@@ -282,8 +282,7 @@ BmMailRefView::BmMailRefView( minimax minmax, int32 width, int32 height)
 	SetViewColor( B_TRANSPARENT_COLOR);
 	if (ThePrefs->GetBool("StripedListView"))
 		SetStripedBackground( true);
-	else 
-		flags |= CLV_TELL_ITEMS_WIDTH;
+
 	Initialize( BRect(0,0,width-1,height-1), B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE,
 					B_FOLLOW_NONE, true, true, true, B_FANCY_BORDER);
 
@@ -757,6 +756,8 @@ void BmMailRefView::AddMailRefMenu( BMenu* menu, BHandler* target,
 	statusMenu->SetFont( &font);
 	menu->AddItem( statusMenu);
 	menu->AddSeparatorItem();
+
+	AddItemToMenu( menu, CreateMenuItem( "Apply Filter", new BMessage( BMM_FILTER)), target);
 
 	BMessage inMsgTempl( BMM_FILTER);
 	inMsgTempl.AddBool( BmFilter::MSG_OUTBOUND, false);
