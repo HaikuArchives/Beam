@@ -935,7 +935,7 @@ void BmMailView::JobIsDone( bool completed) {
 				int32 count;
 				if ((count = rx.exec( 
 					displayText, 
-					"(https?://|ftp://|nntp://|file://|mailto:)[^][<>(){}|\"\\s]+", 
+					"(https?://|ftp://|nntp://|file://|mailto:)[^][<>(){}|\",\\s]+", 
 					Regexx::nocase|Regexx::global|Regexx::newline
 				)) > 0) {
 					for( int i=0; i<count; ++i) {
