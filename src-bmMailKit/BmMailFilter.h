@@ -32,14 +32,15 @@
 #ifndef _BmMailFilter_h
 #define _BmMailFilter_h
 
-#include <memory>
+#include <vector>
+//#include <memory>
 
 #include <Message.h>
 
+#include "BmMailRef.h"
 #include "BmUtil.h"
 
 class BmFilter;
-class BmMail;
 
 /*------------------------------------------------------------------------------*\
 	BmMailFilter
@@ -47,10 +48,28 @@ class BmMail;
 \*------------------------------------------------------------------------------*/
 class BmMailFilter : public BmJobModel {
 	typedef BmJobModel inherited;
+
+	typedef vector< BmRef< BmMailRef> > BmMailRefVect;
+	typedef vector< BmRef< BmMail> > BmMailVect;
+	typedef vector< const char**> BmHeaderVect;
 	
+	struct MsgContext {
+		MsgContext( BmMailFilter* mf, BmMail* m)
+			: mailFilter( mf), mail( m), headers( NULL) 	{}
+		~MsgContext() 							{ if (headers) delete [] headers; }
+		BmMailFilter* mailFilter;
+		BmMail* mail;
+		const char** headers;
+	};
+
 public:
-	BmMailFilter( const BmString& name, const BmFilter* filter, BmMail* mail);
+	BmMailFilter( const BmString& name, BmFilter* filter);
 	virtual ~BmMailFilter();
+
+	// native methods:
+	void AddMailRef( BmMailRef* ref);
+	void AddMail( BmMail* mail);
+	void ManageHeaderVect( const char**header);
 
 	// SIEVE-callbacks:
 	static int sieve_redirect( void* action_context, void* interp_context, 
@@ -66,6 +85,9 @@ public:
 	static int sieve_get_header( void* message_context, const char* header,
 			  							  const char*** contents);
 
+	static int sieve_execute_error( const char* msg, void* interp_context,
+											  void* script_context, void* message_context);
+
 	// overrides of BmJobModel base:
 	bool StartJob();
 
@@ -73,10 +95,12 @@ public:
 	inline BmString Name() const			{ return ModelName(); }
 
 private:
-	const BmFilter* mFilter;
+	BmRef<BmFilter> mFilter;
 							// the actual SIEVE-filter
-	BmMail* mMail;
-							// the mail we are filtering
+	BmMailRefVect mMailRefs;
+							// the mail-refs we shall be filtering
+	BmMailVect mMails;
+							// the mails we shall be filtering
 
 	// Hide copy-constructor and assignment:
 	BmMailFilter( const BmMailFilter&);

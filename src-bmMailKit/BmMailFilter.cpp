@@ -43,16 +43,15 @@
 
 // standard logfile-name for this class:
 #undef BM_LOGNAME
-#define BM_LOGNAME Name()
+#define BM_LOGNAME "Filter"
 
 /*------------------------------------------------------------------------------*\
 	BmMailFilter()
 		-	contructor
 \*------------------------------------------------------------------------------*/
-BmMailFilter::BmMailFilter( const BmString& name, const BmFilter* filter, BmMail* mail)
+BmMailFilter::BmMailFilter( const BmString& name, BmFilter* filter)
 	:	BmJobModel( name)
 	,	mFilter( filter)
-	,	mMail( mail)
 {
 }
 
@@ -61,6 +60,24 @@ BmMailFilter::BmMailFilter( const BmString& name, const BmFilter* filter, BmMail
 		-	destructor
 \*------------------------------------------------------------------------------*/
 BmMailFilter::~BmMailFilter() { 
+}
+
+/*------------------------------------------------------------------------------*\
+	AddMailRef()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailFilter::AddMailRef( BmMailRef* ref) {
+	if (ref)
+		mMailRefs.push_back( ref);
+}
+
+/*------------------------------------------------------------------------------*\
+	AddMail()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailFilter::AddMail( BmMail* mail) {
+	if (mail)
+		mMails.push_back( mail);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -90,11 +107,11 @@ int BmMailFilter::sieve_keep( void* action_context, void* interp_context,
 int BmMailFilter::sieve_fileinto( void* action_context, void* interp_context, 
 			   				  			 void* script_context, void* message_context, 
 			   				 			 const char** errmsg) {
-	BmMail* mail = static_cast< BmMail*>( message_context);
+	MsgContext* msgContext = static_cast< MsgContext*>( message_context);
 	sieve_fileinto_context* fileintoContext 
 		= static_cast< sieve_fileinto_context*>( action_context);
-	if (mail && fileintoContext) {
-		mail->DestFoldername( fileintoContext->mailbox);
+	if (msgContext && msgContext->mail && fileintoContext) {
+		msgContext->mail->DestFoldername( fileintoContext->mailbox);
 	}
 	return SIEVE_OK;
 }
@@ -104,9 +121,9 @@ int BmMailFilter::sieve_fileinto( void* action_context, void* interp_context,
 		-	
 \*------------------------------------------------------------------------------*/
 int BmMailFilter::sieve_get_size( void* message_context, int* sizePtr) {
-	BmMail* mail = static_cast< BmMail*>( message_context);
-	if (mail && sizePtr) {
-		*sizePtr = mail->RawText().Length();
+	MsgContext* msgContext = static_cast< MsgContext*>( message_context);
+	if (msgContext && msgContext->mail && sizePtr) {
+		*sizePtr = msgContext->mail->RawText().Length();
 	}
 	return SIEVE_OK;
 }
@@ -117,15 +134,60 @@ int BmMailFilter::sieve_get_size( void* message_context, int* sizePtr) {
 \*------------------------------------------------------------------------------*/
 int BmMailFilter::sieve_get_header( void* message_context, const char* header,
 			  									const char*** contents) {
+	MsgContext* msgContext = static_cast< MsgContext*>( message_context);
+	if (msgContext && msgContext->mail) {
+		msgContext->mail->Header()->GetAllFieldValues( header, msgContext->headers);
+		*contents = msgContext->headers;
+	}	
+	return SIEVE_OK;
+}
+
+/*------------------------------------------------------------------------------*\
+	execute_error()
+		-	
+\*------------------------------------------------------------------------------*/
+int BmMailFilter::sieve_execute_error( const char* msg, void* interp_context,
+													void* script_context, void* message_context) {
+	BmString filterName = "<unknown>";
+	BmString mailName = "<unknown>";
+	if (script_context) {
+		BmFilter* filter = static_cast< BmFilter*>( script_context);
+		if (filter)
+			filterName = filter->Name();
+	}
+	MsgContext* msgContext = static_cast< MsgContext*>( message_context);
+	if (msgContext && msgContext->mail)
+			mailName = msgContext->mail->Name();
+	BmString err("An error occurred during execution of a mail-filter.");
+	err << "\nFilter: " << filterName;
+	err << "\nMail-ID: " << mailName;
+	err << "\n\nError: " << (msg ? msg : "");
+	BM_SHOWERR( err);
 	return SIEVE_OK;
 }
 
 /*------------------------------------------------------------------------------*\
 	StartJob()
-		-	the job, executes the filter on the mail
+		-	the job, executes the filter on all given mail-refs
 \*------------------------------------------------------------------------------*/
 bool BmMailFilter::StartJob() {
 	try {
+		BmRef<BmMail> mail;
+		for( uint32 i=0; i<mMailRefs.size(); ++i) {
+			mail = BmMail::CreateInstance( mMailRefs[i].Get());
+			if (mail) {
+				MsgContext msgContext( this, mail.Get());
+				if (!mFilter->Execute( &msgContext))
+					break;
+			}
+		}
+		mMailRefs.clear();
+		for( uint32 i=0; i<mMails.size(); ++i) {
+			MsgContext msgContext( this, mMails[i].Get());
+			if (!mFilter->Execute( &msgContext))
+				break;
+		}
+		mMails.clear();
 		return true;
 	}
 	catch( BM_runtime_error &err) {
