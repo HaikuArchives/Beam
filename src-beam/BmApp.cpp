@@ -486,7 +486,7 @@ void BmApplication::RefsReceived( BMessage* msg) {
 		|| entry.GetRef( &eref) != B_OK
 		|| entry.GetStat( &st) != B_OK)
 			continue;
-		BmRef<BmMailRef> ref = BmMailRef::CreateInstance( NULL, eref, st);
+		BmRef<BmMailRef> ref = BmMailRef::CreateInstance( eref, st);
 		if (!ref)
 			continue;
 		if (ref->Status() == BM_MAIL_STATUS_DRAFT
