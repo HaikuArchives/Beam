@@ -45,8 +45,8 @@ extern const char* const BM_DeskbarNormal;
 extern const char* const BM_DeskbarNew;
 
 // menu-messages for deskbar-view:
-enum{
-	BMM_RESET_ICON = 	'bMDa'
+enum {
+	BMM_RESET_ICON = 		'bMDa'
 };
 
 class BmDeskbarView: public BView {
@@ -83,6 +83,7 @@ private:
 	int32 mNewMailCount;
 	BString mCurrIconName;
 	BBitmap *mCurrIcon;
+	node_ref mTrashNodeRef;
 };
 
 #endif

@@ -228,6 +228,9 @@ void BmDeskbarView::InstallDeskbarMonitor() {
 	
 	BMessenger thisAsTarget( this);
 
+	// fetch node-ref of Trash (a kludge, should be able to handle more than one):
+	BDirectory trash( "/boot/home/Desktop/Trash");
+	trash.GetNodeRef( &mTrashNodeRef);
 	// determine the volume of our home-directory:
 	if (find_directory( B_USER_DIRECTORY, &path) == B_OK
 	&& get_ref_for_path( path.Path(), &eref) == B_OK) {
@@ -241,7 +244,8 @@ void BmDeskbarView::InstallDeskbarMonitor() {
 				while (count-- > 0) {
 					nref.device = dent->d_pdev;
 					nref.node = dent->d_pino;
-					mNewMailCount++;
+					if (nref != mTrashNodeRef)
+						mNewMailCount++;
 					// Bump the dirent-pointer by length of the dirent just handled:
 					dent = (dirent* )((char* )dent + dent->d_reclen);
 				}
@@ -284,9 +288,8 @@ void BmDeskbarView::MouseDown(BPoint pos) {
 	BMessage* msg = Looper()->CurrentMessage();
 	if (msg && msg->FindInt32( "buttons", &buttons)==B_OK) {
 		if (buttons == B_PRIMARY_MOUSE_BUTTON) {
-			team_id beamTeam = be_roster->TeamFor( BM_APP_SIG);
-			if (beamTeam)
-				be_roster->ActivateApp( beamTeam);
+			BMessage actMsg( B_SILENT_RELAUNCH);
+			SendToBeam( &actMsg);
 		} else if (buttons == B_SECONDARY_MOUSE_BUTTON)
 			ShowMenu( pos);
 	}
@@ -342,13 +345,15 @@ void BmDeskbarView::HandleQueryUpdateMsg( BMessage* msg) {
 	switch( opcode) {
 		case B_ENTRY_CREATED: {
 			if (msg->FindInt64( "directory", &nref.node) == B_OK
-			&& msg->FindInt32( "device", &nref.device) == B_OK)
+			&& msg->FindInt32( "device", &nref.device) == B_OK
+			&& nref != mTrashNodeRef)
 				IncNewMailCount();
 			break;
 		}
 		case B_ENTRY_REMOVED: {
 			if (msg->FindInt64( "directory", &nref.node) == B_OK
-			&& msg->FindInt32( "device", &nref.device) == B_OK)
+			&& msg->FindInt32( "device", &nref.device) == B_OK
+			&& nref != mTrashNodeRef)
 				DecNewMailCount();
 			break;
 		}
