@@ -8,6 +8,7 @@
 #include <Alert.h>
 
 #include "BmBasics.h"
+#include "BmLogHandler.h"
 #include "BmUtil.h"
 
 BString BM_SPACES("                                                                                ");

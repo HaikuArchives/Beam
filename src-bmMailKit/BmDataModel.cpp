@@ -183,6 +183,7 @@ BmJobModel::BmJobModel( const BString& name)
 	:	BmDataModel( name)
 	,	mJobState( JOB_INITIALIZED)
 	,	mThreadID( 0)
+	,	mJobSpecifier( BM_DEFAULT_JOB)
 {
 }
 
@@ -197,9 +198,10 @@ BmJobModel::~BmJobModel() {
 	StartJobInNewThread()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmJobModel::StartJobInNewThread() {
+void BmJobModel::StartJobInNewThread( int32 jobSpecifier) {
 	BmAutolock lock( mModelLocker);
 	lock.IsLocked()	 						|| BM_THROW_RUNTIME( ModelName() << ": Unable to get lock");
+	mJobSpecifier = jobSpecifier;
 	if (!mThreadID) {
 		// we create a new thread for this job...
 		BString tname = ModelName();
@@ -228,7 +230,8 @@ void BmJobModel::StartJobInNewThread() {
 	StartJobInThisThread()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmJobModel::StartJobInThisThread() {
+void BmJobModel::StartJobInThisThread( int32 jobSpecifier) {
+	mJobSpecifier = jobSpecifier;
 	doStartJob();
 }
 

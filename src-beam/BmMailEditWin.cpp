@@ -17,6 +17,7 @@
 
 #include "Beam.h"
 #include "BmBasics.h"
+#include "BmBodyPartView.h"
 #include "BmEncoding.h"
 	using namespace BmEncoding;
 #include "BmLogHandler.h"
@@ -229,6 +230,8 @@ void BmMailEditWin::CreateGUI() {
 	
 	mMailView->AddFilter( new BmMailViewFilter( BM_MAILVIEW_SHOWRAW, this));
 	mMailView->AddFilter( new BmMailViewFilter( BM_MAILVIEW_SHOWCOOKED, this));
+	mMailView->AddFilter( new BmMailViewFilter( B_SIMPLE_DATA, this));
+	mMailView->BodyPartView()->AddFilter( new BmMailViewFilter( B_SIMPLE_DATA, this));
 }
 
 /*------------------------------------------------------------------------------*\
@@ -322,7 +325,7 @@ void BmMailEditWin::MessageReceived( BMessage* msg) {
 			}
 			case BMM_SEND_LATER:
 			case BMM_SEND_NOW: {
-				if (!CreateMailFromFields())
+				if (!SaveAndReloadMail())
 					break;
 				BmRef<BmMail> mail = mMailView->CurrMail();
 				if (!mail || !mail->Store())
@@ -414,7 +417,6 @@ void BmMailEditWin::EditMail( BmMailRef* ref) {
 		mSenderControl->SetText( mail->GetFieldVal( BM_FIELD_SENDER).String());
 		mSubjectControl->SetText( ref->Subject().String());
 		mToControl->SetText( ref->To().String());
-		mToControl->TextView()->ScrollToOffset( 0);
 		mReplyToControl->SetText( ref->ReplyTo().String());
 		// mark corresponding SMTP-account (if any):
 		BMenuItem* item = NULL;
@@ -543,9 +545,20 @@ BmMailViewFilter::BmMailViewFilter( int32 msgCmd, BmMailEditWin* editWin)
 		-	
 \*------------------------------------------------------------------------------*/
 filter_result BmMailViewFilter::Filter( BMessage* msg, BHandler** target) {
-	if (mEditWin && mEditWin->SaveAndReloadMail()) {
-		mEditWin->SetEditMode( msg->what);
-		return B_DISPATCH_MESSAGE;
+	switch( msg->what) {
+		case BM_MAILVIEW_SHOWRAW:
+		case BM_MAILVIEW_SHOWCOOKED: {
+			if (mEditWin && mEditWin->SaveAndReloadMail()) {
+				mEditWin->SetEditMode( msg->what);
+				return B_DISPATCH_MESSAGE;
+			}
+			break;
+		}
+		case B_SIMPLE_DATA: {
+			if (mEditWin && !mEditWin->IsInRawMode()) {
+				return B_DISPATCH_MESSAGE;
+			}
+		}
 	}
 	return B_SKIP_MESSAGE;
 }

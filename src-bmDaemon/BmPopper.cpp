@@ -77,30 +77,37 @@ BmPopper::~BmPopper() {
 \*------------------------------------------------------------------------------*/
 bool BmPopper::StartJob() {
 
-	const float delta = (100.0 / POP_DONE);
-	const bool failed=true;
-
-	mPopServer.InitCheck() == B_OK									||	BM_THROW_RUNTIME("BmPopper: could not create NetEndpoint");
-	try {
-		for( mState=POP_CONNECT; ShouldContinue() && mState<POP_DONE; ++mState) {
-			TStateMethod stateFunc = PopStates[mState].func;
-			UpdatePOPStatus( (mState==POP_CONNECT ? 0.0 : delta), NULL);
-			(this->*stateFunc)();
+	switch( CurrentJobSpecifier()) {
+		case BM_AUTH_ONLY_JOB: {
+			return true;
 		}
-		UpdatePOPStatus( delta, NULL);
+		default: {
+			const float delta = (100.0 / POP_DONE);
+			const bool failed=true;
+			mPopServer.InitCheck() == B_OK					
+													||	BM_THROW_RUNTIME("BmPopper: could not create NetEndpoint");
+			try {
+				for( mState=POP_CONNECT; ShouldContinue() && mState<POP_DONE; ++mState) {
+					TStateMethod stateFunc = PopStates[mState].func;
+					UpdatePOPStatus( (mState==POP_CONNECT ? 0.0 : delta), NULL);
+					(this->*stateFunc)();
+				}
+				UpdatePOPStatus( delta, NULL);
+			}
+			catch( BM_runtime_error &err) {
+				// a problem occurred, we tell the user:
+				BString errstr = err.what();
+				int e;
+				if ((e = mPopServer.Error()))
+					errstr << "\nerror: " << e << ", " << mPopServer.ErrorStr();
+				UpdatePOPStatus( 0.0, NULL, failed);
+				BString text = Name() << "\n\n" << errstr;
+				BM_SHOWERR( BString("BmPopper: ") << text);
+				return false;
+			}
+			return true;
+		}
 	}
-	catch( BM_runtime_error &err) {
-		// a problem occurred, we tell the user:
-		BString errstr = err.what();
-		int e;
-		if ((e = mPopServer.Error()))
-			errstr << "\nerror: " << e << ", " << mPopServer.ErrorStr();
-		UpdatePOPStatus( 0.0, NULL, failed);
-		BString text = Name() << "\n\n" << errstr;
-		BM_SHOWERR( BString("BmPopper: ") << text);
-		return false;
-	}
-	return true;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -192,9 +199,11 @@ void BmPopper::Check() {
 		return;									// no messages found, nothing more to do
 	}
 
-	// we try to fetch a list of unique message IDs from server:
+	delete [] mMsgUIDs;
 	mMsgUIDs = new BString[mMsgCount];
+	delete [] mMsgSizes;
 	mMsgSizes = new int32[mMsgCount];
+	// we try to fetch a list of unique message IDs from server:
 	cmd = BString("UIDL");
 	SendCommand( cmd);
 	// The UIDL-command may not be implemented by this server, so we 
@@ -228,14 +237,15 @@ void BmPopper::Check() {
 		return;
 	const char *p = mAnswer.String();
 	for( int32 i=0; i<mMsgCount; i++) {
+		int32 msgSize;
 		if (!mPopAccount->IsUIDDownloaded( mMsgUIDs[i])) {
 			// msg is new (according to unknown UID)
 			// fetch msgsize for message...
-			if (sscanf( p, "%ld %ld", &msgNum, &mMsgSizes[i]) != 2 || msgNum != i+1)
+			if (sscanf( p, "%ld %ld", &msgNum, &msgSize) != 2 || msgNum != i+1)
 				throw BM_network_error( BString("answer to LIST has unknown format, msg ") << i+1);
 			// add msg-size to total:
-			mMsgTotalSize += mMsgSizes[i];
-			mNewMsgCount++;
+			mMsgTotalSize += msgSize;
+			mMsgSizes[mNewMsgCount++] = msgSize;
 		}
 		// skip to next line:
 		if (!(p = strstr( p, "\r\n")))
@@ -346,7 +356,7 @@ bool BmPopper::GetAnswer( bool SingleLineMode, int32 mailNr) {
 	int32 numBytes = 0;
 
 	if (mailNr)
-		BM_LOG3( BM_LogPop, BString("announced msg-size:") << mMsgSizes[mailNr-1]);
+		BM_LOG2( BM_LogPop, BString("announced msg-size:") << mMsgSizes[mailNr-1]);
 	BM_LOG3( BM_LogPop, BString("bufSize:") << bufSize);
 	mAnswer.SetTo( '\0', bufSize);		// preallocate the bufsize we need
 	buffer = mAnswer.LockBuffer( 0);

@@ -118,14 +118,15 @@ BmJobController::~BmJobController() {
 	StartJob()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmJobController::StartJob( BmJobModel* model, bool startInNewThread) {
+void BmJobController::StartJob( BmJobModel* model, bool startInNewThread,
+										  int32 jobSpecifier) {
 	AttachModel( model);
 	if (DataModel()) {
 		BM_LOG2( BM_LogModelController, BString("Controller <") << ControllerName() << "> starts job " << ModelName());
 		if (startInNewThread)
-			DataModel()->StartJobInNewThread();
+			DataModel()->StartJobInNewThread( jobSpecifier);
 		else
-			DataModel()->StartJobInThisThread();
+			DataModel()->StartJobInThisThread( jobSpecifier);
 	}
 }
 
@@ -180,4 +181,16 @@ bool BmJobController::IsJobRunning() {
 	} else {
 		return false;
 	}
+}
+
+/*------------------------------------------------------------------------------*\
+	CurrentJobSpecifier()
+		-	
+\*------------------------------------------------------------------------------*/
+int32 BmJobController::CurrentJobSpecifier() {
+	BmJobModel* model = DataModel();
+	if (model)
+		return model->CurrentJobSpecifier();
+	else
+		return BmJobModel::BM_DEFAULT_JOB;
 }

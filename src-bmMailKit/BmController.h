@@ -74,11 +74,13 @@ public:
 	virtual ~BmJobController();
 
 	// native methods:
-	virtual void StartJob( BmJobModel* model = NULL, bool startInNewThread=true);
+	virtual void StartJob( BmJobModel* model=NULL, bool startInNewThread=true,
+								  int32 jobSpecifier=BmJobModel::BM_DEFAULT_JOB);
 	virtual void PauseJob( BMessage* msg);
 	virtual void ContinueJob( BMessage* msg);
 	virtual void StopJob();
 	virtual bool IsJobRunning();
+	int32 CurrentJobSpecifier();
 	virtual void JobIsDone( bool completed) = 0;
 
 protected:

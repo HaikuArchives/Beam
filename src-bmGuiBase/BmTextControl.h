@@ -27,6 +27,8 @@ public:
 
 	// overrides of BTextControl:
 	void FrameResized( float new_width, float new_height);
+	void SetEnabled( bool enabled);
+	void SetText( const char* text);
 
 	// getters:
 	BTextView* TextView() const 			{ return mTextView; }

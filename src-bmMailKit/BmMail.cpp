@@ -111,6 +111,7 @@ void BmMail::SetTo( BString &msgText, const BString account) {
 
 	BString header;
 	header.SetTo( mText, headerLen);
+	delete mHeader;
 	mHeader = new BmMailHeader( header, this);
 	
 	mBody = new BmBodyPartList( this);

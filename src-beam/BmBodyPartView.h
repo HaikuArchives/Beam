@@ -30,7 +30,6 @@ public:
 };
 
 class BmBodyPartList;
-class BmMailView;
 /*------------------------------------------------------------------------------*\
 	BmBodyPartView
 		-	

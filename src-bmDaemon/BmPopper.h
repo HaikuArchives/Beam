@@ -35,6 +35,9 @@ public:
 	static const char* const MSG_TRAILING = 	"bm:trailing";
 	static const char* const MSG_LEADING = 	"bm:leading";
 
+	// job-specifier for authentication only (needed for SMTP-after-POP):
+	static const int32 BM_AUTH_ONLY_JOB = 1;
+
 	BmPopper( const BString& name, BmPopAccount* account);
 	virtual ~BmPopper();
 
@@ -45,6 +48,21 @@ public:
 	bool StartJob();
 
 private:
+	// internal functions:
+	void Connect();
+	void Login();
+	void Check();
+	void Retrieve();
+	void Disconnect();
+	void Quit( bool WaitForAnswer=false);
+	void UpdatePOPStatus( const float, const char*, bool failed=false);
+	void UpdateMailStatus( const float, const char*, int32);
+	void StoreAnswer( char* );
+	bool CheckForPositiveAnswer( bool SingleLineMode, int32 mailNr=0);
+	bool GetAnswer( bool SingleLineMode, int32 mailNr = 0);
+	int32 ReceiveBlock( char* buffer, int32 max);
+	void SendCommand( BString cmd);
+
 	static int32 mId;							// unique message ID, this is used if a 
 													// received message has no UID.
 	static int32 FeedbackTimeout;			// the time a BmPopper will allow to pass
@@ -88,20 +106,6 @@ private:
 	};
 	static PopState PopStates[POP_FINAL];
 
-	// private functions:
-	void Connect();
-	void Login();
-	void Check();
-	void Retrieve();
-	void Disconnect();
-	void Quit( bool WaitForAnswer=false);
-	void UpdatePOPStatus( const float, const char*, bool failed=false);
-	void UpdateMailStatus( const float, const char*, int32);
-	void StoreAnswer( char* );
-	bool CheckForPositiveAnswer( bool SingleLineMode, int32 mailNr=0);
-	bool GetAnswer( bool SingleLineMode, int32 mailNr = 0);
-	int32 ReceiveBlock( char* buffer, int32 max);
-	void SendCommand( BString cmd);
 };
 
 #endif

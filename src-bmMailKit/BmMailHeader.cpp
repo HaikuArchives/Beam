@@ -8,8 +8,6 @@
 
 #include <List.h>
 #include <NodeInfo.h>
-#include <netdb.h>
-#include <unistd.h>
 
 #include "regexx.hh"
 using namespace regexx;
@@ -20,6 +18,7 @@ using namespace regexx;
 #include "BmLogHandler.h"
 #include "BmMail.h"
 #include "BmMailHeader.h"
+#include "BmNetUtil.h"
 #include "BmPrefs.h"
 #include "BmResources.h"
 #include "BmSmtpAccount.h"
@@ -720,38 +719,26 @@ bool BmMailHeader::ConstructRawText( BString& header, int32 encoding) {
 	BString ourID = BString(BmAppName) << " " << BmAppVersion;
 	SetFieldVal( BM_FIELD_X_MAILER, ourID.String());
 
-	// set message-id:
-	BString domain;
-	BString accName = mMail->AccountName();
-	if (accName.Length()) {
-		BmSmtpAccount* account = dynamic_cast<BmSmtpAccount*>( TheSmtpAccountList->FindItemByKey( accName).Get());
-		if (account)
-			domain = account->DomainToAnnounce();
+	if (ThePrefs->GetBool( "GenerateOwnMessageIDs", true)) {
+		// generate our own message-id:
+		BString domain;
+		BString accName = mMail->AccountName();
+		if (accName.Length()) {
+			BmSmtpAccount* account = dynamic_cast<BmSmtpAccount*>( TheSmtpAccountList->FindItemByKey( accName).Get());
+			if (account)
+				domain = account->DomainToAnnounce();
+		}
+		if (!domain.Length()) {
+			// no account given or it has an empty domain, we try to find out manually:
+			domain = OwnFQHN();
+			if (!domain.Length())
+				return false;						// no FQHN, we should not continue
+		}
+		SetFieldVal( BM_FIELD_MESSAGE_ID, 
+						 BString("<") << TimeToString( time( NULL), "%Y%m%d%H%M%S.")
+						 				  << find_thread(NULL) << "." << ++nCounter << "@" 
+						 				  << domain << ">");
 	}
-	if (!domain.Length()) {
-		// no account given or it has an empty domain, we try to find out manually:
-		char hostname[MAXHOSTNAMELEN+1];
-		hostname[MAXHOSTNAMELEN] = '\0';
-		int result;
-		if ((result=gethostname( hostname, MAXHOSTNAMELEN)) < 1) {
-			BM_SHOWERR("Sorry, could not determine name of this host, giving up.");
-			return false;
-		}
-		hostent *hptr;
-		if ((hptr = gethostbyname( hostname)) == NULL) {
-			BM_SHOWERR("Sorry, could not determine IP-address of this host, giving up.");
-			return false;
-		}
-		if ((hptr = gethostbyaddr( hptr->h_addr_list[0], 4, AF_INET)) == NULL) {
-			BM_SHOWERR("Sorry, could not determine FQHN of this host, giving up.");
-			return false;
-		}
-		domain = hptr->h_name;
-	}
-	SetFieldVal( BM_FIELD_MESSAGE_ID, 
-					 BString("<") << TimeToString( time( NULL), "%Y%m%d%H%M%S.")
-					 				  << find_thread(NULL) << "." << ++nCounter << "@" 
-					 				  << domain << ">");
 
 	BmHeaderMap::const_iterator iter;
 	for( iter = mStrippedHeaders.begin(); iter != mStrippedHeaders.end(); ++iter) {

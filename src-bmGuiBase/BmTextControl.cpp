@@ -69,10 +69,32 @@ void BmTextControl::ReattachToParent() {
 	( )
 		-	
 \*------------------------------------------------------------------------------*/
+void BmTextControl::SetEnabled( bool enabled) {
+	inherited::SetEnabled( enabled);
+	if (mLabelIsMenu)
+		mMenuField->SetEnabled( enabled);
+}
+
+/*------------------------------------------------------------------------------*\
+	( )
+		-	
+\*------------------------------------------------------------------------------*/
+void BmTextControl::SetText( const char* text) {
+	inherited::SetText( text);
+	TextView()->ScrollToSelection();
+}
+
+/*------------------------------------------------------------------------------*\
+	( )
+		-	
+\*------------------------------------------------------------------------------*/
 void BmTextControl::FrameResized( float new_width, float new_height) {
 	BRect curr = Bounds();
 	Invalidate( BRect( Divider(), 0, new_width-1, curr.Height()));
 	inherited::FrameResized( new_width, new_height);
+//	TextView()->Select( 0, 0);
+	TextView()->ScrollToSelection();
+//	TextView()->GoToLine( 0);
 }
 
 /*------------------------------------------------------------------------------*\

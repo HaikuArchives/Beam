@@ -33,6 +33,9 @@ public:
 	static const char* const MSG_TRAILING = 	"bm:trailing";
 	static const char* const MSG_LEADING = 	"bm:leading";
 
+	// job-specifier for checking server capabilities:
+	static const int32 BM_CHECK_CAPABILITIES_JOB = 1;
+
 	BmSmtp( const BString& name, BmSmtpAccount* account);
 	virtual ~BmSmtp();
 

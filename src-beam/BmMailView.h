@@ -71,6 +71,7 @@ public:
 	BmRef<BmMail> CurrMail()				{ return mCurrMail; }
 	bool ShowRaw()								{ return mShowRaw; }
 	bool ShowInlinesSeparately()			{ return mShowInlinesSeparately; }
+	BmBodyPartView* BodyPartView()		{ return mBodyPartView; }
 
 	// setters:
 	void TeamUpWith( BmMailRefView* v)	{ mPartnerMailRefView = v; }

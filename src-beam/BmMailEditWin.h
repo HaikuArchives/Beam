@@ -42,6 +42,9 @@ public:
 	void MessageReceived( BMessage*);
 	bool QuitRequested();
 	void Quit();
+	
+	// getters:
+	bool IsInRawMode() const				{ return mRawMode; }
 
 private:
 	BmMailViewContainer* CreateMailView( minimax minmax, BRect frame);

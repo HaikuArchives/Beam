@@ -100,18 +100,21 @@ public:
 
 	// native methods:
 	static int32 ThreadStartFunc(  void*);
-	virtual void StartJobInNewThread();
-	virtual void StartJobInThisThread();
+	virtual void StartJobInNewThread( int32 jobSpecifier=BM_DEFAULT_JOB);
+	virtual void StartJobInThisThread( int32 jobSpecifier=BM_DEFAULT_JOB);
 	virtual void PauseJob();
 	virtual void ContinueJob();
 	virtual void StopJob();
 	thread_id JobThreadID() const 		{ return mThreadID; }
 	bool IsJobRunning() const;
 	bool IsJobCompleted() const			{ return mJobState == JOB_COMPLETED; }
+	int32 CurrentJobSpecifier() const	{ return mJobSpecifier; }
 
 	//	message component definitions for status-msgs:
 	static const char* const MSG_COMPLETED = 		"bm:completed";
 	static const char* const MSG_DOMAIN = 			"bm:domain";
+	
+	static const int32 BM_DEFAULT_JOB = 0;
 
 protected:
 	// native methods:
@@ -132,6 +135,7 @@ private:
 	virtual void doStartJob();
 
 	thread_id mThreadID;
+	int32 mJobSpecifier;
 };
 
 // flags indicating which parts are to be updated:

@@ -18,6 +18,7 @@ using namespace regexx;
 #include "BmLogHandler.h"
 #include "BmMail.h"
 #include "BmMailHeader.h"
+#include "BmNetUtil.h"
 #include "BmSmtpAccount.h"
 #include "BmSmtp.h"
 #include "BmPrefs.h"
@@ -78,33 +79,41 @@ BmSmtp::~BmSmtp() {
 \*------------------------------------------------------------------------------*/
 bool BmSmtp::StartJob() {
 
-	int32 startState = mSmtpAccount->NeedsAuthViaPopServer() 
-									? SMTP_AUTH_VIA_POP 
-									: SMTP_CONNECT;
-	const float delta = 100.0 / (SMTP_DONE-startState);
-	const bool failed=true;
-
-	mSmtpServer.InitCheck() == B_OK									||	BM_THROW_RUNTIME("BmSmtp: could not create NetEndpoint");
-	try {
-		for( 	mState = startState; ShouldContinue() && mState<SMTP_DONE; ++mState) {
-			TStateMethod stateFunc = SmtpStates[mState].func;
-			UpdateSMTPStatus( (mState==startState ? 0.0 : delta), NULL);
-			(this->*stateFunc)();
+	switch( CurrentJobSpecifier()) {
+		case BM_CHECK_CAPABILITIES_JOB: {
+			return true;
 		}
-		UpdateSMTPStatus( delta, NULL);
+		default: {
+			int32 startState = mSmtpAccount->NeedsAuthViaPopServer() 
+											? SMTP_AUTH_VIA_POP 
+											: SMTP_CONNECT;
+			const float delta = 100.0 / (SMTP_DONE-startState);
+			const bool failed=true;
+		
+			mSmtpServer.InitCheck() == B_OK
+													||	BM_THROW_RUNTIME("BmSmtp: could not create NetEndpoint");
+			try {
+				for( 	mState = startState; ShouldContinue() && mState<SMTP_DONE; ++mState) {
+					TStateMethod stateFunc = SmtpStates[mState].func;
+					UpdateSMTPStatus( (mState==startState ? 0.0 : delta), NULL);
+					(this->*stateFunc)();
+				}
+				UpdateSMTPStatus( delta, NULL);
+			}
+			catch( BM_runtime_error &err) {
+				// a problem occurred, we tell the user:
+				BString errstr = err.what();
+				int e;
+				if ((e = mSmtpServer.Error()))
+					errstr << "\nerror: " << e << ", " << mSmtpServer.ErrorStr();
+				UpdateSMTPStatus( 0.0, NULL, failed);
+				BString text = Name() << "\n\n" << errstr;
+				BM_SHOWERR( BString("BmSmtp: ") << text);
+				return false;
+			}
+			return true;
+		}
 	}
-	catch( BM_runtime_error &err) {
-		// a problem occurred, we tell the user:
-		BString errstr = err.what();
-		int e;
-		if ((e = mSmtpServer.Error()))
-			errstr << "\nerror: " << e << ", " << mSmtpServer.ErrorStr();
-		UpdateSMTPStatus( 0.0, NULL, failed);
-		BString text = Name() << "\n\n" << errstr;
-		BM_SHOWERR( BString("BmSmtp: ") << text);
-		return false;
-	}
-	return true;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -173,7 +182,10 @@ void BmSmtp::Connect() {
 			if that fails, HELO is used
 \*------------------------------------------------------------------------------*/
 void BmSmtp::Helo() {
-	BString cmd = BString("EHLO ") << mSmtpAccount->DomainToAnnounce();
+	BString domain = mSmtpAccount->DomainToAnnounce();
+	if (!domain.Length())
+		domain = OwnFQHN();
+	BString cmd = BString("EHLO ") << domain;
 	SendCommand( cmd);
 	try {
 		CheckForPositiveAnswer();
@@ -185,7 +197,7 @@ void BmSmtp::Helo() {
 			mServerSupportsDSN = true;
 		}
 	} catch(...) {
-		cmd = BString("HELO ") << mSmtpAccount->DomainToAnnounce();
+		cmd = BString("HELO ") << domain;
 		SendCommand( cmd);
 		CheckForPositiveAnswer();
 	}
@@ -252,6 +264,7 @@ void BmSmtp::SendMails() {
 			BccRcpt( mail, false);
 			Data( mail);
 		}
+		mail->MarkAs( BM_MAIL_STATUS_SENT);
 	}
 	mSmtpAccount->mMailVect.clear();
 }
@@ -261,7 +274,15 @@ void BmSmtp::SendMails() {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmSmtp::Mail( BmMail* mail) {
-	BString cmd = BString("MAIL from:<") << mail->Header()->DetermineSender() <<">";
+	BString sender = mail->Header()->DetermineSender();
+	Regexx rx;
+	if (!rx.exec( sender, "@\\w+")) {
+		// no domain part within sender-address, we add our current domain:
+		if (sender.FindFirst("@") == B_ERROR)
+			sender << "@";
+		sender << OwnDomain();
+	}
+	BString cmd = BString("MAIL from:<") << sender <<">";
 	if (mServerMayHaveSizeLimit) {
 		int32 mailSize = mail->RawText().Length();
 		cmd << " SIZE=" << mailSize;
