@@ -81,16 +81,17 @@ class BmNetJobModel : public BmJobModel {
 	friend class BmNetOBuf;
 
 public:
-	BmNetJobModel( const BmString& name, uint32 logType, BmStatusFilter* statusFilter);
+	BmNetJobModel( const BmString& name, uint32 logType, 
+						BmStatusFilter* statusFilter);
 	~BmNetJobModel();
 
 	// native methods:
 	virtual bool Connect( const BNetAddress* addr);
 	virtual void Disconnect();
-	virtual bool CheckForPositiveAnswer( uint32 expectedSize = 4096, 
+	virtual bool CheckForPositiveAnswer( uint32 expectedSize=4096, 
 													 bool dotstuffDecoding=false,
 													 bool update=false);
-	virtual void GetAnswer( uint32 expectedSize = 4096, 
+	virtual void GetAnswer( uint32 expectedSize=4096, 
 									bool dotstuffDecoding=false,
 									bool update=false);
 	virtual void SendCommand( const BmString& cmd, 
@@ -125,14 +126,15 @@ protected:
 	BNetEndpoint* mConnection;
 	bool mConnected;
 	BmStatusFilter* mStatusFilter;
-							// filter that splits server-reply into data and status part
-							// (the status part is kept inside the filter object)
+							// filter that splits server-reply into data and status 
+							// part (the status part is kept inside the filter object)
 	BmString mAnswerText;
 							// data part of server-reply
 	BmPwdAcquisitorFunc* mPwdAcquisitorFunc;
 							// function that asks user for a password (may be NULL)
 	BmString mErrorString;
-							// error-text of last failed command (Beam-generated, not from server)
+							// error-text of last failed command (Beam-generated, 
+							// not from server)
 	uint32 mLogType;
 							// log-type can be BmLogPop or BmLogSmtp
 	BmNetIBuf* mReader;
@@ -207,7 +209,9 @@ public:
 	bool IsAtEnd();
 
 	// getters:
-	BNetEndpoint* Connection()				{ return mJob ? mJob->Connection() : NULL; }
+	BNetEndpoint* Connection()				{ return mJob 
+																	? mJob->Connection() 
+																	: NULL; }
 
 protected:
 	BmNetJobModel* mJob;
@@ -230,7 +234,9 @@ public:
 	uint32 Write( BmMemIBuf* input, uint32 blockSize);
 
 	// getters:
-	BNetEndpoint* Connection()				{ return mJob ? mJob->Connection() : NULL; }
+	BNetEndpoint* Connection()				{ return mJob 
+																	? mJob->Connection() 
+																	: NULL; }
 
 	// setters:
 	inline void DoUpdate( bool b)			{ mUpdate = b; }

@@ -82,7 +82,8 @@ public:
 protected:
 	int mMSecsBeforeShow;
 	int mMSecsBeforeRemove;
-	bool mIsAutoJob;							// has this job been invoked automatically?
+	bool mIsAutoJob;	
+							// has this job been invoked automatically?
 	
 private:
 	BMessageRunner* mShowMsgRunner;
@@ -119,7 +120,8 @@ public:
 	BHandler* GetControllerHandler() 	{ return this; }
 
 private:
-	BStatusBar* mStatBar;					// shows number of mails moved during this operation
+	BStatusBar* mStatBar;
+							// shows number of mails moved during this operation
 	MStringView* mBottomLabel;
 
 	// Hide copy-constructor and assignment:
@@ -150,7 +152,8 @@ public:
 	BHandler* GetControllerHandler() 	{ return this; }
 
 private:
-	BStatusBar* mStatBar;					// shows number of mails filtered during this operation
+	BStatusBar* mStatBar;
+							// shows number of mails filtered during this operation
 	MStringView* mBottomLabel;
 
 	// Hide copy-constructor and assignment:
@@ -186,13 +189,16 @@ public:
 	static bool AskUserForPwd( const BmString accName, BmString& pwd);
 
 private:
-	BStatusBar* mStatBar;				// shows current status of this connection
-	BStatusBar* mMailBar;				// shows number of mails handled by this connection
-	bool mHaveBeeped;						// have we indicated arrival of new mail?
+	BStatusBar* mStatBar;
+							// shows current status of this connection
+	BStatusBar* mMailBar;
+							// shows number of mails handled by this connection
+	bool mHaveBeeped;	
+							// have we indicated arrival of new mail?
 
 	static unsigned short nActiveCount;
-												// countdown for active poppers, to start filter-hack 
-												// when appropriate (after all poppers have finished)
+							// countdown for active poppers, to start filter-hack 
+							// when appropriate (after all poppers have finished)
 
 	// Hide copy-constructor and assignment:
 	BmPopperView( const BmPopperView&);
@@ -225,8 +231,10 @@ public:
 	static bool AskUserForPopAcc( const BmString accName, BmString& popAccName);
 
 private:
-	BStatusBar* mStatBar;				// shows current status of this connection
-	BStatusBar* mMailBar;				// shows number of mails handled by this connection
+	BStatusBar* mStatBar;
+							// shows current status of this connection
+	BStatusBar* mMailBar;
+							// shows number of mails handled by this connection
 
 	// Hide copy-constructor and assignment:
 	BmSmtpView( const BmSmtpView&);
@@ -235,20 +243,23 @@ private:
 
 /*------------------------------------------------------------------------------*\
 	BmJobStatusWin
-		-	implements the connection-window, where the states of all active connections
-			are displayed
+		-	implements the connection-window, where the states of all 
+			active connections are displayed
 		-	three different display-modes are available:
-			* DYNAMIC:			JobStatuss are only displayed as long as they are active,
-									when no more connections is active, the window will close.
-			* DYNAMIC_EMPTY:	Only POP-connections that actually received mail stay visible
-									after the connection has ended
-			* STATIC:			All connections are visible, even after connection-close
-		-	in general each connection to any server starts as a request to this class (better: the
-			one and only instance of this class). For every requested connection a new
-			interface is generated and displayed, then the connections is executed by the
-			corresponding connection-object (for instance a BmPopper).
-		-	connections and their interfaces are connected via the interface defined between
-			BmJobController and BmJobModel.
+			* DYNAMIC:			JobStatuss are only displayed as long as they are 
+									active. When no connection is active, the window 
+									will close.
+			* DYNAMIC_EMPTY:	Only POP-connections that actually received mail 
+									stay visible after the connection has ended
+			* STATIC:			All connections are visible, even after 
+									connection-close
+		-	in general each connection to any server starts as a request to this 
+			class (better: the one and only instance of this class). 
+			For every requested connection a new interface is generated and 
+			displayed, then the connections is executed by the corresponding 
+			connection-object (for instance a BmPopper).
+		-	connections and their interfaces are connected via the interface 
+			defined between BmJobController and BmJobModel.
 \*------------------------------------------------------------------------------*/
 class BmJobStatusWin : public BmWindow {
 	typedef BmWindow inherited;
@@ -279,9 +290,12 @@ public:
 
 private:
 
-	JobMap mActiveJobs;						// list of known jobs
-	VGroup* mOuterGroup;						// the outmost view that the connection-interfaces live in
-	BLooper* mInvokingLooper;				// the looper we will tell that we are finished
+	JobMap mActiveJobs;
+							// list of known jobs
+	VGroup* mOuterGroup;
+							// the outmost view that the connection-interfaces live in
+	BLooper* mInvokingLooper;
+							// the looper we will tell that we are finished
 
 	// Hide copy-constructor and assignment:
 	BmJobStatusWin( const BmJobStatusWin&);

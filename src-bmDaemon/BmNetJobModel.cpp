@@ -184,7 +184,8 @@ void BmNetJobModel::GetAnswer( uint32 expectedSize, bool dotstuffDecoding,
 #ifdef BM_LOGGING
 	BmString logStr( "<--\n");
 	logStr.Append( StatusText() + "\n");
-	logStr.Append( mAnswerText.String(), min( (int32)1024, mAnswerText.Length()));
+	logStr.Append( mAnswerText.String(), min( (int32)1024, 
+						mAnswerText.Length()));
 	BM_LOG( mLogType, logStr);
 #endif
 }
@@ -264,7 +265,9 @@ BmDotstuffDecoder::BmDotstuffDecoder( BmMemIBuf* input, BmNetJobModel* job,
 \*------------------------------------------------------------------------------*/
 void BmDotstuffDecoder::Filter( const char* srcBuf, uint32& srcLen, 
 											char* destBuf, uint32& destLen) {
-	BM_LOG3( mJob->LogType(), BmString("starting to decode dot-stuffing of ") << srcLen << " bytes");
+	BM_LOG3( mJob->LogType(), 
+				BmString("starting to decode dot-stuffing of ") 
+					<< srcLen << " bytes");
 	const char* src = srcBuf;
 	const char* srcEnd = srcBuf+srcLen;
 	char* dest = destBuf;
@@ -318,7 +321,9 @@ BmDotstuffEncoder::BmDotstuffEncoder( BmMemIBuf* input, BmNetJobModel* job,
 \*------------------------------------------------------------------------------*/
 void BmDotstuffEncoder::Filter( const char* srcBuf, uint32& srcLen, 
 										  char* destBuf, uint32& destLen) {
-	BM_LOG3( mJob->LogType(), BmString("starting to dot-stuff a string of ") << srcLen << " bytes");
+	BM_LOG3( mJob->LogType(), 
+				BmString("starting to dot-stuff a string of ") 
+					<< srcLen << " bytes");
 
 	const char* src = srcBuf;
 	const char* srcEnd = srcBuf+srcLen;
@@ -387,9 +392,11 @@ uint32 BmNetIBuf::Read( char* dest, uint32 destLen) {
 	int32 numBytes = 0;
 	Connection()->SetTimeout( feedbackTimeout);
 	while( mJob->ShouldContinue() && !numBytes) {
-		BM_LOG3( mJob->LogType(), BmString("Trying to receive up to ") << destLen << " bytes...");
+		BM_LOG3( mJob->LogType(), 
+					BmString("Trying to receive up to ") << destLen << " bytes...");
 		numBytes = Connection()->Receive( dest, destLen);
-		BM_LOG3( mJob->LogType(), BmString("...received ") << numBytes << " bytes");
+		BM_LOG3( mJob->LogType(), 
+					BmString("...received ") << numBytes << " bytes");
 		if (numBytes <= 0) {
 			timeWaiting += feedbackTimeout;
 	 		if (timeWaiting >= timeout)
@@ -436,9 +443,11 @@ uint32 BmNetOBuf::Write( const char* data, uint32 len) {
 	uint32 sentSize=0;
 	for( uint32 offs=0; mJob->ShouldContinue() && offs<len; ) {
 		int32 sz = len-offs;
-		BM_LOG3( mJob->LogType(), BmString("Trying to send ") << sz << " bytes...");
+		BM_LOG3( mJob->LogType(), 
+					BmString("Trying to send ") << sz << " bytes...");
 		int32 sent = Connection()->Send( data+offs, sz);
-		BM_LOG3( mJob->LogType(), BmString("...sent ") << sent << " bytes");
+		BM_LOG3( mJob->LogType(), 
+					BmString("...sent ") << sent << " bytes");
 		if (sent < 0)
 			throw BM_network_error( Connection()->ErrorStr());
 		else {
@@ -447,7 +456,8 @@ uint32 BmNetOBuf::Write( const char* data, uint32 len) {
 			if (mUpdate)
 				mJob->UpdateProgress( sent);
 			if (sent != sz)
-				throw BM_network_error( BmString("error during send, sent only ") << sent << " bytes instead of " << sz);
+				throw BM_network_error( BmString("error during send, sent only ") 
+													<< sent << " bytes instead of " << sz);
 		}
 	}
 	return sentSize;
