@@ -2,7 +2,20 @@ change-history of Beam:
 		$Id$
 
 *******************************************************************************
-[Beam test-03-01-27]:
+[Beam test-03-01-27]
+
+	summary:
+		-	Beam now runs on PPC, too
+		-	a (rather large) refactoring step has been done in order to simplify 
+			handling of memory-/network-buffers and to reduce memory-footprint
+		-	support for people-files has been included, just select from the
+			"To:", "Cc:" or "Bcc:" menu.
+		-	toolbar-buttons now support several text/icon-layouts and can serve for
+			more than one action (prefs missing)
+		-	mailing-lists are now properly supported, there are several ways to
+			reply to a mail (reply-to-list, reply-to-person, be-smart, reply-to-all)
+		-	support for swatch-internet-time added (prefs missing)
+
 *******************************************************************************
 < 2003-01-27: commit >
 
