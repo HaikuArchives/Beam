@@ -873,7 +873,7 @@ bool BmMailEditWin::CreateMailFromFields( bool hardWrapIfNeeded) {
 																			"%a, %d %b %Y %H:%M:%S %z"));
 		}
 		bool res = mail->ConstructRawText( convertedText, encoding, smtpAccount);
-		mMailView->UpdateControllers();
+//		mMailView->UpdateControllers();
 		return res;
 	} else
 		return false;

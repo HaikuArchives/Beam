@@ -110,7 +110,6 @@ public:
 	void UpdateFont( const BFont& font);
 	bool IsOverURL( BPoint point);
 	BString GetTextForTextrun( BmTextRunIter run);
-	void UpdateControllers();
 
 	// overrides of BTextView base:
 	bool AcceptsDrop( const BMessage* msg);

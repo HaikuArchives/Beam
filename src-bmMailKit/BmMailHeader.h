@@ -196,6 +196,7 @@ public:
 	const BString GetStrippedFieldVal( BString fieldName);
 	inline int32 NumLines() const 				{ return mNumLines; }
 	inline const BString& HeaderString() const	{ return mHeaderString; }
+	inline const int32 HeaderLength() const	{ return mHeaderString.Length(); }
 	inline const BString& Name() const			{ return mName; }
 	inline const bool IsRedirect() const		{ return mIsRedirect; }
 	inline const bool HasParsingErrors() const	{ return mHasParsingErrors; }

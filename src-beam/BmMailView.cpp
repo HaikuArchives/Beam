@@ -671,17 +671,6 @@ void BmMailView::ShowMail( BmMail* mail, bool async) {
 }
 
 /*------------------------------------------------------------------------------*\
-	UpdateControllers()
-		-	
-\*------------------------------------------------------------------------------*/
-void BmMailView::UpdateControllers() {
-	if (mCurrMail) {
-		mHeaderView->ShowHeader( mCurrMail->Header().Get());
-		mBodyPartView->ShowBody( mCurrMail->Body());
-	}
-}
-
-/*------------------------------------------------------------------------------*\
 	JobIsDone( completed)
 		-	
 \*------------------------------------------------------------------------------*/
