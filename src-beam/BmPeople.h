@@ -42,7 +42,28 @@
 
 #include "BmDataModel.h"
 
+class BMenu;
+
+class BmPerson;
 class BmPeopleList;
+
+typedef vector< BString> BmStringVect;
+
+struct BmPersonInfo {
+	BString nick;
+	BString name;
+	BmStringVect emails;
+	BmPersonInfo()								{}
+	BmPersonInfo( const BString& nm, const BString& nk, const BString& em)
+		: name( nm) 							{	emails.push_back( em); }
+};
+typedef map< BString, BmPersonInfo> BmPersonMap;
+
+struct BmGroupInfo {
+	BString name;
+	BmPersonMap personMap;
+};
+typedef map< BString, BmGroupInfo> BmGroupMap;
 
 /*------------------------------------------------------------------------------*\
 	BmPerson
@@ -53,26 +74,27 @@ class BmPerson : public BmListModelItem {
 
 public:
 	BmPerson( BmPeopleList* model, const node_ref& nref, const BString& name,
-				 const BString& nick, const BString& email);
+				 const BString& nick, const BString& email, const BString& groups,
+				 bool foreign);
 	virtual ~BmPerson();
 	
+	// native methods:
+	void AddToGroupMap( BmGroupMap& groupMap) const;
+	void AddToNoGroupMap( BmPersonMap& noGroupMap) const;
+	void AddToNickMap( BmPersonMap& nickMap) const;
+	void AddToForeignMap( BmPersonMap& foreignMap) const;
+
+	void AddEmail( const BString &em);
+
 	// getters:
-	inline const BString &Name() const			{ return mName; }
-	inline const BString &DisplayName() const	{ return mDisplayName; }
-	inline const BString &Nick() const			{ return mNick; }
-	inline const BString &Email() const			{ return mEmail; }
 	inline const node_ref &NodeRef() const		{ return mNodeRef; }
 
 	// setters:
-	inline void Name( const BString &s) 		{ mName = s; TellModelItemUpdated( UPD_ALL); }
-	inline void DisplayName( const BString &s){ mDisplayName = s; TellModelItemUpdated( UPD_ALL); }
-	inline void Nick( const BString &s) 		{ mNick = s; TellModelItemUpdated( UPD_ALL); }
-	inline void Email( const BString &s) 		{ mEmail = s; TellModelItemUpdated( UPD_ALL); }
-	inline void NodeRef( const node_ref &nr)	{ mNodeRef = nr; TellModelItemUpdated( UPD_ALL); }
 
 	int16 ArchiveVersion() const			{ return 0; }
 
 private:
+
 	// native methods:
 	static BString GenerateDisplayName( const BString& name, const BString& nick,
 													const BString& email);
@@ -82,11 +104,12 @@ private:
 	BmPerson( const BmPerson&);
 	BmPerson operator=( const BmPerson&);
 
-	BString mName;
-	BString mDisplayName;
 	BString mNick;
-	BString mEmail;
+	BString mName;
+	BmStringVect mEmails;
+	BmStringVect mGroups;
 	node_ref mNodeRef;
+	bool mIsForeign;							// true if person does not live under ~/People
 };
 
 
@@ -97,12 +120,16 @@ private:
 \*------------------------------------------------------------------------------*/
 class BmPeopleList : public BmListModel {
 	typedef BmListModel inherited;
-
+	
 public:
 	// creator-func, c'tors and d'tor:
 	static BmPeopleList* CreateInstance();
 	~BmPeopleList();
 	
+	// native methods:
+	void AddPeopleToMenu( BMenu* menu, const BMessage& templateMsg, 
+								 const char* addrField);
+
 	// overrides of listmodel base:
 	const BString SettingsFileName()		{ return ""; }
 	int16 ArchiveVersion() const			{ return 0; }
@@ -110,6 +137,12 @@ public:
 	static BmRef<BmPeopleList> theInstance;
 
 private:
+	// native methods:
+	BMenu* CreateSubmenuForPersonMap( const BmPersonMap& personMap, 
+												 const BMessage& templateMsg,
+												 const char* addrField,
+												 BString label, BFont* font);
+
 	// overrides of listmode base:
 	void InitializeItems();
 
