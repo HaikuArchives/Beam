@@ -56,6 +56,8 @@ public:
 	BmMenuController( const char* label, BHandler* msgTarget, 
 							BMessage* msgTemplate,
 							RebuildMenuFunc fn, int32 flags=0);
+	
+	~BmMenuController();
 
 	// native methods
 	void UpdateItemList();

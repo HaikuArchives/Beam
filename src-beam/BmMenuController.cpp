@@ -77,6 +77,8 @@ BmMenuController::BmMenuController( const char* label, BHandler* msgTarget,
 	,	mListModel( listModel)
 {
 	UpdateItemList();
+	if (mListModel)
+		mListModel->AddMenuController( this);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -89,6 +91,15 @@ BmMenuController::BmMenuController( const char* label, BHandler* msgTarget,
 	:	inherited( label, msgTarget, msgTemplate, func, flags)
 	,	mListModel( NULL)
 {
+}
+
+/*------------------------------------------------------------------------------*\
+	~BmMenuController()
+		-	
+\*------------------------------------------------------------------------------*/
+BmMenuController::~BmMenuController() {
+	if (mListModel)
+		mListModel->RemoveMenuController( this);
 }
 
 /*------------------------------------------------------------------------------*\
