@@ -152,7 +152,8 @@ BmPopper::PopState BmPopper::PopStates[BmPopper::POP_FINAL] = {
 		-	contructor
 \*------------------------------------------------------------------------------*/
 BmPopper::BmPopper( const BmString& name, BmPopAccount* account)
-	:	inherited( BmString("POP_")<<name, BM_LogPop, new BmPopStatusFilter( NULL, this))
+	:	inherited( BmString("POP_")<<name, BM_LogPop, 
+					  new BmPopStatusFilter( NULL, this))
 	,	mPopAccount( account)
 	,	mCurrMailNr( 0)
 	,	mMsgCount( 0)
@@ -199,7 +200,8 @@ bool BmPopper::StartJob() {
 			(this->*stateFunc)();
 			if (CurrentJobSpecifier() == BM_AUTH_ONLY_JOB && mState==POP_LOGIN)
 				return true;
-			if (CurrentJobSpecifier() == BM_CHECK_AUTH_TYPES_JOB && mState==POP_CONNECT)
+			if (CurrentJobSpecifier() == BM_CHECK_AUTH_TYPES_JOB 
+			&& mState==POP_CONNECT)
 				return true;
 		}
 		if (!ShouldContinue())
@@ -234,9 +236,12 @@ void BmPopper::UpdatePOPStatus( const float delta, const char* detailText,
 	msg->AddString( BmJobModel::MSG_DOMAIN, "statbar");
 	msg->AddFloat( MSG_DELTA, delta);
 	if (failed)
-		msg->AddString( MSG_TRAILING, (BmString(PopStates[mState].text) << " FAILED!").String());
+		msg->AddString( MSG_TRAILING, 
+							(BmString(PopStates[mState].text) << " FAILED!").String());
 	else if (stopped)
-		msg->AddString( MSG_TRAILING, (BmString(PopStates[mState].text) << " Stopped!").String());
+		msg->AddString( MSG_TRAILING, 
+							(BmString(PopStates[mState].text) 
+								<< " Stopped!").String());
 	else
 		msg->AddString( MSG_TRAILING, PopStates[mState].text);
 	if (detailText)
@@ -271,8 +276,9 @@ void BmPopper::UpdateMailStatus( const float delta, const char* detailText,
 		-
 \*------------------------------------------------------------------------------*/
 void BmPopper::UpdateProgress( uint32 numBytes) {
-	float delta = (100.0 * numBytes) / (mNewMsgTotalSize ? mNewMsgTotalSize : 1);
-	BmString detailText = BmString("size: ") << BytesToString( mNewMsgSizes[mCurrMailNr-1]);
+	float delta = (100.0*numBytes)/(mNewMsgTotalSize ? mNewMsgTotalSize : 1);
+	BmString detailText = BmString("size: ") 
+									<< BytesToString( mNewMsgSizes[mCurrMailNr-1]);
 	UpdateMailStatus( delta, detailText.String(), mCurrMailNr);
 }
 
@@ -283,12 +289,14 @@ void BmPopper::UpdateProgress( uint32 numBytes) {
 void BmPopper::StateConnect() {
 	BNetAddress addr;
 	if (!mPopAccount->GetPOPAddress( &addr)) {
-		BmString s = BmString("Could not determine address of POP-Server ") << mPopAccount->POPServer();
+		BmString s = BmString("Could not determine address of POP-Server ") 
+							<< mPopAccount->POPServer();
 		throw BM_network_error( s);
 	}
 	if (!Connect( addr)) {
-		BmString s = BmString("Could not connect to POP-Server ") << mPopAccount->POPServer() 
-						  << "\n\bError:\n\t"<< mErrorString;
+		BmString s = BmString("Could not connect to POP-Server ") 
+							<< mPopAccount->POPServer() 
+						  	<< "\n\bError:\n\t" << mErrorString;
 		throw BM_network_error( s);
 	}
 	CheckForPositiveAnswer();
@@ -300,8 +308,8 @@ void BmPopper::StateConnect() {
 
 /*------------------------------------------------------------------------------*\
 	SuggestAuthType()
-		-	looks at the auth-types supported by the server and selects the most secure
-			of those that is supported by Beam.
+		-	looks at the auth-types supported by the server and selects 
+			the most secure of those that is supported by Beam.
 \*------------------------------------------------------------------------------*/
 BmString BmPopper::SuggestAuthType() const {
 	if (mServerTimestamp.Length())
@@ -349,7 +357,8 @@ void BmPopper::StateLogin() {
 				BmString cmd = BmString("APOP ") << mPopAccount->Username() << " ";
 				SendCommand( cmd, Digest);
 			} else
-				BM_THROW_RUNTIME( "Server did not supply a timestamp, so APOP doesn't work.");
+				BM_THROW_RUNTIME( "Server did not supply a timestamp, "
+										"so APOP doesn't work.");
 		} else {
 			// authMethod == AUTH_POP3: send username and password as plain text:
 			BmString cmd = BmString("USER ") << mPopAccount->Username();
@@ -389,10 +398,14 @@ void BmPopper::StateCheck() {
 	SendCommand( cmd);
 	if (!CheckForPositiveAnswer())
 		return;
-	if (sscanf( StatusText().String()+4, "%ld", &mMsgCount) != 1 || mMsgCount < 0)
+	if (sscanf( StatusText().String()+4, "%ld", &mMsgCount) != 1 
+	|| mMsgCount < 0)
 		throw BM_network_error( "answer to STAT has unknown format");
 	if (mMsgCount == 0) {
 		UpdateMailStatus( 0, NULL, 0);
+		// we remove all local UIDs, since none are listed on the server:
+		BmString removedUids = mPopAccount->AdjustToCurrentServerUids( mMsgUIDs);
+		BM_LOG2( BM_LogPop, removedUids);
 		return;									// no messages found, nothing more to do
 	}
 
@@ -407,11 +420,16 @@ void BmPopper::StateCheck() {
 		// ok, we've got the UIDL-listing, so we fetch it,
 		// fetch UIDLs one per line and store them in array:
 		Regexx rx;
-		int numLines = rx.exec( mAnswerText, "\\s*(\\d+)\\s+(.+?)\\s*$\\n", Regexx::newline | Regexx::global);
+		int numLines = rx.exec( mAnswerText, "\\s*(\\d+)\\s+(.+?)\\s*$\\n", 
+										Regexx::newline | Regexx::global);
 		if (numLines < mMsgCount)
-			throw BM_network_error( BmString("answer to UIDL has unknown format, too few lines matching"));
+			throw BM_network_error(	BmString("answer to UIDL has unknown format"
+														", too few lines matching"));
 		for( int32 i=0; i<mMsgCount; ++i)
 			mMsgUIDs.push_back( rx.match[i].atom[1]);
+		// we remove local UIDs that are not listed on the server anymore:
+		BmString removedUids = mPopAccount->AdjustToCurrentServerUids( mMsgUIDs);
+		BM_LOG( BM_LogPop, removedUids);
 	} catch( BM_network_error& err) {
 		// no UIDL-listing from server, we will have to get by without...
 	}
@@ -426,24 +444,61 @@ void BmPopper::StateCheck() {
 	const char *p = mAnswerText.String();
 	for( int32 i=0; i<mMsgCount; i++) {
 		int32 msgSize;
-		if (!mPopAccount->IsUIDDownloaded( mMsgUIDs[i])) {
+		time_t timeDownloaded;
+		if (!mPopAccount->IsUIDDownloaded( mMsgUIDs[i], &timeDownloaded)) {
 			// msg is new (according to unknown UID)
 			// fetch msgsize for message...
 			if (sscanf( p, "%ld %ld", &msgNum, &msgSize) != 2 || msgNum != i+1)
-				throw BM_network_error( BmString("answer to LIST has unknown format, msg ") << i+1);
+				throw BM_network_error( BmString("answer to LIST has unknown "
+															"format, msg ") << i+1);
 			// add msg-size to total:
 			mNewMsgTotalSize += msgSize;
 			mNewMsgSizes.push_back( msgSize);
 			mNewMsgCount++;
+		} else {
+			// msg is old (according to known UID), we may have to remove it now:
+			if (!mPopAccount->DeleteMailFromServer()) {
+				BM_LOG2( BM_LogPop, BmString("Leaving mail with UID ")<<mMsgUIDs[i]
+											<<" on server\n"
+											<<"since user has told us to "
+											<<"leave all mails on server.");
+			} else {
+				time_t expirationTime 
+					= timeDownloaded + 60 * 60 * 24 * mPopAccount->DeleteMailDelay();
+				time_t now = time(NULL);
+				if (expirationTime <= now && mPopAccount->DeleteMailFromServer()) {
+					// remove
+					BM_LOG( BM_LogPop, BmString("Removing mail with UID ")<<mMsgUIDs[i]
+												<<" from server\n"
+												<<"since it has been downloaded on "
+												<<TimeToString( timeDownloaded)
+												<<",\nit's expiration time is " 
+												<<TimeToString( expirationTime)
+												<<"\nand now it is "	<< TimeToString( now));
+					cmd = BmString("DELE ") << i+1;
+					SendCommand( cmd);
+					if (!CheckForPositiveAnswer())
+						return;
+				} else {
+					BM_LOG2( BM_LogPop, BmString("Leaving mail with UID ")<<mMsgUIDs[i]
+												<<" on server\n"
+												<<"since it has been downloaded on "
+												<<TimeToString( timeDownloaded)
+												<<",\nit's expiration time is " 
+												<<TimeToString( expirationTime)
+												<<"\nand now it is "	<< TimeToString( now));
+				}
+			}
 		}
 		// skip to next line:
 		if (!(p = strstr( p, "\r\n")))
-			throw BM_network_error( BmString("answer to LIST has unknown format, msg ") << i+1);
+			throw BM_network_error( BmString("answer to LIST has unknown format"
+														", msg ") << i+1);
 		p += 2;
 	}
 	if (mNewMsgCount == 0) {
 		UpdateMailStatus( 0, NULL, 0);
-		return;									// no new messages found, nothing more to do
+		return;									// no new messages found, nothing to do
 	}
 }
 
@@ -452,11 +507,14 @@ void BmPopper::StateCheck() {
 		-	retrieves all new mails from server
 \*------------------------------------------------------------------------------*/
 void BmPopper::StateRetrieve() {
+	BmString cmd;
 	mCurrMailNr = 1;
 	for( int32 i=0; i<mMsgCount; ++i) {
-		if (mPopAccount->IsUIDDownloaded( mMsgUIDs[i]))
-			continue;							// msg is old (according to known UID)
-		BmString cmd = BmString("RETR ") << i+1;
+		if (mPopAccount->IsUIDDownloaded( mMsgUIDs[i])) {
+			// msg is old (according to known UID), we skip it:
+			continue;
+		}
+		cmd = BmString("RETR ") << i+1;
 		SendCommand( cmd);
 		if (!CheckForPositiveAnswer( mNewMsgSizes[mCurrMailNr-1], true, true))
 			goto CLEAN_UP;

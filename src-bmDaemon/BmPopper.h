@@ -47,7 +47,9 @@
 
 class BmPopAccount;
 
-#define BM_POPPER_NEEDS_PWD						'bmPp'
+enum {
+	BM_POPPER_NEEDS_PWD						= 'bmPp'
+};
 
 /*------------------------------------------------------------------------------*\
 	BmPopStatusFilter
