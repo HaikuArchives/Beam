@@ -56,7 +56,7 @@ class BmMailRefItem : public BmListViewItem
 	static const int16 nFirstTextCol;
 
 public:
-	BmMailRefItem( BString key, BmListModelItem* item);
+	BmMailRefItem( BmString key, BmListModelItem* item);
 	~BmMailRefItem();
 	
 	// overrides of ListViewItem:
@@ -92,7 +92,7 @@ public:
 	// native methods:
 	void ShowFolder( BmMailFolder* folder);
 	inline void TeamUpWith( BmMailView* mv) 	{ mPartnerMailView = mv; }
-	void AddSelectedRefsToMsg( BMessage* msg, BString fieldName);
+	void AddSelectedRefsToMsg( BMessage* msg, BmString fieldName);
 	void ShowMenu( BPoint point);
 	static void AddMailRefMenu( BMenu* menu, BHandler* target=NULL);
 
@@ -107,7 +107,7 @@ public:
 	void MouseDown(BPoint point);
 
 	// overrides of controller base:
-	BString StateInfoBasename();
+	BmString StateInfoBasename();
 	BMessage* DefaultLayout();
 	CLVContainerView* CreateContainer( bool horizontal, bool vertical, 
 												  bool scroll_view_corner, border_style border, 

@@ -82,7 +82,7 @@ enum Columns {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmMailRefItem::BmMailRefItem( BString key, BmListModelItem* _item)
+BmMailRefItem::BmMailRefItem( BmString key, BmListModelItem* _item)
 	:	inherited( key, _item)
 {
 	UpdateView( UPD_ALL);
@@ -108,7 +108,7 @@ void BmMailRefItem::UpdateView( BmUpdFlags flags) {
 
 	if (flags & BmMailRef::UPD_STATUS) {
 		Bold( ref->IsNew());
-		BString st = BString("Mail_") << ref->Status();
+		BmString st = BmString("Mail_") << ref->Status();
 		icon = TheResources->IconByName(st);
 		SetColumnContent( COL_STATUS_I, icon, 2.0, false);
 		SetColumnContent( COL_STATUS, ref->Status().String(), false);
@@ -119,7 +119,7 @@ void BmMailRefItem::UpdateView( BmUpdFlags flags) {
 			icon = TheResources->IconByName("Attachment");
 			SetColumnContent( COL_ATTACHMENTS_I, icon, 2.0, false);
 		}
-		BString priority = BString("Priority_") << ref->Priority();
+		BmString priority = BmString("Priority_") << ref->Priority();
 		if ((icon = TheResources->IconByName(priority))) {
 			SetColumnContent( COL_PRIORITY_I, icon, 2.0, false);
 		}
@@ -152,7 +152,7 @@ const int32 BmMailRefItem::GetNumValueForColumn( int32 column_index) const {
 	BmMailRef* ref = ModelItem();
 	if (column_index == 0 || column_index == 14) {
 		// status
-		BString st = ref->Status();
+		BmString st = ref->Status();
 		return st == BM_MAIL_STATUS_NEW			? 0 :
 				 st == BM_MAIL_STATUS_DRAFT		? 1 :
 				 st == BM_MAIL_STATUS_PENDING		? 2 :
@@ -322,7 +322,7 @@ void BmMailRefView::MessageReceived( BMessage* msg) {
 	}
 	catch( exception &err) {
 		// a problem occurred, we tell the user:
-		BM_SHOWERR( BString("MailRefView: ") << err.what());
+		BM_SHOWERR( BmString("MailRefView: ") << err.what());
 	}
 }
 
@@ -410,7 +410,7 @@ bool BmMailRefView::InitiateDrag( BPoint where, int32 index, bool wasSelected) {
 	int32 selCount;
 	for( selCount=0; (currIdx=CurrentSelection( selCount))>=0; ++selCount)
 		;
-	BM_LOG2( BM_LogRefView, BString("InitiateDrag() - found ")<<selCount<<" selections");
+	BM_LOG2( BM_LogRefView, BmString("InitiateDrag() - found ")<<selCount<<" selections");
 	BFont font;
 	GetFont( &font);
 	float lineHeight = MAX(TheResources->FontLineHeight( &font),20.0);
@@ -440,13 +440,13 @@ bool BmMailRefView::InitiateDrag( BPoint where, int32 index, bool wasSelected) {
 										  BPoint( 20.0, i*lineHeight+baselineOffset));
 		} else if (i==3) {
 			// add an indicator that more items are being dragged than shown:
-			BString indicator = BString("(...and ") << selCount-3 
+			BmString indicator = BmString("(...and ") << selCount-3 
 				<< (selCount-3 == 1 ? " more item)" : " more items)");
 			dummyView->DrawString( indicator.String(), 
 										  BPoint( 20.0, i*lineHeight+baselineOffset));
 		}
 		if (i%100==0)
-			BM_LOG2( BM_LogRefView, BString("InitiateDrag() - processing ")<<i<<"th selection");
+			BM_LOG2( BM_LogRefView, BmString("InitiateDrag() - processing ")<<i<<"th selection");
 	}
 	dragImage->Unlock();
 	DragMessage( &dragMsg, dragImage, B_OP_ALPHA, BPoint( 10.0, 10.0));
@@ -481,8 +481,8 @@ void BmMailRefView::HandleDrop( const BMessage* msg) {
 		for( int i=0; msg->FindRef( BmMailMover::MSG_REFS, i, &eref)==B_OK; ++i) {
 			tmpMsg.AddRef( BmMailMover::MSG_REFS, &eref);
 		}
-		tmpMsg.AddString( BmJobModel::MSG_JOB_NAME, mCurrFolder->Name());
-		tmpMsg.AddString( BmJobModel::MSG_MODEL, mCurrFolder->Key());
+		tmpMsg.AddString( BmJobModel::MSG_JOB_NAME, mCurrFolder->Name().String());
+		tmpMsg.AddString( BmJobModel::MSG_MODEL, mCurrFolder->Key().String());
 		TheJobStatusWin->PostMessage( &tmpMsg);
 	}
 	inherited::HandleDrop( msg);
@@ -507,7 +507,7 @@ void BmMailRefView::ShowFolder( BmMailFolder* folder) {
 	}
 	catch( exception &err) {
 		// a problem occurred, we tell the user:
-		BM_SHOWERR( BString("MailRefView: ") << err.what());
+		BM_SHOWERR( BmString("MailRefView: ") << err.what());
 	}
 }
 
@@ -515,7 +515,7 @@ void BmMailRefView::ShowFolder( BmMailFolder* folder) {
 	( )
 		-	
 \*------------------------------------------------------------------------------*/
-BString BmMailRefView::StateInfoBasename()	{ 
+BmString BmMailRefView::StateInfoBasename()	{ 
 	return "MailRefView";
 }
 
@@ -531,8 +531,8 @@ BMessage* BmMailRefView::DefaultLayout()		{
 	AddSelectedRefsToMsg( msg, fieldName)
 		-	
 \*------------------------------------------------------------------------------*/
-void BmMailRefView::AddSelectedRefsToMsg( BMessage* msg, BString fieldName) {
-	BString selectedText;
+void BmMailRefView::AddSelectedRefsToMsg( BMessage* msg, BmString fieldName) {
+	BmString selectedText;
 	if (mPartnerMailView) {
 		int32 start, finish;
 		mPartnerMailView->GetSelection( &start, &finish);
@@ -642,7 +642,7 @@ void BmMailRefView::AddMailRefMenu( BMenu* menu, BHandler* target) {
 	for( int i=0; stats[i]; ++i) {
 		BMessage* msg = new BMessage( BMM_MARK_AS);
 		msg->AddString( BmApplication::MSG_STATUS, stats[i]);
-		AddItemToMenu( statusMenu, CreateMenuItem( stats[i], msg, (BString("MarkAs")+stats[i]).String()), target);
+		AddItemToMenu( statusMenu, CreateMenuItem( stats[i], msg, (BmString("MarkAs")+stats[i]).String()), target);
 	}
 	menu->AddItem( statusMenu);
 	menu->AddSeparatorItem();
