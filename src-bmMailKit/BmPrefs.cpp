@@ -53,7 +53,7 @@ const char* const BmPrefs::LOG_LVL_1 = "Log";
 const char* const BmPrefs::LOG_LVL_2 = "Log More";
 const char* const BmPrefs::LOG_LVL_3 = "Log Everything";
 
-const int16 BmPrefs::nPrefsVersion = 6;
+const int16 BmPrefs::nPrefsVersion = 7;
 
 /*------------------------------------------------------------------------------*\
 	CreateInstance()
@@ -125,8 +125,7 @@ BmPrefs::BmPrefs( BMessage* archive)
 	mSavedPrefsMsg = mPrefsMsg = *archive;
 	int16 version = 0;
 	archive->FindInt16( MSG_VERSION, &version);
-	SetLoglevels();
-	
+
 	status_t scStatus = mPrefsMsg.FindMessage( "Shortcuts", &mShortcutsMsg);
 	if (version < 1) {
 		// changes introduced with version 1:
@@ -188,6 +187,43 @@ BmPrefs::BmPrefs( BMessage* archive)
 		// remove field "SeparatorCharsForUndo" (is now called "UndoMode"):
 		mPrefsMsg.RemoveName("SeparatorCharsForUndo");
 	}
+	if (version < 7) {
+		// changes introduced with version 7:
+		//
+		// replace int16-loglevels by int32-versions:
+		const char* ll[] = {
+			"Loglevel_Pop", 
+			"Loglevel_JobWin", 
+			"Loglevel_MailParse",
+			"Loglevel_App",
+			"Loglevel_MailTracking",
+			"Loglevel_Gui",
+			"Loglevel_ModelController",
+			"Loglevel_Smtp",
+			"Loglevel_Filter",
+			"Loglevel_RefCount",
+			"Loglevel_Util",
+			"Loglevel_FolderView",
+			"Loglevel_RefView",
+			"Loglevel_MailEditWin",
+			NULL
+		};
+		for( int i=0; ll[i]; ++i) {
+			mPrefsMsg.RemoveName( ll[i]);
+			int32 level = 0;
+			if (mDefaultsMsg.FindInt32( ll[i], &level) == B_OK)
+				mPrefsMsg.AddInt32( ll[i], level);
+		}
+		// remove multiple default-charset entries:
+		BmString defCharset = mPrefsMsg.FindString( "DefaultCharset");
+		if (!defCharset.Length())
+			defCharset = mDefaultsMsg.FindString( "DefaultCharset");
+		mPrefsMsg.RemoveName( "DefaultCharset");
+		mPrefsMsg.AddString( "DefaultCharset", defCharset.String());
+	}
+
+	SetLoglevels();
+
 	if (scStatus == B_OK) {
 		// add any missing (new) shortcuts:
 		GetShortcutDefaults( &mShortcutsMsg);
@@ -277,16 +313,16 @@ void BmPrefs::InitDefaults() {
 	mDefaultsMsg.AddBool( "InOutAlwaysAtTop", true);
 	mDefaultsMsg.AddBool( "ListviewLikeTracker", false);
 	mDefaultsMsg.AddInt32( "Loglevels", loglevels);
-	mDefaultsMsg.AddInt16( "Loglevel_Pop", BM_LOGLVL_FOR(loglevels,BM_LogPop));
-	mDefaultsMsg.AddInt16( "Loglevel_JobWin", BM_LOGLVL_FOR(loglevels,BM_LogJobWin));
-	mDefaultsMsg.AddInt16( "Loglevel_MailParse", BM_LOGLVL_FOR(loglevels,BM_LogMailParse));
-	mDefaultsMsg.AddInt16( "Loglevel_App", BM_LOGLVL_FOR(loglevels,BM_LogApp));
-	mDefaultsMsg.AddInt16( "Loglevel_MailTracking", BM_LOGLVL_FOR(loglevels,BM_LogMailTracking));
-	mDefaultsMsg.AddInt16( "Loglevel_Gui", BM_LOGLVL_FOR(loglevels,BM_LogGui));
-	mDefaultsMsg.AddInt16( "Loglevel_ModelController", BM_LOGLVL_FOR(loglevels,BM_LogModelController));
-	mDefaultsMsg.AddInt16( "Loglevel_Smtp", BM_LOGLVL_FOR(loglevels,BM_LogSmtp));
-	mDefaultsMsg.AddInt16( "Loglevel_Filter", BM_LOGLVL_FOR(loglevels,BM_LogFilter));
-	mDefaultsMsg.AddInt16( "Loglevel_RefCount", BM_LOGLVL_FOR(loglevels,BM_LogRefCount));
+	mDefaultsMsg.AddInt32( "Loglevel_Pop", BM_LOGLVL_FOR(loglevels,BM_LogPop));
+	mDefaultsMsg.AddInt32( "Loglevel_JobWin", BM_LOGLVL_FOR(loglevels,BM_LogJobWin));
+	mDefaultsMsg.AddInt32( "Loglevel_MailParse", BM_LOGLVL_FOR(loglevels,BM_LogMailParse));
+	mDefaultsMsg.AddInt32( "Loglevel_App", BM_LOGLVL_FOR(loglevels,BM_LogApp));
+	mDefaultsMsg.AddInt32( "Loglevel_MailTracking", BM_LOGLVL_FOR(loglevels,BM_LogMailTracking));
+	mDefaultsMsg.AddInt32( "Loglevel_Gui", BM_LOGLVL_FOR(loglevels,BM_LogGui));
+	mDefaultsMsg.AddInt32( "Loglevel_ModelController", BM_LOGLVL_FOR(loglevels,BM_LogModelController));
+	mDefaultsMsg.AddInt32( "Loglevel_Smtp", BM_LOGLVL_FOR(loglevels,BM_LogSmtp));
+	mDefaultsMsg.AddInt32( "Loglevel_Filter", BM_LOGLVL_FOR(loglevels,BM_LogFilter));
+	mDefaultsMsg.AddInt32( "Loglevel_RefCount", BM_LOGLVL_FOR(loglevels,BM_LogRefCount));
 	mDefaultsMsg.AddBool( "LookForPeopleOnlyInPeopleFolder", true);
 	mDefaultsMsg.AddMessage( "MailRefLayout", new BMessage);
 	mDefaultsMsg.AddString( "MailboxPath", "/boot/home/mail");
@@ -451,25 +487,25 @@ BMessage* BmPrefs::GetShortcutDefaults( BMessage* shortcutsMsg) {
 const char* BmPrefs::GetLogLevelFor( uint32 terrain) {
 	int32 level = 0;
 	if (terrain == BM_LogPop)
-		level = mPrefsMsg.FindInt16("Loglevel_Pop");
+		level = mPrefsMsg.FindInt32("Loglevel_Pop");
 	else if (terrain == BM_LogSmtp)
-		level = mPrefsMsg.FindInt16("Loglevel_Smtp");
+		level = mPrefsMsg.FindInt32("Loglevel_Smtp");
 	else if (terrain == BM_LogApp)
-		level = mPrefsMsg.FindInt16("Loglevel_App");
+		level = mPrefsMsg.FindInt32("Loglevel_App");
 	else if (terrain == BM_LogFilter)
-		level = mPrefsMsg.FindInt16("Loglevel_Filter");
+		level = mPrefsMsg.FindInt32("Loglevel_Filter");
 	else if (terrain == BM_LogMailParse)
-		level = mPrefsMsg.FindInt16("Loglevel_MailParse");
+		level = mPrefsMsg.FindInt32("Loglevel_MailParse");
 	else if (terrain == BM_LogMailTracking)
-		level = mPrefsMsg.FindInt16("Loglevel_MailTracking");
+		level = mPrefsMsg.FindInt32("Loglevel_MailTracking");
 	else if (terrain == BM_LogJobWin)
-		level = mPrefsMsg.FindInt16("Loglevel_JobWin");
+		level = mPrefsMsg.FindInt32("Loglevel_JobWin");
 	else if (terrain == BM_LogGui)
-		level = mPrefsMsg.FindInt16("Loglevel_Gui");
+		level = mPrefsMsg.FindInt32("Loglevel_Gui");
 	else if (terrain == BM_LogModelController)
-		level = mPrefsMsg.FindInt16("Loglevel_ModelController");
+		level = mPrefsMsg.FindInt32("Loglevel_ModelController");
 	else if (terrain == BM_LogRefCount)
-		level = mPrefsMsg.FindInt16("Loglevel_RefCount");
+		level = mPrefsMsg.FindInt32("Loglevel_RefCount");
 
 	if (level == 1)
 		return LOG_LVL_1;
@@ -497,25 +533,25 @@ void BmPrefs::SetLogLevelForTo( uint32 terrain, BmString loglevel) {
 		level = 0;
 
 	if (terrain == BM_LogPop)
-		mPrefsMsg.ReplaceInt16("Loglevel_Pop", level);
+		mPrefsMsg.ReplaceInt32("Loglevel_Pop", level);
 	else if (terrain == BM_LogSmtp)
-		mPrefsMsg.ReplaceInt16("Loglevel_Smtp", level);
+		mPrefsMsg.ReplaceInt32("Loglevel_Smtp", level);
 	else if (terrain == BM_LogApp)
-		mPrefsMsg.ReplaceInt16("Loglevel_App", level);
+		mPrefsMsg.ReplaceInt32("Loglevel_App", level);
 	else if (terrain == BM_LogFilter)
-		mPrefsMsg.ReplaceInt16("Loglevel_Filter", level);
+		mPrefsMsg.ReplaceInt32("Loglevel_Filter", level);
 	else if (terrain == BM_LogMailParse)
-		mPrefsMsg.ReplaceInt16("Loglevel_MailParse", level);
+		mPrefsMsg.ReplaceInt32("Loglevel_MailParse", level);
 	else if (terrain == BM_LogMailTracking)
-		mPrefsMsg.ReplaceInt16("Loglevel_MailTracking", level);
+		mPrefsMsg.ReplaceInt32("Loglevel_MailTracking", level);
 	else if (terrain == BM_LogJobWin)
-		mPrefsMsg.ReplaceInt16("Loglevel_JobWin", level);
+		mPrefsMsg.ReplaceInt32("Loglevel_JobWin", level);
 	else if (terrain == BM_LogGui)
-		mPrefsMsg.ReplaceInt16("Loglevel_Gui", level);
+		mPrefsMsg.ReplaceInt32("Loglevel_Gui", level);
 	else if (terrain == BM_LogModelController)
-		mPrefsMsg.ReplaceInt16("Loglevel_ModelController", level);
+		mPrefsMsg.ReplaceInt32("Loglevel_ModelController", level);
 	else if (terrain == BM_LogRefCount)
-		mPrefsMsg.ReplaceInt16("Loglevel_RefCount", level);
+		mPrefsMsg.ReplaceInt32("Loglevel_RefCount", level);
 	
 	SetLoglevels();
 }
@@ -526,16 +562,16 @@ void BmPrefs::SetLogLevelForTo( uint32 terrain, BmString loglevel) {
 \*------------------------------------------------------------------------------*/
 void BmPrefs::SetLoglevels() {
 	// transfer loglevel-definitions to log-handler:
-	int32 loglevels = BM_LOGLVL_VAL(mPrefsMsg.FindInt16("Loglevel_Pop"),BM_LogPop)
-							+ BM_LOGLVL_VAL(mPrefsMsg.FindInt16("Loglevel_JobWin"),BM_LogJobWin) 
-							+ BM_LOGLVL_VAL(mPrefsMsg.FindInt16("Loglevel_MailParse"),BM_LogMailParse) 
-							+ BM_LOGLVL_VAL(mPrefsMsg.FindInt16("Loglevel_App"),BM_LogApp) 
-							+ BM_LOGLVL_VAL(mPrefsMsg.FindInt16("Loglevel_MailTracking"),BM_LogMailTracking)
-							+ BM_LOGLVL_VAL(mPrefsMsg.FindInt16("Loglevel_Gui"),BM_LogGui)
-							+ BM_LOGLVL_VAL(mPrefsMsg.FindInt16("Loglevel_ModelController"),BM_LogModelController)
-							+ BM_LOGLVL_VAL(mPrefsMsg.FindInt16("Loglevel_Smtp"),BM_LogSmtp)
-							+ BM_LOGLVL_VAL(mPrefsMsg.FindInt16("Loglevel_Filter"),BM_LogFilter)
-							+ BM_LOGLVL_VAL(mPrefsMsg.FindInt16("Loglevel_RefCount"),BM_LogRefCount);
+	int32 loglevels = BM_LOGLVL_VAL(mPrefsMsg.FindInt32("Loglevel_Pop"),BM_LogPop)
+							+ BM_LOGLVL_VAL(mPrefsMsg.FindInt32("Loglevel_JobWin"),BM_LogJobWin) 
+							+ BM_LOGLVL_VAL(mPrefsMsg.FindInt32("Loglevel_MailParse"),BM_LogMailParse) 
+							+ BM_LOGLVL_VAL(mPrefsMsg.FindInt32("Loglevel_App"),BM_LogApp) 
+							+ BM_LOGLVL_VAL(mPrefsMsg.FindInt32("Loglevel_MailTracking"),BM_LogMailTracking)
+							+ BM_LOGLVL_VAL(mPrefsMsg.FindInt32("Loglevel_Gui"),BM_LogGui)
+							+ BM_LOGLVL_VAL(mPrefsMsg.FindInt32("Loglevel_ModelController"),BM_LogModelController)
+							+ BM_LOGLVL_VAL(mPrefsMsg.FindInt32("Loglevel_Smtp"),BM_LogSmtp)
+							+ BM_LOGLVL_VAL(mPrefsMsg.FindInt32("Loglevel_Filter"),BM_LogFilter)
+							+ BM_LOGLVL_VAL(mPrefsMsg.FindInt32("Loglevel_RefCount"),BM_LogRefCount);
 	TheLogHandler->LogLevels( loglevels, 
 									  GetInt( "MinLogfileSize", 50*1024),
 									  GetInt( "MaxLogfileSize", 200*1024));
