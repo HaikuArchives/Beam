@@ -40,6 +40,7 @@
 #include <MTextView.h>
 
 #include "BmApp.h"
+#include "BmBasics.h"
 #include "BmLogWindow.h"
 #include "BmMainWindow.h"
 #include "BmPrefs.h"
@@ -127,7 +128,7 @@ void BmLogWindow::MessageReceived( BMessage* msg) {
 			mLogView->Select( len, len);
 			mLogView->Insert( logMsg.String());
 			mLogView->ScrollToOffset( len + logMsg.Length());
-			if (mShowUponNews 
+			if (mShowUponNews && !BeamInTestMode
 			&& !ThePrefs->GetBool( "ShowAlertForErrors", false)) {
 				SetWorkspaces( bmApp->CurrWorkspace());
 				if (IsMinimized())
