@@ -69,14 +69,8 @@ class BmSpamFilter : public BmFilterAddon {
 		~OsbfClassifier();
 		void Initialize();
 		const BmString& ErrorString() const;
-		bool LearnAsSpam( BmMsgContext* msgContext)
-													{ return Learn(msgContext, true, false); }
-		bool UnlearnAsSpam( BmMsgContext* msgContext)
-													{ return Learn(msgContext, true, true); }
-		bool LearnAsTofu( BmMsgContext* msgContext)
-													{ return Learn(msgContext, false, false); }
-		bool UnlearnAsTofu( BmMsgContext* msgContext)
-													{ return Learn(msgContext, false, true); }
+		bool LearnAsSpam( BmMsgContext* msgContext);
+		bool LearnAsTofu( BmMsgContext* msgContext);
 		bool Classify( BmMsgContext* msgContext);
 		
 	private:
@@ -247,7 +241,8 @@ public:
 	virtual ~BmSpamFilter();
 	
 	// implementations for abstract BmFilterAddon-methods:
-	bool Execute( BmMsgContext* msgContext);
+	bool Execute( BmMsgContext* msgContext, 
+					  const BmString& jobSpecifier = BM_DEFAULT_STRING);
 	bool SanityCheck( BmString& complaint, BmString& fieldName);
 	status_t Archive( BMessage* archive, bool deep = true) const;
 	BmString ErrorString() const;

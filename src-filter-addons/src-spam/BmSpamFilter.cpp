@@ -120,7 +120,6 @@ const char* FilterKinds[] = {
 extern "C" __declspec(dllexport) 
 const char* DefaultFilterName = "<<< SPAM-filter >>>";
 
-
 /********************************************************************************\
 	BmSpamFilter::OsbfClassifier::FeatureFilter
 \********************************************************************************/
@@ -912,6 +911,37 @@ void BmSpamFilter::OsbfClassifier::Store()
 }
 
 /*------------------------------------------------------------------------------*\
+	LearnAsSpam()
+		-	
+\*------------------------------------------------------------------------------*/
+bool 
+BmSpamFilter::OsbfClassifier::LearnAsSpam( BmMsgContext* msgContext)
+{
+	if (msgContext->mail->IsMarkedAsTofu()) {
+		// unlearn this mail as tofu, since it's not:
+		if (!Learn(msgContext, false, true))
+			return false;
+	}
+	// learn this mail as spam:
+	return Learn(msgContext, true, false);
+}
+
+/*------------------------------------------------------------------------------*\
+	Learn()
+		-	
+\*------------------------------------------------------------------------------*/
+bool BmSpamFilter::OsbfClassifier::LearnAsTofu( BmMsgContext* msgContext)
+{
+	if (msgContext->mail->IsMarkedAsSpam()) {
+		// unlearn this mail as spam, since it's not:
+		if (!Learn(msgContext, true, true))
+			return false;
+	}
+	// learn this mail as tofu:
+	return Learn(msgContext, false, false);
+}
+
+/*------------------------------------------------------------------------------*\
 	Learn()
 		-	
 \*------------------------------------------------------------------------------*/
@@ -922,10 +952,6 @@ bool BmSpamFilter::OsbfClassifier::Learn( BmMsgContext* msgContext,
 	BAutolock lock( &mLock);
 	if (!lock.IsLocked()) {
 		mLastErr = "Unable to get SPAM-lock";
-		return false;
-	}
-	if (!msgContext || !msgContext->mail) {
-		mLastErr = "Illegal msg-context!";
 		return false;
 	}
 	
@@ -1337,7 +1363,9 @@ BmSpamFilter::~BmSpamFilter() {
 		-	writes BmSpamFilter into archive
 		-	parameter deep makes no difference...
 \*------------------------------------------------------------------------------*/
-status_t BmSpamFilter::Archive( BMessage* archive, bool) const {
+status_t 
+BmSpamFilter::Archive( BMessage* archive, bool) const 
+{
 	status_t ret = (archive->AddInt16( MSG_VERSION, nArchiveVersion));
 	return ret;
 }
@@ -1346,19 +1374,26 @@ status_t BmSpamFilter::Archive( BMessage* archive, bool) const {
 	Execute()
 		-	
 \*------------------------------------------------------------------------------*/
-bool BmSpamFilter::Execute( BmMsgContext* msgContext) {
+bool 
+BmSpamFilter::Execute( BmMsgContext* msgContext, const BmString& jobSpecifier) 
+{
 	BmString mailId;
 	if (msgContext)
 		mailId = msgContext->mail->Name();
 	BM_LOG2( BM_LogFilter, BmString("Spam-Addon: asked to execute filter <") 
 									<< Name() 
 									<< "> on mail with Id <" << mailId << ">");
-	BM_LOG2( BM_LogFilter, "Spam-Addon: starting execution...");
-//	nClassifier.LearnAsSpam( msgContext);
-	nClassifier.Classify( msgContext);
-//	int res = sieve_execute_script( mCompiledScript, msgContext);
+	if (!jobSpecifier.ICompare("LearnAsSpam")) {
+		BM_LOG2( BM_LogFilter, "Spam-Addon: starting LearnAsSpam job...");
+		nClassifier.LearnAsSpam( msgContext);
+	} else if (!jobSpecifier.ICompare("LearnAsTofu")) {
+		BM_LOG2( BM_LogFilter, "Spam-Addon: starting LearnAsTofu job...");
+		nClassifier.LearnAsTofu( msgContext);
+	} else {
+		BM_LOG2( BM_LogFilter, "Spam-Addon: starting Classify job...");
+		nClassifier.Classify( msgContext);
+	}
 	BM_LOG2( BM_LogFilter, "Spam-Addon: done.");
-//	return res == SIEVE_OK;
 	return true;
 }
 
