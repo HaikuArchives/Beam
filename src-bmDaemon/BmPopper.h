@@ -35,8 +35,8 @@
 #include <memory>
 
 #include <socket.h>
-#ifdef BONE_VERSION
-#include <netinet/in.h>
+#ifdef BEAM_FOR_BONE
+# include <netinet/in.h>
 #endif
 
 #include <Message.h>

@@ -36,8 +36,6 @@
 #include <Resources.h>
 #include <View.h>
 
-#include <socket.h>		// for BONE_VERSION, if we live under BONE
-
 #include "regexx.hh"
 using namespace regexx;
 
@@ -215,7 +213,7 @@ void BmResources::FetchIcons() {
 			from that.
 \*------------------------------------------------------------------------------*/
 void BmResources::FetchOwnFQDN() {
-#ifdef BONE_VERSION
+#ifdef BEAM_FOR_BONE
 	BFile hostFile( "/etc/hostname", B_READ_ONLY);
 	if (hostFile.InitCheck() == B_OK) {
 		BString buffer;

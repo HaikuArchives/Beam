@@ -291,7 +291,7 @@ CLVContainerView* BmPrefsShortcutsView::CreateListView( minimax minmax, int32 wi
 	if (scMsg) {
 		CLVEasyItem* item;
 		type_code type;
-#ifdef BONE_VERSION
+#ifdef BEAM_FOR_BONE
 		const char* name;
 #else
 		char* name;

@@ -31,11 +31,11 @@
 #include <socket.h>
 #include <netdb.h>
 #include <unistd.h>
-#ifdef BONE_VERSION
-#include <bone_serial_ppp.h>
-#define GETHOSTNAME_OK 0
+#ifdef BEAM_FOR_BONE
+# include <bone_serial_ppp.h>
+# define GETHOSTNAME_OK 0
 #else
-#define GETHOSTNAME_OK 1
+# define GETHOSTNAME_OK 1
 #endif
 
 #include "BmBasics.h"
@@ -98,7 +98,7 @@ BString OwnDomain( BString fqdn) {
 \*------------------------------------------------------------------------------*/
 bool IsPPPRunning() {
 	// the following has ruthlessly been ripped from the MailDaemonReplacement (MDR):
-#ifdef BONE_VERSION
+#ifdef BEAM_FOR_BONE
 	int s = socket(AF_INET, SOCK_DGRAM, 0);
 	bsppp_status_t status;
 	strcpy(status.if_name, "ppp0");
