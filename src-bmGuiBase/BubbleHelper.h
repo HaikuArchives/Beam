@@ -25,10 +25,12 @@
 #define _BUBBLEHELPER_H
 
 #include <OS.h>
+#include <Point.h>
 
 class BWindow;
 class BView;
 class BTextView;
+class BList;
 
 class BubbleHelper
 {
