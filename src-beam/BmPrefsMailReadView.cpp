@@ -106,7 +106,7 @@ BmPrefsMailReadView::BmPrefsMailReadView()
 	mHeaderListLargeControl->SetText( ThePrefs->GetString("HeaderListLarge").String());
 	mHeaderListSmallControl->SetText( ThePrefs->GetString("HeaderListSmall").String());
 	mMimeTypeTrustInfoControl->SetText( ThePrefs->GetString("MimeTypeTrustInfo").String());
-	BString val;
+	BmString val;
 	val << ThePrefs->GetInt("MarkAsReadDelay");
 	mMarkAsReadDelayControl->SetText( val.String());
 }
@@ -202,6 +202,6 @@ void BmPrefsMailReadView::MessageReceived( BMessage* msg) {
 	}
 	catch( exception &err) {
 		// a problem occurred, we tell the user:
-		BM_SHOWERR( BString("PrefsView_") << Name() << ":\n\t" << err.what());
+		BM_SHOWERR( BmString("PrefsView_") << Name() << ":\n\t" << err.what());
 	}
 }

@@ -33,7 +33,7 @@
 
 #include <Message.h>
 #include <Query.h>
-#include <String.h>
+#include "BmString.h"
 #include <View.h>
 
 extern const char* BM_APP_SIG;
@@ -80,7 +80,7 @@ protected:
 private:
 	BQuery mNewMailQuery;
 	int32 mNewMailCount;
-	BString mCurrIconName;
+	BmString mCurrIconName;
 	BBitmap *mCurrIcon;
 };
 

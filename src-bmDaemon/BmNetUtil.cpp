@@ -47,7 +47,7 @@
 	OwnFQDN()
 		-	tries to find out our own FQDN (full qualified domainname)
 \*------------------------------------------------------------------------------*/
-BString OwnFQDN() {
+BmString OwnFQDN() {
 	// since everything else seems to be too shaky, we rely on the FQDN that was
 	// built from scanning the network settings file:
 	return TheResources->mOwnFQDN;
@@ -79,7 +79,7 @@ BString OwnFQDN() {
 	OwnDomain()
 		-	tries to find out our own domain
 \*------------------------------------------------------------------------------*/
-BString OwnDomain( BString fqdn) {
+BmString OwnDomain( BmString fqdn) {
 	if (!fqdn.Length())
 		fqdn = OwnFQDN();
 	int32 firstDot = fqdn.FindFirst(".");

@@ -67,7 +67,7 @@ enum Columns {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmSendAccItem::BmSendAccItem( BString key, BmListModelItem* _item)
+BmSendAccItem::BmSendAccItem( BmString key, BmListModelItem* _item)
 	:	inherited( key, _item, false)
 {
 	UpdateView( UPD_ALL);
@@ -211,7 +211,7 @@ void BmSendAccView::MessageReceived( BMessage* msg) {
 		}
 	} catch( exception &err) {
 		// a problem occurred, we tell the user:
-		BM_SHOWERR( BString("SendAccView:\n\t") << err.what());
+		BM_SHOWERR( BmString("SendAccView:\n\t") << err.what());
 	}
 }
 
@@ -221,7 +221,7 @@ void BmSendAccView::MessageReceived( BMessage* msg) {
 	BmPrefsSendMailView
 \********************************************************************************/
 
-const BString BmPrefsSendMailView::nEmptyItemLabel("<none>");
+const BmString BmPrefsSendMailView::nEmptyItemLabel("<none>");
 
 /*------------------------------------------------------------------------------*\
 	()
@@ -397,14 +397,14 @@ void BmPrefsSendMailView::Activated() {
 bool BmPrefsSendMailView::SanityCheck() {
 	if (!InitDone())
 		return true;
-	BString complaint, fieldName;
+	BmString complaint, fieldName;
 	BMessage msg( BM_COMPLAIN_ABOUT_FIELD);
 	BmModelItemMap::const_iterator iter;
 	for( iter = TheSmtpAccountList->begin(); iter != TheSmtpAccountList->end(); ++iter) {
 		BmSmtpAccount* acc = dynamic_cast<BmSmtpAccount*>( iter->second.Get());
 		if (acc && !acc->SanityCheck( complaint, fieldName)) {
 			msg.AddPointer( MSG_ACCOUNT, (void*)acc);
-			msg.AddString( MSG_COMPLAINT, complaint);
+			msg.AddString( MSG_COMPLAINT, complaint.String());
 			if (fieldName.Length())
 				msg.AddString( MSG_FIELD_NAME, fieldName.String());
 			Looper()->PostMessage( &msg, this);
@@ -482,7 +482,7 @@ void BmPrefsSendMailView::MessageReceived( BMessage* msg) {
 				if (mCurrAcc) {
 					BmRef<BmSmtp> smtp( new BmSmtp( mCurrAcc->Key(), mCurrAcc.Get()));
 					smtp->StartJobInThisThread( BmSmtp::BM_CHECK_CAPABILITIES_JOB);
-					BString suggestedAuthType = smtp->SuggestAuthType();
+					BmString suggestedAuthType = smtp->SuggestAuthType();
 					if (suggestedAuthType.Length())
 						mAuthControl->MarkItem( suggestedAuthType.String());
 					else
@@ -509,9 +509,9 @@ void BmPrefsSendMailView::MessageReceived( BMessage* msg) {
 				break;
 			}
 			case BM_ADD_ACCOUNT: {
-				BString key( "new account");
+				BmString key( "new account");
 				for( int32 i=1; TheSmtpAccountList->FindItemByKey( key); ++i) {
-					key = BString("new account_")<<i;
+					key = BmString("new account_")<<i;
 				}
 				TheSmtpAccountList->AddItemToList( new BmSmtpAccount( key.String(), TheSmtpAccountList.Get()));
 				mAccountControl->MakeFocus( true);
@@ -523,7 +523,7 @@ void BmPrefsSendMailView::MessageReceived( BMessage* msg) {
 				if (msg->FindInt32( "which", &buttonPressed) != B_OK) {
 					// first step, ask user about it:
 					BAlert* alert = new BAlert( "Remove Mail-Account", 
-														 (BString("Are you sure about removing the account <") << mCurrAcc->Name() << ">?").String(),
+														 (BmString("Are you sure about removing the account <") << mCurrAcc->Name() << ">?").String(),
 													 	 "Remove", "Cancel", NULL, B_WIDTH_AS_USUAL,
 													 	 B_WARNING_ALERT);
 					alert->SetShortcut( 1, B_ESCAPE);
@@ -540,7 +540,7 @@ void BmPrefsSendMailView::MessageReceived( BMessage* msg) {
 			case BM_COMPLAIN_ABOUT_FIELD: {
 				int32 buttonPressed;
 				if (msg->FindInt32( "which", &buttonPressed) != B_OK) {
-					BString complaint;
+					BmString complaint;
 					complaint = msg->FindString( MSG_COMPLAINT);
 					// first step, tell user about complaint:
 					BAlert* alert = new BAlert( "Sanity Check Failed", 
@@ -556,7 +556,7 @@ void BmPrefsSendMailView::MessageReceived( BMessage* msg) {
 						mAccListView->Select( mAccListView->IndexOf( accItem));
 				} else {
 					// second step, set corresponding focus:
-					BString fieldName;
+					BmString fieldName;
 					fieldName = msg->FindString( MSG_FIELD_NAME);
 					if (fieldName.ICompare( "username")==0)
 						mLoginControl->MakeFocus( true);
@@ -573,7 +573,7 @@ void BmPrefsSendMailView::MessageReceived( BMessage* msg) {
 	}
 	catch( exception &err) {
 		// a problem occurred, we tell the user:
-		BM_SHOWERR( BString("PrefsView_") << Name() << ":\n\t" << err.what());
+		BM_SHOWERR( BmString("PrefsView_") << Name() << ":\n\t" << err.what());
 	}
 }
 

@@ -35,7 +35,7 @@
 #include <Deskbar.h>
 #include <PrintJob.h>
 #include <Rect.h>
-#include <String.h>
+#include "BmString.h"
 
 class BDeskbar;
 class BView;
@@ -56,10 +56,10 @@ public:
 	~BmApplication();
 
 	// native methods:
-	bool HandlesMimetype( const BString mimetype);
+	bool HandlesMimetype( const BmString mimetype);
 	BRect ScreenFrame();
 	void SetNewWorkspace( uint32 newWorkspace);
-	void LaunchURL( const BString url);
+	void LaunchURL( const BmString url);
 	void ForwardMails( BMessage* msg, bool join);
 	void ReplyToMails( BMessage* msg, bool join);
 	void PageSetup();
@@ -80,9 +80,9 @@ public:
 	// getters
 	inline bool IsQuitting()				{ return mIsQuitting; }
 
-	BString BmAppVersion;
-	BString BmAppName;
-	BString BmAppNameWithVersion;
+	BmString BmAppVersion;
+	BmString BmAppName;
+	BmString BmAppNameWithVersion;
 
 	// message-fields:
 	static const char* const MSG_MAILREF = 	"bm:mref";

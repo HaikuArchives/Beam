@@ -40,7 +40,7 @@
 #include <Font.h>
 #include <Menu.h>
 #include <Path.h>
-#include <String.h>
+#include "BmString.h"
 #include <Volume.h>
 
 #include "Colors.h"
@@ -58,9 +58,9 @@ class BPicture;
 		- 	additionally holds the paths used within Beam
 \*------------------------------------------------------------------------------*/
 class BmResources {
-	typedef map< BString, BBitmap*> BmIconMap;
-	typedef vector< BString> BmFontStyleVect;
-	typedef map< BString, BmFontStyleVect> BmFontMap;
+	typedef map< BmString, BBitmap*> BmIconMap;
+	typedef vector< BmString> BmFontStyleVect;
+	typedef map< BmString, BmFontStyleVect> BmFontMap;
 
 public:
 	// creator-func, c'tors and d'tor:
@@ -71,11 +71,11 @@ public:
 	// native methods:
 	BDirectory* MailCacheFolder();
 	BDirectory* StateInfoFolder();
-	BDirectory* GetFolder( const BString& name, BDirectory& dir);
+	BDirectory* GetFolder( const BmString& name, BDirectory& dir);
 
-	BBitmap* IconByName( const BString name);
+	BBitmap* IconByName( const BmString name);
 	//
-	BString HomePath;
+	BmString HomePath;
 	BVolume MailboxVolume;
 	BPath	SettingsPath;
 	//
@@ -88,7 +88,7 @@ public:
 										 rgb_color background = BeBackgroundGrey,
 										 bool transparentBack = false);
 	//
-	void CheckMimeTypeFile( BString sig, time_t appModTime);
+	void CheckMimeTypeFile( BmString sig, time_t appModTime);
 	//
 	void AddFontSubmenuTo( BMenu* menu, BHandler* target=NULL, 
 								  BFont* selectedFont=NULL);
@@ -96,7 +96,7 @@ public:
 	const char* WHITESPACE;
 	PrefilledBitmap mRightArrow;
 	PrefilledBitmap mDownArrow;
-	BString mOwnFQDN;
+	BmString mOwnFQDN;
 	//
 	BCursor mUrlCursor;
 

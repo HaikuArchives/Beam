@@ -35,7 +35,7 @@
 #include <stdexcept>
 
 #include <Archivable.h>
-#include <String.h>
+#include "BmString.h"
 
 #include "BmDataModel.h"
 
@@ -62,20 +62,20 @@ public:
 	virtual ~BmSignature();
 	
 	// native methods:
-	BString GetSignatureString();
+	BmString GetSignatureString();
 
 	// stuff needed for Archival:
 	status_t Archive( BMessage* archive, bool deep = true) const;
 	int16 ArchiveVersion() const			{ return nArchiveVersion; }
 
 	// getters:
-	inline const BString &Content() const	{ return mContent; }
+	inline const BmString &Content() const	{ return mContent; }
 	inline bool Dynamic() const 				{ return mDynamic; }
-	inline const BString &Name() const		{ return Key(); }
+	inline const BmString &Name() const		{ return Key(); }
 	inline uint32 Encoding() const			{ return mEncoding; }
 
 	// setters:
-	inline void Content( const BString &s) { mContent = s; TellModelItemUpdated( UPD_ALL); }
+	inline void Content( const BmString &s) { mContent = s; TellModelItemUpdated( UPD_ALL); }
 	inline void Dynamic( bool b) 				{ mDynamic = b;  TellModelItemUpdated( UPD_ALL); }
 	inline void Encoding( uint32 i) 			{ mEncoding = i;  TellModelItemUpdated( UPD_ALL); }
 
@@ -85,7 +85,7 @@ private:
 	BmSignature( const BmSignature&);
 	BmSignature operator=( const BmSignature&);
 
-	BString mContent;
+	BmString mContent;
 	bool mDynamic;						// if mContents is static text or a script-call
 	uint32 mEncoding;					// character-encoding of this sig
 };
@@ -107,10 +107,10 @@ public:
 	~BmSignatureList();
 	
 	// native methods:
-	BString GetSignatureStringFor( const BString sigName);
+	BmString GetSignatureStringFor( const BmString sigName);
 	
 	// overrides of listmodel base:
-	const BString SettingsFileName();
+	const BmString SettingsFileName();
 	void InstantiateItems( BMessage* archive);
 	int16 ArchiveVersion() const			{ return nArchiveVersion; }
 

@@ -102,14 +102,14 @@ void BmRulerView::Draw( BRect bounds) {
 		// draw ruler numbers:
 		int num=0;
 		for( float x=0; x<width; x+=step*10) {
-			BString numStr = BString("") << num;
+			BmString numStr = BmString("") << num;
 			num += 10;
 			float w = StringWidth( numStr.String());
 			DrawString( numStr.String(), BPoint( nXOffset+1+x-w/2, 8));
 		}
 		if (maxLineLen < 100) {
 			// draw number over right margin;
-			BString numStr = BString("") << maxLineLen;
+			BmString numStr = BmString("") << maxLineLen;
 			float w = StringWidth( numStr.String());
 			DrawString( numStr.String(), BPoint( nXOffset+width-w/2, 8));
 		}
@@ -143,7 +143,7 @@ void BmRulerView::MouseDown( BPoint point) {
 		Parent()->MakeFocus( true);
 	int32 maxLineLen = ThePrefs->GetInt( "MaxLineLenForHardWrap", 998);
 	if (maxLineLen < 100) {
-		BString s = BString("The right margin is currently fixed\nto a maximum of ") 
+		BmString s = BmString("The right margin is currently fixed\nto a maximum of ") 
 							<< maxLineLen 
 							<< " characters.\n\nPlease check Preferences.";
 		TheBubbleHelper.SetHelp( this, s.String());

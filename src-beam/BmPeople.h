@@ -36,7 +36,7 @@
 
 #include <List.h>
 #include <Locker.h>
-#include <String.h>
+#include "BmString.h"
 
 #include <Locker.h>
 #include <Looper.h>
@@ -49,24 +49,24 @@ class BMenu;
 class BmPerson;
 class BmPeopleList;
 
-typedef vector< BString> BmStringVect;
+typedef vector< BmString> BmStringVect;
 
 struct BmPersonInfo {
-	BString nick;
-	BString name;
+	BmString nick;
+	BmString name;
 	BmStringVect emails;
 	BmPersonInfo()								{}
-	BmPersonInfo( const BString& nm, const BString& nk, const BString& em)
+	BmPersonInfo( const BmString& nm, const BmString& nk, const BmString& em)
 		: name( nm) 							{	emails.push_back( em); }
 	void AddEmails( const BmStringVect& mails);
 };
-typedef map< BString, BmPersonInfo> BmPersonMap;
+typedef map< BmString, BmPersonInfo> BmPersonMap;
 
 struct BmGroupInfo {
-	BString name;
+	BmString name;
 	BmPersonMap personMap;
 };
-typedef map< BString, BmGroupInfo> BmGroupMap;
+typedef map< BmString, BmGroupInfo> BmGroupMap;
 
 /*------------------------------------------------------------------------------*\
 	BmPerson
@@ -76,8 +76,8 @@ class BmPerson : public BmListModelItem {
 	typedef BmListModelItem inherited;
 
 public:
-	BmPerson( BmPeopleList* model, const node_ref& nref, const BString& name,
-				 const BString& nick, const BString& email, const BString& groups,
+	BmPerson( BmPeopleList* model, const node_ref& nref, const BmString& name,
+				 const BmString& nick, const BmString& email, const BmString& groups,
 				 bool foreign);
 	virtual ~BmPerson();
 	
@@ -88,7 +88,7 @@ public:
 	void AddToForeignMap( BmPersonMap& foreignMap) const;
 	void AddToAllPeopleMap( BmPersonMap& allPeopleMap) const;
 
-	void AddEmail( const BString &em);
+	void AddEmail( const BmString &em);
 
 	// getters:
 	inline const node_ref &NodeRef() const		{ return mNodeRef; }
@@ -100,16 +100,16 @@ public:
 private:
 
 	// native methods:
-	static BString GenerateDisplayName( const BString& name, const BString& nick,
-													const BString& email);
+	static BmString GenerateDisplayName( const BmString& name, const BmString& nick,
+													const BmString& email);
 
 	BmPerson();									// hide default constructor
 	// Hide copy-constructor and assignment:
 	BmPerson( const BmPerson&);
 	BmPerson operator=( const BmPerson&);
 
-	BString mNick;
-	BString mName;
+	BmString mNick;
+	BmString mName;
 	BmStringVect mEmails;
 	BmStringVect mGroups;
 	node_ref mNodeRef;
@@ -135,7 +135,7 @@ public:
 								 const char* addrField);
 
 	// overrides of listmodel base:
-	const BString SettingsFileName()		{ return ""; }
+	const BmString SettingsFileName()		{ return ""; }
 	int16 ArchiveVersion() const			{ return 0; }
 
 	static BmRef<BmPeopleList> theInstance;
@@ -145,7 +145,7 @@ private:
 	BMenu* CreateSubmenuForPersonMap( const BmPersonMap& personMap, 
 												 const BMessage& templateMsg,
 												 const char* addrField,
-												 BString label, BFont* font,
+												 BmString label, BFont* font,
 												 bool createAllEntry=false);
 
 	// overrides of listmode base:

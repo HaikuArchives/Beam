@@ -54,7 +54,7 @@ class BmController {
 
 public:
 	//
-	BmController( BString name);
+	BmController( BmString name);
 	virtual ~BmController();
 
 	// native methods:
@@ -65,7 +65,7 @@ public:
 
 	// getters
 	inline const char* ControllerName() const	{ return mControllerName.String(); }
-	inline const BString ModelName() const		{ return mDataModel.Get() ? mDataModel->ModelName() : "***NULL***"; }
+	inline const BmString ModelName() const		{ return mDataModel.Get() ? mDataModel->ModelName() : "***NULL***"; }
 	virtual BmDataModel* DataModel()		{ return mDataModel.Get(); }
 
 protected:
@@ -75,7 +75,7 @@ protected:
 
 private:
 	BmRef< BmDataModel> mDataModel;
-	BString mControllerName;
+	BmString mControllerName;
 
 	// setters
 	void DataModel( BmDataModel* model);
@@ -96,7 +96,7 @@ class BmJobController : public BmController {
 
 public:
 	//
-	BmJobController( BString name);
+	BmJobController( BmString name);
 	virtual ~BmJobController();
 
 	// native methods:

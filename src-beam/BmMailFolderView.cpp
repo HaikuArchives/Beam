@@ -31,7 +31,7 @@
 #include <Alert.h>
 #include <MenuItem.h>
 #include <PopUpMenu.h>
-#include <String.h>
+#include "BmString.h"
 
 #include "TextEntryAlert.h"
 
@@ -62,7 +62,7 @@ enum Columns {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmMailFolderItem::BmMailFolderItem( BString key, BmListModelItem* _item, 
+BmMailFolderItem::BmMailFolderItem( BmString key, BmListModelItem* _item, 
 												bool superitem, BMessage* archive)
 	:	inherited( key, _item, true, archive)
 {
@@ -87,7 +87,7 @@ void BmMailFolderItem::UpdateView( BmUpdFlags flags) {
 		return;
 	if (flags & (UPD_EXPANDER  | UPD_KEY | BmMailFolder::UPD_NEW_STATUS)) {
 		Bold( folder->NewMailCount());
-		BString displayName = folder->Name();
+		BmString displayName = folder->Name();
 		if (folder->HasNewMail()) {
 			int32 count = folder->NewMailCount();
 			if (folder->NewMailCountForSubfolders() && !IsExpanded())
@@ -242,8 +242,8 @@ void BmMailFolderView::HandleDrop( const BMessage* msg) {
 			for( int i=0; msg->FindRef( BmMailMover::MSG_REFS, i, &eref)==B_OK; ++i) {
 				tmpMsg.AddRef( BmMailMover::MSG_REFS, &eref);
 			}
-			tmpMsg.AddString( BmJobModel::MSG_JOB_NAME, folder->Name());
-			tmpMsg.AddString( BmJobModel::MSG_MODEL, folder->Key());
+			tmpMsg.AddString( BmJobModel::MSG_JOB_NAME, folder->Name().String());
+			tmpMsg.AddString( BmJobModel::MSG_MODEL, folder->Key().String());
 			TheJobStatusWin->PostMessage( &tmpMsg);
 		}
 	}
@@ -341,7 +341,7 @@ void BmMailFolderView::MessageReceived( BMessage* msg) {
 				} else {
 					// second step, do it if user said ok:
 					if (buttonPressed == 1) {
-						BString newName = msg->FindString( "entry_text");
+						BmString newName = msg->FindString( "entry_text");
 						if (newName.Length()>0)
 							folder->CreateSubFolder( newName.String());
 					}
@@ -362,7 +362,7 @@ void BmMailFolderView::MessageReceived( BMessage* msg) {
 				} else {
 					// second step, do it if user said ok:
 					if (buttonPressed == 1) {
-						BString newName = msg->FindString( "entry_text");
+						BmString newName = msg->FindString( "entry_text");
 						if (newName.Length()>0)
 							folder->Rename( newName.String());
 					}
@@ -376,7 +376,7 @@ void BmMailFolderView::MessageReceived( BMessage* msg) {
 				if (msg->FindInt32( "which", &buttonPressed) != B_OK) {
 					// first step, ask user about it:
 					BAlert* alert = new BAlert( "Trash Mail-Folder", 
-														 (BString("Are you sure about trashing folder <") << folder->Name() << ">?").String(),
+														 (BmString("Are you sure about trashing folder <") << folder->Name() << ">?").String(),
 													 	 "Move to Trash", "Cancel", NULL, B_WIDTH_AS_USUAL,
 													 	 B_WARNING_ALERT);
 					alert->SetShortcut( 1, B_ESCAPE);
@@ -421,7 +421,7 @@ void BmMailFolderView::MessageReceived( BMessage* msg) {
 		}
 	} catch( exception &err) {
 		// a problem occurred, we tell the user:
-		BM_SHOWERR( BString("MailFolderView:\n\t") << err.what());
+		BM_SHOWERR( BmString("MailFolderView:\n\t") << err.what());
 	}
 }
 

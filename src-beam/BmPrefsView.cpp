@@ -52,7 +52,7 @@
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmPrefsView::BmPrefsView( BString label) 
+BmPrefsView::BmPrefsView( BmString label) 
 	:	inherited( M_NO_BORDER, 0, (char*)label.String())
 	,	mInitDone( false)
 	,	mLabelView( NULL)
@@ -122,7 +122,7 @@ void BmPrefsView::MessageReceived( BMessage* msg) {
 	}
 	catch( exception &err) {
 		// a problem occurred, we tell the user:
-		BM_SHOWERR( BString("PrefsView_") << mLabelView->Text() << ":\n\t" << err.what());
+		BM_SHOWERR( BmString("PrefsView_") << mLabelView->Text() << ":\n\t" << err.what());
 	}
 }
 

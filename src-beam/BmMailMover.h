@@ -61,10 +61,10 @@ public:
 	static const char* const MSG_LEADING = 	"bm:leading";
 	static const char* const MSG_REFS = 		"refs";
 
-	BmMailMover( const BString& name, BList* refList, BmMailFolder* destFolder);
+	BmMailMover( const BmString& name, BList* refList, BmMailFolder* destFolder);
 	virtual ~BmMailMover();
 
-	inline BString Name() const			{ return ModelName(); }
+	inline BmString Name() const			{ return ModelName(); }
 
 	bool StartJob();
 

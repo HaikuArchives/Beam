@@ -47,7 +47,7 @@
 	BmController()
 		-	standard contructor
 \*------------------------------------------------------------------------------*/
-BmController::BmController( BString name)
+BmController::BmController( BmString name)
 	:	mDataModel( NULL)
 	,	mControllerName( name)
 {
@@ -59,7 +59,7 @@ BmController::BmController( BString name)
 \*------------------------------------------------------------------------------*/
 BmController::~BmController() {
 	DetachModel();
-	BM_LOG2( BM_LogModelController, BString("Controller <") << ControllerName() << "> has been destructed.");
+	BM_LOG2( BM_LogModelController, BmString("Controller <") << ControllerName() << "> has been destructed.");
 }
 
 /*------------------------------------------------------------------------------*\
@@ -79,7 +79,7 @@ void BmController::AttachModel( BmDataModel* model) {
 	}
 	DataModel( model);
 	if (mDataModel) {
-		BM_LOG2( BM_LogModelController, BString("Controller <") << ControllerName() << "> attaches to model " << ModelName());
+		BM_LOG2( BM_LogModelController, BmString("Controller <") << ControllerName() << "> attaches to model " << ModelName());
 		mDataModel->AddController( this);
 	}
 }
@@ -91,7 +91,7 @@ void BmController::AttachModel( BmDataModel* model) {
 \*------------------------------------------------------------------------------*/
 void BmController::DetachModel() {
 	if (mDataModel) {
-		BM_LOG2( BM_LogModelController, BString("Controller <") << ControllerName() << "> detaches from model " << ModelName());
+		BM_LOG2( BM_LogModelController, BmString("Controller <") << ControllerName() << "> detaches from model " << ModelName());
 		mDataModel->RemoveController( this);
 		mDataModel = NULL;
 	}
@@ -102,9 +102,9 @@ void BmController::DetachModel() {
 		-	determines if the given message came from our current model
 \*------------------------------------------------------------------------------*/
 bool BmController::IsMsgFromCurrentModel( BMessage* msg) {
-	BString msgModelName = FindMsgString( msg, BmDataModel::MSG_MODEL);
+	BmString msgModelName = FindMsgString( msg, BmDataModel::MSG_MODEL);
 	if (msgModelName != ModelName()) {
-		BM_LOG2( BM_LogModelController, BString("Controller <") << ControllerName() << "> drops msg from model <"<<msgModelName<<"> which is not the current one (<"<<ModelName()<<">)");
+		BM_LOG2( BM_LogModelController, BmString("Controller <") << ControllerName() << "> drops msg from model <"<<msgModelName<<"> which is not the current one (<"<<ModelName()<<">)");
 		return false;
 	} else
 		return true;
@@ -142,7 +142,7 @@ void BmController::DataModel( BmDataModel* model) {
 	BmJobController()
 		-	standard contructor
 \*------------------------------------------------------------------------------*/
-BmJobController::BmJobController( BString name)
+BmJobController::BmJobController( BmString name)
 	:	BmController( name)
 {
 }
@@ -166,7 +166,7 @@ void BmJobController::StartJob( BmJobModel* model, bool startInNewThread,
 										  int32 jobSpecifier) {
 	AttachModel( model);
 	if (DataModel()) {
-		BM_LOG2( BM_LogModelController, BString("Controller <") << ControllerName() << "> starts job " << ModelName());
+		BM_LOG2( BM_LogModelController, BmString("Controller <") << ControllerName() << "> starts job " << ModelName());
 		if (startInNewThread)
 			DataModel()->StartJobInNewThread( jobSpecifier);
 		else
@@ -182,7 +182,7 @@ void BmJobController::StartJob( BmJobModel* model, bool startInNewThread,
 \*------------------------------------------------------------------------------*/
 void BmJobController::PauseJob( BMessage* msg) {
 	if (DataModel()) {
-		BM_LOG2( BM_LogModelController, BString("Controller <") << ControllerName() << "> pauses job " << ModelName());
+		BM_LOG2( BM_LogModelController, BmString("Controller <") << ControllerName() << "> pauses job " << ModelName());
 		DataModel()->PauseJob();
 	}
 }
@@ -195,7 +195,7 @@ void BmJobController::PauseJob( BMessage* msg) {
 \*------------------------------------------------------------------------------*/
 void BmJobController::ContinueJob( BMessage* msg) {
 	if (DataModel()) {
-		BM_LOG2( BM_LogModelController, BString("Controller <") << ControllerName() << "> continues job " << ModelName());
+		BM_LOG2( BM_LogModelController, BmString("Controller <") << ControllerName() << "> continues job " << ModelName());
 		DataModel()->ContinueJob();
 	}
 }
@@ -208,7 +208,7 @@ void BmJobController::ContinueJob( BMessage* msg) {
 void BmJobController::StopJob() {
 	BmJobModel* job = DataModel();
 	if (job && !job->IsJobCompleted()) {
-		BM_LOG2( BM_LogModelController, BString("Controller <") << ControllerName() << "> stops job " << ModelName());
+		BM_LOG2( BM_LogModelController, BmString("Controller <") << ControllerName() << "> stops job " << ModelName());
 		job->StopJob();
 	}
 }

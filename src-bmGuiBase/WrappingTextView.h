@@ -28,7 +28,7 @@
 
 #include <vector>
 
-#include <String.h>
+#include "BmString.h"
 #include <TextView.h>
 
 // fake system-message for redo:
@@ -40,7 +40,7 @@ class WrappingTextView : public BTextView
 	
 		struct UndoInfo {
 			bool isInsertion;
-			BString text;
+			BmString text;
 			uint32 offset;
 			text_run_array* text_runs;
 			UndoInfo()

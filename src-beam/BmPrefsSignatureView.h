@@ -45,7 +45,7 @@ class BmSignatureItem : public BmListViewItem
 
 public:
 	// c'tors and d'tor:
-	BmSignatureItem( BString key, BmListModelItem* item);
+	BmSignatureItem( BmString key, BmListModelItem* item);
 	~BmSignatureItem();
 
 	// overrides of listitem base:
@@ -78,7 +78,7 @@ public:
 	BmListViewItem* CreateListViewItem( BmListModelItem* item, BMessage* archive=NULL);
 	
 	// overrides of controller base:
-	BString StateInfoBasename()			{ return "SignatureView"; }
+	BmString StateInfoBasename()			{ return "SignatureView"; }
 	void UpdateModelItem( BMessage* msg);
 	BmListViewItem* AddModelItem( BmListModelItem* item);
 	const char* ItemNameForCaption()		{ return "signature"; }

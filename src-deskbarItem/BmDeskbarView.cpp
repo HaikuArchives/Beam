@@ -50,7 +50,7 @@
 #include <PopUpMenu.h>
 #include <Resources.h>
 #include <Roster.h>
-#include <String.h>
+#include "BmString.h"
 #include <Volume.h>
 
 #include "BmDeskbarView.h"

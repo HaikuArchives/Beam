@@ -38,7 +38,7 @@
 
 #include <Autolock.h>
 #include <Locker.h>
-#include <String.h>
+#include "BmString.h"
 
 #include "BmBasics.h"
 #include "BmLogHandler.h"
@@ -51,13 +51,13 @@ class BmProxy;
 		-	an object that can be reference-managed
 \*------------------------------------------------------------------------------*/
 class BmRefObj {
-	typedef map<BString,BmProxy*> BmProxyMap;
+	typedef map<BmString,BmProxy*> BmProxyMap;
 
 public:
 	BmRefObj() : mRefCount(0) 				{}
 	virtual ~BmRefObj() 						{}
 
-	virtual const BString& RefName() const = 0;
+	virtual const BmString& RefName() const = 0;
 	inline const char* ProxyName() const	{ return typeid(*this).name(); }
 
 	// native methods:
@@ -71,8 +71,8 @@ public:
 	void RemoveRef();
 #endif // BM_REF_DEBUGGING
 
-	BString RefPrintHex() const;
-	static BString RefPrintHex( const void* ptr);
+	BmString RefPrintHex() const;
+	static BmString RefPrintHex( const void* ptr);
 	
 	// getters:
 	inline int32 RefCount() const			{ return mRefCount; }
@@ -97,7 +97,7 @@ private:
 
 
 
-typedef multimap<BString,BmRefObj*> BmObjectMap;
+typedef multimap<BmString,BmRefObj*> BmObjectMap;
 /*------------------------------------------------------------------------------*\
 	BmProxy
 		-	an object that manages all instances of a specific class
@@ -105,10 +105,10 @@ typedef multimap<BString,BmRefObj*> BmObjectMap;
 class BmProxy {
 
 public:
-	inline BmProxy( BString name) : Locker(name.String()) {}
+	inline BmProxy( BmString name) : Locker(name.String()) {}
 	BLocker Locker;
 	BmObjectMap ObjectMap;
-	BmRefObj* FetchObject( const BString& key, void* ptr=NULL);
+	BmRefObj* FetchObject( const BmString& key, void* ptr=NULL);
 };
 
 
@@ -193,7 +193,7 @@ private:
 \*------------------------------------------------------------------------------*/
 template <class T> class BmWeakRef {
 
-	BString mName;
+	BmString mName;
 	T* mPtr;
 	const char* mProxyName;
 
@@ -203,7 +203,7 @@ public:
 	,	mPtr( p)
 	,	mProxyName( p ? p->ProxyName() : "") 
 	{
-		BM_LOG2( BM_LogUtil, BString("RefManager: weak-reference to <") << mName << ":" << BmRefObj::RefPrintHex(mPtr) << "> created");
+		BM_LOG2( BM_LogUtil, BmString("RefManager: weak-reference to <") << mName << ":" << BmRefObj::RefPrintHex(mPtr) << "> created");
 	}
 	inline BmWeakRef<T>& operator= ( T* p) {
 		mName = p ? p->RefName() : NULL;
@@ -219,7 +219,7 @@ public:
 	}
 	inline operator bool() const 			{ return Get(); }
 	inline BmRef<T> Get() const 			{
-		BM_LOG2( BM_LogUtil, BString("RefManager: weak-reference to <") << mName << ":" << BmRefObj::RefPrintHex(mPtr) << "> dereferenced");
+		BM_LOG2( BM_LogUtil, BmString("RefManager: weak-reference to <") << mName << ":" << BmRefObj::RefPrintHex(mPtr) << "> dereferenced");
 		BmProxy* proxy = BmRefObj::GetProxy( mProxyName);
 		if (proxy) {
 			BAutolock lock( &proxy->Locker);

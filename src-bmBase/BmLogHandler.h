@@ -37,7 +37,7 @@
 #include <Locker.h>
 #include <Looper.h>
 #include <StopWatch.h>
-#include <String.h>
+#include "BmString.h"
 
 /*------------------------------------------------------------------------------*\
 	types of messages handled by a BmLogfile:
@@ -58,9 +58,9 @@ class BmLogHandler {
 
 public:
 	// static functions
-	static void Log( const BString logname, uint32 flag, const BString& msg, int8 minlevel=1);
+	static void Log( const BmString logname, uint32 flag, const BmString& msg, int8 minlevel=1);
 	static void Log( const char* const logname, uint32 flag, const char* const msg, int8 minlevel=1);
-	static void FinishLog( const BString& logname);
+	static void FinishLog( const BmString& logname);
 
 	// creator-func, c'tors and d'tor
 	static BmLogHandler* CreateInstance( uint32 logLevels, node_ref* appFolder);
@@ -68,9 +68,9 @@ public:
 	~BmLogHandler();
 
 	// native methods:
-	BmLogfile* FindLogfile( const BString &logname);
-	void CloseLog( const BString &logname);
-	void LogToFile( const BString &logname, uint32 flag, const BString &msg, int8 minlevel=1);
+	BmLogfile* FindLogfile( const BmString &logname);
+	void CloseLog( const BmString &logname);
+	void LogToFile( const BmString &logname, uint32 flag, const BmString &msg, int8 minlevel=1);
 	void LogToFile( const char* const logname, uint32 flag, const char* const msg, int8 minlevel=1);
 
 	// setters:
@@ -106,14 +106,14 @@ private:
 	
 	private:
 		BFile* mLogFile;
-		BString filename;
+		BmString filename;
 
 		// Hide copy-constructor and assignment:
 		BmLogfile( const BmLogfile&);
 		BmLogfile operator=( const BmLogfile&);
 	};
 
-	typedef map<const BString, BmLogfile*> LogfileMap;
+	typedef map<const BmString, BmLogfile*> LogfileMap;
 	LogfileMap mActiveLogs;					// map of names to logfiles
 	BLocker mLocker;							// benaphore used to lock write-access to map
 	uint32 mLoglevels;

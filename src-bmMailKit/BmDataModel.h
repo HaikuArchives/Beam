@@ -36,7 +36,7 @@
 #include <set>
 
 #include <Locker.h>
-#include <String.h>
+#include "BmString.h"
 
 #include "BmRefManager.h"
 
@@ -71,7 +71,7 @@ class BmDataModel : public BmRefObj {
 
 public:
 	// c'tors & d'tor:
-	BmDataModel( const BString& name);
+	BmDataModel( const BmString& name);
 	virtual ~BmDataModel();
 
 	// native methods:
@@ -80,12 +80,12 @@ public:
 	virtual void RemoveController( BmController* controller);
 
 	// getters:
-	inline BString Name() const			{ return mModelName; }
-	inline BString ModelName() const		{ return mModelName; }
+	inline BmString Name() const			{ return mModelName; }
+	inline BmString ModelName() const		{ return mModelName; }
 	inline BLocker& ModelLocker() 		{ return mModelLocker; }
 
 	// overrides of BmRefObj
-	const BString& RefName() const		{ return mModelName; }
+	const BmString& RefName() const		{ return mModelName; }
 
 	//	message component definitions for status-msgs:
 	static const char* const MSG_MODEL = 			"bm:model";
@@ -99,7 +99,7 @@ protected:
 	virtual void TellControllers( BMessage* msg, bool waitForAck=false);
 	virtual void WaitForAllToAck();
 	virtual void WaitForAllToDetach();
-	virtual void HandleError( const BString& errString);
+	virtual void HandleError( const BmString& errString);
 	inline void Freeze() 					{ mFrozenCount++; }
 	inline void Thaw()						{ mFrozenCount--; }
 	inline bool Frozen() 					{ return mFrozenCount > 0; }
@@ -114,7 +114,7 @@ private:
 	BmDataModel( const BmDataModel&);
 	BmDataModel operator=( const BmDataModel&);
 
-	BString mModelName;
+	BmString mModelName;
 };
 
 /*------------------------------------------------------------------------------*\
@@ -128,7 +128,7 @@ class BmJobModel : public BmDataModel {
 
 public:
 	// c'tors & d'tor:
-	BmJobModel( const BString& name);
+	BmJobModel( const BmString& name);
 	virtual ~BmJobModel();
 
 	// native methods:
@@ -186,7 +186,7 @@ const BmUpdFlags UPD_KEY		 	= 1<<1;
 const BmUpdFlags UPD_ALL 			= 0xFFFFFFFF;
 
 class BmListModelItem;
-typedef map< BString, BmRef<BmListModelItem> > BmModelItemMap;
+typedef map< BmString, BmRef<BmListModelItem> > BmModelItemMap;
 /*------------------------------------------------------------------------------*\
 	BmListModelItem
 		-	base class for the items that will be part of a BmListModel
@@ -201,12 +201,12 @@ protected:
 
 public:
 	// c'tors & d'tor:
-	BmListModelItem( BString key, BmListModel* model, BmListModelItem* parent);
+	BmListModelItem( BmString key, BmListModel* model, BmListModelItem* parent);
 	BmListModelItem( const BmListModelItem&);
 	virtual ~BmListModelItem();
 
 	// native methods:
-	BmListModelItem* FindItemByKey( const BString& key);
+	BmListModelItem* FindItemByKey( const BmString& key);
 	virtual int16 ArchiveVersion() const = 0;
 
 	// getters:
@@ -214,17 +214,17 @@ public:
 	inline BmModelItemMap::const_iterator end() const	{ return mSubItemMap.end(); }
 	inline size_t size() const						{ return mSubItemMap.size(); }
 	inline bool empty() const						{ return mSubItemMap.empty(); }
-	inline const BString& Key() const			{ return mKey; }
-	inline const BString& ParentKey() const	{ return mParent ? mParent->Key() : nEmptyParentKey; }
+	inline const BmString& Key() const			{ return mKey; }
+	inline const BmString& ParentKey() const	{ return mParent ? mParent->Key() : nEmptyParentKey; }
 	inline BmListModelItem* Parent() const		{ return mParent; }
 	BmRef<BmListModel> ListModel() const;
 
 	// setters:
 	inline void Parent( BmListModelItem* parent)	{ mParent = parent; }
-	inline void Key( const BString k)				{ mKey = k; }
+	inline void Key( const BmString k)				{ mKey = k; }
 
 	// overrides of BmRefObj
-	const BString& RefName() const		{ return mKey; }
+	const BmString& RefName() const		{ return mKey; }
 
 	// overrides of BArchivable
 	status_t Archive( BMessage* archive, bool deep = true) const;
@@ -246,10 +246,10 @@ private:
 	// Hide assignment:
 	BmListModelItem operator=( const BmListModelItem&);
 	
-	BString mKey;
+	BmString mKey;
 	BmModelItemMap mSubItemMap;
 
-	static const BString nEmptyParentKey;
+	static const BmString nEmptyParentKey;
 
 };
 
@@ -270,18 +270,18 @@ protected:
 
 public:
 	// c'tors & d'tor:
-	BmListModel( const BString& name);
+	BmListModel( const BmString& name);
 	virtual ~BmListModel();
 
 	// native methods:
-	BmRef<BmListModelItem> FindItemByKey( const BString& key);
+	BmRef<BmListModelItem> FindItemByKey( const BmString& key);
 	bool AddItemToList( BmListModelItem* item, BmListModelItem* parent=NULL);
 	void RemoveItemFromList( BmListModelItem* item);
-	BString RenameItem( const BString oldKey, const BString newKey);
-	BmRef<BmListModelItem> RemoveItemFromList( const BString& key);
+	BmString RenameItem( const BmString oldKey, const BmString newKey);
+	BmRef<BmListModelItem> RemoveItemFromList( const BmString& key);
 	virtual bool Store();
-	virtual const BString SettingsFileName() = 0;
-	static BMessage* Restore( const BString settingsFile);
+	virtual const BmString SettingsFileName() = 0;
+	static BMessage* Restore( const BmString settingsFile);
 	virtual void InitializeItems()								{	mInitCheck = B_OK; }
 	virtual void InstantiateItems( BMessage* archive)		{ mInitCheck = B_OK; }
 	virtual void Cleanup();
@@ -312,7 +312,7 @@ protected:
 	virtual void TellModelItemAdded( BmListModelItem* item);
 	virtual void TellModelItemRemoved( BmListModelItem* item);
 	virtual void TellModelItemUpdated( BmListModelItem* item, BmUpdFlags flags=UPD_ALL,
-												  const BString oldKey="");
+												  const BmString oldKey="");
 
 	// overrides of job-model base:
 	bool StartJob();

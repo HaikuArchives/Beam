@@ -6,7 +6,7 @@
 #include <Bitmap.h>
 #include <PopUpMenu.h>
 #include <MenuItem.h>
-#include <String.h>
+#include "BmString.h"
 #include <View.h>
 
 #include "BubbleHelper.h"
@@ -60,7 +60,7 @@ BmToolbarButton::~BmToolbarButton() {
 	( )
 		-	
 \*------------------------------------------------------------------------------*/
-void BmToolbarButton::AddActionVariation( const BString label, BMessage* msg) {
+void BmToolbarButton::AddActionVariation( const BmString label, BMessage* msg) {
 	mVariations.push_back( BmVariation( label, msg));
 }
 
@@ -73,7 +73,7 @@ void BmToolbarButton::CalcMaxSize( float& width, float& height, const char* labe
 	BFont font( be_plain_font);
 	float w, h;
 	bool showIcons = ThePrefs->GetBool( "ShowToolbarIcons", true);
-	BString labelMode   = ThePrefs->GetString( "ShowToolbarLabel", "Bottom");
+	BmString labelMode   = ThePrefs->GetString( "ShowToolbarLabel", "Bottom");
 	float labelWidth  = label ? font.StringWidth( label) : 0;
 	float labelHeight = label ? TheResources->FontLineHeight( &font) : 0;
 	float iconWidth   = (showIcons && image) ? image->Bounds().Width()  : 0;
@@ -112,7 +112,7 @@ BPicture* BmToolbarButton::CreatePicture( int32 mode, const char* label,
 	// Calc icon/label positions
 	BFont font( be_plain_font);
 	bool showIcons = ThePrefs->GetBool( "ShowToolbarIcons", true);
-	BString labelMode = ThePrefs->GetString( "ShowToolbarLabel", "Bottom");
+	BmString labelMode = ThePrefs->GetString( "ShowToolbarLabel", "Bottom");
 	float labelWidth = (label && labelMode != "Hide") ? font.StringWidth( label) : 0;
 	float labelHeight = (label && labelMode != "Hide") ? TheResources->FontLineHeight( &font) : 0;
 	float iconWidth  = (showIcons && image) ? image->Bounds().Width()  : 0;

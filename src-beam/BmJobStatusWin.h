@@ -150,7 +150,7 @@ public:
 	BHandler* GetControllerHandler() 	{ return this; }
 
 	// class-functions:
-	static bool AskUserForPwd( const BString accName, BString& pwd);
+	static bool AskUserForPwd( const BmString accName, BmString& pwd);
 
 private:
 	BStatusBar* mStatBar;				// shows current status of this connection
@@ -188,8 +188,8 @@ public:
 	BHandler* GetControllerHandler() 	{ return this; }
 
 	// class-functions:
-	static bool AskUserForPwd( const BString accName, BString& pwd);
-	static bool AskUserForPopAcc( const BString accName, BString& popAccName);
+	static bool AskUserForPwd( const BmString accName, BmString& pwd);
+	static bool AskUserForPopAcc( const BmString accName, BmString& popAccName);
 
 private:
 	BStatusBar* mStatBar;				// shows current status of this connection
@@ -222,7 +222,7 @@ class BmJobStatusWin : public BmWindow {
 
 	friend class BmJobStatusView;
 
-	typedef map<BString, BmJobStatusView*> JobMap;
+	typedef map<BmString, BmJobStatusView*> JobMap;
 
 public:
 	// creator-func, c'tors and d'tor:

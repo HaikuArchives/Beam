@@ -35,7 +35,7 @@
 #include <File.h>
 #include <InterfaceKit.h>
 #include <Message.h>
-#include <String.h>
+#include "BmString.h"
 
 #include <layout-all.h>
 
@@ -104,7 +104,7 @@ void BmMainMenuBar::MessageReceived( BMessage* msg) {
 	}
 	catch( exception &err) {
 		// a problem occurred, we tell the user:
-		BM_SHOWERR( BString(ControllerName()) << ":\n\t" << err.what());
+		BM_SHOWERR( BmString(ControllerName()) << ":\n\t" << err.what());
 	}
 }
 
@@ -115,7 +115,7 @@ void BmMainMenuBar::MessageReceived( BMessage* msg) {
 void BmMainMenuBar::JobIsDone( bool completed) {
 	if (completed && mAccountMenu) {
 		BmAutolock lock( DataModel()->ModelLocker());
-		lock.IsLocked()	 						|| BM_THROW_RUNTIME( BString() << ControllerName() << ":AddAllModelItems(): Unable to lock model");
+		lock.IsLocked()	 						|| BM_THROW_RUNTIME( BmString() << ControllerName() << ":AddAllModelItems(): Unable to lock model");
 		BMenuItem* old;
 		while( (old = mAccountMenu->RemoveItem( (int32)0)))
 			delete old;
@@ -125,7 +125,7 @@ void BmMainMenuBar::JobIsDone( bool completed) {
 		for( iter = model->begin();  iter != model->end();  ++iter, ++i) {
 			BmListModelItem* item = iter->second.Get();
 			BMessage* msg = new BMessage( BMM_CHECK_MAIL);
-			msg->AddString( BmPopAccountList::MSG_ITEMKEY, item->Key());
+			msg->AddString( BmPopAccountList::MSG_ITEMKEY, item->Key().String());
 			if (item) {
 				if (i<10)
 					mAccountMenu->AddItem( new BMenuItem( item->Key().String(), msg, '0'+i));
@@ -404,7 +404,7 @@ void BmMainWindow::BeginLife() {
 		mMailView->StartWatching( this, BM_NTFY_MAIL_VIEW);
 		mMailFolderView->StartJob( TheMailFolderList.Get());
 		mMainMenuBar->StartJob( ThePopAccountList.Get());
-		BM_LOG2( BM_LogMainWindow, BString("MainWindow begins life"));
+		BM_LOG2( BM_LogMainWindow, BmString("MainWindow begins life"));
 	} catch(...) {
 		nIsAlive = false;
 		throw;
@@ -524,7 +524,7 @@ void BmMainWindow::MessageReceived( BMessage* msg) {
 	}
 	catch( exception &err) {
 		// a problem occurred, we tell the user:
-		BM_SHOWERR( BString("MainWindow: ") << err.what());
+		BM_SHOWERR( BmString("MainWindow: ") << err.what());
 	}
 }
 
@@ -533,7 +533,7 @@ void BmMainWindow::MessageReceived( BMessage* msg) {
 		-	standard BeOS-behaviour, we allow a quit
 \*------------------------------------------------------------------------------*/
 bool BmMainWindow::QuitRequested() {
-	BM_LOG2( BM_LogMainWindow, BString("MainWindow has been asked to quit"));
+	BM_LOG2( BM_LogMainWindow, BmString("MainWindow has been asked to quit"));
 	if (bmApp->IsQuitting()) {
 		Hide();			// to hide a possible delay in WriteStateInfo() from the user
 		return true;
@@ -552,7 +552,7 @@ void BmMainWindow::Quit() {
 	mMailView->DetachModel();
 	mMailRefView->DetachModel();
 	mMailFolderView->DetachModel();
-	BM_LOG2( BM_LogMainWindow, BString("MainWindow has quit"));
+	BM_LOG2( BM_LogMainWindow, BmString("MainWindow has quit"));
 #ifdef BM_DEBUG_MEM
 	(new BAlert( "", "End of MainWindow, check mem-usage!!!", "OK"))->Go();
 #endif

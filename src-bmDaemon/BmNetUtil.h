@@ -31,13 +31,13 @@
 #ifndef _BmNetUtil_h
 #define _BmNetUtil_h
 
-#include <String.h>
+#include "BmString.h"
 
 /*------------------------------------------------------------------------------*\*\
 	utility function that finds out this hosts FQHN:
 \*------------------------------------------------------------------------------*/
-BString OwnFQDN();
-BString OwnDomain( BString fqdn="");
+BmString OwnFQDN();
+BmString OwnDomain( BmString fqdn="");
 
 /*------------------------------------------------------------------------------*\*\
 	utility function that checks if PPP is up and running:

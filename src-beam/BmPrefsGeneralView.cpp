@@ -191,18 +191,18 @@ BmPrefsGeneralView::BmPrefsGeneralView()
 	mNetBufSizeSendControl->SetDivider( divider);
 	mNetRecvTimeoutControl->SetDivider( divider);
 	
-	BString val;
+	BmString val;
 	val << ThePrefs->GetInt("MSecsBeforeMailMoverShows")/1000;
 	mMailMoverShowControl->SetText( val.String());
-	val = BString("") << ThePrefs->GetInt("MSecsBeforePopperRemove")/1000;
+	val = BmString("") << ThePrefs->GetInt("MSecsBeforePopperRemove")/1000;
 	mPopperRemoveControl->SetText( val.String());
-	val = BString("") << ThePrefs->GetInt("MSecsBeforeSmtpRemove")/1000;
+	val = BmString("") << ThePrefs->GetInt("MSecsBeforeSmtpRemove")/1000;
 	mSmtpRemoveControl->SetText( val.String());
-	val = BString("") << ThePrefs->GetInt("MSecsBeforeRemoveFailed", 5000*1000)/1000;
+	val = BmString("") << ThePrefs->GetInt("MSecsBeforeRemoveFailed", 5000*1000)/1000;
 	mRemoveFailedControl->SetText( val.String());
-	val = BString("") << ThePrefs->GetInt("NetSendBufferSize");
+	val = BmString("") << ThePrefs->GetInt("NetSendBufferSize");
 	mNetBufSizeSendControl->SetText( val.String());
-	val = BString("") << ThePrefs->GetInt("ReceiveTimeout");
+	val = BmString("") << ThePrefs->GetInt("ReceiveTimeout");
 	mNetRecvTimeoutControl->SetText( val.String());
 }
 
@@ -218,8 +218,8 @@ BmPrefsGeneralView::~BmPrefsGeneralView() {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BString BmPrefsGeneralView::MailboxButtonLabel() {
-	BString label( "Set mailbox path (currently '");
+BmString BmPrefsGeneralView::MailboxButtonLabel() {
+	BmString label( "Set mailbox path (currently '");
 	label << ThePrefs->GetString( "MailboxPath") << "')...";
 	return label;
 }
@@ -262,7 +262,7 @@ void BmPrefsGeneralView::Initialize() {
 	for( int32 i=0; i<=count; ++i) {
 		BMessage* msg = new BMessage( BM_WORKSPACE_SELECTED);
 		msg->AddInt32( MSG_WORKSPACE, i);
-		BString label;
+		BmString label;
 		if (i)
 			label << i;
 		else
@@ -455,7 +455,7 @@ void BmPrefsGeneralView::MessageReceived( BMessage* msg) {
 	}
 	catch( exception &err) {
 		// a problem occurred, we tell the user:
-		BM_SHOWERR( BString("PrefsView_") << Name() << ":\n\t" << err.what());
+		BM_SHOWERR( BmString("PrefsView_") << Name() << ":\n\t" << err.what());
 	}
 }
 

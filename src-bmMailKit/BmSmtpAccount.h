@@ -37,7 +37,7 @@
 
 #include <Archivable.h>
 #include <List.h>
-#include <String.h>
+#include "BmString.h"
 
 #include <socket.h>
 #ifdef BEAM_FOR_BONE
@@ -82,33 +82,33 @@ public:
 	
 	// native methods:
 	bool NeedsAuthViaPopServer();
-	bool SanityCheck( BString& complaint, BString& fieldName) const;
+	bool SanityCheck( BmString& complaint, BmString& fieldName) const;
 
 	// stuff needed for Archival:
 	status_t Archive( BMessage* archive, bool deep = true) const;
 	int16 ArchiveVersion() const			{ return nArchiveVersion; }
 
 	// getters:
-	inline const BString &Name() const 			{ return Key(); }
-	inline const BString &Username() const 	{ return mUsername; }
-	inline const BString &Password() const 	{ return mPassword; }
+	inline const BmString &Name() const 			{ return Key(); }
+	inline const BmString &Username() const 	{ return mUsername; }
+	inline const BmString &Password() const 	{ return mPassword; }
 	inline bool PwdStoredOnDisk() const			{ return mPwdStoredOnDisk; }
-	inline const BString &SMTPServer() const	{ return mSMTPServer; }
-	inline const BString &DomainToAnnounce() const 	{ return mDomainToAnnounce; }
-	inline const BString &AuthMethod() const 	{ return mAuthMethod; }
+	inline const BmString &SMTPServer() const	{ return mSMTPServer; }
+	inline const BmString &DomainToAnnounce() const 	{ return mDomainToAnnounce; }
+	inline const BmString &AuthMethod() const 	{ return mAuthMethod; }
 	inline uint16 PortNr() const			 		{ return mPortNr; }
-	inline const BString &PortNrString() const{ return mPortNrString; }
-	inline const BString &AccForSmtpAfterPop() const{ return mAccForSmtpAfterPop; }
+	inline const BmString &PortNrString() const{ return mPortNrString; }
+	inline const BmString &AccForSmtpAfterPop() const{ return mAccForSmtpAfterPop; }
 
 	// setters:
-	inline void Username( const BString &s) 	{ mUsername = s;   TellModelItemUpdated( UPD_ALL); }
-	inline void Password( const BString &s) 	{ mPassword = s;   TellModelItemUpdated( UPD_ALL); }
+	inline void Username( const BmString &s) 	{ mUsername = s;   TellModelItemUpdated( UPD_ALL); }
+	inline void Password( const BmString &s) 	{ mPassword = s;   TellModelItemUpdated( UPD_ALL); }
 	inline void PwdStoredOnDisk( bool b)		{ mPwdStoredOnDisk = b;   TellModelItemUpdated( UPD_ALL); }
-	inline void SMTPServer( const BString &s)	{ mSMTPServer = s;   TellModelItemUpdated( UPD_ALL); }
-	inline void DomainToAnnounce( const BString &s) 	{ mDomainToAnnounce = s;   TellModelItemUpdated( UPD_ALL); }
-	inline void AuthMethod( const BString &s) { mAuthMethod = s;   TellModelItemUpdated( UPD_ALL); }
-	inline void PortNr( uint16 i)					{ mPortNr = i; mPortNrString = BString()<<i;  TellModelItemUpdated( UPD_ALL); }
-	inline void AccForSmtpAfterPop( const BString &s)	{ mAccForSmtpAfterPop = s;   TellModelItemUpdated( UPD_ALL); }
+	inline void SMTPServer( const BmString &s)	{ mSMTPServer = s;   TellModelItemUpdated( UPD_ALL); }
+	inline void DomainToAnnounce( const BmString &s) 	{ mDomainToAnnounce = s;   TellModelItemUpdated( UPD_ALL); }
+	inline void AuthMethod( const BmString &s) { mAuthMethod = s;   TellModelItemUpdated( UPD_ALL); }
+	inline void PortNr( uint16 i)					{ mPortNr = i; mPortNrString = BmString()<<i;  TellModelItemUpdated( UPD_ALL); }
+	inline void AccForSmtpAfterPop( const BmString &s)	{ mAccForSmtpAfterPop = s;   TellModelItemUpdated( UPD_ALL); }
 
 	bool GetSMTPAddress( BNetAddress* addr) const;
 
@@ -124,17 +124,17 @@ private:
 	BmSmtpAccount( const BmSmtpAccount&);
 	BmSmtpAccount operator=( const BmSmtpAccount&);
 
-	//BString mName;					// name is stored in key (base-class)
-	BString mUsername;
-	BString mPassword;
-	BString mSMTPServer;				// 
-	BString mDomainToAnnounce;		// domain-name that will be used when we announce
+	//BmString mName;					// name is stored in key (base-class)
+	BmString mUsername;
+	BmString mPassword;
+	BmString mSMTPServer;				// 
+	BmString mDomainToAnnounce;		// domain-name that will be used when we announce
 											// ourselves to the server (HELO/EHLO)
-	BString mAuthMethod;				// authentication method to use
+	BmString mAuthMethod;				// authentication method to use
 	uint16 mPortNr;					// usually 25
-	BString mPortNrString;			// Port-Nr as String
+	BmString mPortNrString;			// Port-Nr as String
 	bool mPwdStoredOnDisk;			// store Passwords unsafely on disk?
-	BString mAccForSmtpAfterPop;	// pop-account to use for authentication
+	BmString mAccForSmtpAfterPop;	// pop-account to use for authentication
 
 };
 
@@ -156,10 +156,10 @@ public:
 	~BmSmtpAccountList();
 	
 	// native methods:
-	void SendQueuedMailFor( const BString accName);
+	void SendQueuedMailFor( const BmString accName);
 	
 	// overrides of listmodel base:
-	const BString SettingsFileName();
+	const BmString SettingsFileName();
 	void InstantiateItems( BMessage* archive);
 	int16 ArchiveVersion() const			{ return nArchiveVersion; }
 	

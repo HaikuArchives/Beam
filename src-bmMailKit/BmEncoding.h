@@ -27,9 +27,10 @@
 /*                                                                       */
 /*************************************************************************/
 
-
 #ifndef _BmEncoding_h
 #define _BmEncoding_h
+
+#include "BmString.h"
 
 /*------------------------------------------------------------------------------*\
 	BmEncoding 
@@ -45,25 +46,25 @@ namespace BmEncoding {
 	const uint32 BM_UTF8_CONVERSION = 0xFF;
 	const uint32 BM_UNKNOWN_ENCODING = 0xFFFF;
 
-	uint32 CharsetToEncoding( const BString& charset);
-	BString EncodingToCharset( const uint32 encoding);
+	uint32 CharsetToEncoding( const BmString& charset);
+	BmString EncodingToCharset( const uint32 encoding);
 
-	void ConvertToUTF8( uint32 srcEncoding, const BString& src, BString& dest);
-	void ConvertFromUTF8( uint32 destEncoding, const BString& src, BString& dest);
+	void ConvertToUTF8( uint32 srcEncoding, const BmString& src, BmString& dest);
+	void ConvertFromUTF8( uint32 destEncoding, const BmString& src, BmString& dest);
 
-	void Encode( BString encodingStyle, const BString& src, BString& dest,
+	void Encode( BmString encodingStyle, const BmString& src, BmString& dest,
 					 bool isEncodedWord=false);
-	void Decode( BString encodingStyle, const BString& src, BString& dest,
+	void Decode( BmString encodingStyle, const BmString& src, BmString& dest,
 					 bool isEncodedWord);
-//	int32 DecodedLength( const BString& encodingStyle, const char* text, int32 length);
+//	int32 DecodedLength( const BmString& encodingStyle, const char* text, int32 length);
 
-	BString ConvertHeaderPartToUTF8( const BString& headerPart, uint32 defaultEncoding);
-	BString ConvertUTF8ToHeaderPart( const BString& utf8text, uint32 encoding,
+	BmString ConvertHeaderPartToUTF8( const BmString& headerPart, uint32 defaultEncoding);
+	BmString ConvertUTF8ToHeaderPart( const BmString& utf8text, uint32 encoding,
 												bool useQuotedPrintableIfNeeded,
 												bool fold=false, int32 fieldLen=0);
 	
-	bool NeedsEncoding( const BString& charsetString);
-	bool IsCompatibleWithText( const BString& s);
+	bool NeedsEncoding( const BmString& charsetString);
+	bool IsCompatibleWithText( const BmString& s);
 };
 
 #endif

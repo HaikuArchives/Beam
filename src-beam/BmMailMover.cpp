@@ -52,7 +52,7 @@ static const float GRAIN = 1.0;
 	BmMailMover()
 		-	contructor
 \*------------------------------------------------------------------------------*/
-BmMailMover::BmMailMover( const BString& name, BList* refList, BmMailFolder* destFolder)
+BmMailMover::BmMailMover( const BmString& name, BList* refList, BmMailFolder* destFolder)
 	:	BmJobModel( name)
 	,	mRefList( refList)
 	,	mDestFolder( destFolder)
@@ -95,33 +95,33 @@ bool BmMailMover::StartJob() {
 			if (ref->directory == destNodeRef.node && ref->device == destNodeRef.device)
 				continue;						// no move neccessary, already at 'new' home
 			(err = entry.SetTo( ref)) == B_OK
-													||	BM_THROW_RUNTIME(BString("couldn't create entry for <")<<ref->name<<"> \n\nError:" << strerror(err));
+													||	BM_THROW_RUNTIME(BmString("couldn't create entry for <")<<ref->name<<"> \n\nError:" << strerror(err));
 			err = entry.MoveTo( &destDir);
 			if ( err == B_FILE_EXISTS) {
 				// increment counter until we have found a unique name:
 				int32 counter=1;
-				while ( (err = entry.MoveTo( &destDir, (BString(ref->name)<<"_"<<counter++).String())) == B_FILE_EXISTS)
+				while ( (err = entry.MoveTo( &destDir, (BmString(ref->name)<<"_"<<counter++).String())) == B_FILE_EXISTS)
 					;
 			}
 			if (err != B_OK)
-				throw BM_runtime_error(BString("couldn't move <")<<ref->name<<"> \n\nError:" << strerror(err));
+				throw BM_runtime_error(BmString("couldn't move <")<<ref->name<<"> \n\nError:" << strerror(err));
 			if ((i+1)%(int)GRAIN == 0) {
 				entry.GetName( filename);
-				BString currentCount = BString()<<i<<" of "<<refCount;
+				BmString currentCount = BmString()<<i<<" of "<<refCount;
 				UpdateStatus( delta, filename, currentCount.String());
 			}
 			snooze( 20*1000);					// give node-monitor a chance to keep up... 
 													// (it will drop messages if we go too fast)
 		}
 		entry.GetName( filename);
-		BString currentCount = BString()<<refCount<<" of "<<refCount;
+		BmString currentCount = BmString()<<refCount<<" of "<<refCount;
 		UpdateStatus( delta, filename, currentCount.String());
 	}
 	catch( BM_runtime_error &err) {
 		// a problem occurred, we tell the user:
-		BString errstr = err.what();
-		BString text = Name() << "\n\n" << errstr;
-		BM_SHOWERR( BString("BmMailMover: ") << text);
+		BmString errstr = err.what();
+		BmString text = Name() << "\n\n" << errstr;
+		BM_SHOWERR( BmString("BmMailMover: ") << text);
 		return false;
 	}
 	return true;

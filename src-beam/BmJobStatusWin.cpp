@@ -130,7 +130,7 @@ void BmJobStatusView::MessageReceived( BMessage* msg) {
 				break;
 			}
 			case BM_TIME_TO_SHOW: {
-				BM_LOG2( BM_LogModelController, BString("Controller <") << ControllerName() << "> has been told to show its view");
+				BM_LOG2( BM_LogModelController, BmString("Controller <") << ControllerName() << "> has been told to show its view");
 				BmAutolock lock( TheJobStatusWin);
 				lock.IsLocked()				|| BM_THROW_RUNTIME( "JobStatusView(): could not lock window");
 				if (!mIsAutoJob) {
@@ -142,7 +142,7 @@ void BmJobStatusView::MessageReceived( BMessage* msg) {
 				break;
 			}
 			case BM_TIME_TO_REMOVE: {
-				BM_LOG2( BM_LogModelController, BString("Controller <") << ControllerName() << "> has been told to remove its view");
+				BM_LOG2( BM_LogModelController, BmString("Controller <") << ControllerName() << "> has been told to remove its view");
 				BmAutolock lock( TheJobStatusWin);
 				lock.IsLocked()				|| BM_THROW_RUNTIME( "JobStatusView(): could not lock window");
 				DetachModel();
@@ -166,7 +166,7 @@ void BmJobStatusView::MessageReceived( BMessage* msg) {
 	}
 	catch( exception &err) {
 		// a problem occurred, we tell the user:
-		BM_SHOWERR( BString("JobStatusView: ") << err.what());
+		BM_SHOWERR( BmString("JobStatusView: ") << err.what());
 	}
 }
 
@@ -179,7 +179,7 @@ void BmJobStatusView::StartJob( BmJobModel* model, bool startInNewThread,
 	delete mShowMsgRunner;
 	mShowMsgRunner = NULL;
 	BMessage* timerMsg = new BMessage( BM_TIME_TO_SHOW);
-	BM_LOG2( BM_LogModelController, BString("Controller <") << ControllerName() << "> sets timer-to-show to "<<MSecsBeforeShow()<<" msecs");
+	BM_LOG2( BM_LogModelController, BmString("Controller <") << ControllerName() << "> sets timer-to-show to "<<MSecsBeforeShow()<<" msecs");
 	mShowMsgRunner = new BMessageRunner( BMessenger( this), timerMsg, 
 													 MSecsBeforeShow(), 1);
 	inherited::StartJob( model, startInNewThread, jobSpecifier);
@@ -193,7 +193,7 @@ void BmJobStatusView::StartJob( BmJobModel* model, bool startInNewThread,
 		-	deletes this job
 \*------------------------------------------------------------------------------*/
 void BmJobStatusView::JobIsDone( bool completed) {
-	BM_LOG2( BM_LogModelController, BString("Controller <") << ControllerName() << "> has been told that job " << ModelName() << " is done");
+	BM_LOG2( BM_LogModelController, BmString("Controller <") << ControllerName() << "> has been told that job " << ModelName() << " is done");
 	if (ThePrefs->GetBool("DynamicStatusWin") || AlwaysRemoveWhenDone()) {
 		int32 timeToWait = completed 
 									? (TheJobStatusWin->IsHidden() ? 1 : MSecsBeforeRemove())
@@ -201,7 +201,7 @@ void BmJobStatusView::JobIsDone( bool completed) {
 		delete mRemoveMsgRunner;
 		mRemoveMsgRunner = NULL;
 		BMessage* timerMsg = new BMessage( BM_TIME_TO_REMOVE);
-		BM_LOG2( BM_LogModelController, BString("Controller <") << ControllerName() << "> sets timer-to-remove to "<<MSecsBeforeRemove()<<" msecs");
+		BM_LOG2( BM_LogModelController, BmString("Controller <") << ControllerName() << "> sets timer-to-remove to "<<MSecsBeforeRemove()<<" msecs");
 		mRemoveMsgRunner = new BMessageRunner( BMessenger( this), timerMsg, timeToWait, 1);
 	}
 }
@@ -231,7 +231,7 @@ BmMailMoverView::BmMailMoverView( const char* name)
 	,	mBottomLabel( NULL)
 {
 	mMSecsBeforeShow = MAX(10,ThePrefs->GetInt( "MSecsBeforeMailMoverShows"));
-	BString labelText = BString("To: ") << name;
+	BmString labelText = BmString("To: ") << name;
 	MView* view = new VGroup(
 		new MBViewWrapper(
 			mStatBar = new BStatusBar( BRect(), name, "Moving: ", ""), true, false, false
@@ -259,11 +259,11 @@ BmMailMoverView::~BmMailMoverView() {
 		-	creates and returns a new job-model, data may contain constructor args
 \*------------------------------------------------------------------------------*/
 BmJobModel* BmMailMoverView::CreateJobModel( BMessage* msg) {
-	BString key = FindMsgString( msg, BmJobModel::MSG_MODEL);
+	BmString key = FindMsgString( msg, BmJobModel::MSG_MODEL);
 	BmRef<BmListModelItem> item = TheMailFolderList->FindItemByKey( key);
 	BmMailFolder* folder;
 	(folder = dynamic_cast<BmMailFolder*>( item.Get()))
-													|| BM_THROW_INVALID( BString("Could not find BmMailFolder ") << key);
+													|| BM_THROW_INVALID( BmString("Could not find BmMailFolder ") << key);
 	BList* refList = new BList;
 	entry_ref eref;
 	for( int i=0; msg->FindRef( BmMailMover::MSG_REFS, i, &eref)==B_OK; ++i) {
@@ -285,8 +285,8 @@ void BmMailMoverView::ResetController() {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmMailMoverView::UpdateModelView( BMessage* msg) {
-	BString name = FindMsgString( msg, BmMailMover::MSG_MOVER);
-	BString domain = FindMsgString( msg, BmJobModel::MSG_DOMAIN);
+	BmString name = FindMsgString( msg, BmMailMover::MSG_MOVER);
+	BmString domain = FindMsgString( msg, BmJobModel::MSG_DOMAIN);
 
 	float delta = FindMsgFloat( msg, BmMailMover::MSG_DELTA);
 	const char* leading = NULL;
@@ -294,7 +294,7 @@ void BmMailMoverView::UpdateModelView( BMessage* msg) {
 	const char* trailing = NULL;
 	msg->FindString( BmMailMover::MSG_TRAILING, &trailing);
 
-	BM_LOG3( BM_LogJobWin, BString("Updating interface for ") << name);
+	BM_LOG3( BM_LogJobWin, BmString("Updating interface for ") << name);
 
 	BmAutolock lock( BmJobStatusWin::theInstance);
 	if (lock.IsLocked()) {
@@ -356,11 +356,11 @@ BmPopperView::~BmPopperView() {
 		-	creates and returns a new job-model, data may contain constructor args
 \*------------------------------------------------------------------------------*/
 BmJobModel* BmPopperView::CreateJobModel( BMessage* msg) {
-	BString accName = FindMsgString( msg, BmJobModel::MSG_JOB_NAME);
+	BmString accName = FindMsgString( msg, BmJobModel::MSG_JOB_NAME);
 	BmRef<BmListModelItem> item = ThePopAccountList->FindItemByKey( accName);
 	BmPopAccount* account;
 	(account = dynamic_cast<BmPopAccount*>( item.Get()))
-													|| BM_THROW_INVALID( BString("Could not find BmPopAccount ") << accName);
+													|| BM_THROW_INVALID( BmString("Could not find BmPopAccount ") << accName);
 	BmPopper* popper = new BmPopper( account->Name(), account);
 	popper->SetPwdAcquisitorFunc( AskUserForPwd);
 	return popper;
@@ -382,8 +382,8 @@ void BmPopperView::ResetController() {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmPopperView::UpdateModelView( BMessage* msg) {
-	BString name = FindMsgString( msg, BmPopper::MSG_POPPER);
-	BString domain = FindMsgString( msg, BmJobModel::MSG_DOMAIN);
+	BmString name = FindMsgString( msg, BmPopper::MSG_POPPER);
+	BmString domain = FindMsgString( msg, BmJobModel::MSG_DOMAIN);
 
 	float delta = FindMsgFloat( msg, BmPopper::MSG_DELTA);
 	const char* leading = NULL;
@@ -391,7 +391,7 @@ void BmPopperView::UpdateModelView( BMessage* msg) {
 	const char* trailing = NULL;
 	msg->FindString( BmPopper::MSG_TRAILING, &trailing);
 
-	BM_LOG3( BM_LogJobWin, BString("Updating interface for ") << name);
+	BM_LOG3( BM_LogJobWin, BmString("Updating interface for ") << name);
 
 	BmAutolock lock( BmJobStatusWin::theInstance);
 	if (lock.IsLocked()) {
@@ -416,9 +416,9 @@ void BmPopperView::UpdateModelView( BMessage* msg) {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-bool BmPopperView::AskUserForPwd( const BString accName, BString& pwd) {
+bool BmPopperView::AskUserForPwd( const BmString accName, BmString& pwd) {
 	// ask user about password:
-	BString text = BString( "Please enter password for POP-Account <")
+	BmString text = BmString( "Please enter password for POP-Account <")
 					   << accName << ">:";
 	TextEntryAlert* alert = new TextEntryAlert( "Info needed", text.String(),
 									 						  "", "Cancel", "OK");
@@ -466,7 +466,7 @@ void BmPopperView::JobIsDone( bool completed) {
 		appDir.GetEntry( &appDirEntry);
 		BPath appPath;
 		appDirEntry.GetPath( &appPath);
-		BString filterCmd;
+		BmString filterCmd;
 		filterCmd << appPath.Path() << "/filter";
 		system( filterCmd.String());
 	}
@@ -524,11 +524,11 @@ BmSmtpView::~BmSmtpView() {
 		-	creates and returns a new job-model, data may contain constructor args
 \*------------------------------------------------------------------------------*/
 BmJobModel* BmSmtpView::CreateJobModel( BMessage* msg) {
-	BString accName = FindMsgString( msg, BmJobModel::MSG_JOB_NAME);
+	BmString accName = FindMsgString( msg, BmJobModel::MSG_JOB_NAME);
 	BmRef<BmListModelItem> item = TheSmtpAccountList->FindItemByKey( accName);
 	BmSmtpAccount* account;
 	(account = dynamic_cast<BmSmtpAccount*>( item.Get()))
-													|| BM_THROW_INVALID( BString("Could not find BmSmtpAccount ") << accName);
+													|| BM_THROW_INVALID( BmString("Could not find BmSmtpAccount ") << accName);
 	BmSmtp* smtp = new BmSmtp( account->Name(), account);
 	smtp->SetPwdAcquisitorFunc( AskUserForPwd);
 	smtp->SetPopAccAcquisitorFunc( AskUserForPopAcc);
@@ -550,8 +550,8 @@ void BmSmtpView::ResetController() {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmSmtpView::UpdateModelView( BMessage* msg) {
-	BString name = FindMsgString( msg, BmSmtp::MSG_SMTP);
-	BString domain = FindMsgString( msg, BmJobModel::MSG_DOMAIN);
+	BmString name = FindMsgString( msg, BmSmtp::MSG_SMTP);
+	BmString domain = FindMsgString( msg, BmJobModel::MSG_DOMAIN);
 
 	float delta = FindMsgFloat( msg, BmSmtp::MSG_DELTA);
 	const char* leading = NULL;
@@ -559,7 +559,7 @@ void BmSmtpView::UpdateModelView( BMessage* msg) {
 	const char* trailing = NULL;
 	msg->FindString( BmSmtp::MSG_TRAILING, &trailing);
 
-	BM_LOG3( BM_LogJobWin, BString("Updating interface for ") << name);
+	BM_LOG3( BM_LogJobWin, BmString("Updating interface for ") << name);
 
 	BmAutolock lock( BmJobStatusWin::theInstance);
 	if (lock.IsLocked()) {
@@ -577,9 +577,9 @@ void BmSmtpView::UpdateModelView( BMessage* msg) {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-bool BmSmtpView::AskUserForPwd( const BString accName, BString& pwd) {
+bool BmSmtpView::AskUserForPwd( const BmString accName, BmString& pwd) {
 	// ask user about password:
-   BString text = BString( "Please enter password for SMTP-account <")
+   BmString text = BmString( "Please enter password for SMTP-account <")
    				   << accName << ">:";
 	TextEntryAlert* alert = new TextEntryAlert( "Info needed", text.String(),
 									 						  "", "Cancel", "OK");
@@ -601,9 +601,9 @@ bool BmSmtpView::AskUserForPwd( const BString accName, BString& pwd) {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-bool BmSmtpView::AskUserForPopAcc( const BString accName, BString& popAccName) {
+bool BmSmtpView::AskUserForPopAcc( const BmString accName, BmString& popAccName) {
 	// ask user about password:
-   BString text = BString( "Please select the POP3-account\nto be used in authentication\nfor SMTP-account <")
+   BmString text = BmString( "Please select the POP3-account\nto be used in authentication\nfor SMTP-account <")
    				   << accName << ">:";
 	BList list;
 	BmModelItemMap::const_iterator iter;
@@ -692,14 +692,14 @@ bool BmJobStatusWin::QuitRequested() {
 	lock.IsLocked()						|| BM_THROW_RUNTIME( "QuitRequested(): could not lock window");
 	while( !IsHidden())
 		Hide();
-	BM_LOG2( BM_LogJobWin, BString("JobStatusWin has been asked to quit; stopping all jobs"));
+	BM_LOG2( BM_LogJobWin, BmString("JobStatusWin has been asked to quit; stopping all jobs"));
 	JobMap::iterator iter;
 	for( iter = mActiveJobs.begin(); iter != mActiveJobs.end(); ++iter) {
 		BmJobStatusView* jobView = iter->second;
 		if (jobView)
 			jobView->StopJob();
 	}
-	BM_LOG2( BM_LogJobWin, BString("JobStatusWin has stopped all jobs"));
+	BM_LOG2( BM_LogJobWin, BmString("JobStatusWin has stopped all jobs"));
 	return bmApp->IsQuitting();
 }
 
@@ -709,7 +709,7 @@ bool BmJobStatusWin::QuitRequested() {
 \*------------------------------------------------------------------------------*/
 void BmJobStatusWin::Quit() {
 	inherited::Quit();
-	BM_LOG2( BM_LogJobWin, BString("JobStatusWin has quit"));
+	BM_LOG2( BM_LogJobWin, BmString("JobStatusWin has quit"));
 }
 
 /*------------------------------------------------------------------------------*\
@@ -734,7 +734,7 @@ void BmJobStatusWin::MessageReceived(BMessage* msg) {
 	}
 	catch( exception &err) {
 		// a problem occurred, we tell the user:
-		BM_SHOWERR( BString("JobStatusWindow: ") << err.what());
+		BM_SHOWERR( BmString("JobStatusWindow: ") << err.what());
 	}
 }
 
@@ -748,7 +748,7 @@ void BmJobStatusWin::MessageReceived(BMessage* msg) {
 void BmJobStatusWin::AddJob( BMessage* msg) {
 	BM_assert( msg);
 
-	BString name = FindMsgString( msg, BmJobModel::MSG_JOB_NAME);
+	BmString name = FindMsgString( msg, BmJobModel::MSG_JOB_NAME);
 	int32 jobSpecifier;
 	if (msg->FindInt32( BmJobModel::MSG_JOB_SPEC, &jobSpecifier) != B_OK)
 		jobSpecifier = BmJobModel::BM_DEFAULT_JOB;
@@ -757,7 +757,7 @@ void BmJobStatusWin::AddJob( BMessage* msg) {
 		inNewThread = true;
 	BmJobStatusView* controller = NULL;
 
-	BM_LOG( BM_LogJobWin, BString("Adding job ") << name);
+	BM_LOG( BM_LogJobWin, BmString("Adding job ") << name);
 
 	BmAutolock lock( this);
 	lock.IsLocked()						|| BM_THROW_RUNTIME( "AddJob(): could not lock window");
@@ -768,14 +768,14 @@ void BmJobStatusWin::AddJob( BMessage* msg) {
 		controller = (*interfaceIter).second;
 		if (controller->IsJobRunning()) {
 			// job is still running, so we better don't disturb:
-			BM_LOG( BM_LogJobWin, BString("JobStatus ") << name << " still active, add aborted.");
+			BM_LOG( BM_LogJobWin, BmString("JobStatus ") << name << " still active, add aborted.");
 			return;
 		}
 	}
 
 	if (!controller)
 	{	// job is inactive, so we create a new controller for it:
-		BM_LOG2( BM_LogJobWin, BString("Creating new view for ") << name);
+		BM_LOG2( BM_LogJobWin, BmString("Creating new view for ") << name);
 		switch( msg->what) {
 			case BM_JOBWIN_POP: {
 				bool autoMode = msg->FindBool( BmPopAccountList::MSG_AUTOCHECK);
@@ -807,7 +807,7 @@ void BmJobStatusWin::AddJob( BMessage* msg) {
 		// we are in STATIC-mode, where inactive jobs are shown. We just
 		// have to reactivate the controller.
 		// This is done by the controllers Reset()-method:
-		BM_LOG2( BM_LogJobWin, BString("Reactivating view of ") << name);
+		BM_LOG2( BM_LogJobWin, BmString("Reactivating view of ") << name);
 		controller->ResetController();
 	}
 
@@ -815,7 +815,7 @@ void BmJobStatusWin::AddJob( BMessage* msg) {
 	BmJobModel* job = controller->CreateJobModel( msg);
 
 	// ...and activate the Job via its controller:
-	BM_LOG2( BM_LogJobWin, BString("Starting job thread "));
+	BM_LOG2( BM_LogJobWin, BmString("Starting job thread "));
 	controller->StartJob( job, inNewThread, jobSpecifier);
 }
 
@@ -830,7 +830,7 @@ void BmJobStatusWin::AddJob( BMessage* msg) {
 void BmJobStatusWin::RemoveJob( const char* name) {
 	BM_assert( name);
 
-	BM_LOG( BM_LogJobWin, BString("Removing job ") << name);
+	BM_LOG( BM_LogJobWin, BmString("Removing job ") << name);
 
 	BmAutolock lock( this);
 	lock.IsLocked()						|| BM_THROW_RUNTIME( "RemoveJob(): could not lock window");

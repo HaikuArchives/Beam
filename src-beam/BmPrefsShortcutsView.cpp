@@ -88,19 +88,19 @@ void BmShortcutControl::KeyDown(const char *bytes, int32 numBytes) {
 	if (numBytes == 1) {
 		BMessage* currMsg = Window()->CurrentMessage();
 		int32 rawKey = currMsg->FindInt32( "raw_char");
-		BString key;
-		BString legalKeys("abcdefghijklmnopqrstuvwxyz0123456789<>@#.,:;+-/*^");
+		BmString key;
+		BmString legalKeys("abcdefghijklmnopqrstuvwxyz0123456789<>@#.,:;+-/*^");
 		if (legalKeys.FindFirst((char)rawKey) != B_ERROR) {
-			key = BString("") << (char)rawKey;
-			BmToUpper( key);
+			key.SetTo( (char)rawKey, 1);
+			key.ToUpper();
 		} else if (rawKey==B_RIGHT_ARROW)
-			key = BString("<RIGHT_ARROW>");
+			key = BmString("<RIGHT_ARROW>");
 		else if (rawKey==B_LEFT_ARROW)
-			key = BString("<LEFT_ARROW>");
+			key = BmString("<LEFT_ARROW>");
 		else if (rawKey==B_UP_ARROW)
-			key = BString("<UP_ARROW>");
+			key = BmString("<UP_ARROW>");
 		else if (rawKey==B_DOWN_ARROW)
-			key = BString("<DOWN_ARROW>");
+			key = BmString("<DOWN_ARROW>");
 		if (key.Length()) {
 			int32 mods = currMsg->FindInt32("modifiers");
 			if (mods & B_SHIFT_KEY)
@@ -214,7 +214,7 @@ void BmPrefsShortcutsView::MessageReceived( BMessage* msg) {
 				msg->FindPointer( "source", (void**)&srcView);
 				BmTextControl* source = dynamic_cast<BmTextControl*>( srcView);
 				if (source == mShortcutControl) {
-					BString sc = mShortcutControl->Text();
+					BmString sc = mShortcutControl->Text();
 					ThePrefs->SetShortcutFor( mNameControl->Text(), sc.String());
 					int32 index = mListView->CurrentSelection( 0);
 					if (index != -1) {
@@ -232,7 +232,7 @@ void BmPrefsShortcutsView::MessageReceived( BMessage* msg) {
 	}
 	catch( exception &err) {
 		// a problem occurred, we tell the user:
-		BM_SHOWERR( BString("PrefsView_") << Name() << ":\n\t" << err.what());
+		BM_SHOWERR( BmString("PrefsView_") << Name() << ":\n\t" << err.what());
 	}
 }
 
@@ -250,8 +250,8 @@ void BmPrefsShortcutsView::ShowShortcut( int32 selection) {
 	} else {
 		CLVEasyItem* scItem = dynamic_cast<CLVEasyItem*>(mListView->ItemAt( selection));
 		if (scItem) {
-			BString name = scItem->GetColumnContentText( 0);
-			BString sc = ThePrefs->GetShortcutFor( name.String());
+			BmString name = scItem->GetColumnContentText( 0);
+			BmString sc = ThePrefs->GetShortcutFor( name.String());
 			mNameControl->SetTextSilently( name.String());
 			mShortcutControl->SetTextSilently( sc.String());
 		}

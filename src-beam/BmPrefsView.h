@@ -32,7 +32,7 @@
 #define _BmPrefsView_h
 
 #include <Message.h>
-#include <String.h>
+#include "BmString.h"
 #include <View.h>
 
 #include <layout.h>
@@ -51,7 +51,7 @@ class BmPrefsView : public MBorder {
 
 public:
 	// c'tors and d'tor:
-	BmPrefsView( BString label);
+	BmPrefsView( BmString label);
 	virtual ~BmPrefsView();
 
 	// native methods:

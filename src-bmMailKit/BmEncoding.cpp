@@ -83,9 +83,9 @@ BmEncoding::BmEncodingPair BmEncoding::BM_Encodings[] = {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-uint32 BmEncoding::CharsetToEncoding( const BString& charset) {
-	BString set( charset);
-	BmToLower( set);
+uint32 BmEncoding::CharsetToEncoding( const BmString& charset) {
+	BmString set( charset);
+	set.ToLower();
 	for( int i=0; BM_Encodings[i].charset; ++i)
 		if (set == BM_Encodings[i].charset)
 			return( BM_Encodings[i].encoding);
@@ -96,7 +96,7 @@ uint32 BmEncoding::CharsetToEncoding( const BString& charset) {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BString BmEncoding::EncodingToCharset( const uint32 encoding) {
+BmString BmEncoding::EncodingToCharset( const uint32 encoding) {
 	for( int i=0; BM_Encodings[i].charset; ++i)
 		if (encoding == BM_Encodings[i].encoding)
 			return( BM_Encodings[i].charset);
@@ -107,8 +107,8 @@ BString BmEncoding::EncodingToCharset( const uint32 encoding) {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmEncoding::ConvertToUTF8( uint32 srcEncoding, const BString& src,
-										  BString& dest) {
+void BmEncoding::ConvertToUTF8( uint32 srcEncoding, const BmString& src,
+										  BmString& dest) {
 	if (srcEncoding == BM_UTF8_CONVERSION) {
 		// source already is UTF8...
 		dest = src;
@@ -134,7 +134,7 @@ void BmEncoding::ConvertToUTF8( uint32 srcEncoding, const BString& src,
 			int32 destLen = buflen-1;		// to allow for the delimiting '\0' (see below)
 			(st=convert_to_utf8( srcEncoding, src.String(), &srcLen, destBuf, 
 										&destLen, &state)) == B_OK
-														|| BM_THROW_RUNTIME( BString("error in convert_to_utf8(): ") << strerror( st));
+														|| BM_THROW_RUNTIME( BmString("error in convert_to_utf8(): ") << strerror( st));
 			if (srcLen == srcbuflen || lastSrcLen == srcLen) {
 				finished = true;
 				destBuf[destLen] = '\0';
@@ -152,8 +152,8 @@ void BmEncoding::ConvertToUTF8( uint32 srcEncoding, const BString& src,
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmEncoding::ConvertFromUTF8( uint32 destEncoding, const BString& src, 
-											 BString& dest) {
+void BmEncoding::ConvertFromUTF8( uint32 destEncoding, const BmString& src, 
+											 BmString& dest) {
 	if (destEncoding == BM_UTF8_CONVERSION) {
 		// source already is UTF8...
 		dest = src;
@@ -178,7 +178,7 @@ void BmEncoding::ConvertFromUTF8( uint32 destEncoding, const BString& src,
 			int32 srcLen = srcbuflen;
 			int32 destLen = buflen-1;
 			(st=convert_from_utf8( destEncoding, src.String(), &srcLen, destBuf, &destLen, &state)) == B_OK
-														|| BM_THROW_RUNTIME( BString("error in convert_from_utf8(): ") << strerror( st));
+														|| BM_THROW_RUNTIME( BmString("error in convert_from_utf8(): ") << strerror( st));
 			if (srcLen == srcbuflen || lastSrcLen == srcLen) {
 				finished = true;
 				destBuf[destLen] = '\0';
@@ -197,7 +197,7 @@ void BmEncoding::ConvertFromUTF8( uint32 destEncoding, const BString& src,
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmEncoding::Encode( BString encodingStyle, const BString& src, BString& dest, 
+void BmEncoding::Encode( BmString encodingStyle, const BmString& src, BmString& dest, 
 								 bool isEncodedWord) {
 	int32 srcLen = src.Length();
 	dest.Truncate(0);
@@ -214,10 +214,8 @@ void BmEncoding::Encode( BString encodingStyle, const BString& src, BString& des
 							// in bodies, the underscore is safe, i.e. it need not be encoded.
 	if (encodingStyle.ICompare("q")==0 || encodingStyle.ICompare("quoted-printable")==0) {
 		// quoted printable:
-		BM_LOG( BM_LogMailParse, BString("starting to encode quoted-printable of ") << srcLen << " bytes");
-		int32 destLen = srcLen*3;
-		char* buf = dest.LockBuffer( destLen+1);
-		int32 destCount = 0;
+		BM_LOG( BM_LogMailParse, BmString("starting to encode quoted-printable of ") << srcLen << " bytes");
+		BmStrOStream tempIO( MAX(128,srcLen*1.2), 1.2);
 		int32 qpLineLen = 0;
 		char add[4];
 		int32 addLen = 0;
@@ -250,16 +248,14 @@ void BmEncoding::Encode( BString encodingStyle, const BString& src, BString& des
 					}
 				}
 			} else if (c == '\r' && *(p+1) == '\n') {
-				buf[destCount++] = '\r';
-				buf[destCount++] = '\n';
+				tempIO.Write( "\r\n", 2);
 				qpLineLen = 0;
 				p++;								// skip over '\n'
 				continue;
 			} else if (c == '\n') {
 				// we encountered a newline without a preceding <CR>, we add that
 				// [in effect converting local newline (LF) to network newline (CRLF)]:
-				buf[destCount++] = '\r';
-				buf[destCount++] = '\n';
+				tempIO.Write( "\r\n", 2);
 				qpLineLen = 0;
 				continue;
 			} else {
@@ -270,23 +266,19 @@ void BmEncoding::Encode( BString encodingStyle, const BString& src, BString& des
 			}
 			if (!isEncodedWord && qpLineLen + addLen >= BM_MAX_LINE_LEN) {
 				// insert soft linebreak:
-				buf[destCount++] = '=';
-				buf[destCount++] = '\r';
-				buf[destCount++] = '\n';
+				tempIO.Write( "=\r\n", 3);
 				qpLineLen = 0;
 			}
-			memcpy( buf+destCount, add, addLen);
-			destCount += addLen;
+			tempIO.Write( add, addLen);
 			qpLineLen += addLen;
 		}
-		buf[destCount] = '\0';
-		dest.UnlockBuffer( destCount);
+		dest.Adopt( tempIO.TheString());
 		BM_LOG( BM_LogMailParse, "qp-encode: done");
 	} else if (encodingStyle.ICompare("b")==0 || encodingStyle.ICompare("base64")==0) {
 		// base64:
-		BM_LOG( BM_LogMailParse, BString("starting to encode base64 of ") << srcLen << " bytes");
+		BM_LOG( BM_LogMailParse, BmString("starting to encode base64 of ") << srcLen << " bytes");
 		int32 destLen = srcLen*5/3;		// just to be sure... (need to be a little over 4/3)
-		char* buf = dest.LockBuffer( destLen+1);
+		char* buf = dest.LockBuffer( destLen);
 		destLen = encode64( buf, src.String(), src.Length());
 		destLen = MAX( 0, destLen);		// if errors should occur we don't want to crash
 		buf[destLen] = '\0';
@@ -295,12 +287,12 @@ void BmEncoding::Encode( BString encodingStyle, const BString& src, BString& des
 	} else if (encodingStyle.ICompare("7bit")==0 || encodingStyle.ICompare("8bit")==0) {
 		// replace local newline (LF) by network newline (CRLF):
 		BM_LOG2( BM_LogMailParse, "7bit/8bit-encode: converting linebreaks");
-		ConvertLinebreaksToCRLF( src, dest);
+		dest.ConvertLinebreaksToCRLF( &src);
 		BM_LOG( BM_LogMailParse, "7bit/8bit-encode: done");
 	} else {
 		if (encodingStyle.ICompare("binary")!=0) {
 			// oops, we don't know this one:
-			ShowAlert( BString("Encode(): Unrecognized encoding-style <")<<encodingStyle<<"> found.\nText will be passed through (not encoded).");
+			ShowAlert( BmString("Encode(): Unrecognized encoding-style <")<<encodingStyle<<"> found.\nText will be passed through (not encoded).");
 		}
 		// no encoding needed/possible (binary or unknown):
 		dest = src;
@@ -311,22 +303,22 @@ void BmEncoding::Encode( BString encodingStyle, const BString& src, BString& des
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmEncoding::Decode( BString encodingStyle, const BString& src, BString& dest, 
+void BmEncoding::Decode( BmString encodingStyle, const BmString& src, BmString& dest, 
 								 bool isEncodedWord) {
 	dest.Truncate(0);
 	Regexx rx;
 	if (encodingStyle.ICompare("q")==0 || encodingStyle.ICompare("quoted-printable")==0) {
 		// quoted printable:
-		BM_LOG( BM_LogMailParse, BString("starting to decode quoted-printable of ") << src.Length() << " bytes");
+		BM_LOG( BM_LogMailParse, BmString("starting to decode quoted-printable of ") << src.Length() << " bytes");
 		int32 destSize = src.Length();
 		if (!destSize)
 			return;
-		char* buf = dest.LockBuffer( destSize+1);
+		char* buf = dest.LockBuffer( destSize);
 		const char* pos = src.String();
 		char* newPos = buf;
 		char* lastSoftbreakPos = NULL;
 		char c1,c2;
-		const BString qpChars("abcdef0123456789ABCDEF");
+		const BmString qpChars("abcdef0123456789ABCDEF");
 		while( *pos) {
 			if (*pos == '\r' && *(pos+1) == '\n') {
 				// make sure to remove any trailing whitespace:
@@ -362,14 +354,14 @@ void BmEncoding::Decode( BString encodingStyle, const BString& src, BString& des
 		BM_LOG( BM_LogMailParse, "qp-decode: done");
 	} else if (encodingStyle.ICompare("b")==0 || encodingStyle.ICompare("base64")==0) {
 		// base64:
-		BM_LOG( BM_LogMailParse, BString("starting to decode base64 of ") << src.Length() << " bytes");
+		BM_LOG( BM_LogMailParse, BmString("starting to decode base64 of ") << src.Length() << " bytes");
 		off_t srcSize = src.Length();
 		if (!srcSize)
 			return;
-		char* destBuf = dest.LockBuffer( srcSize+1);
+		char* destBuf = dest.LockBuffer( srcSize);
 		ssize_t destSize = decode64( destBuf, src.String(), srcSize);
 		if (destSize<0) {
-			BM_LOG( BM_LogMailParse, BString("Unable to decode base64-string. Error: ") << strerror(destSize));
+			BM_LOG( BM_LogMailParse, BmString("Unable to decode base64-string. Error: ") << strerror(destSize));
 			destSize=0;
 		}
 		destBuf[destSize] = '\0';
@@ -378,12 +370,12 @@ void BmEncoding::Decode( BString encodingStyle, const BString& src, BString& des
 	} else if (encodingStyle.ICompare("7bit")==0 || encodingStyle.ICompare("8bit")==0) {
 		// we copy the buffer and replace network newline (CRLF) by local newline (LF):
 		BM_LOG2( BM_LogMailParse, "7bit/8bit-decode: converting linebreaks");
-		ConvertLinebreaksToLF( src, dest);
+		dest.ConvertLinebreaksToLF( &src);
 		BM_LOG( BM_LogMailParse, "7bit/8bit-decode: done");
 	} else {
 		if (encodingStyle.ICompare("binary")!=0) {
 			// oops, we don't know this one:
-			BM_SHOWERR( BString("Decode(): Unrecognized encoding-style <")<<encodingStyle<<"> found.\nNo decoding will take place.");
+			BM_SHOWERR( BmString("Decode(): Unrecognized encoding-style <")<<encodingStyle<<"> found.\nNo decoding will take place.");
 		}
 		// we simply copy the buffer, since the encoding type needs no conversion at all:
 		dest = src;
@@ -396,7 +388,7 @@ void BmEncoding::Decode( BString encodingStyle, const BString& src, BString& des
 		-	value will be computed, NO actual decoding happening here!
 \*------------------------------------------------------------------------------*/
 /*
-int32 BmEncoding::DecodedLength( const BString& encodingStyle, const char* text, 
+int32 BmEncoding::DecodedLength( const BmString& encodingStyle, const char* text, 
 											int32 length) {
 	if (encodingStyle.ICompare( "Q")==0 || encodingStyle.ICompare("Quoted-Printable")==0) {
 		// quoted printable:
@@ -431,7 +423,7 @@ int32 BmEncoding::DecodedLength( const BString& encodingStyle, const char* text,
 	} else if (encodingStyle.ICompare( "7bit") && encodingStyle.ICompare( "8bit")
 				  && encodingStyle.ICompare( "binary")) {
 		// oops, we don't know this one:
-		BM_SHOWERR( BString("DecodedLength(): Unrecognized encoding-style <")<<encodingStyle<<"> found.");
+		BM_SHOWERR( BmString("DecodedLength(): Unrecognized encoding-style <")<<encodingStyle<<"> found.");
 	}
 	return length;
 }
@@ -441,13 +433,13 @@ int32 BmEncoding::DecodedLength( const BString& encodingStyle, const char* text,
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BString BmEncoding::ConvertHeaderPartToUTF8( const BString& headerPart, 
+BmString BmEncoding::ConvertHeaderPartToUTF8( const BmString& headerPart, 
 															uint32 defaultEncoding) {
 	int32 nm;
 	Regexx rx;
 	rx.expr( "=\\?(.+?)\\?(.)\\?(.+?)\\?=\\s*");
 	rx.str( headerPart);
-	BString utf8;
+	BmString utf8;
 	
 	if ((nm = rx.exec( Regexx::global))) {
 		int32 len=headerPart.Length();
@@ -459,13 +451,13 @@ BString BmEncoding::ConvertHeaderPartToUTF8( const BString& headerPart,
 				utf8.Append( headerPart.String()+curr, i->start()-curr);
 			}
 			// convert the match (an encoded word) into UTF8:
-			const BString srcCharset( i->atom[0]);
-			const BString srcQuotingStyle( i->atom[1]);
-			const BString text( i->atom[2]);
-			BString decodedData;
+			const BmString srcCharset( i->atom[0]);
+			const BmString srcQuotingStyle( i->atom[1]);
+			const BmString text( i->atom[2]);
+			BmString decodedData;
 			Decode( srcQuotingStyle, text, decodedData, true);
 			if (decodedData.Length()) {
-				BString decodedAsUTF8;
+				BmString decodedAsUTF8;
 				ConvertToUTF8( CharsetToEncoding(srcCharset), decodedData, decodedAsUTF8);
 				utf8 << decodedAsUTF8;
 			}
@@ -484,12 +476,12 @@ BString BmEncoding::ConvertHeaderPartToUTF8( const BString& headerPart,
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BString BmEncoding::ConvertUTF8ToHeaderPart( const BString& utf8text, uint32 encoding,
+BmString BmEncoding::ConvertUTF8ToHeaderPart( const BmString& utf8text, uint32 encoding,
 															bool useQuotedPrintableIfNeeded,
 															bool fold, int32 fieldLen) {
 	bool needsQuotedPrintable = false;
-	BString charsetString;
-	BString transferEncoding = "7bit";
+	BmString charsetString;
+	BmString transferEncoding = "7bit";
 	ConvertFromUTF8( encoding, utf8text, charsetString);
 	if (useQuotedPrintableIfNeeded)
 		needsQuotedPrintable = NeedsEncoding( charsetString);
@@ -497,8 +489,8 @@ BString BmEncoding::ConvertUTF8ToHeaderPart( const BString& utf8text, uint32 enc
 		transferEncoding = "8bit";
 		needsQuotedPrintable = false;
 	}
-	BString charset = EncodingToCharset( encoding);
-	BString encodedString;
+	BmString charset = EncodingToCharset( encoding);
+	BmString encodedString;
 	if (needsQuotedPrintable) {
 		// encoded-words (quoted-printable) are neccessary, since headerfield contains
 		// non-ASCII chars:
@@ -509,9 +501,9 @@ BString BmEncoding::ConvertUTF8ToHeaderPart( const BString& utf8text, uint32 enc
 							- 7;						// =?...?q?...?=
 		if (fold && encodedString.Length() > maxChars) {
 			// fold header-line, since it is too long:
-			BString foldedString;
+			BmString foldedString;
 			while( encodedString.Length() > maxChars) {
-				BString tmp;
+				BmString tmp;
 				int32 foldPos = maxChars;
 				int32 lastEqualSignPos = encodedString.FindLast( '=', foldPos);
 				if (lastEqualSignPos != B_ERROR && foldPos - lastEqualSignPos < 3) {
@@ -526,7 +518,7 @@ BString BmEncoding::ConvertUTF8ToHeaderPart( const BString& utf8text, uint32 enc
 			foldedString << "=?" << charset << "?q?" << encodedString << "?=";
 			return foldedString;		
 		} else
-			return BString("=?") + charset + "?q?" + encodedString + "?=";
+			return BmString("=?") + charset + "?q?" + encodedString + "?=";
 	} else {
 		// simpler case, no encoded-words neccessary:
 		Encode( transferEncoding, charsetString, encodedString, true);
@@ -534,14 +526,14 @@ BString BmEncoding::ConvertUTF8ToHeaderPart( const BString& utf8text, uint32 enc
 							- (fieldLen + 2);		// space used by "fieldname: "
 		if (fold && encodedString.Length() > maxChars) {
 			// fold header-line, since it is too long:
-			BString foldedString;
+			BmString foldedString;
 			while( encodedString.Length() > maxChars) {
 				int32 foldPos = encodedString.FindLast( ' ', maxChars-1);
 				if (foldPos == B_ERROR)
 					foldPos = maxChars;
 				else
 					foldPos++;					// leave space as last char on curr line
-				BString tmp;
+				BmString tmp;
 				encodedString.MoveInto( tmp, 0, foldPos);
 				foldedString << tmp << "\r\n";
 				foldedString.Append( BM_SPACES, fieldLen+2);
@@ -557,7 +549,7 @@ BString BmEncoding::ConvertUTF8ToHeaderPart( const BString& utf8text, uint32 enc
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-bool BmEncoding::NeedsEncoding( const BString& charsetString) {
+bool BmEncoding::NeedsEncoding( const BmString& charsetString) {
 	// check if string needs quoted-printable/base64 encoding
 	// (which it does if it contains non-ASCII chars):
 	for( const char* p = charsetString.String(); *p; ++p) {
@@ -572,7 +564,7 @@ bool BmEncoding::NeedsEncoding( const BString& charsetString) {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-bool BmEncoding::IsCompatibleWithText( const BString& s) {
+bool BmEncoding::IsCompatibleWithText( const BmString& s) {
 	// check if given string contains any characters that suggest the data
 	// is in fact binary:
 	for( int32 i=0; i<s.Length(); ++i) {

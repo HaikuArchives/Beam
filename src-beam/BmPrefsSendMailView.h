@@ -46,7 +46,7 @@ class BmSendAccItem : public BmListViewItem
 
 public:
 	// c'tors and d'tor:
-	BmSendAccItem( BString key, BmListModelItem* item);
+	BmSendAccItem( BmString key, BmListModelItem* item);
 	~BmSendAccItem();
 
 	// overrides of listitem base:
@@ -79,7 +79,7 @@ public:
 	BmListViewItem* CreateListViewItem( BmListModelItem* item, BMessage* archive=NULL);
 	
 	// overrides of controller base:
-	BString StateInfoBasename()			{ return "SendAccView"; }
+	BmString StateInfoBasename()			{ return "SendAccView"; }
 	void UpdateModelItem( BMessage* msg);
 	BmListViewItem* AddModelItem( BmListModelItem* item);
 	const char* ItemNameForCaption()		{ return "account"; }
@@ -165,7 +165,7 @@ private:
 
 	BmRef<BmSmtpAccount> mCurrAcc;
 	
-	static const BString nEmptyItemLabel;
+	static const BmString nEmptyItemLabel;
 
 	// Hide copy-constructor and assignment:
 	BmPrefsSendMailView( const BmPrefsSendMailView&);

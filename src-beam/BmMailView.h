@@ -101,15 +101,15 @@ public:
 	// native methods:
 	void ShowMail( BmMailRef* ref, bool async=true);
 	void ShowMail( BmMail* mail, bool async=true);
-	void DisplayBodyPart( BString& displayText, BmBodyPart* bodyPart);
+	void DisplayBodyPart( BmString& displayText, BmBodyPart* bodyPart);
 	status_t Archive( BMessage* archive, bool deep=true) const;
 	status_t Unarchive( BMessage* archive, bool deep=true);
 	bool WriteStateInfo();
-	void GetWrappedText( BString& out, bool hardWrapIfNeeded=true);
-	void SetSignatureByName( const BString sigName);
+	void GetWrappedText( BmString& out, bool hardWrapIfNeeded=true);
+	void SetSignatureByName( const BmString sigName);
 	void UpdateFont( const BFont& font);
 	bool IsOverURL( BPoint point);
-	BString GetTextForTextrun( BmTextRunIter run);
+	BmString GetTextForTextrun( BmTextRunIter run);
 
 	// overrides of BTextView base:
 	bool AcceptsDrop( const BMessage* msg);
@@ -161,7 +161,7 @@ private:
 	bool mShowingUrlCursor;
 	
 	// will be archived:
-	BString mFontName;
+	BmString mFontName;
 	int16 mFontSize;
 	BFont mFont;
 	bool mShowRaw;

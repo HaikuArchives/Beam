@@ -40,9 +40,9 @@ class BmToolbarButton : public MPictureButton
 	typedef MPictureButton inherited;
 	
 	struct BmVariation {
-		BString label;
+		BmString label;
 		BMessage* msg;
-		BmVariation( const BString l, BMessage* m) { label=l; msg=m; }
+		BmVariation( const BmString l, BMessage* m) { label=l; msg=m; }
 	};
 	typedef vector<BmVariation> BmVariationVect;
 
@@ -57,7 +57,7 @@ public:
 	// native methods:
 	static void CalcMaxSize( float& width, float& height, const char* label, 
 									 BBitmap* image, bool needsLatch=false);
-	void AddActionVariation( const BString label, BMessage* msg);
+	void AddActionVariation( const BmString label, BMessage* msg);
 	void ShowMenu( BPoint point);
 
 	// overrides of Button base:

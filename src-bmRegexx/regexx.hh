@@ -29,7 +29,7 @@
 #ifndef REGEXX_HH
 #define REGEXX_HH
 
-#include <String.h>
+#include "BmString.h"
 #include <vector>
 #include "split.hh"
 #include "pcre.h"
@@ -47,7 +47,7 @@ namespace regexx {
   public:
 
     inline
-    RegexxMatchAtom(BString& _str,
+    RegexxMatchAtom(BmString& _str,
 		    int32 _start,
 		    int32 _length)
       : m_str(_str), m_start(_start), m_length(_length)
@@ -63,9 +63,9 @@ namespace regexx {
     }
 
     /// Retrieves the atom string.
-    inline BString
+    inline BmString
     str() const
-    { BString temp; return m_str.CopyInto(temp, m_start, m_length); }
+    { BmString temp; return m_str.CopyInto(temp, m_start, m_length); }
 
     /// Returns the position in the original string where the atom starts.
     inline const int32&
@@ -79,17 +79,17 @@ namespace regexx {
 
     /// Operator to transform a RegexxMatchAtom into a string.
     inline operator
-    BString() const
-    { BString temp; return m_str.CopyInto(temp, m_start, m_length); }
+    BmString() const
+    { BmString temp; return m_str.CopyInto(temp, m_start, m_length); }
 
     /// Operator to compare a RegexxMatchAtom with a string.
     inline bool
-    operator==(const BString& _s) const
-    { BString temp; return m_str.CopyInto(temp, m_start, m_length) == _s; }
+    operator==(const BmString& _s) const
+    { BmString temp; return m_str.CopyInto(temp, m_start, m_length) == _s; }
 
   private:
 
-    BString &m_str;
+    BmString &m_str;
     int32 m_start;
     int32 m_length;
 
@@ -111,7 +111,7 @@ namespace regexx {
   public:
 
     inline
-    RegexxMatch(BString& _str,
+    RegexxMatch(BmString& _str,
 		int32 _start,
 		int32 _length)
       : m_str(_str), m_start(_start), m_length(_length)
@@ -127,9 +127,9 @@ namespace regexx {
     }
 
     /// Retrieves the match string.
-    inline BString
+    inline BmString
     str() const
-    { BString temp; return m_str.CopyInto(temp, m_start, m_length); }
+    { BmString temp; return m_str.CopyInto(temp, m_start, m_length); }
 
     /// Returns the position in the original string where the match starts.
     inline const int32&
@@ -143,20 +143,20 @@ namespace regexx {
 
     /// Operator to transform a RegexxMatch into a string.
     inline operator
-    BString() const
-    { BString temp; return m_str.CopyInto(temp, m_start, m_length); }
+    BmString() const
+    { BmString temp; return m_str.CopyInto(temp, m_start, m_length); }
 
     /// Operator to compare a RegexxMatch with a string.
     inline bool
-    operator==(const BString& _s) const
-    { BString temp; return m_str.CopyInto(temp, m_start, m_length) == _s; }
+    operator==(const BmString& _s) const
+    { BmString temp; return m_str.CopyInto(temp, m_start, m_length) == _s; }
 
     /// Vector of atoms found in this match.
     std::vector<RegexxMatchAtom> atom;
 
   private:
 
-    BString &m_str;
+    BmString &m_str;
     int32 m_start;
     int32 m_length;
 
@@ -245,11 +245,11 @@ namespace regexx {
      **/
     class Exception {
     public:
-      Exception(const BString& _message) : m_message(_message) {}
+      Exception(const BmString& _message) : m_message(_message) {}
       /// Method to retrieve Exception information.
-      inline const BString& message() { return m_message; }
+      inline const BmString& message() { return m_message; }
     private:
-      BString m_message;
+      BmString m_message;
     };
 
     /** This exception is thrown when there are errors while compiling
@@ -257,7 +257,7 @@ namespace regexx {
      */
     class CompileException : public Exception {
     public:
-      CompileException(const BString& _message) : Exception(_message) {}
+      CompileException(const BmString& _message) : Exception(_message) {}
     };
 
     /// Constructor
@@ -280,7 +280,7 @@ namespace regexx {
      *  @see operator int()
      */
     inline
-    Regexx(const BString& _str, const BString& _expr, int _flags = 0)
+    Regexx(const BmString& _str, const BmString& _expr, int _flags = 0)
       throw(CompileException)
       : m_compiled(false), m_study(false), m_matches(0), m_extra(NULL)
     { exec(_str,_expr,_flags); }
@@ -294,8 +294,8 @@ namespace regexx {
      *  @see operator string()
      */
     inline
-    Regexx(const BString& _str, const BString& _expr, 
-	   const BString& _repstr, int _flags = 0)
+    Regexx(const BmString& _str, const BmString& _expr, 
+	   const BmString& _repstr, int _flags = 0)
       throw(CompileException)
       : m_compiled(false), m_study(false), m_matches(0), m_extra(NULL)
     { replace(_str,_expr,_repstr,_flags); }
@@ -308,10 +308,10 @@ namespace regexx {
      *  @return Self reference.
      */
     inline Regexx&
-    expr(const BString& _expr);
+    expr(const BmString& _expr);
 
     /// Retrieve the current regular expression.
-    inline const BString&
+    inline const BmString&
     expr() const
     { return m_expr; }
 
@@ -323,10 +323,10 @@ namespace regexx {
      *  @return Self reference.
      */
     inline Regexx&
-    str(const BString& _str);
+    str(const BmString& _str);
 
     /// Retrieve the current string.
-    inline const BString&
+    inline const BmString&
     str() const
     { return m_str; }
 
@@ -352,14 +352,14 @@ namespace regexx {
      *  @return Number of matches.
      */
     inline const unsigned int&
-    exec(const BString& _expr, int _flags = 0)
+    exec(const BmString& _expr, int _flags = 0)
       throw(CompileException);
 
     /** Execute a regular expression.
      *  @return Number of matches.
      */
     inline const unsigned int&
-    exec(const BString& _str, const BString& _expr, int _flags = 0)
+    exec(const BmString& _str, const BmString& _expr, int _flags = 0)
       throw(CompileException);
 
     /** Replace string with regular expression.
@@ -374,8 +374,8 @@ namespace regexx {
      *                 character you have to escape it with a '\'.
      *  @return Replaced string.
      */
-    const BString&
-    replace(const BString& _repstr, int _flags = 0)
+    const BmString&
+    replace(const BmString& _repstr, int _flags = 0)
       throw(CompileException);
 
     /** Replace string with regular expression.
@@ -389,16 +389,16 @@ namespace regexx {
      *                 character you have to escape it with another '\'.
      *  @return Replaced string.
      */
-    inline const BString&
-    replace(const BString& _expr, const BString& _repstr, int _flags = 0)
+    inline const BmString&
+    replace(const BmString& _expr, const BmString& _repstr, int _flags = 0)
       throw(CompileException);
 
     /** Replace string with regular expression.
      *  @return Replaced string.
      */
-    inline const BString&
-    replace(const BString& _str, const BString& _expr, 
-	    const BString& _repstr, int _flags = 0)
+    inline const BmString&
+    replace(const BmString& _str, const BmString& _expr, 
+	    const BmString& _repstr, int _flags = 0)
       throw(CompileException);
 
     /** Customized replace string with regular expression.
@@ -417,7 +417,7 @@ namespace regexx {
      *  @return Replaced string.
      */
     template<class Function>
-    inline const BString&
+    inline const BmString&
     replacef(Function _func, int _flags = 0)
       throw(CompileException);
 
@@ -436,8 +436,8 @@ namespace regexx {
      *  @return Replaced string.
      */
     template<class Function>
-    inline const BString&
-    replacef(const BString& _expr, Function _func, int _flags = 0)
+    inline const BmString&
+    replacef(const BmString& _expr, Function _func, int _flags = 0)
       throw(CompileException);
 
     /** Customized replace string with regular expression.
@@ -451,8 +451,8 @@ namespace regexx {
      *  @return Replaced string.
      */
     template<class Function>
-    inline const BString&
-    replacef(const BString& _str, const BString& _expr, Function _func,
+    inline const BmString&
+    replacef(const BmString& _str, const BmString& _expr, Function _func,
 	    int _flags = 0)
       throw(CompileException);
     
@@ -475,13 +475,13 @@ namespace regexx {
     { return m_matches; }
 
     /// Returns the string of the last replace() or replacef().
-    inline const BString&
+    inline const BmString&
     replaced() const
     { return m_replaced; }
 
     /// Returns the string of the last replace() or replacef().
     inline operator
-    BString() const
+    BmString() const
     { return m_replaced; }
 
     /** The vector of matches.
@@ -496,12 +496,12 @@ namespace regexx {
     
     bool m_compiled;
     bool m_study;
-    BString m_expr;
-    BString m_str;
+    BmString m_expr;
+    BmString m_str;
     int m_capturecount;
     
     unsigned int m_matches;
-    BString m_replaced;
+    BmString m_replaced;
 
     pcre* m_preg;
     pcre_extra* m_extra;
@@ -509,7 +509,7 @@ namespace regexx {
   };
 
   inline Regexx&
-  Regexx::expr(const BString& _expr)
+  Regexx::expr(const BmString& _expr)
   {
     if(m_compiled) {
       free(m_preg);
@@ -525,14 +525,14 @@ namespace regexx {
   }
   
   inline Regexx&
-  Regexx::str(const BString& _str)
+  Regexx::str(const BmString& _str)
   {
     m_str = _str;
     return *this;
   }
   
   inline const unsigned int&
-  Regexx::exec(const BString& _expr, int _flags)
+  Regexx::exec(const BmString& _expr, int _flags)
     throw(CompileException)
   {
     expr(_expr);
@@ -540,7 +540,7 @@ namespace regexx {
   }
   
   inline const unsigned int&
-  Regexx::exec(const BString& _str, const BString& _expr, int _flags)
+  Regexx::exec(const BmString& _str, const BmString& _expr, int _flags)
     throw(CompileException)
   {
     str(_str);
@@ -549,17 +549,17 @@ namespace regexx {
   }
 
 
-  inline const BString&
-  Regexx::replace(const BString& _expr, const BString& _repstr, int _flags)
+  inline const BmString&
+  Regexx::replace(const BmString& _expr, const BmString& _repstr, int _flags)
     throw(CompileException)
   {
     expr(_expr);
     return replace(_repstr,_flags);
   }
 
-  inline const BString&
-  Regexx::replace(const BString& _str, const BString& _expr, 
-		  const BString& _repstr, int _flags)
+  inline const BmString&
+  Regexx::replace(const BmString& _str, const BmString& _expr, 
+		  const BmString& _repstr, int _flags)
     throw(CompileException)
   {
     str(_str);
@@ -568,7 +568,7 @@ namespace regexx {
   }
 
   template<class Function>
-  inline const BString&
+  inline const BmString&
   Regexx::replacef(Function _func, int _flags = 0)
     throw(CompileException)
   {
@@ -576,7 +576,7 @@ namespace regexx {
     m_replaced = m_str;
     std::vector<RegexxMatch>::reverse_iterator m;
     for(m = match.rbegin(); m != match.rend(); m++) {
-    	BString temp = _func(*m);
+    	BmString temp = _func(*m);
       m_replaced.Remove( m->start(), m->Length());
       m_replaced.Insert( temp, m->start());
     }
@@ -584,8 +584,8 @@ namespace regexx {
   }
 
   template<class Function>
-  inline const BString&
-  Regexx::replacef(const BString& _expr, Function _func, int _flags = 0)
+  inline const BmString&
+  Regexx::replacef(const BmString& _expr, Function _func, int _flags = 0)
     throw(CompileException)
   {
     expr(_expr);
@@ -593,8 +593,8 @@ namespace regexx {
   }
 
   template<class Function>
-  inline const BString&
-  Regexx::replacef(const BString& _str, const BString& _expr, Function _func,
+  inline const BmString&
+  Regexx::replacef(const BmString& _str, const BmString& _expr, Function _func,
 		  int _flags = 0)
     throw(CompileException)
   {

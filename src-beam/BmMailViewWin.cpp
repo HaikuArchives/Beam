@@ -31,7 +31,7 @@
 #include <File.h>
 #include <InterfaceKit.h>
 #include <Message.h>
-#include <String.h>
+#include "BmString.h"
 
 #include <layout-all.h>
 
@@ -302,7 +302,7 @@ void BmMailViewWin::MessageReceived( BMessage* msg) {
 			case BMM_FORWARD_INLINE_ATTACH: {
 				BmRef<BmMail> mail = mMailView->CurrMail();
 				if (mail) {
-					BString selectedText;
+					BmString selectedText;
 					int32 start, finish;
 					mMailView->GetSelection( &start, &finish);
 					if (start < finish)
@@ -354,7 +354,7 @@ void BmMailViewWin::MessageReceived( BMessage* msg) {
 	}
 	catch( exception &err) {
 		// a problem occurred, we tell the user:
-		BM_SHOWERR( BString("MailViewWin: ") << err.what());
+		BM_SHOWERR( BmString("MailViewWin: ") << err.what());
 	}
 }
 
@@ -371,7 +371,7 @@ void BmMailViewWin::ShowMail( BmMailRef* mailRef, bool async) {
 		-	standard BeOS-behaviour, we allow a quit
 \*------------------------------------------------------------------------------*/
 bool BmMailViewWin::QuitRequested() {
-	BM_LOG2( BM_LogMainWindow, BString("MailViewWin has been asked to quit"));
+	BM_LOG2( BM_LogMainWindow, BmString("MailViewWin has been asked to quit"));
 	return true;
 }
 
@@ -381,7 +381,7 @@ bool BmMailViewWin::QuitRequested() {
 \*------------------------------------------------------------------------------*/
 void BmMailViewWin::Quit() {
 	mMailView->DetachModel();
-	BM_LOG2( BM_LogMainWindow, BString("MailViewWin has quit"));
+	BM_LOG2( BM_LogMainWindow, BmString("MailViewWin has quit"));
 	inherited::Quit();
 }
 

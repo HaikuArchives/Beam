@@ -34,7 +34,7 @@
 #include <map>
 
 #include <Entry.h>
-#include <String.h>
+#include "BmString.h"
 
 #include "BmDataModel.h"
 
@@ -43,7 +43,7 @@ class BmMailFolderList;
 
 class BmMailRefList;
 
-typedef map<BString, BmMailFolder*> BmFolderMap;
+typedef map<BmString, BmMailFolder*> BmFolderMap;
 
 /*------------------------------------------------------------------------------*\
 	BmMailFolder
@@ -71,11 +71,11 @@ public:
 	void RemoveMailRefList();
 	void RecreateCache();
 	void AddMailRef( entry_ref& eref, struct stat& st);
-	bool HasMailRef( BString key);
+	bool HasMailRef( BmString key);
 	void RemoveMailRef( ino_t node);
 	void CleanupForMailRefList( BmMailRefList* refList);
-	void CreateSubFolder( BString name);
-	void Rename( BString newName);
+	void CreateSubFolder( BmString name);
+	void Rename( BmString newName);
 	void MoveToTrash();
 
 	// overrides of archivable base:
@@ -90,7 +90,7 @@ public:
 	inline const int NewMailCountForSubfolders() const		{ return mNewMailCountForSubfolders; }
 	inline const time_t LastModified() const		{ return mLastModified; }
 	BmRef<BmMailRefList> MailRefList();
-	inline const BString& Name() const				{ return mName; }
+	inline const BmString& Name() const				{ return mName; }
 
 	// setters:
 	inline void EntryRef( entry_ref &e) 			{ mEntryRef = e; mName = e.name; }
@@ -122,7 +122,7 @@ private:
 	// the following members will NOT be archived at all:
 	int mNewMailCount;
 	int mNewMailCountForSubfolders;
-	BString mName;
+	BmString mName;
 
 	// Hide copy-constructor and assignment:
 	BmMailFolder( const BmMailFolder&);

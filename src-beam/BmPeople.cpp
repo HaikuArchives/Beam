@@ -43,6 +43,7 @@ using namespace regexx;
 #include "BmPeople.h"
 #include "BmPrefs.h"
 #include "BmResources.h"
+#include "BmStorageUtil.h"
 #include "BmUtil.h"
 
 /********************************************************************************\
@@ -76,10 +77,10 @@ void BmPersonInfo::AddEmails( const BmStringVect& mails) {
 	BmPerson()
 		-	c'tor
 \*------------------------------------------------------------------------------*/
-BmPerson::BmPerson( BmPeopleList* model, const node_ref& nref, const BString& name,
-						  const BString& nick, const BString& email, const BString& groups,
+BmPerson::BmPerson( BmPeopleList* model, const node_ref& nref, const BmString& name,
+						  const BmString& nick, const BmString& email, const BmString& groups,
 						  bool foreign) 
-	:	inherited( (BString()<<nref.node<<"_"<<nref.device).String(), model, (BmListModelItem*)NULL)
+	:	inherited( (BmString()<<nref.node<<"_"<<nref.device).String(), model, (BmListModelItem*)NULL)
 	,	mName( name)
 	,	mNick( nick)
 	,	mNodeRef( nref)
@@ -111,7 +112,7 @@ BmPerson::~BmPerson() {
 	AddEmail()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmPerson::AddEmail( const BString& em) {
+void BmPerson::AddEmail( const BmString& em) {
 	Regexx rx;
 	if (!rx.exec( em, "^\\s*$")) {
 		for( uint32 i=0; i<mEmails.size(); ++i)
@@ -274,7 +275,7 @@ void BmPeopleList::AddPeopleToMenu( BMenu* menu, const BMessage& templateMsg,
 	for( group = groupMap.begin(); group != groupMap.end(); ++group) {
 		subMenu = CreateSubmenuForPersonMap( group->second.personMap, 
 														 templateMsg, addrField,
-														 BString("Group ")<<group->second.name, &font, true);
+														 BmString("Group ")<<group->second.name, &font, true);
 		menu->AddItem( subMenu);
 	}
 	subMenu = CreateSubmenuForPersonMap( noGroupMap, templateMsg, addrField,
@@ -297,13 +298,13 @@ void BmPeopleList::AddPeopleToMenu( BMenu* menu, const BMessage& templateMsg,
 BMenu* BmPeopleList::CreateSubmenuForPersonMap( const BmPersonMap& personMap, 
 																const BMessage& templateMsg,
 																const char* addrField,
-																BString label, BFont* font,
+																BmString label, BFont* font,
 																bool createAllEntry) {
 	BMessage* msg;
 	BMenu* subMenu = new BMenu( label.String());
 	subMenu->SetFont( font);
 	BmPersonMap::const_iterator person;
-	BString allAddrs;
+	BmString allAddrs;
 	for( person = personMap.begin(); person != personMap.end(); ++person) {
 		const BmPersonInfo& info = person->second;
 		if (createAllEntry) {
@@ -319,18 +320,18 @@ BMenu* BmPeopleList::CreateSubmenuForPersonMap( const BmPersonMap& personMap,
 			subMenu->AddItem( addrMenu);
 			for( uint32 i=0; i<numMails; ++i) {
 				msg = new BMessage( templateMsg);
-				msg->AddString( addrField, info.emails[i]);
+				msg->AddString( addrField, info.emails[i].String());
 				addrMenu->AddItem( new BMenuItem( info.emails[i].String(), msg));
 			}
 		} else {
 			msg = new BMessage( templateMsg);
-			msg->AddString( addrField, info.emails[0]);
+			msg->AddString( addrField, info.emails[0].String());
 			subMenu->AddItem( new BMenuItem( info.name.String(), msg));
 		}
 	}
 	if (createAllEntry) {
 		msg = new BMessage( templateMsg);
-		msg->AddString( addrField, allAddrs);
+		msg->AddString( addrField, allAddrs.String());
 		subMenu->AddSeparatorItem();
 		subMenu->AddItem( new BMenuItem( "<Add Complete Group>", msg));
 	}
@@ -349,25 +350,25 @@ void BmPeopleList::InitializeItems() {
 	entry_ref eref;
 	char buf[4096];
 	BNode node;
-	BString name;
-	BString nick;
-	BString email;
-	BString groups;
+	BmString name;
+	BmString nick;
+	BmString email;
+	BmString groups;
 	
-	BString peopleFolder = TheResources->HomePath + "/People";
+	BmString peopleFolder = TheResources->HomePath + "/People";
 
 	BmAutolock lock( mModelLocker);
 	lock.IsLocked() 							|| BM_THROW_RUNTIME( ModelName() << ":InitializeItems(): Unable to get lock");
 
 	BM_LOG2( BM_LogUtil, "Start of people-query");
 	(err = mPeopleQuery.SetVolume( &TheResources->MailboxVolume)) == B_OK
-													|| BM_THROW_RUNTIME( BString("SetVolume(): ") << strerror(err));
+													|| BM_THROW_RUNTIME( BmString("SetVolume(): ") << strerror(err));
 	(err = mPeopleQuery.SetPredicate( "META:name == '**'")) == B_OK
-													|| BM_THROW_RUNTIME( BString("SetPredicate(): ") << strerror(err));
+													|| BM_THROW_RUNTIME( BmString("SetPredicate(): ") << strerror(err));
 	(err = mPeopleQuery.SetTarget( BMessenger( TheMailMonitor))) == B_OK
-													|| BM_THROW_RUNTIME( BString("BmPeopleList::InitializeItems(): could not set query target.\n\nError:") << strerror(err));
+													|| BM_THROW_RUNTIME( BmString("BmPeopleList::InitializeItems(): could not set query target.\n\nError:") << strerror(err));
 	(err = mPeopleQuery.Fetch()) == B_OK
-													|| BM_THROW_RUNTIME( BString("Fetch(): ") << strerror(err));
+													|| BM_THROW_RUNTIME( BmString("Fetch(): ") << strerror(err));
 	while ((count = mPeopleQuery.GetNextDirents((dirent* )buf, 4096)) > 0) {
 		dent = (dirent* )buf;
 		while (count-- > 0) {
@@ -379,24 +380,24 @@ void BmPeopleList::InitializeItems() {
 			eref.set_name( dent->d_name);
 			if (node.SetTo( &eref) == B_OK) {
 				name = nick = email = "";
-				node.ReadAttrString( "META:name", &name);
-				node.ReadAttrString( "META:nickname", &nick);
-				node.ReadAttrString( "META:email", &email);
-				node.ReadAttrString( "META:group", &groups);
+				BmReadStringAttr( &node, "META:name", name);
+				BmReadStringAttr( &node, "META:nickname", nick);
+				BmReadStringAttr( &node, "META:email", email);
+				BmReadStringAttr( &node, "META:group", groups);
 				BEntry entry( &eref);
 				BPath path;
 				entry.GetPath( &path);
 				bool foreign = ThePrefs->GetBool( "LookForPeopleOnlyInPeopleFolder", true);
 				if (path.InitCheck()==B_OK) {
-					BString personPath( path.Path());
+					BmString personPath( path.Path());
 					if (personPath.ICompare( peopleFolder, peopleFolder.Length()) == 0)
 						foreign = false;
 				}
 				BmPerson* newPerson = new BmPerson( this, nref, name, nick, email, groups, foreign);
 				for( int c=1; c<9; ++c) {
 					email.Truncate(0);
-					BString emailAttr("META:email");
-					node.ReadAttrString( (emailAttr<<c).String(), &email);
+					BmString emailAttr("META:email");
+					BmReadStringAttr( &node, (emailAttr<<c).String(), email);
 					if (email.Length())
 						newPerson->AddEmail( email);
 				}
@@ -406,5 +407,5 @@ void BmPeopleList::InitializeItems() {
 			dent = (dirent* )((char* )dent + dent->d_reclen);
 		}
 	}
-	BM_LOG2( BM_LogUtil, BString("End of people-query (") << peopleCount << " people found)");
+	BM_LOG2( BM_LogUtil, BmString("End of people-query (") << peopleCount << " people found)");
 }

@@ -61,7 +61,7 @@ public:
 	bool Store();
 	bool StartJob();
 	void RemoveController( BmController* controller);
-	const BString SettingsFileName();
+	const BmString SettingsFileName();
 	int16 ArchiveVersion() const			{ return nArchiveVersion; }
 	
 	// getters:
@@ -79,7 +79,7 @@ private:
 	// the following members will NOT be archived at all:
 	BmWeakRef<BmMailFolder> mFolder;
 	bool mNeedsCacheUpdate;
-	BString mSettingsFileName;
+	BmString mSettingsFileName;
 
 	// Hide copy-constructor and assignment:
 	BmMailRefList( const BmMailRefList&);

@@ -46,7 +46,7 @@ class BmRecvAccItem : public BmListViewItem
 
 public:
 	// c'tors and d'tor:
-	BmRecvAccItem( BString key, BmListModelItem* item);
+	BmRecvAccItem( BmString key, BmListModelItem* item);
 	~BmRecvAccItem();
 
 	// overrides of listitem base:
@@ -79,7 +79,7 @@ public:
 	BmListViewItem* CreateListViewItem( BmListModelItem* item, BMessage* archive=NULL);
 	
 	// overrides of controller base:
-	BString StateInfoBasename()			{ return "RecvAccView"; }
+	BmString StateInfoBasename()			{ return "RecvAccView"; }
 	void UpdateModelItem( BMessage* msg);
 	BmListViewItem* AddModelItem( BmListModelItem* item);
 	const char* ItemNameForCaption()		{ return "account"; }
@@ -181,7 +181,7 @@ private:
 
 	BmRef<BmPopAccount> mCurrAcc;
 	
-	static const BString nEmptyItemLabel;
+	static const BmString nEmptyItemLabel;
 
 	// Hide copy-constructor and assignment:
 	BmPrefsRecvMailView( const BmPrefsRecvMailView&);

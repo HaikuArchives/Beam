@@ -77,13 +77,13 @@ BmMailView* BmMailView::CreateInstance( minimax minmax, BRect frame, bool outbou
 	// try to open state-cache-file...
 	status_t err;
 	BFile archiveFile;
-	BString archiveFilename = BString("MailView") << (outbound ? "_out" : "_in");
+	BmString archiveFilename = BmString("MailView") << (outbound ? "_out" : "_in");
 	if ((err = archiveFile.SetTo( TheResources->StateInfoFolder(), archiveFilename.String(), B_READ_ONLY)) == B_OK) {
 		// ...ok, archive file found, we fetch our state from it:
 		try {
 			BMessage archive;
 			(err = archive.Unflatten( &archiveFile)) == B_OK
-												|| BM_THROW_RUNTIME( BString("Could not fetch mail-view archive from file\n\t<") << archiveFilename << ">\n\n Result: " << strerror(err));
+												|| BM_THROW_RUNTIME( BmString("Could not fetch mail-view archive from file\n\t<") << archiveFilename << ">\n\n Result: " << strerror(err));
 			instance->Unarchive( &archive);
 		} catch (exception &e) {
 			BM_SHOWERR( e.what());
@@ -171,16 +171,16 @@ status_t BmMailView::Unarchive( BMessage* archive, bool deep=true) {
 	if (archive->FindInt16( MSG_VERSION, &version) != B_OK)
 		version = 1;
 	status_t ret = archive->FindBool( MSG_RAW, &mShowRaw)
-						|| archive->FindString( MSG_FONTNAME, &mFontName)
 						|| archive->FindInt16( MSG_FONTSIZE, &mFontSize);
+	mFontName = archive->FindString( MSG_FONTNAME);
 	if (ret == B_OK && deep && mHeaderView)
 		ret = mHeaderView->Unarchive( archive, deep);
 	if (ret == B_OK && deep && mBodyPartView)
 		ret = mBodyPartView->Unarchive( archive, deep);
 	int32 pos = mFontName.FindFirst( ",");
 	if (pos != B_ERROR) {
-		BString family( mFontName.String(), pos);
-		BString style( mFontName.String()+pos+1);
+		BmString family( mFontName.String(), pos);
+		BmString style( mFontName.String()+pos+1);
 		mFont.SetFamilyAndStyle( family.String(), style.String());
 	} else {
 		mFont = *be_fixed_font;
@@ -217,7 +217,7 @@ void BmMailView::MessageReceived( BMessage* msg) {
 			}
 			case BM_JOB_DONE: {
 				if (!IsMsgFromCurrentModel( msg)) return;
-				BM_LOG2( BM_LogModelController, BString("Model <")<<FindMsgString( msg, BmDataModel::MSG_MODEL)<<"> has told it is done.");
+				BM_LOG2( BM_LogModelController, BmString("Model <")<<FindMsgString( msg, BmDataModel::MSG_MODEL)<<"> has told it is done.");
 				JobIsDone( FindMsgBool( msg, BmJobModel::MSG_COMPLETED));
 				break;
 			}
@@ -251,8 +251,8 @@ void BmMailView::MessageReceived( BMessage* msg) {
 				break;
 			}
 			case BM_FONT_SELECTED: {
-				BString family = msg->FindString( BmResources::BM_MSG_FONT_FAMILY);
-				BString style = msg->FindString( BmResources::BM_MSG_FONT_STYLE);
+				BmString family = msg->FindString( BmResources::BM_MSG_FONT_FAMILY);
+				BmString style = msg->FindString( BmResources::BM_MSG_FONT_STYLE);
 				mFont.SetFamilyAndStyle( family.String(), style.String());
 				mFontName = family + "," + style;
 				if (mOutbound && mRulerView)
@@ -277,7 +277,7 @@ void BmMailView::MessageReceived( BMessage* msg) {
 				break;
 			}
 			case BM_MAILVIEW_COPY_URL: {
-				BString urlStr = msg->FindString( "url");
+				BmString urlStr = msg->FindString( "url");
 				BMessage* clipMsg;
 				if (be_clipboard->Lock()) {
 					be_clipboard->Clear();
@@ -325,7 +325,7 @@ void BmMailView::MessageReceived( BMessage* msg) {
 	}
 	catch( exception &err) {
 		// a problem occurred, we tell the user:
-		BM_SHOWERR( BString(ControllerName()) << ":\n\t" << err.what());
+		BM_SHOWERR( BmString(ControllerName()) << ":\n\t" << err.what());
 	}
 }
 
@@ -394,7 +394,7 @@ void BmMailView::MouseUp( BPoint point) {
 	if (mCurrMail && mClickedTextRun == TextRunInfoAt( offset)) {
 		BmTextRunInfo runInfo = mClickedTextRun->second;
 		if (runInfo.isURL) {
-			BString url = GetTextForTextrun( mClickedTextRun);
+			BmString url = GetTextForTextrun( mClickedTextRun);
 			bmApp->LaunchURL( url);
 		}
 	}
@@ -418,11 +418,11 @@ bool BmMailView::IsOverURL( BPoint point) {
 	GetTextForTextrun( run)
 		-	returns text for given textrun
 \*------------------------------------------------------------------------------*/
-BString BmMailView::GetTextForTextrun( BmTextRunIter run) {
+BmString BmMailView::GetTextForTextrun( BmTextRunIter run) {
 	BmTextRunIter next = run;
 	next++;
 	Select( run->first, next->first);
-	BString url( Text()+run->first, next->first-run->first);
+	BmString url( Text()+run->first, next->first-run->first);
 	return url;
 }
 
@@ -491,12 +491,12 @@ void BmMailView::FrameResized( float newWidth, float newHeight) {
 	SetSignatureByName()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmMailView::SetSignatureByName( const BString sigName) {
+void BmMailView::SetSignatureByName( const BmString sigName) {
 	if (!mOutbound)
 		return;
-	BString text = Text();
+	BmString text = Text();
 	Regexx rx;
-	BString sigRX = ThePrefs->GetString( "SignatureRX");
+	BmString sigRX = ThePrefs->GetString( "SignatureRX");
 	if (rx.exec( text, sigRX, Regexx::newline))
 		text.Truncate( rx.match[0].start());	// cut off old signature
 	if (text.ByteAt(text.Length()-1) != '\n')
@@ -512,7 +512,7 @@ void BmMailView::SetSignatureByName( const BString sigName) {
 	textRunArray->runs[1].offset = text.Length();
 	textRunArray->runs[1].font = mFont;
 	textRunArray->runs[1].color = BeShadow;
-	BString sig = TheSignatureList->GetSignatureStringFor( sigName);
+	BmString sig = TheSignatureList->GetSignatureStringFor( sigName);
 	int32 lastTextPos = text.Length();
 	if (sig.Length())
 		text << "-- \n" << sig;
@@ -570,7 +570,7 @@ void BmMailView::InsertText( const char *text, int32 length, int32 offset,
 {
 	if (mOutbound && mRulerView && mFont.IsFixed()) {
 		int32 lineStart = OffsetAt( LineAt( offset));
-		BString line( Text()+lineStart, offset-lineStart);
+		BmString line( Text()+lineStart, offset-lineStart);
 		int32 currLinePos = line.CountChars();
 		if (currLinePos > mRulerView->IndicatorPos()) {
 			while( currLinePos+length > mRulerView->IndicatorPos()+1 
@@ -592,8 +592,8 @@ void BmMailView::InsertText( const char *text, int32 length, int32 offset,
 	GetWrappedText()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmMailView::GetWrappedText( BString& out, bool hardWrapIfNeeded) {
-	BString editedText = Text();
+void BmMailView::GetWrappedText( BmString& out, bool hardWrapIfNeeded) {
+	BmString editedText = Text();
 	int32 lineLen;
 	bool keepLongWords;
 	if (hardWrapIfNeeded && ThePrefs->GetBool( "HardWrapMailText")) {
@@ -637,7 +637,7 @@ void BmMailView::ShowMail( BmMailRef* ref, bool async) {
 	}
 	catch( exception &err) {
 		// a problem occurred, we tell the user:
-		BM_SHOWERR( BString("MailView: ") << err.what());
+		BM_SHOWERR( BmString("MailView: ") << err.what());
 	}
 }
 
@@ -666,7 +666,7 @@ void BmMailView::ShowMail( BmMail* mail, bool async) {
 	}
 	catch( exception &err) {
 		// a problem occurred, we tell the user:
-		BM_SHOWERR( BString("MailView: ") << err.what());
+		BM_SHOWERR( BmString("MailView: ") << err.what());
 	}
 }
 
@@ -676,7 +676,7 @@ void BmMailView::ShowMail( BmMail* mail, bool async) {
 \*------------------------------------------------------------------------------*/
 void BmMailView::JobIsDone( bool completed) {
 	if (completed && mCurrMail && mCurrMail->Header()) {
-		BString displayText;
+		BmString displayText;
 		mTextRunMap.clear();
 		mTextRunMap[0] = BmTextRunInfo( Black);
 		BmBodyPartList* body = mCurrMail->Body();
@@ -686,11 +686,11 @@ void BmMailView::JobIsDone( bool completed) {
 		if (body) {
 			mBodyPartView->ShowBody( body);
 			if (mShowRaw) {
-				BM_LOG2( BM_LogMailParse, BString("displaying raw message"));
+				BM_LOG2( BM_LogMailParse, BmString("displaying raw message"));
 				uint32 encoding = mCurrMail->DefaultEncoding();
 				ConvertToUTF8( encoding, mCurrMail->RawText(), displayText);
 			} else {
-				BM_LOG2( BM_LogMailParse, BString("extracting parts to be displayed from body-structure"));
+				BM_LOG2( BM_LogMailParse, BmString("extracting parts to be displayed from body-structure"));
 				BmModelItemMap::const_iterator iter;
 				for( iter=body->begin(); iter != body->end(); ++iter) {
 					BmBodyPart* bodyPart = dynamic_cast<BmBodyPart*>( iter->second.Get());
@@ -723,9 +723,9 @@ void BmMailView::JobIsDone( bool completed) {
 				}
 			}
 		}
-		BM_LOG2( BM_LogMailParse, BString("remove <CR>s from mailtext"));
-		RemoveSetFromString( displayText, "\r");
-		BM_LOG2( BM_LogMailParse, BString("setting mailtext into textview"));
+		BM_LOG2( BM_LogMailParse, BmString("remove <CR>s from mailtext"));
+		displayText.RemoveAll( "\r");
+		BM_LOG2( BM_LogMailParse, BmString("setting mailtext into textview"));
 		// set up textrun-array
 		int32 trsiz = sizeof( struct text_run);
 		text_run_array* textRunArray = (text_run_array*)malloc( sizeof(int32)+trsiz*mTextRunMap.size());
@@ -742,7 +742,7 @@ void BmMailView::JobIsDone( bool completed) {
 		SetText( displayText.String(), displayText.Length(), textRunArray);
 		free( textRunArray);
 		mHeaderView->ShowHeader( mCurrMail->Header().Get());
-		BM_LOG2( BM_LogMailParse, BString("done, mail is visible"));
+		BM_LOG2( BM_LogMailParse, BmString("done, mail is visible"));
 		ContainerView()->UnsetBusy();
 		ScrollTo( 0,0);
 		if (mCurrMail->Status() == BM_MAIL_STATUS_NEW) {
@@ -762,7 +762,7 @@ void BmMailView::JobIsDone( bool completed) {
 		msg.AddBool( MSG_HAS_MAIL, true);
 		SendNotices( BM_NTFY_MAIL_VIEW, &msg);
 	} else {
-		BM_LOG2( BM_LogMailParse, BString("setting empty mail into textview"));
+		BM_LOG2( BM_LogMailParse, BmString("setting empty mail into textview"));
 		mHeaderView->ShowHeader( NULL);
 		SetText( "");
 		ContainerView()->UnsetBusy();
@@ -776,7 +776,7 @@ void BmMailView::JobIsDone( bool completed) {
 	DisplayBodyPart( displayText, bodypart)
 		-	
 \*------------------------------------------------------------------------------*/
-void BmMailView::DisplayBodyPart( BString& displayText, BmBodyPart* bodyPart) {
+void BmMailView::DisplayBodyPart( BmString& displayText, BmBodyPart* bodyPart) {
 	if (!bodyPart->IsMultiPart()) {
 		if (bodyPart->ShouldBeShownInline()) {
 			// MIME-block should be shown inline, so we add it to our textview:
@@ -792,8 +792,8 @@ void BmMailView::DisplayBodyPart( BString& displayText, BmBodyPart* bodyPart) {
 				// Binary subparts are not automatically being converted to local newlines.
 				// Since we are going to display this binary subpart in the mailview, we
 				// have to convert the newlines first:
-				BString convertedData;
-				ConvertLinebreaksToLF( bodyPart->DecodedData(), convertedData);
+				BmString convertedData;
+				convertedData.ConvertLinebreaksToLF( &bodyPart->DecodedData());
 				displayText.Append( convertedData);
 			} else {
 				// standard stuff, bodypart has already been converted to local newlines
@@ -849,14 +849,14 @@ bool BmMailView::WriteStateInfo() {
 	status_t err;
 
 	try {
-		BString filename = BString( "MailView") << (mOutbound ? "_out": "_in");
+		BmString filename = BmString( "MailView") << (mOutbound ? "_out": "_in");
 		this->Archive( &archive, true) == B_OK
 													|| BM_THROW_RUNTIME("Unable to archive MailView-object");
 		(err = cacheFile.SetTo( TheResources->StateInfoFolder(), filename.String(), 
 										B_WRITE_ONLY | B_CREATE_FILE | B_ERASE_FILE)) == B_OK
-													|| BM_THROW_RUNTIME( BString("Could not create cache file\n\t<") << filename << ">\n\n Result: " << strerror(err));
+													|| BM_THROW_RUNTIME( BmString("Could not create cache file\n\t<") << filename << ">\n\n Result: " << strerror(err));
 		(err = archive.Flatten( &cacheFile)) == B_OK
-													|| BM_THROW_RUNTIME( BString("Could not store state-cache into file\n\t<") << filename << ">\n\n Result: " << strerror(err));
+													|| BM_THROW_RUNTIME( BmString("Could not store state-cache into file\n\t<") << filename << ">\n\n Result: " << strerror(err));
 	} catch( exception &e) {
 		BM_SHOWERR( e.what());
 		return false;
@@ -898,14 +898,14 @@ void BmMailView::ShowMenu( BPoint point) {
 			BMessage* msg = new BMessage( BM_MAILVIEW_COPY_URL);
 			int32 currPos = OffsetAt( point);
 			BmTextRunMap::const_iterator run = TextRunInfoAt( currPos);
-			msg->AddString( "url", GetTextForTextrun( run));
+			msg->AddString( "url", GetTextForTextrun( run).String());
 			item = new BMenuItem( "Copy URL to Clipboard", msg);
 			item->SetTarget( this);
 			theMenu->AddItem( item);
 			theMenu->AddSeparatorItem();
 		}
 		
-		if (mCurrMail) {
+		if (mCurrMail && mCurrMail->Body()) {
 			BmRef< BmBodyPart> textBody( mCurrMail->Body()->EditableTextBody());
 			if (textBody) {
 				BMenu* menu = new BMenu( "Use Encoding...");

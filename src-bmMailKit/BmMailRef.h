@@ -35,7 +35,7 @@
 
 
 #include <Entry.h>
-#include <String.h>
+#include "BmString.h"
 
 #include "BmDataModel.h"
 
@@ -89,21 +89,21 @@ public:
 	inline const char* TrackerName() const			{ return mEntryRef.name; }
 	inline const ino_t& Inode() const				{ return mInode; }
 	inline status_t InitCheck()	const				{ return mInitCheck; }
-	inline const BString& Account() const 			{ return mAccount; }
-	inline const BString& Cc() const 				{ return mCc; }
-	inline const BString& From() const 				{ return mFrom; }
-	inline const BString& Name() const				{ return mName; }
-	inline const BString& Priority() const 		{ return mPriority; }
-	inline const BString& ReplyTo() const 			{ return mReplyTo; }
-	inline const BString& Status() const 			{ return mStatus; }
-	inline const BString& Subject() const 			{ return mSubject; }
-	inline const BString& To() const 				{ return mTo; }
+	inline const BmString& Account() const 			{ return mAccount; }
+	inline const BmString& Cc() const 				{ return mCc; }
+	inline const BmString& From() const 				{ return mFrom; }
+	inline const BmString& Name() const				{ return mName; }
+	inline const BmString& Priority() const 		{ return mPriority; }
+	inline const BmString& ReplyTo() const 			{ return mReplyTo; }
+	inline const BmString& Status() const 			{ return mStatus; }
+	inline const BmString& Subject() const 			{ return mSubject; }
+	inline const BmString& To() const 				{ return mTo; }
 	inline const time_t& When() const 				{ return mWhen; }
-	inline const BString& WhenString() const 		{ return mWhenString; }
+	inline const BmString& WhenString() const 		{ return mWhenString; }
 	inline const time_t& Created() const 			{ return mCreated; }
-	inline const BString& CreatedString() const 	{ return mCreatedString; }
+	inline const BmString& CreatedString() const 	{ return mCreatedString; }
 	inline const off_t& Size() const 				{ return mSize; }
-	inline const BString& SizeString() const 		{ return mSizeString; }
+	inline const BmString& SizeString() const 		{ return mSizeString; }
 	inline const bool& HasAttachments() const 	{ return mHasAttachments; }
 	inline const bool IsNew() const					{ return mStatus == "New"; }
 
@@ -120,21 +120,21 @@ private:
 	// the following members will be archived as part of BmFolderList:
 	entry_ref mEntryRef;
 	ino_t mInode;
-	BString mAccount;
-	BString mCc;
-	BString mFrom;
-	BString mName;
-	BString mPriority;
-	BString mReplyTo;
-	BString mStatus;
-	BString mSubject;
-	BString mTo;
+	BmString mAccount;
+	BmString mCc;
+	BmString mFrom;
+	BmString mName;
+	BmString mPriority;
+	BmString mReplyTo;
+	BmString mStatus;
+	BmString mSubject;
+	BmString mTo;
 	time_t mWhen;
-	BString mWhenString;
+	BmString mWhenString;
 	time_t mCreated;
-	BString mCreatedString;
+	BmString mCreatedString;
 	off_t mSize;
-	BString mSizeString;
+	BmString mSizeString;
 	bool mHasAttachments;
 
 	// the following members will not be archived at all:

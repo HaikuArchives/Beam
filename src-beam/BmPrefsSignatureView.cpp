@@ -64,7 +64,7 @@ enum Columns {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmSignatureItem::BmSignatureItem( BString key, BmListModelItem* _item)
+BmSignatureItem::BmSignatureItem( BmString key, BmListModelItem* _item)
 	:	inherited( key, _item, false)
 {
 	UpdateView( UPD_ALL);
@@ -200,7 +200,7 @@ void BmSignatureView::MessageReceived( BMessage* msg) {
 		}
 	} catch( exception &err) {
 		// a problem occurred, we tell the user:
-		BM_SHOWERR( BString("SignatureView:\n\t") << err.what());
+		BM_SHOWERR( BmString("SignatureView:\n\t") << err.what());
 	}
 }
 
@@ -402,10 +402,10 @@ void BmPrefsSignatureView::MessageReceived( BMessage* msg) {
 			}
 			case BM_TEST_SIGNATURE: {
 				if (mCurrSig) {
-					BString sigString = mCurrSig->GetSignatureString();
+					BmString sigString = mCurrSig->GetSignatureString();
 					if (sigString.Length()) {
 						BAlert* alert = new BAlert( "Signature-Test", 
-														 (BString("Please check the results below.\n-- \n")<<sigString).String(),
+														 (BmString("Please check the results below.\n-- \n")<<sigString).String(),
 													 	 "OK", NULL, NULL, B_WIDTH_AS_USUAL,
 													 	 B_INFO_ALERT);
 						alert->SetShortcut( 0, B_ESCAPE);
@@ -415,9 +415,9 @@ void BmPrefsSignatureView::MessageReceived( BMessage* msg) {
 				break;
 			}
 			case BM_ADD_SIGNATURE: {
-				BString key( "new signature");
+				BmString key( "new signature");
 				for( int32 i=1; TheSignatureList->FindItemByKey( key); ++i) {
-					key = BString("new signature_")<<i;
+					key = BmString("new signature_")<<i;
 				}
 				TheSignatureList->AddItemToList( new BmSignature( key.String(), TheSignatureList.Get()));
 				mSignatureControl->MakeFocus( true);
@@ -429,7 +429,7 @@ void BmPrefsSignatureView::MessageReceived( BMessage* msg) {
 				if (msg->FindInt32( "which", &buttonPressed) != B_OK) {
 					// first step, ask user about it:
 					BAlert* alert = new BAlert( "Remove Signature", 
-														 (BString("Are you sure about removing the signature <") << mCurrSig->Name() << ">?").String(),
+														 (BmString("Are you sure about removing the signature <") << mCurrSig->Name() << ">?").String(),
 													 	 "Remove", "Cancel", NULL, B_WIDTH_AS_USUAL,
 													 	 B_WARNING_ALERT);
 					alert->SetShortcut( 1, B_ESCAPE);
@@ -449,7 +449,7 @@ void BmPrefsSignatureView::MessageReceived( BMessage* msg) {
 	}
 	catch( exception &err) {
 		// a problem occurred, we tell the user:
-		BM_SHOWERR( BString("PrefsView_") << Name() << ":\n\t" << err.what());
+		BM_SHOWERR( BmString("PrefsView_") << Name() << ":\n\t" << err.what());
 	}
 }
 

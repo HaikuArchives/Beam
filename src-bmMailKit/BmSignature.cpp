@@ -103,40 +103,40 @@ status_t BmSignature::Archive( BMessage* archive, bool deep) const {
 			and returned
 		-	always returns UTF8-encoded string
 \*------------------------------------------------------------------------------*/
-BString BmSignature::GetSignatureString() {
+BmString BmSignature::GetSignatureString() {
 	if (!mContent.Length())
 		return "";
 	if (mDynamic) {
-		BString scriptFileName = TheTempFileList.NextTempFilenameWithPath();
+		BmString scriptFileName = TheTempFileList.NextTempFilenameWithPath();
 		BFile scriptFile;
 		status_t err = scriptFile.SetTo( scriptFileName.String(), 
 													B_CREATE_FILE | B_WRITE_ONLY);
 		if (err != B_OK) {
-			BM_SHOWERR( BString("Could not create temporary file\n\t<") << scriptFileName << ">\n\n Result: " << strerror(err));
+			BM_SHOWERR( BmString("Could not create temporary file\n\t<") << scriptFileName << ">\n\n Result: " << strerror(err));
 			return "";
 		}
 		scriptFile.Write( mContent.String(), mContent.Length());
 		scriptFile.Unset();
-		BString sigFileName = TheTempFileList.NextTempFilenameWithPath();
-		BString errFileName = TheTempFileList.NextTempFilenameWithPath();
-		BString sysStr = BString("/bin/sh <")+scriptFileName+" >"<<sigFileName<<" 2>"<<errFileName;
-		BM_LOG2( BM_LogUtil, BString("Dynamic signature, executing script: ")<<sysStr);
+		BmString sigFileName = TheTempFileList.NextTempFilenameWithPath();
+		BmString errFileName = TheTempFileList.NextTempFilenameWithPath();
+		BmString sysStr = BmString("/bin/sh <")+scriptFileName+" >"<<sigFileName<<" 2>"<<errFileName;
+		BM_LOG2( BM_LogUtil, BmString("Dynamic signature, executing script: ")<<sysStr);
 		int result = system( sysStr.String());
-		BString sigString;
+		BmString sigString;
 		bool fileOk = FetchFile( sigFileName, sigString);
 		if (!fileOk || result) {
-			BString error;
+			BmString error;
 			FetchFile( errFileName, error);
-			BM_SHOWERR( BString("An error occurred, when trying to fetch dynamic signature <")
+			BM_SHOWERR( BmString("An error occurred, when trying to fetch dynamic signature <")
 						   << Key() << ">\n\nError: " << error);
 		} else if (!sigString.Length()) {
-			BM_SHOWERR( BString("There was an empty result, when trying to fetch dynamic signature <")
+			BM_SHOWERR( BmString("There was an empty result, when trying to fetch dynamic signature <")
 						   << Key() << ">\n");
 		}
 		TheTempFileList.RemoveFile( sigFileName);
 		TheTempFileList.RemoveFile( errFileName);
 		TheTempFileList.RemoveFile( scriptFileName);
-		BString utf8;
+		BmString utf8;
 		ConvertToUTF8( mEncoding, sigString, utf8);
 		return utf8;
 	} else
@@ -182,8 +182,8 @@ BmSignatureList::~BmSignatureList() {
 	SettingsFileName()
 		-	returns the name of the settings-file for the signature-list
 \*------------------------------------------------------------------------------*/
-const BString BmSignatureList::SettingsFileName() {
-	return BString( TheResources->SettingsPath.Path()) << "/" << "Signatures";
+const BmString BmSignatureList::SettingsFileName() {
+	return BmString( TheResources->SettingsPath.Path()) << "/" << "Signatures";
 }
 
 /*------------------------------------------------------------------------------*\
@@ -191,7 +191,7 @@ const BString BmSignatureList::SettingsFileName() {
 		-	returns the signature-string for the signature of the given name
 		-	if no signature with given name exists, an empty string is returned
 \*------------------------------------------------------------------------------*/
-BString BmSignatureList::GetSignatureStringFor( const BString sigName) {
+BmString BmSignatureList::GetSignatureStringFor( const BmString sigName) {
 	BmRef<BmListModelItem> sigRef = FindItemByKey( sigName);
 	BmSignature* sig = dynamic_cast< BmSignature*>( sigRef.Get());
 	if (!sig)
@@ -204,18 +204,18 @@ BString BmSignatureList::GetSignatureStringFor( const BString sigName) {
 		-	initializes the signature-list from the given archive
 \*------------------------------------------------------------------------------*/
 void BmSignatureList::InstantiateItems( BMessage* archive) {
-	BM_LOG2( BM_LogUtil, BString("Start of InstantiateItems() for SignatureList"));
+	BM_LOG2( BM_LogUtil, BmString("Start of InstantiateItems() for SignatureList"));
 	status_t err;
 	int32 numChildren = FindMsgInt32( archive, BmListModelItem::MSG_NUMCHILDREN);
 	for( int i=0; i<numChildren; ++i) {
 		BMessage msg;
 		(err = archive->FindMessage( BmListModelItem::MSG_CHILDREN, i, &msg)) == B_OK
-													|| BM_THROW_RUNTIME(BString("Could not find signature nr. ") << i+1 << " \n\nError:" << strerror(err));
+													|| BM_THROW_RUNTIME(BmString("Could not find signature nr. ") << i+1 << " \n\nError:" << strerror(err));
 		BmSignature* newSig = new BmSignature( &msg, this);
-		BM_LOG3( BM_LogUtil, BString("Signature <") << newSig->Name() << "," << newSig->Key() << "> read");
+		BM_LOG3( BM_LogUtil, BmString("Signature <") << newSig->Name() << "," << newSig->Key() << "> read");
 		AddItemToList( newSig);
 	}
-	BM_LOG2( BM_LogUtil, BString("End of InstantiateItems() for SignatureList"));
+	BM_LOG2( BM_LogUtil, BmString("End of InstantiateItems() for SignatureList"));
 	mInitCheck = B_OK;
 }
 

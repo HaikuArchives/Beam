@@ -64,7 +64,7 @@ BmRef<BmMailFolder> BmMailFolder::CreateDummyInstance() {
 \*------------------------------------------------------------------------------*/
 BmMailFolder::BmMailFolder( BmMailFolderList* model, entry_ref &eref, ino_t node, 
 									 BmMailFolder* parent, time_t &modified)
-	:	inherited( BString() << node, model, parent)
+	:	inherited( BmString() << node, model, parent)
 	,	mEntryRef( eref)
 	,	mInode( node)
 	,	mLastModified( modified)
@@ -90,10 +90,10 @@ BmMailFolder::BmMailFolder( BMessage* archive, BmMailFolderList* model, BmMailFo
 	try {
 		status_t err;
 		(err = archive->FindRef( MSG_ENTRYREF, &mEntryRef)) == B_OK
-													|| BM_THROW_RUNTIME( BString("BmMailFolder: Could not find msg-field ") << MSG_ENTRYREF << "\n\nError:" << strerror(err));
+													|| BM_THROW_RUNTIME( BmString("BmMailFolder: Could not find msg-field ") << MSG_ENTRYREF << "\n\nError:" << strerror(err));
 		mInode = FindMsgInt64( archive, MSG_INODE);
 		mLastModified = FindMsgInt32( archive, MSG_LASTMODIFIED);
-		Key( BString() << mInode);
+		Key( BmString() << mInode);
 		mName = mEntryRef.name;
 		StartNodeMonitor();
 	} catch (exception &e) {
@@ -183,14 +183,14 @@ bool BmMailFolder::CheckIfModifiedSince( time_t when, time_t* storeNewModTime) {
 	BM_LOG3( BM_LogMailTracking, "BmMailFolder::CheckIfModifiedSince() - start");
 	mailDir.SetTo( this->EntryRefPtr());
 	(err = mailDir.InitCheck()) == B_OK
-													|| BM_THROW_RUNTIME(BString("Could not access \nmail-folder <") << Name() << "> \n\nError:" << strerror(err));
+													|| BM_THROW_RUNTIME(BmString("Could not access \nmail-folder <") << Name() << "> \n\nError:" << strerror(err));
 	time_t mtime;
 	BM_LOG3( BM_LogMailTracking, "BmMailFolder::CheckIfModifiedSince() - getting modification time");
 	(err = mailDir.GetModificationTime( &mtime)) == B_OK
-													|| BM_THROW_RUNTIME(BString("Could not get mtime \nfor mail-folder <") << Name() << "> \n\nError:" << strerror(err));
-	BM_LOG3( BM_LogMailTracking, BString("checking if ") << Name() << ": (" << mtime << " > " << when << ")");
+													|| BM_THROW_RUNTIME(BmString("Could not get mtime \nfor mail-folder <") << Name() << "> \n\nError:" << strerror(err));
+	BM_LOG3( BM_LogMailTracking, BmString("checking if ") << Name() << ": (" << mtime << " > " << when << ")");
 	if (mtime > when) {
-		BM_LOG2( BM_LogMailTracking, BString("Mtime of folder <")<<Name()<<"> has changed!");
+		BM_LOG2( BM_LogMailTracking, BmString("Mtime of folder <")<<Name()<<"> has changed!");
 		if (storeNewModTime)
 			*storeNewModTime = mtime;
 		hasChanged = true;
@@ -310,7 +310,7 @@ void BmMailFolder::AddMailRef( entry_ref& eref, struct stat& st) {
 		-	determines if the mail-ref specified by the given key exists within
 			this folders mailref-list
 \*------------------------------------------------------------------------------*/
-bool BmMailFolder::HasMailRef( BString key) {
+bool BmMailFolder::HasMailRef( BmString key) {
 	BmAutolock lock( nRefListLocker);
 	lock.IsLocked() 							|| BM_THROW_RUNTIME( Name() + ":HasMailRef(): Unable to get lock");
 	if (mMailRefList)
@@ -329,7 +329,7 @@ void BmMailFolder::RemoveMailRef( ino_t node) {
 	lock.IsLocked() 							|| BM_THROW_RUNTIME( Name() + ":RemoveMailRef(): Unable to get lock");
 	BM_LOG2( BM_LogMailTracking, Name()+" removing mail-ref "<<node);
 	if (mMailRefList) {
-		if (!mMailRefList->RemoveItemFromList( BString()<<node)) {
+		if (!mMailRefList->RemoveItemFromList( BmString()<<node)) {
 			BM_LOG2( BM_LogMailTracking, Name()+" mail-ref doesn't exist.");
 		}
 	}
@@ -343,7 +343,7 @@ void BmMailFolder::RemoveMailRef( ino_t node) {
 	CreateSubFolder( name)
 		-	creates a new sub-folder of the given name in this mail-folder
 \*------------------------------------------------------------------------------*/
-void BmMailFolder::CreateSubFolder( BString name) {
+void BmMailFolder::CreateSubFolder( BmString name) {
 	BDirectory thisDir( &mEntryRef);
 	if (thisDir.InitCheck() == B_OK) {
 		thisDir.CreateDirectory( name.String(), NULL);
@@ -354,12 +354,12 @@ void BmMailFolder::CreateSubFolder( BString name) {
 	Rename( newName)
 		-	rename this folder to the given name
 \*------------------------------------------------------------------------------*/
-void BmMailFolder::Rename( BString newName) {
+void BmMailFolder::Rename( BmString newName) {
 	BEntry entry( EntryRefPtr());
 	if (entry.InitCheck()==B_OK) {
 		status_t err;
 		(err = entry.Rename( newName.String())) == B_OK
-													|| BM_THROW_RUNTIME(BString("Could not rename mail-folder\n\nError:") << strerror(err));
+													|| BM_THROW_RUNTIME(BmString("Could not rename mail-folder\n\nError:") << strerror(err));
 	}
 }
 

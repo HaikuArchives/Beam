@@ -42,6 +42,7 @@ using namespace regexx;
 #include "BmBasics.h"
 #include "BmPrefs.h"
 #include "BmResources.h"
+#include "BmStorageUtil.h"
 #include "BmUtil.h"
 
 BmResources* BmResources::theInstance = NULL;
@@ -143,7 +144,7 @@ BmResources::~BmResources()
 		-	returns the icon corresponding to the given string-id (which can be an
 			identifier from the resource-file (Beam) or a mimetype.
 \*------------------------------------------------------------------------------*/
-BBitmap* BmResources::IconByName( const BString name) {
+BBitmap* BmResources::IconByName( const BmString name) {
 	BBitmap*& icon = mIconMap[name];
 	if (!icon) {
 		BMimeType mt( name.String());
@@ -195,7 +196,7 @@ void BmResources::FetchIcons() {
 	char *data;
 	for( int32 i=0; res->GetResourceInfo( iconType, i, &id, &name, &length); i++) {
 		if (!(data = (char*)res->LoadResource( iconType, id, &length))) {
-			ShowAlert( BString("FetchIcons(): Could not read icon '") << name << "'");
+			ShowAlert( BmString("FetchIcons(): Could not read icon '") << name << "'");
 			continue;
 		}
 		BArchivable* theObj = NULL;
@@ -213,62 +214,37 @@ void BmResources::FetchIcons() {
 			from that.
 \*------------------------------------------------------------------------------*/
 void BmResources::FetchOwnFQDN() {
+	BmString buffer;
+	Regexx rx;
 #ifdef BEAM_FOR_BONE
-	BFile hostFile( "/etc/hostname", B_READ_ONLY);
-	if (hostFile.InitCheck() == B_OK) {
-		BString buffer;
-		char* buf = buffer.LockBuffer(4096);
-		ssize_t readSize = hostFile.Read( buf, 4095);
-		readSize = MAX(0,readSize);
-		buf[readSize] = 0;
-		buffer.UnlockBuffer( readSize);
-		mOwnFQDN = buffer;
-		if (!mOwnFQDN.Length())
-			mOwnFQDN = "bepc";
-	}
-	BFile domainFile( "/etc/resolv.conf", B_READ_ONLY);
-	if (domainFile.InitCheck() == B_OK) {
-		BString buffer;
-		char* buf = buffer.LockBuffer(4096);
-		ssize_t readSize = domainFile.Read( buf, 4095);
-		readSize = MAX(0,readSize);
-		buf[readSize] = 0;
-		buffer.UnlockBuffer( readSize);
-		Regexx rx;
-		if (rx.exec( buffer, "DOMAIN\\s*(\\S*)", Regexx::nocase)
-		&& rx.match[0].atom[0].Length())
-			mOwnFQDN << "." << rx.match[0].atom[0];
-		else
-			mOwnFQDN << "." << time( NULL) << ".fake";
-	}
+	FetchFile( "/etc/hostname", mOwnFQDN);
+	if (!mOwnFQDN.Length())
+		mOwnFQDN = "bepc";
+	FetchFile( "/etc/resolv.conf", buffer);
+	if (rx.exec( buffer, "DOMAIN\\s*(\\S*)", Regexx::nocase)
+	&& rx.match[0].atom[0].Length())
+		mOwnFQDN << "." << rx.match[0].atom[0];
+	else
+		mOwnFQDN << "." << time( NULL) << ".fake";
 #else
 	BPath path;
 	if (find_directory( B_COMMON_SETTINGS_DIRECTORY, &path) == B_OK) {
-		BFile netFile( (BString(path.Path())<<"/network").String(), B_READ_ONLY);
-		if (netFile.InitCheck() == B_OK) {
-			BString buffer;
-			char* buf = buffer.LockBuffer(4096);
-			ssize_t readSize = netFile.Read( buf, 4095);
-			readSize = MAX(0,readSize);
-			buf[readSize] = 0;
-			buffer.UnlockBuffer( readSize);
-			Regexx rx;
-			if (rx.exec( buffer, "HOSTNAME\\s*=[ \\t]*(\\S*)", Regexx::nocase)) {
-				mOwnFQDN = rx.match[0].atom[0];
-				if (!mOwnFQDN.Length())
-					mOwnFQDN = "bepc";
-				if (rx.exec( buffer, "DNS_DOMAIN\\s*=[ \\t]*(\\S*)", Regexx::nocase)
-				&& rx.match[0].atom[0].Length())
-					mOwnFQDN << "." << rx.match[0].atom[0];
-				else
-					mOwnFQDN << "." << time( NULL) << ".fake";
-			}
+		FetchFile( BmString(path.Path())<<"/network", buffer);
+		if (rx.exec( buffer, "HOSTNAME\\s*=[ \\t]*(\\S*)", Regexx::nocase)) {
+			mOwnFQDN = rx.match[0].atom[0];
+			if (!mOwnFQDN.Length())
+				mOwnFQDN = "bepc";
+			if (rx.exec( buffer, "DNS_DOMAIN\\s*=[ \\t]*(\\S*)", Regexx::nocase)
+			&& rx.match[0].atom[0].Length())
+				mOwnFQDN << "." << rx.match[0].atom[0];
+			else
+				mOwnFQDN << "." << time( NULL) << ".fake";
 		}
 	}
 #endif
 	if (!mOwnFQDN.Length())
 		mOwnFQDN << "bepc." << time( NULL) << ".fake";
-	RemoveSetFromString( mOwnFQDN, "\r\n");
+	mOwnFQDN.RemoveSet( "\r\n");
 }
 
 /*------------------------------------------------------------------------------*\
@@ -298,11 +274,11 @@ void BmResources::FetchFonts() {
 			(.../settings/beos_mime/application/x-vnd.zooey-beam)
 			and removes the file if it's older than the application file.
 \*------------------------------------------------------------------------------*/
-void BmResources::CheckMimeTypeFile( BString sig, time_t appModTime) {
+void BmResources::CheckMimeTypeFile( BmString sig, time_t appModTime) {
 	BPath path;
 	if (find_directory( B_COMMON_SETTINGS_DIRECTORY, &path) == B_OK) {
-		BmToLower( sig);
-		BEntry mtEntry( (BString(path.Path())<<"/beos_mime/"<<sig).String());
+		sig.ToLower();
+		BEntry mtEntry( (BmString(path.Path())<<"/beos_mime/"<<sig).String());
 		if (mtEntry.InitCheck() == B_OK) {
 			time_t modTime;
 			if (mtEntry.GetModificationTime( &modTime) == B_OK) {
@@ -422,7 +398,7 @@ float BmResources::FontLineHeight( const BFont* font) {
 			lives (normally .../settings/Beam/MailCache/)
 \*------------------------------------------------------------------------------*/
 BDirectory* BmResources::MailCacheFolder() {
-	return GetFolder( BString( SettingsPath.Path()) << "/MailCache/", mMailCacheFolder);
+	return GetFolder( BmString( SettingsPath.Path()) << "/MailCache/", mMailCacheFolder);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -431,7 +407,7 @@ BDirectory* BmResources::MailCacheFolder() {
 			lives (normally .../settings/Beam/StateInfo/)
 \*------------------------------------------------------------------------------*/
 BDirectory* BmResources::StateInfoFolder() {
-	return GetFolder( BString( SettingsPath.Path()) << "/StateInfo/", mStateInfoFolder);
+	return GetFolder( BmString( SettingsPath.Path()) << "/StateInfo/", mStateInfoFolder);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -441,12 +417,12 @@ BDirectory* BmResources::StateInfoFolder() {
 		-	a pointer to the initialized directory is returned, so you probably
 			don't want to delete that
 \*------------------------------------------------------------------------------*/
-BDirectory* BmResources::GetFolder( const BString& name, BDirectory& dir) {
+BDirectory* BmResources::GetFolder( const BmString& name, BDirectory& dir) {
 	if (dir.InitCheck() != B_OK) {
 		status_t res = dir.SetTo( name.String());
 		if (res != B_OK) {
 			(res = create_directory( name.String(), 0755) || dir.SetTo( name.String())) == B_OK
-													|| BM_DIE( BString("Sorry, could not create folder ")<<name<<".\n\t Going down!");
+													|| BM_DIE( BmString("Sorry, could not create folder ")<<name<<".\n\t Going down!");
 		}
 	}
 	return &dir;

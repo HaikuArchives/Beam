@@ -80,7 +80,7 @@ protected:
 
 public:
 	//
-	BmListViewItem( BString& key, BmListModelItem* item, bool hierarchical=false, 
+	BmListViewItem( BmString& key, BmListModelItem* item, bool hierarchical=false, 
 						 BMessage* archive=NULL);
 	virtual ~BmListViewItem();
 	
@@ -92,11 +92,11 @@ public:
 	status_t Archive( BMessage* archive, bool deep = true) const;
 
 	// getters:
-	inline const BString Key() const		{ return mKey; }
+	inline const BmString Key() const		{ return mKey; }
 	virtual BmListModelItem* ModelItem() const	{ return mModelItem.Get(); }
 	
 protected:
-	BString mKey;
+	BmString mKey;
 	BmRef<BmListModelItem> mModelItem;
 
 	// Hide copy-constructor and assignment:
@@ -182,7 +182,7 @@ public:
 	virtual BmListViewItem* CreateListViewItem( BmListModelItem* item, 
 															  BMessage* archive=NULL) 			= 0;
 	//
-	BMessage* GetArchiveForItemKey( BString, BMessage* msg=NULL);
+	BMessage* GetArchiveForItemKey( BmString, BMessage* msg=NULL);
 	//
 	virtual void WriteStateInfo();
 	virtual void ReadStateInfo();
@@ -220,7 +220,7 @@ public:
 protected:
 	virtual BmListModel* DataModel()		{ return dynamic_cast<BmListModel*>(BmController::DataModel()); }
 	// archival of the controller's state-info:
-	virtual BString StateInfoBasename()				= 0;
+	virtual BmString StateInfoBasename()				= 0;
 	virtual BMessage* DefaultLayout()	{ return NULL; }
 
 	BMessage* mInitialStateInfo;

@@ -51,7 +51,7 @@ class BmMailFolderItem : public BmListViewItem
 
 public:
 	// c'tors and d'tor:
-	BmMailFolderItem( BString key, BmListModelItem* item, bool superitem, 
+	BmMailFolderItem( BmString key, BmListModelItem* item, bool superitem, 
 							BMessage* archive);
 	~BmMailFolderItem();
 
@@ -99,7 +99,7 @@ public:
 	void HandleDrop( const BMessage* msg);
 	void ItemInvoked( int32 index);
 	void KeyDown(const char *bytes, int32 numBytes);
-	BString StateInfoBasename()			{ return "MailFolderView"; }
+	BmString StateInfoBasename()			{ return "MailFolderView"; }
 	BmListViewItem* UpdateModelItem( BmListModelItem* item, BmUpdFlags updFlags);
 	const char* ItemNameForCaption()		{ return "folder"; }
 	void JobIsDone( bool completed);
@@ -120,7 +120,7 @@ private:
 	
 	BmMailRefView* mPartnerMailRefView;
 	
-	BString mLastActiveKey;
+	BmString mLastActiveKey;
 
 	// Hide copy-constructor and assignment:
 	BmMailFolderView( const BmMailFolderView&);

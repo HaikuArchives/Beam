@@ -162,7 +162,7 @@ BmPrefsMailConstrView::BmPrefsMailConstrView()
 	mReplySubjectStrControl->SetDivider( divider);
 	mReplySubjectRxControl->SetDivider( divider);
 
-	BString val;
+	BmString val;
 	val << ThePrefs->GetInt("MaxLineLen");
 	mMaxLineLenControl->SetText( val.String());
 	mQuotingStringControl->SetText( ThePrefs->GetString("QuotingString").String());
@@ -409,7 +409,7 @@ void BmPrefsMailConstrView::MessageReceived( BMessage* msg) {
 	}
 	catch( exception &err) {
 		// a problem occurred, we tell the user:
-		BM_SHOWERR( BString("PrefsView_") << Name() << ":\n\t" << err.what());
+		BM_SHOWERR( BmString("PrefsView_") << Name() << ":\n\t" << err.what());
 	}
 }
 

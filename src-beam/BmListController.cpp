@@ -58,7 +58,7 @@
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmListViewItem::BmListViewItem( BString& key, BmListModelItem* modelItem,
+BmListViewItem::BmListViewItem( BmString& key, BmListModelItem* modelItem,
 										  bool hierarchical, BMessage* archive)
 	:	inherited( 0, !modelItem->empty(), false, MAX( TheResources->FontLineHeight(), 18))
 	,	mKey( key)
@@ -85,7 +85,7 @@ status_t BmListViewItem::Archive( BMessage* archive, bool deep) const {
 
 	// ...now we add this message with a corresponding key to the archive:
 	status_t ret = archive->AddMessage( MSG_CHILDREN, &msg)
-						|| archive->AddString( MSG_CHILDNAMES, Key());
+						|| archive->AddString( MSG_CHILDNAMES, Key().String());
 	return ret;
 }
 
@@ -429,7 +429,7 @@ void BmListViewController::MessageReceived( BMessage* msg) {
 	}
 	catch( exception &err) {
 		// a problem occurred, we tell the user:
-		BM_SHOWERR( BString(ControllerName()) << ":\n\t" << err.what());
+		BM_SHOWERR( BmString(ControllerName()) << ":\n\t" << err.what());
 	}
 }
 
@@ -452,9 +452,9 @@ BmListViewItem* BmListViewController::FindViewItemFor( BmListModelItem* modelIte
 		-	
 \*------------------------------------------------------------------------------*/
 void BmListViewController::AddAllModelItems() {
-	BM_LOG2( BM_LogModelController, BString(ControllerName())<<": adding items to listview");
+	BM_LOG2( BM_LogModelController, BmString(ControllerName())<<": adding items to listview");
 	BmAutolock lock( DataModel()->ModelLocker());
-	lock.IsLocked()	 						|| BM_THROW_RUNTIME( BString() << ControllerName() << ":AddAllModelItems(): Unable to lock model");
+	lock.IsLocked()	 						|| BM_THROW_RUNTIME( BmString() << ControllerName() << ":AddAllModelItems(): Unable to lock model");
 	MakeEmpty();
 	BmListModel *model = DataModel();
 	BList* tempList = NULL;
@@ -477,7 +477,7 @@ void BmListViewController::AddAllModelItems() {
 		}
 		if (count%100==0) {
 			ScrollView()->PulseBusyView();
-			BString caption = BString()<<count<<" "<<ItemNameForCaption()<<(count>1?"s":"");
+			BmString caption = BmString()<<count<<" "<<ItemNameForCaption()<<(count>1?"s":"");
 			UpdateCaption( caption.String());
 		}
 	}
@@ -491,7 +491,7 @@ void BmListViewController::AddAllModelItems() {
 	SetDisconnectScrollView( false);
 	UpdateColumnSizesDataRectSizeScrollBars( true);
 	UpdateCaption();
-	BM_LOG3( BM_LogModelController, BString(ControllerName())<<": finished with adding items to listview");
+	BM_LOG3( BM_LogModelController, BmString(ControllerName())<<": finished with adding items to listview");
 }
 
 /*------------------------------------------------------------------------------*\
@@ -500,7 +500,7 @@ void BmListViewController::AddAllModelItems() {
 			listmodel
 \*------------------------------------------------------------------------------*/
 BmListViewItem* BmListViewController::AddModelItem( BmListModelItem* item) {
-	BM_LOG2( BM_LogModelController, BString(ControllerName())<<": adding one item to listview");
+	BM_LOG2( BM_LogModelController, BmString(ControllerName())<<": adding one item to listview");
 	BmListViewItem* newItem;
 	if (!Hierarchical()) {
 		newItem = doAddModelItem( NULL, item);
@@ -549,7 +549,7 @@ BmListViewItem* BmListViewController::doAddModelItem( BmListViewItem* parent, Bm
 			an item that has already been deleted by the model.
 \*------------------------------------------------------------------------------*/
 void BmListViewController::RemoveModelItem( BmListModelItem* item) {
-	BM_LOG2( BM_LogModelController, BString(ControllerName())<<": removing one item from listview");
+	BM_LOG2( BM_LogModelController, BmString(ControllerName())<<": removing one item from listview");
 	if (item) {
 		BmListViewItem* viewItem = FindViewItemFor( item);
 		if (viewItem) {
@@ -576,7 +576,7 @@ BmListViewItem* BmListViewController::UpdateModelItem( BmListModelItem* item,
 		if (idx >= 0)
 			InvalidateItem( idx);
 	} else
-		BM_LOG2( BM_LogModelController, BString(ControllerName())<<": requested to update an unknown item <"<<item->Key()<<">");
+		BM_LOG2( BM_LogModelController, BmString(ControllerName())<<": requested to update an unknown item <"<<item->Key()<<">");
 	return viewItem;
 }
 
@@ -599,11 +599,11 @@ void BmListViewController::UpdateCaption( const char* text) {
 			ScrollView()->SetCaptionText( text);
 		} else {
 			int32 numItems = FullListCountItems();
-			BString caption;
+			BmString caption;
 			if (!numItems)
-				caption = BString("no ")<<ItemNameForCaption()<<"s";
+				caption = BmString("no ")<<ItemNameForCaption()<<"s";
 			else
-				caption = BString("")<<numItems<<" "<<ItemNameForCaption()<<(numItems>1 ? "s" : "");
+				caption = BmString("")<<numItems<<" "<<ItemNameForCaption()<<(numItems>1 ? "s" : "");
 			ScrollView()->SetCaptionText( caption.String());
 		}
 		Window()->UpdateIfNeeded();
@@ -647,7 +647,7 @@ void BmListViewController::ShowLabelViewMenu( BPoint point) {
 		bool shown = fColumnDisplayList.HasItem( column);
 		BMessage* msg = new BMessage( shown ? BM_LISTVIEW_HIDE_COLUMN : BM_LISTVIEW_SHOW_COLUMN);
 		msg->AddInt32( MSG_COLUMN_NO, i);
-		BString label = column->GetLabelName();
+		BmString label = column->GetLabelName();
 		BMenuItem* item = new BMenuItem( label.String(), msg);
 		item->SetMarked( shown);
 		if (shown && numVisibleCols == 1) {
@@ -767,7 +767,7 @@ void BmListViewController::JobIsDone( bool completed) {
 \*------------------------------------------------------------------------------*/
 void BmListViewController::WriteStateInfo() {
 	status_t err;
-	BString stateInfoFilename;
+	BmString stateInfoFilename;
 	BFile stateInfoFile;
 	BMessage archive;
 	
@@ -777,12 +777,12 @@ void BmListViewController::WriteStateInfo() {
 	try {
 		stateInfoFilename = StateInfoBasename() << "_" << ModelName();
 		this->Archive( &archive, Hierarchical()) == B_OK
-													|| BM_THROW_RUNTIME( BString("Unable to archive State-Info for ")<<Name());
+													|| BM_THROW_RUNTIME( BmString("Unable to archive State-Info for ")<<Name());
 		(err = stateInfoFile.SetTo( TheResources->StateInfoFolder(), stateInfoFilename.String(), 
 											 B_WRITE_ONLY | B_CREATE_FILE | B_ERASE_FILE)) == B_OK
-													|| BM_THROW_RUNTIME( BString("Could not create state-info file\n\t<") << stateInfoFilename << ">\n\n Result: " << strerror(err));
+													|| BM_THROW_RUNTIME( BmString("Could not create state-info file\n\t<") << stateInfoFilename << ">\n\n Result: " << strerror(err));
 		(err = archive.Flatten( &stateInfoFile)) == B_OK
-													|| BM_THROW_RUNTIME( BString("Could not store state-info into file\n\t<") << stateInfoFilename << ">\n\n Result: " << strerror(err));
+													|| BM_THROW_RUNTIME( BmString("Could not store state-info into file\n\t<") << stateInfoFilename << ">\n\n Result: " << strerror(err));
 	} catch( exception &e) {
 		BM_SHOWERR( e.what());
 	}
@@ -802,7 +802,7 @@ status_t BmListViewController::Archive(BMessage* archive, bool deep) const {
 		}
 	}
 	if (ret != B_OK) {
-		ShowAlert( BString("Could not archive State-Info for ") << ModelName() << "\n\tError: "<< strerror( ret));
+		ShowAlert( BmString("Could not archive State-Info for ") << ModelName() << "\n\tError: "<< strerror( ret));
 	}
 	return ret;
 }
@@ -811,7 +811,7 @@ status_t BmListViewController::Archive(BMessage* archive, bool deep) const {
 	GetArchiveForItemKey( )
 		-	
 \*------------------------------------------------------------------------------*/
-BMessage* BmListViewController::GetArchiveForItemKey( BString key, BMessage* msg=NULL) {
+BMessage* BmListViewController::GetArchiveForItemKey( BmString key, BMessage* msg=NULL) {
 	if (mInitialStateInfo) {
 		status_t ret = B_OK;
 		for( int i=0; ret==B_OK; ++i) {
@@ -831,7 +831,7 @@ BMessage* BmListViewController::GetArchiveForItemKey( BString key, BMessage* msg
 \*------------------------------------------------------------------------------*/
 void BmListViewController::ReadStateInfo() {
 	status_t err;
-	BString stateInfoFilename;
+	BmString stateInfoFilename;
 	BFile stateInfoFile;
 
 	// try to open state-info-file...
@@ -844,7 +844,7 @@ void BmListViewController::ReadStateInfo() {
 			delete mInitialStateInfo;
 			mInitialStateInfo = new BMessage;
 			(err = mInitialStateInfo->Unflatten( &stateInfoFile)) == B_OK
-													|| BM_THROW_RUNTIME( BString("Could not fetch state-info from file\n\t<") << stateInfoFilename << ">\n\n Result: " << strerror(err));
+													|| BM_THROW_RUNTIME( BmString("Could not fetch state-info from file\n\t<") << stateInfoFilename << ">\n\n Result: " << strerror(err));
 			if (mInitialStateInfo)
 				Unarchive( mInitialStateInfo);
 		} catch (exception &e) {

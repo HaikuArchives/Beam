@@ -31,7 +31,7 @@
 #ifndef _BmWindow_h
 #define _BmWindow_h
 
-#include <String.h>
+#include "BmString.h"
 
 #ifdef B_BEOS_VERSION_DANO
 	class BPopUpMenu;
@@ -62,7 +62,7 @@ public:
 	void Show();
 	
 protected:
-	BString mStatefileName;
+	BmString mStatefileName;
 	bool mLifeHasBegun;
 
 	// Hide copy-constructor and assignment:

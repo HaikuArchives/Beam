@@ -28,19 +28,19 @@
 
 #include "split.hh"
 
-std::vector<BString>
-regexx::split(const BString& _where, const BString& _str)
+std::vector<BmString>
+regexx::split(const BmString& _where, const BmString& _str)
 {
-  std::vector<BString> v;
+  std::vector<BmString> v;
   split( _where, _str, v);
   return v;
 }
 
 void
-regexx::split(const BString& _where, const BString& _str,
-				  std::vector<BString>& v)
+regexx::split(const BmString& _where, const BmString& _str,
+				  std::vector<BmString>& v)
 {
-  BString temp;
+  BmString temp;
   v.clear();
   int32 lastpos = 0;
   int32 pos = _str.FindFirst(_where);
@@ -53,19 +53,19 @@ regexx::split(const BString& _where, const BString& _str,
     v.push_back(_str.CopyInto(temp,lastpos,_str.Length()-lastpos));
 }
 
-std::vector<BString>
-regexx::splitex(const BString& _regex, const BString& _str)
+std::vector<BmString>
+regexx::splitex(const BmString& _regex, const BmString& _str)
 {
-  std::vector<BString> v;
+  std::vector<BmString> v;
   splitex( _regex, _str, v);
   return v;
 }
 
 void
-regexx::splitex(const BString& _regex, const BString& _str,
-					 std::vector<BString>& v)
+regexx::splitex(const BmString& _regex, const BmString& _str,
+					 std::vector<BmString>& v)
 {
-  BString temp;
+  BmString temp;
   Regexx rxx;
   rxx.expr(_regex);
   rxx.str(_str);

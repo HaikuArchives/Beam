@@ -62,7 +62,7 @@ BmLogHandler* BmLogHandler::theInstance = NULL;
 	static logging-function
 		-	logs only if a loghandler is actually present
 \*------------------------------------------------------------------------------*/
-void BmLogHandler::Log( const BString logname, uint32 flag, const BString& msg, int8 minlevel=1) { 
+void BmLogHandler::Log( const BmString logname, uint32 flag, const BmString& msg, int8 minlevel=1) { 
 	if (theInstance)
 		theInstance->LogToFile( logname, flag, msg, minlevel);
 }
@@ -72,8 +72,8 @@ void BmLogHandler::Log( const BString logname, uint32 flag, const BString& msg, 
 		-	logs only if a loghandler is actually present
 \*------------------------------------------------------------------------------*/
 void BmLogHandler::Log( const char* const logname, uint32 flag, const char* const msg, int8 minlevel=1) { 
-	BString theLogname(logname);
-	BString theMsg(msg);
+	BmString theLogname(logname);
+	BmString theMsg(msg);
 	if (theInstance)
 		theInstance->LogToFile( theLogname, flag, theMsg, minlevel);
 }
@@ -82,7 +82,7 @@ void BmLogHandler::Log( const char* const logname, uint32 flag, const char* cons
 	static logging-function
 		-	logs only if a loghandler is actually present
 \*------------------------------------------------------------------------------*/
-void BmLogHandler::FinishLog( const BString& logname) { 
+void BmLogHandler::FinishLog( const BmString& logname) { 
 	if (theInstance)
 		theInstance->CloseLog( logname);
 }
@@ -131,11 +131,11 @@ BmLogHandler::~BmLogHandler() {
 		-	tries to find the logfile of the given name in the logfile-map
 		-	if logfile does not exist yet, it is created and added to map
 \*------------------------------------------------------------------------------*/
-BmLogHandler::BmLogfile* BmLogHandler::FindLogfile( const BString &logname) {
+BmLogHandler::BmLogfile* BmLogHandler::FindLogfile( const BmString &logname) {
 	BmAutolock lock( mLocker);
 	if (lock.IsLocked()) {
-		BString name = logname.Length() ? logname : "Beam";
-		name = BString("logs/") + name + ".log";
+		BmString name = logname.Length() ? logname : "Beam";
+		name = BmString("logs/") + name + ".log";
 		LogfileMap::iterator logIter = mActiveLogs.find( name);
 		BmLogfile* log;
 		if (logIter == mActiveLogs.end()) {
@@ -145,7 +145,7 @@ BmLogHandler::BmLogfile* BmLogHandler::FindLogfile( const BString &logname) {
 			BFile* logfile = new BFile( mAppFolder, name.String(),
 												 B_WRITE_ONLY|B_CREATE_FILE|B_OPEN_AT_END);
 			if (logfile->InitCheck() != B_OK)
-				throw BM_runtime_error( BString("Unable to open logfile ") << name);
+				throw BM_runtime_error( BmString("Unable to open logfile ") << name);
 			log = new BmLogfile( logfile, name.String());
 			mActiveLogs[name] = log;
 		} else {
@@ -160,15 +160,15 @@ BmLogHandler::BmLogfile* BmLogHandler::FindLogfile( const BString &logname) {
 	LogToFile( logname, msg)
 		-	writes msg into the logfile specified by logname
 \*------------------------------------------------------------------------------*/
-void BmLogHandler::LogToFile( const BString& logname, uint32 flag,
-										const BString& msg, int8 minlevel) {
+void BmLogHandler::LogToFile( const BmString& logname, uint32 flag,
+										const BmString& msg, int8 minlevel) {
 	BmLogfile* log = FindLogfile( logname);
 	if (log) {
 		int8 loglevel = BM_LOGLVL_FOR(mLoglevels, flag);
 		if (loglevel < minlevel)
 			return;								// loglevel indicates to ignore this message
 		BMessage mess( BM_LOG_MSG);
-		mess.AddString( MSG_MESSAGE, msg);
+		mess.AddString( MSG_MESSAGE, msg.String());
 		mess.AddInt32( MSG_THREAD_ID, find_thread(NULL));
 		log->PostMessage( &mess);
 	}
@@ -180,14 +180,14 @@ void BmLogHandler::LogToFile( const BString& logname, uint32 flag,
 		-	if no logfile of given name exists, it is created
 \*------------------------------------------------------------------------------*/
 void BmLogHandler::LogToFile( const char* const logname, uint32 flag, const char* const msg, int8 minlevel=1) { 
-	LogToFile( BString(logname), flag, BString(msg), minlevel);
+	LogToFile( BmString(logname), flag, BmString(msg), minlevel);
 }
 
 /*------------------------------------------------------------------------------*\
 	CloseLog( logname)
 		-	closes the logfile with the specified logname
 \*------------------------------------------------------------------------------*/
-void BmLogHandler::CloseLog( const BString &logname) {
+void BmLogHandler::CloseLog( const BmString &logname) {
 	BmAutolock lock( mLocker);
 	if (lock.IsLocked()) {
 		LogfileMap::iterator logIter = mActiveLogs.find( logname);
@@ -207,7 +207,7 @@ void BmLogHandler::CloseLog( const BString &logname) {
 		-	starts Looper's message-loop
 \*------------------------------------------------------------------------------*/
 BmLogHandler::BmLogfile::BmLogfile( BFile* file, const char* fn)
-	:	BLooper( (BString("log_")<<fn).String(), B_DISPLAY_PRIORITY, 500)
+	:	BLooper( (BmString("log_")<<fn).String(), B_DISPLAY_PRIORITY, 500)
 	,	mLogFile( file)
 	,	filename( fn)
 {
@@ -243,10 +243,10 @@ void BmLogHandler::BmLogfile::MessageReceived( BMessage* msg) {
 		-	log is flushed after each write
 \*------------------------------------------------------------------------------*/
 void BmLogHandler::BmLogfile::Write( const char* const msg, int32 threadId) {
-	BString s(msg);
-	ReplaceSubstringWith( s, "\r", "<CR>");
-	ReplaceSubstringWith( s, "\n\n", "\n");
-	ReplaceSubstringWith( s, "\n", "\n                                   ");
+	BmString s(msg);
+	s.ReplaceAll( "\r", "<CR>");
+	s.ReplaceAll( "\n\n", "\n");
+	s.ReplaceAll( "\n", "\n                                   ");
 	s << "\n";
 	bigtime_t rtNow = real_time_clock_usecs();
 	time_t now = rtNow/1000000;
@@ -258,8 +258,8 @@ void BmLogHandler::BmLogfile::Write( const char* const msg, int32 threadId) {
 					  nowMSecs);
 	ssize_t result;
 	if ((result = mLogFile->Write( buf, strlen( buf))) < 0)
-		throw BM_runtime_error( BString("Unable to write to logfile ") << filename);
+		throw BM_runtime_error( BmString("Unable to write to logfile ") << filename);
 	if ((result = mLogFile->Write( s.String(), s.Length())) < 0)
-		throw BM_runtime_error( BString("Unable to write to logfile ") << filename);
+		throw BM_runtime_error( BmString("Unable to write to logfile ") << filename);
 	mLogFile->Sync();
 }

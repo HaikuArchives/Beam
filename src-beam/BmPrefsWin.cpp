@@ -31,7 +31,7 @@
 #include <Autolock.h>
 #include <Font.h>
 #include <Message.h>
-#include <String.h>
+#include "BmString.h"
 
 #include <BeBuild.h>
 #ifdef B_BEOS_VERSION_DANO
@@ -273,7 +273,7 @@ void BmPrefsWin::MessageReceived( BMessage* msg) {
 	}
 	catch( exception &err) {
 		// a problem occurred, we tell the user:
-		BM_SHOWERR( BString("PrefsWin: ") << err.what());
+		BM_SHOWERR( BmString("PrefsWin: ") << err.what());
 	}
 }
 
@@ -282,7 +282,7 @@ void BmPrefsWin::MessageReceived( BMessage* msg) {
 		-	standard BeOS-behaviour, we allow a quit
 \*------------------------------------------------------------------------------*/
 bool BmPrefsWin::QuitRequested() {
-	BM_LOG2( BM_LogPrefsWin, BString("PrefsWin has been asked to quit"));
+	BM_LOG2( BM_LogPrefsWin, BmString("PrefsWin has been asked to quit"));
 	return true;
 }
 
@@ -294,7 +294,7 @@ void BmPrefsWin::Quit() {
 	if (mFinishOnExit)
 		mPrefsViewContainer->Finish();
 	mPrefsViewContainer->WriteStateInfo();
-	BM_LOG2( BM_LogPrefsWin, BString("PrefsWin has quit"));
+	BM_LOG2( BM_LogPrefsWin, BmString("PrefsWin has quit"));
 	inherited::Quit();
 }
 

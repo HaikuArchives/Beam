@@ -79,7 +79,7 @@ public:
 
 private:
 	CLVContainerView* CreateMailRefLayoutView( minimax minmax, int32 width, int32 height);
-	BString MailboxButtonLabel();
+	BmString MailboxButtonLabel();
 
 	BmMailRefView* mLayoutView;
 	BmTextControl* mMailMoverShowControl;

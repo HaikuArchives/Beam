@@ -57,11 +57,11 @@ BMenuItem* CreateMenuItem( const char* label, int32 msgWhat, const char* idForSh
 		-	
 \*------------------------------------------------------------------------------*/
 BMenuItem* CreateMenuItem( const char* label, BMessage* msg, const char* idForShortcut) {
-	BString name( idForShortcut ? idForShortcut : label);
+	BmString name( idForShortcut ? idForShortcut : label);
 	name.RemoveAll( "...");
-	BString shortcut = ThePrefs->GetShortcutFor( name.String());
+	BmString shortcut = ThePrefs->GetShortcutFor( name.String());
 	shortcut.RemoveSet( " \t");
-	BmToUpper( shortcut);
+	shortcut.ToUpper();
 	int32 modifiers = 0;
 	int32 pos;
 	if ((pos=shortcut.FindFirst("<SHIFT>")) != B_ERROR) {

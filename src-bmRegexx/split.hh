@@ -29,19 +29,19 @@
 #ifndef SPLIT_HH
 #define SPLIT_HH
 
-#include <String.h>
+#include "BmString.h"
 #include <vector>
 #include "regexx.hh"
 
 namespace regexx {
 
-  std::vector<BString> split(const BString& _where, const BString& _str);
+  std::vector<BmString> split(const BmString& _where, const BmString& _str);
 
-  void split(const BString& _where, const BString& _str, std::vector<BString>& v);
+  void split(const BmString& _where, const BmString& _str, std::vector<BmString>& v);
 
-  std::vector<BString> splitex(const BString& _exp, const BString& _str);
+  std::vector<BmString> splitex(const BmString& _exp, const BmString& _str);
 
-  void splitex(const BString& _regex, const BString& _str, std::vector<BString>& v);
+  void splitex(const BmString& _regex, const BmString& _str, std::vector<BmString>& v);
 
 }
 

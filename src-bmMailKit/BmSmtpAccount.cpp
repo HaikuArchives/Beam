@@ -68,7 +68,7 @@ BmSmtpAccount::BmSmtpAccount( BMessage* archive, BmSmtpAccountList* model)
 	mSMTPServer = FindMsgString( archive, MSG_SMTP_SERVER);
 	mDomainToAnnounce = FindMsgString( archive, MSG_DOMAIN);
 	mAuthMethod = FindMsgString( archive, MSG_AUTH_METHOD);
-	BmToUpper( mAuthMethod);
+	mAuthMethod.ToUpper( );
 	mPortNr = FindMsgInt16( archive, MSG_PORT_NR);
 	mPortNrString << mPortNr;
 	mPwdStoredOnDisk = FindMsgBool( archive, MSG_STORE_PWD);
@@ -99,7 +99,7 @@ status_t BmSmtpAccount::Archive( BMessage* archive, bool deep) const {
 		||	archive->AddString( MSG_AUTH_METHOD, mAuthMethod.String())
 		||	archive->AddInt16( MSG_PORT_NR, mPortNr)
 		||	archive->AddBool( MSG_STORE_PWD, mPwdStoredOnDisk)
-		||	archive->AddString( MSG_ACC_FOR_SAP, mAccForSmtpAfterPop));
+		||	archive->AddString( MSG_ACC_FOR_SAP, mAccForSmtpAfterPop.String()));
 	return ret;
 }
 
@@ -126,7 +126,7 @@ bool BmSmtpAccount::NeedsAuthViaPopServer() {
 			given out-params
 		-	returns true if values are ok, false (and error-info) if not
 \*------------------------------------------------------------------------------*/
-bool BmSmtpAccount::SanityCheck( BString& complaint, BString& fieldName) const {
+bool BmSmtpAccount::SanityCheck( BmString& complaint, BmString& fieldName) const {
 	if (!mSMTPServer.Length()) {
 		complaint = "Please enter the address of this account's SMTP-Server.";
 		fieldName = "smtpserver";
@@ -186,8 +186,8 @@ BmSmtpAccountList::~BmSmtpAccountList() {
 	SettingsFileName()
 		-	returns name of settings-file for list of SMTP-accounts
 \*------------------------------------------------------------------------------*/
-const BString BmSmtpAccountList::SettingsFileName() {
-	return BString( TheResources->SettingsPath.Path()) << "/" << "Smtp Accounts";
+const BmString BmSmtpAccountList::SettingsFileName() {
+	return BmString( TheResources->SettingsPath.Path()) << "/" << "Smtp Accounts";
 }
 
 /*------------------------------------------------------------------------------*\
@@ -195,18 +195,18 @@ const BString BmSmtpAccountList::SettingsFileName() {
 		-	fetches SMTP-accounts from given message-archive
 \*------------------------------------------------------------------------------*/
 void BmSmtpAccountList::InstantiateItems( BMessage* archive) {
-	BM_LOG2( BM_LogMailTracking, BString("Start of InstantiateItems() for SmtpAccountList"));
+	BM_LOG2( BM_LogMailTracking, BmString("Start of InstantiateItems() for SmtpAccountList"));
 	status_t err;
 	int32 numChildren = FindMsgInt32( archive, BmListModelItem::MSG_NUMCHILDREN);
 	for( int i=0; i<numChildren; ++i) {
 		BMessage msg;
 		(err = archive->FindMessage( BmListModelItem::MSG_CHILDREN, i, &msg)) == B_OK
-													|| BM_THROW_RUNTIME(BString("Could not find smtp-account nr. ") << i+1 << " \n\nError:" << strerror(err));
+													|| BM_THROW_RUNTIME(BmString("Could not find smtp-account nr. ") << i+1 << " \n\nError:" << strerror(err));
 		BmSmtpAccount* newAcc = new BmSmtpAccount( &msg, this);
-		BM_LOG3( BM_LogMailTracking, BString("SmtpAccount <") << newAcc->Name() << "," << newAcc->Key() << "> read");
+		BM_LOG3( BM_LogMailTracking, BmString("SmtpAccount <") << newAcc->Name() << "," << newAcc->Key() << "> read");
 		AddItemToList( newAcc);
 	}
-	BM_LOG2( BM_LogMailTracking, BString("End of InstantiateMailRefs() for SmtpAccountList"));
+	BM_LOG2( BM_LogMailTracking, BmString("End of InstantiateMailRefs() for SmtpAccountList"));
 	mInitCheck = B_OK;
 }
 
@@ -214,7 +214,7 @@ void BmSmtpAccountList::InstantiateItems( BMessage* archive) {
 	SendQueuedMailFor( accName)
 		-	sends all queued mails for the account specified by accName
 \*------------------------------------------------------------------------------*/
-void BmSmtpAccountList::SendQueuedMailFor( const BString accName) {
+void BmSmtpAccountList::SendQueuedMailFor( const BmString accName) {
 	BMessage archive(BM_JOBWIN_SMTP);
 	archive.AddString( BmJobModel::MSG_JOB_NAME, accName.String());
 	mJobMetaController->PostMessage( &archive);

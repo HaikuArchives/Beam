@@ -37,9 +37,11 @@
 #include "BmMail.h"
 #include "BmMailRef.h"
 #include "BmMailRefList.h"
+#include "BmPrefs.h"
+#include "BmStorageUtil.h"
 #include "BmUtil.h"
 
-#define BM_REFKEY(x) (BString() << x.st_ino)
+#define BM_REFKEY(x) (BmString() << x.st_ino)
 
 /*------------------------------------------------------------------------------*\
 	CreateInstance( )
@@ -50,7 +52,7 @@ BmRef<BmMailRef> BmMailRef::CreateInstance( BmMailRefList* model, entry_ref &ere
 	BmProxy* proxy = BmRefObj::GetProxy( typeid(BmMailRef).name());
 	if (proxy) {
 		BAutolock lock( &proxy->Locker);
-		BString key( BM_REFKEY( st));
+		BmString key( BM_REFKEY( st));
 		BmRef<BmMailRef> mailRef( dynamic_cast<BmMailRef*>( proxy->FetchObject( key)));
 		if (mailRef) {
 			// update mailref with new info:
@@ -73,7 +75,7 @@ BmRef<BmMailRef> BmMailRef::CreateInstance( BmMailRefList* model, entry_ref &ere
 			return newRef;
 		}
 	}
-	BM_THROW_RUNTIME( BString("Could not get proxy for ") << typeid(BmMailRef).name());
+	BM_THROW_RUNTIME( BmString("Could not get proxy for ") << typeid(BmMailRef).name());
 	return NULL;
 }
 
@@ -150,9 +152,9 @@ BmMailRef::BmMailRef( BMessage* archive, BmMailRefList* model)
 	try {
 		status_t err;
 		(err = archive->FindRef( MSG_ENTRYREF, &mEntryRef)) == B_OK
-													|| BM_THROW_RUNTIME( BString("BmMailRef: Could not find msg-field ") << MSG_ENTRYREF << "\n\nError:" << strerror(err));
+													|| BM_THROW_RUNTIME( BmString("BmMailRef: Could not find msg-field ") << MSG_ENTRYREF << "\n\nError:" << strerror(err));
 		mInode = FindMsgInt64( archive, MSG_INODE);
-		Key( BString() << mInode);
+		Key( BmString() << mInode);
 
 		mAccount = FindMsgString( archive, MSG_ACCOUNT);
 		mHasAttachments = FindMsgBool( archive, MSG_ATTACHMENTS);
@@ -168,9 +170,13 @@ BmMailRef::BmMailRef( BMessage* archive, BmMailRefList* model)
 		mTo = FindMsgString( archive, MSG_TO);
 		mWhen = FindMsgInt32( archive, MSG_WHEN);
 
-		mCreatedString = TimeToString( mCreated);
 		mSizeString = BytesToString( mSize,true);
-		mWhenString = TimeToString( mWhen);
+		mCreatedString = ThePrefs->GetBool( "UseSwatchTimeInRefView", false)
+								? TimeToSwatchString( mCreated)
+								: TimeToString( mCreated);
+		mWhenString = 	ThePrefs->GetBool( "UseSwatchTimeInRefView", false)
+								? TimeToSwatchString( mWhen)
+								: TimeToString( mWhen);
 
 		mInitCheck = B_OK;
 	} catch (exception &e) {
@@ -213,7 +219,7 @@ BmMailRef::BmMailRef( const BmMailRef& mailRef)
 		-	d'tor
 \*------------------------------------------------------------------------------*/
 BmMailRef::~BmMailRef() {
-	BM_LOG3( BM_LogMailTracking, BString("destructor of MailRef ") << Key() << " called");
+	BM_LOG3( BM_LogMailTracking, BmString("destructor of MailRef ") << Key() << " called");
 }
 
 /*------------------------------------------------------------------------------*\
@@ -222,20 +228,20 @@ BmMailRef::~BmMailRef() {
 \*------------------------------------------------------------------------------*/
 status_t BmMailRef::Archive( BMessage* archive, bool deep) const {
 	status_t ret 
-		=  archive->AddString( MSG_ACCOUNT, mAccount)
+		=  archive->AddString( MSG_ACCOUNT, mAccount.String())
 		|| archive->AddBool( MSG_ATTACHMENTS, mHasAttachments)
-		|| archive->AddString( MSG_CC, mCc)
+		|| archive->AddString( MSG_CC, mCc.String())
 		|| archive->AddInt32( MSG_CREATED, mCreated)
 		|| archive->AddRef( MSG_ENTRYREF, &mEntryRef)
-		|| archive->AddString( MSG_FROM, mFrom)
+		|| archive->AddString( MSG_FROM, mFrom.String())
 		|| archive->AddInt64( MSG_INODE, mInode)
-		|| archive->AddString( MSG_NAME, mName)
-		|| archive->AddString( MSG_PRIORITY, mPriority)
-		|| archive->AddString( MSG_REPLYTO, mReplyTo)
+		|| archive->AddString( MSG_NAME, mName.String())
+		|| archive->AddString( MSG_PRIORITY, mPriority.String())
+		|| archive->AddString( MSG_REPLYTO, mReplyTo.String())
 		|| archive->AddInt64( MSG_SIZE, mSize)
-		|| archive->AddString( MSG_STATUS, mStatus)
-		|| archive->AddString( MSG_SUBJECT, mSubject)
-		|| archive->AddString( MSG_TO, mTo)
+		|| archive->AddString( MSG_STATUS, mStatus.String())
+		|| archive->AddString( MSG_SUBJECT, mSubject.String())
+		|| archive->AddString( MSG_TO, mTo.String())
 		|| archive->AddInt32( MSG_WHEN, mWhen);
 	return ret;
 }
@@ -247,7 +253,7 @@ status_t BmMailRef::Archive( BMessage* archive, bool deep) const {
 bool BmMailRef::ReadAttributes( const struct stat* statInfo) {
 	status_t err;
 	BNode node;
-	BString filetype;
+	BmString filetype;
 	bool retval = false;
 	struct stat st;
 	
@@ -257,30 +263,30 @@ bool BmMailRef::ReadAttributes( const struct stat* statInfo) {
 	try {
 		for( int i=0; (err = node.SetTo( &mEntryRef)) == B_BUSY; ++i) {
 			if (i==200)
-				throw BM_runtime_error( BString("Node is locked too long for mail-file <") << mEntryRef.name << "> \n\nError:" << strerror(err));
-			BM_LOG2( BM_LogMailTracking, BString("Node is locked for mail-file <") << mEntryRef.name << ">. We take a nap and try again...");
+				throw BM_runtime_error( BmString("Node is locked too long for mail-file <") << mEntryRef.name << "> \n\nError:" << strerror(err));
+			BM_LOG2( BM_LogMailTracking, BmString("Node is locked for mail-file <") << mEntryRef.name << ">. We take a nap and try again...");
 			snooze( 10*1000);					// pause for 10ms
 		}
 		if (err != B_OK)
-			throw BM_runtime_error(BString("Could not get node for mail-file <") << mEntryRef.name << "> \n\nError:" << strerror(err));
+			throw BM_runtime_error(BmString("Could not get node for mail-file <") << mEntryRef.name << "> \n\nError:" << strerror(err));
 		if (!statInfo) {
 			if ((err = node.GetStat( &st)) != B_OK)
-				throw BM_runtime_error(BString("Could not get stat-info for mail-file <") << mEntryRef.name << "> \n\nError:" << strerror(err));
+				throw BM_runtime_error(BmString("Could not get stat-info for mail-file <") << mEntryRef.name << "> \n\nError:" << strerror(err));
 		}
 
-		node.ReadAttrString( "BEOS:TYPE", &filetype);
+		BmReadStringAttr( &node, "BEOS:TYPE", filetype);
 		if (!filetype.ICompare("text/x-email") 
 		|| !filetype.ICompare("message/rfc822") ) {
 			// file is indeed a mail, we fetch its attributes:
-			node.ReadAttrString( BM_MAIL_ATTR_NAME, 		&mName);
-			node.ReadAttrString( BM_MAIL_ATTR_ACCOUNT, 	&mAccount);
-			node.ReadAttrString( BM_MAIL_ATTR_CC, 			&mCc);
-			node.ReadAttrString( BM_MAIL_ATTR_FROM, 		&mFrom);
-			node.ReadAttrString( BM_MAIL_ATTR_PRIORITY, 	&mPriority);
-			node.ReadAttrString( BM_MAIL_ATTR_REPLY, 		&mReplyTo);
-			node.ReadAttrString( BM_MAIL_ATTR_STATUS, 	&mStatus);
-			node.ReadAttrString( BM_MAIL_ATTR_SUBJECT, 	&mSubject);
-			node.ReadAttrString( BM_MAIL_ATTR_TO, 			&mTo);
+			BmReadStringAttr( &node, BM_MAIL_ATTR_NAME, 		mName);
+			BmReadStringAttr( &node, BM_MAIL_ATTR_ACCOUNT, 	mAccount);
+			BmReadStringAttr( &node, BM_MAIL_ATTR_CC, 		mCc);
+			BmReadStringAttr( &node, BM_MAIL_ATTR_FROM, 		mFrom);
+			BmReadStringAttr( &node, BM_MAIL_ATTR_PRIORITY, mPriority);
+			BmReadStringAttr( &node, BM_MAIL_ATTR_REPLY, 	mReplyTo);
+			BmReadStringAttr( &node, BM_MAIL_ATTR_STATUS, 	mStatus);
+			BmReadStringAttr( &node, BM_MAIL_ATTR_SUBJECT, 	mSubject);
+			BmReadStringAttr( &node, BM_MAIL_ATTR_TO, 		mTo);
 	
 			mWhen = 0;
 			node.ReadAttr( BM_MAIL_ATTR_WHEN, 		B_TIME_TYPE, 0, &mWhen, sizeof(time_t));
@@ -322,7 +328,7 @@ bool BmMailRef::ReadAttributes( const struct stat* statInfo) {
 			}
 			retval = true;
 		} else 
-			BM_LOG2( BM_LogMailTracking, BString("file <")<<mEntryRef.name<<" is not a mail, ignoring it.");
+			BM_LOG2( BM_LogMailTracking, BmString("file <")<<mEntryRef.name<<" is not a mail, ignoring it.");
 	} catch( exception &e) {
 		BM_LOGERR( e.what());
 	}
@@ -351,7 +357,7 @@ void BmMailRef::MarkAs( const char* status) {
 		status_t err;
 		mStatus = status;
 		(err = mailNode.SetTo( &mEntryRef)) == B_OK
-													|| BM_THROW_RUNTIME( BString("Could not create node for current mail-file.\n\n Result: ") << strerror(err));
+													|| BM_THROW_RUNTIME( BmString("Could not create node for current mail-file.\n\n Result: ") << strerror(err));
 		mailNode.WriteAttr( BM_MAIL_ATTR_STATUS, B_STRING_TYPE, 0, status, strlen( status)+1);
 		TellModelItemUpdated( UPD_STATUS);
 		BmRef<BmListModel> listModel( ListModel());

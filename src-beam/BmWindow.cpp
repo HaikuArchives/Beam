@@ -37,7 +37,7 @@ BmWindow::~BmWindow() {
 \*------------------------------------------------------------------------------*/
 status_t BmWindow::ArchiveState( BMessage* archive) const {
 	BRect frame = Frame();
-BM_LOG2( BM_LogUtil, BString("Window ") << Name() << " stored with left:" << frame.left << " top: " << frame.top << "\nwidth:" << frame.Width() << " height: " << frame.Height());
+BM_LOG2( BM_LogUtil, BmString("Window ") << Name() << " stored with left:" << frame.left << " top: " << frame.top << "\nwidth:" << frame.Width() << " height: " << frame.Height());
 	status_t ret = archive->AddRect( MSG_FRAME, frame);
 	return ret;
 }
@@ -50,7 +50,7 @@ status_t BmWindow::UnarchiveState( BMessage* archive) {
 	BRect frame;
 	status_t ret = archive->FindRect( MSG_FRAME, &frame);
 	if (ret == B_OK) {
-BM_LOG2( BM_LogUtil, BString("Window ") << Name() << " opened at left:" << frame.left << " top: " << frame.top << "\nwidth:" << frame.Width() << " height: " << frame.Height());
+BM_LOG2( BM_LogUtil, BmString("Window ") << Name() << " opened at left:" << frame.left << " top: " << frame.top << "\nwidth:" << frame.Width() << " height: " << frame.Height());
 		MoveTo( frame.LeftTop());
 		ResizeTo( frame.Width(), frame.Height());
 	}
@@ -71,7 +71,7 @@ bool BmWindow::ReadStateInfo() {
 		try {
 			BMessage archive;
 			(err = archive.Unflatten( &winFile)) == B_OK
-													|| BM_THROW_RUNTIME( BString("Could not fetch window archive from file\n\t<") << mStatefileName << ">\n\n Result: " << strerror(err));
+													|| BM_THROW_RUNTIME( BmString("Could not fetch window archive from file\n\t<") << mStatefileName << ">\n\n Result: " << strerror(err));
 			UnarchiveState( &archive);
 		} catch (exception &e) {
 			BM_SHOWERR( e.what());
@@ -95,9 +95,9 @@ bool BmWindow::WriteStateInfo() {
 													|| BM_THROW_RUNTIME("Unable to archive Window-object");
 		(err = cacheFile.SetTo( TheResources->StateInfoFolder(), mStatefileName.String(), 
 										B_WRITE_ONLY | B_CREATE_FILE | B_ERASE_FILE)) == B_OK
-													|| BM_THROW_RUNTIME( BString("Could not create cache file\n\t<") << mStatefileName << ">\n\n Result: " << strerror(err));
+													|| BM_THROW_RUNTIME( BmString("Could not create cache file\n\t<") << mStatefileName << ">\n\n Result: " << strerror(err));
 		(err = archive.Flatten( &cacheFile)) == B_OK
-													|| BM_THROW_RUNTIME( BString("Could not store state-cache into file\n\t<") << mStatefileName << ">\n\n Result: " << strerror(err));
+													|| BM_THROW_RUNTIME( BmString("Could not store state-cache into file\n\t<") << mStatefileName << ">\n\n Result: " << strerror(err));
 	} catch( exception &e) {
 		BM_SHOWERR( e.what());
 		return false;

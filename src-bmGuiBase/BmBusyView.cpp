@@ -28,7 +28,7 @@
 /*************************************************************************/
 
 
-#include <String.h>
+#include "BmString.h"
 
 #include "Colors.h"
 
@@ -68,7 +68,7 @@ BmBusyView::~BmBusyView() {
 \*------------------------------------------------------------------------------*/
 void BmBusyView::SetBusy() {
 	mBusyCount++;
-	BM_LOG2( BM_LogUtil, BString("BusyView::SetBusy() busyCount:")<<mBusyCount);
+	BM_LOG2( BM_LogUtil, BmString("BusyView::SetBusy() busyCount:")<<mBusyCount);
 	if (!mMsgRunner) {
 		BMessenger ourselvesAsTarget( this);
 		if (!ourselvesAsTarget.IsValid())
@@ -76,7 +76,7 @@ void BmBusyView::SetBusy() {
 		mMsgRunner = new BMessageRunner( ourselvesAsTarget, &pulseMsg, 100*1000, -1);
 		status_t err;
 		if ((err = mMsgRunner->InitCheck()) != B_OK)
-		 	BM_THROW_RUNTIME( BString("BusyView(): Could not init MessageRunner. Error:") << strerror(err));
+		 	BM_THROW_RUNTIME( BmString("BusyView(): Could not init MessageRunner. Error:") << strerror(err));
 	}
 }
 
@@ -87,7 +87,7 @@ void BmBusyView::SetBusy() {
 void BmBusyView::UnsetBusy() {
 	if (mBusyCount > 0) {
 		mBusyCount--;
-		BM_LOG2( BM_LogUtil, BString("BusyView::UnsetBusy() busyCount:")<<mBusyCount);
+		BM_LOG2( BM_LogUtil, BmString("BusyView::UnsetBusy() busyCount:")<<mBusyCount);
 		if (!mBusyCount) {
 			delete mMsgRunner;
 			mMsgRunner = NULL;
@@ -114,7 +114,7 @@ void BmBusyView::MessageReceived( BMessage* msg) {
 	}
 	catch( exception &err) {
 		// a problem occurred, we tell the user:
-		BM_SHOWERR( BString("BusyView: ") << err.what());
+		BM_SHOWERR( BmString("BusyView: ") << err.what());
 	}
 }
 
@@ -123,7 +123,7 @@ void BmBusyView::MessageReceived( BMessage* msg) {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmBusyView::Pulse() {
-	BM_LOG2( BM_LogUtil, BString("BusyView::Pulse()"));
+	BM_LOG2( BM_LogUtil, BmString("BusyView::Pulse()"));
 	if (mBusyCount > 0) {
 		mCurrState+=10;
 		Invalidate();

@@ -68,7 +68,7 @@ BmPopper::PopState BmPopper::PopStates[BmPopper::POP_FINAL] = {
 	BmPopper( info)
 		-	contructor
 \*------------------------------------------------------------------------------*/
-BmPopper::BmPopper( const BString& name, BmPopAccount* account)
+BmPopper::BmPopper( const BmString& name, BmPopAccount* account)
 	:	BmJobModel( name)
 	,	mPopAccount( account)
 	,	mPopServer( NULL)
@@ -140,13 +140,13 @@ bool BmPopper::StartJob() {
 	}
 	catch( BM_runtime_error &err) {
 		// a problem occurred, we tell the user:
-		BString errstr = err.what();
+		BmString errstr = err.what();
 		int e;
 		if ((e = mPopServer->Error()))
 			errstr << "\nerror: " << e << ", " << mPopServer->ErrorStr();
 		UpdatePOPStatus( 0.0, NULL, true);
-		BString text = Name() << "\n\n" << errstr;
-		HandleError( BString("BmPopper: ") << text);
+		BmString text = Name() << "\n\n" << errstr;
+		HandleError( BmString("BmPopper: ") << text);
 		return false;
 	}
 	return true;
@@ -156,7 +156,7 @@ bool BmPopper::StartJob() {
 	UpdatePOPStatus( delta, detailText, failed)
 		-	informs the interested party about a change in the current POP3-state
 		-	failed==true means that we only want to indicate the failure of the
-			current stage (the BString "FAILED!" will be shown)
+			current stage (the BmString "FAILED!" will be shown)
 \*------------------------------------------------------------------------------*/
 void BmPopper::UpdatePOPStatus( const float delta, const char* detailText, 
 										  bool failed, bool stopped) {
@@ -165,9 +165,9 @@ void BmPopper::UpdatePOPStatus( const float delta, const char* detailText,
 	msg->AddString( BmJobModel::MSG_DOMAIN, "statbar");
 	msg->AddFloat( MSG_DELTA, delta);
 	if (failed)
-		msg->AddString( MSG_TRAILING, BString(PopStates[mState].text) << " FAILED!");
+		msg->AddString( MSG_TRAILING, (BmString(PopStates[mState].text) << " FAILED!").String());
 	else if (stopped)
-		msg->AddString( MSG_TRAILING, BString(PopStates[mState].text) << " Stopped!");
+		msg->AddString( MSG_TRAILING, (BmString(PopStates[mState].text) << " Stopped!").String());
 	else
 		msg->AddString( MSG_TRAILING, PopStates[mState].text);
 	if (detailText)
@@ -181,9 +181,9 @@ void BmPopper::UpdatePOPStatus( const float delta, const char* detailText,
 \*------------------------------------------------------------------------------*/
 void BmPopper::UpdateMailStatus( const float delta, const char* detailText, 
 											int32 currMsg) {
-	BString text;
+	BmString text;
 	if (mNewMsgCount) {
-		text = BString() << currMsg << " of " << mNewMsgCount;
+		text = BmString() << currMsg << " of " << mNewMsgCount;
 	} else {
 		text = "none";
 	}
@@ -191,7 +191,7 @@ void BmPopper::UpdateMailStatus( const float delta, const char* detailText,
 	msg->AddString( MSG_POPPER, Name().String());
 	msg->AddString( BmJobModel::MSG_DOMAIN, "mailbar");
 	msg->AddFloat( MSG_DELTA, delta);
-	msg->AddString( MSG_LEADING, text);
+	msg->AddString( MSG_LEADING, text.String());
 	if (detailText)
 		msg->AddString( MSG_TRAILING, detailText);
 	TellControllers( msg.get());
@@ -207,12 +207,12 @@ void BmPopper::Connect() {
 	mPopServer = new BNetEndpoint;
 	mPopServer->InitCheck() == B_OK		||	BM_THROW_RUNTIME("BmPopper: could not create NetEndpoint");
 	if (!mPopAccount->GetPOPAddress( &addr)) {
-		BString s = BString("Could not determine address of POP-Server ") << mPopAccount->POPServer();
+		BmString s = BmString("Could not determine address of POP-Server ") << mPopAccount->POPServer();
 		throw BM_network_error( s);
 	}
 	status_t err;
 	if ((err=mPopServer->Connect( addr)) != B_OK) {
-		BString s = BString("Could not connect to POP-Server ") << mPopAccount->POPServer() << "\n\bError:\n\t"<<strerror(err);
+		BmString s = BmString("Could not connect to POP-Server ") << mPopAccount->POPServer() << "\n\bError:\n\t"<<strerror(err);
 		throw BM_network_error( s);
 	}
 	mConnected = true;
@@ -228,7 +228,7 @@ void BmPopper::Connect() {
 		-	looks at the auth-types supported by the server and selects the most secure
 			of those that is supported by Beam.
 \*------------------------------------------------------------------------------*/
-BString BmPopper::SuggestAuthType() const {
+BmString BmPopper::SuggestAuthType() const {
 	if (mServerTimestamp.Length())
 		return BmPopAccount::AUTH_APOP;
 	else
@@ -241,11 +241,11 @@ BString BmPopper::SuggestAuthType() const {
 		-	currently supports POP3- & APOP-authentication
 \*------------------------------------------------------------------------------*/
 void BmPopper::Login() {
-	BString pwd;
+	BmString pwd;
 	bool pwdOK = false;
 	bool first = true;
-	BString authMethod = mPopAccount->AuthMethod();
-	BmToUpper( authMethod);
+	BmString authMethod = mPopAccount->AuthMethod();
+	authMethod.ToUpper();
 	while(!pwdOK) {
 		bool pwdGiven = false;
 		if (first && mPopAccount->PwdStoredOnDisk()) {
@@ -266,18 +266,18 @@ void BmPopper::Login() {
 		if (authMethod == BmPopAccount::AUTH_APOP) {
 			// APOP-method: 
 			if (mServerTimestamp.Length()) {
-				BString secret( mServerTimestamp + pwd);
-				BString Digest;
+				BmString secret( mServerTimestamp + pwd);
+				BmString Digest;
 				char* buf = Digest.LockBuffer(40);	// should only need 33
 				MD5Digest( (unsigned char*) secret.String(), buf);
-				Digest.UnlockBuffer();
-				BString cmd = BString("APOP ") << mPopAccount->Username() << " ";
+				Digest.UnlockBuffer( -1);
+				BmString cmd = BmString("APOP ") << mPopAccount->Username() << " ";
 				SendCommand( cmd+Digest);
 			} else
 				BM_THROW_RUNTIME( "Server did not supply a timestamp, so APOP doesn't work.");
 		} else {
 			// authMethod == AUTH_POP3: send username and password as plain text:
-			BString cmd = BString("USER ") << mPopAccount->Username();
+			BmString cmd = BmString("USER ") << mPopAccount->Username();
 			SendCommand( cmd);
 			if (CheckForPositiveAnswer( SINGLE_LINE)) {
 				SendCommand( "PASS ", pwd);
@@ -287,12 +287,12 @@ void BmPopper::Login() {
 			pwdOK = CheckForPositiveAnswer( SINGLE_LINE);
 		} catch( BM_network_error &err) {
 			// most probably a wrong password...
-			BString errstr = err.what();
+			BmString errstr = err.what();
 			int e;
 			if ((e = mPopServer->Error()))
 				errstr << "\nerror: " << e << ", " << mPopServer->ErrorStr();
-			BString text = Name() << "\n\n" << errstr;
-			HandleError( BString("BmPopper: ") << text);
+			BmString text = Name() << "\n\n" << errstr;
+			HandleError( BmString("BmPopper: ") << text);
 		}
 	}
 }
@@ -304,7 +304,7 @@ void BmPopper::Login() {
 void BmPopper::Check() {
 	int32 msgNum = 0;
 
-	BString cmd("STAT");
+	BmString cmd("STAT");
 	SendCommand( cmd);
 	if (!CheckForPositiveAnswer( SINGLE_LINE))
 		return;
@@ -316,11 +316,11 @@ void BmPopper::Check() {
 	}
 
 	delete [] mMsgUIDs;
-	mMsgUIDs = new BString[mMsgCount];
+	mMsgUIDs = new BmString[mMsgCount];
 	delete [] mMsgSizes;
 	mMsgSizes = new int32[mMsgCount];
 	// we try to fetch a list of unique message IDs from server:
-	cmd = BString("UIDL");
+	cmd = BmString("UIDL");
 	SendCommand( cmd);
 	// The UIDL-command may not be implemented by this server, so we 
 	// do not require a positive answer, we just hope for it:
@@ -333,11 +333,11 @@ void BmPopper::Check() {
 		const char *p = mAnswer.String();
 		for( int32 i=0; i<mMsgCount; ++i) {
 			if (sscanf( p, "%ld %80s", &msgNum, msgUID) != 2 || msgNum <= 0)
-				throw BM_network_error( BString("answer to UIDL has unknown format, msg ") << i+1);
+				throw BM_network_error( BmString("answer to UIDL has unknown format, msg ") << i+1);
 			mMsgUIDs[i] = msgUID;
 			// skip to next line:
 			if (!(p = strstr( p, "\r\n")))
-				throw BM_network_error( BString("answer to UIDL has unknown format, msg ") << i+1);
+				throw BM_network_error( BmString("answer to UIDL has unknown format, msg ") << i+1);
 			p += 2;
 		}
 	} else {
@@ -358,14 +358,14 @@ void BmPopper::Check() {
 			// msg is new (according to unknown UID)
 			// fetch msgsize for message...
 			if (sscanf( p, "%ld %ld", &msgNum, &msgSize) != 2 || msgNum != i+1)
-				throw BM_network_error( BString("answer to LIST has unknown format, msg ") << i+1);
+				throw BM_network_error( BmString("answer to LIST has unknown format, msg ") << i+1);
 			// add msg-size to total:
 			mMsgTotalSize += msgSize;
 			mMsgSizes[mNewMsgCount++] = msgSize;
 		}
 		// skip to next line:
 		if (!(p = strstr( p, "\r\n")))
-			throw BM_network_error( BString("answer to LIST has unknown format, msg ") << i+1);
+			throw BM_network_error( BmString("answer to LIST has unknown format, msg ") << i+1);
 		p += 2;
 	}
 	if (mNewMsgCount == 0) {
@@ -383,7 +383,7 @@ void BmPopper::Retrieve() {
 	for( int32 i=0; i<mMsgCount; i++) {
 		if (mPopAccount->IsUIDDownloaded( mMsgUIDs[i]))
 			continue;							// msg is old (according to unknown UID)
-		BString cmd = BString("RETR ") << i+1;
+		BmString cmd = BmString("RETR ") << i+1;
 		SendCommand( cmd);
 		if (!CheckForPositiveAnswer( MULTI_LINE, ++newMailIndex))
 			return;
@@ -393,7 +393,7 @@ void BmPopper::Retrieve() {
 		mPopAccount->MarkUIDAsDownloaded( mMsgUIDs[i]);
 		//	delete the retrieved message if required:
 		if (mPopAccount->DeleteMailFromServer()) {
-			cmd = BString("DELE ") << i+1;
+			cmd = BmString("DELE ") << i+1;
 			SendCommand( cmd);
 			if (!CheckForPositiveAnswer( SINGLE_LINE))
 				return;
@@ -420,7 +420,7 @@ void BmPopper::Disconnect() {
 		-	the network-connection is always closed
 \*------------------------------------------------------------------------------*/
 void BmPopper::Quit( bool WaitForAnswer) {
-	BString cmd("QUIT");
+	BmString cmd("QUIT");
 	try {
 		SendCommand( cmd);
 		if (WaitForAnswer) {
@@ -440,7 +440,7 @@ void BmPopper::Quit( bool WaitForAnswer) {
 bool BmPopper::CheckForPositiveAnswer( bool SingleLineMode, int32 mailNr) {
 	if (GetAnswer( SingleLineMode, mailNr)) {
 		if (mReplyLine[0] != '+') {
-			BString err("Server answers: \n");
+			BmString err("Server answers: \n");
 			err += mReplyLine;
 			err.RemoveAll( "\r");
 			throw BM_network_error( err);
@@ -472,20 +472,20 @@ bool BmPopper::GetAnswer( bool SingleLineMode, int32 mailNr) {
 	int32 numBytes = 0;
 
 	if (mailNr)
-		BM_LOG2( BM_LogPop, BString("announced msg-size:") << mMsgSizes[mailNr-1]);
-	BM_LOG3( BM_LogPop, BString("bufSize:") << bufSize);
+		BM_LOG2( BM_LogPop, BmString("announced msg-size:") << mMsgSizes[mailNr-1]);
+	BM_LOG3( BM_LogPop, BmString("bufSize:") << bufSize);
 	mAnswer.SetTo( '\0', bufSize);		// preallocate the bufsize we need
-	buffer = mAnswer.LockBuffer( bufSize+1);
+	buffer = mAnswer.LockBuffer( bufSize);
 	try {
 		do {
 			int32 bufFree = bufSize - offset;
 			if (bufFree < SMALL) {
 				// bufsize is not sufficient, we enlarge the buffer:
+				mAnswer.UnlockBuffer( bufSize);
 				bufSize *= 2;
-				mAnswer.UnlockBuffer( offset);
-				buffer = mAnswer.LockBuffer( bufSize+1);
+				buffer = mAnswer.LockBuffer( bufSize);
 				bufFree = bufSize - offset;
-				BM_LOG2( BM_LogPop, BString("bufSize enlarged to:") << bufSize);
+				BM_LOG2( BM_LogPop, BmString("bufSize enlarged to:") << bufSize);
 			}
 			if (bufFree > BmPopper::NetBufSize)
 				bufFree = BmPopper::NetBufSize;
@@ -502,7 +502,7 @@ bool BmPopper::GetAnswer( bool SingleLineMode, int32 mailNr) {
 					strcpy( buffer, eol);
 					offset -= (len+2);
 					replyLineExtracted = true;
-					BM_LOG( BM_LogPop, BString("<--\n") << mReplyLine);
+					BM_LOG( BM_LogPop, BmString("<--\n") << mReplyLine);
 					if (SingleLineMode || firstBlock && mReplyLine[0]=='-') {
 						// if all we expect is the reply-line, or if answer is negative, we are done:
 						done = true;
@@ -517,7 +517,7 @@ bool BmPopper::GetAnswer( bool SingleLineMode, int32 mailNr) {
 					*(endp+2)='\0';
 					// end of multiline-answer is indicated by line consisting only of a dot
 					if (!mailNr) {
-						BM_LOG2( BM_LogPop, BString("<--\n") << buffer);
+						BM_LOG2( BM_LogPop, BmString("<--\n") << buffer);
 					}
 					done = true;
 				}
@@ -526,13 +526,13 @@ bool BmPopper::GetAnswer( bool SingleLineMode, int32 mailNr) {
 			firstBlock = false;
 			if (mailNr > 0) {
 				float delta = (100.0 * numBytes) / (mMsgTotalSize ? mMsgTotalSize : 1);
-				BString text = BString("size: ") << BytesToString( mMsgSizes[mailNr-1]);
+				BmString text = BmString("size: ") << BytesToString( mMsgSizes[mailNr-1]);
 				UpdateMailStatus( delta, text.String(), mailNr);
 			}
 		} while( !done && numBytes);
-		mAnswer.UnlockBuffer( -1);
+		mAnswer.UnlockBuffer( offset);
 		if (done) {
-			ReplaceSubstringWith( mAnswer, "\n..", "\n.");	
+			mAnswer.ReplaceAll( "\n..", "\n.");
 							// remove padding of "termination octet" (dot) inside message
 		} else  {
 			//	numBytes == 0, interrupt by external event (user)
@@ -579,22 +579,22 @@ int32 BmPopper::ReceiveBlock( char* buffer, int32 max) {
 	SendCommand( cmd)
 		-	sends the specified POP3-command to the server.
 \*------------------------------------------------------------------------------*/
-void BmPopper::SendCommand( BString cmd, BString secret) {
-	BString command;
+void BmPopper::SendCommand( BmString cmd, BmString secret) {
+	BmString command;
 	if (secret.Length()) {
 		command = cmd + secret;
-		BM_LOG( BM_LogPop, BString("-->\n") << cmd << " secret_data_omitted_here");
+		BM_LOG( BM_LogPop, BmString("-->\n") << cmd << " secret_data_omitted_here");
 													// we do not want to log any passwords...
 	} else {
 		command = cmd;
-		BM_LOG( BM_LogPop, BString("-->\n") << cmd);
+		BM_LOG( BM_LogPop, BmString("-->\n") << cmd);
 	}
 	if (!command.Length() || command[command.Length()-1] != '\n')
 		command << "\r\n";
 	int32 size = command.Length();
 	int32 sentSize;
 	if ((sentSize = mPopServer->Send( command.String(), size)) != size) {
-		throw BM_network_error( BString("error during send, sent only ") << sentSize << " bytes instead of " << size);
+		throw BM_network_error( BmString("error during send, sent only ") << sentSize << " bytes instead of " << size);
 	}
 }
 

@@ -37,7 +37,7 @@
 
 #include <Archivable.h>
 #include <List.h>
-#include <String.h>
+#include "BmString.h"
 
 #include <socket.h>
 #ifdef BEAM_FOR_BONE
@@ -93,12 +93,12 @@ public:
 	virtual ~BmPopAccount();
 	
 	// native methods:
-	bool IsUIDDownloaded( BString uid);
-	void MarkUIDAsDownloaded( BString uid);
-	BString GetFromAddress() const;
-	BString GetDomainName() const;
-	bool HandlesAddress( BString addr, bool needExactMatch=false) const;
-	bool SanityCheck( BString& complaint, BString& fieldName) const;
+	bool IsUIDDownloaded( BmString uid);
+	void MarkUIDAsDownloaded( BmString uid);
+	BmString GetFromAddress() const;
+	BmString GetDomainName() const;
+	bool HandlesAddress( BmString addr, bool needExactMatch=false) const;
+	bool SanityCheck( BmString& complaint, BmString& fieldName) const;
 
 	// stuff needed for Archival:
 	status_t Archive( BMessage* archive, bool deep = true) const;
@@ -111,42 +111,42 @@ public:
 #endif // BM_REF_DEBUGGING
 
 	// getters:
-	inline const BString &AuthMethod() const	{ return mAuthMethod; }
+	inline const BmString &AuthMethod() const	{ return mAuthMethod; }
 	inline bool CheckMail() const 				{ return mCheckMail; }
 	inline bool DeleteMailFromServer() const	{ return mDeleteMailFromServer; }
-	inline const BString &MailAddr() const 	{ return mMailAddr; }
-	inline const BString &MailAliases() const { return mMailAliases; }
+	inline const BmString &MailAddr() const 	{ return mMailAddr; }
+	inline const BmString &MailAliases() const { return mMailAliases; }
 	inline bool MarkedAsDefault() const			{ return mMarkedAsDefault; }
 	inline bool MarkedAsBitBucket() const		{ return mMarkedAsBitBucket; }
-	inline const BString &Name() const 			{ return Key(); }
-	inline const BString &Password() const 	{ return mPassword; }
-	inline const BString &POPServer() const	{ return mPOPServer; }
+	inline const BmString &Name() const 			{ return Key(); }
+	inline const BmString &Password() const 	{ return mPassword; }
+	inline const BmString &POPServer() const	{ return mPOPServer; }
 	inline uint16 PortNr() const					{ return mPortNr; }
-	inline const BString &PortNrString() const{ return mPortNrString; }
+	inline const BmString &PortNrString() const{ return mPortNrString; }
 	inline bool PwdStoredOnDisk() const			{ return mPwdStoredOnDisk; }
-	inline const BString &RealName() const 	{ return mRealName; }
-	inline const BString &SignatureName() const	 { return mSignatureName; }
-	inline const BString &SMTPAccount() const	{ return mSMTPAccount; }
-	inline const BString &Username() const 	{ return mUsername; }
+	inline const BmString &RealName() const 	{ return mRealName; }
+	inline const BmString &SignatureName() const	 { return mSignatureName; }
+	inline const BmString &SMTPAccount() const	{ return mSMTPAccount; }
+	inline const BmString &Username() const 	{ return mUsername; }
 	inline int16 CheckInterval() const 			{ return mCheckInterval; }
-	inline const BString &CheckIntervalString() const{ return mCheckIntervalString; }
+	inline const BmString &CheckIntervalString() const{ return mCheckIntervalString; }
 
 	// setters:
-	inline void AuthMethod( const BString &s) { mAuthMethod = s; TellModelItemUpdated( UPD_ALL); }
+	inline void AuthMethod( const BmString &s) { mAuthMethod = s; TellModelItemUpdated( UPD_ALL); }
 	inline void CheckMail( bool b) 				{ mCheckMail = b;  TellModelItemUpdated( UPD_ALL); }
 	inline void DeleteMailFromServer( bool b)	{ mDeleteMailFromServer = b;  TellModelItemUpdated( UPD_ALL); }
-	inline void MailAddr( const BString &s) 	{ mMailAddr = s;  TellModelItemUpdated( UPD_ALL); }
-	inline void MailAliases( const BString &s){ mMailAliases = s;  TellModelItemUpdated( UPD_ALL); }
+	inline void MailAddr( const BmString &s) 	{ mMailAddr = s;  TellModelItemUpdated( UPD_ALL); }
+	inline void MailAliases( const BmString &s){ mMailAliases = s;  TellModelItemUpdated( UPD_ALL); }
 	inline void MarkedAsDefault( bool b)		{ mMarkedAsDefault = b;  TellModelItemUpdated( UPD_ALL); }
 	inline void MarkedAsBitBucket( bool b)		{ mMarkedAsBitBucket = b;  TellModelItemUpdated( UPD_ALL); }
-	inline void Password( const BString &s) 	{ mPassword = s;  TellModelItemUpdated( UPD_ALL); }
-	inline void POPServer( const BString &s)	{ mPOPServer = s;  TellModelItemUpdated( UPD_ALL); }
-	inline void PortNr( uint16 i)					{ mPortNr = i; mPortNrString = BString()<<i;  TellModelItemUpdated( UPD_ALL); }
+	inline void Password( const BmString &s) 	{ mPassword = s;  TellModelItemUpdated( UPD_ALL); }
+	inline void POPServer( const BmString &s)	{ mPOPServer = s;  TellModelItemUpdated( UPD_ALL); }
+	inline void PortNr( uint16 i)					{ mPortNr = i; mPortNrString = BmString()<<i;  TellModelItemUpdated( UPD_ALL); }
 	inline void PwdStoredOnDisk( bool b)		{ mPwdStoredOnDisk = b;  TellModelItemUpdated( UPD_ALL); }
-	inline void RealName( const BString &s) 	{ mRealName = s;  TellModelItemUpdated( UPD_ALL); }
-	inline void SignatureName( const BString &s)	 { mSignatureName = s;  TellModelItemUpdated( UPD_ALL); }
-	inline void SMTPAccount( const BString &s){ mSMTPAccount = s;  TellModelItemUpdated( UPD_ALL); }
-	inline void Username( const BString &s) 	{ mUsername = s;  TellModelItemUpdated( UPD_ALL); }
+	inline void RealName( const BmString &s) 	{ mRealName = s;  TellModelItemUpdated( UPD_ALL); }
+	inline void SignatureName( const BmString &s)	 { mSignatureName = s;  TellModelItemUpdated( UPD_ALL); }
+	inline void SMTPAccount( const BmString &s){ mSMTPAccount = s;  TellModelItemUpdated( UPD_ALL); }
+	inline void Username( const BmString &s) 	{ mUsername = s;  TellModelItemUpdated( UPD_ALL); }
 	void CheckInterval( int16 i);
 
 	bool GetPOPAddress( BNetAddress* addr) const;
@@ -162,28 +162,28 @@ private:
 
 	void SetupIntervalRunner();
 
-	//BString mName;					// name is stored in key (base-class)
-	BString mUsername;
-	BString mPassword;
-	BString mPOPServer;
-	BString mSMTPAccount;			// name of BmSmtpAccount to use when sending 
+	//BmString mName;					// name is stored in key (base-class)
+	BmString mUsername;
+	BmString mPassword;
+	BmString mPOPServer;
+	BmString mSMTPAccount;			// name of BmSmtpAccount to use when sending 
 											// mail "from" this POP-account
-	BString mRealName;
-	BString mMailAddr;				// address to use (instead of composed address)
-	BString mMailAliases;			// addresses that belong to this POP-Account, too
-	BString mSignatureName;			// name&path of signature file
+	BmString mRealName;
+	BmString mMailAddr;				// address to use (instead of composed address)
+	BmString mMailAliases;			// addresses that belong to this POP-Account, too
+	BmString mSignatureName;			// name&path of signature file
 	uint16 mPortNr;					// usually 110
-	BString mPortNrString;			// mPortNr as String
+	BmString mPortNrString;			// mPortNr as String
 	bool mCheckMail;					// include this account in global mail-check?
 	bool mDeleteMailFromServer;	// delete mails upon receive?
-	BString mAuthMethod;				// authentication method
+	BmString mAuthMethod;				// authentication method
 	bool mMarkedAsDefault;			// is this the default account?
 	bool mPwdStoredOnDisk;			// store Passwords unsafely on disk?
 	bool mMarkedAsBitBucket;		// is this account the fallback-account for failed delivery?
 	int16 mCheckInterval;			// check mail every ... minutes
-	BString mCheckIntervalString;	// check-interval as String
+	BmString mCheckIntervalString;	// check-interval as String
 
-	vector<BString> mUIDs;			// list of UIDs seen in this account
+	vector<BmString> mUIDs;			// list of UIDs seen in this account
 	BMessageRunner* mIntervalRunner;
 };
 
@@ -206,15 +206,15 @@ public:
 	
 	// native methods:
 	void CheckMail( bool allAccounts=false);
-	void CheckMailFor( BString accName, bool isAutoCheck=false);
+	void CheckMailFor( BmString accName, bool isAutoCheck=false);
 	BmRef<BmPopAccount> DefaultAccount();
-	BmRef<BmPopAccount> FindAccountForAddress( const BString addr);
-	void SetDefaultAccount( BString accName);
+	BmRef<BmPopAccount> FindAccountForAddress( const BmString addr);
+	void SetDefaultAccount( BmString accName);
 	//
 	void ResetToSaved();
 	
 	// overrides of listmodel base:
-	const BString SettingsFileName();
+	const BmString SettingsFileName();
 	void InstantiateItems( BMessage* archive);
 	int16 ArchiveVersion() const			{ return nArchiveVersion; }
 

@@ -95,7 +95,7 @@ BmPopAccount::BmPopAccount( BMessage* archive, BmPopAccountList* model)
 	mPortNr = FindMsgInt16( archive, MSG_PORT_NR);
 	mPortNrString << mPortNr;
 	mAuthMethod = FindMsgString( archive, MSG_AUTH_METHOD);
-	BmToUpper( mAuthMethod);
+	mAuthMethod.ToUpper();
 	mMarkedAsDefault = FindMsgBool( archive, MSG_MARK_DEFAULT);
 	mPwdStoredOnDisk = FindMsgBool( archive, MSG_STORE_PWD);
 	mMarkedAsBitBucket = FindMsgBool( archive, MSG_MARK_BUCKET);
@@ -164,7 +164,7 @@ bool BmPopAccount::GetPOPAddress( BNetAddress* addr) const {
 	GetDomainName()
 		-	returns the domain of this POP-Account
 \*------------------------------------------------------------------------------*/
-BString BmPopAccount::GetDomainName() const {
+BmString BmPopAccount::GetDomainName() const {
 	int32 dotPos = mPOPServer.FindFirst(".");
 	if (dotPos != B_ERROR)
 		return mPOPServer.String()+dotPos+1;
@@ -176,9 +176,9 @@ BString BmPopAccount::GetDomainName() const {
 	GetFromAddress()
 		-	returns the constructed from - address for this account
 \*------------------------------------------------------------------------------*/
-BString BmPopAccount::GetFromAddress() const {
-	BString addr( mRealName);
-	BString domainPart = GetDomainName();
+BmString BmPopAccount::GetFromAddress() const {
+	BmString addr( mRealName);
+	BmString domainPart = GetDomainName();
 	if (domainPart.Length())
 		domainPart.Prepend( "@");
 	if (addr.Length()) {
@@ -199,13 +199,13 @@ BString BmPopAccount::GetFromAddress() const {
 	HandlesAddress()
 		-	determines if the given address belongs to this POP-account
 \*------------------------------------------------------------------------------*/
-bool BmPopAccount::HandlesAddress( BString addr, bool needExactMatch) const {
+bool BmPopAccount::HandlesAddress( BmString addr, bool needExactMatch) const {
 	Regexx rx;
 	if (addr==GetFromAddress() || addr==mMailAddr || addr==mUsername)
 		return true;
 	int32 atPos = addr.FindFirst("@");
 	if (atPos != B_ERROR) {
-		BString addrDomain( addr.String()+atPos+1);
+		BmString addrDomain( addr.String()+atPos+1);
 		if (addrDomain != GetDomainName())
 			return false;						// address is from different domain
 		if (addr == mUsername+"@"+addrDomain)
@@ -214,7 +214,7 @@ bool BmPopAccount::HandlesAddress( BString addr, bool needExactMatch) const {
 	}
 	if (!needExactMatch && mMarkedAsBitBucket)
 		return true;
-	BString regex = BString("\\b") + addr + "\\b";
+	BmString regex = BmString("\\b") + addr + "\\b";
 	return rx.exec( mMailAliases, regex) > 0;
 }
 
@@ -223,7 +223,7 @@ bool BmPopAccount::HandlesAddress( BString addr, bool needExactMatch) const {
 		-	checks if a mail with the given uid (unique-ID) has already been 
 			downloaded
 \*------------------------------------------------------------------------------*/
-bool BmPopAccount::IsUIDDownloaded( BString uid) {
+bool BmPopAccount::IsUIDDownloaded( BmString uid) {
 	uid << " ";									// append a space to avoid matching only in parts
 	int32 uidLen = uid.Length();
 	int32 count = mUIDs.size();
@@ -240,7 +240,7 @@ bool BmPopAccount::IsUIDDownloaded( BString uid) {
 		-	this method should be called directly after a message has succesfully
 			been stored locally
 \*------------------------------------------------------------------------------*/
-void BmPopAccount::MarkUIDAsDownloaded( BString uid) {
+void BmPopAccount::MarkUIDAsDownloaded( BmString uid) {
 	mUIDs.push_back( uid << " " << system_time());
 }
 
@@ -251,7 +251,7 @@ void BmPopAccount::MarkUIDAsDownloaded( BString uid) {
 \*------------------------------------------------------------------------------*/
 void BmPopAccount::CheckInterval( int16 i) { 
 	mCheckInterval = i; 
-	mCheckIntervalString = i ? BString()<<i : "";
+	mCheckIntervalString = i ? BmString()<<i : "";
 	TellModelItemUpdated( UPD_ALL);
 	SetupIntervalRunner();
 }
@@ -264,7 +264,7 @@ void BmPopAccount::CheckInterval( int16 i) {
 void BmPopAccount::SetupIntervalRunner() {
 	delete mIntervalRunner;
 	mIntervalRunner = NULL;
-	BM_LOG( BM_LogPop, BString("PopAccount.") << Key() << " sets check interval to " << mCheckInterval);
+	BM_LOG( BM_LogPop, BmString("PopAccount.") << Key() << " sets check interval to " << mCheckInterval);
 	if (mCheckInterval>0) {
 		BMessage* msg = new BMessage( BMM_CHECK_MAIL);
 		msg->AddString( BmPopAccountList::MSG_ITEMKEY, Key().String());
@@ -272,7 +272,7 @@ void BmPopAccount::SetupIntervalRunner() {
 		mIntervalRunner = new BMessageRunner( be_app_messenger, msg, 
 														  mCheckInterval*60*1000*1000, -1);
 		if (mIntervalRunner->InitCheck() != B_OK)
-			ShowAlert( BString("Could not initialize check-interval runner for PopAccount ")<<Key());
+			ShowAlert( BmString("Could not initialize check-interval runner for PopAccount ")<<Key());
 	}
 }
 
@@ -282,7 +282,7 @@ void BmPopAccount::SetupIntervalRunner() {
 			given out-params
 		-	returns true if values are ok, false (and error-info) if not
 \*------------------------------------------------------------------------------*/
-bool BmPopAccount::SanityCheck( BString& complaint, BString& fieldName) const {
+bool BmPopAccount::SanityCheck( BmString& complaint, BmString& fieldName) const {
 	if (!mUsername.Length()) {
 		complaint = "Please enter a username for this account.";
 		fieldName = "username";
@@ -357,8 +357,8 @@ BmPopAccountList::~BmPopAccountList() {
 	SettingsFileName()
 		-	returns the name of the settins-file for the POP3-accounts-list
 \*------------------------------------------------------------------------------*/
-const BString BmPopAccountList::SettingsFileName() {
-	return BString( TheResources->SettingsPath.Path()) << "/" << "Pop Accounts";
+const BmString BmPopAccountList::SettingsFileName() {
+	return BmString( TheResources->SettingsPath.Path()) << "/" << "Pop Accounts";
 }
 
 /*------------------------------------------------------------------------------*\
@@ -366,18 +366,18 @@ const BString BmPopAccountList::SettingsFileName() {
 		-	initializes the POP3-accounts info from the given message
 \*------------------------------------------------------------------------------*/
 void BmPopAccountList::InstantiateItems( BMessage* archive) {
-	BM_LOG2( BM_LogMailTracking, BString("Start of InstantiateItems() for PopAccountList"));
+	BM_LOG2( BM_LogMailTracking, BmString("Start of InstantiateItems() for PopAccountList"));
 	status_t err;
 	int32 numChildren = FindMsgInt32( archive, BmListModelItem::MSG_NUMCHILDREN);
 	for( int i=0; i<numChildren; ++i) {
 		BMessage msg;
 		(err = archive->FindMessage( BmListModelItem::MSG_CHILDREN, i, &msg)) == B_OK
-													|| BM_THROW_RUNTIME(BString("Could not find pop-account nr. ") << i+1 << " \n\nError:" << strerror(err));
+													|| BM_THROW_RUNTIME(BmString("Could not find pop-account nr. ") << i+1 << " \n\nError:" << strerror(err));
 		BmPopAccount* newAcc = new BmPopAccount( &msg, this);
-		BM_LOG3( BM_LogMailTracking, BString("PopAccount <") << newAcc->Name() << "," << newAcc->Key() << "> read");
+		BM_LOG3( BM_LogMailTracking, BmString("PopAccount <") << newAcc->Name() << "," << newAcc->Key() << "> read");
 		AddItemToList( newAcc);
 	}
-	BM_LOG2( BM_LogMailTracking, BString("End of InstantiateItems() for PopAccountList"));
+	BM_LOG2( BM_LogMailTracking, BmString("End of InstantiateItems() for PopAccountList"));
 	mInitCheck = B_OK;
 }
 
@@ -388,11 +388,11 @@ void BmPopAccountList::InstantiateItems( BMessage* archive) {
 			might cause Beam to download recent messages again.
 \*------------------------------------------------------------------------------*/
 void BmPopAccountList::ResetToSaved() {
-	BM_LOG2( BM_LogMailTracking, BString("Start of ResetToSaved() for PopAccountList"));
+	BM_LOG2( BM_LogMailTracking, BmString("Start of ResetToSaved() for PopAccountList"));
 	BmAutolock lock( ModelLocker());
 	lock.IsLocked() 							|| BM_THROW_RUNTIME( ModelName() << ": Unable to get lock");
 	// first we copy all uid-lists into a temp map...
-	map<BString, vector<BString> > uidListMap;
+	map<BmString, vector<BmString> > uidListMap;
 	BmModelItemMap::const_iterator iter;
 	for( iter = begin(); iter != end(); ++iter) {
 		BmPopAccount* acc = dynamic_cast< BmPopAccount*>( iter->second.Get());
@@ -404,11 +404,11 @@ void BmPopAccountList::ResetToSaved() {
 	// ...finally we update the uid-list of each account:
 	for( iter = begin(); iter != end(); ++iter) {
 		BmPopAccount* acc = dynamic_cast< BmPopAccount*>( iter->second.Get());
-		vector< BString>& uidList = uidListMap[acc->Key()];
+		vector< BmString>& uidList = uidListMap[acc->Key()];
 		if (!uidList.empty())
 			acc->mUIDs = uidList;
 	}
-	BM_LOG2( BM_LogMailTracking, BString("End of ResetToSaved() for PopAccountList"));
+	BM_LOG2( BM_LogMailTracking, BmString("End of ResetToSaved() for PopAccountList"));
 }
 
 /*------------------------------------------------------------------------------*\
@@ -438,7 +438,7 @@ BmRef<BmPopAccount> BmPopAccountList::DefaultAccount() {
 		-	marks the account with the given name as the default account
 		-	any prior default-account is being reset
 \*------------------------------------------------------------------------------*/
-void BmPopAccountList::SetDefaultAccount( BString accName) {
+void BmPopAccountList::SetDefaultAccount( BmString accName) {
 	BmAutolock lock( ModelLocker());
 	lock.IsLocked() 							|| BM_THROW_RUNTIME( ModelName() << ": Unable to get lock");
 	BmModelItemMap::const_iterator iter;
@@ -456,7 +456,7 @@ void BmPopAccountList::SetDefaultAccount( BString accName) {
 	FindAccountForAddress( addr)
 		-	determines to which account the given address belongs (if any)
 \*------------------------------------------------------------------------------*/
-BmRef<BmPopAccount> BmPopAccountList::FindAccountForAddress( const BString addr) {
+BmRef<BmPopAccount> BmPopAccountList::FindAccountForAddress( const BmString addr) {
 	BmAutolock lock( ModelLocker());
 	lock.IsLocked() 							|| BM_THROW_RUNTIME( ModelName() << ": Unable to get lock");
 	BmModelItemMap::const_iterator iter;
@@ -473,7 +473,7 @@ BmRef<BmPopAccount> BmPopAccountList::FindAccountForAddress( const BString addr)
 		BmPopAccount* acc = dynamic_cast< BmPopAccount*>( iter->second.Get());
 		if (acc->MarkedAsBitBucket()) {
 			// check if the bit-bucket is for the given address's domain
-			BString regex = acc->GetDomainName()<<"$";
+			BmString regex = acc->GetDomainName()<<"$";
 			Regexx rx;
 			if (rx.exec( addr, regex))
 				return acc;
@@ -508,7 +508,7 @@ void BmPopAccountList::CheckMail( bool allAccounts) {
 			by regular interval checking (in that case we do not want to show a GUI
 			for the check).
 \*------------------------------------------------------------------------------*/
-void BmPopAccountList::CheckMailFor( BString accName, bool isAutoCheck) {
+void BmPopAccountList::CheckMailFor( BmString accName, bool isAutoCheck) {
 	BMessage archive(BM_JOBWIN_POP);
 	archive.AddString( BmJobModel::MSG_JOB_NAME, accName.String());
 	archive.AddBool( MSG_AUTOCHECK, isAutoCheck);

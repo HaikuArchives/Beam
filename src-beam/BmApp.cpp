@@ -143,7 +143,7 @@ BmApplication::BmApplication( const char* sig)
 
 		BmMainWindow::CreateInstance();
 		
-		BString wspc = ThePrefs->GetString( "Workspace", "Current");
+		BmString wspc = ThePrefs->GetString( "Workspace", "Current");
 		TheMainWindow->SetWorkspaces( wspc=="Current" 
 													? B_CURRENT_WORKSPACE 
 													: 1<<(atoi( wspc.String())-1));
@@ -240,7 +240,7 @@ void BmApplication::InstallDeskbarItem() {
 			int32 id;
 			appInfo.ref.set_name( BM_DeskbarItemName);
 			if ((res = mDeskbar.AddItem( &appInfo.ref, &id)) != B_OK)
-				BM_SHOWERR( BString("Unable to install Beam_DeskbarItem.\nError: \n\t") << strerror( res))
+				BM_SHOWERR( BmString("Unable to install Beam_DeskbarItem.\nError: \n\t") << strerror( res))
 		}
 	}
 }
@@ -295,22 +295,24 @@ bool BmApplication::QuitRequested() {
 void BmApplication::ArgvReceived( int32 argc, char** argv) {
 	if (argc>1) {
 		BMessage msg(BMM_NEW_MAIL);
-		BString to( argv[1]);
+		BmString to( argv[1]);
 		if (to.ICompare("mailto:",7)==0) {
 			to.Remove( 0, 7);
 			int32 optPos = to.IFindFirst("?");
 			if (optPos != B_ERROR) {
-				BString opts;
+				BmString opts;
 				to.MoveInto( opts, optPos, to.Length());
 				Regexx rx;
 				int32 optCount = rx.exec( opts, "[?&]([^&=]+)=([^&]+)", Regexx::global);
 				for( int i=0; i<optCount; ++i) {
-					BString rawVal;
-					DeUrlify( rx.match[i].atom[1], rawVal);
-					msg.AddString( MSG_OPT_FIELD, rx.match[i].atom[0]);
-					msg.AddString( MSG_OPT_VALUE, rawVal);
+					BmString rawVal( rx.match[i].atom[1]);
+					rawVal.DeUrlify();
+					BmString field( rx.match[i].atom[0]);
+					msg.AddString( MSG_OPT_FIELD, field.String());
+					msg.AddString( MSG_OPT_VALUE, rawVal.String());
 				}
 			}
+			to.DeUrlify();
 		}
 		msg.AddString( MSG_WHO_TO, to.String());
 		PostMessage( &msg);
@@ -373,7 +375,7 @@ void BmApplication::MessageReceived( BMessage* msg) {
 				msg->FindString( BmPopAccountList::MSG_ITEMKEY, &key);
 				if (key) {
 					bool isAutoCheck = msg->FindBool( BmPopAccountList::MSG_AUTOCHECK);
-					BM_LOG( BM_LogPop, BString("PopAccount ") << key << " checks mail " 
+					BM_LOG( BM_LogPop, BmString("PopAccount ") << key << " checks mail " 
 							  << (isAutoCheck ? "(auto)" : "(manual)"));
 					if (!isAutoCheck || !ThePrefs->GetBool( "AutoCheckOnlyIfPPPRunning", true) 
 					|| IsPPPRunning())
@@ -392,7 +394,7 @@ void BmApplication::MessageReceived( BMessage* msg) {
 				for( ; msg->FindString( MSG_OPT_FIELD, i, &optField)==B_OK; ++i) {
 					mail->SetFieldVal( optField, msg->FindString( MSG_OPT_VALUE, i));
 				}
-				BM_LOG( BM_LogMainWindow, BString("Asked to create new mail with ") << i << " options");
+				BM_LOG( BM_LogMainWindow, BmString("Asked to create new mail with ") << i << " options");
 				BmMailEditWin* editWin = BmMailEditWin::CreateInstance( mail.Get());
 				if (editWin)
 					editWin->Show();
@@ -404,7 +406,7 @@ void BmApplication::MessageReceived( BMessage* msg) {
 				while( msg->FindPointer( MSG_MAILREF, index++, (void**)&mailRef) == B_OK) {
 					BmRef<BmMail> mail = BmMail::CreateInstance( mailRef);
 					if (mail) {
-						BM_LOG( BM_LogMainWindow, BString("Asked to redirect mail <") << mailRef->TrackerName() << ">");
+						BM_LOG( BM_LogMainWindow, BmString("Asked to redirect mail <") << mailRef->TrackerName() << ">");
 						mail->StartJobInThisThread( BmMail::BM_READ_MAIL_JOB);
 						if (mail->InitCheck() != B_OK)
 							continue;
@@ -432,7 +434,7 @@ void BmApplication::MessageReceived( BMessage* msg) {
 					break;
 				if (msgCount>1 && msg->FindInt32( "which", &buttonPressed) != B_OK) {
 					// first step, ask user about how to forward multiple messages:
-					BString s("You have selected more than one message.\n\nShould Beam join the message-bodies into one single mail and reply to that or would you prefer to keep the messages separate?");
+					BmString s("You have selected more than one message.\n\nShould Beam join the message-bodies into one single mail and reply to that or would you prefer to keep the messages separate?");
 					BAlert* alert = new BAlert( "Forwarding Multiple Mails", 
 														 s.String(),
 													 	 "Cancel", "Keep Separate", "Join", B_WIDTH_AS_USUAL,
@@ -456,7 +458,7 @@ void BmApplication::MessageReceived( BMessage* msg) {
 					break;
 				if (msgCount>1 && msg->FindInt32( "which", &buttonPressed) != B_OK) {
 					// first step, ask user about how to forward multiple messages:
-					BString s("You have selected more than one message.\n\nShould Beam join the message-bodies into one single mail and forward that or would you prefer to keep the messages separate?");
+					BmString s("You have selected more than one message.\n\nShould Beam join the message-bodies into one single mail and forward that or would you prefer to keep the messages separate?");
 					BAlert* alert = new BAlert( "Forwarding Multiple Mails", 
 														 s.String(),
 													 	 "Cancel", "Keep Separate", "Join", B_WIDTH_AS_USUAL,
@@ -478,7 +480,7 @@ void BmApplication::MessageReceived( BMessage* msg) {
 				if (result != B_OK)
 					break;
 				int index=0;
-				BString newStatus = msg->FindString( MSG_STATUS);
+				BmString newStatus = msg->FindString( MSG_STATUS);
 				if (msgCount>1 && msg->FindInt32( "which", &buttonPressed) != B_OK) {
 					// first step, check if user has asked to mark as read and has selected
 					// messages with advanced statii (like replied or forwarded). If so, 
@@ -493,7 +495,7 @@ void BmApplication::MessageReceived( BMessage* msg) {
 							}
 						}
 						if (hasAdvanced) {
-							BString s("Some of the selected messages are not new.\n\nShould Beam mark only the new messages as being read?");
+							BmString s("Some of the selected messages are not new.\n\nShould Beam mark only the new messages as being read?");
 							BAlert* alert = new BAlert( "Mark Mails As", 
 																 s.String(),
 															 	 "Cancel", "Mark All Messages", "Just Mark New Messages", B_WIDTH_AS_USUAL,
@@ -511,7 +513,7 @@ void BmApplication::MessageReceived( BMessage* msg) {
 				index=0;
 				while( msg->FindPointer( MSG_MAILREF, index++, (void**)&mailRef) == B_OK) {
 					if (buttonPressed==1 || mailRef->Status() == BM_MAIL_STATUS_NEW) {
-						BM_LOG( BM_LogMainWindow, BString("marking mail <") << mailRef->TrackerName() << "> as " << newStatus);
+						BM_LOG( BM_LogMainWindow, BmString("marking mail <") << mailRef->TrackerName() << "> as " << newStatus);
 						mailRef->MarkAs( newStatus.String());
 					}
 					mailRef->RemoveRef();	// msg is no more refering to mailRef
@@ -543,7 +545,7 @@ void BmApplication::MessageReceived( BMessage* msg) {
 				entry_ref* refs = new entry_ref [index];
 				index=0;
 				for( index=0; msg->FindPointer( MSG_MAILREF, index, (void**)&mailRef) == B_OK; ++index) {
-					BM_LOG( BM_LogMainWindow, BString("Asked to trash mail <") << mailRef->TrackerName() << ">");
+					BM_LOG( BM_LogMainWindow, BmString("Asked to trash mail <") << mailRef->TrackerName() << ">");
 					refs[index] = mailRef->EntryRef();
 					mailRef->MarkAs( BM_MAIL_STATUS_READ);
 							// mark mail as read before moving to trash, so that we don't confuse
@@ -570,7 +572,7 @@ void BmApplication::MessageReceived( BMessage* msg) {
 	}
 	catch( exception &err) {
 		// a problem occurred, we tell the user:
-		BM_SHOWERR( BString("BmApp: ") << err.what());
+		BM_SHOWERR( BmString("BmApp: ") << err.what());
 	}
 }
 
@@ -620,8 +622,8 @@ void BmApplication::ForwardMails( BMessage* msg, bool join) {
 				}
 				if (index == 0) {
 					// set subject for multiple forwards:
-					BString oldSub = mail->GetFieldVal( BM_FIELD_SUBJECT);
-					BString subject = newMail->CreateForwardSubjectFor( oldSub + " (and more...)");
+					BmString oldSub = mail->GetFieldVal( BM_FIELD_SUBJECT);
+					BmString subject = newMail->CreateForwardSubjectFor( oldSub + " (and more...)");
 					newMail->SetFieldVal( BM_FIELD_SUBJECT, subject);
 				}
 			}
@@ -682,7 +684,7 @@ void BmApplication::ReplyToMails( BMessage* msg, bool join) {
 	const char* selectedText = NULL;
 	msg->FindString( MSG_SELECTED_TEXT, &selectedText);
 	if (join) {
-		typedef map< BString, BmRef<BmMail> >BmNewMailMap;
+		typedef map< BmString, BmRef<BmMail> >BmNewMailMap;
 		BmNewMailMap newMailMap;
 		// we collect new mails in the map defined above...
 		for(  int index=0; 
@@ -693,7 +695,7 @@ void BmApplication::ReplyToMails( BMessage* msg, bool join) {
 				mail->StartJobInThisThread( BmMail::BM_READ_MAIL_JOB);
 				if (mail->InitCheck() != B_OK)
 					continue;
-				BString replyAddr = mail->DetermineReplyAddress( msg->what, true);
+				BmString replyAddr = mail->DetermineReplyAddress( msg->what, true);
 				BmRef<BmMail>& newMail = newMailMap[replyAddr];
 				if (!newMail) 
 					newMail = mail->CreateReply( msg->what, selectedText);
@@ -701,8 +703,8 @@ void BmApplication::ReplyToMails( BMessage* msg, bool join) {
 					newMail->AddPartsFromMail( mail, false, BM_IS_REPLY);
 				if (index == 0) {
 					// set subject for multiple forwards:
-					BString oldSub = mail->GetFieldVal( BM_FIELD_SUBJECT);
-					BString subject = newMail->CreateReplySubjectFor( oldSub + " (and more...)");
+					BmString oldSub = mail->GetFieldVal( BM_FIELD_SUBJECT);
+					BmString subject = newMail->CreateReplySubjectFor( oldSub + " (and more...)");
 					newMail->SetFieldVal( BM_FIELD_SUBJECT, subject);
 				}
 			}
@@ -844,7 +846,7 @@ void BmApplication::PageSetup() {
 		-	launches the corresponding program for the given URL (usually Netpositive)
 		-	mailto: - URLs are handled internally
 \*------------------------------------------------------------------------------*/
-void BmApplication::LaunchURL( const BString url) {
+void BmApplication::LaunchURL( const BmString url) {
 	char* urlStr = const_cast<char*>( url.String());
 	status_t result;
 	if (url.ICompare( "https:", 6) == 0)
@@ -857,7 +859,7 @@ void BmApplication::LaunchURL( const BString url) {
 		result = be_roster->Launch( "application/x-vnd.Be.URL.file", 1, &urlStr);
 	else if (url.ICompare( "mailto:", 7) == 0) {
 		BMessage msg(BMM_NEW_MAIL);
-		BString to( urlStr+7);
+		BmString to( urlStr+7);
 		int32 subjPos = to.IFindFirst("?subject=");
 		if (subjPos != B_ERROR) {
 			msg.AddString( BmApplication::MSG_SUBJECT, to.String()+subjPos+9);
@@ -869,7 +871,7 @@ void BmApplication::LaunchURL( const BString url) {
 	}
 	else result = B_ERROR;
 	if (!(result == B_OK || result == B_ALREADY_RUNNING)) {
-		(new BAlert( "", (BString("Could not launch application for url\n\t") 
+		(new BAlert( "", (BmString("Could not launch application for url\n\t") 
 								<< url << "\n\nError:\n\t" << strerror(result)).String(),
 					   "OK"))->Go();
 	}
@@ -937,7 +939,7 @@ Zach
 BRect BmApplication::ScreenFrame() {
 	BScreen screen;
 	if (!screen.IsValid())
-		BM_SHOWERR( BString("Could not initialize BScreen object !?!"));
+		BM_SHOWERR( BmString("Could not initialize BScreen object !?!"));
 	return screen.Frame();
 }
 
@@ -958,7 +960,7 @@ void BmApplication::SetNewWorkspace( uint32 newWorkspace) {
 		-	determines whether or not Beam handles the given mimetype
 		-	returns true for text/x-email and message/rfc822, false otherwise
 \*------------------------------------------------------------------------------*/
-bool BmApplication::HandlesMimetype( const BString mimetype) {
+bool BmApplication::HandlesMimetype( const BmString mimetype) {
 	return mimetype.ICompare( "text/x-email")==0 
 			 || mimetype.ICompare( "message/rfc822")==0;
 }

@@ -115,8 +115,8 @@ regexx::Regexx::exec(int _flags)
   return m_matches;
 }
 
-const BString&
-regexx::Regexx::replace(const BString& _repstr, int _flags)
+const BmString&
+regexx::Regexx::replace(const BmString& _repstr, int _flags)
   throw(CompileException)
 {
   exec(_flags&~nomatch);
@@ -131,7 +131,7 @@ regexx::Regexx::replace(const BString& _repstr, int _flags)
     }
     pos = _repstr.FindFirst("$",pos+1);
   }
-  BString tmprep;
+  BmString tmprep;
   m_replaced = "";
   int32 destSize = m_str.Length()+10;
   char* destBuf = m_replaced.LockBuffer( destSize);
