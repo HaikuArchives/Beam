@@ -3,11 +3,14 @@
 		$Id$
 */
 
+#include <File.h>
+
 #include "BmBasics.h"
 #include "BmController.h"
 #include "BmDataModel.h"
 #include "BmLogHandler.h"
 #include "BmMsgTypes.h"
+#include "BmResources.h"
 #include "BmUtil.h"
 
 
@@ -395,6 +398,7 @@ BmListModelItem* BmListModelItem::FindItemByKey( BString& key) {
 \*------------------------------------------------------------------------------*/
 BmListModel::BmListModel( const BString& name)
 	:  inherited( name)
+	,	mInitCheck( B_NO_INIT)
 {
 }
 
@@ -528,5 +532,104 @@ void BmListModel::TellModelItemUpdated( BmListModelItem* item, BmUpdFlags flags)
 		BM_LOG2( BM_LogModelController, BString("ListModel <") << ModelName() << "> tells about updated item " << item->Key());
 		TellControllers( &msg);
 	}
+}
+
+/*------------------------------------------------------------------------------*\
+	Archive( archive)
+		-	
+\*------------------------------------------------------------------------------*/
+status_t BmListModel::Archive( BMessage* archive, bool deep) const {
+	status_t ret = BArchivable::Archive( archive, deep);
+	if (ret == B_OK) {
+		ret = archive->AddInt32( BmListModelItem::MSG_NUMCHILDREN, size());
+	}
+	if (deep && ret == B_OK) {
+		BmModelItemMap::const_iterator iter;
+		for( iter = begin(); iter != end() && ret == B_OK; ++iter) {
+			BMessage msg;
+			ret = iter->second->Archive( &msg, deep)
+					|| archive->AddMessage( BmListModelItem::MSG_CHILDREN, &msg);
+		}
+	}
+	return ret;
+}
+
+/*------------------------------------------------------------------------------*\
+	Store()
+		-	stores List inside Settings-dir:
+\*------------------------------------------------------------------------------*/
+bool BmListModel::Store() {
+	BMessage archive;
+	BFile cacheFile;
+	status_t err;
+
+	if (mInitCheck != B_OK) return true;
+	try {
+		BAutolock lock( mModelLocker);
+		lock.IsLocked() 						|| BM_THROW_RUNTIME( ModelName() << ":Store(): Unable to get lock");
+		BString filename = SettingsFileName();
+		this->Archive( &archive, true) == B_OK
+													|| BM_THROW_RUNTIME(BString("Unable to archive list-model ")<<ModelName());
+		(err = cacheFile.SetTo( filename.String(), B_WRITE_ONLY | B_CREATE_FILE | B_ERASE_FILE)) == B_OK
+													|| BM_THROW_RUNTIME( BString("Could not create settings-file\n\t<") << filename << ">\n\n Result: " << strerror(err));
+		(err = archive.Flatten( &cacheFile)) == B_OK
+													|| BM_THROW_RUNTIME( BString("Could not store settings into file\n\t<") << filename << ">\n\n Result: " << strerror(err));
+	} catch( exception &e) {
+		BM_SHOWERR( e.what());
+		return false;
+	}
+	return true;
+}
+
+/*------------------------------------------------------------------------------*\
+	Restore()
+		-	restores List from Settings-file (if it exists):
+\*------------------------------------------------------------------------------*/
+BMessage* BmListModel::Restore( const BString filename) {
+	status_t err;
+	BFile file;
+	BMessage* archive = NULL;
+
+	// try to open settings-file...
+	if ((err = file.SetTo( filename.String(), B_READ_ONLY)) == B_OK) {
+		// ...ok, settings file found, we fetch our data from it:
+		try {
+			archive = new BMessage;
+			(err = archive->Unflatten( &file)) == B_OK
+													|| BM_THROW_RUNTIME( BString("Could not fetch settings from file\n\t<") << filename << ">\n\n Result: " << strerror(err));
+		} catch (exception &e) {
+			BM_SHOWERR( e.what());
+			delete archive;
+			archive = NULL;
+		}
+	}
+	return archive;
+}
+
+/*------------------------------------------------------------------------------*\
+	StartJob()
+		-	
+\*------------------------------------------------------------------------------*/
+bool BmListModel::StartJob() {
+	// try to open cache-file (if any) or else initialize the long way
+	if (InitCheck() == B_OK) {
+		return true;
+	}
+
+	Freeze();
+	try {
+		BMessage* archive = Restore( SettingsFileName());
+		if (archive) {
+			InstantiateItems( archive);
+			delete archive;
+		} else {
+			// ...no cache file found, we fetch the existing items by hand...
+			InitializeItems();
+		}
+	} catch (exception &e) {
+		BM_SHOWERR( e.what());
+	}
+	Thaw();
+	return InitCheck() == B_OK;
 }
 

@@ -13,6 +13,7 @@
 
 #include "BmBasics.h"
 #include "BmLogHandler.h"
+#include "BmPopAccount.h"
 #include "BmPrefs.h"
 #include "BmResources.h"
 #include "BmUtil.h"
@@ -56,6 +57,7 @@ BmPrefs* BmPrefs::CreateInstance() {
 	}
 
 	theInstance = prefs;
+	ThePopAccountList = BmPopAccountList::CreateInstance();
 	return prefs;
 }
 
@@ -109,8 +111,8 @@ BmPrefs::BmPrefs( BMessage* archive)
 	: BArchivable( archive)
 {
 	mDynamicConnectionWin = static_cast<TConnWinMode>(FindMsgInt16( archive, MSG_DYNAMIC_CONN_WIN));
-	mReceiveTimeout = ntohs(FindMsgInt16( archive, MSG_RECEIVE_TIMEOUT));
-	mLoglevels = ntohl(FindMsgInt32( archive, MSG_LOGLEVELS));
+	mReceiveTimeout = FindMsgInt16( archive, MSG_RECEIVE_TIMEOUT);
+	mLoglevels = FindMsgInt32( archive, MSG_LOGLEVELS);
 	mMailboxPath = FindMsgString( archive, MSG_MAILBOXPATH);
 	mRefCacheInMem = FindMsgBool( archive, MSG_REF_CACHE_MEM);
 	mRefCacheOnDisk = FindMsgBool( archive, MSG_REF_CACHE_DISK);
@@ -129,6 +131,7 @@ BmPrefs::BmPrefs( BMessage* archive)
 BmPrefs::~BmPrefs() {
 	delete mMailRefLayout;
 	theInstance = NULL;
+	ThePopAccountList = NULL;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -138,14 +141,13 @@ BmPrefs::~BmPrefs() {
 \*------------------------------------------------------------------------------*/
 status_t BmPrefs::Archive( BMessage* archive, bool deep) const {
 	status_t ret = inherited::Archive( archive, deep)
-		||	archive->AddString("class", "BmPrefs")
 		||	archive->AddInt16( MSG_DYNAMIC_CONN_WIN, mDynamicConnectionWin)
-		||	archive->AddInt16( MSG_RECEIVE_TIMEOUT, htons(mReceiveTimeout))
-		||	archive->AddInt32( MSG_LOGLEVELS, htonl(mLoglevels))
+		||	archive->AddInt16( MSG_RECEIVE_TIMEOUT, mReceiveTimeout)
+		||	archive->AddInt32( MSG_LOGLEVELS, mLoglevels)
 		||	archive->AddString( MSG_MAILBOXPATH, mMailboxPath.String())
 		||	archive->AddBool( MSG_REF_CACHE_MEM, mRefCacheInMem)
 		||	archive->AddBool( MSG_REF_CACHE_DISK, mRefCacheOnDisk)
-		||	archive->AddInt32( MSG_DEFAULT_ENCODING, htonl(mDefaultEncoding))
+		||	archive->AddInt32( MSG_DEFAULT_ENCODING, mDefaultEncoding)
 		||	archive->AddBool( MSG_STRIPED_LISTVIEW, mStripedListView)
 		||	archive->AddMessage( MSG_MAILREF_LAYOUT, mMailRefLayout)
 		||	archive->AddBool( MSG_RESTORE_FOLDERS, mRestoreFolderStates)
@@ -187,3 +189,4 @@ bool BmPrefs::Store() {
 	}
 	return true;
 }
+

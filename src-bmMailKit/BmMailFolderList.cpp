@@ -18,7 +18,7 @@
 #include "BmUtil.h"
 
 
-BmRef< BmMailFolderList> BmMailFolderList::theInstance;
+BmRef< BmMailFolderList> BmMailFolderList::theInstance( NULL);
 
 /*------------------------------------------------------------------------------*\
 	CreateInstance()
@@ -37,7 +37,6 @@ BmMailFolderList* BmMailFolderList::CreateInstance() {
 BmMailFolderList::BmMailFolderList()
 	:	BmListModel( "MailFolderList")
 	,	mTopFolder( NULL)
-	,	mInitCheck( B_NO_INIT)
 {
 }
 
@@ -54,53 +53,11 @@ BmMailFolderList::~BmMailFolderList() {
 		-	
 \*------------------------------------------------------------------------------*/
 bool BmMailFolderList::StartJob() {
-	// try to open folder-cache file...
-	status_t err;
-	BFile cacheFile;
-
-	if (InitCheck() == B_OK) {
-		return true;
-	}
-
-	Freeze();
-
-	try {
-	
-		BString filename = BString(TheResources->SettingsPath.Path()) 
-									<< "/" << ARCHIVE_FILENAME;
-	
-		if ((err = cacheFile.SetTo( filename.String(), B_READ_ONLY)) == B_OK) {
-			// ...ok, folder-cache found, we fetch our data from it:
-			BMessage archive;
-			(err = archive.Unflatten( &cacheFile)) == B_OK
-														|| BM_THROW_RUNTIME( BString("Could not fetch folder-cache from file\n\t<") << filename << ">\n\n Result: " << strerror(err));
-			InstantiateMailFolders( &archive);
-		} else {
-			// ...no cache file found, we fetch the existing mail-folders by hand...
-			InitializeMailFolders();
-		}
+	if (inherited::StartJob()) {
 		QueryForNewMails();
-		(err = InitCheck()) == B_OK
-														|| BM_THROW_RUNTIME( BString("Could not initialize mailfolder-list"));
-	} catch (exception &e) {
-		BM_SHOWERR( e.what());
-	}
-	Thaw();
-	return InitCheck() == B_OK;
-}
-
-/*------------------------------------------------------------------------------*\
-	Archive( archive)
-		-	
-\*------------------------------------------------------------------------------*/
-status_t BmMailFolderList::Archive( BMessage* archive, bool deep) const {
-	status_t ret = inherited::Archive( archive, deep);
-	if (deep && mTopFolder) {
-		BMessage msg;
-		ret = mTopFolder->Archive( &msg, deep)
-				|| archive->AddMessage( MSG_TOPFOLDER, &msg);
-	}
-	return ret;
+		return true;
+	} else
+		return false;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -115,10 +72,10 @@ BmMailFolder* BmMailFolderList::AddMailFolder( entry_ref& eref, int64 node,
 }
 
 /*------------------------------------------------------------------------------*\
-	InitializeMailFolders()
+	InitializeItems()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmMailFolderList::InitializeMailFolders() {
+void BmMailFolderList::InitializeItems() {
 	BDirectory mailDir;
 	entry_ref eref;
 	status_t err;
@@ -199,16 +156,16 @@ int BmMailFolderList::doInitializeMailFolders( BmMailFolder* folder, int level) 
 }
 
 /*------------------------------------------------------------------------------*\
-	InstantiateMailFolders( archive)
+	InstantiateItems( archive)
 		-	(re-)creates top mail-folder from given archive and proceeds with all
 			subfolders recursively
 \*------------------------------------------------------------------------------*/
-void BmMailFolderList::InstantiateMailFolders( BMessage* archive) {
+void BmMailFolderList::InstantiateItems( BMessage* archive) {
 	status_t err;
 	BM_LOG2( BM_LogMailTracking, BString("Starting to read folder-cache"));
 	BMessage msg;
-	(err = archive->FindMessage( MSG_TOPFOLDER, &msg)) == B_OK
-												|| BM_THROW_RUNTIME(BString("BmMailFolderList: Could not find msg-field <") << MSG_TOPFOLDER << "> \n\nError:" << strerror(err));
+	(err = archive->FindMessage( BmListModelItem::MSG_CHILDREN, &msg)) == B_OK
+												|| BM_THROW_RUNTIME(BString("BmMailFolderList: Could not find msg-field <") << BmListModelItem::MSG_CHILDREN << "> \n\nError:" << strerror(err));
 	{
 		BAutolock lock( mModelLocker);
 		lock.IsLocked() 						|| BM_THROW_RUNTIME( ModelName() << ":InstantiateMailFolders(): Unable to get lock");
@@ -313,36 +270,16 @@ void BmMailFolderList::QueryForNewMails() {
 		-	stores the current state inside cache-file
 \*------------------------------------------------------------------------------*/
 void BmMailFolderList::RemoveController( BmController* controller) {
-	inheritedModel::RemoveController( controller);
+	inherited::RemoveController( controller);
 	Store();
 }
 
 /*------------------------------------------------------------------------------*\
-	Store()
-		-	stores FolderList inside Settings-dir:
+	SettingsFileName()
+		-	
 \*------------------------------------------------------------------------------*/
-bool BmMailFolderList::Store() {
-	BMessage archive;
-	BFile cacheFile;
-	status_t err;
-
-	if (mInitCheck != B_OK) return true;
-	try {
-		BAutolock lock( mModelLocker);
-		lock.IsLocked() 						|| BM_THROW_RUNTIME( ModelName() << ":Store(): Unable to get lock");
-		BString filename = BString( TheResources->SettingsPath.Path()) << "/" << ARCHIVE_FILENAME;
-		this->Archive( &archive, true) == B_OK
-													|| BM_THROW_RUNTIME("Unable to archive BmFolderList-object");
-		(err = cacheFile.SetTo( filename.String(), 
-										B_WRITE_ONLY | B_CREATE_FILE | B_ERASE_FILE)) == B_OK
-													|| BM_THROW_RUNTIME( BString("Could not create folder-cache file\n\t<") << filename << ">\n\n Result: " << strerror(err));
-		(err = archive.Flatten( &cacheFile)) == B_OK
-													|| BM_THROW_RUNTIME( BString("Could not store folder-cache into file\n\t<") << filename << ">\n\n Result: " << strerror(err));
-	} catch( exception &e) {
-		BM_SHOWERR( e.what());
-		return false;
-	}
-	return true;
+const BString BmMailFolderList::SettingsFileName() {
+	return BString( TheResources->SettingsPath.Path()) << "/" << "Folder Cache";
 }
 
 /*------------------------------------------------------------------------------*\

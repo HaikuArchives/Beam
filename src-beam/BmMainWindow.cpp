@@ -21,6 +21,7 @@
 #include "BmMailView.h"
 #include "BmMainWindow.h"
 #include "BmResources.h"
+#include "BmToolbarButton.h"
 #include "BmUtil.h"
 
 
@@ -84,12 +85,50 @@ BmMainWindow::BmMainWindow()
 	MView* mOuterGroup = 
 		new VGroup(
 			minimax( 600, 200, 1E5, 1E5),
+			CreateMenu(),
+			new Space(minimax(-1,4,-1,4)),
 			new HGroup(
 				minimax( -1, -1, 1E5, -1),
-				new MButton( "Lass gut sein...", new BMessage(B_QUIT_REQUESTED), be_app, minimax(-1,-1,-1,-1)),
+				mCheckButton = new BmToolbarButton( "Check", 
+																TheResources->IconByName("Button_Check"), 
+																new BMessage(BMM_CHECK_MAIL), this, 
+																"Check for new mail"),
+				mNewButton = new BmToolbarButton( "New", 
+															 TheResources->IconByName("Button_New"), 
+															 new BMessage(BMM_NEW_MAIL), this, 
+															 "Compose a new mail message"),
+				mReplyButton = new BmToolbarButton( "Reply", 
+																TheResources->IconByName("Button_Reply"), 
+																new BMessage(BMM_REPLY), this, 
+																"Reply to sender only"),
+				mReplyAllButton = new BmToolbarButton( "Reply All", 
+																	TheResources->IconByName("Button_ReplyAll"), 
+																	new BMessage(BMM_REPLY_ALL), this, 
+																	"Reply to sender and all recipients"),
+				mForwardButton = new BmToolbarButton( "Forward", 
+																  TheResources->IconByName("Button_Forward"), 
+																  new BMessage(BMM_FORWARD), this, 
+																  "Forward (mail text only)"),
+				mBounceButton = new BmToolbarButton( "Bounce", 
+																 TheResources->IconByName("Button_Bounce"), 
+																 new BMessage(BMM_BOUNCE), this, 
+																 "Redirect message to somewhere else (preserves original sender)"),
+				mPrintButton = new BmToolbarButton( "Print", 
+																TheResources->IconByName("Button_Print"), 
+																new BMessage(BMM_PRINT), this, 
+																"Print selected messages(s)"),
+				mTrashButton = new BmToolbarButton( "Delete", 
+																TheResources->IconByName("Button_Trash"), 
+																new BMessage(BMM_TRASH), this, 
+																"Move selected messages to Trash"),
 				new Space(),
+				new BmToolbarButton( "Lass' gut sein", 
+											TheResources->IconByName("Person"), 
+											new BMessage(B_QUIT_REQUESTED), this),
+				new Space(minimax(20,-1,20,-1)),
 				0
 			),
+			new Space(minimax(-1,4,-1,4)),
 			new HGroup(
 				mVertSplitter = new UserResizeSplitView( 
 					CreateMailFolderView( minimax(0,100,300,1E5), 120, 100),
@@ -105,6 +144,10 @@ BmMainWindow::BmMainWindow()
 			0
 		);
 
+	mTrashButton->SetEnabled( false);
+	mForwardButton->SetEnabled( false);
+	mReplyAllButton->SetEnabled( false);
+
 	mMailRefView->TeamUpWith( mMailView);
 	mMailView->TeamUpWith( mMailRefView);
 
@@ -118,6 +161,73 @@ BmMainWindow::BmMainWindow()
 BmMainWindow::~BmMainWindow() {
 	TheMailFolderList = NULL;
 	theInstance = NULL;
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+MMenuBar* BmMainWindow::CreateMenu() {
+	MMenuBar* menubar = new MMenuBar();
+	BMenu* menu = NULL;
+//	BMenuItem* item = NULL;
+	// File
+	menu = new BMenu( "File");
+	menu->AddItem( new BMenuItem( "New Folder", new BMessage( BMM_NEW_MAILFOLDER)));
+	menu->AddSeparatorItem();
+	menu->AddItem( new BMenuItem( "Page Setup...", new BMessage( BMM_PAGE_SETUP)));
+	menu->AddItem( new BMenuItem( "Print Message(s)...", new BMessage( BMM_PRINT)));
+	menu->AddSeparatorItem();
+	menu->AddItem( new BMenuItem( "Preferences...", new BMessage( BMM_PREFERENCES)));
+	menu->AddSeparatorItem();
+	menu->AddItem( new BMenuItem( "About Beam...", new BMessage( B_ABOUT_REQUESTED)));
+	menu->AddSeparatorItem();
+	menu->AddItem( new BMenuItem( "Quit Beam", new BMessage( B_QUIT_REQUESTED), 'Q'));
+	menubar->AddItem( menu);
+
+	// Edit
+	menu = new BMenu( "Edit");
+	menu->AddItem( new BMenuItem( "Undo", new BMessage( B_UNDO), 'Z'));
+	menu->AddSeparatorItem();
+	menu->AddItem( new BMenuItem( "Cut", new BMessage( B_CUT), 'X'));
+	menu->AddItem( new BMenuItem( "Copy", new BMessage( B_COPY), 'C'));
+	menu->AddItem( new BMenuItem( "Paste", new BMessage( B_PASTE), 'V'));
+	menu->AddItem( new BMenuItem( "Select All", new BMessage( B_SELECT_ALL), 'A'));
+	menu->AddSeparatorItem();
+	menu->AddItem( new BMenuItem( "Find...", new BMessage( BMM_FIND), 'F'));
+	menu->AddItem( new BMenuItem( "Find Messages...", new BMessage( BMM_FIND_MESSAGES), 'F', B_SHIFT_KEY));
+	menu->AddItem( new BMenuItem( "Find Next", new BMessage( BMM_FIND_NEXT), 'G'));
+	menubar->AddItem( menu);
+
+	// Network
+	menu = new BMenu( "Network");
+	menu->AddItem( new BMenuItem( "Check Mail", new BMessage( BMM_CHECK_MAIL), 'M'));
+	menu->AddItem( new BMenuItem( "Check All Accounts", new BMessage( BMM_CHECK_ALL), 'M', B_SHIFT_KEY));
+	menu->AddSeparatorItem();
+	menu->AddSeparatorItem();
+	menu->AddItem( new BMenuItem( "Send Pending Messages", new BMessage( BMM_SEND_PENDING)));
+	menubar->AddItem( menu);
+
+	// Message
+	menu = new BMenu( "Message");
+	menu->AddItem( new BMenuItem( "New Message", new BMessage( BMM_NEW_MAIL), 'N'));
+	menu->AddSeparatorItem();
+	menu->AddItem( new BMenuItem( "Reply", new BMessage( BMM_REPLY), 'R'));
+	menu->AddItem( new BMenuItem( "Reply To All", new BMessage( BMM_REPLY_ALL), 'R', B_SHIFT_KEY));
+	menu->AddItem( new BMenuItem( "Forward", new BMessage( BMM_FORWARD), 'J'));
+	menu->AddItem( new BMenuItem( "Forward With Attachments", new BMessage( BMM_FORWARD_ATTACHMENTS), 'J', B_SHIFT_KEY));
+	menu->AddItem( new BMenuItem( "Bounce (Redirect)", new BMessage( BMM_BOUNCE), 'B'));
+	menu->AddSeparatorItem();
+	menu->AddItem( new BMenuItem( "Apply Filter", new BMessage( BMM_FILTER)));
+	menu->AddSeparatorItem();
+	menu->AddItem( new BMenuItem( "Move To Trash", new BMessage( BMM_TRASH), 'T'));
+	menubar->AddItem( menu);
+
+	// Help
+	menu = new BMenu( "Help");
+	menubar->AddItem( menu);
+
+	return menubar;
 }
 
 /*------------------------------------------------------------------------------*\

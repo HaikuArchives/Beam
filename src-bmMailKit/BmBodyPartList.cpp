@@ -60,7 +60,7 @@ void BmContentField::SetTo( const BString cfString) {
 		BString params;
 		if (rx.match[0].atom.size() > 1)
 			cfString.CopyInto( params, rx.match[0].atom[1].start(), rx.match[0].atom[1].Length());
-		if (rx.exec( params, ";\\s*(\\w+)\\s*=\\s*((?:\\\"[^\"]+\\\"\?)|(?:[\\S]+))", Regexx::global)) {
+		if (rx.exec( params, ";\\s*(\\w+)\\s*=\\s*((?:\\\"[^\"]+\\\"?)|(?:[^;\\s]+))", Regexx::global)) {
 			for( uint32 i=0; i<rx.match.size(); ++i) {
 				BString key;
 				BString val;

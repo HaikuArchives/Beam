@@ -112,6 +112,7 @@ public:
 
 	//	overrides of listmodel base:
 	bool StartJob();
+	const BString SettingsFileName()		{ return NULL; }
 
 	// getters:
 	status_t InitCheck()						{ return mInitCheck; }

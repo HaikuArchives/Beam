@@ -10,8 +10,11 @@
 #include <stdexcept>
 
 #include <Archivable.h>
+#include <List.h>
 #include <String.h>
 #include <NetAddress.h>
+
+#include "BmDataModel.h"
 
 /*------------------------------------------------------------------------------*\
 	BmPopAccount 
@@ -19,7 +22,8 @@
 		- 	derived from BArchivable, so it can be read from and
 			written to a file
 \*------------------------------------------------------------------------------*/
-class BmPopAccount : public BArchivable {
+class BmPopAccount : public BmListModelItem {
+	typedef BmListModelItem inherited;
 	// archivable components:
 	static const char* const MSG_NAME = 			"bm:name";
 	static const char* const MSG_USERNAME = 		"bm:username";
@@ -34,10 +38,7 @@ class BmPopAccount : public BArchivable {
 	static const char* const MSG_PORT_NR = 		"bm:portnr";
 	static const char* const MSG_SMTP_PORT_NR = 	"bm:smtpportnr";
 public:
-	BmPopAccount( void) 
-		: BArchivable() 
-		, mCheckMail( false)
-		, mDeleteMailFromServer( false)	{}
+	BmPopAccount( const char* name);
 	BmPopAccount( BMessage* archive);
 	virtual ~BmPopAccount() 				{}
 
@@ -76,6 +77,8 @@ public:
 	BNetAddress POPAddress() const;
 	BNetAddress SMTPAddress() const;
 private:
+	BmPopAccount();					// hide default constructor
+
 	BString mName;						// name of this POP-account
 	BString mUsername;
 	BString mPassword;
@@ -90,5 +93,29 @@ private:
 	int16 mPortNr;						// usually 110
 	int16 mSMTPPortNr;				// usually 25
 };
+
+
+/*------------------------------------------------------------------------------*\
+	BmPopAccountList 
+		-	holds list of all Pop-Accounts
+		-	includes functionality for checking some/all POP-servers for new mail
+\*------------------------------------------------------------------------------*/
+class BmPopAccountList : public BmListModel {
+	typedef BmListModel inherited;
+public:
+	// creator-func, c'tors and d'tor:
+	static BmPopAccountList* CreateInstance();
+	BmPopAccountList();
+	~BmPopAccountList();
+	
+	// overrides of listmodel base:
+	const BString SettingsFileName();
+
+	static BmRef<BmPopAccountList> theInstance;
+
+private:
+};
+
+#define ThePopAccountList BmPopAccountList::theInstance
 
 #endif

@@ -131,7 +131,7 @@ typedef map< BString, BmRef<BmListModelItem> > BmModelItemMap;
 	BmListModelItem
 		-	base class for the items that will be part of a BmListModel
 \*------------------------------------------------------------------------------*/
-class BmListModelItem : public BArchivable, public BmRefObj {
+class BmListModelItem : public BmRefObj, public BArchivable {
 
 public:
 	// c'tors & d'tor:
@@ -158,6 +158,10 @@ public:
 	// overrides of BmRefObj
 	BString RefName() const					{ return mKey; }
 
+	//	message component definitions for status-msgs:
+	static const char* const MSG_NUMCHILDREN  = 		"bm:count";
+	static const char* const MSG_CHILDREN 		= 		"bm:chld";
+
 	static BmRefManager<BmListModelItem> RefManager;
 
 protected:
@@ -175,7 +179,7 @@ protected:
 		-	any attaching controller automatically receives a list of all 
 			objects currently contained in the list-model
 \*------------------------------------------------------------------------------*/
-class BmListModel : public BmJobModel {
+class BmListModel : public BmJobModel, public BArchivable {
 	typedef BmJobModel inherited;
 	
 public:
@@ -188,13 +192,22 @@ public:
 	void AddItemToList( BmListModelItem* item, BmListModelItem* parent=NULL);
 	void RemoveItemFromList( BmListModelItem* item);
 	void RemoveItemFromList( BString key);
+	virtual bool Store();
+	virtual const BString SettingsFileName() = 0;
+	static BMessage* Restore( const BString settingsFile);
+	virtual void InitializeItems()		{	mInitCheck = B_OK; }
+	virtual void InstantiateItems( BMessage* archive)		{ mInitCheck = B_OK; }
+
+	// overrides of job-model base:
+	bool StartJob();
+
+	// overrides of Archivable base:
+	status_t Archive( BMessage* archive, bool deep) const;
 
 	//	message component definitions for status-msgs:
 	static const char* const MSG_ITEMKEY 		=		"bm:ikey";
 	static const char* const MSG_PARENTKEY 	= 		"bm:pkey";
 	static const char* const MSG_MODELITEM 	= 		"bm:item";
-	static const char* const MSG_NUM_CHILDREN = 		"bm:count";
-	static const char* const MSG_CHILDREN 		= 		"bm:children";
 	static const char* const MSG_UPD_FLAGS		= 		"bm:updflags";
 
 	// getters:
@@ -202,14 +215,18 @@ public:
 	BmModelItemMap::const_iterator end() const	{ return mModelItemMap.end(); }
 	size_t size() const						{ return mModelItemMap.size(); }
 	bool empty() const						{ return mModelItemMap.empty(); }
+	status_t InitCheck()						{ return mInitCheck; }
+
 
 protected:
+
 	// native methods:
 	virtual void TellModelItemAdded( BmListModelItem* item);
 	virtual void TellModelItemRemoved( BmListModelItem* item);
 	virtual void TellModelItemUpdated( BmListModelItem* item, BmUpdFlags flags=UPD_ALL);
 
 	BmModelItemMap mModelItemMap;
+	status_t mInitCheck;
 };
 
 #endif

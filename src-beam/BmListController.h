@@ -36,8 +36,8 @@ class BmListViewItem : public CLVEasyItem
 protected: 
 	// archival-fieldnames:
 	static const char* const MSG_EXPANDED = 	"bm:expnd";
-	static const char* const MSG_CHILDNAMES = 	"bm:chldnm";
-	static const char* const MSG_CHILDREN = 		"bm:chldrn";
+	static const char* const MSG_CHILDNAMES = "bm:chldnm";
+	static const char* const MSG_CHILDREN = 	"bm:chldrn";
 
 public:
 	//

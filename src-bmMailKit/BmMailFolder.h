@@ -70,8 +70,6 @@ public:
 	// archival-fieldnames:
 	static const char* const MSG_ENTRYREF = 		"bm:eref";
 	static const char* const MSG_INODE = 			"bm:inod";
-	static const char* const MSG_NUMCHILDREN = 	"bm:nChl";
-	static const char* const MSG_CHILDREN = 		"bm:chld";
 	static const char* const MSG_LASTMODIFIED = 	"bm:lmod";
 
 	//	message component definitions for status-msgs:

@@ -74,7 +74,7 @@ private:
 	static const bool MULTI_LINE = false;
 	static const int32 NetBufSize = 16384;
 
-	BmPtr<BmPopAccount> mPopAccount;		// Info about our pop-account
+	BmRef<BmPopAccount> mPopAccount;		// Info about our pop-account
 
 	BNetEndpoint mPopServer;				// network-connection to POP-server
 	bool mConnected;							// are we connected to the server?
