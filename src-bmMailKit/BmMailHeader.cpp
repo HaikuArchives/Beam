@@ -1074,13 +1074,45 @@ bool BmMailHeader::ConstructRawText( BmStringOBuf& msgText, const BmString& char
 						 				  << domain << ">");
 	}
 
-	BmHeaderMap::const_iterator iter;
-	if (mMail->IsRedirect()) {
-		// add Resent-fields first (as suggested by [Johnson, section 2.4.2]):
+	BmString fieldName;
+	try {
+
+		BmHeaderMap::const_iterator iter;
+		if (mMail->IsRedirect()) {
+			// add Resent-fields first (as suggested by [Johnson, section 2.4.2]):
+			for( iter = mHeaders.begin(); iter != mHeaders.end(); ++iter) {
+				fieldName = iter->first;
+				if (fieldName.ICompare("Resent-",7) != 0) {
+					// just interested in Resent-fields:
+					continue;
+				}
+				if (IsAddressField( fieldName)) {
+					headerIO << fieldName << ": ";
+					mAddrMap[fieldName].ConstructRawText( headerIO, charset, fieldName.Length());
+					headerIO << "\r\n";
+				} else {
+					const BmValueList& valueList = iter->second;
+					int count = valueList.size();
+					bool encodeIfNeeded = IsEncodingOkForField( fieldName);
+					for( int i=0; i<count; ++i) {
+						headerIO << fieldName << ": " 
+								 	<< ConvertUTF8ToHeaderPart( valueList[i], charset, 
+																		 encodeIfNeeded,
+																		 fieldName.Length())
+									<< "\r\n";
+					}
+				}
+			}
+		}
+		// add all other fields:
 		for( iter = mHeaders.begin(); iter != mHeaders.end(); ++iter) {
-			const BmString fieldName = iter->first;
-			if (fieldName.ICompare("Resent-",7) != 0) {
-				// just interested in Resent-fields:
+			fieldName = iter->first;
+			if (fieldName.ICompare("Content-",8) == 0) {
+				// do not include MIME-header, since that will be added by body-part:
+				continue;
+			}
+			if (fieldName.ICompare("Resent-",7) == 0) {
+				// do not include Resent-headers again:
 				continue;
 			}
 			if (IsAddressField( fieldName)) {
@@ -1093,45 +1125,28 @@ bool BmMailHeader::ConstructRawText( BmStringOBuf& msgText, const BmString& char
 				bool encodeIfNeeded = IsEncodingOkForField( fieldName);
 				for( int i=0; i<count; ++i) {
 					headerIO << fieldName << ": " 
-							 	<< ConvertUTF8ToHeaderPart( valueList[i], charset, 
+								<< ConvertUTF8ToHeaderPart( valueList[i], charset, 
 																	 encodeIfNeeded,
 																	 fieldName.Length())
 								<< "\r\n";
 				}
 			}
 		}
+		mHeaderString.Adopt( headerIO.TheString());
+		msgText << mHeaderString;
+		mHasParsingErrors = false;
+		return true;
+	} catch( BM_text_error& textErr) {
+		BmString errText = BmString("The ") << fieldName << "-field "
+									<< "contains characters that\n"
+										"could not be converted to the selected\n"
+										"charset (" 
+									<< charset 
+									<< ").\n\n"
+										"Please select the correct charset or remove "
+										"the offending characters.";
+		throw BM_text_error( errText, fieldName.String(), textErr.posInText);
 	}
-	// add all other fields:
-	for( iter = mHeaders.begin(); iter != mHeaders.end(); ++iter) {
-		const BmString fieldName = iter->first;
-		if (fieldName.ICompare("Content-",8) == 0) {
-			// do not include MIME-header, since that will be added by body-part:
-			continue;
-		}
-		if (fieldName.ICompare("Resent-",7) == 0) {
-			// do not include Resent-headers again:
-			continue;
-		}
-		if (IsAddressField( fieldName)) {
-			headerIO << fieldName << ": ";
-			mAddrMap[fieldName].ConstructRawText( headerIO, charset, fieldName.Length());
-			headerIO << "\r\n";
-		} else {
-			const BmValueList& valueList = iter->second;
-			int count = valueList.size();
-			bool encodeIfNeeded = IsEncodingOkForField( fieldName);
-			for( int i=0; i<count; ++i) {
-				headerIO << fieldName << ": " 
-							<< ConvertUTF8ToHeaderPart( valueList[i], charset, 
-																 encodeIfNeeded,
-																 fieldName.Length())
-							<< "\r\n";
-			}
-		}
-	}
-	mHeaderString.Adopt( headerIO.TheString());
-	msgText << mHeaderString;
-	mHasParsingErrors = false;
-	return true;
+	return false;
 }
 
