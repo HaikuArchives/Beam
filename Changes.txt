@@ -1,6 +1,31 @@
 change-history of Beam:
 		$Id$
 
+< 2004-05-07: commit, moved tag 'current-devel' >
+
+BmEncoding:
+	-	fixed bug in base64-decoder that chokes on embedded padding chars.
+		Unfortunately, Beam is producing these by itself when it concatenates
+		several encoded-words into one string.
+
+BmListController:
+	-	in UpdateModelItem(), we now only redraw the item if it is visible
+		at all.
+
+BmMail:
+	-	fixed bug with generating backup-name for mails with very long names.
+
+BmMailFolderList:
+	-	cosmetical changes
+
+BmMailRef:
+	-	in ResyncFromDisk() we call TellModelItemUpdated() only if anything
+		has in fact changed.
+
+Base64DecoderTest:
+	-	added test that checks for correct handling of embedded padding
+		chars.
+
 < 2004-05-04: commit >
 
 BmMail, BmPrefsMailConstrView:
