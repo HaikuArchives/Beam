@@ -38,6 +38,7 @@
 #include "BmLogHandler.h"
 #include "BmMenuController.h"
 #include "BmPrefs.h"
+#include "BmStorageUtil.h"
 #include "BmUtil.h"
 
 
@@ -1156,7 +1157,7 @@ status_t BmListModel::Archive( BMessage* archive, bool deep) const {
 \*------------------------------------------------------------------------------*/
 bool BmListModel::Store() {
 	BMessage archive;
-	BFile cacheFile;
+	BmBackedFile arcFile;
 	status_t err;
 
 	if (mInitCheck != B_OK)
@@ -1170,14 +1171,11 @@ bool BmListModel::Store() {
 			BM_THROW_RUNTIME( 
 				BmString("Unable to archive list-model ")<<ModelName()
 			);
-		if ((err = cacheFile.SetTo( 
-			filename.String(), 
-			B_WRITE_ONLY | B_CREATE_FILE | B_ERASE_FILE
-		)) != B_OK) {
+		if ((err = arcFile.SetTo( filename.String())) != B_OK) {
 			BM_THROW_RUNTIME( BmString("Could not create settings-file\n\t<") 
 										<< filename << ">\n\n Result: " << strerror(err));
 		}
-		if ((err = archive.Flatten( &cacheFile)) != B_OK)
+		if ((err = archive.Flatten( &arcFile.File())) != B_OK)
 			BM_THROW_RUNTIME( BmString("Could not store settings into file\n\t<") 
 										<< filename << ">\n\n Result: " << strerror(err));
 	} catch( BM_error &e) {
