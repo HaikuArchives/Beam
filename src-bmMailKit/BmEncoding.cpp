@@ -612,7 +612,7 @@ void BmUtf8Decoder::Filter( const char* srcBuf, uint32& srcLen,
 			BM_LOG( BM_LogMailParse, 
 					  "Result in utf8-decode: invalid multibyte char found");
 			if (!mHadToDiscardChars) {
-				mFirstDiscardedPos = mSrcCount;
+				mFirstDiscardedPos = mSrcCount+srcLen;
 				int on = 1;
 				iconvctl( mIconvDescr, ICONV_SET_DISCARD_ILSEQ, &on);
 				mHadToDiscardChars = true;
@@ -798,7 +798,7 @@ void BmUtf8Encoder::Filter( const char* srcBuf, uint32& srcLen,
 			BM_LOG2( BM_LogMailParse, 
 						"Result in utf8-encode: invalid multibyte char found");
 			if (!mHadToDiscardChars) {
-				mFirstDiscardedPos = mSrcCount;
+				mFirstDiscardedPos = mSrcCount + srcLen;
 				int on = 1;
 				iconvctl( mIconvDescr, ICONV_SET_DISCARD_ILSEQ, &on);
 				mHadToDiscardChars = true;
@@ -1046,7 +1046,7 @@ void BmQuotedPrintableEncoder::Filter( const char* srcBuf, uint32& srcLen,
 	const char* safeChars = 
 				(ThePrefs->GetBool( "MakeQPSafeForEBCDIC", false)
 					? "%&/()?+*,.;:<>-_"
-					: "%&/()?+*,.;:<>-_!\"#$@[]\\^'{|}~");
+					: "%&/()?+*,.;:<>-_!\"#$@[]\\^'{|}~\x1B");
 							// in bodies, the underscore is safe, i.e. it need
 							// not be encoded.
 	const char* src = srcBuf;
