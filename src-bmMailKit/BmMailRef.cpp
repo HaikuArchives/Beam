@@ -63,16 +63,18 @@ BmRef<BmMailRef> BmMailRef::CreateInstance( BmMailRefList* model, entry_ref &ere
 			mailRef->ResyncFromDisk();
 			return mailRef;
 		}
+		BmMailRef* newRef = new BmMailRef( model, eref, st);
+		status_t ret;
+		if ((ret = newRef->InitCheck()) != B_OK) {
+			// item is not of mimetype email, we skip it:
+			delete newRef;
+			return NULL;
+		} else {
+			return newRef;
+		}
 	}
-	BmMailRef* mailRef = new BmMailRef( model, eref, st);
-	status_t ret;
-	if ((ret = mailRef->InitCheck()) != B_OK) {
-		// item is not of mimetype email, we skip it:
-		delete mailRef;
-		return NULL;
-	} else {
-		return mailRef;
-	}
+	BM_THROW_RUNTIME( BString("Could not get proxy for ") << typeid(BmMailRef).name());
+	return NULL;
 }
 
 /*------------------------------------------------------------------------------*\

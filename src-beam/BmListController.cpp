@@ -737,14 +737,18 @@ void BmListViewController::ReadStateInfo() {
 			mInitialStateInfo = new BMessage;
 			(err = mInitialStateInfo->Unflatten( &stateInfoFile)) == B_OK
 													|| BM_THROW_RUNTIME( BString("Could not fetch state-info from file\n\t<") << stateInfoFilename << ">\n\n Result: " << strerror(err));
-			Unarchive( mInitialStateInfo);
+			if (mInitialStateInfo)
+				Unarchive( mInitialStateInfo);
 		} catch (exception &e) {
 			delete mInitialStateInfo;
 			mInitialStateInfo = NULL;
 			BM_SHOWERR( e.what());
 		}
-	} else 
-		Unarchive( DefaultLayout());
+	} else {
+		const BMessage* defLayout = DefaultLayout();
+		if (defLayout)
+			Unarchive( defLayout);
+	}
 }
 
 

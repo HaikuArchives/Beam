@@ -90,6 +90,7 @@ public:
 	BmBodyPart( BmBodyPartList* model, const BString& msgtext, int32 s, int32 l, 
 					BmRef<BmMailHeader> mHeader=NULL, BmListModelItem* parent=NULL);
 	BmBodyPart( BmBodyPartList* model, const entry_ref* ref, BmListModelItem* parent=NULL);
+	BmBodyPart( const BmBodyPart& bodyPart);
 	~BmBodyPart();
 
 	// class methods:
@@ -117,6 +118,9 @@ public:
 	inline const BString& DecodedData() const	{ return mDecodedData; }
 	inline int32 DecodedLength() const			{ return mDecodedData.Length(); }
 	inline status_t InitCheck() const			{ return mInitCheck; }
+
+	inline const BString ContentTypeAsString() const	{ return mContentType; }
+	inline const BString ContentDispositionAsString() const	{ return mContentDisposition; }
 
 	inline const BString& Charset() const		{ return mContentType.Param( "charset"); }
 	inline const BString& MimeType() const		{ return mContentType.Value(); }

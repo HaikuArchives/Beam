@@ -251,6 +251,34 @@ BmBodyPart::BmBodyPart( BmBodyPartList* model, const entry_ref* ref, BmListModel
 }
 	
 /*------------------------------------------------------------------------------*\
+	BmBodyPart( bodypart)
+	-	copy c'tor
+\*------------------------------------------------------------------------------*/
+BmBodyPart::BmBodyPart( const BmBodyPart& in) 
+	:	inherited( BString("")<<NextObjectID(), NULL, NULL)
+	,	mIsMultiPart( in.IsMultiPart())
+	,	mContentType( in.ContentTypeAsString())
+	,	mContentTransferEncoding( in.TransferEncoding())
+	,	mContentId( in.ID())
+	,	mContentDisposition( in.ContentDispositionAsString())
+	,	mContentDescription( in.Description())
+	,	mContentLanguage( in.Language())
+	,	mFileName( in.FileName())
+	,	mEntryRef( in.EntryRef())
+	,	mInitCheck( in.InitCheck())
+{
+	int32 len = in.DecodedData().Length();
+	if (len) {
+		char* buf = mDecodedData.LockBuffer( len+1);
+		if (buf) {
+			memcpy( buf, in.DecodedData().String(), len);
+			buf[len] = 0;
+			mDecodedData.UnlockBuffer( len);
+		}
+	}		
+}
+
+/*------------------------------------------------------------------------------*\
 	~BmBodyPart()
 	-	d'tor
 \*------------------------------------------------------------------------------*/
