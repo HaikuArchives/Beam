@@ -80,7 +80,7 @@ BmMailViewWin* BmMailViewWin::CreateInstance( BmMailRef* mailRef) {
 \*------------------------------------------------------------------------------*/
 BmMailViewWin::BmMailViewWin( BmMailRef* mailRef)
 	:	inherited( "MailViewWin", BRect(50,50,800,600), "View Mail", 
-					  ThePrefs->GetBool( "UseDocumentResizer", false) 
+					  ThePrefs->GetBool( "UseDocumentResizer", true) 
 					  		? B_DOCUMENT_WINDOW_LOOK 
 					  		: B_TITLED_WINDOW_LOOK, 
 					  B_NORMAL_WINDOW_FEEL, B_ASYNCHRONOUS_CONTROLS)
@@ -191,7 +191,7 @@ void BmMailViewWin::CreateGUI() {
 		
 	mReplyButton->AddActionVariation( "Reply", new BMessage(BMM_REPLY));
 	mReplyButton->AddActionVariation( "Reply To List", new BMessage(BMM_REPLY_LIST));
-	mReplyButton->AddActionVariation( "Reply To Originator", new BMessage(BMM_REPLY_ORIGINATOR));
+	mReplyButton->AddActionVariation( "Reply To Person", new BMessage(BMM_REPLY_ORIGINATOR));
 	mReplyButton->AddActionVariation( "Reply To All", new BMessage(BMM_REPLY_ALL));
 	mForwardButton->AddActionVariation( "Forward As Attachment", new BMessage(BMM_FORWARD_ATTACHED));
 	mForwardButton->AddActionVariation( "Forward Inline", new BMessage(BMM_FORWARD_INLINE));

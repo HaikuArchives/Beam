@@ -83,6 +83,10 @@ BmMainWindow* BmMainWindow::CreateInstance()
 {
 	if (!theInstance) {
 		theInstance = new BmMainWindow;
+		BmString wspc = ThePrefs->GetString( "Workspace", "Current");
+		TheMainWindow->SetWorkspaces( wspc=="Current" 
+													? B_CURRENT_WORKSPACE 
+													: 1<<(atoi( wspc.String())-1));
 		theInstance->ReadStateInfo();
 	}
 	return theInstance;
@@ -95,7 +99,7 @@ BmMainWindow* BmMainWindow::CreateInstance()
 BmMainWindow::BmMainWindow()
 	:	inherited( "MainWindow", BRect(50,50,800,600), 
 					  bmApp->BmAppNameWithVersion.String(),
-					  ThePrefs->GetBool( "UseDocumentResizer", false)
+					  ThePrefs->GetBool( "UseDocumentResizer", true)
 					  		? B_DOCUMENT_WINDOW_LOOK 
 					  		: B_TITLED_WINDOW_LOOK, 
 					  B_NORMAL_WINDOW_FEEL, 
@@ -190,7 +194,7 @@ BmMainWindow::BmMainWindow()
 
 	mReplyButton->AddActionVariation( "Reply", new BMessage(BMM_REPLY));
 	mReplyButton->AddActionVariation( "Reply To List", new BMessage(BMM_REPLY_LIST));
-	mReplyButton->AddActionVariation( "Reply To Originator", new BMessage(BMM_REPLY_ORIGINATOR));
+	mReplyButton->AddActionVariation( "Reply To Person", new BMessage(BMM_REPLY_ORIGINATOR));
 	mReplyButton->AddActionVariation( "Reply To All", new BMessage(BMM_REPLY_ALL));
 	mForwardButton->AddActionVariation( "Forward As Attachment", new BMessage(BMM_FORWARD_ATTACHED));
 	mForwardButton->AddActionVariation( "Forward Inline", new BMessage(BMM_FORWARD_INLINE));

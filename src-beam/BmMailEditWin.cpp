@@ -231,7 +231,7 @@ BmMailEditWin* BmMailEditWin::CreateInstance( BmMail* mail) {
 \*------------------------------------------------------------------------------*/
 BmMailEditWin::BmMailEditWin( BmMailRef* mailRef, BmMail* mail)
 	:	inherited( "MailEditWin", BRect(50,50,800,600), "Edit Mail", 
-					  ThePrefs->GetBool( "UseDocumentResizer", false) 
+					  ThePrefs->GetBool( "UseDocumentResizer", true)
 					  		? B_DOCUMENT_WINDOW_LOOK 
 					  		: B_TITLED_WINDOW_LOOK, 
 					  B_NORMAL_WINDOW_FEEL, B_ASYNCHRONOUS_CONTROLS)
