@@ -165,7 +165,8 @@ bool BmMailFilter::StartJob() {
 		-	applies mail-filtering to a single given mail
 \*------------------------------------------------------------------------------*/
 void BmMailFilter::Execute( BmMail* mail) {
-	BmMsgContext msgContext( mail);
+	BmMsgContext msgContext;
+	msgContext.mail = mail;
 	if (!mFilter) {
 		BM_LOG2( BM_LogFilter, 
 					BmString("Searching filter-chain for mail with Id <") 
@@ -203,7 +204,7 @@ void BmMailFilter::Execute( BmMail* mail) {
 					= TheFilterList->FindItemByKey( chainedFilter->Key());
 				BmFilter* filter = dynamic_cast< BmFilter*>( filterItem.Get());
 				if (filter) {
-					if (!ExecuteFilter( mail, filter, msgContext))
+					if (!ExecuteFilter( mail, filter, &msgContext))
 						break;
 				}
 			}
@@ -212,25 +213,30 @@ void BmMailFilter::Execute( BmMail* mail) {
 			return;
 		}
 	} else
-		ExecuteFilter( mail, mFilter.Get(), msgContext);
+		ExecuteFilter( mail, mFilter.Get(), &msgContext);
 	bool needToStore = false;
-	if (msgContext.identity.Length()) {
-		mail->IdentityName( msgContext.identity);
+	BmString newIdentity = msgContext.data.FindString("Identity");
+	if (newIdentity.Length()) {
+		mail->IdentityName( newIdentity);
 		needToStore = true;
 	}
-	if (msgContext.status.Length()) {
-		mail->MarkAs( msgContext.status.String());
+	BmString newStatus = msgContext.data.FindString("Status");
+	if (newStatus.Length()) {
+		mail->MarkAs( newStatus.String());
 		needToStore = true;
 	}
-	if (msgContext.rejectMsg.Length()) {
+	BmString rejectMsg = msgContext.data.FindString("RejectMsg");
+	if (rejectMsg.Length()) {
 		// ToDo (maybe): implement sending of MDN
 	}
-	if (msgContext.moveToTrash) {
+	bool moveToTrash = msgContext.data.FindBool("MoveToTrash");
+	if (moveToTrash) {
 		mail->MoveToTrash( true);
 		needToStore = true;
 	}
-	if (msgContext.folderName.Length()) {
-		if (mail->SetDestFoldername( msgContext.folderName)) {
+	BmString newFolderName = msgContext.data.FindString("FolderName");
+	if (newFolderName.Length()) {
+		if (mail->SetDestFoldername( newFolderName)) {
 			if (!needToStore && !mExecuteInMem) {
 				// optimize the (usual) case where folder-change is the only thing
 				// that has happened, if so, we just move the mail (but do not
@@ -254,7 +260,7 @@ void BmMailFilter::Execute( BmMail* mail) {
 		-	return true if processing should continue, false if not
 \*------------------------------------------------------------------------------*/
 bool BmMailFilter::ExecuteFilter( BmMail* mail, BmFilter* filter,
-											 BmMsgContext& msgContext) {
+											 BmMsgContext* msgContext) {
 	if (filter->IsDisabled()) {
 		BM_LOG2( BM_LogFilter, 
 					BmString("Addon for Filter ") << filter->Name() 
@@ -264,27 +270,32 @@ bool BmMailFilter::ExecuteFilter( BmMail* mail, BmFilter* filter,
 		BM_LOG2( BM_LogFilter, 
 					BmString("Executing Filter ") << filter->Name() 
 						<< " (type=" << filter->Kind() << ")...");
-		filter->Addon()->Execute( &msgContext);
-		if (msgContext.identity.Length())
+		filter->Execute( msgContext);
+		BmString newIdentity = msgContext->data.FindString("Identity");
+		if (newIdentity.Length())
 			BM_LOG( BM_LogFilter, 
 					  BmString("Filter ") << filter->Name() 
 					  		<< ": setting identity to " 
-					  		<< msgContext.identity);
-		if (mail->Status() != msgContext.status)
+					  		<< newIdentity);
+		BmString newStatus = msgContext->data.FindString("Status");
+		if (newStatus.Length())
 			BM_LOG( BM_LogFilter, 
 					  BmString("Filter ") << filter->Name() 
 					  		<< ": setting status to " 
-					  		<< msgContext.status);
-		if (msgContext.moveToTrash)
+					  		<< newStatus);
+		bool moveToTrash = msgContext->data.FindBool("MoveToTrash");
+		if (moveToTrash)
 			BM_LOG( BM_LogFilter, 
 					  BmString("Filter ") << filter->Name() 
 					  		<< ": moving mail to trash.");
-		if (msgContext.rejectMsg.Length())
+		BmString rejectMsg = msgContext->data.FindString("RejectMsg");
+		if (rejectMsg.Length())
 			BM_LOG( BM_LogFilter, 
 					  BmString("Filter ") << filter->Name() 
 					  		<< ": rejecting mail with msg " 
-					  		<< msgContext.rejectMsg);
-		if (msgContext.stopProcessing) {
+					  		<< rejectMsg);
+		bool stopProcessing = msgContext->data.FindBool("StopProcessing");
+		if (stopProcessing) {
 			BM_LOG( BM_LogFilter, 
 					  BmString("Filter ") << filter->Name() 
 					  	<< ": wants to stop processing this chain.");

@@ -43,7 +43,7 @@ class BmApplication : public BApplication
 
 public:
 	//
-	BmApplication( const char *sig);
+	BmApplication( const char *sig, bool testModeRequested);
 	~BmApplication();
 
 	// native methods:

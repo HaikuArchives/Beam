@@ -128,7 +128,7 @@ BmApplication* bmApp = NULL;
 	BmApplication()
 		-	constructor
 \*------------------------------------------------------------------------------*/
-BmApplication::BmApplication( const char* sig)
+BmApplication::BmApplication( const char* sig, bool testModeRequested)
 	:	inherited( sig)
 	,	mIsQuitting( false)
 	,	mInitCheck( B_NO_INIT)
@@ -170,7 +170,7 @@ BmApplication::BmApplication( const char* sig)
 		if (BmAppVersion.IFindFirst( "devel") >= 0)
 			BeamInDevelMode = true;
 		// note if we are running in test-mode:
-		if (BmAppVersion.IFindFirst( "test") >= 0)
+		if (testModeRequested || BmAppVersion.IFindFirst( "test") >= 0)
 			BeamInTestMode = true;
 		// store app-path for later use:
 		node_ref nref;
@@ -233,6 +233,7 @@ BmApplication::~BmApplication()
 	TheSignatureList = NULL;
 
 	delete ThePrefs;
+	BmLogHandler::Shutdown();
 	delete TheLogHandler;
 	delete mStartupLocker;
 	delete BeamRoster;

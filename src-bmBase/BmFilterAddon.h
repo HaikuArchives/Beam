@@ -47,7 +47,7 @@ struct IMPEXPBMBASE BmHeaderInfo {
 		-	
 \*------------------------------------------------------------------------------*/
 struct IMPEXPBMBASE BmMsgContext {
-	BmMsgContext( BmMail* mail);
+	BmMsgContext();
 	~BmMsgContext();
 
 	// info fields, are set before filtering starts:
@@ -55,14 +55,12 @@ struct IMPEXPBMBASE BmMsgContext {
 	int32 headerInfoCount;
 	BmHeaderInfo *headerInfos;
 	
-	// result fields, are set by filtering process:
-	BmString folderName;
-	BmString status;
-	BmString identity;
-	BmString rejectMsg;
-	uint8 spamValue;
-	bool moveToTrash;
-	bool stopProcessing;
+	// data-message that contains input & output data:
+	BMessage data;
+
+private:
+	// Hide copy-constructor:
+	BmMsgContext( const BmMsgContext&);
 };
 
 
@@ -79,7 +77,7 @@ public:
 	
 	// native methods:
 	virtual bool Execute( BmMsgContext* msgContext, 
-								 const BmString& jobSpecifier = BM_DEFAULT_STRING) = 0;
+								 const BMessage* jobSpecs = NULL) = 0;
 	virtual void Initialize()				{}
 	virtual bool SanityCheck( BmString& complaint, BmString& fieldName) = 0;
 	virtual status_t Archive( BMessage* archive, bool deep = true) const = 0;

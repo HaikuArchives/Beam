@@ -42,6 +42,7 @@
 #include "BmUtil.h"
 
 class BmFilter;
+class BmMsgContext;
 
 /*------------------------------------------------------------------------------*\
 	BmMailFilter
@@ -80,7 +81,7 @@ public:
 private:
 	void Execute( BmMail* mail);
 	bool ExecuteFilter( BmMail* mail, BmFilter* filter,
-							  BmMsgContext& msgContext);
+							  BmMsgContext* msgContext);
 	void UpdateStatus( const float delta, const char* filename, 
 							 const char* currentCount);
 

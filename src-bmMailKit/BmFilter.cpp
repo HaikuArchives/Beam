@@ -162,6 +162,16 @@ bool BmFilter::SanityCheck( BmString& complaint, BmString& fieldName) const
 	return true;
 }
 
+/*------------------------------------------------------------------------------*\
+	Execute()
+		-	double-dispatches execution to addon
+\*------------------------------------------------------------------------------*/
+bool BmFilter::Execute( BmMsgContext* msgContext)
+{
+	if (!mAddon)
+		return false;
+	return mAddon->Execute( msgContext);
+}
 
 
 /********************************************************************************\
@@ -312,10 +322,32 @@ void BmFilterList::LoadAddons() {
 			}
 */
 			// now we add the addon to our map (one entry per filter-kind):
-			while( *filterKinds)
+			while( *filterKinds) {
+				BmString kind(*filterKinds);
 				FilterAddonMap[*filterKinds++] = ao;
+				if (kind.ICompare("Spam") == 0) {
+					// a spam-filter requires two internal filters (learnAsSpam
+					// and learnAsTofu) which don't appear as part of filter-list:
+					mLearnAsSpamFilter 
+						= new BmFilter( "<<<LearnAsSpam>>>", "Spam", NULL);
+					BMessage learnAsSpamJob;
+					learnAsSpamJob.AddString("jobSpecifier", "LearnAsSpam");
+					mLearnAsSpamFilter->JobSpecifier(learnAsSpamJob);
+					mLearnAsTofuFilter 
+						= new BmFilter( "<<<LearnAsTofu>>>", "Spam", NULL);
+					BMessage learnAsTofuJob;
+					learnAsTofuJob.AddString("jobSpecifier", "LearnAsTofu");
+					mLearnAsTofuFilter->JobSpecifier(learnAsTofuJob);
+					mGetStatisticsFilter 
+						= new BmFilter( "<<<GetStatistics>>>", "Spam", NULL);
+					BMessage getStatisticsJob;
+					getStatisticsJob.AddString("jobSpecifier", "GetStatistics");
+					mGetStatisticsFilter->JobSpecifier(getStatisticsJob);
+				}
+			}
 			BM_LOG( BM_LogFilter, BmString("Successfully loaded addon ") 
 						<< ao.name);
+
 		}
 	}
 	BM_LOG2( BM_LogFilter, BmString("End of LoadAddons() for FilterList"));
@@ -326,6 +358,9 @@ void BmFilterList::LoadAddons() {
 		-	unloads all loaded filter-addons
 \*------------------------------------------------------------------------------*/
 void BmFilterList::UnloadAddons() {
+	mLearnAsSpamFilter = NULL;
+	mLearnAsTofuFilter = NULL;
+	mGetStatisticsFilter = NULL;
 	BmFilterAddonMap::const_iterator iter;
 	for( iter = FilterAddonMap.begin(); iter != FilterAddonMap.end(); ++iter) {
 		unload_add_on( iter->second.image);

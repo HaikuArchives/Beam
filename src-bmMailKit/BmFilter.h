@@ -83,6 +83,7 @@ public:
 	
 	// native methods:
 	bool SanityCheck( BmString& complaint, BmString& fieldName) const;
+	bool Execute( BmMsgContext* msgContext);
 
 	// stuff needed for Archival:
 	status_t Archive( BMessage* archive, bool deep = true) const;
@@ -95,8 +96,9 @@ public:
 
 	inline BmFilterAddon* Addon()			{ return mAddon; }
 	
-	// setters:
-	inline void Addon( BmFilterAddon* fa) { mAddon = fa; }
+	// setters
+	void JobSpecifier(BMessage& jobSpecs)
+													{ mJobSpecifier = jobSpecs; }
 
 	// archivable components:
 	static const char* const MSG_NAME;
@@ -115,6 +117,9 @@ protected:
 							// save the data when the addon can not be loaded)
 	BmString mKind;
 							// type of filter (name of addon)
+	BMessage mJobSpecifier;
+							// specific job-types (learnAsSpam) can be specified here
+							// normally, this is empty
 private:
 	BmFilter();									// hide default constructor
 	
@@ -148,6 +153,12 @@ public:
 	void UnloadAddons();
 	BmString DefaultNameForFilterKind( const BmString& filterKind);
 	bool HaveSpamFilter() const;
+	BmRef<BmFilter>& LearnAsSpamFilter()
+													{ return mLearnAsSpamFilter; }
+	BmRef<BmFilter>& LearnAsTofuFilter()
+													{ return mLearnAsTofuFilter; }
+	BmRef<BmFilter>& GetStatisticsFilter()
+													{ return mGetStatisticsFilter; }
 
 	// overrides of listmodel base:
 	void ForeignKeyChanged( const BmString& key, 
@@ -159,6 +170,10 @@ public:
 	static BmRef< BmFilterList> theInstance;
 
 private:
+
+	BmRef< BmFilter> mLearnAsSpamFilter;
+	BmRef< BmFilter> mLearnAsTofuFilter;
+	BmRef< BmFilter> mGetStatisticsFilter;
 
 	// Hide copy-constructor and assignment:
 	BmFilterList( const BmFilterList&);

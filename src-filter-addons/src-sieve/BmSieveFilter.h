@@ -64,7 +64,7 @@ public:
 
 	// implementations for abstract BmFilterAddon-methods:
 	bool Execute( BmMsgContext* msgContext, 
-					  const BmString& jobSpecifier = BM_DEFAULT_STRING);
+					  const BMessage* jobSpecs = NULL);
 	virtual void Initialize();
 	bool SanityCheck( BmString& complaint, BmString& fieldName);
 	status_t Archive( BMessage* archive, bool deep = true) const;
