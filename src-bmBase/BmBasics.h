@@ -76,8 +76,8 @@ public:
 	BM_network_error
 		-	exception to indicate an error during network communication
 \*------------------------------------------------------------------------------*/
-class IMPEXPBMBASE BM_network_error : public BM_error {
-	typedef BM_error inherited;
+class IMPEXPBMBASE BM_network_error : public BM_runtime_error {
+	typedef BM_runtime_error inherited;
 public:
 	BM_network_error (const BmString& what_arg);
 	BM_network_error (const char* const what_arg);
@@ -89,8 +89,8 @@ public:
 		-	additionally, a character position may be given that indicates
 			the position of the problem within the text
 \*------------------------------------------------------------------------------*/
-class IMPEXPBMBASE BM_text_error : public BM_error {
-	typedef BM_error inherited;
+class IMPEXPBMBASE BM_text_error : public BM_runtime_error {
+	typedef BM_runtime_error inherited;
 public:
 	BM_text_error (const BmString& what_arg, int32 pos=-1);
 	BM_text_error (const char* const what_arg, int32 pos=-1);
