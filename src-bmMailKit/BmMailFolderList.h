@@ -97,7 +97,7 @@ public:
 	virtual ~BmMailFolderList();
 	
 	// native methods:
-	void AddNewFlag( ino_t pnode, ino_t node);
+	BmMailFolder* AddNewFlag( ino_t pnode, ino_t node);
 	void RemoveNewFlag( ino_t pnode, ino_t node);
 	void SetFolderForNodeFlaggedNew( ino_t node, BmMailFolder* folder);
 	BmMailFolder* GetFolderForNodeFlaggedNew( ino_t node);
@@ -107,7 +107,7 @@ public:
 	// overrides of list-model base:
 	bool StartJob();
 	void RemoveController( BmController* controller);
-	const BString SettingsFileName();
+	const BmString SettingsFileName();
 
 	// setters:
 	void MailboxPathHasChanged( bool b) { mMailboxPathHasChanged = b; }
