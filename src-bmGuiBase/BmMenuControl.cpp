@@ -41,15 +41,10 @@
 #include "split.hh"
 using namespace regexx;
 
+#include "BmBasics.h"
 #include "BmMenuControl.h"
 #include "BmMenuControllerBase.h"
 
-
-#ifdef B_BEOS_VERSION_DANO
-const float BmMenuControl::nDividerAdjustment = 13;
-#else
-const float BmMenuControl::nDividerAdjustment = 0;
-#endif
 
 /*------------------------------------------------------------------------------*\
 	( )
@@ -63,7 +58,10 @@ BmMenuControl::BmMenuControl( const char* label, BMenu* menu, float weight,
 	ResizeToPreferred();
 	BRect b = Bounds();
 	float labelWidth = StringWidth( label);
-	SetDivider( nDividerAdjustment + (label ? labelWidth+19 : 0));
+	if (BeamOnDano)
+		SetDivider( 13 + (label ? labelWidth+19 : 0));
+	else
+		SetDivider( (label ? labelWidth+19 : 0));
 	if (fitText) {
 		float fixedWidth = StringWidth( fitText)+Divider()+27;
 		ct_mpm = minimax( fixedWidth, b.Height()+4, 
@@ -138,7 +136,10 @@ minimax BmMenuControl::layoutprefs() {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmMenuControl::SetDivider( float divider) {
-	inherited::SetDivider( divider-nDividerAdjustment);
+	if (BeamOnDano)
+		inherited::SetDivider( divider-13);
+	else
+		inherited::SetDivider( divider);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -150,11 +151,9 @@ BRect BmMenuControl::layout(BRect frame) {
 		return frame;
 	MoveTo(frame.LeftTop());
 	ResizeTo(frame.Width(),frame.Height());
-#ifdef B_BEOS_VERSION_DANO
-	float occupiedSpace = Divider()+1+nDividerAdjustment;
-#else
-	float occupiedSpace = Divider()-12;
-#endif
+	float occupiedSpace = BeamOnDano
+									? Divider()+1+13
+									: Divider()-12;
 	if (occupiedSpace < 3)
 		occupiedSpace = 3;					// leave room for focus-rectangle
 	mMenu->MoveTo( occupiedSpace, mMenu->Frame().top);

@@ -64,8 +64,6 @@ private:
 	
 	BMenu* mMenu;
 	
-	static const float nDividerAdjustment;
-
 	// Hide copy-constructor and assignment:
 	BmMenuControl( const BmMenuControl&);
 	BmMenuControl operator=( const BmMenuControl&);
