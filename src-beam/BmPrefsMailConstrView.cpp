@@ -300,10 +300,7 @@ so if you get complaints about strange/missing characters, try unchecking this."
 	AddItemToMenu( mDefaultForwardTypeControl->Menu(), 
 						new BMenuItem( "Inline", new BMessage(BM_FORWARD_TYPE_SELECTED)), 
 						this);
-	BString markItem = ThePrefs->GetInt( "DefaultForwardType") == BMM_FORWARD_INLINE 
-								? "Inline"
-								: "Attached";
-	mDefaultForwardTypeControl->MarkItem( markItem.String());
+	mDefaultForwardTypeControl->MarkItem( ThePrefs->GetString( "DefaultForwardType").String());
 	mHardWrapAt78Control->SetEnabled( mHardWrapControl->Value());
 }
 
@@ -402,12 +399,8 @@ void BmPrefsMailConstrView::MessageReceived( BMessage* msg) {
 			}
 			case BM_FORWARD_TYPE_SELECTED: {
 				BMenuItem* item = mDefaultForwardTypeControl->Menu()->FindMarked();
-				if (item) {
-					if (BString("Attached").Compare( item->Label()) == 0)
-						ThePrefs->SetInt("DefaultForwardType", BMM_FORWARD_ATTACHED);
-					else
-						ThePrefs->SetInt("DefaultForwardType", BMM_FORWARD_INLINE);
-				}
+				if (item)
+					ThePrefs->SetString( "DefaultForwardType", item->Label());
 				break;
 			}
 			default:
