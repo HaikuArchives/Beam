@@ -31,6 +31,10 @@
 #ifndef _BmNetJobModel_h
 #define _BmNetJobModel_h
 
+#ifdef BEAM_FOR_BONE
+# include <netinet/in.h>
+#endif
+
 #include <NetEndpoint.h>
 
 #include "BmDataModel.h"
