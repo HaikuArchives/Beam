@@ -67,19 +67,20 @@ using namespace regexx;
 		-	resulting text is stored in param out
 		-	the string in has to be UTF8-encoded for this function to work 
 			correctly!
-		-	if keepLongWords is set, single words whose length exceeds maxLineLen 
-			(like URLs) will be preserved (i.e. not be wrapped).
+		-	if keepUrls is set, urls will be preserved (i.e. not be wrapped).
 \*------------------------------------------------------------------------------*/
 void WordWrap( const BmString& in, BmString& out, int32 maxLineLen, 
-					BmString nl, bool keepLongWords) {
+					BmString nl, bool keepUrls) {
 	if (!in.Length()) {
 		out.Truncate( 0, false);
 		return;
 	}
 	Regexx rx;
+	Regexx rxUrl;
 	int32 lastPos = 0;
 	const char *s = in.String();
 	bool needBreak = false;
+	bool isUrl = false;
 	BmStringOBuf tempIO( in.Length()*1.1, 1.1);
 	for( int32 pos = 0;  !needBreak;  pos += nl.Length(), lastPos = pos) {
 		pos = in.FindFirst( nl, pos);
@@ -100,7 +101,7 @@ void WordWrap( const BmString& in, BmString& out, int32 maxLineLen,
 			lineLen++;
 		}
 		while (lineLen > maxLineLen) {
-			if (keepLongWords && lastSpcPos>lastPos) {
+			if (keepUrls && lastSpcPos>lastPos) {
 				// special-case lines containing only quotes and a long word,
 				// since in this case we want to avoid wrapping between quotes
 				// and the word:
@@ -118,8 +119,16 @@ void WordWrap( const BmString& in, BmString& out, int32 maxLineLen,
 			}
 			if (lastSpcPos==B_ERROR || lastSpcPos<lastPos) {
 				// line doesn't contain any space character (before maxline-length), 
-				// we simply break it at right margin (unless keepLongWords is set):
-				if (keepLongWords) {
+				// we simply break it at right margin (unless keepUrls is set):
+				isUrl = (
+					keepUrls 
+					&& rxUrl.exec( 
+						BmString( in.String()+lastPos, pos-lastPos),
+						"(https?://|ftp://|nntp://|file://|mailto:)",
+						Regexx::nocase
+					)
+				);
+				if (keepUrls && isUrl) {
 					// find next space or end of line and break line there:
 					int32 nextSpcPos = in.FindFirst( " ", lastPos+maxLineLen);
 					int32 nlPos = in.FindFirst( nl, lastPos+maxLineLen);

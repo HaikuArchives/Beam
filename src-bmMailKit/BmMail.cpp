@@ -1456,13 +1456,18 @@ int32 BmMail::AddQuotedText( const BmString& inText, BmString& out,
 	int32 modifiedMaxLen = 0;
 	BmString tmp;
 	BmString text;
+	bool isUrl = false;
+	Regexx rxUrl;
 	maxTextLen = MAX( 0, maxTextLen);
 	text.ConvertTabsToSpaces( ThePrefs->GetInt( "SpacesPerTab", 4), &inText);
 	while( text.CountChars() > maxTextLen) {
 		int32 wrapPos = B_ERROR;
 		int32 idx=0;
+		isUrl = rxUrl.exec(
+			inText, "(https?://|ftp://|nntp://|file://|mailto:)", Regexx::nocase
+		);
 		for(  int32 charCount=0; 
-				charCount<maxTextLen || (wrapPos==B_ERROR && text[idx]); 
+				charCount<maxTextLen || (isUrl && wrapPos==B_ERROR && text[idx]); 
 			   ++charCount) {
 			if (IS_UTF8_STARTCHAR(text[idx])) {
 				idx++;
