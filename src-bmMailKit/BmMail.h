@@ -119,8 +119,6 @@ extern const char* BM_MAIL_FOLDER_DRAFT;
 extern const char* BM_MAIL_FOLDER_IN;
 extern const char* BM_MAIL_FOLDER_OUT;
 
-extern const char* BM_MAIL_FOLDER_TRASH;
-
 class BmFilter;
 /*------------------------------------------------------------------------------*\
 	BmMail 
@@ -240,6 +238,7 @@ public:
 													{ mAccountName = s; }
 	inline void IdentityName( const BmString& s)
 													{ mIdentityName = s; }
+	inline void MoveToTrash( bool b)		{ mMoveToTrash = b; }
 
 	// Static functions that try to reformat & quote a given multiline text
 	// in a way that avoids the usual (ugly) quoting-mishaps.
@@ -304,6 +303,9 @@ private:
 							// new status of base mail (forwarded/replied)
 	BmString mSignatureName;
 							// name of signature to use in this mail
+	bool mMoveToTrash;
+							// indicates that this mail should be trashed (after being
+							// stored)
 	mutable BPath mDestFolderpath;
 							// path to folder where the mail shall be stored in
 							// (this may be changed by a mail-filter)

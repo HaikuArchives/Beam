@@ -238,8 +238,8 @@ void BmMailFilter::ExecuteFilter( BmMail* mail) {
 		needToStore = true;
 	}
 	if (msgContext.moveToTrash) {
-		if (mail->SetDestFoldername( BM_MAIL_FOLDER_TRASH))
-			needToStore = true;
+		mail->MoveToTrash( true);
+		needToStore = true;
 	}
 	if (needToStore && CurrentJobSpecifier()!=BM_EXECUTE_FILTER_IN_MEM) {
 		BM_LOG3( BM_LogFilter, "Filtering has changed something, so mail will be stored now.");

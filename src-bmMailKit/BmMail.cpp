@@ -130,8 +130,6 @@ const char* BM_MAIL_FOLDER_DRAFT			= "draft";
 const char* BM_MAIL_FOLDER_IN				= "in";
 const char* BM_MAIL_FOLDER_OUT			= "out";
 
-const char* BM_MAIL_FOLDER_TRASH	 		= "<trash>";
-
 /********************************************************************************\
 	BmMail
 \********************************************************************************/
@@ -171,6 +169,7 @@ BmMail::BmMail( bool outbound)
 	,	mInitCheck( B_NO_INIT)
 	,	mOutbound( outbound)
 	,	mRightMargin( ThePrefs->GetInt( "MaxLineLen"))
+	,	mMoveToTrash( false)
 {
 	BmString emptyMsg = BmString(BM_FIELD_MIME)+": 1.0\r\n";
 	emptyMsg << "Content-Type: text/plain; charset=\"" 
@@ -206,6 +205,7 @@ BmMail::BmMail( BmString &msgText, const BmString account)
 	,	mInitCheck( B_NO_INIT)
 	,	mOutbound( false)
 	,	mRightMargin( ThePrefs->GetInt( "MaxLineLen"))
+	,	mMoveToTrash( false)
 {
 	SetTo( msgText, account);
 
@@ -237,6 +237,7 @@ BmMail::BmMail( BmMailRef* ref)
 	,	mInitCheck( B_NO_INIT)
 	,	mOutbound( false)
 	,	mRightMargin( ThePrefs->GetInt( "MaxLineLen"))
+	,	mMoveToTrash( false)
 {
 	mOutbound = 
 		Status() == BM_MAIL_STATUS_DRAFT
@@ -978,7 +979,6 @@ bool BmMail::Store() {
 	ssize_t res;
 	char basicFilename[B_FILE_NAME_LENGTH];
 	BPath newHomePath;
-	bool moveToTrash = false;
 
 	try {
 		// Find out where mail shall be living.
@@ -1035,10 +1035,7 @@ bool BmMail::Store() {
 
 		// now check whether mail-filtering has decided that the mail shall live
 		// in a specific folder:
-		if (mDestFolderpath == BM_MAIL_FOLDER_TRASH) {
-			// mail shall be moved to trash:
-			moveToTrash = true;
-		} else if (newHomePath != mDestFolderpath) {
+		if (newHomePath != mDestFolderpath) {
 			// try to file mail into a different destination-folder:
 			if ((err = homeDir.SetTo( mDestFolderpath.Path())) != B_OK) {
 				BmLogHandler::Log( "Filter", 
@@ -1099,16 +1096,15 @@ bool BmMail::Store() {
 			}
 		}
 		mailFile.Sync();
-		if (!moveToTrash) {
-			// now move mail to it's real home:
-			(err = mEntry.MoveTo( &homeDir)) == B_OK
+		// now move mail to it's real home:
+		(err = mEntry.MoveTo( &homeDir)) == B_OK
 													|| BM_THROW_RUNTIME( BmString("Could not move mail <")<<basicFilename<<"> to home-folder\n\n Result: " << strerror(err));
-		}
 		entry_ref eref;
 		(err = mEntry.GetRef( &eref)) == B_OK
 													|| BM_THROW_RUNTIME( BmString("Could not get entry-ref for mail <")<<basicFilename<<">.\n\n Result: " << strerror(err));
-		if (moveToTrash)
-			MoveToTrash( &eref, 1);
+		// now that the mail lives on the disk, we move it to tash, if requested:
+		if (mMoveToTrash)
+			::MoveToTrash( &eref, 1);
 		if (!mMailRef) {
 			// mail has been freshly created, we add a mail-ref for it:
 			struct stat st;
