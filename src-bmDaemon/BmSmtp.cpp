@@ -46,6 +46,7 @@ using namespace regexx;
 #include "BmBasics.h"
 #include "BmEncoding.h"
 	using namespace BmEncoding;
+#include "BmFilter.h"
 #include "BmJobStatusWin.h"
 #include "BmIdentity.h"
 #include "BmLogHandler.h"
@@ -556,8 +557,10 @@ void BmSmtp::StateSendMails() {
 			BccRcpt( mail, false, headerText);
 			Data( mail, headerText);
 		}
-		if (ShouldContinue())
+		if (ShouldContinue()) {
 			mail->MarkAs( BM_MAIL_STATUS_SENT);
+			mail->ApplyFilter();
+		}
 	}
 	mCurrMailSize = 0;
 	mCurrMailNr = 0;
