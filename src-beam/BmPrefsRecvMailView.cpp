@@ -977,6 +977,7 @@ void BmPrefsRecvMailView::ShowAccount( int32 selection) {
 			mCurrAcc = NULL;
 	}
 	mMinutesLabel->Invalidate();
+	mDaysLabel->Invalidate();
 }
 
 /*------------------------------------------------------------------------------*\
