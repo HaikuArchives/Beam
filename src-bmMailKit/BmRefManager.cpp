@@ -90,8 +90,8 @@ void BmRefObj::RenameRef( const char* newName) {
 #endif
 	// find object...
 	BmObjectMap::iterator pos;
-	for(	pos = proxy->ObjectMap.find( RefName()); 
-			pos != proxy->ObjectMap.end(); ++pos) {
+	BmObjectMap::iterator end = proxy->ObjectMap.end();
+	for( pos = proxy->ObjectMap.find( RefName()); pos != end; ++pos) {
 		if (pos->second == this)
 			break;
 	}
@@ -134,8 +134,8 @@ void BmRefObj::RemoveRef() {
 		if (lastCount == 1) {
 			// removed last reference, so we delete the object:
 			BmObjectMap::iterator pos;
-			for( 	pos = proxy->ObjectMap.find( RefName()); 
-					pos != proxy->ObjectMap.end(); ++pos) {
+			BmObjectMap::iterator end = proxy->ObjectMap.end();
+			for( pos = proxy->ObjectMap.find( RefName()); pos != end; ++pos) {
 				if (pos->second == this)
 					break;
 			}
@@ -198,7 +198,8 @@ void BmRefObj::CleanupProxies() {
 	if (!lock.IsLocked())
 		throw BM_runtime_error( "CleanupProxies(): Could not acquire global lock!");
 	BmProxyMap::iterator iter;
-	for( iter = nProxyMap.begin(); iter != nProxyMap.end(); ++iter)
+	BmProxyMap::iterator end = nProxyMap.end();
+	for( iter = nProxyMap.begin(); iter != end; ++iter)
 		delete iter->second;
 	nProxyMap.clear();
 }
@@ -224,15 +225,16 @@ void BmRefObj::PrintRefsLeft() {
 	if (!lock.IsLocked())
 		throw BM_runtime_error("PrintRefsLeft(): Could not acquire global lock!");
 	int32 count = 0;
-	BmProxyMap::const_iterator iter;
 	try {
 		BM_LOG( BM_LogRefCount, 
 				  BmString("RefManager: active list\n--------------------"));
-		for( iter = nProxyMap.begin(); iter != nProxyMap.end(); ++iter) {
+		BmProxyMap::const_iterator iter;
+		BmProxyMap::const_iterator end = nProxyMap.end();
+		for( iter = nProxyMap.begin(); iter != end; ++iter) {
 			BmProxy* proxy = iter->second;
 			BmObjectMap::const_iterator iter2;
-			for(  iter2=proxy->ObjectMap.begin(); 
-					iter2 != proxy->ObjectMap.end(); ++iter2, ++count) {
+			BmObjectMap::const_iterator end2 = proxy->ObjectMap.end();
+			for( iter2=proxy->ObjectMap.begin(); iter2 != end2; ++iter2, ++count) {
 				BmRefObj* ref = iter2->second;
 				BM_LOG( BM_LogRefCount, 
 						  BmString("\t<") << typeid(*ref).name() << " " 
@@ -281,8 +283,9 @@ BmString BmRefObj::RefPrintHex( const void* ptr) {
 \*------------------------------------------------------------------------------*/
 BmRefObj* BmProxy::FetchObject( const BmString& key, BmRefObj* ptr) {
 	if (BmRefObj::GlobalLocker()->IsLocked()) {
-		for(  BmObjectMap::const_iterator pos = ObjectMap.find( key);
-				pos!=ObjectMap.end(); ++pos) {
+		BmObjectMap::const_iterator pos;
+		BmObjectMap::const_iterator end = ObjectMap.end();
+		for( pos = ObjectMap.find( key); pos != end; ++pos) {
 			if (pos->first != key)
 				break;
 			if (pos->second == ptr || ptr==NULL)
