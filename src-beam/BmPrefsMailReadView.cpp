@@ -37,6 +37,7 @@
 #include <layout-all.h>
 
 #include "Colors.h"
+#include "BubbleHelper.h"
 
 #include "BmGuiUtil.h"
 #include "BmLogHandler.h"
@@ -103,6 +104,23 @@ BmPrefsMailReadView::~BmPrefsMailReadView() {
 \*------------------------------------------------------------------------------*/
 void BmPrefsMailReadView::Initialize() {
 	inherited::Initialize();
+
+	TheBubbleHelper.SetHelp( mHeaderListSmallControl, "Here you can enter the list of header-fields that will be displayed\nin the 'Small'-mode of the mailheader-view.\nJust enter the header-fields in the order you wish them to appear\nand separate them by a ',' (comma).");
+	TheBubbleHelper.SetHelp( mHeaderListLargeControl, "Here you can enter the list of header-fields that will be displayed\nin the 'Large'-mode of the mailheader-view.\nJust enter the header-fields in the order you wish them to appear\nand separate them by a ',' (comma).");
+	TheBubbleHelper.SetHelp( mMimeTypeTrustInfoControl, "When you double-click an attachment, Beam checks \n\
+if the mimetype of the attachment can be trusted.\n\
+Here you can define how Beam should treat different mimetypes.\n\
+Each single entry is of the form: <mtSubString:action>\n\
+where mtSubString is compared against the beginning of the \n\
+attachment's mimetype. If the mimetype matches, the action given\n\
+in that entry is executed:\n\
+	T means 'trust', i.e. the attachment is immediately opened.\n\
+	W means 'warn', i.e. Beam asks the user before opening the attachment.\n\
+The order of the entries is important, so that in the default\n\
+settings, the mimetype application/pdf has to be given trust before\n\
+the mimetype application can be set to warn-mode.\n\n\
+N.B.: I know this is clumsy and I promise that there will be\n\
+something better in one of the next versions of Beam.");
 
 	mHeaderListSmallControl->SetTarget( this);
 	mHeaderListLargeControl->SetTarget( this);

@@ -360,7 +360,7 @@ void BmMainWindow::BeginLife() {
 		mMainMenuBar->FindItem( BMM_RECACHE_MAILFOLDER)->SetTarget( mMailFolderView);
 		mMainMenuBar->FindItem( BMM_SWITCH_RAW)->SetTarget( mMailView);
 		mMainMenuBar->FindItem( BMM_SWITCH_RAW)->SetMarked( mMailView->ShowRaw());
-		mMainMenuBar->FindItem( BMM_SWITCH_HEADER)->SetTarget( mMailView->HeaderView());
+		mMainMenuBar->FindItem( BMM_SWITCH_HEADER)->SetTarget( (BHandler*)mMailView->HeaderView());
 		// temporary deactivation:
 		mMainMenuBar->FindItem( BMM_PAGE_SETUP)->SetEnabled( false);
 		mMainMenuBar->FindItem( BMM_PRINT)->SetEnabled( false);

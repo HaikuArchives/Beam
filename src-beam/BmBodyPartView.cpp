@@ -29,6 +29,7 @@
 
 
 #include <Alert.h>
+#include <FilePanel.h>
 #include <MenuItem.h>
 #include <PopUpMenu.h>
 #include <Roster.h>
@@ -115,6 +116,7 @@ BmBodyPartView::BmBodyPartView( minimax minmax, int32 width, int32 height,
 					  B_SINGLE_SELECTION_LIST, true, false)
 	,	mShowAllParts( false)
 	,	mEditable( editable)
+	,	mSavePanel( NULL)
 {
 	SetViewColor( BeBackgroundGrey);
 	fLightColumnCol = 						BeBackgroundGrey;
@@ -151,6 +153,7 @@ BmBodyPartView::BmBodyPartView( minimax minmax, int32 width, int32 height,
 		-	
 \*------------------------------------------------------------------------------*/
 BmBodyPartView::~BmBodyPartView() { 
+	delete mSavePanel;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -338,10 +341,15 @@ void BmBodyPartView::MouseDown( BPoint point) {
 	inherited::MouseDown( point); 
 	if (!mEditable && Parent())
 		Parent()->MakeFocus( true);
-	BPoint mousePos;
-	uint32 buttons;
-	GetMouse( &mousePos, &buttons);
-	if (!mEditable && buttons == B_SECONDARY_MOUSE_BUTTON) {
+	BMessage* msg = Looper()->CurrentMessage();
+	int32 buttons;
+	if (msg->FindInt32( "buttons", &buttons)==B_OK 
+	&& !mEditable && buttons == B_SECONDARY_MOUSE_BUTTON) {
+		int32 clickIndex = IndexOf( point);
+		if (clickIndex >= 0) {
+			Select( clickIndex);
+		} else 
+			DeselectAll();
 		ShowMenu( point);
 	}
 }
@@ -361,6 +369,53 @@ void BmBodyPartView::MessageReceived( BMessage* msg) {
 			case BM_BODYPARTVIEW_SHOWATTACHMENTS: {
 				mShowAllParts = false;
 				ShowBody( dynamic_cast<BmBodyPartList*>( DataModel()));
+				break;
+			}
+			case BM_BODYPARTVIEW_SAVE_ATTACHMENT: {
+				int32 index = CurrentSelection( 0);
+				if (index < 0)
+					break;
+				BmBodyPartItem* bodyPartItem = dynamic_cast<BmBodyPartItem*>( FullListItemAt( index));
+				if (!bodyPartItem)
+					break;
+				BmBodyPart* bodyPart = dynamic_cast<BmBodyPart*>( bodyPartItem->ModelItem());
+				if (!bodyPart)
+					break;
+				// first step, let user select filename to save under:
+				if (!mSavePanel) {
+					mSavePanel = new BFilePanel( B_SAVE_PANEL, new BMessenger(this), NULL,
+														  B_FILE_NODE, false);
+				}
+				mSavePanel->SetSaveText( bodyPart->FileName().String());
+				mSavePanel->Show();
+				break;
+			}
+			case B_CANCEL: {
+				// since a SavePanel seems to avoid quitting, thus stopping Beam from proper exit,
+				// we detroy the panel:
+				delete mSavePanel;
+				mSavePanel = NULL;
+				break;
+			}
+			case B_SAVE_REQUESTED: {
+				// since a SavePanel seems to avoid quitting, thus stopping Beam from proper exit,
+				// we detroy the panel:
+				delete mSavePanel;
+				mSavePanel = NULL;
+				int32 index = CurrentSelection( 0);
+				if (index < 0)
+					break;
+				BmBodyPartItem* bodyPartItem = dynamic_cast<BmBodyPartItem*>( FullListItemAt( index));
+				if (!bodyPartItem)
+					break;
+				BmBodyPart* bodyPart = dynamic_cast<BmBodyPart*>( bodyPartItem->ModelItem());
+				if (!bodyPart)
+					break;
+				entry_ref destDirRef;
+				if (msg->FindRef( "directory", 0, &destDirRef) == B_OK) {
+					BString name = msg->FindString( "name");
+					bodyPart->SaveAs( destDirRef, name);
+				}
 				break;
 			}
 			case B_SIMPLE_DATA: {
@@ -479,6 +534,12 @@ void BmBodyPartView::ShowMenu( BPoint point) {
 																  : BM_BODYPARTVIEW_SHOWALL));
 	item->SetTarget( this);
 	item->SetMarked( mShowAllParts);
+	theMenu->AddItem( item);
+
+	theMenu->AddSeparatorItem();
+	item = new BMenuItem( "Save Attachment As...", 
+								 new BMessage( BM_BODYPARTVIEW_SAVE_ATTACHMENT));
+	item->SetTarget( this);
 	theMenu->AddItem( item);
 
    ConvertToScreen(&point);

@@ -181,6 +181,10 @@ public:
 
 	static const int32 BM_READ_MAIL_JOB = 1;
 
+	static const char* const BM_QUOTE_AUTO_WRAP = "Auto Wrap";
+	static const char* const BM_QUOTE_SIMPLE = "Simple";
+	static const char* const BM_QUOTE_PUSH_MARGIN = "Push Margin";
+
 protected:
 	BmMail( BmMailRef* ref);
 

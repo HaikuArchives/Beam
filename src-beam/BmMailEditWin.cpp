@@ -29,6 +29,7 @@
 
 
 #include <File.h>
+#include <FilePanel.h>
 #include <InterfaceKit.h>
 #include <Message.h>
 #include <String.h>
@@ -121,12 +122,21 @@ BmMailEditWin::BmMailEditWin( BmMailRef* mailRef, BmMail* mail)
 	,	mShowDetails3( false)
 	,	mModified( false)
 	,	mHasNeverBeenSaved( mail ? mail->MailRef() == NULL : false)
+	,	mAttachPanel( NULL)
 {
 	CreateGUI();
 	if (mail)
 		EditMail( mail);
 	else
 		EditMail( mailRef);
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+BmMailEditWin::~BmMailEditWin() {
+	delete mAttachPanel;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -291,7 +301,7 @@ void BmMailEditWin::CreateGUI() {
 	if (item)
 		item->SetMarked( true);
 	// add all signatures to signature menu:
-	mSignatureControl->Menu()->AddItem( new BMenuItem( "", new BMessage( BM_SIGNATURE_SELECTED)));
+	mSignatureControl->Menu()->AddItem( new BMenuItem( "<none>", new BMessage( BM_SIGNATURE_SELECTED)));
 	for( iter = TheSignatureList->begin(); iter != TheSignatureList->end(); ++iter) {
 		BmSignature* sig = dynamic_cast< BmSignature*>( iter->second.Get());
 		mSignatureControl->Menu()->AddItem( new BMenuItem( sig->Key().String(), new BMessage( BM_SIGNATURE_SELECTED)));
@@ -302,18 +312,10 @@ void BmMailEditWin::CreateGUI() {
 	mMailView->BodyPartView()->StartWatching( this, BM_NTFY_LISTCONTROLLER_MODIFIED);
 
 	// temporarily disabled:
-	mAttachButton->SetEnabled( false);
 	mPeopleButton->SetEnabled( false);
 	mPrintButton->SetEnabled( false);
 
 	AddChild( dynamic_cast<BView*>(mOuterGroup));
-}
-
-/*------------------------------------------------------------------------------*\
-	()
-		-	
-\*------------------------------------------------------------------------------*/
-BmMailEditWin::~BmMailEditWin() {
 }
 
 /*------------------------------------------------------------------------------*\
@@ -554,6 +556,21 @@ void BmMailEditWin::MessageReceived( BMessage* msg) {
 				}
 				break;
 			}
+			case BMM_ATTACH: {
+				entry_ref attachRef;
+				if (msg->FindRef( "refs", 0, &attachRef) != B_OK) {
+					// first step, let user select files to attach:
+					if (!mAttachPanel) {
+						mAttachPanel = new BFilePanel( B_OPEN_PANEL, new BMessenger(this), NULL,
+																 B_FILE_NODE, true, msg);
+					}
+					mAttachPanel->Show();
+				} else {
+					// second step, attach selected files to mail:
+					mMailView->BodyPartView()->AddAttachment( msg);
+				}
+				break;
+			}
 			case BM_BCC_ADDED: {
 				break;
 			}
@@ -567,8 +584,13 @@ void BmMailEditWin::MessageReceived( BMessage* msg) {
 				// exactly, no break here...
 				BMenuItem* item = NULL;
 				msg->FindPointer( "source", (void**)&item);
-				if (item)
-					mMailView->SetSignatureByName( item->Label());
+				if (item) {
+					BString sigName = item->Label();
+					if (sigName=="<none>")
+						mMailView->SetSignatureByName( "");
+					else
+						mMailView->SetSignatureByName( sigName);
+				}
 			}
 			case BM_CHARSET_SELECTED:
 			case BM_SMTP_SELECTED:

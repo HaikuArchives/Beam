@@ -46,6 +46,7 @@ using namespace regexx;
 #include "BmLogHandler.h"
 #include "BmMail.h"
 #include "BmMailHeader.h"
+#include "BmMailHeaderView.h"
 #include "BmMailRef.h"
 #include "BmMailRefView.h"
 #include "BmMailView.h"
@@ -110,12 +111,12 @@ BmMailView::BmMailView( minimax minmax, BRect frame, bool outbound)
 	AddChild( mBodyPartView);
 	mBodyPartView->MoveTo( mHeaderView->Frame().LeftBottom());
 	mBodyPartView->ResizeTo( 0,0);
-	BFont font( be_fixed_font);
-	font.SetSize( mFontSize);
-	SetFont( &font);
-	SetFontAndColor( &font);
+	mFont = *be_fixed_font;
+	mFont.SetSize( mFontSize);
+	SetFont( &mFont);
+	SetFontAndColor( &mFont);
 	if (outbound) {
-		mRulerView = new BmRulerView( be_fixed_font);
+		mRulerView = new BmRulerView( &mFont);
 		AddChild( mRulerView);
 		mRulerView->MoveTo( mBodyPartView->Frame().LeftBottom());
 	}
@@ -142,7 +143,8 @@ BmMailView::~BmMailView() {
 		-	
 \*------------------------------------------------------------------------------*/
 status_t BmMailView::Archive( BMessage* archive, bool deep=true) const {
-	status_t ret = archive->AddBool( MSG_RAW, mOutbound ? false : mShowRaw)
+	status_t ret = archive->AddInt16( MSG_VERSION, nArchiveVersion)
+						|| archive->AddBool( MSG_RAW, mOutbound ? false : mShowRaw)
 						|| archive->AddString( MSG_FONTNAME, mFontName.String())
 						|| archive->AddInt16( MSG_FONTSIZE, mFontSize);
 	if (ret == B_OK && deep && mHeaderView)
@@ -157,6 +159,9 @@ status_t BmMailView::Archive( BMessage* archive, bool deep=true) const {
 		-	
 \*------------------------------------------------------------------------------*/
 status_t BmMailView::Unarchive( BMessage* archive, bool deep=true) {
+	int16 version;
+	if (archive->FindInt16( MSG_VERSION, &version) != B_OK)
+		version = 1;
 	status_t ret = archive->FindBool( MSG_RAW, &mShowRaw)
 						|| archive->FindString( MSG_FONTNAME, &mFontName)
 						|| archive->FindInt16( MSG_FONTSIZE, &mFontSize);
@@ -164,6 +169,19 @@ status_t BmMailView::Unarchive( BMessage* archive, bool deep=true) {
 		ret = mHeaderView->Unarchive( archive, deep);
 	if (ret == B_OK && deep && mBodyPartView)
 		ret = mBodyPartView->Unarchive( archive, deep);
+	int32 pos = mFontName.FindFirst( ",");
+	if (pos != B_ERROR) {
+		BString family( mFontName.String(), pos);
+		BString style( mFontName.String()+pos+1);
+		mFont.SetFamilyAndStyle( family.String(), style.String());
+	} else {
+		mFont = *be_fixed_font;
+	}
+	mFont.SetSize( mFontSize);
+	SetFont( &mFont);
+	SetFontAndColor( &mFont);
+	if (mOutbound && mRulerView)
+		mRulerView->SetMailViewFont( mFont);
 	return ret;
 }
 
@@ -222,6 +240,30 @@ void BmMailView::MessageReceived( BMessage* msg) {
 			}
 			case BM_RULERVIEW_NEW_POS: {
 				SetFixedWidth( msg->FindInt32( BmRulerView::MSG_NEW_POS));
+				break;
+			}
+			case BM_FONT_SELECTED: {
+				BString family = msg->FindString( BmResources::BM_MSG_FONT_FAMILY);
+				BString style = msg->FindString( BmResources::BM_MSG_FONT_STYLE);
+				mFont.SetFamilyAndStyle( family.String(), style.String());
+				mFontName = family + "," + style;
+				SetFont( &mFont);
+				SetFontAndColor( &mFont);
+				if (mOutbound && mRulerView)
+					mRulerView->SetMailViewFont( mFont);
+				JobIsDone( true);
+				WriteStateInfo();
+				break;
+			}
+			case BM_FONTSIZE_SELECTED: {
+				mFontSize = msg->FindInt16( BmResources::BM_MSG_FONT_SIZE);
+				mFont.SetSize( mFontSize);
+				SetFont( &mFont);
+				SetFontAndColor( &mFont);
+				if (mOutbound && mRulerView)
+					mRulerView->SetMailViewFont( mFont);
+				JobIsDone( true);
+				WriteStateInfo();
 				break;
 			}
 			case B_SIMPLE_DATA: {
@@ -286,15 +328,16 @@ void BmMailView::KeyDown(const char *bytes, int32 numBytes) {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmMailView::MouseDown( BPoint point) {
-	BPoint mousePos;
-	uint32 buttons;
-	GetMouse( &mousePos, &buttons);
-	if (buttons == B_PRIMARY_MOUSE_BUTTON) {
-		int32 offset =  OffsetAt( point);
-		mClickedTextRun = TextRunInfoAt( offset);
-	} else if (buttons == B_SECONDARY_MOUSE_BUTTON) {
-		ShowMenu( point);
-		return;
+	BMessage* msg = Looper()->CurrentMessage();
+	int32 buttons;
+	if (msg->FindInt32( "buttons", &buttons)==B_OK) {
+		if (buttons == B_PRIMARY_MOUSE_BUTTON) {
+			int32 offset =  OffsetAt( point);
+			mClickedTextRun = TextRunInfoAt( offset);
+		} else if (buttons == B_SECONDARY_MOUSE_BUTTON) {
+			ShowMenu( point);
+			return;
+		}
 	}
 	inherited::MouseDown( point);
 }
@@ -485,7 +528,7 @@ void BmMailView::JobIsDone( bool completed) {
 			mBodyPartView->ShowBody( body);
 			if (mShowRaw) {
 				BM_LOG2( BM_LogMailParse, BString("displaying raw message"));
-				uint32 encoding = mCurrMail->Header()->DefaultEncoding();
+				uint32 encoding = mCurrMail->DefaultEncoding();
 				ConvertToUTF8( encoding, mCurrMail->RawText(), displayText);
 			} else {
 				BM_LOG2( BM_LogMailParse, BString("extracting parts to be displayed from body-structure"));
@@ -499,13 +542,16 @@ void BmMailView::JobIsDone( bool completed) {
 					if (displayText.ByteAt(displayText.Length()-1) != '\n')
 						displayText << '\n';
 					mTextRunMap[displayText.Length()] = BmTextRunInfo( BeShadow);
-					displayText << "-- \n" << body->Signature();
+					BString displaySignature;
+					uint32 encoding = mCurrMail->DefaultEncoding();
+					ConvertToUTF8( encoding, body->Signature(), displaySignature);
+					displayText << "-- \n" << displaySignature;
 				}
 				if (!mOutbound) {
 					// highlight URLs:
 					Regexx rx;
 					int32 count;
-					if ((count = rx.exec( displayText, "(https?://|ftp://|nntp://|file://|mailto:)[^][<>(){}\\~|\"\\s]+", 
+					if ((count = rx.exec( displayText, "(https?://|ftp://|nntp://|file://|mailto:)[^][<>(){}|\"\\s]+", 
 						                   Regexx::nocase|Regexx::global|Regexx::newline)) > 0) {
 						for( int i=0; i<count; ++i) {
 							int32 start = rx.match[i].start();
@@ -532,7 +578,7 @@ void BmMailView::JobIsDone( bool completed) {
 		BmTextRunIter iter;
 		for( iter = mTextRunMap.begin(); iter != mTextRunMap.end(); ++iter, ++i) {
 			textRunArray->runs[i].offset = iter->first;
-			textRunArray->runs[i].font = iter->second.font;
+			textRunArray->runs[i].font = mFont;
 			textRunArray->runs[i].color = iter->second.color;
 		}
 		SetText( displayText.String(), displayText.Length(), textRunArray);
@@ -667,7 +713,9 @@ void BmMailView::ShowMenu( BPoint point) {
 		item->SetTarget( this);
 		item->SetMarked( ShowInlinesSeparately());
 		theMenu->AddItem( item);
+		theMenu->AddSeparatorItem();
 	}
+	TheResources->AddFontSubmenuTo( theMenu, this, &mFont);
 
    ConvertToScreen(&point);
 	BRect openRect;

@@ -84,7 +84,9 @@ void BmContentField::SetTo( const BString cfString) {
 				mValue = rx.match[0].atom[0];
 			}
 		}
-		mValue.ToLower();
+		if (mValue.Length())
+			// check introduced for Dano compatibility, otherwise "mysterious things"(TM) happen:
+			mValue.ToLower();
 		BM_LOG2( BM_LogMailParse, BString("...found value: ")<<mValue);
 		// parse and extract parameters:
 		BString params;
@@ -106,7 +108,10 @@ void BmContentField::SetTo( const BString cfString) {
 							val = rx.match[i].atom[1];
 						}
 					}
-					mParams[key.ToLower()] = val;
+					if (key.Length())
+						// check introduced for Dano compatibility, otherwise "mysterious things"(TM) happen:
+						key.ToLower();
+					mParams[key] = val;
 					BM_LOG2( BM_LogMailParse, BString("...found param: ")<<key<<" with value: "<<val);
 				}
 			}
@@ -124,7 +129,9 @@ void BmContentField::SetTo( const BString cfString) {
 \*------------------------------------------------------------------------------*/
 const BString& BmContentField::Param( BString key) const {
 	static BString nullStr;
-	key.ToLower();
+	if (key.Length())
+		// check introduced for Dano compatibility, otherwise "mysterious things"(TM) happen:
+		key.ToLower();
 	BmParamMap::const_iterator iter = mParams.find( key);
 	if (iter != mParams.end()) {
 		return iter->second;
@@ -137,7 +144,10 @@ const BString& BmContentField::Param( BString key) const {
 	-	sets the parameter to the given value:
 \*------------------------------------------------------------------------------*/
 void BmContentField::SetParam( BString key, BString value) {
-	mParams[key.ToLower()] = value;
+	if (key.Length())
+		// check introduced for Dano compatibility, otherwise "mysterious things"(TM) happen:
+		key.ToLower();
+	mParams[key] = value;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -257,8 +267,6 @@ void BmBodyPart::SetTo( const BString& msgtext, int32 start, int32 length,
 	BString transferEncoding;
 	BString id;
 	BString disposition;
-	BString description;
-	BString language;
 	const char* posInRawText = NULL;
 	int32 bodyLength;
  	BmRef<BmListModel> bodyRef = mListModel.Get();
@@ -321,9 +329,10 @@ void BmBodyPart::SetTo( const BString& msgtext, int32 start, int32 length,
 			// split off signature, if any:
 			Regexx rx;
 			BString sigRX = ThePrefs->GetString( "SignatureRX");
-			if (rx.exec( mDecodedData, sigRX, Regexx::newline)) {
-				BString sigStr( mDecodedData.String()+rx.match[0].start()+rx.match[0].Length());
-				mDecodedData.Truncate( rx.match[0].start());
+			int32 count = rx.exec( mDecodedData, sigRX, Regexx::newline|Regexx::global);
+			if (count>0) {
+				BString sigStr( mDecodedData.String()+rx.match[count-1].start()+rx.match[count-1].Length());
+				mDecodedData.Truncate( rx.match[count-1].start());
 				body->Signature( sigStr);
 			}
 		}
@@ -345,7 +354,9 @@ void BmBodyPart::SetTo( const BString& msgtext, int32 start, int32 length,
 	// Language
 	BM_LOG2( BM_LogMailParse, "parsing Content-Language");
 	mContentLanguage = header->GetFieldVal( BM_FIELD_CONTENT_LANGUAGE);
-	mContentLanguage.ToLower();
+	if (mContentLanguage.Length())
+		// check introduced for Dano compatibility, otherwise "mysterious things"(TM) happen:
+		mContentLanguage.ToLower();
 	BM_LOG2( BM_LogMailParse, BString("...found value: ")<<mContentLanguage);
 	// determine a filename (if possible)
 	mFileName = mContentDisposition.Param("filename");
@@ -453,6 +464,28 @@ entry_ref BmBodyPart::WriteToTempFile( BString filename) {
 		entry.GetRef( &eref);
 	}
 	return eref;
+}
+
+/*------------------------------------------------------------------------------*\
+	SaveAs()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmBodyPart::SaveAs( const entry_ref& destDirRef, BString filename) {
+	BDirectory destDir;
+	status_t err;
+	if ((err=destDir.SetTo( &destDirRef)) == B_OK) {
+		BFile destFile;
+		BNodeInfo fileInfo;
+		if ((err = destFile.SetTo( &destDir, filename.String(), 
+										  B_WRITE_ONLY | B_CREATE_FILE | B_ERASE_FILE)) != B_OK) {
+			BM_SHOWERR( BString("Could not save attachment\n\t<") << filename << ">\n\n Result: " << strerror(err));
+			return;
+		}
+		destFile.Write( mDecodedData.String(), mDecodedData.Length());
+		fileInfo.SetTo( &destFile);
+		fileInfo.SetType( MimeType().String());
+	} else
+		BM_SHOWERR( BString("Could not save attachment\n\t<") << filename << ">\n\n Result: " << strerror(err));
 }
 
 /*------------------------------------------------------------------------------*\

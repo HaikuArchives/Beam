@@ -33,6 +33,7 @@
 
 #include <layout-all.h>
 
+#include "BubbleHelper.h"
 #include "Colors.h"
 #include "ColumnListView.h"
 #include "CLVEasyItem.h"
@@ -225,7 +226,7 @@ BmPrefsSignatureView::BmPrefsSignatureView()
 				0
 			),
 			new Space( minimax(0,10,0,10)),
-			new MBorder( M_LABELED_BORDER, 10, (char*)"Signature Info (changes require a restart)",
+			new MBorder( M_LABELED_BORDER, 10, (char*)"Signature Info",
 				new VGroup(
 					mSignatureControl = new BmTextControl( "Signature name:"),
 					new Space( minimax(0,5,0,5)),
@@ -278,6 +279,21 @@ BmPrefsSignatureView::~BmPrefsSignatureView() {
 \*------------------------------------------------------------------------------*/
 void BmPrefsSignatureView::Initialize() {
 	inherited::Initialize();
+
+	TheBubbleHelper.SetHelp( mSigListView, "This listview shows every signature you have defined.");
+	TheBubbleHelper.SetHelp( mSignatureControl, "Here you can enter a name for this signature.\nThis name is used to identify this signature in Beam.");
+	TheBubbleHelper.SetHelp( mContentControl, "Here you can enter the signature text (static mode) \nor a shell-command (dynamic mode).");
+	TheBubbleHelper.SetHelp( mDynamicControl, "Beam supports two kinds of signatures:\n\
+static:\n\
+	The text entered into the content field represents the signature itself.\n\
+	Exactly this text will be appended to a mail that uses this sig.\n\
+dynamic:\n\
+	The text entered into the content field is a shell-command whose output (STDOUT)\n\
+	represents the signature. You can use this mode to implement things like\n\
+	random signature selection from an external database, for instance.");
+	TheBubbleHelper.SetHelp( mCharsetControl, "Here you can define the charset of the signature-text.\nIf in doubt, just leave the default.");
+	TheBubbleHelper.SetHelp( mSignatureRxControl, "This is the regular expression (perl-style) used by Beam\nto split off the signature when viewing mails.");
+	TheBubbleHelper.SetHelp( mTestButton, "Here you can testrun a dynamic signature.");
 
 	mSignatureControl->SetTarget( this);
 	mContentControl->SetTarget( this);
@@ -357,15 +373,13 @@ void BmPrefsSignatureView::MessageReceived( BMessage* msg) {
 				break;
 			}
 			case BM_TEXTFIELD_MODIFIED: {
-				if (mCurrSig) {
-					BView* srcView = NULL;
-					msg->FindPointer( "source", (void**)&srcView);
-					BmTextControl* source = dynamic_cast<BmTextControl*>( srcView);
-					if ( source == mSignatureControl)
-						TheSignatureList->RenameItem( mCurrSig->Name(), mSignatureControl->Text());
-					else if ( source == mSignatureRxControl)
-						ThePrefs->SetString("SignatureRX", mSignatureRxControl->Text());
-				}
+				BView* srcView = NULL;
+				msg->FindPointer( "source", (void**)&srcView);
+				BmTextControl* source = dynamic_cast<BmTextControl*>( srcView);
+				if ( mCurrSig && source == mSignatureControl)
+					TheSignatureList->RenameItem( mCurrSig->Name(), mSignatureControl->Text());
+				else if ( source == mSignatureRxControl)
+					ThePrefs->SetString("SignatureRX", mSignatureRxControl->Text());
 				break;
 			}
 			case BM_DYNAMIC_CHANGED: {

@@ -28,6 +28,9 @@
 /*************************************************************************/
 
 #include <Alert.h>
+#include <Entry.h>
+#include <FilePanel.h>
+#include <Path.h>
 #include <Roster.h>
 
 #include <BeBuild.h>
@@ -39,12 +42,14 @@
 #endif
 #include <layout-all.h>
 
+#include "BubbleHelper.h"
 #include "Colors.h"
 
 #include "BmApp.h"
 #include "BmCheckControl.h"
 #include "BmLogHandler.h"
 #include "BmMailFolder.h"
+#include "BmMailFolderList.h"
 #include "BmMailFolderView.h"
 #include "BmMailRef.h"
 #include "BmMailRefList.h"
@@ -65,6 +70,7 @@
 \*------------------------------------------------------------------------------*/
 BmPrefsGeneralView::BmPrefsGeneralView() 
 	:	inherited( "General Options")
+	,	mMailboxPanel( NULL)
 {
 	MView* view = 
 		new VGroup(
@@ -109,6 +115,14 @@ BmPrefsGeneralView::BmPrefsGeneralView()
 						mInOutAtTopControl = new BmCheckControl( "Show in & out - folders at top of mailfolder-view", 
 																					 	  new BMessage(BM_INOUT_AT_TOP_CHANGED), 
 																					 	  this, ThePrefs->GetBool("InOutAlwaysAtTop", false)),
+						new Space( minimax(0,10,0,10)),
+						mUseDeskbarControl = new BmCheckControl( "Use Deskbar Icon to indicate new mail", 
+																			  new BMessage(BM_USE_DESKBAR_CHANGED), 
+																			  this, ThePrefs->GetBool("UseDeskbar", true)),
+						new Space( minimax(0,10,0,10)),
+						mShowTooltipsControl = new BmCheckControl( "Show Tooltips for Toolbar-Buttons and Prefs", 
+																			  new BMessage(BM_SHOW_TOOLTIPS_CHANGED), 
+																			  this, ThePrefs->GetBool("ShowTooltips", true)),
 						new Space(),
 						0
 						),
@@ -136,6 +150,8 @@ BmPrefsGeneralView::BmPrefsGeneralView()
 				0
 			),
 			new HGroup( 
+				mMailboxButton = new MButton( MailboxButtonLabel().String(), new BMessage( BM_SELECT_MAILBOX), this, minimax(-1,-1,-1,-1)),
+				new Space( minimax(10,0,10,0)),
 				new MButton( "Make Beam preferred-app for email...", new BMessage( BM_MAKE_BEAM_STD_APP), this, minimax(-1,-1,-1,-1)),
 				new Space(),
 				0
@@ -181,6 +197,17 @@ BmPrefsGeneralView::BmPrefsGeneralView()
 		-	
 \*------------------------------------------------------------------------------*/
 BmPrefsGeneralView::~BmPrefsGeneralView() {
+	delete mMailboxPanel;
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+BString BmPrefsGeneralView::MailboxButtonLabel() {
+	BString label( "Set mailbox path (currently '");
+	label << ThePrefs->GetString( "MailboxPath") << "')...";
+	return label;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -189,7 +216,23 @@ BmPrefsGeneralView::~BmPrefsGeneralView() {
 \*------------------------------------------------------------------------------*/
 void BmPrefsGeneralView::Initialize() {
 	inherited::Initialize();
-
+	
+	TheBubbleHelper.SetHelp( mLayoutView, "This (dummy) mail-listview shows and defines\nthe default column-layout and sorting mode for all\nmail-listview.\nEvery mail-folder will follow this layout \n(until you modify the layout for a specific folder).");
+	TheBubbleHelper.SetHelp( mStripedListViewControl, "Checking this will cause the mail-listview to separate\nthe columns by giving them alternating colours.\nOtherwise, the mail-listview's columns are separated \nby truncating the contents with '...' if neccessary.");
+	TheBubbleHelper.SetHelp( mDynamicStatusWinControl, "Determines the layout of the job-status window.\n\tif checked, the job-status window will only display currently active jobs (it will grow/shrink accordingly)\n\tif unchecked, the job-status window will be static and show all known jobs, even if they are not active.");
+	TheBubbleHelper.SetHelp( mMailMoverShowControl, "Here you can enter the time (in ms) Beam will let pass before it \nwill show the GUI for a mail-moving operation inside the job-window.");
+	TheBubbleHelper.SetHelp( mPopperRemoveControl, "Here you can enter the time (in ms) Beam will let a finished POP3-job linger inside the job-window \n(this way you can check the results before the job is removed).");
+	TheBubbleHelper.SetHelp( mSmtpRemoveControl, "Here you can enter the time (in ms) Beam will let a finished SMTP-job linger inside the job-window \n(this way you can check the results before the job is removed).");
+	TheBubbleHelper.SetHelp( mRemoveFailedControl, "Here you can enter the time (in ms) Beam will keep any failed job inside the job-status window\n (this way you can see that a problem occurred before the job is removed).");
+	TheBubbleHelper.SetHelp( mRestoreFolderStatesControl, "Checking this makes Beam remember the state of the mailfolder-view \n(which of the folders are expanded/collapsed).\nIf unchecked, Beam will always start with a collapsed mailfolder-view.");
+	TheBubbleHelper.SetHelp( mInOutAtTopControl, "Determines whether the in- and out-folder will be shown \nat the top of the mailfolder-list or if they \nwill be sorted in alphabetically.");
+	TheBubbleHelper.SetHelp( mUseDeskbarControl, "Checking this makes Beam show an icon in \nthe Deskbar when new mail has arrived.");
+	TheBubbleHelper.SetHelp( mShowTooltipsControl, "Checking this makes Beam show a small \ninfo-window (just like this one) when the \nmouse-pointer lingers over a GUI-item.");
+	TheBubbleHelper.SetHelp( mCacheRefsOnDiskControl, "Checking this will cause Beam to cache \nmail-folder contents on disk.\n\nDoing this speeds up the display \nof a mail-folder's contents quite a lot.");
+	TheBubbleHelper.SetHelp( mCacheRefsInMemControl, "Checking this will cause Beam to keep \nany mail-folder's contents in memory even\nif the user selects another folder.\n\nThis gives best performance, but \nmay use *A LOT* of memory.");
+	TheBubbleHelper.SetHelp( mNetBufSizeSendControl, "Here you can enter the network buffer size (in bytes)\nBeam will use for outgoing connections.\n\nIf sending seems slow, try a larger value in here.");
+	TheBubbleHelper.SetHelp( mNetRecvTimeoutControl, "Here you can enter the time (in ms) Beam\n will wait for an answer from a remote network-server.");
+	
 	mFolder = BmMailFolder::CreateDummyInstance();
 	mRefList = new BmMailRefList( mFolder.Get());
 	BmRef<BmMailRef> mRef( BmMailRef::CreateDummyInstance( mRefList.Get(), 0));
@@ -290,6 +333,15 @@ void BmPrefsGeneralView::MessageReceived( BMessage* msg) {
 				TheMailFolderView->UnlockLooper();
 				break;
 			}
+			case BM_USE_DESKBAR_CHANGED: {
+				ThePrefs->SetBool("UseDeskbar", mUseDeskbarControl->Value());
+				break;
+			}
+			case BM_SHOW_TOOLTIPS_CHANGED: {
+				ThePrefs->SetBool("ShowTooltips", mShowTooltipsControl->Value());
+				TheBubbleHelper.EnableHelp( mShowTooltipsControl->Value());
+				break;
+			}
 			case BM_MAKE_BEAM_STD_APP: {
 				int32 buttonPressed;
 				if (msg->FindInt32( "which", &buttonPressed) != B_OK) {
@@ -319,6 +371,33 @@ void BmPrefsGeneralView::MessageReceived( BMessage* msg) {
 						alert->Go();
 					}
 				}
+				break;
+			}
+			case BM_SELECT_MAILBOX: {
+				entry_ref mailboxRef;
+				if (msg->FindRef( "refs", 0, &mailboxRef) != B_OK) {
+					// first step, let user select new mailbox:
+					if (!mMailboxPanel) {
+						mMailboxPanel = new BFilePanel( B_OPEN_PANEL, new BMessenger(this), NULL,
+																  B_DIRECTORY_NODE, false, msg);
+					}
+					mMailboxPanel->Show();
+				} else {
+					// second step, set mailbox accordingly:
+					BEntry entry( &mailboxRef);
+					BPath path;
+					if (entry.GetPath( &path) == B_OK) {
+						ThePrefs->SetString( "MailboxPath", path.Path());
+						mMailboxButton->SetLabel( MailboxButtonLabel().String());
+						TheMailFolderList->MailboxPathHasChanged( true);
+						BAlert* alert = new BAlert( "Mailbox Path", 
+															 "Done, Beam will use the new mailbox after a restart",
+														 	 "Ok", NULL, NULL, B_WIDTH_AS_USUAL,
+														 	 B_INFO_ALERT);
+						alert->Go();
+					}
+				}
+				break;
 			}
 			default:
 				inherited::MessageReceived( msg);

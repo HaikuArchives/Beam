@@ -40,6 +40,7 @@
 \*------------------------------------------------------------------------------*/
 #define BM_BODYPARTVIEW_SHOWALL				'bmga'
 #define BM_BODYPARTVIEW_SHOWATTACHMENTS	'bmgb'
+#define BM_BODYPARTVIEW_SAVE_ATTACHMENT	'bmgc'
 
 /*------------------------------------------------------------------------------*\
 	BmBodyPartItem
@@ -58,6 +59,7 @@ public:
 	BmBodyPartItem operator=( const BmBodyPartItem&);
 };
 
+class BFilePanel;
 class BmBodyPartList;
 /*------------------------------------------------------------------------------*\
 	BmBodyPartView
@@ -112,6 +114,8 @@ private:
 	float mColWidths[10];
 	bool mShowAllParts;
 	bool mEditable;
+
+	BFilePanel* mSavePanel;
 
 	// Hide copy-constructor and assignment:
 	BmBodyPartView( const BmBodyPartView&);

@@ -28,8 +28,11 @@
 /*************************************************************************/
 
 
+#include <Clipboard.h>
 #include <MenuItem.h>
 #include <PopUpMenu.h>
+#include <StringView.h>
+#include <TextView.h>
 
 #include "Colors.h"
 
@@ -44,6 +47,184 @@ using namespace regexx;
 #include "BmPrefs.h"
 #include "BmResources.h"
 
+
+/********************************************************************************\
+	BmMailHeaderFieldView
+\********************************************************************************/
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+BmMailHeaderFieldView::BmMailHeaderFieldView( BString fieldName, BString value,
+															 BFont* font, float fixedWidth)
+	:	inherited( BRect( 0, 0, 0, 0),
+					  "MailHeaderFieldView", B_FOLLOW_NONE, B_WILL_DRAW)
+{
+	SetViewColor( BeListSelectGrey);
+	const float leftOffs = 16;
+	const float textInset = 1;
+	font->SetFace( B_BOLD_FACE);
+	float titleWidth = font->StringWidth( fieldName.String());
+	float fhl = TheResources->FontLineHeight( font)+3;
+	BRect titleRect( leftOffs, textInset, leftOffs+titleWidth, textInset+fhl-1);
+	mTitleView = new BStringView( titleRect, "titleView", fieldName.String());
+	mTitleView->SetFont( font);
+	mTitleView->SetViewColor( BeListSelectGrey);
+	mTitleView->SetLowColor( BeListSelectGrey);
+	AddChild( mTitleView);
+	BRect contentRect( titleRect.left+titleRect.Width()+5, 0, fixedWidth, 10);
+	BRect textRect = contentRect.InsetByCopy( textInset, textInset);
+	textRect.OffsetTo( 4+textInset, textInset);
+	font->SetFace( B_REGULAR_FACE);
+	mContentView = new BTextView( contentRect, "contentView", textRect,
+											font, &Black, B_FOLLOW_NONE, B_WILL_DRAW);
+	mContentView->SetText( value.String());
+	mContentView->SetViewColor( BeLightShadow);
+	float neededHeight = mContentView->TextHeight( 0, 10000)+2*textInset;
+	mContentView->ResizeTo( fixedWidth-contentRect.left, neededHeight);
+	mContentView->MakeEditable( false);
+	mContentView->MakeSelectable( true);
+	mContentView->SetStylable( false);
+	AddChild( mContentView);
+	ResizeTo( fixedWidth, neededHeight);
+	mTitleView->AddFilter( new BmMsgFilter( this, B_MOUSE_DOWN));
+	mContentView->AddFilter( new BmMsgFilter( this, B_MOUSE_DOWN));
+	mContentView->AddFilter( new BmMsgFilter( this, B_KEY_DOWN));
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+BmMailHeaderFieldView::~BmMailHeaderFieldView() {
+	delete mContentView;
+	delete mTitleView;
+}
+
+/*------------------------------------------------------------------------------*\
+	FilterHook()
+		-	
+\*------------------------------------------------------------------------------*/
+filter_result BmMailHeaderFieldView::BmMsgFilter::Filter( BMessage* msg, 
+																			BHandler** handler) {
+	if (msg->what == B_MOUSE_DOWN) {
+		int32 buttons;
+		int32 clicks;
+		if (msg->FindInt32( "buttons", &buttons)==B_OK && msg->FindInt32( "clicks", &clicks)==B_OK) {
+			if (buttons==B_SECONDARY_MOUSE_BUTTON) {
+				BPoint where;
+				if (msg->FindPoint( "where", &where) == B_OK) {
+					// since we will be show the context-menu, we need to convert the 
+					// local-view's coordinates into the receiving handler's coordinates:
+					BView* view = (BView*)(*handler);
+					where += view->Frame().LeftTop();
+					msg->ReplacePoint( "where", where);
+				}
+				*handler = mDestHandler;
+			}
+		}
+		return B_DISPATCH_MESSAGE;
+	}
+	if (msg->what == B_KEY_DOWN) {
+		return B_SKIP_MESSAGE;
+	}
+	return B_DISPATCH_MESSAGE;
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+float BmMailHeaderFieldView::GetTitleWidth() {
+	return mContentView->Frame().left;
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailHeaderFieldView::SetTitleWidth( float newTitleWidth, float fixedWidth) {
+	BRect titleRect = mTitleView->Frame();
+	mTitleView->MoveTo( newTitleWidth-5-titleRect.Width(), titleRect.top);
+	mContentView->MoveTo( newTitleWidth, 0);
+	mContentView->ResizeTo( fixedWidth-newTitleWidth, mContentView->Frame().Height());
+}
+
+/*------------------------------------------------------------------------------*\
+	MouseDown( point)
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailHeaderFieldView::MouseDown( BPoint point) {
+	inherited::MouseDown( point); 
+	if (Parent())
+		if (Parent()->Parent())
+			Parent()->Parent()->MakeFocus( true);
+	BMessage* msg = Looper()->CurrentMessage();
+	int32 buttons;
+	if (msg->FindInt32( "buttons", &buttons)==B_OK 
+	&& buttons == B_SECONDARY_MOUSE_BUTTON) {
+		ShowMenu( point);
+	}
+}
+
+/*------------------------------------------------------------------------------*\
+	( )
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailHeaderFieldView::ShowMenu( BPoint point) {
+	BPopUpMenu* theMenu = new BPopUpMenu( "HeaderViewMenu", false, false);
+
+	// we fetch real point of click from message (since we may have modified it
+	// in the message-filter):
+	BMessage* msg = Looper()->CurrentMessage();
+	if (msg)
+		msg->FindPoint( "where", &point);
+
+	BmMailHeaderView* headerView = dynamic_cast<BmMailHeaderView*>( Parent());
+	if (!headerView)
+		return;
+	BMenuItem* item = new BMenuItem( "Small Header", new BMessage( BM_HEADERVIEW_SMALL));
+	item->SetTarget( headerView);
+	item->SetMarked( headerView->mDisplayMode == BmMailHeaderView::SMALL_HEADERS);
+	theMenu->AddItem( item);
+	item = new BMenuItem( "Large Header", new BMessage( BM_HEADERVIEW_LARGE));
+	item->SetTarget( headerView);
+	item->SetMarked( headerView->mDisplayMode == BmMailHeaderView::LARGE_HEADERS);
+	theMenu->AddItem( item);
+	item = new BMenuItem( "Full Header (raw)", new BMessage( BM_HEADERVIEW_FULL));
+	item->SetTarget( headerView);
+	item->SetMarked( headerView->mDisplayMode == BmMailHeaderView::FULL_HEADERS);
+	theMenu->AddItem( item);
+	theMenu->AddSeparatorItem();
+	item = new BMenuItem( "Show info from Resent-fields if present", new BMessage( BM_HEADERVIEW_SWITCH_RESENT));
+	item->SetTarget( headerView);
+	item->SetMarked( headerView->mShowRedirectFields);
+	theMenu->AddItem( item);
+	theMenu->AddSeparatorItem();
+	item = new BMenuItem( "Copy Header to Clipboard", new BMessage( BM_HEADERVIEW_COPY_HEADER));
+	item->SetTarget( headerView);
+	item->SetMarked( headerView->mShowRedirectFields);
+	theMenu->AddItem( item);
+	theMenu->AddSeparatorItem();
+	TheResources->AddFontSubmenuTo( theMenu, headerView, &headerView->mFont);
+
+   ConvertToScreen(&point);
+	BRect openRect;
+	openRect.top = point.y - 5;
+	openRect.bottom = point.y + 5;
+	openRect.left = point.x - 5;
+	openRect.right = point.x + 5;
+  	theMenu->Go( point, true, false, openRect);
+  	delete theMenu;
+}
+
+
+
+/********************************************************************************\
+	BmMailHeaderView
+\********************************************************************************/
+
 /*------------------------------------------------------------------------------*\
 	()
 		-	
@@ -53,10 +234,10 @@ BmMailHeaderView::BmMailHeaderView( BmMailHeader* header)
 					  "MailHeaderView", B_FOLLOW_NONE, B_WILL_DRAW)
 	,	mMailHeader( NULL)
 	,	mDisplayMode( LARGE_HEADERS)
-	,	mFont( new BFont( be_bold_font))
+	,	mFont( be_bold_font)
 	,	mShowRedirectFields( true)
 {
-	SetViewColor( B_TRANSPARENT_COLOR);
+	SetViewColor( White);
 	ShowHeader( header);
 }
 
@@ -65,7 +246,6 @@ BmMailHeaderView::BmMailHeaderView( BmMailHeader* header)
 		-	
 \*------------------------------------------------------------------------------*/
 BmMailHeaderView::~BmMailHeaderView() {
-	delete mFont;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -73,9 +253,16 @@ BmMailHeaderView::~BmMailHeaderView() {
 		-	
 \*------------------------------------------------------------------------------*/
 status_t BmMailHeaderView::Archive( BMessage* archive, bool deep=true) const {
-	status_t ret = archive->AddInt16( MSG_VERSION, nArchiveVersion)
-					|| archive->AddInt16( MSG_MODE, mDisplayMode)
+	status_t ret = archive->AddInt16( MSG_MODE, mDisplayMode)
 					|| archive->AddBool( MSG_REDIRECT_MODE, mShowRedirectFields);
+	if (ret==B_OK) {
+		font_family family;
+		font_style style;
+		mFont.GetFamilyAndStyle( &family, &style);
+		BString fontName = BString(family) + "," + style;
+		ret = archive->AddString( MSG_FONTNAME, fontName.String())
+					|| archive->AddInt16( MSG_FONTSIZE, mFont.Size());
+	}
 	return ret;
 }
 
@@ -90,6 +277,19 @@ status_t BmMailHeaderView::Unarchive( BMessage* archive, bool deep=true) {
 	status_t ret = archive->FindInt16( MSG_MODE, &mDisplayMode);
 	if (ret==B_OK && version >= 2)
 		ret = archive->FindBool( MSG_REDIRECT_MODE, &mShowRedirectFields);
+	if (ret==B_OK && version >= 3) {
+		BString fontName = archive->FindString( MSG_FONTNAME);
+		int16 fontSize = archive->FindInt16( MSG_FONTSIZE);
+		int32 pos = fontName.FindFirst( ",");
+		if (pos != B_ERROR) {
+			BString family( fontName.String(), pos);
+			BString style( fontName.String()+pos+1);
+			mFont.SetFamilyAndStyle( family.String(), style.String());
+		} else {
+			mFont = *be_fixed_font;
+		}
+		mFont.SetSize( fontSize);
+	}
 	return ret;
 }
 
@@ -100,37 +300,17 @@ status_t BmMailHeaderView::Unarchive( BMessage* archive, bool deep=true) {
 void BmMailHeaderView::ShowHeader( BmMailHeader* header, bool invalidate) {
 	if (mMailHeader != header)
 		mMailHeader = header;
-	float height = 0;
-	Regexx rx;
 	if (header) {
-		int numLines = 0;
-		switch (mDisplayMode) {
-			case SMALL_HEADERS: {
-				// small mode, 3 fields are displayed (by default):
-				BString fieldList = ThePrefs->GetString( "HeaderListSmall");
-				numLines = rx.exec( fieldList, "[\\w\\-/]+", Regexx::global);
-				break;
-			}
-			case FULL_HEADERS: {
-				// full mode, ALL fields are displayed:
-				numLines = mMailHeader->NumLines();
-				break;
-			}
-			default: {
-				// large mode, 5 fields are displayed (by default):
-				BString fieldList = ThePrefs->GetString( "HeaderListLarge");
-				numLines = rx.exec( fieldList, "[\\w\\-/]+", Regexx::global);
-				break;
-			}
-		};
-		height = 6+(TheResources->FontLineHeight( mFont)+3)*numLines;
-		
+		float height = AddFieldViews();
 		BmMailView* mailView = dynamic_cast<BmMailView*>( Parent());
 		if (mailView) {
 			mailView->ScrollTo( 0,0);
 			ResizeTo( FixedWidth(), height);
 			mailView->CalculateVerticalOffset();
 		}
+	} else {
+		RemoveFieldViews();
+		ResizeTo(0,0);
 	}
 	if (invalidate)
 		Invalidate();
@@ -140,24 +320,26 @@ void BmMailHeaderView::ShowHeader( BmMailHeader* header, bool invalidate) {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmMailHeaderView::Draw( BRect bounds) {
-	inherited::Draw( bounds);
-	
-	BRect r = Bounds();
-
-	if (!mMailHeader) {
-		SetHighColor( White);
-		FillRect( r);
-		return;
+void BmMailHeaderView::RemoveFieldViews() {
+	for( uint32 i=0; i<mFieldViews.size(); ++i) {
+		BmMailHeaderFieldView* fv = mFieldViews[i];
+		RemoveChild( fv);
+		delete fv;
 	}
-
-	float fh = TheResources->FontHeight( mFont);
-	float lh = TheResources->FontLineHeight( mFont)+3;
-
+	mFieldViews.clear();
+}
+	
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+float BmMailHeaderView::AddFieldViews() {
 	vector<BString> titles;
 	vector<BString> fields;
 	BString fieldList;
 	Regexx rx;
+
+	RemoveFieldViews();
 
 	if (mDisplayMode != FULL_HEADERS) {
 		if (mDisplayMode == SMALL_HEADERS)
@@ -172,62 +354,13 @@ void BmMailHeaderView::Draw( BRect bounds) {
 			int32 pos = field.FindFirst("/");
 			if (pos != B_ERROR)
 				field.Truncate( pos);
-			titles.push_back( field);
+			titles.push_back( field<<":");
 		}
 	}
 
-	mFont->SetFace( B_BOLD_FACE);
-	SetFont( mFont);
-	float titleWidth = 0.0;
-	if (mDisplayMode == FULL_HEADERS) {
-		// determine widest field name:
-		int numLines = mMailHeader->NumLines();
-		const char *start = mMailHeader->HeaderString().String();
-		for( int l=0; l<numLines; l++) {
-			const char* end = strchr( start, '\n');
-			if (!end)
-				break;
-			if (*start!=' ' && *start!='\t') {
-				char* colonPos = strchr( start, ':');
-				if (!colonPos)
-					break;
-				BString field( start, colonPos-start);
-				field << ":";
-				float w = StringWidth( field.String()) + 20;
-				if (w > titleWidth)
-					titleWidth = w;
-			}
-			start = end+1;
-		}
-	} else {
-		for( uint32 i=0; i<titles.size(); ++i) {
-			float w = StringWidth( titles[i].String()) + 20;
-			if (w > titleWidth)
-				titleWidth = w;
-		}
-	}
-
-	SetHighColor( BeListSelectGrey);
-	FillRect( BRect(0, 0, titleWidth, r.Height()-1));
-
-	SetHighColor( BeLightShadow);
-	FillRect( BRect(0+titleWidth, 0, r.Width(), r.Height()-1));
-
-	SetHighColor( BeShadow);
-	StrokeLine( BPoint(0,r.Height()), BPoint( r.Width(), r.Height()));
-
-	float x_off = 5.0;
-	float y_off = 2.0;
+	float yPos = 0;
 	if (mDisplayMode != FULL_HEADERS) {
-		// small or large mode, display just a small or a medium number of fields:
-		SetHighColor( Black);
-		SetLowColor( BeListSelectGrey);
-		for( uint32 l=0; l<titles.size(); ++l) {
-			DrawString( (titles[l]+":").String(), BPoint( titleWidth-StringWidth(titles[l].String())-x_off, y_off+l*lh+fh) );
-		}
-		mFont->SetFace( B_REGULAR_FACE);
-		SetFont( mFont);
-		SetLowColor( BeLightShadow);
+		// small or large mode, display fields as defined by prefs:
 		for( uint32 l=0; l<fields.size(); ++l) {
 			BString fieldVal;
 			int count = rx.exec( fields[l], "[\\w\\-]+", Regexx::global);
@@ -253,15 +386,19 @@ void BmMailHeaderView::Draw( BRect bounds) {
 				} else 
 					fieldVal = mMailHeader->GetFieldVal( fieldName);
 			}
-			DrawString( fieldVal.String(), BPoint( titleWidth+x_off, y_off+l*lh+fh) );
+			BmMailHeaderFieldView* fv 
+				= new BmMailHeaderFieldView( titles[l], fieldVal, &mFont, FixedWidth());
+			mFieldViews.push_back( fv);
+			fv->MoveTo( 0, yPos);
+			AddChild( fv);
+			yPos += fv->Frame().Height();
 		}
 	} else {
 		// full mode, display complete header:
-		SetHighColor( Black);
-		SetLowColor( BeLightShadow);
 		int numLines = mMailHeader->NumLines();
 		const char *start = mMailHeader->HeaderString().String();
 		for( int l=0; l<numLines; l++) {
+			BString field;
 			const char* end = strchr( start, '\n');
 			if (!end)
 				break;
@@ -269,44 +406,29 @@ void BmMailHeaderView::Draw( BRect bounds) {
 				char* colonPos = strchr( start, ':');
 				if (!colonPos)
 					break;
-				BString field( start, colonPos-start);
-				field << ":";
-				mFont->SetFace( B_BOLD_FACE);
-				SetFont( mFont);
-				SetLowColor( BeListSelectGrey);
-				DrawString( field.String(), BPoint( titleWidth-StringWidth(field.String())-x_off, y_off+l*lh+fh) );
-				SetLowColor( BeLightShadow);
+				field.SetTo( start, colonPos-start+1);
 				start = colonPos+1;
 			}
 			for( ; start<end-1 && (*start==' ' || *start=='\t'); ++start)
 				;
 			BString line( start, end-start-1);
 			start = end+1;
-			mFont->SetFace( B_REGULAR_FACE);
-			SetFont( mFont);
-			DrawString( line.String(), BPoint( titleWidth+x_off, y_off+l*lh+fh) );
+			BmMailHeaderFieldView* fv 
+				= new BmMailHeaderFieldView( field, line, &mFont, FixedWidth());
+			mFieldViews.push_back( fv);
+			fv->MoveTo( 0, yPos);
+			AddChild( fv);
+			yPos += fv->Frame().Height();
 		}
 	}
-	// ugly hack, force ScrollView to redraw its scrollbar:
-	BmMailView* mv = dynamic_cast<BmMailView*>( Parent());
-	if (mv)
-		mv->ContainerView()->RedrawScrollbars();
-}
-
-/*------------------------------------------------------------------------------*\
-	MouseDown( point)
-		-	
-\*------------------------------------------------------------------------------*/
-void BmMailHeaderView::MouseDown( BPoint point) {
-	inherited::MouseDown( point); 
-	if (Parent())
-		Parent()->MakeFocus( true);
-	BPoint mousePos;
-	uint32 buttons;
-	GetMouse( &mousePos, &buttons);
-	if (buttons == B_SECONDARY_MOUSE_BUTTON) {
-		ShowMenu( point);
+	float maxTitleWidth = 0;
+	for( uint32 i=0; i<mFieldViews.size(); ++i) {
+		float w = mFieldViews[i]->GetTitleWidth();
+		maxTitleWidth = MAX( w, maxTitleWidth);
 	}
+	for( uint32 i=0; i<mFieldViews.size(); ++i)
+		mFieldViews[i]->SetTitleWidth( maxTitleWidth, FixedWidth());
+	return yPos;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -340,7 +462,40 @@ void BmMailHeaderView::MessageReceived( BMessage* msg) {
 			}
 			case BM_HEADERVIEW_SWITCH_RESENT: {
 				mShowRedirectFields = !mShowRedirectFields;
-				Invalidate();
+				ShowHeader( mMailHeader.Get());
+				break;
+			}
+			case BM_HEADERVIEW_COPY_HEADER: {
+				BString hdrStr;
+				ConvertLinebreaksToLF( mMailHeader->HeaderString(), hdrStr);
+				BMessage* clipMsg;
+				if (be_clipboard->Lock()) {
+					be_clipboard->Clear();
+					if ((clipMsg = be_clipboard->Data())) {
+						clipMsg->AddData( "text/plain", B_MIME_TYPE, hdrStr.String(), hdrStr.Length());
+						be_clipboard->Commit();
+					}
+					be_clipboard->Unlock();
+				}
+				break;
+			}
+			case BM_FONT_SELECTED: {
+				BString family = msg->FindString( BmResources::BM_MSG_FONT_FAMILY);
+				BString style = msg->FindString( BmResources::BM_MSG_FONT_STYLE);
+				mFont.SetFamilyAndStyle( family.String(), style.String());
+				ShowHeader( mMailHeader.Get());
+				BmMailView* mailView = dynamic_cast< BmMailView*>( Parent());
+				if (mailView)
+					mailView->WriteStateInfo();
+				break;
+			}
+			case BM_FONTSIZE_SELECTED: {
+				int16 fontSize = msg->FindInt16( BmResources::BM_MSG_FONT_SIZE);
+				mFont.SetSize( fontSize);
+				ShowHeader( mMailHeader.Get());
+				BmMailView* mailView = dynamic_cast< BmMailView*>( Parent());
+				if (mailView)
+					mailView->WriteStateInfo();
 				break;
 			}
 			default:
@@ -354,36 +509,14 @@ void BmMailHeaderView::MessageReceived( BMessage* msg) {
 }
 
 /*------------------------------------------------------------------------------*\
-	( )
+	()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmMailHeaderView::ShowMenu( BPoint point) {
-	BPopUpMenu* theMenu = new BPopUpMenu( "HeaderViewMenu", false, false);
-
-	BMenuItem* item = new BMenuItem( "Small Header", new BMessage( BM_HEADERVIEW_SMALL));
-	item->SetTarget( this);
-	item->SetMarked( mDisplayMode == SMALL_HEADERS);
-	theMenu->AddItem( item);
-	item = new BMenuItem( "Large Header", new BMessage( BM_HEADERVIEW_LARGE));
-	item->SetTarget( this);
-	item->SetMarked( mDisplayMode == LARGE_HEADERS);
-	theMenu->AddItem( item);
-	item = new BMenuItem( "Full Header (raw)", new BMessage( BM_HEADERVIEW_FULL));
-	item->SetTarget( this);
-	item->SetMarked( mDisplayMode == FULL_HEADERS);
-	theMenu->AddItem( item);
-	item = new BMenuItem( "Show info from Resent-fields if present", new BMessage( BM_HEADERVIEW_SWITCH_RESENT));
-	item->SetTarget( this);
-	item->SetMarked( mShowRedirectFields);
-	theMenu->AddItem( item);
-
-   ConvertToScreen(&point);
-	BRect openRect;
-	openRect.top = point.y - 5;
-	openRect.bottom = point.y + 5;
-	openRect.left = point.x - 5;
-	openRect.right = point.x + 5;
-  	theMenu->Go( point, true, false, openRect);
-  	delete theMenu;
+void BmMailHeaderView::Draw( BRect bounds) {
+	inherited::Draw( bounds);
+	// ugly hack, force ScrollView to redraw its scrollbar:
+	BmMailView* mv = dynamic_cast<BmMailView*>( Parent());
+	if (mv)
+		mv->ContainerView()->RedrawScrollbars();
 }
 

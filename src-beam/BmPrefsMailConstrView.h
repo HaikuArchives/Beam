@@ -40,6 +40,7 @@
 #define BM_ATTACH_VCARDS_CHANGED 		'bmAV'
 #define BM_ENCODING_SELECTED		 		'bmES'
 #define BM_FORWARD_TYPE_SELECTED		 	'bmFS'
+#define BM_QUOTE_FORMATTING_SELECTED	'bmQS'
 
 class BmCheckControl;
 class BmMenuControl;
@@ -73,6 +74,7 @@ private:
 	BmTextControl* mMaxLineLenControl;
 	BmMenuControl* mDefaultEncodingControl;
 	BmTextControl* mQuotingStringControl;
+	BmMenuControl* mQuoteFormattingControl;
 
 	BmMenuControl* mDefaultForwardTypeControl;
 	BmTextControl* mForwardIntroStrControl;

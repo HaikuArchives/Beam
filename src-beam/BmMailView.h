@@ -39,12 +39,12 @@
 
 #include "BmController.h"
 #include "BmMail.h"
-#include "BmMailHeaderView.h"
 
 class BmBodyPart;
 class BmBodyPartView;
 class BmMailRef;
 class BmMailViewContainer;
+class BmMailHeaderView;
 class BmMailRefView;
 class BmRulerView;
 
@@ -67,20 +67,22 @@ class BmMailView : public WrappingTextView, public BmJobController {
 	typedef WrappingTextView inherited;
 	typedef BmJobController inheritedController;
 	struct BmTextRunInfo {
-		BmTextRunInfo( rgb_color c=Black, bool url=false, BFont f=*be_fixed_font) { 
-			color = c; isURL = url; font = f;
+		BmTextRunInfo( rgb_color c=Black, bool url=false) { 
+			color = c; isURL = url;
 		}
 		rgb_color color;
 		bool isURL;
-		BFont font;
 	};
 	typedef map<int32,BmTextRunInfo> BmTextRunMap;
 	typedef BmTextRunMap::const_iterator BmTextRunIter;
 	
 	// archival-fieldnames:
+	static const char* const MSG_VERSION =		"bm:version";
 	static const char* const MSG_RAW = 			"bm:raw";
 	static const char* const MSG_FONTNAME = 	"bm:fnt";
 	static const char* const MSG_FONTSIZE =	"bm:fntsz";
+
+	static const int16 nArchiveVersion = 3;
 
 public:
 	static const char* const MSG_HAS_MAIL = 		"bm:hmail";
@@ -146,6 +148,7 @@ private:
 	// will be archived:
 	BString mFontName;
 	int16 mFontSize;
+	BFont mFont;
 	bool mShowRaw;
 	bool mShowInlinesSeparately;
 

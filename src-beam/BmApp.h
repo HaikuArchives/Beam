@@ -32,12 +32,15 @@
 #define _BmApp_h
 
 #include <Application.h>
+#include <Deskbar.h>
 #include <Rect.h>
 #include <String.h>
 
 class BDeskbar;
 class BView;
 class BmWindow;
+
+extern const char* BM_APP_SIG;
 
 #define BMM_SHOW_NEWMAIL_ICON			'bMxa'
 #define BMM_HIDE_NEWMAIL_ICON			'bMxb'
@@ -80,15 +83,12 @@ public:
 	static const char* const MSG_WHO_TO = 	"bm:to";
 	static const char* const MSG_SELECTED_TEXT = 	"bm:seltext";
 
-private:
 	status_t mInitCheck;
 	BmWindow* mMailWin;
 	bool mIsQuitting;
 
-	BDeskbar* mDeskbar;
+	BDeskbar mDeskbar;
 	BView* mDeskbarView;
-
-	inline status_t InitCheck() 			{ return mInitCheck; }
 
 	static int InstanceCount;
 

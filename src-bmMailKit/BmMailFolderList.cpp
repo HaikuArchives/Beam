@@ -320,6 +320,7 @@ BmMailFolderList* BmMailFolderList::CreateInstance() {
 BmMailFolderList::BmMailFolderList()
 	:	BmListModel( "MailFolderList")
 	,	mTopFolder( NULL)
+	,	mMailboxPathHasChanged( false)
 {
 }
 
@@ -589,6 +590,30 @@ void BmMailFolderList::QueryForNewMails() {
 void BmMailFolderList::RemoveController( BmController* controller) {
 	inherited::RemoveController( controller);
 	Store();
+	if (mMailboxPathHasChanged) {
+		// the user has selected a new mailbox, we remove all cache-files:
+		BEntry folderCache( SettingsFileName().String());
+		folderCache.Remove();
+		// remove mailref-caches:
+		BDirectory* mailCacheDir = TheResources->MailCacheFolder();
+		mailCacheDir->Rewind();
+		BEntry mailCache;
+		while( mailCacheDir->GetNextEntry( &mailCache) == B_OK) {
+			mailCache.Remove();
+		}
+		// remove state-info caches for mailref- & folder-listview:
+		BDirectory* stateCacheDir = TheResources->StateInfoFolder();
+		stateCacheDir->Rewind();
+		BEntry stateCache;
+		while( stateCacheDir->GetNextEntry( &stateCache) == B_OK) {
+			char name[B_FILE_NAME_LENGTH+1];
+			if (stateCache.GetName( name) == B_OK) {
+				if (strncmp( name, "MailFolderView_", 15)==0 
+				|| strncmp( name, "MailRefView_", 12)==0)
+					stateCache.Remove();
+			}
+		}
+	}
 }
 
 /*------------------------------------------------------------------------------*\

@@ -31,6 +31,7 @@
 #include <Application.h>
 #include <Bitmap.h>
 #include <FindDirectory.h>
+#include <MenuItem.h>
 #include <Picture.h>
 #include <Resources.h>
 #include <View.h>
@@ -39,6 +40,7 @@
 using namespace regexx;
 
 #include "BmBasics.h"
+#include "BmPrefs.h"
 #include "BmResources.h"
 #include "BmUtil.h"
 
@@ -90,6 +92,9 @@ BmResources::BmResources()
 	// Load all the needed icons from our resources:
 	FetchIcons();
 
+	// Load all font-info:
+	FetchFonts();
+
 	// Determine our own FQDN from network settings file, if possible:
 	FetchOwnFQDN();
 	
@@ -104,11 +109,11 @@ BmResources::BmResources()
 BmResources::~BmResources()
 {
 	BmIconMap::iterator iter;
-	for( iter = IconMap.begin(); iter != IconMap.end(); ++iter) {
+	for( iter = mIconMap.begin(); iter != mIconMap.end(); ++iter) {
 		BBitmap* item = iter->second;
 		delete item;
 	}
-	IconMap.clear();
+	mIconMap.clear();
 
 	// and now... we do something that is AGAINST THE BE_BOOK (gasp)
 	// by deleting the apps resources (no one else will do it for us...):
@@ -123,7 +128,7 @@ BmResources::~BmResources()
 			identifier from the resource-file (Beam) or a mimetype.
 \*------------------------------------------------------------------------------*/
 BBitmap* BmResources::IconByName( const BString name) {
-	BBitmap*& icon = IconMap[name];
+	BBitmap*& icon = mIconMap[name];
 	if (!icon) {
 		BMimeType mt( name.String());
 		if (mt.InitCheck() == B_OK) {
@@ -181,7 +186,7 @@ void BmResources::FetchIcons() {
 		BMessage msg;
 		if (msg.Unflatten( data) == B_OK) {
 			theObj = instantiate_object( &msg);
-			IconMap[name] = dynamic_cast< BBitmap*>( theObj);
+			mIconMap[name] = dynamic_cast< BBitmap*>( theObj);
 		}
 	}
 }
@@ -211,6 +216,27 @@ void BmResources::FetchOwnFQDN() {
 }
 
 /*------------------------------------------------------------------------------*\
+	FetchFonts()
+		-	reads info about all existing font families & styles into the font-map.
+\*------------------------------------------------------------------------------*/
+void BmResources::FetchFonts() {
+	int32 numFamilies = count_font_families();
+	for ( int32 i = 0; i < numFamilies; i++ ) {
+		font_family family;
+		uint32 flags;
+		if ( get_font_family(i, &family, &flags) == B_OK ) {
+			int32 numStyles = count_font_styles(family);
+			for ( int32 j = 0; j < numStyles; j++ ) {
+				font_style style;
+				if ( get_font_style(family, j, &style, &flags) == B_OK ) {
+					mFontMap[family].push_back( style);
+				}
+			}
+		}
+	}
+}
+
+/*------------------------------------------------------------------------------*\
 	CheckMimeTypeFile( sig, appModTime)
 		-	checks age of our own mimetype-file 
 			(.../settings/beos_mime/application/x-vnd.zooey-beam)
@@ -219,7 +245,9 @@ void BmResources::FetchOwnFQDN() {
 void BmResources::CheckMimeTypeFile( BString sig, time_t appModTime) {
 	BPath path;
 	if (find_directory( B_COMMON_SETTINGS_DIRECTORY, &path) == B_OK) {
-		sig.ToLower();
+		if (sig.Length())
+			// check introduced for Dano compatibility, otherwise "mysterious things"(TM) happen:
+			sig.ToLower();
 		BEntry mtEntry( (BString(path.Path())<<"/beos_mime/"<<sig).String());
 		if (mtEntry.InitCheck() == B_OK) {
 			time_t modTime;
@@ -233,6 +261,58 @@ void BmResources::CheckMimeTypeFile( BString sig, time_t appModTime) {
 			}
 		}
 	}
+}
+
+/*------------------------------------------------------------------------------*\
+	AddFontSubmenuTo( menu)
+		-	reads info about all existing font families & styles into the font-map.
+\*------------------------------------------------------------------------------*/
+void BmResources::AddFontSubmenuTo( BMenu* menu, BHandler* target, 
+												BFont* selectedFont) {
+	if (!menu)
+		return;
+	BMenu* fontMenu = new BMenu( "Select Font...");
+	menu->AddItem( fontMenu);
+	font_family family;
+	font_style style;
+	if (selectedFont)
+		selectedFont->GetFamilyAndStyle( &family, &style);
+	BmFontMap::const_iterator iter;
+	for( iter = mFontMap.begin(); iter != mFontMap.end(); ++iter) {
+		const BmFontStyleVect& styles = iter->second;
+		BMenu* subMenu = new BMenu( iter->first.String());
+		for( uint32 i=0; i<styles.size(); ++i) {
+			BMessage* msg = new BMessage( BM_FONT_SELECTED);
+			msg->AddString( BM_MSG_FONT_FAMILY, iter->first.String());
+			msg->AddString( BM_MSG_FONT_STYLE, styles[i].String());
+			BMenuItem* item = new BMenuItem( styles[i].String(), msg);
+			if (target)
+				item->SetTarget( target);
+			if (selectedFont && iter->first==family && styles[i]==style)
+				item->SetMarked( true);
+			subMenu->AddItem( item);
+		}
+		fontMenu->AddItem( subMenu);
+		BMenuItem* familyItem = fontMenu->FindItem( family);
+		if (familyItem) {
+			if (selectedFont && iter->first==family)
+				familyItem->SetMarked( true);
+		}
+	}
+	BMenu* sizeMenu = new BMenu( "Select Fontsize...");
+	const char* sizes[] = { "8","9","10","11","12","14","16","18","20","24",NULL};
+	for( int i=0; sizes[i]!=NULL; ++i) {
+		BMessage* msg = new BMessage( BM_FONTSIZE_SELECTED);
+		int16 size = atoi(sizes[i]);
+		msg->AddInt16( BM_MSG_FONT_SIZE, size);
+		BMenuItem* item = new BMenuItem( sizes[i], msg);
+		if (target)
+			item->SetTarget( target);
+		if (selectedFont && selectedFont->Size()==size)
+			item->SetMarked( true);
+		sizeMenu->AddItem( item);
+	}
+	menu->AddItem( sizeMenu);
 }
 
 /*------------------------------------------------------------------------------*\

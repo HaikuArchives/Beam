@@ -42,10 +42,15 @@
 #define BM_CACHE_REFS_DISK_CHANGED	 		'bmCD'
 #define BM_CACHE_REFS_MEM_CHANGED 			'bmCM'
 #define BM_INOUT_AT_TOP_CHANGED 				'bmIO'
+#define BM_USE_DESKBAR_CHANGED 				'bmDC'
+#define BM_SHOW_TOOLTIPS_CHANGED 			'bmTC'
 #define BM_MAKE_BEAM_STD_APP	 				'bmBS'
+#define BM_SELECT_MAILBOX		 				'bmSM'
 
+class BFilePanel;
 class BmTextControl;
 class BmCheckControl;
+class MButton;
 /*------------------------------------------------------------------------------*\
 	BmPrefsGeneralView
 		-	
@@ -69,6 +74,7 @@ public:
 
 private:
 	CLVContainerView* CreateMailRefLayoutView( minimax minmax, int32 width, int32 height);
+	BString MailboxButtonLabel();
 
 	BmMailRefView* mLayoutView;
 	BmTextControl* mMailMoverShowControl;
@@ -83,6 +89,11 @@ private:
 	BmCheckControl* mCacheRefsInMemControl;
 	BmCheckControl* mCacheRefsOnDiskControl;
 	BmCheckControl* mInOutAtTopControl;
+	BmCheckControl* mUseDeskbarControl;
+	BmCheckControl* mShowTooltipsControl;
+	MButton* mMailboxButton;
+
+	BFilePanel* mMailboxPanel;
 
 	BmRef<BmMailFolder> mFolder;
 	BmRef<BmMailRefList> mRefList;

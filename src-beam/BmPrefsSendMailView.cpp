@@ -33,6 +33,7 @@
 
 #include <layout-all.h>
 
+#include "BubbleHelper.h"
 #include "Colors.h"
 #include "ColumnListView.h"
 #include "CLVEasyItem.h"
@@ -306,6 +307,31 @@ BmPrefsSendMailView::~BmPrefsSendMailView() {
 \*------------------------------------------------------------------------------*/
 void BmPrefsSendMailView::Initialize() {
 	inherited::Initialize();
+
+	TheBubbleHelper.SetHelp( mAccListView, "This listview shows every SMTP-account you have defined.");
+	TheBubbleHelper.SetHelp( mAccountControl, "Here you can enter a name for this SMTP-account.\nThis name is used to identify this account in Beam.");
+	TheBubbleHelper.SetHelp( mDomainControl, "Some SMTP-Servers check the domain announced by the client\n\
+at session-start. This check will fail if the domain of the client-pc\n\
+differs from the real internet-domain (usually the case if\n\
+the client-pc has no permanent connection to the internet).\n\n\
+If the SMTP-server rejects connections, you should try to enter\n\
+your dial-in-provider's domain into this field, otherwise leave\n\
+the field empty.");
+	TheBubbleHelper.SetHelp( mLoginControl, "Here you can enter the username which \nwill be used during authentication.");
+	TheBubbleHelper.SetHelp( mPwdControl, "Here you can enter the password which \nwill be used during authentication.\n(You can only edit this field if you checked 'Store Password on Disk').");
+	TheBubbleHelper.SetHelp( mStorePwdControl, "Checking this allows Beam to store the given \n\
+password unsafely on disk.\n\
+If you uncheck this, Beam will ask you for the password\n\
+everytime you use this account.");
+	TheBubbleHelper.SetHelp( mServerControl, "Please enter the full name of the SMTP-server \ninto this field (e.g. 'mail.xxx.org').");
+	TheBubbleHelper.SetHelp( mPortControl, "Please enter the SMTP-port of the server \ninto this field (usually 25).");
+	TheBubbleHelper.SetHelp( mAuthControl, "Here you can select the authentication type to use:\n\
+<none> -  is the default mode, no authentication at all.\n\
+PLAIN  -  is a simple auth-mode which sends passwords in cleartext\n\
+LOGIN  -  is another simple auth-mode that sends passwords in cleartext\n\
+SMTP-AFTER-POP  -  does SMTP-authentication via the use of a POP3-server.");
+	TheBubbleHelper.SetHelp( mPopControl, "Here you can select the POP3-account that shall be used\n\
+when authenticating via SMTP-AFTER-POP.");
 
 	mAccountControl->SetTarget( this);
 	mDomainControl->SetTarget( this);

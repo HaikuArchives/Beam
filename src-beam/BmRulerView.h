@@ -53,6 +53,7 @@ public:
 
 	// native methods:
 	void SetIndicatorPos( int32 pos);
+	void SetMailViewFont( const BFont& font);
 
 	// overrides of BView base:
 	void Draw( BRect bounds);

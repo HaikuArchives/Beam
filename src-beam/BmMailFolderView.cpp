@@ -231,10 +231,15 @@ void BmMailFolderView::HandleDrop( const BMessage* msg) {
 \*------------------------------------------------------------------------------*/
 void BmMailFolderView::MouseDown( BPoint point) {
 	inherited::MouseDown( point); 
-	BPoint mousePos;
-	uint32 buttons;
-	GetMouse( &mousePos, &buttons);
-	if (buttons == B_SECONDARY_MOUSE_BUTTON) {
+	BMessage* msg = Looper()->CurrentMessage();
+	int32 buttons;
+	if (msg->FindInt32( "buttons", &buttons)==B_OK 
+	&& buttons == B_SECONDARY_MOUSE_BUTTON) {
+		int32 clickIndex = IndexOf( point);
+		if (clickIndex >= 0)
+			Select( clickIndex);
+		else 
+			DeselectAll();
 		ShowMenu( point);
 	}
 }

@@ -103,6 +103,7 @@ public:
 	bool ShouldBeShownInline()	const;
 	bool ContainsRef( const entry_ref& ref) const;
 	entry_ref WriteToTempFile( BString filename="");
+	void SaveAs( const entry_ref& destDirRef, BString filename);
 	void PropagateHigherEncoding();
 	void ConstructBodyForSending( BString &msgText);
 

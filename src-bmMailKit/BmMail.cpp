@@ -641,7 +641,7 @@ bool BmMail::Store() {
 	try {
 		// Find out where mail shall be living.
 		// N.B.: Since we have a node-monitor watching our actions within the mail-folders,
-		//			we create all mails in a temp-folder (outside the mail-hierarchy, so that
+		//			we create all new mails in a temp-folder (outside the mail-hierarchy, so that
 		//			the node-monitor doesn't notice), write out the mail-file completely, and
 		//			then move the complete mail-file into the mail-folder hierarchy.
 		//			This way we can ensure that the node-monitor does not trigger on a
@@ -654,25 +654,20 @@ bool BmMail::Store() {
 		(err = tmpDir.SetTo( tmpPath.Path())) == B_OK
 													|| BM_THROW_RUNTIME( BString("Could not find tmp-directory on this system") << "\n\n Result: " << strerror(err));
 
+		bool createdInTemp = false;
 		if (mEntry.InitCheck() == B_OK) {
 			// mail has just been written to disk, we recycle the current entry, but move 
 			// it to the temp-folder:
 			mEntry.GetName( basicFilename);
-			(err = mEntry.GetParent( &homeDir)) == B_OK
-													|| BM_THROW_RUNTIME( BString("Could not get parent for mail <")<<basicFilename<<">\n\n Result: " << strerror(err));
-			(err = mEntry.MoveTo( &tmpDir)) == B_OK
-													|| BM_THROW_RUNTIME( BString("Could not move mail <")<<basicFilename<<"> to tmp-folder\n\n Result: " << strerror(err));
 		} else if (mMailRef && mMailRef->InitCheck() == B_OK) {
-			// mail has been read from disk, we recycle the old name, but move 
-			// it to the temp-folder:
+			// mail has been read from disk, we recycle the old name:
 			(err = mEntry.SetTo( mMailRef->EntryRefPtr())) == B_OK
 													|| BM_THROW_RUNTIME( BString("Could not create entry from mail-ref <") << mMailRef->Key() << ">\n\n Result: " << strerror(err));
 			(err = mEntry.GetParent( &homeDir)) == B_OK
 													|| BM_THROW_RUNTIME( BString("Could not get parent for mail <") << mMailRef->Key() << ">\n\n Result: " << strerror(err));
-			(err = mEntry.MoveTo( &tmpDir)) == B_OK
-													|| BM_THROW_RUNTIME( BString("Could not move mail <") << mMailRef->Key() << "> to tmp-folder\n\n Result: " << strerror(err));
 			mEntry.GetName( basicFilename);
 		} else {
+			createdInTemp = true;
 			// mail is new, we create a new filename for it, and create the entry 
 			// in the temp-folder::
 			BString homePath  = ThePrefs->GetString("MailboxPath") 
@@ -687,7 +682,7 @@ bool BmMail::Store() {
 		}
 			
 		// we create the new mailfile...
-		(err = mailFile.SetTo( &mEntry, B_WRITE_ONLY | B_CREATE_FILE)) == B_OK
+		(err = mailFile.SetTo( &mEntry, B_WRITE_ONLY | B_ERASE_FILE | B_CREATE_FILE)) == B_OK
 													|| BM_THROW_RUNTIME( BString("Could not create mail-file\n\t<") << basicFilename << ">\n\n Result: " << strerror(err));
 		// ...set the correct mime-type...
 		(err = mailInfo.SetTo( &mailFile)) == B_OK
@@ -706,8 +701,10 @@ bool BmMail::Store() {
 			}
 		}
 		mailFile.Sync();
-		(err = mEntry.MoveTo( &homeDir)) == B_OK
+		if (createdInTemp) {
+			(err = mEntry.MoveTo( &homeDir)) == B_OK
 													|| BM_THROW_RUNTIME( BString("Could not move mail <")<<basicFilename<<"> to home-folder\n\n Result: " << strerror(err));
+		}
 		if (!mMailRef) {
 			// mail has been freshly created, we add a mail-ref for it:
 			entry_ref eref;
@@ -864,7 +861,7 @@ int32 BmMail::QuoteText( const BString& in, BString& out, BString quoteString,
 	if (!in.Length())
 		return maxLineLen;
 	BString qStyle = ThePrefs->GetString( "QuoteFormatting");
-	if (qStyle == "Auto Wrap")
+	if (qStyle == BM_QUOTE_AUTO_WRAP)
 		return QuoteTextWithReWrap( in, out, quoteString, maxLineLen);
 	BString quote;
 	BString text;
@@ -876,10 +873,13 @@ int32 BmMail::QuoteText( const BString& in, BString& out, BString quoteString,
 	int32 count = rx.exec( Regexx::study | Regexx::global | Regexx::newline);
 	for( int32 i=0; i<count; ++i) {
 		quote = rx.match[i].atom[0];
-		if (qStyle == "Manual") {
-			// always respect maxLineLen, never push right margin:
+		if (qStyle == BM_QUOTE_SIMPLE) {
+			// always respect maxLineLen, wrap when lines exceed right margin.
+			// This results in a combing-effect when long lines are wrapped
+			// around, producing a very short next line.
 			maxTextLen = maxLineLen - quote.Length() - quoteString.Length();
 		} else {
+			// qStyle == BM_QUOTE_PUSH_MARGIN
 			// push right margin for new quote-string, if needed, in effect leaving 
 			// the mail-formatting intact (but possibly exceeding 80 chars per line):
 			maxTextLen = maxLineLen - quote.Length();
@@ -902,7 +902,6 @@ int32 BmMail::QuoteTextWithReWrap( const BString& in, BString& out,
 	out = "";
 	if (!in.Length())
 		return maxLineLen;
-	int maxTextLen = maxLineLen - quoteString.Length();
 	Regexx rx;
 	rx.str( in);
 	rx.expr( ThePrefs->GetString( "QuotingLevelRX"));
@@ -911,7 +910,8 @@ int32 BmMail::QuoteTextWithReWrap( const BString& in, BString& out,
 	BString line;
 	BString quote;
 	Regexx rxl;
-	int minLenForWrappedLine = ThePrefs->GetInt( "MinLenForWrappedLine", 60);
+	int maxTextLen;
+	int minLenForWrappedLine = ThePrefs->GetInt( "MinLenForWrappedLine", 50);
 	bool lastWasSpecialLine = true;
 	int32 lastLineLen = 0;
 	int32 count = rx.exec( Regexx::study | Regexx::global | Regexx::newline);
@@ -922,12 +922,14 @@ int32 BmMail::QuoteTextWithReWrap( const BString& in, BString& out,
 		|| rxl.exec( line, ThePrefs->GetString( "QuotingLevelEmptyLineRX", "^[ \\t]*$"))
 		|| rxl.exec( line, ThePrefs->GetString( "QuotingLevelListLineRX", "^[*+\\-\\d]+.*?$"))) {
 			if (i != 0) {
+				maxTextLen = maxLineLen - currQuote.Length() - quoteString.Length();
 				AddQuotedText( text, out, currQuote, quoteString, maxTextLen);
 				text.Truncate(0);
 			}
 			lastWasSpecialLine = true;
 		} else if (lastWasSpecialLine || currQuote != quote || lastLineLen < minLenForWrappedLine) {
 			if (i != 0) {
+				maxTextLen = maxLineLen - currQuote.Length() - quoteString.Length();
 				AddQuotedText( text, out, currQuote, quoteString, maxTextLen);
 				text.Truncate(0);
 			}
@@ -945,6 +947,7 @@ int32 BmMail::QuoteTextWithReWrap( const BString& in, BString& out,
 			text << " " << line;
 		}
 	}
+	maxTextLen = maxLineLen - currQuote.Length() - quoteString.Length();
 	AddQuotedText( text, out, currQuote, quoteString, maxTextLen);
 	BString emptyLinesAtEndRX = BString("(?:") << quoteString << "(" << currQuote << ")?[ \\t]*\\n)+\\z";
 	out = rx.replace( out, emptyLinesAtEndRX, "", Regexx::newline|Regexx::global|Regexx::noatom);
@@ -962,10 +965,10 @@ int32 BmMail::AddQuotedText( BString& text, BString& out,
 	int32 modifiedMaxLen = 0;
 	BString tmp;
 	while( text.Length() > maxTextLen) {
-		int32 spcPos = text.FindLast( " ", maxTextLen-1);
+		int32 spcPos = text.FindLast( " ", maxTextLen);
 		if (spcPos == B_ERROR)
 			spcPos = maxTextLen;
-		else
+		else if (spcPos < maxTextLen)
 			spcPos++;
 		text.MoveInto( tmp, 0, spcPos);
 		tmp.Prepend( quoteString + quote);

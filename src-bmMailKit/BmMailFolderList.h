@@ -109,6 +109,9 @@ public:
 	void RemoveController( BmController* controller);
 	const BString SettingsFileName();
 
+	// setters:
+	void MailboxPathHasChanged( bool b) { mMailboxPathHasChanged = b; }
+
 	static BmRef< BmMailFolderList> theInstance;
 	
 private:
@@ -129,6 +132,7 @@ private:
 	// the following members will NOT be archived at all:
 	BQuery mNewMailQuery;
 	BmNewNodeMap mNewMailNodeMap;
+	bool mMailboxPathHasChanged;
 
 	// Hide copy-constructor and assignment:
 	BmMailFolderList( const BmMailFolderList&);

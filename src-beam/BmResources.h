@@ -33,6 +33,7 @@
 #define _BmResources_h
 
 #include <map>
+#include <vector>
 
 #include <Directory.h>
 #include <Font.h>
@@ -46,6 +47,9 @@
 class BBitmap;
 class BPicture;
 
+#define BM_FONT_SELECTED 'bmFN'
+#define BM_FONTSIZE_SELECTED 'bmFS'
+
 /*------------------------------------------------------------------------------*\
 	BmResources 
 		-	holds all resources needed by Beam
@@ -53,6 +57,8 @@ class BPicture;
 \*------------------------------------------------------------------------------*/
 class BmResources {
 	typedef map< BString, BBitmap*> BmIconMap;
+	typedef vector< BString> BmFontStyleVect;
+	typedef map< BString, BmFontStyleVect> BmFontMap;
 
 public:
 	// creator-func, c'tors and d'tor:
@@ -82,19 +88,28 @@ public:
 	//
 	void CheckMimeTypeFile( BString sig, time_t appModTime);
 	//
+	void AddFontSubmenuTo( BMenu* menu, BHandler* target=NULL, 
+								  BFont* selectedFont=NULL);
+	//
 	const char* WHITESPACE;
 	PrefilledBitmap mRightArrow;
 	PrefilledBitmap mDownArrow;
 	BString mOwnFQDN;
 
 	static BmResources* theInstance;
-
+	
+	static const char* const BM_MSG_FONT_FAMILY = "fontfamily";
+	static const char* const BM_MSG_FONT_STYLE = "fontstyle";
+	static const char* const BM_MSG_FONT_SIZE = "fontsize";
+	
 private:
 	void FetchIcons();
 	void FetchOwnFQDN();
+	void FetchFonts();
 
 	//
-	BmIconMap IconMap;
+	BmIconMap mIconMap;
+	BmFontMap mFontMap;
 
 	// folders living under settings/Beam/:
 	BDirectory mMailCacheFolder;

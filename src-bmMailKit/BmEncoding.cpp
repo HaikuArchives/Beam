@@ -83,7 +83,9 @@ BmEncoding::BmEncodingPair BmEncoding::BM_Encodings[] = {
 \*------------------------------------------------------------------------------*/
 uint32 BmEncoding::CharsetToEncoding( const BString& charset) {
 	BString set( charset);
-	set.ToLower();
+	if (set.Length())
+		// check introduced for Dano compatibility, otherwise "mysterious things"(TM) happen:
+		set.ToLower();
 	for( int i=0; BM_Encodings[i].charset; ++i)
 		if (charset == BM_Encodings[i].charset)
 			return( BM_Encodings[i].encoding);

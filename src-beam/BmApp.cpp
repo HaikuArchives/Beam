@@ -30,12 +30,14 @@
 
 #include <Alert.h>
 #include <AppFileInfo.h>
+#include <Beep.h>
 #include <Deskbar.h>
 #include <Roster.h>
 #include <Screen.h>
 
 #include <PictureButton.h>
 
+#include "BubbleHelper.h"
 #include "ImageAboutWindow.h"
 
 #include "BmApp.h"
@@ -63,6 +65,10 @@ BmApplication* bmApp = NULL;
 
 const char* BM_DeskbarItemName="Beam_NewMail";
 
+const char* BM_APP_SIG = "application/x-vnd.zooey-Beam";
+
+static const char* BM_BEEP_EVENT = "New E-mail";
+
 /*------------------------------------------------------------------------------*\
 	BmApplication()
 		-	constructor
@@ -71,6 +77,7 @@ BmApplication::BmApplication( const char* sig)
 	:	inherited( sig)
 	,	mIsQuitting( false)
 	,	mInitCheck( B_NO_INIT)
+	,	mMailWin( NULL)
 {
 	if (InstanceCount > 0)
 		throw BM_runtime_error("Trying to initialize more than one instance of class Beam");
@@ -122,14 +129,16 @@ BmApplication::BmApplication( const char* sig)
 		BmSmtpAccountList::CreateInstance( TheJobStatusWin);
 		BmPopAccountList::CreateInstance( TheJobStatusWin);
 
-		mDeskbar = new BDeskbar;
 		BBitmap* deskbarIcon = TheResources->IconByName( "DeskbarIcon");
 		BPicture* deskbarPic = TheResources->CreatePictureFor( deskbarIcon, 16, 16,  B_TRANSPARENT_COLOR, true);
 		mDeskbarView = new BPictureButton( BRect(0,0,15,15), BM_DeskbarItemName, 
 													  deskbarPic, deskbarPic, new BMessage('xxxx'));
 		mDeskbarView->SetViewColor( B_TRANSPARENT_COLOR);
+		add_system_beep_event( BM_BEEP_EVENT);
 
 		BmMainWindow::CreateInstance();
+		
+		TheBubbleHelper.EnableHelp( ThePrefs->GetBool( "ShowTooltips", true));
 
 		mInitCheck = B_OK;
 		InstanceCount++;
@@ -144,8 +153,7 @@ BmApplication::BmApplication( const char* sig)
 		-	standard destructor
 \*------------------------------------------------------------------------------*/
 BmApplication::~BmApplication() {
-	mDeskbar->RemoveItem( BM_DeskbarItemName);
-	delete mDeskbar;
+	mDeskbar.RemoveItem( BM_DeskbarItemName);
 	TheMailFolderList = NULL;
 	ThePopAccountList = NULL;
 	TheSmtpAccountList = NULL;
@@ -425,14 +433,15 @@ void BmApplication::MessageReceived( BMessage* msg) {
 			}
 			case BMM_SHOW_NEWMAIL_ICON: {
 				BM_LOG2( BM_LogAll, "App: asked to show new-mail icon in deskbar");
-				if (!mDeskbar->HasItem( BM_DeskbarItemName)) {
-					mDeskbar->AddItem( mDeskbarView);
+				if (!mDeskbar.HasItem( BM_DeskbarItemName)) {
+					mDeskbar.AddItem( mDeskbarView);
+					system_beep( BM_BEEP_EVENT);
 				}
 				break;
 			}
 			case BMM_HIDE_NEWMAIL_ICON: {
 				BM_LOG2( BM_LogAll, "App: asked to hide new-mail icon from deskbar");
-				mDeskbar->RemoveItem( BM_DeskbarItemName);
+				mDeskbar.RemoveItem( BM_DeskbarItemName);
 				break;
 			}
 			case B_SILENT_RELAUNCH: {

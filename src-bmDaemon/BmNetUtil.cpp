@@ -51,8 +51,13 @@ BString OwnFQDN() {
 	hostname[MAXHOSTNAMELEN] = '\0';
 	int result;
 	if ((result=gethostname( hostname, MAXHOSTNAMELEN)) < GETHOSTNAME_OK) {
-		BM_SHOWERR("Sorry, could not determine name of this host, giving up.");
-		return "";
+		// in case we can't get a hostname, we try the network-settings
+		if (TheResources->mOwnFQDN.Length())
+			return TheResources->mOwnFQDN;		// FQDN that was built from network settings file
+		else {
+			BM_SHOWERR("Sorry, could not determine name of this host, giving up.");
+			return "";
+		}
 	}
 	hostent *hptr;
 	// in case we can't get a FQDN by means of gethostbyname, we try the network-settings

@@ -50,6 +50,7 @@ class HGroup;
 class MPictureButton;
 class Space;
 class VGroup;
+class BFilePanel;
 
 class BmMailEditWin : public BmWindow
 {
@@ -124,6 +125,8 @@ private:
 	Space* mSeparator;
 	bool mModified;
 	bool mHasNeverBeenSaved;
+
+	BFilePanel* mAttachPanel;
 
 	static float nNextXPos;
 	static float nNextYPos;

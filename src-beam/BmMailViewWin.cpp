@@ -46,6 +46,7 @@
 	using namespace BmEncoding;
 #include "BmGuiUtil.h"
 #include "BmLogHandler.h"
+#include "BmMailHeaderView.h"
 #include "BmMailRef.h"
 #include "BmMailRefView.h"
 #include "BmMailView.h"

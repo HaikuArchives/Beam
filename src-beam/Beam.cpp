@@ -32,7 +32,7 @@
 
 int main()
 {
-	BmApplication* app = new BmApplication("application/x-vnd.zooey-Beam");
+	BmApplication* app = new BmApplication( BM_APP_SIG);
 	app->Run();
 	delete app;
 }

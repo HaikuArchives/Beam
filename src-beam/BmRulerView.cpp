@@ -62,6 +62,16 @@ BmRulerView::~BmRulerView() {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
+void BmRulerView::SetMailViewFont( const BFont& font) {
+	mMailViewFont = font;
+	mSingleCharWidth = mMailViewFont.StringWidth( "W");
+	Invalidate();
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
 void BmRulerView::Draw( BRect bounds) {
 	inherited::Draw( bounds);
 	
@@ -110,10 +120,10 @@ void BmRulerView::MouseDown( BPoint point) {
 	inherited::MouseDown( point); 
 	if (Parent())
 		Parent()->MakeFocus( true);
-	BPoint mousePos;
-	uint32 buttons;
-	GetMouse( &mousePos, &buttons);
-	if (buttons == B_PRIMARY_MOUSE_BUTTON) {
+	BMessage* msg = Looper()->CurrentMessage();
+	int32 buttons;
+	if (msg->FindInt32( "buttons", &buttons) == B_OK 
+	&& buttons == B_PRIMARY_MOUSE_BUTTON) {
 		if (!mIndicatorGrabbed) {
 			mIndicatorGrabbed = true;
 			SetIndicatorPixelPos( point.x);

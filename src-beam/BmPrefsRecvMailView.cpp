@@ -33,6 +33,7 @@
 
 #include <layout-all.h>
 
+#include "BubbleHelper.h"
 #include "Colors.h"
 #include "ColumnListView.h"
 #include "CLVEasyItem.h"
@@ -365,6 +366,41 @@ BmPrefsRecvMailView::~BmPrefsRecvMailView() {
 \*------------------------------------------------------------------------------*/
 void BmPrefsRecvMailView::Initialize() {
 	inherited::Initialize();
+
+	TheBubbleHelper.SetHelp( mAccListView, "This listview shows every POP3-account you have defined.");
+	TheBubbleHelper.SetHelp( mAccountControl, "Here you can enter a name for this POP3-account.\nThis name is used to identify this account in Beam.");
+	TheBubbleHelper.SetHelp( mAliasesControl, "Some email-providers allow definition of aliases for mail-accounts.\n\
+In this case mails addressed to any of the aliases will be delivered\n\
+to the real account. If you have defined such aliases, you can enter them here.\n\n\
+(This information is used by Beam when trying to determine the mail-account to use\n\
+when replying to mails that were addressed to one of the aliases).");
+	TheBubbleHelper.SetHelp( mLoginControl, "Here you can enter the username which \nwill be used during authentication.");
+	TheBubbleHelper.SetHelp( mMailAddrControl, "Here you can define the mail-address this account will use.\nBeam creates the mail-address automatically, \nbut you can override this by specifying the address here.");
+	TheBubbleHelper.SetHelp( mPwdControl, "Here you can enter the password which \nwill be used during authentication.\n(You can only edit this field if you checked 'Store Password on Disk').");
+	TheBubbleHelper.SetHelp( mRealNameControl, "Please enter your real name here (e.g. 'Bob Meyer').");
+	TheBubbleHelper.SetHelp( mServerControl, "Please enter the full name of the POP3-server \ninto this field (e.g. 'pop.xxx.org').");
+	TheBubbleHelper.SetHelp( mPortControl, "Please enter the POP3-port of the server \ninto this field (usually 110).");
+	TheBubbleHelper.SetHelp( mCheckAccountControl, "Check this if you want to check this account \nwhen pressing the 'Check'-button.");
+	TheBubbleHelper.SetHelp( mCheckEveryControl, "Check this if you want to check this account \nin regular intervals.");
+	TheBubbleHelper.SetHelp( mCheckIntervalControl, "Here you can enter the interval (in minutes)\n between automatic checks.");
+	TheBubbleHelper.SetHelp( mIsBucketControl, "Check this if this account is a fallback account, \n\
+i.e. if this account receives all undeliverable mails\n\
+for a specific domain.\n\
+(Beam uses this information when trying to determine\n\
+the account to use when replying to mails).");
+	TheBubbleHelper.SetHelp( mIsDefaultControl, "Checking this makes Beam use this account \nas the default account.");
+	TheBubbleHelper.SetHelp( mRemoveMailControl, "Checking this makes Beam remove each mail \nfrom the server after retrieving them.");
+	TheBubbleHelper.SetHelp( mStorePwdControl, "Checking this allows Beam to store the given \n\
+password unsafely on disk.\n\
+If you uncheck this, Beam will ask you for the password\n\
+everytime you use this account.");
+	TheBubbleHelper.SetHelp( mAuthControl, "Here you can select the authentication type to use:\n\
+POP3  -  is the standard mode, which sends passwords in cleartext\n\
+APOP  -  is a somewhat safer mode, passwords are encrypted.");
+	TheBubbleHelper.SetHelp( mSignatureControl, "Here you can select the signature to be used \n\
+for every mail sent from this account.");
+	TheBubbleHelper.SetHelp( mSmtpControl, "Here you can select the SMTP-account that shall be used\n\
+to send mails from this account.");
 
 	mAccountControl->SetTarget( this);
 	mAliasesControl->SetTarget( this);
