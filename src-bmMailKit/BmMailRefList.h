@@ -63,6 +63,8 @@ public:
 	void RemoveController( BmController* controller);
 	const BmString SettingsFileName();
 	int16 ArchiveVersion() const			{ return nArchiveVersion; }
+	void TellModelItemAdded( BmListModelItem* item);
+	void TellModelItemRemoved( BmListModelItem* item);
 	
 	// getters:
 	inline bool NeedsCacheUpdate() const

@@ -211,11 +211,18 @@ bool BmMailRefList::StartJob() {
 			}
 		}
 		if (cacheFileUpToDate) {
-			// ...ok, cache-file should contain up-to-date info, we fetch our data from it:
-			MyInstantiateItems( &cacheFile, FindMsgInt32( &msg, BmListModelItem::MSG_NUMCHILDREN));
+			// ...ok, cache-file should contain up-to-date info, 
+			// we fetch our data from it:
+			MyInstantiateItems( 
+				&cacheFile, 
+				FindMsgInt32( 
+					&msg, 
+					BmListModelItem::MSG_NUMCHILDREN
+				)
+			);
 		} else {
-			// ...caching disabled or no cache file found or update required/requested, 
-			// we fetch the existing mails from disk...
+			// ...caching disabled or no cache file found or update 
+			// required/requested, we fetch the existing mails from disk...
 			InitializeItems();
 		}
 
@@ -255,13 +262,16 @@ void BmMailRefList::InitializeItems() {
 
 	BmRef<BmMailFolder> folder( mFolder.Get());	
 							// hold a ref on the corresponding folder while we use it
-	BM_LOG( BM_LogMailTracking, BmString("Start of InitializeMailRefs() for folder ") << folder->Name());
+	BM_LOG( BM_LogMailTracking, 
+			  BmString("Start of InitializeMailRefs() for folder ") 
+			  		<< folder->Name());
 
 	// we create a BDirectory from the given mail-folder...
 	mailDir.SetTo( folder->EntryRefPtr());
 
 	// ...and scan through all its entries for mails:
-	while (!stopped && (count = mailDir.GetNextDirents((dirent* )buf, 4096)) > 0) {
+	while (!stopped 
+	&& (count = mailDir.GetNextDirents((dirent* )buf, 4096)) > 0) {
 		dent = (dirent* )buf;
 		while (!stopped && count-- > 0) {
 			if (!strcmp(dent->d_name, ".") || !strcmp(dent->d_name, ".."))
@@ -274,7 +284,9 @@ void BmMailRefList::InitializeItems() {
 				);
 			if (S_ISREG( st.st_mode)) {
 				// we have found a new mail, so we add it to our list:
-				BM_LOG3( BM_LogMailTracking, BmString("Mail <") << dent->d_name << "," << dent->d_ino << "> found ");
+				BM_LOG3( BM_LogMailTracking, 
+							BmString("Mail <") << dent->d_name << "," << dent->d_ino 
+								<< "> found ");
 				eref.device = dent->d_pdev;
 				eref.directory = dent->d_pino;
 				eref.set_name( dent->d_name);
@@ -286,14 +298,19 @@ void BmMailRefList::InitializeItems() {
 
 			if (!ShouldContinue()) {
 				stopped = true;
-				BM_LOG2( BM_LogMailTracking, BmString("InitializeMailRefs() stopped for folder ") << folder->Name());
+				BM_LOG2( BM_LogMailTracking, 
+							BmString("InitializeMailRefs() stopped for folder ") 
+								<< folder->Name());
 			}
 		}
 	}
-	BM_LOG( BM_LogMailTracking, BmString("End of InitializeMailRefs() for folder ") << folder->Name());
+	BM_LOG( BM_LogMailTracking, 
+			  BmString("End of InitializeMailRefs() for folder ") 
+			  		<< folder->Name());
 	if (stopped) {
 		Cleanup();
 	} else {
+		folder->MailCount( size());
 		mNeedsCacheUpdate = false;
 		mNeedsStore = true;
 		mInitCheck = B_OK;
@@ -307,37 +324,76 @@ void BmMailRefList::InitializeItems() {
 void BmMailRefList::MyInstantiateItems( BDataIO* dataIO, int32 numChildren) {
 	BmRef<BmMailFolder> folder( mFolder.Get());	
 							// hold a ref on the corresponding folder while we use it
-	BM_LOG( BM_LogMailTracking, BmString("Start of InstantiateMailRefs() for folder ") << folder->Name());
+	BM_LOG( BM_LogMailTracking, 
+			  BmString("Start of InstantiateMailRefs() for folder ") 
+			  		<< folder->Name());
 	bool stopped = false;
 	BMessage msg;
 	for( int i=0; !stopped && i<numChildren; ++i) {
 		if (msg.Unflatten( dataIO) != B_OK) {
-			BM_SHOWERR( "Could not read all messages from cache file. Please recreate cache.");
+			BM_SHOWERR( "Could not read all messages from cache file. "
+							"Please recreate cache.");
 			break;
 		}
 		BmRef<BmMailRef> newRef( BmMailRef::CreateInstance( &msg, this));
-		BM_LOG3( BM_LogMailTracking, BmString("MailRef <") << newRef->TrackerName() << "," << newRef->Key() << "> read");
+		BM_LOG3( BM_LogMailTracking, 
+					BmString("MailRef <") << newRef->TrackerName() << "," 
+						<< newRef->Key() << "> read");
 		AddItemToList( newRef.Get());
 
 		if (!ShouldContinue()) {
 			stopped = true;
-			BM_LOG2( BM_LogMailTracking, BmString("InstantiateMailRefs() stopped for folder ") << folder->Name());
+			BM_LOG2( BM_LogMailTracking, 
+						BmString("InstantiateMailRefs() stopped for folder ") 
+							<< folder->Name());
 		}
 	}
-	BM_LOG( BM_LogMailTracking, BmString("End of InstantiateMailRefs() for folder ") << folder->Name());
+	BM_LOG( BM_LogMailTracking, 
+			  BmString("End of InstantiateMailRefs() for folder ") 
+			  		<< folder->Name());
 	if (stopped) {
 		Cleanup();
 	} else {
+		folder->MailCount( size());
 		mNeedsCacheUpdate = false;
-		mNeedsStore = false;					// overrule changes caused from reading the cache
+		mNeedsStore = false;
+							// overrule changes caused from reading the cache
 		mInitCheck = B_OK;
 	}
 }
 
 /*------------------------------------------------------------------------------*\
+	TellModelItemAdded( item)
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailRefList::TellModelItemAdded( BmListModelItem* item) {
+	if (Frozen() || !item->ItemIsValid())
+		return;
+	inherited::TellModelItemAdded( item);
+	BmRef<BmMailFolder> folder( mFolder.Get());	
+							// hold a ref on the corresponding folder while we use it
+	if (folder)
+		folder->MailCount( size());
+}
+
+/*------------------------------------------------------------------------------*\
+	TellModelItemRemoved( item)
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailRefList::TellModelItemRemoved( BmListModelItem* item) {
+	if (Frozen() || !item->ItemIsValid())
+		return;
+	inherited::TellModelItemRemoved( item);
+	BmRef<BmMailFolder> folder( mFolder.Get());	
+							// hold a ref on the corresponding folder while we use it
+	if (folder)
+		folder->MailCount( size());
+}
+
+/*------------------------------------------------------------------------------*\
 	RemoveController()
-		-	deletes DataModel if it has no more controllers and if the list-caching
-			is deactivated
+		-	deletes DataModel if it has no more controllers and if the 
+			list-caching is deactivated
 \*------------------------------------------------------------------------------*/
 void BmMailRefList::RemoveController( BmController* controller) {
 	inherited::RemoveController( controller);

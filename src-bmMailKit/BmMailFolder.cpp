@@ -48,6 +48,7 @@ BLocker BmMailFolder::nRefListLocker( "RefListLocker");
 const char* const BmMailFolder::MSG_ENTRYREF = 		"bm:eref";
 const char* const BmMailFolder::MSG_INODE = 			"bm:inod";
 const char* const BmMailFolder::MSG_LASTMODIFIED = "bm:lmod";
+const char* const BmMailFolder::MSG_MAILCOUNT = 	"bm:mcnt";
 
 //	message component definitions for status-msgs:
 const char* const BmMailFolder::MSG_NAME = 			"bm:fname";
@@ -59,14 +60,15 @@ const BmUpdFlags BmMailFolder::UPD_NEW_STATUS = 	1<<2;
 	BmMailFolder( eref, parent, modified)
 		-	standard c'tor
 \*------------------------------------------------------------------------------*/
-BmMailFolder::BmMailFolder( BmMailFolderList* model, entry_ref &eref, ino_t node, 
-									 BmMailFolder* parent, time_t &modified)
+BmMailFolder::BmMailFolder( BmMailFolderList* model, entry_ref &eref, 
+									 ino_t node, BmMailFolder* parent, time_t &modified)
 	:	inherited( BmString() << node, model, parent)
 	,	mEntryRef( eref)
 	,	mLastModified( modified)
 	,	mMailRefList( NULL)
 	,	mNewMailCount( 0)
 	,	mNewMailCountForSubfolders( 0)
+	,	mMailCount( -1)
 	,	mName( eref.name)
 {
 	mNodeRef.node = node;
@@ -78,13 +80,18 @@ BmMailFolder::BmMailFolder( BmMailFolderList* model, entry_ref &eref, ino_t node
 	BmMailFolder( archive)
 		-	unarchive c'tor
 \*------------------------------------------------------------------------------*/
-BmMailFolder::BmMailFolder( BMessage* archive, BmMailFolderList* model, BmMailFolder* parent)
+BmMailFolder::BmMailFolder( BMessage* archive, BmMailFolderList* model, 
+									 BmMailFolder* parent)
 	:	inherited( "", model, parent)
 	,	mMailRefList( NULL)
 	,	mNewMailCount( 0)
 	,	mNewMailCountForSubfolders( 0)
+	,	mMailCount( -1)
 {
 	try {
+		int16 version;
+		if (archive->FindInt16( MSG_VERSION, &version) != B_OK)
+			version = 0;
 		status_t err;
 		if ((err = archive->FindRef( MSG_ENTRYREF, &mEntryRef)) != B_OK)
 			BM_THROW_RUNTIME( BmString("BmMailFolder: Could not find msg-field ") 
@@ -100,6 +107,8 @@ BmMailFolder::BmMailFolder( BMessage* archive, BmMailFolderList* model, BmMailFo
 		mLastModified = FindMsgInt32( archive, MSG_LASTMODIFIED);
 		Key( BM_REFKEY( mNodeRef));
 		mName = mEntryRef.name;
+		if (version > 1)
+			mMailCount = FindMsgInt32( archive, MSG_MAILCOUNT);
 		StartNodeMonitor();
 	} catch (BM_error &e) {
 		BM_SHOWERR( e.what());
@@ -140,8 +149,10 @@ status_t BmMailFolder::Archive( BMessage* archive, bool deep) const {
 		|| archive->AddRef( MSG_ENTRYREF, &mEntryRef)
 		|| archive->AddInt64( MSG_INODE, mNodeRef.node)
 		|| archive->AddInt32( MSG_LASTMODIFIED, time(NULL))
-							// bump time to the last time folder-cache has been written
-		|| archive->AddInt32( MSG_NUMCHILDREN, size());
+							// bump time to the last time folder-cache has 
+							// been written
+		|| archive->AddInt32( MSG_NUMCHILDREN, size())
+		|| archive->AddInt32( MSG_MAILCOUNT, mMailCount);
 	if (deep && ret == B_OK) {
 		BmModelItemMap::const_iterator pos;
 		for( pos = begin(); pos != end(); ++pos) {
@@ -181,13 +192,17 @@ bool BmMailFolder::CheckIfModifiedSince( time_t when, time_t* storeNewModTime) {
 		BM_THROW_RUNTIME( BmString("Could not access \nmail-folder <") << Name() 
 									<< "> \n\nError:" << strerror(err));
 	time_t mtime;
-	BM_LOG3( BM_LogMailTracking, "BmMailFolder::CheckIfModifiedSince() - getting modification time");
+	BM_LOG3( BM_LogMailTracking, 
+				"BmMailFolder::CheckIfModifiedSince() - getting modification time");
 	if ((err = mailDir.GetModificationTime( &mtime)) != B_OK)
 		BM_THROW_RUNTIME( BmString("Could not get mtime \nfor mail-folder <") 
 									<< Name() << "> \n\nError:" << strerror(err));
-	BM_LOG3( BM_LogMailTracking, BmString("checking if ") << Name() << ": (" << mtime << " > " << when << ")");
+	BM_LOG3( BM_LogMailTracking, 
+				BmString("checking if ") << Name() << ": (" << mtime << " > " 
+					<< when << ")");
 	if (mtime > when) {
-		BM_LOG2( BM_LogMailTracking, BmString("Mtime of folder <")<<Name()<<"> has changed!");
+		BM_LOG2( BM_LogMailTracking, 
+					BmString("Mtime of folder <")<<Name()<<"> has changed!");
 		if (storeNewModTime)
 			*storeNewModTime = mtime;
 		hasChanged = true;
@@ -266,7 +281,9 @@ void BmMailFolder::RemoveMailRefList() {
 void BmMailFolder::CleanupForMailRefList( BmMailRefList* refList) {
 	BmAutolockCheckGlobal lock( nRefListLocker);
 	if (!lock.IsLocked())
-		BM_THROW_RUNTIME( Name() + ":CleanupForMailRefList(): Unable to get lock");
+		BM_THROW_RUNTIME( 
+			Name() + ":CleanupForMailRefList(): Unable to get lock"
+		);
 	if (mMailRefList == refList)
 		RemoveMailRefList();
 }
@@ -281,7 +298,8 @@ void BmMailFolder::UpdateName( const entry_ref& eref) {
 	// ...determine path to folder (but skip root-folder):
 	BmString path;
 	BmListModelItem* curr;
-	for( curr = Parent().Get(); curr && curr->Parent(); curr = curr->Parent().Get()) {
+	for(	curr = Parent().Get(); 
+			curr && curr->Parent(); curr = curr->Parent().Get()) {
 		if (!path.Length())
 			path.Prepend( curr->DisplayKey());
 		else		
@@ -292,8 +310,10 @@ void BmMailFolder::UpdateName( const entry_ref& eref) {
 	EntryRef( eref);
 	TheMailFolderList->TellModelItemUpdated( this, UPD_KEY|UPD_SORT);
 	// adjust foreign keys:
-	TheMailFolderList->AdjustForeignKeys( path.Length() ? path + "/" + oldName : oldName,
-							 						  path.Length() ? path + "/" + mName : mName);
+	TheMailFolderList->AdjustForeignKeys( 
+		path.Length() ? path + "/" + oldName : oldName,
+		path.Length() ? path + "/" + mName : mName
+	);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -312,8 +332,8 @@ void BmMailFolder::RecreateCache() {
 
 /*------------------------------------------------------------------------------*\
 	AddMailRef( eref, st)
-		-	adds the mail-ref specified by the given entry_ref to this folder's mailref-
-			list
+		-	adds the mail-ref specified by the given entry_ref to this folder's 
+			mailref-list
 		-	the param st contains the mail-ref's stat-info
 \*------------------------------------------------------------------------------*/
 void BmMailFolder::AddMailRef( entry_ref& eref, struct stat& st) {
@@ -379,7 +399,8 @@ void BmMailFolder::RemoveMailRef( const node_ref& nref) {
 		}
 	}
 	// if mail-ref is flagged new, we have to tell the mailfolderlist that we no 
-	// longer own this new-mail and decrement our new-mail-counter (causing an update):
+	// longer own this new-mail and decrement our new-mail-counter 
+	// (causing an update):
 	if (TheMailFolderList->NodeIsFlaggedNew( nref))
 		TheMailFolderList->SetFolderForNodeFlaggedNew( nref, NULL);
 }

@@ -40,7 +40,8 @@
 \*------------------------------------------------------------------------------*/
 enum {
 	BM_NTFY_MAILFOLDER_SELECTION = 'bmbb'
-						// sent from BmMailFolderView to observers whenever selection changes
+						// sent from BmMailFolderView to observers whenever 
+						// selection changes
 };
 
 /*------------------------------------------------------------------------------*\
@@ -53,15 +54,17 @@ class BmMailFolderItem : public BmListViewItem
 
 public:
 	// c'tors and d'tor:
-	BmMailFolderItem( const BmString& key, BmListModelItem* item, bool superitem, 
+	BmMailFolderItem( const BmString& key, BmListModelItem* item, bool superitem,
 							BMessage* archive);
 	~BmMailFolderItem();
 
 	// overrides of listitem base:
-	BmMailFolder* ModelItem() const	{ return dynamic_cast<BmMailFolder*>(mModelItem.Get()); }
+	BmMailFolder* ModelItem() const	{ return dynamic_cast<BmMailFolder*>(
+																				mModelItem.Get()); }
 	void UpdateView( BmUpdFlags flags);
 
-	static int CompareItems( const CLVListItem *a_Item1, const CLVListItem *a_Item2,
+	static int CompareItems( const CLVListItem *a_Item1, 
+									 const CLVListItem *a_Item2,
 									 int32 KeyColumn, int32 col_flags);
 
 private:
@@ -87,12 +90,14 @@ public:
 	static const char* const MSG_HAVE_SELECTED_FOLDER;
 
 	// creator-func, c'tors and d'tor:
-	static BmMailFolderView* CreateInstance(  minimax minmax, int32 width, int32 height);
+	static BmMailFolderView* CreateInstance(  minimax minmax, int32 width, 
+															int32 height);
 	BmMailFolderView(  minimax minmax, int32 width, int32 height);
 	~BmMailFolderView();
 
 	// native methods:
-	BmListViewItem* CreateListViewItem( BmListModelItem* item, BMessage* archive=NULL);
+	BmListViewItem* CreateListViewItem( BmListModelItem* item, 
+													BMessage* archive=NULL);
 	void ShowMenu( BPoint point);
 	inline void TeamUpWith( BmMailRefView* mrv) 	{ mPartnerMailRefView = mrv; }
 	void SendNoticesIfNeeded( bool haveSelectedFolder);

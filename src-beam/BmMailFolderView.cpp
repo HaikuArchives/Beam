@@ -55,14 +55,17 @@
 enum Columns {
 	COL_EXPANDER = 0,
 	COL_ICON,
-	COL_NAME
+	COL_NAME,
+	COL_NEW_COUNT,
+	COL_TOTAL_COUNT
 };
 
 /*------------------------------------------------------------------------------*\
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmMailFolderItem::BmMailFolderItem( const BmString& key, BmListModelItem* _item, 
+BmMailFolderItem::BmMailFolderItem( const BmString& key, 
+												BmListModelItem* _item, 
 												bool, BMessage* archive)
 	:	inherited( key, _item, true, archive)
 {
@@ -86,16 +89,35 @@ void BmMailFolderItem::UpdateView( BmUpdFlags flags) {
 	if (!folder)
 		return;
 	if (flags & (UPD_EXPANDER  | UPD_KEY | BmMailFolder::UPD_NEW_STATUS)) {
-		Bold( folder->NewMailCount());
+		Bold( IsExpanded() 
+					? folder->NewMailCount()
+					: folder->HasNewMail());
 		BmString displayName = folder->Name();
-		if (folder->HasNewMail()) {
-			int32 count = folder->NewMailCount();
-			if (folder->NewMailCountForSubfolders() && !IsExpanded())
-	 			count += folder->NewMailCountForSubfolders();
+		if (folder->HasNewMail()
+		&&	folder->NewMailCountForSubfolders() && !IsExpanded()) {
+ 			int32 count = folder->NewMailCountForSubfolders();
 	 		if (count)
 				displayName << " - (" << count << ")";
 		}
 		SetColumnContent( COL_NAME, displayName.String(), false);
+		BmString newCountStr;
+		int32 newCount = folder->NewMailCount();
+		if (newCount == 0)
+			newCountStr = "-";
+		else if (newCount < 0)
+			newCountStr = "?";
+		else
+			newCountStr << newCount;
+		BmString totalCountStr;
+		int32 totalCount = folder->MailCount();
+		if (totalCount == 0)
+			totalCountStr = "-";
+		else if (totalCount < 0)
+			totalCountStr = "?";
+		else
+			totalCountStr << totalCount;
+		SetColumnContent( COL_NEW_COUNT, newCountStr.String(), true);
+		SetColumnContent( COL_TOTAL_COUNT, totalCountStr.String(), true);
 		BBitmap* icon;
 		if (folder->NewMailCount())
 			icon = TheResources->IconByName("Folder_WithNew");
@@ -114,8 +136,10 @@ int BmMailFolderItem::CompareItems( const CLVListItem *a_Item1,
 											   int32 KeyColumn, int32 col_flags) {
 	if (ThePrefs->GetBool("InOutAlwaysAtTop", false)) {
 		// handle special case for in & out-folders to be fixed at top:
-		const BmMailFolderItem* item1 = dynamic_cast<const BmMailFolderItem*>(a_Item1);
-		const BmMailFolderItem* item2 = dynamic_cast<const BmMailFolderItem*>(a_Item2);
+		const BmMailFolderItem* item1 
+			= dynamic_cast<const BmMailFolderItem*>(a_Item1);
+		const BmMailFolderItem* item2 
+			= dynamic_cast<const BmMailFolderItem*>(a_Item2);
 		if (item1 == NULL || item2 == NULL)
 			return 0;
 		BmMailFolder* folder1( item1->ModelItem());
@@ -123,20 +147,27 @@ int BmMailFolderItem::CompareItems( const CLVListItem *a_Item1,
 		if (folder1 == NULL || folder2 == NULL)
 			return 0;
 			
-		CLVSortMode sortmode = TheMailFolderView->ColumnAt( KeyColumn)->SortMode();
+		CLVSortMode sortmode 
+			= TheMailFolderView->ColumnAt( KeyColumn)->SortMode();
 		int32 rev = sortmode == Ascending ? 1 : -1;
 	
-		if (folder1->Name().ICompare("in")==0 || folder1->Name().ICompare("in ",3)==0)
+		if (folder1->Name().ICompare("in")==0 
+		|| folder1->Name().ICompare("in ",3)==0)
 			return -1 * rev;
-		if (folder2->Name().ICompare("in")==0 || folder2->Name().ICompare("in ",3)==0)
+		if (folder2->Name().ICompare("in")==0 
+		|| folder2->Name().ICompare("in ",3)==0)
 			return 1 * rev;
-		if (folder1->Name().ICompare("out")==0 || folder1->Name().ICompare("out ",4)==0)
+		if (folder1->Name().ICompare("out")==0 
+		|| folder1->Name().ICompare("out ",4)==0)
 			return -1 * rev;
-		if (folder2->Name().ICompare("out")==0 || folder2->Name().ICompare("out ",4)==0)
+		if (folder2->Name().ICompare("out")==0 
+		|| folder2->Name().ICompare("out ",4)==0)
 			return 1 * rev;
-		if (folder1->Name().ICompare("draft")==0 || folder1->Name().ICompare("draft ",5)==0)
+		if (folder1->Name().ICompare("draft")==0 
+		|| folder1->Name().ICompare("draft ",5)==0)
 			return -1 * rev;
-		if (folder2->Name().ICompare("draft")==0 || folder2->Name().ICompare("draft ",5)==0)
+		if (folder2->Name().ICompare("draft")==0 
+		|| folder2->Name().ICompare("draft ",5)==0)
 			return 1 * rev;
 	}
 	return CLVEasyItem::CompareItems( a_Item1, a_Item2, KeyColumn, col_flags);
@@ -157,7 +188,9 @@ BmMailFolderView* BmMailFolderView::theInstance = NULL;
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmMailFolderView* BmMailFolderView::CreateInstance( minimax minmax, int32 width, int32 height) {
+BmMailFolderView* BmMailFolderView::CreateInstance( minimax minmax, 
+																	 int32 width, 
+																	 int32 height) {
 	if (theInstance)
 		return theInstance;
 	else 
@@ -169,18 +202,26 @@ BmMailFolderView* BmMailFolderView::CreateInstance( minimax minmax, int32 width,
 		-	
 \*------------------------------------------------------------------------------*/
 BmMailFolderView::BmMailFolderView( minimax minmax, int32 width, int32 height)
-	:	inherited( minmax, BRect(0,0,width-1,height-1), "Beam_FolderView", B_SINGLE_SELECTION_LIST, 
-					  true, true, true, true)
+	:	inherited( minmax, BRect(0,0,width-1,height-1), "Beam_FolderView", 
+					  B_SINGLE_SELECTION_LIST, true, true, true, true)
 	,	mPartnerMailRefView( NULL)
 	,	mHaveSelectedFolder( false)
 {
-	Initialize( BRect( 0,0,width-1,height-1), B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE,
+	Initialize( BRect( 0,0,width-1,height-1), 
+					B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE,
 					B_FOLLOW_TOP_BOTTOM, true, true, true, B_FANCY_BORDER);
 	AddColumn( new CLVColumn( NULL, 10.0, 
-									  CLV_EXPANDER | CLV_LOCK_AT_BEGINNING | CLV_NOT_MOVABLE, 10.0));
-	AddColumn( new CLVColumn( NULL, 18.0, CLV_LOCK_AT_BEGINNING | CLV_NOT_MOVABLE 
-									  | CLV_NOT_RESIZABLE | CLV_PUSH_PASS | CLV_MERGE_WITH_RIGHT, 18.0));
-	AddColumn( new CLVColumn( "Folders", 300.0, CLV_SORT_KEYABLE | CLV_NOT_RESIZABLE | CLV_NOT_MOVABLE, 300.0));
+									  CLV_EXPANDER | CLV_LOCK_AT_BEGINNING 
+									  | CLV_NOT_MOVABLE, 10.0));
+	AddColumn( new CLVColumn( NULL, 18.0, 
+									  CLV_LOCK_AT_BEGINNING | CLV_NOT_MOVABLE 
+									  | CLV_NOT_RESIZABLE | CLV_PUSH_PASS 
+									  | CLV_MERGE_WITH_RIGHT, 18.0));
+	AddColumn( new CLVColumn( "Folders", 100.0, 
+									  CLV_SORT_KEYABLE | CLV_LOCK_AT_BEGINNING 
+									  | CLV_NOT_MOVABLE, 50.0));
+	AddColumn( new CLVColumn( "New", 30.0, CLV_RIGHT_JUSTIFIED, 20.0));
+	AddColumn( new CLVColumn( "Mails", 30.0, CLV_RIGHT_JUSTIFIED, 20.0));
 	SetSortFunction( BmMailFolderItem::CompareItems);
 	SetSortKey( COL_NAME);
 }
@@ -244,11 +285,15 @@ void BmMailFolderView::HandleDrop( const BMessage* msg) {
 	static int jobNum = 1;
 	if (msg && mCurrHighlightItem
 	&& (msg->what == B_SIMPLE_DATA)) {
-		BmMailFolder* folder( dynamic_cast<BmMailFolder*>( mCurrHighlightItem->ModelItem()));
+		BmMailFolder* folder( 
+			dynamic_cast<BmMailFolder*>( mCurrHighlightItem->ModelItem())
+		);
 		if (folder) {
 			BMessage tmpMsg( BM_JOBWIN_MOVEMAILS);
 			entry_ref eref;
-			for( int i=0; msg->FindRef( BmMailMover::MSG_REFS, i, &eref)==B_OK; ++i) {
+			for(	int i=0; 
+					msg->FindRef( BmMailMover::MSG_REFS, i, &eref)==B_OK; 
+					++i) {
 				tmpMsg.AddRef( BmMailMover::MSG_REFS, &eref);
 			}
 			BmString jobName = folder->Name();
@@ -283,8 +328,8 @@ void BmMailFolderView::MouseDown( BPoint point) {
 /*------------------------------------------------------------------------------*\
 	JobIsDone( completed)
 		-	Hook function that is called whenever the jobmodel associated to this 
-			controller indicates that it is done (meaning: the list has been fetched
-			and is now ready to be displayed).
+			controller indicates that it is done (meaning: the list has been 
+			fetched and is now ready to be displayed).
 \*------------------------------------------------------------------------------*/
 void BmMailFolderView::JobIsDone( bool completed) {
 	inherited::JobIsDone( completed);
@@ -305,7 +350,8 @@ void BmMailFolderView::JobIsDone( bool completed) {
 void BmMailFolderView::KeyDown(const char *bytes, int32 numBytes) {
 	if ( numBytes == 1 ) {
 		switch( bytes[0]) {
-			// implement remote navigation within ref-/mail-view (via cursor-keys with modifiers):
+			// implement remote navigation within ref-/mail-view 
+			// (via cursor-keys with modifiers):
 			case B_PAGE_UP:
 			case B_PAGE_DOWN:
 			case B_UP_ARROW:
@@ -346,11 +392,15 @@ void BmMailFolderView::MessageReceived( BMessage* msg) {
 					return;
 				if (msg->FindInt32( "which", &buttonPressed) != B_OK) {
 					// first step, ask user about it:
-					TextEntryAlert* alert = new TextEntryAlert( "New Mail-Folder", 
-																		  	  "Enter name of new folder:",
-												 							  "", "Cancel", "OK");
+					TextEntryAlert* alert = new TextEntryAlert( 
+						"New Mail-Folder", 
+						"Enter name of new folder:",
+						"", "Cancel", "OK"
+					);
 					alert->SetShortcut( 0, B_ESCAPE);
-					alert->Go( new BInvoker( new BMessage(BMM_NEW_MAILFOLDER), BMessenger( this)));
+					alert->Go( new BInvoker( 
+						new BMessage(BMM_NEW_MAILFOLDER), BMessenger( this)
+					));
 				} else {
 					// second step, do it if user said ok:
 					if (buttonPressed == 1) {
@@ -367,11 +417,15 @@ void BmMailFolderView::MessageReceived( BMessage* msg) {
 					return;
 				if (msg->FindInt32( "which", &buttonPressed) != B_OK) {
 					// first step, ask user about it:
-					TextEntryAlert* alert = new TextEntryAlert( "Rename Mail-Folder", 
-																			  "Enter new name for folder:",
-												 							  folder->Name().String(), "Cancel", "OK");
+					TextEntryAlert* alert = new TextEntryAlert( 
+						"Rename Mail-Folder", 
+						"Enter new name for folder:",
+						folder->Name().String(), "Cancel", "OK"
+					);
 					alert->SetShortcut( 0, B_ESCAPE);
-					alert->Go( new BInvoker( new BMessage(BMM_RENAME_MAILFOLDER), BMessenger( this)));
+					alert->Go( new BInvoker( 
+						new BMessage(BMM_RENAME_MAILFOLDER), BMessenger( this)
+					));
 				} else {
 					// second step, do it if user said ok:
 					if (buttonPressed == 1) {
@@ -388,12 +442,18 @@ void BmMailFolderView::MessageReceived( BMessage* msg) {
 					return;
 				if (msg->FindInt32( "which", &buttonPressed) != B_OK) {
 					// first step, ask user about it:
-					BAlert* alert = new BAlert( "Trash Mail-Folder", 
-														 (BmString("Are you sure about trashing folder <") << folder->Name() << ">?").String(),
-													 	 "Move to Trash", "Cancel", NULL, B_WIDTH_AS_USUAL,
-													 	 B_WARNING_ALERT);
+					BAlert* alert = new BAlert( 
+						"Trash Mail-Folder", 
+						(BmString("Are you sure about trashing folder <") 
+							<< folder->Name() << ">?").String(),
+						"Move to Trash", "Cancel", NULL, 
+						B_WIDTH_AS_USUAL,
+						B_WARNING_ALERT
+					);
 					alert->SetShortcut( 1, B_ESCAPE);
-					alert->Go( new BInvoker( new BMessage(BMM_DELETE_MAILFOLDER), BMessenger( this)));
+					alert->Go( new BInvoker( 
+						new BMessage(BMM_DELETE_MAILFOLDER), BMessenger( this)
+					));
 				} else {
 					// second step, do it if user said ok:
 					if (buttonPressed == 0)

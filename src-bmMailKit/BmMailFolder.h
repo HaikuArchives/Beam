@@ -52,18 +52,20 @@ typedef map<BmString, BmMailFolder*> BmFolderMap;
 class BmMailFolder : public BmListModelItem {
 	typedef BmListModelItem inherited;
 
-	static const int16 nArchiveVersion = 1;
+	static const int16 nArchiveVersion = 2;
 
 public:
 	BmMailFolder( BmMailFolderList* model, entry_ref &eref, ino_t node,
 					  BmMailFolder* parent, time_t &modified);
-	BmMailFolder( BMessage* archive, BmMailFolderList* model, BmMailFolder* parent);
+	BmMailFolder( BMessage* archive, BmMailFolderList* model, 
+					  BmMailFolder* parent);
 	virtual ~BmMailFolder();
 	
 	// native methods:
 	void BumpNewMailCount( int32 offset=1);
 	void BumpNewMailCountForSubfolders( int32 offset=1);
-	bool HasNewMail() const					{ return mNewMailCount>0 || mNewMailCountForSubfolders>0; }
+	bool HasNewMail() const					{ return mNewMailCount>0 
+															|| mNewMailCountForSubfolders>0; }
 	bool CheckIfModifiedSinceLastTime();
 	bool CheckIfModifiedSince( time_t when, time_t* storeNewModTime=NULL);
 	void CreateMailRefList();
@@ -86,22 +88,34 @@ public:
 	int16 ArchiveVersion() const			{ return nArchiveVersion; }
 
 	// getters:
-	inline const entry_ref& EntryRef() const 		{ return mEntryRef; }
-	inline const entry_ref* EntryRefPtr() const	{ return &mEntryRef; }
-	inline const node_ref& NodeRef() const			{ return mNodeRef; }
-	inline const int NewMailCount() const			{ return mNewMailCount; }
-	inline const int NewMailCountForSubfolders() const		{ return mNewMailCountForSubfolders; }
-	inline const time_t LastModified() const		{ return mLastModified; }
+	inline const entry_ref& EntryRef() const
+											 		{ return mEntryRef; }
+	inline const entry_ref* EntryRefPtr() const
+													{ return &mEntryRef; }
+	inline const node_ref& NodeRef() const
+													{ return mNodeRef; }
+	inline const int32 NewMailCount() const
+													{ return mNewMailCount; }
+	inline const int32 NewMailCountForSubfolders() const
+													{ return mNewMailCountForSubfolders; }
+	inline const int32 MailCount() const	
+													{ return mMailCount; }
+	inline const time_t LastModified() const
+													{ return mLastModified; }
 	BmRef<BmMailRefList> MailRefList();
-	inline const BmString& Name() const				{ return mName; }
+	inline const BmString& Name() const	{ return mName; }
 
 	// setters:
-	inline void EntryRef( const entry_ref &e) 	{ mEntryRef = e; mName = e.name; }
+	inline void EntryRef( const entry_ref &e)
+												 	{ mEntryRef = e; mName = e.name; }
+	inline void MailCount( int32 i)	 	{ mMailCount = i; 
+													  TellModelItemUpdated( UPD_ALL); }
 
 	// archival-fieldnames:
 	static const char* const MSG_ENTRYREF;
 	static const char* const MSG_INODE;
 	static const char* const MSG_LASTMODIFIED;
+	static const char* const MSG_MAILCOUNT;
 
 	//	message component definitions for status-msgs:
 	static const char* const MSG_NAME;
@@ -117,14 +131,15 @@ private:
 	entry_ref mEntryRef;
 	node_ref mNodeRef;
 	time_t mLastModified;
+	int32 mMailCount;
 
 	// the following members will be archived into their own files:
 	BmRef< BmMailRefList> mMailRefList;
 	static BLocker nRefListLocker;
 
 	// the following members will NOT be archived at all:
-	int mNewMailCount;
-	int mNewMailCountForSubfolders;
+	int32 mNewMailCount;
+	int32 mNewMailCountForSubfolders;
 	BmString mName;
 
 	// Hide copy-constructor and assignment:
