@@ -53,6 +53,14 @@ extern const float darken_tint;
 class ColumnListView : public BListView
 {
 		typedef BListView inherited;
+
+		// archival-fieldnames:
+		static const char* const MSG_DISPLAYORDER = 		"bm:dsplord";
+		static const char* const MSG_NUMSORTKEYS = 		"bm:nsort";
+		static const char* const MSG_SORTKEY = 			"bm:sortk";
+		static const char* const MSG_SORTMODE = 			"bm:sortm";
+		static const char* const MSG_COLWIDTH = 			"bm:colw";
+
 	public:
 		//Constructor and destructor
 		ColumnListView( minimax minmax,
@@ -78,6 +86,9 @@ class ColumnListView : public BListView
 		static ColumnListView* Instantiate(BMessage* data);
 		virtual	status_t Archive(BMessage* data, bool deep = true) const;
 			***/
+		virtual status_t Archive(BMessage* data, bool deep = true) const;
+		virtual status_t UnArchive(BMessage* archive, bool deep = true);
+		virtual void SetDefaults();
 
 		//Column setup functions
 		virtual bool AddColumn(CLVColumn* Column);			//Note that a column may only be added to

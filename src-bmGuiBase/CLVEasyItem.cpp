@@ -371,6 +371,8 @@ int CLVEasyItem::CompareItems(const CLVListItem *a_Item1, const CLVListItem *a_I
 		else if(type2 == CLVColTruncateUserText || type2 == CLVColUserText)
 			text2 = Item2->GetUserText(KeyColumn,-1);
 
+		if (!text1)	return -1;
+		if (!text2)	return 1;
 		return strcasecmp(text1,text2);
 	}
 }

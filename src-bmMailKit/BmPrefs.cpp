@@ -23,34 +23,30 @@
 \*------------------------------------------------------------------------------*/
 BmPrefs* BmPrefs::CreateInstance() 
 {
-	BmPrefs *prefs;
+	BmPrefs *prefs = NULL;
 	status_t err;
 	BString prefsFilename;
 	BFile prefsFile;
 
-	try {
-
-		// try to open settings-file...
-		prefsFilename = BString(bmApp->SettingsPath.Path()) << "/" << PREFS_FILENAME;
-		if ((err = prefsFile.SetTo( prefsFilename.String(), B_READ_ONLY)) == B_OK) {
-			// ...ok, settings file found, we fetch our prefs from it:
+	// try to open settings-file...
+	prefsFilename = BString(bmApp->SettingsPath.Path()) << "/" << PREFS_FILENAME;
+	if ((err = prefsFile.SetTo( prefsFilename.String(), B_READ_ONLY)) == B_OK) {
+		// ...ok, settings file found, we fetch our prefs from it:
+		try {
 			BMessage archive;
 			(err = archive.Unflatten( &prefsFile)) == B_OK
 													|| BM_THROW_RUNTIME( BString("Could not fetch settings from file\n\t<") << prefsFilename << ">\n\n Result: " << strerror(err));
 			prefs = new BmPrefs( &archive);
-		} else {
-			// ...no settings file yet, we start with default settings...
-			prefs = new BmPrefs;
-			// ...and create a new and shiny settings file:
-			if (!prefs->Store())
-			{
-				delete prefs;
-				prefs = 0;
-			}
+		} catch (exception &e) {
+			BM_SHOWERR( e.what());
+			prefs = NULL;
 		}
-	} catch (exception &e) {
-		BM_SHOWERR( e.what());
-		return NULL;
+	}
+	if (!prefs) {
+		// ...no settings file yet, we start with default settings...
+		prefs = new BmPrefs;
+		// ...and create a new and shiny settings file:
+		prefs->Store();
 	}
 
 	return prefs;
@@ -77,6 +73,7 @@ BmPrefs::BmPrefs( void)
 	,	mMailboxPath("/boot/home/mail")			// TODO: change default to .../mail
 	,	mRefCaching( true)
 	,	mDefaultEncoding( B_ISO1_CONVERSION)
+	,	mStripedListView( true)
 {
 #ifdef BM_LOGGING
 	BString s;
@@ -106,6 +103,7 @@ BmPrefs::BmPrefs( BMessage* archive)
 	mMailboxPath = FindMsgString( archive, MSG_MAILBOXPATH);
 	mRefCaching = FindMsgBool( archive, MSG_REF_CACHING);
 	mDefaultEncoding = FindMsgInt32( archive, MSG_DEFAULT_ENCODING);
+	mStripedListView = FindMsgBool( archive, MSG_STRIPED_LISTVIEW);
 	bmApp->LogHandler->LogLevels( mLoglevels);
 }
 
@@ -122,7 +120,8 @@ status_t BmPrefs::Archive( BMessage* archive, bool deep) const {
 		||	archive->AddInt32( MSG_LOGLEVELS, htonl(mLoglevels))
 		||	archive->AddString( MSG_MAILBOXPATH, mMailboxPath.String())
 		||	archive->AddBool( MSG_REF_CACHING, mRefCaching)
-		||	archive->AddInt32( MSG_DEFAULT_ENCODING, htonl(mDefaultEncoding)));
+		||	archive->AddInt32( MSG_DEFAULT_ENCODING, htonl(mDefaultEncoding))
+		||	archive->AddBool( MSG_STRIPED_LISTVIEW, mStripedListView));
 	return ret;
 }
 

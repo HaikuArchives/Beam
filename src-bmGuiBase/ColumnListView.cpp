@@ -1803,6 +1803,8 @@ void ColumnListView::Draw( BRect updateRect) {
 				DrawColumn( ThisColumnRect, fColumnList.IndexOf(ThisColumn));
 			}
 		}
+	} else {
+		SetViewColor( White);
 	}
 	inherited::Draw( updateRect);
 }
@@ -1884,4 +1886,90 @@ void ColumnListView::MessageReceived(BMessage* msg) {
 	} else {
 		inherited::MessageReceived( msg);
 	}
+}
+
+status_t ColumnListView::Archive(BMessage* archive, bool deep) const {
+	AssertWindowLocked();
+	status_t ret = B_OK;
+	int i;
+
+	// display order of columns:
+	const int32 numCols = CountColumns();
+	int32 displayCols[numCols];
+	GetDisplayOrder( displayCols);
+	for( i=0; i<numCols && ret==B_OK; ++i) { 
+		ret = archive->AddInt32( MSG_DISPLAYORDER, displayCols[i]);
+	}
+
+	if (ret == B_OK) {
+		// sortkeys and -modes:
+		int32 numSortKeys = fSortKeyList.CountItems();
+		ret =	archive->AddInt32( MSG_NUMSORTKEYS, numSortKeys);
+		for( i = 0; i<numSortKeys && ret==B_OK; ++i) {
+			CLVColumn* Column = (CLVColumn*)fSortKeyList.ItemAt( i);
+			ret =	archive->AddInt32( MSG_SORTKEY, IndexOfColumn( Column))
+				|| archive->AddInt32( MSG_SORTMODE, Column->SortMode());
+		}
+		
+		if (ret == B_OK) {
+			// store each column's width:
+			for( i=0; i<numCols && ret==B_OK; ++i) { 
+				ret = archive->AddFloat( MSG_COLWIDTH, 
+												 ((CLVColumn*)fColumnList.ItemAt(i))->Width());
+			}
+		}
+	}
+
+	return ret;
+}
+
+status_t ColumnListView::UnArchive(BMessage* archive, bool deep) {
+	AssertWindowLocked();
+	status_t ret = B_OK;
+	int i;
+	// display order of columns:
+	const int32 numCols = CountColumns();
+	int32 displayCols[numCols];
+	for( i=0; i<numCols && ret==B_OK; ++i) { 
+		ret = archive->FindInt32( MSG_DISPLAYORDER, i, &displayCols[i]);
+	}
+	if (ret == B_OK) {
+		SetDisplayOrder( displayCols);
+	
+		// sortkeys and -modes:
+		int32 numSortKeys = 0;
+		ret = archive->FindInt32( MSG_NUMSORTKEYS, &numSortKeys);
+		int32 sortKeys[numSortKeys];
+		CLVSortMode sortModes[numSortKeys];
+		for( i = 0; i<numSortKeys && ret==B_OK; ++i) {
+			ret = archive->FindInt32( MSG_SORTKEY, i, &sortKeys[i])
+				||	archive->FindInt32( MSG_SORTMODE, i, (int32*)&sortModes[i]);
+		}
+		if (ret == B_OK) {
+			SetSorting( numSortKeys, sortKeys, sortModes);
+
+			// set each column's width:
+			float width;
+			for( i=0; i<numCols && ret==B_OK; ++i) { 
+				ret = archive->FindFloat( MSG_COLWIDTH, i, &width);
+				if (ret == B_OK)
+					((CLVColumn*)fColumnList.ItemAt(i))->SetWidth( width);
+			}
+		}
+	}
+	
+	return ret;
+}
+
+void ColumnListView::SetDefaults() {
+	// display order of columns:
+	const int32 numCols = CountColumns();
+	int32 displayCols[numCols];
+	for( int i=0; i<numCols; ++i) { 
+		displayCols[i] = i;
+	}
+	SetDisplayOrder( displayCols);
+
+	// sortkeys and -modes (none):
+	SetSorting( 0, NULL, NULL);
 }

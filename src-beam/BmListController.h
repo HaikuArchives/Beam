@@ -35,6 +35,18 @@ class BmListViewItem : public CLVEasyItem
 		bool rightJustified;
 	};
 
+	class BmListViewItemInfo {
+	public:
+		bool isExpanded;
+		
+		BmListViewItemInfo();
+		BmListViewItemInfo( BMessage* msg);
+		virtual ~BmListViewItemInfo();
+	private:
+		//	message component definitions for status-msgs:
+		static const char* const MSG_EXPANDED = 			"bm:expd";
+	};
+
 public:
 	//
 	BmListViewItem( BString& key, BmListModelItem* item,
@@ -42,13 +54,16 @@ public:
 						 bool superitem=false, bool expanded=false);
 	~BmListViewItem();
 	
+	//	
+	virtual status_t Archive( BMessage* archive, bool deep = true) const;
+
 	//
-	void SetTextCols( int16 firstTextCol, BmListColumn* columnVec);
+	void SetTextCols( int16 firstTextCol, BmListColumn* columnVec, bool truncate=true);
 	
 	// getters:
 	BString Key()								{ return mKey; }
 	BmListModelItem* ModelItem()			{ return mModelItem; }
-	
+
 	//
 	virtual void AddSubItemsToList( BmListViewController *view);
 
@@ -79,8 +94,9 @@ public:
 	~BmListViewController();
 
 	// getters:
-	CLVContainerView* ContainerView()	{ return mContainerView; }
+	CLVContainerView* ContainerView()	{ return inherited::fScrollView; }
 
+	virtual void AttachModel( BmDataModel* model=NULL);
 	virtual void DetachModel();
 
 	//
@@ -102,10 +118,15 @@ public:
 	virtual void MouseDown(BPoint point);
 
 protected:
-	virtual BmListModel* DataModel()		{ 	return dynamic_cast<BmListModel*>(BmController::DataModel()); }
+	virtual BmListModel* DataModel()		{ return dynamic_cast<BmListModel*>(BmController::DataModel()); }
+	// archival of the controller's state-info:
+	virtual status_t Archive(BMessage* archive, bool deep=true) const;
+	virtual BString StateInfoBasename()				= 0;
+	virtual void WriteStateInfo();
+	virtual void ReadStateInfo();
 
-	CLVContainerView* mContainerView;
 	BList* mItemList;
+	BMessage* mInitialStateInfo;
 };
 
 

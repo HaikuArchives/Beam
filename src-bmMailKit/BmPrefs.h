@@ -25,6 +25,7 @@ class BmPrefs : public BArchivable {
 	static const char* const MSG_MAILBOXPATH = 		"bm:mailboxpath";
 	static const char* const MSG_REF_CACHING = 		"bm:refcaching";
 	static const char* const MSG_DEFAULT_ENCODING = "bm:defencoding";
+	static const char* const MSG_STRIPED_LISTVIEW = "bm:stripedlv";
 
 	static const char* const PREFS_FILENAME = 		"General Settings";
 
@@ -58,6 +59,7 @@ public:
 	const BString& MailboxPath() const 	{ return mMailboxPath; }
 	bool RefCaching() const 				{ return mRefCaching; }
 	int32 DefaultEncoding() const 		{ return mDefaultEncoding; }
+	bool StripedListView() const 			{ return mStripedListView; }
 
 	// setters:
 	void CheckMail( TConnWinMode m) 		{ mDynamicConnectionWin = m; }
@@ -66,6 +68,7 @@ public:
 	void MailboxPath( BString& s) 		{ mMailboxPath = s; }
 	void RefCaching( bool b) 				{ mRefCaching = b; }
 	void DefaultEncoding( int32 i) 		{ mDefaultEncoding = i; }
+	void StripedListView( bool b) 		{ mStripedListView = b; }
 
 
 private:
@@ -88,13 +91,16 @@ private:
 							// Path of mailbox-dir (usually '/boot/home/mail')
 
 	bool mRefCaching;
-							// switches mailref-caching on or off
+							// toggles mailref-caching
 
 	int32 mDefaultEncoding;
 							// The default encoding for messages.
 							// This is used in two circumstances:
 							//	-	when a received mail does not indicate any encoding
 							//	-	when a new mail is created in order to be sent
+
+	bool mStripedListView;
+							// toggles striping of listview
 };
 
 #endif

@@ -21,6 +21,7 @@ public:
 	~BeamApp();
 	virtual thread_id Run();
 	virtual void MessageReceived(BMessage*);
+	virtual void ReadyToRun();
 
 private:
 	status_t mInitCheck;

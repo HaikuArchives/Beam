@@ -49,6 +49,9 @@ public:
 	BmListViewItem* CreateListViewItem( BmListModelItem* item, uint32 level=0);
 	
 	//
+	virtual BString StateInfoBasename()	{ return "MailFolderView"; }
+
+	//
 	void MessageReceived( BMessage* msg);
 	void SelectionChanged( void);
 

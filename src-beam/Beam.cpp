@@ -19,7 +19,6 @@ BeamApp::BeamApp()
 	try {
 		beamApp = this;
 		MainWindow = new BmMainWindow();
-		MainWindow->Show();
 		mInitCheck = B_OK;
 	}
 	catch( exception &e) {
@@ -30,6 +29,11 @@ BeamApp::BeamApp()
 
 BeamApp::~BeamApp()
 {
+}
+
+void BeamApp::ReadyToRun()
+{
+	MainWindow->Show();
 }
 
 void BeamApp::MessageReceived(BMessage* msg) {

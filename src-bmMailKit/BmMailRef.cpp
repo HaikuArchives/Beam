@@ -55,6 +55,7 @@ BmMailRef::BmMailRef( entry_ref &eref, ino_t node, struct stat& st)
 			node.ReadAttr( "MAIL:account", 	B_STRING_TYPE, 0, buf, bufsize);		mAccount = buf;	*buf=0;
 			node.ReadAttr( "MAIL:cc", 			B_STRING_TYPE, 0, buf, bufsize);		mCc = buf;			*buf=0;
 			node.ReadAttr( "MAIL:from", 		B_STRING_TYPE, 0, buf, bufsize);		mFrom = buf;		*buf=0;
+			node.ReadAttr( "MAIL:priority", 	B_STRING_TYPE, 0, buf, bufsize);		mPriority = buf;	*buf=0;
 			node.ReadAttr( "MAIL:reply", 		B_STRING_TYPE, 0, buf, bufsize);		mReplyTo = buf;	*buf=0;
 			node.ReadAttr( "MAIL:status", 	B_STRING_TYPE, 0, buf, bufsize);		mStatus = buf;		*buf=0;
 			node.ReadAttr( "MAIL:subject", 	B_STRING_TYPE, 0, buf, bufsize);		mSubject = buf;	*buf=0;

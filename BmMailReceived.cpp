@@ -302,6 +302,19 @@ void BmMailReceived::StoreAttributes( BFile& mailFile) {
 	mailFile.WriteAttr( "MAIL:subject", B_STRING_TYPE, 0, mHeaders["Subject"].String(), mHeaders["Subject"].Length()+1);
 	mailFile.WriteAttr( "MAIL:to", B_STRING_TYPE, 0, mHeaders["To"].String(), mHeaders["To"].Length()+1);
 	mailFile.WriteAttr( "MAIL:cc", B_STRING_TYPE, 0, mHeaders["Cc"].String(), mHeaders["Cc"].Length()+1);
+	// we determine the mail's priority, first we look at X-Priority...
+	BString priority = mHeaders["X-Priority"];
+	// ...if that is not defined we check the Priority field:
+	if (!priority.Length()) {
+		// need to translate from text to number:
+		BString prio = mHeaders["Priority"];
+		if (!prio.ICompare("Highest")) priority = "1";
+		else if (!prio.ICompare("High")) priority = "2";
+		else if (!prio.ICompare("Normal")) priority = "3";
+		else if (!prio.ICompare("Low")) priority = "4";
+		else if (!prio.ICompare("Lowest")) priority = "5";
+	}
+	mailFile.WriteAttr( "MAIL:priority", B_STRING_TYPE, 0, priority.String(), priority.Length()+1);
 	//
 	int32 headerLength, contentLength;
 	if ((headerLength = mText.FindFirst("\r\n\r\n")) != B_ERROR) {

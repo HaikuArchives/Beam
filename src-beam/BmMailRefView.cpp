@@ -8,6 +8,7 @@
 #include "BmMailFolder.h"
 #include "BmMailRefList.h"
 #include "BmMailRefView.h"
+#include "BmPrefs.h"
 #include "BmUtil.h"
 
 const int16 BmMailRefItem::nFirstTextCol = 3;
@@ -48,7 +49,7 @@ BmMailRefItem::BmMailRefItem( BString key, BmListModelItem* _item)
 		{ ref->CreatedString().String(),			false },
 		{ NULL, false }
 	};
-	SetTextCols( nFirstTextCol, cols);
+	SetTextCols( nFirstTextCol, cols, !bmApp->Prefs->StripedListView());
 }
 
 /*------------------------------------------------------------------------------*\
@@ -124,26 +125,28 @@ BmMailRefView::BmMailRefView( minimax minmax, int32 width, int32 height)
 					  false, true)
 	,	mCurrFolder( NULL)
 {
+	int32 flags = 0;
 	SetViewColor( B_TRANSPARENT_COLOR);
-	SetStripedBackground( true);
-	mContainerView = Initialize( BRect(0,0,width,height),
-										  B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE,
-										  B_FOLLOW_ALL,
-										  true, true, true, B_FANCY_BORDER);
+	if (bmApp->Prefs->StripedListView())
+		SetStripedBackground( true);
+	else 
+		flags |= CLV_TELL_ITEMS_WIDTH;
+	Initialize( BRect(0,0,width,height), B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE,
+					B_FOLLOW_ALL, true, true, true, B_FANCY_BORDER);
 
 	AddColumn( new CLVColumn( "", 18.0, CLV_SORT_KEYABLE | CLV_NOT_RESIZABLE | CLV_COLDATA_NUMBER, 18.0));
 	AddColumn( new CLVColumn( "A", 18.0, CLV_SORT_KEYABLE | CLV_NOT_RESIZABLE | CLV_COLDATA_NUMBER, 18.0));
 	AddColumn( new CLVColumn( "P", 18.0, CLV_SORT_KEYABLE | CLV_NOT_RESIZABLE | CLV_COLDATA_NUMBER, 18.0));
-	AddColumn( new CLVColumn( "From", 200.0, CLV_SORT_KEYABLE, 20.0));
-	AddColumn( new CLVColumn( "Subject", 200.0, CLV_SORT_KEYABLE, 20.0));
-	AddColumn( new CLVColumn( "Date", 100.0, CLV_SORT_KEYABLE | CLV_COLDATA_DATE, 20.0));
-	AddColumn( new CLVColumn( "Size", 50.0, CLV_SORT_KEYABLE | CLV_COLDATA_NUMBER | CLV_RIGHT_JUSTIFIED, 20.0));
-	AddColumn( new CLVColumn( "Cc", 100.0, CLV_SORT_KEYABLE, 20.0));
-	AddColumn( new CLVColumn( "Account", 100.0, CLV_SORT_KEYABLE, 20.0));
-	AddColumn( new CLVColumn( "To", 100.0, CLV_SORT_KEYABLE, 20.0));
-	AddColumn( new CLVColumn( "Reply-To", 150.0, CLV_SORT_KEYABLE, 20.0));
-	AddColumn( new CLVColumn( "Tracker-Name", 150.0, CLV_SORT_KEYABLE, 20.0));
-	AddColumn( new CLVColumn( "Created", 100.0, CLV_SORT_KEYABLE | CLV_COLDATA_DATE, 20.0));
+	AddColumn( new CLVColumn( "From", 200.0, CLV_SORT_KEYABLE | flags, 20.0));
+	AddColumn( new CLVColumn( "Subject", 200.0, CLV_SORT_KEYABLE | flags, 20.0));
+	AddColumn( new CLVColumn( "Date", 100.0, CLV_SORT_KEYABLE | CLV_COLDATA_DATE | flags, 20.0));
+	AddColumn( new CLVColumn( "Size", 50.0, CLV_SORT_KEYABLE | CLV_COLDATA_NUMBER | CLV_RIGHT_JUSTIFIED | flags, 20.0));
+	AddColumn( new CLVColumn( "Cc", 100.0, CLV_SORT_KEYABLE | flags, 20.0));
+	AddColumn( new CLVColumn( "Account", 100.0, CLV_SORT_KEYABLE | flags, 20.0));
+	AddColumn( new CLVColumn( "To", 100.0, CLV_SORT_KEYABLE | flags, 20.0));
+	AddColumn( new CLVColumn( "Reply-To", 150.0, CLV_SORT_KEYABLE | flags, 20.0));
+	AddColumn( new CLVColumn( "Tracker-Name", 150.0, CLV_SORT_KEYABLE | flags, 20.0));
+	AddColumn( new CLVColumn( "Created", 100.0, CLV_SORT_KEYABLE | CLV_COLDATA_DATE | flags, 20.0));
 	SetSortFunction( CLVEasyItem::CompareItems);
 	SetSortKey( 3);
 }
@@ -190,4 +193,3 @@ void BmMailRefView::ShowFolder( BmMailFolder* folder) {
 	StartJob( refList, true, false);
 	mCurrFolder = folder;
 }
-

@@ -27,12 +27,16 @@ BmMailFolderItem::BmMailFolderItem( BString key, BmListModelItem* _item, uint32 
 	BmMailFolder* folder = dynamic_cast<BmMailFolder*>( _item);
 	BString displayName = folder->Name();
 	if (folder->HasNewMail()) {
-		int32 count = folder->NewMailCount() + folder->NewMailCountForSubfolders();
-		displayName << " - [" << count << "]";
-		icon = bmApp->IconMap["Folder_WithNew"];
-	} else {
-		icon = bmApp->IconMap["Folder"];
+		int32 count = folder->NewMailCount();
+		if (folder->NewMailCountForSubfolders() && !expanded)
+ 			count += folder->NewMailCountForSubfolders();
+ 		if (count)
+			displayName << " - (" << count << ")";
 	}
+	if (folder->NewMailCount())
+		icon = bmApp->IconMap["Folder_WithNew"];
+	else
+		icon = bmApp->IconMap["Folder"];
 	SetColumnContent( 1, icon, 2.0, false);
 	BmListColumn cols[] = {
 		{ displayName.String(), false },
@@ -76,10 +80,8 @@ BmMailFolderView::BmMailFolderView( minimax minmax, int32 width, int32 height)
 	:	inherited( minmax, BRect(0,0,width,height), "Beam_FolderView", B_SINGLE_SELECTION_LIST, 
 					  true, true)
 {
-	mContainerView = Initialize( BRect( 0,0,width,height),
-										  B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE,
-										  B_FOLLOW_TOP_BOTTOM,
-										  false, true, false, B_FANCY_BORDER);
+	Initialize( BRect( 0,0,width,height), B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE,
+					B_FOLLOW_TOP_BOTTOM, false, true, false, B_FANCY_BORDER);
 	AddColumn( new CLVColumn( NULL, 10.0, 
 									  CLV_EXPANDER | CLV_LOCK_AT_BEGINNING | CLV_NOT_MOVABLE, 10.0));
 	AddColumn( new CLVColumn( NULL, 18.0, CLV_LOCK_AT_BEGINNING | CLV_NOT_MOVABLE 

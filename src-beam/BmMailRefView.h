@@ -51,6 +51,9 @@ public:
 	void ShowFolder( BmMailFolder* folder);
 
 	//
+	virtual BString StateInfoBasename()	{ return "MailRefView"; }
+
+	//
 	BmListViewItem* CreateListViewItem( BmListModelItem* item, uint32 level=0);
 	
 private:

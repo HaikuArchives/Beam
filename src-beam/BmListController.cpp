@@ -3,6 +3,8 @@
 		$Id$
 */
 
+#include <memory.h>
+
 #include <Autolock.h>
 
 #include "BmApp.h"
@@ -14,8 +16,38 @@
 //#include <Profile.h>
 
 /********************************************************************************\
+	BmListViewItemInfo
+\********************************************************************************/
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+BmListViewItem::BmListViewItemInfo::BmListViewItemInfo()
+	:	isExpanded( false) 			
+{
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+BmListViewItem::BmListViewItemInfo::BmListViewItemInfo( BMessage* archive) {
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+BmListViewItem::BmListViewItemInfo::~BmListViewItemInfo() {
+}
+
+
+
+/********************************************************************************\
 	BmListViewItem
 \********************************************************************************/
+
 
 /*------------------------------------------------------------------------------*\
 	()
@@ -49,13 +81,24 @@ BmListViewItem::~BmListViewItem() {
 }
 
 /*------------------------------------------------------------------------------*\
+	Archive( archive)
+		-	
+\*------------------------------------------------------------------------------*/
+status_t BmListViewItem::Archive( BMessage* archive, bool deep) const {
+	status_t ret = inherited::Archive( archive, deep);
+//		|| archive->AddBool( MSG_EXPANDED, &isExpanded);
+	return ret;
+}
+
+/*------------------------------------------------------------------------------*\
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmListViewItem::SetTextCols( int16 firstTextCol, BmListColumn* columnVec) {
+void BmListViewItem::SetTextCols( int16 firstTextCol, BmListColumn* columnVec,
+											 bool truncate) {
 	int16 offs = firstTextCol;
 	for( const BmListColumn* p = columnVec; p->text != NULL; ++p) {
-		SetColumnContent( offs++, p->text, false, p->rightJustified);
+		SetColumnContent( offs++, p->text, truncate, p->rightJustified);
 	}
 }
 
@@ -97,6 +140,7 @@ BmListViewController::BmListViewController( minimax minmax, BRect rect,
 					  Type, hierarchical, showLabelView)
 	,	inheritedController( Name)
 	,	mItemList( NULL)
+	,	mInitialStateInfo( NULL)
 {
 }
 
@@ -105,13 +149,25 @@ BmListViewController::BmListViewController( minimax minmax, BRect rect,
 		-	standard d'tor
 \*------------------------------------------------------------------------------*/
 BmListViewController::~BmListViewController() {
+	delete mInitialStateInfo;
+}
+
+/*------------------------------------------------------------------------------*\
+	AttachModel()
+		-	reads appropriate state-info after attaching to data-model
+\*------------------------------------------------------------------------------*/
+void BmListViewController::AttachModel( BmDataModel* model) {
+	inheritedController::AttachModel( model);
+	ReadStateInfo();
 }
 
 /*------------------------------------------------------------------------------*\
 	DetachModel()
+		-	writes state-info for current data-model before detaching
 		-	clears listview after detach
 \*------------------------------------------------------------------------------*/
 void BmListViewController::DetachModel() {
+	WriteStateInfo();
 	inheritedController::DetachModel();
 	MakeEmpty();		// clear display
 	if (mItemList) {
@@ -238,7 +294,9 @@ void BmListViewController::UpdateModelState( BMessage* msg) {
 
 /*------------------------------------------------------------------------------*\
 	JobIsDone( completed)
-		-	Hook function that is called whenever a jobmodel indicates that it is done
+		-	Hook function that is called whenever the jobmodel associated to this 
+			controller indicates that it is done (meaning: the list has been fetched
+			and is now ready to be displayed).
 \*------------------------------------------------------------------------------*/
 void BmListViewController::JobIsDone( bool completed) {
 	if (completed) {
@@ -286,3 +344,76 @@ void BmListViewController::MouseDown(BPoint point) {
 	MakeFocus( true);
 }
 
+/*------------------------------------------------------------------------------*\
+	WriteStateInfo( )
+		-	
+\*------------------------------------------------------------------------------*/
+void BmListViewController::WriteStateInfo() {
+	status_t err;
+	BString stateInfoFilename;
+	BFile stateInfoFile;
+	auto_ptr< BMessage> archive( new BMessage);
+
+	try {
+		stateInfoFilename = BString(bmApp->SettingsPath.Path()) << "/StateInfo/" 
+								  << StateInfoBasename() << "_" << ModelName();
+		this->Archive( archive.get()) == B_OK
+													|| BM_THROW_RUNTIME( BString("Unable to archive State-Info for ")<<Name());
+		(err = stateInfoFile.SetTo( stateInfoFilename.String(), 
+											 B_WRITE_ONLY | B_CREATE_FILE | B_ERASE_FILE)) == B_OK
+													|| BM_THROW_RUNTIME( BString("Could not create state-info file\n\t<") << stateInfoFilename << ">\n\n Result: " << strerror(err));
+		(err = archive->Flatten( &stateInfoFile)) == B_OK
+													|| BM_THROW_RUNTIME( BString("Could not store state-info into file\n\t<") << stateInfoFilename << ">\n\n Result: " << strerror(err));
+	} catch( exception &e) {
+		BM_SHOWERR( e.what());
+	}
+}
+
+/*------------------------------------------------------------------------------*\
+	Archive()
+		-	
+\*------------------------------------------------------------------------------*/
+status_t BmListViewController::Archive(BMessage* archive, bool deep) const {
+	status_t ret = inherited::Archive( archive, deep);
+	if (deep && ret == B_OK) {
+/*
+		BmModelItemMap::const_iterator pos;
+		for( pos = mSubItemMap.begin(); pos != mSubItemMap.end(); ++pos) {
+			if (ret == B_OK) {
+				BMessage msg;
+				ret = pos->second->Archive( &msg, deep)
+						|| archive->AddMessage( MSG_CHILDREN, &msg);
+			}
+		}
+*/
+	}
+	return ret;
+}
+
+/*------------------------------------------------------------------------------*\
+	ReadStateInfo( )
+		-	
+\*------------------------------------------------------------------------------*/
+void BmListViewController::ReadStateInfo() {
+	status_t err;
+	BString stateInfoFilename;
+	BFile stateInfoFile;
+
+	// try to open state-info-file...
+	stateInfoFilename = BString(bmApp->SettingsPath.Path()) << "/StateInfo/" 
+							  << StateInfoBasename() << "_" << ModelName();
+	if ((err = stateInfoFile.SetTo( stateInfoFilename.String(), B_READ_ONLY)) == B_OK) {
+		// ...ok, file found, we fetch our state(s) from it:
+		try {
+			mInitialStateInfo = new BMessage;
+			(err = mInitialStateInfo->Unflatten( &stateInfoFile)) == B_OK
+													|| BM_THROW_RUNTIME( BString("Could not fetch state-info from file\n\t<") << stateInfoFilename << ">\n\n Result: " << strerror(err));
+			inherited::UnArchive( mInitialStateInfo);
+		} catch (exception &e) {
+			delete mInitialStateInfo;
+			mInitialStateInfo = NULL;
+			BM_SHOWERR( e.what());
+		}
+	} else 
+		inherited::SetDefaults();
+}
