@@ -185,7 +185,7 @@ BmMainWindow::BmMainWindow()
 	,	mMailRefView( NULL)
 	,	mVertSplitter( NULL)
 {
-	CreateMailFolderView( minimax(0,100,300,1E5), 120, 100);
+	CreateMailFolderView( minimax(0,100,300,1E5), 200, 400);
 	CreateMailRefView( minimax(200,100,1E5,1E5), 400, 200);
 	CreateMailView( minimax(200,200,1E5,1E5), BRect(0,0,400,200));
 
@@ -257,9 +257,9 @@ BmMainWindow::BmMainWindow()
 					mHorzSplitter = new UserResizeSplitView( 
 						mMailRefView->ContainerView(),
 						mMailView->ContainerView(),
-						"hsplitter", 150, B_HORIZONTAL, true, true, false, B_FOLLOW_NONE
+						"hsplitter", 200, B_HORIZONTAL, true, true, false, B_FOLLOW_NONE
 					),
-					"vsplitter", 120, B_VERTICAL, true, true, false, B_FOLLOW_NONE
+					"vsplitter", 170, B_VERTICAL, true, true, false, B_FOLLOW_NONE
 				),
 				0
 			),
