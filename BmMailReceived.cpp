@@ -103,10 +103,10 @@ BmMailReceived::BmMailReceived( )
 		-	creates message with given text and unique-ID (as received from server)
 \*------------------------------------------------------------------------------*/
 BmMailReceived::BmMailReceived( BString &msgText, const BString &msgUID, const BString &account) 
-	:	mHasAttachments( false)
+	:	mStatus( "New")
+	,	mHasAttachments( false)
 {
 	Set( msgText, msgUID, account);
-	mStatus = "New";
 }
 	
 /*------------------------------------------------------------------------------*\
@@ -302,6 +302,17 @@ void BmMailReceived::StoreAttributes( BFile& mailFile) {
 	mailFile.WriteAttr( "MAIL:subject", B_STRING_TYPE, 0, mHeaders["Subject"].String(), mHeaders["Subject"].Length()+1);
 	mailFile.WriteAttr( "MAIL:to", B_STRING_TYPE, 0, mHeaders["To"].String(), mHeaders["To"].Length()+1);
 	mailFile.WriteAttr( "MAIL:cc", B_STRING_TYPE, 0, mHeaders["Cc"].String(), mHeaders["Cc"].Length()+1);
+	//
+	int32 headerLength, contentLength;
+	if ((headerLength = mText.FindFirst("\r\n\r\n")) != B_ERROR) {
+		headerLength++;
+		contentLength = mText.Length()-headerLength;
+	} else {
+		headerLength = mText.Length();
+		contentLength = 0;
+	}
+	mailFile.WriteAttr( "MAIL:header_length", B_INT32_TYPE, 0, &headerLength, sizeof(int32));
+	mailFile.WriteAttr( "MAIL:content_length", B_INT32_TYPE, 0, &contentLength, sizeof(int32));
 	//
 	time_t t;
 	if (ParseDateTime( mHeaders["Resent-Date"], t)) {

@@ -13,20 +13,32 @@
 #include "BmMailRefView.h"
 #include "BmUtil.h"
 
+const int16 BmMailFolderItem::nFirstTextCol = 2;
+
 /*------------------------------------------------------------------------------*\
 	()
 		-	
 \*------------------------------------------------------------------------------*/
 BmMailFolderItem::BmMailFolderItem( BString key, BmListModelItem* _item, uint32 level, 
 												bool superitem, bool expanded)
-	:	inherited( key, _item, bmApp->FolderIcon, true, level, superitem, expanded)
+	:	inherited( key, _item, true, level, superitem, expanded)
 {
+	BBitmap* icon;
 	BmMailFolder* folder = dynamic_cast<BmMailFolder*>( _item);
+	BString displayName = folder->Name();
+	if (folder->HasNewMail()) {
+		int32 count = folder->NewMailCount() + folder->NewMailCountForSubfolders();
+		displayName << " - [" << count << "]";
+		icon = bmApp->IconMap["Folder_WithNew"];
+	} else {
+		icon = bmApp->IconMap["Folder"];
+	}
+	SetColumnContent( 1, icon, 2.0, false);
 	BmListColumn cols[] = {
-		{ folder->Name().String(), false },
+		{ displayName.String(), false },
 		{ NULL, false }
 	};
-	SetTextCols( cols);
+	SetTextCols( nFirstTextCol, cols);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -38,6 +50,14 @@ BmMailFolderItem::~BmMailFolderItem() {
 
 
 
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+bool BmMailFolderItem::NeedsHighlight() { 
+	BmMailFolder* folder = dynamic_cast<BmMailFolder*>( ModelItem());
+	return folder->HasNewMail();
+}
 
 /*------------------------------------------------------------------------------*\
 	()

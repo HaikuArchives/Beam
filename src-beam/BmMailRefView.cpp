@@ -10,32 +10,32 @@
 #include "BmMailRefView.h"
 #include "BmUtil.h"
 
-static const char* BM_STAT_READ = 	"R";
-static const char* BM_STAT_NEW = 	"N";
-static const char* BM_STAT_PENDING = "P";
-static const char* BM_STAT_SENT = 	"S";
-static const char* BM_STAT_UNKNOWN = "?";
+const int16 BmMailRefItem::nFirstTextCol = 3;
 
 /*------------------------------------------------------------------------------*\
 	()
 		-	
 \*------------------------------------------------------------------------------*/
 BmMailRefItem::BmMailRefItem( BString key, BmListModelItem* _item)
-	:	inherited( key, _item, bmApp->MailIcon, false)
+	:	inherited( key, _item, false)
 {
 	BmMailRef* ref = dynamic_cast<BmMailRef*>( _item);
 
-	BString st = ref->Status();
-	const char* status = 
-		st == "Read"		? BM_STAT_READ :
-		st == "New" 		? BM_STAT_NEW :
-		st == "Pending" 	? BM_STAT_PENDING :
-		st == "Sent" 		? BM_STAT_SENT : BM_STAT_UNKNOWN;
+	BString st = BString("Mail_") << ref->Status();
+	BBitmap* icon = bmApp->IconMap[st];
+	SetColumnContent( 0, icon, 2.0, false);
+
+	if (ref->HasAttachments()) {
+		icon = bmApp->IconMap["Attachment"];
+		SetColumnContent( 1, icon, 2.0, false);
+	}
 	
+	BString priority = BString("Priority_") << ref->Priority();
+	if ((icon = bmApp->IconMap[priority])) {
+		SetColumnContent( 2, icon, 2.0, false);
+	}
+
 	BmListColumn cols[] = {
-		{ status, 										false },
-		{ ref->HasAttachments() ? "*" : " ",	false },
-		{ ref->Priority().String(),				false },
 		{ ref->From().String(),						false },
 		{ ref->Subject().String(),					false },
 		{ ref->WhenString().String(),				false },
@@ -48,7 +48,7 @@ BmMailRefItem::BmMailRefItem( BString key, BmListModelItem* _item)
 		{ ref->CreatedString().String(),			false },
 		{ NULL, false }
 	};
-	SetTextCols( cols);
+	SetTextCols( nFirstTextCol, cols);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -64,10 +64,30 @@ BmMailRefItem::~BmMailRefItem() {
 \*------------------------------------------------------------------------------*/
 const int32 BmMailRefItem::GetNumValueForColumn( int32 column_index) const {
 	BmMailRef* ref = dynamic_cast<BmMailRef*>( mModelItem);
-	if (column_index == 7)
+	if (column_index == 0) {
+		// status
+		BString st = ref->Status();
+		return st == "New" 			? 0 :
+				 st == "Read" 			? 1 :
+				 st == "Forwarded" 	? 2 :
+				 st == "Replied" 		? 3 :
+				 st == "Pending" 		? 4 :
+				 st == "Sent" 			? 5 : 99;
+	} else if (column_index == 1) {
+		// attachment
+		return ref->HasAttachments() ? 0 : 1;	
+							// show mails with attachment at top (with sortmode 'ascending')
+	} else if (column_index == 2) {
+		// priority
+		int16 prio = atol( ref->Priority().String());
+		return (prio>=1 && prio<=5) ? prio : 3;
+							// illdefined priority means medium priority (=3)
+	} else if (column_index == 6) {
+		// size
 		return ref->Size();
-	else
+	} else {
 		return 0;
+	}
 }
 
 /*------------------------------------------------------------------------------*\
@@ -76,9 +96,9 @@ const int32 BmMailRefItem::GetNumValueForColumn( int32 column_index) const {
 \*------------------------------------------------------------------------------*/
 const time_t BmMailRefItem::GetDateValueForColumn( int32 column_index) const {
 	BmMailRef* ref = dynamic_cast<BmMailRef*>( mModelItem);
-	if (column_index == 6)
+	if (column_index == 5)
 		return ref->When();
-	else if (column_index == 13)
+	else if (column_index == 12)
 		return ref->When();
 	else
 		return 0;
@@ -111,11 +131,9 @@ BmMailRefView::BmMailRefView( minimax minmax, int32 width, int32 height)
 										  B_FOLLOW_ALL,
 										  true, true, true, B_FANCY_BORDER);
 
-	AddColumn( new CLVColumn( NULL, 18.0, CLV_LOCK_AT_BEGINNING | CLV_NOT_MOVABLE 
-									  | CLV_NOT_RESIZABLE, 18.0));
-	AddColumn( new CLVColumn( "S", 16.0, CLV_SORT_KEYABLE, 16.0));
-	AddColumn( new CLVColumn( "A", 16.0, CLV_SORT_KEYABLE, 16.0));
-	AddColumn( new CLVColumn( "P", 16.0, CLV_SORT_KEYABLE, 16.0));
+	AddColumn( new CLVColumn( "", 18.0, CLV_SORT_KEYABLE | CLV_NOT_RESIZABLE | CLV_COLDATA_NUMBER, 18.0));
+	AddColumn( new CLVColumn( "A", 18.0, CLV_SORT_KEYABLE | CLV_NOT_RESIZABLE | CLV_COLDATA_NUMBER, 18.0));
+	AddColumn( new CLVColumn( "P", 18.0, CLV_SORT_KEYABLE | CLV_NOT_RESIZABLE | CLV_COLDATA_NUMBER, 18.0));
 	AddColumn( new CLVColumn( "From", 200.0, CLV_SORT_KEYABLE, 20.0));
 	AddColumn( new CLVColumn( "Subject", 200.0, CLV_SORT_KEYABLE, 20.0));
 	AddColumn( new CLVColumn( "Date", 100.0, CLV_SORT_KEYABLE | CLV_COLDATA_DATE, 20.0));

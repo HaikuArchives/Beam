@@ -788,3 +788,17 @@ void CLVColumnLabelView::SetSnapMinMax()
 			fSnapMax = fTheShownGroupAfter->GroupBegin;
 	}
 }
+
+void CLVColumnLabelView::MessageReceived(BMessage* msg) {
+	if (msg->what == 'PSTE') {
+		struct rgb_color *col;
+		ssize_t siz;
+		const void *data;
+		msg->FindData( "RGBColor", B_RGB_COLOR_TYPE, &data, &siz);
+		col = (rgb_color*)data;
+		SetViewColor(*col);
+		SetLowColor(*col);
+		Invalidate();
+	}
+	inherited::MessageReceived( msg);
+}

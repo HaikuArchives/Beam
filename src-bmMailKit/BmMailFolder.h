@@ -54,6 +54,8 @@ public:
 	// 
 	void BumpNewMailCount();
 	void BumpNewMailCountForSubfolders();
+	bool HasNewMail() const					{ return mNewMailCount>0 || mNewMailCountForSubfolders>0; }
+
 	bool CheckIfModifiedSince();
 
 	//

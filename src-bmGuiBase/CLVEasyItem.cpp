@@ -98,7 +98,7 @@ void CLVEasyItem::PrepListsForSet(int column_index)
 
 
 void CLVEasyItem::SetColumnContent(int column_index, const char *text, bool truncate, 
-											  bool copy, bool right_justify)
+											  bool right_justify)
 {
 	PrepListsForSet(column_index);
 
@@ -112,7 +112,7 @@ void CLVEasyItem::SetColumnContent(int column_index, const char *text, bool trun
 	}
 	else
 	{
-		char* theText = copy ? Strdup_new(text) : const_cast<char*>(text);
+		char* theText = Strdup_new(text);
 		((char**)m_column_content.Items())[column_index] = theText;
 
 		if(!truncate)
@@ -215,8 +215,8 @@ void CLVEasyItem::DrawItemColumn(BView *owner, BRect item_column_rect, int32 col
 		tinted_color = ((ColumnListView*)owner)->ItemSelectColorTinted();
 	}
 	else {
-		color = White;
-		tinted_color = ((ColumnListView*)owner)->TintedWhite();
+		color = ((ColumnListView*)owner)->LightColumnCol();
+		tinted_color = ((ColumnListView*)owner)->DarkColumnCol();
 	}
 	owner->SetDrawingMode(B_OP_COPY);
 
@@ -255,7 +255,7 @@ void CLVEasyItem::DrawItemColumn(BView *owner, BRect item_column_rect, int32 col
 	{
 		const char* text = NULL;
 
-		owner->SetHighColor(Black);
+		owner->SetHighColor( Black);
 		if(type == CLVColTruncateText)
 		{
 			if(needs_truncation)
@@ -338,10 +338,12 @@ int CLVEasyItem::CompareItems(const CLVListItem *a_Item1, const CLVListItem *a_I
 	int32 type1 = ((int32)Item1->m_column_types.ItemAt(KeyColumn)) & CLVColTypesMask;
 	int32 type2 = ((int32)Item2->m_column_types.ItemAt(KeyColumn)) & CLVColTypesMask;
 
+/*
 	if(!((type1 == CLVColStaticText || type1 == CLVColTruncateText || type1 == CLVColTruncateUserText ||
 		type1 == CLVColUserText) && (type2 == CLVColStaticText || type2 == CLVColTruncateText ||
 		type2 == CLVColTruncateUserText || type2 == CLVColUserText)))
 		return 0;
+*/
 
 	uint32 datatype = col_flags & CLV_COLDATAMASK;
 	

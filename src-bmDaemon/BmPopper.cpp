@@ -356,7 +356,9 @@ bool BmPopper::GetAnswer( bool SingleLineMode, int32 mailNr) {
 			if (!SingleLineMode) {
 				// MULTI_LINE mode
 				int32 searchOffset = (offset > 3 ? offset-4 : 0);
-				if (strstr( buffer+searchOffset, "\r\n.\r\n")) {
+				char *endp;
+				if ((endp=strstr( buffer+searchOffset, "\r\n.\r\n"))) {
+					*(endp+2)='\0';
 					// end of multiline-answer is indicated by line consisting only of a dot
 					if (!mailNr) {
 						BM_LOG2( BM_LogPop, BString("<--\n") << buffer);

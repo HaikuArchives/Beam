@@ -4,6 +4,7 @@
 */
 
 #include <FindDirectory.h>
+#include <Resources.h>
 
 #include "BmApp.h"
 #include "BmLogHandler.h"
@@ -24,8 +25,6 @@ BmApplication::BmApplication( const char* sig)
 	:	inherited( sig)
 	,	LogHandler( NULL)
 	,	Prefs( NULL)
-	,	FolderIcon( NULL)
-	,	MailIcon( NULL)
 	,	WHITESPACE( " \t\n\r\f")
 	,	MailFolderList( NULL)
 	,	MailFolderView( NULL)
@@ -33,7 +32,6 @@ BmApplication::BmApplication( const char* sig)
 	,	MainWindow( NULL)
 	,	mIsQuitting( false)
 {
-	status_t err;
 	BMimeType mt;
 	BPath path;
 	entry_ref eref;
@@ -49,40 +47,25 @@ BmApplication::BmApplication( const char* sig)
 	
 		// determine the path to our home-directory:
 		find_directory( B_USER_DIRECTORY, &path) == B_OK
-														|| BM_THROW_RUNTIME( "Sorry, could not determine user's settings-dir !?!");
+													|| BM_THROW_RUNTIME( "Sorry, could not determine user's settings-dir !?!");
 		HomePath = path.Path();
 	
 		// and determine the volume of our mailbox:
 		get_ref_for_path( HomePath.String(), &eref) == B_OK
-														|| BM_THROW_RUNTIME( "Sorry, could not determine mailbox-volume !?!");
+													|| BM_THROW_RUNTIME( "Sorry, could not determine mailbox-volume !?!");
 		MailboxVolume = eref.device;
 		
 		// determine the path to the user-settings-directory:
 		find_directory( B_USER_SETTINGS_DIRECTORY, &path) == B_OK
-														|| BM_THROW_RUNTIME( "Sorry, could not determine user's settings-dir !?!");
+													|| BM_THROW_RUNTIME( "Sorry, could not determine user's settings-dir !?!");
 		SettingsPath.SetTo( path.Path(), "Beam");
 	
 		// load the preferences set by user (if any)
 		Prefs = BmPrefs::CreateInstance();
 		
-		// now we fetch the neccessary icons:
-		// the folder-icon...
-		FolderIcon = new BBitmap( BRect(0,0,15,15), B_CMAP8);
-		(err = mt.SetTo("application/x-vnd.Be-Directory")) == B_OK
-														|| BM_THROW_RUNTIME( BString("Beam: Could not initialize mimetype application/folder") << "\n\nError:" << strerror(err));
-		(err = mt.GetIcon( FolderIcon, B_MINI_ICON)) == B_OK
-														|| BM_THROW_RUNTIME( BString("Beam: Could not find icon for mimetype application/folder") << "\n\nError:" << strerror(err));
-		// the mail-icon...
-		MailIcon = new BBitmap( BRect(0,0,15,15), B_CMAP8);
-		(err = mt.SetTo("text/x-email")) == B_OK
-														|| BM_THROW_RUNTIME( BString("Beam: Could not initialize mimetype text/x-email") << "\n\nError:" << strerror(err));
-		if ((err = mt.GetIcon( MailIcon, B_MINI_ICON)) != B_OK) {
-			(err = mt.SetTo("text")) == B_OK
-															|| BM_THROW_RUNTIME( BString("Beam: Could not initialize mimetype text") << "\n\nError:" << strerror(err));
-			(err = mt.GetIcon( MailIcon, B_MINI_ICON)) == B_OK
-														|| BM_THROW_RUNTIME( BString("Beam: Could not find icon for mimetype text/x-email") << "\n\nError:" << strerror(err));
-		}
-	
+		// Load all the needed icons from our resources:
+		FetchIcons();
+
 		// we fill necessary info about the standard font-height:
 		be_plain_font->GetHeight( &BePlainFontHeight);
 
@@ -100,7 +83,6 @@ BmApplication::BmApplication( const char* sig)
 BmApplication::~BmApplication()
 {
 	delete MailFolderList;
-	delete FolderIcon;
 	delete Prefs;
 	delete LogHandler;
 	InstanceCount--;
@@ -120,6 +102,33 @@ bool BmApplication::QuitRequested() {
 		mIsQuitting = false;
 	}
 	return shouldQuit;
+}
+
+/*------------------------------------------------------------------------------*\
+	FetchIcons()
+		-	reads all icons into the public map IconMap (indexed by name), from where 
+			they can be easily accessed.
+\*------------------------------------------------------------------------------*/
+void BmApplication::FetchIcons() {
+	BResources* res = AppResources();
+	type_code iconType = 'BBMP';
+	res->PreloadResourceType( iconType);
+	int32 id;
+	const char* name;
+	size_t length;
+	char *data;
+	for( int32 i=0; res->GetResourceInfo( iconType, i, &id, &name, &length); i++) {
+		if (!(data = (char*)res->LoadResource( iconType, id, &length))) {
+			ShowAlert( BString("FetchIcons(): Could not read icon '") << name << "'");
+			continue;
+		}
+		BArchivable* theObj = NULL;
+		BMessage msg;
+		if (msg.Unflatten( data) == B_OK) {
+			theObj = instantiate_object( &msg);
+			IconMap[name] = dynamic_cast< BBitmap*>( theObj);
+		}
+	}
 }
 
 /*------------------------------------------------------------------------------*\

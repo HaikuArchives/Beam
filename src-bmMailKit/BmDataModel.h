@@ -29,8 +29,6 @@ class BmController;
 							// the listmodel has removed an item
 #define BM_LISTMODEL_UPDATE	'bmde'
 							// the listmodel indicates a state-change of on of its items
-#define BM_LISTMODEL_BUFFER	'bmdf'
-							// the listmodel has buffered a group of messages
 
 /*------------------------------------------------------------------------------*\
 	BmDataModel

@@ -6,6 +6,8 @@
 #ifndef _BmApp_h
 #define _BmApp_h
 
+#include <map>
+
 #include <Application.h>
 #include <Bitmap.h>
 #include <Font.h>
@@ -34,10 +36,12 @@ public:
 	bool IsQuitting()							{ return mIsQuitting; }
 
 	//
+	typedef map< BString, BBitmap*> BmIconMap;
+	BmIconMap IconMap;
+
+	//
 	BmLogHandler* LogHandler;
 	BmPrefs* Prefs;
-	BBitmap* FolderIcon;
-	BBitmap* MailIcon;
 	BString HomePath;
 	BVolume MailboxVolume;
 	BPath	SettingsPath;
@@ -55,6 +59,8 @@ public:
 	const char* WHITESPACE;
 
 private:
+	void FetchIcons();
+
 	static int InstanceCount;
 	bool mIsQuitting;
 

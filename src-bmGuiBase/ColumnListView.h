@@ -193,9 +193,12 @@ class ColumnListView : public BListView
 		inline int32 GetDisplayIndexForColumn( int32 column_index) {
 			return fColumnDisplayList.IndexOf( fColumnList.ItemAt(column_index));
 		}
-		inline rgb_color TintedWhite()	{ return fTintedWhite; }
+		inline rgb_color LightColumnCol()	{ return fLightColumnCol; }
+		inline rgb_color DarkColumnCol()	{ return fDarkColumnCol; }
 		inline void SetStripedBackground( bool b)		{ fStripedBackground = b; }
 		inline bool StripedBackground( )	{ return fStripedBackground; }
+
+		virtual void MessageReceived( BMessage* msg);
 
 	protected:
 		void SetDisconnectScrollView( bool disconnect);
@@ -239,7 +242,8 @@ class ColumnListView : public BListView
 		rgb_color fSelectedItemColorWindowInactive;
 		rgb_color fSelectedItemColorTintedWindowActive;
 		rgb_color fSelectedItemColorTintedWindowInactive;
-		rgb_color fTintedWhite;
+		rgb_color fDarkColumnCol;
+		rgb_color fLightColumnCol;
 		bool fWindowActive;
 		BScrollBar* fDeactivatedVerticalBar;
 		bool fStripedBackground;

@@ -50,6 +50,7 @@ struct CLVDragGroup
 
 class CLVColumnLabelView : public BView
 {
+		typedef BView inherited;
 	public:
 		//Constructor and destructor
 		CLVColumnLabelView(BRect Bounds,ColumnListView* Parent,const BFont* Font);
@@ -60,6 +61,8 @@ class CLVColumnLabelView : public BView
 		virtual void MouseDown(BPoint Point);
 		virtual void MouseMoved(BPoint where, uint32 code, const BMessage *message);
 		virtual void MouseUp(BPoint where);
+
+		virtual void MessageReceived( BMessage* msg);
 
 	private:
 		friend class ColumnListView;

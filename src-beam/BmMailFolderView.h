@@ -8,7 +8,7 @@
 
 #include <map>
 
-#include "BmController.h"
+#include "BmListController.h"
 
 
 /*------------------------------------------------------------------------------*\
@@ -18,12 +18,14 @@
 class BmMailFolderItem : public BmListViewItem
 {
 	typedef BmListViewItem inherited;
+	static const int16 nFirstTextCol;
 
 public:
 	BmMailFolderItem( BString key, BmListModelItem* item, uint32 level, 
 							bool superitem, bool expanded);
 	~BmMailFolderItem();
 
+	virtual bool NeedsHighlight();
 };
 
 

@@ -124,8 +124,8 @@ fSelectedItemColorWindowActive( tint_color(LightMetallicBlue, lighten_tint)),
 fSelectedItemColorWindowInactive( tint_color(BeListSelectGrey, lighten_tint)),
 fSelectedItemColorTintedWindowActive( tint_color(fSelectedItemColorWindowActive, darken_tint)),
 fSelectedItemColorTintedWindowInactive( tint_color(fSelectedItemColorWindowInactive, darken_tint)),
-fTintedWhite( tint_color( sand, lighten_tint)),
-// fTintedWhite( tint_color( White, darken_tint)),
+fDarkColumnCol( tint_color( White, darken_tint)),
+fLightColumnCol( White),
 fWindowActive( false),
 fDeactivatedVerticalBar( NULL),
 fStripedBackground( false),
@@ -1770,9 +1770,9 @@ void ColumnListView::SetDisconnectScrollView( bool disconnect) {
 void ColumnListView::DrawColumn( BRect updateRect, int32 column_index) {
 	int32 index = GetDisplayIndexForColumn( column_index);
 	if (index % 2) {
-		SetLowColor( fTintedWhite);
+		SetLowColor( fDarkColumnCol);
 	} else {
-		SetLowColor( White);
+		SetLowColor( fLightColumnCol);
 	}
 	FillRect( updateRect, B_SOLID_LOW);
 }
@@ -1859,4 +1859,29 @@ void ColumnListView::KeyDown(const char *bytes, int32 numBytes)
 		}
 	}
 	BListView::KeyDown( bytes, numBytes);
+}
+
+void ColumnListView::MessageReceived(BMessage* msg) {
+	if (msg->what == 'PSTE') {
+		struct rgb_color *col;
+		ssize_t siz;
+		const void *data;
+		msg->FindData( "RGBColor", B_RGB_COLOR_TYPE, &data, &siz);
+		col = (rgb_color*)data;
+		BPoint point;
+		msg->FindPoint("_drop_point_", &point);
+		int num = fColumnDisplayList.CountItems();
+		for( int i=0; i<num; i++) {
+			CLVColumn* column = (CLVColumn*)fColumnDisplayList.ItemAt(i);
+			if (column->ColumnBegin()<point.x && column->ColumnEnd()>=point.x) {
+				if (i%2==0)
+					fDarkColumnCol = *col;
+				else
+					fLightColumnCol = *col;
+				Invalidate();
+			}
+		}
+	} else {
+		inherited::MessageReceived( msg);
+	}
 }
