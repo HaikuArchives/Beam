@@ -950,7 +950,7 @@ int32 BmMail::QuoteText( const BString& in, BString& out, BString inQuoteString,
 	if (!in.Length())
 		return maxLineLen;
 	BString quoteString;
-	ConvertTabsToSpaces( inQuoteString, quoteString);
+	ConvertTabsToSpaces( inQuoteString, quoteString, ThePrefs->GetInt( "SpacesPerTab", 4));
 	BString qStyle = ThePrefs->GetString( "QuoteFormatting");
 	if (qStyle == BM_QUOTE_AUTO_WRAP)
 		return QuoteTextWithReWrap( in, out, quoteString, maxLineLen);
@@ -963,7 +963,7 @@ int32 BmMail::QuoteText( const BString& in, BString& out, BString inQuoteString,
 	int maxTextLen;
 	int32 count = rx.exec( Regexx::study | Regexx::global | Regexx::newline);
 	for( int32 i=0; i<count; ++i) {
-		ConvertTabsToSpaces( rx.match[i].atom[0], quote);
+		ConvertTabsToSpaces( rx.match[i].atom[0], quote, ThePrefs->GetInt( "SpacesPerTab", 4));
 		if (qStyle == BM_QUOTE_SIMPLE) {
 			// always respect maxLineLen, wrap when lines exceed right margin.
 			// This results in a combing-effect when long lines are wrapped
@@ -1013,7 +1013,7 @@ int32 BmMail::QuoteTextWithReWrap( const BString& in, BString& out,
 	int32 lastLineLen = 0;
 	int32 count = rx.exec( Regexx::study | Regexx::global | Regexx::newline);
 	for( int32 i=0; i<count; ++i) {
-		ConvertTabsToSpaces( rx.match[i].atom[0], quote);
+		ConvertTabsToSpaces( rx.match[i].atom[0], quote, ThePrefs->GetInt( "SpacesPerTab", 4));
 		line = rx.match[i].atom[1];
 		if ((line.CountChars() < minLenForWrappedLine && lastWasSpecialLine)
 		|| rxl.exec( line, ThePrefs->GetString( "QuotingLevelEmptyLineRX", "^[ \\t]*$"))
@@ -1069,17 +1069,21 @@ int32 BmMail::AddQuotedText( const BString& inText, BString& out,
 	BString tmp;
 	BString text;
 	maxTextLen = MAX( 0, maxTextLen);
-	ConvertTabsToSpaces( inText, text);
+	ConvertTabsToSpaces( inText, text, ThePrefs->GetInt( "SpacesPerTab", 4));
 	while( text.CountChars() > maxTextLen) {
 		int32 wrapPos = B_ERROR;
 		int32 idx=0;
-		for( int32 chars=0; chars<maxTextLen; ++chars) {
+		for(  int32 charCount=0; 
+				charCount<maxTextLen || (wrapPos==B_ERROR && text[idx]); 
+			   ++charCount) {
 			if (IS_UTF8_STARTCHAR(text[idx])) {
 				idx++;
 				while( IS_WITHIN_UTF8_MULTICHAR(text[idx]))
 					idx++;
 			} else {
 				if (text[idx]==B_SPACE)
+					wrapPos = idx+1;
+				if (text[idx]=='\n')
 					wrapPos = idx+1;
 				idx++;
 			}
@@ -1089,8 +1093,10 @@ int32 BmMail::AddQuotedText( const BString& inText, BString& out,
 		modifiedMaxLen = MAX( tmp.CountChars(), modifiedMaxLen);
 		out << tmp << "\n";
 	}
-	tmp = quoteString + quote + text;
-	modifiedMaxLen = MAX( tmp.CountChars(), modifiedMaxLen);
-	out << tmp << "\n";
+	if (!inText.Length() || text.Length()) {
+		tmp = quoteString + quote + text;
+		modifiedMaxLen = MAX( tmp.CountChars(), modifiedMaxLen);
+		out << tmp << "\n";
+	}
 	return modifiedMaxLen;
 }

@@ -119,18 +119,17 @@ BmMailView::BmMailView( minimax minmax, BRect frame, bool outbound)
 	mBodyPartView->ResizeTo( 0,0);
 	mFont = *be_fixed_font;
 	mFont.SetSize( mFontSize);
-	SetFont( &mFont);
-	SetFontAndColor( &mFont);
+	MakeEditable( outbound);
+	SetDoesUndo( outbound);
+	SetStylable( true);
+	SetWordWrap( true);
+	UpdateFont( mFont);
 	if (outbound) {
 		mRulerView = new BmRulerView( &mFont);
 		AddChild( mRulerView);
 		mRulerView->MoveTo( mBodyPartView->Frame().LeftBottom());
 	}
 	CalculateVerticalOffset();
-	MakeEditable( outbound);
-	SetDoesUndo( outbound);
-	SetStylable( true);
-	SetWordWrap( true);
 	mScrollView = new BmMailViewContainer( minmax, this, B_FOLLOW_NONE, 
 														B_WILL_DRAW | B_FRAME_EVENTS);
 }
@@ -337,9 +336,7 @@ void BmMailView::KeyDown(const char *bytes, int32 numBytes) {
 			case B_PAGE_UP:
 			case B_PAGE_DOWN:
 			case B_UP_ARROW:
-			case B_DOWN_ARROW:
-			case B_LEFT_ARROW:
-			case B_RIGHT_ARROW: {
+			case B_DOWN_ARROW: {
 				int32 mods = Window()->CurrentMessage()->FindInt32("modifiers");
 				if (mods & (B_LEFT_CONTROL_KEY | B_RIGHT_OPTION_KEY | B_SHIFT_KEY)) {
 					// remove modifiers so we don't ping-pong endlessly:
@@ -528,14 +525,18 @@ void BmMailView::SetSignatureByName( const BString sigName) {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmMailView::UpdateFont( const BFont& font) {
+	SetTabWidth( font.StringWidth( BM_SPACES.String(), 
+					 ThePrefs->GetInt( "SpacesPerTab", 4)));
+							// arrange tab-stops to correspond with tab-width
 	SetFont( &font);
 	SetFontAndColor( &font);
-	text_run_array* textRunArray = RunArray( 0, 1000000);
+	int32 len = TextLength();
+	text_run_array* textRunArray = RunArray( 0, len);
 	if (!textRunArray)
 		return;
 	for( int i=0; i<textRunArray->count; ++i)
 		textRunArray->runs[i].font = font;
-	SetRunArray( 0, 1000000, textRunArray);
+	SetRunArray( 0, len, textRunArray);
 	free( textRunArray);
 }
 
@@ -591,16 +592,19 @@ void BmMailView::InsertText( const char *text, int32 length, int32 offset,
 void BmMailView::GetWrappedText( BString& out, bool hardWrapIfNeeded) {
 	BString editedText = Text();
 	int32 lineLen;
+	bool keepLongWords;
 	if (hardWrapIfNeeded && ThePrefs->GetBool( "HardWrapMailText")) {
 		// we are in hard-wrap mode, so we use the right margin from the rulerview
 		// as right border:
 		lineLen = mRulerView->IndicatorPos();
+		keepLongWords = true;				// allow to keep long words (e.g. URLs)
 	} else {
 		// we are in softwrap mode, but there might still be a 78 chars limit
 		// set by prefs (if not, we use the maximum line length of 998 chars):
 		lineLen = ThePrefs->GetInt( "MaxLineLenForHardWrap", 998);
+		keepLongWords = false;				// never exceed 998 chars in one line
 	}
-	WordWrap( editedText, out, lineLen, "\n");
+	WordWrap( editedText, out, lineLen, "\n", keepLongWords);
 	// update mail's right margin according to rulerview:
 	mCurrMail->RightMargin( mRulerView->IndicatorPos());
 }
