@@ -83,6 +83,7 @@ BmMailRefList::~BmMailRefList() {
 \*------------------------------------------------------------------------------*/
 void BmMailRefList::MarkCacheAsDirty() { 
 	mNeedsCacheUpdate = true;
+	Cleanup();
 }
 
 /*------------------------------------------------------------------------------*\
