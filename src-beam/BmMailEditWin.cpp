@@ -324,10 +324,10 @@ void BmMailEditWin::CreateGUI() {
 	mShowDetails3Button->SetFlags( mShowDetails3Button->Flags() & (0xFFFFFFFF^B_NAVIGABLE));
 
 	// initially, the detail-parts are hidden:
-	if (!mShowDetails1)
-		mDetails1Group->RemoveSelf();
 	if (!mShowDetails2)
 		mDetails2Group->RemoveSelf();
+	if (!mShowDetails1)
+		mDetails1Group->RemoveSelf();
 	if (!mShowDetails3)
 		mDetails3Group->RemoveSelf();
 
@@ -504,6 +504,7 @@ void BmMailEditWin::MessageReceived( BMessage* msg) {
 				else
 					mDetails1Group->RemoveSelf();
 				RecalcSize();
+//				mShowDetails2Button->Invoke();
 				break;
 			}
 			case BM_SHOWDETAILS2: {
@@ -826,12 +827,14 @@ void BmMailEditWin::SetFieldsFromMail( BmMail* mail) {
 		else
 			mMailView->MakeFocus( true);
 		// now make certain fields visible if they contain values:
-		if (BString(mCcControl->Text()).Length()) {
-			mShowDetails1Button->SetValue( 1);
+		if (BString(mCcControl->Text()).Length() || BString(mBccControl->Text()).Length()) {
+			mShowDetails1Button->SetValue( B_CONTROL_ON);
+			mShowDetails1Button->SetTarget( BMessenger( this));
 			mShowDetails1Button->Invoke();
 		}
 		if (BString(mBccControl->Text()).Length()) {
-			mShowDetails2Button->SetValue( 1);
+			mShowDetails2Button->SetValue( B_CONTROL_ON);
+			mShowDetails2Button->SetTarget( BMessenger( this));
 			mShowDetails2Button->Invoke();
 		}
 	}
