@@ -133,7 +133,7 @@ BmFilterView::BmFilterView( minimax minmax, int32 width, int32 height,
 					B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE,
 					B_FOLLOW_TOP_BOTTOM, true, true, true, B_FANCY_BORDER);
 
-	AddColumn( new CLVColumn( "Name", 200.0, flags, 50.0));
+	AddColumn( new CLVColumn( "Name", 200.0, flags|CLV_SORT_KEYABLE, 50.0));
 	AddColumn( new CLVColumn( "State", 80.0, flags, 50.0));
 
 	SetSortFunction( CLVEasyItem::CompareItems);
@@ -431,24 +431,8 @@ void BmPrefsFilterView::MessageReceived( BMessage* msg) {
 				msg->FindPointer( "source", (void**)&srcView);
 				BmTextControl* source = dynamic_cast<BmTextControl*>( srcView);
 				if ( mCurrFilter && source == mFilterControl) {
-					BmString oldName = mCurrFilter->Name();
-					BmString newName = mFilterControl->Text();
-					TheFilterList->RenameItem( oldName, newName);
-					// now rename any references to this filter in the filter-chains:
-					BmModelItemMap::const_iterator chainIter;
-					for(  chainIter = TheFilterChainList->begin(); 
-							chainIter != TheFilterChainList->end(); ++chainIter) {
-						BmFilterChain* chain = dynamic_cast< BmFilterChain*>( chainIter->second.Get());
-						if (!chain)
-							continue;
-						BmModelItemMap::const_iterator filterIter;
-						for(  filterIter = chain->inheritedList::begin(); 
-								filterIter != chain->inheritedList::end(); ++filterIter) {
-							BmChainedFilter* filter = dynamic_cast< BmChainedFilter*>( filterIter->second.Get());
-							if (filter && filter->FilterName() == oldName)
-								filter->FilterName( newName);
-						}
-					}
+					// rename filter:
+					TheFilterList->RenameItem( mCurrFilter->Name(), mFilterControl->Text());
 					NoticeChange();
 				}
 				break;
@@ -481,6 +465,7 @@ void BmPrefsFilterView::MessageReceived( BMessage* msg) {
 				} else {
 					// second step, do it if user said ok:
 					if (buttonPressed == 0) {
+						TheFilterChainList->RemoveFilterFromAllChains( mCurrFilter->Key());
 						TheFilterList->RemoveItemFromList( mCurrFilter.Get());
 						mCurrFilter = NULL;
 						NoticeChange();
