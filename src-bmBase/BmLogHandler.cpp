@@ -31,6 +31,7 @@
 #include <Autolock.h>
 #include <Directory.h>
 #include <File.h>
+#include <MessageQueue.h>
 
 #include "BmBasics.h"
 #include "BmLogHandler.h"
@@ -207,11 +208,24 @@ void BmLogHandler::LogToFile( const char* const logname, uint32 flag, const char
 void BmLogHandler::CloseLog( const BmString &logname) {
 	BAutolock lock( mLocker);
 	if (lock.IsLocked()) {
-		LogfileMap::iterator logIter = mActiveLogs.find( logname);
+		BmString name = logname.Length() ? logname : BmString("Beam");
+		name = BmString("logs/") + name + ".log";
+		LogfileMap::iterator logIter = mActiveLogs.find( name);
 		BmLogfile* log;
 		if (logIter != mActiveLogs.end()) {
 			log = (*logIter).second;
-			mActiveLogs.erase( logname);
+			mActiveLogs.erase( logIter);
+			// wait until the logfile has no more entries to process...
+			BMessageQueue* msgQueue = log->MessageQueue();
+			bool done = false;
+			while( msgQueue && !done) {
+				msgQueue->Lock();
+				done = msgQueue->IsEmpty();
+				msgQueue->Unlock();
+				if (!done)
+					snooze( 100*1000);
+			}
+			// ...ok, we can quit the logfile:
 			log->Lock();
 			log->Quit();
 		}
