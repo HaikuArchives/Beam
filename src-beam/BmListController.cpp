@@ -30,7 +30,6 @@
 
 #include <memory.h>
 
-#include <Autolock.h>
 #include <MenuItem.h>
 #include <PopUpMenu.h>
 #include <StringView.h>
@@ -524,12 +523,6 @@ BmListViewItem* BmListViewController::FindViewItemFor( BmListModelItem* modelIte
 \*------------------------------------------------------------------------------*/
 void BmListViewController::AddAllModelItems() {
 	BM_LOG2( BM_LogModelController, BmString(ControllerName())<<": adding items to listview");
-	BmAutolockCheckGlobal lock( DataModel()->ModelLocker());
-	if (!lock.IsLocked())
-		BM_THROW_RUNTIME( 
-			BmString() << ControllerName() 
-				<< ":AddAllModelItems(): Unable to lock model"
-		);
 	MakeEmpty();
 	BmListModel *model = dynamic_cast<BmListModel*>(DataModel().Get());
 	BM_ASSERT( model);

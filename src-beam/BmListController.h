@@ -173,25 +173,7 @@ public:
 	virtual ~BmListViewController();
 
 	// native methods:
-	virtual void AddAllModelItems();
-	virtual BmListViewItem* AddModelItem( BmListModelItem* item);
-	virtual void RemoveModelItem( BmListModelItem* item);
-	virtual BmListViewItem* UpdateModelItem( BmListModelItem* item, BmUpdFlags updFlags);
-	virtual void UpdateModelState( BMessage* msg);
-	virtual void UpdateItem( BmListViewItem* item, BmUpdFlags flags);
-	virtual void UpdateCaption( const char* text=NULL);
 	BmListViewItem* FindViewItemFor( BmListModelItem* modelItem) const;
-	virtual void ItemInvoked( int32 index);
-	virtual bool AcceptsDropOf( const BMessage*)	{ return false; }
-	virtual void HandleDrop( const BMessage* msg);
-	void HighlightItemAt( const BPoint& point);
-	void ShowOrHideColumn( BMessage* msg);
-	//
-	virtual BmListViewItem* CreateListViewItem( BmListModelItem* item, 
-															  BMessage* archive=NULL) 			= 0;
-	//
-	BMessage* GetArchiveForItemKey( const BmString&, BMessage* msg=NULL);
-	//
 	virtual void WriteStateInfo();
 	virtual void ReadStateInfo();
 
@@ -201,7 +183,6 @@ public:
 	BHandler* GetControllerHandler() 	{ return this; }
 	void StartJob( BmJobModel* model = NULL, bool startInNewThread=true,
 						int32 jobSpecifier=BmJobModel::BM_DEFAULT_JOB);
-	void JobIsDone( bool completed);
 	status_t Archive(BMessage* archive, bool deep=true) const;
 
 	// overrides of listview base:
@@ -228,6 +209,28 @@ public:
 	void DragBetweenItems( bool b) 		{ mDragBetweenItems = b; }
 
 protected:
+	// native methods:
+	virtual void AddAllModelItems();
+	virtual BmListViewItem* AddModelItem( BmListModelItem* item);
+	virtual void RemoveModelItem( BmListModelItem* item);
+	virtual BmListViewItem* UpdateModelItem( BmListModelItem* item, BmUpdFlags updFlags);
+	virtual void UpdateModelState( BMessage* msg);
+	virtual void UpdateItem( BmListViewItem* item, BmUpdFlags flags);
+	virtual void UpdateCaption( const char* text=NULL);
+	virtual void ItemInvoked( int32 index);
+	virtual bool AcceptsDropOf( const BMessage*)	{ return false; }
+	virtual void HandleDrop( const BMessage* msg);
+	void HighlightItemAt( const BPoint& point);
+	void ShowOrHideColumn( BMessage* msg);
+	//
+	virtual BmListViewItem* CreateListViewItem( BmListModelItem* item, 
+															  BMessage* archive=NULL) 			= 0;
+	//
+	BMessage* GetArchiveForItemKey( const BmString&, BMessage* msg=NULL);
+
+	// overrides of controller base:
+	void JobIsDone( bool completed);
+
 	// archival of the controller's state-info:
 	virtual BmString StateInfoBasename()				= 0;
 	virtual BMessage* DefaultLayout()	{ return NULL; }
