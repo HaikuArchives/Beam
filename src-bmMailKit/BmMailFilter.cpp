@@ -57,6 +57,7 @@ const char* const BmMailFilter::MSG_REFS = 		"refs";
 
 // alternate job-specifiers:
 const int32 BmMailFilter::BM_EXECUTE_FILTER_IN_MEM = 	1;
+const int32 BmMailFilter::BM_EXECUTE_AND_STORE = 		2;
 
 /*------------------------------------------------------------------------------*\
 	BmMailFilter()
@@ -106,7 +107,8 @@ void BmMailFilter::AddMail( BmMail* mail) {
 \*------------------------------------------------------------------------------*/
 bool BmMailFilter::ShouldContinue() {
 	return inherited::ShouldContinue() 
-			 || CurrentJobSpecifier() == BM_EXECUTE_FILTER_IN_MEM;
+			 || CurrentJobSpecifier() == BM_EXECUTE_FILTER_IN_MEM
+			 || CurrentJobSpecifier() == BM_EXECUTE_AND_STORE;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -164,7 +166,8 @@ bool BmMailFilter::StartJob() {
 		-	applies mail-filtering to a single given mail
 \*------------------------------------------------------------------------------*/
 void BmMailFilter::ExecuteFilter( BmMail* mail) {
-	BmMsgContext msgContext( mail->RawText(), mail->Name());
+	BmMsgContext msgContext( mail->RawText(), mail->Name(), mail->Outbound(),
+									 mail->Status(), mail->AccountName());
 	mail->Header()->GetAllFieldValues( msgContext);
 	if (!mFilter) {
 		BM_LOG2( BM_LogFilter, 

@@ -63,6 +63,9 @@ public:
 	static const int32 BM_EXECUTE_FILTER_IN_MEM;
 							// for filter-execution without any controllers being 
 							// present
+	static const int32 BM_EXECUTE_AND_STORE;
+							// for filter-execution and storing without any 
+							// controllers being present 
 
 	BmMailFilter( const BmString& name, BmFilter* filter);
 	virtual ~BmMailFilter();

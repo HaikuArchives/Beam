@@ -1112,10 +1112,13 @@ bool BmMail::SetDestFoldername( const BmString& inFoldername) {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmMail::ApplyFilter( BmRef<BmFilter> filter) {
+void BmMail::ApplyFilter( BmRef<BmFilter> filter, bool storeIfNeeded) {
 	BmRef<BmMailFilter> filterJob = new BmMailFilter( Name(), filter.Get());
 	filterJob->AddMail( this);
-	filterJob->StartJobInThisThread( BmMailFilter::BM_EXECUTE_FILTER_IN_MEM);
+	if (storeIfNeeded)
+		filterJob->StartJobInThisThread( BmMailFilter::BM_EXECUTE_AND_STORE);
+	else
+		filterJob->StartJobInThisThread( BmMailFilter::BM_EXECUTE_FILTER_IN_MEM);
 }
 
 /*------------------------------------------------------------------------------*\
