@@ -55,17 +55,18 @@ using namespace regexx;
 	AddEmails()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmPersonInfo::AddEmails( const BmStringVect& mails) {
+void BmPersonInfo::AddEmails( const BmString& name, const BmStringVect& mails) {
 	Regexx rx;
 	for( uint32 m=0; m<mails.size(); ++m) {
 		if (!rx.exec( mails[m], "^\\s*$")) {
+			BmString mailAddr = BmPerson::GenerateMailAddr( name, mails[m]);
 			bool found=false;
 			for( uint32 i=0; i<emails.size(); ++i) {
-				if (emails[i] == mails[m])
+				if (emails[i] == mailAddr)
 					found=true;							// avoid duplicate entries
 			}
 			if (!found)
-				emails.push_back( mails[m]);
+				emails.push_back( mailAddr);
 		}
 	}
 }
@@ -128,17 +129,35 @@ bool BmPerson::AddEmail( const BmString& em) {
 }
 
 /*------------------------------------------------------------------------------*\
+	GenerateMailAddr()
+		-	
+\*------------------------------------------------------------------------------*/
+BmString BmPerson::GenerateMailAddr( const BmString& name, const BmString& email) {
+	if (ThePrefs->GetBool( "AddPeopleNameToMailAddr", true) && name.Length()) {
+		// quote the name if it contains "dangerous" characters:
+		if (name.FindFirst(',')!=B_ERROR
+		|| name.FindFirst(':')!=B_ERROR
+		|| name.FindFirst('<')!=B_ERROR	
+		|| name.FindFirst('>')!=B_ERROR)
+			return BmString("\"") << name << "\" <" << email << ">";
+		else
+			return name + " <" + email + ">";
+	} else
+		return email;
+}
+
+/*------------------------------------------------------------------------------*\
 	()
 		-	
 \*------------------------------------------------------------------------------*/
 void BmPerson::AddToNickMap( BmPersonMap& nickMap) const {
 	if (!mIsForeign && mNick.Length() && !mEmails.empty()) {
 		BmPersonInfo& personInfo = nickMap[GenerateSortkeyFor( mNick)];
-		personInfo.AddEmails( mEmails);
+		personInfo.AddEmails( mNick, mEmails);
 		if (personInfo.emails.size() > 1)
 			personInfo.name = mNick;
 		else
-			personInfo.name = mNick + " (" + mEmails[0] + ")";
+			personInfo.name = GenerateMailAddr( mNick, mEmails[0]);
 	}
 }
 
@@ -149,11 +168,11 @@ void BmPerson::AddToNickMap( BmPersonMap& nickMap) const {
 void BmPerson::AddToForeignMap( BmPersonMap& foreignMap) const {
 	if (mIsForeign && mName.Length() && !mEmails.empty()) {
 		BmPersonInfo& personInfo = foreignMap[GenerateSortkeyFor( mName)];
-		personInfo.AddEmails( mEmails);
+		personInfo.AddEmails( mName, mEmails);
 		if (personInfo.emails.size() > 1)
 			personInfo.name = mName;
 		else
-			personInfo.name = mName + " (" + mEmails[0] + ")";
+			personInfo.name = GenerateMailAddr( mName, mEmails[0]);
 	}
 }
 
@@ -164,11 +183,11 @@ void BmPerson::AddToForeignMap( BmPersonMap& foreignMap) const {
 void BmPerson::AddToNoGroupMap( BmPersonMap& noGroupMap) const {
 	if (!mIsForeign && mGroups.empty() && mName.Length() && !mEmails.empty()) {
 		BmPersonInfo& personInfo = noGroupMap[GenerateSortkeyFor( mName)];
-		personInfo.AddEmails( mEmails);
+		personInfo.AddEmails( mName, mEmails);
 		if (personInfo.emails.size() > 1)
 			personInfo.name = mName;
 		else
-			personInfo.name = mName + " (" + mEmails[0] + ")";
+			personInfo.name = GenerateMailAddr( mName, mEmails[0]);
 	}
 }
 
@@ -180,10 +199,10 @@ void BmPerson::AddToAllPeopleMap( BmPersonMap& allPeopleMap) const {
 	if (mName.Length() || !mEmails.empty()) {
 		for( uint32 i=0; i<mEmails.size(); ++i) {
 			BmPersonInfo& personInfo = allPeopleMap[GenerateSortkeyFor( mName+mEmails[i])];
-			personInfo.name = mName + " (" + mEmails[i] + ")";
+			personInfo.name = GenerateMailAddr( mName, mEmails[i]);
 			BmStringVect mails;
 			mails.push_back( mEmails[i]);
-			personInfo.AddEmails( mails);
+			personInfo.AddEmails( mName, mails);
 		}
 	}
 }
@@ -199,11 +218,11 @@ void BmPerson::AddToGroupMap( BmGroupMap& groupMap) const {
 		BmGroupInfo& groupInfo = groupMap[GenerateSortkeyFor( mGroups[i])];
 		groupInfo.name = mGroups[i];
 		BmPersonInfo& personInfo = groupInfo.personMap[GenerateSortkeyFor( mName)];
-		personInfo.AddEmails( mEmails);
+		personInfo.AddEmails( mName, mEmails);
 		if (personInfo.emails.size() > 1)
 			personInfo.name = mName;
 		else
-			personInfo.name = mName + " (" + mEmails[0] + ")";
+			personInfo.name = GenerateMailAddr( mName, mEmails[0]);
 	}
 }
 
@@ -324,12 +343,14 @@ BMenu* BmPeopleList::CreateSubmenuForPersonMap( const BmPersonMap& personMap,
 		if (numMails>1) {
 			BMenu* addrMenu = new BMenu( info.name.String());
 			addrMenu->SetFont( font);
-			subMenu->AddItem( addrMenu);
 			for( uint32 i=0; i<numMails; ++i) {
 				msg = new BMessage( templateMsg);
 				msg->AddString( addrField, info.emails[i].String());
 				addrMenu->AddItem( new BMenuItem( info.emails[i].String(), msg));
 			}
+			msg = new BMessage( templateMsg);
+			msg->AddString( addrField, info.emails[0].String());
+			subMenu->AddItem( new BMenuItem( addrMenu, msg));
 		} else {
 			msg = new BMessage( templateMsg);
 			msg->AddString( addrField, info.emails[0].String());

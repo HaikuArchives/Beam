@@ -58,7 +58,7 @@ struct BmPersonInfo {
 	BmPersonInfo()								{}
 	BmPersonInfo( const BmString& nm, const BmString& nk, const BmString& em)
 		: name( nm), nick( nk)				{	emails.push_back( em); }
-	void AddEmails( const BmStringVect& mails);
+	void AddEmails( const BmString& name, const BmStringVect& mails);
 };
 typedef map< BmString, BmPersonInfo> BmPersonMap;
 
@@ -87,6 +87,9 @@ public:
 	void AddToNickMap( BmPersonMap& nickMap) const;
 	void AddToForeignMap( BmPersonMap& foreignMap) const;
 	void AddToAllPeopleMap( BmPersonMap& allPeopleMap) const;
+	//
+	static BmString GenerateMailAddr( const BmString& name, 
+												 const BmString& email);
 
 	bool AddEmail( const BmString &em);
 
@@ -100,8 +103,6 @@ public:
 private:
 
 	// native methods:
-	static BmString GenerateDisplayName( const BmString& name, const BmString& nick,
-													const BmString& email);
 
 	BmPerson();									// hide default constructor
 	// Hide copy-constructor and assignment:
