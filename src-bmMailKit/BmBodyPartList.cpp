@@ -259,7 +259,6 @@ BmBodyPart::BmBodyPart( BmBodyPartList* model, const entry_ref* ref, BmListModel
 			mCurrentEncoding = mSuggestedEncoding = BM_UTF8_CONVERSION;
 			mHaveDecodedData = true;
 		}
-		mBodyLength = size;
 
 		mContentType.SetTo( mimetype<<"; name=\"" << ref->name << '"');
 		if (mimetype.ICompare( "text/", 5) == 0)
@@ -276,6 +275,16 @@ BmBodyPart::BmBodyPart( BmBodyPartList* model, const entry_ref* ref, BmListModel
 													: "7bit";
 		else
 			mContentTransferEncoding = "base64";
+
+		if (mContentTransferEncoding=="7bit" || mContentTransferEncoding=="8bit"
+		|| mContentTransferEncoding=="quoted-printable") {
+			// we compute an encoded-size estimate for text, (we simply assume 
+			// that UTF8-encoding yields about the same size as quoted-printable):
+			mBodyLength = mDecodedData.Length();
+		} else {
+			// we compute an encoded-size estimate for base64:
+			mBodyLength = (int)(mDecodedData.Length()*4.1)/3;
+		}
 		
 		mInitCheck = B_OK;
 	} catch( exception &err) {
@@ -395,32 +404,30 @@ void BmBodyPart::SetTo( const BmString& msgtext, int32 start, int32 length,
 		mHaveDecodedData = true;
 	} else {
 		// decode body:
-		if (IsText() && ShouldBeShownInline()) {
+		if (IsText() && body->EditableTextBody() == this) {
 			// text data is decoded and then converted from it's encoding into utf8:
-			BM_LOG2( BM_LogMailParse, BmString("creating bodyString of length ")<<mBodyLength<<"...");
-			BmString bodyString;
-			msgtext.CopyInto( bodyString, mStartInRawText, mBodyLength);
-			BmString decodedString;
-			BM_LOG2( BM_LogMailParse, "...decoding bodyString...");
-			Decode( mContentTransferEncoding, bodyString, decodedString, false);
-			BM_LOG2( BM_LogMailParse, "...converting bodyString to utf8...");
-			ConvertToUTF8( mCurrentEncoding, decodedString, mDecodedData);
-			if (body->EditableTextBody() == this) {
-				// split off signature, if any:
-				Regexx rx;
-				BmString sigRX = ThePrefs->GetString( "SignatureRX");
-				int32 count = rx.exec( mDecodedData, sigRX, Regexx::newline|Regexx::global);
-				if (count>0) {
-					BmString sigStr( mDecodedData.String()+rx.match[count-1].start()+rx.match[count-1].Length());
-					mDecodedData.Truncate( rx.match[count-1].start());
-					body->Signature( sigStr);
-				}
+			BM_LOG2( BM_LogMailParse, BmString("decoding text-part of mail (length ")<<mBodyLength<<" bytes) ...");
+			BmStringIBuf text( msgtext.String()+mStartInRawText, mBodyLength);
+			BmMemFilterRef decoder = FindDecoderFor( text, mContentTransferEncoding);
+			BmStringOBuf tempIO( mBodyLength);
+			BmUtf8Encoder textConverter( *decoder, mSuggestedEncoding);
+			tempIO.Write( textConverter);
+			mDecodedData.Adopt( tempIO.TheString());
+			BM_LOG2( BM_LogMailParse, "...splitting off signature...");
+			// split off signature, if any:
+			Regexx rx;
+			BmString sigRX = ThePrefs->GetString( "SignatureRX");
+			int32 count = rx.exec( mDecodedData, sigRX, Regexx::newline|Regexx::global);
+			if (count>0) {
+				BmString sigStr( mDecodedData.String()+rx.match[count-1].start()+rx.match[count-1].Length());
+				mDecodedData.Truncate( rx.match[count-1].start());
+				body->Signature( sigStr);
 			}
+			BM_LOG2( BM_LogMailParse, "...done (decoding of text-part)");
 			mHaveDecodedData = true;
 		} else {
-			// non-text decoding is defered until actually needed:
+			// decoding of attachments is deferred until actually needed
 		}
-		BM_LOG2( BM_LogMailParse, "...decoded data is ready");
 	}
 	// id
 	BM_LOG2( BM_LogMailParse, "parsing Content-Id");
@@ -577,19 +584,20 @@ const BmString& BmBodyPart::DecodedData() const {
 			BmBodyPartList* bodyPartList = dynamic_cast< BmBodyPartList*>( listModel.Get());
 			const BmMail* mail;
 			if (bodyPartList && (mail=bodyPartList->Mail())) {
-				BmString bodyString;
-				mail->RawText().CopyInto( bodyString, mStartInRawText, mBodyLength);
+				BmStringIBuf text( mail->RawText().String()+mStartInRawText, mBodyLength);
+				BmMemFilterRef decoder = FindDecoderFor( text, mContentTransferEncoding);
+				BmStringOBuf tempIO( mBodyLength, 1.2);
 				if (IsText()) {
 					// text data is decoded and then converted from it's encoding into utf8:
-					BM_LOG2( BM_LogMailParse, "re-converting bodyString...");
-					BmString decodedString;
-					Decode( mContentTransferEncoding, bodyString, decodedString, false);
-					ConvertToUTF8( mSuggestedEncoding, decodedString, mDecodedData);
+					BM_LOG2( BM_LogMailParse, BmString( "(re-)converting bodytext of ") << mBodyLength << " bytes...");
+					BmUtf8Encoder textConverter( *decoder, mSuggestedEncoding);
+					tempIO.Write( textConverter);
 					mCurrentEncoding = mSuggestedEncoding;
 				} else {
-					BM_LOG2( BM_LogMailParse, "decoding bodyString...");
-					Decode( mContentTransferEncoding, bodyString, mDecodedData, false);
+					BM_LOG2( BM_LogMailParse, BmString( "decoding bodytext of ") << mBodyLength << " bytes...");
+					tempIO.Write( *decoder);
 				}
+				mDecodedData.Adopt( tempIO.TheString());
 				BM_LOG2( BM_LogMailParse, "done");
 				mHaveDecodedData = true;
 			}
@@ -767,10 +775,25 @@ int32 BmBodyPart::PruneUnneededMultiParts() {
 }
 
 /*------------------------------------------------------------------------------*\
+	EstimateEncodedSize()
+		-	
+\*------------------------------------------------------------------------------*/
+int32 BmBodyPart::EstimateEncodedSize() {
+	int32 size = 1024 + (IsMultiPart() ? 0 : mBodyLength);
+							// 1024 makes room for header-fields
+	BmModelItemMap::const_iterator iter;
+	for( iter = begin(); iter != end(); ) {
+		BmBodyPart* bodyPart = dynamic_cast< BmBodyPart*>( iter++->second.Get());
+		size += bodyPart->EstimateEncodedSize();
+	}
+	return size;
+}
+
+/*------------------------------------------------------------------------------*\
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmBodyPart::ConstructBodyForSending( BmStrOStream &msgText) {
+void BmBodyPart::ConstructBodyForSending( BmStringOBuf &msgText) {
 	BmString boundary;
 	if (IsMultiPart()) {
 		PropagateHigherEncoding();
@@ -787,18 +810,46 @@ void BmBodyPart::ConstructBodyForSending( BmStrOStream &msgText) {
 	if (mContentLanguage.Length())
 		msgText << BM_FIELD_CONTENT_LANGUAGE << ": " << mContentLanguage << "\r\n";
 	msgText << "\r\n";
+
 	if (IsMultiPart())
 		msgText << "This is a multi-part message in MIME format.\r\n\r\n";
-	BmString encodedString;
-	if (IsText()) {
-		BmString convertedString;
-		ConvertFromUTF8( CharsetToEncoding( Charset()), DecodedData(), convertedString);
-		Encode( mContentTransferEncoding, convertedString, encodedString);
-	} else
-		Encode( mContentTransferEncoding, DecodedData(), encodedString);
-	msgText << encodedString;
-	if (msgText.ByteAt( msgText.CurrPos()-1) != '\n')
-		msgText << "\r\n";
+	else {
+		uint32 newStartPos = msgText.CurrPos();
+	
+		BmRef<BmListModel> listModel( ListModel());
+		const BmMail* mail = NULL;
+		BmBodyPartList* bodyPartList = NULL;
+		if (listModel) {
+			bodyPartList = dynamic_cast< BmBodyPartList*>( listModel.Get());
+			if (bodyPartList)
+				mail = bodyPartList->Mail();
+		}
+		if (bodyPartList && mail && mStartInRawText 
+		&& bodyPartList->EditableTextBody() != this) {
+			// we already have the encoded text, we simply copy that:
+			BM_LOG2( BM_LogMailParse, BmString( "copying bodytext of ") << mBodyLength << " bytes...");
+			mBodyLength = msgText.Write( mail->RawText().String()+mStartInRawText, mBodyLength);
+			BM_LOG2( BM_LogMailParse, "...done (bodytext)");
+		} else {
+			// encode buffer (and convert if neccessary):
+			BmStringIBuf text( DecodedData());
+			BmMemFilterRef encoder = FindEncoderFor( text, mContentTransferEncoding);
+			if (IsText()) {
+				BM_LOG2( BM_LogMailParse, BmString( "encoding/converting bodytext of ") << DecodedLength() << " bytes...");
+				BM_LOG2( BM_LogMailParse, "to native encoding...");
+				BmUtf8Decoder textConverter( *encoder, CharsetToEncoding( Charset()));
+				mBodyLength = msgText.Write( textConverter);
+			} else {
+				BM_LOG2( BM_LogMailParse, BmString( "encoding bodytext of ") << DecodedLength() << " bytes...");
+				mBodyLength = msgText.Write( *encoder);
+			}
+			BM_LOG2( BM_LogMailParse, "...done (bodytext)");
+		}
+		mStartInRawText = newStartPos;
+		uint32 len = msgText.CurrPos();
+		if (len && msgText.ByteAt( len-1) != '\n')
+			msgText << "\r\n";
+	}
 	BmModelItemMap::const_iterator iter;
 	for( iter = begin(); iter != end(); ++iter) {
 		if (IsMultiPart())
@@ -989,10 +1040,24 @@ void BmBodyPartList::PruneUnneededMultiParts() {
 }
 
 /*------------------------------------------------------------------------------*\
+	EstimateEncodedSize()
+		-	
+\*------------------------------------------------------------------------------*/
+int32 BmBodyPartList::EstimateEncodedSize() {
+	int32 size = 0;
+	BmModelItemMap::const_iterator iter;
+	for( iter = begin(); iter != end(); ) {
+		BmBodyPart* bodyPart = dynamic_cast< BmBodyPart*>( iter++->second.Get());
+		size += bodyPart->EstimateEncodedSize();
+	}
+	return size;
+}
+
+/*------------------------------------------------------------------------------*\
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-bool BmBodyPartList::ConstructBodyForSending( BmStrOStream& msgText) {
+bool BmBodyPartList::ConstructBodyForSending( BmStringOBuf& msgText) {
 	BmAutolock lock( mModelLocker);
 	lock.IsLocked()	 						|| BM_THROW_RUNTIME( ModelName() << ":ConstructBodyForSending(): Unable to get lock");
 	BmRef<BmBodyPart> editableTextBody( EditableTextBody());

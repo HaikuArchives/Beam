@@ -663,13 +663,19 @@ void BmMail::AddPartsFromMail( BmRef<BmMail> mail, bool withAttachments,
 \*------------------------------------------------------------------------------*/
 bool BmMail::ConstructRawText( const BmString& editedText, int32 encoding,
 										 const BmString smtpAccount) {
-	BmStrOStream msgText( editedText.Length()*1.5, 2.0);
+	int32 startSize = mBody->EstimateEncodedSize() + editedText.Length() 
+							+ max( mHeader->HeaderLength(), (int32)4096)+4096;
+	startSize += 65536-(startSize%65536);
+	BmStringOBuf msgText( startSize, 1.2);
 	mAccountName = smtpAccount;
 	if (!mHeader->ConstructRawText( msgText, encoding))
 		return false;
 	mBody->SetEditableText( editedText, encoding);
 	if (!mBody->ConstructBodyForSending( msgText))
 		return false;
+	uint32 len = msgText.CurrPos();
+	if (len && msgText.ByteAt( len-1) != '\n')
+		msgText << "\r\n";
 	mText.Adopt( msgText.TheString());
 	BM_LOG3( BM_LogMailParse, BmString("CONSTRUCTED MSG: \n-----START--------\n") << mText << "\n-----END----------");
 	return mInitCheck == B_OK;

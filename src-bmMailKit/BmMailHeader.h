@@ -35,6 +35,7 @@
 #include <vector>
 
 #include "BmBasics.h"
+#include "BmMemIO.h"
 #include "BmRefManager.h"
 #include "BmUtil.h"
 
@@ -110,7 +111,7 @@ public:
 	bool Add( BmString strippedFieldVal);
 	void Remove( BmString singleAddress);
 	BmStringList SplitIntoAddresses( BmString addrList);
-	void ConstructRawText( BmStrOStream& header, int32 encoding, int32 fieldNameLength) const;
+	void ConstructRawText( BmStringOBuf& header, int32 encoding, int32 fieldNameLength) const;
 	BmString FindAddressMatchingAccount( BmPopAccount* acc) const;
 	bool ContainsAddrSpec( BmString addrSpec) const;
 	BmString AddrSpecsAsString() const;
@@ -186,7 +187,7 @@ public:
 	BmString DetermineOriginator( bool bypassReplyTo=false);
 	BmString DetermineListAddress( bool bypassSanityTest=false);
 	//
-	bool ConstructRawText( BmStrOStream& header, int32 encoding);
+	bool ConstructRawText( BmStringOBuf& header, int32 encoding);
 
 	// overrides of BmRefObj
 	const BmString& RefName() const				{ return mKey; }

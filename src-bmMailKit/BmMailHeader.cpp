@@ -413,7 +413,7 @@ BmAddressList::operator BmString() const {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmAddressList::ConstructRawText( BmStrOStream& header, int32 encoding, 
+void BmAddressList::ConstructRawText( BmStringOBuf& header, int32 encoding, 
 												  int32 fieldNameLength) const {
 	BmString fieldString;
 	if (mIsGroup) {
@@ -971,8 +971,8 @@ void BmMailHeader::StoreAttributes( BFile& mailFile) {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-bool BmMailHeader::ConstructRawText( BmStrOStream& msgText, int32 encoding) {
-	BmStrOStream headerIO( 1024, 2.0);
+bool BmMailHeader::ConstructRawText( BmStringOBuf& msgText, int32 encoding) {
+	BmStringOBuf headerIO( 1024, 2.0);
 	if (!mAddrMap[BM_FIELD_TO].InitOK() && !mAddrMap[BM_FIELD_CC].InitOK()) {
 		if (mAddrMap[BM_FIELD_BCC].InitOK()) {
 			// only hidden recipients via use of bcc, we set a dummy-<TO> value:

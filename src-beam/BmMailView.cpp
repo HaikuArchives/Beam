@@ -677,6 +677,9 @@ void BmMailView::ShowMail( BmMail* mail, bool async) {
 void BmMailView::JobIsDone( bool completed) {
 	if (completed && mCurrMail && mCurrMail->Header()) {
 		BmString displayText;
+		BmStringOBuf displayBuf( mShowRaw 
+											? mCurrMail->RawText().Length()
+											: 65536);
 		mTextRunMap.clear();
 		mTextRunMap[0] = BmTextRunInfo( Black);
 		BmBodyPartList* body = mCurrMail->Body();
@@ -688,23 +691,29 @@ void BmMailView::JobIsDone( bool completed) {
 			if (mShowRaw) {
 				BM_LOG2( BM_LogMailParse, BmString("displaying raw message"));
 				uint32 encoding = mCurrMail->DefaultEncoding();
-				ConvertToUTF8( encoding, mCurrMail->RawText(), displayText);
+				BmStringIBuf text( mCurrMail->RawText());
+				BmLinebreakDecoder decoder( text);
+				BmUtf8Encoder textConverter( decoder, encoding);
+				displayBuf.Write( textConverter);
+				displayText.Adopt( displayBuf.TheString());
 			} else {
 				BM_LOG2( BM_LogMailParse, BmString("extracting parts to be displayed from body-structure"));
 				BmModelItemMap::const_iterator iter;
 				for( iter=body->begin(); iter != body->end(); ++iter) {
 					BmBodyPart* bodyPart = dynamic_cast<BmBodyPart*>( iter->second.Get());
-					DisplayBodyPart( displayText, bodyPart);
+					DisplayBodyPart( displayBuf, bodyPart);
 				}
 				// add signature, if any:
 				if (body->Signature().Length()) {
-					if (displayText.ByteAt(displayText.Length()-1) != '\n')
-						displayText << '\n';
-					mTextRunMap[displayText.Length()] = BmTextRunInfo( BeShadow);
+					uint32 len = displayBuf.CurrPos();
+					if (len && displayBuf.ByteAt(len-1) != '\n')
+						displayBuf << "\n";
+					mTextRunMap[displayBuf.CurrPos()] = BmTextRunInfo( BeShadow);
 					// signature within body is already in UTF8-encoding, so we
 					// just add it to out display-text:
-					displayText << "-- \n" << body->Signature();
+					displayBuf << "-- \n" << body->Signature();
 				}
+				displayText.Adopt( displayBuf.TheString());
 				if (!mOutbound) {
 					// highlight URLs:
 					Regexx rx;
@@ -723,8 +732,8 @@ void BmMailView::JobIsDone( bool completed) {
 				}
 			}
 		}
-		BM_LOG2( BM_LogMailParse, BmString("remove <CR>s from mailtext"));
-		displayText.RemoveAll( "\r");
+//		BM_LOG2( BM_LogMailParse, BmString("remove <CR>s from mailtext"));
+//		displayText.RemoveAll( "\r");
 		BM_LOG2( BM_LogMailParse, BmString("setting mailtext into textview"));
 		// set up textrun-array
 		int32 trsiz = sizeof( struct text_run);
@@ -776,17 +785,17 @@ void BmMailView::JobIsDone( bool completed) {
 	DisplayBodyPart( displayText, bodypart)
 		-	
 \*------------------------------------------------------------------------------*/
-void BmMailView::DisplayBodyPart( BmString& displayText, BmBodyPart* bodyPart) {
+void BmMailView::DisplayBodyPart( BmStringOBuf& displayBuf, BmBodyPart* bodyPart) {
 	if (!bodyPart->IsMultiPart()) {
 		if (bodyPart->ShouldBeShownInline()) {
 			// MIME-block should be shown inline, so we add it to our textview:
-			if (displayText.Length() && mShowInlinesSeparately) {
+			if (displayBuf.CurrPos() && mShowInlinesSeparately) {
 				// we show a separator between two inline bodyparts
 				if (bodyPart->FileName().Length()) {
-					displayText << "\n- - - - - - - - - - - - - - - - - - - -\n";
-					displayText << "Inline Attachment <" << bodyPart->FileName() << "> follows:\n";
+					displayBuf << "\n- - - - - - - - - - - - - - - - - - - -\n";
+					displayBuf << "Inline Attachment <" << bodyPart->FileName() << "> follows:\n";
 				}
-				displayText << "- - - - - - - - - - - - - - - - - - - -\n\n";
+				displayBuf << "- - - - - - - - - - - - - - - - - - - -\n\n";
 			}
 			if (bodyPart->IsBinary()) {
 				// Binary subparts are not automatically being converted to local newlines.
@@ -794,17 +803,17 @@ void BmMailView::DisplayBodyPart( BmString& displayText, BmBodyPart* bodyPart) {
 				// have to convert the newlines first:
 				BmString convertedData;
 				convertedData.ConvertLinebreaksToLF( &bodyPart->DecodedData());
-				displayText.Append( convertedData);
+				displayBuf << convertedData;
 			} else {
 				// standard stuff, bodypart has already been converted to local newlines
-				displayText.Append( bodyPart->DecodedData());
+				displayBuf << bodyPart->DecodedData();
 			}
 		}
 	} else {
 		BmModelItemMap::const_iterator iter;
 		for( iter=bodyPart->begin(); iter != bodyPart->end(); ++iter) {
 			BmBodyPart* subPart = dynamic_cast<BmBodyPart*>( iter->second.Get());
-			DisplayBodyPart( displayText, subPart);
+			DisplayBodyPart( displayBuf, subPart);
 		}
 	}
 }

@@ -39,6 +39,7 @@
 
 #include "BmController.h"
 #include "BmMail.h"
+#include "BmMemIO.h"
 
 class BMessageRunner;
 class BmBodyPart;
@@ -101,7 +102,7 @@ public:
 	// native methods:
 	void ShowMail( BmMailRef* ref, bool async=true);
 	void ShowMail( BmMail* mail, bool async=true);
-	void DisplayBodyPart( BmString& displayText, BmBodyPart* bodyPart);
+	void DisplayBodyPart( BmStringOBuf& displayBuf, BmBodyPart* bodyPart);
 	status_t Archive( BMessage* archive, bool deep=true) const;
 	status_t Unarchive( BMessage* archive, bool deep=true);
 	bool WriteStateInfo();

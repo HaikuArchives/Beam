@@ -34,6 +34,7 @@
 #include <Entry.h>
 
 #include "BmDataModel.h"
+#include "BmMemIO.h"
 
 class BmMail;
 class BmMailHeader;
@@ -107,7 +108,8 @@ public:
 	void SaveAs( const entry_ref& destDirRef, BmString filename);
 	void PropagateHigherEncoding();
 	int32 PruneUnneededMultiParts();
-	void ConstructBodyForSending( BmStrOStream &msgText);
+	int32 EstimateEncodedSize();
+	void ConstructBodyForSending( BmStringOBuf &msgText);
 	void SuggestEncoding( int32 enc) 			{ mSuggestedEncoding = enc; }
 
 	static BmString GenerateBoundary();
@@ -195,7 +197,8 @@ public:
 	bool HasAttachments() const;
 	void AddAttachmentFromRef( const entry_ref* ref);
 	void PruneUnneededMultiParts();
-	bool ConstructBodyForSending( BmStrOStream& msgText);
+	int32 EstimateEncodedSize();
+	bool ConstructBodyForSending( BmStringOBuf& msgText);
 	void SetEditableText( const BmString& text, uint32 encoding);
 	uint32 DefaultEncoding()	const;
 
