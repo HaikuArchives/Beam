@@ -28,6 +28,8 @@
 /*                                                                       */
 /*************************************************************************/
 
+#include <algorithm>
+
 #include "BmMemIO.h"
 
 /********************************************************************************\
@@ -38,7 +40,7 @@
 	BmMemFilter()
 		-	constructor
 \*------------------------------------------------------------------------------*/
-BmMemFilter::BmMemFilter( BmMemIBuf& input, uint32 blockSize)
+BmMemFilter::BmMemFilter( BmMemIBuf* input, uint32 blockSize, bool immediatePassOn)
 	:	mInput( input)
 	,	mBuf( new char [blockSize])
 	,	mCurrPos( 0)
@@ -48,6 +50,8 @@ BmMemFilter::BmMemFilter( BmMemIBuf& input, uint32 blockSize)
 	,	mDestCount( 0)
 	,	mIsFinalized( false)
 	,	mHadError( false)
+	,	mEndReached( false)
+	,	mImmediatePassOnMode( immediatePassOn)
 {
 }
 
@@ -60,19 +64,39 @@ BmMemFilter::~BmMemFilter() {
 }
 
 /*------------------------------------------------------------------------------*\
-	()
+	Reset()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMemFilter::Reset( BmMemIBuf* input) {
+	mCurrPos = mCurrSize = mSrcCount = mDestCount = 0;
+	mIsFinalized = false;
+	mHadError = false;
+	mEndReached = false;
+	if (input)
+		mInput = input;
+}
+
+/*------------------------------------------------------------------------------*\
+	Read()
 		-	
 \*------------------------------------------------------------------------------*/
 uint32 BmMemFilter::Read( char* data, uint32 reqLen) {
-	const uint32 minSize=5;
+	const uint32 minSize=10;
+							// Minimum size of destination-buffer that we need.
+							// The minSize must be larger than the biggest destination-
+							// size of any single source-byte. At the moment, the
+							// biggest possible destination-size of a single source-byte
+							// is produced by the UTF8-encoder, which may blow up a single
+							// character to 5 bytes (or less, of course).
 	uint32 readLen = 0;
 	uint32 srcLen;
 	uint32 destLen;
 	bool tooSmall = false;
-	while( !mHadError && readLen < reqLen-minSize) {
+	assert( mInput);
+	while( !mHadError && !mEndReached && readLen < reqLen-minSize) {
 		if (mCurrPos==mCurrSize || tooSmall) {
-			// block is empty, we need to fetch more data:
-			if (mInput.IsAtEnd()) {
+			// block is empty or too small, we need to fetch more data:
+			if (mInput->IsAtEnd()) {
 				// there is no more input data in our input-MemIO, 
 				// this means that we have reached the end.
 				// We just have to finalize the filter-output:
@@ -88,7 +112,7 @@ uint32 BmMemFilter::Read( char* data, uint32 reqLen) {
 			mCurrSize = srcLen;
 			tooSmall = false;
 			// ...and (re-)fill the buffer from our input-stream:
-			mCurrSize += mInput.Read( mBuf+srcLen, mBlockSize-srcLen);
+			mCurrSize += mInput->Read( mBuf+srcLen, mBlockSize-srcLen);
 		}
 		srcLen = max( (uint32)0, mCurrSize - mCurrPos);
 		if (srcLen) {
@@ -100,6 +124,8 @@ uint32 BmMemFilter::Read( char* data, uint32 reqLen) {
 			mCurrPos += srcLen;
 			mSrcCount += srcLen;
 			readLen += destLen;
+			if (mImmediatePassOnMode && readLen)
+				break;
 		}
 	}
 	mDestCount += readLen;
@@ -111,7 +137,9 @@ uint32 BmMemFilter::Read( char* data, uint32 reqLen) {
 		-	
 \*------------------------------------------------------------------------------*/
 bool BmMemFilter::IsAtEnd() {
-	return mHadError || (mCurrPos==mCurrSize && mInput.IsAtEnd() && mIsFinalized);
+	assert( mInput);
+	return mHadError || mEndReached
+			 || (mCurrPos==mCurrSize && mInput->IsAtEnd() && mIsFinalized);
 }
 
 
@@ -125,10 +153,9 @@ bool BmMemFilter::IsAtEnd() {
 		-	constructor
 \*------------------------------------------------------------------------------*/
 BmStringIBuf::BmStringIBuf( const char* str, int32 len)
-	:	mBuf( str)
-	,	mCurrPos( 0)
-	,	mSize( len==-1 ? strlen( str) : len)
+	:	mIndex( 0)
 {
+	AddBuffer( str, len);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -136,10 +163,17 @@ BmStringIBuf::BmStringIBuf( const char* str, int32 len)
 		-	constructor
 \*------------------------------------------------------------------------------*/
 BmStringIBuf::BmStringIBuf( const BmString& str)
-	:	mBuf( str.String())
-	,	mCurrPos( 0)
-	,	mSize( str.Length())
+	:	mIndex( 0)
 {
+	AddBuffer( str);
+}
+
+/*------------------------------------------------------------------------------*\
+	AddBuffer( str, len)
+		-	
+\*------------------------------------------------------------------------------*/
+void BmStringIBuf::AddBuffer( const char* str, int32 len) {
+	mBufInfo.push_back( BufInfo( str, len<0 ? strlen( str) : len));
 }
 
 /*------------------------------------------------------------------------------*\
@@ -147,10 +181,50 @@ BmStringIBuf::BmStringIBuf( const BmString& str)
 		-	
 \*------------------------------------------------------------------------------*/
 uint32 BmStringIBuf::Read( char* data, uint32 reqLen) {
-	uint32 size = min( reqLen, mSize-mCurrPos);
-	memcpy( data, mBuf+mCurrPos, size);
-	mCurrPos += size;
-	return size;
+	uint32 readLen = 0;
+	while( readLen < reqLen && !IsAtEnd()) {
+		uint32 size = min( reqLen-readLen, mBufInfo[mIndex].size-mBufInfo[mIndex].currPos);
+		memcpy( data+readLen, mBufInfo[mIndex].buf+mBufInfo[mIndex].currPos, size);
+		readLen += size;
+		mBufInfo[mIndex].currPos += size;
+		if (mBufInfo[mIndex].currPos == mBufInfo[mIndex].size)
+			mIndex++;
+	}
+	return readLen;
+}
+
+/*------------------------------------------------------------------------------*\
+	IsAtEnd()
+		-	
+\*------------------------------------------------------------------------------*/
+bool BmStringIBuf::IsAtEnd() {
+	while (mIndex < mBufInfo.size()) {
+		if (mBufInfo[mIndex].currPos < mBufInfo[mIndex].size)
+			return false;
+		mIndex++;
+	}
+	return true;
+}
+
+/*------------------------------------------------------------------------------*\
+	EndsWithNewline()
+		-	
+\*------------------------------------------------------------------------------*/
+bool BmStringIBuf::EndsWithNewline() {
+	uint32 lst = mBufInfo.size()-1;
+	return lst && mBufInfo[lst].size 
+			 && mBufInfo[lst].buf[mBufInfo[lst].size-1] == '\n';
+}
+
+/*------------------------------------------------------------------------------*\
+	Size()
+		-	
+\*------------------------------------------------------------------------------*/
+uint32 BmStringIBuf::Size() const {
+	uint32 sz = 0;
+	for( uint32 i=0; i<mBufInfo.size(); ++i)
+		sz += mBufInfo[i].size;
+	return sz;
 }
 
 
@@ -215,13 +289,13 @@ uint32 BmStringOBuf::Write( const char* data, uint32 len) {
 	Write( input)
 		-	adds all data from given BmMemIBuf input to end of string
 \*------------------------------------------------------------------------------*/
-uint32 BmStringOBuf::Write( BmMemIBuf& input, uint32 blockSize) {
+uint32 BmStringOBuf::Write( BmMemIBuf* input, uint32 blockSize) {
 	uint32 writeLen=0;
 	uint32 len;
-	while( !input.IsAtEnd()) {
+	while( input && !input->IsAtEnd()) {
 		if (!GrowBufferToFit( blockSize))
 			break;
-		len = input.Read( mBuf+mCurrPos, blockSize);
+		len = input->Read( mBuf+mCurrPos, blockSize);
 		writeLen += len;
 		mCurrPos += len;
 	}

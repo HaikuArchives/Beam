@@ -31,7 +31,7 @@
 #ifndef _BmMemIO_h
 #define _BmMemIO_h
 
-#include <list>
+#include <vector>
 
 #include "BmString.h"
 
@@ -64,8 +64,11 @@ class BmMemFilter : public virtual BmMemIBuf {
 	typedef BmMemIBuf inherited;
 
 public:
-	BmMemFilter( BmMemIBuf& input, uint32 blockSize=65536);
+	BmMemFilter( BmMemIBuf* input, uint32 blockSize=65536, bool immediatePassOn=false);
 	~BmMemFilter();
+
+	// native methods:
+	virtual void Reset( BmMemIBuf* input=NULL);
 
 	// overrides of BmMemIBuf:
 	uint32 Read( char* data, uint32 reqLen);
@@ -80,7 +83,7 @@ protected:
 	virtual void Finalize( char* destBuf, uint32& destLen) 
 													{ destLen=0; mIsFinalized = true; }
 	
-	BmMemIBuf& mInput;
+	BmMemIBuf* mInput;
 	char* mBuf;
 	uint32 mCurrPos;
 	uint32 mCurrSize;
@@ -88,7 +91,20 @@ protected:
 	uint32 mSrcCount;
 	uint32 mDestCount;
 	bool mIsFinalized;
+							// indicates that Finalize() has completed
 	bool mHadError;
+							// indicates that an error has occurred, no more
+							// processing will be done by this filter
+	bool mEndReached;
+							// the filter has reached a byte-combination that indicates
+							// the end of data (e.g. "\r\n.\r\n" in dotstuffed encoding
+							// the remaining data will be ignored
+	bool mImmediatePassOnMode;
+							// indicates that instead of trying to fill its buffer, the
+							// filter will process every block of data it gets and immediately
+							// pass it on to its output buffer. Network-related filters 
+							// usually behave this way so that they process the data while
+							// more bytes are travelling through the net.
 };
 
 /*------------------------------------------------------------------------------*\
@@ -102,15 +118,32 @@ public:
 	BmStringIBuf( const char* str, int32 len=-1);
 	BmStringIBuf( const BmString& str);
 
+	// native methods:
+	void AddBuffer( const char* str, int32 len=-1);
+	inline void AddBuffer( const BmString& str)
+													{ AddBuffer( str.String(), str.Length()); }
+
 	// overrides of BmMemIBuf base:
 	uint32 Read( char* data, uint32 reqLen);
-	inline bool IsAtEnd()					{ return mCurrPos == mSize; }
-	inline uint32 Size()						{ return mSize; }
+	bool IsAtEnd();
+	bool EndsWithNewline();
+
+	// getters:
+	uint32 Size() const;
+	inline const char* FirstBuf() const	{ return mBufInfo[0].buf; }
+	inline uint32 FirstSize() const		{ return mBufInfo[0].size; }
 
 private:
-	const char* mBuf;
-	uint32 mCurrPos;
-	uint32 mSize;
+	struct BufInfo {
+		const char* buf;
+		uint32 currPos;
+		uint32 size;
+		BufInfo( const char* b, uint32 s)
+			: buf( b), currPos( 0), size( s)		{}
+	};
+	typedef vector<BufInfo> BmBufInfoVect;
+	BmBufInfoVect mBufInfo;
+	uint32 mIndex;
 
 	// Hide copy-constructor and assignment:
 	BmStringIBuf( const BmStringIBuf&);
@@ -127,13 +160,20 @@ class BmStringOBuf : public virtual BmMemOBuf {
 public:
 	BmStringOBuf( uint32 startLen, float growFactor=1.5);
 	~BmStringOBuf();
+
+	// overrides/overloads of BmMemOBuf base:
 	uint32 Write( const char* data, uint32 len);
-	uint32 Write( BmMemIBuf& input, uint32 blockSize=BmMemFilter::nBlockSize);
+	uint32 Write( BmMemIBuf* input, uint32 blockSize=BmMemFilter::nBlockSize);
 	uint32 Write( const BmString& data)	{ return Write( data.String(), data.Length()); }
+	
+	// native methods:
 	BmString& TheString();
+	inline const char* Buffer() const	{ return mBuf; }
 	inline bool HasData() const 			{ return mBuf!=NULL; }
-	inline uint32 CurrPos() const 		{ return mCurrPos; }
 	inline char ByteAt( uint32 pos) const { return (!mBuf||pos<0||pos>=mCurrPos) ? 0 : mBuf[pos]; }
+
+	// getters:
+	inline uint32 CurrPos() const 		{ return mCurrPos; }
 
 	BmStringOBuf 		&operator<<(const char *);
 	BmStringOBuf 		&operator<<(const BmString &);
