@@ -684,7 +684,6 @@ const BmString& BmBodyPart::DecodedData() const {
 				= dynamic_cast< BmBodyPartList*>( listModel.Get());
 			const BmMail* mail;
 			if (bodyPartList && (mail=bodyPartList->Mail())!=NULL) {
-BmString s(mail->RawText().String()+mStartInRawText, mBodyLength);
 				BmStringIBuf text( mail->RawText().String()+mStartInRawText, 
 										 mBodyLength);
 				BmMemFilterRef decoder 
@@ -971,7 +970,7 @@ void BmBodyPart::ConstructBodyForSending( BmStringOBuf &msgText) {
 				BmMemFilterRef encoder 
 					= FindEncoderFor( &textConverter, mContentTransferEncoding);
 				mBodyLength = msgText.Write( encoder.get());
-				if (textConverter.HadError()) {
+				if (textConverter.HadToDiscardChars()) {
 					BmString errText 
 						= (bodyPartList->EditableTextBody() == this)
 							?	BmString("The mailtext contains characters that ")
@@ -985,7 +984,9 @@ void BmBodyPart::ConstructBodyForSending( BmStringOBuf &msgText) {
 								<< mCurrentCharset << ").\n\n"
 								<< "Please re-add the attachment with the correct "
 								<< "charset.";
-					throw BM_text_error( errText, "", textConverter.SrcCount());
+					throw BM_text_error( 
+						errText, "", textConverter.FirstDiscardedPos()
+					);
 				}
 			} else {
 				BM_LOG2( BM_LogMailParse, 
