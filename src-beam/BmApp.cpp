@@ -621,7 +621,7 @@ void BmApplication::ForwardMails( BMessage* msg, bool join) {
 				msg->FindPointer( MSG_MAILREF, index, (void**)&mailRef) == B_OK;
 				++index) {
 			if (mailRef)
-				sortedRefMap.insert( pair<time_t, BmMailRef*>( mailRef->When(), 
+				sortedRefMap.insert( pair<const time_t, BmMailRef*>( mailRef->When(), 
 																			  mailRef));
 		}
 		// now iterate over the sorted mail-refs:
@@ -721,7 +721,7 @@ void BmApplication::ReplyToMails( BMessage* msg, bool join) {
 				msg->FindPointer( MSG_MAILREF, index, (void**)&mailRef) == B_OK;
 				++index) {
 			if (mailRef)
-				sortedRefMap.insert( pair<time_t, BmMailRef*>( mailRef->When(), 
+				sortedRefMap.insert( pair<const time_t, BmMailRef*>( mailRef->When(), 
 																			  mailRef));
 		}
 		// we file mails into the different originator-slots:
