@@ -37,6 +37,7 @@
 
 #include "BmString.h"
 #include "BmMemIO.h"
+#include "BmUtil.h"
 
 /*------------------------------------------------------------------------------*\
 	BmEncoding 
@@ -55,15 +56,12 @@ namespace BmEncoding {
 	void ConvertToUTF8( const BmString& srcCharset, const BmString& src, BmString& dest);
 	void ConvertFromUTF8( const BmString& destCharset, const BmString& src, BmString& dest);
 
-	void Encode( BmString encodingStyle, const BmString& src, BmString& dest, 
-					 bool isEncodedWord=false);
-	void Decode( BmString encodingStyle, const BmString& src, BmString& dest, 
-					 bool isEncodedWord=false);
+	void Encode( BmString encodingStyle, const BmString& src, BmString& dest);
+	void Decode( BmString encodingStyle, const BmString& src, BmString& dest);
 
 	BmString ConvertHeaderPartToUTF8( const BmString& headerPart, const BmString& defaultCharset);
 	BmString ConvertUTF8ToHeaderPart( const BmString& utf8text, const BmString& charset,
-												 bool useQuotedPrintableIfNeeded,
-												 bool fold=false, int32 fieldLen=0);
+												 bool useQuotedPrintableIfNeeded, int32 fieldLen);
 	
 	bool NeedsEncoding( const BmString& utf8String);
 	bool IsCompatibleWithText( const BmString& s);
@@ -75,7 +73,6 @@ namespace BmEncoding {
 											 uint32 blockSize=BmMemFilter::nBlockSize);
 	BmMemFilterRef FindEncoderFor( BmMemIBuf* input, 
 											 const BmString& encodingStyle,
-											 bool isEncodedWord=false, 
 											 uint32 blockSize=BmMemFilter::nBlockSize);
 };
 
@@ -175,8 +172,7 @@ class BmQuotedPrintableEncoder : public BmMemFilter {
 	typedef BmMemFilter inherited;
 
 public:
-	BmQuotedPrintableEncoder( BmMemIBuf* input, bool isEncodedWord=false, 
-									  uint32 blockSize=nBlockSize);
+	BmQuotedPrintableEncoder( BmMemIBuf* input, uint32 blockSize=nBlockSize);
 
 protected:
 	// overrides of BmMailFilter base:
@@ -184,9 +180,31 @@ protected:
 					 char* destBuf, uint32& destLen);
 	void Finalize( char* destBuf, uint32& destLen);
 
-	bool mIsEncodedWord;
 	int mCurrLineLen;
 	int mSpacesThatMayNeedEncoding;
+};
+
+/*------------------------------------------------------------------------------*\
+	class BmQuotedPrintableEncoder
+		-	
+\*------------------------------------------------------------------------------*/
+class BmQpEncodedWordEncoder : public BmMemFilter {
+	typedef BmMemFilter inherited;
+
+public:
+	BmQpEncodedWordEncoder( BmMemIBuf* input, uint32 blockSize=nBlockSize, 
+									int startAtOffset=0,
+									const BmString& charset=BM_DEFAULT_STRING);
+
+protected:
+	// overrides of BmMailFilter base:
+	void Filter( const char* srcBuf, uint32& srcLen, 
+					 char* destBuf, uint32& destLen);
+	void Finalize( char* destBuf, uint32& destLen);
+
+	BmString mEncodedWord;
+	BmString mQueuedChars;
+	int mCurrLineLen;
 };
 
 /*------------------------------------------------------------------------------*\
@@ -307,6 +325,29 @@ protected:
 	// overrides of BmMailFilter base:
 	void Filter( const char* srcBuf, uint32& srcLen, 
 					 char* destBuf, uint32& destLen);
+};
+
+/*------------------------------------------------------------------------------*\
+	class BmFoldedLineEncoder
+		-	
+\*------------------------------------------------------------------------------*/
+class BmFoldedLineEncoder : public BmMemFilter {
+	typedef BmMemFilter inherited;
+
+public:
+	BmFoldedLineEncoder( BmMemIBuf* input, int lineLen,
+							   uint32 blockSize=nBlockSize, int startAtOffset=0);
+
+protected:
+	// overrides of BmMailFilter base:
+	void Filter( const char* srcBuf, uint32& srcLen, 
+					 char* destBuf, uint32& destLen);
+	void Finalize( char* destBuf, uint32& destLen);
+
+	int mCurrLineLen;
+	int mMaxLineLen;
+	bool mAddQueuedChars;
+	BmString mQueuedChars;
 };
 
 #endif
