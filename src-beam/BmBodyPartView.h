@@ -112,7 +112,10 @@ public:
 	inline bool ShowAllParts()				{ return mShowAllParts; }
 
 	// setters:
-	inline void IsUsedForPrinting( bool b) { mIsUsedForPrinting = b; }
+	inline void IsUsedForPrinting( bool b) 
+													{ mIsUsedForPrinting = b; }
+	inline void DefaultCharset( BmString s) 
+													{ mDefaultCharset = s; }
 
 	static const int16 nFirstTextCol;
 
@@ -124,6 +127,9 @@ private:
 	bool mShowAllParts;
 	bool mEditable;
 	bool mIsUsedForPrinting;
+	BmString mDefaultCharset;
+							// holds charset that will be used for dropped 
+							// text-attachments (or UTF-8, depending on prefs).
 
 	BFilePanel* mSavePanel;
 

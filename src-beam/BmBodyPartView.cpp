@@ -62,6 +62,7 @@ enum Columns {
 	COL_SIZE,
 	COL_DESCRIPTION,
 	COL_TRANSFER_ENC,
+	COL_CHARSET,
 	COL_LANGUAGE
 };
 
@@ -95,6 +96,9 @@ BmBodyPartItem::BmBodyPartItem( const BmString& key, BmListModelItem* _item)
 		{ sizeString.String(),								true },
 		{ bodyPart->Description().String(),				false },
 		{ bodyPart->TransferEncoding().String(),		false },
+		{ bodyPart->IsText() 
+			? bodyPart->SuggestedCharset().String() 
+			: "",													false },
 		{ bodyPart->Language().String(),					false },
 		{ NULL, false }
 	};
@@ -116,7 +120,7 @@ BmBodyPartItem::~BmBodyPartItem() {
 #define BACKGROUND_COL BeBackgroundGrey
 
 const int16 BmBodyPartView::nFirstTextCol = 2;
-float BmBodyPartView::nColWidths[10] = {10,20,20,20,20,20,20,20,0,0};
+float BmBodyPartView::nColWidths[10] = {10,20,20,20,20,20,20,20,20,0};
 
 const char* const BmBodyPartView::MSG_SHOWALL = "bm:showall";
 
@@ -161,6 +165,7 @@ BmBodyPartView::BmBodyPartView( minimax minmax, int32 width, int32 height,
 	AddColumn( new CLVColumn( "Description", nColWidths[5], 0, 20.0));
 	AddColumn( new CLVColumn( "Transfer", nColWidths[6], 0, 20.0));
 	AddColumn( new CLVColumn( "", nColWidths[7], 0, 20.0));
+	AddColumn( new CLVColumn( "", nColWidths[8], 0, 20.0));
 }
 
 /*------------------------------------------------------------------------------*\
@@ -252,7 +257,14 @@ void BmBodyPartView::AddAttachment( BMessage* msg) {
 	if (!bodyPartList)
 		return;
 	for( int i=0; msg->FindRef( "refs", i, &ref) == B_OK; ++i) {
-		bodyPartList->AddAttachmentFromRef( &ref);
+		bodyPartList->AddAttachmentFromRef( &ref, mDefaultCharset);
+	}
+	BmBodyPart* droppedBodyPart = NULL;
+	if (msg->FindPointer( "bm:bodypart", (void**)&droppedBodyPart) == B_OK) {
+		// we take a shortcut: if dragging from one mail-view to the other,
+		// we just copy the body-part:
+		BmRef<BmBodyPart> newBodyPart( new BmBodyPart(*droppedBodyPart));
+		bodyPartList->AddItemToList( newBodyPart.Get());
 	}
 	ShowBody( bodyPartList);
 }
@@ -640,7 +652,6 @@ bool BmBodyPartView::InitiateDrag( BPoint, int32 index, bool wasSelected) {
 	BmBodyPartItem* bodyPartItem = dynamic_cast<BmBodyPartItem*>(ItemAt( index));
 	BmBodyPart* bodyPart( bodyPartItem->ModelItem());
 	const char* filename = bodyPartItem->GetColumnContentText( COL_NAME);
-//	entry_ref eref = bodyPart->WriteToTempFile( filename);
 	dragMsg.AddInt32( "be:actions", B_COPY_TARGET);
 	dragMsg.AddInt32( "be:actions", B_TRASH_TARGET);
 	dragMsg.AddString( "be:types", B_FILE_MIME_TYPE);
@@ -648,7 +659,7 @@ bool BmBodyPartView::InitiateDrag( BPoint, int32 index, bool wasSelected) {
 	dragMsg.AddString( "be:clip_name", filename);
 	dragMsg.AddString( "be:originator", BmDragId.String());
 	dragMsg.AddString( "be:originator_data", bodyPart->Key().String());
-//	dragMsg.AddRef( "refs", &eref);
+	dragMsg.AddPointer( "bm:bodypart", bodyPart);
 	BFont font;
 	GetFont( &font);
 	float lineHeight = MAX(TheResources->FontLineHeight( &font),20.0);
