@@ -89,6 +89,7 @@ public:
 
 	static BmPrefs* theInstance;
 
+	void SetupMailboxVolume();
 	BVolume MailboxVolume;
 
 	// log-levels as string (for prefs):
@@ -101,7 +102,6 @@ private:
 
 	void InitDefaults();
 	void SetLoglevels();
-	void SetupMailboxVolume();
 	BMessage* GetShortcutDefaults( BMessage* msg=NULL);
 	void SetShortcutIfNew( BMessage* msg, const char* name, const BmString val);
 
