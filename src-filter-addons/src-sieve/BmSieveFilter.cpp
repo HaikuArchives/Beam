@@ -1420,18 +1420,26 @@ void BmSieveFilterPrefs::RemoveMarkedFilterLines() {
 				mMailPartControl[currIdx]->MarkItem(
 					mMailPartControl[i]->MenuItem()->Label()
 				);
+				mCurrFilterAddon->mMatchMailPart[currIdx] 
+					= mCurrFilterAddon->mMatchMailPart[i];
 				mFieldNameControl[currIdx]->SetText(
 					mFieldNameControl[i]->Text()
 				);
+				mCurrFilterAddon->mMatchFieldName[currIdx] 
+					= mCurrFilterAddon->mMatchFieldName[i];
 				mOperatorControl[currIdx]->MarkItem(
 					mOperatorControl[i]->MenuItem()->Label()
 				);
 				mOperatorControl[currIdx]->MenuItem()->SetLabel(
 					mOperatorControl[i]->MenuItem()->Label()
 				);
+				mCurrFilterAddon->mMatchOperator[currIdx] 
+					= mCurrFilterAddon->mMatchOperator[i];
 				mValueControl[currIdx]->SetText(
 					mValueControl[i]->Text()
 				);
+				mCurrFilterAddon->mMatchValue[currIdx] 
+					= mCurrFilterAddon->mMatchValue[i];
 			}
 			currIdx++;
 		} else
@@ -1441,10 +1449,14 @@ void BmSieveFilterPrefs::RemoveMarkedFilterLines() {
 		--mVisibleLines;
 		mMailPartControl[mVisibleLines]->ClearMark();
 		mMailPartControl[mVisibleLines]->MenuItem()->SetLabel("");
+		mCurrFilterAddon->mMatchMailPart[mVisibleLines] = "";
 		mFieldNameControl[mVisibleLines]->SetText("");
+		mCurrFilterAddon->mMatchFieldName[mVisibleLines] = "";
 		mOperatorControl[mVisibleLines]->ClearMark();
 		mOperatorControl[mVisibleLines]->MenuItem()->SetLabel("");
+		mCurrFilterAddon->mMatchOperator[mVisibleLines] = "";
 		mValueControl[mVisibleLines]->SetText("");
+		mCurrFilterAddon->mMatchValue[mVisibleLines] = "";
 		mFilterLine[mVisibleLines]->RemoveSelf();
 	}
 }
