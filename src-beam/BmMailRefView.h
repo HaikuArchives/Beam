@@ -58,8 +58,7 @@ class BmMailRefItem : public BmListViewItem
 	static const int16 nFirstTextCol;
 
 public:
-	BmMailRefItem( ColumnListView* lv, const BmString& key, 
-						BmListModelItem* item);
+	BmMailRefItem( ColumnListView* lv, BmListModelItem* item);
 	~BmMailRefItem();
 	
 	// overrides of ListViewItem:

@@ -77,8 +77,8 @@ protected:
 
 public:
 	//
-	BmListViewItem( ColumnListView* lv, const BmString& key, 
-						 BmListModelItem* item, bool hierarchical=false, 
+	BmListViewItem( ColumnListView* lv, BmListModelItem* item, 
+						 bool hierarchical=false, 
 						 BMessage* archive=NULL);
 	virtual ~BmListViewItem();
 	
@@ -91,12 +91,11 @@ public:
 	status_t Archive( BMessage* archive, bool deep = true) const;
 
 	// getters:
-	inline const BmString& Key() const	{ return mKey; }
+	inline const BmString& Key() const	{ return mModelItem->Key(); }
 	virtual BmListModelItem* ModelItem() const	
 													{ return mModelItem.Get(); }
 	
 protected:
-	BmString mKey;
 	BmRef<BmListModelItem> mModelItem;
 
 	// Hide copy-constructor and assignment:

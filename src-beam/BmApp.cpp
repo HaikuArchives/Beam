@@ -249,6 +249,8 @@ BmApplication::BmApplication( const char* sig)
 \*------------------------------------------------------------------------------*/
 BmApplication::~BmApplication() {
 	RemoveDeskbarItem();
+	ThePeopleMonitor = NULL;
+	TheMailMonitor = NULL;
 	ThePeopleList = NULL;
 	TheMailFolderList = NULL;
 	TheIdentityList = NULL;
@@ -260,7 +262,7 @@ BmApplication::~BmApplication() {
 #ifdef BM_REF_DEBUGGING
 	BmRefObj::PrintRefsLeft();
 #endif
-//	TheLogHandler->ShutDown();
+	BmRefObj::CleanupProxies();
 	delete mPrintSetup;
 	delete ThePrefs;
 	delete TheResources;

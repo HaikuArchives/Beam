@@ -55,8 +55,7 @@ class BmBodyPartItem : public BmListViewItem
 	typedef BmListViewItem inherited;
 
 public:
-	BmBodyPartItem( ColumnListView* lv, const BmString& key, 
-						 BmListModelItem* item);
+	BmBodyPartItem( ColumnListView* lv, BmListModelItem* item);
 	~BmBodyPartItem();
 
 	BmBodyPart* ModelItem() const	{ return dynamic_cast<BmBodyPart*>(mModelItem.Get()); }

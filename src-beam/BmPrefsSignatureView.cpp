@@ -73,9 +73,8 @@ enum Columns {
 		-	
 \*------------------------------------------------------------------------------*/
 BmSignatureItem::BmSignatureItem( ColumnListView* lv, 
-											 const BmString& key, 
 											 BmListModelItem* _item)
-	:	inherited( lv, key, _item, false)
+	:	inherited( lv, _item, false)
 {
 }
 
@@ -173,7 +172,7 @@ BmSignatureView::~BmSignatureView() {
 \*------------------------------------------------------------------------------*/
 BmListViewItem* BmSignatureView::CreateListViewItem( BmListModelItem* item,
 																	  BMessage*) {
-	return new BmSignatureItem( this, item->Key(), item);
+	return new BmSignatureItem( this, item);
 }
 
 /*------------------------------------------------------------------------------*\

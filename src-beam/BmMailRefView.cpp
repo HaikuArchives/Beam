@@ -97,9 +97,8 @@ enum Columns {
 		-	
 \*------------------------------------------------------------------------------*/
 BmMailRefItem::BmMailRefItem( ColumnListView* lv, 
-										const BmString& key, 
 										BmListModelItem* _item)
-	:	inherited( lv, key, _item)
+	:	inherited( lv, _item)
 {
 }
 
@@ -420,7 +419,7 @@ CLVContainerView* BmMailRefView::CreateContainer( bool horizontal,
 \*------------------------------------------------------------------------------*/
 BmListViewItem* BmMailRefView::CreateListViewItem( BmListModelItem* item, 
 																	BMessage*) {
-	return new BmMailRefItem( this, item->Key(), item);
+	return new BmMailRefItem( this, item);
 }
 
 /*------------------------------------------------------------------------------*\

@@ -68,6 +68,7 @@ public:
 	static inline BLocker* GlobalLocker();
 	static BmString RefPrintHex( const void* ptr);
 	static BmProxy* GetProxy( const char* const proxyName);
+	static void CleanupProxies();
 #ifdef BM_REF_DEBUGGING
 	static void PrintRefsLeft();
 #endif

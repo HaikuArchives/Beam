@@ -65,11 +65,9 @@ const char* const BmListViewItem::MSG_CHILDREN = 	"bm:chldrn";
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmListViewItem::BmListViewItem( ColumnListView* lv, const BmString& key, 
-										  BmListModelItem* modelItem,
+BmListViewItem::BmListViewItem( ColumnListView* lv, BmListModelItem* modelItem,
 										  bool, BMessage* archive)
 	:	inherited( modelItem->OutlineLevel(), !modelItem->empty(), false, lv)
-	,	mKey( key)
 	,	mModelItem( modelItem)
 {
 	SetExpanded( archive ? archive->FindBool( MSG_EXPANDED) : false);
@@ -275,11 +273,11 @@ void BmListViewController::MouseMoved( BPoint point, uint32 transit,
 					int32 pulsedScrollDelay 
 						= ThePrefs->GetInt( "PulsedScrollDelay", 100);
 					if (pulsedScrollDelay>0) {
-						BMessage* msg = new BMessage( BM_PULSED_SCROLL);
-						msg->AddInt32( MSG_SCROLL_STEP, mPulsedScrollStep);
+						BMessage msg( BM_PULSED_SCROLL);
+						msg.AddInt32( MSG_SCROLL_STEP, mPulsedScrollStep);
 						BMessenger msgr( this);
 						mPulsedScrollRunner = new BMessageRunner( 
-							msgr, msg, pulsedScrollDelay*1000, -1
+							msgr, &msg, pulsedScrollDelay*1000, -1
 						);
 					}
 				}
@@ -372,12 +370,13 @@ void BmListViewController::HighlightItemAt( const BPoint& point) {
 				int32 expandCollapseDelay 
 					= ThePrefs->GetInt( "ExpandCollapseDelay", 1000);
 				if (expandCollapseDelay>0) {
-					BMessage* msg = new BMessage( BM_EXPAND_OR_COLLAPSE);
-					msg->AddPointer( MSG_HIGHITEM, (void*)mCurrHighlightItem);
-					msg->AddBool( MSG_EXPAND, !mCurrHighlightItem->IsExpanded());
+					BMessage msg( BM_EXPAND_OR_COLLAPSE);
+					msg.AddPointer( MSG_HIGHITEM, (void*)mCurrHighlightItem);
+					msg.AddBool( MSG_EXPAND, !mCurrHighlightItem->IsExpanded());
 					BMessenger msgr( this);
-					mExpandCollapseRunner 
-						= new BMessageRunner( msgr, msg, expandCollapseDelay*1000, 1);
+					mExpandCollapseRunner = new BMessageRunner( 
+						msgr, &msg, expandCollapseDelay*1000, 1
+					);
 				}
 			}
 		} else

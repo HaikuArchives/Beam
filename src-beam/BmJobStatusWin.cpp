@@ -182,11 +182,11 @@ void BmJobStatusView::StartJob( BmJobModel* model, bool startInNewThread,
 										  int32 jobSpecifier) {
 	delete mShowMsgRunner;
 	mShowMsgRunner = NULL;
-	BMessage* timerMsg = new BMessage( BM_TIME_TO_SHOW);
+	BMessage timerMsg( BM_TIME_TO_SHOW);
 	BM_LOG2( BM_LogModelController, 
 				BmString("Controller <") << ControllerName() 
 					<< "> sets timer-to-show to "<<MSecsBeforeShow()<<" msecs");
-	mShowMsgRunner = new BMessageRunner( BMessenger( this), timerMsg, 
+	mShowMsgRunner = new BMessageRunner( BMessenger( this), &timerMsg, 
 													 MSecsBeforeShow(), 1);
 	inherited::StartJob( model, startInNewThread, jobSpecifier);
 }
@@ -213,13 +213,13 @@ void BmJobStatusView::JobIsDone( bool completed) {
 					: ThePrefs->GetInt("MSecsBeforeRemoveFailed", 5000*1000));
 		delete mRemoveMsgRunner;
 		mRemoveMsgRunner = NULL;
-		BMessage* timerMsg = new BMessage( BM_TIME_TO_REMOVE);
+		BMessage timerMsg( BM_TIME_TO_REMOVE);
 		BM_LOG2( BM_LogModelController, 
 					BmString("Controller <") << ControllerName() 
 						<< "> sets timer-to-remove to " << MSecsBeforeRemove() 
 						<< " msecs");
 		mRemoveMsgRunner = new BMessageRunner( 
-			BMessenger( this), timerMsg, timeToWait, 1
+			BMessenger( this), &timerMsg, timeToWait, 1
 		);
 	}
 }

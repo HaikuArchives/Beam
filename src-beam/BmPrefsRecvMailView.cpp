@@ -84,9 +84,8 @@ enum Columns {
 		-	
 \*------------------------------------------------------------------------------*/
 BmRecvAccItem::BmRecvAccItem( ColumnListView* lv, 
-										const BmString& key, 
 										BmListModelItem* _item)
-	:	inherited( lv, key, _item, false)
+	:	inherited( lv, _item, false)
 {
 }
 
@@ -195,7 +194,7 @@ BmRecvAccView::~BmRecvAccView() {
 \*------------------------------------------------------------------------------*/
 BmListViewItem* BmRecvAccView::CreateListViewItem( BmListModelItem* item,
 																	BMessage*) {
-	return new BmRecvAccItem( this, item->Key(), item);
+	return new BmRecvAccItem( this, item);
 }
 
 /*------------------------------------------------------------------------------*\

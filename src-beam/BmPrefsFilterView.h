@@ -45,8 +45,7 @@ class BmFilterItem : public BmListViewItem
 
 public:
 	// c'tors and d'tor:
-	BmFilterItem( ColumnListView* lv, const BmString& key, 
-					  BmListModelItem* item);
+	BmFilterItem( ColumnListView* lv, BmListModelItem* item);
 	~BmFilterItem();
 
 	// overrides of listitem base:

@@ -76,9 +76,8 @@ const BmString BmDragId = "beam/att";
 		-	
 \*------------------------------------------------------------------------------*/
 BmBodyPartItem::BmBodyPartItem( ColumnListView* lv, 
-										  const BmString& key, 
 										  BmListModelItem* _item)
-	:	inherited( lv, key, _item)
+	:	inherited( lv, _item)
 {
 	BmBodyPart* bodyPart = dynamic_cast<BmBodyPart*>( _item);
 
@@ -206,7 +205,7 @@ BmListViewItem* BmBodyPartView::CreateListViewItem( BmListModelItem* item,
 																	 BMessage*) {
 	BmBodyPart* modelItem = dynamic_cast<BmBodyPart*>( item);
 	if (mShowAllParts || !modelItem->IsMultiPart() && !modelItem->ShouldBeShownInline()) {
-		return new BmBodyPartItem( this, item->Key(), item);
+		return new BmBodyPartItem( this, item);
 	} else {
 		return NULL;
 	}

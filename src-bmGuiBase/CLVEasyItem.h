@@ -38,10 +38,10 @@ class BBitmap;
 //******************************************************************************************************
 class IMPEXPSANTAPARTSFORBEAM CLVEasyItem : public CLVListItem
 {
-		static const int8 CLV_STYLE_HIGHLIGHT = 1<<0;
-		static const int8 CLV_STYLE_HIGHLIGHT_TOP = 1<<1;
-		static const int8 CLV_STYLE_HIGHLIGHT_BOTTOM = 1<<2;
-		static const int8 CLV_STYLE_BOLD = 1<<3;
+		static const uint8 CLV_STYLE_HIGHLIGHT = 1<<1;
+		static const uint8 CLV_STYLE_HIGHLIGHT_TOP = 1<<2;
+		static const uint8 CLV_STYLE_HIGHLIGHT_BOTTOM = 1<<3;
+		static const uint8 CLV_STYLE_BOLD = 1<<4;
 		
 	public:
 		//Constructor and destructor
@@ -55,7 +55,6 @@ class IMPEXPSANTAPARTSFORBEAM CLVEasyItem : public CLVListItem
 		virtual void DrawItemColumn(BRect item_column_rect, int32 column_index);
 		virtual void Update(BView *owner, const BFont *font);
 		static int CompareItems(const CLVListItem* a_Item1, const CLVListItem* a_Item2, int32 KeyColumn, int32 col_flags);
-		inline float GetTextOffset() {return text_offset;}
 		virtual const char* GetUserText(int32 column_index, float column_width) const;
 
 		virtual const int32 GetNumValueForColumn( int32) const 		{ return 0; }
@@ -73,13 +72,10 @@ class IMPEXPSANTAPARTSFORBEAM CLVEasyItem : public CLVListItem
 
 	protected:
 		void PrepListsForSet(int column_index);
-		void SetStyleFlag( uint8 style, bool on);
 		
 		BList m_column_content;	//List of char* (full content) or BBitmap*
 
 	protected:
-		float text_offset;
-		uint8 style_flags;
 };
 
 

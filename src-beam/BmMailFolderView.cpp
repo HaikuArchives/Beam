@@ -65,10 +65,9 @@ enum Columns {
 		-	
 \*------------------------------------------------------------------------------*/
 BmMailFolderItem::BmMailFolderItem( ColumnListView* lv, 
-												const BmString& key, 
 												BmListModelItem* _item, 
 												bool, BMessage* archive)
-	:	inherited( lv, key, _item, true, archive)
+	:	inherited( lv, _item, true, archive)
 {
 }
 
@@ -275,9 +274,9 @@ status_t BmMailFolderView::Unarchive(const BMessage* archive, bool deep) {
 BmListViewItem* BmMailFolderView::CreateListViewItem( BmListModelItem* item,
 																		BMessage* archive) {
 	if (ThePrefs->GetBool("RestoreFolderStates"))
-		return new BmMailFolderItem( this, item->Key(), item, true, archive);
+		return new BmMailFolderItem( this, item, true, archive);
 	else
-		return new BmMailFolderItem( this, item->Key(), item, true, NULL);
+		return new BmMailFolderItem( this, item, true, NULL);
 }
 
 /*------------------------------------------------------------------------------*\

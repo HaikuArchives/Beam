@@ -43,11 +43,9 @@
 CLVEasyItem::CLVEasyItem(uint32 level, bool superitem, bool expanded, 
 								 ColumnListView* lv)
 :  CLVListItem(level,superitem,expanded)
-,  m_column_content( lv->CountColumns())
+,  m_column_content( MIN( 4, lv->CountColumns()))
 {
 	fOwner = lv;
-	text_offset = 0.0;
-	style_flags = 0;
 }
 
 
@@ -221,6 +219,12 @@ void CLVEasyItem::DrawItemColumn(BRect item_column_rect, int32 column_index)
 
 		if(text != NULL)
 		{
+			font_height fontAttrs;
+			BFont curr_font;
+			fOwner->GetFont(&curr_font);
+			curr_font.GetHeight( &fontAttrs);
+			float fontHeight = ceil(fontAttrs.ascent) + ceil(fontAttrs.descent);
+			float text_offset = ceil(fontAttrs.ascent) + (Height()-fontHeight)/2.0;
 			BPoint draw_point;
 			if(!right_justify)
 				draw_point.Set(item_column_rect.left+(offs?offs:2.0),item_column_rect.top+text_offset);
@@ -269,12 +273,6 @@ void CLVEasyItem::DrawItemColumn(BRect item_column_rect, int32 column_index)
 void CLVEasyItem::Update(BView *fOwner, const BFont *font)
 {
 	CLVListItem::Update(fOwner,font);
-	font_height FontAttributes;
-	BFont owner_font;
-	fOwner->GetFont(&owner_font);
-	owner_font.GetHeight(&FontAttributes);
-	float FontHeight = ceil(FontAttributes.ascent) + ceil(FontAttributes.descent);
-	text_offset = ceil(FontAttributes.ascent) + (Height()-FontHeight)/2.0;
 }
 
 
@@ -340,7 +338,7 @@ void CLVEasyItem::Highlight( bool b) {
 }
 
 bool CLVEasyItem::Highlight( ) { 
-	return (style_flags & CLV_STYLE_HIGHLIGHT) != 0; 
+	return (fItemFlags & CLV_STYLE_HIGHLIGHT) != 0; 
 }
 
 void CLVEasyItem::HighlightTop( bool b) { 
@@ -348,7 +346,7 @@ void CLVEasyItem::HighlightTop( bool b) {
 }
 
 bool CLVEasyItem::HighlightTop( ) { 
-	return (style_flags & CLV_STYLE_HIGHLIGHT_TOP) != 0; 
+	return (fItemFlags & CLV_STYLE_HIGHLIGHT_TOP) != 0; 
 }
 
 void CLVEasyItem::HighlightBottom( bool b) { 
@@ -356,7 +354,7 @@ void CLVEasyItem::HighlightBottom( bool b) {
 }
 
 bool CLVEasyItem::HighlightBottom( ) { 
-	return (style_flags & CLV_STYLE_HIGHLIGHT_BOTTOM) != 0; 
+	return (fItemFlags & CLV_STYLE_HIGHLIGHT_BOTTOM) != 0; 
 }
 
 void CLVEasyItem::Bold( bool b) { 
@@ -364,12 +362,5 @@ void CLVEasyItem::Bold( bool b) {
 }
 
 bool CLVEasyItem::Bold( ) { 
-	return (style_flags & CLV_STYLE_BOLD) != 0; 
-}
-
-void CLVEasyItem::SetStyleFlag( uint8 style, bool on) {
-	if (on)
-		style_flags |= style;
-	else
-		style_flags &= (0xFF ^ style);
+	return (fItemFlags & CLV_STYLE_BOLD) != 0; 
 }

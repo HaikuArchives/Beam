@@ -1737,8 +1737,8 @@ int32 ColumnListView::FullListNumberOfSubitems(const CLVListItem* item) const
 void ColumnListView::Expand(CLVListItem* item)
 {
 	AssertWindowLocked();
-	if(!(item->fSuperItem))
-		item->fSuperItem = true;
+	if(!(item->IsSuperItem()))
+		item->SetSuperItem( true);
 	if(item->IsExpanded())
 		return;
 	item->SetExpanded(true);
@@ -1767,7 +1767,7 @@ void ColumnListView::Expand(CLVListItem* item)
 			if(NextItem->OutlineLevel() > ItemLevel)
 			{
 				BListView::AddItem((BListItem*)NextItem,AddPos++);
-				if(NextItem->fSuperItem && !NextItem->IsExpanded())
+				if(NextItem->IsSuperItem() && !NextItem->IsExpanded())
 				{
 					//The item I just added is collapsed, so skip all its children
 					uint32 SkipLevel = NextItem->OutlineLevel() + 1;
@@ -1796,8 +1796,8 @@ void ColumnListView::Expand(CLVListItem* item)
 void ColumnListView::Collapse(CLVListItem* item)
 {
 	AssertWindowLocked();
-	if(!(item->fSuperItem))
-		item->fSuperItem = true;
+	if(!(item->IsSuperItem()))
+		item->SetSuperItem( true);
 	if(!(item->IsExpanded()))
 		return;
 	item->SetExpanded(false);
@@ -2117,7 +2117,7 @@ void ColumnListView::KeyDown(const char *bytes, int32 numBytes)
 					if (currIdx < 0)
 						return;			// no item selected
 					CLVListItem *currItem = cast_as( ItemAt( currIdx), CLVListItem);
-					if (!currItem || !currItem->fSuperItem)
+					if (!currItem || !currItem->IsSuperItem())
 						return;
 					if (bytes[0] == B_LEFT_ARROW)
 						Collapse( currItem);

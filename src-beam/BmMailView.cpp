@@ -923,10 +923,10 @@ void BmMailView::JobIsDone( bool completed) {
 			}
 			int32 readDelay = ThePrefs->GetInt( "MarkAsReadDelay", 2000);
 			if (readDelay>0) {
-				BMessage* msg = new BMessage( BM_MARK_AS_READ);
-				msg->AddPointer( MSG_MAIL, (void*)mCurrMail.Get());
+				BMessage msg( BM_MARK_AS_READ);
+				msg.AddPointer( MSG_MAIL, (void*)mCurrMail.Get());
 				BMessenger msgr( this);
-				mReadRunner = new BMessageRunner( msgr, msg, readDelay*1000, 1);
+				mReadRunner = new BMessageRunner( msgr, &msg, readDelay*1000, 1);
 			}
 		}
 		SendNoticesIfNeeded( true);

@@ -77,9 +77,8 @@ enum Columns {
 		-	
 \*------------------------------------------------------------------------------*/
 BmSendAccItem::BmSendAccItem( ColumnListView* lv, 
-										const BmString& key, 
 										BmListModelItem* _item)
-	:	inherited( lv, key, _item, false)
+	:	inherited( lv, _item, false)
 {
 }
 
@@ -181,7 +180,7 @@ BmSendAccView::~BmSendAccView() {
 \*------------------------------------------------------------------------------*/
 BmListViewItem* BmSendAccView::CreateListViewItem( BmListModelItem* item,
 																	BMessage*) {
-	return new BmSendAccItem( this, item->Key(), item);
+	return new BmSendAccItem( this, item);
 }
 
 /*------------------------------------------------------------------------------*\

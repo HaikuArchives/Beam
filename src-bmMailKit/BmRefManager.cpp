@@ -190,7 +190,21 @@ BmProxy* BmRefObj::GetProxy( const char* const proxyName) {
 }
 
 /*------------------------------------------------------------------------------*\
-	GetProxy()
+	GlobalLocker()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmRefObj::CleanupProxies() {
+	BAutolock lock( GlobalLocker());
+	if (!lock.IsLocked())
+		throw BM_runtime_error( "CleanupProxies(): Could not acquire global lock!");
+	BmProxyMap::iterator iter;
+	for( iter = nProxyMap.begin(); iter != nProxyMap.end(); ++iter)
+		delete iter->second;
+	nProxyMap.clear();
+}
+
+/*------------------------------------------------------------------------------*\
+	GlobalLocker()
 		-	
 \*------------------------------------------------------------------------------*/
 BLocker* BmRefObj::GlobalLocker() { 

@@ -54,8 +54,7 @@ class BmMailFolderItem : public BmListViewItem
 
 public:
 	// c'tors and d'tor:
-	BmMailFolderItem( ColumnListView* lv, const BmString& key, 
-							BmListModelItem* item, bool superitem,
+	BmMailFolderItem( ColumnListView* lv, BmListModelItem* item, bool superitem,
 							BMessage* archive);
 	~BmMailFolderItem();
 

@@ -38,8 +38,9 @@
 CLVListItem::CLVListItem(uint32 level, bool superitem, bool expanded)
 : BListItem(level, expanded)
 , fOwner( NULL)
+, fItemFlags( 0)
 {
-	fSuperItem = superitem;
+	SetSuperItem( superitem);
 }
 
 
@@ -151,7 +152,7 @@ bool CLVListItem::ExpanderRectContains(BPoint where) {
 			ThisColumnRect.right += Shift;
 			if(ThisColumnRect.right > PushMax)
 				ThisColumnRect.right = PushMax;
-			if(fSuperItem)
+			if(IsSuperItem())
 			{
 				//Draw the expander, clip manually
 				float TopOffset = ceil((ThisColumnRect.bottom-ThisColumnRect.top-10.0)/2.0);
@@ -217,7 +218,7 @@ void CLVListItem::DrawItem(BView* fOwner, BRect itemRect, bool complete)
 				//Give the programmer a chance to do his kind of highlighting if the item is selected
 				DrawItemColumn(ThisColumnRect,
 					((ColumnListView*)fOwner)->fColumnList.IndexOf(ThisColumn));
-				if(fSuperItem)
+				if(IsSuperItem())
 				{
 					//Draw the expander, clip manually
 					float TopOffset = ceil((ThisColumnRect.bottom-ThisColumnRect.top-10.0)/2.0);
@@ -289,4 +290,11 @@ void CLVListItem::ColumnWidthChanged(int32 /*column_index*/, float /*column_widt
 
 void CLVListItem::FrameChanged(int32 /*column_index*/, BRect /*new_frame*/)
 {
+}
+
+void CLVListItem::SetStyleFlag( uint8 style, bool on) {
+	if (on)
+		fItemFlags |= style;
+	else
+		fItemFlags &= (0xFF ^ style);
 }

@@ -99,6 +99,7 @@ BmFilter::BmFilter( BMessage* archive, BmFilterList* model)
 		-	standard d'tor
 \*------------------------------------------------------------------------------*/
 BmFilter::~BmFilter() {
+	delete mAddon;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -186,6 +187,7 @@ BmFilterList::BmFilterList( const char* name)
 		-	standard destructor
 \*------------------------------------------------------------------------------*/
 BmFilterList::~BmFilterList() {
+	Cleanup();
 	UnloadAddons();
 	theInstance = NULL;
 }

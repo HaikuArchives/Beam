@@ -38,6 +38,7 @@ class BList;
 //******************************************************************************************************
 class IMPEXPSANTAPARTSFORBEAM CLVListItem : public BListItem
 {
+		static const uint8 CLV_STYLE_SUPERITEM = 1<<0;
 	public:
 		//Constructor and destructor
 		CLVListItem(uint32 level = 0, bool superitem = false, bool expanded = false);
@@ -61,8 +62,11 @@ class IMPEXPSANTAPARTSFORBEAM CLVListItem : public BListItem
 		BRect ItemColumnFrame(int32 column_index);
 		float ExpanderShift(int32 column_index);
 		virtual void Update(BView* owner, const BFont* font);
-		inline bool IsSuperItem() const {return fSuperItem;}
-		inline void SetSuperItem(bool superitem) {fSuperItem = superitem;}
+		inline bool IsSuperItem() const	{ return fItemFlags & CLV_STYLE_SUPERITEM;}
+		inline void SetSuperItem( bool superitem) 
+													{ SetStyleFlag( CLV_STYLE_SUPERITEM, 
+																		 superitem); 
+													}
 		bool ExpanderRectContains(BPoint where);
 		virtual void ColumnWidthChanged(int32 column_index, float column_width);
 		virtual void FrameChanged(int32 column_index, BRect new_frame);
@@ -70,9 +74,10 @@ class IMPEXPSANTAPARTSFORBEAM CLVListItem : public BListItem
 
 	protected:
 		friend class ColumnListView;
+		void SetStyleFlag( uint8 style, bool on);
 
 		ColumnListView* fOwner;
-		bool fSuperItem;
+		uint8 fItemFlags;
 };
 
 
