@@ -59,7 +59,6 @@
 	DRAG-message:
 \*------------------------------------------------------------------------------*/
 #define BM_MAIL_DRAG						'bmha'
-#define BM_FOLDER_DRAG					'bmhb'
-#define BM_ATTACHMENT_DRAG				'bmhc'
+#define BM_ATTACHMENT_DRAG				'bmhb'
 
 #endif

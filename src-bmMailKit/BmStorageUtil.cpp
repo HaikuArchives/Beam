@@ -13,6 +13,8 @@
 
 #include "BmStorageUtil.h"
 
+BmTempFileList TheTempFileList;
+
 /*------------------------------------------------------------------------------*\
 	()
 		-	
@@ -54,4 +56,24 @@ bool CheckMimeType( entry_ref* eref, const char* type) {
 		}
 	}
 	return false;
+}
+
+/*------------------------------------------------------------------------------*\
+	~BmTempFileList()
+		-	
+\*------------------------------------------------------------------------------*/
+BmTempFileList::~BmTempFileList() {
+	int count = mFiles.size();
+	for( int i=0; i<count; ++i) {
+		BEntry tmpFile( mFiles[i].String());
+		tmpFile.Remove();
+	}
+}
+
+/*------------------------------------------------------------------------------*\
+	AddFile()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmTempFileList::AddFile( BString fileWithPath) {
+	mFiles.push_back( fileWithPath);
 }

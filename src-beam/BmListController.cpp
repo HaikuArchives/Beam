@@ -136,6 +136,17 @@ CLVContainerView* BmListViewController::CreateContainer( bool horizontal, bool v
 }
 
 /*------------------------------------------------------------------------------*\
+	AttachedToWindow()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmListViewController::AttachedToWindow() {
+	inherited::AttachedToWindow();
+	if (SetTarget( this) != B_OK)
+		BM_THROW_RUNTIME( "ListViewController: Could not set invocation-target.");
+	SetInvocationMessage( new BMessage( B_CONTROL_INVOKED));
+}
+
+/*------------------------------------------------------------------------------*\
 	MouseDown( point)
 		-	override that automatically grabs the keyboard-focus after a click 
 			inside the listview
@@ -239,6 +250,11 @@ void BmListViewController::MessageReceived( BMessage* msg) {
 			case BM_JOB_DONE: {
 				if (!IsMsgFromCurrentModel( msg)) break;
 				JobIsDone( FindMsgBool( msg, BmJobModel::MSG_COMPLETED));
+				break;
+			}
+			case B_CONTROL_INVOKED: {
+				// an item has been double-clicked:
+				ItemInvoked( FindMsgInt32( msg, "index"));
 				break;
 			}
 			default:
@@ -426,6 +442,13 @@ void BmListViewController::UpdateCaption( const char* text) {
 		}
 		Window()->UpdateIfNeeded();
 	}
+}
+
+/*------------------------------------------------------------------------------*\
+	ItemInvoked( index)
+		-	
+\*------------------------------------------------------------------------------*/
+void BmListViewController::ItemInvoked( int32 index) {
 }
 
 /*------------------------------------------------------------------------------*\

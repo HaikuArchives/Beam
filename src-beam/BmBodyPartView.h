@@ -21,11 +21,6 @@ class BmBodyPartItem : public BmListViewItem
 public:
 	BmBodyPartItem( BString key, BmListModelItem* item);
 	~BmBodyPartItem();
-	
-	static void ResetUnnamedFileCounter() { nUnnamedFileCounter = 0; }
-
-private:
-	static int16 nUnnamedFileCounter;
 };
 
 class BmBodyPartList;
@@ -51,12 +46,14 @@ public:
 	CLVContainerView* CreateContainer( bool horizontal, bool vertical, 
 												  bool scroll_view_corner, border_style border, 
 												  uint32 ResizingMode, uint32 flags);
+	bool InitiateDrag( BPoint point, int32 index, bool wasSelected);
 	void MessageReceived( BMessage* msg);
 	void MouseDown( BPoint point);
 
 	// overrides of controller base:
 	void AddAllModelItems();
 	BmListViewItem* CreateListViewItem( BmListModelItem* item, BMessage* archive=NULL);
+	void ItemInvoked( int32 index);
 	BString StateInfoBasename();
 
 	// getters:

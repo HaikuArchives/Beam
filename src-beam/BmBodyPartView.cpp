@@ -5,6 +5,7 @@
 
 #include <MenuItem.h>
 #include <PopUpMenu.h>
+#include <Roster.h>
 #include <Window.h>
 
 #include "BmBasics.h"
@@ -21,8 +22,6 @@
 	BmBodyPartItem
 \********************************************************************************/
 
-int16 BmBodyPartItem::nUnnamedFileCounter = 0;
-
 /*------------------------------------------------------------------------------*\
 	()
 		-	
@@ -32,22 +31,18 @@ BmBodyPartItem::BmBodyPartItem( BString key, BmListModelItem* _item)
 {
 	BmBodyPart* bodyPart = dynamic_cast<BmBodyPart*>( _item);
 
-	BBitmap* icon = TheResources->IconByName( bodyPart->mContentType.mValue);
+	BBitmap* icon = TheResources->IconByName( bodyPart->MimeType());
 	SetColumnContent( 0, icon, 2.0, false);
 
-	BString sizeString = BytesToString( bodyPart->mDecodedLength, true);
-	BString fileName = bodyPart->mFileName;
-	if (!fileName.Length()) {
-		fileName = BString("unknown")<<++nUnnamedFileCounter;
-	}
+	BString sizeString = BytesToString( bodyPart->DecodedLength(), true);
 
 	// set column-values:
 	BmListColumn cols[] = {
-		{ fileName.String(),									false },
-		{ bodyPart->mContentType.mValue.String(),		false },
+		{ bodyPart->FileName().String(),					false },
+		{ bodyPart->MimeType().String(),					false },
 		{ sizeString.String(),								true },
-		{ bodyPart->mContentLanguage.String(),			false },
-		{ bodyPart->mContentDescription.String(),		false },
+		{ bodyPart->Language().String(),					false },
+		{ bodyPart->Description().String(),				false },
 		{ NULL, false }
 	};
 	SetTextCols( BmBodyPartView::nFirstTextCol, cols, false);
@@ -98,6 +93,7 @@ BmBodyPartView::BmBodyPartView( minimax minmax, int32 width, int32 height)
 	AddColumn( new CLVColumn( "Size", nColWidths[3], CLV_RIGHT_JUSTIFIED, 20.0));
 	AddColumn( new CLVColumn( "Language", nColWidths[4], 0, 20.0));
 	AddColumn( new CLVColumn( "Description", nColWidths[5], 0, 20.0));
+
 }
 
 /*------------------------------------------------------------------------------*\
@@ -114,7 +110,7 @@ BmBodyPartView::~BmBodyPartView() {
 BmListViewItem* BmBodyPartView::CreateListViewItem( BmListModelItem* item, 
 																	BMessage* archive) {
 	BmBodyPart* modelItem = dynamic_cast<BmBodyPart*>( item);
-	if (!modelItem->mIsMultiPart && (mShowAllParts || !modelItem->ShouldBeShownInline())) {
+	if (!modelItem->IsMultiPart() && (mShowAllParts || !modelItem->ShouldBeShownInline())) {
 		return new BmBodyPartItem( item->Key(), item);
 	} else {
 		return NULL;
@@ -156,7 +152,6 @@ void BmBodyPartView::ShowBody( BmBodyPartList* body) {
 \*------------------------------------------------------------------------------*/
 void BmBodyPartView::AddAllModelItems() {
 	// initializations:
-	BmBodyPartItem::ResetUnnamedFileCounter();
 	int i;
 	for( i=nFirstTextCol; i<CountColumns(); ++i) {
 		mColWidths[i] = nColWidths[i];
@@ -235,6 +230,67 @@ void BmBodyPartView::MessageReceived( BMessage* msg) {
 		// a problem occurred, we tell the user:
 		BM_SHOWERR( BString("MailHeaderView:\n\t") << err.what());
 	}
+}
+
+/*------------------------------------------------------------------------------*\
+	ItemInvoked( index)
+		-	
+\*------------------------------------------------------------------------------*/
+void BmBodyPartView::ItemInvoked( int32 index) {
+	BmBodyPartItem* bodyPartItem = dynamic_cast<BmBodyPartItem*>( FullListItemAt( index));
+	if (bodyPartItem) {
+		BmBodyPart* bodyPart = dynamic_cast<BmBodyPart*>( bodyPartItem->ModelItem());
+		if (!bodyPart)
+			return;
+		entry_ref eref = bodyPart->WriteToTempFile();
+		status_t res = be_roster->Launch( &eref);
+		if (res != B_OK && res != B_ALREADY_RUNNING) {
+			ShowAlert( "Sorry, could not launch application for this attachment (unknown mimetype perhaps?)");
+		}
+	}
+}
+
+/*------------------------------------------------------------------------------*\
+	InitiateDrag()
+		-	
+\*------------------------------------------------------------------------------*/
+bool BmBodyPartView::InitiateDrag( BPoint where, int32 index, bool wasSelected) {
+	if (!wasSelected)
+		return false;
+	BMessage dragMsg( BM_ATTACHMENT_DRAG);
+	BmBodyPartItem* bodyPartItem = dynamic_cast<BmBodyPartItem*>(ItemAt( index));
+	BmBodyPart* bodyPart = dynamic_cast<BmBodyPart*>(bodyPartItem->ModelItem());
+	const char* filename = bodyPartItem->GetColumnContentText( 1);
+	entry_ref eref = bodyPart->WriteToTempFile( filename);
+	dragMsg.AddString( "be:types", bodyPart->MimeType());
+	dragMsg.AddString( "be:type_descriptions", "E-mail attachment");
+	dragMsg.AddInt32( "be:actions", B_MOVE_TARGET);
+	dragMsg.AddString( "be:originator", "Beam");
+	dragMsg.AddString( "be:clip_name", filename);
+	dragMsg.AddRef( "refs", &eref);
+	BFont font;
+	GetFont( &font);
+	float lineHeight = MAX(TheResources->FontLineHeight( &font),20.0);
+	float baselineOffset = TheResources->FontBaselineOffset( &font);
+	BRect dragRect( 0, 0, 200-1, 1*lineHeight-1);
+	BView* dummyView = new BView( dragRect, NULL, B_FOLLOW_NONE, 0);
+	BBitmap* dragImage = new BBitmap( dragRect, B_RGBA32, true);
+	dragImage->AddChild( dummyView);
+	dragImage->Lock();
+	dummyView->SetHighColor( B_TRANSPARENT_COLOR);
+	dummyView->FillRect( dragRect);
+	dummyView->SetDrawingMode( B_OP_ALPHA);
+	dummyView->SetHighColor( 0, 0, 0, 128);
+	dummyView->SetBlendingMode( B_CONSTANT_ALPHA, B_ALPHA_COMPOSITE);
+	// now we add the selected item to drag-image and to drag-msg:
+	const BBitmap* icon = bodyPartItem->GetColumnContentBitmap( 0);
+	if (icon) {
+		dummyView->DrawBitmapAsync( icon, BPoint(0,0));
+	}
+	dummyView->DrawString( filename, BPoint(20.0,baselineOffset));
+	dragImage->Unlock();
+	DragMessage( &dragMsg, dragImage, B_OP_ALPHA, BPoint( 10.0, 10.0));
+	return true;
 }
 
 /*------------------------------------------------------------------------------*\

@@ -261,15 +261,17 @@ void BmMailView::JobIsDone( bool completed) {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmMailView::DisplayBodyPart( BString& displayText, BmBodyPart* bodyPart) {
-	if (!bodyPart->mIsMultiPart) {
+	if (!bodyPart->IsMultiPart()) {
 		if (bodyPart->ShouldBeShownInline()) {
 			// MIME-block should be shown inline, so we add it to our textview:
 			if (displayText.Length()) {
 				// we show a separator between two inline bodyparts
 				displayText<<"- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -";
 			}
-			uint32 encoding = CharsetToEncoding( bodyPart->mContentType.mParams["charset"]);
-			displayText.Append( ConvertToUTF8( encoding, bodyPart->DecodedData().String()));
+			uint32 encoding = CharsetToEncoding( bodyPart->TypeParam("charset"));
+			char* data = (char*)bodyPart->DecodedData();
+			displayText.Append( ConvertToUTF8( encoding, data));
+			free( data);
 		}
 	} else {
 		BmModelItemMap::const_iterator iter;

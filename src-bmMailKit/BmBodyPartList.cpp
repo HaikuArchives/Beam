@@ -4,6 +4,8 @@
 */
 
 #include <Autolock.h>
+#include <FindDirectory.h>
+#include <NodeInfo.h>
 
 #include <regexx/regexx.hh>
 using namespace regexx;
@@ -17,6 +19,7 @@ using namespace regexx;
 #include "BmMailHeader.h"
 #include "BmPrefs.h"
 #include "BmResources.h"
+#include "BmStorageUtil.h"
 #include "BmUtil.h"
 
 #undef BM_LOGNAME
@@ -85,6 +88,19 @@ void BmContentField::SetTo( const BString cfString) {
 	mInitCheck = B_OK;
 }
 
+/*------------------------------------------------------------------------------*\
+	Param( key)
+	-	returns parameter-value for given key (or empty string)
+\*------------------------------------------------------------------------------*/
+const BString& BmContentField::Param( BString key) const {
+	static BString nullStr;
+	key.ToLower();
+	BmParamMap::const_iterator iter = mParams.find( key);
+	if (iter != mParams.end()) {
+		return iter->second;
+	} else
+		return nullStr;
+}
 
 
 /********************************************************************************\
@@ -200,9 +216,12 @@ void BmBodyPart::SetTo( const BString& msgtext, int32 start, int32 length,
 	mContentLanguage.ToLower();
 	BM_LOG2( BM_LogMailParse, BString("...found value: ")<<mContentLanguage);
 	// determine a filename (if possible)
-	mFileName = mContentDisposition.mParams["filename"];
+	mFileName = mContentDisposition.Param("filename");
 	if (!mFileName.Length()) {
-		mFileName = mContentType.mParams["name"];
+		mFileName = mContentType.Param("name");
+		if (!mFileName.Length()) {
+			mFileName = TheTempFileList.NextTempFilename();
+		}
 	}
 	// remove temporary header:
 	if (deleteHeader)
@@ -210,7 +229,7 @@ void BmBodyPart::SetTo( const BString& msgtext, int32 start, int32 length,
 		
 	if (type.ICompare("multipart", 9) == 0) {
 		mIsMultiPart = true;
-		BString boundary = BString("--")+mContentType.mParams["boundary"];
+		BString boundary = BString("--")+mContentType.Param("boundary");
 		if (boundary.Length()==2) {
 			BM_SHOWERR( "No boundary specified within multipart-message!");
 			return;
@@ -242,7 +261,7 @@ void BmBodyPart::SetTo( const BString& msgtext, int32 start, int32 length,
 	-	
 \*------------------------------------------------------------------------------*/
 bool BmBodyPart::IsText() const {
-	return mContentType.mValue.ICompare("text/",5) == 0;
+	return MimeType().ICompare("text/",5) == 0;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -250,7 +269,7 @@ bool BmBodyPart::IsText() const {
 	-	
 \*------------------------------------------------------------------------------*/
 bool BmBodyPart::IsPlainText() const {
-	return mContentType.mValue.ICompare("text/plain") == 0;
+	return MimeType().ICompare("text/plain") == 0;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -258,22 +277,58 @@ bool BmBodyPart::IsPlainText() const {
 	-	
 \*------------------------------------------------------------------------------*/
 bool BmBodyPart::ShouldBeShownInline()	const {
-	return (IsPlainText() && mContentDisposition.mValue.ICompare("inline")==0);
+	return (IsPlainText() && Disposition().ICompare("inline")==0);
 }
 
 /*------------------------------------------------------------------------------*\
-	DecodedData( msgtext, start, length, contentType)
+	DecodedTextData( msgtext, start, length, contentType)
 	-	
 \*------------------------------------------------------------------------------*/
-BString BmBodyPart::DecodedData() const {
+void* BmBodyPart::DecodedData( int32* dataLen) const {
 	BString buf( mPosInRawText, mLength);
-	if (mContentTransferEncoding.Length())
-		BmEncoding::Decode( mContentTransferEncoding, buf, false, IsText());
-	if (buf.Length() && buf[buf.Length()-1] != '\n')
-		buf << "\r\n";
-	return buf;
+	if (mContentTransferEncoding.Length()) {
+		int32 decodedSize = 0;
+		void* decodedData = Decode( mContentTransferEncoding, buf, false, IsText(), decodedSize);
+		if (dataLen)
+			*dataLen = decodedSize;
+		return decodedData;
+	}
+	return NULL;
 }
 
+/*------------------------------------------------------------------------------*\
+	WriteToTempFile()
+		-	
+\*------------------------------------------------------------------------------*/
+entry_ref BmBodyPart::WriteToTempFile( BString filename) {
+	BPath tempPath;
+	entry_ref eref;
+	if (!filename.Length()) {
+		filename = mFileName;
+	}
+	if (find_directory( B_COMMON_TEMP_DIRECTORY, &tempPath, true) == B_OK) {
+		BDirectory tempDir;
+		BFile tempFile;
+		BNodeInfo fileInfo;
+		status_t err;
+		tempDir.SetTo( tempPath.Path());
+		if ((err = tempFile.SetTo( &tempDir, filename.String(), 
+										  B_WRITE_ONLY | B_CREATE_FILE | B_ERASE_FILE)) != B_OK) {
+			BM_LOGERR( BString("Could not create temporary file\n\t<") << filename << ">\n\n Result: " << strerror(err));
+			return eref;
+		}
+		TheTempFileList.AddFile( BString(tempPath.Path())<<"/"<<filename);
+		int32 dataLen;
+		void* data = DecodedData( &dataLen);
+		tempFile.Write( data, dataLen);
+		free( data);
+		fileInfo.SetTo( &tempFile);
+		fileInfo.SetType( MimeType().String());
+		BEntry entry( &tempDir, filename.String());
+		entry.GetRef( &eref);
+	}
+	return eref;
+}
 
 
 /********************************************************************************\
@@ -324,4 +379,3 @@ bool BmBodyPartList::StartJob() {
 	}
 	return InitCheck() == B_OK;
 }
-

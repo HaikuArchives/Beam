@@ -129,6 +129,7 @@ public:
 	virtual void UpdateItem( BmListViewItem* item, BmUpdFlags flags);
 	virtual void UpdateCaption( const char* text=NULL);
 	BmListViewItem* FindViewItemFor( BmListModelItem* modelItem);
+	virtual void ItemInvoked( int32 index);
 	virtual bool AcceptsDropOf( const BMessage* msg)	{ return false; }
 	virtual void HandleDrop( const BMessage* msg);
 	void ShowOrHideColumn( BMessage* msg);
@@ -151,6 +152,7 @@ public:
 												  uint32 ResizingMode, uint32 flags);
 	void ExpansionChanged( CLVListItem* item, bool expanded);
 	void ShowLabelViewMenu( BPoint pos);
+	void AttachedToWindow();
 	void MessageReceived( BMessage* msg);
 	void MouseDown(BPoint point);
 	void MouseMoved( BPoint point, uint32 transit, const BMessage *msg);
