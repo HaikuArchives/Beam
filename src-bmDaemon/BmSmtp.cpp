@@ -496,7 +496,7 @@ void BmSmtp::StateSendMails() {
 	mCurrMailNr = 1;
 	for( int32 i=0; i<mMailCount; ++i, ++mCurrMailNr) {
 		if (!mailRefs[i] || !mailRefs[i]->ItemIsValid()) {
-			BM_LOGERR( BmString("SendMails(): mail no. ") << i 
+			BM_LOGERR( BmString("SendMails(): mail no. ") << i+1
 								<< " can't be found, skipping it.");
 			continue;
 		}
@@ -505,7 +505,7 @@ void BmSmtp::StateSendMails() {
 			if (mail->InitCheck() != B_OK)
 				mail->StartJobInThisThread( BmMail::BM_READ_MAIL_JOB);
 			if (mail->InitCheck() != B_OK) {
-				BM_LOGERR( BmString("SendMails(): mail no. ") << i 
+				BM_LOGERR( BmString("SendMails(): mail no. ") << i+1
 									<< " can't be read, skipping it.");
 				continue;
 			}
@@ -552,7 +552,7 @@ void BmSmtp::StateSendMails() {
 		}
 		catch( BM_runtime_error &err) {
 			// a problem occurred, we tell the user:
-			BM_LOGERR( BmString("SendMails(): mail no. ") << i 
+			BM_LOGERR( BmString("SendMails(): mail no. ") << i+1
 								<< " couldn't be send.\n\nError:\n" << err.what());
 			mail->MarkAs( BM_MAIL_STATUS_ERROR);
 				// mark mail as ERROR since it couldn't be send
