@@ -117,16 +117,17 @@ class BmPrefsRecvMailView : public BmPrefsView {
 	typedef BmPrefsView inherited;
 
 	enum {
-		BM_AUTH_SELECTED 			 = 'bmAS',
-		BM_FILTER_CHAIN_SELECTED = 'bmFS',
-		BM_HOME_FOLDER_SELECTED  = 'bmHS',
-		BM_CHECK_MAIL_CHANGED 	 = 'bmCC',
-		BM_CHECK_EVERY_CHANGED 	 = 'bmCE',
-		BM_REMOVE_MAIL_CHANGED 	 = 'bmRC',
-		BM_PWD_STORED_CHANGED 	 = 'bmPC',
-		BM_CHECK_AND_SUGGEST		 = 'bmCS',
-		BM_ADD_ACCOUNT 			 = 'bmAA',
-		BM_REMOVE_ACCOUNT 		 = 'bmRA'
+		BM_AUTH_SELECTED 			 	= 'bmAS',
+		BM_FILTER_CHAIN_SELECTED 	= 'bmFS',
+		BM_HOME_FOLDER_SELECTED  	= 'bmHS',
+		BM_CHECK_MAIL_CHANGED 	 	= 'bmCC',
+		BM_CHECK_EVERY_CHANGED 	 	= 'bmCE',
+		BM_REMOVE_MAIL_CHANGED 	 	= 'bmRC',
+		BM_PWD_STORED_CHANGED 	 	= 'bmPC',
+		BM_CHECK_AND_SUGGEST		 	= 'bmCS',
+		BM_ADD_ACCOUNT 			 	= 'bmAA',
+		BM_REMOVE_ACCOUNT 		 	= 'bmRA',
+		BM_CHECK_IF_PPP_UP_CHANGED = 'bmCP'
 	};
 	
 public:
@@ -170,6 +171,8 @@ private:
 	BmCheckControl* mRemoveMailControl;
 	BmCheckControl* mStorePwdControl;
 	BmCheckControl* mCheckEveryControl;
+	BmCheckControl* mAutoCheckIfPppUpControl;
+
 	MButton* mCheckAndSuggestButton;
 	MButton* mAddButton;
 	MButton* mRemoveButton;

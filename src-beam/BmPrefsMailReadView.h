@@ -44,7 +44,6 @@ class BmPrefsMailReadView : public BmPrefsView {
 	typedef BmPrefsView inherited;
 
 	enum {
-		BM_CHECK_IF_PPP_UP_CHANGED 			= 'bmCP',
 		BM_USE_SWATCHTIME_CHANGED				= 'bmST',
 		BM_TIMEMODE_IN_HEADERVIEW_SELECTED 	= 'bmTM',
 		BM_SHOW_DECODED_LENGTH_CHANGED		= 'bmSD'
@@ -74,8 +73,6 @@ private:
 	BmCheckControl* mUseSwatchTimeInRefViewControl;
 
 	BmTextControl* mMimeTypeTrustInfoControl;
-
-	BmCheckControl* mAutoCheckIfPppUpControl;
 
 	// Hide copy-constructor and assignment:
 	BmPrefsMailReadView( const BmPrefsMailReadView&);

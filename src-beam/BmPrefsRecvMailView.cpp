@@ -316,6 +316,12 @@ BmPrefsRecvMailView::BmPrefsRecvMailView()
 				new VGroup(
 					new MBorder( M_LABELED_BORDER, 10, (char*)"Options",
 						new VGroup(
+							mAutoCheckIfPppUpControl = new BmCheckControl( 
+								"Automatically check for mails only if PPP is up", 
+								new BMessage(BM_CHECK_IF_PPP_UP_CHANGED), 
+								this, ThePrefs->GetBool("AutoCheckOnlyIfPPPRunning")
+							),
+							new Space( minimax(0,10,0,10)),
 							mCheckAccountControl = new BmCheckControl( 
 								"Include in Manual Check", 
 								new BMessage(BM_CHECK_MAIL_CHANGED), 
@@ -408,6 +414,7 @@ BmPrefsRecvMailView::~BmPrefsRecvMailView() {
 	TheBubbleHelper->SetHelp( mHomeFolderControl, NULL);
 	TheBubbleHelper->SetHelp( mFilterChainControl, NULL);
 	TheBubbleHelper->SetHelp( mCheckAndSuggestButton, NULL);
+	TheBubbleHelper->SetHelp( mAutoCheckIfPppUpControl, NULL);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -504,6 +511,15 @@ void BmPrefsRecvMailView::Initialize() {
 		"When you click here, Beam will connect to the POP-server,\n"
 		"check which authentication types it supports and select\n"
 		"the most secure."
+	);
+	TheBubbleHelper->SetHelp( 
+		mAutoCheckIfPppUpControl, 
+		"If you check this, automatic checks take place only if you\n"
+		"have a running dialup-connection.\n"
+		"If you have a permanent connection to the internet, you MUST\n"
+		"uncheck this, otherwise no automatic checks will happen!\n"
+		"Please note that this setting is valid for all accounts, not\n"
+		"just for this one!"
 	);
 
 	mAccountControl->SetTarget( this);
@@ -702,6 +718,12 @@ void BmPrefsRecvMailView::MessageReceived( BMessage* msg) {
 				NoticeChange();
 				break;
 			}
+			case BM_CHECK_IF_PPP_UP_CHANGED: {
+				ThePrefs->SetBool( "AutoCheckOnlyIfPPPRunning", 
+										 mAutoCheckIfPppUpControl->Value());
+				NoticeChange();
+				break;
+			}
 			case BM_CHECK_AND_SUGGEST: {
 				if (mCurrAcc) {
 					BmRef<BmPopper> popper( new BmPopper( mCurrAcc->Key(), 
@@ -875,6 +897,7 @@ void BmPrefsRecvMailView::ShowAccount( int32 selection) {
 	mFilterChainControl->SetEnabled( enabled);
 	mRemoveButton->SetEnabled( enabled);
 	mCheckAccountControl->SetEnabled( enabled);
+	mAutoCheckIfPppUpControl->SetEnabled( enabled);
 	mCheckEveryControl->SetEnabled( enabled);
 	mCheckAndSuggestButton->SetEnabled( enabled);
 	mRemoveMailControl->SetEnabled( enabled);
@@ -892,6 +915,7 @@ void BmPrefsRecvMailView::ShowAccount( int32 selection) {
 		mHomeFolderControl->ClearMark();
 		mFilterChainControl->ClearMark();
 		mCheckAccountControl->SetValue( 0);
+		mAutoCheckIfPppUpControl->SetValue( 0);
 		mCheckEveryControl->SetValue( 0);
 		mRemoveMailControl->SetValue( 0);
 		mStorePwdControl->SetValue( 0);
@@ -925,6 +949,8 @@ void BmPrefsRecvMailView::ShowAccount( int32 selection) {
 							? mCurrAcc->FilterChain().String()
 							: BM_NoItemLabel.String());
 					mCheckAccountControl->SetValue( mCurrAcc->CheckMail());
+					mAutoCheckIfPppUpControl->SetValueSilently( 
+						ThePrefs->GetBool("AutoCheckOnlyIfPPPRunning"));
 					mCheckEveryControl->SetValue( 
 						mCurrAcc->CheckInterval()>0 ? 1 : 0);
 					mCheckIntervalControl->SetTextSilently( 
