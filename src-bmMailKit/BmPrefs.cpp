@@ -384,30 +384,32 @@ void BmPrefs::InitDefaults() {
 	mDefaultsMsg.AddBool( "UseDocumentResizer", true);
 	mDefaultsMsg.AddBool( "UseSwatchTimeInRefView", false);
 	mDefaultsMsg.AddString( "Workspace", "Current");
-	mDefaultsMsg.AddString( "StandardCharsets", (BmString("<iso-8859-1>")
-									+"<iso-8859-2>" 
-									+"<iso-8859-3>"	
-									+"<iso-8859-4>"
-									+"<iso-8859-5>" 
-									+"<iso-8859-6>" 
-									+"<iso-8859-7>"
-									+"<iso-8859-8>"
-									+"<iso-8859-9>" 
-									+"<iso-8859-10>" 
-									+"<iso-8859-13>" 
-									+"<iso-8859-14>"
-									+"<iso-8859-15>" 
-									+"<macroman>" 
-									+"<windows-1251>" 
-									+"<windows-1252>"
-									+"<cp866>"
-									+"<cp850>"
-									+"<iso-2022-jp>"
-									+"<iso-2022-jp-2>"
-									+"<koi8-r>"
-									+"<euc-kr>"
-									+"<big-5>"
-									+"<utf-8>").String());
+	mDefaultsMsg.AddString( "StandardCharsets", 
+									"<iso-8859-1>"
+									"<iso-8859-2>" 
+									"<iso-8859-3>"	
+									"<iso-8859-4>"
+									"<iso-8859-5>" 
+									"<iso-8859-6>" 
+									"<iso-8859-7>"
+									"<iso-8859-8>"
+									"<iso-8859-9>" 
+									"<iso-8859-10>" 
+									"<iso-8859-13>" 
+									"<iso-8859-14>"
+									"<iso-8859-15>" 
+									"<macroman>" 
+									"<windows-1251>" 
+									"<windows-1252>"
+									"<cp866>"
+									"<cp850>"
+									"<iso-2022-jp>"
+									"<iso-2022-jp-2>"
+									"<koi8-r>"
+									"<euc-kr>"
+									"<big-5>"
+									"<us-ascii>"
+									"<utf-8>");
 }
 
 /*------------------------------------------------------------------------------*\
