@@ -100,11 +100,14 @@ In order to be able to compile Beam, you need to have the following setup:
 	Simply extract the archive and move 'jam' to /boot/home/config/bin.
 
 5.	In order to finally compile Beam, you just need to open a terminal,
-	cd into Beam's main-folder and start jam.
+	cd into Beam's main-folder and start jam. This will take a while...
 
-	If you are interested in fiddling with the build (i.e. activate debugging
-	info), please have a look at build-jam/UserBuildConfig.sample. In this file
-	you'll find more info about what you can do.
+	After jam is finished, you can find the result in generated/distro 
+	(or generated/distro_debug, depending on settings).
+
+	N.B.: If you are interested in fiddling with the build (i.e. activate 
+	debugging info), please have a look at build-jam/UserBuildConfig.sample. 
+	In this file you'll find more info about what you can do.
 
 Have fun!
 
