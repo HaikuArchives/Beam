@@ -131,6 +131,13 @@ public:
 						uint32 blockSize=nBlockSize);
 	~BmUtf8Encoder();
 
+	// native methods:
+	void InitConverter();
+	void SetTransliterate( bool transliterate);
+
+	// overrides of BmMemFilter base:
+	void Reset( BmMemIBuf* input);
+
 protected:
 	// overrides of BmMailFilter base:
 	void Filter( const char* srcBuf, uint32& srcLen, 
@@ -139,6 +146,7 @@ protected:
 	uint32 mSrcEncoding;
 #ifdef BM_USE_ICONV
 	iconv_t mIconvDescr;
+	bool mTransliterate;
 #endif
 };
 
