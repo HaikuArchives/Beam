@@ -77,7 +77,7 @@ BmMailRefList::~BmMailRefList() {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmMailRefList::MarkCacheAsDirty() { 
-	mNeedsCacheUpdate = true; 
+	mNeedsCacheUpdate = true;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -181,6 +181,16 @@ bool BmMailRefList::StartJob() {
 			// we fetch the existing mails from disk...
 			InitializeItems();
 		}
+
+#ifdef BM_LOGGING
+		int32 objSize = 0;
+		BmModelItemMap::const_iterator iter;
+		for( iter = begin(); iter != end(); ++iter) {
+			objSize += iter->second->ObjectSize() + sizeof( BmString) + iter->first.Length();
+		}
+		BM_LOG( BM_LogMailTracking, BmString("RefList <") << ModelName() << "> has (estimated) size of " << objSize << " bytes");
+#endif
+
 	} catch (exception &e) {
 		BM_SHOWERR( e.what());
 	}

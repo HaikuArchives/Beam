@@ -70,7 +70,6 @@ public:
 	// creator-funcs, c'tors and d'tor:
 	static BmRef<BmMailRef> CreateInstance( BmMailRefList* model, entry_ref &eref, 
 												 		 struct stat& st);
-	static BmRef<BmMailRef> CreateDummyInstance( BmMailRefList* model, int id);
 	BmMailRef( BMessage* archive, BmMailRefList* model);
 	virtual ~BmMailRef();
 
@@ -78,6 +77,10 @@ public:
 	void MarkAs( const char* s);
 	bool ReadAttributes( const struct stat* statInfo = NULL);
 	void ResyncFromDisk();
+
+#ifdef BM_LOGGING
+	int32 ObjectSize( bool addSizeofThis=true) const;
+#endif
 
 	// overrides of archivable base:
 	status_t Archive( BMessage* archive, bool deep = true) const;
@@ -89,21 +92,21 @@ public:
 	inline const char* TrackerName() const			{ return mEntryRef.name; }
 	inline const ino_t& Inode() const				{ return mInode; }
 	inline status_t InitCheck()	const				{ return mInitCheck; }
-	inline const BmString& Account() const 			{ return mAccount; }
+	inline const BmString& Account() const 		{ return mAccount; }
 	inline const BmString& Cc() const 				{ return mCc; }
-	inline const BmString& From() const 				{ return mFrom; }
+	inline const BmString& From() const 			{ return mFrom; }
 	inline const BmString& Name() const				{ return mName; }
 	inline const BmString& Priority() const 		{ return mPriority; }
-	inline const BmString& ReplyTo() const 			{ return mReplyTo; }
+	inline const BmString& ReplyTo() const 		{ return mReplyTo; }
 	inline const BmString& Status() const 			{ return mStatus; }
-	inline const BmString& Subject() const 			{ return mSubject; }
+	inline const BmString& Subject() const 		{ return mSubject; }
 	inline const BmString& To() const 				{ return mTo; }
 	inline const time_t& When() const 				{ return mWhen; }
-	inline const BmString& WhenString() const 		{ return mWhenString; }
+	inline const BmString& WhenString() const 	{ return mWhenString; }
 	inline const time_t& Created() const 			{ return mCreated; }
-	inline const BmString& CreatedString() const 	{ return mCreatedString; }
+	inline const BmString& CreatedString() const { return mCreatedString; }
 	inline const off_t& Size() const 				{ return mSize; }
-	inline const BmString& SizeString() const 		{ return mSizeString; }
+	inline const BmString& SizeString() const 	{ return mSizeString; }
 	inline const bool& HasAttachments() const 	{ return mHasAttachments; }
 	inline const bool IsNew() const					{ return mStatus == "New"; }
 
