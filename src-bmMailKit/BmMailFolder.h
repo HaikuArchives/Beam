@@ -66,6 +66,7 @@ public:
 	void BumpNewMailCountForSubfolders( int32 offset=1);
 	bool HasNewMail() const					{ return mNewMailCount>0 
 															|| mNewMailCountForSubfolders>0; }
+	bool HasNewMailInSubfolders() const	{ return mNewMailCountForSubfolders>0; }
 	bool CheckIfModifiedSinceLastTime();
 	bool CheckIfModifiedSince( time_t when, time_t* storeNewModTime=NULL);
 	void CreateMailRefList();

@@ -87,21 +87,26 @@ void BmMailFolderItem::UpdateView( BmUpdFlags flags, bool redraw,
 	BmMailFolder* folder( ModelItem());
 	if (!folder)
 		return;
-	if (flags & (UPD_EXPANDER | UPD_KEY | BmMailFolder::UPD_HAVE_NEW_STATUS)) {
-		Bold( IsExpanded() 
-					? folder->NewMailCount()
-					: folder->HasNewMail());
+	if (flags & (UPD_KEY | BmMailFolder::UPD_HAVE_NEW_STATUS)) {
+		Bold( folder->NewMailCount());
 		SetColumnContent( COL_NAME, folder->Name().String());
 		if (redraw)
 			updColBitmap = 0xFFFFFFFF;
 							// Bold() may have changed font, need to redraw everything!
 	}
-	if (flags & BmMailFolder::UPD_HAVE_NEW_STATUS) {
+	if (flags & (UPD_EXPANDER | BmMailFolder::UPD_HAVE_NEW_STATUS)) {
 		BBitmap* icon;
-		if (folder->NewMailCount())
-			icon = TheResources->IconByName("Folder_WithNew");
-		else
-			icon = TheResources->IconByName("Folder");
+		if (folder->NewMailCount()) {
+			if (folder->HasNewMailInSubfolders() && !IsExpanded())
+				icon = TheResources->IconByName("Folder_New_NewInSub");
+			else
+				icon = TheResources->IconByName("Folder_New");
+		} else {
+			if (folder->HasNewMailInSubfolders() && !IsExpanded())
+				icon = TheResources->IconByName("Folder_NewInSub");
+			else
+				icon = TheResources->IconByName("Folder");
+		}
 		SetColumnContent( COL_ICON, icon, 2.0);
 		updColBitmap |= (1UL<<COL_ICON);
 	}
