@@ -41,6 +41,9 @@
 extern IMPEXPBMBASE bool BeamInTestMode;		
 							// indicates if Beam is running in test-mode
 
+extern IMPEXPBMBASE bool BeamOnDano;
+							// indicates if Beam is running on Dano or later
+
 /*------------------------------------------------------------------------------*\
 	BM_error
 		-	base-class for any Beam-exception
