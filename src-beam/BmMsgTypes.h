@@ -9,8 +9,14 @@
 /*------------------------------------------------------------------------------*\
 	types of messages handled by the Beam-Application:
 \*------------------------------------------------------------------------------*/
-#define BM_APP_CONNWIN_DONE			'bmab'
+#define BM_APP_CONNWIN_DONE			'bmaa'
 						// sent from BmConnectionWin to app when a connection has finished
+
+/*------------------------------------------------------------------------------*\
+	types of messages sent via the observe/notify system:
+\*------------------------------------------------------------------------------*/
+#define BM_NTFY_MAILREF_SELECTION	'bmba'
+						// sent from BmMailRefView to observers whenever mail-selection changes
 
 /*------------------------------------------------------------------------------*\
 	types of messages handled by a listview-controller:
@@ -37,10 +43,12 @@
 							// the listmodel indicates a state-change of on of its items
 
 /*------------------------------------------------------------------------------*\
-	types of messages handled by a BmConnectionWin:
+	types of messages handled by a BmJobStatusWin:
 \*------------------------------------------------------------------------------*/
-#define BM_CONNWIN_FETCHPOP			'bmea'
-						// sent from App BmConnectionWin in order to start pop-connection
+#define BM_JOBWIN_FETCHPOP				'bmea'
+						// sent to BmJobStatusWin in order to start pop-connection
+#define BM_JOBWIN_MOVEMAILS			'bmeb'
+						// sent to BmJobStatusWin in order to move mails
 
 /*------------------------------------------------------------------------------*\
 	types of messages handled by a BmMailHeaderView:
@@ -60,5 +68,42 @@
 \*------------------------------------------------------------------------------*/
 #define BM_MAIL_DRAG						'bmha'
 #define BM_ATTACHMENT_DRAG				'bmhb'
+
+/*------------------------------------------------------------------------------*\
+	types of messages handled by a BmLogfile:
+\*------------------------------------------------------------------------------*/
+#define BM_LOG_MSG						'bmha'
+
+
+/*------------------------------------------------------------------------------*\
+	Menu-messages:
+\*------------------------------------------------------------------------------*/
+// main window
+#define BMM_NEW_MAILFOLDER				'bMfa'
+#define BMM_PAGE_SETUP					'bMfb'
+#define BMM_PRINT							'bMfc'
+#define BMM_PREFERENCES					'bMfd'
+#define BMM_FIND							'bMfe'
+#define BMM_FIND_MESSAGES				'bMff'
+#define BMM_FIND_NEXT					'bMfg'
+#define BMM_CHECK_MAIL					'bMfh'
+#define BMM_CHECK_ALL					'bMfi'
+#define BMM_SEND_PENDING				'bMfj'
+#define BMM_NEW_MAIL						'bMfk'
+#define BMM_REPLY							'bMfl'
+#define BMM_REPLY_ALL					'bMfm'
+#define BMM_FORWARD						'bMfn'
+#define BMM_FORWARD_ATTACHMENTS		'bMfo'
+#define BMM_BOUNCE						'bMfp'
+#define BMM_FILTER						'bMfq'
+#define BMM_TRASH							'bMfr'
+// mail edit window
+#define BMM_ATTACH						'bMga'
+#define BMM_OPEN							'bMgb'
+#define BMM_SAVE							'bMgc'
+#define BMM_SEND_LATER					'bMgd'
+#define BMM_SEND_NOW						'bMge'
+#define BMM_SHOW_PEOPLE					'bMgf'
+
 
 #endif

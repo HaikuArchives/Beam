@@ -91,13 +91,22 @@ BBitmap* BmResources::IconByName( const BString name) {
 		if (mt.InitCheck() == B_OK) {
 			icon = new BBitmap( BRect( 0, 0, 15, 15), B_CMAP8);
 			if (mt.GetIcon( icon, B_MINI_ICON) != B_OK) {
-				// the given mimetype has no icon defined, we take the icon of a generic file:
-				mt.SetTo("application/octet-stream");
-				if (mt.InitCheck() == B_OK) {
-					if (mt.GetIcon( icon, B_MINI_ICON) != B_OK) {
-						// no icon for generic file ?!? we give up...
-						delete icon;
-						icon = NULL;
+				// the given mimetype has no icon defined, we check if the preferred app 
+				// of this mimetype has an icon for this type:
+				status_t err;
+				char preferredApp[B_MIME_TYPE_LENGTH+1];
+				if (mt.GetPreferredApp( preferredApp) != B_OK
+				|| mt.SetTo( preferredApp) != B_OK
+				|| (err=mt.GetIconForType( name.String(), icon, B_MINI_ICON)) != B_OK) {
+					// the preferred-app doesn't exist or has no icon for this mimetype.
+					// We take the icon of a generic file:
+					mt.SetTo("application/octet-stream");
+					if (mt.InitCheck() == B_OK) {
+						if (mt.GetIcon( icon, B_MINI_ICON) != B_OK) {
+							// no icon for generic file ?!? we give up...
+							delete icon;
+							icon = NULL;
+						}
 					}
 				}
 			}

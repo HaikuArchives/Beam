@@ -27,7 +27,8 @@ public:
 	
 	// overrides of ListViewItem:
 	BmMailRef* ModelItem() const			{ return dynamic_cast< BmMailRef*>( mModelItem.Get()); }
-
+	void UpdateView( BmUpdFlags flags);
+	
 	// overrides of CLVEasyItem base:
 	const int32 GetNumValueForColumn( int32 column_index) const;
 	const time_t GetDateValueForColumn( int32 column_index) const;
@@ -44,6 +45,8 @@ class BmMailRefView : public BmListViewController
 	typedef BmListViewController inherited;
 	
 public:
+	static const char* const MSG_MAILS_SELECTED = 		"bm:msel";
+
 	// creator-func, c'tors and d'tor:
 	static BmMailRefView* CreateInstance( minimax minmax, int32 width, int32 height);
 	BmMailRefView( minimax minmax, int32 width, int32 height);

@@ -129,6 +129,7 @@ fLightColumnCol( White),
 fWindowActive( false),
 fDeactivatedVerticalBar( NULL),
 fStripedBackground( false),
+fInsertAtSortedPos( true),
 fMinMax( minmax)
 {
 }
@@ -1068,20 +1069,80 @@ bool ColumnListView::AddUnder(BListItem* a_item, BListItem* a_superitem)
 	//Add the item under the superitem in the full list
 	int32 ItemPos = SuperItemPos + 1;
 	item->fOutlineLevel = SuperItemLevel + 1;
-	while(true)
-	{
-		CLVListItem* Temp = (CLVListItem*)fFullItemList.ItemAt(ItemPos);
-		if(Temp)
+	if (fInsertAtSortedPos)
+		ItemPos = DetermineSortedPosHierarchical( item, SuperItemPos+1);
+	else {
+		ItemPos = SuperItemPos + 1;
+		while(true)
 		{
-			if(Temp->fOutlineLevel > SuperItemLevel)
-				ItemPos++;
+			CLVListItem* Temp = (CLVListItem*)fFullItemList.ItemAt(ItemPos);
+			if(Temp)
+			{
+				if(Temp->fOutlineLevel > SuperItemLevel)
+					ItemPos++;
+				else
+					break;
+			}
 			else
 				break;
 		}
-		else
-			break;
 	}
 	return AddItemPrivate(item,ItemPos);
+}
+
+
+int32 ColumnListView::DetermineSortedPosHierarchical( CLVListItem* item, uint32 startIndex)
+{
+	int32 SortDepth = fSortKeyList.CountItems();
+
+	//Create a new BList of the items in this level
+	int32 Counter = startIndex;
+	uint32 ThisLevel = item->fOutlineLevel;
+	BList ThisLevelItems(16);
+	while(true)
+	{
+		CLVListItem* ThisItem = (CLVListItem*)fFullItemList.ItemAt(Counter);
+		if(ThisItem == NULL)
+			break;
+		uint32 ThisItemLevel = ThisItem->fOutlineLevel;
+		if(ThisItemLevel == ThisLevel)
+		{
+			ThisLevelItems.AddItem((void*)Counter);
+		}
+		else if(ThisItemLevel < ThisLevel)
+			break;
+		Counter++;
+	}
+
+	// now find sorted position for new item within this list:
+	int32 numItems = ThisLevelItems.CountItems();
+	if (!numItems)
+		return startIndex;
+	if (!fCompare || !SortDepth)
+		return ((int32)ThisLevelItems.LastItem())+1;
+	int32 currPos = numItems / 2;
+	int32 lb = 0;
+	int32 ub = numItems-1;
+	while( ub-lb > 1) {
+		int CompareResult = 0;
+		for(int32 SortIteration = 0; SortIteration < SortDepth && CompareResult == 0; SortIteration++)
+		{
+			CLVColumn* Column = (CLVColumn*)fSortKeyList.ItemAt(SortIteration);
+			CompareResult = fCompare(item,(CLVListItem*)ItemAt((int32)ThisLevelItems.ItemAt(currPos)),fColumnList.IndexOf(Column),Column->Flags());
+			if(Column->fSortMode == Descending)
+				CompareResult = 0-CompareResult;
+		}
+		if (CompareResult >= 0) {
+			lb = currPos;
+			int32 offs = (ub-currPos) / 2;
+			currPos += offs ? offs : 1;
+		} else {
+			ub = currPos;
+			int32 offs = (currPos-lb) / 2;
+			currPos -= offs ? offs : 1;
+		}
+	}
+	return (int32)ThisLevelItems.ItemAt( currPos);
 }
 
 
@@ -1101,12 +1162,47 @@ bool ColumnListView::AddItem(BListItem* a_item)
 	CLVListItem* item = cast_as(a_item,CLVListItem);
 	if(item == NULL)
 		return false;
-	if(fHierarchical)
+	if(fHierarchical) {
 		return AddItemPrivate(item,fFullItemList.CountItems());
-	else
-		return AddItemPrivate(item,CountItems());
+	} else {
+		if (fInsertAtSortedPos)
+			return AddItemPrivate(item, DetermineSortedPos( item));
+		else 
+			return AddItemPrivate(item, CountItems());
+	}
 }
 
+
+int32 ColumnListView::DetermineSortedPos(CLVListItem* item)
+{
+	int32 SortDepth = fSortKeyList.CountItems();
+	int32 numItems = FullListCountItems();
+	if (!numItems || !fCompare || !SortDepth)
+		return numItems;
+	int32 currPos = numItems / 2;
+	int32 lb = 0;
+	int32 ub = numItems-1;
+	while( ub-lb > 1) {
+		int CompareResult = 0;
+		for(int32 SortIteration = 0; SortIteration < SortDepth && CompareResult == 0; SortIteration++)
+		{
+			CLVColumn* Column = (CLVColumn*)fSortKeyList.ItemAt(SortIteration);
+			CompareResult = fCompare(item,(CLVListItem*)ItemAt(currPos),fColumnList.IndexOf(Column),Column->Flags());
+			if(Column->fSortMode == Descending)
+				CompareResult = 0-CompareResult;
+		}
+		if (CompareResult >= 0) {
+			lb = currPos;
+			int32 offs = (ub-currPos) / 2;
+			currPos += offs ? offs : 1;
+		} else {
+			ub = currPos;
+			int32 offs = (currPos-lb) / 2;
+			currPos -= offs ? offs : 1;
+		}
+	}
+	return currPos;
+}
 
 bool ColumnListView::AddItemPrivate(CLVListItem* item, int32 fullListIndex)
 {
@@ -1858,6 +1954,8 @@ void ColumnListView::KeyDown(const char *bytes, int32 numBytes)
 		switch( bytes[0]) {
 			case B_LEFT_ARROW:
 			case B_RIGHT_ARROW: {
+					// allow user to expand/collapse the subitems by pressing
+					// a modifier and CursorRight/CursorLeft
 					int32 mods = Window()->CurrentMessage()->FindInt32("modifiers");
 					if (mods & (B_CONTROL_KEY | B_SHIFT_KEY)) {
 						// expand / collapse the superitem
@@ -1889,6 +1987,7 @@ void ColumnListView::KeyDown(const char *bytes, int32 numBytes)
 				}
 				break;
 			case B_PAGE_DOWN: {
+					// avoid flicker when we are already at the bottom:
 					BScrollBar* vscroller = ScrollBar( B_VERTICAL);
 					if (vscroller) {
 						float min, max;
@@ -1928,28 +2027,35 @@ void ColumnListView::HideColumn( int32 col_index) {
 }
 
 void ColumnListView::MessageReceived(BMessage* msg) {
-	if (msg->what == 'PSTE') {
-		// handle color-drops:
-		struct rgb_color *col;
-		ssize_t siz;
-		const void *data;
-		msg->FindData( "RGBColor", B_RGB_COLOR_TYPE, &data, &siz);
-		col = (rgb_color*)data;
-		BPoint point;
-		msg->FindPoint("_drop_point_", &point);
-		int num = fColumnDisplayList.CountItems();
-		for( int i=0; i<num; i++) {
-			CLVColumn* column = (CLVColumn*)fColumnDisplayList.ItemAt(i);
-			if (column->ColumnBegin()<point.x && column->ColumnEnd()>=point.x) {
-				if (i%2==0)
-					fDarkColumnCol = *col;
-				else
-					fLightColumnCol = *col;
-				Invalidate();
+	switch( msg->what) {
+		case 'PSTE': {
+			// handle color-drops:
+			struct rgb_color *col;
+			ssize_t siz;
+			const void *data;
+			msg->FindData( "RGBColor", B_RGB_COLOR_TYPE, &data, &siz);
+			col = (rgb_color*)data;
+			BPoint point;
+			msg->FindPoint("_drop_point_", &point);
+			int num = fColumnDisplayList.CountItems();
+			for( int i=0; i<num; i++) {
+				CLVColumn* column = (CLVColumn*)fColumnDisplayList.ItemAt(i);
+				if (column->ColumnBegin()<point.x && column->ColumnEnd()>=point.x) {
+					if (i%2==0)
+						fDarkColumnCol = *col;
+					else
+						fLightColumnCol = *col;
+					Invalidate();
+				}
 			}
+			break;
 		}
-	} else {
-		inherited::MessageReceived( msg);
+		case B_SELECT_ALL: {
+			Select( 0, FullListCountItems()-1);
+			break;
+		}
+		default:
+			inherited::MessageReceived( msg);
 	}
 }
 

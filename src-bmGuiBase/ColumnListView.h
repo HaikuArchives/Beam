@@ -168,12 +168,14 @@ class ColumnListView : public BListView
 
 		//List functions
 		virtual bool AddUnder(BListItem* item, BListItem* superitem);
+		int32 DetermineSortedPosHierarchical( CLVListItem* item, uint32 startIndex);
 		virtual bool AddItem(BListItem* item, int32 fullListIndex);
 		virtual bool AddItem(BListItem* item);
 		virtual bool AddList(BList* newItems);						//This must be a BList of
 																	//CLVListItem*'s, NOT BListItem*'s
 		virtual bool AddList(BList* newItems, int32 fullListIndex);	//This must be a BList of
 																	//CLVListItem*'s, NOT BListItem*'s
+		int32 DetermineSortedPos(CLVListItem* item);
 		virtual bool RemoveItem(BListItem* item);
 		virtual BListItem* RemoveItem(int32 fullListIndex);			//Actually returns CLVListItem
 		virtual bool RemoveItems(int32 fullListIndex, int32 count);
@@ -209,6 +211,8 @@ class ColumnListView : public BListView
 		inline rgb_color DarkColumnCol()	{ return fDarkColumnCol; }
 		inline void SetStripedBackground( bool b)		{ fStripedBackground = b; }
 		inline bool StripedBackground( )	{ return fStripedBackground; }
+		inline void SetInsertAtSortedPos( bool b)		{ fInsertAtSortedPos = b; }
+		inline bool InsertAtSortedPos( )	{ return fInsertAtSortedPos; }
 
 		virtual void MessageReceived( BMessage* msg);
 
@@ -236,6 +240,7 @@ class ColumnListView : public BListView
 		static int HierarchicalBListSortFunc(BListItem** item1, BListItem** item2);
 		void AssertWindowLocked() const;
 		virtual CLVContainerView* ScrollView() 	{ return fScrollView; }
+		virtual CLVColumnLabelView* ColumnLabelView() 	{ return fColumnLabelView; }
 
 		CLVColumnLabelView* fColumnLabelView;
 		CLVContainerView* fScrollView;
@@ -261,6 +266,7 @@ class ColumnListView : public BListView
 		bool fWindowActive;
 		BScrollBar* fDeactivatedVerticalBar;
 		bool fStripedBackground;
+		bool fInsertAtSortedPos;
 
 		minimax fMinMax;		
 };

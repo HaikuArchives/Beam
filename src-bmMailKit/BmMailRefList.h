@@ -38,16 +38,14 @@ public:
 
 private:
 
+	// native methods:
+	void InitializeItems();
+	void InstantiateItems( BMessage* archive);
+
 	// the following members will NOT be archived at all:
 	BmRef<BmMailFolder> mFolder;
-	bool mUpdateCache;
+	bool mNeedsCacheUpdate;
 
-	//
-	void InitializeItems();
-	//
-	void InstantiateItems( BMessage* archive);
-	//
-	void Cleanup();
 };
 
 

@@ -19,12 +19,6 @@ class BmMailFolderItem : public BmListViewItem
 {
 	typedef BmListViewItem inherited;
 
-	enum Columns {
-		COL_ICON = 1,
-		COL_NAME,
-		COL_MAX
-	};
-
 public:
 	// c'tors and d'tor:
 	BmMailFolderItem( BString key, BmListModelItem* item, bool superitem, 
@@ -62,7 +56,6 @@ public:
 	const char* ItemNameForCaption()		{ return "folder"; }
 
 	// overrides of listview base:
-	void MessageReceived( BMessage* msg);
 	void SelectionChanged( void);
 
 	static BmMailFolderView* theInstance;

@@ -11,6 +11,8 @@
 #include <StringView.h>
 #include <Window.h>
 
+#include "CLVColumnLabelView.h"
+
 #include "BmBasics.h"
 #include "BmBusyView.h"
 #include "BmCaption.h"
@@ -21,8 +23,8 @@
 #include "BmResources.h"
 #include "BmUtil.h"
 
-//#include <Profile.h>
-
+#define BM_PULSE 'bmPL'
+static BMessage pulseMsg(BM_PULSE);
 
 /********************************************************************************\
 	BmListViewItem
@@ -109,6 +111,8 @@ BmListViewController::BmListViewController( minimax minmax, BRect rect,
 	,	mShowBusyView( showBusyView)
 	,	mUseStateCache( true)
 	,	mCurrHighlightItem( NULL)
+	,	mUpdatePulseRunner( NULL)
+	,	mCachedMessages( 20)
 {
 }
 
@@ -117,6 +121,7 @@ BmListViewController::BmListViewController( minimax minmax, BRect rect,
 		-	standard d'tor
 \*------------------------------------------------------------------------------*/
 BmListViewController::~BmListViewController() {
+	delete mUpdatePulseRunner;
 	delete mInitialStateInfo;
 }
 
@@ -153,7 +158,9 @@ void BmListViewController::AttachedToWindow() {
 \*------------------------------------------------------------------------------*/
 void BmListViewController::MouseDown(BPoint point) { 
 	inherited::MouseDown( point); 
-	MakeFocus( true);
+	BView::MakeFocus( true);
+	// [zooey]: use the following line to draw blue frame indicating key-focus
+	// MakeFocus( true);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -219,6 +226,7 @@ void BmListViewController::MessageReceived( BMessage* msg) {
 				BmListModelItem* item=NULL;
 				msg->FindPointer( BmListModel::MSG_MODELITEM, (void**)&item);
 				AddModelItem( item);
+				UpdateCaption();
 				break;
 			}
 			case BM_LISTMODEL_REMOVE: {
@@ -226,6 +234,7 @@ void BmListViewController::MessageReceived( BMessage* msg) {
 				BmListModelItem* item=NULL;
 				msg->FindPointer( BmListModel::MSG_MODELITEM, (void**)&item);
 				RemoveModelItem( item);
+				UpdateCaption();
 				break;
 			}
 			case BM_LISTMODEL_UPDATE: {
@@ -260,7 +269,8 @@ void BmListViewController::MessageReceived( BMessage* msg) {
 			default:
 				if (msg->WasDropped())
 					HandleDrop( msg);
-				inherited::MessageReceived( msg);
+				else
+					inherited::MessageReceived( msg);
 		}
 	}
 	catch( exception &err) {
@@ -289,13 +299,15 @@ BmListViewItem* BmListViewController::FindViewItemFor( BmListModelItem* modelIte
 \*------------------------------------------------------------------------------*/
 void BmListViewController::AddAllModelItems() {
 	BM_LOG2( BM_LogModelController, BString(ControllerName())<<": adding items to listview");
-	BAutolock lock( DataModel()->ModelLocker());
+	BmAutolock lock( DataModel()->ModelLocker());
 	lock.IsLocked()	 						|| BM_THROW_RUNTIME( BString() << ControllerName() << ":AddAllModelItems(): Unable to lock model");
+	MakeEmpty();
 	BmListModel *model = DataModel();
 	BList* tempList = NULL;
 	if (!Hierarchical())
 		tempList = new BList( model->size());
 	SetDisconnectScrollView( true);
+	SetInsertAtSortedPos( false);
 	BmModelItemMap::const_iterator iter;
 	int32 count=1;
 	for( iter = model->begin(); iter != model->end(); ++iter, ++count) {
@@ -311,7 +323,7 @@ void BmListViewController::AddAllModelItems() {
 		}
 		if (count%100==0) {
 			ScrollView()->PulseBusyView();
-			BString caption = BString()<<count<<ItemNameForCaption()<<(count>1?"s":"");
+			BString caption = BString()<<count<<" "<<ItemNameForCaption()<<(count>1?"s":"");
 			UpdateCaption( caption.String());
 		}
 	}
@@ -321,6 +333,7 @@ void BmListViewController::AddAllModelItems() {
 		delete tempList;
 	}
 	SortItems();
+	SetInsertAtSortedPos( true);
 	SetDisconnectScrollView( false);
 	UpdateColumnSizesDataRectSizeScrollBars( true);
 	UpdateCaption();
@@ -334,16 +347,12 @@ void BmListViewController::AddAllModelItems() {
 \*------------------------------------------------------------------------------*/
 void BmListViewController::AddModelItem( BmListModelItem* item) {
 	BM_LOG2( BM_LogModelController, BString(ControllerName())<<": adding one item to listview");
-	BAutolock lock( DataModel()->ModelLocker());
-	lock.IsLocked()	 						|| BM_THROW_RUNTIME( BString() << ControllerName() << ":AddModelItem(): Unable to lock model");
 	if (!Hierarchical()) {
 		doAddModelItem( NULL, item);
 	} else {
 		BmListViewItem* parentItem = FindViewItemFor( item->Parent());
 		doAddModelItem( parentItem, item);
 	}
-	SortItems();
-	UpdateCaption();
 }
 
 /*------------------------------------------------------------------------------*\
@@ -356,8 +365,6 @@ void BmListViewController::doAddModelItem( BmListViewItem* parent, BmListModelIt
 	if (newItem) {
 		if (Hierarchical() && !item->empty())
 			newItem->SetSuperItem( true);
-	
-		// TODO: add mechanism for inserting at correct position
 		if (parent)
 			AddUnder( newItem, parent);
 		else
@@ -384,8 +391,6 @@ void BmListViewController::doAddModelItem( BmListViewItem* parent, BmListModelIt
 \*------------------------------------------------------------------------------*/
 void BmListViewController::RemoveModelItem( BmListModelItem* item) {
 	BM_LOG2( BM_LogModelController, BString(ControllerName())<<": removing one item from listview");
-	BAutolock lock( DataModel()->ModelLocker());
-	lock.IsLocked()	 						|| BM_THROW_RUNTIME( BString() << ControllerName() << ":RemoveModelItem(): Unable to lock model");
 	if (item) {
 		DeselectAll();
 		BmListViewItem* viewItem = FindViewItemFor( item);
@@ -475,10 +480,14 @@ void BmListViewController::ShowLabelViewMenu( BPoint point) {
 	int32 numVisibleCols = fColumnDisplayList.CountItems();
 	for( int32 i=0; i<numCols; ++i) {
 		CLVColumn* column = (CLVColumn*)fColumnList.ItemAt( i);
+		if (!column) continue;
+		uint32 flags = column->Flags();
+		if (flags & (CLV_EXPANDER | CLV_LOCK_WITH_RIGHT | CLV_MERGE_WITH_RIGHT | CLV_NOT_MOVABLE)) continue;
 		bool shown = fColumnDisplayList.HasItem( column);
 		BMessage* msg = new BMessage( shown ? BM_LISTVIEW_HIDE_COLUMN : BM_LISTVIEW_SHOW_COLUMN);
 		msg->AddInt32( MSG_COLUMN_NO, i);
-		BMenuItem* item = new BMenuItem( column->GetLabelName(), msg);
+		BString label = column->GetLabelName();
+		BMenuItem* item = new BMenuItem( label.String(), msg);
 		item->SetMarked( shown);
 		if (shown && numVisibleCols == 1) {
 			// don't allow user to remove last visible column:
@@ -488,13 +497,15 @@ void BmListViewController::ShowLabelViewMenu( BPoint point) {
 		theMenu->AddItem( item);
 	}
 
-   ConvertToScreen(&point);
-	BRect openRect;
-	openRect.top = point.y - 5;
-	openRect.bottom = point.y + 5;
-	openRect.left = point.x - 5;
-	openRect.right = point.x + 5;
-  	theMenu->Go( point, true, false, openRect);
+	if (theMenu->CountItems() > 0) {
+	   ColumnLabelView()->ConvertToScreen(&point);
+		BRect openRect;
+		openRect.top = point.y - 5;
+		openRect.bottom = point.y + 5;
+		openRect.left = point.x - 5;
+		openRect.right = point.x + 5;
+  		theMenu->Go( point, true, false, openRect);
+	}
   	delete theMenu;
 }
 
@@ -538,16 +549,24 @@ void BmListViewController::DetachModel() {
 	WriteStateInfo();
 	inheritedController::DetachModel();
 	ScrollView()->UnsetBusy();
+	MakeEmpty();
+	UpdateCaption();
+}
+
+/*------------------------------------------------------------------------------*\
+	MakeEmpty()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmListViewController::MakeEmpty() {
 	BList tempList;
 	int32 count = FullListCountItems();
 	for( int i=0; i<count; ++i)
 		tempList.AddItem( FullListItemAt( i));
-	MakeEmpty();								// clear display
-	UpdateCaption();
+	inherited::MakeEmpty();					// clear display
 	while( !tempList.IsEmpty()) {
 		BmListViewItem* subItem = static_cast<BmListViewItem*>(tempList.RemoveItem( (int32)0));
 		delete subItem;
-	}		
+	}
 }
 
 /*------------------------------------------------------------------------------*\
@@ -697,7 +716,7 @@ BmCLVContainerView::BmCLVContainerView( minimax minmax, ColumnListView* target,
 	if (hScroller) {
 		frame = hScroller->Frame();
 		if (showCaption && !mCaptionWidth) {
-			mCaptionWidth = frame.Width();
+//			mCaptionWidth = frame.Width();
 			hScroller->Hide();
 		}
 	} else {
@@ -790,7 +809,7 @@ BRect BmCLVContainerView::layout( BRect rect) {
 		BRect cpFrame = mCaption->Frame();
 		mCaption->MoveTo( cpFrame.left, rect.bottom-1-cpFrame.Height());
 		BScrollBar* hScroller = ScrollBar( B_HORIZONTAL);
-		if (!hScroller || hScroller->IsHidden()) {
+		if (!mCaptionWidth && (!hScroller || hScroller->IsHidden())) {
 			if (ScrollBar( B_VERTICAL))
 				fullCaptionWidth -= B_V_SCROLL_BAR_WIDTH + 1;
 			mCaption->ResizeTo( fullCaptionWidth, cpFrame.Height());

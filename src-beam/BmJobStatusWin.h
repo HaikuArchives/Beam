@@ -38,10 +38,42 @@ public:
 
 	// overrides of controller base:
 	BHandler* GetControllerHandler() 	{ return this; }
-	virtual void JobIsDone( bool completed);
+	void JobIsDone( bool completed);
 
 	// overrides of view base:
-	virtual void MessageReceived( BMessage* msg);
+	void MessageReceived( BMessage* msg);
+};
+
+class MStringView;
+/*------------------------------------------------------------------------------*\
+	BmMailMoverView
+		-	controls a specific mail-moving operation
+\*------------------------------------------------------------------------------*/
+class BmMailMoverView : public BmJobStatusView {
+
+public:
+	// creator-func, c'tors and d'tor:
+	static BmMailMoverView* CreateInstance( const char* name);
+	BmMailMoverView( const char* name);
+	~BmMailMoverView();
+
+	// overrides of jobstatusview base:
+	bool WantsToStayVisible();
+	void ResetController();
+	void UpdateModelView( BMessage* msg);
+	BmJobModel* CreateJobModel( BMessage* msg);
+
+	// overrides of controller base:
+	BHandler* GetControllerHandler() 	{ return this; }
+
+	//	message component definitions:
+	static const char* const MSG_REFS = 		"refs";
+	static const char* const MSG_NAME = 		"refs";
+	static const char* const MSG_FOLDER = 		"bm:folder";
+
+private:
+	BStatusBar* mStatBar;					// shows number of mails moved during this operation
+	MStringView* mBottomLabel;
 };
 
 /*------------------------------------------------------------------------------*\
@@ -56,13 +88,11 @@ public:
 	BmPopperView( const char* name);
 	~BmPopperView();
 
-	// native methods:
-	BmJobModel* CreateJobModel( BMessage* msg);
-
-	// overrides of connectionview base:
+	// overrides of jobstatusview base:
 	bool WantsToStayVisible();
 	void ResetController();
 	void UpdateModelView( BMessage* msg);
+	BmJobModel* CreateJobModel( BMessage* msg);
 
 	// overrides of controller base:
 	BHandler* GetControllerHandler() 	{ return this; }
@@ -99,17 +129,18 @@ class BmJobStatusWin : public MWindow {
 												|	B_NOT_ZOOMABLE
 												|	B_NOT_RESIZABLE;
 
-	typedef map<BString, BmJobStatusView*> JobStatusMap;
+	typedef map<BString, BmJobStatusView*> JobMap;
 
 public:
-	// c'tors and d'tor:
-	BmJobStatusWin( const char* title, BLooper* invoker=NULL);
+	// creator-func, c'tors and d'tor:
+	static BmJobStatusWin* CreateInstance();
+	BmJobStatusWin( const char* title);
 	virtual ~BmJobStatusWin();
 
 	// overrides of BWindow base:
 	bool QuitRequested();
 	void Quit();
-	virtual void MessageReceived( BMessage* msg);
+	void MessageReceived( BMessage* msg);
 
 	//
 	static const rgb_color BM_COL_STATUSBAR;
@@ -118,18 +149,23 @@ public:
 	static BmJobStatusWin* Instance;
 
 	//	message component definitions:
-	static const char* const MSG_CONN_NAME = 		"bm:connname";
-	static const char* const MSG_CONN_INFO = 		"bm:conninfo";
+	static const char* const MSG_JOB_NAME = 		"bm:jobname";
+
+	static BmJobStatusWin* theInstance;
 
 private:
-	void AddJobStatus( BMessage* msg);
-	void RemoveJobStatus( const char* name);
+	void AddJob( BMessage* msg);
+	void RemoveJob( const char* name);
 
-	JobStatusMap mActiveJobStatuss;	// list of known connections (some may be inactive)
+	JobMap mActiveJobs;						// list of known jobs (some may be inactive)
 	VGroup* mOuterGroup;						// the outmost view that the connection-interfaces live in
 	BLooper* mInvokingLooper;				// the looper we will tell that we are finished
-	uint8 mActiveConnCount;					// number of currently active connections
+	uint8 mActiveJobCount;					// number of currently active jobs
+
 
 };
+
+#define TheJobStatusWin BmJobStatusWin::theInstance
+
 
 #endif

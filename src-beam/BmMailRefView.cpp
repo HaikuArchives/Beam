@@ -6,6 +6,7 @@
 #include <Window.h>
 
 #include "BmBasics.h"
+#include "BmJobStatusWin.h"
 #include "BmLogHandler.h"
 #include "BmMailFolder.h"
 #include "BmMailRef.h"
@@ -19,6 +20,26 @@
 #include "BmUtil.h"
 
 const int16 BmMailRefItem::nFirstTextCol = 3;
+
+enum Columns {
+	COL_STATUS_I = 0,
+	COL_ATTACHMENTS_I,
+	COL_PRIORITY_I,
+	COL_FROM,
+	COL_SUBJECT,
+	COL_DATE,
+	COL_SIZE,
+	COL_CC,
+	COL_ACCOUNT,
+	COL_TO,
+	COL_REPLY_TO,
+	COL_NAME,
+	COL_CREATED,
+	COL_TRACKER_NAME,
+	COL_STATUS,
+	COL_ATTACHMENT,
+	COL_PRIORITY
+};
 
 /********************************************************************************\
 	BmMailRefItem
@@ -36,16 +57,16 @@ BmMailRefItem::BmMailRefItem( BString key, BmListModelItem* _item)
 
 	BString st = BString("Mail_") << ref->Status();
 	BBitmap* icon = TheResources->IconByName(st);
-	SetColumnContent( 0, icon, 2.0, false);
+	SetColumnContent( COL_STATUS_I, icon, 2.0, false);
 
 	if (ref->HasAttachments()) {
 		icon = TheResources->IconByName("Attachment");
-		SetColumnContent( 1, icon, 2.0, false);
+		SetColumnContent( COL_ATTACHMENTS_I, icon, 2.0, false);
 	}
 	
 	BString priority = BString("Priority_") << ref->Priority();
 	if ((icon = TheResources->IconByName(priority))) {
-		SetColumnContent( 2, icon, 2.0, false);
+		SetColumnContent( COL_PRIORITY_I, icon, 2.0, false);
 	}
 
 	BmListColumn cols[] = {
@@ -73,6 +94,21 @@ BmMailRefItem::BmMailRefItem( BString key, BmListModelItem* _item)
 		-	
 \*------------------------------------------------------------------------------*/
 BmMailRefItem::~BmMailRefItem() { 
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailRefItem::UpdateView( BmUpdFlags flags) {
+	inherited::UpdateView( flags);
+	BmMailRef* ref = ModelItem();
+	if (flags & BmMailRef::UPD_STATUS) {
+		BString st = BString("Mail_") << ref->Status();
+		BBitmap* icon = TheResources->IconByName(st);
+		SetColumnContent( COL_STATUS_I, icon, 2.0, false);
+		SetColumnContent( COL_STATUS, ref->Status().String(), false);
+	}
 }
 
 /*------------------------------------------------------------------------------*\
@@ -363,15 +399,16 @@ bool BmMailRefView::AcceptsDropOf( const BMessage* msg) {
 \*------------------------------------------------------------------------------*/
 void BmMailRefView::HandleDrop( const BMessage* msg) {
 	if (mCurrFolder && msg && msg->what == B_SIMPLE_DATA) {
-		BList refList;
-		entry_ref eref;
-		for( int i=0; msg->FindRef( "refs", i, &eref)==B_OK; ++i) {
-			refList.AddItem( new entry_ref( eref));
+		if (mCurrFolder) {
+			BMessage tmpMsg( BM_JOBWIN_MOVEMAILS);
+			entry_ref eref;
+			for( int i=0; msg->FindRef( BmMailMoverView::MSG_REFS, i, &eref)==B_OK; ++i) {
+				tmpMsg.AddRef( BmMailMoverView::MSG_REFS, &eref);
+			}
+			tmpMsg.AddString( BmJobStatusWin::MSG_JOB_NAME, mCurrFolder->Name());
+			tmpMsg.AddPointer( BmMailMoverView::MSG_FOLDER, mCurrFolder.Get());
+			TheJobStatusWin->PostMessage( &tmpMsg);
 		}
-		mCurrFolder->MoveMailsHere( refList);
-		entry_ref* ref;
-		while( (ref = static_cast<entry_ref*>( refList.RemoveItem( (int32)0))))
-			delete ref;
 	}
 	inherited::HandleDrop( msg);
 }
@@ -389,6 +426,7 @@ void BmMailRefView::ShowFolder( BmMailFolder* folder) {
 		if (refList)
 			StartJob( refList, true);
 		mCurrFolder = folder;
+		SelectionChanged();
 	}
 	catch( exception &err) {
 		// a problem occurred, we tell the user:
@@ -417,7 +455,13 @@ BMessage* BmMailRefView::DefaultLayout()		{
 		-	
 \*------------------------------------------------------------------------------*/
 void BmMailRefView::SelectionChanged( void) {
-	int32 selection = CurrentSelection();
+	int32 temp;
+	int32 selection = -1;
+	int32 numSelected = 0;
+	while( (temp = CurrentSelection(numSelected)) >= 0) {
+		selection = temp;
+		numSelected++;
+	}
 	if (selection >= 0) {
 		BmMailRefItem* refItem;
 		refItem = dynamic_cast<BmMailRefItem*>(ItemAt( selection));
@@ -429,4 +473,8 @@ void BmMailRefView::SelectionChanged( void) {
 	} else
 		if (mPartnerMailView)
 			mPartnerMailView->ShowMail( NULL);
+	
+	BMessage msg(BM_NTFY_MAILREF_SELECTION);
+	msg.AddInt32( MSG_MAILS_SELECTED, numSelected);
+	SendNotices( BM_NTFY_MAILREF_SELECTION, &msg);
 }

@@ -6,6 +6,7 @@
 #include <String.h>
 
 #include "BmBasics.h"
+#include "BmJobStatusWin.h"
 #include "BmLogHandler.h"
 #include "BmMailFolder.h"
 #include "BmMailFolderList.h"
@@ -20,7 +21,11 @@
 	BmMailFolderItem
 \********************************************************************************/
 
-
+enum Columns {
+	COL_EXPANDER = 0,
+	COL_ICON,
+	COL_NAME
+};
 
 /*------------------------------------------------------------------------------*\
 	()
@@ -47,7 +52,7 @@ BmMailFolderItem::~BmMailFolderItem() {
 void BmMailFolderItem::UpdateView( BmUpdFlags flags) {
 	inherited::UpdateView( flags);
 	BmMailFolder* folder = ModelItem();
-	if (flags & (UPD_EXPANDER | UPD_NAME)) {
+	if (flags & (UPD_EXPANDER | BmMailFolder::UPD_NAME)) {
 		BString displayName = folder->Name();
 		if (folder->HasNewMail()) {
 			int32 count = folder->NewMailCount();
@@ -102,7 +107,7 @@ BmMailFolderView::BmMailFolderView( minimax minmax, int32 width, int32 height)
 									  | CLV_NOT_RESIZABLE | CLV_PUSH_PASS | CLV_MERGE_WITH_RIGHT, 18.0));
 	AddColumn( new CLVColumn( "Folders", 300.0, CLV_SORT_KEYABLE | CLV_NOT_RESIZABLE | CLV_NOT_MOVABLE, 300.0));
 	SetSortFunction( CLVEasyItem::CompareItems);
-	SetSortKey( 2);
+	SetSortKey( COL_NAME);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -126,28 +131,11 @@ BmListViewItem* BmMailFolderView::CreateListViewItem( BmListModelItem* item,
 }
 
 /*------------------------------------------------------------------------------*\
-	MessageReceived( msg)
-		-	
-\*------------------------------------------------------------------------------*/
-void BmMailFolderView::MessageReceived( BMessage* msg) {
-	try {
-		switch( msg->what) {
-			default:
-				inherited::MessageReceived( msg);
-		}
-	}
-	catch( exception &err) {
-		// a problem occurred, we tell the user:
-		BM_SHOWERR( BString("MailFolderView: ") << err.what());
-	}
-}
-
-/*------------------------------------------------------------------------------*\
 	AcceptsDropOf( msg)
 		-	
 \*------------------------------------------------------------------------------*/
 bool BmMailFolderView::AcceptsDropOf( const BMessage* msg) {
-	return (msg && msg->what == BM_MAIL_DRAG);
+	return (msg && (msg->what == BM_MAIL_DRAG || msg->what == B_SIMPLE_DATA));
 }
 
 /*------------------------------------------------------------------------------*\
@@ -155,19 +143,18 @@ bool BmMailFolderView::AcceptsDropOf( const BMessage* msg) {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmMailFolderView::HandleDrop( const BMessage* msg) {
-	if (msg && msg->what == BM_MAIL_DRAG && mCurrHighlightItem) {
-		BList refList;
-		entry_ref eref;
-		for( int i=0; msg->FindRef( "refs", i, &eref)==B_OK; ++i) {
-			refList.AddItem( new entry_ref( eref));
-		}
-		if (refList.CountItems()) {
-			BmMailFolder* folder = dynamic_cast<BmMailFolder*>( mCurrHighlightItem->ModelItem());
-			if (folder)
-				folder->MoveMailsHere( refList);
-			entry_ref* ref;
-			while( (ref = static_cast<entry_ref*>( refList.RemoveItem( (int32)0))))
-				delete ref;
+	if (msg && mCurrHighlightItem
+	&& (msg->what == BM_MAIL_DRAG || msg->what == B_SIMPLE_DATA)) {
+		BmMailFolder* folder = dynamic_cast<BmMailFolder*>( mCurrHighlightItem->ModelItem());
+		if (folder) {
+			BMessage tmpMsg( BM_JOBWIN_MOVEMAILS);
+			entry_ref eref;
+			for( int i=0; msg->FindRef( BmMailMoverView::MSG_REFS, i, &eref)==B_OK; ++i) {
+				tmpMsg.AddRef( BmMailMoverView::MSG_REFS, &eref);
+			}
+			tmpMsg.AddString( BmJobStatusWin::MSG_JOB_NAME, folder->Name());
+			tmpMsg.AddPointer( BmMailMoverView::MSG_FOLDER, folder);
+			TheJobStatusWin->PostMessage( &tmpMsg);
 		}
 	}
 	inherited::HandleDrop( msg);

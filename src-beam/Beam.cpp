@@ -5,7 +5,7 @@
 
 #include "Beam.h"
 #include "BmBasics.h"
-#include "BmConnectionWin.h"
+#include "BmJobStatusWin.h"
 #include "BmLogHandler.h"
 #include "BmMailFolderList.h"
 #include "BmMainWindow.h"
@@ -40,6 +40,13 @@ void BeamApp::ReadyToRun()
 void BeamApp::MessageReceived(BMessage* msg) {
 	try {
 		switch( msg->what) {
+			case B_SILENT_RELAUNCH: {
+				BM_LOG2( BM_LogAll, "App: silently relaunched");
+				if (TheMainWindow->IsMinimized())
+					TheMainWindow->Minimize( false);
+				inherited::MessageReceived( msg);
+				break;
+			}
 			case B_QUIT_REQUESTED: 
 				BM_LOG2( BM_LogAll, "App: quit requested");
 			default:

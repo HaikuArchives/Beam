@@ -8,6 +8,7 @@
 
 #include <stdexcept>
 
+#include <Autolock.h>
 #include <String.h>
 
 #define BM_assert(expr) if (!expr) { throw BM_invalid_argument(BString("BM_assert says no at ")<<__FILE__<<":"<<__LINE__); }
@@ -70,5 +71,20 @@ inline bool BM_DIE( const BString &s) { ShowAlert(s); exit(10); }
 \*------------------------------------------------------------------------------*/
 #define BmPtr const auto_ptr
 #define BmNcPtr auto_ptr
+
+/*------------------------------------------------------------------------------*\*\
+	wrapper around BAutolock that enhances profiling output
+\*------------------------------------------------------------------------------*/
+// during profiling we use this:
+/*
+class BmAutolock : public BAutolock {
+public:
+	BmAutolock( BLooper* l) : BAutolock( l) {};
+	BmAutolock( BLocker* l) : BAutolock( l) {};
+	BmAutolock( BLocker& l) : BAutolock( l) {};
+};
+*/
+//otherwise, we use this:
+#define BmAutolock BAutolock
 
 #endif

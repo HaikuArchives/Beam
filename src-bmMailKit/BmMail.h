@@ -35,6 +35,7 @@ public:
 	// native methods:
 	bool Store();
 	void StoreAttributes( BFile& mailFile);
+	void MarkAs( const char* status);
 	
 	// overrides of jobmodel base:
 	bool StartJob();
@@ -46,6 +47,7 @@ public:
 	BmBodyPartList* Body() const			{ return mBody.Get(); }
 	BmMailHeader* Header() const			{ return mHeader; }
 	int32 HeaderLength() const				{ return mHeaderLength; }
+	const BString Status() const;
 
 protected:
 	void SetTo( BString &msgText, const BString &account);
@@ -58,7 +60,6 @@ private:
 
 	BString mText;								// text of complete message
 	BString mAccountName;					// name of POP-account this message came from
-	BString mStatus;							// status of this mail (client-status that is, e.g. "Read" or "New")
 	bool mHasAttachments;					// flag indicating the presence of attachments
 
 	BEntry mParentEntry;						// filesystem-entry for mailfolder this mail currently lives in

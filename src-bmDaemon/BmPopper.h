@@ -19,25 +19,6 @@
 class BmPopAccount;
 
 /*------------------------------------------------------------------------------*\
-	BmPopperInfo
-		-	a BmPopper begins life with a pointer to this structure.
-		-	this struct is used to push the neccessary info through 
-			a thread-entry-function's data-ptr
-			
-\*------------------------------------------------------------------------------*/
-struct BmPopperInfo {
-	BmPopAccount* account;
-							// the POP-account we have to deal with
-	BString name;
-							// name of this POP-session (used in GUI and for logging purposes)
-
-	BmPopperInfo( BmPopAccount* a, const BString &n)
-			: account(a)
-			, name(n)
-			{}
-};
-
-/*------------------------------------------------------------------------------*\
 	BmPopper
 		-	implements the POP-client
 		-	each instance represents a single connection to a specific POP-account
@@ -120,7 +101,6 @@ private:
 	bool GetAnswer( bool SingleLineMode, int32 mailNr = 0);
 	int32 ReceiveBlock( char* buffer, int32 max);
 	void SendCommand( BString cmd);
-	void TellWeAreDone();
 };
 
 #endif

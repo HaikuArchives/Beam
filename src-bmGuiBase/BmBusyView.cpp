@@ -13,7 +13,7 @@
 #include "BmUtil.h"
 
 #define BM_PULSE 'bmPL'
-BMessage pulseMsg(BM_PULSE);
+static BMessage pulseMsg(BM_PULSE);
 
 /*------------------------------------------------------------------------------*\
 	( )
@@ -42,17 +42,16 @@ BmBusyView::~BmBusyView() {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmBusyView::SetBusy() {
-	if (mBusyCount++ == 0) {
-		BM_LOG3( BM_LogUtil, BString("BusyView::SetBusy() busyCount:")<<mBusyCount);
-		if (!mMsgRunner) {
-			BMessenger ourselvesAsTarget( this);
-			if (!ourselvesAsTarget.IsValid())
-				BM_THROW_RUNTIME( "BusyView(): Could not init Messenger.");
-			mMsgRunner = new BMessageRunner( ourselvesAsTarget, &pulseMsg, 100*1000, -1);
-			status_t err;
-			if ((err = mMsgRunner->InitCheck()) != B_OK)
-			 	BM_THROW_RUNTIME( BString("BusyView(): Could not init MessageRunner. Error:") << strerror(err));
-		}
+	mBusyCount++;
+	BM_LOG2( BM_LogUtil, BString("BusyView::SetBusy() busyCount:")<<mBusyCount);
+	if (!mMsgRunner) {
+		BMessenger ourselvesAsTarget( this);
+		if (!ourselvesAsTarget.IsValid())
+			BM_THROW_RUNTIME( "BusyView(): Could not init Messenger.");
+		mMsgRunner = new BMessageRunner( ourselvesAsTarget, &pulseMsg, 100*1000, -1);
+		status_t err;
+		if ((err = mMsgRunner->InitCheck()) != B_OK)
+		 	BM_THROW_RUNTIME( BString("BusyView(): Could not init MessageRunner. Error:") << strerror(err));
 	}
 }
 
@@ -63,7 +62,7 @@ void BmBusyView::SetBusy() {
 void BmBusyView::UnsetBusy() {
 	if (mBusyCount > 0) {
 		mBusyCount--;
-		BM_LOG3( BM_LogUtil, BString("BusyView::UnsetBusy() busyCount:")<<mBusyCount);
+		BM_LOG2( BM_LogUtil, BString("BusyView::UnsetBusy() busyCount:")<<mBusyCount);
 		if (!mBusyCount) {
 			delete mMsgRunner;
 			mMsgRunner = NULL;
@@ -99,7 +98,7 @@ void BmBusyView::MessageReceived( BMessage* msg) {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmBusyView::Pulse() {
-	BM_LOG3( BM_LogUtil, BString("BusyView::Pulse()"));
+	BM_LOG2( BM_LogUtil, BString("BusyView::Pulse()"));
 	if (mBusyCount > 0) {
 		mCurrState+=10;
 		Invalidate();

@@ -10,6 +10,7 @@
 #include <stdio.h>
 
 #include <Locker.h>
+#include <Looper.h>
 #include <StopWatch.h>
 #include <String.h>
 
@@ -20,6 +21,7 @@
 		-	different logfiles are identified by their name and will be created on demand
 \*------------------------------------------------------------------------------*/
 class BmLogHandler {
+	class BmLogfile;
 
 public:
 	// static functions
@@ -33,6 +35,7 @@ public:
 	~BmLogHandler();
 
 	// native methods:
+	BmLogfile* FindLogfile( const BString &logname);
 	void CloseLog( const BString &logname);
 	void LogToFile( const BString &logname, uint32 flag, const BString &msg, int8 minlevel=1);
 	void LogToFile( const char* const logname, uint32 flag, const char* const msg, int8 minlevel=1);
@@ -45,16 +48,21 @@ public:
 	BStopWatch StopWatch;
 
 private:
+	//	message component definitions for status-msgs:
+	static const char* const MSG_MESSAGE = 		"bm:msg";
+
 	/*------------------------------------------------------------------------------*\*\
 		BmLogfile
 			-	implements a single logfile
 			-	the actual logging takes place in here
 	\*------------------------------------------------------------------------------*/
-	class BmLogfile {
+	class BmLogfile : public BLooper{
+		typedef BLooper inherited;
 	public:
 		BmLogfile( const BString &fn);
 		~BmLogfile();
-		void Write( const char* const msg, uint32 flag, int8 minlevel, uint32 loglevels);
+		void Write( const char* const msg);
+		void MessageReceived( BMessage* msg);
 	
 		static BString LogPath;
 	
@@ -76,7 +84,7 @@ private:
 // the different "terrains" we will be logging, each of them
 // has its own loglevel:
 extern const uint32 BM_LogPop;
-extern const uint32 BM_LogConnWin;
+extern const uint32 BM_LogJobWin;
 extern const uint32 BM_LogMailParse;
 extern const uint32 BM_LogUtil;
 extern const uint32 BM_LogMailTracking;
@@ -84,6 +92,7 @@ extern const uint32 BM_LogFolderView;
 extern const uint32 BM_LogRefView;
 extern const uint32 BM_LogMainWindow;
 extern const uint32 BM_LogModelController;
+extern const uint32 BM_LogMailEditWin;
 extern const uint32 BM_LogAll;
 
 // macros to convert the loglevel for a specific flag 

@@ -18,25 +18,6 @@ class BmToolbarButton;
 class CLVContainerView;
 class UserResizeSplitView;
 
-#define BMM_NEW_MAILFOLDER				'bMfa'
-#define BMM_PAGE_SETUP					'bMfb'
-#define BMM_PRINT							'bMfc'
-#define BMM_PREFERENCES					'bMfd'
-#define BMM_FIND							'bMfe'
-#define BMM_FIND_MESSAGES				'bMff'
-#define BMM_FIND_NEXT					'bMfg'
-#define BMM_CHECK_MAIL					'bMfh'
-#define BMM_CHECK_ALL					'bMfi'
-#define BMM_SEND_PENDING				'bMfj'
-#define BMM_NEW_MAIL						'bMfk'
-#define BMM_REPLY							'bMfl'
-#define BMM_REPLY_ALL					'bMfm'
-#define BMM_FORWARD						'bMfn'
-#define BMM_FORWARD_ATTACHMENTS		'bMfo'
-#define BMM_BOUNCE						'bMfp'
-#define BMM_FILTER						'bMfq'
-#define BMM_TRASH							'bMfr'
-
 class BmMainWindow : public MWindow
 {
 	typedef MWindow inherited;
@@ -73,6 +54,7 @@ private:
 	MMenuBar* CreateMenu();
 	bool Store();
 	status_t Unarchive( BMessage* archive, bool deep=true);
+	void MailRefSelectionChanged( int32 numSelected);
 
 	BmMailFolderView* mMailFolderView;
 	BmMailRefView* mMailRefView;

@@ -47,7 +47,7 @@ BmRefManager::~BmRefManager() {
 \*------------------------------------------------------------------------------*/
 void BmRefManager::AddRef( BmRefManager* model) {
 	assert( model);
-	BAutolock lock( mLocker);
+	BmAutolock lock( mLocker);
 	lock.IsLocked()	 					|| BM_THROW_RUNTIME( "AddRef(): Unable to get lock");
 	int32 numRefs = ++mRefMap[model];
 	BM_LOG2( BM_LogUtil, BString("ModelManager: reference to <") << model->ModelName() << "> added, ref-count is "<<numRefs);
@@ -59,7 +59,7 @@ void BmRefManager::AddRef( BmRefManager* model) {
 \*------------------------------------------------------------------------------*/
 void BmRefManager::RemoveRef( BmRefManager* model) {
 	assert( model);
-	BAutolock lock( mLocker);
+	BmAutolock lock( mLocker);
 	lock.IsLocked()	 					|| BM_THROW_RUNTIME( "RemoveRef(): Unable to get lock");
 	int32 numRefs = --mRefMap[model];
 	BM_LOG2( BM_LogUtil, BString("ModelManager: reference to <") << model->ModelName() << "> removed, ref-count is " <<numRefs);

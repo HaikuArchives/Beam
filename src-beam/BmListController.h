@@ -153,6 +153,7 @@ public:
 	void ExpansionChanged( CLVListItem* item, bool expanded);
 	void ShowLabelViewMenu( BPoint pos);
 	void AttachedToWindow();
+	void MakeEmpty();
 	void MessageReceived( BMessage* msg);
 	void MouseDown(BPoint point);
 	void MouseMoved( BPoint point, uint32 transit, const BMessage *msg);
@@ -180,6 +181,8 @@ protected:
 	bool mShowBusyView;
 	bool mUseStateCache;
 	BmListViewItem* mCurrHighlightItem;
+	BMessageRunner* mUpdatePulseRunner;
+	BList mCachedMessages;
 };
 
 

@@ -248,12 +248,15 @@ void BmMailView::JobIsDone( bool completed) {
 		SetText( displayText.String());
 		BM_LOG2( BM_LogMailParse, BString("done, mail is visible"));
 		mHeaderView->ShowHeader( mCurrMail->Header());
+		ContainerView()->UnsetBusy();
 		ScrollTo( 0,0);
+		if (mCurrMail->Status() == "New")
+			mCurrMail->MarkAs( "Read");
 	} else {
 		mHeaderView->ShowHeader( NULL);
 		SetText( "");
+		ContainerView()->UnsetBusy();
 	}
-	ContainerView()->UnsetBusy();
 }
 
 /*------------------------------------------------------------------------------*\

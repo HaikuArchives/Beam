@@ -77,7 +77,7 @@ public:
 	bool IsGroup() const						{ return mIsGroup; }
 	int32 AddrCount() const					{ return mAddrList.size(); }
 	BString GroupName() const				{ return mGroupName; }
-	BmAddress FirstAddress() const		{ return mAddrList[0]; }
+	BmAddress FirstAddress() const		{ return mAddrList.size() > 0 ? mAddrList[0] : BmAddress(""); }
 
 private:
 	bool mInitOK;

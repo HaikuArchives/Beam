@@ -9,7 +9,7 @@
 #include <MWindow.h>
 
 #include "BmApp.h"
-#include "BmConnectionWin.h"
+#include "BmJobStatusWin.h"
 #include "BmLogHandler.h"
 #include "BmMsgTypes.h"
 #include "BmPopAccount.h"
@@ -30,7 +30,7 @@ public:
 
 class GenericApp : public BmApplication
 {
-	BmConnectionWin *win;
+	BmJobStatusWin *win;
 	GenericWin *gw;
 	int32 count;
 public:
@@ -75,7 +75,7 @@ bool GenericWin::QuitRequested() {
 GenericApp::GenericApp()
 : BmApplication("application/x-vnd.OT-Generic"), win(0), count(0)
 {
-	win = new BmConnectionWin( "ConnectionWin", this);
+	win = new BmJobStatusWin( "Job Status Win", this);
 	win->Hide();
 	win->Show();
 	gw = new GenericWin();
@@ -88,12 +88,12 @@ GenericApp::~GenericApp()
 
 void GenericApp::MessageReceived(BMessage* msg) {
 	BMessage* archive;
-	BmPopAccount acc;
+	BmPopAccount acc("xxx");
 	switch( msg->what) {
 		case BM_MSG_NOCH_EINER: 
 
 			count++;
-			archive = new BMessage(BM_CONNWIN_FETCHPOP);
+			archive = new BMessage(BM_JOBWIN_FETCHPOP);
 			if (count % 3 == 1) {
 				sprintf(buf, "mailtest@kiwi:110");
 				acc.Name( buf);
@@ -122,7 +122,7 @@ void GenericApp::MessageReceived(BMessage* msg) {
 				acc.SMTPPortNr( 25);
 				acc.Archive( archive, false);
 			}
-			archive->AddString( BmConnectionWin::MSG_CONN_NAME, acc.Name());
+			archive->AddString( BmJobStatusWin::MSG_JOB_NAME, acc.Name());
 			win->PostMessage( archive);
 			delete archive;
 

@@ -33,7 +33,6 @@ using namespace regexx;
 \*------------------------------------------------------------------------------*/
 BmMail::BmMail()
 	:	inherited("MailModel_dummy")
-	,	mStatus( "New")
 	,	mHasAttachments( false)
 	,	mMailRef( NULL)
 	,	mHeader( NULL)
@@ -49,12 +48,11 @@ BmMail::BmMail()
 \*------------------------------------------------------------------------------*/
 BmMail::BmMail( BmMailRef* ref) 
 	:	inherited( BString("MailModel_") << ref->Inode())
-	,	mStatus( "New")
 	,	mHasAttachments( false)
 	,	mHeader( NULL)
 	,	mHeaderLength( 0)
 	,	mBody( new BmBodyPartList( this))
-	,	mMailRef( new BmMailRef( *ref))	// copy the mail-ref
+	,	mMailRef( ref)
 	,	mInitCheck( B_NO_INIT)
 {
 }
@@ -66,7 +64,6 @@ BmMail::BmMail( BmMailRef* ref)
 \*------------------------------------------------------------------------------*/
 BmMail::BmMail( BString &msgText, const BString &account) 
 	:	inherited( "MailModel_dummy")
-	,	mStatus( "New")
 	,	mHasAttachments( false)
 	,	mHeader( NULL)
 	,	mHeaderLength( 0)
@@ -112,6 +109,35 @@ void BmMail::SetTo( BString &msgText, const BString &account) {
 	mHeader = new BmMailHeader( header, this);
 }
 	
+/*------------------------------------------------------------------------------*\
+	MarkAsRead()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMail::MarkAs( const char* status) {
+	if (!mMailRef || InitCheck() != B_OK)
+		return;
+	try {
+		BNode mailNode;
+		status_t err;
+		// we write the new status...
+		(err = mailNode.SetTo( mMailRef->EntryRefPtr())) == B_OK
+													|| BM_THROW_RUNTIME( BString("Could not create node for current mail-file.\n\n Result: ") << strerror(err));
+		mailNode.WriteAttr( "MAIL:status", B_STRING_TYPE, 0, status, strlen( status)+1);
+		// ...and tell the mail-ref:
+		mMailRef->Status( status);
+	} catch( exception &e) {
+		BM_SHOWERR(e.what());
+	}
+}
+	
+/*------------------------------------------------------------------------------*\
+	Status()
+		-	
+\*------------------------------------------------------------------------------*/
+const BString BmMail::Status() const { 
+	return mMailRef ? mMailRef->Status() : "New";
+}
+
 /*------------------------------------------------------------------------------*\
 	Store()
 		-	stores mail-data and attributes inside a file
@@ -177,7 +203,7 @@ bool BmMail::Store() {
 \*------------------------------------------------------------------------------*/
 void BmMail::StoreAttributes( BFile& mailFile) {
 	//
-	mailFile.WriteAttr( "MAIL:status", B_STRING_TYPE, 0, mStatus.String(), mStatus.Length()+1);
+	mailFile.WriteAttr( "MAIL:status", B_STRING_TYPE, 0, "New", 4);
 	mailFile.WriteAttr( "MAIL:account", B_STRING_TYPE, 0, mAccountName.String(), mAccountName.Length()+1);
 	//
 	int32 headerLength, contentLength;

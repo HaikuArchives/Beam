@@ -7,19 +7,23 @@
 #include <Directory.h>
 #include <NodeMonitor.h>
 
+#include "BmApp.h"
 #include "BmBasics.h"
 #include "BmLogHandler.h"
 #include "BmMailFolder.h"
+#include "BmMailFolderList.h"
+#include "BmMailRef.h"
 #include "BmMailRefList.h"
+//#include "BmMainWindow.h"
 #include "BmUtil.h"
 
 /*------------------------------------------------------------------------------*\
 	BmMailFolder( eref, parent, modified)
 		-	standard c'tor
 \*------------------------------------------------------------------------------*/
-BmMailFolder::BmMailFolder( entry_ref &eref, ino_t node, BmMailFolder* parent, 
-									 time_t &modified)
-	:	inherited( BString() << node, parent)
+BmMailFolder::BmMailFolder( BmMailFolderList* model, entry_ref &eref, ino_t node, 
+									 BmMailFolder* parent, time_t &modified)
+	:	inherited( BString() << node, model, parent)
 	,	mEntryRef( eref)
 	,	mInode( node)
 	,	mLastModified( modified)
@@ -38,8 +42,8 @@ BmMailFolder::BmMailFolder( entry_ref &eref, ino_t node, BmMailFolder* parent,
 	BmMailFolder( archive)
 		-	unarchive c'tor
 \*------------------------------------------------------------------------------*/
-BmMailFolder::BmMailFolder( BMessage* archive, BmMailFolder* parent)
-	:	inherited( "", parent)
+BmMailFolder::BmMailFolder( BMessage* archive, BmMailFolderList* model, BmMailFolder* parent)
+	:	inherited( "", model, parent)
 	,	mInode( 0)
 	,	mMailRefList( NULL)
 	,	mNeedsCacheUpdate( false)
@@ -52,7 +56,7 @@ BmMailFolder::BmMailFolder( BMessage* archive, BmMailFolder* parent)
 													|| BM_THROW_RUNTIME( BString("BmMailFolder: Could not find msg-field ") << MSG_ENTRYREF << "\n\nError:" << strerror(err));
 		mInode = FindMsgInt64( archive, MSG_INODE);
 		mLastModified = FindMsgInt32( archive, MSG_LASTMODIFIED);
-		mKey = BString() << mInode;
+		Key( BString() << mInode);
 		mName = mEntryRef.name;
 		if (CheckIfModifiedSince( mLastModified, &mLastModified))
 			mNeedsCacheUpdate = true;
@@ -79,7 +83,7 @@ void BmMailFolder::StartNodeMonitor() {
 	node_ref nref;
 	nref.device = mEntryRef.device;
 	nref.node = mInode;
-	watch_node( &nref, B_WATCH_DIRECTORY, be_app_messenger);
+	watch_node( &nref, B_WATCH_DIRECTORY, BMessenger( TheNodeMonitor));
 }
 
 /*------------------------------------------------------------------------------*\
@@ -90,7 +94,7 @@ void BmMailFolder::StopNodeMonitor() {
 	node_ref nref;
 	nref.device = mEntryRef.device;
 	nref.node = mInode;
-	watch_node( &nref, B_STOP_WATCHING, be_app_messenger);
+	watch_node( &nref, B_STOP_WATCHING, BMessenger( TheNodeMonitor));
 }
 
 /*------------------------------------------------------------------------------*\
@@ -102,10 +106,10 @@ status_t BmMailFolder::Archive( BMessage* archive, bool deep) const {
 		|| archive->AddRef( MSG_ENTRYREF, &mEntryRef)
 		|| archive->AddInt64( MSG_INODE, mInode)
 		|| archive->AddInt32( MSG_LASTMODIFIED, mLastModified)
-		|| archive->AddInt32( MSG_NUMCHILDREN, mSubItemMap.size());
+		|| archive->AddInt32( MSG_NUMCHILDREN, size());
 	if (deep && ret == B_OK) {
 		BmModelItemMap::const_iterator pos;
-		for( pos = mSubItemMap.begin(); pos != mSubItemMap.end(); ++pos) {
+		for( pos = begin(); pos != end(); ++pos) {
 			if (ret == B_OK) {
 				BMessage msg;
 				ret = pos->second->Archive( &msg, deep)
@@ -148,20 +152,22 @@ bool BmMailFolder::CheckIfModifiedSince( time_t when, time_t* storeNewModTime) {
 	BumpNewMailCount()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmMailFolder::BumpNewMailCount() {
-	mNewMailCount++;
+void BmMailFolder::BumpNewMailCount( int32 offset) {
+	mNewMailCount += offset;
+	TheMailFolderList->TellModelItemUpdated( this, UPD_NAME);
 	if (Parent())
-		Parent()->BumpNewMailCountForSubfolders();
+		Parent()->BumpNewMailCountForSubfolders( offset);
 }
 
 /*------------------------------------------------------------------------------*\
 	BumpNewMailCountForSubfolders()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmMailFolder::BumpNewMailCountForSubfolders() {
-	mNewMailCountForSubfolders++;
+void BmMailFolder::BumpNewMailCountForSubfolders( int32 offset) {
+	mNewMailCountForSubfolders += offset;
+	TheMailFolderList->TellModelItemUpdated( this, UPD_NAME);
 	if (Parent())
-		Parent()->BumpNewMailCountForSubfolders();
+		Parent()->BumpNewMailCountForSubfolders( offset);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -183,8 +189,9 @@ void BmMailFolder::CreateMailRefList() {
 	if (mMailRefList) {
 		RemoveMailRefList();
 	}
-	mMailRefList = new BmMailRefList( this, mNeedsCacheUpdate);
+	BmMailRefList* temp = new BmMailRefList( this, mNeedsCacheUpdate);
 	mNeedsCacheUpdate = false;
+	mMailRefList = temp;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -196,36 +203,19 @@ void BmMailFolder::RemoveMailRefList() {
 }
 
 /*------------------------------------------------------------------------------*\
-	RemoveMailRefList()
-		-	
-\*------------------------------------------------------------------------------*/
-void BmMailFolder::MoveMailsHere( BList& refs) {
-	static uint32 counter = 1;
-	BDirectory thisDir( &mEntryRef);
-	int32 count = refs.CountItems();
-	// move each mailref into this folder:
-	for( int32 i=0; i<count; ++i) {
-		entry_ref* ref = static_cast<entry_ref*>( refs.ItemAt(i));
-		BEntry entry( ref);
-		if (entry.InitCheck() == B_OK) {
-			if (entry.MoveTo( &thisDir) == B_FILE_EXISTS) {
-				// increment counter until we have found a unique name:
-				while ( entry.MoveTo( &thisDir, (BString(ref->name)<<"_"<<counter++).String()) == B_FILE_EXISTS)
-					;
-			}
-		}
-	}
-}
-
-/*------------------------------------------------------------------------------*\
 	AddMailRef()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmMailFolder::AddMailRef( entry_ref& eref, int64 node, struct stat& st) {
-	if (mMailRefList)
-		mMailRefList->AddMailRef( eref, node, st);
-	else
+void BmMailFolder::AddMailRef( entry_ref& eref, ino_t node, struct stat& st) {
+	if (mMailRefList) {
+		if (!mMailRefList->AddMailRef( eref, node, st))
+			return;								// mail-ref already exists, we quit
+	} else
 		mNeedsCacheUpdate = true;
+	// if mail-ref is flagged new, we have to tell the mailfolderlist that we own
+	// this new-mail and increment our new-mail-counter (causing an update):
+	if (TheMailFolderList->NodeIsFlaggedNew( node))
+		TheMailFolderList->SetFolderForNodeFlaggedNew( node, this);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -234,7 +224,7 @@ void BmMailFolder::AddMailRef( entry_ref& eref, int64 node, struct stat& st) {
 \*------------------------------------------------------------------------------*/
 bool BmMailFolder::HasMailRef( BString key) {
 	if (mMailRefList)
-		return mMailRefList->FindItemByKey( key) != NULL;
+		return mMailRefList->FindItemByKey( key);
 	else
 		return false;
 }
@@ -243,10 +233,15 @@ bool BmMailFolder::HasMailRef( BString key) {
 	RemoveMailRef()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmMailFolder::RemoveMailRef( BString key) {
-	if (mMailRefList)
-		mMailRefList->RemoveItemFromList( key);
-	else
+void BmMailFolder::RemoveMailRef( ino_t node) {
+	if (mMailRefList) {
+		if (!mMailRefList->RemoveItemFromList( BString()<<node))
+			return;								// mail-ref didn't exist, we quit
+	} else
 		mNeedsCacheUpdate = true;
+	// if mail-ref is flagged new, we have to tell the mailfolderlist that we no 
+	// longer own this new-mail and decrement our new-mail-counter (causing an update):
+	if (TheMailFolderList->NodeIsFlaggedNew( node))
+		TheMailFolderList->SetFolderForNodeFlaggedNew( node, NULL);
 }
 

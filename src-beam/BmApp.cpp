@@ -6,6 +6,7 @@
 #include "BmApp.h"
 #include "BmBasics.h"
 #include "BmDataModel.h"
+#include "BmJobStatusWin.h"
 #include "BmLogHandler.h"
 #include "BmMailFolderList.h"
 #include "BmPrefs.h"
@@ -39,6 +40,14 @@ BmApplication::BmApplication( const char* sig)
 		// load the preferences set by user (if any):
 		BmPrefs::CreateInstance();
 		
+		// create the node-monitor looper:
+		BmNodeMonitor::CreateInstance();
+
+		// create the job status window:
+		BmJobStatusWin::CreateInstance();
+		TheJobStatusWin->Hide();
+		TheJobStatusWin->Show();
+
 		InstanceCount++;
 	} catch (exception& err) {
 		ShowAlert( err.what());
@@ -66,10 +75,13 @@ BmApplication::~BmApplication()
 \*------------------------------------------------------------------------------*/
 bool BmApplication::QuitRequested() {
 	mIsQuitting = true;
+	TheNodeMonitor->LockLooper();
 	bool shouldQuit = inherited::QuitRequested();
 	if (!shouldQuit) {
 		mIsQuitting = false;
-	}
+		TheNodeMonitor->UnlockLooper();
+	} else
+		TheNodeMonitor->Quit();
 	return shouldQuit;
 }
 
@@ -80,12 +92,9 @@ bool BmApplication::QuitRequested() {
 void BmApplication::MessageReceived( BMessage* msg) {
 	try {
 		switch( msg->what) {
-			case B_NODE_MONITOR: {
-				TheMailFolderList->HandleNodeMonitorMsg( msg);
-				break;
-			}
 			default:
 				inherited::MessageReceived( msg);
+				break;
 		}
 	}
 	catch( exception &err) {

@@ -16,13 +16,11 @@
 #include "BmDataModel.h"
 
 class BmMailFolder;
+class BmMailFolderList;
 
 class BmMailRefList;
 
 typedef map<BString, BmMailFolder*> BmFolderMap;
-
-// flags indicating which parts are to be updated:
-const BmUpdFlags UPD_NAME	= 1<<1;
 
 /*------------------------------------------------------------------------------*\
 	BmMailFolder
@@ -32,21 +30,21 @@ class BmMailFolder : public BmListModelItem {
 	typedef BmListModelItem inherited;
 
 public:
-	BmMailFolder( entry_ref &eref, ino_t node, BmMailFolder* parent, time_t &modified);
-	BmMailFolder( BMessage* archive, BmMailFolder* parent);
+	BmMailFolder( BmMailFolderList* model, entry_ref &eref, ino_t node,
+					  BmMailFolder* parent, time_t &modified);
+	BmMailFolder( BMessage* archive, BmMailFolderList* model, BmMailFolder* parent);
 	virtual ~BmMailFolder();
 	
 	// native methods:
-	void BumpNewMailCount();
-	void BumpNewMailCountForSubfolders();
+	void BumpNewMailCount( int32 offset=1);
+	void BumpNewMailCountForSubfolders( int32 offset=1);
 	bool HasNewMail() const					{ return mNewMailCount>0 || mNewMailCountForSubfolders>0; }
 	bool CheckIfModifiedSince( time_t when, time_t* storeNewModTime=NULL);
 	void CreateMailRefList();
 	void RemoveMailRefList();
-	void AddMailRef( entry_ref& eref, int64 node, struct stat& st);
+	void AddMailRef( entry_ref& eref, ino_t node, struct stat& st);
 	bool HasMailRef( BString key);
-	void RemoveMailRef( BString key);
-	void MoveMailsHere( BList& refs);
+	void RemoveMailRef( ino_t node);
 
 	// overrides of archivable base:
 	static BArchivable* Instantiate( BMessage* archive);
@@ -74,6 +72,9 @@ public:
 
 	//	message component definitions for status-msgs:
 	static const char* const MSG_NAME = 			"bm:fname";
+
+	// flags indicating which parts are to be updated:
+	static const BmUpdFlags UPD_NAME	= 1<<1;
 
 private:
 	void StartNodeMonitor();

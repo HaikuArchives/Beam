@@ -10,14 +10,16 @@
 #include "BmBasics.h"
 #include "BmLogHandler.h"
 #include "BmMailRef.h"
+#include "BmMailRefList.h"
 #include "BmUtil.h"
 
 /*------------------------------------------------------------------------------*\
 	BmMailRef( archive)
 		-	unarchive c'tor
 \*------------------------------------------------------------------------------*/
-BmMailRef* BmMailRef::CreateInstance( entry_ref &eref, ino_t node, struct stat& st) {
-	BmMailRef* ref = new BmMailRef( eref, node, st);
+BmMailRef* BmMailRef::CreateInstance( BmMailRefList* model, entry_ref &eref, 
+												  ino_t node, struct stat& st) {
+	BmMailRef* ref = new BmMailRef( model, eref, node, st);
 	status_t ret;
 	if ((ret = ref->InitCheck()) != B_OK) {
 		// item is not of mimetype email, we skip it:
@@ -32,8 +34,8 @@ BmMailRef* BmMailRef::CreateInstance( entry_ref &eref, ino_t node, struct stat& 
 	BmMailRef( eref, parent, modified)
 		-	standard c'tor
 \*------------------------------------------------------------------------------*/
-BmMailRef::BmMailRef( entry_ref &eref, ino_t node, struct stat& st)
-	:	inherited( BString() << node)
+BmMailRef::BmMailRef( BmMailRefList* model, entry_ref &eref, ino_t node, struct stat& st)
+	:	inherited( BString() << node, model, (BmListModelItem*)NULL)
 	,	mEntryRef( eref)
 	,	mInode( node)
 	,	mInitCheck( B_NO_INIT)
@@ -45,13 +47,14 @@ BmMailRef::BmMailRef( entry_ref &eref, ino_t node, struct stat& st)
 	char* buf;
 	size_t bufsize = 256;
 
+	buffer.SetTo( '\0', bufsize);		// preallocate the bufsize we need
+	buf = buffer.LockBuffer( 0);
+
 	try {
 		node.SetTo( &eref);
 		(err = node.InitCheck()) == B_OK
 													|| BM_THROW_RUNTIME(BString("Could not get node for mail-file <") << eref.name << "> \n\nError:" << strerror(err));
 
-		buffer.SetTo( '\0', bufsize);		// preallocate the bufsize we need
-		buf = buffer.LockBuffer( 0);
 		node.ReadAttr( "BEOS:TYPE", 		B_STRING_TYPE, 0, buf, bufsize);		filetype = buf; 	*buf=0;
 		if (!filetype.ICompare("text/x-email")) {
 			// file is indeed a mail, we fetch its attributes:
@@ -116,8 +119,8 @@ BmMailRef::BmMailRef( entry_ref &eref, ino_t node, struct stat& st)
 	BmMailRef( archive)
 		-	unarchive c'tor
 \*------------------------------------------------------------------------------*/
-BmMailRef::BmMailRef( BMessage* archive)
-	:	inherited("")
+BmMailRef::BmMailRef( BMessage* archive, BmMailRefList* model)
+	:	inherited( "", model, (BmListModelItem*)NULL)
 	,	mInode( 0)
 	,	mInitCheck( B_NO_INIT)
 {
@@ -126,7 +129,7 @@ BmMailRef::BmMailRef( BMessage* archive)
 		(err = archive->FindRef( MSG_ENTRYREF, &mEntryRef)) == B_OK
 													|| BM_THROW_RUNTIME( BString("BmMailRef: Could not find msg-field ") << MSG_ENTRYREF << "\n\nError:" << strerror(err));
 		mInode = FindMsgInt64( archive, MSG_INODE);
-		mKey = BString() << mInode;
+		Key( BString() << mInode);
 
 		mAccount = FindMsgString( archive, MSG_ACCOUNT);
 		mHasAttachments = FindMsgBool( archive, MSG_ATTACHMENTS);
@@ -182,4 +185,13 @@ status_t BmMailRef::Archive( BMessage* archive, bool deep) const {
 		|| archive->AddString( MSG_TO, mTo)
 		|| archive->AddInt32( MSG_WHEN, mWhen);
 	return ret;
+}
+
+/*------------------------------------------------------------------------------*\
+	Status()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailRef::Status( const char* s) { 
+	mStatus = s;
+	TellModelItemUpdated( UPD_STATUS);
 }

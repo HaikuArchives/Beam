@@ -21,8 +21,8 @@
 	BmPopAccount()
 		-	
 \*------------------------------------------------------------------------------*/
-BmPopAccount::BmPopAccount( const char* name) 
-	:	inherited( name, NULL)
+BmPopAccount::BmPopAccount( const char* name, BmPopAccountList* model) 
+	:	inherited( name, model, (BmListModelItem*)NULL)
 	,	mCheckMail( false)
 	,	mDeleteMailFromServer( false)	
 {
@@ -33,8 +33,8 @@ BmPopAccount::BmPopAccount( const char* name)
 		-	constructs a BmPopAccount from a BMessage
 		-	N.B.: BMessage must be in NETWORK-BYTE-ORDER
 \*------------------------------------------------------------------------------*/
-BmPopAccount::BmPopAccount( BMessage* archive) 
-	:	inherited( FindMsgString( archive, MSG_NAME), NULL)
+BmPopAccount::BmPopAccount( BMessage* archive, BmPopAccountList* model) 
+	:	inherited( FindMsgString( archive, MSG_NAME), model, (BmListModelItem*)NULL)
 {
 	mName = FindMsgString( archive, MSG_NAME);
 	mUsername = FindMsgString( archive, MSG_USERNAME);
@@ -124,7 +124,7 @@ BmPopAccountList::BmPopAccountList()
 	:	inherited( "PopAccountList")
 {
 	StartJob();
-	BmPopAccount* acc = new BmPopAccount( "testaccount");
+	BmPopAccount* acc = new BmPopAccount( "testaccount", this);
 		acc->Name( "mailtest@kiwi:110");
 		acc->Username( "mailtest");
 		acc->Password( "mailtest");

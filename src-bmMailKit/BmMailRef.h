@@ -17,6 +17,7 @@
 #include "BmDataModel.h"
 
 class BmMail;
+class BmMailRefList;
 /*------------------------------------------------------------------------------*\
 	BmMailRef
 		-	class 
@@ -43,11 +44,15 @@ class BmMailRef : public BmListModelItem {
 
 public:
 	// creator-func, c'tors and d'tor:
-	static BmMailRef* CreateInstance( entry_ref &eref, ino_t node, struct stat& st);
-	BmMailRef( entry_ref &eref, ino_t node, struct stat& st);
-	BmMailRef( BMessage* archive);
+	static BmMailRef* CreateInstance( BmMailRefList* model, entry_ref &eref, 
+												 ino_t node, struct stat& st);
+	BmMailRef( BmMailRefList* model, entry_ref &eref, ino_t node, struct stat& st);
+	BmMailRef( BMessage* archive, BmMailRefList* model);
 	virtual ~BmMailRef();
-	
+
+	// native methods:
+	void Status( const char* s);
+
 	// overrides of archivable base:
 	static BArchivable* Instantiate( BMessage* archive);
 	virtual status_t Archive( BMessage* archive, bool deep = true) const;
@@ -74,13 +79,13 @@ public:
 	const off_t& Size() const 					{ return mSize; }
 	const BString& SizeString() const 		{ return mSizeString; }
 	const bool& HasAttachments() const 		{ return mHasAttachments; }
+	const bool IsNew() const					{ return mStatus == "New"; }
 
 	// setters:
 	void EntryRef( entry_ref &e) 				{ mEntryRef = e; }
 
-protected:
 	// flags indicating which parts are to be updated:
-	static const BmUpdFlags UPD_NAME	= 2<<0;
+	static const BmUpdFlags UPD_STATUS	= 1<<1;
 
 private:
 	// the following members will be archived as part of BmFolderList:

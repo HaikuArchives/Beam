@@ -40,6 +40,7 @@ private:
 
 
 
+class BmBodyPartList;
 /*------------------------------------------------------------------------------*\
 	BmBodyPart
 		-	
@@ -49,8 +50,8 @@ class BmBodyPart : public BmListModelItem {
 
 public:
 	// c'tors and d'tor:
-	BmBodyPart( BmListModelItem* parent=NULL);
-	BmBodyPart( const BString& msgtext, int32 s, int32 l, 
+	BmBodyPart( BmBodyPartList* model, BmListModelItem* parent=NULL);
+	BmBodyPart( BmBodyPartList* model, const BString& msgtext, int32 s, int32 l, 
 					BmMailHeader* mHeader=NULL, BmListModelItem* parent=NULL);
 
 	// native methods:

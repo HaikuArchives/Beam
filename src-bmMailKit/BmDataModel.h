@@ -44,7 +44,7 @@ public:
 	BLocker& ModelLocker() 					{ return mModelLocker; }
 
 	// overrides of BmRefObj
-	BString RefName() const					{ return mModelName; }
+	const BString& RefName() const		{ return mModelName; }
 
 	//	message component definitions for status-msgs:
 	static const char* const MSG_MODEL = 			"bm:model";
@@ -126,37 +126,38 @@ const BmUpdFlags UPD_ALL 			= 0xFFFFFFFF;
 
 class BmListModelItem;
 typedef map< BString, BmRef<BmListModelItem> > BmModelItemMap;
-
+typedef BmRef< BmListModelItem> BmListModelItemRef;
 /*------------------------------------------------------------------------------*\
 	BmListModelItem
 		-	base class for the items that will be part of a BmListModel
 \*------------------------------------------------------------------------------*/
 class BmListModelItem : public BmRefObj, public BArchivable {
+	friend class BmListModel;
 
 public:
 	// c'tors & d'tor:
-	BmListModelItem( BString key, BmListModelItem* parent=NULL);
+	BmListModelItem( BString key, BmListModel* model, BmListModelItem* parent);
 	virtual ~BmListModelItem();
 
 	// native methods:
-	void AddSubItem( BmListModelItem* subItem);
-	void RemoveSubItem( BmListModelItem* item);
-	BmListModelItem* FindItemByKey( BString& key);
+	BmListModelItem* FindItemByKey( const BString& key);
 
 	// getters:
 	BmModelItemMap::const_iterator begin() const	{ return mSubItemMap.begin(); }
 	BmModelItemMap::const_iterator end() const	{ return mSubItemMap.end(); }
 	size_t size() const						{ return mSubItemMap.size(); }
 	bool empty() const						{ return mSubItemMap.empty(); }
-	BString Key() const						{ return mKey; }
-	BString ParentKey() const				{ return mParent ? mParent->Key() : BString("Empty"); }
+	const BString& Key() const				{ return mKey; }
+	const BString& ParentKey() const		{ return mParent ? mParent->Key() : nEmptyParentKey; }
 	BmListModelItem* Parent() const		{ return mParent; }
+	BmListModel* ListModel() const		{ return mListModel; }
 
 	// setters:
 	void Parent( BmListModelItem* parent)	{ mParent = parent; }
+	void Key( const BString k)				{ mKey = k; }
 
 	// overrides of BmRefObj
-	BString RefName() const					{ return mKey; }
+	const BString& RefName() const		{ return mKey; }
 
 	//	message component definitions for status-msgs:
 	static const char* const MSG_NUMCHILDREN  = 		"bm:count";
@@ -165,9 +166,19 @@ public:
 	static BmRefManager<BmListModelItem> RefManager;
 
 protected:
-	BString mKey;
+	// native methods:
+	bool AddSubItem( BmListModelItem* subItem);
+	void RemoveSubItem( BmListModelItem* item);
+	virtual void TellModelItemUpdated( BmUpdFlags flags=UPD_ALL);
+
 	BmListModelItem* mParent;
+	BmListModel* mListModel;
+
+private:
+	BString mKey;
 	BmModelItemMap mSubItemMap;
+
+	static const BString nEmptyParentKey;
 
 };
 
@@ -181,6 +192,8 @@ protected:
 \*------------------------------------------------------------------------------*/
 class BmListModel : public BmJobModel, public BArchivable {
 	typedef BmJobModel inherited;
+
+	friend BmListModelItem;
 	
 public:
 	// c'tors & d'tor:
@@ -188,15 +201,16 @@ public:
 	virtual ~BmListModel();
 
 	// native methods:
-	BmListModelItem* FindItemByKey( BString& key);
-	void AddItemToList( BmListModelItem* item, BmListModelItem* parent=NULL);
+	BmListModelItemRef FindItemByKey( const BString& key);
+	bool AddItemToList( BmListModelItem* item, BmListModelItem* parent=NULL);
 	void RemoveItemFromList( BmListModelItem* item);
-	void RemoveItemFromList( BString key);
+	BmListModelItemRef RemoveItemFromList( const BString& key);
 	virtual bool Store();
 	virtual const BString SettingsFileName() = 0;
 	static BMessage* Restore( const BString settingsFile);
 	virtual void InitializeItems()		{	mInitCheck = B_OK; }
 	virtual void InstantiateItems( BMessage* archive)		{ mInitCheck = B_OK; }
+	virtual void Cleanup();
 
 	// overrides of job-model base:
 	bool StartJob();
@@ -215,7 +229,7 @@ public:
 	BmModelItemMap::const_iterator end() const	{ return mModelItemMap.end(); }
 	size_t size() const						{ return mModelItemMap.size(); }
 	bool empty() const						{ return mModelItemMap.empty(); }
-	status_t InitCheck()						{ return mInitCheck; }
+	status_t InitCheck() const				{ return mInitCheck; }
 
 
 protected:
@@ -225,8 +239,10 @@ protected:
 	virtual void TellModelItemRemoved( BmListModelItem* item);
 	virtual void TellModelItemUpdated( BmListModelItem* item, BmUpdFlags flags=UPD_ALL);
 
-	BmModelItemMap mModelItemMap;
 	status_t mInitCheck;
+
+private:
+	BmModelItemMap mModelItemMap;
 };
 
 #endif

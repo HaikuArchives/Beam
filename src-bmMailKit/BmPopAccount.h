@@ -16,6 +16,7 @@
 
 #include "BmDataModel.h"
 
+class BmPopAccountList;
 /*------------------------------------------------------------------------------*\
 	BmPopAccount 
 		-	holds information about one specific POP3-account
@@ -38,8 +39,8 @@ class BmPopAccount : public BmListModelItem {
 	static const char* const MSG_PORT_NR = 		"bm:portnr";
 	static const char* const MSG_SMTP_PORT_NR = 	"bm:smtpportnr";
 public:
-	BmPopAccount( const char* name);
-	BmPopAccount( BMessage* archive);
+	BmPopAccount( const char* name, BmPopAccountList* model);
+	BmPopAccount( BMessage* archive, BmPopAccountList* model);
 	virtual ~BmPopAccount() 				{}
 
 	// stuff needed for BArchivable:

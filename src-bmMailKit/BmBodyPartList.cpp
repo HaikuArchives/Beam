@@ -113,8 +113,8 @@ int32 BmBodyPart::nCounter = 0;
 	BmBodyPart()
 	-	default c'tor
 \*------------------------------------------------------------------------------*/
-BmBodyPart::BmBodyPart( BmListModelItem* parent)
-	:	inherited( BString("")<<++nCounter, parent)
+BmBodyPart::BmBodyPart( BmBodyPartList* model, BmListModelItem* parent)
+	:	inherited( BString("")<<++nCounter, model, parent)
 	,	mIsMultiPart( false)
 	,	mPosInRawText( NULL)
 	,	mLength( 0)
@@ -126,9 +126,9 @@ BmBodyPart::BmBodyPart( BmListModelItem* parent)
 	BmBodyPart( msgtext, start, length, contentType)
 	-	c'tor
 \*------------------------------------------------------------------------------*/
-BmBodyPart::BmBodyPart( const BString& msgtext, int32 start, int32 length, 
-								BmMailHeader* header, BmListModelItem* parent)
-	:	inherited( BString("")<<++nCounter, parent)
+BmBodyPart::BmBodyPart( BmBodyPartList* model, const BString& msgtext, int32 start, 
+								int32 length, BmMailHeader* header, BmListModelItem* parent)
+	:	inherited( BString("")<<++nCounter, model, parent)
 	,	mIsMultiPart( false)
 	,	mPosInRawText( NULL)
 	,	mLength( 0)
@@ -245,8 +245,8 @@ void BmBodyPart::SetTo( const BString& msgtext, int32 start, int32 length,
 			int32 nextPos = nPos - msgtext.String();
 			int32 sPos = startPos+boundary.Length()+2;
 			BM_LOG2( BM_LogMailParse, "Subpart of multipart found will be added to array");
-			BmBodyPart *subPart = new BmBodyPart( msgtext, sPos, nextPos-sPos, NULL, this);
-			mSubItemMap[subPart->Key()] = subPart;
+			BmBodyPart *subPart = new BmBodyPart( (BmBodyPartList*)ListModel(), msgtext, sPos, nextPos-sPos, NULL, this);
+			AddSubItem( subPart);
 			startPos = nextPos;
 		}
 		if (!count) {
@@ -364,18 +364,20 @@ bool BmBodyPartList::StartJob() {
 		return true;
 	}
 
+	Freeze();									// we shut up for better performance
 	try {
 		if (mMail) {
 			const BString& msgText = mMail->RawText();
-			BmBodyPart* bodyPart = new BmBodyPart( msgText, mMail->HeaderLength()+2, 
+			BmBodyPart* bodyPart = new BmBodyPart( this, msgText, mMail->HeaderLength()+2, 
 																msgText.Length()-mMail->HeaderLength()-2, 
 																mMail->Header());
-			mModelItemMap[bodyPart->Key()] = bodyPart;
+			AddItemToList( bodyPart);
 			mMail = NULL;
 		}
 		mInitCheck = B_OK;
 	} catch (exception &e) {
 		BM_SHOWERR( e.what());
 	}
+	Thaw();
 	return InitCheck() == B_OK;
 }

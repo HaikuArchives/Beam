@@ -22,6 +22,15 @@
 	BmBodyPartItem
 \********************************************************************************/
 
+enum Columns {
+	COL_ICON = 0,
+	COL_NAME,
+	COL_MIMETYPE,
+	COL_SIZE,
+	COL_LANGUAGE,
+	COL_DESCRIPTION
+};
+
 /*------------------------------------------------------------------------------*\
 	()
 		-	
@@ -32,7 +41,7 @@ BmBodyPartItem::BmBodyPartItem( BString key, BmListModelItem* _item)
 	BmBodyPart* bodyPart = dynamic_cast<BmBodyPart*>( _item);
 
 	BBitmap* icon = TheResources->IconByName( bodyPart->MimeType());
-	SetColumnContent( 0, icon, 2.0, false);
+	SetColumnContent( COL_ICON, icon, 2.0, false);
 
 	BString sizeString = BytesToString( bodyPart->DecodedLength(), true);
 
@@ -242,11 +251,16 @@ void BmBodyPartView::ItemInvoked( int32 index) {
 		BmBodyPart* bodyPart = dynamic_cast<BmBodyPart*>( bodyPartItem->ModelItem());
 		if (!bodyPart)
 			return;
+		bodyPartItem->Highlight( true);
+		InvalidateItem( index);
+		Window()->UpdateIfNeeded();
 		entry_ref eref = bodyPart->WriteToTempFile();
 		status_t res = be_roster->Launch( &eref);
 		if (res != B_OK && res != B_ALREADY_RUNNING) {
 			ShowAlert( "Sorry, could not launch application for this attachment (unknown mimetype perhaps?)");
 		}
+		bodyPartItem->Highlight( false);
+		InvalidateItem( index);
 	}
 }
 

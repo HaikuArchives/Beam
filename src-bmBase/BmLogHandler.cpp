@@ -7,6 +7,7 @@
 
 #include "BmBasics.h"
 #include "BmLogHandler.h"
+#include "BmMsgTypes.h"
 #include "BmUtil.h"
 
 /*------------------------------------------------------------------------------*\
@@ -14,7 +15,7 @@
 	has its own loglevel:
 \*------------------------------------------------------------------------------*/
 const uint32 BM_LogPop  				= 1UL<<0;
-const uint32 BM_LogConnWin 			= 1UL<<1;
+const uint32 BM_LogJobWin 				= 1UL<<1;
 const uint32 BM_LogMailParse 			= 1UL<<2;
 const uint32 BM_LogUtil		 			= 1UL<<3;
 const uint32 BM_LogMailTracking		= 1UL<<4;
@@ -22,6 +23,7 @@ const uint32 BM_LogFolderView			= 1UL<<5;
 const uint32 BM_LogRefView				= 1UL<<6;
 const uint32 BM_LogMainWindow			= 1UL<<7;
 const uint32 BM_LogModelController	= 1UL<<8;
+const uint32 BM_LogMailEditWin		= 1UL<<9;
 // dummy constant meaning to log everything:
 const uint32 BM_LogAll  				= 0xffffffff;
 
@@ -85,19 +87,19 @@ BmLogHandler::~BmLogHandler() {
 	for(  LogfileMap::iterator logIter = mActiveLogs.begin();
 			logIter != mActiveLogs.end();
 			++logIter) {
-		delete (*logIter).second;
+		BLooper* looper = (*logIter).second;
+		looper->LockLooper();
+		looper->Quit();
 	}
 	theInstance = NULL;
 }
 
 /*------------------------------------------------------------------------------*\
-	LogToFile( logname, msg)
-		-	writes msg into the logfile that is named logname
-		-	if no logfile of given name exists, it is created
+	FindLogfile()
+		-	
 \*------------------------------------------------------------------------------*/
-void BmLogHandler::LogToFile( const BString &logname, uint32 flag,
-										const BString &msg, int8 minlevel) {
-	BAutolock lock( mLocker);
+BmLogHandler::BmLogfile* BmLogHandler::FindLogfile( const BString &logname) {
+	BmAutolock lock( mLocker);
 	BString name = logname.Length() ? logname : "Beam";
 	if (lock.IsLocked()) {
 		LogfileMap::iterator logIter = mActiveLogs.find( name);
@@ -109,9 +111,28 @@ void BmLogHandler::LogToFile( const BString &logname, uint32 flag,
 		} else {
 			log = (*logIter).second;
 		}
-		log->Write( msg.String(), flag, minlevel, mLoglevels);
+		return log;
 	} else
 		throw BM_runtime_error("LogToFile(): Unable to get lock on loghandler");
+}
+
+/*------------------------------------------------------------------------------*\
+	LogToFile( logname, msg)
+		-	writes msg into the logfile that is named logname
+		-	if no logfile of given name exists, it is created
+\*------------------------------------------------------------------------------*/
+void BmLogHandler::LogToFile( const BString &logname, uint32 flag,
+										const BString &msg, int8 minlevel) {
+	BmLogfile* log = FindLogfile( logname);
+	if (log) {
+		int8 loglevel = ((mLoglevels & flag) ? 1 : 0)
+						  + ((mLoglevels & flag<<16) ? 2 : 0);
+		if (loglevel < minlevel)
+			return;								// loglevel indicates to ignore this message
+		BMessage mess( BM_LOG_MSG);
+		mess.AddString( MSG_MESSAGE, msg);
+		log->PostMessage( &mess);
+	}
 }
 
 /*------------------------------------------------------------------------------*\
@@ -128,7 +149,7 @@ void BmLogHandler::LogToFile( const char* const logname, uint32 flag, const char
 		-	closes the logfile with the specified by name
 \*------------------------------------------------------------------------------*/
 void BmLogHandler::CloseLog( const BString &logname) {
-	BAutolock lock( mLocker);
+	BmAutolock lock( mLocker);
 	if (lock.IsLocked()) {
 		LogfileMap::iterator logIter = mActiveLogs.find( logname);
 		BmLogfile* log;
@@ -152,9 +173,12 @@ BString BmLogHandler::BmLogfile::LogPath = "/boot/home/Sources/beam/logs/";
 		- standard
 \*------------------------------------------------------------------------------*/
 BmLogHandler::BmLogfile::BmLogfile( const BString &fn)
-	:	logfile( NULL)
+	:	BLooper( (BString("log_")<<fn).String(), B_DISPLAY_PRIORITY, 500)
+	,	logfile( NULL)
 	,	filename(fn)
-{}
+{
+	Run();
+}
 
 /*------------------------------------------------------------------------------*\
 	destructor
@@ -165,16 +189,26 @@ BmLogHandler::BmLogfile::~BmLogfile() {
 }
 
 /*------------------------------------------------------------------------------*\
+	MessageReceived( msg)
+		-	
+\*------------------------------------------------------------------------------*/
+void BmLogHandler::BmLogfile::MessageReceived( BMessage* msg) {
+	switch( msg->what) {
+		case BM_LOG_MSG: {
+			Write( msg->FindString( MSG_MESSAGE));
+			break;
+		}
+		default:
+			inherited::MessageReceived( msg);
+	}
+}
+
+/*------------------------------------------------------------------------------*\
 	Write( msg)
 		-	writes given msg into log, including current timestamp
 		-	log is flushed after each write
 \*------------------------------------------------------------------------------*/
-void BmLogHandler::BmLogfile::Write( const char* const msg, uint32 flag, 
-												 int8 minlevel, uint32 loglevels) {
-	int8 loglevel = ((loglevels & flag) ? 1 : 0)
-					  + ((loglevels & flag<<16) ? 2 : 0);
-	if (loglevel < minlevel)
-		return;
+void BmLogHandler::BmLogfile::Write( const char* const msg) {
 	if (logfile == NULL) {
 		BString fn = BString(LogPath) << filename;
 		if (fn.FindFirst(".log") == B_ERROR) {

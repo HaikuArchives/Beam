@@ -25,7 +25,7 @@
 BmMailRefList::BmMailRefList( BmMailFolder* folder, bool updateCache)
 	:	BmListModel( BString("MailRefList_") << folder->Key() << " (" << folder->Name()<<")")
 	,	mFolder( folder)
-	,	mUpdateCache( updateCache)
+	,	mNeedsCacheUpdate( updateCache)
 {
 }
 
@@ -35,15 +35,6 @@ BmMailRefList::BmMailRefList( BmMailFolder* folder, bool updateCache)
 \*------------------------------------------------------------------------------*/
 BmMailRefList::~BmMailRefList() {
 	Cleanup();
-}
-
-/*------------------------------------------------------------------------------*\
-	Cleanup()
-		-	frees occupied memory
-\*------------------------------------------------------------------------------*/
-void BmMailRefList::Cleanup() {
-	mModelItemMap.clear();
-	mInitCheck = B_NO_INIT;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -83,7 +74,7 @@ bool BmMailRefList::StartJob() {
 			time_t mtime;
 			(err = cacheFile.GetModificationTime( &mtime)) == B_OK
 														|| BM_THROW_RUNTIME(BString("Could not get mtime \nfor mail-folder <") << Name() << "> \n\nError:" << strerror(err));
-			if (!mUpdateCache && !mFolder->CheckIfModifiedSince( mtime))
+			if (!mNeedsCacheUpdate && !mFolder->CheckIfModifiedSince( mtime))
 				cacheFileUpToDate = true;
 		}
 		if (cacheFileUpToDate) {
@@ -109,9 +100,11 @@ bool BmMailRefList::StartJob() {
 		-	
 \*------------------------------------------------------------------------------*/
 BmMailRef* BmMailRefList::AddMailRef( entry_ref& eref, int64 node, struct stat& st) {
-	BmMailRef* newMailRef = BmMailRef::CreateInstance( eref, node, st);
-	AddItemToList( newMailRef);
-	return newMailRef;
+	BmMailRef* newMailRef = BmMailRef::CreateInstance( this, eref, node, st);
+	if (AddItemToList( newMailRef))
+		return newMailRef;
+	else
+		return NULL;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -164,7 +157,7 @@ void BmMailRefList::InitializeItems() {
 	if (stopped) {
 		Cleanup();
 	} else {
-		mUpdateCache = false;
+		mNeedsCacheUpdate = false;
 		mInitCheck = B_OK;
 	}
 }
@@ -182,13 +175,9 @@ void BmMailRefList::InstantiateItems( BMessage* archive) {
 		BMessage msg;
 		(err = archive->FindMessage( BmListModelItem::MSG_CHILDREN, i, &msg)) == B_OK
 													|| BM_THROW_RUNTIME(BString("Could not find mailcache-entry nr. ") << i+1 << " \n\nError:" << strerror(err));
-		BmMailRef* newRef = new BmMailRef( &msg);
+		BmMailRef* newRef = new BmMailRef( &msg, this);
 		BM_LOG3( BM_LogMailTracking, BString("MailRef <") << newRef->TrackerName() << "," << newRef->Key() << "> read");
-		{
-			BAutolock lock( mModelLocker);
-			lock.IsLocked() 						|| BM_THROW_RUNTIME( ModelName() << ":InstantiateMailRefs(): Unable to get lock");
-			mModelItemMap[newRef->Key()] = newRef;
-		}
+		AddItemToList( newRef);
 
 		if (!ShouldContinue()) {
 			stopped = true;
@@ -198,7 +187,7 @@ void BmMailRefList::InstantiateItems( BMessage* archive) {
 	if (stopped) {
 		Cleanup();
 	} else {
-		mUpdateCache = false;
+		mNeedsCacheUpdate = false;
 		mInitCheck = B_OK;
 	}
 }

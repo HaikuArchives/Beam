@@ -15,11 +15,13 @@
 #include "Beam.h"
 #include "BmBasics.h"
 #include "BmLogHandler.h"
+#include "BmMailEditWin.h"
 #include "BmMailFolderList.h"
 #include "BmMailFolderView.h"
 #include "BmMailRefView.h"
 #include "BmMailView.h"
 #include "BmMainWindow.h"
+#include "BmMsgTypes.h"
 #include "BmResources.h"
 #include "BmToolbarButton.h"
 #include "BmUtil.h"
@@ -144,12 +146,9 @@ BmMainWindow::BmMainWindow()
 			0
 		);
 
-	mTrashButton->SetEnabled( false);
-	mForwardButton->SetEnabled( false);
-	mReplyAllButton->SetEnabled( false);
-
 	mMailRefView->TeamUpWith( mMailView);
 	mMailView->TeamUpWith( mMailRefView);
+	MailRefSelectionChanged( 0);
 
 	AddChild( dynamic_cast<BView*>(mOuterGroup));
 }
@@ -267,6 +266,7 @@ status_t BmMainWindow::Unarchive( BMessage* archive, bool deep=true) {
 void BmMainWindow::BeginLife() {
 	nIsAlive = true;
 	try {
+		mMailRefView->StartWatching( this, BM_NTFY_MAILREF_SELECTION);
 		BM_LOG2( BM_LogMainWindow, BString("MainWindow begins life"));
 		mMailFolderView->StartJob( TheMailFolderList.Get(), true);
 	} catch(...) {
@@ -309,9 +309,30 @@ BmMailViewContainer* BmMainWindow::CreateMailView( minimax minmax, BRect frame) 
 void BmMainWindow::MessageReceived( BMessage* msg) {
 	try {
 		switch( msg->what) {
-			case B_QUIT_REQUESTED:
+			case B_QUIT_REQUESTED: {
 				beamApp->PostMessage( B_QUIT_REQUESTED);
 				break;
+			}
+			case B_SELECT_ALL: {
+				BView* focusView = CurrentFocus();
+				if (focusView)
+					PostMessage( msg, focusView);
+				break;
+			}
+			case BMM_NEW_MAIL: {
+				BmMailEditWin* editWin = BmMailEditWin::CreateInstance();
+				if (editWin)
+					editWin->Show();
+				break;
+			}
+			case B_OBSERVER_NOTICE_CHANGE: {
+				switch( msg->FindInt32( B_OBSERVE_WHAT_CHANGE)) {
+					case BM_NTFY_MAILREF_SELECTION: {
+						MailRefSelectionChanged( msg->FindInt32( BmMailRefView::MSG_MAILS_SELECTED));
+					}
+				}
+				break;
+			}
 			default:
 				inherited::MessageReceived( msg);
 		}
@@ -371,3 +392,17 @@ bool BmMainWindow::Store() {
 	}
 	return true;
 }
+
+/*------------------------------------------------------------------------------*\
+	MailRefSelectionChanged()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMainWindow::MailRefSelectionChanged( int32 numSelected) {
+	mReplyButton->SetEnabled( numSelected > 0);
+	mReplyAllButton->SetEnabled( numSelected > 0);
+	mForwardButton->SetEnabled( numSelected > 0);
+	mBounceButton->SetEnabled( numSelected > 0);
+	mPrintButton->SetEnabled( numSelected * 0 > 0);
+	mTrashButton->SetEnabled( numSelected > 0);
+}
+

@@ -11,9 +11,9 @@
 #include <map>
 #include <typeinfo>
 
-#include <Locker.h>
 #include <String.h>
 
+#include "BmBasics.h"
 #include "BmLogHandler.h"
 
 
@@ -23,7 +23,7 @@
 \*------------------------------------------------------------------------------*/
 class BmRefObj {
 public:
-	virtual BString RefName() const = 0;
+	virtual const BString& RefName() const = 0;
 };
 
 /*------------------------------------------------------------------------------*\
@@ -45,7 +45,7 @@ public:
 	// native methods:
 	void AddRef( T* ptr) {
 		assert( ptr);
-		BAutolock lock( mLocker);
+		BmAutolock lock( mLocker);
 		lock.IsLocked()	 					|| BM_THROW_RUNTIME( "AddRef(): Unable to get lock");
 #ifdef BM_LOGGING
 		int32 numRefs = ++mRefMap[ptr];
@@ -57,7 +57,7 @@ public:
 
 	void RemoveRef( T* ptr) {
 		assert( ptr);
-		BAutolock lock( mLocker);
+		BmAutolock lock( mLocker);
 		lock.IsLocked()	 					|| BM_THROW_RUNTIME( "RemoveRef(): Unable to get lock");
 		int32 numRefs = --mRefMap[ptr];
 #ifdef BM_LOGGING
@@ -81,7 +81,7 @@ public:
 	
 	void PrintStatistics() {
 #ifdef BM_LOGGING
-		BAutolock lock( mLocker);
+		BmAutolock lock( mLocker);
 		lock.IsLocked()	 					|| BM_THROW_RUNTIME( "RemoveRef(): Unable to get lock");
 		BmRefMap::const_iterator iter;
 		BString s = BString(mID) << " statistics:\n";
@@ -111,14 +111,26 @@ private:
 	T* mPtr;
 
 public:
-	explicit BmRef(T* p = 0) : mPtr( p) {
+	BmRef(T* p = 0) : mPtr( p) {
 		AddRef( mPtr);
 	}
-	explicit BmRef( const BmRef& r) : mPtr( r.Get()) {
+	BmRef( const BmRef<T>& ref) : mPtr( ref.Get()) {
 		AddRef( mPtr);
 	}
 	~BmRef() {
 		RemoveRef( mPtr);
+	}
+	BmRef<T>& operator= ( const BmRef<T>& ref) {
+		if (mPtr != ref.Get()) {
+			// in order to behave correctly when being called recursively,
+			// we set new value before deleting old, so that a recursive call
+			// will skip this block (because of the condition above).
+			T* old = mPtr;
+			mPtr = ref.Get();
+			RemoveRef( old);
+			AddRef( mPtr);
+		}
+		return *this;
 	}
 	BmRef<T>& operator= ( T* p) {
 		if (mPtr != p) {
@@ -131,6 +143,19 @@ public:
 			AddRef( mPtr);
 		}
 		return *this;
+	}
+	bool operator== ( const BmRef<T>& ref) {
+		return mPtr == ref.Get();
+	}
+	void Clear() {
+		if (mPtr) {
+			// in order to behave correctly when being called recursively,
+			// we set new value before deleting old, so that a recursive call
+			// will skip this block (because of the condition above).
+			T* p = mPtr;
+			mPtr = NULL;
+			RemoveRef( p);
+		}
 	}
 	T* operator->() const   				{ return mPtr; }
 	T* Get() const 							{ return mPtr; }
