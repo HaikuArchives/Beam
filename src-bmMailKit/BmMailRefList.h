@@ -65,7 +65,8 @@ public:
 	int16 ArchiveVersion() const			{ return nArchiveVersion; }
 	
 	// getters:
-	inline bool NeedsCacheUpdate() const	{ return mNeedsCacheUpdate; }
+	inline bool NeedsCacheUpdate() const
+													{ return mNeedsCacheUpdate; }
 	
 	// setters:
 	inline void MarkAsChanged() 			{ mNeedsStore = true; }

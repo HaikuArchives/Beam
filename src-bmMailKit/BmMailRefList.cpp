@@ -315,9 +315,9 @@ void BmMailRefList::MyInstantiateItems( BDataIO* dataIO, int32 numChildren) {
 			BM_SHOWERR( "Could not read all messages from cache file. Please recreate cache.");
 			break;
 		}
-		BmMailRef* newRef = new BmMailRef( &msg, this);
+		BmRef<BmMailRef> newRef( BmMailRef::CreateInstance( &msg, this));
 		BM_LOG3( BM_LogMailTracking, BmString("MailRef <") << newRef->TrackerName() << "," << newRef->Key() << "> read");
-		AddItemToList( newRef);
+		AddItemToList( newRef.Get());
 
 		if (!ShouldContinue()) {
 			stopped = true;

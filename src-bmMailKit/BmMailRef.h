@@ -65,13 +65,16 @@ class BmMailRef : public BmListModelItem {
 	static const char* const MSG_TO;
 	static const char* const MSG_WHEN;
 	static const char* const MSG_IDENTITY;
+	static const char* const MSG_IS_VALID;
 	static const int16 nArchiveVersion;
 
 public:
 	// creator-funcs, c'tors and d'tor:
-	static BmRef<BmMailRef> CreateInstance( BmMailRefList* model, entry_ref &eref, 
+	static BmRef<BmMailRef> CreateInstance( BmMailRefList* model, 
+														 entry_ref &eref, 
 												 		 struct stat& st);
-	BmMailRef( BMessage* archive, BmMailRefList* model);
+	static BmRef<BmMailRef> CreateInstance( BMessage* archive, 
+														 BmMailRefList* model);
 	virtual ~BmMailRef();
 
 	// native methods:
@@ -84,39 +87,57 @@ public:
 	int16 ArchiveVersion() const			{ return nArchiveVersion; }
 
 	// getters:
-	inline const entry_ref& EntryRef() const 		{ return mEntryRef; }
-	inline const entry_ref* EntryRefPtr() const	{ return &mEntryRef; }
-	inline const char* TrackerName() const			{ return mEntryRef.name; }
-	inline const node_ref& NodeRef() const			{ return mNodeRef; }
-	inline status_t InitCheck()	const				{ return mInitCheck; }
-	inline const BmString& Account() const 		{ return mAccount; }
-	inline const BmString& Cc() const 				{ return mCc; }
-	inline const BmString& From() const 			{ return mFrom; }
-	inline const BmString& Name() const				{ return mName; }
-	inline const BmString& Priority() const 		{ return mPriority; }
-	inline const BmString& ReplyTo() const 		{ return mReplyTo; }
-	inline const BmString& Status() const 			{ return mStatus; }
-	inline const BmString& Subject() const 		{ return mSubject; }
-	inline const BmString& To() const 				{ return mTo; }
-	inline const time_t& When() const 				{ return mWhen; }
-	inline const BmString& WhenString() const 	{ return mWhenString; }
-	inline const bigtime_t& WhenCreated() const	{ return mWhenCreated; }
-	inline const BmString& WhenCreatedString() const { return mWhenCreatedString; }
-	inline const off_t& Size() const 				{ return mSize; }
-	inline const BmString& SizeString() const 	{ return mSizeString; }
-	inline const bool& HasAttachments() const 	{ return mHasAttachments; }
-	inline const bool IsNew() const					{ return mStatus == "New"; }
-	inline const BmString& Identity() const 		{ return mIdentity; }
+	inline const entry_ref& EntryRef() const 		
+													{ return mEntryRef; }
+	inline const entry_ref* EntryRefPtr() const	
+													{ return &mEntryRef; }
+	inline const char* TrackerName() const			
+													{ return mEntryRef.name; }
+	inline const node_ref& NodeRef() const
+													{ return mNodeRef; }
+	inline status_t InitCheck()	const	{ return mInitCheck; }
+	inline const BmString& Account() const
+											 		{ return mAccount; }
+	inline const BmString& Cc() const 	{ return mCc; }
+	inline const BmString& From() const { return mFrom; }
+	inline const BmString& Name() const	{ return mName; }
+	inline const BmString& Priority() const
+											 		{ return mPriority; }
+	inline const BmString& ReplyTo() const
+											 		{ return mReplyTo; }
+	inline const BmString& Status() const
+										 			{ return mStatus; }
+	inline const BmString& Subject() const
+											 		{ return mSubject; }
+	inline const BmString& To() const 	{ return mTo; }
+	inline const time_t& When() const 	{ return mWhen; }
+	inline const BmString& WhenString() const
+												 	{ return mWhenString; }
+	inline const bigtime_t& WhenCreated() const
+													{ return mWhenCreated; }
+	inline const BmString& WhenCreatedString() const 
+													{ return mWhenCreatedString; }
+	inline const off_t& Size() const 	{ return mSize; }
+	inline const BmString& SizeString() const
+												 	{ return mSizeString; }
+	inline const bool& HasAttachments() const
+												 	{ return mHasAttachments; }
+	inline const bool IsNew() const		{ return mStatus == "New"; }
+	inline const BmString& Identity() const
+											 		{ return mIdentity; }
 
 	// setters:
-	inline void EntryRef( entry_ref &e) 			{ mEntryRef = e; }
-	inline void WhenCreated( const bigtime_t& t)	{ mWhenCreated = t; }
+	inline void EntryRef( entry_ref &e) { mEntryRef = e; }
+	inline void WhenCreated( const bigtime_t& t)
+													{ mWhenCreated = t; }
 
 	// flags indicating which parts are to be updated:
 	static const BmUpdFlags UPD_STATUS	= 1<<2;
 
 protected:
 	BmMailRef( BmMailRefList* model, entry_ref &eref, struct stat& st);
+	BmMailRef( BMessage* archive, node_ref& nref, BmMailRefList* model);
+	void Initialize();
 
 private:
 	// the following members will be archived as part of BmFolderList:
