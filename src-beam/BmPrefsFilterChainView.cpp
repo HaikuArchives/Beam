@@ -361,7 +361,6 @@ BmPrefsFilterChainView::BmPrefsFilterChainView()
 	MView* view = 
 		new UserResizeSplitView(
 			new HGroup(
-				minimax( 400,120),
 				CreateFilterChainListView( minimax(200,150,1E5,1E5), 200, 200),
 				new Space( minimax(5,0,5,1E5)),
 				new VGroup(
