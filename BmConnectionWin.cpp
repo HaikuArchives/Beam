@@ -20,7 +20,7 @@
 
 #include "BmConnectionWin.h"
 
-static rgb_color BM_COL_STATUSBAR = {128,128,128};
+const rgb_color BmConnectionWin::BM_COL_STATUSBAR = {128,128,128};
 
 //---------------------------------------
 bool BmConnectionWin::IsConnectionWinAlive = false;
@@ -55,6 +55,7 @@ BmConnectionWin::~BmConnectionWin() {
 
 //---------------------------------------
 bool BmConnectionWin::QuitRequested() {
+	BmConnectionWin::IsConnectionWinAlive = false;
 	return true;
 }
 
@@ -78,7 +79,7 @@ void BmConnectionWin::MessageReceived(BMessage *msg) {
 		case BM_POP_DONE: {
 			RemovePopper( FindMsgString( msg, BmPopper::MSG_POPPER));
 			if (mActiveConnections.empty()) {
-//				Hide();
+				Hide();
 			}
 			break;
 		}
@@ -96,12 +97,24 @@ void BmConnectionWin::MessageReceived(BMessage *msg) {
 void BmConnectionWin::AddPopper( BmPopAccount *account) {
 	assert( account);
 	char tname[B_OS_NAME_LENGTH+1];
-	const char* name = account->Name().c_str();
+	const char* name = account->Name().String();
 	BStatusBar* statBar;
 	BStatusBar* mailBar;
 	MView* interface;
 
-	// ...create a new thread for the Popper...
+	ConnectionMap::iterator interfaceIter = mActiveConnections.find( account->Name());
+	if (interfaceIter != mActiveConnections.end()) {
+		// interface-info found, maybe this popper is already active:
+		BmConnectionWinInfo *interfaceInfo = ((*interfaceIter).second);
+		thread_info ti;
+		int32 res;
+		if ((res=get_thread_info( interfaceInfo->thread, &ti)) == B_OK) {
+			// thread is still running, so we better don't disturb:
+			return;
+		}
+	}
+
+	// we create a new thread for the Popper...
 	BmPopperInfo* popperInfo = new BmPopperInfo( account, account->Name(), this, &::IsConnectionWinAlive);
 	sprintf( tname, "BmPopper%ld", BmPopper::NextID());
 	thread_id t_id = spawn_thread( &BmPopper::NewPopper, tname, 
@@ -109,18 +122,17 @@ void BmConnectionWin::AddPopper( BmPopAccount *account) {
 	if (t_id < 0)
 		throw runtime_error("AddPopper(): Could not create new popper-thread");
 
-	ConnectionMap::iterator popperIter = mActiveConnections.find( account->Name());
-	if (popperIter == mActiveConnections.end())
+	if (interfaceIter == mActiveConnections.end())
 	{	// account is inactive, so we create a new interface for it...
 		interface = AddPopperInterface( name, statBar, mailBar);
 		// ...note the thread's id and corresponding view inside the map...
 		mActiveConnections[account->Name()] = new BmConnectionWinInfo(t_id, interface, statBar, mailBar);
 	} else {
 		// store new thread id:
-		BmConnectionWinInfo *popperInfo = ((*popperIter).second);
-		popperInfo->thread = t_id;
-		popperInfo->statBar->Reset( "State: ", name);
-		popperInfo->mailBar->Reset( "Messages: ", NULL);
+		BmConnectionWinInfo *interfaceInfo = ((*interfaceIter).second);
+		interfaceInfo->thread = t_id;
+		interfaceInfo->statBar->Reset( "State: ", name);
+		interfaceInfo->mailBar->Reset( "Messages: ", NULL);
 	}
 
 	// ...and activate the Popper:
@@ -165,16 +177,16 @@ void BmConnectionWin::UpdatePopperInterface( BMessage* msg) {
 	const char* trailing = NULL;
 	msg->FindString( BmPopper::MSG_TRAILING, &trailing);
 
-	ConnectionMap::iterator popperIter = mActiveConnections.find( name);
-	if (popperIter == mActiveConnections.end())
+	ConnectionMap::iterator interfaceIter = mActiveConnections.find( name);
+	if (interfaceIter == mActiveConnections.end())
 		return;		// account is not active, nothing to do...
-	BmConnectionWinInfo *popperInfo = (*popperIter).second;
+	BmConnectionWinInfo *interfaceInfo = (*interfaceIter).second;
 	BAutolock lock( this);
 	if (lock.IsLocked()) {
 		if (msg->what == BM_POP_UPDATE_STATE) {
-			popperInfo->statBar->Update( delta, leading, trailing);
+			interfaceInfo->statBar->Update( delta, leading, trailing);
 		} else { 
-			popperInfo->mailBar->Update( delta, leading, trailing);
+			interfaceInfo->mailBar->Update( delta, leading, trailing);
 		}
 	} else
 		throw runtime_error("UpdatePopperInterface(): could not lock window");
@@ -184,17 +196,18 @@ void BmConnectionWin::UpdatePopperInterface( BMessage* msg) {
 void BmConnectionWin::RemovePopper( const char* name) {
 	assert( name);
 
-	ConnectionMap::iterator popperIter = mActiveConnections.find( name);
-	if (popperIter == mActiveConnections.end())
-		return;					// account is not active, nothing to do...
+	ConnectionMap::iterator interfaceIter = mActiveConnections.find( name);
+	if (interfaceIter == mActiveConnections.end())
+		return;									// account is not active, nothing to do...
 	
-	if (Beam::Prefs->DynamicConnectionWin()) {
-		BmConnectionWinInfo *popperInfo = (*popperIter).second;
-		RemovePopperInterface( popperInfo);
-									// account is found, so we remove its interface...
-		mActiveConnections.erase( popperIter);
-									// ...and remove the info about this popper from our map
-		delete popperInfo;
+	BmConnectionWinInfo *interfaceInfo = (*interfaceIter).second;
+	if (Beam::Prefs->DynamicConnectionWin() 
+	|| interfaceInfo->mailBar->CurrentValue()==0) {
+		RemovePopperInterface( interfaceInfo);
+							// account is found, so we remove its interface...
+		mActiveConnections.erase( interfaceIter);
+							// ...and remove the info about this popper from our map
+		delete interfaceInfo;
 	}
 }
 

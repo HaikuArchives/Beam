@@ -39,14 +39,14 @@ BmPopAccount::BmPopAccount( BMessage *archive)
 status_t BmPopAccount::Archive( BMessage *archive, bool deep) const {
 	status_t ret = (BArchivable::Archive( archive, deep)
 		||	archive->AddString("class", "BmPopAccount")
-		||	archive->AddString( MSG_NAME, mName.c_str())
-		||	archive->AddString( MSG_USERNAME, mUsername.c_str())
-		||	archive->AddString( MSG_PASSWORD, mPassword.c_str())
-		||	archive->AddString( MSG_POP_SERVER, mPOPServer.c_str())
-		||	archive->AddString( MSG_SMTP_SERVER, mSMTPServer.c_str())
-		||	archive->AddString( MSG_REAL_NAME, mRealName.c_str())
-		||	archive->AddString( MSG_REPLY_TO, mReplyTo.c_str())
-		||	archive->AddString( MSG_SIGNATURE_NAME, mSignatureName.c_str())
+		||	archive->AddString( MSG_NAME, mName.String())
+		||	archive->AddString( MSG_USERNAME, mUsername.String())
+		||	archive->AddString( MSG_PASSWORD, mPassword.String())
+		||	archive->AddString( MSG_POP_SERVER, mPOPServer.String())
+		||	archive->AddString( MSG_SMTP_SERVER, mSMTPServer.String())
+		||	archive->AddString( MSG_REAL_NAME, mRealName.String())
+		||	archive->AddString( MSG_REPLY_TO, mReplyTo.String())
+		||	archive->AddString( MSG_SIGNATURE_NAME, mSignatureName.String())
 		||	archive->AddBool( MSG_CHECK_MAIL, mCheckMail)
 		||	archive->AddBool( MSG_DELETE_MAIL, mDeleteMailFromServer)
 		||	archive->AddInt16( MSG_PORT_NR, htons(mPortNr))
@@ -69,7 +69,7 @@ BArchivable* BmPopAccount::Instantiate( BMessage *archive) {
 		-	returns the POP3-connect-info as a BNetAddress
   ------------------------------------------------------------------------------*/
 BNetAddress BmPopAccount::POPAddress() const {
-	BNetAddress addr( mPOPServer.c_str(), mPortNr);
+	BNetAddress addr( mPOPServer.String(), mPortNr);
 	if (addr.InitCheck() == B_OK)
 		return addr;
 	else
@@ -81,7 +81,7 @@ BNetAddress BmPopAccount::POPAddress() const {
 		-	returns the SMTP-connect-info as a BNetAddress
   ------------------------------------------------------------------------------*/
 BNetAddress BmPopAccount::SMTPAddress() const {
-	BNetAddress addr( mSMTPServer.c_str(), mSMTPPortNr);
+	BNetAddress addr( mSMTPServer.String(), mSMTPPortNr);
 	if (addr.InitCheck() == B_OK)
 		return addr;
 	else

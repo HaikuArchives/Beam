@@ -9,7 +9,6 @@
 #include <map>
 #include <stdio.h>
 #include <stdexcept>
-#include <string>
 
 #include <Message.h>
 #include <StopWatch.h>
@@ -20,7 +19,7 @@
 //---------------------------------------------------
 class network_error : public runtime_error {
 public:
-  network_error (const string& what_arg): runtime_error (what_arg.c_str()) { }
+  network_error (const BString& what_arg): runtime_error (what_arg.String()) { }
   network_error (char *const what_arg): runtime_error (what_arg) { }
 };
 
@@ -43,11 +42,11 @@ class BmLogHandler {
 		~BmLogfile() { if (logfile) fclose(logfile); }
 		void Write( const char* const msg);
 	
-		static string LogPath;
+		static BString LogPath;
 	
 	private:
 		FILE* logfile;
-		string filename;
+		BString filename;
 		BStopWatch watch;
 	};
 
@@ -56,34 +55,36 @@ class BmLogHandler {
 	Benaphore mBenaph;
 
 public:
+	void CloseLog( const char* const logname);
+	void CloseLog( const BString &logname) 
+							{ CloseLog( logname.String()); }
+
 	void LogToFile( const char* const logname, const char* const msg);
-	void LogToFile( const char* const logname, const string &msg) 
-							{ LogToFile( logname, msg.c_str()); }
-	void LogToFile( string &logname, const char* const msg)
-							{ LogToFile( logname.c_str(), msg); }
-	void LogToFile( string &logname, const string &msg) 
-							{ LogToFile( logname.c_str(), msg.c_str()); }
+	void LogToFile( const char* const logname, const BString &msg) 
+							{ LogToFile( logname, msg.String()); }
+	void LogToFile( BString &logname, const char* const msg)
+							{ LogToFile( logname.String(), msg); }
+	void LogToFile( BString &logname, const BString &msg) 
+							{ LogToFile( logname.String(), msg.String()); }
 
 	BmLogHandler() : mBenaph("beam_loghandler") { }
 	~BmLogHandler();
 };
 
 namespace Beam {
-	extern BmLogHandler LogHandler;
+	extern BmLogHandler* LogHandler;
 };
 
 #ifdef LOGGING
-#define BmLOG(msg) Beam::LogHandler.LogToFile( LOGNAME, msg)
+#define BmLOG(msg) Beam::LogHandler->LogToFile( LOGNAME, msg)
+#define BmLOG_FINISH(name) Beam::LogHandler->CloseLog( name)
 #else
 #define BmLOG(msg)
+#define BmLOG_FINISH(name)
 #endif
 #define LOGNAME "beam"
 
 //---------------------------------------------------
-string BytesToString( int32 bytes);
-
-//---------------------------------------------------
-string iToStr( int32 i);
-string fToStr( double f);
+BString BytesToString( int32 bytes);
 
 #endif

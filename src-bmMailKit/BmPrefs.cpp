@@ -27,6 +27,17 @@ bool BmPrefs::InitPrefs()
 }
 
 /*------------------------------------------------------------------------------
+	BmPrefs()
+		-	default constructor
+  ------------------------------------------------------------------------------*/
+BmPrefs::BmPrefs( void)
+	: BArchivable() 
+	, mDynamicConnectionWin( false)
+	, mReceiveTimeout( 60 )
+{
+}
+
+/*------------------------------------------------------------------------------
 	BmPrefs( archive)
 		-	constructs a BmPrefs from a BMessage
 		-	N.B.: BMessage must be in NETWORK-BYTE-ORDER

@@ -25,6 +25,8 @@ class BmConnectionWin : public MWindow {
 												|	B_NOT_ZOOMABLE
 												|	B_NOT_RESIZABLE;
 
+	static const rgb_color BM_COL_STATUSBAR;
+	
 	struct BmConnectionWinInfo {
 		MView* interface;
 		thread_id thread;
@@ -37,7 +39,7 @@ class BmConnectionWin : public MWindow {
 			, mailBar(mb)
 			{}
 	};
-	typedef map<string, BmConnectionWinInfo*> ConnectionMap;
+	typedef map<BString, BmConnectionWinInfo*> ConnectionMap;
 public:
 	static bool IsConnectionWinAlive;
 

@@ -7,10 +7,10 @@
 #ifndef _BmPrefs_h
 #define _BmPrefs_h
 
-#include <string>
 #include <stdexcept>
 
 #include <Archivable.h>
+#include <String.h>
 
 #include "BmUtil.h"
 
@@ -25,11 +25,8 @@ class BmPrefs : public BArchivable {
 	static char* const MSG_DYNAMIC_CONN_WIN = "bm:dynconnwin";
 	static char* const MSG_RECEIVE_TIMEOUT = 	"bm:recvtimeout";
 public:
-	BmPrefs( void) 
-		: BArchivable() 
-		, mDynamicConnectionWin( false)
-		, mReceiveTimeout( 60 )
-			{}
+	BmPrefs( void)
+			;
 	BmPrefs( BMessage *archive)
 			;
 	virtual ~BmPrefs() 

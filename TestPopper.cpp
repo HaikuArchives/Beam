@@ -42,7 +42,7 @@ int main()
 		be_app->Run();
 	} 
 	catch( exception &e) {
-		BmLOG( string("Oops: %s") + e.what());
+		BmLOG( BString("Oops: %s") << e.what());
 	}
 	delete be_app;
 }
@@ -71,6 +71,7 @@ bool GenericWin::QuitRequested() {
 GenericApp::GenericApp()
 : BApplication("application/x-vnd.OT-Generic"), win(0)
 {
+	Beam::LogHandler = new BmLogHandler();
 	win = new BmConnectionWin( "ConnectionWin", this);
 	win->Hide();
 	win->Show();
@@ -79,7 +80,9 @@ GenericApp::GenericApp()
 }
 
 GenericApp::~GenericApp()
-{ }
+{
+	delete Beam::LogHandler;
+}
 
 bool GenericApp::QuitRequested() {
 	return true;
@@ -90,8 +93,9 @@ void GenericApp::MessageReceived(BMessage* msg) {
 	BmPopAccount acc;
 	switch( msg->what) {
 		case BM_MSG_NOCH_EINER: 
+
 			archive = new BMessage(BM_POPWIN_FETCHMSGS);
-			sprintf(buf, "mailtest@kiwi");
+			sprintf(buf, "mailtest@kiwi:110");
 			acc.Name( buf);
 			acc.Username( "mailtest");
 			acc.Password( "mailtest");
@@ -103,7 +107,7 @@ void GenericApp::MessageReceived(BMessage* msg) {
 			delete archive;
 
 			archive = new BMessage(BM_POPWIN_FETCHMSGS);
-			sprintf(buf, "zooey@kiwi");
+			sprintf(buf, "zooey@kiwi:110");
 			acc.Name( buf);
 			acc.Username( "zooey");
 			acc.Password( "leeds#42");
@@ -113,6 +117,32 @@ void GenericApp::MessageReceived(BMessage* msg) {
 			acc.Archive( archive, false);
 			win->PostMessage( archive);
 			delete archive;
+
+			archive = new BMessage(BM_POPWIN_FETCHMSGS);
+			sprintf(buf, "mailtest2@kiwi:114");
+			acc.Name( buf);
+			acc.Username( "mailtest2");
+			acc.Password( "mailtest2");
+			acc.POPServer( "kiwi");
+			acc.PortNr( 114);
+			acc.SMTPPortNr( 25);
+			acc.Archive( archive, false);
+			win->PostMessage( archive);
+			delete archive;
+
+/*
+			archive = new BMessage(BM_POPWIN_FETCHMSGS);
+			sprintf(buf, "mailtest@kiwi:112");
+			acc.Name( buf);
+			acc.Username( "mailtest");
+			acc.Password( "mailtest");
+			acc.POPServer( "kiwi");
+			acc.PortNr( 112);
+			acc.SMTPPortNr( 25);
+			acc.Archive( archive, false);
+			win->PostMessage( archive);
+			delete archive;
+*/
 
 			break;
 		case BM_POPWIN_DONE: 

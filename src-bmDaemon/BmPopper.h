@@ -12,7 +12,6 @@
 #include <Message.h>
 #include <NetAddress.h>
 #include <NetEndpoint.h>
-#include <String.h>
 
 #include "BmPrefs.h"
 #include "BmPopAccount.h"
@@ -37,7 +36,7 @@
 struct BmPopperInfo {
 	BmPopAccount* account;
 							// the POP-account we have to deal with
-	string name;
+	BString name;
 							// name of this POP-session (used in GUI and for logging purposes)
 	BLooper *statusLooper;
 							// the looper that should receive status-messages from a BmPopper.
@@ -46,7 +45,7 @@ struct BmPopperInfo {
 							// a bool-function that returns true as long as the BmPopper
 							// should continue to run. OPTIONAL
 
-	BmPopperInfo( BmPopAccount* a, const string &n, BLooper* sl, bool (*f)()) 
+	BmPopperInfo( BmPopAccount* a, const BString &n, BLooper* sl, bool (*f)()) 
 			: account(a)
 			, name(n)
 			, statusLooper(sl)
@@ -85,17 +84,18 @@ private:
 
 	static const bool SINGLE_LINE = true;
 	static const bool MULTI_LINE = false;
+	static const int32 NetBufSize = 16384;
 
 	BmPopperInfo* mPopperInfo;				// configuration-info
 
 	BNetEndpoint mPopServer;				// network-connection to POP-server
 	bool mConnected;							// are we connected to the server?
 
-	string* mMsgUIDs;						// array of unique-IDs, one for each message
+	BString* mMsgUIDs;							// array of unique-IDs, one for each message
 	int32 mMsgCount;							// number of msgs to be received
 	int32 mMsgSize;							// size of current msg
 	int32 mMsgTotalSize;						// size of all msgs to be received
-	string mAnswer;							// holds last answer of POP-server
+	BString mAnswer;							// holds last answer of POP-server
 
 	int32 mState;								// current POP3-state (refer enum below)
 	enum States {
@@ -125,14 +125,14 @@ private:
 	void Update();
 	void Disconnect();
 	void Quit( bool WaitForAnswer=false);
-	void UpdatePOPStatus( const float, const char*);
+	void UpdatePOPStatus( const float, const char*, bool failed=false);
 	void UpdateMailStatus( const float, const char*, int32);
 	bool ShouldContinue();
 	void StoreAnswer( char *);
 	void CheckForPositiveAnswer( bool SingleLineMode, int32 mailNr=0);
 	void GetAnswer( bool SingleLineMode, int32 mailNr = 0);
 	int32 ReceiveBlock( char* buffer, int32 max);
-	void SendCommand( string cmd);
+	void SendCommand( BString cmd);
 };
 
 #endif
