@@ -35,6 +35,8 @@
 #include <Resources.h>
 #include <Screen.h>
 #include <Bitmap.h>
+#include <StringView.h>
+#include <TextView.h>
 
 //******************************************************************************************************
 //**** Project header files
@@ -49,8 +51,9 @@
 //******************************************************************************************************
 ImageAboutWindow::ImageAboutWindow(const char* window_title, const char* app_title,
 	const BBitmap* bmap, float icon_sidebar_offset, const char* body_text,
-	const char* email, const char* web)
-: BWindow(BRect(-1,-1,-1,-1),"",B_TITLED_WINDOW,B_NOT_RESIZABLE)
+	const char* email, const char* web, const char* credits)
+: BWindow(BRect(-1,-1,-1,-1),"",B_TITLED_WINDOW,B_NOT_RESIZABLE|B_PULSE_NEEDED)
+, m_credits_pos( 0)
 {
 	SetTitle(window_title);
 
@@ -197,6 +200,7 @@ ImageAboutWindow::ImageAboutWindow(const char* window_title, const char* app_tit
 	m_title_rect.right = m_title_rect.left + title_width;
 	m_title_rect.bottom = m_title_rect.top + bold_height;
 
+	string_widths = MAX(280, string_widths);
 	
 	float curr_pos = m_title_rect.bottom + ceil(bold_height/4);
 	if(m_version)
@@ -243,6 +247,32 @@ ImageAboutWindow::ImageAboutWindow(const char* window_title, const char* app_tit
 		curr_pos += plain_spacing;
 	}
 
+	if (credits) {
+		BRect label_rect;
+		label_rect.left = logo_right - 10;
+		label_rect.top = curr_pos+5;
+		label_rect.right = label_rect.left+60;
+		label_rect.bottom = label_rect.top + plain_height;
+		m_credits_label = new BStringView( label_rect, "label", "Credits:");
+		curr_pos += 5+label_rect.Height();
+		BRect credits_rect;
+		credits_rect.left = logo_right - 10;
+		credits_rect.top = curr_pos+2;
+		credits_rect.right = credits_rect.left+string_widths+26;
+		credits_rect.bottom = credits_rect.top + 5*plain_height+12;
+		curr_pos += credits_rect.Height();
+		BRect text_rect = credits_rect;
+		text_rect.OffsetTo(0,0);
+		text_rect.InsetBy(4,4);
+		m_credits_view = new BTextView( credits_rect, "credits", text_rect,
+												  B_FOLLOW_NONE, B_WILL_DRAW);
+		m_credits_view->MakeEditable( false);
+		m_credits_view->MakeSelectable( false);
+		m_credits_view->SetText( credits);
+		m_credits_view->SetViewColor( BeButtonGrey);
+		m_credits_view->SetLowColor( BeButtonGrey);
+	}
+
 	if(m_bitmap && curr_pos < m_logo_rect.bottom)
 		curr_pos = m_logo_rect.bottom;
 
@@ -253,6 +283,8 @@ ImageAboutWindow::ImageAboutWindow(const char* window_title, const char* app_tit
 	ResizeTo(bounds.right,bounds.bottom);
 	BView* content_view = new AboutView(bounds,this);
 	AddChild(content_view);
+	content_view->AddChild( m_credits_label);
+	content_view->AddChild( m_credits_view);
 	BRect screen_limits = BScreen().Frame();
 	MoveTo(screen_limits.left+floor((screen_limits.Width()-bounds.Width())/2),
 		screen_limits.top+floor((screen_limits.Height()-bounds.Height())/2));
@@ -303,7 +335,14 @@ void ImageAboutWindow::MouseDown(BPoint point) {
 	}
 }
 
-
+void ImageAboutWindow::ScrollCredits() {
+	SetPulseRate(10*1000);
+	float height = m_credits_view->Bounds().Height();
+	float text_height = m_credits_view->TextHeight(0,100000);
+	if (++m_credits_pos > text_height-height)
+		m_credits_pos = 0;
+	m_credits_view->ScrollTo( 0, m_credits_pos);
+}
 
 void ImageAboutWindow::DrawContent(BView* view, BRect update_rect)
 {
@@ -355,7 +394,7 @@ void ImageAboutWindow::DrawContent(BView* view, BRect update_rect)
 //**** AboutView
 //******************************************************************************************************
 AboutView::AboutView(BRect rect, ImageAboutWindow* parent)
-: BView(rect,NULL,B_FOLLOW_ALL_SIDES,B_WILL_DRAW)
+: BView(rect,NULL,B_FOLLOW_ALL_SIDES,B_WILL_DRAW|B_PULSE_NEEDED)
 {
 	m_parent = parent;
 	SetViewColor(BeBackgroundGrey);
@@ -372,4 +411,8 @@ void AboutView::Draw(BRect update_rect)
 void AboutView::MouseDown(BPoint point) { 
 	BView::MouseDown( point);
 	m_parent->MouseDown( point);
+}
+
+void AboutView::Pulse(void) { 
+	m_parent->ScrollCredits();
 }

@@ -64,6 +64,7 @@ enum Columns {
 	COL_SIGNATURE,
 	COL_SERVER,
 	COL_PORT,
+	COL_CHECK_INTERVAL,
 	COL_AUTH_METHOD,
 	COL_USER,
 	COL_PWD,
@@ -107,6 +108,7 @@ void BmRecvAccItem::UpdateView( BmUpdFlags flags) {
 			{ acc->SignatureName().String(),			false },
 			{ acc->POPServer().String(),				false },
 			{ acc->PortNrString().String(),			true  },
+			{ acc->CheckIntervalString().String(),	true  },
 			{ acc->AuthMethod().String(),				false },
 			{ acc->Username().String(),				false },
 			{ acc->PwdStoredOnDisk() ? "*****":"",	false },
@@ -167,6 +169,7 @@ BmRecvAccView::BmRecvAccView( minimax minmax, int32 width, int32 height)
 	AddColumn( new CLVColumn( "Signature", 80.0, CLV_SORT_KEYABLE|flags, 40.0));
 	AddColumn( new CLVColumn( "Server", 80.0, CLV_SORT_KEYABLE|flags, 40.0));
 	AddColumn( new CLVColumn( "Port", 40.0, flags, 40.0));
+	AddColumn( new CLVColumn( "Interval", 40.0, flags, 40.0));
 	AddColumn( new CLVColumn( "Auth-Method", 80.0, CLV_SORT_KEYABLE|flags, 40.0));
 	AddColumn( new CLVColumn( "User", 80.0, CLV_SORT_KEYABLE|flags, 40.0));
 	AddColumn( new CLVColumn( "Pwd", 50.0, CLV_SORT_KEYABLE|flags, 40.0));
@@ -288,6 +291,15 @@ BmPrefsRecvMailView::BmPrefsRecvMailView()
 							mCheckAccountControl = new BmCheckControl( "Check mail", 
 																					 new BMessage(BM_CHECK_MAIL_CHANGED), 
 																					 this),
+							new HGroup(
+								mCheckEveryControl = new BmCheckControl( "Check every", 
+																						 new BMessage(BM_CHECK_EVERY_CHANGED), 
+																						 this),
+								mCheckIntervalControl = new BmTextControl( "", false, 4),
+								mMinutesLabel = new MStringView( "minutes"),
+								new Space(),
+								0
+							),
 							mRemoveMailControl = new BmCheckControl( "Remove mails from server", 
 																				  new BMessage(BM_REMOVE_MAIL_CHANGED), 
 																				  this),
@@ -363,6 +375,8 @@ void BmPrefsRecvMailView::Initialize() {
 	mRealNameControl->SetTarget( this);
 	mServerControl->SetTarget( this);
 	mCheckAccountControl->SetTarget( this);
+	mCheckEveryControl->SetTarget( this);
+	mCheckIntervalControl->SetTarget( this);
 	mIsBucketControl->SetTarget( this);
 	mIsDefaultControl->SetTarget( this);
 	mRemoveMailControl->SetTarget( this);
@@ -473,12 +487,24 @@ void BmPrefsRecvMailView::MessageReceived( BMessage* msg) {
 						mCurrAcc->RealName( mRealNameControl->Text());
 					else if ( source == mServerControl)
 						mCurrAcc->POPServer( mServerControl->Text());
+					else if ( source == mCheckIntervalControl)
+						mCurrAcc->CheckInterval( MAX( 0,atoi(mCheckIntervalControl->Text())));
 				}
 				break;
 			}
 			case BM_CHECK_MAIL_CHANGED: {
 				if (mCurrAcc)
 					mCurrAcc->CheckMail( mCheckAccountControl->Value());
+				break;
+			}
+			case BM_CHECK_EVERY_CHANGED: {
+				bool val = mCheckEveryControl->Value();
+				mCheckIntervalControl->SetEnabled( val);
+				if (!val) {
+					mCheckIntervalControl->SetTextSilently( "");
+					if (mCurrAcc)
+						mCurrAcc->CheckInterval( 0);
+				}
 				break;
 			}
 			case BM_REMOVE_MAIL_CHANGED: {
@@ -591,6 +617,7 @@ void BmPrefsRecvMailView::ShowAccount( int32 selection) {
 	mSmtpControl->SetEnabled( enabled);
 	mRemoveButton->SetEnabled( enabled);
 	mCheckAccountControl->SetEnabled( enabled);
+	mCheckEveryControl->SetEnabled( enabled);
 	mRemoveMailControl->SetEnabled( enabled);
 	mIsDefaultControl->SetEnabled( enabled);
 	mIsBucketControl->SetEnabled( enabled);
@@ -606,15 +633,19 @@ void BmPrefsRecvMailView::ShowAccount( int32 selection) {
 		mPwdControl->SetTextSilently( "");
 		mRealNameControl->SetTextSilently( "");
 		mServerControl->SetTextSilently( "");
+		mCheckIntervalControl->SetTextSilently( "");
 		mAuthControl->ClearMark();
 		mSignatureControl->ClearMark();
 		mSmtpControl->ClearMark();
 		mCheckAccountControl->SetValue( 0);
+		mCheckEveryControl->SetValue( 0);
 		mRemoveMailControl->SetValue( 0);
 		mIsDefaultControl->SetValue( 0);
 		mIsBucketControl->SetValue( 0);
 		mStorePwdControl->SetValue( 0);
 		mPwdControl->SetEnabled( false);
+		mCheckIntervalControl->SetEnabled( false);
+		mMinutesLabel->SetHighColor( BeInactiveGrey);
 	} else {
 		BmRecvAccItem* accItem = dynamic_cast<BmRecvAccItem*>(mAccListView->ItemAt( selection));
 		if (accItem) {
@@ -636,15 +667,20 @@ void BmPrefsRecvMailView::ShowAccount( int32 selection) {
 													? mCurrAcc->SMTPAccount().String()
 													: nEmptyItemLabel.String());
 				mCheckAccountControl->SetValue( mCurrAcc->CheckMail());
+				mCheckEveryControl->SetValue( mCurrAcc->CheckInterval()>0 ? 1 : 0);
+				mCheckIntervalControl->SetTextSilently( mCurrAcc->CheckIntervalString().String());
 				mRemoveMailControl->SetValue( mCurrAcc->DeleteMailFromServer());
 				mIsDefaultControl->SetValue( mCurrAcc->MarkedAsDefault());
 				mIsBucketControl->SetValue( mCurrAcc->MarkedAsBitBucket());
 				mStorePwdControl->SetValue( mCurrAcc->PwdStoredOnDisk());
 				mPwdControl->SetEnabled( mCurrAcc->PwdStoredOnDisk());
+				mCheckIntervalControl->SetEnabled( mCurrAcc->CheckInterval()>0);
+				mMinutesLabel->SetHighColor( mCurrAcc->CheckInterval()>0 ? Black : BeInactiveGrey);
 			}
 		} else
 			mCurrAcc = NULL;
 	}
+	mMinutesLabel->Invalidate();
 }
 
 /*------------------------------------------------------------------------------*\

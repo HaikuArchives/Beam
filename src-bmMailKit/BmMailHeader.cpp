@@ -112,7 +112,17 @@ BmAddress::~BmAddress() {
 		-	
 \*------------------------------------------------------------------------------*/
 BmAddress::operator BString() const {
-	return mPhrase.Length() ? (mPhrase + " <" + mAddrSpec + ">") : mAddrSpec;
+	if (mPhrase.Length()) {
+		// quote the phrase if it contains "dangerous" characters:
+		if (mPhrase.FindFirst(',')!=B_ERROR
+		|| mPhrase.FindFirst(':')!=B_ERROR
+		|| mPhrase.FindFirst('<')!=B_ERROR	
+		|| mPhrase.FindFirst('>')!=B_ERROR)
+			return BString("\"") << mPhrase << "\" <" << mAddrSpec << ">";
+		else
+			return mPhrase + " <" + mAddrSpec + ">";
+	} else
+		return mAddrSpec;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -133,7 +143,16 @@ void BmAddress::ConstructRawText( BString& header, int32 encoding, int32 fieldNa
 	BString convertedAddrSpec = ConvertUTF8ToHeaderPart( mAddrSpec, encoding, false, 
 																		  true, fieldNameLength);
 	if (mPhrase.Length()) {
-		BString convertedPhrase = ConvertUTF8ToHeaderPart( mPhrase, encoding, true, 
+		// quote the phrase if it contains "dangerous" characters:
+		BString phrase;
+		if (mPhrase.FindFirst(',')!=B_ERROR
+		|| mPhrase.FindFirst(':')!=B_ERROR
+		|| mPhrase.FindFirst('<')!=B_ERROR	
+		|| mPhrase.FindFirst('>')!=B_ERROR)
+			phrase = BString("\"") << mPhrase << "\"";
+		else
+			phrase = mPhrase;
+		BString convertedPhrase = ConvertUTF8ToHeaderPart( phrase, encoding, true, 
 																			true, fieldNameLength);
 		if (convertedPhrase.Length()+convertedAddrSpec.Length()+3 > ThePrefs->GetInt( "MaxLineLen")) {
 			header << convertedPhrase << "\r\n";

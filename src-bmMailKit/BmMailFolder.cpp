@@ -116,7 +116,7 @@ void BmMailFolder::StartNodeMonitor() {
 	node_ref nref;
 	nref.device = mEntryRef.device;
 	nref.node = mInode;
-	watch_node( &nref, B_WATCH_DIRECTORY, BMessenger( TheNodeMonitor));
+	watch_node( &nref, B_WATCH_DIRECTORY, BMessenger( TheMailMonitor));
 }
 
 /*------------------------------------------------------------------------------*\
@@ -127,7 +127,7 @@ void BmMailFolder::StopNodeMonitor() {
 	node_ref nref;
 	nref.device = mEntryRef.device;
 	nref.node = mInode;
-	watch_node( &nref, B_STOP_WATCHING, BMessenger( TheNodeMonitor));
+	watch_node( &nref, B_STOP_WATCHING, BMessenger( TheMailMonitor));
 }
 
 /*------------------------------------------------------------------------------*\

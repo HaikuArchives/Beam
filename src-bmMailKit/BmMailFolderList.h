@@ -41,25 +41,25 @@
 #include "BmMailFolder.h"
 
 /*------------------------------------------------------------------------------*\*\
-	BmNodeMonitor
+	BmMailMonitor
 		-	class 
 \*------------------------------------------------------------------------------*/
-class BmNodeMonitor : public BLooper {
+class BmMailMonitor : public BLooper {
 	typedef BLooper inherited;
 
 public:
 	// creator-func and c'tor:
-	static BmNodeMonitor* CreateInstance();
-	BmNodeMonitor();
+	static BmMailMonitor* CreateInstance();
+	BmMailMonitor();
 
 	//	native methods:
-	void HandleNodeMonitorMsg( BMessage* msg);
+	void HandleMailMonitorMsg( BMessage* msg);
 	void HandleQueryUpdateMsg( BMessage* msg);
 
 	// overrides of looper base:
 	void MessageReceived( BMessage* msg);
 
-	static BmNodeMonitor* theInstance;
+	static BmMailMonitor* theInstance;
 	
 private:
 	BmMailFolder* parent;
@@ -71,8 +71,8 @@ private:
 	int32 counter;
 
 	// Hide copy-constructor and assignment:
-	BmNodeMonitor( const BmNodeMonitor&);
-	BmNodeMonitor operator=( const BmNodeMonitor&);
+	BmMailMonitor( const BmMailMonitor&);
+	BmMailMonitor operator=( const BmMailMonitor&);
 };
 
 /*------------------------------------------------------------------------------*\*\
@@ -84,7 +84,7 @@ class BmMailFolderList : public BmListModel {
 	typedef map< ino_t, BmMailFolder*> BmNewNodeMap;
 
 	friend class BmMailFolder;
-	friend BmNodeMonitor;
+	friend BmMailMonitor;
 
 	// archival-fieldnames:
 	static const char* const MSG_MAILBOXMTIME = 	"bm:mboxmtime";
@@ -137,6 +137,6 @@ private:
 
 #define TheMailFolderList BmMailFolderList::theInstance
 
-#define TheNodeMonitor BmNodeMonitor::theInstance
+#define TheMailMonitor BmMailMonitor::theInstance
 
 #endif

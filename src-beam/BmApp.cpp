@@ -108,7 +108,7 @@ BmApplication::BmApplication( const char* sig)
 		BmPrefs::CreateInstance();
 		
 		// create the node-monitor looper:
-		BmNodeMonitor::CreateInstance();
+		BmMailMonitor::CreateInstance();
 
 		// create the job status window:
 		BmJobStatusWin::CreateInstance();
@@ -124,9 +124,10 @@ BmApplication::BmApplication( const char* sig)
 
 		mDeskbar = new BDeskbar;
 		BBitmap* deskbarIcon = TheResources->IconByName( "DeskbarIcon");
-		BPicture* deskbarPic = TheResources->CreatePictureFor( deskbarIcon, 16, 16, BeShadow);
+		BPicture* deskbarPic = TheResources->CreatePictureFor( deskbarIcon, 16, 16,  B_TRANSPARENT_COLOR, true);
 		mDeskbarView = new BPictureButton( BRect(0,0,15,15), BM_DeskbarItemName, 
 													  deskbarPic, deskbarPic, new BMessage('xxxx'));
+		mDeskbarView->SetViewColor( B_TRANSPARENT_COLOR);
 
 		BmMainWindow::CreateInstance();
 
@@ -208,13 +209,13 @@ thread_id BmApplication::Run() {
 \*------------------------------------------------------------------------------*/
 bool BmApplication::QuitRequested() {
 	mIsQuitting = true;
-	TheNodeMonitor->LockLooper();
+	TheMailMonitor->LockLooper();
 	bool shouldQuit = inherited::QuitRequested();
 	if (!shouldQuit) {
 		mIsQuitting = false;
-		TheNodeMonitor->UnlockLooper();
+		TheMailMonitor->UnlockLooper();
 	} else
-		TheNodeMonitor->Quit();
+		TheMailMonitor->Quit();
 	return shouldQuit;
 }
 
@@ -495,7 +496,42 @@ void BmApplication::AboutRequested() {
 		15, 
 		"BEware, Another Mailer\n(c) Oliver Tappe, Berlin, Germany",
 		"mailto:beam@hirschkaefer.de",
-		"http://www.hirschkaefer.de/beam"
+		"http://www.hirschkaefer.de/beam",
+		"\n\n\n\n\n\n\nThanks to:
+
+Heike Herfart 
+	for understanding the geek, 
+	the testing sessions 
+	and many, many suggestions. 
+
+
+...and (in alphabetical order)...
+
+Charlie Clark
+	for reporting bugs
+
+Helmar Rudolph
+	for advanced ideas
+
+Lars Müller
+	for bug-reports in early testing-stages
+
+Linus Almstrom
+	for many bug-reports and suggestions
+	and helping me solve problems with node-monitoring
+
+qwilk
+	for suggesting to use <none> in menu-fields instead of ''
+
+Rob Lund
+	for suggesting to make the header-view info selectable
+
+Stephen Butters
+	for suggestions
+
+Zach 
+	for bug-reports and suggestions 
+\n\n\n\n\n\n"
 	);
 	aboutWin->Show();
 }

@@ -107,6 +107,7 @@ private:
 #define BM_SIGNATURE_SELECTED 	'bmGS'
 #define BM_SMTP_SELECTED 			'bmSS'
 #define BM_CHECK_MAIL_CHANGED 	'bmCC'
+#define BM_CHECK_EVERY_CHANGED 	'bmCE'
 #define BM_REMOVE_MAIL_CHANGED 	'bmRC'
 #define BM_IS_DEFAULT_CHANGED 	'bmDC'
 #define BM_IS_BUCKET_CHANGED	 	'bmFC'
@@ -119,6 +120,7 @@ class BmTextControl;
 class BmMenuControl;
 class BmCheckControl;
 class MButton;
+class MStringView;
 /*------------------------------------------------------------------------------*\
 	BmPrefsRecvMailView
 		-	
@@ -160,6 +162,7 @@ private:
 	BmTextControl* mPwdControl;
 	BmTextControl* mRealNameControl;
 	BmTextControl* mServerControl;
+	BmTextControl* mCheckIntervalControl;
 	BmMenuControl* mAuthControl;
 	BmMenuControl* mSignatureControl;
 	BmMenuControl* mSmtpControl;
@@ -168,8 +171,10 @@ private:
 	BmCheckControl* mIsDefaultControl;
 	BmCheckControl* mRemoveMailControl;
 	BmCheckControl* mStorePwdControl;
+	BmCheckControl* mCheckEveryControl;
 	MButton* mAddButton;
 	MButton* mRemoveButton;
+	MStringView* mMinutesLabel;
 
 	BmRef<BmPopAccount> mCurrAcc;
 	

@@ -43,27 +43,27 @@
 #include "BmUtil.h"
 
 /********************************************************************************\
-	BmNodeMonitor
+	BmMailMonitor
 \********************************************************************************/
 
-BmNodeMonitor* BmNodeMonitor::theInstance = NULL;
+BmMailMonitor* BmMailMonitor::theInstance = NULL;
 
 /*------------------------------------------------------------------------------*\
 	CreateInstance()
 		-	creator-func
 \*------------------------------------------------------------------------------*/
-BmNodeMonitor* BmNodeMonitor::CreateInstance() {
+BmMailMonitor* BmMailMonitor::CreateInstance() {
 	if (!theInstance)
-		theInstance = new BmNodeMonitor();
+		theInstance = new BmMailMonitor();
 	return theInstance;
 }
 
 /*------------------------------------------------------------------------------*\
-	BmNodeMonitor()
+	BmMailMonitor()
 		-	standard c'tor
 \*------------------------------------------------------------------------------*/
-BmNodeMonitor::BmNodeMonitor()
-	:	BLooper("NodeMonitor", B_DISPLAY_PRIORITY, 500)
+BmMailMonitor::BmMailMonitor()
+	:	BLooper("MailMonitor", B_DISPLAY_PRIORITY, 500)
 	,	parent( NULL)
 	,	lastParentInode( 0)
 	,	lastParentRef( NULL)
@@ -79,12 +79,12 @@ BmNodeMonitor::BmNodeMonitor()
 	MessageReceived( msg)
 		-	
 \*------------------------------------------------------------------------------*/
-void BmNodeMonitor::MessageReceived( BMessage* msg) {
+void BmMailMonitor::MessageReceived( BMessage* msg) {
 	try {
 		switch( msg->what) {
 			case B_NODE_MONITOR: {
 				if (TheMailFolderList)
-					HandleNodeMonitorMsg( msg);
+					HandleMailMonitorMsg( msg);
 				break;
 			}
 			case B_QUERY_UPDATE: {
@@ -98,15 +98,15 @@ void BmNodeMonitor::MessageReceived( BMessage* msg) {
 	}
 	catch( exception &err) {
 		// a problem occurred, we tell the user:
-		BM_SHOWERR( BString("NodeMonitor: ") << err.what());
+		BM_SHOWERR( BString("MailMonitor: ") << err.what());
 	}
 }
 
 /*------------------------------------------------------------------------------*\
-	HandleNodeMonitorMsg()
+	HandleMailMonitorMsg()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmNodeMonitor::HandleNodeMonitorMsg( BMessage* msg) {
+void BmMailMonitor::HandleMailMonitorMsg( BMessage* msg) {
 	int32 opcode = msg->FindInt32( "opcode");
 	entry_ref eref;
 	const char *name;
@@ -114,7 +114,7 @@ void BmNodeMonitor::HandleNodeMonitorMsg( BMessage* msg) {
 	struct stat st;
 	status_t err;
 	ino_t node;
-	BM_LOG2( BM_LogMailTracking, BString("NodeMonitorMessage nr.") << ++counter << " received.");
+	BM_LOG2( BM_LogMailTracking, BString("MailMonitorMessage nr.") << ++counter << " received.");
 	BmMailFolder* folder = NULL;
 	try {
 		switch( opcode) {
@@ -152,7 +152,7 @@ void BmNodeMonitor::HandleNodeMonitorMsg( BMessage* msg) {
 				}
 				{	// new scope for lock:
 					BmAutolock lock( TheMailFolderList->mModelLocker);
-					lock.IsLocked() 						|| BM_THROW_RUNTIME( "HandleNodeMonitorMsg(): Unable to get lock");
+					lock.IsLocked() 						|| BM_THROW_RUNTIME( "HandleMailMonitorMsg(): Unable to get lock");
 					// check if the parent dir is the same as it was for the last message:
 					if (!lastParentRef || lastParentInode != eref.directory) {
 						// try to find new parent dir in our own structure:
@@ -265,7 +265,7 @@ void BmNodeMonitor::HandleNodeMonitorMsg( BMessage* msg) {
 	HandleQueryUpdateMsg()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmNodeMonitor::HandleQueryUpdateMsg( BMessage* msg) {
+void BmMailMonitor::HandleQueryUpdateMsg( BMessage* msg) {
 	int32 opcode = msg->FindInt32( "opcode");
 	status_t err;
 	ino_t node;
@@ -566,7 +566,7 @@ void BmMailFolderList::QueryForNewMails() {
 													|| BM_THROW_RUNTIME( BString("SetVolume(): ") << strerror(err));
 	(err = mNewMailQuery.SetPredicate( "MAIL:status == 'New'")) == B_OK
 													|| BM_THROW_RUNTIME( BString("SetPredicate(): ") << strerror(err));
-	(err = mNewMailQuery.SetTarget( BMessenger( TheNodeMonitor))) == B_OK
+	(err = mNewMailQuery.SetTarget( BMessenger( TheMailMonitor))) == B_OK
 													|| BM_THROW_RUNTIME( BString("QueryForNewMails(): could not set query target.\n\nError:") << strerror(err));
 	(err = mNewMailQuery.Fetch()) == B_OK
 													|| BM_THROW_RUNTIME( BString("Fetch(): ") << strerror(err));

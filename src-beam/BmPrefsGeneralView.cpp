@@ -197,6 +197,8 @@ void BmPrefsGeneralView::Initialize() {
 	mRef = BmMailRef::CreateDummyInstance( mRefList.Get(), 1);
 	mRefList->AddItemToList( mRef.Get());
 	mLayoutView->StartJob( mRefList.Get());
+	
+	mLayoutView->Unarchive( ThePrefs->GetMsg("MailRefLayout"));
 
 	mMailMoverShowControl->SetTarget( this);
 	mPopperRemoveControl->SetTarget( this);
@@ -217,10 +219,9 @@ void BmPrefsGeneralView::WriteStateInfo() {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmPrefsGeneralView::SaveData() {
-	BMessage* prefsMsg = ThePrefs->PrefsMsg();
 	BMessage layoutMsg;
 	if (mLayoutView->Archive( &layoutMsg, false) == B_OK)
-		prefsMsg->ReplaceMessage("MailRefLayout", &layoutMsg);
+		ThePrefs->SetMsg("MailRefLayout", &layoutMsg);
 	ThePrefs->Store();
 }
 

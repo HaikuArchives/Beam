@@ -315,7 +315,8 @@ BDirectory* BmResources::GetFolder( const BString& name, BDirectory& dir) {
 		-	
 \*------------------------------------------------------------------------------*/
 BPicture* BmResources::CreatePictureFor( BBitmap* image, float width, float height,
-													  rgb_color background) {
+													  rgb_color background,
+													  bool transparentBack) {
 	BPicture* picture = new BPicture();
 	BRect rect(0,0,width-1,height-1);
 	BView* view = new BView( rect, NULL, B_FOLLOW_NONE, 0);
@@ -324,8 +325,10 @@ BPicture* BmResources::CreatePictureFor( BBitmap* image, float width, float heig
 	drawImage->Lock();
 	view->BeginPicture( picture);
 	view->SetViewColor( background);
-	view->SetLowColor( background);
-	view->FillRect( rect, B_SOLID_LOW);
+	if (!transparentBack) {
+		view->SetLowColor( background);
+		view->FillRect( rect, B_SOLID_LOW);
+	}
 	if (image) {
 		BRect imageRect = image->Bounds();
 		float imageWidth = imageRect.Width();

@@ -41,6 +41,7 @@
 //**** Forward name declarations
 //******************************************************************************************************
 class AboutView;
+class BTextView;
 
 
 //******************************************************************************************************
@@ -60,7 +61,7 @@ class ImageAboutWindow : public BWindow
 		//Constructor and destructor
 		ImageAboutWindow(const char* window_title, const char* app_title, const BBitmap* bmap,
 			float icon_sidebar_offset, const char* body_text, const char* email=NULL, 
-			const char* web=NULL);
+			const char* web=NULL, const char* credits=NULL);
 			//icon_resource_name specifies the name of a 'bits' resource holding a logo image file for
 			//loading by BTranslationUtils.   The image should have dark grey (R184,G184,B184) on the
 			//left hand side, and light grey (R216,G216,B216) on the right hand side of the center of
@@ -69,6 +70,7 @@ class ImageAboutWindow : public BWindow
 			//resource is loaded and displayed in the about window.
  		virtual ~ImageAboutWindow();
 		void MouseDown(BPoint point);
+		void ScrollCredits( void);
 
 		//BWindow overrides
 		virtual void MessageReceived(BMessage *message);
@@ -97,6 +99,10 @@ class ImageAboutWindow : public BWindow
 		BRect m_left_of_logo;
 		BRect m_below_logo;
 
+		BStringView* m_credits_label;
+		BTextView* m_credits_view;
+		float m_credits_pos;
+		
 		float m_bold_font_ascent;
 		float m_plain_font_ascent;
 };
@@ -111,12 +117,14 @@ class AboutView : public BView
 		AboutView(BRect rect, ImageAboutWindow* parent);
 
 		ImageAboutWindow* m_parent;
+
 		friend ImageAboutWindow;
 
 	public:
 		//BView override
 		void Draw(BRect update_rect);
 		void MouseDown(BPoint point);
+		void Pulse( void);
 };
 
 

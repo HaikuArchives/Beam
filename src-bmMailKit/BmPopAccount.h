@@ -140,7 +140,7 @@ public:
 	inline void SignatureName( const BString &s)	 { mSignatureName = s;  TellModelItemUpdated( UPD_ALL); }
 	inline void SMTPAccount( const BString &s){ mSMTPAccount = s;  TellModelItemUpdated( UPD_ALL); }
 	inline void Username( const BString &s) 	{ mUsername = s;  TellModelItemUpdated( UPD_ALL); }
-	inline void CheckInterval( int16 i) 		{ mCheckInterval = i; mCheckIntervalString = BString()<<i;  TellModelItemUpdated( UPD_ALL); }
+	inline void CheckInterval( int16 i) 		{ mCheckInterval = i; mCheckIntervalString = i ? BString()<<i : "";  TellModelItemUpdated( UPD_ALL); }
 
 	bool GetPOPAddress( BNetAddress* addr) const;
 

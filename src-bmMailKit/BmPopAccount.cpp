@@ -64,7 +64,7 @@ BmPopAccount::BmPopAccount( const char* name, BmPopAccountList* model)
 	,	mMarkedAsBitBucket( false)
 	,	mPwdStoredOnDisk( false)
 	,	mCheckInterval( 0)
-	,	mCheckIntervalString( "0")
+	,	mCheckIntervalString( "")
 	,	mIntervalRunner( NULL)
 {
 	SetupIntervalRunner();
@@ -104,10 +104,10 @@ BmPopAccount::BmPopAccount( BMessage* archive, BmPopAccountList* model)
 	}
 	if (version > 1) {
 		mCheckInterval = FindMsgInt16( archive, MSG_CHECK_INTERVAL);
-		mCheckIntervalString << mCheckInterval;
+		if (mCheckInterval)
+			mCheckIntervalString << mCheckInterval;
 	} else {
 		mCheckInterval = 0;
-		mCheckIntervalString << 0;
 	}
 	SetupIntervalRunner();
 }
@@ -251,7 +251,7 @@ void BmPopAccount::SetupIntervalRunner() {
 		msg->AddString( BmPopAccountList::MSG_ITEMKEY, Key().String());
 		msg->AddBool( BmPopAccountList::MSG_AUTOCHECK, true);
 		mIntervalRunner = new BMessageRunner( be_app_messenger, msg, 
-														  mCheckInterval*15*1000*1000, -1);
+														  mCheckInterval*60*1000*1000, -1);
 	}
 }
 

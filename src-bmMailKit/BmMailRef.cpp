@@ -54,7 +54,11 @@ BmRef<BmMailRef> BmMailRef::CreateInstance( BmMailRefList* model, entry_ref &ere
 		BmRef<BmMailRef> mailRef( dynamic_cast<BmMailRef*>( proxy->FetchObject( key)));
 		if (mailRef) {
 			// update mailref with new info:
-			mailRef->mListModel = model;
+			if (model) {
+				// only update list if we really have one (don't clobber existing list
+				// with NULL value):
+				mailRef->mListModel = model;
+			}
 			mailRef->EntryRef( eref);
 			return mailRef;
 		}
