@@ -784,6 +784,8 @@ void BmMailRefView::AddMailRefMenu( BMenu* menu, BHandler* target,
 	if (isContextMenu)
 		filterMenu->SetFont( &font);
 	menu->AddItem( filterMenu);
+	AddItemToMenu( menu, CreateMenuItem( "Create Filter From Mail...", new BMessage( BMM_CREATE_FILTER)), target);
+
 	menu->AddSeparatorItem();
 
 	if (isContextMenu) {
