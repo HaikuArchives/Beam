@@ -47,6 +47,7 @@ class BPath;
 using namespace regexx;
 
 #include "BmApp.h"
+#include "BmPrefs.h"
 #include "BmStorageUtil.h"
 
 #include "TestBeam.h"
@@ -143,6 +144,9 @@ BTestSuite* CreateMailParserTestSuite() {
 		-	
 \*------------------------------------------------------------------------------*/
 int32 StartTests( void* args) {
+	// wait until app ist initialized:
+	testApp->StartupLocker()->Lock();
+
 	// create ascii-alphabet:
 	for( uint8 h=0; h<16; ++h) {
 		for( uint8 l=0; l<16; ++l) {
@@ -151,10 +155,6 @@ int32 StartTests( void* args) {
 		}
 	}
 	
-	// wait for Beam to be completely up and running:
-	while( !testApp || !testApp->IsRunning())
-		snooze( 200*1000);
-
 	// change to src-test folder in order to be able to read
 	// testdata:
 	BmString testPath(testApp->AppPath());
@@ -164,6 +164,13 @@ int32 StartTests( void* args) {
 		HaveTestdata = true;
 		chdir( testPath.String());
 	}
+	// use a different mailbox if in test-mode:
+	ThePrefs->SetString( "MailboxPath", testPath+"/mail");
+	// allow app to start running...
+	testApp->StartupLocker()->Unlock();
+	snooze( 200*1000);
+	// ...and wait for Beam to be completely up and running:
+	testApp->StartupLocker()->Lock();
 
 	// we use only statically linked tests since linking each test against
 	// Beam_in_Parts.a would yield large binaries for each test, no good!

@@ -38,6 +38,7 @@
 #include "BmString.h"
 
 class BDeskbar;
+class BLocker;
 class BView;
 class BmWindow;
 
@@ -84,7 +85,7 @@ public:
 
 	// getters
 	inline bool IsQuitting()				{ return mIsQuitting; }
-	inline bool IsRunning()					{ return mIsRunning; }
+	inline BLocker* StartupLocker()		{ return mStartupLocker; }
 	inline const BmString& AppPath()		{ return mAppPath; }
 
 	BmString BmAppVersion;
@@ -111,7 +112,7 @@ private:
 	BMessage* mPrintSetup;
 	BPrintJob mPrintJob;
 
-	bool mIsRunning;
+	BLocker* mStartupLocker;
 	
 	BmString mAppPath;
 	

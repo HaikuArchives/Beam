@@ -105,7 +105,7 @@ BmApplication::BmApplication( const char* sig)
 	,	mMailWin( NULL)
 	,	mPrintSetup( NULL)
 	,	mPrintJob( "Mail")
-	,	mIsRunning( false)
+	,	mStartupLocker( new BLocker( "StartupLocker", false))
 {
 	if (InstanceCount > 0)
 		throw BM_runtime_error( "Trying to initialize more than one instance "
@@ -117,6 +117,8 @@ BmApplication::BmApplication( const char* sig)
 
 	bmApp = this;
 	
+	mStartupLocker->Lock();
+
 	try {
 		BmAppName = bmApp->Name();
 		// set version info:
@@ -218,6 +220,7 @@ BmApplication::BmApplication( const char* sig)
 
 		mInitCheck = B_OK;
 		InstanceCount++;
+		mStartupLocker->Unlock();
 		BM_LOG( BM_LogApp, BmString("App-initialization done."));
 	} catch (BM_error& err) {
 		BM_SHOWERR( err.what());
@@ -247,6 +250,7 @@ BmApplication::~BmApplication() {
 	delete ThePrefs;
 	delete TheResources;
 	delete TheLogHandler;
+	delete mStartupLocker;
 	InstanceCount--;
 }
 
@@ -287,6 +291,9 @@ thread_id BmApplication::Run() {
 		if (BeamInTestMode) {
 			// in test-mode the main-window will only be shown when neccessary:
 			TheMainWindow->Hide();
+			// Now wait until Test-thread allows us to start...
+			snooze( 200*1000);
+			mStartupLocker->Lock();
 		}
 
 		EnsureIndexExists( "MAIL:identity");
@@ -320,9 +327,9 @@ thread_id BmApplication::Run() {
 		BM_LOG( BM_LogApp, BmString("...reading SMTP-accounts..."));
 		TheSmtpAccountList->StartJobInThisThread();
 
-		mIsRunning = true;
+		if (BeamInTestMode)
+			mStartupLocker->Unlock();
 		tid = inherited::Run();
-		mIsRunning = false;
 	
 		ThePopAccountList->Store();
 							// always store pop-account-list since the list of 
