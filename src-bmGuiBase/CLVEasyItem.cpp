@@ -186,7 +186,7 @@ void CLVEasyItem::DrawItemColumn(BView *owner, BRect item_column_rect, int32 col
 	if(column_index < 0)
 		return;
 
-	int32 type = ((int32)m_column_types.ItemAt(column_index)) & CLVColTypesMask;
+	int32 type = ((int32)m_column_types.ItemAt(column_index));
 	if(type == 0)
 		return;
 	bool right_justify = false;

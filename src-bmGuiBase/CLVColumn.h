@@ -39,14 +39,15 @@ class CLVListItem;
 //******************************************************************************************************
 enum
 {
-	CLVColNone =				0x00000000,
+	CLVColNone =					0x00000000,
 	CLVColStaticText = 			0x00000001,
-	CLVColBitmap = 				0x00000003,
-	CLVColUserText = 			0x00000004,
+	CLVColBitmap = 				0x00000002,
+	CLVColUserText = 				0x00000003,
 
-	CLVColTypesMask =			0x00000007,
+	CLVColTypesMask =				0x00000003,
 
 	CLVColFlagRightJustify =	0x00000020
+
 };
 
 
