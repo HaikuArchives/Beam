@@ -287,7 +287,7 @@ BmPrefsSendMailView::BmPrefsSendMailView()
 								this, 
 								new BMessage( BM_POP_SELECTED),
 								&BmRosterBase::RebuildPopAccountMenu, 
-								BM_MC_LABEL_FROM_MARKED
+								BM_MC_LABEL_FROM_MARKED | BM_MC_ADD_NONE_ITEM
 							)
 						),
 						new HGroup( 
