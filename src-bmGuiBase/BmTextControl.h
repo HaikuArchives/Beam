@@ -31,6 +31,7 @@
 #ifndef _BmTextControl_h
 #define _BmTextControl_h
 
+#include <MenuField.h>
 #include <TextControl.h>
 
 #include <layout.h>
