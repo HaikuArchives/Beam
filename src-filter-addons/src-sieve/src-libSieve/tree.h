@@ -66,12 +66,14 @@ struct Test {
 	stringlist_t *sl; /* exists */
 	struct { /* it's a header test */
 	    int comptag;
+	    int relation;
 	    comparator_t *comp;
 	    stringlist_t *sl;
 	    patternlist_t *pl;
 	} h;
 	struct { /* it's an address or envelope test */
 	    int comptag;
+	    int relation;
 	    comparator_t *comp;
 	    stringlist_t *sl;
 	    patternlist_t *pl;
@@ -116,6 +118,7 @@ struct Commandlist {
 	} n;
 	struct { /* it's a denotify action */
 	    int comptag;
+	    int relation;
 	    comparator_t *comp;
 	    void *pattern;
 	    const char *priority;

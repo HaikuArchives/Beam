@@ -37,6 +37,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 typedef int comparator_t(const char *, const char *);
 
 /* returns a pointer to a comparator function given it's name */
-comparator_t *lookup_comp(const char *comp, int mode);
+comparator_t *lookup_comp(const char *comp, int mode, int relation);
 
 #endif

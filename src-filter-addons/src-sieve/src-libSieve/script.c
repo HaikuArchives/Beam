@@ -103,9 +103,15 @@ int script_require(sieve_script_t *s, char *req)
     } else if (!strcmp("subaddress", req)) {
 	s->support.subaddress = 1;
 	return 1;
+    } else if (!strcmp("relational", req)) {
+	s->support.relational = 1;
+	return 1;
     } else if (!strcmp("comparator-i;octet", req)) {
 	return 1;
     } else if (!strcmp("comparator-i;ascii-casemap", req)) {
+	return 1;
+    } else if (!strcmp("comparator-i;ascii-numeric", req)) {
+	s->support.i_ascii_numeric = 1;
 	return 1;
     }
     return 0;
@@ -333,12 +339,24 @@ static int evaltest(sieve_interp_t *i, test_t *t, void *m)
 	for (sl = t->u.h.sl; sl != NULL && !res; sl = sl->next) {
 	    const char **val;
 	    int l;
+	    unsigned long count;
+	    char countStr[20];
 	    if (i->getheader(m, sl->s, &val) != SIEVE_OK)
 		continue;
-	    for (pl = t->u.h.pl; pl != NULL && !res; pl = pl->next) {
-		for (l = 0; val[l] != NULL && !res; l++) {
-		    res |= t->u.h.comp(pl->p, val[l]);
+	    switch(t->u.h.comptag) {
+	    case COUNT:
+		for (count = 0; val[count] != NULL; count++)
+		    ;
+		sprintf(countStr, "%lu", count);
+		for (pl = t->u.h.pl; pl != NULL && !res; pl = pl->next)
+		    res |= t->u.h.comp(pl->p, countStr);
+		break;
+	    default:
+		for (pl = t->u.h.pl; pl != NULL && !res; pl = pl->next) {
+		    for (l = 0; val[l] != NULL && !res; l++)
+			res |= t->u.h.comp(pl->p, val[l]);
 		}
+		break;
 	    }
 	}
 	break;

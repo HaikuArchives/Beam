@@ -6,6 +6,7 @@ SubDirHdrs $(TOP) src-bmGuiBase ;
 SubDirHdrs $(TOP) src-filter-addons src-sieve src-libSieve ;
 SubDirHdrs $(OBJECTS_DIR) src-filter-addons src-sieve src-libSieve ;
 
+SubDirSysHdrs /boot/home/config/include/cppunit ;
 SubDirSysHdrs /boot/home/config/include ;
 SubDirSysHdrs /boot/home/config/include/liblayout ;
 
@@ -22,3 +23,4 @@ AddOn Sieve
 SubInclude TOP src-filter-addons src-sieve src-libSieve ;
 
 MakeLocate Sieve : [ FDirName $(DISTRO_DIR) add-ons Filters ] ;
+

@@ -50,6 +50,8 @@ const int BM_MAX_MATCH_COUNT = 20;
 \*------------------------------------------------------------------------------*/
 class BmSieveFilter : public BmFilterAddon {
 	typedef BmFilterAddon inherited;
+	
+	friend class SieveTest;
 
 public:
 	BmSieveFilter( const BmString& name, const BMessage* archive);
@@ -57,7 +59,6 @@ public:
 	
 	// native methods:
 	bool CompileScript();
-	void RegisterCallbacks( sieve_interp_t* interp);
 	BLocker* SieveLock();
 	virtual bool AskBeforeFileInto()		{ return false; }
 
@@ -80,6 +81,9 @@ public:
 	static int sieve_fileinto( void* action_context, void* interp_context, 
 			   				  		void* script_context, void* message_context, 
 			   				  		const char** errmsg);
+	static int sieve_reject( void* action_context, void* interp_context, 
+			   					 void* script_context, void* message_context, 
+			   					 const char** errmsg);
 	static int sieve_notify( void* action_context, void*, 
 			   				  	 void*, void* message_context, 
 			   				  	 const char**);
@@ -112,6 +116,8 @@ public:
 	static const int16 nArchiveVersion;
 
 protected:
+	void RegisterCallbacks( sieve_interp_t* interp);
+
 	BmString mName;
 							// the name of this filter-implementation
 	BmString mContent;
@@ -225,6 +231,8 @@ class LayeredGroup;
 class BmFilterScrollView;
 class BmFilterGroup;
 class Space;
+class MButton;
+class HGroup;
 
 enum {
 	BM_ANY_ALL_SELECTED			= 'bmTa',

@@ -45,6 +45,8 @@ struct sieve_script {
 	int notify    : 1;
 	int regex     : 1;
 	int subaddress: 1;
+	int relational: 1;
+	int i_ascii_numeric: 1;
     } support;
 
     void *script_context;

@@ -7,6 +7,8 @@ SubDirHdrs $(TOP) src-bmMailKit ;
 SubDirHdrs $(TOP) src-bmDaemon ;
 SubDirHdrs $(TOP) src-bmGuiBase ;
 SubDirHdrs $(TOP) src-deskbarItem ;
+SubDirHdrs $(TOP) src-filter-addons src-sieve ;
+SubDirHdrs $(TOP) src-filter-addons src-sieve src-libSieve ;
 
 SubDirSysHdrs /boot/home/config/include/cppunit ;
 SubDirSysHdrs /boot/home/config/include ;
@@ -23,10 +25,6 @@ if $(OSPLAT) = PPC {
 					 ;
 }
 
-# use the zeta stdc++-lib instead of the R5-provided version, as that
-# one contains a buggy std::string implementation:
-FIXEDSTDC++LIB = stdc++.r4 ;
-
 Application TestBeam
 	:  
 		Base64DecoderTest.cpp
@@ -42,14 +40,16 @@ Application TestBeam
 		MultiLockerTest.cpp                   
 		QuotedPrintableDecoderTest.cpp  
 		QuotedPrintableEncoderTest.cpp  
+		SieveTest.cpp
 		StringTest.cpp
 		TestBeam.cpp
 		Utf8DecoderTest.cpp
 		Utf8EncoderTest.cpp
 	: 	
+		$(OBJECTS_DIR)/src-filter-addons/src-sieve/BmSieveFilter.o libsieve.a
 		beamInParts.a bmMailKit.so bmDaemon.so 
 		bmGuiBase.so bmRegexx.so bmBase.so 
-		layout tracker cppunit $(FIXEDSTDC++LIB) translation be
+		layout tracker cppunit $(STDC++LIB) translation be
 	;
 XRes TestBeam 
 	: 

@@ -73,7 +73,7 @@ int sieve_interp_alloc(sieve_interp_t **interp, void *interp_context)
 }
 
 static const char *sieve_extensions = "fileinto reject envelope vacation"
-                                      " imapflags notify subaddress" 
+                                      " imapflags notify subaddress relational" 
 #ifdef ENABLE_REGEX
 " regex";
 #else

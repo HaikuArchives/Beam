@@ -270,6 +270,7 @@ void BmSieveFilter::RegisterCallbacks( sieve_interp_t* interp) {
 	sieve_register_keep( interp, BmSieveFilter::sieve_keep);
 	sieve_register_discard( interp, BmSieveFilter::sieve_discard);
 	sieve_register_fileinto( interp, BmSieveFilter::sieve_fileinto);
+	sieve_register_reject( interp, BmSieveFilter::sieve_reject);
 	sieve_register_notify( interp, BmSieveFilter::sieve_notify);
 	sieve_register_imapflags( interp, NULL);
 
@@ -415,6 +416,26 @@ int BmSieveFilter::sieve_fileinto( void* action_context, void* script_context,
 				msgContext->folderName = pathbuf;
 		} else
 			msgContext->folderName = fileintoContext->mailbox;
+	}
+	return SIEVE_OK;
+}
+
+/*------------------------------------------------------------------------------*\
+	sieve_reject()
+		-	
+\*------------------------------------------------------------------------------*/
+int BmSieveFilter::sieve_reject( void* action_context, void* script_context, 
+			   				  			void*, void* message_context, 
+			   				 			const char**) {
+	BmMsgContext* msgContext = static_cast< BmMsgContext*>( message_context);
+	sieve_reject_context* rejectContext 
+		= static_cast< sieve_reject_context*>( action_context);
+	BmSieveFilter* filter = static_cast< BmSieveFilter*>( script_context);
+	if (msgContext && filter && rejectContext) {
+		BM_LOG3( BM_LogFilter, BmString("Sieve-Addon: sieve_reject called "
+												  "with msg ")
+												  <<rejectContext->msg);
+		msgContext->rejectMsg = rejectContext->msg;
 	}
 	return SIEVE_OK;
 }

@@ -68,6 +68,7 @@ using namespace regexx;
 #include "MultiLockerTest.h"
 #include "QuotedPrintableDecoderTest.h"
 #include "QuotedPrintableEncoderTest.h"
+#include "SieveTest.h"
 #include "StringTest.h"
 #include "Utf8DecoderTest.h"
 #include "Utf8EncoderTest.h"
@@ -181,6 +182,19 @@ BTestSuite* CreateMailParserTestSuite() {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
+BTestSuite* CreateFilterAddonsTestSuite() {
+	BTestSuite *suite = new BTestSuite("FilterAddons");
+
+	// ##### Add test suites here #####
+	suite->addTest("FilterAddons::Sieve", 
+						SieveTest::suite());
+	return suite;
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
 int32 StartTests( void* args) {
 	try {
 		// wait until app ist initialized:
@@ -229,6 +243,7 @@ int32 StartTests( void* args) {
 		shell.AddSuite( CreateBmBaseTestSuite() );
 		shell.AddSuite( CreateMailTrackerTestSuite() );
 		shell.AddSuite( CreateMailParserTestSuite() );
+		shell.AddSuite( CreateFilterAddonsTestSuite() );
 	
 		BTestShell::SetGlobalShell(&shell);
 	

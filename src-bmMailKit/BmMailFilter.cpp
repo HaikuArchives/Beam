@@ -229,6 +229,11 @@ void BmMailFilter::ExecuteFilter( BmMail* mail) {
 							BM_LOG( BM_LogFilter, 
 									  BmString("Filter ") << filter->Name() 
 									  		<< ": moving mail to trash.");
+						if (msgContext.rejectMsg.Length())
+							BM_LOG( BM_LogFilter, 
+									  BmString("Filter ") << filter->Name() 
+									  		<< ": rejecting mail with msg " 
+									  		<< msgContext.rejectMsg);
 						if (msgContext.stopProcessing) {
 							BM_LOG( BM_LogFilter, 
 									  BmString("Filter ") << filter->Name() 
@@ -266,6 +271,11 @@ void BmMailFilter::ExecuteFilter( BmMail* mail) {
 				BM_LOG( BM_LogFilter, 
 						  BmString("Filter ") << mFilter->Name() 
 						  		<< ": moving mail to trash.");
+			if (msgContext.rejectMsg.Length())
+				BM_LOG( BM_LogFilter, 
+						  BmString("Filter ") << mFilter->Name() 
+						  		<< ": rejecting mail with msg " 
+						  		<< msgContext.rejectMsg);
 		}
 	}
 	bool needToStore = false;
@@ -276,6 +286,9 @@ void BmMailFilter::ExecuteFilter( BmMail* mail) {
 	if (mail->Status() != msgContext.status) {
 		mail->MarkAs( msgContext.status.String());
 		needToStore = true;
+	}
+	if (msgContext.rejectMsg.Length()) {
+		// ToDo (maybe): implement sending of MDN
 	}
 	if (msgContext.moveToTrash) {
 		mail->MoveToTrash( true);
