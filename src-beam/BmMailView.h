@@ -69,7 +69,7 @@ enum {
 	utility function to wrap lines at word boundary:
 \*------------------------------------------------------------------------------*/
 void WordWrap( const BmString& in, BmString& out, int32 maxLineLen, 
-					BmString nl, bool keepUrls);
+					BmString nl);
 
 /*------------------------------------------------------------------------------*\
 	BmMailView

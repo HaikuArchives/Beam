@@ -67,10 +67,10 @@ using namespace regexx;
 		-	resulting text is stored in param out
 		-	the string in has to be UTF8-encoded for this function to work 
 			correctly!
-		-	if keepUrls is set, urls will be preserved (i.e. not be wrapped).
+		-	urls will be preserved (i.e. not be wrapped).
 \*------------------------------------------------------------------------------*/
 void WordWrap( const BmString& in, BmString& out, int32 maxLineLen, 
-					BmString nl, bool keepUrls) {
+					BmString nl) {
 	if (!in.Length()) {
 		out.Truncate( 0, false);
 		return;
@@ -101,7 +101,7 @@ void WordWrap( const BmString& in, BmString& out, int32 maxLineLen,
 			lineLen++;
 		}
 		while (lineLen > maxLineLen) {
-			if (keepUrls && lastSpcPos>lastPos) {
+			if (lastSpcPos>lastPos) {
 				// special-case lines containing only quotes and a long word,
 				// since in this case we want to avoid wrapping between quotes
 				// and the word:
@@ -119,16 +119,15 @@ void WordWrap( const BmString& in, BmString& out, int32 maxLineLen,
 			}
 			if (lastSpcPos==B_ERROR || lastSpcPos<lastPos) {
 				// line doesn't contain any space character (before maxline-length), 
-				// we simply break it at right margin (unless keepUrls is set):
+				// we simply break it at right margin (unless it's an URL):
 				isUrl = (
-					keepUrls 
-					&& rxUrl.exec( 
+					rxUrl.exec( 
 						BmString( in.String()+lastPos, pos-lastPos),
 						"(https?://|ftp://|nntp://|file://|mailto:)",
 						Regexx::nocase
 					)
 				);
-				if (keepUrls && isUrl) {
+				if (isUrl) {
 					// find next space or end of line and break line there:
 					int32 nextSpcPos = in.FindFirst( " ", lastPos+maxLineLen);
 					int32 nlPos = in.FindFirst( nl, lastPos+maxLineLen);
@@ -754,21 +753,16 @@ void BmMailView::InsertText( const char *text, int32 length, int32 offset,
 		-	
 \*------------------------------------------------------------------------------*/
 void BmMailView::GetWrappedText( BmString& out, bool hardWrapIfNeeded) {
-	BmString editedText = Text();
-	int32 lineLen;
-	bool keepLongWords;
 	if (hardWrapIfNeeded && ThePrefs->GetBool( "HardWrapMailText")) {
 		// we are in hard-wrap mode, so we use the right margin from the 
-		// rulerview as right border:
-		lineLen = mRulerView->IndicatorPos();
-		keepLongWords = true;				// allow to keep long words (e.g. URLs)
+		// rulerview as right border and wrap the mail-text accordingly:
+		BmString editedText = Text();
+		int32 lineLen = mRulerView->IndicatorPos();
+		WordWrap( editedText, out, lineLen, "\n");
 	} else {
-		// we are in softwrap mode, but there might still be a 78 chars limit
-		// set by prefs (if not, we use the maximum line length of 998 chars):
-		lineLen = ThePrefs->GetInt( "MaxLineLenForHardWrap", 998);
-		keepLongWords = false;				// never exceed 998 chars in one line
+		// we are in softwrap mode:
+		out = Text();
 	}
-	WordWrap( editedText, out, lineLen, "\n", keepLongWords);
 	// update mail's right margin according to rulerview:
 	mCurrMail->RightMargin( mRulerView->IndicatorPos());
 }
