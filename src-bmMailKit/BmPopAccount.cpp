@@ -422,6 +422,28 @@ void BmPopAccountList::ResetToSaved() {
 }
 
 /*------------------------------------------------------------------------------*\
+	ForeignKeyChanged( keyName, oldVal, newVal)
+		-	updates the specified foreign-key with the given new value
+\*------------------------------------------------------------------------------*/
+void BmPopAccountList::ForeignKeyChanged( const BmString& key, 
+														const BmString& oldVal, 
+														const BmString& newVal) {
+	BmAutolockCheckGlobal lock( ModelLocker());
+	lock.IsLocked() 							|| BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
+	BmModelItemMap::const_iterator iter;
+	for( iter = begin(); iter != end(); ++iter) {
+		BmPopAccount* acc = dynamic_cast< BmPopAccount*>( iter->second.Get());
+		if (key == BmPopAccount::MSG_FILTER_CHAIN) {
+			if (acc && acc->FilterChain() == oldVal)
+				acc->FilterChain( newVal);
+		} else if (key == BmPopAccount::MSG_HOME_FOLDER) {
+			if (acc && acc->HomeFolder() == oldVal)
+				acc->HomeFolder( newVal);
+		}
+	}
+}
+
+/*------------------------------------------------------------------------------*\
 	CheckMail( allAccounts)
 		-	checks mail for the accounts that have been marked to be part of the
 			primary account-set

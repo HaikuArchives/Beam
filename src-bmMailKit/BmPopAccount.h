@@ -65,23 +65,6 @@ class BmPopAccount : public BmListModelItem {
 	typedef BmListModelItem inherited;
 	friend BmPopAccountList;
 
-	// archivable components:
-	static const char* const MSG_NAME;
-	static const char* const MSG_USERNAME;
-	static const char* const MSG_PASSWORD;
-	static const char* const MSG_POP_SERVER;
-	static const char* const MSG_CHECK_MAIL;
-	static const char* const MSG_DELETE_MAIL;
-	static const char* const MSG_PORT_NR;
-	static const char* const MSG_UID;
-	static const char* const MSG_AUTH_METHOD;
-	static const char* const MSG_MARK_DEFAULT;
-	static const char* const MSG_STORE_PWD;
-	static const char* const MSG_CHECK_INTERVAL;
-	static const char* const MSG_FILTER_CHAIN;
-	static const char* const MSG_HOME_FOLDER;
-	static const int16 nArchiveVersion;
-
 public:
 	BmPopAccount( const char* name, BmPopAccountList* model);
 	BmPopAccount( BMessage* archive, BmPopAccountList* model);
@@ -132,6 +115,23 @@ public:
 
 	static const char* const AUTH_POP3;
 	static const char* const AUTH_APOP;
+
+	// archivable components:
+	static const char* const MSG_NAME;
+	static const char* const MSG_USERNAME;
+	static const char* const MSG_PASSWORD;
+	static const char* const MSG_POP_SERVER;
+	static const char* const MSG_CHECK_MAIL;
+	static const char* const MSG_DELETE_MAIL;
+	static const char* const MSG_PORT_NR;
+	static const char* const MSG_UID;
+	static const char* const MSG_AUTH_METHOD;
+	static const char* const MSG_MARK_DEFAULT;
+	static const char* const MSG_STORE_PWD;
+	static const char* const MSG_CHECK_INTERVAL;
+	static const char* const MSG_FILTER_CHAIN;
+	static const char* const MSG_HOME_FOLDER;
+	static const int16 nArchiveVersion;
 
 private:
 	BmPopAccount();					// hide default constructor
@@ -186,6 +186,8 @@ public:
 	void ResetToSaved();
 	
 	// overrides of listmodel base:
+	void ForeignKeyChanged( const BmString& key, 
+									const BmString& oldVal, const BmString& newVal);
 	const BmString SettingsFileName();
 	void InstantiateItems( BMessage* archive);
 	int16 ArchiveVersion() const			{ return nArchiveVersion; }

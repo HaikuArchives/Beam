@@ -147,6 +147,8 @@ public:
 	inline void CurrIdentity( BmIdentity* i) { mCurrIdentity = i; }
 
 	// overrides of listmodel base:
+	void ForeignKeyChanged( const BmString& key, 
+									const BmString& oldVal, const BmString& newVal);
 	const BmString SettingsFileName();
 	void InstantiateItems( BMessage* archive);
 	status_t Archive( BMessage* archive, bool deep = true) const;

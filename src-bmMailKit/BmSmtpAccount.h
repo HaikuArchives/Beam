@@ -62,18 +62,6 @@ class BmSmtpAccount : public BmListModelItem {
 	typedef BmListModelItem inherited;
 	typedef vector< BmRef< BmMail> > BmMailVect;
 
-	// archivable components:
-	static const char* const MSG_NAME;
-	static const char* const MSG_USERNAME;
-	static const char* const MSG_PASSWORD;
-	static const char* const MSG_SMTP_SERVER;
-	static const char* const MSG_DOMAIN;
-	static const char* const MSG_AUTH_METHOD;
-	static const char* const MSG_PORT_NR;
-	static const char* const MSG_ACC_FOR_SAP;
-	static const char* const MSG_STORE_PWD;
-	static const int16 nArchiveVersion;
-
 public:
 	BmSmtpAccount( const char* name, BmSmtpAccountList* model);
 	BmSmtpAccount( BMessage* archive, BmSmtpAccountList* model);
@@ -116,6 +104,18 @@ public:
 	static const char* const AUTH_SMTP_AFTER_POP;
 	static const char* const AUTH_PLAIN;
 	static const char* const AUTH_LOGIN;
+
+	// archivable components:
+	static const char* const MSG_NAME;
+	static const char* const MSG_USERNAME;
+	static const char* const MSG_PASSWORD;
+	static const char* const MSG_SMTP_SERVER;
+	static const char* const MSG_DOMAIN;
+	static const char* const MSG_AUTH_METHOD;
+	static const char* const MSG_PORT_NR;
+	static const char* const MSG_ACC_FOR_SAP;
+	static const char* const MSG_STORE_PWD;
+	static const int16 nArchiveVersion;
 
 private:
 	BmSmtpAccount();					// hide default constructor

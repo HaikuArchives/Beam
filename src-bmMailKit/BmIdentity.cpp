@@ -246,6 +246,31 @@ const BmString BmIdentityList::SettingsFileName() {
 }
 
 /*------------------------------------------------------------------------------*\
+	ForeignKeyChanged( keyName, oldVal, newVal)
+		-	updates the specified foreign-key with the given new value
+\*------------------------------------------------------------------------------*/
+void BmIdentityList::ForeignKeyChanged( const BmString& key, 
+													 const BmString& oldVal, 
+													 const BmString& newVal) {
+	BmAutolockCheckGlobal lock( ModelLocker());
+	lock.IsLocked() 							|| BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
+	BmModelItemMap::const_iterator iter;
+	for( iter = begin(); iter != end(); ++iter) {
+		BmIdentity* ident = dynamic_cast< BmIdentity*>( iter->second.Get());
+		if (key == BmIdentity::MSG_POP_ACCOUNT) {
+			if (ident && ident->POPAccount() == oldVal)
+				ident->POPAccount( newVal);
+		} else if (key == BmIdentity::MSG_SMTP_ACCOUNT) {
+			if (ident && ident->SMTPAccount() == oldVal)
+				ident->SMTPAccount( newVal);
+		} else if (key == BmIdentity::MSG_SIGNATURE_NAME) {
+			if (ident && ident->SignatureName() == oldVal)
+				ident->SignatureName( newVal);
+		}
+	}
+}
+
+/*------------------------------------------------------------------------------*\
 	Archive( archive, deep)
 		-	writes BmIdentity into archive
 		-	parameter deep makes no difference...
