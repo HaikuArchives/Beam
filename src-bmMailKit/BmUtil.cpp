@@ -38,6 +38,7 @@ using namespace regexx;
 
 #include "BmBasics.h"
 #include "BmLogHandler.h"
+#include "BmMemIO.h"
 #include "BmPrefs.h"
 #include "BmUtil.h"
 
@@ -199,13 +200,13 @@ BmString BytesToString( int32 bytes, bool mini) {
 	TimeToString( time)
 		-	converts the given time into a string
 \*------------------------------------------------------------------------------*/
-BmString TimeToString( time_t t, const char* format) {
+BmString TimeToString( time_t utc, const char* format) {
 	BmString s;
 	const int32 bufsize=100;
 	s.SetTo( '\0', bufsize);
 	char* buf=s.LockBuffer( bufsize);
 	struct tm ltm;
-	localtime_r( &t, &ltm);
+	localtime_r( &utc, &ltm);
 	strftime( buf, bufsize, format, &ltm);
 	s.UnlockBuffer( strlen(buf));
 	return s;
@@ -216,10 +217,7 @@ BmString TimeToString( time_t t, const char* format) {
 		-	converts the given (local) time into a string representing 
 			swatch internet time
 \*------------------------------------------------------------------------------*/
-BmString TimeToSwatchString( time_t t) {
-	struct tm utctm;
-	gmtime_r( &t, &utctm);
-	time_t utc = mktime( &utctm);
+BmString TimeToSwatchString( time_t utc) {
 	time_t swatch = utc+3600;	// add one hour
 	int32 beats = ((swatch % 86400) * 1000) / 86400;
 	return TimeToString( swatch, "%Y-%m-%d @") << beats;
@@ -274,7 +272,7 @@ void WordWrap( const BmString& in, BmString& out, int32 maxLineLen, BmString nl,
 	int32 lastPos = 0;
 	const char *s = in.String();
 	bool needBreak = false;
-	BmStrOStream tempIO( in.Length()*1.1, 1.1);
+	BmStringOBuf tempIO( in.Length()*1.1, 1.1);
 	for( int32 pos = 0;  !needBreak;  pos += nl.Length(), lastPos = pos) {
 		pos = in.FindFirst( nl, pos);
 		if (pos == B_ERROR) {
