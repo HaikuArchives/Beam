@@ -52,14 +52,16 @@ BmTempFileList TheTempFileList;
 \*------------------------------------------------------------------------------*/
 bool MoveToTrash( const entry_ref* refs, int32 count) {
 	// this is based on code I got from Tim Vernum's Website. thx!
-	static BPath desktopPath;
-	if (desktopPath.InitCheck() != B_OK) {
+	static BString desktopWin;
+	if (!desktopWin.Length()) {
 		// initialize (find) desktop-path:
 		status_t err;
+		BPath desktopPath;
 		if ((err=find_directory( B_DESKTOP_DIRECTORY, &desktopPath, true)) != B_OK) {
 			BM_LOGERR( BString("Could not find desktop-folder!\n\nError: ")<<strerror( err));
-			desktopPath.SetTo( "/boot/home/Desktop");
-		}
+			desktopWin = "/boot/home/Desktop";
+		} else
+			desktopWin = desktopPath.Path();
 	}
 	BMessenger tracker( "application/x-vnd.Be-TRAK" );
 	if (refs && tracker.IsValid()) {
@@ -72,16 +74,16 @@ bool MoveToTrash( const entry_ref* refs, int32 count) {
 		msg.AddSpecifier( &specifier );
 
 		msg.AddSpecifier( "Poses" );
-		msg.AddSpecifier( "Window", desktopPath.Path());
+		msg.AddSpecifier( "Window", desktopWin.String());
 
 		BMessage reply;
 		tracker.SendMessage( &msg, &reply);
 		if (reply.what == B_MESSAGE_NOT_UNDERSTOOD) {
 			// maybe we have to deal with a Tracker that does not have a window named
 			// '/boot/home/Desktop', but uses 'Desktop' instead, we try that:
-			if (BString("Desktop") != desktopPath.Path()) {
+			if (desktopWin != "Desktop") {
 				// try with 'Desktop':
-				desktopPath.SetTo( "Desktop");
+				desktopWin = "Desktop";
 				return MoveToTrash( refs, count);
 			}
 			// neither '/boot/home/Desktop' nor 'Desktop' seems to work, we give up:
