@@ -1191,14 +1191,18 @@ BmSieveFilterPrefs::BmSieveFilterPrefs( minimax minmax)
 					NULL, new BPopUpMenu( ""),
 					0, 0, BM_MAILPART_OTHER
 				),
-				mFieldSpecLayer[i] = new LayeredGroup(
-					new Space(),
-					mAddrPartControl[i] = new BmMenuControl( 
-						NULL, new BPopUpMenu( ""), 0, 0, 
-						BM_ADDRPART_LOCALPART
+				new VGroup(
+					new Space( minimax( 0,4,1e5,4)),
+					mFieldSpecLayer[i] = new LayeredGroup(
+						new Space(),
+						mAddrPartControl[i] = new BmMenuControl( 
+							NULL, new BPopUpMenu( ""), 0, 0, 
+							BM_ADDRPART_LOCALPART
+						),
+						mFieldNameControl[i] = new BmTextControl( (const char *)NULL),
+						NULL
 					),
-					mFieldNameControl[i] = new BmTextControl( (const char *)NULL),
-					NULL
+					0
 				),
 				mOperatorControl[i] = new BmMenuControl( 
 					NULL, new BPopUpMenu( ""),
@@ -1211,6 +1215,7 @@ BmSieveFilterPrefs::BmSieveFilterPrefs( minimax minmax)
 				0
 			);
 		mMailPartControl[i]->ct_mpm.maxi.y = 1E5;
+		mFieldSpecLayer[i]->ct_mpm.maxi.y = 1E5;
 		mAddrPartControl[i]->ct_mpm.maxi.y = 1E5;
 		mOperatorControl[i]->ct_mpm.maxi.y = 1E5;
 		mFieldNameControl[i]->ct_mpm = minimax(80,-1,80,1E5);
