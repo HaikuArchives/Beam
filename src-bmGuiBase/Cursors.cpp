@@ -2,6 +2,8 @@
 //******************************************************************************************************
 //**** PROJECT HEADER FILES
 //******************************************************************************************************
+#include <Cursor.h>
+
 #include "Cursors.h"
 
 
@@ -160,8 +162,27 @@ uint8 c_magnify_cursor_data[68] =
 	0,4,	//0000000000000100
 };
 
-const void* c_v_resize_cursor = c_v_resize_cursor_data;
-const void* c_h_resize_cursor = c_h_resize_cursor_data;
-const void* c_crosshairs_cursor = c_crosshairs_cursor_data;
-const void* c_magnify_cursor = c_magnify_cursor_data;
-
+BCursor* cvr = NULL;
+const BCursor* c_v_resize_cursor() {
+	if (!cvr)
+		cvr = new BCursor( (void*)&c_v_resize_cursor_data);
+	return cvr;
+}
+BCursor* chr = NULL;
+const BCursor* c_h_resize_cursor() {
+	if (!chr)
+		chr = new BCursor( (void*)&c_h_resize_cursor_data);
+	return chr;
+}
+BCursor* crh = NULL;
+const BCursor* c_crosshairs_cursor() {
+	if (!crh)
+		crh = new BCursor( (void*)&c_crosshairs_cursor_data);
+	return crh;
+}
+BCursor* cmg = NULL;
+const BCursor* c_magnify_cursor() {
+	if (!cmg)
+		cmg = new BCursor( (void*)&c_magnify_cursor_data);
+	return cmg;
+}

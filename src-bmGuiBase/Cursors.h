@@ -9,13 +9,14 @@
 #include <SupportDefs.h>
 
 
+class BCursor;
 //******************************************************************************************************
 //**** CONSTANT DEFINITIONS
 //******************************************************************************************************
-extern const void* c_v_resize_cursor;
-extern const void* c_h_resize_cursor;
-extern const void* c_crosshairs_cursor;
-extern const void* c_magnify_cursor;
+const BCursor* c_v_resize_cursor();
+const BCursor* c_h_resize_cursor();
+const BCursor* c_crosshairs_cursor();
+const BCursor* c_magnify_cursor();
 
 
 #endif //_SGB_CURSORS_H_

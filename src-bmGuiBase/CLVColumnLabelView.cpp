@@ -495,7 +495,7 @@ void CLVColumnLabelView::MouseMoved(BPoint where, uint32 code, const BMessage *)
 	}
 	if(should_show_modified_cursor && !fModifiedCursor)
 	{
-		be_app->SetCursor(c_v_resize_cursor);
+		be_app->SetCursor(c_v_resize_cursor());
 		be_app->ShowCursor();
 	}
 	fModifiedCursor = should_show_modified_cursor;
