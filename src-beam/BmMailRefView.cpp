@@ -204,6 +204,9 @@ const int32 BmMailRefItem::GetNumValueForColumn( int32 column_index) const {
 							// illdefined priority means medium priority (=3)
 	} else if (column_index == COL_SIZE) {
 		return ref->Size();
+	} else if (column_index == COL_RATIO_SPAM) {
+		return (int32)(ref->RatioSpam()*1000);	
+							// errr, since we are returning int32!
 	} else {
 		return 0;		// we don't know this number-column !?!
 	}
@@ -390,6 +393,11 @@ BmMailRefView::BmMailRefView( minimax minmax, int32 width, int32 height)
 									  flags | CLV_COLDATA_NUMBER | CLV_COLTYPE_USERTEXT,
 									  18.0, "(P)riority [Text]"));
 	AddColumn( new CLVColumn( "Identity", 100.0, flags | CLV_COLTYPE_USERTEXT, 
+									  40.0));
+	AddColumn( new CLVColumn( "Classification", 100.0, flags | CLV_COLTYPE_USERTEXT, 
+									  40.0));
+	AddColumn( new CLVColumn( "RatioSpam", 50.0, flags | CLV_COLDATA_NUMBER 
+										| CLV_RIGHT_JUSTIFIED| CLV_COLTYPE_USERTEXT, 
 									  40.0));
 	SetSortFunction( CLVEasyItem::CompareItems);
 	SetSortKey( COL_DATE);
@@ -908,6 +916,10 @@ void BmMailRefView::AddMailRefMenu( BMenu* menu, BHandler* target,
 	if (isContextMenu)
 		moveMenu->SetFont( &font);
 	menu->AddItem( moveMenu);
+	menu->AddSeparatorItem();
+
+	AddItemToMenu( menu, CreateMenuItem( "Learn as Spam", BMM_LEARN_AS_SPAM), target);
+	AddItemToMenu( menu, CreateMenuItem( "Learn as Tofu", BMM_LEARN_AS_TOFU), target);
 	menu->AddSeparatorItem();
 
 	AddItemToMenu( menu, 
