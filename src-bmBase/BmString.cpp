@@ -39,6 +39,7 @@
 #include <UTF8.h>
 
 #include "BmString.h"
+#include "BmMemIO.h"
 
 #define KEEP_CASE false
 #define IGNORE_CASE true
@@ -486,11 +487,7 @@ BmString::RemoveLast(const BmString &string)
 BmString&
 BmString::RemoveAll(const BmString &string)
 {
-	int32 pos = B_ERROR;
-	while ((pos = _ShortFindAfter(string.String(), string.Length())) >= 0)
-		_ShrinkAtBy(pos, string.Length());
-
-	return *this;
+	return _DoReplace( string.String(), "", 0x7FFFFFFF, 0, KEEP_CASE);
 }
 
 
@@ -523,13 +520,7 @@ BmString::RemoveLast(const char *str)
 BmString&
 BmString::RemoveAll(const char *str)
 {
-	if (str) {
-		int32 pos;
-		int32 len = strlen(str);
-		while ((pos = _ShortFindAfter(str, len)) >= 0)
-			_ShrinkAtBy(pos, len);
-	}
-	return *this;
+	return _DoReplace( str, "", 0x7FFFFFFF, 0, KEEP_CASE);
 }
 
 
@@ -1610,8 +1601,8 @@ BmString::_IFindBefore(const char *str, int32 offset, int32 strlen) const
 
 
 BmString&
-BmString::_DoReplace(const char *findThis, const char *replaceWith, int32 maxReplaceCount, int32 fromOffset,
-							bool ignoreCase)
+BmString::_DoReplace(const char *findThis, const char *replaceWith, int32 maxReplaceCount, 
+							int32 fromOffset,	bool ignoreCase)
 {
 	if (findThis == NULL || maxReplaceCount <= 0 || fromOffset < 0 || fromOffset >= Length())
 		return *this;
@@ -1622,7 +1613,7 @@ BmString::_DoReplace(const char *findThis, const char *replaceWith, int32 maxRep
 		: &BmString::_FindAfter;
 	int32 findLen = strlen( findThis);
 	int32 replaceLen = replaceWith ? strlen( replaceWith) : 0;
-	BmStrOStream tempIO( (int32)MAX( MAX( findLen, 128), Length()*1.2), 1.2);
+	BmStringOBuf tempIO( (int32)MAX( MAX( findLen, 128), Length()*1.2), 1.2);
 	int32 lastSrcPos = fromOffset;
 	int32 len;
 	for(  int32 srcPos=0; 
@@ -1729,7 +1720,7 @@ BmString& BmString::ConvertLinebreaksToLF( const BmString* srcData) {
 		return *this;
 	}
 	
-	BmStrOStream tempIO( (int32)MAX( 128, src->Length()*1.2), 1.2);
+	BmStringOBuf tempIO( (int32)MAX( 128, src->Length()), 1.2);
 	int32 lastSrcPos = 0;
 	int32 len;
 	for( int32 srcPos=0; (srcPos=src->_FindAfter( "\r\n", lastSrcPos, 2)) != B_ERROR; ) {
@@ -1760,7 +1751,7 @@ BmString& BmString::ConvertLinebreaksToCRLF( const BmString* srcData) {
 		return *this;
 	}
 	
-	BmStrOStream tempIO( (int32)MAX( 128, src->Length()*1.2), 1.2);
+	BmStringOBuf tempIO( (int32)MAX( 128, src->Length()*1.2), 1.2);
 	int32 lastSrcPos = 0;
 	int32 len;
 	for( int32 srcPos=0; (srcPos=src->_FindAfter( "\n", srcPos, 1)) != B_ERROR; srcPos++) {
@@ -1796,7 +1787,7 @@ BmString::ConvertTabsToSpaces( int32 numSpaces, const BmString* srcData) {
 	
 	BmString spaces;
 	spaces.SetTo( ' ', numSpaces);
-	BmStrOStream tempIO( (int32)MAX( 128, src->Length()*1.2), 1.2);
+	BmStringOBuf tempIO( (int32)MAX( 128, src->Length()*1.2), 1.2);
 	int32 lastSrcPos = 0;
 	int32 len;
 	for( int32 srcPos=0; (srcPos=src->_FindAfter( "\t", lastSrcPos, 1)) != B_ERROR; ) {
@@ -1822,7 +1813,7 @@ BmString::ConvertTabsToSpaces( int32 numSpaces, const BmString* srcData) {
 #define HEXDIGIT2CHAR(d) (((d)>='0'&&(d)<='9') ? (d)-'0' : ((d)>='A'&&(d)<='F') ? (d)-'A'+10 : ((d)>='a'&&(d)<='f') ? (d)-'a'+10 : 0)
 BmString&
 BmString::DeUrlify() {
-	BmStrOStream tempIO( (int32)MAX( 128, Length()*1.2), 1.2);
+	BmStringOBuf tempIO( (int32)MAX( 128, Length()), 1.2);
 	int32 lastSrcPos = 0;
 	int32 len;
 	char c1, c2;
@@ -1847,67 +1838,3 @@ BmString::DeUrlify() {
 	}
 	return *this;
 }
-
-/*------------------------------------------------------------------------------*\
-	BmStrOStream()
-		-	constructor
-\*------------------------------------------------------------------------------*/
-BmStrOStream::BmStrOStream( int32 startLen, float growFactor)
-	:	mBufLen( startLen)
-	,	mGrowFactor( MAX(1.0, growFactor))
-	,	mBuf( NULL)
-	,	mCurrPos( 0)
-{
-}
-
-/*------------------------------------------------------------------------------*\
-	Write( data, len)
-		-	adds given data to end of string
-\*------------------------------------------------------------------------------*/
-bool BmStrOStream::Write( const char* data, int32 len) {
-	if (!len)
-		return true;
-	if (!mBuf || mCurrPos+len > mBufLen) {
-		if (mBuf) {
-			mStr.UnlockBuffer( mBufLen);
-			mBufLen = (int32)MAX( mGrowFactor*mBufLen, mGrowFactor*(mCurrPos+len));
-		} else
-			mBufLen = (int32)MAX( mBufLen, mCurrPos+len);
-		mBuf = mStr.LockBuffer( mBufLen);
-		if (!mBuf)
-			return false;
-	}
-	memcpy( mBuf+mCurrPos, data, len);
-	mCurrPos += len;
-	return true;
-}
-
-/*------------------------------------------------------------------------------*\
-	TheString()
-		-	returns the string
-\*------------------------------------------------------------------------------*/
-BmString& BmStrOStream::TheString() {
-	if (mBuf) {
-		mBuf[mCurrPos] = '\0';
-		mStr.UnlockBuffer( mCurrPos);
-		mBuf = NULL;
-	}
-	return mStr;
-}
-
-BmStrOStream&
-BmStrOStream::operator<<(const char *str)
-{
-	if (str)
-		Write( str, strlen(str));
-	return *this;	
-}
-
-
-BmStrOStream&
-BmStrOStream::operator<<(const BmString &string)
-{
-	Write( string.String(), string.Length());
-	return *this;
-}
-

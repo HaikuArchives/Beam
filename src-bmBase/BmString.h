@@ -503,27 +503,4 @@ BmString operator+(const BmString& s1, const BmString& s2);
 BmString operator+(const char* s1, const BmString& s2);
 BmString operator+(const BmString& s1, const char* s2);
 
-
-class BmStrOStream {
-
-public:
-	BmStrOStream( int32 startLen, float growFactor=1.2);
-	bool Write( const char* data, int32 len);
-	bool Write( const BmString& data)	{ return Write( data.String(), data.Length()); }
-	BmString& TheString();
-	bool HasData() const 					{ return mBuf!=NULL; }
-	int32 CurrPos() const 					{ return mCurrPos; }
-	char ByteAt( int32 pos) const 		{ return (!mBuf||pos<0||pos>=mCurrPos) ? 0 : mBuf[pos]; }
-
-	BmStrOStream 		&operator<<(const char *);
-	BmStrOStream 		&operator<<(const BmString &);
-
-private:
-	int32 mBufLen;
-	float mGrowFactor;
-	char* mBuf;
-	int32 mCurrPos;
-	BmString mStr;
-};
-
 #endif /* __BSTRING__ */
