@@ -46,6 +46,29 @@ using namespace regexx;
 #include "BmUtil.h"
 
 /********************************************************************************\
+	BmPersonInfo
+\********************************************************************************/
+
+/*------------------------------------------------------------------------------*\
+	AddEmails()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmPersonInfo::AddEmails( const BmStringVect& mails) {
+	Regexx rx;
+	for( uint32 m=0; m<mails.size(); ++m) {
+		if (!rx.exec( mails[m], "^\\s*$")) {
+			bool found=false;
+			for( uint32 i=0; i<emails.size(); ++i) {
+				if (emails[i] == mails[m])
+					found=true;							// avoid duplicate entries
+			}
+			if (!found)
+				emails.push_back( mails[m]);
+		}
+	}
+}
+
+/********************************************************************************\
 	BmPerson
 \********************************************************************************/
 
@@ -105,9 +128,11 @@ void BmPerson::AddEmail( const BString& em) {
 void BmPerson::AddToNickMap( BmPersonMap& nickMap) const {
 	if (!mIsForeign && mNick.Length() && !mEmails.empty()) {
 		BmPersonInfo& personInfo = nickMap[GenerateSortkeyFor( mNick)];
-		personInfo.name = mNick;
-		personInfo.emails.insert( personInfo.emails.end(),
-										  mEmails.begin(), mEmails.end());
+		personInfo.AddEmails( mEmails);
+		if (personInfo.emails.size() > 1)
+			personInfo.name = mNick;
+		else
+			personInfo.name = mNick + " (" + mEmails[0] + ")";
 	}
 }
 
@@ -118,9 +143,11 @@ void BmPerson::AddToNickMap( BmPersonMap& nickMap) const {
 void BmPerson::AddToForeignMap( BmPersonMap& foreignMap) const {
 	if (mIsForeign && mName.Length() && !mEmails.empty()) {
 		BmPersonInfo& personInfo = foreignMap[GenerateSortkeyFor( mName)];
-		personInfo.name = mName;
-		personInfo.emails.insert( personInfo.emails.end(),
-										  mEmails.begin(), mEmails.end());
+		personInfo.AddEmails( mEmails);
+		if (personInfo.emails.size() > 1)
+			personInfo.name = mName;
+		else
+			personInfo.name = mName + " (" + mEmails[0] + ")";
 	}
 }
 
@@ -131,9 +158,27 @@ void BmPerson::AddToForeignMap( BmPersonMap& foreignMap) const {
 void BmPerson::AddToNoGroupMap( BmPersonMap& noGroupMap) const {
 	if (!mIsForeign && mGroups.empty() && mName.Length() && !mEmails.empty()) {
 		BmPersonInfo& personInfo = noGroupMap[GenerateSortkeyFor( mName)];
-		personInfo.name = mName;
-		personInfo.emails.insert( personInfo.emails.end(),
-										  mEmails.begin(), mEmails.end());
+		personInfo.AddEmails( mEmails);
+		if (personInfo.emails.size() > 1)
+			personInfo.name = mName;
+		else
+			personInfo.name = mName + " (" + mEmails[0] + ")";
+	}
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmPerson::AddToAllPeopleMap( BmPersonMap& allPeopleMap) const {
+	if (mName.Length() && !mEmails.empty()) {
+		for( uint32 i=0; i<mEmails.size(); ++i) {
+			BmPersonInfo& personInfo = allPeopleMap[GenerateSortkeyFor( mName+mEmails[i])];
+			personInfo.name = mName + " (" + mEmails[i] + ")";
+			BmStringVect mails;
+			mails.push_back( mEmails[i]);
+			personInfo.AddEmails( mails);
+		}
 	}
 }
 
@@ -148,9 +193,11 @@ void BmPerson::AddToGroupMap( BmGroupMap& groupMap) const {
 		BmGroupInfo& groupInfo = groupMap[GenerateSortkeyFor( mGroups[i])];
 		groupInfo.name = mGroups[i];
 		BmPersonInfo& personInfo = groupInfo.personMap[GenerateSortkeyFor( mName)];
-		personInfo.name = mName;
-		personInfo.emails.insert( personInfo.emails.end(),
-										  mEmails.begin(), mEmails.end());
+		personInfo.AddEmails( mEmails);
+		if (personInfo.emails.size() > 1)
+			personInfo.name = mName;
+		else
+			personInfo.name = mName + " (" + mEmails[0] + ")";
 	}
 }
 
@@ -199,6 +246,7 @@ void BmPeopleList::AddPeopleToMenu( BMenu* menu, const BMessage& templateMsg,
 												const char* addrField) {
 	if (!menu)
 		return;
+	BmPersonMap allPeopleMap;
 	BmPersonMap foreignMap;
 	BmPersonMap nickMap;
 	BmPersonMap noGroupMap;
@@ -213,6 +261,7 @@ void BmPeopleList::AddPeopleToMenu( BMenu* menu, const BMessage& templateMsg,
 			person->AddToNoGroupMap( noGroupMap);
 			person->AddToNickMap( nickMap);
 			person->AddToForeignMap( foreignMap);
+			person->AddToAllPeopleMap( allPeopleMap);
 		}
 	}
 	BFont font;
@@ -225,7 +274,7 @@ void BmPeopleList::AddPeopleToMenu( BMenu* menu, const BMessage& templateMsg,
 	for( group = groupMap.begin(); group != groupMap.end(); ++group) {
 		subMenu = CreateSubmenuForPersonMap( group->second.personMap, 
 														 templateMsg, addrField,
-														 group->second.name, &font);
+														 BString("Group ")<<group->second.name, &font, true);
 		menu->AddItem( subMenu);
 	}
 	subMenu = CreateSubmenuForPersonMap( noGroupMap, templateMsg, addrField,
@@ -234,6 +283,10 @@ void BmPeopleList::AddPeopleToMenu( BMenu* menu, const BMessage& templateMsg,
 	menu->AddSeparatorItem();
 	subMenu = CreateSubmenuForPersonMap( foreignMap, templateMsg, addrField,
 													 "(Not in ~/People)", &font);
+	menu->AddItem( subMenu);
+	menu->AddSeparatorItem();
+	subMenu = CreateSubmenuForPersonMap( allPeopleMap, templateMsg, addrField,
+													 "All People", &font);
 	menu->AddItem( subMenu);
 }
 
@@ -244,13 +297,21 @@ void BmPeopleList::AddPeopleToMenu( BMenu* menu, const BMessage& templateMsg,
 BMenu* BmPeopleList::CreateSubmenuForPersonMap( const BmPersonMap& personMap, 
 																const BMessage& templateMsg,
 																const char* addrField,
-																BString label, BFont* font) {
+																BString label, BFont* font,
+																bool createAllEntry) {
 	BMessage* msg;
 	BMenu* subMenu = new BMenu( label.String());
 	subMenu->SetFont( font);
 	BmPersonMap::const_iterator person;
+	BString allAddrs;
 	for( person = personMap.begin(); person != personMap.end(); ++person) {
 		const BmPersonInfo& info = person->second;
+		if (createAllEntry) {
+			if (person==personMap.begin())
+				allAddrs << info.emails[0];
+			else
+				allAddrs << ", " << info.emails[0];
+		}
 		uint32 numMails = info.emails.size();
 		if (numMails>1) {
 			BMenu* addrMenu = new BMenu( info.name.String());
@@ -266,6 +327,12 @@ BMenu* BmPeopleList::CreateSubmenuForPersonMap( const BmPersonMap& personMap,
 			msg->AddString( addrField, info.emails[0]);
 			subMenu->AddItem( new BMenuItem( info.name.String(), msg));
 		}
+	}
+	if (createAllEntry) {
+		msg = new BMessage( templateMsg);
+		msg->AddString( addrField, allAddrs);
+		subMenu->AddSeparatorItem();
+		subMenu->AddItem( new BMenuItem( "<Add Complete Group>", msg));
 	}
 	return subMenu;
 }

@@ -32,6 +32,8 @@
 #ifndef _BmPeople_h
 #define _BmPeople_h
 
+#include <vector>
+
 #include <List.h>
 #include <Locker.h>
 #include <String.h>
@@ -56,6 +58,7 @@ struct BmPersonInfo {
 	BmPersonInfo()								{}
 	BmPersonInfo( const BString& nm, const BString& nk, const BString& em)
 		: name( nm) 							{	emails.push_back( em); }
+	void AddEmails( const BmStringVect& mails);
 };
 typedef map< BString, BmPersonInfo> BmPersonMap;
 
@@ -83,6 +86,7 @@ public:
 	void AddToNoGroupMap( BmPersonMap& noGroupMap) const;
 	void AddToNickMap( BmPersonMap& nickMap) const;
 	void AddToForeignMap( BmPersonMap& foreignMap) const;
+	void AddToAllPeopleMap( BmPersonMap& allPeopleMap) const;
 
 	void AddEmail( const BString &em);
 
@@ -141,7 +145,8 @@ private:
 	BMenu* CreateSubmenuForPersonMap( const BmPersonMap& personMap, 
 												 const BMessage& templateMsg,
 												 const char* addrField,
-												 BString label, BFont* font);
+												 BString label, BFont* font,
+												 bool createAllEntry=false);
 
 	// overrides of listmode base:
 	void InitializeItems();
