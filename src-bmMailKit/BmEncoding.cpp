@@ -63,7 +63,9 @@ static iconv_t ICONV_ERR = (iconv_t)0xFFFFFFFF;
 static int HandleOneCharset( unsigned int namescount, 
 									  const char * const * names,
                              void* data) {
+	// the preferred names of charsets:
 	static const char* rxs[] = {
+		"^US-ASCII$",
 		"^ISO-",
 		"^WINDOWS-",
 		"^CP",
@@ -355,11 +357,15 @@ BmString BmEncoding::ConvertUTF8ToHeaderPart( const BmString& utf8Text,
 		BmQpEncodedWordEncoder qpEncoder( &srcBuf, blockSize, fieldLen+2, 	
 													 charset);
 		tempIO.Write( &qpEncoder);
+		if (qpEncoder.HadError())
+			throw BM_text_error( "", "", qpEncoder.SrcCount());
 	} else {
 		BmUtf8Decoder textConverter( &srcBuf, charset);
 		BmFoldedLineEncoder foldEncoder( &textConverter, BM_MAX_LINE_LEN, 
 													blockSize, fieldLen+2);
 		tempIO.Write( &foldEncoder);
+		if (textConverter.HadError())
+			throw BM_text_error( "", "", textConverter.SrcCount());
 	}
 	BmString foldedString;
 	foldedString.Adopt( tempIO.TheString());
