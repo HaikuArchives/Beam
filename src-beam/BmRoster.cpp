@@ -411,7 +411,7 @@ void BmRoster::RebuildFilterMenu( BmMenuControllerBase* menu)
 	ClearMenu( menu);	
 	ListMenuBuilder builder(TheFilterList.Get(), menu, menu->MsgTemplate(), 
 									menu->MsgTarget());
-	builder.ItemFilter(&itemFilter);
+//	builder.ItemFilter(&itemFilter);
 	builder.Go();
 }
 
