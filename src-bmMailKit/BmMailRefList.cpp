@@ -34,6 +34,9 @@
 #include <Path.h>
 #include <Query.h>
 
+#include "regexx.hh"
+using namespace regexx;
+
 #include "BmBasics.h"
 #include "BmLogHandler.h"
 #include "BmMailFolder.h"
@@ -161,10 +164,22 @@ bool BmMailRefList::StartJob() {
 	
 		bool cacheFileUpToDate = false;
 		if (ThePrefs->GetBool("CacheRefsOnDisk")
+		&& (err = cacheFile.SetTo( filename.String(), B_READ_ONLY)) != B_OK) {
+			// cache-file not found, but we have changed names of cache-files in Feb 2003,
+			// so we check if a cache-file according to the old name exists (and rename
+			// it to match our new regulations):
+			Regexx rx( filename, "^(.+?_\\d+)_\\d+(.+?)$", "$1$2");
+			BmString oldFilename = rx;
+			BEntry entry( oldFilename.String());
+			time_t mtime;
+			err = (entry.InitCheck() || entry.GetModificationTime( &mtime) 
+					|| entry.Rename( filename.String()) || entry.SetModificationTime( mtime));
+		}
+		if (ThePrefs->GetBool("CacheRefsOnDisk")
 		&& (err = cacheFile.SetTo( filename.String(), B_READ_ONLY)) == B_OK) {
 			time_t mtime;
 			(err = cacheFile.GetModificationTime( &mtime)) == B_OK
-														|| BM_THROW_RUNTIME(BmString("Could not get mtime \nfor mail-folder <") << Name() << "> \n\nError:" << strerror(err));
+													|| BM_THROW_RUNTIME(BmString("Could not get mtime \nfor mail-folder <") << Name() << "> \n\nError:" << strerror(err));
 			if (!mNeedsCacheUpdate && !folder->CheckIfModifiedSince( mtime)) {
 				// archive up-to-date, but is it the correct format-version?
 				msg.Unflatten( &cacheFile);
