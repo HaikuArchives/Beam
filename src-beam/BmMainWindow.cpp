@@ -260,10 +260,10 @@ BmMainWindow::~BmMainWindow() {
 		-	
 \*------------------------------------------------------------------------------*/
 static int CompareLogs( const void* logL, const void* logR) {
-	BmLogHandler::BmLogfile* leftLog 
-		= static_cast< BmLogHandler::BmLogfile*>( *(const void**)logL);
-	BmLogHandler::BmLogfile* rightLog 
-		= static_cast< BmLogHandler::BmLogfile*>( *(const void**)logR);
+	const BmLogHandler::BmLogfile* leftLog 
+		= static_cast< const BmLogHandler::BmLogfile*>( *(const void**)logL);
+	const BmLogHandler::BmLogfile* rightLog 
+		= static_cast< const BmLogHandler::BmLogfile*>( *(const void**)logR);
 	if (!leftLog)
 		return -1;
 	if (!rightLog)
