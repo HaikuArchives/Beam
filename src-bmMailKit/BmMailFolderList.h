@@ -114,7 +114,7 @@ private:
 	void InitializeItems();
 	int doInitializeMailFolders( BmMailFolder* folder, int level);
 	void InstantiateItems( BMessage* archive);
-	void doInstantiateMailFolders( BmMailFolder* folder, BMessage* archive, int level);
+	int doInstantiateMailFolders( BmMailFolder* folder, BMessage* archive, int level);
 
 	// overrides of listmodel base:
 	int16 ArchiveVersion() const			{ return nArchiveVersion; }

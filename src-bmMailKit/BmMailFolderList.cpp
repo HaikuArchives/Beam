@@ -466,11 +466,11 @@ void BmMailFolderList::InitializeItems() {
 
 		// now we process all subfolders of the top-folder recursively:
 #ifdef BM_LOGGING
-		int numDirs = 1 + doInitializeMailFolders( mTopFolder.Get(), 1);
+		int folderCount = 1 + doInitializeMailFolders( mTopFolder.Get(), 1);
 #else
 		doInitializeMailFolders( mTopFolder.Get(), 1);
 #endif
-		BM_LOG( BM_LogMailTracking, BmString("End of initFolders (") << numDirs << " folders found)");
+		BM_LOG( BM_LogMailTracking, BmString("End of initFolders (") << folderCount << " folders found)");
 		mInitCheck = B_OK;
 	}
 }
@@ -486,7 +486,7 @@ int BmMailFolderList::doInitializeMailFolders( BmMailFolder* folder, int level) 
 	struct stat st;
 	status_t err;
 	char buf[4096];
-	int32 count, dirCount = 0;
+	int32 count, folderCount = 0;
 	BmString mailDirName;
 
 	// we create a BDirectory from the given mail-folder...
@@ -510,15 +510,15 @@ int BmMailFolderList::doInitializeMailFolders( BmMailFolder* folder, int level) 
 				eref.set_name( dent->d_name);
 				BM_LOG3( BM_LogMailTracking, BmString("Mail-folder <") << dent->d_name << "," << dent->d_ino << "> found at level " << level);
 				BmMailFolder* newFolder = AddMailFolder( eref, dent->d_ino, folder, st.st_mtime);
-				dirCount++;
+				folderCount++;
 				// now we process the new sub-folder first:
-				dirCount += doInitializeMailFolders( newFolder, level+1);
+				folderCount += doInitializeMailFolders( newFolder, level+1);
 			}
 			// Bump the dirent-pointer by length of the dirent just handled:
 			dent = (dirent* )((char* )dent + dent->d_reclen);
 		}
 	}
-	return dirCount;
+	return folderCount;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -533,17 +533,18 @@ void BmMailFolderList::InstantiateItems( BMessage* archive) {
 	(err = archive->FindMessage( BmListModelItem::MSG_CHILDREN, &msg)) == B_OK
 												|| BM_THROW_RUNTIME(BmString("BmMailFolderList: Could not find msg-field <") << BmListModelItem::MSG_CHILDREN << "> \n\nError:" << strerror(err));
 	{
+		int32 folderCount = 1;
 		BmAutolockCheckGlobal lock( mModelLocker);
 		lock.IsLocked() 						|| BM_THROW_RUNTIME( ModelNameNC() << ":InstantiateMailFolders(): Unable to get lock");
 		mTopFolder = new BmMailFolder( &msg, this, NULL);
 		AddItemToList( mTopFolder.Get());
 		BM_LOG3( BM_LogMailTracking, BmString("Top-folder <") << mTopFolder->EntryRef().name << "," << mTopFolder->Key() << "> read");
 		if (mTopFolder->CheckIfModifiedSinceLastTime()) {
-			doInitializeMailFolders( mTopFolder.Get(), 1);
+			folderCount += doInitializeMailFolders( mTopFolder.Get(), 1);
 		} else {
-			doInstantiateMailFolders( mTopFolder.Get(), &msg, 1);
+			folderCount += doInstantiateMailFolders( mTopFolder.Get(), &msg, 1);
 		}
-		BM_LOG( BM_LogMailTracking, BmString("End of reading folder-cache (") << size() << " folders found)");
+		BM_LOG( BM_LogMailTracking, BmString("End of reading folder-cache (") << folderCount << " folders found)");
 		mInitCheck = B_OK;
 	}
 }
@@ -552,10 +553,11 @@ void BmMailFolderList::InstantiateItems( BMessage* archive) {
 	doInstantiateMailFolders( archive)
 		-	recursively (re-)creates all mail-folders from given archive
 \*------------------------------------------------------------------------------*/
-void BmMailFolderList::doInstantiateMailFolders( BmMailFolder* folder, BMessage* archive,
+int BmMailFolderList::doInstantiateMailFolders( BmMailFolder* folder, BMessage* archive,
 																 int level) {
 	status_t err;
 	int32 numChildren = FindMsgInt32( archive, BmMailFolder::MSG_NUMCHILDREN);
+	int32 folderCount = numChildren;
 	for( int i=0; i<numChildren; ++i) {
 		BMessage msg;
 		(err = archive->FindMessage( BmMailFolder::MSG_CHILDREN, i, &msg)) == B_OK
@@ -564,11 +566,12 @@ void BmMailFolderList::doInstantiateMailFolders( BmMailFolder* folder, BMessage*
 		AddItemToList( newFolder, folder);
 		BM_LOG3( BM_LogMailTracking, BmString("Mail-folder <") << newFolder->EntryRef().name << "," << newFolder->Key() << "> read");
 		if (newFolder->CheckIfModifiedSinceLastTime()) {
-			doInitializeMailFolders( newFolder, level+1);
+			folderCount += doInitializeMailFolders( newFolder, level+1);
 		} else {
-			doInstantiateMailFolders( newFolder, &msg, level+1);
+			folderCount += doInstantiateMailFolders( newFolder, &msg, level+1);
 		}
 	}
+	return folderCount;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -589,7 +592,7 @@ void BmMailFolderList::QueryForNewMails() {
 	BmAutolockCheckGlobal lock( mModelLocker);
 	lock.IsLocked() 							|| BM_THROW_RUNTIME( ModelNameNC() << ":QueryForNewMails(): Unable to get lock");
 
-	BM_LOG2( BM_LogMailTracking, "Start of newMail-query");
+	BM_LOG( BM_LogMailTracking, "Start of newMail-query");
 	(err = mNewMailQuery.SetVolume( &TheResources->MailboxVolume)) == B_OK
 													|| BM_THROW_RUNTIME( BmString("SetVolume(): ") << strerror(err));
 	(err = mNewMailQuery.SetPredicate( "MAIL:status == 'New'")) == B_OK
@@ -619,7 +622,7 @@ void BmMailFolderList::QueryForNewMails() {
 		if (*iter)
 			TellModelItemUpdated( *iter, BmMailFolder::UPD_NEW_STATUS);
 	}
-	BM_LOG2( BM_LogMailTracking, BmString("End of newMail-query (") << newCount << " new mails found)");
+	BM_LOG( BM_LogMailTracking, BmString("End of newMail-query (") << newCount << " new mails found)");
 }
 
 /*------------------------------------------------------------------------------*\
