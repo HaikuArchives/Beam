@@ -10,24 +10,55 @@ In order to be able to compile Beam, you need to have the following setup:
 	release (beam_src_xxx.zip) or fetch the up-to-date source fresh from 
 	Beam's CVS-server:
 	
-	1. Open a Terminal and cd into the folder where you would like Beam to 
+	1.1. Open a Terminal and cd into the folder where you would like Beam to 
 	   live (a folder named beam will be created in here, see below).
 
-	2. Login to the CVS-server:
+	1.2. Login to the CVS-server:
 
-		cvs -d:pserver:anonymous@cvs.sourceforge.net:/cvsroot/beam login
+		export BEAM_REP=:pserver:anonymous@cvs.sourceforge.net:/cvsroot/beam
+		cvs -d$BEAM_REP login
 
 		(press return when you are asked for a password)
  
-	3. Fetch the CVS-tree:
+	1.3. Decide which source branch you want (release, stable or development).
+		Two CVS-tags exist in order to clearly separate these two branches:
+		'current-stable' & 'current-release' on the stable branch and 
+		'current-devel' on the development-branch (the head).
 
-		cvs -z3 -d:pserver:anonymous@cvs.sourceforge.net:/cvsroot/beam co beam
+		- The 'current-release' tag points to the latest full public release
+		  (i.e. Beam-versions that have been published on BeBits).
+		  [Choose this if all you want is the source of the last public release].
+
+		- The 'current-stable' tag points to the most up-to-date code in the
+		  stable branch that should work just fine.
+		  [Choose this if you need all the latest patches, and are prepared
+		   to accept one or more minor temporary glitches].
+
+		- The 'current-devel' tag points to the newest development code that
+		  deserves it (i.e. is considered not to be a health risk...).
+		  [Choose this if you want to have a look (and say) at where Beam is 
+		   heading. Be prepared to live with random crashes and weird stuff!]
+
+	1.4.	Fetching the CVS-tree:
+
+		Depending on the version you want, please do the following:
+	
+		1.4.1	For the release code do:
+
+				cvs -z3 -d$BEAM_REP co -r current-release beam
+
+		1.4.2	For the latest stable code do:
+
+				cvs -z3 -d$BEAM_REP co -r current-stable beam
+
+		1.4.3	For the latest development code do:
+
+				cvs -z3 -d$BEAM_REP co -r current-devel beam
 
 		(that will take some time)
 	
 	After that has finished, a folder named 'beam' should have been created 
 	which contains the complete source-files.
-
 
 
 2.	Since Beam requires liblayout to run, it needs the liblayout-SDK during
@@ -42,7 +73,6 @@ In order to be able to compile Beam, you need to have the following setup:
 	(and several others...)
 
 
-
 3.	In order to compile the libSieve-subproject, Beam requires a BeIDE plugin
 	that knows how to handle yacc and flex input files (.y and .l files). 
 	Please fetch this plugin from BeBits:
@@ -55,26 +85,27 @@ In order to be able to compile Beam, you need to have the following setup:
 	since with the initial version, Beam won't link correctly.
 
 
-4.	In order to finally compile Beam, you just have to open and make the 
-	appropriate BeIDE-project, but since there are quite a few of those, you 
-	need to decide if you just want to use Beam or if you want to fiddle 
-	with its code (and thus would like debugging and logging facilities):
+4.	In order to finally compile Beam, you just have to run the makefile 
+	(or open and make the appropriate BeIDE-project, if you would like 
+	debugging facilities):
 
 	a. Compiling Beam for general use (a release build):
 
-		- For BeOS R5 x86, select beam/build/release/Beam_release.proj
-		- For BeOS BONE or Dano, select beam/build/release/Beam_bone_release.proj
-		- For BeOS R5 PPC, select beam/build_ppc/release/Beam_ppc.proj
+		- For all BeOS platforms, cd into beam/build and just do a
+				make
+				
+		This will take a while and after it's done Beam will live in the folder
+				beam/build/Beam-xxxx-yyyy/build/
 
 	b. Compiling Beam with debugging and logging (a development build):
 
-		- For BeOS R5 x86, select beam/build/devel/Beam.proj
-		- For BeOS BONE or Dano, select beam/build/devel/Beam_bone.proj
-		- (For BeOS R5 PPC there currently is no devel-project, sorry)
+		- For BeOS R5 x86, open beam/build/devel/Beam.proj
+		- For BeOS BONE or Dano, open beam/build/devel/Beam_bone.proj
+		- For BeOS R5 PPC, open beam/build_ppc/devel/Beam_ppc.proj
 
-	After you have opened the appropriate project-file, you will see that it uses 
-	a number of sub-projects. Just do a make on the top-level project and a 
-	couple of minutes later, Beam should be all done.
+		After you have opened the appropriate project-file, you will see that it uses 
+		a number of sub-projects. Just do a make on the top-level project and a 
+		couple of minutes later, Beam should be all done.
 
 
 Have fun!
