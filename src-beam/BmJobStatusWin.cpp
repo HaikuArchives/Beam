@@ -9,6 +9,7 @@
 #include <ClassInfo.h>
 #include <Entry.h>
 #include <InterfaceDefs.h>
+#include <MessageRunner.h>
 #include <StatusBar.h>
 
 #include <layout.h>
@@ -35,6 +36,8 @@
 	BmJobStatusView
 \********************************************************************************/
 
+static const int32 BM_TIME_TO_SHOW = 'BmZ1';
+static const int32 BM_TIME_TO_REMOVE = 'BmZ2';
 
 /*------------------------------------------------------------------------------*\
 	BmJobStatusView()
@@ -43,6 +46,10 @@
 BmJobStatusView::BmJobStatusView( const char* name)
 	:	MBorder( M_ETCHED_BORDER, 2, const_cast<char*>(name))
 	,	BmJobController( name)
+	,	mShowMsgRunner( NULL)
+	,	mRemoveMsgRunner( NULL)
+	,	mMSecsBeforeShow( 100)
+	,	mMSecsBeforeRemove( 100)
 {
 }
 
@@ -51,6 +58,8 @@ BmJobStatusView::BmJobStatusView( const char* name)
 		-	standard destructor
 \*------------------------------------------------------------------------------*/
 BmJobStatusView::~BmJobStatusView() {
+	delete mRemoveMsgRunner;
+	delete mShowMsgRunner;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -78,6 +87,23 @@ void BmJobStatusView::MessageReceived( BMessage* msg) {
 				UpdateModelView( msg);
 				break;
 			}
+			case BM_TIME_TO_SHOW: {
+				BM_LOG2( BM_LogModelController, BString("Controller <") << ControllerName() << "> has been told to show its view");
+				Show();
+				TheJobStatusWin->Show();
+				break;
+			}
+			case BM_TIME_TO_REMOVE: {
+				BM_LOG2( BM_LogModelController, BString("Controller <") << ControllerName() << "> has been told to remove its view");
+				DetachModel();
+				if (!IsHidden()) {
+					Hide();
+					TheJobStatusWin->Hide();
+				}
+				TheJobStatusWin->RemoveJob( ControllerName());
+				delete this;
+				break;
+			}
 			default:
 				MBorder::MessageReceived( msg);
 		}
@@ -89,23 +115,37 @@ void BmJobStatusView::MessageReceived( BMessage* msg) {
 }
 
 /*------------------------------------------------------------------------------*\
+	StartJob()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmJobStatusView::StartJob( BmJobModel* model, bool startInNewThread) {
+	delete mShowMsgRunner;
+	mShowMsgRunner = NULL;
+	BMessage* timerMsg = new BMessage( BM_TIME_TO_SHOW);
+	BM_LOG2( BM_LogModelController, BString("Controller <") << ControllerName() << "> sets timer-to-show to "<<MSecsBeforeShow()<<" msecs");
+	mShowMsgRunner = new BMessageRunner( BMessenger( this), timerMsg, 
+													 MSecsBeforeShow(), 1);
+	inherited::StartJob( model, startInNewThread);
+}
+
+/*------------------------------------------------------------------------------*\
 	JobIsDone()
 		-	hook-method that is called when a JobModel tells us it's finished
 		-	parameter msg may contain any further attributes
-		-	tells the connection-window to remove this connection
-		-	deletes this connection
+		-	tells the job-window to remove this job
+		-	deletes this job
 \*------------------------------------------------------------------------------*/
 void BmJobStatusView::JobIsDone( bool completed) {
 	BM_LOG2( BM_LogModelController, BString("Controller <") << ControllerName() << "> has been told that job " << ModelName() << " is done");
-	BmJobStatusWin::Instance->RemoveJob( ControllerName());
-	if (ThePrefs->DynamicConnectionWin() == BmPrefs::CONN_WIN_DYNAMIC 
-	|| (ThePrefs->DynamicConnectionWin() == BmPrefs::CONN_WIN_DYNAMIC_EMPTY
-		&& !WantsToStayVisible())) {
-			DetachModel();
-			delete this;
-	} else {
-		if (!completed)
-			ResetController();
+	if (!completed)
+		ResetController();
+	if (ThePrefs->GetBool("DynamicStatusWin") || AlwaysRemoveWhenDone()) {
+		delete mRemoveMsgRunner;
+		mRemoveMsgRunner = NULL;
+		BMessage* timerMsg = new BMessage( BM_TIME_TO_REMOVE);
+		BM_LOG2( BM_LogModelController, BString("Controller <") << ControllerName() << "> sets timer-to-remove to "<<MSecsBeforeRemove()<<" msecs");
+		mRemoveMsgRunner = new BMessageRunner( BMessenger( this), timerMsg, 
+															MSecsBeforeRemove(), 1);
 	}
 }
 
@@ -133,6 +173,7 @@ BmMailMoverView::BmMailMoverView( const char* name)
 	,	mStatBar( NULL)
 	,	mBottomLabel( NULL)
 {
+	mMSecsBeforeShow = ThePrefs->GetInt( "MSecsBeforeMailMoverShows", 250*1000);
 	BString labelText = BString("To: ") << ControllerName();
 	MView* view = new VGroup(
 		new MBViewWrapper(
@@ -175,14 +216,6 @@ void BmMailMoverView::ResetController() {
 	mStatBar->Reset( "Moving: ", "");
 }
 
-/*------------------------------------------------------------------------------*\
-	WantsToStay´Visible()
-		-	
-\*------------------------------------------------------------------------------*/
-bool BmMailMoverView::WantsToStayVisible() {
-	return false; 
-}
-				
 /*------------------------------------------------------------------------------*\
 	UpdateModelView()
 		-	
@@ -230,6 +263,7 @@ BmPopperView::BmPopperView( const char* name)
 	,	mStatBar( NULL)
 	,	mMailBar( NULL)
 {
+	mMSecsBeforeRemove = ThePrefs->GetInt( "MSecsBeforePopperRemove", 5000*1000);
 	MView* view = new VGroup(
 		new MBViewWrapper(
 			mStatBar = new BStatusBar( BRect(), name, "State: ", name), true, false, false
@@ -275,14 +309,6 @@ void BmPopperView::ResetController() {
 	mMailBar->Reset( "Messages: ", NULL);
 }
 
-/*------------------------------------------------------------------------------*\
-	WantsToStay´Visible()
-		-	
-\*------------------------------------------------------------------------------*/
-bool BmPopperView::WantsToStayVisible() {
-	return mMailBar->CurrentValue() != 0;
-}
-				
 /*------------------------------------------------------------------------------*\
 	UpdateModelView()
 		-	
@@ -341,13 +367,12 @@ BmJobStatusWin* BmJobStatusWin::CreateInstance() {
 
 /*------------------------------------------------------------------------------*\
 	BmJobStatusWin()
-		-	constructor, creates outer view that will take up the connection-interfaces
+		-	constructor, creates outer view that will take up the job-interfaces
 \*------------------------------------------------------------------------------*/
 BmJobStatusWin::BmJobStatusWin( const char* title)
 	:	MWindow( BRect(50,50,0,0), "Jobs",
 					B_FLOATING_WINDOW_LOOK, B_NORMAL_WINDOW_FEEL,
 					MyWinFlags)
-	,	mActiveJobCount( 0)
 { 
 	mOuterGroup = 
 		new VGroup(
@@ -375,18 +400,18 @@ BmJobStatusWin::~BmJobStatusWin() {
 \*------------------------------------------------------------------------------*/
 bool BmJobStatusWin::QuitRequested() {
 	if (!bmApp->IsQuitting()) {
-		Hide();
 		return false;
 	}
-	BM_LOG2( BM_LogJobWin, BString("JobStatusWin has been asked to quit; stopping all connections"));
+	BmAutolock lock( this);
+	lock.IsLocked()						|| BM_THROW_RUNTIME( "QuitRequested(): could not lock window");
+	BM_LOG2( BM_LogJobWin, BString("JobStatusWin has been asked to quit; stopping all jobs"));
 	JobMap::iterator iter;
 	for( iter = mActiveJobs.begin(); iter != mActiveJobs.end(); ++iter) {
 		BmJobStatusView* jobView = (*iter).second;
 		if (jobView)
 			jobView->StopJob();
 	}
-	BM_LOG2( BM_LogJobWin, BString("JobStatusWin has stopped all connections"));
-	Hide();
+	BM_LOG2( BM_LogJobWin, BString("JobStatusWin has stopped all jobs"));
 	return bmApp->IsQuitting();
 }
 
@@ -401,8 +426,8 @@ void BmJobStatusWin::Quit() {
 
 /*------------------------------------------------------------------------------*\
 	MessageReceived( msg)
-		-	handles messages sent from Application (connection requests)
-			and messages sent from connections (update-requests and 
+		-	handles messages sent from Application (job requests)
+			and messages sent from jobs (update-requests and 
 			finished-triggers)
 \*------------------------------------------------------------------------------*/
 void BmJobStatusWin::MessageReceived(BMessage* msg) {
@@ -425,11 +450,11 @@ void BmJobStatusWin::MessageReceived(BMessage* msg) {
 }
 
 /*------------------------------------------------------------------------------*\
-	AddJobStatus( msg)
-		-	adds a new connection-interface to this window
+	AddJob( msg)
+		-	adds a new job-interface to this window
 		-	the necessary BmJobStatusView-object will be created and its 
 			corresponding BmJobModel will be started (in a new thread).
-		-	if connection is already active, it is left alone (nothing happens)
+		-	if job is already active, it is left alone (nothing happens)
 \*------------------------------------------------------------------------------*/
 void BmJobStatusWin::AddJob( BMessage* msg) {
 	BM_assert( msg);
@@ -437,7 +462,10 @@ void BmJobStatusWin::AddJob( BMessage* msg) {
 	BString name = FindMsgString( msg, MSG_JOB_NAME);
 	BmJobStatusView* controller = NULL;
 
-	BM_LOG( BM_LogJobWin, BString("Adding connection ") << name);
+	BM_LOG( BM_LogJobWin, BString("Adding job ") << name);
+
+	BmAutolock lock( this);
+	lock.IsLocked()						|| BM_THROW_RUNTIME( "AddJob(): could not lock window");
 
 	JobMap::iterator interfaceIter = mActiveJobs.find( name);
 	if (interfaceIter != mActiveJobs.end()) {
@@ -451,7 +479,7 @@ void BmJobStatusWin::AddJob( BMessage* msg) {
 	}
 
 	if (!controller)
-	{	// account is inactive, so we create a new controller for it:
+	{	// job is inactive, so we create a new controller for it:
 		BM_LOG2( BM_LogJobWin, BString("Creating new view for ") << name);
 		switch( msg->what) {
 			case BM_JOBWIN_FETCHPOP:
@@ -473,7 +501,7 @@ void BmJobStatusWin::AddJob( BMessage* msg) {
 		// ...and note the interface inside the map:
 		mActiveJobs[name] = controller;
 	} else {
-		// we are in STATIC-mode, where inactive connections are shown. We just
+		// we are in STATIC-mode, where inactive jobs are shown. We just
 		// have to reactivate the controller.
 		// This is done by the controllers Reset()-method:
 		BM_LOG2( BM_LogJobWin, BString("Reactivating view of ") << name);
@@ -484,27 +512,25 @@ void BmJobStatusWin::AddJob( BMessage* msg) {
 	BmJobModel* job = controller->CreateJobModel( msg);
 
 	// ...and activate the Job via its controller:
-	BM_LOG2( BM_LogJobWin, BString("Starting connection thread "));
+	BM_LOG2( BM_LogJobWin, BString("Starting job thread "));
 	controller->StartJob( job);
-
-	mActiveJobCount++;
-	while (IsHidden())
-		Show();
 }
 
 /*------------------------------------------------------------------------------*\
-	RemoveJobStatus( name)
-		-	removes a connection and its administrative info
+	RemoveJob( name)
+		-	removes a job and its administrative info
 		-	the decision about whether or not to remove the interface, too, 
-			depends on the mode of the connection-window:
-			*	CONN_WIN_DYNAMIC:			always remove interface
-			*	CONN_WIN_DYNAMIC_EMPTY:	remove interface if no new mail was found
-			*	CONN_WIN_STATIC:			never remove interface
+			depends on the mode of the job-window:
+			*	DYNAMIC:			always remove interface
+			*	STATIC:			never remove interface
 \*------------------------------------------------------------------------------*/
 void BmJobStatusWin::RemoveJob( const char* name) {
 	BM_assert( name);
 
-	BM_LOG( BM_LogJobWin, BString("Removing connection ") << name);
+	BM_LOG( BM_LogJobWin, BString("Removing job ") << name);
+
+	BmAutolock lock( this);
+	lock.IsLocked()						|| BM_THROW_RUNTIME( "RemoveJob(): could not lock window");
 
 	JobMap::iterator interfaceIter = mActiveJobs.find( name);
 	if (interfaceIter == mActiveJobs.end())
@@ -514,23 +540,9 @@ void BmJobStatusWin::RemoveJob( const char* name) {
 	if (!controller)
 		return;
 
-	controller->StopJob();
-
-	// remove interface only if mode indicates to do so:
-	if (ThePrefs->DynamicConnectionWin() == BmPrefs::CONN_WIN_DYNAMIC 
-	|| (ThePrefs->DynamicConnectionWin() == BmPrefs::CONN_WIN_DYNAMIC_EMPTY
-		&& !controller->WantsToStayVisible())) {
-		BM_LOG2( BM_LogJobWin, BString("Removing interface of connection ") << name);
-		BmAutolock lock( this);
-		lock.IsLocked()						|| BM_THROW_RUNTIME( "RemoveJobStatus(): could not lock window");
-		BRect rect = controller->Bounds();
-		mOuterGroup->RemoveChild( controller);
-		ResizeBy( 0, 0-(rect.Height()));
-		RecalcSize();
-		mActiveJobs.erase( name);
-	}
-	mActiveJobCount--;
-	if (mActiveJobs.empty() && ThePrefs->DynamicConnectionWin()) {
-		Hide();
-	}
+	BRect rect = controller->Bounds();
+	mOuterGroup->RemoveChild( controller);
+	ResizeBy( 0, 0-(rect.Height()));
+	RecalcSize();
+	mActiveJobs.erase( controller->ControllerName());
 }

@@ -9,6 +9,7 @@
 
 #include "BmBasics.h"
 #include "BmLogHandler.h"
+#include "BmMail.h"
 #include "BmMailRef.h"
 #include "BmMailRefList.h"
 #include "BmUtil.h"
@@ -63,27 +64,29 @@ BmMailRef::BmMailRef( BmMailRefList* model, entry_ref &eref, ino_t node, struct 
 		node.ReadAttr( "BEOS:TYPE", 		B_STRING_TYPE, 0, buf, bufsize);		filetype = buf; 	*buf=0;
 		if (!filetype.ICompare("text/x-email")) {
 			// file is indeed a mail, we fetch its attributes:
-			node.ReadAttrString( "MAIL:name", 		&mName);
-			node.ReadAttrString( "MAIL:account", 	&mAccount);
-			node.ReadAttrString( "MAIL:cc", 			&mCc);
-			node.ReadAttrString( "MAIL:from", 		&mFrom);
-			node.ReadAttrString( "MAIL:priority", 	&mPriority);
-			node.ReadAttrString( "MAIL:reply", 		&mReplyTo);
-			node.ReadAttrString( "MAIL:status", 	&mStatus);
-			node.ReadAttrString( "MAIL:subject", 	&mSubject);
-			node.ReadAttrString( "MAIL:to", 			&mTo);
+			node.ReadAttrString( BM_MAIL_ATTR_NAME, 		&mName);
+			node.ReadAttrString( BM_MAIL_ATTR_ACCOUNT, 	&mAccount);
+			node.ReadAttrString( BM_MAIL_ATTR_CC, 			&mCc);
+			node.ReadAttrString( BM_MAIL_ATTR_FROM, 		&mFrom);
+			node.ReadAttrString( BM_MAIL_ATTR_PRIORITY, 	&mPriority);
+			node.ReadAttrString( BM_MAIL_ATTR_REPLY, 		&mReplyTo);
+			node.ReadAttrString( BM_MAIL_ATTR_STATUS, 	&mStatus);
+			node.ReadAttrString( BM_MAIL_ATTR_SUBJECT, 	&mSubject);
+			node.ReadAttrString( BM_MAIL_ATTR_TO, 			&mTo);
 	
 			mWhen = 0;
-			node.ReadAttr( "MAIL:when", 		B_TIME_TYPE, 0, &mWhen, sizeof(time_t));
+			node.ReadAttr( BM_MAIL_ATTR_WHEN, 		B_TIME_TYPE, 0, &mWhen, sizeof(time_t));
 			mWhenString = TimeToString( mWhen);
 	
-			bool att1 = false;
-			node.ReadAttr( "MAIL:attachment", B_BOOL_TYPE, 0, &att1, sizeof(att1));
-			bool att2 = false;
-			node.ReadAttr( "MAIL:attachments", B_BOOL_TYPE, 0, &att2, sizeof(att2));
-			int32 att3 = 0;
-			node.ReadAttr( "MAIL:has_attachment", B_INT32_TYPE, 0, &att3, sizeof(att3));
-			mHasAttachments = att1 || att2 || att3>0;
+			int32 att1 = 0;					// standard BeOS kind (BMail, Postmaster, Beam)
+			node.ReadAttr( BM_MAIL_ATTR_ATTACHMENTS, B_INT32_TYPE, 0, &att1, sizeof(att1));
+			bool att2 = false;				// Scooby kind
+			node.ReadAttr( "MAIL:attachment", B_BOOL_TYPE, 0, &att2, sizeof(att2));
+			mHasAttachments = att1>0 || att2;
+													// please notice that we ignore Mail-It, since
+													// it does not give any proper indication 
+													// (other than its internal status-attribute,
+													// which we really do not want to even look at)
 	
 			mSize = st.st_size;
 			mSizeString = BytesToString( mSize,true);

@@ -58,7 +58,7 @@ BmMailView::BmMailView( minimax minmax, BRect frame, bool editable)
 	:	inherited( frame, "MailView", B_FOLLOW_NONE, B_WILL_DRAW | B_NAVIGABLE)
 	,	inheritedController( "MailViewController")
 	,	mEditMode( editable)
-	,	mCurrMail( NULL)
+	,	mCurrMail( new BmMail())
 	,	mPartnerMailRefView( NULL)
 	,	mRaw( false)
 	,	mFontSize( 12)
@@ -148,7 +148,7 @@ void BmMailView::MessageReceived( BMessage* msg) {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmMailView::KeyDown(const char *bytes, int32 numBytes) { 
-	if ( numBytes == 1 ) {
+	if ( numBytes == 1 && !IsEditable()) {
 		switch( bytes[0]) {
 			case B_PAGE_UP:
 			case B_PAGE_DOWN:
@@ -170,7 +170,8 @@ void BmMailView::KeyDown(const char *bytes, int32 numBytes) {
 				inherited::KeyDown( bytes, numBytes);
 				break;
 		}
-	}
+	} else 
+		inherited::KeyDown( bytes, numBytes);
 }
 
 /*------------------------------------------------------------------------------*\

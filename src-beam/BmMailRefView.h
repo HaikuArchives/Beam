@@ -66,7 +66,7 @@ public:
 
 	// overrides of controller base:
 	BString StateInfoBasename();
-	BMessage* DefaultLayout();
+	const BMessage* DefaultLayout();
 	CLVContainerView* CreateContainer( bool horizontal, bool vertical, 
 												  bool scroll_view_corner, border_style border, 
 												  uint32 ResizingMode, uint32 flags);

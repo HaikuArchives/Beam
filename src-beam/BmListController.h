@@ -174,7 +174,7 @@ protected:
 	virtual BString StateInfoBasename()				= 0;
 	virtual void WriteStateInfo();
 	virtual void ReadStateInfo();
-	virtual BMessage* DefaultLayout()	{ return NULL; }
+	virtual const BMessage* DefaultLayout()	{ return NULL; }
 
 	BMessage* mInitialStateInfo;
 	bool mShowCaption;

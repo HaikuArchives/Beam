@@ -185,7 +185,7 @@ void* BmEncoding::Decode( const BString& encodingStyle, BString& text,
 		// quoted printable:
 		Regexx rx;
 		// remove trailing whitespace (was added during mail-transport):
-		text = rx.replace( text, "\\s+(?=\\r\\n)", "", Regexx::newline | Regexx::global);
+		text = rx.replace( text, "[\\t ]+(?=\\r\\n)", "", Regexx::newline | Regexx::global);
 		// join together lines that end with a softbreak:
 		text = rx.replace( text, "=\\r\\n", "", Regexx::newline | Regexx::global);
 		if (isEncodedWord) {

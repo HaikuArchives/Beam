@@ -55,6 +55,8 @@ BmMailRefItem::BmMailRefItem( BString key, BmListModelItem* _item)
 {
 	BmMailRef* ref = dynamic_cast<BmMailRef*>( _item);
 
+	Bold( ref->IsNew());
+
 	BString st = BString("Mail_") << ref->Status();
 	BBitmap* icon = TheResources->IconByName(st);
 	SetColumnContent( COL_STATUS_I, icon, 2.0, false);
@@ -86,7 +88,7 @@ BmMailRefItem::BmMailRefItem( BString key, BmListModelItem* _item)
 		{ ref->Priority().String(),				false },
 		{ NULL, false }
 	};
-	SetTextCols( nFirstTextCol, cols, !ThePrefs->StripedListView());
+	SetTextCols( nFirstTextCol, cols, !ThePrefs->GetBool("StripedListView"));
 }
 
 /*------------------------------------------------------------------------------*\
@@ -104,6 +106,7 @@ void BmMailRefItem::UpdateView( BmUpdFlags flags) {
 	inherited::UpdateView( flags);
 	BmMailRef* ref = ModelItem();
 	if (flags & BmMailRef::UPD_STATUS) {
+		Bold( ref->IsNew());
 		BString st = BString("Mail_") << ref->Status();
 		BBitmap* icon = TheResources->IconByName(st);
 		SetColumnContent( COL_STATUS_I, icon, 2.0, false);
@@ -188,7 +191,7 @@ BmMailRefView::BmMailRefView( minimax minmax, int32 width, int32 height)
 {
 	int32 flags = 0;
 	SetViewColor( B_TRANSPARENT_COLOR);
-	if (ThePrefs->StripedListView())
+	if (ThePrefs->GetBool("StripedListView"))
 		SetStripedBackground( true);
 	else 
 		flags |= CLV_TELL_ITEMS_WIDTH;
@@ -446,8 +449,8 @@ BString BmMailRefView::StateInfoBasename()	{
 	( )
 		-	
 \*------------------------------------------------------------------------------*/
-BMessage* BmMailRefView::DefaultLayout()		{ 
-	return ThePrefs->MailRefLayout(); 
+const BMessage* BmMailRefView::DefaultLayout()		{ 
+	return ThePrefs->GetMsg("MailRefLayout"); 
 }
 
 /*------------------------------------------------------------------------------*\

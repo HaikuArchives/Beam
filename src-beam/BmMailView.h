@@ -54,12 +54,13 @@ public:
 	void MessageReceived( BMessage* msg);
 
 	// overrides of BmController base:
-	BHandler* GetControllerHandler()	{ return this; }
+	BHandler* GetControllerHandler()		{ return this; }
 	void JobIsDone( bool completed);
 	void DetachModel();
 
 	// getters:
 	BmMailViewContainer* ContainerView() const	{ return mScrollView; }
+	BmRef<BmMail> CurrMail()				{ return mCurrMail; }
 
 	// setters:
 	void TeamUpWith( BmMailRefView* v)	{ mPartnerMailRefView = v; }

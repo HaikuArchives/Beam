@@ -124,7 +124,7 @@ BmMailFolderView::~BmMailFolderView() {
 \*------------------------------------------------------------------------------*/
 BmListViewItem* BmMailFolderView::CreateListViewItem( BmListModelItem* item,
 																		BMessage* archive) {
-	if (ThePrefs->RestoreFolderStates())
+	if (ThePrefs->GetBool("RestoreFolderStates"))
 		return new BmMailFolderItem( item->Key(), item, true, archive);
 	else
 		return new BmMailFolderItem( item->Key(), item, true, NULL);

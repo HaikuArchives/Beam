@@ -80,12 +80,17 @@ void BmMainMenuBar::JobIsDone( bool completed) {
 			delete old;
 		BmListModel *model = dynamic_cast<BmListModel*>( DataModel());
 		BmModelItemMap::const_iterator iter;
-		for( iter = model->begin(); iter != model->end(); ++iter) {
+		int i=0;
+		for( iter = model->begin();  iter != model->end();  ++iter, ++i) {
 			BmListModelItem* item = iter->second.Get();
 			BMessage* msg = new BMessage( BMM_CHECK_MAIL);
 			msg->AddString( BmPopAccountList::MSG_ITEMKEY, item->Key());
-			if (item)
-				mAccountMenu->AddItem( new BMenuItem( item->Key().String(), msg));
+			if (item) {
+				if (i<10)
+					mAccountMenu->AddItem( new BMenuItem( item->Key().String(), msg, '0'+i));
+				else
+					mAccountMenu->AddItem( new BMenuItem( item->Key().String(), msg, i));
+			}
 		}
 	}
 }
@@ -436,6 +441,7 @@ void BmMainWindow::MessageReceived( BMessage* msg) {
 \*------------------------------------------------------------------------------*/
 bool BmMainWindow::QuitRequested() {
 	BM_LOG2( BM_LogMainWindow, BString("MainWindow has been asked to quit"));
+	ThePopAccountList->Store();
 	Store();
 	beamApp->PostMessage( B_QUIT_REQUESTED);
 	return true;

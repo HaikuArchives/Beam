@@ -102,7 +102,9 @@ class BmMailHeader {
 		void Set( const BString fieldName, const BString content);
 		void Add( const BString fieldName, const BString content);
 		void Remove( const BString fieldName);
+		BString FoldLine( BString line, int fieldLength) const;
 		BString& operator [] (const BString fieldName);
+		operator BString() const;
 	private:
 		BmHeaderMap mHeaders;
 	};
@@ -122,14 +124,19 @@ public:
 
 	// getters:
 	const BString& GetFieldVal( const BString fieldName);
-	const BString GetEnhancedFieldVal( const BString fieldName);
+	const BString GetStrippedFieldVal( const BString fieldName);
 	int32 NumLines() const 					{ return mNumLines; }
 	const BString& HeaderString() const { return mHeaderString; }
+	const BString& Name() const			{ return mName; }
+
+	// operators:
+	operator BString() const;				// returns concatenated header-fields (ready to be sent)
 
 protected:
+	bool IsAddressField( const BString fieldName);
 	void ParseHeader( const BString &header);
 	BString ParseHeaderField( BString fieldName, BString fieldValue);
-	BString EnhanceField( BString fieldValue, BString* commentBuffer=NULL);
+	BString StripField( BString fieldValue, BString* commentBuffer=NULL);
 
 	bool ParseDateTime( const BString& str, time_t& dateTime);
 
@@ -141,7 +148,7 @@ private:
 							// values (for most fields, this list should only have
 							// one item, but for others, e.g. 'Received', the list
 							// will have numerous entries.
-	BmHeaderList mEnhancedHeaders;
+	BmHeaderList mStrippedHeaders;
 							// contains all stripped headers as a list of corresponding
 							// values. For simplicity, this map contains even fields for
 							// which the stripped value does not make sense, because they
@@ -150,9 +157,18 @@ private:
 							// N.B.: 'stripped' actually means that any comments and 
 							//       unneccessary whitespace are gone from the field-values.
 	BmAddrMap mAddrMap;
-							// address-fields with detailed (parsed) information
+							// address-fields with detailed information about all
+							// the single address-entries that are contained within
+							// each field.
+							// In case a complete addresslist is accessed as a BString,
+							// it will (in contrast to the stripped-field) deliver a
+							// completely parsed and reconstructed version of the address.
+							// This results in identical formatting for all addresses
+							// (i.e. no '"'s around phrases and the like)
 	BmMail* mMail;		
 							// The mail these headers belong to
+	BString mName;
+							// The "name" of the sender of this mail (MAIL:name attribute)
 	int32 mDefaultEncoding;
 							// encoding to be used by this mail (if not specified otherwise)
 	int32 mNumLines;

@@ -87,7 +87,7 @@ class ColumnListView : public BListView
 		static ColumnListView* Instantiate(BMessage* data);
 			***/
 		virtual status_t Archive(BMessage* data, bool deep = true) const;
-		virtual status_t Unarchive(BMessage* archive, bool deep = true);
+		virtual status_t Unarchive(const BMessage* archive, bool deep = true);
 
 		//Column setup functions
 		virtual bool AddColumn(CLVColumn* Column);			//Note that a column may only be added to

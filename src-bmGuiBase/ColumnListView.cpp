@@ -2095,7 +2095,7 @@ status_t ColumnListView::Archive(BMessage* archive, bool deep) const {
 	return ret;
 }
 
-status_t ColumnListView::Unarchive(BMessage* archive, bool deep) {
+status_t ColumnListView::Unarchive(const BMessage* archive, bool deep) {
 	AssertWindowLocked();
 	status_t ret = B_OK;
 	int i;

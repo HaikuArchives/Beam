@@ -173,12 +173,22 @@ void BmMailHeaderView::Draw( BRect bounds) {
 		mFont->SetFace( B_REGULAR_FACE);
 		SetFont( mFont);
 		SetLowColor( BeLightShadow);
-		DrawString( mMailHeader->GetFieldVal( "Subject").String(), BPoint( titleWidth+x_off, y_off+0*lh+fh) );
-		DrawString( mMailHeader->GetEnhancedFieldVal( "From").String(), BPoint( titleWidth+x_off, y_off+1*lh+fh) );
-		DrawString( mMailHeader->GetEnhancedFieldVal( "Date").String(), BPoint( titleWidth+x_off, y_off+2*lh+fh) );
+		DrawString( mMailHeader->GetFieldVal( BM_FIELD_SUBJECT).String(), BPoint( titleWidth+x_off, y_off+0*lh+fh) );
+		if (ThePrefs->GetBool( "ShowStrippedFieldsInHeaderView", true)) {
+			DrawString( mMailHeader->GetStrippedFieldVal( BM_FIELD_FROM).String(), BPoint( titleWidth+x_off, y_off+1*lh+fh) );
+			DrawString( mMailHeader->GetStrippedFieldVal( BM_FIELD_DATE).String(), BPoint( titleWidth+x_off, y_off+2*lh+fh) );
+		} else {
+			DrawString( mMailHeader->GetFieldVal( BM_FIELD_FROM).String(), BPoint( titleWidth+x_off, y_off+1*lh+fh) );
+			DrawString( mMailHeader->GetFieldVal( BM_FIELD_DATE).String(), BPoint( titleWidth+x_off, y_off+2*lh+fh) );
+		}
 		if (mDisplayMode == LARGE_HEADERS) {
-			DrawString( mMailHeader->GetEnhancedFieldVal( "To").String(), BPoint( titleWidth+x_off, y_off+3*lh+fh) );
-			DrawString( mMailHeader->GetEnhancedFieldVal( "Cc").String(), BPoint( titleWidth+x_off, y_off+4*lh+fh) );
+			if (ThePrefs->GetBool( "ShowStrippedFieldsInHeaderView", true)) {
+				DrawString( mMailHeader->GetStrippedFieldVal( BM_FIELD_TO).String(), BPoint( titleWidth+x_off, y_off+3*lh+fh) );
+				DrawString( mMailHeader->GetStrippedFieldVal( BM_FIELD_CC).String(), BPoint( titleWidth+x_off, y_off+4*lh+fh) );
+			} else {
+				DrawString( mMailHeader->GetFieldVal( BM_FIELD_TO).String(), BPoint( titleWidth+x_off, y_off+3*lh+fh) );
+				DrawString( mMailHeader->GetFieldVal( BM_FIELD_CC).String(), BPoint( titleWidth+x_off, y_off+4*lh+fh) );
+			}
 		}
 	} else {
 		// full mode, display complete header:

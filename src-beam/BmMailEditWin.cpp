@@ -104,12 +104,12 @@ BmMailEditWin::BmMailEditWin()
 			new Space(minimax(-1,4,-1,4)),
 			new HGroup(
 				new Space(minimax(20,-1,20,-1)),
-				mFromControl = new BmMenuControl( "From:", new BPopUpMenu( "Mail Accounts")),
+				mFromControl = new BmMenuControl( "From:", BM_FIELD_FROM, new BPopUpMenu( "Mail Accounts")),
 				0
 			),
 			new HGroup(
 				new Space(minimax(20,-1,20,-1)),
-				mToControl = new BmTextControl( "To:", true),
+				mToControl = new BmTextControl( "To:", BM_FIELD_TO, true),
 				0
 			),
 			new HGroup(
@@ -119,22 +119,22 @@ BmMailEditWin::BmMailEditWin()
 										  TheResources->CreatePictureFor( &TheResources->mDownArrow, 16, 16), 
 										  new BMessage( BM_MAILEDIT_SHOWDETAILS), this, B_TWO_STATE_BUTTON),
 				new Space(minimax(4,-1,4,-1)),
-				mSubjectControl = new BmTextControl( "Subject:", false),
+				mSubjectControl = new BmTextControl( "Subject:", BM_FIELD_SUBJECT, false),
 				0
 			),
 			new HGroup(
 				new Space(minimax(20,-1,20,-1)),
-				mCcControl = new BmTextControl( "Cc:", true),
+				mCcControl = new BmTextControl( "Cc:", BM_FIELD_CC, true),
 				0
 			),
 			new HGroup(
 				new Space(minimax(20,-1,20,-1)),
-				mBccControl = new BmTextControl( "Bcc:", true),
+				mBccControl = new BmTextControl( "Bcc:", BM_FIELD_BCC, true),
 				0
 			),
 			new HGroup(
 				new Space(minimax(20,-1,20,-1)),
-				mEncodingControl = new BmMenuControl( "Encoding:", new BPopUpMenu( "Encoding:")),
+				mEncodingControl = new BmMenuControl( "Encoding:", BM_FIELD_CONTENT_TRANSFER_ENCODING, new BPopUpMenu( "Encoding:")),
 				0
 			),
 			new Space(minimax(-1,4,-1,4)),
@@ -283,6 +283,17 @@ void BmMailEditWin::MessageReceived( BMessage* msg) {
 					mEncodingControl->DetachFromParent();
 				}
 				RecalcSize();
+				break;
+			}
+			case BM_TEXT_CHANGED: {
+				BTextControl* control = NULL;
+				msg->FindPointer( "source", (void**)&control);
+				if (control) {
+					BmRef<BmMail> mail = mMailView->CurrMail();
+					if (mail) {
+						mail->SetFieldVal( control->Name(), control->Text());
+					}
+				}
 				break;
 			}
 			case B_COPY:

@@ -46,7 +46,8 @@ BmPopper::BmPopper( const BString& name, BmPopAccount* account)
 	,	mConnected( false)
 	,	mMsgUIDs( NULL)
 	,	mMsgCount( 0)
-	,	mMsgSize( 0)
+	,	mNewMsgCount( 0)
+	,	mMsgSizes( NULL)
 	,	mMsgTotalSize( 1)
 	,	mState( 0)
 {
@@ -64,6 +65,8 @@ BmPopper::~BmPopper() {
 		// a good idea...(?)
 		this->Quit();
 	}
+	if (mMsgSizes)
+		delete [] mMsgSizes;
 	if (mMsgUIDs)
 		delete [] mMsgUIDs;
 }
@@ -128,8 +131,8 @@ void BmPopper::UpdatePOPStatus( const float delta, const char* detailText,
 void BmPopper::UpdateMailStatus( const float delta, const char* detailText, 
 											int32 currMsg) {
 	BString text;
-	if (mMsgCount) {
-		text = BString() << currMsg << " of " << mMsgCount;
+	if (mNewMsgCount) {
+		text = BString() << currMsg << " of " << mNewMsgCount;
 	} else {
 		text = "none";
 	}
@@ -175,11 +178,13 @@ void BmPopper::Login() {
 		-	looks for new mail
 \*------------------------------------------------------------------------------*/
 void BmPopper::Check() {
+	int32 msgNum = 0;
+
 	BString cmd("STAT");
 	SendCommand( cmd);
 	if (!CheckForPositiveAnswer( SINGLE_LINE))
 		return;
-	if (sscanf( mReplyLine.String()+4, "%ld %ld", &mMsgCount, &mMsgTotalSize) != 2 || mMsgCount < 0)
+	if (sscanf( mReplyLine.String()+4, "%ld", &mMsgCount) != 1 || mMsgCount < 0)
 		throw BM_network_error( "answer to STAT has unknown format");
 	if (mMsgCount == 0) {
 		UpdateMailStatus( 0, NULL, 0);
@@ -188,30 +193,57 @@ void BmPopper::Check() {
 
 	// we try to fetch a list of unique message IDs from server:
 	mMsgUIDs = new BString[mMsgCount];
+	mMsgSizes = new int32[mMsgCount];
 	cmd = BString("UIDL");
 	SendCommand( cmd);
 	// The UIDL-command may not be implemented by this server, so we 
 	// do not require a postive answer, we just hope for it:
 	if (!GetAnswer( MULTI_LINE)) 			
-		return;
+		return;									// interrupted, we give up
 	if (mReplyLine[0] == '+') {
 		// ok, we've got the UIDL-listing, so we fetch it:
-		int32 msgNum;
 		char msgUID[71];
 		// fetch UIDLs one per line and store them in array:
 		const char *p = mAnswer.String();
-		for( int32 i=0; i<mMsgCount; i++) {
+		for( int32 i=0; i<mMsgCount; ++i) {
 			if (sscanf( p, "%ld %70s", &msgNum, msgUID) != 2 || msgNum <= 0)
-				throw BM_network_error( "answer to UIDL has unknown format");
+				throw BM_network_error( BString("answer to UIDL has unknown format, msg ") << i+1);
 			mMsgUIDs[i] = msgUID;
 			// skip to next line:
 			if (!(p = strstr( p, "\r\n")))
-				throw BM_network_error( "answer to UIDL has unknown format");
+				throw BM_network_error( BString("answer to UIDL has unknown format, msg ") << i+1);
 			p += 2;
 		}
 	} else {
-		// no UIDL-listing from server, we will have to fetch the UIDLs later
-		// or generate our own (happens in class BmMail)
+		// no UIDL-listing from server, we will have to get by without...
+	}
+
+	// compute total size of messages that are new to us:
+	mMsgTotalSize = 0;
+	mNewMsgCount = 0;
+	cmd = "LIST";
+	SendCommand( cmd);
+	if (!CheckForPositiveAnswer( MULTI_LINE))
+		return;
+	const char *p = mAnswer.String();
+	for( int32 i=0; i<mMsgCount; i++) {
+		if (!mPopAccount->IsUIDDownloaded( mMsgUIDs[i])) {
+			// msg is new (according to unknown UID)
+			// fetch msgsize for message...
+			if (sscanf( p, "%ld %ld", &msgNum, &mMsgSizes[i]) != 2 || msgNum != i+1)
+				throw BM_network_error( BString("answer to LIST has unknown format, msg ") << i+1);
+			// add msg-size to total:
+			mMsgTotalSize += mMsgSizes[i];
+			mNewMsgCount++;
+		}
+		// skip to next line:
+		if (!(p = strstr( p, "\r\n")))
+			throw BM_network_error( BString("answer to LIST has unknown format, msg ") << i+1);
+		p += 2;
+	}
+	if (mNewMsgCount == 0) {
+		UpdateMailStatus( 0, NULL, 0);
+		return;									// no new messages found, nothing more to do
 	}
 }
 
@@ -220,23 +252,20 @@ void BmPopper::Check() {
 		-	retrieves all mails from server
 \*------------------------------------------------------------------------------*/
 void BmPopper::Retrieve() {
-	int32 num;
+	int32 newMailIndex = 0;
 	for( int32 i=0; i<mMsgCount; i++) {
-		BString cmd = BString("LIST ") << i+1;
+		if (mPopAccount->IsUIDDownloaded( mMsgUIDs[i]))
+			continue;							// msg is old (according to unknown UID)
+		BString cmd = BString("RETR ") << i+1;
 		SendCommand( cmd);
-		if (!CheckForPositiveAnswer( SINGLE_LINE))
-			return;
-		if (sscanf( mReplyLine.String()+4, "%ld %ld", &num, &mMsgSize) != 2 || num != i+1)
-		throw BM_network_error( "answer to LIST has unknown format");
-		cmd = BString("RETR ") << i+1;
-		SendCommand( cmd);
-		if (!CheckForPositiveAnswer( MULTI_LINE, i+1))
+		if (!CheckForPositiveAnswer( MULTI_LINE, ++newMailIndex))
 			return;
 		BmMail mail( mAnswer, Name());
 		mail.Store();
+		mPopAccount->MarkUIDAsDownloaded( mMsgUIDs[i]);
 	}
-	if (mMsgCount)
-		UpdateMailStatus( 100.0, "done", mMsgCount);
+	if (mNewMsgCount)
+		UpdateMailStatus( 100.0, "done", mNewMsgCount);
 	//	delete the retrieved messages if required:
 	if (mPopAccount->DeleteMailFromServer()) {
 		for( int32 i=0; i<mMsgCount; i++) {
@@ -307,8 +336,8 @@ bool BmPopper::CheckForPositiveAnswer( bool SingleLineMode, int32 mailNr) {
 bool BmPopper::GetAnswer( bool SingleLineMode, int32 mailNr) {
 	int32 offset = 0;
 	int32 SMALL = 512;
-	int32 bufSize = (mailNr>0 && mMsgSize > BmPopper::NetBufSize) 
-							? mMsgSize+SMALL*4
+	int32 bufSize = (mailNr>0 && mMsgSizes[mailNr-1] > BmPopper::NetBufSize) 
+							? mMsgSizes[mailNr-1]+SMALL*4
 							: BmPopper::NetBufSize;
 	char *buffer;
 	bool done = false;
@@ -317,7 +346,7 @@ bool BmPopper::GetAnswer( bool SingleLineMode, int32 mailNr) {
 	int32 numBytes = 0;
 
 	if (mailNr)
-		BM_LOG3( BM_LogPop, BString("announced msg-size:") << mMsgSize);
+		BM_LOG3( BM_LogPop, BString("announced msg-size:") << mMsgSizes[mailNr-1]);
 	BM_LOG3( BM_LogPop, BString("bufSize:") << bufSize);
 	mAnswer.SetTo( '\0', bufSize);		// preallocate the bufsize we need
 	buffer = mAnswer.LockBuffer( 0);
@@ -371,7 +400,7 @@ bool BmPopper::GetAnswer( bool SingleLineMode, int32 mailNr) {
 			firstBlock = false;
 			if (mailNr > 0) {
 				float delta = (100.0 * numBytes) / (mMsgTotalSize ? mMsgTotalSize : 1);
-				BString text = BString("size: ") << BytesToString( mMsgSize);
+				BString text = BString("size: ") << BytesToString( mMsgSizes[mailNr-1]);
 				UpdateMailStatus( delta, text.String(), mailNr);
 			}
 		} while( !done && numBytes);
@@ -400,7 +429,7 @@ bool BmPopper::GetAnswer( bool SingleLineMode, int32 mailNr) {
 \*------------------------------------------------------------------------------*/
 int32 BmPopper::ReceiveBlock( char* buffer, int32 max) {
 	int32 numBytes;
-	int32 AnswerTimeout = ThePrefs->ReceiveTimeout()*1000*1000;
+	int32 AnswerTimeout = ThePrefs->GetInt("ReceiveTimeout")*1000*1000;
 	int32 timeout = AnswerTimeout / BmPopper::FeedbackTimeout;
 	bool shouldCont;
 	for( int32 round=0; (shouldCont = ShouldContinue()) && round<timeout; ++round) {

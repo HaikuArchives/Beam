@@ -13,8 +13,8 @@
 	( )
 		-	
 \*------------------------------------------------------------------------------*/
-BmMenuControl::BmMenuControl( const char* label, BMenu* menu) 
-	:	inherited( BRect(0,0,200,20), NULL, label, menu, false, B_FOLLOW_NONE)
+BmMenuControl::BmMenuControl( const char* label, const char* name, BMenu* menu) 
+	:	inherited( BRect(0,0,200,20), name, label, menu, false, B_FOLLOW_NONE)
 	,	mParent( NULL)
 {
 	ResizeToPreferred();

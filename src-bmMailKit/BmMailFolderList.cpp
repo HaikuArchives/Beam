@@ -383,7 +383,7 @@ void BmMailFolderList::InitializeItems() {
 	BDirectory mailDir;
 	entry_ref eref;
 	status_t err;
-	BString mailDirName( ThePrefs->MailboxPath());
+	BString mailDirName( ThePrefs->GetString("MailboxPath"));
 	time_t mtime;
 
 	BM_LOG2( BM_LogMailTracking, "Start of initFolders");

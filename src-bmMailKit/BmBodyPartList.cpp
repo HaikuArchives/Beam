@@ -175,13 +175,13 @@ void BmBodyPart::SetTo( const BString& msgtext, int32 start, int32 length,
 	}
 	// MIME-type
 	BM_LOG2( BM_LogMailParse, "parsing Content-Type");
-	type = header->GetFieldVal("Content-Type");
+	type = header->GetFieldVal( BM_FIELD_CONTENT_TYPE);
 	if (!type.Length() || type.ICompare("text")==0)
 		type = "text/plain; charset=us-ascii";
 	mContentType.SetTo( type);
 	// encoding
 	BM_LOG2( BM_LogMailParse, "parsing Content-Transfer-Encoding");
-	encoding = header->GetFieldVal("Content-Transfer-Encoding");
+	encoding = header->GetFieldVal( BM_FIELD_CONTENT_TRANSFER_ENCODING);
 	if (!encoding.Length())
 		encoding = "7bit";
 	mContentTransferEncoding = encoding;
@@ -190,7 +190,7 @@ void BmBodyPart::SetTo( const BString& msgtext, int32 start, int32 length,
 	if (!mIsMultiPart) {
 		// unneccessary for multiparts, since they are never handled on their own 
 		// (they are split into their subparts instead)
-		if (ThePrefs->ShowDecodedLength() && mContentTransferEncoding.Length())
+		if (ThePrefs->GetBool("ShowDecodedLength") && mContentTransferEncoding.Length())
 			mDecodedLength = BmEncoding::DecodedLength( mContentTransferEncoding, 
 																	  mPosInRawText, mLength);
 		else
@@ -198,21 +198,21 @@ void BmBodyPart::SetTo( const BString& msgtext, int32 start, int32 length,
 	}
 	// id
 	BM_LOG2( BM_LogMailParse, "parsing Content-Id");
-	mContentId = header->GetFieldVal("Content-Id");
+	mContentId = header->GetFieldVal( BM_FIELD_CONTENT_ID);
 	BM_LOG2( BM_LogMailParse, BString("...found value: ")<<mContentId);
 	// disposition
 	BM_LOG2( BM_LogMailParse, "parsing Content-Disposition");
-	disposition = header->GetFieldVal("Content-Disposition");
+	disposition = header->GetFieldVal( BM_FIELD_CONTENT_DISPOSITION);
 	if (!disposition.Length())
 		disposition = (IsPlainText() ? "inline" : "attachment");
 	mContentDisposition.SetTo( disposition);
 	// description
 	BM_LOG2( BM_LogMailParse, "parsing Content-Description");
-	mContentDescription = header->GetFieldVal("Content-Description");
+	mContentDescription = header->GetFieldVal( BM_FIELD_CONTENT_DESCRIPTION);
 	BM_LOG2( BM_LogMailParse, BString("...found value: ")<<mContentDescription);
 	// Language
 	BM_LOG2( BM_LogMailParse, "parsing Content-Language");
-	mContentLanguage = header->GetFieldVal("Content-Language");
+	mContentLanguage = header->GetFieldVal( BM_FIELD_CONTENT_LANGUAGE);
 	mContentLanguage.ToLower();
 	BM_LOG2( BM_LogMailParse, BString("...found value: ")<<mContentLanguage);
 	// determine a filename (if possible)
@@ -354,6 +354,21 @@ BmBodyPartList::~BmBodyPartList() {
 }
 
 /*------------------------------------------------------------------------------*\
+	ParseMail()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmBodyPartList::ParseMail() {
+	if (mMail) {
+		const BString& msgText = mMail->RawText();
+		BmBodyPart* bodyPart = new BmBodyPart( this, msgText, mMail->HeaderLength()+2, 
+															msgText.Length()-mMail->HeaderLength()-2, 
+															mMail->Header());
+		AddItemToList( bodyPart);
+	}
+	mInitCheck = B_OK;
+}
+
+/*------------------------------------------------------------------------------*\
 	StartJob()
 		-	
 \*------------------------------------------------------------------------------*/
@@ -366,18 +381,21 @@ bool BmBodyPartList::StartJob() {
 
 	Freeze();									// we shut up for better performance
 	try {
-		if (mMail) {
-			const BString& msgText = mMail->RawText();
-			BmBodyPart* bodyPart = new BmBodyPart( this, msgText, mMail->HeaderLength()+2, 
-																msgText.Length()-mMail->HeaderLength()-2, 
-																mMail->Header());
-			AddItemToList( bodyPart);
-			mMail = NULL;
-		}
-		mInitCheck = B_OK;
+		ParseMail();
 	} catch (exception &e) {
 		BM_SHOWERR( e.what());
 	}
 	Thaw();
 	return InitCheck() == B_OK;
+}
+
+/*------------------------------------------------------------------------------*\
+	HasAttachments()
+		-	
+\*------------------------------------------------------------------------------*/
+bool BmBodyPartList::HasAttachments() const {
+	if (empty())
+		return false;
+	BmBodyPart* bodyPart = dynamic_cast< BmBodyPart*>( begin()->second.Get());
+	return bodyPart ? bodyPart->IsMultiPart() : false;
 }

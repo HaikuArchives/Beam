@@ -110,6 +110,8 @@ public:
 	virtual ~BmBodyPartList();
 
 	// native methods:
+	void ParseMail();
+	bool HasAttachments() const;
 
 	//	overrides of listmodel base:
 	bool StartJob();

@@ -40,7 +40,7 @@ CLVEasyItem::CLVEasyItem(uint32 level, bool superitem, bool expanded, float minh
 : CLVListItem(level,superitem,expanded,minheight)
 {
 	text_offset = 0.0;
-	highlight = false;
+	style_flags = 0;
 }
 
 
@@ -220,7 +220,7 @@ void CLVEasyItem::DrawItemColumn(BView *owner, BRect item_column_rect, int32 col
 		color = ((ColumnListView*)owner)->LightColumnCol();
 		tinted_color = ((ColumnListView*)owner)->DarkColumnCol();
 	}
-	if (highlight) {
+	if (Highlight()) {
 		const float highlight_tint = 1.15F;
 		color = tint_color( color, highlight_tint);
 		tinted_color = tint_color( tinted_color, highlight_tint);
@@ -262,6 +262,12 @@ void CLVEasyItem::DrawItemColumn(BView *owner, BRect item_column_rect, int32 col
 	{
 		const char* text = NULL;
 
+		BFont owner_font;
+		owner->GetFont(&owner_font);
+		if (Bold()) {
+			owner->SetFont( be_bold_font);
+		}
+	
 		owner->SetHighColor( Black);
 		if(type == CLVColTruncateText)
 		{
@@ -288,12 +294,14 @@ void CLVEasyItem::DrawItemColumn(BView *owner, BRect item_column_rect, int32 col
 				draw_point.Set(item_column_rect.left+(offs?offs:2.0),item_column_rect.top+text_offset);
 			else
 			{
-				BFont font;
-				owner->GetFont(&font);
-				float string_width = font.StringWidth(text);
+				float string_width = owner_font.StringWidth(text);
 				draw_point.Set(item_column_rect.right-(offs?offs:2.0)-string_width,item_column_rect.top+text_offset);
 			}				
 			owner->DrawString(text,draw_point);
+		}
+
+		if (Bold()) {
+			owner->SetFont( &owner_font);
 		}
 	}
 	else if(type == CLVColBitmap)
@@ -316,6 +324,7 @@ void CLVEasyItem::DrawItemColumn(BView *owner, BRect item_column_rect, int32 col
 		owner->SetDrawingMode(B_OP_OVER);
 		owner->DrawBitmap(bitmap,item_column_rect);
 		owner->SetDrawingMode(B_OP_COPY);
+
 	}
 	owner->ConstrainClippingRegion(NULL);
 }
@@ -531,3 +540,26 @@ const char* CLVEasyItem::GetUserText(int32 column_index, float column_width) con
 	return NULL;
 }
 
+
+void CLVEasyItem::Highlight( bool b) { 
+	SetStyleFlag( CLV_STYLE_HIGHLIGHT, b); 
+}
+
+bool CLVEasyItem::Highlight( ) { 
+	return (style_flags & CLV_STYLE_HIGHLIGHT) != 0; 
+}
+
+void CLVEasyItem::Bold( bool b) { 
+	SetStyleFlag( CLV_STYLE_BOLD, b); 
+}
+
+bool CLVEasyItem::Bold( ) { 
+	return (style_flags & CLV_STYLE_BOLD) != 0; 
+}
+
+void CLVEasyItem::SetStyleFlag( uint8 style, bool on) {
+	if (on)
+		style_flags |= style;
+	else
+		style_flags &= (0xFF ^ style);
+}

@@ -35,38 +35,23 @@ using namespace regexx;
 \*------------------------------------------------------------------------------*/
 BmMail::BmMail()
 	:	inherited("MailModel_dummy")
-	,	mHasAttachments( false)
 	,	mMailRef( NULL)
 	,	mHeader( NULL)
 	,	mHeaderLength( 0)
 	,	mBody( new BmBodyPartList( this))
 	,	mInitCheck( B_NO_INIT)
 {
+	BString emptyMsg( "\r\n\r\n");
+	SetTo( emptyMsg, "");
 }
 
-/*------------------------------------------------------------------------------*\
-	BmMail( entry_ref)
-		-	constructor
-\*------------------------------------------------------------------------------*/
-BmMail::BmMail( BmMailRef* ref) 
-	:	inherited( BString("MailModel_") << ref->Inode())
-	,	mHasAttachments( false)
-	,	mHeader( NULL)
-	,	mHeaderLength( 0)
-	,	mBody( new BmBodyPartList( this))
-	,	mMailRef( ref)
-	,	mInitCheck( B_NO_INIT)
-{
-}
-	
 /*------------------------------------------------------------------------------*\
 	BmMail( msgText, msgUID, account)
 		-	constructor
 		-	creates message with given text and receiver-account
 \*------------------------------------------------------------------------------*/
-BmMail::BmMail( BString &msgText, const BString &account) 
+BmMail::BmMail( BString &msgText, const BString account) 
 	:	inherited( "MailModel_dummy")
-	,	mHasAttachments( false)
 	,	mHeader( NULL)
 	,	mHeaderLength( 0)
 	,	mBody( new BmBodyPartList( this))
@@ -74,9 +59,22 @@ BmMail::BmMail( BString &msgText, const BString &account)
 	,	mInitCheck( B_NO_INIT)
 {
 	SetTo( msgText, account);
-	mInitCheck = B_OK;
 }
 	
+/*------------------------------------------------------------------------------*\
+	BmMail( mailref)
+		-	constructor via a mail-ref (from file)
+\*------------------------------------------------------------------------------*/
+BmMail::BmMail( BmMailRef* ref) 
+	:	inherited( BString("MailModel_") << ref->Inode())
+	,	mHeader( NULL)
+	,	mHeaderLength( 0)
+	,	mBody( new BmBodyPartList( this))
+	,	mMailRef( ref)
+	,	mInitCheck( B_NO_INIT)
+{
+}
+
 /*------------------------------------------------------------------------------*\
 	~BmMail()
 	-	standard d'tor
@@ -91,7 +89,7 @@ BmMail::~BmMail() {
 		-	the mail-header is extracted from msgText and is parsed
 		-	account is the name of the POP/IMAP-account this message was received from
 \*------------------------------------------------------------------------------*/
-void BmMail::SetTo( BString &msgText, const BString &account) {
+void BmMail::SetTo( BString &msgText, const BString account) {
 	Regexx rx;
 	
 	// find end of header (and start of body):
@@ -109,6 +107,9 @@ void BmMail::SetTo( BString &msgText, const BString &account) {
 	BString header;
 	header.SetTo( mText, headerLen);
 	mHeader = new BmMailHeader( header, this);
+	
+	mBody->ParseMail();
+	mInitCheck = B_OK;
 }
 	
 /*------------------------------------------------------------------------------*\
@@ -124,7 +125,7 @@ void BmMail::MarkAs( const char* status) {
 		// we write the new status...
 		(err = mailNode.SetTo( mMailRef->EntryRefPtr())) == B_OK
 													|| BM_THROW_RUNTIME( BString("Could not create node for current mail-file.\n\n Result: ") << strerror(err));
-		mailNode.WriteAttr( "MAIL:status", B_STRING_TYPE, 0, status, strlen( status)+1);
+		mailNode.WriteAttr( BM_MAIL_ATTR_STATUS, B_STRING_TYPE, 0, status, strlen( status)+1);
 		// ...and tell the mail-ref:
 		mMailRef->Status( status);
 	} catch( exception &e) {
@@ -141,6 +142,40 @@ const BString BmMail::Status() const {
 }
 
 /*------------------------------------------------------------------------------*\
+	HasAttachments()
+		-	
+\*------------------------------------------------------------------------------*/
+bool BmMail::HasAttachments() const { 
+	if (mBody)
+		return mBody->HasAttachments();
+	else
+		return false;
+}
+
+/*------------------------------------------------------------------------------*\
+	SetFieldVal()
+	-	
+\*------------------------------------------------------------------------------*/
+void BmMail::SetFieldVal( const BString fieldName, const BString value) {
+	// we set the field-value inside the mail-header only if it has content
+	// otherwise we remove the field from the header:
+	if (value.Length())
+		mHeader->SetFieldVal( fieldName, value);
+	else
+		mHeader->RemoveField( fieldName);
+
+BString s = *mHeader;
+}
+
+/*------------------------------------------------------------------------------*\
+	RemoveFieldVal()
+	-	
+\*------------------------------------------------------------------------------*/
+void BmMail::RemoveField( const BString fieldName) {
+	mHeader->RemoveField( fieldName);
+}
+
+/*------------------------------------------------------------------------------*\
 	Store()
 		-	stores mail-data and attributes inside a file
 \*------------------------------------------------------------------------------*/
@@ -154,11 +189,11 @@ bool BmMail::Store() {
 	BString basicFilename;
 	BString inboxPath;
 	BDirectory homeDir;
+	BEntry mailEntry;
 
 	try {
 		if (mParentEntry.InitCheck() == B_NO_INIT) {
-//			(inboxPath = ThePrefs->MailboxPath()) << "/mailbox";
-			(inboxPath = ThePrefs->MailboxPath()) << "/in_beam";
+			(inboxPath = ThePrefs->GetString("MailboxPath")) << "/mailbox";
 			(err = mParentEntry.SetTo( inboxPath.String(), true)) == B_OK
 													|| BM_THROW_RUNTIME( BString("Could not create entry for mail-folder <") << inboxPath << ">\n\n Result: " << strerror(err));
 		}
@@ -172,13 +207,13 @@ bool BmMail::Store() {
 		BString filename( BString(path.Path()) << "/" << basicFilename);
 		// determing tmp-folder where the mail is being created:
 		BString tmpFilename( BString(tmpPath.Path()) << "/" << basicFilename);
-		(err = mMailEntry.SetTo( tmpFilename.String())) == B_OK
+		(err = mailEntry.SetTo( tmpFilename.String())) == B_OK
 											|| BM_THROW_RUNTIME( BString("Could not create entry for new mail-file <") << tmpFilename << ">\n\n Result: " << strerror(err));
-		if (mMailEntry.Exists()) {
+		if (mailEntry.Exists()) {
 			BM_THROW_RUNTIME( BString("Unable to create a unique filename for mail <") << basicFilename << ">.\n\n Result: " << strerror(err));
 		}
 		// we create the new mailfile...
-		(err = mailFile.SetTo( &mMailEntry, B_WRITE_ONLY | B_CREATE_FILE)) == B_OK
+		(err = mailFile.SetTo( &mailEntry, B_WRITE_ONLY | B_CREATE_FILE)) == B_OK
 													|| BM_THROW_RUNTIME( BString("Could not create mail-file\n\t<") << basicFilename << ">\n\n Result: " << strerror(err));
 		// ...lock the file so no-one will be reading while we write...
 		mailFile.Lock();
@@ -203,7 +238,7 @@ bool BmMail::Store() {
 		// finally we move the mail-file to its new home:
 		(err = homeDir.SetTo( &mParentEntry)) == B_OK
 													|| BM_THROW_RUNTIME( BString("Could not get directory for \n\t<") << path.Path() << ">\n\n Result: " << strerror(err));
-		(err = mMailEntry.MoveTo( &homeDir)) == B_OK
+		(err = mailEntry.MoveTo( &homeDir)) == B_OK
 													|| BM_THROW_RUNTIME( BString("Could not move mail from tmp-folder to \n\t<") << filename << ">\n\n Result: " << strerror(err));
 	} catch( exception &e) {
 		BM_SHOWERR(e.what());
@@ -219,8 +254,8 @@ bool BmMail::Store() {
 \*------------------------------------------------------------------------------*/
 void BmMail::StoreAttributes( BFile& mailFile) {
 	//
-	mailFile.WriteAttr( "MAIL:status", B_STRING_TYPE, 0, "New", 4);
-	mailFile.WriteAttr( "MAIL:account", B_STRING_TYPE, 0, mAccountName.String(), mAccountName.Length()+1);
+	mailFile.WriteAttr( BM_MAIL_ATTR_STATUS, B_STRING_TYPE, 0, "New", 4);
+	mailFile.WriteAttr( BM_MAIL_ATTR_ACCOUNT, B_STRING_TYPE, 0, mAccountName.String(), mAccountName.Length()+1);
 	//
 	int32 headerLength, contentLength;
 	if ((headerLength = mText.FindFirst("\r\n\r\n")) != B_ERROR) {
@@ -231,10 +266,11 @@ void BmMail::StoreAttributes( BFile& mailFile) {
 		contentLength = 0;
 	}
 	mHeaderLength = headerLength;
-	mailFile.WriteAttr( "MAIL:header_length", B_INT32_TYPE, 0, &headerLength, sizeof(int32));
-	mailFile.WriteAttr( "MAIL:content_length", B_INT32_TYPE, 0, &contentLength, sizeof(int32));
+	mailFile.WriteAttr( BM_MAIL_ATTR_HEADER, B_INT32_TYPE, 0, &headerLength, sizeof(int32));
+	mailFile.WriteAttr( BM_MAIL_ATTR_CONTENT, B_INT32_TYPE, 0, &contentLength, sizeof(int32));
 	//
-	mailFile.WriteAttr( "MAIL:attachments", B_BOOL_TYPE, 0, &mHasAttachments, sizeof(mHasAttachments));
+	int32 hasAttachments = HasAttachments();
+	mailFile.WriteAttr( BM_MAIL_ATTR_ATTACHMENTS, B_INT32_TYPE, 0, &hasAttachments, sizeof(hasAttachments));
 }
 /*------------------------------------------------------------------------------*\
 	CreateBasicFilename()
@@ -242,7 +278,7 @@ void BmMail::StoreAttributes( BFile& mailFile) {
 \*------------------------------------------------------------------------------*/
 BString BmMail::CreateBasicFilename() {
 	static int32 counter = 1;
-	BString name = mHeader->GetEnhancedFieldVal("Name");
+	BString name = mHeader->Name();
 	char now[16];
 	time_t t = time(NULL);
 	strftime( now, 15, "%0Y%0m%0d%0H%0M%0S", localtime( &t));
@@ -251,6 +287,12 @@ BString BmMail::CreateBasicFilename() {
 							// we avoid some characters in filename
 	return name;
 }
+
+
+
+/********************************************************************************\
+	BmLocalMail
+\********************************************************************************/
 
 /*------------------------------------------------------------------------------*\
 	StartJob()
@@ -309,8 +351,8 @@ bool BmMail::StartJob() {
 		BM_LOG2( BM_LogMailParse, BString("...real size is ") << realSize << " bytes");
 		buf[realSize] = '\0';
 		mailText.UnlockBuffer( realSize);
-		// we create the BmMail from the plain text:
-		BM_LOG2( BM_LogMailParse, BString("creating a BmMail-instance from msgtext"));
+		// we initialize the BmMail-internals from the plain text:
+		BM_LOG2( BM_LogMailParse, BString("initializing BmMail from msgtext"));
 		SetTo( mailText, mMailRef->Account());
 		BM_LOG2( BM_LogMailParse, BString("Done, mail is initialized"));
 		mInitCheck = B_OK;

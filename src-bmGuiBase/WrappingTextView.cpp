@@ -164,7 +164,7 @@ void WrappingTextView::CalculateVerticalOffset() {
 void WrappingTextView::KeyDown(const char *bytes, int32 numBytes) 
 { 
 	if (IsEditable()) {
-		// in editable mode, we simply forward cursor-keys:
+		// in editable mode, we simply forward anything:
 		BTextView::KeyDown( bytes, numBytes);
 	} else if ( numBytes == 1 ) {
 		// in read-only mode, we use cursor-keys to move scrollbar:

@@ -36,6 +36,9 @@
 //******************************************************************************************************
 class CLVEasyItem : public CLVListItem
 {
+		static const int8 CLV_STYLE_HIGHLIGHT = 1<<0;
+		static const int8 CLV_STYLE_BOLD = 1<<1;
+		
 	public:
 		//Constructor and destructor
 		CLVEasyItem(uint32 level = 0, bool superitem = false, bool expanded = false, float minheight = 0.0);
@@ -61,11 +64,14 @@ class CLVEasyItem : public CLVListItem
 		virtual const int32 GetNumValueForColumn( int32 column_index) const 		{ return 0; }
 		virtual const time_t GetDateValueForColumn( int32 column_index) const 	{ return 0; }
 
-		void Highlight( bool b) 			{ highlight = b; }
-		bool Highlight( ) 					{ return highlight; }
+		void Highlight( bool b);
+		bool Highlight( );
+		void Bold( bool b);
+		bool Bold( );
 
 	protected:
 		void PrepListsForSet(int column_index);
+		void SetStyleFlag( uint8 style, bool on);
 		
 		BList m_column_types;	//List of int32's converted from CLVColumnTypes
 		BList m_column_content;	//List of char* (full content) or BBitmap*
@@ -74,7 +80,7 @@ class CLVEasyItem : public CLVListItem
 
 	protected:
 		float text_offset;
-		bool highlight;
+		uint8 style_flags;
 };
 
 

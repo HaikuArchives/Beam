@@ -23,7 +23,7 @@ BmPrefs* BmPrefs::theInstance = NULL;
 /*------------------------------------------------------------------------------*\
 	CreateInstance()
 		-	initialiazes preferences by reading them from a file
-		-	if no preference-file is found, default prefs are used
+		-	if no preference-file is found, defaultVal prefs are used
 \*------------------------------------------------------------------------------*/
 BmPrefs* BmPrefs::CreateInstance() {
 	BmPrefs *prefs = NULL;
@@ -49,7 +49,7 @@ BmPrefs* BmPrefs::CreateInstance() {
 		}
 	}
 	if (!prefs) {
-		// ...no settings file yet, we start with default settings...
+		// ...no settings file yet, we start with defaultVal settings...
 		prefs = new BmPrefs;
 		// ...and create a new and shiny settings file:
 		prefs->Store();
@@ -61,45 +61,16 @@ BmPrefs* BmPrefs::CreateInstance() {
 
 /*------------------------------------------------------------------------------*\
 	BmPrefs()
-		-	default constructor
+		-	defaultVal constructor
 \*------------------------------------------------------------------------------*/
 BmPrefs::BmPrefs( void)
 	:	BArchivable() 
-	,	mDynamicConnectionWin( CONN_WIN_DYNAMIC)
-	,	mReceiveTimeout( 60 )
-	,	mLoglevels( BM_LOGLVL2(BM_LogPop) 
-						+ BM_LOGLVL2(BM_LogJobWin) 
-						+ BM_LOGLVL2(BM_LogMailParse) 
-						+ BM_LOGLVL2(BM_LogUtil) 
-						+ BM_LOGLVL2(BM_LogMailTracking)
-						+ BM_LOGLVL2(BM_LogFolderView)
-						+ BM_LOGLVL2(BM_LogRefView)
-						+ BM_LOGLVL2(BM_LogMainWindow)
-						+ BM_LOGLVL3(BM_LogModelController)
-						+ BM_LOGLVL2(BM_LogMailEditWin)
-						)
-	,	mMailboxPath("/boot/home/mail")			// TODO: change default to .../mail
-	,	mRefCacheInMem( false)
-	,	mRefCacheOnDisk( true)
-	,	mDefaultEncoding( B_ISO1_CONVERSION)
-	,	mStripedListView( true)
-	,	mMailRefLayout( new BMessage)
-	,	mRestoreFolderStates( true)
-	,	mShowDecodedLength( true)
 {
-#ifdef BM_LOGGING
-	BString s;
-	for( int i=31; i>=0; --i) {
-		if (mLoglevels & (01UL<<i))
-			s << "1";
-		else
-			s << "0";
-	}
-#endif
-	// transfer loglevel-definitions to log-handler:
-	TheLogHandler->LogLevels( mLoglevels);
-	BM_LOG3( BM_LogUtil, BString("Initialized loglevels to binary value ") << s);
+	InitDefaults();
+	mPrefsMsg = mDefaultsMsg;
+	SetLoglevels();
 }
+
 
 /*------------------------------------------------------------------------------*\
 	BmPrefs( archive)
@@ -109,18 +80,9 @@ BmPrefs::BmPrefs( void)
 BmPrefs::BmPrefs( BMessage* archive) 
 	: BArchivable( archive)
 {
-	mDynamicConnectionWin = static_cast<TConnWinMode>(FindMsgInt16( archive, MSG_DYNAMIC_CONN_WIN));
-	mReceiveTimeout = FindMsgInt16( archive, MSG_RECEIVE_TIMEOUT);
-	mLoglevels = FindMsgInt32( archive, MSG_LOGLEVELS);
-	mMailboxPath = FindMsgString( archive, MSG_MAILBOXPATH);
-	mRefCacheInMem = FindMsgBool( archive, MSG_REF_CACHE_MEM);
-	mRefCacheOnDisk = FindMsgBool( archive, MSG_REF_CACHE_DISK);
-	mDefaultEncoding = FindMsgInt32( archive, MSG_DEFAULT_ENCODING);
-	mStripedListView = FindMsgBool( archive, MSG_STRIPED_LISTVIEW);
-	mMailRefLayout = FindMsgMsg( archive, MSG_MAILREF_LAYOUT);
-	mRestoreFolderStates = FindMsgBool( archive, MSG_RESTORE_FOLDERS);
-	mShowDecodedLength = FindMsgBool( archive, MSG_SHOW_DECODED_LENGTH);
-	TheLogHandler->LogLevels( mLoglevels);
+	InitDefaults();
+	mPrefsMsg = *archive;
+	SetLoglevels();
 }
 
 /*------------------------------------------------------------------------------*\
@@ -128,58 +90,73 @@ BmPrefs::BmPrefs( BMessage* archive)
 		-	standard destructor
 \*------------------------------------------------------------------------------*/
 BmPrefs::~BmPrefs() {
-	delete mMailRefLayout;
 	theInstance = NULL;
 }
 
 /*------------------------------------------------------------------------------*\
-	Archive( archive, deep)
-		-	writes BmPrefs into archive
-		-	parameter deep makes no difference...
+	InitDefaults( )
+		-	constructs a BMessage containing all defaultVal values
 \*------------------------------------------------------------------------------*/
-status_t BmPrefs::Archive( BMessage* archive, bool deep) const {
-	status_t ret = inherited::Archive( archive, deep)
-		||	archive->AddInt16( MSG_DYNAMIC_CONN_WIN, mDynamicConnectionWin)
-		||	archive->AddInt16( MSG_RECEIVE_TIMEOUT, mReceiveTimeout)
-		||	archive->AddInt32( MSG_LOGLEVELS, mLoglevels)
-		||	archive->AddString( MSG_MAILBOXPATH, mMailboxPath.String())
-		||	archive->AddBool( MSG_REF_CACHE_MEM, mRefCacheInMem)
-		||	archive->AddBool( MSG_REF_CACHE_DISK, mRefCacheOnDisk)
-		||	archive->AddInt32( MSG_DEFAULT_ENCODING, mDefaultEncoding)
-		||	archive->AddBool( MSG_STRIPED_LISTVIEW, mStripedListView)
-		||	archive->AddMessage( MSG_MAILREF_LAYOUT, mMailRefLayout)
-		||	archive->AddBool( MSG_RESTORE_FOLDERS, mRestoreFolderStates)
-		||	archive->AddBool( MSG_SHOW_DECODED_LENGTH, mShowDecodedLength);
-	return ret;
+void BmPrefs::InitDefaults() {
+	mDefaultsMsg.MakeEmpty();
+	mDefaultsMsg.AddBool( "DynamicStatusWin", true);
+	mDefaultsMsg.AddInt32( "ReceiveTimeout", 60);
+	mDefaultsMsg.AddInt32( "Loglevels", BM_LOGLVL2(BM_LogPop) 
+										+ BM_LOGLVL2(BM_LogJobWin) 
+										+ BM_LOGLVL2(BM_LogMailParse) 
+										+ BM_LOGLVL2(BM_LogUtil) 
+										+ BM_LOGLVL2(BM_LogMailTracking)
+										+ BM_LOGLVL2(BM_LogFolderView)
+										+ BM_LOGLVL2(BM_LogRefView)
+										+ BM_LOGLVL2(BM_LogMainWindow)
+										+ BM_LOGLVL3(BM_LogModelController)
+										+ BM_LOGLVL2(BM_LogMailEditWin)
+										);
+	mDefaultsMsg.AddString( "MailboxPath", "/boot/home/mail");
+	mDefaultsMsg.AddBool( "CacheRefsInMem", false);
+	mDefaultsMsg.AddBool( "CacheRefsOnDisk", true);
+	mDefaultsMsg.AddInt32( "DefaultEncoding", B_ISO1_CONVERSION);
+	mDefaultsMsg.AddBool( "StripedListView", true);
+	mDefaultsMsg.AddMessage( "MailRefLayout", new BMessage);
+	mDefaultsMsg.AddBool( "RestoreFolderStates", true);
+	mDefaultsMsg.AddBool( "ShowDecodedLength", true);
 }
 
 /*------------------------------------------------------------------------------*\
-	Instantiate( archive)
-		-	(re-)creates a PopAccount from a given BMessage
+	SetLoglevels( )
+		-	constructs a BMessage containing all defaultVal values
 \*------------------------------------------------------------------------------*/
-BArchivable* BmPrefs::Instantiate( BMessage* archive) {
-	if (!validate_instantiation( archive, "BmPrefs"))
-		return NULL;
-	return new BmPrefs( archive);
+void BmPrefs::SetLoglevels() {
+	// transfer loglevel-definitions to log-handler:
+	int32 loglevels = GetInt("Loglevels");
+	TheLogHandler->LogLevels( loglevels);
+#ifdef BM_LOGGING
+	BString s;
+	for( int i=31; i>=0; --i) {
+		if (loglevels & (01UL<<i))
+			s << "1";
+		else
+			s << "0";
+	}
+#endif
+	BM_LOG3( BM_LogUtil, BString("Initialized loglevels to binary value ") << s);
 }
+
 
 /*------------------------------------------------------------------------------*\
 	Store()
 		-	stores preferences into global Settings-file:
 \*------------------------------------------------------------------------------*/
 bool BmPrefs::Store() {
-	BMessage archive;
 	BFile prefsFile;
 	status_t err;
 
 	try {
 		BString prefsFilename = BString( TheResources->SettingsPath.Path()) << "/" << PREFS_FILENAME;
-		this->Archive( &archive) == B_OK
-													|| BM_THROW_RUNTIME("Unable to archive BmPrefs-object");
 		(err = prefsFile.SetTo( prefsFilename.String(), 
 										B_WRITE_ONLY | B_CREATE_FILE | B_ERASE_FILE)) == B_OK
 													|| BM_THROW_RUNTIME( BString("Could not create settings file\n\t<") << prefsFilename << ">\n\n Result: " << strerror(err));
-		(err = archive.Flatten( &prefsFile)) == B_OK
+		(err = mPrefsMsg.Flatten( &prefsFile)) == B_OK
 													|| BM_THROW_RUNTIME( BString("Could not store settings into file\n\t<") << prefsFilename << ">\n\n Result: " << strerror(err));
 	} catch( exception &e) {
 		BM_SHOWERR( e.what());
@@ -188,3 +165,114 @@ bool BmPrefs::Store() {
 	return true;
 }
 
+/*------------------------------------------------------------------------------*\
+	GetString()
+		-	
+\*------------------------------------------------------------------------------*/
+BString BmPrefs::GetString( const char* name) {
+	const char* val;
+	if (mPrefsMsg.FindString( name, &val) == B_OK)
+		return val;
+	else {
+		BM_SHOWERR( BString("The Preferences-field ") << name << " of type string is unknown");
+		return "";
+	}
+}
+
+/*------------------------------------------------------------------------------*\
+	GetString()
+		-	
+\*------------------------------------------------------------------------------*/
+BString BmPrefs::GetString( const char* name, const BString defaultVal) {
+	const char* val;
+	if (mPrefsMsg.FindString( name, &val) == B_OK)
+		return val;
+	else
+		return defaultVal;
+}
+
+/*------------------------------------------------------------------------------*\
+	GetBool()
+		-	
+\*------------------------------------------------------------------------------*/
+bool BmPrefs::GetBool( const char* name) {
+	bool val;
+	if (mPrefsMsg.FindBool( name, &val) == B_OK)
+		return val;
+	else {
+		BM_SHOWERR( BString("The Preferences-field ") << name << " of type bool is unknown");
+		return false;
+	}
+}
+
+/*------------------------------------------------------------------------------*\
+	GetBool()
+		-	
+\*------------------------------------------------------------------------------*/
+bool BmPrefs::GetBool( const char* name, const bool defaultVal) {
+	bool val;
+	if (mPrefsMsg.FindBool( name, &val) == B_OK)
+		return val;
+	else
+		return defaultVal;
+}
+
+/*------------------------------------------------------------------------------*\
+	Get()
+		-	
+\*------------------------------------------------------------------------------*/
+int32 BmPrefs::GetInt( const char* name) {
+	int32 val;
+	if (mPrefsMsg.FindInt32( name, &val) == B_OK)
+		return val;
+	else {
+		BM_SHOWERR( BString("The Preferences-field ") << name << " of type int32 is unknown");
+		return 0;
+	}
+}
+
+/*------------------------------------------------------------------------------*\
+	Get()
+		-	
+\*------------------------------------------------------------------------------*/
+int32 BmPrefs::GetInt( const char* name, const int32 defaultVal) {
+	int32 val;
+	if (mPrefsMsg.FindInt32( name, &val) == B_OK)
+		return val;
+	else
+		return defaultVal;
+}
+
+/*------------------------------------------------------------------------------*\
+	GetMsg()
+		-	
+\*------------------------------------------------------------------------------*/
+const BMessage* BmPrefs::GetMsg( const char* name) {
+	BMessage* msg = mMsgCache[name];
+	if (msg)
+		return msg;
+	msg = new BMessage();
+	if (mPrefsMsg.FindMessage( name, msg) == B_OK) {
+		mMsgCache[name] = msg;
+		return msg;
+	} else {
+		BM_SHOWERR( BString("The Preferences-field ") << name << " of type message is unknown");
+		return NULL;
+	}
+}
+
+/*------------------------------------------------------------------------------*\
+	GetMsg()
+		-	
+\*------------------------------------------------------------------------------*/
+const BMessage* BmPrefs::GetMsg( const char* name, const BMessage* defaultVal) {
+	BMessage* msg = mMsgCache[name];
+	if (msg)
+		return msg;
+	msg = new BMessage();
+	if (mPrefsMsg.FindMessage( name, msg) == B_OK) {
+		mMsgCache[name] = msg;
+		return msg;
+	} else
+		return defaultVal;
+}

@@ -61,9 +61,10 @@ private:
 	bool mConnected;							// are we connected to the server?
 
 	BString* mMsgUIDs;						// array of unique-IDs, one for each message
-	int32 mMsgCount;							// number of msgs to be received
-	int32 mMsgSize;							// size of current msg
-	int32 mMsgTotalSize;						// size of all msgs to be received
+	int32 mMsgCount;							// number of msgs found on server
+	int32 mNewMsgCount;						// number of msgs to be received
+	int32* mMsgSizes;							// size of msgs to be received
+	int32 mMsgTotalSize;						// total-size of msgs to be received
 	BString mAnswer;							// holds last answer of POP-server
 	BString mReplyLine;						// holds last server-reply (the answer's first line)
 

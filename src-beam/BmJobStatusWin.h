@@ -23,25 +23,39 @@ class BmPopper;
 		-	controls a specific connection
 \*------------------------------------------------------------------------------*/
 class BmJobStatusView : public MBorder, public BmJobController {
-
+	typedef BmJobController inherited;
+	
 public:
-
 	// c'tors and d'tor:
 	BmJobStatusView( const char* name);
 	virtual ~BmJobStatusView();
 
 	// native methods:
-	virtual bool WantsToStayVisible()	{ return false; }
+	virtual bool AlwaysRemoveWhenDone()	{ return false; }
 	virtual void ResetController()		{ }
 	virtual void UpdateModelView( BMessage* msg) = 0;
 	virtual BmJobModel* CreateJobModel( BMessage* msg) = 0;
 
 	// overrides of controller base:
+	void StartJob( BmJobModel* model = NULL, bool startInNewThread=true);
 	BHandler* GetControllerHandler() 	{ return this; }
 	void JobIsDone( bool completed);
 
 	// overrides of view base:
 	void MessageReceived( BMessage* msg);
+
+	// getters:
+	int MSecsBeforeShow()					{ return mMSecsBeforeShow; }
+	int MSecsBeforeRemove()					{ return mMSecsBeforeRemove; }
+
+protected:
+	int mMSecsBeforeShow;
+	int mMSecsBeforeRemove;
+	
+private:
+	BMessageRunner* mShowMsgRunner;
+	BMessageRunner* mRemoveMsgRunner;
+	
 };
 
 class MStringView;
@@ -58,7 +72,7 @@ public:
 	~BmMailMoverView();
 
 	// overrides of jobstatusview base:
-	bool WantsToStayVisible();
+	bool AlwaysRemoveWhenDone()			{ return true; }
 	void ResetController();
 	void UpdateModelView( BMessage* msg);
 	BmJobModel* CreateJobModel( BMessage* msg);
@@ -89,7 +103,6 @@ public:
 	~BmPopperView();
 
 	// overrides of jobstatusview base:
-	bool WantsToStayVisible();
 	void ResetController();
 	void UpdateModelView( BMessage* msg);
 	BmJobModel* CreateJobModel( BMessage* msg);
@@ -160,8 +173,6 @@ private:
 	JobMap mActiveJobs;						// list of known jobs (some may be inactive)
 	VGroup* mOuterGroup;						// the outmost view that the connection-interfaces live in
 	BLooper* mInvokingLooper;				// the looper we will tell that we are finished
-	uint8 mActiveJobCount;					// number of currently active jobs
-
 
 };
 

@@ -12,13 +12,15 @@
 
 class HGroup;
 
+#define BM_TEXT_CHANGED 'bMcc'
+
 class BmTextControl : public MView, public BTextControl
 {
 	typedef BTextControl inherited;
 
 public:
 	// creator-func, c'tors and d'tor:
-	BmTextControl( const char* label, bool labelIsMenu=false);
+	BmTextControl( const char* label, const char* name, bool labelIsMenu=false);
 	~BmTextControl();
 	
 	// native methods:

@@ -69,7 +69,7 @@ bool BmMailRefList::StartJob() {
 		BString filename = SettingsFileName();
 	
 		bool cacheFileUpToDate = false;
-		if (ThePrefs->RefCacheOnDisk()
+		if (ThePrefs->GetBool("CacheRefsOnDisk")
 		&& (err = cacheFile.SetTo( filename.String(), B_READ_ONLY)) == B_OK) {
 			time_t mtime;
 			(err = cacheFile.GetModificationTime( &mtime)) == B_OK
@@ -198,10 +198,10 @@ void BmMailRefList::InstantiateItems( BMessage* archive) {
 			is deactivated
 \*------------------------------------------------------------------------------*/
 void BmMailRefList::RemoveController( BmController* controller) {
-	if (ThePrefs->RefCacheOnDisk())
+	if (ThePrefs->GetBool("CacheRefsOnDisk"))
 		Store();
 	inherited::RemoveController( controller);
-	if (!(ThePrefs->RefCacheInMem() || HasControllers())) {
+	if (!(ThePrefs->GetBool("CacheRefsInMem") || HasControllers())) {
 		mFolder->RemoveMailRefList();
 	}
 }
