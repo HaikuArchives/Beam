@@ -1,3 +1,2 @@
-this folder represents Beam's default iconset, which is included
-in the resources of the application.
+This folder represents a slight variation on Beam's default iconset, this time using original Be-folders.
 
