@@ -10,6 +10,7 @@ Beam 0.92:
 -	contribute our BString-related work to OpenBeOS
 
 -	add support for mail-filtering
+	(include SpamAssassin and Razor)
 
 -	support draft-folder
 
