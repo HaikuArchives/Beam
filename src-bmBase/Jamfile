@@ -1,0 +1,13 @@
+SubDir TOP src-bmBase ;
+
+SharedLibrary bmBase.so
+	:  
+		BmBasics.cpp 
+		BmFilterAddon.cpp 
+		BmLogHandler.cpp 
+		BmMemIO.cpp 
+		BmString.cpp
+		md5c.c
+	: 	
+		be 
+	;

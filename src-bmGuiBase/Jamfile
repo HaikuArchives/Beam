@@ -1,0 +1,42 @@
+SubDir TOP src-santaPartsForBeam ;
+
+SubDirHdrs $(TOP) src-bmBase ;
+SubDirHdrs $(TOP) src-libRegexx ;
+
+SubDirSysHdrs /boot/home/config/include ;
+SubDirSysHdrs /boot/home/config/include/liblayout ;
+
+LINKFLAGS += -L/boot/home/config/lib ;
+
+SharedLibrary santaPartsForBeam.so
+	:  
+		BetterScrollView.cpp
+		BmBusyView.cpp
+		BmCaption.cpp
+		BmCheckControl.cpp
+		BmFilterAddonPrefs.cpp
+		BmMenuControl.cpp
+		BmMenuControllerBase.cpp
+		BmMultiLineTextControl.cpp
+		BmTextControl.cpp
+		BubbleHelper.cpp
+		CLVColumn.cpp
+		CLVColumnLabelView.cpp
+		CLVEasyItem.cpp
+		CLVListItem.cpp
+		Colors.cpp
+		ColumnListView.cpp
+		Cursors.cpp
+		DeepBevelView.cpp
+		ImageAboutWindow.cpp
+		ListSelectionAlert.cpp
+		MultiLineTextControl.cpp
+		NewStrings.cpp
+		PrefilledBitmap.cpp
+		ScrollViewCorner.cpp
+		TextEntryAlert.cpp
+		UserResizeSplitView.cpp
+		WrappingTextView.cpp
+	: 	
+		layout regexx.so bmBase.so pcre $(STDC++LIB) be 
+	;

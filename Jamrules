@@ -1,0 +1,46 @@
+
+# The directories used by the build.
+BUILD_DIR			= [ FDirName $(TOP) build-jam ] ;
+GENERATED_DIR		= [ FDirName $(TOP) generated ] ;
+DISTRO_DIR			= [ FDirName $(TOP) generated distro ] ;
+
+include [ FDirName $(BUILD_DIR) HelperRules ] ;
+include [ FDirName $(BUILD_DIR) ConfigRules ] ;
+include [ FDirName $(BUILD_DIR) OverriddenJamRules ] ;
+include [ FDirName $(BUILD_DIR) MainBuildRules ] ;
+include [ FDirName $(BUILD_DIR) BuildSettings ] ;
+
+# Include UserBuildConfig.
+{
+	local userBuildConfig = [ GLOB $(BUILD_DIR) : UserBuildConfig ] ;
+	if $(userBuildConfig)
+	{
+		LOCATE on UserBuildConfig = $(BUILD_DIR) ;
+		include UserBuildConfig ;
+	}
+}
+
+# default to strip generated apps if not specified otherwise:
+STRIP_APPS ?= 1 ;
+
+# Cache files for header scanning and jamfile caching.
+HCACHEFILE = header_cache ;
+JCACHEFILE = jamfile_cache ;
+LOCATE on $(HCACHEFILE) $(JCACHEFILE) = $(GENERATED_DIR) ;
+
+
+rule MakeDistro
+{
+	# MakeDistro <target> 
+
+	local target = $(1) ;
+
+	NotFile $(target) ;
+	Always $(target) ;
+}
+
+actions MakeDistro
+{
+	echo "making distro" ;
+}
+

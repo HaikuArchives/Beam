@@ -194,9 +194,9 @@ void BmDeskbarView::ChangeIcon( const char* iconName) {
 		BFile file( &appInfo.ref, B_READ_ONLY);
 		if (file.InitCheck() == B_OK) {
 			BResources rsrc( &file);
-			size_t len;
+			size_t len = 0;
 			const void *data = rsrc.LoadResource( 'BBMP', iconName, &len);
-			if (len) {
+			if (len && data) {
 				BMemoryIO stream( data, len);
 				stream.Seek( 0, SEEK_SET);
 				BMessage archive;

@@ -1,0 +1,19 @@
+SubDir TOP src-deskbarItem ;
+
+SubDirHdrs $(TOP) src-beam ;
+SubDirHdrs $(TOP) src-deskbarItem ;
+
+AddOn Beam_DeskbarItem
+	:  
+		BmDeskbarView.cpp
+	: 	
+		be
+	;
+
+XRes Beam_DeskbarItem
+	: 
+		[ FDirName $(TOP) resources BmDeskbarIcons.rsrc ] 
+		[ FDirName $(TOP) resources BmDeskbarResources.rsrc ] 
+	;
+
+MimeSet Beam_DeskbarItem ;

@@ -33,9 +33,10 @@
 
 #include "libregexx.h"
 
+#include <pcre.h>
+
 #include "BmString.h"
 #include "split.hh"
-#include "pcre.h"
 
 namespace regexx {
 

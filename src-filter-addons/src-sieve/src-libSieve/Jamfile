@@ -1,0 +1,33 @@
+SubDir TOP src-filter-addons src-sieve src-libSieve src ;
+
+SubDirHdrs $(TOP) src-bmBase ;
+
+CCFLAGS += -DENABLE_REGEX ;
+if $(OSPLAT) = X86 {
+	CCFLAGS += -Wno-conversion -Wno-unused -Wno-sign-compare -Wno-uninitialized ;
+} else {
+	CCFLAGS += -w nounwanted -w nounused ;
+}
+
+SubDirSysHdrs /boot/home/config/include ;
+
+YACCFLAGS = -v -d -p "$(2:B)" ;
+
+StaticLibrary libsieve.a
+	:  
+		addr.y
+		addr-lex.l
+		sieve.y
+		sieve-lex.l
+		comparator.c
+		imparse.c
+		interp.c
+		message.c
+		parseaddr.c
+		script.c
+		sieve_err.c
+		tree.c
+		util.c
+		xmalloc.c
+	: 	
+	;

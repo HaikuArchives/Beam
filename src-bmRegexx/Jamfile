@@ -1,0 +1,14 @@
+SubDir TOP src-libRegexx ;
+
+SubDirHdrs $(TOP) src-bmBase ;
+
+SubDirSysHdrs /boot/home/config/include ;
+LINKFLAGS += -L/boot/home/config/lib ;
+
+SharedLibrary regexx.so
+	:  
+		regexx.cc
+		split.cc
+	: 	
+		pcre $(STDC++LIB) bmBase.so 
+	;
