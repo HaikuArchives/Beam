@@ -55,6 +55,7 @@
 #include "BmMainWindow.h"
 #include "BmMsgTypes.h"
 #include "BmNetUtil.h"
+#include "BmPeople.h"
 #include "BmPopAccount.h"
 #include "BmPrefs.h"
 #include "BmResources.h"
@@ -130,6 +131,7 @@ BmApplication::BmApplication( const char* sig)
 		BmSignatureList::CreateInstance();
 		TheSignatureList->StartJobInThisThread();
 
+		BmPeopleList::CreateInstance();
 		BmMailFolderList::CreateInstance();
 		BmSmtpAccountList::CreateInstance( TheJobStatusWin);
 		BmPopAccountList::CreateInstance( TheJobStatusWin);
@@ -159,6 +161,7 @@ BmApplication::BmApplication( const char* sig)
 \*------------------------------------------------------------------------------*/
 BmApplication::~BmApplication() {
 	RemoveDeskbarItem();
+	ThePeopleList = NULL;
 	TheMailFolderList = NULL;
 	ThePopAccountList = NULL;
 	TheSmtpAccountList = NULL;
