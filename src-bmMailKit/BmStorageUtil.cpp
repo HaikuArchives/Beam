@@ -149,6 +149,21 @@ bool MoveToTrash( const entry_ref* refs, int32 count) {
 } 
 
 /*------------------------------------------------------------------------------*\
+	LivesInTrash( eref)
+		-	returns whether or not the given entry_ref lives inside the Trash
+\*------------------------------------------------------------------------------*/
+bool LivesInTrash( const entry_ref& eref) {
+	BEntry entry( &eref);
+	BPath path;
+	entry.GetPath( &path);
+	if (path.InitCheck() != B_OK)
+		return false;
+	BmString refPath = path.Path();
+	BmString trashPath = ThePrefs->TrashPath;
+	return refPath.Compare(trashPath, trashPath.Length()) == 0;
+}
+
+/*------------------------------------------------------------------------------*\
 	CheckMimeType( eref, type)
 		-	checks if the file specified by eref is of the given mimetype
 \*------------------------------------------------------------------------------*/

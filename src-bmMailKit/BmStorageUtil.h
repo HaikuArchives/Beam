@@ -48,6 +48,9 @@ IMPEXPBMMAILKIT
 bool MoveToTrash( const entry_ref* refs, int32 count);
 
 IMPEXPBMMAILKIT 
+bool LivesInTrash( const entry_ref& eref);
+
+IMPEXPBMMAILKIT 
 bool CheckMimeType( const entry_ref* eref, const char* type);
 
 IMPEXPBMMAILKIT 
