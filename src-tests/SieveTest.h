@@ -48,9 +48,10 @@ class SieveTest : public BTestCase
 	CPPUNIT_TEST( BasicActionTest);
 	CPPUNIT_TEST( ExtendedActionTest);
 	CPPUNIT_TEST( BasicTestsTest);
-	CPPUNIT_TEST( AddressTestTest);
 	CPPUNIT_TEST( ExistsTestTest);
 	CPPUNIT_TEST( HeaderTestTest);
+	CPPUNIT_TEST( AddressTestTest);
+	CPPUNIT_TEST( RelationalTestsTest);
 	CPPUNIT_TEST_SUITE_END();
 public:
 //	static CppUnit::Test* Suite();
@@ -70,6 +71,7 @@ public:
 	void AddressTestTest();
 	void ExistsTestTest();
 	void HeaderTestTest();
+	void RelationalTestsTest();
 };
 
 

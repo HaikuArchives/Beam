@@ -49,6 +49,24 @@ static BmString targetStatus;
 static BmString targetIdentity;
 static BmString targetMsg;
 
+static BmString mailText("\
+Date: Mon, 25 Feb 2003 08:51:06 -0500\r\n\
+Received: through3\r\n\
+Received: through2\r\n\
+Received: through1\r\n\
+From: them\r\n\
+To: you+sieve@test.org\r\n\
+Cc: cc1, the_cc2 <cc2@test.org>\r\n\
+Cc: <cc3>\r\n\
+To: you\r\n\
+Sender: <test+@test.org>\r\n\
+Subject: A simple testmail for SIEVE filtering\r\n\
+X-Priority: 3\r\n\
+X-Empty: \r\n\
+\r\n\
+blah (just to have a body)\
+");
+
 /*------------------------------------------------------------------------------*\
 	()
 		-	
@@ -130,6 +148,7 @@ Result()
 		res |= RES_TRASH;
 		msgContext->moveToTrash = false;
 	}
+//	cerr << res << endl;
 	return res;
 }
 
@@ -141,21 +160,7 @@ void
 SieveTest::setUp()
 {
 	inherited::setUp();
-	SetupMsgContext("\
-Date: Mon, 25 Feb 2003 08:51:06 -0500\r\n\
-Received: through3\r\n\
-Received: through2\r\n\
-Received: through1\r\n\
-From: them\r\n\
-To: you\r\n\
-Cc: cc1, the_cc2 <cc2@test.org>\r\n\
-Cc: cc3\r\n\
-To: you\r\n\
-Subject: A simple testmail for SIEVE filtering\r\n\
-X-Priority: 3\r\n\
-\r\n\
-blah (just to have a body)\
-");
+	SetupMsgContext(mailText);
 }
 	
 // tearDown
@@ -421,6 +426,181 @@ SieveTest::BasicTestsTest(void)
 void 
 SieveTest::AddressTestTest(void)
 {
+	// simple :is comparison 
+	NextSubTest();
+	filter.mContent = "\
+		if address \
+			:all \
+			:is \"To\" \"you+sieve@test.org\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript() || CompErr());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_KEEP);
+
+	// default addresspart is :all
+	NextSubTest();
+	filter.mContent = "\
+		if address \
+			:all \
+			:is \"From\" \"them\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript() || CompErr());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_KEEP);
+
+	// default match-type should be :is
+	NextSubTest();
+	filter.mContent = "\
+		if address \
+			:localpart \
+			\"From\" \"the\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript() || CompErr());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_TRASH);
+
+	// a nonexisting header never :is ""
+	NextSubTest();
+	filter.mContent = "\
+		if address \
+			:is \"X-frobnicle\" \"\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript() || CompErr());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_TRASH);
+
+	// :localpart addr-part comparison 
+	NextSubTest();
+	filter.mContent = "\
+		if address \
+			:localpart \
+			:is \"To\" \"you+sieve\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript() || CompErr());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_KEEP);
+
+	// :domain addr-part comparison 
+	NextSubTest();
+	filter.mContent = "\
+		if address \
+			:domain \
+			:is \"To\" \"test.org\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript() || CompErr());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_KEEP);
+
+	// subaddress-extension (:detail, :user) needs to be required
+	NextSubTest();
+	filter.mContent = "\
+		if address \
+			:detail \
+			:is \"To\" \"sieve\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( !filter.CompileScript() 
+						 && filter.ErrorString()
+						 		.FindFirst("subaddress not required") != B_ERROR);
+	// :detail addr-part comparison 
+	NextSubTest();
+	filter.mContent = "\
+		require \"subaddress\"; \
+		if address \
+			:detail \
+			:is \"To\" \"sieve\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript() || CompErr());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_KEEP);
+	// :detail :is "" for empty detail
+	NextSubTest();
+	filter.mContent = "\
+		require \"subaddress\"; \
+		if address \
+			:detail \
+			:is \"Sender\" \"\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript() || CompErr());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_KEEP);
+	// :detail never :is "" if not separator (+) is found
+	NextSubTest();
+	filter.mContent = "\
+		require \"subaddress\"; \
+		if address \
+			:detail \
+			:is \"From\" \"\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript() || CompErr());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_TRASH);
+
+	// :user addr-part comparison 
+	NextSubTest();
+	filter.mContent = "\
+		require \"subaddress\"; \
+		if address \
+			:user \
+			:is \"To\" \"you\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript() || CompErr());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_KEEP);
+	//
+	NextSubTest();
+	filter.mContent = "\
+		require \"subaddress\"; \
+		if address \
+			:user \
+			:is \"From\" \"them\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript() || CompErr());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_KEEP);
+
+	// an existing, empty header is no address (so never :is "")
+	NextSubTest();
+	filter.mContent = "\
+		if address \
+			:is \"X-Empty\" \"\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript() || CompErr());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_TRASH);
+
+	// yield true if any of multiple keys matches
+	NextSubTest();
+	filter.mContent = "\
+		if address :is \"From\" [\"me\", \"myself\", \"I\"] \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript() || CompErr());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_TRASH);
+	// 
+	NextSubTest();
+	filter.mContent = "\
+		if address :is \"From\" [\"me\", \"myself\", \"them\"] \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript() || CompErr());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_KEEP);
+
+	// yield true if any of multiple headers matches
+	NextSubTest();
+	filter.mContent = "\
+		if address :is [\"X-frobnicle\", \"X-shratful\"] \"them\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript() || CompErr());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_TRASH);
+	// 
+	NextSubTest();
+	filter.mContent = "\
+		if address :is [\"X-frobnicle\", \"FrOm\"] \"thEm\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript() || CompErr());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_KEEP);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -430,6 +610,33 @@ SieveTest::AddressTestTest(void)
 void 
 SieveTest::ExistsTestTest(void)
 {
+	// simple test
+	NextSubTest();
+	filter.mContent = "if exists \"From\" { keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript() || CompErr());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_KEEP);
+
+	// exist must match case-independent
+	NextSubTest();
+	filter.mContent = "if exists \"fRoM\" { keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript() || CompErr());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_KEEP);
+
+	// checking more than one header means all of them must exist
+	NextSubTest();
+	filter.mContent = "if exists [\"From\", \"Cc\"] { keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript() || CompErr());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_KEEP);
+	// 
+	NextSubTest();
+	filter.mContent = "if exists [\"From\", \"X-frobnicle\"] { keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript() || CompErr());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_TRASH);
+
 }
 
 /*------------------------------------------------------------------------------*\
@@ -439,5 +646,402 @@ SieveTest::ExistsTestTest(void)
 void 
 SieveTest::HeaderTestTest(void)
 {
+	// simple :is comparison
+	NextSubTest();
+	filter.mContent = "\
+		if header \
+			:is \"From\" \"them\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript() || CompErr());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_KEEP);
+
+	// default match-type should be :is
+	NextSubTest();
+	filter.mContent = "if header \"From\" \"the\" { keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript() || CompErr());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_TRASH);
+
+	// a nonexisting header never :is ""
+	NextSubTest();
+	filter.mContent = "\
+		if header \
+			:is \"X-frobnicle\" \"\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript() || CompErr());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_TRASH);
+
+	// an existing, empty header always :is ""
+	NextSubTest();
+	filter.mContent = "\
+		if header \
+			:is \"X-Empty\" \"\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript() || CompErr());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_KEEP);
+
+	// yield true if any of multiple keys matches
+	NextSubTest();
+	filter.mContent = "\
+		if header :is \"From\" [\"me\", \"myself\", \"I\"] \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript() || CompErr());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_TRASH);
+	// 
+	NextSubTest();
+	filter.mContent = "\
+		if header :is \"From\" [\"me\", \"myself\", \"them\"] \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript() || CompErr());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_KEEP);
+
+	// yield true if any of multiple headers matches
+	NextSubTest();
+	filter.mContent = "\
+		if header :is [\"X-frobnicle\", \"X-shratful\"] \"them\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript() || CompErr());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_TRASH);
+	// 
+	NextSubTest();
+	filter.mContent = "\
+		if header :is [\"X-frobnicle\", \"FrOm\"] \"thEm\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript() || CompErr());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_KEEP);
+
+	// default comparator should be i;ascii-casemap (case-insensitive)
+	NextSubTest();
+	filter.mContent = "\
+		if header \
+			:is \"From\" \"tHem\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript() || CompErr());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_KEEP);
+
+	// specifying a case-sensitive comparator should work
+	NextSubTest();
+	filter.mContent = "\
+		if header \
+			:comparator \"i;octet\" \
+			:is \"From\" \"tHem\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript() || CompErr());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_TRASH);
+
+	// specifying a non-existent comparator should bail
+	NextSubTest();
+	filter.mContent = "\
+		if header \
+			:comparator \"i;cruxtet\" \
+			:is \"From\" \"tHem\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( !filter.CompileScript() 
+						 && filter.ErrorString()
+						 		.FindFirst("unknown comparator tag") != B_ERROR);
+
+	// :contains comparison
+	NextSubTest();
+	filter.mContent = "\
+		if header \
+			:contains \"From\" \"hem\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript() || CompErr());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_KEEP);
+	//
+	NextSubTest();
+	filter.mContent = "\
+		if header \
+			:contains \"From\" \"hohum\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript() || CompErr());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_TRASH);
+
+	// existing header always :contains ""
+	NextSubTest();
+	filter.mContent = "\
+		if header \
+			:contains \"From\" \"\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript() || CompErr());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_KEEP);
+	//
+	NextSubTest();
+	filter.mContent = "\
+		if header \
+			:contains \"X-Empty\" \"\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript() || CompErr());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_KEEP);
+
+	// non-existing header never :contains ""
+	NextSubTest();
+	filter.mContent = "\
+		if header \
+			:contains \"X-frobnicle\" \"\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript() || CompErr());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_TRASH);
+
+	// :matches comparison
+	NextSubTest();
+	filter.mContent = "\
+		if header \
+			:matches \"From\" \"them\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript() || CompErr());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_KEEP);
+	//
+	NextSubTest();
+	filter.mContent = "\
+		if header \
+			:matches \"From\" \"th?m\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript() || CompErr());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_KEEP);
+	//
+	NextSubTest();
+	filter.mContent = "\
+		if header \
+			:matches \"From\" \"t*m\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript() || CompErr());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_KEEP);
+	//
+	NextSubTest();
+	filter.mContent = "\
+		if header \
+			:matches \"From\" \"?h*\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript() || CompErr());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_KEEP);
+	//
+	NextSubTest();
+	filter.mContent = "\
+		if header \
+			:matches \"From\" \"*\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript() || CompErr());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_KEEP);
+	//
+	NextSubTest();
+	filter.mContent = "\
+		if header \
+			:matches \"From\" \"*them*\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript() || CompErr());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_KEEP);
+	//
+	NextSubTest();
+	filter.mContent = "\
+		if header \
+			:matches \"From\" \"*hum\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript() || CompErr());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_TRASH);
+
+	// non-existing header never matches anything
+	NextSubTest();
+	filter.mContent = "\
+		if header \
+			:matches \"X-frobnicle\" \"*\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript() || CompErr());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_TRASH);
+
+	// :regex needs to be required
+	NextSubTest();
+	filter.mContent = "\
+		if header \
+			:regex \"From\" \"them\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( !filter.CompileScript() 
+						 && filter.ErrorString()
+						 		.FindFirst("regex not required") != B_ERROR);
+	// :regex comparison
+	NextSubTest();
+	filter.mContent = "\
+		require \"regex\"; \
+		if header \
+			:regex \"From\" \"th.m\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript() || CompErr());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_KEEP);
+	//
+	NextSubTest();
+	filter.mContent = "\
+		require \"regex\"; \
+		if header \
+			:regex \"From\" \"th.m\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript() || CompErr());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_KEEP);
+	//
+	NextSubTest();
+	filter.mContent = "\
+		require \"regex\"; \
+		if header \
+			:regex \"From\" \"t.+m\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript() || CompErr());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_KEEP);
+	//
+	NextSubTest();
+	filter.mContent = "\
+		require \"regex\"; \
+		if header \
+			:regex \"From\" \"^th.+$\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript() || CompErr());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_KEEP);
+	//
+	NextSubTest();
+	filter.mContent = "\
+		require \"regex\"; \
+		if header \
+			:regex \"From\" \"^(.*)$\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript() || CompErr());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_KEEP);
+	//
+	NextSubTest();
+	filter.mContent = "\
+		require \"regex\"; \
+		if header \
+			:regex \"From\" \"^them$\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript() || CompErr());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_KEEP);
+	//
+	NextSubTest();
+	filter.mContent = "\
+		require \"regex\"; \
+		if header \
+			:regex \"From\" \".hum$\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript() || CompErr());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_TRASH);
+
+	// non-existing header never matches anything
+	NextSubTest();
+	filter.mContent = "\
+		require \"regex\"; \
+		if header \
+			:regex \"X-frobnicle\" \".*\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript() || CompErr());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_TRASH);
+
 }
 
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void 
+SieveTest::RelationalTestsTest(void)
+{
+	// relational match-types (COUNT and VALUE) need to be required
+	NextSubTest();
+	filter.mContent = "\
+		if header \
+			:value \"eq\" \"From\" \"them\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( !filter.CompileScript() 
+						 && filter.ErrorString()
+						 		.FindFirst("relational not required") != B_ERROR);
+
+	// value eq
+	NextSubTest();
+	filter.mContent = "\
+		require \"relational\"; \
+		if header \
+			:value \"eq\" \"From\" \"them\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_KEEP);
+	// 
+	NextSubTest();
+	filter.mContent = "\
+		require \"relational\"; \
+		if header \
+			:value \"eq\" \"From\" \"those\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_TRASH);
+
+	// value ne
+	NextSubTest();
+	filter.mContent = "\
+		require \"relational\"; \
+		if header \
+			:value \"ne\" \"From\" \"tHem\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_TRASH);
+	// 
+	NextSubTest();
+	filter.mContent = "\
+		require \"relational\"; \
+		if header \
+			:value \"ne\" \"From\" \"tHose\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_KEEP);
+
+	// value gt
+	NextSubTest();
+	filter.mContent = "\
+		require \"relational\"; \
+		if header \
+			:value \"gt\" \"From\" \"tham\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_KEEP);
+	// 
+	NextSubTest();
+	filter.mContent = "\
+		require \"relational\"; \
+		if header \
+			:value \"gt\" \"From\" \"them\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_TRASH);
+
+}
