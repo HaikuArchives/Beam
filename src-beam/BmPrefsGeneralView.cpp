@@ -54,8 +54,6 @@
 #include "BmMailFolder.h"
 #include "BmMailFolderList.h"
 #include "BmMailFolderView.h"
-#include "BmMailRef.h"
-#include "BmMailRefList.h"
 #include "BmMenuControl.h"
 #include "BmPrefs.h"
 #include "BmPrefsGeneralView.h"
@@ -80,18 +78,6 @@ BmPrefsGeneralView::BmPrefsGeneralView()
 {
 	MView* view = 
 		new VGroup(
-			new Space( minimax(0,10,0,10)),
-			new MBorder( M_LABELED_BORDER, 10, (char*)"Mail-Listview Layout",
-				new VGroup(
-					CreateMailRefLayoutView( minimax(400,80,1E5,80), 400, 80),
-					new Space( minimax(0,4,0,4)),
-					mStripedListViewControl = new BmCheckControl( "Use striped version of listview (needs restart)", 
-																				 new BMessage(BM_STRIPED_LISTVIEW_CHANGED), 
-																				 this, ThePrefs->GetBool("StripedListView")),
-					new Space( minimax(0,4,0,4)),
-					0
-				)
-			),
 			new Space( minimax(0,10,0,10)),
 			new HGroup( 
 				new MBorder( M_LABELED_BORDER, 10, (char*)"Status Window",
@@ -177,8 +163,6 @@ BmPrefsGeneralView::BmPrefsGeneralView()
 		);
 	mGroupView->AddChild( dynamic_cast<BView*>(view));
 	
-	mLayoutView->AvoidInvoke( true);
-	
 	float divider = mMailMoverShowControl->Divider();
 	divider = MAX( divider, mPopperRemoveControl->Divider());
 	divider = MAX( divider, mSmtpRemoveControl->Divider());
@@ -233,8 +217,6 @@ BmString BmPrefsGeneralView::MailboxButtonLabel() {
 void BmPrefsGeneralView::Initialize() {
 	inherited::Initialize();
 	
-	TheBubbleHelper.SetHelp( mLayoutView, "This (dummy) mail-listview shows and defines\nthe default column-layout and sorting mode for all\nmail-listview.\nEvery mail-folder will follow this layout \n(until you modify the layout for a specific folder).");
-	TheBubbleHelper.SetHelp( mStripedListViewControl, "Checking this will cause the mail-listview to separate\nthe columns by giving them alternating colours.\nOtherwise, the mail-listview's columns are separated \nby truncating the contents with '...' if neccessary.");
 	TheBubbleHelper.SetHelp( mDynamicStatusWinControl, "Determines the layout of the job-status window.\n\tif checked, the job-status window will only display currently active jobs (it will grow/shrink accordingly)\n\tif unchecked, the job-status window will be static and show all known jobs, even if they are not active.");
 	TheBubbleHelper.SetHelp( mMailMoverShowControl, "Here you can enter the time (in ms) Beam will let pass before it \nwill show the GUI for a mail-moving operation inside the job-window.");
 	TheBubbleHelper.SetHelp( mPopperRemoveControl, "Here you can enter the time (in ms) Beam will let a finished POP3-job linger inside the job-window \n(this way you can check the results before the job is removed).");
@@ -250,14 +232,6 @@ void BmPrefsGeneralView::Initialize() {
 	TheBubbleHelper.SetHelp( mCacheRefsInMemControl, "Checking this will cause Beam to keep \nany mail-folder's contents in memory even\nif the user selects another folder.\n\nThis gives best performance, but \nmay use *A LOT* of memory.");
 	TheBubbleHelper.SetHelp( mNetBufSizeSendControl, "Here you can enter the network buffer size (in bytes)\nBeam will use for outgoing connections.\n\nIf sending seems slow, try a larger value in here.");
 	TheBubbleHelper.SetHelp( mNetRecvTimeoutControl, "Here you can enter the time (in ms) Beam\n will wait for an answer from a remote network-server.");
-	
-	mFolder = BmMailFolder::CreateDummyInstance();
-	mRefList = new BmMailRefList( mFolder.Get());
-	BmRef<BmMailRef> mRef( BmMailRef::CreateDummyInstance( mRefList.Get(), 0));
-	mRefList->AddItemToList( mRef.Get());
-	mRef = BmMailRef::CreateDummyInstance( mRefList.Get(), 1);
-	mRefList->AddItemToList( mRef.Get());
-	mLayoutView->StartJob( mRefList.Get());
 	
 	// add workspaces:
 	int32 count = count_workspaces();
@@ -286,7 +260,6 @@ void BmPrefsGeneralView::Initialize() {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmPrefsGeneralView::WriteStateInfo() {
-//	mLayoutView->WriteStateInfo();
 }
 
 /*------------------------------------------------------------------------------*\
@@ -294,9 +267,6 @@ void BmPrefsGeneralView::WriteStateInfo() {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmPrefsGeneralView::SaveData() {
-	BMessage layoutMsg;
-	if (mLayoutView->Archive( &layoutMsg, false) == B_OK)
-		ThePrefs->SetMsg("MailRefLayout", &layoutMsg);
 	ThePrefs->Store();
 	bool deskbar = mUseDeskbarControl->Value();
 	if (deskbar)
@@ -312,8 +282,6 @@ void BmPrefsGeneralView::SaveData() {
 void BmPrefsGeneralView::UndoChanges() {
 	bool lastInOutAtTop = ThePrefs->GetBool( "InOutAlwaysAtTop");
 	ThePrefs->ResetToSaved();
-	auto_ptr<BMessage> layoutMsg( ThePrefs->GetMsg( "MailRefLayout"));
-	mLayoutView->Unarchive( layoutMsg.get());
 	if (lastInOutAtTop != ThePrefs->GetBool( "InOutAlwaysAtTop")) {
 		if (TheMailFolderView->LockLooper()) {
 			TheMailFolderView->SortItems();
@@ -349,10 +317,6 @@ void BmPrefsGeneralView::MessageReceived( BMessage* msg) {
 			}
 			case BM_RESTORE_FOLDER_STATES_CHANGED: {
 				ThePrefs->SetBool("RestoreFolderStates", mRestoreFolderStatesControl->Value());
-				break;
-			}
-			case BM_STRIPED_LISTVIEW_CHANGED: {
-				ThePrefs->SetBool("StripedListView", mStripedListViewControl->Value());
 				break;
 			}
 			case BM_DYNAMIC_STATUS_WIN_CHANGED: {
@@ -459,15 +423,4 @@ void BmPrefsGeneralView::MessageReceived( BMessage* msg) {
 		// a problem occurred, we tell the user:
 		BM_SHOWERR( BmString("PrefsView_") << Name() << ":\n\t" << err.what());
 	}
-}
-
-/*------------------------------------------------------------------------------*\
-	()
-		-	
-\*------------------------------------------------------------------------------*/
-CLVContainerView* BmPrefsGeneralView::CreateMailRefLayoutView( minimax minmax, int32 width, int32 height) {
-	mLayoutView = BmMailRefView::CreateInstance( minmax, width, height);
-	auto_ptr<BMessage> layoutMsg( ThePrefs->GetMsg( "MailRefLayout"));
-	mLayoutView->Unarchive( layoutMsg.get());
-	return mLayoutView->ContainerView();
 }

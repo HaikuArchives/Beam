@@ -36,7 +36,6 @@
 #include "BmPrefsView.h"
 
 
-#define BM_STRIPED_LISTVIEW_CHANGED 		'bmSC'
 #define BM_RESTORE_FOLDER_STATES_CHANGED 	'bmRF'
 #define BM_DYNAMIC_STATUS_WIN_CHANGED 		'bmDS'
 #define BM_CACHE_REFS_DISK_CHANGED	 		'bmCD'
@@ -78,10 +77,8 @@ public:
 	static const char* const MSG_WORKSPACE;
 
 private:
-	CLVContainerView* CreateMailRefLayoutView( minimax minmax, int32 width, int32 height);
 	BmString MailboxButtonLabel();
 
-	BmMailRefView* mLayoutView;
 	BmTextControl* mMailMoverShowControl;
 	BmTextControl* mPopperRemoveControl;
 	BmTextControl* mSmtpRemoveControl;
@@ -89,7 +86,6 @@ private:
 	BmTextControl* mNetBufSizeSendControl;
 	BmTextControl* mNetRecvTimeoutControl;
 	BmCheckControl* mRestoreFolderStatesControl;
-	BmCheckControl* mStripedListViewControl;
 	BmCheckControl* mDynamicStatusWinControl;
 	BmCheckControl* mCacheRefsInMemControl;
 	BmCheckControl* mCacheRefsOnDiskControl;
@@ -102,9 +98,6 @@ private:
 
 	BFilePanel* mMailboxPanel;
 
-	BmRef<BmMailFolder> mFolder;
-	BmRef<BmMailRefList> mRefList;
-	
 	// Hide copy-constructor and assignment:
 	BmPrefsGeneralView( const BmPrefsGeneralView&);
 	BmPrefsGeneralView operator=( const BmPrefsGeneralView&);
