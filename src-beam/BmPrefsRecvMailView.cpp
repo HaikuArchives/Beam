@@ -31,7 +31,13 @@
 #include <MenuItem.h>
 #include <PopUpMenu.h>
 
-#include <layout-all.h>
+#include <liblayout/HGroup.h>
+#include <liblayout/LayeredGroup.h>
+#include <liblayout/MButton.h>
+#include <liblayout/MPopup.h>
+#include <liblayout/MStringView.h>
+#include <liblayout/Space.h>
+#include <liblayout/VGroup.h>
 
 #include "BubbleHelper.h"
 #include "Colors.h"
@@ -313,7 +319,7 @@ BmPrefsRecvMailView::BmPrefsRecvMailView()
 							mIsDefaultControl = new BmCheckControl( "Use this as default account", 
 																				 new BMessage(BM_IS_DEFAULT_CHANGED), 
 																				 this),
-							mIsBucketControl = new BmCheckControl( "This is a fallback account", 
+							mIsBucketControl = new BmCheckControl( "This is a catch-all account", 
 																				new BMessage(BM_IS_BUCKET_CHANGED), 
 																				this),
 							new Space( minimax(0,10,0,10)),
@@ -388,7 +394,7 @@ when replying to mails that were addressed to one of the aliases).");
 	TheBubbleHelper.SetHelp( mCheckAccountControl, "Check this if you want to check this account \nwhen pressing the 'Check'-button.");
 	TheBubbleHelper.SetHelp( mCheckEveryControl, "Check this if you want to check this account \nin regular intervals.");
 	TheBubbleHelper.SetHelp( mCheckIntervalControl, "Here you can enter the interval (in minutes)\n between automatic checks.");
-	TheBubbleHelper.SetHelp( mIsBucketControl, "Check this if this account is a fallback account, \n\
+	TheBubbleHelper.SetHelp( mIsBucketControl, "Check this if this account is a catch-all account, \n\
 i.e. if this account receives all undeliverable mails\n\
 for a specific domain.\n\
 (Beam uses this information when trying to determine\n\

@@ -31,7 +31,13 @@
 #include <MenuItem.h>
 #include <PopUpMenu.h>
 
-#include <layout-all.h>
+#include <liblayout/HGroup.h>
+#include <liblayout/LayeredGroup.h>
+#include <liblayout/MButton.h>
+#include <liblayout/MPopup.h>
+#include <liblayout/MStringView.h>
+#include <liblayout/Space.h>
+#include <liblayout/VGroup.h>
 
 #include "BubbleHelper.h"
 #include "Colors.h"
@@ -85,10 +91,14 @@ void BmSignatureItem::UpdateView( BmUpdFlags flags) {
 	inherited::UpdateView( flags);
 	BmSignature* sig = ModelItem();
 	if (flags & UPD_ALL) {
+		BmString beautifiedContent( sig->Content());
+		beautifiedContent.ReplaceAll( "\n", "\\n");
+		beautifiedContent.ReplaceAll( "\t", "\\t");
+
 		BmListColumn cols[] = {
 			{ sig->Key().String(),						false },
 			{ sig->Dynamic() ? "*" : "",				false },
-			{ sig->Content().String(),					false },
+			{ beautifiedContent.String(),				false },
 			{ NULL, false }
 		};
 		SetTextCols( 0, cols);
@@ -230,7 +240,7 @@ BmPrefsSignatureView::BmPrefsSignatureView()
 				new VGroup(
 					mSignatureControl = new BmTextControl( "Signature name:"),
 					new Space( minimax(0,5,0,5)),
-					mContentControl = new BmMultiLineTextControl( "Content:", false),
+					mContentControl = new BmMultiLineTextControl( "Content:", false, 4, 0, true),
 					new Space( minimax(0,5,0,5)),
 					new HGroup( 
 						mDynamicControl = new BmCheckControl( "Content is dynamic (execute the given command via shell, fetch stdout as signature)", 
@@ -251,7 +261,7 @@ BmPrefsSignatureView::BmPrefsSignatureView()
 					0
 				)
 			),
-			new Space(minimax(0,0,1E5,1E5,0.5)),
+			new Space(minimax(0,0,1E5,1E5,0.1)),
 			0
 		);
 	mGroupView->AddChild( dynamic_cast<BView*>(view));

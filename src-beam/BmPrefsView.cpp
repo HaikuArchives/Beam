@@ -35,7 +35,10 @@
 	class BRect;
 #endif
 
-#include <layout-all.h>
+#include <liblayout/LayeredGroup.h>
+#include <liblayout/MStringView.h>
+#include <liblayout/Space.h>
+#include <liblayout/VGroup.h>
 
 #include "Colors.h"
 
