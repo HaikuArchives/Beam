@@ -36,6 +36,8 @@
 #include <Entry.h>
 #include <MessageFilter.h>
 
+#include "BmController.h"
+#include "BmTextControl.h"
 #include "BmWindow.h"
 
 class MMenuBar;
@@ -47,7 +49,6 @@ class BmMailRef;
 class BmMailViewContainer;
 class BmMenuControl;
 class BmToolbarButton;
-class BmTextControl;
 class CLVContainerView;
 class HGroup;
 class MPictureButton;
@@ -55,6 +56,40 @@ class Space;
 class VGroup;
 class BFilePanel;
 
+
+/*------------------------------------------------------------------------------*\
+	BmPeopleControl
+		-	
+\*------------------------------------------------------------------------------*/
+class BmPeopleControl : public BmTextControl, public BmJobController
+{
+	typedef BmTextControl inherited;
+	typedef BmJobController inheritedController;
+
+public:
+	// creator-func, c'tors and d'tor:
+	BmPeopleControl( const char* label);
+	~BmPeopleControl();
+
+	// overrides of controller base:
+	BHandler* GetControllerHandler() 	{ return this; }
+	void JobIsDone( bool completed);
+
+	// overrides of BView base:
+	void MessageReceived( BMessage* msg);
+	void AttachedToWindow( void);
+
+private:
+	// Hide copy-constructor and assignment:
+	BmPeopleControl( const BmPeopleControl&);
+	BmPeopleControl operator=( const BmPeopleControl&);
+};
+
+
+/*------------------------------------------------------------------------------*\
+	BmMailEditWin
+		-	
+\*------------------------------------------------------------------------------*/
 class BmMailEditWin : public BmWindow
 {
 	typedef BmWindow inherited;
@@ -72,12 +107,24 @@ class BmMailEditWin : public BmWindow
 		BControl* mShiftTabToControl;
 	};
 
+	class BmPeopleDropMsgFilter : public BMessageFilter {
+	public:
+		BmPeopleDropMsgFilter( uint32 cmd)
+			: 	BMessageFilter( B_DROPPED_DELIVERY, B_ANY_SOURCE, cmd) 
+		{
+		}
+		filter_result Filter( BMessage* msg, BHandler** handler);
+	};
+
 public:
 	// creator-funcs, c'tors and d'tor:
 	static BmMailEditWin* CreateInstance( BmMailRef* mailRef=NULL);
 	static BmMailEditWin* CreateInstance( BmMail* mail=NULL);
 	~BmMailEditWin();
 
+	// native methods:
+	void AddAddressToTextControl( BmTextControl* cntrl, const BmString& email);
+	
 	// overrides of BmWindow base:
 	void BeginLife();
 	void MessageReceived( BMessage*);
@@ -107,7 +154,7 @@ private:
 	bool CreateMailFromFields( bool hardWrapIfNeeded=true);
 	bool SaveMail( bool hardWrapIfNeeded=true);
 	void SetFieldsFromMail( BmMail* mail);
-	
+
 	static BmEditWinMap nEditWinMap;
 
 	BmMailView* mMailView;
@@ -123,13 +170,14 @@ private:
 	BmToolbarButton* mPeopleButton;
 	BmToolbarButton* mPrintButton;
 	
-	BmTextControl* mBccControl;
-	BmTextControl* mCcControl;
+	BmPeopleControl* mBccControl;
+	BmPeopleControl* mCcControl;
+	BmPeopleControl* mToControl;
+
 	BmTextControl* mFromControl;
 	BmTextControl* mReplyToControl;
 	BmTextControl* mSenderControl;
 	BmTextControl* mSubjectControl;
-	BmTextControl* mToControl;
 	
 	BmMenuControl* mCharsetControl;
 	BmMenuControl* mSmtpControl;

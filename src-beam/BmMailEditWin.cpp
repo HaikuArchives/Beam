@@ -62,21 +62,12 @@
 #include "BmResources.h"
 #include "BmSignature.h"
 #include "BmSmtpAccount.h"
+#include "BmStorageUtil.h"
 #include "BmTextControl.h"
 #include "BmToolbarButton.h"
 #include "BmUtil.h"
 #include "BmPeople.h"
 
-/********************************************************************************\
-	BmMailEditWin
-\********************************************************************************/
-
-float BmMailEditWin::nNextXPos = 300;
-float BmMailEditWin::nNextYPos = 100;
-BmMailEditWin::BmEditWinMap BmMailEditWin::nEditWinMap;
-
-const char* const BmMailEditWin::MSG_CONTROL = 	"ctrl";
-const char* const BmMailEditWin::MSG_ADDRESS = 	"addr";
 
 /*------------------------------------------------------------------------------*\
 	types of messages handled by a BmMailEditWin:
@@ -92,6 +83,103 @@ const char* const BmMailEditWin::MSG_ADDRESS = 	"addr";
 #define BM_SHOWDETAILS2			'bMYi'
 #define BM_SHOWDETAILS3			'bMYj'
 #define BM_SIGNATURE_SELECTED	'bMYk'
+
+
+/********************************************************************************\
+	BmPeopleControl
+\********************************************************************************/
+
+/*------------------------------------------------------------------------------*\
+	( )
+		-	
+\*------------------------------------------------------------------------------*/
+BmPeopleControl::BmPeopleControl( const char* label)
+	:	inherited( label, true)
+	,	inheritedController( label)
+{
+}
+
+/*------------------------------------------------------------------------------*\
+	( )
+		-	
+\*------------------------------------------------------------------------------*/
+BmPeopleControl::~BmPeopleControl() {
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmPeopleControl::AttachedToWindow( void) {
+	inherited::AttachedToWindow();
+	// connect to the people-list:
+	StartJob( ThePeopleList.Get(), false);
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmPeopleControl::MessageReceived( BMessage* msg) {
+	try {
+		switch( msg->what) {
+			case BM_JOB_DONE:
+			case BM_LISTMODEL_ADD:
+			case BM_LISTMODEL_UPDATE:
+			case BM_LISTMODEL_REMOVE: {
+				// handle job-related messages (related to our menu):
+				BmListModelItem* item=NULL;
+				msg->FindPointer( BmListModel::MSG_MODELITEM, (void**)&item);
+				if (item)
+					item->RemoveRef();		// the msg is no longer referencing the item
+				JobIsDone( true);
+				break;
+			}
+			default:
+				inherited::MessageReceived( msg);
+		}
+	}
+	catch( exception &err) {
+		// a problem occurred, we tell the user:
+		BM_SHOWERR( ModelNameNC() << ": " << err.what());
+	}
+}
+
+/*------------------------------------------------------------------------------*\
+	JobIsDone()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmPeopleControl::JobIsDone( bool completed) {
+	if (completed) {
+		BmAutolockCheckGlobal lock( DataModel()->ModelLocker());
+		lock.IsLocked()	 					|| BM_THROW_RUNTIME( BmString() << ControllerName() << ":JobIsDone(): Unable to lock model");
+		BMenuItem* old;
+		while( (old = Menu()->RemoveItem( (int32)0))!=NULL)
+			delete old;
+
+		// add all adresses to menu and a menu-entry for clearing the field:
+		BMessage templateMsg( BM_TO_CC_BCC_ADDED);
+		templateMsg.AddPointer( BmMailEditWin::MSG_CONTROL, this);
+		ThePeopleList->AddPeopleToMenu( Menu(), templateMsg, BmMailEditWin::MSG_ADDRESS);
+		BMessage* clearMsg = new BMessage( BM_TO_CC_BCC_CLEAR);
+		clearMsg->AddPointer( BmMailEditWin::MSG_CONTROL, this);
+		Menu()->AddSeparatorItem();
+		Menu()->AddItem( new BMenuItem( "<Clear Field>", clearMsg));
+	}
+}
+
+
+
+/********************************************************************************\
+	BmMailEditWin
+\********************************************************************************/
+
+float BmMailEditWin::nNextXPos = 300;
+float BmMailEditWin::nNextYPos = 100;
+BmMailEditWin::BmEditWinMap BmMailEditWin::nEditWinMap;
+
+const char* const BmMailEditWin::MSG_CONTROL = 	"ctrl";
+const char* const BmMailEditWin::MSG_ADDRESS = 	"addr";
 
 /*------------------------------------------------------------------------------*\
 	CreateInstance()
@@ -146,6 +234,9 @@ BmMailEditWin::BmMailEditWin( BmMailRef* mailRef, BmMail* mail)
 {
 	CreateGUI();
 	mMailView->AddFilter( new BmShiftTabMsgFilter( mSubjectControl, B_KEY_DOWN));
+	mToControl->AddFilter( new BmPeopleDropMsgFilter( B_SIMPLE_DATA));
+	mCcControl->AddFilter( new BmPeopleDropMsgFilter( B_SIMPLE_DATA));
+	mBccControl->AddFilter( new BmPeopleDropMsgFilter( B_SIMPLE_DATA));
 	if (mail)
 		EditMail( mail);
 	else
@@ -180,6 +271,34 @@ filter_result BmMailEditWin::BmShiftTabMsgFilter::Filter( BMessage* msg, BHandle
 		}
 	}
 	return B_DISPATCH_MESSAGE;
+}
+
+/*------------------------------------------------------------------------------*\
+	Filter()
+		-	
+\*------------------------------------------------------------------------------*/
+filter_result BmMailEditWin::BmPeopleDropMsgFilter::Filter( BMessage* msg, 
+																				BHandler** handler) {
+	filter_result res = B_DISPATCH_MESSAGE;
+	BView* cntrl = handler ? dynamic_cast< BView*>( *handler) : NULL;
+	if (msg && msg->what == B_SIMPLE_DATA && cntrl) {
+		BmMailEditWin* win = dynamic_cast< BmMailEditWin*>( cntrl->Window());
+		if (!win)
+			return res;
+		entry_ref eref;
+		for( int32 i=0; msg->FindRef( "refs", i, &eref) == B_OK; ++i) {
+			if (CheckMimeType( &eref, "application/x-person")) {
+				BNode personNode( &eref);
+				if (personNode.InitCheck() != B_OK)
+					continue;
+				BmString addr;
+				BmReadStringAttr( &personNode, "META:email", addr);
+				win->AddAddressToTextControl( dynamic_cast< BmTextControl*>( cntrl), addr);
+				res = B_SKIP_MESSAGE;
+			}
+		}
+	}
+	return res;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -250,7 +369,7 @@ void BmMailEditWin::CreateGUI() {
 										  TheResources->CreatePictureFor( &TheResources->mDownArrow, 16, 16), 
 										  new BMessage( BM_SHOWDETAILS1), this, B_TWO_STATE_BUTTON),
 				new Space(minimax(4,-1,4,-1)),
-				mToControl = new BmTextControl( "To:", true),
+				mToControl = new BmPeopleControl( "To:"),
 				mCharsetControl = new BmMenuControl( "Charset:", new BPopUpMenu( ""), 0.4),
 				0
 			),
@@ -262,13 +381,13 @@ void BmMailEditWin::CreateGUI() {
 											  TheResources->CreatePictureFor( &TheResources->mDownArrow, 16, 16), 
 											  new BMessage( BM_SHOWDETAILS2), this, B_TWO_STATE_BUTTON),
 					new Space(minimax(4,-1,4,-1)),
-					mCcControl = new BmTextControl( "Cc:", true),
+					mCcControl = new BmPeopleControl( "Cc:"),
 					mReplyToControl = new BmTextControl( "Reply-To:", false),
 					0
 				),
 				mDetails2Group = new HGroup(
 					new Space(minimax(20,-1,20,-1)),
-					mBccControl = new BmTextControl( "Bcc:", true),
+					mBccControl = new BmPeopleControl( "Bcc:"),
 					mSenderControl = new BmTextControl( "Sender:", false),
 					0
 				),
@@ -345,18 +464,6 @@ void BmMailEditWin::CreateGUI() {
 		subMenu->AddItem( new BMenuItem( acc->Key().String(), new BMessage( BM_FROM_ADDED)));
 	}
 	mFromControl->Menu()->AddItem( subMenu);
-
-	// add all adresses to To/Cc/Bcc menu and a menu-entry for clearing the field:
-	BmTextControl*	ctrl[] = {mToControl, mCcControl, mBccControl, NULL};
-	for( int n=0; ctrl[n]!=NULL; ++n) {
-		BMessage templateMsg( BM_TO_CC_BCC_ADDED);
-		templateMsg.AddPointer( MSG_CONTROL, ctrl[n]);
-		ThePeopleList->AddPeopleToMenu( ctrl[n]->Menu(), templateMsg, MSG_ADDRESS);
-		BMessage* clearMsg = new BMessage( BM_TO_CC_BCC_CLEAR);
-		clearMsg->AddPointer( MSG_CONTROL, ctrl[n]);
-		ctrl[n]->Menu()->AddSeparatorItem();
-		ctrl[n]->Menu()->AddItem( new BMenuItem( "<Clear Field>", clearMsg));
-	}
 
 	// add all smtp-accounts to smtp menu:
 	for( iter = TheSmtpAccountList->begin(); iter != TheSmtpAccountList->end(); ++iter) {
@@ -613,14 +720,7 @@ void BmMailEditWin::MessageReceived( BMessage* msg) {
 				BmTextControl* cntrl;
 				if (msg->FindPointer( MSG_CONTROL, (void**)&cntrl) == B_OK) {
 					BmString email = msg->FindString( MSG_ADDRESS);
-					BmString currStr = cntrl->Text();
-					if (rx.exec( currStr, "\\S+"))
-						currStr << ", " << email;
-					else
-						currStr << email;
-					cntrl->SetText( currStr.String());
-					cntrl->TextView()->Select( currStr.Length(), currStr.Length());
-					cntrl->TextView()->ScrollToSelection();
+					AddAddressToTextControl( cntrl, email);
 				}
 				break;
 			}
@@ -733,6 +833,25 @@ void BmMailEditWin::MessageReceived( BMessage* msg) {
 	catch( exception &err) {
 		// a problem occurred, we tell the user:
 		BM_SHOWERR( BmString("MailEditWin: ") << err.what());
+	}
+}
+
+/*------------------------------------------------------------------------------*\
+	AddAddressToTextControl( BmTextControl* cntrl, email)
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailEditWin::AddAddressToTextControl( BmTextControl* cntrl, 
+															const BmString& email) {
+	if (cntrl) {
+		Regexx rx;
+		BmString currStr = cntrl->Text();
+		if (rx.exec( currStr, "\\S+"))
+			currStr << ", " << email;
+		else
+			currStr << email;
+		cntrl->SetText( currStr.String());
+		cntrl->TextView()->Select( currStr.Length(), currStr.Length());
+		cntrl->TextView()->ScrollToSelection();
 	}
 }
 
