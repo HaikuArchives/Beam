@@ -95,6 +95,7 @@ public:
 	// native methods:
 	void InitConverter();
 	void SetTransliterate( bool transliterate);
+	void SetDiscard( bool discard);
 
 	// overrides of BmMemFilter base:
 	void Reset( BmMemIBuf* input);
@@ -107,6 +108,7 @@ protected:
 	const BmString& mDestCharset;
 	iconv_t mIconvDescr;
 	bool mTransliterate;
+	bool mDiscard;
 };
 
 /*------------------------------------------------------------------------------*\
@@ -124,9 +126,13 @@ public:
 	// native methods:
 	void InitConverter();
 	void SetTransliterate( bool transliterate);
+	void SetDiscard( bool discard);
 
 	// overrides of BmMemFilter base:
 	void Reset( BmMemIBuf* input);
+
+	// getters:
+	bool HadToDiscardChars()				{ return mHadToDiscardChars; }
 
 protected:
 	// overrides of BmMailFilter base:
@@ -136,6 +142,8 @@ protected:
 	const BmString& mSrcCharset;
 	iconv_t mIconvDescr;
 	bool mTransliterate;
+	bool mDiscard;
+	bool mHadToDiscardChars;
 };
 
 /*------------------------------------------------------------------------------*\

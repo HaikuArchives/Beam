@@ -426,6 +426,7 @@ BmUtf8Decoder::BmUtf8Decoder( BmMemIBuf* input, const BmString& destCharset,
 	,	mDestCharset( destCharset)
 	,	mIconvDescr( ICONV_ERR)
 	,	mTransliterate( false)
+	,	mDiscard( false)
 {
 	InitConverter();
 }
@@ -460,10 +461,16 @@ void BmUtf8Decoder::InitConverter() {
 		iconv_close( mIconvDescr);
 		mIconvDescr = ICONV_ERR;
 	}
-	BmString toSet = mDestCharset	+ (mTransliterate ? "//TRANSLIT" : "");
+	BmString flag;
+	if (mTransliterate)
+		flag = "//TRANSLIT";
+	else if (mDiscard)
+		flag = "//IGNORE";
+	BmString toSet = mDestCharset	+ flag;
 	if ((mIconvDescr = iconv_open( toSet.String(), "UTF-8")) == ICONV_ERR) {
 		BM_LOGERR( BmString("libiconv: unable to convert from UTF-8 to ") << toSet);
 		mHadError = true;
+		return;
 	}
 }
 
@@ -475,6 +482,17 @@ void BmUtf8Decoder::SetTransliterate( bool transliterate) {
 	if (mIconvDescr != ICONV_ERR && mTransliterate == transliterate)
 		return;
 	mTransliterate = transliterate;
+	InitConverter();
+}
+
+/*------------------------------------------------------------------------------*\
+	SetDiscard()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmUtf8Decoder::SetDiscard( bool discard) {
+	if (mIconvDescr != ICONV_ERR && mDiscard == discard)
+		return;
+	mDiscard = discard;
 	InitConverter();
 }
 
@@ -534,6 +552,8 @@ BmUtf8Encoder::BmUtf8Encoder( BmMemIBuf* input, const BmString& srcCharset,
 	,	mSrcCharset( srcCharset)
 	,	mIconvDescr( ICONV_ERR)
 	,	mTransliterate( false)
+	,	mDiscard( false)
+	,	mHadToDiscardChars( false)
 {
 	InitConverter();
 }
@@ -557,6 +577,7 @@ BmUtf8Encoder::~BmUtf8Encoder()
 void BmUtf8Encoder::Reset( BmMemIBuf* input) {
 	inherited::Reset( input);
 	InitConverter();
+	mHadToDiscardChars = false;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -568,10 +589,16 @@ void BmUtf8Encoder::InitConverter() {
 		iconv_close( mIconvDescr);
 		mIconvDescr = ICONV_ERR;
 	}
-	BmString toSet = BmString("UTF-8") + (mTransliterate ? "//TRANSLIT" : "");
+	BmString flag;
+	if (mTransliterate)
+		flag = "//TRANSLIT";
+	else if (mDiscard)
+		flag = "//IGNORE";
+	BmString toSet = BmString("UTF-8") + flag;
 	if ((mIconvDescr = iconv_open( toSet.String(), mSrcCharset.String())) == ICONV_ERR) {
 		BM_LOGERR( BmString("libiconv: unable to convert from ") << mSrcCharset << " to " << toSet);
 		mHadError = true;
+		return;
 	}
 }
 
@@ -583,6 +610,17 @@ void BmUtf8Encoder::SetTransliterate( bool transliterate) {
 	if (mIconvDescr != ICONV_ERR && mTransliterate == transliterate)
 		return;
 	mTransliterate = transliterate;
+	InitConverter();
+}
+
+/*------------------------------------------------------------------------------*\
+	SetDiscard()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmUtf8Encoder::SetDiscard( bool discard) {
+	if (mIconvDescr != ICONV_ERR && mDiscard == discard)
+		return;
+	mDiscard = discard;
 	InitConverter();
 }
 
@@ -615,8 +653,10 @@ void BmUtf8Encoder::Filter( const char* srcBuf, uint32& srcLen,
 		else if (errno == EINVAL)
 			BM_LOG3( BM_LogMailParse, "Result in utf8-encode: stopped on multibyte char, need to continue");
 		else if (errno == EILSEQ) {
-			BM_LOGERR( "Result in utf8-encode: invalid multibyte char found");
-			mHadError = true;
+			BM_LOG2( BM_LogMailParse, "Result in utf8-encode: invalid multibyte char found");
+			mHadToDiscardChars = true;
+			int on = 1;
+			iconvctl( mIconvDescr, ICONV_SET_DISCARD_ILSEQ, &on);
 		} else {
 			BM_LOGERR( BmString("Unknown error-result in utf8-encode: ") << errno);
 			mHadError = true;
