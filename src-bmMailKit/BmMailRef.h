@@ -76,7 +76,7 @@ public:
 	// native methods:
 	void MarkAs( const char* s);
 	bool ReadAttributes( const struct stat* statInfo = NULL);
-	void ResyncFromDisk();
+	void ResyncFromDisk( entry_ref* newRef=NULL);
 
 #ifdef BM_LOGGING
 	int32 ObjectSize( bool addSizeofThis=true) const;

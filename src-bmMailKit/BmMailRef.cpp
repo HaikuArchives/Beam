@@ -314,7 +314,9 @@ bool BmMailRef::ReadAttributes( const struct stat* statInfo) {
 	ResyncFromDisk()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmMailRef::ResyncFromDisk() { 
+void BmMailRef::ResyncFromDisk( entry_ref* newRef) {
+	if (newRef)
+		mEntryRef = *newRef;
 	if (ReadAttributes())
 		mInitCheck = B_OK;
 	TellModelItemUpdated( UPD_ALL);
