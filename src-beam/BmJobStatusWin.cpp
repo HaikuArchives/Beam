@@ -332,10 +332,11 @@ BmMailFilterView::BmMailFilterView( const char* name)
 	,	mBottomLabel( NULL)
 {
 	mMSecsBeforeShow = MAX(10,ThePrefs->GetInt( "MSecsBeforeMailFilterShows", 500));
-	MView* view = new VGroup(
+	MView* view = new HGroup(
 		new MBViewWrapper(
 			mStatBar = new BStatusBar( BRect(), name, "Filtering: ", ""), true, false, false
 		),
+		new MStop( this),
 		0
 	);
 	AddChild( dynamic_cast<BView*>(view));
