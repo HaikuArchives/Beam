@@ -436,14 +436,17 @@ void BmMailRefList::MyInstantiateItems( BDataIO* dataIO, int32 numChildren) {
 							<< folder->Name());
 		}
 	}
+	bool needsStore = false;
 	if (!stopped) {
 		BM_LOG( BM_LogMailTracking, 
 				  BmString("Fetching appended MailRef-archives for folder ")
 				  		<< folder->Name());
 		BList appendedArchives(100);
 		FetchAppendedArchives( dataIO, &appendedArchives);
-		if (appendedArchives.CountItems() > 0)
+		if (appendedArchives.CountItems() > 0) {
 			IntegrateAppendedArchives( appendedArchives);
+			needsStore = true;
+		}
 	}
 	BM_LOG( BM_LogMailTracking, 
 			  BmString("End of InstantiateMailRefs() for folder ") 
@@ -453,7 +456,7 @@ void BmMailRefList::MyInstantiateItems( BDataIO* dataIO, int32 numChildren) {
 	} else {
 		folder->MailCount( ValidCount());
 		mNeedsCacheUpdate = false;
-		mNeedsStore = false;
+		mNeedsStore = needsStore;
 							// overrule changes caused from reading the cache
 		mInitCheck = B_OK;
 	}
