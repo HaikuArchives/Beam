@@ -85,7 +85,6 @@ class BmPopAccount : public BmListModelItem {
 	static const char* const MSG_MAIL_ALIASES;
 	static const char* const MSG_MARK_BUCKET;
 	static const char* const MSG_CHECK_INTERVAL;
-	static const char* const MSG_FILTER_NAME;
 	static const int16 nArchiveVersion;
 
 public:
@@ -104,12 +103,6 @@ public:
 	// stuff needed for Archival:
 	status_t Archive( BMessage* archive, bool deep = true) const;
 	int16 ArchiveVersion() const			{ return nArchiveVersion; }
-
-	// debugging overrides:
-#ifdef BM_REF_DEBUGGING
-	void AddRef()								{ inherited::AddRef(); }
-	void RemoveRef()							{ inherited::RemoveRef(); }
-#endif // BM_REF_DEBUGGING
 
 	// getters:
 	inline const BmString &AuthMethod() const	{ return mAuthMethod; }
@@ -131,7 +124,6 @@ public:
 	inline const BmString &Username() const 	{ return mUsername; }
 	inline int16 CheckInterval() const 			{ return mCheckInterval; }
 	inline const BmString &CheckIntervalString() const{ return mCheckIntervalString; }
-	inline const BmString &FilterName() const	{ return mFilterName; }
 
 	// setters:
 	inline void AuthMethod( const BmString &s) { mAuthMethod = s; TellModelItemUpdated( UPD_ALL); }
@@ -150,7 +142,6 @@ public:
 	inline void SMTPAccount( const BmString &s){ mSMTPAccount = s;  TellModelItemUpdated( UPD_ALL); }
 	inline void Username( const BmString &s) 	{ mUsername = s;  TellModelItemUpdated( UPD_ALL); }
 	void CheckInterval( int16 i);
-	inline void FilterName( const BmString &s){ mFilterName = s;  TellModelItemUpdated( UPD_ALL); }
 
 	bool GetPOPAddress( BNetAddress* addr) const;
 
@@ -179,13 +170,12 @@ private:
 	BmString mPortNrString;			// mPortNr as String
 	bool mCheckMail;					// include this account in global mail-check?
 	bool mDeleteMailFromServer;	// delete mails upon receive?
-	BmString mAuthMethod;				// authentication method
+	BmString mAuthMethod;			// authentication method
 	bool mMarkedAsDefault;			// is this the default account?
 	bool mPwdStoredOnDisk;			// store Passwords unsafely on disk?
 	bool mMarkedAsBitBucket;		// is this account a catch-all-account for failed delivery?
 	int16 mCheckInterval;			// check mail every ... minutes
 	BmString mCheckIntervalString;	// check-interval as String
-	BmString mFilterName;			// name of mail-filter to use for this account
 
 	vector<BmString> mUIDs;			// list of UIDs seen in this account
 	BMessageRunner* mIntervalRunner;

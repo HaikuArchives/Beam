@@ -73,7 +73,6 @@ class BmSmtpAccount : public BmListModelItem {
 	static const char* const MSG_PORT_NR;
 	static const char* const MSG_ACC_FOR_SAP;
 	static const char* const MSG_STORE_PWD;
-	static const char* const MSG_FILTER_NAME;
 	static const int16 nArchiveVersion;
 
 public:
@@ -100,7 +99,6 @@ public:
 	inline uint16 PortNr() const			 		{ return mPortNr; }
 	inline const BmString &PortNrString() const{ return mPortNrString; }
 	inline const BmString &AccForSmtpAfterPop() const{ return mAccForSmtpAfterPop; }
-	inline const BmString &FilterName() const	{ return mFilterName; }
 
 	// setters:
 	inline void Username( const BmString &s) 	{ mUsername = s;   TellModelItemUpdated( UPD_ALL); }
@@ -111,7 +109,6 @@ public:
 	inline void AuthMethod( const BmString &s) { mAuthMethod = s;   TellModelItemUpdated( UPD_ALL); }
 	inline void PortNr( uint16 i)					{ mPortNr = i; mPortNrString = BmString()<<i;  TellModelItemUpdated( UPD_ALL); }
 	inline void AccForSmtpAfterPop( const BmString &s)	{ mAccForSmtpAfterPop = s;   TellModelItemUpdated( UPD_ALL); }
-	inline void FilterName( const BmString &s){ mFilterName = s;  TellModelItemUpdated( UPD_ALL); }
 
 	bool GetSMTPAddress( BNetAddress* addr) const;
 
@@ -130,15 +127,14 @@ private:
 	//BmString mName;					// name is stored in key (base-class)
 	BmString mUsername;
 	BmString mPassword;
-	BmString mSMTPServer;				// 
-	BmString mDomainToAnnounce;		// domain-name that will be used when we announce
+	BmString mSMTPServer;			// 
+	BmString mDomainToAnnounce;	// domain-name that will be used when we announce
 											// ourselves to the server (HELO/EHLO)
-	BmString mAuthMethod;				// authentication method to use
+	BmString mAuthMethod;			// authentication method to use
 	uint16 mPortNr;					// usually 25
 	BmString mPortNrString;			// Port-Nr as String
 	bool mPwdStoredOnDisk;			// store Passwords unsafely on disk?
 	BmString mAccForSmtpAfterPop;	// pop-account to use for authentication
-	BmString mFilterName;			// name of mail-filter to use for this account
 
 };
 
