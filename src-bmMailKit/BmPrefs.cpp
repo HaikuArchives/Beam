@@ -55,7 +55,7 @@ const char* const BmPrefs::LOG_LVL_3 = "Log Everything";
 const BmString BmPrefs::nListSeparator = ",";
 
 const BmString BmPrefs::nDefaultIconset = "/Icons/iconset 22 nuvola grey-red";
-const int16 BmPrefs::nPrefsVersion = 10;
+const int16 BmPrefs::nPrefsVersion = 11;
 
 /*------------------------------------------------------------------------------*\
 	CreateInstance()
@@ -238,7 +238,13 @@ BmPrefs::BmPrefs( BMessage* archive)
 		mPrefsMsg.RemoveName( "MaxLineLenForHardWrap");
 		mPrefsMsg.AddBool( "NeverExceed78Chars", mlen < 100);
 	}
-	if (version < 9) {
+	if (version < 10) {
+		// changes introduced with version 10:
+		//
+		// add list-fields:
+		mPrefsMsg.AddString( "ListFields", "Mail-Followup-To,Reply-To");
+	}
+	if (version < 11) {
 		// changes introduced with version 9:
 		//
 		// replace <>-separators by simple commas:
@@ -251,12 +257,6 @@ BmPrefs::BmPrefs( BMessage* archive)
 			s.RemoveLast( ",");
 			mPrefsMsg.ReplaceString( *f, s.String());
 		}
-	}
-	if (version < 10) {
-		// changes introduced with version 10:
-		//
-		// add list-fields:
-		mPrefsMsg.AddString( "ListFields", "Mail-Followup-To,Reply-To");
 	}
 
 	SetLoglevels();
@@ -333,6 +333,10 @@ void BmPrefs::InitDefaults() {
 							+ BM_LOGLVL0(BM_LogRefCount);
 
 	mDefaultsMsg.AddBool( "AddPeopleNameToMailAddr", true);
+	mDefaultsMsg.AddString( "AutoCharsetsInbound", 
+									"us-ascii,utf-8,default");
+	mDefaultsMsg.AddString( "AutoCharsetsOutbound", 
+									"us-ascii,default,iso-2022-jp,utf-8");
 	mDefaultsMsg.AddBool( "AutoCheckOnlyIfPPPRunning", true);
 	mDefaultsMsg.AddBool( "Allow8BitMime", false);
 	mDefaultsMsg.AddBool( "BeepWhenNewMailArrived", true);
@@ -415,6 +419,13 @@ void BmPrefs::InitDefaults() {
 	mDefaultsMsg.AddString( "ShowToolbarLabel", "Right");
 	mDefaultsMsg.AddString( "SignatureRX", "^---?\\s*\\n");
 	mDefaultsMsg.AddBool("SpecialHeaderForEachBcc", false);
+	mDefaultsMsg.AddString( "StandardCharsets", 
+									"iso-8859-1,iso-8859-2,iso-8859-3,iso-8859-4,"
+									"iso-8859-5,iso-8859-6,iso-8859-7,iso-8859-8,"
+									"iso-8859-9,iso-8859-10,iso-8859-13,iso-8859-14,"
+									"iso-8859-15,macroman,windows-1251,windows-1252,"
+									"cp866,cp850,iso-2022-jp,iso-2022-jp-2,"
+									"koi8-r,euc-kr,big-5,us-ascii,utf-8");
 	mDefaultsMsg.AddBool( "StripedListView", true);
 	mDefaultsMsg.AddString( "TimeModeInHeaderView", "Local");
 	mDefaultsMsg.AddString( "UndoMode", "Words");
@@ -422,32 +433,6 @@ void BmPrefs::InitDefaults() {
 	mDefaultsMsg.AddBool( "UseDocumentResizer", true);
 	mDefaultsMsg.AddBool( "UseSwatchTimeInRefView", false);
 	mDefaultsMsg.AddString( "Workspace", "Current");
-	mDefaultsMsg.AddString( "StandardCharsets", 
-									"iso-8859-1,"
-									"iso-8859-2," 
-									"iso-8859-3,"	
-									"iso-8859-4,"
-									"iso-8859-5," 
-									"iso-8859-6," 
-									"iso-8859-7,"
-									"iso-8859-8,"
-									"iso-8859-9," 
-									"iso-8859-10," 
-									"iso-8859-13," 
-									"iso-8859-14,"
-									"iso-8859-15," 
-									"macroman," 
-									"windows-1251," 
-									"windows-1252,"
-									"cp866,"
-									"cp850,"
-									"iso-2022-jp,"
-									"iso-2022-jp-2,"
-									"koi8-r,"
-									"euc-kr,"
-									"big-5,"
-									"us-ascii,"
-									"utf-8");
 }
 
 /*------------------------------------------------------------------------------*\
