@@ -175,6 +175,9 @@ public:
 									const BmString& newVal);
 	bool SanityCheck( BmString& complaint, BmString& fieldName);
 	status_t Archive( BMessage* archive, bool deep = true) const;
+	void SetupFromMailData( const BmString& subject, 
+									const BmString& from, 
+									const BmString& To);
 
 private:
 
@@ -215,6 +218,7 @@ class BmTextControl;
 class BmMultiLineTextControl;
 class LayeredGroup;
 class BmFilterScrollView;
+class BmFilterGroup;
 class Space;
 
 #define BM_ANY_ALL_SELECTED			'bmTa'
@@ -266,7 +270,7 @@ private:
 	void RemoveFilterLine();
 	void UpdateState();
 
-	VGroup* mFilterGroup;
+	BmFilterGroup* mFilterGroup;
 	VGroup* mActionGroup;
 	BmFilterScrollView* mFilterScrollView;
 	Space* mSpaceAtBottom;

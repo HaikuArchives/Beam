@@ -35,6 +35,7 @@
 #include <MenuItem.h>
 #include <Message.h>
 #include <PopUpMenu.h>
+#include <ScrollView.h>
 
 #include <VGroup.h>
 #include <HGroup.h>
@@ -55,8 +56,6 @@ extern "C" {
 #include "sieve.h"
 }
 
-#include <MScrollView.h>
-#include "BetterScrollView.h"
 #include "BubbleHelper.h"
 
 #include "BmLogHandler.h"
@@ -65,52 +64,6 @@ extern "C" {
 #include "BmMenuControl.h"
 #include "BmMultiLineTextControl.h"
 #include "BmTextControl.h"
-
-
-/********************************************************************************\
-	BmFilterScrollView
-\********************************************************************************/
-
-class BmFilterScrollView: public MScrollView
-{
-	public:
-		BmFilterScrollView(MView *target, bool horizontal=false, bool vertical=false,
-			border_style border=B_FANCY_BORDER, minimax size=0)
-		:	MScrollView( target, false, true, border)
-		,	kid( target)
-		{ 
-			vscr = ScrollBar( B_VERTICAL);
-		}
-		virtual minimax layoutprefs();
-		virtual BRect layout(BRect rect);
-	private:
-		MView* kid;
-		BScrollBar* vscr;
-};
-
-minimax BmFilterScrollView::layoutprefs() {
-	kid->layoutprefs();
-	return mpm = ct_mpm;
-}
-
-BRect BmFilterScrollView::layout(BRect rect) {
-	MoveTo( rect.left, rect.top);
-	ResizeTo( rect.Width(), rect.Height());
-	minimax kid_mpm = kid->mpm;
-	int32 inset = 2;
-	float viewWidth = rect.Width()-B_V_SCROLL_BAR_WIDTH-2*inset;
-	float viewHeight = rect.Height()-inset*2;
-	float dataHeight = kid_mpm.mini.y-inset*2;
-	if (dataHeight < viewHeight)
-		dataHeight = viewHeight;
-	BRect kidRect = BRect( inset, inset, viewWidth, dataHeight);
-	kid->layout( kidRect);
-	if (vscr) {
-		vscr->SetRange( 0, dataHeight - viewHeight);
-		vscr->SetProportion( viewHeight / dataHeight);
-	}
-	return rect;
-}
 
 
 /********************************************************************************\
@@ -498,14 +451,18 @@ int BmSieveFilter::sieve_execute_error( const char* msg, void*,
 #define BM_MAILPART_BODY   "<Message-Text>"
 
 // the fields that can be selected directly:
+BmString BM_MP_SEPARATOR = "---";
 static const char* mailParts[] = {
 	"Bcc",
 	"Cc",
 	"From",
-	"List-Id",
 	"Reply-To",
 	"Subject",
 	"To",
+	BM_MP_SEPARATOR.String(),
+	"List-Id",
+	"Mailing-List",
+	BM_MP_SEPARATOR.String(),
 	BM_MAILPART_OTHER,
 //	BM_MAILPART_BODY,
 	NULL
@@ -520,6 +477,7 @@ static BmString BmAddressFieldNames =
 #define BM_ADDRPART_ADDRESS   "(Address)"
 #define BM_ADDRPART_DOMAIN    "(Domain)"
 #define BM_ADDRPART_LOCALPART "(Localpart)"
+
 static const char* addrParts[] = {
 	BM_ADDRPART_COMPLETE,
 	BM_ADDRPART_ADDRESS,
@@ -527,7 +485,6 @@ static const char* addrParts[] = {
 	BM_ADDRPART_LOCALPART,
 	NULL
 };
-
 #define BM_LONGEST_OP "does not match regex"
 static const char* operators[][3] = {
 	{ "is", "", "is"},
@@ -642,6 +599,34 @@ status_t BmGraphicalSieveFilter::Archive( BMessage* archive, bool) const {
 			 || archive->AddString( MSG_MATCH_VALUE, mMatchValue[i].String()));
 	}
 	return ret;
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmGraphicalSieveFilter::SetupFromMailData( const BmString& subject, 
+																const BmString& from, 
+																const BmString& to) {
+	mMatchCount = 0;
+	if (from.Length()) {
+		mMatchMailPart[mMatchCount] = "From";
+		mMatchOperator[mMatchCount] = "is";
+		mMatchValue[mMatchCount] = from;
+		mMatchCount++;
+	}
+	if (subject.Length()) {
+		mMatchMailPart[mMatchCount] = "To";
+		mMatchOperator[mMatchCount] = "is";
+		mMatchValue[mMatchCount] = to;
+		mMatchCount++;
+	}
+	if (subject.Length()) {
+		mMatchMailPart[mMatchCount] = "Subject";
+		mMatchOperator[mMatchCount] = "contains";
+		mMatchValue[mMatchCount] = subject;
+		mMatchCount++;
+	}
 }
 
 /*------------------------------------------------------------------------------*\
@@ -837,6 +822,106 @@ BmFilterAddon* InstantiateFilter( const BmString& name,
 
 
 /********************************************************************************\
+	BmFilterScrollView
+\********************************************************************************/
+
+class BmFilterGroup : public MGroup, public BView
+{
+	public:
+		BmFilterGroup()
+		: BView( BRect( 0, 0, 99, 99), "filterGroup", B_FOLLOW_ALL, 
+					B_WILL_DRAW) 
+		{
+		}
+		virtual minimax layoutprefs();
+		virtual BRect layout(BRect rect);
+	private:
+};
+
+minimax BmFilterGroup::layoutprefs() {
+	mpm = ct_mpm;
+	mpm.mini.y = 0;
+	int32 count = CountChildren();
+	for( int32 i=0; i<count; ++i) {
+		BView* kid = ChildAt( i);
+		MView* mvkid = dynamic_cast<MView*>( kid);
+		if (!mvkid)
+			continue;
+		minimax kid_mpm = mvkid->layoutprefs();
+		mpm.mini.y += kid_mpm.mini.y;
+	}
+	mpm.maxi.y = mpm.mini.y;
+	return mpm;
+}
+
+BRect BmFilterGroup::layout(BRect rect) {
+	MoveTo( rect.left, rect.top);
+	ResizeTo( rect.Width(), rect.Height());
+	float yPos = 0.0;
+	int32 count = CountChildren();
+	for( int32 i=0; i<count; ++i) {
+		BView* kid = ChildAt( i);
+		MView* mvkid = dynamic_cast<MView*>( kid);
+		if (!mvkid)
+			continue;
+		minimax kid_mpm = mvkid->mpm;
+		BRect kidRect = mvkid->layout( BRect( rect.left, yPos, rect.right, yPos+kid_mpm.mini.y));
+		yPos += kidRect.Height();
+	}
+	return rect;
+}
+
+class BmFilterScrollView: public MView, public BScrollView
+{
+	public:
+		BmFilterScrollView(MView *target, bool horizontal=false, bool vertical=false,
+			border_style border=B_FANCY_BORDER, minimax size=0)
+		:	BScrollView( "scroller", dynamic_cast<BView*>(target), 
+							 B_FOLLOW_NONE, B_WILL_DRAW|B_FRAME_EVENTS,
+							false, true, border)
+		,	kid( target)
+		{
+			vscr = ScrollBar( B_VERTICAL);
+		}
+		virtual minimax layoutprefs();
+		virtual BRect layout(BRect rect);
+	private:
+		MView* kid;
+		BScrollBar* vscr;
+};
+
+minimax BmFilterScrollView::layoutprefs() {
+	kid->layoutprefs();
+	return mpm = ct_mpm;
+}
+
+BRect BmFilterScrollView::layout(BRect rect) {
+	BView* bv = dynamic_cast<BView*>( kid);
+	bv->TargetedByScrollView( this);
+	MoveTo( rect.left, rect.top);
+	ResizeTo( rect.Width(), rect.Height());
+	int32 inset = 2;
+	float viewWidth = rect.Width()-B_V_SCROLL_BAR_WIDTH-inset*2;
+	float viewHeight = rect.Height()-inset*2;
+	float dataHeight = kid->mpm.mini.y;
+	if (dataHeight < viewHeight)
+		dataHeight = viewHeight;
+	BRect kidRect = BRect( inset, inset, viewWidth-1, viewHeight-1);
+	float value = vscr->Value();
+	// reset scrolling state (otherwise we have a scrolling nightmare, but why?):
+	vscr->SetValue( 0);
+	kid->layout( kidRect);
+	// set scrolling-position back to as it was before layout:
+	vscr->SetValue( value);
+	// update range and proportion:
+	vscr->SetRange( 0, dataHeight - viewHeight);
+	vscr->SetProportion( viewHeight / dataHeight);
+	return rect;
+}
+
+
+
+/********************************************************************************\
 	BmSieveFilterPrefs
 \********************************************************************************/
 
@@ -850,12 +935,12 @@ BmSieveFilterPrefs::BmSieveFilterPrefs( minimax minmax)
 	:	inherited( minmax)
 	,	mCurrFilterAddon( NULL)
 {
-	mFilterGroup = new VGroup( (MView*)0);
+	mFilterGroup = new BmFilterGroup();
 
 	BView* bv = dynamic_cast<BView*>( mFilterGroup);
 	if (bv) {
-		bv->SetResizingMode( B_FOLLOW_NONE);
-		bv->SetFlags( B_WILL_DRAW);
+		bv->SetResizingMode( B_FOLLOW_ALL);
+		bv->SetFlags( B_WILL_DRAW|B_FRAME_EVENTS);
 		bv->ResizeTo( 200,40);
 	}
 
@@ -871,7 +956,7 @@ BmSieveFilterPrefs::BmSieveFilterPrefs( minimax minmax)
 						mAddButton = new MButton( "Add Line", 
 														  new BMessage( BM_ADD_FILTER_LINE), 
 														  this, minimax(-1,-1,-1,-1)),
-						mRemoveButton = new MButton( "Remove Line", 
+						mRemoveButton = new MButton( "Remove (Last) Line", 
 															  new BMessage( BM_REMOVE_FILTER_LINE), 
 															  this, minimax(-1,-1,-1,-1)),
 						0
@@ -949,10 +1034,6 @@ BmSieveFilterPrefs::BmSieveFilterPrefs( minimax minmax)
 	= mSetIdentityControl->ct_mpm.maxi.x = mSetIdentityControl->ct_mpm.mini.x 
 	= maxWidth+5;
 
-	mFileIntoValueControl->SetDivider( 12);
-	mSetStatusValueControl->SetDivider( 12);
-	mSetIdentityValueControl->SetDivider( 12);
-
 	mAnyAllControl->SetDivider( 70);
 	mAnyAllControl->ct_mpm.maxi.x = 120;
 	
@@ -972,13 +1053,15 @@ BmSieveFilterPrefs::BmSieveFilterPrefs( minimax minmax)
 				),
 				mOperatorControl[i] = new BmMenuControl( NULL, new BPopUpMenu( ""),
 																	  0, 0, BM_LONGEST_OP),
-				mValueControl[i] = new BmMultiLineTextControl( "", false, 1, 0, true),
+				mValueControl[i] = new BmMultiLineTextControl( NULL, false, 1, 0, true),
 				0
 			);
+		mMailPartControl[i]->ct_mpm.maxi.y = 1E5;
+		mAddrPartControl[i]->ct_mpm.maxi.y = 1E5;
+		mOperatorControl[i]->ct_mpm.maxi.y = 1E5;
 		mFieldNameControl[i]->ct_mpm = minimax(80,-1,80,1E5);
 		mValueControl[i]->SetTabAllowed( false);
 		mValueControl[i]->ct_mpm = minimax(140,-1,1E5,1E5);
-
 		mFilterGroup->AddChild( mFilterLine[i]);
 	}		
 	mFilterGroup->AddChild( mSpaceAtBottom = new Space());
@@ -1055,11 +1138,15 @@ of the active filter-chain will be ignored.");
 	}
 	for( int i=0; i<BM_MAX_MATCH_COUNT; ++i) {
 		for( const char** itemP = mailParts; *itemP; ++itemP) {
-			BMessage* msg = new BMessage( BM_MAILPART_SELECTED);
-			msg->AddInt16( MSG_IDX, i);
-			BMenuItem* item = new BMenuItem( *itemP, msg);
-			item->SetTarget( this);
-			mMailPartControl[i]->Menu()->AddItem( item);
+			if (BM_MP_SEPARATOR == *itemP)
+				mMailPartControl[i]->Menu()->AddSeparatorItem();
+			else {
+				BMessage* msg = new BMessage( BM_MAILPART_SELECTED);
+				msg->AddInt16( MSG_IDX, i);
+				BMenuItem* item = new BMenuItem( *itemP, msg);
+				item->SetTarget( this);
+				mMailPartControl[i]->Menu()->AddItem( item);
+			}
 		}
 		for( const char** itemP = addrParts; *itemP; ++itemP) {
 			BMessage* msg = new BMessage( BM_ADDRPART_SELECTED);
@@ -1172,21 +1259,21 @@ void BmSieveFilterPrefs::AdjustScrollView() {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmSieveFilterPrefs::AdjustSizeOfValueControl( BmMultiLineTextControl* control) {
-		// adjust size of multiline-textview to accommodate its content:
-		BFont font;
-		control->GetFont( &font);
-		font_height fh;
-		font.GetHeight( &fh);
-		int lineHeight = (int)(ceil(fh.ascent) + ceil(fh.descent) + ceil(fh.leading));
-		int lineCount = 1;
-		BmString txt( control->Text());
-		for( int32 pos = 0; (pos = txt.FindFirst( "\n", pos)) != B_ERROR; ++pos)
-			++lineCount;
-		float height = lineHeight*lineCount+13;
-		control->ct_mpm.mini.y = control->ct_mpm.maxi.y
-		= control->mpm.mini.y = control->mpm.maxi.y = height;
-		control->SetTextMargin( 2);
-		control->TextView()->ScrollToOffset( 0);
+	// adjust size of multiline-textview to accommodate its content:
+	BFont font;
+	control->GetFont( &font);
+	font_height fh;
+	font.GetHeight( &fh);
+	int lineHeight = (int)(ceil(fh.ascent) + ceil(fh.descent) + ceil(fh.leading));
+	int lineCount = 1;
+	BmString txt( control->Text());
+	for( int32 pos = 0; (pos = txt.FindFirst( "\n", pos)) != B_ERROR; ++pos)
+		++lineCount;
+	float height = lineHeight*lineCount+13;
+	control->ct_mpm.mini.y = control->ct_mpm.maxi.y
+	= control->mpm.mini.y = control->mpm.maxi.y = height;
+	control->SetTextMargin( 2);
+	control->TextView()->ScrollToOffset( 0);
 }
 
 /*------------------------------------------------------------------------------*\
