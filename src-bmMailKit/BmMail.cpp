@@ -1517,11 +1517,13 @@ int32 BmMail::AddQuotedText( const BmString& inText, BmString& out,
 	Regexx rxUrl;
 	maxTextLen = MAX( 0, maxTextLen);
 	text.ConvertTabsToSpaces( ThePrefs->GetInt( "SpacesPerTab", 4), &inText);
-	while( text.CountChars() > maxTextLen) {
+	int32 charsLeft = text.CountChars();
+	while( charsLeft > maxTextLen) {
 		int32 wrapPos = B_ERROR;
 		int32 idx=0;
 		isUrl = rxUrl.exec(
-			inText, "(https?://|ftp://|nntp://|file://|mailto:)", Regexx::nocase
+			text, "^\\s*(https?://|ftp://|nntp://|file://|mailto:)", 
+			Regexx::nocase
 		);
 		for(  int32 charCount=0; 
 				charCount<maxTextLen || (isUrl && wrapPos==B_ERROR && text[idx]); 
@@ -1539,6 +1541,7 @@ int32 BmMail::AddQuotedText( const BmString& inText, BmString& out,
 			}
 		}
 		text.MoveInto( tmp, 0, wrapPos!=B_ERROR ? wrapPos : idx);
+		charsLeft -= tmp.CountChars();
 		tmp.Prepend( quoteString + quote);
 		modifiedMaxLen = MAX( tmp.CountChars(), modifiedMaxLen);
 		out << tmp << "\n";
