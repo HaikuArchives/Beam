@@ -388,8 +388,10 @@ bool BmApplication::QuitRequested() {
 	int32 count = CountWindows();
 	for( int32 i=count-1; shouldQuit && i>=0; --i) {
 		BWindow* win = bmApp->WindowAt( i);
+		win->Lock();
 		if (win && !win->QuitRequested())
 			shouldQuit = false;
+		win->Unlock();
 	}
 
 	if (!shouldQuit) {
@@ -416,7 +418,7 @@ bool BmApplication::QuitRequested() {
 			new mail is generated for if an argument has been provided
 \*------------------------------------------------------------------------------*/
 void BmApplication::ArgvReceived( int32 argc, char** argv) {
-	if (argc>1) {
+	if (argc>1 && !BeamInTestMode) {
 		BMessage msg(BMM_NEW_MAIL);
 		BmString to( argv[1]);
 		if (to.ICompare("mailto:",7)==0) {
@@ -1242,7 +1244,7 @@ void BmApplication::AboutRequested() {
 		15, 
 		"BEware, Another Mailer\n(c) Oliver Tappe, Berlin, Germany",
 		"mailto:beam@hirschkaefer.de",
-		"http://www.hirschkaefer.de/beam",
+		"http://beam.sourceforge.net",
 		"\n\n\n\n\n\n\nThanks to:\n\
 \n\
 Heike Herfart \n\
