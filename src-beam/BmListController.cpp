@@ -563,6 +563,11 @@ void BmListViewController::AddAllModelItems() {
 	MakeEmpty();
 	BmListModel *model = dynamic_cast<BmListModel*>(DataModel().Get());
 	BM_ASSERT( model);
+	BmAutolockCheckGlobal lock( model->ModelLocker());
+	if (!lock.IsLocked())
+		BM_THROW_RUNTIME( 
+			model->ModelNameNC() << ": Unable to get lock"
+		);
 	BList* tempList = NULL;
 	if (!Hierarchical())
 		tempList = new BList( model->size());
@@ -627,6 +632,13 @@ void BmListViewController::AddAllModelItems() {
 			listmodel
 \*------------------------------------------------------------------------------*/
 BmListViewItem* BmListViewController::AddModelItem( BmListModelItem* item) {
+	BmListModel *model = dynamic_cast<BmListModel*>(DataModel().Get());
+	BM_ASSERT( model);
+	BmAutolockCheckGlobal lock( model->ModelLocker());
+	if (!lock.IsLocked())
+		BM_THROW_RUNTIME( 
+			model->ModelNameNC() << ": Unable to get lock"
+		);
 	BM_LOG2( BM_LogModelController, 
 				BmString(ControllerName())<<": adding one item to listview");
 	BmListViewItem* newItem;
@@ -685,6 +697,13 @@ void BmListViewController::RemoveModelItem( BmListModelItem* item) {
 	BM_LOG2( BM_LogModelController, 
 				BmString(ControllerName())<<": removing one item from listview");
 	if (item) {
+		BmListModel *model = dynamic_cast<BmListModel*>(DataModel().Get());
+		BM_ASSERT( model);
+		BmAutolockCheckGlobal lock( model->ModelLocker());
+		if (!lock.IsLocked())
+			BM_THROW_RUNTIME( 
+				model->ModelNameNC() << ": Unable to get lock"
+			);
 		doRemoveModelItem( item);
 		UpdateCaption();
 		BMessage msg( BM_NTFY_LISTCONTROLLER_MODIFIED);
@@ -741,6 +760,13 @@ BmListViewItem* BmListViewController::UpdateModelItem( BmListModelItem* item,
 			if (itemIndex >= visibleTopIndex && itemIndex <= visibleBottomIndex)
 				needRedraw = true;
 		}
+		BmListModel *model = dynamic_cast<BmListModel*>(DataModel().Get());
+		BM_ASSERT( model);
+		BmAutolockCheckGlobal lock( model->ModelLocker());
+		if (!lock.IsLocked())
+			BM_THROW_RUNTIME( 
+				model->ModelNameNC() << ": Unable to get lock"
+			);
 		viewItem->UpdateView( updFlags, needRedraw);
 	} else
 		BM_LOG2( BM_LogModelController, 
@@ -864,6 +890,13 @@ void BmListViewController::UpdateItem( BmListViewItem* item, BmUpdFlags flags) {
 	if (!item)
 		return;
 	if (LockLooper()) {
+		BmListModel *model = dynamic_cast<BmListModel*>(DataModel().Get());
+		BM_ASSERT( model);
+		BmAutolockCheckGlobal lock( model->ModelLocker());
+		if (!lock.IsLocked())
+			BM_THROW_RUNTIME( 
+				model->ModelNameNC() << ": Unable to get lock"
+			);
 		item->UpdateView( flags);
 		InvalidateItem( IndexOf( item));
 		UnlockLooper();

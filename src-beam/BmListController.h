@@ -228,10 +228,6 @@ protected:
 	virtual BmString StateInfoBasename()				= 0;
 	virtual BMessage* DefaultLayout()	{ return NULL; }
 
-	BmListViewItem* doAddModelItem( BmListViewItem* parent, 
-											  BmListModelItem* item);
-	void doRemoveModelItem( BmListModelItem* item);
-
 	typedef map< BmListModelItem*, BmListViewItem*> BmViewModelMap;
 
 	BmViewModelMap mViewModelMap;
@@ -251,6 +247,10 @@ protected:
 	static const char* const MSG_SCROLL_STEP;
 
 private:
+
+	BmListViewItem* doAddModelItem( BmListViewItem* parent, 
+											  BmListModelItem* item);
+	void doRemoveModelItem( BmListModelItem* item);
 
 	// Hide copy-constructor and assignment:
 	BmListViewController( const BmListViewController&);
