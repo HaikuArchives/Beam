@@ -104,7 +104,6 @@ public:
 	void KeyDown(const char *bytes, int32 numBytes);
 	BmString StateInfoBasename()			{ return "MailFolderView"; }
 	const char* ItemNameForCaption()		{ return "folder"; }
-	void JobIsDone( bool completed);
 	//
 	status_t Archive(BMessage* archive, bool deep=true) const;
 	status_t Unarchive(const BMessage* archive, bool deep=true);
@@ -115,6 +114,9 @@ public:
 	void SelectionChanged( void);
 
 	static BmMailFolderView* theInstance;
+
+protected:
+	void JobIsDone( bool completed);
 
 private:
 

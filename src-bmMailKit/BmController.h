@@ -115,9 +115,10 @@ public:
 	virtual void StopJob();
 	virtual bool IsJobRunning();
 	int32 CurrentJobSpecifier();
-	virtual void JobIsDone( bool completed) = 0;
 
 protected:
+
+	virtual void JobIsDone( bool completed) = 0;
 
 	// Hide copy-constructor and assignment:
 	BmJobController( const BmJobController&);
