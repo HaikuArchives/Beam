@@ -82,6 +82,7 @@ CLVColumn::CLVColumn(const char* label,float width,uint32 flags,float min_width,
 	fPushedByExpander = false;
 	fParent = NULL;
 	fSortMode = NoSort;
+	fBitmapOffset = 0;
 }
 
 

@@ -818,6 +818,14 @@ void ColumnListView::AddSortKey(int32 ColumnIndex)
 	SortingChanged();
 }
 
+bool ColumnListView::IsSortKey(int32 ColumnIndex)
+{
+	AssertWindowLocked();
+	CLVColumn* Column = NULL;
+	if (ColumnIndex >= 0)
+		Column = (CLVColumn*)fColumnList.ItemAt(ColumnIndex);
+	return (Column && fSortKeyList.HasItem(Column));
+}
 
 void ColumnListView::SetSortMode(int32 ColumnIndex,CLVSortMode Mode, bool doSort)
 {
@@ -1082,13 +1090,7 @@ void ColumnListView::WindowActivated(bool active)
 		fSelectedItemColorWindowActive.blue != fSelectedItemColorWindowInactive.blue ||
 		fSelectedItemColorWindowActive.alpha != fSelectedItemColorWindowInactive.alpha)
 	{
-		int32 index=0;
-		int32 selected;
-		while((selected = CurrentSelection(index)) >= 0)
-		{
-			InvalidateItem(selected);
-			index++;
-		}
+		Invalidate();
 	}
 	BListView::WindowActivated(active);
 }
@@ -1225,6 +1227,69 @@ bool ColumnListView::AddItem(BListItem* a_item)
 }
 
 
+void ColumnListView::ReSortItem( CLVListItem* item)
+{
+	if (!item)
+		return;
+
+	if (fHierarchical) {
+		int32 oldPos = FullListIndexOf( item);
+		int32 newPos;
+		int32 itemCount = 1+FullListNumberOfSubitems( item);
+		CLVListItem* superitem = Superitem( item);
+
+		// temporarily remove item(s) from full list:
+		BList movingItems( itemCount);
+		for( int32 i=0; i<itemCount; ++i)
+			movingItems.AddItem( fFullItemList.ItemAt( oldPos+i));
+		fFullItemList.RemoveItems( oldPos, itemCount);
+
+		// now determine new position of (main-)item:
+		int32 startPos = superitem ? FullListIndexOf( superitem)+1 : 0;
+		newPos = DetermineSortedPosHierarchical( item, startPos);
+
+		// reinsert item(s) in full list at new position...
+		fFullItemList.AddList( &movingItems, newPos);
+		if (newPos == oldPos)
+			return;			// positions haven't changed, nothing more to do
+	
+		// Find the new position in listview:
+		int32 prevPos = fFullItemList.IndexOf( item)-1;
+		CLVListItem* prevItem = NULL;
+		while( prevPos >= 0)	{
+			prevItem = (CLVListItem*)fFullItemList.ItemAt(prevPos);
+			if (prevItem && BListView::HasItem(prevItem))
+				break;
+			else
+				prevPos--;
+		}
+		if (prevItem)
+			newPos = BListView::IndexOf( prevItem) + 1;
+		else
+			newPos = 0;
+	
+		// ...and finally move the item(s) in the listview, too:
+		for( int32 i=0; i<itemCount; ++i) {
+			oldPos = BListView::IndexOf( (BListItem*)movingItems.ItemAt( i));
+			if (oldPos < 0)
+				continue;
+			if (newPos > oldPos)
+				MoveItem( oldPos, newPos-1);
+			else {
+				MoveItem( oldPos, newPos);
+				newPos++;
+			}
+		}
+	} else {
+		// move item to new position:
+		int32 oldPos = IndexOf( item);
+		int32 newPos = DetermineSortedPos( item);
+		if (newPos > oldPos)
+			newPos--;
+		MoveItem( oldPos, newPos);
+	}
+}
+
 int32 ColumnListView::DetermineSortedPos(CLVListItem* item)
 {
 	int32 SortDepth = fSortKeyList.CountItems();
@@ -1234,12 +1299,26 @@ int32 ColumnListView::DetermineSortedPos(CLVListItem* item)
 	int32 currPos = numItems/2;
 	int32 lb = 0;
 	int32 ub = numItems-1;
+	CLVListItem* compItem;
 	while( lb<=ub ) {
 		int CompareResult = 0;
+		compItem = (CLVListItem*)ItemAt(currPos);
+		if (item == compItem) {
+			// avoid comparing with ourselves, since that would give unwanted results:
+			int32 cp = currPos;
+			compItem = NULL;
+			if (currPos>lb)
+				compItem = (CLVListItem*)ItemAt(--cp);
+			if (!compItem && currPos<ub)
+				compItem = (CLVListItem*)ItemAt(++cp);
+			if (!compItem)
+				return currPos;
+			currPos = cp;
+		}
 		for(int32 SortIteration = 0; SortIteration < SortDepth && CompareResult == 0; SortIteration++)
 		{
 			CLVColumn* Column = (CLVColumn*)fSortKeyList.ItemAt(SortIteration);
-			CompareResult = fCompare(item,(CLVListItem*)ItemAt(currPos),fColumnList.IndexOf(Column),Column->Flags());
+			CompareResult = fCompare(item,compItem,fColumnList.IndexOf(Column),Column->Flags());
 			if(Column->fSortMode == Descending)
 				CompareResult = 0-CompareResult;
 		}
@@ -1979,10 +2058,12 @@ void ColumnListView::Draw( BRect updateRect) {
 		BRect ThisItemRect;
 		for( int32 idx=firstItemIndex; idx<=lastItemIndex; ++idx) {
 			ThisItemRect = ItemFrame( idx);
-			ItemAt( idx)->DrawItem( this, ThisItemRect, true);
+			ItemAt( idx)->DrawItem( this, ThisItemRect, false);
 		}
 		updateRect.top = ThisItemRect.bottom+1;
 	}
+	if (updateRect.Height() <= 0)
+		return;
 
 	if (fStripedBackground) {
 		BList* DisplayList = &fColumnDisplayList;

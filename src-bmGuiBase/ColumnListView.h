@@ -126,6 +126,7 @@ class IMPEXPSANTAPARTSFORBEAM ColumnListView : public BListView
 		virtual void SetSortKey(int32 ColumnIndex);
 			//Set it to -1 to remove the sort key.
 		virtual void AddSortKey(int32 ColumnIndex);
+		bool IsSortKey(int32 ColumnIndex);
 		void ReverseSortMode(int32 ColumnIndex);
 		virtual void SetSortMode(int32 ColumnIndex,CLVSortMode Mode, bool doSort=true);
 			//Override this to filter the modes
@@ -205,6 +206,7 @@ class IMPEXPSANTAPARTSFORBEAM ColumnListView : public BListView
 		virtual void ExpansionChanged(CLVListItem*, bool) {}
 		void SetSortFunction(CLVCompareFuncPtr compare);
 		void SortItems();
+		void ReSortItem(CLVListItem* item);
 		virtual CLVContainerView* CreateContainer(bool horizontal, bool vertical, bool scroll_view_corner,
 			border_style border, uint32 ResizingMode, uint32 flags);
 		virtual void KeyDown(const char *bytes, int32 numBytes);
@@ -261,7 +263,6 @@ class IMPEXPSANTAPARTSFORBEAM ColumnListView : public BListView
 		BList fColumnDisplayList;
 		BList fSortKeyList;		//List contains CLVColumn pointers
 		BList fFullItemList;
-		BList m_column_types;	//List of int32's converted from CLVColumnTypes
 		PrefilledBitmap fRightArrow;
 		PrefilledBitmap fDownArrow;
 		int32 fExpanderColumn;

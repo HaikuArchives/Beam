@@ -105,12 +105,18 @@ BRect CLVListItem::ItemColumnFrame(int32 column_index)
 
 
 void CLVListItem::InvalidateColumn( int32 column_index) {
-	if (column_index < 0)
+	BRect updateRect;
+	if (column_index < 0) {
 		// invalidate whole item:
-		fOwner->InvalidateItem( fOwner->IndexOf( this));
-	else
-		// invalidate a single column
-		fOwner->Invalidate( ItemColumnFrame( column_index));
+		updateRect = fOwner->ItemFrame( fOwner->IndexOf( this));
+		if (updateRect.Intersects( fOwner->Bounds()))
+			fOwner->InvalidateItem( fOwner->IndexOf( this));
+	} else {
+		// invalidate a single column:
+		updateRect = ItemColumnFrame( column_index);
+		if (updateRect.Intersects( fOwner->Bounds()))
+			fOwner->Invalidate( updateRect);
+	}
 }
 
 bool CLVListItem::ExpanderRectContains(BPoint where) {
@@ -210,7 +216,7 @@ void CLVListItem::DrawItem(BView* fOwner, BRect itemRect, bool complete)
 			{
 				//Give the programmer a chance to do his kind of highlighting if the item is selected
 				DrawItemColumn(ThisColumnRect,
-					((ColumnListView*)fOwner)->fColumnList.IndexOf(ThisColumn),complete);
+					((ColumnListView*)fOwner)->fColumnList.IndexOf(ThisColumn));
 				if(fSuperItem)
 				{
 					//Draw the expander, clip manually
@@ -245,14 +251,14 @@ void CLVListItem::DrawItem(BView* fOwner, BRect itemRect, bool complete)
 				ThisColumnRect.right = PushMax;
 			if(ThisColumnRect.right >= ThisColumnRect.left && ClippingRegion.Intersects(ThisColumnRect))
 				DrawItemColumn(ThisColumnRect,
-					((ColumnListView*)fOwner)->fColumnList.IndexOf(ThisColumn),complete);
+					((ColumnListView*)fOwner)->fColumnList.IndexOf(ThisColumn));
 		}
 	}
 	//Fill the area after all the columns (so the select highlight goes all the way across)
 	ThisColumnRect.left = LastColumnEnd + 1.0;
 	ThisColumnRect.right = fOwner->Bounds().right;
 	if(ThisColumnRect.left <= ThisColumnRect.right && ClippingRegion.Intersects(ThisColumnRect))
-		DrawItemColumn(ThisColumnRect,-NumberOfColumns,complete);
+		DrawItemColumn(ThisColumnRect,-NumberOfColumns);
 }
 
 

@@ -50,8 +50,8 @@ class IMPEXPSANTAPARTSFORBEAM CLVListItem : public BListItem
 		virtual	status_t Archive(BMessage* data, bool deep = true) const;
 		*/
 		
-		virtual void DrawItemColumn(BRect item_column_rect, int32 column_index,
-			bool complete) = 0;	//column_index (0-N) is based on the order in which the columns were added
+		virtual void DrawItemColumn(BRect item_column_rect, int32 column_index) = 0;	
+								//column_index (0-N) is based on the order in which the columns were added
 								//to the ColumnListView, not the display order.  An index of -1 indicates
 								//that the program needs to draw a blank area beyond the last column.  The
 								//main purpose is to allow the highlighting bar to continue all the way to
@@ -71,8 +71,8 @@ class IMPEXPSANTAPARTSFORBEAM CLVListItem : public BListItem
 	protected:
 		friend class ColumnListView;
 
-		bool fSuperItem;
 		ColumnListView* fOwner;
+		bool fSuperItem;
 };
 
 

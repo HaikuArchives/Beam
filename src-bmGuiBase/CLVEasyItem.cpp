@@ -42,7 +42,8 @@
 //******************************************************************************************************
 CLVEasyItem::CLVEasyItem(uint32 level, bool superitem, bool expanded, 
 								 ColumnListView* lv)
-: CLVListItem(level,superitem,expanded)
+:  CLVListItem(level,superitem,expanded)
+,  m_column_content( lv->CountColumns())
 {
 	fOwner = lv;
 	text_offset = 0.0;
@@ -53,12 +54,11 @@ CLVEasyItem::CLVEasyItem(uint32 level, bool superitem, bool expanded,
 CLVEasyItem::~CLVEasyItem()
 {
 	int num_columns = m_column_content.CountItems();
-	for(int column = 0; column < num_columns; column++)
-	{
-		int32 type = (int32)fOwner->m_column_types.ItemAt(column);
-		type &= CLVColTypesMask;
-		if(type == 	CLVColStaticText)
-			delete[] ((char*)m_column_content.ItemAt(column));
+	CLVColumn* column;
+	for(int c = 0; c < num_columns; c++) {
+		column = (CLVColumn*)fOwner->ColumnAt(c);
+		if (column && column->Type() == CLV_COLTYPE_STATICTEXT)
+			delete[] ((char*)m_column_content.ItemAt(c));
 	}
 }
 
@@ -66,99 +66,80 @@ CLVEasyItem::~CLVEasyItem()
 void CLVEasyItem::PrepListsForSet(int column_index)
 {
 	int cur_num_columns = m_column_content.CountItems();
-	bool delete_old = (cur_num_columns >= column_index-1);
+	bool delete_old = (cur_num_columns > column_index);
 	while(cur_num_columns <= column_index)
 	{
-		fOwner->m_column_types.AddItem((void*)CLVColNone);
 		m_column_content.AddItem(NULL);
 		cur_num_columns++;
 	}
 	if(delete_old)
 	{
 		//Column content exists already so delete the old entries
-		int32 old_type = (int32)fOwner->m_column_types.ItemAt(column_index);
-		old_type &= CLVColTypesMask;
-
-		void* old_content = m_column_content.ItemAt(column_index);
-		if(old_type == CLVColStaticText) {
-			delete [] ((char*)old_content);
+		CLVColumn* column = (CLVColumn*)fOwner->ColumnAt(column_index);
+		if (column && column->Type() == CLV_COLTYPE_STATICTEXT) {
+			delete [] ((char*)m_column_content.ItemAt(column_index));
 			((char**)m_column_content.Items())[column_index] = NULL;
 		}
 	}
 }
 
 
-void CLVEasyItem::SetColumnContent(int column_index, const char *text, bool right_justify)
+void CLVEasyItem::SetColumnContent(int column_index, const char *text)
 {
 	PrepListsForSet(column_index);
 
 	//Create the new entry
-	if(text == NULL || text[0] == 0)
-	{
-		((int32*)fOwner->m_column_types.Items())[column_index] = CLVColNone;
+	if (text == NULL || text[0] == 0)
 		((char**)m_column_content.Items())[column_index] = NULL;
-	}
 	else
-	{
 		((char**)m_column_content.Items())[column_index] = Strdup_new(text);
-		((int32*)fOwner->m_column_types.Items())[column_index] = CLVColStaticText;
-		if(right_justify)
-			((int32*)fOwner->m_column_types.Items())[column_index] |= CLVColFlagRightJustify;
-	}
 }
 
 
-void CLVEasyItem::SetColumnContent(int column_index, const BBitmap *bitmap, int8 horizontal_offset,
-											  bool right_justify)
+void CLVEasyItem::SetColumnContent(int column_index, const BBitmap *bitmap, 
+											  int8 horizontal_offset)
 {
 	PrepListsForSet(column_index);
 
 	//Create the new entry
-	if(bitmap == NULL)
-	{
-		((int32*)fOwner->m_column_types.Items())[column_index] = CLVColNone;
-		((char**)m_column_content.Items())[column_index] = NULL;
+	CLVColumn* column = (CLVColumn*)fOwner->ColumnAt(column_index);
+	if (column) {
+		column->BitmapOffset( horizontal_offset);
+		if(bitmap == NULL)
+			((char**)m_column_content.Items())[column_index] = NULL;
+		else
+			((BBitmap**)m_column_content.Items())[column_index] = (BBitmap*)bitmap;
 	}
-	else
-	{
-		((int32*)fOwner->m_column_types.Items())[column_index] = CLVColBitmap + (((int32)horizontal_offset)<<24);
-		if(right_justify)
-			((int32*)fOwner->m_column_types.Items())[column_index] |= CLVColFlagRightJustify;
-		((BBitmap**)m_column_content.Items())[column_index] = (BBitmap*)bitmap;
-	}
-}
-
-
-void CLVEasyItem::SetColumnUserTextContent(int column_index, bool right_justify)
-{
-	PrepListsForSet(column_index);
-	((int32*)fOwner->m_column_types.Items())[column_index] = CLVColUserText;
-	if(right_justify)
-		((int32*)fOwner->m_column_types.Items())[column_index] |= CLVColFlagRightJustify;
 }
 
 
 const char* CLVEasyItem::GetColumnContentText(int column_index)
 {
-	int32 type = ((int32)fOwner->m_column_types.ItemAt(column_index)) & CLVColTypesMask;
-	if(type == CLVColStaticText)
-		return (char*)m_column_content.ItemAt(column_index);
-	if(type == CLVColUserText)
-		return GetUserText(column_index,-1);
+	CLVColumn* column = (CLVColumn*)fOwner->ColumnAt(column_index);
+	if (column) {
+		int32 type = column->Type();
+		if (type == CLV_COLTYPE_STATICTEXT)
+			return (char*)m_column_content.ItemAt(column_index);
+		if (type == CLV_COLTYPE_USERTEXT)
+			return GetUserText(column_index,-1);
+	}
 	return NULL;
 }
 
 
 const BBitmap* CLVEasyItem::GetColumnContentBitmap(int column_index)
 {
-	int32 type = ((int32)fOwner->m_column_types.ItemAt(column_index)) & CLVColTypesMask;
-	if(type != CLVColBitmap)
-		return NULL;
-	return (BBitmap*)m_column_content.ItemAt(column_index);
+	CLVColumn* column = (CLVColumn*)fOwner->ColumnAt(column_index);
+	if (column) {
+		int32 type = column->Type();
+		if (type == CLV_COLTYPE_BITMAP)
+		return (BBitmap*)m_column_content.ItemAt(column_index);
+	}
+	return NULL;
 }
 
 
-void CLVEasyItem::DrawItemColumn(BRect item_column_rect, int32 column_index, bool)
+void CLVEasyItem::DrawItemColumn(BRect item_column_rect, int32 column_index)
 {
 	rgb_color color, tinted_color;
 	bool selected = IsSelected();
@@ -166,11 +147,11 @@ void CLVEasyItem::DrawItemColumn(BRect item_column_rect, int32 column_index, boo
 	float offs = striped ? 5.0 : 0.0;
 
 	if(selected) {
-		color = ((ColumnListView*)fOwner)->ItemSelectColor();
-		tinted_color = ((ColumnListView*)fOwner)->ItemSelectColorTinted();
+		color = fOwner->ItemSelectColor();
+		tinted_color = fOwner->ItemSelectColorTinted();
 	} else {
-		color = ((ColumnListView*)fOwner)->LightColumnCol();
-		tinted_color = ((ColumnListView*)fOwner)->DarkColumnCol();
+		color = fOwner->LightColumnCol();
+		tinted_color = fOwner->DarkColumnCol();
 	}
 	if (Highlight()) {
 		const float highlight_tint = 1.15F;
@@ -179,7 +160,7 @@ void CLVEasyItem::DrawItemColumn(BRect item_column_rect, int32 column_index, boo
 	}
 	fOwner->SetDrawingMode(B_OP_COPY);
 
-	int32 index = ((ColumnListView*)fOwner)->GetDisplayIndexForColumn( abs(column_index));
+	int32 index = fOwner->GetDisplayIndexForColumn( abs(column_index));
 	if (column_index < 0)
 		index = abs(column_index);
 	if (striped && index % 2) {
@@ -194,13 +175,13 @@ void CLVEasyItem::DrawItemColumn(BRect item_column_rect, int32 column_index, boo
 	if(column_index < 0)
 		return;
 
-	int32 type = ((int32)fOwner->m_column_types.ItemAt(column_index));
-	if(type == 0)
+	CLVColumn* column = (CLVColumn*)fOwner->ColumnAt(column_index);
+	if (!column)
 		return;
+	uint32 type = column->Type();
 	bool right_justify = false;
-	if(type & CLVColFlagRightJustify)
+	if (column->Flags() & CLV_RIGHT_JUSTIFIED)
 		right_justify = true;
-	type &= CLVColTypesMask;
 
 	BRegion Region;
 	Region.Include(item_column_rect);
@@ -222,7 +203,7 @@ void CLVEasyItem::DrawItemColumn(BRect item_column_rect, int32 column_index, boo
 		fOwner->FillRect( highlightRect);
 	}
 
-	if(type == CLVColStaticText || type == CLVColUserText)
+	if(type == CLV_COLTYPE_STATICTEXT || type == CLV_COLTYPE_USERTEXT)
 	{
 		const char* text = NULL;
 
@@ -233,9 +214,9 @@ void CLVEasyItem::DrawItemColumn(BRect item_column_rect, int32 column_index, boo
 		}
 	
 		fOwner->SetHighColor( Black);
-		if(type == CLVColStaticText)
+		if(type == CLV_COLTYPE_STATICTEXT)
 			text = (const char*)m_column_content.ItemAt(column_index);
-		else if(type == CLVColUserText)
+		else if(type == CLV_COLTYPE_USERTEXT)
 			text = GetUserText(column_index,-1);
 
 		if(text != NULL)
@@ -258,12 +239,12 @@ void CLVEasyItem::DrawItemColumn(BRect item_column_rect, int32 column_index, boo
 			fOwner->SetFont( &owner_font);
 		}
 	}
-	else if(type == CLVColBitmap)
+	else if(type == CLV_COLTYPE_BITMAP)
 	{
 		const BBitmap* bitmap = (BBitmap*)m_column_content.ItemAt(column_index);
 		if (bitmap != NULL) {
 			BRect bounds = bitmap->Bounds();
-			float horizontal_offset = (float)(((int32)fOwner->m_column_types.ItemAt(column_index))>>24);
+			float horizontal_offset = column->BitmapOffset();
 			if(!right_justify)
 			{
 				item_column_rect.left += horizontal_offset;
@@ -302,13 +283,9 @@ int CLVEasyItem::CompareItems(const CLVListItem *a_Item1, const CLVListItem *a_I
 {
 	const CLVEasyItem* Item1 = cast_as(a_Item1,const CLVEasyItem);
 	const CLVEasyItem* Item2 = cast_as(a_Item2,const CLVEasyItem);
-	if(Item1 == NULL || Item2 == NULL || Item1->fOwner->m_column_types.CountItems() <= KeyColumn ||
-		Item2->fOwner->m_column_types.CountItems() <= KeyColumn)
+	if (Item1 == NULL || Item2 == NULL)
 		return 0;
 	
-	int32 type1 = ((int32)Item1->fOwner->m_column_types.ItemAt(KeyColumn)) & CLVColTypesMask;
-	int32 type2 = ((int32)Item2->fOwner->m_column_types.ItemAt(KeyColumn)) & CLVColTypesMask;
-
 	uint32 datatype = col_flags & CLV_COLDATAMASK;
 	
 	if (datatype == CLV_COLDATA_NUMBER) {
@@ -329,19 +306,26 @@ int CLVEasyItem::CompareItems(const CLVListItem *a_Item1, const CLVListItem *a_I
 	} else {
 		const char* text1 = NULL;
 		const char* text2 = NULL;
+		int32 type = col_flags & CLV_COLTYPE_MASK;
 
-		if(type1 == CLVColStaticText)
+		if (type == CLV_COLTYPE_STATICTEXT)
 			text1 = (const char*)Item1->m_column_content.ItemAt(KeyColumn);
-		else if(type1 == CLVColUserText)
+		else if (type == CLV_COLTYPE_USERTEXT)
 			text1 = Item1->GetUserText(KeyColumn,-1);
 
-		if(type2 == CLVColStaticText)
+		if (type == CLV_COLTYPE_STATICTEXT)
 			text2 = (const char*)Item2->m_column_content.ItemAt(KeyColumn);
-		else if(type2 == CLVColUserText)
+		else if (type == CLV_COLTYPE_USERTEXT)
 			text2 = Item2->GetUserText(KeyColumn,-1);
 
-		if (!text1)	return -1;
-		if (!text2)	return 1;
+		if (!text1) {
+			if (!text2)
+				return 0;
+			else
+				return -1;
+		}
+		if (!text2)
+			return 1;
 		return strcasecmp(text1,text2);
 	}
 }

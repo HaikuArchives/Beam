@@ -48,13 +48,11 @@ class IMPEXPSANTAPARTSFORBEAM CLVEasyItem : public CLVListItem
 		CLVEasyItem(uint32 level, bool superitem, bool expanded, ColumnListView* lv);
 		virtual ~CLVEasyItem();
 
-		virtual void SetColumnContent(int column_index, const BBitmap *bitmap, int8 horizontal_offset = 2,
-			bool right_justify = false);
-		virtual void SetColumnContent(int column_index, const char *text, bool right_justify = false);
-		virtual void SetColumnUserTextContent(int column_index, bool right_justify = false);
+		virtual void SetColumnContent(int column_index, const BBitmap *bitmap, int8 horizontal_offset = 2);
+		virtual void SetColumnContent(int column_index, const char *text);
 		const char* GetColumnContentText(int column_index);
 		const BBitmap* GetColumnContentBitmap(int column_index);
-		virtual void DrawItemColumn(BRect item_column_rect, int32 column_index, bool complete);
+		virtual void DrawItemColumn(BRect item_column_rect, int32 column_index);
 		virtual void Update(BView *owner, const BFont *font);
 		static int CompareItems(const CLVListItem* a_Item1, const CLVListItem* a_Item2, int32 KeyColumn, int32 col_flags);
 		inline float GetTextOffset() {return text_offset;}

@@ -36,65 +36,73 @@ class CLVListItem;
 #include "SantaPartsForBeam.h"
 
 //******************************************************************************************************
-//**** TYPE DEFINITIONS AND CONSTANTS
-//******************************************************************************************************
-enum
-{
-	CLVColNone =					0x00000000,
-	CLVColStaticText = 			0x00000001,
-	CLVColBitmap = 				0x00000002,
-	CLVColUserText = 				0x00000003,
-
-	CLVColTypesMask =				0x00000003,
-
-	CLVColFlagRightJustify =	0x00000020
-
-};
-
-
-//******************************************************************************************************
 //**** CONSTANTS
 //******************************************************************************************************
 //Flags
 enum
 {
-	CLV_SORT_KEYABLE =			0x00000001,		//Can be used as the sorting key
-	CLV_NOT_MOVABLE =			0x00000002,		//Column can't be moved by user
-	CLV_NOT_RESIZABLE =			0x00000004,		//Column can't be resized by user
-	CLV_LOCK_AT_BEGINNING =		0x00000008,		//Movable columns may not be placed or moved by the user
-												//into a position before this one
-	CLV_LOCK_AT_END =			0x00000010,		//Movable columns may not be placed or moved by the user
-												//into a position after this one
-	CLV_HIDDEN =				0x00000020,		//This column is hidden initially
-	CLV_MERGE_WITH_RIGHT =		0x00000040,		//Merge this column label with the one that follows it.
-	CLV_LOCK_WITH_RIGHT =		0x00000080,		//Lock this column to the one that follows it such that
-												//if the column to the right is moved by the user, this
-												//one will move with it and vice versa
-	CLV_EXPANDER =				0x00000100,		//Column contains an expander.  You may only use one
-												//expander in a ColumnListView, and an expander may not be
-												//added to a non-hierarchal ColumnListView.  It may not
-												//have a label.  Its width is automatically set to 20.0.
-												//The only flags that affect it are CLV_NOT_MOVABLE,
-												//CLV_LOCK_AT_BEGINNING, CLV_NOT_SHOWN and
-												//CLV_LOCK_WITH_RIGHT.  The others are set for you:
-												//CLV_NOT_RESIZABLE | CLV_MERGE_WITH_RIGHT
-	CLV_PUSH_PASS =				0x00000200,		//Causes this column, if pushed by an expander to the
-												//left, to pass that push on and also push the next
-												//column to the right.
-	CLV_HEADER_TRUNCATE =		0x00000400,		//Causes this column label to be tructated with an ellipsis
-												//if the column header is narrower than the text it contains.
-	CLV_TELL_ITEMS_WIDTH =		0x00000800,		//Causes items in this column to be informed when the column
-												//width is changed.  This is necessary for CLVEasyItems.
-	CLV_RIGHT_JUSTIFIED =		0x00001000,		//Causes the column, when resized, to shift its content,
-												//not just the content of subsequent columns.  This does not
-												//affect the rendering of content in items in the column,
-												//just the area that gets scrolled.
+	CLV_COLTYPE_STATICTEXT = 	0x00000000,
+	CLV_COLTYPE_BITMAP = 		0x00000001,
+	CLV_COLTYPE_USERTEXT = 		0x00000002,
+	CLV_COLTYPE_MASK =			0x00000003,
+							//bitmask used by column-types
+
+	CLV_SORT_KEYABLE =			0x00000004,
+							//Can be used as the sorting key
+	CLV_NOT_MOVABLE =				0x00000008,
+							//Column can't be moved by user
+	CLV_NOT_RESIZABLE =			0x00000010,
+							//Column can't be resized by user
+	CLV_LOCK_AT_BEGINNING =		0x00000020,
+							//Movable columns may not be placed or moved by the user
+							//into a position before this one
+	CLV_LOCK_AT_END =				0x00000040,
+							//Movable columns may not be placed or moved by the user
+							//into a position after this one
+	CLV_HIDDEN =					0x00000080,
+							//This column is hidden initially
+	CLV_MERGE_WITH_RIGHT =		0x00000100,
+							//Merge this column label with the one that follows it.
+	CLV_LOCK_WITH_RIGHT =		0x00000200,
+							//Lock this column to the one that follows it such that
+							//if the column to the right is moved by the user, this
+							//one will move with it and vice versa
+	CLV_EXPANDER =					0x00000400,
+							//Column contains an expander.  You may only use one
+							//expander in a ColumnListView, and an expander may not be
+							//added to a non-hierarchal ColumnListView.  It may not
+							//have a label.  Its width is automatically set to 20.0.
+							//The only flags that affect it are CLV_NOT_MOVABLE,
+							//CLV_LOCK_AT_BEGINNING, CLV_NOT_SHOWN and
+							//CLV_LOCK_WITH_RIGHT.  The others are set for you:
+							//CLV_NOT_RESIZABLE | CLV_MERGE_WITH_RIGHT
+	CLV_PUSH_PASS =				0x00000800,
+							//Causes this column, if pushed by an expander to the
+							//left, to pass that push on and also push the next
+							//column to the right.
+	CLV_HEADER_TRUNCATE =		0x00001000,
+							//Causes this column label to be tructated with an ellipsis
+							//if the column header is narrower than the text it contains.
+	CLV_TELL_ITEMS_WIDTH =		0x00002000,
+							//Causes items in this column to be informed when the column
+							//width is changed.  This is necessary for CLVEasyItems.
+	CLV_RIGHT_JUSTIFIED =		0x00004000,
+							//Causes the column, when resized, to shift its content,
+							//not just the content of subsequent columns.  This does not
+							//affect the rendering of content in items in the column,
+							//just the area that gets scrolled.
 	// added by zooey:
-	CLV_COLDATAMASK =			0x00006000,		//bitmap used by column-datatypes
-	CLV_COLDATA_STRING =		0x00000000,		//Column is a string, used in sorting. N.B.: this is the default
-	CLV_COLDATA_NUMBER =		0x00002000,		//Column is a number, used in sorting
-	CLV_COLDATA_DATE =		0x00004000,		//Column is a date, used in sorting
-	CLV_COLDATA_BIGTIME =	0x00006000		//Column is a bigtime, used in sorting
+	CLV_COLDATAMASK =				0x00038000,
+							//bitmap used by column-datatypes
+	CLV_COLDATA_STRING =			0x00000000,
+							//Column is a string, used in sorting. N.B.: this is the default
+	CLV_COLDATA_NUMBER =			0x00008000,
+							//Column is a number, used in sorting
+	CLV_COLDATA_DATE =			0x00010000,
+							//Column is a date, used in sorting
+	CLV_COLDATA_BIGTIME =		0x00020000
+							//Column is a bigtime, used in sorting
+
 };
 
 enum CLVSortMode
@@ -142,6 +150,7 @@ class IMPEXPSANTAPARTSFORBEAM CLVColumn
 												//ColumnListView::ColumnWidthChanged to detect changes to
 												//column widths
 		uint32 Flags() const;
+		inline uint32 Type() const			{ return fFlags & CLV_COLTYPE_MASK; }
 		bool IsShown() const;
 		float ColumnBegin() const { return fColumnBegin; }
 		float ColumnEnd() const { return fColumnEnd; }
@@ -150,6 +159,8 @@ class IMPEXPSANTAPARTSFORBEAM CLVColumn
 		virtual void SetSortMode(CLVSortMode mode);
 		const char* GetLabel() const;
 		const char* GetLabelName() const { return fLabelName; }
+		int8 BitmapOffset() const { return fBitmapOffset; }
+		void BitmapOffset( uint8 o) { fBitmapOffset = o; }
 		ColumnListView* GetParent() const ;
 		BView* GetHeaderView() const;
 		virtual void DrawColumnHeader(BView* view, BRect header_rect, bool sort_key, bool focus,
@@ -186,6 +197,7 @@ class IMPEXPSANTAPARTSFORBEAM CLVColumn
 		bool fPushedByExpander;
 		CLVSortMode fSortMode;
 		ColumnListView* fParent;
+		int8 fBitmapOffset;
 };
 
 
