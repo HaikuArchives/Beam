@@ -57,19 +57,3 @@ XRes TestBeam
 		[ FDirName $(TOP) resources BmTestAppResources.rsrc ] 
 	;
 MimeSet TestBeam ;
-
-Application TestBeamMini
-	:  
-		TestBeamMini.cpp
-	: 	
-		cppunit $(FIXEDSTDC++LIB) be
-	;
-MimeSet TestBeamMini ;
-
-Application TestBeamMicro
-	:  
-		TestBeamMicro.cpp
-	: 	
-		$(FIXEDSTDC++LIB) be
-	;
-MimeSet TestBeamMicro ;
