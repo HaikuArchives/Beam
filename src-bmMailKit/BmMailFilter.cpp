@@ -39,6 +39,7 @@
 #include "BmFilterChain.h"
 #include "BmMail.h"
 #include "BmMailFilter.h"
+#include "BmMailHeader.h"
 #include "BmPopAccount.h"
 #include "BmSmtpAccount.h"
 #include "BmUtil.h"
