@@ -5,6 +5,318 @@ change-history of Beam:
 [Beam test-03-01-27]
 
 	summary:
+		-	Beam now uses libiconv for text-conversions instead of the BeOS-native
+			functions (since they do not always work reliably).
+		-	the behaviour of the prefs window has been overhauled
+		-	Beam supports mail-filters through native SIEVE-scripts
+			(you have to enter them manually).
+
+*******************************************************************************
+< 2003-02-17: commit, 'current'-tag moved >
+
+BmEncoding:
+	-	corrected wrong order of iconv_open() params... tsk!
+
+BmMenuController:
+	-	added, these were missing from cvs since a couple of days
+
+BmPrefs:
+	-	changed defaults of log-levels
+
+-------------------------------------------------------------------------------
+< 2003-02-16: commit >
+
+BmBasics:
+	-	added new BM_text_error exception
+
+BmBodyPartList, BmMailEditWin:
+	-	added support for detecting encoding mismatches (when the
+		mailtext contains characters that could not be converted to the
+		selected encoding). In such a case, we now ask the user to
+		check the selected charset or remove the offending character(s).
+
+BmController:
+	-	moved IsMsgFromCurrentModel() from protected to public
+
+BmEncoding:
+	-	added support for using libiconv for character-conversions, and
+		made this mode the default, since the BeOS-provided conversion-
+		routines do not always work reliably when they encounter characters
+		that are not supported by a specific encoding (resulting in '\0'-
+		characters being inserted into the string, which sooner or later 
+		leads to complete havoc...).
+
+BmFilter:
+	-	removed the unneeded msg-field MSG_FILTER
+
+BmJobStatusWin:
+	-	BmMailFilterView now uses BmListModel::MSG_ITEMKEY instead of 
+		BmFilter::MSG_FILTER
+
+BmMail:
+	-	minor cleanup
+
+BmMailRefView, BmMainWindow, BmMailViewWin:
+	-	added support for dynamically changing the filter-menus as
+		the filter-list are being edited.
+
+BmMailView:
+	-	removed unneccessary include for BmMainWindow
+
+BmPref*View, BmRulerView:
+	-	in the view's destructor, we now remove all BubbleHelper-entries,
+		so we do not leave entries lying around that might creep up at
+		odd places (when an address is reused by another view)
+
+BmMemIO.h:
+	-	added getters HadError(), SrcCount() and DestCount()
+
+Beam*.proj:
+	-	added libiconv.so to libraries and removed libtextencoding.so and
+		libtranslation.so
+
+-------------------------------------------------------------------------------
+< 2003-02-13: commit >
+
+BmFilter:
+	-	added a couple of MSG-field-names used for communication
+		between mail-filter model and view.
+
+BmJobStatusWin:
+	-	added BmMailFilterView
+	-	changed color of status-bar under DANO (so that it doesn't
+		match the background color...)
+
+BmMail:
+	-	changed mDestFoldername to be a path instead of a BmString
+		(and renamed it to mDestFolderpath while doing it). This
+		simplifies the task of determining a mail's new home-folder
+		somewhat (although it's still something of a mess).
+
+BmMailEditWin:
+	-	now uses BmMail::SetDestFoldername()
+
+BmMailFilter:
+	-	now we actually read mails from disk before filtering them. This
+		avoids crashing a lot >;o)
+	-	implemented store-on-change-only for mail-filtering
+	-	added new job-specifier BM_EXECUTE_FILTER that executes a
+		filter even if no controller is present (as is the case when
+		Beam has just downloaded this mail).
+
+BmMailRef:
+	-	added newRef-argument to ResyncFromDisk()
+
+BmMailRefView, BmMailViewWin, BmMainWindow:
+	-	added support for applying filters to selected mails
+
+BmPopper, BmSmtp:
+	-	added check to ShouldContinue() in StateLogin()
+
+-------------------------------------------------------------------------------
+< 2003-02-08: commit, 'current'-tag moved >
+
+BmCheckControl:
+	-	added SetValueSilently(), needed by PrefsViews
+
+BmFilter:
+	-	added support for constructing appropriate error-strings
+
+BmMail:
+	-	added support for changing a mail's status before it has
+		been written to disk (required in order to realize the sieve
+		imapflags-actions).
+
+BmMailFilter:
+	-	added support for setting mail-flags through sieve's 
+		imapflags-actions
+		
+BmPrefs:
+	-	added ResetToDefault()
+
+BmPrefs...View, BmPrefsWin:
+	-	fixed several layout-issues
+	-	completely overhauled behaviour prefs-window, which now seems to 
+		make more sense
+	-	added support for restoring defaults
+
+xmalloc:
+	-	fixed bug in xstrconcat() with pos not being incremented
+
+-------------------------------------------------------------------------------
+< 2003-02-07: commit, 'current'-tag moved >
+
+BmApp:
+	-	when joining replies/forwards, they are now being joined
+		in chronolical order
+
+BmBodyPartView:
+	-	we now accept incorrect mimetype-declarations for attachments
+		if (and only if) the real mimetype has supertype "text". 
+		This makes it possible to quietly open email-attachments 
+		('message/rfc822' but BeOS sees them as 'text/x-email').
+	-	fixed bug with incorrectly declared attachments of real 
+		supertype 'text' always being opened with the declared type.
+		Now they are opened with their real type.
+
+BmFilter:
+	-	added Execute()-method that (surprise) executes this filter
+		in the given message-context
+	-	added support for default-filters
+
+BmListController:
+	-	fixed bug that caused autoscroll to stop working when the mouse
+		had temporarily exited the listview (and re-entered the scrollzone 
+		later)
+		
+BmMail:
+	-	added Filter()-method that applies the appropriate mail-filter
+		to this mail
+	-	fixed bug with mails being incorrectly initialized as inbound
+		when in fact they were outbound
+
+BmMailEditWin:
+	-	changed SaveMail() to apply mail-filter immediately before send 
+		a mail
+	-	changed SaveMail() to store draft messages in the 'draft'-folder
+	-	whenever we save a mail, we make sure to set its outbound-flag
+
+BmMailFilter:
+	-	added struct MsgContext that includes support for deleting the
+		header-buffers which are neccessary because of the braindead
+		mechanism libSieve uses to access the headers of a mail
+
+BmMailFolderView:
+	-	fixed minor bug with name of MailMover-jobs not being unique
+
+BmMailHeader:
+	-	added support for accessing all entries for a single header
+
+BmPopAccount, BmSmtpAccount:
+	-	added support for handling an account's filtername
+
+BmPopper:
+	-	after a mail has been rerieved, we now apply the appropriate
+		mail-filter before storing the mail on disk
+
+BmPrefsFilterView:
+	-	added support for specifying a default filter (one for inbound 
+		and one for outbound)
+
+BmPrefsRecvMailView, BmPrefsSendMailView:
+	-	added support for associating mail-filters with accounts
+
+BmUtil:
+	-	Fixed ugly bug in WordWrap() that would drop the last line of 
+		a mail.
+
+sieve.y, sieve-lex.l:
+	-	added workaround for the (annoying) fact that flex is not being
+		re-initialized correctly when we start to parse a new script.
+		We now do the re-initialization ourselves (hopefully not missing
+		anything...)
+
+CLVEasyItem, CLVColumn
+	-	fixed bug with right-justified columns not working properly
+
+-------------------------------------------------------------------------------
+< 2003-02-05: commit >
+
+BmApp:
+	-	updated credits (added Paweł Lewicki)
+	-	added creation/deletion of FilterLists
+
+BmEncoding:
+	-	removed padding to field-name length from folding-code, since 
+		it is useless
+	-	fixed bug with one additional space being inserted during
+		unfolding of non-address fields
+
+BmFilter:
+	-	created, a BmFilter contains info about one specific SIEVE-
+		script.
+
+BmListController:
+	-	fixed auto-scrolling being activated when in fact it shouldn't.
+		Now there is a 12-pixel scrollzone at the edge of a listview
+		that activates auto-scrolling.
+	-	The highlighted item is now updated during autoscroll (i.e. the
+		highlight moves with the scroll).
+
+BmLogHandler:
+	-	added BM_LogFilter logging-type
+
+BmMail:
+	-	added support for storing mails in a destination folder that
+		has been set by a mail-filter
+
+BmMailFilter:
+	-	created, a BmMailFilter executes a given BmFilter on a BmMail
+
+BmMailHeader:
+	-	removed padding to field-name length from folding-code, since 
+		it is useless
+	-	fixed a minor bug that caused Beam to select an suboptimal 
+		from-address for a reply whenever an address-matching-fallback 
+		has been found (although an address-exact-match exists, too). 
+
+BmMultilineTextControl:
+	-	completed support for automatic layout during resize
+
+BmPopAccount:
+	-	renamed "fallback"-account to "catch-all"-account
+
+BmPopper:
+	-	fixed crash when ns-lookup failed
+
+BmPrefs:
+	-	added BM_LogFilter logging-type
+
+BmPrefsFilterView:
+	-	created, contains functionality for editing a filter-list
+
+BmPrefs...View:
+	-	now include individual files instead of "liblayout-all.h"
+
+BmPrefsWin:
+	-	added two instances of BmPrefsFilterView (one inbound the
+		other outbound).
+
+BmSignature:
+	-	added locking when accessing a dynamic signature
+
+BmSmtp:
+	-	fixed crash when ns-lookup failed
+
+BmStorageUtil:
+	-	fixed BmTempFileList::NextTempFilenameWithPath() to correctly
+		insert a '/' between path and filename.
+
+BmString:
+	-	LockBuffer() now returns a buffer when asked for size 0 (this
+		buffer is of length 1 to allow for storing the '\0'-terminator).
+		This fixes a crash in BmStorageUtil::FetchFile() and other places.
+
+Build.txt:
+	-	added this file, containing a building-howto
+
+MultiLineTextControl:
+	-	fixed bug with textview still being editable when the 
+		MultiLineTextControl has been disabled.
+
+sieve.y:
+	-	fixed two minor include-issues
+
+sieve_err:
+	-	added sieve_strerror()
+
+libSieve:
+	-	fiddled several files to make libSieve work on PPC
+
+*******************************************************************************
+[Beam test-03-01-27]
+
+	summary:
 		-	Beam now runs on PPC, too
 		-	a (rather large) refactoring step has been done in order to simplify 
 			handling of memory-/network-buffers and to reduce memory-footprint
