@@ -157,11 +157,6 @@ status_t BmSieveFilter::Archive( BMessage* archive, bool) const {
 		-	
 \*------------------------------------------------------------------------------*/
 bool BmSieveFilter::Execute( void* message_context) {
-	BAutolock lock( SieveLock());
-	if (!lock.IsLocked()) {
-		mLastErr = "Unable to get SIEVE-lock";
-		return false;
-	}
 	BmMsgContext* msgContext = static_cast< BmMsgContext*>( message_context);
 	BmString mailId;
 	if (msgContext)
