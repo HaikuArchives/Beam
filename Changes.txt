@@ -2,6 +2,162 @@ change-history of Beam:
 		$Id$
 
 *******************************************************************************
+[Beam 1.0-rc1]
+
+	summary:
+		-	added detailed logging of mail-filtering
+		-	brought prefs up-to-date, including possibility to influence logging
+		-	startup feels faster now (window is shown sooner)
+		-	on startup, we now block mail-checking until pop-accounts are complete.
+		-	several smaller bugs fixed
+*******************************************************************************
+
+< 2003-08-09: commit>
+
+BmEncoding, BmPrefs, BmPrefsMailConstrView:
+	-	fixed a couple of case-inconsistencies.
+
+BmLogHandler:
+	-	replaced parameter-nam "flag" by the more appropriate "terrain".
+
+BmLogWindow:
+	-	now always use B_TITLED_WINDOW_LOOK, otherwise the scrollbar's
+		lower button is not visible.
+
+BmMailFilter, BmSieveFilter:
+	-	added (more detailed) logging.
+
+BmMailFolderView:
+	-	in InOutAlwaysAtTop-mode, we now move the drafts folder to the
+		top, too.
+
+BmPrefsGeneralView:
+	-	added prefs-item ShowToolbarBorder.
+
+BmPrefsLogging:
+	-	added this prefs-view.
+
+BmPrefsWin:
+	-	added logging-prefs-view.
+
+< 2003-08-07: commit>
+
+BmApp:
+	-	before checking mail, we now check if all pop-accounts have been
+		read and, if not, we wait until they are.
+
+BmMailView:
+	-	small modification concerning the prefs-item UndoMode.
+
+BmPrefs:
+	-	added new prefs-items to default-msg.
+
+BmPrefsGeneralView:
+	-	added the prefs-items ShowToolbarLabel, ShowToolbarIcons,
+		ShowAlertForErrors and CloseViewWin.
+
+BmPrefsMailConstrView:
+	-	added support for selecting the frequently used character-sets.
+	-	added the prefs-items UndoMode, ReplyIntroStrPrivate, 
+		AddNameToPeople, PeopleFolder and LookInPeopleFolder.
+
+BmPrefsMailReadView:
+	-	added the prefs-items ShowDecodedLength, UseSwatchTimeInRefView
+		and TimeModeInHeaderView.
+
+BmPrefsWin:
+	-	changed minimum size in such a way that filter-page is always
+		displayed correctly.
+
+< 2003-08-05: commit>
+
+BmApp:
+	-	in ReplyToMails() we now use the information if a mail goes
+		to a person only in order to correctly set the reply-intro
+		under all circumstances.
+
+BmBodyPartView:
+	-	changed (again) the way how Beam complains when an attachment's
+		declared mimetype does not match its real one. Now we explicitly
+		check if message/rfc822 has been detected as text/... and in that
+		case automatically insist on open this attachment as a mail.
+
+BmEncoding:
+	-	added automatic correction from "utf8" to "utf-8" when converting
+		from/to UTF-8.
+
+BmGuiUtil:
+	-	small optimization in AddCharsetMenu().
+
+BmLogHandler:
+	-	fixed problems with new BM_LOG-macros: they were not properly
+		surrounded by a statement block, which lead to unwanted changes
+		of code-grammar (if-else structures were being corrupted).
+
+BmMail:
+	-	in CreateReply(), AddPartsFromMail() and CreateReplyIntro() 
+		we now use the information if a mail goes to a person only 
+		in order to correctly set the reply-intro under all circumstances.
+	-	in HasComeFromList(), we now look at the mail-field Mailing-List,
+		too.
+
+BmMailHeader:
+	-	in DetermineReplyAddress(), we now look at the mail-field 
+		Mail-Followup-To, too.
+	-	in DetermineOriginator(), we now look at the mail-field 
+		Mail-Reply-To, too.
+
+BmMailRefView, BmPrefs:
+	-	changed menu-entry from "Reply To Originator" to "Reply To Person".
+
+BmMainWindow, BmLogWindow, BmMailEditWin, BmMailViewWin:
+	-	changed default for Prefs-value 'UseDocumentResizer' to true.
+
+BmWindow:
+	-	added code to ensure that windows are always opened on-screen.
+
+< 2003-08-02: commit>
+
+BmApp:
+	-	added some more logging to startup-phase.
+	-	restructured startup phase to feel faster.
+
+BmMailFolderList:
+	-	corrected counting of folders for logging.
+
+BmMailHeader:
+	-	fixed bug in unfolding-regex: spaces at the end of the line
+		were not matched (but they should be). Now Beam should always
+		separate two unfolded lines by exactly one space.
+
+BmMailRefList, BmListController:
+	-	deactivated logging of estimated object sizes (useful for debugging,
+	    but no more needed).
+
+BmLogHandler:
+	-	optimized and cleaned-up logging to such an extent that the
+		string to be logged is only created if current loglevels suffice.
+		These preparations were needed in order to allow logging in
+		release-versions of Beam.
+	-	finished support for passing log-messages on to log-windows.
+	
+BmLogWindow:
+	-	added (replaced BmLogView), a simple way to view logs.
+
+BmPopper:
+	-	in destructor, we no longer finish the corresponding log. Since
+		the logs now live on, they can be selected in the 'Show Log'-menu,
+		which is what we want.
+
+BmString:
+	-	added Trim()
+
+many files:
+	-	checked and corrected logging where appropriate.
+
+
+
+*******************************************************************************
 [Beam test-03-07-28]
 
 	summary:
