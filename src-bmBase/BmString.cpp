@@ -47,8 +47,8 @@
 #include "BmString.h"
 #include "BmMemIO.h"
 
-#define KEEP_CASE false
-#define IGNORE_CASE true
+static const bool KEEP_CASE = false;
+static const bool IGNORE_CASE = true;
 
 // stuff missing from libc:
 char *
@@ -1871,10 +1871,10 @@ BmString::Trim( bool left, bool right) {
 	if (len) {
 		char* buf = LockBuffer( len);
 		char* start = buf;
+		char* end = start+len-1;
 		if (left)
 			while( isspace(*start))
 				start++;
-		char* end = start+len-1;
 		if (right)
 			while( end>start && isspace(*end))
 				end--;
