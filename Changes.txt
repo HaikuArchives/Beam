@@ -1,6 +1,59 @@
 change-history of Beam:
 		$Id$
 
+< 2005-01-12: commit, moved tag 'current-devel' >
+
+BmListController:
+	-	fixed possible redrawing issue when adding items.
+
+BmMailEditWin:
+	-	making use of explicit resource-name passing in order to cause the
+		'Attach'-Toolbar to show (but use the 'Attachment'-resource).
+
+BmToolbarButton:
+	-	added support for passing the resource-name explicitly (as opposed
+		to using the label).
+
+ColumnListView:
+	-	added assertion to ReSortItem().
+
+libsieve:
+	-	added relational operators
+	-	added numerical comparator
+	-	changed semantics of address :all :is "From" "root" to match the
+		string "root" instead of "root@unspecified-domain" (which I think
+		is quite counter-intuitive).
+
+BmSieveFilter:
+	-	errors in Header-test are now correctly propagated.
+
+BmSieveTest:
+	-	added complete testcases for the Address-, Exists-, Header- and 
+		relational tests.
+
+WrappingTextView:
+	-	in read-only mode, B_END and B_HOME are now mapped to vertical
+		scrollbar (as the default, horizontal scrolling is useless).
+
+< 2004-11-18: commit, moved tag 'current-devel' >
+
+BmMailViewWin, BmMainWindow:
+	- consolidated text/icon-name of 'Delete'-Button to be 'Trash', as
+     the icon is named this way. Now the icon shows again... 
+
+SieveTest:
+	- added tests for basic SIEVE-tests (true, false, anyof, allof, ...)
+
+< 2004-11-17: commit, moved tag 'current-devel' >
+
+BmFilterAddon, BmMailFilter, BmSieveTest:
+	- added action-tests for SIEVE-filters.
+	- activated reject-support (but is still a dummy)
+
+MainBuildRules:
+	- added support for specifying object-files directly in the libs-line of
+	  LinkAgainst.	
+
 < 2004-11-14: commit, moved tag 'current-devel' >
 
 BmMailEditWinPart2:
