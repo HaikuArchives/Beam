@@ -48,6 +48,7 @@ using namespace BmEncoding;
 #include "BmGuiUtil.h"
 #include "BmLogHandler.h"
 #include "BmMail.h"
+#include "BmMailFactory.h"
 #include "BmMenuControl.h"
 #include "BmMenuController.h"
 #include "BmMsgTypes.h"
@@ -397,15 +398,15 @@ void BmPrefsMailConstrView::Initialize() {
 
 	// add quote-formattings:
 	AddItemToMenu( mQuoteFormattingControl->Menu(), 
-						new BMenuItem( BmMail::BM_QUOTE_AUTO_WRAP, 
+						new BMenuItem( BmMailFactory::BM_QUOTE_AUTO_WRAP, 
 											new BMessage(BM_QUOTE_FORMATTING_SELECTED)), 
 						this);
 	AddItemToMenu( mQuoteFormattingControl->Menu(), 
-						new BMenuItem( BmMail::BM_QUOTE_PUSH_MARGIN, 
+						new BMenuItem( BmMailFactory::BM_QUOTE_PUSH_MARGIN, 
 											new BMessage(BM_QUOTE_FORMATTING_SELECTED)), 
 						this);
 	AddItemToMenu( mQuoteFormattingControl->Menu(), 
-						new BMenuItem( BmMail::BM_QUOTE_SIMPLE, 
+						new BMenuItem( BmMailFactory::BM_QUOTE_SIMPLE, 
 											new BMessage(BM_QUOTE_FORMATTING_SELECTED)), 
 						this);
 
@@ -485,8 +486,7 @@ void BmPrefsMailConstrView::SetupUsedCharsetsPrefs() {
 void BmPrefsMailConstrView::Update() {
 	mHardWrapControl->SetValueSilently( ThePrefs->GetBool("HardWrapMailText"));
 	mQuoteFormattingControl->MarkItem( 
-		ThePrefs->GetString( "QuoteFormatting", 
-									BmMail::BM_QUOTE_AUTO_WRAP).String()
+		ThePrefs->GetString( "QuoteFormatting").String()
 	);
 	mDefaultCharsetControl->ClearMark();
 	mUndoModeControl->MarkItem( 

@@ -34,9 +34,6 @@
 #include <FindDirectory.h>
 #include <NodeInfo.h>
 
-#include "regexx.hh"
-using namespace regexx;
-
 #include "BmBasics.h"
 #include "BmBodyPartList.h"
 #include "BmEncoding.h"
@@ -49,11 +46,9 @@ using namespace regexx;
 #include "BmMailHeader.h"
 #include "BmMailRef.h"
 #include "BmMsgTypes.h"
-#include "BmPopAccount.h"
 #include "BmPrefs.h"
 #include "BmResources.h"
 #include "BmSignature.h"
-#include "BmSmtpAccount.h"
 #include "BmStorageUtil.h"
 
 #undef BM_LOGNAME
@@ -138,12 +133,10 @@ const char* BM_MAIL_FOLDER_OUT			= "out";
 	BmMail
 \********************************************************************************/
 
-#define BM_MAILKEY(ref) \
-	(BmString("Mail_") << ref->NodeRef().node)
-
-const char* const BmMail::BM_QUOTE_AUTO_WRAP = 		"Auto Wrap";
-const char* const BmMail::BM_QUOTE_SIMPLE = 			"Simple";
-const char* const BmMail::BM_QUOTE_PUSH_MARGIN = 	"Push Margin";
+static BmString BM_MAILKEY( const BmMailRef* ref)
+{
+	return BmString("Mail_") << ref->NodeRef().node;
+}
 
 /*------------------------------------------------------------------------------*\
 	CreateInstance( mailref)
@@ -155,14 +148,16 @@ BmRef<BmMail> BmMail::CreateInstance( BmMailRef* ref) {
 		BM_SHOWERR("BmMail::CreateInstance(): Could not acquire global lock!");
 		return NULL;
 	}
-	BmProxy* proxy = BmRefObj::GetProxy( typeid(BmMail).name());
-	if (proxy) {
-		BmString key( BM_MAILKEY( ref));
-		BmRef<BmMail> mail( dynamic_cast<BmMail*>( proxy->FetchObject( key)));
-		if (mail)
-			return mail;
-	}
-	return new BmMail( ref);
+	BmString key( BM_MAILKEY( ref));
+	BmRef<BmMail> mail( 
+		dynamic_cast<BmMail*>( 
+			BmRefObj::FetchObject( typeid(BmMail).name(), key)
+		)
+	);
+	if (mail)
+		return mail;
+	else
+		return new BmMail( ref);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -441,206 +436,24 @@ bool BmMail::HasComeFromList() const {
 }
 
 /*------------------------------------------------------------------------------*\
-	CreateInlineForward()
-	-	
-\*------------------------------------------------------------------------------*/
-BmRef<BmMail> BmMail::CreateInlineForward( bool withAttachments, 
-														 const BmString selectedText) {
-	BmRef<BmMail> newMail = new BmMail( true);
-	// massage subject, if neccessary:
-	BmString subject = GetFieldVal( BM_FIELD_SUBJECT);
-	newMail->SetFieldVal( BM_FIELD_SUBJECT, CreateForwardSubjectFor( subject));
-	newMail->AddPartsFromMail( this, withAttachments, BM_IS_FORWARD, false, 
-										selectedText);
-	newMail->SetBaseMailInfo( MailRef(), BM_MAIL_STATUS_FORWARDED);
-
-	BmString receivingAddr;
-	BmRef<BmIdentity> ident;
-	DetermineRecvAddrAndIdentity( receivingAddr, ident);
-	if (ident && receivingAddr.Length()) {
-		newMail->SetFieldVal( BM_FIELD_FROM, receivingAddr);
-		newMail->SetSignatureByName( ident->SignatureName());
-		newMail->AccountName( ident->SMTPAccount());
-		newMail->IdentityName( ident->Key());
-	}
-
-	return newMail;
-}
-
-/*------------------------------------------------------------------------------*\
-	CreateAttachedForward()
-	-	
-\*------------------------------------------------------------------------------*/
-BmRef<BmMail> BmMail::CreateAttachedForward() {
-	BmRef<BmMail> newMail = new BmMail( true);
-	if (mMailRef->InitCheck() == B_OK)
-		newMail->Body()->AddAttachmentFromRef( mMailRef->EntryRefPtr(), 
-															DefaultCharset());
-	// massage subject, if neccessary:
-	BmString subject = GetFieldVal( BM_FIELD_SUBJECT);
-	newMail->SetFieldVal( BM_FIELD_SUBJECT, CreateForwardSubjectFor( subject));
-	newMail->SetBaseMailInfo( MailRef(), BM_MAIL_STATUS_FORWARDED);
-
-	BmString receivingAddr;
-	BmRef<BmIdentity> ident;
-	DetermineRecvAddrAndIdentity( receivingAddr, ident);
-	if (ident && receivingAddr.Length()) {
-		newMail->SetFieldVal( BM_FIELD_FROM, receivingAddr);
-		newMail->SetSignatureByName( ident->SignatureName());
-		newMail->AccountName( ident->SMTPAccount());
-		newMail->IdentityName( ident->Key());
-	}
-
-	return newMail;
-}
-
-/*------------------------------------------------------------------------------*\
-	DetermineReplyAddress()
-	-	
-\*------------------------------------------------------------------------------*/
-BmString BmMail::DetermineReplyAddress( int32 replyMode, bool canonicalize,
-													 bool& replyGoesToPersonOnly) {
-	// fill address information, depending on reply-mode:
-	BmString replyAddr;
-	if (!Header())
-		return "";
-	if (mOutbound) {
-		// if replying to outbound messages, we re-use the original recipients,
-		// not ourselves:
-		replyAddr = Header()->GetAddressList( BM_FIELD_TO).AddrString();
-		replyGoesToPersonOnly = false;
-	} else if (replyMode == BMM_REPLY) {
-		// smart (*cough*) mode: If the mail has come from a list, we react
-		// according to user prefs (reply-to-list or reply-to-originator).
-		bool hasComeFromList = HasComeFromList();
-		replyGoesToPersonOnly = !hasComeFromList;
-		if (hasComeFromList) {
-			replyAddr = ThePrefs->GetBool( "PreferReplyToList", true)
-							? Header()->DetermineListAddress()
-							: Header()->DetermineOriginator();
-		}
-		if (!replyAddr.Length()) {
-			replyAddr = Header()->DetermineOriginator();
-		}
-	} else if (replyMode == BMM_REPLY_LIST) {
-		// blindly use list-address for reply (this might mean that we send
-		// a reply to the list although the messages has not come from the list):
-		replyAddr = Header()->DetermineListAddress( true);
-		replyGoesToPersonOnly = false;
-	} else if (replyMode == BMM_REPLY_ORIGINATOR) {
-		// bypass the reply-to, this way one can send mail to the 
-		// original author of a mail which has been 'reply-to'-munged 
-		// by a mailing-list processor:
-		replyAddr = Header()->DetermineOriginator( true);
-		replyGoesToPersonOnly = true;
-	} else if (replyMode == BMM_REPLY_ALL) {
-		// since we are replying to all recipients of this message,
-		// we now include the Originator (plain and standard way):
-		replyAddr = Header()->DetermineOriginator();
-		replyGoesToPersonOnly = false;
-	}
-	if (canonicalize)
-		return BmAddressList( replyAddr).AddrString();
-	else
-		return replyAddr;
-}
-
-/*------------------------------------------------------------------------------*\
-	CreateReply()
-	-	
-\*------------------------------------------------------------------------------*/
-BmRef<BmMail> BmMail::CreateReply( int32 replyMode, 
-											  const BmString selectedText) {
-	bool dummy;
-	return doCreateReply( replyMode, dummy, selectedText, true);
-}
-
-/*------------------------------------------------------------------------------*\
-	CreateReply()
-	-	
-\*------------------------------------------------------------------------------*/
-BmRef<BmMail> BmMail::CreateReply( int32 replyMode, 
-											  bool& replyGoesToPersonOnly,
-											  const BmString selectedText) {
-	return doCreateReply( replyMode, replyGoesToPersonOnly, selectedText, false);
-}
-
-/*------------------------------------------------------------------------------*\
-	CreateReply()
-	-	
-\*------------------------------------------------------------------------------*/
-BmRef<BmMail> BmMail::doCreateReply( int32 replyMode, 
-												 bool& replyGoesToPersonOnly,
-											 	 const BmString selectedText,
-											 	 bool ignoreReplyGoesToPersonOnly) {
-	BmRef<BmMail> newMail = new BmMail( true);
-	// copy old message ID into in-reply-to and references fields:
-	BmString messageID = GetFieldVal( BM_FIELD_MESSAGE_ID);
-	newMail->SetFieldVal( BM_FIELD_IN_REPLY_TO, messageID);
-	BmString oldRefs = GetFieldVal( BM_FIELD_REFERENCES);
-	if (oldRefs.Length())
-		newMail->SetFieldVal( BM_FIELD_REFERENCES, oldRefs + " " + messageID);
-	else
-		newMail->SetFieldVal( BM_FIELD_REFERENCES, messageID);
-	BmString newTo 
-		= DetermineReplyAddress( replyMode, false, replyGoesToPersonOnly);
-	newMail->SetFieldVal( BM_FIELD_TO, newTo);
-
-	BmString receivingAddr;
-	BmRef<BmIdentity> ident;
-	DetermineRecvAddrAndIdentity( receivingAddr, ident);
-	if (ident && receivingAddr.Length()) {
-		newMail->SetFieldVal( BM_FIELD_FROM, receivingAddr);
-		newMail->SetSignatureByName( ident->SignatureName());
-		newMail->AccountName( ident->SMTPAccount());
-		newMail->IdentityName( ident->Key());
-	}
-
-	// if we are replying to all, we may need to include more addresses:
-	if (replyMode == BMM_REPLY_ALL) {
-		BmString newCc = GetFieldVal( BM_FIELD_CC);
-		if (newCc != newTo)
-			// add address only if not already done so
-			newMail->SetFieldVal( BM_FIELD_CC, newCc);
-		newMail->Header()->RemoveAddrFieldVal( BM_FIELD_CC, receivingAddr);
-		BmString additionalCc = GetFieldVal( BM_FIELD_TO);
-		if (additionalCc != newTo)
-			// add address only if not already done so
-			newMail->Header()->AddFieldVal( BM_FIELD_CC, additionalCc);
-		// remove the receiving address from list of recipients, since we
-		// do not want to send ourselves a reply:
-		newMail->Header()->RemoveAddrFieldVal( BM_FIELD_CC, receivingAddr);
-	}
-	// massage subject, if neccessary:
-	BmString subject = GetFieldVal( BM_FIELD_SUBJECT);
-	newMail->SetFieldVal( BM_FIELD_SUBJECT, CreateReplySubjectFor( subject));
-	newMail->AddPartsFromMail( this, false, BM_IS_REPLY, 
-										ignoreReplyGoesToPersonOnly 
-											? false
-											: replyGoesToPersonOnly, 
-										selectedText);
-	newMail->SetBaseMailInfo( MailRef(), BM_MAIL_STATUS_REPLIED);
-	return newMail;
-}
-
-/*------------------------------------------------------------------------------*\
 	DetermineRecvAddrAndIdentity()
 	-	
 \*------------------------------------------------------------------------------*/
 void BmMail::DetermineRecvAddrAndIdentity( BmString& receivingAddr,
-														 BmRef<BmIdentity>& ident) {
-	// Since we are replying, we generate the new mail's from-address 
+														 BmRef<BmIdentity>& ident)
+{
+	// try to determince the receiving address and identity
 	// from the received mail's to-/cc-/bcc-info in several steps.
 	// First, we check if this mail has an identity assigned to it:
 	ident = dynamic_cast< BmIdentity*>( 
-		TheIdentityList->FindItemByKey( mIdentityName).Get()
+		TheIdentityList->FindItemByKey( IdentityName()).Get()
 	);
 	if (!ident) {
 		// second, we check if the account through which the mail has been 
 		// received can be identified (not always possible, since the account 
 		// may have been renamed or deleted by now):
 		ident = dynamic_cast< BmIdentity*>( 
-			TheIdentityList->FindIdentityForPopAccount( mAccountName).Get()
+			TheIdentityList->FindIdentityForPopAccount( AccountName()).Get()
 		);
 	}
 	if (ident) {
@@ -657,214 +470,20 @@ void BmMail::DetermineRecvAddrAndIdentity( BmString& receivingAddr,
 		BmAutolockCheckGlobal lock( ThePopAccountList->ModelLocker());
 		if (!lock.IsLocked())
 			BM_THROW_RUNTIME( 
-				"CreateReply(): Unable to get lock on PopAccountList"
+				"DetermineRecvAddrAndIdentity(): "
+				"Unable to get lock on PopAccountList"
 			);
 		BmModelItemMap::const_iterator iter;
 		for( iter = TheIdentityList->begin(); 
 			  iter != TheIdentityList->end() && !receivingAddr.Length(); 
 			  ++iter) {
 			ident = dynamic_cast< BmIdentity*>( iter->second.Get());
-			if (ident)
-				receivingAddr = Header()->DetermineReceivingAddrFor( ident.Get());
-		}
-	}
-}
-
-/*------------------------------------------------------------------------------*\
-	CreateRedirect()
-	-	
-\*------------------------------------------------------------------------------*/
-BmRef<BmMail> BmMail::CreateRedirect() {
-	BmRef<BmMail> newMail = new BmMail( true);
-	BmString msgText( mText);
-	newMail->SetTo( msgText, "");
-	if (newMail->IsRedirect()) {
-		// oops, mail already had been redirected, we clobber the existing
-		// Resent-fields, since STD11 says multiple Resent-fields result in 
-		// undefined behaviour:
-		newMail->RemoveField( BM_FIELD_RESENT_BCC);
-		newMail->RemoveField( BM_FIELD_RESENT_CC);
-		newMail->RemoveField( BM_FIELD_RESENT_DATE);
-		newMail->RemoveField( BM_FIELD_RESENT_FROM);
-		newMail->RemoveField( BM_FIELD_RESENT_MESSAGE_ID);
-		newMail->RemoveField( BM_FIELD_RESENT_REPLY_TO);
-		newMail->RemoveField( BM_FIELD_RESENT_SENDER);
-		newMail->RemoveField( BM_FIELD_RESENT_TO);
-	}
-	newMail->IsRedirect( true);
-	newMail->SetFieldVal( BM_FIELD_RESENT_DATE, 
-								 TimeToString( time( NULL), 
-								 					"%a, %d %b %Y %H:%M:%S %z"));
-
-	BmString receivingAddr;
-	BmRef<BmIdentity> ident;
-	DetermineRecvAddrAndIdentity( receivingAddr, ident);
-	if (ident && receivingAddr.Length()) {
-		newMail->SetFieldVal( BM_FIELD_RESENT_FROM, receivingAddr);
-		newMail->SetSignatureByName( ident->SignatureName());
-		newMail->AccountName( ident->SMTPAccount());
-		newMail->IdentityName( ident->Key());
-	}
-
-	newMail->SetBaseMailInfo( MailRef(), BM_MAIL_STATUS_REDIRECTED);
-	return newMail;
-}
-
-/*------------------------------------------------------------------------------*\
-	CreateAsNew()
-	-	
-\*------------------------------------------------------------------------------*/
-BmRef<BmMail> BmMail::CreateAsNew() {
-	BmRef<BmMail> newMail = new BmMail( true);
-	BmString msgText( mText);
-	newMail->SetTo( msgText, "");
-	BmRef<BmListModelItem> identRef 
-		= TheIdentityList->FindItemByKey( mIdentityName);
-	BmIdentity* ident = dynamic_cast<BmIdentity*>( identRef.Get());
-	if (ident) {
-		newMail->AccountName( ident->SMTPAccount());
-		newMail->SetSignatureByName( ident->SignatureName());
-		newMail->IdentityName( ident->Key());
-	}
-	return newMail;
-}
-
-/*------------------------------------------------------------------------------*\
-	CreateReplySubjectFor()
-	-	
-\*------------------------------------------------------------------------------*/
-BmString BmMail::CreateReplySubjectFor( const BmString subject) {
-	BmString isReplyRX 
-		= ThePrefs->GetString( "ReplySubjectRX", "^\\s*(Re|Aw)(\\[\\d+\\])?:");
-	Regexx rx;
-	if (!rx.exec( subject, isReplyRX, Regexx::nocase|Regexx::nomatch)) {
-		BmString subjectStr = ThePrefs->GetString( "ReplySubjectStr", "Re: %s");
-		subjectStr = rx.replace( subjectStr, "%s", subject, 
-								 		 Regexx::nocase|Regexx::global|Regexx::noatom);
-		return subjectStr;
-	}
-	return subject;
-}
-
-/*------------------------------------------------------------------------------*\
-	CreateForwardSubjectFor()
-	-	
-\*------------------------------------------------------------------------------*/
-BmString BmMail::CreateForwardSubjectFor( const BmString subject) {
-	BmString isForwardRX 
-		= ThePrefs->GetString( "ForwardSubjectRX", 
-									  "^\\s*\\[?\\s*Fwd(\\[\\d+\\])?:");
-	Regexx rx;
-	if (!rx.exec( subject, isForwardRX, Regexx::nocase|Regexx::nomatch)) {
-		BmString subjectStr 
-			= ThePrefs->GetString( "ForwardSubjectStr", "[Fwd: %s]");
-		subjectStr = rx.replace( subjectStr, "%s", subject, 
-										 Regexx::nocase|Regexx::global|Regexx::noatom);
-		return subjectStr;
-	}
-	return subject;
-}
-
-/*------------------------------------------------------------------------------*\
-	ExpandIntroMacros()
-		-	expands all macros within the given intro-string
-\*------------------------------------------------------------------------------*/
-enum AddrKind {
-	AK_FULL = 0,
-	AK_NAME,
-	AK_ADDR
-};
-
-struct AddrCollector {
-	AddrCollector( AddrKind kind) : kind(kind), count(0) {}
-	void operator()( const BmAddress& addr) {
-		if (count++ > 0)
-			result << ", ";
-		switch( kind) {
-			case AK_NAME: {
-				// use name if that exists, use addr-spec otherwise:
-				result << (addr.HasPhrase() ? addr.Phrase() : addr.AddrSpec());
-				break;
-			}
-			case AK_ADDR: {
-				// use addr-spec only:
-				result << addr.AddrSpec();
-				break;
-			}
-			default: {
-				// use full address:
-				result << addr.AddrString();
+			if (ident) {
+				receivingAddr 
+					= Header()->DetermineReceivingAddrFor( ident.Get());
 			}
 		}
 	}
-	AddrKind kind;
-	int count;
-	BmString result;
-};
-
-void BmMail::ExpandIntroMacros( BmString& intro, bool mailIsToPersonOnly) {
-	Regexx rx;
-	intro = rx.replace( intro, "%D", 
-							  TimeToString( mMailRef->When(), "%Y-%m-%d"),
-							  Regexx::nocase|Regexx::global|Regexx::noatom);
-	intro = rx.replace( intro, "%T", 
-							  TimeToString( mMailRef->When(), "%X [%z]"), 
-							  Regexx::nocase|Regexx::global|Regexx::noatom);
-	intro = rx.replace( intro, "\\n", "\n", 
-							  Regexx::nocase|Regexx::global|Regexx::noatom);
-	intro = rx.replace( intro, "%S", mMailRef->Subject(), 
-							  Regexx::nocase|Regexx::global|Regexx::noatom);
-
-	BmAddressList addrs = Header()->DetermineOriginator( true);
-	if (intro.IFindFirst( "%FN") >= B_OK) {
-		BmString fromNames;
-		if (!mailIsToPersonOnly) {
-			// the more formal approach, we replace %F by the originator(s) 
-			// name:
-			AddrCollector collector( AK_NAME);
-			fromNames = for_each( addrs.begin(), addrs.end(), collector).result;
-		} else
-			// less formal way, replace %F by ReplyIntroDefaultNick in order
-			// to say something like "On xxx, you wrote":
-			fromNames = ThePrefs->GetString( "ReplyIntroDefaultNick", "you");
-		intro.IReplaceAll( "%FN", fromNames.String()); 
-	} 
-	if (intro.IFindFirst( "%FA") >= B_OK) {
-		// replace %FA by the originator(s) addr-spec:
-		BmString fromAddrs;
-		AddrCollector collector( AK_ADDR);
-		fromAddrs = for_each( addrs.begin(), addrs.end(), collector).result;
-		intro.IReplaceAll( "%FA", fromAddrs.String()); 
-	}
-	if (intro.IFindFirst( "%F") >= B_OK) {
-		// replace %F by the originator(s) full address:
-		BmString fromAddrs;
-		AddrCollector collector( AK_FULL);
-		fromAddrs = for_each( addrs.begin(), addrs.end(), collector).result;
-		intro.IReplaceAll( "%F", fromAddrs.String()); 
-	}
-}
-
-/*------------------------------------------------------------------------------*\
-	CreateReplyIntro()
-		-	creates an appropriate intro-line for a reply-message
-		-	the returned string is the intro in UTF8
-\*------------------------------------------------------------------------------*/
-BmString BmMail::CreateReplyIntro( bool mailIsToPersonOnly) {
-	BmString intro = ThePrefs->GetString( "ReplyIntroStr");
-	ExpandIntroMacros( intro, mailIsToPersonOnly);
-	return intro;
-}
-
-/*------------------------------------------------------------------------------*\
-	CreateForwardIntro()
-		-	creates an appropriate intro-line for a forwarded message
-		-	the returned string is the intro in UTF8
-\*------------------------------------------------------------------------------*/
-BmString BmMail::CreateForwardIntro() {
-	BmString intro = ThePrefs->GetString( "ForwardIntroStr");
-	ExpandIntroMacros( intro, false);
-	return intro;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -875,64 +494,6 @@ void BmMail::AddAttachmentFromRef( const entry_ref* ref,
 											  const BmString& charset) {
 	if (mBody)
 		mBody->AddAttachmentFromRef( ref, charset);
-}
-
-/*------------------------------------------------------------------------------*\
-	AddPartsFromMail()
-	-	
-\*------------------------------------------------------------------------------*/
-void BmMail::AddPartsFromMail( BmRef<BmMail> mail, bool withAttachments, 
-										 bool isForward, bool mailIsToPersonOnly,
-										 const BmString selectedText) {
-	if (!mail || !mail->Body() || !mBody)
-		return;
-	// copy and quote text-body:
-	BmRef<BmBodyPart> newTextBody( mBody->EditableTextBody());
-	BmRef<BmBodyPart> textBody( mail->Body()->EditableTextBody());
-	// copy info about charset from old into new mail:
-	BmString charset = mail->DefaultCharset();
-	BmString quotedText;
-	int32 newLineLen = QuoteText( (selectedText.Length() || !textBody)
-													? selectedText 
-													: textBody->DecodedData(),
-											quotedText,
-				 							ThePrefs->GetString( "QuotingString"),
-											ThePrefs->GetInt( "MaxLineLen"));
-	BmString intro( isForward 
-							? mail->CreateForwardIntro() << "\n"
-							: mail->CreateReplyIntro( mailIsToPersonOnly) << "\n");
-	if (newTextBody)
-		mBody->SetEditableText( newTextBody->DecodedData() + "\n" + intro 
-											+ quotedText, 
-										charset);
-	else
-		mBody->SetEditableText( intro + quotedText, charset);
-	BumpRightMargin( newLineLen);
-	if (withAttachments && mail->Body()->HasAttachments()) {
-		BmModelItemMap::const_iterator iter, end;
-		if (mail->Body()->IsMultiPart()) {
-			iter = mail->Body()->begin()->second->begin();
-			end = mail->Body()->begin()->second->end();
-		} else {
-			iter = mail->Body()->begin();
-			end = mail->Body()->end();
-		}
-		// copy all attachments (maybe except v-cards):
-		bool doNotAttachVCards 
-			= ThePrefs->GetBool( "DoNotAttachVCardsToForward", true);
-		for( ; iter != end; ++iter) {
-			BmBodyPart* bodyPart 
-				= dynamic_cast< BmBodyPart*>( iter->second.Get());
-			if (textBody != bodyPart) {
-				if (doNotAttachVCards 
-				&& bodyPart->MimeType().ICompare( "text/x-vcard") == 0)
-					continue;
-				BmBodyPart* copiedBody = new BmBodyPart( *bodyPart);
-				mBody->AddItemToList( copiedBody);
-			}
-		}
-	}
-	AddBaseMailRef( mail->MailRef());
 }
 
 /*------------------------------------------------------------------------------*\
@@ -1112,8 +673,8 @@ bool BmMail::SetDestFoldername( const BmString& inFoldername) {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmMail::ApplyFilter( BmRef<BmFilter> filter, bool storeIfNeeded) {
-	BmRef<BmMailFilter> filterJob = new BmMailFilter( Name(), filter.Get());
+void BmMail::ApplyFilter( bool storeIfNeeded) {
+	BmRef<BmMailFilter> filterJob = new BmMailFilter( Name(), NULL);
 	filterJob->AddMail( this);
 	if (storeIfNeeded)
 		filterJob->StartJobInThisThread( BmMailFilter::BM_EXECUTE_AND_STORE);
@@ -1453,194 +1014,55 @@ void BmMail::ResyncFromDisk() {
 }
 
 /*------------------------------------------------------------------------------*\
-	QuoteText()
+	()
 		-	
 \*------------------------------------------------------------------------------*/
-int32 BmMail::QuoteText( const BmString& in, BmString& out, 
-								 const BmString inQuoteString, int maxLineLen) {
-	out = "";
-	if (!in.Length())
-		return maxLineLen;
-	BmString quoteString;
-	quoteString.ConvertTabsToSpaces( ThePrefs->GetInt( "SpacesPerTab", 4), 
-												&inQuoteString);
-	BmString qStyle = ThePrefs->GetString( "QuoteFormatting");
-	if (qStyle == BM_QUOTE_AUTO_WRAP)
-		return QuoteTextWithReWrap( in, out, quoteString, maxLineLen);
-	BmString quote;
-	BmString text;
-	Regexx rx;
-	rx.str( in);
-	rx.expr( ThePrefs->GetString( "QuotingLevelRX"));
-	int modifiedMaxLen = maxLineLen;
-	int maxTextLen;
-	int32 count = rx.exec( Regexx::study | Regexx::global | Regexx::newline);
-	for( int32 i=0; i<count; ++i) {
-		BmString q(rx.match[i].atom[0]);
-		quote.ConvertTabsToSpaces( ThePrefs->GetInt( "SpacesPerTab", 4), &q);
-		if (qStyle == BM_QUOTE_SIMPLE) {
-			// always respect maxLineLen, wrap when lines exceed right margin.
-			// This results in a combing-effect when long lines are wrapped
-			// around, producing a very short next line.
-			maxTextLen 
-				= MAX( 0, 
-						 maxLineLen - quote.CountChars() - quoteString.CountChars());
-		} else {
-			// qStyle == BM_QUOTE_PUSH_MARGIN
-			// push right margin for new quote-string, if needed, in effect 
-			// leaving the mail-formatting intact more often (but possibly
-			// exceeding 80 chars per line):
-			maxTextLen = MAX( 0, maxLineLen - quote.CountChars());
-		}
-		text = rx.match[i].atom[1];
-		int32 len = text.Length();
-		// trim trailing spaces:
-		while( len>0 && text[len-1]==' ')
-			len--;
-		text.Truncate( len);
-		int32 newLen = AddQuotedText( text, out, quote, quoteString, maxTextLen);
-		modifiedMaxLen = MAX( newLen, modifiedMaxLen);
-	}
-	// now remove trailing empty lines:
-	BmString emptyLinesAtEndRX 
-		= BmString("(?:") << "\\Q" << quoteString << "\\E" 
-								<< "(" << "\\Q" << quote << "\\E" 
-								<< ")?[ \\t]*\\n)+\\z";
-	out = rx.replace( out, emptyLinesAtEndRX, "", 
-							Regexx::newline|Regexx::global|Regexx::noatom);
-	return modifiedMaxLen;
+bool BmMail::IsFieldEmpty( const BmString fieldName)
+{ 
+	return mHeader 
+				? mHeader->IsFieldEmpty(fieldName)
+				: true; 
 }
 
 /*------------------------------------------------------------------------------*\
-	QuoteText()
+	()
 		-	
 \*------------------------------------------------------------------------------*/
-int32 BmMail::QuoteTextWithReWrap( const BmString& in, BmString& out, 
-											  BmString quoteString, int maxLineLen) {
-	out = "";
-	if (!in.Length())
-		return maxLineLen;
-	Regexx rx;
-	rx.str( in);
-	rx.expr( ThePrefs->GetString( "QuotingLevelRX"));
-	BmString currQuote;
-	BmString text;
-	BmString line;
-	BmString quote;
-	Regexx rxl;
-	int maxTextLen;
-	int minLenForWrappedLine = ThePrefs->GetInt( "MinLenForWrappedLine", 50);
-	bool lastWasSpecialLine = true;
-	int32 lastLineLen = 0;
-	int32 count = rx.exec( Regexx::study | Regexx::global | Regexx::newline);
-	for( int32 i=0; i<count; ++i) {
-		BmString q(rx.match[i].atom[0]);
-		quote.ConvertTabsToSpaces( ThePrefs->GetInt( "SpacesPerTab", 4), &q);
-		line = rx.match[i].atom[1];
-		if ((line.CountChars() < minLenForWrappedLine && lastWasSpecialLine)
-		|| rxl.exec( line, ThePrefs->GetString( "QuotingLevelEmptyLineRX", 
-															 "^[ \\t]*$"))
-		|| rxl.exec( line, ThePrefs->GetString( "QuotingLevelListLineRX", 
-															 "^[*+\\-\\d]+.*?$"))) {
-			if (i != 0) {
-				maxTextLen = MAX( 0, 
-							 			maxLineLen - currQuote.CountChars() 
-							 				- quoteString.CountChars());
-				AddQuotedText( text, out, currQuote, quoteString, maxTextLen);
-				text.Truncate(0);
-			}
-			lastWasSpecialLine = true;
-		} else if (lastWasSpecialLine || currQuote != quote 
-		|| lastLineLen < minLenForWrappedLine) {
-			if (i != 0) {
-				maxTextLen = MAX( 0, 
-										maxLineLen - currQuote.CountChars() 
-											- quoteString.CountChars());
-				AddQuotedText( text, out, currQuote, quoteString, maxTextLen);
-				text.Truncate(0);
-			}
-			lastWasSpecialLine = false;
-		}
-		currQuote = quote;
-		lastLineLen = line.CountChars();
-		if (!text.Length())
-			text = line;
-		else {
-			int32 len = text.Length();
-			// trim trailing spaces:
-			while( len>0 && text[len-1]==' ')
-				len--;
-			text.Truncate( len);
-			text << " " << line;
-		}
-	}
-	maxTextLen = MAX( 0, 
-							maxLineLen - currQuote.CountChars() 
-								- quoteString.CountChars());
-	AddQuotedText( text, out, currQuote, quoteString, maxTextLen);
-	// now remove trailing empty lines:
-	BmString emptyLinesAtEndRX 
-		= BmString("(?:") << "\\Q" << quoteString << "\\E" 
-								<< "(" << "\\Q" << currQuote << "\\E" 
-								<< ")?[ \\t]*\\n)+\\z";
-	out = rx.replace( out, emptyLinesAtEndRX, "", 
-							Regexx::newline|Regexx::global|Regexx::noatom);
-	return maxLineLen;
+int32 BmMail::HeaderLength() const
+{ 
+	return mHeader 
+				? mHeader->HeaderLength() 
+				: 0; 
 }
 
 /*------------------------------------------------------------------------------*\
-	AddQuotedLine()
+	()
 		-	
-		-	N.B.: We use the character-count in order to determine line-lengths, 
-			which for some charsets (e.g. iso-2022-jp) results in lines longer than
-			78 *byte* hard-limit (it just respects a limit of 78 *characters*).
-			This probably violates the RFC, but I believe it just makes more sense
-			for the users (since characters is what they see on screen, not bytes).
 \*------------------------------------------------------------------------------*/
-int32 BmMail::AddQuotedText( const BmString& inText, BmString& out, 
-									  const BmString& quote,
-									  const BmString& quoteString,
-								     int maxTextLen) {
-	int32 modifiedMaxLen = 0;
-	BmString tmp;
-	BmString text;
-	bool isUrl = false;
-	Regexx rxUrl;
-	maxTextLen = MAX( 0, maxTextLen);
-	text.ConvertTabsToSpaces( ThePrefs->GetInt( "SpacesPerTab", 4), &inText);
-	int32 charsLeft = text.CountChars();
-	while( charsLeft > maxTextLen) {
-		int32 wrapPos = B_ERROR;
-		int32 idx=0;
-		isUrl = rxUrl.exec(
-			text, "^\\s*(https?://|ftp://|nntp://|file://|mailto:)", 
-			Regexx::nocase
-		);
-		for(  int32 charCount=0; 
-				charCount<maxTextLen || (isUrl && wrapPos==B_ERROR && text[idx]); 
-			   ++charCount) {
-			if (IS_UTF8_STARTCHAR(text[idx])) {
-				idx++;
-				while( IS_WITHIN_UTF8_MULTICHAR(text[idx]))
-					idx++;
-			} else {
-				if (text[idx]==B_SPACE)
-					wrapPos = idx+1;
-				if (text[idx]=='\n')
-					wrapPos = idx+1;
-				idx++;
-			}
-		}
-		text.MoveInto( tmp, 0, wrapPos!=B_ERROR ? wrapPos : idx);
-		charsLeft -= tmp.CountChars();
-		tmp.Prepend( quoteString + quote);
-		modifiedMaxLen = MAX( tmp.CountChars(), modifiedMaxLen);
-		out << tmp << "\n";
-	}
-	if (!inText.Length() || text.Length()) {
-		tmp = quoteString + quote + text;
-		modifiedMaxLen = MAX( tmp.CountChars(), modifiedMaxLen);
-		out << tmp << "\n";
-	}
-	return modifiedMaxLen;
+const BmString& BmMail::HeaderText() const
+{
+	return mHeader 
+				? mHeader->HeaderString() 
+				: BM_DEFAULT_STRING; 
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+bool BmMail::IsRedirect() const
+{
+	return mHeader 
+				? mHeader->IsRedirect()
+				: false;
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMail::IsRedirect( bool b)
+{ 
+	if (mHeader)
+		mHeader->IsRedirect( b); 
 }

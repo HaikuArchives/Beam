@@ -37,12 +37,14 @@
 #include <Entry.h>
 #include <Mime.h>
 #include <Path.h>
+#include "BmString.h"
 
 #include "BmDataModel.h"
-#include "BmMailHeader.h"
 #include "BmUtil.h"
 
 class BmBodyPartList;
+class BmIdentity;
+class BmMailHeader;
 class BmMailRef;
 
 // mail-attribute types:
@@ -150,52 +152,31 @@ public:
 	void SetTo( BmString &text, const BmString account);
 	void SetNewHeader( const BmString& headerStr);
 	void SetSignatureByName( const BmString sigName);
-	void ApplyFilter( BmRef<BmFilter> filter = NULL, bool storeIfNeeded=false);
+	void ApplyFilter( bool storeIfNeeded=false);
 	bool Store();
 	void ResyncFromDisk();
 	//
 	const BmString& GetFieldVal( const BmString fieldName);
 	bool HasAttachments() const;
 	bool HasComeFromList() const;
+	void DetermineRecvAddrAndIdentity( BmString& receivingAddr,
+												  BmRef<BmIdentity>& ident);
 	void MarkAs( const char* status);
 	void RemoveField( const BmString fieldName);
 	void SetFieldVal( const BmString fieldName, const BmString value);
-	inline bool IsFieldEmpty( const BmString fieldName)
-													{ 
-														return mHeader 
-															? mHeader->IsFieldEmpty(fieldName)
-															: true; 
-													}
+	bool IsFieldEmpty( const BmString fieldName);
 	const BmString Status() const;
-	//
-	BmString DetermineReplyAddress( int32 replyMode, bool canonicalize,
-											  bool& replyGoesToPersonOnly);
-	//
-	BmRef<BmMail> CreateAttachedForward();
-	BmRef<BmMail> CreateInlineForward( bool withAttachments, 
-										  		  const BmString selectedText="");
-	BmRef<BmMail> CreateReply( int32 replyMode,
-										const BmString selectedText="");
-	BmRef<BmMail> CreateReply( int32 replyMode, 
-										bool& replyGoesToPersonOnly,
-										const BmString selectedText="");
-	BmRef<BmMail> CreateRedirect();
-	BmRef<BmMail> CreateAsNew();
-	BmString CreateReplySubjectFor( const BmString subject);
-	BmString CreateForwardSubjectFor( const BmString subject);
-	BmString CreateReplyIntro( bool mailIsToPersonOnly);
-	BmString CreateForwardIntro();
 	//
 	void AddAttachmentFromRef( const entry_ref* ref,
 										const BmString& defaultCharset);
-	void AddPartsFromMail( BmRef<BmMail> mail, bool withAttachments,
-								  bool isForward, bool mailIsToPersonOnly,
-								  const BmString selectedText="");
 	//
 	bool SetDestFoldername( const BmString& destFoldername);
 	const BPath& DestFolderpath() const;
 	//	
 	bool MoveToDestFolderpath();
+	//
+	void SetBaseMailInfo( BmMailRef* ref, const BmString newStatus);
+	void AddBaseMailRef( BmMailRef* ref);
 
 	// overrides of jobmodel base:
 	bool StartJob();
@@ -205,25 +186,14 @@ public:
 													{ return mInitCheck; }
 	inline const BmString& AccountName(){ return mAccountName; }
 	inline BmBodyPartList* Body() const	{ return mBody.Get(); }
-	inline BmRef<BmMailHeader> Header() const	
-													{ return mHeader; }
-	inline int32 HeaderLength() const	{ return mHeader 
-																	? mHeader->HeaderLength() 
-																	: 0; 
-													}
+	inline BmMailHeader* Header() const	{ return mHeader.Get(); }
+	int32 HeaderLength() const;
 	inline int32 RightMargin() const		{ return mRightMargin; }
 	inline const BmString& RawText() const		
 													{ return mText; }
-	inline const BmString& HeaderText() const	
-													{ return mHeader 
-																	? mHeader->HeaderString() 
-																	: BM_DEFAULT_STRING; 
-													}
+	const BmString& HeaderText() const;
 	inline const bool Outbound() const	{ return mOutbound; }
-	inline const bool IsRedirect() const{ return mHeader 
-																	? mHeader->IsRedirect() 
-																	: false; 
-													}
+	bool IsRedirect() const;
 	inline BmMailRef* MailRef() const	{ return mMailRef.Get(); }
 	const BmString& DefaultCharset()	const;
 	inline BmString SignatureName() const		
@@ -235,9 +205,7 @@ public:
 	inline void BumpRightMargin( int32 i)		
 													{ mRightMargin = MAX(i,mRightMargin); }
 	inline void RightMargin( int32 i)	{ mRightMargin = i; }
-	inline void IsRedirect( bool b)		{ if (mHeader) 
-															mHeader->IsRedirect( b); 
-													}
+	void IsRedirect( bool b);
 	inline void Outbound( bool b)			{ mOutbound = b; }
 	inline void AccountName( const BmString& s)
 													{ mAccountName = s; }
@@ -245,18 +213,7 @@ public:
 													{ mIdentityName = s; }
 	inline void MoveToTrash( bool b)		{ mMoveToTrash = b; }
 
-	// Static functions that try to reformat & quote a given multiline text
-	// in a way that avoids the usual (ugly) quoting-mishaps.
-	// The resulting int is the line-length needed to leave 
-	// the formatting intact.
-	static int32 QuoteText( const BmString& in, BmString& out, 
-									const BmString quote, int maxLen);
-
 	static const int32 BM_READ_MAIL_JOB = 1;
-
-	static const char* const BM_QUOTE_AUTO_WRAP;
-	static const char* const BM_QUOTE_SIMPLE;
-	static const char* const BM_QUOTE_PUSH_MARGIN;
 
 protected:
 	BmMail( BmMailRef* ref);
@@ -264,29 +221,10 @@ protected:
 	BmString CreateBasicFilename();
 	void StoreAttributes( BFile& mailFile, const BmString& status, 
 								 bigtime_t whenCreated);
-	void SetBaseMailInfo( BmMailRef* ref, const BmString newStatus);
-	void AddBaseMailRef( BmMailRef* ref);
-	//
-	void ExpandIntroMacros( BmString& intro, bool mailIsToPersonOnly);
-
-	// static functions used for quote-formatting:
-	static int32 QuoteTextWithReWrap( const BmString& in, BmString& out, 
-											    BmString quoteString, int maxLineLen);
-	static int32 AddQuotedText( const BmString& text, BmString& out, 
-										 const BmString& quote, 
-										 const BmString& quoteString,
-								 		 int maxTextLen);
 
 private:
 	BmMail();
 	
-	BmRef<BmMail> doCreateReply( int32 replyMode, bool& replyGoesToPersonOnly,
-										  const BmString selectedText="",
-										  bool avoidReplyGoesToPersonOnly=false);
-
-	void DetermineRecvAddrAndIdentity( BmString& receivingAddr,
-												  BmRef<BmIdentity>& ident);
-
 	const BmString DefaultStatus() const;
 
 	BmRef<BmMailHeader> mHeader;
@@ -329,9 +267,5 @@ private:
 	BmMail( const BmMail&);
 	BmMail operator=( const BmMail&);
 };
-
-// convenience-consts for AddPartsFromMail()-param isForward:
-const bool BM_IS_FORWARD = true;
-const bool BM_IS_REPLY = false;
 
 #endif

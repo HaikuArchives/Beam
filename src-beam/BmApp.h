@@ -54,22 +54,20 @@ class BmApplication : public BApplication
 {
 	typedef BApplication inherited;
 
+	friend int32 PrintMails( void* data);
+
 public:
 	//
 	BmApplication( const char *sig);
 	~BmApplication();
 
 	// native methods:
-	bool HandlesMimetype( const BmString mimetype);
 	BRect ScreenFrame();
 	void SetNewWorkspace( uint32 newWorkspace);
 	uint32 CurrWorkspace();
+	//
+	bool HandlesMimetype( const BmString mimetype);
 	void LaunchURL( const BmString url);
-	void PageSetup();
-	void PrintMails( BMessage* msg);
-
-	void InstallDeskbarItem();
-	void RemoveDeskbarItem();
 
 	// beos-stuff
 	void MessageReceived( BMessage* msg);
@@ -101,14 +99,10 @@ public:
 	static const char* const MSG_SENDING_REFVIEW;
 
 private:
-	static int32 MarkMailsAs( void* msg);
-	static int32 MoveMails( void* msg);
-	static int32 RedirectMails( void* msg);
-	static int32 ReplyToMails( void* msg);
-	static int32 ForwardMails( void* msg);
-	static int32 PrintMails( void* msg);
-	static int32 TrashMails( void* msg);
-	static int32 EditMailsAsNew( void* msg);
+	void PageSetup();
+
+	void InstallDeskbarItem();
+	void RemoveDeskbarItem();
 
 	status_t mInitCheck;
 	BmWindow* mMailWin;
