@@ -148,6 +148,7 @@ BmApplication::BmApplication( const char* sig)
 
 		// load the preferences set by user (if any):
 		BmPrefs::CreateInstance();
+		BM_LOG( BM_LogApp, BmString("App-initialization started..."));
 
 		// init charset-tables:
 		BmEncoding::InitCharsetMap();
@@ -160,15 +161,12 @@ BmApplication::BmApplication( const char* sig)
 		TheJobStatusWin->Hide();
 		TheJobStatusWin->Show();
 
-		// create and initialize most of our list-models:
+		// create most of our list-models:
 		BmSignatureList::CreateInstance();
-		TheSignatureList->StartJobInNewThread();
 
 		BmFilterList::CreateInstance();
-		TheFilterList->StartJobInNewThread();
 
 		BmFilterChainList::CreateInstance();
-		TheFilterChainList->StartJobInNewThread();
 
 		BmPeopleMonitor::CreateInstance();
 		BmPeopleList::CreateInstance();
@@ -176,14 +174,12 @@ BmApplication::BmApplication( const char* sig)
 		BmMailFolderList::CreateInstance();
 
 		BmIdentityList::CreateInstance();
-		TheIdentityList->StartJobInThisThread();
-
-		BmPopAccountList::CreateInstance( TheJobStatusWin);
-		ThePopAccountList->StartJobInThisThread();
 
 		BmSmtpAccountList::CreateInstance( TheJobStatusWin);
-		TheSmtpAccountList->StartJobInThisThread();
 
+		BmPopAccountList::CreateInstance( TheJobStatusWin);
+
+		BM_LOG( BM_LogApp, BmString("...setting up foreign-keys..."));
 		// now setup all foreign-key connections between these list-models:
 		ThePopAccountList->AddForeignKey( BmIdentity::MSG_POP_ACCOUNT, 
 													 TheIdentityList.Get());
@@ -206,6 +202,7 @@ BmApplication::BmApplication( const char* sig)
 
 		add_system_beep_event( BM_BEEP_EVENT);
 
+		BM_LOG( BM_LogApp, BmString("...creating main-window..."));
 		BmMainWindow::CreateInstance();
 		
 		BmString wspc = ThePrefs->GetString( "Workspace", "Current");
@@ -217,6 +214,7 @@ BmApplication::BmApplication( const char* sig)
 
 		mInitCheck = B_OK;
 		InstanceCount++;
+		BM_LOG( BM_LogApp, BmString("App-initialization done."));
 	} catch (BM_error& err) {
 		ShowAlert( err.what());
 		exit( 10);
@@ -277,8 +275,33 @@ thread_id BmApplication::Run() {
 			InstallDeskbarItem();
 		EnsureIndexExists( "MAIL:identity");
 		EnsureIndexExists( "MAIL:account");
+		BM_LOG( BM_LogApp, BmString("Showing main-window."));
 		TheMainWindow->Show();
+
+		// start most of our list-models:
+		BM_LOG( BM_LogApp, BmString("...querying people..."));
+		ThePeopleList->StartJobInNewThread();
+
+		BM_LOG( BM_LogApp, BmString("...reading POP-accounts..."));
+		ThePopAccountList->StartJobInNewThread();
+
+		BM_LOG( BM_LogApp, BmString("...reading identities..."));
+		TheIdentityList->StartJobInThisThread();
+
+		BM_LOG( BM_LogApp, BmString("...reading signatures..."));
+		TheSignatureList->StartJobInThisThread();
+
+		BM_LOG( BM_LogApp, BmString("...reading filters..."));
+		TheFilterList->StartJobInNewThread();
+
+		BM_LOG( BM_LogApp, BmString("...reading filter-chains..."));
+		TheFilterChainList->StartJobInNewThread();
+
+		BM_LOG( BM_LogApp, BmString("...reading SMTP-accounts..."));
+		TheSmtpAccountList->StartJobInThisThread();
+
 		tid = inherited::Run();
+
 		ThePopAccountList->Store();
 							// always store pop-account-list since the list of received
 							// mails may have changed
@@ -332,6 +355,7 @@ void BmApplication::RemoveDeskbarItem() {
 		-	standard BeOS-behaviour, we allow a quit
 \*------------------------------------------------------------------------------*/
 bool BmApplication::QuitRequested() {
+	BM_LOG( BM_LogApp, "App: quit requested, checking state...");
 	mIsQuitting = true;
 	TheMailMonitor->LockLooper();
 	bool shouldQuit = true;
@@ -357,6 +381,7 @@ bool BmApplication::QuitRequested() {
 			}
 		}
 	}
+	BM_LOG( BM_LogApp, shouldQuit ? "ok, App is quitting" : "no, app isn't quitting");
 	return shouldQuit;
 }
 
@@ -448,7 +473,7 @@ void BmApplication::MessageReceived( BMessage* msg) {
 				msg->FindString( BmPopAccountList::MSG_ITEMKEY, &key);
 				if (key) {
 					bool isAutoCheck = msg->FindBool( BmPopAccountList::MSG_AUTOCHECK);
-					BM_LOG( BM_LogPop, BmString("PopAccount ") << key << " checks mail " 
+					BM_LOG( BM_LogApp, BmString("PopAccount ") << key << " checks mail " 
 							  << (isAutoCheck ? "(auto)" : "(manual)"));
 					if (!isAutoCheck || !ThePrefs->GetBool( "AutoCheckOnlyIfPPPRunning", true) 
 					|| IsPPPRunning())
@@ -467,7 +492,7 @@ void BmApplication::MessageReceived( BMessage* msg) {
 				for( ; msg->FindString( MSG_OPT_FIELD, i, &optField)==B_OK; ++i) {
 					mail->SetFieldVal( optField, msg->FindString( MSG_OPT_VALUE, i));
 				}
-				BM_LOG( BM_LogMainWindow, BmString("Asked to create new mail with ") << i << " options");
+				BM_LOG( BM_LogApp, BmString("Asked to create new mail with ") << i << " options");
 				BmMailEditWin* editWin = BmMailEditWin::CreateInstance( mail.Get());
 				if (editWin)
 					editWin->Show();
@@ -479,7 +504,7 @@ void BmApplication::MessageReceived( BMessage* msg) {
 				while( msg->FindPointer( MSG_MAILREF, index++, (void**)&mailRef) == B_OK) {
 					BmRef<BmMail> mail = BmMail::CreateInstance( mailRef);
 					if (mail) {
-						BM_LOG( BM_LogMainWindow, BmString("Asked to redirect mail <") << mailRef->TrackerName() << ">");
+						BM_LOG( BM_LogApp, BmString("Asked to redirect mail <") << mailRef->TrackerName() << ">");
 						if (mail->InitCheck() != B_OK)
 							mail->StartJobInThisThread( BmMail::BM_READ_MAIL_JOB);
 						if (mail->InitCheck() != B_OK)
@@ -516,8 +541,10 @@ void BmApplication::MessageReceived( BMessage* msg) {
 					alert->SetShortcut( 0, B_ESCAPE);
 					alert->Go( new BInvoker( new BMessage(*msg), BMessenger( this)));
 				} else {
-					if (buttonPressed > 0)
+					if (buttonPressed > 0) {
+						BM_LOG( BM_LogApp, BmString("Asked to reply to ") << msgCount << " mails.");
 						ReplyToMails( msg, buttonPressed==2);
+					}
 				}
 				break;
 			}
@@ -540,8 +567,10 @@ void BmApplication::MessageReceived( BMessage* msg) {
 					alert->SetShortcut( 0, B_ESCAPE);
 					alert->Go( new BInvoker( new BMessage(*msg), BMessenger( this)));
 				} else {
-					if (buttonPressed > 0)
+					if (buttonPressed > 0) {
+						BM_LOG( BM_LogApp, BmString("Asked to forward ") << msgCount << " mails.");
 						ForwardMails( msg, buttonPressed==2);
+					}
 				}
 				break;
 			}
@@ -587,7 +616,7 @@ void BmApplication::MessageReceived( BMessage* msg) {
 				index=0;
 				while( msg->FindPointer( MSG_MAILREF, index++, (void**)&mailRef) == B_OK) {
 					if (buttonPressed==1 || mailRef->Status() == BM_MAIL_STATUS_NEW) {
-						BM_LOG( BM_LogMainWindow, BmString("marking mail <") << mailRef->TrackerName() << "> as " << newStatus);
+						BM_LOG( BM_LogApp, BmString("marking mail <") << mailRef->TrackerName() << "> as " << newStatus);
 						mailRef->MarkAs( newStatus.String());
 					}
 					mailRef->RemoveRef();	// msg is no more refering to mailRef
@@ -658,7 +687,7 @@ void BmApplication::MessageReceived( BMessage* msg) {
 				entry_ref* refs = new entry_ref [index];
 				index=0;
 				for( index=0; msg->FindPointer( MSG_MAILREF, index, (void**)&mailRef) == B_OK; ++index) {
-					BM_LOG( BM_LogMainWindow, BmString("Asked to trash mail <") << mailRef->TrackerName() << ">");
+					BM_LOG( BM_LogApp, BmString("Asked to trash mail <") << mailRef->TrackerName() << ">");
 					refs[index] = mailRef->EntryRef();
 					mailRef->MarkAs( BM_MAIL_STATUS_READ);
 							// mark mail as read before moving to trash, so that we don't confuse
@@ -705,14 +734,12 @@ void BmApplication::MessageReceived( BMessage* msg) {
 				break;
 			}
 			case B_SILENT_RELAUNCH: {
-				BM_LOG2( BM_LogAll, "App: silently relaunched");
+				BM_LOG( BM_LogApp, "App: silently relaunched");
 				if (TheMainWindow->IsMinimized())
 					TheMainWindow->Minimize( false);
 				inherited::MessageReceived( msg);
 				break;
 			}
-			case B_QUIT_REQUESTED: 
-				BM_LOG2( BM_LogAll, "App: quit requested");
 			default:
 				inherited::MessageReceived( msg);
 				break;
