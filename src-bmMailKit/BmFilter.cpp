@@ -35,6 +35,7 @@
 #include "BubbleHelper.h"
 
 #include "BmBasics.h"
+#include "BmApp.h"
 #include "BmPrefs.h"
 #include "BmFilter.h"
 #include "BmLogHandler.h"
@@ -210,7 +211,7 @@ void BmFilterList::LoadAddons() {
 	// determine the path to the user-config-directory:
 	find_directory( B_USER_ADDONS_DIRECTORY, &path) == B_OK
 													|| BM_THROW_RUNTIME( "Sorry, could not determine user's addon-dir !?!");
-	BmString addonPath = BmString(path.Path()) << "/Beam/Filters";
+	BmString addonPath = bmApp->AppPath() + "/add-ons/Filters";
 	TheResources->GetFolder( addonPath, addonDir);
 
 	// ...and scan through all its entries for other mail-folders:
