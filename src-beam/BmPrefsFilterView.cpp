@@ -47,6 +47,7 @@
 #include "ColumnListView.h"
 #include "CLVEasyItem.h"
 
+#include "BmCheckControl.h"
 #include "BmGuiUtil.h"
 #include "BmLogHandler.h"
 #include "BmMultiLineTextControl.h"
@@ -61,6 +62,7 @@
 
 enum Columns {
 	COL_KEY = 0,
+	COL_DEFAULT,
 	COL_CONTENT
 };
 
@@ -95,6 +97,7 @@ void BmFilterItem::UpdateView( BmUpdFlags flags) {
 		
 		BmListColumn cols[] = {
 			{ filter->Key().String(),						false },
+			{ filter->MarkedAsDefault() ? "*" : "",	false },
 			{ beautifiedContent.String(),					false },
 			{ NULL, false }
 		};
@@ -135,6 +138,7 @@ BmFilterView::BmFilterView( minimax minmax, int32 width, int32 height)
 					B_FOLLOW_TOP_BOTTOM, true, true, true, B_FANCY_BORDER);
 
 	AddColumn( new CLVColumn( "Name", 120.0, CLV_SORT_KEYABLE|flags, 50.0));
+	AddColumn( new CLVColumn( "D", 20.0, CLV_SORT_KEYABLE|flags, 20.0, "(D)efault?"));
 	AddColumn( new CLVColumn( "Content", 400.0, flags, 40.0));
 
 	SetSortFunction( CLVEasyItem::CompareItems);
@@ -232,6 +236,10 @@ BmPrefsFilterView::BmPrefsFilterView( BmFilterList* filterList, bool outbound)
 					new HGroup( 
 						mFilterControl = new BmTextControl( "Filter name:"),
 						new Space(),
+						mIsDefaultControl = new BmCheckControl( "Use this as default filter", 
+																			 new BMessage(BM_IS_DEFAULT_CHANGED), 
+																			 this),
+						new Space(),
 						mTestButton = new MButton( "Check the SIEVE-script", new BMessage( BM_TEST_FILTER), this, minimax(-1,-1,-1,-1)),
 						0
 					),
@@ -284,11 +292,16 @@ void BmPrefsFilterView::Initialize() {
 
 	TheBubbleHelper.SetHelp( mFilterListView, "This listview shows every filter you have defined.");
 	TheBubbleHelper.SetHelp( mFilterControl, "Here you can enter a name for this filter.\nThis name is used to identify this filter in Beam.");
+	if (mOutbound)
+		TheBubbleHelper.SetHelp( mIsDefaultControl, "Checking this makes Beam use this filter \nas the default filter for outbound mail.");
+	else
+		TheBubbleHelper.SetHelp( mIsDefaultControl, "Checking this makes Beam use this filter \nas the default filter for inbound mail.");
 	TheBubbleHelper.SetHelp( mContentControl, "Here you can enter the content of this filter (a SIEVE script).");
 	TheBubbleHelper.SetHelp( mTestButton, "Here you can check the syntax of the SIEVE-script.");
 
 	mFilterControl->SetTarget( this);
 	mContentControl->SetTarget( this);
+	mIsDefaultControl->SetTarget( this);
 
 	mFilterListView->SetSelectionMessage( new BMessage( BM_SELECTION_CHANGED));
 	mFilterListView->SetTarget( this);
@@ -348,6 +361,19 @@ void BmPrefsFilterView::MessageReceived( BMessage* msg) {
 					BmMultiLineTextControl* source = dynamic_cast<BmMultiLineTextControl*>( srcView);
 					if ( source == mContentControl)
 						mCurrFilter->Content( mContentControl->Text());
+				}
+				break;
+			}
+			case BM_IS_DEFAULT_CHANGED: {
+				if (mCurrFilter) {
+					bool val = mIsDefaultControl->Value();
+					if (val) {
+						if (mOutbound)
+							TheOutboundFilterList->SetDefaultFilter( mCurrFilter->Key());
+						else
+							TheInboundFilterList->SetDefaultFilter( mCurrFilter->Key());
+					} else
+						mCurrFilter->MarkedAsDefault( false);
 				}
 				break;
 			}
@@ -422,11 +448,13 @@ void BmPrefsFilterView::MessageReceived( BMessage* msg) {
 void BmPrefsFilterView::ShowFilter( int32 selection) {
 	bool enabled = (selection != -1);
 	mFilterControl->SetEnabled( enabled);
+	mIsDefaultControl->SetEnabled( enabled);
 	mContentControl->SetEnabled( enabled);
 	
 	if (selection == -1) {
 		mCurrFilter = NULL;
 		mFilterControl->SetTextSilently( "");
+		mIsDefaultControl->SetValue( 0);
 		mContentControl->SetTextSilently( "");
 		mTestButton->SetEnabled( false);
 	} else {
@@ -436,6 +464,7 @@ void BmPrefsFilterView::ShowFilter( int32 selection) {
 			if (mCurrFilter) {
 				mFilterControl->SetTextSilently( mCurrFilter->Name().String());
 				mContentControl->SetTextSilently( mCurrFilter->Content().String());
+				mIsDefaultControl->SetValue( mCurrFilter->MarkedAsDefault());
 				mTestButton->SetEnabled( true);
 			}
 		} else

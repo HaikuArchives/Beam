@@ -103,8 +103,10 @@ private:
 #define BM_ADD_FILTER			'bmAS'
 #define BM_REMOVE_FILTER		'bmRS'
 #define BM_TEST_FILTER			'bmTS'
+#define BM_IS_DEFAULT_CHANGED	'bmDC'
 
 
+class BmCheckControl;
 class BmMultiLineTextControl;
 class BmTextControl;
 class MButton;
@@ -145,6 +147,7 @@ private:
 
 	BmListViewController* mFilterListView;
 	BmTextControl* mFilterControl;
+	BmCheckControl* mIsDefaultControl;
 	BmMultiLineTextControl* mContentControl;
 	MButton* mAddButton;
 	MButton* mRemoveButton;
