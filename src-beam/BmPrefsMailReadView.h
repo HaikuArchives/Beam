@@ -74,8 +74,6 @@ private:
 	BmCheckControl* mUseSwatchTimeInRefViewControl;
 	BmCheckControl* mSelectNextOnDeleteControl;
 
-	BmTextControl* mMimeTypeTrustInfoControl;
-
 	// Hide copy-constructor and assignment:
 	BmPrefsMailReadView( const BmPrefsMailReadView&);
 	BmPrefsMailReadView operator=( const BmPrefsMailReadView&);

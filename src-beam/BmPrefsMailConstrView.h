@@ -46,17 +46,9 @@ class BmPrefsMailConstrView : public BmPrefsView {
 	typedef BmPrefsView inherited;
 
 	enum {
-		BM_EACH_BCC_CHANGED 				= 'bmBC',
-		BM_PREFER_USER_AGENT_CHANGED 	= 'bmUA',
-		BM_GENERATE_MSGIDS_CHANGED 	= 'bmGI',
-		BM_QP_SAFE_CHANGED	 			= 'bmQP',
-		BM_ATTACH_VCARDS_CHANGED 		= 'bmAV',
 		BM_CHARSET_SELECTED		 		= 'bmCS',
 		BM_FORWARD_TYPE_SELECTED		= 'bmFS',
 		BM_QUOTE_FORMATTING_SELECTED	= 'bmQS',
-		BM_ALLOW_8_BIT_CHANGED			= 'bm8C',
-		BM_IMPORT_EXPORT_UTF8_CHANGED	= 'bmIE',
-		BM_HARD_WRAP_AT_78_CHANGED		= 'bmHW',
 		BM_HARD_WRAP_CHANGED				= 'bmHC',
 		BM_USED_CHARSET_SELECTED		= 'bmUS',
 		BM_LOOK_IN_PEOPLE_CHANGED		= 'bmLP',
@@ -87,13 +79,6 @@ private:
 
 	BmString PeopleFolderButtonLabel();
 
-	BmCheckControl* mGenerateIDsControl;
-	BmCheckControl* mMakeQpSafeControl;
-	BmCheckControl* mSpecialForEachBccControl;
-	BmCheckControl* mPreferUserAgentControl;
-	BmCheckControl* mAllow8BitControl;
-	BmCheckControl* mImportExportUtf8Control;
-	BmCheckControl* mHardWrapAt78Control;
 	BmCheckControl* mHardWrapControl;
 	BmTextControl* mMaxLineLenControl;
 	BmTextControl* mQuotingStringControl;
@@ -103,16 +88,12 @@ private:
 	BmMenuControl* mDefaultCharsetControl;
 	BmMenuControl* mUsedCharsetsControl;
 
-	BmMenuControl* mDefaultForwardTypeControl;
-	BmTextControl* mForwardIntroStrControl;
 	BmTextControl* mForwardSubjectStrControl;
-	BmTextControl* mForwardSubjectRxControl;
-	BmCheckControl* mDontAttachVCardsControl;
+	BmTextControl* mForwardIntroStrControl;
 
+	BmTextControl* mReplySubjectStrControl;
 	BmTextControl* mReplyIntroStrControl;
 	BmTextControl* mReplyIntroStrPrivateControl;
-	BmTextControl* mReplySubjectStrControl;
-	BmTextControl* mReplySubjectRxControl;
 
 	BmCheckControl* mAddNameToPeopleControl;
 	BmCheckControl* mLookInPeopleFolderControl;

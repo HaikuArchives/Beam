@@ -85,13 +85,6 @@ BmPrefsMailConstrView::BmPrefsMailConstrView()
 								this, 
 								ThePrefs->GetBool("HardWrapMailText")
 						),
-						mHardWrapAt78Control 
-							= new BmCheckControl( 
-								"Always respect maximum line-length of 78 characters", 
-							   new BMessage(BM_HARD_WRAP_AT_78_CHANGED), 
-							   this, 
-							   ThePrefs->GetBool( "NeverExceed78Chars", false)
-							),
 						new Space( minimax(0,10,0,10)),
 						mQuotingStringControl 
 							= new BmTextControl( "Quoting string:"),
@@ -105,43 +98,7 @@ BmPrefsMailConstrView::BmPrefsMailConstrView()
 						0
 					)
 				),
-				new MBorder( M_LABELED_BORDER, 10, 
-								 (char*)"Mail-Construction Options",
-					new VGroup(
-						mAllow8BitControl = new BmCheckControl( 
-							"Use 8-bit-MIME ", 
-							new BMessage(BM_ALLOW_8_BIT_CHANGED), 
-							this, ThePrefs->GetBool("Allow8BitMime")
-						),
-						mImportExportUtf8Control = new BmCheckControl( 
-							"Treat all text-attachments as UTF-8.", 
-							new BMessage(BM_IMPORT_EXPORT_UTF8_CHANGED), 
-							this, ThePrefs->GetBool("ImportExportTextAsUtf8", true)
-						),
-						mSpecialForEachBccControl = new BmCheckControl( 
-							"Generate header for each Bcc-recipient", 
-						   new BMessage(BM_EACH_BCC_CHANGED), 
-						   this, ThePrefs->GetBool("SpecialHeaderForEachBcc")
-						),
-						mPreferUserAgentControl = new BmCheckControl( 
-							"Prefer 'UserAgent'-header over 'X-Mailer'", 
-							new BMessage(BM_PREFER_USER_AGENT_CHANGED), 
-							this, ThePrefs->GetBool("PreferUserAgentOverX-Mailer")
-						),
-						mGenerateIDsControl = new BmCheckControl( 
-							"Generate own message-IDs", 
-							new BMessage(BM_GENERATE_MSGIDS_CHANGED), 
-							this, ThePrefs->GetBool("GenerateOwnMessageIDs")
-						),
-						mMakeQpSafeControl = new BmCheckControl( 
-							"Make quoted-printable safe for non-ASCII gateways "
-							"(EBCDIC)", 
-							new BMessage(BM_QP_SAFE_CHANGED), 
-							this, ThePrefs->GetBool("MakeQPSafeForEBCDIC")
-						),
-						0
-					)
-				),
+				new Space(),
 				0
 			),
 			new Space( minimax(0,5,0,5)),
@@ -195,21 +152,7 @@ BmPrefsMailConstrView::BmPrefsMailConstrView()
 						mForwardIntroStrControl 
 							= new BmTextControl( "Intro:", false, 0, 23),
 						mForwardSubjectStrControl = new BmTextControl( "Subject:"),
-						mForwardSubjectRxControl 
-							= new BmTextControl( "Is-Forward-Regex:"),
-						new HGroup( 
-							mDefaultForwardTypeControl 
-								= new BmMenuControl( "Default forward-type:", 
-															new BPopUpMenu("")),
-							new Space(),
-							0
-						),
-						new Space( minimax(0,4,0,4)),
-						mDontAttachVCardsControl = new BmCheckControl( 
-								"Do not attach v-cards in forward", 
-								new BMessage(BM_ATTACH_VCARDS_CHANGED), 
-								this, ThePrefs->GetBool("DoNotAttachVCardsToForward")
-						),
+						new Space(),
 						0
 					)
 				),
@@ -217,11 +160,8 @@ BmPrefsMailConstrView::BmPrefsMailConstrView()
 					new VGroup(
 						mReplyIntroStrControl = new BmTextControl( "Intro:"),
 						mReplySubjectStrControl = new BmTextControl( "Subject:"),
-						mReplySubjectRxControl 
-							= new BmTextControl( "Is-Reply-Regex:"),
 						mReplyIntroStrPrivateControl 
 							= new BmTextControl( "Personal Phrase:"),
-						new Space(),
 						0
 					)
 				),
@@ -233,34 +173,20 @@ BmPrefsMailConstrView::BmPrefsMailConstrView()
 		);
 	mGroupView->AddChild( dynamic_cast<BView*>(view));
 	
-	float divider = mMaxLineLenControl->Divider();
-	divider = MAX( divider, mQuotingStringControl->Divider());
-	divider = MAX( divider, mQuoteFormattingControl->Divider());
-	divider = MAX( divider, mDefaultCharsetControl->Divider());
-	divider = MAX( divider, mUsedCharsetsControl->Divider());
-	divider = MAX( divider, mForwardIntroStrControl->Divider());
-	divider = MAX( divider, mForwardSubjectStrControl->Divider());
-	divider = MAX( divider, mForwardSubjectRxControl->Divider());
-	divider = MAX( divider, mDefaultForwardTypeControl->Divider());
-	divider = MAX( divider, mReplyIntroStrControl->Divider());
-	divider = MAX( divider, mReplyIntroStrPrivateControl->Divider());
-	divider = MAX( divider, mReplySubjectStrControl->Divider());
-	divider = MAX( divider, mReplySubjectRxControl->Divider());
-	divider = MAX( divider, mUndoModeControl->Divider());
-	mMaxLineLenControl->SetDivider( divider);
-	mQuotingStringControl->SetDivider( divider);
-	mQuoteFormattingControl->SetDivider( divider);
-	mDefaultCharsetControl->SetDivider( divider);
-	mUsedCharsetsControl->SetDivider( divider);
-	mForwardIntroStrControl->SetDivider( divider);
-	mForwardSubjectStrControl->SetDivider( divider);
-	mForwardSubjectRxControl->SetDivider( divider);
-	mDefaultForwardTypeControl->SetDivider( divider);
-	mReplyIntroStrControl->SetDivider( divider);
-	mReplyIntroStrPrivateControl->SetDivider( divider);
-	mReplySubjectStrControl->SetDivider( divider);
-	mReplySubjectRxControl->SetDivider( divider);
-	mUndoModeControl->SetDivider( divider);
+	DivideSame(
+		mMaxLineLenControl,
+		mQuotingStringControl, 
+		mQuoteFormattingControl,
+		mDefaultCharsetControl,
+		mUsedCharsetsControl,
+		mForwardIntroStrControl,
+		mForwardSubjectStrControl,
+		mReplyIntroStrControl,
+		mReplyIntroStrPrivateControl,
+		mReplySubjectStrControl,
+		mUndoModeControl,
+		NULL
+	);
 
 	BmString val;
 	val << ThePrefs->GetInt("MaxLineLen");
@@ -271,16 +197,12 @@ BmPrefsMailConstrView::BmPrefsMailConstrView()
 		ThePrefs->GetString("ForwardIntroStr").String());
 	mForwardSubjectStrControl->SetText( 
 		ThePrefs->GetString("ForwardSubjectStr").String());
-	mForwardSubjectRxControl->SetText( 
-		ThePrefs->GetString("ForwardSubjectRX").String());
 	mReplyIntroStrControl->SetText( 
 		ThePrefs->GetString("ReplyIntroStr").String());
 	mReplyIntroStrPrivateControl->SetText( 
 		ThePrefs->GetString("ReplyIntroDefaultNick", "you").String());
 	mReplySubjectStrControl->SetText( 
 		ThePrefs->GetString("ReplySubjectStr").String());
-	mReplySubjectRxControl->SetText( 
-		ThePrefs->GetString("ReplySubjectRX").String());
 }
 
 /*------------------------------------------------------------------------------*\
@@ -294,23 +216,12 @@ BmPrefsMailConstrView::~BmPrefsMailConstrView() {
 	TheBubbleHelper->SetHelp( mQuoteFormattingControl, NULL);
 	TheBubbleHelper->SetHelp( mForwardIntroStrControl, NULL);
 	TheBubbleHelper->SetHelp( mForwardSubjectStrControl, NULL);
-	TheBubbleHelper->SetHelp( mForwardSubjectRxControl, NULL);
 	TheBubbleHelper->SetHelp( mReplyIntroStrControl, NULL);
 	TheBubbleHelper->SetHelp( mReplyIntroStrPrivateControl, NULL);
 	TheBubbleHelper->SetHelp( mReplySubjectStrControl, NULL);
-	TheBubbleHelper->SetHelp( mReplySubjectRxControl, NULL);
 	TheBubbleHelper->SetHelp( mDefaultCharsetControl, NULL);
 	TheBubbleHelper->SetHelp( mUsedCharsetsControl, NULL);
-	TheBubbleHelper->SetHelp( mSpecialForEachBccControl, NULL);
-	TheBubbleHelper->SetHelp( mPreferUserAgentControl, NULL);
-	TheBubbleHelper->SetHelp( mGenerateIDsControl, NULL);
-	TheBubbleHelper->SetHelp( mMakeQpSafeControl, NULL);
-	TheBubbleHelper->SetHelp( mDefaultForwardTypeControl, NULL);
-	TheBubbleHelper->SetHelp( mDontAttachVCardsControl, NULL);
 	TheBubbleHelper->SetHelp( mHardWrapControl, NULL);
-	TheBubbleHelper->SetHelp( mHardWrapAt78Control, NULL);
-	TheBubbleHelper->SetHelp( mAllow8BitControl, NULL);
-	TheBubbleHelper->SetHelp( mImportExportUtf8Control, NULL);
 	TheBubbleHelper->SetHelp( mLookInPeopleFolderControl, NULL);
 	TheBubbleHelper->SetHelp( mAddNameToPeopleControl, NULL);
 	TheBubbleHelper->SetHelp( mPeopleFolderButton, NULL);
@@ -340,11 +251,9 @@ void BmPrefsMailConstrView::Initialize() {
 	mQuotingStringControl->SetTarget( this);
 	mForwardIntroStrControl->SetTarget( this);
 	mForwardSubjectStrControl->SetTarget( this);
-	mForwardSubjectRxControl->SetTarget( this);
 	mReplyIntroStrControl->SetTarget( this);
 	mReplyIntroStrPrivateControl->SetTarget( this);
 	mReplySubjectStrControl->SetTarget( this);
-	mReplySubjectRxControl->SetTarget( this);
 
 	TheBubbleHelper->SetHelp( 
 		mMaxLineLenControl, 
@@ -400,14 +309,6 @@ void BmPrefsMailConstrView::Initialize() {
 		"	%s  -  expands to the original mail's subject."
 	);
 	TheBubbleHelper->SetHelp( 
-		mForwardSubjectRxControl, 
-		"This string is the regular-expression (perl-style) Beam uses\n"
-		"to determine whether a given subject indicates\n"
-		"that the mail already is a forward.\n"
-		"This way subjects like \n\t'Fwd: Fwd: Fwd: fun-stuff'\n"
-		"can be avoided."
-	);
-	TheBubbleHelper->SetHelp( 
 		mReplyIntroStrControl, 
 		"Here you can enter a string that will \n"
 		"appear at the top of every reply.\n"
@@ -435,14 +336,6 @@ void BmPrefsMailConstrView::Initialize() {
 		"	%s  -  expands to the original mail's subject."
 	);
 	TheBubbleHelper->SetHelp( 
-		mReplySubjectRxControl, 
-		"This string is the regular-expression (perl-style) Beam uses\n"
-		"to determine whether a given subject indicates\n"
-		"that the mail already is a reply.\n"
-		"This way subjects like \n\t'Re: Re: Re: your offer'\n"
-		"can be avoided."
-	);
-	TheBubbleHelper->SetHelp( 
 		mDefaultCharsetControl, 
 		"Here you can select the charset-encoding Beam should use by default."
 	);
@@ -450,55 +343,6 @@ void BmPrefsMailConstrView::Initialize() {
 		mUsedCharsetsControl, 
 		"Here you can select the charsets you are frequently using.\n"
 		"These will then be shown in the first level of every charset-menu."
-	);
-	TheBubbleHelper->SetHelp( 
-		mSpecialForEachBccControl, 
-		"Here you can select the way Beam sends mails with Bcc recipients\n\n"
-		"Checked:\n"
-		"	Beam will send separate mails to each Bcc-recipient, each of which\n"
-		"	will contain exactly one Bcc-header (the current recipient). \n"
-		"	This results in more traffic, but has the advantage that each mail\n"
-		"	actually contains the recipients address in the header, making it \n"
-		"	look less like spam.\n"
-		"Unchecked:\n"
-		"	Beam will send a single mail to all recipients, which does not\n"
-		"	contain any Bcc-headers. \n"
-		"	This results in less network traffic but makes it more likely that\n"
-		"	the mail is filtered right into the spam-folder on the\n"
-		"	recipient's side."
-	);
-	TheBubbleHelper->SetHelp( 
-		mPreferUserAgentControl, 
-		"Email-clients used to identify themselves in a header-field called\n"
-		"'X-Mailer'.\n"
-		"Lately, the use of a header-field named 'UserAgent' became popular.\n"
-		"By checking/unchecking this control you can decide which field\n"
-		"Beam should use."
-	);
-	TheBubbleHelper->SetHelp( 
-		mGenerateIDsControl, 
-		"This control determines if Beam should generate the message-IDs\n"
-		"used to uniquely identify every mail on the net.\n"
-		"If unchecked, the SMTP-server will generate these IDs, which is \n"
-		"usually ok, but makes sorting mails by thread less reliable\n"
-		"(since mail-threading is currently not implemented this doesn't\n"
-		"apply for now)."
-	);
-	TheBubbleHelper->SetHelp( 
-		mMakeQpSafeControl, 
-		"This makes Beam generate quoted-printables that are safe for\n"
-		"EBCDIC-gateways\n (if you don't know what EBCDIC is, don't worry\n"
-		"and leave this as is)."
-	);
-	TheBubbleHelper->SetHelp( 
-		mDefaultForwardTypeControl, 
-		"Here you can select the forwarding-type Beam should use when you\n"
-		"press the 'Forward'-button."
-	);
-	TheBubbleHelper->SetHelp( 
-		mDontAttachVCardsControl, 
-		"Checking this causes Beam to NOT include vcard-attachments\n"
-		"(appended address-info) in a forwarded mail."
 	);
 	TheBubbleHelper->SetHelp( 
 		mHardWrapControl, 
@@ -514,30 +358,6 @@ void BmPrefsMailConstrView::Initialize() {
 		"is able to handle long lines nicely (most modern mailers do, but some\n"
 		"mailing-list software does not)."
 	);
-	TheBubbleHelper->SetHelp( 
-		mHardWrapAt78Control, 
-		"Checking this causes Beam to ensure that no single line of a mail\n"
-		"exceeds the length of 78 characters (as suggested by RFC2822).\n"
-		"This will fix the right margin to at most 78 chars."
-	);
-	TheBubbleHelper->SetHelp( 
-		mAllow8BitControl, 
-		"Checking this causes Beam to allow 8-bit characters\n"
-		"inside a mail-body without encoding them.\n"
-		"This avoids the use of quoted-printables and is usually ok with \n"
-		"modern mail-servers, but it *may* cause problems during transport,\n"
-		"so if you get complaints about strange/missing characters,\n"
-		"try unchecking this."
-	);
-	TheBubbleHelper->SetHelp( 
-		mImportExportUtf8Control, 
-		"If this is checked, every text-attachment that you add to a mail\n"
-		"will be treated as being utf-8 text."
-		"If unchecked, each text-attachment added to a mail will be added\n"
-		"with the encoding currently selected in the mail-edit-window.\n"
-		"This is useful if you need to add text-files to mails that\n"
-		"have non-utf8 character-sets.\n"
-		"If you are in doubt, leave checked.");
 	TheBubbleHelper->SetHelp( 
 		mLookInPeopleFolderControl, 
 		"If checked, Beam will only deal with people-files that\n"
@@ -583,16 +403,6 @@ void BmPrefsMailConstrView::Initialize() {
 	AddItemToMenu( mQuoteFormattingControl->Menu(), 
 						new BMenuItem( BmMail::BM_QUOTE_SIMPLE, 
 											new BMessage(BM_QUOTE_FORMATTING_SELECTED)), 
-						this);
-
-	// add forward-types:
-	AddItemToMenu( mDefaultForwardTypeControl->Menu(), 
-						new BMenuItem( "Attached", 
-											new BMessage(BM_FORWARD_TYPE_SELECTED)), 
-						this);
-	AddItemToMenu( mDefaultForwardTypeControl->Menu(), 
-						new BMenuItem( "Inline", 
-											new BMessage(BM_FORWARD_TYPE_SELECTED)), 
 						this);
 
 	// add undo-modes:
@@ -670,16 +480,9 @@ void BmPrefsMailConstrView::SetupUsedCharsetsPrefs() {
 \*------------------------------------------------------------------------------*/
 void BmPrefsMailConstrView::Update() {
 	mHardWrapControl->SetValueSilently( ThePrefs->GetBool("HardWrapMailText"));
-	mHardWrapAt78Control->SetEnabled( mHardWrapControl->Value());
-	mHardWrapAt78Control->SetValueSilently( 
-		ThePrefs->GetBool( "NeverExceed78Chars", false)
-	);
 	mQuoteFormattingControl->MarkItem( 
 		ThePrefs->GetString( "QuoteFormatting", 
 									BmMail::BM_QUOTE_AUTO_WRAP).String()
-	);
-	mDefaultForwardTypeControl->MarkItem( 
-		ThePrefs->GetString( "DefaultForwardType").String()
 	);
 	mDefaultCharsetControl->ClearMark();
 	mUndoModeControl->MarkItem( 
@@ -688,25 +491,6 @@ void BmPrefsMailConstrView::Update() {
 	BmString charset( ThePrefs->GetString( "DefaultCharset"));
 	mDefaultCharsetControl->MarkItem( charset.String());
 	mDefaultCharsetControl->MenuItem()->SetLabel( charset.String());
-	mAllow8BitControl->SetValueSilently( ThePrefs->GetBool("Allow8BitMime"));
-	mImportExportUtf8Control->SetValueSilently( 
-		ThePrefs->GetBool("ImportExportTextAsUtf8", true)
-	);
-	mSpecialForEachBccControl->SetValueSilently( 
-		ThePrefs->GetBool("SpecialHeaderForEachBcc")
-	);
-	mPreferUserAgentControl->SetValueSilently( 
-		ThePrefs->GetBool("PreferUserAgentOverX-Mailer")
-	);
-	mGenerateIDsControl->SetValueSilently( 
-		ThePrefs->GetBool("GenerateOwnMessageIDs")
-	);
-	mMakeQpSafeControl->SetValueSilently( 
-		ThePrefs->GetBool("MakeQPSafeForEBCDIC")
-	);
-	mDontAttachVCardsControl->SetValueSilently(
-		ThePrefs->GetBool("DoNotAttachVCardsToForward")
-	);
 	mAddNameToPeopleControl->SetValueSilently( 
 		ThePrefs->GetBool("AddPeopleNameToMailAddr", true)
 	);
@@ -725,9 +509,6 @@ void BmPrefsMailConstrView::Update() {
 	mForwardSubjectStrControl->SetTextSilently( 
 		ThePrefs->GetString("ForwardSubjectStr").String()
 	);
-	mForwardSubjectRxControl->SetTextSilently( 
-		ThePrefs->GetString("ForwardSubjectRX").String()
-	);
 	mReplyIntroStrControl->SetTextSilently( 
 		ThePrefs->GetString("ReplyIntroStr").String()
 	);
@@ -736,9 +517,6 @@ void BmPrefsMailConstrView::Update() {
 	);
 	mReplySubjectStrControl->SetTextSilently( 
 		ThePrefs->GetString("ReplySubjectStr").String()
-	);
-	mReplySubjectRxControl->SetTextSilently( 
-		ThePrefs->GetString("ReplySubjectRX").String()
 	);
 	SetupUsedCharsetsMenu();
 }
@@ -782,9 +560,6 @@ void BmPrefsMailConstrView::MessageReceived( BMessage* msg) {
 				else if ( source == mForwardSubjectStrControl)
 					ThePrefs->SetString( "ForwardSubjectStr", 
 												mForwardSubjectStrControl->Text());
-				else if ( source == mForwardSubjectRxControl)
-					ThePrefs->SetString( "ForwardSubjectRX", 
-												mForwardSubjectRxControl->Text());
 				else if ( source == mReplyIntroStrControl)
 					ThePrefs->SetString( "ReplyIntroStr", 
 												mReplyIntroStrControl->Text());
@@ -794,56 +569,6 @@ void BmPrefsMailConstrView::MessageReceived( BMessage* msg) {
 				else if ( source == mReplySubjectStrControl)
 					ThePrefs->SetString( "ReplySubjectStr", 
 												mReplySubjectStrControl->Text());
-				else if ( source == mReplySubjectRxControl)
-					ThePrefs->SetString( "ReplySubjectRX", 
-												mReplySubjectRxControl->Text());
-				NoticeChange();
-				break;
-			}
-			case BM_EACH_BCC_CHANGED: {
-				ThePrefs->SetBool( "SpecialHeaderForEachBcc",
-										 mSpecialForEachBccControl->Value());
-				NoticeChange();
-				break;
-			}
-			case BM_PREFER_USER_AGENT_CHANGED: {
-				ThePrefs->SetBool( "PreferUserAgentOverX-Mailer", 
-										 mPreferUserAgentControl->Value());
-				NoticeChange();
-				break;
-			}
-			case BM_GENERATE_MSGIDS_CHANGED: {
-				ThePrefs->SetBool( "GenerateOwnMessageIDs", 
-										 mGenerateIDsControl->Value());
-				NoticeChange();
-				break;
-			}
-			case BM_QP_SAFE_CHANGED: {
-				ThePrefs->SetBool( "MakeQPSafeForEBCDIC", 
-										 mMakeQpSafeControl->Value());
-				NoticeChange();
-				break;
-			}
-			case BM_ATTACH_VCARDS_CHANGED: {
-				ThePrefs->SetBool( "DoNotAttachVCardsToForward", 
-										 mDontAttachVCardsControl->Value());
-				NoticeChange();
-				break;
-			}
-			case BM_ALLOW_8_BIT_CHANGED: {
-				ThePrefs->SetBool( "Allow8BitMime", mAllow8BitControl->Value());
-				NoticeChange();
-				break;
-			}
-			case BM_IMPORT_EXPORT_UTF8_CHANGED: {
-				ThePrefs->SetBool( "ImportExportTextAsUtf8", 
-										 mImportExportUtf8Control->Value());
-				NoticeChange();
-				break;
-			}
-			case BM_HARD_WRAP_AT_78_CHANGED: {
-				ThePrefs->SetBool( "NeverExceed78Chars", 
-										 mHardWrapAt78Control->Value());
 				NoticeChange();
 				break;
 			}
@@ -862,9 +587,6 @@ void BmPrefsMailConstrView::MessageReceived( BMessage* msg) {
 			case BM_HARD_WRAP_CHANGED: {
 				bool val = mHardWrapControl->Value();
 				ThePrefs->SetBool("HardWrapMailText", val);
-				mHardWrapAt78Control->SetEnabled( val);
-				if (!val)
-					mHardWrapAt78Control->SetValue( false);
 				NoticeChange();
 				break;
 			}
@@ -903,13 +625,6 @@ void BmPrefsMailConstrView::MessageReceived( BMessage* msg) {
 				BMenuItem* item = mQuoteFormattingControl->Menu()->FindMarked();
 				if (item)
 					ThePrefs->SetString( "QuoteFormatting", item->Label());
-				NoticeChange();
-				break;
-			}
-			case BM_FORWARD_TYPE_SELECTED: {
-				BMenuItem* item = mDefaultForwardTypeControl->Menu()->FindMarked();
-				if (item)
-					ThePrefs->SetString( "DefaultForwardType", item->Label());
 				NoticeChange();
 				break;
 			}

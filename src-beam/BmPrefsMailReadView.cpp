@@ -114,10 +114,6 @@ BmPrefsMailReadView::BmPrefsMailReadView()
 			new Space( minimax(0,10,0,10)),
 			new MBorder( M_LABELED_BORDER, 10, (char*)"Mail-Attachment Options",
 				new VGroup(
-					mMimeTypeTrustInfoControl = new BmTextControl( 
-						"Mimetype trust info:"
-					),
-					new Space( minimax(0,5,0,5)),
 					mShowDecodedLengthControl = new BmCheckControl( 
 						"Show Real (Decoded) Length", 
 						new BMessage(BM_SHOW_DECODED_LENGTH_CHANGED), 
@@ -131,14 +127,13 @@ BmPrefsMailReadView::BmPrefsMailReadView()
 		);
 	mGroupView->AddChild( dynamic_cast<BView*>(view));
 	
-	float divider = mHeaderListSmallControl->Divider();
-	divider = MAX( divider, mHeaderListLargeControl->Divider());
-	divider = MAX( divider, mMarkAsReadDelayControl->Divider());
-	divider = MAX( divider, mTimeModeInHeaderViewControl->Divider());
-	mHeaderListSmallControl->SetDivider( divider);
-	mHeaderListLargeControl->SetDivider( divider);
-	mMarkAsReadDelayControl->SetDivider( divider);
-	mTimeModeInHeaderViewControl->SetDivider( divider);
+	DivideSame( 
+		mHeaderListSmallControl,
+		mHeaderListLargeControl,
+		mMarkAsReadDelayControl,
+		mTimeModeInHeaderViewControl,
+		NULL
+	);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -148,7 +143,6 @@ BmPrefsMailReadView::BmPrefsMailReadView()
 BmPrefsMailReadView::~BmPrefsMailReadView() {
 	TheBubbleHelper->SetHelp( mHeaderListSmallControl, NULL);
 	TheBubbleHelper->SetHelp( mHeaderListLargeControl, NULL);
-	TheBubbleHelper->SetHelp( mMimeTypeTrustInfoControl, NULL);
 	TheBubbleHelper->SetHelp( mMarkAsReadDelayControl, NULL);
 	TheBubbleHelper->SetHelp( mUseSwatchTimeInRefViewControl, NULL);
 	TheBubbleHelper->SetHelp( mSelectNextOnDeleteControl, NULL);
@@ -180,21 +174,6 @@ void BmPrefsMailReadView::Initialize() {
 		"and separate them by a ',' (comma).\n"
 		"If put a '/' (slash) between two fieldnames, the first field will\n"
 		"be displayed, but if that is empty, the second will be used."
-	);
-	TheBubbleHelper->SetHelp( 
-		mMimeTypeTrustInfoControl, 
-		"When you double-click an attachment, Beam checks \n"
-		"if the mimetype of the attachment can be trusted.\n"
-		"Here you can define how Beam should treat different mimetypes.\n"
-		"Each single entry is of the form: <mtSubString:action>\n"
-		"where mtSubString is compared against the beginning of the \n"
-		"attachment's mimetype. If the mimetype matches, the action given\n"
-		"in that entry is executed:\n"
-		"	T means 'trust', i.e. the attachment is immediately opened.\n"
-		"	W means 'warn', i.e. Beam asks the user before opening the attachment.\n"
-		"The order of the entries is important, so that in the default\n"
-		"settings, the mimetype application/pdf has to be given trust before\n"
-		"the mimetype application can be set to warn-mode."
 	);
 	TheBubbleHelper->SetHelp( 
 		mMarkAsReadDelayControl, 
@@ -243,7 +222,6 @@ void BmPrefsMailReadView::Initialize() {
 	mHeaderListSmallControl->SetTarget( this);
 	mHeaderListLargeControl->SetTarget( this);
 	mMarkAsReadDelayControl->SetTarget( this);
-	mMimeTypeTrustInfoControl->SetTarget( this);
 
 	// add time-modes:
 	const char* timeModes[] = {
@@ -287,9 +265,6 @@ void BmPrefsMailReadView::Update() {
 	mHeaderListSmallControl->SetTextSilently( 
 		ThePrefs->GetString("HeaderListSmall").String()
 	);
-	mMimeTypeTrustInfoControl->SetTextSilently( 
-		ThePrefs->GetString("MimeTypeTrustInfo").String()
-	);
 	mTimeModeInHeaderViewControl->MarkItem( 
 		ThePrefs->GetString("TimeModeInHeaderView","local").String()
 	);
@@ -331,11 +306,6 @@ void BmPrefsMailReadView::MessageReceived( BMessage* msg) {
 					ThePrefs->SetString(
 						"HeaderListLarge", 
 						mHeaderListLargeControl->Text()
-					);
-				else if ( source == mMimeTypeTrustInfoControl)
-					ThePrefs->SetString(
-						"MimeTypeTrustInfo", 
-						mMimeTypeTrustInfoControl->Text()
 					);
 				else if ( source == mMarkAsReadDelayControl)
 					ThePrefs->SetInt(
