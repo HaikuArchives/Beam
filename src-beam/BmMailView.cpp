@@ -247,6 +247,7 @@ BmMailView::BmMailView( minimax minmax, BRect frame, bool outbound)
 	,	mReadRunner( NULL)
 	,	mShowingUrlCursor( false)
 	,	mHaveMail( false)
+	,	mDisplayInProgress( false)
 {
 	mHeaderView = new BmMailHeaderView( NULL);
 	if (outbound)
@@ -716,7 +717,7 @@ bool BmMailView::AcceptsDrop( const BMessage*) {
 		-	
 \*------------------------------------------------------------------------------*/
 bool BmMailView::CanEndLine( int32 offset) {
-	if (ByteAt( offset) == '/')
+	if (strchr( "/&=", ByteAt( offset)) != NULL)
 		return false;
 	return inherited::CanEndLine( offset);
 }
@@ -784,6 +785,7 @@ void BmMailView::ShowMail( BmMailRef* ref, bool async) {
 			return;
 		}
 		mCurrMail = BmMail::CreateInstance( ref);
+		mDisplayInProgress = true;
 		StartJob( mCurrMail.Get(), async);
 		if (async)
 			ContainerView()->SetBusy();
@@ -811,6 +813,7 @@ void BmMailView::ShowMail( BmMail* mail, bool async) {
 			return;
 		}
 		mCurrMail = mail;
+		mDisplayInProgress = true;
 		StartJob( mCurrMail.Get(), async);
 		if (async)
 			ContainerView()->SetBusy();
@@ -869,23 +872,23 @@ void BmMailView::JobIsDone( bool completed) {
 					displayBuf << "-- \n" << body->Signature();
 				}
 				displayText.Adopt( displayBuf.TheString());
-				if (!mOutbound) {
-					// highlight URLs:
-					Regexx rx;
-					int32 count;
-					if ((count = rx.exec( 
-						displayText, 
-						"(https?://|ftp://|nntp://|file://|mailto:)[^][<>(){}|\"\\s]+", 
-						Regexx::nocase|Regexx::global|Regexx::newline
-					)) > 0) {
-						for( int i=0; i<count; ++i) {
-							int32 start = rx.match[i].start();
-							int32 end = start+rx.match[i].Length();
-							BmTextRunIter iter = TextRunInfoAt( start);
-							BmTextRunInfo runInfo = iter->second;
-							mTextRunMap[start] = BmTextRunInfo( MedMetallicBlue, true);
-							mTextRunMap[end] = runInfo;
-						}
+			}
+			if (!mOutbound) {
+				// highlight URLs:
+				Regexx rx;
+				int32 count;
+				if ((count = rx.exec( 
+					displayText, 
+					"(https?://|ftp://|nntp://|file://|mailto:)[^][<>(){}|\"\\s]+", 
+					Regexx::nocase|Regexx::global|Regexx::newline
+				)) > 0) {
+					for( int i=0; i<count; ++i) {
+						int32 start = rx.match[i].start();
+						int32 end = start+rx.match[i].Length();
+						BmTextRunIter iter = TextRunInfoAt( start);
+						BmTextRunInfo runInfo = iter->second;
+						mTextRunMap[start] = BmTextRunInfo( MedMetallicBlue, true);
+						mTextRunMap[end] = runInfo;
 					}
 				}
 			}
@@ -898,7 +901,7 @@ void BmMailView::JobIsDone( bool completed) {
 		text_run_array* textRunArray 
 			= (text_run_array*)malloc( sizeof(int32)+trsiz*mTextRunMap.size());
 		if (!textRunArray)
-			return;
+			goto out;
 		textRunArray->count = mTextRunMap.size();
 		int i=0;
 		BmTextRunIter iter;
@@ -936,6 +939,17 @@ void BmMailView::JobIsDone( bool completed) {
 		ContainerView()->UnsetBusy();
 		SendNoticesIfNeeded( false);
 	}
+out:
+	mDisplayInProgress = false;
+}
+
+/*------------------------------------------------------------------------------*\
+	IsDisplayComplete()
+		-	
+\*------------------------------------------------------------------------------*/
+bool BmMailView::IsDisplayComplete() {
+	return !IsJobRunning() && !mBodyPartView->IsJobRunning()
+			 && !mDisplayInProgress;
 }
 
 /*------------------------------------------------------------------------------*\

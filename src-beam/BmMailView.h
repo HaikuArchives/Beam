@@ -120,6 +120,7 @@ public:
 	bool IsOverURL( BPoint point);
 	BmString GetTextForTextrun( BmTextRunIter run);
 	void SendNoticesIfNeeded( bool haveMail);
+	bool IsDisplayComplete();
 
 	// overrides of BTextView base:
 	bool AcceptsDrop( const BMessage* msg);
@@ -137,7 +138,6 @@ public:
 	
 	// overrides of BmController base:
 	BHandler* GetControllerHandler()		{ return this; }
-	void JobIsDone( bool completed);
 	void DetachModel();
 
 	// getters:
@@ -157,6 +157,9 @@ public:
 	inline void ShowRaw( bool b) 			{ mShowRaw = b; }
 	inline void ShowInlinesSeparately( bool b)	
 													{ mShowInlinesSeparately = b; }
+
+protected:
+	void JobIsDone( bool completed);
 
 private:
 	void ShowMenu( BPoint point);
@@ -183,6 +186,7 @@ private:
 	BFont mFont;
 	bool mShowRaw;
 	bool mShowInlinesSeparately;
+	bool mDisplayInProgress;
 
 	// Hide copy-constructor and assignment:
 	BmMailView( const BmMailView&);
