@@ -736,8 +736,12 @@ BmString BmListModel::RenameItem( const BmString oldKey, const BmString suggeste
 	// find unique key for item:
 	BmString newKey=suggestedNewKey;
 	BmRef<BmListModelItem> doubleItem;
-	for( int32 i = 1; (doubleItem=FindItemByKey( newKey)); ++i) {
-		newKey = suggestedNewKey+"("<<i<<")";
+	if (oldKey != newKey) {
+		// if key has actually changed, we check if the new key already exists
+		for( int32 i = 1; (doubleItem=FindItemByKey( newKey)); ++i) {
+			newKey = suggestedNewKey+"("<<i<<")";
+							// find a unique new key
+		}
 	}
 	// now find item under old key...
 	BmRef<BmListModelItem> item( FindItemByKey( oldKey));
@@ -748,7 +752,7 @@ BmString BmListModel::RenameItem( const BmString oldKey, const BmString suggeste
 	item->RenameRef( newKey.String());
 	item->Key( newKey);
 	mModelItemMap[newKey] = item.Get();
-	TellModelItemUpdated( item.Get(), UPD_ALL | UPD_SORT, oldKey);
+	TellModelItemUpdated( item.Get(), UPD_KEY | UPD_SORT, oldKey);
 	return newKey;
 }
 

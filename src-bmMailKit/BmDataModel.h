@@ -228,6 +228,7 @@ public:
 	inline size_t size() const						{ return mSubItemMap.size(); }
 	inline bool empty() const						{ return mSubItemMap.empty(); }
 	inline const BmString& Key() const			{ return mKey; }
+	virtual const BmString& DisplayKey() const	{ return mKey; }
 	inline BmRef<BmListModelItem> Parent() const		{ return mParent; }
 	BmRef<BmListModel> ListModel() const;
 
