@@ -77,9 +77,11 @@
 	BmPrefsWin
 \********************************************************************************/
 
-#define BM_APPLY_CHANGES   'bmWA'
-#define BM_REVERT_CHANGES  'bmWR'
-#define BM_SET_DEFAULTS    'bmWD'
+enum {
+	BM_APPLY_CHANGES   = 'bmWA',
+	BM_REVERT_CHANGES  = 'bmWR',
+	BM_SET_DEFAULTS    = 'bmWD'
+};
 
 BmPrefsWin* BmPrefsWin::theInstance = NULL;
 
@@ -165,6 +167,7 @@ BmPrefsWin::BmPrefsWin()
 	AddChild( dynamic_cast<BView*>(mOuterGroup));
 	mApplyButton->SetEnabled( false);
 	mRevertButton->SetEnabled( false);
+	mPrefsListView->Select( 0);
 }
 
 /*------------------------------------------------------------------------------*\
