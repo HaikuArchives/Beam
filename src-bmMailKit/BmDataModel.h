@@ -187,7 +187,8 @@ private:
 typedef uint32 BmUpdFlags;
 const BmUpdFlags UPD_EXPANDER 	= 1<<0;
 const BmUpdFlags UPD_KEY		 	= 1<<1;
-const BmUpdFlags UPD_ALL 			= 0xFFFFFFFF;
+const BmUpdFlags UPD_ALL 			= 0x7FFFFFFF;
+const BmUpdFlags UPD_SORT			= 1<<31;
 
 class BmListModelItem;
 typedef map< BmString, BmRef<BmListModelItem> > BmModelItemMap;
