@@ -112,11 +112,6 @@ Base64DecoderTest::SimpleTest()
 	DecodeBase64AndCheck( "YWJjZA===",
 								 "abcd");
 
-	// check what happens with '=' in the middle, should be ignored:
-	NextSubTest(); 
-	DecodeBase64AndCheck( "YW=JjZA==",
-								 "abcd");
-
 	// some more robustness checks:
 	NextSubTest(); 
 	DecodeBase64AndCheck( "=",
@@ -129,17 +124,22 @@ Base64DecoderTest::SimpleTest()
 
 	// some more robustness checks:
 	NextSubTest(); 
+	DecodeBase64AndCheck( "++==",
+								 "\xfb");
+
+	// some more robustness checks:
+	NextSubTest(); 
+	DecodeBase64AndCheck( "+===",
+								 "\xf8");
+
+	// some more robustness checks:
+	NextSubTest(); 
 	DecodeBase64AndCheck( "++",
 								 "\xfb");
 
 	// some more robustness checks:
 	NextSubTest(); 
 	DecodeBase64AndCheck( " =\r\t!",
-								 "");
-
-	// some more robustness checks:
-	NextSubTest(); 
-	DecodeBase64AndCheck( "+===",
 								 "");
 
 	// check normal decoding:
@@ -157,6 +157,16 @@ Base64DecoderTest::SimpleTest()
 	DecodeBase64AndCheck( "U2ltcGxlIGVu!§$%&()Y29kaW5nIMOkw7bDvMOf",
 								 "Simple encoding äöüß");
 
+	// check that decoding correctly handles embedded padding chars
+	// by resetting the state (the result in this test is iso-2022-jp text):
+	NextSubTest(); 
+	DecodeBase64AndCheck( "W1lhaG9vIRskQiVHJWolUCE8GyhCXQ==IBskQiJjMEIbKEI="
+								 "GyRCPzQiZDpHQzskR0IoRnwlLSVjJUMlNyVzGyhC"
+								 "GyRCJTAhKiUtJWMlQyU3JWUlbyVzGyhC",
+								 "[Yahoo!\x1b$B%G%j%P!<\x1b(B] \x1b$B\"c0B\x1b(B"
+								 "\x1b$B?4\"d:GC;$GB(F|%-%c%C%7%s\x1b(B\x1b$B%0!"
+								 "*%-%c%C%7%e%o%s\x1b(B");
+
 	// complete alphabet, 255 characters (1-255):
 	BmString alphabet;
 	for( int i = 0; i<16; ++i)
@@ -171,6 +181,7 @@ Base64DecoderTest::SimpleTest()
 		"w8fLz9PX29/j5+vv8/f7/",
 		alphabet
 	);
+	
 }
 
 /*------------------------------------------------------------------------------*\
