@@ -119,6 +119,7 @@ public:
 
 	// overrides of listitem base:
 	void UpdateView( BmUpdFlags flags);
+	const int32 GetNumValueForColumn( int32 column_index) const;
 
 private:
 	// Hide copy-constructor and assignment:

@@ -205,7 +205,7 @@ void BmFilterChainView::MessageReceived( BMessage* msg) {
 
 enum Columns2 {
 	COL2_POS = 0,
-	COL2_KEY
+	COL2_NAME
 };
 
 /*------------------------------------------------------------------------------*\
@@ -244,6 +244,21 @@ void BmChainedFilterItem::UpdateView( BmUpdFlags flags) {
 	}
 }
 
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+const int32 BmChainedFilterItem::GetNumValueForColumn( int32 column_index) const {
+	BmChainedFilter* filter( dynamic_cast<BmChainedFilter*>( ModelItem()));
+	if (column_index == COL2_POS) {
+		// return numerical representation of key (the position):
+		return atol( filter->Key().String());	
+	} else {
+		return 0;		// we don't know this number-column !?!
+	}
+}
+
+
 
 
 /********************************************************************************\
@@ -276,8 +291,10 @@ BmChainedFilterView::BmChainedFilterView( minimax minmax, int32 width, int32 hei
 					B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE,
 					B_FOLLOW_TOP_BOTTOM, true, true, true, B_FANCY_BORDER);
 
-	AddColumn( new CLVColumn( "Pos", 40.0, CLV_SORT_KEYABLE|CLV_RIGHT_JUSTIFIED|flags, 40.0));
-	AddColumn( new CLVColumn( "Name", 250.0, flags, 200.0));
+	AddColumn( new CLVColumn( "Pos", 20.0, 
+									  flags|CLV_SORT_KEYABLE|CLV_RIGHT_JUSTIFIED|CLV_COLDATA_NUMBER|CLV_HIDDEN,
+									  20.0));
+	AddColumn( new CLVColumn( "Name", 200.0, flags, 80.0));
 
 	SetSortFunction( CLVEasyItem::CompareItems);
 	SetSortKey( COL2_POS);
@@ -567,7 +584,9 @@ void BmPrefsFilterChainView::MessageReceived( BMessage* msg) {
 				msg->FindPointer( "source", (void**)&srcView);
 				BmTextControl* source = dynamic_cast<BmTextControl*>( srcView);
 				if (mCurrFilterChain && source == mChainControl) {
-					TheFilterChainList->RenameItem( mCurrFilterChain->Key(), mChainControl->Text());
+					// rename filter-chain:
+					TheFilterChainList->RenameItem( mCurrFilterChain->Key(), 
+														     mChainControl->Text());
 					NoticeChange();
 				}
 				break;
@@ -662,8 +681,11 @@ void BmPrefsFilterChainView::UpdateState() {
 	bool haveChained = (mCurrChainedFilter != NULL);
 	bool haveAvailable = (mCurrAvailableFilter != NULL);
 
-	mChainControl->SetEnabled( haveChain);
-	mRemoveButton->SetEnabled( haveChain && mCurrFilterChain->Key()!=BM_DefaultItemLabel
+	mChainControl->SetEnabled( haveChain
+										&& mCurrFilterChain->Key()!=BM_DefaultItemLabel
+										&& mCurrFilterChain->Key()!=BM_DefaultOutItemLabel);
+	mRemoveButton->SetEnabled( haveChain 
+										&& mCurrFilterChain->Key()!=BM_DefaultItemLabel
 										&& mCurrFilterChain->Key()!=BM_DefaultOutItemLabel);
 	mMoveUpButton->SetEnabled( haveChain && haveChained);
 	mMoveDownButton->SetEnabled( haveChain && haveChained);
