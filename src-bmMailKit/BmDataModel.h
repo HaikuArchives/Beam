@@ -229,10 +229,6 @@ public:
 	virtual int16 ArchiveVersion() const = 0;
 	virtual void IntegrateAppendedArchive( BMessage* archive);
 
-#ifdef BM_LOGGING
-	virtual int32 ObjectSize( bool addSizeofThis=true) const;
-#endif
-
 	// getters:
 	inline BmModelItemMap::const_iterator begin() const	
 													{ return mSubItemMap.begin(); }
@@ -300,6 +296,8 @@ class BmListModel : public BmJobModel, public BArchivable {
 	};
 	typedef vector< BmForeignKey> BmForeignKeyVect;
 	
+	typedef set< BmMenuController*> BmMenuControllerSet;
+
 protected:
 	static const char* const MSG_VERSION;
 
@@ -376,7 +374,7 @@ protected:
 	bool mNeedsStore;
 	BmForeignKeyVect mForeignKeyVect;
 
-	BList mInterestedMenuControllers;
+	BmMenuControllerSet mInterestedMenuControllers;
 							// list of BMenuControllers viewing this list for changes
 
 

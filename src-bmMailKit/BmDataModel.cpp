@@ -693,27 +693,6 @@ BmRef<BmListModel> BmListModelItem::ListModel() const	{
 	return mListModel.Get(); 
 }
 
-#ifdef BM_LOGGING
-/*------------------------------------------------------------------------------*\
-	ObjectSize()
-		-	gives a rough determination of how many bytes this object occupies
-		-	N.B.: The ListModel this item lives in must be locked when calling
-			this method, otherwise "bad things"(TM) happen!
-\*------------------------------------------------------------------------------*/
-int32 BmListModelItem::ObjectSize( bool addSizeofThis) const {
-	int32 objSize = 
-		(addSizeofThis ? sizeof( *this) : 0)
-		+		mKey.Length()+1;
-
-	BmModelItemMap::const_iterator iter;
-	for( iter = begin(); iter != end(); ++iter) {
-		objSize += sizeof( BmString) + iter->first.Length() 
-						+ iter->second->ObjectSize();
-	}
-	return objSize;
-}
-#endif
-
 
 
 /********************************************************************************\
@@ -1045,13 +1024,11 @@ void BmListModel::UpdateMenuControllers() {
 		BM_THROW_RUNTIME( 
 			ModelNameNC() << ":UpdateMenuControllers(): Unable to get lock"
 		);
-	int32 count=mInterestedMenuControllers.CountItems();
-	for( int32 i=0; i<count; ++i) {
-		BmMenuController* mc = static_cast< BmMenuController*>( 
-			mInterestedMenuControllers.ItemAt( i)
-		);
-		if (mc)
-			mc->UpdateItemList();
+	BmMenuControllerSet::iterator iter;
+	for(	iter = mInterestedMenuControllers.begin(); 
+			iter != mInterestedMenuControllers.end(); 
+			++iter) {
+		(*iter)->UpdateItemList();
 	}
 }
 
@@ -1065,8 +1042,7 @@ void BmListModel::AddMenuController( BmMenuController* mc) {
 		BM_THROW_RUNTIME( 
 			ModelNameNC() << ":AddMenuController(): Unable to get lock"
 		);
-	if (!mInterestedMenuControllers.HasItem( mc))
-		mInterestedMenuControllers.AddItem( mc);
+	mInterestedMenuControllers.insert( mc);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -1079,7 +1055,7 @@ void BmListModel::RemoveMenuController( BmMenuController* mc) {
 		BM_THROW_RUNTIME( 
 			ModelNameNC() << ":RemoveMenuController(): Unable to get lock"
 		);
-	mInterestedMenuControllers.RemoveItem( mc);
+	mInterestedMenuControllers.erase( mc);
 }
 
 /*------------------------------------------------------------------------------*\
