@@ -884,6 +884,11 @@ void BmMailView::JobIsDone( bool completed) {
 				BM_LOG2( BM_LogMailParse, 
 							BmString("extracting parts to be displayed from "
 										"body-structure"));
+				BmAutolockCheckGlobal lock( body->ModelLocker());
+				if (!lock.IsLocked())
+					BM_THROW_RUNTIME( 
+						body->ModelNameNC() << ": Unable to get lock"
+					);
 				BmModelItemMap::const_iterator iter;
 				for( iter=body->begin(); iter != body->end(); ++iter) {
 					BmBodyPart* bodyPart 

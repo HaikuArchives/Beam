@@ -137,39 +137,14 @@ BMenuItem* CreateSubMenuItem( const char* label, BMessage* msg,
 \*------------------------------------------------------------------------------*/
 typedef map< BmString, BmListModelItem* > BmSortedItemMap;
 
-void AddListToMenu( BmListModel* list, BMenu* menu, BMessage* msgTemplate,
-						  BHandler* msgTarget, BFont* font, bool skipFirstLevel,
-						  bool addNoneItem, const BmString shortcuts) {
-	BmSortedItemMap sortedMap;
-	if (list) {
-		BmModelItemMap::const_iterator iter;
-		for( iter = list->begin();  iter != list->end();  ++iter) {
-			BmString sortKey = iter->second->DisplayKey();
-			sortedMap[sortKey.ToLower()] = iter->second.Get();
-		}
-		if (addNoneItem && menu) {
-			BMenuItem* noneItem = new BMenuItem( BM_NoItemLabel.String(),
-															 new BMessage( *msgTemplate));
-			noneItem->SetTarget( msgTarget);
-			menu->AddItem( noneItem);
-		}
-		int s=0;
-		BmSortedItemMap::const_iterator siter;
-		for( siter = sortedMap.begin(); siter != sortedMap.end(); ++siter, ++s) {
-			if (s<shortcuts.Length())
-				AddListItemToMenu( siter->second, menu, msgTemplate, msgTarget, 
-										 font, skipFirstLevel, shortcuts[s]);
-			else
-				AddListItemToMenu( siter->second, menu, msgTemplate, msgTarget, 
-										 font, skipFirstLevel);
-		}
-	}
-}
-								
 /*------------------------------------------------------------------------------*\
 	AddListItemToMenu()
 		-	
 \*------------------------------------------------------------------------------*/
+void AddListItemToMenu( BmListModelItem* item, BMenu* menu, 
+								BMessage* msgTemplate, BHandler* msgTarget, 
+								BFont* font, bool skipThisButAddChildren=false, 
+								char shortcut=0);
 void AddListItemToMenu( BmListModelItem* item, BMenu* menu, 
 								BMessage* msgTemplate, BHandler* msgTarget,
 								BFont* font, bool skipThisButAddChildren, 
@@ -216,3 +191,38 @@ void AddListItemToMenu( BmListModelItem* item, BMenu* menu,
 		}
 	}
 }
+
+void AddListToMenu( BmListModel* list, BMenu* menu, BMessage* msgTemplate,
+						  BHandler* msgTarget, BFont* font, bool skipFirstLevel,
+						  bool addNoneItem, const BmString shortcuts) {
+	BmSortedItemMap sortedMap;
+	if (list) {
+		BmAutolockCheckGlobal lock( list->ModelLocker());
+		if (!lock.IsLocked())
+			BM_THROW_RUNTIME( 
+				list->ModelNameNC() << ": Unable to get lock"
+			);
+		BmModelItemMap::const_iterator iter;
+		for( iter = list->begin();  iter != list->end();  ++iter) {
+			BmString sortKey = iter->second->DisplayKey();
+			sortedMap[sortKey.ToLower()] = iter->second.Get();
+		}
+		if (addNoneItem && menu) {
+			BMenuItem* noneItem = new BMenuItem( BM_NoItemLabel.String(),
+															 new BMessage( *msgTemplate));
+			noneItem->SetTarget( msgTarget);
+			menu->AddItem( noneItem);
+		}
+		int s=0;
+		BmSortedItemMap::const_iterator siter;
+		for( siter = sortedMap.begin(); siter != sortedMap.end(); ++siter, ++s) {
+			if (s<shortcuts.Length())
+				AddListItemToMenu( siter->second, menu, msgTemplate, msgTarget, 
+										 font, skipFirstLevel, shortcuts[s]);
+			else
+				AddListItemToMenu( siter->second, menu, msgTemplate, msgTarget, 
+										 font, skipFirstLevel);
+		}
+	}
+}
+								

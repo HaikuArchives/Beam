@@ -194,6 +194,11 @@ bool BmRoster::AskUserForPopAcc( const BmString& accName, BmString& popAccName)
    									  "in authentication\nfor SMTP-account <" )
 	   				   << accName << ">:";
 	BList list;
+	BmAutolockCheckGlobal lock( ThePopAccountList->ModelLocker());
+	if (!lock.IsLocked())
+		BM_THROW_RUNTIME( 
+			ThePopAccountList->ModelNameNC() << ": Unable to get lock"
+		);
 	BmModelItemMap::const_iterator iter;
 	for(	iter = ThePopAccountList->begin(); 
 			iter != ThePopAccountList->end(); ++iter) {
@@ -411,26 +416,41 @@ void BmRoster::RebuildLogMenu( BmMenuControllerBase* logMenu) {
 		logMenu->AddItem( new BMenuItem( logNames[i], logMsg));
 	}
 	// POP
-	BMenu* popMenu = new BMenu( "POP-Accounts");
-	BmModelItemMap::const_iterator iter;
-	for( 	iter = ThePopAccountList->begin(); 
-			iter != ThePopAccountList->end(); ++iter) {
-		BmString logname = BmString("POP_") + iter->second->Key();
-		BMessage* logMsg( new BMessage( logMenu->MsgTemplate()->what));
-		logMsg->AddString( "logfile", logname.String());
-		popMenu->AddItem( new BMenuItem( iter->second->Key().String(), logMsg));
+	{
+		BMenu* popMenu = new BMenu( "POP-Accounts");
+		BmAutolockCheckGlobal lock( ThePopAccountList->ModelLocker());
+		if (!lock.IsLocked())
+			BM_THROW_RUNTIME( 
+				ThePopAccountList->ModelNameNC() << ": Unable to get lock"
+			);
+		BmModelItemMap::const_iterator iter;
+		for( 	iter = ThePopAccountList->begin(); 
+				iter != ThePopAccountList->end(); ++iter) {
+			BmString logname = BmString("POP_") + iter->second->Key();
+			BMessage* logMsg( new BMessage( logMenu->MsgTemplate()->what));
+			logMsg->AddString( "logfile", logname.String());
+			popMenu->AddItem( new BMenuItem( iter->second->Key().String(), logMsg));
+		}
+		logMenu->AddItem( popMenu);
 	}
-	logMenu->AddItem( popMenu);
 	// SMTP
-	BMenu* smtpMenu = new BMenu( "SMTP-Accounts");
-	for( 	iter = TheSmtpAccountList->begin(); 
-			iter != TheSmtpAccountList->end(); ++iter) {
-		BmString logname = BmString("SMTP_") + iter->second->Key();
-		BMessage* logMsg( new BMessage( logMenu->MsgTemplate()->what));
-		logMsg->AddString( "logfile", logname.String());
-		smtpMenu->AddItem( new BMenuItem( iter->second->Key().String(), logMsg));
+	{
+		BMenu* smtpMenu = new BMenu( "SMTP-Accounts");
+		BmAutolockCheckGlobal lock( TheSmtpAccountList->ModelLocker());
+		if (!lock.IsLocked())
+			BM_THROW_RUNTIME( 
+				TheSmtpAccountList->ModelNameNC() << ": Unable to get lock"
+			);
+		BmModelItemMap::const_iterator iter;
+		for( 	iter = TheSmtpAccountList->begin(); 
+				iter != TheSmtpAccountList->end(); ++iter) {
+			BmString logname = BmString("SMTP_") + iter->second->Key();
+			BMessage* logMsg( new BMessage( logMenu->MsgTemplate()->what));
+			logMsg->AddString( "logfile", logname.String());
+			smtpMenu->AddItem( new BMenuItem( iter->second->Key().String(), logMsg));
+		}
+		logMenu->AddItem( smtpMenu);
 	}
-	logMenu->AddItem( smtpMenu);
 	TheLogHandler->mLocker.Unlock();
 }
 

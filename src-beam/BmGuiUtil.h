@@ -57,9 +57,5 @@ void AddListToMenu( BmListModel* list, BMenu* menu, BMessage* msgTemplate,
 						  BHandler* msgTarget, BFont* font, 
 						  bool skipFirstLevel=false,
 						  bool addNoneItem=false, const BmString shortcuts="");
-void AddListItemToMenu( BmListModelItem* item, BMenu* menu, 
-								BMessage* msgTemplate, BHandler* msgTarget, 
-								BFont* font, bool skipThisButAddChildren=false, 
-								char shortcut=0);
 
 #endif

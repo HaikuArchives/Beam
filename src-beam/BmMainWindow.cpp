@@ -80,6 +80,9 @@ bool BmMainWindow::IsAlive() {
 
 void UpdateAccounts( BmToolbarButton* button)
 {
+	BmAutolockCheckGlobal lock( ThePopAccountList->ModelLocker());
+	if (!lock.IsLocked())
+		BM_THROW_RUNTIME( "UpdateAccounts: Unable to get lock");
 	BmModelItemMap::const_iterator iter;
 	for( 	iter = ThePopAccountList->begin(); 
 			iter != ThePopAccountList->end(); ++iter) {
