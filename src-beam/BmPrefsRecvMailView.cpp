@@ -493,11 +493,11 @@ void BmPrefsRecvMailView::Initialize() {
 	TheBubbleHelper->SetHelp( 
 		mAuthControl, 
 		"Here you can select the authentication type to use:\n"
-		"<AUTO>		- means the best (safest) available mode is used automatically.\n"
-		"DIGEST-MD5 - is safe, neither password nor user or sent in clear.\n"
-		"CRAM-MD5   - is safe, neither password nor user or sent in clear.\n"
-		"APOP       - is somewhat safe, password is encrypted (but user isn't).\n"
-		"POP3       - is very unsafe, password is sent in cleartext"
+		"<auto>		- means the best (safest) available mode is used automatically.\n"
+		"DIGEST-MD5	- is safe, neither password nor user are sent in cleartext.\n"
+		"CRAM-MD5		- is safe, neither password nor user are sent in cleartext.\n"
+		"APOP			- is somewhat safe, password is encrypted (but user isn't).\n"
+		"POP3			- is very unsafe, password is sent in cleartext"
 	);
 	TheBubbleHelper->SetHelp( 
 		mHomeFolderControl, 

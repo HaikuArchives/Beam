@@ -415,13 +415,13 @@ void BmPrefsSendMailView::Initialize() {
 	TheBubbleHelper->SetHelp( 
 		mAuthControl, 
 		"Here you can select the authentication type to use:\n"
-		"<AUTO> means the best (safest) available mode is used automatically.\n"
-		"DIGEST-MD5 is safe, neither password nor user are sent in cleartext.\n"
-		"CRAM-MD5 is safe, neither password nor user are sent in cleartext.\n"
-		"PLAIN is a simple auth-mode which sends passwords in cleartext\n"
-		"LOGIN is another simple auth-mode that sends passwords in cleartext\n"
-		"SMTP-AFTER-POP does SMTP-authentication via the use of a POP3-server."
-		"<none> is the simplest mode, no authentication at all.\n"
+		"<auto>		- means the best (safest) available mode is used automatically.\n"
+		"DIGEST-MD5	- is safe, neither password nor user are sent in cleartext.\n"
+		"CRAM-MD5		- is safe, neither password nor user are sent in cleartext.\n"
+		"PLAIN		- is a simple auth-mode which sends passwords in cleartext\n"
+		"LOGIN		- is another simple auth-mode that sends passwords in cleartext\n"
+		"SMTP-AFTER-POP	- does SMTP-authentication via the use of a POP3-server.\n"
+		"<none> 		- is the simplest mode, no authentication at all."
 	);
 	TheBubbleHelper->SetHelp( 
 		mPopControl, 

@@ -53,9 +53,9 @@ const char* const BmSmtpAccount::MSG_AUTH_METHOD = "bm:authmethod";
 const char* const BmSmtpAccount::MSG_PORT_NR = 		"bm:portnr";
 const char* const BmSmtpAccount::MSG_ACC_FOR_SAP = "bm:accForSmtpAfterPop";
 const char* const BmSmtpAccount::MSG_STORE_PWD = 	"bm:storepwd";
-const int16 BmSmtpAccount::nArchiveVersion = 5;
+const int16 BmSmtpAccount::nArchiveVersion = 6;
 
-const char* const BmSmtpAccount::AUTH_AUTO = 			"<AUTO>";
+const char* const BmSmtpAccount::AUTH_AUTO = 			"<auto>";
 const char* const BmSmtpAccount::AUTH_SMTP_AFTER_POP= "SMTP-AFTER-POP";
 const char* const BmSmtpAccount::AUTH_PLAIN = 			"PLAIN";
 const char* const BmSmtpAccount::AUTH_LOGIN = 			"LOGIN";
@@ -97,8 +97,8 @@ BmSmtpAccount::BmSmtpAccount( BMessage* archive, BmSmtpAccountList* model)
 	if (version > 1) {
 		mAccForSmtpAfterPop = FindMsgString( archive, MSG_ACC_FOR_SAP);
 	}
-	if (version <= 4) {
-		// with version 5 we introduce auto-detection of best authentication
+	if (version <= 5) {
+		// with version 6 we introduce auto-detection of best authentication
 		// method. This is now the default:
 		mAuthMethod = AUTH_AUTO;
 	}
