@@ -54,21 +54,6 @@ const char* const BmMailFolder::MSG_NAME = 			"bm:fname";
 const BmUpdFlags BmMailFolder::UPD_NEW_STATUS = 	1<<2;
 
 /*------------------------------------------------------------------------------*\
-	CreateDummyInstance()
-		-	static creator-func, creates dummy mail-folder (used in prefs)
-\*------------------------------------------------------------------------------*/
-BmRef<BmMailFolder> BmMailFolder::CreateDummyInstance() {
-	BMessage archive;
-	entry_ref eref;
-	eref.set_name("dummy");
-	archive.AddRef( MSG_ENTRYREF, &eref);
-	archive.AddInt64( MSG_INODE, 0);
-	archive.AddInt32( MSG_LASTMODIFIED, time(NULL));
-	archive.AddInt32( MSG_NUMCHILDREN, 0);
-	return new BmMailFolder( &archive, NULL, NULL);
-}
-
-/*------------------------------------------------------------------------------*\
 	BmMailFolder( eref, parent, modified)
 		-	standard c'tor
 \*------------------------------------------------------------------------------*/

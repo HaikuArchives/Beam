@@ -205,7 +205,7 @@ protected:
 
 public:
 	// c'tors & d'tor:
-	BmListModelItem( BmString key, BmListModel* model, BmListModelItem* parent);
+	BmListModelItem( const BmString& key, BmListModel* model, BmListModelItem* parent);
 	BmListModelItem( const BmListModelItem&);
 	virtual ~BmListModelItem();
 
@@ -213,13 +213,16 @@ public:
 	BmListModelItem* FindItemByKey( const BmString& key);
 	virtual int16 ArchiveVersion() const = 0;
 
+#ifdef BM_LOGGING
+	virtual int32 ObjectSize( bool addSizeofThis=true) const;
+#endif
+
 	// getters:
 	inline BmModelItemMap::const_iterator begin() const	{ return mSubItemMap.begin(); }
 	inline BmModelItemMap::const_iterator end() const	{ return mSubItemMap.end(); }
 	inline size_t size() const						{ return mSubItemMap.size(); }
 	inline bool empty() const						{ return mSubItemMap.empty(); }
 	inline const BmString& Key() const			{ return mKey; }
-	inline const BmString& ParentKey() const	{ return mParent ? mParent->Key() : nEmptyParentKey; }
 	inline BmListModelItem* Parent() const		{ return mParent; }
 	BmRef<BmListModel> ListModel() const;
 
@@ -254,8 +257,6 @@ private:
 	
 	BmString mKey;
 	BmModelItemMap mSubItemMap;
-
-	static const BmString nEmptyParentKey;
 
 };
 

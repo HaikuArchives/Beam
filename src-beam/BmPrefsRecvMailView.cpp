@@ -77,7 +77,7 @@ enum Columns {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmRecvAccItem::BmRecvAccItem( BmString key, BmListModelItem* _item)
+BmRecvAccItem::BmRecvAccItem( const BmString& key, BmListModelItem* _item)
 	:	inherited( key, _item, false)
 {
 	UpdateView( UPD_ALL);
@@ -117,7 +117,7 @@ void BmRecvAccItem::UpdateView( BmUpdFlags flags) {
 			{ acc->SMTPAccount().String(),			false },
 			{ NULL, false }
 		};
-		SetTextCols( 0, cols, !ThePrefs->GetBool("StripedListView"));
+		SetTextCols( 0, cols);
 	}
 }
 

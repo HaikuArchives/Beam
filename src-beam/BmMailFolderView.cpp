@@ -62,7 +62,7 @@ enum Columns {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmMailFolderItem::BmMailFolderItem( BmString key, BmListModelItem* _item, 
+BmMailFolderItem::BmMailFolderItem( const BmString& key, BmListModelItem* _item, 
 												bool, BMessage* archive)
 	:	inherited( key, _item, true, archive)
 {

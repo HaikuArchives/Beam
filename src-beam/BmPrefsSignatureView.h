@@ -45,7 +45,7 @@ class BmSignatureItem : public BmListViewItem
 
 public:
 	// c'tors and d'tor:
-	BmSignatureItem( BmString key, BmListModelItem* item);
+	BmSignatureItem( const BmString& key, BmListModelItem* item);
 	~BmSignatureItem();
 
 	// overrides of listitem base:

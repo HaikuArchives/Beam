@@ -612,7 +612,7 @@ const BmString& BmBodyPart::DecodedData() const {
 \*------------------------------------------------------------------------------*/
 bool BmBodyPart::ContainsRef( const entry_ref& ref) const {
 	BmModelItemMap::const_iterator iter;
-	for( iter = begin(); iter != end(); iter++) {
+	for( iter = begin(); iter != end(); ++iter) {
 		BmBodyPart* bodyPart = dynamic_cast< BmBodyPart*>( iter->second.Get());
 		if (bodyPart->EntryRef() == ref)
 			return true;
@@ -951,7 +951,7 @@ void BmBodyPartList::AddAttachmentFromRef( const entry_ref* ref) {
 		alreadyPresent = parent->ContainsRef( *ref);
 	else {
 		BmModelItemMap::const_iterator iter;
-		for( iter = begin(); !alreadyPresent && iter != end(); iter++) {
+		for( iter = begin(); !alreadyPresent && iter != end(); ++iter) {
 			BmBodyPart* bodyPart = dynamic_cast< BmBodyPart*>( iter->second.Get());
 			if (bodyPart->EntryRef() == *ref)
 				alreadyPresent = true;

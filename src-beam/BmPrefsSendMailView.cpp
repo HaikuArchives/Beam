@@ -67,7 +67,7 @@ enum Columns {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmSendAccItem::BmSendAccItem( BmString key, BmListModelItem* _item)
+BmSendAccItem::BmSendAccItem( const BmString& key, BmListModelItem* _item)
 	:	inherited( key, _item, false)
 {
 	UpdateView( UPD_ALL);
@@ -98,7 +98,7 @@ void BmSendAccItem::UpdateView( BmUpdFlags flags) {
 			{ acc->PortNrString().String(),			true  },
 			{ NULL, false }
 		};
-		SetTextCols( 0, cols, !ThePrefs->GetBool("StripedListView"));
+		SetTextCols( 0, cols);
 	}
 }
 

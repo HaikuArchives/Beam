@@ -72,7 +72,7 @@ enum Columns {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmBodyPartItem::BmBodyPartItem( BmString key, BmListModelItem* _item)
+BmBodyPartItem::BmBodyPartItem( const BmString& key, BmListModelItem* _item)
 	:	inherited( key, _item)
 {
 	BmBodyPart* bodyPart = dynamic_cast<BmBodyPart*>( _item);
@@ -96,7 +96,7 @@ BmBodyPartItem::BmBodyPartItem( BmString key, BmListModelItem* _item)
 		{ bodyPart->Language().String(),					false },
 		{ NULL, false }
 	};
-	SetTextCols( BmBodyPartView::nFirstTextCol, cols, false);
+	SetTextCols( BmBodyPartView::nFirstTextCol, cols);
 }
 
 /*------------------------------------------------------------------------------*\

@@ -51,7 +51,7 @@ class BmBodyPartItem : public BmListViewItem
 	typedef BmListViewItem inherited;
 
 public:
-	BmBodyPartItem( BmString key, BmListModelItem* item);
+	BmBodyPartItem( const BmString& key, BmListModelItem* item);
 	~BmBodyPartItem();
 
 	// Hide copy-constructor and assignment:

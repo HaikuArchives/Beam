@@ -64,7 +64,7 @@ enum Columns {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmSignatureItem::BmSignatureItem( BmString key, BmListModelItem* _item)
+BmSignatureItem::BmSignatureItem( const BmString& key, BmListModelItem* _item)
 	:	inherited( key, _item, false)
 {
 	UpdateView( UPD_ALL);
@@ -91,7 +91,7 @@ void BmSignatureItem::UpdateView( BmUpdFlags flags) {
 			{ sig->Content().String(),					false },
 			{ NULL, false }
 		};
-		SetTextCols( 0, cols, !ThePrefs->GetBool("StripedListView"));
+		SetTextCols( 0, cols);
 	}
 }
 

@@ -46,7 +46,7 @@ class BmRecvAccItem : public BmListViewItem
 
 public:
 	// c'tors and d'tor:
-	BmRecvAccItem( BmString key, BmListModelItem* item);
+	BmRecvAccItem( const BmString& key, BmListModelItem* item);
 	~BmRecvAccItem();
 
 	// overrides of listitem base:

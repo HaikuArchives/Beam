@@ -56,7 +56,7 @@ class BmMailRefItem : public BmListViewItem
 	static const int16 nFirstTextCol;
 
 public:
-	BmMailRefItem( BmString key, BmListModelItem* item);
+	BmMailRefItem( const BmString& key, BmListModelItem* item);
 	~BmMailRefItem();
 	
 	// overrides of ListViewItem:
@@ -66,6 +66,7 @@ public:
 	// overrides of CLVEasyItem base:
 	const int32 GetNumValueForColumn( int32 column_index) const;
 	const time_t GetDateValueForColumn( int32 column_index) const;
+	const char* GetUserText( int32 column_index, float column_width) const;
 
 	// Hide copy-constructor and assignment:
 	BmMailRefItem( const BmMailRefItem&);

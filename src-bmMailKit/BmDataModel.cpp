@@ -467,8 +467,6 @@ void BmJobModel::TellJobIsDone( bool completed) {
 	BmListModelItem
 \********************************************************************************/
 
-const BmString BmListModelItem::nEmptyParentKey = "empty";
-
 const char* const BmListModelItem::MSG_VERSION  = 		"bm:version";
 const char* const BmListModelItem::MSG_NUMCHILDREN = 	"bm:count";
 const char* const BmListModelItem::MSG_CHILDREN = 		"bm:chld";
@@ -477,7 +475,7 @@ const char* const BmListModelItem::MSG_CHILDREN = 		"bm:chld";
 	ListModelItem( key, parent)
 		-	c'tor
 \*------------------------------------------------------------------------------*/
-BmListModelItem::BmListModelItem( BmString key, BmListModel* model, BmListModelItem* parent)
+BmListModelItem::BmListModelItem( const BmString& key, BmListModel* model, BmListModelItem* parent)
 	:	mKey( key)
 	,	mListModel( model)
 	,	mParent( parent)
@@ -559,7 +557,7 @@ void BmListModelItem::TellModelItemUpdated( BmUpdFlags flags) {
 BmListModelItem* BmListModelItem::FindItemByKey( const BmString& key) {
 	BmListModelItem* found = NULL;
 	BmModelItemMap::const_iterator iter;
-	for( iter = begin(); !found && iter != end(); iter++) {
+	for( iter = begin(); !found && iter != end(); ++iter) {
 		BmListModelItem* item = iter->second.Get();
 		if (item->Key() == key)
 			return item;
@@ -577,6 +575,23 @@ BmRef<BmListModel> BmListModelItem::ListModel() const	{
 	return mListModel.Get(); 
 }
 
+#ifdef BM_LOGGING
+/*------------------------------------------------------------------------------*\
+	ObjectSize()
+		-	
+\*------------------------------------------------------------------------------*/
+int32 BmListModelItem::ObjectSize( bool addSizeofThis) const {
+	int32 objSize = 
+		(addSizeofThis ? sizeof( *this) : 0)
+		+		mKey.Length()+1;
+
+	BmModelItemMap::const_iterator iter;
+	for( iter = begin(); iter != end(); ++iter) {
+		objSize += sizeof( BmString) + iter->first.Length() + iter->second->ObjectSize();
+	}
+	return objSize;
+}
+#endif
 
 
 /********************************************************************************\

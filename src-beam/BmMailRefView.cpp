@@ -70,7 +70,8 @@ enum Columns {
 	COL_TRACKER_NAME,
 	COL_STATUS,
 	COL_ATTACHMENT,
-	COL_PRIORITY
+	COL_PRIORITY,
+	COL_END
 };
 
 /********************************************************************************\
@@ -82,10 +83,16 @@ enum Columns {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmMailRefItem::BmMailRefItem( BmString key, BmListModelItem* _item)
+BmMailRefItem::BmMailRefItem( const BmString& key, BmListModelItem* _item)
 	:	inherited( key, _item)
 {
 	UpdateView( UPD_ALL);
+	for( int col=nFirstTextCol; col<COL_END; ++col) {
+		if (col==COL_SIZE)
+			SetColumnUserTextContent( col, true);
+		else
+			SetColumnUserTextContent( col, false);
+	}
 }
 
 /*------------------------------------------------------------------------------*\
@@ -110,37 +117,19 @@ void BmMailRefItem::UpdateView( BmUpdFlags flags) {
 		Bold( ref->IsNew());
 		BmString st = BmString("Mail_") << ref->Status();
 		icon = TheResources->IconByName(st);
-		SetColumnContent( COL_STATUS_I, icon, 2.0, false);
+		SetColumnContent( COL_STATUS_I, icon);
 		SetColumnContent( COL_STATUS, ref->Status().String(), false);
 	}
 
 	if (flags == UPD_ALL) {
 		if (ref->HasAttachments()) {
 			icon = TheResources->IconByName("Attachment");
-			SetColumnContent( COL_ATTACHMENTS_I, icon, 2.0, false);
+			SetColumnContent( COL_ATTACHMENTS_I, icon);
 		}
 		BmString priority = BmString("Priority_") << ref->Priority();
 		if ((icon = TheResources->IconByName(priority))!=NULL) {
-			SetColumnContent( COL_PRIORITY_I, icon, 2.0, false);
+			SetColumnContent( COL_PRIORITY_I, icon);
 		}
-		BmListColumn cols[] = {
-			{ ref->From().String(),						false },
-			{ ref->Subject().String(),					false },
-			{ ref->WhenString().String(),				false },
-			{ ref->SizeString().String(),				true  },
-			{ ref->Cc().String(),						false },
-			{ ref->Account().String(),					false },
-			{ ref->To().String(),						false },
-			{ ref->ReplyTo().String(),					false },
-			{ ref->Name().String(),						false },
-			{ ref->CreatedString().String(),			false },
-			{ ref->TrackerName(),						false },
-			{ ref->Status().String(),					false },
-			{ ref->HasAttachments() ? "*" : "",		false },
-			{ ref->Priority().String(),				false },
-			{ NULL, false }
-		};
-		SetTextCols( nFirstTextCol, cols, !ThePrefs->GetBool("StripedListView"));
 	}
 }
 
@@ -187,6 +176,66 @@ const time_t BmMailRefItem::GetDateValueForColumn( int32 column_index) const {
 		return ref->Created();
 	else
 		return 0;		// we don't know this date-column !?!
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+const char* BmMailRefItem::GetUserText(int32 colIdx, float colWidth) const {
+	BmMailRef* ref = ModelItem();
+	if (!ref)
+		return "";
+	const char* text;
+	switch( colIdx) {
+	case COL_FROM:
+		text = ref->From().String();
+		break;
+	case COL_SUBJECT:
+		text = ref->Subject().String();
+		break;
+	case COL_DATE:
+		text = ref->WhenString().String();
+		break;
+	case COL_SIZE:
+		text = ref->SizeString().String();
+		break;
+	case COL_CC:
+		text = ref->Cc().String();
+		break;
+	case COL_ACCOUNT:
+		text = ref->Account().String();
+		break;
+	case COL_TO:
+		text = ref->To().String();
+		break;
+	case COL_REPLY_TO:
+		text = ref->ReplyTo().String();
+		break;
+	case COL_NAME:
+		text = ref->Name().String();
+		break;
+	case COL_CREATED:
+		text = ref->CreatedString().String();
+		break;
+	case COL_TRACKER_NAME:
+		text = ref->TrackerName();
+		break;
+	case COL_STATUS:
+		text = ref->Status().String();
+		break;
+	case COL_ATTACHMENT:
+		text = ref->HasAttachments() ? "*" : "";
+		break;
+	case COL_PRIORITY:
+		text = ref->Priority().String();
+		break;
+	default:
+		return "";
+	};
+	if (text)
+		return text;
+	return "";
 }
 
 
@@ -246,7 +295,8 @@ BmMailRefView::BmMailRefView( minimax minmax, int32 width, int32 height)
 	AddColumn( new CLVColumn( "A", 100.0, CLV_SORT_KEYABLE | CLV_COLDATA_NUMBER, 18.0, "(A)ttachments [Text]"));
 	AddColumn( new CLVColumn( "P", 100.0, CLV_SORT_KEYABLE | CLV_COLDATA_NUMBER, 18.0, "(P)riority [Text]"));
 	SetSortFunction( CLVEasyItem::CompareItems);
-	SetSortKey( 3);
+	SetSortKey( COL_DATE);
+	SetSortMode( COL_DATE, Descending, false);
 }
 
 /*------------------------------------------------------------------------------*\
