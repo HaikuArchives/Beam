@@ -98,9 +98,10 @@ private:
 	BmFilterChainView operator=( const BmFilterChainView&);
 };
 
-#define BM_ADD_CHAIN				'bmAS'
-#define BM_REMOVE_CHAIN			'bmRS'
-
+enum {
+	BM_ADD_CHAIN				= 'bmAS',
+	BM_REMOVE_CHAIN			= 'bmRS'
+};
 
 
 
@@ -156,10 +157,23 @@ public:
 												  border_style border, 
 												  uint32 ResizingMode, 
 												  uint32 flags);
+	bool InitiateDrag( BPoint, int32 index, bool wasSelected);
+	bool AcceptsDropOf( const BMessage* msg);
+	void HandleDrop( const BMessage* msg);
 
 	// overrides of listview base:
 	void MessageReceived( BMessage* msg);
 
+	// msg-fields:
+	static const char* MSG_OLD_POS;
+
+	// message-types:
+	enum {
+		BM_CHAINED_FILTER_DRAG			= 'bmCD',
+		BM_NTFY_ORDER_MODIFIED 			= 'bmCE'
+							// chained filters have been reordered
+	};
+	
 private:
 
 	// Hide copy-constructor and assignment:
@@ -168,11 +182,6 @@ private:
 };
 
 
-#define BM_CHAINED_SELECTION_CHANGED	'bmCC'
-#define BM_AVAILABLE_SELECTION_CHANGED	'bmAC'
-
-#define BM_MOVE_UP_FILTER		'bmFU'
-#define BM_MOVE_DOWN_FILTER	'bmFD'
 
 class MButton;
 class MPlayFW;
@@ -186,6 +195,14 @@ class BmTextControl;
 class BmPrefsFilterChainView : public BmPrefsView {
 	typedef BmPrefsView inherited;
 
+	// message-types:
+	enum {
+		BM_CHAINED_SELECTION_CHANGED	= 'bmCC',
+		BM_CHAINED_ITEM_INVOKED			= 'bmCI',
+		BM_AVAILABLE_SELECTION_CHANGED= 'bmAC',
+		BM_AVAILABLE_ITEM_INVOKED		= 'bmAI',
+	};
+
 public:
 	// c'tors and d'tor:
 	BmPrefsFilterChainView();
@@ -193,6 +210,8 @@ public:
 	
 	// native methods:
 	void UpdateState();
+	void ChainFilter();
+	void UnchainFilter();
 
 	// overrides of BmPrefsView base:
 	void Initialize();
@@ -219,8 +238,6 @@ private:
 	BmListViewController* mAvailableFilterListView;
 	MButton* mAddButton;
 	MButton* mRemoveButton;
-	MButton* mMoveUpButton;
-	MButton* mMoveDownButton;
 	MPlayBW* mAddFilterButton;
 	MPlayFW* mRemoveFilterButton;
 	MFFWD* mEmptyChainButton;
