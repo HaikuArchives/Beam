@@ -110,7 +110,7 @@ BmMainWindow::BmMainWindow()
 				mForwardButton = new BmToolbarButton( "Forward", 
 																  TheResources->IconByName("Button_Forward"), 
 																  new BMessage(BMM_FORWARD), this, 
-																  "Forward (mail text only)"),
+																  "Forward mail to somewhere else"),
 				mBounceButton = new BmToolbarButton( "Bounce", 
 																 TheResources->IconByName("Button_Bounce"), 
 																 new BMessage(BMM_BOUNCE), this, 
@@ -169,7 +169,6 @@ BmMainWindow::~BmMainWindow() {
 MMenuBar* BmMainWindow::CreateMenu() {
 	MMenuBar* menubar = new MMenuBar();
 	BMenu* menu = NULL;
-//	BMenuItem* item = NULL;
 	// File
 	menu = new BMenu( "File");
 	menu->AddItem( new BMenuItem( "New Folder", new BMessage( BMM_NEW_MAILFOLDER)));
@@ -214,7 +213,7 @@ MMenuBar* BmMainWindow::CreateMenu() {
 	menu->AddItem( new BMenuItem( "Reply", new BMessage( BMM_REPLY), 'R'));
 	menu->AddItem( new BMenuItem( "Reply To All", new BMessage( BMM_REPLY_ALL), 'R', B_SHIFT_KEY));
 	menu->AddItem( new BMenuItem( "Forward", new BMessage( BMM_FORWARD), 'J'));
-	menu->AddItem( new BMenuItem( "Forward With Attachments", new BMessage( BMM_FORWARD_ATTACHMENTS), 'J', B_SHIFT_KEY));
+//	menu->AddItem( new BMenuItem( "Forward With Attachments", new BMessage( BMM_FORWARD_ATTACHMENTS), 'J', B_SHIFT_KEY));
 	menu->AddItem( new BMenuItem( "Bounce (Redirect)", new BMessage( BMM_BOUNCE), 'B'));
 	menu->AddSeparatorItem();
 	menu->AddItem( new BMenuItem( "Apply Filter", new BMessage( BMM_FILTER)));
@@ -313,6 +312,10 @@ void BmMainWindow::MessageReceived( BMessage* msg) {
 				beamApp->PostMessage( B_QUIT_REQUESTED);
 				break;
 			}
+			case B_COPY:
+			case B_CUT: 
+			case B_PASTE: 
+			case B_UNDO: 
 			case B_SELECT_ALL: {
 				BView* focusView = CurrentFocus();
 				if (focusView)

@@ -1,3 +1,4 @@
+//		$Id$
 //CLVEasyItem header file
 
 //*** LICENSE ***

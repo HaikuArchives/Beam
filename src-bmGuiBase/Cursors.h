@@ -1,3 +1,4 @@
+//		$Id$
 #ifndef _SGB_CURSORS_H_
 #define _SGB_CURSORS_H_
 

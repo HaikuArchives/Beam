@@ -1,3 +1,4 @@
+//		$Id$
 //Column list header header file
 
 //*** LICENSE ***

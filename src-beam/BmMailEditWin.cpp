@@ -59,9 +59,12 @@ BmMailEditWin::BmMailEditWin()
 	:	inherited( BRect(50,50,800,600), "Edit Mail", B_TITLED_WINDOW_LOOK, 
 					  B_NORMAL_WINDOW_FEEL, B_ASYNCHRONOUS_CONTROLS)
 {
+	BPopUpMenu* mToPopup = new BPopUpMenu( "To_Popup", true, false);
+	MTextControl* mToTextControl;
+	
 	MView* mOuterGroup = 
 		new VGroup(
-			minimax( 600, 200, 1E5, 1E5),
+			minimax( 500, 400, 1E5, 1E5),
 			CreateMenu(),
 			new Space(minimax(-1,4,-1,4)),
 			new HGroup(
@@ -91,6 +94,16 @@ BmMailEditWin::BmMailEditWin()
 																new BMessage(BMM_PRINT), this, 
 																"Print selected messages(s)"),
 				new Space(),
+				0
+			),
+			new Space(minimax(-1,4,-1,4)),
+			new HGroup(
+				minimax( -1, -1, 1E5, -1),
+				new Space(minimax(10,-1,10,-1)),
+				new MBViewWrapper(
+					new BMenuField( BRect(0,0,40,20), NULL, "To:", mToPopup), true, true, true
+				),
+				mToTextControl = new MTextControl( NULL, ""),
 				0
 			),
 			new Space(minimax(-1,4,-1,4)),
@@ -195,9 +208,16 @@ BmMailViewContainer* BmMailEditWin::CreateMailView( minimax minmax, BRect frame)
 void BmMailEditWin::MessageReceived( BMessage* msg) {
 	try {
 		switch( msg->what) {
-			case B_QUIT_REQUESTED:
-				beamApp->PostMessage( B_QUIT_REQUESTED);
+			case B_COPY:
+			case B_CUT: 
+			case B_PASTE: 
+			case B_UNDO: 
+			case B_SELECT_ALL: {
+				BView* focusView = CurrentFocus();
+				if (focusView)
+					PostMessage( msg, focusView);
 				break;
+			}
 			default:
 				inherited::MessageReceived( msg);
 		}
@@ -215,7 +235,6 @@ void BmMailEditWin::MessageReceived( BMessage* msg) {
 bool BmMailEditWin::QuitRequested() {
 	BM_LOG2( BM_LogMailEditWin, BString("MailEditWin has been asked to quit"));
 	Store();
-	beamApp->PostMessage( B_QUIT_REQUESTED);
 	return true;
 }
 

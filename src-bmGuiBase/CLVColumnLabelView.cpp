@@ -1,3 +1,4 @@
+//		$Id$
 //ColumnLabelView class source file
 
 //*** LICENSE ***
