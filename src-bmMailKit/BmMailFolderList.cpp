@@ -296,6 +296,25 @@ void BmMailMonitor::EntryRemoved( BmMailFolder* parent, node_ref& nref) {
 void BmMailMonitor::EntryMoved( BmMailFolder* parent, node_ref& nref,
 										  entry_ref& eref, struct stat& st,
 										  BmMailFolder* oldParent, entry_ref& erefFrom) {
+	// Since we track all mail-folders, we get two entry-moved messages from
+	// the node-monitor if a mail is moved inside the mailbox. We only want
+	// to handle the event once, so we filter out double messages here:
+	static BmMailFolder* last_parent;
+	static BmMailFolder* last_oldParent;
+	static entry_ref last_eref;
+	static entry_ref last_erefFrom;
+	if (last_parent == parent && last_oldParent == oldParent
+	&& last_eref == eref && last_erefFrom == erefFrom) {
+		BM_LOG2( BM_LogMailTracking, 
+					BmString("Second move-event of mail/folder <") << eref.name 
+						<< "," << nref.node << "> dropped.");
+		return;
+	}
+	last_parent = parent;
+	last_oldParent = oldParent;
+	last_eref = eref;
+	last_erefFrom = erefFrom;
+	// ok, now do actual processing:
 	if (S_ISDIR(st.st_mode)) {
 		// it's a mail-folder, we check for type of change:
 		BmRef<BmMailFolder> folder;
