@@ -113,6 +113,8 @@ class BmMailRef;
 class BmMail : public BmJobModel {
 	typedef BmJobModel inherited;
 
+	typedef map<int32,BString> BmQuoteLevelMap;
+
 public:
 	static BmRef<BmMail> CreateInstance( BmMailRef* ref);
 	BmMail( bool outbound);
@@ -172,9 +174,9 @@ public:
 	inline void ModifiedMaxLineLen( int32 i)	{ mModifiedMaxLineLen = MAX(i,mModifiedMaxLineLen); }
 	inline void IsRedirect( bool b)				{ if (mHeader) mHeader->IsRedirect( b); }
 
-	// static function that tries to reformat & quote a given multiline text
+	// static functions that try to reformat & quote a given multiline text
 	// in a way that avoids the usual (ugly) quoting-mishaps.
-	// the resulting int is the line-length needed to leave the formatting intact..
+	// the resulting int is the line-length needed to leave the formatting intact.
 	static int32 QuoteText( const BString& in, BString& out, BString quote, int maxLen);
 
 	static const int32 BM_READ_MAIL_JOB = 1;
@@ -189,6 +191,13 @@ protected:
 	BString CreateReplyIntro();
 	BString CreateForwardIntro();
 	void SetBaseMailInfo( BmMailRef* ref, const BString newStatus);
+
+	// static functions used for quote-formatting:
+	static int32 QuoteTextWithReWrap( const BString& in, BString& out, 
+											    BString quoteString, int maxLineLen);
+	static int32 AddQuotedText( BString& text, BString& out, 
+										 const BString& quote, const BString& quoteString,
+								 		 int maxTextLen);
 
 	BmRef<BmMailRef> mMailRef;
 	status_t mInitCheck;

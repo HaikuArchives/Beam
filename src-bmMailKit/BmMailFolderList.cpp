@@ -32,8 +32,9 @@
 #include <Directory.h>
 #include <File.h>
 #include <NodeMonitor.h>
-#include <Path.h>
+#include <storage/Path.h>
 
+#include "BmApp.h"
 #include "BmBasics.h"
 #include "BmLogHandler.h"
 #include "BmMailFolderList.h"
@@ -352,6 +353,7 @@ void BmMailFolderList::AddNewFlag( ino_t pnode, ino_t node) {
 	mNewMailNodeMap[ node] = parent;
 	if (parent)
 		parent->BumpNewMailCount();
+	bmApp->PostMessage( BMM_SHOW_NEWMAIL_ICON);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -364,6 +366,7 @@ void BmMailFolderList::RemoveNewFlag( ino_t pnode, ino_t node) {
 	BmMailFolder* parent = dynamic_cast< BmMailFolder*>( parentRef.Get());
 	if (parent)
 		parent->BumpNewMailCount( -1);
+	bmApp->PostMessage( BMM_HIDE_NEWMAIL_ICON);
 }
 
 /*------------------------------------------------------------------------------*\

@@ -31,7 +31,7 @@
 #include <Alert.h>
 #include <MenuItem.h>
 #include <PopUpMenu.h>
-#include <String.h>
+#include <support/String.h>
 
 #include "TextEntryAlert.h"
 

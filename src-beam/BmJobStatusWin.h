@@ -34,6 +34,12 @@
 
 #include <map>
 
+#ifdef B_BEOS_VERSION_DANO
+	class BMessage;
+	class BStatusBar;
+	class BFont;
+	class BRect;
+#endif
 #include <MBorder.h>
 #include <VGroup.h>
 
@@ -126,8 +132,8 @@ class BmPopperView : public BmJobStatusView {
 
 public:
 	// creator-func, c'tors and d'tor:
-	static BmPopperView* CreateInstance( const char* name);
-	BmPopperView( const char* name);
+	static BmPopperView* CreateInstance( const char* name, bool isAutoCheck);
+	BmPopperView( const char* name, bool isAutoCheck);
 	~BmPopperView();
 
 	// overrides of jobstatusview base:
@@ -144,6 +150,7 @@ public:
 private:
 	BStatusBar* mStatBar;				// shows current status of this connection
 	BStatusBar* mMailBar;				// shows number of mails handled by this connection
+	bool mIsAutoCheck;					// has this job been invoked automatically?
 
 	// Hide copy-constructor and assignment:
 	BmPopperView( const BmPopperView&);

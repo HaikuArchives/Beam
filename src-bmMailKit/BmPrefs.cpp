@@ -131,7 +131,7 @@ BmPrefs::BmPrefs( BMessage* archive)
 		//
 		// change default value of SignatureRX:
 		mPrefsMsg.RemoveName("SignatureRX");
-		mPrefsMsg.AddString( "SignatureRX", "^---?\\s*\\n");
+		mPrefsMsg.AddString( "SignatureRX", mDefaultsMsg.FindString( "SignatureRX"));
 		mPrefsMsg.AddInt16( MSG_VERSION, nPrefsVersion);
 		// remove BeMailStyle-flag, since we now have configurable shortcuts:
 		mPrefsMsg.RemoveName("BeMailStyle");
@@ -220,6 +220,8 @@ void BmPrefs::InitDefaults() {
 	mDefaultsMsg.AddString( "MimeTypeTrustInfo", "<application/pdf:T><application:W><:T>");
 	mDefaultsMsg.AddBool( "InOutAlwaysAtTop", false);
 	mDefaultsMsg.AddMessage( "Shortcuts", GetShortcutDefaults());
+	mDefaultsMsg.AddString( "QuoteFormatting", "Auto Wrap");
+	mDefaultsMsg.AddString( "QuotingLevelRX", "^((?:\\w?\\w?\\w?[>|]|[ \\t]*)*)(.*?)$");
 }
 
 /*------------------------------------------------------------------------------*\
@@ -356,8 +358,13 @@ BString BmPrefs::GetString( const char* name) {
 	if (mPrefsMsg.FindString( name, &val) == B_OK)
 		return val;
 	else {
-		BM_SHOWERR( BString("The Preferences-field ") << name << " of type string is unknown");
-		return "";
+		if (mDefaultsMsg.FindString( name, &val) == B_OK) {
+			mPrefsMsg.AddString( name, val);
+			return val;
+		} else {
+			BM_SHOWERR( BString("The Preferences-field ") << name << " of type string is unknown");
+			return "";
+		}
 	}
 }
 
@@ -369,8 +376,13 @@ BString BmPrefs::GetString( const char* name, const BString defaultVal) {
 	const char* val;
 	if (mPrefsMsg.FindString( name, &val) == B_OK)
 		return val;
-	else
-		return defaultVal;
+	else {
+		if (mDefaultsMsg.FindString( name, &val) == B_OK) {
+			mPrefsMsg.AddString( name, val);
+			return val;
+		} else
+			return defaultVal;
+	}
 }
 
 /*------------------------------------------------------------------------------*\
@@ -382,8 +394,13 @@ bool BmPrefs::GetBool( const char* name) {
 	if (mPrefsMsg.FindBool( name, &val) == B_OK)
 		return val;
 	else {
-		BM_SHOWERR( BString("The Preferences-field ") << name << " of type bool is unknown");
-		return false;
+		if (mDefaultsMsg.FindBool( name, &val) == B_OK) {
+			mPrefsMsg.AddBool( name, val);
+			return val;
+		} else {
+			BM_SHOWERR( BString("The Preferences-field ") << name << " of type bool is unknown");
+			return false;
+		}
 	}
 }
 
@@ -395,8 +412,13 @@ bool BmPrefs::GetBool( const char* name, const bool defaultVal) {
 	bool val;
 	if (mPrefsMsg.FindBool( name, &val) == B_OK)
 		return val;
-	else
-		return defaultVal;
+	else {
+		if (mDefaultsMsg.FindBool( name, &val) == B_OK) {
+			mPrefsMsg.AddBool( name, val);
+			return val;
+		} else
+			return defaultVal;
+	}
 }
 
 /*------------------------------------------------------------------------------*\
@@ -408,8 +430,13 @@ int32 BmPrefs::GetInt( const char* name) {
 	if (mPrefsMsg.FindInt32( name, &val) == B_OK)
 		return val;
 	else {
-		BM_SHOWERR( BString("The Preferences-field ") << name << " of type int32 is unknown");
-		return 0;
+		if (mDefaultsMsg.FindInt32( name, &val) == B_OK) {
+			mPrefsMsg.AddInt32( name, val);
+			return val;
+		} else {
+			BM_SHOWERR( BString("The Preferences-field ") << name << " of type int32 is unknown");
+			return 0;
+		}
 	}
 }
 
@@ -421,8 +448,13 @@ int32 BmPrefs::GetInt( const char* name, const int32 defaultVal) {
 	int32 val;
 	if (mPrefsMsg.FindInt32( name, &val) == B_OK)
 		return val;
-	else
-		return defaultVal;
+	else {
+		if (mDefaultsMsg.FindInt32( name, &val) == B_OK) {
+			mPrefsMsg.AddInt32( name, val);
+			return val;
+		} else
+			return defaultVal;
+	}
 }
 
 /*------------------------------------------------------------------------------*\
@@ -438,8 +470,13 @@ const BMessage* BmPrefs::GetMsg( const char* name) {
 		mMsgCache[name] = msg;
 		return msg;
 	} else {
-		BM_SHOWERR( BString("The Preferences-field ") << name << " of type message is unknown");
-		return NULL;
+		if (mDefaultsMsg.FindMessage( name, msg) == B_OK) {
+			mPrefsMsg.AddMessage( name, msg);
+			return msg;
+		} else {
+			BM_SHOWERR( BString("The Preferences-field ") << name << " of type message is unknown");
+			return msg;
+		}
 	}
 }
 
@@ -455,8 +492,13 @@ const BMessage* BmPrefs::GetMsg( const char* name, const BMessage* defaultVal) {
 	if (mPrefsMsg.FindMessage( name, msg) == B_OK) {
 		mMsgCache[name] = msg;
 		return msg;
-	} else
-		return defaultVal;
+	} else {
+		if (mDefaultsMsg.FindMessage( name, msg) == B_OK) {
+			mPrefsMsg.AddMessage( name, msg);
+			return msg;
+		} else
+			return defaultVal;
+	}
 }
 
 /*------------------------------------------------------------------------------*\

@@ -31,7 +31,7 @@
 #include <Autolock.h>
 #include <Font.h>
 #include <Message.h>
-#include <String.h>
+#include <support/String.h>
 
 #include <layout-all.h>
 

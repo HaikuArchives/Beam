@@ -37,7 +37,7 @@
 
 #include <Archivable.h>
 #include <List.h>
-#include <String.h>
+#include <support/String.h>
 
 // <needed to compile under BONE>
 #include <socket.h>

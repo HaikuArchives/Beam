@@ -569,39 +569,8 @@ void BmBodyPartList::ParseMail() {
 															msgText.Length()-mMail->HeaderLength()-2, 
 															mMail->Header());
 		AddItemToList( bodyPart);
-		AnalyseEditableTextBody();
 	}
 	mInitCheck = B_OK;
-}
-
-/*------------------------------------------------------------------------------*\
-	AnalyseEditableTextBody()
-		-	
-\*------------------------------------------------------------------------------*/
-void BmBodyPartList::AnalyseEditableTextBody() {
-	if (!mEditableTextBody)
-		return;
-	Regexx rx;
-	Regexx rxl;
-	rx.str( mEditableTextBody->DecodedData());
-	rx.expr( ThePrefs->GetString( "QuotingLevelRX", "^((?:[>|]?[ \\t]*)*)(.*?)$"));
-	int32 count = rx.exec( Regexx::study | Regexx::global | Regexx::newline);
-	BString currQuote;
-	bool lastWasSpecialLine = true;
-	for( int32 i=0; i<count; ++i) {
-		BString quote( rx.match[i].atom[0]);
-		BString line( rx.match[i].atom[1]);
-		if (rxl.exec( line, ThePrefs->GetString( "QuotingLevelEmptyLineRX", "^[ \\t]*$"))
-		|| rxl.exec( line, ThePrefs->GetString( "QuotingLevelListLineRX", "^[*+\\-\\d]+.*?$"))) {
-			mQuoteLevelMap.insert( make_pair( rx.match[i].atom[1].start(), quote));
-			currQuote = quote;
-			lastWasSpecialLine = true;
-		} else if (lastWasSpecialLine || currQuote != quote) {
-			mQuoteLevelMap.insert( make_pair( rx.match[i].atom[1].start(), quote));
-			currQuote = quote;
-			lastWasSpecialLine = false;
-		}
-	}
 }
 
 /*------------------------------------------------------------------------------*\

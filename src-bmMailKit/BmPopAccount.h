@@ -37,7 +37,7 @@
 
 #include <Archivable.h>
 #include <List.h>
-#include <String.h>
+#include <support/String.h>
 
 // <needed to compile under BONE>
 #include <socket.h>
@@ -57,6 +57,7 @@ class BmPopAccountList;
 #define BM_JOBWIN_POP					'bmea'
 						// sent to JobMetaController in order to start pop-connection
 
+class BMessageRunner;
 /*------------------------------------------------------------------------------*\
 	BmPopAccount 
 		-	holds information about one specific POP3-account
@@ -83,12 +84,13 @@ class BmPopAccount : public BmListModelItem {
 	static const char* const MSG_STORE_PWD = 		"bm:storepwd";
 	static const char* const MSG_MAIL_ALIASES = 	"bm:mailaliases";
 	static const char* const MSG_MARK_BUCKET = 	"bm:markbucket";
-	static const int16 nArchiveVersion = 1;
+	static const char* const MSG_CHECK_INTERVAL = "bm:checkinterval";
+	static const int16 nArchiveVersion = 2;
 
 public:
 	BmPopAccount( const char* name, BmPopAccountList* model);
 	BmPopAccount( BMessage* archive, BmPopAccountList* model);
-	virtual ~BmPopAccount() 				{}
+	virtual ~BmPopAccount();
 	
 	// native methods:
 	bool IsUIDDownloaded( BString uid);
@@ -119,6 +121,8 @@ public:
 	inline const BString &SignatureName() const	 { return mSignatureName; }
 	inline const BString &SMTPAccount() const	{ return mSMTPAccount; }
 	inline const BString &Username() const 	{ return mUsername; }
+	inline int16 CheckInterval() const 			{ return mCheckInterval; }
+	inline const BString &CheckIntervalString() const{ return mCheckIntervalString; }
 
 	// setters:
 	inline void AuthMethod( const BString &s) { mAuthMethod = s; TellModelItemUpdated( UPD_ALL); }
@@ -136,6 +140,7 @@ public:
 	inline void SignatureName( const BString &s)	 { mSignatureName = s;  TellModelItemUpdated( UPD_ALL); }
 	inline void SMTPAccount( const BString &s){ mSMTPAccount = s;  TellModelItemUpdated( UPD_ALL); }
 	inline void Username( const BString &s) 	{ mUsername = s;  TellModelItemUpdated( UPD_ALL); }
+	inline void CheckInterval( int16 i) 		{ mCheckInterval = i; mCheckIntervalString = BString()<<i;  TellModelItemUpdated( UPD_ALL); }
 
 	bool GetPOPAddress( BNetAddress* addr) const;
 
@@ -147,6 +152,8 @@ private:
 	// Hide copy-constructor and assignment:
 	BmPopAccount( const BmPopAccount&);
 	BmPopAccount operator=( const BmPopAccount&);
+
+	void SetupIntervalRunner();
 
 	//BString mName;					// name is stored in key (base-class)
 	BString mUsername;
@@ -166,9 +173,11 @@ private:
 	bool mMarkedAsDefault;			// is this the default account?
 	bool mPwdStoredOnDisk;			// store Passwords unsafely on disk?
 	bool mMarkedAsBitBucket;		// is this account the fallback-account for failed delivery?
+	int16 mCheckInterval;			// check mail every ... minutes
+	BString mCheckIntervalString;	// check-interval as String
 
 	vector<BString> mUIDs;			// list of UIDs seen in this account
-
+	BMessageRunner* mIntervalRunner;
 };
 
 
@@ -190,7 +199,7 @@ public:
 	
 	// native methods:
 	void CheckMail( bool allAccounts=false);
-	void CheckMailFor( BString accName);
+	void CheckMailFor( BString accName, bool isAutoCheck=false);
 	void AuthOnlyFor( BString accName);
 	BmRef<BmPopAccount> DefaultAccount();
 	BmRef<BmPopAccount> FindAccountForAddress( const BString addr);
@@ -202,6 +211,8 @@ public:
 	int16 ArchiveVersion() const			{ return nArchiveVersion; }
 
 	static BmRef<BmPopAccountList> theInstance;
+
+	static const char* const MSG_AUTOCHECK 	=	"bm:auto";
 
 private:
 	// Hide copy-constructor and assignment:

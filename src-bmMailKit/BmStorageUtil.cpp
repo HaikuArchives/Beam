@@ -36,7 +36,7 @@
 #include <File.h>
 #include <FindDirectory.h>
 #include <NodeInfo.h> 
-#include <Path.h> 
+#include <storage/Path.h> 
 
 #include "BmBasics.h"
 #include "BmStorageUtil.h"

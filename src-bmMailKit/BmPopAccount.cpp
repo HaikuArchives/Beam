@@ -29,14 +29,17 @@
 /*************************************************************************/
 
 
+#include <Application.h>
 #include <ByteOrder.h>
 #include <File.h>
 #include <Message.h>
+#include <MessageRunner.h>
 
 #include "regexx.hh"
 using namespace regexx;
 
 #include "BmBasics.h"
+#include "BmMsgTypes.h"
 #include "BmPopAccount.h"
 #include "BmPopper.h"
 #include "BmResources.h"
@@ -60,7 +63,11 @@ BmPopAccount::BmPopAccount( const char* name, BmPopAccountList* model)
 	,	mMarkedAsDefault( false)
 	,	mMarkedAsBitBucket( false)
 	,	mPwdStoredOnDisk( false)
+	,	mCheckInterval( 0)
+	,	mCheckIntervalString( "0")
+	,	mIntervalRunner( NULL)
 {
+	SetupIntervalRunner();
 }
 
 /*------------------------------------------------------------------------------*\
@@ -69,6 +76,7 @@ BmPopAccount::BmPopAccount( const char* name, BmPopAccountList* model)
 \*------------------------------------------------------------------------------*/
 BmPopAccount::BmPopAccount( BMessage* archive, BmPopAccountList* model) 
 	:	inherited( FindMsgString( archive, MSG_NAME), model, (BmListModelItem*)NULL)
+	,	mIntervalRunner( NULL)
 {
 	int16 version;
 	if (archive->FindInt16( MSG_VERSION, &version) != B_OK)
@@ -94,6 +102,22 @@ BmPopAccount::BmPopAccount( BMessage* archive, BmPopAccountList* model)
 	for( int32 i=0; archive->FindString( MSG_UID, i, &uid) == B_OK; ++i) {
 		mUIDs.push_back( uid);
 	}
+	if (version > 1) {
+		mCheckInterval = FindMsgInt16( archive, MSG_CHECK_INTERVAL);
+		mCheckIntervalString << mCheckInterval;
+	} else {
+		mCheckInterval = 0;
+		mCheckIntervalString << 0;
+	}
+	SetupIntervalRunner();
+}
+
+/*------------------------------------------------------------------------------*\
+	~BmPopAccount()
+		-	
+\*------------------------------------------------------------------------------*/
+BmPopAccount::~BmPopAccount() {
+	delete mIntervalRunner;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -118,7 +142,8 @@ status_t BmPopAccount::Archive( BMessage* archive, bool deep) const {
 		||	archive->AddString( MSG_AUTH_METHOD, mAuthMethod.String())
 		||	archive->AddBool( MSG_MARK_DEFAULT, mMarkedAsDefault)
 		||	archive->AddBool( MSG_STORE_PWD, mPwdStoredOnDisk)
-		||	archive->AddBool( MSG_MARK_BUCKET, mMarkedAsBitBucket));
+		||	archive->AddBool( MSG_MARK_BUCKET, mMarkedAsBitBucket)
+		||	archive->AddInt16( MSG_CHECK_INTERVAL, mCheckInterval));
 	int32 count = mUIDs.size();
 	for( int i=0; ret==B_OK && i<count; ++i) {
 		ret = archive->AddString( MSG_UID, mUIDs[i].String());
@@ -213,6 +238,21 @@ bool BmPopAccount::IsUIDDownloaded( BString uid) {
 \*------------------------------------------------------------------------------*/
 void BmPopAccount::MarkUIDAsDownloaded( BString uid) {
 	mUIDs.push_back( uid << " " << system_time());
+}
+
+/*------------------------------------------------------------------------------*\
+	SetupIntervalRunner()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmPopAccount::SetupIntervalRunner() {
+	delete mIntervalRunner;
+	if (mCheckInterval>0) {
+		BMessage* msg = new BMessage( BMM_CHECK_MAIL);
+		msg->AddString( BmPopAccountList::MSG_ITEMKEY, Key().String());
+		msg->AddBool( BmPopAccountList::MSG_AUTOCHECK, true);
+		mIntervalRunner = new BMessageRunner( be_app_messenger, msg, 
+														  mCheckInterval*15*1000*1000, -1);
+	}
 }
 
 
@@ -361,9 +401,10 @@ void BmPopAccountList::CheckMail( bool allAccounts) {
 	CheckMailFor()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmPopAccountList::CheckMailFor( BString accName) {
+void BmPopAccountList::CheckMailFor( BString accName, bool isAutoCheck) {
 	BMessage archive(BM_JOBWIN_POP);
 	archive.AddString( BmJobModel::MSG_JOB_NAME, accName.String());
+	archive.AddBool( MSG_AUTOCHECK, isAutoCheck);
 	mJobMetaController->PostMessage( &archive);
 }
 

@@ -30,8 +30,11 @@
 
 #include <Alert.h>
 #include <AppFileInfo.h>
+#include <Deskbar.h>
 #include <Roster.h>
 #include <Screen.h>
+
+#include <PictureButton.h>
 
 #include "ImageAboutWindow.h"
 
@@ -57,6 +60,8 @@
 int BmApplication::InstanceCount = 0;
 
 BmApplication* bmApp = NULL;
+
+const char* BM_DeskbarItemName="Beam_NewMail";
 
 /*------------------------------------------------------------------------------*\
 	BmApplication()
@@ -117,6 +122,12 @@ BmApplication::BmApplication( const char* sig)
 		BmSmtpAccountList::CreateInstance( TheJobStatusWin);
 		BmPopAccountList::CreateInstance( TheJobStatusWin);
 
+		mDeskbar = new BDeskbar;
+		BBitmap* deskbarIcon = TheResources->IconByName( "DeskbarIcon");
+		BPicture* deskbarPic = TheResources->CreatePictureFor( deskbarIcon, 16, 16, BeShadow);
+		mDeskbarView = new BPictureButton( BRect(0,0,15,15), BM_DeskbarItemName, 
+													  deskbarPic, deskbarPic, new BMessage('xxxx'));
+
 		BmMainWindow::CreateInstance();
 
 		mInitCheck = B_OK;
@@ -132,6 +143,8 @@ BmApplication::BmApplication( const char* sig)
 		-	standard destructor
 \*------------------------------------------------------------------------------*/
 BmApplication::~BmApplication() {
+	mDeskbar->RemoveItem( BM_DeskbarItemName);
+	delete mDeskbar;
 	TheMailFolderList = NULL;
 	ThePopAccountList = NULL;
 	TheSmtpAccountList = NULL;
@@ -266,9 +279,10 @@ void BmApplication::MessageReceived( BMessage* msg) {
 			case BMM_CHECK_MAIL: {
 				const char* key = NULL;
 				msg->FindString( BmPopAccountList::MSG_ITEMKEY, &key);
-				if (key)
-					ThePopAccountList->CheckMailFor( key);
-				else
+				if (key) {
+					bool isAutoCheck = msg->FindBool( BmPopAccountList::MSG_AUTOCHECK);
+					ThePopAccountList->CheckMailFor( key, isAutoCheck);
+				} else
 					ThePopAccountList->CheckMail();
 				break;
 			}
@@ -406,6 +420,19 @@ void BmApplication::MessageReceived( BMessage* msg) {
 				}
 				MoveToTrash( refs, index);
 				delete [] refs;
+				break;
+			}
+			case BMM_SHOW_NEWMAIL_ICON: {
+				BM_LOG2( BM_LogAll, "App: asked to show new-mail icon in deskbar");
+				if (!mDeskbar->HasItem( BM_DeskbarItemName)) {
+					mDeskbar->AddItem( mDeskbarView);
+				}
+				break;
+			}
+			case BMM_HIDE_NEWMAIL_ICON: {
+				BM_LOG2( BM_LogAll, "App: asked to hide new-mail icon from deskbar");
+				mDeskbar->RemoveItem( BM_DeskbarItemName);
+				break;
 			}
 			case B_SILENT_RELAUNCH: {
 				BM_LOG2( BM_LogAll, "App: silently relaunched");

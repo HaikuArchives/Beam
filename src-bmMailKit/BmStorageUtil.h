@@ -33,7 +33,7 @@
 
 #include <set>
 
-#include <String.h>
+#include <support/String.h>
 
 class entry_ref;
 

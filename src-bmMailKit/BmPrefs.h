@@ -36,7 +36,7 @@
 
 #include <Archivable.h>
 #include <Message.h>
-#include <String.h>
+#include <support/String.h>
 
 /*------------------------------------------------------------------------------*\
 	BmPrefs 

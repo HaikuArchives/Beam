@@ -32,7 +32,7 @@
 
 #include <stdexcept>
 
-#include <String.h>
+#include <support/String.h>
 
 #define BM_assert(expr) if (!expr) { throw BM_invalid_argument(BString("BM_assert says no at ")<<__FILE__<<":"<<__LINE__); }
 

@@ -31,8 +31,11 @@
 #ifndef _BmWindow_h
 #define _BmWindow_h
 
-#include <String.h>
+#include <support/String.h>
 
+#ifdef B_BEOS_VERSION_DANO
+	class BPopUpMenu;
+#endif
 #include <MWindow.h>
 
 class BmWindow : public MWindow

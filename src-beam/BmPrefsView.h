@@ -32,7 +32,7 @@
 #define _BmPrefsView_h
 
 #include <Message.h>
-#include <String.h>
+#include <support/String.h>
 #include <View.h>
 
 #include <layout.h>

@@ -33,9 +33,14 @@
 
 #include <Application.h>
 #include <Rect.h>
-#include <String.h>
+#include <support/String.h>
 
+class BDeskbar;
+class BView;
 class BmWindow;
+
+#define BMM_SHOW_NEWMAIL_ICON			'bMxa'
+#define BMM_HIDE_NEWMAIL_ICON			'bMxb'
 
 class BmApplication : public BApplication
 {
@@ -79,6 +84,9 @@ private:
 	status_t mInitCheck;
 	BmWindow* mMailWin;
 	bool mIsQuitting;
+
+	BDeskbar* mDeskbar;
+	BView* mDeskbarView;
 
 	inline status_t InitCheck() 			{ return mInitCheck; }
 

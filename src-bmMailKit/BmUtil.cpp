@@ -289,7 +289,7 @@ void ConvertLinebreaksToCRLF( const BString& in, BString& out) {
 	}
 	*newPos = 0;
 	out.UnlockBuffer( newPos-buf);
-	out.Truncate( newPos-buf, false);
+	out.Truncate( newPos-buf);
 }
 
 /*------------------------------------------------------------------------------*\

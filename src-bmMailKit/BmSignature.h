@@ -35,7 +35,7 @@
 #include <stdexcept>
 
 #include <Archivable.h>
-#include <String.h>
+#include <support/String.h>
 
 #include "BmDataModel.h"
 

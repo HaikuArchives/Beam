@@ -124,10 +124,12 @@ void BmJobStatusView::MessageReceived( BMessage* msg) {
 				BM_LOG2( BM_LogModelController, BString("Controller <") << ControllerName() << "> has been told to show its view");
 				BmAutolock lock( TheJobStatusWin);
 				lock.IsLocked()				|| BM_THROW_RUNTIME( "JobStatusView(): could not lock window");
-				Show();
-				do {
-					TheJobStatusWin->Show();
-				} while (TheJobStatusWin->IsHidden());
+				if (TheJobStatusWin->Workspaces() == (uint32)current_workspace()+1) {
+					do {
+						TheJobStatusWin->Minimize( false);
+						TheJobStatusWin->Show();
+					} while (TheJobStatusWin->IsHidden());
+				}
 				break;
 			}
 			case BM_TIME_TO_REMOVE: {
@@ -301,20 +303,23 @@ void BmMailMoverView::UpdateModelView( BMessage* msg) {
 	CreateInstance( name)
 		-	creates and returns a new popper-view
 \*------------------------------------------------------------------------------*/
-BmPopperView* BmPopperView::CreateInstance( const char* name) {
-	return new BmPopperView( name);
+BmPopperView* BmPopperView::CreateInstance( const char* name, bool isAutoCheck) {
+	return new BmPopperView( name, isAutoCheck);
 }
 
 /*------------------------------------------------------------------------------*\
 	BmPopperView()
 		-	standard constructor
 \*------------------------------------------------------------------------------*/
-BmPopperView::BmPopperView( const char* name)
+BmPopperView::BmPopperView( const char* name, bool isAutoCheck)
 	:	BmJobStatusView( name)
 	,	mStatBar( NULL)
 	,	mMailBar( NULL)
+	,	mIsAutoCheck( isAutoCheck)
 {
 	mMSecsBeforeRemove = MAX(10,ThePrefs->GetInt( "MSecsBeforePopperRemove"));
+	if (mIsAutoCheck)
+		mMSecsBeforeShow = 0;	// avoid showing if in auto-mode.
 	MView* view = new VGroup(
 		new MBViewWrapper(
 			mStatBar = new BStatusBar( BRect(), name, name, ""), true, false, false
@@ -592,10 +597,11 @@ BmJobStatusWin* BmJobStatusWin::CreateInstance() {
 \*------------------------------------------------------------------------------*/
 BmJobStatusWin::BmJobStatusWin()
 	:	BmWindow( "JobStatusWindow", 
-					BRect(bmApp->ScreenFrame().right-BM_MINSIZE-2,20,0,0), 
+					BRect(bmApp->ScreenFrame().right-BM_MINSIZE-4,20,0,0), 
 					"Jobs",
 					B_FLOATING_WINDOW_LOOK, B_NORMAL_WINDOW_FEEL,
-					B_ASYNCHRONOUS_CONTROLS	|	B_NOT_ZOOMABLE	|	B_NOT_V_RESIZABLE)
+					B_ASYNCHRONOUS_CONTROLS	|	B_NOT_ZOOMABLE	|	B_NOT_V_RESIZABLE
+					| B_AVOID_FOCUS)
 { 
 	mOuterGroup = 
 		new VGroup(
@@ -713,9 +719,11 @@ void BmJobStatusWin::AddJob( BMessage* msg) {
 	{	// job is inactive, so we create a new controller for it:
 		BM_LOG2( BM_LogJobWin, BString("Creating new view for ") << name);
 		switch( msg->what) {
-			case BM_JOBWIN_POP:
-				controller = new BmPopperView( name.String());
+			case BM_JOBWIN_POP: {
+				bool autoMode = msg->FindBool( BmPopAccountList::MSG_AUTOCHECK);
+				controller = new BmPopperView( name.String(), autoMode);
 				break;
+			}
 			case BM_JOBWIN_SMTP:
 				controller = new BmSmtpView( name.String());
 				break;
@@ -735,7 +743,7 @@ void BmJobStatusWin::AddJob( BMessage* msg) {
 		float height = frame.bottom+2;
 		ResizeTo( Frame().Width(), height);
 		RecalcSize();
-		// ...and note the interface inside the map:
+		// ...and add the interface to the map:
 		mActiveJobs[name] = controller;
 	} else {
 		// we are in STATIC-mode, where inactive jobs are shown. We just

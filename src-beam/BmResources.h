@@ -36,14 +36,15 @@
 
 #include <Directory.h>
 #include <Font.h>
-#include <Path.h>
-#include <String.h>
+#include <storage/Path.h>
+#include <support/String.h>
 #include <Volume.h>
 
 #include "Colors.h"
 #include "PrefilledBitmap.h"
 
 class BBitmap;
+class BPicture;
 
 /*------------------------------------------------------------------------------*\
 	BmResources 

@@ -454,8 +454,11 @@ BString BmMail::CreateReplySubjectFor( const BString subject) {
 	Regexx rx;
 	if (!rx.exec( subject, isReplyRX, Regexx::nocase|Regexx::nomatch)) {
 		BString subjectStr = ThePrefs->GetString( "ReplySubjectStr", "Re: %s");
-		return rx.replace( subjectStr, "%s", subject, 
-								 Regexx::nocase|Regexx::global|Regexx::noatom);
+		subjectStr = rx.replace( subjectStr, "%s", subject, 
+								 		 Regexx::nocase|Regexx::global|Regexx::noatom);
+		BString convertedSubject;
+		ConvertFromUTF8( DefaultEncoding(), subjectStr, convertedSubject);
+		return convertedSubject;
 	}
 	return subject;
 }
@@ -468,10 +471,12 @@ BString BmMail::CreateForwardSubjectFor( const BString subject) {
 	BString isForwardRX = ThePrefs->GetString( "ForwardSubjectRX", "^\\s*\\[?\\s*Fwd(\\[\\d+\\])?:");
 	Regexx rx;
 	if (!rx.exec( subject, isForwardRX, Regexx::nocase|Regexx::nomatch)) {
-		BString newSubject = ThePrefs->GetString( "ForwardSubjectStr", "[Fwd: %s]");
-		newSubject = rx.replace( newSubject, "%s", subject, 
+		BString subjectStr = ThePrefs->GetString( "ForwardSubjectStr", "[Fwd: %s]");
+		subjectStr = rx.replace( subjectStr, "%s", subject, 
 										 Regexx::nocase|Regexx::global|Regexx::noatom);
-		return newSubject;
+		BString convertedSubject;
+		ConvertFromUTF8( DefaultEncoding(), subjectStr, convertedSubject);
+		return convertedSubject;
 	}
 	return subject;
 }
@@ -487,9 +492,13 @@ BString BmMail::CreateReplyIntro() {
 							  Regexx::nocase|Regexx::global|Regexx::noatom);
 	intro = rx.replace( intro, "%T", TimeToString( mMailRef->When(), "%X [%z]"), 
 							  Regexx::nocase|Regexx::global|Regexx::noatom);
-	intro = rx.replace( intro, "%F", mMailRef->From(), 
+	BmAddress fromAddr = Header()->GetAddressList( BM_FIELD_FROM).FirstAddress();
+	intro = rx.replace( intro, "%F", 
+							  fromAddr.HasPhrase() ? fromAddr.Phrase() : fromAddr.AddrSpec(), 
 							  Regexx::nocase|Regexx::global|Regexx::noatom);
-	return intro;
+	BString convertedIntro;
+	ConvertFromUTF8( DefaultEncoding(), intro, convertedIntro);
+	return convertedIntro;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -503,9 +512,13 @@ BString BmMail::CreateForwardIntro() {
 							  Regexx::nocase|Regexx::global|Regexx::noatom);
 	intro = rx.replace( intro, "%T", TimeToString( mMailRef->When(), "%X [%z]"), 
 							  Regexx::nocase|Regexx::global|Regexx::noatom);
-	intro = rx.replace( intro, "%F", mMailRef->From(), 
+	BmAddress fromAddr = Header()->GetAddressList( BM_FIELD_FROM).FirstAddress();
+	intro = rx.replace( intro, "%F", 
+							  fromAddr.HasPhrase() ? fromAddr.Phrase() : fromAddr.AddrSpec(), 
 							  Regexx::nocase|Regexx::global|Regexx::noatom);
-	return intro;
+	BString convertedIntro;
+	ConvertFromUTF8( DefaultEncoding(), intro, convertedIntro);
+	return convertedIntro;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -846,46 +859,121 @@ void BmMail::ResyncFromDisk() {
 		-	
 \*------------------------------------------------------------------------------*/
 int32 BmMail::QuoteText( const BString& in, BString& out, BString quoteString, 
-								 int maxLen) {
+								 int maxLineLen) {
 	out = "";
 	if (!in.Length())
-		return maxLen;
-	Regexx rx;
+		return maxLineLen;
+	BString qStyle = ThePrefs->GetString( "QuoteFormatting");
+	if (qStyle == "Auto Wrap")
+		return QuoteTextWithReWrap( in, out, quoteString, maxLineLen);
 	BString quote;
 	BString text;
-	BString tmp;
+	Regexx rx;
 	rx.str( in);
-	rx.expr( ThePrefs->GetString( "QuotedLineRX", "^((?:\\w?\\w?\\w?[>|][ \\t]*)*)(.*?)$"));
-	int modifiedMaxLen = maxLen;
+	rx.expr( ThePrefs->GetString( "QuotingLevelRX"));
+	int modifiedMaxLen = maxLineLen;
+	int maxTextLen;
 	int32 count = rx.exec( Regexx::study | Regexx::global | Regexx::newline);
 	for( int32 i=0; i<count; ++i) {
 		quote = rx.match[i].atom[0];
-		text = rx.match[i].atom[1];
-		int32 maxTextLen;
-		if (ThePrefs->GetBool( "BePedanticAboutMaxLineLen", false)) {
-			// always respect maxlinelen, resulting in comb-effect when mails are hard-wrapped:
-			maxTextLen = MAX(1,maxLen-quoteString.Length()-quote.Length());
+		if (qStyle == "Manual") {
+			// always respect maxLineLen, never push right margin:
+			maxTextLen = maxLineLen - quote.Length() - quoteString.Length();
 		} else {
-			// adjust maxlinelen to allow for quote-string, in effect leaving the
-			// mail-formatting intact:
-			maxTextLen = MAX(1,maxLen-quote.Length());
+			// push right margin for new quote-string, if needed, in effect leaving 
+			// the mail-formatting intact (but possibly exceeding 80 chars per line):
+			maxTextLen = maxLineLen - quote.Length();
 		}
-		while( text.Length() > maxTextLen) {
-			int32 spcPos = text.FindLast( " ", maxTextLen-1);
-			if (spcPos == B_ERROR)
-				spcPos = maxTextLen;
-			else
-				spcPos++;
-			text.MoveInto( tmp, 0, spcPos);
-			tmp = quoteString + quote + tmp;
-			modifiedMaxLen = MAX( tmp.Length(), modifiedMaxLen);
-			out << tmp << "\n";
+		text = rx.match[i].atom[1];
+		int32 newLen = AddQuotedText( text, out, quote, quoteString, maxTextLen);
+		modifiedMaxLen = MAX( newLen, modifiedMaxLen);
+	}
+	BString emptyLinesAtEndRX = BString("(?:") << quoteString << "(" << quote << ")?[ \\t]*\\n)+\\z";
+	out = rx.replace( out, emptyLinesAtEndRX, "", Regexx::newline|Regexx::global|Regexx::noatom);
+	return modifiedMaxLen;
+}
+
+/*------------------------------------------------------------------------------*\
+	QuoteText()
+		-	
+\*------------------------------------------------------------------------------*/
+int32 BmMail::QuoteTextWithReWrap( const BString& in, BString& out, 
+											  BString quoteString, int maxLineLen) {
+	out = "";
+	if (!in.Length())
+		return maxLineLen;
+	int maxTextLen = maxLineLen - quoteString.Length();
+	Regexx rx;
+	rx.str( in);
+	rx.expr( ThePrefs->GetString( "QuotingLevelRX"));
+	BString currQuote;
+	BString text;
+	BString line;
+	BString quote;
+	Regexx rxl;
+	int minLenForWrappedLine = ThePrefs->GetInt( "MinLenForWrappedLine", 60);
+	bool lastWasSpecialLine = true;
+	int32 lastLineLen = 0;
+	int32 count = rx.exec( Regexx::study | Regexx::global | Regexx::newline);
+	for( int32 i=0; i<count; ++i) {
+		quote = rx.match[i].atom[0];
+		line = rx.match[i].atom[1];
+		if ((line.Length() < minLenForWrappedLine && lastWasSpecialLine)
+		|| rxl.exec( line, ThePrefs->GetString( "QuotingLevelEmptyLineRX", "^[ \\t]*$"))
+		|| rxl.exec( line, ThePrefs->GetString( "QuotingLevelListLineRX", "^[*+\\-\\d]+.*?$"))) {
+			if (i != 0) {
+				AddQuotedText( text, out, currQuote, quoteString, maxTextLen);
+				text.Truncate(0);
+			}
+			lastWasSpecialLine = true;
+		} else if (lastWasSpecialLine || currQuote != quote || lastLineLen < minLenForWrappedLine) {
+			if (i != 0) {
+				AddQuotedText( text, out, currQuote, quoteString, maxTextLen);
+				text.Truncate(0);
+			}
+			lastWasSpecialLine = false;
 		}
-		tmp = quoteString + quote + text;
+		currQuote = quote;
+		lastLineLen = line.Length();
+		if (!text.Length())
+			text = line;
+		else {
+			int32 len = text.Length()-1;
+			while( len>=0 && text[len]==' ')
+				len--;
+			text.Truncate( len+1);
+			text << " " << line;
+		}
+	}
+	AddQuotedText( text, out, currQuote, quoteString, maxTextLen);
+	BString emptyLinesAtEndRX = BString("(?:") << quoteString << "(" << currQuote << ")?[ \\t]*\\n)+\\z";
+	out = rx.replace( out, emptyLinesAtEndRX, "", Regexx::newline|Regexx::global|Regexx::noatom);
+	return maxLineLen;
+}
+
+/*------------------------------------------------------------------------------*\
+	AddQuotedLine()
+		-	
+\*------------------------------------------------------------------------------*/
+int32 BmMail::AddQuotedText( BString& text, BString& out, 
+									  const BString& quote,
+									  const BString& quoteString,
+								     int maxTextLen) {
+	int32 modifiedMaxLen = 0;
+	BString tmp;
+	while( text.Length() > maxTextLen) {
+		int32 spcPos = text.FindLast( " ", maxTextLen-1);
+		if (spcPos == B_ERROR)
+			spcPos = maxTextLen;
+		else
+			spcPos++;
+		text.MoveInto( tmp, 0, spcPos);
+		tmp.Prepend( quoteString + quote);
 		modifiedMaxLen = MAX( tmp.Length(), modifiedMaxLen);
 		out << tmp << "\n";
 	}
-	BString emptyLinesAtEnd = BString("(?:") << quoteString << quote << "\n)+\\z";
-	out = rx.replace( out, emptyLinesAtEnd, "", Regexx::newline|Regexx::global);
+	tmp = quoteString + quote + text;
+	modifiedMaxLen = MAX( tmp.Length(), modifiedMaxLen);
+	out << tmp << "\n";
 	return modifiedMaxLen;
 }
