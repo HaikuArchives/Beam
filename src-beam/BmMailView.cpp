@@ -51,7 +51,6 @@ using namespace regexx;
 #include "BmMailRef.h"
 #include "BmMailRefView.h"
 #include "BmMailView.h"
-#include "BmMainWindow.h"
 #include "BmMsgTypes.h"
 #include "BmPrefs.h"
 #include "BmResources.h"
