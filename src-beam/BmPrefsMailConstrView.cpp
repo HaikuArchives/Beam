@@ -185,6 +185,25 @@ BmPrefsMailConstrView::BmPrefsMailConstrView()
 		-	
 \*------------------------------------------------------------------------------*/
 BmPrefsMailConstrView::~BmPrefsMailConstrView() {
+	TheBubbleHelper.SetHelp( mMaxLineLenControl, NULL);
+	TheBubbleHelper.SetHelp( mQuotingStringControl, NULL);
+	TheBubbleHelper.SetHelp( mQuoteFormattingControl, NULL);
+	TheBubbleHelper.SetHelp( mForwardIntroStrControl, NULL);
+	TheBubbleHelper.SetHelp( mForwardSubjectStrControl, NULL);
+	TheBubbleHelper.SetHelp( mForwardSubjectRxControl, NULL);
+	TheBubbleHelper.SetHelp( mReplyIntroStrControl, NULL);
+	TheBubbleHelper.SetHelp( mReplySubjectStrControl, NULL);
+	TheBubbleHelper.SetHelp( mReplySubjectRxControl, NULL);
+	TheBubbleHelper.SetHelp( mDefaultEncodingControl, NULL);
+	TheBubbleHelper.SetHelp( mSpecialForEachBccControl, NULL);
+	TheBubbleHelper.SetHelp( mPreferUserAgentControl, NULL);
+	TheBubbleHelper.SetHelp( mGenerateIDsControl, NULL);
+	TheBubbleHelper.SetHelp( mMakeQpSafeControl, NULL);
+	TheBubbleHelper.SetHelp( mDefaultForwardTypeControl, NULL);
+	TheBubbleHelper.SetHelp( mDontAttachVCardsControl, NULL);
+	TheBubbleHelper.SetHelp( mHardWrapControl, NULL);
+	TheBubbleHelper.SetHelp( mHardWrapAt78Control, NULL);
+	TheBubbleHelper.SetHelp( mAllow8BitControl, NULL);
 }
 
 /*------------------------------------------------------------------------------*\

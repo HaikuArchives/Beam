@@ -204,6 +204,21 @@ BmPrefsGeneralView::BmPrefsGeneralView()
 \*------------------------------------------------------------------------------*/
 BmPrefsGeneralView::~BmPrefsGeneralView() {
 	delete mMailboxPanel;
+	TheBubbleHelper.SetHelp( mDynamicStatusWinControl, NULL);
+	TheBubbleHelper.SetHelp( mMailMoverShowControl, NULL);
+	TheBubbleHelper.SetHelp( mPopperRemoveControl, NULL);
+	TheBubbleHelper.SetHelp( mSmtpRemoveControl, NULL);
+	TheBubbleHelper.SetHelp( mRemoveFailedControl, NULL);
+	TheBubbleHelper.SetHelp( mWorkspaceControl, NULL);
+	TheBubbleHelper.SetHelp( mRestoreFolderStatesControl, NULL);
+	TheBubbleHelper.SetHelp( mInOutAtTopControl, NULL);
+	TheBubbleHelper.SetHelp( mUseDeskbarControl, NULL);
+	TheBubbleHelper.SetHelp( mBeepNewMailControl, NULL);
+	TheBubbleHelper.SetHelp( mShowTooltipsControl, NULL);
+	TheBubbleHelper.SetHelp( mCacheRefsOnDiskControl, NULL);
+	TheBubbleHelper.SetHelp( mCacheRefsInMemControl, NULL);
+	TheBubbleHelper.SetHelp( mNetBufSizeSendControl, NULL);
+	TheBubbleHelper.SetHelp( mNetRecvTimeoutControl, NULL);
 }
 
 /*------------------------------------------------------------------------------*\

@@ -285,6 +285,11 @@ BmPrefsFilterView::BmPrefsFilterView( BmFilterList* filterList, bool outbound)
 		-	
 \*------------------------------------------------------------------------------*/
 BmPrefsFilterView::~BmPrefsFilterView() {
+	TheBubbleHelper.SetHelp( mFilterListView, NULL);
+	TheBubbleHelper.SetHelp( mFilterControl, NULL);
+	TheBubbleHelper.SetHelp( mIsDefaultControl, NULL);
+	TheBubbleHelper.SetHelp( mContentControl, NULL);
+	TheBubbleHelper.SetHelp( mTestButton, NULL);
 }
 
 /*------------------------------------------------------------------------------*\

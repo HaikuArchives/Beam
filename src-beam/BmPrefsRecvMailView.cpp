@@ -384,6 +384,27 @@ BmPrefsRecvMailView::BmPrefsRecvMailView()
 		-	
 \*------------------------------------------------------------------------------*/
 BmPrefsRecvMailView::~BmPrefsRecvMailView() {
+	TheBubbleHelper.SetHelp( mAccListView, NULL);
+	TheBubbleHelper.SetHelp( mAccountControl, NULL);
+	TheBubbleHelper.SetHelp( mAliasesControl, NULL);
+	TheBubbleHelper.SetHelp( mLoginControl, NULL);
+	TheBubbleHelper.SetHelp( mMailAddrControl, NULL);
+	TheBubbleHelper.SetHelp( mPwdControl, NULL);
+	TheBubbleHelper.SetHelp( mRealNameControl, NULL);
+	TheBubbleHelper.SetHelp( mServerControl, NULL);
+	TheBubbleHelper.SetHelp( mPortControl, NULL);
+	TheBubbleHelper.SetHelp( mCheckAccountControl, NULL);
+	TheBubbleHelper.SetHelp( mCheckEveryControl, NULL);
+	TheBubbleHelper.SetHelp( mCheckIntervalControl, NULL);
+	TheBubbleHelper.SetHelp( mIsBucketControl, NULL);
+	TheBubbleHelper.SetHelp( mIsDefaultControl, NULL);
+	TheBubbleHelper.SetHelp( mRemoveMailControl, NULL);
+	TheBubbleHelper.SetHelp( mStorePwdControl, NULL);
+	TheBubbleHelper.SetHelp( mAuthControl, NULL);
+	TheBubbleHelper.SetHelp( mSignatureControl, NULL);
+	TheBubbleHelper.SetHelp( mSmtpControl, NULL);
+	TheBubbleHelper.SetHelp( mFilterControl, NULL);
+	TheBubbleHelper.SetHelp( mCheckAndSuggestButton, NULL);
 }
 
 /*------------------------------------------------------------------------------*\

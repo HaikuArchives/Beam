@@ -115,6 +115,11 @@ BmPrefsMailReadView::BmPrefsMailReadView()
 		-	
 \*------------------------------------------------------------------------------*/
 BmPrefsMailReadView::~BmPrefsMailReadView() {
+	TheBubbleHelper.SetHelp( mHeaderListSmallControl, NULL);
+	TheBubbleHelper.SetHelp( mHeaderListLargeControl, NULL);
+	TheBubbleHelper.SetHelp( mMimeTypeTrustInfoControl, NULL);
+	TheBubbleHelper.SetHelp( mMarkAsReadDelayControl, NULL);
+	TheBubbleHelper.SetHelp( mAutoCheckIfPppUpControl, NULL);
 }
 
 /*------------------------------------------------------------------------------*\

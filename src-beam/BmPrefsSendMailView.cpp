@@ -326,6 +326,17 @@ BmPrefsSendMailView::BmPrefsSendMailView()
 		-	
 \*------------------------------------------------------------------------------*/
 BmPrefsSendMailView::~BmPrefsSendMailView() {
+	TheBubbleHelper.SetHelp( mAccListView, NULL);
+	TheBubbleHelper.SetHelp( mAccountControl, NULL);
+	TheBubbleHelper.SetHelp( mDomainControl, NULL);
+	TheBubbleHelper.SetHelp( mLoginControl, NULL);
+	TheBubbleHelper.SetHelp( mPwdControl, NULL);
+	TheBubbleHelper.SetHelp( mServerControl, NULL);
+	TheBubbleHelper.SetHelp( mPortControl, NULL);
+	TheBubbleHelper.SetHelp( mAuthControl, NULL);
+	TheBubbleHelper.SetHelp( mPopControl, NULL);
+	TheBubbleHelper.SetHelp( mFilterControl, NULL);
+	TheBubbleHelper.SetHelp( mCheckAndSuggestButton, NULL);
 }
 
 /*------------------------------------------------------------------------------*\

@@ -160,6 +160,8 @@ BmPrefsShortcutsView::BmPrefsShortcutsView()
 		-	
 \*------------------------------------------------------------------------------*/
 BmPrefsShortcutsView::~BmPrefsShortcutsView() {
+	TheBubbleHelper.SetHelp( mListView, NULL);
+	TheBubbleHelper.SetHelp( mShortcutControl, NULL);
 }
 
 /*------------------------------------------------------------------------------*\

@@ -281,6 +281,13 @@ BmPrefsSignatureView::BmPrefsSignatureView()
 		-	
 \*------------------------------------------------------------------------------*/
 BmPrefsSignatureView::~BmPrefsSignatureView() {
+	TheBubbleHelper.SetHelp( mSigListView, NULL);
+	TheBubbleHelper.SetHelp( mSignatureControl, NULL);
+	TheBubbleHelper.SetHelp( mContentControl, NULL);
+	TheBubbleHelper.SetHelp( mDynamicControl, NULL);
+	TheBubbleHelper.SetHelp( mCharsetControl, NULL);
+	TheBubbleHelper.SetHelp( mSignatureRxControl, NULL);
+	TheBubbleHelper.SetHelp( mTestButton, NULL);
 }
 
 /*------------------------------------------------------------------------------*\

@@ -62,6 +62,7 @@ BmRulerView::BmRulerView( const BFont& font)
 		-	
 \*------------------------------------------------------------------------------*/
 BmRulerView::~BmRulerView() {
+	TheBubbleHelper.SetHelp( this, NULL);
 }
 
 /*------------------------------------------------------------------------------*\
