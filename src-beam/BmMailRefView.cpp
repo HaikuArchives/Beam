@@ -78,7 +78,7 @@ enum Columns {
 	COL_TO,
 	COL_REPLY_TO,
 	COL_NAME,
-	COL_CREATED,
+	COL_WHEN_CREATED,
 	COL_TRACKER_NAME,
 	COL_STATUS,
 	COL_ATTACHMENT,
@@ -152,7 +152,7 @@ void BmMailRefItem::UpdateView( BmUpdFlags flags) {
 \*------------------------------------------------------------------------------*/
 const int32 BmMailRefItem::GetNumValueForColumn( int32 column_index) const {
 	BmMailRef* ref( ModelItem());
-	if (column_index == 0 || column_index == 14) {
+	if (column_index == COL_STATUS_I || column_index == COL_STATUS) {
 		// status
 		BmString st = ref->Status();
 		return st == BM_MAIL_STATUS_NEW			? 0 :
@@ -186,10 +186,20 @@ const time_t BmMailRefItem::GetDateValueForColumn( int32 column_index) const {
 	BmMailRef* ref( ModelItem());
 	if (column_index == COL_DATE)
 		return ref->When();
-	else if (column_index == COL_CREATED)
-		return ref->Created();
 	else
 		return 0;		// we don't know this date-column !?!
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+const bigtime_t BmMailRefItem::GetBigtimeValueForColumn( int32 column_index) const {
+	BmMailRef* ref( ModelItem());
+	if (column_index == COL_WHEN_CREATED)
+		return ref->WhenCreated();
+	else
+		return 0;		// we don't know this bigtime-column !?!
 }
 
 /*------------------------------------------------------------------------------*\
@@ -229,8 +239,8 @@ const char* BmMailRefItem::GetUserText(int32 colIdx, float /*colWidth*/) const {
 	case COL_NAME:
 		text = ref->Name().String();
 		break;
-	case COL_CREATED:
-		text = ref->CreatedString().String();
+	case COL_WHEN_CREATED:
+		text = ref->WhenCreatedString().String();
 		break;
 	case COL_TRACKER_NAME:
 		text = ref->TrackerName();
@@ -318,7 +328,7 @@ BmMailRefView::BmMailRefView( minimax minmax, int32 width, int32 height)
 	AddColumn( new CLVColumn( "To", 100.0, flags, 20.0));
 	AddColumn( new CLVColumn( "Reply-To", 150.0, flags, 20.0));
 	AddColumn( new CLVColumn( "Name", 150.0, flags, 20.0));
-	AddColumn( new CLVColumn( "Created", 100.0, flags | CLV_COLDATA_DATE,
+	AddColumn( new CLVColumn( "Date-Created", 100.0, flags | CLV_COLDATA_BIGTIME,
 									  20.0));
 	AddColumn( new CLVColumn( "Tracker-Name", 150.0, flags, 20.0));
 	AddColumn( new CLVColumn( "S", 100.0, flags, 40.0, "(S)tatus [Text]"));

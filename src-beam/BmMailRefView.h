@@ -68,6 +68,7 @@ public:
 	// overrides of CLVEasyItem base:
 	const int32 GetNumValueForColumn( int32 column_index) const;
 	const time_t GetDateValueForColumn( int32 column_index) const;
+	const bigtime_t GetBigtimeValueForColumn( int32 column_index) const;
 	const char* GetUserText( int32 column_index, float column_width) const;
 
 	// Hide copy-constructor and assignment:
