@@ -115,6 +115,16 @@ BmApplication::BmApplication( const char* sig)
 		// set global flag, if in test-mode:
 		BeamInTestMode = true;
 
+	// find out if we are running on Dano (or newer):
+	system_info sysInfo;
+	get_system_info( &sysInfo);
+	BmString kTimestamp(sysInfo.kernel_build_date);
+	kTimestamp << " " << sysInfo.kernel_build_time;
+	time_t kTime;
+	ParseDateTime( kTimestamp, kTime);
+	if (kTime >= 1005829579)
+		BeamOnDano = true;
+
 	bmApp = this;
 	
 	mStartupLocker->Lock();
@@ -514,14 +524,23 @@ void BmApplication::MessageReceived( BMessage* msg) {
 					bool isAutoCheck 
 						= msg->FindBool( BmPopAccountList::MSG_AUTOCHECK);
 					BM_LOG( BM_LogApp, 
-							  BmString("PopAccount ") << key << " checks mail " 
+							  BmString("PopAccount ") << key << " asks to check mail " 
 							  	<< (isAutoCheck ? "(auto)" : "(manual)"));
 					if (!isAutoCheck 
 					|| !ThePrefs->GetBool( "AutoCheckOnlyIfPPPRunning", true) 
-					|| IsPPPRunning())
+					|| IsPPPRunning()) {
+						BM_LOG( BM_LogApp, 
+								  BmString("PopAccount ") << key	
+								  		<< ": mail is checked now");
 						ThePopAccountList->CheckMailFor( key, isAutoCheck);
-				} else
+					} else
+						BM_LOG( BM_LogApp, 
+								  BmString("PopAccount ") << key	
+								  		<< ": mail is not checked (PPP isn't running)");
+				} else {
+					BM_LOG( BM_LogApp, "Request to check mail for all accounts");
 					ThePopAccountList->CheckMail();
+				}
 				break;
 			}
 			case BMM_NEW_MAIL: {
