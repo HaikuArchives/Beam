@@ -115,7 +115,7 @@ BmMainWindow* BmMainWindow::CreateInstance()
 \*------------------------------------------------------------------------------*/
 BmMainWindow::BmMainWindow()
 	:	inherited( "MainWindow", BRect(50,50,800,600), 
-					  bmApp->BmAppNameWithVersion.String(),
+					  bmApp->BmAppName.String(),
 					  ThePrefs->GetBool( "UseDocumentResizer", true)
 					  		? B_DOCUMENT_WINDOW_LOOK 
 					  		: B_TITLED_WINDOW_LOOK, 
