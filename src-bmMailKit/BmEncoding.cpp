@@ -1046,7 +1046,7 @@ void BmQuotedPrintableEncoder::Filter( const char* srcBuf, uint32& srcLen,
 	const char* safeChars = 
 				(ThePrefs->GetBool( "MakeQPSafeForEBCDIC", false)
 					? "%&/()?+*,.;:<>-_"
-					: "%&/()?+*,.;:<>-_!\"#$@[]\\^'{|}~\x1B");
+					: "%&/()?+*,.;:<>-_!\"#$@[]\\^'{|}~");
 							// in bodies, the underscore is safe, i.e. it need
 							// not be encoded.
 	const char* src = srcBuf;
