@@ -249,7 +249,13 @@ BmMailView::BmMailView( minimax minmax, BRect frame, bool outbound)
 		mRulerView = new BmRulerView( &mFont);
 		AddChild( mRulerView);
 		mRulerView->MoveTo( mBodyPartView->Frame().LeftBottom());
-		m_separator_chars = ThePrefs->GetString( "SeparatorCharsForUndo", " \n\t,.");
+		BmString undoMode = ThePrefs->GetString( "UndoMode", "Words");
+		if (undoMode.ICompare("Words") == 0)
+			m_separator_chars = " \n\t,;.";
+		else if (undoMode.ICompare("Paragraphs") == 0)
+			m_separator_chars = "\n";
+		else if (undoMode.ICompare("None") == 0)
+			m_separator_chars = "";
 	}
 	CalculateVerticalOffset();
 	mScrollView = new BmMailViewContainer( minmax, this, B_FOLLOW_NONE, 
