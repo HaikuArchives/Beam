@@ -198,7 +198,7 @@ BmBodyPart::BmBodyPart( BmBodyPartList* model, const BString& msgtext, int32 sta
 	,	mStartInRawText( 0)
 	,	mBodyLength( 0)
 	,	mSuggestedEncoding( ThePrefs->GetInt( "DefaultEncoding"))
-	,	mCurrentEncoding( mSuggestedEncoding)
+	,	mCurrentEncoding( ThePrefs->GetInt( "DefaultEncoding"))
 {
 	SetTo( msgtext, start, length, header);
 }
@@ -216,15 +216,12 @@ BmBodyPart::BmBodyPart( BmBodyPartList* model, const entry_ref* ref, BmListModel
 	// we can't store info about mailtext, since there is no mailtext available:
 	,	mBodyLength( 0)
 	,	mSuggestedEncoding( ThePrefs->GetInt( "DefaultEncoding"))
-	,	mCurrentEncoding( mSuggestedEncoding)
+	,	mCurrentEncoding( ThePrefs->GetInt( "DefaultEncoding"))
 {
 	try {
 		status_t err;
 		BFile file;
-		BNodeInfo nodeInfo;
 		off_t size;
-		char mt[B_MIME_TYPE_LENGTH+1];
-		*mt = 0;
 		(err=file.SetTo( ref, B_READ_ONLY)) == B_OK		
 														|| BM_THROW_RUNTIME( BString("Couldn't create file for <") << ref->name << "> \n\nError:" << strerror(err));
 		(err=file.GetSize( &size)) == B_OK
@@ -715,6 +712,40 @@ void BmBodyPart::PropagateHigherEncoding() {
 }
 
 /*------------------------------------------------------------------------------*\
+	PruneUnnededMultiParts()
+		-	
+\*------------------------------------------------------------------------------*/
+int32 BmBodyPart::PruneUnneededMultiParts() {
+	int32 count=0;
+	BmModelItemMap::const_iterator iter;
+	for( iter = begin(); iter != end(); ) {
+		BmBodyPart* bodyPart = dynamic_cast< BmBodyPart*>( iter++->second.Get());
+		if (bodyPart->IsMultiPart()) {
+			int32 subCount = bodyPart->PruneUnneededMultiParts();
+			if (subCount == 0) {
+				// remove this multipart, it is empty:
+				RemoveSubItem( bodyPart);
+				continue;
+			} else if (subCount == 1) {
+				// replace this multipart with its only child:
+				BmRef< BmListModelItem> childRef( bodyPart->begin()->second.Get());
+				BString parentKey = bodyPart->Key();
+				RemoveSubItem( bodyPart);
+				AddSubItem( childRef.Get());
+				BmRef<BmListModel> listModel( ListModel());
+				if (listModel)
+					listModel->RenameItem( childRef->Key(), parentKey);
+							// reuse parent's key so that child takes up 
+							// the parent's position in list
+				continue;
+			}
+		}
+		count++;
+	}
+	return count;
+}
+
+/*------------------------------------------------------------------------------*\
 	()
 		-	
 \*------------------------------------------------------------------------------*/
@@ -830,8 +861,7 @@ bool BmBodyPartList::HasAttachments() const {
 		return false;
 	if (!mEditableTextBody)
 		return true;
-	BmBodyPart* bodyPart = dynamic_cast< BmBodyPart*>( begin()->second.Get());
-	return bodyPart ? bodyPart->IsMultiPart() : false;
+	return IsMultiPart();
 }
 
 /*------------------------------------------------------------------------------*\
@@ -889,12 +919,39 @@ uint32 BmBodyPartList::DefaultEncoding() const {
 		-	
 \*------------------------------------------------------------------------------*/
 bool BmBodyPartList::IsMultiPart() const {
-	if (size()) {
+	if (size()==1) {
 		BmBodyPart* firstBody = dynamic_cast<BmBodyPart*>( begin()->second.Get());
 		if (firstBody)
 			return firstBody->IsMultiPart();
 	}
-	return false;
+	return size()>1;
+}
+
+/*------------------------------------------------------------------------------*\
+	PruneUnnededMultiParts()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmBodyPartList::PruneUnneededMultiParts() {
+	BmAutolock lock( mModelLocker);
+	lock.IsLocked()	 						|| BM_THROW_RUNTIME( ModelName() << ":PruneUnnededMultiParts(): Unable to get lock");
+	BmModelItemMap::const_iterator iter;
+	for( iter = begin(); iter != end(); ) {
+		BmBodyPart* bodyPart = dynamic_cast< BmBodyPart*>( iter++->second.Get());
+		if (bodyPart->IsMultiPart()) {
+			int32 subCount = bodyPart->PruneUnneededMultiParts();
+			if (subCount == 0) {
+				// remove this multipart, it is empty:
+				RemoveItemFromList( bodyPart);
+			} else if (subCount == 1) {
+				// replace this multipart with its only child:
+				BmRef< BmListModelItem> childRef( bodyPart->begin()->second.Get());
+				BString parentKey = bodyPart->Key();
+				RemoveItemFromList( bodyPart);
+				AddItemToList( childRef.Get());
+				RenameItem( childRef->Key(), parentKey);
+			}
+		}
+	}
 }
 
 /*------------------------------------------------------------------------------*\
@@ -902,6 +959,9 @@ bool BmBodyPartList::IsMultiPart() const {
 		-	
 \*------------------------------------------------------------------------------*/
 bool BmBodyPartList::ConstructBodyForSending( BString& msgText) {
+	BmAutolock lock( mModelLocker);
+	lock.IsLocked()	 						|| BM_THROW_RUNTIME( ModelName() << ":ConstructBodyForSending(): Unable to get lock");
+	PruneUnneededMultiParts();
 	BmRef<BmBodyPart> editableTextBody( EditableTextBody());
 	bool hasMultiPartTop = editableTextBody && editableTextBody->Parent();
 	bool isMultiPart = hasMultiPartTop
@@ -916,29 +976,16 @@ bool BmBodyPartList::ConstructBodyForSending( BString& msgText) {
 		msgText << "--"<<boundary<<"\r\n";
 	}
 	BmModelItemMap::const_iterator iter;
-	if (hasMultiPartTop && !isMultiPart) {
-		// The mail thinks it is a multipart-mail, while in fact it isn't (any more).
-		// This means that the user has removed attachments from the mail, so that
-		// now there is no need for the multipart at the top, so we skip it:
-		BmRef<BmBodyPart> editableTextBody( EditableTextBody());
-		BmBodyPart* topPart( dynamic_cast< BmBodyPart*>( editableTextBody->Parent()));
-		for( iter = topPart->begin(); iter != topPart->end(); ++iter) {
-			BmBodyPart* bodyPart = dynamic_cast< BmBodyPart*>( iter->second.Get());
-			bodyPart->ConstructBodyForSending( msgText);
-		}
-	} else {
-		// The mail is either a simple text-mail or it is/should be a multipart-mail:
-		for( iter = begin(); iter != end(); ++iter) {
-			BmBodyPart* bodyPart = dynamic_cast< BmBodyPart*>( iter->second.Get());
-			bodyPart->ConstructBodyForSending( msgText);
-			if (isMultiPart && !hasMultiPartTop) {
-				BmModelItemMap::const_iterator next = iter;
-				next++;
-				if (next == end())
-					msgText << "--"<<boundary<<"--\r\n";
-				else
-					msgText << "--"<<boundary<<"\r\n";
-			}
+	for( iter = begin(); iter != end(); ++iter) {
+		BmBodyPart* bodyPart = dynamic_cast< BmBodyPart*>( iter->second.Get());
+		bodyPart->ConstructBodyForSending( msgText);
+		if (isMultiPart && !hasMultiPartTop) {
+			BmModelItemMap::const_iterator next = iter;
+			next++;
+			if (next == end())
+				msgText << "--"<<boundary<<"--\r\n";
+			else
+				msgText << "--"<<boundary<<"\r\n";
 		}
 	}
 	return true;

@@ -106,6 +106,7 @@ public:
 	entry_ref WriteToTempFile( BString filename="");
 	void SaveAs( const entry_ref& destDirRef, BString filename);
 	void PropagateHigherEncoding();
+	int32 PruneUnneededMultiParts();
 	void ConstructBodyForSending( BString &msgText);
 	void SuggestEncoding( int32 enc) 			{ mSuggestedEncoding = enc; }
 
@@ -192,6 +193,7 @@ public:
 	void ParseMail();
 	bool HasAttachments() const;
 	void AddAttachmentFromRef( const entry_ref* ref);
+	void PruneUnneededMultiParts();
 	bool ConstructBodyForSending( BString& msgText);
 	void SetEditableText( const BString& text, uint32 encoding);
 	uint32 DefaultEncoding()	const;
