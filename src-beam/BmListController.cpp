@@ -583,7 +583,7 @@ void BmListViewController::AddAllModelItems() {
 		BmListViewItem* viewItem;
 		if (Hierarchical()) {
 			// add item and its subitems to the listview:
-			doAddModelItem( NULL, modelItem);
+			doAddModelItem( NULL, modelItem, false);
 		} else {
 			viewItem = CreateListViewItem( modelItem);
 			if (viewItem) {
@@ -643,11 +643,11 @@ BmListViewItem* BmListViewController::AddModelItem( BmListModelItem* item) {
 				BmString(ControllerName())<<": adding one item to listview");
 	BmListViewItem* newItem;
 	if (!Hierarchical()) {
-		newItem = doAddModelItem( NULL, item);
+		newItem = doAddModelItem( NULL, item, true);
 	} else {
 		BmRef<BmListModelItem> parent( item->Parent());
 		BmListViewItem* parentItem = FindViewItemFor( parent.Get());
-		newItem = doAddModelItem( parentItem, item);
+		newItem = doAddModelItem( parentItem, item, true);
 	}
 	BMessage msg( BM_NTFY_LISTCONTROLLER_MODIFIED);
 	SendNotices( BM_NTFY_LISTCONTROLLER_MODIFIED, &msg);
@@ -659,7 +659,8 @@ BmListViewItem* BmListViewController::AddModelItem( BmListModelItem* item) {
 		-	
 \*------------------------------------------------------------------------------*/
 BmListViewItem* BmListViewController::doAddModelItem( BmListViewItem* parent, 
-																		BmListModelItem* item) {
+																		BmListModelItem* item,
+																		bool redraw) {
 	auto_ptr<BMessage> archive( 
 		Hierarchical() 
 			? GetArchiveForItemKey( item->Key()) 
@@ -667,12 +668,12 @@ BmListViewItem* BmListViewController::doAddModelItem( BmListViewItem* parent,
 	);
 	BmListViewItem* newItem = CreateListViewItem( item, archive.get());
 	if (newItem) {
-		newItem->UpdateView( UPD_ALL, false);
 		if (parent)
 			AddUnder( newItem, parent);
 		else
 			AddItem( newItem);
 		mViewModelMap[item] = newItem;
+		newItem->UpdateView( UPD_ALL, redraw);
 		BM_LOG2( BM_LogMailTracking, 
 					BmString("ListView <") << ModelName() << "> added view-item " 
 						<< newItem->Key());
@@ -683,7 +684,7 @@ BmListViewItem* BmListViewController::doAddModelItem( BmListViewItem* parent,
 	BmModelItemMap::const_iterator endIter = item->end();
 	for( iter = item->begin(); iter != endIter; ++iter) {
 		BmListModelItem* subItem = iter->second.Get();
-		doAddModelItem( newItem, subItem);
+		doAddModelItem( newItem, subItem, redraw);
 	}
 	return newItem;
 }

@@ -249,7 +249,7 @@ protected:
 private:
 
 	BmListViewItem* doAddModelItem( BmListViewItem* parent, 
-											  BmListModelItem* item);
+											  BmListModelItem* item, bool redraw);
 	void doRemoveModelItem( BmListModelItem* item);
 
 	// Hide copy-constructor and assignment:
