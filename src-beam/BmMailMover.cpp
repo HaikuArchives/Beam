@@ -96,7 +96,8 @@ bool BmMailMover::StartJob() {
 	destDir.GetNodeRef( &destNodeRef);
 	// move each mailref into the destination folder:
 	try {
-		for( int32 i=0; ShouldContinue() && i<refCount; ++i) {
+		int32 i;
+		for( i=0; ShouldContinue() && i<refCount; ++i) {
 			ref = static_cast<entry_ref*>( mRefList->ItemAt(i));
 			if (ref->directory == destNodeRef.node && ref->device == destNodeRef.device)
 				continue;						// no move neccessary, already at 'new' home
@@ -120,7 +121,7 @@ bool BmMailMover::StartJob() {
 													// (it will drop messages if we go too fast)
 		}
 		entry.GetName( filename);
-		BmString currentCount = BmString()<<refCount<<" of "<<refCount;
+		BmString currentCount = BmString()<<i<<" of "<<refCount;
 		UpdateStatus( delta, filename, currentCount.String());
 	}
 	catch( BM_runtime_error &err) {
@@ -144,6 +145,9 @@ void BmMailMover::UpdateStatus( const float delta, const char* filename,
 	msg->AddString( BmJobModel::MSG_DOMAIN, "statbar");
 	msg->AddFloat( MSG_DELTA, delta);
 	msg->AddString( MSG_LEADING, filename);
-	msg->AddString( MSG_TRAILING, currentCount);
+	if (!ShouldContinue())
+		msg->AddString( MSG_TRAILING, (BmString(currentCount) << ", Stopped!").String());
+	else
+		msg->AddString( MSG_TRAILING, currentCount);
 	TellControllers( msg.get());
 }

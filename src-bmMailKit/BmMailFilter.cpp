@@ -132,7 +132,7 @@ bool BmMailFilter::StartJob() {
 							  currentCount.String());
 		}
 		mMails.clear();
-		BmString currentCount = BmString()<<count<<" of "<<count;
+		BmString currentCount = BmString()<<c<<" of "<<count;
 		UpdateStatus( delta, "", currentCount.String());
 		return true;
 	}
@@ -220,6 +220,9 @@ void BmMailFilter::UpdateStatus( const float delta, const char* filename,
 	msg->AddString( BmJobModel::MSG_DOMAIN, "statbar");
 	msg->AddFloat( MSG_DELTA, delta);
 	msg->AddString( MSG_LEADING, filename);
-	msg->AddString( MSG_TRAILING, currentCount);
+	if (!ShouldContinue())
+		msg->AddString( MSG_TRAILING, (BmString(currentCount) << ", Stopped!").String());
+	else
+		msg->AddString( MSG_TRAILING, currentCount);
 	TellControllers( msg.get());
 }
