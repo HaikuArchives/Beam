@@ -159,17 +159,11 @@ void BmMailMonitor::HandleMailMonitorMsg( BMessage* msg) {
 					}
 				}
 				if (opcode == B_ENTRY_CREATED) {
-					BmAutolockCheckGlobal lock( TheMailFolderList->mModelLocker);
-					if (!lock.IsLocked())
-						BM_THROW_RUNTIME( "MailMonitor(): Unable to get lock");
 					parent = dynamic_cast<BmMailFolder*>( 
 						TheMailFolderList->FindItemByKey( BM_REFKEY( pnref)).Get()
 					);
 					EntryCreated( parent.Get(), nref, eref, st);
 				} else if (opcode == B_ENTRY_REMOVED) {
-					BmAutolockCheckGlobal lock( TheMailFolderList->mModelLocker);
-					if (!lock.IsLocked())
-						BM_THROW_RUNTIME( "MailMonitor(): Unable to get lock");
 					parent = dynamic_cast<BmMailFolder*>( 
 						TheMailFolderList->FindItemByKey( BM_REFKEY( pnref)).Get()
 					);
@@ -196,16 +190,11 @@ void BmMailMonitor::HandleMailMonitorMsg( BMessage* msg) {
 					oldParent = dynamic_cast<BmMailFolder*>( 
 						TheMailFolderList->FindItemByKey( BM_REFKEY( opnref)).Get()
 					);
-					{	// new scope for autolock:
-						BmAutolockCheckGlobal lock( TheMailFolderList->mModelLocker);
-						if (!lock.IsLocked())
-							BM_THROW_RUNTIME( "MailMonitor(): Unable to get lock");
-						parent = dynamic_cast<BmMailFolder*>( 
-							TheMailFolderList->FindItemByKey( BM_REFKEY( pnref)).Get()
-						);
-						EntryMoved( parent.Get(), nref, eref, st, 
-										oldParent.Get(), erefFrom);
-					}
+					parent = dynamic_cast<BmMailFolder*>( 
+						TheMailFolderList->FindItemByKey( BM_REFKEY( pnref)).Get()
+					);
+					EntryMoved( parent.Get(), nref, eref, st, 
+									oldParent.Get(), erefFrom);
 				}
 				break;
 			}
@@ -217,9 +206,6 @@ void BmMailMonitor::HandleMailMonitorMsg( BMessage* msg) {
 					BM_THROW_RUNTIME( "Field 'node' not found in msg !?!");
 				if ((err = msg->FindInt32( "device", &nref.device)) != B_OK)
 					BM_THROW_RUNTIME( "Field 'device' not found in msg !?!");
-				BmAutolockCheckGlobal lock( TheMailFolderList->mModelLocker);
-				if (!lock.IsLocked())
-					BM_THROW_RUNTIME( "MailMonitor(): Unable to get lock");
 				EntryChanged( nref);
 				break;
 			}
@@ -241,6 +227,9 @@ void BmMailMonitor::EntryCreated( BmMailFolder* parent, node_ref& nref,
 				<< "> is unknown."
 		);
 	if (S_ISDIR(st.st_mode)) {
+		BmAutolockCheckGlobal lock( TheMailFolderList->mModelLocker);
+		if (!lock.IsLocked())
+			BM_THROW_RUNTIME( "MailMonitor::EntryCreated(): Unable to get lock");
 		// a new mail-folder has been created, we add 
 		// it to our list:
 		BM_LOG2( BM_LogMailTracking, 
@@ -265,17 +254,24 @@ void BmMailMonitor::EntryRemoved( BmMailFolder* parent, node_ref& nref) {
 	BmRef<BmMailFolder> folder;
 	// we have no entry that could tell us what kind of item 
 	// was removed, so we have to find out by ourselves:
-	if (parent)
+	if (parent) {
+		// a folder has been deleted, we remove it from our list:
+		BmAutolockCheckGlobal lock( TheMailFolderList->mModelLocker);
+		if (!lock.IsLocked())
+			BM_THROW_RUNTIME( "MailMonitor::EntryRemoved(): Unable to get lock");
 		folder = dynamic_cast< BmMailFolder*>( 
 			parent->FindItemByKey( BM_REFKEY( nref))
 		);
-	else
+	} else
 		folder = NULL;
 	if (folder) {
 		// a folder has been deleted, we remove it from our list:
 		BM_LOG2( BM_LogMailTracking, 
 					BmString("Removal of mail-folder <") 
 						<< nref.node << "> detected.");
+		BmAutolockCheckGlobal lock( TheMailFolderList->mModelLocker);
+		if (!lock.IsLocked())
+			BM_THROW_RUNTIME( "MailMonitor::EntryRemoved(): Unable to get lock");
 		// adjust new-mail-count accordingly...
 		int32 newMailCount = folder->NewMailCount() 
 									+ folder->NewMailCountForSubfolders();
@@ -314,6 +310,9 @@ void BmMailMonitor::EntryMoved( BmMailFolder* parent, node_ref& nref,
 							<< "> detected.");
 			folder->UpdateName( eref);
 		} else {
+			BmAutolockCheckGlobal lock( TheMailFolderList->mModelLocker);
+			if (!lock.IsLocked())
+				BM_THROW_RUNTIME( "MailMonitor::EntryMoved(): Unable to get lock");
 			// the folder has really changed position within the filesystem-tree:
 			if (oldParent && folder && folder->Parent() != oldParent)
 				// folder not there anymore (e.g. 2nd msg for move)
@@ -390,9 +389,18 @@ void BmMailMonitor::EntryMoved( BmMailFolder* parent, node_ref& nref,
 		-	
 \*------------------------------------------------------------------------------*/
 void BmMailMonitor::EntryChanged( node_ref& nref) {
+	BM_LOG2( BM_LogMailTracking, 
+				BmString("Change of item with node <") 
+					<< nref.node << "> detected...");
 	BmRef<BmMailRef> ref = TheMailFolderList->FindMailRefByKey( nref);
-	if (ref)
+	if (ref) {
+		BM_LOG2( BM_LogMailTracking, 
+					"...corresponding ref was found in loaded ref-lists.");
 		ref->ResyncFromDisk();
+	} else {
+		BM_LOG2( BM_LogMailTracking, 
+					"...corresponding ref wasn't found in loaded ref-lists.");
+	}
 }
 
 /*------------------------------------------------------------------------------*\
