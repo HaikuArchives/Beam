@@ -37,9 +37,6 @@ public:
 	const BString ModelName() const		{ return mDataModel.Get() ? mDataModel->ModelName() : "***NULL***"; }
 	virtual BmDataModel* DataModel()		{ return mDataModel.Get(); }
 
-	// setters
-	void DataModel( BmDataModel* model);
-
 protected:
 	//
 	virtual bool IsMsgFromCurrentModel( BMessage* msg);
@@ -47,6 +44,9 @@ protected:
 private:
 	BmRef< BmDataModel> mDataModel;
 	BString mControllerName;
+
+	// setters
+	void DataModel( BmDataModel* model);
 
 };
 

@@ -30,10 +30,11 @@ public:
 	~BmMailHeaderView();
 
 	// native methods:
-	void ShowHeader( BmMailHeader* header);
+	void ShowHeader( BmMailHeader* header, bool invalidate=true);
 	void ShowMenu( BPoint point);
 	status_t Archive( BMessage* archive, bool deep=true) const;
 	status_t Unarchive( BMessage* archive, bool deep=true);
+	float FixedWidth() 						{ return 5000; }
 
 	// overrides of BView base:
 	void Draw( BRect bounds);

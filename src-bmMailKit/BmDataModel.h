@@ -194,35 +194,4 @@ protected:
 	BmOpenReplySet mOpenReplySet;
 };
 
-
-
-/*------------------------------------------------------------------------------*\
-	BmDataModelManager
-		-	manages all instances of DataModels (esp their deletion)
-\*------------------------------------------------------------------------------*/
-/*
-class BmDataModelManager {
-	typedef map< BmDataModel*, int32> BmRefMap;
-
-public:
-	// creator-func, c'tors & d'tor:
-	static BmDataModelManager* CreateInstance();
-	BmDataModelManager();
-	~BmDataModelManager();
-	
-	// native methods:
-	void AddRef( BmDataModel* model);
-	void RemoveRef( BmDataModel* model);
-
-	static BmDataModelManager* theInstance;
-
-private:
-	BmRefMap mRefMap;
-	BLocker mLocker;
-};
-
-#define TheModelManager BmDataModelManager::theInstance
-*/
-
-
 #endif

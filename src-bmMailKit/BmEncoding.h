@@ -19,6 +19,7 @@ namespace BmEncoding {
 	char* Encode( const BString& enodingStyle, char* text);
 	void Decode( const BString& encodingStyle, BString& text, bool isEncodedWord,
 					 bool isText);
+	int32 DecodedLength( const BString& encodingStyle, const char* text, int32 length);
 
 	BString ConvertHeaderPartToUTF8( const BString& headerPart, int32 defaultEncoding);
 	BString ConvertUTF8ToHeaderPart( const BString& utf8text);

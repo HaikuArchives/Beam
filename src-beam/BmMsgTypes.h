@@ -49,5 +49,11 @@
 #define BM_HEADERVIEW_LARGE			'bmfb'
 #define BM_HEADERVIEW_FULL				'bmfc'
 
+/*------------------------------------------------------------------------------*\
+	types of messages handled by a BmBodyPartView:
+\*------------------------------------------------------------------------------*/
+#define BM_BODYPARTVIEW_SHOWALL		'bmga'
+#define BM_BODYPARTVIEW_SHOWINLINE	'bmgb'
+
 
 #endif

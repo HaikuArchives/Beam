@@ -23,7 +23,6 @@ class BmMail;
 \*------------------------------------------------------------------------------*/
 class BmMailRef : public BmListModelItem {
 	typedef BmListModelItem inherited;
-	typedef BmJobModel inheritedModel;
 
 	// archival-fieldnames:
 	static const char* const MSG_ACCOUNT = 	"bm:ac";

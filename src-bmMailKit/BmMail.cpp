@@ -7,13 +7,8 @@
 //#include <memory>
 
 #include <NodeInfo.h>
-#include <UTF8.h>
 
-#include <regexx/regexx.hh>
-using namespace regexx;
-
-#include "BmEncoding.h"
-	using namespace BmEncoding;
+#include "BmBodyPartList.h"
 #include "BmLogHandler.h"
 #include "BmMail.h"
 #include "BmMailHeader.h"
@@ -23,218 +18,6 @@ using namespace regexx;
 
 #undef BM_LOGNAME
 #define BM_LOGNAME "MailParser"
-
-/********************************************************************************\
-	BmContentField
-\********************************************************************************/
-
-/*------------------------------------------------------------------------------*\
-	BmContentField( ctString)
-	-	c'tor
-\*------------------------------------------------------------------------------*/
-BmContentField::BmContentField( const BString cfString) {
-	SetTo( cfString);
-}
-
-/*------------------------------------------------------------------------------*\
-	SetTo( cfString)
-	-	parses given content-field
-\*------------------------------------------------------------------------------*/
-void BmContentField::SetTo( const BString cfString) {
-	Regexx rx;
-
-	if (rx.exec( cfString, "^\\s*([^\\s;]+)\\s*(;.+)?\\s*$")) {
-		// extract value:
-		if (rx.match[0].atom.size() > 0) {
-			if (cfString[rx.match[0].atom[0].start()] == '"') {
-				// skip quotes during extraction:
-				cfString.CopyInto( mValue, rx.match[0].atom[0].start()+1, rx.match[0].atom[0].Length()-2);
-			} else {
-				cfString.CopyInto( mValue, rx.match[0].atom[0].start(), rx.match[0].atom[0].Length());
-			}
-		}
-		mValue.ToLower();
-		BM_LOG2( BM_LogMailParse, BString("...found value: ")<<mValue);
-		// parse and extract parameters:
-		BString params;
-		if (rx.match[0].atom.size() > 1)
-			cfString.CopyInto( params, rx.match[0].atom[1].start(), rx.match[0].atom[1].Length());
-		if (rx.exec( params, ";\\s*(\\w+)\\s*=\\s*((?:\\\"[^\"]+\\\")|(?:[\\S]+))", Regexx::global)) {
-			for( uint32 i=0; i<rx.match.size(); ++i) {
-				BString key;
-				BString val;
-				if (rx.match[0].atom.size() > 0) {
-					params.CopyInto( key, rx.match[i].atom[0].start(), rx.match[i].atom[0].Length());
-					if (rx.match[0].atom.size() > 1) {
-						if (params[rx.match[i].atom[1].start()] == '"') {
-							// skip quotes during extraction:
-							params.CopyInto( val, rx.match[i].atom[1].start()+1, rx.match[i].atom[1].Length()-2);
-						} else {
-							params.CopyInto( val, rx.match[i].atom[1].start(), rx.match[i].atom[1].Length());
-						}
-					}
-					mParams[key.ToLower()] = val;
-					BM_LOG2( BM_LogMailParse, BString("...found param: ")<<key<<" with value: "<<val);
-				}
-			}
-		}
-	} else {
-		BM_SHOWERR( BString("field-value <")<<cfString<<"> has unknown structure!");
-		return;
-	}
-	mInitCheck = B_OK;
-}
-
-
-
-/********************************************************************************\
-	BmBodyPart
-\********************************************************************************/
-
-/*------------------------------------------------------------------------------*\
-	BmBodyPart()
-	-	default c'tor
-\*------------------------------------------------------------------------------*/
-BmBodyPart::BmBodyPart()
-	:	mIsMultiPart( false)
-	,	mPosInRawText( NULL)
-	,	mLength( 0)
-{
-}
-
-/*------------------------------------------------------------------------------*\
-	BmBodyPart( msgtext, start, length, contentType)
-	-	c'tor
-\*------------------------------------------------------------------------------*/
-BmBodyPart::BmBodyPart( const BString& msgtext, int32 start, int32 length, 
-								BmMailHeader* header)
-	:	mIsMultiPart( false)
-	,	mPosInRawText( NULL)
-	,	mLength( 0)
-{
-	SetTo( msgtext, start, length, header);
-}
-
-/*------------------------------------------------------------------------------*\
-	SetTo( msgtext, start, length, contentType)
-	-	
-\*------------------------------------------------------------------------------*/
-void BmBodyPart::SetTo( const BString& msgtext, int32 start, int32 length, 
-								BmMailHeader* header)
-{
-	BString type;
-	BString encoding;
-	BString id;
-	BString disposition;
-	BString description;
-	BString language;
-	bool deleteHeader = false;
-
-	if (!header) {
-		// this is not the main body, so we have to split the MIME-headers from
-		// the MIME-bodypart:
-		BString headerText;
-		int32 pos = msgtext.FindFirst( "\r\n\r\n", start);
-		if (pos == B_ERROR) {
-			BString str;
-			msgtext.CopyInto( str, start, 256);
-			BM_SHOWERR( BString("Couldn't determine borderline between MIME-header and body in string <")<<str<<">.");
-			return;
-		}
-		msgtext.CopyInto( headerText, start, pos-start+2);
-		mPosInRawText = msgtext.String()+pos+4;
-		mLength = length - (pos+4-start);
-		BM_LOG2( BM_LogMailParse, BString("MIME-Header found: ") << headerText);
-		header = new BmMailHeader( headerText, NULL);
-		deleteHeader = true;
-	} else {
-		mPosInRawText = msgtext.String()+start;
-		mLength = length;
-	}
-	// MIME-type
-	BM_LOG2( BM_LogMailParse, "parsing Content-Type");
-	type = header->GetFieldVal("Content-Type");
-	if (!type.Length() || type.ICompare("text")==0)
-		type = "text/plain; charset=us-ascii";
-	mContentType.SetTo( type);
-	// encoding
-	BM_LOG2( BM_LogMailParse, "parsing Content-Transfer-Encoding");
-	encoding = header->GetFieldVal("Content-Transfer-Encoding");
-	if (!encoding.Length())
-		encoding = "7bit";
-	mContentTransferEncoding = encoding;
-	BM_LOG2( BM_LogMailParse, BString("...found value: ")<<mContentTransferEncoding);
-	// id
-	BM_LOG2( BM_LogMailParse, "parsing Content-Id");
-	mContentId = header->GetFieldVal("Content-Id");
-	BM_LOG2( BM_LogMailParse, BString("...found value: ")<<mContentId);
-	// disposition
-	BM_LOG2( BM_LogMailParse, "parsing Content-Disposition");
-	disposition = header->GetFieldVal("Content-Disposition");
-	if (!disposition.Length())
-		disposition = (IsText() ? "inline" : "attachment");
-	mContentDisposition.SetTo( disposition);
-	// description
-	BM_LOG2( BM_LogMailParse, "parsing Content-Description");
-	mContentDescription = header->GetFieldVal("Content-Description");
-	BM_LOG2( BM_LogMailParse, BString("...found value: ")<<mContentDescription);
-	// Language
-	BM_LOG2( BM_LogMailParse, "parsing Content-Language");
-	mContentLanguage = header->GetFieldVal("Content-Language");
-	mContentLanguage.ToLower();
-	BM_LOG2( BM_LogMailParse, BString("...found value: ")<<mContentLanguage);
-	// remove temporary header:
-	if (deleteHeader)
-		delete header;
-		
-	if (type.ICompare("multipart", 9) == 0) {
-		mIsMultiPart = true;
-		BString boundary = BString("--")+mContentType.mParams["boundary"];
-		if (boundary.Length()==2) {
-			BM_SHOWERR( "No boundary specified within multipart-message!");
-			return;
-		}
-		int32 startPos = msgtext.FindFirst( boundary, mPosInRawText-msgtext.String());
-		if (startPos == B_ERROR) {
-			BM_SHOWERR( BString("Boundary <")<<boundary<<"> not found within message.");
-			return;
-		}
-		int32 nextPos;
-		int32 count = 0;
-		for( ; (nextPos = msgtext.FindFirst( boundary, startPos+boundary.Length())) != B_ERROR; ++count) {
-			int32 sPos = startPos+boundary.Length()+2;
-			BM_LOG2( BM_LogMailParse, "Subpart of multipart found will be added to array");
-			BmBodyPart subPart( msgtext, sPos, nextPos-sPos, NULL);
-			mBodyPartVect.push_back( subPart);
-			startPos = nextPos;
-		}
-		if (!count) {
-			BM_SHOWERR( BString("Boundary <")<<boundary<<"> not found within message.");
-			return;
-		}
-	}
-}
-
-/*------------------------------------------------------------------------------*\
-	IsText()
-	-	
-\*------------------------------------------------------------------------------*/
-bool BmBodyPart::IsText() const {
-	return mContentType.mValue.ICompare("text/plain") == 0;
-}
-
-/*------------------------------------------------------------------------------*\
-	DecodedData( msgtext, start, length, contentType)
-	-	
-\*------------------------------------------------------------------------------*/
-BString BmBodyPart::DecodedData() const {
-	BString buf( mPosInRawText, mLength);
-	if (mContentTransferEncoding.Length())
-		BmEncoding::Decode( mContentTransferEncoding, buf, false, IsText());
-	if (buf.Length() && buf[buf.Length()-1] != '\n')
-		buf << "\r\n";
-	return buf;
-}
 
 /********************************************************************************\
 	BmMail
@@ -251,6 +34,7 @@ BmMail::BmMail()
 	,	mMailRef( NULL)
 	,	mHeader( NULL)
 	,	mHeaderLength( 0)
+	,	mBody( new BmBodyPartList( this))
 	,	mInitCheck( B_NO_INIT)
 {
 }
@@ -265,6 +49,7 @@ BmMail::BmMail( BmMailRef* ref)
 	,	mHasAttachments( false)
 	,	mHeader( NULL)
 	,	mHeaderLength( 0)
+	,	mBody( new BmBodyPartList( this))
 	,	mMailRef( new BmMailRef( *ref))	// copy the mail-ref
 	,	mInitCheck( B_NO_INIT)
 {
@@ -281,6 +66,7 @@ BmMail::BmMail( BString &msgText, const BString &account)
 	,	mHasAttachments( false)
 	,	mHeader( NULL)
 	,	mHeaderLength( 0)
+	,	mBody( new BmBodyPartList( this))
 	,	mMailRef( NULL)
 	,	mInitCheck( B_NO_INIT)
 {
@@ -390,7 +176,7 @@ void BmMail::StoreAttributes( BFile& mailFile) {
 	//
 	int32 headerLength, contentLength;
 	if ((headerLength = mText.FindFirst("\r\n\r\n")) != B_ERROR) {
-		headerLength++;
+		headerLength+=2;
 		contentLength = mText.Length()-headerLength;
 	} else {
 		headerLength = mText.Length();
@@ -423,7 +209,7 @@ BString BmMail::CreateBasicFilename() {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmMail::StartJob() {
-	// try to open corresponding mail file...
+	// try to open corresponding mail file, then read and parse mail contents...
 	status_t err;
 	BFile mailFile;
 	
@@ -469,9 +255,9 @@ void BmMail::StartJob() {
 		BM_LOG2( BM_LogMailParse, BString("...real size is ") << realSize << " bytes");
 		buf[realSize] = '\0';
 		mailText.UnlockBuffer( realSize);
+		// we create the BmMail from the plain text:
+		BM_LOG2( BM_LogMailParse, BString("creating a BmMail-instance from msgtext"));
 		SetTo( mailText, mMailRef->Account());
-		BM_LOG2( BM_LogMailParse, BString("parsing MIME-structure of mail"));
-		mBody.SetTo( mText, mHeaderLength, mText.Length()-mHeaderLength, mHeader);
 		BM_LOG2( BM_LogMailParse, BString("Done, mail is initialized"));
 		mInitCheck = B_OK;
 	} catch (exception &e) {

@@ -125,6 +125,20 @@ void WrappingTextView::ResetTextRect()
 		bar->SetProportion( MIN( 1.0, big/(height+m_vertical_offset)));
 	else 
 		bar->SetProportion( 1.0);
+
+	bar = ScrollBar( B_HORIZONTAL);
+	if (!bar) 	return;
+	int numChildren = CountChildren();
+	float width = textRect.Width();
+	float maxWidth = width;
+	for( int i=0; i<numChildren; ++i) {
+		float w = ChildAt( i)->Frame().Width();
+		if (w > maxWidth)
+			maxWidth = w;
+	}
+	bar->SetSteps( width/10, width);
+	bar->SetRange( 0, MAX(0, maxWidth-width-20));
+	bar->SetProportion( MIN( 1.0, width/maxWidth));
 }
 
 
@@ -133,8 +147,16 @@ bool WrappingTextView::HasBeenModified()
 	return m_modified;
 }
 
-void WrappingTextView::SetVerticalOffset( float offset) {
-	m_vertical_offset = offset;
+void WrappingTextView::CalculateVerticalOffset() {
+	float offset = 0;
+	int max=CountChildren();
+	for( int i=0; i<max; ++i) {
+		BView* child = ChildAt(i);
+		child->MoveTo( 0, offset);
+		BRect frame = child->Frame();
+		offset += 1+frame.Height();
+	}
+	m_vertical_offset = MAX( offset, 0);
 	ResetTextRect();
 }
 

@@ -4,7 +4,10 @@
 */
 
 #include <UTF8.h>
+#include <Window.h>
 
+#include "BmBodyPartList.h"
+#include "BmBodyPartView.h"
 #include "BmBusyView.h"
 #include "BmEncoding.h"
 	using namespace BmEncoding;
@@ -12,6 +15,7 @@
 #include "BmMail.h"
 #include "BmMailHeaderView.h"
 #include "BmMailRef.h"
+#include "BmMailRefView.h"
 #include "BmMailView.h"
 #include "BmMsgTypes.h"
 #include "BmResources.h"
@@ -51,16 +55,21 @@ BmMailView* BmMailView::CreateInstance( minimax minmax, BRect frame, bool editab
 \*------------------------------------------------------------------------------*/
 BmMailView::BmMailView( minimax minmax, BRect frame, bool editable) 
 	:	inherited( frame, "MailView", B_FOLLOW_NONE, B_WILL_DRAW | B_NAVIGABLE)
-//	:	inherited( frame, "MailView", B_FOLLOW_NONE, B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE)
 	,	inheritedController( "MailViewController")
 	,	mEditMode( editable)
 	,	mCurrMail( NULL)
+	,	mPartnerMailRefView( NULL)
 	,	mRaw( false)
 	,	mFontSize( 12)
 {
 	mHeaderView = new BmMailHeaderView( NULL);
 	AddChild( mHeaderView);
-	SetVerticalOffset( mHeaderView->Frame().Height());
+	mBodyPartView = new BmBodyPartView( minimax( 0, 0, 1E5, 1E5), 800, 0);
+	mBodyPartView->RemoveSelf();
+	AddChild( mBodyPartView);
+	mBodyPartView->MoveTo( mHeaderView->Frame().LeftBottom());
+	mBodyPartView->ResizeTo( 800,40);
+	CalculateVerticalOffset();
 	MakeEditable( editable);
 	SetStylable( !editable);
 	SetWordWrap( true);
@@ -131,6 +140,36 @@ void BmMailView::MessageReceived( BMessage* msg) {
 }
 
 /*------------------------------------------------------------------------------*\
+	KeyDown()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailView::KeyDown(const char *bytes, int32 numBytes) { 
+	if ( numBytes == 1 ) {
+		switch( bytes[0]) {
+			case B_PAGE_UP:
+			case B_PAGE_DOWN:
+			case B_UP_ARROW:
+			case B_DOWN_ARROW:
+			case B_LEFT_ARROW:
+			case B_RIGHT_ARROW: {
+				int32 mods = Window()->CurrentMessage()->FindInt32("modifiers");
+				if (mods & (B_CONTROL_KEY | B_SHIFT_KEY)) {
+					// remove modifiers so we don't ping-pong endlessly:
+					Window()->CurrentMessage()->ReplaceInt32("modifiers", 0);
+					if (mPartnerMailRefView)
+						mPartnerMailRefView->KeyDown( bytes, numBytes);
+				} else
+					inherited::KeyDown( bytes, numBytes);
+				break;
+			}
+			default:
+				inherited::KeyDown( bytes, numBytes);
+				break;
+		}
+	}
+}
+
+/*------------------------------------------------------------------------------*\
 	ShowMail()
 		-	
 \*------------------------------------------------------------------------------*/
@@ -169,10 +208,17 @@ void BmMailView::MakeFocus(bool focused) {
 \*------------------------------------------------------------------------------*/
 void BmMailView::FrameResized( float newWidth, float newHeight) {
 	inherited::FrameResized( newWidth, newHeight);
+	if (mBodyPartView) {
+		float widenedBy = newWidth-mBodyPartView->Frame().Width();
+		float height = mBodyPartView->Frame().Height();
+		mBodyPartView->ResizeTo( mBodyPartView->FixedWidth(), height);
+		if (widenedBy > 0)
+			mBodyPartView->Invalidate( BRect( newWidth-widenedBy, 0, newWidth, height));
+	}
 	if (mHeaderView) {
 		float widenedBy = newWidth-mHeaderView->Frame().Width();
 		float height = mHeaderView->Frame().Height();
-		mHeaderView->ResizeTo( newWidth, height);
+		mHeaderView->ResizeTo( mHeaderView->FixedWidth(), height);
 		if (widenedBy > 0)
 			mHeaderView->Invalidate( BRect( newWidth-widenedBy, 0, newWidth, height));
 	}
@@ -183,10 +229,18 @@ void BmMailView::FrameResized( float newWidth, float newHeight) {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmMailView::JobIsDone( bool completed) {
-	ContainerView()->UnsetBusy();
 	if (completed && mCurrMail) {
 		BString displayText;
-		DisplayBodyPart( displayText, mCurrMail->Body());
+		BmBodyPartList* body = mCurrMail->Body();
+		if (body) {
+			mBodyPartView->ShowBody( body);
+			BM_LOG2( BM_LogMailParse, BString("extracting parts to be displayed from body-structure"));
+			BmModelItemMap::const_iterator iter;
+			for( iter=body->begin(); iter != body->end(); ++iter) {
+				BmBodyPart* bodyPart = dynamic_cast<BmBodyPart*>( iter->second);
+				DisplayBodyPart( displayText, bodyPart);
+			}
+		}
 		BM_LOG2( BM_LogMailParse, BString("remove <CR>s from mailtext"));
 		RemoveSetFromString( displayText, "\r");
 		BM_LOG2( BM_LogMailParse, BString("converting mailtext to UTF8"));
@@ -200,27 +254,31 @@ void BmMailView::JobIsDone( bool completed) {
 		mHeaderView->ShowHeader( NULL);
 		SetText( "");
 	}
+	ContainerView()->UnsetBusy();
 }
 
 /*------------------------------------------------------------------------------*\
 	DisplayBodyPart( displayText, bodypart)
 		-	
 \*------------------------------------------------------------------------------*/
-void BmMailView::DisplayBodyPart( BString& displayText, const BmBodyPart& bodyPart) {
-	if (!bodyPart.mIsMultiPart) {
-		BmContentField type = bodyPart.mContentType;
-		BmContentField disposition = bodyPart.mContentDisposition;
-		if (type.mValue.ICompare("text", 4) == 0 && disposition.mValue == "inline") {
-			// MIME-block is textual and should be shown inline, so we add it to
-			// our textview:
-			displayText.Append( bodyPart.DecodedData());
+void BmMailView::DisplayBodyPart( BString& displayText, const BmBodyPart* bodyPart) {
+	if (!bodyPart->mIsMultiPart) {
+		if (bodyPart->ShouldBeShownInline()) {
+			// MIME-block should be shown inline, so we add it to our textview:
+			if (displayText.Length()) {
+				// we show a separator between two inline bodyparts
+				displayText<<"- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -";
+			}
+			displayText.Append( bodyPart->DecodedData());
 		} else {
-			// MIME-block is not textual or it should be shown as an attachment:
-			displayText << "<< "<<type.mValue<<" name="<<type.mParams["name"]<<" >>\r\n";
+			// MIME-block should be shown as an attachment:
+//			displayText << "<< "<<type.mValue<<" name="<<type.mParams["name"]<<" >>\r\n";
 		}
 	} else {
-		for( uint32 i=0; i<bodyPart.mBodyPartVect.size(); ++i) {
-			DisplayBodyPart( displayText, bodyPart.mBodyPartVect[i]);
+		BmModelItemMap::const_iterator iter;
+		for( iter=bodyPart->begin(); iter != bodyPart->end(); ++iter) {
+			BmBodyPart* subPart = dynamic_cast<BmBodyPart*>( iter->second);
+			DisplayBodyPart( displayText, subPart);
 		}
 	}
 }
@@ -230,9 +288,11 @@ void BmMailView::DisplayBodyPart( BString& displayText, const BmBodyPart& bodyPa
 		-	
 \*------------------------------------------------------------------------------*/
 void BmMailView::DetachModel() {
+	mBodyPartView->DetachModel();
 	inheritedController::DetachModel();
 	ContainerView()->UnsetBusy();
 	SetText( "");
+	mHeaderView->ShowHeader( NULL, false);
 }
 
 

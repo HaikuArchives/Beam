@@ -45,7 +45,7 @@ class WrappingTextView : public BTextView
 		virtual void Modified();
 		bool HasBeenModified();
 		void ResetTextRect();
-		void SetVerticalOffset( float offset);
+		void CalculateVerticalOffset();
 		void KeyDown(const char *bytes, int32 numBytes);
 
 	protected:

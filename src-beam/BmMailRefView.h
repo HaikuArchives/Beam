@@ -50,6 +50,7 @@ public:
 	void TeamUpWith( BmMailView* mv) 	{ mPartnerMailView = mv; }
 
 	// overrides of listview base:
+	void KeyDown(const char *bytes, int32 numBytes);
 	void MessageReceived( BMessage* msg);
 	void SelectionChanged( void);
 

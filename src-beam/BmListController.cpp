@@ -187,7 +187,7 @@ void BmListViewController::MessageReceived( BMessage* msg) {
 		switch( msg->what) {
 			case BM_LISTMODEL_ADD: {
 				if (!IsMsgFromCurrentModel( msg)) break;
-				AddModelItem( msg);
+				AddModelItemToList( msg);
 				break;
 			}
 			case BM_LISTMODEL_REMOVE: {
@@ -230,7 +230,7 @@ void BmListViewController::MessageReceived( BMessage* msg) {
 		-	Hook function that is called whenever a new item has been added to the 
 			listmodel
 \*------------------------------------------------------------------------------*/
-void BmListViewController::AddModelItem( BMessage* msg) {
+void BmListViewController::AddModelItemToList( BMessage* msg) {
 /*
 	BmListViewItem* newItem = NULL;
 	BmListViewItem* parentItem = NULL;
@@ -266,6 +266,7 @@ void BmListViewController::AddModelItem( BMessage* msg) {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmListViewController::AddModelItemsToList() {
+	BM_LOG2( BM_LogMailParse, BString(ControllerName())<<": adding items to listview");
 	BAutolock lock( DataModel()->ModelLocker());
 	lock.IsLocked()	 						|| BM_THROW_RUNTIME( BString() << ControllerName() << ":AddModelItemsToMap(): Unable to lock model");
 	BmListModel *model = DataModel();
@@ -303,6 +304,7 @@ void BmListViewController::AddModelItemsToList() {
 	SetDisconnectScrollView( false);
 	UpdateColumnSizesDataRectSizeScrollBars( true);
 	UpdateCaption();
+	BM_LOG2( BM_LogMailParse, BString(ControllerName())<<": finished with adding items to listview");
 }
 
 /*------------------------------------------------------------------------------*\

@@ -105,6 +105,7 @@ BmMainWindow::BmMainWindow()
 		);
 
 	mMailRefView->TeamUpWith( mMailView);
+	mMailView->TeamUpWith( mMailRefView);
 
 	AddChild( dynamic_cast<BView*>(mOuterGroup));
 }

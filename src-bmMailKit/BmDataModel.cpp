@@ -135,7 +135,11 @@ void BmDataModel::WaitForAllControllers() {
 			lCount++; 
 		}
 		snooze(200*1000);
-		BM_LOG3( BM_LogModelController, BString("Job <") << ModelName() << "> is still waiting for controllers to detach");
+		BM_LOG3( BM_LogModelController, BString("Job <") << ModelName() << "> is still waiting for some controllers to detach:");
+		BmControllerMap::iterator iter;
+		for( iter = mControllerMap.begin(); iter != mControllerMap.end(); ++iter) {
+			BM_LOG3( BM_LogModelController, BString("... <") << iter->first->ControllerName() << "> is still attached!");
+		}
 		while(lCount--) {
 			mModelLocker.Lock();
 		}
@@ -158,6 +162,7 @@ int32 BmJobModel::ThreadStartFunc( void* data) {
 		{
 			BAutolock lock( job->mModelLocker);
 			lock.IsLocked()	 						|| BM_THROW_RUNTIME( job->ModelName() << ":ThreadStartFunc(): Unable to get lock on controller-set");
+			BM_LOG2( BM_LogModelController, BString("Thread is started for job <") << job->ModelName() << ">");
 			job->doStartJob();
 			BM_LOG2( BM_LogModelController, BString("Job <") << job->ModelName() << "> has finished");
 			job->mThreadID = 0;
@@ -234,7 +239,7 @@ void BmJobModel::StartJobInThisThread() {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmJobModel::doStartJob() {
-	BM_LOG2( BM_LogModelController, BString("Job thread <") << ModelName() << "> has started");
+	BM_LOG2( BM_LogModelController, BString("Job <") << ModelName() << "> has started");
 	mJobState = JOB_RUNNING;
 	int lCount=0;
 	while (mModelLocker.IsLocked()) {

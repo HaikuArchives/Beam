@@ -14,9 +14,12 @@
 #include "BmController.h"
 #include "BmMail.h"
 
+class BmBodyPart;
+class BmBodyPartView;
 class BmMailRef;
 class BmMailViewContainer;
 class BmMailHeaderView;
+class BmMailRefView;
 
 /*------------------------------------------------------------------------------*\
 	BmMailView
@@ -39,13 +42,14 @@ public:
 
 	// native methods:
 	void ShowMail( BmMailRef* ref);
-	void DisplayBodyPart( BString& displayText, const BmBodyPart& bodyPart);
+	void DisplayBodyPart( BString& displayText, const BmBodyPart* bodyPart);
 	status_t Archive( BMessage* archive, bool deep=true) const;
 	status_t Unarchive( BMessage* archive, bool deep=true);
 	bool Store();
 
 	// overrides of BTextView base:
 	void FrameResized( float newWidth, float newHeight);
+	void KeyDown(const char *bytes, int32 numBytes);
 	void MakeFocus(bool focused);
 	void MessageReceived( BMessage* msg);
 
@@ -57,12 +61,17 @@ public:
 	// getters:
 	BmMailViewContainer* ContainerView() const	{ return mScrollView; }
 
+	// setters:
+	void TeamUpWith( BmMailRefView* v)	{ mPartnerMailRefView = v; }
+
 private:
 	// will not be archived:
 	bool mEditMode;
 	BmRef< BmMail> mCurrMail;
 	BmMailViewContainer* mScrollView;
 	BmMailHeaderView* mHeaderView;
+	BmBodyPartView* mBodyPartView;
+	BmMailRefView* mPartnerMailRefView;
 	// will be archived:
 	BString mFontName;
 	int16 mFontSize;

@@ -74,7 +74,7 @@ BmPrefs::BmPrefs( void)
 						+ BM_LOGLVL2(BM_LogFolderView)
 						+ BM_LOGLVL2(BM_LogRefView)
 						+ BM_LOGLVL2(BM_LogMainWindow)
-						+ BM_LOGLVL2(BM_LogModelController)
+						+ BM_LOGLVL3(BM_LogModelController)
 						)
 	,	mMailboxPath("/boot/home/mail")			// TODO: change default to .../mail
 	,	mRefCaching( true)

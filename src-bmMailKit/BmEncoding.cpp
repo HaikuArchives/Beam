@@ -11,6 +11,7 @@
 using namespace regexx;
 
 #include "BmEncoding.h"
+#include "BmLogHandler.h"
 #include "BmUtil.h"
 
 #define HEXDIGIT2CHAR(d) (((d)>='0'&&(d)<='9') ? (d)-'0' : ((d)>='A'&&(d)<='F') ? (d)-'A'+10 : ((d)>='a'&&(d)<='f') ? (d)-'a'+10 : 0)
@@ -197,8 +198,62 @@ void BmEncoding::Decode( const BString& encodingStyle, BString& text,
 	} else if (encodingStyle.ICompare( "7bit") && encodingStyle.ICompare( "8bit")
 				  && encodingStyle.ICompare( "binary")) {
 		// oops, we don't know this one:
-		ShowAlert( BString("Decode(): Unrecognized encoding-style <")<<encodingStyle<<"> found.\nNo decoding will take place.");
+		BM_SHOWERR( BString("Decode(): Unrecognized encoding-style <")<<encodingStyle<<"> found.\nNo decoding will take place.");
 	}
+}
+
+/*------------------------------------------------------------------------------*\
+	DecodedLength()
+		-	returns length of given encoded text after it has been decoded
+		-	value will be computed, NO actual decoding happening here!
+\*------------------------------------------------------------------------------*/
+int32 BmEncoding::DecodedLength( const BString& encodingStyle, const char* text, 
+											int32 length) {
+	if (encodingStyle.ICompare( "Q")==0 || encodingStyle.ICompare("Quoted-Printable")==0) {
+		// quoted printable:
+//		Regexx rx;
+		int32 skipCount=0, encodedCount=0;
+		int32 pos=0;
+		for( const char* s=text; pos<length; s++, pos++) {
+			if (*s == '\r') {
+				// count trailing whitespace in order to subtract it later:
+				const char* s2=s-1;
+				while( s2>=s && isspace(*s--))
+					skipCount++;
+			}
+			if (*s=='=' && pos+2<length) {
+				if (isalnum(*(s+1)) && isalnum(*(s+2)))
+					encodedCount++;
+			}
+		}
+/*
+		BString textStr( text, length);
+		// skip trailing whitespace (was added during mail-transport):
+		skipCount = rx.exec( textStr, "\\s+(?=\\r\\n)", Regexx::newline | Regexx::global);
+		// determine number of QP-encodings, each of which will shorten length by 2 bytes
+		// during decoding stage:
+		encodedCount = rx.exec( textStr, "=([0-9A-F][0-9A-F])", Regexx::newline | Regexx::global);
+		// compute total size :
+*/
+		return length-encodedCount*2-skipCount;
+	} else if (encodingStyle.ICompare( "B") == 0 || encodingStyle.ICompare("Base64")==0) {
+		// base64:
+		int32 count=0;
+		int32 padding=0;
+		int32 pos=0;
+		for( const char* s=text; pos<length; s++, pos++) {
+			if (!isspace(*s))
+				count++;
+			if (*s=='=')
+				padding++;
+		}
+		return count/4*3-padding;
+	} else if (encodingStyle.ICompare( "7bit") && encodingStyle.ICompare( "8bit")
+				  && encodingStyle.ICompare( "binary")) {
+		// oops, we don't know this one:
+		BM_SHOWERR( BString("DecodedLength(): Unrecognized encoding-style <")<<encodingStyle<<"> found.");
+	}
+	return length;
 }
 
 /*------------------------------------------------------------------------------*\

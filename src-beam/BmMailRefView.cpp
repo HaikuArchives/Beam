@@ -3,6 +3,8 @@
 		$Id$
 */
 
+#include <Window.h>
+
 #include "BmLogHandler.h"
 #include "BmMailFolder.h"
 #include "BmMailRefList.h"
@@ -203,6 +205,36 @@ void BmMailRefView::MessageReceived( BMessage* msg) {
 	catch( exception &err) {
 		// a problem occurred, we tell the user:
 		BM_SHOWERR( BString("MailRefView: ") << err.what());
+	}
+}
+
+/*------------------------------------------------------------------------------*\
+	KeyDown()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailRefView::KeyDown(const char *bytes, int32 numBytes) { 
+	if ( numBytes == 1 ) {
+		switch( bytes[0]) {
+			case B_PAGE_UP:
+			case B_PAGE_DOWN:
+			case B_UP_ARROW:
+			case B_DOWN_ARROW:
+			case B_LEFT_ARROW:
+			case B_RIGHT_ARROW: {
+				int32 mods = Window()->CurrentMessage()->FindInt32("modifiers");
+				if (mods & (B_CONTROL_KEY | B_SHIFT_KEY)) {
+					// remove modifiers so we don't ping-pong endlessly:
+					Window()->CurrentMessage()->ReplaceInt32("modifiers", 0);
+					if (mPartnerMailView)
+						mPartnerMailView->KeyDown( bytes, numBytes);
+				} else
+					inherited::KeyDown( bytes, numBytes);
+				break;
+			}
+			default:
+				inherited::KeyDown( bytes, numBytes);
+				break;
+		}
 	}
 }
 

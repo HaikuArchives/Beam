@@ -97,18 +97,18 @@ void GenericApp::MessageReceived(BMessage* msg) {
 			if (count % 3 == 1) {
 				sprintf(buf, "mailtest@kiwi:110");
 				acc.Name( buf);
-				acc.Username( "mailtest");
-				acc.Password( "mailtest");
+				acc.Username( "mailtest2");
+				acc.Password( "mailtest2");
 				acc.POPServer( "kiwi");
 				acc.PortNr( 110);
 				acc.SMTPPortNr( 25);
 				acc.Archive( archive, false);
 			} else if (count % 3 == 2) {
-				sprintf(buf, "mailtest2@kiwi:110");
+				sprintf(buf, "zooey@hirschkaefer.de:110");
 				acc.Name( buf);
-				acc.Username( "mailtest2");
-				acc.Password( "mailtest2");
-				acc.POPServer( "kiwi");
+				acc.Username( "pop30448");
+				acc.Password( "jH.d993");
+				acc.POPServer( "pop.hirschkaefer.de");
 				acc.PortNr( 110);
 				acc.SMTPPortNr( 25);
 				acc.Archive( archive, false);

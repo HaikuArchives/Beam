@@ -19,7 +19,7 @@ BMessage pulseMsg(BM_PULSE);
 		-	
 \*------------------------------------------------------------------------------*/
 BmBusyView::BmBusyView( BRect frame)
-	:	inherited( frame, "BmBusyView", B_FOLLOW_LEFT | B_FOLLOW_TOP, B_WILL_DRAW)
+	:	inherited( frame, "BmBusyView", B_FOLLOW_NONE, B_WILL_DRAW)
 	,	mMsgRunner( NULL)
 	,	mCachedBounds( Bounds())
 	,	mBusyCount( 0)
@@ -111,12 +111,15 @@ void BmBusyView::Pulse() {
 \*------------------------------------------------------------------------------*/
 void BmBusyView::Draw( BRect bounds) {
 	BRect r = mCachedBounds;
+	SetHighColor( tint_color(BeBackgroundGrey, 1.072F));
+	FillRect( r);
 	SetHighColor( White);
 	StrokeRect( BRect(1.0,1.0,r.right,r.bottom));
 	SetHighColor( BeShadow);
-	StrokeRect( bounds);
-	if (mBusyCount <= 0)
+	StrokeRect( r);
+	if (mBusyCount <= 0) {
 		return;
+	}
 	r.InsetBy( 1.0, 1.0);
 	r.left++;
 	r.top++;

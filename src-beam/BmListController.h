@@ -128,8 +128,8 @@ public:
 	virtual ~BmListViewController();
 
 	// native methods:
-	void AddModelItemsToList();
-	void AddModelItem( BMessage* msg);
+	virtual void AddModelItemsToList();
+	virtual void AddModelItemToList( BMessage* msg);
 	void RemoveModelItem( BMessage* msg);
 	void UpdateModelItem( BMessage* msg);
 	void UpdateModelState( BMessage* msg);

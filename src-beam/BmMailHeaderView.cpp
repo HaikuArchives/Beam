@@ -61,7 +61,7 @@ status_t BmMailHeaderView::Unarchive( BMessage* archive, bool deep=true) {
 	ShowHeader()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmMailHeaderView::ShowHeader( BmMailHeader* header) {
+void BmMailHeaderView::ShowHeader( BmMailHeader* header, bool invalidate) {
 	mMailHeader = header;
 	float height = 0;
 	if (header) {
@@ -84,12 +84,13 @@ void BmMailHeaderView::ShowHeader( BmMailHeader* header) {
 			}
 		};
 		height = 6+(TheResources->FontLineHeight( mFont)+3)*numLines;
-		ResizeTo( Bounds().Width(), height);
+		ResizeTo( FixedWidth(), height);
 		BmMailView* mailView = (BmMailView*)Parent();
 		if (mailView)
-			mailView->SetVerticalOffset( height);
+			mailView->CalculateVerticalOffset();
 	}
-	Invalidate();
+	if (invalidate)
+		Invalidate();
 }
 
 /*------------------------------------------------------------------------------*\
@@ -197,7 +198,9 @@ void BmMailHeaderView::Draw( BRect bounds) {
 				field << ":";
 				mFont->SetFace( B_BOLD_FACE);
 				SetFont( mFont);
+				SetLowColor( BeListSelectGrey);
 				DrawString( field.String(), BPoint( titleWidth-StringWidth(field.String())-x_off, y_off+l*lh+fh) );
+				SetLowColor( BeLightShadow);
 				start = colonPos+1;
 			}
 			for( ; start<end-1 && (*start==' ' || *start=='\t'); ++start)
@@ -266,15 +269,15 @@ void BmMailHeaderView::MessageReceived( BMessage* msg) {
 void BmMailHeaderView::ShowMenu( BPoint point) {
 	BPopUpMenu* theMenu = new BPopUpMenu( "HeaderViewMenu", false, false);
 
-	BMenuItem* item = new BMenuItem( "Small Header (Cooked)", new BMessage( BM_HEADERVIEW_SMALL));
+	BMenuItem* item = new BMenuItem( "Small Header", new BMessage( BM_HEADERVIEW_SMALL));
 	item->SetTarget( this);
 	item->SetMarked( mDisplayMode == SMALL_HEADERS);
 	theMenu->AddItem( item);
-	item = new BMenuItem( "Large Header (Cooked)", new BMessage( BM_HEADERVIEW_LARGE));
+	item = new BMenuItem( "Large Header", new BMessage( BM_HEADERVIEW_LARGE));
 	item->SetTarget( this);
 	item->SetMarked( mDisplayMode == LARGE_HEADERS);
 	theMenu->AddItem( item);
-	item = new BMenuItem( "Full Header (Raw)", new BMessage( BM_HEADERVIEW_FULL));
+	item = new BMenuItem( "Full Header (raw)", new BMessage( BM_HEADERVIEW_FULL));
 	item->SetTarget( this);
 	item->SetMarked( mDisplayMode == FULL_HEADERS);
 	theMenu->AddItem( item);
