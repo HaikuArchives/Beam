@@ -375,33 +375,21 @@ void BmMailEditWin::HandleFromSet( const BmString& from) {
 		= TheIdentityList->FindItemByKey( from);
 	BmIdentity* ident 
 		= dynamic_cast< BmIdentity*>( identRef.Get()); 
-	if (!ident)
+	BmRef<BmMail> mail = mMailView->CurrMail();
+	if (!ident || !mail)
 		return;
 	TheIdentityList->CurrIdentity( ident);
-	BmString fromString = ident->GetFromAddress();
-	mFromControl->SetText( fromString.String());
-	mFromControl->TextView()->Select( fromString.Length(), 
-												 fromString.Length());
-	mFromControl->TextView()->ScrollToSelection();
-	mReplyToControl->SetText( ident->ReplyTo().String());
-	// mark selected identity:
-	mFromControl->Menu()->MarkItem( ident->Key().String());
-	// select corresponding smtp-account, if any:
-	mSmtpControl->MarkItem( ident->SMTPAccount().String());
-	// update signature:
-	BmString sigName = ident->SignatureName();
-	mMailView->SetSignatureByName( sigName);
-	if (sigName.Length())
-		mSignatureControl->MarkItem( sigName.String());
-	else
-		mSignatureControl->MarkItem( BM_NoItemLabel.String());
+	BmString fromAddr = ident->GetFromAddress();
+	mail->SetupFromIdentityAndRecvAddr( ident, fromAddr);
+	SetFieldsFromMail( mail.Get(), true);
 }
 
 /*------------------------------------------------------------------------------*\
 	SetFieldFromMail()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmMailEditWin::SetFieldsFromMail( BmMail* mail) {
+void BmMailEditWin::SetFieldsFromMail( BmMail* mail, bool onlyIdentityFields) 
+{
 	if (mail) {
 		BmString fromAddrSpec;
 		if (mail->IsRedirect()) {
@@ -413,8 +401,9 @@ void BmMailEditWin::SetFieldsFromMail( BmMail* mail) {
 							mail->GetFieldVal( BM_FIELD_RESENT_FROM).String());
 			mSenderControl->SetTextSilently( 
 							mail->GetFieldVal( BM_FIELD_RESENT_SENDER).String());
-			mToControl->SetTextSilently( 
-							mail->GetFieldVal( BM_FIELD_RESENT_TO).String());
+			if (!onlyIdentityFields)
+				mToControl->SetTextSilently( 
+								mail->GetFieldVal( BM_FIELD_RESENT_TO).String());
 			fromAddrSpec 
 				= mail->Header()->GetAddressList( BM_FIELD_RESENT_FROM)
 																.FirstAddress().AddrSpec();
@@ -427,17 +416,30 @@ void BmMailEditWin::SetFieldsFromMail( BmMail* mail) {
 							mail->GetFieldVal( BM_FIELD_FROM).String());
 			mSenderControl->SetTextSilently( 
 							mail->GetFieldVal( BM_FIELD_SENDER).String());
-			mToControl->SetTextSilently( 
-							mail->GetFieldVal( BM_FIELD_TO).String());
+			if (!onlyIdentityFields)
+				mToControl->SetTextSilently( 
+								mail->GetFieldVal( BM_FIELD_TO).String());
 			mReplyToControl->SetTextSilently( 
 							mail->GetFieldVal( BM_FIELD_REPLY_TO).String());
 			fromAddrSpec 
 				= mail->Header()->GetAddressList( BM_FIELD_FROM)
 																.FirstAddress().AddrSpec();
 		}
-		mSubjectControl->SetTextSilently( 
-							mail->GetFieldVal( BM_FIELD_SUBJECT).String());
-		SetTitle( (BmString("Edit Mail: ") + mSubjectControl->Text()).String());
+		if (!onlyIdentityFields) {
+			mSubjectControl->SetTextSilently( 
+								mail->GetFieldVal( BM_FIELD_SUBJECT).String());
+			SetTitle((BmString("Edit Mail: ")+mSubjectControl->Text()).String());
+			// mark corresponding charset:
+			BmString charset = mail->DefaultCharset();
+			charset.ToLower();
+			mCharsetControl->MenuItem()->SetLabel( charset.String());
+			mCharsetControl->MarkItem( charset.String());
+			if (ThePrefs->GetBool( "ImportExportTextAsUtf8", true))
+				mMailView->BodyPartView()->DefaultCharset( "utf-8");
+			else
+				mMailView->BodyPartView()->DefaultCharset( charset);
+		}
+
 		// mark corresponding identity:
 		BmRef<BmIdentity> identRef 
 			= TheIdentityList->FindIdentityForAddrSpec( fromAddrSpec);
@@ -452,15 +454,7 @@ void BmMailEditWin::SetFieldsFromMail( BmMail* mail) {
 			mSignatureControl->MarkItem( sigName.String());
 		else
 			mSignatureControl->MarkItem( BM_NoItemLabel.String());
-		// mark corresponding charset:
-		BmString charset = mail->DefaultCharset();
-		charset.ToLower();
-		mCharsetControl->MenuItem()->SetLabel( charset.String());
-		mCharsetControl->MarkItem( charset.String());
-		if (ThePrefs->GetBool( "ImportExportTextAsUtf8", true))
-			mMailView->BodyPartView()->DefaultCharset( "utf-8");
-		else
-			mMailView->BodyPartView()->DefaultCharset( charset);
+
 		// try to set convenient focus:
 		if (!mFromControl->TextView()->TextLength())
 			mFromControl->MakeFocus( true);
@@ -470,6 +464,7 @@ void BmMailEditWin::SetFieldsFromMail( BmMail* mail) {
 			mSubjectControl->MakeFocus( true);
 		else
 			mMailView->MakeFocus( true);
+
 		// now make certain fields visible if they contain values:
 		if (BmString(mCcControl->Text()).Length() 
 		|| BmString(mBccControl->Text()).Length()) {

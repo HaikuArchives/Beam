@@ -28,6 +28,7 @@
 /*************************************************************************/
 
 #include "BmDataModel.h"
+#include "BmMailRef.h"
 	// having this up here seems to reliably avoid an internal compiler error
 	// that shows up otherwise. Go figure...
 
@@ -57,7 +58,6 @@
 #include "BmGuiUtil.h"
 #include "BmLogHandler.h"
 #include "BmMailEditWin.h"
-#include "BmMailRef.h"
 #include "BmMailView.h"
 #include "BmMenuControl.h"
 #include "BmMenuController.h"

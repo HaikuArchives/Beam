@@ -136,7 +136,7 @@ private:
 
 	bool CreateMailFromFields( bool hardWrapIfNeeded=true);
 	bool SaveMail( bool hardWrapIfNeeded=true);
-	void SetFieldsFromMail( BmMail* mail);
+	void SetFieldsFromMail( BmMail* mail, bool onlyIdentityFields = false);
 
 	void SendMail( bool sendNow);
 	bool EditHeaders();
