@@ -86,11 +86,13 @@ BmPerson::BmPerson( BmPeopleList* model, const node_ref& nref, const BmString& n
 	,	mNodeRef( nref)
 	,	mIsForeign( foreign)
 {
-	AddEmail( email);
+	if (!AddEmail( email))
+		return;			// empty email, we skip the rest
 	
 	BmStringVect grpVect;
 	split( ",", groups, grpVect);
-	// we trim leading/trailing whitespace from group-names and drop empty groups:
+	// we trim leading/trailing whitespace from group-names and drop groups with
+	// empty names:
 	Regexx rx;
 	mGroups.reserve( grpVect.size());
 	for( uint32 i=0; i<grpVect.size(); ++i) {
@@ -112,14 +114,16 @@ BmPerson::~BmPerson() {
 	AddEmail()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmPerson::AddEmail( const BmString& em) {
+bool BmPerson::AddEmail( const BmString& em) {
 	Regexx rx;
 	if (!rx.exec( em, "^\\s*$")) {
 		for( uint32 i=0; i<mEmails.size(); ++i)
 			if (mEmails[i] == em)
-				return;							// avoid duplicate entries
+				return true;					// avoid duplicate entries
 		mEmails.push_back( em);
+		return true;
 	}
+	return false;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -275,7 +279,8 @@ void BmPeopleList::AddPeopleToMenu( BMenu* menu, const BMessage& templateMsg,
 	for( group = groupMap.begin(); group != groupMap.end(); ++group) {
 		subMenu = CreateSubmenuForPersonMap( group->second.personMap, 
 														 templateMsg, addrField,
-														 BmString("Group ")<<group->second.name, &font, true);
+														 BmString("Group ")<<group->second.name, 
+														 &font, true);
 		menu->AddItem( subMenu);
 	}
 	subMenu = CreateSubmenuForPersonMap( noGroupMap, templateMsg, addrField,

@@ -88,7 +88,7 @@ public:
 	void AddToForeignMap( BmPersonMap& foreignMap) const;
 	void AddToAllPeopleMap( BmPersonMap& allPeopleMap) const;
 
-	void AddEmail( const BmString &em);
+	bool AddEmail( const BmString &em);
 
 	// getters:
 	inline const node_ref &NodeRef() const		{ return mNodeRef; }
