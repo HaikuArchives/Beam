@@ -210,6 +210,7 @@ BmMailRefView::BmMailRefView( minimax minmax, int32 width, int32 height)
 	:	inherited( minmax, BRect(0,0,width-1,height-1), "Beam_MailRefView", B_MULTIPLE_SELECTION_LIST, 
 					  false, true, true, true)
 	,	mCurrFolder( NULL)
+	,	mAvoidInvoke( false)
 {
 	int32 flags = 0;
 	SetViewColor( B_TRANSPARENT_COLOR);
@@ -523,6 +524,13 @@ const BMessage* BmMailRefView::DefaultLayout()		{
 		-	
 \*------------------------------------------------------------------------------*/
 void BmMailRefView::AddSelectedRefsToMsg( BMessage* msg, BString fieldName) {
+	BString selectedText;
+	if (mPartnerMailView) {
+		int32 start, finish;
+		mPartnerMailView->GetSelection( &start, &finish);
+		if (start < finish)
+			selectedText.SetTo(mPartnerMailView->Text()+start, finish-start);
+	}
 	int32 selected = -1;
 	int32 numSelected = 0;
 	while( (selected = CurrentSelection(numSelected)) >= 0) {
@@ -532,6 +540,8 @@ void BmMailRefView::AddSelectedRefsToMsg( BMessage* msg, BString fieldName) {
 			BmRef<BmMailRef> ref = dynamic_cast<BmMailRef*>( refItem->ModelItem());
 			msg->AddPointer( fieldName.String(), static_cast< void*>( ref.Get()));
 			ref->AddRef();						// the message now refers to the mailRef, too
+			if (selectedText.Length())
+				msg->AddString( BmApplication::MSG_SELECTED_TEXT, selectedText.String());
 		}
 		numSelected++;
 	}
@@ -549,6 +559,10 @@ void BmMailRefView::SelectionChanged( void) {
 	while( numSelected < 2 && (temp = CurrentSelection(numSelected)) >= 0) {
 		selection = temp;
 		numSelected++;
+	}
+	if (mAvoidInvoke) {
+		DeselectAll();
+		return;
 	}
 	if (mPartnerMailView) {
 		if (selection >= 0 && numSelected == 1) {
@@ -576,7 +590,7 @@ void BmMailRefView::SelectionChanged( void) {
 void BmMailRefView::ItemInvoked( int32 index) {
 	BmMailRefItem* refItem;
 	refItem = dynamic_cast<BmMailRefItem*>(ItemAt( index));
-	if (refItem) {
+	if (refItem && !mAvoidInvoke) {
 		BmRef<BmMailRef> ref( dynamic_cast<BmMailRef*>(refItem->ModelItem()));
 		if (ref) {
 			if (ref->Status() == BM_MAIL_STATUS_DRAFT

@@ -279,6 +279,8 @@ void BmApplication::MessageReceived( BMessage* msg) {
 			case BMM_REPLY_ALL: {
 				BmMailRef* mailRef = NULL;
 				int index=0;
+				const char* selectedText = NULL;
+				msg->FindString( MSG_SELECTED_TEXT, &selectedText);
 				while( msg->FindPointer( MSG_MAILREF, index++, (void**)&mailRef) == B_OK) {
 					BmRef<BmMail> mail = BmMail::CreateInstance( mailRef);
 					if (mail) {
@@ -287,9 +289,9 @@ void BmApplication::MessageReceived( BMessage* msg) {
 							continue;
 						BmRef<BmMail> newMail;
 						if (msg->what == BMM_REPLY)
-							newMail = mail->CreateReply( false);
+							newMail = mail->CreateReply( false, selectedText);
 						else if (msg->what == BMM_REPLY_ALL)
-							newMail = mail->CreateReply( true);
+							newMail = mail->CreateReply( true, selectedText);
 						if (newMail) {
 							BmMailEditWin* editWin = BmMailEditWin::CreateInstance( newMail.Get());
 							if (editWin)

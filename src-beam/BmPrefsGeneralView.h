@@ -31,6 +31,7 @@
 #ifndef _BmPrefsGeneralView_h
 #define _BmPrefsGeneralView_h
 
+#include "BmMailFolder.h"
 #include "BmMailRefView.h"
 #include "BmPrefsView.h"
 
@@ -81,6 +82,9 @@ private:
 	BmCheckControl* mCacheRefsOnDiskControl;
 	BmCheckControl* mBeMailStyleControl;
 
+	BmRef<BmMailFolder> mFolder;
+	BmRef<BmMailRefList> mRefList;
+	
 	// Hide copy-constructor and assignment:
 	BmPrefsGeneralView( const BmPrefsGeneralView&);
 	BmPrefsGeneralView operator=( const BmPrefsGeneralView&);

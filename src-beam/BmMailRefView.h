@@ -115,9 +115,12 @@ public:
 	BmListViewItem* CreateListViewItem( BmListModelItem* item, BMessage* archive=NULL);
 	const char* ItemNameForCaption()		{ return "message"; }
 
+	void AvoidInvoke( bool b)				{ mAvoidInvoke = b; }
+
 private:
 	BmRef<BmMailFolder> mCurrFolder;
 	BmMailView* mPartnerMailView;
+	bool mAvoidInvoke;
 
 	// Hide copy-constructor and assignment:
 	BmMailRefView( const BmMailRefView&);

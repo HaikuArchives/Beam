@@ -127,6 +127,8 @@ BmPrefsGeneralView::BmPrefsGeneralView()
 		);
 	mGroupView->AddChild( dynamic_cast<BView*>(view));
 	
+	mLayoutView->AvoidInvoke( true);
+	
 	float divider = mMailMoverShowControl->Divider();
 	divider = MAX( divider, mPopperRemoveControl->Divider());
 	divider = MAX( divider, mSmtpRemoveControl->Divider());
@@ -166,8 +168,8 @@ BmPrefsGeneralView::~BmPrefsGeneralView() {
 void BmPrefsGeneralView::Initialize() {
 	inherited::Initialize();
 
-	BmRef<BmMailFolder> mFolder( BmMailFolder::CreateDummyInstance());
-	BmRef<BmMailRefList> mRefList( new BmMailRefList( mFolder.Get()));
+	mFolder = BmMailFolder::CreateDummyInstance();
+	mRefList = new BmMailRefList( mFolder.Get());
 	BmRef<BmMailRef> mRef( BmMailRef::CreateDummyInstance( mRefList.Get(), 0));
 	mRefList->AddItemToList( mRef.Get());
 	mRef = BmMailRef::CreateDummyInstance( mRefList.Get(), 1);

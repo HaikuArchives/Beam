@@ -142,7 +142,15 @@ void BmRefObj::PrintRefsLeft() {
 		-	helper-func that prints this-pointer as hex-number
 \*------------------------------------------------------------------------------*/
 BString BmRefObj::RefPrintHex() const { 
-	char buf[20]; sprintf( buf, "%p", this);	return buf;	
+	return RefPrintHex( this);	
+}
+
+/*------------------------------------------------------------------------------*\
+	RefPrintHex()
+		-	helper-func that prints this-pointer as hex-number
+\*------------------------------------------------------------------------------*/
+BString BmRefObj::RefPrintHex( const void* ptr) { 
+	char buf[20]; sprintf( buf, "%p", ptr);	return buf;	
 }
 
 
@@ -151,10 +159,16 @@ BString BmRefObj::RefPrintHex() const {
 	FetchObject()
 		-	
 \*------------------------------------------------------------------------------*/
-BmRefObj* BmProxy::FetchObject( const BString& key) {
+BmRefObj* BmProxy::FetchObject( const BString& key, void* ptr) {
 	if (Locker.IsLocked()) {
-		BmObjectMap::const_iterator iter = ObjectMap.find( key);
-		return (iter != ObjectMap.end() ? iter->second : NULL);
+		for(  BmObjectMap::const_iterator pos = ObjectMap.find( key);
+				pos!=ObjectMap.end(); ++pos) {
+			if (pos->first != key)
+				break;
+			if (pos->second == ptr || ptr==NULL)
+				return pos->second;
+		}
+		return NULL;
 	} else
 		BM_SHOWERR("FetchObject(): Proxy must be locked!");
 	return NULL;

@@ -70,6 +70,7 @@ public:
 #endif // BM_REF_DEBUGGING
 
 	BString RefPrintHex() const;
+	static BString RefPrintHex( const void* ptr);
 	
 	// getters:
 	inline int32 RefCount() const			{ return mRefCount; }
@@ -105,7 +106,7 @@ public:
 	inline BmProxy( BString name) : Locker(name.String()) {}
 	BLocker Locker;
 	BmObjectMap ObjectMap;
-	BmRefObj* FetchObject( const BString& key);
+	BmRefObj* FetchObject( const BString& key, void* ptr=NULL);
 };
 
 
@@ -191,33 +192,36 @@ private:
 template <class T> class BmWeakRef {
 
 	BString mName;
+	T* mPtr;
 	const char* mProxyName;
 
 public:
 	inline BmWeakRef(T* p = 0) 
 	:	mName( p ? p->RefName() : "") 
+	,	mPtr( p)
 	,	mProxyName( p ? p->ProxyName() : "") 
 	{
-		BM_LOG2( BM_LogUtil, BString("RefManager: weak-reference to <") << mName << "> created");
+		BM_LOG2( BM_LogUtil, BString("RefManager: weak-reference to <") << mName << ":" << BmRefObj::RefPrintHex(mPtr) << "> created");
 	}
 	inline BmWeakRef<T>& operator= ( T* p) {
 		mName = p ? p->RefName() : NULL;
+		mPtr = p;
 		mProxyName = p ? p->ProxyName() : "";
 		return *this;
 	}
 	inline bool operator== ( const T* p) {
-		return p ? p->RefName() == mName : false;
+		return (p == mPtr) && (p ? p->RefName() == mName : false);
 	}
 	inline bool operator!= ( const T* p) {
-		return p ? p->RefName() != mName : true;
+		return (p != mPtr) || (p ? p->RefName() != mName : true);
 	}
 	inline operator bool() const 			{ return Get(); }
 	inline BmRef<T> Get() const 			{
-		BM_LOG2( BM_LogUtil, BString("RefManager: weak-reference to <") << mName << "> dereferenced");
+		BM_LOG2( BM_LogUtil, BString("RefManager: weak-reference to <") << mName << ":" << BmRefObj::RefPrintHex(mPtr) << "> dereferenced");
 		BmProxy* proxy = BmRefObj::GetProxy( mProxyName);
 		if (proxy) {
 			BAutolock lock( &proxy->Locker);
-			return static_cast<T*>(proxy->FetchObject( mName));
+			return static_cast<T*>(proxy->FetchObject( mName, mPtr));
 		} else 
 			return NULL;
 	}
