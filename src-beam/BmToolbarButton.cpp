@@ -51,6 +51,7 @@ BmToolbarButton::BmToolbarButton( const char *label, BBitmap* image,
 	:	inherited( minimax( width, height, -1 ,-1), 
 					  &BmDummyPicture, &BmDummyPicture, message, handler)
 	,	mHighlighted( false)
+	,	mUpdateVariationsFunc( NULL)
 {
 	TheBubbleHelper->SetHelp( this, tipText);
 	SetViewColor( B_TRANSPARENT_COLOR);
@@ -271,6 +272,15 @@ BPicture* BmToolbarButton::CreatePicture( int32 mode, const char* label,
 }
 
 /*------------------------------------------------------------------------------*\
+	SetUpdateVariationsFunc( updFunc)
+		-	
+\*------------------------------------------------------------------------------*/
+void BmToolbarButton::SetUpdateVariationsFunc( BmUpdateVariationsFunc* updFunc)
+{
+	mUpdateVariationsFunc = updFunc;
+}
+
+/*------------------------------------------------------------------------------*\
 	MouseDown( point)
 		-	
 \*------------------------------------------------------------------------------*/
@@ -288,6 +298,11 @@ void BmToolbarButton::MouseDown( BPoint point) {
 void BmToolbarButton::ShowMenu( BPoint point) {
 	BPopUpMenu* theMenu = new BPopUpMenu( "ButtonMenu", false, false);
 	theMenu->SetFont( be_plain_font);
+	
+	if (mUpdateVariationsFunc) {
+		mVariations.clear();
+		mUpdateVariationsFunc( this);
+	}
 
 	BMenuItem* item = NULL;
 	for( uint32 i=0; i<mVariations.size(); ++i) {

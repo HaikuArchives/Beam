@@ -42,7 +42,9 @@ class ToolbarSpace :  public Space
 		void Draw( BRect updateRect);
 };
 
+class BmToolbarButton;
 
+typedef void (BmUpdateVariationsFunc)( BmToolbarButton* button);
 
 class BmToolbarButton : public MPictureButton
 {
@@ -71,6 +73,7 @@ public:
 									 BBitmap* image, bool needsLatch=false);
 	void AddActionVariation( const BmString label, BMessage* msg);
 	void ShowMenu( BPoint point);
+	void SetUpdateVariationsFunc( BmUpdateVariationsFunc* updFunc);
 
 	// overrides of Button base:
 	void MouseDown( BPoint point);
@@ -82,6 +85,8 @@ private:
 							// the different actions that can be started through this button
 	BRect mLatchRect;
 	BPoint mMenuPoint;
+	
+	BmUpdateVariationsFunc* mUpdateVariationsFunc;
 
 	BPicture* CreatePicture( int32 mode, const char* label, BBitmap* image, 
 									 float width, float height, bool needsLatch);
