@@ -31,7 +31,7 @@
 #ifndef _BmLogHandler_h
 #define _BmLogHandler_h
 
-#include <map.h>
+#include <map>
 #include <stdio.h>
 
 #include <Locker.h>

@@ -153,7 +153,11 @@ BmPrefs::BmPrefs( BMessage* archive)
 		//
 		// remove trailing dots from shortcuts, if present:
 		BMessage scMsg( mShortcutsMsg);
+#ifdef B_BEOS_VERSION_DANO
+		const char* name;
+#else
 		char* name;
+#endif
 		uint32 type;
 		int32 pos=-1;
 		for( int32 i=0; scMsg.GetInfo( B_STRING_TYPE, i, &name, &type)==B_OK; ++i) {
