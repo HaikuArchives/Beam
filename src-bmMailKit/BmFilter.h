@@ -157,8 +157,6 @@ public:
 													{ return mLearnAsSpamFilter; }
 	BmRef<BmFilter>& LearnAsTofuFilter()
 													{ return mLearnAsTofuFilter; }
-	BmRef<BmFilter>& GetStatisticsFilter()
-													{ return mGetStatisticsFilter; }
 
 	// overrides of listmodel base:
 	void ForeignKeyChanged( const BmString& key, 
@@ -169,11 +167,13 @@ public:
 
 	static BmRef< BmFilterList> theInstance;
 
+	static const char* const LEARN_AS_SPAM_NAME;
+	static const char* const LEARN_AS_TOFU_NAME;
+
 private:
 
 	BmRef< BmFilter> mLearnAsSpamFilter;
 	BmRef< BmFilter> mLearnAsTofuFilter;
-	BmRef< BmFilter> mGetStatisticsFilter;
 
 	// Hide copy-constructor and assignment:
 	BmFilterList( const BmFilterList&);

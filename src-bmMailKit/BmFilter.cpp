@@ -170,7 +170,7 @@ bool BmFilter::Execute( BmMsgContext* msgContext)
 {
 	if (!mAddon)
 		return false;
-	return mAddon->Execute( msgContext);
+	return mAddon->Execute( msgContext, &mJobSpecifier);
 }
 
 
@@ -183,6 +183,9 @@ BmRef< BmFilterList> BmFilterList::theInstance( NULL);
 const int16 BmFilterList::nArchiveVersion = 1;
 
 BmFilterAddonMap FilterAddonMap;
+
+const char* const BmFilterList::LEARN_AS_SPAM_NAME = "<<<LearnAsSpam>>>";
+const char* const BmFilterList::LEARN_AS_TOFU_NAME = "<<<LearnAsTofu>>>";
 
 /*------------------------------------------------------------------------------*\
 	CreateInstance()
@@ -329,20 +332,15 @@ void BmFilterList::LoadAddons() {
 					// a spam-filter requires two internal filters (learnAsSpam
 					// and learnAsTofu) which don't appear as part of filter-list:
 					mLearnAsSpamFilter 
-						= new BmFilter( "<<<LearnAsSpam>>>", "Spam", NULL);
+						= new BmFilter( LEARN_AS_SPAM_NAME, "Spam", NULL);
 					BMessage learnAsSpamJob;
 					learnAsSpamJob.AddString("jobSpecifier", "LearnAsSpam");
 					mLearnAsSpamFilter->JobSpecifier(learnAsSpamJob);
 					mLearnAsTofuFilter 
-						= new BmFilter( "<<<LearnAsTofu>>>", "Spam", NULL);
+						= new BmFilter( LEARN_AS_TOFU_NAME, "Spam", NULL);
 					BMessage learnAsTofuJob;
 					learnAsTofuJob.AddString("jobSpecifier", "LearnAsTofu");
 					mLearnAsTofuFilter->JobSpecifier(learnAsTofuJob);
-					mGetStatisticsFilter 
-						= new BmFilter( "<<<GetStatistics>>>", "Spam", NULL);
-					BMessage getStatisticsJob;
-					getStatisticsJob.AddString("jobSpecifier", "GetStatistics");
-					mGetStatisticsFilter->JobSpecifier(getStatisticsJob);
 				}
 			}
 			BM_LOG( BM_LogFilter, BmString("Successfully loaded addon ") 
@@ -360,7 +358,6 @@ void BmFilterList::LoadAddons() {
 void BmFilterList::UnloadAddons() {
 	mLearnAsSpamFilter = NULL;
 	mLearnAsTofuFilter = NULL;
-	mGetStatisticsFilter = NULL;
 	BmFilterAddonMap::const_iterator iter;
 	for( iter = FilterAddonMap.begin(); iter != FilterAddonMap.end(); ++iter) {
 		unload_add_on( iter->second.image);
