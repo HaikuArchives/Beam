@@ -80,13 +80,17 @@ protected:
 
 public:
 	//
-	BmListViewItem( BmString& key, BmListModelItem* item, bool hierarchical=false, 
+	BmListViewItem( const BmString& key, BmListModelItem* item, bool hierarchical=false, 
 						 BMessage* archive=NULL);
 	virtual ~BmListViewItem();
 	
 	// native methods:
-	void SetTextCols( int16 firstTextCol, BmListColumn* columnVec, bool truncate=true);
+	void SetTextCols( int16 firstTextCol, BmListColumn* columnVec);
 	virtual void UpdateView( BmUpdFlags flags);
+
+#ifdef BM_LOGGING
+	int32 ObjectSize( bool addSizeofThis=true) const;
+#endif
 
 	//	overrides from listitem-baseclass:
 	status_t Archive( BMessage* archive, bool deep = true) const;

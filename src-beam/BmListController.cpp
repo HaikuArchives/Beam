@@ -62,7 +62,7 @@ const char* const BmListViewItem::MSG_CHILDREN = 	"bm:chldrn";
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmListViewItem::BmListViewItem( BmString& key, BmListModelItem* modelItem,
+BmListViewItem::BmListViewItem( const BmString& key, BmListModelItem* modelItem,
 										  bool, BMessage* archive)
 	:	inherited( 0, !modelItem->empty(), false, MAX( TheResources->FontLineHeight(), 18))
 	,	mKey( key)
@@ -108,13 +108,23 @@ void BmListViewItem::UpdateView( BmUpdFlags flags) {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmListViewItem::SetTextCols( int16 firstTextCol, BmListColumn* columnVec,
-											 bool truncate) {
+void BmListViewItem::SetTextCols( int16 firstTextCol, BmListColumn* columnVec) {
 	int16 offs = firstTextCol;
 	for( const BmListColumn* p = columnVec; p->text != NULL; ++p) {
-		SetColumnContent( offs++, p->text, truncate, p->rightJustified);
+		SetColumnContent( offs++, p->text, p->rightJustified);
 	}
 }
+
+#ifdef BM_LOGGING
+/*------------------------------------------------------------------------------*\
+	ObjectSize()
+		-	
+\*------------------------------------------------------------------------------*/
+int32 BmListViewItem::ObjectSize( bool addSizeofThis) const {
+	return 	(addSizeofThis ? sizeof( *this) : 0)
+		+		mKey.Length()+1;
+}
+#endif
 
 
 
@@ -494,9 +504,18 @@ void BmListViewController::AddAllModelItems() {
 	}
 	if (!Hierarchical()) {
 		// add complete item-list for efficiency:
+#ifdef BM_LOGGING
+		int32 objSize = 0;
+		for( int32 i=0; i<tempList->CountItems(); ++i) {
+			BmListViewItem* item = (BmListViewItem*)tempList->ItemAt(i);
+			objSize += item->ObjectSize() + sizeof( BmString) + item->Key().Length();
+		}
+		BM_LOG( BM_LogMailTracking, BmString("ListView <") << ModelName() << "> has (estimated) size of " << objSize << " bytes");
+#endif
 		AddList( tempList);
 		delete tempList;
 	}
+
 	SortItems();
 	SetInsertAtSortedPos( true);
 	SetDisconnectScrollView( false);
