@@ -58,6 +58,8 @@ Base64EncoderTest::tearDown()
 	inherited::tearDown();
 }
 
+static bool SingleLineMode = false;
+
 /*------------------------------------------------------------------------------*\
 	()
 		-	
@@ -68,7 +70,12 @@ static void EncodeBase64AndCheck( BmString input, BmString result)
 	int32 blockSize = 128;
 	BmStringIBuf srcBuf( input);
 	BmStringOBuf destBuf( blockSize);
-	BmBase64Encoder encoder( &srcBuf, blockSize);
+	BmBase64Encoder encoder( 
+		&srcBuf, blockSize,
+		SingleLineMode
+			? BmBase64Encoder::nTagOnSingleLine
+			: BM_DEFAULT_STRING
+		);
 	destBuf.Write( &encoder, blockSize);
 	encodedStr.Adopt( destBuf.TheString());
 	try {
@@ -126,6 +133,21 @@ Base64EncoderTest::SimpleTest()
 		"wcLDxMXGx8jJysvMzc7P0NHS09TV1tfY2drb3N3e3+Dh4uPk\r\n5ebn6Onq6+zt7u/"
 		"w8fLz9PX29/j5+vv8/f7/"
 	);
+
+	{
+		// complete alphabet, again, this time on single line:
+		Activator activator(SingleLineMode);
+		NextSubTest(); 
+		EncodeBase64AndCheck( 
+			alphabet,
+			"AQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyAhIiMkJSYnKCkqKywtLi8wMTI"
+			"zNDU2Nzg5Ojs8PT4/QEFCQ0RFRkdISUpLTE1OT1BRUlNUVVZXWFlaW1xdXl9gYW"
+			"JjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXp7fH1+f4CBgoOEhYaHiImKi4yNjo+Qk"
+			"ZKTlJWWl5iZmpucnZ6foKGio6SlpqeoqaqrrK2ur7CxsrO0tba3uLm6u7y9vr/A"
+			"wcLDxMXGx8jJysvMzc7P0NHS09TV1tfY2drb3N3e3+Dh4uPk5ebn6Onq6+zt7u/"
+			"w8fLz9PX29/j5+vv8/f7/"
+		);
+	}
 }
 
 /*------------------------------------------------------------------------------*\

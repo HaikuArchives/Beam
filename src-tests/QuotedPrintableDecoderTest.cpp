@@ -71,7 +71,12 @@ static void DecodeQpAndCheck( BmString input, BmString result)
 	int32 blockSize = 128;
 	BmStringIBuf srcBuf( input);
 	BmStringOBuf destBuf( blockSize);
-	BmQuotedPrintableDecoder qpDecoder( &srcBuf, IsEncodedWord, blockSize);
+	BmQuotedPrintableDecoder qpDecoder( 
+		&srcBuf, blockSize, 
+		IsEncodedWord 
+			? BmQuotedPrintableDecoder::nTagIsEncodedWord 
+			: BM_DEFAULT_STRING
+	);
 	destBuf.Write( &qpDecoder, blockSize);
 	decodedStr.Adopt( destBuf.TheString());
 	try {
