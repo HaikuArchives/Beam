@@ -71,7 +71,10 @@ void BmCaption::Draw( BRect updateRect) {
 	StrokeLine( r.LeftBottom(), r.RightBottom());
 	SetHighColor( ui_color( B_UI_PANEL_TEXT_COLOR));
 	font_height fInfo;
-	be_plain_font->GetHeight( &fInfo);
+	BFont captionFont( *be_plain_font);
+	captionFont.SetSize( be_plain_font->Size()-1);
+	captionFont.GetHeight( &fInfo);
+	SetFont( &captionFont);
 	float offset = (1+r.Height()-(fInfo.ascent+fInfo.descent))/2.0;
 	float width = be_plain_font->StringWidth( Text());
 	BPoint pos( r.Width()-width-2.0, fInfo.ascent+offset);

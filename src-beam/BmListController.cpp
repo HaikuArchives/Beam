@@ -1195,11 +1195,7 @@ BRect BmCLVContainerView::layout( BRect rect) {
 		BScrollBar* hScroller = ScrollBar( B_HORIZONTAL);
 		if (!mCaptionWidth && (!hScroller || hScroller->IsHidden())) {
 			if (ScrollBar( B_VERTICAL))
-#ifdef B_BEOS_VERSION_DANO
-				fullCaptionWidth -= B_V_SCROLL_BAR_WIDTH + 3;
-#else
 				fullCaptionWidth -= B_V_SCROLL_BAR_WIDTH + 2;
-#endif
 			mCaption->ResizeTo( fullCaptionWidth, cpFrame.Height());
 			mCaption->Invalidate();
 		}

@@ -1192,7 +1192,7 @@ BmMailViewContainer::BmMailViewContainer( minimax minmax, BmMailView* target,
 		hScroller->ResizeBy( -bvSize, 0.0);
 		hScroller->MoveBy( bvSize, 0.0);
 		mBusyView = new BmBusyView( BRect( hsLT.x, hsLT.y, 
-													  hsLT.x+bvSize-1, hsLT.y+bvSize));
+													  hsLT.x+bvSize, hsLT.y+bvSize));
 		AddChild( mBusyView);
 	}
 }

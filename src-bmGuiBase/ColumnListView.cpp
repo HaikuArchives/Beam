@@ -157,14 +157,17 @@ fMinMax( minmax)
 
 CLVContainerView* ColumnListView::Initialize( BRect Frame, uint32 flags, uint32 ResizingMode, 
 								 bool horizontal, bool vertical, bool scroll_view_corner, 
-								 border_style border, const BFont *LabelFont) {
+								 border_style border, const BFont* LabelFont) {
+	// setup caption font to be one less in size than given (standard) font:
+	BFont captionFont(*LabelFont);
+	captionFont.SetSize(LabelFont->Size()-1);
 	//Create the column titles bar view
 	font_height FontAttributes;
-	LabelFont->GetHeight(&FontAttributes);
+	captionFont.GetHeight(&FontAttributes);
 	float LabelFontHeight = ceil(FontAttributes.ascent) + ceil(FontAttributes.descent);
 	float ColumnLabelViewBottom = Frame.top+LabelFontHeight+2.0;
 	fColumnLabelView = new CLVColumnLabelView( BRect(Frame.left,Frame.top,Frame.right,
-											   ColumnLabelViewBottom),this,LabelFont);
+											   ColumnLabelViewBottom),this,&captionFont);
 
 	//Create the container view
 	EmbedInContainer(horizontal,vertical,scroll_view_corner,border,ResizingMode,flags);

@@ -57,12 +57,21 @@ BetterScrollView::BetterScrollView(const char *name, BView *target, uint32 resiz
 	m_data_rect.Set(-1,-1,-1,-1);
 	m_h_scrollbar = ScrollBar(B_HORIZONTAL);
 	m_v_scrollbar = ScrollBar(B_VERTICAL);
-#ifndef B_BEOS_VERSION_DANO
+#ifdef B_BEOS_VERSION_DANO
+	// on Dano/Zeta, we need to correct the h-scroller-size slightly...
+	if (m_h_scrollbar)
+		m_h_scrollbar->ResizeBy( 1.0, 0.0);
+	// ...and move and resize the v-scroller, too:
+	if (m_v_scrollbar) {
+		m_v_scrollbar->MoveBy( 0.0, -1.0);
+		m_v_scrollbar->ResizeBy( 0.0, 2.0);
+	}
+#else
 	// on R5, we need to correct the h-scroller-position slightly:
 	if (m_h_scrollbar) {
 		m_h_scrollbar->MoveBy( 1.0, 0.0);
 		m_h_scrollbar->ResizeBy( -1.0, 0.0);
-	}		
+	}
 #endif
 	if(scroll_view_corner && horizontal && vertical)
 	{
