@@ -37,6 +37,7 @@ class BmMailFolderView;
 class BmMailRefView;
 class BmMailView;
 class BmMailViewContainer;
+class BmMenuController;
 class MMenuBar;
 class BmToolbarButton;
 class CLVContainerView;
@@ -99,6 +100,8 @@ private:
 	BmToolbarButton* mForwardButton;
 	BmToolbarButton* mPrintButton;
 	BmToolbarButton* mTrashButton;
+	
+	BmMenuController* mAccountMenu;
 	
 	MMenuBar* mMainMenuBar;
 	static bool nIsAlive;

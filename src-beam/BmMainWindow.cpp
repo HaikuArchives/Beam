@@ -307,14 +307,13 @@ MMenuBar* BmMainWindow::CreateMenu() {
 	// Network
 	menu = new BMenu( "Network");
 	menu->AddItem( CreateMenuItem( "Check Mail", BMM_CHECK_MAIL));
-	subMenu = new BmMenuController( 
+	mAccountMenu = new BmMenuController( 
 		"Check Mail For", this,
 		new BMessage( BMM_CHECK_MAIL), 
 		&BmRosterBase::RebuildPopAccountMenu,
 		BM_MC_MOVE_RIGHT
 	);
-	subMenu->Shortcuts( "1234567890");
-	menu->AddItem( subMenu);
+	menu->AddItem( mAccountMenu);
 	menu->AddItem( CreateMenuItem( "Check All Accounts", BMM_CHECK_ALL));
 	menu->AddSeparatorItem();
 	subMenu = new BmMenuController( 
@@ -396,6 +395,11 @@ void BmMainWindow::BeginLife() {
 			->SetTarget( (BHandler*)mMailView->HeaderView());
 		// temporary deactivation:
 		mMainMenuBar->FindItem( BMM_FIND_MESSAGES)->SetEnabled( false);
+
+		// populate pop-account menu in order to activate shortcuts:
+		while( !ThePopAccountList->IsJobCompleted())
+			snooze( 200*1000);
+		mAccountMenu->Shortcuts( "1234567890");
 
 		// create and hide error-log
 		mErrLogWin 
