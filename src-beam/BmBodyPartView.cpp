@@ -31,6 +31,7 @@
 #include <Alert.h>
 #include <FilePanel.h>
 #include <MenuItem.h>
+#include <NodeInfo.h>
 #include <PopUpMenu.h>
 #include <Roster.h>
 #include <Window.h>
@@ -466,14 +467,27 @@ void BmBodyPartView::ItemInvoked( int32 index) {
 		// by the attachment-info:
 		BString realMT = DetermineMimeType( &eref, true);
 		if (realMT.ICompare( bodyPart->MimeType())!=0) {
-			BString s("ATTENTION!\n\nThe attachment pretends to be of type \n\t");
+			BString s("ATTENTION!\n\nThe attachment has been declared to be of type \n\n\t");
 			s << bodyPart->MimeType()
-			  << "\nbut BeOS thinks it is in fact of type\n\t" << realMT
+			  << "\n\nbut BeOS thinks it is in fact of type\n\n\t" << realMT
 			  << "\n\nDo you really want to open this attachment?";
-			BAlert* alert = new BAlert( "", s.String(), "Yes", "No");
-			alert->SetShortcut( 1, B_ESCAPE);
-			if (!(alert->Go() == 0))
+			BString openReal = BString("Yes, open as ")<<realMT;
+			BString openDeclared = BString("Yes, open as ")<<bodyPart->MimeType();
+			BAlert* alert = new BAlert( "", s.String(), openReal.String(), 
+												 openDeclared.String(), "No");
+			alert->SetShortcut( 2, B_ESCAPE);
+			int32 choice = alert->Go();
+			if (choice == 2)
 				return;
+			if (choice == 1) {
+				// revert to declared mimetype:
+				realMT = bodyPart->MimeType();
+				BNode node( &eref);
+				BNodeInfo nodeInfo( &node);
+				status_t err = nodeInfo.SetType( realMT.String());
+				if (err != B_OK)
+					return;
+			}
 		}
 		if (bmApp->HandlesMimetype( realMT)) {
 			BMessage msg( B_REFS_RECEIVED);
