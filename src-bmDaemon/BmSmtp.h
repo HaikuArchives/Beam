@@ -35,13 +35,36 @@
 #include <memory>
 
 #include <Message.h>
-#include <NetEndpoint.h>
 
-#include "BmDataModel.h"
+#include "BmNetJobModel.h"
 
 class BmSmtpAccount;
 
 #define BM_SMTP_NEEDS_PWD						'bmSp'
+
+/*------------------------------------------------------------------------------*\
+	BmSmtpStatusFilter
+		-	
+\*------------------------------------------------------------------------------*/
+class BmSmtpStatusFilter : public BmStatusFilter {
+	typedef BmStatusFilter inherited;
+
+public:
+	BmSmtpStatusFilter( BmMemIBuf* input, uint32 blockSize=65536);
+
+	// overrides of BmStatusFilter base:
+	bool CheckForPositiveAnswer();
+	void Reset( BmMemIBuf* input);
+
+protected:
+	// overrides of BmMailFilter base:
+	void Filter( const char* srcBuf, uint32& srcLen, 
+					 char* destBuf, uint32& destLen);
+
+	bool mAtStartOfLine;
+	int8 mDigitCount;
+	bool mIncludeUpToNewline;
+};
 
 /*------------------------------------------------------------------------------*\
 	BmSmtp
@@ -50,8 +73,8 @@ class BmSmtpAccount;
 		-	in general, each BmSmtp is started as a thread which exits when the
 			SMTP-session has ended
 \*------------------------------------------------------------------------------*/
-class BmSmtp : public BmJobModel {
-	typedef BmJobModel inherited;
+class BmSmtp : public BmNetJobModel {
+	typedef BmNetJobModel inherited;
 	
 	typedef vector< BmString> BmRcptVect;
 	
@@ -71,10 +94,6 @@ public:
 	BmSmtp( const BmString& name, BmSmtpAccount* account);
 	virtual ~BmSmtp();
 
-	typedef bool BmPwdAcquisitorFunc( const BmString, BmString&);
-	inline void SetPwdAcquisitorFunc( BmPwdAcquisitorFunc* func)
-													{ mPwdAcquisitorFunc = func; }
-
 	typedef bool BmPopAccAcquisitorFunc( const BmString, BmString&);
 	inline void SetPopAccAcquisitorFunc( BmPopAccAcquisitorFunc* func)
 													{ mPopAccAcquisitorFunc = func; }
@@ -83,23 +102,19 @@ public:
 
 	inline BmString Name() const			{ return ModelName(); }
 
+	// overrides of netjob-model base:
+	void UpdateProgress( uint32 numBytes);
+
 	// overrides of job-model base:
 	bool StartJob();
 	bool ShouldContinue();
 
 private:
-	static int32 FeedbackTimeout;			// the time a BmSmtp will allow to pass
-													// before reacting on any user-action 
-													// (like closing the window)
-
-	static const int32 NetBufSize = 2048;
-
 	BmRef<BmSmtpAccount> mSmtpAccount;	// Info about our smtp-account
 
-	BNetEndpoint* mSmtpServer;				// network-connection to SMTP-server
-	bool mConnected;							// are we connected to the server?
-
-	BmString mAnswer;							// holds last answer of SMTP-server
+	int32 mMsgTotalSize;
+	int32 mCurrMailNr;
+	int32 mCurrMailSize;
 
 	int32 mState;								// current SMTP-state (refer enum below)
 	enum States {
@@ -112,9 +127,6 @@ private:
 		SMTP_DONE,
 		SMTP_FINAL
 	};
-
-	// function that asks user for a password:
-	BmPwdAcquisitorFunc* mPwdAcquisitorFunc;
 
 	// function that asks user for a pop-account (needed for SmtpAfterPop)
 	BmPopAccAcquisitorFunc* mPopAccAcquisitorFunc;
@@ -129,27 +141,21 @@ private:
 	static SmtpState SmtpStates[SMTP_FINAL];
 
 	// private functions:
-	void Connect();
-	void Helo();
-	void AuthViaPopServer();
-	void Auth();
-	void SendMails();
-	void Disconnect();
+	void StateConnect();
+	void StateHelo();
+	void StateAuthViaPopServer();
+	void StateAuth();
+	void StateSendMails();
+	void StateDisconnect();
+
 	void Quit( bool WaitForAnswer=false);
 	void Mail( BmMail *mail);
 	bool HasStdRcpts( BmMail *mail, BmRcptVect& rcptVect);
 	void Rcpt( const BmRcptVect& rcptVect);
-	void BccRcpt( BmMail *mail, bool sendDataForEachBcc, 
-					  const BmString& headerText, BmStringIBuf& bodyText);
-	void Data( BmMail *mail, const BmString& headerText, BmStringIBuf& bodyText,
-				  BmString forBcc="");
+	void BccRcpt( BmMail *mail, bool sendDataForEachBcc, const BmString& headerText);
+	void Data( BmMail *mail, const BmString& headerText, BmString forBcc="");
 	void UpdateSMTPStatus( const float, const char*, bool failed=false, bool stopped=false);
 	void UpdateMailStatus( const float, const char*, int32);
-	void StoreAnswer( char* );
-	bool CheckForPositiveAnswer();
-	bool GetAnswer();
-	int32 ReceiveBlock( char* buffer, int32 max);
-	void SendCommand( BmString& cmd, bool isSecret=false, bool isMailData=false);
 
 	bool mServerMayHaveSizeLimit;
 	bool mServerSupportsDSN;
