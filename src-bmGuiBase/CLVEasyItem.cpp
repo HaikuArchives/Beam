@@ -42,7 +42,9 @@
 //******************************************************************************************************
 CLVEasyItem::CLVEasyItem(uint32 level, bool superitem, bool expanded, 
 								 ColumnListView* lv)
-:  CLVListItem(level,superitem,expanded)
+:  CLVListItem( (lv && lv->fAvoidColPushing) ? 0 : level,
+					 superitem,
+					 expanded)
 ,  m_column_content( MIN( 4, lv->CountColumns()))
 {
 	fOwner = lv;
