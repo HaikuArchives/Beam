@@ -990,7 +990,8 @@ void BmListViewController::WriteStateInfo() {
 	BFile stateInfoFile;
 	BMessage archive;
 	
-	if (!DataModel() || !mUseStateCache)
+	BmListModel* model = dynamic_cast<BmListModel*>(DataModel().Get());
+	if (!model || !model->InitCheck()==B_OK || !mUseStateCache)
 		return;
 
 	try {
