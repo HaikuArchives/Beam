@@ -954,7 +954,7 @@ bool BmGraphicalSieveFilter::BuildScriptFromStrings() {
 	if (matchPart.Length()) {
 		script << "}";
 	}
-	mContent = script;
+	Content( script);
 	return true;
 }
 
