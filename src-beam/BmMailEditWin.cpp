@@ -64,6 +64,7 @@
 #include "BmTextControl.h"
 #include "BmToolbarButton.h"
 #include "BmUtil.h"
+#include "BmPeople.h"
 
 /********************************************************************************\
 	BmMailEditWin
@@ -76,18 +77,17 @@ BmMailEditWin::BmEditWinMap BmMailEditWin::nEditWinMap;
 /*------------------------------------------------------------------------------*\
 	types of messages handled by a BmMailEditWin:
 \*------------------------------------------------------------------------------*/
-#define BM_BCC_ADDED 			'bMYa'
-#define BM_CC_ADDED 				'bMYb'
+#define BM_TO_CC_BCC_CLEAR 	'bMYa'
+#define BM_TO_CC_BCC_ADDED	 	'bMYb'
 #define BM_CHARSET_SELECTED	'bMYc'
 #define BM_FROM_ADDED 			'bMYd'
 #define BM_FROM_SET	 			'bMYe'
-#define BM_SHOWDETAILS1			'bMYf'
-#define BM_SMTP_SELECTED		'bMYg'
-#define BM_TO_ADDED 				'bMYh'
-#define BM_EDIT_HEADER_DONE	'bMYi'
-#define BM_SHOWDETAILS2			'bMYj'
-#define BM_SHOWDETAILS3			'bMYk'
-#define BM_SIGNATURE_SELECTED	'bMYl'
+#define BM_SMTP_SELECTED		'bMYf'
+#define BM_EDIT_HEADER_DONE	'bMYg'
+#define BM_SHOWDETAILS1			'bMYh'
+#define BM_SHOWDETAILS2			'bMYi'
+#define BM_SHOWDETAILS3			'bMYj'
+#define BM_SIGNATURE_SELECTED	'bMYk'
 
 /*------------------------------------------------------------------------------*\
 	CreateInstance()
@@ -325,6 +325,31 @@ void BmMailEditWin::CreateGUI() {
 	}
 	mFromControl->Menu()->AddItem( subMenu);
 
+	// add all adresses to To/Cc/Bcc menu and a menu-entry for clearing the field:
+	BMessage* msg;
+	BmTextControl*	ctrl[] = {mToControl, mCcControl, mBccControl, NULL};
+	ThePeopleList->ModelLocker().Lock();
+	for( iter = ThePeopleList->begin(); iter != ThePeopleList->end(); ++iter) {
+		BmPerson* person = dynamic_cast< BmPerson*>( iter->second.Get());
+		if (!person)
+			continue;
+		for( int n=0; ctrl[n]!=NULL; ++n) {
+			msg = new BMessage( BM_TO_CC_BCC_ADDED);
+			msg->AddPointer( MSG_CONTROL, ctrl[n]);
+			msg->AddString( MSG_ADDRESS, person->Email());
+			ctrl[n]->Menu()->AddItem( new BMenuItem( person->DisplayName().String(), msg));
+		}
+	}
+	for( int n=0; ctrl[n]!=NULL; ++n) {
+		msg = new BMessage( BM_TO_CC_BCC_CLEAR);
+		msg->AddPointer( MSG_CONTROL, ctrl[n]);
+		ctrl[n]->Menu()->AddSeparatorItem();
+		ctrl[n]->Menu()->AddItem( new BMenuItem( "Clear", msg));
+		ctrl[n]->Menu()->SetLabelFromMarked( false);
+		ctrl[n]->Menu()->SetRadioMode( false);
+	}
+	ThePeopleList->ModelLocker().Unlock();
+
 	// add all smtp-accounts to smtp menu:
 	for( iter = TheSmtpAccountList->begin(); iter != TheSmtpAccountList->end(); ++iter) {
 		BmSmtpAccount* acc = dynamic_cast< BmSmtpAccount*>( iter->second.Get());
@@ -450,6 +475,7 @@ BmMailViewContainer* BmMailEditWin::CreateMailView( minimax minmax, BRect frame)
 		-	
 \*------------------------------------------------------------------------------*/
 void BmMailEditWin::MessageReceived( BMessage* msg) {
+	Regexx rx;
 	try {
 		switch( msg->what) {
 			case BM_SHOWDETAILS1: {
@@ -571,9 +597,33 @@ void BmMailEditWin::MessageReceived( BMessage* msg) {
 				SaveMail( false);
 				break;
 			}
+			case BM_TO_CC_BCC_ADDED: {
+				BmTextControl* cntrl;
+				BString email;
+				if (msg->FindPointer( MSG_CONTROL, (void**)&cntrl) == B_OK
+				&& msg->FindString( MSG_ADDRESS, &email) == B_OK) {
+					BString currStr = cntrl->Text();
+					if (rx.exec( currStr, "\\S+"))
+						currStr << ", " << email;
+					else
+						currStr << email;
+					cntrl->SetText( currStr.String());
+					cntrl->TextView()->Select( currStr.Length(), currStr.Length());
+					cntrl->TextView()->ScrollToSelection();
+				}
+				break;
+			}
+			case BM_TO_CC_BCC_CLEAR: {
+				BmTextControl* cntrl;
+				if (msg->FindPointer( MSG_CONTROL, (void**)&cntrl) == B_OK) {
+					cntrl->SetText( "");
+					cntrl->TextView()->Select( 0, 0);
+					cntrl->TextView()->ScrollToSelection();
+				}
+				break;
+			}
 			case BM_FROM_SET:
 			case BM_FROM_ADDED: {
-				Regexx rx;
 				BMenuItem* item = NULL;
 				msg->FindPointer( "source", (void**)&item);
 				if (item) {
@@ -617,15 +667,6 @@ void BmMailEditWin::MessageReceived( BMessage* msg) {
 					// second step, attach selected files to mail:
 					mMailView->BodyPartView()->AddAttachment( msg);
 				}
-				break;
-			}
-			case BM_BCC_ADDED: {
-				break;
-			}
-			case BM_CC_ADDED: {
-				break;
-			}
-			case BM_TO_ADDED: {
 				break;
 			}
 			case BM_SIGNATURE_SELECTED: {
