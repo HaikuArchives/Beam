@@ -104,7 +104,7 @@ rule SetUpSubDirBuildSettings {
 		}
 	} else {
 		if $(OSPLAT) = X86 {
-			OPTIM ?= -O2 ;
+			OPTIM ?= -O3 -fstrict-aliasing ;
 		} else {
 			OPTIM ?= -O7 ;
 		}
