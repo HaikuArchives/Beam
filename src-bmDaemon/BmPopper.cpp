@@ -51,16 +51,84 @@ using namespace regexx;
 #undef BM_LOGNAME
 #define BM_LOGNAME Name()
 
+/********************************************************************************\
+	BmPopStatusFilter
+\********************************************************************************/
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+BmPopStatusFilter::BmPopStatusFilter( BmMemIBuf* input, BmNetJobModel* job,
+												  uint32 blockSize)
+	:	inherited( input, blockSize)
+	,	mJob( job)
+{
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmPopStatusFilter::Filter( const char* srcBuf, uint32& srcLen, 
+										  char* destBuf, uint32& destLen) {
+	const char* src = srcBuf;
+	const char* srcEnd = srcBuf+srcLen;
+
+	if (mHaveStatus) {
+		uint32 size = min( destLen, srcLen);
+		memcpy( destBuf, srcBuf, size);
+		srcLen = destLen = size;
+	} else {
+		while( src<srcEnd && *src!='\n')
+			src++;
+		uint32 statusSize = src-srcBuf;
+		mStatusText.Append( srcBuf, statusSize);
+		if (src<srcEnd) {
+			src++;								// skip '\n'
+			mHaveStatus = true;
+			mStatusText.RemoveAll( "\r");
+			if (!mNeedData)
+				// the status is all we want, we are done:
+				mEndReached = true;
+		}
+		srcLen = src-srcBuf;
+		destLen = 0;
+	}
+	if (mUpdate && destLen)
+		mJob->UpdateProgress( destLen);
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+bool BmPopStatusFilter::CheckForPositiveAnswer() {
+	if (mStatusText.Length() && mStatusText[0] != '+') {
+		BmString err("Server answers: \n");
+		err += mStatusText;
+		err.RemoveAll( "\r");
+		throw BM_network_error( err);
+	}
+	return true;
+}
+
+
+
+/********************************************************************************\
+	BmPopper
+\********************************************************************************/
+
 /*------------------------------------------------------------------------------*\
 	PopStates[]
 		-	array of POP3-states, each with title and corresponding handler-method
 \*------------------------------------------------------------------------------*/
 BmPopper::PopState BmPopper::PopStates[BmPopper::POP_FINAL] = {
-	PopState( "connect...", &BmPopper::Connect),
-	PopState( "login...", &BmPopper::Login),
-	PopState( "check...", &BmPopper::Check),
-	PopState( "get...", &BmPopper::Retrieve),
-	PopState( "quit...", &BmPopper::Disconnect),
+	PopState( "connect...", &BmPopper::StateConnect),
+	PopState( "login...", &BmPopper::StateLogin),
+	PopState( "check...", &BmPopper::StateCheck),
+	PopState( "get...", &BmPopper::StateRetrieve),
+	PopState( "quit...", &BmPopper::StateDisconnect),
 	PopState( "done", NULL)
 };
 
@@ -69,17 +137,15 @@ BmPopper::PopState BmPopper::PopStates[BmPopper::POP_FINAL] = {
 		-	contructor
 \*------------------------------------------------------------------------------*/
 BmPopper::BmPopper( const BmString& name, BmPopAccount* account)
-	:	BmJobModel( name)
+	:	inherited( BmString("POP_")<<name, BM_LogPop, new BmPopStatusFilter( NULL, this))
 	,	mPopAccount( account)
-	,	mPopServer( NULL)
-	,	mConnected( false)
+	,	mCurrMailNr( 0)
 	,	mMsgUIDs( NULL)
 	,	mMsgCount( 0)
 	,	mNewMsgCount( 0)
-	,	mMsgSizes( NULL)
-	,	mMsgTotalSize( 1)
+	,	mNewMsgSizes( NULL)
+	,	mNewMsgTotalSize( 1)
 	,	mState( 0)
-	,	mPwdAcquisitorFunc( NULL)
 {
 }
 
@@ -89,15 +155,9 @@ BmPopper::BmPopper( const BmString& name, BmPopAccount* account)
 		-	frees all associated memory (hopefully)
 \*------------------------------------------------------------------------------*/
 BmPopper::~BmPopper() { 
-	if (mConnected) {
-		//	We try to inform POP-server about QUIT, if still connected.
-		// This probably means that we ran into an exception, so maybe it's not really
-		// a good idea...(?)
-		Quit();
-	}
 	TheLogHandler->FinishLog( BM_LOGNAME);
-	if (mMsgSizes)
-		delete [] mMsgSizes;
+	if (mNewMsgSizes)
+		delete [] mNewMsgSizes;
 	if (mMsgUIDs)
 		delete [] mMsgUIDs;
 }
@@ -142,11 +202,11 @@ bool BmPopper::StartJob() {
 		// a problem occurred, we tell the user:
 		BmString errstr = err.what();
 		int e;
-		if ((e = mPopServer->Error()))
-			errstr << "\nerror: " << e << ", " << mPopServer->ErrorStr();
+		if ((e = Connection()->Error()))
+			errstr << "\nerror: " << e << ", " << mConnection->ErrorStr();
 		UpdatePOPStatus( 0.0, NULL, true);
-		BmString text = Name() << "\n\n" << errstr;
-		HandleError( BmString("BmPopper: ") << text);
+		BmString text = Name() << ":\n\n" << errstr;
+		HandleError( text);
 		return false;
 	}
 	return true;
@@ -198,27 +258,33 @@ void BmPopper::UpdateMailStatus( const float delta, const char* detailText,
 }
 
 /*------------------------------------------------------------------------------*\
-	Connect()
+	UpdateProgress( numBytes)
+		-
+\*------------------------------------------------------------------------------*/
+void BmPopper::UpdateProgress( uint32 numBytes) {
+	float delta = (100.0 * numBytes) / (mNewMsgTotalSize ? mNewMsgTotalSize : 1);
+	BmString detailText = BmString("size: ") << BytesToString( mNewMsgSizes[mCurrMailNr-1]);
+	UpdateMailStatus( delta, detailText.String(), mCurrMailNr);
+}
+
+/*------------------------------------------------------------------------------*\
+	StateConnect()
 		-	Initiates network-connection to POP-server
 \*------------------------------------------------------------------------------*/
-void BmPopper::Connect() {
+void BmPopper::StateConnect() {
 	BNetAddress addr;
-	delete mPopServer;
-	mPopServer = new BNetEndpoint;
-	mPopServer->InitCheck() == B_OK		||	BM_THROW_RUNTIME("BmPopper: could not create NetEndpoint");
 	if (!mPopAccount->GetPOPAddress( &addr)) {
 		BmString s = BmString("Could not determine address of POP-Server ") << mPopAccount->POPServer();
 		throw BM_network_error( s);
 	}
-	status_t err;
-	if ((err=mPopServer->Connect( addr)) != B_OK) {
-		BmString s = BmString("Could not connect to POP-Server ") << mPopAccount->POPServer() << "\n\bError:\n\t"<<strerror(err);
+	if (!Connect( addr)) {
+		BmString s = BmString("Could not connect to POP-Server ") << mPopAccount->POPServer() 
+						  << "\n\bError:\n\t"<< mErrorString;
 		throw BM_network_error( s);
 	}
-	mConnected = true;
-	CheckForPositiveAnswer( SINGLE_LINE);
+	CheckForPositiveAnswer();
 	Regexx rx;
-	if (rx.exec( mReplyLine, "(<.+?>)\\s*$", Regexx::newline)) {
+	if (rx.exec( StatusText(), "(<.+?>)\\s*$", Regexx::newline)) {
 		mServerTimestamp = rx.match[0];
 	}
 }
@@ -236,11 +302,11 @@ BmString BmPopper::SuggestAuthType() const {
 }
 
 /*------------------------------------------------------------------------------*\
-	Login()
+	StateLogin()
 		-	Sends user/passwd combination and checks result
 		-	currently supports POP3- & APOP-authentication
 \*------------------------------------------------------------------------------*/
-void BmPopper::Login() {
+void BmPopper::StateLogin() {
 	BmString pwd;
 	bool pwdOK = false;
 	bool first = true;
@@ -272,43 +338,49 @@ void BmPopper::Login() {
 				MD5Digest( (unsigned char*) secret.String(), buf);
 				Digest.UnlockBuffer( -1);
 				BmString cmd = BmString("APOP ") << mPopAccount->Username() << " ";
-				SendCommand( cmd+Digest);
+				SendCommand( cmd, Digest);
 			} else
 				BM_THROW_RUNTIME( "Server did not supply a timestamp, so APOP doesn't work.");
 		} else {
 			// authMethod == AUTH_POP3: send username and password as plain text:
 			BmString cmd = BmString("USER ") << mPopAccount->Username();
 			SendCommand( cmd);
-			if (CheckForPositiveAnswer( SINGLE_LINE)) {
+			if (CheckForPositiveAnswer()) {
 				SendCommand( "PASS ", pwd);
 			}
 		}
 		try {
-			pwdOK = CheckForPositiveAnswer( SINGLE_LINE);
+			if (CheckForPositiveAnswer())
+				pwdOK = true;
+			else {
+				Disconnect();
+				StopJob();
+				return;
+			}
 		} catch( BM_network_error &err) {
 			// most probably a wrong password...
 			BmString errstr = err.what();
 			int e;
-			if ((e = mPopServer->Error()))
-				errstr << "\nerror: " << e << ", " << mPopServer->ErrorStr();
-			BmString text = Name() << "\n\n" << errstr;
-			HandleError( BmString("BmPopper: ") << text);
+			if ((e = Connection()->Error()))
+				errstr << "\nerror: " << e << ", " << Connection()->ErrorStr();
+			BmString text = Name() << ":\n\n" << errstr;
+			HandleError( text);
 		}
 	}
 }
 
 /*------------------------------------------------------------------------------*\
-	Check()
+	StateCheck()
 		-	looks for new mail
 \*------------------------------------------------------------------------------*/
-void BmPopper::Check() {
+void BmPopper::StateCheck() {
 	int32 msgNum = 0;
 
 	BmString cmd("STAT");
 	SendCommand( cmd);
-	if (!CheckForPositiveAnswer( SINGLE_LINE))
+	if (!CheckForPositiveAnswer())
 		return;
-	if (sscanf( mReplyLine.String()+4, "%ld", &mMsgCount) != 1 || mMsgCount < 0)
+	if (sscanf( StatusText().String()+4, "%ld", &mMsgCount) != 1 || mMsgCount < 0)
 		throw BM_network_error( "answer to STAT has unknown format");
 	if (mMsgCount == 0) {
 		UpdateMailStatus( 0, NULL, 0);
@@ -317,20 +389,20 @@ void BmPopper::Check() {
 
 	delete [] mMsgUIDs;
 	mMsgUIDs = new BmString[mMsgCount];
-	delete [] mMsgSizes;
-	mMsgSizes = new int32[mMsgCount];
+	delete [] mNewMsgSizes;
+	mNewMsgSizes = new int32[mMsgCount];
 	// we try to fetch a list of unique message IDs from server:
 	cmd = BmString("UIDL");
 	SendCommand( cmd);
-	// The UIDL-command may not be implemented by this server, so we 
-	// do not require a positive answer, we just hope for it:
-	if (!GetAnswer( MULTI_LINE)) 			
-		return;									// interrupted, we give up
-	if (mReplyLine[0] == '+') {
+	try {
+		// The UIDL-command may not be implemented by this server, so we 
+		// do not require a positive answer, we just hope for it:
+		if (!CheckForPositiveAnswer( 16384, true))
+			return;								// interrupted, we give up
 		// ok, we've got the UIDL-listing, so we fetch it:
 		char msgUID[128];
 		// fetch UIDLs one per line and store them in array:
-		const char *p = mAnswer.String();
+		const char *p = mAnswerText.String();
 		for( int32 i=0; i<mMsgCount; ++i) {
 			if (sscanf( p, "%ld %80s", &msgNum, msgUID) != 2 || msgNum <= 0)
 				throw BM_network_error( BmString("answer to UIDL has unknown format, msg ") << i+1);
@@ -340,18 +412,18 @@ void BmPopper::Check() {
 				throw BM_network_error( BmString("answer to UIDL has unknown format, msg ") << i+1);
 			p += 2;
 		}
-	} else {
+	} catch( BM_network_error& err) {
 		// no UIDL-listing from server, we will have to get by without...
 	}
 
 	// compute total size of messages that are new to us:
-	mMsgTotalSize = 0;
+	mNewMsgTotalSize = 0;
 	mNewMsgCount = 0;
 	cmd = "LIST";
 	SendCommand( cmd);
-	if (!CheckForPositiveAnswer( MULTI_LINE))
+	if (!CheckForPositiveAnswer( 16384, true))
 		return;
-	const char *p = mAnswer.String();
+	const char *p = mAnswerText.String();
 	for( int32 i=0; i<mMsgCount; i++) {
 		int32 msgSize;
 		if (!mPopAccount->IsUIDDownloaded( mMsgUIDs[i])) {
@@ -360,8 +432,8 @@ void BmPopper::Check() {
 			if (sscanf( p, "%ld %ld", &msgNum, &msgSize) != 2 || msgNum != i+1)
 				throw BM_network_error( BmString("answer to LIST has unknown format, msg ") << i+1);
 			// add msg-size to total:
-			mMsgTotalSize += msgSize;
-			mMsgSizes[mNewMsgCount++] = msgSize;
+			mNewMsgTotalSize += msgSize;
+			mNewMsgSizes[mNewMsgCount++] = msgSize;
 		}
 		// skip to next line:
 		if (!(p = strstr( p, "\r\n")))
@@ -375,39 +447,42 @@ void BmPopper::Check() {
 }
 
 /*------------------------------------------------------------------------------*\
-	Retrieve()
+	StateRetrieve()
 		-	retrieves all new mails from server
 \*------------------------------------------------------------------------------*/
-void BmPopper::Retrieve() {
-	int32 newMailIndex = 0;
-	for( int32 i=0; i<mMsgCount; i++) {
+void BmPopper::StateRetrieve() {
+	mCurrMailNr = 1;
+	for( int32 i=0; i<mMsgCount; ++i) {
 		if (mPopAccount->IsUIDDownloaded( mMsgUIDs[i]))
-			continue;							// msg is old (according to unknown UID)
+			continue;							// msg is old (according to known UID)
 		BmString cmd = BmString("RETR ") << i+1;
 		SendCommand( cmd);
-		if (!CheckForPositiveAnswer( MULTI_LINE, ++newMailIndex))
-			return;
-		BmMail mail( mAnswer, Name());
+		if (!CheckForPositiveAnswer( mNewMsgSizes[mCurrMailNr-1], true, true))
+			goto CLEAN_UP;
+		BmMail mail( mAnswerText, Name());
 		if (mail.InitCheck() != B_OK || !mail.Store())
-			return;
+			goto CLEAN_UP;
 		mPopAccount->MarkUIDAsDownloaded( mMsgUIDs[i]);
 		//	delete the retrieved message if required:
 		if (mPopAccount->DeleteMailFromServer()) {
 			cmd = BmString("DELE ") << i+1;
 			SendCommand( cmd);
-			if (!CheckForPositiveAnswer( SINGLE_LINE))
-				return;
+			if (!CheckForPositiveAnswer())
+				goto CLEAN_UP;
 		}
+		mCurrMailNr++;
 	}
 	if (mNewMsgCount)
 		UpdateMailStatus( 100.0, "done", mNewMsgCount);
+CLEAN_UP:
+	mCurrMailNr = 0;
 }
 
 /*------------------------------------------------------------------------------*\
-	Disconnect()
+	StateDisconnect()
 		-	tells the server that we are finished
 \*------------------------------------------------------------------------------*/
-void BmPopper::Disconnect() {
+void BmPopper::StateDisconnect() {
 	Quit( true);
 }
 
@@ -423,185 +498,13 @@ void BmPopper::Quit( bool WaitForAnswer) {
 	BmString cmd("QUIT");
 	try {
 		SendCommand( cmd);
-		if (WaitForAnswer) {
-			GetAnswer( SINGLE_LINE);
-		}
+		if (WaitForAnswer)
+			GetAnswer();
 	} catch(...) {	}
-	mPopServer->Close();
-	mConnected = false;
-}
-
-/*------------------------------------------------------------------------------*\
-	CheckForPositiveAnswer( SingleLineMode, mailNr)
-		-	waits for an answer from server and checks if it is positive
-		-	throws an exception if answer is negative
-		-	parameters are just passed on
-\*------------------------------------------------------------------------------*/
-bool BmPopper::CheckForPositiveAnswer( bool SingleLineMode, int32 mailNr) {
-	if (GetAnswer( SingleLineMode, mailNr)) {
-		if (mReplyLine[0] != '+') {
-			BmString err("Server answers: \n");
-			err += mReplyLine;
-			err.RemoveAll( "\r");
-			throw BM_network_error( err);
-		}
-		return true;
-	} else {
-		// user has interrupted
-		return false;
-	}
-}
-
-/*------------------------------------------------------------------------------*\
-	GetAnswer( SingleLineMode, mailNr)
-		-	waits for an answer from server and stores it in mAnswer
-		-	mailNr > 0 if answer is a mail-message, mailNr==0 otherwise
-		-	first line of answer (server-reply-line) is saved into mReplyLine.
-			Because of this, the reply-line does not appear in mAnswer.
-\*------------------------------------------------------------------------------*/
-bool BmPopper::GetAnswer( bool SingleLineMode, int32 mailNr) {
-	int32 offset = 0;
-	int32 SMALL = 512;
-	int32 netBufSize = ThePrefs->GetInt( "NetReceiveBufferSize", 65536);
-	int32 bufSize = (mailNr>0 && mMsgSizes[mailNr-1] > netBufSize) 
-							? mMsgSizes[mailNr-1]+SMALL*4
-							: netBufSize;
-	char *buffer;
-	bool done = false;
-	bool firstBlock = true;
-	bool replyLineExtracted = false;
-	int32 numBytes = 0;
-
-	if (mailNr)
-		BM_LOG2( BM_LogPop, BmString("announced msg-size:") << mMsgSizes[mailNr-1]);
-	BM_LOG3( BM_LogPop, BmString("bufSize:") << bufSize);
-	mAnswer.SetTo( '\0', bufSize);		// preallocate the bufsize we need
-	buffer = mAnswer.LockBuffer( bufSize);
-	try {
-		do {
-			int32 bufFree = bufSize - offset;
-			if (bufFree < SMALL) {
-				// bufsize is not sufficient, we enlarge the buffer:
-				mAnswer.UnlockBuffer( bufSize);
-				bufSize *= 2;
-				buffer = mAnswer.LockBuffer( bufSize);
-				bufFree = bufSize - offset;
-				BM_LOG2( BM_LogPop, BmString("bufSize enlarged to:") << bufSize);
-			}
-			if (bufFree > netBufSize)
-				bufFree = netBufSize;
-			numBytes = ReceiveBlock( buffer+offset, bufFree);
-			if (!replyLineExtracted) {
-				// we may have to extract the reply-line from the buffer:
-				char* eol;
-				if ((eol=strstr( buffer, "\r\n")) != NULL) {
-					// reply-line is complete, we extract it from buffer:
-					*eol = 0;
-					eol += 2;
-					mReplyLine = buffer;
-					int32 len = mReplyLine.Length();
-					strcpy( buffer, eol);
-					offset -= (len+2);
-					replyLineExtracted = true;
-					BM_LOG( BM_LogPop, BmString("<--\n") << mReplyLine);
-					if (SingleLineMode || firstBlock && mReplyLine[0]=='-') {
-						// if all we expect is the reply-line, or if answer is negative, we are done:
-						done = true;
-					}
-				};
-			}
-			if (!SingleLineMode) {
-				// MULTI_LINE mode
-				int32 searchOffset = (offset > 3 ? offset-4 : 0);
-				char *endp;
-				if ((endp=strstr( buffer+searchOffset, "\r\n.\r\n"))) {
-					*(endp+2)='\0';
-					// end of multiline-answer is indicated by line consisting only of a dot
-					if (!mailNr) {
-						BM_LOG2( BM_LogPop, BmString("<--\n") << buffer);
-					}
-					done = true;
-				}
-			}
-			offset += numBytes;
-			firstBlock = false;
-			if (mailNr > 0) {
-				float delta = (100.0 * numBytes) / (mMsgTotalSize ? mMsgTotalSize : 1);
-				BmString text = BmString("size: ") << BytesToString( mMsgSizes[mailNr-1]);
-				UpdateMailStatus( delta, text.String(), mailNr);
-			}
-		} while( !done && numBytes);
-		mAnswer.UnlockBuffer( offset);
-		if (done) {
-			mAnswer.ReplaceAll( "\n..", "\n.");
-							// remove padding of "termination octet" (dot) inside message
-		} else  {
-			//	numBytes == 0, interrupt by external event (user)
-			mAnswer = "";
-		}
-	} catch (...) {
-		mAnswer.UnlockBuffer( -1);
-		throw;
-	}
-	return done;
-}
-
-/*------------------------------------------------------------------------------*\
-	ReceiveBlock( buffer, max)
-		-	receives a block of a specified size (<=max) from server and appends
-			it to mAnswer (well, writes it into mAnswer's buffer)
-		-	ensures user-feedback is not blocked longer than BmPopper::FeedbackTimeout
-		-	waits only BmPopper::ReceiveTimeout seconds for answer,
-			throws an exception if no answer has arrived within that timeframe
-		-	returns size of received block in bytes
-\*------------------------------------------------------------------------------*/
-int32 BmPopper::ReceiveBlock( char* buffer, int32 max) {
-	int32 numBytes;
-	int32 AnswerTimeout = ThePrefs->GetInt("ReceiveTimeout")*1000*1000;
-	int32 timeout = AnswerTimeout / BmPopper::FeedbackTimeout;
-	bool shouldCont;
-	for( int32 round=0; (shouldCont = ShouldContinue()) && round<timeout; ++round) {
-		if (mPopServer->IsDataPending( BmPopper::FeedbackTimeout)) {
-			if ((numBytes = mPopServer->Receive( buffer, max-1)) > 0) {
-				buffer[numBytes] = '\0';
-				return numBytes;
-			} else if (numBytes < 0) {
-				throw BM_network_error( "error during receive");
-			}
-		}
-	}
-	if (shouldCont) {
-		throw BM_network_error( "timeout during receive from POP-server");
-	}
-	return 0;
-}
-
-/*------------------------------------------------------------------------------*\
-	SendCommand( cmd)
-		-	sends the specified POP3-command to the server.
-\*------------------------------------------------------------------------------*/
-void BmPopper::SendCommand( BmString cmd, BmString secret) {
-	BmString command;
-	if (secret.Length()) {
-		command = cmd + secret;
-		BM_LOG( BM_LogPop, BmString("-->\n") << cmd << " secret_data_omitted_here");
-													// we do not want to log any passwords...
-	} else {
-		command = cmd;
-		BM_LOG( BM_LogPop, BmString("-->\n") << cmd);
-	}
-	if (!command.Length() || command[command.Length()-1] != '\n')
-		command << "\r\n";
-	int32 size = command.Length();
-	int32 sentSize;
-	if ((sentSize = mPopServer->Send( command.String(), size)) != size) {
-		throw BM_network_error( BmString("error during send, sent only ") << sentSize << " bytes instead of " << size);
-	}
+	Disconnect();
 }
 
 /*------------------------------------------------------------------------------*\
 	Initialize statics:
 \*------------------------------------------------------------------------------*/
 int32 BmPopper::mId = 0;
-int32 BmPopper::FeedbackTimeout = 200*1000;
-

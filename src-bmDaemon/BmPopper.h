@@ -43,11 +43,34 @@
 #include <NetAddress.h>
 #include <NetEndpoint.h>
 
-#include "BmDataModel.h"
+#include "BmNetJobModel.h"
 
 class BmPopAccount;
 
 #define BM_POPPER_NEEDS_PWD						'bmPp'
+
+/*------------------------------------------------------------------------------*\
+	BmPopStatusFilter
+		-	
+\*------------------------------------------------------------------------------*/
+class BmPopStatusFilter : public BmStatusFilter {
+	typedef BmStatusFilter inherited;
+
+public:
+	BmPopStatusFilter( BmMemIBuf* input, BmNetJobModel* job, 
+							 uint32 blockSize=65536);
+
+	// overrides of BmStatusFilter base:
+	bool CheckForPositiveAnswer();
+
+protected:
+	// overrides of BmMailFilter base:
+	void Filter( const char* srcBuf, uint32& srcLen, 
+					 char* destBuf, uint32& destLen);
+
+	BmNetJobModel* mJob;
+
+};
 
 /*------------------------------------------------------------------------------*\
 	BmPopper
@@ -56,8 +79,8 @@ class BmPopAccount;
 		-	in general, each BmPopper is started as a thread which exits when the
 			POP-session has ended
 \*------------------------------------------------------------------------------*/
-class BmPopper : public BmJobModel {
-	typedef BmJobModel inherited;
+class BmPopper : public BmNetJobModel {
+	typedef BmNetJobModel inherited;
 	
 public:
 	//	message component definitions for status-msgs:
@@ -79,11 +102,11 @@ public:
 	virtual ~BmPopper();
 
 	BmString SuggestAuthType() const;
-	typedef bool BmPwdAcquisitorFunc( const BmString, BmString&);
-	inline void SetPwdAcquisitorFunc( BmPwdAcquisitorFunc* func)
-													{ mPwdAcquisitorFunc = func; }
 	inline static int32 NextID() 			{ return ++mId; }
 	inline BmString Name() const			{ return ModelName(); }
+
+	// overrides of netjob-model base:
+	void UpdateProgress( uint32 numBytes);
 
 	// overrides of job-model base:
 	bool StartJob();
@@ -91,41 +114,28 @@ public:
 
 private:
 	// internal functions:
-	void Connect();
-	void Login();
-	void Check();
-	void Retrieve();
-	void Disconnect();
+	void StateConnect();
+	void StateLogin();
+	void StateCheck();
+	void StateRetrieve();
+	void StateDisconnect();
 	void Quit( bool WaitForAnswer=false);
 	void UpdatePOPStatus( const float, const char*, bool failed=false, bool stopped=false);
 	void UpdateMailStatus( const float, const char*, int32);
-	void StoreAnswer( char* );
-	bool CheckForPositiveAnswer( bool SingleLineMode, int32 mailNr=0);
-	bool GetAnswer( bool SingleLineMode, int32 mailNr = 0);
-	int32 ReceiveBlock( char* buffer, int32 max);
-	void SendCommand( BmString cmd, BmString secret="");
 
 	static int32 mId;							// unique message ID, this is used if a 
 													// received message has no UID.
-	static int32 FeedbackTimeout;			// the time a BmPopper will allow to pass
-													// before reacting on any user-action 
-													// (like closing the window)
-
-	static const bool SINGLE_LINE = true;
-	static const bool MULTI_LINE = false;
 
 	BmRef<BmPopAccount> mPopAccount;		// Info about our pop-account
 
-	BNetEndpoint* mPopServer;				// network-connection to POP-server
-	bool mConnected;							// are we connected to the server?
-
 	BmString* mMsgUIDs;						// array of unique-IDs, one for each message
 	int32 mMsgCount;							// number of msgs found on server
+
+	int32 mCurrMailNr;						// nr of currently handled mail (0 if none)
 	int32 mNewMsgCount;						// number of msgs to be received
-	int32* mMsgSizes;							// size of msgs to be received
-	int32 mMsgTotalSize;						// total-size of msgs to be received
-	BmString mAnswer;							// holds last answer of POP-server
-	BmString mReplyLine;						// holds last server-reply (the answer's first line)
+	int32* mNewMsgSizes;						// sizes of msgs to be received
+	int32 mNewMsgTotalSize;					// total-size of msgs to be received
+
 	BmString mServerTimestamp;				// optional timestamp from Server (needed for APOP)
 
 	int32 mState;								// current POP3-state (refer enum below)
@@ -138,9 +148,6 @@ private:
 		POP_DONE,
 		POP_FINAL
 	};
-
-	// function that asks user for a password:
-	BmPwdAcquisitorFunc* mPwdAcquisitorFunc;
 
 	// stuff needed for internal POP3-state-loop:
 	typedef void (BmPopper::*TStateMethod)();
