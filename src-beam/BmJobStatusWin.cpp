@@ -351,7 +351,7 @@ BmMailFilterView::~BmMailFilterView() {
 \*------------------------------------------------------------------------------*/
 BmJobModel* BmMailFilterView::CreateJobModel( BMessage* msg) {
 	const char* filterName;
-	if (msg->FindString( BmFilter::MSG_FILTER, &filterName) != B_OK)
+	if (msg->FindString( BmListModel::MSG_ITEMKEY, &filterName) != B_OK)
 		return NULL;
 	bool outbound;
 	if (msg->FindBool( BmFilter::MSG_OUTBOUND, &outbound) != B_OK)
