@@ -88,6 +88,11 @@ class BmMailEditWin : public BmWindow
 		filter_result Filter( BMessage* msg, BHandler** handler);
 	};
 
+	// state-archival members:
+	static const char* const MSG_DETAIL1;
+	static const char* const MSG_DETAIL2;
+	static const char* const MSG_DETAIL3;
+
 public:
 	// creator-funcs, c'tors and d'tor:
 	static BmMailEditWin* CreateInstance( BmMailRef* mailRef=NULL);
@@ -103,6 +108,7 @@ public:
 	bool QuitRequested();
 	void Quit();
 	void Show();
+	status_t ArchiveState( BMessage* archive) const;
 	status_t UnarchiveState( BMessage* archive);
 	
 	// getters:
@@ -117,6 +123,7 @@ private:
 	BmMailEditWin();
 	BmMailEditWin( BmMailRef* mailRef=NULL, BmMail* mail=NULL);
 
+	void ToggleDetailsButton( int32 nr);
 	void EditMail( BmMailRef* ref);
 	void EditMail( BmMail* mail);
 	BmMailViewContainer* CreateMailView( minimax minmax, BRect frame);

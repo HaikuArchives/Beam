@@ -130,6 +130,10 @@ BmMailEditWin::BmEditWinMap BmMailEditWin::nEditWinMap;
 const char* const BmMailEditWin::MSG_CONTROL = 	"ctrl";
 const char* const BmMailEditWin::MSG_ADDRESS = 	"addr";
 
+const char* const BmMailEditWin::MSG_DETAIL1 = 	"det1";
+const char* const BmMailEditWin::MSG_DETAIL2 = 	"det2";
+const char* const BmMailEditWin::MSG_DETAIL3 = 	"det3";
+
 /*------------------------------------------------------------------------------*\
 	CreateInstance()
 		-	creates a new mail-edit window
@@ -503,6 +507,18 @@ void BmMailEditWin::CreateGUI() {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
+status_t BmMailEditWin::ArchiveState( BMessage* archive) const {
+	inherited::ArchiveState( archive);
+	status_t ret = archive->AddBool( MSG_DETAIL1, mShowDetails1)
+						|| archive->AddBool( MSG_DETAIL2, mShowDetails2)
+						|| archive->AddBool( MSG_DETAIL3, mShowDetails3);
+	return ret;
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
 status_t BmMailEditWin::UnarchiveState( BMessage* archive) {
 	status_t ret = inherited::UnarchiveState( archive);
 	if (ret == B_OK) {
@@ -523,6 +539,12 @@ status_t BmMailEditWin::UnarchiveState( BMessage* archive) {
 		frame.right = MIN( frame.right, scrFrame.right-5);
 		MoveTo( BPoint( nNextXPos, nNextYPos));
 		ResizeTo( frame.Width(), frame.Height());
+		if (archive->FindBool( MSG_DETAIL1))
+			ToggleDetailsButton( 1);
+		if (archive->FindBool( MSG_DETAIL2))
+			ToggleDetailsButton( 2);
+		if (archive->FindBool( MSG_DETAIL3))
+			ToggleDetailsButton( 3);
 		WriteStateInfo();
 	} else {
 		MoveTo( BPoint( nNextXPos, nNextYPos));
@@ -598,42 +620,60 @@ BmMailViewContainer* BmMailEditWin::CreateMailView( minimax minmax,
 	()
 		-	
 \*------------------------------------------------------------------------------*/
+void BmMailEditWin::ToggleDetailsButton( int32 nr) {
+	switch( nr) {
+		case 1: {
+			int32 newVal = (mShowDetails1 ? B_CONTROL_OFF : B_CONTROL_ON);
+			mShowDetails1Button->SetValue( newVal);
+			mShowDetails1 = newVal != B_CONTROL_OFF;
+			if (mShowDetails1)
+				mOuterGroup->AddChild( mDetails1Group, mSubjectGroup);
+			else
+				mDetails1Group->RemoveSelf();
+			break;
+		}
+		case 2: {
+			int32 newVal = (mShowDetails2 ? B_CONTROL_OFF : B_CONTROL_ON);
+			mShowDetails2Button->SetValue( newVal);
+			mShowDetails2 = newVal != B_CONTROL_OFF;
+			if (mShowDetails2)
+				mDetails1Group->AddChild( mDetails2Group);
+			else
+				mDetails2Group->RemoveSelf();
+			break;
+		}
+		case 3: {
+			int32 newVal = (mShowDetails3 ? B_CONTROL_OFF : B_CONTROL_ON);
+			mShowDetails3Button->SetValue( newVal);
+			mShowDetails3 = newVal != B_CONTROL_OFF;
+			if (mShowDetails3)
+				mOuterGroup->AddChild( mDetails3Group, mSeparator);
+			else
+				mDetails3Group->RemoveSelf();
+			break;
+		}
+	}
+	RecalcSize();
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
 void BmMailEditWin::MessageReceived( BMessage* msg) {
 	Regexx rx;
 	try {
 		switch( msg->what) {
 			case BM_SHOWDETAILS1: {
-				int32 newVal = (mShowDetails1 ? B_CONTROL_OFF : B_CONTROL_ON);
-				mShowDetails1Button->SetValue( newVal);
-				mShowDetails1 = newVal != B_CONTROL_OFF;
-				if (mShowDetails1)
-					mOuterGroup->AddChild( mDetails1Group, mSubjectGroup);
-				else
-					mDetails1Group->RemoveSelf();
-				RecalcSize();
-//				mShowDetails2Button->Invoke();
+				ToggleDetailsButton( 1);
 				break;
 			}
 			case BM_SHOWDETAILS2: {
-				int32 newVal = (mShowDetails2 ? B_CONTROL_OFF : B_CONTROL_ON);
-				mShowDetails2Button->SetValue( newVal);
-				mShowDetails2 = newVal != B_CONTROL_OFF;
-				if (mShowDetails2)
-					mDetails1Group->AddChild( mDetails2Group);
-				else
-					mDetails2Group->RemoveSelf();
-				RecalcSize();
+				ToggleDetailsButton( 2);
 				break;
 			}
 			case BM_SHOWDETAILS3: {
-				int32 newVal = (mShowDetails3 ? B_CONTROL_OFF : B_CONTROL_ON);
-				mShowDetails3Button->SetValue( newVal);
-				mShowDetails3 = newVal != B_CONTROL_OFF;
-				if (mShowDetails3)
-					mOuterGroup->AddChild( mDetails3Group, mSeparator);
-				else
-					mDetails3Group->RemoveSelf();
-				RecalcSize();
+				ToggleDetailsButton( 3);
 				break;
 			}
 			case BMM_SEND_LATER:
@@ -805,7 +845,7 @@ void BmMailEditWin::MessageReceived( BMessage* msg) {
 																 fromString.Length());
 					mFromControl->TextView()->ScrollToSelection();
 					// mark selected identity:
-					item->SetMarked( true);
+					mFromControl->Menu()->MarkItem( ident->Key().String());
 					// select corresponding smtp-account, if any:
 					mSmtpControl->MarkItem( ident->SMTPAccount().String());
 					// update signature:
@@ -1007,12 +1047,8 @@ void BmMailEditWin::SetFieldsFromMail( BmMail* mail) {
 		// mark corresponding identity:
 		BmRef<BmIdentity> identRef 
 			= TheIdentityList->FindIdentityForAddrSpec( fromAddrSpec);
-		if (identRef) {
-			BMenuItem* item 
-				= mFromControl->Menu()->FindItem( identRef->Key().String());
-			if (item)
-				item->SetMarked( true);
-		}
+		if (identRef)
+			mFromControl->Menu()->MarkItem( identRef->Key().String());
 		// mark corresponding SMTP-account (if any):
 		BmString smtpAccount = mail->AccountName();
 		mSmtpControl->MarkItem( smtpAccount.String());
