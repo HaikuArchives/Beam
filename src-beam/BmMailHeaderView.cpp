@@ -359,11 +359,8 @@ void BmMailHeaderView::ShowHeader( BmMailHeader* header, bool invalidate) {
 			ResizeTo( FixedWidth(), height);
 			mailView->CalculateVerticalOffset();
 			if (hasErrors) {
-				BmString errStr( mMailHeader->ParsingErrors());
-				errStr << "\nThe mail-header could not be parsed completely. "
-					 	 << "Some information may be displayed incorrectly.";
-				mailView->AddParsingError(errStr);
-				BM_LOG( BM_LogMailParse, errStr);
+				mailView->AddParsingError(mMailHeader->ParsingErrors());
+				BM_LOG( BM_LogMailParse, mMailHeader->ParsingErrors());
 			}
 		}
 	} else {
