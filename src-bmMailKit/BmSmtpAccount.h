@@ -110,7 +110,8 @@ public:
 													{ mAuthMethod = s; 
 													  TellModelItemUpdated( UPD_ALL); }
 	inline void PortNr( uint16 i)			{ mPortNr = i; 
-													  mPortNrString = BmString()<<i;
+													  mPortNrString 
+													  		= BmString()<<(uint32)i;
 													  TellModelItemUpdated( UPD_ALL); }
 	inline void AccForSmtpAfterPop( const BmString &s)	
 													{ mAccForSmtpAfterPop = s; 

@@ -127,7 +127,8 @@ public:
 													  TellModelItemUpdated( UPD_ALL); }
 	inline void DeleteMailDelay( uint16 i)			
 													{ mDeleteMailDelay = i; 
-													  mDeleteMailDelayString = BmString()<<i;  
+													  mDeleteMailDelayString 
+													  		= BmString()<<(uint32)i;
 													  TellModelItemUpdated( UPD_ALL); }
 	inline void MarkedAsDefault( bool b){ mMarkedAsDefault = b;  
 													  TellModelItemUpdated( UPD_ALL); }
@@ -138,7 +139,8 @@ public:
 													{ mPOPServer = s;  
 													  TellModelItemUpdated( UPD_ALL); }
 	inline void PortNr( uint16 i)			{ mPortNr = i; 
-													  mPortNrString = BmString()<<i;  
+													  mPortNrString 
+													  		= BmString()<<(uint32)i;
 													  TellModelItemUpdated( UPD_ALL); }
 	inline void PwdStoredOnDisk( bool b){ mPwdStoredOnDisk = b;  
 													  TellModelItemUpdated( UPD_ALL); }

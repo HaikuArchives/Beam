@@ -91,7 +91,7 @@ BmSmtpAccount::BmSmtpAccount( BMessage* archive, BmSmtpAccountList* model)
 	mAuthMethod = FindMsgString( archive, MSG_AUTH_METHOD);
 	mAuthMethod.ToUpper( );
 	mPortNr = FindMsgInt16( archive, MSG_PORT_NR);
-	mPortNrString << mPortNr;
+	mPortNrString << (uint32)mPortNr;
 	mPwdStoredOnDisk = FindMsgBool( archive, MSG_STORE_PWD);
 	if (version > 1) {
 		mAccForSmtpAfterPop = FindMsgString( archive, MSG_ACC_FOR_SAP);

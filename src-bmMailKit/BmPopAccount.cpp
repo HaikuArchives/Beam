@@ -124,7 +124,7 @@ BmPopAccount::BmPopAccount( BMessage* archive, BmPopAccountList* model)
 	mCheckMail = FindMsgBool( archive, MSG_CHECK_MAIL);
 	mDeleteMailFromServer = FindMsgBool( archive, MSG_DELETE_MAIL);
 	mPortNr = FindMsgInt16( archive, MSG_PORT_NR);
-	mPortNrString << mPortNr;
+	mPortNrString << (uint32)mPortNr;
 	mAuthMethod = FindMsgString( archive, MSG_AUTH_METHOD);
 	mAuthMethod.ToUpper();
 	mMarkedAsDefault = FindMsgBool( archive, MSG_MARK_DEFAULT);
