@@ -33,11 +33,6 @@
 
 #include "BmPrefsView.h"
 
-#define BM_CHECK_IF_PPP_UP_CHANGED 				'bmCP'
-#define BM_USE_SWATCHTIME_CHANGED				'bmST'
-#define BM_TIMEMODE_IN_HEADERVIEW_SELECTED 	'bmTM'
-#define BM_SHOW_DECODED_LENGTH_CHANGED		 	'bmSD'
-
 class BmCheckControl;
 class BmTextControl;
 class BmMenuControl;
@@ -48,6 +43,13 @@ class BmMenuControl;
 class BmPrefsMailReadView : public BmPrefsView {
 	typedef BmPrefsView inherited;
 
+	enum {
+		BM_CHECK_IF_PPP_UP_CHANGED 			= 'bmCP',
+		BM_USE_SWATCHTIME_CHANGED				= 'bmST',
+		BM_TIMEMODE_IN_HEADERVIEW_SELECTED 	= 'bmTM',
+		BM_SHOW_DECODED_LENGTH_CHANGED		= 'bmSD'
+	};
+	
 public:
 	// c'tors and d'tor:
 	BmPrefsMailReadView();
