@@ -49,16 +49,21 @@ using namespace regexx;
 		-	
 \*------------------------------------------------------------------------------*/
 BmMenuControl::BmMenuControl( const char* label, BMenu* menu, float weight, 
-										float maxWidth) 
+										float maxWidth, const char* fitText)
 	:	inherited( BRect(0,0,400,20), NULL, label, menu, true, B_FOLLOW_NONE)
 	,	mMenu( static_cast<BMenu*>( ChildAt( 0)))
 {
 	ResizeToPreferred();
 	BRect b = Bounds();
 	float labelWidth = StringWidth( label);
-	ct_mpm = minimax( StringWidth("12345678901234567890123456789012345"), b.Height()+4, 
-							maxWidth, b.Height()+4, weight);
 	SetDivider( label ? labelWidth+27 : 0);
+	if (fitText) {
+		float fixedWidth = StringWidth( fitText)+Divider()+27;
+		ct_mpm = minimax( fixedWidth, b.Height()+4, 
+								fixedWidth, b.Height()+4);
+	} else
+		ct_mpm = minimax( StringWidth("12345678901234567890123456789012345"), b.Height()+4, 
+								maxWidth, b.Height()+4, weight);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -153,6 +158,8 @@ BRect BmMenuControl::layout(BRect frame) {
 	MoveTo(frame.LeftTop());
 	ResizeTo(frame.Width(),frame.Height());
 	float occupiedSpace = Divider()-10;
+	if (occupiedSpace < 3)
+		occupiedSpace = 3;					// leave room for focus-rectangle
 	mMenu->MoveTo( occupiedSpace, mMenu->Frame().top);
 	mMenu->ResizeTo( frame.Width()-occupiedSpace-6, mMenu->Frame().Height());
 	return frame;
