@@ -31,7 +31,6 @@
 #ifndef _BmMailRef_h
 #define _BmMailRef_h
 
-#include <map>
 #include <vector>
 
 #include <Entry.h>

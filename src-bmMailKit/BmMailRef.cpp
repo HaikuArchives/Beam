@@ -44,7 +44,8 @@
 #include "BmStorageUtil.h"
 #include "BmUtil.h"
 
-static BmString BM_REFKEYSTAT( const struct stat& x) {
+static BmString BM_REFKEYSTAT( const struct stat& x) 
+{
 	return BmString() << x.st_ino;
 }
 
@@ -84,25 +85,21 @@ BmRef<BmMailRef> BmMailRef::CreateInstance( entry_ref &eref,
 		BM_SHOWERR("BmMailRef::CreateInstance(): Could not acquire global lock!");
 		return NULL;
 	}
-	BmProxy* proxy = BmRefObj::GetProxy( typeid(BmMailRef).name());
-	if (proxy) {
-		BmString key( BM_REFKEYSTAT( st));
-		BmRef<BmMailRef> mailRef( 
-			dynamic_cast<BmMailRef*>( proxy->FetchObject( key))
-		);
-		GlobalLocker()->Unlock();
-		if (mailRef) {
-			mailRef->ResyncFromDisk( &eref, &st);
-			return mailRef;
-		}
+	BmString key( BM_REFKEYSTAT( st));
+	BmRef<BmMailRef> mailRef( 
+		dynamic_cast<BmMailRef*>( 
+			BmRefObj::FetchObject( typeid(BmMailRef).name(), key)
+		)
+	);
+	GlobalLocker()->Unlock();
+	if (mailRef) {
+		mailRef->ResyncFromDisk( &eref, &st);
+		return mailRef;
+	} else {
 		mailRef = new BmMailRef( eref, st);
 		mailRef->Initialize();
 		return mailRef;
 	}
-	GlobalLocker()->Unlock();
-	BM_SHOWERR( BmString("Could not get proxy for ") 
-						<< typeid(BmMailRef).name());
-	return NULL;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -117,31 +114,28 @@ BmRef<BmMailRef> BmMailRef::CreateInstance( BMessage* archive) {
 		BM_SHOWERR("BmMailRef::CreateInstance(): Could not acquire global lock!");
 		return NULL;
 	}
-	BmProxy* proxy = BmRefObj::GetProxy( typeid(BmMailRef).name());
-	if (proxy) {
-		status_t err;
-		node_ref nref;
-		if ((err = archive->FindInt64( MSG_INODE, &nref.node)) != B_OK) {
-			BM_LOGERR( BmString("BmMailRef: Could not find msg-field ") 
-								<< MSG_INODE << "\n\nError:" << strerror(err));
-			return NULL;
-		}
-		nref.device = ThePrefs->MailboxVolume.Device();
-		BmString key( BM_REFKEY( nref));
-		BmRef<BmMailRef> mailRef( 
-			dynamic_cast<BmMailRef*>( proxy->FetchObject( key))
-		);
-		GlobalLocker()->Unlock();
-		if (mailRef)
-			return mailRef;
+	status_t err;
+	node_ref nref;
+	if ((err = archive->FindInt64( MSG_INODE, &nref.node)) != B_OK) {
+		BM_LOGERR( BmString("BmMailRef: Could not find msg-field ") 
+							<< MSG_INODE << "\n\nError:" << strerror(err));
+		return NULL;
+	}
+	nref.device = ThePrefs->MailboxVolume.Device();
+	BmString key( BM_REFKEY( nref));
+	BmRef<BmMailRef> mailRef( 
+		dynamic_cast<BmMailRef*>( 
+			BmRefObj::FetchObject( typeid(BmMailRef).name(), key)
+		)
+	);
+	GlobalLocker()->Unlock();
+	if (mailRef)
+		return mailRef;
+	else {
 		mailRef = new BmMailRef( archive, nref);
 		mailRef->Initialize();
 		return mailRef;
 	}
-	GlobalLocker()->Unlock();
-	BM_SHOWERR( BmString("Could not get proxy for ") 
-						<< typeid(BmMailRef).name());
-	return NULL;
 }
 
 /*------------------------------------------------------------------------------*\
