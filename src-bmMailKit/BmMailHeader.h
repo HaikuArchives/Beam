@@ -191,12 +191,11 @@ public:
 
 	// native methods:
 	void StoreAttributes( BFile& mailFile);
-							//	the following three take UTF8 as input:
+	//	these take UTF8 as input:
 	void SetFieldVal( BmString fieldName, const BmString value);
 	void AddFieldVal( BmString fieldName, const BmString value);
 	void RemoveField( BmString fieldName);
 	void RemoveAddrFieldVal( BmString fieldName, const BmString address);
-							// the next always produces US-ASCII (7-bit):
 	const BmAddressList& GetAddressList( BmString fieldName);
 	bool IsFieldEmpty( BmString fieldName);
 	bool AddressFieldContainsAddrSpec( BmString fieldName, 
