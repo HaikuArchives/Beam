@@ -46,6 +46,8 @@ extern "C" {
 
 class BmFilterList;
 
+#define BM_JOBWIN_FILTER					'bmed'
+						// sent to JobMetaController in order to start filter-job
 /*------------------------------------------------------------------------------*\
 	BmFilter 
 		-	holds information about one filter (a SIEVE-script)
@@ -93,6 +95,10 @@ public:
 	// setters:
 	inline void Content( const BmString &s){ mContent = s; TellModelItemUpdated( UPD_ALL); }
 	inline void MarkedAsDefault( bool b)	{ mMarkedAsDefault = b;  TellModelItemUpdated( UPD_ALL); }
+
+	static const char* const MSG_FILTER;
+	static const char* const MSG_OUTBOUND;
+	static const char* const MSG_MAILREF;
 
 private:
 	BmFilter();									// hide default constructor
