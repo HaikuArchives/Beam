@@ -31,18 +31,14 @@
 #ifndef _BmMainWindow_h
 #define _BmMainWindow_h
 
-#include <MMenuBar.h>
-
-#include "BmController.h"
 #include "BmWindow.h"
 
-class BMenu;
-
-class BmMenuController;
 class BmMailFolderView;
 class BmMailRefView;
 class BmMailView;
 class BmMailViewContainer;
+class BMenuBar;
+class BmMenuController;
 class BmToolbarButton;
 class CLVContainerView;
 class UserResizeSplitView;
@@ -94,6 +90,8 @@ private:
 	UserResizeSplitView* mVertSplitter;
 	UserResizeSplitView* mHorzSplitter;
 	
+	BmMenuController* mAccountMenu;
+	
 	BmToolbarButton* mCheckButton;
 	BmToolbarButton* mNewButton;
 	BmToolbarButton* mReplyButton;
@@ -103,9 +101,6 @@ private:
 	BmToolbarButton* mTrashButton;
 	
 	MMenuBar* mMainMenuBar;
-	BmMenuController* mAccountMenu;
-	BmMenuController* mFilterMenu;
-
 	static bool nIsAlive;
 
 	// Hide copy-constructor and assignment:
