@@ -112,6 +112,10 @@ void DeUrlify( const BString& in, BString& out);
 \*------------------------------------------------------------------------------*/
 void WordWrap( const BString& in, BString& out, int32 maxLineLen, BString nl);
 /*------------------------------------------------------------------------------*\
+	utility function to generate the sortkey for a given name:
+\*------------------------------------------------------------------------------*/
+BString GenerateSortkeyFor( const BString& name);
+/*------------------------------------------------------------------------------*\
 	utility defines for UTF8-character parsing:
 \*------------------------------------------------------------------------------*/
 #define IS_PART_OF_UTF8_MULTICHAR(c) ((c)&0x80)

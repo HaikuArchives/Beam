@@ -487,3 +487,26 @@ void WordWrap( const BString& in, BString& out, int32 maxLineLen, BString nl) {
 	if (lastPos < in.Length())
 		out.Append( in.String()+lastPos, in.Length()-lastPos);
 }
+
+/*------------------------------------------------------------------------------*\
+	GenerateSortkeyFor( name))
+		-	returns the sortkey for the given name
+\*------------------------------------------------------------------------------*/
+BString GenerateSortkeyFor( const BString& name) {
+	BString skey( name);
+	if (!skey.Length()) 
+		return skey;
+	skey.ToLower();
+	ReplaceSubstringWith( skey, BString("Ä"), BString("ae"));
+	ReplaceSubstringWith( skey, BString("Ü"), BString("ue"));
+	ReplaceSubstringWith( skey, BString("Ö"), BString("oe"));
+	ReplaceSubstringWith( skey, BString("ä"), BString("ae"));
+	ReplaceSubstringWith( skey, BString("ü"), BString("ue"));
+	ReplaceSubstringWith( skey, BString("ö"), BString("oe"));
+	ReplaceSubstringWith( skey, BString("ß"), BString("ss"));
+	// that's it for now, decomposition for other chars later...
+	if (skey.ByteAt(0) == '(')
+		skey.Prepend("~");
+	return skey;
+}
+
