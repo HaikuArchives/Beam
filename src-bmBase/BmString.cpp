@@ -1860,3 +1860,34 @@ BmString::DeUrlify() {
 	}
 	return *this;
 }
+
+/*------------------------------------------------------------------------------*\
+	Trim()
+		-	trims left/right/both sides of string from whitespace
+\*------------------------------------------------------------------------------*/
+BmString&
+BmString::Trim( bool left, bool right) {
+	int32 len = Length();
+	if (len) {
+		char* buf = LockBuffer( len);
+		char* start = buf;
+		if (left)
+			while( isspace(*start))
+				start++;
+		char* end = start+len-1;
+		if (right)
+			while( end>start && isspace(*end))
+				end--;
+		if (*start==0 || end==buf) {
+			// string contains whitespace only, we throw it away:
+			*buf = 0;
+			len = 0;
+		} else {
+			len = end-start+1;
+			if (len>0)
+				memmove( buf, start, len);
+		}
+		UnlockBuffer( len);
+	}
+	return *this;
+}

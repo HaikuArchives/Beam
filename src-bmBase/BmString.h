@@ -301,6 +301,8 @@ public:
 						/* decodes URL-encoded strings
 						 */
 
+	BmString&			Trim( bool left=true, bool right=true);
+
 /*---- Simple sprintf replacement calls ------------------------------------*/
 /*---- Slower than sprintf but type and overflow safe ----------------------*/
 	BmString 		&operator<<(const char *);
