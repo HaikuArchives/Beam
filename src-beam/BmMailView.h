@@ -60,7 +60,7 @@ class BmRulerView;
 #define BM_MAILVIEW_SHOWCOOKED					'bmMb'
 #define BM_MAILVIEW_SHOWINLINES_SEPARATELY	'bmMc'
 #define BM_MAILVIEW_SHOWINLINES_CONCATENATED	'bmMd'
-#define BM_MAILVIEW_SELECT_ENCODING				'bmMe'
+#define BM_MAILVIEW_SELECT_CHARSET				'bmMe'
 #define BM_MAILVIEW_COPY_URL						'bmMf'
 
 /*------------------------------------------------------------------------------*\
@@ -87,7 +87,6 @@ class BmMailView : public WrappingTextView, public BmJobController {
 	static const char* const MSG_FONTSIZE;
 	//
 	static const char* const MSG_MAIL;
-	static const char* const MSG_ENCODING;
 
 	static const int16 nArchiveVersion;
 
@@ -111,6 +110,7 @@ public:
 	void UpdateFont( const BFont& font);
 	bool IsOverURL( BPoint point);
 	BmString GetTextForTextrun( BmTextRunIter run);
+	void SendNoticesIfNeeded( bool haveMail);
 
 	// overrides of BTextView base:
 	bool AcceptsDrop( const BMessage* msg);
@@ -160,6 +160,7 @@ private:
 	BmTextRunIter mClickedTextRun;
 	BMessageRunner* mReadRunner;
 	bool mShowingUrlCursor;
+	bool mHaveMail;
 	
 	// will be archived:
 	BmString mFontName;

@@ -72,7 +72,6 @@ const char* const BmMailView::MSG_FONTNAME = "bm:fnt";
 const char* const BmMailView::MSG_FONTSIZE =	"bm:fntsz";
 
 const char* const BmMailView::MSG_MAIL =		"bm:mail";
-const char* const BmMailView::MSG_ENCODING =	"bm:encod";
 
 const int16 BmMailView::nArchiveVersion = 3;
 
@@ -119,6 +118,7 @@ BmMailView::BmMailView( minimax minmax, BRect frame, bool outbound)
 	,	mFontSize( 12)
 	,	mReadRunner( NULL)
 	,	mShowingUrlCursor( false)
+	,	mHaveMail( false)
 {
 	mHeaderView = new BmMailHeaderView( NULL);
 	if (outbound)
@@ -300,11 +300,11 @@ void BmMailView::MessageReceived( BMessage* msg) {
 				}
 				break;
 			}
-			case BM_MAILVIEW_SELECT_ENCODING: {
+			case BM_MAILVIEW_SELECT_CHARSET: {
 				if (mCurrMail) {
 					BmRef< BmBodyPart> textBody( mCurrMail->Body()->EditableTextBody());
 					if (textBody) {
-						textBody->SuggestEncoding( msg->FindInt32( MSG_ENCODING));
+						textBody->SuggestCharset( msg->FindString( MSG_CHARSET));
 						JobIsDone( true);
 					}
 				}
@@ -636,9 +636,7 @@ void BmMailView::ShowMail( BmMailRef* ref, bool async) {
 			mHeaderView->ShowHeader( NULL);
 			mBodyPartView->ShowBody( NULL);
 			mCurrMail = NULL;
-			BMessage msg(BM_NTFY_MAIL_VIEW);
-			msg.AddBool( MSG_HAS_MAIL, false);
-			SendNotices( BM_NTFY_MAIL_VIEW, &msg);
+			SendNoticesIfNeeded( false);
 			return;
 		}
 		mCurrMail = BmMail::CreateInstance( ref);
@@ -665,9 +663,7 @@ void BmMailView::ShowMail( BmMail* mail, bool async) {
 			mCurrMail = NULL;
 			mHeaderView->ShowHeader( NULL);
 			mBodyPartView->ShowBody( NULL);
-			BMessage msg(BM_NTFY_MAIL_VIEW);
-			msg.AddBool( MSG_HAS_MAIL, false);
-			SendNotices( BM_NTFY_MAIL_VIEW, &msg);
+			SendNoticesIfNeeded( false);
 			return;
 		}
 		mCurrMail = mail;
@@ -701,10 +697,10 @@ void BmMailView::JobIsDone( bool completed) {
 			mBodyPartView->ShowBody( body);
 			if (mShowRaw) {
 				BM_LOG2( BM_LogMailParse, BmString("displaying raw message"));
-				uint32 encoding = mCurrMail->DefaultEncoding();
+				BmString charset = mCurrMail->DefaultCharset();
 				BmStringIBuf text( mCurrMail->RawText());
 				BmLinebreakDecoder decoder( &text);
-				BmUtf8Encoder textConverter( &decoder, encoding);
+				BmUtf8Encoder textConverter( &decoder, charset);
 				displayBuf.Write( &textConverter);
 				displayText.Adopt( displayBuf.TheString());
 			} else {
@@ -778,16 +774,25 @@ void BmMailView::JobIsDone( bool completed) {
 				mReadRunner = new BMessageRunner( msgr, msg, readDelay*1000, 1);
 			}
 		}
-		BMessage msg(BM_NTFY_MAIL_VIEW);
-		msg.AddBool( MSG_HAS_MAIL, true);
-		SendNotices( BM_NTFY_MAIL_VIEW, &msg);
+		SendNoticesIfNeeded( true);
 	} else {
 		BM_LOG2( BM_LogMailParse, BmString("setting empty mail into textview"));
 		mHeaderView->ShowHeader( NULL);
 		SetText( "");
 		ContainerView()->UnsetBusy();
+		SendNoticesIfNeeded( false);
+	}
+}
+
+/*------------------------------------------------------------------------------*\
+	SendNoticesIfNeeded()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailView::SendNoticesIfNeeded( bool haveMail) {
+	if (haveMail != mHaveMail) {
+		mHaveMail = haveMail;
 		BMessage msg(BM_NTFY_MAIL_VIEW);
-		msg.AddBool( MSG_HAS_MAIL, false);
+		msg.AddBool( MSG_HAS_MAIL, mHaveMail);
 		SendNotices( BM_NTFY_MAIL_VIEW, &msg);
 	}
 }
@@ -818,6 +823,14 @@ void BmMailView::DisplayBodyPart( BmStringOBuf& displayBuf, BmBodyPart* bodyPart
 			} else {
 				// standard stuff, bodypart has already been converted to local newlines
 				displayBuf << bodyPart->DecodedData();
+				if (bodyPart->HadErrorDuringConversion() 
+				&& bodyPart == mCurrMail->Body()->EditableTextBody().Get()) {
+					BmString errText = BmString("The mailtext contains characters that ")
+												<< "could not be converted from the selected charset ("
+												<< bodyPart->SuggestedCharset() << ")\ninto UTF-8.\n\n"
+												<< "Please try another charset.";
+					BM_SHOWERR( errText);
+				}
 			}
 		}
 	} else {
@@ -891,6 +904,10 @@ bool BmMailView::WriteStateInfo() {
 void BmMailView::ShowMenu( BPoint point) {
 	BPopUpMenu* theMenu = new BPopUpMenu( "MailViewMenu", false, false);
 
+	BFont font( *be_plain_font);
+	font.SetSize( 10);
+	theMenu->SetFont( &font);
+
 	BMenuItem* item = NULL;
 	if (!mOutbound) {
 		item = new BMenuItem( "Show All MIME-Bodies", 
@@ -928,15 +945,12 @@ void BmMailView::ShowMenu( BPoint point) {
 		if (mCurrMail && mCurrMail->Body()) {
 			BmRef< BmBodyPart> textBody( mCurrMail->Body()->EditableTextBody());
 			if (textBody) {
-				BMenu* menu = new BMenu( "Use Encoding...");
-				for( int i=0; BM_Encodings[i].charset; ++i) {
-					BMessage* msg = new BMessage( BM_MAILVIEW_SELECT_ENCODING);
-					msg->AddInt32( MSG_ENCODING, BM_Encodings[i].encoding);
-					item = CreateMenuItem( BM_Encodings[i].charset, msg);
-					if (textBody->SuggestedEncoding()==(int32)BM_Encodings[i].encoding)
-						item->SetMarked( true);
-					AddItemToMenu( menu, item, this);
-				}
+				BMenu* menu = new BMenu( "Try Charset...");
+				menu->SetFont( &font);
+				AddCharsetMenu( menu, this, BM_MAILVIEW_SELECT_CHARSET);
+				BMenuItem* curr = menu->FindItem( textBody->SuggestedCharset().String());
+				if (curr)
+					curr->SetMarked( true);
 				theMenu->AddItem( menu);
 				theMenu->AddSeparatorItem();
 			}
