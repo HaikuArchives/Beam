@@ -403,7 +403,7 @@ float BmMailHeaderView::AddFieldViews() {
 						if (timeMode.ICompare( "swatch") == 0)
 							fieldVal = TimeToSwatchString( lt);
 						else if (timeMode.ICompare( "local") == 0)
-							fieldVal = TimeToString( lt);
+							fieldVal = TimeToString( lt, "%Y-%m-%d %H:%M:%S %Z");
 					}
 				}
 			}
