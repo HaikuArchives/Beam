@@ -119,7 +119,7 @@ void BmMailRefItem::UpdateView( BmUpdFlags flags, bool redraw,
 	BmMailRef* ref( ModelItem());
 	if (!ref)
 		return;
-	BBitmap* icon = NULL;
+	BmBitmapHandle* icon = NULL;
 
 	if (flags & BmMailRef::UPD_STATUS) {
 		Bold( ref->IsNew());
@@ -601,9 +601,9 @@ bool BmMailRefView::InitiateDrag( BPoint, int32 index, bool wasSelected) {
 		dragMsg.AddRef( "refs", ref->EntryRefPtr());
 		if (i<th) {
 			// add only the first ten selections to drag-image:
-			const BBitmap* icon = refItem->GetColumnContentBitmap( 0);
-			if (icon) {
-				dummyView->DrawBitmapAsync( icon, BPoint(0,i*lineHeight));
+			const BmBitmapHandle* icon = refItem->GetColumnContentBitmap( 0);
+			if (icon && icon->bitmap) {
+				dummyView->DrawBitmapAsync( icon->bitmap, BPoint(0,i*lineHeight));
 			}
 			dummyView->DrawString( ref->Subject().String(), 
 										  BPoint( 20.0, i*lineHeight+baselineOffset));

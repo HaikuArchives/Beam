@@ -63,6 +63,8 @@
 #include "BmMenuControl.h"
 #include "BmPrefs.h"
 #include "BmPrefsGeneralView.h"
+#include "BmResources.h"
+#include "BmToolbarButton.h"
 #include "BmUtil.h"
 
 
@@ -311,6 +313,8 @@ void BmPrefsGeneralView::SaveData() {
 \*------------------------------------------------------------------------------*/
 void BmPrefsGeneralView::UndoChanges() {
 	ThePrefs->ResetToSaved();
+	TheResources->InitializeWithPrefs();
+	TheToolbarManager->UpdateAllToolbars();
 }
 
 /*------------------------------------------------------------------------------*\
@@ -319,6 +323,8 @@ void BmPrefsGeneralView::UndoChanges() {
 \*------------------------------------------------------------------------------*/
 void BmPrefsGeneralView::SetDefaults() {
 	ThePrefs->ResetToDefault();
+	TheResources->InitializeWithPrefs();
+	TheToolbarManager->UpdateAllToolbars();
 }
 
 /*------------------------------------------------------------------------------*\
@@ -346,6 +352,7 @@ void BmPrefsGeneralView::MessageReceived( BMessage* msg) {
 					"ShowToolbarBorder", 
 					mShowToolbarBorderControl->Value()
 				);
+				TheToolbarManager->UpdateAllToolbars();
 				NoticeChange();
 				break;
 			}
@@ -353,6 +360,7 @@ void BmPrefsGeneralView::MessageReceived( BMessage* msg) {
 				BMenuItem* item = mToolbarLabelControl->Menu()->FindMarked();
 				if (item) {
 					ThePrefs->SetString( "ShowToolbarLabel", item->Label());
+					TheToolbarManager->UpdateAllToolbars();
 					NoticeChange();
 				}
 			}
@@ -452,9 +460,11 @@ void BmPrefsGeneralView::MessageReceived( BMessage* msg) {
 							B_DIRECTORY_NODE, false, msg
 						);
 					}
-					mIconboxPanel->SetPanelDirectory( 
-						ThePrefs->GetString("IconPath").String()
-					);
+					BmString iconPath = ThePrefs->GetString("IconPath");
+					int32 pos = iconPath.FindLast('/');
+					if (pos != B_ERROR)
+						iconPath.Truncate(pos);
+					mIconboxPanel->SetPanelDirectory( iconPath.String());
 					mIconboxPanel->Show();
 				} else {
 					// second step, set iconbox accordingly:
@@ -463,14 +473,9 @@ void BmPrefsGeneralView::MessageReceived( BMessage* msg) {
 					if (entry.GetPath( &path) == B_OK) {
 						ThePrefs->SetString( "IconPath", path.Path());
 						mIconboxButton->SetLabel( IconboxButtonLabel().String());
+						TheResources->InitializeWithPrefs();
+						TheToolbarManager->UpdateAllToolbars();
 						NoticeChange();
-						BAlert* alert = new BAlert( 
-							"Icon Path", 
-							"Done, Beam will use the new icons after a restart",
-							"Ok", NULL, NULL, B_WIDTH_AS_USUAL,
-							B_INFO_ALERT
-						);
-						alert->Go();
 					}
 				}
 				break;

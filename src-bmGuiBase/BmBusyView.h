@@ -37,6 +37,8 @@
 
 #include "BmGuiBase.h"
 
+class BmBitmapHandle;
+
 class IMPEXPBMGUIBASE BmBusyView : public BView
 {
 	typedef BView inherited;
@@ -53,7 +55,7 @@ public:
 	void UnsetErrorText();
 	void Pulse();
 
-	static void SetErrorIcon( BBitmap* icon)
+	static void SetErrorIcon( const BmBitmapHandle* icon)
 													{ nErrorIcon = icon; }
 
 	// overrides of BStringView base:
@@ -68,7 +70,7 @@ private:
 	int16 mBusyCount;
 	int32 mCurrState;
 	BmString mErrorText;
-	static BBitmap* nErrorIcon;
+	static const BmBitmapHandle* nErrorIcon;
 
 	// Hide copy-constructor and assignment:
 	BmBusyView( const BmBusyView&);

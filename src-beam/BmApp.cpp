@@ -1359,7 +1359,7 @@ void BmApplication::AboutRequested() {
 	ImageAboutWindow* aboutWin = new ImageAboutWindow(
 		"About Beam",
 		"Beam",
-		TheResources->IconByName("AboutIcon"),
+		TheResources->IconByName("AboutIcon")->bitmap,
 		15, 
 		"BEware, Another Mailer\n(c) Oliver Tappe, Berlin, Germany",
 		"mailto:beam@hirschkaefer.de",

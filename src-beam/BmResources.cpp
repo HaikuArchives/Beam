@@ -41,6 +41,7 @@
 #include <View.h>
 
 #include "BmBasics.h"
+#include "BmBitmapHandle.h"
 #include "BmLogHandler.h"
 #include "BmPrefs.h"
 #include "BmResources.h"
@@ -72,7 +73,7 @@ const char* const BmResources::BM_MSG_FONT_FAMILY = "fontfamily";
 const char* const BmResources::BM_MSG_FONT_STYLE = "fontstyle";
 const char* const BmResources::BM_MSG_FONT_SIZE = "fontsize";
 
-typedef map< BmString, BBitmap*> BmIconMap;
+typedef map< BmString, BmBitmapHandle*> BmIconMap;
 typedef vector< BmString> BmFontStyleVect;
 typedef map< BmString, BmFontStyleVect> BmFontMap;
 //
@@ -115,7 +116,8 @@ BmResources::~BmResources()
 {
 	BmIconMap::iterator iter;
 	for( iter = mIconMap.begin(); iter != mIconMap.end(); ++iter) {
-		BBitmap* item = iter->second;
+		BmBitmapHandle* item = iter->second;
+		delete item->bitmap;
 		delete item;
 	}
 	mIconMap.clear();
@@ -142,40 +144,44 @@ void BmResources::InitializeWithPrefs()
 		-	returns the icon corresponding to the given string-id (which can be an
 			identifier from the resource-file (Beam) or a mimetype.
 \*------------------------------------------------------------------------------*/
-BBitmap* BmResources::IconByName( const BmString name) {
-	BBitmap*& icon = mIconMap[name];
-	if (!icon) {
+BmBitmapHandle* BmResources::IconByName( const BmString name) {
+	BmBitmapHandle* icon = mIconMap[name];
+	if (!icon || !icon->bitmap) {
 		BMimeType mt( name.String());
+		BBitmap* bitmap = NULL;
 		if (mt.InitCheck() == B_OK) {
-			icon = new BBitmap( BRect( 0, 0, 15, 15), B_CMAP8);
-			if (mt.GetIcon( icon, B_MINI_ICON) != B_OK) {
+			bitmap = new BBitmap( BRect( 0, 0, 15, 15), B_CMAP8);
+			if (mt.GetIcon( bitmap, B_MINI_ICON) != B_OK) {
 				// the given mimetype has no icon defined, we check if the 
 				// preferred app of this mimetype has an icon for this type:
 				BMimeType preferredApp;
 				char preferredAppName[B_MIME_TYPE_LENGTH+1];
 				if (mt.GetPreferredApp( preferredAppName) != B_OK
 				|| preferredApp.SetTo( preferredAppName) != B_OK
-				|| preferredApp.GetIconForType( name.String(), icon, 
+				|| preferredApp.GetIconForType( name.String(), bitmap, 
 														  B_MINI_ICON) != B_OK) {
 					// the preferred-app doesn't exist or has no icon for this
 					// mimetype. We check if the mimetype's supertype has an icon:
 					BMimeType supertype;
 					mt.GetSupertype( &supertype);
-					if (supertype.GetIcon( icon, B_MINI_ICON) != B_OK) {
+					if (supertype.GetIcon( bitmap, B_MINI_ICON) != B_OK) {
 						// no icon for the supertype, tough!
 						// We take the icon of a generic file:
 						mt.SetTo("application/octet-stream");
 						if (mt.InitCheck() == B_OK) {
-							if (mt.GetIcon( icon, B_MINI_ICON) != B_OK) {
+							if (mt.GetIcon( bitmap, B_MINI_ICON) != B_OK) {
 								// no icon for generic file ?!? we give up...
-								delete icon;
-								icon = NULL;
+								delete bitmap;
+								bitmap = NULL;
 							}
 						}
 					}
 				}
 			}
 		}
+		if (!icon)
+			mIconMap[name] = icon = new BmBitmapHandle();
+		icon->bitmap = bitmap;
 	}
 	return icon;
 }
@@ -197,8 +203,8 @@ void BmResources::FetchIcons() {
 	for( 	int32 i=0; 
 			res->GetResourceInfo( iconType, i, &id, &name, &length); i++) {
 		BmString picFile = iconPath + "/" + name;
-		mIconMap[name] = BTranslationUtils::GetBitmap( picFile.String());
-		if (!mIconMap[name]) {
+		BBitmap* bitmap = BTranslationUtils::GetBitmap( picFile.String());
+		if (!bitmap) {
 			// load default pic from resources:
 			if (!(data = (char*)res->LoadResource( iconType, id, &length))) {
 				BM_SHOWERR( BmString("FetchIcons(): Could not read icon '") << name 
@@ -209,9 +215,14 @@ void BmResources::FetchIcons() {
 			BMessage msg;
 			if (msg.Unflatten( data) == B_OK) {
 				theObj = instantiate_object( &msg);
-				mIconMap[name] = dynamic_cast< BBitmap*>( theObj);
+				bitmap = dynamic_cast< BBitmap*>( theObj);
 			}
 		}
+		BmIconMap::iterator iter = mIconMap.find(name);
+		if (iter != mIconMap.end())
+			iter->second->bitmap = bitmap;
+		else
+			mIconMap[name] = new BmBitmapHandle(bitmap);
 	}
 }
 

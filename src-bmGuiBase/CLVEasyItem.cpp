@@ -92,7 +92,8 @@ void CLVEasyItem::SetColumnContent(int column_index, const char *text)
 }
 
 
-void CLVEasyItem::SetColumnContent(int column_index, const BBitmap *bitmap, 
+void CLVEasyItem::SetColumnContent(int column_index, 
+											  const BmBitmapHandle *bitmap, 
 											  int8 horizontal_offset)
 {
 	PrepListsForSet(column_index);
@@ -104,7 +105,7 @@ void CLVEasyItem::SetColumnContent(int column_index, const BBitmap *bitmap,
 		if(bitmap == NULL)
 			((char**)m_column_content.Items())[column_index] = NULL;
 		else
-			((BBitmap**)m_column_content.Items())[column_index] = (BBitmap*)bitmap;
+			((const BmBitmapHandle**)m_column_content.Items())[column_index] = bitmap;
 	}
 }
 
@@ -123,13 +124,13 @@ const char* CLVEasyItem::GetColumnContentText(int column_index)
 }
 
 
-const BBitmap* CLVEasyItem::GetColumnContentBitmap(int column_index)
+const BmBitmapHandle* CLVEasyItem::GetColumnContentBitmap(int column_index)
 {
 	CLVColumn* column = (CLVColumn*)fOwner->ColumnAt(column_index);
 	if (column) {
 		int32 type = column->Type();
 		if (type == CLV_COLTYPE_BITMAP)
-		return (BBitmap*)m_column_content.ItemAt(column_index);
+		return (const BmBitmapHandle*)m_column_content.ItemAt(column_index);
 	}
 	return NULL;
 }
@@ -243,7 +244,9 @@ void CLVEasyItem::DrawItemColumn(BRect item_column_rect, int32 column_index)
 	}
 	else if(type == CLV_COLTYPE_BITMAP)
 	{
-		const BBitmap* bitmap = (BBitmap*)m_column_content.ItemAt(column_index);
+		const BmBitmapHandle* bitmapHandle 
+			= (const BmBitmapHandle*)m_column_content.ItemAt(column_index);
+		const BBitmap* bitmap = bitmapHandle ? bitmapHandle->bitmap : NULL;
 		if (bitmap != NULL) {
 			BRect bounds = bitmap->Bounds();
 			float horizontal_offset = column->BitmapOffset();

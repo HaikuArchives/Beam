@@ -3,6 +3,8 @@
 		$Id$
 */
 
+#include <set>
+
 #include <Bitmap.h>
 #include <PopUpMenu.h>
 #include <MenuItem.h>
@@ -12,7 +14,10 @@
 #include "BubbleHelper.h"
 #include "Colors.h"
 
+#include "MWindow.h"
+
 #include "BmBasics.h"
+#include "BmBitmapHandle.h"
 #include "BmPrefs.h"
 #include "BmResources.h"
 #include "BmToolbarButton.h"
@@ -30,43 +35,151 @@ const float LATCHSZ  = 4.0;
 
 static BPicture BmDummyPicture;
 
+
+BmToolbarManager* BmToolbarManager::theInstance = NULL;
+
 /*------------------------------------------------------------------------------*\
 	( )
 		-	
 \*------------------------------------------------------------------------------*/
-void ToolbarSpace::Draw( BRect updateRect) {
-	Space::Draw( updateRect);
-	BBitmap* toolbarBackground = TheResources->IconByName("Toolbar_Background");
-	DrawBitmap( toolbarBackground, Bounds());
+BmToolbarManager* BmToolbarManager::Instance()
+{
+	if (!theInstance)
+		theInstance = new BmToolbarManager;
+	return theInstance;
+};
+
+/*------------------------------------------------------------------------------*\
+	( )
+		-	
+\*------------------------------------------------------------------------------*/
+BmToolbarManager::BmToolbarManager()
+	:	mToolbarLock( "ToolbarManager")
+{
+};
+
+/*------------------------------------------------------------------------------*\
+	( )
+		-	
+\*------------------------------------------------------------------------------*/
+void BmToolbarManager::UpdateAllToolbars() {
+	mToolbarLock.Lock();
+	BmToolbarSet::iterator iter;
+	for( iter=mToolbarSet.begin(); iter != mToolbarSet.end(); ++iter) {
+		BmToolbar* tb = (*iter);
+		if (tb)
+			tb->UpdateLayout();
+	}
+	mToolbarLock.Unlock();
 }
 
 /*------------------------------------------------------------------------------*\
 	( )
 		-	
 \*------------------------------------------------------------------------------*/
-BmToolbarButton::BmToolbarButton( const char *label, BBitmap* image, 
-											 float width, float height, 
+void BmToolbarManager::AddToolbar( BmToolbar* tb)
+{
+	mToolbarLock.Lock();
+	mToolbarSet.insert( tb);
+	mToolbarLock.Unlock();
+}
+
+/*------------------------------------------------------------------------------*\
+	( )
+		-	
+\*------------------------------------------------------------------------------*/
+void BmToolbarManager::RemoveToolbar( BmToolbar* tb)
+{
+	mToolbarLock.Lock();
+	mToolbarSet.insert( tb);
+	mToolbarLock.Unlock();
+}
+
+/*------------------------------------------------------------------------------*\
+	( )
+		-	
+\*------------------------------------------------------------------------------*/
+BmToolbar::BmToolbar(MView* kid)
+	:	inherited( M_RAISED_BORDER, 1, NULL, kid)
+{
+	TheToolbarManager->AddToolbar( this);
+}
+
+/*------------------------------------------------------------------------------*\
+	( )
+		-	
+\*------------------------------------------------------------------------------*/
+BmToolbar::~BmToolbar()
+{
+	TheToolbarManager->RemoveToolbar( this);
+}
+
+/*------------------------------------------------------------------------------*\
+	( )
+		-	
+\*------------------------------------------------------------------------------*/
+void BmToolbar::UpdateLayout() {
+	LockLooper();
+	BView* group = ChildAt(0);
+	if (group) {
+		int32 count = group->CountChildren();
+		// Get maximum button size...
+		float width=0, height=0;
+		for( int32 c=0; c<count; ++c) {
+			BmToolbarButton* tbb 
+				= dynamic_cast<BmToolbarButton*>(group->ChildAt(c));
+			if (tbb)
+				BmToolbarButton::CalcMaxSize(width, height, tbb->Label().String(), 
+													  tbb->NeedsLatch());
+		}
+		//...and layout all buttons according to this size:
+		for( int32 c=0; c<count; ++c) {
+			BmToolbarButton* tbb 
+				= dynamic_cast<BmToolbarButton*>(group->ChildAt(c));
+			if (tbb)
+				tbb->CreateAllPictures(width, height);
+		}
+		MWindow* win = dynamic_cast<MWindow*>( Window());
+		if (win)
+			win->RecalcSize();
+		for( int32 c=0; c<count; ++c)
+			group->ChildAt(c)->Invalidate();
+	}
+	UnlockLooper();
+}
+
+
+
+/*------------------------------------------------------------------------------*\
+	( )
+		-	
+\*------------------------------------------------------------------------------*/
+void BmToolbarSpace::Draw( BRect updateRect) {
+	Space::Draw( updateRect);
+	BmBitmapHandle* toolbarBackground 
+		= TheResources->IconByName("Toolbar_Background");
+	DrawBitmap( toolbarBackground->bitmap, Bounds());
+}
+
+
+
+/*------------------------------------------------------------------------------*\
+	( )
+		-	
+\*------------------------------------------------------------------------------*/
+BmToolbarButton::BmToolbarButton( const char *label, float width, float height, 
 											 BMessage *message, BHandler *handler, 
 											 const char* tipText, bool needsLatch)
 	:	inherited( minimax( width, height, -1 ,-1), 
 					  &BmDummyPicture, &BmDummyPicture, message, handler)
 	,	mHighlighted( false)
+	,	mNeedsLatch( needsLatch)
 	,	mUpdateVariationsFunc( NULL)
+	,	mLabel( label)
 {
 	TheBubbleHelper->SetHelp( this, tipText);
 	SetViewColor( B_TRANSPARENT_COLOR);
-	BPicture* off_pic = 
-		CreatePicture( STATE_OFF, label, image, width, height, needsLatch);
-	BPicture* on_pic = 
-		CreatePicture( STATE_ON, label, image, width, height, needsLatch);
-	BPicture* dis_pic 
-		= CreatePicture( STATE_DISABLED, label, image, width, height, needsLatch);
-	SetEnabledOff( off_pic);
-	SetEnabledOn( on_pic);
-	SetDisabledOff( dis_pic);
-	delete off_pic;
-	delete on_pic;
-	delete dis_pic;
+	CreateAllPictures( width, height);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -81,6 +194,26 @@ BmToolbarButton::~BmToolbarButton() {
 	( )
 		-	
 \*------------------------------------------------------------------------------*/
+void BmToolbarButton::CreateAllPictures( float width, float height) {
+	ct_mpm = minimax( width, height, -1, -1);
+	BPicture* off_pic = 
+		CreatePicture( STATE_OFF, width, height);
+	BPicture* on_pic = 
+		CreatePicture( STATE_ON, width, height);
+	BPicture* dis_pic 
+		= CreatePicture( STATE_DISABLED, width, height);
+	SetEnabledOff( off_pic);
+	SetEnabledOn( on_pic);
+	SetDisabledOff( dis_pic);
+	delete off_pic;
+	delete on_pic;
+	delete dis_pic;
+}
+
+/*------------------------------------------------------------------------------*\
+	( )
+		-	
+\*------------------------------------------------------------------------------*/
 void BmToolbarButton::AddActionVariation( const BmString label, BMessage* msg) {
 	mVariations.push_back( BmVariation( label, msg));
 }
@@ -89,47 +222,12 @@ void BmToolbarButton::AddActionVariation( const BmString label, BMessage* msg) {
 	( )
 		-	
 \*------------------------------------------------------------------------------*/
-void BmToolbarButton::CalcMaxSize( float& width, float& height, const char* label, 
-											  BBitmap* image, bool needsLatch) {
-	BFont font( be_plain_font);
-	float w, h;
-	bool showIcons = ThePrefs->GetBool( "ShowToolbarIcons", true);
-	BmString labelMode   = ThePrefs->GetString( "ShowToolbarLabel", "Bottom");
-	float labelWidth  = label ? font.StringWidth( label) : 0;
-	float labelHeight = label ? TheResources->FontLineHeight( &font) : 0;
-	float iconWidth   = (showIcons && image) ? image->Bounds().Width()  : 0;
-	float iconHeight  = (showIcons && image) ? image->Bounds().Height() : 0;
-
-	if (showIcons && (labelMode == "Left" || labelMode == "Right")) {
-		// Icon + Label: horizontal
-		w = labelWidth+iconWidth+DIVW+2*DIVICONW + (needsLatch?DIVLATCHW:0);
-		h = MAX( labelHeight+2*DIVLABELH, iconHeight+2*DIVICONH);
-	} else if (showIcons && (labelMode == "Top" || labelMode == "Bottom")) {
-		// Icon + Label: vertical
-		w = MAX( labelWidth+2*DIVLABELW, iconWidth+2*DIVICONW) + (needsLatch?DIVLATCHW:0);
-		h = labelHeight+iconHeight+DIVH+2*DIVICONH;
-	} else if (!showIcons && labelMode != "Hide") {
-		// Label only
-		w = labelWidth+2*DIVLABELW + (needsLatch?DIVLATCHW:0);
-		h = labelHeight+2*DIVLABELH;
-	} else /* if (showIcons && labelMode == "Hide") */ {
-		// Icon only
-		w = iconWidth+2*DIVICONW + (needsLatch?DIVLATCHW:0);
-		h = iconHeight+2*DIVICONH;
-	}
-
-	width  = MAX( width,  w);
-	height = MAX( height, h - (ThePrefs->GetBool( "ToolbarBorder", true) ? 0 : 6));
-}
-
-/*------------------------------------------------------------------------------*\
-	( )
-		-	
-\*------------------------------------------------------------------------------*/
-BPicture* BmToolbarButton::CreatePicture( int32 mode, const char* label, 
-														BBitmap* image, float width, float height,
-														bool needsLatch) {
-
+BPicture* BmToolbarButton::CreatePicture( int32 mode, float width, 
+														float height) {
+	const char* label = mLabel.String();
+	BmBitmapHandle* imageHandle 
+		= TheResources->IconByName(BmString("Button_")<<label);
+	BBitmap* image = imageHandle ? imageHandle->bitmap : NULL;
 	// Calc icon/label positions
 	BFont font( be_plain_font);
 	bool showIcons = ThePrefs->GetBool( "ShowToolbarIcons", true);
@@ -145,7 +243,7 @@ BPicture* BmToolbarButton::CreatePicture( int32 mode, const char* label,
 		// Icon + Label/Left
 		float d = (width-DIVLATCHW-DIVW-labelWidth-iconWidth)/2;
 		posLabel = BPoint( d,(height-labelHeight)/2+offset);
-		posIcon = BPoint( d+DIVW+labelWidth+(needsLatch?DIVLATCHW:0),
+		posIcon = BPoint( d+DIVW+labelWidth+(mNeedsLatch?DIVLATCHW:0),
 								(height-iconHeight)/2-1+offset);
 	} else if (showIcons && (labelMode == "Right")) {
 		// Icon + Label/Right
@@ -170,7 +268,7 @@ BPicture* BmToolbarButton::CreatePicture( int32 mode, const char* label,
 		posIcon = BPoint( (width-iconWidth)/2,(height-iconHeight)/2+offset);
 	}
 	
-	if (needsLatch) {
+	if (mNeedsLatch) {
 		if (labelMode == "Hide")
 			mLatchRect.Set( posIcon.x+iconWidth+2, posIcon.y+iconHeight/2-LATCHSZ/2, 
 								 width, height);
@@ -191,8 +289,9 @@ BPicture* BmToolbarButton::CreatePicture( int32 mode, const char* label,
 	view->SetHighColor( ui_color( B_UI_PANEL_TEXT_COLOR));
 	view->SetViewColor( B_TRANSPARENT_COLOR);
 	view->SetLowColor( ui_color( B_UI_PANEL_BACKGROUND_COLOR));
-	BBitmap* toolbarBackground = TheResources->IconByName("Toolbar_Background");
-	view->DrawBitmap( toolbarBackground, view->Bounds());
+	BmBitmapHandle* toolbarBackground 
+		= TheResources->IconByName("Toolbar_Background");
+	view->DrawBitmap( toolbarBackground->bitmap, view->Bounds());
 
 	// Draw Border
 	if (ThePrefs->GetBool( "ShowToolbarBorder", true)) {
@@ -250,7 +349,7 @@ BPicture* BmToolbarButton::CreatePicture( int32 mode, const char* label,
 	}
 
 	// draw latch
-	if (needsLatch) {
+	if (mNeedsLatch) {
 		float x_offs = mLatchRect.left;
 		float y_offs = mLatchRect.top+1;
 		view->FillTriangle( BPoint( x_offs, y_offs), 
@@ -261,8 +360,8 @@ BPicture* BmToolbarButton::CreatePicture( int32 mode, const char* label,
 	if (mode == STATE_DISABLED) {
 		// blend complete picture into background:
 		view->SetDrawingMode( B_OP_BLEND);
-		view->DrawBitmap( toolbarBackground, view->Bounds());
-		view->DrawBitmap( toolbarBackground, view->Bounds());
+		view->DrawBitmap( toolbarBackground->bitmap, view->Bounds());
+		view->DrawBitmap( toolbarBackground->bitmap, view->Bounds());
 	}
 
 	view->EndPicture();
@@ -320,5 +419,45 @@ void BmToolbarButton::ShowMenu( BPoint point) {
 	openRect.right = point.x + 105;
 	theMenu->SetAsyncAutoDestruct( true);
   	theMenu->Go( point, true, false, openRect, true);
+}
+
+/*------------------------------------------------------------------------------*\
+	( )
+		-	
+\*------------------------------------------------------------------------------*/
+void BmToolbarButton::CalcMaxSize( float& width, float& height, 
+											  const char* label, bool needsLatch) {
+	BFont font( be_plain_font);
+	float w, h;
+	BmBitmapHandle* imageHandle 
+		= TheResources->IconByName( BmString("Button_")<<label);
+	BBitmap* image = imageHandle ? imageHandle->bitmap : NULL;
+	bool showIcons = ThePrefs->GetBool( "ShowToolbarIcons", true);
+	BmString labelMode   = ThePrefs->GetString( "ShowToolbarLabel", "Bottom");
+	float labelWidth  = label ? font.StringWidth( label) : 0;
+	float labelHeight = label ? TheResources->FontLineHeight( &font) : 0;
+	float iconWidth   = (showIcons && image) ? image->Bounds().Width()  : 0;
+	float iconHeight  = (showIcons && image) ? image->Bounds().Height() : 0;
+
+	if (showIcons && (labelMode == "Left" || labelMode == "Right")) {
+		// Icon + Label: horizontal
+		w = labelWidth+iconWidth+DIVW+2*DIVICONW + (needsLatch?DIVLATCHW:0);
+		h = MAX( labelHeight+2*DIVLABELH, iconHeight+2*DIVICONH);
+	} else if (showIcons && (labelMode == "Top" || labelMode == "Bottom")) {
+		// Icon + Label: vertical
+		w = MAX( labelWidth+2*DIVLABELW, iconWidth+2*DIVICONW) + (needsLatch?DIVLATCHW:0);
+		h = labelHeight+iconHeight+DIVH+2*DIVICONH;
+	} else if (!showIcons && labelMode != "Hide") {
+		// Label only
+		w = labelWidth+2*DIVLABELW + (needsLatch?DIVLATCHW:0);
+		h = labelHeight+2*DIVLABELH;
+	} else /* if (showIcons && labelMode == "Hide") */ {
+		// Icon only
+		w = iconWidth+2*DIVICONW + (needsLatch?DIVLATCHW:0);
+		h = iconHeight+2*DIVICONH;
+	}
+
+	width  = MAX( width,  w);
+	height = MAX( height, h - (ThePrefs->GetBool( "ToolbarBorder", true) ? 0 : 6));
 }
 

@@ -39,6 +39,7 @@
 #include "Colors.h"
 #include "PrefilledBitmap.h"
 
+class BmBitmapHandle;
 class BBitmap;
 class BMenu;
 class BPicture;
@@ -64,7 +65,7 @@ public:
 	// native methods:
 	void InitializeWithPrefs();
 
-	BBitmap* IconByName( const BmString name);
+	BmBitmapHandle* IconByName( const BmString name);
 	//
 	font_height BePlainFontHeight;
 	float FontBaselineOffset( const BFont* font=NULL);

@@ -29,9 +29,8 @@
 //**** PROJECT HEADER FILES AND CLASS NAME DECLARATIONS
 //******************************************************************************************************
 #include "BmGuiBase.h"
+#include "BmBitmapHandle.h"
 #include "CLVListItem.h"
-
-class BBitmap;
 
 //******************************************************************************************************
 //**** CLVEasyItem CLASS DECLARATION
@@ -48,10 +47,10 @@ class IMPEXPBMGUIBASE CLVEasyItem : public CLVListItem
 		CLVEasyItem(uint32 level, bool superitem, bool expanded, ColumnListView* lv);
 		virtual ~CLVEasyItem();
 
-		virtual void SetColumnContent(int column_index, const BBitmap *bitmap, int8 horizontal_offset = 2);
+		virtual void SetColumnContent(int column_index, const BmBitmapHandle* bitmap, int8 horizontal_offset = 2);
 		virtual void SetColumnContent(int column_index, const char *text);
 		const char* GetColumnContentText(int column_index);
-		const BBitmap* GetColumnContentBitmap(int column_index);
+		const BmBitmapHandle* GetColumnContentBitmap(int column_index);
 		virtual void DrawItemColumn(BRect item_column_rect, int32 column_index);
 		virtual void Update(BView *owner, const BFont *font);
 		static int CompareItems(const CLVListItem* a_Item1, const CLVListItem* a_Item2, int32 KeyColumn, int32 col_flags);
@@ -73,7 +72,7 @@ class IMPEXPBMGUIBASE CLVEasyItem : public CLVListItem
 	protected:
 		void PrepListsForSet(int column_index);
 		
-		BList m_column_content;	//List of char* (full content) or BBitmap*
+		BList m_column_content;	//List of char* (full content) or BmBitmapHandle*
 
 	protected:
 };

@@ -34,13 +34,14 @@
 #include "Colors.h"
 
 #include "BmBasics.h"
+#include "BmBitmapHandle.h"
 #include "BmBusyView.h"
 #include "BmString.h"
 
 #define BM_PULSE 'bmPL'
 static BMessage pulseMsg(BM_PULSE);
 
-BBitmap* BmBusyView::nErrorIcon = NULL;
+const BmBitmapHandle* BmBusyView::nErrorIcon = NULL;
 
 /*------------------------------------------------------------------------------*\
 	( )
@@ -176,7 +177,7 @@ void BmBusyView::Draw( BRect) {
 		if (mErrorText.Length() > 0 && nErrorIcon) {
 			SetDrawingMode( B_OP_ALPHA);
 			SetBlendingMode( B_PIXEL_ALPHA, B_ALPHA_OVERLAY);
-			DrawBitmap( nErrorIcon, BPoint(0,1));
+			DrawBitmap( nErrorIcon->bitmap, BPoint(0,1));
 		}
 		return;
 	}

@@ -131,12 +131,12 @@ status_t BmMailViewWin::UnarchiveState( BMessage* archive) {
 void BmMailViewWin::CreateGUI() {
 	// Get maximum button size
 	float width=0, height=0;
-	BmToolbarButton::CalcMaxSize(width, height, "New",			TheResources->IconByName("Button_New"));
-	BmToolbarButton::CalcMaxSize(width, height, "Reply",		TheResources->IconByName("Button_Reply"));
-	BmToolbarButton::CalcMaxSize(width, height, "Reply All",	TheResources->IconByName("Button_ReplyAll"));
-	BmToolbarButton::CalcMaxSize(width, height, "Forward",	TheResources->IconByName("Button_Forward"));
-	BmToolbarButton::CalcMaxSize(width, height, "Print",		TheResources->IconByName("Button_Print"));
-	BmToolbarButton::CalcMaxSize(width, height, "Delete",		TheResources->IconByName("Button_Trash"));
+	BmToolbarButton::CalcMaxSize(width, height, "New");
+	BmToolbarButton::CalcMaxSize(width, height, "Reply");
+	BmToolbarButton::CalcMaxSize(width, height, "Reply All");
+	BmToolbarButton::CalcMaxSize(width, height, "Forward");
+	BmToolbarButton::CalcMaxSize(width, height, "Print");
+	BmToolbarButton::CalcMaxSize(width, height, "Delete");
 
 	int32 defaultFwdMsgType = 
 		ThePrefs->GetString( "DefaultForwardType")=="Inline"
@@ -146,35 +146,30 @@ void BmMailViewWin::CreateGUI() {
 		new VGroup(
 			minimax( 500, 400, 1E5, 1E5),
 			CreateMenu(),
-			new MBorder( M_RAISED_BORDER, 1, NULL,
+			new BmToolbar( 
 				new HGroup(
 					minimax( -1, -1, 1E5, -1),
 					mNewButton = new BmToolbarButton( "New", 
-																 TheResources->IconByName("Button_New"), 
 																 width, height,
 																 new BMessage(BMM_NEW_MAIL), this, 
 																 "Compose a new mail message"),
 					mReplyButton = new BmToolbarButton( "Reply", 
-																	TheResources->IconByName("Button_Reply"), 
 																 	width, height,
 																	new BMessage(BMM_REPLY), this, 
 																	"Reply to person or list", true),
 					mForwardButton = new BmToolbarButton( "Forward", 
-																	  TheResources->IconByName("Button_Forward"), 
 																 	  width, height,
 																	  new BMessage( defaultFwdMsgType), this, 
 																	  "Forward mail to somewhere else", true),
 					mPrintButton = new BmToolbarButton( "Print", 
-																	TheResources->IconByName("Button_Print"), 
 																   width, height,
 																	new BMessage(BMM_PRINT), this, 
 																	"Print this messages"),
 					mTrashButton = new BmToolbarButton( "Delete", 
-																	TheResources->IconByName("Button_Trash"), 
 																   width, height,
 																	new BMessage(BMM_TRASH), this, 
 																	"Move this message to Trash"),
-					new ToolbarSpace(),
+					new BmToolbarSpace(),
 					0
 				)
 			),

@@ -96,7 +96,7 @@ BmBodyPartItem::BmBodyPartItem( ColumnListView* lv,
 {
 	BmBodyPart* bodyPart = dynamic_cast<BmBodyPart*>( _item);
 
-	BBitmap* icon = TheResources->IconByName( bodyPart->MimeType());
+	BmBitmapHandle* icon = TheResources->IconByName( bodyPart->MimeType());
 	SetColumnContent( COL_ICON, icon, 2.0);
 
 	BmString sizeString = bodyPart->IsMultiPart() 
@@ -730,9 +730,9 @@ bool BmBodyPartView::InitiateDrag( BPoint, int32 index, bool wasSelected) {
 		bodyPart = bodyPartItem->ModelItem();
 		if (i<th) {
 			// add only the first ten selections to drag-image:
-			const BBitmap* icon = bodyPartItem->GetColumnContentBitmap( 0);
+			const BmBitmapHandle* icon = bodyPartItem->GetColumnContentBitmap( 0);
 			if (icon) {
-				dummyView->DrawBitmapAsync( icon, BPoint(0,i*lineHeight));
+				dummyView->DrawBitmapAsync( icon->bitmap, BPoint(0,i*lineHeight));
 			}
 			dummyView->DrawString( bodyPart->FileName().String(), 
 										  BPoint( 20.0, i*lineHeight+baselineOffset));

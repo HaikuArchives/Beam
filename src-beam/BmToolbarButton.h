@@ -31,19 +31,48 @@
 #ifndef _BmToolbarButton_h
 #define _BmToolbarButton_h
 
+#include <set>
 #include <vector>
 
+#include <Locker.h>
 #include <Message.h>
 
+#include <MBorder.h>
 #include <MPictureButton.h>
 #include <Space.h>
 
 #include "BmString.h"
 
-class ToolbarSpace :  public Space
+class BmToolbar :  public MBorder
 {
-	public:
-		void Draw( BRect updateRect);
+	typedef MBorder inherited;
+public:
+	BmToolbar(MView* kid);
+	~BmToolbar();
+	void UpdateLayout();
+};
+
+class BmToolbarManager
+{
+	typedef set<BmToolbar*> BmToolbarSet;
+public:
+	BmToolbarManager();
+	void AddToolbar( BmToolbar* tb);
+	void RemoveToolbar( BmToolbar* tb);
+	void UpdateAllToolbars();
+	static BmToolbarManager* Instance();
+private:
+	static BmToolbarManager* theInstance;
+	BmToolbarSet mToolbarSet;
+	BLocker mToolbarLock;
+};
+
+#define TheToolbarManager (BmToolbarManager::Instance())
+
+class BmToolbarSpace :  public Space
+{
+public:
+	void Draw( BRect updateRect);
 };
 
 class BmToolbarButton;
@@ -62,22 +91,25 @@ typedef vector<BmVariation> BmVariationVect;
 class BmToolbarButton : public MPictureButton
 {
 	typedef MPictureButton inherited;
-	
+	friend class BmToolbar;
 
 public:
 	// creator-func, c'tors and d'tor:
-	BmToolbarButton( const char *label, BBitmap* image, 
-						  float width, float height, 
+	BmToolbarButton( const char *label, float width, float height, 
 						  BMessage *message, BHandler *handler, 
 						  const char* tipText=NULL, bool needsLatch=false);
 	~BmToolbarButton();
 	
 	// native methods:
 	static void CalcMaxSize( float& width, float& height, const char* label, 
-									 BBitmap* image, bool needsLatch=false);
+									 bool needsLatch=false);
 	void AddActionVariation( const BmString label, BMessage* msg);
 	void ShowMenu( BPoint point);
 	void SetUpdateVariationsFunc( BmUpdateVariationsFunc* updFunc);
+	
+	// getters:
+	const BmString& Label() const			{ return mLabel; }
+	bool NeedsLatch() const					{ return mNeedsLatch; }
 
 	// overrides of Button base:
 	void MouseDown( BPoint point);
@@ -87,13 +119,15 @@ private:
 							// intended for mouse-over highlighting, but currently not used
 	BmVariationVect mVariations;
 							// the different actions that can be started through this button
+	bool mNeedsLatch;
 	BRect mLatchRect;
 	BPoint mMenuPoint;
+	BmString mLabel;
 	
 	BmUpdateVariationsFunc* mUpdateVariationsFunc;
 
-	BPicture* CreatePicture( int32 mode, const char* label, BBitmap* image, 
-									 float width, float height, bool needsLatch);
+	void CreateAllPictures( float width, float height);
+	BPicture* CreatePicture( int32 mode, float width, float height);
 
 	// Hide copy-constructor and assignment:
 	BmToolbarButton( const BmToolbarButton&);

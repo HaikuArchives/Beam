@@ -95,7 +95,7 @@ void BmMailFolderItem::UpdateView( BmUpdFlags flags, bool redraw,
 							// Bold() may have changed font, need to redraw everything!
 	}
 	if (flags & (UPD_EXPANDER | BmMailFolder::UPD_HAVE_NEW_STATUS)) {
-		BBitmap* icon;
+		BmBitmapHandle* icon;
 		if (folder->NewMailCount()) {
 			if (folder->HasNewMailInSubfolders() && !IsExpanded())
 				icon = TheResources->IconByName("Folder_New_NewInSub");
