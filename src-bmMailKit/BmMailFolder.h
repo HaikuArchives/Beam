@@ -52,7 +52,7 @@ typedef map<BmString, BmMailFolder*> BmFolderMap;
 class BmMailFolder : public BmListModelItem {
 	typedef BmListModelItem inherited;
 
-	static const int16 nArchiveVersion = 2;
+	static const int16 nArchiveVersion = 3;
 
 public:
 	BmMailFolder( BmMailFolderList* model, entry_ref &eref, ino_t node,
@@ -104,18 +104,22 @@ public:
 													{ return mLastModified; }
 	BmRef<BmMailRefList> MailRefList();
 	inline const BmString& Name() const	{ return mName; }
+	inline const BmString& SelectedRefKey() const	
+													{ return mSelectedRefKey; }
 
 	// setters:
 	inline void EntryRef( const entry_ref &e)
 												 	{ mEntryRef = e; mName = e.name; }
-	inline void MailCount( int32 i)	 	{ mMailCount = i; 
-													  TellModelItemUpdated( UPD_ALL); }
+	void MailCount( int32 i);
+	inline void SelectedRefKey( const BmString& key)
+													{ mSelectedRefKey = key; }
 
 	// archival-fieldnames:
 	static const char* const MSG_ENTRYREF;
 	static const char* const MSG_INODE;
 	static const char* const MSG_LASTMODIFIED;
 	static const char* const MSG_MAILCOUNT;
+	static const char* const MSG_SELECTED_KEY;
 
 	//	message component definitions for status-msgs:
 	static const char* const MSG_NAME;
@@ -132,6 +136,7 @@ private:
 	node_ref mNodeRef;
 	time_t mLastModified;
 	int32 mMailCount;
+	BmString mSelectedRefKey;
 
 	// the following members will be archived into their own files:
 	BmRef< BmMailRefList> mMailRefList;

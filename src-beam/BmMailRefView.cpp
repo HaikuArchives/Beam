@@ -296,7 +296,6 @@ BmMailRefView::BmMailRefView( minimax minmax, int32 width, int32 height)
 	:	inherited( minmax, BRect(0,0,width-1,height-1), "Beam_MailRefView", 
 					  B_MULTIPLE_SELECTION_LIST, false, true, true, true)
 	,	mCurrFolder( NULL)
-	,	mAvoidInvoke( false)
 	,	mHaveSelectedRef( false)
 {
 	int32 flags = CLV_SORT_KEYABLE;
@@ -668,6 +667,30 @@ void BmMailRefView::ShowFolder( BmMailFolder* folder) {
 }
 
 /*------------------------------------------------------------------------------*\
+	JobIsDone( completed)
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailRefView::JobIsDone( bool completed) {
+	inherited::JobIsDone( completed);
+	if (completed && mCurrFolder) {
+		BmRef<BmMailRefList> refList( mCurrFolder->MailRefList().Get());
+		if (refList) {
+			BmRef<BmListModelItem> refItem 
+				= refList->FindItemByKey( mCurrFolder->SelectedRefKey());
+			BmListViewItem* viewItem = FindViewItemFor( refItem.Get());
+			int32 idx = IndexOf( viewItem);
+			if (idx >= 0) {
+				Select( idx);
+				// show the selected item centered within the view (if possible):
+				BRect frame = ItemFrame( idx);
+				float newYPos = frame.top-(Bounds().Height()-frame.Height())/2.0;
+				ScrollTo( BPoint( 0, MAX( 0, newYPos)));
+			}
+		}
+	}
+}
+
+/*------------------------------------------------------------------------------*\
 	( )
 		-	
 \*------------------------------------------------------------------------------*/
@@ -737,22 +760,18 @@ void BmMailRefView::SelectionChanged( void) {
 		selection = temp;
 		numSelected++;
 	}
-	if (mAvoidInvoke) {
-		DeselectAll();
-		return;
+	BmRef<BmMailRef> ref;
+	if (selection >= 0 && numSelected == 1) {
+		BmMailRefItem* refItem;
+		refItem = dynamic_cast<BmMailRefItem*>(ItemAt( selection));
+		if (refItem) {
+			ref = refItem->ModelItem();
+		}
 	}
-	if (mPartnerMailView) {
-		if (selection >= 0 && numSelected == 1) {
-			BmMailRefItem* refItem;
-			refItem = dynamic_cast<BmMailRefItem*>(ItemAt( selection));
-			if (refItem) {
-				BmMailRef* ref( refItem->ModelItem());
-				if (ref)
-					mPartnerMailView->ShowMail( ref);
-			}
-		} else
-			mPartnerMailView->ShowMail( static_cast< BmMailRef*>( NULL));
-	}
+	if (mPartnerMailView)
+		mPartnerMailView->ShowMail( ref.Get());
+	if (mCurrFolder && mCurrFolder->MailRefList()->InitCheck() == B_OK)
+		mCurrFolder->SelectedRefKey( ref ? ref->Key() : "");
 	
 	SendNoticesIfNeeded( numSelected > 0);
 	BM_LOG2( BM_LogGui, "MailRefView::SelectionChanged() - exit");
@@ -778,7 +797,7 @@ void BmMailRefView::SendNoticesIfNeeded( bool haveSelectedRef) {
 void BmMailRefView::ItemInvoked( int32 index) {
 	BmMailRefItem* refItem;
 	refItem = dynamic_cast<BmMailRefItem*>(ItemAt( index));
-	if (refItem && !mAvoidInvoke) {
+	if (refItem) {
 		BmMailRef* ref( refItem->ModelItem());
 		if (ref) {
 			if (ref->Status() == BM_MAIL_STATUS_DRAFT

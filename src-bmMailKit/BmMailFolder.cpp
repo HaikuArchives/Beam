@@ -49,6 +49,7 @@ const char* const BmMailFolder::MSG_ENTRYREF = 		"bm:eref";
 const char* const BmMailFolder::MSG_INODE = 			"bm:inod";
 const char* const BmMailFolder::MSG_LASTMODIFIED = "bm:lmod";
 const char* const BmMailFolder::MSG_MAILCOUNT = 	"bm:mcnt";
+const char* const BmMailFolder::MSG_SELECTED_KEY =	"bm:selk";
 
 //	message component definitions for status-msgs:
 const char* const BmMailFolder::MSG_NAME = 			"bm:fname";
@@ -109,6 +110,8 @@ BmMailFolder::BmMailFolder( BMessage* archive, BmMailFolderList* model,
 		mName = mEntryRef.name;
 		if (version > 1)
 			mMailCount = FindMsgInt32( archive, MSG_MAILCOUNT);
+		if (version > 2)
+			mSelectedRefKey = FindMsgString( archive, MSG_SELECTED_KEY);
 		StartNodeMonitor();
 	} catch (BM_error &e) {
 		BM_SHOWERR( e.what());
@@ -152,7 +155,8 @@ status_t BmMailFolder::Archive( BMessage* archive, bool deep) const {
 							// bump time to the last time folder-cache has 
 							// been written
 		|| archive->AddInt32( MSG_NUMCHILDREN, size())
-		|| archive->AddInt32( MSG_MAILCOUNT, mMailCount);
+		|| archive->AddInt32( MSG_MAILCOUNT, mMailCount)
+		|| archive->AddString( MSG_SELECTED_KEY, mSelectedRefKey.String());
 	if (deep && ret == B_OK) {
 		BmModelItemMap::const_iterator pos;
 		for( pos = begin(); pos != end(); ++pos) {
@@ -286,6 +290,16 @@ void BmMailFolder::CleanupForMailRefList( BmMailRefList* refList) {
 		);
 	if (mMailRefList == refList)
 		RemoveMailRefList();
+}
+
+/*------------------------------------------------------------------------------*\
+	MailCount( count)
+		-	sets mail-count for this folder
+		-	tells that model has been updated
+\*------------------------------------------------------------------------------*/
+void BmMailFolder::MailCount( int32 i) {
+	mMailCount = i; 
+	TellModelItemUpdated( UPD_ALL);
 }
 
 /*------------------------------------------------------------------------------*\

@@ -127,12 +127,14 @@ public:
 	BmListViewItem* CreateListViewItem( BmListModelItem* item, BMessage* archive=NULL);
 	const char* ItemNameForCaption()		{ return "message"; }
 
-	void AvoidInvoke( bool b)				{ mAvoidInvoke = b; }
+protected:
+	// overrides of listcontroller base:
+	void JobIsDone( bool completed);
+	
 
 private:
 	BmRef<BmMailFolder> mCurrFolder;
 	BmMailView* mPartnerMailView;
-	bool mAvoidInvoke;
 	bool mHaveSelectedRef;
 
 	// Hide copy-constructor and assignment:
