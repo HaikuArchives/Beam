@@ -24,6 +24,13 @@
 
 
 // adapted for liblayout
+#ifdef B_BEOS_VERSION_DANO
+	class BFont;
+	class BMessage;
+	class BMessageRunner;
+	class BRect;
+	class BStatusBar;
+#endif
 #include "layout.h"
 
 //******************************************************************************************************

@@ -37,7 +37,7 @@
 #include <Locker.h>
 #include <Looper.h>
 #include <StopWatch.h>
-#include <support/String.h>
+#include <String.h>
 
 /*------------------------------------------------------------------------------*\
 	types of messages handled by a BmLogfile:

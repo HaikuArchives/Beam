@@ -35,7 +35,7 @@
 
 
 #include <Entry.h>
-#include <support/String.h>
+#include <String.h>
 
 #include "BmDataModel.h"
 

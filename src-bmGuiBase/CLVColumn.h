@@ -25,10 +25,10 @@
 #include <SupportDefs.h>
 #include <Rect.h>
 
-
 //******************************************************************************************************
 //**** PROJECT HEADER FILES AND CLASS NAME DECLARATIONS
 //******************************************************************************************************
+class BFont;
 class ColumnListView;
 class CLVColumn;
 class CLVListItem;

@@ -31,7 +31,7 @@
 #include <Autolock.h>
 #include <Directory.h>
 #include <File.h>
-#include <storage/Path.h>
+#include <Path.h>
 #include <Query.h>
 
 #include "BmBasics.h"

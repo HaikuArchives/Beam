@@ -196,8 +196,13 @@ void BmPopper::UpdateMailStatus( const float delta, const char* detailText,
 \*------------------------------------------------------------------------------*/
 void BmPopper::Connect() {
 	BNetAddress addr;
-	if (!mPopAccount->GetPOPAddress( &addr) || mPopServer.Connect( addr) != B_OK) {
-		BString s = BString("Could not connect to POP-Server ") << mPopAccount->POPServer();
+	if (!mPopAccount->GetPOPAddress( &addr)) {
+		BString s = BString("Could not determine address of POP-Server ") << mPopAccount->POPServer();
+		throw BM_network_error( s);
+	}
+	status_t err;
+	if ((err=mPopServer.Connect( addr)) != B_OK) {
+		BString s = BString("Could not connect to POP-Server ") << mPopAccount->POPServer() << "\n\bError:\n\t"<<strerror(err);
 		throw BM_network_error( s);
 	}
 	mConnected = true;

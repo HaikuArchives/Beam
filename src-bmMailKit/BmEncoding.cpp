@@ -192,7 +192,7 @@ void BmEncoding::Encode( BString encodingStyle, const BString& src, BString& des
 								 bool isEncodedWord) {
 	int32 srcLen = src.Length();
 	encodingStyle.ToUpper();
-	dest.Truncate(0,false);
+	dest.Truncate(0);
 	const char* safeChars = ThePrefs->GetBool( "MakeQPSafeForEBCDIC", false)
 									? "%&/()?+*,.;:<>-_"
 									: "%&/()?+*,.;:<>-_!\"#$@[]\\^'{|}~";
@@ -298,7 +298,7 @@ void BmEncoding::Encode( BString encodingStyle, const BString& src, BString& des
 void BmEncoding::Decode( BString encodingStyle, const BString& src, BString& dest, 
 								 bool isEncodedWord, bool isText) {
 	encodingStyle.ToUpper();
-	dest.Truncate(0,false);
+	dest.Truncate(0);
 	Regexx rx;
 	if (encodingStyle == "Q" || encodingStyle == "QUOTED-PRINTABLE") {
 		// quoted printable:
@@ -347,7 +347,7 @@ void BmEncoding::Decode( BString encodingStyle, const BString& src, BString& des
 			return;
 		char* destBuf = dest.LockBuffer( srcSize);
 		int32 destSize = decode_base64( destBuf, const_cast<char*>(src.String()), srcSize, convertCRs);
-		dest[destSize] = '\0';
+		destBuf[destSize] = '\0';
 		dest.UnlockBuffer( destSize);
 		BM_LOG( BM_LogMailParse, "base64-decode: done");
 	} else if (encodingStyle == "7BIT" || encodingStyle == "8BIT") {

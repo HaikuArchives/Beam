@@ -36,7 +36,7 @@
 #include <set>
 
 #include <Locker.h>
-#include <support/String.h>
+#include <String.h>
 
 #include "BmRefManager.h"
 

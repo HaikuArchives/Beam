@@ -4,7 +4,7 @@
 */
 
 #include <Bitmap.h>
-#include <support/String.h>
+#include <String.h>
 #include <View.h>
 
 #include "BubbleHelper.h"

@@ -35,6 +35,14 @@
 //**** System header files
 //******************************************************************************************************
 #include <assert.h>
+#include <BeBuild.h>
+#ifdef B_BEOS_VERSION_DANO
+	class BFont;
+	class BMessage;
+	class BMessageRunner;
+	class BRect;
+	class BStatusBar;
+#endif
 #include <layout.h>
 #include <MGroup.h>
 

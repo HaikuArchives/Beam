@@ -35,10 +35,11 @@
 #include <map>
 
 #ifdef B_BEOS_VERSION_DANO
-	class BMessage;
-	class BStatusBar;
 	class BFont;
+	class BMessage;
+	class BMessageRunner;
 	class BRect;
+	class BStatusBar;
 #endif
 #include <MBorder.h>
 #include <VGroup.h>

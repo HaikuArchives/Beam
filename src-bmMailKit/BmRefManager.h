@@ -38,7 +38,7 @@
 
 #include <Autolock.h>
 #include <Locker.h>
-#include <support/String.h>
+#include <String.h>
 
 #include "BmBasics.h"
 #include "BmLogHandler.h"

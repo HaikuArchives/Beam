@@ -301,8 +301,11 @@ void BmSmtp::Auth() {
 			if (CheckForPositiveAnswer()) {
 				BString base64;
 				cmd = BString("_") << mSmtpAccount->Username() << "_" << mSmtpAccount->Password();
-				cmd[0] = '\0';
-				cmd[mSmtpAccount->Username().Length()+1] = '\0';
+				int32 len=cmd.Length();
+				char* buf = cmd.LockBuffer( 0);
+				buf[0] = '\0';
+				buf[mSmtpAccount->Username().Length()+1] = '\0';
+				cmd.UnlockBuffer( len);
 				Encode( "base64", cmd, base64);
 				SendCommand( "", base64);
 			}

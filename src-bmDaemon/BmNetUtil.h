@@ -31,7 +31,7 @@
 #ifndef _BmNetUtil_h
 #define _BmNetUtil_h
 
-#include <support/String.h>
+#include <String.h>
 
 /*------------------------------------------------------------------------------*\*\
 	utility function that finds out this hosts FQHN:

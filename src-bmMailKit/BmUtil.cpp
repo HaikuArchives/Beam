@@ -176,9 +176,9 @@ BString TimeToString( time_t t, const char* format) {
 	BString s;
 	const int32 bufsize=40;
 	s.SetTo( '\0', bufsize);
-	char* buf=s.LockBuffer( 0);
+	char* buf=s.LockBuffer( 40);
 	strftime( buf, bufsize, format, localtime( &t));
-	s.UnlockBuffer( -1);
+	s.UnlockBuffer( strlen(buf));
 	return s;
 }
 

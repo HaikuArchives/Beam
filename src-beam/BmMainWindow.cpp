@@ -35,7 +35,7 @@
 #include <File.h>
 #include <InterfaceKit.h>
 #include <Message.h>
-#include <support/String.h>
+#include <String.h>
 
 #include <layout-all.h>
 

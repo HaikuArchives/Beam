@@ -32,7 +32,7 @@
 #include <Directory.h>
 #include <File.h>
 #include <NodeMonitor.h>
-#include <storage/Path.h>
+#include <Path.h>
 
 #include "BmApp.h"
 #include "BmBasics.h"

@@ -31,8 +31,15 @@
 #include <Autolock.h>
 #include <Font.h>
 #include <Message.h>
-#include <support/String.h>
+#include <String.h>
 
+#include <BeBuild.h>
+#ifdef B_BEOS_VERSION_DANO
+	class BFont;
+	class BMessage;
+	class BPopUpMenu;
+	class BRect;
+#endif
 #include <layout-all.h>
 
 #include "ColumnListView.h"

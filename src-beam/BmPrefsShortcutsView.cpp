@@ -29,6 +29,13 @@
 
 #include <Alert.h>
 
+#include <BeBuild.h>
+#ifdef B_BEOS_VERSION_DANO
+	class BFont;
+	class BMessage;
+	class BPopUpMenu;
+	class BRect;
+#endif
 #include <layout-all.h>
 
 #include "Colors.h"
@@ -268,7 +275,7 @@ CLVContainerView* BmPrefsShortcutsView::CreateListView( minimax minmax, int32 wi
 	if (scMsg) {
 		CLVEasyItem* item;
 		type_code type;
-		char* name;
+		const char* name;
 		for( int32 i=0; scMsg->GetInfo( B_STRING_TYPE, i, &name, &type)==B_OK; ++i) {
 			item = new CLVEasyItem( 0, false, false, 18.0);
 			item->SetColumnContent( 0, name, !ThePrefs->GetBool("StripedListView"));

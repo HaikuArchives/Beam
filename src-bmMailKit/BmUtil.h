@@ -34,7 +34,7 @@
 #include <ctime>
 
 #include <Message.h>
-#include <support/String.h>
+#include <String.h>
 
 extern BString BM_SPACES;
 extern BString BM_DEFAULT_STRING;

@@ -33,7 +33,7 @@
 
 #include <Application.h>
 #include <Rect.h>
-#include <support/String.h>
+#include <String.h>
 
 class BDeskbar;
 class BView;

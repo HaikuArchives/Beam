@@ -28,7 +28,7 @@
 /*************************************************************************/
 
 
-#include <support/String.h>
+#include <String.h>
 
 #include "Colors.h"
 
