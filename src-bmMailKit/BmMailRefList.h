@@ -47,7 +47,7 @@ class BmMailRef;
 class IMPEXPBMMAILKIT BmMailRefList : public BmListModel {
 	typedef BmListModel inherited;
 
-	static const int16 nArchiveVersion = 2;
+	static const int16 nArchiveVersion;
 
 public:
 

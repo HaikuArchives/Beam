@@ -47,6 +47,8 @@ using namespace regexx;
 #include "BmRosterBase.h"
 #include "BmUtil.h"
 
+const int16 BmMailRefList::nArchiveVersion = 3;
+
 /*------------------------------------------------------------------------------*\
 	BmMailRefList()
 		-	standard c'tor

@@ -73,6 +73,9 @@ const char* BM_MAIL_ATTR_CONTENT			= B_MAIL_ATTR_CONTENT;
 const char* BM_MAIL_ATTR_ATTACHMENTS 	= "MAIL:has_attachment";
 const char* BM_MAIL_ATTR_ACCOUNT			= "MAIL:account";
 //
+const char* BM_MAIL_ATTR_CLASSIFICATION = "MAIL:classification";
+const char* BM_MAIL_ATTR_RATIO_SPAM		= "MAIL:ratio_spam";
+//
 const char* BM_MAIL_ATTR_IDENTITY		= "MAIL:beam/identity";
 const char* BM_MAIL_ATTR_MARGIN	 		= "MAIL:beam/margin";
 const char* BM_MAIL_ATTR_WHEN_CREATED = "MAIL:beam/when-created";
@@ -1088,6 +1091,24 @@ bool BmMail::IsFieldEmpty( const BmString fieldName)
 	return mHeader 
 				? mHeader->IsFieldEmpty(fieldName)
 				: true; 
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+bool BmMail::IsMarkedAsSpam() const
+{ 
+	return false; 
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+bool BmMail::IsMarkedAsTofu() const
+{ 
+	return false; 
 }
 
 /*------------------------------------------------------------------------------*\

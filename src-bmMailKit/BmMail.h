@@ -65,6 +65,9 @@ extern IMPEXPBMMAILKIT const char* BM_MAIL_ATTR_HEADER;
 extern IMPEXPBMMAILKIT const char* BM_MAIL_ATTR_CONTENT;
 extern IMPEXPBMMAILKIT const char* BM_MAIL_ATTR_ATTACHMENTS;
 extern IMPEXPBMMAILKIT const char* BM_MAIL_ATTR_ACCOUNT;
+// attributes introduced by MDR
+extern IMPEXPBMMAILKIT const char* BM_MAIL_ATTR_CLASSIFICATION;
+extern IMPEXPBMMAILKIT const char* BM_MAIL_ATTR_RATIO_SPAM;
 // Beam's own attributes:
 extern IMPEXPBMMAILKIT const char* BM_MAIL_ATTR_IDENTITY;
 extern IMPEXPBMMAILKIT const char* BM_MAIL_ATTR_MARGIN;
@@ -173,6 +176,9 @@ public:
 	void SetFieldVal( const BmString fieldName, const BmString value);
 	bool IsFieldEmpty( const BmString fieldName);
 	const BmString Status() const;
+	//
+	bool IsMarkedAsSpam() const;
+	bool IsMarkedAsTofu() const;
 	//
 	void AddAttachmentFromRef( const entry_ref* ref,
 										const BmString& defaultCharset);

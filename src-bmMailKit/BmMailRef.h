@@ -67,6 +67,8 @@ class IMPEXPBMMAILKIT BmMailRef : public BmListModelItem {
 	static const char* const MSG_WHEN;
 	static const char* const MSG_IDENTITY;
 	static const char* const MSG_IS_VALID;
+	static const char* const MSG_CLASSIFICATION;
+	static const char* const MSG_RATIO_SPAM;
 	static const int16 nArchiveVersion;
 
 public:
@@ -121,11 +123,14 @@ public:
 	inline const off_t& Size() const 	{ return mSize; }
 	inline const BmString& SizeString() const
 												 	{ return mSizeString; }
-	inline const bool& HasAttachments() const
+	inline const bool HasAttachments() const
 												 	{ return mHasAttachments; }
 	inline const bool IsNew() const		{ return mStatus == "New"; }
 	inline const BmString& Identity() const
 											 		{ return mIdentity; }
+	inline const BmString& Classification() const
+											 		{ return mClassification; }
+	inline float RatioSpam() const		{ return mRatioSpam; }
 
 	// setters:
 	inline void EntryRef( entry_ref &e) { mEntryRef = e; }
@@ -148,6 +153,8 @@ public:
 	static const BmUpdFlags UPD_WHEN				= 1<<14;
 	static const BmUpdFlags UPD_IDENTITY		= 1<<15;
 	static const BmUpdFlags UPD_TRACKERNAME	= 1<<16;
+	static const BmUpdFlags UPD_CLASSIFICATION= 1<<17;
+	static const BmUpdFlags UPD_RATIO_SPAM		= 1<<18;
 
 	// additional fieldnames for appended archives:
 	static const char* const MSG_OPCODE;
@@ -181,6 +188,9 @@ private:
 	BmString mSizeString;
 	bool mHasAttachments;
 	BmString mIdentity;
+	BmString mClassification;				// spam or genuine
+	float mRatioSpam;							// 0.00 (genuine) .. 1.0 (spam)
+	BmString mRatioSpamString;
 
 	// the following members will not be archived at all:
 	status_t mInitCheck;
