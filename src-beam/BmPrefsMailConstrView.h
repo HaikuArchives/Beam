@@ -33,23 +33,6 @@
 
 #include "BmPrefsView.h"
 
-#define BM_EACH_BCC_CHANGED 				'bmBC'
-#define BM_PREFER_USER_AGENT_CHANGED 	'bmUA'
-#define BM_GENERATE_MSGIDS_CHANGED 		'bmGI'
-#define BM_QP_SAFE_CHANGED	 				'bmQP'
-#define BM_ATTACH_VCARDS_CHANGED 		'bmAV'
-#define BM_CHARSET_SELECTED		 		'bmCS'
-#define BM_FORWARD_TYPE_SELECTED		 	'bmFS'
-#define BM_QUOTE_FORMATTING_SELECTED	'bmQS'
-#define BM_ALLOW_8_BIT_CHANGED			'bm8C'
-#define BM_HARD_WRAP_AT_78_CHANGED		'bmHW'
-#define BM_HARD_WRAP_CHANGED				'bmHC'
-#define BM_USED_CHARSET_SELECTED		 	'bmUS'
-#define BM_LOOK_IN_PEOPLE_CHANGED		'bmLP'
-#define BM_ADD_PEOPLE_NAME_CHANGED		'bmPN'
-#define BM_SELECT_PEOPLE_FOLDER			'bmSP'
-#define BM_UNDO_MODE_SELECTED		 		'bmUM'
-
 class BFilePanel;
 class BmCheckControl;
 class BmMenuControl;
@@ -62,13 +45,31 @@ class MButton;
 class BmPrefsMailConstrView : public BmPrefsView {
 	typedef BmPrefsView inherited;
 
+	enum {
+		BM_EACH_BCC_CHANGED 				= 'bmBC',
+		BM_PREFER_USER_AGENT_CHANGED 	= 'bmUA',
+		BM_GENERATE_MSGIDS_CHANGED 	= 'bmGI',
+		BM_QP_SAFE_CHANGED	 			= 'bmQP',
+		BM_ATTACH_VCARDS_CHANGED 		= 'bmAV',
+		BM_CHARSET_SELECTED		 		= 'bmCS',
+		BM_FORWARD_TYPE_SELECTED		= 'bmFS',
+		BM_QUOTE_FORMATTING_SELECTED	= 'bmQS',
+		BM_ALLOW_8_BIT_CHANGED			= 'bm8C',
+		BM_HARD_WRAP_AT_78_CHANGED		= 'bmHW',
+		BM_HARD_WRAP_CHANGED				= 'bmHC',
+		BM_USED_CHARSET_SELECTED		= 'bmUS',
+		BM_LOOK_IN_PEOPLE_CHANGED		= 'bmLP',
+		BM_ADD_PEOPLE_NAME_CHANGED		= 'bmPN',
+		BM_SELECT_PEOPLE_FOLDER			= 'bmSP',
+		BM_UNDO_MODE_SELECTED		 	= 'bmUM'
+	};
+	
 public:
 	// c'tors and d'tor:
 	BmPrefsMailConstrView();
 	virtual ~BmPrefsMailConstrView();
 	
 	// native methods:
-	void SetupDefaultCharsetMenu();
 	void SetupUsedCharsetsMenu();
 	void SetupUsedCharsetsPrefs();
 
