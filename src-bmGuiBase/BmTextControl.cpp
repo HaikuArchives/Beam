@@ -66,7 +66,7 @@ BmTextControl::BmTextControl( const char* label, bool labelIsMenu, int32 fixedTe
 		else
 			ct_mpm = minimax( divPos + font.StringWidth("W")*10, b.Height()+4, 1E5, b.Height()+4);
 	}
-	SetDivider( divPos);
+	inherited::SetDivider( divPos);
 	if (labelIsMenu) {
 		float width, height;
 		GetPreferredSize( &width, &height);
@@ -158,6 +158,8 @@ BRect BmTextControl::layout(BRect frame) {
 	MoveTo(frame.LeftTop());
 	ResizeTo(frame.Width(),frame.Height());
 	float occupiedSpace = Divider()-10;
+	if (occupiedSpace < 3)
+		occupiedSpace = 3;					// leave room for focus-rectangle
 	mTextView->MoveTo( occupiedSpace, 5);
 	mTextView->ResizeTo( frame.Width()-occupiedSpace-6, mTextView->Frame().Height());
 	return frame;
