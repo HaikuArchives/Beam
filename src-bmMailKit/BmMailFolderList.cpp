@@ -864,8 +864,8 @@ void BmMailFolderList::QueryForNewMails() {
 	}
 	Thaw();
 	BmFolderSet::const_iterator iter;
-	for(	iter=foldersWithNewMail.begin(); 
-			iter!=foldersWithNewMail.end(); ++iter) {
+	BmFolderSet::const_iterator end = foldersWithNewMail.end();
+	for(	iter = foldersWithNewMail.begin(); iter != end; ++iter) {
 		if (*iter)
 			TellModelItemUpdated( 
 				*iter, 
