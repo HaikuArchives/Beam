@@ -79,7 +79,7 @@ class BmMailEditWin : public BmWindow
 		BControl* mShiftTabToControl;
 	};
 
-	class BmPeopleDropMsgFilter : public BMessageFilter {
+	friend class BmPeopleDropMsgFilter : public BMessageFilter {
 	public:
 		BmPeopleDropMsgFilter( uint32 cmd)
 			: 	BMessageFilter( B_DROPPED_DELIVERY, B_ANY_SOURCE, cmd) 
@@ -87,6 +87,8 @@ class BmMailEditWin : public BmWindow
 		}
 		filter_result Filter( BMessage* msg, BHandler** handler);
 	};
+
+	static void RebuildPeopleMenu( BmMenuControllerBase* peopleMenu);
 
 	// state-archival members:
 	static const char* const MSG_DETAIL1;
@@ -99,9 +101,6 @@ public:
 	static BmMailEditWin* CreateInstance( BmMail* mail=NULL);
 	~BmMailEditWin();
 
-	// native methods:
-	void AddAddressToTextControl( BmTextControl* cntrl, const BmString& email);
-	
 	// overrides of BmWindow base:
 	void BeginLife();
 	void MessageReceived( BMessage*);
@@ -123,6 +122,11 @@ private:
 	BmMailEditWin();
 	BmMailEditWin( BmMailRef* mailRef=NULL, BmMail* mail=NULL);
 
+	// native methods:
+	void AddAddressToTextControl( BmTextControl* cntrl, const BmString& email);
+	void RemoveAddressFromTextControl( BmTextControl* cntrl, 
+												  const BmString& email);
+	
 	void SetDetailsButton( int32 nr, int32 newVal);
 	void EditMail( BmMailRef* ref);
 	void EditMail( BmMail* mail);

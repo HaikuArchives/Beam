@@ -87,35 +87,11 @@ enum {
 	BM_SHOWDETAILS1		= 'bMYl',
 	BM_SHOWDETAILS2		= 'bMYm',
 	BM_SHOWDETAILS3		= 'bMYn',
-	BM_SIGNATURE_SELECTED= 'bMYo'
+	BM_SIGNATURE_SELECTED= 'bMYo',
+	BM_TO_REMOVE			= 'bMYp',
+	BM_CC_REMOVE			= 'bMYq',
+	BM_BCC_REMOVE			= 'bMYr'
 };
-
-
-
-/*------------------------------------------------------------------------------*\
-	()
-		-	
-\*------------------------------------------------------------------------------*/
-static void RebuildPeopleMenu( BmMenuControllerBase* peopleMenu) {
-	BMenuItem* old;
-	while( (old = peopleMenu->RemoveItem( (int32)0)) != NULL)
-		delete old;
-	
-	BMessage* msgTempl = peopleMenu->MsgTemplate();
-	// add all adresses to menu and a menu-entry for clearing the field:
-	ThePeopleList->AddPeopleToMenu( peopleMenu, *msgTempl,
-											  BmListModel::MSG_ITEMKEY);
-	peopleMenu->AddSeparatorItem();
-	BMessage* clearMsg;
-	if (msgTempl->what == BM_TO_ADDED)
-		clearMsg = new BMessage( BM_TO_CLEAR);
-	else if (msgTempl->what == BM_CC_ADDED)
-		clearMsg = new BMessage( BM_CC_CLEAR);
-	else
-		clearMsg = new BMessage( BM_BCC_CLEAR);
-	peopleMenu->AddItem( new BMenuItem( "<Clear Field>", clearMsg));
-}
-
 
 
 
@@ -178,6 +154,7 @@ BmMailEditWin::BmMailEditWin( BmMailRef* mailRef, BmMail* mail)
 					  		? B_DOCUMENT_WINDOW_LOOK 
 					  		: B_TITLED_WINDOW_LOOK, 
 					  B_NORMAL_WINDOW_FEEL, B_ASYNCHRONOUS_CONTROLS)
+	,	mMailView( NULL)
 	,	mShowDetails1( false)
 	,	mShowDetails2( false)
 	,	mShowDetails3( false)
@@ -265,6 +242,69 @@ filter_result BmMailEditWin::BmPeopleDropMsgFilter::Filter( BMessage* msg,
 		}
 	}
 	return res;
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailEditWin::RebuildPeopleMenu( BmMenuControllerBase* peopleMenu) {
+	BmMailEditWin* editWin 
+		= dynamic_cast< BmMailEditWin*>( peopleMenu->MsgTarget());
+	if (!editWin)
+		return;
+
+	BMenuItem* old;
+	while( (old = peopleMenu->RemoveItem( (int32)0)) != NULL)
+		delete old;
+	
+	BMessage* msgTempl = peopleMenu->MsgTemplate();
+	// add all adresses to menu and a menu-entry for clearing the field:
+	ThePeopleList->AddPeopleToMenu( peopleMenu, *msgTempl,
+											  BmListModel::MSG_ITEMKEY);
+
+	peopleMenu->AddSeparatorItem();
+	BMenu* removeMenu = NULL;
+	BmRef<BmMail> currMail = editWin->CurrMail();
+	if (currMail) {
+		BmAddressList addrList;
+		if (msgTempl->what == BM_TO_ADDED)
+			addrList.Set( editWin->mToControl->Text());
+		else if (msgTempl->what == BM_CC_ADDED)
+			addrList.Set( editWin->mCcControl->Text());
+		else
+			addrList.Set( editWin->mBccControl->Text());
+		BmAddrList::const_iterator iter;
+		for( iter = addrList.begin(); iter != addrList.end(); ++iter) {
+			if (!removeMenu) {
+				BFont font;
+				peopleMenu->GetFont( &font);
+				removeMenu = new BMenu( "<Remove>");
+				removeMenu->SetFont( &font);
+			}
+			BMessage* removeMsg;
+			if (msgTempl->what == BM_TO_ADDED)
+				removeMsg = new BMessage( BM_TO_REMOVE);
+			else if (msgTempl->what == BM_CC_ADDED)
+				removeMsg = new BMessage( BM_CC_REMOVE);
+			else
+				removeMsg = new BMessage( BM_BCC_REMOVE);
+			removeMsg->AddString( MSG_ADDRESS, (*iter).AddrString().String());
+			removeMenu->AddItem( new BMenuItem( (*iter).AddrString().String(), 
+															removeMsg));
+		}
+		if (removeMenu)
+			peopleMenu->AddItem( removeMenu);
+	}
+	// add menu-entry for clearing the field:
+	BMessage* clearMsg;
+	if (msgTempl->what == BM_TO_ADDED)
+		clearMsg = new BMessage( BM_TO_CLEAR);
+	else if (msgTempl->what == BM_CC_ADDED)
+		clearMsg = new BMessage( BM_CC_CLEAR);
+	else
+		clearMsg = new BMessage( BM_BCC_CLEAR);
+	peopleMenu->AddItem( new BMenuItem( "<Clear Field>", clearMsg));
 }
 
 /*------------------------------------------------------------------------------*\
@@ -833,6 +873,27 @@ void BmMailEditWin::MessageReceived( BMessage* msg) {
 				);
 				break;
 			}
+			case BM_TO_REMOVE: {
+				RemoveAddressFromTextControl( 
+					mToControl, 
+					msg->FindString( MSG_ADDRESS)
+				);
+				break;
+			}
+			case BM_CC_REMOVE: {
+				RemoveAddressFromTextControl( 
+					mCcControl, 
+					msg->FindString( MSG_ADDRESS)
+				);
+				break;
+			}
+			case BM_BCC_REMOVE: {
+				RemoveAddressFromTextControl( 
+					mBccControl, 
+					msg->FindString( MSG_ADDRESS)
+				);
+				break;
+			}
 			case BM_TO_CLEAR: {
 				mToControl->SetText( "");
 				mToControl->TextView()->Select( 0, 0);
@@ -985,6 +1046,22 @@ void BmMailEditWin::AddAddressToTextControl( BmTextControl* cntrl,
 }
 
 /*------------------------------------------------------------------------------*\
+	RemoveAddressFromTextControl( BmTextControl* cntrl, email)
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailEditWin::RemoveAddressFromTextControl( BmTextControl* cntrl, 
+																  const BmString& email) {
+	if (cntrl) {
+		BmAddressList addr( cntrl->Text());
+		addr.Remove( email);
+		BmString currStr( addr.AddrString());
+		cntrl->SetText( currStr.String());
+		cntrl->TextView()->Select( currStr.Length(), currStr.Length());
+		cntrl->TextView()->ScrollToSelection();
+	}
+}
+
+/*------------------------------------------------------------------------------*\
 	BeginLife()
 		-	
 \*------------------------------------------------------------------------------*/
@@ -1034,7 +1111,10 @@ void BmMailEditWin::EditMail( BmMail* mail) {
 		-	
 \*------------------------------------------------------------------------------*/
 BmRef<BmMail> BmMailEditWin::CurrMail() const { 
-	return mMailView->CurrMail();
+	if (mMailView)
+		return mMailView->CurrMail();
+	else
+		return NULL;
 }
 
 /*------------------------------------------------------------------------------*\
