@@ -132,6 +132,12 @@ void BmLogHandler::FinishLog( const BmString& logname) {
 void BmLogHandler::StartWatchingLogfile( BHandler* handler, 
 													  const char* logfileName) {
 	mLocker.Lock();
+	BmWatcherInfo* info = WatcherInfoFor( logfileName);
+	if (!info) {
+		info = new BmWatcherInfo( logfileName, handler);
+		mWatcherInfo.AddItem( info);
+	} else if (!info->watchingHandlers.HasItem( handler))
+		info->watchingHandlers.AddItem( handler);
 	BmLogfile* log = LogfileFor( logfileName);
 	if (log && !log->mWatchingHandlers.HasItem( handler))
 		log->mWatchingHandlers.AddItem( handler);
@@ -145,6 +151,12 @@ void BmLogHandler::StartWatchingLogfile( BHandler* handler,
 void BmLogHandler::StopWatchingLogfile( BHandler* handler, 
 													 const char* logfileName) {
 	mLocker.Lock();
+	BmWatcherInfo* info = WatcherInfoFor( logfileName);
+	if (!info) {
+		info = new BmWatcherInfo( logfileName, handler);
+		mWatcherInfo.AddItem( info);
+	} else
+		info->watchingHandlers.RemoveItem( handler);
 	BmLogfile* log = LogfileFor( logfileName);
 	if (log)
 		log->mWatchingHandlers.RemoveItem( handler);
@@ -204,7 +216,7 @@ void BmLogHandler::LogLevels( uint32 loglevels, int32 minFileSize,
 
 /*------------------------------------------------------------------------------*\
 	LogfileFor( logname)
-		-	tries to find the logfile of the given name in the logfile-map
+		-	tries to find the logfile of the given name in the logfile-list
 \*------------------------------------------------------------------------------*/
 BmLogHandler::BmLogfile* BmLogHandler::LogfileFor( const BmString &logname) {
 	BmLogfile* log = NULL;
@@ -218,20 +230,40 @@ BmLogHandler::BmLogfile* BmLogHandler::LogfileFor( const BmString &logname) {
 }
 
 /*------------------------------------------------------------------------------*\
+	WatcherInfoFor( logname)
+		-	tries to find the watcher-info of the given name in the list
+\*------------------------------------------------------------------------------*/
+BmLogHandler::BmWatcherInfo* 
+BmLogHandler::WatcherInfoFor( const BmString &logname) {
+	BmWatcherInfo* info = NULL;
+	int32 count = mWatcherInfo.CountItems();
+	for( int i=0; i<count; ++i) {
+		info = static_cast< BmWatcherInfo*>( mWatcherInfo.ItemAt(i));
+		if (info && info->logname == logname)
+			return info;
+	}
+	return NULL;
+}
+
+/*------------------------------------------------------------------------------*\
 	FindLogfile( logname)
 		-	tries to find the logfile of the given name in the logfile-map
 		-	if logfile does not exist yet, it is created and added to map
 \*------------------------------------------------------------------------------*/
 BmLogHandler::BmLogfile* BmLogHandler::FindLogfile( const BmString &ln) {
+	BmString logFolderName 
+		= BeamInTestMode
+			? "logs_test"					// use another log-folder in testmode
+			: "logs";
 	BAutolock lock( mLocker);
 	if (!lock.IsLocked())
 		throw BM_runtime_error("LogToFile(): Unable to get lock on loghandler");
 	BmString logname = ln.Length() ? ln : BmString("Beam");
-	BmString name = BmString("logs/") + logname + ".log";
+	BmString name = logFolderName + "/" + logname + ".log";
 	BmLogfile* log = LogfileFor( logname);
 	if (!log) {
 		// logfile doesn't exists, so we create it:
-		mAppFolder->CreateDirectory( "logs", NULL);
+		mAppFolder->CreateDirectory( logFolderName.String(), NULL);
 						// ensure that the logs-folder exists
 		BFile* logfile = new BFile( mAppFolder, name.String(),
 											 B_READ_WRITE|B_CREATE_FILE|B_OPEN_AT_END);
@@ -253,6 +285,11 @@ BmLogHandler::BmLogfile* BmLogHandler::FindLogfile( const BmString &ln) {
 			delete [] buf;
 		}
 		log = new BmLogfile( logfile, name.String(), logname.String());
+		// now add known watchers to this logfile:
+		BmWatcherInfo* info = WatcherInfoFor( logname);
+		if (info)
+			log->mWatchingHandlers = info->watchingHandlers;
+		// finally add logfile to list of active logfiles:
 		mActiveLogs.AddItem( log);
 	}
 	return log;

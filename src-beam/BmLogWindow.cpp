@@ -39,6 +39,7 @@
 #include <MScrollView.h>
 #include <MTextView.h>
 
+#include "BmApp.h"
 #include "BmLogWindow.h"
 #include "BmPrefs.h"
 
@@ -48,13 +49,18 @@ int32 BmLogWindow::nWinCount = 0;
 	CreateAndStartInstanceInWindow( )
 		-	
 \*------------------------------------------------------------------------------*/
-BmLogWindow* BmLogWindow::CreateAndStartInstanceFor( const char* logfileName) {
+BmLogWindow* BmLogWindow::CreateAndStartInstanceFor( const char* logfileName,
+																	  bool showUponNews) {
 	float x = 50+(nWinCount*20)%300;
 	float y = 50+(nWinCount*20)%300;
 	BRect frame( x, y, x+599, y+399);
 	BmString title("Beam-Log: ");
 	title << logfileName;
-	BmLogWindow* win = new BmLogWindow( frame, title, logfileName);
+	BmLogWindow* win = new BmLogWindow( frame, title, logfileName, showUponNews);
+	if (showUponNews) {
+		win->Hide();							// pre-hide window, shows upon message
+		win->SetWorkspaces( bmApp->CurrWorkspace());
+	}
 	win->Show();
 	TheLogHandler->StartWatchingLogfile( win, logfileName);
 	nWinCount++;
@@ -66,11 +72,12 @@ BmLogWindow* BmLogWindow::CreateAndStartInstanceFor( const char* logfileName) {
 		-	
 \*------------------------------------------------------------------------------*/
 BmLogWindow::BmLogWindow( const BRect& frame, const BmString& title, 
-								  const char* logfileName)
+								  const char* logfileName, bool showUponNews)
 	:	inherited( frame, title.String(), 
 					  B_FLOATING_WINDOW_LOOK,
 					  B_NORMAL_WINDOW_FEEL, B_ASYNCHRONOUS_CONTROLS)
 	,	mLogfileName( logfileName)
+	,	mShowUponNews( showUponNews)
 {
 	mLogView = new MTextView();
 	mLogView->MakeEditable( false);
@@ -115,6 +122,13 @@ void BmLogWindow::MessageReceived( BMessage* msg) {
 			mLogView->Select( len, len);
 			mLogView->Insert( logMsg.String());
 			mLogView->ScrollToOffset( len + logMsg.Length());
+			if (mShowUponNews) {
+				SetWorkspaces( bmApp->CurrWorkspace());
+				if (IsMinimized())
+					Minimize( false);
+				while( IsHidden())
+					Show();
+			}
 			break;
 		}
 		default: {
@@ -122,3 +136,18 @@ void BmLogWindow::MessageReceived( BMessage* msg) {
 		}
 	}
 }
+
+/*------------------------------------------------------------------------------*\
+	QuitRequested()
+		-	allow a quit when app is quitting, but just hide otherwise
+\*------------------------------------------------------------------------------*/
+bool BmLogWindow::QuitRequested() {
+	if (mShowUponNews) {
+		Lock();
+		while( !IsHidden())
+			Hide();
+		Unlock();
+	}
+	return bmApp->IsQuitting();
+}
+

@@ -45,17 +45,20 @@ class BmLogWindow : public MWindow
 
 public:
 	// creator-func, c'tors and d'tor:
-	static BmLogWindow* CreateAndStartInstanceFor( const char* logfileName);
+	static BmLogWindow* CreateAndStartInstanceFor( const char* logfileName,
+																  bool showUponNews=false);
 	BmLogWindow( const BRect& frame, const BmString& title, 
-					 const char* logfileName);
+					 const char* logfileName, bool showUponNews);
 	~BmLogWindow();
 	
 	// overrides of BWindow-base:
 	void MessageReceived( BMessage* msg);
+	bool QuitRequested();
 
 private:
 	BmString mLogfileName;
 	MTextView* mLogView;
+	bool mShowUponNews;
 
 	static int32 nWinCount;
 

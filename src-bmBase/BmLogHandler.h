@@ -61,6 +61,13 @@ class IMPEXPBMBASE BmLogHandler {
 
 	class BmLogfile;
 
+	struct BmWatcherInfo {
+		BmString logname;
+		BList watchingHandlers;
+		BmWatcherInfo( const BmString& ln, BHandler* h)
+			:	logname( ln) 					{ watchingHandlers.AddItem( h); }
+	};
+
 public:
 	// static functions
 	static void Log( const BmString logname, const BmString& msg);
@@ -83,8 +90,12 @@ public:
 	void StartWatchingLogfile( BHandler* looper, const char* logfileName);
 	void StopWatchingLogfile( BHandler* looper, const char* logfileName);
 
+	// getters:
+	bool ShowErrorsOnScreen()				{ return mShowErrorsOnScreen; }
+
 	// setters:
 	void LogLevels( uint32 loglevels, int32 minFileSize, int32 maxFileSize);
+	void ShowErrorsOnScreen( bool b)		{ mShowErrorsOnScreen = b; }
 
 	BStopWatch StopWatch;
 
@@ -100,8 +111,8 @@ public:
 	static const char* const MSG_THREAD_ID;
 
 private:
-
 	BmLogfile* LogfileFor( const BmString &logname);
+	BmWatcherInfo* WatcherInfoFor( const BmString &logname);
 
 	// Hide copy-constructor and assignment:
 	BmLogHandler( const BmLogHandler&);
@@ -133,10 +144,13 @@ private:
 		BmLogfile operator=( const BmLogfile&);
 	};
 
+	BList mWatcherInfo;
+
 	uint32 mLoglevels;
 	BDirectory* mAppFolder;
 	int32 mMinFileSize;
 	int32 mMaxFileSize;
+	bool mShowErrorsOnScreen;
 };
 
 /*------------------------------------------------------------------------------*\
@@ -224,8 +238,9 @@ IMPEXPBMBASE void ShowAlertWithType( const BmString &text, alert_type type);
 		if (TheLogHandler) { \
 			BmLogHandler::Log( BM_LOGNAME, msg); \
 		 	BmLogHandler::Log( "Errors", msg); \
+		 	if (TheLogHandler->ShowErrorsOnScreen()) \
+				ShowAlert( msg);	\
 		} \
-		ShowAlert( msg);	\
 	} while(0)
 
 #else
@@ -247,8 +262,9 @@ IMPEXPBMBASE void ShowAlertWithType( const BmString &text, alert_type type);
 		if (TheLogHandler) { \
 			BmLogHandler::Log( BM_LOGNAME, msg); \
 		 	BmLogHandler::Log( "Errors", msg); \
+		 	if (TheLogHandler->ShowErrorsOnScreen()) \
+				ShowAlert( msg);	\
 		} \
-		ShowAlert( msg); \
 	} while(0)
 
 #endif
