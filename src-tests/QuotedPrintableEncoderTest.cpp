@@ -60,17 +60,20 @@ QuotedPrintableEncoderTest::tearDown()
 	inherited::tearDown();
 }
 
+static void EncodeQpAndCheck( BmString input, BmString result, 
+										BmString destCharset="utf-8");
 /*------------------------------------------------------------------------------*\
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-static void EncodeQpAndCheck( BmString input, BmString result) { 
+static void EncodeQpAndCheck( BmString input, BmString result, 
+										BmString destCharset) { 
 	BmString encodedStr; 
 	int32 blockSize = 128; 
 	BmStringIBuf srcBuf( input); 
 	BmStringOBuf destBuf( blockSize); 
 	if (IsEncodedWord) { 
-		BmQpEncodedWordEncoder qpEncoder( &srcBuf, blockSize, 0, "utf-8"); 
+		BmQpEncodedWordEncoder qpEncoder( &srcBuf, blockSize, 0, destCharset); 
 		destBuf.Write( &qpEncoder, blockSize); 
 	} else { 
 		BmQuotedPrintableEncoder qpEncoder( &srcBuf, blockSize); 
@@ -398,6 +401,7 @@ QuotedPrintableEncoderTest::MultiLineEncodedWordTest() {
 		"1234?=\r\n"
 		" =?utf-8?q?5?="
 	);
+
 	// check encoding near wrapping border (fits on current line):
 	NextSubTest(); 
 	EncodeQpAndCheck( 
@@ -443,6 +447,49 @@ QuotedPrintableEncoderTest::MultiLineEncodedWordTest() {
 		"9012?=\r\n"
 		" =?utf-8?q?=C3=A445678?="
 	);
+
+	// now same thing but different destination-charset:
+	// check encoding near wrapping border (fits on current line):
+	NextSubTest(); 
+	EncodeQpAndCheck( 
+		"12345678901234567890123456789012345678901234567890123456ä89012345678",
+		//
+		"=?iso-8859-1?q?12345678901234567890123456789012345678901234567890123"
+		"456=E4?=\r\n"
+		" =?iso-8859-1?q?89012345678?=",
+		"iso-8859-1"
+	);
+	// check encoding near wrapping border (doesn't fit on current line):
+	NextSubTest(); 
+	EncodeQpAndCheck( 
+		"123456789012345678901234567890123456789012345678901234567ä9012345678",
+		//
+		"=?iso-8859-1?q?12345678901234567890123456789012345678901234567890123"
+		"4567?=\r\n"
+		" =?iso-8859-1?q?=E49012345678?=",
+		"iso-8859-1"
+	);
+	// check encoding near wrapping border (doesn't fit on current line):
+	NextSubTest(); 
+	EncodeQpAndCheck( 
+		"1234567890123456789012345678901234567890123456789012345678ä012345678",
+		//
+		"=?iso-8859-1?q?12345678901234567890123456789012345678901234567890123"
+		"45678?=\r\n"
+		" =?iso-8859-1?q?=E4012345678?=",
+		"iso-8859-1"
+	);
+	// check encoding near wrapping border (doesn't fit on current line):
+	NextSubTest(); 
+	EncodeQpAndCheck( 
+		"12345678901234567890123456789012345678901234567890123456789ä12345678",
+		//
+		"=?iso-8859-1?q?12345678901234567890123456789012345678901234567890123"
+		"456789?=\r\n"
+		" =?iso-8859-1?q?=E412345678?=",
+		"iso-8859-1"
+	);
+
 	// the following is a japanese-textphrase which had exposed a hanging-error
 	// in QpEncodedWordEncoder:
 	NextSubTest(); 
