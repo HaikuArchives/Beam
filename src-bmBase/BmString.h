@@ -513,4 +513,6 @@ IMPEXPBMBASE BmString operator+(const char* s1, const BmString& s2);
 IMPEXPBMBASE BmString operator+(const BmString& s1, const char* s2);
 
 
+extern IMPEXPBMBASE BmString BM_DEFAULT_STRING;
+
 #endif

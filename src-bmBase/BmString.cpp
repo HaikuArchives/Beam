@@ -32,6 +32,8 @@
 
 char* strcasestr(const char *s, const char *find);
 
+BmString BM_DEFAULT_STRING;
+
 // -----------------------------------------------------------------------
 // start of OpenBeOS implemenation of BmString
 // -----------------------------------------------------------------------

@@ -40,7 +40,6 @@
 #include "BmString.h"
 
 extern IMPEXPBMMAILKIT BmString BM_SPACES;
-extern IMPEXPBMMAILKIT BmString BM_DEFAULT_STRING;
 extern IMPEXPBMMAILKIT BmString BM_DefaultItemLabel;
 extern IMPEXPBMMAILKIT BmString BM_NoItemLabel;
 extern IMPEXPBMMAILKIT BmString BM_WHITESPACE;
