@@ -559,6 +559,10 @@ void BmBodyPart::SetTo( const BmString& msgtext, int32 start, int32 length,
 		Regexx rx;
 		char* nPos = startPos;
 		int32 foundBoundaryLen;
+							// length of current boundary that was found and matches the
+							// given boundary
+		int32 firstBoundaryLen=0;
+							// length of first (given) boundary
 		while( !isLastBoundary) {
 			while( 1) {
 				// in this loop we determine the next occurence of the current 
@@ -571,11 +575,17 @@ void BmBodyPart::SetTo( const BmString& msgtext, int32 start, int32 length,
 				if (*(nPos+foundBoundaryLen)=='-' 
 				&& *(nPos+foundBoundaryLen+1)=='-')
 					foundBoundaryLen+=2;
+				// skip any space and tabs:
+				while (*(nPos+foundBoundaryLen)==' ' 
+				|| *(nPos+foundBoundaryLen)=='\t')
+					foundBoundaryLen++;
 				// now skip over \r\n if present:
 				if (*(nPos+foundBoundaryLen)=='\r')
 					foundBoundaryLen++;
 				if (*(nPos+foundBoundaryLen)=='\n')
 					foundBoundaryLen++;
+				if (!firstBoundaryLen)
+					firstBoundaryLen = foundBoundaryLen;
 				BM_LOG2( BM_LogMailParse, "finding next boundary...");
 				nPos = strstr( nPos+foundBoundaryLen, boundary.String());
 				if (!nPos) {
@@ -614,7 +624,7 @@ void BmBodyPart::SetTo( const BmString& msgtext, int32 start, int32 length,
 				}
 			}
 			if (nPos) {
-				int32 startOffs = startPos-msgtext.String()+foundBoundaryLen;
+				int32 startOffs = startPos-msgtext.String()+firstBoundaryLen;
 				BM_LOG2( BM_LogMailParse, 
 							"Subpart of multipart found will be added to array");
 				int32 len = max((long)0,nPos-msgtext.String()-startOffs-2);
@@ -629,7 +639,7 @@ void BmBodyPart::SetTo( const BmString& msgtext, int32 start, int32 length,
 				AddSubItem( subPart);
 				startPos = nPos;
 			} else {
-				int32 startOffs = startPos-msgtext.String()+foundBoundaryLen;
+				int32 startOffs = startPos-msgtext.String()+firstBoundaryLen;
 				if (start+length > startOffs) {
 					// the final boundary is missing, we include the remaining 
 					// part as a sub-bodypart anyway:
