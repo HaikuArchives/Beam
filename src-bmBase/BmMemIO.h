@@ -43,7 +43,6 @@ class BmMemIBuf {
 public:
 	virtual ~BmMemIBuf()						{}
 	virtual uint32 Read( char* data, uint32 reqLen) = 0;
-	virtual BmString Peek( uint32 len, int32 offsetToCurr) = 0;
 	virtual bool IsAtEnd() = 0;
 };
 
@@ -64,8 +63,6 @@ public:
 class BmMemFilter : public virtual BmMemIBuf {
 	typedef BmMemIBuf inherited;
 
-	static const uint32 nMaxBufferFixupSize = 256;
-
 public:
 	BmMemFilter( BmMemIBuf& input, uint32 blockSize=65536);
 	~BmMemFilter();
@@ -74,27 +71,24 @@ public:
 	uint32 Read( char* data, uint32 reqLen);
 	bool IsAtEnd();
 
-protected:
-	struct BmMemBlock {
-		inline BmMemBlock( uint32 sz, uint32 safety)
-			:	data( new char [sz])
-			,	currPos( 0)
-			,	size( sz-safety)				{}
-		inline ~BmMemBlock()					{ delete [] data; }
-		char* data;
-		uint32 currPos;
-		uint32 size;
-	};
-	typedef list< BmMemBlock*> BmMemBlockList;
+	static const uint32 nBlockSize = 65536;
 
+protected:
 	// native methods:
-	virtual uint32 DetermineBufferFixup( BmMemIBuf& input)	{ return 0; }
-	virtual void DoFilter( const char* srcBuf, uint32& srcLen, 
-								  char* destBuf, uint32& destLen) = 0;
+	virtual void Filter( const char* srcBuf, uint32& srcLen, 
+								char* destBuf, uint32& destLen) = 0;
+	virtual void Finalize( char* destBuf, uint32& destLen) 
+													{ destLen=0; mIsFinalized = true; }
 	
 	BmMemIBuf& mInput;
-	BmMemBlockList mBlockList;
+	char* mBuf;
+	uint32 mCurrPos;
+	uint32 mCurrSize;
 	uint32 mBlockSize;
+	uint32 mSrcCount;
+	uint32 mDestCount;
+	bool mIsFinalized;
+	bool mHadError;
 };
 
 /*------------------------------------------------------------------------------*\
@@ -110,8 +104,8 @@ public:
 
 	// overrides of BmMemIBuf base:
 	uint32 Read( char* data, uint32 reqLen);
-	BmString Peek( uint32 len, int32 offsetToCurr);
 	inline bool IsAtEnd()					{ return mCurrPos == mSize; }
+	inline uint32 Size()						{ return mSize; }
 
 private:
 	const char* mBuf;
@@ -131,8 +125,10 @@ class BmStringOBuf : public virtual BmMemOBuf {
 	typedef BmMemOBuf inherited;
 
 public:
-	BmStringOBuf( uint32 startLen, float growFactor=1.2);
+	BmStringOBuf( uint32 startLen, float growFactor=1.5);
+	~BmStringOBuf();
 	uint32 Write( const char* data, uint32 len);
+	uint32 Write( BmMemIBuf& input, uint32 blockSize=BmMemFilter::nBlockSize);
 	uint32 Write( const BmString& data)	{ return Write( data.String(), data.Length()); }
 	BmString& TheString();
 	inline bool HasData() const 			{ return mBuf!=NULL; }
@@ -143,6 +139,8 @@ public:
 	BmStringOBuf 		&operator<<(const BmString &);
 
 private:
+	bool GrowBufferToFit( uint32 len);
+
 	uint32 mBufLen;
 	float mGrowFactor;
 	char* mBuf;
