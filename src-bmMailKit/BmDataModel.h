@@ -272,6 +272,7 @@ protected:
 	bool mItemIsValid;
 
 private:
+
 	// Hide assignment:
 #ifndef __POWERPC__
 	BmListModelItem( const BmListModelItem&);
@@ -317,6 +318,7 @@ public:
 										 BmListModelItem* parent=NULL);
 	virtual void RemoveItemFromList( BmListModelItem* item);
 	virtual BmRef<BmListModelItem> RemoveItemByKey( const BmString& key);
+	virtual void SetItemValidity(  BmListModelItem* item, bool isValid);
 	//
 	virtual BmString RenameItem( const BmString oldKey, const BmString& newKey);
 	virtual void AddForeignKey( const char* key, BmListModel* model);
@@ -361,6 +363,13 @@ public:
 	inline bool empty() const				{ return mModelItemMap.empty(); }
 	inline status_t InitCheck() const	{ return mInitCheck; }
 
+	inline size_t ValidCount() const		{ return mModelItemMap.size()
+																- mInvalidCount; }
+	inline size_t InvalidCount() const	{ return mInvalidCount; }
+	// setters:
+	inline void IncInvalidCount()			{ mInvalidCount++; }
+	inline void DecInvalidCount()			{ mInvalidCount--; }
+
 protected:
 
 	// native methods:
@@ -378,6 +387,7 @@ protected:
 	status_t mInitCheck;
 	bool mNeedsStore;
 	BmForeignKeyVect mForeignKeyVect;
+	int32 mInvalidCount;
 
 	BmMenuControllerSet mInterestedMenuControllers;
 							// list of BMenuControllers viewing this list for changes

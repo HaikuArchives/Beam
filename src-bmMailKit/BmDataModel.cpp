@@ -146,7 +146,8 @@ void BmDataModel::ControllerAck( BmController* controller) {
 
 /*------------------------------------------------------------------------------*\
 	TellControllers( msg)
-		-	tells controllers about our new state (msg holding the state-description)
+		-	tells controllers about our new state (msg holding the 
+			state-description)
 		-	if no interested controller exists, this does nothing
 		-	if this dataModel is frozen, nothing happens
 \*------------------------------------------------------------------------------*/
@@ -215,8 +216,8 @@ bool BmDataModel::HasControllers() {
 /*------------------------------------------------------------------------------*\
 	ShouldContinue()
 		-	checks whether this datamodel is still required to do its work
-		-	this implementation returns true as long as there is at least one controller
-			interested
+		-	this implementation returns true as long as there is at least one 
+			controller interested
 \*------------------------------------------------------------------------------*/
 bool BmDataModel::ShouldContinue() {
 	return HasControllers() || !mNeedControllersToContinue;
@@ -690,25 +691,13 @@ BmRef<BmListModel> BmListModelItem::ListModel() const	{
 void BmListModelItem::ItemIsValid( bool _itemIsValid) {
 	if (mItemIsValid != _itemIsValid) {
 		BmRef<BmListModel> listModel( ListModel());
-		if (listModel) {
-			BmAutolockCheckGlobal lock( listModel->ModelLocker());
-			if (!lock.IsLocked())
-				BM_THROW_RUNTIME( listModel->ModelNameNC() 
-											<< ": Unable to get lock");
-			if (_itemIsValid) {
-				// item has changed from invalid to valid, we set to valid and then
-				// tell controllers about its addition:
-				mItemIsValid = true;
-				listModel->TellModelItemAdded( this);
-			} else {
-				// item has changed from valid to invalid, we first
-				// tell controllers about its removal and then set item to invalid
-				// (otherwise, TellModelItemRemoved would ignore our request,
-				// since this item is invalid):
-				listModel->TellModelItemRemoved( this);
-				mItemIsValid = false;
-			}
-		}
+		if (listModel)
+			// we have a listmodel, so we delegate the validity change to it,
+			// since it will deal with required updates, too:
+			listModel->SetItemValidity( this, _itemIsValid);
+		else
+			// no listmodel, we just change the validity:
+			mItemIsValid = _itemIsValid;
 	}
 }
 
@@ -734,6 +723,7 @@ BmListModel::BmListModel( const BmString& name)
 	:  inherited( name)
 	,	mInitCheck( B_NO_INIT)
 	,	mNeedsStore( false)
+	,	mInvalidCount( 0)
 {
 }
 
@@ -755,6 +745,7 @@ void BmListModel::Cleanup() {
 	mModelItemMap.clear();
 	mNeedsStore = false;
 	mInitCheck = B_NO_INIT;
+	mInvalidCount = 0;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -762,7 +753,8 @@ void BmListModel::Cleanup() {
 		-	adds given item to given parent-item
 		-	if parent==NULL the item is added to the listmodel itself
 \*------------------------------------------------------------------------------*/
-bool BmListModel::AddItemToList( BmListModelItem* item, BmListModelItem* parent) {
+bool BmListModel::AddItemToList( BmListModelItem* item, 
+											BmListModelItem* parent) {
 	if (item) {
 		BmAutolockCheckGlobal lock( mModelLocker);
 		if (!lock.IsLocked())
@@ -771,6 +763,9 @@ bool BmListModel::AddItemToList( BmListModelItem* item, BmListModelItem* parent)
 			);
 		if (parent) {
 			if (parent->AddSubItem( item)) {
+				item->mListModel = this;
+				if (!item->mItemIsValid)
+					IncInvalidCount();
 				mNeedsStore = true;
 				TellModelItemAdded( item);
 				if (parent->size() == 1) {
@@ -785,6 +780,9 @@ bool BmListModel::AddItemToList( BmListModelItem* item, BmListModelItem* parent)
 			if (iter == mModelItemMap.end()) {
 				mModelItemMap[item->Key()] = item;
 				item->Parent( NULL);
+				item->mListModel = this;
+				if (!item->mItemIsValid)
+					IncInvalidCount();
 				mNeedsStore = true;
 				TellModelItemAdded( item);
 				return true;
@@ -818,6 +816,9 @@ void BmListModel::RemoveItemFromList( BmListModelItem* item) {
 		} else {
 			mModelItemMap.erase( item->Key());
 		}
+		item->mListModel = NULL;
+		if (!item->mItemIsValid)
+			DecInvalidCount();
 		TellModelItemRemoved( item);
 	}
 }
@@ -835,6 +836,35 @@ BmRef<BmListModelItem> BmListModel::RemoveItemByKey( const BmString& key) {
 	BmRef<BmListModelItem> item( FindItemByKey( key));
 	RemoveItemFromList( item.Get());
 	return item;
+}
+
+/*------------------------------------------------------------------------------*\
+	SetItemValidity( item, b)
+		-	
+\*------------------------------------------------------------------------------*/
+void BmListModel::SetItemValidity(  BmListModelItem* item, bool isValid) {
+	if (item && item->mItemIsValid != isValid) {
+		BmAutolockCheckGlobal lock( mModelLocker);
+		if (!lock.IsLocked())
+			BM_THROW_RUNTIME( 
+				ModelNameNC() << ":SetItemValidity(): Unable to get lock"
+			);
+		if (isValid) {
+			// item has changed from invalid to valid, we set to valid and then
+			// tell controllers about its addition:
+			item->mItemIsValid = true;
+			DecInvalidCount();
+			TellModelItemAdded( item);
+		} else {
+			// item has changed from valid to invalid, we first
+			// tell controllers about its removal and then set item to invalid
+			// (otherwise, TellModelItemRemoved would ignore our request,
+			// since this item is invalid):
+			TellModelItemRemoved( item);
+			IncInvalidCount();
+			item->mItemIsValid = false;
+		}
+	}
 }
 
 /*------------------------------------------------------------------------------*\
@@ -868,8 +898,8 @@ void BmListModel::AdjustForeignKeys( const BmString& oldVal,
 		-	renames the item that has the given key oldKey into suggestedNewKey
 		-	if suggestedNewKey is not unique, a unique new key is generated
 		-	the real new key of the item is returned
-		-	N.B.: oldKey is passed in by-value so that it does not change during the
-			rename (so that old value is available afterwards).
+		-	N.B.: oldKey is passed in by-value so that it does not change during 
+			the rename (so that old value is available afterwards).
 \*------------------------------------------------------------------------------*/
 BmString BmListModel::RenameItem( const BmString oldKey, 
 											 const BmString& suggestedNewKey) {
@@ -960,12 +990,12 @@ void BmListModel::TellModelItemAdded( BmListModelItem* item) {
 						<< "> tells about added item " << item->Key());
 		TellControllers( &msg);
 	}
-	UpdateMenuControllers();
 }
 
 /*------------------------------------------------------------------------------*\
 	TellModelItemRemoved( item)
-		-	tells all controllers that the given item has been removed from hierarchy
+		-	tells all controllers that the given item has been removed from 
+			hierarchy
 		-	the controllers are requested to acknowledge the removal, so that
 			they won't access the removed item (stale pointer)
 \*------------------------------------------------------------------------------*/
@@ -989,7 +1019,6 @@ void BmListModel::TellModelItemRemoved( BmListModelItem* item) {
 						<< "> tells about removed item " << item->Key());
 		TellControllers( &msg, true);
 	}
-	UpdateMenuControllers();
 }
 
 /*------------------------------------------------------------------------------*\
@@ -998,7 +1027,8 @@ void BmListModel::TellModelItemRemoved( BmListModelItem* item) {
 		-	param updFlags indicates which part of the item has been changed
 		-	param oldKey contains the old key of the item if the item was renamed
 \*------------------------------------------------------------------------------*/
-void BmListModel::TellModelItemUpdated( BmListModelItem* item, BmUpdFlags flags,
+void BmListModel::TellModelItemUpdated( BmListModelItem* item, 
+													 BmUpdFlags flags,
 													 const BmString oldKey) {
 	if (Frozen() || !item->ItemIsValid())
 		return;
@@ -1023,7 +1053,6 @@ void BmListModel::TellModelItemUpdated( BmListModelItem* item, BmUpdFlags flags,
 						<< "> tells about updated item " << item->Key());
 		TellControllers( &msg);
 	}
-	UpdateMenuControllers();
 }
 
 /*------------------------------------------------------------------------------*\
@@ -1040,17 +1069,21 @@ void BmListModel::TellJobIsDone( bool completed) {
 		-	updates all menu-controllers that have subscribed to this job
 \*------------------------------------------------------------------------------*/
 void BmListModel::UpdateMenuControllers() {
-	BmAutolockCheckGlobal lock( mModelLocker);
-	if (!lock.IsLocked())
-		BM_THROW_RUNTIME( 
-			ModelNameNC() << ":UpdateMenuControllers(): Unable to get lock"
-		);
-	BmMenuControllerSet::iterator iter;
-	for(	iter = mInterestedMenuControllers.begin(); 
-			iter != mInterestedMenuControllers.end(); 
-			++iter) {
-		(*iter)->UpdateItemList();
+	BmMenuControllerSet tempSet;
+	{ // scope for lock
+		BmAutolockCheckGlobal lock( mModelLocker);
+		if (!lock.IsLocked())
+			BM_THROW_RUNTIME( 
+				ModelNameNC() << ":UpdateMenuControllers(): Unable to get lock"
+			);
+		tempSet.insert( mInterestedMenuControllers.begin(), 
+							 mInterestedMenuControllers.end());
+		// now release lock since UpdateItemList will have to acquire a lock
+		// on the menu's window (and we do not want risk a deadlock!):
 	}
+	BmMenuControllerSet::iterator iter;
+	for( iter = tempSet.begin(); iter != tempSet.end(); ++iter)
+		(*iter)->UpdateItemList();
 }
 
 /*------------------------------------------------------------------------------*\
