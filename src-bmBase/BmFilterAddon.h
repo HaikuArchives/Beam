@@ -37,17 +37,6 @@
 #include "BmBase.h"
 #include "BmString.h"
 
-const int32 BM_FILL_MENU_FROM_LIST = 'bmFM';
-
-extern IMPEXPBMBASE const char* MSG_LIST_NAME;
-extern IMPEXPBMBASE const char* MSG_MENU_POINTER;
-extern IMPEXPBMBASE const char* MSG_MENU_TARGET;
-extern IMPEXPBMBASE const char* MSG_MSG_TEMPLATE;
-
-extern IMPEXPBMBASE const char* BM_FOLDERLIST_NAME;
-extern IMPEXPBMBASE const char* BM_STATUSLIST_NAME;
-extern IMPEXPBMBASE const char* BM_IDENTITYLIST_NAME;
-
 /*------------------------------------------------------------------------------*\
 	BmFilterAddon 
 		-	base class for all filter-addons, this is used as filter-addon-API
@@ -98,15 +87,19 @@ struct IMPEXPBMBASE BmHeaderInfo {
 };
 	
 struct IMPEXPBMBASE BmMsgContext {
-	BmMsgContext( const BmString& mtxt, const BmString& mid);
+	BmMsgContext( const BmString& mtxt, const BmString& mid, bool outb,
+					  const BmString& stat, const BmString& account);
 	~BmMsgContext();
 
+	// info fields, are set before filtering starts:
 	const BmString& rawMsgText;
 	const BmString& mailId;
-	
+	bool outbound;
+	BmString account;
 	int32 headerInfoCount;
 	BmHeaderInfo *headerInfos;
 	
+	// result fields, are set by filtering process:
 	BmString folderName;
 	BmString status;
 	BmString identity;
