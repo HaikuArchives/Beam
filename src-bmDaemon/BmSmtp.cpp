@@ -252,7 +252,6 @@ bool BmSmtp::StartJob() {
 			UpdateSMTPStatus( 0.0, NULL, false, true);
 		else
 			UpdateSMTPStatus( delta, NULL);
-		mSmtpAccount->SendingFinished();
 	}
 	catch( BM_runtime_error &err) {
 		// a problem occurred, we tell the user:
@@ -263,7 +262,6 @@ bool BmSmtp::StartJob() {
 		UpdateSMTPStatus( 0.0, NULL, failed);
 		BmString text = Name() << ":\n\n" << errstr;
 		HandleError( text);
-		mSmtpAccount->SendingFinished();
 		return false;
 	}
 	return true;
@@ -387,42 +385,16 @@ void BmSmtp::StateHelo() {
 		-	authenticates through pop-server (SMTP_AFTER_POP)
 \*------------------------------------------------------------------------------*/
 void BmSmtp::StateAuthViaPopServer() {
-	BmMail* mail = mSmtpAccount->FirstPendingMail();
-	if (mail) {
-		BmString sender = mail->Header()->DetermineSender();
-		BmString accName = mSmtpAccount->AccForSmtpAfterPop();
-		BmRef<BmPopAccount> sendingAcc = dynamic_cast<BmPopAccount*>( 
-			ThePopAccountList->FindItemByKey( accName).Get()
-		);
-		if (!sendingAcc) {
-			// no default pop-account set, we try to find out by looking at the
-			// sender address:
-			sendingAcc = TheIdentityList->FindPopAccountForAddrSpec( sender);
-		}
-		if (!sendingAcc) {
-			// still no pop-account found, we ask user, if possible:
-			if (ShouldContinue()) {
-				if (!BeamRoster->AskUserForPopAcc( Name(), accName)) {
-					Disconnect();
-					StopJob();
-					return;
-				}
-				sendingAcc = dynamic_cast<BmPopAccount*>( 
-					ThePopAccountList->FindItemByKey( accName).Get()
-				);
-			}
-		}
-		if (!sendingAcc)
-			BM_THROW_RUNTIME( BmString("Sorry, could not determine pop-account "
-											"for address '") << sender 
-										<< "'\n\n Smtp-after-Pop authentication failed, "
-											"giving up.");
-		BmRef<BmPopper> popper( new BmPopper( 
-			sendingAcc->Name(), 
-			sendingAcc.Get()
-		));
-		popper->StartJobInThisThread( BmPopper::BM_AUTH_ONLY_JOB);
-	}
+	BmString accName = mSmtpAccount->AccForSmtpAfterPop();
+	BmRef<BmPopAccount> sendingAcc = dynamic_cast<BmPopAccount*>( 
+		ThePopAccountList->FindItemByKey( accName).Get()
+	);
+	if (!sendingAcc)
+		BM_THROW_RUNTIME( BmString("Sorry, could not determine pop-account")
+									<< "'\n\n Smtp-after-Pop authentication failed, "
+										"giving up.");
+	BmRef<BmPopper> popper = new BmPopper(sendingAcc->Name(), sendingAcc.Get());
+	popper->StartJobInThisThread( BmPopper::BM_AUTH_ONLY_JOB);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -509,24 +481,34 @@ void BmSmtp::StateAuth() {
 			version for each Bcc-recipient (SpecialHeaderForEachBcc=true)
 \*------------------------------------------------------------------------------*/
 void BmSmtp::StateSendMails() {
-	BmSmtpAccount::BmMailVect mailVect;
-	mSmtpAccount->HandoutPendingMails(mailVect);
-	mMailCount = mailVect.size();
+	mMailCount = mQueuedRefVect.size();
+
 	mMsgTotalSize = 0;
+	BmRef<BmMailRef> mailRefs[mMailCount];
+	BmRef<BmMail> mail;
 	for( int32 i=0; i<mMailCount; ++i) {
-		BmMail* mail = mailVect[i].Get();
-		if (mail)
-			mMsgTotalSize += mail->RawText().Length();
+		mailRefs[i] = BmMailRef::CreateInstance( mQueuedRefVect[i]);
+		if (mailRefs[i] && mailRefs[i]->ItemIsValid())
+			mMsgTotalSize += mailRefs[i]->Size();
 	}
 
 	Regexx rx;
 	mCurrMailNr = 1;
 	for( int32 i=0; i<mMailCount; ++i, ++mCurrMailNr) {
-		BmMail* mail = mailVect[i].Get();
-		if (!mail) {
+		if (!mailRefs[i] || !mailRefs[i]->ItemIsValid()) {
 			BM_LOGERR( BmString("SendMails(): mail no. ") << i 
-								<< " is NULL, skipping it.");
+								<< " can't be found, skipping it.");
 			continue;
+		}
+		BmRef<BmMail> mail = BmMail::CreateInstance( mailRefs[i].Get());
+		if (mail) {
+			if (mail->InitCheck() != B_OK)
+				mail->StartJobInThisThread( BmMail::BM_READ_MAIL_JOB);
+			if (mail->InitCheck() != B_OK) {
+				BM_LOGERR( BmString("SendMails(): mail no. ") << i 
+									<< " can't be read, skipping it.");
+				continue;
+			}
 		}
 		mCurrMailSize = mail->RawText().Length();
 
@@ -550,18 +532,18 @@ void BmSmtp::StateSendMails() {
 
 		BmRcptVect rcptVect;
 		if (ThePrefs->GetBool("SpecialHeaderForEachBcc", true)) {
-			if (HasStdRcpts( mail, rcptVect)) {
-				Mail( mail);
+			if (HasStdRcpts( mail.Get(), rcptVect)) {
+				Mail( mail.Get());
 				Rcpt( rcptVect);
-				Data( mail, headerText);
+				Data( mail.Get(), headerText);
 			}
-			BccRcpt( mail, true, headerText);
+			BccRcpt( mail.Get(), true, headerText);
 		} else {
-			Mail( mail);
-			if (HasStdRcpts( mail, rcptVect))
+			Mail( mail.Get());
+			if (HasStdRcpts( mail.Get(), rcptVect))
 				Rcpt( rcptVect);
-			BccRcpt( mail, false, headerText);
-			Data( mail, headerText);
+			BccRcpt( mail.Get(), false, headerText);
+			Data( mail.Get(), headerText);
 		}
 		if (ShouldContinue()) {
 			mail->MarkAs( BM_MAIL_STATUS_SENT);
@@ -717,6 +699,15 @@ void BmSmtp::Quit( bool WaitForAnswer) {
 			GetAnswer();
 	} catch(...) {	}
 	Disconnect();
+}
+
+/*------------------------------------------------------------------------------*\
+	QueueMail()
+		-	adds given entry_ref to the queue of mails that shall be send
+\*------------------------------------------------------------------------------*/
+void BmSmtp::QueueMail( entry_ref eref)
+{
+	mQueuedRefVect.push_back( eref);
 }
 
 /*------------------------------------------------------------------------------*\

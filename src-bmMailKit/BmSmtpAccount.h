@@ -32,8 +32,6 @@
 #ifndef _BmSmtpAccount_h
 #define _BmSmtpAccount_h
 
-#include <vector>
-
 #include <Archivable.h>
 #include <List.h>
 #include "BmString.h"
@@ -47,7 +45,6 @@ enum {
 						// smtp-connection
 };
 
-class BmMailQuery;
 class BNetAddress;
 class BmSmtpAccountList;
 /*------------------------------------------------------------------------------*\
@@ -58,7 +55,6 @@ class BmSmtpAccountList;
 \*------------------------------------------------------------------------------*/
 class IMPEXPBMMAILKIT BmSmtpAccount : public BmListModelItem {
 	typedef BmListModelItem inherited;
-	typedef vector< BmRef< BmMail> > BmMailVect;
 
 public:
 	BmSmtpAccount( const char* name, BmSmtpAccountList* model);
@@ -68,12 +64,9 @@ public:
 	// native methods:
 	bool NeedsAuthViaPopServer();
 	bool SanityCheck( BmString& complaint, BmString& fieldName) const;
-	void QueueMail( BmMail* mail);
-	void SendQueuedMail();
 	//
-	void HandoutPendingMails(BmMailVect &outMailVect);
-	BmMail* FirstPendingMail();
-	void SendingFinished();
+	void SendMail( const entry_ref& eref);
+	void SendPendingMails();
 
 	// stuff needed for Archival:
 	status_t Archive( BMessage* archive, bool deep = true) const;
@@ -142,13 +135,14 @@ public:
 	static const char* const MSG_STORE_PWD;
 	static const int16 nArchiveVersion;
 
+	// message field names:
+	static const char* const MSG_REF;
+
 private:
 	BmSmtpAccount();					// hide default constructor
 	// Hide copy-constructor and assignment:
 	BmSmtpAccount( const BmSmtpAccount&);
 	BmSmtpAccount operator=( const BmSmtpAccount&);
-
-	void FetchPendingMails();
 
 	//BmString mName;					// name is stored in key (base-class)
 	BmString mUsername;
@@ -161,10 +155,6 @@ private:
 	BmString mPortNrString;			// Port-Nr as String
 	bool mPwdStoredOnDisk;			// store Passwords unsafely on disk?
 	BmString mAccForSmtpAfterPop;	// pop-account to use for authentication
-
-	bool mSendInProgress;
-	BmMailVect mQueuedMail;
-	BmMailQuery* mPendingQuery;
 };
 
 
@@ -185,7 +175,8 @@ public:
 	~BmSmtpAccountList();
 	
 	// native methods:
-	void SendQueuedMailFor( const BmString accName);
+	void SendPendingMails();
+	void SendPendingMailsFor( const BmString accName);
 	
 	// overrides of listmodel base:
 	const BmString SettingsFileName();

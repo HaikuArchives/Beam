@@ -617,6 +617,9 @@ BmJobModel* BmSmtpView::CreateJobModel( BMessage* msg) {
 	if (!(account = dynamic_cast<BmSmtpAccount*>( item.Get())))
 		BM_THROW_INVALID( BmString("Could not find BmSmtpAccount ") << accName);
 	BmSmtp* smtp = new BmSmtp( account->Name(), account);
+	entry_ref eref;
+	for( int i=0; msg->FindRef( BmSmtpAccount::MSG_REF, i, &eref)==B_OK; ++i)
+		smtp->QueueMail( eref);
 	return smtp;
 }
 
@@ -808,7 +811,7 @@ void BmJobStatusWin::AddJob( BMessage* msg) {
 
 	JobMap::iterator interfaceIter = mActiveJobs.find( name);
 	if (interfaceIter != mActiveJobs.end()) {
-		// view found, maybe this popper is already active:
+		// view found, maybe this job is already active:
 		controller = (*interfaceIter).second;
 		if (controller->IsJobRunning()) {
 			// job is still running, so we better don't disturb:

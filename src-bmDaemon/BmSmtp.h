@@ -81,6 +81,7 @@ class IMPEXPBMDAEMON BmSmtp : public BmNetJobModel {
 	typedef BmNetJobModel inherited;
 	
 	typedef vector< BmString> BmRcptVect;
+	typedef vector< entry_ref> BmQueuedRefVect;
 	
 public:
 	//	message component definitions for status-msgs:
@@ -91,12 +92,16 @@ public:
 
 	// message component definitions for additional info:
 	static const char* const MSG_PWD;
+	static const char* const MSG_REF;
 
-	// job-specifier for checking server capabilities:
+	// job-specifiers:
 	static const int32 BM_CHECK_CAPABILITIES_JOB;
+	static const int32 BM_SEND_SPECIFIC_MAILS;
 
 	BmSmtp( const BmString& name, BmSmtpAccount* account);
 	virtual ~BmSmtp();
+
+	void QueueMail( entry_ref eref);
 
 	BmString SuggestAuthType() const;
 
@@ -162,6 +167,8 @@ private:
 	bool mServerMayHaveSizeLimit;
 	bool mServerSupportsDSN;
 	BmString mSupportedAuthTypes;
+	
+	BmQueuedRefVect mQueuedRefVect;
 
 	// Hide copy-constructor and assignment:
 	BmSmtp( const BmSmtp&);
