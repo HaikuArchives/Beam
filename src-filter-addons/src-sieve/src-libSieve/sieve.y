@@ -40,8 +40,8 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "script.h"
 #include "tree.h"
 
-#include "../lib/util.h"
-#include "../lib/imparse.h"
+#include "util.h"
+#include "imparse.h"
 
     /* definitions */
     extern int addrparse(void);
