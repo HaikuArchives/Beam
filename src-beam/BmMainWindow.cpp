@@ -275,7 +275,7 @@ static int CompareLogs( const void* logL, const void* logR) {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-static void RebuildLogMenu( BmMenuController* logMenu) {
+static void RebuildLogMenu( BmMenuControllerBase* logMenu) {
 	BMenuItem* old;
 	while( (old = logMenu->RemoveItem( (int32)0))!=NULL)
 		delete old;

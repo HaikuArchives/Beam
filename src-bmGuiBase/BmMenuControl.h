@@ -57,7 +57,6 @@ public:
 	void SetEnabled( bool enabled);
 
 private:
-	void doClearMark( BMenu* menu);
 
 	minimax layoutprefs();
 	BRect layout(BRect frame);

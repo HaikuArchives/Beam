@@ -96,7 +96,7 @@ enum {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-static void RebuildPeopleMenu( BmMenuController* peopleMenu) {
+static void RebuildPeopleMenu( BmMenuControllerBase* peopleMenu) {
 	BMenuItem* old;
 	while( (old = peopleMenu->RemoveItem( (int32)0)) != NULL)
 		delete old;

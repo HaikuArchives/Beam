@@ -86,7 +86,7 @@ BmPopAccount::BmPopAccount( const char* name, BmPopAccountList* model)
 	:	inherited( name, model, (BmListModelItem*)NULL)
 	,	mCheckMail( true)
 	,	mDeleteMailFromServer( false)
-	,	mDeleteMailDelay( 3)
+	,	mDeleteMailDelay( 0)
 	,	mPortNr( 110)
 	,	mPortNrString( "110")
 	,	mAuthMethod( "POP3")
@@ -177,7 +177,7 @@ BmPopAccount::BmPopAccount( BMessage* archive, BmPopAccountList* model)
 			mUIDs.push_back( uidInfo);
 		}
 		// initialize attributes introduced in version 7:
-		mDeleteMailDelay = 3;
+		mDeleteMailDelay = 0;
 		mDeleteMailDelayString << mDeleteMailDelay;
 	} else {
 		// load new UID-format:

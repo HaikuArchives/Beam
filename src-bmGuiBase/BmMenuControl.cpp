@@ -28,7 +28,6 @@
 /*************************************************************************/
 
 
-#include <MenuBar.h>
 #include <MenuItem.h>
 
 #include <HGroup.h>
@@ -43,6 +42,7 @@
 using namespace regexx;
 
 #include "BmMenuControl.h"
+#include "BmMenuControllerBase.h"
 
 /*------------------------------------------------------------------------------*\
 	( )
@@ -80,19 +80,9 @@ BmMenuControl::~BmMenuControl() {
 void BmMenuControl::MarkItem( const char* label, bool recurse) {
 	BMenuItem* item = NULL;
 	if (recurse) {
-		doClearMark( Menu());
+		BmMenuControllerBase::ClearMarkInMenu( Menu());
 		MenuItem()->SetLabel( label);
-		// we walk down the tree to find the corresponding menu-item:
-		vector<BmString> itemVect;
-		split( "/", label, itemVect);
-		BMenu* currMenu = Menu();
-		for( uint32 i=0; currMenu && i<itemVect.size(); ++i) {
-			BmString str = itemVect[i];
-			item = currMenu->FindItem( str.String());
-			currMenu = item 
-							? item->Submenu()
-							: NULL;
-		}
+		item = BmMenuControllerBase::MarkItemInMenu( Menu(), label);
 	} else
 		item = Menu()->FindItem( label);
 	if (item)
@@ -107,25 +97,7 @@ void BmMenuControl::MarkItem( const char* label, bool recurse) {
 \*------------------------------------------------------------------------------*/
 void BmMenuControl::ClearMark() {
 	MenuItem()->SetLabel("");
-	doClearMark( Menu());
-}
-
-/*------------------------------------------------------------------------------*\
-	( )
-		-	
-\*------------------------------------------------------------------------------*/
-void BmMenuControl::doClearMark( BMenu* menu) {
-	if (!menu)
-		return;
-	BMenuItem* item;
-	while( (item = menu->FindMarked()) != NULL)
-		item->SetMarked( false);
-	int32 count=menu->CountItems();
-	for( int i=0; i<count; ++i) {
-		BMenu* subMenu = menu->SubmenuAt( i);
-		if (subMenu)
-			doClearMark( subMenu);
-	}
+	BmMenuControllerBase::ClearMarkInMenu( Menu());
 }
 
 /*------------------------------------------------------------------------------*\
