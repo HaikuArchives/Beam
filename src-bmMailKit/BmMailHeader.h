@@ -59,7 +59,8 @@ class BmAddress {
 
 public:
 	// c'tors and d'tor:
-	BmAddress( BString addrText);
+	BmAddress();
+	BmAddress( const BString& addrText);
 	~BmAddress();
 
 	inline bool operator== (const BmAddress& a) {
@@ -68,6 +69,7 @@ public:
 	}
 
 	// native methods:
+	bool SetTo( const BString& addrText);
 	void ConstructRawText( BString& header, int32 encoding, int32 fieldNameLength) const;
 	bool IsHandledByAccount( BmPopAccount* acc) const;
 
@@ -110,6 +112,7 @@ public:
 	BmStringList SplitIntoAddresses( BString addrList);
 	void ConstructRawText( BString& header, int32 encoding, int32 fieldNameLength) const;
 	BString FindAddressMatchingAccount( BmPopAccount* acc) const;
+	bool ContainsAddrSpec( BString addrSpec) const;
 	//
 	inline BmAddrList::const_iterator begin() const { return mAddrList.begin(); }
 	inline BmAddrList::const_iterator end() const	{ return mAddrList.end(); }
@@ -148,12 +151,12 @@ class BmMailHeader : public BmRefObj {
 
 	class BmHeaderList {
 	public:
-		void Set( const BString fieldName, const BString content);
-		void Add( const BString fieldName, const BString content);
-		void Remove( const BString fieldName);
+		void Set( const BString& fieldName, const BString content);
+		void Add( const BString& fieldName, const BString content);
+		void Remove( const BString& fieldName);
 		BmHeaderMap::const_iterator begin() const { return mHeaders.begin(); }
 		BmHeaderMap::const_iterator end() const	{ return mHeaders.end(); }
-		const BString& operator [] (const BString fieldName) const;
+		const BString& operator [] (const BString& fieldName) const;
 	private:
 		BmHeaderMap mHeaders;
 	};
@@ -168,25 +171,28 @@ public:
 	// native methods:
 	void StoreAttributes( BFile& mailFile);
 							//	the following three take UTF8 as input:
-	void SetFieldVal( const BString fieldName, const BString value);
-	void AddFieldVal( const BString fieldName, const BString value);
-	void RemoveField( const BString fieldName);
-	void RemoveAddrFieldVal( const BString fieldName, const BString address);
+	void SetFieldVal( BString fieldName, const BString value);
+	void AddFieldVal( BString fieldName, const BString value);
+	void RemoveField( BString fieldName);
+	void RemoveAddrFieldVal( BString fieldName, const BString address);
 							// the next always produces US-ASCII (7-bit):
-	bool ConstructRawText( BString& header, int32 encoding);
-
+	const BmAddressList GetAddressList( BString fieldName);
+	bool IsFieldEmpty( BString fieldName);
+	bool AddressFieldContainsAddrSpec( BString fieldName, const BString addrSpec);
+	//
 	BString DetermineSender();
 	BString DetermineReceivingAddrFor( BmPopAccount* acc);
-	BString DetermineOriginator();
-	const BmAddressList GetAddressList( const BString fieldName);
-	bool IsFieldEmpty( const BString fieldName);
+	BString DetermineOriginator( bool bypassReplyTo=false);
+	BString DetermineListAddress( bool bypassSanityTest=false);
+	//
+	bool ConstructRawText( BString& header, int32 encoding);
 
 	// overrides of BmRefObj
 	const BString& RefName() const				{ return mKey; }
 
 	// getters:
-	const BString& GetFieldVal( const BString fieldName);
-	const BString GetStrippedFieldVal( const BString fieldName);
+	const BString& GetFieldVal( BString fieldName);
+	const BString GetStrippedFieldVal( BString fieldName);
 	inline int32 NumLines() const 				{ return mNumLines; }
 	inline const BString& HeaderString() const	{ return mHeaderString; }
 	inline const BString& Name() const			{ return mName; }
