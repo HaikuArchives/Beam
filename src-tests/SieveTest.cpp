@@ -63,8 +63,8 @@ SetupMsgContext(BmString text)
 			mail->SetTo(text,mailAcc);
 		static int count=0;
 		mailId = BmString("testmail-")<<++count;
-		if (!msgContext)
-			msgContext = new BmMsgContext(mail->RawText(), mailId, false, "Read", mailAcc);
+		delete msgContext;
+		msgContext = new BmMsgContext(mail->RawText(), mailId, false, "Read", mailAcc);
 		mail->Header()->GetAllFieldValues( *msgContext);
 	} catch( BM_error& e) {
 		cerr << e.what() << endl;
@@ -174,14 +174,14 @@ SieveTest::tearDown()
 void 
 SieveTest::BasicActionTest(void)
 {
-	// implicit keep;
+	// implicit keep
 	NextSubTest();
 	filter.mContent = "";
 	CPPUNIT_ASSERT( filter.CompileScript() || CompErr());
 	CPPUNIT_ASSERT( filter.Execute(msgContext));
 	CPPUNIT_ASSERT( Result() == RES_KEEP);
 
-	// explicit keep;
+	// explicit keep
 	NextSubTest();
 	filter.mContent = "keep;";
 	CPPUNIT_ASSERT( filter.CompileScript() || CompErr());
@@ -304,5 +304,140 @@ notify :method \"BeamStopProcessing\";\n\
 	CPPUNIT_ASSERT( filter.CompileScript());
 	CPPUNIT_ASSERT( filter.Execute(msgContext));
 	CPPUNIT_ASSERT( Result() == RES_STOP);
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void 
+SieveTest::BasicTestsTest(void)
+{
+	// true
+	NextSubTest();
+	filter.mContent = "if true { keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript() || CompErr());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_KEEP);
+
+	// false
+	NextSubTest();
+	filter.mContent = "if false { keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript() || CompErr());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_TRASH);
+
+	// not
+	NextSubTest();
+	filter.mContent = "if not true { keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript() || CompErr());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_TRASH);
+	//
+	NextSubTest();
+	filter.mContent = "if not not not false { keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript() || CompErr());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_KEEP);
+
+	// anyof
+	NextSubTest();
+	filter.mContent = "if anyof (false, false) { keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript() || CompErr());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_TRASH);
+	//
+	NextSubTest();
+	filter.mContent = "if anyof (true, false) { keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript() || CompErr());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_KEEP);
+	//
+	NextSubTest();
+	filter.mContent = "if anyof (false, true) { keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript() || CompErr());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_KEEP);
+	//
+	NextSubTest();
+	filter.mContent = "if anyof (true, true) { keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript() || CompErr());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_KEEP);
+
+	// allof
+	NextSubTest();
+	filter.mContent = "if allof (false, false) { keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript() || CompErr());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_TRASH);
+	//
+	NextSubTest();
+	filter.mContent = "if allof (true, false) { keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript() || CompErr());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_TRASH);
+	//
+	NextSubTest();
+	filter.mContent = "if allof (false, true) { keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript() || CompErr());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_TRASH);
+	//
+	NextSubTest();
+	filter.mContent = "if allof (true, true) { keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript() || CompErr());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_KEEP);
+
+	// size
+	NextSubTest();
+	filter.mContent = "if size :over 100 { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript() || CompErr());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_TRASH);
+	//
+	NextSubTest();
+	filter.mContent = "if size :under 10000 { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript() || CompErr());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_TRASH);
+	//
+	NextSubTest();
+	filter.mContent = BmString("if not anyof (\n")
+		<< "size :over " << mail->RawText().Length() << ",\n"
+		<< "size :under " << mail->RawText().Length() << ")\n"
+		<< "{ discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript() || CompErr());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_TRASH);
+
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void 
+SieveTest::AddressTestTest(void)
+{
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void 
+SieveTest::ExistsTestTest(void)
+{
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void 
+SieveTest::HeaderTestTest(void)
+{
 }
 
