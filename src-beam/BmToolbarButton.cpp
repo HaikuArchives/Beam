@@ -149,12 +149,15 @@ BPicture* BmToolbarButton::CreatePicture( int32 mode, const char* label,
 		posIcon = BPoint( (width-iconWidth)/2,(height-iconHeight)/2+offset);
 	}
 	
-	if (labelMode == "Hide")
-		mLatchRect.Set( posIcon.x+iconWidth+2, posIcon.y+iconHeight/2-LATCHSZ/2, 
-							 width, height);
-	else
-		mLatchRect.Set( posLabel.x+labelWidth+2, posLabel.y+labelHeight/2-LATCHSZ/2, 
-							 width, height);
+	if (needsLatch) {
+		if (labelMode == "Hide")
+			mLatchRect.Set( posIcon.x+iconWidth+2, posIcon.y+iconHeight/2-LATCHSZ/2, 
+								 width, height);
+		else
+			mLatchRect.Set( posLabel.x+labelWidth+2, posLabel.y+labelHeight/2-LATCHSZ/2, 
+								 width, height);
+	} else
+		mLatchRect.Set( -1, -1, -1, -1);
 
 	// Draw
 	BRect rect(0,0,width-1,height-1);
