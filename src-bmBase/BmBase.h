@@ -30,15 +30,13 @@
 #ifndef _BmBase_h
 #define _BmBase_h
 
+#include <BeBuild.h>
+
 /* import-/export-declarations for the bmBase shared-lib */
-#ifdef __POWERPC__
 #ifdef BM_BUILDING_BMBASE
-#define IMPEXPBMBASE __declspec(dllexport)
+#define IMPEXPBMBASE _EXPORT
 #else
-#define IMPEXPBMBASE __declspec(dllimport)
-#endif
-#else
-#define IMPEXPBMBASE
+#define IMPEXPBMBASE _IMPORT
 #endif
 
 #endif

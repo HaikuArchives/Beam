@@ -30,15 +30,13 @@
 #ifndef _libregexx_h
 #define _libregexx_h
 
+#include <BeBuild.h>
+
 /* import-/export-declarations for the libregexx shared-lib */
-#ifdef __POWERPC__
 #ifdef BM_BUILDING_LIBREGEXX
-#define IMPEXPLIBREGEXX __declspec(dllexport)
+#define IMPEXPLIBREGEXX _EXPORT
 #else
-#define IMPEXPLIBREGEXX __declspec(dllimport)
-#endif
-#else
-#define IMPEXPLIBREGEXX
+#define IMPEXPLIBREGEXX _IMPORT
 #endif
 
 #endif

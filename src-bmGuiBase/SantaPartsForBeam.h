@@ -30,15 +30,13 @@
 #ifndef _BmSantaPartsForBeam_h
 #define _BmSantaPartsForBeam_h
 
+#include <BeBuild.h>
+
 // import-/export-declarations for the SantaPartsForBeam shared-lib
-#ifdef __POWERPC__
 #ifdef BM_BUILDING_SANTAPARTSFORBEAM
-#define IMPEXPSANTAPARTSFORBEAM __declspec(dllexport)
+#define IMPEXPSANTAPARTSFORBEAM _EXPORT
 #else
-#define IMPEXPSANTAPARTSFORBEAM __declspec(dllimport)
-#endif
-#else
-#define IMPEXPSANTAPARTSFORBEAM
+#define IMPEXPSANTAPARTSFORBEAM _IMPORT
 #endif
 
 #endif
