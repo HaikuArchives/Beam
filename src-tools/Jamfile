@@ -4,12 +4,35 @@ SubDirHdrs $(TOP) src-bmBase ;
 SubDirHdrs $(TOP) src-bmRegexx ;
 SubDirHdrs $(TOP) src-bmMailKit ;
 
+SubDirSysHdrs /boot/home/config/include ;
+
 Application MailConverter
 	:  
 		MailConverter.cpp
 	: 	
 		bmMailKit.so bmBase.so be
 	;
-
 MakeLocate MailConverter : [ FDirName $(DISTRO_DIR) tools ] ;
+XRes MailConverter
+	: 
+		[ FDirName $(TOP) resources MailConverter.rsrc ] 
+	;
+
+MimeSet MailConverter ;
+
+Application SpamOMeter
+	:  
+		SpamOMeter.cpp
+	: 	
+		bmMailKit.so bmRegexx.so bmBase.so be
+	;
+
+MakeLocate SpamOMeter : [ FDirName $(DISTRO_DIR) tools ] ;
+XRes SpamOMeter
+	: 
+		[ FDirName $(TOP) resources SpamOMeter.rsrc ] 
+	;
+
+MimeSet SpamOMeter ;
+
 
