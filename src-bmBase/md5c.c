@@ -24,6 +24,12 @@ These notices must be retained in any copies of any part of this
 documentation and/or software.
  */
 
+/*
+ * [zooey]: all this is just temporary and will be replaced by cryptlib
+ *          in a later release (when Beam will support secure transport).
+ */
+
+
 #include <cstdio>
 #include <cstring>
 
@@ -332,15 +338,113 @@ static void MD5_memset (POINTER output, int value, unsigned int len)
 
 void MD5Digest (unsigned char *s, char* out) {
 	int i;
+	unsigned char digest[17];
+	
+	MD5Sum(s, digest);
+
+  	for (i = 0;  i < 16;  i++) {
+  		unsigned char c = digest[i];
+		*out++ = (c > 0x9F ? 'a'-10 : '0')+(c>>4);
+		*out++ = ((c&0x0F) > 9 ? 'a'-10 : '0')+(c&0x0F);
+  	}
+  	*out = '\0';
+}
+
+/***********************************************************
+ * MD5Sum ()
+ *    - added to this file by [zooey]
+ *    - hashes the given string
+ ***********************************************************/
+
+void MD5Sum (unsigned char *s, char* out) {
 	MD5_CTX context;
-	unsigned char digest[16];
 	
 	MD5Init(&context);
 	MD5Update(&context, s, strlen((char*)s));
-	MD5Final(digest, &context);
-  	
-  	for (i = 0;  i < 16;  i++) 
-    	sprintf(out+2*i, "%02x", digest[i]);
+	MD5Final(out, &context);
+	out[16] = '\0';
 }
 
+
+
+/***********************************************************
+ * MD5_HMAC (text, key, digest)
+ *    - added to this file by [zooey]
+ *    - original code taken from RFC2104
+ ***********************************************************/
+
+void MD5_HMAC( unsigned char* text, int text_len, 
+					unsigned char* key, int key_len, unsigned char* out)
+{ 
+	MD5_CTX context; 
+	unsigned char k_ipad[65];    /* inner padding - 
+	                              * key XORd with ipad 
+	                              */ 
+	unsigned char k_opad[65];    /* outer padding - 
+	                              * key XORd with opad 
+	                              */ 
+	unsigned char tk[16]; 
+	unsigned char digest[16]; 
+	int i; 
+	/* if key is longer than 64 bytes reset it to key=MD5(key) */ 
+	if (key_len > 64) { 
+	
+		MD5_CTX      tctx; 
+		
+		MD5Init(&tctx); 
+		MD5Update(&tctx, key, key_len); 
+		MD5Final(tk, &tctx); 
+		
+		key = tk; 
+		key_len = 16; 
+	} 
+	
+	/* 
+	 * the HMAC_MD5 transform looks like: 
+	 * 
+	 * MD5(K XOR opad, MD5(K XOR ipad, text)) 
+	 * 
+	 * where K is an n byte key 
+	 * ipad is the byte 0x36 repeated 64 times 
+	
+	 * opad is the byte 0x5c repeated 64 times 
+	 * and text is the data being protected 
+	 */ 
+	
+	/* start out by storing key in pads */ 
+	memset( k_ipad, 0, sizeof k_ipad); 
+	memset( k_opad, 0, sizeof k_opad); 
+	memcpy( k_ipad, key, key_len);
+	memcpy( k_opad, key, key_len);
+	
+	/* XOR key with ipad and opad values */ 
+	for (i=0; i<64; i++) { 
+		k_ipad[i] ^= 0x36; 
+		k_opad[i] ^= 0x5c; 
+	} 
+	/* 
+	 * perform inner MD5 
+	 */ 
+	MD5Init(&context);                   /* init context for 1st 
+	                                      * pass */ 
+	MD5Update(&context, k_ipad, 64);     /* start with inner pad */ 
+	MD5Update(&context, text, text_len); /* then text of datagram */ 
+	MD5Final(digest, &context);          /* finish up 1st pass */ 
+	/* 
+	 * perform outer MD5 
+	 */ 
+	MD5Init(&context);                   /* init context for 2nd 
+	                                      * pass */ 
+	MD5Update(&context, k_opad, 64);     /* start with outer pad */ 
+	MD5Update(&context, digest, 16);     /* then results of 1st 
+	                                      * hash */ 
+	MD5Final(digest, &context);          /* finish up 2nd pass */ 
+
+  	for (i = 0;  i < 16;  i++) {
+  		unsigned char c = digest[i];
+		*out++ = (c > 0x9F ? 'a'-10 : '0')+(c>>4);
+		*out++ = ((c&0x0F) > 9 ? 'a'-10 : '0')+(c&0x0F);
+  	}
+  	*out = '\0';
+} 
 

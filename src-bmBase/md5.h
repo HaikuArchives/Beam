@@ -45,6 +45,10 @@ IMPEXPBMBASE void MD5Update PROTO_LIST
   ((MD5_CTX *, unsigned char *, unsigned int));
 IMPEXPBMBASE void MD5Final PROTO_LIST ((unsigned char [16], MD5_CTX *));
 IMPEXPBMBASE void MD5Digest (unsigned char *s, char *out);
+IMPEXPBMBASE void MD5Sum (unsigned char *s, char* out);
+IMPEXPBMBASE void MD5_HMAC( unsigned char* text, int text_len, 
+									 unsigned char* key, int key_len, 
+									 unsigned char* out);
 
 #ifdef __cplusplus
 }
