@@ -84,7 +84,8 @@ class BmSlaveHandler {
 public:
 	BmSlaveHandler();
 	~BmSlaveHandler();
-	void Run( const char* name, thread_func func, void* data);
+	void Run( const char* name, thread_func func, BMessage* msg, 
+				 uint16 minCountForThread=10);
 private:
 	int32 mSlaveNum;
 };
@@ -98,15 +99,24 @@ BmSlaveHandler::~BmSlaveHandler()
 {
 }
 
-void BmSlaveHandler::Run( const char* name, thread_func func, void* data) 
+void BmSlaveHandler::Run( const char* name, thread_func func, 
+								  BMessage* msg, uint16 minCountForThread)
 {
-	BmString tname( name);
-	tname << "(" << mSlaveNum++ << ")";
-	thread_id t_id = spawn_thread( func, tname.String(), 
-											 B_NORMAL_PRIORITY, data);
-	if (t_id < 0)
-		throw BM_runtime_error("SlaveHandler::Run(): Could not spawn thread");
-	resume_thread( t_id);
+	BmMailRefVect* refVect = NULL;
+	msg->FindPointer( BmApplication::MSG_MAILREF_VECT, (void**)&refVect);
+	if (!refVect || refVect->size() <= minCountForThread) {
+		// execute task in app-thread:
+		func(msg);
+	} else {
+		// start new thread for task:
+		BmString tname( name);
+		tname << "(" << mSlaveNum++ << ")";
+		thread_id t_id = spawn_thread( func, tname.String(), 
+												 B_NORMAL_PRIORITY, msg);
+		if (t_id < 0)
+			throw BM_runtime_error("SlaveHandler::Run(): Could not spawn thread");
+		resume_thread( t_id);
+	}
 }
 
 static BmSlaveHandler SlaveHandler;
@@ -166,7 +176,14 @@ static int32 MarkMailsAs( void* data)
 		}
 	}
 	if (buttonPressed != 0) {
+		// tell sending ref-view that we are doing work:
+		BMessenger sendingRefView;
+		msg->FindMessenger( BmApplication::MSG_SENDING_REFVIEW, &sendingRefView);
+		if (sendingRefView.IsValid())
+			sendingRefView.SendMessage( BMM_SET_BUSY);
+
 		BmMailRef* mailRef;
+		int i=0;
 		BmMailRefVect::iterator iter;
 		for( iter = refVect->begin(); 
 			  !bmApp->IsQuitting() && iter != refVect->end(); ++iter) {
@@ -176,8 +193,14 @@ static int32 MarkMailsAs( void* data)
 						  BmString("marking mail <") << mailRef->TrackerName()
 						  		<< "> as " << newStatus);
 				mailRef->MarkAs( newStatus.String());
+				if (++i % 100 == 0)
+					snooze(500*1000);
+						// give mail monitor a chance to catch up...
 			}
 		}
+		// now tell sending ref-view that we are finished:
+		if (sendingRefView.IsValid())
+			sendingRefView.SendMessage( BMM_UNSET_BUSY);
 	}
 	delete refVect;
 				// freeing all references to mailrefs contained in vector
@@ -201,6 +224,12 @@ static int32 MoveMails( void* data)
 		return B_OK;
 	int32 countFound = refVect->size();
 	if (countFound > 0) {
+		// tell sending ref-view that we are doing work:
+		BMessenger sendingRefView;
+		msg->FindMessenger( BmApplication::MSG_SENDING_REFVIEW, &sendingRefView);
+		if (sendingRefView.IsValid())
+			sendingRefView.SendMessage( BMM_SET_BUSY);
+
 		BMessage tmpMsg( BM_JOBWIN_MOVEMAILS);
 		BmString folderName = msg->FindString( BmListModel::MSG_ITEMKEY);
 		BmRef<BmListModelItem> itemRef 
@@ -232,6 +261,9 @@ static int32 MoveMails( void* data)
 		tmpMsg.AddInt32( BmMailMover::MSG_REF_COUNT, countFound);
 				// message takes ownership of refs-array!
 		TheJobStatusWin->PostMessage( &tmpMsg);
+		// now tell sending ref-view that we are finished:
+		if (sendingRefView.IsValid())
+			sendingRefView.SendMessage( BMM_UNSET_BUSY);
 	}
 	delete refVect;
 				// freeing all references to mailrefs contained in vector
@@ -255,6 +287,13 @@ static int32 TrashMails( void* data)
 	int32 countFound = refVect->size();
 	if (countFound>0) {
 		struct entry_ref *refs = new entry_ref [countFound];
+
+		// tell sending ref-view that we are doing work:
+		BMessenger sendingRefView;
+		msg->FindMessenger( BmApplication::MSG_SENDING_REFVIEW, &sendingRefView);
+		if (sendingRefView.IsValid())
+			sendingRefView.SendMessage( BMM_SET_BUSY);
+
 		BmMailRef* mailRef;
 		BmMailRefVect::iterator iter;
 		int32 index=0;
@@ -264,10 +303,22 @@ static int32 TrashMails( void* data)
 			BM_LOG( BM_LogApp, 
 					  BmString("Asked to trash mail <") 
 					  		<< mailRef->TrackerName() << ">");
+			if (mailRef->Status() == BM_MAIL_STATUS_NEW)
+				mailRef->MarkAs( BM_MAIL_STATUS_READ);
+					// mark new mails as read such that the deskbar-item 
+					// will notice the disappearance of these new mails
+					// (otherwise it won't get notified by the live-query).
 			refs[index++] = mailRef->EntryRef();
+			if (index % 100 == 0)
+				snooze(500*1000);
+					// give mail monitor a chance to catch up...
 		}
 		MoveToTrash( refs, index);
 		delete [] refs;
+
+		// now tell sending ref-view that we are finished:
+		if (sendingRefView.IsValid())
+			sendingRefView.SendMessage( BMM_UNSET_BUSY);
 	}
 	delete refVect;
 				// freeing all references to mailrefs contained in vector
@@ -1187,7 +1238,7 @@ void BmApplication::MessageReceived( BMessage* msg) {
 					PageSetup();
 				if (mPrintSetup) {
 					DetachCurrentMessage();
-					SlaveHandler.Run( "Msg-Printer", PrintMails, msg);
+					SlaveHandler.Run( "Msg-Printer", PrintMails, msg, 2);
 				}
 				break;
 			}
