@@ -79,17 +79,6 @@ TextEntryAlert::TextEntryAlert(const char* title, const char* info_text, const c
 	struct font_height plain_font_height;
 	be_plain_font->GetHeight(&plain_font_height);
 	info_text_box = result_rects[0];
-	info_text_box.bottom = info_text_box.top + ceil(plain_font_height.ascent) +
-		ceil(plain_font_height.descent);
-	entry_text_rect = result_rects[1];
-	entry_text_rect.bottom = entry_text_rect.top +
-		(ceil(plain_font_height.ascent)+ceil(plain_font_height.descent))*min_text_box_rows +
-		ceil(plain_font_height.leading)*(min_text_box_rows-1);
-	entry_text_rect.InsetBy(0-(c_text_margin+c_text_border_width),
-		0-(c_text_margin+c_text_border_width));
-	if(entry_text_rect.Width() < min_text_box_width)
-		entry_text_rect.right = entry_text_rect.left+min_text_box_width;
-	entry_text_rect.bottom -= 1;			//To make it look like BTextControl
 
 	//Position and create label
 	m_label_view = NULL;
@@ -109,12 +98,28 @@ TextEntryAlert::TextEntryAlert(const char* title, const char* info_text, const c
 		m_label_view->MakeEditable(false);
 		m_label_view->MakeSelectable(false);
 		m_label_view->SetWordWrap(false);
+		float textHeight = m_label_view->TextHeight( 0, 10000);
+		info_text_box.bottom = info_text_box.top + textHeight;
+		m_label_view->ResizeTo( m_label_view->Bounds().Width(), textHeight+4);
 	}
 	else
 	{
 		info_text_box.Set(0,0,0,0);
 		inline_label = false;
 	}
+
+//	info_text_box.bottom = info_text_box.top + ceil(plain_font_height.ascent) +
+//		ceil(plain_font_height.descent);
+	entry_text_rect = result_rects[1];
+	entry_text_rect.bottom = entry_text_rect.top +
+		(ceil(plain_font_height.ascent)+ceil(plain_font_height.descent))*min_text_box_rows +
+		ceil(plain_font_height.leading)*(min_text_box_rows-1);
+	entry_text_rect.InsetBy(0-(c_text_margin+c_text_border_width),
+		0-(c_text_margin+c_text_border_width));
+	if(entry_text_rect.Width() < min_text_box_width)
+		entry_text_rect.right = entry_text_rect.left+min_text_box_width;
+	entry_text_rect.bottom -= 1;			//To make it look like BTextControl
+
 
 	//Create buttons
 	m_buttons[0] = NULL;
@@ -146,7 +151,7 @@ TextEntryAlert::TextEntryAlert(const char* title, const char* info_text, const c
 	if(inline_label)
 		entry_text_rect.OffsetTo(info_text_box.right+c_inline_label_spacing,c_item_spacing);
 	else
-		entry_text_rect.OffsetTo(c_item_spacing,info_text_box.bottom+c_non_inline_label_spacing-4);
+		entry_text_rect.OffsetTo(c_item_spacing,info_text_box.bottom+c_non_inline_label_spacing);
 		//-5 is to compensate for extra pixels that BeOS adds to the font height
 	if(frame != NULL)
 	{
@@ -249,6 +254,7 @@ TextEntryAlert::TextEntryAlert(const char* title, const char* info_text, const c
 		min_height += (buttons_height + c_item_spacing);
 	min_width -= 2;		//Need this for some reason
 	min_height -= 2;
+	m_text_entry_buffer = NULL;
 	SetSizeLimits(min_width,100000,min_height,100000);
 	AddCommonFilter(new BMessageFilter(B_KEY_DOWN,KeyDownFilterStatic));
 	m_shortcut[0] = 0;
@@ -266,7 +272,7 @@ TextEntryAlert::~TextEntryAlert()
 int32 TextEntryAlert::Go(BmString& text_entry_buffer)
 {
 	int32 button_pressed = -1;
-	m_text_entry_buffer = text_entry_buffer;
+	m_text_entry_buffer = &text_entry_buffer;
 	m_button_pressed = &button_pressed;
 	sem_id done_mutex = create_sem(0,"text_entry_alert_done");
 	m_done_mutex = done_mutex;
@@ -384,7 +390,7 @@ void TextEntryAlert::MessageReceived(BMessage* message)
 				//Synchronous version: set the result button and text buffer, then release the thread
 				//that created me
 				*m_button_pressed = which;
-				m_text_entry_buffer.SetTo(text);
+				m_text_entry_buffer->SetTo(text);
 				release_sem(m_done_mutex);
 				m_done_mutex = B_ERROR;
 			}

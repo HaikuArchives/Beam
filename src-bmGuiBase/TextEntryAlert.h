@@ -119,7 +119,7 @@ class IMPEXPBMGUIBASE TextEntryAlert : public BWindow
 
 		//For the synchronous version (pointers point to data areas owned by thread that called Go)
 		sem_id m_done_mutex;		//Mutex to release when the user hits a button or the window closes
-		BmString m_text_entry_buffer;	//Buffer to store the user-entered text when the user hits a button
+		BmString* m_text_entry_buffer;	//Buffer to store the user-entered text when the user hits a button
 		int32* m_button_pressed;	//Place to store the button index that the user hit
 
 		//For the asynchronous version
