@@ -165,8 +165,6 @@ bool BmSieveFilter::Execute( void* message_context) {
 									<< Name() 
 									<< "> on mail with Id <" << mailId << ">");
 	if (!mCompiledScript) {
-		BM_LOG2( BM_LogFilter, BmString("Sieve-Addon: compiling SIEVE-script of "
-												  "filter ") << Name()); 
 		bool scriptOK = CompileScript();
 		if (!scriptOK || !mCompiledScript) {
 			BmString errString = LastErr() + "\n" 
@@ -195,6 +193,10 @@ bool BmSieveFilter::CompileScript() {
 	status_t err;
 	BFile scriptBFile;
 
+	BM_LOG( BM_LogFilter, 
+			  BmString("Sieve-Addon: compiling SIEVE-script of filter ") 
+					<< Name()); 
+
 	// set lock to serialize SIEVE-calls:
 	BAutolock lock( SieveLock());
 	if (!lock.IsLocked()) {
@@ -204,6 +206,8 @@ bool BmSieveFilter::CompileScript() {
 
 	mLastErr = mLastSieveErr = "";
 
+	BM_LOG2( BM_LogFilter, "Sieve-Addon: compilation...register");
+
 	// create sieve interpreter:
 	int res = sieve_interp_alloc( &mSieveInterp, this);
 	if (res != SIEVE_OK) {
@@ -212,6 +216,7 @@ bool BmSieveFilter::CompileScript() {
 	}
 	RegisterCallbacks( mSieveInterp);
 
+	BM_LOG2( BM_LogFilter, "Sieve-Addon: compilation...create tmpfile");
 	// create temporary file with script-contents 
 	// (since SIEVE parses from file only):
 	scriptFileName = "/tmp/bm_sieve_script";
@@ -226,6 +231,7 @@ bool BmSieveFilter::CompileScript() {
 	scriptBFile.Write( mContent.String(), mContent.Length());
 	scriptBFile.Unset();
 
+	BM_LOG2( BM_LogFilter, "Sieve-Addon: compilation...open tmpfile for sieve");
 	// open script file for sieve...
 	scriptFile = fopen( scriptFileName.String(), "r");
 	if (!scriptFile) {
@@ -238,12 +244,14 @@ bool BmSieveFilter::CompileScript() {
 		sieve_script_free( &mCompiledScript);
 		mCompiledScript = NULL;
 	}
+	BM_LOG2( BM_LogFilter, "Sieve-Addon: compilation...parsing");
 	res = sieve_script_parse( mSieveInterp, scriptFile, this, &mCompiledScript);
 	if (res != SIEVE_OK) {
 		mLastErr = BmString(Name()) 
 							<< ":\nThe script could not be parsed correctly";
 		goto cleanup;
 	}
+	BM_LOG2( BM_LogFilter, "Sieve-Addon: compilation...done");
 	ret = true;
 
 cleanup:
