@@ -58,7 +58,7 @@ using namespace BmEncoding;
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmMailHeaderFieldView::BmMailHeaderFieldView( BString fieldName, BString value,
+BmMailHeaderFieldView::BmMailHeaderFieldView( BmString fieldName, BmString value,
 															 BFont* font, float fixedWidth)
 	:	inherited( BRect( 0, 0, 0, 0),
 					  "MailHeaderFieldView", B_FOLLOW_NONE, B_WILL_DRAW)
@@ -129,7 +129,7 @@ filter_result BmMailHeaderFieldView::BmMsgFilter::Filter( BMessage* msg,
 		return B_DISPATCH_MESSAGE;
 	}
 	if (msg->what == B_KEY_DOWN) {
-		BString bytes = msg->FindString( "bytes");
+		BmString bytes = msg->FindString( "bytes");
 		if (bytes.Length() 
 		&& (bytes[0]==B_UP_ARROW || bytes[0]==B_DOWN_ARROW))
 			return B_SKIP_MESSAGE;
@@ -263,7 +263,7 @@ status_t BmMailHeaderView::Archive( BMessage* archive, bool deep=true) const {
 		font_family family;
 		font_style style;
 		mFont.GetFamilyAndStyle( &family, &style);
-		BString fontName = BString(family) + "," + style;
+		BmString fontName = BmString(family) + "," + style;
 		ret = archive->AddString( MSG_FONTNAME, fontName.String())
 					|| archive->AddInt16( MSG_FONTSIZE, mFont.Size());
 	}
@@ -282,12 +282,12 @@ status_t BmMailHeaderView::Unarchive( BMessage* archive, bool deep=true) {
 	if (ret==B_OK && version >= 2)
 		ret = archive->FindBool( MSG_REDIRECT_MODE, &mShowRedirectFields);
 	if (ret==B_OK && version >= 3) {
-		BString fontName = archive->FindString( MSG_FONTNAME);
+		BmString fontName = archive->FindString( MSG_FONTNAME);
 		int16 fontSize = archive->FindInt16( MSG_FONTSIZE);
 		int32 pos = fontName.FindFirst( ",");
 		if (pos != B_ERROR) {
-			BString family( fontName.String(), pos);
-			BString style( fontName.String()+pos+1);
+			BmString family( fontName.String(), pos);
+			BmString style( fontName.String()+pos+1);
 			mFont.SetFamilyAndStyle( family.String(), style.String());
 		} else {
 			mFont = *be_fixed_font;
@@ -344,9 +344,9 @@ void BmMailHeaderView::RemoveFieldViews() {
 		-	
 \*------------------------------------------------------------------------------*/
 float BmMailHeaderView::AddFieldViews() {
-	vector<BString> titles;
-	vector<BString> fields;
-	BString fieldList;
+	vector<BmString> titles;
+	vector<BmString> fields;
+	BmString fieldList;
 	Regexx rx;
 
 	RemoveFieldViews();
@@ -358,7 +358,7 @@ float BmMailHeaderView::AddFieldViews() {
 			fieldList = ThePrefs->GetString( "HeaderListLarge");
 		int numShown = rx.exec( fieldList, "[\\w\\-/]+", Regexx::global);
 		for( int i=0; i<numShown; ++i) {
-			BString field = rx.match[i];
+			BmString field = rx.match[i];
 			field.CapitalizeEachWord();
 			fields.push_back( field);
 			int32 pos = field.FindFirst("/");
@@ -372,10 +372,10 @@ float BmMailHeaderView::AddFieldViews() {
 	if (mDisplayMode != FULL_HEADERS) {
 		// small or large mode, display fields as defined by prefs:
 		for( uint32 l=0; l<fields.size(); ++l) {
-			BString fieldVal;
+			BmString fieldVal;
 			int count = rx.exec( fields[l], "[\\w\\-]+", Regexx::global);
 			for( int i=0; i<count && !fieldVal.Length(); ++i) {
-				BString fieldName = rx.match[i];
+				BmString fieldName = rx.match[i];
 				if (mMailHeader->IsRedirect()) {
 					if (mShowRedirectFields && fieldName == BM_FIELD_FROM)
 						fieldVal = mMailHeader->GetFieldVal( BM_FIELD_RESENT_FROM);
@@ -395,6 +395,17 @@ float BmMailHeaderView::AddFieldViews() {
 						fieldVal = mMailHeader->GetFieldVal( fieldName);
 				} else 
 					fieldVal = mMailHeader->GetFieldVal( fieldName);
+				if (fieldName == BM_FIELD_DATE) {
+					BmString timeMode = ThePrefs->GetString( "TimeModeInHeaderView", "native");
+					if (timeMode.ICompare( "native") != 0) {
+						time_t lt = 0;
+						ParseDateTime( fieldVal, lt);
+						if (timeMode.ICompare( "swatch") == 0)
+							fieldVal = TimeToSwatchString( lt);
+						else if (timeMode.ICompare( "local") == 0)
+							fieldVal = TimeToString( lt);
+					}
+				}
 			}
 			BmMailHeaderFieldView* fv 
 				= new BmMailHeaderFieldView( titles[l], fieldVal, &mFont, FixedWidth());
@@ -405,10 +416,12 @@ float BmMailHeaderView::AddFieldViews() {
 		}
 	} else {
 		// full mode, display complete header:
-		int numLines = mMailHeader->NumLines();
+		int numLines = rx.exec( mMailHeader->HeaderString(), "\\n", 
+										Regexx::newline | Regexx::global);
+
 		const char *start = mMailHeader->HeaderString().String();
 		for( int l=0; l<numLines; l++) {
-			BString field;
+			BmString field;
 			const char* end = strchr( start, '\n');
 			if (!end)
 				break;
@@ -421,9 +434,9 @@ float BmMailHeaderView::AddFieldViews() {
 			}
 			for( ; start<end-1 && (*start==' ' || *start=='\t'); ++start)
 				;
-			BString line( start, end-start-1);
+			BmString line( start, end-start-1);
 			start = end+1;
-			BString utf8Line;
+			BmString utf8Line;
 			ConvertToUTF8( B_ISO1_CONVERSION, line, utf8Line);
 			BmMailHeaderFieldView* fv 
 				= new BmMailHeaderFieldView( field, utf8Line, &mFont, FixedWidth());
@@ -478,8 +491,8 @@ void BmMailHeaderView::MessageReceived( BMessage* msg) {
 				break;
 			}
 			case BM_HEADERVIEW_COPY_HEADER: {
-				BString hdrStr;
-				ConvertLinebreaksToLF( mMailHeader->HeaderString(), hdrStr);
+				BmString hdrStr;
+				hdrStr.ConvertLinebreaksToLF( &mMailHeader->HeaderString());
 				BMessage* clipMsg;
 				if (be_clipboard->Lock()) {
 					be_clipboard->Clear();
@@ -492,8 +505,8 @@ void BmMailHeaderView::MessageReceived( BMessage* msg) {
 				break;
 			}
 			case BM_FONT_SELECTED: {
-				BString family = msg->FindString( BmResources::BM_MSG_FONT_FAMILY);
-				BString style = msg->FindString( BmResources::BM_MSG_FONT_STYLE);
+				BmString family = msg->FindString( BmResources::BM_MSG_FONT_FAMILY);
+				BmString style = msg->FindString( BmResources::BM_MSG_FONT_STYLE);
 				mFont.SetFamilyAndStyle( family.String(), style.String());
 				ShowHeader( mMailHeader.Get());
 				BmMailView* mailView = dynamic_cast< BmMailView*>( Parent());
@@ -516,7 +529,7 @@ void BmMailHeaderView::MessageReceived( BMessage* msg) {
 	}
 	catch( exception &err) {
 		// a problem occurred, we tell the user:
-		BM_SHOWERR( BString("MailHeaderView:\n\t") << err.what());
+		BM_SHOWERR( BmString("MailHeaderView:\n\t") << err.what());
 	}
 }
 

@@ -71,7 +71,7 @@ class BmMailHeaderFieldView : public BView {
 
 public:
 	// c'tors and d'tor:
-	BmMailHeaderFieldView( BString fieldName, BString value, BFont* font, 
+	BmMailHeaderFieldView( BmString fieldName, BmString value, BFont* font, 
 								  float fixedWidth);
 	~BmMailHeaderFieldView();
 
