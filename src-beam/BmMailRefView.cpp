@@ -214,6 +214,8 @@ void BmMailRefView::ShowFolder( BmMailFolder* folder) {
 	try {
 		StopJob();
 		BmMailRefList* refList = folder->MailRefList();
+		if (mPartnerMailView)
+			mPartnerMailView->ShowMail( NULL);
 		StartJob( refList, true);
 		mCurrFolder = folder;
 	}

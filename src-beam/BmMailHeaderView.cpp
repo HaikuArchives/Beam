@@ -85,10 +85,10 @@ void BmMailHeaderView::ShowHeader( BmMailHeader* header) {
 		};
 		height = 6+(TheResources->FontLineHeight( mFont)+3)*numLines;
 		ResizeTo( Bounds().Width(), height);
+		BmMailView* mailView = (BmMailView*)Parent();
+		if (mailView)
+			mailView->SetVerticalOffset( height);
 	}
-	BmMailView* mailView = (BmMailView*)Parent();
-	if (mailView)
-		mailView->SetVerticalOffset( height);
 	Invalidate();
 }
 

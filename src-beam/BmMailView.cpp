@@ -50,7 +50,8 @@ BmMailView* BmMailView::CreateInstance( minimax minmax, BRect frame, bool editab
 		-	
 \*------------------------------------------------------------------------------*/
 BmMailView::BmMailView( minimax minmax, BRect frame, bool editable) 
-	:	inherited( frame, "MailView", B_FOLLOW_NONE, B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE)
+	:	inherited( frame, "MailView", B_FOLLOW_NONE, B_WILL_DRAW | B_NAVIGABLE)
+//	:	inherited( frame, "MailView", B_FOLLOW_NONE, B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE)
 	,	inheritedController( "MailViewController")
 	,	mEditMode( editable)
 	,	mCurrMail( NULL)
@@ -136,6 +137,11 @@ void BmMailView::MessageReceived( BMessage* msg) {
 void BmMailView::ShowMail( BmMailRef* ref) {
 	try {
 		StopJob();
+		if (!ref) {
+			DetachModel();
+			mHeaderView->ShowHeader( NULL);
+			return;
+		}
 		ContainerView()->SetBusy();
 		mCurrMail = new BmMail( ref);
 		StartJob( mCurrMail.Get(), true);
@@ -189,6 +195,7 @@ void BmMailView::JobIsDone( bool completed) {
 		SetText( displayText.String());
 		BM_LOG2( BM_LogMailParse, BString("done, mail is visible"));
 		mHeaderView->ShowHeader( mCurrMail->Header());
+		ScrollTo( 0,0);
 	} else {
 		mHeaderView->ShowHeader( NULL);
 		SetText( "");
@@ -226,7 +233,6 @@ void BmMailView::DetachModel() {
 	inheritedController::DetachModel();
 	ContainerView()->UnsetBusy();
 	SetText( "");
-	mHeaderView->ShowHeader( NULL);
 }
 
 
