@@ -28,7 +28,7 @@ public:
 
 /*------------------------------------------------------------------------------*\
 	BmRefManager
-		-	manages all instances of objects (esp their deletion)
+		-	manages all instances of objects (esp. their deletion)
 \*------------------------------------------------------------------------------*/
 template <class T> class BmRefManager {
 	typedef map< T*, int32> BmRefMap;
