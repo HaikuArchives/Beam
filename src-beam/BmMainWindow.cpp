@@ -66,6 +66,8 @@ BmMainWindow* BmMainWindow::theInstance = NULL;
 const char* const BmMainWindow::MSG_VSPLITTER = "bm:vspl";
 const char* const BmMainWindow::MSG_HSPLITTER = "bm:hspl";
 
+void RebuildLogMenu( BMenu* logMenu);
+
 /*------------------------------------------------------------------------------*\
 	flag and access-function that indicate a user's request-to-stop:
 \*------------------------------------------------------------------------------*/

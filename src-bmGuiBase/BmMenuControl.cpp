@@ -118,7 +118,7 @@ void BmMenuControl::doClearMark( BMenu* menu) {
 	if (!menu)
 		return;
 	BMenuItem* item;
-	while( (item = menu->FindMarked()))
+	while( (item = menu->FindMarked()) != NULL)
 		item->SetMarked( false);
 	int32 count=menu->CountItems();
 	for( int i=0; i<count; ++i) {

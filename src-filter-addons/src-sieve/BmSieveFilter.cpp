@@ -66,6 +66,14 @@ extern "C" {
 #include "BmTextControl.h"
 
 
+extern "C" __declspec(dllexport)
+BmFilterAddon* InstantiateFilter( const BmString& name, 
+											 const BMessage* archive,
+											 const BmString& kind);
+
+extern "C" __declspec(dllexport) 
+BmFilterAddonPrefsView* InstantiateFilterPrefs( minimax minmax, const BmString& kind);
+
 /********************************************************************************\
 	BmSieveFilter
 \********************************************************************************/
@@ -300,9 +308,9 @@ bool BmSieveFilter::SanityCheck( BmString& complaint, BmString& fieldName) {
 	sieve_redirect()
 		-	
 \*------------------------------------------------------------------------------*/
-int BmSieveFilter::sieve_redirect( void* action_context, void* interp_context, 
-			   							  void* script_context, void* message_context, 
-			   							  const char** errmsg) {
+int BmSieveFilter::sieve_redirect( void* /*action_context*/, void* /*interp_context*/, 
+			   							  void* /*script_context*/, void* /*message_context*/, 
+			   							  const char** /*errmsg*/) {
 	return SIEVE_OK;
 }
 
@@ -1124,7 +1132,7 @@ all if the criteria match (AND-operation).");
 that shall be matched.");
 		TheBubbleHelper->SetHelp( mAddrPartControl[i], "This field is only shown if the selected header is an addres-field.\n\
 Here you can choose, which part of the address-field the filter should look at.\n\
-Assuming a FROM header of 'Elliot Smith <esmith@test.org>' the choices are:
+Assuming a FROM header of 'Elliot Smith <esmith@test.org>' the choices are:\n\
    (complete): the complete address-field will be used, i.e. 'Elliot Smith <esmith@test.org>'\n\
    (address): just the address-part (addr-spec) will be used, i.e. 'esmith@test.org'\n\
    (domain): just the domain-part will be used, i.e. 'test.org'\n\

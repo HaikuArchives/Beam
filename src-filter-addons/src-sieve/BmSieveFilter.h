@@ -51,11 +51,6 @@ extern "C" {
 class BmSieveFilter : public BmFilterAddon {
 	typedef BmFilterAddon inherited;
 
-	// archivable components:
-	static const char* const MSG_VERSION;
-	static const char* const MSG_CONTENT;
-	static const int16 nArchiveVersion;
-
 public:
 	BmSieveFilter( const BmString& name, const BMessage* archive);
 	virtual ~BmSieveFilter();
@@ -108,6 +103,11 @@ public:
 
 	// setters:
 	inline void Content( const BmString &s){ mContent = s; }
+
+	// archivable components:
+	static const char* const MSG_VERSION;
+	static const char* const MSG_CONTENT;
+	static const int16 nArchiveVersion;
 
 protected:
 	BmString mName;
