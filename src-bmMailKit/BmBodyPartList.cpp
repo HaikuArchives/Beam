@@ -972,7 +972,7 @@ void BmBodyPart::ConstructBodyForSending( BmStringOBuf &msgText) {
 								<< mCurrentCharset << ").\n\n"
 								<< "Please re-add the attachment with the correct "
 								<< "charset.";
-					throw BM_text_error( errText, textConverter.SrcCount());
+					throw BM_text_error( errText, "", textConverter.SrcCount());
 				}
 			} else {
 				BM_LOG2( BM_LogMailParse, 
