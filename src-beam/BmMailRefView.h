@@ -104,6 +104,7 @@ public:
 										 BHandler* menuControllerHandler,
 										 BmMenuController** inFilterMenuPtr=NULL, 
 										 BmMenuController** outFilterMenuPtr=NULL);
+	void SendNoticesIfNeeded( bool haveSelectedRef);
 
 	// overrides of listview base:
 	void KeyDown(const char *bytes, int32 numBytes);
@@ -130,6 +131,7 @@ private:
 	BmRef<BmMailFolder> mCurrFolder;
 	BmMailView* mPartnerMailView;
 	bool mAvoidInvoke;
+	bool mHaveSelectedRef;
 
 	// Hide copy-constructor and assignment:
 	BmMailRefView( const BmMailRefView&);

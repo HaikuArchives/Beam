@@ -55,6 +55,13 @@
 
 const int16 BmMailRefItem::nFirstTextCol = 3;
 
+struct BmIndexDesc {
+	BmIndexDesc( int32 s)
+		: start( s), end( s) {}
+	int32 start;
+	int32 end;
+};
+
 enum Columns {
 	COL_STATUS_I = 0,
 	COL_ATTACHMENTS_I,
@@ -269,6 +276,7 @@ BmMailRefView::BmMailRefView( minimax minmax, int32 width, int32 height)
 					  false, true, true, true)
 	,	mCurrFolder( NULL)
 	,	mAvoidInvoke( false)
+	,	mHaveSelectedRef( false)
 {
 	int32 flags = 0;
 	SetViewColor( B_TRANSPARENT_COLOR);
@@ -409,12 +417,41 @@ void BmMailRefView::KeyDown(const char *bytes, int32 numBytes) {
 			}
 			case B_DELETE: {
 				BMessage msg(BMM_TRASH);
+				vector< BmIndexDesc> indexVect;
+				vector< BListItem*> itemVect;
 				int32 currIdx;
-				int32 lastIdx=-1;
-				for( int32 i=0; (currIdx=CurrentSelection( i))>=0; ++i)
-					lastIdx=currIdx;
+				int32 index=-1;
+				for( int32 i=0; (currIdx=CurrentSelection( i))>=0; ++i) {
+					if (index==-1 || indexVect[index].end != currIdx-1) {
+						indexVect.push_back( BmIndexDesc( currIdx));
+						index++;
+					} else
+						indexVect[index].end = currIdx;
+					itemVect.push_back( ItemAt( currIdx));
+				}
+				if (indexVect.empty())
+					break;
 				AddSelectedRefsToMsg( &msg, BmApplication::MSG_MAILREF);
-				Select( lastIdx+1);			// select next item that remains in list
+				// now move cursor onwards...
+				if (indexVect.back().end < CountItems()-1)
+					Select( indexVect.back().end+1);		// select next item that remains in list
+				else if (indexVect.front().start > 0)
+					Select( indexVect.front().start-1);		// select last item that remains in list
+				else
+					DeselectAll();
+				// remove view-items immediately because that looks better and it 
+				// avoids double deletions (which cause Tracker to complain):
+				SetDisconnectScrollView( true);
+				for( int32 i=indexVect.size()-1; i>=0; --i) {
+					RemoveItems( indexVect[i].start, 1+indexVect[i].end-indexVect[i].start);
+				}
+				SetDisconnectScrollView( false);
+				UpdateCaption();
+				for( uint32 i=0; i<itemVect.size(); ++i) {
+					mViewModelMap.erase( ((BmListViewItem*)itemVect[i])->ModelItem());
+					delete itemVect[i];
+				}
+				// finally we instruct our app to remove the mail
 				be_app_messenger.SendMessage( &msg);
 				break;
 			}
@@ -644,10 +681,21 @@ void BmMailRefView::SelectionChanged( void) {
 			mPartnerMailView->ShowMail( static_cast< BmMailRef*>( NULL));
 	}
 	
-	BMessage msg(BM_NTFY_MAILREF_SELECTION);
-	msg.AddInt32( MSG_MAILS_SELECTED, numSelected);
-	SendNotices( BM_NTFY_MAILREF_SELECTION, &msg);
+	SendNoticesIfNeeded( numSelected > 0);
 	BM_LOG2( BM_LogRefView, "SelectionChanged() - exit");
+}
+
+/*------------------------------------------------------------------------------*\
+	SendNoticesIfNeeded()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailRefView::SendNoticesIfNeeded( bool haveSelectedRef) {
+	if (haveSelectedRef != mHaveSelectedRef) {
+		mHaveSelectedRef = haveSelectedRef;
+		BMessage msg(BM_NTFY_MAILREF_SELECTION);
+		msg.AddBool( MSG_MAILS_SELECTED, mHaveSelectedRef);
+		SendNotices( BM_NTFY_MAILREF_SELECTION, &msg);
+	}
 }
 
 /*------------------------------------------------------------------------------*\
@@ -704,6 +752,9 @@ void BmMailRefView::AddMailRefMenu( BMenu* menu, BHandler* target,
 		msg->AddString( BmApplication::MSG_STATUS, stats[i]);
 		AddItemToMenu( statusMenu, CreateMenuItem( stats[i], msg, (BmString("MarkAs")+stats[i]).String()), target);
 	}
+	BFont font( *be_plain_font);
+	font.SetSize( 10);
+	statusMenu->SetFont( &font);
 	menu->AddItem( statusMenu);
 	menu->AddSeparatorItem();
 
@@ -712,6 +763,7 @@ void BmMailRefView::AddMailRefMenu( BMenu* menu, BHandler* target,
 	BmMenuController* inFilterMenu
 		= new BmMenuController( MENU_INBOUND_FILTER, "InboundFilterController",
 										inMsgTempl, menuControllerHandler);
+	inFilterMenu->SetFont( &font);
 	menu->AddItem( inFilterMenu);
 	if (inFilterMenuPtr)
 		*inFilterMenuPtr = inFilterMenu;
@@ -724,6 +776,7 @@ void BmMailRefView::AddMailRefMenu( BMenu* menu, BHandler* target,
 	BmMenuController* outFilterMenu
 		= new BmMenuController( MENU_OUTBOUND_FILTER, "OutboundFilterController",
 										outMsgTempl, menuControllerHandler);
+	outFilterMenu->SetFont( &font);
 	menu->AddItem( outFilterMenu);
 	if (outFilterMenuPtr)
 		*outFilterMenuPtr = outFilterMenu;
@@ -746,6 +799,10 @@ void BmMailRefView::ShowMenu( BPoint point) {
 		return; 
 
 	BPopUpMenu* theMenu = new BPopUpMenu( "MailFolderViewMenu", false, false);
+
+	BFont font( *be_plain_font);
+	font.SetSize( 10);
+	theMenu->SetFont( &font);
 
 	AddMailRefMenu( theMenu, Window(), Window());
 
