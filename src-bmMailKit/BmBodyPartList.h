@@ -62,7 +62,8 @@ public:
 
 	// operators:
 	operator BmString() const;
-							// returns contentfield completely formatted (ready to be sent)
+							// returns contentfield completely formatted 
+							// (ready to be sent)
 
 private:
 	BmString mValue;
@@ -88,9 +89,12 @@ class BmBodyPart : public BmListModelItem {
 
 public:
 	// c'tors and d'tor:
-	BmBodyPart( BmBodyPartList* model, const BmString& msgtext, int32 s, int32 l, 
+	BmBodyPart( BmBodyPartList* model, const BmString& msgtext, int32 s, int32 l,
+					const BmString& defaultCharset,
 					BmRef<BmMailHeader> mHeader=NULL, BmListModelItem* parent=NULL);
-	BmBodyPart( BmBodyPartList* model, const entry_ref* ref, BmListModelItem* parent=NULL);
+	BmBodyPart( BmBodyPartList* model, const entry_ref* ref, 
+					const BmString& defaultCharset,
+					BmListModelItem* parent=NULL);
 	BmBodyPart( const BmBodyPart& bodyPart);
 	~BmBodyPart();
 
@@ -98,7 +102,9 @@ public:
 	static BmString NextObjectID();
 
 	// native methods:
-	void SetTo( const BmString& msgtext, int32 s, int32 l, BmRef<BmMailHeader> mHeader=NULL);
+	void SetTo( const BmString& msgtext, int32 s, int32 l, 
+					const BmString& defaultCharset,
+					BmRef<BmMailHeader> mHeader=NULL);
 	void SetBodyText( const BmString& utf8Text, const BmString& charset);
 	bool IsText() const;
 	bool IsPlainText() const;
@@ -119,34 +125,52 @@ public:
 	int16 ArchiveVersion() const			{ return nArchiveVersion; }
 
 	// getters:
-	inline bool IsMultiPart() const				{ return mIsMultiPart; }
+	inline bool IsMultiPart() const		{ return mIsMultiPart; }
 	const BmString& DecodedData() const;
-	inline int32 DecodedLength() const			{ return DecodedData().Length(); }
-	inline status_t InitCheck() const			{ return mInitCheck; }
+	inline int32 DecodedLength() const	{ return DecodedData().Length(); }
+	inline status_t InitCheck() const	{ return mInitCheck; }
 
-	inline const BmString ContentTypeAsString() const	{ return mContentType; }
-	inline const BmString ContentDispositionAsString() const	{ return mContentDisposition; }
+	inline const BmString ContentTypeAsString() const	
+													{ return mContentType; }
+	inline const BmString ContentDispositionAsString() const	
+													{ return mContentDisposition; }
 
-	inline const BmString& Charset() const		{ return mContentType.Param( "charset"); }
-	inline const BmString& MimeType() const		{ return mContentType.Value(); }
-	inline const BmString& Disposition() const	{ return mContentDisposition.Value(); }
-	inline const BmString& FileName() const		{ return mFileName; }
-	inline const BmString& TransferEncoding() const	{ return mContentTransferEncoding; }
-	inline const BmString& ID() const				{ return mContentId; }
-	inline const BmString& Description() const	{ return mContentDescription; }
-	inline const BmString& Language() const		{ return mContentLanguage; }
-	inline const BmString& TypeParam( BmString key) const		{ return mContentType.Param( key); }
-	inline const BmString& DispositionParam( BmString key) const	{ return mContentDisposition.Param( key); }
-	inline int32 BodyLength() const				{ return mBodyLength; }
-	inline const BmString& SuggestedCharset() const		{ return mSuggestedCharset; }
-	inline const BmString& CurrentCharset() const		{ return mCurrentCharset; }
-	inline bool HadErrorDuringConversion() const			{ return mHadErrorDuringConversion; }
+	inline const BmString& MimeType() const		
+													{ return mContentType.Value(); }
+	inline const BmString& Disposition() const	
+													{ return mContentDisposition.Value(); }
+	inline const BmString& FileName() const		
+													{ return mFileName; }
+	inline const BmString& TransferEncoding() const	
+													{ return mContentTransferEncoding; }
+	inline const BmString& ID() const	
+													{ return mContentId; }
+	inline const BmString& Description() const	
+													{ return mContentDescription; }
+	inline const BmString& Language() const		
+													{ return mContentLanguage; }
+	inline const BmString& TypeParam( BmString key) const		
+													{ return mContentType.Param( key); }
+	inline const BmString& DispositionParam( BmString key) const	
+													{ return mContentDisposition
+																	.Param( key); }
+	inline int32 BodyLength() const		{ return mBodyLength; }
+	inline const BmString& SuggestedCharset() const		
+													{ return mSuggestedCharset; }
+	inline const BmString& CurrentCharset() const		
+													{ return mCurrentCharset; }
+	inline bool HadErrorDuringConversion() const			
+													{ return mHadErrorDuringConversion; }
 
-	inline const entry_ref& EntryRef() const	{ return mEntryRef; }
+	inline const entry_ref& EntryRef() const	
+													{ return mEntryRef; }
 
-	inline const bool Is7Bit() const				{ return mContentTransferEncoding.ICompare( "7bit") == 0; }
-	inline const bool Is8Bit() const				{ return mContentTransferEncoding.ICompare( "8bit") == 0; }
-	inline const bool IsBinary() const			{ return mContentTransferEncoding.ICompare( "binary") == 0; }
+	inline const bool Is7Bit() const		{ return mContentTransferEncoding
+																	.ICompare( "7bit") == 0; }
+	inline const bool Is8Bit() const		{ return mContentTransferEncoding
+																	.ICompare( "8bit") == 0; }
+	inline const bool IsBinary() const	{ return mContentTransferEncoding
+																	.ICompare( "binary") == 0; }
 
 	static int32 nBoundaryCounter;
 
@@ -198,7 +222,8 @@ public:
 	// native methods:
 	void ParseMail();
 	bool HasAttachments() const;
-	void AddAttachmentFromRef( const entry_ref* ref);
+	void AddAttachmentFromRef( const entry_ref* ref,
+										const BmString& defaultCharset);
 	void PruneUnneededMultiParts();
 	int32 EstimateEncodedSize();
 	bool ConstructBodyForSending( BmStringOBuf& msgText);
@@ -213,14 +238,18 @@ public:
 
 	// getters:
 	inline status_t InitCheck()			{ return mInitCheck; }
-	inline BmRef<BmBodyPart> EditableTextBody() const { return mEditableTextBody.Get(); }
-	inline const BmString& Signature() const	{ return mSignature; }
+	inline BmRef<BmBodyPart> EditableTextBody() const 
+													{ return mEditableTextBody.Get(); }
+	inline const BmString& Signature() const	
+													{ return mSignature; }
 	inline BmMail* Mail() const			{ return mMail; }
 	bool IsMultiPart() const;
 
 	// setters:
-	inline void EditableTextBody( BmBodyPart* b) { mEditableTextBody = b; }
-	inline void Signature( const BmString& s)		{ mSignature = s; }
+	inline void EditableTextBody( BmBodyPart* b) 
+													{ mEditableTextBody = b; }
+	inline void Signature( const BmString& s)		
+													{ mSignature = s; }
 
 private:
 	BmMail* mMail;

@@ -74,12 +74,14 @@ BmContentField::BmContentField( const BmString cfString) {
 void BmContentField::SetTo( const BmString cfString) {
 	Regexx rx;
 
-	if (rx.exec( cfString, "^\\s*([^\\s;]+)\\s*([;\\s].*)?\\s*$", Regexx::newline)) {
+	if (rx.exec( cfString, "^\\s*([^\\s;]+)\\s*([;\\s].*)?\\s*$", 
+					 Regexx::newline)) {
 		// extract value:
 		if (rx.match[0].atom.size() > 0) {
 			if (cfString[rx.match[0].atom[0].start()] == '"') {
 				// skip quotes during extraction:
-				cfString.CopyInto( mValue, rx.match[0].atom[0].start()+1, rx.match[0].atom[0].Length()-2);
+				cfString.CopyInto( mValue, rx.match[0].atom[0].start()+1, 
+										 rx.match[0].atom[0].Length()-2);
 			} else {
 				mValue = rx.match[0].atom[0];
 			}
@@ -90,7 +92,9 @@ void BmContentField::SetTo( const BmString cfString) {
 		BmString params;
 		if (rx.match[0].atom.size() > 1)
 			params = rx.match[0].atom[1];
-		if (rx.exec( params, ";\\s*(\\w+)\\s*=\\s*((?:\\\"[^\"]+\\\"?)|(?:[^;\\s]+))", Regexx::global)) {
+		if (rx.exec( params, 
+						 ";\\s*(\\w+)\\s*=\\s*((?:\\\"[^\"]+\\\"?)|(?:[^;\\s]+))", 
+						 Regexx::global)) {
 			for( uint32 i=0; i<rx.match.size(); ++i) {
 				BmString key;
 				BmString val;
@@ -99,21 +103,26 @@ void BmContentField::SetTo( const BmString cfString) {
 					if (rx.match[0].atom.size() > 1) {
 						if (params[rx.match[i].atom[1].start()] == '"') {
 							// skip quotes during extraction:
-							int skip = params[rx.match[i].atom[1].start()+rx.match[i].atom[1].Length()-1] == '"'
+							int skip = params[rx.match[i].atom[1].start()
+													+rx.match[i].atom[1].Length()-1] == '"'
 											? 2 : 1;
-							params.CopyInto( val, rx.match[i].atom[1].start()+1, rx.match[i].atom[1].Length()-skip);
+							params.CopyInto( val, rx.match[i].atom[1].start()+1, 
+												  rx.match[i].atom[1].Length()-skip);
 						} else {
 							val = rx.match[i].atom[1];
 						}
 					}
 					key.ToLower();
 					mParams[key] = val;
-					BM_LOG2( BM_LogMailParse, BmString("...found param: ")<<key<<" with value: "<<val);
+					BM_LOG2( BM_LogMailParse, 
+								BmString("...found param: ")<<key
+									<<" with value: "<<val);
 				}
 			}
 		}
 	} else {
-		BM_SHOWERR( BmString("field-value <")<<cfString<<"> has unknown structure!");
+		BM_SHOWERR( BmString("field-value <")<<cfString
+							<<"> has unknown structure!");
 		return;
 	}
 	mInitCheck = B_OK;
@@ -188,28 +197,38 @@ BmString BmBodyPart::NextObjectID() {
 	BmBodyPart( msgtext, start, length, contentType)
 	-	c'tor
 \*------------------------------------------------------------------------------*/
-BmBodyPart::BmBodyPart( BmBodyPartList* model, const BmString& msgtext, int32 start, 
-								int32 length, BmRef<BmMailHeader> header, BmListModelItem* parent)
+BmBodyPart::BmBodyPart( BmBodyPartList* model, const BmString& msgtext, 
+								int32 start, int32 length, 
+								const BmString& defaultCharset,
+								BmRef<BmMailHeader> header, BmListModelItem* parent)
 	:	inherited( BmString("")<<NextObjectID(), model, parent)
 	,	mIsMultiPart( false)
 	,	mInitCheck( B_NO_INIT)
 	,	mEntryRef()
-	// info about mailtext will be overwritten in SetTo(), but we initialize with safe values:
+	// info about mailtext will be overwritten in SetTo(), but we initialize 
+	// with safe values:
 	,	mStartInRawText( 0)
 	,	mBodyLength( 0)
 	,	mHaveDecodedData( false)
-	,	mSuggestedCharset( ThePrefs->GetString( "DefaultCharset"))
-	,	mCurrentCharset( ThePrefs->GetString( "DefaultCharset"))
+	,	mSuggestedCharset( defaultCharset)
+	,	mCurrentCharset( defaultCharset)
 	, 	mHadErrorDuringConversion( false)
 {
-	SetTo( msgtext, start, length, header);
+	if (!mSuggestedCharset.Length())
+		mCurrentCharset = mSuggestedCharset 
+			= ThePrefs->GetBool( "ImportExportTextAsUtf8", true)
+				? "utf-8"
+				: ThePrefs->GetString( "DefaultCharset");
+	SetTo( msgtext, start, length, defaultCharset, header);
 }
 
 /*------------------------------------------------------------------------------*\
 	BmBodyPart()
 	-	c'tor
 \*------------------------------------------------------------------------------*/
-BmBodyPart::BmBodyPart( BmBodyPartList* model, const entry_ref* ref, BmListModelItem* parent)
+BmBodyPart::BmBodyPart( BmBodyPartList* model, const entry_ref* ref, 
+								const BmString& defaultCharset,
+								BmListModelItem* parent)
 	:	inherited( BmString("")<<NextObjectID(), model, parent)
 	,	mIsMultiPart( false)
 	,	mInitCheck( B_NO_INIT)
@@ -218,34 +237,44 @@ BmBodyPart::BmBodyPart( BmBodyPartList* model, const entry_ref* ref, BmListModel
 	// we can't store info about mailtext, since there is no mailtext available:
 	,	mBodyLength( 0)
 	,	mHaveDecodedData( false)
-	,	mSuggestedCharset( ThePrefs->GetString( "DefaultCharset"))
-	,	mCurrentCharset( ThePrefs->GetString( "DefaultCharset"))
+	,	mSuggestedCharset( defaultCharset)
+	,	mCurrentCharset( defaultCharset)
 	, 	mHadErrorDuringConversion( false)
 {
+	if (!mSuggestedCharset.Length())
+		mCurrentCharset = mSuggestedCharset 
+			= ThePrefs->GetBool( "ImportExportTextAsUtf8", true)
+				? "utf-8"
+				: ThePrefs->GetString( "DefaultCharset");
 	try {
 		status_t err;
 		BFile file;
 		off_t size;
 		(err=file.SetTo( ref, B_READ_ONLY)) == B_OK		
-														|| BM_THROW_RUNTIME( BmString("Couldn't create file for <") << ref->name << "> \n\nError:" << strerror(err));
+													|| BM_THROW_RUNTIME( BmString("Couldn't create file for <") << ref->name << "> \n\nError:" << strerror(err));
 		(err=file.GetSize( &size)) == B_OK
-														|| BM_THROW_RUNTIME( BmString("Couldn't get file-size for <") << ref->name << "> \n\nError:" << strerror(err));
+													|| BM_THROW_RUNTIME( BmString("Couldn't get file-size for <") << ref->name << "> \n\nError:" << strerror(err));
 		BmString mimetype = DetermineMimeType( ref, false);
 		if (mimetype.ICompare("text/x-email")==0) {
 			// convert beos-own mail-mimetype into correct message/rfc822:
 			mimetype = "message/rfc822";
 		}
 		mFileName = ref->name;
-		mContentDisposition.SetTo( BmString( "attachment; filename=\"")<<ref->name<<'"');
+		mContentDisposition.SetTo( BmString( "attachment; filename=\"")
+												<<ref->name<<'"');
 
-		if (mimetype.ICompare( "text/", 5)==0 && !ThePrefs->GetBool( "ImportTextAsUtf8", false)) {
+		if (mimetype.ICompare( "text/", 5)==0 
+		&& !ThePrefs->GetBool( "ImportExportTextAsUtf8", true)) {
 			BmString nativeString;
 			char* buf = nativeString.LockBuffer( size);
 			file.Read( buf, size);
 			buf[size] = '\0';
 			nativeString.UnlockBuffer( size);
 			if (!IsCompatibleWithText( nativeString)) {
-				BM_SHOWERR( "The attachment has been advertised as text, although it seems to contain binary data.\n\nThe attachment will be added as generic file, just to be safe.");
+				BM_SHOWERR( "The attachment has been advertised as text, "
+								"although it seems to contain binary data.\n\n"
+								"The attachment will be added as generic file, "
+								"just to be safe.");
 				mimetype="application/octet-stream";
 				file.Seek( 0, SEEK_SET);
 			} else {
@@ -264,17 +293,19 @@ BmBodyPart::BmBodyPart( BmBodyPartList* model, const entry_ref* ref, BmListModel
 
 		mContentType.SetTo( mimetype<<"; name=\"" << ref->name << '"');
 		if (mimetype.ICompare( "text/", 5) == 0)
-			mContentTransferEncoding = NeedsEncoding( mDecodedData) 
-													? ThePrefs->GetBool( "Allow8BitMime", false) 
-														? "8bit"
-														: "quoted-printable"
-													: "7bit";
+			mContentTransferEncoding 
+				= NeedsEncoding( mDecodedData) 
+					? ThePrefs->GetBool( "Allow8BitMime", false) 
+						? "8bit"
+						: "quoted-printable"
+					: "7bit";
 		else if (mimetype.ICompare( "message/", 8) == 0)
-			mContentTransferEncoding = NeedsEncoding( mDecodedData) 
-													? ThePrefs->GetBool( "Allow8BitMime", false) 
-														? "8bit"
-														: "7bit"
-													: "7bit";
+			mContentTransferEncoding 
+				= NeedsEncoding( mDecodedData) 
+					? ThePrefs->GetBool( "Allow8BitMime", false) 
+						? "8bit"
+						: "7bit"
+					: "7bit";
 		else
 			mContentTransferEncoding = "base64";
 
@@ -335,8 +366,11 @@ BmBodyPart::~BmBodyPart() {
 	-	
 \*------------------------------------------------------------------------------*/
 void BmBodyPart::SetTo( const BmString& msgtext, int32 start, int32 length, 
+								const BmString& defaultCharset,
 								BmRef<BmMailHeader> header) {
-	BM_LOG2( BM_LogMailParse, BmString("BodyPart::SetTo() start: ") << start << " len: " << length);
+	BM_LOG2( BM_LogMailParse, 
+				BmString("BodyPart::SetTo() start: ") << start 
+					<< " len: " << length);
 	BmString type;
 	BmString transferEncoding;
 	BmString id;
@@ -356,7 +390,8 @@ void BmBodyPart::SetTo( const BmString& msgtext, int32 start, int32 length,
 		if (pos == B_ERROR) {
 			BmString str;
 			msgtext.CopyInto( str, start, 256);
-			BM_SHOWERR( BmString("Couldn't determine borderline between MIME-header and body in string <")<<str<<">.");
+			BM_SHOWERR( BmString("Couldn't determine borderline between "
+										"MIME-header and body in string <")<<str<<">.");
 			return;
 		}
 		BM_LOG2( BM_LogMailParse, "copying headerText...");
@@ -394,33 +429,46 @@ void BmBodyPart::SetTo( const BmString& msgtext, int32 start, int32 length,
 	BM_LOG2( BM_LogMailParse, "parsing Content-Transfer-Encoding");
 	transferEncoding = header->GetFieldVal( BM_FIELD_CONTENT_TRANSFER_ENCODING);
 	transferEncoding.RemoveSet( TheResources->WHITESPACE);
-							// some broken (webmail)-clients produce stuff like "7 bit"...
+							// some broken (webmail)-clients produce stuff like
+							// "7 bit"...
 	transferEncoding.IReplaceAll( "bits", "bit");
 							// others use '8bits' instead of '8bit'...
 	transferEncoding.IReplaceAll( "7-bit", "7bit");
 	transferEncoding.IReplaceAll( "8-bit", "8bit");
-							// other broken (webmail)-clients produce stuff like "7-bit" (argh)
+							// other broken (webmail)-clients produce stuff like 
+							// "7-bit" (argh)
 	if (!transferEncoding.Length())
 		transferEncoding = "7bit";
 	mContentTransferEncoding = transferEncoding;
-	BM_LOG2( BM_LogMailParse, BmString("...found value: ")<<mContentTransferEncoding);
+	BM_LOG2( BM_LogMailParse, 
+				BmString("...found value: ")<<mContentTransferEncoding);
 
-	mCurrentCharset = mSuggestedCharset = Charset();
+	mCurrentCharset = mSuggestedCharset = mContentType.Param( "charset"); 
 	if (!mCurrentCharset.Length())
-		mCurrentCharset = mSuggestedCharset = ThePrefs->GetString( "DefaultCharset");
+		mCurrentCharset = mSuggestedCharset 
+			= defaultCharset;
+	if (!mCurrentCharset.Length())
+		mCurrentCharset = mSuggestedCharset 
+			= ThePrefs->GetBool( "ImportExportTextAsUtf8", true)
+				? "utf-8"
+				: ThePrefs->GetString( "DefaultCharset");
 
 	// MIME-Decoding:
 	if (mIsMultiPart) {
-		// decoding is unneccessary for multiparts, since they are never handled on 
-		// their own (they are split into their subparts instead)
+		// decoding is unneccessary for multiparts, since they are never 
+		// handled on their own (they are split into their subparts instead)
 		mHaveDecodedData = true;
 	} else {
 		// decode body:
 		if (IsText() && body->EditableTextBody() == this) {
-			// text data is decoded and then converted from it's native charset into utf8:
-			BM_LOG2( BM_LogMailParse, BmString("decoding text-part of mail (length ")<<mBodyLength<<" bytes) ...");
+			// text data is decoded and then converted from it's native charset
+			// into utf8:
+			BM_LOG2( BM_LogMailParse, 
+						BmString("decoding text-part of mail (length ")
+							<<mBodyLength<<" bytes) ...");
 			BmStringIBuf text( msgtext.String()+mStartInRawText, mBodyLength);
-			BmMemFilterRef decoder = FindDecoderFor( &text, mContentTransferEncoding);
+			BmMemFilterRef decoder 
+				= FindDecoderFor( &text, mContentTransferEncoding);
 			BmStringOBuf tempIO( mBodyLength);
 			BmUtf8Encoder textConverter( decoder.get(), mSuggestedCharset);
 			tempIO.Write( &textConverter);
@@ -431,9 +479,11 @@ void BmBodyPart::SetTo( const BmString& msgtext, int32 start, int32 length,
 			// split off signature, if any:
 			Regexx rx;
 			BmString sigRX = ThePrefs->GetString( "SignatureRX");
-			int32 count = rx.exec( mDecodedData, sigRX, Regexx::newline|Regexx::global);
+			int32 count 
+				= rx.exec( mDecodedData, sigRX, Regexx::newline|Regexx::global);
 			if (count>0) {
-				BmString sigStr( mDecodedData.String()+rx.match[count-1].start()+rx.match[count-1].Length());
+				BmString sigStr( mDecodedData.String()+rx.match[count-1].start()
+											+rx.match[count-1].Length());
 				mDecodedData.Truncate( rx.match[count-1].start());
 				body->Signature( sigStr);
 			}
@@ -456,7 +506,8 @@ void BmBodyPart::SetTo( const BmString& msgtext, int32 start, int32 length,
 	// description
 	BM_LOG2( BM_LogMailParse, "parsing Content-Description");
 	mContentDescription = header->GetFieldVal( BM_FIELD_CONTENT_DESCRIPTION);
-	BM_LOG2( BM_LogMailParse, BmString("...found value: ")<<mContentDescription);
+	BM_LOG2( BM_LogMailParse, 
+				BmString("...found value: ")<<mContentDescription);
 	// Language
 	BM_LOG2( BM_LogMailParse, "parsing Content-Language");
 	mContentLanguage = header->GetFieldVal( BM_FIELD_CONTENT_LANGUAGE);
@@ -477,9 +528,11 @@ void BmBodyPart::SetTo( const BmString& msgtext, int32 start, int32 length,
 			BM_SHOWERR( "No boundary specified within multipart-message!");
 			return;
 		}
-		char* startPos = strstr( msgtext.String()+mStartInRawText, boundary.String());
+		char* startPos 
+			= strstr( msgtext.String()+mStartInRawText, boundary.String());
 		if (!startPos) {
-			BM_SHOWERR( BmString("Boundary <")<<boundary<<"> not found within message.");
+			BM_SHOWERR( BmString("Boundary <")<<boundary
+								<<"> not found within message.");
 			return;
 		}
 		BmString checkStr;
@@ -487,20 +540,29 @@ void BmBodyPart::SetTo( const BmString& msgtext, int32 start, int32 length,
 		bool isLastBoundary = false;
 		Regexx rx;
 		char* nPos = startPos;
+		int32 foundBoundaryLen;
 		while( !isLastBoundary) {
-			int32 foundBoundaryLen = boundary.Length();
 			while( 1) {
-				// in this loop we determine the next occurence of the current boundary,
-				// being careful not to accept boundaries that do not start at the beginning
-				// of a line or which are followed by nonspace-characters.
-				if (*(nPos+boundary.Length())=='-' && *(nPos+boundary.Length()+1)=='-') {
-					// first boundary has stop-marks (meaning the mimepart is empty...), we skip
-					foundBoundaryLen = boundary.Length()+2;
-				}
+				// in this loop we determine the next occurence of the current 
+				// boundary, being careful not to accept boundaries that do not
+				// start at the beginning of a line or which are followed by 
+				// nonspace-characters.
+				foundBoundaryLen = boundary.Length();
+				// boundary may have stop-marks (meaning this should be the last
+				// sub-mimepart), we skip those:
+				if (*(nPos+foundBoundaryLen)=='-' 
+				&& *(nPos+foundBoundaryLen+1)=='-')
+					foundBoundaryLen+=2;
+				// now skip over \r\n if present:
+				if (*(nPos+foundBoundaryLen)=='\r')
+					foundBoundaryLen++;
+				if (*(nPos+foundBoundaryLen)=='\n')
+					foundBoundaryLen++;
 				BM_LOG2( BM_LogMailParse, "finding next boundary...");
 				nPos = strstr( nPos+foundBoundaryLen, boundary.String());
 				if (!nPos) {
-					BM_LOG2( BM_LogMailParse, "...done (no further boundary found)");
+					BM_LOG2( BM_LogMailParse, 
+								"...done (no further boundary found)");
 					break;
 				}
 				BM_LOG2( BM_LogMailParse, "...done (found next boundary)");
@@ -510,7 +572,8 @@ void BmBodyPart::SetTo( const BmString& msgtext, int32 start, int32 length,
 					BM_LOG2( BM_LogMailParse, "...done (init of boundary check)");
 					if (endOfLine) {
 						int32 len=endOfLine-nPos;
-						BM_LOG2( BM_LogMailParse, BmString("setting checkStr to length ") << len);
+						BM_LOG2( BM_LogMailParse, 
+									BmString("setting checkStr to length ") << len);
 						checkStr.SetTo( nPos, len);
 					} else {
 						BM_LOG2( BM_LogMailParse, "setting checkStr to remainder");
@@ -523,8 +586,8 @@ void BmBodyPart::SetTo( const BmString& msgtext, int32 start, int32 length,
 						isLastBoundary = true;
 						break;
 					}
-					// checking if found boundary starts line and is just followed by whitespace
-					// (if anything at all):
+					// checking if found boundary starts line and is just 
+					// followed by whitespace (if anything at all):
 					BM_LOG2( BM_LogMailParse, "...boundary check(2)...");
 					if (rx.exec( checkStr, "^(.+?)\\s*$", Regexx::newline)
 					&& boundary.ICompare( rx.match[0].atom[0])==0)
@@ -534,11 +597,14 @@ void BmBodyPart::SetTo( const BmString& msgtext, int32 start, int32 length,
 			}
 			if (nPos) {
 				int32 startOffs = startPos-msgtext.String()+foundBoundaryLen;
-				BM_LOG2( BM_LogMailParse, "Subpart of multipart found will be added to array");
-				BmBodyPart *subPart = new BmBodyPart( (BmBodyPartList*)ListModel().Get(), 
-																  msgtext, startOffs, 
-																  nPos-msgtext.String()-startOffs,
-																  NULL, this);
+				BM_LOG2( BM_LogMailParse, 
+							"Subpart of multipart found will be added to array");
+				int32 len = max((long)0,nPos-msgtext.String()-startOffs-2);
+							// -2 in order to leave out \r\n before boundary
+				BmBodyPart *subPart 
+					= new BmBodyPart( (BmBodyPartList*)ListModel().Get(), 
+										   msgtext, startOffs, len,
+											defaultCharset, NULL, this);
 				BmAutolockCheckGlobal lock( ListModel()->ModelLocker());
 				lock.IsLocked()	 			|| BM_THROW_RUNTIME( "BmBodyPart::SetTo(): Unable to get lock");
 				AddSubItem( subPart);
@@ -546,15 +612,17 @@ void BmBodyPart::SetTo( const BmString& msgtext, int32 start, int32 length,
 			} else {
 				int32 startOffs = startPos-msgtext.String()+foundBoundaryLen;
 				if (start+length > startOffs) {
-					// the final boundary is missing, we include the remaining part as a 
-					// sub-bodypart anyway:
-					int32 nlPos=msgtext.FindFirst( "\r\n", startOffs+2);
+					// the final boundary is missing, we include the remaining 
+					// part as a sub-bodypart anyway:
+					int32 nlPos=msgtext.FindFirst( "\r\n", startOffs);
 					if (nlPos!=B_ERROR && nlPos<start+length) {
-						BM_LOG2( BM_LogMailParse, "Subpart of multipart found will be added to array");
-						BmBodyPart *subPart = new BmBodyPart( (BmBodyPartList*)ListModel().Get(), 
-																		  msgtext, startOffs, 
-																		  start+length-startOffs, 
-																		  NULL, this);
+						BM_LOG2( BM_LogMailParse, 
+									"Subpart of multipart found will be added to array");
+						BmBodyPart *subPart 
+							= new BmBodyPart( (BmBodyPartList*)ListModel().Get(), 
+												   msgtext, startOffs, 
+													start+length-startOffs, 
+													defaultCharset, NULL, this);
 						BmAutolockCheckGlobal lock( ListModel()->ModelLocker());
 						lock.IsLocked()	 	|| BM_THROW_RUNTIME( "BmBodyPart::SetTo(): Unable to get lock");
 						AddSubItem( subPart);
@@ -599,22 +667,31 @@ const BmString& BmBodyPart::DecodedData() const {
 	if (!mHaveDecodedData || mCurrentCharset != mSuggestedCharset) {
 		BmRef<BmListModel> listModel( ListModel());
 		if (listModel) {
-			BmBodyPartList* bodyPartList = dynamic_cast< BmBodyPartList*>( listModel.Get());
+			BmBodyPartList* bodyPartList 
+				= dynamic_cast< BmBodyPartList*>( listModel.Get());
 			const BmMail* mail;
 			if (bodyPartList && (mail=bodyPartList->Mail())!=NULL) {
-				BmStringIBuf text( mail->RawText().String()+mStartInRawText, mBodyLength);
-				BmMemFilterRef decoder = FindDecoderFor( &text, mContentTransferEncoding);
+BmString s(mail->RawText().String()+mStartInRawText, mBodyLength);
+				BmStringIBuf text( mail->RawText().String()+mStartInRawText, 
+										 mBodyLength);
+				BmMemFilterRef decoder 
+					= FindDecoderFor( &text, mContentTransferEncoding);
 				BmStringOBuf tempIO( mBodyLength, 1.2);
 				if (IsText()) {
-					// text data is decoded and then converted from it's native charset into utf8:
-					BM_LOG2( BM_LogMailParse, BmString( "(re-)converting bodytext of ") << mBodyLength << " bytes...");
+					// text data is decoded and then converted from it's native
+					// charset into utf8:
+					BM_LOG2( BM_LogMailParse, 
+								BmString( "(re-)converting bodytext of ") 
+									<< mBodyLength << " bytes...");
 					BmUtf8Encoder textConverter( decoder.get(), mSuggestedCharset);
 					tempIO.Write( &textConverter);
 					mCurrentCharset = mSuggestedCharset;
 					mHadErrorDuringConversion = 
 						textConverter.HadToDiscardChars() || textConverter.HadError();
 				} else {
-					BM_LOG2( BM_LogMailParse, BmString( "decoding bodytext of ") << mBodyLength << " bytes...");
+					BM_LOG2( BM_LogMailParse, 
+								BmString( "decoding bodytext of ") << mBodyLength 
+									<< " bytes...");
 					tempIO.Write( decoder.get());
 					mHadErrorDuringConversion = false;
 				}
@@ -646,9 +723,9 @@ bool BmBodyPart::ContainsRef( const entry_ref& ref) const {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmBodyPart::WriteToFile( BFile& file) {
-	if (IsText() && !ThePrefs->GetBool( "ExportTextAsUtf8", false)) {
+	if (IsText() && !ThePrefs->GetBool( "ImportExportTextAsUtf8", true)) {
 		BmString convertedString;
-		ConvertFromUTF8( Charset(), DecodedData(), convertedString);
+		ConvertFromUTF8( mSuggestedCharset, DecodedData(), convertedString);
 		file.Write( convertedString.String(), convertedString.Length());
 	} else
 		file.Write( DecodedData().String(), DecodedLength());
@@ -672,9 +749,12 @@ entry_ref BmBodyPart::WriteToTempFile( BmString filename) {
 		BFile tempFile;
 		status_t err;
 		tempDir.SetTo( tempPath.Path());
-		if ((err = tempFile.SetTo( &tempDir, filename.String(), 
-										  B_WRITE_ONLY | B_CREATE_FILE | B_ERASE_FILE)) != B_OK) {
-			BM_LOGERR( BmString("Could not create temporary file\n\t<") << filename << ">\n\n Result: " << strerror(err));
+		if ((err = tempFile.SetTo( 
+			&tempDir, filename.String(), 
+			B_WRITE_ONLY | B_CREATE_FILE | B_ERASE_FILE)
+		) != B_OK) {
+			BM_SHOWERR( BmString("Could not create temporary file\n\t<") 
+								<< filename << ">\n\n Result: " << strerror(err));
 			return eref;
 		}
 		TheTempFileList.AddFile( BmString(tempPath.Path())<<"/"<<filename);
@@ -699,20 +779,15 @@ void BmBodyPart::SaveAs( const entry_ref& destDirRef, BmString filename) {
 	status_t err;
 	if ((err=destDir.SetTo( &destDirRef)) == B_OK) {
 		BFile destFile;
-		BNodeInfo fileInfo;
-		if ((err = destFile.SetTo( &destDir, filename.String(), 
-										  B_WRITE_ONLY | B_CREATE_FILE | B_ERASE_FILE)) != B_OK) {
-			BM_SHOWERR( BmString("Could not save attachment\n\t<") << filename << ">\n\n Result: " << strerror(err));
+		if ((err = destFile.SetTo( 
+			&destDir, filename.String(), 
+			B_WRITE_ONLY | B_CREATE_FILE | B_ERASE_FILE)
+		) != B_OK) {
+			BM_SHOWERR( BmString("Could not save attachment\n\t<") 
+								<< filename << ">\n\n Result: " << strerror(err));
 			return;
 		}
-		if (IsText() && !ThePrefs->GetBool( "ExportTextAsUtf8", false)) {
-			BmString convertedString;
-			ConvertFromUTF8( Charset(), DecodedData(), convertedString);
-			destFile.Write( convertedString.String(), convertedString.Length());
-		} else
-			destFile.Write( DecodedData().String(), DecodedLength());
-		fileInfo.SetTo( &destFile);
-		fileInfo.SetType( MimeType().String());
+		WriteToFile( destFile);
 		BEntry entry;
 		destDir.GetEntry( &entry);
 		BPath path;
@@ -723,16 +798,18 @@ void BmBodyPart::SaveAs( const entry_ref& destDirRef, BmString filename) {
 			update_mime_info( fullpath.String(), false, true, false);
 		}
 	} else
-		BM_SHOWERR( BmString("Could not save attachment\n\t<") << filename << ">\n\n Result: " << strerror(err));
+		BM_SHOWERR( BmString("Could not save attachment\n\t<") << filename 
+							<< ">\n\n Result: " << strerror(err));
 }
 
 /*------------------------------------------------------------------------------*\
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmBodyPart::SetBodyText( const BmString& utf8Text, const BmString& charset) {
+void BmBodyPart::SetBodyText( const BmString& utf8Text, 
+										const BmString& charset) {
 	mDecodedData = utf8Text;
-	mContentType.SetParam( "charset", charset);
+	mSuggestedCharset = mCurrentCharset = charset;
 	mContentTransferEncoding = NeedsEncoding( utf8Text) 
 											? (ThePrefs->GetBool( "Allow8BitMime", false)
 												? "8bit"
@@ -745,7 +822,8 @@ void BmBodyPart::SetBodyText( const BmString& utf8Text, const BmString& charset)
 		-	
 \*------------------------------------------------------------------------------*/
 BmString BmBodyPart::GenerateBoundary() {
-	return BmString("_=_BOUNDARY_")<<system_time()<<"_"<<++nBoundaryCounter<<"_=_";
+	return BmString("_=_BOUNDARY_") << system_time() << "_"
+				<< ++nBoundaryCounter << "_=_";
 }
 
 /*------------------------------------------------------------------------------*\
@@ -829,15 +907,21 @@ void BmBodyPart::ConstructBodyForSending( BmStringOBuf &msgText) {
 		boundary = GenerateBoundary();
 		mContentType.SetParam( "boundary", boundary);
 	}
+	if (IsText())
+		mContentType.SetParam( "charset", mSuggestedCharset);
 	msgText << BM_FIELD_CONTENT_TYPE << ": " << mContentType << "\r\n";
-	msgText << BM_FIELD_CONTENT_TRANSFER_ENCODING << ": " << mContentTransferEncoding << "\r\n";
-	msgText << BM_FIELD_CONTENT_DISPOSITION << ": " << mContentDisposition << "\r\n";
+	msgText << BM_FIELD_CONTENT_TRANSFER_ENCODING << ": " 
+			  << mContentTransferEncoding << "\r\n";
+	msgText << BM_FIELD_CONTENT_DISPOSITION << ": " << mContentDisposition 
+			  << "\r\n";
 	if (mContentDescription.Length())
-		msgText << BM_FIELD_CONTENT_DESCRIPTION << ": " << mContentDescription << "\r\n";
+		msgText << BM_FIELD_CONTENT_DESCRIPTION << ": " << mContentDescription 
+				  << "\r\n";
 	if (mContentId.Length())
 		msgText << BM_FIELD_CONTENT_ID << ": " << mContentId << "\r\n";
 	if (mContentLanguage.Length())
-		msgText << BM_FIELD_CONTENT_LANGUAGE << ": " << mContentLanguage << "\r\n";
+		msgText << BM_FIELD_CONTENT_LANGUAGE << ": " << mContentLanguage 
+				  << "\r\n";
 	msgText << "\r\n";
 
 	if (IsMultiPart())
@@ -856,28 +940,46 @@ void BmBodyPart::ConstructBodyForSending( BmStringOBuf &msgText) {
 		if (bodyPartList && mail && mStartInRawText 
 		&& bodyPartList->EditableTextBody() != this) {
 			// we already have the encoded text, we simply copy that:
-			BM_LOG2( BM_LogMailParse, BmString( "copying bodytext of ") << mBodyLength << " bytes...");
-			mBodyLength = msgText.Write( mail->RawText().String()+mStartInRawText, mBodyLength);
+			BM_LOG2( BM_LogMailParse, 
+						BmString( "copying bodytext of ") << mBodyLength 
+							<< " bytes...");
+			mBodyLength = msgText.Write( mail->RawText().String()+mStartInRawText, 
+												  mBodyLength);
 			BM_LOG2( BM_LogMailParse, "...done (bodytext)");
 		} else {
 			// encode buffer (and convert if neccessary):
 			BmStringIBuf text( DecodedData());
 			if (IsText()) {
-				BM_LOG2( BM_LogMailParse, BmString( "encoding/converting bodytext of ") 
-												  << DecodedLength() << " bytes to " << Charset());
-				BmUtf8Decoder textConverter( &text, Charset());
-				BmMemFilterRef encoder = FindEncoderFor( &textConverter, mContentTransferEncoding);
+				BM_LOG2( BM_LogMailParse, 
+							BmString( "encoding/converting bodytext of ") 
+											  << DecodedLength() << " bytes to " 
+											  << mCurrentCharset);
+				BmUtf8Decoder textConverter( &text, mCurrentCharset);
+				BmMemFilterRef encoder 
+					= FindEncoderFor( &textConverter, mContentTransferEncoding);
 				mBodyLength = msgText.Write( encoder.get());
 				if (textConverter.HadError()) {
-					BmString errText = BmString("The mailtext contains characters that ")
-												<< "could not be converted to the selected charset ("
-												<< Charset() << ").\n\n"
-												<< "Please select the correct charset or remove the offending characters.";
+					BmString errText 
+						= (bodyPartList->EditableTextBody() == this)
+							?	BmString("The mailtext contains characters that ")
+								<< "could not be converted to the selected charset ("
+								<< mCurrentCharset << ").\n\n"
+								<< "Please select the correct charset or remove "
+								<< "the offending characters."
+							:	BmString("The attachment ") << FileName()
+								<< " contains characters that "
+								<< "could not be converted to the selected charset ("
+								<< mCurrentCharset << ").\n\n"
+								<< "Please re-add the attachment with the correct "
+								<< "charset.";
 					throw BM_text_error( errText, textConverter.SrcCount());
 				}
 			} else {
-				BM_LOG2( BM_LogMailParse, BmString( "encoding bodytext of ") << DecodedLength() << " bytes...");
-				BmMemFilterRef encoder = FindEncoderFor( &text, mContentTransferEncoding);
+				BM_LOG2( BM_LogMailParse, 
+							BmString( "encoding bodytext of ") << DecodedLength() 
+								<< " bytes...");
+				BmMemFilterRef encoder 
+					= FindEncoderFor( &text, mContentTransferEncoding);
 				mBodyLength = msgText.Write( encoder.get());
 			}
 			BM_LOG2( BM_LogMailParse, "...done (bodytext)");
@@ -932,9 +1034,10 @@ void BmBodyPartList::ParseMail() {
 	Cleanup();
 	if (mMail) {
 		const BmString& msgText = mMail->RawText();
-		BmBodyPart* bodyPart = new BmBodyPart( this, msgText, mMail->HeaderLength()+2, 
-															msgText.Length()-mMail->HeaderLength()-2, 
-															mMail->Header());
+		BmBodyPart* bodyPart 
+			= new BmBodyPart( this, msgText, mMail->HeaderLength()+2, 
+									msgText.Length()-mMail->HeaderLength()-2, 
+									mMail->DefaultCharset(),	mMail->Header());
 		AddItemToList( bodyPart);
 	}
 	mInitCheck = B_OK;
@@ -977,7 +1080,8 @@ bool BmBodyPartList::HasAttachments() const {
 	AddAttachmentFromRef()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmBodyPartList::AddAttachmentFromRef( const entry_ref* ref) {
+void BmBodyPartList::AddAttachmentFromRef( const entry_ref* ref, 
+														 const BmString& charset) {
 	BmAutolockCheckGlobal lock( ModelLocker());
 	lock.IsLocked() 						|| BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
 	BmRef<BmBodyPart> editableTextBody( EditableTextBody());
@@ -991,13 +1095,14 @@ void BmBodyPartList::AddAttachmentFromRef( const entry_ref* ref) {
 	else {
 		BmModelItemMap::const_iterator iter;
 		for( iter = begin(); !alreadyPresent && iter != end(); ++iter) {
-			BmBodyPart* bodyPart = dynamic_cast< BmBodyPart*>( iter->second.Get());
+			BmBodyPart* bodyPart 
+				= dynamic_cast< BmBodyPart*>( iter->second.Get());
 			if (bodyPart->EntryRef() == *ref)
 				alreadyPresent = true;
 		}
 	}
 	if (!alreadyPresent) {
-		BmBodyPart* bodyPart = new BmBodyPart( this, ref, parent);
+		BmBodyPart* bodyPart = new BmBodyPart( this, ref, charset, parent);
 		if (bodyPart->InitCheck() == B_OK) {
 			AddItemToList( bodyPart, parent);
 		} else
@@ -1024,7 +1129,8 @@ void BmBodyPartList::RemoveItemFromList( BmListModelItem* item) {
 	SetEditableText()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmBodyPartList::SetEditableText( const BmString& utf8Text, const BmString& charset) {
+void BmBodyPartList::SetEditableText( const BmString& utf8Text, 
+												  const BmString& charset) {
 	BmRef<BmBodyPart> editableTextBody( EditableTextBody());
 	if (editableTextBody)
 		editableTextBody->SetBodyText( utf8Text, charset);
@@ -1037,7 +1143,7 @@ void BmBodyPartList::SetEditableText( const BmString& utf8Text, const BmString& 
 const BmString& BmBodyPartList::DefaultCharset() const {
 	BmRef<BmBodyPart> editableTextBody( EditableTextBody());
 	if (editableTextBody)
-		return editableTextBody->Charset();
+		return editableTextBody->SuggestedCharset();
 	return BmEncoding::DefaultCharset; 
 }
 
@@ -1049,7 +1155,8 @@ bool BmBodyPartList::IsMultiPart() const {
 	BmAutolockCheckGlobal lock( ModelLocker());
 	lock.IsLocked() 						|| BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
 	if (size()==1) {
-		BmBodyPart* firstBody = dynamic_cast<BmBodyPart*>( begin()->second.Get());
+		BmBodyPart* firstBody 
+			= dynamic_cast<BmBodyPart*>( begin()->second.Get());
 		if (firstBody)
 			return firstBody->IsMultiPart();
 	}
@@ -1112,7 +1219,8 @@ bool BmBodyPartList::ConstructBodyForSending( BmStringOBuf& msgText) {
 	BmString boundary;
 	if (isMultiPart && !hasMultiPartTop) {
 		boundary = BmBodyPart::GenerateBoundary();
-		msgText << BM_FIELD_CONTENT_TYPE << ": multipart/mixed; boundary=\""<<boundary<<"\"\r\n";
+		msgText << BM_FIELD_CONTENT_TYPE << ": multipart/mixed; boundary=\""
+				  << boundary<<"\"\r\n";
 		msgText << BM_FIELD_CONTENT_TRANSFER_ENCODING << ": 7bit\r\n\r\n";
 		msgText << "This is a multi-part message in MIME format.\r\n\r\n";
 		msgText << "--"<<boundary<<"\r\n";
