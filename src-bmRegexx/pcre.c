@@ -32,6 +32,8 @@ restrictions:
 -----------------------------------------------------------------------------
 */
 
+#undef DEBUG
+
 /* Define DEBUG to get debugging output on stdout. */
 
 /* #define DEBUG */
