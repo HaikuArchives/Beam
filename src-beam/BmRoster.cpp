@@ -172,11 +172,12 @@ bool BmRoster::AskUserForPwd( const BmString& text, BmString& pwd)
 	alert->SetLook( B_FLOATING_WINDOW_LOOK);
 	alert->TextEntryView()->HideTyping( true);
 	alert->SetShortcut( 0, B_ESCAPE);
-	char buf[128];
-	int32 result = alert->Go( buf, 128);
+	BmString buf;
+	int32 result = alert->Go( buf);
 	if (result == 1) {
 		pwd = buf;
-		memset( buf, '*', 128);
+		if (buf.Length())
+			memset( (char*)buf.String(), '*', buf.Length());
 		return true;
 	} else
 		return false;
