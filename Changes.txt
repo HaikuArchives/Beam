@@ -2,7 +2,7 @@ change-history of Beam:
 		$Id$
 
 *******************************************************************************
-[Beam test-03-01-27]
+[Beam test-03-02-17]
 
 	summary:
 		-	Beam now uses libiconv for text-conversions instead of the BeOS-native
