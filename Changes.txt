@@ -14,7 +14,24 @@ change-history of Beam:
 			easier to handle many different mail-accounts.
 		-	
 *******************************************************************************
-< 2003-07-14: release test-03-07-14 >
+
+< 2003-07-15: release test-03-07-15 >
+
+Changes.txt, ToDo.txt:
+	-	updated for release test-03-07-15
+
+updateLibFolder.sh:
+	-	now we recreate every link by use of -f flag.
+
+BmFilterAddon, BmMailFilter, BmSieveFilter:
+	-	finished implementing SetStatus- and Discard-functionalities-
+
+BmIdentity:
+	-	fixed crash when trying to archive an identity-list that has
+		no current identity.
+
+BmMail:
+	-	implemented storing of mails into Trash.
 
 < 2003-07-13: commit >
 
