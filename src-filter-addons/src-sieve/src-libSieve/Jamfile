@@ -11,8 +11,6 @@ if $(OSPLAT) = X86 {
 
 SubDirSysHdrs /boot/home/config/include ;
 
-YACCFLAGS = -v -d -p "$(2:B)" ;
-
 StaticLibrary libsieve.a
 	:  
 		addr.y
