@@ -250,10 +250,12 @@ BmBodyPart::BmBodyPart( BmBodyPartList* model, const entry_ref* ref,
 		status_t err;
 		BFile file;
 		off_t size;
-		(err=file.SetTo( ref, B_READ_ONLY)) == B_OK		
-													|| BM_THROW_RUNTIME( BmString("Couldn't create file for <") << ref->name << "> \n\nError:" << strerror(err));
-		(err=file.GetSize( &size)) == B_OK
-													|| BM_THROW_RUNTIME( BmString("Couldn't get file-size for <") << ref->name << "> \n\nError:" << strerror(err));
+		if ((err=file.SetTo( ref, B_READ_ONLY)) != B_OK)
+			BM_THROW_RUNTIME( BmString("Couldn't create file for <") << ref->name 
+										<< "> \n\nError:" << strerror(err));
+		if ((err=file.GetSize( &size)) != B_OK)
+			BM_THROW_RUNTIME( BmString("Couldn't get file-size for <") 
+										<< ref->name << "> \n\nError:" << strerror(err));
 		BmString mimetype = DetermineMimeType( ref, false);
 		if (mimetype.ICompare("text/x-email")==0) {
 			// convert beos-own mail-mimetype into correct message/rfc822:
@@ -384,21 +386,26 @@ void BmBodyPart::SetTo( const BmString& msgtext, int32 start, int32 length,
 		// this is not the main body, so we have to split the MIME-headers from
 		// the MIME-bodypart:
 		BmString headerText;
-		BM_LOG2( BM_LogMailParse, "looking for end-of-header...");
-		int32 pos = msgtext.FindFirst( "\r\n\r\n", start);
-		BM_LOG2( BM_LogMailParse, "...done (looking for end-of-header)");
-		if (pos == B_ERROR) {
-			BmString str;
-			msgtext.CopyInto( str, start, 256);
-			BM_SHOWERR( BmString("Couldn't determine borderline between "
-										"MIME-header and body in string <")<<str<<">.");
-			return;
+		if (!length) {
+			mStartInRawText = start;
+			mBodyLength = 0;
+		} else {
+			BM_LOG2( BM_LogMailParse, "looking for end-of-header...");
+			int32 pos = msgtext.FindFirst( "\r\n\r\n", start);
+			BM_LOG2( BM_LogMailParse, "...done (looking for end-of-header)");
+			if (pos == B_ERROR || pos >= start+length) {
+				BmString str;
+				msgtext.CopyInto( str, start, min( length, (int32)256));
+				BM_SHOWERR( BmString("Couldn't determine borderline between "
+											"MIME-header and body in string <")<<str<<">.");
+				return;
+			}
+			BM_LOG2( BM_LogMailParse, "copying headerText...");
+			msgtext.CopyInto( headerText, start, pos-start+2);
+			BM_LOG2( BM_LogMailParse, "...done (copying headerText)");
+			mStartInRawText = pos+4;
+			mBodyLength = length - (pos+4-start);
 		}
-		BM_LOG2( BM_LogMailParse, "copying headerText...");
-		msgtext.CopyInto( headerText, start, pos-start+2);
-		BM_LOG2( BM_LogMailParse, "...done (copying headerText)");
-		mStartInRawText = pos+4;
-		mBodyLength = length - (pos+4-start);
 		BM_LOG2( BM_LogMailParse, BmString("MIME-Header found: ") << headerText);
 		header = new BmMailHeader( headerText, NULL);
 	} else {
@@ -606,7 +613,8 @@ void BmBodyPart::SetTo( const BmString& msgtext, int32 start, int32 length,
 										   msgtext, startOffs, len,
 											defaultCharset, NULL, this);
 				BmAutolockCheckGlobal lock( ListModel()->ModelLocker());
-				lock.IsLocked()	 			|| BM_THROW_RUNTIME( "BmBodyPart::SetTo(): Unable to get lock");
+				if (!lock.IsLocked())
+					BM_THROW_RUNTIME( "BmBodyPart::SetTo(): Unable to get lock");
 				AddSubItem( subPart);
 				startPos = nPos;
 			} else {
@@ -624,7 +632,10 @@ void BmBodyPart::SetTo( const BmString& msgtext, int32 start, int32 length,
 													start+length-startOffs, 
 													defaultCharset, NULL, this);
 						BmAutolockCheckGlobal lock( ListModel()->ModelLocker());
-						lock.IsLocked()	 	|| BM_THROW_RUNTIME( "BmBodyPart::SetTo(): Unable to get lock");
+						if (!lock.IsLocked())
+							BM_THROW_RUNTIME( 
+								"BmBodyPart::SetTo(): Unable to get lock"
+							);
 						AddSubItem( subPart);
 					}
 				}
@@ -1083,7 +1094,8 @@ bool BmBodyPartList::HasAttachments() const {
 void BmBodyPartList::AddAttachmentFromRef( const entry_ref* ref, 
 														 const BmString& charset) {
 	BmAutolockCheckGlobal lock( ModelLocker());
-	lock.IsLocked() 						|| BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
+	if (!lock.IsLocked())
+		BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
 	BmRef<BmBodyPart> editableTextBody( EditableTextBody());
 	BmRef<BmListModelItem> parentRef;
 	if (editableTextBody)
@@ -1117,7 +1129,8 @@ void BmBodyPartList::AddAttachmentFromRef( const entry_ref* ref,
 \*------------------------------------------------------------------------------*/
 void BmBodyPartList::RemoveItemFromList( BmListModelItem* item) {
 	BmAutolockCheckGlobal lock( ModelLocker());
-	lock.IsLocked() 						|| BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
+	if (!lock.IsLocked())
+		BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
 	Freeze();
 	inherited::RemoveItemFromList( item);
 	PruneUnneededMultiParts();
@@ -1153,7 +1166,8 @@ const BmString& BmBodyPartList::DefaultCharset() const {
 \*------------------------------------------------------------------------------*/
 bool BmBodyPartList::IsMultiPart() const {
 	BmAutolockCheckGlobal lock( ModelLocker());
-	lock.IsLocked() 						|| BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
+	if (!lock.IsLocked())
+		BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
 	if (size()==1) {
 		BmBodyPart* firstBody 
 			= dynamic_cast<BmBodyPart*>( begin()->second.Get());
@@ -1169,7 +1183,10 @@ bool BmBodyPartList::IsMultiPart() const {
 \*------------------------------------------------------------------------------*/
 void BmBodyPartList::PruneUnneededMultiParts() {
 	BmAutolockCheckGlobal lock( mModelLocker);
-	lock.IsLocked()	 						|| BM_THROW_RUNTIME( ModelNameNC() << ":PruneUnnededMultiParts(): Unable to get lock");
+	if (!lock.IsLocked())
+		BM_THROW_RUNTIME( 
+			ModelNameNC() << ":PruneUnnededMultiParts(): Unable to get lock"
+		);
 	BmModelItemMap::const_iterator iter;
 	for( iter = begin(); iter != end(); ) {
 		BmBodyPart* bodyPart = dynamic_cast< BmBodyPart*>( iter++->second.Get());
@@ -1210,7 +1227,10 @@ int32 BmBodyPartList::EstimateEncodedSize() {
 \*------------------------------------------------------------------------------*/
 bool BmBodyPartList::ConstructBodyForSending( BmStringOBuf& msgText) {
 	BmAutolockCheckGlobal lock( mModelLocker);
-	lock.IsLocked()	 						|| BM_THROW_RUNTIME( ModelNameNC() << ":ConstructBodyForSending(): Unable to get lock");
+	if (!lock.IsLocked())
+		BM_THROW_RUNTIME( 
+			ModelNameNC() << ":ConstructBodyForSending(): Unable to get lock"
+		);
 	BmRef<BmBodyPart> editableTextBody( EditableTextBody());
 	bool hasMultiPartTop = editableTextBody && editableTextBody->Parent();
 	bool isMultiPart = hasMultiPartTop
