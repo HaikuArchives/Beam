@@ -15,3 +15,7 @@ extern void initialize_siev_error_table ();
 /* for compatibility with older versions... */
 #define init_siev_err_tbl initialize_siev_error_table
 #define siev_err_base ERROR_TABLE_BASE_siev
+
+#ifdef __BEOS__
+const char* sieve_strerror( long err_no);
+#endif

@@ -31,7 +31,11 @@ struct et_list {
     const struct error_table * table;
 };
 
+#ifdef __BEOS__
+static struct et_list *_et_list = 0;
+#else
 extern struct et_list *_et_list;
+#endif
 
 static const struct error_table et = { text, -1237848064L, 7 };
 
@@ -44,3 +48,18 @@ void initialize_siev_error_table (NOARGS) {
         _et_list = &link;
     }
 }
+
+#ifdef __BEOS__
+const char* sieve_strerror( long err_no) {
+	long offs;
+	const struct error_table* table;
+	initialize_siev_error_table();
+	table = link.table;
+	if (table) {
+		offs = err_no-table->base;
+		if (offs>=0 && offs<table->n_msgs)
+			return table->msgs[offs];
+	}
+	return "unknown error (libsieve)";
+}
+#endif
