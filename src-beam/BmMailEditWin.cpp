@@ -32,7 +32,7 @@
 #include <FilePanel.h>
 #include <InterfaceKit.h>
 #include <Message.h>
-#include <String.h>
+#include "BmString.h"
 
 #include <layout-all.h>
 
@@ -168,7 +168,7 @@ BmMailEditWin::~BmMailEditWin() {
 \*------------------------------------------------------------------------------*/
 filter_result BmMailEditWin::BmMsgFilter::Filter( BMessage* msg, BHandler** handler) {
 	if (msg->what == B_KEY_DOWN) {
-		BString bytes = msg->FindString( "bytes");
+		BmString bytes = msg->FindString( "bytes");
 		int32 modifiers = msg->FindInt32( "modifiers");
 		if (bytes.Length() && bytes[0]==B_TAB && modifiers & B_SHIFT_KEY) {
 			mShiftTabToControl->MakeFocus( true);
@@ -518,7 +518,7 @@ void BmMailEditWin::MessageReceived( BMessage* msg) {
 			}
 			case BMM_SEND_LATER:
 			case BMM_SEND_NOW: {
-				BM_LOG2( BM_LogMailEditWin, BString("Asked to send mail"));
+				BM_LOG2( BM_LogMailEditWin, BmString("Asked to send mail"));
 				if (!SaveMail( true))
 					break;
 				BM_LOG2( BM_LogMailEditWin, "...mail was saved");
@@ -545,8 +545,8 @@ void BmMailEditWin::MessageReceived( BMessage* msg) {
 							float w=600, h=400;
 							BRect alertFrame( (screen.Width()-w)/2,(screen.Height()-h)/2,
 													(screen.Width()+w)/2,(screen.Height()+h)/2);
-							BString headerStr;
-							ConvertLinebreaksToLF( mail->Header()->HeaderString(), headerStr);
+							BmString headerStr;
+							headerStr.ConvertLinebreaksToLF( &mail->Header()->HeaderString());
 							TextEntryAlert* alert = 
 								new TextEntryAlert( "Edit Headers", 
 														  "Please edit the mail-headers below:",
@@ -604,10 +604,9 @@ void BmMailEditWin::MessageReceived( BMessage* msg) {
 			}
 			case BM_TO_CC_BCC_ADDED: {
 				BmTextControl* cntrl;
-				BString email;
-				if (msg->FindPointer( MSG_CONTROL, (void**)&cntrl) == B_OK
-				&& msg->FindString( MSG_ADDRESS, &email) == B_OK) {
-					BString currStr = cntrl->Text();
+				if (msg->FindPointer( MSG_CONTROL, (void**)&cntrl) == B_OK) {
+					BmString email = msg->FindString( MSG_ADDRESS);
+					BmString currStr = cntrl->Text();
 					if (rx.exec( currStr, "\\S+"))
 						currStr << ", " << email;
 					else
@@ -635,7 +634,7 @@ void BmMailEditWin::MessageReceived( BMessage* msg) {
 					BmRef<BmListModelItem> accRef = ThePopAccountList->FindItemByKey( item->Label());
 					BmPopAccount* acc = dynamic_cast< BmPopAccount*>( accRef.Get()); 
 					if (acc) {
-						BString fromString = msg->what == BM_FROM_ADDED ? mFromControl->Text() : "";
+						BmString fromString = msg->what == BM_FROM_ADDED ? mFromControl->Text() : "";
 						if (rx.exec( fromString, "\\S+")) {
 							fromString << ", " << acc->GetFromAddress();
 						} else {
@@ -649,7 +648,7 @@ void BmMailEditWin::MessageReceived( BMessage* msg) {
 						// select corresponding smtp-account, if any:
 						mSmtpControl->MarkItem( acc->SMTPAccount().String());
 						// update signature:
-						BString sigName = acc->SignatureName();
+						BmString sigName = acc->SignatureName();
 						mMailView->SetSignatureByName( sigName);
 						if (sigName.Length())
 							mSignatureControl->MarkItem( sigName.String());
@@ -675,24 +674,27 @@ void BmMailEditWin::MessageReceived( BMessage* msg) {
 				break;
 			}
 			case BM_SIGNATURE_SELECTED: {
-				// exactly, no break here...
 				BMenuItem* item = NULL;
 				msg->FindPointer( "source", (void**)&item);
 				if (item) {
-					BString sigName = item->Label();
+					BmString sigName = item->Label();
 					if (sigName=="<none>")
 						mMailView->SetSignatureByName( "");
 					else
 						mMailView->SetSignatureByName( sigName);
+					mModified = true;
+					mSaveButton->SetEnabled( true);
 				}
+				break;
 			}
-			case BM_TEXTFIELD_MODIFIED:
+			case BM_TEXTFIELD_MODIFIED: {
 				BControl* source;
 				if (msg->FindPointer( "source", (void**)&source)==B_OK
 				&& source==mSubjectControl) {
-					SetTitle( (BString("Edit Mail: ") + mSubjectControl->Text()).String());
+					SetTitle( (BmString("Edit Mail: ") + mSubjectControl->Text()).String());
 				}
-				// right, no break here...
+				// right, no break here!
+			}
 			case BM_CHARSET_SELECTED:
 			case BM_SMTP_SELECTED:
 			case B_OBSERVER_NOTICE_CHANGE: {
@@ -721,7 +723,7 @@ void BmMailEditWin::MessageReceived( BMessage* msg) {
 	}
 	catch( exception &err) {
 		// a problem occurred, we tell the user:
-		BM_SHOWERR( BString("MailEditWin: ") << err.what());
+		BM_SHOWERR( BmString("MailEditWin: ") << err.what());
 	}
 }
 
@@ -799,12 +801,12 @@ void BmMailEditWin::SetFieldsFromMail( BmMail* mail) {
 			mReplyToControl->SetTextSilently( mail->GetStrippedFieldVal( BM_FIELD_REPLY_TO).String());
 		}
 		mSubjectControl->SetTextSilently( mail->GetStrippedFieldVal( BM_FIELD_SUBJECT).String());
-		SetTitle( (BString("Edit Mail: ") + mSubjectControl->Text()).String());
+		SetTitle( (BmString("Edit Mail: ") + mSubjectControl->Text()).String());
 		// mark corresponding SMTP-account (if any):
-		BString smtpAccount = mail->AccountName();
+		BmString smtpAccount = mail->AccountName();
 		mSmtpControl->MarkItem( smtpAccount.String());
 		// mark signature of current mail as selected:
-		BString sigName = mail->SignatureName();
+		BmString sigName = mail->SignatureName();
 		if (sigName.Length())
 			mSignatureControl->MarkItem( sigName.String());
 		else
@@ -821,12 +823,12 @@ void BmMailEditWin::SetFieldsFromMail( BmMail* mail) {
 		else
 			mMailView->MakeFocus( true);
 		// now make certain fields visible if they contain values:
-		if (BString(mCcControl->Text()).Length() || BString(mBccControl->Text()).Length()) {
+		if (BmString(mCcControl->Text()).Length() || BmString(mBccControl->Text()).Length()) {
 			mShowDetails1Button->SetValue( B_CONTROL_ON);
 			mShowDetails1Button->SetTarget( BMessenger( this));
 			mShowDetails1Button->Invoke();
 		}
-		if (BString(mBccControl->Text()).Length()) {
+		if (BmString(mBccControl->Text()).Length()) {
 			mShowDetails2Button->SetValue( B_CONTROL_ON);
 			mShowDetails2Button->SetTarget( BMessenger( this));
 			mShowDetails2Button->Invoke();
@@ -841,8 +843,8 @@ void BmMailEditWin::SetFieldsFromMail( BmMail* mail) {
 bool BmMailEditWin::CreateMailFromFields( bool hardWrapIfNeeded) {
 	BmRef<BmMail> mail = mMailView->CurrMail();
 	if (mail) {
-		BString editedText;
-		BString convertedText;
+		BmString editedText;
+		BmString convertedText;
 		mMailView->GetWrappedText( editedText, hardWrapIfNeeded);
 		BMenuItem* charsetItem = mCharsetControl->Menu()->FindMarked();
 		int32 encoding = charsetItem 
@@ -850,7 +852,7 @@ bool BmMailEditWin::CreateMailFromFields( bool hardWrapIfNeeded) {
 						 		: ThePrefs->GetInt("DefaultEncoding");
 		ConvertFromUTF8( encoding, editedText, convertedText);
 		BMenuItem* smtpItem = mSmtpControl->Menu()->FindMarked();
-		BString smtpAccount = smtpItem ? smtpItem->Label() : "";
+		BmString smtpAccount = smtpItem ? smtpItem->Label() : "";
 		mail->AccountName( smtpAccount);
 		if (mail->IsRedirect()) {
 			mail->SetFieldVal( BM_FIELD_RESENT_BCC, mBccControl->Text());
@@ -906,7 +908,7 @@ bool BmMailEditWin::SaveMail( bool hardWrapIfNeeded) {
 		-	standard BeOS-behaviour, we allow a quit
 \*------------------------------------------------------------------------------*/
 bool BmMailEditWin::QuitRequested() {
-	BM_LOG2( BM_LogMailEditWin, BString("MailEditWin has been asked to quit"));
+	BM_LOG2( BM_LogMailEditWin, BmString("MailEditWin has been asked to quit"));
 	if (mModified) {
 		if (IsMinimized())
 			Minimize( false);
@@ -941,6 +943,6 @@ bool BmMailEditWin::QuitRequested() {
 void BmMailEditWin::Quit() {
 	mMailView->WriteStateInfo();
 	mMailView->DetachModel();
-	BM_LOG2( BM_LogMailEditWin, BString("MailEditWin has quit"));
+	BM_LOG2( BM_LogMailEditWin, BmString("MailEditWin has quit"));
 	inherited::Quit();
 }
