@@ -37,11 +37,12 @@ class BmMailFolderView;
 class BmMailRefView;
 class BmMailView;
 class BmMailViewContainer;
-class BMenuBar;
+class MMenuBar;
 class BmMenuController;
 class BmToolbarButton;
 class CLVContainerView;
 class UserResizeSplitView;
+class BmLogWindow;
 
 class BmMainWindow : public BmWindow
 {
@@ -68,6 +69,7 @@ public:
 	bool QuitRequested();
 	void Quit();
 	void WorkspacesChanged( uint32 oldWorkspaces, uint32 newWorkspaces);
+	void Minimize( bool minimize);
 
 	static BmMainWindow* theInstance;
 
@@ -91,6 +93,8 @@ private:
 	UserResizeSplitView* mHorzSplitter;
 	
 	BmMenuController* mAccountMenu;
+	
+	BmLogWindow* mErrLogWin;
 	
 	BmToolbarButton* mCheckButton;
 	BmToolbarButton* mNewButton;

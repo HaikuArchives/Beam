@@ -58,6 +58,7 @@
 #include "BmPopAccount.h"
 #include "BmPrefs.h"
 #include "BmResources.h"
+#include "BmSmtpAccount.h"
 #include "BmToolbarButton.h"
 #include "BmUtil.h"
 
@@ -110,6 +111,7 @@ BmMainWindow::BmMainWindow()
 	,	mMailRefView( NULL)
 	,	mVertSplitter( NULL)
 	,	mAccountMenu( NULL)
+	,	mErrLogWin( NULL)
 {
 	CreateMailFolderView( minimax(0,100,300,1E5), 200, 400);
 	CreateMailRefView( minimax(200,100,1E5,1E5), 400, 200);
@@ -259,39 +261,42 @@ BmMainWindow::~BmMainWindow() {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-static int CompareLogs( const void* logL, const void* logR) {
-	const BmLogHandler::BmLogfile* leftLog 
-		= static_cast< const BmLogHandler::BmLogfile*>( *(const void**)logL);
-	const BmLogHandler::BmLogfile* rightLog 
-		= static_cast< const BmLogHandler::BmLogfile*>( *(const void**)logR);
-	if (!leftLog)
-		return -1;
-	if (!rightLog)
-		return 1;
-	return leftLog->logname.ICompare( rightLog->logname);
-}
-
-/*------------------------------------------------------------------------------*\
-	()
-		-	
-\*------------------------------------------------------------------------------*/
 static void RebuildLogMenu( BmMenuControllerBase* logMenu) {
+	const char* logNames[] = {
+		"Beam",
+		"Filter",
+		"MailParser",
+		NULL
+	};
 	BMenuItem* old;
 	while( (old = logMenu->RemoveItem( (int32)0))!=NULL)
 		delete old;
-	TheLogHandler->mLocker.Lock();
-	TheLogHandler->mActiveLogs.SortItems( CompareLogs);
-	int32 count = TheLogHandler->mActiveLogs.CountItems();
-	for( int i=0; i<count; ++i) {
-		BmLogHandler::BmLogfile* log 
-			= static_cast< BmLogHandler::BmLogfile*>( 
-														TheLogHandler->mActiveLogs.ItemAt(i));
-		if (log) {
-			BMessage* logMsg( new BMessage( logMenu->MsgTemplate()->what));
-			logMsg->AddString( "logfile", log->logname.String());
-			logMenu->AddItem( new BMenuItem( log->logname.String(), logMsg));
-		}
+	for( int i=0; logNames[i] != NULL; ++i) {
+		BMessage* logMsg( new BMessage( logMenu->MsgTemplate()->what));
+		logMsg->AddString( "logfile", logNames[i]);
+		logMenu->AddItem( new BMenuItem( logNames[i], logMsg));
 	}
+	// POP
+	BMenu* popMenu = new BMenu( "POP-Accounts");
+	BmModelItemMap::const_iterator iter;
+	for( 	iter = ThePopAccountList->begin(); 
+			iter != ThePopAccountList->end(); ++iter) {
+		BmString logname = BmString("POP_") + iter->second->Key();
+		BMessage* logMsg( new BMessage( logMenu->MsgTemplate()->what));
+		logMsg->AddString( "logfile", logname.String());
+		popMenu->AddItem( new BMenuItem( iter->second->Key().String(), logMsg));
+	}
+	logMenu->AddItem( popMenu);
+	// SMTP
+	BMenu* smtpMenu = new BMenu( "SMTP-Accounts");
+	for( 	iter = TheSmtpAccountList->begin(); 
+			iter != TheSmtpAccountList->end(); ++iter) {
+		BmString logname = BmString("SMTP_") + iter->second->Key();
+		BMessage* logMsg( new BMessage( logMenu->MsgTemplate()->what));
+		logMsg->AddString( "logfile", logname.String());
+		smtpMenu->AddItem( new BMenuItem( iter->second->Key().String(), logMsg));
+	}
+	logMenu->AddItem( smtpMenu);
 	TheLogHandler->mLocker.Unlock();
 }
 
@@ -429,8 +434,8 @@ void BmMainWindow::BeginLife() {
 //		mMainMenuBar->FindItem( BMM_SEND_PENDING)->SetEnabled( false);
 
 		// create and hide error-log
-		if (!ThePrefs->GetBool( "ShowAlertForErrors", false))
-			BmLogWindow::CreateAndStartInstanceFor( "Errors", true);
+		mErrLogWin 
+			= BmLogWindow::CreateAndStartInstanceFor( "Errors", true, true);
 
 		mMailFolderView->StartWatching( this, BM_NTFY_MAILFOLDER_SELECTION);
 		mMailRefView->StartWatching( this, BM_NTFY_MAILREF_SELECTION);
@@ -622,6 +627,16 @@ void BmMainWindow::Quit() {
 	(new BAlert( "", "End of MainWindow, check mem-usage!!!", "OK"))->Go();
 #endif
 	inherited::Quit();
+}
+
+/*------------------------------------------------------------------------------*\
+	Minimize()
+		-	standard BeOS-behaviour, but we minimize our error-window, too.
+\*------------------------------------------------------------------------------*/
+void BmMainWindow::Minimize( bool minimize) {
+	inherited::Minimize( minimize);
+	if (minimize && mErrLogWin)
+		mErrLogWin->Minimize( true);
 }
 
 /*------------------------------------------------------------------------------*\
