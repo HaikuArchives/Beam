@@ -169,6 +169,8 @@ public:
 	void AddPartsFromMail( BmRef<BmMail> mail, bool withAttachments,
 								  bool isForward,
 								  const BmString selectedText="");
+	//
+	void DestFoldername( const BmString& destFoldername);
 	
 	// overrides of jobmodel base:
 	bool StartJob();
@@ -222,30 +224,35 @@ protected:
 
 	BmRef<BmMailRef> mMailRef;
 	status_t mInitCheck;
-
+	
 private:
 	BmMail();
 	
 	const BmString DefaultStatus() const;
 
-	BmRef<BmMailHeader> mHeader;			// contains header-information
-
-	BmRef<BmBodyPartList> mBody;			// contains body-information (split into subparts)
-
-	BmString mText;								// text of complete message
-
-	BmString mAccountName;					// name of account this message came from/is sent through
-
-	BEntry mEntry;								// filesystem-entry for this mail 
-
-	bool mOutbound;							// true if mail is for sending (as opposed to reveived)
-
-	int32 mRightMargin;						// the current right-margin for this mail
-
-	BmMailRefVect mBaseRefVect;			// the mailref(s) that created us (via forward/reply)
-	BmString mNewBaseStatus;					// new status of base mail (forwarded/replied)
-
-	BmString mSignatureName;					// name of signature to use in this mail
+	BmRef<BmMailHeader> mHeader;
+							// contains header-information
+	BmRef<BmBodyPartList> mBody;
+							// contains body-information (split into subparts)
+	BmString mText;
+							// text of complete message
+	BmString mAccountName;
+							// name of account this message came from/is sent through
+	BEntry mEntry;
+							// filesystem-entry for this mail 
+	bool mOutbound;
+							// true if mail is for sending (as opposed to received)
+	int32 mRightMargin;
+							// the current right-margin for this mail
+	BmMailRefVect mBaseRefVect;
+							// the mailref(s) that created us (via forward/reply)
+	BmString mNewBaseStatus;
+							// new status of base mail (forwarded/replied)
+	BmString mSignatureName;
+							// name of signature to use in this mail
+	BmString mDestFoldername;
+							// name of folder where the mail shall be stored in
+							// (this may be set by a mail-filter)
 
 	// Hide copy-constructor and assignment:
 	BmMail( const BmMail&);

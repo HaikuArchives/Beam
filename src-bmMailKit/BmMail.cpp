@@ -701,6 +701,15 @@ void BmMail::AddBaseMailRef( BmMailRef* ref) {
 }
 
 /*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMail::DestFoldername( const BmString& destFoldername) {
+	mDestFoldername = destFoldername;
+	mDestFoldername.ReplaceAll( '.', '/');
+}
+
+/*------------------------------------------------------------------------------*\
 	Store()
 		-	stores mail-data and attributes inside a file
 \*------------------------------------------------------------------------------*/
@@ -749,13 +758,26 @@ bool BmMail::Store() {
 													|| BM_THROW_RUNTIME( BmString("Could not move mail <") << mMailRef->Key() << "> to tmp-folder\n\n Result: " << strerror(err));
 			mEntry.GetName( basicFilename);
 		} else {
-			// mail is new, we create a new filename for it, and create the entry 
-			// in the temp-folder::
-			BmString homePath  = ThePrefs->GetString("MailboxPath") 
-									+ (mOutbound ? "/out" : "/in");
-			create_directory( homePath.String(), 0755);
-			(err = homeDir.SetTo( homePath.String())) == B_OK
+			// this mail is new, so first we find it's new home (a mail-folder)...
+			BmString homePath;
+			if (mDestFoldername.Length()) {
+				// try to file mail into given destination-folder:
+				homePath = ThePrefs->GetString("MailboxPath") + "/" << mDestFoldername;
+				if ((err = homeDir.SetTo( homePath.String())) != B_OK) {
+					BM_LOG( BM_LogFilter, BmString("Could not file message into mail-folder ") << homePath 
+													<< "\nError: " << strerror(res)
+													<< "\n\nMessage will now be filed into the " 
+													<< (mOutbound ? "out" : "in")	<< "-folder");
+				}
+			}
+			if (homeDir.InitCheck() != B_OK) {
+				homePath = ThePrefs->GetString("MailboxPath") + (mOutbound ? "/out" : "/in");
+				if (homeDir.SetTo( homePath.String()) != B_OK)
+					create_directory( homePath.String(), 0755);
+				(err = homeDir.SetTo( homePath.String())) == B_OK
 													|| BM_THROW_RUNTIME( BmString("Could not set directory to <") << homePath << ">\n\n Result: " << strerror(err));
+			}
+			// we create a new filename for it, and create the entry in the temp-folder:
 			BmString newName  = BmString(tmpPath.Path()) + "/" + CreateBasicFilename();
 			(err = mEntry.SetTo( newName.String())) == B_OK
 													|| BM_THROW_RUNTIME( BmString("Could not create entry for mail-file <") << newName << ">\n\n Result: " << strerror(err));
