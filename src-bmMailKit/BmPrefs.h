@@ -35,7 +35,7 @@
 #include <Archivable.h>
 #include <Locker.h>
 #include <Message.h>
-#include <String.h>
+#include "BmString.h"
 
 /*------------------------------------------------------------------------------*\
 	BmPrefs 
@@ -66,17 +66,17 @@ public:
 	int32 GetInt( const char* name);
 	int32 GetInt( const char* name, const int32 defaultVal);
 	BMessage* GetMsg( const char* name);
-	BString GetString( const char* name);
-	BString GetString( const char* name, const BString defaultVal);
+	BmString GetString( const char* name);
+	BmString GetString( const char* name, const BmString defaultVal);
 	void SetBool( const char* name, const bool val);
 	void SetInt( const char* name, const int32 val);
 	void SetMsg( const char* name, const BMessage* val);
-	void SetString( const char* name, const BString val);
+	void SetString( const char* name, const BmString val);
 	//
 	void ResetToSaved();
 
-	BString GetShortcutFor( const char* shortcutID);
-	void SetShortcutFor( const char* name, const BString val);
+	BmString GetShortcutFor( const char* shortcutID);
+	void SetShortcutFor( const char* name, const BmString val);
 
 	// getters:
 	BMessage* ShortcutsMsg()				{ return &mShortcutsMsg; }
@@ -89,7 +89,7 @@ private:
 	void InitDefaults();
 	void SetLoglevels();
 	BMessage* GetShortcutDefaults( BMessage* msg=NULL);
-	void SetShortcutIfNew( BMessage* msg, const char* name, const BString val);
+	void SetShortcutIfNew( BMessage* msg, const char* name, const BmString val);
 
 	BMessage mPrefsMsg;
 	BMessage mDefaultsMsg;

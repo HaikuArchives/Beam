@@ -52,20 +52,20 @@ BmPrefs* BmPrefs::theInstance = NULL;
 BmPrefs* BmPrefs::CreateInstance() {
 	BmPrefs *prefs = NULL;
 	status_t err;
-	BString prefsFilename;
+	BmString prefsFilename;
 	BFile prefsFile;
 
 	if (theInstance) 
 		return theInstance;
 
 	// try to open settings-file...
-	prefsFilename = BString( TheResources->SettingsPath.Path()) << "/" << PREFS_FILENAME;
+	prefsFilename = BmString( TheResources->SettingsPath.Path()) << "/" << PREFS_FILENAME;
 	if ((err = prefsFile.SetTo( prefsFilename.String(), B_READ_ONLY)) == B_OK) {
 		// ...ok, settings file found, we fetch our prefs from it:
 		try {
 			BMessage archive;
 			(err = archive.Unflatten( &prefsFile)) == B_OK
-													|| BM_THROW_RUNTIME( BString("Could not fetch settings from file\n\t<") << prefsFilename << ">\n\n Result: " << strerror(err));
+													|| BM_THROW_RUNTIME( BmString("Could not fetch settings from file\n\t<") << prefsFilename << ">\n\n Result: " << strerror(err));
 			prefs = new BmPrefs( &archive);
 		} catch (exception &e) {
 			BM_SHOWERR( e.what());
@@ -154,12 +154,12 @@ BmPrefs::BmPrefs( BMessage* archive)
 		uint32 type;
 		int32 pos=-1;
 		for( int32 i=0; scMsg.GetInfo( B_STRING_TYPE, i, &name, &type)==B_OK; ++i) {
-			BString scName( name);
+			BmString scName( name);
 			if ((pos=scName.FindFirst( "...")) != B_ERROR) {
-				BString val = mShortcutsMsg.FindString( scName.String());
+				BmString val = mShortcutsMsg.FindString( scName.String());
 				mShortcutsMsg.RemoveName( scName.String());
 				scName.Truncate( pos);
-				mShortcutsMsg.AddString( scName.String(), val);
+				mShortcutsMsg.AddString( scName.String(), val.String());
 			}
 		}
 	}
@@ -177,7 +177,7 @@ BmPrefs::BmPrefs( BMessage* archive)
 	} else {
 		// no shortcuts info yet, we add default settings:
 		mPrefsMsg.AddMessage( "Shortcuts", GetShortcutDefaults( &mShortcutsMsg));
-	} 
+	}
 }
 
 /*------------------------------------------------------------------------------*\
@@ -286,8 +286,10 @@ void BmPrefs::InitDefaults() {
 	mDefaultsMsg.AddString( "SignatureRX", "^---?\\s*\\n");
 	mDefaultsMsg.AddBool("SpecialHeaderForEachBcc", true);
 	mDefaultsMsg.AddBool( "StripedListView", true);
+	mDefaultsMsg.AddString( "TimeModeInHeaderView", "Local");
 	mDefaultsMsg.AddBool( "UseDeskbar", true);
 	mDefaultsMsg.AddBool( "UseDocumentResizer", true);
+	mDefaultsMsg.AddBool( "UseSwatchTimeInRefView", false);
 	mDefaultsMsg.AddString( "Workspace", "Current");
 }
 
@@ -295,7 +297,7 @@ void BmPrefs::InitDefaults() {
 	GetShortcutFor( shortcutID)
 		-	returns the shortcut for a given id (label):
 \*------------------------------------------------------------------------------*/
-BString BmPrefs::GetShortcutFor( const char* shortcutID) {
+BmString BmPrefs::GetShortcutFor( const char* shortcutID) {
 	BmAutolock lock( mLocker);
 	lock.IsLocked()	 						|| BM_THROW_RUNTIME( "Prefs: Unable to get lock!");
 	const char* sc = mShortcutsMsg.FindString( shortcutID);
@@ -308,21 +310,21 @@ BString BmPrefs::GetShortcutFor( const char* shortcutID) {
 		-	this method is used to copy new shortcuts over from the defaults-msg
 			to the current prefs-message
 \*------------------------------------------------------------------------------*/
-void BmPrefs::SetShortcutIfNew( BMessage* msg, const char* name, const BString val) {
+void BmPrefs::SetShortcutIfNew( BMessage* msg, const char* name, const BmString val) {
 	type_code tc;
 	if (msg->GetInfo( name, &tc) != B_OK)
-		msg->AddString( name, val);
+		msg->AddString( name, val.String());
 }
 
 /*------------------------------------------------------------------------------*\
 	SetShortcutFor( name, val)
 		-	updates a shortcut to the given value
 \*------------------------------------------------------------------------------*/
-void BmPrefs::SetShortcutFor( const char* name, const BString val) {
+void BmPrefs::SetShortcutFor( const char* name, const BmString val) {
 	BmAutolock lock( mLocker);
 	lock.IsLocked()	 						|| BM_THROW_RUNTIME( "Prefs: Unable to get lock!");
 	mShortcutsMsg.RemoveName( name);
-	mShortcutsMsg.AddString( name, val);
+	mShortcutsMsg.AddString( name, val.String());
 }
 
 /*------------------------------------------------------------------------------*\
@@ -391,14 +393,14 @@ void BmPrefs::SetLoglevels() {
 	int32 loglevels = GetInt("Loglevels");
 	TheLogHandler->LogLevels( loglevels);
 #ifdef BM_LOGGING
-	BString s;
+	BmString s;
 	for( int i=31; i>=0; --i) {
 		if (loglevels & (01UL<<i))
 			s << "1";
 		else
 			s << "0";
 	}
-	BM_LOG3( BM_LogUtil, BString("Initialized loglevels to binary value ") << s);
+	BM_LOG3( BM_LogUtil, BmString("Initialized loglevels to binary value ") << s);
 #endif
 }
 
@@ -414,10 +416,10 @@ bool BmPrefs::Store() {
 	lock.IsLocked()	 						|| BM_THROW_RUNTIME( "Prefs: Unable to get lock!");
 
 	try {
-		BString prefsFilename = BString( TheResources->SettingsPath.Path()) << "/" << PREFS_FILENAME;
+		BmString prefsFilename = BmString( TheResources->SettingsPath.Path()) << "/" << PREFS_FILENAME;
 		(err = prefsFile.SetTo( prefsFilename.String(), 
 										B_WRITE_ONLY | B_CREATE_FILE | B_ERASE_FILE)) == B_OK
-													|| BM_THROW_RUNTIME( BString("Could not create settings file\n\t<") << prefsFilename << ">\n\n Result: " << strerror(err));
+													|| BM_THROW_RUNTIME( BmString("Could not create settings file\n\t<") << prefsFilename << ">\n\n Result: " << strerror(err));
 		// in order to avoid storing loglevels as plain value, we take it out temporarily:
 		int32 loglevels = mPrefsMsg.FindInt32("Loglevels");
 		mPrefsMsg.RemoveName("Loglevels");
@@ -426,7 +428,7 @@ bool BmPrefs::Store() {
 		mPrefsMsg.AddMessage("Shortcuts", &mShortcutsMsg);
 		// store prefs-data inside file:		
 		(err = mPrefsMsg.Flatten( &prefsFile)) == B_OK
-													|| BM_THROW_RUNTIME( BString("Could not store settings into file\n\t<") << prefsFilename << ">\n\n Result: " << strerror(err));
+													|| BM_THROW_RUNTIME( BmString("Could not store settings into file\n\t<") << prefsFilename << ">\n\n Result: " << strerror(err));
 		// put loglevels back in:
 		mPrefsMsg.AddInt32( "Loglevels", loglevels);
 		// update saved state to current:
@@ -446,7 +448,7 @@ bool BmPrefs::Store() {
 		-	if neither the current prefs nor the defaults-msg contain the specified
 			value, an error message is shown
 \*------------------------------------------------------------------------------*/
-BString BmPrefs::GetString( const char* name) {
+BmString BmPrefs::GetString( const char* name) {
 	BmAutolock lock( mLocker);
 	lock.IsLocked()	 						|| BM_THROW_RUNTIME( "Prefs: Unable to get lock!");
 	const char* val;
@@ -457,7 +459,7 @@ BString BmPrefs::GetString( const char* name) {
 			mPrefsMsg.AddString( name, val);
 			return val;
 		} else {
-			BM_SHOWERR( BString("The Preferences-field ") << name << " of type string is unknown");
+			BM_SHOWERR( BmString("The Preferences-field ") << name << " of type string is unknown");
 			return "";
 		}
 	}
@@ -471,7 +473,7 @@ BString BmPrefs::GetString( const char* name) {
 		-	if neither the current prefs nor the defaults-msg contain the specified
 			value, the given default-value is returned
 \*------------------------------------------------------------------------------*/
-BString BmPrefs::GetString( const char* name, const BString defaultVal) {
+BmString BmPrefs::GetString( const char* name, const BmString defaultVal) {
 	BmAutolock lock( mLocker);
 	lock.IsLocked()	 						|| BM_THROW_RUNTIME( "Prefs: Unable to get lock!");
 	const char* val;
@@ -505,7 +507,7 @@ bool BmPrefs::GetBool( const char* name) {
 			mPrefsMsg.AddBool( name, val);
 			return val;
 		} else {
-			BM_SHOWERR( BString("The Preferences-field ") << name << " of type bool is unknown");
+			BM_SHOWERR( BmString("The Preferences-field ") << name << " of type bool is unknown");
 			return false;
 		}
 	}
@@ -553,7 +555,7 @@ int32 BmPrefs::GetInt( const char* name) {
 			mPrefsMsg.AddInt32( name, val);
 			return val;
 		} else {
-			BM_SHOWERR( BString("The Preferences-field ") << name << " of type int32 is unknown");
+			BM_SHOWERR( BmString("The Preferences-field ") << name << " of type int32 is unknown");
 			return 0;
 		}
 	}
@@ -602,7 +604,7 @@ BMessage* BmPrefs::GetMsg( const char* name) {
 			mPrefsMsg.AddMessage( name, msg);
 			return msg;
 		} else {
-			BM_SHOWERR( BString("The Preferences-field ") << name << " of type message is unknown");
+			BM_SHOWERR( BmString("The Preferences-field ") << name << " of type message is unknown");
 			delete msg;
 			return NULL;
 		}
@@ -651,11 +653,11 @@ void BmPrefs::SetMsg( const char* name, const BMessage* val) {
 
 /*------------------------------------------------------------------------------*\
 	SetString()
-		-	sets the prefs-val (a BString) specified by name to the given val
+		-	sets the prefs-val (a BmString) specified by name to the given val
 		-	if a value for the given name exists already, it is replaced by the 
 			new value
 \*------------------------------------------------------------------------------*/
-void BmPrefs::SetString( const char* name, const BString val) {
+void BmPrefs::SetString( const char* name, const BmString val) {
 	BmAutolock lock( mLocker);
 	lock.IsLocked()	 						|| BM_THROW_RUNTIME( "Prefs: Unable to get lock!");
 	mPrefsMsg.RemoveName( name);
