@@ -83,6 +83,7 @@ enum Columns {
 	COL_STATUS,
 	COL_ATTACHMENT,
 	COL_PRIORITY,
+	COL_IDENTITY,
 	COL_END
 };
 
@@ -242,6 +243,9 @@ const char* BmMailRefItem::GetUserText(int32 colIdx, float colWidth) const {
 	case COL_PRIORITY:
 		text = ref->Priority().String();
 		break;
+	case COL_IDENTITY:
+		text = ref->Identity().String();
+		break;
 	default:
 		return "";
 	};
@@ -309,6 +313,7 @@ BmMailRefView::BmMailRefView( minimax minmax, int32 width, int32 height)
 	AddColumn( new CLVColumn( "S", 100.0, CLV_SORT_KEYABLE, 40.0, "(S)tatus [Text]"));
 	AddColumn( new CLVColumn( "A", 100.0, CLV_SORT_KEYABLE | CLV_COLDATA_NUMBER, 18.0, "(A)ttachments [Text]"));
 	AddColumn( new CLVColumn( "P", 100.0, CLV_SORT_KEYABLE | CLV_COLDATA_NUMBER, 18.0, "(P)riority [Text]"));
+	AddColumn( new CLVColumn( "Identity", 100.0, CLV_SORT_KEYABLE | flags, 20.0));
 	SetSortFunction( CLVEasyItem::CompareItems);
 	SetSortKey( COL_DATE);
 	SetSortMode( COL_DATE, Descending, false);
