@@ -218,19 +218,19 @@ BmString BmEncoding::ConvertHeaderPartToUTF8( const BmString& headerPart,
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmString BmEncoding::ConvertUTF8ToHeaderPart( const BmString& utf8text, uint32 encoding,
+BmString BmEncoding::ConvertUTF8ToHeaderPart( const BmString& utf8Text, uint32 encoding,
 															bool useQuotedPrintableIfNeeded,
 															bool fold, int32 fieldLen) {
 	bool needsQuotedPrintable = false;
-	BmString charsetString;
 	BmString transferEncoding = "7bit";
-	ConvertFromUTF8( encoding, utf8text, charsetString);
 	if (useQuotedPrintableIfNeeded)
-		needsQuotedPrintable = NeedsEncoding( charsetString);
+		needsQuotedPrintable = NeedsEncoding( utf8Text);
 	if (ThePrefs->GetBool( "Allow8BitMimeInHeader", false) && needsQuotedPrintable) {
 		transferEncoding = "8bit";
 		needsQuotedPrintable = false;
 	}
+	BmString charsetString;
+	ConvertFromUTF8( encoding, utf8Text, charsetString);
 	BmString charset = EncodingToCharset( encoding);
 	BmString encodedString;
 	if (needsQuotedPrintable) {
@@ -291,10 +291,10 @@ BmString BmEncoding::ConvertUTF8ToHeaderPart( const BmString& utf8text, uint32 e
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-bool BmEncoding::NeedsEncoding( const BmString& charsetString) {
+bool BmEncoding::NeedsEncoding( const BmString& utf8String) {
 	// check if string needs quoted-printable/base64 encoding
 	// (which it does if it contains non-ASCII chars):
-	for( const char* p = charsetString.String(); *p; ++p) {
+	for( const char* p = utf8String.String(); *p; ++p) {
 		if (*p<32 && *p!='\r' && *p!='\n' && *p!='\t')
 			// N.B.: This is a signed char, so c<32 means [0-31] and [128-255]
 			return true;

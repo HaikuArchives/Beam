@@ -65,7 +65,7 @@ namespace BmEncoding {
 												bool useQuotedPrintableIfNeeded,
 												bool fold=false, int32 fieldLen=0);
 	
-	bool NeedsEncoding( const BmString& charsetString);
+	bool NeedsEncoding( const BmString& utf8String);
 	bool IsCompatibleWithText( const BmString& s);
 
 	typedef auto_ptr<BmMemFilter> BmMemFilterRef;
