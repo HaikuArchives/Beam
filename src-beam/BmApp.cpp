@@ -286,11 +286,9 @@ void BmApplication::ReadyToRun() {
 
 /*------------------------------------------------------------------------------*\
 	AppActivated()
-		-	shows Beam's main-window
+		-	
 \*------------------------------------------------------------------------------*/
 void BmApplication::AppActivated( bool active) {
-	if (active && TheMainWindow->IsMinimized())
-		TheMainWindow->Minimize( false);
 }
 
 /*------------------------------------------------------------------------------*\
