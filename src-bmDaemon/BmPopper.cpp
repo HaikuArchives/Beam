@@ -449,7 +449,7 @@ bool BmPopper::GetAnswer( bool SingleLineMode, int32 mailNr) {
 		BM_LOG2( BM_LogPop, BString("announced msg-size:") << mMsgSizes[mailNr-1]);
 	BM_LOG3( BM_LogPop, BString("bufSize:") << bufSize);
 	mAnswer.SetTo( '\0', bufSize);		// preallocate the bufsize we need
-	buffer = mAnswer.LockBuffer( 0);
+	buffer = mAnswer.LockBuffer( bufSize);
 	try {
 		do {
 			int32 bufFree = bufSize - offset;

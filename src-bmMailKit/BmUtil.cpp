@@ -224,7 +224,7 @@ BString operator+(const BString& s1, const char* s2)
 \*------------------------------------------------------------------------------*/
 BString& RemoveSetFromString( BString& str, const char* charsToRemove) {
 	if (!charsToRemove) return str;
-	char* buf = str.LockBuffer( 0);
+	char* buf = str.LockBuffer( str.Length());
 	if (buf) {
 		char* pos = buf;
 		char* newPos = buf;

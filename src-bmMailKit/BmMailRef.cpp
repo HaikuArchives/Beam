@@ -260,7 +260,7 @@ bool BmMailRef::ReadAttributes( const struct stat* statInfo) {
 	}
 
 	buffer.SetTo( '\0', bufsize);		// preallocate the bufsize we need
-	buf = buffer.LockBuffer( 0);
+	buf = buffer.LockBuffer( bufsize);
 
 	try {
 		for( int i=0; (err = node.SetTo( &mEntryRef)) == B_BUSY; ++i) {

@@ -124,12 +124,10 @@ void BmJobStatusView::MessageReceived( BMessage* msg) {
 				BM_LOG2( BM_LogModelController, BString("Controller <") << ControllerName() << "> has been told to show its view");
 				BmAutolock lock( TheJobStatusWin);
 				lock.IsLocked()				|| BM_THROW_RUNTIME( "JobStatusView(): could not lock window");
-				if (TheJobStatusWin->Workspaces() == (uint32)current_workspace()+1) {
-					do {
-						TheJobStatusWin->Minimize( false);
-						TheJobStatusWin->Show();
-					} while (TheJobStatusWin->IsHidden());
-				}
+				do {
+					TheJobStatusWin->Minimize( false);
+					TheJobStatusWin->Show();
+				} while (TheJobStatusWin->IsHidden());
 				break;
 			}
 			case BM_TIME_TO_REMOVE: {
@@ -601,7 +599,7 @@ BmJobStatusWin::BmJobStatusWin()
 					"Jobs",
 					B_FLOATING_WINDOW_LOOK, B_NORMAL_WINDOW_FEEL,
 					B_ASYNCHRONOUS_CONTROLS	|	B_NOT_ZOOMABLE	|	B_NOT_V_RESIZABLE
-					| B_AVOID_FOCUS | B_NOT_CLOSABLE | B_NO_WORKSPACE_ACTIVATION)
+					| B_NO_WORKSPACE_ACTIVATION)
 { 
 	mOuterGroup = 
 		new VGroup(

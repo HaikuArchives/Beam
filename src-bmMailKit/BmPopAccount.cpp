@@ -241,11 +241,23 @@ void BmPopAccount::MarkUIDAsDownloaded( BString uid) {
 }
 
 /*------------------------------------------------------------------------------*\
+	CheckInterval( interval)
+		-	
+\*------------------------------------------------------------------------------*/
+void BmPopAccount::CheckInterval( int16 i) { 
+	mCheckInterval = i; 
+	mCheckIntervalString = i ? BString()<<i : "";
+	TellModelItemUpdated( UPD_ALL);
+	SetupIntervalRunner();
+}
+
+/*------------------------------------------------------------------------------*\
 	SetupIntervalRunner()
 		-	
 \*------------------------------------------------------------------------------*/
 void BmPopAccount::SetupIntervalRunner() {
 	delete mIntervalRunner;
+	mIntervalRunner = NULL;
 	if (mCheckInterval>0) {
 		BMessage* msg = new BMessage( BMM_CHECK_MAIL);
 		msg->AddString( BmPopAccountList::MSG_ITEMKEY, Key().String());
