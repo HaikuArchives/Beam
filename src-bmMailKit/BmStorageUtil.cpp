@@ -107,8 +107,11 @@ bool CheckMimeType( const entry_ref* eref, const char* type) {
 	DetermineMimeType( eref, doublecheck)
 		-	determines the mimetype of the given file (according to BeOS)
 \*------------------------------------------------------------------------------*/
-BString DetermineMimeType( const entry_ref* eref, bool doublecheck) {
-	BNode node( eref);
+BString DetermineMimeType( const entry_ref* inref, bool doublecheck) {
+	BEntry entry( inref, true);			// traverse links
+	entry_ref eref;
+	entry.GetRef( &eref);
+	BNode node( &eref);
 	if (node.InitCheck() == B_OK) {
 		if (doublecheck)
 			node.RemoveAttr( "BEOS:TYPE");
@@ -118,7 +121,6 @@ BString DetermineMimeType( const entry_ref* eref, bool doublecheck) {
 			*mimetype = 0;
 			if (nodeInfo.GetType( mimetype)!=B_OK) {
 				// no mimetype info yet, we ask BeOS to determine mimetype and then try again:
-				BEntry entry( eref);
 				BPath path;
 				entry.GetPath( &path);
 				status_t res=entry.InitCheck();
