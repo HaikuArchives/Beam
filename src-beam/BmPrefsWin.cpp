@@ -29,6 +29,7 @@
 
 
 #include <Autolock.h>
+#include <MenuField.h>
 #include <Font.h>
 #include <Message.h>
 #include "BmString.h"
@@ -41,7 +42,11 @@
 	class BRect;
 #endif
 
-#include <layout-all.h>
+#include <liblayout/HGroup.h>
+#include <liblayout/LayeredGroup.h>
+#include <liblayout/MButton.h>
+#include <liblayout/Space.h>
+#include <liblayout/VGroup.h>
 
 #include "ColumnListView.h"
 #include "CLVEasyItem.h"
@@ -52,6 +57,7 @@
 #include "BmLogHandler.h"
 #include "BmMsgTypes.h"
 #include "BmPrefsView.h"
+#include "BmPrefsFilterView.h"
 #include "BmPrefsGeneralView.h"
 #include "BmPrefsMailConstrView.h"
 #include "BmPrefsMailReadView.h"
@@ -122,9 +128,11 @@ BmPrefsWin::BmPrefsWin()
 								new BmPrefsShortcutsView(),
 								new BmPrefsMailConstrView(),
 								new BmPrefsSendMailView(),
+								new BmPrefsFilterView( TheOutboundFilterList.Get(), true),
 								new BmPrefsSignatureView(),
 								new BmPrefsMailReadView(),
 								new BmPrefsRecvMailView(),
+								new BmPrefsFilterView( TheInboundFilterList.Get(), false),
 								0
 							)
 						),
@@ -226,6 +234,10 @@ CLVContainerView* BmPrefsWin::CreatePrefsListView( minimax minmax, int32 width, 
 	mPrefsListView->AddItem( item);
 
 	item = new CLVEasyItem( 1, false, false, 18.0);
+	item->SetColumnContent( 1, "Filters");
+	mPrefsListView->AddItem( item);
+
+	item = new CLVEasyItem( 1, false, false, 18.0);
 	item->SetColumnContent( 1, "Signatures");
 	mPrefsListView->AddItem( item);
 
@@ -236,6 +248,10 @@ CLVContainerView* BmPrefsWin::CreatePrefsListView( minimax minmax, int32 width, 
 
 	item = new CLVEasyItem( 1, false, false, 18.0);
 	item->SetColumnContent( 1, "Accounts");
+	mPrefsListView->AddItem( item);
+
+	item = new CLVEasyItem( 1, false, false, 18.0);
+	item->SetColumnContent( 1, "Filters");
 	mPrefsListView->AddItem( item);
 
 	return container;
