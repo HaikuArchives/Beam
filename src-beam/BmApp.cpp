@@ -692,8 +692,8 @@ void BmApplication::ReplyToMails( BMessage* msg, bool join) {
 				mail->StartJobInThisThread( BmMail::BM_READ_MAIL_JOB);
 				if (mail->InitCheck() != B_OK)
 					continue;
-				BString originator = mail->Header()->DetermineOriginator();
-				BmRef<BmMail>& newMail = newMailMap[originator];
+				BString replyAddr = mail->DetermineReplyAddress( msg->what, true);
+				BmRef<BmMail>& newMail = newMailMap[replyAddr];
 				if (!newMail) 
 					newMail = mail->CreateReply( msg->what, selectedText);
 				else
