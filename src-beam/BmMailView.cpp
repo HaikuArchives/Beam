@@ -64,12 +64,15 @@ BmMailView::BmMailView( minimax minmax, BRect frame, bool editable)
 	,	mFontSize( 12)
 {
 	mHeaderView = new BmMailHeaderView( NULL);
-	AddChild( mHeaderView);
+	if (editable)
+		mHeaderView->ResizeTo( 0,0);
+	else
+		AddChild( mHeaderView);
 	mBodyPartView = new BmBodyPartView( minimax( 0, 0, 1E5, 1E5), 800, 0);
 	mBodyPartView->RemoveSelf();
 	AddChild( mBodyPartView);
 	mBodyPartView->MoveTo( mHeaderView->Frame().LeftBottom());
-	mBodyPartView->ResizeTo( 800,40);
+	mBodyPartView->ResizeTo( 800,0);
 	CalculateVerticalOffset();
 	MakeEditable( editable);
 	SetStylable( !editable);

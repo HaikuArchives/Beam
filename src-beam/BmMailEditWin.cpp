@@ -10,13 +10,19 @@
 
 #include <layout-all.h>
 
+#include "PrefilledBitmap.h"
+
 #include "Beam.h"
 #include "BmBasics.h"
+#include "BmEncoding.h"
 #include "BmLogHandler.h"
 #include "BmMailView.h"
 #include "BmMailEditWin.h"
+#include "BmMenuControl.h"
 #include "BmMsgTypes.h"
+#include "BmPopAccount.h"
 #include "BmResources.h"
+#include "BmTextControl.h"
 #include "BmToolbarButton.h"
 #include "BmUtil.h"
 
@@ -58,58 +64,113 @@ BmMailEditWin* BmMailEditWin::CreateInstance()
 BmMailEditWin::BmMailEditWin()
 	:	inherited( BRect(50,50,800,600), "Edit Mail", B_TITLED_WINDOW_LOOK, 
 					  B_NORMAL_WINDOW_FEEL, B_ASYNCHRONOUS_CONTROLS)
+	,	mShowDetails( false)
 {
-	BPopUpMenu* mToPopup = new BPopUpMenu( "To_Popup", true, false);
-	MTextControl* mToTextControl;
-	
-	MView* mOuterGroup = 
+	mOuterGroup = 
 		new VGroup(
 			minimax( 500, 400, 1E5, 1E5),
 			CreateMenu(),
-			new Space(minimax(-1,4,-1,4)),
-			new HGroup(
-				minimax( -1, -1, 1E5, -1),
-				mSendButton = new BmToolbarButton( "Send", 
-															  TheResources->IconByName("Button_Send"), 
-															  new BMessage(BMM_SEND_NOW), this, 
-															  "Send mail now"),
-				mSaveButton = new BmToolbarButton( "Save", 
-																TheResources->IconByName("Button_Save"), 
-																new BMessage(BMM_SAVE), this, 
-																"Save mail as draft (for later use)"),
-				mNewButton = new BmToolbarButton( "New", 
-															 TheResources->IconByName("Button_New"), 
-															 new BMessage(BMM_NEW_MAIL), this, 
-															 "Compose a new mail message"),
-				mAttachButton = new BmToolbarButton( "Attach", 
-																 TheResources->IconByName("Attachment"), 
-																 new BMessage(BMM_ATTACH), this, 
-																 "Attach a file to this mail"),
-				mPeopleButton = new BmToolbarButton( "People", 
-																 TheResources->IconByName("Person"), 
-																 new BMessage(BMM_SHOW_PEOPLE), this, 
-																 "Show people information (addresses)"),
-				mPrintButton = new BmToolbarButton( "Print", 
-																TheResources->IconByName("Button_Print"), 
-																new BMessage(BMM_PRINT), this, 
-																"Print selected messages(s)"),
-				new Space(),
-				0
+			new MBorder( M_RAISED_BORDER, 3, NULL,
+				new HGroup(
+					minimax( -1, -1, 1E5, -1),
+					mSendButton = new BmToolbarButton( "Send", 
+																  TheResources->IconByName("Button_Send"), 
+																  new BMessage(BMM_SEND_NOW), this, 
+																  "Send mail now"),
+					mSaveButton = new BmToolbarButton( "Save", 
+																	TheResources->IconByName("Button_Save"), 
+																	new BMessage(BMM_SAVE), this, 
+																	"Save mail as draft (for later use)"),
+					mNewButton = new BmToolbarButton( "New", 
+																 TheResources->IconByName("Button_New"), 
+																 new BMessage(BMM_NEW_MAIL), this, 
+																 "Compose a new mail message"),
+					mAttachButton = new BmToolbarButton( "Attach", 
+																	 TheResources->IconByName("Attachment"), 
+																	 new BMessage(BMM_ATTACH), this, 
+																	 "Attach a file to this mail"),
+					mPeopleButton = new BmToolbarButton( "People", 
+																	 TheResources->IconByName("Person"), 
+																	 new BMessage(BMM_SHOW_PEOPLE), this, 
+																	 "Show people information (addresses)"),
+					mPrintButton = new BmToolbarButton( "Print", 
+																	TheResources->IconByName("Button_Print"), 
+																	new BMessage(BMM_PRINT), this, 
+																	"Print selected messages(s)"),
+					new Space(),
+					0
+				)
 			),
 			new Space(minimax(-1,4,-1,4)),
 			new HGroup(
-				minimax( -1, -1, 1E5, -1),
-				new Space(minimax(10,-1,10,-1)),
-				new MBViewWrapper(
-					new BMenuField( BRect(0,0,40,20), NULL, "To:", mToPopup), true, true, true
-				),
-				mToTextControl = new MTextControl( NULL, ""),
+				new Space(minimax(20,-1,20,-1)),
+				mFromControl = new BmMenuControl( "From:", new BPopUpMenu( "Mail Accounts")),
+				0
+			),
+			new HGroup(
+				new Space(minimax(20,-1,20,-1)),
+				mToControl = new BmTextControl( "To:", true),
+				0
+			),
+			new HGroup(
+				mShowDetailsButton = 
+				new MPictureButton( minimax( 16,16,16,16), 
+										  TheResources->CreatePictureFor( &TheResources->mRightArrow, 16, 16), 
+										  TheResources->CreatePictureFor( &TheResources->mDownArrow, 16, 16), 
+										  new BMessage( BM_MAILEDIT_SHOWDETAILS), this, B_TWO_STATE_BUTTON),
+				new Space(minimax(4,-1,4,-1)),
+				mSubjectControl = new BmTextControl( "Subject:", false),
+				0
+			),
+			new HGroup(
+				new Space(minimax(20,-1,20,-1)),
+				mCcControl = new BmTextControl( "Cc:", true),
+				0
+			),
+			new HGroup(
+				new Space(minimax(20,-1,20,-1)),
+				mBccControl = new BmTextControl( "Bcc:", true),
+				0
+			),
+			new HGroup(
+				new Space(minimax(20,-1,20,-1)),
+				mEncodingControl = new BmMenuControl( "Encoding:", new BPopUpMenu( "Encoding:")),
 				0
 			),
 			new Space(minimax(-1,4,-1,4)),
 			CreateMailView( minimax(200,200,1E5,1E5), BRect(0,0,400,200)),
 			0
 		);
+		
+	float divider = mToControl->Divider();
+	divider = max( divider, mSubjectControl->Divider());
+	divider = max( divider, mFromControl->Divider());
+	divider = max( divider, mCcControl->Divider());
+	divider = max( divider, mBccControl->Divider());
+	mToControl->SetDivider( divider);
+	mSubjectControl->SetDivider( divider);
+	mFromControl->SetDivider( divider);
+	mCcControl->SetDivider( divider);
+	mBccControl->SetDivider( divider);
+	mEncodingControl->SetDivider( divider);
+	mShowDetailsButton->SetFlags( mShowDetailsButton->Flags() & (0xFFFFFFFF^B_NAVIGABLE));
+
+	// initially, the detail-parts are hidden:
+	mCcControl->DetachFromParent();
+	mBccControl->DetachFromParent();
+	mEncodingControl->DetachFromParent();
+
+	// add all popaccounts to menu:
+	BmModelItemMap::const_iterator iter;
+	for( iter = ThePopAccountList->begin(); iter != ThePopAccountList->end(); ++iter) {
+		BmPopAccount* acc = dynamic_cast< BmPopAccount*>( iter->second.Get());
+		mFromControl->Menu()->AddItem( new BMenuItem( acc->Key().String(), new BMessage('bmyy')));
+	}
+
+	// add all encodings to menu:
+	for( const char **enc = BmEncoding::BM_Encodings; *enc; ++enc) {
+		mEncodingControl->Menu()->AddItem( new BMenuItem( *enc, new BMessage('bmyy')));
+	}
 
 	AddChild( dynamic_cast<BView*>(mOuterGroup));
 }
@@ -208,6 +269,22 @@ BmMailViewContainer* BmMailEditWin::CreateMailView( minimax minmax, BRect frame)
 void BmMailEditWin::MessageReceived( BMessage* msg) {
 	try {
 		switch( msg->what) {
+			case BM_MAILEDIT_SHOWDETAILS: {
+				int32 newVal = (mShowDetails ? B_CONTROL_OFF : B_CONTROL_ON);
+				mShowDetailsButton->SetValue( newVal);
+				mShowDetails = newVal != B_CONTROL_OFF;
+				if (mShowDetails) {
+					mCcControl->ReattachToParent();
+					mBccControl->ReattachToParent();
+					mEncodingControl->ReattachToParent();
+				} else {
+					mCcControl->DetachFromParent();
+					mBccControl->DetachFromParent();
+					mEncodingControl->DetachFromParent();
+				}
+				RecalcSize();
+				break;
+			}
 			case B_COPY:
 			case B_CUT: 
 			case B_PASTE: 

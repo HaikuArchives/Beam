@@ -11,6 +11,8 @@
 \*------------------------------------------------------------------------------*/
 namespace BmEncoding {
 	
+	extern const char* BM_Encodings[];
+
 	const uint32 BM_UTF8_CONVERSION = 0xFFFF;
 
 	uint32 CharsetToEncoding( const BString& charset);

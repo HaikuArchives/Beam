@@ -15,6 +15,9 @@
 #include <String.h>
 #include <Volume.h>
 
+#include "Colors.h"
+#include "PrefilledBitmap.h"
+
 class BBitmap;
 
 /*------------------------------------------------------------------------------*\
@@ -47,7 +50,12 @@ public:
 	float FontHeight( const BFont* font=NULL);
 	float FontLineHeight( const BFont* font=NULL);
 	//
+	BPicture* CreatePictureFor( BBitmap* image, float width, float height,
+										 rgb_color background = BeBackgroundGrey);
+	//
 	const char* WHITESPACE;
+	PrefilledBitmap mRightArrow;
+	PrefilledBitmap mDownArrow;
 
 	static BmResources* theInstance;
 

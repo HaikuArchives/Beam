@@ -17,6 +17,32 @@ using namespace regexx;
 
 #define HEXDIGIT2CHAR(d) (((d)>='0'&&(d)<='9') ? (d)-'0' : ((d)>='A'&&(d)<='F') ? (d)-'A'+10 : ((d)>='a'&&(d)<='f') ? (d)-'a'+10 : 0)
 
+const char* BmEncoding::BM_Encodings[] = {
+	"ISO-8859-1",
+	"ISO-8859-2",
+	"ISO-8859-3",
+	"ISO-8859-4",
+	"ISO-8859-5",
+	"ISO-8859-6",
+	"ISO-8859-7",
+	"ISO-8859-8",
+	"ISO-8859-9",
+	"ISO-8859-10",
+	"Macintosh",
+	"SHIFT_JIS",
+	"EUC-JP",
+	"ISO-2022-JP",
+	"WINDOWS-1252",
+	"KOI8-R",
+	"WINDOWS-1251",
+	"IBM866",
+	"IBM850",
+	"EUC-KR",
+	"ISO-8859-13",
+	"ISO-8859-14",
+	"ISO-8859-15",
+	NULL
+};
 
 /*------------------------------------------------------------------------------*\
 	()

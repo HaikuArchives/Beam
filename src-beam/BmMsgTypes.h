@@ -64,15 +64,21 @@
 #define BM_BODYPARTVIEW_SHOWINLINE	'bmgb'
 
 /*------------------------------------------------------------------------------*\
-	DRAG-message:
+	types of messages handled by a BmMailEditWin:
 \*------------------------------------------------------------------------------*/
-#define BM_MAIL_DRAG						'bmha'
-#define BM_ATTACHMENT_DRAG				'bmhb'
+#define BM_MAILEDIT_SHOWDETAILS		'bmha'
 
 /*------------------------------------------------------------------------------*\
 	types of messages handled by a BmLogfile:
 \*------------------------------------------------------------------------------*/
-#define BM_LOG_MSG						'bmha'
+#define BM_LOG_MSG						'bmia'
+
+
+/*------------------------------------------------------------------------------*\
+	DRAG-message:
+\*------------------------------------------------------------------------------*/
+#define BM_MAIL_DRAG						'bmza'
+#define BM_ATTACHMENT_DRAG				'bmzb'
 
 
 /*------------------------------------------------------------------------------*\

@@ -12,8 +12,11 @@ class MMenuBar;
 
 class BmMailView;
 class BmMailViewContainer;
+class BmMenuControl;
 class BmToolbarButton;
+class BmTextControl;
 class CLVContainerView;
+class MPictureButton;
 
 class BmMailEditWin : public MWindow
 {
@@ -42,12 +45,25 @@ private:
 
 	BmMailView* mMailView;
 	
+	MPictureButton* mShowDetailsButton;
+
 	BmToolbarButton* mSendButton;
 	BmToolbarButton* mSaveButton;
 	BmToolbarButton* mNewButton;
 	BmToolbarButton* mAttachButton;
 	BmToolbarButton* mPeopleButton;
 	BmToolbarButton* mPrintButton;
+	
+	BmTextControl* mToControl;
+	BmTextControl* mSubjectControl;
+	BmTextControl* mCcControl;
+	BmTextControl* mBccControl;
+	
+	BmMenuControl* mFromControl;
+	BmMenuControl* mEncodingControl;
+	
+	bool mShowDetails;
+	MView* mOuterGroup;
 };
 
 #endif

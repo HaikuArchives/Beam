@@ -6,13 +6,18 @@
 #include <Application.h>
 #include <Bitmap.h>
 #include <FindDirectory.h>
+#include <Picture.h>
 #include <Resources.h>
+#include <View.h>
 
 #include "BmBasics.h"
 #include "BmResources.h"
 #include "BmUtil.h"
 
 BmResources* BmResources::theInstance = NULL;
+
+extern uint8 CLVRightArrowData[132];
+extern uint8 CLVDownArrowData[132];
 
 /*------------------------------------------------------------------------------*\
 	CreateInstance()
@@ -32,6 +37,8 @@ BmResources* BmResources::CreateInstance() {
 \*------------------------------------------------------------------------------*/
 BmResources::BmResources()
 	:	WHITESPACE( " \t\n\r\f")
+	,	mRightArrow( BRect(0.0,0.0,10.0,10.0), B_COLOR_8_BIT, CLVRightArrowData)
+	,	mDownArrow( BRect(0.0,0.0,10.0,10.0), B_COLOR_8_BIT, CLVDownArrowData)
 {
 	BMimeType mt;
 	BPath path;
@@ -216,4 +223,36 @@ BDirectory* BmResources::GetFolder( const BString& name, BDirectory& dir) {
 	}
 	return &dir;
 }
+
+/*------------------------------------------------------------------------------*\
+	( )
+		-	
+\*------------------------------------------------------------------------------*/
+BPicture* BmResources::CreatePictureFor( BBitmap* image, float width, float height,
+													  rgb_color background) {
+	BPicture* picture = new BPicture();
+	BRect rect(0,0,width-1,height-1);
+	BView* view = new BView( rect, NULL, B_FOLLOW_NONE, 0);
+	BBitmap* drawImage = new BBitmap( rect, B_RGBA32, true);
+	drawImage->AddChild( view);
+	drawImage->Lock();
+	view->BeginPicture( picture);
+	view->SetViewColor( background);
+	view->SetLowColor( background);
+	view->FillRect( rect, B_SOLID_LOW);
+	if (image) {
+		BRect imageRect = image->Bounds();
+		float imageWidth = imageRect.Width();
+		float imageHeight = imageRect.Height();
+		view->SetDrawingMode(B_OP_OVER);
+		view->DrawBitmap( image, BPoint( (width-imageWidth)/2.0, (height-imageHeight)/2.0));
+		view->SetDrawingMode(B_OP_COPY);
+	}
+	view->EndPicture();
+	drawImage->Unlock();
+	delete drawImage;
+	return picture;
+}
+
+
 
