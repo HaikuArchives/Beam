@@ -369,13 +369,18 @@ BmMailFilterView::~BmMailFilterView() {
 		-	creates and returns a new job-model, data may contain constructor args
 \*------------------------------------------------------------------------------*/
 BmJobModel* BmMailFilterView::CreateJobModel( BMessage* msg) {
-	const char* filterName = NULL;
-	msg->FindString( BmListModel::MSG_ITEMKEY, &filterName);
+	BmString filterName = msg->FindString( BmListModel::MSG_ITEMKEY);
 	BmFilter* filter = NULL;
-	BmRef<BmListModelItem> filterRef;
-	if (filterName) {
-		filterRef = TheFilterList->FindItemByKey( filterName);
-		filter = dynamic_cast< BmFilter*>( filterRef.Get());
+	if (filterName.Length()) {
+		if (filterName == BmFilterList::LEARN_AS_SPAM_NAME)
+			filter = TheFilterList->LearnAsSpamFilter().Get();
+		else if (filterName == BmFilterList::LEARN_AS_TOFU_NAME)
+			filter = TheFilterList->LearnAsTofuFilter().Get();
+		else {
+			BmRef<BmListModelItem> filterRef
+				= TheFilterList->FindItemByKey( filterName);
+			filter = dynamic_cast< BmFilter*>( filterRef.Get());
+		}
 		if (!filter)
 			return NULL;
 	}
