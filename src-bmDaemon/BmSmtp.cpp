@@ -374,7 +374,7 @@ void BmSmtp::StateHelo() {
 			mServerSupportsDSN = true;
 		}
 		if (rx.exec( 
-			StatusText(), "^\\d\\d\\d.AUTH\\W+(.*?)$", Regexx::newline
+			StatusText(), "^\\d\\d\\d.AUTH[\\s=]+(.*?)$", Regexx::newline
 		)) {
 			mSupportedAuthTypes = rx.match[0].atom[0];
 		}
