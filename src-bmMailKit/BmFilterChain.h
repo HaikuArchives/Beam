@@ -41,8 +41,7 @@
 
 #include <vector.h>
 
-extern IMPEXPBMMAILKIT BmString BM_OutboundPreEditLabel;
-extern IMPEXPBMMAILKIT BmString BM_OutboundPreSendLabel;
+extern IMPEXPBMMAILKIT BmString BM_OutboundLabel;
 
 class BmFilterChainList;
 class BmChainedFilterList;

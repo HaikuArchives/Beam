@@ -50,8 +50,7 @@ const char* const BmChainedFilter::MSG_FILTERNAME = "bm:fname";
 
 const int16 BmChainedFilter::nArchiveVersion = 2;
 
-BmString BM_OutboundPreEditLabel("<outbound-before-edit>");
-BmString BM_OutboundPreSendLabel("<outbound-before-send>");
+BmString BM_OutboundLabel("<outbound>");
 
 // standard logfile-name for this class:
 #undef BM_LOGNAME
@@ -280,7 +279,7 @@ void BmChainedFilterList::InstantiateItems( BMessage* archive) {
 	BmFilterChain
 \********************************************************************************/
 
-const int16 BmFilterChain::nArchiveVersion = 2;
+const int16 BmFilterChain::nArchiveVersion = 3;
 
 const char* const BmFilterChain::MSG_NAME = "bm:name";
 
@@ -308,10 +307,10 @@ BmFilterChain::BmFilterChain( BMessage* archive, BmFilterChainList* model)
 	int16 version;
 	if (archive->FindInt16( MSG_VERSION, &version) != B_OK)
 		version = 0;
-	if (version < 2) {
-		// rename <outbound> to <outbound-pre-send>:
-		if (Key() == "<outbound>")
-			Key(BM_OutboundPreSendLabel);
+	if (version == 2) {
+		// rename <outbound-pre-send> back to <outbound> (ahem):
+		if (Key() == "<outbound-pre-send>")
+			Key(BM_OutboundLabel);
 	}
 }
 
@@ -446,10 +445,9 @@ bool BmFilterChainList::StartJob() {
 	bool res = inherited::StartJob();
 	if (!FindItemByKey( BM_DefaultItemLabel))
 		AddItemToList( new BmFilterChain( BM_DefaultItemLabel.String(), this));
-	if (!FindItemByKey( BM_OutboundPreEditLabel))
-		AddItemToList( new BmFilterChain( BM_OutboundPreEditLabel.String(), this));
-	if (!FindItemByKey( BM_OutboundPreSendLabel))
-		AddItemToList( new BmFilterChain( BM_OutboundPreSendLabel.String(), this));
+	RemoveItemByKey( "<outbound-pre-edit>");
+	if (!FindItemByKey( BM_OutboundLabel))
+		AddItemToList( new BmFilterChain( BM_OutboundLabel.String(), this));
 	return res;
 }
 

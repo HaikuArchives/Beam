@@ -56,10 +56,6 @@ const char* const BmMailFilter::MSG_TRAILING = 	"bm:trailing";
 const char* const BmMailFilter::MSG_LEADING = 	"bm:leading";
 const char* const BmMailFilter::MSG_REFS = 		"refs";
 
-// alternate job-specifiers:
-const int32 BmMailFilter::BM_EXECUTE_PRE_EDIT = 1;
-const int32 BmMailFilter::BM_EXECUTE_PRE_SEND = 2;
-
 /*------------------------------------------------------------------------------*\
 	BmMailFilter()
 		-	contructor
@@ -180,13 +176,8 @@ void BmMailFilter::ExecuteFilter( BmMail* mail) {
 		BmRef< BmListModelItem> accItem;
 		BmRef< BmListModelItem> chainItem;
 		if (mail->Outbound()) {
-			if (CurrentJobSpecifier() == BM_EXECUTE_PRE_EDIT) {
-				// use the (outbound) pre-edit chain:
-				chainItem = TheFilterChainList->FindItemByKey(BM_OutboundPreEditLabel);
-			} else {
-				// use the (outbound) pre-send chain:
-				chainItem = TheFilterChainList->FindItemByKey(BM_OutboundPreSendLabel);
-			}
+			// use the outbound chain:
+			chainItem = TheFilterChainList->FindItemByKey(BM_OutboundLabel);
 		} else {
 			// fetch the corresponding inbound-chain:
 			accItem = ThePopAccountList->FindItemByKey( mail->AccountName());

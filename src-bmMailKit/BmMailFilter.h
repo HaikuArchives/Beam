@@ -61,10 +61,6 @@ public:
 	static const char* const MSG_LEADING;
 	static const char* const MSG_REFS;
 
-	// alternate job-specifiers:
-	static const int32 BM_EXECUTE_PRE_EDIT;
-	static const int32 BM_EXECUTE_PRE_SEND;
-
 	BmMailFilter( const BmString& name, BmFilter* filter, 
 					  bool executeInMem = false, bool needControllers = true);
 	virtual ~BmMailFilter();
