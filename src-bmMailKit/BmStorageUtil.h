@@ -49,7 +49,7 @@ void EnsureIndexExists( const char* attrName);
 
 bool FetchFile( BmString fileName, BmString& contents);
 
-void BmReadStringAttr( const BNode* node, const char* attrName, BmString& out);
+bool BmReadStringAttr( const BNode* node, const char* attrName, BmString& out);
 
 BmString BM_REFKEY( const node_ref& nref);
 

@@ -279,15 +279,19 @@ BmString BmTempFileList::NextTempFilenameWithPath() {
 	BmReadStringAttr( node, attrName, outStr)
 		-	
 \*------------------------------------------------------------------------------*/
-void BmReadStringAttr( const BNode* node, const char* attrName, 
+bool BmReadStringAttr( const BNode* node, const char* attrName, 
 							  BmString& outStr) {
 	attr_info attrInfo;
-	if (node->GetAttrInfo( attrName, &attrInfo) != B_OK) {
-		outStr.Truncate( 0);
-		return;
+	BmString tmpStr;
+	if (node->GetAttrInfo( attrName, &attrInfo) == B_OK) {
+		long long size = max( (long long)0, attrInfo.size-1);
+		char* buf = tmpStr.LockBuffer( size);
+		node->ReadAttr( attrName, B_STRING_TYPE, 0, buf, size);
+		tmpStr.UnlockBuffer( size);
 	}
-	long long size = max( (long long)0, attrInfo.size-1);
-	char* buf = outStr.LockBuffer( size);
-	node->ReadAttr( attrName, B_STRING_TYPE, 0, buf, size);
-	outStr.UnlockBuffer( size);
+	if (tmpStr != outStr) {
+		outStr.Adopt( tmpStr);
+		return true;	// attribute has changed
+	}
+	return false;		// nothing has changed
 }
