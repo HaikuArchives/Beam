@@ -1,6 +1,352 @@
 change-history of Beam:
 		$Id$
 
+< 2004-06-25: commit, moved tag 'current-devel' >
+
+BmBodyPartList:
+	-	fixed incorrect handling of attachment-filenames that contain slashes.
+
+BmDataModel:
+	-	instead of checking whether the model is locked in empty() and size(),
+		we now explicitly lock it instead. It's just begin() and end() where
+		we require the model to be locked by the caller.
+
+BmFilter:
+	-	fixed incorrect signature of SanityCheck().
+
+BmFilterChain, BmMailFilter:
+	-	simplified sorting of filter inside chain.
+
+BmGuiUtil, BmMailView, BmMainWindow, BmRoster:
+	-	added missing locks when accessing a model's item-map.
+
+BmListController:
+	-	added missing locks for adding, removing and updating items.
+
+BmMail, BmMailFactory:
+	-	centralized initialization of a mail from given identity-data into
+		the new method SetupFromIdentityAndRecvAddr().
+
+BmMailEditWin:
+	-	seemingly "solved" the internal compiler error phenomenon...
+
+BmMailFolderList:
+	-	added missing lock in FindMailRefByKey().
+
+BmMailHeaderView:
+	-	fixed a bug that caused incorrect baseline-alignment between title-
+		and content-view that occurred with fonts having a leading>0.
+
+BmIdentity, BmPrefsIdentityView:
+	-	added support for configuring the reply-to header.
+
+BmPrefs*View:
+	-	simplified SanityCheck()-mechanics.
+
+BuildSettings:
+	-	added new lib-path /boot/beos/system/lib such that libnetapi.so is
+		found on all systems (even when the link from /boot/devel/lib/x86
+		is missing, as is the case for Dano and Zeta).
+
+< 2004-06-23: commit >
+
+BmFilterChain, BmMail, BmMailFilter, BmPrefsFilterChainView:
+	-	split outgoing chains into two: pre-edit and pre-send.
+
+BmMailEditWin:
+	-	yet more wrestling with internal compiler errors, yuck!
+
+BmMailRefView:
+	-	added default-types to forward- & reply-submenu in order to make
+		things clearer. The submenu-controlling item still is an alternative 
+		way to trigger the default action.
+
+BmMailView:
+	-	added options for URL- and sig-highlighting.
+
+BmPopper:
+	-	adjusted to filter-related interface-changes in BmMail.
+
+BmResources:
+	-	cosmetical changes.
+
+BmRoster:
+	-	adjusted to interface-changes for TextEntryAlert.
+
+BmSieveFilter:
+	-	fixed wrong signature of InstantiateFilterPrefsView(), which lead
+		to a crash when opening the prefs-window.
+
+BmStorageUtil:
+	-	implementation details have been moved from header-file into cpp.
+
+BmToolbarButton:
+	-	cosmetical changes.
+
+BuildSettings:
+	-	now we no longer strip apps by default.
+
+TextEntryAlert:
+	-	changed output-type from char-buffer to BmString.
+
+split, regexx:
+	-	cosmetical changes.
+
+< 2004-06-14: commit >
+
+many files:
+	-	separated code into application-, daemon- and mailkit-parts and
+		changed CVS-structure accordingly.
+	-	completely switched to building through jam (i.e. no more makefiles,
+		no more BeIDE-projects).
+
+BmApp:
+	-	added MAIL:status to the required indices.
+
+BmMailEditWin:
+	-	split BmMailEditWin into two parts in order to avoid internal compiler
+		errors. Now it seems to work for both gcc-991026 and gcc000224.
+	-	fixed race-condition and possible crashes during sending of mails
+		(was reading/writing unprotected vector).
+
+BmMailQuery:
+	-	added this, providing a somewhat general interface to query for mails.
+
+BmPrefs*View:
+	-	removed many options now considered superfluous (can still be changed
+		through direct prefs-file editing).
+
+BmRoster:
+	-	added BmRoster-class which defines an interface through which add-ons
+		and libraries can ask the running app for specific info.
+
+BmSmtpAccount, BmSmtp:
+	-	we now use a pending mail query in order to determine which mails
+		to send.
+
+< 2004-06-08: commit >
+
+BmApp, BmMail, BmMailFactory, BmPrefsMailConstrView:
+	-	moved mail-creating functions out into BmMailFactory.
+
+BmBodyPartView:
+	-	made BmBodyPartItem invisible.
+	-	reduced compile-time dependencies.
+
+BmMailEditWin:
+	-	started to tackle the compilation problems with gcc000224, which
+		exposes quite a problem related to template-code. Whoa!
+
+BmMailFilter:
+	-	added missing #include.
+
+BmMailFolderList, BmNetJobModel, BmPrefs, BmMenuAlert, BmLogHandler:
+	-	stripped unneeded code.
+
+BmMailRef:
+	-	adjusted to recent BmRefManager-changes.
+
+BmMailView:
+	-	adjusted to recent interface-changes in BmMail:
+
+BmRefManager:
+	-	rearranged code to expose less implementation details.
+
+BmRosterBase:
+	-	cosmetics.
+
+BmSieveFilter:
+	-	adjusted to BmRosterBase-changes.
+
+BmWindow:
+	-	added bring-to-front functionality to Show().
+
+Jamfiles:
+	-	added missing new files.
+
+bmBase, libRegexx, SantaPartsForBeam:
+	-	now make use of _IMPORT & _EXPORT
+
+< 2004-06-03: commit >
+
+BmApp:
+	-	most tasks are separate threads now, freeing the app for other
+		work.
+	-	added ability to send mailbox-device to deskbar.
+
+BmDeskbarView:
+	-	added missing support for mailboxes on non-boot volume.
+
+BmDividable, Bm*Control, BmPrefs*View:
+	-	simplified use of dividers.
+
+BmFilterAddon:
+	-	added support for filtering against Status, Account and Outbound.
+
+BmMail, BmMailFilter:
+	-	added new filtering-job which stores messages as needed.
+
+BmMailEditWin:
+	-	added support for selecting the destinatin folder of this mail.
+
+BmMainWindow:
+	-	added individual pop-accounts as variations to check-button.
+
+BmMenuAlert:
+	-	added this alert that allows to pick from a menu.
+
+BmMenuControl:
+	-	fixed redraw-after-resize problems.
+
+BmMenuControllerBase:
+	-	automatically redirect messages with empty target to our window.
+
+BmPrefs:
+	-	changed several default settings.
+
+BmPrefsSignatureView:
+	-	added missing disabling of charset-control.
+	-	removed signature-regex control, users shouldn't fiddle with it.
+
+BmRosterBase:
+	-	rewrote method for add-ons to access info from Beam.
+
+BmSieveFilter:
+	-	added support for manual filing of outgoing messages.
+
+BmSmtp:
+	-	removed superfluous filtering, this is now done before the mail
+		is being sent.
+
+BmToolbarButton:
+	-	added support for dynamically updating variations before menu is
+		shown.
+		
+MultiLineTextControl:
+	-	corrected colors for drawing deep bevel.
+
+sieve-lex:
+	-	the lexer used to eat backslashes, which is no good if parsing
+		regexes. So we now do not skip backslashes anymore.
+
+< 2004-06-01: commit >
+
+Jamfile, Jamrules, build-jam:
+	-	added a first draft of a jam-based build-environment.
+
+makefiles, project-files:
+	-	pcre is now not compiled into Beam, but we use libpcre.so instead.
+
+BmPrefs:
+	-	changed default-iconset to 'iconset 22 nuvola grey-red'.
+
+resources:
+	-	updated some icons and fixed cvs-problems.
+
+< 2004-05-29: commit >
+
+BmApp:
+	-	split initialization of BmResources such that parts of it can access
+		the prefs.
+
+BmGuiUtil:
+	-	added CreateSubMenuItem() which allows the controlling-item for a 
+		submenu to trigger a message of it's own when pressed.
+
+BmMailEditWin:
+	-	dropped people will now appear with the same format as the ones being
+		selected from the people-menu.
+	-	stripped toolbar to contain only the required buttons.
+	-	layout cosmetics.
+
+BmMailFolder, BmMailFolderView:
+	-	changed semantics of folder-highlighting to make use of four different
+		states: normal, hasNew, newInSub and hasNewWithNewInSub.
+
+BmMailHeader:
+	-	changed determination of mailing-list-name such that more fields to
+		check can be added through prefs.
+
+BmMailRefView:
+	-	changed menu-layout to be simpler and to reduce mouse-travel.
+
+BmMailViewWin, BmMainWindow:
+	-	stripped toolbar to contain only the required buttons.
+	-	layout cosmetics.
+
+BmPeople:
+	-	minor corrections
+
+BmPrefs:
+	-	added default iconset and 'IconPath'.
+	-	added 'ListFields'.
+
+BmPrefs*View:
+	-	removed loads of unneccessary options (can still be changed through
+		use of mar, though).
+
+BmResources:
+	-	split initialization of BmResources such that parts of it can access
+		the prefs.
+	-	added functionality for reading icons from files (iconpath).
+
+BmToolbarButton:
+	-	fixed rendering for transparency.
+	-	fixed memory leak in constructor.
+
+resources:
+	-	added several different iconsets.
+	-	changed internal iconset to '22 nuvola be-red'.
+
+CLVEasyItem, ImageAboutWindow:
+	-	fixed rendering for transparency.
+
+< 2004-05-11: commit, moved tag 'current-devel' >
+
+BmBodyPartList, BmGuiUtils, BmMailHeaderView, BmPrefs:
+	-	generalized handling of string-lists (we now always use comma as
+		separator).
+
+BmBodyPartView:
+	-	corrected selection color of bodypart-listview.
+
+BmMail:
+	-	added automatic identity-pass-on for forwarding and redirection, too.
+
+< 2004-05-10: commit >
+
+BmMailFolder, BmMailFolderList, BmMailRef, BmMailRefList:
+	-	circumvent the problem of B_ATTR_CHANGED not providing the info
+		neccessary to determine the folder a mail-ref lives in.
+
+< 2004-05-09: commit, moved tag 'current-devel' >
+
+BmListController, BmMailFolderView, BmMailRefView, BmPrefsFilterChainView,
+BmPrefsFilterView, BmPrefsRecvMailView.cpp, BmPrefsSendMailView.cpp,
+BmPrefsSignatureView.cpp:
+	-	fixed problem with automatic resorting of items not working after
+		an attribute has changed.
+
+< 2004-05-08: commit, moved tag 'current-devel' >
+
+BmDataModel:
+	-	in Store() we now us a BmBackedFile to safely store the settings.
+
+BmMail:
+	-	simplified Store() to now use the BmBackedFile-class.
+
+BmMailFolderList:
+	-	cosmetical changes.
+
+BmMailRef:
+	-	added missing member-initializers for mWhen and mWhenCreated.
+
+BmSmtp:
+	-	added missing member-initializer for mCurrMailSize.
+
+BmStorageUtils:
+	-	added BmBackedFile, a file with automatic backup.
+
 < 2004-05-07: commit, moved tag 'current-devel' >
 
 BmEncoding:
