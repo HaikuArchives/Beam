@@ -494,19 +494,21 @@ int BmSieveFilter::sieve_get_header( void* message_context, const char* header,
 	BM_LOG3( BM_LogFilter, 
 				BmString("Sieve-Addon: sieve_get_header called for header ")
 					<< header);
-	static const char* dummy[2] = { NULL, NULL };
+	static const char* fakes[2] = { NULL, NULL };
 	BmMsgContext* msgContext = static_cast< BmMsgContext*>( message_context);
 	if (msgContext && contentsPtr && header) {
+		*contentsPtr = NULL;
 		BmString headerName( header);
-		*contentsPtr = dummy;
-		if (headerName.ICompare("Status") == 0)
-			dummy[0] = msgContext->status.String();
-		else if (headerName.ICompare("Account") == 0)
-			dummy[0] = msgContext->account.String();
-		else if (headerName.ICompare("Outbound") == 0)
-			dummy[0] = msgContext->outbound ? "true" : "false";
-		else {
-			dummy[0] = NULL;
+		if (headerName.ICompare("Status") == 0) {
+			fakes[0] = msgContext->status.String();
+			*contentsPtr = fakes;
+		} else if (headerName.ICompare("Account") == 0) {
+			fakes[0] = msgContext->account.String();
+			*contentsPtr = fakes;
+		} else if (headerName.ICompare("Outbound") == 0) {
+			fakes[0] = msgContext->outbound ? "true" : "false";
+			*contentsPtr = fakes;
+		} else {
 			for( int i=0; i<msgContext->headerInfoCount; ++i) {
 				if (!msgContext->headerInfos[i].fieldName.ICompare( header)) {
 					*contentsPtr = msgContext->headerInfos[i].values;
@@ -519,8 +521,9 @@ int BmSieveFilter::sieve_get_header( void* message_context, const char* header,
 				}
 			}
 		}
+		return *contentsPtr != NULL ? SIEVE_OK : SIEVE_FAIL;
 	}
-	return SIEVE_OK;
+	return SIEVE_FAIL;
 }
 
 /*------------------------------------------------------------------------------*\
