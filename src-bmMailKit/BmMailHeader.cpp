@@ -53,7 +53,8 @@ using namespace regexx;
 #define BM_LOGNAME "MailParser"
 
 static BmString BmAddressFieldNames = 
-	"<Bcc><Resent-Bcc><Cc><List-Id><Resent-Cc><From><Resent-From><Reply-To><Resent-Reply-To><Sender><Resent-Sender><To><Resent-To>";
+	"<Bcc><Resent-Bcc><Cc><List-Id><Resent-Cc><From><Resent-From><Reply-To>"
+	"<Resent-Reply-To><Sender><Resent-Sender><To><Resent-To>";
 
 static BmString BmNoEncodingFieldNames = 
 	"<Received><Message-ID><Resent-Message-ID><Date><Resent-Date>";
@@ -101,14 +102,22 @@ bool BmAddress::SetTo( const BmString& fullText) {
 	BmString addrText, phraseText;
 
 	mAddrString.Truncate(0);
-	// first we check whether the addresstext is separated into phrase and addrspec:
-	if (rx.exec( fullText, "^\\s*(.*?)\\s*<\\s*(?:[^<>]+?:)?([^:<>]*?)\\s*>\\s*$")) {
-		// it's a phrase followed by an address (which possibly contains a source-route).
-		fullText.CopyInto( phraseText, rx.match[0].atom[0].start(), rx.match[0].atom[0].Length());
-		fullText.CopyInto( addrText, rx.match[0].atom[1].start(), rx.match[0].atom[1].Length());
+	// first we check whether the addresstext is separated into phrase 
+	// and addrspec:
+	if (rx.exec( 
+		fullText, 
+		"^\\s*(.*?)\\s*<\\s*(?:[^<>]+?:)?([^:<>]*?)\\s*>\\s*$"
+	)) {
+		// it's a phrase followed by an address (which possibly contains 
+		// a source-route).
+		fullText.CopyInto( phraseText, rx.match[0].atom[0].start(), 
+								 rx.match[0].atom[0].Length());
+		fullText.CopyInto( addrText, rx.match[0].atom[1].start(), 
+								 rx.match[0].atom[1].Length());
 		// strip leading&trailing quotes:
 		if (rx.exec( phraseText, "^[\"']+(.+?)[\"']+$")) {
-			phraseText.CopyInto( mPhrase, rx.match[0].atom[0].start(), rx.match[0].atom[0].Length());
+			phraseText.CopyInto( mPhrase, rx.match[0].atom[0].start(), 
+										rx.match[0].atom[0].Length());
 		} else {
 			mPhrase = phraseText;
 		}
@@ -118,7 +127,8 @@ bool BmAddress::SetTo( const BmString& fullText) {
 	}
 	// finally strip all leading/trailing whitespace from the address-part:
 	if (rx.exec( addrText, "^\\s*(.+?)\\s*$"))
-		addrText.CopyInto( mAddrSpec, rx.match[0].atom[0].start(), rx.match[0].atom[0].Length());
+		addrText.CopyInto( mAddrSpec, rx.match[0].atom[0].start(), 
+								 rx.match[0].atom[0].Length());
 	else
 		mAddrSpec = addrText;
 	// avoid spurious addrSpecs that only contains whitespace:
@@ -140,7 +150,8 @@ const BmString& BmAddress::AddrString() const {
 			|| mPhrase.FindFirst(':')!=B_ERROR
 			|| mPhrase.FindFirst('<')!=B_ERROR	
 			|| mPhrase.FindFirst('>')!=B_ERROR)
-				mAddrString = BmString("\"") << mPhrase << "\" <" << mAddrSpec << ">";
+				mAddrString = BmString("\"") << mPhrase << "\" <" 
+										<< mAddrSpec << ">";
 			else
 				mAddrString = mPhrase + " <" + mAddrSpec + ">";
 		} else
@@ -153,7 +164,8 @@ const BmString& BmAddress::AddrString() const {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-bool BmAddress::IsHandledByAccount( BmIdentity* ident, bool needExactMatch) const {
+bool BmAddress::IsHandledByAccount( BmIdentity* ident, 
+												bool needExactMatch) const {
 	if (!ident)
 		return false;
 	return ident->HandlesAddrSpec( mAddrSpec, needExactMatch);
@@ -165,8 +177,8 @@ bool BmAddress::IsHandledByAccount( BmIdentity* ident, bool needExactMatch) cons
 \*------------------------------------------------------------------------------*/
 void BmAddress::ConstructRawText( BmString& header, const BmString& charset, 
 											 int32 fieldNameLength) const {
-	BmString convertedAddrSpec = ConvertUTF8ToHeaderPart( mAddrSpec, charset, false, 
-																			fieldNameLength);
+	BmString convertedAddrSpec 
+		= ConvertUTF8ToHeaderPart( mAddrSpec, charset, false, fieldNameLength);
 	if (mPhrase.Length()) {
 		// quote the phrase if it contains "dangerous" characters:
 		BmString phrase;
@@ -177,9 +189,10 @@ void BmAddress::ConstructRawText( BmString& header, const BmString& charset,
 			phrase = BmString("\"") << mPhrase << "\"";
 		else
 			phrase = mPhrase;
-		BmString convertedPhrase = ConvertUTF8ToHeaderPart( phrase, charset, true, 
-																			 fieldNameLength);
-		if (convertedPhrase.Length()+convertedAddrSpec.Length()+3 > ThePrefs->GetInt( "MaxLineLen")) {
+		BmString convertedPhrase 
+			= ConvertUTF8ToHeaderPart( phrase, charset, true, fieldNameLength);
+		if (convertedPhrase.Length()+convertedAddrSpec.Length()+3 
+				> ThePrefs->GetInt( "MaxLineLen")) {
 			header << convertedPhrase << "\r\n <" << convertedAddrSpec << ">";
 		} else
 			header << convertedPhrase << " <" << convertedAddrSpec << ">";
@@ -243,9 +256,11 @@ bool BmAddressList::Add( BmString strippedFieldVal) {
 	if (rx.exec( strippedFieldVal, "^\\s*(.+?):\\s*(.+?)?;\\s*$")) {
 		// it's a group list:
 		mIsGroup = true;
-		strippedFieldVal.CopyInto( mGroupName, rx.match[0].atom[0].start(), rx.match[0].atom[0].Length());
+		strippedFieldVal.CopyInto( mGroupName, rx.match[0].atom[0].start(), 
+											rx.match[0].atom[0].Length());
 		if (rx.match[0].atom.size() > 1)
-			strippedFieldVal.CopyInto( addrText, rx.match[0].atom[1].start(), rx.match[0].atom[1].Length());
+			strippedFieldVal.CopyInto( addrText, rx.match[0].atom[1].start(), 
+												rx.match[0].atom[1].Length());
 	} else {
 		// simple address (or list of addresses)
 		mIsGroup = false;
@@ -282,8 +297,8 @@ void BmAddressList::Remove( BmString singleAddress) {
 	SplitIntoAddresses()
 		-	
 \*------------------------------------------------------------------------------*/
-const BmString& BmAddressList::FindAddressMatchingAccount( BmIdentity* ident, 
-																	 		  bool needExactMatch) const {
+const BmString& BmAddressList
+::FindAddressMatchingAccount( BmIdentity* ident, bool needExactMatch) const {
 	int32 count = mAddrList.size();
 	for( int i=0; i<count; ++i) {
 		if (mAddrList[i].IsHandledByAccount( ident, needExactMatch))
@@ -318,8 +333,10 @@ BmStringList BmAddressList::SplitIntoAddresses( BmString addrListText) {
 	while( *pos) {
 		if (*pos == '"') {
 			BmString quotedString;
-			// quoted-string started, we remove the quotes and unquote quoted-pairs.
-			for( endPos=pos+1; *endPos && (*endPos!='"' || *(endPos-1)=='\\'); ++endPos)
+			// quoted-string started, we remove the quotes and unquote 
+			// quoted-pairs.
+			for( 	endPos=pos+1; 
+					*endPos && (*endPos!='"' || *(endPos-1)=='\\'); ++endPos)
 				;
 			if (*endPos) {
 				// found complete quoted-string.
@@ -327,16 +344,17 @@ BmStringList BmAddressList::SplitIntoAddresses( BmString addrListText) {
 				quotedString.Append( pos+1, numChars-2);
 				pos += numChars;
 			} else {
-				// it seems that there is no ending quote, we assume the remainder to be 
-				// part of the quoted string:
+				// it seems that there is no ending quote, we assume the 
+				// remainder to be part of the quoted string:
 				quotedString.Append( pos+1);
 				pos = endPos;
 			}
-			// we deescape characters that are escaped by a backslash (quoted-pairs):
+			// we deescape characters that are escaped by a backslash 
+			// (quoted-pairs):
 			currAddr.Append( quotedString.CharacterDeescape( '\\'));
 		} else if (*pos == '<') {
-			// route-address started, we copy it as a block in order to avoid problems
-			// with possibly contained separator-chars (commas).
+			// route-address started, we copy it as a block in order to avoid 
+			// problems with possibly contained separator-chars (commas).
 			for( endPos=pos+1; *endPos && (*endPos!='>'); ++endPos)
 				;
 			if (*endPos) {
@@ -345,14 +363,15 @@ BmStringList BmAddressList::SplitIntoAddresses( BmString addrListText) {
 				currAddr.Append( pos, numChars);
 				pos += numChars;
 			} else {
-				// it seems that there is no ending '>', we assume the remainder to be 
-				// part of the route-address (and append the missing '>'):
+				// it seems that there is no ending '>', we assume the remainder 
+				// to be  part of the route-address (and append the missing '>'):
 				currAddr.Append( pos);
 				currAddr.Append( ">");
 				pos = endPos;
 			}
 		} else {
-			// we copy characters until we find the start of a quoted string or the separator char:
+			// we copy characters until we find the start of a quoted string or 
+			// the separator char:
 			for(  endPos=pos; *endPos && *endPos!='"' && *endPos!=','; ++endPos)
 				;
 			int32 numChars = endPos-pos;
@@ -399,7 +418,8 @@ const BmString& BmAddressList::AddrString() const {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmAddressList::ConstructRawText( BmStringOBuf& header, const BmString& charset, 
+void BmAddressList::ConstructRawText( BmStringOBuf& header, 
+												  const BmString& charset, 
 												  int32 fieldNameLength) const {
 	BmString fieldString;
 	if (mIsGroup) {
@@ -414,7 +434,8 @@ void BmAddressList::ConstructRawText( BmStringOBuf& header, const BmString& char
 		pos->ConstructRawText( converted, charset, fieldNameLength);
 		if (pos != mAddrList.begin()) {
 			fieldString << ", ";
-			if (fieldString.Length() + converted.Length() > ThePrefs->GetInt( "MaxLineLen")) {
+			if (fieldString.Length() + converted.Length() 
+					> ThePrefs->GetInt( "MaxLineLen")) {
 				fieldString << "\r\n ";
 			}
 		}
@@ -435,7 +456,8 @@ void BmAddressList::ConstructRawText( BmStringOBuf& header, const BmString& char
 	Set( fieldName, value)
 		-	
 \*------------------------------------------------------------------------------*/
-void BmMailHeader::BmHeaderList::Set( const BmString& fieldName, const BmString value) {
+void BmMailHeader::BmHeaderList::Set( const BmString& fieldName, 
+												  const BmString value) {
 	BmValueList& valueList = mHeaders[fieldName];
 	valueList.clear();
 	valueList.push_back( value);
@@ -445,7 +467,8 @@ void BmMailHeader::BmHeaderList::Set( const BmString& fieldName, const BmString 
 	Add( fieldName, value)
 		-	
 \*------------------------------------------------------------------------------*/
-void BmMailHeader::BmHeaderList::Add( const BmString& fieldName, const BmString value) {
+void BmMailHeader::BmHeaderList::Add( const BmString& fieldName, 
+												  const BmString value) {
 	BmValueList& valueList = mHeaders[fieldName];
 	valueList.push_back( value);
 }
@@ -482,7 +505,8 @@ void BmMailHeader::BmHeaderList::GetAllValues( BmMsgContext& msgContext) const {
 	operator [] ( fieldName)
 		-	returns first value found for given fieldName
 \*------------------------------------------------------------------------------*/
-const BmString& BmMailHeader::BmHeaderList::operator [] (const BmString& fieldName) const {
+const BmString& BmMailHeader::BmHeaderList
+::operator [] (const BmString& fieldName) const {
 	BmHeaderMap::const_iterator iter = mHeaders.find(fieldName);
 	if (iter == mHeaders.end())
 		return BM_DEFAULT_STRING;
@@ -517,7 +541,8 @@ struct subpart {
 BmMailHeader::BmMailHeader( const BmString &headerText, BmMail* mail)
 	:	mHeaderString( headerText)
 	,	mMail( mail)
-	,	mKey( RefPrintHex())					// generate dummy identifier from our address
+	,	mKey( RefPrintHex())
+							// generate dummy identifier from our address
 	,	mIsRedirect( false)
 	,	mHasParsingErrors( false)
 {
@@ -680,7 +705,8 @@ void BmMailHeader::RemoveField( BmString fieldName) {
 	RemoveAddrFieldVal()
 	-	
 \*------------------------------------------------------------------------------*/
-void BmMailHeader::RemoveAddrFieldVal(  BmString fieldName, const BmString value) {
+void BmMailHeader::RemoveAddrFieldVal(  BmString fieldName, 
+													 const BmString value) {
 	fieldName.CapitalizeEachWord();
 	if (IsAddressField( fieldName))
 		mAddrMap[fieldName].Remove( value);
@@ -785,13 +811,19 @@ BmString BmMailHeader::DetermineReceivingAddrFor( BmIdentity* ident) {
 	// the given identity exactly, in the second loop-run, we accept matches
 	// by catch-all-identities, too:
 	for( int i=0;  !addr.Length() && i<2;  ++i) {
-		addr = mAddrMap[BM_FIELD_TO].FindAddressMatchingAccount( ident, needExactMatch);
+		addr = mAddrMap[BM_FIELD_TO].FindAddressMatchingAccount( 
+			ident, needExactMatch
+		);
 		if (addr.Length())
 			break;
-		addr = mAddrMap[BM_FIELD_CC].FindAddressMatchingAccount( ident, needExactMatch);
+		addr = mAddrMap[BM_FIELD_CC].FindAddressMatchingAccount( 
+			ident, needExactMatch
+		);
 		if (addr.Length())
 			break;
-		addr = mAddrMap[BM_FIELD_BCC].FindAddressMatchingAccount( ident, needExactMatch);
+		addr = mAddrMap[BM_FIELD_BCC].FindAddressMatchingAccount( 
+			ident, needExactMatch
+		);
 		needExactMatch = false;
 	}
 	return addr;
@@ -800,14 +832,16 @@ BmString BmMailHeader::DetermineReceivingAddrFor( BmIdentity* ident) {
 /*------------------------------------------------------------------------------*\
 	ParseHeader( header)
 		-	parses mail-header and splits it into fieldname/fieldbody - pairs
-		-	we try to determine the mails' charset by finding a charset-string given 
-		   within the header. Some sending mail-clients cut some corners and incorporate 
-		   non-ASCII characters	unencoded inside any header-fields (the subject comes 
-		   to mind) [thus relying on the transport system being 8bit-clean].
-			In this case we hope that the header contains a content-type specification 
-			as well with the charset that was actually used. We feed the charset found 
-			into the default charset that is being used for header-field conversion 
-			(if any only if nothing else is specified in a header-field)
+		-	we try to determine the mails' charset by finding a charset-string 
+			given within the header. Some sending mail-clients cut some corners 
+			and incorporate non-ASCII characters unencoded inside any 
+			header-fields (the subject comes to mind) [thus relying on the 
+			transport system being 8bit-clean].
+			In this case we hope that the header contains a content-type 
+			specification as well with the charset that was actually used. 
+			We feed the charset found into the default charset that is being 
+			used for header-field conversion (if and only if nothing else is 
+			specified in a header-field)
 \*------------------------------------------------------------------------------*/
 void BmMailHeader::ParseHeader( const BmString &header) {
 	Regexx rxUnfold, rx;
@@ -826,7 +860,10 @@ void BmMailHeader::ParseHeader( const BmString &header) {
 	}
 	int32 nm = subparts.size();
 	if (!nm && mMail) {
-		throw BM_mail_format_error( BmString("Could not find any header-fields in this header: \n") << header);
+		throw BM_mail_format_error( 
+			BmString("Could not find any header-fields in this header: \n") 
+				<< header
+		);
 	}
 	BM_LOG( BM_LogMailParse, "The mail-header");
 	BM_LOG3( BM_LogMailParse, BmString(header) << "\n------------------");
@@ -841,7 +878,10 @@ void BmMailHeader::ParseHeader( const BmString &header) {
 		int32 pos = headerField.FindFirst( ':');
 		if (pos == B_ERROR) { 
 			mHasParsingErrors = true;
-			BM_LOGERR( BmString("Could not determine field-name of mail-header-part:\n") << headerField << "\n\nThis header-field will be ignored."); 
+			BM_LOGERR( BmString("Could not determine field-name of "
+									  "mail-header-part:\n") 
+							<< headerField 
+							<< "\n\nThis header-field will be ignored."); 
 			continue;
 		}
 		fieldName.SetTo( headerField, pos);
@@ -849,22 +889,32 @@ void BmMailHeader::ParseHeader( const BmString &header) {
 		headerField.CopyInto( fieldBody, pos+1, headerField.Length());
 
 		// unfold the field-body and remove leading and trailing whitespace:
-		fieldBody = rxUnfold.replace( fieldBody, "(?:\\s*\\r\\n)+\\s*", " ", Regexx::global);
+		fieldBody = rxUnfold.replace( fieldBody, "(?:\\s*\\r\\n)+\\s*", " ", 
+												Regexx::global);
 		fieldBody.Trim();
 
 		// insert pair into header-map:
-		AddFieldVal( fieldName, ConvertHeaderPartToUTF8( fieldBody, BmEncoding::DefaultCharset));
+		AddFieldVal( 
+			fieldName, 
+			ConvertHeaderPartToUTF8( 
+				fieldBody, 
+				ThePrefs->GetString("DefaultCharset")
+			)
+		);
 
 		BM_LOG2( BM_LogMailParse, fieldName << ": " << fieldBody);
 	}
 
-	if (mAddrMap[BM_FIELD_RESENT_FROM].InitOK() || mAddrMap[BM_FIELD_RESENT_SENDER].InitOK())
+	if (mAddrMap[BM_FIELD_RESENT_FROM].InitOK() 
+	|| mAddrMap[BM_FIELD_RESENT_SENDER].InitOK())
 		IsRedirect( true);
 
 	if (mMail) {
-		// we construct the 'name' for this mail (will go into attribute MAIL:name)...
+		// we construct the 'name' for this mail (will go into 
+		// attribute MAIL:name)...
 		if (mMail->Outbound()) {
-			// for outbound mails we fetch the groupname or phrase of the first TO-address:
+			// for outbound mails we fetch the groupname or phrase of the 
+			// first TO-address:
 			BmAddressList toAddrList = mAddrMap[BM_FIELD_TO];
 			if (toAddrList.IsGroup()) {
 				mName = toAddrList.GroupName();
@@ -876,7 +926,8 @@ void BmMailHeader::ParseHeader( const BmString &header) {
 					mName = toAddr.AddrSpec();
 			}
 		} else {
-			// for inbound mails we fetch the groupname or phrase of the first FROM-address:
+			// for inbound mails we fetch the groupname or phrase of the 
+			// first FROM-address:
 			BmAddressList fromAddrList = mAddrMap[BM_FIELD_FROM];
 			if (fromAddrList.IsGroup()) {
 				mName = fromAddrList.GroupName();
@@ -895,14 +946,16 @@ void BmMailHeader::ParseHeader( const BmString &header) {
 	StripField()
 		-	
 \*------------------------------------------------------------------------------*/
-BmString BmMailHeader::StripField( BmString fieldValue, BmString* commentBuffer) {
+BmString BmMailHeader::StripField( BmString fieldValue, 
+											  BmString* commentBuffer) {
 	BmString stripped;
 	const char* pos = fieldValue.String();
 	const char* endPos;
 	while( *pos) {
 		if (*pos == '"') {
 			// quoted-string started, we search its end:
-			for( endPos=pos+1; *endPos && (*endPos!='"' || *(endPos-1)=='\\'); ++endPos)
+			for( 	endPos=pos+1; 
+					*endPos && (*endPos!='"' || *(endPos-1)=='\\'); ++endPos)
 				;
 			if (*endPos) {
 				// found complete quoted-string, we copy it:
@@ -910,8 +963,8 @@ BmString BmMailHeader::StripField( BmString fieldValue, BmString* commentBuffer)
 				stripped.Append( pos, numChars);
 				pos += numChars;
 			} else {
-				// it seems that there is no ending quote, we assume the remainder to be 
-				// part of the quoted string (and add the missing quote):
+				// it seems that there is no ending quote, we assume the remainder
+				// to be part of the quoted string (and add the missing quote):
 				stripped.Append( pos);
 				stripped.Append( "\"");
 				pos = endPos;
@@ -920,7 +973,9 @@ BmString BmMailHeader::StripField( BmString fieldValue, BmString* commentBuffer)
 			// comment started, we search its end:
 			BmString comment;
 			int32 nestLevel=1;
-			for( endPos=pos+1; *endPos && (*endPos!=')' || *(endPos-1)=='\\' || --nestLevel); ++endPos) {
+			for(	endPos=pos+1; 
+					*endPos && (*endPos!=')' || *(endPos-1)=='\\' || --nestLevel); 
+					++endPos) {
 				if (*endPos == '(' && *(endPos-1)!='\\') {
 					// take a note that we found a nested comment:
 					nestLevel++;
@@ -933,9 +988,9 @@ BmString BmMailHeader::StripField( BmString fieldValue, BmString* commentBuffer)
 					commentBuffer->Append( pos, numChars);
 				pos += numChars;
 			} else {
-				// it seems that there is no ending paranthesis, so we assume that all the
-				// remains are part of this incomplete comment. We add the missing paranthesis
-				// to the comment buffer:
+				// it seems that there is no ending paranthesis, so we assume 
+				// that all the remains are part of this incomplete comment. 
+				// We add the missing paranthesis to the comment buffer:
 				if (commentBuffer) {
 					commentBuffer->Append( pos);
 					commentBuffer->Append( ")");
@@ -952,7 +1007,8 @@ BmString BmMailHeader::StripField( BmString fieldValue, BmString* commentBuffer)
 			// we copy characters until we find the start of a quoted-string,
 			// whitespace, or a comment:
 			for(  endPos=pos+1; 
-					*endPos && *endPos!='"' && *endPos!='(' && *endPos!='\t' && *endPos!=' ';
+					*endPos && *endPos!='"' && *endPos!='(' && *endPos!='\t' 
+					&& *endPos!=' ';
 					++endPos)
 				;
 			int32 numChars = endPos-pos;
@@ -973,33 +1029,40 @@ void BmMailHeader::StoreAttributes( BFile& mailFile) {
 	BmString recipients;
 	//
 	BmString s = Name();
-	mailFile.WriteAttr( BM_MAIL_ATTR_NAME, B_STRING_TYPE, 0, s.String(), s.Length()+1);
+	mailFile.WriteAttr( BM_MAIL_ATTR_NAME, B_STRING_TYPE, 0, s.String(), 
+							  s.Length()+1);
 	//
 	s = mAddrMap[BM_FIELD_REPLY_TO].AddrString();
-	mailFile.WriteAttr( BM_MAIL_ATTR_REPLY, B_STRING_TYPE, 0, s.String(), s.Length()+1);
+	mailFile.WriteAttr( BM_MAIL_ATTR_REPLY, B_STRING_TYPE, 0, s.String(), 
+							  s.Length()+1);
 	//
 	s = mAddrMap[BM_FIELD_RESENT_FROM].AddrString();
 	if (!s.Length())
 		s = mAddrMap[BM_FIELD_FROM].AddrString();
-	mailFile.WriteAttr( BM_MAIL_ATTR_FROM, B_STRING_TYPE, 0, s.String(), s.Length()+1);
+	mailFile.WriteAttr( BM_MAIL_ATTR_FROM, B_STRING_TYPE, 0, s.String(), 
+							  s.Length()+1);
 	//
 	mailFile.WriteAttr( BM_MAIL_ATTR_SUBJECT, B_STRING_TYPE, 0, 
-							  mHeaders[BM_FIELD_SUBJECT].String(), mHeaders[BM_FIELD_SUBJECT].Length()+1);
+							  mHeaders[BM_FIELD_SUBJECT].String(), 
+							  mHeaders[BM_FIELD_SUBJECT].Length()+1);
 	//
 	mailFile.WriteAttr( BM_MAIL_ATTR_MIME, B_STRING_TYPE, 0, 
-							  mHeaders[BM_FIELD_MIME].String(), mHeaders[BM_FIELD_MIME].Length()+1);
+							  mHeaders[BM_FIELD_MIME].String(), 
+							  mHeaders[BM_FIELD_MIME].Length()+1);
 	//
 	s = mAddrMap[BM_FIELD_RESENT_TO].AddrString();
 	if (!s.Length())
 		s = mAddrMap[BM_FIELD_TO].AddrString();
-	mailFile.WriteAttr( BM_MAIL_ATTR_TO, B_STRING_TYPE, 0, s.String(), s.Length()+1);
+	mailFile.WriteAttr( BM_MAIL_ATTR_TO, B_STRING_TYPE, 0, s.String(), 
+							  s.Length()+1);
 	if (outbound && s.Length())
 		recipients << s << ",";
 	//
 	s = mAddrMap[BM_FIELD_RESENT_CC].AddrString();
 	if (!s.Length())
 		s = mAddrMap[BM_FIELD_CC].AddrString();
-	mailFile.WriteAttr( BM_MAIL_ATTR_CC, B_STRING_TYPE, 0, s.String(), s.Length()+1);
+	mailFile.WriteAttr( BM_MAIL_ATTR_CC, B_STRING_TYPE, 0, s.String(), 
+							  s.Length()+1);
 	if (outbound) {
 		if (s.Length())
 			recipients << s << ",";
@@ -1031,9 +1094,10 @@ void BmMailHeader::StoreAttributes( BFile& mailFile) {
 	if (!priority.Length()) {
 		priority = "3";						// we default to normal priority
 	}
-	mailFile.WriteAttr( BM_MAIL_ATTR_PRIORITY, B_STRING_TYPE, 0, priority.String(), priority.Length()+1);
-	// if the message was resent, we take the date of the resending operation, not the
-	// original date.
+	mailFile.WriteAttr( BM_MAIL_ATTR_PRIORITY, B_STRING_TYPE, 0, 
+							  priority.String(), priority.Length()+1);
+	// if the message was resent, we take the date of the resending operation,
+	// not the original date.
 	time_t t;
 	if (!ParseDateTime( mHeaders[BM_FIELD_RESENT_DATE], t)
 	&& !ParseDateTime( mHeaders[BM_FIELD_DATE], t))
@@ -1045,7 +1109,8 @@ void BmMailHeader::StoreAttributes( BFile& mailFile) {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-bool BmMailHeader::ConstructRawText( BmStringOBuf& msgText, const BmString& charset) {
+bool BmMailHeader::ConstructRawText( BmStringOBuf& msgText, 
+												 const BmString& charset) {
 	BmStringOBuf headerIO( 1024, 2.0);
 	if (!mAddrMap[BM_FIELD_TO].InitOK() && !mAddrMap[BM_FIELD_CC].InitOK()) {
 		if (mAddrMap[BM_FIELD_BCC].InitOK()) {
@@ -1054,7 +1119,8 @@ bool BmMailHeader::ConstructRawText( BmStringOBuf& msgText, const BmString& char
 		}
 	}
 
-	// identify ourselves as creator of this mail message (so people know who to blame >:o)
+	// identify ourselves as creator of this mail message (so people know 
+	// who to blame >:o)
 	BmString agentField = ThePrefs->GetBool( "PreferUserAgentOverX-Mailer", true)
 								? BM_FIELD_USER_AGENT : BM_FIELD_X_MAILER;
 	if (IsFieldEmpty( agentField)) {
@@ -1067,22 +1133,30 @@ bool BmMailHeader::ConstructRawText( BmStringOBuf& msgText, const BmString& char
 		BmString domain;
 		BmString accName = mMail->AccountName();
 		if (accName.Length()) {
-			BmSmtpAccount* account = dynamic_cast<BmSmtpAccount*>( TheSmtpAccountList->FindItemByKey( accName).Get());
+			BmSmtpAccount* account = dynamic_cast<BmSmtpAccount*>( 
+				TheSmtpAccountList->FindItemByKey( accName).Get()
+			);
 			if (account)
 				domain = account->DomainToAnnounce();
 		}
 		if (!domain.Length()) {
-			// no account given or it has an empty domain, we try to find out manually:
+			// no account given or it has an empty domain, we try to 
+			// find out manually:
 			domain = OwnFQDN();
 			if (!domain.Length()) {
-				BM_SHOWERR( "Identity crisis!\nBeam is unable to determine full-qualified domainname of this computer, something is seriously wrong with network settings!\nBeam will use a fake name and continue");
+				BM_SHOWERR( "Identity crisis!\nBeam is unable to determine "
+								"full-qualified domainname of this computer, "
+								"something is seriously wrong with network settings!\n"
+								"Beam will use a fake name and continue");
 				domain = "bepc.fake.local";
 			}
 		}
-		SetFieldVal( mMail->IsRedirect() ? BM_FIELD_RESENT_MESSAGE_ID : BM_FIELD_MESSAGE_ID, 
+		SetFieldVal( mMail->IsRedirect() 
+							? BM_FIELD_RESENT_MESSAGE_ID 
+							: BM_FIELD_MESSAGE_ID, 
 						 BmString("<") << TimeToString( time( NULL), "%Y%m%d%H%M%S.")
-						 				  << find_thread(NULL) << "." << ++nCounter << "@" 
-						 				  << domain << ">");
+						 				  << find_thread(NULL) << "." << ++nCounter 
+						 				  << "@" << domain << ">");
 	}
 
 	BmString fieldName;
@@ -1099,7 +1173,8 @@ bool BmMailHeader::ConstructRawText( BmStringOBuf& msgText, const BmString& char
 				}
 				if (IsAddressField( fieldName)) {
 					headerIO << fieldName << ": ";
-					mAddrMap[fieldName].ConstructRawText( headerIO, charset, fieldName.Length());
+					mAddrMap[fieldName].ConstructRawText( headerIO, charset, 
+																	  fieldName.Length());
 					headerIO << "\r\n";
 				} else {
 					const BmValueList& valueList = iter->second;
@@ -1119,7 +1194,8 @@ bool BmMailHeader::ConstructRawText( BmStringOBuf& msgText, const BmString& char
 		for( iter = mHeaders.begin(); iter != mHeaders.end(); ++iter) {
 			fieldName = iter->first;
 			if (fieldName.ICompare("Content-",8) == 0) {
-				// do not include MIME-header, since that will be added by body-part:
+				// do not include MIME-header, since that will be added 
+				// by body-part:
 				continue;
 			}
 			if (fieldName.ICompare("Resent-",7) == 0) {
@@ -1128,7 +1204,8 @@ bool BmMailHeader::ConstructRawText( BmStringOBuf& msgText, const BmString& char
 			}
 			if (IsAddressField( fieldName)) {
 				headerIO << fieldName << ": ";
-				mAddrMap[fieldName].ConstructRawText( headerIO, charset, fieldName.Length());
+				mAddrMap[fieldName].ConstructRawText( headerIO, charset, 
+																  fieldName.Length());
 				headerIO << "\r\n";
 			} else {
 				const BmValueList& valueList = iter->second;
@@ -1160,4 +1237,3 @@ bool BmMailHeader::ConstructRawText( BmStringOBuf& msgText, const BmString& char
 	}
 	return false;
 }
-

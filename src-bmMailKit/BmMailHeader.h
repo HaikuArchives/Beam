@@ -49,13 +49,17 @@ class BmIdentity;
 \*------------------------------------------------------------------------------*/
 class BM_mail_format_error : public BM_runtime_error {
 public:
-	BM_mail_format_error (const BmString& what_arg): BM_runtime_error (what_arg.String()) { }
-	BM_mail_format_error (const char* const what_arg): BM_runtime_error (what_arg) { }
+	BM_mail_format_error (const BmString& what_arg)
+		: BM_runtime_error (what_arg.String()) 
+													{ }
+	BM_mail_format_error (const char* const what_arg)
+		: BM_runtime_error (what_arg) 	{ }
 };
 
 /*------------------------------------------------------------------------------*\
 	BmAddress
-		-	represents a single mail-addresses (parsed and split into its components)
+		-	represents a single mail-addresses (parsed and split into 
+			its components)
 \*------------------------------------------------------------------------------*/
 class BmAddress {
 
@@ -65,10 +69,9 @@ public:
 	BmAddress( const BmString& addrText);
 	~BmAddress();
 
-	inline bool operator== (const BmAddress& a) {
-		return mPhrase == a.Phrase() 
-			&&  mAddrSpec == a.AddrSpec();
-	}
+	inline bool operator== (const BmAddress& a) 
+													{ return mPhrase == a.Phrase() 
+															&&  mAddrSpec == a.AddrSpec(); }
 
 	// native methods:
 	bool SetTo( const BmString& addrText);
@@ -80,9 +83,11 @@ public:
 	// getters:
 	inline bool InitOK() const				{ return mInitOK; }
 	inline bool HasPhrase() const			{ return mPhrase.Length() > 0; }
-	inline const BmString& Phrase() const		{ return mPhrase; }
-	inline bool HasAddrSpec() const			{ return mAddrSpec.Length() > 0; }
-	inline const BmString& AddrSpec() const		{ return mAddrSpec; }
+	inline const BmString& Phrase() const		
+													{ return mPhrase; }
+	inline bool HasAddrSpec() const		{ return mAddrSpec.Length() > 0; }
+	inline const BmString& AddrSpec() const
+													{ return mAddrSpec; }
 
 private:
 	bool mInitOK;
@@ -117,8 +122,10 @@ public:
 	bool ContainsAddrSpec( BmString addrSpec) const;
 	const BmString& AddrString() const;
 	//
-	inline BmAddrList::const_iterator begin() const { return mAddrList.begin(); }
-	inline BmAddrList::const_iterator end() const	{ return mAddrList.end(); }
+	inline BmAddrList::const_iterator begin() const 
+													{ return mAddrList.begin(); }
+	inline BmAddrList::const_iterator end() const	
+													{ return mAddrList.end(); }
 	inline size_t size() const				{ return mAddrList.size(); }
 	inline bool empty() const				{ return mAddrList.empty(); }
 
@@ -126,8 +133,12 @@ public:
 	inline bool InitOK() const				{ return mInitOK; }
 	inline bool IsGroup() const			{ return mIsGroup; }
 	inline int32 AddrCount() const		{ return mAddrList.size(); }
-	inline const BmString& GroupName() const	{ return mGroupName; }
-	inline BmAddress FirstAddress() const		{ return mAddrList.size() > 0 ? mAddrList[0] : BmAddress(); }
+	inline const BmString& GroupName() const	
+													{ return mGroupName; }
+	inline BmAddress FirstAddress() const
+													{ return mAddrList.size() > 0 
+															? mAddrList[0] 
+															: BmAddress(); }
 
 private:
 	bool mInitOK;
@@ -141,8 +152,8 @@ private:
 	BmMailHeader 
 		-	represents a single mail-message in Beam
 		-	contains functionality to read/write mails from/to files
-		- 	implements all mail-specific text-handling like header-parsing, en-/decoding,
-			en-/decrypting
+		- 	implements all mail-specific text-handling like header-parsing, 
+			en-/decoding, en-/decrypting
 \*------------------------------------------------------------------------------*/
 class BmMailHeader : public virtual BmRefObj {
 
@@ -156,8 +167,10 @@ private:
 		void Set( const BmString& fieldName, const BmString content);
 		void Add( const BmString& fieldName, const BmString content);
 		void Remove( const BmString& fieldName);
-		BmHeaderMap::const_iterator begin() const { return mHeaders.begin(); }
-		BmHeaderMap::const_iterator end() const	{ return mHeaders.end(); }
+		BmHeaderMap::const_iterator begin() const 
+													{ return mHeaders.begin(); }
+		BmHeaderMap::const_iterator end() const	
+													{ return mHeaders.end(); }
 		const BmString& operator [] (const BmString& fieldName) const;
 		void GetAllValues( BmMsgContext& msgContext) const;
 
@@ -182,7 +195,8 @@ public:
 							// the next always produces US-ASCII (7-bit):
 	const BmAddressList& GetAddressList( BmString fieldName);
 	bool IsFieldEmpty( BmString fieldName);
-	bool AddressFieldContainsAddrSpec( BmString fieldName, const BmString addrSpec);
+	bool AddressFieldContainsAddrSpec( BmString fieldName, 
+												  const BmString addrSpec);
 	bool AddressFieldContainsAddress( BmString fieldName, 
 												 const BmString& address);
 	//
@@ -194,19 +208,23 @@ public:
 	bool ConstructRawText( BmStringOBuf& header, const BmString& charset);
 
 	// overrides of BmRefObj
-	const BmString& RefName() const				{ return mKey; }
+	const BmString& RefName() const		{ return mKey; }
 
 	// getters:
 	void GetAllFieldValues( BmMsgContext& msgContext) const;
 	const BmString& GetFieldVal( BmString fieldName);
-	inline const BmString& HeaderString() const	{ return mHeaderString; }
-	inline const int32 HeaderLength() const	{ return mHeaderString.Length(); }
-	inline const BmString& Name() const			{ return mName; }
-	inline const bool IsRedirect() const		{ return mIsRedirect; }
-	inline const bool HasParsingErrors() const	{ return mHasParsingErrors; }
+	inline const BmString& HeaderString() const	
+													{ return mHeaderString; }
+	inline const int32 HeaderLength() const
+													{ return mHeaderString.Length(); }
+	inline const BmString& Name() const	{ return mName; }
+	inline const bool IsRedirect() const
+													{ return mIsRedirect; }
+	inline const bool HasParsingErrors() const	
+													{ return mHasParsingErrors; }
 
 	// setters:
-	inline void IsRedirect( bool b)				{ mIsRedirect = b; }
+	inline void IsRedirect( bool b)		{ mIsRedirect = b; }
 
 	// class-functions:
 	static bool IsAddressField( const BmString fieldName);
@@ -223,34 +241,38 @@ private:
 							// the complete original mail-header
 	BmHeaderList mHeaders;
 							// contains all stripped headers as a list of corresponding
-							// values. For simplicity, this map contains even fields for
-							// which the stripped value does not make sense, because they
-							// aren't structured (e.g. 'Subject'). The stripped versions
-							// of these fields' values will be the same as the original
-							// field-value (i.e. no stripping takes place)
+							// values. For simplicity, this map contains even fields
+							// for which the stripped value does not make sense, 
+							// because they aren't structured (e.g. 'Subject'). 
+							// The stripped versions of these fields' values will be 
+							// the same as the original field-value (i.e. no 
+							// stripping takes place).
 							// N.B.: 'stripped' actually means that any comments and 
-							//       unneccessary whitespace are gone from the field-values.
+							//       unneccessary whitespace are gone from the 
+							//       field-values.
 	BmAddrMap mAddrMap;
 							// address-fields with detailed information about all
 							// the single address-entries that are contained within
 							// each field.
-							// In case a complete addresslist is accessed as a BmString,
-							// it will (in contrast to the stripped-field) deliver a
-							// completely parsed and reconstructed version of the address.
+							// In case a complete addresslist is accessed as a 
+							// BmString, it will (in contrast to the stripped-field) 
+							// deliver a completely parsed and reconstructed version 
+							// of the address.
 							// This results in identical formatting for all addresses
 							// (i.e. no '"'s around phrases and the like)
 	BmMail* mMail;		
 							// The mail these headers belong to
 	BmString mName;
-							// The "name" of the sender of this mail (MAIL:name attribute)
+							// The "name" of the sender of this mail 
+							// (MAIL:name attribute)
 	BmString mKey;
-							// Since headers have no real key, we generate one from the this-value
+							// Since headers have no real key, we generate one 
+							// from the this-value
 	bool mIsRedirect;	
-							// true if header contains redirect-fields (or will do in near future)
-
+							// true if header contains redirect-fields 
+							// (or will do in near future)
 	bool mHasParsingErrors;	
 							// true if header contains parsing-errors
-
 	static int32 nCounter;
 							// counter for message-id
 
