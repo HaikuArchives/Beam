@@ -1,6 +1,113 @@
 change-history of Beam:
 		$Id$
 
+[Beam v0.914, 2002-11-29]:
+	BmApplication:
+		-	mark mails as read before trashing them in order to avoid confusing
+			the new-mail counter.
+	
+	BmDeskbarItem:
+		-	shrunk menu-font to 10 points.
+		-	removed LivesInTrash(), since that didn't make any sense.
+	
+	BmEncoding:
+		-	added IsCompatibleWithText() in order to check attachments of type
+			text if they really are text (not binary), before they are being
+			added to a mail. This is needed in the special case where an attachment
+			lives on a non-BeOS filesystem (thus not having reliable filetypes).
+			For Instance, BeOS believes that MS-Word documents on a FAT32-partition
+			are of type text/plain, while in fact they contain binary data.
+			To avoid Beam chopping off the file, we do this sanity check first.
+	
+	BmGuiUtils:
+		-	changed handling of shortcuts in CreateMenuItem() such that trailing
+			dots are removed.
+	
+	BmLogHandler:
+		-	replaced calls to BString::ReplaceAll with ReplaceSubstringWith().
+	
+	BmMail:
+		-	fixed crash in quoting-code when long lines containing only spaces
+			were encountered.
+			
+	BmMailEditWin:
+		-	now we clobber a mail's date only if it is not a redirection, since
+			in that case the original date *must not* be fiddled with.
+		-	After constructing a mail's text afresh, we now update the mail's
+			connections to it's controllers, since the datamodel's for the
+			body and the header have been changed. This fixes the bug that
+			caused Beam to ignore changes to the bodypartlist (attachments)
+			when the mail has been saved once (from inside the maileditview).
+			After the first save, the connection to the (old) bodypartlist 
+			persisted so that any further changes to the attachments would be
+			lost. This bug could lead to lost/unwanted attachments when a mail
+			was finally sent.
+		-	Corrected field-value check for the case of a redirected mail
+			(we have to check the resent-... fields in that case).
+			
+	BmMailFolder:
+		-	instead of using one locker per mail-folder, we now use a single
+			static locker to protect the ref-lists of all mail-folders. There were 
+			just too many lockers around.
+	
+	BmMailFolderList:
+		-	the new-mail counter does not anymore check if new mail lives
+			in trash, since that is unreliable anyway (moves inside/outside 
+			trash are not seen). We just hope that there'll never be any
+			new mail in trash...
+	
+	BmMailHeader:
+		-	several cosmetic changes that faciliate correct handling of empty
+			group-addresslists.
+		-	the regexx that was used to split the mail-header into separate
+			fields used too much stack space (leading to crashes), so we now use
+			hand-coded field-separation.
+	
+	BmMailRef:
+		-	when errors occur during construction, we now only log the errors
+			instead of popping up alerts for them, in order to behave in a
+			more sensible way if other mail-software is around (like MDR).
+	
+	BmMailView:
+		-	added UpdateControllers() that reinstalls controller/datamodel 
+			connections.
+	
+	BmPrefs:
+		-	patched archive-version to 3
+		-	changed handling of shortcuts such that trailing dots are removed.
+			This avoids problems when adding/removing dots in the menu-items.
+			
+	BmSmtp:
+		-	fix problem that made Beam try to send empty rcpt-commands to
+			server for empty group-addresslists.
+	
+	BmStorageUtil:
+		-	Fixed MoveToTrash so that it works with LocaleTracker, too.
+			We now use find_directory() to get the desktop-path and then 
+			target the tracker message to that window (usually 
+			"/boot/home/Desktop"). This seems to work for both OpenTracker and
+			LocaleTracker.
+		-	Fixed MoveToTrash even more to work with all known Trackers
+			(5.00, 5.02, OpenTracker and LocaleTracker). Now both 'Desktop' and
+			'/boot/home/Desktop' are tried as base-windows.
+		-	removed LivesInTrash(), since that didn't make any sense.
+			
+	BmUtil:
+		-	added ReplaceSubstringWith() to avoid the use of the pathetic
+			BString::ReplaceAll().
+	
+	general node-monitoring:
+		-	we do not any longer show errors on screen, since there are just
+			to many of them happening, esp. when MDR is running. MDR seems to 
+			create and then immediately rename/move mails, which would confuse
+			Beam ever to often. So now at least Beam is quiet about it...
+
+	release-projects:
+		-	replaced -fomit-frame-pointer with -fno-omit-frame-pointer, since
+			this way the obscure crashes that some people have experienced
+			during send/receive don't (seem to) occur. While at it, we removed
+			the unneeded -no-pic, too.
+	
 [Beam v0.913, 2002-11-15]:
 	all:
 		-	added a +1 to many BString::LockBuffer() calls in order to have enough
