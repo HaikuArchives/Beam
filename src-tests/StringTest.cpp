@@ -41,6 +41,9 @@
 
 #include "BmString.h"
 
+static const int32 OUT_OF_MEM_SIZE = 1000*1000*1000*2;
+							// a value larger than the available memory
+
 // setUp
 void
 StringTest::setUp()
@@ -1022,7 +1025,7 @@ StringTest::StringRemoveTest(void)
 	string2 = new BmString("string");
 	string2->MoveInto(*string1, 0, 200);
 	CPPUNIT_ASSERT(strcmp(string1->String(), "string") == 0);
-	CPPUNIT_ASSERT(strcmp(string2->String(), "string") == 0);
+	CPPUNIT_ASSERT(strcmp(string2->String(), "") == 0);
 	delete string1;
 	delete string2;
 	
@@ -1039,9 +1042,9 @@ StringTest::StringRemoveTest(void)
 	NextSubTest();
 	string1 = new BmString("some text");
 	memset(dest, 0, 100);
-	string1->MoveInto(dest, 0, 50);
-	CPPUNIT_ASSERT(strcmp(dest, "some text") == 0);
-	CPPUNIT_ASSERT(strcmp(string1->String(), "some text") == 0);
+	string1->MoveInto(dest, 4, 50);
+	CPPUNIT_ASSERT(strcmp(dest, " text") == 0);
+	CPPUNIT_ASSERT(strcmp(string1->String(), "some") == 0);
 	delete string1;
 }
 
@@ -1748,6 +1751,13 @@ StringTest::StringAssignTest(void)
 	CPPUNIT_ASSERT(strcmp(str->String(), "") == 0);
 	delete str;
 	
+	//SetTo( const char*, TOO_LARGE)
+	NextSubTest();
+	str = new BmString;
+	str->SetTo(0x05040302, OUT_OF_MEM_SIZE);
+	CPPUNIT_ASSERT(strcmp(str->String(), "") == 0);
+	delete str;
+	
 	NextSubTest();
 	str = new BmString;
 	str->SetTo("BLA");
@@ -1766,6 +1776,13 @@ StringTest::StringAssignTest(void)
 	str = new BmString;
 	str->SetTo('C', 10);
 	CPPUNIT_ASSERT(strcmp(str->String(), "CCCCCCCCCC") == 0);
+	delete str;
+	
+	//SetTo(char, int32)
+	NextSubTest();
+	str = new BmString;
+	str->SetTo('X', OUT_OF_MEM_SIZE);
+	CPPUNIT_ASSERT(strcmp(str->String(), "") == 0);
 	delete str;
 	
 	NextSubTest();
@@ -1905,6 +1922,22 @@ StringTest::StringAppendTest(void)
 	str1 = new BmString("Base");
 	str1->Append('C', 5);
 	CPPUNIT_ASSERT(strcmp(str1->String(), "BaseCCCCC") == 0);
+	delete str1;
+
+	//Append(const char*, TOO_BIG)
+	NextSubTest();
+	str1 = new BmString("Base");
+	str1->Append("APPENDED", OUT_OF_MEM_SIZE);
+	CPPUNIT_ASSERT(strcmp(str1->String(), "BaseAPPENDED") == 0);
+	CPPUNIT_ASSERT(str1->Length() == (int32)strlen("BaseAPPENDED"));
+	delete str1;
+
+	//Append(char, TOO_BIG)
+	NextSubTest();
+	str1 = new BmString("Base");
+	str1->Append( 'X', OUT_OF_MEM_SIZE);
+	CPPUNIT_ASSERT(strcmp(str1->String(), "") == 0);
+	CPPUNIT_ASSERT(str1->Length() == 0);
 	delete str1;
 }
 
