@@ -84,7 +84,7 @@ BmMailHeaderFieldView::BmMailHeaderFieldView( BmString fieldName, BmString value
 	mContentView->SetText( value.String());
 	mContentView->SetViewColor( BeLightShadow);
 	float neededHeight = mContentView->TextHeight( 0, 10000)+2*textInset;
-	mContentView->ResizeTo( fixedWidth-contentRect.left, neededHeight);
+	mContentView->ResizeTo( fixedWidth-contentRect.left-20, neededHeight);
 	mContentView->MakeEditable( false);
 	mContentView->MakeSelectable( true);
 	mContentView->SetStylable( false);
@@ -109,7 +109,7 @@ BmMailHeaderFieldView::~BmMailHeaderFieldView() {
 		-	
 \*------------------------------------------------------------------------------*/
 filter_result BmMailHeaderFieldView::BmMsgFilter::Filter( BMessage* msg, 
-																			BHandler** handler) {
+																			 BHandler** handler) {
 	if (msg->what == B_MOUSE_DOWN) {
 		int32 buttons;
 		int32 clicks;
@@ -131,8 +131,13 @@ filter_result BmMailHeaderFieldView::BmMsgFilter::Filter( BMessage* msg,
 	if (msg->what == B_KEY_DOWN) {
 		BmString bytes = msg->FindString( "bytes");
 		if (bytes.Length() 
-		&& (bytes[0]==B_UP_ARROW || bytes[0]==B_DOWN_ARROW))
-			return B_SKIP_MESSAGE;
+		&& (bytes[0]==B_UP_ARROW || bytes[0]==B_DOWN_ARROW || bytes[0]==B_RIGHT_ARROW
+		   || bytes[0]==B_LEFT_ARROW || bytes[0]==B_PAGE_UP || bytes[0]==B_PAGE_DOWN
+		   || bytes[0]==B_HOME || bytes[0]==B_END )) {
+			// dispatch any cursor movement to the mailview:
+			BView* view = (BView*)(*handler);
+			*handler =  view->Parent()->Parent()->Parent();
+	   }
 	}
 	return B_DISPATCH_MESSAGE;
 }
@@ -154,6 +159,8 @@ void BmMailHeaderFieldView::SetTitleWidth( float newTitleWidth, float fixedWidth
 	mTitleView->MoveTo( newTitleWidth-5-titleRect.Width(), titleRect.top);
 	mContentView->MoveTo( newTitleWidth, 0);
 	mContentView->ResizeTo( fixedWidth-newTitleWidth, mContentView->Frame().Height());
+	BRect textRect( 4, 2, fixedWidth-newTitleWidth-5, mContentView->Frame().Height()-1);
+	mContentView->SetTextRect( textRect);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -407,6 +414,17 @@ float BmMailHeaderView::AddFieldViews() {
 				if (fieldName == BM_FIELD_DATE) {
 					BmString timeMode = ThePrefs->GetString( "TimeModeInHeaderView", "native");
 					if (timeMode.ICompare( "native") != 0) {
+						// some mail-clients (notable BeMail) generate date-formats with double
+						// time-zone information which confuses parsedatetime(). 
+						// N.B. Some other mailers enclose the same textual representation in
+						// comments (parantheses), which is perfectly legal and will be handled
+						// by the mail-header parsing code (the comments will not be present
+						// in the string handled here).
+						Regexx rx;
+						// remove superfluous timezone information, i.e. convert something
+						// like '12:11:10 +0200 CEST' to '12:11:10 +0200':
+						fieldVal = rx.replace( fieldVal, "([+\\-]\\d+)\\s*[\\w()\\s]+$", "$1");
+						// convert datetime-string into time_t:
 						time_t lt = 0;
 						ParseDateTime( fieldVal, lt);
 						if (timeMode.ICompare( "swatch") == 0)
