@@ -257,6 +257,14 @@ BmStringOBuf::~BmStringOBuf() {
 }
 
 /*------------------------------------------------------------------------------*\
+	Reset()
+		-	reset to empty state
+\*------------------------------------------------------------------------------*/
+void BmStringOBuf::Reset() {
+	mCurrPos = 0;
+}
+
+/*------------------------------------------------------------------------------*\
 	GrowBufferToFit( len)
 		-	makes sure that the buffer is big enough to write the given number
 			of bytes.

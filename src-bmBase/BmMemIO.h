@@ -178,6 +178,7 @@ public:
 	inline const char* Buffer() const	{ return mBuf; }
 	inline bool HasData() const 			{ return mBuf!=NULL; }
 	inline char ByteAt( uint32 pos) const { return (!mBuf||pos<0||pos>=mCurrPos) ? 0 : mBuf[pos]; }
+	void Reset();
 
 	// getters:
 	inline uint32 CurrPos() const 		{ return mCurrPos; }
