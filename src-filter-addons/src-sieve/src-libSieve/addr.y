@@ -44,30 +44,6 @@ extern int addrlex(void);
 %start sieve_address
 
 %%
-address: mailbox			/* one addressee */
-	| group				/* named list */
-	;
-
-group: phrase ':' ';'
-	| phrase ':' mailboxes ';'
-	;
-
-mailboxes: mailbox
-	| mailbox ',' mailboxes
-	;
-
-mailbox: addrspec			/* simple address */
-	| phrase routeaddr		/* name & addr-spec */
-	;
-
-routeaddr: '<' addrspec '>'
-	| '<' route ':' addrspec '>'
-	;
-
-route: '@' domain			/* path-relative */
-	| '@' domain ',' route
-	;
-
 sieve_address: addrspec			/* simple address */
 	| phrase '<' addrspec '>'	/* name & addr-spec */
 	;
