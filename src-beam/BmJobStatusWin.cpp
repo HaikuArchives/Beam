@@ -55,8 +55,10 @@
 
 #include "BmApp.h"
 #include "BmBasics.h"
+#include "BmFilter.h"
 #include "BmJobStatusWin.h"
 #include "BmLogHandler.h"
+#include "BmMailFilter.h"
 #include "BmMailFolder.h"
 #include "BmMailFolderList.h"
 #include "BmMailMover.h"
@@ -212,7 +214,6 @@ void BmJobStatusView::JobIsDone( bool completed) {
 	BmMailMoverView
 \********************************************************************************/
 
-
 /*------------------------------------------------------------------------------*\
 	CreateInstance( name)
 		-	creates and returns a new mailmover-view
@@ -301,6 +302,104 @@ void BmMailMoverView::UpdateModelView( BMessage* msg) {
 		mStatBar->Update( delta, leading, trailing);
 	} else
 		throw BM_runtime_error("BmMailMoverView::UpdateModelView(): could not lock window");
+}
+
+
+
+/********************************************************************************\
+	BmMailFilterView
+\********************************************************************************/
+
+/*------------------------------------------------------------------------------*\
+	CreateInstance( name)
+		-	creates and returns a new mailfilter-view
+\*------------------------------------------------------------------------------*/
+BmMailFilterView* BmMailFilterView::CreateInstance( const char* name) {
+	return new BmMailFilterView( name);
+}
+
+/*------------------------------------------------------------------------------*\
+	BmMailFilterView()
+		-	standard constructor
+\*------------------------------------------------------------------------------*/
+BmMailFilterView::BmMailFilterView( const char* name)
+	:	BmJobStatusView( name)
+	,	mStatBar( NULL)
+	,	mBottomLabel( NULL)
+{
+	mMSecsBeforeShow = MAX(10,ThePrefs->GetInt( "MSecsBeforeMailFilterShows", 500));
+	MView* view = new VGroup(
+		new MBViewWrapper(
+			mStatBar = new BStatusBar( BRect(), name, "Filtering: ", ""), true, false, false
+		),
+		0
+	);
+	AddChild( dynamic_cast<BView*>(view));
+	mStatBar->SetBarHeight( 8.0);
+}
+
+/*------------------------------------------------------------------------------*\
+	~BmMailFilterView()
+		-	standard destructor
+\*------------------------------------------------------------------------------*/
+BmMailFilterView::~BmMailFilterView() {
+}
+
+/*------------------------------------------------------------------------------*\
+	CreateJobModel( data)
+		-	creates and returns a new job-model, data may contain constructor args
+\*------------------------------------------------------------------------------*/
+BmJobModel* BmMailFilterView::CreateJobModel( BMessage* msg) {
+	const char* filterName;
+	if (msg->FindString( BmFilter::MSG_FILTER, &filterName) != B_OK)
+		return NULL;
+	bool outbound;
+	if (msg->FindBool( BmFilter::MSG_OUTBOUND, &outbound) != B_OK)
+		return NULL;
+	BmRef<BmListModelItem> filterRef = outbound
+						? TheOutboundFilterList->FindItemByKey( filterName)
+						: TheInboundFilterList->FindItemByKey( filterName);
+	BmFilter* filter = dynamic_cast< BmFilter*>( filterRef.Get());
+	if (!filter)
+		return NULL;
+	BmMailFilter* mailFilter = new BmMailFilter( ControllerName(), filter);
+	BmMailRef* ref;
+	for( int i=0; msg->FindPointer( BmFilter::MSG_MAILREF, i, (void**)&ref)==B_OK; ++i) {
+		mailFilter->AddMailRef( ref);
+		ref->RemoveRef();						// message no longer refers to mail-ref
+	}
+	return mailFilter;
+}
+
+/*------------------------------------------------------------------------------*\
+	ResetController()
+		-	reinitializes the view in order to start another job
+\*------------------------------------------------------------------------------*/
+void BmMailFilterView::ResetController() {
+	mStatBar->Reset( "Filtering: ", "");
+}
+
+/*------------------------------------------------------------------------------*\
+	UpdateModelView()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailFilterView::UpdateModelView( BMessage* msg) {
+	BmString name = FindMsgString( msg, BmMailFilter::MSG_FILTER);
+	BmString domain = FindMsgString( msg, BmJobModel::MSG_DOMAIN);
+
+	float delta = FindMsgFloat( msg, BmMailMover::MSG_DELTA);
+	const char* leading = NULL;
+	msg->FindString( BmMailMover::MSG_LEADING, &leading);
+	const char* trailing = NULL;
+	msg->FindString( BmMailMover::MSG_TRAILING, &trailing);
+
+	BM_LOG3( BM_LogJobWin, BmString("Updating interface for ") << name);
+
+	BmAutolock lock( BmJobStatusWin::theInstance);
+	if (lock.IsLocked()) {
+		mStatBar->Update( delta, leading, trailing);
+	} else
+		throw BM_runtime_error("BmMailFilterView::UpdateModelView(): could not lock window");
 }
 
 
@@ -636,7 +735,11 @@ bool BmSmtpView::AskUserForPopAcc( const BmString accName, BmString& popAccName)
 		- the color used for a status-bar's gauge:
 		- pointer to the single instance
 \*------------------------------------------------------------------------------*/
+#ifdef B_BEOS_VERSION_DANO
+const rgb_color BmJobStatusWin::BM_COL_STATUSBAR = {216,216,216};
+#else
 const rgb_color BmJobStatusWin::BM_COL_STATUSBAR = {160,160,160};
+#endif
 BmJobStatusWin* BmJobStatusWin::theInstance = NULL;
 
 /*------------------------------------------------------------------------------*\
@@ -725,6 +828,7 @@ void BmJobStatusWin::MessageReceived(BMessage* msg) {
 		switch( msg->what) {
 			case BM_JOBWIN_SMTP:
 			case BM_JOBWIN_POP:
+			case BM_JOBWIN_FILTER:
 			case BM_JOBWIN_MOVEMAILS: {
 				// request to start a new job
 				AddJob( msg);
@@ -786,6 +890,9 @@ void BmJobStatusWin::AddJob( BMessage* msg) {
 			}
 			case BM_JOBWIN_SMTP:
 				controller = new BmSmtpView( name.String());
+				break;
+			case BM_JOBWIN_FILTER:
+				controller = new BmMailFilterView( name.String());
 				break;
 			case BM_JOBWIN_MOVEMAILS:
 				controller = new BmMailMoverView( name.String());

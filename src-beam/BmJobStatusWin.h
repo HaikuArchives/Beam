@@ -128,6 +128,37 @@ private:
 };
 
 /*------------------------------------------------------------------------------*\
+	BmMailFilterView
+		-	controls a specific mail-filtering operation
+\*------------------------------------------------------------------------------*/
+class BmMailFilterView : public BmJobStatusView {
+	typedef BmJobStatusView inherited;
+
+public:
+	// creator-func, c'tors and d'tor:
+	static BmMailFilterView* CreateInstance( const char* name);
+	BmMailFilterView( const char* name);
+	~BmMailFilterView();
+
+	// overrides of jobstatusview base:
+	bool AlwaysRemoveWhenDone()			{ return true; }
+	void ResetController();
+	void UpdateModelView( BMessage* msg);
+	BmJobModel* CreateJobModel( BMessage* msg);
+
+	// overrides of controller base:
+	BHandler* GetControllerHandler() 	{ return this; }
+
+private:
+	BStatusBar* mStatBar;					// shows number of mails filtered during this operation
+	MStringView* mBottomLabel;
+
+	// Hide copy-constructor and assignment:
+	BmMailFilterView( const BmMailFilterView&);
+	BmMailFilterView operator=( const BmMailFilterView&);
+};
+
+/*------------------------------------------------------------------------------*\
 	BmPopperView
 		-	controls a specific POP3-connection
 \*------------------------------------------------------------------------------*/
