@@ -211,19 +211,24 @@ BmString BmEncoding::ConvertHeaderPartToUTF8( const BmString& headerPart,
 															 const BmString& defaultCharset) {
 	int32 nm;
 	Regexx rx;
-	rx.expr( "=\\?(.+?)\\?(.)\\?(.*?)\\?=\\s*");
+	rx.expr( "=\\?(.+?)\\?(.)\\?(.*?)\\?=");
 	rx.str( headerPart);
 	const uint32 blockSize = max( (int32)128, headerPart.Length());
 	BmStringOBuf utf8( blockSize, 2.0);
 	
 	if ((nm = rx.exec( Regexx::global))!=0) {
+		Regexx rxWhite;
 		int32 len=headerPart.Length();
 		int32 curr=0;
 		vector<RegexxMatch>::const_iterator i;
 		for( i = rx.match.begin(); i != rx.match.end(); ++i) {
 			if (curr < i->start()) {
-				// copy the characters between start/curr match and first match:
-				utf8.Write( headerPart.String()+curr, i->start()-curr);
+				// copy the characters between start/curr match and next match,
+				// unless it's all whitespace (rfc2047 requires whitespace between
+				// encoded words to be removed):
+				BmString chars( headerPart.String()+curr, i->start()-curr);
+				if (!rxWhite.exec( chars, "^\\s*$"))
+					utf8.Write( chars);
 			}
 			// convert the match (an encoded word) into UTF8:
 			const BmString srcCharset( i->atom[0]);
