@@ -255,8 +255,12 @@ BmString BmEncoding::ConvertUTF8ToHeaderPart( const BmString& utf8Text, uint32 e
 					foldPos = lastEqualSignPos;
 				}
 				encodedString.MoveInto( tmp, 0, foldPos);
-				foldedString << "=?" << charset << "?q?" << tmp << "?=\r\n";
-				foldedString.Append( BM_SPACES, fieldLen+2);
+				foldedString << "=?" << charset << "?q?" << tmp << "?=\r\n ";
+				// now compute maxChars for lines without the leading fieldname:
+				maxChars = BM_MAX_LINE_LEN			// 76 chars maximum
+								- 1						// a single space
+								- charset.Length()	// length of charset in encoded-word
+								- 7;						// =?...?q?...?=
 			}
 			foldedString << "=?" << charset << "?q?" << encodedString << "?=";
 			return foldedString;		
@@ -274,12 +278,12 @@ BmString BmEncoding::ConvertUTF8ToHeaderPart( const BmString& utf8Text, uint32 e
 				int32 foldPos = encodedString.FindLast( ' ', maxChars-1);
 				if (foldPos == B_ERROR)
 					foldPos = maxChars;
-				else
-					foldPos++;					// leave space as last char on curr line
 				BmString tmp;
 				encodedString.MoveInto( tmp, 0, foldPos);
-				foldedString << tmp << "\r\n";
-				foldedString.Append( BM_SPACES, fieldLen+2);
+				foldedString << tmp << "\r\n ";
+				// now compute maxChars for lines without the leading fieldname:
+				maxChars = BM_MAX_LINE_LEN			// 76 chars maximum
+								- 1;						// a single space
 			}
 			foldedString << encodedString;
 			return foldedString;		
