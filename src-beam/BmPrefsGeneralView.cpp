@@ -86,23 +86,43 @@ BmPrefsGeneralView::BmPrefsGeneralView()
 		new VGroup(
 			new Space( minimax(0,10,0,10)),
 			new HGroup( 
-				new MBorder( M_LABELED_BORDER, 10, (char*)"Status Window",
-					new HGroup( 
-						new VGroup(
-							mDynamicStatusWinControl = new BmCheckControl( "Only show active jobs", 
-																						  new BMessage(BM_DYNAMIC_STATUS_WIN_CHANGED), 
-																						  this, ThePrefs->GetBool("DynamicStatusWin")),
-							new Space( minimax(0,4,0,4)),
-							mMailMoverShowControl = new BmTextControl( "Time before mail-moving-job will be shown (ms):", false, 5),
-							mPopperRemoveControl = new BmTextControl( "Time before mail-receiving-job will be removed (ms):", false, 5),
-							mSmtpRemoveControl = new BmTextControl( "Time before mail-sending-job will be removed (ms):", false, 5),
-							mRemoveFailedControl = new BmTextControl( "Time before a failed job will be removed (ms):", false, 5),
-							new Space( minimax(0,4,0,4)),
+				new VGroup( 
+					new MBorder( M_LABELED_BORDER, 10, (char*)"Status Window",
+						new HGroup( 
+							new VGroup(
+								mDynamicStatusWinControl = new BmCheckControl( "Only show active jobs", 
+																							  new BMessage(BM_DYNAMIC_STATUS_WIN_CHANGED), 
+																							  this, ThePrefs->GetBool("DynamicStatusWin")),
+								new Space( minimax(0,4,0,4)),
+								mMailMoverShowControl = new BmTextControl( "Time before mail-moving-job will be shown (ms):", false, 5),
+								mPopperRemoveControl = new BmTextControl( "Time before mail-receiving-job will be removed (ms):", false, 5),
+								mSmtpRemoveControl = new BmTextControl( "Time before mail-sending-job will be removed (ms):", false, 5),
+								mRemoveFailedControl = new BmTextControl( "Time before a failed job will be removed (ms):", false, 5),
+								new Space( minimax(0,4,0,4)),
+								0
+							),
+							new Space(),
 							0
-						),
-						new Space(),
-						0
-					)
+						)
+					),
+					new MBorder( M_LABELED_BORDER, 10, (char*)"Performance & Timing Options",
+						new HGroup( 
+							new VGroup(
+								mCacheRefsOnDiskControl = new BmCheckControl( "Cache mailfolders (on disk)", 
+																					 		new BMessage(BM_CACHE_REFS_DISK_CHANGED), 
+																					 		this, ThePrefs->GetBool("CacheRefsOnDisk")),
+								mCacheRefsInMemControl = new BmCheckControl( "Keep mailfolders in memory once loaded", 
+																					 		new BMessage(BM_CACHE_REFS_MEM_CHANGED), 
+																					 		this, ThePrefs->GetBool("CacheRefsInMem")),
+								mNetBufSizeSendControl = new BmTextControl( "Network buffer size when sending mail (bytes):", false, 5),
+								mNetRecvTimeoutControl = new BmTextControl( "Timeout for network-connections (seconds):", false, 5),
+								0
+							),
+							new Space(),
+							0
+						)
+					),
+					0
 				),
 				new MBorder( M_LABELED_BORDER, 10, (char*)"General GUI Options",
 					new HGroup(
@@ -123,9 +143,22 @@ BmPrefsGeneralView::BmPrefsGeneralView()
 																				  new BMessage(BM_BEEP_NEW_MAIL_CHANGED), 
 																				  this, ThePrefs->GetBool("BeepWhenNewMailArrived", true)),
 							new Space( minimax(0,10,0,10)),
+							mShowAlertForErrorsControl = new BmCheckControl( "Show Alert if an Error occurs", 
+																				           new BMessage(BM_SHOW_ALERTS_FOR_ERRORS_CHANGED), 
+																				           this, ThePrefs->GetBool("ShowAlertForErrors", true)),
+							new Space( minimax(0,10,0,10)),
 							mShowTooltipsControl = new BmCheckControl( "Show Tooltips for Toolbar-Buttons and Prefs", 
 																				  new BMessage(BM_SHOW_TOOLTIPS_CHANGED), 
 																				  this, ThePrefs->GetBool("ShowTooltips", true)),
+							new Space( minimax(0,10,0,10)),
+							mShowToolbarIconsControl = new BmCheckControl( "Show Icons in Toolbar-Buttons", 
+																						  new BMessage(BM_SHOW_TOOLBAR_ICONS_CHANGED), 
+																						  this, ThePrefs->GetBool("ShowToolbarIcons", true)),
+							mToolbarLabelControl = new BmMenuControl( "Layout of Labels in Toolbar:", new BPopUpMenu("")),
+							new Space( minimax(0,10,0,10)),
+							mCloseViewWinControl = new BmCheckControl( "Close Mail-Window Upon Reply", 
+																				    new BMessage(BM_CLOSE_VIEWWIN_CHANGED), 
+																				    this, ThePrefs->GetBool("CloseViewWinAfterMailAction", true)),
 							new Space(),
 							0
 						),
@@ -136,27 +169,6 @@ BmPrefsGeneralView::BmPrefsGeneralView()
 				0
 			),
 			new Space( minimax(0,10,0,10)),
-			new HGroup( 
-				new MBorder( M_LABELED_BORDER, 10, (char*)"Performance & Timing Options",
-					new HGroup( 
-						new VGroup(
-							mCacheRefsOnDiskControl = new BmCheckControl( "Cache mailfolders (on disk)", 
-																				 		new BMessage(BM_CACHE_REFS_DISK_CHANGED), 
-																				 		this, ThePrefs->GetBool("CacheRefsOnDisk")),
-							mCacheRefsInMemControl = new BmCheckControl( "Keep mailfolders in memory once loaded", 
-																				 		new BMessage(BM_CACHE_REFS_MEM_CHANGED), 
-																				 		this, ThePrefs->GetBool("CacheRefsInMem")),
-							mNetBufSizeSendControl = new BmTextControl( "Network buffer size when sending mail (bytes):", false, 5),
-							mNetRecvTimeoutControl = new BmTextControl( "Timeout for network-connections (seconds):", false, 5),
-							0
-						),
-						new Space(),
-						0
-					)
-				),
-				new Space(),
-				0
-			),
 			new HGroup( 
 				mMailboxButton = new MButton( MailboxButtonLabel().String(), new BMessage( BM_SELECT_MAILBOX), this, minimax(-1,-1,-1,-1)),
 				new Space( minimax(10,0,10,0)),
@@ -219,6 +231,10 @@ BmPrefsGeneralView::~BmPrefsGeneralView() {
 	TheBubbleHelper->SetHelp( mCacheRefsInMemControl, NULL);
 	TheBubbleHelper->SetHelp( mNetBufSizeSendControl, NULL);
 	TheBubbleHelper->SetHelp( mNetRecvTimeoutControl, NULL);
+	TheBubbleHelper->SetHelp( mShowToolbarIconsControl, NULL);
+	TheBubbleHelper->SetHelp( mToolbarLabelControl, NULL);
+	TheBubbleHelper->SetHelp( mShowAlertForErrorsControl, NULL);
+	TheBubbleHelper->SetHelp( mCloseViewWinControl, NULL);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -226,7 +242,7 @@ BmPrefsGeneralView::~BmPrefsGeneralView() {
 		-	
 \*------------------------------------------------------------------------------*/
 BmString BmPrefsGeneralView::MailboxButtonLabel() {
-	BmString label( "Set mailbox path (currently '");
+	BmString label( "Set Mailbox Folder (currently '");
 	label << ThePrefs->GetString( "MailboxPath") << "')...";
 	return label;
 }
@@ -253,6 +269,10 @@ void BmPrefsGeneralView::Initialize() {
 	TheBubbleHelper->SetHelp( mCacheRefsInMemControl, "Checking this will cause Beam to keep \nany mail-folder's contents in memory even\nif the user selects another folder.\n\nThis gives best performance, but \nmay use *A LOT* of memory.");
 	TheBubbleHelper->SetHelp( mNetBufSizeSendControl, "Here you can enter the network buffer size (in bytes)\nBeam will use for outgoing connections.\n\nIf sending seems slow, try a larger value in here.");
 	TheBubbleHelper->SetHelp( mNetRecvTimeoutControl, "Here you can enter the time (in ms) Beam\n will wait for an answer from a remote network-server.");
+	TheBubbleHelper->SetHelp( mShowToolbarIconsControl, "If checked, Beam will display icons in each toolbar-button.");
+	TheBubbleHelper->SetHelp( mToolbarLabelControl, "Here you can select if and where the label\nshall be shown inside a toolbar-button");
+	TheBubbleHelper->SetHelp( mShowAlertForErrorsControl, "If unchecked, Beam will not display error-messages on-screen,\nbut they will just be logged (written to a log-file) instead.\nIf in doubt, leave this checked.");
+	TheBubbleHelper->SetHelp( mCloseViewWinControl, "If you check this, Beam will automatically close\n\the mail-view-window if you reply to that mail.");
 	
 	// add workspaces:
 	int32 count = count_workspaces();
@@ -265,6 +285,20 @@ void BmPrefsGeneralView::Initialize() {
 		else
 			label = "Current";
 		AddItemToMenu( mWorkspaceControl->Menu(), new BMenuItem( label.String(), msg), this);
+	}
+
+	// add label-layouts:
+	const char* layouts[] = {
+		"Left",
+		"Right",
+		"Top",
+		"Bottom",
+		"Hide",
+		NULL
+	};
+	for( int32 i=0; layouts[i]; ++i) {
+		BMessage* msg = new BMessage( BM_TOOLBAR_LABEL_SELECTED);
+		AddItemToMenu( mToolbarLabelControl->Menu(), new BMenuItem( layouts[i], msg), this);
 	}
 
 	mMailMoverShowControl->SetTarget( this);
@@ -282,6 +316,7 @@ void BmPrefsGeneralView::Initialize() {
 \*------------------------------------------------------------------------------*/
 void BmPrefsGeneralView::Update() {
 	mWorkspaceControl->MarkItem( ThePrefs->GetString("Workspace", "Current").String());
+	mToolbarLabelControl->MarkItem( ThePrefs->GetString("ShowToolbarLabel", "Bottom").String());
 	mDynamicStatusWinControl->SetValueSilently( ThePrefs->GetBool("DynamicStatusWin"));
 	mRestoreFolderStatesControl->SetValueSilently( ThePrefs->GetBool("RestoreFolderStates"));
 	mInOutAtTopControl->SetValueSilently( ThePrefs->GetBool("InOutAlwaysAtTop", false));
@@ -290,6 +325,9 @@ void BmPrefsGeneralView::Update() {
 	mShowTooltipsControl->SetValueSilently( ThePrefs->GetBool("ShowTooltips", true));
 	mCacheRefsOnDiskControl->SetValueSilently( ThePrefs->GetBool("CacheRefsOnDisk"));
 	mCacheRefsInMemControl->SetValueSilently( ThePrefs->GetBool("CacheRefsInMem"));
+	mShowToolbarIconsControl->SetValueSilently( ThePrefs->GetBool("ShowToolbarIcons", true));
+	mShowAlertForErrorsControl->SetValueSilently( ThePrefs->GetBool("ShowAlertForErrors", true));
+	mCloseViewWinControl->SetValueSilently( ThePrefs->GetBool("CloseViewWinAfterMailAction", true));
 	BmString val;
 	val << ThePrefs->GetInt("MSecsBeforeMailMoverShows")/1000;
 	mMailMoverShowControl->SetTextSilently( val.String());
@@ -423,6 +461,28 @@ void BmPrefsGeneralView::MessageReceived( BMessage* msg) {
 			case BM_SHOW_TOOLTIPS_CHANGED: {
 				ThePrefs->SetBool("ShowTooltips", mShowTooltipsControl->Value());
 				TheBubbleHelper->EnableHelp( mShowTooltipsControl->Value());
+				NoticeChange();
+				break;
+			}
+			case BM_SHOW_TOOLBAR_ICONS_CHANGED: {
+				ThePrefs->SetBool("ShowToolbarIcons", mShowToolbarIconsControl->Value());
+				NoticeChange();
+				break;
+			}
+			case BM_TOOLBAR_LABEL_SELECTED: {
+				BMenuItem* item = mToolbarLabelControl->Menu()->FindMarked();
+				if (item) {
+					ThePrefs->SetString( "ShowToolbarLabel", item->Label());
+					NoticeChange();
+				}
+			}
+			case BM_SHOW_ALERTS_FOR_ERRORS_CHANGED: {
+				ThePrefs->SetBool("ShowAlertForErrors", mShowAlertForErrorsControl->Value());
+				NoticeChange();
+				break;
+			}
+			case BM_CLOSE_VIEWWIN_CHANGED: {
+				ThePrefs->SetBool("CloseViewWinAfterMailAction", mCloseViewWinControl->Value());
 				NoticeChange();
 				break;
 			}

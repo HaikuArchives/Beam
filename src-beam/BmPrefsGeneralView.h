@@ -47,6 +47,10 @@
 #define BM_SELECT_MAILBOX		 				'bmSM'
 #define BM_BEEP_NEW_MAIL_CHANGED				'bmBN'
 #define BM_WORKSPACE_SELECTED					'bmWS'
+#define BM_TOOLBAR_LABEL_SELECTED			'bmTL'
+#define BM_SHOW_TOOLBAR_ICONS_CHANGED		'bmTI'
+#define BM_SHOW_ALERTS_FOR_ERRORS_CHANGED	'bmAE'
+#define BM_CLOSE_VIEWWIN_CHANGED				'bmCW'
 
 class BFilePanel;
 class BmTextControl;
@@ -95,10 +99,16 @@ private:
 	BmCheckControl* mUseDeskbarControl;
 	BmCheckControl* mShowTooltipsControl;
 	BmCheckControl* mBeepNewMailControl;
+	BmCheckControl* mShowAlertForErrorsControl;
+	BmCheckControl* mShowToolbarIconsControl;
+	BmCheckControl* mCloseViewWinControl;
 	BmMenuControl* mWorkspaceControl;
+	BmMenuControl* mToolbarLabelControl;
+
 	MButton* mMailboxButton;
 
 	BFilePanel* mMailboxPanel;
+
 
 	// Hide copy-constructor and assignment:
 	BmPrefsGeneralView( const BmPrefsGeneralView&);
