@@ -699,6 +699,8 @@ bool BmJobStatusWin::QuitRequested() {
 		if (jobView)
 			jobView->StopJob();
 	}
+	snooze( ThePrefs->GetInt( "FeedbackTimeout", 200)*1500);
+							// give jobs a chance to stop
 	BM_LOG2( BM_LogJobWin, BmString("JobStatusWin has stopped all jobs"));
 	return bmApp->IsQuitting();
 }
