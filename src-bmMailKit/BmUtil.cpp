@@ -12,6 +12,7 @@ using namespace regexx;
 
 #include "BmBasics.h"
 #include "BmLogHandler.h"
+#include "BmPrefs.h"
 #include "BmUtil.h"
 
 BString BM_SPACES("                                                                                                                                                                                    ");
@@ -370,12 +371,11 @@ void ConvertLinebreaksToCRLF( const BString& in, BString& out) {
 }
 
 /*------------------------------------------------------------------------------*\
-	ConvertTabsToSpaces( in, out)
-		-	converts all tabs of given in-string into three spaces
+	ConvertTabsToSpaces( in, out, numSpaces)
+		-	converts all tabs of given in-string into numSpaces spaces
 		-	result is stored in out
 \*------------------------------------------------------------------------------*/
-void ConvertTabsToSpaces( const BString& in, BString& out) {
-	const int numSpaces = 3;
+void ConvertTabsToSpaces( const BString& in, BString& out, int numSpaces) {
 	int32 outSize = in.Length()*numSpaces;
 	if (!outSize) {
 		out = "";
@@ -438,12 +438,16 @@ void DeUrlify( const BString& in, BString& out) {
 		-	param maxLineLen indicates right border for wrap
 		-	resulting text is stored in param out
 		-	the string in has to be UTF8-encoded for this function to work correctly!
+		-	if keepLongWords is set, single words whose length exceeds maxLineLen 
+			(like URLs) will be preserved (i.e. not be wrapped).
 \*------------------------------------------------------------------------------*/
-void WordWrap( const BString& in, BString& out, int32 maxLineLen, BString nl) {
+void WordWrap( const BString& in, BString& out, int32 maxLineLen, BString nl, 
+					bool keepLongWords) {
 	if (!in.Length()) {
 		out = "";
 		return;
 	}
+	Regexx rx;
 	int32 lastPos = 0;
 	const char *s = in.String();
 	bool needBreak = false;
@@ -461,14 +465,53 @@ void WordWrap( const BString& in, BString& out, int32 maxLineLen, BString nl) {
 				i++;
 			lineLen++;
 		}
+		int32 lastSpcPos;
 		while (lineLen > maxLineLen) {
-			int32 lastSpcPos = in.FindLast( " ", lastPos+maxLineLen);
+			lastSpcPos = in.FindLast( " ", lastPos+maxLineLen);
+			if (keepLongWords && lastSpcPos>lastPos) {
+				// special-case lines containing only quotes and a long word,
+				// since in this case we want to avoid wrapping between quotes
+				// and the word:
+				BString lineBeforeSpace;
+				in.CopyInto( lineBeforeSpace, lastPos, 1+lastSpcPos-lastPos);
+				if (rx.exec( lineBeforeSpace, ThePrefs->GetString( "QuotingLevelRX"))) {
+					BString text=rx.match[0].atom[1];
+					if (!text.Length()) {
+						// the subpart before last space consists only of the quote,
+						// we avoid wrapping this line:
+						lastSpcPos=B_ERROR;
+					}
+				}
+			}
 			if (lastSpcPos==B_ERROR || lastSpcPos<lastPos) {
-				// line doesn't contain any space character, we simply break it
-				// at right margin:
-				out.Append( in.String()+lastPos, maxLineLen);
-				out.Append( nl);
-				lastPos += maxLineLen;
+				// line doesn't contain any space character (before maxline-length), 
+				// we simply break it at right margin (unless keepLongWords is set):
+				if (keepLongWords) {
+					// find next space or end of line and break line there:
+					int32 nextSpcPos = in.FindFirst( " ", lastPos+maxLineLen);
+					int32 nlPos = in.FindFirst( nl, lastPos+maxLineLen);
+					if (nextSpcPos==B_ERROR || nlPos<nextSpcPos) {
+						// have no space in line, we keep whole line:
+						if (nlPos == B_ERROR) {
+							out.Append( in.String()+lastPos);
+							out.Append( nl);
+							lastPos = in.Length();
+						} else {
+							out.Append( in.String()+lastPos, nl.Length()+nlPos-lastPos);
+							lastPos = nlPos + nl.Length();
+						}
+					} else {
+						// break long line at a space behind right margin:
+						out.Append( in.String()+lastPos, 1+nextSpcPos-lastPos);
+						out.Append( nl);
+						lastPos = nextSpcPos+1;
+					}
+				} else {
+					// break line at right margin:
+					out.Append( in.String()+lastPos, maxLineLen);
+					out.Append( nl);
+					lastPos += maxLineLen;
+				}
 			} else {
 				// wrap line after last space:
 				out.Append( in.String()+lastPos, 1+lastSpcPos-lastPos);
