@@ -61,6 +61,7 @@ extern "C" {
 #include "BmLogHandler.h"
 #include "BmSieveFilter.h"
 #include "BmCheckControl.h"
+#include "BmMail.h"
 #include "BmMenuAlert.h"
 #include "BmMenuControl.h"
 #include "BmMenuControllerBase.h"
@@ -156,11 +157,10 @@ status_t BmSieveFilter::Archive( BMessage* archive, bool) const {
 	Execute()
 		-	
 \*------------------------------------------------------------------------------*/
-bool BmSieveFilter::Execute( void* message_context) {
-	BmMsgContext* msgContext = static_cast< BmMsgContext*>( message_context);
+bool BmSieveFilter::Execute( BmMsgContext* msgContext) {
 	BmString mailId;
 	if (msgContext)
-		mailId = msgContext->mailId;
+		mailId = msgContext->mail->Name();
 	BM_LOG2( BM_LogFilter, BmString("Sieve-Addon: asked to execute filter <") 
 									<< Name() 
 									<< "> on mail with Id <" << mailId << ">");
@@ -396,7 +396,7 @@ int BmSieveFilter::sieve_fileinto( void* action_context, void* script_context,
 												  "with folder ")
 												  <<fileintoContext->mailbox);
 		SetMailFlags( fileintoContext->imapflags, msgContext);
-		if (msgContext->outbound && filter->AskBeforeFileInto()) {
+		if (msgContext->mail->Outbound() && filter->AskBeforeFileInto()) {
 			BmMenuAlert* alert = new BmMenuAlert( 
 				300, 100, "File Into Folder", 
 				"Please select the folder this mail\n should be filed into:",
@@ -478,10 +478,10 @@ int BmSieveFilter::sieve_notify( void* action_context, void*,
 int BmSieveFilter::sieve_get_size( void* message_context, int* sizePtr) {
 	BmMsgContext* msgContext = static_cast< BmMsgContext*>( message_context);
 	if (msgContext && sizePtr)
-		*sizePtr = msgContext->rawMsgText.Length();
+		*sizePtr = msgContext->mail->RawText().Length();
 	BM_LOG3( BM_LogFilter, 
 				BmString("Sieve-Addon: sieve_get_size called, answer = ")
-					<< msgContext->rawMsgText.Length());
+					<< msgContext->mail->RawText().Length());
 	return SIEVE_OK;
 }
 
@@ -500,15 +500,17 @@ int BmSieveFilter::sieve_get_header( void* message_context, const char* header,
 		*contentsPtr = NULL;
 		BmString headerName( header);
 		if (headerName.ICompare("Status") == 0) {
-			fakes[0] = msgContext->status.String();
+			fakes[0] = msgContext->mail->Status().String();
 			*contentsPtr = fakes;
 		} else if (headerName.ICompare("Account") == 0) {
-			fakes[0] = msgContext->account.String();
+			fakes[0] = msgContext->mail->AccountName().String();
 			*contentsPtr = fakes;
 		} else if (headerName.ICompare("Outbound") == 0) {
-			fakes[0] = msgContext->outbound ? "true" : "false";
+			fakes[0] = msgContext->mail->Outbound() ? "true" : "false";
 			*contentsPtr = fakes;
 		} else {
+			if (!msgContext->headerInfos)
+				msgContext->mail->Header()->GetAllFieldValues( *msgContext);
 			for( int i=0; i<msgContext->headerInfoCount; ++i) {
 				if (!msgContext->headerInfos[i].fieldName.ICompare( header)) {
 					*contentsPtr = msgContext->headerInfos[i].values;
@@ -542,7 +544,7 @@ int BmSieveFilter::sieve_execute_error( const char* msg, void*,
 	}
 	BmMsgContext* msgContext = static_cast< BmMsgContext*>( message_context);
 	if (msgContext)
-		mailName = msgContext->mailId;
+		mailName = msgContext->mail->Name();
 	BmString err("An error occurred during execution of a mail-filter.");
 	err << "\nSieveFilter: " << filterName;
 	err << "\nMail-ID: " << mailName;

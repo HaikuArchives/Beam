@@ -63,15 +63,9 @@ BmFilterAddon::~BmFilterAddon() {
 	BmMsgContext()
 		-	c'tor
 \*------------------------------------------------------------------------------*/
-BmMsgContext::BmMsgContext( const BmString& mtxt, const BmString& mid,
-									 bool outb, const BmString& stat, 
-									 const BmString& acc)
-	:	rawMsgText( mtxt)
-	,	mailId( mid)
-	,	outbound( outb)
-	,	account( acc)
+BmMsgContext::BmMsgContext( BmMail* m)
+	:	mail( m)
 	,	headerInfos( NULL)
-	,	status( stat)
 	,	moveToTrash( false)
 	,	stopProcessing( false)
 {

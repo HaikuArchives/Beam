@@ -37,6 +37,35 @@
 #include "BmBase.h"
 #include "BmString.h"
 
+class BmMail;
+struct IMPEXPBMBASE BmHeaderInfo {
+	BmString fieldName;
+	const char** values;
+};
+/*------------------------------------------------------------------------------*\
+	BmMsgContext
+		-	
+\*------------------------------------------------------------------------------*/
+struct IMPEXPBMBASE BmMsgContext {
+	BmMsgContext( BmMail* mail);
+	~BmMsgContext();
+
+	// info fields, are set before filtering starts:
+	BmMail* mail;
+	int32 headerInfoCount;
+	BmHeaderInfo *headerInfos;
+	
+	// result fields, are set by filtering process:
+	BmString folderName;
+	BmString status;
+	BmString identity;
+	BmString rejectMsg;
+	bool moveToTrash;
+	bool stopProcessing;
+};
+
+
+
 /*------------------------------------------------------------------------------*\
 	BmFilterAddon 
 		-	base class for all filter-addons, this is used as filter-addon-API
@@ -48,7 +77,7 @@ public:
 	virtual ~BmFilterAddon();
 	
 	// native methods:
-	virtual bool Execute( void* msgContext) = 0;
+	virtual bool Execute( BmMsgContext* msgContext) = 0;
 	virtual bool SanityCheck( BmString& complaint, BmString& fieldName) = 0;
 	virtual status_t Archive( BMessage* archive, bool deep = true) const = 0;
 	virtual BmString ErrorString() const = 0;
@@ -79,36 +108,5 @@ class BmFilterAddonPrefsView;
 typedef BmFilterAddonPrefsView* (*BmInstantiateFilterPrefsFunc)( 
 	float minX, float minY, float maxX, float maxY, const BmString& kind
 );
-
-/*------------------------------------------------------------------------------*\
-	BmMsgContext
-		-	
-\*------------------------------------------------------------------------------*/
-struct IMPEXPBMBASE BmHeaderInfo {
-	BmString fieldName;
-	const char** values;
-};
-	
-struct IMPEXPBMBASE BmMsgContext {
-	BmMsgContext( const BmString& mtxt, const BmString& mid, bool outb,
-					  const BmString& stat, const BmString& account);
-	~BmMsgContext();
-
-	// info fields, are set before filtering starts:
-	const BmString& rawMsgText;
-	const BmString& mailId;
-	bool outbound;
-	BmString account;
-	int32 headerInfoCount;
-	BmHeaderInfo *headerInfos;
-	
-	// result fields, are set by filtering process:
-	BmString folderName;
-	BmString status;
-	BmString identity;
-	BmString rejectMsg;
-	bool moveToTrash;
-	bool stopProcessing;
-};
 
 #endif

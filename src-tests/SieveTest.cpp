@@ -82,8 +82,7 @@ SetupMsgContext(BmString text)
 		static int count=0;
 		mailId = BmString("testmail-")<<++count;
 		delete msgContext;
-		msgContext = new BmMsgContext(mail->RawText(), mailId, false, "Read", mailAcc);
-		mail->Header()->GetAllFieldValues( *msgContext);
+		msgContext = new BmMsgContext(mail.Get());
 	} catch( BM_error& e) {
 		cerr << e.what() << endl;
 		throw;
@@ -129,10 +128,10 @@ Result()
 		res |= RES_IDENTITY;
 		msgContext->identity = "";
 	}
-	if (msgContext->status != "Read") {
+	if (msgContext->status.Length()) {
 		targetStatus = msgContext->status;
 		res |= RES_STATUS;
-		msgContext->status = "Read";
+		msgContext->status = "";
 	}
 	if (msgContext->folderName.Length()) {
 		targetFolder = msgContext->folderName;

@@ -63,7 +63,7 @@ public:
 	virtual bool AskBeforeFileInto()		{ return false; }
 
 	// implementations for abstract BmFilterAddon-methods:
-	bool Execute( void* msgContext);
+	bool Execute( BmMsgContext* msgContext);
 	bool SanityCheck( BmString& complaint, BmString& fieldName);
 	status_t Archive( BMessage* archive, bool deep = true) const;
 	BmString ErrorString() const;

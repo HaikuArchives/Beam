@@ -129,16 +129,16 @@ bool BmMailFilter::StartJob() {
 				mail = BmMail::CreateInstance( (*mMailRefs)[i].Get());
 				if (mail) {
 					mail->StartJobInThisThread( BmMail::BM_READ_MAIL_JOB);
-					ExecuteFilter( mail.Get());
+					Execute( mail.Get());
 				}
-				BmString currentCount = BmString()<<c++<<" of "<<count;
+				BmString currentCount = BmString()<<++c<<" of "<<count;
 				UpdateStatus( delta, mail->Name().String(), currentCount.String());
 			}
 			mMailRefs->clear();
 		}
 		for( uint32 i=0; ShouldContinue() && i<mMails.size(); ++i) {
-			ExecuteFilter( mMails[i].Get());
-			BmString currentCount = BmString()<<c++<<" of "<<count;
+			Execute( mMails[i].Get());
+			BmString currentCount = BmString()<<++c<<" of "<<count;
 			UpdateStatus( delta, mMails[i]->Name().String(), 
 							  currentCount.String());
 		}
@@ -161,13 +161,11 @@ bool BmMailFilter::StartJob() {
 }
 
 /*------------------------------------------------------------------------------*\
-	ExecuteFilter()
+	Execute()
 		-	applies mail-filtering to a single given mail
 \*------------------------------------------------------------------------------*/
-void BmMailFilter::ExecuteFilter( BmMail* mail) {
-	BmMsgContext msgContext( mail->RawText(), mail->Name(), mail->Outbound(),
-									 mail->Status(), mail->AccountName());
-	mail->Header()->GetAllFieldValues( msgContext);
+void BmMailFilter::Execute( BmMail* mail) {
+	BmMsgContext msgContext( mail);
 	if (!mFilter) {
 		BM_LOG2( BM_LogFilter, 
 					BmString("Searching filter-chain for mail with Id <") 
@@ -205,85 +203,22 @@ void BmMailFilter::ExecuteFilter( BmMail* mail) {
 					= TheFilterList->FindItemByKey( chainedFilter->Key());
 				BmFilter* filter = dynamic_cast< BmFilter*>( filterItem.Get());
 				if (filter) {
-					if (filter->IsDisabled()) {
-						BM_LOG2( BM_LogFilter, 
-									BmString("Addon for Filter ") << filter->Name() 
-										<< " (type=" << filter->Kind() 
-										<< ") has not been loaded, we skip this filter.");
-					} else {
-						BM_LOG2( BM_LogFilter, 
-									BmString("Executing Filter ") << filter->Name() 
-										<< " (type=" << filter->Kind() << ")...");
-						filter->Addon()->Execute( &msgContext);
-						if (msgContext.identity.Length())
-							BM_LOG( BM_LogFilter, 
-									  BmString("Filter ") << filter->Name() 
-									  		<< ": setting identity to " 
-									  		<< msgContext.identity);
-						if (mail->Status() != msgContext.status)
-							BM_LOG( BM_LogFilter, 
-									  BmString("Filter ") << filter->Name() 
-									  		<< ": setting status to " 
-									  		<< msgContext.status);
-						if (msgContext.moveToTrash)
-							BM_LOG( BM_LogFilter, 
-									  BmString("Filter ") << filter->Name() 
-									  		<< ": moving mail to trash.");
-						if (msgContext.rejectMsg.Length())
-							BM_LOG( BM_LogFilter, 
-									  BmString("Filter ") << filter->Name() 
-									  		<< ": rejecting mail with msg " 
-									  		<< msgContext.rejectMsg);
-						if (msgContext.stopProcessing) {
-							BM_LOG( BM_LogFilter, 
-									  BmString("Filter ") << filter->Name() 
-									  	<< ": wants to stop processing this chain.");
-							break;
-						}
-					}
+					if (!ExecuteFilter( mail, filter, msgContext))
+						break;
 				}
 			}
 		} else {
 			BM_LOG2( BM_LogFilter, "...no chain found -> nothing to do.");
 			return;
 		}
-	} else {
-		if (mFilter->IsDisabled()) {
-			BM_LOG2( BM_LogFilter, 
-						BmString("Addon for Filter ") << mFilter->Name() 
-							<< " (type=" << mFilter->Kind() 
-							<< ") has not been loaded, we skip this filter.");
-			return;
-		} else {
-			BM_LOG2( BM_LogFilter, 
-						BmString("Executing Filter ") << mFilter->Name() 
-							<< " (type=" << mFilter->Kind() << ")...");
-			mFilter->Addon()->Execute( &msgContext);
-			if (msgContext.identity.Length())
-				BM_LOG( BM_LogFilter, 
-						  BmString("Filter ") << mFilter->Name() 
-						  		<< ": setting identity to " << msgContext.identity);
-			if (mail->Status() != msgContext.status)
-				BM_LOG( BM_LogFilter, 
-						  BmString("Filter ") << mFilter->Name() 
-						  		<< ": setting status to " << msgContext.status);
-			if (msgContext.moveToTrash)
-				BM_LOG( BM_LogFilter, 
-						  BmString("Filter ") << mFilter->Name() 
-						  		<< ": moving mail to trash.");
-			if (msgContext.rejectMsg.Length())
-				BM_LOG( BM_LogFilter, 
-						  BmString("Filter ") << mFilter->Name() 
-						  		<< ": rejecting mail with msg " 
-						  		<< msgContext.rejectMsg);
-		}
-	}
+	} else
+		ExecuteFilter( mail, mFilter.Get(), msgContext);
 	bool needToStore = false;
 	if (msgContext.identity.Length()) {
 		mail->IdentityName( msgContext.identity);
 		needToStore = true;
 	}
-	if (mail->Status() != msgContext.status) {
+	if (msgContext.status.Length()) {
 		mail->MarkAs( msgContext.status.String());
 		needToStore = true;
 	}
@@ -311,6 +246,52 @@ void BmMailFilter::ExecuteFilter( BmMail* mail) {
 					"Filtering has changed something, so mail will be stored now.");
 		mail->Store();
 	}
+}
+
+/*------------------------------------------------------------------------------*\
+	ExecuteFilter()
+		-	applies a specific filter to a single given mail
+		-	return true if processing should continue, false if not
+\*------------------------------------------------------------------------------*/
+bool BmMailFilter::ExecuteFilter( BmMail* mail, BmFilter* filter,
+											 BmMsgContext& msgContext) {
+	if (filter->IsDisabled()) {
+		BM_LOG2( BM_LogFilter, 
+					BmString("Addon for Filter ") << filter->Name() 
+						<< " (type=" << filter->Kind() 
+						<< ") has not been loaded, we skip this filter.");
+	} else {
+		BM_LOG2( BM_LogFilter, 
+					BmString("Executing Filter ") << filter->Name() 
+						<< " (type=" << filter->Kind() << ")...");
+		filter->Addon()->Execute( &msgContext);
+		if (msgContext.identity.Length())
+			BM_LOG( BM_LogFilter, 
+					  BmString("Filter ") << filter->Name() 
+					  		<< ": setting identity to " 
+					  		<< msgContext.identity);
+		if (mail->Status() != msgContext.status)
+			BM_LOG( BM_LogFilter, 
+					  BmString("Filter ") << filter->Name() 
+					  		<< ": setting status to " 
+					  		<< msgContext.status);
+		if (msgContext.moveToTrash)
+			BM_LOG( BM_LogFilter, 
+					  BmString("Filter ") << filter->Name() 
+					  		<< ": moving mail to trash.");
+		if (msgContext.rejectMsg.Length())
+			BM_LOG( BM_LogFilter, 
+					  BmString("Filter ") << filter->Name() 
+					  		<< ": rejecting mail with msg " 
+					  		<< msgContext.rejectMsg);
+		if (msgContext.stopProcessing) {
+			BM_LOG( BM_LogFilter, 
+					  BmString("Filter ") << filter->Name() 
+					  	<< ": wants to stop processing this chain.");
+			return false;
+		}
+	}
+	return true;
 }
 
 /*------------------------------------------------------------------------------*\

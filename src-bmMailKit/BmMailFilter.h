@@ -78,7 +78,9 @@ public:
 	inline BmString Name() const			{ return ModelName(); }
 
 private:
-	void ExecuteFilter( BmMail* mail);
+	void Execute( BmMail* mail);
+	bool ExecuteFilter( BmMail* mail, BmFilter* filter,
+							  BmMsgContext& msgContext);
 	void UpdateStatus( const float delta, const char* filename, 
 							 const char* currentCount);
 
