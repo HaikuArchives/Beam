@@ -105,6 +105,7 @@ private:
 
 #define BM_AUTH_SELECTED 			'bmAS'
 #define BM_SIGNATURE_SELECTED 	'bmGS'
+#define BM_FILTER_SELECTED 		'bmFS'
 #define BM_SMTP_SELECTED 			'bmSS'
 #define BM_CHECK_MAIL_CHANGED 	'bmCC'
 #define BM_CHECK_EVERY_CHANGED 	'bmCE'
@@ -167,6 +168,7 @@ private:
 	BmTextControl* mCheckIntervalControl;
 	BmMenuControl* mAuthControl;
 	BmMenuControl* mSignatureControl;
+	BmMenuControl* mFilterControl;
 	BmMenuControl* mSmtpControl;
 	BmCheckControl* mCheckAccountControl;
 	BmCheckControl* mIsBucketControl;

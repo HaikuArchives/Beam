@@ -45,6 +45,7 @@
 #include "CLVEasyItem.h"
 
 #include "BmCheckControl.h"
+#include "BmFilter.h"
 #include "BmGuiUtil.h"
 #include "BmLogHandler.h"
 #include "BmMenuControl.h"
@@ -63,6 +64,7 @@ enum Columns {
 	COL_KEY = 0,
 	COL_SERVER,
 	COL_AUTH_METHOD,
+	COL_FILTER,
 	COL_USER,
 	COL_PWD,
 	COL_DOMAIN,
@@ -98,6 +100,7 @@ void BmSendAccItem::UpdateView( BmUpdFlags flags) {
 			{ acc->Key().String(),						false },
 			{ acc->SMTPServer().String(),				false },
 			{ acc->AuthMethod().String(),				false },
+			{ acc->FilterName().String(),				false },
 			{ acc->Username().String(),				false },
 			{ acc->PwdStoredOnDisk() ? "*****":"",	false },
 			{ acc->DomainToAnnounce().String(),		false },
@@ -150,6 +153,7 @@ BmSendAccView::BmSendAccView( minimax minmax, int32 width, int32 height)
 	AddColumn( new CLVColumn( "Account", 80.0, CLV_SORT_KEYABLE|flags, 50.0));
 	AddColumn( new CLVColumn( "Server", 80.0, CLV_SORT_KEYABLE|flags, 40.0));
 	AddColumn( new CLVColumn( "Auth-Method", 80.0, CLV_SORT_KEYABLE|flags, 40.0));
+	AddColumn( new CLVColumn( "Filter", 80.0, CLV_SORT_KEYABLE|flags, 40.0));
 	AddColumn( new CLVColumn( "User", 80.0, CLV_SORT_KEYABLE|flags, 40.0));
 	AddColumn( new CLVColumn( "Pwd", 50.0, CLV_SORT_KEYABLE|flags, 40.0));
 	AddColumn( new CLVColumn( "Domain", 80.0, CLV_SORT_KEYABLE|flags, 40.0));
@@ -250,17 +254,25 @@ BmPrefsSendMailView::BmPrefsSendMailView()
 					new VGroup(
 						mAccountControl = new BmTextControl( "Account name:", false, 0, 25),
 						new Space( minimax(0,5,0,5)),
-						mServerControl = new BmTextControl( "SMTP-Server:"),
-						mPortControl = new BmTextControl( "Port:"),
+						new HGroup( 
+							mServerControl = new BmTextControl( "SMTP-Server/Port:"),
+							mPortControl = new BmTextControl( "", 5),
+							0
+						),
 						new Space( minimax(0,5,0,5)),
 						new HGroup(
 							mAuthControl = new BmMenuControl( "Auth-method:", new BPopUpMenu("")),
 							mCheckAndSuggestButton = new MButton("Check and Suggest", new BMessage(BM_CHECK_AND_SUGGEST), this, minimax(-1,-1,-1,-1)),
 							0
 						),
-						mLoginControl = new BmTextControl( "Username:"),
-						mPwdControl = new BmTextControl( "Password:"),
 						mPopControl = new BmMenuControl( "Pop-account:", new BPopUpMenu("")),
+						new HGroup( 
+							mLoginControl = new BmTextControl( "User/Pwd:", 0, 12),
+							mPwdControl = new BmTextControl( ""),
+							0
+						),
+						new Space( minimax(0,5,0,5)),
+						mFilterControl = new BmMenuControl( "Filter:", new BPopUpMenu("")),
 						new Space( minimax(0,5,0,5)),
 						mDomainControl = new BmTextControl( "Domain to announce:"),
 						0
@@ -291,19 +303,20 @@ BmPrefsSendMailView::BmPrefsSendMailView()
 	float divider = mAccountControl->Divider();
 	divider = MAX( divider, mDomainControl->Divider());
 	divider = MAX( divider, mLoginControl->Divider());
-	divider = MAX( divider, mPortControl->Divider());
-	divider = MAX( divider, mPwdControl->Divider());
 	divider = MAX( divider, mServerControl->Divider());
 	divider = MAX( divider, mAuthControl->Divider());
 	divider = MAX( divider, mPopControl->Divider());
+	divider = MAX( divider, mFilterControl->Divider());
 	mAccountControl->SetDivider( divider);
 	mDomainControl->SetDivider( divider);
 	mLoginControl->SetDivider( divider);
-	mPortControl->SetDivider( divider);
-	mPwdControl->SetDivider( divider);
 	mServerControl->SetDivider( divider);
 	mAuthControl->SetDivider( divider);
 	mPopControl->SetDivider( divider);
+	mFilterControl->SetDivider( divider);
+
+	mPortControl->SetDivider( 5);
+	mPwdControl->SetDivider( 5);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -344,6 +357,8 @@ LOGIN  -  is another simple auth-mode that sends passwords in cleartext\n\
 SMTP-AFTER-POP  -  does SMTP-authentication via the use of a POP3-server.");
 	TheBubbleHelper.SetHelp( mPopControl, "Here you can select the POP3-account that shall be used\n\
 when authenticating via SMTP-AFTER-POP.");
+	TheBubbleHelper.SetHelp( mFilterControl, "Here you can select the mail-filter to be used \n\
+for every mail sent through this account.");
 	TheBubbleHelper.SetHelp( mCheckAndSuggestButton, "When you click here, Beam will connect to the SMTP-server,\n\
 check which authentication types it supports and select\n\
 the most secure.");
@@ -392,6 +407,20 @@ void BmPrefsSendMailView::Activated() {
 		BmPopAccount* acc = dynamic_cast< BmPopAccount*>( iter->second.Get());
 		AddItemToMenu( mPopControl->Menu(), 
 							new BMenuItem( acc->Key().String(), new BMessage( BM_POP_SELECTED)), 
+							this);
+	}
+
+	// update all entries of filter-menu:
+	while( (item = mFilterControl->Menu()->RemoveItem( (int32)0))!=NULL)
+		delete item;
+	AddItemToMenu( mFilterControl->Menu(), 
+					   new BMenuItem( nEmptyItemLabel.String(), new BMessage( BM_FILTER_SELECTED)), this);
+	AddItemToMenu( mFilterControl->Menu(), 
+					   new BMenuItem( BM_DefaultItemLabel.String(), new BMessage( BM_FILTER_SELECTED)), this);
+	for( iter = TheOutboundFilterList->begin(); iter != TheOutboundFilterList->end(); ++iter) {
+		BmFilter* filter = dynamic_cast< BmFilter*>( iter->second.Get());
+		AddItemToMenu( mFilterControl->Menu(), 
+							new BMenuItem( filter->Key().String(), new BMessage( BM_FILTER_SELECTED)), 
 							this);
 	}
 }
@@ -514,6 +543,14 @@ void BmPrefsSendMailView::MessageReceived( BMessage* msg) {
 				UpdateState();
 				break;
 			}
+			case BM_FILTER_SELECTED: {
+				BMenuItem* item = mFilterControl->Menu()->FindMarked();
+				if (item && nEmptyItemLabel != item->Label())
+					mCurrAcc->FilterName( item->Label());
+				else
+					mCurrAcc->FilterName( "");
+				break;
+			}
 			case BM_ADD_ACCOUNT: {
 				BmString key( "new account");
 				for( int32 i=1; TheSmtpAccountList->FindItemByKey( key); ++i) {
@@ -597,6 +634,7 @@ void BmPrefsSendMailView::ShowAccount( int32 selection) {
 		mPwdControl->SetTextSilently( "");
 		mServerControl->SetTextSilently( "");
 		mAuthControl->ClearMark();
+		mFilterControl->ClearMark();
 		mPopControl->ClearMark();
 		mStorePwdControl->SetValue( 0);
 	} else {
@@ -615,6 +653,9 @@ void BmPrefsSendMailView::ShowAccount( int32 selection) {
 													: nEmptyItemLabel.String());
 				mPopControl->MarkItem( mCurrAcc->AccForSmtpAfterPop().Length()
 													? mCurrAcc->AccForSmtpAfterPop().String()
+													: nEmptyItemLabel.String());
+				mFilterControl->MarkItem( mCurrAcc->FilterName().Length()
+													? mCurrAcc->FilterName().String()
 													: nEmptyItemLabel.String());
 				mStorePwdControl->SetValue( mCurrAcc->PwdStoredOnDisk());
 			}
@@ -639,6 +680,7 @@ void BmPrefsSendMailView::UpdateState() {
 	mCheckAndSuggestButton->SetEnabled( accSelected);
 	mRemoveButton->SetEnabled( accSelected);
 	mStorePwdControl->SetEnabled( accSelected);
+	mFilterControl->SetEnabled( accSelected);
 
 	if (!accSelected) {
 		mPopControl->SetEnabled( false);
