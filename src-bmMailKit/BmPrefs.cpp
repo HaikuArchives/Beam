@@ -482,6 +482,9 @@ bool BmPrefs::Store() {
 		// in order to avoid storing loglevels as plain value, we take it out temporarily:
 		int32 loglevels = mPrefsMsg.FindInt32("Loglevels");
 		mPrefsMsg.RemoveName("Loglevels");
+		// update version:
+		mPrefsMsg.RemoveName( MSG_VERSION);
+		mPrefsMsg.AddInt16( MSG_VERSION, nPrefsVersion);
 		// update shortcuts:
 		mPrefsMsg.RemoveName("Shortcuts");
 		mPrefsMsg.AddMessage("Shortcuts", &mShortcutsMsg);
