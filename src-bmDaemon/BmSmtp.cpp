@@ -560,7 +560,6 @@ void BmSmtp::StateSendMails() {
 		}
 		if (ShouldContinue()) {
 			mail->MarkAs( BM_MAIL_STATUS_SENT);
-			mail->ApplyFilter();
 		}
 	}
 	mCurrMailSize = 0;
