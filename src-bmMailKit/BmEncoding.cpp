@@ -305,19 +305,25 @@ BmString BmEncoding::ConvertUTF8ToHeaderPart( const BmString& utf8Text,
 		Encode( transferEncoding, charsetString, encodedString, true);
 		int32 maxChars = BM_MAX_LINE_LEN		// 76 chars maximum
 							- (fieldLen + 2);		// space used by "fieldname: "
+		bool isFirstLine = true;
 		if (fold && encodedString.Length() > maxChars) {
 			// fold header-line, since it is too long:
 			BmString foldedString;
 			while( encodedString.Length() > maxChars) {
 				int32 foldPos = encodedString.FindLast( ' ', maxChars-1);
+				if (foldPos == 0)
+					foldPos = 1;						// skip over space at beginning of line
 				if (foldPos == B_ERROR)
-					foldPos = maxChars;
+					foldPos = isFirstLine ? 0 : maxChars;
 				BmString tmp;
 				encodedString.MoveInto( tmp, 0, foldPos);
 				foldedString << tmp << "\r\n ";
-				// now compute maxChars for lines without the leading fieldname:
-				maxChars = BM_MAX_LINE_LEN			// 76 chars maximum
-								- 1;						// a single space
+				if (isFirstLine) {
+					// now compute maxChars for lines without the leading fieldname:
+					maxChars = BM_MAX_LINE_LEN			// 76 chars maximum
+									- 1;						// a single space
+					isFirstLine = false;
+				}
 			}
 			foldedString << encodedString;
 			return foldedString;		
