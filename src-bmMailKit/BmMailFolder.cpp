@@ -120,7 +120,7 @@ BmMailFolder::~BmMailFolder() {
 		-	instructs the node-monitor to watch this folder
 \*------------------------------------------------------------------------------*/
 void BmMailFolder::StartNodeMonitor() {
-	watch_node( &mNodeRef, B_WATCH_DIRECTORY, BMessenger( TheMailMonitor));
+	WatchNode( &mNodeRef, B_WATCH_DIRECTORY, TheMailMonitor);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -128,7 +128,7 @@ void BmMailFolder::StartNodeMonitor() {
 		-	instructs the node-monitor to stop watching this folder
 \*------------------------------------------------------------------------------*/
 void BmMailFolder::StopNodeMonitor() {
-	watch_node( &mNodeRef, B_STOP_WATCHING, BMessenger( TheMailMonitor));
+	WatchNode( &mNodeRef, B_STOP_WATCHING, TheMailMonitor);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -337,18 +337,29 @@ void BmMailFolder::AddMailRef( entry_ref& eref, struct stat& st) {
 }
 
 /*------------------------------------------------------------------------------*\
-	HasMailRef( key)
-		-	determines if the mail-ref specified by the given key exists within
-			this folders mailref-list
+	FindMailRefByKey()
+		-	
 \*------------------------------------------------------------------------------*/
-bool BmMailFolder::HasMailRef( BmString key) {
-	BmAutolockCheckGlobal lock( nRefListLocker);
-	if (!lock.IsLocked())
-		BM_THROW_RUNTIME( Name() + ":HasMailRef(): Unable to get lock");
-	if (mMailRefList)
-		return mMailRefList->FindItemByKey( key);
-	else
-		return false;
+BmRef<BmListModelItem> BmMailFolder::FindMailRefByKey( const BmString& key) {
+	BmRef<BmListModelItem> foundRef;
+	{	// scope for lock
+		BmAutolockCheckGlobal lock( nRefListLocker);
+		if (!lock.IsLocked())
+			BM_THROW_RUNTIME( Name() + ":FindMailRefByKey(): Unable to get lock");
+		if (mMailRefList)
+			foundRef = mMailRefList->FindItemByKey( key);
+	}
+	if (!foundRef) {
+		BmModelItemMap::const_iterator iter;
+		for( iter = begin(); !foundRef && iter != end(); ++iter) {
+			BmMailFolder* subFolder = dynamic_cast< BmMailFolder*>(
+				iter->second.Get()
+			);
+			if (subFolder)
+				foundRef = subFolder->FindMailRefByKey( key);
+		}
+	}
+	return foundRef;
 }
 
 /*------------------------------------------------------------------------------*\
