@@ -394,6 +394,7 @@ bool BmMailRef::ReadAttributes( const struct stat* statInfo,
 											 &ratio, sizeof(float));
 		if (sz != sizeof(float)) {
 			RatioSpam(UNKNOWN_RATIO);
+			updFlags |= UPD_RATIO_SPAM;
 		} else {
 			if (ratio != mRatioSpam) {
 				RatioSpam(ratio);
