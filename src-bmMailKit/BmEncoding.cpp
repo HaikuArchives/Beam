@@ -59,8 +59,12 @@ BmString BmEncoding::DefaultCharset = "ISO-8859-15";
 static iconv_t ICONV_ERR = (iconv_t)0xFFFFFFFF;
 
 /*------------------------------------------------------------------------------*\
-	()
-		-	
+	HandleOneCharset()
+		-	this function is called during initialization of libiconv.
+		-	for every passed charset (which can have more than one name) Beam checks
+			if it prefers one of the given names over all the other (according to
+			some regular expressions). 
+			If so, the name Beam prefers is used, the first name otherwise.
 \*------------------------------------------------------------------------------*/
 static int HandleOneCharset( unsigned int namescount, const char * const * names,
                              void* data) {
@@ -428,6 +432,10 @@ BmUtf8Decoder::BmUtf8Decoder( BmMemIBuf* input, const BmString& destCharset,
 	,	mTransliterate( false)
 	,	mDiscard( false)
 {
+	if (mDestCharset.ICompare("utf8")==0)
+		// common mistake: utf8 instead of utf-8:
+		mDestCharset = "utf-8";
+
 	InitConverter();
 }
 
@@ -555,6 +563,10 @@ BmUtf8Encoder::BmUtf8Encoder( BmMemIBuf* input, const BmString& srcCharset,
 	,	mDiscard( false)
 	,	mHadToDiscardChars( false)
 {
+	if (mSrcCharset.ICompare("utf8")==0)
+		// common mistake: utf8 instead of utf-8:
+		mSrcCharset = "utf-8";
+
 	InitConverter();
 }
 

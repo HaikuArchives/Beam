@@ -105,7 +105,7 @@ protected:
 	void Filter( const char* srcBuf, uint32& srcLen, 
 					 char* destBuf, uint32& destLen);
 
-	const BmString& mDestCharset;
+	BmString mDestCharset;
 	iconv_t mIconvDescr;
 	bool mTransliterate;
 	bool mDiscard;
@@ -139,7 +139,7 @@ protected:
 	void Filter( const char* srcBuf, uint32& srcLen, 
 					 char* destBuf, uint32& destLen);
 
-	const BmString& mSrcCharset;
+	BmString mSrcCharset;
 	iconv_t mIconvDescr;
 	bool mTransliterate;
 	bool mDiscard;
