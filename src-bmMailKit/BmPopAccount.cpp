@@ -376,8 +376,11 @@ void BmPopAccount::SetupIntervalRunner() {
 		BMessage* msg = new BMessage( BMM_CHECK_MAIL);
 		msg->AddString( BmPopAccountList::MSG_ITEMKEY, Key().String());
 		msg->AddBool( BmPopAccountList::MSG_AUTOCHECK, true);
-		mIntervalRunner = new BMessageRunner( be_app_messenger, msg, 
-														  mCheckInterval*60*1000*1000, -1);
+		mIntervalRunner = new BMessageRunner( 
+			be_app_messenger, msg, 
+			static_cast< bigtime_t>( mCheckInterval)*60*1000*1000, 
+			-1
+		);
 		if (mIntervalRunner->InitCheck() != B_OK)
 			BM_SHOWERR( BmString("Could not initialize check-interval runner"
 									   "for PopAccount ")<<Key());

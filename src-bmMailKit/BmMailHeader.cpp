@@ -801,7 +801,8 @@ BmString BmMailHeader::DetermineListAddress( bool bypassSanityTest) {
 		|| AddressFieldContainsAddrSpec( BM_FIELD_RESENT_TO, listAddr.AddrSpec())
 		|| AddressFieldContainsAddrSpec( BM_FIELD_RESENT_CC, listAddr.AddrSpec())
 		|| AddressFieldContainsAddrSpec( BM_FIELD_RESENT_BCC, listAddr.AddrSpec())
-		|| AddressFieldContainsAddrSpec( BM_FIELD_RESENT_FROM, listAddr.AddrSpec())))	{
+		|| AddressFieldContainsAddrSpec( BM_FIELD_RESENT_FROM, 
+													listAddr.AddrSpec())))	{
 			// We do not want to send any replies to administrative mails back to 
 			// the list, so we clear the List-Address:
 			return "";

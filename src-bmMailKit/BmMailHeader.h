@@ -121,7 +121,8 @@ public:
 	BmStringList SplitIntoAddresses( BmString addrList);
 	void ConstructRawText( BmStringOBuf& header, const BmString& charset, 
 								  int32 fieldNameLength) const;
-	const BmString& FindAddressMatchingAccount( BmIdentity* ident, bool needExactMatch=false) const;
+	const BmString& FindAddressMatchingAccount( BmIdentity* ident, 
+															  bool needExactMatch=false) const;
 	bool ContainsAddrSpec( BmString addrSpec) const;
 	const BmString& AddrString() const;
 	//

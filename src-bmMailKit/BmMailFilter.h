@@ -62,7 +62,8 @@ public:
 
 	// alternate job-specifiers:
 	static const int32 BM_EXECUTE_FILTER_IN_MEM;
-							// for filter-execution without any controllers being present
+							// for filter-execution without any controllers being 
+							// present
 
 	BmMailFilter( const BmString& name, BmFilter* filter);
 	virtual ~BmMailFilter();
@@ -81,7 +82,8 @@ public:
 
 private:
 	void ExecuteFilter( BmMail* mail);
-	void UpdateStatus( const float delta, const char* filename, const char* currentCount);
+	void UpdateStatus( const float delta, const char* filename, 
+							 const char* currentCount);
 
 	BmRef<BmFilter> mFilter;
 							// the actual SIEVE-filter

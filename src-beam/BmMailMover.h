@@ -49,8 +49,8 @@ class BmMailFolder;
 /*------------------------------------------------------------------------------*\
 	BmMailMover
 		-	implements the moving of mails inside the file-system
-		-	in general, each BmMailMover is started as a thread which exits when the
-			moving-operation has ended
+		-	in general, each BmMailMover is started as a thread which exits when 
+			the moving-operation has ended
 \*------------------------------------------------------------------------------*/
 class BmMailMover : public BmJobModel {
 	typedef BmJobModel inherited;
@@ -71,7 +71,8 @@ public:
 	bool StartJob();
 
 private:
-	void UpdateStatus( const float delta, const char* filename, const char* currentCount);
+	void UpdateStatus( const float delta, const char* filename, 
+							 const char* currentCount);
 	
 	BList* mRefList;
 	BmMailFolder* mDestFolder;

@@ -62,7 +62,8 @@ BmString OwnFQDN() {
 		return "";
 	}
 	hostent *hptr;
-	// in case we can't get a FQDN by means of gethostbyname, we return the hostname:
+	// in case we can't get a FQDN by means of gethostbyname, we return 
+	// the hostname:
 	if ((hptr = gethostbyname( hostname)) == NULL) {
 		return hostname;
 	} else {
@@ -99,7 +100,8 @@ BmString OwnDomain( BmString fqdn) {
 bool IsPPPRunning() {
 	bool running = false;
 #ifdef BEAM_FOR_BONE
-	// the following has ruthlessly been ripped from the MailDaemonReplacement (MDR):
+	// the following has ruthlessly been ripped from the 
+	// MailDaemonReplacement (MDR):
 	int s = socket(AF_INET, SOCK_DGRAM, 0);
 	bsppp_status_t status;
 	strcpy(status.if_name, "ppp0");

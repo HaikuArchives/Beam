@@ -43,6 +43,7 @@
 #include "md5.h"
 
 #include "regexx.hh"
+#include "split.hh"
 using namespace regexx;
 
 #include "BmBasics.h"
@@ -397,7 +398,7 @@ void BmPopper::StateLogin() {
 		-	looks for new mail
 \*------------------------------------------------------------------------------*/
 void BmPopper::StateCheck() {
-	int32 msgNum = 0;
+	uint32 msgNum = 0;
 
 	BmString cmd("STAT");
 	SendCommand( cmd);
@@ -446,16 +447,36 @@ void BmPopper::StateCheck() {
 	SendCommand( cmd);
 	if (!CheckForPositiveAnswer( 16384, true))
 		return;
-	const char *p = mAnswerText.String();
-	for( int32 i=0; i<mMsgCount; i++) {
+	vector<BmString> listAnswerVect;
+	split( "\r\n", mAnswerText, listAnswerVect);
+	uint32 count = mMsgCount;
+	if (count != listAnswerVect.size()) {
+		BM_LOG( BM_LogPop, 
+				  BmString("Strange: server indicated ")<< mMsgCount
+						<< " mails, but LIST received " << listAnswerVect.size()
+						<< " lines!");
+		if (count > listAnswerVect.size())
+			count = listAnswerVect.size();
+	}
+	for( uint32 i=0; i<count; i++) {
 		int32 msgSize;
 		time_t timeDownloaded;
 		if (!mPopAccount->IsUIDDownloaded( mMsgUIDs[i], &timeDownloaded)) {
 			// msg is new (according to unknown UID)
 			// fetch msgsize for message...
-			if (sscanf( p, "%ld %ld", &msgNum, &msgSize) != 2 || msgNum != i+1)
-				throw BM_network_error( BmString("answer to LIST has unknown "
-															"format, msg ") << i+1);
+			Regexx rx;
+			if (!rx.exec( listAnswerVect[i], "^\\s*(\\d+)\\s+(\\d+)\\s*$"))
+				throw BM_network_error( 
+					BmString("answer to LIST has unknown format, msg ") << i+1
+				);
+			BmString msgNumStr = rx.match[0].atom[0];
+			msgNum = atoi(msgNumStr.String());
+			if (msgNum != i+1)
+				throw BM_network_error( 
+					BmString("answer to LIST has unexpeced msgNo in line ") << i+1
+				);
+			BmString msgSizeStr = rx.match[0].atom[1];
+			msgSize = atoi(msgSizeStr.String());
 			// add msg-size to total:
 			mNewMsgTotalSize += msgSize;
 			mNewMsgSizes.push_back( msgSize);
@@ -473,33 +494,30 @@ void BmPopper::StateCheck() {
 				time_t now = time(NULL);
 				if (expirationTime <= now && mPopAccount->DeleteMailFromServer()) {
 					// remove
-					BM_LOG( BM_LogPop, BmString("Removing mail with UID ")<<mMsgUIDs[i]
-												<<" from server\n"
-												<<"since it has been downloaded on "
-												<<TimeToString( timeDownloaded)
-												<<",\nit's expiration time is " 
-												<<TimeToString( expirationTime)
-												<<"\nand now it is "	<< TimeToString( now));
+					BM_LOG( BM_LogPop, 
+							  BmString("Removing mail with UID ")<<mMsgUIDs[i]
+									<<" from server\n"
+									<<"since it has been downloaded on "
+									<<TimeToString( timeDownloaded)
+									<<",\nit's expiration time is " 
+									<<TimeToString( expirationTime)
+									<<"\nand now it is "	<< TimeToString( now));
 					cmd = BmString("DELE ") << i+1;
 					SendCommand( cmd);
 					if (!CheckForPositiveAnswer())
 						return;
 				} else {
-					BM_LOG2( BM_LogPop, BmString("Leaving mail with UID ")<<mMsgUIDs[i]
-												<<" on server\n"
-												<<"since it has been downloaded on "
-												<<TimeToString( timeDownloaded)
-												<<",\nit's expiration time is " 
-												<<TimeToString( expirationTime)
-												<<"\nand now it is "	<< TimeToString( now));
+					BM_LOG2( BM_LogPop, 
+								BmString("Leaving mail with UID ")<<mMsgUIDs[i]
+									<<" on server\n"
+									<<"since it has been downloaded on "
+									<<TimeToString( timeDownloaded)
+									<<",\nit's expiration time is " 
+									<<TimeToString( expirationTime)
+									<<"\nand now it is "	<< TimeToString( now));
 				}
 			}
 		}
-		// skip to next line:
-		if (!(p = strstr( p, "\r\n")))
-			throw BM_network_error( BmString("answer to LIST has unknown format"
-														", msg ") << i+1);
-		p += 2;
 	}
 	if (mNewMsgCount == 0) {
 		UpdateMailStatus( 0, NULL, 0);

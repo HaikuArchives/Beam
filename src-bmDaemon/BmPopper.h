@@ -115,25 +115,31 @@ private:
 	void StateRetrieve();
 	void StateDisconnect();
 	void Quit( bool WaitForAnswer=false);
-	void UpdatePOPStatus( const float, const char*, bool failed=false, bool stopped=false);
+	void UpdatePOPStatus( const float, const char*, bool failed=false, 
+								 bool stopped=false);
 	void UpdateMailStatus( const float, const char*, int32);
 
-	static int32 mId;							// unique message ID, this is used if a 
-													// received message has no UID.
-
-	BmRef<BmPopAccount> mPopAccount;		// Info about our pop-account
-
-	vector<BmString> mMsgUIDs;				// array of unique-IDs, one for each message
-	int32 mMsgCount;							// number of msgs found on server
-
-	int32 mCurrMailNr;						// nr of currently handled mail (0 if none)
-	int32 mNewMsgCount;						// number of msgs to be received
-	vector<int32> mNewMsgSizes;			// sizes of msgs to be received
-	int32 mNewMsgTotalSize;					// total-size of msgs to be received
-
-	BmString mServerTimestamp;				// optional timestamp from Server (needed for APOP)
-
-	int32 mState;								// current POP3-state (refer enum below)
+	static int32 mId;
+							// unique message ID, this is used if a 
+							// received message has no UID.
+	BmRef<BmPopAccount> mPopAccount;
+							// Info about our pop-account
+	vector<BmString> mMsgUIDs;
+							// array of unique-IDs, one for each message
+	int32 mMsgCount;
+							// number of msgs found on server
+	int32 mCurrMailNr;
+							// nr of currently handled mail (0 if none)
+	int32 mNewMsgCount;
+							// number of msgs to be received
+	vector<int32> mNewMsgSizes;
+							// sizes of msgs to be received
+	int32 mNewMsgTotalSize;
+							// total-size of msgs to be received
+	BmString mServerTimestamp;
+							// optional timestamp from Server (needed for APOP)
+	int32 mState;		
+							// current POP3-state (refer enum below)
 	enum States {
 		POP_CONNECT = 0,
 		POP_LOGIN,

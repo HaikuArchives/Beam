@@ -58,7 +58,8 @@ const char* const BmMailMover::MSG_REFS = 		"refs";
 	BmMailMover()
 		-	contructor
 \*------------------------------------------------------------------------------*/
-BmMailMover::BmMailMover( const BmString& name, BList* refList, BmMailFolder* destFolder)
+BmMailMover::BmMailMover( const BmString& name, BList* refList, 
+								  BmMailFolder* destFolder)
 	:	BmJobModel( name)
 	,	mRefList( refList)
 	,	mDestFolder( destFolder)
@@ -72,7 +73,9 @@ BmMailMover::BmMailMover( const BmString& name, BList* refList, BmMailFolder* de
 BmMailMover::~BmMailMover() { 
 	if (mRefList) {
 		entry_ref* ref;
-		while( (ref = static_cast<entry_ref*>( mRefList->RemoveItem( (int32)0)))!=NULL)
+		while( (ref = static_cast<entry_ref*>( 
+			mRefList->RemoveItem( (int32)0)
+		))!=NULL)
 			delete ref;
 		delete mRefList;
 	}
@@ -99,8 +102,10 @@ bool BmMailMover::StartJob() {
 		int32 i;
 		for( i=0; ShouldContinue() && i<refCount; ++i) {
 			ref = static_cast<entry_ref*>( mRefList->ItemAt(i));
-			if (ref->directory == destNodeRef.node && ref->device == destNodeRef.device)
-				continue;						// no move neccessary, already at 'new' home
+			if (ref->directory == destNodeRef.node 
+			&& ref->device == destNodeRef.device)
+				continue;						
+							// no move neccessary, already at 'new' home
 			if ((err = entry.SetTo( ref)) != B_OK)
 				BM_THROW_RUNTIME( BmString("couldn't create entry for <")
 											<< ref->name << "> \n\nError:" 
@@ -109,18 +114,25 @@ bool BmMailMover::StartJob() {
 			if ( err == B_FILE_EXISTS) {
 				// increment counter until we have found a unique name:
 				int32 counter=1;
-				while ( (err = entry.MoveTo( &destDir, (BmString(ref->name)<<"_"<<counter++).String())) == B_FILE_EXISTS)
+				while ( (err = entry.MoveTo( 
+					&destDir, 
+					(BmString(ref->name) << "_" << counter++).String()
+				)) == B_FILE_EXISTS)
 					;
 			}
 			if (err != B_OK)
-				throw BM_runtime_error(BmString("couldn't move <")<<ref->name<<"> \n\nError:" << strerror(err));
+				throw BM_runtime_error(
+					BmString("couldn't move <") << ref->name << "> \n\nError:" 
+						<< strerror(err)
+				);
 			if ((i+1)%(int)GRAIN == 0) {
 				entry.GetName( filename);
 				BmString currentCount = BmString()<<i<<" of "<<refCount;
 				UpdateStatus( delta, filename, currentCount.String());
 			}
-			snooze( 20*1000);					// give node-monitor a chance to keep up... 
-													// (it will drop messages if we go too fast)
+			snooze( 20*1000);
+							// give node-monitor a chance to keep up... 
+							// (it will drop messages if we go too fast)
 		}
 		entry.GetName( filename);
 		BmString currentCount = BmString()<<i<<" of "<<refCount;
@@ -148,7 +160,8 @@ void BmMailMover::UpdateStatus( const float delta, const char* filename,
 	msg->AddFloat( MSG_DELTA, delta);
 	msg->AddString( MSG_LEADING, filename);
 	if (!ShouldContinue())
-		msg->AddString( MSG_TRAILING, (BmString(currentCount) << ", Stopped!").String());
+		msg->AddString( MSG_TRAILING, 
+							 (BmString(currentCount) << ", Stopped!").String());
 	else
 		msg->AddString( MSG_TRAILING, currentCount);
 	TellControllers( msg.get());

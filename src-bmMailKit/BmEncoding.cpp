@@ -57,9 +57,9 @@ static iconv_t ICONV_ERR = (iconv_t)0xFFFFFFFF;
 /*------------------------------------------------------------------------------*\
 	HandleOneCharset()
 		-	this function is called during initialization of libiconv.
-		-	for every passed charset (which can have more than one name) Beam checks
-			if it prefers one of the given names over all the other (according to
-			some regular expressions). 
+		-	for every passed charset (which can have more than one name) Beam 
+			checks if it prefers one of the given names over all the other 
+			(according to some regular expressions). 
 			If so, the name Beam prefers is used, the first name otherwise.
 \*------------------------------------------------------------------------------*/
 static int HandleOneCharset( unsigned int namescount, 
@@ -1422,7 +1422,8 @@ BmFoldedLineEncoder::BmFoldedLineEncoder( BmMemIBuf* input, int lineLen,
 \*------------------------------------------------------------------------------*/
 bool BmFoldedLineEncoder::OutputLineIfNeeded( char* &dest, 
 															 const char* destEnd) {
-	if (!mNeedFlush && mStartAtOffset+mQueuedChars.Length() > BM_MAX_HEADER_LINE_LEN) {
+	if (!mNeedFlush 
+	&& mStartAtOffset+mQueuedChars.Length() > BM_MAX_HEADER_LINE_LEN) {
 		// line is too long and needs soft break:
 		mNeedFlush = true;
 	}

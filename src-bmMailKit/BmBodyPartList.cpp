@@ -402,8 +402,10 @@ void BmBodyPart::SetTo( const BmString& msgtext, int32 start, int32 length,
 				if (pos == B_ERROR || pos >= end) {
 					BmString str;
 					msgtext.CopyInto( str, start, min( length, (int32)256));
-					BM_SHOWERR( BmString("Couldn't determine borderline between "
-												"MIME-header and body in string <")<<str<<">.");
+					BM_SHOWERR( 
+						BmString("Couldn't determine borderline between "
+									"MIME-header and body in string <")<<str<<">."
+					);
 					return;
 				}
 				mStartInRawText = pos+4;
