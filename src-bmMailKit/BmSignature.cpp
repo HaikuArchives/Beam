@@ -52,7 +52,7 @@ const char* const BmSignature::MSG_NAME = 		"bm:name";
 const char* const BmSignature::MSG_DYNAMIC = 	"bm:dynamic";
 const char* const BmSignature::MSG_CONTENT = 	"bm:content";
 const char* const BmSignature::MSG_CHARSET = 	"bm:charset";
-const int16 BmSignature::nArchiveVersion = 2;
+const int16 BmSignature::nArchiveVersion = 3;
 
 /*------------------------------------------------------------------------------*\
 	BmSignature()
@@ -62,7 +62,7 @@ BmSignature::BmSignature( const char* name, BmSignatureList* model)
 	:	inherited( name, model, (BmListModelItem*)NULL)
 	,	mAccessLock( (BmString("access_sig_") << name).Truncate(B_OS_NAME_LENGTH).String())
 	,	mDynamic( false)
-	,	mCharset( "UTF-8")
+	,	mCharset( "utf-8")
 {
 }
 
@@ -87,6 +87,10 @@ BmSignature::BmSignature( BMessage* archive, BmSignatureList* model)
 		// map from old beos-number to new ibiconv-string:
 		int16 encoding = FindMsgInt16( archive, "bm:encoding");
 		mCharset = BmEncoding::ConvertFromBeosToLibiconv( encoding);
+	}
+	if (version < 3) {
+		// from version 3, we use lowercase-charsets:
+		mCharset.ToLower();
 	}
 }
 
