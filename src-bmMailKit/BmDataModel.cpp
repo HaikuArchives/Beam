@@ -685,6 +685,17 @@ BmRef<BmListModel> BmListModelItem::ListModel() const	{
 }
 
 /*------------------------------------------------------------------------------*\
+	OutlineLevel()
+		-	returns the number of parents this item has
+\*------------------------------------------------------------------------------*/
+uint32 BmListModelItem::OutlineLevel() const	{
+	uint32 level = 0;
+ 	for( BmListModelItem* parent = mParent; parent; parent = parent->mParent)
+ 		level++;
+	return level;
+}
+
+/*------------------------------------------------------------------------------*\
 	ItemIsValid( b)
 		-	
 \*------------------------------------------------------------------------------*/
@@ -925,7 +936,7 @@ BmString BmListModel::RenameItem( const BmString oldKey,
 	item->RenameRef( newKey.String());
 	item->Key( newKey);
 	mModelItemMap[newKey] = item.Get();
-	TellModelItemUpdated( item.Get(), UPD_KEY | UPD_SORT, oldKey);
+	TellModelItemUpdated( item.Get(), UPD_KEY, oldKey);
 	// ...determine path to item (needed for handling of foreign-keys):
 	BmString path;
 	BmListModelItem* curr = item.Get();

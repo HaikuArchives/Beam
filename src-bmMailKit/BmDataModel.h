@@ -202,8 +202,7 @@ private:
 typedef uint32 BmUpdFlags;
 const BmUpdFlags UPD_EXPANDER 	= 1<<0;
 const BmUpdFlags UPD_KEY		 	= 1<<1;
-const BmUpdFlags UPD_ALL 			= 0x7FFFFFFFUL;
-const BmUpdFlags UPD_SORT			= 1UL<<31;
+const BmUpdFlags UPD_ALL 			= 0xFFFFFFFFUL;
 
 class BmListModelItem;
 typedef map< BmString, BmRef<BmListModelItem> > BmModelItemMap;
@@ -244,6 +243,7 @@ public:
 	inline BmRef<BmListModelItem> Parent() const		
 													{ return mParent; }
 	inline bool ItemIsValid() const		{ return mItemIsValid; }
+	uint32 OutlineLevel() const;
 	BmRef<BmListModel> ListModel() const;
 
 	// setters:
