@@ -63,9 +63,13 @@ public:
 	~BmMailRefItem();
 	
 	// overrides of ListViewItem:
-	BmMailRef* ModelItem() const	{ return dynamic_cast<BmMailRef*>(mModelItem.Get()); }
-	void UpdateView( BmUpdFlags flags);
-	void AddedToListview();
+	BmMailRef* ModelItem() const		{ 
+													return dynamic_cast<	BmMailRef*>(
+															mModelItem.Get()
+													); 
+												}
+	void UpdateView( BmUpdFlags flags, bool redraw = true, 
+						  uint32 updColBitmap = 0);
 	
 	// overrides of CLVEasyItem base:
 	const int32 GetNumValueForColumn( int32 column_index) const;

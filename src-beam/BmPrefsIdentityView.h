@@ -51,7 +51,8 @@ public:
 	~BmRecvIdentItem();
 
 	// overrides of listitem base:
-	void UpdateView( BmUpdFlags flags);
+	void UpdateView( BmUpdFlags flags, bool redraw = true, 
+						  uint32 updColBitmap = 0);
 	BmRecvIdent* ModelItem() const 			{ return dynamic_cast< BmRecvIdent*>( mModelItem.Get()); }
 
 private:

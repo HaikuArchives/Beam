@@ -83,7 +83,7 @@ BmBodyPartItem::BmBodyPartItem( ColumnListView* lv,
 	BmBodyPart* bodyPart = dynamic_cast<BmBodyPart*>( _item);
 
 	BBitmap* icon = TheResources->IconByName( bodyPart->MimeType());
-	SetColumnContent( COL_ICON, icon, 2.0, false);
+	SetColumnContent( COL_ICON, icon, 2.0);
 
 	BmString sizeString = bodyPart->IsMultiPart() 
 								? BM_DEFAULT_STRING 
@@ -92,17 +92,17 @@ BmBodyPartItem::BmBodyPartItem( ColumnListView* lv,
 									: BytesToString( bodyPart->BodyLength(), true);
 
 	// set column-values:
-	BmListColumn cols[] = {
-		{ bodyPart->FileName().String(),					false },
-		{ bodyPart->MimeType().String(),					false },
-		{ sizeString.String(),								true },
-		{ bodyPart->Description().String(),				false },
-		{ bodyPart->TransferEncoding().String(),		false },
-		{ bodyPart->IsText() 
+	const char* cols[] = {
+		bodyPart->FileName().String(),
+		bodyPart->MimeType().String(),
+		sizeString.String(),
+		bodyPart->Description().String(),
+		bodyPart->TransferEncoding().String(),
+		bodyPart->IsText() 
 			? bodyPart->SuggestedCharset().String() 
-			: "",													false },
-		{ bodyPart->Language().String(),					false },
-		{ NULL, false }
+			: "",
+		bodyPart->Language().String(),
+		NULL
 	};
 	SetTextCols( BmBodyPartView::nFirstTextCol, cols);
 }
@@ -159,8 +159,10 @@ BmBodyPartView::BmBodyPartView( minimax minmax, int32 width, int32 height,
 	UseStateCache( false);
 
 	AddColumn( new CLVColumn( NULL, nColWidths[0], 
-									  CLV_EXPANDER | CLV_LOCK_AT_BEGINNING | CLV_NOT_MOVABLE, 10.0));
-	AddColumn( new CLVColumn( "Icon", nColWidths[1], CLV_PUSH_PASS, 18.0));
+									  CLV_EXPANDER | CLV_LOCK_AT_BEGINNING 
+									  | CLV_NOT_MOVABLE | CLV_COLTYPE_BITMAP, 10.0));
+	AddColumn( new CLVColumn( "Icon", nColWidths[1], 
+									  CLV_PUSH_PASS | CLV_COLTYPE_BITMAP, 18.0));
 	AddColumn( new CLVColumn( "Name", nColWidths[2], 0, 20.0));
 	AddColumn( new CLVColumn( "Mimetype", nColWidths[3], 0, 20.0));
 	AddColumn( new CLVColumn( "Size", nColWidths[4], CLV_RIGHT_JUSTIFIED, 20.0));

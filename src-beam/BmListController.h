@@ -67,11 +67,6 @@ class BmListViewItem : public CLVEasyItem
 {
 	typedef CLVEasyItem inherited;
 	
-	struct BmListColumn {
-		const char* text;
-		bool rightJustified;
-	};
-
 	friend BmListViewController;
 
 protected: 
@@ -88,9 +83,9 @@ public:
 	virtual ~BmListViewItem();
 	
 	// native methods:
-	void SetTextCols( int16 firstTextCol, BmListColumn* columnVec);
-	virtual void UpdateView( BmUpdFlags flags);
-	virtual void AddedToListview()		{	UpdateView( UPD_ALL); }
+	void SetTextCols( int16 firstTextCol, const char** content);
+	virtual void UpdateView( BmUpdFlags flags, bool redraw = true,
+									 uint32 updColBitmap = 0);
 
 	//	overrides from listitem-baseclass:
 	status_t Archive( BMessage* archive, bool deep = true) const;
@@ -234,7 +229,8 @@ protected:
 	virtual BmString StateInfoBasename()				= 0;
 	virtual BMessage* DefaultLayout()	{ return NULL; }
 
-	BmListViewItem* doAddModelItem( BmListViewItem* parent, BmListModelItem* item);
+	BmListViewItem* doAddModelItem( BmListViewItem* parent, 
+											  BmListModelItem* item);
 	void doRemoveModelItem( BmListModelItem* item);
 
 	typedef map< BmListModelItem*, BmListViewItem*> BmViewModelMap;

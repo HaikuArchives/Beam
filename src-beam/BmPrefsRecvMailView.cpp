@@ -101,25 +101,28 @@ BmRecvAccItem::~BmRecvAccItem() {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmRecvAccItem::UpdateView( BmUpdFlags flags) {
-	inherited::UpdateView( flags);
+void BmRecvAccItem::UpdateView( BmUpdFlags flags, bool redraw, 
+										  uint32 updColBitmap) {
 	BmRecvAcc* acc = ModelItem();
 	if (flags & UPD_ALL) {
-		BmListColumn cols[] = {
-			{ acc->Key().String(),						false },
-			{ acc->CheckMail() ? "*" : "",			false },
-			{ acc->DeleteMailFromServer() ? "*" : "",	false },
-			{ acc->FilterChain().String(),			false },
-			{ acc->POPServer().String(),				false },
-			{ acc->PortNrString().String(),			true  },
-			{ acc->CheckIntervalString().String(),	true  },
-			{ acc->AuthMethod().String(),				false },
-			{ acc->Username().String(),				false },
-			{ acc->PwdStoredOnDisk() ? "*****":"",	false },
-			{ NULL, false }
+		const char* cols[] = {
+			acc->Key().String(),
+			acc->CheckMail() ? "*" : "",
+			acc->DeleteMailFromServer() ? "*" : "",
+			acc->FilterChain().String(),
+			acc->POPServer().String(),
+			acc->PortNrString().String(),
+			acc->CheckIntervalString().String(),
+			acc->AuthMethod().String(),
+			acc->Username().String(),
+			acc->PwdStoredOnDisk() ? "*****":"",
+			NULL
 		};
 		SetTextCols( 0, cols);
+		if (redraw)
+			updColBitmap = 0xFFFFFFFF;
 	}
+	inherited::UpdateView( flags, redraw, updColBitmap);
 }
 
 

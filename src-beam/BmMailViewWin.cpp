@@ -311,14 +311,14 @@ void BmMailViewWin::MessageReceived( BMessage* msg) {
 						selectedText.SetTo( mMailView->Text()+start, finish-start);
 					const BmRef<BmMailRef> mailRef = mail->MailRef();
 					if (mailRef) {
-						BMessage msg2( msg->what);
 						BmMailRefVect* refVect = new BmMailRefVect();
 						refVect->push_back( mailRef);
-						msg2.AddPointer( BmApplication::MSG_MAILREF_VECT, 
+						msg->AddPointer( BmApplication::MSG_MAILREF_VECT, 
 											  static_cast< void*>( refVect));
 						if (selectedText.Length())
-							msg2.AddString( BmApplication::MSG_SELECTED_TEXT, selectedText.String());
-						be_app_messenger.SendMessage( &msg2, &msg2);
+							msg->AddString( BmApplication::MSG_SELECTED_TEXT, 
+												 selectedText.String());
+						be_app_messenger.SendMessage( msg);
 					}
 					if (msg->what == BMM_TRASH
 					|| (ThePrefs->GetBool("CloseViewWinAfterMailAction", true)

@@ -90,22 +90,25 @@ BmSignatureItem::~BmSignatureItem() {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmSignatureItem::UpdateView( BmUpdFlags flags) {
-	inherited::UpdateView( flags);
+void BmSignatureItem::UpdateView( BmUpdFlags flags, bool redraw,
+											 uint32 updColBitmap) {
 	BmSignature* sig = dynamic_cast<BmSignature*>( ModelItem());
 	if (flags & UPD_ALL) {
 		BmString beautifiedContent( sig->Content());
 		beautifiedContent.ReplaceAll( "\n", "\\n");
 		beautifiedContent.ReplaceAll( "\t", "\\t");
 
-		BmListColumn cols[] = {
-			{ sig->Key().String(),						false },
-			{ sig->Dynamic() ? "*" : "",				false },
-			{ beautifiedContent.String(),				false },
-			{ NULL, false }
+		const char* cols[] = {
+			sig->Key().String(),
+			sig->Dynamic() ? "*" : "",
+			beautifiedContent.String(),
+			NULL
 		};
 		SetTextCols( 0, cols);
+		if (redraw)
+			updColBitmap = 0xFFFFFFFF;
 	}
+	inherited::UpdateView( flags, redraw, updColBitmap);
 }
 
 

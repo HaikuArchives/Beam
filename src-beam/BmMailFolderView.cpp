@@ -83,8 +83,8 @@ BmMailFolderItem::~BmMailFolderItem() {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmMailFolderItem::UpdateView( BmUpdFlags flags) {
-	inherited::UpdateView( flags);
+void BmMailFolderItem::UpdateView( BmUpdFlags flags, bool redraw, 
+											  uint32 updColBitmap) {
 	BmMailFolder* folder( ModelItem());
 	if (!folder)
 		return;
@@ -92,8 +92,10 @@ void BmMailFolderItem::UpdateView( BmUpdFlags flags) {
 		Bold( IsExpanded() 
 					? folder->NewMailCount()
 					: folder->HasNewMail());
-		SetColumnContent( COL_NAME, folder->Name().String(), false);
-		InvalidateColumn( -1);
+		SetColumnContent( COL_NAME, folder->Name().String());
+		if (redraw)
+			updColBitmap = 0xFFFFFFFF;
+							// Bold() may have changed font, need to redraw everything!
 	}
 	if (flags & BmMailFolder::UPD_HAVE_NEW_STATUS) {
 		BBitmap* icon;
@@ -101,8 +103,9 @@ void BmMailFolderItem::UpdateView( BmUpdFlags flags) {
 			icon = TheResources->IconByName("Folder_WithNew");
 		else
 			icon = TheResources->IconByName("Folder");
-		SetColumnContent( COL_ICON, icon, 2.0, false);
-		InvalidateColumn( COL_ICON);
+		SetColumnContent( COL_ICON, icon, 2.0);
+		if (redraw)
+			updColBitmap |= (1UL<<COL_ICON);
 	}
 	if (flags & BmMailFolder::UPD_NEW_COUNT) {
 		BmString newCountStr;
@@ -113,8 +116,9 @@ void BmMailFolderItem::UpdateView( BmUpdFlags flags) {
 			newCountStr = "?";
 		else
 			newCountStr << newCount;
-		SetColumnContent( COL_NEW_COUNT, newCountStr.String(), true);
-		InvalidateColumn( COL_NEW_COUNT);
+		SetColumnContent( COL_NEW_COUNT, newCountStr.String());
+		if (redraw)
+			updColBitmap |= (1UL<<COL_NEW_COUNT);
 	}
 	if (flags & BmMailFolder::UPD_TOTAL_COUNT) {
 		BmString totalCountStr;
@@ -125,9 +129,11 @@ void BmMailFolderItem::UpdateView( BmUpdFlags flags) {
 			totalCountStr = "?";
 		else
 			totalCountStr << totalCount;
-		SetColumnContent( COL_TOTAL_COUNT, totalCountStr.String(), true);
-		InvalidateColumn( COL_TOTAL_COUNT);
+		SetColumnContent( COL_TOTAL_COUNT, totalCountStr.String());
+		if (redraw)
+			updColBitmap |= (1UL<<COL_TOTAL_COUNT);
 	}
+	inherited::UpdateView( flags, redraw, updColBitmap);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -215,14 +221,16 @@ BmMailFolderView::BmMailFolderView( minimax minmax, int32 width, int32 height)
 					B_FOLLOW_TOP_BOTTOM, true, true, true, B_FANCY_BORDER);
 	AddColumn( new CLVColumn( NULL, 10.0, 
 									  CLV_EXPANDER | CLV_LOCK_AT_BEGINNING 
-									  | CLV_NOT_MOVABLE, 10.0));
+									  | CLV_NOT_MOVABLE | CLV_COLTYPE_BITMAP, 10.0));
 	AddColumn( new CLVColumn( NULL, 18.0, 
 									  CLV_LOCK_AT_BEGINNING | CLV_NOT_MOVABLE 
 									  | CLV_NOT_RESIZABLE | CLV_PUSH_PASS 
-									  | CLV_MERGE_WITH_RIGHT, 18.0));
+									  | CLV_MERGE_WITH_RIGHT | CLV_COLTYPE_BITMAP, 
+									  18.0));
 	AddColumn( new CLVColumn( "Folders", 100.0, 
 									  CLV_SORT_KEYABLE | CLV_LOCK_AT_BEGINNING 
-									  | CLV_NOT_MOVABLE, 50.0));
+									  | CLV_NOT_MOVABLE, 
+									  50.0));
 	AddColumn( new CLVColumn( "New", 30.0, CLV_RIGHT_JUSTIFIED, 20.0));
 	AddColumn( new CLVColumn( "Mails", 30.0, CLV_RIGHT_JUSTIFIED, 20.0));
 	SetSortFunction( BmMailFolderItem::CompareItems);

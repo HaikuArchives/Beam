@@ -89,16 +89,19 @@ BmFilterChainItem::~BmFilterChainItem() {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmFilterChainItem::UpdateView( BmUpdFlags flags) {
-	inherited::UpdateView( flags);
+void BmFilterChainItem::UpdateView( BmUpdFlags flags, bool redraw, 
+												uint32 updColBitmap) {
 	BmFilterChain* chain	= dynamic_cast<BmFilterChain*>( ModelItem());
 	if (flags & UPD_ALL) {
-		BmListColumn cols[] = {
-			{ chain->Key().String(),			false },
-			{ NULL, false }
+		const char* cols[] = {
+			chain->Key().String(),
+			NULL
 		};
 		SetTextCols( 0, cols);
+		if (redraw)
+			updColBitmap = 0xFFFFFFFF;
 	}
+	inherited::UpdateView( flags, redraw, updColBitmap);
 }
 
 
@@ -237,19 +240,22 @@ BmChainedFilterItem::~BmChainedFilterItem() {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmChainedFilterItem::UpdateView( BmUpdFlags flags) {
-	inherited::UpdateView( flags);
+void BmChainedFilterItem::UpdateView( BmUpdFlags flags, bool redraw, 
+												  uint32 updColBitmap) {
 	BmChainedFilter* filter( dynamic_cast<BmChainedFilter*>( ModelItem()));
 	if (flags & UPD_ALL) {
 		BmString pos;
 		pos << filter->Position();
-		BmListColumn cols[] = {
-			{ pos.String(),				true },
-			{ filter->Key().String(),	false },
-			{ NULL, false }
+		const char* cols[] = {
+			pos.String(),
+			filter->Key().String(),
+			NULL
 		};
 		SetTextCols( 0, cols);
+		if (redraw)
+			updColBitmap = 0xFFFFFFFF;
 	}
+	inherited::UpdateView( flags, redraw, updColBitmap);
 }
 
 /*------------------------------------------------------------------------------*\

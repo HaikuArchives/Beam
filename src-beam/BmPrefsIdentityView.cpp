@@ -93,23 +93,26 @@ BmRecvIdentItem::~BmRecvIdentItem() {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmRecvIdentItem::UpdateView( BmUpdFlags flags) {
-	inherited::UpdateView( flags);
+void BmRecvIdentItem::UpdateView( BmUpdFlags flags, bool redraw, 
+											 uint32 updColBitmap) {
 	BmRecvIdent* ident = ModelItem();
 	if (flags & UPD_ALL) {
-		BmListColumn cols[] = {
-			{ ident->Key().String(),						false },
-			{ ident->RealName().String(),					false },
-			{ ident->MailAddr().String(),					false },
-			{ ident->MailAliases().String(),				false },
-			{ ident->POPAccount().String(),				false },
-			{ ident->MarkedAsBitBucket() ? "*" : "",	false },
-			{ ident->SignatureName().String(),			false },
-			{ ident->SMTPAccount().String(),				false },
-			{ NULL, false }
+		const char* cols[] = {
+			ident->Key().String(),
+			ident->RealName().String(),
+			ident->MailAddr().String(),
+			ident->MailAliases().String(),
+			ident->POPAccount().String(),
+			ident->MarkedAsBitBucket() ? "*" : "",
+			ident->SignatureName().String(),
+			ident->SMTPAccount().String(),
+			NULL
 		};
 		SetTextCols( 0, cols);
+		if (redraw)
+			updColBitmap = 0xFFFFFFFF;
 	}
+	inherited::UpdateView( flags, redraw, updColBitmap);
 }
 
 

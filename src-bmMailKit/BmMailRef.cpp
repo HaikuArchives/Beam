@@ -89,8 +89,7 @@ BmRef<BmMailRef> BmMailRef::CreateInstance( entry_ref &eref,
 		);
 		GlobalLocker()->Unlock();
 		if (mailRef) {
-			mailRef->EntryRef( eref);
-			mailRef->ResyncFromDisk();
+			mailRef->ResyncFromDisk( &eref, &st);
 			return mailRef;
 		}
 		mailRef = new BmMailRef( eref, st);
@@ -268,15 +267,14 @@ void BmMailRef::Initialize() {
 	ReadAttributes()
 		-	reads attribute-data from mail-file
 \*------------------------------------------------------------------------------*/
-bool BmMailRef::ReadAttributes( const struct stat* statInfo) {
+bool BmMailRef::ReadAttributes( const struct stat* statInfo, 
+										  BmUpdFlags* updFlagsOut) {
 	status_t err;
 	BNode node;
 	BmString filetype;
 	struct stat st;
-	
-	if (statInfo)
-		st = *statInfo;
-	
+	BmUpdFlags updFlags = 0;
+
 	for( int i=0; (err = node.SetTo( &mEntryRef)) == B_BUSY; ++i) {
 		if (i==200)
 			break;
@@ -292,12 +290,16 @@ bool BmMailRef::ReadAttributes( const struct stat* statInfo) {
 				<< mEntryRef.name << "> \n\nError:" << strerror(err)
 		);
 	}
-	if (err == B_OK && !statInfo) {
-		if ((err = node.GetStat( &st)) != B_OK)
-			BM_LOGERR(
-				BmString("Could not get stat-info for mail-ref <") 
-					<< mEntryRef.name << "> \n\nError:" << strerror(err)
-			);
+	if (err == B_OK) {
+		if (statInfo)
+			st = *statInfo;
+		else {
+			if ((err = node.GetStat( &st)) != B_OK)
+				BM_LOGERR(
+					BmString("Could not get stat-info for mail-ref <") 
+						<< mEntryRef.name << "> \n\nError:" << strerror(err)
+				);
+		}
 	}
 
 	BmReadStringAttr( &node, "BEOS:TYPE", filetype);
@@ -305,23 +307,37 @@ bool BmMailRef::ReadAttributes( const struct stat* statInfo) {
 	&& (!filetype.ICompare("text/x-email") 
 		|| !filetype.ICompare("message/rfc822"))) {
 		// file is indeed a mail, we fetch its attributes:
-		BmReadStringAttr( &node, BM_MAIL_ATTR_NAME, 		mName);
-		BmReadStringAttr( &node, BM_MAIL_ATTR_ACCOUNT, 	mAccount);
-		BmReadStringAttr( &node, BM_MAIL_ATTR_CC, 		mCc);
-		BmReadStringAttr( &node, BM_MAIL_ATTR_FROM, 		mFrom);
-		BmReadStringAttr( &node, BM_MAIL_ATTR_PRIORITY, mPriority);
-		BmReadStringAttr( &node, BM_MAIL_ATTR_REPLY, 	mReplyTo);
-		BmReadStringAttr( &node, BM_MAIL_ATTR_STATUS, 	mStatus);
-		BmReadStringAttr( &node, BM_MAIL_ATTR_SUBJECT, 	mSubject);
-		BmReadStringAttr( &node, BM_MAIL_ATTR_TO, 		mTo);
-		BmReadStringAttr( &node, BM_MAIL_ATTR_IDENTITY, mIdentity);
+		if (BmReadStringAttr( &node, BM_MAIL_ATTR_NAME, 	mName))
+			updFlags |= UPD_NAME;
+		if (BmReadStringAttr( &node, BM_MAIL_ATTR_ACCOUNT, mAccount))
+			updFlags |= UPD_ACCOUNT;
+		if (BmReadStringAttr( &node, BM_MAIL_ATTR_CC, 		mCc))
+			updFlags |= UPD_CC;
+		if (BmReadStringAttr( &node, BM_MAIL_ATTR_FROM, 	mFrom))
+			updFlags |= UPD_FROM;
+		if (BmReadStringAttr( &node, BM_MAIL_ATTR_REPLY, 	mReplyTo))
+			updFlags |= UPD_REPLYTO;
+		if (BmReadStringAttr( &node, BM_MAIL_ATTR_STATUS, 	mStatus))
+			updFlags |= UPD_STATUS;
+		if (BmReadStringAttr( &node, BM_MAIL_ATTR_SUBJECT, mSubject))
+			updFlags |= UPD_SUBJECT;
+		if (BmReadStringAttr( &node, BM_MAIL_ATTR_TO, 		mTo))
+			updFlags |= UPD_TO;
+		if (BmReadStringAttr( &node, BM_MAIL_ATTR_IDENTITY, mIdentity))
+			updFlags |= UPD_IDENTITY;
+		BmString priority;
+		BmReadStringAttr( &node, BM_MAIL_ATTR_PRIORITY, priority);
 
-		mWhen = 0;
+		time_t when;
 		node.ReadAttr( BM_MAIL_ATTR_WHEN, B_TIME_TYPE, 0, 
-							&mWhen, sizeof(time_t));
-		mWhenString = 	ThePrefs->GetBool( "UseSwatchTimeInRefView", false)
-								? TimeToSwatchString( mWhen)
-								: TimeToString( mWhen);
+							&when, sizeof(time_t));
+		if (when != mWhen) {
+			mWhen = when;
+			mWhenString = 	ThePrefs->GetBool( "UseSwatchTimeInRefView", false)
+									? TimeToSwatchString( mWhen)
+									: TimeToString( mWhen);
+			updFlags |= UPD_WHEN;
+		}
 
 		int32 att1 = 0;
 						// standard BeOS kind (BMail, Postmaster, Beam)
@@ -330,46 +346,62 @@ bool BmMailRef::ReadAttributes( const struct stat* statInfo) {
 		bool att2 = false;
 						// Scooby kind
 		node.ReadAttr( "MAIL:attachment", B_BOOL_TYPE, 0, &att2, sizeof(att2));
-		mHasAttachments = att1>0 || att2;
-						// please notice that we ignore Mail-It, since
-						// it does not give any proper indication 
-						// (other than its internal status-attribute,
-						// which we really do not want to look at...)
+		if (mHasAttachments != (att1>0 || att2)) {
+			mHasAttachments = (att1>0 || att2);
+							// please notice that we ignore Mail-It, since
+							// it does not give any proper indication 
+							// (other than its internal status-attribute,
+							// which we really do not want to look at...)
+			updFlags |= UPD_ATTACHMENTS;
+		}
 
-		mSize = st.st_size;
-		mSizeString = BytesToString( mSize,true);
+		if (mSize != st.st_size) {
+			mSize = st.st_size;
+			mSizeString = BytesToString( mSize,true);
+			updFlags |= UPD_SIZE;
+		}
 
+		bigtime_t whenCreated;
 		if (node.ReadAttr( BM_MAIL_ATTR_WHEN_CREATED, B_UINT64_TYPE, 0, 
-								 &mWhenCreated, sizeof(bigtime_t)) < 0) {
+								 &whenCreated, sizeof(bigtime_t)) < 0) {
 			// corresponding attribute doesn't exist, we fetch it from the
 			// file's creation time (which is just time_t instead of bigtime_t):
-			mWhenCreated = static_cast<int64>(	st.st_crtime)*(1000*1000);
+			whenCreated = static_cast<int64>(	st.st_crtime)*(1000*1000);
 						// yes, crtime contains the creation-time, trust me!
 		}
-		mWhenCreatedString 
-			= ThePrefs->GetBool( "UseSwatchTimeInRefView", false)
-				? TimeToSwatchString( mWhenCreated/(1000*1000))
-				: TimeToString( mWhenCreated/(1000*1000));
+		if (whenCreated != mWhenCreated) {
+			mWhenCreated = whenCreated;
+			mWhenCreatedString 
+				= ThePrefs->GetBool( "UseSwatchTimeInRefView", false)
+					? TimeToSwatchString( mWhenCreated/(1000*1000))
+					: TimeToString( mWhenCreated/(1000*1000));
+			updFlags |= UPD_WHEN_CREATED;
+		}
 
 		// simplify priority:
-		if (!mPriority.Length()) {
-			mPriority = "3";				// normal priority
+		if (!priority.Length()) {
+			priority = "3";				// normal priority
 		} else {
-			if (isdigit(mPriority[0]))
-				mPriority.Truncate(1);
+			if (isdigit(priority[0]))
+				priority.Truncate(1);
 			else {
-				if (mPriority.FindFirst("Highest") != B_ERROR)
-					mPriority = "1";
-				else if (mPriority.FindFirst("High") != B_ERROR)
-					mPriority = "2";
-				else if (mPriority.FindFirst("Lowest") != B_ERROR)
-					mPriority = "5";
-				else if (mPriority.FindFirst("Low") != B_ERROR)
-					mPriority = "4";
+				if (priority.IFindFirst("Highest") != B_ERROR)
+					priority = "1";
+				else if (priority.IFindFirst("High") != B_ERROR)
+					priority = "2";
+				else if (priority.IFindFirst("Lowest") != B_ERROR)
+					priority = "5";
+				else if (priority.IFindFirst("Low") != B_ERROR)
+					priority = "4";
 				else
-					mPriority = "3";
+					priority = "3";
 			}
 		}
+		if (priority != mPriority) {
+			mPriority = priority;
+			updFlags |= UPD_PRIORITY;
+		}
+			
 		ItemIsValid( true);
 	} else {
 		// item is no mail, we mark it as invalid:
@@ -397,6 +429,8 @@ bool BmMailRef::ReadAttributes( const struct stat* statInfo) {
 						<< " is not a mail, invalidating it.");
 		ItemIsValid( false);
 	}
+	if (updFlagsOut)
+		*updFlagsOut = updFlags;
 	return err == B_OK;
 }
 
@@ -404,12 +438,17 @@ bool BmMailRef::ReadAttributes( const struct stat* statInfo) {
 	ResyncFromDisk()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmMailRef::ResyncFromDisk( entry_ref* newRef) {
-	if (newRef)
+void BmMailRef::ResyncFromDisk( entry_ref* newRef, 
+										  const struct stat* statInfo) {
+	BmUpdFlags updFlags = 0;
+	if (newRef) {
+		if (strcmp( mEntryRef.name, newRef->name) != 0)
+			updFlags |= UPD_TRACKERNAME;
 		mEntryRef = *newRef;
-	if (ReadAttributes())
+	}
+	if (ReadAttributes( statInfo, &updFlags))
 		mInitCheck = B_OK;
-	TellModelItemUpdated( UPD_ALL);
+	TellModelItemUpdated( updFlags);
 	BmRef<BmListModel> listModel( ListModel());
 	BmMailRefList* refList = dynamic_cast< BmMailRefList*>( listModel.Get());
 	if (refList)

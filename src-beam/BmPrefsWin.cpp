@@ -229,7 +229,9 @@ CLVContainerView* BmPrefsWin::CreatePrefsListView( minimax minmax, int32 width, 
 												be_bold_font);
 	mPrefsListView->AddColumn( 
 		new CLVColumn( NULL, 10.0, 
-							CLV_EXPANDER | CLV_LOCK_AT_BEGINNING | CLV_NOT_MOVABLE, 10.0));
+							CLV_EXPANDER | CLV_LOCK_AT_BEGINNING | CLV_NOT_MOVABLE
+							| CLV_COLTYPE_BITMAP, 
+							10.0));
 	mPrefsListView->AddColumn( 
 		new CLVColumn( "   Category", 300.0, 
 							CLV_NOT_MOVABLE|CLV_NOT_RESIZABLE|CLV_TELL_ITEMS_WIDTH, 300.0));

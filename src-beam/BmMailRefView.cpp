@@ -81,7 +81,7 @@ enum Columns {
 	COL_WHEN_CREATED,
 	COL_TRACKER_NAME,
 	COL_STATUS,
-	COL_ATTACHMENT,
+	COL_ATTACHMENTS,
 	COL_PRIORITY,
 	COL_IDENTITY,
 	COL_END
@@ -114,22 +114,8 @@ BmMailRefItem::~BmMailRefItem() {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmMailRefItem::AddedToListview() {
-	inherited::AddedToListview();
-	for( int col=nFirstTextCol; col<COL_END; ++col) {
-		if (col==COL_SIZE)
-			SetColumnUserTextContent( col, true);
-		else
-			SetColumnUserTextContent( col, false);
-	}
-}
-
-/*------------------------------------------------------------------------------*\
-	()
-		-	
-\*------------------------------------------------------------------------------*/
-void BmMailRefItem::UpdateView( BmUpdFlags flags) {
-	inherited::UpdateView( flags);
+void BmMailRefItem::UpdateView( BmUpdFlags flags, bool redraw, 
+										  uint32 updColBitmap) {
 	BmMailRef* ref( ModelItem());
 	if (!ref)
 		return;
@@ -140,20 +126,53 @@ void BmMailRefItem::UpdateView( BmUpdFlags flags) {
 		BmString st = BmString("Mail_") << ref->Status();
 		icon = TheResources->IconByName(st);
 		SetColumnContent( COL_STATUS_I, icon);
-		SetColumnContent( COL_STATUS, ref->Status().String(), false);
+		if (redraw)
+			updColBitmap = 0xFFFFFFFF;
+							// Bold() may have changed font, need to redraw everything!
 	}
-
-	if (flags == UPD_ALL) {
+	if (flags & BmMailRef::UPD_ATTACHMENTS) {
 		if (ref->HasAttachments()) {
 			icon = TheResources->IconByName("Attachment");
 			SetColumnContent( COL_ATTACHMENTS_I, icon);
 		}
+		if (redraw)
+			updColBitmap |= (1UL<<COL_ATTACHMENTS | 1UL<<COL_ATTACHMENTS_I);
+	}
+	if (flags & BmMailRef::UPD_PRIORITY) {
 		BmString priority = BmString("Priority_") << ref->Priority();
 		if ((icon = TheResources->IconByName(priority))!=NULL) {
 			SetColumnContent( COL_PRIORITY_I, icon);
 		}
+		if (redraw)
+			updColBitmap |= (1UL<<COL_PRIORITY | 1UL<<COL_PRIORITY_I);
 	}
-	InvalidateColumn( -1);
+	if (redraw) {
+		if (flags & BmMailRef::UPD_ACCOUNT)
+			updColBitmap |= (1UL << COL_ACCOUNT);
+		if (flags & BmMailRef::UPD_CC)
+			updColBitmap |= (1UL << COL_CC);
+		if (flags & BmMailRef::UPD_FROM)
+			updColBitmap |= (1UL << COL_FROM);
+		if (flags & BmMailRef::UPD_NAME)
+			updColBitmap |= (1UL << COL_NAME);
+		if (flags & BmMailRef::UPD_WHEN_CREATED)
+			updColBitmap |= (1UL << COL_WHEN_CREATED);
+		if (flags & BmMailRef::UPD_REPLYTO)
+			updColBitmap |= (1UL << COL_REPLY_TO);
+		if (flags & BmMailRef::UPD_SIZE)
+			updColBitmap |= (1UL << COL_SIZE);
+		if (flags & BmMailRef::UPD_SUBJECT)
+			updColBitmap |= (1UL << COL_SUBJECT);
+		if (flags & BmMailRef::UPD_TO)
+			updColBitmap |= (1UL << COL_TO);
+		if (flags & BmMailRef::UPD_WHEN)
+			updColBitmap |= (1UL << COL_DATE);
+		if (flags & BmMailRef::UPD_IDENTITY)
+			updColBitmap |= (1UL << COL_IDENTITY);
+		if (flags & BmMailRef::UPD_TRACKERNAME)
+			updColBitmap |= (1UL << COL_TRACKER_NAME);
+	}
+	inherited::UpdateView( flags, redraw, updColBitmap);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -174,7 +193,7 @@ const int32 BmMailRefItem::GetNumValueForColumn( int32 column_index) const {
 				 st == BM_MAIL_STATUS_REPLIED		? 6 :
 				 st == BM_MAIL_STATUS_REDIRECTED	? 7 : 99;
 	} else if (column_index == COL_ATTACHMENTS_I 
-	|| column_index == COL_ATTACHMENT) {
+	|| column_index == COL_ATTACHMENTS) {
 		return ref->HasAttachments() ? 0 : 1;	
 							// show mails with attachment at top
 	} else if (column_index == COL_PRIORITY_I || column_index == COL_PRIORITY) {
@@ -258,7 +277,7 @@ const char* BmMailRefItem::GetUserText(int32 colIdx, float /*colWidth*/) const {
 	case COL_STATUS:
 		text = ref->Status().String();
 		break;
-	case COL_ATTACHMENT:
+	case COL_ATTACHMENTS:
 		text = ref->HasAttachments() ? "*" : "";
 		break;
 	case COL_PRIORITY:
@@ -318,34 +337,52 @@ BmMailRefView::BmMailRefView( minimax minmax, int32 width, int32 height)
 					B_FOLLOW_NONE, true, true, true, B_FANCY_BORDER);
 
 	AddColumn( new CLVColumn( "", 18.0, 
-									  flags | CLV_NOT_RESIZABLE | CLV_COLDATA_NUMBER, 
+									  flags | CLV_NOT_RESIZABLE | CLV_COLDATA_NUMBER
+									  | CLV_COLTYPE_BITMAP, 
 									  18.0, "Status [Icon]"));
 	AddColumn( new CLVColumn( "A", 18.0, 
-									  flags | CLV_NOT_RESIZABLE | CLV_COLDATA_NUMBER, 
+									  flags | CLV_NOT_RESIZABLE | CLV_COLDATA_NUMBER
+									  | CLV_COLTYPE_BITMAP, 
 									  18.0, "(A)ttachments [Icon]"));
 	AddColumn( new CLVColumn( "P", 18.0, 
-									  flags | CLV_NOT_RESIZABLE | CLV_COLDATA_NUMBER, 
+									  flags | CLV_NOT_RESIZABLE | CLV_COLDATA_NUMBER
+									  | CLV_COLTYPE_BITMAP, 
 									  18.0, "(P)riority [Icon]"));
-	AddColumn( new CLVColumn( "From", 200.0, flags, 20.0));
-	AddColumn( new CLVColumn( "Subject", 200.0, flags, 20.0));
-	AddColumn( new CLVColumn( "Date", 100.0, flags | CLV_COLDATA_DATE, 20.0));
+	AddColumn( new CLVColumn( "From", 200.0, flags | CLV_COLTYPE_USERTEXT, 
+									  20.0));
+	AddColumn( new CLVColumn( "Subject", 200.0, flags | CLV_COLTYPE_USERTEXT, 
+									  20.0));
+	AddColumn( new CLVColumn( "Date", 100.0, 
+									  flags | CLV_COLDATA_DATE | CLV_COLTYPE_USERTEXT, 
+									  20.0));
 	AddColumn( new CLVColumn( "Size", 50.0, 
-									  flags | CLV_COLDATA_NUMBER | CLV_RIGHT_JUSTIFIED,
+									  flags | CLV_COLDATA_NUMBER | CLV_RIGHT_JUSTIFIED
+									  | CLV_COLTYPE_USERTEXT,
 									  20.0));
-	AddColumn( new CLVColumn( "Cc", 100.0, flags, 20.0));
-	AddColumn( new CLVColumn( "Account", 100.0, flags, 20.0));
-	AddColumn( new CLVColumn( "To", 100.0, flags, 20.0));
-	AddColumn( new CLVColumn( "Reply-To", 150.0, flags, 20.0));
-	AddColumn( new CLVColumn( "Name", 150.0, flags, 20.0));
-	AddColumn( new CLVColumn( "Date-Created", 100.0, flags | CLV_COLDATA_BIGTIME,
+	AddColumn( new CLVColumn( "Cc", 100.0, flags | CLV_COLTYPE_USERTEXT, 20.0));
+	AddColumn( new CLVColumn( "Account", 100.0, flags | CLV_COLTYPE_USERTEXT, 
 									  20.0));
-	AddColumn( new CLVColumn( "Tracker-Name", 150.0, flags, 20.0));
-	AddColumn( new CLVColumn( "S", 100.0, flags, 40.0, "(S)tatus [Text]"));
-	AddColumn( new CLVColumn( "A", 100.0, flags | CLV_COLDATA_NUMBER, 18.0, 
-									  "(A)ttachments [Text]"));
-	AddColumn( new CLVColumn( "P", 100.0, flags | CLV_COLDATA_NUMBER, 18.0, 
-									  "(P)riority [Text]"));
-	AddColumn( new CLVColumn( "Identity", 100.0, flags, 40.0));
+	AddColumn( new CLVColumn( "To", 100.0, flags | CLV_COLTYPE_USERTEXT, 20.0));
+	AddColumn( new CLVColumn( "Reply-To", 150.0, flags | CLV_COLTYPE_USERTEXT,
+									  20.0));
+	AddColumn( new CLVColumn( "Name", 150.0, flags | CLV_COLTYPE_USERTEXT, 
+									  20.0));
+	AddColumn( new CLVColumn( "Date-Created", 100.0, 
+									  flags | CLV_COLDATA_BIGTIME | CLV_COLTYPE_USERTEXT,
+									  20.0));
+	AddColumn( new CLVColumn( "Tracker-Name", 150.0, 
+									  flags | CLV_COLTYPE_USERTEXT, 
+									  20.0));
+	AddColumn( new CLVColumn( "S", 100.0, flags | CLV_COLTYPE_USERTEXT, 
+									  40.0, "(S)tatus [Text]"));
+	AddColumn( new CLVColumn( "A", 100.0, 
+									  flags | CLV_COLDATA_NUMBER | CLV_COLTYPE_USERTEXT,
+									  18.0, "(A)ttachments [Text]"));
+	AddColumn( new CLVColumn( "P", 100.0, 
+									  flags | CLV_COLDATA_NUMBER | CLV_COLTYPE_USERTEXT,
+									  18.0, "(P)riority [Text]"));
+	AddColumn( new CLVColumn( "Identity", 100.0, flags | CLV_COLTYPE_USERTEXT, 
+									  40.0));
 	SetSortFunction( CLVEasyItem::CompareItems);
 	SetSortKey( COL_DATE);
 	SetSortMode( COL_DATE, Descending, false);
@@ -446,7 +483,7 @@ void BmMailRefView::TrashSelectedMessages() {
 	// note down selection...
 	int32 firstIdx = CurrentSelection( 0);
 	int32 currIdx;
-	int32 lastIdx;
+	int32 lastIdx = firstIdx;
 	for( int32 i=0; (currIdx=CurrentSelection( i))>=0; ++i)
 		lastIdx = currIdx;
 

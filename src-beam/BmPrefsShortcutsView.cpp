@@ -250,7 +250,7 @@ void BmPrefsShortcutsView::MessageReceived( BMessage* msg) {
 					if (index != -1) {
 						CLVEasyItem* scItem = dynamic_cast<CLVEasyItem*>(mListView->ItemAt( index));
 						if (scItem)
-							scItem->SetColumnContent( 1, sc.String(), !ThePrefs->GetBool("StripedListView"));
+							scItem->SetColumnContent( 1, sc.String());
 						mListView->InvalidateItem( index);
 					}
 					NoticeChange();

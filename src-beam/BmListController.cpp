@@ -32,6 +32,7 @@
 
 #include <MenuItem.h>
 #include <PopUpMenu.h>
+#include <Region.h>
 #include <StringView.h>
 #include <Window.h>
 
@@ -100,10 +101,29 @@ status_t BmListViewItem::Archive( BMessage* archive, bool) const {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmListViewItem::UpdateView( BmUpdFlags flags) {
-	BmListModelItem* item = ModelItem();
-	if (item && flags & (UPD_EXPANDER)) {
-		SetSuperItem( item->size() != 0);
+void BmListViewItem::UpdateView( BmUpdFlags flags, bool redraw, 
+											uint32 updColBitmap) {
+	if (flags & UPD_EXPANDER) {
+		BmListModelItem* item = ModelItem();
+		if (item)
+			SetSuperItem( item->size() != 0);
+	}
+	if (redraw) {
+		BRegion updateRegion;
+		bool needReSort = false;
+		uint32 colCount = fOwner->CountColumns();
+		for( uint32 c=0; c<colCount; ++c) {
+			if (updColBitmap & (1UL<<c)) {
+				updateRegion.Include( ItemColumnFrame( c));
+				if (fOwner->IsSortKey( c))
+					needReSort = true;
+			}
+		}
+		if (needReSort)
+			fOwner->ReSortItem( this);
+		BRect updateRect = updateRegion.Frame();
+		if (updateRect.IsValid())
+			fOwner->Invalidate( updateRect);
 	}
 }
 
@@ -111,10 +131,10 @@ void BmListViewItem::UpdateView( BmUpdFlags flags) {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmListViewItem::SetTextCols( int16 firstTextCol, BmListColumn* columnVec) {
+void BmListViewItem::SetTextCols( int16 firstTextCol, const char** content) {
 	int16 offs = firstTextCol;
-	for( const BmListColumn* p = columnVec; p->text != NULL; ++p) {
-		SetColumnContent( offs++, p->text, p->rightJustified);
+	for( ; *content != NULL; ++content) {
+		SetColumnContent( offs++, *content);
 	}
 }
 
@@ -556,12 +576,18 @@ void BmListViewController::AddAllModelItems() {
 			doAddModelItem( NULL, modelItem);
 		} else {
 			viewItem = CreateListViewItem( modelItem);
-			if (viewItem)
+			if (viewItem) {
+				viewItem->UpdateView( UPD_ALL, false);
 				tempList->AddItem( viewItem);
-			mViewModelMap[modelItem] = viewItem;
-			BM_LOG2( BM_LogMailTracking, 
-						BmString("ListView <") << ModelName() << "> added view-item "
-							<< viewItem->Key());
+				mViewModelMap[modelItem] = viewItem;
+				BM_LOG2( BM_LogMailTracking, 
+							BmString("ListView <") << ModelName() << "> added view-item "
+								<< viewItem->Key());
+			} else
+				BM_LOG( BM_LogMailTracking, 
+						  BmString("ListView <") << ModelName() 
+								<< "> could not create view-item for modelItem "
+								<< modelItem->Key());
 		}
 		if (count%100==0) {
 			ScrollView()->PulseBusyView();
@@ -574,9 +600,6 @@ void BmListViewController::AddAllModelItems() {
 	if (!Hierarchical()) {
 		// add complete item-list for efficiency:
 		AddList( tempList);
-		int32 numItems = tempList->CountItems();
-		for( int32 i=0; i<numItems; ++i)
-			((BmListViewItem*)tempList->ItemAt( i))->AddedToListview();
 		delete tempList;
 	}
 
@@ -624,13 +647,11 @@ BmListViewItem* BmListViewController::doAddModelItem( BmListViewItem* parent,
 	);
 	BmListViewItem* newItem = CreateListViewItem( item, archive.get());
 	if (newItem) {
-		if (Hierarchical() && !item->empty())
-			newItem->SetSuperItem( true);
+		newItem->UpdateView( UPD_ALL, false);
 		if (parent)
 			AddUnder( newItem, parent);
 		else
 			AddItem( newItem);
-		newItem->AddedToListview();
 		mViewModelMap[item] = newItem;
 		BM_LOG2( BM_LogMailTracking, 
 					BmString("ListView <") << ModelName() << "> added view-item " 
@@ -682,8 +703,7 @@ void BmListViewController::doRemoveModelItem( BmListModelItem* item) {
 							<< "> removed view-item " << viewItem->Key());
 			// remove all sub-items of current item from the view as well:
 			BmModelItemMap::const_iterator iter;
-			BmModelItemMap::const_iterator endIter = item->end();
-			for( iter = item->begin(); iter != endIter; ++iter) {
+			for( iter = item->begin(); iter != item->end(); ++iter) {
 				BmListModelItem* subItem = iter->second.Get();
 				doRemoveModelItem( subItem);
 			}
@@ -693,9 +713,10 @@ void BmListViewController::doRemoveModelItem( BmListModelItem* item) {
 }
 
 /*------------------------------------------------------------------------------*\
-	UpdateModelItem( msg)
+	UpdateModelItem( item, updFlags)
 		-	Hook function that is called whenever an item needs to be updated 
-		-	default implementation redraws item completely
+		-	updFlags may contain info on which parts (columns) of the item should 
+			be updated.
 \*------------------------------------------------------------------------------*/
 BmListViewItem* BmListViewController::UpdateModelItem( BmListModelItem* item, 
 																		 BmUpdFlags updFlags) {

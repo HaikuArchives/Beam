@@ -62,7 +62,8 @@ public:
 	// overrides of listitem base:
 	BmMailFolder* ModelItem() const	{ return dynamic_cast<BmMailFolder*>(
 																				mModelItem.Get()); }
-	void UpdateView( BmUpdFlags flags);
+	void UpdateView( BmUpdFlags flags, bool redraw = true, 
+						  uint32 updColBitmap = 0);
 
 	static int CompareItems( const CLVListItem *a_Item1, 
 									 const CLVListItem *a_Item2,

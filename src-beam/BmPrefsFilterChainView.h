@@ -50,7 +50,8 @@ public:
 	~BmFilterChainItem();
 
 	// overrides of listitem base:
-	void UpdateView( BmUpdFlags flags);
+	void UpdateView( BmUpdFlags flags, bool redraw = true, 
+						  uint32 updColBitmap = 0);
 
 private:
 	// Hide copy-constructor and assignment:
@@ -121,7 +122,8 @@ public:
 	~BmChainedFilterItem();
 
 	// overrides of listitem base:
-	void UpdateView( BmUpdFlags flags);
+	void UpdateView( BmUpdFlags flags, bool redraw = true, 
+						  uint32 updColBitmap = 0);
 	const int32 GetNumValueForColumn( int32 column_index) const;
 
 private:

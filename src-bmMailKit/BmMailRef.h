@@ -77,8 +77,10 @@ public:
 
 	// native methods:
 	void MarkAs( const char* s);
-	bool ReadAttributes( const struct stat* statInfo = NULL);
-	void ResyncFromDisk( entry_ref* newRef=NULL);
+	bool ReadAttributes( const struct stat* statInfo = NULL,
+								BmUpdFlags* updFlagsOut = NULL);
+	void ResyncFromDisk( entry_ref* newRef = NULL,
+								const struct stat* statInfo = NULL);
 
 	// overrides of archivable base:
 	status_t Archive( BMessage* archive, bool deep = true) const;

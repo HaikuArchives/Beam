@@ -94,22 +94,25 @@ BmSendAccItem::~BmSendAccItem() {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmSendAccItem::UpdateView( BmUpdFlags flags) {
-	inherited::UpdateView( flags);
+void BmSendAccItem::UpdateView( BmUpdFlags flags, bool redraw,
+										  uint32 updColBitmap) {
 	BmSendAcc* acc = ModelItem();
 	if (flags & UPD_ALL) {
-		BmListColumn cols[] = {
-			{ acc->Key().String(),						false },
-			{ acc->SMTPServer().String(),				false },
-			{ acc->AuthMethod().String(),				false },
-			{ acc->Username().String(),				false },
-			{ acc->PwdStoredOnDisk() ? "*****":"",	false },
-			{ acc->DomainToAnnounce().String(),		false },
-			{ acc->PortNrString().String(),			true  },
-			{ NULL, false }
+		const char* cols[] = {
+			acc->Key().String(),
+			acc->SMTPServer().String(),
+			acc->AuthMethod().String(),
+			acc->Username().String(),
+			acc->PwdStoredOnDisk() ? "*****":"",
+			acc->DomainToAnnounce().String(),
+			acc->PortNrString().String(),
+			NULL
 		};
 		SetTextCols( 0, cols);
+		if (redraw)
+			updColBitmap = 0xFFFFFFFF;
 	}
+	inherited::UpdateView( flags, redraw, updColBitmap);
 }
 
 
