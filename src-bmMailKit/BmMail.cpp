@@ -480,7 +480,12 @@ BmString BmMail::DetermineReplyAddress( int32 replyMode, bool canonicalize,
 	BmString replyAddr;
 	if (!Header())
 		return "";
-	if (replyMode == BMM_REPLY) {
+	if (mOutbound) {
+		// if replying to outbound messages, we re-use the original recipients,
+		// not ourselves:
+		replyAddr = Header()->GetAddressList( BM_FIELD_TO).AddrString();
+		replyGoesToPersonOnly = false;
+	} else if (replyMode == BMM_REPLY) {
 		// smart (*cough*) mode: If the mail has come from a list, we react
 		// according to user prefs (reply-to-list or reply-to-originator).
 		bool hasComeFromList = HasComeFromList();
