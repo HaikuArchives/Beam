@@ -53,7 +53,7 @@ class BmSmtpAccount;
 class BmSmtp : public BmJobModel {
 	typedef BmJobModel inherited;
 	
-	typedef vector< BString> BmRcptVect;
+	typedef vector< BmString> BmRcptVect;
 	
 public:
 	//	message component definitions for status-msgs:
@@ -68,20 +68,20 @@ public:
 	// job-specifier for checking server capabilities:
 	static const int32 BM_CHECK_CAPABILITIES_JOB = 1;
 
-	BmSmtp( const BString& name, BmSmtpAccount* account);
+	BmSmtp( const BmString& name, BmSmtpAccount* account);
 	virtual ~BmSmtp();
 
-	typedef bool BmPwdAcquisitorFunc( const BString, BString&);
+	typedef bool BmPwdAcquisitorFunc( const BmString, BmString&);
 	inline void SetPwdAcquisitorFunc( BmPwdAcquisitorFunc* func)
 													{ mPwdAcquisitorFunc = func; }
 
-	typedef bool BmPopAccAcquisitorFunc( const BString, BString&);
+	typedef bool BmPopAccAcquisitorFunc( const BmString, BmString&);
 	inline void SetPopAccAcquisitorFunc( BmPopAccAcquisitorFunc* func)
 													{ mPopAccAcquisitorFunc = func; }
 
-	BString SuggestAuthType() const;
+	BmString SuggestAuthType() const;
 
-	inline BString Name() const			{ return ModelName(); }
+	inline BmString Name() const			{ return ModelName(); }
 
 	// overrides of job-model base:
 	bool StartJob();
@@ -99,7 +99,7 @@ private:
 	BNetEndpoint* mSmtpServer;				// network-connection to SMTP-server
 	bool mConnected;							// are we connected to the server?
 
-	BString mAnswer;							// holds last answer of SMTP-server
+	BmString mAnswer;							// holds last answer of SMTP-server
 
 	int32 mState;								// current SMTP-state (refer enum below)
 	enum States {
@@ -139,19 +139,21 @@ private:
 	void Mail( BmMail *mail);
 	bool HasStdRcpts( BmMail *mail, BmRcptVect& rcptVect);
 	void Rcpt( const BmRcptVect& rcptVect);
-	void BccRcpt( BmMail *mail, bool sendDataForEachBcc);
-	void Data( BmMail *mail, BString forBcc="");
+	void BccRcpt( BmMail *mail, bool sendDataForEachBcc, 
+					  const BmString& headerText, const BmString& bodyText);
+	void Data( BmMail *mail, const BmString& headerText, const BmString& bodyText,
+				  BmString forBcc="");
 	void UpdateSMTPStatus( const float, const char*, bool failed=false, bool stopped=false);
 	void UpdateMailStatus( const float, const char*, int32);
 	void StoreAnswer( char* );
 	bool CheckForPositiveAnswer();
 	bool GetAnswer();
 	int32 ReceiveBlock( char* buffer, int32 max);
-	void SendCommand( BString cmd, BString secret="", bool isMailData=false);
+	void SendCommand( BmString& cmd, bool isSecret=false, bool isMailData=false);
 
 	bool mServerMayHaveSizeLimit;
 	bool mServerSupportsDSN;
-	BString mSupportedAuthTypes;
+	BmString mSupportedAuthTypes;
 
 	// Hide copy-constructor and assignment:
 	BmSmtp( const BmSmtp&);
