@@ -206,9 +206,7 @@ void BmMailMonitor::HandleMailMonitorMsg( BMessage* msg) {
 							if (erefFrom.directory == eref.directory) {
 								// rename only, we take the short path:
 								BM_LOG2( BM_LogMailTracking, BmString("Rename of mail-folder <") << eref.name << "," << nref.node << "> detected.");
-								folder->EntryRef( eref);
-								TheMailFolderList->TellModelItemUpdated( folder.Get(), 
-																					  UPD_KEY|UPD_SORT);
+								folder->UpdateName( eref);
 							} else {
 								// the folder has really changed position within filesystem-tree:
 								if (oldParent && folder && folder->Parent() != oldParent.Get())

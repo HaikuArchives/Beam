@@ -258,6 +258,31 @@ void BmMailFolder::CleanupForMailRefList( BmMailRefList* refList) {
 }
 
 /*------------------------------------------------------------------------------*\
+	UpdateName( eref)
+		-	sets a new name for this folder (is called by node-monitor
+		-	adjusts foreign-keys accordingly
+		-	tells that model has been updated
+\*------------------------------------------------------------------------------*/
+void BmMailFolder::UpdateName( const entry_ref& eref) {
+	// ...determine path to folder (but skip root-folder):
+	BmString path;
+	BmListModelItem* curr;
+	for( curr = Parent().Get(); curr && curr->Parent(); curr = curr->Parent().Get()) {
+		if (!path.Length())
+			path.Prepend( curr->DisplayKey());
+		else		
+			path.Prepend( curr->DisplayKey() + "/");
+	}
+	// set new entry-ref:
+	BmString oldName = mName;
+	EntryRef( eref);
+	TheMailFolderList->TellModelItemUpdated( this, UPD_KEY|UPD_SORT);
+	// adjust foreign keys:
+	TheMailFolderList->AdjustForeignKeys( path.Length() ? path + "/" + oldName : oldName,
+							 						  path.Length() ? path + "/" + mName : mName);
+}
+
+/*------------------------------------------------------------------------------*\
 	ReCreateMailRefList()
 		-	marks this folder's mailref-list as dirty, causing the reflist's cache
 			to be recreated
@@ -320,7 +345,7 @@ void BmMailFolder::RemoveMailRef( const node_ref& nref) {
  	BmString key( BM_REFKEY( nref));
  	BM_LOG2( BM_LogMailTracking, Name()+" removing mail-ref " << key);
 	if (mMailRefList) {
-		if (!mMailRefList->RemoveItemFromList( key)) {
+		if (!mMailRefList->RemoveItemByName( key)) {
 			BM_LOG2( BM_LogMailTracking, Name()+" mail-ref doesn't exist.");
 		}
 	}

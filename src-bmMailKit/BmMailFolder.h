@@ -73,6 +73,7 @@ public:
 	bool HasMailRef( BmString key);
 	void RemoveMailRef( const node_ref& nref);
 	void CleanupForMailRefList( BmMailRefList* refList);
+	void UpdateName( const entry_ref &eref);
 	void CreateSubFolder( BmString name);
 	void Rename( BmString newName);
 	void MoveToTrash();
@@ -95,7 +96,7 @@ public:
 	inline const BmString& Name() const				{ return mName; }
 
 	// setters:
-	inline void EntryRef( entry_ref &e) 			{ mEntryRef = e; mName = e.name; }
+	inline void EntryRef( const entry_ref &e) 	{ mEntryRef = e; mName = e.name; }
 
 	// archival-fieldnames:
 	static const char* const MSG_ENTRYREF;
