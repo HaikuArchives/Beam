@@ -52,6 +52,8 @@ MKDIR = mkdir -p ;
 # by default we do not strip and do not build tests:
 STRIP_APPS ?= 0 ;
 BUILD_TESTS ?= 0 ;
+# For consistency, we evaluate BUILD_DEBUG, too:
+DEBUG ?= $BUILD_DEBUG ;
 
 rule SetUpSubDirBuildSettings {
 	# SetUpSubDirBuildSettings <dir> ;
@@ -80,18 +82,8 @@ rule SetUpSubDirBuildSettings {
 		}
 	}
 
-	# set the objects-folder according to debugging settings:
-	if $(DEBUG) && $(DEBUG) != 0
-	{
-		OBJECTS_DIR			= [ FDirName $(TOP) generated objects-debug ] ;
-	} 
-	else 
-	{
-		OBJECTS_DIR			= [ FDirName $(TOP) generated objects-nodebug ] ;
-	}
-	
 	# debugging settings
-	if $(DEBUG) > 0 {
+	if $(DEBUG) && $(DEBUG) != 0 {
 		OPTIMIZE = 0 ;
 		STRIP_APPS = 0 ;
 		DEFINES += DEBUG=$(DEBUG) BM_REF_DEBUGGING ;
@@ -99,6 +91,11 @@ rule SetUpSubDirBuildSettings {
 		C++FLAGS += -g ;
 		LINKFLAGS += -g ;
 		DISTRO_DIR			= [ FDirName $(TOP) generated distro_debug ] ;
+		OBJECTS_DIR			= [ FDirName $(TOP) generated objects-debug ] ;
+	}
+	else 
+	{
+		OBJECTS_DIR			= [ FDirName $(TOP) generated objects-nodebug ] ;
 	}
 
 	# optimization settings
