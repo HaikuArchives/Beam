@@ -100,6 +100,7 @@ void BmRecvIdentItem::UpdateView( BmUpdFlags flags, bool redraw,
 			ident->Key().String(),
 			ident->RealName().String(),
 			ident->MailAddr().String(),
+			ident->ReplyTo().String(),
 			ident->MailAliases().String(),
 			ident->POPAccount().String(),
 			ident->MarkedAsBitBucket() ? "*" : "",
@@ -263,6 +264,7 @@ BmPrefsIdentityView::BmPrefsIdentityView()
 																		  false, 0, 25),
 						mRealNameControl = new BmTextControl( "Real name:"),
 						mMailAddrControl = new BmTextControl( "Mail address:"),
+						mReplyToControl = new BmTextControl( "Reply-To:"),
 						mAliasesControl = new BmTextControl( "Aliases:"),
 						new Space( minimax(0,5,0,5)),
 						mPopControl = new BmMenuControl( 
@@ -326,6 +328,7 @@ BmPrefsIdentityView::BmPrefsIdentityView()
 		mMailAddrControl,
 		mAliasesControl,
 		mRealNameControl,
+		mReplyToControl,
 		mSignatureControl,
 		mSmtpControl,
 		mPopControl,
@@ -343,6 +346,7 @@ BmPrefsIdentityView::~BmPrefsIdentityView() {
 	TheBubbleHelper->SetHelp( mMailAddrControl, NULL);
 	TheBubbleHelper->SetHelp( mAliasesControl, NULL);
 	TheBubbleHelper->SetHelp( mRealNameControl, NULL);
+	TheBubbleHelper->SetHelp( mReplyToControl, NULL);
 	TheBubbleHelper->SetHelp( mIsBucketControl, NULL);
 	TheBubbleHelper->SetHelp( mSignatureControl, NULL);
 	TheBubbleHelper->SetHelp( mSmtpControl, NULL);
@@ -385,6 +389,15 @@ void BmPrefsIdentityView::Initialize() {
 		"Please enter your real name here (e.g. 'Bob Meyer')."
 	);
 	TheBubbleHelper->SetHelp( 
+		mReplyToControl, 
+		"Here you can specify a mail-address that should receive the answers\n"
+		"to the mails you sent (using this identity).\n"
+		"If you leave this empty, the answers will go to the mail-address\n"
+		"given above (or the default)."
+		"Use this only if you want to explicitly redirect answers to somewhere\n"
+		"else."
+	);
+	TheBubbleHelper->SetHelp( 
 		mIsBucketControl, 
 		"Check this if the corresponding pop-account is a catch-all account,\n"
 		"and this identity should be used for unknown addresses\n"
@@ -411,6 +424,7 @@ void BmPrefsIdentityView::Initialize() {
 	mMailAddrControl->SetTarget( this);
 	mAliasesControl->SetTarget( this);
 	mRealNameControl->SetTarget( this);
+	mReplyToControl->SetTarget( this);
 	mIsBucketControl->SetTarget( this);
 
 	mIdentListView->SetSelectionMessage( new BMessage( BM_SELECTION_CHANGED));
@@ -440,24 +454,7 @@ void BmPrefsIdentityView::WriteStateInfo() {
 		-	
 \*------------------------------------------------------------------------------*/
 bool BmPrefsIdentityView::SanityCheck() {
-	if (!InitDone())
-		return true;
-	BmString complaint, fieldName;
-	BMessage msg( BM_COMPLAIN_ABOUT_FIELD);
-	BmModelItemMap::const_iterator iter;
-	for(	iter = TheIdentityList->begin(); 
-			iter != TheIdentityList->end(); ++iter) {
-		BmIdentity* ident = dynamic_cast<BmIdentity*>( iter->second.Get());
-		if (ident && !ident->SanityCheck( complaint, fieldName)) {
-			msg.AddPointer( MSG_ITEM, (void*)ident);
-			msg.AddString( MSG_COMPLAINT, complaint.String());
-			if (fieldName.Length())
-				msg.AddString( MSG_FIELD_NAME, fieldName.String());
-			ThePrefsWin->SendMsgToSubView( Name(), &msg);
-			return false;
-		}
-	}
-	return true;
+	return DoSanityCheck( TheIdentityList.Get(), Name());
 }
 
 /*------------------------------------------------------------------------------*\
@@ -503,6 +500,8 @@ void BmPrefsIdentityView::MessageReceived( BMessage* msg) {
 						mCurrIdent->MailAliases( mAliasesControl->Text());
 					else if ( source == mRealNameControl)
 						mCurrIdent->RealName( mRealNameControl->Text());
+					else if ( source == mReplyToControl)
+						mCurrIdent->ReplyTo( mReplyToControl->Text());
 					NoticeChange();
 				}
 				break;
@@ -629,6 +628,7 @@ void BmPrefsIdentityView::ShowIdentity( int32 selection) {
 	mMailAddrControl->SetEnabled( enabled);
 	mAliasesControl->SetEnabled( enabled);
 	mRealNameControl->SetEnabled( enabled);
+	mReplyToControl->SetEnabled( enabled);
 	mSignatureControl->SetEnabled( enabled);
 	mSmtpControl->SetEnabled( enabled);
 	mPopControl->SetEnabled( enabled);
@@ -641,6 +641,7 @@ void BmPrefsIdentityView::ShowIdentity( int32 selection) {
 		mMailAddrControl->SetTextSilently( "");
 		mAliasesControl->SetTextSilently( "");
 		mRealNameControl->SetTextSilently( "");
+		mReplyToControl->SetTextSilently( "");
 		mSignatureControl->ClearMark();
 		mPopControl->ClearMark();
 		mSmtpControl->ClearMark();
@@ -663,6 +664,9 @@ void BmPrefsIdentityView::ShowIdentity( int32 selection) {
 					);
 					mRealNameControl->SetTextSilently( 
 						mCurrIdent->RealName().String()
+					);
+					mReplyToControl->SetTextSilently( 
+						mCurrIdent->ReplyTo().String()
 					);
 					mSignatureControl->MarkItem( 
 						mCurrIdent->SignatureName().Length() 

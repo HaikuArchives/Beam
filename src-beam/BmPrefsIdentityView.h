@@ -153,6 +153,7 @@ private:
 	BmTextControl* mIdentityControl;
 	BmTextControl* mMailAddrControl;
 	BmTextControl* mRealNameControl;
+	BmTextControl* mReplyToControl;
 	BmMenuControl* mSignatureControl;
 	BmMenuControl* mPopControl;
 	BmMenuControl* mSmtpControl;
