@@ -84,7 +84,6 @@ BmPrefs* BmPrefs::CreateInstance() {
 		prefs->Store();
 	}
 
-	theInstance = prefs;
 	return prefs;
 }
 
@@ -96,6 +95,7 @@ BmPrefs::BmPrefs( void)
 	:	BArchivable() 
 	,	mLocker( "PrefsLock")
 {
+	theInstance = this;
 	InitDefaults();
 	mSavedPrefsMsg = mPrefsMsg = mDefaultsMsg;
 	SetLoglevels();
@@ -113,6 +113,7 @@ BmPrefs::BmPrefs( BMessage* archive)
 	:	BArchivable( archive)
 	,	mLocker( "PrefsLock")
 {
+	theInstance = this;
 	InitDefaults();
 	mSavedPrefsMsg = mPrefsMsg = *archive;
 	int16 version = 0;
