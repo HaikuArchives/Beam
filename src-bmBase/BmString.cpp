@@ -1410,6 +1410,7 @@ BmString::_Init(const char* str, int32 len)
 	ASSERT(_privateData == NULL);
 
 	_privateData = (char*)malloc(len + sizeof(int32) + 1);
+	assert( _privateData);
 	_privateData += sizeof(int32);
 	
 	memcpy(_privateData, str, len);
@@ -1457,6 +1458,8 @@ BmString::_GrowBy(int32 size)
 	_privateData = (char*)realloc(_privateData, 
 		curLen + size + sizeof(int32) + 1);
 		
+	assert( _privateData);
+
 	_privateData += sizeof(int32);
 	
 	_SetLength(curLen + size);	
@@ -1477,6 +1480,7 @@ BmString::_OpenAtBy(int32 offset, int32 length)
 		_privateData -= sizeof(int32);
 	
 	_privateData = (char*)realloc(_privateData , oldLength + length + sizeof(int32) + 1);
+	assert( _privateData);
 	_privateData += sizeof(int32);
 	
 	memmove(_privateData + offset + length, _privateData + offset,
@@ -1502,6 +1506,7 @@ BmString::_ShrinkAtBy(int32 offset, int32 length)
 	
 	_privateData -= sizeof(int32);	
 	_privateData = (char*)realloc(_privateData, oldLength - length + sizeof(int32) + 1);
+	assert( _privateData);
 	_privateData += sizeof(int32);
 	
 	_SetLength(oldLength - length);	
