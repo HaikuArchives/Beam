@@ -55,6 +55,7 @@ using namespace regexx;
 #include "BmLogHandler.h"
 #include "BmMailEditWin.h"
 #include "BmMailFolderList.h"
+#include "BmMailMover.h"
 #include "BmMailRef.h"
 #include "BmMailView.h"
 #include "BmMailViewWin.h"
@@ -549,6 +550,28 @@ void BmApplication::MessageReceived( BMessage* msg) {
 					}
 					mailRef->RemoveRef();	// msg is no more refering to mailRef
 				}
+				break;
+			}
+			case BMM_MOVE: {
+				static int jobNum = 1;
+				BMessage tmpMsg( BM_JOBWIN_MOVEMAILS);
+				BmMailRef* ref;
+				for( int i=0; msg->FindPointer( MSG_MAILREF, i, (void**)&ref)==B_OK; ++i) {
+					if (ref) {
+						tmpMsg.AddRef( BmMailMover::MSG_REFS, ref->EntryRefPtr());
+						ref->RemoveRef();		// msg no longer refers to mail-ref
+					}
+				}
+				BmString folderName = msg->FindString( BmListModel::MSG_ITEMKEY);
+				BmRef<BmListModelItem> itemRef = TheMailFolderList->FindItemByKey( folderName);
+				BmMailFolder* folder = dynamic_cast< BmMailFolder*>( itemRef.Get());
+				if (!folder)
+					break;
+				BmString jobName = folder->DisplayKey();
+				jobName << jobNum++;
+				tmpMsg.AddString( BmJobModel::MSG_JOB_NAME, jobName.String());
+				tmpMsg.AddString( BmJobModel::MSG_MODEL, folder->Key().String());
+				TheJobStatusWin->PostMessage( &tmpMsg);
 				break;
 			}
 			case c_about_window_url_invoked: {
