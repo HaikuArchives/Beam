@@ -170,8 +170,9 @@ void BmFilterChain::ForeignKeyChanged( const BmString& key,
 	BmAutolockCheckGlobal lock( ModelLocker());
 	lock.IsLocked() 							|| BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
 	BmModelItemMap::const_iterator iter;
-	for( iter = inheritedList::begin(); iter != inheritedList::end(); ++iter) {
-		BmChainedFilter* filter = dynamic_cast< BmChainedFilter*>( iter->second.Get());
+	for( iter = inheritedList::begin(); iter != inheritedList::end(); ) {
+		BmChainedFilter* filter = dynamic_cast< BmChainedFilter*>( iter++->second.Get());
+							// need iter++ here because RenameItem will destroy iter!
 		if (key == BmChainedFilter::MSG_FILTERNAME) {
 			if (filter && filter->Key() == oldVal)
 				RenameItem( oldVal, newVal);
@@ -318,8 +319,9 @@ void BmFilterChainList::ForeignKeyChanged( const BmString& key,
 	lock.IsLocked() 							|| BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
 	if (key == BmChainedFilter::MSG_FILTERNAME) {
 		BmModelItemMap::const_iterator iter;
-		for( iter = begin(); iter != end(); ++iter) {
-			BmFilterChain* chain = dynamic_cast< BmFilterChain*>( iter->second.Get());
+		for( iter = begin(); iter != end(); ) {
+			BmFilterChain* chain = dynamic_cast< BmFilterChain*>( iter++->second.Get());
+							// need iter++ here because RenameItem will destroy iter!
 			chain->RenameItem( oldVal, newVal);
 		}
 	}

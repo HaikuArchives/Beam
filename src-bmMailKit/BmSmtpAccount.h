@@ -38,13 +38,6 @@
 #include <List.h>
 #include "BmString.h"
 
-#include <socket.h>
-#ifdef BEAM_FOR_BONE
-# include <netinet/in.h>
-#endif
-
-#include <NetAddress.h>
-
 #include "BmDataModel.h"
 #include "BmMail.h"
 
@@ -54,6 +47,7 @@ enum {
 						// smtp-connection
 };
 
+class BNetAddress;
 class BmSmtpAccountList;
 /*------------------------------------------------------------------------------*\
 	BmSmtpAccount 

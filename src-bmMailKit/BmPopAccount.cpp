@@ -34,6 +34,7 @@
 #include <File.h>
 #include <Message.h>
 #include <MessageRunner.h>
+#include <NetAddress.h>
 
 #include "regexx.hh"
 using namespace regexx;
@@ -556,8 +557,9 @@ void BmPopAccountList::ForeignKeyChanged( const BmString& key,
 	BmAutolockCheckGlobal lock( ModelLocker());
 	lock.IsLocked() 							|| BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
 	BmModelItemMap::const_iterator iter;
-	for( iter = begin(); iter != end(); ++iter) {
-		BmPopAccount* acc = dynamic_cast< BmPopAccount*>( iter->second.Get());
+	for( iter = begin(); iter != end(); ) {
+		BmPopAccount* acc = dynamic_cast< BmPopAccount*>( iter++->second.Get());
+							// need iter++ here because RenameItem will destroy iter!
 		if (key == BmPopAccount::MSG_FILTER_CHAIN) {
 			if (acc && acc->FilterChain() == oldVal)
 				acc->FilterChain( newVal);

@@ -255,8 +255,9 @@ void BmIdentityList::ForeignKeyChanged( const BmString& key,
 	BmAutolockCheckGlobal lock( ModelLocker());
 	lock.IsLocked() 							|| BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
 	BmModelItemMap::const_iterator iter;
-	for( iter = begin(); iter != end(); ++iter) {
-		BmIdentity* ident = dynamic_cast< BmIdentity*>( iter->second.Get());
+	for( iter = begin(); iter != end(); ) {
+		BmIdentity* ident = dynamic_cast< BmIdentity*>( iter++->second.Get());
+							// need iter++ here because RenameItem will destroy iter!
 		if (key == BmIdentity::MSG_POP_ACCOUNT) {
 			if (ident && ident->POPAccount() == oldVal)
 				ident->POPAccount( newVal);

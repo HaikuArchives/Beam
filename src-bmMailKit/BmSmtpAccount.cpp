@@ -32,6 +32,7 @@
 #include <ByteOrder.h>
 #include <File.h>
 #include <Message.h>
+#include <NetAddress.h>
 
 #include "BmBasics.h"
 #include "BmLogHandler.h"
