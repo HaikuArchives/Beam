@@ -70,10 +70,96 @@ using namespace regexx;
 #include "BmPrefs.h"
 #include "BmPrefsWin.h"
 #include "BmResources.h"
+#include "BmRosterBase.h"
 #include "BmSignature.h"
 #include "BmSmtpAccount.h"
 #include "BmStorageUtil.h"
 #include "BmUtil.h"
+
+/*------------------------------------------------------------------------------*\
+	BmRoster
+		-	a class that can be used by add-ons to retrieve info about
+			Beam's state.
+\*------------------------------------------------------------------------------*/
+class BmRoster : public BmRosterBase {
+
+public:
+	virtual ~BmRoster()						{}
+	
+	// overrides of base class:
+	void FillMenuFromList( const char* listName, BMenu* menu, 
+								  BHandler* menuTarget, BMessage* msgTemplate);
+};
+
+void BmRoster::FillMenuFromList( const char* ln, BMenu* menu, 
+										   BHandler* target, BMessage* msgTempl) {
+	BmString listName(ln);
+	if (menu) {
+		BFont font;
+		menu->GetFont( &font);
+		if (listName == BM_ROSTER_STATUSLIST) {
+			const char* stats[] = {
+				BM_MAIL_STATUS_DRAFT, BM_MAIL_STATUS_FORWARDED, 
+				BM_MAIL_STATUS_NEW, 
+				BM_MAIL_STATUS_PENDING, BM_MAIL_STATUS_READ, 
+				BM_MAIL_STATUS_REDIRECTED,
+				BM_MAIL_STATUS_REPLIED, BM_MAIL_STATUS_SENT,	NULL
+			};
+			for( int i=0; stats[i]; ++i) {
+				BMenuItem* item 
+					= new BMenuItem( stats[i], new BMessage(*msgTempl));
+				item->SetTarget( target);
+				menu->AddItem( item);
+			}
+		} else if (listName == BM_ROSTER_FOLDERLIST) {
+			AddListToMenu( TheMailFolderList.Get(), menu, msgTempl, 
+								target, &font, true);
+		} else if (listName == BM_ROSTER_IDENTITYLIST) {
+			AddListToMenu( TheIdentityList.Get(), menu, msgTempl, 
+								target, &font);
+		}
+	}
+}
+
+
+
+/*------------------------------------------------------------------------------*\
+	BmSlaveHandler
+		-	
+\*------------------------------------------------------------------------------*/
+class BmSlaveHandler {
+public:
+	BmSlaveHandler();
+	~BmSlaveHandler();
+	void Run( const char* name, thread_func func, void* data);
+private:
+	int32 mSlaveNum;
+};
+
+BmSlaveHandler::BmSlaveHandler()
+	:	mSlaveNum( 1)
+{
+}
+
+BmSlaveHandler::~BmSlaveHandler()
+{
+}
+
+void BmSlaveHandler::Run( const char* name, thread_func func, void* data) 
+{
+	BmString tname( name);
+	tname << "(" << mSlaveNum++ << ")";
+	thread_id t_id = spawn_thread( func, tname.String(), 
+											 B_NORMAL_PRIORITY, data);
+	if (t_id < 0)
+		throw BM_runtime_error("SlaveHandler::Run(): Could not spawn thread");
+	resume_thread( t_id);
+}
+
+static BmSlaveHandler SlaveHandler;
+
+
+
 
 int BmApplication::InstanceCount = 0;
 
@@ -93,6 +179,7 @@ const char* const BmApplication::MSG_OPT_VALUE = 	"bm:optv";
 const char* const BmApplication::MSG_SUBJECT = 		"bm:subj";
 const char* const BmApplication::MSG_SELECTED_TEXT = 	"bm:seltext";
 const char* const BmApplication::MSG_SENDING_REFVIEW = 	"bm:srefv";
+
 
 /*------------------------------------------------------------------------------*\
 	BmApplication()
@@ -191,6 +278,9 @@ BmApplication::BmApplication( const char* sig)
 		TheJobStatusWin->Hide();
 		TheJobStatusWin->Show();
 
+		// create the info-roster (used by add-ons):
+		BeamRoster = new BmRoster();
+
 		// create most of our list-models:
 		BmSignatureList::CreateInstance();
 
@@ -270,6 +360,7 @@ BmApplication::~BmApplication() {
 	delete TheResources;
 	delete TheLogHandler;
 	delete mStartupLocker;
+	delete BeamRoster;
 	InstanceCount--;
 }
 
@@ -448,6 +539,8 @@ bool BmApplication::QuitRequested() {
 			}
 		}
 	}
+	snooze( 200*1000);
+		// there might be slaves running, give them some more time to stop.
 	BM_LOG( BM_LogApp, 
 			  shouldQuit ? "ok, App is quitting" : "no, app isn't quitting");
 	return shouldQuit;
@@ -512,8 +605,8 @@ void BmApplication::RefsReceived( BMessage* msg) {
 
 /*------------------------------------------------------------------------------*\
 	MessageReceived( msg)
-		-	handles all actions on mailrefs, like replying, forwarding, and creating
-			new mails
+		-	handles all actions on mailrefs, like replying, forwarding, 
+			and creating new mails
 \*------------------------------------------------------------------------------*/
 void BmApplication::MessageReceived( BMessage* msg) {
 	try {
@@ -571,242 +664,38 @@ void BmApplication::MessageReceived( BMessage* msg) {
 				break;
 			}
 			case BMM_REDIRECT: {
-				BmMailRefVect* refVect = NULL;
-				msg->FindPointer( MSG_MAILREF_VECT, (void**)&refVect);
-				if (!refVect)
-					break;
-				BmMailRef* mailRef;
-				BmMailRefVect::iterator iter;
-				for( iter = refVect->begin(); iter != refVect->end(); ++iter) {
-					mailRef = iter->Get();
-					BmRef<BmMail> mail = BmMail::CreateInstance( mailRef);
-					if (mail) {
-						BM_LOG( BM_LogApp, 
-								  BmString("Asked to redirect mail <") 
-								  		<< mailRef->TrackerName() << ">");
-						if (mail->InitCheck() != B_OK)
-							mail->StartJobInThisThread( BmMail::BM_READ_MAIL_JOB);
-						if (mail->InitCheck() != B_OK)
-							continue;
-						BmRef<BmMail> newMail;
-						newMail = mail->CreateRedirect();
-						if (newMail) {
-							BmMailEditWin* editWin 
-								= BmMailEditWin::CreateInstance( newMail.Get());
-							if (editWin)
-								editWin->Show();
-						}
-					}
-				}
-				delete refVect;
-							// freeing all references to mailrefs contained in vector
+				DetachCurrentMessage();
+				SlaveHandler.Run( "Msg-Redirector", RedirectMails, msg);
 				break;
 			}
 			case BMM_EDIT_AS_NEW: {
-				BmMailRefVect* refVect = NULL;
-				msg->FindPointer( MSG_MAILREF_VECT, (void**)&refVect);
-				if (!refVect)
-					break;
-				BmMailRef* mailRef;
-				BmMailRefVect::iterator iter;
-				for( iter = refVect->begin(); iter != refVect->end(); ++iter) {
-					mailRef = iter->Get();
-					BmRef<BmMail> mail = BmMail::CreateInstance( mailRef);
-					if (mail) {
-						BM_LOG( BM_LogApp, 
-								  BmString("Asked to edit mail <") 
-								  		<< mailRef->TrackerName() << "> as new");
-						if (mail->InitCheck() != B_OK)
-							mail->StartJobInThisThread( BmMail::BM_READ_MAIL_JOB);
-						if (mail->InitCheck() != B_OK)
-							continue;
-						BmRef<BmMail> newMail;
-						newMail = mail->CreateAsNew();
-						if (newMail) {
-							BmMailEditWin* editWin 
-								= BmMailEditWin::CreateInstance( newMail.Get());
-							if (editWin)
-								editWin->Show();
-						}
-					}
-				}
-				delete refVect;
-							// freeing all references to mailrefs contained in vector
+				DetachCurrentMessage();
+				SlaveHandler.Run( "Msg-Editor", EditMailsAsNew, msg);
 				break;
 			}
 			case BMM_REPLY:
 			case BMM_REPLY_LIST:
 			case BMM_REPLY_ORIGINATOR:
 			case BMM_REPLY_ALL: {
-				int32 buttonPressed=0;
-				BmMailRefVect* refVect = NULL;
-				msg->FindPointer( MSG_MAILREF_VECT, (void**)&refVect);
-				if (!refVect)
-					break;
-				int32 msgCount = refVect->size();
-				if (msgCount>1 
-				&& msg->FindInt32( "which", &buttonPressed) != B_OK) {
-					// first step, ask user about how to forward multiple messages:
-					BmString s("You have selected more than one message.\n\n"
-								  "Should Beam join the message-bodies into one "
-								  "single mail and reply to that or would you prefer "
-								  "to keep the messages separate?");
-					BAlert* alert = new BAlert( 
-						"Forwarding Multiple Mails", s.String(),
-						"Keep Separate", "Join per Recipient", "Join All", 
-						B_WIDTH_AS_USUAL,	B_EVEN_SPACING, B_IDEA_ALERT
-					);
-					alert->Go( new BInvoker( new BMessage(*msg), 
-													 BMessenger( this)));
-				} else {
-					BM_LOG( BM_LogApp, 
-							  BmString("Asked to reply to ") << msgCount << " mails.");
-					ReplyToMails( msg, buttonPressed>0, buttonPressed==2);
-					delete refVect;
-							// freeing all references to mailrefs contained in vector
-				}
+				DetachCurrentMessage();
+				SlaveHandler.Run( "Msg-Replier", ReplyToMails, msg);
 				break;
 			}
 			case BMM_FORWARD_ATTACHED:
 			case BMM_FORWARD_INLINE:
 			case BMM_FORWARD_INLINE_ATTACH: {
-				int32 buttonPressed=1;
-				BmMailRefVect* refVect = NULL;
-				msg->FindPointer( MSG_MAILREF_VECT, (void**)&refVect);
-				if (!refVect)
-					break;
-				int32 msgCount = refVect->size();
-				if (msgCount>1 
-				&& msg->FindInt32( "which", &buttonPressed) != B_OK) {
-					// first step, ask user about how to forward multiple messages:
-					BmString s("You have selected more than one message.\n\n"
-								  "Should Beam join the message-bodies into one "
-								  "single mail and forward that or would you prefer "
-								  "to keep the messages separate?");
-					BAlert* alert = new BAlert( 
-						"Forwarding Multiple Mails", s.String(),
-					 	"Cancel", "Keep Separate", "Join", 
-					 	B_WIDTH_AS_USUAL,	B_OFFSET_SPACING, B_IDEA_ALERT
-					);
-					alert->SetShortcut( 0, B_ESCAPE);
-					alert->Go( new BInvoker( new BMessage(*msg), 
-													 BMessenger( this)));
-				} else {
-					if (buttonPressed > 0) {
-						BM_LOG( BM_LogApp, 
-							BmString("Asked to forward ") << msgCount << " mails.");
-						ForwardMails( msg, buttonPressed==2);
-					}
-					delete refVect;
-							// freeing all references to mailrefs contained in vector
-				}
+				DetachCurrentMessage();
+				SlaveHandler.Run( "Msg-Forwarder", ForwardMails, msg);
 				break;
 			}
 			case BMM_MARK_AS: {
-				int32 buttonPressed=1;
-				BmString newStatus = msg->FindString( MSG_STATUS);
-				BmMailRefVect* refVect = NULL;
-				msg->FindPointer( MSG_MAILREF_VECT, (void**)&refVect);
-				if (!refVect)
-					break;
-				int32 msgCount = refVect->size();
-				if (msgCount>1 
-				&& msg->FindInt32( "which", &buttonPressed) != B_OK) {
-					// first step, check if user has asked to mark as read and 
-					// has selected messages with advanced statii (like replied
-					// or forwarded). If so,  we ask the user about how to 
-					// handle those:
-					if (newStatus == BM_MAIL_STATUS_READ) {
-						bool hasAdvanced = false;
-						BmMailRef* mailRef;
-						BmMailRefVect::iterator iter;
-						for( 
-							iter = refVect->begin(); iter != refVect->end(); ++iter
-						) {
-							mailRef = iter->Get();
-							if (mailRef->Status() != BM_MAIL_STATUS_NEW
-							&&  mailRef->Status() != BM_MAIL_STATUS_READ) {
-								hasAdvanced = true;
-								break;
-							}
-						}
-						if (hasAdvanced) {
-							BmString s("Some of the selected messages are not new."
-										  "\n\nShould Beam mark only the new messages "
-										  "as being read?");
-							BAlert* alert = new BAlert( 
-								"Mark Mails As", s.String(), "Cancel", 
-								"Mark All Messages", "Just Mark New Messages", 
-								B_WIDTH_AS_USUAL, B_OFFSET_SPACING, B_IDEA_ALERT
-							);
-							alert->SetShortcut( 0, B_ESCAPE);
-							alert->Go( new BInvoker( new BMessage(*msg), 
-															 BMessenger( this)));
-							break;
-						} else
-							buttonPressed = 1;	// mark all messages
-					} else
-						buttonPressed = 1;	// mark all messages
-				}
-				if (buttonPressed != 0) {
-					BmMailRef* mailRef;
-					BmMailRefVect::iterator iter;
-					for( iter = refVect->begin(); iter != refVect->end(); ++iter) {
-						mailRef = iter->Get();
-						if (buttonPressed==1 
-						|| mailRef->Status() == BM_MAIL_STATUS_NEW) {
-							BM_LOG( BM_LogApp, 
-									  BmString("marking mail <") << mailRef->TrackerName()
-									  		<< "> as " << newStatus);
-							mailRef->MarkAs( newStatus.String());
-						}
-					}
-				}
-				delete refVect;
-							// freeing all references to mailrefs contained in vector
+				DetachCurrentMessage();
+				SlaveHandler.Run( "Msg-Marker", MarkMailsAs, msg);
 				break;
 			}
 			case BMM_MOVE: {
-				static int jobNum = 1;
-				BmMailRefVect* refVect = NULL;
-				msg->FindPointer( MSG_MAILREF_VECT, (void**)&refVect);
-				if (!refVect)
-					break;
-				int32 countFound = refVect->size();
-				if (countFound > 0) {
-					BMessage tmpMsg( BM_JOBWIN_MOVEMAILS);
-					BmString folderName = msg->FindString( BmListModel::MSG_ITEMKEY);
-					BmRef<BmListModelItem> itemRef 
-						= TheMailFolderList->FindItemByKey( folderName);
-					BmMailFolder* folder = dynamic_cast< BmMailFolder*>( itemRef.Get());
-					if (!folder)
-						break;
-					BmString jobName = folder->DisplayKey();
-					jobName << jobNum++;
-					tmpMsg.AddString( BmJobModel::MSG_JOB_NAME, jobName.String());
-					tmpMsg.AddString( BmJobModel::MSG_MODEL, folder->Key().String());
-					// now add a pointer to an array of entry_refs to msg:
-					struct entry_ref *refs = new entry_ref [countFound];
-					BmMailRef* mailRef;
-					BmMailRefVect::iterator iter;
-					int32 index=0;
-					for( iter = refVect->begin(); iter != refVect->end(); ++iter) {
-						mailRef = iter->Get();
-						BM_LOG( 
-							BM_LogApp, 
-							BmString("Asked to move mail <") 
-								<< mailRef->TrackerName() << "> to folder <"
-								<< folder->DisplayKey() << ">"
-						);
-						refs[index++] = mailRef->EntryRef();
-					}
-					tmpMsg.AddPointer( BmMailMover::MSG_REFS, (void*)refs);
-					tmpMsg.AddInt32( BmMailMover::MSG_REF_COUNT, countFound);
-							// message takes ownership of refs-array!
-					TheJobStatusWin->PostMessage( &tmpMsg);
-				}
-				delete refVect;
-							// freeing all references to mailrefs contained in vector
+				DetachCurrentMessage();
+				SlaveHandler.Run( "Msg-Mover", MoveMails, msg);
 				break;
 			}
 			case c_about_window_url_invoked: {
@@ -823,8 +712,10 @@ void BmApplication::MessageReceived( BMessage* msg) {
 			case BMM_PRINT: {
 				if (!mPrintSetup)
 					PageSetup();
-				if (mPrintSetup)
-					PrintMails( msg);
+				if (mPrintSetup) {
+					DetachCurrentMessage();
+					SlaveHandler.Run( "Msg-Printer", PrintMails, msg);
+				}
 				break;
 			}
 			case BMM_PREFERENCES: {
@@ -844,69 +735,8 @@ void BmApplication::MessageReceived( BMessage* msg) {
 				break;
 			}
 			case BMM_TRASH: {
-				BmMailRefVect* refVect = NULL;
-				msg->FindPointer( MSG_MAILREF_VECT, (void**)&refVect);
-				if (!refVect)
-					break;
-				int32 countFound = refVect->size();
-				if (countFound>0) {
-					struct entry_ref *refs = new entry_ref [countFound];
-					BmMailRef* mailRef;
-					BmMailRefVect::iterator iter;
-					int32 index=0;
-					for( iter = refVect->begin(); iter != refVect->end(); ++iter) {
-						mailRef = iter->Get();
-						BM_LOG( BM_LogApp, 
-								  BmString("Asked to trash mail <") 
-								  		<< mailRef->TrackerName() << ">");
-						refs[index++] = mailRef->EntryRef();
-//						mailRef->MarkAs( BM_MAIL_STATUS_READ);
-								// mark mail as read before moving to trash, so that
-								// we don't confuse our new-mail counter
-					}
-					MoveToTrash( refs, index);
-					delete [] refs;
-				}
-				delete refVect;
-							// freeing all references to mailrefs contained in vector
-				break;
-			}
-			case BM_FILL_MENU_FROM_LIST: {
-				BmString listName = msg->FindString( MSG_LIST_NAME);
-				BMenu* menu;
-				if (msg->FindPointer( MSG_MENU_POINTER, (void**)&menu) != B_OK)
-					break;
-				BHandler* target;
-				if (msg->FindPointer( MSG_MENU_TARGET, (void**)&target) != B_OK)
-					break;
-				BMessage msgTempl;
-				if (msg->FindMessage( MSG_MSG_TEMPLATE, &msgTempl) != B_OK)
-					break;
-				if (menu) {
-					BFont font;
-					menu->GetFont( &font);
-					if (listName == BM_STATUSLIST_NAME) {
-						const char* stats[] = {
-							BM_MAIL_STATUS_DRAFT, BM_MAIL_STATUS_FORWARDED, 
-							BM_MAIL_STATUS_NEW, 
-							BM_MAIL_STATUS_PENDING, BM_MAIL_STATUS_READ, 
-							BM_MAIL_STATUS_REDIRECTED,
-							BM_MAIL_STATUS_REPLIED, BM_MAIL_STATUS_SENT,	NULL
-						};
-						for( int i=0; stats[i]; ++i) {
-							BMenuItem* item 
-								= new BMenuItem( stats[i], new BMessage(msgTempl));
-							item->SetTarget( target);
-							menu->AddItem( item);
-						}
-					} else if (listName == BM_FOLDERLIST_NAME) {
-						AddListToMenu( TheMailFolderList.Get(), menu, &msgTempl, 
-											target, &font, true);
-					} else if (listName == BM_IDENTITYLIST_NAME) {
-						AddListToMenu( TheIdentityList.Get(), menu, &msgTempl, 
-											target, &font);
-					}
-				}
+				DetachCurrentMessage();
+				SlaveHandler.Run( "Msg-Trasher", TrashMails, msg);
 				break;
 			}
 			case B_SILENT_RELAUNCH: {
@@ -914,6 +744,14 @@ void BmApplication::MessageReceived( BMessage* msg) {
 				if (TheMainWindow->IsMinimized())
 					TheMainWindow->Minimize( false);
 				inherited::MessageReceived( msg);
+				break;
+			}
+			case BM_DESKBAR_GET_MBOX_DEVICE: {
+				if (!msg->IsReply()) {
+					BMessage reply( BM_DESKBAR_GET_MBOX_DEVICE);
+					reply.AddInt32( "mbox_dev", ThePrefs->MailboxVolume.Device());
+					msg->SendReply( &reply, (BHandler*)NULL, 1000000);
+				}
 				break;
 			}
 			default:
@@ -928,117 +766,393 @@ void BmApplication::MessageReceived( BMessage* msg) {
 }
 
 /*------------------------------------------------------------------------------*\
+	MarkMailsAs( msg)
+		-	sets status for all mailref's contained in the given message.
+		-	this is a thread-entry func.
+\*------------------------------------------------------------------------------*/
+int32 BmApplication::MarkMailsAs( void* data)
+{
+	BMessage* msg = static_cast< BMessage*>( data);
+	if (!msg)
+		return B_OK;
+	int32 buttonPressed = 1;
+		// mark all messages by default
+	BmString newStatus = msg->FindString( MSG_STATUS);
+	BmMailRefVect* refVect = NULL;
+	msg->FindPointer( MSG_MAILREF_VECT, (void**)&refVect);
+	if (!refVect)
+		return B_OK;
+	int32 msgCount = refVect->size();
+	if (msgCount>1) {
+		// first step, check if user has asked to mark as read and 
+		// has selected messages with advanced statii (like replied
+		// or forwarded). If so,  we ask the user about how to 
+		// handle those:
+		if (newStatus == BM_MAIL_STATUS_READ) {
+			bool hasAdvanced = false;
+			BmMailRef* mailRef;
+			BmMailRefVect::iterator iter;
+			for( 
+				iter = refVect->begin(); iter != refVect->end(); ++iter
+			) {
+				mailRef = iter->Get();
+				if (mailRef->Status() != BM_MAIL_STATUS_NEW
+				&&  mailRef->Status() != BM_MAIL_STATUS_READ) {
+					hasAdvanced = true;
+					break;
+				}
+			}
+			if (hasAdvanced) {
+				BmString s("Some of the selected messages are not new."
+							  "\n\nShould Beam mark only the new messages "
+							  "as being read?");
+				BAlert* alert = new BAlert( 
+					"Set Mail Status", s.String(), "Cancel", 
+					"Set Status of All Messages", "Set Status of New Messages Only", 
+					B_WIDTH_AS_USUAL, B_OFFSET_SPACING, B_IDEA_ALERT
+				);
+				alert->SetShortcut( 0, B_ESCAPE);
+				buttonPressed = alert->Go();
+			}
+		}
+	}
+	if (buttonPressed != 0) {
+		BmMailRef* mailRef;
+		BmMailRefVect::iterator iter;
+		for( iter = refVect->begin(); 
+			  !bmApp->IsQuitting() && iter != refVect->end(); ++iter) {
+			mailRef = iter->Get();
+			if (buttonPressed==1 || mailRef->Status() == BM_MAIL_STATUS_NEW) {
+				BM_LOG( BM_LogApp, 
+						  BmString("marking mail <") << mailRef->TrackerName()
+						  		<< "> as " << newStatus);
+				mailRef->MarkAs( newStatus.String());
+			}
+		}
+	}
+	delete refVect;
+				// freeing all references to mailrefs contained in vector
+	return B_OK;
+}
+
+/*------------------------------------------------------------------------------*\
+	MoveMails( msg)
+		-	moves mails to a new folder.
+		-	this is a thread-entry func.
+\*------------------------------------------------------------------------------*/
+int32 BmApplication::MoveMails( void* data)
+{
+	BMessage* msg = static_cast< BMessage*>( data);
+	if (!msg)
+		return B_OK;
+	static int jobNum = 1;
+	BmMailRefVect* refVect = NULL;
+	msg->FindPointer( MSG_MAILREF_VECT, (void**)&refVect);
+	if (!refVect)
+		return B_OK;
+	int32 countFound = refVect->size();
+	if (countFound > 0) {
+		BMessage tmpMsg( BM_JOBWIN_MOVEMAILS);
+		BmString folderName = msg->FindString( BmListModel::MSG_ITEMKEY);
+		BmRef<BmListModelItem> itemRef 
+			= TheMailFolderList->FindItemByKey( folderName);
+		BmMailFolder* folder = dynamic_cast< BmMailFolder*>( itemRef.Get());
+		if (!folder)
+			return B_OK;
+		BmString jobName = folder->DisplayKey();
+		jobName << jobNum++;
+		tmpMsg.AddString( BmJobModel::MSG_JOB_NAME, jobName.String());
+		tmpMsg.AddString( BmJobModel::MSG_MODEL, folder->Key().String());
+		// now add a pointer to an array of entry_refs to msg:
+		struct entry_ref *refs = new entry_ref [countFound];
+		BmMailRef* mailRef;
+		BmMailRefVect::iterator iter;
+		int32 index=0;
+		for( iter = refVect->begin(); 
+			  !bmApp->IsQuitting() && iter != refVect->end(); ++iter) {
+			mailRef = iter->Get();
+			BM_LOG( 
+				BM_LogApp, 
+				BmString("Asked to move mail <") 
+					<< mailRef->TrackerName() << "> to folder <"
+					<< folder->DisplayKey() << ">"
+			);
+			refs[index++] = mailRef->EntryRef();
+		}
+		tmpMsg.AddPointer( BmMailMover::MSG_REFS, (void*)refs);
+		tmpMsg.AddInt32( BmMailMover::MSG_REF_COUNT, countFound);
+				// message takes ownership of refs-array!
+		TheJobStatusWin->PostMessage( &tmpMsg);
+	}
+	delete refVect;
+				// freeing all references to mailrefs contained in vector
+	return B_OK;
+}
+
+/*------------------------------------------------------------------------------*\
+	TrashMails( msg)
+		-	moves mails to trash.
+		-	this is a thread-entry func.
+\*------------------------------------------------------------------------------*/
+int32 BmApplication::TrashMails( void* data)
+{
+	BMessage* msg = static_cast< BMessage*>( data);
+	if (!msg)
+		return B_OK;
+	BmMailRefVect* refVect = NULL;
+	msg->FindPointer( MSG_MAILREF_VECT, (void**)&refVect);
+	if (!refVect)
+		return B_OK;
+	int32 countFound = refVect->size();
+	if (countFound>0) {
+		struct entry_ref *refs = new entry_ref [countFound];
+		BmMailRef* mailRef;
+		BmMailRefVect::iterator iter;
+		int32 index=0;
+		for( iter = refVect->begin(); 
+			  !bmApp->IsQuitting() && iter != refVect->end(); ++iter) {
+			mailRef = iter->Get();
+			BM_LOG( BM_LogApp, 
+					  BmString("Asked to trash mail <") 
+					  		<< mailRef->TrackerName() << ">");
+			refs[index++] = mailRef->EntryRef();
+		}
+		MoveToTrash( refs, index);
+		delete [] refs;
+	}
+	delete refVect;
+				// freeing all references to mailrefs contained in vector
+	return B_OK;
+}
+
+/*------------------------------------------------------------------------------*\
+	EditMailsAsNew( msg)
+		-	creates mails from given set (copies them and starts edit).
+		-	this is a thread-entry func.
+\*------------------------------------------------------------------------------*/
+int32 BmApplication::EditMailsAsNew( void* data)
+{
+	BMessage* msg = static_cast< BMessage*>( data);
+	if (!msg)
+		return B_OK;
+	BmMailRefVect* refVect = NULL;
+	msg->FindPointer( MSG_MAILREF_VECT, (void**)&refVect);
+	if (!refVect)
+		return B_OK;
+	BmMailRef* mailRef;
+	BmMailRefVect::iterator iter;
+	for( iter = refVect->begin(); 
+		  !bmApp->IsQuitting() && iter != refVect->end(); ++iter) {
+		mailRef = iter->Get();
+		BmRef<BmMail> mail = BmMail::CreateInstance( mailRef);
+		if (mail) {
+			BM_LOG( BM_LogApp, 
+					  BmString("Asked to edit mail <") 
+					  		<< mailRef->TrackerName() << "> as new");
+			if (mail->InitCheck() != B_OK)
+				mail->StartJobInThisThread( BmMail::BM_READ_MAIL_JOB);
+			if (mail->InitCheck() != B_OK)
+				continue;
+			BmRef<BmMail> newMail;
+			newMail = mail->CreateAsNew();
+			if (newMail) {
+				BmMailEditWin* editWin 
+					= BmMailEditWin::CreateInstance( newMail.Get());
+				if (editWin)
+					editWin->Show();
+			}
+		}
+	}
+	delete refVect;
+				// freeing all references to mailrefs contained in vector
+	return B_OK;
+}
+
+/*------------------------------------------------------------------------------*\
+	RedirectMails( msg)
+		-	redirects given mails.
+		-	this is a thread-entry func.
+\*------------------------------------------------------------------------------*/
+int32 BmApplication::RedirectMails( void* data)
+{
+	BMessage* msg = static_cast< BMessage*>( data);
+	if (!msg)
+		return B_OK;
+	BmMailRefVect* refVect = NULL;
+	msg->FindPointer( MSG_MAILREF_VECT, (void**)&refVect);
+	if (!refVect)
+		return B_OK;
+	BmMailRef* mailRef;
+	BmMailRefVect::iterator iter;
+	for( iter = refVect->begin(); 
+	     !bmApp->IsQuitting() && iter != refVect->end(); ++iter) {
+		mailRef = iter->Get();
+		BmRef<BmMail> mail = BmMail::CreateInstance( mailRef);
+		if (mail) {
+			BM_LOG( BM_LogApp, 
+					  BmString("Asked to redirect mail <") 
+					  		<< mailRef->TrackerName() << ">");
+			if (mail->InitCheck() != B_OK)
+				mail->StartJobInThisThread( BmMail::BM_READ_MAIL_JOB);
+			if (mail->InitCheck() != B_OK)
+				continue;
+			BmRef<BmMail> newMail;
+			newMail = mail->CreateRedirect();
+			if (newMail) {
+				BmMailEditWin* editWin 
+					= BmMailEditWin::CreateInstance( newMail.Get());
+				if (editWin)
+					editWin->Show();
+			}
+		}
+	}
+	delete refVect;
+				// freeing all references to mailrefs contained in vector
+	return B_OK;
+}
+
+/*------------------------------------------------------------------------------*\
 	ForwardMails( msg, join)
 		-	forwards all mailref's contained in the given message.
 		-	depending on the param join, multiple mails are joined into one single 
 			forward or one forward is generated for each mail.
 \*------------------------------------------------------------------------------*/
-void BmApplication::ForwardMails( BMessage* msg, bool join) {
+int32 BmApplication::ForwardMails( void* data) {
+	BMessage* msg = static_cast< BMessage*>( data);
 	if (!msg)
-		return;
+		return B_OK;
 
+	int32 buttonPressed = 1;
 	BmMailRefVect* refVect = NULL;
 	msg->FindPointer( MSG_MAILREF_VECT, (void**)&refVect);
 	if (!refVect)
-		return;
+		return B_OK;
 
-	// tell sending ref-view that we are doing work:
-	BMessenger sendingRefView;
-	msg->FindMessenger( MSG_SENDING_REFVIEW, &sendingRefView);
-	if (sendingRefView.IsValid())
-		sendingRefView.SendMessage( BMM_SET_BUSY);
-
-	BmMailRef* mailRef = NULL;
-	BmRef<BmMail> newMail;
-	const char* selectedText = NULL;
-	msg->FindString( MSG_SELECTED_TEXT, &selectedText);
-	if (join) {
-		// fetch mail-refs from message and sort them chronologically:
-		typedef multimap< time_t, BmMailRef* >BmSortedRefMap;
-		BmSortedRefMap sortedRefMap;
-		for( uint32 index=0; index < refVect->size(); ++index) {
-			mailRef = (*refVect)[index].Get();
-			if (mailRef)
-				sortedRefMap.insert( pair<const time_t, 
-											BmMailRef*>( mailRef->When(), mailRef));
-		}
-		// now iterate over the sorted mail-refs:
-		for(  BmSortedRefMap::const_iterator iter = sortedRefMap.begin(); 
-				iter != sortedRefMap.end(); 
-				++iter) {
-			mailRef = iter->second;
-			BmRef<BmMail> mail = BmMail::CreateInstance( mailRef);
-			if (mail) {
-				if (mail->InitCheck() != B_OK)
-					mail->StartJobInThisThread( BmMail::BM_READ_MAIL_JOB);
-				if (mail->InitCheck() != B_OK)
-					continue;
-				if (msg->what == BMM_FORWARD_ATTACHED) {
-					if (iter == sortedRefMap.begin()) 
-						newMail = mail->CreateAttachedForward();
-					else
-						newMail->AddAttachmentFromRef( mailRef->EntryRefPtr(),
-																 mail->DefaultCharset());
-				} else if (msg->what == BMM_FORWARD_INLINE) {
-					if (iter == sortedRefMap.begin()) 
-						newMail = mail->CreateInlineForward( false, selectedText);
-					else
-						newMail->AddPartsFromMail( mail, false, BM_IS_FORWARD, false);
-				} else if (msg->what == BMM_FORWARD_INLINE_ATTACH) {
-					if (iter == sortedRefMap.begin()) 
-						newMail = mail->CreateInlineForward( true, selectedText);
-					else
-						newMail->AddPartsFromMail( mail, true, BM_IS_FORWARD, false);
-				}
-				if (iter == sortedRefMap.begin()) {
-					// set subject for multiple forwards:
-					BmString oldSub = mail->GetFieldVal( BM_FIELD_SUBJECT);
-					BmString subject = newMail->CreateForwardSubjectFor( 
-						oldSub + " (and more...)"
-					);
-					newMail->SetFieldVal( BM_FIELD_SUBJECT, subject);
-				}
-			}
-		}
-		if (newMail) {
-			BmMailEditWin* editWin 
-				= BmMailEditWin::CreateInstance( newMail.Get());
-			if (editWin)
-				editWin->Show();
-		}
-	} else {
-		// create one forward per mail:
-		for( uint32 index=0; index < refVect->size(); ++index) {
-			mailRef = (*refVect)[index].Get();
-			BmRef<BmMail> mail = BmMail::CreateInstance( mailRef);
-			if (mail) {
-				if (mail->InitCheck() != B_OK)
-					mail->StartJobInThisThread( BmMail::BM_READ_MAIL_JOB);
-				if (mail->InitCheck() != B_OK)
-					continue;
-				if (msg->what == BMM_FORWARD_ATTACHED) {
-					newMail = mail->CreateAttachedForward();
-				} else if (msg->what == BMM_FORWARD_INLINE) {
-					newMail = mail->CreateInlineForward( 
-						false, index==0 ? selectedText : NULL
-					);
-				} else if (msg->what == BMM_FORWARD_INLINE_ATTACH) {
-					newMail = mail->CreateInlineForward( 
-						true, index==0 ? selectedText : NULL
-					);
-				}
-				if (newMail) {
-					BmMailEditWin* editWin 
-						= BmMailEditWin::CreateInstance( newMail.Get());
-					if (editWin)
-						editWin->Show();
-				}
-			}
-		}
+	int32 msgCount = refVect->size();
+	if (msgCount>1) {
+		// first step, ask user about how to forward multiple messages:
+		BmString s("You have selected more than one message.\n\n"
+					  "Should Beam join the message-bodies into one "
+					  "single mail and forward that or would you prefer "
+					  "to keep the messages separate?");
+		BAlert* alert = new BAlert( 
+			"Forwarding Multiple Mails", s.String(),
+		 	"Cancel", "Keep Separate", "Join", 
+		 	B_WIDTH_AS_USUAL,	B_OFFSET_SPACING, B_IDEA_ALERT
+		);
+		alert->SetShortcut( 0, B_ESCAPE);
+		buttonPressed = alert->Go();
 	}
-	// now tell sending ref-view that we are finished:
-	if (sendingRefView.IsValid())
-		sendingRefView.SendMessage( BMM_UNSET_BUSY);
+	if (buttonPressed > 0) {
+
+		BM_LOG( BM_LogApp, 
+			BmString("Asked to forward ") << msgCount << " mails.");
+	
+		bool join = (buttonPressed == 2);
+	
+		// tell sending ref-view that we are doing work:
+		BMessenger sendingRefView;
+		msg->FindMessenger( MSG_SENDING_REFVIEW, &sendingRefView);
+		if (sendingRefView.IsValid())
+			sendingRefView.SendMessage( BMM_SET_BUSY);
+	
+		BmMailRef* mailRef = NULL;
+		BmRef<BmMail> newMail;
+		const char* selectedText = NULL;
+		msg->FindString( MSG_SELECTED_TEXT, &selectedText);
+		if (join) {
+			// fetch mail-refs from message and sort them chronologically:
+			typedef multimap< time_t, BmMailRef* >BmSortedRefMap;
+			BmSortedRefMap sortedRefMap;
+			for( uint32 index=0; index < refVect->size(); ++index) {
+				mailRef = (*refVect)[index].Get();
+				if (mailRef)
+					sortedRefMap.insert( pair<const time_t, 
+												BmMailRef*>( mailRef->When(), mailRef));
+			}
+			// now iterate over the sorted mail-refs:
+			for(  BmSortedRefMap::const_iterator iter = sortedRefMap.begin(); 
+					!bmApp->IsQuitting() && iter != sortedRefMap.end(); 
+					++iter) {
+				mailRef = iter->second;
+				BmRef<BmMail> mail = BmMail::CreateInstance( mailRef);
+				if (mail) {
+					if (mail->InitCheck() != B_OK)
+						mail->StartJobInThisThread( BmMail::BM_READ_MAIL_JOB);
+					if (mail->InitCheck() != B_OK)
+						continue;
+					if (msg->what == BMM_FORWARD_ATTACHED) {
+						if (iter == sortedRefMap.begin()) 
+							newMail = mail->CreateAttachedForward();
+						else
+							newMail->AddAttachmentFromRef( mailRef->EntryRefPtr(),
+																	 mail->DefaultCharset());
+					} else if (msg->what == BMM_FORWARD_INLINE) {
+						if (iter == sortedRefMap.begin()) 
+							newMail = mail->CreateInlineForward( false, selectedText);
+						else
+							newMail->AddPartsFromMail( mail, false, BM_IS_FORWARD, false);
+					} else if (msg->what == BMM_FORWARD_INLINE_ATTACH) {
+						if (iter == sortedRefMap.begin()) 
+							newMail = mail->CreateInlineForward( true, selectedText);
+						else
+							newMail->AddPartsFromMail( mail, true, BM_IS_FORWARD, false);
+					}
+					if (iter == sortedRefMap.begin()) {
+						// set subject for multiple forwards:
+						BmString oldSub = mail->GetFieldVal( BM_FIELD_SUBJECT);
+						BmString subject = newMail->CreateForwardSubjectFor( 
+							oldSub + " (and more...)"
+						);
+						newMail->SetFieldVal( BM_FIELD_SUBJECT, subject);
+					}
+				}
+			}
+			if (newMail) {
+				BmMailEditWin* editWin 
+					= BmMailEditWin::CreateInstance( newMail.Get());
+				if (editWin)
+					editWin->Show();
+			}
+		} else {
+			// create one forward per mail:
+			for( uint32 index=0; 
+				  !bmApp->IsQuitting() && index < refVect->size(); ++index) {
+				mailRef = (*refVect)[index].Get();
+				BmRef<BmMail> mail = BmMail::CreateInstance( mailRef);
+				if (mail) {
+					if (mail->InitCheck() != B_OK)
+						mail->StartJobInThisThread( BmMail::BM_READ_MAIL_JOB);
+					if (mail->InitCheck() != B_OK)
+						continue;
+					if (msg->what == BMM_FORWARD_ATTACHED) {
+						newMail = mail->CreateAttachedForward();
+					} else if (msg->what == BMM_FORWARD_INLINE) {
+						newMail = mail->CreateInlineForward( 
+							false, index==0 ? selectedText : NULL
+						);
+					} else if (msg->what == BMM_FORWARD_INLINE_ATTACH) {
+						newMail = mail->CreateInlineForward( 
+							true, index==0 ? selectedText : NULL
+						);
+					}
+					if (newMail) {
+						BmMailEditWin* editWin 
+							= BmMailEditWin::CreateInstance( newMail.Get());
+						if (editWin)
+							editWin->Show();
+					}
+				}
+			}
+		}
+		// now tell sending ref-view that we are finished:
+		if (sendingRefView.IsValid())
+			sendingRefView.SendMessage( BMM_UNSET_BUSY);
+	}
+		
+	delete refVect;
+			// freeing all references to mailrefs contained in vector
+	return B_OK;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -1047,14 +1161,37 @@ void BmApplication::ForwardMails( BMessage* msg, bool join) {
 		-	depending on the param join, multiple mails are joined into one single 
 			reply (one per originator) or one reply is generated for each mail.
 \*------------------------------------------------------------------------------*/
-void BmApplication::ReplyToMails( BMessage* msg, bool join, bool joinIntoOne) {
+int32 BmApplication::ReplyToMails( void* data) {
+	BMessage* msg = static_cast< BMessage*>( data);
 	if (!msg)
-		return;
+		return B_OK;
 
+	int32 buttonPressed=0;
 	BmMailRefVect* refVect = NULL;
 	msg->FindPointer( MSG_MAILREF_VECT, (void**)&refVect);
 	if (!refVect)
-		return;
+		return B_OK;
+
+	int32 msgCount = refVect->size();
+	if (msgCount>1) {
+		// first step, ask user about how to forward multiple messages:
+		BmString s("You have selected more than one message.\n\n"
+					  "Should Beam join the message-bodies into one "
+					  "single mail and reply to that or would you prefer "
+					  "to keep the messages separate?");
+		BAlert* alert = new BAlert( 
+			"Forwarding Multiple Mails", s.String(),
+			"Keep Separate", "Join per Recipient", "Join All", 
+			B_WIDTH_AS_USUAL,	B_EVEN_SPACING, B_IDEA_ALERT
+		);
+		buttonPressed = alert->Go();
+	}
+
+	BM_LOG( BM_LogApp, 
+			  BmString("Asked to reply to ") << msgCount << " mails.");
+
+	bool join = (buttonPressed > 0);
+	bool joinIntoOne = (buttonPressed == 2);
 
 	bool replyGoesToPersonOnly = false;
 	// tell sending ref-view that we are doing work:
@@ -1079,7 +1216,7 @@ void BmApplication::ReplyToMails( BMessage* msg, bool join, bool joinIntoOne) {
 		typedef map< BmString, BmRef<BmMail> >BmNewMailMap;
 		BmNewMailMap newMailMap;
 		for(  BmSortedRefMap::const_iterator iter = sortedRefMap.begin(); 
-				iter != sortedRefMap.end(); 
+				!bmApp->IsQuitting() && iter != sortedRefMap.end(); 
 				++iter) {
 			mailRef = iter->second;
 			BmRef<BmMail> mail = BmMail::CreateInstance( mailRef);
@@ -1125,7 +1262,7 @@ void BmApplication::ReplyToMails( BMessage* msg, bool join, bool joinIntoOne) {
 		}
 		// ...and now show all the freshly generated mails:
 		for(  BmNewMailMap::const_iterator iter=newMailMap.begin(); 
-			   iter!=newMailMap.end(); 
+			   !bmApp->IsQuitting() && iter!=newMailMap.end(); 
 			   ++iter) {
 			BmMailEditWin* editWin 
 				= BmMailEditWin::CreateInstance( iter->second.Get());
@@ -1135,7 +1272,8 @@ void BmApplication::ReplyToMails( BMessage* msg, bool join, bool joinIntoOne) {
 	} else {
 		// create one reply per mail:
 		BmRef<BmMail> newMail;
-		for( uint32 index=0; index < refVect->size(); ++index) {
+		for( uint32 index=0; 
+			  !bmApp->IsQuitting() && index < refVect->size(); ++index) {
 			mailRef = (*refVect)[index].Get();
 			BmRef<BmMail> mail = BmMail::CreateInstance( mailRef);
 			if (mail) {
@@ -1159,22 +1297,29 @@ void BmApplication::ReplyToMails( BMessage* msg, bool join, bool joinIntoOne) {
 	// now tell sending ref-view that we are finished:
 	if (sendingRefView.IsValid())
 		sendingRefView.SendMessage( BMM_UNSET_BUSY);
+
+	delete refVect;
+			// freeing all references to mailrefs contained in vector
+	return B_OK;
 }
 
 /*------------------------------------------------------------------------------*\
 	PrintMails( msg)
 		-	prints all mailref's contained in the given message.
 \*------------------------------------------------------------------------------*/
-void BmApplication::PrintMails( BMessage* msg) {
-	if (!mPrintSetup)
-		PageSetup();
-	if (!mPrintSetup || !msg)
-		return;
+int32 BmApplication::PrintMails( void* data) {
+	BMessage* msg = static_cast< BMessage*>( data);
+	if (!msg)
+		return B_OK;
+	if (!bmApp->mPrintSetup)
+		bmApp->PageSetup();
+	if (!bmApp->mPrintSetup || !msg)
+		return B_OK;
 
 	BmMailRefVect* refVect = NULL;
 	msg->FindPointer( MSG_MAILREF_VECT, (void**)&refVect);
 	if (!refVect)
-		return;
+		return B_OK;
 
 	// tell sending ref-view that we are doing work:
 	BMessenger sendingRefView;
@@ -1182,15 +1327,15 @@ void BmApplication::PrintMails( BMessage* msg) {
 	if (sendingRefView.IsValid())
 		sendingRefView.SendMessage( BMM_SET_BUSY);
 
-	mPrintJob.SetSettings( new BMessage( *mPrintSetup));
-	status_t result = mPrintJob.ConfigJob();
+	bmApp->mPrintJob.SetSettings( new BMessage( *bmApp->mPrintSetup));
+	status_t result = bmApp->mPrintJob.ConfigJob();
 	if (result == B_OK) {
-		delete mPrintSetup;
-		mPrintSetup = mPrintJob.Settings();
-		int32 firstPage = mPrintJob.FirstPage();
-		int32 lastPage = mPrintJob.LastPage();
+		delete bmApp->mPrintSetup;
+		bmApp->mPrintSetup = bmApp->mPrintJob.Settings();
+		int32 firstPage = bmApp->mPrintJob.FirstPage();
+		int32 lastPage = bmApp->mPrintJob.LastPage();
 		if (lastPage-firstPage+1 <= 0)
-			return;
+			goto out;
 		BmMailRef* mailRef = NULL;
 		// we create a hidden mail-view-window which is being used for printing:
 		BmMailViewWin* mailWin = BmMailViewWin::CreateInstance();
@@ -1198,7 +1343,7 @@ void BmApplication::PrintMails( BMessage* msg) {
 		mailWin->Show();
 		BmMailView* mailView = mailWin->MailView();
 		// now get printable rect...
-		BRect printableRect = mPrintJob.PrintableRect();
+		BRect printableRect = bmApp->mPrintJob.PrintableRect();
 		// ...and adjust mailview accordingly (to use the available space
 		// effectively):
 		mailView->LockLooper();
@@ -1206,10 +1351,10 @@ void BmApplication::PrintMails( BMessage* msg) {
 		mailView->UnlockLooper();
 		mailView->BodyPartView()->IsUsedForPrinting( true);
 		// now we start printing...
-		mPrintJob.BeginJob();
+		bmApp->mPrintJob.BeginJob();
 		int32 page = 1;
 		for(  uint32 mailIdx=0; 
-				mailIdx < refVect->size() && page<=lastPage;
+				!bmApp->IsQuitting() && mailIdx < refVect->size() && page<=lastPage;
 				++mailIdx) {
 			mailRef = (*refVect)[mailIdx].Get();
 			mailView->LockLooper();
@@ -1229,10 +1374,10 @@ void BmApplication::PrintMails( BMessage* msg) {
 					5, currFrame.bottom
 				)));
 			currFrame.bottom = topOfLine.y-1;
-			while( page<=lastPage) {
+			while( !bmApp->IsQuitting() && page<=lastPage) {
 				if (page >= firstPage) {
-					mPrintJob.DrawView( mailView, currFrame, BPoint(0,0));
-					mPrintJob.SpoolPage();
+					bmApp->mPrintJob.DrawView( mailView, currFrame, BPoint(0,0));
+					bmApp->mPrintJob.SpoolPage();
 				}
 				currFrame.top = currFrame.bottom+1;
 				currFrame.bottom = currFrame.top + height-1;
@@ -1249,12 +1394,17 @@ void BmApplication::PrintMails( BMessage* msg) {
 					break;
 			}
 		}
-		mPrintJob.CommitJob();
+		bmApp->mPrintJob.CommitJob();
 		mailWin->PostMessage( B_QUIT_REQUESTED);
 	}
 	// now tell sending ref-view that we are finished:
 	if (sendingRefView.IsValid())
 		sendingRefView.SendMessage( BMM_UNSET_BUSY);
+
+out:
+	delete refVect;
+			// freeing all references to mailrefs contained in vector
+	return B_OK;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -1349,11 +1499,13 @@ Atillâ Öztürk\n\
 Bernd Thorsten Korz\n\
 Cedric Vincent\n\
 Charlie Clark\n\
+David Vignoni\n\
 Eberhard Hafermalz\n\
 Eugenia Loli-Queru\n\
 Helmar Rudolph\n\
 Ingo Weinhold\n\
 Jace Cavacini\n\
+Jens Neuwerk\n\
 Jon Hart\n\
 Kevin Musick\n\
 Koki\n\
@@ -1363,6 +1515,7 @@ Linus Almstrom\n\
 Mathias Reitinger\n\
 Max Hartmann\n\
 MDR-team (MailDaemonReplacement)\n\
+Mikael Larsson\n\
 Mikhail Panasyuk\n\
 Olivier Milla\n\
 qwilk\n\
@@ -1424,3 +1577,4 @@ bool BmApplication::HandlesMimetype( const BmString mimetype) {
 	return mimetype.ICompare( "text/x-email")==0 
 			 || mimetype.ICompare( "message/rfc822")==0;
 }
+
