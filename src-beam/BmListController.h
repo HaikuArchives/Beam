@@ -54,6 +54,8 @@ class BmListViewController;
 							// item has been added/removed
 #define BM_EXPAND_OR_COLLAPSE			 'bmcd'
 							// time to expand/collapse an item automatically
+#define BM_PULSED_SCROLL				 'bmce'
+							// time to scroll listview upwards/downwards
 
 /*------------------------------------------------------------------------------*\
 	BmListViewItem
@@ -226,12 +228,14 @@ protected:
 	bool mShowBusyView;
 	bool mUseStateCache;
 	BmListViewItem* mCurrHighlightItem;
-	BMessageRunner* mUpdatePulseRunner;
 	BMessageRunner* mExpandCollapseRunner;
 	bool mSittingOnExpander;
+	BMessageRunner* mPulsedScrollRunner;
+	int32 mPulsedScrollStep;
 
 	static const char* const MSG_HIGHITEM = "hitem";
 	static const char* const MSG_EXPAND = "expnd";
+	static const char* const MSG_SCROLL_STEP = "step";
 
 private:
 	BmListViewItem* doAddModelItem( BmListViewItem* parent, BmListModelItem* item);

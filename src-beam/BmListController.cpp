@@ -49,9 +49,6 @@
 #include "BmResources.h"
 #include "BmUtil.h"
 
-#define BM_PULSE 'bmPL'
-static BMessage pulseMsg(BM_PULSE);
-
 /********************************************************************************\
 	BmListViewItem
 \********************************************************************************/
@@ -137,9 +134,10 @@ BmListViewController::BmListViewController( minimax minmax, BRect rect,
 	,	mShowBusyView( showBusyView)
 	,	mUseStateCache( true)
 	,	mCurrHighlightItem( NULL)
-	,	mUpdatePulseRunner( NULL)
 	,	mSittingOnExpander( false)
 	,	mExpandCollapseRunner( NULL)
+	,	mPulsedScrollRunner( NULL)
+	,	mPulsedScrollStep( 0)
 {
 }
 
@@ -157,7 +155,7 @@ BmListViewController::~BmListViewController() {
 			delete subItem;
 		}
 	delete mExpandCollapseRunner;
-	delete mUpdatePulseRunner;
+	delete mPulsedScrollRunner;
 	delete mInitialStateInfo;
 }
 
@@ -215,6 +213,29 @@ void BmListViewController::MouseMoved( BPoint point, uint32 transit, const BMess
 	inherited::MouseMoved( point, transit, msg);
 	if (msg && AcceptsDropOf( msg)) {
 		if (transit == B_INSIDE_VIEW || transit == B_ENTERED_VIEW) {
+			int32 scrollStep = 0;
+			BRect b( Bounds());
+			if (point.y > b.bottom-5)
+				scrollStep = 1;
+			else if (point.y < b.top+5)
+				scrollStep = -1;
+			if (scrollStep != mPulsedScrollStep) {
+				if (mPulsedScrollRunner) {
+					delete mPulsedScrollRunner;
+					mPulsedScrollRunner = NULL;
+				}
+				mPulsedScrollStep = scrollStep;
+				if (mPulsedScrollStep) {
+					int32 pulsedScrollDelay = ThePrefs->GetInt( "PulsedScrollDelay", 100);
+					if (pulsedScrollDelay>0) {
+						BMessage* msg = new BMessage( BM_PULSED_SCROLL);
+						msg->AddInt32( MSG_SCROLL_STEP, mPulsedScrollStep);
+						BMessenger msgr( this);
+						mPulsedScrollRunner 
+							= new BMessageRunner( msgr, msg, pulsedScrollDelay*1000, -1);
+					}
+				}
+			}
 			int32 index = IndexOf( point);
 			if (IndexOf( mCurrHighlightItem) != index) {
 				if (mCurrHighlightItem) {
@@ -267,6 +288,11 @@ void BmListViewController::MouseMoved( BPoint point, uint32 transit, const BMess
 				InvalidateItem( IndexOf( mCurrHighlightItem));
 				mCurrHighlightItem = NULL;
 			}
+		}
+	} else {
+		if (mPulsedScrollRunner) {
+			delete mPulsedScrollRunner;
+			mPulsedScrollRunner = NULL;
 		}
 	}
 }
@@ -368,6 +394,28 @@ void BmListViewController::MessageReceived( BMessage* msg) {
 				}
 				delete mExpandCollapseRunner;
 				mExpandCollapseRunner = NULL;
+				break;
+			}
+			case BM_PULSED_SCROLL: {
+				int32 step;
+				if (msg->FindInt32( MSG_SCROLL_STEP, &step) == B_OK) {
+					BRect bounds = Bounds();
+					if (step>0) {
+						int32 lastVisibleIndex = IndexOf( BPoint( 0, bounds.bottom-5));
+						if (lastVisibleIndex>=0 && lastVisibleIndex+step < CountItems()) {
+							BRect frame = ItemFrame( lastVisibleIndex+step);
+							float newYPos = frame.bottom-Bounds().Height();
+							ScrollTo( BPoint( 0, MAX( 0, newYPos)));
+						}
+					} else if (step<0) {
+						int32 firstVisibleIndex = IndexOf( BPoint( 0, bounds.top+5));
+						if (firstVisibleIndex+step >= 0) {
+							BRect frame = ItemFrame( firstVisibleIndex+step);
+							float newYPos = frame.top;
+							ScrollTo( BPoint( 0, MAX( 0, newYPos)));
+						}
+					}
+				}
 				break;
 			}
 			default:
