@@ -59,6 +59,8 @@ public:
 
 	// native methods
 	virtual void UpdateItemList();
+	void MarkItem( const char* label);
+	void ClearMark();
 	//
 	static BMenuItem* MarkItemInMenu( BMenu* menu, const char* label);
 	static void ClearMarkInMenu( BMenu* menu);
@@ -80,6 +82,7 @@ protected:
 	BmString mShortcuts;
 	RebuildMenuFunc mRebuildMenuFunc;
 	int32 mFlags;
+	BmString mMarkedLabel;
 
 private:
 	// Hide copy-constructor and assignment:

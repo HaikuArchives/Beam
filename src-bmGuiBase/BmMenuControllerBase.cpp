@@ -78,9 +78,31 @@ void BmMenuControllerBase::UpdateItemList( void) {
 		// menu is created by a dedicated function:
 		(*mRebuildMenuFunc)( this);
 	}
-	BMenuItem* labelItem = Superitem();
-	if (labelItem)
-		MarkItemInMenu( this, labelItem->Label());
+	if (mFlags & BM_MC_LABEL_FROM_MARKED) {
+		// mark the item corresponding to the label of our controlling menu-item:
+		BMenuItem* labelItem = Superitem();
+		if (labelItem)
+			MarkItemInMenu( this, labelItem->Label());
+	} else {
+		if (mMarkedLabel.Length())
+			MarkItemInMenu( this, mMarkedLabel.String());
+	}
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMenuControllerBase::MarkItem( const char* label) {
+	mMarkedLabel = label;
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMenuControllerBase::ClearMark() {
+	mMarkedLabel.Truncate(0);
 }
 
 /*------------------------------------------------------------------------------*\
