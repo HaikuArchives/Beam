@@ -326,7 +326,7 @@ BmMailRefView::BmMailRefView( minimax minmax, int32 width, int32 height)
 									  "(A)ttachments [Text]"));
 	AddColumn( new CLVColumn( "P", 100.0, flags | CLV_COLDATA_NUMBER, 18.0, 
 									  "(P)riority [Text]"));
-	AddColumn( new CLVColumn( "Identity", 100.0, flags, 20.0));
+	AddColumn( new CLVColumn( "Identity", 100.0, flags, 40.0));
 	SetSortFunction( CLVEasyItem::CompareItems);
 	SetSortKey( COL_DATE);
 	SetSortMode( COL_DATE, Descending, false);

@@ -299,7 +299,7 @@ BmChainedFilterView::BmChainedFilterView( minimax minmax,
 
 	AddColumn( new CLVColumn( "Pos", 20.0, 
 									  flags|CLV_SORT_KEYABLE|CLV_RIGHT_JUSTIFIED
-									  		 |CLV_COLDATA_NUMBER|CLV_HIDDEN,
+									  		 |CLV_COLDATA_NUMBER,
 									  20.0));
 	AddColumn( new CLVColumn( "Name", 200.0, flags, 80.0));
 

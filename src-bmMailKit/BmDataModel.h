@@ -84,7 +84,8 @@ public:
 
 	// getters:
 	inline const BmString& Name() const	{ return mModelName; }
-	inline const BmString& ModelName() const	{ return mModelName; }
+	inline const BmString& ModelName() const	
+													{ return mModelName; }
 	inline BmString ModelNameNC() const	{ return mModelName; }
 	inline BLocker& ModelLocker() const	{ return mModelLocker; }
 
@@ -319,7 +320,8 @@ public:
 	void AdjustForeignKeys( const BmString& oldVal, const BmString& newVal);
 	virtual void ForeignKeyChanged( const BmString& key, 
 											  const BmString& oldVal, 
-											  const BmString& newVal)	{ }
+											  const BmString& newVal)	
+											  		{ }
 	//
 	virtual bool Store();
 	virtual const BmString SettingsFileName() = 0;

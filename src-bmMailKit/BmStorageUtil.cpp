@@ -60,8 +60,10 @@ bool MoveToTrash( const entry_ref* refs, int32 count) {
 		// initialize (find) desktop-path:
 		status_t err;
 		BPath desktopPath;
-		if ((err=find_directory( B_DESKTOP_DIRECTORY, &desktopPath, true)) != B_OK) {
-			BM_SHOWERR( BmString("Could not find desktop-folder!\n\nError: ")<<strerror( err));
+		if ((err=find_directory( B_DESKTOP_DIRECTORY, 
+										 &desktopPath, true)) != B_OK) {
+			BM_SHOWERR( BmString("Could not find desktop-folder!\n\nError: ")
+								<< strerror( err));
 			desktopWin = "/boot/home/Desktop";
 		} else
 			desktopWin = desktopPath.Path();
@@ -72,12 +74,14 @@ bool MoveToTrash( const entry_ref* refs, int32 count) {
 		BMessage specifier( 'sref' );
 		char buf[1024];
 		for( int i=0; i<count; ++i) {
-			// add refs through AddData in order to set the array's size in advance:
+			// add refs through AddData in order to set the array's size 
+			// in advance:
 			int32 nmLen = strlen( refs[i].name);
 			memcpy( buf, &refs[i], sizeof( entry_ref));
 			strcpy( buf+sizeof( entry_ref)-sizeof(char*), refs[i].name);
 			specifier.AddData( "refs", B_REF_TYPE, buf, 
-									 sizeof( const entry_ref)-sizeof(char*)+nmLen+1, false, count);
+									 sizeof( const entry_ref)-sizeof(char*)+nmLen+1, 
+									 false, count);
 		}
 		specifier.AddString( "property", "Entry" );
 		msg.AddSpecifier( &specifier );
@@ -88,14 +92,16 @@ bool MoveToTrash( const entry_ref* refs, int32 count) {
 		BMessage reply;
 		tracker.SendMessage( &msg, &reply);
 		if (reply.what == B_MESSAGE_NOT_UNDERSTOOD) {
-			// maybe we have to deal with a Tracker that does not have a window named
-			// '/boot/home/Desktop', but uses 'Desktop' instead, we try that:
+			// maybe we have to deal with a Tracker that does not have a 
+			// window named '/boot/home/Desktop', but uses 'Desktop' instead,
+			// we try that:
 			if (desktopWin != "Desktop") {
 				// try with 'Desktop':
 				desktopWin = "Desktop";
 				return MoveToTrash( refs, count);
 			}
-			// neither '/boot/home/Desktop' nor 'Desktop' seems to work, we give up:
+			// neither '/boot/home/Desktop' nor 'Desktop' seems to work,
+			// we give up:
 			return false;
 		}
 		return true;
@@ -129,7 +135,8 @@ BmString DetermineMimeType( const entry_ref* inref, bool doublecheck) {
 			char mimetype[B_MIME_TYPE_LENGTH+1];
 			*mimetype = 0;
 			if (nodeInfo.GetType( mimetype)!=B_OK) {
-				// no mimetype info yet, we ask BeOS to determine mimetype and then try again:
+				// no mimetype info yet, we ask BeOS to determine mimetype 
+				// and then try again:
 				BPath path;
 				entry.GetPath( &path);
 				status_t res=entry.InitCheck();
@@ -150,11 +157,14 @@ BmString DetermineMimeType( const entry_ref* inref, bool doublecheck) {
 \*------------------------------------------------------------------------------*/
 void EnsureIndexExists( const char* attrName) {
 	struct index_info idxInfo;
-	if (fs_stat_index( TheResources->MailboxVolume.Device(), attrName, &idxInfo) != 0) {
-		status_t res = fs_create_index( TheResources->MailboxVolume.Device(), attrName,
+	if (fs_stat_index( TheResources->MailboxVolume.Device(), attrName, 
+							 &idxInfo) != 0) {
+		status_t res = fs_create_index( TheResources->MailboxVolume.Device(), 
+												  attrName,
 												  B_STRING_TYPE, 0);
 		if (res == -1)
-			BM_SHOWERR( BmString("Could not create index for attribute ")<<attrName<<".\n\nError: "<<strerror( errno));
+			BM_SHOWERR( BmString("Could not create index for attribute ")
+								<< attrName << ".\n\nError: " << strerror( errno));
 	}
 }
 
@@ -224,7 +234,8 @@ BmString BmTempFileList::NextTempFilenameWithPath() {
 	BmReadStringAttr( node, attrName, outStr)
 		-	
 \*------------------------------------------------------------------------------*/
-void BmReadStringAttr( const BNode* node, const char* attrName, BmString& outStr) {
+void BmReadStringAttr( const BNode* node, const char* attrName, 
+							  BmString& outStr) {
 	attr_info attrInfo;
 	if (node->GetAttrInfo( attrName, &attrInfo) != B_OK) {
 		outStr.Truncate( 0);

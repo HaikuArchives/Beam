@@ -53,7 +53,7 @@ BmLogWindow* BmLogWindow::CreateAndStartInstanceFor( const char* logfileName,
 																	  bool showUponNews) {
 	float x = 50+(nWinCount*20)%300;
 	float y = 50+(nWinCount*20)%300;
-	BRect frame( x, y, x+599, y+399);
+	BRect frame( x, y, x+599, y+199);
 	BmString title("Beam-Log: ");
 	title << logfileName;
 	BmLogWindow* win = new BmLogWindow( frame, title, logfileName, showUponNews);

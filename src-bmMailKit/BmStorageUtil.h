@@ -62,7 +62,7 @@ public:
 	~BmTempFileList();
 	void AddFile( BmString fileWithPath);
 	void RemoveFile( BmString fileWithPath);
-	BmString NextTempFilename()				{ return BmString("bm_") << ++mCount; }
+	BmString NextTempFilename()			{ return BmString("bm_") << ++mCount; }
 	BmString NextTempFilenameWithPath();
 private:
 	BmFileSet mFiles;

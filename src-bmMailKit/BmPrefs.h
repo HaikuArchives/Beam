@@ -46,9 +46,9 @@
 class BmPrefs : public BArchivable {
 	typedef BArchivable inherited;
 
-	static const char* const PREFS_FILENAME;// = 			"General Settings";
+	static const char* const PREFS_FILENAME;
 
-	static const char* const MSG_VERSION;// = 	"bm:version";
+	static const char* const MSG_VERSION;
 
 	static const int16 nPrefsVersion;
 	

@@ -175,9 +175,11 @@ private:
 
 /*------------------------------------------------------------------------------*\
 	BmWeakRef
-		-	smart-pointer class that implements weak-referencing (via a set of BmRefObj)
-		-	a weak reference is not included in reference-counting, but it transparently
-			checks whether the weakly referenced object still exists or not.
+		-	smart-pointer class that implements weak-referencing (via a set 
+			of BmRefObj)
+		-	a weak reference is not included in reference-counting, but it 
+			transparently checks whether the weakly referenced object still 
+			exists or not.
 \*------------------------------------------------------------------------------*/
 // helper function to keep logging out of header-file:
 void LogHelper( const BmString& text);
@@ -194,7 +196,8 @@ public:
 	,	mPtr( p)
 	,	mProxyName( p ? p->ProxyName() : "") 
 	{
-		LogHelper( BmString("RefManager: weak-reference to <") << mName << ":" << BmRefObj::RefPrintHex(mPtr) << "> created");
+		LogHelper( BmString("RefManager: weak-reference to <") << mName 
+						<< ":" << BmRefObj::RefPrintHex(mPtr) << "> created");
 	}
 	inline BmWeakRef<T>& operator= ( T* p) {
 		mName = p ? p->RefName() : BM_DEFAULT_STRING;
@@ -210,7 +213,8 @@ public:
 	}
 	inline operator bool() const 			{ return Get(); }
 	inline BmRef<T> Get() const 			{
-		LogHelper( BmString("RefManager: weak-reference to <") << mName << ":" << BmRefObj::RefPrintHex(mPtr) << "> dereferenced");
+		LogHelper( BmString("RefManager: weak-reference to <") << mName 
+						<< ":" << BmRefObj::RefPrintHex(mPtr) << "> dereferenced");
 		BAutolock lock( BmRefObj::GlobalLocker());
 		BmProxy* proxy = BmRefObj::GetProxy( mProxyName);
 		if (proxy) {

@@ -165,15 +165,16 @@ BBitmap* BmResources::IconByName( const BmString name) {
 		if (mt.InitCheck() == B_OK) {
 			icon = new BBitmap( BRect( 0, 0, 15, 15), B_CMAP8);
 			if (mt.GetIcon( icon, B_MINI_ICON) != B_OK) {
-				// the given mimetype has no icon defined, we check if the preferred app 
-				// of this mimetype has an icon for this type:
+				// the given mimetype has no icon defined, we check if the 
+				// preferred app of this mimetype has an icon for this type:
 				BMimeType preferredApp;
 				char preferredAppName[B_MIME_TYPE_LENGTH+1];
 				if (mt.GetPreferredApp( preferredAppName) != B_OK
 				|| preferredApp.SetTo( preferredAppName) != B_OK
-				|| preferredApp.GetIconForType( name.String(), icon, B_MINI_ICON) != B_OK) {
-					// the preferred-app doesn't exist or has no icon for this mimetype.
-					// We check if the mimetype's supertype has an icon:
+				|| preferredApp.GetIconForType( name.String(), icon, 
+														  B_MINI_ICON) != B_OK) {
+					// the preferred-app doesn't exist or has no icon for this
+					// mimetype. We check if the mimetype's supertype has an icon:
 					BMimeType supertype;
 					mt.GetSupertype( &supertype);
 					if (supertype.GetIcon( icon, B_MINI_ICON) != B_OK) {
@@ -197,8 +198,8 @@ BBitmap* BmResources::IconByName( const BmString name) {
 
 /*------------------------------------------------------------------------------*\
 	FetchIcons()
-		-	reads all icons into the public map IconMap (indexed by name), from where 
-			they can be easily accessed.
+		-	reads all icons into the public map IconMap (indexed by name), from
+			where they can be easily accessed.
 \*------------------------------------------------------------------------------*/
 void BmResources::FetchIcons() {
 	BResources* res = mResources = be_app->AppResources();
@@ -208,9 +209,11 @@ void BmResources::FetchIcons() {
 	const char* name;
 	size_t length;
 	char *data;
-	for( int32 i=0; res->GetResourceInfo( iconType, i, &id, &name, &length); i++) {
+	for( 	int32 i=0; 
+			res->GetResourceInfo( iconType, i, &id, &name, &length); i++) {
 		if (!(data = (char*)res->LoadResource( iconType, id, &length))) {
-			BM_SHOWERR( BmString("FetchIcons(): Could not read icon '") << name << "'");
+			BM_SHOWERR( BmString("FetchIcons(): Could not read icon '") << name 
+								<< "'");
 			continue;
 		}
 		BArchivable* theObj = NULL;
@@ -350,7 +353,8 @@ void BmResources::AddFontSubmenuTo( BMenu* menu, BHandler* target,
 	}
 	BMenu* sizeMenu = new BMenu( "Select Fontsize...");
 	sizeMenu->SetFont( &font);
-	const char* sizes[] = { "8","9","10","11","12","14","16","18","20","24",NULL};
+	const char* sizes[] 
+		= { "8","9","10","11","12","14","16","18","20","24",NULL };
 	for( int i=0; sizes[i]!=NULL; ++i) {
 		BMessage* msg = new BMessage( BM_FONTSIZE_SELECTED);
 		int16 size = atoi(sizes[i]);
@@ -418,7 +422,8 @@ float BmResources::FontLineHeight( const BFont* font) {
 			lives (normally .../settings/Beam/MailCache/)
 \*------------------------------------------------------------------------------*/
 BDirectory* BmResources::MailCacheFolder() {
-	return GetFolder( BmString( SettingsPath.Path()) << "/MailCache/", mMailCacheFolder);
+	return GetFolder( BmString( SettingsPath.Path()) << "/MailCache/", 
+							mMailCacheFolder);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -427,7 +432,8 @@ BDirectory* BmResources::MailCacheFolder() {
 			lives (normally .../settings/Beam/StateInfo/)
 \*------------------------------------------------------------------------------*/
 BDirectory* BmResources::StateInfoFolder() {
-	return GetFolder( BmString( SettingsPath.Path()) << "/StateInfo/", mStateInfoFolder);
+	return GetFolder( BmString( SettingsPath.Path()) << "/StateInfo/", 
+							mStateInfoFolder);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -441,8 +447,10 @@ BDirectory* BmResources::GetFolder( const BmString& name, BDirectory& dir) {
 	if (dir.InitCheck() != B_OK) {
 		status_t res = dir.SetTo( name.String());
 		if (res != B_OK) {
-			if ((res = create_directory( name.String(), 0755) || dir.SetTo( name.String())) != B_OK) {
-				BM_SHOWERR( BmString("Sorry, could not create folder ")<<name<<".\n\t Going down!");
+			if ((res = create_directory( name.String(), 0755) 
+			|| dir.SetTo( name.String())) != B_OK) {
+				BM_SHOWERR( BmString("Sorry, could not create folder ") << name
+									<< ".\n\t Going down!");
 				exit( 10);
 			}
 		}
@@ -457,7 +465,8 @@ BDirectory* BmResources::GetFolder( const BmString& name, BDirectory& dir) {
 			transparent
 		-	the caller takes ownership of the returned BPicture
 \*------------------------------------------------------------------------------*/
-BPicture* BmResources::CreatePictureFor( BBitmap* image, float width, float height,
+BPicture* BmResources::CreatePictureFor( BBitmap* image, 
+													  float width, float height,
 													  rgb_color background,
 													  bool transparentBack) {
 	BPicture* picture = new BPicture();
@@ -477,7 +486,8 @@ BPicture* BmResources::CreatePictureFor( BBitmap* image, float width, float heig
 		float imageWidth = imageRect.Width();
 		float imageHeight = imageRect.Height();
 		view->SetDrawingMode(B_OP_OVER);
-		view->DrawBitmap( image, BPoint( (width-imageWidth)/2.0, (height-imageHeight)/2.0));
+		view->DrawBitmap( image, BPoint( (width-imageWidth)/2.0, 
+													(height-imageHeight)/2.0));
 		view->SetDrawingMode(B_OP_COPY);
 	}
 	view->EndPicture();

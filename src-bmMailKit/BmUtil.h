@@ -44,8 +44,8 @@ extern BmString BM_NoItemLabel;
 
 /*------------------------------------------------------------------------------*\
 	FindMsgXXX( archive, name)
-		-	functions that extract the msg-field of a specified name from the given 
-			archive and return it.
+		-	functions that extract the msg-field of a specified name from the 
+			given archive and return it.
 \*------------------------------------------------------------------------------*/
 const char* FindMsgString( BMessage* archive, const char* name, int32 index=0);
 bool FindMsgBool( BMessage* archive, const char* name, int32 index=0);
@@ -53,7 +53,8 @@ int64 FindMsgInt64( BMessage* archive, const char* name, int32 index=0);
 int32 FindMsgInt32( BMessage* archive, const char* name, int32 index=0);
 int16 FindMsgInt16( BMessage* archive, const char* name, int32 index=0);
 float FindMsgFloat( BMessage* archive, const char* name, int32 index=0);
-BMessage* FindMsgMsg( BMessage* archive, const char* name, BMessage* msg=NULL, int32 index=0);
+BMessage* FindMsgMsg( BMessage* archive, const char* name, BMessage* msg=NULL, 
+							 int32 index=0);
 void* FindMsgPointer( BMessage* archive, const char* name, int32 index=0);
 
 /*------------------------------------------------------------------------------*\

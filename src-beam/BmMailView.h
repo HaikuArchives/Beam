@@ -55,7 +55,8 @@ class BmRulerView;
 \*------------------------------------------------------------------------------*/
 enum {
 	BM_NTFY_MAIL_VIEW							= 'bmbc',
-						// sent from BmMailView to observers whenever selection changes
+						// sent from BmMailView to observers whenever 
+						// selection changes
 	BM_MAILVIEW_SHOWRAW						= 'bmMa',
 	BM_MAILVIEW_SHOWCOOKED					= 'bmMb',
 	BM_MAILVIEW_SHOWINLINES_SEPARATELY	= 'bmMc',
@@ -101,7 +102,8 @@ public:
 	static const char* const MSG_HAS_MAIL;
 
 	// creator-func, c'tors and d'tor:
-	static BmMailView* CreateInstance(  minimax minmax, BRect frame, bool outbound);
+	static BmMailView* CreateInstance(  minimax minmax, BRect frame, 
+													bool outbound);
 	BmMailView( minimax minmax, BRect frame, bool outbound);
 	~BmMailView();
 
@@ -139,17 +141,22 @@ public:
 	void DetachModel();
 
 	// getters:
-	inline BmMailViewContainer* ContainerView() const	{ return mScrollView; }
-	inline BmRef<BmMail> CurrMail()				{ return mCurrMail; }
-	inline bool ShowRaw()							{ return mShowRaw; }
-	inline bool ShowInlinesSeparately()			{ return mShowInlinesSeparately; }
-	inline BmBodyPartView* BodyPartView()		{ return mBodyPartView; }
-	inline BmMailHeaderView* HeaderView()		{ return mHeaderView; }
+	inline BmMailViewContainer* ContainerView() const	
+													{ return mScrollView; }
+	inline BmRef<BmMail> CurrMail()		{ return mCurrMail; }
+	inline bool ShowRaw()					{ return mShowRaw; }
+	inline bool ShowInlinesSeparately()	{ return mShowInlinesSeparately; }
+	inline BmBodyPartView* BodyPartView()
+													{ return mBodyPartView; }
+	inline BmMailHeaderView* HeaderView()
+													{ return mHeaderView; }
 
 	// setters:
-	inline void TeamUpWith( BmMailRefView* v)	{ mPartnerMailRefView = v; }
-	inline void ShowRaw( bool b) 					{ mShowRaw = b; }
-	inline void ShowInlinesSeparately( bool b)	{ mShowInlinesSeparately = b; }
+	inline void TeamUpWith( BmMailRefView* v)
+													{ mPartnerMailRefView = v; }
+	inline void ShowRaw( bool b) 			{ mShowRaw = b; }
+	inline void ShowInlinesSeparately( bool b)	
+													{ mShowInlinesSeparately = b; }
 
 private:
 	void ShowMenu( BPoint point);
@@ -191,8 +198,8 @@ class BmMailViewContainer : public MView, public BetterScrollView {
 	typedef BetterScrollView inherited;
 
 public:
-	BmMailViewContainer( minimax minmax, BmMailView* target, uint32 resizingMode, 
-								uint32 flags);
+	BmMailViewContainer( minimax minmax, BmMailView* target, 
+								uint32 resizingMode, uint32 flags);
 	~BmMailViewContainer();
 
 	// native methods:
