@@ -43,7 +43,7 @@ class CLVEasyItem : public CLVListItem
 		virtual void SetColumnContent(int column_index, const BBitmap *bitmap, float horizontal_offset = 2.0,
 			bool copy = true, bool right_justify = false);
 		virtual void SetColumnContent(int column_index, const char *text, bool truncate = true,
-			bool right_justify = false);
+			bool copy = true, bool right_justify = false);
 		virtual void SetColumnUserTextContent(int column_index, bool truncate = true, bool right_justify = false);
 		const char* GetColumnContentText(int column_index);
 		const BBitmap* GetColumnContentBitmap(int column_index);

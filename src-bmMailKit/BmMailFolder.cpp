@@ -96,6 +96,7 @@ status_t BmMailFolder::Archive( BMessage* archive, bool deep) const {
 bool BmMailFolder::CheckIfModifiedSince() {
 	status_t err;
 	BDirectory mailDir;
+	bool hasChanged = false;
 
 	BM_LOG3( BM_LogMailFolders, "BmMailFolder::CheckIfModifiedSince() - start");
 	mailDir.SetTo( this->EntryRefPtr());
@@ -105,13 +106,14 @@ bool BmMailFolder::CheckIfModifiedSince() {
 	BM_LOG3( BM_LogMailFolders, "BmMailFolder::CheckIfModifiedSince() - getting modification time");
 	(err = mailDir.GetModificationTime( &mtime)) == B_OK
 													|| BM_THROW_RUNTIME(BString("Could not get mtime \nfor mail-folder <") << Name() << "> \n\nError:" << strerror(err));
-	BM_LOG3( BM_LogMailFolders, BString("Mtimes of folder ") << Name() << ": (" << mtime << "<->" << mLastModified << ")");
+	BM_LOG3( BM_LogMailFolders, BString("checking if ") << Name() << ": (" << mtime << " > " << mLastModified << ")");
 	if (mtime != mLastModified) {
-		BM_LOG3( BM_LogMailFolders, BString("Mtime of folder has changed!"));
+		BM_LOG2( BM_LogMailFolders, BString("Mtime of folder has changed!"));
 		mLastModified = mtime;
+		hasChanged = true;
 	}
 	BM_LOG3( BM_LogMailFolders, "BmMailFolder::CheckIfModifiedSince() - end");
-	return mtime != mLastModified;
+	return hasChanged;
 }
 
 /*------------------------------------------------------------------------------*\

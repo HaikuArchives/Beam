@@ -58,7 +58,7 @@ void BmMailRefList::Cleanup() {
 \*------------------------------------------------------------------------------*/
 void BmMailRefList::RemoveController( BmController* controller) {
 	inheritedModel::RemoveController( controller);
-	if (bmApp->Prefs->RefCaching() && !HasControllers()) {
+	if (!(bmApp->Prefs->RefCaching() || HasControllers())) {
 		mFolder->RemoveMailRefList();
 	}
 }

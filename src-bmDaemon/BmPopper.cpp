@@ -13,7 +13,7 @@
 
 #include "BmApp.h"
 #include "BmLogHandler.h"
-#include "BmMail.h"
+#include "BmMailReceived.h"
 #include "BmPopAccount.h"
 #include "BmPopper.h"
 #include "BmPrefs.h"
@@ -210,7 +210,7 @@ void BmPopper::Check() {
 		}
 	} else {
 		// no UIDL-listing from server, we will have to fetch the UIDLs later
-		// or generate our own (happens in class BmMail)
+		// or generate our own (happens in class BmMailReceived)
 	}
 }
 
@@ -231,7 +231,7 @@ void BmPopper::Retrieve() {
 		SendCommand( cmd);
 		if (!CheckForPositiveAnswer( MULTI_LINE, i+1))
 			return;
-		BmMail mail( mAnswer, mMsgUIDs[i], Name());
+		BmMailReceived mail( mAnswer, mMsgUIDs[i], Name());
 		mail.Store();
 	}
 	if (mMsgCount)

@@ -42,7 +42,7 @@ int main()
 {
 	GenericApp *testApp = new GenericApp;
 	try {
-		be_app->Run();
+		testApp->Run();
 	} 
 	catch( exception &e) {
 		BM_LOGERR( BString("Oops: %s") << e.what());
@@ -67,7 +67,7 @@ GenericWin::~GenericWin()
 { }
 
 bool GenericWin::QuitRequested() {
-	be_app->PostMessage( B_QUIT_REQUESTED);
+	bmApp->PostMessage( B_QUIT_REQUESTED);
 	return true;
 }
 
@@ -93,7 +93,7 @@ void GenericApp::MessageReceived(BMessage* msg) {
 
 			count++;
 			archive = new BMessage(BM_CONNWIN_FETCHPOP);
-			if (count % 3 == 0) {
+			if (count % 3 == 1) {
 				sprintf(buf, "mailtest@kiwi:110");
 				acc.Name( buf);
 				acc.Username( "mailtest");
@@ -102,7 +102,7 @@ void GenericApp::MessageReceived(BMessage* msg) {
 				acc.PortNr( 110);
 				acc.SMTPPortNr( 25);
 				acc.Archive( archive, false);
-			} else if (count % 3 == 1) {
+			} else if (count % 3 == 2) {
 				sprintf(buf, "zooey@kiwi:110");
 				acc.Name( buf);
 				acc.Username( "zooey");
@@ -111,13 +111,13 @@ void GenericApp::MessageReceived(BMessage* msg) {
 				acc.PortNr( 110);
 				acc.SMTPPortNr( 25);
 				acc.Archive( archive, false);
-			} else if (count % 3 == 2) {
-				sprintf(buf, "mailtest2@kiwi:114");
+			} else if (count % 3 == 0) {
+				sprintf(buf, "negativland@t-online.de");
 				acc.Name( buf);
-				acc.Username( "mailtest2");
-				acc.Password( "mailtest2");
-				acc.POPServer( "kiwi");
-				acc.PortNr( 114);
+				acc.Username( "negativland");
+				acc.Password( "xxx");
+				acc.POPServer( "pop.t-online.de");
+				acc.PortNr( 110);
 				acc.SMTPPortNr( 25);
 				acc.Archive( archive, false);
 			}

@@ -97,7 +97,8 @@ void CLVEasyItem::PrepListsForSet(int column_index)
 }
 
 
-void CLVEasyItem::SetColumnContent(int column_index, const char *text, bool truncate, bool right_justify)
+void CLVEasyItem::SetColumnContent(int column_index, const char *text, bool truncate, 
+											  bool copy, bool right_justify)
 {
 	PrepListsForSet(column_index);
 
@@ -111,8 +112,8 @@ void CLVEasyItem::SetColumnContent(int column_index, const char *text, bool trun
 	}
 	else
 	{
-		char* copy = Strdup_new(text);
-		((char**)m_column_content.Items())[column_index] = copy;
+		char* theText = copy ? Strdup_new(text) : const_cast<char*>(text);
+		((char**)m_column_content.Items())[column_index] = theText;
 
 		if(!truncate)
 		{
@@ -122,9 +123,9 @@ void CLVEasyItem::SetColumnContent(int column_index, const char *text, bool trun
 		else
 		{
 			((int32*)m_column_types.Items())[column_index] = CLVColTruncateText|CLVColFlagNeedsTruncation;
-			copy = new char[strlen(text)+3];
-			strcpy(copy,text);
-			((char**)m_aux_content.Items())[column_index] = copy;
+			theText = new char[strlen(text)+3];
+			strcpy(theText,text);
+			((char**)m_aux_content.Items())[column_index] = theText;
 		}
 		if(right_justify)
 			((int32*)m_column_types.Items())[column_index] |= CLVColFlagRightJustify;

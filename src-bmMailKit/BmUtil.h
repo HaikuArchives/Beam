@@ -93,4 +93,11 @@ BString TimeToString( time_t t);
 #define BmPtr const auto_ptr
 #define BmNcPtr auto_ptr
 
+/*------------------------------------------------------------------------------*\*\
+	utility operator to easy concatenation of BStrings
+\*------------------------------------------------------------------------------*/
+BString operator+(const BString& s1, const BString& s2);
+BString operator+(const char* s1, const BString& s2);
+BString operator+(const BString& s1, const char* s2);
+
 #endif

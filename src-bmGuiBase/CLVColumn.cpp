@@ -401,9 +401,9 @@ void CLVColumn::DrawColumnHeader(BView* view, BRect header_rect, bool sort_key, 
 		view->DrawString(label,text_point);
 		view->SetDrawingMode(B_OP_COPY);
 	
-		//Underline if this is a selected sort column
 		if(sort_key)
 		{
+		// Draw a lash indicating the current sorting-order:
 			float Width = view->StringWidth(label);
 			if (header_rect.right-header_rect.left-Width > 18) {
 				if (sortPrio == 0)
@@ -412,19 +412,20 @@ void CLVColumn::DrawColumnHeader(BView* view, BRect header_rect, bool sort_key, 
 					view->SetHighColor( BeDarkShadow);
 				else
 					view->SetHighColor( BeShadow);
-				float x_offs;
+				float x_offs, y_offs;
+				y_offs = font_ascent-5;
 				if (!(fFlags&CLV_RIGHT_JUSTIFIED))
 					x_offs = header_rect.left + Width + 8;
 				else 
 					x_offs = header_rect.right - Width - 8 - 10;
 				if (sortMode == Ascending) {
-					view->FillTriangle( BPoint( x_offs, header_rect.top+6), 
-											  BPoint( x_offs + 10, header_rect.top+6),
-											  BPoint( x_offs + 5, header_rect.top+6+5));
+					view->FillTriangle( BPoint( x_offs, header_rect.top+y_offs), 
+											  BPoint( x_offs + 10, header_rect.top+y_offs),
+											  BPoint( x_offs + 5, header_rect.top+y_offs+5));
 				} else if (sortMode == Descending) {
-					view->FillTriangle( BPoint( x_offs, header_rect.top+6+5), 
-											  BPoint( x_offs + 10, header_rect.top+6+5),
-											  BPoint( x_offs + 5, header_rect.top+6));
+					view->FillTriangle( BPoint( x_offs, header_rect.top+y_offs+5), 
+											  BPoint( x_offs + 10, header_rect.top+y_offs+5),
+											  BPoint( x_offs + 5, header_rect.top+y_offs));
 				}
 			}
 		}

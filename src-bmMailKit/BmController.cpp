@@ -12,7 +12,7 @@
 #include "BmMainWindow.h"
 #include "BmUtil.h"
 
-#include <Profile.h>
+//#include <Profile.h>
 
 /********************************************************************************\
 	BmController
@@ -219,7 +219,7 @@ BmListViewItem::~BmListViewItem() {
 \*------------------------------------------------------------------------------*/
 void BmListViewItem::SetTextCols( BmListColumn* columnVec) {
 	for( const BmListColumn* p = columnVec; p->text != NULL; ++p) {
-		SetColumnContent( mOffs++, p->text, false, p->rightJustified);
+		SetColumnContent( mOffs++, p->text, false, true, p->rightJustified);
 	}
 }
 

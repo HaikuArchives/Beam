@@ -9,6 +9,7 @@
 #include <Directory.h>
 #include <File.h>
 #include <Message.h>
+#include <UTF8.h>
 
 #include "BmApp.h"
 #include "BmLogHandler.h"
@@ -74,7 +75,8 @@ BmPrefs::BmPrefs( void)
 						+ BM_LOGLVL2(BM_LogModelController)
 						)
 	,	mMailboxPath("/boot/home/mail")			// TODO: change default to .../mail
-	,	mRefCaching( false)
+	,	mRefCaching( true)
+	,	mDefaultEncoding( B_ISO1_CONVERSION)
 {
 #ifdef BM_LOGGING
 	BString s;
@@ -103,6 +105,7 @@ BmPrefs::BmPrefs( BMessage* archive)
 	mLoglevels = ntohl(FindMsgInt32( archive, MSG_LOGLEVELS));
 	mMailboxPath = FindMsgString( archive, MSG_MAILBOXPATH);
 	mRefCaching = FindMsgBool( archive, MSG_REF_CACHING);
+	mDefaultEncoding = FindMsgInt32( archive, MSG_DEFAULT_ENCODING);
 	bmApp->LogHandler->LogLevels( mLoglevels);
 }
 
@@ -118,7 +121,8 @@ status_t BmPrefs::Archive( BMessage* archive, bool deep) const {
 		||	archive->AddInt16( MSG_RECEIVE_TIMEOUT, htons(mReceiveTimeout))
 		||	archive->AddInt32( MSG_LOGLEVELS, htonl(mLoglevels))
 		||	archive->AddString( MSG_MAILBOXPATH, mMailboxPath.String())
-		||	archive->AddBool( MSG_REF_CACHING, mRefCaching));
+		||	archive->AddBool( MSG_REF_CACHING, mRefCaching)
+		||	archive->AddInt32( MSG_DEFAULT_ENCODING, htonl(mDefaultEncoding)));
 	return ret;
 }
 

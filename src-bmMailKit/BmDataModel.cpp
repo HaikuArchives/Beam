@@ -119,10 +119,16 @@ void BmDataModel::WaitForAllControllers() {
 	// wait for all controllers to detach:
 	BM_LOG2( BM_LogModelController, BString("Job <") << ModelName() << "> waits for controllers to detach");
 	while( HasControllers()) {
-		mModelLocker.Unlock();
+		int lCount=0;
+		while (mModelLocker.IsLocked()) {
+			mModelLocker.Unlock();
+			lCount++; 
+		}
 		snooze(200*1000);
 		BM_LOG3( BM_LogModelController, BString("Job <") << ModelName() << "> is still waiting for controllers to detach");
-		mModelLocker.Lock();
+		while(lCount--) {
+			mModelLocker.Lock();
+		}
 	}
 	BM_LOG2( BM_LogModelController, BString("Job <") << ModelName() << "> has no more controllers");
 }

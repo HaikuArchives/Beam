@@ -24,6 +24,7 @@ class BmPrefs : public BArchivable {
 	static const char* const MSG_LOGLEVELS = 			"bm:loglevels";
 	static const char* const MSG_MAILBOXPATH = 		"bm:mailboxpath";
 	static const char* const MSG_REF_CACHING = 		"bm:refcaching";
+	static const char* const MSG_DEFAULT_ENCODING = "bm:defencoding";
 
 	static const char* const PREFS_FILENAME = 		"General Settings";
 
@@ -56,6 +57,7 @@ public:
 	uint32 Loglevels() const 				{ return mLoglevels; }
 	const BString& MailboxPath() const 	{ return mMailboxPath; }
 	bool RefCaching() const 				{ return mRefCaching; }
+	int32 DefaultEncoding() const 		{ return mDefaultEncoding; }
 
 	// setters:
 	void CheckMail( TConnWinMode m) 		{ mDynamicConnectionWin = m; }
@@ -63,19 +65,36 @@ public:
 	void Loglevels( int32 i) 				{ mLoglevels = i; }
 	void MailboxPath( BString& s) 		{ mMailboxPath = s; }
 	void RefCaching( bool b) 				{ mRefCaching = b; }
+	void DefaultEncoding( int32 i) 		{ mDefaultEncoding = i; }
+
 
 private:
 	// TODO: make these configurable by user (i.e. write a GUI):
-	TConnWinMode mDynamicConnectionWin;	// show connections in connection-window only when
-													// they are alive, 
-													// show the ones with new mail
-													// or display them all the time?
-	int16 mReceiveTimeout;					// network-timeout for answer of servers
-	int32 mLoglevels;							// default loglevels, for each logflag
-													// 2 bits are used (allowing levels from 
-													// 0 [off] to 3 [full])
-	BString mMailboxPath;					// Path of mailbox-dir (usually '/boot/home/mail')
-	bool mRefCaching;							// switches mailref-caching on or off
+	TConnWinMode mDynamicConnectionWin;	
+							// show connections in connection-window only when
+							// they are alive, 
+							// show the ones with new mail
+							// or display them all the time?
+
+	int16 mReceiveTimeout;
+							// network-timeout for answer of servers
+
+	int32 mLoglevels;
+							// default loglevels, for each logflag
+							// 2 bits are used (allowing levels from 
+							// 0 [off] to 3 [full])
+
+	BString mMailboxPath;
+							// Path of mailbox-dir (usually '/boot/home/mail')
+
+	bool mRefCaching;
+							// switches mailref-caching on or off
+
+	int32 mDefaultEncoding;
+							// The default encoding for messages.
+							// This is used in two circumstances:
+							//	-	when a received mail does not indicate any encoding
+							//	-	when a new mail is created in order to be sent
 };
 
 #endif

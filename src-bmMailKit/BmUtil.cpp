@@ -167,10 +167,11 @@ BString BytesToString( int32 bytes, bool mini) {
 \*------------------------------------------------------------------------------*/
 BString TimeToString( time_t t) {
 	BString s;
+	const char* format = "%Y-%m-%d %H:%M:%S";
 	const int32 bufsize=40;
 	s.SetTo( '\0', bufsize);
 	char* buf=s.LockBuffer( 0);
-	strftime( buf, bufsize, "%Y-%m-%d %H:%M:%S", localtime( &t));
+	strftime( buf, bufsize, format, localtime( &t));
 	s.UnlockBuffer( -1);
 	return s;
 }
@@ -184,4 +185,29 @@ void ShowAlert( const BString &text) {
 	BAlert* alert = new BAlert( NULL, text.String(), "OK", NULL, NULL, 
 										 B_WIDTH_AS_USUAL, B_STOP_ALERT);
 	alert->Go();
+}
+
+/*------------------------------------------------------------------------------*\*\
+	BString::operator+
+		-	
+\*------------------------------------------------------------------------------*/
+BString operator+(const BString& s1, const BString& s2) 
+{
+	BString result(s1);
+	result += s2;
+	return result;
+}
+
+BString operator+(const char* s1, const BString& s2) 
+{
+	BString result(s1);
+	result += s2;
+	return result;
+}
+
+BString operator+(const BString& s1, const char* s2) 
+{
+	BString result(s1);
+	result += s2;
+	return result;
 }

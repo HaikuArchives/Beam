@@ -10,6 +10,12 @@
 #include "BmMailRefView.h"
 #include "BmUtil.h"
 
+static const char* BM_STAT_READ = 	"R";
+static const char* BM_STAT_NEW = 	"N";
+static const char* BM_STAT_PENDING = "P";
+static const char* BM_STAT_SENT = 	"S";
+static const char* BM_STAT_UNKNOWN = "?";
+
 /*------------------------------------------------------------------------------*\
 	()
 		-	
@@ -20,13 +26,14 @@ BmMailRefItem::BmMailRefItem( BString key, BmListModelItem* _item)
 	BmMailRef* ref = dynamic_cast<BmMailRef*>( _item);
 
 	BString st = ref->Status();
-	BString status = 
-		st == "Read"		? "R" :
-		st == "New" 		? "N" :
-		st == "Sent" 		? "S" : "?";
+	const char* status = 
+		st == "Read"		? BM_STAT_READ :
+		st == "New" 		? BM_STAT_NEW :
+		st == "Pending" 	? BM_STAT_PENDING :
+		st == "Sent" 		? BM_STAT_SENT : BM_STAT_UNKNOWN;
 	
 	BmListColumn cols[] = {
-		{ status.String(), 							false },
+		{ status, 										false },
 		{ ref->HasAttachments() ? "*" : " ",	false },
 		{ ref->Priority().String(),				false },
 		{ ref->From().String(),						false },
