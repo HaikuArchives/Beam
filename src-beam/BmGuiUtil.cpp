@@ -89,6 +89,47 @@ BMenuItem* CreateMenuItem( const char* label, BMessage* msg,
 		return new BMenuItem( label, msg);
 }
 
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+BMenuItem* CreateSubMenuItem( const char* label, int32 msgWhat, 
+										const char* idForShortcut) {
+	return CreateSubMenuItem( label, new BMessage(msgWhat), idForShortcut);
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+BMenuItem* CreateSubMenuItem( const char* label, BMessage* msg, 
+										const char* idForShortcut) {
+	BmString name( idForShortcut ? idForShortcut : label);
+	name.RemoveAll( "...");
+	BmString shortcut = ThePrefs->GetShortcutFor( name.String());
+	shortcut.RemoveSet( " \t");
+	shortcut.ToUpper();
+	int32 modifiers = 0;
+	int32 pos;
+	if ((pos=shortcut.FindFirst("<SHIFT>")) != B_ERROR) {
+		modifiers |= B_SHIFT_KEY;
+		shortcut.Remove( pos, 7);
+	}
+	BMenu* subMenu = new BMenu( label);
+	BMenuItem* item = new BMenuItem( subMenu, msg);
+	if (shortcut=="<RIGHT_ARROW>")
+		item->SetShortcut( B_RIGHT_ARROW, modifiers);
+	else if (shortcut=="<LEFT_ARROW>")
+		item->SetShortcut( B_LEFT_ARROW, modifiers);
+	else if (shortcut=="<UP_ARROW>")
+		item->SetShortcut( B_UP_ARROW, modifiers);
+	else if (shortcut=="<DOWN_ARROW>")
+		item->SetShortcut( B_DOWN_ARROW, modifiers);
+	else if (shortcut.Length())
+		item->SetShortcut( shortcut[0], modifiers);
+	return item;
+}
+
 const char* const MSG_CHARSET = "bm:chset";
 /*------------------------------------------------------------------------------*\
 	( )

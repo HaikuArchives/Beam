@@ -48,6 +48,10 @@ BMenuItem* CreateMenuItem( const char* label, int32 msgWhat,
 									const char* idForShortcut=NULL);
 BMenuItem* CreateMenuItem( const char* label, BMessage* msg, 
 									const char* idForShortcut=NULL);
+BMenuItem* CreateSubMenuItem( const char* label, int32 msgWhat, 
+										const char* idForShortcut=NULL);
+BMenuItem* CreateSubMenuItem( const char* label, BMessage* msg, 
+										const char* idForShortcut);
 
 extern const char* const MSG_CHARSET;
 void AddCharsetMenu( BMenu* menu, BHandler* target, int32 msgType);
