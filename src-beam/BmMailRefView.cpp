@@ -266,6 +266,8 @@ const char* const BmMailRefView::MENU_MARK_AS =				"Mark Message As";
 const char* const BmMailRefView::MENU_FILTER = 				"Apply Specific Filter";
 const char* const BmMailRefView::MENU_MOVE =					"Move Message To";
 
+const BmString BmDragId = "beam/ref";
+
 /*------------------------------------------------------------------------------*\
 	()
 		-	
@@ -361,7 +363,7 @@ void BmMailRefView::MessageReceived( BMessage* msg) {
 			case B_TRASH_TARGET: {
 				if (msg->IsReply()) {
 					const BMessage* origMsg = msg->Previous();
-					if (origMsg) {
+					if (origMsg && BmDragId==origMsg->FindString("be:originator")) {
 						int32 count;
 						type_code code;
 						origMsg->GetInfo( "refs", &code, &count);
@@ -506,7 +508,7 @@ bool BmMailRefView::InitiateDrag( BPoint, int32 index, bool wasSelected) {
 	BmMailRefItem* refItem = dynamic_cast<BmMailRefItem*>(ItemAt( index));
 	BmMailRef* ref( refItem->ModelItem());
 	dragMsg.AddString( "be:clip_name", ref->TrackerName());
-	dragMsg.AddString( "be:originator", "Beam");
+	dragMsg.AddString( "be:originator", BmDragId.String());
 	int32 currIdx;
 	// we count the number of selected items:
 	int32 selCount;
