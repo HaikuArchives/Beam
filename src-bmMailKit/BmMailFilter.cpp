@@ -179,7 +179,8 @@ void BmMailFilter::ExecuteFilter( BmMail* mail) {
 			BM_LOG2( BM_LogFilter, BmString("...found chain ") << chain->DisplayKey() << ", applying all its filters...");
 			// execute all the chain's filters:
 			BmAutolockCheckGlobal lock( chain->ModelLocker());
-			lock.IsLocked() 					|| BM_THROW_RUNTIME( chain->ModelNameNC() << ": Unable to get lock");
+			if (!lock.IsLocked())
+				BM_THROW_RUNTIME( chain->ModelNameNC() << ": Unable to get lock");
 			BmFilterPosMap::const_iterator iter;
 			for( iter = chain->posBegin(); iter != chain->posEnd(); ++iter) {
 				BmChainedFilter* chainedFilter = iter->second;

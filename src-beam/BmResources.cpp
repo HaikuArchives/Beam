@@ -100,18 +100,18 @@ BmResources::BmResources()
 	entry_ref eref;
 
 	// determine the path to our home-directory:
-	find_directory( B_USER_DIRECTORY, &path) == B_OK
-													|| BM_THROW_RUNTIME( "Sorry, could not determine user's settings-dir !?!");
+	if (find_directory( B_USER_DIRECTORY, &path) != B_OK)
+		BM_THROW_RUNTIME( "Sorry, could not determine user's settings-dir !?!");
 	HomePath = path.Path();
 	
 	// and determine the volume of our mailbox:
-	get_ref_for_path( HomePath.String(), &eref) == B_OK
-													|| BM_THROW_RUNTIME( "Sorry, could not determine mailbox-volume !?!");
+	if (get_ref_for_path( HomePath.String(), &eref) != B_OK)
+		BM_THROW_RUNTIME( "Sorry, could not determine mailbox-volume !?!");
 	MailboxVolume = eref.device;
 		
 	// determine the path to the user-settings-directory:
-	find_directory( B_USER_SETTINGS_DIRECTORY, &path) == B_OK
-													|| BM_THROW_RUNTIME( "Sorry, could not determine user's settings-dir !?!");
+	if (find_directory( B_USER_SETTINGS_DIRECTORY, &path) != B_OK)
+		BM_THROW_RUNTIME( "Sorry, could not determine user's settings-dir !?!");
 	if (BeamInTestMode)
 		// in order to avoid clobbering precious settings,
 		// we use a different settings-folder  in tesmode:

@@ -136,7 +136,8 @@ void BmJobStatusView::MessageReceived( BMessage* msg) {
 							BmString("Controller <") << ControllerName() 
 								<< "> has been told to show its view");
 				BmAutolockCheckGlobal lock( TheJobStatusWin);
-				lock.IsLocked()				|| BM_THROW_RUNTIME( "JobStatusView(): could not lock window");
+				if (!lock.IsLocked())
+					BM_THROW_RUNTIME( "JobStatusView(): could not lock window");
 				if (!mIsAutoJob) {
 					TheJobStatusWin->Minimize( false);
 					while (TheJobStatusWin->IsHidden())
@@ -149,7 +150,8 @@ void BmJobStatusView::MessageReceived( BMessage* msg) {
 							BmString("Controller <") << ControllerName() 
 								<< "> has been told to remove its view");
 				BmAutolockCheckGlobal lock( TheJobStatusWin);
-				lock.IsLocked()				|| BM_THROW_RUNTIME( "JobStatusView(): could not lock window");
+				if (!lock.IsLocked())
+					BM_THROW_RUNTIME( "JobStatusView(): could not lock window");
 				DetachModel();
 				if (!IsHidden())
 					Hide();
@@ -280,8 +282,8 @@ BmJobModel* BmMailMoverView::CreateJobModel( BMessage* msg) {
 	BmString key = FindMsgString( msg, BmJobModel::MSG_MODEL);
 	BmRef<BmListModelItem> item = TheMailFolderList->FindItemByKey( key);
 	BmMailFolder* folder;
-	(folder = dynamic_cast<BmMailFolder*>( item.Get()))!=NULL
-													|| BM_THROW_INVALID( BmString("Could not find BmMailFolder ") << key);
+	if (!(folder = dynamic_cast<BmMailFolder*>( item.Get())))
+		BM_THROW_INVALID( BmString("Could not find BmMailFolder ") << key);
 	BList* refList = new BList;
 	entry_ref eref;
 	for( int i=0; msg->FindRef( BmMailMover::MSG_REFS, i, &eref)==B_OK; ++i) {
@@ -492,8 +494,8 @@ BmJobModel* BmPopperView::CreateJobModel( BMessage* msg) {
 	BmString accName = FindMsgString( msg, BmJobModel::MSG_JOB_NAME);
 	BmRef<BmListModelItem> item = ThePopAccountList->FindItemByKey( accName);
 	BmPopAccount* account;
-	(account = dynamic_cast<BmPopAccount*>( item.Get()))!=NULL
-													|| BM_THROW_INVALID( BmString("Could not find BmPopAccount ") << accName);
+	if (!(account = dynamic_cast<BmPopAccount*>( item.Get())))
+		BM_THROW_INVALID( BmString("Could not find BmPopAccount ") << accName);
 	BmPopper* popper = new BmPopper( account->Name(), account);
 	popper->SetPwdAcquisitorFunc( AskUserForPwd);
 	return popper;
@@ -650,8 +652,8 @@ BmJobModel* BmSmtpView::CreateJobModel( BMessage* msg) {
 	BmString accName = FindMsgString( msg, BmJobModel::MSG_JOB_NAME);
 	BmRef<BmListModelItem> item = TheSmtpAccountList->FindItemByKey( accName);
 	BmSmtpAccount* account;
-	(account = dynamic_cast<BmSmtpAccount*>( item.Get()))!=NULL
-													|| BM_THROW_INVALID( BmString("Could not find BmSmtpAccount ") << accName);
+	if (!(account = dynamic_cast<BmSmtpAccount*>( item.Get())))
+		BM_THROW_INVALID( BmString("Could not find BmSmtpAccount ") << accName);
 	BmSmtp* smtp = new BmSmtp( account->Name(), account);
 	smtp->SetPwdAcquisitorFunc( AskUserForPwd);
 	smtp->SetPopAccAcquisitorFunc( AskUserForPopAcc);
@@ -820,7 +822,8 @@ BmJobStatusWin::~BmJobStatusWin() {
 \*------------------------------------------------------------------------------*/
 bool BmJobStatusWin::QuitRequested() {
 	BmAutolockCheckGlobal lock( this);
-	lock.IsLocked()						|| BM_THROW_RUNTIME( "QuitRequested(): could not lock window");
+	if (!lock.IsLocked())
+		BM_THROW_RUNTIME( "QuitRequested(): could not lock window");
 	while( !IsHidden())
 		Hide();
 	BM_LOG2( BM_LogJobWin, 
@@ -895,7 +898,8 @@ void BmJobStatusWin::AddJob( BMessage* msg) {
 	BM_LOG( BM_LogJobWin, BmString("Adding job ") << name);
 
 	BmAutolockCheckGlobal lock( this);
-	lock.IsLocked()						|| BM_THROW_RUNTIME( "AddJob(): could not lock window");
+	if (!lock.IsLocked())
+		BM_THROW_RUNTIME( "AddJob(): could not lock window");
 
 	JobMap::iterator interfaceIter = mActiveJobs.find( name);
 	if (interfaceIter != mActiveJobs.end()) {
@@ -933,7 +937,8 @@ void BmJobStatusWin::AddJob( BMessage* msg) {
 		}
 
 		BmAutolockCheckGlobal lock( this);
-		lock.IsLocked()						|| BM_THROW_RUNTIME("AddJob(): could not lock window");
+		if (!lock.IsLocked())
+			BM_THROW_RUNTIME("AddJob(): could not lock window");
 
 		// add the new interface to our view:
 		mOuterGroup->AddChild( dynamic_cast<BView*>(controller));
@@ -973,7 +978,8 @@ void BmJobStatusWin::RemoveJob( const char* name) {
 	BM_LOG( BM_LogJobWin, BmString("Removing job ") << name);
 
 	BmAutolockCheckGlobal lock( this);
-	lock.IsLocked()						|| BM_THROW_RUNTIME( "RemoveJob(): could not lock window");
+	if (!lock.IsLocked())
+		BM_THROW_RUNTIME( "RemoveJob(): could not lock window");
 
 	JobMap::iterator interfaceIter = mActiveJobs.find( name);
 	if (interfaceIter == mActiveJobs.end())

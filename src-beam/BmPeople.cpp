@@ -276,7 +276,8 @@ void BmPeopleList::AddPeopleToMenu( BMenu* menu, const BMessage& templateMsg,
 	BmPersonMap noGroupMap;
 	BmGroupMap groupMap;
 	BmAutolockCheckGlobal lock( ModelLocker());
-	lock.IsLocked() 							|| BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
+	if (!lock.IsLocked())
+		BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
 	BmModelItemMap::const_iterator iter;
 	for( iter = begin(); iter != end(); ++iter) {
 		BmPerson* person = dynamic_cast< BmPerson*>( iter->second.Get());
@@ -370,7 +371,8 @@ BMenu* BmPeopleList::CreateSubmenuForPersonMap( const BmPersonMap& personMap,
 \*------------------------------------------------------------------------------*/
 BmRef< BmPerson> BmPeopleList::FindPersonByNodeRef( const node_ref& nref) {
 	BmAutolockCheckGlobal lock( ModelLocker());
-	lock.IsLocked() 							|| BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
+	if (!lock.IsLocked())
+		BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
 	BmModelItemMap::const_iterator iter;
 	for( iter = begin(); iter != end(); ++iter) {
 		BmPerson* person = dynamic_cast< BmPerson*>( iter->second.Get());
@@ -446,17 +448,20 @@ void BmPeopleList::InitializeItems() {
 	char buf[4096];
 	
 	BmAutolockCheckGlobal lock( mModelLocker);
-	lock.IsLocked() 							|| BM_THROW_RUNTIME( ModelNameNC() << ":InitializeItems(): Unable to get lock");
+	if (!lock.IsLocked())
+		BM_THROW_RUNTIME( 
+			ModelNameNC() << ":InitializeItems(): Unable to get lock"
+		);
 
 	BM_LOG2( BM_LogApp, "Start of people-query");
-	(err = mPeopleQuery.SetVolume( &TheResources->MailboxVolume)) == B_OK
-													|| BM_THROW_RUNTIME( BmString("SetVolume(): ") << strerror(err));
-	(err = mPeopleQuery.SetPredicate( "META:email == '**'")) == B_OK
-													|| BM_THROW_RUNTIME( BmString("SetPredicate(): ") << strerror(err));
-	(err = mPeopleQuery.SetTarget( BMessenger( ThePeopleMonitor))) == B_OK
-													|| BM_THROW_RUNTIME( BmString("BmPeopleList::InitializeItems(): could not set query target.\n\nError:") << strerror(err));
-	(err = mPeopleQuery.Fetch()) == B_OK
-													|| BM_THROW_RUNTIME( BmString("Fetch(): ") << strerror(err));
+	if ((err = mPeopleQuery.SetVolume( &TheResources->MailboxVolume)) != B_OK)
+		BM_THROW_RUNTIME( BmString("SetVolume(): ") << strerror(err));
+	if ((err = mPeopleQuery.SetPredicate( "META:email == '**'")) != B_OK)
+		BM_THROW_RUNTIME( BmString("SetPredicate(): ") << strerror(err));
+	if ((err = mPeopleQuery.SetTarget( BMessenger( ThePeopleMonitor))) != B_OK)
+		BM_THROW_RUNTIME( BmString("BmPeopleList::InitializeItems(): could not set query target.\n\nError:") << strerror(err));
+	if ((err = mPeopleQuery.Fetch()) != B_OK)
+		BM_THROW_RUNTIME( BmString("Fetch(): ") << strerror(err));
 	while ((count = mPeopleQuery.GetNextDirents((dirent* )buf, 4096)) > 0) {
 		dent = (dirent* )buf;
 		while (count-- > 0) {
@@ -542,24 +547,24 @@ void BmPeopleMonitor::HandleQueryUpdateMsg( BMessage* msg) {
 			case B_ENTRY_CREATED: {
 				entry_ref eref;
 				const char* name;
-				(err = msg->FindInt64( "directory", &eref.directory)) == B_OK
-													|| BM_THROW_RUNTIME( "Field 'directory' not found in msg !?!");
-				(err = msg->FindInt32( "device", &nref.device)) == B_OK
-													|| BM_THROW_RUNTIME( "Field 'device' not found in msg !?!");
-				(err = msg->FindInt64( "node", &nref.node)) == B_OK
-													|| BM_THROW_RUNTIME( BmString("Field 'node' not found in msg !?!"));
-				(err = msg->FindString( "name", &name)) == B_OK
-													|| BM_THROW_RUNTIME( BmString("Field 'name' not found in msg !?!"));
+				if ((err = msg->FindInt64( "directory", &eref.directory)) != B_OK)
+					BM_THROW_RUNTIME( "Field 'directory' not found in msg !?!");
+				if ((err = msg->FindInt32( "device", &nref.device)) != B_OK)
+					BM_THROW_RUNTIME( "Field 'device' not found in msg !?!");
+				if ((err = msg->FindInt64( "node", &nref.node)) != B_OK)
+					BM_THROW_RUNTIME( BmString("Field 'node' not found in msg !?!"));
+				if ((err = msg->FindString( "name", &name)) != B_OK)
+					BM_THROW_RUNTIME( BmString("Field 'name' not found in msg !?!"));
 				eref.set_name( name);
 				eref.device = nref.device;
 				ThePeopleList->AddPerson( nref, eref);
 				break;
 			}
 			case B_ENTRY_REMOVED: {
-				(err = msg->FindInt32( "device", &nref.device)) == B_OK
-													|| BM_THROW_RUNTIME( "Field 'device' not found in msg !?!");
-				(err = msg->FindInt64( "node", &nref.node)) == B_OK
-													|| BM_THROW_RUNTIME( BmString("Field 'node' not found in msg !?!"));
+				if ((err = msg->FindInt32( "device", &nref.device)) != B_OK)
+					BM_THROW_RUNTIME( "Field 'device' not found in msg !?!");
+				if ((err = msg->FindInt64( "node", &nref.node)) != B_OK)
+					BM_THROW_RUNTIME( BmString("Field 'node' not found in msg !?!"));
 				ThePeopleList->RemovePerson( nref);
 				break;
 			}

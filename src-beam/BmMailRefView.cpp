@@ -476,7 +476,9 @@ void BmMailRefView::KeyDown(const char *bytes, int32 numBytes) {
 				UpdateCaption();
 				{	// scope for lock
 					BmAutolockCheckGlobal lock( DataModel()->ModelLocker());
-					lock.IsLocked()			|| BM_THROW_RUNTIME( BmString() << ControllerName() << "KeyDown(): Unable to lock model");
+					if (!lock.IsLocked())
+						BM_THROW_RUNTIME( BmString() << ControllerName() 
+													<< "KeyDown(): Unable to lock model");
 					for( uint32 i=0; i<itemVect.size(); ++i) {
 						doRemoveModelItem( 
 							((BmListViewItem*)itemVect[i])->ModelItem()

@@ -525,7 +525,11 @@ BmListViewItem* BmListViewController::FindViewItemFor( BmListModelItem* modelIte
 void BmListViewController::AddAllModelItems() {
 	BM_LOG2( BM_LogModelController, BmString(ControllerName())<<": adding items to listview");
 	BmAutolockCheckGlobal lock( DataModel()->ModelLocker());
-	lock.IsLocked()	 						|| BM_THROW_RUNTIME( BmString() << ControllerName() << ":AddAllModelItems(): Unable to lock model");
+	if (!lock.IsLocked())
+		BM_THROW_RUNTIME( 
+			BmString() << ControllerName() 
+				<< ":AddAllModelItems(): Unable to lock model"
+		);
 	MakeEmpty();
 	BmListModel *model = dynamic_cast<BmListModel*>(DataModel().Get());
 	BM_ASSERT( model);
@@ -892,13 +896,23 @@ void BmListViewController::WriteStateInfo() {
 
 	try {
 		stateInfoFilename = StateInfoBasename() << "_" << ModelName();
-		this->Archive( &archive, Hierarchical()) == B_OK
-													|| BM_THROW_RUNTIME( BmString("Unable to archive State-Info for ")<<Name());
-		(err = stateInfoFile.SetTo( TheResources->StateInfoFolder(), stateInfoFilename.String(), 
-											 B_WRITE_ONLY | B_CREATE_FILE | B_ERASE_FILE)) == B_OK
-													|| BM_THROW_RUNTIME( BmString("Could not create state-info file\n\t<") << stateInfoFilename << ">\n\n Result: " << strerror(err));
-		(err = archive.Flatten( &stateInfoFile)) == B_OK
-													|| BM_THROW_RUNTIME( BmString("Could not store state-info into file\n\t<") << stateInfoFilename << ">\n\n Result: " << strerror(err));
+		if (this->Archive( &archive, Hierarchical()) != B_OK)
+			BM_THROW_RUNTIME( BmString("Unable to archive State-Info for ")
+										<< Name());
+		if ((err = stateInfoFile.SetTo( 
+			TheResources->StateInfoFolder(), 
+			stateInfoFilename.String(), 
+			B_WRITE_ONLY | B_CREATE_FILE | B_ERASE_FILE
+		)) != B_OK)
+			BM_THROW_RUNTIME( BmString("Could not create state-info file\n\t<") 
+										<< stateInfoFilename << ">\n\n Result: " 
+										<< strerror(err)
+			);
+		if ((err = archive.Flatten( &stateInfoFile)) != B_OK)
+			BM_THROW_RUNTIME( BmString("Could not store state-info into file\n\t<") 
+										<< stateInfoFilename << ">\n\n Result: " 
+										<< strerror(err)
+			);
 	} catch( BM_error &e) {
 		BM_SHOWERR( e.what());
 	}
@@ -970,8 +984,11 @@ void BmListViewController::ReadStateInfo() {
 		try {
 			delete mInitialStateInfo;
 			mInitialStateInfo = new BMessage;
-			(err = mInitialStateInfo->Unflatten( &stateInfoFile)) == B_OK
-													|| BM_THROW_RUNTIME( BmString("Could not fetch state-info from file\n\t<") << stateInfoFilename << ">\n\n Result: " << strerror(err));
+			if ((err = mInitialStateInfo->Unflatten( &stateInfoFile)) != B_OK)
+				BM_THROW_RUNTIME( 
+					BmString("Could not fetch state-info from file\n\t<") 
+						<< stateInfoFilename << ">\n\n Result: " << strerror(err)
+				);
 			if (mInitialStateInfo)
 				Unarchive( mInitialStateInfo);
 		} catch (BM_error &e) {

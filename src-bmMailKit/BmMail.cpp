@@ -343,8 +343,11 @@ void BmMail::MarkAs( const char* status) {
 				return;
 			}
 			mEntry.GetRef( &eref);
-			(err = mailNode.SetTo( &eref)) == B_OK
-													|| BM_THROW_RUNTIME( BmString("Could not create node for current mail-file.\n\n Result: ") << strerror(err));
+			if ((err = mailNode.SetTo( &eref)) != B_OK)
+				BM_THROW_RUNTIME( 
+					BmString("Could not create node for current mail-file.\n\n "
+								"Result: ") << strerror(err)
+				);
 			mailNode.WriteAttr( BM_MAIL_ATTR_STATUS, B_STRING_TYPE, 0, status, 
 									  strlen( status)+1);
 		}
@@ -573,7 +576,10 @@ BmRef<BmMail> BmMail::doCreateReply( int32 replyMode,
 		// the receiving address could not be determined, so we iterate through 
 		// all identities and try to find one that (may) have received this mail.
 		BmAutolockCheckGlobal lock( ThePopAccountList->ModelLocker());
-		lock.IsLocked() 						|| BM_THROW_RUNTIME( "CreateReply(): Unable to get lock on PopAccountList");
+		if (!lock.IsLocked())
+			BM_THROW_RUNTIME( 
+				"CreateReply(): Unable to get lock on PopAccountList"
+			);
 		BmModelItemMap::const_iterator iter;
 		for( iter = TheIdentityList->begin(); 
 			  iter != TheIdentityList->end() && !receivingAddr.Length(); 
@@ -924,13 +930,21 @@ const BPath& BmMail::DestFolderpath() const {
 			if (mEntry.InitCheck() == B_OK) {
 				entry = mEntry;
 			} else if (mMailRef && mMailRef->InitCheck() == B_OK) {
-				(err = entry.SetTo( mMailRef->EntryRefPtr())) == B_OK
-													|| BM_THROW_RUNTIME( BmString("Could not create entry from mail-ref <") << mMailRef->Key() << ">\n\n Result: " << strerror(err));
+				if ((err = entry.SetTo( mMailRef->EntryRefPtr())) != B_OK)
+					BM_THROW_RUNTIME( 
+						BmString("Could not create entry from mail-ref <") 
+							<< mMailRef->Key() << ">\n\n Result: " << strerror(err)
+					);
 			}
-			(err = entry.GetParent( &homeDir)) == B_OK
-													|| BM_THROW_RUNTIME( BmString("Could not get parent for mail <")<<Name()<<">\n\n Result: " << strerror(err));
-			(err = mDestFolderpath.SetTo( &homeDir, NULL)) == B_OK
-													|| BM_THROW_RUNTIME( BmString("Could not get path for homeDir of mail <")<<Name()<<">\n\n Result: " << strerror(err));
+			if ((err = entry.GetParent( &homeDir)) != B_OK)
+				BM_THROW_RUNTIME( BmString("Could not get parent for mail <")
+											<< Name() << ">\n\n Result: " 
+											<< strerror(err));
+			if ((err = mDestFolderpath.SetTo( &homeDir, NULL)) != B_OK)
+				BM_THROW_RUNTIME( 
+					BmString("Could not get path for homeDir of mail <")
+						<< Name() << ">\n\n Result: " << strerror(err)
+				);
 		}
 	}
 	return mDestFolderpath;
@@ -996,11 +1010,18 @@ bool BmMail::Store() {
 		//			files appearing to have zero-length or similar peculiarities).
 		//
 		// So: first, we determine the tmp-folder where the mail is being created:
-		(err = find_directory( B_COMMON_TEMP_DIRECTORY, 
-									  &tmpPath, true)) == B_OK
-													|| BM_THROW_RUNTIME( BmString("Could not find tmp-directory on this system") << "\n\n Result: " << strerror(err));
-		(err = tmpDir.SetTo( tmpPath.Path())) == B_OK
-													|| BM_THROW_RUNTIME( BmString("Could not find tmp-directory on this system") << "\n\n Result: " << strerror(err));
+		if ((err = find_directory( 
+			B_COMMON_TEMP_DIRECTORY, &tmpPath, true
+		)) != B_OK)
+			BM_THROW_RUNTIME( 
+				BmString("Could not find tmp-directory on this system") 
+					<< "\n\n Result: " << strerror(err)
+			);
+		if ((err = tmpDir.SetTo( tmpPath.Path())) != B_OK)
+			BM_THROW_RUNTIME( 
+				BmString("Could not find tmp-directory on this system") 
+					<< "\n\n Result: " << strerror(err)
+			);
 
 		DestFolderpath();						// init mDestFolderpath
 
@@ -1012,16 +1033,29 @@ bool BmMail::Store() {
 			} else {
 				// mail has been read from disk, we recycle the old name, but move 
 				// it to the temp-folder (see below)
-				(err = mEntry.SetTo( mMailRef->EntryRefPtr())) == B_OK
-													|| BM_THROW_RUNTIME( BmString("Could not create entry from mail-ref <") << mMailRef->Key() << ">\n\n Result: " << strerror(err));
+				if ((err = mEntry.SetTo( mMailRef->EntryRefPtr())) != B_OK)
+					BM_THROW_RUNTIME( 
+						BmString("Could not create entry from mail-ref <") 
+							<< mMailRef->Key() << ">\n\n Result: " << strerror(err)
+					);
 				mEntry.GetName( basicFilename);
 			}
-			(err = mEntry.GetParent( &homeDir)) == B_OK
-													|| BM_THROW_RUNTIME( BmString("Could not get parent for mail <")<<basicFilename<<">\n\n Result: " << strerror(err));
-			(err = newHomePath.SetTo( &homeDir, NULL)) == B_OK
-													|| BM_THROW_RUNTIME( BmString("Could not get path for homeDir of mail <")<<basicFilename<<">\n\n Result: " << strerror(err));
-			(err = mEntry.MoveTo( &tmpDir)) == B_OK
-													|| BM_THROW_RUNTIME( BmString("Could not move mail <")<<basicFilename<<"> to tmp-folder\n\n Result: " << strerror(err));
+			if ((err = mEntry.GetParent( &homeDir)) != B_OK)
+				BM_THROW_RUNTIME( 
+					BmString("Could not get parent for mail <")
+						<< basicFilename << ">\n\n Result: " << strerror(err)
+				);
+			if ((err = newHomePath.SetTo( &homeDir, NULL)) != B_OK)
+				BM_THROW_RUNTIME( 
+					BmString("Could not get path for homeDir of mail <")
+						<< basicFilename << ">\n\n Result: " << strerror(err)
+				);
+			if ((err = mEntry.MoveTo( &tmpDir)) != B_OK)
+				BM_THROW_RUNTIME( 
+					BmString("Could not move mail <")
+						<< basicFilename << "> to tmp-folder\n\n Result: " 
+						<< strerror(err)
+				);
 		} else {
 			// this mail is new, so first we find it's new home (a mail-folder)...
 			BmString p( ThePrefs->GetString("MailboxPath") + "/" 
@@ -1032,8 +1066,11 @@ bool BmMail::Store() {
 			// the temp-folder:
 			BmString newName  
 				= BmString(tmpPath.Path()) + "/" + CreateBasicFilename();
-			(err = mEntry.SetTo( newName.String())) == B_OK
-													|| BM_THROW_RUNTIME( BmString("Could not create entry for mail-file <") << newName << ">\n\n Result: " << strerror(err));
+			if ((err = mEntry.SetTo( newName.String())) != B_OK)
+				BM_THROW_RUNTIME( 
+					BmString("Could not create entry for mail-file <") 
+						<< newName << ">\n\n Result: " << strerror(err)
+				);
 			mEntry.GetName( basicFilename);
 		}
 
@@ -1064,24 +1101,35 @@ bool BmMail::Store() {
 			|| newBox == mbox + BM_MAIL_FOLDER_DRAFT) {
 				// yep, its a system folder, so we silently (re-)create it:
 				create_directory( newHomePath.Path(), 0755);
-				(err = homeDir.SetTo( newHomePath.Path())) == B_OK
-													|| BM_THROW_RUNTIME( BmString("Could not set directory to <") << newHomePath.Path() << ">\n\n Result: " << strerror(err));
+				if ((err = homeDir.SetTo( newHomePath.Path())) != B_OK)
+					BM_THROW_RUNTIME( 
+						BmString("Could not set directory to <") 
+							<< newHomePath.Path() << ">\n\n Result: " 
+							<< strerror(err)
+					);
 			} else
-				throw BM_runtime_error( BmString("Could not set directory to <") 
-													<< newHomePath.Path() 
-													<< ">\n\n Result: " 
-													<< strerror(err));
+				BM_THROW_RUNTIME( 
+					BmString("Could not set directory to <") 
+						<< newHomePath.Path() << ">\n\n Result: " 
+						<< strerror(err)
+				);
 		}
 			
 		// we create/open the new mailfile...
-		(err = mailFile.SetTo( &mEntry, 
-									  B_WRITE_ONLY 
-									  | B_ERASE_FILE 
-									  | B_CREATE_FILE)) == B_OK
-													|| BM_THROW_RUNTIME( BmString("Could not create mail-file\n\t<") << basicFilename << ">\n\n Result: " << strerror(err));
+		if ((err = mailFile.SetTo( 
+			&mEntry, 
+			B_WRITE_ONLY | B_ERASE_FILE | B_CREATE_FILE
+		)) != B_OK)
+			BM_THROW_RUNTIME( 
+				BmString("Could not create mail-file\n\t<") 
+					<< basicFilename << ">\n\n Result: " << strerror(err)
+			);
 		// ...set the correct mime-type...
-		(err = mailInfo.SetTo( &mailFile)) == B_OK
-													|| BM_THROW_RUNTIME( BmString("Could not set node-info for mail-file\n\t<") << basicFilename << ">\n\n Result: " << strerror(err));
+		if ((err = mailInfo.SetTo( &mailFile)) != B_OK)
+			BM_THROW_RUNTIME( 
+				BmString("Could not set node-info for mail-file\n\t<") 
+					<< basicFilename << ">\n\n Result: " << strerror(err)
+			);
 		mailInfo.SetType( "text/x-email");
 		// ...store all other attributes...
 		StoreAttributes( mailFile);
@@ -1101,11 +1149,17 @@ bool BmMail::Store() {
 		}
 		mailFile.Sync();
 		// now move mail to it's real home:
-		(err = mEntry.MoveTo( &homeDir)) == B_OK
-													|| BM_THROW_RUNTIME( BmString("Could not move mail <")<<basicFilename<<"> to home-folder\n\n Result: " << strerror(err));
+		if ((err = mEntry.MoveTo( &homeDir)) != B_OK)
+			BM_THROW_RUNTIME( 
+				BmString("Could not move mail <") << basicFilename 
+					<< "> to home-folder\n\n Result: " << strerror(err)
+			);
 		entry_ref eref;
-		(err = mEntry.GetRef( &eref)) == B_OK
-													|| BM_THROW_RUNTIME( BmString("Could not get entry-ref for mail <")<<basicFilename<<">.\n\n Result: " << strerror(err));
+		if ((err = mEntry.GetRef( &eref)) != B_OK)
+			BM_THROW_RUNTIME( 
+				BmString("Could not get entry-ref for mail <") << basicFilename
+					<< ">.\n\n Result: " << strerror(err)
+			);
 		// now that the mail lives on the disk, we move it to tash, if requested:
 		if (mMoveToTrash)
 			::MoveToTrash( &eref, 1);
@@ -1255,8 +1309,11 @@ bool BmMail::StartJob() {
 								 &mRightMargin, sizeof(int32));
 		// ...and read file contents:
 		off_t mailSize;
-		(err = mailFile.GetSize( &mailSize)) == B_OK
-													|| BM_THROW_RUNTIME(BmString("Could not get size of mail-file <") << eref.name << "> \n\nError:" << strerror(err));
+		if ((err = mailFile.GetSize( &mailSize)) != B_OK)
+			BM_THROW_RUNTIME( 
+				BmString("Could not get size of mail-file <") << eref.name 
+					<< "> \n\nError:" << strerror(err)
+			);
 		BM_LOG2( BM_LogMailParse, 
 					BmString("...should be reading ") << mailSize << " bytes");
 		char* buf = mailText.LockBuffer( mailSize);

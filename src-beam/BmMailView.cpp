@@ -218,8 +218,11 @@ BmMailView* BmMailView::CreateInstance( minimax minmax, BRect frame,
 		// ...ok, archive file found, we fetch our state from it:
 		try {
 			BMessage archive;
-			(err = archive.Unflatten( &archiveFile)) == B_OK
-													|| BM_THROW_RUNTIME( BmString("Could not fetch mail-view archive from file\n\t<") << archiveFilename << ">\n\n Result: " << strerror(err));
+			if ((err = archive.Unflatten( &archiveFile)) != B_OK)
+				BM_THROW_RUNTIME( 
+					BmString("Could not fetch mail-view archive from file\n\t<") 
+						<< archiveFilename << ">\n\n Result: " << strerror(err)
+				);
 			instance->Unarchive( &archive);
 		} catch (BM_error &e) {
 			BM_SHOWERR( e.what());
@@ -1046,15 +1049,22 @@ bool BmMailView::WriteStateInfo() {
 
 	try {
 		BmString filename = BmString( "MailView") << (mOutbound ? "_out": "_in");
-		this->Archive( &archive, true) == B_OK
-													|| BM_THROW_RUNTIME("Unable to archive MailView-object");
-		(err = cacheFile.SetTo( 
+		if (this->Archive( &archive, true) != B_OK)
+			BM_THROW_RUNTIME("Unable to archive MailView-object");
+		if ((err = cacheFile.SetTo( 
 			TheResources->StateInfoFolder(), 
 			filename.String(), 
-			B_WRITE_ONLY | B_CREATE_FILE | B_ERASE_FILE)) == B_OK
-													|| BM_THROW_RUNTIME( BmString("Could not create cache file\n\t<") << filename << ">\n\n Result: " << strerror(err));
-		(err = archive.Flatten( &cacheFile)) == B_OK
-													|| BM_THROW_RUNTIME( BmString("Could not store state-cache into file\n\t<") << filename << ">\n\n Result: " << strerror(err));
+			B_WRITE_ONLY | B_CREATE_FILE | B_ERASE_FILE
+		)) != B_OK)
+			BM_THROW_RUNTIME( 
+				BmString("Could not create cache file\n\t<") << filename 
+					<< ">\n\n Result: " << strerror(err)
+			);
+		if ((err = archive.Flatten( &cacheFile)) != B_OK)
+			BM_THROW_RUNTIME( 
+				BmString("Could not store state-cache into file\n\t<") 
+					<< filename << ">\n\n Result: " << strerror(err)
+			);
 	} catch( BM_error &e) {
 		BM_SHOWERR( e.what());
 		return false;

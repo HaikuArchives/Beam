@@ -204,7 +204,8 @@ void BmFilterList::ForeignKeyChanged( const BmString& key,
 												  const BmString& oldVal, 
 												  const BmString& newVal) {
 	BmAutolockCheckGlobal lock( ModelLocker());
-	lock.IsLocked() 							|| BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
+	if (!lock.IsLocked())
+		BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
 	BmModelItemMap::const_iterator iter;
 	for( iter = begin(); iter != end(); ++iter) {
 		BmFilter* filter = dynamic_cast< BmFilter*>( iter->second.Get());
@@ -226,8 +227,8 @@ void BmFilterList::LoadAddons() {
 	BM_LOG2( BM_LogFilter, BmString("Start of LoadAddons() for FilterList"));
 
 	// determine the path to the user-config-directory:
-	find_directory( B_USER_ADDONS_DIRECTORY, &path) == B_OK
-													|| BM_THROW_RUNTIME( "Sorry, could not determine user's addon-dir !?!");
+	if (find_directory( B_USER_ADDONS_DIRECTORY, &path) != B_OK)
+		BM_THROW_RUNTIME( "Sorry, could not determine user's addon-dir !?!");
 	BmString addonPath = bmApp->AppPath() + "/add-ons/Filters";
 	TheResources->GetFolder( addonPath, addonDir);
 
@@ -304,8 +305,11 @@ void BmFilterList::InstantiateItems( BMessage* archive) {
 	int32 numChildren = FindMsgInt32( archive, BmListModelItem::MSG_NUMCHILDREN);
 	for( int i=0; i<numChildren; ++i) {
 		BMessage msg;
-		(err = archive->FindMessage( BmListModelItem::MSG_CHILDREN, i, &msg)) == B_OK
-													|| BM_THROW_RUNTIME(BmString("Could not find signature nr. ") << i+1 << " \n\nError:" << strerror(err));
+		if ((err = archive->FindMessage( 
+			BmListModelItem::MSG_CHILDREN, i, &msg
+		)) != B_OK)
+			BM_THROW_RUNTIME(BmString("Could not find signature nr. ") << i+1 
+										<< " \n\nError:" << strerror(err));
 		BmFilter* newFilter = new BmFilter( &msg, this);
 		AddItemToList( newFilter);
 	}

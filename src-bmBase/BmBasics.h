@@ -35,7 +35,8 @@
 #include "BmBase.h"
 #include "BmString.h"
 
-#define BM_ASSERT(E)		(!(E) ? _debuggerAssert(__FILE__,__LINE__, (char*)#E) : (int)0)
+#define BM_ASSERT(E)		(!(E) ? _debuggerAssert(__FILE__,__LINE__, (char*)#E) \
+										: (int)0)
 
 extern IMPEXPBMBASE bool BeamInTestMode;		
 							// indicates if Beam is running in test-mode
@@ -106,15 +107,18 @@ public:
 		-	throws exception of specific type
 \*------------------------------------------------------------------------------*/
 #define BM_THROW_RUNTIME(s) BM_Throw_Runtime(s,__LINE__,__FILE__)
-IMPEXPBMBASE bool BM_Throw_Runtime( const BmString &s, int line, 
-												const char* file);
 
 #define BM_THROW_INVALID(s) BM_Throw_Invalid(s,__LINE__,__FILE__)
-IMPEXPBMBASE bool BM_Throw_Invalid( const BmString &s, int line, 
-												const char* file);
 
 #define BM_THROW_NETWORK(s) BM_Throw_Network(s,__LINE__,__FILE__)
-IMPEXPBMBASE bool BM_Throw_Network( const BmString &s, int line, 
+
+IMPEXPBMBASE void BM_Throw_Runtime( const BmString &s, int line, 
+												const char* file);
+
+IMPEXPBMBASE void BM_Throw_Invalid( const BmString &s, int line, 
+												const char* file);
+
+IMPEXPBMBASE void BM_Throw_Network( const BmString &s, int line, 
 												const char* file);
 
 /*------------------------------------------------------------------------------*\

@@ -125,7 +125,10 @@ status_t BmSignature::Archive( BMessage* archive, bool deep) const {
 \*------------------------------------------------------------------------------*/
 BmString BmSignature::GetSignatureString() {
 	BmAutolockCheckGlobal lock( mAccessLock);
-	lock.IsLocked()	 						|| BM_THROW_RUNTIME( BmString(Key()) << "-destructor: Unable to get access-lock");
+	if (!lock.IsLocked())
+		BM_THROW_RUNTIME( 
+			BmString(Key()) << "-destructor: Unable to get access-lock"
+		);
 	if (!mContent.Length())
 		return "";
 	if (mDynamic) {
@@ -234,8 +237,11 @@ void BmSignatureList::InstantiateItems( BMessage* archive) {
 	int32 numChildren = FindMsgInt32( archive, BmListModelItem::MSG_NUMCHILDREN);
 	for( int i=0; i<numChildren; ++i) {
 		BMessage msg;
-		(err = archive->FindMessage( BmListModelItem::MSG_CHILDREN, i, &msg)) == B_OK
-													|| BM_THROW_RUNTIME(BmString("Could not find signature nr. ") << i+1 << " \n\nError:" << strerror(err));
+		if ((err = archive->FindMessage( 
+			BmListModelItem::MSG_CHILDREN, i, &msg
+		)) != B_OK)
+			BM_THROW_RUNTIME( BmString("Could not find signature nr. ") << i+1 
+										<< " \n\nError:" << strerror(err));
 		BmSignature* newSig = new BmSignature( &msg, this);
 		BM_LOG3( BM_LogApp, BmString("Signature <") << newSig->Name() << "," << newSig->Key() << "> read");
 		AddItemToList( newSig);

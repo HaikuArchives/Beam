@@ -253,7 +253,8 @@ void BmIdentityList::ForeignKeyChanged( const BmString& key,
 													 const BmString& oldVal, 
 													 const BmString& newVal) {
 	BmAutolockCheckGlobal lock( ModelLocker());
-	lock.IsLocked() 							|| BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
+	if (!lock.IsLocked())
+		BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
 	BmModelItemMap::const_iterator iter;
 	for( iter = begin(); iter != end(); ++iter) {
 		BmIdentity* ident = dynamic_cast< BmIdentity*>( iter->second.Get());
@@ -293,8 +294,11 @@ void BmIdentityList::InstantiateItems( BMessage* archive) {
 	int32 numChildren = FindMsgInt32( archive, BmListModelItem::MSG_NUMCHILDREN);
 	for( int i=0; i<numChildren; ++i) {
 		BMessage msg;
-		(err = archive->FindMessage( BmListModelItem::MSG_CHILDREN, i, &msg)) == B_OK
-													|| BM_THROW_RUNTIME(BmString("Could not find identity nr. ") << i+1 << " \n\nError:" << strerror(err));
+		if ((err = archive->FindMessage( 
+			BmListModelItem::MSG_CHILDREN, i, &msg
+		)) != B_OK)
+			BM_THROW_RUNTIME( BmString("Could not find identity nr. ") << i+1 
+										<< " \n\nError:" << strerror(err));
 		BmIdentity* newIdent = new BmIdentity( &msg, this);
 		BM_LOG3( BM_LogMailTracking, BmString("Identity <") << newIdent->Name() << "," << newIdent->Key() << "> read");
 		AddItemToList( newIdent);
@@ -318,7 +322,8 @@ void BmIdentityList::InstantiateItems( BMessage* archive) {
 void BmIdentityList::ResetToSaved() {
 	BM_LOG2( BM_LogMailTracking, BmString("Start of ResetToSaved() for IdentityList"));
 	BmAutolockCheckGlobal lock( ModelLocker());
-	lock.IsLocked() 							|| BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
+	if (!lock.IsLocked())
+		BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
 	Cleanup();
 	StartJobInThisThread();
 	BM_LOG2( BM_LogMailTracking, BmString("End of ResetToSaved() for IdentityList"));
@@ -333,7 +338,8 @@ void BmIdentityList::ResetToSaved() {
 \*------------------------------------------------------------------------------*/
 BmRef<BmIdentity> BmIdentityList::FindIdentityForPopAccount( const BmString accName) {
 	BmAutolockCheckGlobal lock( ModelLocker());
-	lock.IsLocked() 							|| BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
+	if (!lock.IsLocked())
+		BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
 	BmModelItemMap::const_iterator iter;
 	// check if we have a bit-bucket identity:
 	for( iter = begin(); iter != end(); ++iter) {
@@ -357,7 +363,8 @@ BmRef<BmIdentity> BmIdentityList::FindIdentityForPopAccount( const BmString accN
 \*------------------------------------------------------------------------------*/
 BmString BmIdentityList::FindFromAddressForPopAccount( const BmString accName) {
 	BmAutolockCheckGlobal lock( ModelLocker());
-	lock.IsLocked() 							|| BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
+	if (!lock.IsLocked())
+		BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
 	BmRef<BmIdentity> ident = FindIdentityForPopAccount( accName);
 	if (ident)
 		return ident->GetFromAddress();
@@ -371,7 +378,8 @@ BmString BmIdentityList::FindFromAddressForPopAccount( const BmString accName) {
 \*------------------------------------------------------------------------------*/
 BmRef<BmIdentity> BmIdentityList::FindIdentityForAddrSpec( const BmString addrSpec) {
 	BmAutolockCheckGlobal lock( ModelLocker());
-	lock.IsLocked() 							|| BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
+	if (!lock.IsLocked())
+		BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
 	BmModelItemMap::const_iterator iter;
 	// we first check whether any identity handles the given address (as primary
 	// address):
@@ -396,7 +404,8 @@ BmRef<BmIdentity> BmIdentityList::FindIdentityForAddrSpec( const BmString addrSp
 \*------------------------------------------------------------------------------*/
 BmRef<BmPopAccount> BmIdentityList::FindPopAccountForAddrSpec( const BmString addrSpec) {
 	BmAutolockCheckGlobal lock( ModelLocker());
-	lock.IsLocked() 							|| BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
+	if (!lock.IsLocked())
+		BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
 	BmRef<BmIdentity> ident = FindIdentityForAddrSpec( addrSpec);
 	if (ident)
 		return ident->PopAcc();

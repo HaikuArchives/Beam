@@ -131,8 +131,9 @@ BmMailRef::BmMailRef( BMessage* archive, BmMailRefList* model)
 {
 	try {
 		status_t err;
-		(err = archive->FindRef( MSG_ENTRYREF, &mEntryRef)) == B_OK
-													|| BM_THROW_RUNTIME( BmString("BmMailRef: Could not find msg-field ") << MSG_ENTRYREF << "\n\nError:" << strerror(err));
+		if ((err = archive->FindRef( MSG_ENTRYREF, &mEntryRef)) != B_OK)
+			BM_THROW_RUNTIME( BmString("BmMailRef: Could not find msg-field ") 
+										<< MSG_ENTRYREF << "\n\nError:" << strerror(err));
 		mNodeRef.node = FindMsgInt64( archive, MSG_INODE);
 		mNodeRef.device = mEntryRef.device;
 		Key( BM_REFKEY( mNodeRef));
@@ -352,8 +353,12 @@ void BmMailRef::MarkAs( const char* status) {
 		BNode mailNode;
 		status_t err;
 		mStatus = status;
-		(err = mailNode.SetTo( &mEntryRef)) == B_OK
-													|| BM_THROW_RUNTIME( BmString("Could not create node for current mail-file.\n\n Result: ") << strerror(err));
+		if ((err = mailNode.SetTo( &mEntryRef)) != B_OK)
+			BM_THROW_RUNTIME( 
+				BmString( "Could not create node for current mail-file.\n\n"
+							 " Result: ") 
+					<< strerror(err)
+			);
 		mailNode.WriteAttr( BM_MAIL_ATTR_STATUS, B_STRING_TYPE, 0, status, strlen( status)+1);
 		TellModelItemUpdated( UPD_STATUS);
 		BmRef<BmListModel> listModel( ListModel());

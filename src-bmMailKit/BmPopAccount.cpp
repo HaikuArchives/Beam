@@ -491,9 +491,11 @@ void BmPopAccountList::InstantiateItems( BMessage* archive) {
 	int32 numChildren = FindMsgInt32( archive, BmListModelItem::MSG_NUMCHILDREN);
 	for( int i=0; i<numChildren; ++i) {
 		BMessage msg;
-		(err = archive->FindMessage( BmListModelItem::MSG_CHILDREN, 
-											  i, &msg)) == B_OK
-													|| BM_THROW_RUNTIME(BmString("Could not find pop-account nr. ") << i+1 << " \n\nError:" << strerror(err));
+		if ((err = archive->FindMessage( 
+			BmListModelItem::MSG_CHILDREN, i, &msg
+		)) != B_OK)
+			BM_THROW_RUNTIME( BmString("Could not find pop-account nr. ") << i+1 
+										<< " \n\nError:" << strerror(err));
 		BmPopAccount* newAcc = new BmPopAccount( &msg, this);
 		BM_LOG3( BM_LogMailTracking, 
 					BmString("PopAccount <") << newAcc->Name() << "," 
@@ -522,7 +524,8 @@ void BmPopAccountList::ResetToSaved() {
 	BM_LOG2( BM_LogMailTracking, 
 				BmString("Start of ResetToSaved() for PopAccountList"));
 	BmAutolockCheckGlobal lock( ModelLocker());
-	lock.IsLocked() 							|| BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
+	if (!lock.IsLocked())
+		BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
 	// first we copy all uid-lists into a temp map...
 	map<BmString, BmUidVect > uidListMap;
 	BmModelItemMap::const_iterator iter;
@@ -552,7 +555,8 @@ void BmPopAccountList::ForeignKeyChanged( const BmString& key,
 														const BmString& oldVal, 
 														const BmString& newVal) {
 	BmAutolockCheckGlobal lock( ModelLocker());
-	lock.IsLocked() 							|| BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
+	if (!lock.IsLocked())
+		BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
 	BmModelItemMap::const_iterator iter;
 	for( iter = begin(); iter != end(); ++iter) {
 		BmPopAccount* acc = dynamic_cast< BmPopAccount*>( iter->second.Get());
@@ -574,7 +578,8 @@ void BmPopAccountList::ForeignKeyChanged( const BmString& key,
 \*------------------------------------------------------------------------------*/
 void BmPopAccountList::CheckMail( bool allAccounts) {
 	BmAutolockCheckGlobal lock( ModelLocker());
-	lock.IsLocked() 							|| BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
+	if (!lock.IsLocked())
+		BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
 	BmModelItemMap::const_iterator iter;
 	for( iter = begin(); iter != end(); ++iter) {
 		BmPopAccount* acc = dynamic_cast< BmPopAccount*>( iter->second.Get());

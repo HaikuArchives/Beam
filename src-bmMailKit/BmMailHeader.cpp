@@ -597,7 +597,11 @@ const BmString& BmMailHeader::GetFieldVal( BmString fieldName) {
 bool BmMailHeader::AddressFieldContainsAddrSpec( BmString fieldName, 
 																 const BmString addrSpec) {
 	fieldName.CapitalizeEachWord();
-	IsAddressField( fieldName)				|| BM_THROW_RUNTIME( BmString("BmMailHeader.AddressFieldContainsAddrSpec(): Field is not an address-field."));
+	if (!IsAddressField( fieldName))
+		BM_THROW_RUNTIME( 
+			"BmMailHeader.AddressFieldContainsAddrSpec(): Field is not an "
+			"address-field."
+		);
 	return mAddrMap[fieldName].ContainsAddrSpec( addrSpec);
 }
 
@@ -608,7 +612,11 @@ bool BmMailHeader::AddressFieldContainsAddrSpec( BmString fieldName,
 bool BmMailHeader::AddressFieldContainsAddress( BmString fieldName, 
 																const BmString& address) {
 	fieldName.CapitalizeEachWord();
-	IsAddressField( fieldName)				|| BM_THROW_RUNTIME( BmString("BmMailHeader.AddressFieldContainsAddress(): Field is not an address-field."));
+	if (!IsAddressField( fieldName))
+		BM_THROW_RUNTIME( 
+			"BmMailHeader.AddressFieldContainsAddress(): Field is not an "
+			"address-field."
+		);
 	BmAddress addr( address);
 	return mAddrMap[fieldName].ContainsAddrSpec( addr.AddrSpec());
 }
@@ -619,7 +627,10 @@ bool BmMailHeader::AddressFieldContainsAddress( BmString fieldName,
 \*------------------------------------------------------------------------------*/
 const BmAddressList& BmMailHeader::GetAddressList( BmString fieldName) {
 	fieldName.CapitalizeEachWord();
-	IsAddressField( fieldName)				|| BM_THROW_RUNTIME( BmString("BmMailHeader.GetAddressList(): Field is not an address-field."));
+	if (!IsAddressField( fieldName))
+		BM_THROW_RUNTIME( 
+			"BmMailHeader.GetAddressList(): Field is not an address-field."
+		);
 	return mAddrMap[fieldName];
 }
 

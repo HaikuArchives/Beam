@@ -99,7 +99,8 @@ void BmMenuController::UpdateItemList( void) {
 	if (mListModel) {
 		// create menu according to list-model:
 		BmAutolockCheckGlobal lock( mListModel->ModelLocker());
-		lock.IsLocked()	 					|| BM_THROW_RUNTIME( "UpdateItemList(): Unable to lock model");
+		if (!lock.IsLocked())
+			BM_THROW_RUNTIME( "UpdateItemList(): Unable to lock model");
 		BMenuItem* old;
 		while( (old = RemoveItem( (int32)0))!=NULL)
 			delete old;

@@ -119,14 +119,20 @@ BM_text_error::BM_text_error( const char* what_arg, const char* ctx, int32 pos)
 	throwing-helpers...
 \********************************************************************************/
 
-bool BM_Throw_Runtime( const BmString &s, int line, const char* file) { 
-	throw BM_runtime_error(BmString("*** Exception at ")<<file<<":"<<line<<" ***\n"<<s); 
+void BM_Throw_Runtime( const BmString &s, int line, const char* file) { 
+	throw BM_runtime_error( 
+		BmString("*** Exception at ") << file << ":" << line<<" ***\n"<<s
+	); 
 }
 
-bool BM_Throw_Invalid( const BmString &s, int line, const char* file) { 
-	throw BM_invalid_argument(BmString("*** Exception at ")<<file<<":"<<line<<" ***\n"<<s); 
+void BM_Throw_Invalid( const BmString &s, int line, const char* file) { 
+	throw BM_invalid_argument(
+		BmString("*** Exception at ")<<file<<":"<<line<<" ***\n"<<s
+	); 
 }
 
-bool BM_Throw_Network( const BmString &s, int line, const char* file) { 
-	throw BM_network_error(BmString("*** Exception at ")<<file<<":"<<line<<" ***\n"<<s); 
+void BM_Throw_Network( const BmString &s, int line, const char* file) { 
+	throw BM_network_error(
+		BmString("*** Exception at ")<<file<<":"<<line<<" ***\n"<<s
+	); 
 }

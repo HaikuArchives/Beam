@@ -101,8 +101,10 @@ bool BmMailMover::StartJob() {
 			ref = static_cast<entry_ref*>( mRefList->ItemAt(i));
 			if (ref->directory == destNodeRef.node && ref->device == destNodeRef.device)
 				continue;						// no move neccessary, already at 'new' home
-			(err = entry.SetTo( ref)) == B_OK
-													||	BM_THROW_RUNTIME(BmString("couldn't create entry for <")<<ref->name<<"> \n\nError:" << strerror(err));
+			if ((err = entry.SetTo( ref)) != B_OK)
+				BM_THROW_RUNTIME( BmString("couldn't create entry for <")
+											<< ref->name << "> \n\nError:" 
+											<< strerror(err));
 			err = entry.MoveTo( &destDir);
 			if ( err == B_FILE_EXISTS) {
 				// increment counter until we have found a unique name:

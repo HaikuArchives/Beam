@@ -84,8 +84,9 @@ BmMailFolder::BmMailFolder( BMessage* archive, BmMailFolderList* model, BmMailFo
 {
 	try {
 		status_t err;
-		(err = archive->FindRef( MSG_ENTRYREF, &mEntryRef)) == B_OK
-													|| BM_THROW_RUNTIME( BmString("BmMailFolder: Could not find msg-field ") << MSG_ENTRYREF << "\n\nError:" << strerror(err));
+		if ((err = archive->FindRef( MSG_ENTRYREF, &mEntryRef)) != B_OK)
+			BM_THROW_RUNTIME( BmString("BmMailFolder: Could not find msg-field ") 
+										<< MSG_ENTRYREF << "\n\nError:" << strerror(err));
 		mNodeRef.node = FindMsgInt64( archive, MSG_INODE);
 		mNodeRef.device = mEntryRef.device;
 		mLastModified = FindMsgInt32( archive, MSG_LASTMODIFIED);
@@ -168,12 +169,14 @@ bool BmMailFolder::CheckIfModifiedSince( time_t when, time_t* storeNewModTime) {
 	
 	BM_LOG3( BM_LogMailTracking, "BmMailFolder::CheckIfModifiedSince() - start");
 	mailDir.SetTo( this->EntryRefPtr());
-	(err = mailDir.InitCheck()) == B_OK
-													|| BM_THROW_RUNTIME(BmString("Could not access \nmail-folder <") << Name() << "> \n\nError:" << strerror(err));
+	if ((err = mailDir.InitCheck()) != B_OK)
+		BM_THROW_RUNTIME( BmString("Could not access \nmail-folder <") << Name() 
+									<< "> \n\nError:" << strerror(err));
 	time_t mtime;
 	BM_LOG3( BM_LogMailTracking, "BmMailFolder::CheckIfModifiedSince() - getting modification time");
-	(err = mailDir.GetModificationTime( &mtime)) == B_OK
-													|| BM_THROW_RUNTIME(BmString("Could not get mtime \nfor mail-folder <") << Name() << "> \n\nError:" << strerror(err));
+	if ((err = mailDir.GetModificationTime( &mtime)) != B_OK)
+		BM_THROW_RUNTIME( BmString("Could not get mtime \nfor mail-folder <") 
+									<< Name() << "> \n\nError:" << strerror(err));
 	BM_LOG3( BM_LogMailTracking, BmString("checking if ") << Name() << ": (" << mtime << " > " << when << ")");
 	if (mtime > when) {
 		BM_LOG2( BM_LogMailTracking, BmString("Mtime of folder <")<<Name()<<"> has changed!");
@@ -221,7 +224,8 @@ void BmMailFolder::BumpNewMailCountForSubfolders( int32 offset) {
 \*------------------------------------------------------------------------------*/
 BmRef<BmMailRefList> BmMailFolder::MailRefList() {
 	BmAutolockCheckGlobal lock( nRefListLocker);
-	lock.IsLocked() 							|| BM_THROW_RUNTIME( Name() + ":RemoveMailRefList(): Unable to get lock");
+	if (!lock.IsLocked())
+		BM_THROW_RUNTIME( Name() + ":RemoveMailRefList(): Unable to get lock");
 	if (!mMailRefList)
 		CreateMailRefList();
 	return mMailRefList;
@@ -241,7 +245,8 @@ void BmMailFolder::CreateMailRefList() {
 \*------------------------------------------------------------------------------*/
 void BmMailFolder::RemoveMailRefList() {
 	BmAutolockCheckGlobal lock( nRefListLocker);
-	lock.IsLocked() 							|| BM_THROW_RUNTIME( Name() + ":RemoveMailRefList(): Unable to get lock");
+	if (!lock.IsLocked())
+		BM_THROW_RUNTIME( Name() + ":RemoveMailRefList(): Unable to get lock");
 	mMailRefList = NULL;
 }
 
@@ -252,7 +257,8 @@ void BmMailFolder::RemoveMailRefList() {
 \*------------------------------------------------------------------------------*/
 void BmMailFolder::CleanupForMailRefList( BmMailRefList* refList) {
 	BmAutolockCheckGlobal lock( nRefListLocker);
-	lock.IsLocked() 							|| BM_THROW_RUNTIME( Name() + ":CleanupForMailRefList(): Unable to get lock");
+	if (!lock.IsLocked())
+		BM_THROW_RUNTIME( Name() + ":CleanupForMailRefList(): Unable to get lock");
 	if (mMailRefList == refList)
 		RemoveMailRefList();
 }
@@ -289,7 +295,8 @@ void BmMailFolder::UpdateName( const entry_ref& eref) {
 \*------------------------------------------------------------------------------*/
 void BmMailFolder::RecreateCache() {
 	BmAutolockCheckGlobal lock( nRefListLocker);
-	lock.IsLocked() 							|| BM_THROW_RUNTIME( Name() + ":RecreateCache(): Unable to get lock");
+	if (!lock.IsLocked())
+		BM_THROW_RUNTIME( Name() + ":RecreateCache(): Unable to get lock");
 	CreateMailRefList();
 	if (mMailRefList)
 		mMailRefList->MarkCacheAsDirty();
@@ -303,7 +310,8 @@ void BmMailFolder::RecreateCache() {
 \*------------------------------------------------------------------------------*/
 void BmMailFolder::AddMailRef( entry_ref& eref, struct stat& st) {
 	BmAutolockCheckGlobal lock( nRefListLocker);
-	lock.IsLocked() 							|| BM_THROW_RUNTIME( Name() + ":AddMailRef(): Unable to get lock");
+	if (!lock.IsLocked())
+		BM_THROW_RUNTIME( Name() + ":AddMailRef(): Unable to get lock");
 	node_ref nref;
 	nref.node = st.st_ino;
 	nref.device = st.st_dev;
@@ -327,7 +335,8 @@ void BmMailFolder::AddMailRef( entry_ref& eref, struct stat& st) {
 \*------------------------------------------------------------------------------*/
 bool BmMailFolder::HasMailRef( BmString key) {
 	BmAutolockCheckGlobal lock( nRefListLocker);
-	lock.IsLocked() 							|| BM_THROW_RUNTIME( Name() + ":HasMailRef(): Unable to get lock");
+	if (!lock.IsLocked())
+		BM_THROW_RUNTIME( Name() + ":HasMailRef(): Unable to get lock");
 	if (mMailRefList)
 		return mMailRefList->FindItemByKey( key);
 	else
@@ -341,7 +350,8 @@ bool BmMailFolder::HasMailRef( BmString key) {
 \*------------------------------------------------------------------------------*/
 void BmMailFolder::RemoveMailRef( const node_ref& nref) {
 	BmAutolockCheckGlobal lock( nRefListLocker);
-	lock.IsLocked() 							|| BM_THROW_RUNTIME( Name() + ":RemoveMailRef(): Unable to get lock");
+	if (!lock.IsLocked())
+		BM_THROW_RUNTIME( Name() + ":RemoveMailRef(): Unable to get lock");
  	BmString key( BM_REFKEY( nref));
  	BM_LOG2( BM_LogMailTracking, Name()+" removing mail-ref " << key);
 	if (mMailRefList) {
@@ -374,8 +384,9 @@ void BmMailFolder::Rename( BmString newName) {
 	BEntry entry( EntryRefPtr());
 	if (entry.InitCheck()==B_OK) {
 		status_t err;
-		(err = entry.Rename( newName.String())) == B_OK
-													|| BM_THROW_RUNTIME(BmString("Could not rename mail-folder\n\nError:") << strerror(err));
+		if ((err = entry.Rename( newName.String())) != B_OK)
+			BM_THROW_RUNTIME( BmString("Could not rename mail-folder\n\nError:") 
+										<< strerror(err));
 	}
 }
 

@@ -109,12 +109,13 @@ public:
 	
 private:
 	// native methods:
-	BmMailFolder* AddMailFolder( entry_ref& eref, int64 node, BmMailFolder* parent, 
-										  time_t mtime);
+	BmMailFolder* AddMailFolder( entry_ref& eref, int64 node, 
+										  BmMailFolder* parent, time_t mtime);
 	void InitializeItems();
 	int doInitializeMailFolders( BmMailFolder* folder, int level);
 	void InstantiateItems( BMessage* archive);
-	int doInstantiateMailFolders( BmMailFolder* folder, BMessage* archive, int level);
+	int doInstantiateMailFolders( BmMailFolder* folder, BMessage* archive, 
+											int level);
 
 	// overrides of listmodel base:
 	int16 ArchiveVersion() const			{ return nArchiveVersion; }

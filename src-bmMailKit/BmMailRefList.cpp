@@ -113,10 +113,17 @@ bool BmMailRefList::Store() {
 	if (mInitCheck != B_OK) return true;
 	try {
 		BmAutolockCheckGlobal lock( ModelLocker());
-		lock.IsLocked() 						|| BM_THROW_RUNTIME( ModelNameNC() << ":Store(): Unable to get lock");
+		if (!lock.IsLocked())
+			BM_THROW_RUNTIME( 
+				ModelNameNC() << ":Store(): Unable to get lock"
+			);
 		BmString filename = SettingsFileName();
-		(ret = cacheFile.SetTo( filename.String(), B_WRITE_ONLY | B_CREATE_FILE | B_ERASE_FILE)) == B_OK
-													|| BM_THROW_RUNTIME( BmString("Could not create settings-file\n\t<") << filename << ">\n\n Result: " << strerror(ret));
+		if ((ret = cacheFile.SetTo( 
+			filename.String(), 
+			B_WRITE_ONLY | B_CREATE_FILE | B_ERASE_FILE
+		)) != B_OK)
+			BM_THROW_RUNTIME( BmString("Could not create settings-file\n\t<") 
+										<< filename << ">\n\n Result: " << strerror(ret));
 		ret = archive.AddInt16( MSG_VERSION, nArchiveVersion)
 				| archive.AddInt32( BmListModelItem::MSG_NUMCHILDREN, size())
 				| archive.Flatten( &memIO);
@@ -178,8 +185,11 @@ bool BmMailRefList::StartJob() {
 		if (ThePrefs->GetBool("CacheRefsOnDisk")
 		&& (err = cacheFile.SetTo( filename.String(), B_READ_ONLY)) == B_OK) {
 			time_t mtime;
-			(err = cacheFile.GetModificationTime( &mtime)) == B_OK
-													|| BM_THROW_RUNTIME(BmString("Could not get mtime \nfor mail-folder <") << Name() << "> \n\nError:" << strerror(err));
+			if ((err = cacheFile.GetModificationTime( &mtime)) != B_OK)
+				BM_THROW_RUNTIME( 
+					BmString("Could not get mtime \nfor mail-folder <") << Name() 
+						<< "> \n\nError:" << strerror(err)
+				);
 			if (!mNeedsCacheUpdate && !folder->CheckIfModifiedSince( mtime)) {
 				// archive up-to-date, but is it the correct format-version?
 				msg.Unflatten( &cacheFile);
@@ -254,8 +264,11 @@ void BmMailRefList::InitializeItems() {
 			if (!strcmp(dent->d_name, ".") || !strcmp(dent->d_name, ".."))
 				continue;						// ignore . and .. dirs
 
-			(err=mailDir.GetStatFor( dent->d_name, &st)) == B_OK
-													|| BM_THROW_RUNTIME(BmString("Could not get stat-info for \nmail-file <") << dent->d_name << "> \n\nError:" << strerror(err));
+			if ((err=mailDir.GetStatFor( dent->d_name, &st)) != B_OK)
+				BM_THROW_RUNTIME( 
+					BmString("Could not get stat-info for \nmail-file <") 
+						<< dent->d_name << "> \n\nError:" << strerror(err)
+				);
 			if (S_ISREG( st.st_mode)) {
 				// we have found a new mail, so we add it to our list:
 				BM_LOG3( BM_LogMailTracking, BmString("Mail <") << dent->d_name << "," << dent->d_ino << "> found ");

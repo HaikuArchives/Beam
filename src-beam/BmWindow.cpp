@@ -85,8 +85,11 @@ bool BmWindow::ReadStateInfo() {
 		// ...ok, archive file found, we fetch our dimensions from it:
 		try {
 			BMessage archive;
-			(err = archive.Unflatten( &winFile)) == B_OK
-													|| BM_THROW_RUNTIME( BmString("Could not fetch window archive from file\n\t<") << mStatefileName << ">\n\n Result: " << strerror(err));
+			if ((err = archive.Unflatten( &winFile)) != B_OK)
+				BM_THROW_RUNTIME( 
+					BmString("Could not fetch window archive from file\n\t<") 
+						<< mStatefileName << ">\n\n Result: " << strerror(err)
+				);
 			UnarchiveState( &archive);
 		} catch (BM_error &e) {
 			BM_SHOWERR( e.what());
@@ -106,13 +109,22 @@ bool BmWindow::WriteStateInfo() {
 	status_t err;
 
 	try {
-		this->ArchiveState( &archive) == B_OK
-													|| BM_THROW_RUNTIME("Unable to archive Window-object");
-		(err = cacheFile.SetTo( TheResources->StateInfoFolder(), mStatefileName.String(), 
-										B_WRITE_ONLY | B_CREATE_FILE | B_ERASE_FILE)) == B_OK
-													|| BM_THROW_RUNTIME( BmString("Could not create cache file\n\t<") << mStatefileName << ">\n\n Result: " << strerror(err));
-		(err = archive.Flatten( &cacheFile)) == B_OK
-													|| BM_THROW_RUNTIME( BmString("Could not store state-cache into file\n\t<") << mStatefileName << ">\n\n Result: " << strerror(err));
+		if (this->ArchiveState( &archive) != B_OK)
+			BM_THROW_RUNTIME("Unable to archive Window-object");
+		if ((err = cacheFile.SetTo( 
+			TheResources->StateInfoFolder(), 
+			mStatefileName.String(), 
+			B_WRITE_ONLY | B_CREATE_FILE | B_ERASE_FILE
+		)) != B_OK)
+			BM_THROW_RUNTIME( 
+				BmString("Could not create cache file\n\t<") << mStatefileName 
+					<< ">\n\n Result: " << strerror(err)
+			);
+		if ((err = archive.Flatten( &cacheFile)) != B_OK)
+			BM_THROW_RUNTIME( 
+				BmString("Could not store state-cache into file\n\t<") 
+					<< mStatefileName << ">\n\n Result: " << strerror(err)
+			);
 	} catch( BM_error &e) {
 		BM_SHOWERR( e.what());
 		return false;

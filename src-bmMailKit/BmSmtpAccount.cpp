@@ -233,9 +233,11 @@ void BmSmtpAccountList::InstantiateItems( BMessage* archive) {
 	int32 numChildren = FindMsgInt32( archive, BmListModelItem::MSG_NUMCHILDREN);
 	for( int i=0; i<numChildren; ++i) {
 		BMessage msg;
-		(err = archive->FindMessage( BmListModelItem::MSG_CHILDREN, i, &msg)) 
-			== B_OK
-													|| BM_THROW_RUNTIME(BmString("Could not find smtp-account nr. ") << i+1 << " \n\nError:" << strerror(err));
+		if ((err = archive->FindMessage( 
+			BmListModelItem::MSG_CHILDREN, i, &msg
+		)) != B_OK)
+			BM_THROW_RUNTIME( BmString("Could not find smtp-account nr. ") << i+1 
+										<< " \n\nError:" << strerror(err));
 		BmSmtpAccount* newAcc = new BmSmtpAccount( &msg, this);
 		BM_LOG3( BM_LogMailTracking, 
 					BmString("SmtpAccount <") << newAcc->Name() << "," 

@@ -171,7 +171,8 @@ void BmFilterChain::ForeignKeyChanged( const BmString& key,
 													const BmString& oldVal, 
 													const BmString& newVal) {
 	BmAutolockCheckGlobal lock( ModelLocker());
-	lock.IsLocked() 							|| BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
+	if (!lock.IsLocked())
+		BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
 	BmModelItemMap::const_iterator iter;
 	for( iter = inheritedList::begin(); iter != inheritedList::end(); ) {
 		BmChainedFilter* filter = dynamic_cast< BmChainedFilter*>( iter++->second.Get());
@@ -192,7 +193,8 @@ void BmFilterChain::ForeignKeyChanged( const BmString& key,
 \*------------------------------------------------------------------------------*/
 void BmFilterChain::RenumberPos() {
 	BmAutolockCheckGlobal lock( ModelLocker());
-	lock.IsLocked() 							|| BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
+	if (!lock.IsLocked())
+		BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
 	// first create a temporary map that is sorted by position:
 	BmFilterPosMap tempMap;
 	BmModelItemMap::const_iterator iter;
@@ -219,7 +221,8 @@ void BmFilterChain::RenumberPos() {
 \*------------------------------------------------------------------------------*/
 void BmFilterChain::AddItemToList( BmListModelItem* item) {
 	BmAutolockCheckGlobal lock( ModelLocker());
-	lock.IsLocked() 							|| BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
+	if (!lock.IsLocked())
+		BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
 	inheritedList::AddItemToList( item);
 	BmChainedFilter* filter = dynamic_cast< BmChainedFilter*>( item);
 	if (filter->Position() == BM_UNDEFINED_POSITION)
@@ -232,7 +235,8 @@ void BmFilterChain::AddItemToList( BmListModelItem* item) {
 \*------------------------------------------------------------------------------*/
 void BmFilterChain::RemoveItemFromList( BmListModelItem* item) {
 	BmAutolockCheckGlobal lock( ModelLocker());
-	lock.IsLocked() 							|| BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
+	if (!lock.IsLocked())
+		BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
 	inheritedList::RemoveItemFromList( item);
 	RenumberPos();
 }
@@ -267,8 +271,11 @@ void BmFilterChain::InstantiateItems( BMessage* archive) {
 	int32 numChildren = FindMsgInt32( archive, BmListModelItem::MSG_NUMCHILDREN);
 	for( int i=0; i<numChildren; ++i) {
 		BMessage msg;
-		(err = archive->FindMessage( BmListModelItem::MSG_CHILDREN, i, &msg)) == B_OK
-													|| BM_THROW_RUNTIME(BmString("Could not find item nr. ") << i+1 << " \n\nError:" << strerror(err));
+		if ((err = archive->FindMessage( 
+			BmListModelItem::MSG_CHILDREN, i, &msg)
+		) != B_OK)
+			BM_THROW_RUNTIME( BmString("Could not find item nr. ") << i+1 
+										<< " \n\nError:" << strerror(err));
 		BmChainedFilter* newFilter = new BmChainedFilter( &msg, this);
 		BM_LOG3( BM_LogFilter, BmString("ChainedFilter <") << newFilter->Key() << "> read");
 		AddItemToList( newFilter);
@@ -331,7 +338,8 @@ void BmFilterChainList::ForeignKeyChanged( const BmString& key,
 														 const BmString& oldVal, 
 														 const BmString& newVal) {
 	BmAutolockCheckGlobal lock( ModelLocker());
-	lock.IsLocked() 							|| BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
+	if (!lock.IsLocked())
+		BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
 	if (key == BmChainedFilter::MSG_FILTERNAME) {
 		BmModelItemMap::const_iterator iter;
 		for( iter = begin(); iter != end(); ++iter) {
@@ -363,8 +371,11 @@ void BmFilterChainList::InstantiateItems( BMessage* archive) {
 	int32 numChildren = FindMsgInt32( archive, BmListModelItem::MSG_NUMCHILDREN);
 	for( int i=0; i<numChildren; ++i) {
 		BMessage msg;
-		(err = archive->FindMessage( BmListModelItem::MSG_CHILDREN, i, &msg)) == B_OK
-													|| BM_THROW_RUNTIME(BmString("Could not find item nr. ") << i+1 << " \n\nError:" << strerror(err));
+		if ((err = archive->FindMessage( 
+			BmListModelItem::MSG_CHILDREN, i, &msg)
+		) != B_OK)
+			BM_THROW_RUNTIME( BmString("Could not find item nr. ") << i+1 
+										<< " \n\nError:" << strerror(err));
 		BmFilterChain* newChain = new BmFilterChain( &msg, this);
 		BM_LOG3( BM_LogFilter, BmString("FilterChain <") << newChain->Name() << "> read");
 		newChain->InstantiateItems( &msg);
