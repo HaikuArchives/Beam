@@ -13,7 +13,7 @@ namespace BmEncoding {
 	
 	int32 CharsetToEncoding( const BString& charset);
 
-	char* ConvertToUTF8( uint32 srcEncoding, const char* srcBuf);
+	BString ConvertToUTF8( uint32 srcEncoding, const char* srcBuf);
 
 	char* Encode( const BString& enodingStyle, char* text);
 	void Decode( const BString& encodingStyle, BString& text);

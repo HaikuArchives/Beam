@@ -15,6 +15,8 @@
 #include <Looper.h>
 #include <String.h>
 
+#include "BmRefManager.h"
+
 class BmController;
 
 /*------------------------------------------------------------------------------*\
@@ -37,11 +39,14 @@ public:
 	virtual void RemoveController( BmController* controller);
 
 	// getters:
+	BString Name() const						{ return mModelName; }
 	BString ModelName() const				{ return mModelName; }
 	BLocker& ModelLocker() 					{ return mModelLocker; }
 
 	//	message component definitions for status-msgs:
 	static const char* const MSG_MODEL = 			"bm:model";
+
+	static BmRefManager<BmDataModel> RefManager;
 
 protected:
 	// native methods:
@@ -195,6 +200,7 @@ protected:
 	BmDataModelManager
 		-	manages all instances of DataModels (esp their deletion)
 \*------------------------------------------------------------------------------*/
+/*
 class BmDataModelManager {
 	typedef map< BmDataModel*, int32> BmRefMap;
 
@@ -216,6 +222,7 @@ private:
 };
 
 #define TheModelManager BmDataModelManager::theInstance
+*/
 
 
 #endif

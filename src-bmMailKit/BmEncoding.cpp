@@ -61,7 +61,8 @@ int32 BmEncoding::CharsetToEncoding( const BString& charset) {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-char* BmEncoding::ConvertToUTF8( uint32 srcEncoding, const char* srcBuf) {
+BString BmEncoding::ConvertToUTF8( uint32 srcEncoding, const char* srcBuf) {
+	BString utf8String;
 	char* destBuf = NULL;
 	int32 srcbuflen = strlen(srcBuf);
 	int32 state=0;
@@ -70,14 +71,10 @@ char* BmEncoding::ConvertToUTF8( uint32 srcEncoding, const char* srcBuf) {
 
 	try {
 		for( bool finished=false; !finished; ) {
-			if (!destBuf) {
-				(destBuf = (char*)malloc( buflen))
-														|| BM_THROW_RUNTIME( "Unable to allocate memory in ConvertToUTF8()");
-			} else {
+			utf8String.LockBuffer( buflen);
+			if (destBuf)
 				buflen *= 2;
-				(destBuf = (char*)realloc( destBuf, buflen))
-														|| BM_THROW_RUNTIME( "Unable to re-allocate memory in ConvertToUTF8()");
-			}
+			destBuf = utf8String.LockBuffer( buflen);
 			int32 srcLen = srcbuflen;
 			int32 destLen = buflen-1;
 			(st=convert_to_utf8( srcEncoding, srcBuf, &srcLen, destBuf, &destLen, &state)) == B_OK
@@ -86,13 +83,13 @@ char* BmEncoding::ConvertToUTF8( uint32 srcEncoding, const char* srcBuf) {
 				finished = true;
 				destBuf[destLen] = '\0';
 			}
+			utf8String.UnlockBuffer( destLen);
 		}
 	} catch (...) {
-		if (destBuf)
-			free( destBuf);
+		utf8String.UnlockBuffer( 0);
 		throw;
 	}
-	return destBuf;
+	return utf8String;
 }
 
 /*------------------------------------------------------------------------------*\

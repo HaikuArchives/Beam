@@ -75,7 +75,7 @@ private:
 	time_t mLastModified;
 
 	// the following members will be archived into their own files:
-	BmMailRefList* mMailRefList;
+	BmRef< BmMailRefList> mMailRefList;
 
 	// the following members will NOT be archived at all:
 	bool mNeedsCacheUpdate;

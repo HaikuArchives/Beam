@@ -50,6 +50,7 @@ public:
 
 	// overrides of listview base:
 	void MessageReceived( BMessage* msg);
+	void SelectionChanged( void);
 
 	// overrides of controller base:
 	BString StateInfoBasename();

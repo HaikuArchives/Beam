@@ -353,7 +353,7 @@ void BmListViewController::UpdateCaption( const char* text) {
 			if (!numItems)
 				caption = BString("no messages");
 			else
-				caption = BString("")<<numItems<<" messages";
+				caption = BString("")<<numItems<<" message"<<(numItems>1 ? "s" : "");
 			ScrollView()->SetCaptionText( caption.String());
 		}
 		Window()->UpdateIfNeeded();
@@ -602,6 +602,7 @@ BmCLVContainerView::BmCLVContainerView( minimax minmax, ColumnListView* target,
 	,	mBusyView( NULL)
 {
 	SetViewColor( ui_color( B_PANEL_BACKGROUND_COLOR));
+//	SetViewColor( B_TRANSPARENT_COLOR);
 	BRect hsFrame;
 	BPoint hsLT;
 	BScrollBar* hScroller = ScrollBar( B_HORIZONTAL);
@@ -609,7 +610,7 @@ BmCLVContainerView::BmCLVContainerView( minimax minmax, ColumnListView* target,
 		hsFrame = hScroller->Frame();
 		hsLT = hsFrame.LeftTop();
 		float bvSize = hsFrame.Height();
-		hScroller->ResizeBy( bvSize, 0.0);
+		hScroller->ResizeBy( -bvSize, 0.0);
 		hScroller->MoveBy( bvSize, 0.0);
 		mBusyView = new BmBusyView( BRect( hsLT.x, hsLT.y, hsLT.x+bvSize, hsLT.y+bvSize));
 		AddChild( mBusyView);
@@ -617,7 +618,7 @@ BmCLVContainerView::BmCLVContainerView( minimax minmax, ColumnListView* target,
 	if (showCaption && hScroller) {
 		hsFrame = hScroller->Frame();
 		hsLT = hsFrame.LeftTop();
-		hScroller->ResizeBy( mCaptionWidth, 0.0);
+		hScroller->ResizeBy( -mCaptionWidth, 0.0);
 		hScroller->MoveBy( mCaptionWidth, 0.0);
 		mCaption = new BmCaption( BRect( hsLT.x, hsLT.y, hsLT.x+mCaptionWidth, hsLT.y+hsFrame.Height()), "");
 		AddChild( mCaption);

@@ -144,7 +144,7 @@ BmMailRefList* BmMailFolder::MailRefList() {
 	if (!mMailRefList || mNeedsCacheUpdate) {
 		CreateMailRefList();
 	}
-	return mMailRefList;
+	return mMailRefList.Get();
 }
 
 /*------------------------------------------------------------------------------*\
@@ -156,7 +156,6 @@ void BmMailFolder::CreateMailRefList() {
 		RemoveMailRefList();
 	}
 	mMailRefList = new BmMailRefList( this, mNeedsCacheUpdate);
-	TheModelManager->AddRef( mMailRefList);
 	mNeedsCacheUpdate = false;
 }
 
@@ -166,7 +165,6 @@ void BmMailFolder::CreateMailRefList() {
 \*------------------------------------------------------------------------------*/
 void BmMailFolder::RemoveMailRefList() {
 	if (mMailRefList) {
-		TheModelManager->RemoveRef( mMailRefList);
 		mMailRefList = NULL;
 	}
 }

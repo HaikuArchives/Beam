@@ -34,18 +34,18 @@ public:
 
 	// getters
 	const char* ControllerName() const	{ return mControllerName.String(); }
-	const BString ModelName() const		{ return mDataModel ? mDataModel->ModelName() : "***NULL***"; }
-	virtual BmDataModel* DataModel()		{ return mDataModel; }
+	const BString ModelName() const		{ return mDataModel.Get() ? mDataModel->ModelName() : "***NULL***"; }
+	virtual BmDataModel* DataModel()		{ return mDataModel.Get(); }
 
 	// setters
-	void DataModel( BmDataModel* model)	{ mDataModel = model; }
+	void DataModel( BmDataModel* model);
 
 protected:
 	//
 	virtual bool IsMsgFromCurrentModel( BMessage* msg);
 
 private:
-	BmDataModel* mDataModel;
+	BmRef< BmDataModel> mDataModel;
 	BString mControllerName;
 
 };
@@ -69,6 +69,7 @@ public:
 	virtual void ContinueJob( BMessage* msg);
 	virtual void StopJob();
 	virtual bool IsJobRunning();
+	virtual void JobIsDone( bool completed) = 0;
 
 protected:
 	virtual BmJobModel* DataModel()		{ 	return dynamic_cast<BmJobModel*>(inherited::DataModel()); }

@@ -45,7 +45,7 @@ public:
 	// getters:
 	status_t InitCheck()						{ return mInitCheck; }
 
-	static BmMailFolderList* theInstance;
+	static BmRef< BmMailFolderList> theInstance;
 
 private:
 	// the following members will be archived as part of BmFolderList:

@@ -52,7 +52,6 @@ void BmController::AttachModel( BmDataModel* model) {
 	}
 	if (mDataModel) {
 		BM_LOG2( BM_LogModelController, BString("Controller <") << ControllerName() << "> attaches to model " << ModelName());
-		TheModelManager->AddRef( mDataModel);
 		mDataModel->AddController( this);
 	}
 }
@@ -66,7 +65,6 @@ void BmController::DetachModel() {
 	if (mDataModel) {
 		BM_LOG2( BM_LogModelController, BString("Controller <") << ControllerName() << "> detaches from model " << ModelName());
 		mDataModel->RemoveController( this);
-		TheModelManager->RemoveRef( mDataModel);
 		mDataModel = NULL;
 	}
 }
@@ -77,7 +75,19 @@ void BmController::DetachModel() {
 \*------------------------------------------------------------------------------*/
 bool BmController::IsMsgFromCurrentModel( BMessage* msg) {
 	BString msgModelName = FindMsgString( msg, BmDataModel::MSG_MODEL);
-	return msgModelName == ModelName();
+	if (msgModelName != ModelName()) {
+		BM_LOG2( BM_LogModelController, BString("Controller <") << ControllerName() << "> drops msg from model <"<<msgModelName<<"> which is not the current one (<"<<ModelName()<<">)");
+		return false;
+	} else
+		return true;
+}
+
+/*------------------------------------------------------------------------------*\
+	DataModel( model)
+		-	
+\*------------------------------------------------------------------------------*/
+void BmController::DataModel( BmDataModel* model) {
+	mDataModel = model;
 }
 
 
@@ -172,4 +182,3 @@ bool BmJobController::IsJobRunning() {
 		return false;
 	}
 }
-

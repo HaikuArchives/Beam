@@ -23,7 +23,7 @@ class BmLogHandler {
 
 public:
 	// static functions
-	static void Log( const BString &logname, uint32 flag, const BString &msg, int8 minlevel=1);
+	static void Log( const BString &logname, uint32 flag, const BString& msg, int8 minlevel=1);
 	static void Log( const char* const logname, uint32 flag, const char* const msg, int8 minlevel=1);
 	static void FinishLog( const BString& logname);
 

@@ -16,12 +16,14 @@
 
 #include "BmDataModel.h"
 
+class BmMail;
 /*------------------------------------------------------------------------------*\
 	BmMailRef
 		-	class 
 \*------------------------------------------------------------------------------*/
 class BmMailRef : public BmListModelItem {
 	typedef BmListModelItem inherited;
+	typedef BmJobModel inheritedModel;
 
 	// archival-fieldnames:
 	static const char* const MSG_ACCOUNT = 	"bm:ac";

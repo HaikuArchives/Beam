@@ -3,7 +3,10 @@
 		$Id$
 */
 
+#include <File.h>
+
 #include "BmLogHandler.h"
+#include "BmMail.h"
 #include "BmMailRef.h"
 #include "BmUtil.h"
 
@@ -158,4 +161,3 @@ status_t BmMailRef::Archive( BMessage* archive, bool deep) const {
 		|| archive->AddInt32( MSG_WHEN, mWhen);
 	return ret;
 }
-

@@ -7,6 +7,7 @@
 #include "BmMailFolder.h"
 #include "BmMailRefList.h"
 #include "BmMailRefView.h"
+#include "BmMailView.h"
 #include "BmMsgTypes.h"
 #include "BmPrefs.h"
 #include "BmResources.h"
@@ -107,7 +108,7 @@ const time_t BmMailRefItem::GetDateValueForColumn( int32 column_index) const {
 	if (column_index == 5)
 		return ref->When();
 	else if (column_index == 12)
-		return ref->When();
+		return ref->Created();
 	else
 		return 0;
 }
@@ -137,7 +138,7 @@ BmMailRefView* BmMailRefView::CreateInstance( minimax minmax, int32 width, int32
 		-	
 \*------------------------------------------------------------------------------*/
 BmMailRefView::BmMailRefView( minimax minmax, int32 width, int32 height)
-	:	inherited( minmax, BRect(0,0,width,height), "Beam_MailRefView", B_MULTIPLE_SELECTION_LIST, 
+	:	inherited( minmax, BRect(0,0,width-1,height-1), "Beam_MailRefView", B_MULTIPLE_SELECTION_LIST, 
 					  false, true, true, true)
 	,	mCurrFolder( NULL)
 {
@@ -147,7 +148,7 @@ BmMailRefView::BmMailRefView( minimax minmax, int32 width, int32 height)
 		SetStripedBackground( true);
 	else 
 		flags |= CLV_TELL_ITEMS_WIDTH;
-	Initialize( BRect(0,0,width,height), B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE,
+	Initialize( BRect(0,0,width-1,height-1), B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE,
 					B_FOLLOW_ALL, true, true, true, B_FANCY_BORDER);
 
 	AddColumn( new CLVColumn( "", 18.0, CLV_SORT_KEYABLE | CLV_NOT_RESIZABLE | CLV_COLDATA_NUMBER, 
@@ -236,4 +237,21 @@ BString BmMailRefView::StateInfoBasename()	{
 \*------------------------------------------------------------------------------*/
 BMessage* BmMailRefView::DefaultLayout()		{ 
 	return ThePrefs->MailRefLayout(); 
+}
+
+/*------------------------------------------------------------------------------*\
+	SelectionChanged()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailRefView::SelectionChanged( void) {
+	uint32 selection = CurrentSelection();
+	if (selection >= 0) {
+		BmMailRefItem* refItem;
+		refItem = dynamic_cast<BmMailRefItem*>(ItemAt( selection));
+		if (refItem) {
+			BmMailRef* ref = dynamic_cast<BmMailRef*>(refItem->ModelItem());
+			if (ref)
+				TheMailView->ShowMail( ref);
+		}
+	}
 }

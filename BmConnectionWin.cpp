@@ -228,7 +228,7 @@ BmConnectionWin* BmConnectionWin::Instance = NULL;
 		-	constructor, creates outer view that will take up the connection-interfaces
 \*------------------------------------------------------------------------------*/
 BmConnectionWin::BmConnectionWin( const char* title, BLooper* invoker)
-	:	MWindow( BRect(50,50,0,0), title,
+	:	MWindow( BRect(50,50,0,0), "Connections",
 					B_FLOATING_WINDOW_LOOK, B_NORMAL_WINDOW_FEEL,
 					MyWinFlags)
 	,	mInvokingLooper( invoker)

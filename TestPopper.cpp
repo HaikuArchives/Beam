@@ -11,6 +11,7 @@
 #include "BmApp.h"
 #include "BmConnectionWin.h"
 #include "BmLogHandler.h"
+#include "BmMsgTypes.h"
 #include "BmPopAccount.h"
 #include "BmPopper.h"
 
@@ -103,10 +104,10 @@ void GenericApp::MessageReceived(BMessage* msg) {
 				acc.SMTPPortNr( 25);
 				acc.Archive( archive, false);
 			} else if (count % 3 == 2) {
-				sprintf(buf, "zooey@kiwi:110");
+				sprintf(buf, "mailtest2@kiwi:110");
 				acc.Name( buf);
-				acc.Username( "zooey");
-				acc.Password( "leeds#42");
+				acc.Username( "mailtest2");
+				acc.Password( "mailtest2");
 				acc.POPServer( "kiwi");
 				acc.PortNr( 110);
 				acc.SMTPPortNr( 25);
@@ -140,7 +141,7 @@ void GenericApp::MessageReceived(BMessage* msg) {
 */
 
 			break;
-		case BM_CONNWIN_DONE: 
+//		case BM_CONNWIN_DONE: 
 //			PostMessage( B_QUIT_REQUESTED);
 			break;
 		default:

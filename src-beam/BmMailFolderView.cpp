@@ -88,10 +88,10 @@ BmMailFolderView* BmMailFolderView::CreateInstance( minimax minmax, int32 width,
 		-	
 \*------------------------------------------------------------------------------*/
 BmMailFolderView::BmMailFolderView( minimax minmax, int32 width, int32 height)
-	:	inherited( minmax, BRect(0,0,width,height), "Beam_FolderView", B_SINGLE_SELECTION_LIST, 
+	:	inherited( minmax, BRect(0,0,width-1,height-1), "Beam_FolderView", B_SINGLE_SELECTION_LIST, 
 					  true, true)
 {
-	Initialize( BRect( 0,0,width,height), B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE,
+	Initialize( BRect( 0,0,width-1,height-1), B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE,
 					B_FOLLOW_TOP_BOTTOM, false, true, false, B_FANCY_BORDER);
 	AddColumn( new CLVColumn( NULL, 10.0, 
 									  CLV_EXPANDER | CLV_LOCK_AT_BEGINNING | CLV_NOT_MOVABLE, 10.0));

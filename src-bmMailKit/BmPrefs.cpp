@@ -64,7 +64,7 @@ BmPrefs* BmPrefs::CreateInstance() {
 \*------------------------------------------------------------------------------*/
 BmPrefs::BmPrefs( void)
 	:	BArchivable() 
-	,	mDynamicConnectionWin( CONN_WIN_STATIC)
+	,	mDynamicConnectionWin( CONN_WIN_DYNAMIC)
 	,	mReceiveTimeout( 60 )
 	,	mLoglevels( BM_LOGLVL2(BM_LogPop) 
 						+ BM_LOGLVL2(BM_LogConnWin) 

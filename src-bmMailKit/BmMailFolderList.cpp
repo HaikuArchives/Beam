@@ -16,17 +16,16 @@
 #include "BmUtil.h"
 
 
-BmMailFolderList* BmMailFolderList::theInstance = NULL;
+BmRef< BmMailFolderList> BmMailFolderList::theInstance;
 
 /*------------------------------------------------------------------------------*\
 	CreateInstance()
 		-	creator-func
 \*------------------------------------------------------------------------------*/
 BmMailFolderList* BmMailFolderList::CreateInstance() {
-	if (theInstance)
-		return theInstance;
-	else
-		return theInstance = new BmMailFolderList();
+	if (!theInstance)
+		theInstance = new BmMailFolderList();
+	return theInstance.Get();
 }
 
 /*------------------------------------------------------------------------------*\

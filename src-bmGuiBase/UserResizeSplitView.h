@@ -38,7 +38,10 @@
 
 #include <layout.h>
 
-class CLVContainerView;
+class MBView : public MView, public BView {
+	MBView( BRect frame, const char *name, uint32 resizeMask, uint32 flags) 
+	:	BView( frame, name, resizeMask, flags) {}
+};
 
 //******************************************************************************************************
 //**** UserResizeSplitView
@@ -46,8 +49,8 @@ class CLVContainerView;
 class UserResizeSplitView : public MView, public BView
 {
 	public:
-		UserResizeSplitView( CLVContainerView* top_or_left_child, CLVContainerView* right_or_bottom_child, 
-									BRect frame, const char* name, float divider_left_or_top,
+		UserResizeSplitView( MView* top_or_left_child, MView* right_or_bottom_child, 
+									const char* name, float divider_left_or_top,
 									orientation posture = B_HORIZONTAL, 
 									bool should_resize_left_or_top = true,
 									bool should_resize_right_or_bottom = true, 
@@ -72,14 +75,15 @@ class UserResizeSplitView : public MView, public BView
 			//divider, or that the right child has the B_FOLLOW_RIGHT set for a vertical divider.  Note
 			//that the parent window should have the B_ASYNCHRONOUS_CONTROLS flag set.
 
-		void AddChildren(CLVContainerView* top_or_left, CLVContainerView* right_or_bottom);
-		inline CLVContainerView* LeftChild() {assert(m_posture == B_HORIZONTAL); return m_left_or_top;}
-		inline CLVContainerView* TopChild() {assert(m_posture == B_VERTICAL); return m_left_or_top;}
-		inline CLVContainerView* RightChild() {assert(m_posture == B_HORIZONTAL); return m_right_or_bottom;}
-		inline CLVContainerView* BottomChild() {assert(m_posture == B_VERTICAL); return m_right_or_bottom;}
+//		void AddChildren(CLVContainerView* top_or_left, CLVContainerView* right_or_bottom);
+		inline MView* LeftChild() {assert(m_posture == B_HORIZONTAL); return m_left_or_top;}
+		inline MView* TopChild() {assert(m_posture == B_VERTICAL); return m_left_or_top;}
+		inline MView* RightChild() {assert(m_posture == B_HORIZONTAL); return m_right_or_bottom;}
+		inline MView* BottomChild() {assert(m_posture == B_VERTICAL); return m_right_or_bottom;}
 		void SetMinimumChildAreaSizes(float left_or_top_minimum_size,
 			float right_or_bottom_minimum_size);
 
+		virtual void SetPreferredDividerLeftOrTop(float divider_left_or_top);
 		virtual void SetDividerLeftOrTop(float divider_left_or_top);
 		inline float DividerLeftOrTop() {return m_divider_left_or_top;}
 
@@ -107,19 +111,21 @@ class UserResizeSplitView : public MView, public BView
 
 	private:
 		float m_divider_left_or_top;
+		float m_preferred_divider_left_or_top;
 		orientation m_posture;
 		bool m_should_resize_left_or_top;
 		bool m_should_resize_right_or_bottom;
 		bool m_move_slider_on_frame_resize;
 		bool m_modified_cursor;
 		bool m_dragging;
-		CLVContainerView* m_left_or_top;
-		CLVContainerView* m_right_or_bottom;
+		MBView* m_left_or_top;
+		MBView* m_right_or_bottom;
 		rgb_color m_background_color;
 		rgb_color m_dark_1_color;
 		rgb_color m_dark_2_color;
 		float m_cached_width_or_height;
 		float m_drag_mouse_offset;
+		bool mSetupDone;
 };
 
 

@@ -17,6 +17,7 @@
 #include "BmMailFolderList.h"
 #include "BmMailFolderView.h"
 #include "BmMailRefView.h"
+#include "BmMailView.h"
 #include "BmMainWindow.h"
 #include "BmResources.h"
 #include "BmUtil.h"
@@ -78,7 +79,6 @@ BmMainWindow::BmMainWindow()
 	,	mVertSplitter( NULL)
 {
 	TheMailFolderList = BmMailFolderList::CreateInstance();
-	TheModelManager->AddRef( TheMailFolderList);
 
 	MView* mOuterGroup = 
 		new VGroup(
@@ -92,9 +92,12 @@ BmMainWindow::BmMainWindow()
 			new HGroup(
 				mVertSplitter = new UserResizeSplitView( 
 					CreateMailFolderView( minimax(0,100,300,1E5), 120, 100),
-					CreateMailRefView( minimax(200,100,1E5,1E5), 400, 100),
-					BRect(0, 0, 800, 500), 
-					"splitter1", 120, B_VERTICAL, true, true, false, B_FOLLOW_NONE
+					mHorzSplitter = new UserResizeSplitView( 
+						CreateMailRefView( minimax(200,100,1E5,1E5), 400, 200),
+						CreateMailView( minimax(200,200,1E5,1E5), BRect(0,0,400,200)),
+						"hsplitter", 150, B_HORIZONTAL, true, true, false, B_FOLLOW_NONE
+					),
+					"vsplitter", 120, B_VERTICAL, true, true, false, B_FOLLOW_NONE
 				),
 				0
 			),
@@ -109,7 +112,7 @@ BmMainWindow::BmMainWindow()
 		-	
 \*------------------------------------------------------------------------------*/
 BmMainWindow::~BmMainWindow() {
-	TheModelManager->RemoveRef( TheMailFolderList);
+	TheMailFolderList = NULL;
 	theInstance = NULL;
 }
 
@@ -119,7 +122,8 @@ BmMainWindow::~BmMainWindow() {
 \*------------------------------------------------------------------------------*/
 status_t BmMainWindow::Archive( BMessage* archive, bool deep=true) const {
 	status_t ret = archive->AddRect( MSG_FRAME, Frame())
-						|| archive->AddFloat( MSG_VSPLITTER, mVertSplitter->DividerLeftOrTop());
+						|| archive->AddFloat( MSG_VSPLITTER, mVertSplitter->DividerLeftOrTop())
+						|| archive->AddFloat( MSG_HSPLITTER, mHorzSplitter->DividerLeftOrTop());
 	return ret;
 }
 
@@ -129,13 +133,15 @@ status_t BmMainWindow::Archive( BMessage* archive, bool deep=true) const {
 \*------------------------------------------------------------------------------*/
 status_t BmMainWindow::Unarchive( BMessage* archive, bool deep=true) {
 	BRect frame;
-	float vDividerPos;
+	float vDividerPos, hDividerPos;
 	status_t ret = archive->FindRect( MSG_FRAME, &frame)
-						|| archive->FindFloat( MSG_VSPLITTER, &vDividerPos);
+						|| archive->FindFloat( MSG_VSPLITTER, &vDividerPos)
+						|| archive->FindFloat( MSG_HSPLITTER, &hDividerPos);
 	if (ret == B_OK) {
 		MoveTo( frame.LeftTop());
 		ResizeTo( frame.Width(), frame.Height());
-		mVertSplitter->SetDividerLeftOrTop( vDividerPos);
+		mVertSplitter->SetPreferredDividerLeftOrTop( vDividerPos);
+		mHorzSplitter->SetPreferredDividerLeftOrTop( hDividerPos);
 	}
 	return ret;
 }
@@ -148,7 +154,7 @@ void BmMainWindow::BeginLife() {
 	nIsAlive = true;
 	try {
 		BM_LOG2( BM_LogMainWindow, BString("MainWindow begins life"));
-		mMailFolderView->StartJob( TheMailFolderList, true);
+		mMailFolderView->StartJob( TheMailFolderList.Get(), true);
 	} catch(...) {
 		nIsAlive = false;
 		throw;
@@ -171,6 +177,15 @@ CLVContainerView* BmMainWindow::CreateMailFolderView( minimax minmax, int32 widt
 CLVContainerView* BmMainWindow::CreateMailRefView( minimax minmax, int32 width, int32 height) {
 	mMailRefView = BmMailRefView::CreateInstance( minmax, width, height);
 	return mMailRefView->ContainerView();
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+BmMailViewContainer* BmMainWindow::CreateMailView( minimax minmax, BRect frame) {
+	mMailView = BmMailView::CreateInstance( minmax, frame, false);
+	return mMailView->ContainerView();
 }
 
 /*------------------------------------------------------------------------------*\

@@ -10,6 +10,8 @@
 
 class BmMailFolderView;
 class BmMailRefView;
+class BmMailView;
+class BmMailViewContainer;
 class CLVContainerView;
 class UserResizeSplitView;
 
@@ -20,6 +22,7 @@ class BmMainWindow : public MWindow
 	// archival-fieldnames:
 	static const char* const MSG_FRAME = 		"bm:frm";
 	static const char* const MSG_VSPLITTER = 	"bm:vspl";
+	static const char* const MSG_HSPLITTER = 	"bm:hspl";
 
 public:
 	// creator-func, c'tors and d'tor:
@@ -34,6 +37,7 @@ public:
 	void BeginLife();
 	CLVContainerView* CreateMailFolderView( minimax minmax, int32 width, int32 height);
 	CLVContainerView* CreateMailRefView( minimax minmax, int32 width, int32 height);
+	BmMailViewContainer* CreateMailView( minimax minmax, BRect frame);
 	status_t Unarchive( BMessage* archive, bool deep=true);
 	bool Store();
 
@@ -48,7 +52,9 @@ public:
 private:
 	BmMailFolderView* mMailFolderView;
 	BmMailRefView* mMailRefView;
+	BmMailView* mMailView;
 	UserResizeSplitView* mVertSplitter;
+	UserResizeSplitView* mHorzSplitter;
 
 	static bool nIsAlive;
 };

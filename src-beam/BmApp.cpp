@@ -32,9 +32,6 @@ BmApplication::BmApplication( const char* sig)
 		// create the log-handler:
 		BmLogHandler::CreateInstance( 1);
 
-		// create the model-manager:
-		BmDataModelManager::CreateInstance();
-
 		// load/determine all needed resources:
 		BmResources::CreateInstance();
 
@@ -56,7 +53,6 @@ BmApplication::~BmApplication()
 {
 	delete ThePrefs;
 	delete TheResources;
-	delete TheModelManager;
 	delete TheLogHandler;
 	InstanceCount--;
 }

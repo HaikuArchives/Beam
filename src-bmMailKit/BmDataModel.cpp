@@ -10,11 +10,11 @@
 #include "BmUtil.h"
 
 
-BmDataModelManager* BmDataModelManager::theInstance = NULL;
-
 /********************************************************************************\
 	BmDataModel
 \********************************************************************************/
+
+BmRefManager<BmDataModel> BmDataModel::RefManager;
 
 /*------------------------------------------------------------------------------*\
 	BmDataModel( name)
@@ -22,7 +22,7 @@ BmDataModelManager* BmDataModelManager::theInstance = NULL;
 \*------------------------------------------------------------------------------*/
 BmDataModel::BmDataModel( const BString& name) 
 	:	mModelName( name)
-	,	mModelLocker( (BString("beam_dm_") << name).String(), false)
+	,	mModelLocker( (BString("beam_dm_") << name).Truncate(B_OS_NAME_LENGTH).String(), false)
 	,	mStateVal( 0)
 {
 }
@@ -77,15 +77,22 @@ void BmDataModel::TellControllers( BMessage* msg, bool bumpStateVal) {
 	BAutolock lock( mModelLocker);
 	lock.IsLocked()	 						|| BM_THROW_RUNTIME( mModelName << ":TellControllers(): Unable to get lock on controller-set");
 	BHandler* controller;
+	status_t err;
 	if (bumpStateVal) mStateVal++;
 	msg->AddString( MSG_MODEL, ModelName().String());
 	BmControllerMap::iterator iter;
-	for( iter = mControllerMap.begin(); iter != mControllerMap.end(); ++iter) {
+	iter = mControllerMap.begin();
+	if (iter == mControllerMap.end()) {
+		BM_LOG2( BM_LogModelController, BString("Model <") << ModelName() << "> has no controllers to talk to.");
+	}
+	for( ; iter != mControllerMap.end(); ++iter) {
 		(controller = iter->first->GetControllerHandler())
 													|| BM_THROW_RUNTIME( mModelName << ":TellControllers(): Controller found with NULL-handler!");
 		if (iter->second < mStateVal) {
+			BMessenger msgr( controller);
 			BM_LOG2( BM_LogModelController, BString("Talking to handler ") << iter->first->ControllerName());
-			controller->Looper()->PostMessage( msg, controller);
+			(err=msgr.SendMessage( msg)) == B_OK
+													|| BM_THROW_RUNTIME( mModelName << ":TellControllers(): SendMessage() failed!");
 			if (bumpStateVal) {
 				iter->second = mStateVal;
 			}
@@ -148,13 +155,15 @@ void BmDataModel::WaitForAllControllers() {
 int32 BmJobModel::ThreadStartFunc( void* data) {
 	BmJobModel* job = static_cast<BmJobModel*>( data);
 	if (job) {
-		BAutolock lock( job->mModelLocker);
-		lock.IsLocked()	 						|| BM_THROW_RUNTIME( job->ModelName() << ":ThreadStartFunc(): Unable to get lock on controller-set");
-		TheModelManager->AddRef( job);
-		job->doStartJob();
-		BM_LOG2( BM_LogModelController, BString("Job <") << job->ModelName() << "> has finished");
-		job->mThreadID = 0;
-		TheModelManager->RemoveRef( job);
+		{
+			BAutolock lock( job->mModelLocker);
+			lock.IsLocked()	 						|| BM_THROW_RUNTIME( job->ModelName() << ":ThreadStartFunc(): Unable to get lock on controller-set");
+			job->doStartJob();
+			BM_LOG2( BM_LogModelController, BString("Job <") << job->ModelName() << "> has finished");
+			job->mThreadID = 0;
+		}
+		RefManager.RemoveRef( job);
+							// indicate that this thread has no more interest in jobmodel
 		return 0;
 	} else {
 		BM_LOGERR("StartJobThread(): Data-pointer is no BmJobModel");
@@ -190,15 +199,22 @@ void BmJobModel::StartJobInNewThread() {
 	lock.IsLocked()	 					|| BM_THROW_RUNTIME( ModelName() << ":TellModelItemRemoved(): Unable to get lock");
 	if (!mThreadID) {
 		// we create a new thread for this job...
-		thread_id t_id = spawn_thread( &BmJobModel::ThreadStartFunc, ModelName().String(),
+		BString tname = ModelName();
+		tname.Truncate( B_OS_NAME_LENGTH);
+		thread_id t_id = spawn_thread( &BmJobModel::ThreadStartFunc, tname.String(),
 												 B_NORMAL_PRIORITY, this);
 		if (t_id < 0)
 			throw BM_runtime_error("StartJob(): Could not spawn thread");
 
 		mThreadID = t_id;
 
+		// we add another ref to ourselves (which belongs to the thread that
+		// we spawned above:
+		RefManager.AddRef( this);
+
 		// finally, we activate the job:
 		BM_LOG2( BM_LogModelController, BString("Starting job thread ") << t_id);
+		mJobState = JOB_RUNNING;
 		resume_thread( t_id);
 	} else {
 		BM_LOGERR( BString("Trying to start a job that is already running"));
@@ -218,8 +234,6 @@ void BmJobModel::StartJobInThisThread() {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmJobModel::doStartJob() {
-//	BAutolock lock( mModelLocker);
-//	lock.IsLocked()	 					|| BM_THROW_RUNTIME( ModelName() << ":TellModelItemRemoved(): Unable to get lock");
 	BM_LOG2( BM_LogModelController, BString("Job thread <") << ModelName() << "> has started");
 	mJobState = JOB_RUNNING;
 	int lCount=0;
@@ -227,8 +241,12 @@ void BmJobModel::doStartJob() {
 		mModelLocker.Unlock();
 		lCount++; 
 	}
-	StartJob();
-	TellJobIsDone();
+	try {
+		StartJob();
+		TellJobIsDone( mJobState != JOB_STOPPED);
+	} catch( exception& e) {
+		BM_SHOWERR( e.what());
+	}
 	while(lCount--) {
 		mModelLocker.Lock();
 	}
@@ -256,8 +274,9 @@ void BmJobModel::ContinueJob() {
 \*------------------------------------------------------------------------------*/
 void BmJobModel::StopJob() {
 	if (IsJobRunning()) {
+		BAutolock lock( mModelLocker);
+		lock.IsLocked()	 					|| BM_THROW_RUNTIME( ModelName() << ":StopJob(): Unable to get lock");
 		mJobState = JOB_STOPPED;
-		TellJobIsDone( false);
 	}
 }
 
@@ -288,6 +307,8 @@ bool BmJobModel::ShouldContinue() {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmJobModel::TellJobIsDone( bool completed) {
+	BAutolock lock( mModelLocker);
+	lock.IsLocked()	 					|| BM_THROW_RUNTIME( ModelName() << ":TellJobIsDone(): Unable to get lock");
 	BString name = ModelName();
 	BMessage msg( BM_JOB_DONE);
 	msg.AddBool( MSG_COMPLETED, completed);
@@ -450,69 +471,3 @@ void BmListModel::TellModelItemUpdated( BmListModelItem* item) {
 	}
 }
 
-
-
-/********************************************************************************\
-	BmDataModelManager
-\********************************************************************************/
-
-/*------------------------------------------------------------------------------*\
-	CreateInstance()
-		-	creator-func
-\*------------------------------------------------------------------------------*/
-BmDataModelManager* BmDataModelManager::CreateInstance() {
-	if (theInstance)
-		return theInstance;
-	else
-		return theInstance = new BmDataModelManager();
-}
-
-/*------------------------------------------------------------------------------*\
-	BmDataModelManager()
-		-	c'tor
-\*------------------------------------------------------------------------------*/
-BmDataModelManager::BmDataModelManager()
-	:	mLocker( "DataModelManager", false)
-{
-}
-
-/*------------------------------------------------------------------------------*\
-	~BmDataModelManager()
-		-	d'tor
-\*------------------------------------------------------------------------------*/
-BmDataModelManager::~BmDataModelManager() {
-}
-
-
-/*------------------------------------------------------------------------------*\
-	AddRef( model)
-		-	adds a reference to the given model
-\*------------------------------------------------------------------------------*/
-void BmDataModelManager::AddRef( BmDataModel* model) {
-	assert( model);
-	BAutolock lock( mLocker);
-	lock.IsLocked()	 					|| BM_THROW_RUNTIME( "AddRef(): Unable to get lock");
-	int32 numRefs = ++mRefMap[model];
-	BM_LOG2( BM_LogUtil, BString("ModelManager: reference to <") << model->ModelName() << "> added, ref-count is "<<numRefs);
-}
-
-/*------------------------------------------------------------------------------*\
-	AddRef( model)
-		-	adds a reference to the given model
-\*------------------------------------------------------------------------------*/
-void BmDataModelManager::RemoveRef( BmDataModel* model) {
-	assert( model);
-	BAutolock lock( mLocker);
-	lock.IsLocked()	 					|| BM_THROW_RUNTIME( "RemoveRef(): Unable to get lock");
-	int32 numRefs = --mRefMap[model];
-	BM_LOG2( BM_LogUtil, BString("ModelManager: reference to <") << model->ModelName() << "> removed, ref-count is " <<numRefs);
-	if (numRefs == 0) {
-		// removed last reference, so we delete the model:
-		mRefMap.erase( model);
-		BM_LOG2( BM_LogUtil, BString("ModelManager: ... model will be deleted"));
-		delete model;
-	} else if (numRefs < 0) {
-		// was not referenced at all, we remove ref-item:
-		mRefMap.erase( model);
-	}
-}
