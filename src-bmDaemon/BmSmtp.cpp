@@ -32,8 +32,10 @@
 
 #include <ctype.h>
 #include <memory.h>
-//#include <memory>
 #include <stdio.h>
+
+#include <NetAddress.h>
+#include <NetEndpoint.h>
 
 #include "regexx.hh"
 using namespace regexx;
@@ -317,7 +319,7 @@ void BmSmtp::StateConnect() {
 							<< mSmtpAccount->SMTPServer();
 		throw BM_network_error( s);
 	}
-	if (!Connect( addr)) {
+	if (!Connect( &addr)) {
 		BmString s = BmString("Could not connect to SMTP-Server ") << mSmtpAccount->SMTPServer() 
 						 	<< "\n\bError:\n\t"<< mErrorString;
 		throw BM_network_error( s);

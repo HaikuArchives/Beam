@@ -28,6 +28,13 @@
 /*                                                                       */
 /*************************************************************************/
 
+#include <socket.h>
+#ifdef BEAM_FOR_BONE
+# include <netinet/in.h>
+#endif
+
+#include <NetEndpoint.h>
+
 #include "BmLogHandler.h"
 #include "BmNetJobModel.h"
 #include "BmPrefs.h"
@@ -101,7 +108,7 @@ BmNetJobModel::~BmNetJobModel() {
 	Connect()
 		-	
 \*------------------------------------------------------------------------------*/
-bool BmNetJobModel::Connect( const BNetAddress& addr) { 
+bool BmNetJobModel::Connect( const BNetAddress* addr) { 
 	Disconnect();
 	mConnection = new BNetEndpoint;
 	mErrorString.Truncate( 0);
@@ -110,7 +117,7 @@ bool BmNetJobModel::Connect( const BNetAddress& addr) {
 		return false;
 	}
 	status_t err;
-	if ((err=mConnection->Connect( addr)) != B_OK) {
+	if ((err=mConnection->Connect( *addr)) != B_OK) {
 		mErrorString = strerror(err);
 		return false;
 	}

@@ -31,17 +31,12 @@
 #ifndef _BmNetJobModel_h
 #define _BmNetJobModel_h
 
-#ifdef BEAM_FOR_BONE
-# include <netinet/in.h>
-#endif
-
-#include <NetEndpoint.h>
-
 #include "BmDataModel.h"
 #include "BmMemIO.h"
 #include "BmUtil.h"
 
-
+class BNetAddress;
+class BNetEndpoint;
 /*------------------------------------------------------------------------------*\
 	class BmStatusFilter
 		-	
@@ -90,7 +85,7 @@ public:
 	~BmNetJobModel();
 
 	// native methods:
-	virtual bool Connect( const BNetAddress& addr);
+	virtual bool Connect( const BNetAddress* addr);
 	virtual void Disconnect();
 	virtual bool CheckForPositiveAnswer( uint32 expectedSize = 4096, 
 													 bool dotstuffDecoding=false,

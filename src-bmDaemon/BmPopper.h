@@ -34,14 +34,7 @@
 
 #include <memory>
 
-#include <socket.h>
-#ifdef BEAM_FOR_BONE
-# include <netinet/in.h>
-#endif
-
 #include <Message.h>
-#include <NetAddress.h>
-#include <NetEndpoint.h>
 
 #include "BmNetJobModel.h"
 

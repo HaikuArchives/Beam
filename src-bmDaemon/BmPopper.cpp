@@ -34,6 +34,9 @@
 #include <memory>
 #include <stdio.h>
 
+#include <NetAddress.h>
+#include <NetEndpoint.h>
+
 #include "md5.h"
 
 #include "regexx.hh"
@@ -293,7 +296,7 @@ void BmPopper::StateConnect() {
 							<< mPopAccount->POPServer();
 		throw BM_network_error( s);
 	}
-	if (!Connect( addr)) {
+	if (!Connect( &addr)) {
 		BmString s = BmString("Could not connect to POP-Server ") 
 							<< mPopAccount->POPServer() 
 						  	<< "\n\bError:\n\t" << mErrorString;
