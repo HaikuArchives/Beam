@@ -178,9 +178,16 @@ static void parseaddr_append(struct address ***addrpp, char *name, char *route, 
 
     newaddr->mailbox = mailbox;
 
+/*  [zooey]: I think it is counterintuitive that given the header
+						From: root
+				 the test
+						address :all :is "From" "root"
+				 in fact tries to match against "root@unspecified-domain".
+				 I want it to match against "root", so I deactivated this.
     if (domain && !*domain) {
 	domain = parseaddr_unspecified_domain;
     }
+*/
     newaddr->domain = domain;
 
     newaddr->next = 0;

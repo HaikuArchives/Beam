@@ -320,13 +320,13 @@ dtags: /* empty */		 { $$ = new_dtags(); }
 				}
 	| dtags relcomp STRING  { $$ = $1;
 				  if ($$->comptag != -1) { 
-				      yyerror("duplicate comparator type tag"); YYERROR; 
+				      sieveerror("duplicate comparator type tag"); YYERROR; 
 				  } else {
 				      $$->comptag = $2;
 				      $$->relation = verify_relat($3);
 				      if ($$->relation==-1) 
 				      {
-				      	  YYERROR; /*vr called yyerror()*/ 
+				      	  YYERROR; /*vr called sieveerror()*/ 
 				      }
 				  } 
 				}
@@ -442,12 +442,12 @@ aetags: /* empty */              { $$ = new_aetags(); }
 				 }
 	| aetags relcomp STRING  { $$ = $1;
 				   if ($$->comptag != -1) { 
-				       yyerror("duplicate comparator type tag"); YYERROR; 
+				       sieveerror("duplicate comparator type tag"); YYERROR; 
 				   } else { 
 				       $$->comptag = $2;
 				       $$->relation = verify_relat($3);
 				       if ($$->relation==-1) {
-				       	   YYERROR; /*vr called yyerror()*/ 
+				       	   YYERROR; /*vr called sieveerror()*/ 
 				       }
 				   } 
 				 }
@@ -457,7 +457,7 @@ aetags: /* empty */              { $$ = new_aetags(); }
 				       YYERROR; 
 				   } else if (!strcmp($3, "i;ascii-numeric") 
 				   && !parse_script->support.i_ascii_numeric) {
-				       yyerror("comparator-i;ascii-numeric not required");
+				       sieveerror("comparator-i;ascii-numeric not required");
 				       YYERROR; 
 				   }
 				   else { $$->comparator = $3; } }
@@ -470,12 +470,12 @@ htags: /* empty */		 { $$ = new_htags(); }
 				   else { $$->comptag = $2; } }
 	| htags relcomp STRING 	 { $$ = $1;
 				   if ($$->comptag != -1) { 
-				       yyerror("duplicate comparator type tag"); YYERROR; 
+				       sieveerror("duplicate comparator type tag"); YYERROR; 
 				   } else {
 				       $$->comptag = $2;
 				       $$->relation = verify_relat($3);
 				       if ($$->relation==-1) {
-				           YYERROR; /*vr called yyerror()*/ 
+				           YYERROR; /*vr called sieveerror()*/ 
 				       }
 				   } 
 				 }
@@ -485,7 +485,7 @@ htags: /* empty */		 { $$ = new_htags(); }
 				       YYERROR; 
 				   } else if (!strcmp($3, "i;ascii-numeric") 
 				   && !parse_script->support.i_ascii_numeric) {
-				       yyerror("comparator-i;ascii-numeric not required");
+				       sieveerror("comparator-i;ascii-numeric not required");
 				       YYERROR; 
 				   }
 				   else { $$->comparator = $3; } }
@@ -517,13 +517,13 @@ comptag: IS			 { $$ = IS; }
 	;
 
 relcomp: COUNT			 { if (!parse_script->support.relational) {
-				     yyerror("relational not required");
+				     sieveerror("relational not required");
 				     YYERROR;
 				   }
 				   $$ = COUNT; 
 				 }
 	| VALUE			 { if (!parse_script->support.relational) {
-				     yyerror("relational not required");
+				     sieveerror("relational not required");
 				     YYERROR;
 				   }
 				   $$ = VALUE; 
@@ -604,6 +604,10 @@ static test_t *build_address(int t, struct aetags *ae,
 	ret->u.ae.comptag = ae->comptag;
 	ret->u.ae.relation = ae->relation;
 	ret->u.ae.comp = lookup_comp(ae->comparator, ae->comptag, ae->relation);
+	if (!ret->u.ae.comp) {
+   	    sieveerror("unknown comparator tag");
+	    return NULL;
+	}
 	ret->u.ae.sl = sl;
 	ret->u.ae.pl = pl;
 	ret->u.ae.addrpart = ae->addrtag;
@@ -627,6 +631,10 @@ static test_t *build_header(int t, struct htags *h,
 	ret->u.h.comptag = h->comptag;
 	ret->u.h.relation = h->relation;
 	ret->u.h.comp = lookup_comp(h->comparator, h->comptag, h->relation);
+	if (!ret->u.h.comp) {
+   	    sieveerror("unknown comparator tag");
+	    return NULL;
+	}
 	ret->u.h.sl = sl;
 	ret->u.h.pl = pl;
 	free_htags(h);
@@ -907,7 +915,7 @@ static int verify_relat(char *r)
     else{
       snprintf(errbuf, sizeof(errbuf), 
       	   "flag '%s': not a valid relational operation", r);
-      yyerror(errbuf);
+      sieveerror(errbuf);
       return -1;
     }
 }

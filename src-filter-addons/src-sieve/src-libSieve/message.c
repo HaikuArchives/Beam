@@ -454,12 +454,22 @@ char *get_address(address_part_t addrpart,
 
 	switch (addrpart) { 
 	case ADDRESS_ALL:
-#define U_DOMAIN "unspecified-domain"
+/*  [zooey]: I think it is counterintuitive that given the header
+		From: root
+	     the test
+		address :all :is "From" "root"
+	     in fact tries to match against "root@unspecified-domain".
+	     I want it to match against "root", so I changed this.
+*/
+//#define U_DOMAIN "unspecified-domain"
 #define U_USER "unknown-user"
 	    if (a->mailbox || a->domain) {
 		const char *m = a->mailbox ? a->mailbox : U_USER;
-		const char *d = a->domain ? a->domain : U_DOMAIN;
-		am->freeme = xstrconcat(m, "@", d, NULL);
+		const char *d = a->domain && *(a->domain) ? a->domain : NULL;
+		if (d)
+		    am->freeme = xstrconcat(m, "@", d, NULL);
+		else
+		    am->freeme = xstrdup(m);
 		ret = am->freeme;
 	    } else {
 		ret = NULL;

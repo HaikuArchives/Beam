@@ -270,7 +270,7 @@ comparator_t *lookup_comp(const char *comp, int mode, int relation)
     if (!strcmp(comp, "i;octet")) {
 	switch (mode) {
 	case IS:
-	    ret = &strcmp;
+	    ret = &oct_eq;
 	    break;
 	case CONTAINS:
 	    ret = &octet_contains;
