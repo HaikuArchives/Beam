@@ -74,7 +74,7 @@ BmContentField::BmContentField( const BString cfString) {
 void BmContentField::SetTo( const BString cfString) {
 	Regexx rx;
 
-	if (rx.exec( cfString, "^\\s*([^\\s;]+)\\s*([;\\s].*)?\\s*$")) {
+	if (rx.exec( cfString, "^\\s*([^\\s;]+)\\s*([;\\s].*)?\\s*$", Regexx::newline)) {
 		// extract value:
 		if (rx.match[0].atom.size() > 0) {
 			if (cfString[rx.match[0].atom[0].start()] == '"') {
