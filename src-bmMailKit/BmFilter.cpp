@@ -197,6 +197,23 @@ const BmString BmFilterList::SettingsFileName() {
 }
 
 /*------------------------------------------------------------------------------*\
+	ForeignKeyChanged( keyName, oldVal, newVal)
+		-	we pass the info about the changed foreign-key on to each add-on:
+\*------------------------------------------------------------------------------*/
+void BmFilterList::ForeignKeyChanged( const BmString& key, 
+												  const BmString& oldVal, 
+												  const BmString& newVal) {
+	BmAutolockCheckGlobal lock( ModelLocker());
+	lock.IsLocked() 							|| BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
+	BmModelItemMap::const_iterator iter;
+	for( iter = begin(); iter != end(); ++iter) {
+		BmFilter* filter = dynamic_cast< BmFilter*>( iter->second.Get());
+		if (filter && filter->Addon())
+			filter->Addon()->ForeignKeyChanged( key, oldVal, newVal);
+	}
+}
+
+/*------------------------------------------------------------------------------*\
 	LoadAddons()
 		-	loads all available filter-addons
 \*------------------------------------------------------------------------------*/

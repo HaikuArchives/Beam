@@ -142,6 +142,8 @@ public:
 	void UnloadAddons();
 
 	// overrides of listmodel base:
+	void ForeignKeyChanged( const BmString& key, 
+									const BmString& oldVal, const BmString& newVal);
 	const BmString SettingsFileName();
 	void InstantiateItems( BMessage* archive);
 	int16 ArchiveVersion() const			{ return nArchiveVersion; }
