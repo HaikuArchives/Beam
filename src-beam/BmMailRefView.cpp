@@ -437,11 +437,12 @@ void BmMailRefView::RemoveSelectedMessagesFromView() {
 	if (indexVect.empty())
 		return;
 
+	bool selectNext = ThePrefs->GetBool( "SelectNextMailAfterDelete", true);
 	// now move cursor onwards...
-	if (indexVect.back().end < CountItems()-1)
+	if (selectNext && indexVect.back().end < CountItems()-1)
 		Select( indexVect.back().end+1);		
 				// select next item that remains in list
-	else if (indexVect.front().start > 0)
+	else if (selectNext && indexVect.front().start > 0)
 		Select( indexVect.front().start-1);		
 				// select last item that remains in list
 	else
