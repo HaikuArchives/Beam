@@ -119,6 +119,7 @@ class BmPrefsIdentityView : public BmPrefsView {
 		BM_SIGNATURE_SELECTED 	= 'bmGS',
 		BM_SMTP_SELECTED 			= 'bmSS',
 		BM_IS_BUCKET_CHANGED	 	= 'bmFC',
+		BM_SET_SPECIAL_HEADERS 	= 'bmSH',
 		BM_ADD_IDENTITY 			= 'bmAI',
 		BM_REMOVE_IDENTITY 		= 'bmRI'
 	};
@@ -154,6 +155,7 @@ private:
 	BmTextControl* mMailAddrControl;
 	BmTextControl* mRealNameControl;
 	BmTextControl* mReplyToControl;
+	MButton* mSpecialHeadersButton;
 	BmMenuControl* mSignatureControl;
 	BmMenuControl* mPopControl;
 	BmMenuControl* mSmtpControl;

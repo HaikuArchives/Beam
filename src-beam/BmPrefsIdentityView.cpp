@@ -29,6 +29,7 @@
 
 #include <Alert.h>
 #include <MenuItem.h>
+#include <Screen.h>
 
 #include <HGroup.h>
 #include <LayeredGroup.h>
@@ -41,6 +42,7 @@
 #include "Colors.h"
 #include "ColumnListView.h"
 #include "CLVEasyItem.h"
+#include "TextEntryAlert.h"
 
 #include "BmCheckControl.h"
 #include "BmGuiUtil.h"
@@ -264,7 +266,15 @@ BmPrefsIdentityView::BmPrefsIdentityView()
 																		  false, 0, 25),
 						mRealNameControl = new BmTextControl( "Real name:"),
 						mMailAddrControl = new BmTextControl( "Mail address:"),
-						mReplyToControl = new BmTextControl( "Reply-To:"),
+						new HGroup(
+							mReplyToControl = new BmTextControl( "Reply-To:"),
+							mSpecialHeadersButton = new MButton( 
+								"Special Headers...", 
+							   new BMessage(BM_SET_SPECIAL_HEADERS), 
+							   this, minimax(-1,-1,-1,-1)
+							),
+							0
+						),
 						mAliasesControl = new BmTextControl( "Aliases:"),
 						new Space( minimax(0,5,0,5)),
 						mPopControl = new BmMenuControl( 
@@ -347,6 +357,7 @@ BmPrefsIdentityView::~BmPrefsIdentityView() {
 	TheBubbleHelper->SetHelp( mAliasesControl, NULL);
 	TheBubbleHelper->SetHelp( mRealNameControl, NULL);
 	TheBubbleHelper->SetHelp( mReplyToControl, NULL);
+	TheBubbleHelper->SetHelp( mSpecialHeadersButton, NULL);
 	TheBubbleHelper->SetHelp( mIsBucketControl, NULL);
 	TheBubbleHelper->SetHelp( mSignatureControl, NULL);
 	TheBubbleHelper->SetHelp( mSmtpControl, NULL);
@@ -396,6 +407,12 @@ void BmPrefsIdentityView::Initialize() {
 		"given above (or the default)."
 		"Use this only if you want to explicitly redirect answers to somewhere\n"
 		"else."
+	);
+	TheBubbleHelper->SetHelp( 
+		mSpecialHeadersButton, 
+		"Click this button if you want to define more default headers\n"
+		"used for every mail being created from this identity.\n\n"
+		"A typical use would be to set a standard Bcc: - address."
 	);
 	TheBubbleHelper->SetHelp( 
 		mIsBucketControl, 
@@ -539,6 +556,46 @@ void BmPrefsIdentityView::MessageReceived( BMessage* msg) {
 				NoticeChange();
 				break;
 			}
+			case BM_SET_SPECIAL_HEADERS: {
+				if (!mCurrIdent)
+					break;
+				BmString specialHeaders = mCurrIdent->SpecialHeaders();
+				BScreen scr;
+				BRect screen( scr.Frame());
+				float w=600, h=400;
+				BRect alertFrame( (screen.Width()-w)/2,
+										(screen.Height()-h)/2,
+										(screen.Width()+w)/2,
+										(screen.Height()+h)/2);
+				TextEntryAlert* alert = 
+					new TextEntryAlert( 
+						"Edit Special Headers", 
+						"Please enter any special headers below, "
+						"just as they would appear in a mail.\n\n"
+						"Here's an example: \n"
+						"    Bcc: maileater <bitbucket@test.org>\n"
+						"    Cc: Jim-Bob <jimbob@test.org>\n"
+						"        John-Boy <johnboy@test.org>\n"
+						"    X-Company-Special: grok.dis",
+						specialHeaders.String(),
+						"Cancel",
+						"OK",
+						false, 80, 20, B_WIDTH_FROM_LABEL, true,
+						&alertFrame
+					);
+				alert->SetShortcut( B_ESCAPE, 0);
+				alert->TextEntryView()->DisallowChar( 27);
+				alert->TextEntryView()->SetFontAndColor( be_fixed_font);
+				alert->SetShortcut( 0, B_ESCAPE);
+				int32 choice = alert->Go( specialHeaders);
+				if (choice == 1) {
+					if (specialHeaders.Length()
+					&& specialHeaders[specialHeaders.Length()-1] != '\n')
+						specialHeaders << '\n';
+					mCurrIdent->SpecialHeaders( specialHeaders);
+				}
+				break;
+			}
 			case BM_ADD_IDENTITY: {
 				BmString key( "new identity");
 				for( int32 i=1; TheIdentityList->FindItemByKey( key); ++i) {
@@ -631,6 +688,7 @@ void BmPrefsIdentityView::ShowIdentity( int32 selection) {
 	mReplyToControl->SetEnabled( enabled);
 	mSignatureControl->SetEnabled( enabled);
 	mSmtpControl->SetEnabled( enabled);
+	mSpecialHeadersButton->SetEnabled( enabled);
 	mPopControl->SetEnabled( enabled);
 	mRemoveButton->SetEnabled( enabled);
 	mIsBucketControl->SetEnabled( enabled);
