@@ -815,7 +815,7 @@ void BmApplication::MessageReceived( BMessage* msg) {
 				int32 countFound;
 				msg->GetInfo( MSG_MAILREF, &typeFound, &countFound);
 				if (countFound>0) {
-					entry_ref refs[countFound];
+					struct entry_ref *refs = new entry_ref [countFound];
 					int index=0;
 					for(  index=0; 
 							msg->FindPointer( 
@@ -832,6 +832,7 @@ void BmApplication::MessageReceived( BMessage* msg) {
 						mailRef->RemoveRef();	// msg is no more refering to mailRef
 					}
 					MoveToTrash( refs, index);
+					delete [] refs;
 				}
 				break;
 			}

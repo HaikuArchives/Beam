@@ -33,6 +33,8 @@
 
 #include <SupportDefs.h>
 
+#include <cstring>
+
 #include "BmBase.h"
 
 class IMPEXPBMBASE BmString {

@@ -295,7 +295,8 @@ BmString::CountChars() const
 		count++;
 
 		// Jump to next UTF8 character
-		for (; (*start & 0xc0) == 0x80; start++);
+		while((*start & 0xc0) == 0x80)
+			start++;
 	}
 
 	return count;
@@ -2131,7 +2132,7 @@ BmString::_DoPrepend(const char *str, int32 count)
 
 /* XXX: These could be inlined too, if they are too slow */
 int32
-BmString::_FindAfter(const char *str, int32 offset, int32 strlen) const
+BmString::_FindAfter(const char *str, int32 offset, int32 /*strlen*/) const
 {	
 	char *ptr = strstr(String() + offset, str);
 
@@ -2143,7 +2144,7 @@ BmString::_FindAfter(const char *str, int32 offset, int32 strlen) const
 
 
 int32
-BmString::_IFindAfter(const char *str, int32 offset, int32 strlen) const
+BmString::_IFindAfter(const char *str, int32 offset, int32 /*strlen*/) const
 {
 	char *ptr = strcasestr(String() + offset, str);
 
@@ -2155,7 +2156,7 @@ BmString::_IFindAfter(const char *str, int32 offset, int32 strlen) const
 
 
 int32
-BmString::_ShortFindAfter(const char *str, int32 len) const
+BmString::_ShortFindAfter(const char *str, int32 /*len*/) const
 {
 	char *ptr = strstr(String(), str);
 	
