@@ -148,7 +148,6 @@ public:
 	void ResyncFromDisk();
 	//
 	const BmString& GetFieldVal( const BmString fieldName);
-	BmString GetStrippedFieldVal( const BmString fieldName);
 	bool HasAttachments() const;
 	bool HasComeFromList() const;
 	void MarkAs( const char* status);

@@ -295,17 +295,6 @@ const BmString& BmMail::GetFieldVal( const BmString fieldName) {
 }
 
 /*------------------------------------------------------------------------------*\
-	GetStrippedFieldVal()
-	-	
-\*------------------------------------------------------------------------------*/
-BmString BmMail::GetStrippedFieldVal( const BmString fieldName) {
-	if (mHeader)
-		return mHeader->GetStrippedFieldVal( fieldName);
-	else
-		return BM_DEFAULT_STRING;
-}
-
-/*------------------------------------------------------------------------------*\
 	SetFieldVal()
 	-	
 \*------------------------------------------------------------------------------*/

@@ -74,10 +74,8 @@ public:
 	void ConstructRawText( BmString& header, const BmString& charset, 
 								  int32 fieldNameLength) const;
 	bool IsHandledByAccount( BmPopAccount* acc, bool needExactMatch=false) const;
+	const BmString& AddrString() const;
 
-	// operators:
-	operator BmString() const;
-						// returns address completely formatted (ready to be sent)
 	// getters:
 	inline bool InitOK() const				{ return mInitOK; }
 	inline bool HasPhrase() const			{ return mPhrase.Length() > 0; }
@@ -89,7 +87,7 @@ private:
 	bool mInitOK;
 	BmString mPhrase;
 	BmString mAddrSpec;
-
+	mutable BmString mAddrString;
 };
 
 typedef vector< BmString> BmStringList;
@@ -114,18 +112,16 @@ public:
 	BmStringList SplitIntoAddresses( BmString addrList);
 	void ConstructRawText( BmStringOBuf& header, const BmString& charset, 
 								  int32 fieldNameLength) const;
-	BmString FindAddressMatchingAccount( BmPopAccount* acc, bool needExactMatch=false) const;
+	const BmString& FindAddressMatchingAccount( BmPopAccount* acc, bool needExactMatch=false) const;
 	bool ContainsAddrSpec( BmString addrSpec) const;
 	BmString AddrSpecsAsString() const;
+	const BmString& AddrString() const;
 	//
 	inline BmAddrList::const_iterator begin() const { return mAddrList.begin(); }
 	inline BmAddrList::const_iterator end() const	{ return mAddrList.end(); }
 	inline size_t size() const				{ return mAddrList.size(); }
 	inline bool empty() const				{ return mAddrList.empty(); }
 
-	// operators:
-	operator BmString() const;
-							// returns address-list completely formatted (ready to be sent)
 	// getters:
 	inline bool InitOK() const				{ return mInitOK; }
 	inline bool IsGroup() const			{ return mIsGroup; }
@@ -138,7 +134,7 @@ private:
 	bool mIsGroup;
 	BmString mGroupName;
 	BmAddrList mAddrList;
-
+	mutable BmString mAddrString;
 };
 
 /*------------------------------------------------------------------------------*\
@@ -201,7 +197,6 @@ public:
 	// getters:
 	void GetAllFieldValues( BmString fieldName, const char**& valList) const;
 	const BmString& GetFieldVal( BmString fieldName);
-	const BmString GetStrippedFieldVal( BmString fieldName);
 	inline const BmString& HeaderString() const	{ return mHeaderString; }
 	inline const int32 HeaderLength() const	{ return mHeaderString.Length(); }
 	inline const BmString& Name() const			{ return mName; }
@@ -225,16 +220,12 @@ private:
 	BmString mHeaderString;
 							// the complete original mail-header
 	BmHeaderList mHeaders;
-							// contains all headers as a list of corresponding
-							// values (for most fields, this list should only have
-							// one item, but for others, e.g. 'Received', the list
-							// will have numerous entries.
-	BmHeaderList mStrippedHeaders;
 							// contains all stripped headers as a list of corresponding
 							// values. For simplicity, this map contains even fields for
 							// which the stripped value does not make sense, because they
 							// aren't structured (e.g. 'Subject'). The stripped versions
-							// of these fields' values should not be used, of course.
+							// of these fields' values will be the same as the original
+							// field-value (i.e. no stripping takes place)
 							// N.B.: 'stripped' actually means that any comments and 
 							//       unneccessary whitespace are gone from the field-values.
 	BmAddrMap mAddrMap;
