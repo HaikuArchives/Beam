@@ -113,6 +113,7 @@ public:
 	void ConstructRawText( BString& header, int32 encoding, int32 fieldNameLength) const;
 	BString FindAddressMatchingAccount( BmPopAccount* acc) const;
 	bool ContainsAddrSpec( BString addrSpec) const;
+	BString AddrSpecsAsString() const;
 	//
 	inline BmAddrList::const_iterator begin() const { return mAddrList.begin(); }
 	inline BmAddrList::const_iterator end() const	{ return mAddrList.end(); }

@@ -369,6 +369,29 @@ BmStringList BmAddressList::SplitIntoAddresses( BString addrListText) {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
+BString BmAddressList::AddrSpecsAsString() const {
+	BString addrString;
+	if (mIsGroup) {
+		addrString << mGroupName << ":";
+		if (mAddrList.begin() != mAddrList.end())
+			// cosmetics: add space only if group actually contains addresses
+			addrString << " ";
+	}
+	BmAddrList::const_iterator pos;
+	for( pos=mAddrList.begin(); pos!=mAddrList.end(); ++pos) {
+		if (pos != mAddrList.begin())
+			addrString << ", ";
+		addrString << pos->AddrSpec();
+	}
+	if (mIsGroup)
+		addrString << ";";
+	return addrString;
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
 BmAddressList::operator BString() const {
 	BString addrString;
 	if (mIsGroup) {
@@ -643,7 +666,6 @@ void BmMailHeader::RemoveAddrFieldVal(  BString fieldName, const BString value) 
 	-	
 \*------------------------------------------------------------------------------*/
 BString BmMailHeader::DetermineOriginator( bool bypassReplyTo=false) {
-	BString originator;
 	BmAddressList addrList = mAddrMap[BM_FIELD_REPLY_TO];
 	if (bypassReplyTo || !addrList.InitOK()) {
 		addrList = mAddrMap[BM_FIELD_FROM];
