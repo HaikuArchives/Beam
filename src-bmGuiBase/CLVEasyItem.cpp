@@ -241,7 +241,10 @@ void CLVEasyItem::DrawItemColumn(BView *owner, BRect item_column_rect, int32 col
 				draw_point.Set(item_column_rect.left+(offs?offs:2.0),item_column_rect.top+text_offset);
 			else
 			{
-				float string_width = owner_font.StringWidth(text);
+				float string_width 
+					= Bold() 
+						? be_bold_font->StringWidth(text)
+						: owner_font.StringWidth(text);
 				draw_point.Set(item_column_rect.right-(offs?offs:2.0)-string_width,item_column_rect.top+text_offset);
 			}				
 			owner->DrawString(text,draw_point);
