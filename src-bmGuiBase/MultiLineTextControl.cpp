@@ -125,6 +125,7 @@ void MultiLineTextControl::SetEnabled( bool enabled) {
 	m_enabled = enabled;
 	BControl::SetEnabled( enabled);
 	m_text_view->SetViewColor( enabled ? White : BeInactiveControlGrey);
+	m_text_view->MakeEditable( enabled);
 	MakeFocus( false);
 	Invalidate();
 	m_text_view->Invalidate();
