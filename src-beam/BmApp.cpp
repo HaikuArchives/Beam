@@ -48,6 +48,7 @@ using namespace regexx;
 #include "BmBodyPartView.h"
 #include "BmDataModel.h"
 #include "BmDeskbarView.h"
+#include "BmEncoding.h"
 #include "BmFilter.h"
 #include "BmJobStatusWin.h"
 #include "BmLogHandler.h"
@@ -62,6 +63,7 @@ using namespace regexx;
 #include "BmPeople.h"
 #include "BmPopAccount.h"
 #include "BmPrefs.h"
+#include "BmPrefsWin.h"
 #include "BmResources.h"
 #include "BmSignature.h"
 #include "BmSmtpAccount.h"
@@ -129,6 +131,9 @@ BmApplication::BmApplication( const char* sig)
 		time_t appModTime;
 		appFile.GetModificationTime( &appModTime);
 		TheResources->CheckMimeTypeFile( sig, appModTime);
+
+		// init charset-tables:
+		BmEncoding::InitCharsetMap();
 
 		// load the preferences set by user (if any):
 		BmPrefs::CreateInstance();
@@ -553,6 +558,19 @@ void BmApplication::MessageReceived( BMessage* msg) {
 					PageSetup();
 				if (mPrintSetup)
 					PrintMails( msg);
+				break;
+			}
+			case BMM_PREFERENCES: {
+				if (!ThePrefsWin) {
+					BmPrefsWin::CreateInstance();
+					ThePrefsWin->Show();
+				} else  {
+					if (ThePrefsWin->LockLooper()) {
+						ThePrefsWin->Hide();
+						ThePrefsWin->Show();
+						ThePrefsWin->UnlockLooper();
+					}
+				}
 				break;
 			}
 			case BMM_TRASH: {

@@ -113,6 +113,18 @@ status_t BmFilter::Archive( BMessage* archive, bool deep) const {
 		-	
 \*------------------------------------------------------------------------------*/
 bool BmFilter::Execute( void* msgContext) {
+	// lock filter-list in order to serialize SIEVE-calls:
+	BmRef<BmListModel> filterList( ListModel());
+	if (!filterList) {
+		mLastErr = "Unable to get filter-list";
+		return false;
+	}
+	BmAutolock lock( filterList->ModelLocker());
+	if (!lock.IsLocked()) {
+		mLastErr = "Unable to lock filter-list";
+		return false;
+	}
+
 	if (!mCompiledScript) {
 		bool scriptOK = CompileScript();
 		if (!scriptOK || !mCompiledScript) {
@@ -142,6 +154,18 @@ bool BmFilter::CompileScript() {
 	BFile scriptBFile;
 
 	mLastErr = mLastSieveErr = "";
+
+	// lock filter-list in order to serialize SIEVE-calls:
+	BmRef<BmListModel> filterList( ListModel());
+	if (!filterList) {
+		mLastErr = "Unable to get filter-list";
+		return false;
+	}
+	BmAutolock lock( filterList->ModelLocker());
+	if (!lock.IsLocked()) {
+		mLastErr = "Unable to lock filter-list";
+		return false;
+	}
 
 	// create sieve interpreter:
 	int res = sieve_interp_alloc( &sieveInterp, this);

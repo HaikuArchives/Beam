@@ -306,6 +306,9 @@ void BmResources::AddFontSubmenuTo( BMenu* menu, BHandler* target,
 	if (!menu)
 		return;
 	BMenu* fontMenu = new BMenu( "Select Font...");
+	BFont font( *be_plain_font);
+	font.SetSize( 10);
+	fontMenu->SetFont( &font);
 	menu->AddItem( fontMenu);
 	font_family family;
 	font_style style;
@@ -315,6 +318,7 @@ void BmResources::AddFontSubmenuTo( BMenu* menu, BHandler* target,
 	for( iter = mFontMap.begin(); iter != mFontMap.end(); ++iter) {
 		const BmFontStyleVect& styles = iter->second;
 		BMenu* subMenu = new BMenu( iter->first.String());
+		subMenu->SetFont( &font);
 		for( uint32 i=0; i<styles.size(); ++i) {
 			BMessage* msg = new BMessage( BM_FONT_SELECTED);
 			msg->AddString( BM_MSG_FONT_FAMILY, iter->first.String());
@@ -334,6 +338,7 @@ void BmResources::AddFontSubmenuTo( BMenu* menu, BHandler* target,
 		}
 	}
 	BMenu* sizeMenu = new BMenu( "Select Fontsize...");
+	sizeMenu->SetFont( &font);
 	const char* sizes[] = { "8","9","10","11","12","14","16","18","20","24",NULL};
 	for( int i=0; sizes[i]!=NULL; ++i) {
 		BMessage* msg = new BMessage( BM_FONTSIZE_SELECTED);

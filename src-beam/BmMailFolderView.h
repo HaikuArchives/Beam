@@ -82,7 +82,7 @@ class BmMailFolderView : public BmListViewController
 	static const char* const MSG_CURR_FOLDER;
 
 public:
-	static const char* const MSG_FOLDERS_SELECTED;
+	static const char* const MSG_HAVE_SELECTED_FOLDER;
 
 	// creator-func, c'tors and d'tor:
 	static BmMailFolderView* CreateInstance(  minimax minmax, int32 width, int32 height);
@@ -93,6 +93,7 @@ public:
 	BmListViewItem* CreateListViewItem( BmListModelItem* item, BMessage* archive=NULL);
 	void ShowMenu( BPoint point);
 	inline void TeamUpWith( BmMailRefView* mrv) 	{ mPartnerMailRefView = mrv; }
+	void SendNoticesIfNeeded( bool haveSelectedFolder);
 	
 	// overrides of controller base:
 	bool AcceptsDropOf( const BMessage* msg);
@@ -121,6 +122,8 @@ private:
 	BmMailRefView* mPartnerMailRefView;
 	
 	BmString mLastActiveKey;
+	
+	bool mHaveSelectedFolder;
 
 	// Hide copy-constructor and assignment:
 	BmMailFolderView( const BmMailFolderView&);

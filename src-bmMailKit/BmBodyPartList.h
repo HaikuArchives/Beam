@@ -99,7 +99,7 @@ public:
 
 	// native methods:
 	void SetTo( const BmString& msgtext, int32 s, int32 l, BmRef<BmMailHeader> mHeader=NULL);
-	void SetBodyText( const BmString& utf8Text, uint32 encoding);
+	void SetBodyText( const BmString& utf8Text, const BmString& charset);
 	bool IsText() const;
 	bool IsPlainText() const;
 	bool ShouldBeShownInline()	const;
@@ -110,7 +110,7 @@ public:
 	int32 PruneUnneededMultiParts();
 	int32 EstimateEncodedSize();
 	void ConstructBodyForSending( BmStringOBuf &msgText);
-	void SuggestEncoding( int32 enc) 			{ mSuggestedEncoding = enc; }
+	void SuggestCharset( const BmString& s) { mSuggestedCharset = s; }
 
 	static BmString GenerateBoundary();
 
@@ -137,8 +137,9 @@ public:
 	inline const BmString& TypeParam( BmString key) const		{ return mContentType.Param( key); }
 	inline const BmString& DispositionParam( BmString key) const	{ return mContentDisposition.Param( key); }
 	inline int32 BodyLength() const				{ return mBodyLength; }
-	inline int32 SuggestedEncoding() const		{ return mSuggestedEncoding; }
-	inline int32 CurrentEncoding() const		{ return mCurrentEncoding; }
+	inline const BmString& SuggestedCharset() const		{ return mSuggestedCharset; }
+	inline const BmString& CurrentCharset() const		{ return mCurrentCharset; }
+	inline bool HadErrorDuringConversion() const			{ return mHadErrorDuringConversion; }
 
 	inline const entry_ref& EntryRef() const	{ return mEntryRef; }
 
@@ -163,8 +164,9 @@ private:
 	int32 mStartInRawText;
 	int32 mBodyLength;
 	
-	mutable int32 mCurrentEncoding;
-	int32 mSuggestedEncoding;
+	mutable BmString mCurrentCharset;
+	BmString mSuggestedCharset;
+	mutable bool mHadErrorDuringConversion;
 	
 	entry_ref mEntryRef;
 
@@ -199,8 +201,8 @@ public:
 	void PruneUnneededMultiParts();
 	int32 EstimateEncodedSize();
 	bool ConstructBodyForSending( BmStringOBuf& msgText);
-	void SetEditableText( const BmString& utf8Text, uint32 encoding);
-	uint32 DefaultEncoding()	const;
+	void SetEditableText( const BmString& utf8Text, const BmString& charset);
+	const BmString& DefaultCharset()	const;
 
 	//	overrides of listmodel base:
 	bool StartJob();

@@ -53,7 +53,7 @@ class BmSignature : public BmListModelItem {
 	static const char* const MSG_NAME;
 	static const char* const MSG_DYNAMIC;
 	static const char* const MSG_CONTENT;
-	static const char* const MSG_ENCODING;
+	static const char* const MSG_CHARSET;
 	static const int16 nArchiveVersion;
 
 public:
@@ -72,12 +72,12 @@ public:
 	inline const BmString &Content() const	{ return mContent; }
 	inline bool Dynamic() const 				{ return mDynamic; }
 	inline const BmString &Name() const		{ return Key(); }
-	inline uint32 Encoding() const			{ return mEncoding; }
+	inline const BmString &Charset() const	{ return mCharset; }
 
 	// setters:
 	inline void Content( const BmString &s) { mContent = s; TellModelItemUpdated( UPD_ALL); }
 	inline void Dynamic( bool b) 				{ mDynamic = b;  TellModelItemUpdated( UPD_ALL); }
-	inline void Encoding( uint32 i) 			{ mEncoding = i;  TellModelItemUpdated( UPD_ALL); }
+	inline void Charset( const BmString &s) { mCharset = s; TellModelItemUpdated( UPD_ALL); }
 
 private:
 	BmSignature();					// hide default constructor
@@ -89,7 +89,7 @@ private:
 
 	BmString mContent;				// the signature data as entered by user
 	bool mDynamic;						// if mContents is static text or a script-call
-	uint32 mEncoding;					// character-encoding of this sig
+	BmString mCharset;				// character-set of this sig
 };
 
 

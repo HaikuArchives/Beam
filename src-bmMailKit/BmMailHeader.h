@@ -71,7 +71,8 @@ public:
 
 	// native methods:
 	bool SetTo( const BmString& addrText);
-	void ConstructRawText( BmString& header, int32 encoding, int32 fieldNameLength) const;
+	void ConstructRawText( BmString& header, const BmString& charset, 
+								  int32 fieldNameLength) const;
 	bool IsHandledByAccount( BmPopAccount* acc, bool needExactMatch=false) const;
 
 	// operators:
@@ -111,7 +112,8 @@ public:
 	bool Add( BmString strippedFieldVal);
 	void Remove( BmString singleAddress);
 	BmStringList SplitIntoAddresses( BmString addrList);
-	void ConstructRawText( BmStringOBuf& header, int32 encoding, int32 fieldNameLength) const;
+	void ConstructRawText( BmStringOBuf& header, const BmString& charset, 
+								  int32 fieldNameLength) const;
 	BmString FindAddressMatchingAccount( BmPopAccount* acc, bool needExactMatch=false) const;
 	bool ContainsAddrSpec( BmString addrSpec) const;
 	BmString AddrSpecsAsString() const;
@@ -191,7 +193,7 @@ public:
 	BmString DetermineOriginator( bool bypassReplyTo=false);
 	BmString DetermineListAddress( bool bypassSanityTest=false);
 	//
-	bool ConstructRawText( BmStringOBuf& header, int32 encoding);
+	bool ConstructRawText( BmStringOBuf& header, const BmString& charset);
 
 	// overrides of BmRefObj
 	const BmString& RefName() const				{ return mKey; }

@@ -31,8 +31,6 @@
 #include <assert.h>
 #include <cstring>
 
-#include <UTF8.h>
-
 #include "regexx.hh"
 using namespace regexx;
 
@@ -54,66 +52,101 @@ using namespace BmEncoding;
 #define CHAR2HIGHNIBBLE(c) (((c) > 0x9F ? 'A'-10 : '0')+((c)>>4))
 #define CHAR2LOWNIBBLE(c)  ((((c)&0x0F) > 9 ? 'A'-10 : '0')+((c)&0x0F))
 
-BmEncoding::BmEncodingPair BmEncoding::BM_Encodings[] = {
-	{ "iso-8859-1", B_ISO1_CONVERSION },
-	{ "iso-8859-2", B_ISO2_CONVERSION },
-	{ "iso-8859-3", B_ISO3_CONVERSION },
-	{ "iso-8859-4", B_ISO4_CONVERSION },
-	{ "iso-8859-5", B_ISO5_CONVERSION },
-	{ "iso-8859-6", B_ISO6_CONVERSION },
-	{ "iso-8859-7", B_ISO7_CONVERSION },
-	{ "iso-8859-8", B_ISO8_CONVERSION },
-	{ "iso-8859-9", B_ISO9_CONVERSION },
-	{ "iso-8859-10", B_ISO10_CONVERSION },
-	{ "macintosh", B_MAC_ROMAN_CONVERSION },
-	{ "windows-1252", B_MS_WINDOWS_CONVERSION },
-	{ "windows-1251", B_MS_WINDOWS_1251_CONVERSION },
-	{ "ibm866", B_MS_DOS_866_CONVERSION },
-	{ "ibm850", B_MS_DOS_CONVERSION },
-	{ "shift_jis", B_SJIS_CONVERSION },
-	{ "euc-jp", B_EUC_CONVERSION },
-	{ "iso-2022-jp", B_JIS_CONVERSION },
-	{ "koi8-r", B_KOI8R_CONVERSION },
-	{ "euc-kr", B_EUC_KR_CONVERSION },
-	{ "iso-8859-13", B_ISO13_CONVERSION },
-	{ "iso-8859-14", B_ISO14_CONVERSION },
-	{ "iso-8859-15", B_ISO15_CONVERSION },
-	{ "utf-8", BM_UTF8_CONVERSION },
-	{ "utf8", BM_UTF8_CONVERSION },
-	{ NULL, 0 }
-};
+
+BmCharsetMap BmEncoding::TheCharsetMap;
+
+BmString BmEncoding::DefaultCharset = "ISO-8859-15";
 
 /*------------------------------------------------------------------------------*\
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-uint32 BmEncoding::CharsetToEncoding( const BmString& charset) {
-	BmString set( charset);
-	set.ToLower();
-	for( int i=0; BM_Encodings[i].charset; ++i)
-		if (set == BM_Encodings[i].charset)
-			return( BM_Encodings[i].encoding);
-	return B_ISO1_CONVERSION;		// just anything that is compatible with us-ascii (which is the fallback)
+static int HandleOneCharset( unsigned int namescount, const char * const * names,
+                             void* data) {
+	static const char* rxs[] = {
+		"^ISO-",
+		"^WINDOWS-",
+		"^CP",
+		"^KOI8-",
+		"^EUC-",
+		"^MACROMAN$",
+		"^SHIFT-JIS$",
+		"^UTF-",
+		"^UCS-",
+		NULL
+	};
+	Regexx rx;
+	int index=0;
+	for( int r=0; rxs[r]!=NULL; ++r) {
+		rx.expr( rxs[r]);
+		for( uint32 i=0; i<namescount; ++i) {
+			rx.str( names[i]);
+			if (rx.exec() > 0) {
+				index = i;
+				goto out;
+			}
+		}
+	}
+out:
+	for( uint32 i=0; i<namescount; ++i)
+		TheCharsetMap[names[i]] = false;
+	TheCharsetMap[names[index]] = true;
+	return 0;
 }
 
 /*------------------------------------------------------------------------------*\
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmString BmEncoding::EncodingToCharset( const uint32 encoding) {
-	for( int i=0; BM_Encodings[i].charset; ++i)
-		if (encoding == BM_Encodings[i].encoding)
-			return( BM_Encodings[i].charset);
-	return "us-ascii";						// to indicate us-ascii (which is the fallback)
+void BmEncoding::InitCharsetMap() {
+	iconvlist( &HandleOneCharset, NULL);
 }
 
 /*------------------------------------------------------------------------------*\
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmEncoding::ConvertToUTF8( uint32 srcEncoding, const BmString& src,
+const char* BmEncoding::ConvertFromBeosToLibiconv( uint32 encoding) {
+	static const char* map[] = {
+		"ISO-8859-1",
+		"ISO-8859-2",
+		"ISO-8859-3",
+		"ISO-8859-4",
+		"ISO-8859-5",
+		"ISO-8859-6",
+		"ISO-8859-7",
+		"ISO-8859-8",
+		"ISO-8859-9",
+		"ISO-8859-10",
+		"MACROMAN",
+		"SHIFT-JIS",
+		"EUC-JP",
+		"ISO-2022-JP-2",
+		"WINDOWS-1252",
+		"UCS-4",
+		"KOI8-R",
+		"WINDOWS-1251",
+		"CP866",
+		"CP850",
+		"EUC-KR",
+		"ISO-8859-13",
+		"ISO-8859-14",
+		"ISO-8859-15",
+		"UTF-8"
+	};
+	if (encoding >= 0 && encoding <= 24)
+		return map[encoding];
+	else
+		return "UTF-8";
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmEncoding::ConvertToUTF8( const BmString& srcCharset, const BmString& src,
 										  BmString& dest) {
-	if (srcEncoding == BM_UTF8_CONVERSION) {
+	if (srcCharset == "UTF-8") {
 		// source already is UTF8...
 		dest = src;
 		return;
@@ -121,7 +154,7 @@ void BmEncoding::ConvertToUTF8( uint32 srcEncoding, const BmString& src,
 	BmStringIBuf srcBuf( src);
 	const uint32 blockSize = max( (int32)128, src.Length());
 	BmStringOBuf destBuf( blockSize);
-	BmUtf8Encoder encoder( &srcBuf, srcEncoding, blockSize);
+	BmUtf8Encoder encoder( &srcBuf, srcCharset, blockSize);
 	destBuf.Write( &encoder, blockSize);
 	dest.Adopt( destBuf.TheString());
 }
@@ -130,9 +163,9 @@ void BmEncoding::ConvertToUTF8( uint32 srcEncoding, const BmString& src,
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmEncoding::ConvertFromUTF8( uint32 destEncoding, const BmString& src, 
+void BmEncoding::ConvertFromUTF8( const BmString& destCharset, const BmString& src, 
 											 BmString& dest) {
-	if (destEncoding == BM_UTF8_CONVERSION) {
+	if (destCharset == "UTF-8") {
 		// destination shall be UTF8, too...
 		dest = src;
 		return;
@@ -140,7 +173,7 @@ void BmEncoding::ConvertFromUTF8( uint32 destEncoding, const BmString& src,
 	BmStringIBuf srcBuf( src);
 	const uint32 blockSize = max( (int32)128, src.Length());
 	BmStringOBuf destBuf( blockSize);
-	BmUtf8Decoder encoder( &srcBuf, destEncoding, blockSize);
+	BmUtf8Decoder encoder( &srcBuf, destCharset, blockSize);
 	destBuf.Write( &encoder, blockSize);
 	dest.Adopt( destBuf.TheString());
 }
@@ -178,7 +211,7 @@ void BmEncoding::Decode( BmString encodingStyle, const BmString& src, BmString& 
 		-	
 \*------------------------------------------------------------------------------*/
 BmString BmEncoding::ConvertHeaderPartToUTF8( const BmString& headerPart, 
-															 uint32 defaultEncoding) {
+															 const BmString& defaultCharset) {
 	int32 nm;
 	Regexx rx;
 	rx.expr( "=\\?(.+?)\\?(.)\\?(.+?)\\?=\\s*");
@@ -200,7 +233,7 @@ BmString BmEncoding::ConvertHeaderPartToUTF8( const BmString& headerPart,
 			const BmString srcQuotingStyle( i->atom[1]);
 			BmStringIBuf text( headerPart.String()+i->atom[2].start(), i->atom[2].Length());
 			BmMemFilterRef decoder = FindDecoderFor( &text, srcQuotingStyle, true, blockSize);
-			BmUtf8Encoder textConverter( decoder.get(), CharsetToEncoding( srcCharset), blockSize);
+			BmUtf8Encoder textConverter( decoder.get(), srcCharset, blockSize);
 			utf8.Write( &textConverter, blockSize);
 			curr = i->start()+i->Length();
 		}
@@ -209,7 +242,7 @@ BmString BmEncoding::ConvertHeaderPartToUTF8( const BmString& headerPart,
 		}
 	} else {
 		BmStringIBuf text( headerPart);
-		BmUtf8Encoder textConverter( &text, defaultEncoding);
+		BmUtf8Encoder textConverter( &text, defaultCharset);
 		utf8.Write( &textConverter);
 	}
 	return utf8.TheString();
@@ -219,9 +252,10 @@ BmString BmEncoding::ConvertHeaderPartToUTF8( const BmString& headerPart,
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmString BmEncoding::ConvertUTF8ToHeaderPart( const BmString& utf8Text, uint32 encoding,
-															bool useQuotedPrintableIfNeeded,
-															bool fold, int32 fieldLen) {
+BmString BmEncoding::ConvertUTF8ToHeaderPart( const BmString& utf8Text, 
+															 const BmString& charset,
+															 bool useQuotedPrintableIfNeeded,
+															 bool fold, int32 fieldLen) {
 	bool needsQuotedPrintable = false;
 	BmString transferEncoding = "7bit";
 	if (useQuotedPrintableIfNeeded)
@@ -231,8 +265,7 @@ BmString BmEncoding::ConvertUTF8ToHeaderPart( const BmString& utf8Text, uint32 e
 		needsQuotedPrintable = false;
 	}
 	BmString charsetString;
-	ConvertFromUTF8( encoding, utf8Text, charsetString);
-	BmString charset = EncodingToCharset( encoding);
+	ConvertFromUTF8( charset, utf8Text, charsetString);
 	BmString encodedString;
 	if (needsQuotedPrintable) {
 		// encoded-words (quoted-printable) are neccessary, since headerfield contains
@@ -337,11 +370,11 @@ BmMemFilterRef BmEncoding::FindDecoderFor( BmMemIBuf* input,
 		filter = new BmBase64Decoder( input, blockSize);
 	else if (encodingStyle.ICompare("7bit")==0 || encodingStyle.ICompare("8bit")==0)
 		filter = new BmLinebreakDecoder( input, blockSize);
-	else {
-		if (encodingStyle.ICompare("binary")!=0) {
-			BM_SHOWERR( BmString("FindDecoderFor(): Unrecognized encoding-style <")<<encodingStyle<<"> found.\nNo decoding will take place.");
-		}
+	else if (encodingStyle.ICompare("binary")==0)
 		filter = new BmBinaryDecoder( input, blockSize);
+	else {
+		BM_SHOWERR( BmString("FindDecoderFor(): Unrecognized encoding-style <")<<encodingStyle<<"> found.\nAssuming 7bit.");
+		filter = new BmLinebreakDecoder( input, blockSize);
 	}
 	return BmMemFilterRef( filter);
 }
@@ -360,11 +393,11 @@ BmMemFilterRef BmEncoding::FindEncoderFor( BmMemIBuf* input,
 		filter = new BmBase64Encoder( input, blockSize);
 	else if (encodingStyle.ICompare("7bit")==0 || encodingStyle.ICompare("8bit")==0)
 		filter = new BmLinebreakEncoder( input, blockSize);
-	else {
-		if (encodingStyle.ICompare("binary")!=0) {
-			BM_SHOWERR( BmString("FindDecoderFor(): Unrecognized encoding-style <")<<encodingStyle<<"> found.\nNo decoding will take place.");
-		}
+	else if (encodingStyle.ICompare("binary")==0)
 		filter = new BmBinaryEncoder( input, blockSize);
+	else {
+		BM_SHOWERR( BmString("FindEncoderFor(): Unrecognized encoding-style <")<<encodingStyle<<"> found.\nAssuming 7bit.");
+		filter = new BmLinebreakEncoder( input, blockSize);
 	}
 	return BmMemFilterRef( filter);
 }
@@ -380,14 +413,12 @@ BmMemFilterRef BmEncoding::FindEncoderFor( BmMemIBuf* input,
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmUtf8Decoder::BmUtf8Decoder( BmMemIBuf* input, uint32 destEncoding, 
+BmUtf8Decoder::BmUtf8Decoder( BmMemIBuf* input, const BmString& destCharset, 
 										uint32 blockSize)
 	:	inherited( input, blockSize)
-	,	mDestEncoding( destEncoding)
-#ifdef BM_USE_ICONV
+	,	mDestCharset( destCharset)
 	,	mIconvDescr( NULL)
 	,	mTransliterate( false)
-#endif
 {
 	InitConverter();
 }
@@ -398,12 +429,10 @@ BmUtf8Decoder::BmUtf8Decoder( BmMemIBuf* input, uint32 destEncoding,
 \*------------------------------------------------------------------------------*/
 BmUtf8Decoder::~BmUtf8Decoder()
 {
-#ifdef BM_USE_ICONV
 	if (mIconvDescr) {
 		iconv_close( mIconvDescr);
 		mIconvDescr = NULL;
 	}
-#endif
 }
 
 /*------------------------------------------------------------------------------*\
@@ -420,18 +449,15 @@ void BmUtf8Decoder::Reset( BmMemIBuf* input) {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmUtf8Decoder::InitConverter() {
-#ifdef BM_USE_ICONV
 	if (mIconvDescr) {
 		iconv_close( mIconvDescr);
 		mIconvDescr = NULL;
 	}
-	BmString toSet = EncodingToCharset( mDestEncoding)
-							+ (mTransliterate ? "//TRANSLIT" : "");
+	BmString toSet = mDestCharset	+ (mTransliterate ? "//TRANSLIT" : "");
 	if ((mIconvDescr = iconv_open( toSet.String(), "UTF-8")) == NULL) {
 		BM_LOGERR( BmString("libiconv: unable to convert from UTF-8 to ") << toSet);
 		mHadError = true;
 	}
-#endif
 }
 
 /*------------------------------------------------------------------------------*\
@@ -455,7 +481,7 @@ void BmUtf8Decoder::Filter( const char* srcBuf, uint32& srcLen,
 									 char* destBuf, uint32& destLen) {
 	BM_LOG3( BM_LogMailParse, BmString("starting to decode utf8 of ") << srcLen << " bytes");
 
-	if (mDestEncoding == BM_UTF8_CONVERSION) {
+	if (mDestCharset == "UTF-8") {
 		// destination shall be UTF8, too...
 		uint32 size = min( srcLen, destLen);
 		memcpy( destBuf, srcBuf, size);
@@ -463,7 +489,6 @@ void BmUtf8Decoder::Filter( const char* srcBuf, uint32& srcLen,
 		return;
 	}
 
-#ifdef BM_USE_ICONV
 	const char* inBuf = srcBuf;
 	size_t inBytesLeft = srcLen;
 	char* outBuf = destBuf;
@@ -484,14 +509,6 @@ void BmUtf8Decoder::Filter( const char* srcBuf, uint32& srcLen,
 			mHadError = true;
 		}
 	}
-#else
-	int32 state = 0;
-	status_t err = convert_from_utf8( mDestEncoding, srcBuf, (int32*)&srcLen, 
-												 destBuf, (int32*)&destLen, &state);
-	if (err != B_OK) {
-		BM_LOG( BM_LogMailParse, BmString("error in utf8-decode: ") << strerror(err));
-	}
-#endif
 
 	BM_LOG3( BM_LogMailParse, "utf8-decode: done");
 }
@@ -506,14 +523,12 @@ void BmUtf8Decoder::Filter( const char* srcBuf, uint32& srcLen,
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmUtf8Encoder::BmUtf8Encoder( BmMemIBuf* input, uint32 srcEncoding, 
+BmUtf8Encoder::BmUtf8Encoder( BmMemIBuf* input, const BmString& srcCharset, 
 										uint32 blockSize)
 	:	inherited( input, blockSize)
-	,	mSrcEncoding( srcEncoding)
-#ifdef BM_USE_ICONV
+	,	mSrcCharset( srcCharset)
 	,	mIconvDescr( NULL)
 	,	mTransliterate( false)
-#endif
 {
 	InitConverter();
 }
@@ -524,12 +539,10 @@ BmUtf8Encoder::BmUtf8Encoder( BmMemIBuf* input, uint32 srcEncoding,
 \*------------------------------------------------------------------------------*/
 BmUtf8Encoder::~BmUtf8Encoder()
 {
-#ifdef BM_USE_ICONV
 	if (mIconvDescr) {
 		iconv_close( mIconvDescr);
 		mIconvDescr = NULL;
 	}
-#endif
 }
 
 /*------------------------------------------------------------------------------*\
@@ -546,19 +559,15 @@ void BmUtf8Encoder::Reset( BmMemIBuf* input) {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmUtf8Encoder::InitConverter() { 
-#ifdef BM_USE_ICONV
 	if (mIconvDescr) {
 		iconv_close( mIconvDescr);
 		mIconvDescr = NULL;
 	}
-	BmString fromSet = EncodingToCharset( mSrcEncoding);
-	BmString toSet = BmString("UTF-8") 
-							+ (mTransliterate ? "//TRANSLIT" : "");
-	if ((mIconvDescr = iconv_open( toSet.String(), fromSet.String())) == NULL) {
-		BM_LOGERR( BmString("libiconv: unable to convert from ") << fromSet << " to " << toSet);
+	BmString toSet = BmString("UTF-8") + (mTransliterate ? "//TRANSLIT" : "");
+	if ((mIconvDescr = iconv_open( toSet.String(), mSrcCharset.String())) == NULL) {
+		BM_LOGERR( BmString("libiconv: unable to convert from ") << mSrcCharset << " to " << toSet);
 		mHadError = true;
 	}
-#endif
 }
 
 /*------------------------------------------------------------------------------*\
@@ -566,12 +575,10 @@ void BmUtf8Encoder::InitConverter() {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmUtf8Encoder::SetTransliterate( bool transliterate) {
-#ifdef BM_USE_ICONV
 	if (mIconvDescr && mTransliterate == transliterate)
 		return;
 	mTransliterate = transliterate;
 	InitConverter();
-#endif
 }
 
 /*------------------------------------------------------------------------------*\
@@ -582,7 +589,7 @@ void BmUtf8Encoder::Filter( const char* srcBuf, uint32& srcLen,
 									 char* destBuf, uint32& destLen) {
 	BM_LOG3( BM_LogMailParse, BmString("starting to encode utf8 of ") << srcLen << " bytes");
 
-	if (mSrcEncoding == BM_UTF8_CONVERSION) {
+	if (mSrcCharset == "UTF-8") {
 		// source already is UTF8...
 		uint32 size = min( srcLen, destLen);
 		memcpy( destBuf, srcBuf, size);
@@ -590,7 +597,6 @@ void BmUtf8Encoder::Filter( const char* srcBuf, uint32& srcLen,
 		return;
 	}
 
-#ifdef BM_USE_ICONV
 	const char* inBuf = srcBuf;
 	size_t inBytesLeft = srcLen;
 	char* outBuf = destBuf;
@@ -611,14 +617,6 @@ void BmUtf8Encoder::Filter( const char* srcBuf, uint32& srcLen,
 			mHadError = true;
 		}
 	}
-#else
-	int32 state = 0;
-	status_t err = convert_to_utf8( mSrcEncoding, srcBuf, (int32*)&srcLen, 
-											  destBuf, (int32*)&destLen, &state);
-	if (err != B_OK) {
-		BM_LOG( BM_LogMailParse, BmString("error in utf8-encode: ") << strerror(err));
-	}
-#endif
 
 	BM_LOG3( BM_LogMailParse, "utf8-encode: done");
 }

@@ -43,7 +43,6 @@
 #include "BmBasics.h"
 #include "BmLogHandler.h"
 
-
 template <class T> class BmRef;
 class BmProxy;
 /*------------------------------------------------------------------------------*\
@@ -107,8 +106,7 @@ typedef multimap<BmString,BmRefObj*> BmObjectMap;
 class BmProxy {
 
 public:
-	inline BmProxy( BmString name) : Locker(name.String()) {}
-	BLocker Locker;
+	inline BmProxy( BmString name) {}
 	BmObjectMap ObjectMap;
 	BmRefObj* FetchObject( const BmString& key, void* ptr=NULL);
 };
@@ -222,9 +220,9 @@ public:
 	inline operator bool() const 			{ return Get(); }
 	inline BmRef<T> Get() const 			{
 		BM_LOG2( BM_LogUtil, BmString("RefManager: weak-reference to <") << mName << ":" << BmRefObj::RefPrintHex(mPtr) << "> dereferenced");
+		BAutolock lock( BmRefObj::GlobalLocker());
 		BmProxy* proxy = BmRefObj::GetProxy( mProxyName);
 		if (proxy) {
-			BAutolock lock( &proxy->Locker);
 			return static_cast<T*>(proxy->FetchObject( mName, mPtr));
 		} else 
 			return NULL;

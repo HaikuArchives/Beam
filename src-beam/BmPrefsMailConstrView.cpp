@@ -42,8 +42,6 @@
 #include "Colors.h"
 
 #include "BmCheckControl.h"
-#include "BmEncoding.h"
-	using namespace BmEncoding;
 #include "BmGuiUtil.h"
 #include "BmLogHandler.h"
 #include "BmMail.h"
@@ -84,7 +82,7 @@ BmPrefsMailConstrView::BmPrefsMailConstrView()
 						mQuotingStringControl = new BmTextControl( "Quoting string:"),
 						mQuoteFormattingControl = new BmMenuControl( "Quote-formatting:", new BPopUpMenu("")),
 						new Space( minimax(0,10,0,10)),
-						mDefaultEncodingControl = new BmMenuControl( "Default-encoding:", new BPopUpMenu("")),
+						mDefaultCharsetControl = new BmMenuControl( "Default-charset:", new BPopUpMenu("")),
 						new Space(),
 						0
 					)
@@ -148,7 +146,7 @@ BmPrefsMailConstrView::BmPrefsMailConstrView()
 	float divider = mMaxLineLenControl->Divider();
 	divider = MAX( divider, mQuotingStringControl->Divider());
 	divider = MAX( divider, mQuoteFormattingControl->Divider());
-	divider = MAX( divider, mDefaultEncodingControl->Divider());
+	divider = MAX( divider, mDefaultCharsetControl->Divider());
 	divider = MAX( divider, mForwardIntroStrControl->Divider());
 	divider = MAX( divider, mForwardSubjectStrControl->Divider());
 	divider = MAX( divider, mForwardSubjectRxControl->Divider());
@@ -159,7 +157,7 @@ BmPrefsMailConstrView::BmPrefsMailConstrView()
 	mMaxLineLenControl->SetDivider( divider);
 	mQuotingStringControl->SetDivider( divider);
 	mQuoteFormattingControl->SetDivider( divider);
-	mDefaultEncodingControl->SetDivider( divider);
+	mDefaultCharsetControl->SetDivider( divider);
 	mForwardIntroStrControl->SetDivider( divider);
 	mForwardSubjectStrControl->SetDivider( divider);
 	mForwardSubjectRxControl->SetDivider( divider);
@@ -194,7 +192,7 @@ BmPrefsMailConstrView::~BmPrefsMailConstrView() {
 	TheBubbleHelper.SetHelp( mReplyIntroStrControl, NULL);
 	TheBubbleHelper.SetHelp( mReplySubjectStrControl, NULL);
 	TheBubbleHelper.SetHelp( mReplySubjectRxControl, NULL);
-	TheBubbleHelper.SetHelp( mDefaultEncodingControl, NULL);
+	TheBubbleHelper.SetHelp( mDefaultCharsetControl, NULL);
 	TheBubbleHelper.SetHelp( mSpecialForEachBccControl, NULL);
 	TheBubbleHelper.SetHelp( mPreferUserAgentControl, NULL);
 	TheBubbleHelper.SetHelp( mGenerateIDsControl, NULL);
@@ -259,7 +257,7 @@ The following macros are supported:\n\
 The following macros are supported:\n\
 	%S  -  expands to the original mail's subject.");
 	TheBubbleHelper.SetHelp( mReplySubjectRxControl, "This string is the regular-expression (perl-style) Beam uses\nto determine whether a given subject indicates\nthat the mail already is a reply.\nThis way subjects like \n\t'Re: Re: Re: your offer'\ncan be avoided.");
-	TheBubbleHelper.SetHelp( mDefaultEncodingControl, "Here you can select the charset-encoding Beam should usually use.");
+	TheBubbleHelper.SetHelp( mDefaultCharsetControl, "Here you can select the charset-encoding Beam should use by default.");
 	TheBubbleHelper.SetHelp( mSpecialForEachBccControl, "Here you can select the way Beam sends mails with Bcc recipients\n\
 	\n\
 Checked:\n\
@@ -299,11 +297,8 @@ This avoids the use of quoted-printables and is usually ok with \n\
 modern mail-servers, but it *may* cause problems during transport,\n\
 so if you get complaints about strange/missing characters, try unchecking this.");
 
-	// add all encodings to menu:
-	for( int i=0; BM_Encodings[i].charset; ++i) {
-		AddItemToMenu( mDefaultEncodingControl->Menu(), 
-							new BMenuItem( BM_Encodings[i].charset, new BMessage(BM_ENCODING_SELECTED)), this);
-	}
+	// add all charsets to menu:
+	AddCharsetMenu( mDefaultCharsetControl->Menu(), this, BM_CHARSET_SELECTED);
 
 	// add quote-formattings:
 	AddItemToMenu( mQuoteFormattingControl->Menu(), 
@@ -336,7 +331,7 @@ void BmPrefsMailConstrView::Update() {
 	mHardWrapAt78Control->SetValueSilently( ThePrefs->GetInt("MaxLineLenForHardWrap",998)<100);
 	mQuoteFormattingControl->MarkItem( ThePrefs->GetString("QuoteFormatting", BmMail::BM_QUOTE_AUTO_WRAP).String());
 	mDefaultForwardTypeControl->MarkItem( ThePrefs->GetString( "DefaultForwardType").String());
-	mDefaultEncodingControl->MarkItem( EncodingToCharset( ThePrefs->GetInt( "DefaultEncoding")).String());
+	mDefaultCharsetControl->MarkItem( ThePrefs->GetString( "DefaultCharset").String());
 	mAllow8BitControl->SetValueSilently( ThePrefs->GetBool("Allow8BitMime"));
 	mSpecialForEachBccControl->SetValueSilently( ThePrefs->GetBool("SpecialHeaderForEachBcc"));
 	mPreferUserAgentControl->SetValueSilently( ThePrefs->GetBool("PreferUserAgentOverX-Mailer"));
@@ -445,10 +440,10 @@ void BmPrefsMailConstrView::MessageReceived( BMessage* msg) {
 				NoticeChange();
 				break;
 			}
-			case BM_ENCODING_SELECTED: {
-				BMenuItem* item = mDefaultEncodingControl->Menu()->FindMarked();
+			case BM_CHARSET_SELECTED: {
+				BMenuItem* item = mDefaultCharsetControl->Menu()->FindMarked();
 				if (item)
-					ThePrefs->SetInt("DefaultEncoding", CharsetToEncoding( item->Label()));
+					ThePrefs->SetString("DefaultCharset", item->Label());
 				NoticeChange();
 				break;
 			}

@@ -158,8 +158,9 @@ bool BmAddress::IsHandledByAccount( BmPopAccount* acc, bool needExactMatch) cons
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmAddress::ConstructRawText( BmString& header, int32 encoding, int32 fieldNameLength) const {
-	BmString convertedAddrSpec = ConvertUTF8ToHeaderPart( mAddrSpec, encoding, false, 
+void BmAddress::ConstructRawText( BmString& header, const BmString& charset, 
+											 int32 fieldNameLength) const {
+	BmString convertedAddrSpec = ConvertUTF8ToHeaderPart( mAddrSpec, charset, false, 
 																			true, fieldNameLength);
 	if (mPhrase.Length()) {
 		// quote the phrase if it contains "dangerous" characters:
@@ -171,7 +172,7 @@ void BmAddress::ConstructRawText( BmString& header, int32 encoding, int32 fieldN
 			phrase = BmString("\"") << mPhrase << "\"";
 		else
 			phrase = mPhrase;
-		BmString convertedPhrase = ConvertUTF8ToHeaderPart( phrase, encoding, true, 
+		BmString convertedPhrase = ConvertUTF8ToHeaderPart( phrase, charset, true, 
 																			true, fieldNameLength);
 		if (convertedPhrase.Length()+convertedAddrSpec.Length()+3 > ThePrefs->GetInt( "MaxLineLen")) {
 			header << convertedPhrase << "\r\n <" << convertedAddrSpec << ">";
@@ -412,7 +413,7 @@ BmAddressList::operator BmString() const {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmAddressList::ConstructRawText( BmStringOBuf& header, int32 encoding, 
+void BmAddressList::ConstructRawText( BmStringOBuf& header, const BmString& charset, 
 												  int32 fieldNameLength) const {
 	BmString fieldString;
 	if (mIsGroup) {
@@ -424,7 +425,7 @@ void BmAddressList::ConstructRawText( BmStringOBuf& header, int32 encoding,
 	BmAddrList::const_iterator pos;
 	for( pos=mAddrList.begin(); pos!=mAddrList.end(); ++pos) {
 		BmString converted;
-		pos->ConstructRawText( converted, encoding, fieldNameLength);
+		pos->ConstructRawText( converted, charset, fieldNameLength);
 		if (pos != mAddrList.begin()) {
 			fieldString << ", ";
 			if (fieldString.Length() + converted.Length() > ThePrefs->GetInt( "MaxLineLen")) {
@@ -789,13 +790,13 @@ BmString BmMailHeader::DetermineReceivingAddrFor( BmPopAccount* acc) {
 /*------------------------------------------------------------------------------*\
 	ParseHeader( header)
 		-	parses mail-header and splits it into fieldname/fieldbody - pairs
-		-	we try to determine the mails' encoding by finding a charset given within
-			the header.	Some sending mail-clients cut some corners and incorporate 
-			non-ASCII characters	unencoded inside any header-fields (the subject comes 
-			to mind) [thus relying on the transport system being 8bit-clean].
+		-	we try to determine the mails' charset by finding a charset-string given 
+		   within the header. Some sending mail-clients cut some corners and incorporate 
+		   non-ASCII characters	unencoded inside any header-fields (the subject comes 
+		   to mind) [thus relying on the transport system being 8bit-clean].
 			In this case we hope that the header contains a content-type specification 
 			as well with the charset that was actually used. We feed the charset found 
-			into the default encoding that is being used for header-field conversion 
+			into the default charset that is being used for header-field conversion 
 			(if any only if nothing else is specified in a header-field)
 \*------------------------------------------------------------------------------*/
 void BmMailHeader::ParseHeader( const BmString &header) {
@@ -843,7 +844,7 @@ void BmMailHeader::ParseHeader( const BmString &header) {
 		fieldBody = rxUnfold.replace( fieldBody, "\\s+$", "", Regexx::global);
 
 		// insert pair into header-map:
-		AddFieldVal( fieldName, ConvertHeaderPartToUTF8( fieldBody, B_ISO1_CONVERSION));
+		AddFieldVal( fieldName, ConvertHeaderPartToUTF8( fieldBody, BmEncoding::DefaultCharset));
 
 		BM_LOG2( BM_LogMailParse, fieldName << ": " << fieldBody);
 	}
@@ -1009,7 +1010,7 @@ void BmMailHeader::StoreAttributes( BFile& mailFile) {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-bool BmMailHeader::ConstructRawText( BmStringOBuf& msgText, int32 encoding) {
+bool BmMailHeader::ConstructRawText( BmStringOBuf& msgText, const BmString& charset) {
 	BmStringOBuf headerIO( 1024, 2.0);
 	if (!mAddrMap[BM_FIELD_TO].InitOK() && !mAddrMap[BM_FIELD_CC].InitOK()) {
 		if (mAddrMap[BM_FIELD_BCC].InitOK()) {
@@ -1060,7 +1061,7 @@ bool BmMailHeader::ConstructRawText( BmStringOBuf& msgText, int32 encoding) {
 			}
 			if (IsAddressField( fieldName)) {
 				headerIO << fieldName << ": ";
-				mAddrMap[fieldName].ConstructRawText( headerIO, encoding, fieldName.Length());
+				mAddrMap[fieldName].ConstructRawText( headerIO, charset, fieldName.Length());
 				headerIO << "\r\n";
 			} else {
 				const BmValueList& valueList = iter->second;
@@ -1068,7 +1069,7 @@ bool BmMailHeader::ConstructRawText( BmStringOBuf& msgText, int32 encoding) {
 				bool encodeIfNeeded = IsEncodingOkForField( fieldName);
 				for( int i=0; i<count; ++i) {
 					headerIO << fieldName << ": " 
-							 	<< ConvertUTF8ToHeaderPart( valueList[i], encoding, 
+							 	<< ConvertUTF8ToHeaderPart( valueList[i], charset, 
 																	 encodeIfNeeded, true,
 																	 fieldName.Length())
 								<< "\r\n";
@@ -1089,7 +1090,7 @@ bool BmMailHeader::ConstructRawText( BmStringOBuf& msgText, int32 encoding) {
 		}
 		if (IsAddressField( fieldName)) {
 			headerIO << fieldName << ": ";
-			mAddrMap[fieldName].ConstructRawText( headerIO, encoding, fieldName.Length());
+			mAddrMap[fieldName].ConstructRawText( headerIO, charset, fieldName.Length());
 			headerIO << "\r\n";
 		} else {
 			const BmValueList& valueList = iter->second;
@@ -1097,7 +1098,7 @@ bool BmMailHeader::ConstructRawText( BmStringOBuf& msgText, int32 encoding) {
 			bool encodeIfNeeded = IsEncodingOkForField( fieldName);
 			for( int i=0; i<count; ++i) {
 				headerIO << fieldName << ": " 
-							<< ConvertUTF8ToHeaderPart( valueList[i], encoding, 
+							<< ConvertUTF8ToHeaderPart( valueList[i], charset, 
 																 encodeIfNeeded, true, 
 																 fieldName.Length())
 							<< "\r\n";

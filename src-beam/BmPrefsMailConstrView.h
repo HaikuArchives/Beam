@@ -38,7 +38,7 @@
 #define BM_GENERATE_MSGIDS_CHANGED 		'bmGI'
 #define BM_QP_SAFE_CHANGED	 				'bmQP'
 #define BM_ATTACH_VCARDS_CHANGED 		'bmAV'
-#define BM_ENCODING_SELECTED		 		'bmES'
+#define BM_CHARSET_SELECTED		 		'bmCS'
 #define BM_FORWARD_TYPE_SELECTED		 	'bmFS'
 #define BM_QUOTE_FORMATTING_SELECTED	'bmQS'
 #define BM_ALLOW_8_BIT_CHANGED			'bm8C'
@@ -79,7 +79,7 @@ private:
 	BmCheckControl* mHardWrapAt78Control;
 	BmCheckControl* mHardWrapControl;
 	BmTextControl* mMaxLineLenControl;
-	BmMenuControl* mDefaultEncodingControl;
+	BmMenuControl* mDefaultCharsetControl;
 	BmTextControl* mQuotingStringControl;
 	BmMenuControl* mQuoteFormattingControl;
 

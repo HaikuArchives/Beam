@@ -65,8 +65,8 @@ void BmMenuController::JobIsDone( bool completed) {
 			msg->AddString( BmListModel::MSG_ITEMKEY, item->Key().String());
 			if (item) {
 				BMenuItem* menuItem;
-				if (i<10)
-					menuItem = new BMenuItem( item->Key().String(), msg, '0'+i);
+				if (i<mShortcuts.Length())
+					menuItem = new BMenuItem( item->Key().String(), msg, mShortcuts[i]);
 				else
 					menuItem = new BMenuItem( item->Key().String(), msg);
 				menuItem->SetTarget( GetControllerHandler());

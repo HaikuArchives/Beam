@@ -198,8 +198,9 @@ BmBodyPart::BmBodyPart( BmBodyPartList* model, const BmString& msgtext, int32 st
 	,	mStartInRawText( 0)
 	,	mBodyLength( 0)
 	,	mHaveDecodedData( false)
-	,	mSuggestedEncoding( ThePrefs->GetInt( "DefaultEncoding"))
-	,	mCurrentEncoding( ThePrefs->GetInt( "DefaultEncoding"))
+	,	mSuggestedCharset( ThePrefs->GetString( "DefaultCharset"))
+	,	mCurrentCharset( ThePrefs->GetString( "DefaultCharset"))
+	, 	mHadErrorDuringConversion( false)
 {
 	SetTo( msgtext, start, length, header);
 }
@@ -217,8 +218,9 @@ BmBodyPart::BmBodyPart( BmBodyPartList* model, const entry_ref* ref, BmListModel
 	// we can't store info about mailtext, since there is no mailtext available:
 	,	mBodyLength( 0)
 	,	mHaveDecodedData( false)
-	,	mSuggestedEncoding( ThePrefs->GetInt( "DefaultEncoding"))
-	,	mCurrentEncoding( ThePrefs->GetInt( "DefaultEncoding"))
+	,	mSuggestedCharset( ThePrefs->GetString( "DefaultCharset"))
+	,	mCurrentCharset( ThePrefs->GetString( "DefaultCharset"))
+	, 	mHadErrorDuringConversion( false)
 {
 	try {
 		status_t err;
@@ -247,7 +249,7 @@ BmBodyPart::BmBodyPart( BmBodyPartList* model, const entry_ref* ref, BmListModel
 				mimetype="application/octet-stream";
 				file.Seek( 0, SEEK_SET);
 			} else {
-				ConvertToUTF8( mCurrentEncoding, nativeString, mDecodedData);
+				ConvertToUTF8( mCurrentCharset, nativeString, mDecodedData);
 				mHaveDecodedData = true;
 			}
 		}
@@ -256,7 +258,7 @@ BmBodyPart::BmBodyPart( BmBodyPartList* model, const entry_ref* ref, BmListModel
 			file.Read( buf, size);
 			buf[size] = '\0';
 			mDecodedData.UnlockBuffer( size);
-			mCurrentEncoding = mSuggestedEncoding = BM_UTF8_CONVERSION;
+			mCurrentCharset = mSuggestedCharset = "UTF-8";
 			mHaveDecodedData = true;
 		}
 
@@ -313,8 +315,9 @@ BmBodyPart::BmBodyPart( const BmBodyPart& in)
 	,	mStartInRawText( 0)
 	,	mBodyLength( 0)
 	,	mHaveDecodedData( false)
-	,	mSuggestedEncoding( in.SuggestedEncoding())
-	,	mCurrentEncoding( in.CurrentEncoding())
+	,	mSuggestedCharset( in.SuggestedCharset())
+	,	mCurrentCharset( in.CurrentCharset())
+	, 	mHadErrorDuringConversion( false)
 {
 	mDecodedData.SetTo( in.DecodedData());
 	mHaveDecodedData = true;
@@ -340,6 +343,8 @@ void BmBodyPart::SetTo( const BmString& msgtext, int32 start, int32 length,
 	BmString disposition;
  	BmRef<BmListModel> bodyRef = mListModel.Get();
  	BmBodyPartList* body = dynamic_cast< BmBodyPartList*>( bodyRef.Get());
+ 	
+ 	mHadErrorDuringConversion = false;
 
 	if (!header) {
 		// this is not the main body, so we have to split the MIME-headers from
@@ -395,7 +400,9 @@ void BmBodyPart::SetTo( const BmString& msgtext, int32 start, int32 length,
 	mContentTransferEncoding = transferEncoding;
 	BM_LOG2( BM_LogMailParse, BmString("...found value: ")<<mContentTransferEncoding);
 
-	mCurrentEncoding = mSuggestedEncoding = CharsetToEncoding( Charset());
+	mCurrentCharset = mSuggestedCharset = Charset();
+	if (!mCurrentCharset.Length())
+		mCurrentCharset = mSuggestedCharset = ThePrefs->GetString( "DefaultCharset");
 
 	// MIME-Decoding:
 	if (mIsMultiPart) {
@@ -405,14 +412,15 @@ void BmBodyPart::SetTo( const BmString& msgtext, int32 start, int32 length,
 	} else {
 		// decode body:
 		if (IsText() && body->EditableTextBody() == this) {
-			// text data is decoded and then converted from it's encoding into utf8:
+			// text data is decoded and then converted from it's native charset into utf8:
 			BM_LOG2( BM_LogMailParse, BmString("decoding text-part of mail (length ")<<mBodyLength<<" bytes) ...");
 			BmStringIBuf text( msgtext.String()+mStartInRawText, mBodyLength);
 			BmMemFilterRef decoder = FindDecoderFor( &text, mContentTransferEncoding);
 			BmStringOBuf tempIO( mBodyLength);
-			BmUtf8Encoder textConverter( decoder.get(), mSuggestedEncoding);
+			BmUtf8Encoder textConverter( decoder.get(), mSuggestedCharset);
 			tempIO.Write( &textConverter);
 			mDecodedData.Adopt( tempIO.TheString());
+			mHadErrorDuringConversion = textConverter.HadError();
 			BM_LOG2( BM_LogMailParse, "...splitting off signature...");
 			// split off signature, if any:
 			Regexx rx;
@@ -578,7 +586,7 @@ bool BmBodyPart::ShouldBeShownInline()	const {
 	-	
 \*------------------------------------------------------------------------------*/
 const BmString& BmBodyPart::DecodedData() const {
-	if (!mHaveDecodedData || mCurrentEncoding != mSuggestedEncoding) {
+	if (!mHaveDecodedData || mCurrentCharset != mSuggestedCharset) {
 		BmRef<BmListModel> listModel( ListModel());
 		if (listModel) {
 			BmBodyPartList* bodyPartList = dynamic_cast< BmBodyPartList*>( listModel.Get());
@@ -588,14 +596,16 @@ const BmString& BmBodyPart::DecodedData() const {
 				BmMemFilterRef decoder = FindDecoderFor( &text, mContentTransferEncoding);
 				BmStringOBuf tempIO( mBodyLength, 1.2);
 				if (IsText()) {
-					// text data is decoded and then converted from it's encoding into utf8:
+					// text data is decoded and then converted from it's native charset into utf8:
 					BM_LOG2( BM_LogMailParse, BmString( "(re-)converting bodytext of ") << mBodyLength << " bytes...");
-					BmUtf8Encoder textConverter( decoder.get(), mSuggestedEncoding);
+					BmUtf8Encoder textConverter( decoder.get(), mSuggestedCharset);
 					tempIO.Write( &textConverter);
-					mCurrentEncoding = mSuggestedEncoding;
+					mCurrentCharset = mSuggestedCharset;
+					mHadErrorDuringConversion = textConverter.HadError();
 				} else {
 					BM_LOG2( BM_LogMailParse, BmString( "decoding bodytext of ") << mBodyLength << " bytes...");
 					tempIO.Write( decoder.get());
+					mHadErrorDuringConversion = false;
 				}
 				mDecodedData.Adopt( tempIO.TheString());
 				BM_LOG2( BM_LogMailParse, "done");
@@ -644,7 +654,7 @@ entry_ref BmBodyPart::WriteToTempFile( BmString filename) {
 		TheTempFileList.AddFile( BmString(tempPath.Path())<<"/"<<filename);
 		if (IsText() && !ThePrefs->GetBool( "ExportTextAsUtf8", false)) {
 			BmString convertedString;
-			ConvertFromUTF8( CharsetToEncoding( Charset()), DecodedData(), convertedString);
+			ConvertFromUTF8( Charset(), DecodedData(), convertedString);
 			tempFile.Write( convertedString.String(), convertedString.Length());
 		} else
 			tempFile.Write( DecodedData().String(), DecodedLength());
@@ -678,7 +688,7 @@ void BmBodyPart::SaveAs( const entry_ref& destDirRef, BmString filename) {
 		}
 		if (IsText() && !ThePrefs->GetBool( "ExportTextAsUtf8", false)) {
 			BmString convertedString;
-			ConvertFromUTF8( CharsetToEncoding( Charset()), DecodedData(), convertedString);
+			ConvertFromUTF8( Charset(), DecodedData(), convertedString);
 			destFile.Write( convertedString.String(), convertedString.Length());
 		} else
 			destFile.Write( DecodedData().String(), DecodedLength());
@@ -701,9 +711,9 @@ void BmBodyPart::SaveAs( const entry_ref& destDirRef, BmString filename) {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmBodyPart::SetBodyText( const BmString& utf8Text, uint32 encoding) {
+void BmBodyPart::SetBodyText( const BmString& utf8Text, const BmString& charset) {
 	mDecodedData = utf8Text;
-	mContentType.SetParam( "charset", EncodingToCharset( encoding));
+	mContentType.SetParam( "charset", charset);
 	mContentTransferEncoding = NeedsEncoding( utf8Text) 
 											? (ThePrefs->GetBool( "Allow8BitMime", false)
 												? "8bit"
@@ -836,7 +846,7 @@ void BmBodyPart::ConstructBodyForSending( BmStringOBuf &msgText) {
 			if (IsText()) {
 				BM_LOG2( BM_LogMailParse, BmString( "encoding/converting bodytext of ") 
 												  << DecodedLength() << " bytes to " << Charset());
-				BmUtf8Decoder textConverter( &text, CharsetToEncoding( Charset()));
+				BmUtf8Decoder textConverter( &text, Charset());
 				BmMemFilterRef encoder = FindEncoderFor( &textConverter, mContentTransferEncoding);
 				mBodyLength = msgText.Write( encoder.get());
 				if (textConverter.HadError()) {
@@ -990,21 +1000,21 @@ void BmBodyPartList::RemoveItemFromList( BmListModelItem* item) {
 	SetEditableText()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmBodyPartList::SetEditableText( const BmString& utf8Text, uint32 encoding) {
+void BmBodyPartList::SetEditableText( const BmString& utf8Text, const BmString& charset) {
 	BmRef<BmBodyPart> editableTextBody( EditableTextBody());
 	if (editableTextBody)
-		editableTextBody->SetBodyText( utf8Text, encoding);
+		editableTextBody->SetBodyText( utf8Text, charset);
 }
 
 /*------------------------------------------------------------------------------*\
-	DefaultEncoding()
+	DefaultCharset()
 		-	
 \*------------------------------------------------------------------------------*/
-uint32 BmBodyPartList::DefaultEncoding() const {
+const BmString& BmBodyPartList::DefaultCharset() const {
 	BmRef<BmBodyPart> editableTextBody( EditableTextBody());
 	if (editableTextBody)
-		return CharsetToEncoding( editableTextBody->TypeParam( "charset"));
-	return BM_UNKNOWN_ENCODING; 
+		return editableTextBody->Charset();
+	return BmEncoding::DefaultCharset; 
 }
 
 /*------------------------------------------------------------------------------*\

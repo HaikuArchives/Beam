@@ -47,11 +47,14 @@ public:
 
 	BHandler* GetControllerHandler() 	{ return mTarget ? mTarget : Window(); }
 	void JobIsDone( bool completed);
+	
+	void Shortcuts( const BmString s) 	{ mShortcuts = s; }
 
 private:
 	
 	BMessage mMsgTemplate;
 	BHandler* mTarget;
+	BmString mShortcuts;
 
 	// Hide copy-constructor and assignment:
 	BmMenuController( const BmMenuController&);

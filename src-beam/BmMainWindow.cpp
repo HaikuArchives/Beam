@@ -56,7 +56,6 @@
 #include "BmMsgTypes.h"
 #include "BmPopAccount.h"
 #include "BmPrefs.h"
-#include "BmPrefsWin.h"
 #include "BmResources.h"
 #include "BmToolbarButton.h"
 #include "BmUtil.h"
@@ -231,7 +230,7 @@ MMenuBar* BmMainWindow::CreateMenu() {
 	menu->AddItem( CreateMenuItem( "Page Setup...", BMM_PAGE_SETUP));
 	menu->AddItem( CreateMenuItem( "Print Message(s)...", BMM_PRINT, "Print Message..."));
 	menu->AddSeparatorItem();
-	menu->AddItem( CreateMenuItem( "Preferences...", BMM_PREFERENCES));
+	AddItemToMenu( menu, CreateMenuItem( "Preferences...", BMM_PREFERENCES), bmApp);
 	menu->AddSeparatorItem();
 	menu->AddItem( CreateMenuItem( "About Beam...", B_ABOUT_REQUESTED));
 	menu->AddSeparatorItem();
@@ -257,6 +256,7 @@ MMenuBar* BmMainWindow::CreateMenu() {
 							new BmMenuController( "Check Mail For", 
 														 "PopAccountMenuController",
 														 checkMsgTempl, this));
+	mAccountMenu->Shortcuts( "0123456789");
 	menu->AddItem( CreateMenuItem( "Check All Accounts", BMM_CHECK_ALL));
 	menu->AddSeparatorItem();
 	menu->AddItem( CreateMenuItem( "Send Pending Messages...", BMM_SEND_PENDING));
@@ -418,11 +418,11 @@ void BmMainWindow::MessageReceived( BMessage* msg) {
 			case B_OBSERVER_NOTICE_CHANGE: {
 				switch( msg->FindInt32( B_OBSERVE_WHAT_CHANGE)) {
 					case BM_NTFY_MAILFOLDER_SELECTION: {
-						MailFolderSelectionChanged( msg->FindInt32( BmMailFolderView::MSG_FOLDERS_SELECTED));
+						MailFolderSelectionChanged( msg->FindBool( BmMailFolderView::MSG_HAVE_SELECTED_FOLDER));
 						break;
 					}
 					case BM_NTFY_MAILREF_SELECTION: {
-						MailRefSelectionChanged( msg->FindInt32( BmMailRefView::MSG_MAILS_SELECTED));
+						MailRefSelectionChanged( msg->FindBool( BmMailRefView::MSG_MAILS_SELECTED));
 						break;
 					}
 					case BM_NTFY_MAIL_VIEW: {
@@ -434,19 +434,6 @@ void BmMainWindow::MessageReceived( BMessage* msg) {
 			}
 			case B_ABOUT_REQUESTED: {
 				be_app_messenger.SendMessage( msg);
-				break;
-			}
-			case BMM_PREFERENCES: {
-				if (!ThePrefsWin) {
-					BmPrefsWin::CreateInstance();
-					ThePrefsWin->Show();
-				} else  {
-					if (ThePrefsWin->LockLooper()) {
-						ThePrefsWin->Hide();
-						ThePrefsWin->Show();
-						ThePrefsWin->UnlockLooper();
-					}
-				}
 				break;
 			}
 			case BM_JOB_DONE:
@@ -519,36 +506,36 @@ void BmMainWindow::Quit() {
 	MailFolderSelectionChanged()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmMainWindow::MailFolderSelectionChanged( int32 numSelected) {
+void BmMainWindow::MailFolderSelectionChanged( bool haveSelectedFolder) {
 	// adjust menu:
-	mMainMenuBar->FindItem( BMM_NEW_MAILFOLDER)->SetEnabled( numSelected > 0);
-	mMainMenuBar->FindItem( BMM_RENAME_MAILFOLDER)->SetEnabled( numSelected > 0);
-	mMainMenuBar->FindItem( BMM_DELETE_MAILFOLDER)->SetEnabled( numSelected > 0);
-	mMainMenuBar->FindItem( BMM_RECACHE_MAILFOLDER)->SetEnabled( numSelected > 0);
+	mMainMenuBar->FindItem( BMM_NEW_MAILFOLDER)->SetEnabled( haveSelectedFolder);
+	mMainMenuBar->FindItem( BMM_RENAME_MAILFOLDER)->SetEnabled( haveSelectedFolder);
+	mMainMenuBar->FindItem( BMM_DELETE_MAILFOLDER)->SetEnabled( haveSelectedFolder);
+	mMainMenuBar->FindItem( BMM_RECACHE_MAILFOLDER)->SetEnabled( haveSelectedFolder);
 }
 
 /*------------------------------------------------------------------------------*\
 	MailRefSelectionChanged()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmMainWindow::MailRefSelectionChanged( int32 numSelected) {
+void BmMainWindow::MailRefSelectionChanged( bool haveSelectedRef) {
 	// adjust buttons:
-	mReplyButton->SetEnabled( numSelected > 0);
-	mForwardButton->SetEnabled( numSelected > 0);
-	mRedirectButton->SetEnabled( numSelected > 0);
-	mTrashButton->SetEnabled( numSelected > 0);
-	mPrintButton->SetEnabled( numSelected > 0);
+	mReplyButton->SetEnabled( haveSelectedRef);
+	mForwardButton->SetEnabled( haveSelectedRef);
+	mRedirectButton->SetEnabled( haveSelectedRef);
+	mTrashButton->SetEnabled( haveSelectedRef);
+	mPrintButton->SetEnabled( haveSelectedRef);
 	// adjust menu:
-	mMainMenuBar->FindItem( BMM_REPLY)->SetEnabled( numSelected > 0);
-	mMainMenuBar->FindItem( BMM_FORWARD_ATTACHED)->SetEnabled( numSelected > 0);
-	mMainMenuBar->FindItem( BMM_FORWARD_INLINE)->SetEnabled( numSelected > 0);
-	mMainMenuBar->FindItem( BMM_FORWARD_INLINE_ATTACH)->SetEnabled( numSelected > 0);
-	mMainMenuBar->FindItem( BMM_REDIRECT)->SetEnabled( numSelected > 0);
-	mMainMenuBar->FindItem( BmMailRefView::MENU_MARK_AS)->SetEnabled( numSelected > 0);
-	mMainMenuBar->FindItem( BmMailRefView::MENU_INBOUND_FILTER)->SetEnabled( numSelected > 0);
-	mMainMenuBar->FindItem( BmMailRefView::MENU_OUTBOUND_FILTER)->SetEnabled( numSelected > 0);
-	mMainMenuBar->FindItem( BMM_PRINT)->SetEnabled( numSelected > 0);
-	mMainMenuBar->FindItem( BMM_TRASH)->SetEnabled( numSelected > 0);
+	mMainMenuBar->FindItem( BMM_REPLY)->SetEnabled( haveSelectedRef);
+	mMainMenuBar->FindItem( BMM_FORWARD_ATTACHED)->SetEnabled( haveSelectedRef);
+	mMainMenuBar->FindItem( BMM_FORWARD_INLINE)->SetEnabled( haveSelectedRef);
+	mMainMenuBar->FindItem( BMM_FORWARD_INLINE_ATTACH)->SetEnabled( haveSelectedRef);
+	mMainMenuBar->FindItem( BMM_REDIRECT)->SetEnabled( haveSelectedRef);
+	mMainMenuBar->FindItem( BmMailRefView::MENU_MARK_AS)->SetEnabled( haveSelectedRef);
+	mMainMenuBar->FindItem( BmMailRefView::MENU_INBOUND_FILTER)->SetEnabled( haveSelectedRef);
+	mMainMenuBar->FindItem( BmMailRefView::MENU_OUTBOUND_FILTER)->SetEnabled( haveSelectedRef);
+	mMainMenuBar->FindItem( BMM_PRINT)->SetEnabled( haveSelectedRef);
+	mMainMenuBar->FindItem( BMM_TRASH)->SetEnabled( haveSelectedRef);
 }
 
 /*------------------------------------------------------------------------------*\

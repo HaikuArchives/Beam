@@ -318,13 +318,11 @@ dynamic:\n\
 	mSignatureRxControl->SetTarget( this);
 
 	// add all encodings to menu:
-	for( int i=0; BM_Encodings[i].charset; ++i) {
-		AddItemToMenu( mCharsetControl->Menu(), 
-							new BMenuItem( BM_Encodings[i].charset, new BMessage(BM_CHARSET_SELECTED)), this);
-	}
+	AddCharsetMenu( mCharsetControl->Menu(), this, BM_CHARSET_SELECTED);
+
 	// mark default charset:
 	BMenuItem* item;
-	item = mCharsetControl->Menu()->FindItem( EncodingToCharset( ThePrefs->GetInt( "DefaultEncoding")).String());
+	item = mCharsetControl->Menu()->FindItem( ThePrefs->GetString( "DefaultCharset").String());
 	if (item)
 		item->SetMarked( true);
 
@@ -416,9 +414,9 @@ void BmPrefsSignatureView::MessageReceived( BMessage* msg) {
 				if (mCurrSig) {
 					BMenuItem* item = mCharsetControl->Menu()->FindMarked();
 					if (item)
-						mCurrSig->Encoding( CharsetToEncoding( item->Label()));
+						mCurrSig->Charset( item->Label());
 					else
-						mCurrSig->Encoding( ThePrefs->GetInt( "DefaultEncoding"));
+						mCurrSig->Charset( ThePrefs->GetString( "DefaultCharset"));
 					NoticeChange();
 				}
 				break;
@@ -494,7 +492,7 @@ void BmPrefsSignatureView::ShowSignature( int32 selection) {
 		mContentControl->SetTextSilently( "");
 		mDynamicControl->SetValue( 0);
 		mCharsetControl->SetEnabled( false);
-		mCharsetControl->MarkItem( EncodingToCharset( ThePrefs->GetInt( "DefaultEncoding")).String());
+		mCharsetControl->MarkItem( ThePrefs->GetString( "DefaultCharset").String());
 		mTestButton->SetEnabled( false);
 	} else {
 		BmSignatureItem* sigItem = dynamic_cast<BmSignatureItem*>(mSigListView->ItemAt( selection));
@@ -504,7 +502,7 @@ void BmPrefsSignatureView::ShowSignature( int32 selection) {
 				mSignatureControl->SetTextSilently( mCurrSig->Name().String());
 				mContentControl->SetTextSilently( mCurrSig->Content().String());
 				mDynamicControl->SetValue( mCurrSig->Dynamic());
-				mCharsetControl->MarkItem( EncodingToCharset( mCurrSig->Encoding()).String());
+				mCharsetControl->MarkItem( mCurrSig->Charset().String());
 				mCharsetControl->SetEnabled( mCurrSig->Dynamic());
 				mTestButton->SetEnabled( mCurrSig->Dynamic());
 			}

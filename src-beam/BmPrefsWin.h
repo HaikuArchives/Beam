@@ -38,6 +38,7 @@
 class CLVContainerView;
 class UserResizeSplitView;
 class BmPrefsViewContainer;
+class MButton;
 
 class BmPrefsWin : public BmWindow
 {

@@ -128,12 +128,12 @@ private:
 
 	BmRef<BmPopAccount> mPopAccount;		// Info about our pop-account
 
-	BmString* mMsgUIDs;						// array of unique-IDs, one for each message
+	vector<BmString> mMsgUIDs;				// array of unique-IDs, one for each message
 	int32 mMsgCount;							// number of msgs found on server
 
 	int32 mCurrMailNr;						// nr of currently handled mail (0 if none)
 	int32 mNewMsgCount;						// number of msgs to be received
-	int32* mNewMsgSizes;						// sizes of msgs to be received
+	vector<int32> mNewMsgSizes;			// sizes of msgs to be received
 	int32 mNewMsgTotalSize;					// total-size of msgs to be received
 
 	BmString mServerTimestamp;				// optional timestamp from Server (needed for APOP)

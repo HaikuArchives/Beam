@@ -154,10 +154,8 @@ BmPopper::BmPopper( const BmString& name, BmPopAccount* account)
 	:	inherited( BmString("POP_")<<name, BM_LogPop, new BmPopStatusFilter( NULL, this))
 	,	mPopAccount( account)
 	,	mCurrMailNr( 0)
-	,	mMsgUIDs( NULL)
 	,	mMsgCount( 0)
 	,	mNewMsgCount( 0)
-	,	mNewMsgSizes( NULL)
 	,	mNewMsgTotalSize( 1)
 	,	mState( 0)
 {
@@ -170,10 +168,6 @@ BmPopper::BmPopper( const BmString& name, BmPopAccount* account)
 \*------------------------------------------------------------------------------*/
 BmPopper::~BmPopper() { 
 	TheLogHandler->FinishLog( BM_LOGNAME);
-	if (mNewMsgSizes)
-		delete [] mNewMsgSizes;
-	if (mMsgUIDs)
-		delete [] mMsgUIDs;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -401,10 +395,6 @@ void BmPopper::StateCheck() {
 		return;									// no messages found, nothing more to do
 	}
 
-	delete [] mMsgUIDs;
-	mMsgUIDs = new BmString[mMsgCount];
-	delete [] mNewMsgSizes;
-	mNewMsgSizes = new int32[mMsgCount];
 	// we try to fetch a list of unique message IDs from server:
 	cmd = BmString("UIDL");
 	SendCommand( cmd);
@@ -413,19 +403,14 @@ void BmPopper::StateCheck() {
 		// do not require a positive answer, we just hope for it:
 		if (!CheckForPositiveAnswer( 16384, true))
 			return;								// interrupted, we give up
-		// ok, we've got the UIDL-listing, so we fetch it:
-		char msgUID[128];
+		// ok, we've got the UIDL-listing, so we fetch it,
 		// fetch UIDLs one per line and store them in array:
-		const char *p = mAnswerText.String();
-		for( int32 i=0; i<mMsgCount; ++i) {
-			if (sscanf( p, "%ld %80s", &msgNum, msgUID) != 2 || msgNum <= 0)
-				throw BM_network_error( BmString("answer to UIDL has unknown format, msg ") << i+1);
-			mMsgUIDs[i] = msgUID;
-			// skip to next line:
-			if (!(p = strstr( p, "\r\n")))
-				throw BM_network_error( BmString("answer to UIDL has unknown format, msg ") << i+1);
-			p += 2;
-		}
+		Regexx rx;
+		int numLines = rx.exec( mAnswerText, "\\s*(\\d+)\\s+(.+?)\\s*$\\n", Regexx::newline | Regexx::global);
+		if (numLines < mMsgCount)
+			throw BM_network_error( BmString("answer to UIDL has unknown format, too few lines matching"));
+		for( int32 i=0; i<mMsgCount; ++i)
+			mMsgUIDs.push_back( rx.match[i].atom[1]);
 	} catch( BM_network_error& err) {
 		// no UIDL-listing from server, we will have to get by without...
 	}
@@ -447,7 +432,8 @@ void BmPopper::StateCheck() {
 				throw BM_network_error( BmString("answer to LIST has unknown format, msg ") << i+1);
 			// add msg-size to total:
 			mNewMsgTotalSize += msgSize;
-			mNewMsgSizes[mNewMsgCount++] = msgSize;
+			mNewMsgSizes.push_back( msgSize);
+			mNewMsgCount++;
 		}
 		// skip to next line:
 		if (!(p = strstr( p, "\r\n")))

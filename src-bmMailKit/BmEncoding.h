@@ -30,15 +30,10 @@
 #ifndef _BmEncoding_h
 #define _BmEncoding_h
 
-// deactivate this to use standard BeOS translation (but beware, it 
-// *is* buggy for some asian encodings [like EUC-JP]):
-#define BM_USE_ICONV
-
 #include <memory>
+#include <map>
 
-#ifdef BM_USE_ICONV
 #include <iconv.h>
-#endif
 
 #include "BmString.h"
 #include "BmMemIO.h"
@@ -48,30 +43,27 @@
 \*------------------------------------------------------------------------------*/
 namespace BmEncoding {
 	
-	struct BmEncodingPair {
-		const char* charset;
-		const uint32 encoding;
-	};
-	extern BmEncodingPair BM_Encodings[];
+	typedef map< BmString, bool> BmCharsetMap;
+	extern BmCharsetMap TheCharsetMap;
 
-	const uint32 BM_UTF8_CONVERSION = 0xFF;
-	const uint32 BM_UNKNOWN_ENCODING = 0xFFFF;
+	extern BmString DefaultCharset;
+	
+	void InitCharsetMap();
 
-	uint32 CharsetToEncoding( const BmString& charset);
-	BmString EncodingToCharset( const uint32 encoding);
+	const char* ConvertFromBeosToLibiconv( uint32 encoding);
 
-	void ConvertToUTF8( uint32 srcEncoding, const BmString& src, BmString& dest);
-	void ConvertFromUTF8( uint32 destEncoding, const BmString& src, BmString& dest);
+	void ConvertToUTF8( const BmString& srcCharset, const BmString& src, BmString& dest);
+	void ConvertFromUTF8( const BmString& destCharset, const BmString& src, BmString& dest);
 
 	void Encode( BmString encodingStyle, const BmString& src, BmString& dest, 
-								 bool isEncodedWord=false);
+					 bool isEncodedWord=false);
 	void Decode( BmString encodingStyle, const BmString& src, BmString& dest, 
-								 bool isEncodedWord=false);
+					 bool isEncodedWord=false);
 
-	BmString ConvertHeaderPartToUTF8( const BmString& headerPart, uint32 defaultEncoding);
-	BmString ConvertUTF8ToHeaderPart( const BmString& utf8text, uint32 encoding,
-												bool useQuotedPrintableIfNeeded,
-												bool fold=false, int32 fieldLen=0);
+	BmString ConvertHeaderPartToUTF8( const BmString& headerPart, const BmString& defaultCharset);
+	BmString ConvertUTF8ToHeaderPart( const BmString& utf8text, const BmString& charset,
+												 bool useQuotedPrintableIfNeeded,
+												 bool fold=false, int32 fieldLen=0);
 	
 	bool NeedsEncoding( const BmString& utf8String);
 	bool IsCompatibleWithText( const BmString& s);
@@ -96,7 +88,7 @@ class BmUtf8Decoder : public BmMemFilter {
 	typedef BmMemFilter inherited;
 
 public:
-	BmUtf8Decoder( BmMemIBuf* input, uint32 destEncoding, 
+	BmUtf8Decoder( BmMemIBuf* input, const BmString& destCharset, 
 						uint32 blockSize=nBlockSize);
 	~BmUtf8Decoder();
 	
@@ -112,11 +104,9 @@ protected:
 	void Filter( const char* srcBuf, uint32& srcLen, 
 					 char* destBuf, uint32& destLen);
 
-	uint32 mDestEncoding;
-#ifdef BM_USE_ICONV
+	const BmString& mDestCharset;
 	iconv_t mIconvDescr;
 	bool mTransliterate;
-#endif
 };
 
 /*------------------------------------------------------------------------------*\
@@ -127,7 +117,7 @@ class BmUtf8Encoder : public BmMemFilter {
 	typedef BmMemFilter inherited;
 
 public:
-	BmUtf8Encoder( BmMemIBuf* input, uint32 srcEncoding, 
+	BmUtf8Encoder( BmMemIBuf* input, const BmString& srcCharset, 
 						uint32 blockSize=nBlockSize);
 	~BmUtf8Encoder();
 
@@ -143,11 +133,9 @@ protected:
 	void Filter( const char* srcBuf, uint32& srcLen, 
 					 char* destBuf, uint32& destLen);
 
-	uint32 mSrcEncoding;
-#ifdef BM_USE_ICONV
+	const BmString& mSrcCharset;
 	iconv_t mIconvDescr;
 	bool mTransliterate;
-#endif
 };
 
 /*------------------------------------------------------------------------------*\

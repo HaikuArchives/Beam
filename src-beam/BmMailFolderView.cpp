@@ -145,7 +145,7 @@ int BmMailFolderItem::CompareItems( const CLVListItem *a_Item1,
 
 
 const char* const BmMailFolderView::MSG_CURR_FOLDER = "bm:currfolder";
-const char* const BmMailFolderView::MSG_FOLDERS_SELECTED = "bm:fsel";
+const char* const BmMailFolderView::MSG_HAVE_SELECTED_FOLDER = "bm:fsel";
 
 BmMailFolderView* BmMailFolderView::theInstance = NULL;
 
@@ -168,6 +168,7 @@ BmMailFolderView::BmMailFolderView( minimax minmax, int32 width, int32 height)
 	:	inherited( minmax, BRect(0,0,width-1,height-1), "Beam_FolderView", B_SINGLE_SELECTION_LIST, 
 					  true, true, true, true)
 	,	mPartnerMailRefView( NULL)
+	,	mHaveSelectedFolder( false)
 {
 	Initialize( BRect( 0,0,width-1,height-1), B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE,
 					B_FOLLOW_TOP_BOTTOM, true, true, true, B_FANCY_BORDER);
@@ -461,10 +462,21 @@ void BmMailFolderView::SelectionChanged( void) {
 		mPartnerMailRefView->ShowFolder( folder.Get());
 	else
 		mPartnerMailRefView->ShowFolder( NULL);
+	SendNoticesIfNeeded( folder ? true : false);
+}
 
-	BMessage msg(BM_NTFY_MAILFOLDER_SELECTION);
-	msg.AddInt32( MSG_FOLDERS_SELECTED, folder ? 1 : 0);
-	SendNotices( BM_NTFY_MAILFOLDER_SELECTION, &msg);
+
+/*------------------------------------------------------------------------------*\
+	SendNoticesIfNeeded()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailFolderView::SendNoticesIfNeeded( bool haveSelectedFolder) {
+	if (haveSelectedFolder != mHaveSelectedFolder) {
+		mHaveSelectedFolder = haveSelectedFolder;
+		BMessage msg(BM_NTFY_MAILFOLDER_SELECTION);
+		msg.AddBool( MSG_HAVE_SELECTED_FOLDER, mHaveSelectedFolder);
+		SendNotices( BM_NTFY_MAILFOLDER_SELECTION, &msg);
+	}
 }
 
 /*------------------------------------------------------------------------------*\
@@ -511,6 +523,9 @@ void BmMailFolderView::ShowMenu( BPoint point) {
 	BmRef<BmMailFolder> folder = CurrentFolder();
 
 	BPopUpMenu* theMenu = new BPopUpMenu( "MailFolderViewMenu", false, false);
+	BFont font( *be_plain_font);
+	font.SetSize( 10);
+	theMenu->SetFont( &font);
 
 	BMenuItem* item;
 	if (folder) {

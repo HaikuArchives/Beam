@@ -50,8 +50,8 @@ using namespace regexx;
 const char* const BmSignature::MSG_NAME = 		"bm:name";
 const char* const BmSignature::MSG_DYNAMIC = 	"bm:dynamic";
 const char* const BmSignature::MSG_CONTENT = 	"bm:content";
-const char* const BmSignature::MSG_ENCODING = 	"bm:encoding";
-const int16 BmSignature::nArchiveVersion = 1;
+const char* const BmSignature::MSG_CHARSET = 	"bm:charset";
+const int16 BmSignature::nArchiveVersion = 2;
 
 /*------------------------------------------------------------------------------*\
 	BmSignature()
@@ -61,7 +61,7 @@ BmSignature::BmSignature( const char* name, BmSignatureList* model)
 	:	inherited( name, model, (BmListModelItem*)NULL)
 	,	mAccessLock( (BmString("access_sig_") << name).Truncate(B_OS_NAME_LENGTH).String())
 	,	mDynamic( false)
-	,	mEncoding( BM_UTF8_CONVERSION)
+	,	mCharset( "UTF-8")
 {
 }
 
@@ -80,7 +80,13 @@ BmSignature::BmSignature( BMessage* archive, BmSignatureList* model)
 		version = 0;
 	mContent = FindMsgString( archive, MSG_CONTENT);
 	mDynamic = FindMsgBool( archive, MSG_DYNAMIC);
-	mEncoding = FindMsgInt16( archive, MSG_ENCODING);
+	if (version > 1) {
+		mCharset = FindMsgString( archive, MSG_CHARSET);
+	} else {
+		// map from old beos-number to new ibiconv-string:
+		int16 encoding = FindMsgInt16( archive, "bm:encoding");
+		mCharset = BmEncoding::ConvertFromBeosToLibiconv( encoding);
+	}
 }
 
 /*------------------------------------------------------------------------------*\
@@ -100,7 +106,7 @@ status_t BmSignature::Archive( BMessage* archive, bool deep) const {
 		||	archive->AddString( MSG_NAME, Key().String())
 		||	archive->AddString( MSG_CONTENT, mContent.String())
 		||	archive->AddBool( MSG_DYNAMIC, mDynamic)
-		||	archive->AddInt16( MSG_ENCODING, mEncoding));
+		||	archive->AddString( MSG_CHARSET, mCharset.String()));
 	return ret;
 }
 
@@ -149,7 +155,7 @@ BmString BmSignature::GetSignatureString() {
 		TheTempFileList.RemoveFile( errFileName);
 		TheTempFileList.RemoveFile( scriptFileName);
 		BmString utf8;
-		ConvertToUTF8( mEncoding, sigString, utf8);
+		ConvertToUTF8( mCharset, sigString, utf8);
 		return utf8;
 	} else
 		return mContent;

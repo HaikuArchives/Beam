@@ -59,7 +59,8 @@ using namespace regexx;
 	BmMail
 \********************************************************************************/
 
-#define BM_REFKEY(x) (BmString("MailModel_") << x->Inode())
+#define BM_MAILKEY(ref) \
+	(BmString("Mail_") << ref->NodeRef().node << "_" << ref->NodeRef().device)
 
 const char* const BmMail::BM_QUOTE_AUTO_WRAP = 		"Auto Wrap";
 const char* const BmMail::BM_QUOTE_SIMPLE = 			"Simple";
@@ -70,10 +71,10 @@ const char* const BmMail::BM_QUOTE_PUSH_MARGIN = 	"Push Margin";
 		-	constructs a mail from file
 \*------------------------------------------------------------------------------*/
 BmRef<BmMail> BmMail::CreateInstance( BmMailRef* ref) {
+	BAutolock lock( GlobalLocker());
 	BmProxy* proxy = BmRefObj::GetProxy( typeid(BmMail).name());
 	if (proxy) {
-		BAutolock lock( &proxy->Locker);
-		BmString key( BM_REFKEY( ref));
+		BmString key( BM_MAILKEY( ref));
 		BmRef<BmMail> mail( dynamic_cast<BmMail*>( proxy->FetchObject( key)));
 		if (mail)
 			return mail;
@@ -96,7 +97,7 @@ BmMail::BmMail( bool outbound)
 {
 	BmString emptyMsg = BmString(BM_FIELD_MIME)+": 1.0\r\n";
 	emptyMsg << "Content-Type: text/plain; charset=\"" 
-				<< EncodingToCharset( ThePrefs->GetInt( "DefaultEncoding"))
+				<< ThePrefs->GetString( "DefaultCharset")
 				<<	"\"\r\n";
 	emptyMsg << BM_FIELD_DATE << ": " << TimeToString( time( NULL), 
 																		"%a, %d %b %Y %H:%M:%S %z");
@@ -135,7 +136,7 @@ BmMail::BmMail( BmString &msgText, const BmString account)
 		-	constructor via a mail-ref (from file)
 \*------------------------------------------------------------------------------*/
 BmMail::BmMail( BmMailRef* ref) 
-	:	inherited( BM_REFKEY( ref))
+	:	inherited( BM_MAILKEY( ref))
 	,	mHeader( NULL)
 	,	mBody( NULL)
 	,	mMailRef( ref)
@@ -212,7 +213,7 @@ void BmMail::SetNewHeader( const BmString& headerStr) {
 }
 
 /*------------------------------------------------------------------------------*\
-	SetSignatureByName( sigName, encoding)
+	SetSignatureByName( sigName)
 	-	
 \*------------------------------------------------------------------------------*/
 void BmMail::SetSignatureByName( const BmString sigName) {
@@ -617,9 +618,8 @@ void BmMail::AddPartsFromMail( BmRef<BmMail> mail, bool withAttachments,
 	// copy and quote text-body:
 	BmRef<BmBodyPart> newTextBody( mBody->EditableTextBody());
 	BmRef<BmBodyPart> textBody( mail->Body()->EditableTextBody());
-	// copy info about encoding from old into new mail:
-	int32 encoding = mail->DefaultEncoding();
-	BmString charset = EncodingToCharset( encoding);
+	// copy info about charset from old into new mail:
+	BmString charset = mail->DefaultCharset();
 	BmString quotedText;
 	int32 newLineLen = QuoteText( (selectedText.Length() || !textBody)
 													? selectedText 
@@ -632,9 +632,9 @@ void BmMail::AddPartsFromMail( BmRef<BmMail> mail, bool withAttachments,
 							: mail->CreateReplyIntro() << "\n");
 	if (newTextBody)
 		mBody->SetEditableText( newTextBody->DecodedData() + "\n" + intro + quotedText, 
-										encoding);
+										charset);
 	else
-		mBody->SetEditableText( intro + quotedText, encoding);
+		mBody->SetEditableText( intro + quotedText, charset);
 	BumpRightMargin( newLineLen);
 	if (withAttachments && mail->Body()->HasAttachments()) {
 		BmModelItemMap::const_iterator iter, end;
@@ -664,16 +664,17 @@ void BmMail::AddPartsFromMail( BmRef<BmMail> mail, bool withAttachments,
 	ConstructRawText()
 	-	
 \*------------------------------------------------------------------------------*/
-bool BmMail::ConstructRawText( const BmString& editedUtf8Text, int32 encoding,
+bool BmMail::ConstructRawText( const BmString& editedUtf8Text, 
+										 const BmString& charset,
 										 const BmString smtpAccount) {
 	int32 startSize = mBody->EstimateEncodedSize() + editedUtf8Text.Length() 
 							+ max( mHeader->HeaderLength(), (int32)4096)+4096;
 	startSize += 65536-(startSize%65536);
 	BmStringOBuf msgText( startSize, 1.2);
 	mAccountName = smtpAccount;
-	if (!mHeader->ConstructRawText( msgText, encoding))
+	if (!mHeader->ConstructRawText( msgText, charset))
 		return false;
-	mBody->SetEditableText( editedUtf8Text, encoding);
+	mBody->SetEditableText( editedUtf8Text, charset);
 	if (!mBody->ConstructBodyForSending( msgText))
 		return false;
 	uint32 len = msgText.CurrPos();
@@ -685,14 +686,13 @@ bool BmMail::ConstructRawText( const BmString& editedUtf8Text, int32 encoding,
 }
 
 /*------------------------------------------------------------------------------*\
-	DefaultEncoding()
+	DefaultCharset()
 		-	
 \*------------------------------------------------------------------------------*/
-uint32 BmMail::DefaultEncoding() const {
-	uint32 defEncoding;
-	if (mBody && (defEncoding = mBody->DefaultEncoding())!=BM_UNKNOWN_ENCODING)
-		return defEncoding;
-	return B_ISO1_CONVERSION;
+const BmString& BmMail::DefaultCharset() const {
+	if (mBody)
+		return mBody->DefaultCharset();
+	return BmEncoding::DefaultCharset;
 }
 
 /*------------------------------------------------------------------------------*\

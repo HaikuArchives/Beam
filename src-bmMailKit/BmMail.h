@@ -137,7 +137,8 @@ public:
 	virtual ~BmMail();
 
 	// native methods:
-	bool ConstructRawText( const BmString& editableUtf8Text, int32 encoding,
+	bool ConstructRawText( const BmString& editableUtf8Text, 
+								  const BmString& charset,
 								  BmString smtpAccount);
 	void SetTo( BmString &text, const BmString account);
 	void SetNewHeader( const BmString& headerStr);
@@ -195,7 +196,7 @@ public:
 	inline const bool Outbound() const			{ return mOutbound; }
 	inline const bool IsRedirect() const		{ return mHeader ? mHeader->IsRedirect() : false; }
 	inline BmMailRef* MailRef() const			{ return mMailRef.Get(); }
-	uint32 DefaultEncoding()	const;
+	const BmString& DefaultCharset()	const;
 	inline BmString SignatureName() const		{ return mSignatureName; }
 
 	// setters:

@@ -35,6 +35,7 @@
 #include <UTF8.h>
 
 #include "BmBasics.h"
+#include "BmEncoding.h"
 #include "BmLogHandler.h"
 #include "BmMsgTypes.h"
 #include "BmPrefs.h"
@@ -174,10 +175,19 @@ BmPrefs::BmPrefs( BMessage* archive)
 	if (version < 4) {
 		// changes introduced with version 4:
 		//
-		// replace int-field "" with corresponding string-field:
+		// replace int-field "DefaultForwardType" with corresponding string-field:
 		mPrefsMsg.RemoveName("DefaultForwardType");
 		mPrefsMsg.AddString( "DefaultForwardType", 
 									mDefaultsMsg.FindString( "DefaultForwardType"));
+	}
+	if (version < 5) {
+		// changes introduced with version 5:
+		//
+		// replace int-field "DefaultEncoding" with corresponding string-field:
+		int32 encoding = mPrefsMsg.FindInt32( "DefaultEncoding");
+		BmString charset = BmEncoding::ConvertFromBeosToLibiconv( encoding);
+		mPrefsMsg.RemoveName("DefaultEncoding");
+		mPrefsMsg.AddString( "DefaultCharset", charset.String());
 	}
 	if (scStatus == B_OK) {
 		// add any missing (new) shortcuts:
@@ -253,7 +263,7 @@ void BmPrefs::InitDefaults() {
 	mDefaultsMsg.AddBool( "BeepWhenNewMailArrived", true);
 	mDefaultsMsg.AddBool( "CacheRefsInMem", false);
 	mDefaultsMsg.AddBool( "CacheRefsOnDisk", true);
-	mDefaultsMsg.AddInt32( "DefaultEncoding", B_ISO1_CONVERSION);
+	mDefaultsMsg.AddString( "DefaultCharset", BmEncoding::DefaultCharset.String());
 	mDefaultsMsg.AddString( "DefaultForwardType", "Inline");
 	mDefaultsMsg.AddBool( "DoNotAttachVCardsToForward", true);
 	mDefaultsMsg.AddBool( "DynamicStatusWin", true);
@@ -313,6 +323,30 @@ void BmPrefs::InitDefaults() {
 	mDefaultsMsg.AddBool( "UseDocumentResizer", true);
 	mDefaultsMsg.AddBool( "UseSwatchTimeInRefView", false);
 	mDefaultsMsg.AddString( "Workspace", "Current");
+	mDefaultsMsg.AddString( "StandardCharsets", (BmString("<ISO-8859-1>")
+									+"<ISO-8859-2>" 
+									+"<ISO-8859-3>"	
+									+"<ISO-8859-4>"
+									+"<ISO-8859-5>" 
+									+"<ISO-8859-6>" 
+									+"<ISO-8859-7>"
+									+"<ISO-8859-8>"
+									+"<ISO-8859-9>" 
+									+"<ISO-8859-10>" 
+									+"<ISO-8859-13>" 
+									+"<ISO-8859-14>"
+									+"<ISO-8859-15>" 
+									+"<MACROMAN>" 
+									+"<WINDOWS-1251>" 
+									+"<WINDOWS-1252>"
+									+"<CP866>"
+									+"<CP850>"
+									+"<ISO-2022-JP>"
+									+"<ISO-2022-JP-2>"
+									+"<KOI8-R>"
+									+"<EUC-KR>"
+									+"<BIG-5>"
+									+"<UTF-8>").String());
 }
 
 /*------------------------------------------------------------------------------*\

@@ -30,6 +30,11 @@
 #include <Menu.h>
 #include <MenuItem.h>
 
+#include "regexx.hh"
+using namespace regexx;
+
+#include "BmEncoding.h"
+using namespace BmEncoding;
 #include "BmGuiUtil.h"
 #include "BmPrefs.h"
 #include "BmUtil.h"
@@ -81,3 +86,40 @@ BMenuItem* CreateMenuItem( const char* label, BMessage* msg, const char* idForSh
 	else
 		return new BMenuItem( label, msg);
 }
+
+const char* const MSG_CHARSET = "bm:chset";
+/*------------------------------------------------------------------------------*\
+	( )
+		-	
+\*------------------------------------------------------------------------------*/
+void AddCharsetMenu( BMenu* menu, BHandler* target, int32 msgType) {
+	if (!menu)
+		return;
+	menu->SetLabelFromMarked( false);
+	// add standard entries:
+	Regexx rx;
+	BmString stdSets = ThePrefs->GetString( "StandardCharsets");
+	int32 numStdSets = rx.exec( stdSets, "<(.+?)>", Regexx::global);
+	for( int i=0; i<numStdSets; ++i) {
+		BmString charset( rx.match[i].atom[0]);
+		BMessage* msg = new BMessage( msgType);
+		msg->AddString( MSG_CHARSET, charset.String());
+		AddItemToMenu( menu, CreateMenuItem( charset.String(), msg), target);
+	}
+	// add all other charsets:
+	BMenu* moreMenu = new BMenu( "<show all>");
+	moreMenu->SetLabelFromMarked( false);
+	BFont font( *be_plain_font);
+	font.SetSize( 10);
+	moreMenu->SetFont( &font);
+	BmCharsetMap::const_iterator iter;
+	for( iter = TheCharsetMap.begin(); iter != TheCharsetMap.end(); ++iter) {
+		BMessage* msg = new BMessage( msgType);
+		msg->AddString( MSG_CHARSET, iter->first.String());
+		if (iter->second)
+			AddItemToMenu( moreMenu, CreateMenuItem( iter->first.String(), msg), target);
+	}
+	menu->AddSeparatorItem();
+	menu->AddItem( moreMenu);
+}
+
