@@ -111,8 +111,9 @@ void BmListViewItem::AddSubItemsToList( BmListViewController* view) {
 		SetSuperItem( true);
 		for( iter = mModelItem->begin(); iter != mModelItem->end(); ++iter) {
 			BmListModelItem* subItem = iter->second;
-			BMessage* archive = view->GetArchiveForItemKey( subItem->Key());
-			BmListViewItem* viewItem = view->CreateListViewItem( subItem, archive);
+			BMessage archive;
+			view->GetArchiveForItemKey( subItem->Key(), &archive);
+			BmListViewItem* viewItem = view->CreateListViewItem( subItem, &archive);
 			mSubItemList->AddItem( viewItem);
 			view->AddUnder( viewItem, this);
 			viewItem->AddSubItemsToList( view);
@@ -380,12 +381,6 @@ void BmListViewController::ShowOrHideColumn( BMessage* msg) {
 void BmListViewController::ShowLabelViewMenu( BPoint point) {
 	BPopUpMenu* theMenu = new BPopUpMenu( "LabelViewMenu", false, false);
 
-/*
-	BFont font(be_plain_font);
-	font.SetSize(10);
-	theMenu->SetFont(&font);
-*/
-	
 	int32 numCols = fColumnList.CountItems();
 	int32 numVisibleCols = fColumnDisplayList.CountItems();
 	for( int32 i=0; i<numCols; ++i) {
@@ -409,8 +404,7 @@ void BmListViewController::ShowLabelViewMenu( BPoint point) {
 	openRect.bottom = point.y + 5;
 	openRect.left = point.x - 5;
 	openRect.right = point.x + 5;
-//  	theMenu->Go( point, true, false, openRect);
-  	theMenu->Go( point, true, false);
+  	theMenu->Go( point, true, false, openRect);
   	delete theMenu;
 }
 
@@ -538,14 +532,14 @@ status_t BmListViewController::Archive(BMessage* archive, bool deep) const {
 	GetArchiveForItemKey( )
 		-	
 \*------------------------------------------------------------------------------*/
-BMessage* BmListViewController::GetArchiveForItemKey( BString key) {
+BMessage* BmListViewController::GetArchiveForItemKey( BString key, BMessage* msg=NULL) {
 	if (mInitialStateInfo) {
 		status_t ret = B_OK;
 		for( int i=0; ret==B_OK; ++i) {
 			const char* name;
 			ret = mInitialStateInfo->FindString( BmListViewItem::MSG_CHILDNAMES, i, &name);
 			if (key == name) {
-				return FindMsgMsg( mInitialStateInfo, BmListViewItem::MSG_CHILDREN, NULL, i);
+				return FindMsgMsg( mInitialStateInfo, BmListViewItem::MSG_CHILDREN, msg, i);
 			}
 		}
 	}

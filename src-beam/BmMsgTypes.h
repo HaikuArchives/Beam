@@ -42,5 +42,12 @@
 #define BM_CONNWIN_FETCHPOP			'bmea'
 						// sent from App BmConnectionWin in order to start pop-connection
 
+/*------------------------------------------------------------------------------*\
+	types of messages handled by a BmMailHeaderView:
+\*------------------------------------------------------------------------------*/
+#define BM_HEADERVIEW_SMALL			'bmfa'
+#define BM_HEADERVIEW_LARGE			'bmfb'
+#define BM_HEADERVIEW_FULL				'bmfc'
+
 
 #endif

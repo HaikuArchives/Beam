@@ -160,7 +160,7 @@ BString BytesToString( int32 bytes, bool mini) {
 	return BString(buf);
 }
 
-/*------------------------------------------------------------------------------*\*\
+/*------------------------------------------------------------------------------*\
 	TimeToString( time)
 		-	converts the given time into a string
 \*------------------------------------------------------------------------------*/
@@ -186,7 +186,7 @@ void ShowAlert( const BString &text) {
 	alert->Go();
 }
 
-/*------------------------------------------------------------------------------*\*\
+/*------------------------------------------------------------------------------*\
 	BString::operator+
 		-	
 \*------------------------------------------------------------------------------*/
@@ -209,4 +209,32 @@ BString operator+(const BString& s1, const char* s2)
 	BString result(s1);
 	result += s2;
 	return result;
+}
+
+/*------------------------------------------------------------------------------*\
+	RemoveSetFromString( string, charsToRemove)
+		-	
+\*------------------------------------------------------------------------------*/
+BString& RemoveSetFromString( BString& str, const char* charsToRemove) {
+	if (!charsToRemove) return str;
+	char* buf = str.LockBuffer( 0);
+	if (buf) {
+		char* pos = buf;
+		char* newPos = buf;
+		while( *pos) {
+			if (strchr( charsToRemove, *pos))
+				pos++;
+			else {
+				if (pos != newPos)
+					*newPos++ = *pos++;
+				else {
+					newPos++;
+					pos++;
+				}
+			}
+		}
+		*newPos = 0;
+		str.UnlockBuffer( newPos-buf);
+	}
+	return str;
 }

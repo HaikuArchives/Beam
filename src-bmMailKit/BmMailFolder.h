@@ -51,6 +51,7 @@ public:
 	const ino_t& Inode() const				{ return mInode; }
 	const int NewMailCount() const		{ return mNewMailCount; }
 	const int NewMailCountForSubfolders() const		{ return mNewMailCountForSubfolders; }
+	const time_t LastModified() const	{ return mLastModified; }
 	BmMailFolder* Parent() 					{ return dynamic_cast<BmMailFolder*>( mParent); }
 	BmMailRefList* MailRefList();
 	const BString& Name() const			{ return mName; }

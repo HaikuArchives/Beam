@@ -88,9 +88,16 @@ void BmMailRefList::StartJob() {
 	
 		BString filename = BString("folder_") << mFolder->Key()<<" ("<<mFolder->Name()<<")";
 	
-		if (!mUpdateCache 
-		&& (err = cacheFile.SetTo( TheResources->MailCacheFolder(), filename.String(), B_READ_ONLY)) == B_OK) {
-			// ...ok, cache-file found, we fetch our data from it:
+		bool cacheFileUpToDate = false;
+		if ((err = cacheFile.SetTo( TheResources->MailCacheFolder(), filename.String(), B_READ_ONLY)) == B_OK) {
+			time_t mtime;
+			(err = cacheFile.GetModificationTime( &mtime)) == B_OK
+														|| BM_THROW_RUNTIME(BString("Could not get mtime \nfor mail-folder <") << Name() << "> \n\nError:" << strerror(err));
+			if (!mUpdateCache && mtime>mFolder->LastModified())
+				cacheFileUpToDate = true;
+		}
+		if (cacheFileUpToDate) {	
+			// ...ok, cache-file should contain up-to-date info, we fetch our data from it:
 			BMessage archive;
 			(err = archive.Unflatten( &cacheFile)) == B_OK
 														|| BM_THROW_RUNTIME( BString("Could not fetch mail-cache from file\n\t<") << filename << ">\n\n Result: " << strerror(err));

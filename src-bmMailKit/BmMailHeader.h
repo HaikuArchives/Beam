@@ -61,11 +61,11 @@ class BmAddressList {
 public:
 	// c'tors and d'tor:
 	BmAddressList();
-	BmAddressList( BString canonicalFieldVal);
+	BmAddressList( BString strippedFieldVal);
 	~BmAddressList();
 
 	// native methods:
-	bool Set( BString canonicalFieldVal);
+	bool Set( BString strippedFieldVal);
 	BmStringList SplitIntoAddresses( BString addrList);
 	
 	// operators:
@@ -118,32 +118,44 @@ public:
 	void SetFieldVal( const BString fieldName, const BString value);
 	void AddFieldVal( const BString fieldName, const BString value);
 	void RemoveField( const BString fieldName);
+
+	// getters:
 	const BString& GetFieldVal( const BString fieldName);
-	const BString& GetCanonicalFieldVal( const BString fieldName);
+	const BString GetEnhancedFieldVal( const BString fieldName);
+	int32 NumLines() const 					{ return mNumLines; }
+	const BString& HeaderString() const { return mHeaderString; }
 
 protected:
 	void ParseHeader( const BString &header);
 	BString ParseHeaderField( BString fieldName, BString fieldValue);
-	BString CanonicalizeField( BString fieldValue, BString* commentBuffer=NULL);
+	BString EnhanceField( BString fieldValue, BString* commentBuffer=NULL);
 
 	bool ParseDateTime( const BString& str, time_t& dateTime);
-//	bool ParseAddress( const BString& str, BString& addr);
-//	bool ParseMultiAddress( const BString& str, BList& addrs);
-//	bool ParseMsgID( const BString& str, BString& msgID);
-//	bool ParseMailbox( const BString& str, BString& mailbox);
 
 private:
-	BmHeaderList mHeaders;					// contains all headers as a list of corresponding
-													// values (for most fields, this list should only have
-													// one item, but for others, e.g. 'Received', the list
-													// will have numerous entries.
-	BmHeaderList mCanonicalHeaders;		// contains all canonical headers as a list of corresponding
-													// values. For simplicity, this map contains even fields for
-													// which the canonical value does not make sense, because they
-													// aren't structured (e.g. 'Subject'). The canonical versions
-													// of these fields' values should not be used, of course.
-	BmAddrMap mAddrMap;						// address-fields with detailed (parsed) information
-	BmMail* mMail;								// The mail these headers belong to
+	BString mHeaderString;
+							// the complete original mail-header
+	BmHeaderList mHeaders;
+							// contains all headers as a list of corresponding
+							// values (for most fields, this list should only have
+							// one item, but for others, e.g. 'Received', the list
+							// will have numerous entries.
+	BmHeaderList mEnhancedHeaders;
+							// contains all stripped headers as a list of corresponding
+							// values. For simplicity, this map contains even fields for
+							// which the stripped value does not make sense, because they
+							// aren't structured (e.g. 'Subject'). The stripped versions
+							// of these fields' values should not be used, of course.
+							// N.B.: 'stripped' actually means that any comments and 
+							//       unneccessary whitespace are gone from the field-values.
+	BmAddrMap mAddrMap;
+							// address-fields with detailed (parsed) information
+	BmMail* mMail;		
+							// The mail these headers belong to
+	int32 mDefaultEncoding;
+							// encoding to be used by this mail (if not specified otherwise)
+	int32 mNumLines;
+							// number of lines in this header
 };
 
 #endif

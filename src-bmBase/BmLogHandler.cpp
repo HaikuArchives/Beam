@@ -97,13 +97,14 @@ BmLogHandler::~BmLogHandler() {
 void BmLogHandler::LogToFile( const BString &logname, uint32 flag,
 										const BString &msg, int8 minlevel) {
 	BAutolock lock( mLocker);
+	BString name = logname.Length() ? logname : "Beam";
 	if (lock.IsLocked()) {
-		LogfileMap::iterator logIter = mActiveLogs.find( logname);
+		LogfileMap::iterator logIter = mActiveLogs.find( name);
 		BmLogfile* log;
 		if (logIter == mActiveLogs.end()) {
 			// logfile doesn't exists, so we create it:
-			log = new BmLogfile( logname);
-			mActiveLogs[logname] = log;
+			log = new BmLogfile( name);
+			mActiveLogs[name] = log;
 		} else {
 			log = (*logIter).second;
 		}

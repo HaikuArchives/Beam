@@ -21,7 +21,7 @@ using namespace regexx;
 #include "BmResources.h"
 
 #undef BM_LOGNAME
-#define BM_LOGNAME mMail->AccountName()
+#define BM_LOGNAME "MailParser"
 
 static BString BmAddressFieldNames = 
 	"<Bcc><Resent-Bcc><Cc><Resent-Cc><From><Resent-From><Reply-To><Resent-Reply-To><Sender><Resent-Sender><To><Resent-To>";
@@ -186,10 +186,10 @@ BmAddressList::BmAddressList()
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmAddressList::BmAddressList( BString canonicalFieldVal)
+BmAddressList::BmAddressList( BString strippedFieldVal)
 	:	mIsGroup( false) 
 {
-	mInitOK = Set( canonicalFieldVal);
+	mInitOK = Set( strippedFieldVal);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -203,7 +203,7 @@ BmAddressList::~BmAddressList() {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-bool BmAddressList::Set( BString canonicalFieldVal) {
+bool BmAddressList::Set( BString strippedFieldVal) {
 	BString addrText;
 	Regexx rx;
 	bool res = true;
@@ -211,18 +211,18 @@ bool BmAddressList::Set( BString canonicalFieldVal) {
 	mGroupName = "";
 	mAddrList.clear();
 
-	if (rx.exec( canonicalFieldVal, "^\\s*(.+?):(.+)?;\\s*$")) {
+	if (rx.exec( strippedFieldVal, "^\\s*(.+?):(.+)?;\\s*$")) {
 		// it's a group list:
 		mIsGroup = true;
-		canonicalFieldVal.CopyInto( mGroupName, rx.match[0].atom[0].start(), rx.match[0].atom[0].Length());
+		strippedFieldVal.CopyInto( mGroupName, rx.match[0].atom[0].start(), rx.match[0].atom[0].Length());
 		if (rx.match[0].atom.size() > 1)
-			canonicalFieldVal.CopyInto( addrText, rx.match[0].atom[1].start(), rx.match[0].atom[1].Length());
+			strippedFieldVal.CopyInto( addrText, rx.match[0].atom[1].start(), rx.match[0].atom[1].Length());
 		if (!addrText.Length())
 			return false;
 	} else {
 		// simple address (or list of addresses)
 		mIsGroup = false;
-		addrText = canonicalFieldVal;
+		addrText = strippedFieldVal;
 	}
 	BmStringList addrList = SplitIntoAddresses( addrText);
 	size_t num = addrList.size();
@@ -238,7 +238,7 @@ bool BmAddressList::Set( BString canonicalFieldVal) {
 }
 	
 /*------------------------------------------------------------------------------*\
-	CanonicalizeField()
+	EnhanceField()
 		-	
 \*------------------------------------------------------------------------------*/
 BmStringList BmAddressList::SplitIntoAddresses( BString addrListText) {
@@ -292,6 +292,7 @@ BmStringList BmAddressList::SplitIntoAddresses( BString addrListText) {
 			if (*endPos == ',') {
 				addrList.push_back( currAddr);
 				currAddr = "";
+				pos++;
 			}
 		}
 	}
@@ -355,7 +356,7 @@ void BmMailHeader::BmHeaderList::Remove( const BString fieldName) {
 
 /*------------------------------------------------------------------------------*\
 	operator [] ( fieldName)
-		-	
+		-	returns first value found for given fieldName
 \*------------------------------------------------------------------------------*/
 BString& BmMailHeader::BmHeaderList::operator [] (const BString fieldName) {
 	BmValueList& valueList = mHeaders[fieldName];
@@ -375,7 +376,8 @@ BString& BmMailHeader::BmHeaderList::operator [] (const BString fieldName) {
 		-	constructor
 \*------------------------------------------------------------------------------*/
 BmMailHeader::BmMailHeader( const BString &headerText, BmMail* mail)
-	:	mMail( mail)
+	:	mHeaderString( headerText)
+	,	mMail( mail)
 {
 	ParseHeader( headerText);
 }
@@ -396,11 +398,15 @@ const BString& BmMailHeader::GetFieldVal( const BString fieldName) {
 }
 
 /*------------------------------------------------------------------------------*\
-	GetCanonicalFieldVal()
+	GetEnhancedFieldVal()
 	-	
 \*------------------------------------------------------------------------------*/
-const BString& BmMailHeader::GetCanonicalFieldVal( const BString fieldName) {
-	return mCanonicalHeaders[fieldName];
+const BString BmMailHeader::GetEnhancedFieldVal( const BString fieldName) {
+	if (BmAddressFieldNames.IFindFirst( fieldName) != B_ERROR) {
+		// field contains an address-spec, we return the parsed/reconstructed address:
+		return mAddrMap[fieldName];
+	} else
+		return mEnhancedHeaders[fieldName];
 }
 
 /*------------------------------------------------------------------------------*\
@@ -409,7 +415,8 @@ const BString& BmMailHeader::GetCanonicalFieldVal( const BString fieldName) {
 \*------------------------------------------------------------------------------*/
 void BmMailHeader::SetFieldVal( const BString fieldName, const BString value) {
 	mHeaders.Set( fieldName, value);
-	mCanonicalHeaders.Set( fieldName, CanonicalizeField( value));
+	if (mMail)
+		mEnhancedHeaders.Set( fieldName, EnhanceField( value));
 }
 
 /*------------------------------------------------------------------------------*\
@@ -418,7 +425,8 @@ void BmMailHeader::SetFieldVal( const BString fieldName, const BString value) {
 \*------------------------------------------------------------------------------*/
 void BmMailHeader::AddFieldVal( const BString fieldName, const BString value) {
 	mHeaders.Add( fieldName, value);
-	mCanonicalHeaders.Add( fieldName, CanonicalizeField( value));
+	if (mMail)
+		mEnhancedHeaders.Add( fieldName, EnhanceField( value));
 }
 
 /*------------------------------------------------------------------------------*\
@@ -427,7 +435,8 @@ void BmMailHeader::AddFieldVal( const BString fieldName, const BString value) {
 \*------------------------------------------------------------------------------*/
 void BmMailHeader::RemoveField( const BString fieldName) {
 	mHeaders.Remove( fieldName);
-	mCanonicalHeaders.Remove( fieldName);
+	if (mMail)
+		mEnhancedHeaders.Remove( fieldName);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -437,6 +446,21 @@ void BmMailHeader::RemoveField( const BString fieldName) {
 void BmMailHeader::ParseHeader( const BString &header) {
 	Regexx rxHeaderFields, rxUnfold, rx;
 	int32 nm;
+
+	// set default encoding
+	mDefaultEncoding = ThePrefs->DefaultEncoding();
+	// try to determine the mails' encoding by finding a charset given within the header:
+	rx.expr( "^Content-Type:\\s*.+?;charset\\s*=[\\s\"]*([^\\s\"]+)");
+	rx.str( header.String());
+	if (rx.exec( Regexx::nocase | Regexx::newline)) {
+		// extract encoding from the charset found:
+		BString charset;
+		header.CopyInto( charset, rx.match[0].atom[0].start(), rx.match[0].atom[0].Length());
+		mDefaultEncoding = CharsetToEncoding( charset);
+	}
+
+	// count number of lines in header
+	mNumLines = rx.exec( header, "\\n", Regexx::newline | Regexx::global);
 
 	// split header into separate header-fields:
 	rxHeaderFields.expr( "^(\\S.+?\\r\\n(?:\\s.+?\\r\\n)*)(?=(\\Z|\\S))");
@@ -455,7 +479,6 @@ void BmMailHeader::ParseHeader( const BString &header) {
 		// split each headerfield into field-name and field-body:
 		BString headerField, fieldName, fieldBody;
 		header.CopyInto( headerField, i->start(), i->Length());
-		headerField.RemoveAll( "\r");
 		int32 pos = headerField.FindFirst( ':');
 		if (pos == B_ERROR) { 
 			BM_SHOWERR(BString("Could not determine field-name of mail-header-part:\n") << headerField << "\n\nThis header-field will be ignored."); 
@@ -473,37 +496,39 @@ void BmMailHeader::ParseHeader( const BString &header) {
 		fieldBody = rxUnfold.replace( fieldBody, "\\s+$", "", Regexx::global);
 
 		// insert pair into header-map:
-		AddFieldVal( fieldName, ConvertHeaderPartToUTF8( fieldBody));
+		AddFieldVal( fieldName, ConvertHeaderPartToUTF8( fieldBody, mDefaultEncoding));
 		if (BmAddressFieldNames.IFindFirst( fieldName) != B_ERROR) {
 			// field contains an address-spec, we examine the address:
-			BmAddressList addr( mCanonicalHeaders[fieldName]);
+			BmAddressList addr( mEnhancedHeaders[fieldName]);
 			if (addr.InitOK())
 				mAddrMap[fieldName] = addr;
 		}
 
-		BM_LOG2( BM_LogMailParse, fieldName << ": " << fieldBody << "\n------------------");
+		BM_LOG2( BM_LogMailParse, fieldName << ": " << fieldBody);
 	}
 
-	// we construct the 'name' for this mail (will go into attribute MAIL:name)
-	// by fetching the groupname or phrase of the first FROM-address:
-	BmAddressList fromAddrList = mAddrMap["From"];
-	if (fromAddrList.IsGroup()) {
-		AddFieldVal( "Name", fromAddrList.GroupName());
-	} else {
-		BmAddress fromAddr = fromAddrList.FirstAddress();
-		if (fromAddr.HasPhrase())
-			AddFieldVal( "Name", fromAddr.Phrase());
-		else
-			AddFieldVal( "Name", fromAddr.AddrSpec());
+	if (mMail) {
+		// we construct the 'name' for this mail (will go into attribute MAIL:name)
+		// by fetching the groupname or phrase of the first FROM-address:
+		BmAddressList fromAddrList = mAddrMap["From"];
+		if (fromAddrList.IsGroup()) {
+			mEnhancedHeaders.Set( "Name", fromAddrList.GroupName());
+		} else {
+			BmAddress fromAddr = fromAddrList.FirstAddress();
+			if (fromAddr.HasPhrase())
+				mEnhancedHeaders.Set( "Name", fromAddr.Phrase());
+			else
+				mEnhancedHeaders.Set( "Name", fromAddr.AddrSpec());
+		}
 	}
 }
 
 /*------------------------------------------------------------------------------*\
-	CanonicalizeField()
+	EnhanceField()
 		-	
 \*------------------------------------------------------------------------------*/
-BString BmMailHeader::CanonicalizeField( BString fieldValue, BString* commentBuffer) {
-	BString canonical;
+BString BmMailHeader::EnhanceField( BString fieldValue, BString* commentBuffer) {
+	BString stripped;
 	const char* pos = fieldValue.String();
 	const char* endPos;
 	while( *pos) {
@@ -514,13 +539,13 @@ BString BmMailHeader::CanonicalizeField( BString fieldValue, BString* commentBuf
 			if (*endPos) {
 				// found complete quoted-string, we copy it:
 				int32 numChars = 1+endPos-pos;
-				canonical.Append( pos, numChars);
+				stripped.Append( pos, numChars);
 				pos += numChars;
 			} else {
 				// it seems that there is no ending quote, we assume the remainder to be 
 				// part of the quoted string (and add the missing quote):
-				canonical.Append( pos);
-				canonical.Append( "\"");
+				stripped.Append( pos);
+				stripped.Append( "\"");
 				pos = endPos;
 			}
 		} else if (*pos == '(') {
@@ -541,7 +566,8 @@ BString BmMailHeader::CanonicalizeField( BString fieldValue, BString* commentBuf
 				pos += numChars;
 			} else {
 				// it seems that there is no ending paranthesis, so we assume that all the
-				// remains are part of this incomplete comment. This comment will be left out.
+				// remains are part of this incomplete comment. We add the missing paranthesis
+				// to the comment buffer:
 				if (commentBuffer) {
 					commentBuffer->Append( pos);
 					commentBuffer->Append( ")");
@@ -552,7 +578,7 @@ BString BmMailHeader::CanonicalizeField( BString fieldValue, BString* commentBuf
 			// replace linear whitespace by a single space:
 			for( endPos=pos+1;  *endPos=='\t' || *endPos==' ';  ++endPos)
 				;
-			canonical.Append( " ");
+			stripped.Append( " ");
 			pos += endPos-pos;
 		} else {
 			// we copy characters until we find the start of a quoted-string,
@@ -562,11 +588,11 @@ BString BmMailHeader::CanonicalizeField( BString fieldValue, BString* commentBuf
 					++endPos)
 				;
 			int32 numChars = endPos-pos;
-			canonical.Append( pos, numChars);
+			stripped.Append( pos, numChars);
 			pos += numChars;
 		}
 	}
-	return canonical;
+	return stripped;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -585,7 +611,7 @@ bool BmMailHeader::ParseDateTime( const BString& str, time_t& dateTime) {
 \*------------------------------------------------------------------------------*/
 void BmMailHeader::StoreAttributes( BFile& mailFile) {
 	//
-	BString s = mCanonicalHeaders["Name"];
+	BString s = mEnhancedHeaders["Name"];
 	mailFile.WriteAttr( "MAIL:name", B_STRING_TYPE, 0, s.String(), s.Length()+1);
 	s = mAddrMap["Reply-To"];
 	mailFile.WriteAttr( "MAIL:reply", B_STRING_TYPE, 0, s.String(), s.Length()+1);

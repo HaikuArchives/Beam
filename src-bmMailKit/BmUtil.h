@@ -100,5 +100,10 @@ BString TimeToString( time_t t);
 BString operator+(const BString& s1, const BString& s2);
 BString operator+(const char* s1, const BString& s2);
 BString operator+(const BString& s1, const char* s2);
+/*------------------------------------------------------------------------------*\*\
+	utility function that removes a set of chars from a BString
+	(needed since performance of BString::RemoveAll() is so pathetic...)
+\*------------------------------------------------------------------------------*/
+BString& RemoveSetFromString( BString& str, const char* chars);
 
 #endif

@@ -45,8 +45,8 @@ public:
 	BPath	SettingsPath;
 	//
 	font_height BePlainFontHeight;
-	float FontHeight();
-	float FontLineHeight();
+	float FontHeight( const BFont* font=NULL);
+	float FontLineHeight( const BFont* font=NULL);
 	//
 	const char* WHITESPACE;
 
@@ -58,6 +58,8 @@ private:
 	// folders living under settings/Beam/:
 	BDirectory mMailCacheFolder;
 	BDirectory mStateInfoFolder;
+	
+	BResources* mResources;
 };
 
 #define TheResources BmResources::theInstance

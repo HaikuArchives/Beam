@@ -5,7 +5,7 @@
 
 #include <string.h>
 
-#include <UTF8.h>
+#include <E-mail.h>
 
 #include <regexx/regexx.hh>
 using namespace regexx;
@@ -34,17 +34,12 @@ int32 BmEncoding::CharsetToEncoding( const BString& charset) {
 	if (set == "ISO-8859-9") 		return( B_ISO9_CONVERSION);
 	if (set == "ISO-8859-10") 		return( B_ISO10_CONVERSION);
 /*	
-	[zooey]:	does not seem to be registered with MIME ?!?
-	if (charset == "macintosh") 		return( B_MAC_ROMAN_CONVERSION);
-*/
+	[zooey]:	does not seem to be registered with MIME ?!? */
+	if (set == "macintosh") 		return( B_MAC_ROMAN_CONVERSION);
 	if (set == "SHIFT_JIS") 		return( B_SJIS_CONVERSION);
 	if (set == "EUC-JP") 			return( B_EUC_CONVERSION);
 	if (set == "ISO-2022-JP")	 	return( B_JIS_CONVERSION);
 	if (set == "WINDOWS-1252") 	return( B_MS_WINDOWS_CONVERSION);
-/*	
-	[zooey]:	makes no sense within e-mail ?!?:
-	if (charset == "") 		return( B_UNICODE_CONVERSION);
-*/
 	if (set == "KOI8-R") 			return( B_KOI8R_CONVERSION);
 	if (set == "WINDOWS-1251") 	return( B_MS_WINDOWS_1251_CONVERSION);
 	if (set == "IBM866") 			return( B_MS_DOS_866_CONVERSION);
@@ -54,7 +49,41 @@ int32 BmEncoding::CharsetToEncoding( const BString& charset) {
 	if (set == "ISO-8859-14") 		return( B_ISO14_CONVERSION);
 	if (set == "ISO-8859-15") 		return( B_ISO15_CONVERSION);
 
-	return -1;		// to indicate us-ascii (which is the fallback)
+	return B_ISO1_CONVERSION;		// just anything that is compatible with us-ascii (which is the fallback)
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+BString BmEncoding::EncodingToCharset( const int32 encoding) {
+	if (encoding == B_ISO1_CONVERSION) 		return( "ISO-8859-1");
+	if (encoding == B_ISO2_CONVERSION) 		return( "ISO-8859-2");
+	if (encoding == B_ISO3_CONVERSION) 		return( "ISO-8859-3");
+	if (encoding == B_ISO4_CONVERSION) 		return( "ISO-8859-4");
+	if (encoding == B_ISO5_CONVERSION) 		return( "ISO-8859-5");
+	if (encoding == B_ISO6_CONVERSION) 		return( "ISO-8859-6");
+	if (encoding == B_ISO7_CONVERSION) 		return( "ISO-8859-7");
+	if (encoding == B_ISO8_CONVERSION) 		return( "ISO-8859-8");
+	if (encoding == B_ISO9_CONVERSION) 		return( "ISO-8859-9");
+	if (encoding == B_ISO10_CONVERSION) 	return( "ISO-8859-10");
+/*	
+	[zooey]:	although it does not seem to be registered with MIME ?!? */
+	if (encoding == B_MAC_ROMAN_CONVERSION)	return( "macintosh");
+	if (encoding == B_SJIS_CONVERSION) 		return( "SHIFT_JIS");
+	if (encoding == B_EUC_CONVERSION) 		return( "EUC-JP");
+	if (encoding == B_JIS_CONVERSION)	 	return( "ISO-2022-JP");
+	if (encoding == B_MS_WINDOWS_CONVERSION) 	return( "WINDOWS-1252");
+	if (encoding == B_KOI8R_CONVERSION) 	return( "KOI8-R");
+	if (encoding == B_MS_WINDOWS_1251_CONVERSION) 	return( "WINDOWS-1251");
+	if (encoding == B_MS_DOS_866_CONVERSION)	return( "IBM866");
+	if (encoding == B_MS_DOS_CONVERSION) 	return( "IBM850");
+	if (encoding == B_EUC_KR_CONVERSION) 	return( "EUC-KR");
+	if (encoding == B_ISO13_CONVERSION) 	return( "ISO-8859-13");
+	if (encoding == B_ISO14_CONVERSION) 	return( "ISO-8859-14");
+	if (encoding == B_ISO15_CONVERSION) 	return( "ISO-8859-15");
+
+	return "US-ASCII";		// to indicate us-ascii (which is the fallback)
 }
 
 /*------------------------------------------------------------------------------*\
@@ -66,8 +95,10 @@ BString BmEncoding::ConvertToUTF8( uint32 srcEncoding, const char* srcBuf) {
 	char* destBuf = NULL;
 	int32 srcbuflen = strlen(srcBuf);
 	int32 state=0;
-	int32 buflen = (int32)(srcbuflen*1.5);
+	int32 buflen = srcbuflen>92 ? (int32)(srcbuflen*1.5) : 128;
 	status_t st;
+	if (!srcbuflen)
+		return "";
 
 	try {
 		for( bool finished=false; !finished; ) {
@@ -114,17 +145,26 @@ char* BmEncoding::Encode( const BString& encodingStyle, char* text) {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmEncoding::Decode( const BString& encodingStyle, BString& text) {
-	if (encodingStyle.ICompare( "Q") == 0) {
+void BmEncoding::Decode( const BString& encodingStyle, BString& text, 
+								 bool isEncodedWord, bool isText) {
+	if (encodingStyle.ICompare( "Q")==0 || encodingStyle.ICompare("Quoted-Printable")==0) {
 		// quoted printable:
-		text.ReplaceAll( "_", " ");
-		int32 len=text.Length();
-		int32 nm;
 		Regexx rx;
+		// remove trailing whitespace (was added during mail-transport):
+		text = rx.replace( text, "\\s+(?=\\r\\n)", "", Regexx::newline | Regexx::global);
+		// join together lines that end with a softbreak:
+		text = rx.replace( text, "=\\r\\n", "", Regexx::newline | Regexx::global);
+		if (isEncodedWord) {
+			// in encoded-words, underlines are really spaces (a real underline is encoded):
+			text.ReplaceAll( "_", " ");
+		}
+		// now we decode the quoted printables:
 		rx.expr( "=([0-9A-F][0-9A-F])");
 		rx.str( text);
+		int32 len=text.Length();
+		int32 nm;
 		if ((nm = rx.exec( Regexx::global | Regexx::nocase))) {
-			char* buf = text.LockBuffer(len+1);
+			char* buf = text.LockBuffer(0);
 			unsigned char ch;
 			int32 neg_offs=0;
 			int32 curr=0;
@@ -136,20 +176,28 @@ void BmEncoding::Decode( const BString& encodingStyle, BString& text) {
 				}
 				ch = HEXDIGIT2CHAR(buf[pos+1])*16 + HEXDIGIT2CHAR(buf[pos+2]);
 				buf[pos-neg_offs] = ch;
-				curr = pos-neg_offs+1;
+				curr = pos+3;
 				neg_offs += 2;
 			}
-			if (curr<len-neg_offs) {
-				memmove( buf+curr-neg_offs, buf+curr, len-neg_offs-curr);
+			if (curr<len && neg_offs) {
+				memmove( buf+curr-neg_offs, buf+curr, len-curr);
 			}
 			buf[len-neg_offs] = '\0';
-			text.UnlockBuffer( -1);
+			text.UnlockBuffer( len-neg_offs);
 		}
-	} else if (encodingStyle.ICompare( "B") == 0) {
+	} else if (encodingStyle.ICompare( "B") == 0 || encodingStyle.ICompare("Base64")==0) {
 		// base64:
-	} else {
+		bool convertCRs = isText;
+		off_t inSize = text.Length();
+		if (!inSize)
+			return;
+		char* in = text.LockBuffer(0);
+		ssize_t outSize = decode_base64( in, in, inSize, convertCRs);
+		text.UnlockBuffer( outSize);
+	} else if (encodingStyle.ICompare( "7bit") && encodingStyle.ICompare( "8bit")
+				  && encodingStyle.ICompare( "binary")) {
 		// oops, we don't know this one:
-		ShowAlert( BString("Decode(): Unrecognized encoding-style <")<<encodingStyle<<"> found.\nNo encoding will take place.");
+		ShowAlert( BString("Decode(): Unrecognized encoding-style <")<<encodingStyle<<"> found.\nNo decoding will take place.");
 	}
 }
 
@@ -157,14 +205,15 @@ void BmEncoding::Decode( const BString& encodingStyle, BString& text) {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BString BmEncoding::ConvertHeaderPartToUTF8( const BString& headerPart) {
+BString BmEncoding::ConvertHeaderPartToUTF8( const BString& headerPart, 
+															int32 defaultEncoding) {
 	int32 nm;
 	Regexx rx;
 	rx.expr( "=\\?(.+?)\\?(.)\\?(.+?)\\?=\\s*");
 	rx.str( headerPart);
-
+	BString utf8;
+	
 	if ((nm = rx.exec( Regexx::global))) {
-		BString utf8;
 		int32 len=headerPart.Length();
 		int32 curr=0;
 		vector<RegexxMatch>::const_iterator i;
@@ -177,7 +226,7 @@ BString BmEncoding::ConvertHeaderPartToUTF8( const BString& headerPart) {
 			BString srcCharset( i->atom[0]);
 			BString srcQuotingStyle( i->atom[1]);
 			BString text( i->atom[2]);
-			Decode( srcQuotingStyle, text);
+			Decode( srcQuotingStyle, text, true, true);
 			
 			utf8 += ConvertToUTF8( CharsetToEncoding(srcCharset), text.String());
 			curr = i->start()+i->Length();
@@ -185,10 +234,10 @@ BString BmEncoding::ConvertHeaderPartToUTF8( const BString& headerPart) {
 		if (curr<len) {
 			utf8.Append( headerPart.String()+curr, len-curr);
 		}
-		return utf8;
 	} else {
-		return headerPart;
+		utf8 = ConvertToUTF8( defaultEncoding, headerPart.String());
 	}
+	return utf8;
 }
 
 /*------------------------------------------------------------------------------*\

@@ -57,8 +57,10 @@ fDragGroups(10)
 CLVColumnLabelView::~CLVColumnLabelView()
 {
 	int32 NumberOfGroups = fDragGroups.CountItems();
-	for(int32 Counter = 0; Counter < NumberOfGroups; Counter++)
-		fDragGroups.RemoveItem(int32(0));
+	for(int32 Counter = 0; Counter < NumberOfGroups; Counter++) {
+		CLVDragGroup* item = (CLVDragGroup*)fDragGroups.RemoveItem(int32(0));
+		delete item;
+	}
 }
 
 

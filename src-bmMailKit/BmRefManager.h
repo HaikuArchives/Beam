@@ -46,7 +46,7 @@ public:
 		BAutolock lock( mLocker);
 		lock.IsLocked()	 					|| BM_THROW_RUNTIME( "RemoveRef(): Unable to get lock");
 		int32 numRefs = --mRefMap[ptr];
-		BM_LOG2( BM_LogUtil, BString("RefManager: reference to <") << ptr->Name() << ")> removed, ref-count is "<<numRefs);
+		BM_LOG2( BM_LogUtil, BString("RefManager: reference to <") << ptr->Name() << "> removed, ref-count is "<<numRefs);
 		if (numRefs == 0) {
 			// removed last reference, so we delete the object:
 			mRefMap.erase( ptr);

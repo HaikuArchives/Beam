@@ -250,8 +250,8 @@ void BmMailRefView::SelectionChanged( void) {
 		refItem = dynamic_cast<BmMailRefItem*>(ItemAt( selection));
 		if (refItem) {
 			BmMailRef* ref = dynamic_cast<BmMailRef*>(refItem->ModelItem());
-			if (ref)
-				TheMailView->ShowMail( ref);
+			if (ref && mPartnerMailView)
+				mPartnerMailView->ShowMail( ref);
 		}
 	}
 }

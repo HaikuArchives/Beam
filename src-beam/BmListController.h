@@ -140,7 +140,7 @@ public:
 	virtual BmListViewItem* CreateListViewItem( BmListModelItem* item, 
 															  BMessage* archive=NULL) 			= 0;
 	//
-	BMessage* GetArchiveForItemKey( BString);
+	BMessage* GetArchiveForItemKey( BString, BMessage* msg=NULL);
 
 	// overrides of controller base:
 	void AttachModel( BmDataModel* model=NULL);

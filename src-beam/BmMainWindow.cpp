@@ -104,6 +104,8 @@ BmMainWindow::BmMainWindow()
 			0
 		);
 
+	mMailRefView->TeamUpWith( mMailView);
+
 	AddChild( dynamic_cast<BView*>(mOuterGroup));
 }
 
@@ -224,6 +226,7 @@ bool BmMainWindow::QuitRequested() {
 		-	standard BeOS-behaviour, we quit
 \*------------------------------------------------------------------------------*/
 void BmMainWindow::Quit() {
+	mMailView->DetachModel();
 	mMailRefView->DetachModel();
 	mMailFolderView->DetachModel();
 	BM_LOG2( BM_LogMainWindow, BString("MainWindow has quit"));
@@ -248,6 +251,8 @@ bool BmMainWindow::Store() {
 													|| BM_THROW_RUNTIME( BString("Could not create cache file\n\t<") << filename << ">\n\n Result: " << strerror(err));
 		(err = archive.Flatten( &cacheFile)) == B_OK
 													|| BM_THROW_RUNTIME( BString("Could not store state-cache into file\n\t<") << filename << ">\n\n Result: " << strerror(err));
+		if (mMailView)
+			mMailView->Store();
 	} catch( exception &e) {
 		BM_SHOWERR( e.what());
 		return false;

@@ -11,7 +11,6 @@
 #include "BmListController.h"
 
 class BmMailFolder;
-
 /*------------------------------------------------------------------------------*\
 	BmMailRefItem
 		-	
@@ -31,6 +30,7 @@ public:
 
 };
 
+class BmMailView;
 /*------------------------------------------------------------------------------*\
 	BmMailRefView
 		-	
@@ -47,6 +47,7 @@ public:
 
 	// native methods:
 	void ShowFolder( BmMailFolder* folder);
+	void TeamUpWith( BmMailView* mv) 	{ mPartnerMailView = mv; }
 
 	// overrides of listview base:
 	void MessageReceived( BMessage* msg);
@@ -61,6 +62,7 @@ public:
 	
 private:
 	BmMailFolder* mCurrFolder;
+	BmMailView* mPartnerMailView;
 
 };
 

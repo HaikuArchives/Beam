@@ -64,6 +64,17 @@ BmResources::BmResources()
 \*------------------------------------------------------------------------------*/
 BmResources::~BmResources()
 {
+	BmIconMap::iterator iter;
+	for( iter = IconMap.begin(); iter != IconMap.end(); ++iter) {
+		BBitmap* item = iter->second;
+		delete item;
+	}
+	IconMap.clear();
+
+	// and now... we do something that is AGAINST THE BE_BOOK (gasp)
+	// by deleting the apps resources (no one else will do it for us...):
+	delete mResources;
+
 	theInstance = NULL;
 }
 
@@ -73,7 +84,7 @@ BmResources::~BmResources()
 			they can be easily accessed.
 \*------------------------------------------------------------------------------*/
 void BmResources::FetchIcons() {
-	BResources* res = be_app->AppResources();
+	BResources* res = mResources = be_app->AppResources();
 	type_code iconType = 'BBMP';
 	res->PreloadResourceType( iconType);
 	int32 id;
@@ -98,18 +109,30 @@ void BmResources::FetchIcons() {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-float BmResources::FontHeight() { 
-	return BePlainFontHeight.ascent + BePlainFontHeight.descent; 
+float BmResources::FontHeight( const BFont* font) { 
+	font_height fh;
+	if (!font)
+		fh = BePlainFontHeight;
+	else
+		font->GetHeight( &fh);
+
+	return fh.ascent + fh.descent; 
 }
 
 /*------------------------------------------------------------------------------*\
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-float BmResources::FontLineHeight() {
-	return BePlainFontHeight.ascent 
-			+ BePlainFontHeight.descent 
-			+ BePlainFontHeight.leading; 
+float BmResources::FontLineHeight( const BFont* font) {
+	font_height fh;
+	if (!font)
+		fh = BePlainFontHeight;
+	else
+		font->GetHeight( &fh);
+
+	return fh.ascent 
+			+ fh.descent 
+			+ fh.leading; 
 }
 
 /*------------------------------------------------------------------------------*\

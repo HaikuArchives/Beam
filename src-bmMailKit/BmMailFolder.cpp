@@ -155,7 +155,7 @@ void BmMailFolder::CreateMailRefList() {
 	if (mMailRefList) {
 		RemoveMailRefList();
 	}
-	mMailRefList = new BmMailRefList( this, mNeedsCacheUpdate);
+	mMailRefList = new BmMailRefList( this, mLastModified);
 	mNeedsCacheUpdate = false;
 }
 

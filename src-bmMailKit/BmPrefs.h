@@ -8,6 +8,7 @@
 #define _BmPrefs_h
 
 #include <Archivable.h>
+#include <Font.h>
 #include <String.h>
 
 /*------------------------------------------------------------------------------*\
@@ -28,6 +29,7 @@ class BmPrefs : public BArchivable {
 	static const char* const MSG_STRIPED_LISTVIEW = 	"bm:strpdlv";
 	static const char* const MSG_MAILREF_LAYOUT = 		"bm:mreflayout";
 	static const char* const MSG_RESTORE_FOLDERS = 		"bm:rstfldrs";
+	static const char* const MSG_HEADERVIEW_MODE = 		"bm:hdrvmode";
 
 	static const char* const PREFS_FILENAME = 			"General Settings";
 
