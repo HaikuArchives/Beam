@@ -287,7 +287,7 @@ public:
 	void MessageReceived( BMessage* msg);
 
 	// getters:
-	bool HasActiveJobs() const				{ return !mActiveJobs.empty(); }
+	bool HasActiveJobs();
 
 	//
 	static const rgb_color BM_COL_STATUSBAR;

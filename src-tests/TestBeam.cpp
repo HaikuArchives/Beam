@@ -177,7 +177,7 @@ int32 StartTests( void* args) {
 	// change to src-test folder in order to be able to read
 	// testdata:
 	BmString testPath(testApp->AppPath());
-	testPath.Truncate( testPath.FindLast( "/beam/"));
+	testPath.Truncate( testPath.FindLast( "/beam"));
 	testPath << "/beam_testdata";
 	if (!access( testPath.String(), R_OK)) {
 		HaveTestdata = true;

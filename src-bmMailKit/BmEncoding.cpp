@@ -223,6 +223,7 @@ struct BmTextPart {
 		,	text( t)
 		,	encodingStyle( es) 				{ }
 };
+
 /*------------------------------------------------------------------------------*\
 	()
 		-	
@@ -348,10 +349,10 @@ BmString BmEncoding::ConvertUTF8ToHeaderPart( const BmString& utf8Text,
 	bool needsQuotedPrintable = false;
 	BmString transferEncoding = "7bit";
 	if (useQuotedPrintableIfNeeded)
-		needsQuotedPrintable = NeedsEncoding( utf8Text, 
-														  BM_MAX_HEADER_LINE_LEN);
+		needsQuotedPrintable = NeedsQuotedPrintableEncoding( utf8Text);
 	if (ThePrefs->GetBool( "Allow8BitMimeInHeader", false) 
 	&& needsQuotedPrintable) {
+		// use 8bitmime instead of quoted-printable (problematic in headers!)
 		transferEncoding = "8bit";
 		needsQuotedPrintable = false;
 	}
@@ -383,16 +384,17 @@ BmString BmEncoding::ConvertUTF8ToHeaderPart( const BmString& utf8Text,
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-bool BmEncoding::NeedsEncoding( const BmString& utf8String, int16 maxLineLen) {
+bool BmEncoding::NeedsQuotedPrintableEncoding( const BmString& utf8String, 
+															  uint16 maxLineLen) {
 	// check if string needs quoted-printable/base64 encoding;
 	// encoding is needed: 
 	// 	- if the string contains non-ASCII chars
-	// 	- if the string contains lines longer than 998 characters
+	// 	- if the string contains lines longer than the given maxLineLen
 	const char* lastNlPos = utf8String.String()-1;
 	for( const char* p = utf8String.String(); *p; ++p) {
 		signed char c = *p;
 		if (c=='\n') {
-			if (p - lastNlPos > maxLineLen)
+			if (maxLineLen && p - lastNlPos > maxLineLen)
 				// line is too long and needs to be encoded:
 				return true;
 			lastNlPos = p;
@@ -400,7 +402,8 @@ bool BmEncoding::NeedsEncoding( const BmString& utf8String, int16 maxLineLen) {
 			// N.B.: This is a signed char, so c<32 means [0-31] and [128-255]
 			return true;
 	}
-	return (utf8String.String()+utf8String.Length() - lastNlPos > maxLineLen);
+	return maxLineLen 
+			 && (utf8String.String()+utf8String.Length()-lastNlPos > maxLineLen);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -524,6 +527,7 @@ void BmUtf8Decoder::Reset( BmMemIBuf* input) {
 	InitConverter();
 	mHadToDiscardChars = false;
 	mFirstDiscardedPos = -1;
+	mStoppedOnMultibyte = false;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -624,6 +628,32 @@ void BmUtf8Decoder::Filter( const char* srcBuf, uint32& srcLen,
 	BM_LOG3( BM_LogMailParse, "utf8-decode: done");
 }
 
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmUtf8Decoder::Finalize( char* destBuf, uint32& destLen) {
+	BM_LOG3( BM_LogMailParse, "finalizing utf8-decoding");
+
+	const char* inBuf = NULL;
+	size_t inBytesLeft = 0;
+	char* outBuf = destBuf;
+	size_t outBytesLeft = destLen;
+	size_t irrevCount = iconv( mIconvDescr, &inBuf, &inBytesLeft, 
+										&outBuf, &outBytesLeft);
+	destLen -= outBytesLeft;
+	if (irrevCount == (size_t)-1) {
+		if (errno == E2BIG) {
+			BM_LOG3( BM_LogMailParse, 
+						"Result in utf8-decode: too big, need to continue");
+			return;
+		}
+	}
+	mIsFinalized = true;
+
+	BM_LOG3( BM_LogMailParse, "utf8-decode: done");
+}
+
 
 
 /********************************************************************************\
@@ -644,6 +674,7 @@ BmUtf8Encoder::BmUtf8Encoder( BmMemIBuf* input, const BmString& srcCharset,
 	,	mHadToDiscardChars( false)
 	,	mFirstDiscardedPos( -1)
 	,	mStoppedOnMultibyte( false)
+	,	mHaveResetToInitialState( false)
 {
 	if (mSrcCharset.ICompare("utf8")==0)
 		// common mistake: utf8 instead of utf-8:
@@ -673,6 +704,8 @@ void BmUtf8Encoder::Reset( BmMemIBuf* input) {
 	InitConverter();
 	mHadToDiscardChars = false;
 	mFirstDiscardedPos = -1;
+	mStoppedOnMultibyte = false;
+	mHaveResetToInitialState = false;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -745,11 +778,18 @@ void BmUtf8Encoder::Filter( const char* srcBuf, uint32& srcLen,
 						"Result in utf8-encode: too big, need to continue");
 		else if (errno == EINVAL) {
 			if (mStoppedOnMultibyte) {
-				BM_SHOWERR( "utf8-encode: encountered incomplete multibyte "
-								"character, parts of text may be missing");
-				mHadError = true;
+				if (!mHaveResetToInitialState) {
+					// return to inital state:
+					iconv( mIconvDescr, NULL, NULL, NULL, NULL);
+					mHaveResetToInitialState = true;
+				} else {
+					BM_SHOWERR( "utf8-encode: encountered incomplete multibyte "
+									"character, parts of text may be missing");
+					mHadError = true;
+				}
 			} else {
 				mStoppedOnMultibyte = true;
+				mHaveResetToInitialState = false;
 				BM_LOG3( BM_LogMailParse, 
 							"Result in utf8-encode: stopped on multibyte char, "
 							"need to continue");
@@ -1230,12 +1270,14 @@ bool BmQpEncodedWordEncoder::OutputLineIfNeeded( char* &dest,
 void BmQpEncodedWordEncoder::EncodeConversionBuf() { 
 	const char* safeChars = 
 			 (ThePrefs->GetBool( "MakeQPSafeForEBCDIC", false)
-					? "%&/()+*,.;:<>-"
-					: "%&/()+*,.;:<>-!\"#$@[]\\^'{|}~");
+					? "%&/+*.-"
+					: "%&/+*.-!#$@^{|}");
 							// in encoded words, underscore has to be encoded, since
 							// it is used for spaces!
 							// the question-mark has to be encoded, too, since it
 							// is part of the encoded-word markers!
+							// the characters ()"'<>;:[] are considered dangerous in 
+							// encoded words, so these are encoded, too.
 	char c;
 	int32 len = mConversionBuf.Length();
 	if (len>0) {

@@ -2,6 +2,40 @@ change-history of Beam:
 		$Id$
 
 *******************************************************************************
+[Beam 1.0-rc7]
+*******************************************************************************
+
+< 2003-11-12: commit>
+
+BmBodyPartList, BmEncoding, BmMailHeader:
+	-	fixed bug with illegal characters being able to slip into encoded
+		mail-headers, some of which do indeed confuse mail-servers and
+		cause mails to be garbled. 
+		Now we avoid any of <>:;()[]\ to be included in mail-headers in
+		an unencoded form.
+	-	fixed possible encoding of References- and In-Reply-To-fields
+		although encoding is forbidden within these fields.
+
+BmEncoding:
+	-	added Finalize() to Utf8Decoder, where give iconv the opportunity
+		to add a final shift-sequence if needed (e.g. for iso-2022-jp).
+	-	added support for automatically suppressing conversion errors if
+		(and only if) all that is missing is the final shift-sequence.
+		This "error" happens a lot because of several MUAs (Beam included)
+		not doing iso-2022-jp conversion *quite* right.
+
+BmJobStatusWin:
+	-	improved checking for active jobs such that inactive (but visible)
+		jobs no longer trigger the alert.
+
+BmPrefsMailConstrView:
+	-	made the two settings 'AddPeopleNameToMailAddr' and 
+		'LookForPeopleInPeopleFolder' actually work.
+
+EncodedWordEncoderTest:
+	-	changed results to comply with new encoding rules.
+
+*******************************************************************************
 [Beam 1.0-rc6]
 *******************************************************************************
 

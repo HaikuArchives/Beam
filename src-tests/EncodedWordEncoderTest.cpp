@@ -132,12 +132,12 @@ EncodedWordEncoderTest::SimpleTest() {
 		"=?utf-8?q?=01=02=03=04=05=06=07=08=09=0A=0B=0C=0E=0F?=",
 							// yes, =0D (\r) is dumped!
 		"=?utf-8?q?=10=11=12=13=14=15=16=17=18=19=1A=1B=1C=1D=1E=1F?=",
-		"=?utf-8?q?_!\"#$%&'()*+,-./?=",
-		"=?utf-8?q?0123456789:;<=3D>=3F?=",
+		"=?utf-8?q?_!=22#$%&=27=28=29*+=2C-./?=",
+		"=?utf-8?q?0123456789=3A=3B=3C=3D=3E=3F?=",
 		"=?utf-8?q?@ABCDEFGHIJKLMNO?=",
-		"=?utf-8?q?PQRSTUVWXYZ[\\]^=5F?=",
+		"=?utf-8?q?PQRSTUVWXYZ=5B=5C=5D^=5F?=",
 		"=?utf-8?q?=60abcdefghijklmno?=",
-		"=?utf-8?q?pqrstuvwxyz{|}~=7F?=",
+		"=?utf-8?q?pqrstuvwxyz{|}=7E=7F?=",
 	};
 	for( int i = 0; i<8; ++i) {
 		NextSubTest(); 
@@ -158,10 +158,11 @@ EncodedWordEncoderTest::MultiLineTest() {
 		"die den Tod bezwingt auszudenken "
 		"und ließ mich nieder wo ich mich beherrsche",
 		//
-		"=?utf-8?q?Ich_war_dabei_mir_eine_Art_von_Verschwinden,_"
-		"die_den_Tod_bezwing?=\r\n"
-		" =?utf-8?q?t_auszudenken_und_lie=C3=9F_mich_nieder_"
-		"wo_ich_mich_beherrsche?="
+		"=?utf-8?q?Ich_war_dabei_mir_eine_Art_von_Verschwinden=2C_"
+		"die_den_Tod_bezwi?=\r\n"
+		" =?utf-8?q?ngt_auszudenken_und_lie=C3=9F_mich_nieder_"
+		"wo_ich_mich_beherrsch?=\r\n"
+		" =?utf-8?q?e?="
 	);
 	// check wrapping border at 76 characters (should not be folded):
 	NextSubTest(); 
@@ -273,8 +274,8 @@ EncodedWordEncoderTest::MultiLineTest() {
 	// in QpEncodedWordEncoder:
 	NextSubTest(); 
 	EncodeQpAndCheck( "Re: ありがとうございます。 (and more...)",
-							"=?utf-8?q?Re:_=E3=81=82=E3=82=8A=E3=81=8C=E3=81=A8=E3"
+							"=?utf-8?q?Re=3A_=E3=81=82=E3=82=8A=E3=81=8C=E3=81=A8=E3"
 								"=81=86=E3=81=94?=\r\n"
 							" =?utf-8?q?=E3=81=96=E3=81=84=E3=81=BE=E3=81=99=E3=80"
-								"=82_(and_more...)?=");
+								"=82_=28and_more...=29?=");
 }

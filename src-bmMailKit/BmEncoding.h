@@ -71,7 +71,8 @@ namespace BmEncoding {
 												 bool useQuotedPrintableIfNeeded, 
 												 int32 fieldLen);
 	
-	bool NeedsEncoding( const BmString& utf8String, int16 maxLineLen);
+	bool NeedsQuotedPrintableEncoding( const BmString& utf8String, 
+												  uint16 maxLineLen=0);
 	bool IsCompatibleWithText( const BmString& s);
 
 	typedef auto_ptr<BmMemFilter> BmMemFilterRef;
@@ -114,6 +115,7 @@ protected:
 	// overrides of BmMailFilter base:
 	void Filter( const char* srcBuf, uint32& srcLen, 
 					 char* destBuf, uint32& destLen);
+	void Finalize( char* destBuf, uint32& destLen);
 
 	BmString mDestCharset;
 	iconv_t mIconvDescr;
@@ -160,6 +162,7 @@ protected:
 	bool mHadToDiscardChars;
 	int32 mFirstDiscardedPos;
 	bool mStoppedOnMultibyte;
+	bool mHaveResetToInitialState;
 };
 
 /*------------------------------------------------------------------------------*\

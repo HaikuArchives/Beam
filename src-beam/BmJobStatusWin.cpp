@@ -999,3 +999,20 @@ void BmJobStatusWin::RemoveJob( const char* name) {
 			Hide();
 	}
 }
+
+/*------------------------------------------------------------------------------*\
+	HasActiveJobs()
+		-	determines whether or not there are still any jobs active
+\*------------------------------------------------------------------------------*/
+bool BmJobStatusWin::HasActiveJobs() {
+	BmAutolockCheckGlobal lock( this);
+	if (!lock.IsLocked())
+		BM_THROW_RUNTIME( "RemoveJob(): could not lock window");
+	JobMap::iterator iter;
+	for( iter = mActiveJobs.begin(); iter != mActiveJobs.end(); ++iter) {
+		BmJobStatusView* jobView = iter->second;
+		if (jobView && jobView->IsJobRunning())
+			return true;
+	}
+	return false;
+}

@@ -843,14 +843,14 @@ void BmPrefsMailConstrView::MessageReceived( BMessage* msg) {
 				break;
 			}
 			case BM_LOOK_IN_PEOPLE_CHANGED: {
-				ThePrefs->SetInt( "LookForPeopleOnlyInPeopleFolder", 
-										mLookInPeopleFolderControl->Value());
+				ThePrefs->SetBool( "LookForPeopleOnlyInPeopleFolder", 
+										 mLookInPeopleFolderControl->Value());
 				NoticeChange();
 				break;
 			}
 			case BM_ADD_PEOPLE_NAME_CHANGED: {
-				ThePrefs->SetInt( "AddPeopleNameToMailAddr", 
-										mAddNameToPeopleControl->Value());
+				ThePrefs->SetBool( "AddPeopleNameToMailAddr", 
+										 mAddNameToPeopleControl->Value());
 				NoticeChange();
 				break;
 			}
