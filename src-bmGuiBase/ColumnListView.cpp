@@ -167,6 +167,8 @@ CLVContainerView* ColumnListView::Initialize( BRect Frame, uint32 flags, uint32 
 	UpdateColumnSizesDataRectSizeScrollBars();
 	fColumnLabelView->UpdateDragGroups();
 
+	SetViewColor( White);
+
 	return fScrollView;
 }
 
@@ -2077,7 +2079,8 @@ void ColumnListView::KeyDown(const char *bytes, int32 numBytes)
 						Select( ++maxSelIdx, true);
 						BRect frame = ItemFrame( maxSelIdx);
 						float newYPos = frame.bottom-Bounds().Height();
-						ScrollTo( BPoint( 0, MAX( 0, newYPos)));
+						if (newYPos > Bounds().top || frame.top < Bounds().top)
+							ScrollTo( BPoint( 0, MAX( 0, newYPos)));
 					}
 					return;
 				}
