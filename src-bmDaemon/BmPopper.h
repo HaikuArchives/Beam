@@ -113,7 +113,6 @@ private:
 
 	static const bool SINGLE_LINE = true;
 	static const bool MULTI_LINE = false;
-	static const int32 NetBufSize = 16384;
 
 	BmRef<BmPopAccount> mPopAccount;		// Info about our pop-account
 

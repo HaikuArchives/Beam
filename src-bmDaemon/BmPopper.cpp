@@ -462,9 +462,10 @@ bool BmPopper::CheckForPositiveAnswer( bool SingleLineMode, int32 mailNr) {
 bool BmPopper::GetAnswer( bool SingleLineMode, int32 mailNr) {
 	int32 offset = 0;
 	int32 SMALL = 512;
-	int32 bufSize = (mailNr>0 && mMsgSizes[mailNr-1] > BmPopper::NetBufSize) 
+	int32 netBufSize = ThePrefs->GetInt( "NetReceiveBufferSize", 65536);
+	int32 bufSize = (mailNr>0 && mMsgSizes[mailNr-1] > netBufSize) 
 							? mMsgSizes[mailNr-1]+SMALL*4
-							: BmPopper::NetBufSize;
+							: netBufSize;
 	char *buffer;
 	bool done = false;
 	bool firstBlock = true;
@@ -487,8 +488,8 @@ bool BmPopper::GetAnswer( bool SingleLineMode, int32 mailNr) {
 				bufFree = bufSize - offset;
 				BM_LOG2( BM_LogPop, BmString("bufSize enlarged to:") << bufSize);
 			}
-			if (bufFree > BmPopper::NetBufSize)
-				bufFree = BmPopper::NetBufSize;
+			if (bufFree > netBufSize)
+				bufFree = netBufSize;
 			numBytes = ReceiveBlock( buffer+offset, bufFree);
 			if (!replyLineExtracted) {
 				// we may have to extract the reply-line from the buffer:
