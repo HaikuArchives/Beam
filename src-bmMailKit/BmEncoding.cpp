@@ -56,6 +56,8 @@ BmCharsetMap BmEncoding::TheCharsetMap;
 
 BmString BmEncoding::DefaultCharset = "ISO-8859-15";
 
+static iconv_t ICONV_ERR = (iconv_t)0xFFFFFFFF;
+
 /*------------------------------------------------------------------------------*\
 	()
 		-	
@@ -416,7 +418,7 @@ BmUtf8Decoder::BmUtf8Decoder( BmMemIBuf* input, const BmString& destCharset,
 										uint32 blockSize)
 	:	inherited( input, blockSize)
 	,	mDestCharset( destCharset)
-	,	mIconvDescr( NULL)
+	,	mIconvDescr( ICONV_ERR)
 	,	mTransliterate( false)
 {
 	InitConverter();
@@ -428,9 +430,9 @@ BmUtf8Decoder::BmUtf8Decoder( BmMemIBuf* input, const BmString& destCharset,
 \*------------------------------------------------------------------------------*/
 BmUtf8Decoder::~BmUtf8Decoder()
 {
-	if (mIconvDescr) {
+	if (mIconvDescr != ICONV_ERR) {
 		iconv_close( mIconvDescr);
-		mIconvDescr = NULL;
+		mIconvDescr = ICONV_ERR;
 	}
 }
 
@@ -448,12 +450,12 @@ void BmUtf8Decoder::Reset( BmMemIBuf* input) {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmUtf8Decoder::InitConverter() {
-	if (mIconvDescr) {
+	if (mIconvDescr != ICONV_ERR) {
 		iconv_close( mIconvDescr);
-		mIconvDescr = NULL;
+		mIconvDescr = ICONV_ERR;
 	}
 	BmString toSet = mDestCharset	+ (mTransliterate ? "//TRANSLIT" : "");
-	if ((mIconvDescr = iconv_open( toSet.String(), "UTF-8")) == NULL) {
+	if ((mIconvDescr = iconv_open( toSet.String(), "UTF-8")) == ICONV_ERR) {
 		BM_LOGERR( BmString("libiconv: unable to convert from UTF-8 to ") << toSet);
 		mHadError = true;
 	}
@@ -464,12 +466,10 @@ void BmUtf8Decoder::InitConverter() {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmUtf8Decoder::SetTransliterate( bool transliterate) {
-#ifdef BM_USE_ICONV
-	if (mIconvDescr && mTransliterate == transliterate)
+	if (mIconvDescr != ICONV_ERR && mTransliterate == transliterate)
 		return;
 	mTransliterate = transliterate;
 	InitConverter();
-#endif
 }
 
 /*------------------------------------------------------------------------------*\
@@ -526,7 +526,7 @@ BmUtf8Encoder::BmUtf8Encoder( BmMemIBuf* input, const BmString& srcCharset,
 										uint32 blockSize)
 	:	inherited( input, blockSize)
 	,	mSrcCharset( srcCharset)
-	,	mIconvDescr( NULL)
+	,	mIconvDescr( ICONV_ERR)
 	,	mTransliterate( false)
 {
 	InitConverter();
@@ -538,9 +538,9 @@ BmUtf8Encoder::BmUtf8Encoder( BmMemIBuf* input, const BmString& srcCharset,
 \*------------------------------------------------------------------------------*/
 BmUtf8Encoder::~BmUtf8Encoder()
 {
-	if (mIconvDescr) {
+	if (mIconvDescr != ICONV_ERR) {
 		iconv_close( mIconvDescr);
-		mIconvDescr = NULL;
+		mIconvDescr = ICONV_ERR;
 	}
 }
 
@@ -558,12 +558,12 @@ void BmUtf8Encoder::Reset( BmMemIBuf* input) {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmUtf8Encoder::InitConverter() { 
-	if (mIconvDescr) {
+	if (mIconvDescr != ICONV_ERR) {
 		iconv_close( mIconvDescr);
-		mIconvDescr = NULL;
+		mIconvDescr = ICONV_ERR;
 	}
 	BmString toSet = BmString("UTF-8") + (mTransliterate ? "//TRANSLIT" : "");
-	if ((mIconvDescr = iconv_open( toSet.String(), mSrcCharset.String())) == NULL) {
+	if ((mIconvDescr = iconv_open( toSet.String(), mSrcCharset.String())) == ICONV_ERR) {
 		BM_LOGERR( BmString("libiconv: unable to convert from ") << mSrcCharset << " to " << toSet);
 		mHadError = true;
 	}
@@ -574,7 +574,7 @@ void BmUtf8Encoder::InitConverter() {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmUtf8Encoder::SetTransliterate( bool transliterate) {
-	if (mIconvDescr && mTransliterate == transliterate)
+	if (mIconvDescr != ICONV_ERR && mTransliterate == transliterate)
 		return;
 	mTransliterate = transliterate;
 	InitConverter();
