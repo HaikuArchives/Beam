@@ -54,6 +54,7 @@
 #include "BmPrefs.h"
 #include "BmPrefsSendMailView.h"
 #include "BmPrefsWin.h"
+#include "BmRosterBase.h"
 #include "BmSmtp.h"
 #include "BmTextControl.h"
 #include "BmUtil.h"
@@ -285,7 +286,7 @@ BmPrefsSendMailView::BmPrefsSendMailView()
 								"POP-account:", 
 								this, 
 								new BMessage( BM_POP_SELECTED),
-								ThePopAccountList.Get(), 
+								&BmRosterBase::RebuildPopAccountMenu, 
 								BM_MC_LABEL_FROM_MARKED
 							)
 						),

@@ -55,6 +55,7 @@
 #include "BmMultiLineTextControl.h"
 #include "BmPrefs.h"
 #include "BmPrefsSignatureView.h"
+#include "BmRosterBase.h"
 #include "BmTextControl.h"
 #include "BmUtil.h"
 
@@ -275,7 +276,7 @@ BmPrefsSignatureView::BmPrefsSignatureView()
 							"Charset:", 
 							new BmMenuController( "", this, 
 														 new BMessage( BM_CHARSET_SELECTED), 
-														 BmRebuildCharsetMenu,
+														 &BmRosterBase::RebuildCharsetMenu,
 														 BM_MC_LABEL_FROM_MARKED
 							)
 						),
@@ -359,7 +360,8 @@ void BmPrefsSignatureView::Initialize() {
 	mDynamicControl->SetTarget( this);
 
 	// add all encodings to menu:
-	AddCharsetMenu( mCharsetControl->Menu(), this, BM_CHARSET_SELECTED);
+	BeamRoster->AddCharsetMenu( mCharsetControl->Menu(), this, 
+										 BM_CHARSET_SELECTED);
 
 	// mark default charset:
 	BmString charset( ThePrefs->GetString( "DefaultCharset"));

@@ -271,7 +271,7 @@ BmPrefsIdentityView::BmPrefsIdentityView()
 								"POP-account:", 
 								this, 
 								new BMessage( BM_POP_SELECTED),
-								ThePopAccountList.Get(), 
+								&BmRosterBase::RebuildPopAccountMenu, 
 								BM_MC_LABEL_FROM_MARKED
 							)
 						),
@@ -282,7 +282,7 @@ BmPrefsIdentityView::BmPrefsIdentityView()
 								"SMTP-account:", 
 								this, 
 								new BMessage( BM_SMTP_SELECTED),
-								TheSmtpAccountList.Get(), 
+								&BmRosterBase::RebuildSmtpAccountMenu, 
 								BM_MC_LABEL_FROM_MARKED
 							)
 						),
@@ -293,7 +293,7 @@ BmPrefsIdentityView::BmPrefsIdentityView()
 								"Signature:", 
 								this, 
 								new BMessage( BM_SIGNATURE_SELECTED),
-								TheSignatureList.Get(), 
+								&BmRosterBase::RebuildSignatureMenu, 
 								BM_MC_LABEL_FROM_MARKED | BM_MC_ADD_NONE_ITEM
 							)
 						),

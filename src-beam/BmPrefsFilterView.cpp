@@ -49,6 +49,7 @@
 #include "BmApp.h"
 #include "BmCheckControl.h"
 #include "BmFilter.h"
+#include "BmFilterAddonPrefs.h"
 #include "BmFilterChain.h"
 #include "BmGuiUtil.h"
 #include "BmLogHandler.h"
@@ -247,7 +248,7 @@ BmPrefsFilterView::BmPrefsFilterView()
 			= iter->second.instantiateFilterPrefsFunc;
 		if (func) {
 			BmFilterAddonPrefsView* pview 
-				= (*func)( minimax( 400, 200, 1E5, 1E5), iter->first);
+				= (*func)( 400, 200, 1E5, 1E5, iter->first);
 			prefsView[pv++] = iter->second.addonPrefsView = pview;
 			k[kk++] = (char*)pview->Kind();
 		}

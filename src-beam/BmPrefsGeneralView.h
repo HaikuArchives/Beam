@@ -31,8 +31,6 @@
 #ifndef _BmPrefsGeneralView_h
 #define _BmPrefsGeneralView_h
 
-#include "BmMailFolder.h"
-#include "BmMailRefView.h"
 #include "BmPrefsView.h"
 
 

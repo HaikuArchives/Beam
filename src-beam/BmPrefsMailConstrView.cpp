@@ -54,6 +54,7 @@ using namespace BmEncoding;
 #include "BmMsgTypes.h"
 #include "BmPrefs.h"
 #include "BmPrefsMailConstrView.h"
+#include "BmRosterBase.h"
 #include "BmTextControl.h"
 #include "BmUtil.h"
 
@@ -107,7 +108,7 @@ BmPrefsMailConstrView::BmPrefsMailConstrView()
 								"Default-charset:", 
 								new BmMenuController( "", this, 
 															 new BMessage( BM_CHARSET_SELECTED), 
-															 BmRebuildCharsetMenu,
+															 &BmRosterBase::RebuildCharsetMenu,
 															 BM_MC_LABEL_FROM_MARKED
 								)
 							),
@@ -451,7 +452,6 @@ void BmPrefsMailConstrView::SetupUsedCharsetsMenu() {
 			charset = iter->first;
 			charset.ToLower();
 			BMessage* msg = new BMessage( BM_USED_CHARSET_SELECTED);
-			msg->AddString( MSG_CHARSET, charset.String());
 			item = CreateMenuItem( charset.String(), msg);
 			AddItemToMenu( menu, item, this);
 			if (stdSets.IFindFirst( BmString("<")<<charset<<">") != B_ERROR)

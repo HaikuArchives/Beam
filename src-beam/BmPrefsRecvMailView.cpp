@@ -57,6 +57,7 @@
 #include "BmPrefs.h"
 #include "BmPrefsRecvMailView.h"
 #include "BmPrefsWin.h"
+#include "BmRosterBase.h"
 #include "BmSignature.h"
 #include "BmSmtpAccount.h"
 #include "BmTextControl.h"
@@ -300,7 +301,7 @@ BmPrefsRecvMailView::BmPrefsRecvMailView()
 							new BmMenuController( 
 								"", this, 
 								new BMessage( BM_HOME_FOLDER_SELECTED), 
-								TheMailFolderList.Get(), 
+								&BmRosterBase::RebuildFolderMenu, 
 								BM_MC_SKIP_FIRST_LEVEL
 							)
 						),
@@ -309,7 +310,7 @@ BmPrefsRecvMailView::BmPrefsRecvMailView()
 							new BmMenuController( 
 								"", this, 
 								new BMessage( BM_FILTER_CHAIN_SELECTED), 
-								TheFilterChainList.Get(), 
+								&BmRosterBase::RebuildFilterChainMenu, 
 								BM_MC_ADD_NONE_ITEM | BM_MC_LABEL_FROM_MARKED
 							)
 						),
