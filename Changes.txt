@@ -2,7 +2,7 @@ change-history of Beam:
 		$Id$
 
 *******************************************************************************
-[Beam test-03-07-15]
+[Beam test-03-07-28]
 
 	summary:
 		-	Graphical editor for Mail-filters has been sexed up a bit.
