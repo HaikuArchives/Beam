@@ -38,7 +38,6 @@ class BmMailRefView;
 class BmMailView;
 class BmMailViewContainer;
 class MMenuBar;
-class BmMenuController;
 class BmToolbarButton;
 class CLVContainerView;
 class UserResizeSplitView;
@@ -91,8 +90,6 @@ private:
 	BmMailView* mMailView;
 	UserResizeSplitView* mVertSplitter;
 	UserResizeSplitView* mHorzSplitter;
-	
-	BmMenuController* mAccountMenu;
 	
 	BmLogWindow* mErrLogWin;
 	

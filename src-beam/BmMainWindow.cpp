@@ -68,8 +68,6 @@ BmMainWindow* BmMainWindow::theInstance = NULL;
 const char* const BmMainWindow::MSG_VSPLITTER = "bm:vspl";
 const char* const BmMainWindow::MSG_HSPLITTER = "bm:hspl";
 
-void RebuildLogMenu( BMenu* logMenu);
-
 /*------------------------------------------------------------------------------*\
 	flag and access-function that indicate a user's request-to-stop:
 \*------------------------------------------------------------------------------*/
@@ -126,7 +124,6 @@ BmMainWindow::BmMainWindow()
 	,	mMailFolderView( NULL)
 	,	mMailRefView( NULL)
 	,	mVertSplitter( NULL)
-	,	mAccountMenu( NULL)
 	,	mErrLogWin( NULL)
 {
 	CreateMailFolderView( minimax(0,100,300,1E5), 200, 400);
@@ -269,6 +266,7 @@ BmMainWindow::~BmMainWindow() {
 MMenuBar* BmMainWindow::CreateMenu() {
 	mMainMenuBar = new MMenuBar();
 	BMenu* menu = NULL;
+	BmMenuController* subMenu;
 	// File
 	menu = new BMenu( "File");
 	menu->AddItem( CreateMenuItem( "New Folder...", BMM_NEW_MAILFOLDER));
@@ -309,19 +307,24 @@ MMenuBar* BmMainWindow::CreateMenu() {
 	// Network
 	menu = new BMenu( "Network");
 	menu->AddItem( CreateMenuItem( "Check Mail", BMM_CHECK_MAIL));
-	mAccountMenu = new BmMenuController( 
+	subMenu = new BmMenuController( 
 		"Check Mail For", this,
 		new BMessage( BMM_CHECK_MAIL), 
 		&BmRosterBase::RebuildPopAccountMenu,
 		BM_MC_MOVE_RIGHT
 	);
-	mAccountMenu->Shortcuts( "1234567890");
-	menu->AddItem( mAccountMenu);
+	subMenu->Shortcuts( "1234567890");
+	menu->AddItem( subMenu);
 	menu->AddItem( CreateMenuItem( "Check All Accounts", BMM_CHECK_ALL));
 	menu->AddSeparatorItem();
-//	menu->AddItem( CreateMenuItem( "Send Pending Messages...", 
-//											 BMM_SEND_PENDING));
-	menu->AddItem( CreateMenuItem( "World Peace...", 
+	subMenu = new BmMenuController( 
+		"Send Pending Messages For", this,
+		new BMessage( BMM_SEND_PENDING), 
+		&BmRosterBase::RebuildSmtpAccountMenu,
+		BM_MC_MOVE_RIGHT
+	);
+	menu->AddItem( subMenu);
+	menu->AddItem( CreateMenuItem( "Send All Pending Messages...",
 											 BMM_SEND_PENDING));
 	mMainMenuBar->AddItem( menu);
 
@@ -393,7 +396,6 @@ void BmMainWindow::BeginLife() {
 			->SetTarget( (BHandler*)mMailView->HeaderView());
 		// temporary deactivation:
 		mMainMenuBar->FindItem( BMM_FIND_MESSAGES)->SetEnabled( false);
-//		mMainMenuBar->FindItem( BMM_SEND_PENDING)->SetEnabled( false);
 
 		// create and hide error-log
 		mErrLogWin 
@@ -536,10 +538,11 @@ void BmMainWindow::MessageReceived( BMessage* msg) {
 				break;
 			}
 			case BMM_SEND_PENDING: {
-				(new BAlert( "", 
-								 "Sorry, but this service is not available\n"
-								 "in the open-source version...", 
-								 "Bummer!"))->Go();
+				BmString key = msg->FindString( BmSmtpAccountList::MSG_ITEMKEY);
+				if (key.Length())
+					TheSmtpAccountList->SendPendingMailsFor( key);
+				else
+					TheSmtpAccountList->SendPendingMails();
 				break;
 			}
 			default:
