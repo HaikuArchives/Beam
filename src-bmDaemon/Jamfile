@@ -16,7 +16,7 @@ SharedLibrary bmDaemon.so
 		BmSmtp.cpp
 	: 	
 		bmBase.so bmRegexx.so bmMailKit.so
-		$(STDC++LIB) netapi be 
+		$(STDC++LIB) $(LIBNETAPI) be 
 	;
 
 MakeLocate bmDaemon.so : [ FDirName $(DISTRO_DIR) lib ] ;
