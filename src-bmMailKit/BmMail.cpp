@@ -1125,7 +1125,7 @@ void BmMail::ApplyFilter( BmRef<BmFilter> filter) {
 bool BmMail::Store() {
 	BmBackedFile mailFile;
 	BEntry folderEntry;
-	status_t err;
+	status_t err = B_NO_INIT;
 	ssize_t res;
 	char filenameBuf[B_FILE_NAME_LENGTH];
 	BmString filename;
