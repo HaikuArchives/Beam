@@ -192,10 +192,11 @@ const char* const BmMailView::MSG_VERSION =	"bm:version";
 const char* const BmMailView::MSG_RAW = 		"bm:raw";
 const char* const BmMailView::MSG_FONTNAME = "bm:fnt";
 const char* const BmMailView::MSG_FONTSIZE =	"bm:fntsz";
+const char* const BmMailView::MSG_HIGHLIGHT ="bm:hil";
 
 const char* const BmMailView::MSG_MAIL =		"bm:mail";
 
-const int16 BmMailView::nArchiveVersion = 3;
+const int16 BmMailView::nArchiveVersion = 4;
 
 const char* const BmMailView::MSG_HAS_MAIL = "bm:hmail";
 
@@ -245,6 +246,7 @@ BmMailView::BmMailView( minimax minmax, BRect frame, bool outbound)
 	,	mShowRaw( false)
 	,	mShowInlinesSeparately( true)
 	,	mFontSize( 12)
+	,	mHighlightFlags( 0xFFFF)
 	,	mReadRunner( NULL)
 	,	mShowingUrlCursor( false)
 	,	mHaveMail( false)
@@ -307,7 +309,8 @@ status_t BmMailView::Archive( BMessage* archive, bool deep) const {
 	status_t ret = archive->AddInt16( MSG_VERSION, nArchiveVersion)
 						|| archive->AddBool( MSG_RAW, mOutbound ? false : mShowRaw)
 						|| archive->AddString( MSG_FONTNAME, mFontName.String())
-						|| archive->AddInt16( MSG_FONTSIZE, mFontSize);
+						|| archive->AddInt16( MSG_FONTSIZE, mFontSize)
+						|| archive->AddInt16( MSG_HIGHLIGHT, mHighlightFlags);
 	if (ret == B_OK && deep && mHeaderView)
 		ret = mHeaderView->Archive( archive, deep);
 	if (ret == B_OK && deep && mBodyPartView)
@@ -341,6 +344,11 @@ status_t BmMailView::Unarchive( BMessage* archive, bool deep) {
 	mFont.SetSize( mFontSize);
 	SetFont( &mFont);
 	SetFontAndColor( &mFont);
+
+	if (version >= 4)
+		archive->FindInt16( MSG_HIGHLIGHT, &mHighlightFlags);
+	else
+		mHighlightFlags = HIGHLIGHT_SIG | HIGHLIGHT_URL;
 	if (mOutbound && mRulerView)
 		mRulerView->SetMailViewFont( mFont);
 	return ret;
@@ -456,6 +464,20 @@ void BmMailView::MessageReceived( BMessage* msg) {
 						textBody->SuggestCharset( item->Label());
 						JobIsDone( true);
 					}
+				}
+				break;
+			}
+			case BM_MAILVIEW_HIGHLIGHT_URL: {
+				if (mCurrMail) {
+					mHighlightFlags ^= HIGHLIGHT_URL;
+					JobIsDone( true);
+				}
+				break;
+			}
+			case BM_MAILVIEW_HIGHLIGHT_SIG: {
+				if (mCurrMail) {
+					mHighlightFlags ^= HIGHLIGHT_SIG;
+					JobIsDone( true);
 				}
 				break;
 			}
@@ -873,15 +895,19 @@ void BmMailView::JobIsDone( bool completed) {
 					uint32 len = displayBuf.CurrPos();
 					if (!len || displayBuf.ByteAt(len-1) != '\n')
 						displayBuf << "\n";
-					mTextRunMap[displayBuf.CurrPos()] 
-						= BmTextRunInfo( BmWeakenColor(B_UI_DOCUMENT_TEXT_COLOR,2));
+					if ((mHighlightFlags & HIGHLIGHT_SIG) > 0)
+						mTextRunMap[displayBuf.CurrPos()] 
+							= BmTextRunInfo(BmWeakenColor(B_UI_DOCUMENT_TEXT_COLOR,2));
+					else
+						mTextRunMap[displayBuf.CurrPos()] 
+							= BmTextRunInfo(ui_color(B_UI_DOCUMENT_TEXT_COLOR));
 					// signature within body is already in UTF8-encoding, so we
 					// just add it to out display-text:
 					displayBuf << "-- \n" << body->Signature();
 				}
 				displayText.Adopt( displayBuf.TheString());
 			}
-			if (!mOutbound) {
+			if (!mOutbound && (mHighlightFlags & HIGHLIGHT_URL) > 0) {
 				// highlight URLs:
 				Regexx rx;
 				int32 count;
@@ -1143,7 +1169,7 @@ void BmMailView::ShowMenu( BPoint point) {
 		if (mCurrMail && mCurrMail->Body()) {
 			BmRef< BmBodyPart> textBody( mCurrMail->Body()->EditableTextBody());
 			if (textBody) {
-				BMenu* menu = new BMenu( "Try Charset...");
+				BMenu* menu = new BMenu( "Try Charset");
 				menu->SetFont( &font);
 				BeamRoster->AddCharsetMenu( menu, this, BM_MAILVIEW_SELECT_CHARSET);
 				BMenuItem* curr 
@@ -1156,6 +1182,23 @@ void BmMailView::ShowMenu( BPoint point) {
 		}
 	}
 	TheResources->AddFontSubmenuTo( theMenu, this, &mFont);
+	if (!mOutbound) {
+		theMenu->AddSeparatorItem();
+		BMenu* hiMenu = new BMenu( "Colorize");
+		hiMenu->SetFont( &font);
+		item = new BMenuItem("Links", new BMessage(BM_MAILVIEW_HIGHLIGHT_URL));
+		if ((mHighlightFlags & HIGHLIGHT_URL) > 0)
+			item->SetMarked( true);
+		item->SetTarget( this);
+		hiMenu->AddItem( item);
+		item = new BMenuItem("Signatures", 
+									new BMessage(BM_MAILVIEW_HIGHLIGHT_SIG));
+		if ((mHighlightFlags & HIGHLIGHT_SIG) > 0)
+			item->SetMarked( true);
+		item->SetTarget( this);
+		hiMenu->AddItem( item);
+		theMenu->AddItem( hiMenu);
+	}
 
    ConvertToScreen(&point);
 	BRect openRect;

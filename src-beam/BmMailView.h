@@ -62,7 +62,9 @@ enum {
 	BM_MAILVIEW_SHOWINLINES_SEPARATELY	= 'bmMc',
 	BM_MAILVIEW_SHOWINLINES_CONCATENATED= 'bmMd',
 	BM_MAILVIEW_SELECT_CHARSET				= 'bmMe',
-	BM_MAILVIEW_COPY_URL						= 'bmMf'
+	BM_MAILVIEW_COPY_URL						= 'bmMf',
+	BM_MAILVIEW_HIGHLIGHT_SIG				= 'bmMg',
+	BM_MAILVIEW_HIGHLIGHT_URL				= 'bmMh'
 };
 
 /*------------------------------------------------------------------------------*\
@@ -93,10 +95,14 @@ class BmMailView : public WrappingTextView, public BmJobController {
 	static const char* const MSG_RAW;
 	static const char* const MSG_FONTNAME;
 	static const char* const MSG_FONTSIZE;
+	static const char* const MSG_HIGHLIGHT;
 	//
 	static const char* const MSG_MAIL;
 
 	static const int16 nArchiveVersion;
+	
+	static const int16 HIGHLIGHT_SIG = 1<<0;
+	static const int16 HIGHLIGHT_URL = 1<<1;
 
 public:
 	static const char* const MSG_HAS_MAIL;
@@ -183,6 +189,7 @@ private:
 	// will be archived:
 	BmString mFontName;
 	int16 mFontSize;
+	int16 mHighlightFlags;
 	BFont mFont;
 	bool mShowRaw;
 	bool mShowInlinesSeparately;
