@@ -104,7 +104,7 @@ bool CheckMimeType( const entry_ref* eref, const char* type) {
 }
 
 /*------------------------------------------------------------------------------*\
-	DetermineMimeType( eref)
+	DetermineMimeType( eref, doublecheck)
 		-	determines the mimetype of the given file (according to BeOS)
 \*------------------------------------------------------------------------------*/
 BString DetermineMimeType( const entry_ref* eref, bool doublecheck) {
