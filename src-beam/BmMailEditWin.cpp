@@ -207,9 +207,17 @@ BmMailEditWin::~BmMailEditWin() {
 	delete mAttachPanel;
 	BmRef<BmMail> mail = mMailView->CurrMail();
 	if (mail) {
-		BmMailRef* mailRef = mail->MailRef();
-		if (mailRef)
-			nEditWinMap.erase(mailRef->EntryRef());
+		// we remove ourselves from the existing edit-windows map in a safe manner
+		// (such as to not depend on the current key corresponding to the key
+		// that was used when we were inserted into the map):
+		BmEditWinMap::iterator iter;
+		for( iter = nEditWinMap.begin(); iter != nEditWinMap.end(); ++iter) {
+			if (iter->second == this) {
+				// remove ourselves and quit:
+				nEditWinMap.erase( iter);
+				return;
+			}
+		}
 	}
 }
 
