@@ -98,7 +98,9 @@ BmPrefsLoggingView::BmPrefsLoggingView()
 					new VGroup(
 						mLogMailTrackingControl 
 							= new BmMenuControl( "Tracking Mails:", 
-														new BPopUpMenu("")),
+														new BPopUpMenu(""),
+														1.0, 0,
+														"Log Everything"),
 						mLogMailParseControl = new BmMenuControl( "Parsing Mails:", 
 																				new BPopUpMenu("")),
 						new Space( minimax(0,10,0,10)),
