@@ -409,6 +409,8 @@ void BmApplication::MessageReceived( BMessage* msg) {
 				break;
 			}
 			case BMM_REPLY:
+			case BMM_REPLY_LIST:
+			case BMM_REPLY_ORIGINATOR:
 			case BMM_REPLY_ALL: {
 				int32 buttonPressed=1;
 				type_code tc;
@@ -681,17 +683,10 @@ void BmApplication::ReplyToMails( BMessage* msg, bool join) {
 					continue;
 				BString originator = mail->Header()->DetermineOriginator();
 				BmRef<BmMail>& newMail = newMailMap[originator];
-				if (msg->what == BMM_REPLY) {
-					if (!newMail) 
-						newMail = mail->CreateReply( false, selectedText);
-					else
-						newMail->AddPartsFromMail( mail, false, BM_IS_REPLY);
-				} else if (msg->what == BMM_REPLY_ALL) {
-					if (!newMail) 
-						newMail = mail->CreateReply( true, selectedText);
-					else
-						newMail->AddPartsFromMail( mail, false, BM_IS_REPLY);
-				}
+				if (!newMail) 
+					newMail = mail->CreateReply( msg->what, selectedText);
+				else
+					newMail->AddPartsFromMail( mail, false, BM_IS_REPLY);
 				if (index == 0) {
 					// set subject for multiple forwards:
 					BString oldSub = mail->GetFieldVal( BM_FIELD_SUBJECT);
@@ -719,11 +714,7 @@ void BmApplication::ReplyToMails( BMessage* msg, bool join) {
 				mail->StartJobInThisThread( BmMail::BM_READ_MAIL_JOB);
 				if (mail->InitCheck() != B_OK)
 					continue;
-				if (msg->what == BMM_REPLY) {
-					newMail = mail->CreateReply( false, index==0 ? selectedText : NULL);
-				} else if (msg->what == BMM_REPLY_ALL) {
-					newMail = mail->CreateReply( true, index==0 ? selectedText : NULL);
-				}
+				newMail = mail->CreateReply( msg->what, index==0 ? selectedText : NULL);
 				if (newMail) {
 					BmMailEditWin* editWin = BmMailEditWin::CreateInstance( newMail.Get());
 					if (editWin)

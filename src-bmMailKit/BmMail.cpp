@@ -43,6 +43,7 @@ using namespace regexx;
 #include "BmMail.h"
 #include "BmMailHeader.h"
 #include "BmMailRef.h"
+#include "BmMsgTypes.h"
 #include "BmPopAccount.h"
 #include "BmPrefs.h"
 #include "BmResources.h"
@@ -315,6 +316,14 @@ void BmMail::RemoveField( const BString fieldName) {
 }
 
 /*------------------------------------------------------------------------------*\
+	HasComeFromList()
+	-	
+\*------------------------------------------------------------------------------*/
+bool BmMail::HasComeFromList() const {
+	return mHeader && !mHeader->IsFieldEmpty( BM_FIELD_LIST_ID);
+}
+
+/*------------------------------------------------------------------------------*\
 	CreateInlineForward()
 	-	
 \*------------------------------------------------------------------------------*/
@@ -347,14 +356,37 @@ BmRef<BmMail> BmMail::CreateAttachedForward() {
 	CreateReply()
 	-	
 \*------------------------------------------------------------------------------*/
-BmRef<BmMail> BmMail::CreateReply( bool replyToAll, const BString selectedText) {
+BmRef<BmMail> BmMail::CreateReply( int32 replyMode, const BString selectedText) {
 	BmRef<BmMail> newMail = new BmMail( true);
 	// copy old message ID into in-reply-to and references fields:
 	BString messageID = GetFieldVal( BM_FIELD_MESSAGE_ID);
 	newMail->SetFieldVal( BM_FIELD_IN_REPLY_TO, messageID);
 	newMail->SetFieldVal( BM_FIELD_REFERENCES, GetFieldVal( BM_FIELD_REFERENCES) + " " + messageID);
-	// fill address information:
-	BString newTo = Header()->DetermineOriginator();
+	BString newTo;
+	// fill address information, depending on reply-mode:
+	if (replyMode == BMM_REPLY) {
+		// smart (*cough*) mode: If the mail has come from a list, we react
+		// according to user prefs (reply-to-list or reply-to-originator).
+		if (HasComeFromList()) {
+			newTo = ThePrefs->GetBool( "PreferReplyToList", true)
+							? Header()->DetermineListAddress()
+							: Header()->DetermineOriginator();
+		}
+		if (!newTo.Length())
+			newTo = Header()->DetermineOriginator();
+	} else if (replyMode == BMM_REPLY_LIST) {
+		// blindly use list-address for reply (may be empty):
+		newTo = Header()->DetermineListAddress();
+	} else if (replyMode == BMM_REPLY_ORIGINATOR) {
+		// bypass the reply-to, this way one can send mail to the 
+		// original author of a mail which has been 'reply-to'-munged 
+		// by a mailing-list processor:
+		newTo = Header()->DetermineOriginator( true);
+	} else if (replyMode == BMM_REPLY_ALL) {
+		// since we are replying to all recipients of this message,
+		// we now include the Originator (plain and standard way):
+		newTo = Header()->DetermineOriginator();
+	}
 	newMail->SetFieldVal( BM_FIELD_TO, newTo);
 	// fetch info about encoding from old mail:
 	int32 encoding = DefaultEncoding();
@@ -394,20 +426,26 @@ BmRef<BmMail> BmMail::CreateReply( bool replyToAll, const BString selectedText) 
 		newMail->AccountName( acc->SMTPAccount());
 	}
 	// if we are replying to all, we may need to include more addresses:
-	if (replyToAll) {
+	if (replyMode == BMM_REPLY_ALL) {
 		BString newCc;
 		if (ThePrefs->GetBool( "UseResentFieldsInReply", false))
 			newCc = GetFieldVal( BM_FIELD_RESENT_CC);
 		else
 			newCc = GetFieldVal( BM_FIELD_CC);
-		newMail->SetFieldVal( BM_FIELD_CC, newCc);
+		if (newCc != newTo)
+			// add address only if not already done so
+			newMail->SetFieldVal( BM_FIELD_CC, newCc);
 		newMail->Header()->RemoveAddrFieldVal( BM_FIELD_CC, receivingAddr);
 		BString additionalCc;
 		if (ThePrefs->GetBool( "UseResentFieldsInReply", false))
 			additionalCc = GetFieldVal( BM_FIELD_RESENT_TO);
 		else
 			additionalCc = GetFieldVal( BM_FIELD_TO);
-		newMail->Header()->AddFieldVal( BM_FIELD_CC, additionalCc);
+		if (additionalCc != newTo)
+			// add address only if not already done so
+			newMail->Header()->AddFieldVal( BM_FIELD_CC, additionalCc);
+		// remove the receiving address from list of recipients, since we
+		// do not want to send ourselves a reply:
 		newMail->Header()->RemoveAddrFieldVal( BM_FIELD_CC, receivingAddr);
 	}
 	// massage subject, if neccessary:

@@ -75,6 +75,7 @@ class BmMailRef;
 #define BM_FIELD_DATE 						"Date"
 #define BM_FIELD_FROM 						"From"
 #define BM_FIELD_IN_REPLY_TO				"In-Reply-To"
+#define BM_FIELD_LIST_ID					"List-Id"
 #define BM_FIELD_MESSAGE_ID				"Message-Id"
 #define BM_FIELD_MIME 						"Mime-Version"
 #define BM_FIELD_PRIORITY					"Priority"
@@ -136,6 +137,7 @@ public:
 	const BString& GetFieldVal( const BString fieldName);
 	BString GetStrippedFieldVal( const BString fieldName);
 	bool HasAttachments() const;
+	bool HasComeFromList() const;
 	void MarkAs( const char* status);
 	void RemoveField( const BString fieldName);
 	void SetFieldVal( const BString fieldName, const BString value);
@@ -149,7 +151,7 @@ public:
 	BmRef<BmMail> CreateAttachedForward();
 	BmRef<BmMail> CreateInlineForward( bool withAttachments, 
 										  		  const BString selectedText="");
-	BmRef<BmMail> CreateReply( bool replyToAll, const BString selectedText="");
+	BmRef<BmMail> CreateReply( int32 replyMode, const BString selectedText="");
 	BmRef<BmMail> CreateRedirect();
 	BString CreateReplySubjectFor( const BString subject);
 	BString CreateForwardSubjectFor( const BString subject);
