@@ -113,6 +113,11 @@ BmPrefsMailConstrView::BmPrefsMailConstrView()
 							new BMessage(BM_ALLOW_8_BIT_CHANGED), 
 							this, ThePrefs->GetBool("Allow8BitMime")
 						),
+						mImportExportUtf8Control = new BmCheckControl( 
+							"Treat all text-attachments as UTF-8.", 
+							new BMessage(BM_IMPORT_EXPORT_UTF8_CHANGED), 
+							this, ThePrefs->GetBool("ImportExportTextAsUtf8", true)
+						),
 						mSpecialForEachBccControl = new BmCheckControl( 
 							"Generate header for each Bcc-recipient", 
 						   new BMessage(BM_EACH_BCC_CHANGED), 
@@ -305,6 +310,7 @@ BmPrefsMailConstrView::~BmPrefsMailConstrView() {
 	TheBubbleHelper->SetHelp( mHardWrapControl, NULL);
 	TheBubbleHelper->SetHelp( mHardWrapAt78Control, NULL);
 	TheBubbleHelper->SetHelp( mAllow8BitControl, NULL);
+	TheBubbleHelper->SetHelp( mImportExportUtf8Control, NULL);
 	TheBubbleHelper->SetHelp( mLookInPeopleFolderControl, NULL);
 	TheBubbleHelper->SetHelp( mAddNameToPeopleControl, NULL);
 	TheBubbleHelper->SetHelp( mPeopleFolderButton, NULL);
@@ -519,6 +525,15 @@ void BmPrefsMailConstrView::Initialize() {
 		"try unchecking this."
 	);
 	TheBubbleHelper->SetHelp( 
+		mImportExportUtf8Control, 
+		"If this is checked, every text-attachment that you add to a mail\n"
+		"will be treated as being utf-8 text."
+		"If unchecked, each text-attachment added to a mail will be added\n"
+		"with the encoding currently selected in the mail-edit-window.\n"
+		"This is useful if you need to add text-files to mails that\n"
+		"have non-utf8 character-sets.\n"
+		"If you are in doubt, leave checked.");
+	TheBubbleHelper->SetHelp( 
 		mLookInPeopleFolderControl, 
 		"If checked, Beam will only deal with people-files that\n"
 		"live in the people-folder.\n"
@@ -654,7 +669,8 @@ void BmPrefsMailConstrView::Update() {
 	mHardWrapAt78Control->SetValueSilently( 
 		ThePrefs->GetInt("MaxLineLenForHardWrap",998)<100);
 	mQuoteFormattingControl->MarkItem( 
-		ThePrefs->GetString("QuoteFormatting", BmMail::BM_QUOTE_AUTO_WRAP).String());
+		ThePrefs->GetString( "QuoteFormatting", 
+									BmMail::BM_QUOTE_AUTO_WRAP).String());
 	mDefaultForwardTypeControl->MarkItem( 
 		ThePrefs->GetString( "DefaultForwardType").String());
 	mDefaultCharsetControl->ClearMark();
@@ -664,6 +680,8 @@ void BmPrefsMailConstrView::Update() {
 	mDefaultCharsetControl->MarkItem( charset.String());
 	mDefaultCharsetControl->MenuItem()->SetLabel( charset.String());
 	mAllow8BitControl->SetValueSilently( ThePrefs->GetBool("Allow8BitMime"));
+	mImportExportUtf8Control->SetValueSilently( 
+		ThePrefs->GetBool("ImportExportTextAsUtf8", true));
 	mSpecialForEachBccControl->SetValueSilently( 
 		ThePrefs->GetBool("SpecialHeaderForEachBcc"));
 	mPreferUserAgentControl->SetValueSilently( 
@@ -789,6 +807,12 @@ void BmPrefsMailConstrView::MessageReceived( BMessage* msg) {
 			}
 			case BM_ALLOW_8_BIT_CHANGED: {
 				ThePrefs->SetBool( "Allow8BitMime", mAllow8BitControl->Value());
+				NoticeChange();
+				break;
+			}
+			case BM_IMPORT_EXPORT_UTF8_CHANGED: {
+				ThePrefs->SetBool( "ImportExportTextAsUtf8", 
+										 mImportExportUtf8Control->Value());
 				NoticeChange();
 				break;
 			}

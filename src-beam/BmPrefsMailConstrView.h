@@ -55,6 +55,7 @@ class BmPrefsMailConstrView : public BmPrefsView {
 		BM_FORWARD_TYPE_SELECTED		= 'bmFS',
 		BM_QUOTE_FORMATTING_SELECTED	= 'bmQS',
 		BM_ALLOW_8_BIT_CHANGED			= 'bm8C',
+		BM_IMPORT_EXPORT_UTF8_CHANGED	= 'bmIE',
 		BM_HARD_WRAP_AT_78_CHANGED		= 'bmHW',
 		BM_HARD_WRAP_CHANGED				= 'bmHC',
 		BM_USED_CHARSET_SELECTED		= 'bmUS',
@@ -91,6 +92,7 @@ private:
 	BmCheckControl* mSpecialForEachBccControl;
 	BmCheckControl* mPreferUserAgentControl;
 	BmCheckControl* mAllow8BitControl;
+	BmCheckControl* mImportExportUtf8Control;
 	BmCheckControl* mHardWrapAt78Control;
 	BmCheckControl* mHardWrapControl;
 	BmTextControl* mMaxLineLenControl;
