@@ -41,53 +41,17 @@ class WrappingTextView : public BTextView
 		struct UndoInfo {
 			bool isInsertion;
 			BmString text;
-			uint32 offset;
+			int32 offset;
 			text_run_array* text_runs;
-			UndoInfo()
-				:	text_runs( NULL)
-			{ 
-			}
+			bool fixed;
+			bool deleteToRight;
+			UndoInfo();
 			UndoInfo( bool ins, const char* t, int32 len, uint32 offs,
-						 const text_run_array* runs)
-				:	isInsertion( ins)
-				,	text( t, len)
-				,	offset( offs)
-				,	text_runs( NULL)
-			{ 
-				if (runs) {
-					int32 sz = sizeof(int32)+runs->count*sizeof(text_run);
-					text_runs = (text_run_array*)malloc( sz);
-					memcpy( text_runs, runs, sz);
-				}
-			}
-			UndoInfo( const UndoInfo& ui)
-				:	isInsertion( ui.isInsertion)
-				,	text( ui.text)
-				,	offset( ui.offset)
-				,	text_runs( NULL)
-			{ 
-				if (ui.text_runs) {
-					int32 sz = sizeof(int32)+ui.text_runs->count*sizeof(text_run);
-					text_runs = (text_run_array*)malloc( sz);
-					memcpy( text_runs, ui.text_runs, sz);
-				}
-			}
-			UndoInfo operator=( const UndoInfo& ui) {
-				isInsertion = ui.isInsertion;
-				text = ui.text;
-				offset = ui.offset;
-				if (ui.text_runs) {
-					int32 sz = sizeof(int32)+ui.text_runs->count*sizeof(text_run);
-					text_runs = (text_run_array*)malloc( sz);
-					memcpy( text_runs, ui.text_runs, sz);
-				} else
-					text_runs = NULL;
-				return *this;
-			}
-			~UndoInfo() { 
-				if (text_runs)
-					free( text_runs); 
-			}
+						 const text_run_array* runs, bool delToRight=false);
+			UndoInfo( const UndoInfo& ui);
+			UndoInfo operator=( const UndoInfo& ui);
+			~UndoInfo();
+			void JoinTextRuns( const text_run_array* a_runs, int32 len, bool atFront);
 		};
 		typedef vector< UndoInfo> TUndoVect;
 
@@ -122,6 +86,8 @@ class WrappingTextView : public BTextView
 		virtual void RedoChange();
 		virtual void ResetUndoBuffer();
 
+		BmString m_separator_chars;
+
 	private:
 		bool m_modified;
 		bool m_modified_disabled;
@@ -134,6 +100,7 @@ class WrappingTextView : public BTextView
 		bool m_in_undo_redo;
 		void* m_undo_context;
 		int32 m_selection_start;
+		int32 m_last_key_was_del;
 };
 
 #endif
