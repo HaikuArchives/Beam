@@ -971,7 +971,7 @@ BmString&
 BmString::IReplaceFirst(char replaceThis, char withThis)
 {
 	char tmp[2] = { replaceThis, '\0' };
-	int32 pos = _FindAfter(tmp, 0, 1);
+	int32 pos = _IFindAfter(tmp, 0, 1);
 	
 	if (pos >= 0)
 		_privateData[pos] = withThis;
@@ -1143,7 +1143,7 @@ BmString::LockBuffer(int32 maxLength)
 	
 	int32 len = Length();
 	
-	if (maxLength > len)
+	if (maxLength > len || (!maxLength && !len))
 		_privateData = _GrowBy(maxLength - len);
 
 	return _privateData;
