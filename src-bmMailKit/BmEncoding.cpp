@@ -31,6 +31,7 @@
 #include <ctype.h>
 
 #include "regexx.hh"
+#include "split.hh"
 using namespace regexx;
 
 #include "BmBasics.h"
@@ -104,6 +105,36 @@ out:
 \*------------------------------------------------------------------------------*/
 void BmEncoding::InitCharsetMap() {
 	iconvlist( &HandleOneCharset, NULL);
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmEncoding::GetPreferredCharsets( BmCharsetVect& charsetVect, 
+													const BmString& nativeCharset,
+													bool outbound)
+{
+	charsetVect.clear();
+	BmString autoCharsets 
+		= ThePrefs->GetString( 
+				outbound 
+					? "AutoCharsetsOutbound"
+					: "AutoCharsetsInbound"
+		  );
+	BmCharsetVect autoCharsetVect;
+	split( BmPrefs::nListSeparator, autoCharsets, autoCharsetVect);
+	// add given native-charset (as specified in body/header) as first entry:
+	charsetVect.push_back(nativeCharset);
+	for( uint32 i=0; i<autoCharsetVect.size(); ++i) {
+		if (autoCharsetVect[i].ICompare("default") == 0)
+			charsetVect.push_back(ThePrefs->GetString("DefaultCharset"));
+		else if (autoCharsetVect[i].ICompare(nativeCharset) != 0)
+			charsetVect.push_back(autoCharsetVect[i]);
+	}
+	// add native charset as last, too, as this simplifies showing
+	// the appropriate error-msg:
+	charsetVect.push_back(nativeCharset);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -229,16 +260,19 @@ struct BmTextPart {
 		-	
 \*------------------------------------------------------------------------------*/
 BmString BmEncoding::ConvertHeaderPartToUTF8( const BmString& headerPart, 
-															 const BmString& defaultCharset) {
+															 const BmString& defaultCharset,
+															 bool& hadConversionError) {
 	int32 nm;
 	Regexx rx;
 	rx.expr( "=\\?(.+?)\\?(.)\\?(.*?)\\?=");
 	rx.str( headerPart);
 	const uint32 blockSize = max( (int32)128, headerPart.Length());
-	BmStringOBuf utf8( blockSize, 2.0);
 	vector< BmTextPart> textPartVect;
 	BmTextPart currTextPart( defaultCharset, "", "");
 	
+	hadConversionError = false;
+
+	BmStringOBuf result( blockSize, 2.0);
 	if ((nm = rx.exec( Regexx::global))!=0) {
 		Regexx rxWhite;
 		int32 len=headerPart.Length();
@@ -320,22 +354,48 @@ BmString BmEncoding::ConvertHeaderPartToUTF8( const BmString& headerPart,
 	// strings:
 	for( uint32 i=0; i<textPartVect.size(); ++i) {
 		BmTextPart& textPart = textPartVect[i];
-		if (textPart.encodingStyle == "") {
-			// no decoding neccessary, just character-conversion:
-			BmStringIBuf text( textPart.text);
-			BmUtf8Encoder textConverter( &text, textPart.charset);
-			utf8.Write( &textConverter);
-		} else {
-			// encoded-words, need decoding + character-conversion:
-			BmStringIBuf text( textPart.text);
-			BmMemFilterRef decoder 
-				= FindDecoderFor( &text, textPart.encodingStyle, true, blockSize);
-			BmUtf8Encoder textConverter( decoder.get(), textPart.charset, 
-												  blockSize);
-			utf8.Write( &textConverter, blockSize);
+		BmCharsetVect charsetVect;
+		// we try the native charset first and (in case of errors)
+		// all preferred charsets:
+		if (ThePrefs->GetBool("AutoCharsetDetectionInbound", true))
+			GetPreferredCharsets( charsetVect, textPart.charset);
+		else
+			charsetVect.push_back(textPart.charset);
+		BmString charset;
+		for( uint32 i=0; i<charsetVect.size(); ++i) {
+			charset = charsetVect[i];
+			BmStringOBuf utf8( blockSize, 2.0);
+			BM_LOG2( BM_LogMailParse, 
+						BmString( "ConvertHeaderPartToUTF8(): trying charset ") 
+							<< charset);
+			if (textPart.encodingStyle == "") {
+				// no decoding neccessary, just character-conversion:
+				BmStringIBuf text( textPart.text);
+				BmUtf8Encoder textConverter( &text, charset);
+				utf8.Write( &textConverter);
+				if (textConverter.HadError() || textConverter.HadToDiscardChars())
+					hadConversionError = true;
+				else {
+					result.Write(utf8.TheString());
+					break;
+				}
+			} else {
+				// encoded-words, need decoding + character-conversion:
+				BmStringIBuf text( textPart.text);
+				BmMemFilterRef decoder 
+					= FindDecoderFor(&text, textPart.encodingStyle, true, blockSize);
+				BmUtf8Encoder textConverter( decoder.get(), charset, blockSize);
+				utf8.Write( &textConverter, blockSize);
+				if (textConverter.HadError() || textConverter.HadToDiscardChars())
+					hadConversionError = true;
+				else {
+					result.Write(utf8.TheString());
+					break;
+				}
+			}
 		}
 	}
-	return utf8.TheString();
+	return result.TheString();
 }
 
 /*------------------------------------------------------------------------------*\
@@ -343,7 +403,7 @@ BmString BmEncoding::ConvertHeaderPartToUTF8( const BmString& headerPart,
 		-	
 \*------------------------------------------------------------------------------*/
 BmString BmEncoding::ConvertUTF8ToHeaderPart( const BmString& utf8Text, 
-															 const BmString& charset,
+															 const BmString& inCharset,
 															 bool useQuotedPrintableIfNeeded,
 															 int32 fieldLen) {
 	bool needsQuotedPrintable = false;
@@ -357,26 +417,49 @@ BmString BmEncoding::ConvertUTF8ToHeaderPart( const BmString& utf8Text,
 		needsQuotedPrintable = false;
 	}
 	const uint32 blockSize = max( (int32)128, utf8Text.Length());
-	BmStringIBuf srcBuf( utf8Text);
-	BmStringOBuf tempIO( blockSize, 2);
-	if (needsQuotedPrintable) {
-		// encoded-words (quoted-printable) are neccessary, since 
-		// headerfield contains non-ASCII chars:
-		BmQpEncodedWordEncoder qpEncoder( &srcBuf, blockSize, fieldLen+2, 	
-													 charset);
-		tempIO.Write( &qpEncoder);
-		if (qpEncoder.HadToDiscardChars())
-			throw BM_text_error( "", "", qpEncoder.FirstDiscardedPos());
-	} else {
-		BmUtf8Decoder textConverter( &srcBuf, charset);
-		BmFoldedLineEncoder foldEncoder( &textConverter, BM_MAX_HEADER_LINE_LEN, 
-													blockSize, fieldLen+2);
-		tempIO.Write( &foldEncoder);
-		if (textConverter.HadToDiscardChars())
-			throw BM_text_error( "", "", textConverter.FirstDiscardedPos());
-	}
 	BmString foldedString;
-	foldedString.Adopt( tempIO.TheString());
+	BmCharsetVect charsetVect;
+	if (ThePrefs->GetBool("AutoCharsetDetectionOutbound", true)) {
+		// we try the native charset first and (in case of errors)
+		// all preferred charsets:
+		GetPreferredCharsets(charsetVect, inCharset, true);
+	} else
+		charsetVect.push_back(inCharset);
+	BmString charset;
+	for( uint32 i=0; i<charsetVect.size(); ++i) {
+		charset = charsetVect[i];
+		BM_LOG2( BM_LogMailParse, 
+					BmString( "ConvertUTF8ToHeaderPart(): trying charset ") 
+						<< charset);
+		BmStringIBuf srcBuf( utf8Text);
+		BmStringOBuf tempIO( blockSize, 2);
+		if (needsQuotedPrintable) {
+			// encoded-words (quoted-printable) are neccessary, since 
+			// headerfield contains non-ASCII chars:
+			BmQpEncodedWordEncoder qpEncoder( &srcBuf, blockSize, fieldLen+2, 	
+														 charset);
+			tempIO.Write( &qpEncoder);
+			if (qpEncoder.HadError() || qpEncoder.HadToDiscardChars()) {
+				if (i+1 == charsetVect.size())
+					throw BM_text_error( "", "", qpEncoder.FirstDiscardedPos());
+			} else {
+				foldedString.Adopt( tempIO.TheString());
+				break;
+			}
+		} else {
+			BmUtf8Decoder textConverter( &srcBuf, charset);
+			BmFoldedLineEncoder foldEncoder( &textConverter, BM_MAX_HEADER_LINE_LEN, 
+														blockSize, fieldLen+2);
+			tempIO.Write( &foldEncoder);
+			if (textConverter.HadError() || textConverter.HadToDiscardChars()) {
+				if (i+1 == charsetVect.size())
+					throw BM_text_error( "", "", textConverter.FirstDiscardedPos());
+			} else {
+				foldedString.Adopt( tempIO.TheString());
+				break;
+			}
+		}
+	}
 	return foldedString;		
 }
 

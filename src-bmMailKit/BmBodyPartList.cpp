@@ -95,7 +95,7 @@ void BmContentField::SetTo( const BmString cfString) {
 		if (rx.match[0].atom.size() > 1)
 			params = rx.match[0].atom[1];
 		if (rx.exec( params, 
-						 ";\\s*(\\w+)\\s*=\\s*((?:\\\"[^\"]+\\\"?)|(?:[^;\\s]+))", 
+						 ";?\\s*(\\w+)\\s*=\\s*((?:\\\"[^\"]+\\\"?)|(?:[^;\\s]+))", 
 						 Regexx::global)) {
 			for( uint32 i=0; i<rx.match.size(); ++i) {
 				BmString key;
@@ -485,18 +485,7 @@ void BmBodyPart::SetTo( const BmString& msgtext, int32 start, int32 length,
 		if (IsText() && body->EditableTextBody() == this) {
 			// text data is decoded and then converted from it's native charset
 			// into utf8:
-			BM_LOG2( BM_LogMailParse, 
-						BmString("decoding text-part of mail (length ")
-							<<mBodyLength<<" bytes) ...");
-			BmStringIBuf text( msgtext.String()+mStartInRawText, mBodyLength);
-			BmMemFilterRef decoder 
-				= FindDecoderFor( &text, mContentTransferEncoding);
-			BmStringOBuf tempIO( mBodyLength);
-			BmUtf8Encoder textConverter( decoder.get(), mSuggestedCharset);
-			tempIO.Write( &textConverter);
-			mHadErrorDuringConversion = 
-				textConverter.HadToDiscardChars() || textConverter.HadError();
-			mDecodedData.Adopt( tempIO.TheString());
+			DecodedData();
 			BM_LOG2( BM_LogMailParse, "...splitting off signature...");
 			// split off signature, if any:
 			Regexx rx;
@@ -680,7 +669,7 @@ void BmBodyPart::SetTo( const BmString& msgtext, int32 start, int32 length,
 	AddParsingError()
 	-	
 \*------------------------------------------------------------------------------*/
-void BmBodyPart::AddParsingError( const BmString& errStr)
+void BmBodyPart::AddParsingError( const BmString& errStr) const
 {
 	if (errStr.Length()) {
 		if (mParsingErrors.Length())
@@ -719,36 +708,67 @@ bool BmBodyPart::ShouldBeShownInline()	const {
 \*------------------------------------------------------------------------------*/
 const BmString& BmBodyPart::DecodedData() const {
 	if (!mHaveDecodedData || mCurrentCharset != mSuggestedCharset) {
+		mParsingErrors.Truncate(0);
 		BmRef<BmListModel> listModel( ListModel());
 		if (listModel) {
 			BmBodyPartList* bodyPartList 
 				= dynamic_cast< BmBodyPartList*>( listModel.Get());
 			const BmMail* mail;
 			if (bodyPartList && (mail=bodyPartList->Mail())!=NULL) {
-				BmStringIBuf text( mail->RawText().String()+mStartInRawText, 
-										 mBodyLength);
-				BmMemFilterRef decoder 
-					= FindDecoderFor( &text, mContentTransferEncoding);
-				BmStringOBuf tempIO( mBodyLength, 1.2);
 				if (IsText()) {
 					// text data is decoded and then converted from it's native
 					// charset into utf8:
 					BM_LOG2( BM_LogMailParse, 
 								BmString( "(re-)converting bodytext of ") 
 									<< mBodyLength << " bytes...");
-					BmUtf8Encoder textConverter( decoder.get(), mSuggestedCharset);
-					tempIO.Write( &textConverter);
-					mCurrentCharset = mSuggestedCharset;
-					mHadErrorDuringConversion = 
-						textConverter.HadToDiscardChars() || textConverter.HadError();
+					BmCharsetVect charsetVect;
+					if (mSuggestedCharset != mCurrentCharset 
+					|| !ThePrefs->GetBool("AutoCharsetDetectionInbound", true))
+						// user suggested a charset, we try that:
+						charsetVect.push_back( mSuggestedCharset);
+					else
+						// we try the native charset first and (in case of errors)
+						// all preferred charsets:
+						GetPreferredCharsets( charsetVect, mCurrentCharset);
+					BmString charset;
+					for( uint32 i=0; i<charsetVect.size(); ++i) {
+						BmStringIBuf text( mail->RawText().String()+mStartInRawText,
+												 mBodyLength);
+						BmMemFilterRef decoder 
+							= FindDecoderFor( &text, mContentTransferEncoding);
+						BmStringOBuf tempIO( mBodyLength, 1.2);
+						charset = charsetVect[i];
+						BM_LOG2( BM_LogMailParse, 
+									BmString( "trying charset ") << charset);
+						BmUtf8Encoder textConverter( decoder.get(), charset);
+						tempIO.Write( &textConverter);
+						mHadErrorDuringConversion = textConverter.HadToDiscardChars() 
+											|| textConverter.HadError();
+						if (!mHadErrorDuringConversion || i==charsetVect.size()-1) {
+							if (i>0) {
+								AddParsingError(
+									BmString("Autodetected charset (")
+										<< charset << "), may need manual correction"
+								);
+							}
+							mDecodedData.Adopt( tempIO.TheString());
+							break;
+						}
+					}
+					mCurrentCharset = mSuggestedCharset = charset;
 				} else {
+					BmStringIBuf text( mail->RawText().String()+mStartInRawText, 
+											 mBodyLength);
+					BmMemFilterRef decoder 
+						= FindDecoderFor( &text, mContentTransferEncoding);
+					BmStringOBuf tempIO( mBodyLength, 1.2);
 					BM_LOG2( BM_LogMailParse, 
 								BmString( "decoding bodytext of ") << mBodyLength 
 									<< " bytes...");
 					tempIO.Write( decoder.get());
+					mDecodedData.Adopt( tempIO.TheString());
 					mHadErrorDuringConversion = false;
 				}
-				mDecodedData.Adopt( tempIO.TheString());
 				BM_LOG2( BM_LogMailParse, "done");
 				mHaveDecodedData = true;
 			}
@@ -961,8 +981,72 @@ void BmBodyPart::ConstructBodyForSending( BmStringOBuf &msgText) {
 		boundary = GenerateBoundary();
 		mContentType.SetParam( "boundary", boundary);
 	}
-	if (IsText())
-		mContentType.SetParam( "charset", mSuggestedCharset);
+	BmRef<BmListModel> listModel( ListModel());
+	const BmMail* mail = NULL;
+	BmBodyPartList* bodyPartList = NULL;
+	if (listModel) {
+		bodyPartList = dynamic_cast< BmBodyPartList*>( listModel.Get());
+		if (bodyPartList)
+			mail = bodyPartList->Mail();
+	}
+	bool haveEncodedText 
+		= bodyPartList && mail && mStartInRawText 
+			&& bodyPartList->EditableTextBody() != this;
+	BmString encodedTextStr;
+	if (IsText()) {
+		if (!haveEncodedText) {
+			// need to convert the text from utf-8 to native charset:
+			BM_LOG2( BM_LogMailParse, 
+						BmString( "encoding/converting bodytext of ") 
+										  << DecodedLength() << " bytes to " 
+										  << mCurrentCharset);
+			BmCharsetVect charsetVect;
+			if (ThePrefs->GetBool("AutoCharsetDetectionOutbound", true)) {
+				// we try the native charset first and (in case of errors)
+				// all preferred charsets:
+				GetPreferredCharsets(charsetVect, mCurrentCharset, true);
+			} else
+				charsetVect.push_back(mCurrentCharset);
+			BmString charset;
+			for( uint32 i=0; i<charsetVect.size(); ++i) {
+				charset = charsetVect[i];
+				BM_LOG2( BM_LogMailParse, BmString( "trying charset ") << charset);
+				BmStringIBuf text( DecodedData());
+				BmUtf8Decoder textConverter( &text, charset);
+				BmMemFilterRef encoder 
+					= FindEncoderFor( &textConverter, mContentTransferEncoding);
+				BmStringOBuf encodedText(DecodedLength());
+				encodedText.Write( encoder.get());
+				if (textConverter.HadError() || textConverter.HadToDiscardChars()) {
+					if (i+1 == charsetVect.size()) {
+						// last round, autodetection of charset failed, so we bail:
+						BmString errText
+							= (bodyPartList->EditableTextBody() == this)
+								?	BmString("The mailtext contains characters that ")
+									<< "could not be converted to the selected charset ("
+									<< mCurrentCharset << ").\n\n"
+									<< "Please select the correct charset or remove "
+									<< "the offending characters."
+								:	BmString("The attachment ") << FileName()
+									<< " contains characters that "
+									<< "could not be converted to the selected charset ("
+									<< mCurrentCharset << ").\n\n"
+									<< "Please re-add the attachment with the correct "
+									<< "charset.";
+						throw BM_text_error( 
+							errText, "", textConverter.FirstDiscardedPos()
+						);
+					}
+				} else {
+					encodedTextStr.Adopt( encodedText.TheString());
+					mCurrentCharset = mSuggestedCharset = charset;
+					break;
+				}
+			}
+			BM_LOG2( BM_LogMailParse, "...done (bodytext)");
+		}
+		mContentType.SetParam( "charset", mCurrentCharset);
+	}
 	msgText << BM_FIELD_CONTENT_TYPE << ": " << mContentType << "\r\n";
 	msgText << BM_FIELD_CONTENT_TRANSFER_ENCODING << ": " 
 			  << mContentTransferEncoding << "\r\n";
@@ -983,16 +1067,7 @@ void BmBodyPart::ConstructBodyForSending( BmStringOBuf &msgText) {
 	else {
 		uint32 newStartPos = msgText.CurrPos();
 	
-		BmRef<BmListModel> listModel( ListModel());
-		const BmMail* mail = NULL;
-		BmBodyPartList* bodyPartList = NULL;
-		if (listModel) {
-			bodyPartList = dynamic_cast< BmBodyPartList*>( listModel.Get());
-			if (bodyPartList)
-				mail = bodyPartList->Mail();
-		}
-		if (bodyPartList && mail && mStartInRawText 
-		&& bodyPartList->EditableTextBody() != this) {
+		if (haveEncodedText) {
 			// we already have the encoded text, we simply copy that:
 			BM_LOG2( BM_LogMailParse, 
 						BmString( "copying bodytext of ") << mBodyLength 
@@ -1001,44 +1076,21 @@ void BmBodyPart::ConstructBodyForSending( BmStringOBuf &msgText) {
 												  mBodyLength);
 			BM_LOG2( BM_LogMailParse, "...done (bodytext)");
 		} else {
-			// encode buffer (and convert if neccessary):
-			BmStringIBuf text( DecodedData());
 			if (IsText()) {
-				BM_LOG2( BM_LogMailParse, 
-							BmString( "encoding/converting bodytext of ") 
-											  << DecodedLength() << " bytes to " 
-											  << mCurrentCharset);
-				BmUtf8Decoder textConverter( &text, mCurrentCharset);
-				BmMemFilterRef encoder 
-					= FindEncoderFor( &textConverter, mContentTransferEncoding);
-				mBodyLength = msgText.Write( encoder.get());
-				if (textConverter.HadToDiscardChars()) {
-					BmString errText 
-						= (bodyPartList->EditableTextBody() == this)
-							?	BmString("The mailtext contains characters that ")
-								<< "could not be converted to the selected charset ("
-								<< mCurrentCharset << ").\n\n"
-								<< "Please select the correct charset or remove "
-								<< "the offending characters."
-							:	BmString("The attachment ") << FileName()
-								<< " contains characters that "
-								<< "could not be converted to the selected charset ("
-								<< mCurrentCharset << ").\n\n"
-								<< "Please re-add the attachment with the correct "
-								<< "charset.";
-					throw BM_text_error( 
-						errText, "", textConverter.FirstDiscardedPos()
-					);
-				}
+				// copy encoded text into message:
+				BmStringIBuf text( encodedTextStr);
+				mBodyLength = msgText.Write(&text);
 			} else {
+				// encode buffer:
+				BmStringIBuf text( DecodedData());
 				BM_LOG2( BM_LogMailParse, 
 							BmString( "encoding bodytext of ") << DecodedLength() 
 								<< " bytes...");
 				BmMemFilterRef encoder 
 					= FindEncoderFor( &text, mContentTransferEncoding);
 				mBodyLength = msgText.Write( encoder.get());
+				BM_LOG2( BM_LogMailParse, "...done (bodytext)");
 			}
-			BM_LOG2( BM_LogMailParse, "...done (bodytext)");
 		}
 		mStartInRawText = newStartPos;
 		uint32 len = msgText.CurrPos();

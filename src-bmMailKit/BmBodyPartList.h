@@ -184,7 +184,7 @@ private:
 	int32 PruneUnneededMultiParts();
 	int32 EstimateEncodedSize();
 	void ConstructBodyForSending( BmStringOBuf &msgText);
-	void AddParsingError( const BmString& errStr);
+	void AddParsingError( const BmString& errStr) const;
 
 	bool mIsMultiPart;
 	BmContentField mContentType;
@@ -201,7 +201,7 @@ private:
 	int32 mBodyLength;
 	
 	mutable BmString mCurrentCharset;
-	BmString mSuggestedCharset;
+	mutable BmString mSuggestedCharset;
 	mutable bool mHadErrorDuringConversion;
 	mutable BmString mParsingErrors;
 	

@@ -34,6 +34,7 @@
 
 #include <memory>
 #include <map>
+#include <vector>
 
 #include <iconv.h>
 
@@ -54,6 +55,12 @@ namespace BmEncoding {
 
 	extern IMPEXPBMMAILKIT BmString DefaultCharset;
 	
+	typedef vector< BmString> BmCharsetVect;
+	IMPEXPBMMAILKIT 
+	void GetPreferredCharsets( BmCharsetVect& charsetVect, 
+										const BmString& nativeCharset,
+										bool outbound = false);
+
 	IMPEXPBMMAILKIT 
 	void InitCharsetMap();
 
@@ -75,7 +82,8 @@ namespace BmEncoding {
 
 	IMPEXPBMMAILKIT 
 	BmString ConvertHeaderPartToUTF8( const BmString& headerPart, 
-												 const BmString& defaultCharset);
+												 const BmString& defaultCharset,
+												 bool& hadConversionError);
 	IMPEXPBMMAILKIT 
 	BmString ConvertUTF8ToHeaderPart( const BmString& utf8text, 
 												 const BmString& charset,

@@ -100,7 +100,6 @@ bool BmAddress::SetTo( const BmString& fullText) {
 	Regexx rx;
 	BmString addrText, phraseText;
 
-	mAddrString.Truncate(0);
 	// first we check whether the addresstext is separated into phrase 
 	// and addrspec:
 	if (rx.exec( 
@@ -156,12 +155,11 @@ BmString BmAddress::QuotedPhrase() const {
 		-	generates UTF8-string for this address
 \*------------------------------------------------------------------------------*/
 const BmString& BmAddress::AddrString() const {
-	if (!mAddrString.Length()) {
-		if (mPhrase.Length()) {
-			mAddrString = QuotedPhrase() + " <" + mAddrSpec + ">";
-		} else
-			mAddrString = mAddrSpec;
-	}
+	mAddrString.Truncate(0);
+	if (mPhrase.Length()) {
+		mAddrString = QuotedPhrase() + " <" + mAddrSpec + ">";
+	} else
+		mAddrString = mAddrSpec;
 	return mAddrString;
 }
 
@@ -393,22 +391,21 @@ BmStringList BmAddressList::SplitIntoAddresses( BmString addrListText) {
 		-	
 \*------------------------------------------------------------------------------*/
 const BmString& BmAddressList::AddrString() const {
-	if (!mAddrString.Length()) {
-		if (mIsGroup) {
-			mAddrString << mGroupName << ":";
-			if (mAddrList.begin() != mAddrList.end())
-				// cosmetics: add space only if group actually contains addresses
-				mAddrString << " ";
-		}
-		BmAddrList::const_iterator pos;
-		for( pos=mAddrList.begin(); pos!=mAddrList.end(); ++pos) {
-			if (pos != mAddrList.begin())
-				mAddrString << ", ";
-			mAddrString << pos->AddrString();
-		}
-		if (mIsGroup)
-			mAddrString << ";";
+	mAddrString.Truncate(0);
+	if (mIsGroup) {
+		mAddrString << mGroupName << ":";
+		if (mAddrList.begin() != mAddrList.end())
+			// cosmetics: add space only if group actually contains addresses
+			mAddrString << " ";
 	}
+	BmAddrList::const_iterator pos;
+	for( pos=mAddrList.begin(); pos!=mAddrList.end(); ++pos) {
+		if (pos != mAddrList.begin())
+			mAddrString << ", ";
+		mAddrString << pos->AddrString();
+	}
+	if (mIsGroup)
+		mAddrString << ";";
 	return mAddrString;
 }
 
@@ -988,13 +985,21 @@ void BmMailHeader::ParseHeader( const BmString &header) {
 		fieldBody.Trim();
 
 		// insert pair into header-map:
+		bool hadConversionError;
 		AddFieldVal( 
 			fieldName, 
 			ConvertHeaderPartToUTF8( 
 				fieldBody, 
-				ThePrefs->GetString("DefaultCharset")
+				ThePrefs->GetString("DefaultCharset"),
+				hadConversionError
 			)
 		);
+		if (hadConversionError) {
+			BmString errStr 
+				= BmString("Autodetected charset of header-field '") 
+					<< fieldName << "', parts of text may be missing.";
+			AddParsingError( errStr);
+		}
 
 		BM_LOG2( BM_LogMailParse, fieldName << ": " << fieldBody);
 	}
@@ -1254,6 +1259,9 @@ bool BmMailHeader::ConstructRawText( BmStringOBuf& msgText,
 			// add Resent-fields first (as suggested by [Johnson, section 2.4.2]):
 			for( iter = mHeaders.begin(); iter != mHeaders.end(); ++iter) {
 				fieldName = iter->first;
+				BM_LOG2( BM_LogMailParse, 
+							BmString( "ConstructRawText(): dealing with field ") 
+								<< fieldName);
 				if (fieldName.ICompare("Resent-",7) != 0) {
 					// just interested in Resent-fields:
 					continue;
@@ -1280,6 +1288,9 @@ bool BmMailHeader::ConstructRawText( BmStringOBuf& msgText,
 		// add all other fields:
 		for( iter = mHeaders.begin(); iter != mHeaders.end(); ++iter) {
 			fieldName = iter->first;
+			BM_LOG2( BM_LogMailParse, 
+						BmString( "ConstructRawText(): dealing with field ") 
+							<< fieldName);
 			if (fieldName.ICompare("Content-",8) == 0) {
 				// do not include MIME-header, since that will be added 
 				// by body-part:
