@@ -74,7 +74,7 @@ class BmMailHeaderFieldView : public BView {
 public:
 	// c'tors and d'tor:
 	BmMailHeaderFieldView( BmString fieldName, BmString value, BFont* font, 
-								  float fixedWidth);
+								  float fixedWidth, float titleWidth=-1);
 	~BmMailHeaderFieldView();
 
 	// native methods:
@@ -134,9 +134,12 @@ public:
 
 private:
 	BmRef<BmMailHeader> mMailHeader;
-	int16 mDisplayMode;						// 0=small, 2=large, anyother=medium
-	BFont mFont;								// font to be used for header-fields
-	bool mShowRedirectFields;				// true=>show redirect-fields false=>show original fields
+	int16 mDisplayMode;
+							// 0=small, 2=large, anyother=medium
+	BFont mFont;		
+							// font to be used for header-fields
+	bool mShowRedirectFields;
+							// true=>show redirect-fields false=>show original fields
 	float mMaxTitleWidth;
 	vector<BmMailHeaderFieldView*> mFieldViews;
 
