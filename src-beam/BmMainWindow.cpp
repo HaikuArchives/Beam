@@ -463,8 +463,15 @@ void BmMainWindow::MessageReceived( BMessage* msg) {
 				break;
 			}
 			case BMM_PREFERENCES: {
-				BmPrefsWin::CreateInstance();
-				ThePrefsWin->Show();
+				if (!ThePrefsWin) {
+					BmPrefsWin::CreateInstance();
+					ThePrefsWin->Show();
+				} else  {
+					ThePrefsWin->LockLooper();
+					ThePrefsWin->Hide();
+					ThePrefsWin->Show();
+					ThePrefsWin->UnlockLooper();
+				}
 				break;
 			}
 			default:

@@ -55,7 +55,7 @@ public:
 
 	// native methods:
 	BmRef<BmMailRef> AddMailRef( entry_ref& eref, struct stat& st);
-	inline void MarkCacheAsDirty()		{ mNeedsCacheUpdate = true; }
+	void MarkCacheAsDirty();
 
 	// overrides of list-model base:
 	bool StartJob();

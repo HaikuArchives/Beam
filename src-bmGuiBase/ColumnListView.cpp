@@ -1017,6 +1017,7 @@ void ColumnListView::MouseUp(BPoint where)
 		Select(fNoKeyMouseDownItemIndex,false);
 	fNoKeyMouseDownItemIndex = -1;
 	fWatchingForDrag = false;
+	inherited::MouseUp( where);
 }
 
 
@@ -1025,10 +1026,19 @@ void ColumnListView::MouseMoved(BPoint where, uint32 code, const BMessage *messa
 	if(fWatchingForDrag && (where.x<fLastMouseDown.x-4 || where.x>fLastMouseDown.x+4 ||
 		where.y<fLastMouseDown.y-4 || where.y>fLastMouseDown.y+4))
 	{
+		BPoint p;
+		uint32 buttons;
+		GetMouse( &p, &buttons);
+		if (!(buttons & B_PRIMARY_MOUSE_BUTTON)) {
+			// sometimes, MouseUp() has not been invoked, although the mouse-button
+			// had been released some time ago. We check if the mouse-button is really
+			// still down, if not, we break out:
+			fWatchingForDrag = false;
+			return;
+		}
 		InitiateDrag(fLastMouseDown,IndexOf(fLastMouseDown),true);
 		fNoKeyMouseDownItemIndex = -1;
 		fWatchingForDrag = false;
-		SetMouseEventMask(0);
 	}
 }
 

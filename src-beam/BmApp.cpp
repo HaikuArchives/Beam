@@ -270,7 +270,7 @@ void BmApplication::MessageReceived( BMessage* msg) {
 				const char* to = NULL;
 				if ((to = msg->FindString( MSG_WHO_TO)))
 					mail->SetFieldVal( BM_FIELD_TO, to);
-				BmMailEditWin* editWin = BmMailEditWin::CreateInstance( mail.Get());
+				BmMailEditWin* editWin = BmMailEditWin::CreateInstance( mail.Get(), true);
 				if (editWin)
 					editWin->Show();
 				break;

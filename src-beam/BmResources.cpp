@@ -35,6 +35,9 @@
 #include <Resources.h>
 #include <View.h>
 
+#include "regexx.hh"
+using namespace regexx;
+
 #include "BmBasics.h"
 #include "BmResources.h"
 #include "BmUtil.h"
@@ -86,6 +89,9 @@ BmResources::BmResources()
 	
 	// Load all the needed icons from our resources:
 	FetchIcons();
+
+	// Determine our own FQDN from network settings file, if possible:
+	FetchOwnFQDN();
 
 	// we fill necessary info about the standard font-height:
 	be_plain_font->GetHeight( &BePlainFontHeight);
@@ -176,6 +182,30 @@ void BmResources::FetchIcons() {
 		if (msg.Unflatten( data) == B_OK) {
 			theObj = instantiate_object( &msg);
 			IconMap[name] = dynamic_cast< BBitmap*>( theObj);
+		}
+	}
+}
+
+/*------------------------------------------------------------------------------*\
+	FetchOwnFQDN()
+		-	fetches hostname and domainname from network settings and build FQDN 
+			from that.
+\*------------------------------------------------------------------------------*/
+void BmResources::FetchOwnFQDN() {
+	BPath path;
+	if (find_directory( B_COMMON_SETTINGS_DIRECTORY, &path) == B_OK) {
+		BFile netFile( (BString(path.Path())<<"/network").String(), B_READ_ONLY);
+		if (netFile.InitCheck() == B_OK) {
+			BString buffer;
+			char* buf = buffer.LockBuffer(4096);
+			ssize_t readSize = netFile.Read( buf, 4095);
+			buffer.UnlockBuffer( readSize > 0 ? readSize : 0);
+			Regexx rx;
+			if (rx.exec( buffer, "HOSTNAME\\s*=\\s*(\\S+)", Regexx::nocase)) {
+				mOwnFQDN = rx.match[0].atom[0];
+				if (rx.exec( buffer, "DNS_DOMAIN\\s*=\\s*(\\S+)", Regexx::nocase))
+					mOwnFQDN << "." << rx.match[0].atom[0];
+			}
 		}
 	}
 }

@@ -492,7 +492,7 @@ void BmMailRefView::ShowFolder( BmMailFolder* folder) {
 		if (mPartnerMailView)
 			mPartnerMailView->ShowMail( static_cast< BmMailRef*>( NULL));
 		if (refList)
-			StartJob( refList.Get(), true);
+			StartJob( refList.Get());
 		mCurrFolder = folder;
 		SelectionChanged();
 	}

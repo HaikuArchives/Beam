@@ -332,8 +332,9 @@ void BmMailView::MakeFocus(bool focused) {
 void BmMailView::FrameResized( float newWidth, float newHeight) {
 	inherited::FrameResized( newWidth, newHeight);
 	float textWidth = TextRect().Width()+4;
+	float widenedBy = newWidth-textWidth;
 	if (mBodyPartView) {
-		float widenedBy = newWidth-mBodyPartView->Frame().Width();
+//		float widenedBy = newWidth-mBodyPartView->Frame().Width();
 		float height = mBodyPartView->Frame().Height();
 		if (mOutbound)
 			mBodyPartView->ResizeTo( MAX(textWidth,newWidth), height);
@@ -343,14 +344,14 @@ void BmMailView::FrameResized( float newWidth, float newHeight) {
 			mBodyPartView->Invalidate( BRect( newWidth-widenedBy, 0, newWidth, height));
 	}
 	if (mHeaderView && !mOutbound) {
-		float widenedBy = newWidth-mHeaderView->Frame().Width();
+//		float widenedBy = newWidth-mHeaderView->Frame().Width();
 		float height = mHeaderView->Frame().Height();
 		mHeaderView->ResizeTo( mHeaderView->FixedWidth(), height);
 		if (widenedBy > 0)
 			mHeaderView->Invalidate( BRect( newWidth-widenedBy, 0, newWidth, height));
 	}
 	if (mRulerView) {
-		float widenedBy = newWidth-mRulerView->Frame().Width();
+//		float widenedBy = newWidth-mRulerView->Frame().Width();
 		float height = mRulerView->Frame().Height();
 		mRulerView->ResizeTo( MAX(textWidth,newWidth), height);
 		if (widenedBy > 0)
@@ -392,9 +393,9 @@ void BmMailView::ShowMail( BmMailRef* ref, bool async) {
 			SendNotices( BM_NTFY_MAIL_VIEW, &msg);
 			return;
 		}
-		ContainerView()->SetBusy();
 		mCurrMail = BmMail::CreateInstance( ref);
 		StartJob( mCurrMail.Get(), async);
+		ContainerView()->SetBusy();
 	}
 	catch( exception &err) {
 		// a problem occurred, we tell the user:
@@ -419,9 +420,9 @@ void BmMailView::ShowMail( BmMail* mail, bool async) {
 			SendNotices( BM_NTFY_MAIL_VIEW, &msg);
 			return;
 		}
-		ContainerView()->SetBusy();
 		mCurrMail = mail;
 		StartJob( mCurrMail.Get(), async);
+		ContainerView()->SetBusy();
 	}
 	catch( exception &err) {
 		// a problem occurred, we tell the user:
@@ -754,3 +755,17 @@ void BmMailViewContainer::UnsetBusy() {
 void BmMailViewContainer::PulseBusyView() {
 	if (mBusyView) mBusyView->Pulse();
 }
+
+/*------------------------------------------------------------------------------*\
+	( )
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailViewContainer::RedrawScrollbars() {
+	BScrollBar* hScroller = ScrollBar( B_HORIZONTAL);
+	if (hScroller)
+		hScroller->Invalidate();
+	BScrollBar* vScroller = ScrollBar( B_VERTICAL);
+	if (vScroller)
+		vScroller->Invalidate();
+}
+

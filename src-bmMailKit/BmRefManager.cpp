@@ -34,23 +34,25 @@
 #include "BmRefManager.h"
 
 BmRefObj::BmProxyMap BmRefObj::nProxyMap;
+BLocker* BmRefObj::nGlobalLocker = NULL;
 
 /*------------------------------------------------------------------------------*\
 	AddRef()
 		-	add one reference to object
 \*------------------------------------------------------------------------------*/
 void BmRefObj::AddRef() {
-	BmProxy* proxy = GetProxy( ProxyName());
-	if (proxy) {
-		BAutolock lock( &proxy->Locker);
-		if (!lock.IsLocked())
-			return;
-		++mRefCount;
-		if (mRefCount == 1)
-			proxy->ObjectMap[RefName()] = this;
-		BM_LOG2( BM_LogUtil, BString("RefManager: reference to <") << RefName() << ":"<<RefPrintHex()<<"> added, ref-count is "<<mRefCount);
-	} else
-		BM_SHOWERR(BString("AddRef(): Proxy ")<<ProxyName()<<" could not be created");
+	int32 lastCount = atomic_add( &mRefCount, 1);
+	if (lastCount == 0) {
+		BmProxy* proxy = GetProxy( ProxyName());
+		if (proxy) {
+			BAutolock lock( &proxy->Locker);
+			if (!lock.IsLocked())
+				throw BM_runtime_error(BString("AddRef(): Proxy ")<<ProxyName()<<" could not be locked");
+			proxy->ObjectMap.insert( make_pair( RefName(), this));
+		} else
+			BM_SHOWERR(BString("AddRef(): Proxy ")<<ProxyName()<<" could not be created");
+	}
+	BM_LOG2( BM_LogUtil, BString("RefManager: reference to <") << RefName() << ":"<<RefPrintHex()<<"> added, ref-count is "<<lastCount+1);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -59,23 +61,30 @@ void BmRefObj::AddRef() {
 			if the new reference count is zero
 \*------------------------------------------------------------------------------*/
 void BmRefObj::RemoveRef() {
-	BmProxy* proxy = GetProxy( ProxyName());
-	if (proxy) {
-		BAutolock lock( &proxy->Locker);
-		int32 currRefCount = --mRefCount;
-		BM_LOG2( BM_LogUtil, BString("RefManager: reference to <") << RefName() << ":"<<RefPrintHex()<<"> removed, ref-count is "<<currRefCount);
-		if (currRefCount == 0) {
-			proxy->ObjectMap.erase( RefName());
-			// removed last reference, so we delete the object:
+	int32 lastCount = atomic_add( &mRefCount, -1);
+	BM_LOG2( BM_LogUtil, BString("RefManager: reference to <") << RefName() << ":"<<RefPrintHex()<<"> removed, ref-count is "<<lastCount-1);
+	if (lastCount == 1) {
+		// removed last reference, so we delete the object:
+		BmProxy* proxy = GetProxy( ProxyName());
+		if (proxy) {
+			BAutolock lock( &proxy->Locker);
+			BmObjectMap::iterator pos;
+			for( pos = proxy->ObjectMap.find( RefName()); pos != proxy->ObjectMap.end(); ++pos) {
+				if (pos->second == this)
+					break;
+			}
+			if (pos != proxy->ObjectMap.end())
+				proxy->ObjectMap.erase( pos);
+//			proxy->ObjectMap.erase( RefName());
 #ifdef BM_REF_DEBUGGING
 			BM_LOG( BM_LogUtil, BString("RefManager: ... object <") << typeid(*this).name() << ":" << RefName() << ":"<<RefPrintHex()<<"> will be deleted");
 #else
 			BM_LOG( BM_LogUtil, BString("RefManager: ... object <") << RefName() << ":"<<RefPrintHex()<<"> will be deleted");
 #endif
 			delete this;
-		}
-	} else
-		BM_SHOWERR(BString("RemoveRef(): Proxy ")<<ProxyName()<<" not found");
+		} else
+			BM_SHOWERR(BString("RemoveRef(): Proxy ")<<ProxyName()<<" not found");
+	}
 }
 
 /*------------------------------------------------------------------------------*\
@@ -83,12 +92,24 @@ void BmRefObj::RemoveRef() {
 		-	
 \*------------------------------------------------------------------------------*/
 BmProxy* BmRefObj::GetProxy( const char* const proxyName) {
+	BAutolock lock( GlobalLocker());
 	BmProxyMap::iterator iter = nProxyMap.find( proxyName);
 	if (iter == nProxyMap.end())
 		return nProxyMap[proxyName] = new BmProxy( proxyName);
 	else
 		return iter->second;
 }
+
+/*------------------------------------------------------------------------------*\
+	GetProxy()
+		-	
+\*------------------------------------------------------------------------------*/
+BLocker* BmRefObj::GlobalLocker() { 
+	if (!nGlobalLocker)
+		nGlobalLocker = new BLocker("GlobalRefLock");
+	return nGlobalLocker;
+}
+
 
 #ifdef BM_REF_DEBUGGING
 /*------------------------------------------------------------------------------*\
@@ -98,6 +119,7 @@ BmProxy* BmRefObj::GetProxy( const char* const proxyName) {
 void BmRefObj::PrintRefsLeft() {
 	int32 count = 0;
 	BmProxyMap::const_iterator iter;
+	BAutolock lock( GlobalLocker());
 	BM_LOG2( BM_LogUtil, BString("RefManager: active list\n--------------------"));
 	for( iter = nProxyMap.begin(); iter != nProxyMap.end(); ++iter) {
 		BmProxy* proxy = iter->second;

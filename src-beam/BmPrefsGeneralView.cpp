@@ -87,12 +87,15 @@ BmPrefsGeneralView::BmPrefsGeneralView()
 						0
 					)
 				),
-				new MBorder( M_LABELED_BORDER, 10, (char*)"Mailfolder-View",
+				new MBorder( M_LABELED_BORDER, 10, (char*)"General GUI Options",
 					new HGroup( 
 					new VGroup(
-						mRestoreFolderStatesControl = new BmCheckControl( "Restore state on startup", 
+						mRestoreFolderStatesControl = new BmCheckControl( "Restore mailfolder-view state on startup", 
 																					 	  new BMessage(BM_RESTORE_FOLDER_STATES_CHANGED), 
 																					 	  this, ThePrefs->GetBool("RestoreFolderStates")),
+						mBeMailStyleControl = new BmCheckControl( "Use BeMail-compatible shortcuts", 
+																					 	  new BMessage(BM_BEMAIL_STYLE_CHANGED), 
+																					 	  this, ThePrefs->GetBool("BeMailStyle")),
 						new Space(),
 						0
 						),
@@ -247,6 +250,10 @@ void BmPrefsGeneralView::MessageReceived( BMessage* msg) {
 			}
 			case BM_CACHE_REFS_MEM_CHANGED: {
 				prefsMsg->ReplaceBool("CacheRefsInMem", mCacheRefsInMemControl->Value());
+				break;
+			}
+			case BM_BEMAIL_STYLE_CHANGED: {
+				prefsMsg->ReplaceBool("BeMailStyle", mBeMailStyleControl->Value());
 				break;
 			}
 			default:

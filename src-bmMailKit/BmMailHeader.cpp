@@ -831,7 +831,7 @@ bool BmMailHeader::ConstructRawText( BString& header, int32 encoding) {
 		SetFieldVal( agentField, ourID.String());
 	}
 
-	if (ThePrefs->GetBool( "GenerateOwnMessageIDs") && IsFieldEmpty( BM_FIELD_MESSAGE_ID)) {
+	if (ThePrefs->GetBool( "GenerateOwnMessageIDs")) {
 		// generate our own message-id:
 		BString domain;
 		BString accName = mMail->AccountName();
@@ -842,7 +842,7 @@ bool BmMailHeader::ConstructRawText( BString& header, int32 encoding) {
 		}
 		if (!domain.Length()) {
 			// no account given or it has an empty domain, we try to find out manually:
-			domain = OwnFQHN();
+			domain = OwnFQDN();
 			if (!domain.Length())
 				return false;						// no FQHN, we should not continue
 		}

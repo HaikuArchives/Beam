@@ -59,8 +59,8 @@ class BmMailEditWin : public BmWindow
 public:
 	// creator-funcs, c'tors and d'tor:
 	static BmMailEditWin* CreateInstance( BmMailRef* mailRef=NULL);
-	static BmMailEditWin* CreateInstance( BmMail* mail=NULL);
-	BmMailEditWin( BmMailRef* mailRef=NULL, BmMail* mail=NULL);
+	static BmMailEditWin* CreateInstance( BmMail* mail=NULL, bool isNew=false);
+	BmMailEditWin( BmMailRef* mailRef=NULL, BmMail* mail=NULL, bool isNew=false);
 	~BmMailEditWin();
 
 	// native methods:

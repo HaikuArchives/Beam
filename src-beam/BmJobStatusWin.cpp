@@ -700,6 +700,9 @@ void BmJobStatusWin::AddJob( BMessage* msg) {
 
 		// add the new interface to our view:
 		mOuterGroup->AddChild( dynamic_cast<BView*>(controller));
+		BRect frame = controller->Frame();
+		float height = frame.bottom+2;
+		ResizeTo( Frame().Width(), height);
 		RecalcSize();
 		// ...and note the interface inside the map:
 		mActiveJobs[name] = controller;

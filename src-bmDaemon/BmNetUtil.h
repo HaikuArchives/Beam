@@ -36,7 +36,7 @@
 /*------------------------------------------------------------------------------*\*\
 	utility function that finds out this hosts FQHN:
 \*------------------------------------------------------------------------------*/
-BString OwnFQHN();
-BString OwnDomain();
+BString OwnFQDN();
+BString OwnDomain( BString fqdn="");
 
 #endif

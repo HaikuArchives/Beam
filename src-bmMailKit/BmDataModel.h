@@ -305,8 +305,6 @@ public:
 	inline bool empty() const						{ return mModelItemMap.empty(); }
 	inline status_t InitCheck() const			{ return mInitCheck; }
 
-	static const char* const nProxyName = 		"BmListModel";
-
 protected:
 
 	// native methods:

@@ -137,6 +137,14 @@ void BmNodeMonitor::HandleNodeMonitorMsg( BMessage* msg) {
 													|| BM_THROW_RUNTIME( BString("Couldn't create entry for parent-node <")<<eref.directory<<"> and name <"<<eref.name << "> \n\nError:" << strerror(err));
 					(err = entry.GetStat( &st)) == B_OK
 													|| BM_THROW_RUNTIME( BString("Couldn't get stat for entry.") << " \n\nError:" << strerror(err));
+					if (opcode == B_ENTRY_CREATED && st.st_size == 0) {
+						// some programs create mails directly in the in-folder (instead of creating the mail-file
+						// in a temp-folder and then moving the complete file over to the mailbox).
+						// In order to avoid reading empty mail-files, we wait a little and then try again...
+						snooze( 200*1000);
+						(err = entry.GetStat( &st)) == B_OK
+													|| BM_THROW_RUNTIME( BString("Couldn't get stat for entry.") << " \n\nError:" << strerror(err));
+					}
 					(err = entry.GetNodeRef( &nref)) == B_OK
 													|| BM_THROW_RUNTIME(BString("Could not get node-ref for entry.") << "> \n\nError:" << strerror(err));
 					node = nref.node;

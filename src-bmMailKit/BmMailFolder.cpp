@@ -223,6 +223,8 @@ void BmMailFolder::BumpNewMailCountForSubfolders( int32 offset) {
 		-	
 \*------------------------------------------------------------------------------*/
 BmRef<BmMailRefList> BmMailFolder::MailRefList() {
+	BmAutolock lock( mRefListLocker);
+	lock.IsLocked() 							|| BM_THROW_RUNTIME( Name() + ":RemoveMailRefList(): Unable to get lock");
 	if (!mMailRefList)
 		CreateMailRefList();
 	return mMailRefList;
@@ -241,6 +243,8 @@ void BmMailFolder::CreateMailRefList() {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmMailFolder::RemoveMailRefList() {
+	BmAutolock lock( mRefListLocker);
+	lock.IsLocked() 							|| BM_THROW_RUNTIME( Name() + ":RemoveMailRefList(): Unable to get lock");
 	mMailRefList = NULL;
 }
 
@@ -249,11 +253,11 @@ void BmMailFolder::RemoveMailRefList() {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmMailFolder::RecreateCache() {
-	if (mMailRefList) {
-		CreateMailRefList();
+	BmAutolock lock( mRefListLocker);
+	lock.IsLocked() 							|| BM_THROW_RUNTIME( Name() + ":RecreateCache(): Unable to get lock");
+	CreateMailRefList();
+	if (mMailRefList)
 		mMailRefList->MarkCacheAsDirty();
-		mMailRefList->StartJobInNewThread();
-	}
 }
 
 /*------------------------------------------------------------------------------*\
@@ -261,9 +265,14 @@ void BmMailFolder::RecreateCache() {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmMailFolder::AddMailRef( entry_ref& eref, struct stat& st) {
+	BmAutolock lock( mRefListLocker);
+	lock.IsLocked() 							|| BM_THROW_RUNTIME( Name() + ":AddMailRef(): Unable to get lock");
+	BM_LOG2( BM_LogMailTracking, Name()+" adding mail-ref " << st.st_ino);
 	if (mMailRefList) {
-		if (!mMailRefList->AddMailRef( eref, st))
+		if (!mMailRefList->AddMailRef( eref, st)) {
+			BM_LOG2( BM_LogMailTracking, Name()+" mail-ref already exists.");
 			return;								// mail-ref already exists, we quit
+		}
 	}
 	// if mail-ref is flagged new, we have to tell the mailfolderlist that we own
 	// this new-mail and increment our new-mail-counter (causing an update):
@@ -276,6 +285,8 @@ void BmMailFolder::AddMailRef( entry_ref& eref, struct stat& st) {
 		-	
 \*------------------------------------------------------------------------------*/
 bool BmMailFolder::HasMailRef( BString key) {
+	BmAutolock lock( mRefListLocker);
+	lock.IsLocked() 							|| BM_THROW_RUNTIME( Name() + ":HasMailRef(): Unable to get lock");
 	if (mMailRefList)
 		return mMailRefList->FindItemByKey( key);
 	else
@@ -287,9 +298,14 @@ bool BmMailFolder::HasMailRef( BString key) {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmMailFolder::RemoveMailRef( ino_t node) {
+	BmAutolock lock( mRefListLocker);
+	lock.IsLocked() 							|| BM_THROW_RUNTIME( Name() + ":RemoveMailRef(): Unable to get lock");
+	BM_LOG2( BM_LogMailTracking, Name()+" removing mail-ref "<<node);
 	if (mMailRefList) {
-		if (!mMailRefList->RemoveItemFromList( BString()<<node))
+		if (!mMailRefList->RemoveItemFromList( BString()<<node)) {
+			BM_LOG2( BM_LogMailTracking, Name()+" mail-ref doesn't exist.");
 			return;								// mail-ref didn't exist, we quit
+		}
 	}
 	// if mail-ref is flagged new, we have to tell the mailfolderlist that we no 
 	// longer own this new-mail and decrement our new-mail-counter (causing an update):

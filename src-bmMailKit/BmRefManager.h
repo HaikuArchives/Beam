@@ -58,17 +58,24 @@ public:
 	virtual ~BmRefObj() 						{}
 
 	virtual const BString& RefName() const = 0;
-	virtual const char* ProxyName() const
-													{ return typeid(*this).name(); }
+	inline const char* ProxyName() const	{ return typeid(*this).name(); }
 
 	// native methods:
+#ifdef BM_REF_DEBUGGING
+	virtual void AddRef();
+	virtual void RemoveRef();
+#else
 	void AddRef();
 	void RemoveRef();
+#endif // BM_REF_DEBUGGING
+
 	BString RefPrintHex() const;
 	
 	// getters:
 	inline int32 RefCount() const			{ return mRefCount; }
 
+	static inline BLocker* GlobalLocker();
+	
 	// statics:
 	static BmProxy* GetProxy( const char* const proxyName);
 #ifdef BM_REF_DEBUGGING
@@ -78,6 +85,7 @@ public:
 private:
 	int32 mRefCount;
 	static BmProxyMap nProxyMap;
+	static BLocker* nGlobalLocker;
 
 	// Hide copy-constructor and assignment:
 	BmRefObj( const BmRefObj&);
@@ -86,7 +94,7 @@ private:
 
 
 
-typedef map<BString,BmRefObj*> BmObjectMap;
+typedef multimap<BString,BmRefObj*> BmObjectMap;
 /*------------------------------------------------------------------------------*\
 	BmProxy
 		-	

@@ -40,6 +40,7 @@
 #define BM_DYNAMIC_STATUS_WIN_CHANGED 		'bmDS'
 #define BM_CACHE_REFS_DISK_CHANGED	 		'bmCD'
 #define BM_CACHE_REFS_MEM_CHANGED 			'bmCM'
+#define BM_BEMAIL_STYLE_CHANGED 				'bmBM'
 
 class BmTextControl;
 class BmCheckControl;
@@ -78,6 +79,7 @@ private:
 	BmCheckControl* mDynamicStatusWinControl;
 	BmCheckControl* mCacheRefsInMemControl;
 	BmCheckControl* mCacheRefsOnDiskControl;
+	BmCheckControl* mBeMailStyleControl;
 
 	// Hide copy-constructor and assignment:
 	BmPrefsGeneralView( const BmPrefsGeneralView&);

@@ -81,11 +81,13 @@ public:
 	const char* WHITESPACE;
 	PrefilledBitmap mRightArrow;
 	PrefilledBitmap mDownArrow;
+	BString mOwnFQDN;
 
 	static BmResources* theInstance;
 
 private:
 	void FetchIcons();
+	void FetchOwnFQDN();
 
 	//
 	BmIconMap IconMap;

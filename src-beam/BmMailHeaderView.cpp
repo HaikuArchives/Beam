@@ -115,10 +115,13 @@ void BmMailHeaderView::ShowHeader( BmMailHeader* header, bool invalidate) {
 			}
 		};
 		height = 6+(TheResources->FontLineHeight( mFont)+3)*numLines;
-		ResizeTo( FixedWidth(), height);
-		BmMailView* mailView = (BmMailView*)Parent();
-		if (mailView)
+		
+		BmMailView* mailView = dynamic_cast<BmMailView*>( Parent());
+		if (mailView) {
+			mailView->ScrollTo( 0,0);
+			ResizeTo( FixedWidth(), height);
 			mailView->CalculateVerticalOffset();
+		}
 	}
 	if (invalidate)
 		Invalidate();
@@ -256,6 +259,10 @@ void BmMailHeaderView::Draw( BRect bounds) {
 			DrawString( line.String(), BPoint( titleWidth+x_off, y_off+l*lh+fh) );
 		}
 	}
+	// ugly hack, force ScrollView to redraw its scrollbar:
+	BmMailView* mv = dynamic_cast<BmMailView*>( Parent());
+	if (mv)
+		mv->ContainerView()->RedrawScrollbars();
 }
 
 /*------------------------------------------------------------------------------*\

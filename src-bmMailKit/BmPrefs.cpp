@@ -195,6 +195,7 @@ void BmPrefs::InitDefaults() {
 	mDefaultsMsg.AddString( "ReplySubjectStr", "Re: %s");
 	mDefaultsMsg.AddString( "SignatureRX", "\\A---?\\s*\\n");
 	mDefaultsMsg.AddString( "MimeTypeTrustInfo", "<application/pdf:T><application:W><:T>");
+	mDefaultsMsg.AddBool( "BeMailStyle", false);
 }
 
 /*------------------------------------------------------------------------------*\

@@ -40,12 +40,13 @@
 #include "BmBasics.h"
 #include "BmLogHandler.h"
 #include "BmNetUtil.h"
+#include "BmResources.h"
 
 /*------------------------------------------------------------------------------*\
-	OwnFQHN()
-		-	tries to find out our own FQHN (full qualified hostname)
+	OwnFQDN()
+		-	tries to find out our own FQDN (full qualified domainname)
 \*------------------------------------------------------------------------------*/
-BString OwnFQHN() {
+BString OwnFQDN() {
 	char hostname[MAXHOSTNAMELEN+1];
 	hostname[MAXHOSTNAMELEN] = '\0';
 	int result;
@@ -54,26 +55,35 @@ BString OwnFQHN() {
 		return "";
 	}
 	hostent *hptr;
+	// in case we can't get a FQDN by means of gethostbyname, we try the network-settings
+	// file, if that fails as well, we return the hostname:
 	if ((hptr = gethostbyname( hostname)) == NULL) {
-		BM_SHOWERR("Sorry, could not determine IP-address of this host, giving up.");
-		return "";
+		if (TheResources->mOwnFQDN.Length())
+			return TheResources->mOwnFQDN;		// FQDN that was built from network settings file
+		else
+			return hostname;
+	} else {
+		hostent *h2ptr;
+		if ((h2ptr = gethostbyaddr( hptr->h_addr_list[0], 4, AF_INET)) == NULL)
+			return hptr->h_name;
+		else
+			return h2ptr->h_name;
 	}
-	if ((hptr = gethostbyaddr( hptr->h_addr_list[0], 4, AF_INET)) == NULL) {
-		BM_SHOWERR("Sorry, could not determine FQHN of this host, giving up.");
-		return "";
-	}
-	return hptr->h_name;
 }
 
 /*------------------------------------------------------------------------------*\
 	OwnDomain()
 		-	tries to find out our own domain
 \*------------------------------------------------------------------------------*/
-BString OwnDomain() {
-	BString fqhn = OwnFQHN();
-	int32 firstDot = fqhn.FindFirst(".");
-	if (firstDot != B_ERROR)
-		return fqhn.Remove( 0, firstDot+1);
-	else
+BString OwnDomain( BString fqdn) {
+	if (!fqdn.Length())
+		fqdn = OwnFQDN();
+	int32 firstDot = fqdn.FindFirst(".");
+	if (firstDot != B_ERROR) {
+		if (fqdn.FindFirst(".",firstDot+1) != B_ERROR)
+			return fqdn.Remove( 0, firstDot+1);
+		else
+			return fqdn;
+	} else
 		return "";
 }

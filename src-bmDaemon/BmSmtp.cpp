@@ -210,7 +210,7 @@ void BmSmtp::Connect() {
 void BmSmtp::Helo() {
 	BString domain = mSmtpAccount->DomainToAnnounce();
 	if (!domain.Length())
-		domain = OwnFQHN();
+		domain = OwnFQDN();
 	BString cmd = BString("EHLO ") << domain;
 	SendCommand( cmd);
 	try {
@@ -344,7 +344,8 @@ void BmSmtp::Mail( BmMail* mail) {
 		// no domain part within sender-address, we add our current domain:
 		if (sender.FindFirst("@") == B_ERROR)
 			sender << "@";
-		sender << OwnDomain();
+		BString fqdn = mSmtpAccount->DomainToAnnounce();
+		sender << OwnDomain( fqdn);
 	}
 	BString cmd = BString("MAIL from:<") << sender <<">";
 	if (mServerMayHaveSizeLimit) {

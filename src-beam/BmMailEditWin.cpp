@@ -101,8 +101,8 @@ BmMailEditWin* BmMailEditWin::CreateInstance( BmMailRef* mailRef) {
 		-	creates a new mail-edit window
 		-	initialiazes the window's dimensions by reading its archive-file (if any)
 \*------------------------------------------------------------------------------*/
-BmMailEditWin* BmMailEditWin::CreateInstance( BmMail* mail) {
-	BmMailEditWin* win = new BmMailEditWin( NULL, mail);
+BmMailEditWin* BmMailEditWin::CreateInstance( BmMail* mail, bool isNew) {
+	BmMailEditWin* win = new BmMailEditWin( NULL, mail, isNew);
 	win->ReadStateInfo();
 	return win;
 }
@@ -111,13 +111,13 @@ BmMailEditWin* BmMailEditWin::CreateInstance( BmMail* mail) {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmMailEditWin::BmMailEditWin( BmMailRef* mailRef, BmMail* mail)
+BmMailEditWin::BmMailEditWin( BmMailRef* mailRef, BmMail* mail, bool isNew)
 	:	inherited( "MailEditWin", BRect(50,50,800,600), "Edit Mail", B_TITLED_WINDOW_LOOK, 
 					  B_NORMAL_WINDOW_FEEL, B_ASYNCHRONOUS_CONTROLS)
 	,	mShowDetails1( false)
 	,	mShowDetails2( false)
 	,	mShowDetails3( false)
-	,	mModified( false)
+	,	mModified( isNew)
 {
 	CreateGUI();
 	if (mail)
@@ -283,7 +283,7 @@ void BmMailEditWin::CreateGUI() {
 	if (item)
 		item->SetMarked( true);
 
-	mSaveButton->SetEnabled( false);
+	mSaveButton->SetEnabled( mModified);
 	mMailView->SetModificationMessage( new BMessage( BM_TEXTFIELD_MODIFIED));
 	mMailView->BodyPartView()->StartWatching( this, BM_NTFY_LISTCONTROLLER_MODIFIED);
 
@@ -337,6 +337,7 @@ status_t BmMailEditWin::UnarchiveState( BMessage* archive) {
 		-	
 \*------------------------------------------------------------------------------*/
 MMenuBar* BmMailEditWin::CreateMenu() {
+	bool beMailStyle = ThePrefs->GetBool("BeMailStyle");
 	MMenuBar* menubar = new MMenuBar();
 	BMenu* menu = NULL;
 	// File
@@ -363,8 +364,8 @@ MMenuBar* BmMailEditWin::CreateMenu() {
 
 	// Network
 	menu = new BMenu( "Network");
-	menu->AddItem( new BMenuItem( "Send Mail Now", new BMessage( BMM_SEND_NOW), 'E'));
-	menu->AddItem( new BMenuItem( "Send Mail Later", new BMessage( BMM_SEND_LATER), 'E', B_SHIFT_KEY));
+	menu->AddItem( new BMenuItem( "Send Mail Now", new BMessage( BMM_SEND_NOW), beMailStyle ? 'M' : 'E'));
+	menu->AddItem( new BMenuItem( "Send Mail Later", new BMessage( BMM_SEND_LATER), beMailStyle ? 'M' : 'E', B_SHIFT_KEY));
 	menu->AddSeparatorItem();
 	menubar->AddItem( menu);
 

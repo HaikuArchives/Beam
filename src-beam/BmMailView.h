@@ -169,6 +169,7 @@ public:
 	void SetBusy();
 	void UnsetBusy();
 	void PulseBusyView();
+	void RedrawScrollbars();
 
 	// overrides of BView base:
 	void FrameResized(float new_width, float new_height);
