@@ -919,7 +919,7 @@ void BmMailView::JobIsDone( bool completed) {
 		}
 		SetText( displayText.String(), displayText.Length(), textRunArray);
 		free( textRunArray);
-		mHeaderView->ShowHeader( mCurrMail->Header().Get());
+		mHeaderView->ShowHeader( mCurrMail->Header());
 		BM_LOG2( BM_LogMailParse, BmString("done, mail is visible"));
 		ContainerView()->UnsetBusy();
 		ScrollTo( 0,0);
