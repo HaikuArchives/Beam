@@ -153,6 +153,8 @@ public:
 	}
 	const BString Status() const;
 	//
+	BString DetermineReplyAddress( int32 replyMode, bool canonicalize);
+	//
 	BmRef<BmMail> CreateAttachedForward();
 	BmRef<BmMail> CreateInlineForward( bool withAttachments, 
 										  		  const BString selectedText="");

@@ -353,6 +353,45 @@ BmRef<BmMail> BmMail::CreateAttachedForward() {
 }
 
 /*------------------------------------------------------------------------------*\
+	DetermineReplyAddress()
+	-	
+\*------------------------------------------------------------------------------*/
+BString BmMail::DetermineReplyAddress( int32 replyMode, bool canonicalize) {
+	// fill address information, depending on reply-mode:
+	BString replyAddr;
+	if (!Header())
+		return "";
+	if (replyMode == BMM_REPLY) {
+		// smart (*cough*) mode: If the mail has come from a list, we react
+		// according to user prefs (reply-to-list or reply-to-originator).
+		if (HasComeFromList()) {
+			replyAddr = ThePrefs->GetBool( "PreferReplyToList", true)
+							? Header()->DetermineListAddress()
+							: Header()->DetermineOriginator();
+		}
+		if (!replyAddr.Length())
+			replyAddr = Header()->DetermineOriginator();
+	} else if (replyMode == BMM_REPLY_LIST) {
+		// blindly use list-address for reply (this might mean that we send
+		// a reply to the list although the messages has not come from the list):
+		replyAddr = Header()->DetermineListAddress( true);
+	} else if (replyMode == BMM_REPLY_ORIGINATOR) {
+		// bypass the reply-to, this way one can send mail to the 
+		// original author of a mail which has been 'reply-to'-munged 
+		// by a mailing-list processor:
+		replyAddr = Header()->DetermineOriginator( true);
+	} else if (replyMode == BMM_REPLY_ALL) {
+		// since we are replying to all recipients of this message,
+		// we now include the Originator (plain and standard way):
+		replyAddr = Header()->DetermineOriginator();
+	}
+	if (canonicalize)
+		return BmAddressList( replyAddr).AddrSpecsAsString();
+	else
+		return replyAddr;
+}
+
+/*------------------------------------------------------------------------------*\
 	CreateReply()
 	-	
 \*------------------------------------------------------------------------------*/
@@ -362,32 +401,7 @@ BmRef<BmMail> BmMail::CreateReply( int32 replyMode, const BString selectedText) 
 	BString messageID = GetFieldVal( BM_FIELD_MESSAGE_ID);
 	newMail->SetFieldVal( BM_FIELD_IN_REPLY_TO, messageID);
 	newMail->SetFieldVal( BM_FIELD_REFERENCES, GetFieldVal( BM_FIELD_REFERENCES) + " " + messageID);
-	BString newTo;
-	// fill address information, depending on reply-mode:
-	if (replyMode == BMM_REPLY) {
-		// smart (*cough*) mode: If the mail has come from a list, we react
-		// according to user prefs (reply-to-list or reply-to-originator).
-		if (HasComeFromList()) {
-			newTo = ThePrefs->GetBool( "PreferReplyToList", true)
-							? Header()->DetermineListAddress()
-							: Header()->DetermineOriginator();
-		}
-		if (!newTo.Length())
-			newTo = Header()->DetermineOriginator();
-	} else if (replyMode == BMM_REPLY_LIST) {
-		// blindly use list-address for reply (this might mean that we send
-		// a reply to the list although the messages has not come from the list):
-		newTo = Header()->DetermineListAddress( true);
-	} else if (replyMode == BMM_REPLY_ORIGINATOR) {
-		// bypass the reply-to, this way one can send mail to the 
-		// original author of a mail which has been 'reply-to'-munged 
-		// by a mailing-list processor:
-		newTo = Header()->DetermineOriginator( true);
-	} else if (replyMode == BMM_REPLY_ALL) {
-		// since we are replying to all recipients of this message,
-		// we now include the Originator (plain and standard way):
-		newTo = Header()->DetermineOriginator();
-	}
+	BString newTo = DetermineReplyAddress( replyMode, false);
 	newMail->SetFieldVal( BM_FIELD_TO, newTo);
 	// fetch info about encoding from old mail:
 	int32 encoding = DefaultEncoding();
