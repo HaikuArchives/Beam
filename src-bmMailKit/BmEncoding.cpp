@@ -209,6 +209,15 @@ void BmEncoding::Decode( BmString encodingStyle, const BmString& src,
 	dest.Adopt( destBuf.TheString());
 }
 
+struct BmTextPart {
+	BmString charset;
+	BmString text;
+	BmString encodingStyle;
+	BmTextPart( const BmString& cs, const BmString& t, const BmString& es)
+		:	charset( cs)
+		,	text( t)
+		,	encodingStyle( es)		{}
+};
 /*------------------------------------------------------------------------------*\
 	()
 		-	
@@ -221,6 +230,8 @@ BmString BmEncoding::ConvertHeaderPartToUTF8( const BmString& headerPart,
 	rx.str( headerPart);
 	const uint32 blockSize = max( (int32)128, headerPart.Length());
 	BmStringOBuf utf8( blockSize, 2.0);
+	vector< BmTextPart> textPartVect;
+	BmTextPart currTextPart( defaultCharset, "", "");
 	
 	if ((nm = rx.exec( Regexx::global))!=0) {
 		Regexx rxWhite;
@@ -233,27 +244,87 @@ BmString BmEncoding::ConvertHeaderPartToUTF8( const BmString& headerPart,
 				// unless it's all whitespace (rfc2047 requires whitespace between
 				// encoded words to be removed):
 				BmString chars( headerPart.String()+curr, i->start()-curr);
-				if (!rxWhite.exec( chars, "^\\s*$"))
-					utf8.Write( chars);
+				if (!rxWhite.exec( chars, "^\\s*$")) {
+					if (currTextPart.charset != defaultCharset 
+					|| currTextPart.encodingStyle != "") {
+						// current text-part doesn't fit this text, we need to create
+						// a new text-part:
+						if (currTextPart.text.Length())
+							// add current text-part to vector before creating new one:
+							textPartVect.push_back( currTextPart);
+						currTextPart.charset = defaultCharset;
+						currTextPart.text = "";
+						currTextPart.encodingStyle = "";
+					}
+					currTextPart.text.Append( chars);
+				}
 			}
 			// convert the match (an encoded word) into UTF8:
 			const BmString srcCharset( i->atom[0]);
-			const BmString srcQuotingStyle( i->atom[1]);
-			BmStringIBuf text( headerPart.String()+i->atom[2].start(), 
-									 i->atom[2].Length());
-			BmMemFilterRef decoder 
-				= FindDecoderFor( &text, srcQuotingStyle, true, blockSize);
-			BmUtf8Encoder textConverter( decoder.get(), srcCharset, blockSize);
-			utf8.Write( &textConverter, blockSize);
+			const BmString srcEncodingStyle( i->atom[1]);
+			BmString chars( headerPart.String()+i->atom[2].start(), 
+								 i->atom[2].Length());
+			if (currTextPart.charset != srcCharset 
+			|| currTextPart.encodingStyle != srcEncodingStyle) {
+				// current text-part doesn't fit this text, we need to create
+				// a new text-part:
+				if (currTextPart.text.Length())
+					// add current text-part to vector before creating new one:
+					textPartVect.push_back( currTextPart);
+				currTextPart.charset = srcCharset;
+				currTextPart.text = "";
+				currTextPart.encodingStyle = srcEncodingStyle;
+			}
+			currTextPart.text.Append( chars);
 			curr = i->start()+i->Length();
 		}
 		if (curr<len) {
-			utf8.Write( headerPart.String()+curr, len-curr);
+			// copy the remaining characters,
+			// unless it's all whitespace (rfc2047 requires whitespace between
+			// encoded words to be removed):
+			BmString chars( headerPart.String()+curr, len-curr);
+			if (!rxWhite.exec( chars, "^\\s*$")) {
+				if (currTextPart.charset != defaultCharset 
+				|| currTextPart.encodingStyle != "") {
+					// current text-part doesn't fit this text, we need to create
+					// a new text-part:
+					if (currTextPart.text.Length())
+						// add current text-part to vector before creating new one:
+					textPartVect.push_back( currTextPart);
+					currTextPart.charset = defaultCharset;
+					currTextPart.text = "";
+					currTextPart.encodingStyle = "";
+				}
+				currTextPart.text.Append( chars);
+			}
 		}
 	} else {
-		BmStringIBuf text( headerPart);
-		BmUtf8Encoder textConverter( &text, defaultCharset);
-		utf8.Write( &textConverter);
+		// no encoded words neccessary, we just copy the header-part:
+		currTextPart.charset = defaultCharset;
+		currTextPart.text = headerPart;
+		currTextPart.encodingStyle = "";
+	}
+	if (currTextPart.text.Length())
+		// add current text-part to vector before iterating through vector:
+		textPartVect.push_back( currTextPart);
+	// now step over all text-parts and decode them, concatenating the resulting
+	// strings:
+	for( uint32 i=0; i<textPartVect.size(); ++i) {
+		BmTextPart& textPart = textPartVect[i];
+		if (textPart.encodingStyle == "") {
+			// no decoding neccessary, just character-conversion:
+			BmStringIBuf text( textPart.text);
+			BmUtf8Encoder textConverter( &text, textPart.charset);
+			utf8.Write( &textConverter);
+		} else {
+			// encoded-words, need decoding + character-conversion:
+			BmStringIBuf text( textPart.text);
+			BmMemFilterRef decoder 
+				= FindDecoderFor( &text, textPart.encodingStyle, true, blockSize);
+			BmUtf8Encoder textConverter( decoder.get(), textPart.charset, 
+												  blockSize);
+			utf8.Write( &textConverter, blockSize);
+		}
 	}
 	return utf8.TheString();
 }
@@ -277,15 +348,15 @@ BmString BmEncoding::ConvertUTF8ToHeaderPart( const BmString& utf8Text,
 	}
 	const uint32 blockSize = max( (int32)128, utf8Text.Length());
 	BmStringIBuf srcBuf( utf8Text);
-	BmUtf8Decoder textConverter( &srcBuf, charset);
 	BmStringOBuf tempIO( blockSize, 2);
 	if (needsQuotedPrintable) {
 		// encoded-words (quoted-printable) are neccessary, since 
 		// headerfield contains non-ASCII chars:
-		BmQpEncodedWordEncoder qpEncoder( &textConverter, blockSize, 
-													 fieldLen+2, charset);
+		BmQpEncodedWordEncoder qpEncoder( &srcBuf, blockSize, fieldLen+2, 	
+													 charset);
 		tempIO.Write( &qpEncoder);
 	} else {
+		BmUtf8Decoder textConverter( &srcBuf, charset);
 		BmFoldedLineEncoder foldEncoder( &textConverter, BM_MAX_LINE_LEN, 
 													blockSize, fieldLen+2);
 		tempIO.Write( &foldEncoder);
@@ -399,6 +470,7 @@ BmUtf8Decoder::BmUtf8Decoder( BmMemIBuf* input, const BmString& destCharset,
 	,	mIconvDescr( ICONV_ERR)
 	,	mTransliterate( false)
 	,	mDiscard( false)
+	,	mStoppedOnMultibyte( false)
 {
 	if (mDestCharset.ICompare("utf8")==0)
 		// common mistake: utf8 instead of utf-8:
@@ -495,11 +567,18 @@ void BmUtf8Decoder::Filter( const char* srcBuf, uint32& srcLen,
 		if (errno == E2BIG)
 			BM_LOG3( BM_LogMailParse, 
 						"Result in utf8-decode: too big, need to continue");
-		else if (errno == EINVAL)
-			BM_LOG3( BM_LogMailParse, 
-						"Result in utf8-decode: stopped on multibyte char, "
-						"need to continue");
-		else if (errno == EILSEQ) {
+		else if (errno == EINVAL) {
+			if (mStoppedOnMultibyte) {
+				BM_SHOWERR( "utf8-decode: encountered incomplete multibyte "
+								"character, parts of text may be missing");
+				mHadError = true;
+			} else {
+				mStoppedOnMultibyte = true;
+				BM_LOG3( BM_LogMailParse, 
+							"Result in utf8-decode: stopped on multibyte char, "
+							"need to continue");
+			}
+		} else if (errno == EILSEQ) {
 			BM_LOG( BM_LogMailParse, 
 					  "Result in utf8-decode: invalid multibyte char found");
 			mHadError = true;
@@ -508,7 +587,8 @@ void BmUtf8Decoder::Filter( const char* srcBuf, uint32& srcLen,
 								<< errno);
 			mHadError = true;
 		}
-	}
+	} else
+		mStoppedOnMultibyte = false;
 
 	BM_LOG3( BM_LogMailParse, "utf8-decode: done");
 }
@@ -531,6 +611,7 @@ BmUtf8Encoder::BmUtf8Encoder( BmMemIBuf* input, const BmString& srcCharset,
 	,	mTransliterate( false)
 	,	mDiscard( false)
 	,	mHadToDiscardChars( false)
+	,	mStoppedOnMultibyte( false)
 {
 	if (mSrcCharset.ICompare("utf8")==0)
 		// common mistake: utf8 instead of utf-8:
@@ -629,11 +710,18 @@ void BmUtf8Encoder::Filter( const char* srcBuf, uint32& srcLen,
 		if (errno == E2BIG)
 			BM_LOG3( BM_LogMailParse, 
 						"Result in utf8-encode: too big, need to continue");
-		else if (errno == EINVAL)
-			BM_LOG3( BM_LogMailParse, 
-						"Result in utf8-encode: stopped on multibyte char, "
-						"need to continue");
-		else if (errno == EILSEQ) {
+		else if (errno == EINVAL) {
+			if (mStoppedOnMultibyte) {
+				BM_SHOWERR( "utf8-encode: encountered incomplete multibyte "
+								"character, parts of text may be missing");
+				mHadError = true;
+			} else {
+				mStoppedOnMultibyte = true;
+				BM_LOG3( BM_LogMailParse, 
+							"Result in utf8-encode: stopped on multibyte char, "
+							"need to continue");
+			}
+		} else if (errno == EILSEQ) {
 			BM_LOG2( BM_LogMailParse, 
 						"Result in utf8-encode: invalid multibyte char found");
 			mHadToDiscardChars = true;
@@ -644,7 +732,8 @@ void BmUtf8Encoder::Filter( const char* srcBuf, uint32& srcLen,
 								<< errno);
 			mHadError = true;
 		}
-	}
+	} else
+		mStoppedOnMultibyte = false;
 
 	BM_LOG3( BM_LogMailParse, "utf8-encode: done");
 }
@@ -972,7 +1061,7 @@ void BmQuotedPrintableEncoder::Finalize( char* destBuf, uint32& destLen) {
 BmQpEncodedWordEncoder::BmQpEncodedWordEncoder( BmMemIBuf* input, 
 																uint32 blockSize,
 																int startAtOffset,
-																const BmString& charset)
+																const BmString& destCharset)
 	:	inherited( input, blockSize)
 	,	mQueuedChars( 80)
 	,	mStartAtOffset( startAtOffset)
@@ -980,9 +1069,59 @@ BmQpEncodedWordEncoder::BmQpEncodedWordEncoder( BmMemIBuf* input,
 	,	mCurrAddedLen( 0)
 	,	mNeedFlush( false)
 	,	mKeepLen( 0)
+	,	mCharacterLen( 0)
+	,	mDestCharset( destCharset)
+	,	mIconvDescr( ICONV_ERR)
+	,	mStoppedOnMultibyte( false)
 {
-	mEncodedWord = BmString("=?")<<charset<<"?q?";
+	if (mDestCharset.ICompare("utf8")==0)
+		// common mistake: utf8 instead of utf-8:
+		mDestCharset = "utf-8";
+
+	InitConverter();
+	//
+	mEncodedWord = BmString("=?")<<destCharset<<"?q?";
 	mQueuedChars << mEncodedWord;
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+BmQpEncodedWordEncoder::~BmQpEncodedWordEncoder()
+{
+	if (mIconvDescr != ICONV_ERR) {
+		iconv_close( mIconvDescr);
+		mIconvDescr = ICONV_ERR;
+	}
+}
+
+/*------------------------------------------------------------------------------*\
+	Reset()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmQpEncodedWordEncoder::Reset( BmMemIBuf* input) {
+	inherited::Reset( input);
+	InitConverter();
+}
+
+/*------------------------------------------------------------------------------*\
+	InitConverter()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmQpEncodedWordEncoder::InitConverter() {
+	if (mIconvDescr != ICONV_ERR) {
+		iconv_close( mIconvDescr);
+		mIconvDescr = ICONV_ERR;
+	}
+	BmString toSet = mDestCharset;
+	if (!mDestCharset.Length()
+	|| (mIconvDescr = iconv_open( toSet.String(), "utf-8")) == ICONV_ERR) {
+		BM_SHOWERR( BmString("libiconv: unable to convert from utf-8 to ") 
+							<< toSet);
+		mHadError = true;
+		return;
+	}
 }
 
 /*------------------------------------------------------------------------------*\
@@ -993,6 +1132,7 @@ void BmQpEncodedWordEncoder::Queue( const char* chars, uint32 len) {
 	mQueuedChars.Put( chars, len);
 	mLastAddedLen = mCurrAddedLen;
 	mCurrAddedLen = len;
+	mCharacterLen += len;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -1012,12 +1152,15 @@ bool BmQpEncodedWordEncoder::OutputLineIfNeeded( char* &dest,
 				: mLastAddedLen + mCurrAddedLen;
 						// last char-group won't fit, so we need to fold
 						// before it.
+		if (mCharacterLen > mKeepLen)
+			mKeepLen = mCharacterLen;
 		mNeedFlush = true;
 	}
 	if (mNeedFlush) {
 		// line is too long or needs hard break, we output all chars up to
 		// the group added last:
-		while (mStartAtOffset+mQueuedChars.Length() > mKeepLen) {
+		while (mQueuedChars.Length() 
+		&& mQueuedChars.Length() > mKeepLen) {
 			if (dest>=destEnd)
 				return false;
 			*dest++ = mQueuedChars.Get();
@@ -1042,10 +1185,7 @@ bool BmQpEncodedWordEncoder::OutputLineIfNeeded( char* &dest,
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmQpEncodedWordEncoder::Filter( const char* srcBuf, uint32& srcLen, 
-												 char* destBuf, uint32& destLen) {
-	BM_LOG3( BM_LogMailParse, 
-				BmString("starting to qp-word-encode ") << srcLen << " bytes");
+void BmQpEncodedWordEncoder::EncodeConversionBuf() { 
 	const char* safeChars = 
 			 (ThePrefs->GetBool( "MakeQPSafeForEBCDIC", false)
 					? "%&/()+*,.;:<>-"
@@ -1054,31 +1194,90 @@ void BmQpEncodedWordEncoder::Filter( const char* srcBuf, uint32& srcLen,
 							// it is used for spaces!
 							// the question-mark has to be encoded, too, since it
 							// is part of the encoded-word markers!
+	char c;
+	int32 len = mConversionBuf.Length();
+	if (len>0) {
+		mCharacterLen = 0;
+		for( int32 pos=0; pos<len; ++pos) {
+			c = mConversionBuf[pos];
+			if (isalnum(c) || strchr( safeChars, c)) {
+				Queue( &c, 1);
+			} else if (c == ' ') {
+				// in encoded-words, we always replace SPACE by underline:
+				Queue( "_", 1);
+			} else if (c == '\r') {
+				continue;							// dump '\r'
+			} else {
+				// qp-encode a single character:
+				char enc[3] = {
+					'=',
+					(char)CHAR2HIGHNIBBLE(c),
+				 	(char)CHAR2LOWNIBBLE(c)
+				};
+				Queue( enc, 3);
+			}
+		}
+		mConversionBuf.Truncate(0);
+	}
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmQpEncodedWordEncoder::Filter( const char* srcBuf, uint32& srcLen, 
+												 char* destBuf, uint32& destLen) {
+	BM_LOG3( BM_LogMailParse, 
+				BmString("starting to qp-word-encode ") << srcLen << " bytes");
+
 	const char* src = srcBuf;
-	const char* srcEnd = srcBuf+srcLen;
 	char* dest = destBuf;
 	char* destEnd = destBuf+destLen;
-	char c;
-	for( ; src<srcEnd && dest<destEnd; ++src) {
-		if (!OutputLineIfNeeded( dest, destEnd))
-			break;
-		c = *src;
-		if (isalnum(c) || strchr( safeChars, c)) {
-			Queue( &c, 1);
-		} else if (c == ' ') {
-			// in encoded-words, we always replace SPACE by underline:
-			Queue( "_", 1);
-		} else if (c == '\r') {
-			continue;							// dump '\r'
-		} else {
-			// qp-encode a single character:
-			char enc[3] = {
-				'=',
-				(char)CHAR2HIGHNIBBLE(c),
-			 	(char)CHAR2LOWNIBBLE(c)
-			};
-			Queue( enc, 3);
+
+	EncodeConversionBuf();
+
+	if (OutputLineIfNeeded( dest, destEnd)) {
+		const char* srcEnd = srcBuf+srcLen;
+		size_t srcBytesLeft = 1;
+		if (IS_UTF8_STARTCHAR(*srcBuf)) {
+			const char* p = srcBuf+1;
+			while( p<srcEnd && IS_WITHIN_UTF8_MULTICHAR( *p++))
+				srcBytesLeft++;
 		}
+		const int32 conversionBufLen = 256;
+								// a value larger than any imaginable byte-length
+								// of a single character (no matter what encoding)!
+		char* outBuf = mConversionBuf.LockBuffer( conversionBufLen);
+		size_t outBytesLeft = conversionBufLen;
+		size_t irrevCount = iconv( mIconvDescr, &src, &srcBytesLeft,
+											&outBuf, &outBytesLeft);
+		mConversionBuf.UnlockBuffer( conversionBufLen - outBytesLeft);
+		if (irrevCount == (size_t)-1) {
+			if (errno == E2BIG)
+				BM_LOG3( BM_LogMailParse, 
+							"Result in utf8-decode: too big, need to continue");
+			else if (errno == EINVAL) {
+				if (mStoppedOnMultibyte) {
+					BM_SHOWERR( "utf8-decode: encountered incomplete multibyte "
+									"character, parts of text may be missing");
+					mHadError = true;
+				} else {
+					mStoppedOnMultibyte = true;
+					BM_LOG3( BM_LogMailParse, 
+								"Result in utf8-decode: stopped on multibyte char, "
+								"need to continue");
+				}
+			} else if (errno == EILSEQ) {
+				BM_LOG( BM_LogMailParse, 
+						  "Result in utf8-decode: invalid multibyte char found");
+				mHadError = true;
+			} else {
+				BM_SHOWERR( BmString("Unknown error-result in utf8-decode: ") 
+									<< errno);
+				mHadError = true;
+			}
+		} else
+			mStoppedOnMultibyte = false;
 	}
 	srcLen = src-srcBuf;
 	destLen = dest-destBuf;
@@ -1092,6 +1291,9 @@ void BmQpEncodedWordEncoder::Filter( const char* srcBuf, uint32& srcLen,
 void BmQpEncodedWordEncoder::Finalize( char* destBuf, uint32& destLen) {
 	char* dest = destBuf;
 	char* destEnd = destBuf+destLen;
+
+	EncodeConversionBuf();
+
 	if (OutputLineIfNeeded( dest, destEnd)) {
 		// output remaining chars (followed by "?="):
 		if (mQueuedChars.PeekTail() != '=')

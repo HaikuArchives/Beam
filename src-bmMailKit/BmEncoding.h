@@ -111,6 +111,7 @@ protected:
 	iconv_t mIconvDescr;
 	bool mTransliterate;
 	bool mDiscard;
+	bool mStoppedOnMultibyte;
 };
 
 /*------------------------------------------------------------------------------*\
@@ -146,6 +147,7 @@ protected:
 	bool mTransliterate;
 	bool mDiscard;
 	bool mHadToDiscardChars;
+	bool mStoppedOnMultibyte;
 };
 
 /*------------------------------------------------------------------------------*\
@@ -207,14 +209,20 @@ public:
 	BmQpEncodedWordEncoder( BmMemIBuf* input, uint32 blockSize=nBlockSize, 
 									int startAtOffset=0,
 									const BmString& charset=BM_DEFAULT_STRING);
+	virtual ~BmQpEncodedWordEncoder();
 
 protected:
-	// overrides of BmMailFilter base:
+	// native methods:
+	void InitConverter();
+	void EncodeConversionBuf();
+	void Queue( const char* chars, uint32 len);
+	bool OutputLineIfNeeded( char* &dest, const char* destEnd);
+
+	// overrides of BmMemFilter base:
+	void Reset( BmMemIBuf* input);
 	void Filter( const char* srcBuf, uint32& srcLen, 
 					 char* destBuf, uint32& destLen);
 	void Finalize( char* destBuf, uint32& destLen);
-	void Queue( const char* chars, uint32 len);
-	bool OutputLineIfNeeded( char* &dest, const char* destEnd);
 
 	BmString mEncodedWord;
 	BmRingBuf mQueuedChars;
@@ -223,6 +231,13 @@ protected:
 	int mCurrAddedLen;
 	bool mNeedFlush;
 	int mKeepLen;
+	int mCharacterLen;
+	//
+	BmString mDestCharset;
+	iconv_t mIconvDescr;
+	bool mStoppedOnMultibyte;
+
+	BmString mConversionBuf;
 };
 
 /*------------------------------------------------------------------------------*\
