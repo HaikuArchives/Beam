@@ -32,14 +32,15 @@
 #ifndef _BmMailQuery_h
 #define _BmMailQuery_h
 
+#include <vector>
+
 #include "BmMailKit.h"
 
+#include <Entry.h>
 #include <Query.h>
 
-#include "BmMail.h"
 #include "BmString.h"
 
-typedef vector< BmRef< BmMail> > BmMailVect;
 /*------------------------------------------------------------------------------*\
 	BmMailQuery
 		-	implements the querying for mails
@@ -47,15 +48,15 @@ typedef vector< BmRef< BmMail> > BmMailVect;
 			the moving-operation has ended
 \*------------------------------------------------------------------------------*/
 struct IMPEXPBMMAILKIT BmMailQuery {
+	typedef vector< entry_ref > BmRefVect;
 	
 	BmMailQuery();
 	virtual ~BmMailQuery()					{}
 
 	void SetPredicate( const BmString& predicate);
 	void Execute();
-	void HandoutMails(BmMailVect &outMailVect);
 
-	BmMailVect mMailVect;
+	BmRefVect mRefVect;
 	BQuery mQuery;
 	BmString mPredicate;
 };

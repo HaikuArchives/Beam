@@ -58,14 +58,9 @@ void BmMailQuery::SetPredicate( const BmString& pred)
 \*------------------------------------------------------------------------------*/
 void BmMailQuery::Execute()
 {
-	mMailVect.clear();
 	status_t err;
-	BEntry entry;
-	entry_ref eref;
-	struct stat st;
-	BmRef<BmMailRef> mailRef;
-	BmRef<BmMail> mail;
 	BM_LOG2( BM_LogMailTracking, "Start of pending-mail-query");
+	mRefVect.clear();
 	mQuery.Clear();
 	err = mQuery.SetVolume( &ThePrefs->MailboxVolume);
 	if (err != B_OK) {
@@ -85,29 +80,11 @@ void BmMailQuery::Execute()
 							<< "Error: " << strerror(err));
 		return;
 	}
-	while ((err = mQuery.GetNextEntry(&entry)) == B_OK) {
-		entry.GetRef(&eref);
-		entry.GetStat(&st);
-		mailRef = BmMailRef::CreateInstance( eref, st);
-		if (mailRef->ItemIsValid()) {
-			mail = BmMail::CreateInstance( mailRef.Get());
-			if (mail) {
-				if (mail->InitCheck() != B_OK)
-					mail->StartJobInThisThread( BmMail::BM_READ_MAIL_JOB);
-				if (mail->InitCheck() == B_OK)
-					mMailVect.push_back(mail);
-			}
-		}
+
+	entry_ref eref;
+	while ((err = mQuery.GetNextRef(&eref)) == B_OK) {
+		if (eref.directory != ThePrefs->TrashNodeRef.node)
+			mRefVect.push_back(eref);
 	}
 	BM_LOG2( BM_LogMailTracking, "Done with pending-mail-query");
 }
-
-/*------------------------------------------------------------------------------*\
-	HandoutMails()
-		-	moves info about found mails into given vector
-\*------------------------------------------------------------------------------*/
-void BmMailQuery::HandoutMails(BmMailVect &outMailVect) {
-	outMailVect = mMailVect;
-	mMailVect.clear();
-}
-
