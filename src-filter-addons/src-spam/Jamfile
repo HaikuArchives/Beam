@@ -1,0 +1,22 @@
+SubDir TOP src-filter-addons src-spam ;
+
+SubDirHdrs $(TOP) src-bmBase ;
+SubDirHdrs $(TOP) src-bmRegexx ;
+SubDirHdrs $(TOP) src-bmGuiBase ;
+
+SubDirSysHdrs /boot/home/config/include/cppunit ;
+SubDirSysHdrs /boot/home/config/include ;
+SubDirSysHdrs /boot/home/config/include/liblayout ;
+
+LINKFLAGS += -L/boot/home/config/lib ;
+
+AddOn Spam
+	:  
+		BmSpamFilter.cpp
+	: 	
+		bmGuiBase.so bmRegexx.so bmBase.so 
+		layout pcreposix be
+	;
+
+MakeLocate Spam : [ FDirName $(DISTRO_DIR) add-ons Filters ] ;
+

@@ -1,3 +1,4 @@
 SubDir TOP src-filter-addons ;
 
 SubInclude TOP src-filter-addons src-sieve ;
+SubInclude TOP src-filter-addons src-spam ;
