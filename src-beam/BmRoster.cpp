@@ -247,7 +247,7 @@ static void RebuildList( BmMenuControllerBase* menu, BmListModel* list,
 	BFont font;
 	menu->GetFont( &font);
 	AddListToMenu( list, menu, menu->MsgTemplate(), menu->MsgTarget(), 
-						&font, skipFirstLevel);
+						&font, skipFirstLevel, false, menu->Shortcuts());
 }
 
 /*------------------------------------------------------------------------------*\
