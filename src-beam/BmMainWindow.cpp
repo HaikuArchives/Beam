@@ -272,8 +272,8 @@ MMenuBar* BmMainWindow::CreateMenu() {
 	BMenu* menu = NULL;
 	// File
 	menu = new BMenu( "File");
-	menu->AddItem( CreateMenuItem( "New Folder", BMM_NEW_MAILFOLDER));
-	menu->AddItem( CreateMenuItem( "Rename Folder", BMM_RENAME_MAILFOLDER));
+	menu->AddItem( CreateMenuItem( "New Folder...", BMM_NEW_MAILFOLDER));
+	menu->AddItem( CreateMenuItem( "Rename Folder...", BMM_RENAME_MAILFOLDER));
 	menu->AddItem( CreateMenuItem( "Delete Folder", BMM_DELETE_MAILFOLDER));
 	menu->AddItem( CreateMenuItem( "Recache Folder", BMM_RECACHE_MAILFOLDER));
 	menu->AddSeparatorItem();
@@ -294,7 +294,7 @@ MMenuBar* BmMainWindow::CreateMenu() {
 	menu->AddItem( CreateMenuItem( "Select All", B_SELECT_ALL));
 	menu->AddSeparatorItem();
 	menu->AddItem( CreateMenuItem( "Find...", BMM_FIND));
-	menu->AddItem( CreateMenuItem( "Find Messages...", BMM_FIND_MESSAGES));
+	menu->AddItem( CreateMenuItem( "Find Messages", BMM_FIND_MESSAGES));
 	menu->AddItem( CreateMenuItem( "Find Next", BMM_FIND_NEXT));
 	mMainMenuBar->AddItem( menu);
 

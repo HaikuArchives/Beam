@@ -937,13 +937,13 @@ int32 BmMail::QuoteText( const BString& in, BString& out, BString inQuoteString,
 			// always respect maxLineLen, wrap when lines exceed right margin.
 			// This results in a combing-effect when long lines are wrapped
 			// around, producing a very short next line.
-			maxTextLen = maxLineLen - quote.CountChars() - quoteString.CountChars();
+			maxTextLen = MAX( 0, maxLineLen - quote.CountChars() - quoteString.CountChars());
 		} else {
 			// qStyle == BM_QUOTE_PUSH_MARGIN
 			// push right margin for new quote-string, if needed, in effect leaving 
 			// the mail-formatting intact more often (but possibly exceeding 80 chars 
 			// per line):
-			maxTextLen = maxLineLen - quote.CountChars();
+			maxTextLen = MAX( 0, maxLineLen - quote.CountChars());
 		}
 		text = rx.match[i].atom[1];
 		int32 len = text.Length();
@@ -988,14 +988,14 @@ int32 BmMail::QuoteTextWithReWrap( const BString& in, BString& out,
 		|| rxl.exec( line, ThePrefs->GetString( "QuotingLevelEmptyLineRX", "^[ \\t]*$"))
 		|| rxl.exec( line, ThePrefs->GetString( "QuotingLevelListLineRX", "^[*+\\-\\d]+.*?$"))) {
 			if (i != 0) {
-				maxTextLen = maxLineLen - currQuote.CountChars() - quoteString.CountChars();
+				maxTextLen = MAX( 0, maxLineLen - currQuote.CountChars() - quoteString.CountChars());
 				AddQuotedText( text, out, currQuote, quoteString, maxTextLen);
 				text.Truncate(0);
 			}
 			lastWasSpecialLine = true;
 		} else if (lastWasSpecialLine || currQuote != quote || lastLineLen < minLenForWrappedLine) {
 			if (i != 0) {
-				maxTextLen = maxLineLen - currQuote.CountChars() - quoteString.CountChars();
+				maxTextLen = MAX( 0, maxLineLen - currQuote.CountChars() - quoteString.CountChars());
 				AddQuotedText( text, out, currQuote, quoteString, maxTextLen);
 				text.Truncate(0);
 			}
@@ -1014,7 +1014,7 @@ int32 BmMail::QuoteTextWithReWrap( const BString& in, BString& out,
 			text << " " << line;
 		}
 	}
-	maxTextLen = maxLineLen - currQuote.CountChars() - quoteString.CountChars();
+	maxTextLen = MAX( 0, maxLineLen - currQuote.CountChars() - quoteString.CountChars());
 	AddQuotedText( text, out, currQuote, quoteString, maxTextLen);
 	BString emptyLinesAtEndRX = BString("(?:") << quoteString << "(" << currQuote << ")?[ \\t]*\\n)+\\z";
 	out = rx.replace( out, emptyLinesAtEndRX, "", Regexx::newline|Regexx::global|Regexx::noatom);
@@ -1037,6 +1037,7 @@ int32 BmMail::AddQuotedText( const BString& inText, BString& out,
 	int32 modifiedMaxLen = 0;
 	BString tmp;
 	BString text;
+	maxTextLen = MAX( 0, maxTextLen);
 	ConvertTabsToSpaces( inText, text);
 	while( text.CountChars() > maxTextLen) {
 		int32 wrapPos = B_ERROR;

@@ -117,7 +117,7 @@ private:
 
 	// the following members will be archived into their own files:
 	BmRef< BmMailRefList> mMailRefList;
-	BLocker mRefListLocker;
+	static BLocker nRefListLocker;
 
 	// the following members will NOT be archived at all:
 	int mNewMailCount;

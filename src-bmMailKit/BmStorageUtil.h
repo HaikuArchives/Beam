@@ -43,7 +43,7 @@ bool LivesInTrash( const node_ref* nref);
 
 bool CheckMimeType( const entry_ref* eref, const char* type);
 
-BString DetermineMimeType( const entry_ref* eref);
+BString DetermineMimeType( const entry_ref* eref, bool doublecheck=false);
 
 bool FetchFile( BString fileName, BString& contents);
 

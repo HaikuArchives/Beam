@@ -139,8 +139,31 @@ BmPrefs::BmPrefs( BMessage* archive)
 		// remove BeMailStyle-flag, since we now have configurable shortcuts:
 		mPrefsMsg.RemoveName("BeMailStyle");
 	}
-	
+	if (version < 2) {
+		// changes introduced with version 2:
+		//
+		// nothing to do...
+	}
+
 	if (mPrefsMsg.FindMessage( "Shortcuts", &mShortcutsMsg) == B_OK) {
+		if (version < 3) {
+			BMessage scMsg( mShortcutsMsg);
+			// changes introduced with version 3:
+			//
+			// remove trailing dots from shortcuts, if present:
+			char* name;
+			uint32 type;
+			int32 pos=-1;
+			for( int32 i=0; scMsg.GetInfo( B_STRING_TYPE, i, &name, &type)==B_OK; ++i) {
+				BString scName( name);
+				if ((pos=scName.FindFirst( "...")) != B_ERROR) {
+					BString val = mShortcutsMsg.FindString( scName.String());
+					mShortcutsMsg.RemoveName( scName.String());
+					scName.Truncate( pos);
+					mShortcutsMsg.AddString( scName.String(), val);
+				}
+			}
+		}
 		// add any missing (new) shortcuts:
 		GetShortcutDefaults( &mShortcutsMsg);
 	} else {
@@ -295,7 +318,7 @@ void BmPrefs::SetShortcutFor( const char* name, const BString val) {
 BMessage* BmPrefs::GetShortcutDefaults( BMessage* shortcutsMsg) {
 	if (!shortcutsMsg)
 		shortcutsMsg = new BMessage;
-	SetShortcutIfNew( shortcutsMsg, "About Beam...", "");
+	SetShortcutIfNew( shortcutsMsg, "About Beam", "");
 	SetShortcutIfNew( shortcutsMsg, "Apply Filter", "");
 	SetShortcutIfNew( shortcutsMsg, "Check Mail", "M");
 	SetShortcutIfNew( shortcutsMsg, "Check All Accounts", "<SHIFT>M");
@@ -303,8 +326,8 @@ BMessage* BmPrefs::GetShortcutDefaults( BMessage* shortcutsMsg) {
 	SetShortcutIfNew( shortcutsMsg, "Copy", "C");
 	SetShortcutIfNew( shortcutsMsg, "Cut", "X");
 	SetShortcutIfNew( shortcutsMsg, "Delete Folder", "");
-	SetShortcutIfNew( shortcutsMsg, "Find...", "F");
-	SetShortcutIfNew( shortcutsMsg, "Find Messages...", "<SHIFT>F");
+	SetShortcutIfNew( shortcutsMsg, "Find", "F");
+	SetShortcutIfNew( shortcutsMsg, "Find Messages", "<SHIFT>F");
 	SetShortcutIfNew( shortcutsMsg, "Find Next", "G");
 	SetShortcutIfNew( shortcutsMsg, "Forward As Attachment", "<SHIFT>J");
 	SetShortcutIfNew( shortcutsMsg, "Forward Inline", "J");
@@ -322,8 +345,8 @@ BMessage* BmPrefs::GetShortcutDefaults( BMessage* shortcutsMsg) {
 	SetShortcutIfNew( shortcutsMsg, "New Message", "N");
 	SetShortcutIfNew( shortcutsMsg, "Page Setup", "");
 	SetShortcutIfNew( shortcutsMsg, "Paste", "V");
-	SetShortcutIfNew( shortcutsMsg, "Preferences...", "<SHIFT>P");
-	SetShortcutIfNew( shortcutsMsg, "Print Message...", "");
+	SetShortcutIfNew( shortcutsMsg, "Preferences", "<SHIFT>P");
+	SetShortcutIfNew( shortcutsMsg, "Print Message", "");
 	SetShortcutIfNew( shortcutsMsg, "Quit Beam", "Q");
 	SetShortcutIfNew( shortcutsMsg, "Recache Folder", "");
 	SetShortcutIfNew( shortcutsMsg, "Redirect", "B");
@@ -335,7 +358,7 @@ BMessage* BmPrefs::GetShortcutDefaults( BMessage* shortcutsMsg) {
 	SetShortcutIfNew( shortcutsMsg, "Select All", "A");
 	SetShortcutIfNew( shortcutsMsg, "Send Mail Now", "M");
 	SetShortcutIfNew( shortcutsMsg, "Send Mail Later", "<SHIFT>M");
-	SetShortcutIfNew( shortcutsMsg, "Send Pending Messages...", "");
+	SetShortcutIfNew( shortcutsMsg, "Send Pending Messages", "");
 	SetShortcutIfNew( shortcutsMsg, "Show Raw Message", "<SHIFT>H");
 	SetShortcutIfNew( shortcutsMsg, "Toggle Header Mode", "H");
 	SetShortcutIfNew( shortcutsMsg, "Undo", "Z");

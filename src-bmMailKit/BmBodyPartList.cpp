@@ -219,14 +219,40 @@ BmBodyPart::BmBodyPart( BmBodyPartList* model, const entry_ref* ref, BmListModel
 														|| BM_THROW_RUNTIME( BString("Couldn't create file for <") << ref->name << "> \n\nError:" << strerror(err));
 		(err=file.GetSize( &size)) == B_OK
 														|| BM_THROW_RUNTIME( BString("Couldn't get file-size for <") << ref->name << "> \n\nError:" << strerror(err));
-		BString mimetype = DetermineMimeType( ref);
+		BString mimetype = DetermineMimeType( ref, true);
 		if (mimetype.ICompare("text/x-email")==0) {
 			// convert beos-own mail-mimetype into correct message/rfc822:
 			mimetype = "message/rfc822";
 		}
 		mFileName = ref->name;
-		mContentType.SetTo( mimetype<<"; name=\"" << ref->name << '"');
 		mContentDisposition.SetTo( BString( "attachment; filename=\"")<<ref->name<<'"');
+
+		bool dataOk = false;
+		if (mimetype.ICompare( "text/", 5)==0 && !ThePrefs->GetBool( "ImportTextAsUtf8", false)) {
+			BString nativeString;
+			char* buf = nativeString.LockBuffer( size+1);
+			file.Read( buf, size);
+			buf[size] = '\0';
+			nativeString.UnlockBuffer( size);
+			if (!IsCompatibleWithText( nativeString)) {
+				BM_SHOWERR( "The attachment has been advertised as text, although it seems to contain binary data.\n\nThe attachment will be added as generic file, just to be safe.");
+				mimetype="application/octet-stream";
+				file.Seek( 0, SEEK_SET);
+			} else {
+				ConvertToUTF8( ThePrefs->GetInt( "DefaultEncoding"), 
+									nativeString, mDecodedData);
+				dataOk = true;
+			}
+		}
+		if (!dataOk) {
+			char* buf = mDecodedData.LockBuffer( size+1);
+			file.Read( buf, size);
+			buf[size] = '\0';
+			mDecodedData.UnlockBuffer( size);
+			dataOk = true;
+		}
+
+		mContentType.SetTo( mimetype<<"; name=\"" << ref->name << '"');
 		if (mimetype.ICompare( "text/", 5) == 0)
 			mContentTransferEncoding = NeedsEncoding( mDecodedData) 
 													? ThePrefs->GetBool( "Allow8BitMime", false) 
@@ -241,21 +267,6 @@ BmBodyPart::BmBodyPart( BmBodyPartList* model, const entry_ref* ref, BmListModel
 													: "7bit";
 		else
 			mContentTransferEncoding = "base64";
-
-		if (IsText() && !ThePrefs->GetBool( "ImportTextAsUtf8", false)) {
-			BString convertedString;
-			char* buf = convertedString.LockBuffer( size+1);
-			file.Read( buf, size);
-			buf[size] = '\0';
-			convertedString.UnlockBuffer( size);
-			ConvertToUTF8( ThePrefs->GetInt( "DefaultEncoding"), 
-								convertedString, mDecodedData);
-		} else {
-			char* buf = mDecodedData.LockBuffer( size+1);
-			file.Read( buf, size);
-			buf[size] = '\0';
-			mDecodedData.UnlockBuffer( size);
-		}
 		
 		mInitCheck = B_OK;
 	} catch( exception &err) {

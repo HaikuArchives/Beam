@@ -100,6 +100,9 @@ BmAddress::BmAddress( BString fullText)
 		addrText.CopyInto( mAddrSpec, rx.match[0].atom[0].start(), rx.match[0].atom[0].Length());
 	else
 		mAddrSpec = addrText;
+	// avoid spurious addrSpecs that only contains whitespace:
+	if (rx.exec( mAddrSpec, "^\\s+$"))
+		mAddrSpec = "";
 	mInitOK = true;
 }
 
@@ -220,14 +223,12 @@ bool BmAddressList::Add( BString strippedFieldVal) {
 	Regexx rx;
 	bool res = true;
 
-	if (rx.exec( strippedFieldVal, "^\\s*(.+?):(.+)?;\\s*$")) {
+	if (rx.exec( strippedFieldVal, "^\\s*(.+?):\\s*(.+?)?;\\s*$")) {
 		// it's a group list:
 		mIsGroup = true;
 		strippedFieldVal.CopyInto( mGroupName, rx.match[0].atom[0].start(), rx.match[0].atom[0].Length());
 		if (rx.match[0].atom.size() > 1)
 			strippedFieldVal.CopyInto( addrText, rx.match[0].atom[1].start(), rx.match[0].atom[1].Length());
-		if (!addrText.Length())
-			return false;
 	} else {
 		// simple address (or list of addresses)
 		mIsGroup = false;
@@ -342,8 +343,12 @@ BmStringList BmAddressList::SplitIntoAddresses( BString addrListText) {
 \*------------------------------------------------------------------------------*/
 BmAddressList::operator BString() const {
 	BString addrString;
-	if (mIsGroup)
-		addrString << mGroupName << ": ";
+	if (mIsGroup) {
+		addrString << mGroupName << ":";
+		if (mAddrList.begin() != mAddrList.end())
+			// cosmetics: add space only if group actually contains addresses
+			addrString << " ";
+	}
 	BmAddrList::const_iterator pos;
 	for( pos=mAddrList.begin(); pos!=mAddrList.end(); ++pos) {
 		if (pos != mAddrList.begin())
@@ -362,8 +367,12 @@ BmAddressList::operator BString() const {
 void BmAddressList::ConstructRawText( BString& header, int32 encoding, 
 												  int32 fieldNameLength) const {
 	BString fieldString;
-	if (mIsGroup)
-		fieldString << mGroupName << ": ";
+	if (mIsGroup) {
+		fieldString << mGroupName << ":";
+		if (mAddrList.begin() != mAddrList.end())
+			// cosmetics: add space only if group actually contains addresses
+			fieldString << " ";
+	}
 	BmAddrList::const_iterator pos;
 	for( pos=mAddrList.begin(); pos!=mAddrList.end(); ++pos) {
 		BString converted;
@@ -436,6 +445,13 @@ const BString& BmMailHeader::BmHeaderList::operator [] (const BString fieldName)
 \********************************************************************************/
 
 int32 BmMailHeader::nCounter = 0;
+
+	// split header into separate header-fields:
+	struct subpart {
+		int32 pos;
+		int32 len;
+		inline subpart( int32 p, int32 l) : pos(p), len(l) {}
+	};
 
 /*------------------------------------------------------------------------------*\
 	BmMailHeader( headerText)
@@ -674,29 +690,37 @@ BString BmMailHeader::DetermineReceivingAddrFor( BmPopAccount* acc) {
 			(if any only if nothing else is specified in a header-field)
 \*------------------------------------------------------------------------------*/
 void BmMailHeader::ParseHeader( const BString &header) {
-	Regexx rxHeaderFields, rxUnfold, rx;
-	int32 nm;
+	Regexx rxUnfold, rx;
 
 	// count number of lines in header
 	mNumLines = rx.exec( header, "\\n", Regexx::newline | Regexx::global);
 
-	// split header into separate header-fields:
-	rxHeaderFields.expr( "^(\\S.*?\\r\\n(?:\\s.*?\\r\\n)*)(?=(\\Z|\\S))");
-	rxHeaderFields.str( header.String());
-	if (!(nm=rxHeaderFields.exec( Regexx::global | Regexx::newline)) && mMail) {
+	typedef vector< subpart> BmSubpartVect;
+	BmSubpartVect subparts;
+	int32 pos=-1;
+	int32 lastpos = 0;
+	for(  int32 offset=0; 
+			(pos = header.FindFirst( "\r\n", offset)) != B_ERROR;
+			offset = pos+2) {
+		if (!isspace(header[pos+2])) {
+			subparts.push_back( subpart( lastpos, pos-lastpos));
+			lastpos = pos+2;
+		}
+	}
+	int32 nm = subparts.size();
+	if (!nm && mMail) {
 		throw BM_mail_format_error( BString("Could not find any header-fields in this header: \n") << header);
 	}
-	vector<RegexxMatch>::const_iterator i;
-
 	BM_LOG( BM_LogMailParse, "The mail-header");
 	BM_LOG3( BM_LogMailParse, BString(header) << "\n------------------");
 	BM_LOG( BM_LogMailParse, BString("contains ") << nm << " headerfields\n");
 
-	for( i = rxHeaderFields.match.begin(); i != rxHeaderFields.match.end(); ++i) {
+	BmSubpartVect::const_iterator i;
+	for( i=subparts.begin(); i!=subparts.end(); ++i) {
 
 		// split each headerfield into field-name and field-body:
-		BString headerField, fieldName, fieldBody;
-		headerField = *i;
+		BString fieldName, fieldBody;
+		BString headerField( header.String()+i->pos, i->len);
 		int32 pos = headerField.FindFirst( ':');
 		if (pos == B_ERROR) { 
 			mHasParsingErrors = true;

@@ -426,7 +426,7 @@ MMenuBar* BmMailEditWin::CreateMenu() {
 
 	// Message
 	menu = new BMenu( "Message");
-	menu->AddItem( CreateMenuItem( "New Message...", BMM_NEW_MAIL));
+	menu->AddItem( CreateMenuItem( "New Message", BMM_NEW_MAIL));
 	menubar->AddItem( menu);
 
 	// temporary deactivations:
@@ -811,7 +811,8 @@ bool BmMailEditWin::CreateMailFromFields( bool hardWrapIfNeeded) {
 			mail->SetFieldVal( BM_FIELD_REPLY_TO, mReplyToControl->Text());
 		}
 		mail->SetFieldVal( BM_FIELD_SUBJECT, mSubjectControl->Text());
-		if (ThePrefs->GetBool( "SetMailDateWithEverySave", true)) {
+		if (!mail->IsRedirect() 
+		&& ThePrefs->GetBool( "SetMailDateWithEverySave", true)) {
 			mail->SetFieldVal( BM_FIELD_DATE, TimeToString( time( NULL), 
 																			"%a, %d %b %Y %H:%M:%S %z"));
 		}

@@ -53,6 +53,8 @@ class BmSmtpAccount;
 class BmSmtp : public BmJobModel {
 	typedef BmJobModel inherited;
 	
+	typedef vector< BString> BmRcptVect;
+	
 public:
 	//	message component definitions for status-msgs:
 	static const char* const MSG_SMTP = 		"bm:smtp";
@@ -135,7 +137,8 @@ private:
 	void Disconnect();
 	void Quit( bool WaitForAnswer=false);
 	void Mail( BmMail *mail);
-	void Rcpt( BmMail *mail);
+	bool HasStdRcpts( BmMail *mail, BmRcptVect& rcptVect);
+	void Rcpt( const BmRcptVect& rcptVect);
 	void BccRcpt( BmMail *mail, bool sendDataForEachBcc);
 	void Data( BmMail *mail, BString forBcc="");
 	void UpdateSMTPStatus( const float, const char*, bool failed=false, bool stopped=false);

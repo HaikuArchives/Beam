@@ -57,7 +57,9 @@ BMenuItem* CreateMenuItem( const char* label, int32 msgWhat, const char* idForSh
 		-	
 \*------------------------------------------------------------------------------*/
 BMenuItem* CreateMenuItem( const char* label, BMessage* msg, const char* idForShortcut) {
-	BString shortcut = ThePrefs->GetShortcutFor( idForShortcut ? idForShortcut : label);
+	BString name( idForShortcut ? idForShortcut : label);
+	name.RemoveAll( "...");
+	BString shortcut = ThePrefs->GetShortcutFor( name.String());
 	shortcut.RemoveSet( " \t");
 	BmToUpper( shortcut);
 	int32 modifiers = 0;

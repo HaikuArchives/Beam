@@ -40,6 +40,7 @@
 #include <Path.h> 
 
 #include "BmBasics.h"
+#include "BmLogHandler.h"
 #include "BmStorageUtil.h"
 
 BmTempFileList TheTempFileList;
@@ -50,11 +51,19 @@ BmTempFileList TheTempFileList;
 		-	param count indicates number of files contained in array refs
 \*------------------------------------------------------------------------------*/
 bool MoveToTrash( const entry_ref* refs, int32 count) {
-	// this is basically code I got from Tim Vernum's Website. thx!
-	BMessenger tracker("application/x-vnd.Be-TRAK" );
+	// this is based on code I got from Tim Vernum's Website. thx!
+	static BPath desktopPath;
+	if (desktopPath.InitCheck() != B_OK) {
+		// initialize (find) desktop-path:
+		status_t err;
+		if ((err=find_directory( B_DESKTOP_DIRECTORY, &desktopPath, true)) != B_OK) {
+			BM_LOGERR( BString("Could not find desktop-folder!\n\nError: ")<<strerror( err));
+			desktopPath.SetTo( "/boot/home/Desktop");
+		}
+	}
+	BMessenger tracker( "application/x-vnd.Be-TRAK" );
 	if (refs && tracker.IsValid()) {
-		BMessage msg( B_DELETE_PROPERTY );
-
+		BMessage msg( B_DELETE_PROPERTY);
 		BMessage specifier( 'sref' );
 		for( int i=0; i<count; ++i) {
 			specifier.AddRef( "refs", &refs[i]);
@@ -63,9 +72,22 @@ bool MoveToTrash( const entry_ref* refs, int32 count) {
 		msg.AddSpecifier( &specifier );
 
 		msg.AddSpecifier( "Poses" );
-		msg.AddSpecifier( "Window", 1 );
+		msg.AddSpecifier( "Window", desktopPath.Path());
 
-		return tracker.SendMessage( &msg) == B_OK;
+		BMessage reply;
+		tracker.SendMessage( &msg, &reply);
+		if (reply.what == B_MESSAGE_NOT_UNDERSTOOD) {
+			// maybe we have to deal with a Tracker that does not have a window named
+			// '/boot/home/Desktop', but uses 'Desktop' instead, we try that:
+			if (BString("Desktop") != desktopPath.Path()) {
+				// try with 'Desktop':
+				desktopPath.SetTo( "Desktop");
+				return MoveToTrash( refs, count);
+			}
+			// neither '/boot/home/Desktop' nor 'Desktop' seems to work, we give up:
+			return false;
+		}
+		return true;
 	} else
 		return false;
 } 
@@ -102,9 +124,11 @@ bool CheckMimeType( const entry_ref* eref, const char* type) {
 	DetermineMimeType( eref)
 		-	determines the mimetype of the given file (according to BeOS)
 \*------------------------------------------------------------------------------*/
-BString DetermineMimeType( const entry_ref* eref) {
+BString DetermineMimeType( const entry_ref* eref, bool doublecheck) {
 	BNode node( eref);
 	if (node.InitCheck() == B_OK) {
+		if (doublecheck)
+			node.RemoveAttr( "BEOS:TYPE");
 		BNodeInfo nodeInfo( &node);
 		if (nodeInfo.InitCheck() == B_OK) {
 			char mimetype[B_MIME_TYPE_LENGTH+1];
@@ -116,8 +140,9 @@ BString DetermineMimeType( const entry_ref* eref) {
 				entry.GetPath( &path);
 				status_t res=entry.InitCheck();
 				if (res==B_OK && path.InitCheck()==B_OK && path.Path())
-					update_mime_info( path.Path(), false, true, false);
+					update_mime_info( path.Path(), false, true, true);
 			}
+			nodeInfo.SetTo( &node);
 			if (nodeInfo.GetType( mimetype) == B_OK)
 				return mimetype;
 		}

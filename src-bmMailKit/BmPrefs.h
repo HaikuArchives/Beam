@@ -50,7 +50,7 @@ class BmPrefs : public BArchivable {
 
 	static const char* const MSG_VERSION = 	"bm:version";
 
-	static const int16 nPrefsVersion = 2;
+	static const int16 nPrefsVersion = 3;
 	
 public:
 	// creator-func, c'tors and d'tor:

@@ -52,7 +52,11 @@ void BmRefObj::AddRef() {
 		} else
 			BM_SHOWERR(BString("AddRef(): Proxy ")<<ProxyName()<<" could not be created");
 	}
+#ifdef BM_REF_DEBUGGING
+	BM_LOG2( BM_LogUtil, BString("RefManager: reference to <") << typeid(*this).name() << ":" << RefName() << ":"<<RefPrintHex()<<"> added, ref-count is "<<lastCount+1);
+#else
 	BM_LOG2( BM_LogUtil, BString("RefManager: reference to <") << RefName() << ":"<<RefPrintHex()<<"> added, ref-count is "<<lastCount+1);
+#endif
 }
 
 /*------------------------------------------------------------------------------*\
@@ -61,7 +65,11 @@ void BmRefObj::AddRef() {
 			and then reinsert it under different name:
 \*------------------------------------------------------------------------------*/
 void BmRefObj::RenameRef( const char* newName) {
+#ifdef BM_REF_DEBUGGING
+	BM_LOG2( BM_LogUtil, BString("RefManager: reference to <") << typeid(*this).name() << ":" << RefName() << ":"<<RefPrintHex()<<"> renamed to "<<newName);
+#else
 	BM_LOG2( BM_LogUtil, BString("RefManager: reference to <") << RefName() << ":"<<RefPrintHex()<<"> renamed to "<<newName);
+#endif
 	BmProxy* proxy = GetProxy( ProxyName());
 	if (proxy) {
 		BAutolock lock( &proxy->Locker);
@@ -89,7 +97,11 @@ void BmRefObj::RenameRef( const char* newName) {
 \*------------------------------------------------------------------------------*/
 void BmRefObj::RemoveRef() {
 	int32 lastCount = atomic_add( &mRefCount, -1);
+#ifdef BM_REF_DEBUGGING
+	BM_LOG2( BM_LogUtil, BString("RefManager: reference to <") << typeid(*this).name() << ":" << RefName() << ":"<<RefPrintHex()<<"> removed, ref-count is "<<lastCount-1);
+#else
 	BM_LOG2( BM_LogUtil, BString("RefManager: reference to <") << RefName() << ":"<<RefPrintHex()<<"> removed, ref-count is "<<lastCount-1);
+#endif
 	if (lastCount == 1) {
 		// removed last reference, so we delete the object:
 		BmProxy* proxy = GetProxy( ProxyName());

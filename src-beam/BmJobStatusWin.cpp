@@ -134,9 +134,9 @@ void BmJobStatusView::MessageReceived( BMessage* msg) {
 				BmAutolock lock( TheJobStatusWin);
 				lock.IsLocked()				|| BM_THROW_RUNTIME( "JobStatusView(): could not lock window");
 				if (!mIsAutoJob) {
+					TheJobStatusWin->Minimize( false);
 					do {
-						TheJobStatusWin->Minimize( false);
-							TheJobStatusWin->Show();
+						TheJobStatusWin->Show();
 					} while (TheJobStatusWin->IsHidden());
 				}
 				break;
@@ -453,7 +453,7 @@ void BmPopperView::StartJob( BmJobModel* model, bool startInNewThread,
 void BmPopperView::JobIsDone( bool completed) {
 	inherited::JobIsDone( completed);
 	if (--nActiveCount == 0) {
-		// [suggested by Rainer Riedl (and improved by Tyler Dauwalder)]:
+		// [feature suggested by Rainer Riedl (and improved by Tyler Dauwalder)]:
 		// 	temporary hack: Execute possibly existing 'filter'-program to do 
 		//		mail filtering (this will be removed in Beam 0.92):
 		app_info appInfo;

@@ -78,6 +78,7 @@ public:
 	inline bool InitOK() const				{ return mInitOK; }
 	inline bool HasPhrase() const			{ return mPhrase.Length() > 0; }
 	inline const BString& Phrase() const		{ return mPhrase; }
+	inline bool HasAddrSpec() const			{ return mAddrSpec.Length() > 0; }
 	inline const BString& AddrSpec() const		{ return mAddrSpec; }
 
 private:

@@ -461,7 +461,7 @@ void BmBodyPartView::ItemInvoked( int32 index) {
 		entry_ref eref = bodyPart->WriteToTempFile();
 		// ...and verify that the real mimetype corresponds to the one indicated
 		// by the attachment-info:
-		BString realMT = DetermineMimeType( &eref);
+		BString realMT = DetermineMimeType( &eref, true);
 		if (realMT.ICompare( bodyPart->MimeType())!=0) {
 			BString s("ATTENTION!\n\nThe attachment pretends to be of type \n\t");
 			s << bodyPart->MimeType()

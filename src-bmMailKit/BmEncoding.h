@@ -63,6 +63,7 @@ namespace BmEncoding {
 												bool fold=false, int32 fieldLen=0);
 	
 	bool NeedsEncoding( const BString& charsetString);
+	bool IsCompatibleWithText( const BString& s);
 };
 
 #endif

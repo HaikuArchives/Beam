@@ -384,12 +384,18 @@ void BmSmtp::SendMails() {
 			BM_LOGERR( BString("SendMails(): mail no. ") << i << " is NULL, skipping it.");
 			continue;
 		}
-		Mail( mail);
-		Rcpt( mail);
+		BmRcptVect rcptVect;
 		if (ThePrefs->GetBool("SpecialHeaderForEachBcc", true)) {
-			Data( mail);
+			if (HasStdRcpts( mail, rcptVect)) {
+				Mail( mail);
+				Rcpt( rcptVect);
+				Data( mail);
+			}
 			BccRcpt( mail, true);
 		} else {
+			Mail( mail);
+			if (HasStdRcpts( mail, rcptVect))
+				Rcpt( rcptVect);
 			BccRcpt( mail, false);
 			Data( mail);
 		}
@@ -422,24 +428,43 @@ void BmSmtp::Mail( BmMail* mail) {
 }
 
 /*------------------------------------------------------------------------------*\
-	Rcpt( mail)
-		-	announces all recipients of the given mail to the server
+	bool HasStdRcpts( mail)
+		-	determines the list of standard-recipients (from TO & CC)
+		-	returns true if at least one recipient has been set, false otherwise
+			(the latter case might occur if a mail only contains BCCs)
 \*------------------------------------------------------------------------------*/
-void BmSmtp::Rcpt( BmMail* mail) {
+bool BmSmtp::HasStdRcpts( BmMail* mail, BmRcptVect& rcptVect) {
 	BmAddrList::const_iterator iter;
 	const BmAddressList toList = mail->IsRedirect() 
 											? mail->Header()->GetAddressList( BM_FIELD_RESENT_TO)
 											: mail->Header()->GetAddressList( BM_FIELD_TO);
 	for( iter=toList.begin(); iter != toList.end(); ++iter) {
-		BString cmd = BString("RCPT to:<") << iter->AddrSpec() <<">";
-		SendCommand( cmd);
-		CheckForPositiveAnswer();
+		if (!iter->HasAddrSpec())
+			// empty group-addresses have no real address-specification 
+			// (like 'Undisclosed-Recipients: ;'), we filter those:
+			continue;
+		rcptVect.push_back( iter->AddrSpec());
 	}
 	const BmAddressList ccList = mail->IsRedirect() 
 											? mail->Header()->GetAddressList( BM_FIELD_RESENT_CC)
 											: mail->Header()->GetAddressList( BM_FIELD_CC);
 	for( iter=ccList.begin(); iter != ccList.end(); ++iter) {
-		BString cmd = BString("RCPT to:<") << iter->AddrSpec() <<">";
+		if (!iter->HasAddrSpec())
+			// empty group-addresses have no real address-specification 
+			// (like 'Undisclosed-Recipients: ;'), we filter those:
+			continue;
+		rcptVect.push_back( iter->AddrSpec());
+	}
+	return rcptVect.size()>0;
+}
+
+/*------------------------------------------------------------------------------*\
+	bool Rcpt( rcptVect)
+		-	announces all given recipients to the server
+\*------------------------------------------------------------------------------*/
+void BmSmtp::Rcpt( const BmRcptVect& rcptVect) {
+	for( uint32 i=0; i<rcptVect.size(); ++i) {
+		BString cmd = BString("RCPT to:<") << rcptVect[i] <<">";
 		SendCommand( cmd);
 		CheckForPositiveAnswer();
 	}
