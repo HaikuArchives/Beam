@@ -83,10 +83,11 @@ public:
 	// getters:
 	BHandler* MsgTarget() const;
 	BMessage* MsgTemplate() 		 		{ return mMsgTemplate; }
+	const BmString& Shortcuts() const 	{ return mShortcuts; }
 
 	// setters:
 	void MsgTarget( BHandler* t)  		{ mMsgTarget = t; }
-	void Shortcuts( const BmString s) 	{ mShortcuts = s; }
+	void Shortcuts( const BmString s);
 
 protected:
 	virtual void UpdateItemList();

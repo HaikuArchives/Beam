@@ -198,3 +198,13 @@ BHandler* BmMenuControllerBase::MsgTarget() const
 	}
 	return mMsgTarget; 
 }
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMenuControllerBase::Shortcuts( const BmString s)
+{ 
+	mShortcuts = s; 
+	UpdateItemList(); 
+}
