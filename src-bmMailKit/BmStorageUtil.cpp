@@ -195,7 +195,7 @@ BmString BmTempFileList::NextTempFilenameWithPath() {
 	status_t err;
 	(err=find_directory( B_COMMON_TEMP_DIRECTORY, &tempPath, true)) == B_OK
 													||	BM_THROW_RUNTIME(BmString("Could not find tmp-folder!\n\nError: ")<<strerror( err));
-	return BmString(tempPath.Path()) << "bm_" << ++mCount;
+	return BmString(tempPath.Path()) << "/bm_" << ++mCount;
 }
 
 /*------------------------------------------------------------------------------*\
