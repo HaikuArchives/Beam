@@ -128,8 +128,6 @@ BmMainWindow::BmMainWindow()
 	BmToolbarButton::CalcMaxSize(width, height, "Forward",	
 										  TheResources->IconByName("Button_Forward"), 
 										  true);
-	BmToolbarButton::CalcMaxSize(width, height, "Redirect",	
-										  TheResources->IconByName("Button_Redirect"));
 	BmToolbarButton::CalcMaxSize(width, height, "Print",		
 										  TheResources->IconByName("Button_Print"));
 	BmToolbarButton::CalcMaxSize(width, height, "Delete",		
@@ -144,7 +142,7 @@ BmMainWindow::BmMainWindow()
 		new VGroup(
 			minimax( 600, 200, 1E5, 1E5),
 			CreateMenu(),
-			new MBorder( M_RAISED_BORDER, 3, NULL,
+			new MBorder( M_RAISED_BORDER, 1, NULL,
 				new HGroup(
 					minimax( -1, -1, 1E5, -1),
 					mCheckButton 
@@ -179,15 +177,6 @@ BmMainWindow::BmMainWindow()
 						   new BMessage( defaultFwdMsgType), this, 
 						   "Forward mail to somewhere else", true
 						),
-					mRedirectButton 
-						= new BmToolbarButton( 
-							"Redirect", 
-							TheResources->IconByName("Button_Redirect"), 
-							width, height,
-							new BMessage(BMM_REDIRECT), this, 
-							"Redirect message to somewhere else "
-							"(preserves original sender)"
-						),
 					mPrintButton 
 						= new BmToolbarButton( 
 							"Print", 
@@ -204,7 +193,7 @@ BmMainWindow::BmMainWindow()
 							new BMessage(BMM_TRASH), this, 
 							"Move selected messages to Trash"
 						),
-					new Space(),
+					new ToolbarSpace(),
 					0
 				)
 			),
@@ -655,24 +644,13 @@ void BmMainWindow::MailRefSelectionChanged( bool haveSelectedRef) {
 	// adjust buttons:
 	mReplyButton->SetEnabled( haveSelectedRef);
 	mForwardButton->SetEnabled( haveSelectedRef);
-	mRedirectButton->SetEnabled( haveSelectedRef);
 	mTrashButton->SetEnabled( haveSelectedRef);
 	mPrintButton->SetEnabled( haveSelectedRef);
 	// adjust menu:
-	mMainMenuBar->FindItem( BMM_REPLY)
-		->SetEnabled( haveSelectedRef);
-	mMainMenuBar->FindItem( BMM_REPLY_LIST)
-		->SetEnabled( haveSelectedRef);
-	mMainMenuBar->FindItem( BMM_REPLY_ORIGINATOR)
-		->SetEnabled( haveSelectedRef);
-	mMainMenuBar->FindItem( BMM_REPLY_ALL)
-		->SetEnabled( haveSelectedRef);
-	mMainMenuBar->FindItem( BMM_FORWARD_ATTACHED)
-		->SetEnabled( haveSelectedRef);
-	mMainMenuBar->FindItem( BMM_FORWARD_INLINE)
-		->SetEnabled( haveSelectedRef);
-	mMainMenuBar->FindItem( BMM_FORWARD_INLINE_ATTACH)
-		->SetEnabled( haveSelectedRef);
+	mMainMenuBar->FindItem( "Reply")
+			->SetEnabled( haveSelectedRef);
+	mMainMenuBar->FindItem( "Forward")
+			->SetEnabled( haveSelectedRef);
 	mMainMenuBar->FindItem( BMM_REDIRECT)
 		->SetEnabled( haveSelectedRef);
 	mMainMenuBar->FindItem( BMM_EDIT_AS_NEW)

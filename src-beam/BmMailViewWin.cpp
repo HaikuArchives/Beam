@@ -135,7 +135,6 @@ void BmMailViewWin::CreateGUI() {
 	BmToolbarButton::CalcMaxSize(width, height, "Reply",		TheResources->IconByName("Button_Reply"));
 	BmToolbarButton::CalcMaxSize(width, height, "Reply All",	TheResources->IconByName("Button_ReplyAll"));
 	BmToolbarButton::CalcMaxSize(width, height, "Forward",	TheResources->IconByName("Button_Forward"));
-	BmToolbarButton::CalcMaxSize(width, height, "Redirect",	TheResources->IconByName("Button_Redirect"));
 	BmToolbarButton::CalcMaxSize(width, height, "Print",		TheResources->IconByName("Button_Print"));
 	BmToolbarButton::CalcMaxSize(width, height, "Delete",		TheResources->IconByName("Button_Trash"));
 
@@ -147,7 +146,7 @@ void BmMailViewWin::CreateGUI() {
 		new VGroup(
 			minimax( 500, 400, 1E5, 1E5),
 			CreateMenu(),
-			new MBorder( M_RAISED_BORDER, 3, NULL,
+			new MBorder( M_RAISED_BORDER, 1, NULL,
 				new HGroup(
 					minimax( -1, -1, 1E5, -1),
 					mNewButton = new BmToolbarButton( "New", 
@@ -165,11 +164,6 @@ void BmMailViewWin::CreateGUI() {
 																 	  width, height,
 																	  new BMessage( defaultFwdMsgType), this, 
 																	  "Forward mail to somewhere else", true),
-					mRedirectButton = new BmToolbarButton( "Redirect", 
-																	 TheResources->IconByName("Button_Redirect"), 
-																 	 width, height,
-																	 new BMessage(BMM_REDIRECT), this, 
-																	 "Redirect message to somewhere else (preserves original message)"),
 					mPrintButton = new BmToolbarButton( "Print", 
 																	TheResources->IconByName("Button_Print"), 
 																   width, height,
@@ -180,7 +174,7 @@ void BmMailViewWin::CreateGUI() {
 																   width, height,
 																	new BMessage(BMM_TRASH), this, 
 																	"Move this message to Trash"),
-					new Space(),
+					new ToolbarSpace(),
 					0
 				)
 			),
@@ -323,6 +317,9 @@ void BmMailViewWin::MessageReceived( BMessage* msg) {
 					if (msg->what == BMM_TRASH
 					|| (ThePrefs->GetBool("CloseViewWinAfterMailAction", true)
 						&& (msg->what == BMM_REDIRECT
+							|| msg->what == BMM_FORWARD_INLINE
+							|| msg->what == BMM_FORWARD_INLINE_ATTACH
+							|| msg->what == BMM_FORWARD_ATTACHED
 							|| msg->what == BMM_REPLY
 							|| msg->what == BMM_REPLY_LIST
 							|| msg->what == BMM_REPLY_ORIGINATOR

@@ -100,7 +100,6 @@ private:
 	BmToolbarButton* mNewButton;
 	BmToolbarButton* mReplyButton;
 	BmToolbarButton* mForwardButton;
-	BmToolbarButton* mRedirectButton;
 	BmToolbarButton* mPrintButton;
 	BmToolbarButton* mTrashButton;
 	
