@@ -62,9 +62,10 @@ extern const char* BM_MAIL_ATTR_HEADER;
 extern const char* BM_MAIL_ATTR_CONTENT;
 extern const char* BM_MAIL_ATTR_ATTACHMENTS;
 extern const char* BM_MAIL_ATTR_ACCOUNT;
+// Beam's own attributes:
 extern const char* BM_MAIL_ATTR_IDENTITY;
-//
 extern const char* BM_MAIL_ATTR_MARGIN;
+extern const char* BM_MAIL_ATTR_WHEN_CREATED;
 
 extern const char* BM_FIELD_BCC;
 extern const char* BM_FIELD_CC;
@@ -305,6 +306,8 @@ private:
 							// new status of base mail (forwarded/replied)
 	BmString mSignatureName;
 							// name of signature to use in this mail
+	bigtime_t mWhenCreated;
+							// time (in microseconds) when this mail was created
 	bool mMoveToTrash;
 							// indicates that this mail should be trashed (after being
 							// stored)

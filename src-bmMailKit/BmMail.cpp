@@ -73,9 +73,10 @@ const char* BM_MAIL_ATTR_HEADER			= B_MAIL_ATTR_HEADER;
 const char* BM_MAIL_ATTR_CONTENT			= B_MAIL_ATTR_CONTENT;
 const char* BM_MAIL_ATTR_ATTACHMENTS 	= "MAIL:has_attachment";
 const char* BM_MAIL_ATTR_ACCOUNT			= "MAIL:account";
-const char* BM_MAIL_ATTR_IDENTITY		= "MAIL:beam/identity";
 //
+const char* BM_MAIL_ATTR_IDENTITY		= "MAIL:beam/identity";
 const char* BM_MAIL_ATTR_MARGIN	 		= "MAIL:beam/margin";
+const char* BM_MAIL_ATTR_WHEN_CREATED = "MAIL:beam/when-created";
 
 const char* BM_FIELD_BCC 					= "Bcc";
 const char* BM_FIELD_CC 					= "Cc";
@@ -1074,6 +1075,9 @@ bool BmMail::Store() {
 						<< newName << ">\n\n Result: " << strerror(err)
 				);
 			mEntry.GetName( basicFilename);
+
+			// since mail is new, we initialize its creation-time:
+			mWhenCreated = real_time_clock_usecs();
 		}
 
 		// now check whether mail-filtering has decided that the mail shall live
@@ -1162,7 +1166,7 @@ bool BmMail::Store() {
 				BmString("Could not get entry-ref for mail <") << basicFilename
 					<< ">.\n\n Result: " << strerror(err)
 			);
-		// now that the mail lives on the disk, we move it to tash, if requested:
+		// now that the mail lives on the disk, we move it to trash, if requested:
 		if (mMoveToTrash)
 			::MoveToTrash( &eref, 1);
 		if (!mMailRef) {
@@ -1170,6 +1174,7 @@ bool BmMail::Store() {
 			struct stat st;
 			mEntry.GetStat( &st);
 			mMailRef = BmMailRef::CreateInstance( NULL, eref, st);
+			mMailRef->WhenCreated( mWhenCreated);
 		} else
 			mMailRef->ResyncFromDisk( &eref);
 		for( uint32 i=0; i<mBaseRefVect.size(); ++i) {
@@ -1224,6 +1229,9 @@ void BmMail::StoreAttributes( BFile& mailFile) {
 	//
 	mailFile.WriteAttr( BM_MAIL_ATTR_MARGIN, B_INT32_TYPE, 0, 
 							  &mRightMargin, sizeof(int32));
+	//
+	mailFile.WriteAttr( BM_MAIL_ATTR_WHEN_CREATED, B_UINT64_TYPE, 0, 
+							  &mWhenCreated, sizeof(mWhenCreated));
 }
 
 /*------------------------------------------------------------------------------*\
