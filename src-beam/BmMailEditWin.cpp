@@ -381,10 +381,11 @@ void BmMailEditWin::CreateGUI() {
 								),
 					mAttachButton 
 						= new BmToolbarButton( 
-									"Attach", 
+									"Attach...", 
 									width, height,
 									new BMessage(BMM_ATTACH), this, 
-									"Attach a file to this mail"
+									"Attach a file to this mail",
+									false, "Attachment"
 								),
 					new BmToolbarSpace(),
 					0
