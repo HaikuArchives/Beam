@@ -505,8 +505,6 @@ BString GenerateSortkeyFor( const BString& name) {
 	ReplaceSubstringWith( skey, BString("ö"), BString("oe"));
 	ReplaceSubstringWith( skey, BString("ß"), BString("ss"));
 	// that's it for now, decomposition for other chars later...
-	if (skey.ByteAt(0) == '(')
-		skey.Prepend("~");
 	return skey;
 }
 
