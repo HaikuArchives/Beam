@@ -908,6 +908,11 @@ void BmMailEditWin::MessageReceived( BMessage* msg) {
 					item->SetMarked( true);
 					mModified = true;
 					mSaveButton->SetEnabled( true);
+					// need to tell BodyPartView about new charset:
+					if (ThePrefs->GetBool( "ImportExportTextAsUtf8", true))
+						mMailView->BodyPartView()->DefaultCharset( "utf-8");
+					else
+						mMailView->BodyPartView()->DefaultCharset( item->Label());
 				}
 				break;
 			}
@@ -1063,6 +1068,10 @@ void BmMailEditWin::SetFieldsFromMail( BmMail* mail) {
 		charset.ToLower();
 		mCharsetControl->MenuItem()->SetLabel( charset.String());
 		mCharsetControl->MarkItem( charset.String());
+		if (ThePrefs->GetBool( "ImportExportTextAsUtf8", true))
+			mMailView->BodyPartView()->DefaultCharset( "utf-8");
+		else
+			mMailView->BodyPartView()->DefaultCharset( charset);
 		// try to set convenient focus:
 		if (!mFromControl->TextView()->TextLength())
 			mFromControl->MakeFocus( true);
