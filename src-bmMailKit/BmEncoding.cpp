@@ -1521,7 +1521,7 @@ const int32 BmBase64Decoder::nBase64Alphabet[256] = {
 	 -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
 	 -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
 	 -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 62, -1, -1, -1, 63,
-	 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, -1, -1, -1, -1, -1, -1,
+	 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, -1, -1, -1, -2, -1, -1,
 	 -1,  0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14,
 	 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, -1, -1, -1, -1, -1,
 	 -1, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40,
@@ -1553,8 +1553,19 @@ void BmBase64Decoder::Filter( const char* srcBuf, uint32& srcLen,
 	char* destEnd = destBuf+destLen;
 		
 	while( src<srcEnd && dest<=destEnd-3) {
-		if ((value = nBase64Alphabet[*src++])<0)
+		if ((value = nBase64Alphabet[*src++])<0) {
+			if (value == -2) {
+				// padding-char ('=') encountered, we flush converted chars...
+				if (mIndex) {
+					*dest++ = (mConcat & 0x00ff0000) >> 16;
+					if (mIndex > 2)
+						*dest++ = (mConcat & 0x0000ff00) >> 8;
+				}
+				// ... and reset state:
+				mConcat = mIndex = 0;
+			}
 			continue;
+		}
 			
 		mConcat |= (value << ((3-mIndex)*6));
 		
