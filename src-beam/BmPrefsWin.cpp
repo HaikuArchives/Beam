@@ -114,6 +114,7 @@ BmPrefsWin::BmPrefsWin()
 {
 	MView* mOuterGroup = 
 		new VGroup( 
+			minimax( 700, 550),
 			new MBorder( M_RAISED_BORDER, 5, NULL,
 				new HGroup(
 					minimax(500,200),
@@ -362,6 +363,9 @@ bool BmPrefsWin::QuitRequested() {
 		switch( result) {
 			case 0:
 				return false;
+			case 1:
+				mPrefsViewContainer->RevertChanges();
+				return true;
 			case 2:
 				return mPrefsViewContainer->ApplyChanges();
 		}
