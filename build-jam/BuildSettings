@@ -8,6 +8,11 @@ if $(OSPLAT) = PPC {
 	CFLAGS = [ FFilter $(CFLAGS) : -nosyspath ] ;
 	C++FLAGS = [ FFilter $(C++FLAGS) : -nosyspath ] ;
 	LINKFLAGS += -warn -export pragma ;
+} else {
+	CFLAGS += -march=pentiumpro ;
+	C++FLAGS += -march=pentiumpro ;
+	LINKFLAGS += -L/boot/beos/system/lib ;
+		# such that libnetapi.so is found on all systems...
 }
 
 if $(OSPLAT) = X86 {
@@ -84,6 +89,7 @@ rule SetUpSubDirBuildSettings {
 		CCFLAGS += -g ;
 		C++FLAGS += -g ;
 		LINKFLAGS += -g ;
+		DISTRO_DIR			= [ FDirName $(TOP) generated distro_debug ] ;
 	}
 
 	# optimization settings
@@ -95,7 +101,7 @@ rule SetUpSubDirBuildSettings {
 		}
 	} else {
 		if $(OSPLAT) = X86 {
-			OPTIM ?= -O2 ;
+			OPTIM ?= -O3 ;
 		} else {
 			OPTIM ?= -O7 ;
 		}
