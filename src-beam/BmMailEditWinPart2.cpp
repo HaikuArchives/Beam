@@ -538,6 +538,13 @@ bool BmMailEditWin::CreateMailFromFields( bool hardWrapIfNeeded) {
 		}
 		try {
 			bool res = mail->ConstructRawText( editedText, charset, smtpAccount);
+			if (mail->DefaultCharset() != charset) {
+				// charset has been changed by autodetection, 
+				// we select the new one:
+				charset = mail->DefaultCharset();
+				mCharsetControl->MenuItem()->SetLabel( charset.String());
+				mCharsetControl->MarkItem( charset.String());
+			}
 			return res;
 		} catch( BM_text_error& textErr) {
 			if (textErr.posInText >= 0) {
