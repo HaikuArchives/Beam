@@ -1112,22 +1112,23 @@ bool ColumnListView::AddUnder(BListItem* a_item, BListItem* a_superitem)
 	//Add the item under the superitem in the full list
 	int32 ItemPos = SuperItemPos + 1;
 	item->fOutlineLevel = SuperItemLevel + 1;
-	if (fInsertAtSortedPos)
+	if (fInsertAtSortedPos) {
 		ItemPos = DetermineSortedPosHierarchical( item, SuperItemPos+1);
-	else
-		ItemPos = SuperItemPos + 1;
-	while(true)
-	{
-		CLVListItem* Temp = (CLVListItem*)fFullItemList.ItemAt(ItemPos);
-		if(Temp)
-		{
-			if(Temp->fOutlineLevel > item->fOutlineLevel)
-				ItemPos++;
-			else
-				break;
+		// now skip over any child-items belonging to the item before us:
+		for(	CLVListItem* Temp = (CLVListItem*)fFullItemList.ItemAt(ItemPos);
+				Temp && Temp->fOutlineLevel > item->fOutlineLevel;
+		) {
+			Temp = (CLVListItem*)fFullItemList.ItemAt(++ItemPos);
 		}
-		else
-			break;
+	} else {
+		ItemPos = SuperItemPos + 1;
+		// now skip to end of items on same level as ourselves (add new
+		// item to the end):
+		for(	CLVListItem* Temp = (CLVListItem*)fFullItemList.ItemAt(ItemPos);
+				Temp && Temp->fOutlineLevel >= item->fOutlineLevel;
+		) {
+			Temp = (CLVListItem*)fFullItemList.ItemAt(++ItemPos);
+		}
 	}
 	return AddItemPrivate(item,ItemPos);
 }
