@@ -42,7 +42,8 @@
 		-	
 \*------------------------------------------------------------------------------*/
 BmMultiLineTextControl::BmMultiLineTextControl( const char* label, bool labelIsMenu, 
-															   int32 lineCount, int32 minTextLen)
+															   int32 lineCount, int32 minTextLen,
+															   bool fixedHeight)
 	:	inherited( BRect(0,0,0,0), NULL, label, true, NULL, NULL, B_FOLLOW_NONE)
 	,	mLabelIsMenu( labelIsMenu)
 {
@@ -52,9 +53,11 @@ BmMultiLineTextControl::BmMultiLineTextControl( const char* label, bool labelIsM
 	m_text_view->GetFont( &font);
 	float height = m_text_view->LineHeight()*lineCount+12;
 	if (minTextLen)
-		ct_mpm = minimax( divPos + font.StringWidth("W")*minTextLen, height+4, 1E5, height+4);
+		ct_mpm = minimax( divPos + font.StringWidth("W")*minTextLen, height+4, 
+								1E5, fixedHeight ? height+4 : 1E5);
 	else
-		ct_mpm = minimax( divPos + font.StringWidth("W")*10, height+6, 1E5, height+6);
+		ct_mpm = minimax( divPos + font.StringWidth("W")*10, height+6, 
+								1E5, fixedHeight ? height+6 : 1E5);
 	SetDivider( divPos);
 	if (labelIsMenu) {
 		float width, height;
@@ -120,7 +123,7 @@ void BmMultiLineTextControl::SetTextSilently( const char* text) {
 \*------------------------------------------------------------------------------*/
 void BmMultiLineTextControl::FrameResized( float new_width, float new_height) {
 	BRect curr = Bounds();
-	Invalidate( BRect( Divider(), 0, new_width-1, curr.Height()));
+	Invalidate( BRect( Divider(), 0, new_width-1, curr.Height()-1));
 	inherited::FrameResized( new_width, new_height);
 	m_text_view->ScrollToSelection();
 }
@@ -143,7 +146,8 @@ BRect BmMultiLineTextControl::layout(BRect frame) {
 	MoveTo(frame.LeftTop());
 	ResizeTo(frame.Width(),frame.Height());
 	float occupiedSpace = Divider()-11;
-	m_text_view->MoveTo( occupiedSpace, 5);
-	m_text_view->ResizeTo( frame.Width()-occupiedSpace-5, frame.Height()-m_text_view->Frame().top-2);
+	m_text_view->MoveTo( occupiedSpace, 4);
+	m_text_view->ResizeTo( frame.Width()-occupiedSpace-5, 
+								  frame.Height()-m_text_view->Frame().top-4-2);
 	return frame;
 }

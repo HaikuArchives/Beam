@@ -46,7 +46,8 @@ class BmMultiLineTextControl : public MView, public MultiLineTextControl
 public:
 	// creator-func, c'tors and d'tor:
 	BmMultiLineTextControl( const char* label, bool labelIsMenu=false,
-									int32 lineCount = 4, int32 minTextLen=0);
+									int32 lineCount = 4, int32 minTextLen=0, 
+									bool fixedHeight=false);
 	~BmMultiLineTextControl();
 	
 	// native methods:
