@@ -168,6 +168,9 @@ public:
 	bool BuildScriptFromStrings();
 
 	// overrides of BmSieve-base:
+	void ForeignKeyChanged( const BmString& key, 
+									const BmString& oldVal, 
+									const BmString& newVal);
 	bool SanityCheck( BmString& complaint, BmString& fieldName);
 	status_t Archive( BMessage* archive, bool deep = true) const;
 

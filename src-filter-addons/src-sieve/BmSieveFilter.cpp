@@ -689,6 +689,21 @@ bool BmGraphicalSieveFilter::BuildScriptFromStrings() {
 	return true;
 }
 
+/*------------------------------------------------------------------------------*\
+	ForeignKeyChanged( keyName, oldVal, newVal)
+		-	updates the specified foreign-key with the given new value
+\*------------------------------------------------------------------------------*/
+void BmGraphicalSieveFilter::ForeignKeyChanged( const BmString& key, 
+																const BmString& oldVal, 
+																const BmString& newVal) {
+	if (key == BmFilterAddon::FK_FOLDER) {
+		if (mActionFileIntoValue == oldVal)
+			mActionFileIntoValue = newVal;
+	} else if (key == BmFilterAddon::FK_IDENTITY) {
+		if (mActionSetIdentityValue == oldVal)
+			mActionSetIdentityValue = newVal;
+	}
+}
 
 
 /*------------------------------------------------------------------------------*\
