@@ -91,17 +91,20 @@ BmFilterItem::~BmFilterItem() {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmFilterItem::UpdateView( BmUpdFlags flags) {
-	inherited::UpdateView( flags);
+void BmFilterItem::UpdateView( BmUpdFlags flags, bool redraw, 
+										 uint32 updColBitmap) {
 	BmFilter* filter( dynamic_cast<BmFilter*>( ModelItem()));
 	if (flags & UPD_ALL) {
-		BmListColumn cols[] = {
-			{ filter->Key().String(),			false },
-			{ filter->IsDisabled() ? "DISABLED" : "",			false },
-			{ NULL, false }
+		const char* cols[] = {
+			filter->Key().String(),
+			filter->IsDisabled() ? "DISABLED" : "",
+			NULL
 		};
 		SetTextCols( 0, cols);
+		if (redraw)
+			updColBitmap = 0xFFFFFFFF;
 	}
+	inherited::UpdateView( flags, redraw, updColBitmap);
 }
 
 
@@ -550,7 +553,7 @@ void BmPrefsFilterView::MessageReceived( BMessage* msg) {
 					}
 					NoticeChange();
 				}
-				delete [] refVect;
+				delete refVect;
 				break;
 			}
 			case BM_REMOVE_FILTER: {

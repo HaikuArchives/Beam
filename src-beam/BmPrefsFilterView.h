@@ -50,7 +50,8 @@ public:
 	~BmFilterItem();
 
 	// overrides of listitem base:
-	void UpdateView( BmUpdFlags flags);
+	void UpdateView( BmUpdFlags flags, bool redraw = true, 
+						  uint32 updColBitmap = 0);
 
 private:
 	// Hide copy-constructor and assignment:
