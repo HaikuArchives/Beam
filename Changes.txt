@@ -5,6 +5,14 @@ change-history of Beam:
 [Beam 1.0-rc3]
 *******************************************************************************
 
+BmPrefsFilterChainView:
+	-	'Pos'-column is now again hidden properly
+	-	cleaned source to follow 80-chars-per-line
+
+BmUtil:
+	-	improved robustness of ParseDateTime() with respect to dates
+		containing textual timezones that parsedate() doesn't know about.
+
 < 2003-09-23: commit>
 
 BmApp:
