@@ -674,6 +674,15 @@ void BmPrefs::SetupMailboxVolume() {
 	if (entry.GetNodeRef( &nref) != B_OK)
 		BM_THROW_RUNTIME( "Sorry, could not determine mailbox-volume !?!");
 	MailboxVolume = nref.device;
+	
+	// now find out about Trash-NodeRef on this volume:
+	BDirectory mboxRoot;
+	MailboxVolume.GetRootDirectory( &mboxRoot);
+	if (mboxRoot.InitCheck() == B_OK) {
+		// fetch node-ref of Trash (a kludge, should be able to handle more than one):
+		BDirectory trash( &mboxRoot, "home/Desktop/Trash");
+		trash.GetNodeRef( &TrashNodeRef);
+	}
 }
 
 /*------------------------------------------------------------------------------*\

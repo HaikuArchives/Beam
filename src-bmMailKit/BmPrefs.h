@@ -37,6 +37,7 @@
 #include <Archivable.h>
 #include <Locker.h>
 #include <Message.h>
+#include <Node.h>
 #include <Volume.h>
 #include "BmString.h"
 
@@ -93,6 +94,7 @@ public:
 
 	void SetupMailboxVolume();
 	BVolume MailboxVolume;
+	node_ref TrashNodeRef;
 
 	// log-levels as string (for prefs):
 	static const char* const LOG_LVL_0;
