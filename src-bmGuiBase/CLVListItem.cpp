@@ -175,7 +175,7 @@ bool CLVListItem::ExpanderRectContains(BPoint where) {
 	return contains;
 }
 
-void CLVListItem::DrawItem(BView* fOwner, BRect itemRect, bool complete)
+void CLVListItem::DrawItem(BView* /*owner*/, BRect itemRect, bool complete)
 {
 	BList* DisplayList = &((ColumnListView*)fOwner)->fColumnDisplayList;
 	int32 NumberOfColumns = DisplayList->CountItems();
@@ -206,7 +206,7 @@ void CLVListItem::DrawItem(BView* fOwner, BRect itemRect, bool complete)
 		ThisColumnRect.left = ThisColumn->fColumnBegin;
 		ThisColumnRect.right = LastColumnEnd = ThisColumn->fColumnEnd;
 		float Shift = 0.0;
-		if((ThisColumn->fFlags & CLV_EXPANDER) || ThisColumn->fPushedByExpander)
+		if ((ThisColumn->fFlags & CLV_EXPANDER) || ThisColumn->fPushedByExpander)
 			Shift = ExpanderDelta;
 		if(ThisColumn->fFlags & CLV_EXPANDER)
 		{
@@ -266,7 +266,7 @@ void CLVListItem::DrawItem(BView* fOwner, BRect itemRect, bool complete)
 float CLVListItem::ExpanderShift(int32 column_index)
 {
 	CLVColumn* ThisColumn = fOwner->ColumnAt(column_index);
-	if(!(ThisColumn->fPushedByExpander || ThisColumn->fFlags & CLV_EXPANDER))
+	if (!(ThisColumn->fPushedByExpander || ThisColumn->fFlags & CLV_EXPANDER))
 		return 0.0;
 	else
 		return OutlineLevel() * EXPANDER_SHIFT;

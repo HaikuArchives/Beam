@@ -57,7 +57,7 @@ class IMPEXPSANTAPARTSFORBEAM CLVListItem : public BListItem
 								//that the program needs to draw a blank area beyond the last column.  The
 								//main purpose is to allow the highlighting bar to continue all the way to
 								//the end of the ColumnListView, even after the end of the last column.
-		virtual void DrawItem(BView* owner, BRect itemRect, bool complete);
+		virtual void DrawItem(BView* /*owner*/, BRect itemRect, bool complete);
 								//In general, you don't need or want to override DrawItem().
 		BRect ItemColumnFrame(int32 column_index);
 		float ExpanderShift(int32 column_index);
