@@ -958,6 +958,55 @@ const BPath& BmMail::DestFolderpath() const {
 }
 
 /*------------------------------------------------------------------------------*\
+	MoveToDestFolderpath()
+		-	moves a mail into a new destination folder (which is specified in 
+			mDestFolderpath)
+		-	the mail is just moved, it is not re-written to disk.
+\*------------------------------------------------------------------------------*/
+bool BmMail::MoveToDestFolderpath() {
+	if (mDestFolderpath.InitCheck() == B_OK) {
+		if (mEntry.InitCheck() == B_OK
+		|| mMailRef && mMailRef->InitCheck() == B_OK) {
+			status_t err;
+			BDirectory homeDir;
+			BEntry entry;
+			if (mEntry.InitCheck() != B_OK) {
+				if ((err = mEntry.SetTo( mMailRef->EntryRefPtr())) != B_OK)
+					BM_THROW_RUNTIME( 
+						BmString("Could not create entry from mail-ref <") 
+							<< mMailRef->Key() << ">\n\n Result: " << strerror(err)
+					);
+			}
+			BDirectory newHomeDir( mDestFolderpath.Path());
+			if (newHomeDir.InitCheck() != B_OK)
+				return false;
+			if ((err = mEntry.MoveTo( &newHomeDir)) != B_OK) {
+				BM_LOGERR( 
+					BmString("Could not move mail <") << Name() 
+						<< "> to folder <" << mDestFolderpath.Path()
+						<< ">\n\n Result: " << strerror(err)
+				);
+				return false;
+			}
+			entry_ref eref;
+			if ((err = mEntry.GetRef( &eref)) != B_OK) {
+				BM_LOGERR( 
+					BmString("Could not get entry-ref for mail <") << Name()
+						<< ">.\n\n Result: " << strerror(err)
+				);
+				return false;
+			}
+			// create a (new) mail-ref for the freshly saved mail:
+			struct stat st;
+			mEntry.GetStat( &st);
+			mMailRef = BmMailRef::CreateInstance( eref, st);
+			return true;
+		}
+	}
+	return false;
+}
+
+/*------------------------------------------------------------------------------*\
 	()
 		-	
 \*------------------------------------------------------------------------------*/

@@ -194,7 +194,9 @@ public:
 	//
 	bool SetDestFoldername( const BmString& destFoldername);
 	const BPath& DestFolderpath() const;
-	
+	//	
+	bool MoveToDestFolderpath();
+
 	// overrides of jobmodel base:
 	bool StartJob();
 
