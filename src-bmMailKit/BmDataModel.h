@@ -104,11 +104,15 @@ protected:
 	inline void Freeze() 					{ mFrozenCount++; }
 	inline void Thaw()						{ mFrozenCount--; }
 	inline bool Frozen() 					{ return mFrozenCount > 0; }
+	inline bool NeedControllersToContinue()	{ return mNeedControllersToContinue; }
+
+	inline void NeedControllersToContinue( bool b)	{ mNeedControllersToContinue = b; }
 
 	mutable BLocker mModelLocker;
 	BmControllerSet mControllerSet;
 	BmControllerSet mOutstandingSet;
 	int8 mFrozenCount;
+	bool mNeedControllersToContinue;
 
 private:
 	// Hide copy-constructor and assignment:

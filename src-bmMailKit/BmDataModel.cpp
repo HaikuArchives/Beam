@@ -54,6 +54,7 @@ BmDataModel::BmDataModel( const BmString& name)
 	:	mModelName( name)
 	,	mModelLocker( (BmString("beam_dm_") << name).Truncate(B_OS_NAME_LENGTH).String(), false)
 	,	mFrozenCount( 0)
+	,	mNeedControllersToContinue( true)
 {
 }
 
@@ -169,7 +170,7 @@ bool BmDataModel::HasControllers() {
 			interested
 \*------------------------------------------------------------------------------*/
 bool BmDataModel::ShouldContinue() {
-	return HasControllers();
+	return HasControllers() || !mNeedControllersToContinue;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -440,7 +441,7 @@ bool BmJobModel::ShouldContinue() {
 	}
 	BmAutolockCheckGlobal lock( mModelLocker);
 	lock.IsLocked()	 						|| BM_THROW_RUNTIME( ModelNameNC() << ":ShouldContinue(): Unable to get lock on controller-set");
-	return (HasControllers() && mJobState == JOB_RUNNING);
+	return ((HasControllers() || !mNeedControllersToContinue) && mJobState == JOB_RUNNING);
 }
 
 /*------------------------------------------------------------------------------*\
