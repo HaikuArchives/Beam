@@ -1096,6 +1096,7 @@ bool BmMail::Store() {
 	BPath newHomePath;
 	BEntry backupEntry;
 	BmString backupName;
+	BmString backupExt(" (backup_by_beam)");
 	BmString status;
 	bigtime_t whenCreated;
 
@@ -1132,7 +1133,7 @@ bool BmMail::Store() {
 			// now create a backup-entry for this mail and find a unique
 			// name for the backup-file...
 			backupEntry = mEntry;
-			backupName = filename + " (backup_by_beam)";
+			backupName.SetTo(filename, B_FILE_NAME_LENGTH-backupExt.Length());
 			// ...set the mime-type to something other than mail
 			//    (in order to cause this mail to disappear from ref-view)...
 			if ((err = backupNode.SetTo( &backupEntry)) != B_OK)

@@ -266,6 +266,8 @@ protected:
 								 bigtime_t whenCreated);
 	void SetBaseMailInfo( BmMailRef* ref, const BmString newStatus);
 	void AddBaseMailRef( BmMailRef* ref);
+	//
+	void ExpandIntroMacros( BmString& intro, bool mailIsToPersonOnly);
 
 	// static functions used for quote-formatting:
 	static int32 QuoteTextWithReWrap( const BmString& in, BmString& out, 
