@@ -63,6 +63,7 @@ struct IMPEXPBMMAILKIT BmFilterAddonDescr {
 
 	image_id image;
 	BmString name;
+	BmString defaultFilterName;
 	BmInstantiateFilterFunc instantiateFilterFunc;
 	BmInstantiateFilterPrefsFunc instantiateFilterPrefsFunc;
 	BmFilterAddonPrefsView* addonPrefsView;
@@ -145,6 +146,7 @@ public:
 	// native methods:
 	void LoadAddons();
 	void UnloadAddons();
+	BmString DefaultNameForFilterKind( const BmString& filterKind);
 
 	// overrides of listmodel base:
 	void ForeignKeyChanged( const BmString& key, 

@@ -464,14 +464,17 @@ void BmPrefsFilterView::MessageReceived( BMessage* msg) {
 				break;
 			}
 			case BM_ADD_FILTER: {
-				BmString key( "new filter");
-				for( int32 i=1; TheFilterList->FindItemByKey( key); ++i) {
-					key = BmString("new filter_")<<i;
-				}
 				BMenuItem* item = mAddPopup->Menu()->FindMarked();
 				if (item) {
-					BmString sieveKind( item->Label());
-					BmFilter* newFilter = new BmFilter( key.String(), sieveKind, 
+					BmString filterKind( item->Label());
+					BmString defaultKey 
+						= TheFilterList->DefaultNameForFilterKind( filterKind);
+					BmString key = defaultKey;
+					for( int32 i=1; TheFilterList->FindItemByKey( key); ++i) {
+						key = defaultKey;
+						key << "_" << i;
+					}
+					BmFilter* newFilter = new BmFilter( key.String(), filterKind, 
 																   TheFilterList.Get());
 					TheFilterList->AddItemToList( newFilter);
 					mFilterControl->MakeFocus( true);

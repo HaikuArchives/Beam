@@ -62,7 +62,7 @@ const int16 BmFilter::nArchiveVersion = 6;
 	BmFilter()
 		-	c'tor
 \*------------------------------------------------------------------------------*/
-BmFilter::BmFilter( const char* name, const BmString& kind, BmFilterList* model) 
+BmFilter::BmFilter( const char* name, const BmString& kind, BmFilterList* model)
 	:	inherited( name, model, (BmListModelItem*)NULL)
 	,	mAddon( NULL)
 	,	mKind( kind)
@@ -76,7 +76,8 @@ BmFilter::BmFilter( const char* name, const BmString& kind, BmFilterList* model)
 		-	constructs a BmFilter from a BMessage
 \*------------------------------------------------------------------------------*/
 BmFilter::BmFilter( BMessage* archive, BmFilterList* model) 
-	:	inherited( FindMsgString( archive, MSG_NAME), model, (BmListModelItem*)NULL)
+	:	inherited( FindMsgString( archive, MSG_NAME), model, 
+					  (BmListModelItem*)NULL)
 	,	mAddon( NULL)
 {
 	int16 version;
@@ -110,13 +111,21 @@ BmFilter::~BmFilter() {
 void BmFilter::SetupAddonPart() {
 	if (mKind.Length()) {
 		mKind.CapitalizeEachWord();
-		BmInstantiateFilterFunc instFunc = FilterAddonMap[mKind].instantiateFilterFunc;
-		if (instFunc && (mAddon = (*instFunc)( Key(), &mAddonArchive, mKind)) != NULL)
-			BM_LOG2( BM_LogFilter, BmString("Instantiated Filter-Addon <") << mKind << ":" << Key() << ">");
+		BmInstantiateFilterFunc instFunc 
+			= FilterAddonMap[mKind].instantiateFilterFunc;
+		if (instFunc 
+		&& (mAddon = (*instFunc)( Key(), &mAddonArchive, mKind)) != NULL)
+			BM_LOG2( BM_LogFilter, 
+						BmString("Instantiated Filter-Addon <") << mKind << ":" 
+							<< Key() << ">");
 		else
-			BM_LOG2( BM_LogFilter, BmString("Unable to instantiate Filter-Addon <") << mKind << ":" << Key() << ">. This filter will be disabled.");
+			BM_LOG2( BM_LogFilter, 
+						BmString("Unable to instantiate Filter-Addon <") << mKind 
+							<< ":" << Key() << ">. This filter will be disabled.");
 	} else
-		BM_LOG2( BM_LogFilter, BmString("Unable to instantiate Filter-Addon <") << Key() << "> since it has no kind!. This filter will be disabled.");
+		BM_LOG2( BM_LogFilter, 
+					BmString("Unable to instantiate Filter-Addon <") << Key() 
+						<< "> since it has no kind!. This filter will be disabled.");
 }
 
 /*------------------------------------------------------------------------------*\
@@ -245,47 +254,67 @@ void BmFilterList::LoadAddons() {
 			entry.GetName( nameBuf);
 			// try to load addon:
 			const char** filterKinds;
+			const char** defaultFilterName;
 			BmFilterAddonDescr ao;
 			ao.name = nameBuf;
 			ao.name.CapitalizeEachWord();
 			entry.GetPath( &path);
 			if ((ao.image = load_add_on( path.Path())) < 0) {
-				BM_SHOWERR( BmString("Unable to load filter-addon\n\t")<<ao.name<<"\n\nError:\n\t"<<strerror( ao.image));
+				BM_SHOWERR( BmString("Unable to load filter-addon\n\t")
+									<<ao.name<<"\n\nError:\n\t"<<strerror( ao.image));
 				continue;
 			}
-			if ((err = get_image_symbol( ao.image, "InstantiateFilter", 
-												  B_SYMBOL_TYPE_ANY, (void**)&ao.instantiateFilterFunc)) != B_OK) {
-				BM_SHOWERR( BmString("Unable to load filter-addon\n\t")<<ao.name<<"\n\nMissing symbol 'InstantiateFilter'");
+			if ((err = get_image_symbol( 
+				ao.image, "InstantiateFilter", B_SYMBOL_TYPE_ANY, 
+				(void**)&ao.instantiateFilterFunc
+			)) != B_OK) {
+				BM_SHOWERR( BmString("Unable to load filter-addon\n\t")
+								<<ao.name<<"\n\nMissing symbol 'InstantiateFilter'");
 				continue;
 			}
-			if ((err = get_image_symbol( ao.image, "InstantiateFilterPrefs", 
-												  B_SYMBOL_TYPE_ANY, (void**)&ao.instantiateFilterPrefsFunc)) != B_OK) {
-				BM_SHOWERR( BmString("Unable to load filter-addon\n\t")<<ao.name<<"\n\nMissing symbol 'InstantiateFilterPrefs'");
+			if ((err = get_image_symbol( 
+				ao.image, "InstantiateFilterPrefs", B_SYMBOL_TYPE_ANY, 
+				(void**)&ao.instantiateFilterPrefsFunc
+			)) != B_OK) {
+				BM_SHOWERR( BmString("Unable to load filter-addon\n\t")
+								<<ao.name
+								<<"\n\nMissing symbol 'InstantiateFilterPrefs'");
 				continue;
 			}
-			if ((err = get_image_symbol( ao.image, "FilterKinds", 
-												  B_SYMBOL_TYPE_ANY, (void**)&filterKinds)) != B_OK) {
-				BM_SHOWERR( BmString("Unable to load filter-addon\n\t")<<ao.name<<"\n\nMissing symbol 'FilterKinds'");
+			if ((err = get_image_symbol( 
+				ao.image, "FilterKinds", B_SYMBOL_TYPE_ANY, 
+				(void**)&filterKinds
+			)) != B_OK) {
+				BM_SHOWERR( BmString("Unable to load filter-addon\n\t")
+								<<ao.name<<"\n\nMissing symbol 'FilterKinds'");
 				continue;
 			}
-			// we try to set TheBubbleHelper and TheLogHandler globals inside the addon to our current
-			// values:
+			if ((err = get_image_symbol( 
+				ao.image, "DefaultFilterName", B_SYMBOL_TYPE_ANY, 
+				(void**)&defaultFilterName
+			)) == B_OK)
+				ao.defaultFilterName = *defaultFilterName;
+			else
+				ao.defaultFilterName = "new filter";
+			// we try to set TheBubbleHelper and TheLogHandler globals inside 
+			// the addon to our current values:
 /*
 			BubbleHelper** bhPtr;
 			if (get_image_symbol( ao.image, "TheBubbleHelper", B_SYMBOL_TYPE_ANY, 
 										 (void**)&bhPtr) == B_OK) {
 				*bhPtr = TheBubbleHelper;
 			}
-*/
 			BmLogHandler** lhPtr;
 			if (get_image_symbol( ao.image, "TheLogHandler", B_SYMBOL_TYPE_ANY, 
 										 (void**)&lhPtr) == B_OK) {
 				*lhPtr = TheLogHandler;
 			}
+*/
 			// now we add the addon to our map (one entry per filter-kind):
 			while( *filterKinds)
 				FilterAddonMap[*filterKinds++] = ao;
-			BM_LOG( BM_LogFilter, BmString("Successfully loaded addon ") << ao.name);
+			BM_LOG( BM_LogFilter, BmString("Successfully loaded addon ") 
+						<< ao.name);
 		}
 	}
 	BM_LOG2( BM_LogFilter, BmString("End of LoadAddons() for FilterList"));
@@ -304,11 +333,21 @@ void BmFilterList::UnloadAddons() {
 }
 
 /*------------------------------------------------------------------------------*\
+	DefaultNameForFilterKind()
+		-	determines the default-name for the given filter kind
+\*------------------------------------------------------------------------------*/
+BmString BmFilterList::DefaultNameForFilterKind( const BmString& filterKind)
+{
+	return FilterAddonMap[filterKind].defaultFilterName;
+}
+
+/*------------------------------------------------------------------------------*\
 	InstantiateItems( archive)
 		-	initializes the signature-list from the given archive
 \*------------------------------------------------------------------------------*/
 void BmFilterList::InstantiateItems( BMessage* archive) {
-	BM_LOG2( BM_LogFilter, BmString("Start of InstantiateItems() for FilterList"));
+	BM_LOG2( BM_LogFilter, 
+				BmString("Start of InstantiateItems() for FilterList"));
 	status_t err;
 	int32 numChildren = FindMsgInt32( archive, BmListModelItem::MSG_NUMCHILDREN);
 	for( int i=0; i<numChildren; ++i) {
