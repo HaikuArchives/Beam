@@ -29,28 +29,109 @@
 /*************************************************************************/
 
 
+#include <map>
+
 #include <Alert.h>
 
 #include "BmLogHandler.h"
-#include "BmRefManager.h"
 #include "BmUtil.h"
 
-BmRefObj::BmProxyMap BmRefObj::nProxyMap;
+#pragma implementation
+
+#include "BmRefManager.h"
+
 BLocker* BmRefObj::nGlobalLocker = NULL;
+
+typedef multimap<BmString,BmRefObj*> BmObjectMap;
+/*------------------------------------------------------------------------------*\
+	BmObjectList
+		-	an object that manages all instances of a specific class
+\*------------------------------------------------------------------------------*/
+struct BmObjectList 
+{
+	inline BmObjectList() 							{}
+	BmObjectMap ObjectMap;
+	BmRefObj* FetchObject( const BmString& key, BmRefObj* ptr=NULL);
+
+	static BmObjectList* GetObjectList( const char* const objListName);
+	static void CleanupObjectLists();
+	typedef map<BmString,BmObjectList*> BmObjectListMap;
+	static BmObjectListMap nObjectListMap;
+};
+BmObjectList::BmObjectListMap BmObjectList::nObjectListMap;
+
+/*------------------------------------------------------------------------------*\
+	GetObjectList()
+		-	
+\*------------------------------------------------------------------------------*/
+BmObjectList* BmObjectList::GetObjectList( const char* const objListName)
+{
+	BAutolock lock( BmRefObj::GlobalLocker());
+	if (!lock.IsLocked())
+		throw BM_runtime_error( "GetObjectList(): Could not acquire global lock!");
+	BmObjectListMap::iterator iter = nObjectListMap.find( objListName);
+	if (iter == nObjectListMap.end())
+		return nObjectListMap[objListName] = new BmObjectList();
+	else
+		return iter->second;
+}
+
+/*------------------------------------------------------------------------------*\
+	FetchObject()
+		-	
+\*------------------------------------------------------------------------------*/
+BmRefObj* BmObjectList::FetchObject( const BmString& key, BmRefObj* ptr)
+{
+	if (BmRefObj::GlobalLocker()->IsLocked()) {
+		BmObjectMap::const_iterator pos;
+		BmObjectMap::const_iterator end = ObjectMap.end();
+		for( pos = ObjectMap.find( key); pos != end; ++pos) {
+			if (pos->first != key)
+				break;
+			if (pos->second == ptr || ptr==NULL)
+				return pos->second;
+		}
+		return NULL;
+	} else
+		BM_SHOWERR("FetchObject(): BmRefObj::GlobalLocker() must be locked!");
+	return NULL;
+}
+
+/*------------------------------------------------------------------------------*\
+	CleanupObjectLists()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmObjectList::CleanupObjectLists()
+{
+	BAutolock lock( BmRefObj::GlobalLocker());
+	if (!lock.IsLocked())
+		throw BM_runtime_error( 
+			"CleanupObjectLists(): Could not acquire global lock!"
+		);
+	BmObjectListMap::iterator iter;
+	BmObjectListMap::iterator end = nObjectListMap.end();
+	for( iter = nObjectListMap.begin(); iter != end; ++iter)
+		delete iter->second;
+	nObjectListMap.clear();
+}
+
+
+
 
 /*------------------------------------------------------------------------------*\
 	AddRef()
 		-	add one reference to object
 \*------------------------------------------------------------------------------*/
-void BmRefObj::AddRef() {
+void BmRefObj::AddRef() 
+{
 	BAutolock lock( GlobalLocker());
 	if (!lock.IsLocked())
 		throw BM_runtime_error( "AddRef(): Could not acquire global lock!");
-	BmProxy* proxy = GetProxy( ProxyName());
-	BM_ASSERT( proxy!=NULL && mRefCount >= 0);
+	BmObjectList* objList = BmObjectList::GetObjectList( ObjectListName());
+	BM_ASSERT( objList!=NULL && mRefCount >= 0);
 	int32 lastCount = atomic_add( &mRefCount, 1);
 	if (lastCount == 0) {
-		proxy->ObjectMap.insert( pair<const BmString, BmRefObj*>( RefName(), 
+		objList->ObjectMap.insert( pair<const BmString, BmRefObj*>( RefName(), 
 																					 this));
 	}
 #ifdef BM_REF_DEBUGGING
@@ -72,12 +153,13 @@ void BmRefObj::AddRef() {
 		-	changes the name of the ref-obj (actually removing the item from the map
 			and then reinserting it under a different name):
 \*------------------------------------------------------------------------------*/
-void BmRefObj::RenameRef( const char* newName) {
+void BmRefObj::RenameRef( const char* newName) 
+{
 	BAutolock lock( GlobalLocker());
 	if (!lock.IsLocked())
 		throw BM_runtime_error( "RenameRef(): Could not acquire global lock!");
-	BmProxy* proxy = GetProxy( ProxyName());
-	BM_ASSERT( proxy!=NULL && mRefCount >= 0);
+	BmObjectList* objList = BmObjectList::GetObjectList( ObjectListName());
+	BM_ASSERT( objList!=NULL && mRefCount >= 0);
 #ifdef BM_REF_DEBUGGING
 	BM_LOG2( BM_LogRefCount, 
 				BmString("RefManager: reference to <") << typeid(*this).name() 
@@ -90,16 +172,16 @@ void BmRefObj::RenameRef( const char* newName) {
 #endif
 	// find object...
 	BmObjectMap::iterator pos;
-	BmObjectMap::iterator end = proxy->ObjectMap.end();
-	for( pos = proxy->ObjectMap.find( RefName()); pos != end; ++pos) {
+	BmObjectMap::iterator end = objList->ObjectMap.end();
+	for( pos = objList->ObjectMap.find( RefName()); pos != end; ++pos) {
 		if (pos->second == this)
 			break;
 	}
 	// ...remove old entry...
-	if (pos != proxy->ObjectMap.end())
-		proxy->ObjectMap.erase( pos);
+	if (pos != objList->ObjectMap.end())
+		objList->ObjectMap.erase( pos);
 	// ...and insert under new name:
-	proxy->ObjectMap.insert( pair< const BmString, BmRefObj*>( newName, this));
+	objList->ObjectMap.insert( pair< const BmString, BmRefObj*>( newName, this));
 }
 
 /*------------------------------------------------------------------------------*\
@@ -107,14 +189,15 @@ void BmRefObj::RenameRef( const char* newName) {
 		-	removes one reference from object and deletes the object
 			if the new reference count is zero
 \*------------------------------------------------------------------------------*/
-void BmRefObj::RemoveRef() {
+void BmRefObj::RemoveRef() 
+{
 	bool needsDelete = false;
 	{	// scope for lock
 		BAutolock lock( GlobalLocker());
 		if (!lock.IsLocked())
 			throw BM_runtime_error( "RemoveRef(): Could not acquire global lock!");
-		BmProxy* proxy = GetProxy( ProxyName());
-		BM_ASSERT( proxy!=NULL && mRefCount >= 0);
+		BmObjectList* objList = BmObjectList::GetObjectList( ObjectListName());
+		BM_ASSERT( objList!=NULL && mRefCount >= 0);
 
 		int32 lastCount = atomic_add( &mRefCount, -1);
 	
@@ -134,13 +217,13 @@ void BmRefObj::RemoveRef() {
 		if (lastCount == 1) {
 			// removed last reference, so we delete the object:
 			BmObjectMap::iterator pos;
-			BmObjectMap::iterator end = proxy->ObjectMap.end();
-			for( pos = proxy->ObjectMap.find( RefName()); pos != end; ++pos) {
+			BmObjectMap::iterator end = objList->ObjectMap.end();
+			for( pos = objList->ObjectMap.find( RefName()); pos != end; ++pos) {
 				if (pos->second == this)
 					break;
 			}
-			if (pos != proxy->ObjectMap.end())
-				proxy->ObjectMap.erase( pos);
+			if (pos != objList->ObjectMap.end())
+				objList->ObjectMap.erase( pos);
 #ifdef BM_REF_DEBUGGING
 			BM_LOG( BM_LogRefCount, 
 					  BmString("RefManager: ... object <") << typeid(*this).name() 
@@ -164,63 +247,59 @@ void BmRefObj::RemoveRef() {
 }
 
 /*------------------------------------------------------------------------------*\
-	GetProxy()
+	FetchObject()
+		-	returns the object for the given specs
+\*------------------------------------------------------------------------------*/
+BmRefObj* BmRefObj::FetchObject( const char* objListName, 
+											const BmString& objName, BmRefObj* ptr)
+{
+	BM_ASSERT( GlobalLocker()->IsLocked());
+	BmObjectList* objList = BmObjectList::GetObjectList( objListName);
+	if (objList)
+		return objList->FetchObject( objName, ptr);
+	else
+		return NULL;
+}
+
+/*------------------------------------------------------------------------------*\
+	ObjectListName()
 		-	
 \*------------------------------------------------------------------------------*/
-const char* BmRefObj::ProxyName() const {
+const char* BmRefObj::ObjectListName() const 
+{
 	BAutolock lock( GlobalLocker());
 	if (!lock.IsLocked())
-		throw BM_runtime_error( "RemoveRef(): Could not acquire global lock!");
+		throw BM_runtime_error( "ObjectListName(): Could not acquire global lock!");
 	return typeid(*this).name();
 }
 
 /*------------------------------------------------------------------------------*\
-	GetProxy()
+	CleanupObjectLists()
 		-	
 \*------------------------------------------------------------------------------*/
-BmProxy* BmRefObj::GetProxy( const char* const proxyName) {
-	BAutolock lock( GlobalLocker());
-	if (!lock.IsLocked())
-		throw BM_runtime_error( "GetProxy(): Could not acquire global lock!");
-	BmProxyMap::iterator iter = nProxyMap.find( proxyName);
-	if (iter == nProxyMap.end())
-		return nProxyMap[proxyName] = new BmProxy();
-	else
-		return iter->second;
+void BmRefObj::CleanupObjectLists() 
+{
+	BmObjectList::CleanupObjectLists();
 }
 
 /*------------------------------------------------------------------------------*\
 	GlobalLocker()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmRefObj::CleanupProxies() {
-	BAutolock lock( GlobalLocker());
-	if (!lock.IsLocked())
-		throw BM_runtime_error( "CleanupProxies(): Could not acquire global lock!");
-	BmProxyMap::iterator iter;
-	BmProxyMap::iterator end = nProxyMap.end();
-	for( iter = nProxyMap.begin(); iter != end; ++iter)
-		delete iter->second;
-	nProxyMap.clear();
-}
-
-/*------------------------------------------------------------------------------*\
-	GlobalLocker()
-		-	
-\*------------------------------------------------------------------------------*/
-BLocker* BmRefObj::GlobalLocker() { 
+BLocker* BmRefObj::GlobalLocker() 
+{ 
 	if (!nGlobalLocker)
 		nGlobalLocker = new BLocker("GlobalRefLock");
 	return nGlobalLocker;
 }
-
 
 #ifdef BM_REF_DEBUGGING
 /*------------------------------------------------------------------------------*\
 	PrintRefsLeft()
 		-	helper-func that prints all existing references:
 \*------------------------------------------------------------------------------*/
-void BmRefObj::PrintRefsLeft() {
+void BmRefObj::PrintRefsLeft() 
+{
 	BAutolock lock( GlobalLocker());
 	if (!lock.IsLocked())
 		throw BM_runtime_error("PrintRefsLeft(): Could not acquire global lock!");
@@ -228,13 +307,14 @@ void BmRefObj::PrintRefsLeft() {
 	try {
 		BM_LOG( BM_LogRefCount, 
 				  BmString("RefManager: active list\n--------------------"));
-		BmProxyMap::const_iterator iter;
-		BmProxyMap::const_iterator end = nProxyMap.end();
-		for( iter = nProxyMap.begin(); iter != end; ++iter) {
-			BmProxy* proxy = iter->second;
+		BmObjectList::BmObjectListMap::const_iterator iter;
+		BmObjectList::BmObjectListMap::const_iterator end 
+			= BmObjectList::nObjectListMap.end();
+		for( iter = BmObjectList::nObjectListMap.begin(); iter != end; ++iter) {
+			BmObjectList* objList = iter->second;
 			BmObjectMap::const_iterator iter2;
-			BmObjectMap::const_iterator end2 = proxy->ObjectMap.end();
-			for( iter2=proxy->ObjectMap.begin(); iter2 != end2; ++iter2, ++count) {
+			BmObjectMap::const_iterator end2 = objList->ObjectMap.end();
+			for( iter2=objList->ObjectMap.begin(); iter2 != end2; ++iter2, ++count) {
 				BmRefObj* ref = iter2->second;
 				BM_LOG( BM_LogRefCount, 
 						  BmString("\t<") << typeid(*ref).name() << " " 
@@ -263,7 +343,8 @@ void BmRefObj::PrintRefsLeft() {
 	RefPrintHex()
 		-	helper-func that prints this-pointer as hex-number
 \*------------------------------------------------------------------------------*/
-BmString BmRefObj::RefPrintHex() const { 
+BmString BmRefObj::RefPrintHex() const 
+{ 
 	return RefPrintHex( this);	
 }
 
@@ -271,31 +352,12 @@ BmString BmRefObj::RefPrintHex() const {
 	RefPrintHex()
 		-	helper-func that prints this-pointer as hex-number
 \*------------------------------------------------------------------------------*/
-BmString BmRefObj::RefPrintHex( const void* ptr) { 
+BmString BmRefObj::RefPrintHex( const void* ptr) 
+{ 
 	char buf[20]; sprintf( buf, "%p", ptr);	return buf;	
 }
 
 
-
-/*------------------------------------------------------------------------------*\
-	FetchObject()
-		-	
-\*------------------------------------------------------------------------------*/
-BmRefObj* BmProxy::FetchObject( const BmString& key, BmRefObj* ptr) {
-	if (BmRefObj::GlobalLocker()->IsLocked()) {
-		BmObjectMap::const_iterator pos;
-		BmObjectMap::const_iterator end = ObjectMap.end();
-		for( pos = ObjectMap.find( key); pos != end; ++pos) {
-			if (pos->first != key)
-				break;
-			if (pos->second == ptr || ptr==NULL)
-				return pos->second;
-		}
-		return NULL;
-	} else
-		BM_SHOWERR("FetchObject(): BmRefObj::GlobalLocker() must be locked!");
-	return NULL;
-}
 
 // helper function to keep logging out of header-file:
 void LogHelper( const BmString& text) {
@@ -341,7 +403,8 @@ BmAutolockCheckGlobal::BmAutolockCheckGlobal( BLocker& l)
 	~BmAutolockCheckGlobal()
 		-	
 \*------------------------------------------------------------------------------*/
-BmAutolockCheckGlobal::~BmAutolockCheckGlobal() {
+BmAutolockCheckGlobal::~BmAutolockCheckGlobal() 
+{
 	if (mLocker)
 		mLocker->Unlock();
 	if (mLooper)
@@ -352,7 +415,8 @@ BmAutolockCheckGlobal::~BmAutolockCheckGlobal() {
 	IsLocked()
 		-	
 \*------------------------------------------------------------------------------*/
-bool BmAutolockCheckGlobal::IsLocked() { 
+bool BmAutolockCheckGlobal::IsLocked() 
+{ 
 	return mLocker && mLocker->IsLocked()
 			|| mLooper && mLooper->IsLocked();
 }
@@ -361,7 +425,8 @@ bool BmAutolockCheckGlobal::IsLocked() {
 	Init()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmAutolockCheckGlobal::Init() {
+void BmAutolockCheckGlobal::Init() 
+{
 	if (BmRefObj::GlobalLocker()->IsLocked()) {
 		DEBUGGER( "GlobalLocker must not be locked when using "
 					 "BmAutolockCheckGlobal!");

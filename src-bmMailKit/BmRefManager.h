@@ -33,7 +33,6 @@
 
 #include <stdio.h>
 
-#include <map>
 #include <typeinfo>
 
 #include <Autolock.h>
@@ -42,33 +41,35 @@
 
 #include "BmBasics.h"
 
+#pragma interface
+
 template <class T> class BmRef;
-class BmProxy;
+class BmObjectList;
 /*------------------------------------------------------------------------------*\
 	BmRefObj
 		-	an object that can be reference-managed
 \*------------------------------------------------------------------------------*/
 class BmRefObj {
-	typedef map<BmString,BmProxy*> BmProxyMap;
 	
 public:
 	BmRefObj() : mRefCount(0) 				{}
 	virtual ~BmRefObj() 						{}
-
 
 	// native methods:
 	void AddRef();
 	void RenameRef( const char* newName);
 	void RemoveRef();
 	//
-	const char* ProxyName() const;
+	const char* ObjectListName() const;
+	static BmRefObj* FetchObject( const char* objListName, 
+											const BmString& objName, 
+											BmRefObj* ptr = NULL);
 	BmString RefPrintHex() const;
 
 	// statics:
 	static inline BLocker* GlobalLocker();
 	static BmString RefPrintHex( const void* ptr);
-	static BmProxy* GetProxy( const char* const proxyName);
-	static void CleanupProxies();
+	static void CleanupObjectLists();
 #ifdef BM_REF_DEBUGGING
 	static void PrintRefsLeft();
 #endif
@@ -77,7 +78,6 @@ private:
 	virtual const BmString& RefName() const = 0;
 
 	int32 mRefCount;
-	static BmProxyMap nProxyMap;
 	static BLocker* nGlobalLocker;
 
 	// Hide copy-constructor and assignment:
@@ -85,21 +85,6 @@ private:
 #ifndef __POWERPC__
 	BmRefObj operator=( const BmRefObj&);
 #endif
-};
-
-
-
-typedef multimap<BmString,BmRefObj*> BmObjectMap;
-/*------------------------------------------------------------------------------*\
-	BmProxy
-		-	an object that manages all instances of a specific class
-\*------------------------------------------------------------------------------*/
-class BmProxy {
-
-public:
-	inline BmProxy() 							{}
-	BmObjectMap ObjectMap;
-	BmRefObj* FetchObject( const BmString& key, BmRefObj* ptr=NULL);
 };
 
 
@@ -189,13 +174,13 @@ template <class T> class BmWeakRef {
 
 	BmString mName;
 	T* mPtr;
-	const char* mProxyName;
+	const char* mObjectListName;
 
 public:
 	inline BmWeakRef(T* p = 0) 
 	:	mName( p ? p->RefName() : BM_DEFAULT_STRING) 
 	,	mPtr( p)
-	,	mProxyName( p ? p->ProxyName() : "") 
+	,	mObjectListName( p ? p->ObjectListName() : "") 
 	{
 		LogHelper( BmString("RefManager: weak-reference to <") << mName 
 						<< ":" << BmRefObj::RefPrintHex(mPtr) << "> created");
@@ -203,7 +188,7 @@ public:
 	inline BmWeakRef<T>& operator= ( T* p) {
 		mName = p ? p->RefName() : BM_DEFAULT_STRING;
 		mPtr = p;
-		mProxyName = p ? p->ProxyName() : "";
+		mObjectListName = p ? p->ObjectListName() : "";
 		return *this;
 	}
 	inline bool operator== ( const T* p) {
@@ -217,11 +202,9 @@ public:
 		LogHelper( BmString("RefManager: weak-reference to <") << mName 
 						<< ":" << BmRefObj::RefPrintHex(mPtr) << "> dereferenced");
 		BAutolock lock( BmRefObj::GlobalLocker());
-		BmProxy* proxy = BmRefObj::GetProxy( mProxyName);
-		if (proxy) {
-			return dynamic_cast<T*>(proxy->FetchObject( mName, mPtr));
-		} else 
-			return NULL;
+		return dynamic_cast<T*>( 
+			BmRefObj::FetchObject( mObjectListName, mName, mPtr)
+		);
 	}
 
 private:
