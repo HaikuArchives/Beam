@@ -1828,7 +1828,9 @@ BmString::DeUrlify() {
 	char c1, c2;
 	for( int32 srcPos=0; (srcPos=_FindAfter( "%", srcPos, 1)) != B_ERROR; srcPos++) {
 		if ((c1=toupper(ByteAt(srcPos+1))) 
-		&& (c1>='A' && c1<='F' || c1>='0' && c1<='9')) {
+		&& (c1>='A' && c1<='F' || c1>='0' && c1<='9')
+		&& (c2=toupper(ByteAt(srcPos+2)))
+		&& (c2>='A' && c2<='F' || c2>='0' && c2<='9')) {
 			len = srcPos-lastSrcPos;
 			tempIO.Write( String()+lastSrcPos, len);
 			char native[2] = {HEXDIGIT2CHAR(c1)*16+HEXDIGIT2CHAR(c2), '\0'};
