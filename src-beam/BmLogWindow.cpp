@@ -68,12 +68,15 @@ BmLogWindow* BmLogWindow::CreateAndStartInstanceFor( const char* logfileName) {
 BmLogWindow::BmLogWindow( const BRect& frame, const BmString& title, 
 								  const char* logfileName)
 	:	inherited( frame, title.String(), 
-					  B_TITLED_WINDOW_LOOK, 
+					  B_FLOATING_WINDOW_LOOK,
 					  B_NORMAL_WINDOW_FEEL, B_ASYNCHRONOUS_CONTROLS)
 	,	mLogfileName( logfileName)
 {
 	mLogView = new MTextView();
 	mLogView->MakeEditable( false);
+	BFont font( be_fixed_font);
+	font.SetSize(10);
+	mLogView->SetFontAndColor( 0,0,&font);
 	AddChild( dynamic_cast< BView*>( 
 		new MScrollView( mLogView, false, true)
 	));

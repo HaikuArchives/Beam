@@ -35,7 +35,9 @@
 
 #include "BmLogHandler.h"
 
-#define BM_LOGENTRY_ADDED 'bmle'
+enum {
+	BM_LOGENTRY_ADDED = 'bmle'
+};
 
 class BmLogWindow : public MWindow
 {
