@@ -452,7 +452,7 @@ bool BmMailView::AcceptsDrop( const BMessage* msg) {
 \*------------------------------------------------------------------------------*/
 void BmMailView::GetWrappedText( BString& out) {
 	BString editedText = Text();
-	WordWrap( editedText, out, ThePrefs->GetInt( "MaxLineLenForHardWrap", 1000), "\n");
+	WordWrap( editedText, out, ThePrefs->GetInt( "MaxLineLenForHardWrap", 998), "\n");
 }
 
 /*------------------------------------------------------------------------------*\
