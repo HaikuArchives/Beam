@@ -268,6 +268,7 @@ static int evaltest(sieve_interp_t *i, test_t *t, void *m)
     stringlist_t *sl;
     patternlist_t *pl;
     int res = 0;
+    unsigned long count=0;
     address_part_t addrpart = ADDRESS_ALL;
 
     switch (t->type) {
@@ -301,12 +302,23 @@ static int evaltest(sieve_interp_t *i, test_t *t, void *m)
                     val = get_address(addrpart, &data, &marker, 0);
 		    while (val != NULL && !res) { 
 			/* loop through each address */
-			res |= t->u.ae.comp(pl->p, val);
+			if (t->u.h.comptag == COUNT)
+			    count++;
+			else
+			    res |= t->u.ae.comp(pl->p, val);
 			val = get_address(addrpart, &data, &marker, 0);
        		    }
 		    free_address(&data, &marker);
 		}
+		if (t->u.h.comptag == COUNT)
+		    break;
 	    }
+	}
+	if (t->u.h.comptag == COUNT) {
+	    char countStr[20];
+	    sprintf(countStr, "%lu", count);
+	    for (pl = t->u.ae.pl; pl != NULL && !res; pl = pl->next)
+		res |= t->u.ae.comp(pl->p, countStr);
 	}
 	break;
     case ANYOF:
@@ -334,32 +346,37 @@ static int evaltest(sieve_interp_t *i, test_t *t, void *m)
     case STRUE:
 	res = 1;
 	break;
-    case HEADER:
+    case HEADER: {
+	const char **val;
+    	int l;
 	res = 0;
-	for (sl = t->u.h.sl; sl != NULL && !res; sl = sl->next) {
-	    const char **val;
-	    int l;
-	    unsigned long count;
-	    char countStr[20];
-	    if (i->getheader(m, sl->s, &val) != SIEVE_OK)
-		continue;
-	    switch(t->u.h.comptag) {
-	    case COUNT:
-		for (count = 0; val[count] != NULL; count++)
-		    ;
+	switch(t->u.h.comptag) {
+	    case COUNT: {
+		char countStr[20];
+		for (sl = t->u.h.sl; sl != NULL && !res; sl = sl->next) {
+		    if (i->getheader(m, sl->s, &val) == SIEVE_OK)
+			for (l = 0; val[l] != NULL; l++, count++)
+			    ;
+		}
 		sprintf(countStr, "%lu", count);
 		for (pl = t->u.h.pl; pl != NULL && !res; pl = pl->next)
 		    res |= t->u.h.comp(pl->p, countStr);
 		break;
-	    default:
-		for (pl = t->u.h.pl; pl != NULL && !res; pl = pl->next) {
-		    for (l = 0; val[l] != NULL && !res; l++)
-			res |= t->u.h.comp(pl->p, val[l]);
-		}
+	    }
+	    default: {
+		for (sl = t->u.h.sl; sl != NULL && !res; sl = sl->next) {
+		    if (i->getheader(m, sl->s, &val) != SIEVE_OK)
+			continue;
+		    for (pl = t->u.h.pl; pl != NULL && !res; pl = pl->next) {
+		        for (l = 0; val[l] != NULL && !res; l++)
+			    res |= t->u.h.comp(pl->p, val[l]);
+		    }
+	        }
 		break;
 	    }
 	}
 	break;
+    }
     case NOT:
 	res = !evaltest(i, t->u.t, m);
 	break;
