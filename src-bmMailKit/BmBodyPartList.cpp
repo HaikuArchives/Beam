@@ -535,6 +535,7 @@ void BmBodyPart::SetTo( const BmString& msgtext, int32 start, int32 length,
 	BM_LOG2( BM_LogMailParse, BmString("...found value: ")<<mContentLanguage);
 	// determine a filename (if possible)
 	mFileName = mContentDisposition.Param("filename");
+	mFileName.ReplaceSet( "/~<>()`´\\\"'", "_");
 	if (!mFileName.Length()) {
 		mFileName = mContentType.Param("name");
 		if (!mFileName.Length()) {
@@ -1266,6 +1267,11 @@ void BmBodyPartList::PruneUnneededMultiParts() {
 		-	
 \*------------------------------------------------------------------------------*/
 int32 BmBodyPartList::EstimateEncodedSize() {
+	BmAutolockCheckGlobal lock( mModelLocker);
+	if (!lock.IsLocked())
+		BM_THROW_RUNTIME( 
+			ModelNameNC() << ":EstimateEncodedSize(): Unable to get lock"
+		);
 	int32 size = 0;
 	BmModelItemMap::const_iterator iter;
 	for( iter = begin(); iter != end(); ) {

@@ -88,6 +88,8 @@ class IMPEXPBMMAILKIT BmBodyPart : public BmListModelItem {
 	typedef BmListModelItem inherited;
 
 	static const int16 nArchiveVersion = 1;
+	
+	friend BmBodyPartList;
 
 public:
 	// c'tors and d'tor:
@@ -112,14 +114,9 @@ public:
 	bool IsText() const;
 	bool IsPlainText() const;
 	bool ShouldBeShownInline()	const;
-	bool ContainsRef( const entry_ref& ref) const;
 	entry_ref WriteToTempFile( BmString filename="");
 	void WriteToFile( BFile& file);
 	void SaveAs( const entry_ref& destDirRef, BmString filename);
-	void PropagateHigherEncoding();
-	int32 PruneUnneededMultiParts();
-	int32 EstimateEncodedSize();
-	void ConstructBodyForSending( BmStringOBuf &msgText);
 	void SuggestCharset( const BmString& s) { mSuggestedCharset = s; }
 
 	static BmString GenerateBoundary();
@@ -178,6 +175,12 @@ public:
 	static int32 nBoundaryCounter;
 
 private:
+	bool ContainsRef( const entry_ref& ref) const;
+	void PropagateHigherEncoding();
+	int32 PruneUnneededMultiParts();
+	int32 EstimateEncodedSize();
+	void ConstructBodyForSending( BmStringOBuf &msgText);
+
 	bool mIsMultiPart;
 	BmContentField mContentType;
 	BmString mContentTransferEncoding;
