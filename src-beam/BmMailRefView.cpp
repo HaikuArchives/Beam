@@ -56,6 +56,8 @@
 const int16 BmMailRefItem::nFirstTextCol = 3;
 
 struct BmIndexDesc {
+	BmIndexDesc()
+		: start( 0), end( 0) {}
 	BmIndexDesc( int32 s)
 		: start( s), end( s) {}
 	int32 start;
