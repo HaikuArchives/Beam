@@ -715,10 +715,10 @@ void BmListModel::RemoveItemFromList( BmListModelItem* item) {
 }
 
 /*------------------------------------------------------------------------------*\
-	RemoveItemFromList( key)
+	RemoveItemByName( key)
 		-	removes item with given key from this listmodel's item-hierarchy
 \*------------------------------------------------------------------------------*/
-BmRef<BmListModelItem> BmListModel::RemoveItemFromList( const BmString& key) {
+BmRef<BmListModelItem> BmListModel::RemoveItemByName( const BmString& key) {
 	BmAutolockCheckGlobal lock( mModelLocker);
 	lock.IsLocked()	 						|| BM_THROW_RUNTIME( ModelNameNC() << ":RemoveItemFromList(): Unable to get lock");
 	BmRef<BmListModelItem> item( FindItemByKey( key));
@@ -727,12 +727,36 @@ BmRef<BmListModelItem> BmListModel::RemoveItemFromList( const BmString& key) {
 }
 
 /*------------------------------------------------------------------------------*\
+		-	
+\*------------------------------------------------------------------------------*/
+void BmListModel::AddForeignKey( const char* key, BmListModel* model) {
+	BmForeignKey foreignKey;
+	foreignKey.keyName = key;
+	foreignKey.foreignListModel = model;
+	mForeignKeyVect.push_back( foreignKey);
+}
+
+/*------------------------------------------------------------------------------*\
+		-	
+\*------------------------------------------------------------------------------*/
+void BmListModel::AdjustForeignKeys( const BmString& oldVal, const BmString& newVal) {
+	// adjust all foreign-keys (if any):
+	for( uint32 i=0; i<mForeignKeyVect.size(); ++i) {
+		BmRef<BmListModel> foreignList( mForeignKeyVect[i].foreignListModel.Get());
+		if (foreignList) {
+			foreignList->ForeignKeyChanged( mForeignKeyVect[i].keyName,
+													  oldVal, newVal);
+		}
+	}
+}
+
+/*------------------------------------------------------------------------------*\
 	RenameItem( oldKey, suggestedNewKey)
 		-	renames the item that has the given key oldKey into suggestedNewKey
 		-	if suggestedNewKey is not unique, a unique new key is generated
 		-	the real new key of the item is returned
 \*------------------------------------------------------------------------------*/
-BmString BmListModel::RenameItem( const BmString oldKey, const BmString suggestedNewKey) {
+BmString BmListModel::RenameItem( const BmString& oldKey, const BmString& suggestedNewKey) {
 	BmAutolockCheckGlobal lock( mModelLocker);
 	lock.IsLocked()	 						|| BM_THROW_RUNTIME( ModelNameNC() << ":RenameItem(): Unable to get lock");
 	// find unique key for item:
@@ -755,6 +779,19 @@ BmString BmListModel::RenameItem( const BmString oldKey, const BmString suggeste
 	item->Key( newKey);
 	mModelItemMap[newKey] = item.Get();
 	TellModelItemUpdated( item.Get(), UPD_KEY | UPD_SORT, oldKey);
+	// ...determine path to item (needed for handling of foreign-keys):
+	BmString path;
+	BmListModelItem* curr = item.Get();
+	while( (curr = curr->Parent().Get())) {
+		if (!path.Length())
+			path.Prepend( curr->DisplayKey());
+		else		
+			path.Prepend( curr->DisplayKey() + "/");
+	}
+	// now adjust foreign keys:
+	AdjustForeignKeys( path.Length() ? path + "/" + oldKey : oldKey,
+							 path.Length() ? path + "/" + newKey : newKey);
+	// return new key (might differ from the one suggested):
 	return newKey;
 }
 

@@ -34,6 +34,7 @@
 #include <map>
 #include <memory>
 #include <set>
+#include <vector>
 
 #include <Locker.h>
 #include "BmString.h"
@@ -277,6 +278,12 @@ private:
 class BmListModel : public BmJobModel, public BArchivable {
 	typedef BmJobModel inherited;
 	friend BmListModelItem;
+
+	struct BmForeignKey {
+		BmWeakRef<BmListModel> foreignListModel;
+		BmString keyName;
+	};
+	typedef vector< BmForeignKey> BmForeignKeyVect;
 	
 protected:
 	static const char* const MSG_VERSION;
@@ -288,17 +295,25 @@ public:
 
 	// native methods:
 	BmRef<BmListModelItem> FindItemByKey( const BmString& key);
-	bool AddItemToList( BmListModelItem* item, BmListModelItem* parent=NULL);
-	void RemoveItemFromList( BmListModelItem* item);
-	BmString RenameItem( const BmString oldKey, const BmString newKey);
-	BmRef<BmListModelItem> RemoveItemFromList( const BmString& key);
+	virtual bool AddItemToList( BmListModelItem* item, BmListModelItem* parent=NULL);
+	virtual void RemoveItemFromList( BmListModelItem* item);
+	virtual BmRef<BmListModelItem> RemoveItemByName( const BmString& key);
+	//
+	virtual BmString RenameItem( const BmString& oldKey, const BmString& newKey);
+	virtual void AddForeignKey( const char* key, BmListModel* model);
+	void AdjustForeignKeys( const BmString& oldVal, const BmString& newVal);
+	virtual void ForeignKeyChanged( const BmString& key, 
+											  const BmString& oldVal, 
+											  const BmString& newVal)	{ }
+	//
 	virtual bool Store();
 	virtual const BmString SettingsFileName() = 0;
-	static BMessage* Restore( const BmString settingsFile);
 	virtual void InitializeItems()								{	mInitCheck = B_OK; }
 	virtual void InstantiateItems( BMessage*)					{ mInitCheck = B_OK; }
 	virtual void Cleanup();
 	virtual int16 ArchiveVersion() const = 0;
+
+	static BMessage* Restore( const BmString settingsFile);
 
 	// overrides of Archivable base:
 	status_t Archive( BMessage* archive, bool deep) const;
@@ -332,6 +347,7 @@ protected:
 
 	status_t mInitCheck;
 	bool mNeedsStore;
+	BmForeignKeyVect mForeignKeyVect;
 
 private:
 	// Hide copy-constructor and assignment:
