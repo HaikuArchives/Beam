@@ -36,6 +36,7 @@
 #include <Message.h> 
 #include <File.h>
 #include <FindDirectory.h>
+#include <fs_attr.h> 
 #include <NodeInfo.h> 
 #include <Path.h> 
 
@@ -52,13 +53,13 @@ BmTempFileList TheTempFileList;
 \*------------------------------------------------------------------------------*/
 bool MoveToTrash( const entry_ref* refs, int32 count) {
 	// this is based on code I got from Tim Vernum's Website. thx!
-	static BString desktopWin;
+	static BmString desktopWin;
 	if (!desktopWin.Length()) {
 		// initialize (find) desktop-path:
 		status_t err;
 		BPath desktopPath;
 		if ((err=find_directory( B_DESKTOP_DIRECTORY, &desktopPath, true)) != B_OK) {
-			BM_LOGERR( BString("Could not find desktop-folder!\n\nError: ")<<strerror( err));
+			BM_LOGERR( BmString("Could not find desktop-folder!\n\nError: ")<<strerror( err));
 			desktopWin = "/boot/home/Desktop";
 		} else
 			desktopWin = desktopPath.Path();
@@ -99,7 +100,7 @@ bool MoveToTrash( const entry_ref* refs, int32 count) {
 		-	checks if the file specified by eref is of the given mimetype
 \*------------------------------------------------------------------------------*/
 bool CheckMimeType( const entry_ref* eref, const char* type) {
-	BString realMT = DetermineMimeType( eref);
+	BmString realMT = DetermineMimeType( eref);
 	return strcasecmp( type, realMT.String()) == 0;
 }
 
@@ -107,7 +108,7 @@ bool CheckMimeType( const entry_ref* eref, const char* type) {
 	DetermineMimeType( eref, doublecheck)
 		-	determines the mimetype of the given file (according to BeOS)
 \*------------------------------------------------------------------------------*/
-BString DetermineMimeType( const entry_ref* inref, bool doublecheck) {
+BmString DetermineMimeType( const entry_ref* inref, bool doublecheck) {
 	BEntry entry( inref, true);			// traverse links
 	entry_ref eref;
 	entry.GetRef( &eref);
@@ -140,13 +141,14 @@ BString DetermineMimeType( const entry_ref* inref, bool doublecheck) {
 		-	reads the file specified by filename (complete path)
 		-	stores the file's data into given string contents
 \*------------------------------------------------------------------------------*/
-bool FetchFile( BString fileName, BString& contents) {
+bool FetchFile( BmString fileName, BmString& contents) {
 	BFile file( fileName.String(), B_READ_ONLY);
 	if (file.InitCheck() == B_OK) {
 		off_t size;
 		file.GetSize( &size);
-		char* buf = contents.LockBuffer( size+1);
+		char* buf = contents.LockBuffer( size);
 		ssize_t read = file.Read( buf, size);
+		read = MAX( 0, read);
 		buf[read] = '\0';
 		contents.UnlockBuffer( read);
 		return true;
@@ -169,7 +171,7 @@ BmTempFileList::~BmTempFileList() {
 	AddFile( fileWithPath)
 		-	adds given filename to the list of temporary files
 \*------------------------------------------------------------------------------*/
-void BmTempFileList::AddFile( BString fileWithPath) {
+void BmTempFileList::AddFile( BmString fileWithPath) {
 	mFiles.insert( fileWithPath);
 }
 
@@ -178,7 +180,7 @@ void BmTempFileList::AddFile( BString fileWithPath) {
 		-	removes file specified by fileWithPath from list of
 			temporary files and from disk
 \*------------------------------------------------------------------------------*/
-void BmTempFileList::RemoveFile( BString fileWithPath) {
+void BmTempFileList::RemoveFile( BmString fileWithPath) {
 	BEntry tmpFile( fileWithPath.String());
 	tmpFile.Remove();
 	mFiles.erase( fileWithPath);
@@ -188,10 +190,25 @@ void BmTempFileList::RemoveFile( BString fileWithPath) {
 	NextTempFileNameWithPath()
 		-	returns the name to use for a new temporary file
 \*------------------------------------------------------------------------------*/
-BString BmTempFileList::NextTempFilenameWithPath() {
+BmString BmTempFileList::NextTempFilenameWithPath() {
 	BPath tempPath;
 	status_t err;
 	(err=find_directory( B_COMMON_TEMP_DIRECTORY, &tempPath, true)) == B_OK
-													||	BM_THROW_RUNTIME(BString("Could not find tmp-folder!\n\nError: ")<<strerror( err));
-	return BString(tempPath.Path()) << "bm_" << ++mCount;
+													||	BM_THROW_RUNTIME(BmString("Could not find tmp-folder!\n\nError: ")<<strerror( err));
+	return BmString(tempPath.Path()) << "bm_" << ++mCount;
+}
+
+/*------------------------------------------------------------------------------*\
+	BmReadStringAttr( node, attrName, outStr)
+		-	
+\*------------------------------------------------------------------------------*/
+void BmReadStringAttr( const BNode* node, const char* attrName, BmString& outStr) {
+	attr_info attrInfo;
+	if (node->GetAttrInfo( attrName, &attrInfo) != B_OK) {
+		outStr.Truncate( 0);
+		return;
+	}
+	char* buf = outStr.LockBuffer( attrInfo.size);
+	node->ReadAttr( attrName, B_STRING_TYPE, 0, buf, attrInfo.size);
+	outStr.UnlockBuffer( attrInfo.size);
 }
