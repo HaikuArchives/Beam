@@ -1,0 +1,18 @@
+--- iso2022_jp3.h.orig	Sun May  9 17:13:28 2004
++++ iso2022_jp3.h	Sun May  9 15:42:18 2004
+@@ -154,12 +154,14 @@
+         if (s[0] < 0x80 && s[1] < 0x80) {
+           int ret = jisx0208_mbtowc(conv,pwc,s,2);
+           if (ret == RET_ILSEQ)
+-            return RET_ILSEQ;
++            goto try_JISX02131;
+           if (ret != 2) abort();
+           conv->istate = state;
+           return count+2;
+         } else
+           return RET_ILSEQ;
++try_JISX02131:
++        state = STATE_JISX02131;
+       case STATE_JISX02131:
+       case STATE_JISX02132:
+         if (n < count+2)
