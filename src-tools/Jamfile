@@ -1,0 +1,15 @@
+SubDir TOP src-tools ;
+
+SubDirHdrs $(TOP) src-bmBase ;
+SubDirHdrs $(TOP) src-bmRegexx ;
+SubDirHdrs $(TOP) src-bmMailKit ;
+
+Application MailConverter
+	:  
+		MailConverter.cpp
+	: 	
+		bmMailKit.so bmBase.so be
+	;
+
+MakeLocate MailConverter : [ FDirName $(DISTRO_DIR) tools ] ;
+
