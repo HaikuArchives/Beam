@@ -4,6 +4,15 @@ change-history of Beam:
 < 2004-05-07: commit, moved tag 'current-devel' >
 
 BmEncoding:
+	-	removed spurious addition of Escape to the characters safe for 
+		qp-encoding, i.e. it would not be encoded. I can't remember the
+		reason why I had added it, and it looks strange now. Maybe it
+		has to do with japanese encoding (that uses Esc a lot), but I
+		don't know.
+
+< 2004-05-07: commit >
+
+BmEncoding:
 	-	fixed bug in base64-decoder that chokes on embedded padding chars.
 		Unfortunately, Beam is producing these by itself when it concatenates
 		several encoded-words into one string.
