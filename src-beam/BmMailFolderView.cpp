@@ -174,10 +174,16 @@ int BmMailFolderItem::CompareItems( const CLVListItem *a_Item1,
 		|| folder2->Name().ICompare("out ",4)==0)
 			return 1 * rev;
 		if (folder1->Name().ICompare("draft")==0 
-		|| folder1->Name().ICompare("draft ",5)==0)
+		|| folder1->Name().ICompare("draft ",6)==0)
 			return -1 * rev;
 		if (folder2->Name().ICompare("draft")==0 
-		|| folder2->Name().ICompare("draft ",5)==0)
+		|| folder2->Name().ICompare("draft ",6)==0)
+			return 1 * rev;
+		if (folder1->Name().ICompare("spam")==0 
+		|| folder1->Name().ICompare("spam ",5)==0)
+			return -1 * rev;
+		if (folder2->Name().ICompare("spam")==0 
+		|| folder2->Name().ICompare("spam ",5)==0)
 			return 1 * rev;
 	}
 	return CLVEasyItem::CompareItems( a_Item1, a_Item2, KeyColumn, col_flags);
