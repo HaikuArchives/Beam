@@ -375,8 +375,9 @@ BmRef<BmMail> BmMail::CreateReply( int32 replyMode, const BString selectedText) 
 		if (!newTo.Length())
 			newTo = Header()->DetermineOriginator();
 	} else if (replyMode == BMM_REPLY_LIST) {
-		// blindly use list-address for reply (may be empty):
-		newTo = Header()->DetermineListAddress();
+		// blindly use list-address for reply (this might mean that we send
+		// a reply to the list although the messages has not come from the list):
+		newTo = Header()->DetermineListAddress( true);
 	} else if (replyMode == BMM_REPLY_ORIGINATOR) {
 		// bypass the reply-to, this way one can send mail to the 
 		// original author of a mail which has been 'reply-to'-munged 
@@ -427,20 +428,12 @@ BmRef<BmMail> BmMail::CreateReply( int32 replyMode, const BString selectedText) 
 	}
 	// if we are replying to all, we may need to include more addresses:
 	if (replyMode == BMM_REPLY_ALL) {
-		BString newCc;
-		if (ThePrefs->GetBool( "UseResentFieldsInReply", false))
-			newCc = GetFieldVal( BM_FIELD_RESENT_CC);
-		else
-			newCc = GetFieldVal( BM_FIELD_CC);
+		BString newCc = GetFieldVal( BM_FIELD_CC);
 		if (newCc != newTo)
 			// add address only if not already done so
 			newMail->SetFieldVal( BM_FIELD_CC, newCc);
 		newMail->Header()->RemoveAddrFieldVal( BM_FIELD_CC, receivingAddr);
-		BString additionalCc;
-		if (ThePrefs->GetBool( "UseResentFieldsInReply", false))
-			additionalCc = GetFieldVal( BM_FIELD_RESENT_TO);
-		else
-			additionalCc = GetFieldVal( BM_FIELD_TO);
+		BString additionalCc = GetFieldVal( BM_FIELD_TO);
 		if (additionalCc != newTo)
 			// add address only if not already done so
 			newMail->Header()->AddFieldVal( BM_FIELD_CC, additionalCc);
