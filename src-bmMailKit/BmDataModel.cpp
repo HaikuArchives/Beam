@@ -678,6 +678,66 @@ BmListModelItem* BmListModelItem::FindItemByKey( const BmString& key) {
 }
 
 /*------------------------------------------------------------------------------*\
+		-	
+\*------------------------------------------------------------------------------*/
+BmModelItemMap::const_iterator BmListModelItem::begin() const	
+{ 
+#ifdef BM_REF_DEBUGGING
+	BmRef<BmListModel> listModel( ListModel());
+	if (listModel)
+		BM_ASSERT( listModel->ModelLocker().IsLocked());
+#endif
+	return mSubItemMap.begin();
+}
+
+/*------------------------------------------------------------------------------*\
+		-	
+\*------------------------------------------------------------------------------*/
+BmModelItemMap::const_iterator BmListModelItem::end() const	
+{ 
+#ifdef BM_REF_DEBUGGING
+	BmRef<BmListModel> listModel( ListModel());
+	if (listModel)
+		BM_ASSERT( listModel->ModelLocker().IsLocked());
+#endif
+	return mSubItemMap.end(); 
+}
+
+/*------------------------------------------------------------------------------*\
+		-	
+\*------------------------------------------------------------------------------*/
+size_t BmListModelItem::size() const				
+{ 
+	BmRef<BmListModel> listModel( ListModel());
+	if (listModel) {
+		BmAutolockCheckGlobal lock( listModel->ModelLocker());
+		if (!lock.IsLocked())
+			BM_THROW_RUNTIME( 
+				listModel->ModelNameNC() << "size(): Unable to get lock"
+			);
+		return mSubItemMap.size(); 
+	} else
+		return 0;
+}
+
+/*------------------------------------------------------------------------------*\
+		-	
+\*------------------------------------------------------------------------------*/
+bool BmListModelItem::empty() const				
+{ 
+	BmRef<BmListModel> listModel( ListModel());
+	if (listModel) {
+		BmAutolockCheckGlobal lock( listModel->ModelLocker());
+		if (!lock.IsLocked())
+			BM_THROW_RUNTIME( 
+				listModel->ModelNameNC() << "empty(): Unable to get lock"
+			);
+		return mSubItemMap.empty(); 
+	} else
+		return true;
+}
+
+/*------------------------------------------------------------------------------*\
 	ListModel()
 		-	dereferences the weak-reference to the listmodel (may be NULL)
 \*------------------------------------------------------------------------------*/
@@ -906,6 +966,50 @@ void BmListModel::AdjustForeignKeys( const BmString& oldVal,
 }
 
 /*------------------------------------------------------------------------------*\
+		-	
+\*------------------------------------------------------------------------------*/
+BmModelItemMap::const_iterator BmListModel::begin() const
+{ 
+#ifdef BM_REF_DEBUGGING
+	BM_ASSERT( mModelLocker.IsLocked());
+#endif
+	return mModelItemMap.begin(); 
+}
+
+/*------------------------------------------------------------------------------*\
+		-	
+\*------------------------------------------------------------------------------*/
+BmModelItemMap::const_iterator BmListModel::end() const
+{
+#ifdef BM_REF_DEBUGGING
+	BM_ASSERT( mModelLocker.IsLocked());
+#endif
+	return mModelItemMap.end(); 
+}
+
+/*------------------------------------------------------------------------------*\
+		-	
+\*------------------------------------------------------------------------------*/
+size_t BmListModel::size() const
+{ 
+	BmAutolockCheckGlobal lock( mModelLocker);
+	if (!lock.IsLocked())
+		BM_THROW_RUNTIME( ModelNameNC() << "size(): Unable to get lock");
+	return mModelItemMap.size(); 
+}
+
+/*------------------------------------------------------------------------------*\
+		-	
+\*------------------------------------------------------------------------------*/
+bool BmListModel::empty() const
+{
+	BmAutolockCheckGlobal lock( mModelLocker);
+	if (!lock.IsLocked())
+		BM_THROW_RUNTIME( ModelNameNC() << "empty(): Unable to get lock");
+	return mModelItemMap.empty(); 
+}
+
+/*------------------------------------------------------------------------------*\
 	RenameItem( oldKey, suggestedNewKey)
 		-	renames the item that has the given key oldKey into suggestedNewKey
 		-	if suggestedNewKey is not unique, a unique new key is generated
@@ -1080,6 +1184,11 @@ void BmListModel::TellJobIsDone( bool completed) {
 		-	archives the listmodel with all items into the given message
 \*------------------------------------------------------------------------------*/
 status_t BmListModel::Archive( BMessage* archive, bool deep) const {
+	BmAutolockCheckGlobal lock( mModelLocker);
+	if (!lock.IsLocked())
+		BM_THROW_RUNTIME( 
+			ModelNameNC() << ":Archive(): Unable to get lock"
+		);
 	status_t ret = BArchivable::Archive( archive, deep);
 	if (ret == B_OK) {
 		ret = archive->AddInt32( BmListModelItem::MSG_NUMCHILDREN, size());

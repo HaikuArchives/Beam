@@ -230,14 +230,15 @@ public:
 	virtual int16 ArchiveVersion() const = 0;
 	virtual void IntegrateAppendedArchive( BMessage* archive);
 	void ItemIsValid( bool b);
+	virtual bool SanityCheck( BmString& complaint, BmString& fieldName) const
+													{ return true; }
 
 	// getters:
-	inline BmModelItemMap::const_iterator begin() const	
-													{ return mSubItemMap.begin(); }
-	inline BmModelItemMap::const_iterator end() const	
-													{ return mSubItemMap.end(); }
-	inline size_t size() const				{ return mSubItemMap.size(); }
-	inline bool empty() const				{ return mSubItemMap.empty(); }
+	BmModelItemMap::const_iterator begin() const;
+	BmModelItemMap::const_iterator end() const;
+	size_t size() const;
+	bool empty() const;
+
 	inline const BmString& Key() const	{ return mKey; }
 	virtual const BmString& DisplayKey() const		
 													{ return mKey; }
@@ -351,12 +352,11 @@ public:
 	static const char* const MSG_OLD_KEY;
 
 	// getters:
-	inline BmModelItemMap::const_iterator begin() const 	
-													{ return mModelItemMap.begin(); }
-	inline BmModelItemMap::const_iterator end() const		
-													{ return mModelItemMap.end(); }
-	inline size_t size() const				{ return mModelItemMap.size(); }
-	inline bool empty() const				{ return mModelItemMap.empty(); }
+	BmModelItemMap::const_iterator begin() const;
+	BmModelItemMap::const_iterator end() const;
+	size_t size() const;
+	bool empty() const;
+
 	inline status_t InitCheck() const	{ return mInitCheck; }
 
 	inline size_t ValidCount() const		{ return mModelItemMap.size()
