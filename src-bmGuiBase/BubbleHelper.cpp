@@ -23,11 +23,15 @@
 
 #include <string.h>
 #include <malloc.h>
+
+#include <map>
+
 #include <Application.h>
 #include <Window.h>
 #include <TextView.h>
 #include <Region.h>
 #include <Screen.h>
+#include <Cursor.h>
 
 #include "BubbleHelper.h"
 
@@ -35,18 +39,18 @@ BubbleHelper TheBubbleHelper;
 
 long BubbleHelper::runcount=0;
 
-struct helppair
-{
-    BView    *view;
-    char    *text;
+struct BubbleInfo {
+    const char* text;
+    const BCursor* cursor;
 };
+typedef map< BView*, BubbleInfo> BubbleInfoMap;
+BubbleInfoMap infoMap;
 
 BubbleHelper::BubbleHelper()
 {
     // You only need one instance per application.
     if(atomic_add(&runcount,1)==0)
     {
-        helplist=new BList(30);
         helperthread=spawn_thread(_helper,"helper",B_NORMAL_PRIORITY,this);
         if(helperthread>=0)
             resume_thread(helperthread);
@@ -57,9 +61,6 @@ BubbleHelper::BubbleHelper()
         // Since you shouldn't be creating more than one instance
         // you may want to jump straight into the debugger here.
         debugger("only one BubbleHelper instance allowed/necessary");
-      //  helperthread=-1;
-      //  helplist=NULL;
-      //  enabled=false;
     }
 }
 
@@ -78,71 +79,38 @@ BubbleHelper::~BubbleHelper()
     	    textwin->Unlock();
     	}
     }
-    if(helplist)
-    {
-        helppair *pair;
-        int i=helplist->CountItems()-1;
-        while(i>=0)
-        {
-            pair=(helppair*)helplist->RemoveItem(i);
-            if(pair && pair->text)
-                free(pair->text);
-            delete pair;
-            i--;
-        }
-        delete helplist;
-    }
     atomic_add(&runcount,-1);
 }
 
 void BubbleHelper::SetHelp(BView *view, const char *text)
 {
-    if(this && view)
-    {
-        // delete previous text for this view, if any
-        for(int i=0;;i++)
-        {
-            helppair *pair;
-            pair=(helppair*)helplist->ItemAt(i);
-            if(!pair)
-                break;
-            if(pair->view==view)
-            {
-                helplist->RemoveItem(pair);
-                free(pair->text);
-                delete pair;
-                break;
-            }
-        }
-
-        // add new text, if any
-        if(text)
-        {
-            helppair *pair=new helppair;
-            pair->view=view;
-            pair->text=strdup(text);
-            helplist->AddItem(pair);
-        }
-    }
+    if (!text)
+        DropInfo( view);
+    else if (this && view)
+	     infoMap[view].text = text;
 }
 
-char *BubbleHelper::GetHelp(BView *view)
+void BubbleHelper::SetCursor(BView *view, const BCursor* cursor)
 {
-    int i=0;
-    helppair *pair;
-    
-    // This could be sped up by sorting the list and
-    // doing a binary search.
-    // Right now this is left as an exercise for the
-    // reader, or should I say "third party opportunity"?
-    while((pair=(helppair*)helplist->ItemAt(i++))!=NULL)
-    {
-        if(pair->view==view)
-            return pair->text;
-    }
-    return NULL;
+    if (this && view)
+        infoMap[view].cursor = cursor;
 }
 
+void BubbleHelper::DropInfo( BView *view)
+{
+    if (this && view)
+        infoMap.erase( view);
+}
+
+const char *BubbleHelper::GetHelp(BView *view)
+{
+    return infoMap[view].text;
+}
+
+const BCursor* BubbleHelper::GetCursor(BView *view)
+{
+    return infoMap[view].cursor;
+}
 
 long BubbleHelper::_helper(void *arg)
 {
@@ -193,6 +161,12 @@ void BubbleHelper::Helper()
                 if(lastwhere!=where || buttons)
                 {
                     delaycounter=0;
+
+                    BView *view = FindView(where);
+                    const BCursor* cursor = GetCursor( view);
+                    if (!cursor)
+                        cursor = B_CURSOR_SYSTEM_DEFAULT;
+                    be_app->SetCursor( cursor, true);
                 }
                 else
                 {
@@ -201,8 +175,8 @@ void BubbleHelper::Helper()
                     {
                         delaycounter=0;
                         // mouse didn't move for a while
-                        BView *view=FindView(where);
-                        char *text=NULL;
+                        BView *view = FindView(where);
+                        const char *text = NULL;
                         while(view && (text=GetHelp(view))==NULL)
                             view=view->Parent();
                         if(text)
@@ -297,7 +271,7 @@ BView *BubbleHelper::FindView(BPoint where)
     return winview;
 }
 
-void BubbleHelper::DisplayHelp(char *text, BPoint where)
+void BubbleHelper::DisplayHelp(const char *text, BPoint where)
 {
     textview->SetText(text);
     

@@ -31,6 +31,7 @@ class BWindow;
 class BView;
 class BTextView;
 class BList;
+class BCursor;
 
 class BubbleHelper
 {
@@ -40,15 +41,18 @@ class BubbleHelper
 
 		void SetHelp(BView *view, const char *text);
 		void EnableHelp(bool enable=true);
+		void SetCursor(BView *view, const BCursor* cursor);
 
 	private:
 		thread_id	helperthread;
 		BList		*helplist;
 		BWindow		*textwin;
 		BTextView	*textview;
-		void		DisplayHelp(char *text,BPoint where);
+		void		DisplayHelp(const char *text,BPoint where);
+		void     DropInfo(BView *view);
 		void		Helper();
-		char		*GetHelp(BView *view);
+		const char		*GetHelp(BView *view);
+		const BCursor  *GetCursor(BView *view);
 		static long _helper(void *arg);
 		BView		*FindView(BPoint where);
 		bool		enabled;
