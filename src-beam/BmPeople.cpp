@@ -302,7 +302,7 @@ void BmPeopleList::AddPeopleToMenu( BMenu* menu, const BMessage& templateMsg,
 	menu->AddSeparatorItem();
 	if (foreignMap.size() > 0) {
 		subMenu = CreateSubmenuForPersonMap( foreignMap, templateMsg, addrField,
-														 "(Not in ~/People)", &font);
+														 "(Not in People-Folder)", &font);
 		menu->AddItem( subMenu);
 		menu->AddSeparatorItem();
 	}
