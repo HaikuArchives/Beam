@@ -311,6 +311,7 @@ void BmPrefs::InitDefaults() {
 	mDefaultsMsg.AddString( "HeaderListLarge", "Subject,From,Date,To,Cc,User-Agent/X-Mailer");
 	mDefaultsMsg.AddString( "HeaderListSmall", "Subject,From,Date");
 	mDefaultsMsg.AddBool( "InOutAlwaysAtTop", true);
+	mDefaultsMsg.AddBool( "ImportExportTextAsUtf8", true);
 	mDefaultsMsg.AddBool( "ListviewLikeTracker", false);
 	mDefaultsMsg.AddInt32( "Loglevels", loglevels);
 	mDefaultsMsg.AddInt32( "Loglevel_Pop", BM_LOGLVL_FOR(loglevels,BM_LogPop));
@@ -325,7 +326,12 @@ void BmPrefs::InitDefaults() {
 	mDefaultsMsg.AddInt32( "Loglevel_RefCount", BM_LOGLVL_FOR(loglevels,BM_LogRefCount));
 	mDefaultsMsg.AddBool( "LookForPeopleOnlyInPeopleFolder", true);
 	mDefaultsMsg.AddMessage( "MailRefLayout", new BMessage);
-	mDefaultsMsg.AddString( "MailboxPath", "/boot/home/mail");
+	if (BeamInTestMode)
+		// use a different mailbox if in test-mode:
+		mDefaultsMsg.AddString( "MailboxPath", "/boot/home/mail_test");
+	else
+		// standard mail-box:
+		mDefaultsMsg.AddString( "MailboxPath", "/boot/home/mail");
 	mDefaultsMsg.AddBool( "MakeQPSafeForEBCDIC", false);
 	mDefaultsMsg.AddInt32( "MarkAsReadDelay", 500);
 	mDefaultsMsg.AddInt32( "MaxLineLen", 76);
@@ -348,7 +354,7 @@ void BmPrefs::InitDefaults() {
 	mDefaultsMsg.AddString( "ReplySubjectStr", "Re: %s");
 	mDefaultsMsg.AddBool( "RestoreFolderStates", true);
 	mDefaultsMsg.AddMessage( "Shortcuts", GetShortcutDefaults());
-	mDefaultsMsg.AddBool( "ShowAlertForErrors", true);
+	mDefaultsMsg.AddBool( "ShowAlertForErrors", false);
 	mDefaultsMsg.AddBool( "ShowDecodedLength", true);
 	mDefaultsMsg.AddBool( "ShowToolbarBorder", false);
 	mDefaultsMsg.AddBool( "ShowToolbarIcons", true);
@@ -575,6 +581,7 @@ void BmPrefs::SetLoglevels() {
 	TheLogHandler->LogLevels( loglevels, 
 									  GetInt( "MinLogfileSize", 50*1024),
 									  GetInt( "MaxLogfileSize", 200*1024));
+	TheLogHandler->ShowErrorsOnScreen( GetBool( "ShowAlertForErrors", false));
 #ifdef BM_LOGGING
 	BmString s;
 	for( int i=31; i>=0; --i) {

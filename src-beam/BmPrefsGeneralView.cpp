@@ -502,6 +502,7 @@ void BmPrefsGeneralView::MessageReceived( BMessage* msg) {
 			}
 			case BM_SHOW_ALERTS_FOR_ERRORS_CHANGED: {
 				ThePrefs->SetBool("ShowAlertForErrors", mShowAlertForErrorsControl->Value());
+				TheLogHandler->ShowErrorsOnScreen( mShowAlertForErrorsControl->Value());
 				NoticeChange();
 				break;
 			}
