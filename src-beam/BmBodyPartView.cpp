@@ -139,7 +139,7 @@ BmBodyPartView::BmBodyPartView( minimax minmax, int32 width, int32 height,
 	SetViewColor( ui_color( B_UI_PANEL_BACKGROUND_COLOR));
 	fLightColumnCol = ui_color( B_UI_PANEL_BACKGROUND_COLOR);
 	fSelectedItemColorWindowActive = 
-	fSelectedItemColorWindowInactive = BmWeakenColor( B_UI_SHADOW_COLOR, 2);
+	fSelectedItemColorWindowInactive = BmWeakenColor( B_UI_SHADOW_COLOR, 3);
 
 	Initialize( BRect(0,0,800,40), B_WILL_DRAW | B_FRAME_EVENTS,
 					B_FOLLOW_NONE, false, false, false, B_FANCY_BORDER);
