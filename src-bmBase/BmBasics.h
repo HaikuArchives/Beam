@@ -95,9 +95,10 @@ public:
 class IMPEXPBMBASE BM_text_error : public BM_runtime_error {
 	typedef BM_runtime_error inherited;
 public:
-	BM_text_error (const BmString& what_arg, int32 pos=-1);
-	BM_text_error (const char* const what_arg, int32 pos=-1);
+	BM_text_error (const BmString& what_arg, const char* ctx="", int32 pos=-1);
+	BM_text_error (const char* const what_arg, const char* ctx="", int32 pos=-1);
 	int32 posInText;
+	BmString context;
 };
 
 /*------------------------------------------------------------------------------*\
@@ -105,13 +106,16 @@ public:
 		-	throws exception of specific type
 \*------------------------------------------------------------------------------*/
 #define BM_THROW_RUNTIME(s) BM_Throw_Runtime(s,__LINE__,__FILE__)
-IMPEXPBMBASE bool BM_Throw_Runtime( const BmString &s, int line, const char* file);
+IMPEXPBMBASE bool BM_Throw_Runtime( const BmString &s, int line, 
+												const char* file);
 
 #define BM_THROW_INVALID(s) BM_Throw_Invalid(s,__LINE__,__FILE__)
-IMPEXPBMBASE bool BM_Throw_Invalid( const BmString &s, int line, const char* file);
+IMPEXPBMBASE bool BM_Throw_Invalid( const BmString &s, int line, 
+												const char* file);
 
 #define BM_THROW_NETWORK(s) BM_Throw_Network(s,__LINE__,__FILE__)
-IMPEXPBMBASE bool BM_Throw_Network( const BmString &s, int line, const char* file);
+IMPEXPBMBASE bool BM_Throw_Network( const BmString &s, int line, 
+												const char* file);
 
 /*------------------------------------------------------------------------------*\
 	utility defines to shorten the use of auto_ptrs
