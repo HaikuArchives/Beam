@@ -105,7 +105,6 @@ private:
 
 #define BM_AUTH_SELECTED 			'bmAS'
 #define BM_POP_SELECTED 			'bmPS'
-#define BM_FILTER_SELECTED 		'bmFS'
 #define BM_PWD_STORED_CHANGED 	'bmPC'
 #define BM_CHECK_AND_SUGGEST		'bmCS'
 #define BM_ADD_ACCOUNT 				'bmAA'
@@ -159,7 +158,6 @@ private:
 	BmTextControl* mServerControl;
 	BmMenuControl* mAuthControl;
 	BmMenuControl* mPopControl;
-	BmMenuControl* mFilterControl;
 	BmCheckControl* mStorePwdControl;
 	MButton* mCheckAndSuggestButton;
 	MButton* mAddButton;
