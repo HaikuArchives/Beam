@@ -28,7 +28,8 @@
 /*************************************************************************/
 
 
-//#include <stdio.h> 
+#include <set>
+
 #include <errno.h> 
 
 #include <Directory.h> 
@@ -47,8 +48,6 @@
 #include "BmMailFolderList.h"
 #include "BmPrefs.h"
 #include "BmStorageUtil.h"
-
-BmTempFileList TheTempFileList;
 
 // -----------------------------------------------------------------------------
 BmString BM_REFKEY( const node_ref& nref) {
@@ -232,13 +231,26 @@ bool FetchFile( BmString fileName, BmString& contents) {
 	return false;
 }
 
+typedef set<BmString> BmFileSet;
+static BmFileSet nTempFiles;
+BmTempFileList TheTempFileList;
+
+/*------------------------------------------------------------------------------*\
+	BmTempFileList()
+		-	c'tor
+\*------------------------------------------------------------------------------*/
+BmTempFileList::BmTempFileList()
+	: mCount(0)
+{
+}
+
 /*------------------------------------------------------------------------------*\
 	~BmTempFileList()
 		-	d'tor, removes all temporary files used during this session
 \*------------------------------------------------------------------------------*/
 BmTempFileList::~BmTempFileList() {
 	BmFileSet::const_iterator iter;
-	while( (iter=mFiles.begin()) != mFiles.end()) {
+	while( (iter=nTempFiles.begin()) != nTempFiles.end()) {
 		RemoveFile( *iter);
 	}
 }
@@ -248,7 +260,7 @@ BmTempFileList::~BmTempFileList() {
 		-	adds given filename to the list of temporary files
 \*------------------------------------------------------------------------------*/
 void BmTempFileList::AddFile( BmString fileWithPath) {
-	mFiles.insert( fileWithPath);
+	nTempFiles.insert( fileWithPath);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -259,7 +271,7 @@ void BmTempFileList::AddFile( BmString fileWithPath) {
 void BmTempFileList::RemoveFile( BmString fileWithPath) {
 	BEntry tmpFile( fileWithPath.String());
 	tmpFile.Remove();
-	mFiles.erase( fileWithPath);
+	nTempFiles.erase( fileWithPath);
 }
 
 /*------------------------------------------------------------------------------*\

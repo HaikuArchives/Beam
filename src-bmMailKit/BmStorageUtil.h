@@ -33,8 +33,6 @@
 
 #include "BmMailKit.h"
 
-#include <set>
-
 #include <Entry.h>
 #include <File.h>
 
@@ -75,16 +73,14 @@ status_t SetupFolder( const BmString& name, BDirectory* dir);
 		-	
 \*------------------------------------------------------------------------------*/
 class IMPEXPBMMAILKIT BmTempFileList {
-	typedef set<BmString> BmFileSet;
 public:
-	BmTempFileList() : mCount(0) 			{}
+	BmTempFileList();
 	~BmTempFileList();
 	void AddFile( BmString fileWithPath);
 	void RemoveFile( BmString fileWithPath);
 	BmString NextTempFilename()			{ return BmString("bm_") << ++mCount; }
 	BmString NextTempFilenameWithPath();
 private:
-	BmFileSet mFiles;
 	int32 mCount;
 	// Hide copy-constructor and assignment:
 	BmTempFileList( const BmTempFileList&);
