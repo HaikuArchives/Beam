@@ -472,6 +472,26 @@ void BmMailHeader::BmHeaderList::Remove( const BmString& fieldName) {
 }
 
 /*------------------------------------------------------------------------------*\
+	()
+		-	returns all values found for given fieldName
+\*------------------------------------------------------------------------------*/
+void BmMailHeader::BmHeaderList::GetAllValuesFor( const BmString& fieldName,
+																  const char**& valList) const {
+	valList = NULL;
+	BmHeaderMap::const_iterator iter = mHeaders.find(fieldName);
+	if (iter != mHeaders.end()) {
+		const BmValueList& valueList = iter->second;
+		valList = new const char* [valueList.size()+1];
+		for( uint32 i=0; i<valueList.size(); ++i)
+			valList[i] = valueList[i].String();
+		valList[valueList.size()] = NULL;
+	} else {
+		valList = new const char* [1];
+		valList[0] = NULL;
+	}
+}
+
+/*------------------------------------------------------------------------------*\
 	operator [] ( fieldName)
 		-	returns first value found for given fieldName
 \*------------------------------------------------------------------------------*/
@@ -561,6 +581,16 @@ bool BmMailHeader::IsStrippingOkForField( BmString fieldName) {
 bool BmMailHeader::IsFieldEmpty( BmString fieldName) {
 	fieldName.CapitalizeEachWord();
 	return GetFieldVal( fieldName).Length() == 0;
+}
+
+/*------------------------------------------------------------------------------*\
+	GetAllFieldValues()
+	-	
+\*------------------------------------------------------------------------------*/
+void BmMailHeader::GetAllFieldValues( BmString fieldName,
+												  const char**& valList) const {
+	fieldName.CapitalizeEachWord();
+	mHeaders.GetAllValuesFor( fieldName, valList);
 }
 
 /*------------------------------------------------------------------------------*\

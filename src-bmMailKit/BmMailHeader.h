@@ -148,9 +148,11 @@ private:
 \*------------------------------------------------------------------------------*/
 class BmMailHeader : public BmRefObj {
 
+public:
 	typedef vector< BmString> BmValueList;
 	typedef map< BmString, BmValueList> BmHeaderMap;
 
+private:
 	class BmHeaderList {
 	public:
 		void Set( const BmString& fieldName, const BmString content);
@@ -159,6 +161,8 @@ class BmMailHeader : public BmRefObj {
 		BmHeaderMap::const_iterator begin() const { return mHeaders.begin(); }
 		BmHeaderMap::const_iterator end() const	{ return mHeaders.end(); }
 		const BmString& operator [] (const BmString& fieldName) const;
+		void GetAllValuesFor( const BmString& fieldName,
+									 const char**& valList) const;
 	private:
 		BmHeaderMap mHeaders;
 	};
@@ -193,6 +197,7 @@ public:
 	const BmString& RefName() const				{ return mKey; }
 
 	// getters:
+	void GetAllFieldValues( BmString fieldName, const char**& valList) const;
 	const BmString& GetFieldVal( BmString fieldName);
 	const BmString GetStrippedFieldVal( BmString fieldName);
 	inline const BmString& HeaderString() const	{ return mHeaderString; }
