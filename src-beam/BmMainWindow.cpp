@@ -503,7 +503,8 @@ void BmMainWindow::MessageReceived( BMessage* msg) {
 			case BMM_REPLY_ALL:
 			case BMM_FORWARD_ATTACHED:
 			case BMM_FORWARD_INLINE:
-			case BMM_FORWARD_INLINE_ATTACH: {
+			case BMM_FORWARD_INLINE_ATTACH: 
+			case BMM_EDIT_AS_NEW: {
 				mMailRefView->AddSelectedRefsToMsg( msg, 
 																BmApplication::MSG_MAILREF);
 				be_app_messenger.SendMessage( msg);
@@ -662,6 +663,8 @@ void BmMainWindow::MailRefSelectionChanged( bool haveSelectedRef) {
 	mMainMenuBar->FindItem( BMM_FORWARD_INLINE_ATTACH)
 		->SetEnabled( haveSelectedRef);
 	mMainMenuBar->FindItem( BMM_REDIRECT)
+		->SetEnabled( haveSelectedRef);
+	mMainMenuBar->FindItem( BMM_EDIT_AS_NEW)
 		->SetEnabled( haveSelectedRef);
 	mMainMenuBar->FindItem( BmMailRefView::MENU_MARK_AS)
 		->SetEnabled( haveSelectedRef);

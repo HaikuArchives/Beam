@@ -70,6 +70,7 @@ enum {
 	BMM_SWITCH_HEADER				= 'bMdn',
 	BMM_MOVE							= 'bMdo',
 	BMM_CREATE_FILTER				= 'bMdp',
+	BMM_EDIT_AS_NEW				= 'bMdq',
 	
 	// mail edit window
 	BMM_ATTACH						= 'bMea',

@@ -839,6 +839,9 @@ void BmMailRefView::AddMailRefMenu( BMenu* menu, BHandler* target,
 
 	menu->AddSeparatorItem();
 
+	AddItemToMenu( menu, CreateMenuItem( "Edit As New...", BMM_EDIT_AS_NEW), target);
+	menu->AddSeparatorItem();
+
 	if (isContextMenu) {
 		AddItemToMenu( menu, 
 							CreateMenuItem( "Print Message(s)...", 

@@ -401,6 +401,7 @@ BMessage* BmPrefs::GetShortcutDefaults( BMessage* shortcutsMsg) {
 	SetShortcutIfNew( shortcutsMsg, "Copy", "C");
 	SetShortcutIfNew( shortcutsMsg, "Cut", "X");
 	SetShortcutIfNew( shortcutsMsg, "Delete Folder", "");
+	SetShortcutIfNew( shortcutsMsg, "Edit As New", "");
 	SetShortcutIfNew( shortcutsMsg, "Filter", "");
 	SetShortcutIfNew( shortcutsMsg, "Find", "F");
 	SetShortcutIfNew( shortcutsMsg, "Find Messages", "<SHIFT>F");

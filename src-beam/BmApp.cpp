@@ -531,6 +531,29 @@ void BmApplication::MessageReceived( BMessage* msg) {
 				}
 				break;
 			}
+			case BMM_EDIT_AS_NEW: {
+				BmMailRef* mailRef = NULL;
+				int index=0;
+				while( msg->FindPointer( MSG_MAILREF, index++, (void**)&mailRef) == B_OK) {
+					BmRef<BmMail> mail = BmMail::CreateInstance( mailRef);
+					if (mail) {
+						BM_LOG( BM_LogApp, BmString("Asked to edit mail <") << mailRef->TrackerName() << "> as new");
+						if (mail->InitCheck() != B_OK)
+							mail->StartJobInThisThread( BmMail::BM_READ_MAIL_JOB);
+						if (mail->InitCheck() != B_OK)
+							continue;
+						BmRef<BmMail> newMail;
+						newMail = mail->CreateAsNew();
+						if (newMail) {
+							BmMailEditWin* editWin = BmMailEditWin::CreateInstance( newMail.Get());
+							if (editWin)
+								editWin->Show();
+						}
+					}
+					mailRef->RemoveRef();	// msg is no more refering to mailRef
+				}
+				break;
+			}
 			case BMM_REPLY:
 			case BMM_REPLY_LIST:
 			case BMM_REPLY_ORIGINATOR:

@@ -300,7 +300,8 @@ void BmMailViewWin::MessageReceived( BMessage* msg) {
 			case BMM_PRINT:
 			case BMM_FORWARD_ATTACHED:
 			case BMM_FORWARD_INLINE:
-			case BMM_FORWARD_INLINE_ATTACH: {
+			case BMM_FORWARD_INLINE_ATTACH:
+			case BMM_EDIT_AS_NEW: {
 				BmRef<BmMail> mail = mMailView->CurrMail();
 				if (mail) {
 					BmString selectedText;
