@@ -165,10 +165,10 @@ BmPopper::BmPopper( const BmString& name, BmPopAccount* account)
 /*------------------------------------------------------------------------------*\
 	~BmPopper()
 		-	destructor
-		-	frees all associated memory (hopefully)
 \*------------------------------------------------------------------------------*/
 BmPopper::~BmPopper() { 
-	BM_LOG_FINISH( BM_LOGNAME);
+	// taken out to make it easier to acquire list of logs:
+//	BM_LOG_FINISH( BM_LOGNAME);
 }
 
 /*------------------------------------------------------------------------------*\
