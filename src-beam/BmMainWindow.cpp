@@ -489,6 +489,20 @@ void BmMainWindow::MessageReceived( BMessage* msg) {
 				TheJobStatusWin->PostMessage( &tmpMsg);
 				break;
 			}
+			case BMM_LEARN_AS_SPAM: 
+			case BMM_LEARN_AS_TOFU: {
+				BMessage tmpMsg( BM_JOBWIN_FILTER);
+				mMailRefView->AddSelectedRefsToMsg( &tmpMsg);
+				BmString jobName 
+					= (msg->what == BMM_LEARN_AS_SPAM)
+							? BmFilterList::LEARN_AS_SPAM_NAME 
+							: BmFilterList::LEARN_AS_TOFU_NAME;
+				tmpMsg.AddString( BmListModel::MSG_ITEMKEY, jobName.String());
+				jobName << jobNum++;
+				tmpMsg.AddString( BmJobModel::MSG_JOB_NAME, jobName.String());
+				TheJobStatusWin->PostMessage( &tmpMsg);
+				break;
+			}
 			case BMM_CREATE_FILTER: {
 				mMailRefView->AddSelectedRefsToMsg( msg);
 				BMessage appMsg( BMM_PREFERENCES);

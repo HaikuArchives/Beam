@@ -71,6 +71,8 @@ enum {
 	BMM_MOVE							= 'bMdo',
 	BMM_CREATE_FILTER				= 'bMdp',
 	BMM_EDIT_AS_NEW				= 'bMdq',
+	BMM_LEARN_AS_SPAM				= 'bMdr',
+	BMM_LEARN_AS_TOFU				= 'bMds',
 	
 	// mail edit window
 	BMM_ATTACH						= 'bMea',
