@@ -54,11 +54,18 @@ using namespace regexx;
 
 #include "Base64DecoderTest.h"
 #include "Base64EncoderTest.h"
+#include "BinaryDecoderTest.h"
+#include "BinaryEncoderTest.h"
+#include "EncodedWordEncoderTest.h"
 #include "FoldedLineEncoderTest.h"
+#include "LinebreakDecoderTest.h"
+#include "LinebreakEncoderTest.h"
 #include "MemIoTest.h"
 #include "QuotedPrintableDecoderTest.h"
 #include "QuotedPrintableEncoderTest.h"
 #include "StringTest.h"
+#include "Utf8DecoderTest.h"
+#include "Utf8EncoderTest.h"
 
 //------------------------------------------------------------------------------
 BmString AsciiAlphabet[16];
@@ -71,9 +78,6 @@ struct ArgsInfo {
 	int argc;
 	char** argv;
 };
-
-//------------------------------------------------------------------------------
-BTestShell shell("Beam Testing Framework", new SemaphoreSyncObject);
 
 /*------------------------------------------------------------------------------*\
 	()
@@ -130,12 +134,26 @@ BTestSuite* CreateMailParserTestSuite() {
 						Base64DecoderTest::suite());
 	suite->addTest("Encoding::Base64Encoder", 
 						Base64EncoderTest::suite());
+	suite->addTest("Encoding::BinaryDecoder", 
+						BinaryDecoderTest::suite());
+	suite->addTest("Encoding::BinaryEncoder", 
+						BinaryEncoderTest::suite());
+	suite->addTest("Encoding::EncodedWordEncoder", 
+						EncodedWordEncoderTest::suite());
 	suite->addTest("Encoding::FoldedLineEncoder", 
 						FoldedLineEncoderTest::suite());
+	suite->addTest("Encoding::LinebreakDecoder", 
+						LinebreakDecoderTest::suite());
+	suite->addTest("Encoding::LinebreakEncoder", 
+						LinebreakEncoderTest::suite());
 	suite->addTest("Encoding::QuotedPrintableDecoder", 
 						QuotedPrintableDecoderTest::suite());
 	suite->addTest("Encoding::QuotedPrintableEncoder", 
 						QuotedPrintableEncoderTest::suite());
+	suite->addTest("Encoding::Utf8Decoder", 
+						Utf8DecoderTest::suite());
+	suite->addTest("Encoding::Utf8Encoder", 
+						Utf8EncoderTest::suite());
 	return suite;
 }
 
@@ -164,6 +182,7 @@ int32 StartTests( void* args) {
 		HaveTestdata = true;
 		chdir( testPath.String());
 	}
+
 	// use a different mailbox if in test-mode:
 	ThePrefs->SetString( "MailboxPath", testPath+"/mail");
 	// allow app to start running...
@@ -171,6 +190,8 @@ int32 StartTests( void* args) {
 	snooze( 200*1000);
 	// ...and wait for Beam to be completely up and running:
 	testApp->StartupLocker()->Lock();
+
+	BTestShell shell("Beam Testing Framework", new SemaphoreSyncObject);
 
 	// we use only statically linked tests since linking each test against
 	// Beam_in_Parts.a would yield large binaries for each test, no good!
@@ -184,6 +205,7 @@ int32 StartTests( void* args) {
 	shell.Run( argsInfo->argc, argsInfo->argv);
 	
 	// done with the tests, now quit the app:
+	testApp->StartupLocker()->Unlock();
 	be_app->PostMessage( B_QUIT_REQUESTED);
 
 	return 0;

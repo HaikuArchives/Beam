@@ -1,5 +1,5 @@
 /*
-	QuotedPrintableEncoderTest.h
+	BinaryDecoderTest.cpp
 		$Id$
 */
 /*************************************************************************/
@@ -32,39 +32,77 @@
  *
  */
 
+#include "BinaryDecoderTest.h"
+#include "TestBeam.h"
 
-#ifndef _QuotedPrintableEncoderTest_h
-#define _QuotedPrintableEncoderTest_h
+#include "BmEncoding.h"
 
-#include <cppunit/TestCaller.h>
-#include <cppunit/TestSuite.h>
-#include <cppunit/extensions/HelperMacros.h>
-#include <TestCase.h>
+/*
+ *
+ * Please note that any string-constants in this file are UTF-8, so the
+ * decoded string should be in utf-8, too.
+ *
+ */
 
-class QuotedPrintableEncoderTest : public BTestCase
+// setUp
+void
+BinaryDecoderTest::setUp()
 {
-	typedef TestCase inherited;
-	CPPUNIT_TEST_SUITE( QuotedPrintableEncoderTest );
-	CPPUNIT_TEST( SimpleTest);
-	CPPUNIT_TEST( MultiLineTest);
-	CPPUNIT_TEST( LargeDataTest);
-	CPPUNIT_TEST_SUITE_END();
-public:
-//	static CppUnit::Test* Suite();
+	inherited::setUp();
+}
 	
-	// This function called before *each* test added in Suite()
-	void setUp();
-	
-	// This function called after *each* test added in Suite()
-	void tearDown();
+// tearDown
+void
+BinaryDecoderTest::tearDown()
+{
+	inherited::tearDown();
+}
 
-	//------------------------------------------------------------
-	// Test functions
-	//------------------------------------------------------------
-	void SimpleTest();
-	void MultiLineTest();
-	void LargeDataTest();
-};
+static void DecodeAndCheck( BmString input, BmString result);
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+static void DecodeAndCheck( BmString input, BmString result) {
+	BmString decodedStr;
+	int32 blockSize = 128;
+	BmStringIBuf srcBuf( input);
+	BmStringOBuf destBuf( blockSize);
+	BmBinaryDecoder decoder( &srcBuf, blockSize);
+	destBuf.Write( &decoder, blockSize);
+	decodedStr.Adopt( destBuf.TheString());
+	try {
+		CPPUNIT_ASSERT( decodedStr.Compare( result)==0);
+	} catch( ...) {
+		DumpResult( decodedStr);
+		throw;
+	}
+}
 
-
-#endif
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void
+BinaryDecoderTest::SimpleTest()
+{
+	// empty run:
+	NextSubTest(); 
+	DecodeAndCheck( "",
+						 "");
+	// binary decoding is just a copy, so there's really nothing to do...
+	NextSubTest(); 
+	DecodeAndCheck( "A simple text",
+						 "A simple text");
+	// check handling of embedded 0-bytes:
+	NextSubTest(); 
+	BmString input("abcdefghijklmnopqrstuvwxyz");
+	int32 len = input.Length();
+	char* p = input.LockBuffer( -1);
+	p[10] = '\0';
+	p[20] = '\0';
+	input.UnlockBuffer( len);
+	BmString output( input);
+	DecodeAndCheck( input,
+						 output);
+}

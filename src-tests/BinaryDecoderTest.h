@@ -1,5 +1,5 @@
 /*
-	QuotedPrintableEncoderTest.h
+	BinaryDecoderTest.h
 		$Id$
 */
 /*************************************************************************/
@@ -33,21 +33,19 @@
  */
 
 
-#ifndef _QuotedPrintableEncoderTest_h
-#define _QuotedPrintableEncoderTest_h
+#ifndef _BinaryDecoderTest_h
+#define _BinaryDecoderTest_h
 
 #include <cppunit/TestCaller.h>
 #include <cppunit/TestSuite.h>
 #include <cppunit/extensions/HelperMacros.h>
 #include <TestCase.h>
 
-class QuotedPrintableEncoderTest : public BTestCase
+class BinaryDecoderTest : public BTestCase
 {
 	typedef TestCase inherited;
-	CPPUNIT_TEST_SUITE( QuotedPrintableEncoderTest );
+	CPPUNIT_TEST_SUITE( BinaryDecoderTest );
 	CPPUNIT_TEST( SimpleTest);
-	CPPUNIT_TEST( MultiLineTest);
-	CPPUNIT_TEST( LargeDataTest);
 	CPPUNIT_TEST_SUITE_END();
 public:
 //	static CppUnit::Test* Suite();
@@ -62,8 +60,6 @@ public:
 	// Test functions
 	//------------------------------------------------------------
 	void SimpleTest();
-	void MultiLineTest();
-	void LargeDataTest();
 };
 
 

@@ -1,5 +1,5 @@
 /*
-	QuotedPrintableEncoderTest.h
+	LinebreakEncoderTest.cpp
 		$Id$
 */
 /*************************************************************************/
@@ -32,39 +32,72 @@
  *
  */
 
+#include "LinebreakEncoderTest.h"
+#include "TestBeam.h"
 
-#ifndef _QuotedPrintableEncoderTest_h
-#define _QuotedPrintableEncoderTest_h
+#include "BmEncoding.h"
 
-#include <cppunit/TestCaller.h>
-#include <cppunit/TestSuite.h>
-#include <cppunit/extensions/HelperMacros.h>
-#include <TestCase.h>
+/*
+ *
+ * Please note that any string-constants in this file are UTF-8, so the
+ * decoded string should be in utf-8, too.
+ *
+ */
 
-class QuotedPrintableEncoderTest : public BTestCase
+// setUp
+void
+LinebreakEncoderTest::setUp()
 {
-	typedef TestCase inherited;
-	CPPUNIT_TEST_SUITE( QuotedPrintableEncoderTest );
-	CPPUNIT_TEST( SimpleTest);
-	CPPUNIT_TEST( MultiLineTest);
-	CPPUNIT_TEST( LargeDataTest);
-	CPPUNIT_TEST_SUITE_END();
-public:
-//	static CppUnit::Test* Suite();
+	inherited::setUp();
+}
 	
-	// This function called before *each* test added in Suite()
-	void setUp();
-	
-	// This function called after *each* test added in Suite()
-	void tearDown();
+// tearDown
+void
+LinebreakEncoderTest::tearDown()
+{
+	inherited::tearDown();
+}
 
-	//------------------------------------------------------------
-	// Test functions
-	//------------------------------------------------------------
-	void SimpleTest();
-	void MultiLineTest();
-	void LargeDataTest();
-};
+static void EncodeLinebreaksAndCheck( BmString input, BmString result);
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+static void EncodeLinebreaksAndCheck( BmString input, BmString result) {
+	BmString encodedStr;
+	int32 blockSize = 128;
+	BmStringIBuf srcBuf( input);
+	BmStringOBuf destBuf( blockSize);
+	BmLinebreakEncoder encoder( &srcBuf, blockSize);
+	destBuf.Write( &encoder, blockSize);
+	encodedStr.Adopt( destBuf.TheString());
+	try {
+		CPPUNIT_ASSERT( encodedStr.Compare( result)==0);
+	} catch( ...) {
+		DumpResult( encodedStr);
+		throw;
+	}
+}
 
-
-#endif
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void
+LinebreakEncoderTest::SimpleTest()
+{
+	// empty run:
+	NextSubTest(); 
+	EncodeLinebreaksAndCheck( "",
+									  "");
+	// run with nothing to do:
+	NextSubTest(); 
+	EncodeLinebreaksAndCheck( "A simple text",
+									  "A simple text");
+	// check everything in one go:
+	NextSubTest(); 
+	EncodeLinebreaksAndCheck( 
+		"\nA simple text\n (which contains \rsome linebreaks)\n\n",
+		"\r\nA simple text\r\n (which contains some linebreaks)\r\n\r\n"
+	);
+}
