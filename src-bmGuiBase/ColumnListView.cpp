@@ -1237,8 +1237,10 @@ void ColumnListView::ReSortItem( CLVListItem* item)
 	if (!item)
 		return;
 
+
 	if (fHierarchical) {
 		int32 oldPos = FullListIndexOf( item);
+		ASSERT(oldPos >= 0);
 		int32 newPos;
 		int32 itemCount = 1+FullListNumberOfSubitems( item);
 		CLVListItem* superitem = Superitem( item);
