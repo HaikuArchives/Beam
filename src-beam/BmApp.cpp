@@ -1099,13 +1099,11 @@ void BmApplication::RefsReceived( BMessage* msg) {
 	entry_ref inref;
 	entry_ref eref;
 	BEntry entry;
-	struct stat st;
 	for( int index=0; msg->FindRef( "refs", index, &inref) == B_OK; ++index) {
 		if (entry.SetTo( &inref, true) != B_OK
-		|| entry.GetRef( &eref) != B_OK
-		|| entry.GetStat( &st) != B_OK)
+		|| entry.GetRef( &eref) != B_OK)
 			continue;
-		BmRef<BmMailRef> ref = BmMailRef::CreateInstance( eref, st);
+		BmRef<BmMailRef> ref = BmMailRef::CreateInstance( eref);
 		if (!ref)
 			continue;
 		if (ref->Status() == BM_MAIL_STATUS_DRAFT
