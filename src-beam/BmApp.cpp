@@ -460,10 +460,14 @@ void BmApplication::MessageReceived( BMessage* msg) {
 	try {
 		switch( msg->what) {
 			case BMM_CHECK_ALL: {
+				while( ThePopAccountList->IsJobRunning())
+					snooze( 200*1000);
 				ThePopAccountList->CheckMail( true);
 				break;
 			}
 			case BMM_CHECK_MAIL: {
+				while( ThePopAccountList->IsJobRunning())
+					snooze( 200*1000);
 				const char* key = NULL;
 				msg->FindString( BmPopAccountList::MSG_ITEMKEY, &key);
 				if (key) {
