@@ -2,6 +2,173 @@ change-history of Beam:
 		$Id$
 
 *******************************************************************************
+[Beam 1.0-rc2]
+*******************************************************************************
+
+< 2003-09-11: commit>
+
+BmApp, BmMainWindow, BmMailRefView, BmMailViewWin, BmPrefs:
+	-	added support for 'Edit As New...'-functionality.
+
+BmMail:
+	-	improved detection of identity for incoming mails:
+		when we have determined the default-identity for the 
+		given pop-account, we now proceed to check if there's
+		another identity that corresponds directly to the
+		receiving address of the current mail.
+
+BmMailEditWin:
+	-	now archives/restores state of detail-buttons, too.
+
+BmMenuControllerBase:
+	-	now keeps the marked item even for menus which do not
+		have the BM_MC_LABEL_FROM_MARKED-flag set.
+
+BmPrefs:
+	-	switch loglevels from int16 to int32
+	-	removed multiple entries for 'DefaultCharset'
+
+BmTextControl:
+	-	now uses BmMenuControllerBase as Menu
+
+< 2003-09-09: commit>
+
+BmMenuControllerBase:
+	-	added as base class for BmMenuController, which allows us
+		to use simple menu-controllers in add-ons (like SIEVE).
+
+BmSieveFilter:
+	-	implemented folder- and identity-menu by means of
+		BmMenuControllerBase, ensuring that these menues are
+		always up to date.
+
+< 2003-09-08: commit>
+
+many files:
+	-	replaced most #defines by something more c++-like.
+	-	tried hard to comply better with the 80-chars-per-line rule.
+
+BmApp:
+	-	added support for joining multiple replies into one single
+		mail, no matter what the original recipients were.
+
+BmBodyPartView:
+	-	added support for removing attachments from mails that are
+		being read (not edited).
+
+BmDataModel:
+	-	RenameItem() now takes the oldKey by-value such that is not changed
+		during the rename-operation.
+	-	added support for appended archives, which are being written
+		while Beam is running and integrated into the current archive
+		upon Store() or on startup-after-crash.
+
+BmDeskbarView:
+	-	now we avoid dealing with new mails living in Trash since other
+		mail-clients might put them there with status=='New'. We no
+		longer care about those.
+
+BmEncoding:
+	-	fixed problem in BmFoldedLineEncoder that would always
+		lead to hard-break formatting.
+
+BmLogWindow:
+	-	cosmetical changes: smaller tab, fixed font.
+
+BmMail:
+	-	corrected a small problem in DetermineReplyAddress() with respect
+		to the setting of replyToPersonOnly.
+
+BmMailFilter:
+	-	now we (again) do stop processing the filter chain if a matching
+		filter has requested so.
+
+BmMainWindow:
+	-	convinced the pop-accounts menu to automagically be updated
+		when the PopAccountlist is set-up in order to make the menu
+		shortcuts work at all times (not only after you opened the
+		menu for the first time).
+
+BmMenuController:
+	-	simplified and polished, works more reliably now.
+
+BmPopAccount:
+	-	added missing initialization for mHomeFolder.
+	-	changed UID-handling, esp. we no write UIDs of downloaded mails
+		immediately, so that after a crash Beam should now only double
+		download a maximum of one mail only.
+
+BmPopper:
+	-	added support for removing mails from server after a given 
+		number of days.
+	-	added support for removing local UIDs that are not any longer
+		listed on the server (saves _loads_ of space, my PopAccounts-file
+		has gone from 128KB to 3KB...)
+
+BmPrefsFilterChainView:
+	-	replaced non-working MoveUp/MoveDown-buttons by drag'n'drop.
+
+BmPrefsIdentityView:
+	-	corrected heading.
+
+BmPrefsMailConstrView:
+	-	fixed bug with default-charset not being saved.
+
+BmPrefsRecvMailView:
+	-	added support for automatically removing the corresponding 
+		identities when an account is removed.
+
+BmPrefsWin:
+	-	upon startup, we now show the 'General' - page.
+
+BmString:
+	-	fixed embarrassing bug in Trim(), which caused havoc in mail-
+		header generation when editing mails.
+
+BmUtil:
+	-	corrected one-hour offset in date when converting to internet
+		time, which could lead to wrong date being displayed.
+
+ColumnListView:
+	-	fixed bug when sorting items at the end of a hierarchical
+		listview which has "pending children".
+
+makefiles/:
+	-	added the make-system that has kindly been provided by
+		Linus Almstrom.
+
+< 2003-08-21: commit>
+
+BmBodyPartList:
+	-	added WriteToFile() as support for new drag-protocol.
+
+BmBodyPartView:
+	-	upgraded dragging-protocol to actually make use of the
+		notification message.
+
+BmEncoding:
+	-	fixed case-related problem in charset-conversion that could lead
+		to a hang.
+	-	Fixed problem with Beam sometimes violating RFC2047	in such a way 
+	    that it was possible to separate a multibyte-char across two 
+	    encoded-words. This is no longer the case (I hope).
+
+BmMail:
+	-	write missing MAIL:-attributes to file (e.g. MAIL:recipients 
+		and MAIL:flags).
+
+BmMailHeader:
+	-	fixed cache-validation bug in BmAddrList, which resulted in
+		outdated mAddrString-contents being returned by AddrString().
+
+BmMailRefView:
+	-	added checking of be:originator when handling B_TRASH_TARGET.
+
+BmMemIO:
+	-	in BmMemFilter::Read(), we no longer Finalize() the filter
+		if the dest-buffer is to small and just has to be grown.
+
+*******************************************************************************
 [Beam 1.0-rc1]
 
 	summary:
