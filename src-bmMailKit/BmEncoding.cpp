@@ -229,9 +229,10 @@ void BmEncoding::Encode( BString encodingStyle, const BString& src, BString& des
 		dest.UnlockBuffer( destLen);
 	} else if (encodingStyle == "7BIT" || encodingStyle == "8BIT") {
 		// replace local newline (LF) by network newline (CRLF):
-		dest = src;
-		dest.ReplaceAll( "\r\n", "\n");	// just in case there already are <CRLF>s in src...
-		dest.ReplaceAll( "\n", "\r\n");
+		Regexx rx;
+		dest = rx.replace( src, "\\r\\n", "\n", Regexx::newline | Regexx::global);
+							// just in case there already are <CRLF>s in src...
+		dest = rx.replace( dest, "\\n", "\r\n", Regexx::newline | Regexx::global);
 	} else {
 		if (encodingStyle != "BINARY") {
 			// oops, we don't know this one:
@@ -250,19 +251,18 @@ void BmEncoding::Decode( BString encodingStyle, const BString& src, BString& des
 								 bool isEncodedWord, bool isText) {
 	encodingStyle.ToUpper();
 	dest.Truncate(0,false);
+	Regexx rx;
 	if (encodingStyle == "Q" || encodingStyle == "QUOTED-PRINTABLE") {
 		// quoted printable:
-		Regexx rx;
 		// remove trailing whitespace from all lines (may have been added during mail-transport):
 		BString text = rx.replace( src, "[\\t ]+(?=\\r\\n)", "", Regexx::newline | Regexx::global);
 		// join together lines that end with a softbreak:
-//		text = rx.replace( text, "=\\r\\n", "", Regexx::newline | Regexx::global);
-		text.ReplaceAll( "=\r\n", "");
+		text = rx.replace( text, "=\\r\\n", "", Regexx::newline | Regexx::global);
 		// replace network newline (CRLF) by local newline (LF):
-		text.ReplaceAll( "\r\n", "\n");
+		text = rx.replace( text, "\\r\\n", "\n", Regexx::newline | Regexx::global);
 		if (isEncodedWord) {
 			// in encoded-words, underlines are really spaces (a real underline is encoded):
-			text.ReplaceAll( "_", " ");
+			text = rx.replace( text, "_", " ", Regexx::newline | Regexx::global);
 		}
 		// now we decode the quoted printables:
 		rx.expr( "=([0-9A-F][0-9A-F])");
@@ -306,10 +306,8 @@ void BmEncoding::Decode( BString encodingStyle, const BString& src, BString& des
 		dest[destSize] = '\0';
 		dest.UnlockBuffer( destSize);
 	} else if (encodingStyle == "7BIT" || encodingStyle == "8BIT") {
-		// we copy the buffer...
-		dest = src;
-		// ... and replace network newline (CRLF) by local newline (LF):
-		dest.ReplaceAll( "\r\n", "\n");
+		// we copy the buffer and replace network newline (CRLF) by local newline (LF):
+		dest = rx.replace( src, "\\r\\n", "\n", Regexx::newline | Regexx::global);
 	} else {
 		if (encodingStyle != "BINARY") {
 			// oops, we don't know this one:

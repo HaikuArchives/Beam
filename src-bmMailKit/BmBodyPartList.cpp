@@ -244,6 +244,9 @@ void BmBodyPart::SetTo( const BString& msgtext, int32 start, int32 length,
 		type = "text/plain; charset=us-ascii";
 	}
 	mContentType.SetTo( type);
+	if (type.ICompare("multipart", 9) == 0) {
+		mIsMultiPart = true;
+	}
 	if (IsPlainText() && body->EditableTextBody() == NULL) {
 		body->EditableTextBody( this);
 	}
@@ -256,13 +259,15 @@ void BmBodyPart::SetTo( const BString& msgtext, int32 start, int32 length,
 		encoding = "7bit";
 	mContentTransferEncoding = encoding;
 	BM_LOG2( BM_LogMailParse, BString("...found value: ")<<mContentTransferEncoding);
-	// decoded length
+
+	// MIME-Decoding:
 	if (mIsMultiPart) {
 		// decoding is unneccessary for multiparts, since they are never handled on 
 		// their own (they are split into their subparts instead)
 	} else {
-		BString body( posInRawText, bodyLength);
-		Decode( mContentTransferEncoding, body, mDecodedData, false, IsText());
+		// decode body:
+		BString bodyString( posInRawText, bodyLength);
+		Decode( mContentTransferEncoding, bodyString, mDecodedData, false, IsText());
 	}
 	// id
 	BM_LOG2( BM_LogMailParse, "parsing Content-Id");
@@ -295,8 +300,7 @@ void BmBodyPart::SetTo( const BString& msgtext, int32 start, int32 length,
 	if (deleteHeader)
 		delete header;
 		
-	if (type.ICompare("multipart", 9) == 0) {
-		mIsMultiPart = true;
+	if (mIsMultiPart) {
 		BString boundary = BString("--")+mContentType.Param("boundary");
 		if (boundary.Length()==2) {
 			BM_SHOWERR( "No boundary specified within multipart-message!");

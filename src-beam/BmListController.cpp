@@ -184,7 +184,8 @@ void BmListViewController::MouseMoved( BPoint point, uint32 transit, const BMess
 					InvalidateItem( index);
 				}
 			}
-			if (Hierarchical() && mCurrHighlightItem->ExpanderRectContains( point)) {
+			if (Hierarchical() && mCurrHighlightItem 
+			&& mCurrHighlightItem->ExpanderRectContains( point)) {
 				if (!mSittingOnExpander) {
 					if (!mCurrHighlightItem->IsExpanded()) {
 						// expand superitem if mouse is over expander (so that user can 
