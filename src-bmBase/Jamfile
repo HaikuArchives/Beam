@@ -8,6 +8,7 @@ SharedLibrary bmBase.so
 		BmFilterAddon.cpp 
 		BmLogHandler.cpp 
 		BmMemIO.cpp 
+		BmMultiLocker.cpp 
 		BmRosterBase.cpp 
 		BmString.cpp
 		md5c.c

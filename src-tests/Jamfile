@@ -8,6 +8,7 @@ SubDirHdrs $(TOP) src-bmDaemon ;
 SubDirHdrs $(TOP) src-bmGuiBase ;
 SubDirHdrs $(TOP) src-deskbarItem ;
 
+SubDirSysHdrs /boot/home/config/include/cppunit ;
 SubDirSysHdrs /boot/home/config/include ;
 SubDirSysHdrs /boot/home/config/include/liblayout ;
 
@@ -34,6 +35,7 @@ Application TestBeam
 		LinebreakEncoderTest.cpp    
 		MailMonitorTest.cpp             
 		MemIoTest.cpp                   
+		MultiLockerTest.cpp                   
 		QuotedPrintableDecoderTest.cpp  
 		QuotedPrintableEncoderTest.cpp  
 		StringTest.cpp
@@ -51,3 +53,17 @@ XRes TestBeam
 		[ FDirName $(TOP) resources BmTestAppResources.rsrc ] 
 	;
 MimeSet TestBeam ;
+
+Application TestBeamMini
+	:  
+		MultiLockerTest.cpp                   
+		TestBeamMini.cpp
+	: 	
+		bmBase.so 
+		cppunit $(STDC++LIB) be
+	;
+XRes TestBeamMini
+	: 
+		[ FDirName $(TOP) resources BmTestAppResources.rsrc ] 
+	;
+MimeSet TestBeamMini ;

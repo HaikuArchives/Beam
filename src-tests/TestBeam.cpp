@@ -65,6 +65,7 @@ using namespace regexx;
 #include "LinebreakEncoderTest.h"
 #include "MailMonitorTest.h"
 #include "MemIoTest.h"
+#include "MultiLockerTest.h"
 #include "QuotedPrintableDecoderTest.h"
 #include "QuotedPrintableEncoderTest.h"
 #include "StringTest.h"
@@ -121,6 +122,8 @@ BTestSuite* CreateBmBaseTestSuite() {
 	// ##### Add test suites here #####
 	suite->addTest("BmBase::MemIo", 
 						MemIoTest::suite());
+	suite->addTest("BmBase::MultiLocker", 
+						MultiLockerTest::suite());
 	suite->addTest("BmBase::String", 
 						StringTest::suite());
 	return suite;
