@@ -65,6 +65,7 @@ const int32 BmMailFilter::BM_EXECUTE_FILTER_IN_MEM = 	1;
 BmMailFilter::BmMailFilter( const BmString& name, BmFilter* filter)
 	:	BmJobModel( name)
 	,	mFilter( filter)
+	,	mMailRefs( NULL)
 {
 }
 
@@ -73,15 +74,18 @@ BmMailFilter::BmMailFilter( const BmString& name, BmFilter* filter)
 		-	destructor
 \*------------------------------------------------------------------------------*/
 BmMailFilter::~BmMailFilter() { 
+	delete mMailRefs;
 }
 
 /*------------------------------------------------------------------------------*\
-	AddMailRef()
+	SetMailRefVect()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmMailFilter::AddMailRef( BmMailRef* ref) {
-	if (ref)
-		mMailRefs.push_back( ref);
+void BmMailFilter::SetMailRefVect( BmMailRefVect* refVect) {
+	if (refVect != mMailRefs) {
+		delete mMailRefs;
+		mMailRefs = refVect;
+	}
 }
 
 /*------------------------------------------------------------------------------*\
@@ -111,22 +115,26 @@ bool BmMailFilter::ShouldContinue() {
 \*------------------------------------------------------------------------------*/
 bool BmMailFilter::StartJob() {
 	try {
-		int32 count = mMailRefs.size() + mMails.size();
-		BM_LOG2( BM_LogFilter, 
-					BmString("Starting filter-job for ") << count << " mails.");
+		int32 count = mMails.size();
 		int32 c=0;
 		const float delta =  100.0 / (count / GRAIN);
-		BmRef<BmMail> mail;
-		for( uint32 i=0; ShouldContinue() && i<mMailRefs.size(); ++i) {
-			mail = BmMail::CreateInstance( mMailRefs[i].Get());
-			if (mail) {
-				mail->StartJobInThisThread( BmMail::BM_READ_MAIL_JOB);
-				ExecuteFilter( mail.Get());
+		if (mMailRefs)
+			count += mMailRefs->size();
+		BM_LOG2( BM_LogFilter, 
+					BmString("Starting filter-job for ") << count << " mails.");
+		if (mMailRefs) {
+			BmRef<BmMail> mail;
+			for( uint32 i=0; ShouldContinue() && i<mMailRefs->size(); ++i) {
+				mail = BmMail::CreateInstance( (*mMailRefs)[i].Get());
+				if (mail) {
+					mail->StartJobInThisThread( BmMail::BM_READ_MAIL_JOB);
+					ExecuteFilter( mail.Get());
+				}
+				BmString currentCount = BmString()<<c++<<" of "<<count;
+				UpdateStatus( delta, mail->Name().String(), currentCount.String());
 			}
-			BmString currentCount = BmString()<<c++<<" of "<<count;
-			UpdateStatus( delta, mail->Name().String(), currentCount.String());
+			mMailRefs->clear();
 		}
-		mMailRefs.clear();
 		for( uint32 i=0; ShouldContinue() && i<mMails.size(); ++i) {
 			ExecuteFilter( mMails[i].Get());
 			BmString currentCount = BmString()<<c++<<" of "<<count;

@@ -48,7 +48,6 @@ class BmFilter;
 class BmMailFilter : public BmJobModel {
 	typedef BmJobModel inherited;
 
-	typedef vector< BmRef< BmMailRef> > BmMailRefVect;
 	typedef vector< BmRef< BmMail> > BmMailVect;
 	typedef vector< const char**> BmHeaderVect;
 	
@@ -69,7 +68,7 @@ public:
 	virtual ~BmMailFilter();
 
 	// native methods:
-	void AddMailRef( BmMailRef* ref);
+	void SetMailRefVect( BmMailRefVect* refVect);
 	void AddMail( BmMail* mail);
 	void ManageHeaderVect( const char**header);
 
@@ -87,7 +86,7 @@ private:
 
 	BmRef<BmFilter> mFilter;
 							// the actual SIEVE-filter
-	BmMailRefVect mMailRefs;
+	BmMailRefVect* mMailRefs;
 							// the mail-refs we shall be filtering
 	BmMailVect mMails;
 							// the mails we shall be filtering

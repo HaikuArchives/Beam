@@ -385,13 +385,7 @@ BmJobModel* BmMailFilterView::CreateJobModel( BMessage* msg) {
 	BmMailFilter* mailFilter = new BmMailFilter( ControllerName(), filter);
 	BmMailRefVect* refVect = NULL;
 	msg->FindPointer( BmApplication::MSG_MAILREF_VECT, (void**)&refVect);
-	if (refVect) {
-		BmMailRefVect::iterator iter;
-		for( iter = refVect->begin(); iter != refVect->end(); ++iter) {
-			mailFilter->AddMailRef( iter->Get());
-		}
-		delete [] refVect;
-	}
+	mailFilter->SetMailRefVect( refVect);
 	return mailFilter;
 }
 
