@@ -771,6 +771,8 @@ void BmPrefsFilterChainView::MessageReceived( BMessage* msg) {
 			case B_OBSERVER_NOTICE_CHANGE: {
 				switch( msg->FindInt32( B_OBSERVE_WHAT_CHANGE)) {
 					case BmChainedFilterView::BM_NTFY_ORDER_MODIFIED: {
+						// trigger redraw of chained-filter-list:
+						mChainedFilterListView->SortItems();
 						NoticeChange();
 						break;
 					}

@@ -60,8 +60,6 @@ public:
 	virtual ~BmChainedFilter();
 	
 	// native methods:
-	bool operator < (const BmChainedFilter& right)
-													{ return mPosition < right.mPosition; }
 
 	// stuff needed for Archival:
 	status_t Archive( BMessage* archive, bool deep = true) const;
@@ -71,16 +69,12 @@ public:
 	inline int32 Position() const			{ return mPosition; }
 
 	// setters:
-	inline void Position( int32 p)		{ mPosition = p;  
-													  TellModelItemUpdated( UPD_POS); }
+	inline void Position( int32 p)		{ mPosition = p; }
 
 	// archivable components:
 	static const char* const MSG_POSITION;
 	static const char* const MSG_FILTERNAME;
 	static const int16 nArchiveVersion;
-
-	// flags indicating which parts are to be updated:
-	static const BmUpdFlags UPD_POS;
 
 private:
 	BmChainedFilter();						// hide default constructor
@@ -94,8 +88,6 @@ private:
 							// in order to be able to squeeze in an element
 							// during drag'n'drop operations.
 };
-
-
 
 typedef vector< BmChainedFilter*> BmFilterPosVect;
 

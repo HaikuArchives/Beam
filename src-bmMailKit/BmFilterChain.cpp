@@ -53,9 +53,6 @@ const int16 BmChainedFilter::nArchiveVersion = 2;
 BmString BM_OutboundPreEditLabel("<outbound-before-edit>");
 BmString BM_OutboundPreSendLabel("<outbound-before-send>");
 
-// flags indicating which parts are to be updated:
-const BmUpdFlags BmChainedFilter::UPD_POS  = 1<<2;
-
 // standard logfile-name for this class:
 #undef BM_LOGNAME
 #define BM_LOGNAME "Filter"
@@ -166,6 +163,12 @@ void BmChainedFilterList::ForeignKeyChanged( const BmString& key,
 		-	N.B.: In fact there are holes, but regularly, such that the
 			items are numbered by a step of 2.
 \*------------------------------------------------------------------------------*/
+struct LessPos {
+	bool operator() ( const BmChainedFilter* left, 
+							const BmChainedFilter* right) {
+		return left->Position() < right->Position();
+	}
+};
 void BmChainedFilterList::RenumberPos() {
 	BmAutolockCheckGlobal lock( ModelLocker());
 	if (!lock.IsLocked())
@@ -177,7 +180,7 @@ void BmChainedFilterList::RenumberPos() {
 			= dynamic_cast< BmChainedFilter*>( iter->second.Get());
 		mPosVect.push_back(filter);
 	}
-	sort(mPosVect.begin(), mPosVect.end());
+	sort(mPosVect.begin(), mPosVect.end(), LessPos());
 	// now renumber all elements in mPosVect:
 	int32 currPos = 1;
 	BmFilterPosVect::iterator posIter;
