@@ -42,6 +42,9 @@ using namespace regexx;
 #include "BmPrefs.h"
 #include "BmUtil.h"
 
+#undef BM_LOGNAME
+#define BM_LOGNAME "MailParser"
+
 #define BM_MAX_LINE_LEN 76
 							// as stated in [K. Johnson, p. 149f]
 
@@ -193,10 +196,6 @@ void BmEncoding::ConvertFromUTF8( uint32 destEncoding, const BmString& src,
 	}
 }
 
-/*------------------------------------------------------------------------------*\
-	()
-		-	
-\*------------------------------------------------------------------------------*/
 void BmEncoding::Encode( BmString encodingStyle, const BmString& src, BmString& dest, 
 								 bool isEncodedWord) {
 	int32 srcLen = src.Length();
@@ -299,10 +298,6 @@ void BmEncoding::Encode( BmString encodingStyle, const BmString& src, BmString& 
 	}
 }
 
-/*------------------------------------------------------------------------------*\
-	()
-		-	
-\*------------------------------------------------------------------------------*/
 void BmEncoding::Decode( BmString encodingStyle, const BmString& src, BmString& dest, 
 								 bool isEncodedWord) {
 	dest.Truncate(0);
@@ -383,58 +378,11 @@ void BmEncoding::Decode( BmString encodingStyle, const BmString& src, BmString& 
 }
 
 /*------------------------------------------------------------------------------*\
-	DecodedLength()
-		-	returns length of given encoded text after it has been decoded
-		-	value will be computed, NO actual decoding happening here!
-\*------------------------------------------------------------------------------*/
-/*
-int32 BmEncoding::DecodedLength( const BmString& encodingStyle, const char* text, 
-											int32 length) {
-	if (encodingStyle.ICompare( "Q")==0 || encodingStyle.ICompare("Quoted-Printable")==0) {
-		// quoted printable:
-		int32 skipCount=0, encodedCount=0;
-		int32 pos=0;
-		for( const char* s=text; pos<length; s++, pos++) {
-			if (*s == '\r') {
-				// count trailing whitespace in order to subtract it later:
-				const char* s2=s-1;
-				while( s2>=s && isspace(*s--))
-					skipCount++;
-			}
-			if (*s=='=' && pos+2<length) {
-				if (isalnum(*(s+1)) && isalnum(*(s+2)))
-					encodedCount++;
-			}
-		}
-		return length-encodedCount*2-skipCount;
-	} else if (encodingStyle.ICompare( "B") == 0 || encodingStyle.ICompare("Base64")==0) {
-		// base64:
-		int32 count=0;
-		int32 padding=0;
-		int32 pos=0;
-		for( const char* s=text; pos<length; s++, pos++) {
-			char c = *s;
-			if (!isspace(c))
-				count++;
-			if (c=='=')
-				padding++;
-		}
-		return count/4*3-padding;
-	} else if (encodingStyle.ICompare( "7bit") && encodingStyle.ICompare( "8bit")
-				  && encodingStyle.ICompare( "binary")) {
-		// oops, we don't know this one:
-		BM_SHOWERR( BmString("DecodedLength(): Unrecognized encoding-style <")<<encodingStyle<<"> found.");
-	}
-	return length;
-}
-*/
-
-/*------------------------------------------------------------------------------*\
 	()
 		-	
 \*------------------------------------------------------------------------------*/
 BmString BmEncoding::ConvertHeaderPartToUTF8( const BmString& headerPart, 
-															uint32 defaultEncoding) {
+															 uint32 defaultEncoding) {
 	int32 nm;
 	Regexx rx;
 	rx.expr( "=\\?(.+?)\\?(.)\\?(.+?)\\?=\\s*");
@@ -576,4 +524,303 @@ bool BmEncoding::IsCompatibleWithText( const BmString& s) {
 	return true;
 }
 
+
+
+/********************************************************************************\
+	BmQuotedPrintableDecoder
+\********************************************************************************/
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+BmQuotedPrintableDecoder::BmQuotedPrintableDecoder( BmMemIBuf& input, 
+																	 bool isEncodedWord, 
+																	 uint32 blockSize)
+	:	inherited( input, blockSize)
+	,	mIsEncodedWord( isEncodedWord)
+{
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+uint32 BmQuotedPrintableDecoder::DetermineBufferFixup( BmMemIBuf& input) {
+	BmString peekStr = input.Peek( 2, -2);
+	int32 pos = peekStr.FindFirst( '=');
+	return pos != B_ERROR ? pos+1 : 0;
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmQuotedPrintableDecoder::DoFilter( const char* srcBuf, uint32& srcLen, 
+													  char* destBuf, uint32& destLen) {
+	BM_LOG( BM_LogMailParse, BmString("starting to decode quoted-printable of ") << srcLen << " bytes");
+	const char* pos = srcBuf;
+	char* srcEnd = destBuf+srcLen;
+	char* newPos = destBuf;
+	char* destEnd = destBuf+destLen;
+	char* lastSoftbreakPos = NULL;
+	char c1,c2;
+	const BmString qpChars("abcdef0123456789ABCDEF");
+	while( pos<srcEnd && newPos<destEnd && *pos) {
+		if (*pos == '\r' && *(pos+1) == '\n') {
+			// make sure to remove any trailing whitespace:
+			while(newPos>destBuf && (*(newPos-1) == ' ' || *(newPos-1) == '\t'))
+				newPos--;
+			// join lines that have been divided by a soft linebreak:
+			if (lastSoftbreakPos>0) {
+				newPos = lastSoftbreakPos;		// move back to '='-character
+				lastSoftbreakPos = 0;
+				pos++;						// skip '\n', too
+			}
+			pos++;							// skip '\r'
+		} else if (mIsEncodedWord && *pos == '_') {
+			// in encoded-words, underlines are really spaces (a real underline is encoded):
+			*newPos++ = ' ';
+			pos++;
+		} else if (*pos == '=') {
+			if ((c1=*(pos+1)) && qpChars.FindFirst(c1)!=B_ERROR 
+			&& (c2=*(pos+2)) && qpChars.FindFirst(c2)!=B_ERROR) {
+				*newPos++ = HEXDIGIT2CHAR(c1)*16 + HEXDIGIT2CHAR(c2);
+				pos+=3;
+			} else {
+				// softbreak encountered, we keep note of it's position
+				lastSoftbreakPos = newPos;
+				*newPos++ = *pos++;
+			}
+		} else {
+			*newPos++ = *pos++;
+		}
+	}
+	srcLen = max( 0, (int)(pos-srcBuf));
+	destLen = max( 0, (int)(newPos-destBuf));
+	BM_LOG( BM_LogMailParse, "qp-decode: done");
+}
+
+
+
+/********************************************************************************\
+	BmQuotedPrintableEncoder
+\********************************************************************************/
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+BmQuotedPrintableEncoder::BmQuotedPrintableEncoder( BmMemIBuf& input, 
+																	 bool isEncodedWord, 
+																	 uint32 blockSize)
+	:	inherited( input, blockSize)
+	,	mIsEncodedWord( isEncodedWord)
+{
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmQuotedPrintableEncoder::DoFilter( const char* srcBuf, uint32& srcLen, 
+													  char* destBuf, uint32& destLen) {
+	BM_LOG( BM_LogMailParse, BmString("starting to encode quoted-printable of ") << srcLen << " bytes");
+	const char* safeChars = 
+		mIsEncodedWord 
+			? (ThePrefs->GetBool( "MakeQPSafeForEBCDIC", false)
+					? "%&/()?+*,.;:<>-"
+					: "%&/()?+*,.;:<>-!\"#$@[]\\^'{|}~")
+							// in encoded words, underscore has to be encoded, since it
+							// is used for spaces!
+			: (ThePrefs->GetBool( "MakeQPSafeForEBCDIC", false)
+					? "%&/()?+*,.;:<>-_"
+					: "%&/()?+*,.;:<>-_!\"#$@[]\\^'{|}~");
+							// in bodies, the underscore is safe, i.e. it need not be encoded.
+	int32 qpLineLen = 0;
+	char add[4];
+	int32 addLen = 0;
+	const char* srcEnd = srcBuf+srcLen;
+	char* dest = destBuf;
+	char* destEnd = destBuf+destLen;
+	for( const char* p=srcBuf; p<srcEnd && dest<destEnd && *p; ++p, addLen=0) {
+		unsigned char c = *p;
+		if (isalnum(c) || strchr( safeChars, c)) {
+			add[addLen++] = c;
+		} else if (c == ' ') {
+			// in encoded-words, we always replace SPACE by underline:
+			if (c == ' ' && mIsEncodedWord)
+				add[addLen++] = '_';
+			else {
+				// check if whitespace is at end of line (thus needs encoding):
+				bool needsEncoding = true;
+				for( const char* p2=p+1; *p2; ++p2) {
+					if (*p2 == '\r' && *(p2+1)=='\n')
+						break;
+					if (*p2 != ' ' && *p2 != '\t') {
+						needsEncoding = false;
+						break;
+					}
+				}
+				if (needsEncoding) {
+					add[0] = '='; 
+					add[1] = (char)CHAR2HIGHNIBBLE(c); 
+					add[2] = (char)CHAR2LOWNIBBLE(c);
+					addLen=3;
+				} else {
+					add[addLen++] = c;
+				}
+			}
+		} else if ((c=='\r' && *(p+1)=='\n') || c=='\n') {
+			if (dest+2>=destEnd)
+				break;
+			*dest++ = '\r';
+			*dest++ = '\n';
+			qpLineLen = 0;
+			if (c=='\n')
+				p++;								// skip over '\n'
+			continue;
+		} else {
+			add[0] = '='; 
+			add[1] = (char)CHAR2HIGHNIBBLE(c); 
+			add[2] = (char)CHAR2LOWNIBBLE(c);
+			addLen=3;
+		}
+		if (!mIsEncodedWord && qpLineLen + addLen >= BM_MAX_LINE_LEN) {
+			if (dest+addLen+3>=destEnd)
+				break;
+			// insert soft linebreak:
+			*dest++ = '=';
+			*dest++ = '\r';
+			*dest++ = '\n';
+			qpLineLen = 0;
+		}
+		for( int i=0; i<addLen; ++i)
+			*dest++ = add[i];
+		qpLineLen += addLen;
+	}
+	BM_LOG( BM_LogMailParse, "qp-encode: done");
+}
+
+
+
+/********************************************************************************\
+	BmBase64Decoder
+\********************************************************************************/
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+uint32 BmBase64Decoder::DetermineBufferFixup( BmMemIBuf& input) {
+	BmString peekStr = input.Peek( 100, -2);
+	int32 pos = peekStr.FindFirst( "\r\n");
+	return pos != B_ERROR ? pos : 0;
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmBase64Decoder::DoFilter( const char* srcBuf, uint32& srcLen, 
+										  char* destBuf, uint32& destLen) {
+	uint32 concat = 0;
+	int32 value;
+	
+	static int32 base64_alphabet[256] = { //----Fast lookup table
+		 -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+		 -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+		 -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 62, -1, -1, -1, 63,
+		 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, -1, -1, -1,  0, -1, -1,
+		 -1,  0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14,
+		 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, -1, -1, -1, -1, -1,
+		 -1, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40,
+		 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, -1, -1, -1, -1, -1,
+		 -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+		 -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+		 -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+		 -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+		 -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+		 -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+		 -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+		 -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1
+	};
+
+	const char* src = srcBuf;
+	const char* srcEnd = srcBuf+srcLen;
+	char* dest = destBuf;
+	char* destEnd = destBuf+destLen;
+		
+	while( src+(3-mIndex)<srcEnd && dest<=destEnd-3) {
+		if ((value = base64_alphabet[(unsigned char)*src++])==-1)
+			continue;
+			
+		concat |= (((uint32)value) << ((3-mIndex)*6));
+		
+		if (++mIndex == 4) {
+			*dest++ = (concat & 0x00ff0000) >> 16;
+			*dest++ = (concat & 0x0000ff00) >> 8;
+			*dest++ = (concat & 0x000000ff);
+			concat = mIndex = 0;
+		}
+	}
+	
+	srcLen = src-srcBuf;
+	destLen = dest-destBuf;
+}
+
+
+
+/********************************************************************************\
+	BmBase64Encoder
+\********************************************************************************/
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmBase64Encoder::DoFilter( const char* in, uint32& srcLen, 
+										  char* out, uint32& destLen) {
+	const int BASE64_LINELENGTH = 76;
+
+	static char base64_alphabet[64] = { //----Fast lookup table
+		'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+		'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
+		'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+		'+',
+		'/'
+	};
+ 
+	unsigned long concat;
+	uint32 i = 0;
+	uint32 k = 0;
+	uint32 v;
+	while ( i<srcLen && k<=destLen-6) {
+		concat = ((in[i] & 0xff) << 16);
+		if ((i+1) < srcLen)
+			concat |= ((in[i+1] & 0xff) << 8);
+		if ((i+2) < srcLen)
+			concat |= (in[i+2] & 0xff);
+		i += 3;
+				
+		out[k++] = base64_alphabet[(concat >> 18) & 63];
+		out[k++] = base64_alphabet[(concat >> 12) & 63];
+		out[k++] = base64_alphabet[(concat >> 6) & 63];
+		out[k++] = base64_alphabet[concat & 63];
+
+		if (i >= srcLen) {
+			for (v = 0; v <= (i - srcLen); v++)
+				out[k-v] = '=';
+		}
+
+		mCurrLineLen += 4;
+		if (mCurrLineLen >= BASE64_LINELENGTH) {
+			out[k++] = '\r';
+			out[k++] = '\n';
+			mCurrLineLen = 4;
+		}
+	}
+	srcLen = i;
+	destLen = k;
+}
 
