@@ -157,7 +157,10 @@ status_t BmPopAccount::Archive( BMessage* archive, bool deep) const {
 		-	returns the POP3-connect-info as a BNetAddress
 \*------------------------------------------------------------------------------*/
 bool BmPopAccount::GetPOPAddress( BNetAddress* addr) const {
-	return addr->SetTo( mPOPServer.String(), mPortNr) == B_OK;
+	if (addr)
+		return addr->SetTo( mPOPServer.String(), mPortNr) == B_OK;
+	else
+		return false;
 }
 
 /*------------------------------------------------------------------------------*\
