@@ -5,6 +5,219 @@ change-history of Beam:
 [Beam test-03-07-15]
 
 	summary:
+		-	Graphical editor for Mail-filters has been sexed up a bit.
+		-	Mail-filters can be created from a given mail (From, To
+		   and Subject will be set).
+		-	When adding filters, you can now ask Beam to automatically
+		   add them to the default chain.
+		-	several bugs fixed
+*******************************************************************************
+
+< 2003-07-28: release test-03-07-28 >
+
+BmFilterAddon:
+	-	added SetupFromMailData() that creates some filter-lines according
+		to the given mail-data.
+
+BmApp, BmMailViewWin, BmMainWindow, BmMsgTypes:
+	-	added BMM_CREATE_FILTER
+
+BmMailRef:
+	-	corrected a comment
+	
+BmMailRefView:
+	-	added menu-entry to create a filter from (first) selected mail.
+
+BmMultiLineTextControl:
+	-	corrected layout concerning the divider-position.
+
+BmPrefsFilterChainView:
+	-	added a minimum size to hgroup containing filter-chain listview.
+	-	removed some layout-glitches.
+
+BmPrefsFilterView:
+	-	added check-button that allows to automatically add new filters to
+		the default chain, too.
+	-	added support for creating filters from a given mail
+
+BmPrefsView, BmPrefsWin:
+	-	added support for jumping to a specific prefsview and send it a
+		message (asking it to do something)
+
+BmSieveFilter:
+	-	made menu-controls of filter-line top-aligned.
+	-	moved values-control closer to operator-control.
+	-	HACKED a way around a weird BScrollView-problem which causes
+		problems when resizing a view that is scrolled downwards.
+	-	added support for creating filter from mail-data.
+
+ColumnListView:
+	-	removed return-value checking from Unarchive(), since it caused
+		problems when trying to read from older state-archives.
+
+ImageAboutWindow:
+	-	added B_NOT_ZOOMABLE to window's flags.
+
+MultiLineTextControl:
+	-	fixed crash if given label is NULL.
+
+< 2003-07-26: commit>
+
+BmBasics:
+	-	fixed two bugs introduced during restructuring work: BM_network_error
+		and BM_text_error are now (again) derived from BM_runtime_error, not
+		BM_error.
+		
+BmJobStatusWin:
+	-	added stop-button to BmMailMoverJob.
+
+BmMailFilter, BmMailMover:
+	-	now we say "stopped!" if job has been stopped.
+	
+BmMailViewWin:
+	-	we now close the window automatically after a reply has been 
+		requested (depending on prefs).
+
+BmMenuControl:
+	-	added support for specifying a text at construction time, which
+		will be used to determine the exact width of the menufield.
+	-	corrected incorrect layout if divider < 12
+
+BmMultiLineTextControl:
+	-	minor cleanup, moved MView-related methods from private to
+		public in order to be able to use them from external classes.
+
+BmPrefsFilterView:
+	-	adjusted default layout of splitter
+
+BmSieveFilter:
+	-	added support for SIEVE's address-test, allowing to specify which
+		part of an address field to use for a match
+	-	added support for multiple values, which can now be entered in
+		a corresponding multiline-textfield.
+	-	added BmFilterScrollView, a scrollview that works as required by
+		the filter-list. Now the maximum number of filter-lines is 
+		(arbitrarily) set to 20. That should be enough, I hope.
+
+BmTextControl:
+	-	corrected incorrect layout if divider < 12
+
+BmToolbarButton:
+	-	now we make sure never to display a context-menu if the button
+		does not need a latch (has no subitems).
+
+ColumnListView:
+	-	fixed bug that would allow extending the selection by use of
+		cursor-down key although the listview is in single-select mode.
+
+MultiLineTextControl:
+	-	changed text-margin from 4 to 3 pixels.
+
+< 2003-07-23: commit>
+
+BmApp:
+	-	added code to setup the foreign-key connections between the
+		different listmodels.
+
+BmDataModel:
+	-	added support for automatic handling of foreign-keys, allowing
+		Beam to track listmodel-items referencing other listmodel-items
+		to update their record if the referenced item is being renamed.
+
+BmFilter:
+	-	implemented ForeignKeyChanged() in order to automatically update
+		foreign-keys (call is double-dispatched to add-on).
+
+BmFilterAddon:
+	-	added identifiers for the foreign-key folder and identity
+	-	added abstract ForeignKeyChanged()-base method
+
+BmFilterChain:
+	-	added methods for removing a filter from one/all chain(s).
+	-	added methods for renaming a filter in one/all chain(s).
+
+BmIdentity:
+	-	implemented ForeignKeyChanged() in order to automatically update
+		foreign-keys.
+
+BmMailFolder, BmMailFolderList:
+	-	implemented automatic updating of foreign-keys to folder-name.
+
+BmMailRefView:
+	-	added identity - column to listview
+
+BmMailView:
+	-	when adding signature to empty mailtext, we now always make sure
+		to insert an empty line before the signature. Without this, 
+		the complete mailtext would be grey.
+
+BmMenuControl:
+	-	fixed crash in MarkItem() when an item was not found in recurse 
+		mode.
+
+BmPeople:
+	-	added support for using full mail-address in addition to just
+		using the addrSpec.
+
+BmPopAccount:
+	-	implemented ForeignKeyChanged() in order to automatically update
+		foreign-keys.
+
+BmPrefs:
+	-	fixed bug with archive-version not being updated correctly, which
+		in turn caused the item "DefaultCharset" being added every time
+		the prefs were saved.
+
+BmPrefsFilterView:
+	-	fixed sorting of filters (now we *do* set a sortkey...).
+	-	when renaming a filter, we now adjust the link in all chains
+		that use this filter.
+	-	when removing a filter, we now remove the link from all chains
+		that used this filter.
+
+BmPrefsFilterChainView:
+	-	fixed sorting of chained items (now we sort numerically).
+	-	when renaming a chain, we now adjust the link in all pop-accounts
+		that use this chain.
+
+BmSieveFilter:
+	-	implemented ForeignKeyChanged() in order to automatically update
+		foreign-keys.
+
+BmSmtpAccount:
+	-	implemented ForeignKeyChanged() in order to automatically update
+		foreign-keys.
+
+< 2003-07-16: commit>
+
+BmFilter:
+	-	corrected bug that would cause Beam to create wrong kind of
+		Sieve-filter when trying to migrate older archive versions.
+
+BmFilterChain:
+	-	fixed crash when removing a filter from the chain (the STL is
+		a bit tricky sometimes...)
+
+BmMailEditWin:
+	-	BmPeopleControl now detaches from model as itself gets detached
+		from window. This fixes the bug with BmPeopleList being unable
+		to send messages to detached view ("bad port id").
+
+BmSieveFilter:
+	-	added "List-Id" to list of standard-fields.
+
+BmStorageUtil:
+	-	in EnsureIndexExists(), we now check if index exists instead
+		of always trying to create it, avoiding irrelevant error-logs.
+
+script.c (libSieve):
+	-	re-added changes that were lost during my last cvs-havoc. Without
+		these changes a script could only be used once.
+
+*******************************************************************************
+[Beam test-03-07-15]
+
+	summary:
 		-	Mail-filters are now implemented as add-ons.
 		-	Mail-filters can be edited in a graphical way, so that it
 		   is no longer neccessary (but possible) to edit the SIEVE-script.
