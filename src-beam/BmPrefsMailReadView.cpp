@@ -133,7 +133,6 @@ void BmPrefsMailReadView::UndoChanges() {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmPrefsMailReadView::MessageReceived( BMessage* msg) {
-	BMessage* prefsMsg = ThePrefs->PrefsMsg();
 	try {
 		switch( msg->what) {
 			case BM_TEXTFIELD_MODIFIED: {
@@ -141,13 +140,13 @@ void BmPrefsMailReadView::MessageReceived( BMessage* msg) {
 				msg->FindPointer( "source", (void**)&srcView);
 				BmTextControl* source = dynamic_cast<BmTextControl*>( srcView);
 				if ( source == mHeaderListSmallControl)
-					prefsMsg->ReplaceString("HeaderListSmall", mHeaderListSmallControl->Text());
+					ThePrefs->SetString("HeaderListSmall", mHeaderListSmallControl->Text());
 				else if ( source == mHeaderListLargeControl)
-					prefsMsg->ReplaceString("HeaderListLarge", mHeaderListLargeControl->Text());
+					ThePrefs->SetString("HeaderListLarge", mHeaderListLargeControl->Text());
 				else if ( source == mSignatureRxControl)
-					prefsMsg->ReplaceString("SignatureRX", mSignatureRxControl->Text());
+					ThePrefs->SetString("SignatureRX", mSignatureRxControl->Text());
 				else if ( source == mMimeTypeTrustInfoControl)
-					prefsMsg->ReplaceString("MimeTypeTrustInfo", mMimeTypeTrustInfoControl->Text());
+					ThePrefs->SetString("MimeTypeTrustInfo", mMimeTypeTrustInfoControl->Text());
 				break;
 			}
 			default:

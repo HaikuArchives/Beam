@@ -219,7 +219,6 @@ void BmPrefsMailConstrView::UndoChanges() {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmPrefsMailConstrView::MessageReceived( BMessage* msg) {
-	BMessage* prefsMsg = ThePrefs->PrefsMsg();
 	try {
 		switch( msg->what) {
 			case BM_TEXTFIELD_MODIFIED: {
@@ -227,56 +226,56 @@ void BmPrefsMailConstrView::MessageReceived( BMessage* msg) {
 				msg->FindPointer( "source", (void**)&srcView);
 				BmTextControl* source = dynamic_cast<BmTextControl*>( srcView);
 				if ( source == mMaxLineLenControl)
-					prefsMsg->ReplaceInt32("MaxLineLen", atoi(mMaxLineLenControl->Text()));
+					ThePrefs->SetInt("MaxLineLen", atoi(mMaxLineLenControl->Text()));
 				else if ( source == mQuotingStringControl)
-					prefsMsg->ReplaceString("QuotingString", mQuotingStringControl->Text());
+					ThePrefs->SetString("QuotingString", mQuotingStringControl->Text());
 				else if ( source == mForwardIntroStrControl)
-					prefsMsg->ReplaceString("ForwardIntoStr", mForwardIntroStrControl->Text());
+					ThePrefs->SetString("ForwardIntoStr", mForwardIntroStrControl->Text());
 				else if ( source == mForwardSubjectStrControl)
-					prefsMsg->ReplaceString("ForwardSubjectStr", mForwardSubjectStrControl->Text());
+					ThePrefs->SetString("ForwardSubjectStr", mForwardSubjectStrControl->Text());
 				else if ( source == mForwardSubjectRxControl)
-					prefsMsg->ReplaceString("ForwardSubjectRX", mForwardSubjectRxControl->Text());
+					ThePrefs->SetString("ForwardSubjectRX", mForwardSubjectRxControl->Text());
 				else if ( source == mReplyIntroStrControl)
-					prefsMsg->ReplaceString("ReplyIntoStr", mReplyIntroStrControl->Text());
+					ThePrefs->SetString("ReplyIntoStr", mReplyIntroStrControl->Text());
 				else if ( source == mReplySubjectStrControl)
-					prefsMsg->ReplaceString("ReplySubjectStr", mReplySubjectStrControl->Text());
+					ThePrefs->SetString("ReplySubjectStr", mReplySubjectStrControl->Text());
 				else if ( source == mReplySubjectRxControl)
-					prefsMsg->ReplaceString("ReplySubjectRX", mReplySubjectRxControl->Text());
+					ThePrefs->SetString("ReplySubjectRX", mReplySubjectRxControl->Text());
 				break;
 			}
 			case BM_EACH_BCC_CHANGED: {
-				prefsMsg->ReplaceBool("SpecialHeaderForEachBcc", mSpecialForEachBccControl->Value());
+				ThePrefs->SetBool("SpecialHeaderForEachBcc", mSpecialForEachBccControl->Value());
 				break;
 			}
 			case BM_PREFER_USER_AGENT_CHANGED: {
-				prefsMsg->ReplaceBool("PreferUserAgentOverX-Mailer", mPreferUserAgentControl->Value());
+				ThePrefs->SetBool("PreferUserAgentOverX-Mailer", mPreferUserAgentControl->Value());
 				break;
 			}
 			case BM_GENERATE_MSGIDS_CHANGED: {
-				prefsMsg->ReplaceBool("GenerateOwnMessageIDs", mGenerateIDsControl->Value());
+				ThePrefs->SetBool("GenerateOwnMessageIDs", mGenerateIDsControl->Value());
 				break;
 			}
 			case BM_QP_SAFE_CHANGED: {
-				prefsMsg->ReplaceBool("MakeQPSafeForEBCDIC", mMakeQpSafeControl->Value());
+				ThePrefs->SetBool("MakeQPSafeForEBCDIC", mMakeQpSafeControl->Value());
 				break;
 			}
 			case BM_ATTACH_VCARDS_CHANGED: {
-				prefsMsg->ReplaceBool("DoNotAttachVCardsToForward", mDontAttachVCardsControl->Value());
+				ThePrefs->SetBool("DoNotAttachVCardsToForward", mDontAttachVCardsControl->Value());
 				break;
 			}
 			case BM_ENCODING_SELECTED: {
 				BMenuItem* item = mDefaultEncodingControl->Menu()->FindMarked();
 				if (item)
-					prefsMsg->ReplaceInt32("DefaultEncoding", CharsetToEncoding( item->Label()));
+					ThePrefs->SetInt("DefaultEncoding", CharsetToEncoding( item->Label()));
 				break;
 			}
 			case BM_FORWARD_TYPE_SELECTED: {
 				BMenuItem* item = mDefaultForwardTypeControl->Menu()->FindMarked();
 				if (item) {
 					if (BString("Attached").Compare( item->Label()) == 0)
-						prefsMsg->ReplaceInt32("DefaultForwardType", BMM_FORWARD_ATTACHED);
+						ThePrefs->SetInt("DefaultForwardType", BMM_FORWARD_ATTACHED);
 					else
-						prefsMsg->ReplaceInt32("DefaultForwardType", BMM_FORWARD_INLINE);
+						ThePrefs->SetInt("DefaultForwardType", BMM_FORWARD_INLINE);
 				}
 				break;
 			}

@@ -355,3 +355,39 @@ const BMessage* BmPrefs::GetMsg( const char* name, const BMessage* defaultVal) {
 	} else
 		return defaultVal;
 }
+
+/*------------------------------------------------------------------------------*\
+	SetBool()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmPrefs::SetBool( const char* name, const bool val) {
+	mPrefsMsg.RemoveName( name);
+	mPrefsMsg.AddBool( name, val);
+}
+
+/*------------------------------------------------------------------------------*\
+	SetInt()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmPrefs::SetInt( const char* name, const int32 val) {
+	mPrefsMsg.RemoveName( name);
+	mPrefsMsg.AddInt32( name, val);
+}
+
+/*------------------------------------------------------------------------------*\
+	SetMsg()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmPrefs::SetMsg( const char* name, const BMessage* val) {
+	mPrefsMsg.RemoveName( name);
+	mPrefsMsg.AddMessage( name, val);
+}
+
+/*------------------------------------------------------------------------------*\
+	SetString()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmPrefs::SetString( const char* name, const BString val) {
+	mPrefsMsg.RemoveName( name);
+	mPrefsMsg.AddString( name, val.String());
+}

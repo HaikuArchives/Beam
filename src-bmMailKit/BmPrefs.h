@@ -68,6 +68,10 @@ public:
 	const BMessage* GetMsg( const char* name, const BMessage* defaultVal);
 	BString GetString( const char* name);
 	BString GetString( const char* name, const BString defaultVal);
+	void SetBool( const char* name, const bool val);
+	void SetInt( const char* name, const int32 val);
+	void SetMsg( const char* name, const BMessage* val);
+	void SetString( const char* name, const BString val);
 
 	// getters:
 	BMessage* PrefsMsg()						{ return &mPrefsMsg; }

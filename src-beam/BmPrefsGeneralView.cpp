@@ -215,7 +215,6 @@ void BmPrefsGeneralView::UndoChanges() {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmPrefsGeneralView::MessageReceived( BMessage* msg) {
-	BMessage* prefsMsg = ThePrefs->PrefsMsg();
 	try {
 		switch( msg->what) {
 			case BM_TEXTFIELD_MODIFIED: {
@@ -223,39 +222,39 @@ void BmPrefsGeneralView::MessageReceived( BMessage* msg) {
 				msg->FindPointer( "source", (void**)&srcView);
 				BmTextControl* source = dynamic_cast<BmTextControl*>( srcView);
 				if ( source == mMailMoverShowControl)
-					prefsMsg->ReplaceInt32("MSecsBeforeMailMoverShows", 1000*atoi(mMailMoverShowControl->Text()));
+					ThePrefs->SetInt("MSecsBeforeMailMoverShows", 1000*atoi(mMailMoverShowControl->Text()));
 				else if ( source == mPopperRemoveControl)
-					prefsMsg->ReplaceInt32("MSecsBeforePopperRemove", 1000*atoi(mPopperRemoveControl->Text()));
+					ThePrefs->SetInt("MSecsBeforePopperRemove", 1000*atoi(mPopperRemoveControl->Text()));
 				else if ( source == mSmtpRemoveControl)
-					prefsMsg->ReplaceInt32("MSecsBeforeSmtpRemove", 1000*atoi(mSmtpRemoveControl->Text()));
+					ThePrefs->SetInt("MSecsBeforeSmtpRemove", 1000*atoi(mSmtpRemoveControl->Text()));
 				else if ( source == mNetBufSizeSendControl)
-					prefsMsg->ReplaceInt32("NetSendBufferSize", atoi(mNetBufSizeSendControl->Text()));
+					ThePrefs->SetInt("NetSendBufferSize", atoi(mNetBufSizeSendControl->Text()));
 				else if ( source == mNetRecvTimeoutControl)
-					prefsMsg->ReplaceInt32("ReceiveTimeout", atoi(mNetRecvTimeoutControl->Text()));
+					ThePrefs->SetInt("ReceiveTimeout", atoi(mNetRecvTimeoutControl->Text()));
 				break;
 			}
 			case BM_RESTORE_FOLDER_STATES_CHANGED: {
-				prefsMsg->ReplaceBool("RestoreFolderStates", mRestoreFolderStatesControl->Value());
+				ThePrefs->SetBool("RestoreFolderStates", mRestoreFolderStatesControl->Value());
 				break;
 			}
 			case BM_STRIPED_LISTVIEW_CHANGED: {
-				prefsMsg->ReplaceBool("StripedListView", mStripedListViewControl->Value());
+				ThePrefs->SetBool("StripedListView", mStripedListViewControl->Value());
 				break;
 			}
 			case BM_DYNAMIC_STATUS_WIN_CHANGED: {
-				prefsMsg->ReplaceBool("DynamicStatusWin", mDynamicStatusWinControl->Value());
+				ThePrefs->SetBool("DynamicStatusWin", mDynamicStatusWinControl->Value());
 				break;
 			}
 			case BM_CACHE_REFS_DISK_CHANGED: {
-				prefsMsg->ReplaceBool("CacheRefsOnDisk", mCacheRefsOnDiskControl->Value());
+				ThePrefs->SetBool("CacheRefsOnDisk", mCacheRefsOnDiskControl->Value());
 				break;
 			}
 			case BM_CACHE_REFS_MEM_CHANGED: {
-				prefsMsg->ReplaceBool("CacheRefsInMem", mCacheRefsInMemControl->Value());
+				ThePrefs->SetBool("CacheRefsInMem", mCacheRefsInMemControl->Value());
 				break;
 			}
 			case BM_BEMAIL_STYLE_CHANGED: {
-				prefsMsg->ReplaceBool("BeMailStyle", mBeMailStyleControl->Value());
+				ThePrefs->SetBool("BeMailStyle", mBeMailStyleControl->Value());
 				break;
 			}
 			default:
