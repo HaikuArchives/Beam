@@ -153,7 +153,7 @@ bool BmSmtp::StartJob() {
 			errstr << "\nerror: " << e << ", " << mSmtpServer->ErrorStr();
 		UpdateSMTPStatus( 0.0, NULL, failed);
 		BString text = Name() << "\n\n" << errstr;
-		BM_SHOWERR( BString("BmSmtp: ") << text);
+		HandleError( BString("BmSmtp: ") << text);
 		mSmtpAccount->mMailVect.clear();
 		return false;
 	}
@@ -364,7 +364,7 @@ void BmSmtp::Auth() {
 			if ((e = mSmtpServer->Error()))
 				errstr << "\nerror: " << e << ", " << mSmtpServer->ErrorStr();
 			BString text = Name() << "\n\n" << errstr;
-			BM_SHOWERR( BString("BmSmtp: ") << text);
+			HandleError( BString("BmSmtp: ") << text);
 		}
 	}
 }

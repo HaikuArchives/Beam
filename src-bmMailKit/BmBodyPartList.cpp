@@ -152,9 +152,12 @@ BmContentField::operator BString() const {
 
 	BmParamMap::const_iterator iter;
 	if (!mParams.empty()) {
-		fieldString << ";";	
 		for( iter = mParams.begin(); iter != mParams.end(); ++iter) {
-			fieldString << " " << iter->first << "=\"" << iter->second << '"';
+			fieldString << ";\r\n "
+							<< iter->first 
+							<< "=\"" 
+							<< iter->second
+							<< '"';
 		}
 	}
 	return fieldString;
@@ -440,17 +443,22 @@ void BmBodyPart::SetTo( const BString& msgtext, int32 start, int32 length,
 			BM_SHOWERR( BString("Boundary <")<<boundary<<"> not found within message.");
 			return;
 		}
-		char* nPos = startPos;
 		BString checkStr;
 		BString foundBoundary;
 		bool isLastBoundary = false;
 		Regexx rx;
+		char* nPos = startPos;
 		while( !isLastBoundary) {
+			int32 foundBoundaryLen = boundary.Length();
 			while( 1) {
 				// in this loop we determine the next occurence of the current boundary,
 				// being careful not to accept boundaries that do not start at the beginning
 				// of a line or which are followed by nonspace-characters.
-				nPos = strstr( nPos+boundary.Length(), boundary.String());
+				if (*(nPos+boundary.Length())=='-' && *(nPos+boundary.Length()+1)=='-') {
+					// first boundary has stop-marks (meaning the mimepart is empty...), we skip
+					foundBoundaryLen = boundary.Length()+2;
+				}
+				nPos = strstr( nPos+foundBoundaryLen, boundary.String());
 				if (!nPos)
 					break;
 				if (*(nPos-1)=='\n') {
@@ -473,7 +481,7 @@ void BmBodyPart::SetTo( const BString& msgtext, int32 start, int32 length,
 				}
 			}
 			if (nPos) {
-				int32 startOffs = startPos-msgtext.String()+boundary.Length();
+				int32 startOffs = startPos-msgtext.String()+foundBoundaryLen;
 				BM_LOG2( BM_LogMailParse, "Subpart of multipart found will be added to array");
 				BmBodyPart *subPart = new BmBodyPart( (BmBodyPartList*)ListModel().Get(), 
 																  msgtext, startOffs, 
@@ -482,7 +490,7 @@ void BmBodyPart::SetTo( const BString& msgtext, int32 start, int32 length,
 				AddSubItem( subPart);
 				startPos = nPos;
 			} else {
-				int32 startOffs = startPos-msgtext.String()+boundary.Length();
+				int32 startOffs = startPos-msgtext.String()+foundBoundaryLen;
 				if (start+length > startOffs) {
 					// the final boundary is missing, we include the remaining part as a 
 					// sub-bodypart anyway:

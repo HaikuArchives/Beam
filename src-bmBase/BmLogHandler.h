@@ -167,12 +167,12 @@ extern const uint32 BM_LogAll;
 #define BM_LOG3(flag,msg) \
 	BmLogHandler::Log( BM_LOGNAME, flag, msg, 3)
 #define BM_LOGERR(msg) \
-	BmLogHandler::Log( "Errors", BM_LogAll, msg, 0)
+	{ BmLogHandler::Log( BM_LOGNAME, BM_LogAll, msg, 0); \
+	  BmLogHandler::Log( "Errors", BM_LogAll, msg, 0);  }
 #define BM_LOG_FINISH(name) BmLogHandler::FinishLog( name)
 #define BM_LOGNAME "Beam"
 #define BM_SHOWERR(msg) \
-	{	BmLogHandler::Log( BM_LOGNAME, BM_LogAll, msg, 0); \
-		BM_LOGERR(msg); \
+	{	BM_LOGERR(msg); \
 		ShowAlert( msg);	}
 
 #else
@@ -183,10 +183,10 @@ extern const uint32 BM_LogAll;
 #define BM_LOG_FINISH(name) BmLogHandler::FinishLog( name)
 #define BM_LOGNAME "Beam"
 #define BM_LOGERR(msg) \
-	BmLogHandler::Log( "Errors", BM_LogAll, msg, 0)
+	{ BmLogHandler::Log( BM_LOGNAME, BM_LogAll, msg, 0); \
+	  BmLogHandler::Log( "Errors", BM_LogAll, msg, 0);  }
 #define BM_SHOWERR(msg) \
-	{	BmLogHandler::Log( BM_LOGNAME, BM_LogAll, msg, 0); \
-		BM_LOGERR(msg); \
+	{	BM_LOGERR(msg); \
 		ShowAlert( msg);	}
 
 #endif

@@ -249,7 +249,10 @@ void BmLogHandler::BmLogfile::Write( const char* const msg, int32 threadId) {
 	s.ReplaceAll( "\n", "\n                       ");
 	s << "\n";
 	static char buf[40];
-	sprintf( buf, "<%6ld|%012Ld>: ", threadId, TheLogHandler->StopWatch.ElapsedTime());
+	sprintf( buf, "<%6ld|%s.%04Ld>: ", 
+					  threadId, 
+					  TimeToString( time( NULL), "%Y-%m-%d|%H:%M:%S").String(),
+					  (system_time()/1000)%1000);
 	ssize_t result;
 	if ((result = mLogFile->Write( buf, strlen( buf))) < 0)
 		throw BM_runtime_error( BString("Unable to write to logfile ") << filename);

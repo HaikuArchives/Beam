@@ -27,6 +27,7 @@
 /*                                                                       */
 /*************************************************************************/
 
+#include <Clipboard.h>
 #include <MenuItem.h>
 #include <PopUpMenu.h>
 #include <UTF8.h>
@@ -274,6 +275,19 @@ void BmMailView::MessageReceived( BMessage* msg) {
 				mBodyPartView->AddAttachment( msg);
 				break;
 			}
+			case BM_MAILVIEW_COPY_URL: {
+				BString urlStr = msg->FindString( "url");
+				BMessage* clipMsg;
+				if (be_clipboard->Lock()) {
+					be_clipboard->Clear();
+					if ((clipMsg = be_clipboard->Data())) {
+						clipMsg->AddData( "text/plain", B_MIME_TYPE, urlStr.String(), urlStr.Length());
+						be_clipboard->Commit();
+					}
+					be_clipboard->Unlock();
+				}
+				break;
+			}
 /*
 			case BM_MAILVIEW_SELECT_ENCODING: {
 				if (mCurrMail) {
@@ -380,14 +394,36 @@ void BmMailView::MouseUp( BPoint point) {
 	if (mCurrMail && mClickedTextRun == TextRunInfoAt( offset)) {
 		BmTextRunInfo runInfo = mClickedTextRun->second;
 		if (runInfo.isURL) {
-			BmTextRunIter next = mClickedTextRun;
-			next++;
-			Select( mClickedTextRun->first, next->first);
-			BString url( Text()+mClickedTextRun->first, next->first-mClickedTextRun->first);
+			BString url = GetTextForTextrun( mClickedTextRun);
 			bmApp->LaunchURL( url);
 		}
 	}
 	mClickedTextRun = 0;
+}
+
+/*------------------------------------------------------------------------------*\
+	IsOverURL( point)
+		-	returns true if given point is over an URL, false if not
+\*------------------------------------------------------------------------------*/
+bool BmMailView::IsOverURL( BPoint point) {
+	if (mTextRunMap.size() > 0) {
+		int32 currPos = OffsetAt( point);
+		BmTextRunMap::const_iterator iter = TextRunInfoAt( currPos);
+		return (iter != mTextRunMap.end() && iter->second.isURL);
+	}
+	return false;
+}
+
+/*------------------------------------------------------------------------------*\
+	GetTextForTextrun( run)
+		-	returns text for given textrun
+\*------------------------------------------------------------------------------*/
+BString BmMailView::GetTextForTextrun( BmTextRunIter run) {
+	BmTextRunIter next = run;
+	next++;
+	Select( run->first, next->first);
+	BString url( Text()+run->first, next->first-run->first);
+	return url;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -396,19 +432,15 @@ void BmMailView::MouseUp( BPoint point) {
 \*------------------------------------------------------------------------------*/
 void BmMailView::MouseMoved( BPoint point, uint32 transit, const BMessage *msg) {
 	inherited::MouseMoved( point, transit, msg);
-	if (mCurrMail && mTextRunMap.size() > 0) {
-		int32 currPos = OffsetAt( point);
-		BmTextRunMap::const_iterator iter = TextRunInfoAt( currPos);
-		if (iter != mTextRunMap.end() && iter->second.isURL) {
-			if (!mShowingUrlCursor) {
-				SetViewCursor( &TheResources->mUrlCursor);
-				mShowingUrlCursor = true;
-			}
-		} else {
-			if (mShowingUrlCursor) {
-				SetViewCursor( B_CURSOR_I_BEAM);
-				mShowingUrlCursor = false;
-			}
+	if (mCurrMail && IsOverURL( point)) {
+		if (!mShowingUrlCursor) {
+			SetViewCursor( &TheResources->mUrlCursor);
+			mShowingUrlCursor = true;
+		}
+	} else {
+		if (mShowingUrlCursor) {
+			SetViewCursor( B_CURSOR_I_BEAM);
+			mShowingUrlCursor = false;
 		}
 	}
 }
@@ -856,6 +888,17 @@ void BmMailView::ShowMenu( BPoint point) {
 		item->SetMarked( ShowInlinesSeparately());
 		theMenu->AddItem( item);
 		theMenu->AddSeparatorItem();
+
+		if (IsOverURL( point)) {
+			BMessage* msg = new BMessage( BM_MAILVIEW_COPY_URL);
+			int32 currPos = OffsetAt( point);
+			BmTextRunMap::const_iterator run = TextRunInfoAt( currPos);
+			msg->AddString( "url", GetTextForTextrun( run));
+			item = new BMenuItem( "Copy URL to Clipboard", msg);
+			item->SetTarget( this);
+			theMenu->AddItem( item);
+			theMenu->AddSeparatorItem();
+		}
 /*
 		BMenu* menu = new BMenu( "Use Encoding...");
 		for( int i=0; BM_Encodings[i].charset; ++i) {

@@ -146,7 +146,7 @@ bool BmPopper::StartJob() {
 			errstr << "\nerror: " << e << ", " << mPopServer->ErrorStr();
 		UpdatePOPStatus( 0.0, NULL, true);
 		BString text = Name() << "\n\n" << errstr;
-		BM_SHOWERR( BString("BmPopper: ") << text);
+		HandleError( BString("BmPopper: ") << text);
 		return false;
 	}
 	return true;
@@ -292,7 +292,7 @@ void BmPopper::Login() {
 			if ((e = mPopServer->Error()))
 				errstr << "\nerror: " << e << ", " << mPopServer->ErrorStr();
 			BString text = Name() << "\n\n" << errstr;
-			BM_SHOWERR( BString("BmPopper: ") << text);
+			HandleError( BString("BmPopper: ") << text);
 		}
 	}
 }

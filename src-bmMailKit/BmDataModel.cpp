@@ -227,6 +227,21 @@ void BmDataModel::WaitForAllToDetach() {
 	BM_LOG2( BM_LogModelController, BString("Model <") << ModelName() << "> has no more controllers");
 }
 
+/*------------------------------------------------------------------------------*\
+	HandleError( errStr)
+		-	handles the given error by logging it and showing it to the
+			user if the dataModel should currently continue
+\*------------------------------------------------------------------------------*/
+void BmDataModel::HandleError( const BString& errStr) {
+	if (ShouldContinue()) {
+		BM_SHOWERR( errStr);
+	} else {
+		BM_LOGERR( errStr);
+	}
+}
+
+
+
 /********************************************************************************\
 	BmJobModel
 \********************************************************************************/

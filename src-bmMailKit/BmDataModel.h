@@ -99,6 +99,7 @@ protected:
 	virtual void TellControllers( BMessage* msg, bool waitForAck=false);
 	virtual void WaitForAllToAck();
 	virtual void WaitForAllToDetach();
+	virtual void HandleError( const BString& errString);
 	inline void Freeze() 					{ mFrozenCount++; }
 	inline void Thaw()						{ mFrozenCount--; }
 	inline bool Frozen() 					{ return mFrozenCount > 0; }
@@ -166,7 +167,6 @@ protected:
 
 	BmJobState JobState() const 			{ return mJobState; }
 
-protected:
 	int32 mJobSpecifier;
 
 private:

@@ -46,6 +46,7 @@ using namespace regexx;
 #include "BmMailView.h"
 #include "BmPrefs.h"
 #include "BmResources.h"
+#include "BmStorageUtil.h"
 #include "BmUtil.h"
 
 /********************************************************************************\
@@ -456,21 +457,34 @@ void BmBodyPartView::ItemInvoked( int32 index) {
 		bodyPartItem->Highlight( true);
 		InvalidateItem( index);
 		Window()->UpdateIfNeeded();		// for immediate highlight
+		// we write the attachment into a temporary file...
 		entry_ref eref = bodyPart->WriteToTempFile();
-		if (bmApp->HandlesMimetype( bodyPart->MimeType())) {
+		// ...and verify that the real mimetype corresponds to the one indicated
+		// by the attachment-info:
+		BString realMT = DetermineMimeType( &eref);
+		if (realMT.ICompare( bodyPart->MimeType())!=0) {
+			BString s("ATTENTION!\n\nThe attachment pretends to be of type \n\t");
+			s << bodyPart->MimeType()
+			  << "\nbut BeOS thinks it is in fact of type\n\t" << realMT
+			  << "\n\nDo you really want to open this attachment?";
+			BAlert* alert = new BAlert( "", s.String(), "Yes", "No");
+			alert->SetShortcut( 1, B_ESCAPE);
+			if (!(alert->Go() == 0))
+				return;
+		}
+		if (bmApp->HandlesMimetype( realMT)) {
 			BMessage msg( B_REFS_RECEIVED);
 			msg.AddRef( "refs", &eref);
 			bmApp->RefsReceived( &msg);
 		} else {
-			BString mimetype = bodyPart->MimeType();
 			BString mtTrustInfo = ThePrefs->GetString( "MimeTypeTrustInfo", 
-																	 "<application/pdf:T><application:W><:T>");
+																	 "<application/pdf:T><application/zip:T><application:W><:T>");
 			bool doIt = true;
 			Regexx rx;
 			int count = rx.exec( mtTrustInfo, "<(.*?):(\\w)>", Regexx::global);
 			for( int i=0; i<count; ++i) {
 				BString match = rx.match[i].atom[0];
-				if ( mimetype.ICompare( match, match.Length()) == 0) {
+				if ( realMT.ICompare( match, match.Length()) == 0) {
 					BString trustLevel = rx.match[i].atom[1];
 					if (trustLevel.ICompare( "T") != 0) {
 						BString s("The attachment may contain harmful content, are you sure to open it?");

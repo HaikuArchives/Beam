@@ -60,6 +60,7 @@ class BmRulerView;
 #define BM_MAILVIEW_SHOWINLINES_SEPARATELY	'bmMc'
 #define BM_MAILVIEW_SHOWINLINES_CONCATENATED	'bmMd'
 #define BM_MAILVIEW_SELECT_ENCODING				'bmMe'
+#define BM_MAILVIEW_COPY_URL						'bmMf'
 
 /*------------------------------------------------------------------------------*\
 	BmMailView
@@ -107,6 +108,8 @@ public:
 	void GetWrappedText( BString& out, bool hardWrapIfNeeded=true);
 	void SetSignatureByName( const BString sigName);
 	void UpdateFont( const BFont& font);
+	bool IsOverURL( BPoint point);
+	BString GetTextForTextrun( BmTextRunIter run);
 
 	// overrides of BTextView base:
 	bool AcceptsDrop( const BMessage* msg);

@@ -2004,50 +2004,78 @@ void ColumnListView::KeyDown(const char *bytes, int32 numBytes)
 		switch( bytes[0]) {
 			case B_LEFT_ARROW:
 			case B_RIGHT_ARROW: {
-					// allow user to expand/collapse the subitems by pressing
-					// a modifier and CursorRight/CursorLeft
-					int32 mods = Window()->CurrentMessage()->FindInt32("modifiers");
-					if (mods & (B_CONTROL_KEY | B_SHIFT_KEY)) {
-						// expand / collapse the superitem
-						int32 currIdx = CurrentSelection();
-						if (currIdx < 0)
-							return;			// no item selected
-						CLVListItem *currItem = cast_as( ItemAt( currIdx), CLVListItem);
-						if (!currItem || !currItem->fSuperItem)
-							return;
-						if (bytes[0] == B_LEFT_ARROW)
-							Collapse( currItem);
-						else if (bytes[0] == B_RIGHT_ARROW)
-							Expand( currItem);
-					} else {
-						// move horizontal scrollbar:
-						float min, max, smallStep, bigStep, value;
-						BScrollBar* bar = ScrollBar( B_HORIZONTAL);
-						if (!bar) 	return;
-						bar->GetRange( &min, &max);
-						bar->GetSteps( &smallStep, &bigStep);
-						value = bar->Value();
-						if (bytes[0] == B_LEFT_ARROW) {
-							value = MAX( value-smallStep, min);
-						} else if (bytes[0] == B_RIGHT_ARROW) {
-							value = MIN( value+smallStep, max);
-						}
-						bar->SetValue( value);
+				// allow user to expand/collapse the subitems by pressing
+				// a modifier and CursorRight/CursorLeft
+				int32 mods = Window()->CurrentMessage()->FindInt32("modifiers");
+				if (mods & (B_CONTROL_KEY | B_SHIFT_KEY)) {
+					// expand / collapse the superitem
+					int32 currIdx = CurrentSelection();
+					if (currIdx < 0)
+						return;			// no item selected
+					CLVListItem *currItem = cast_as( ItemAt( currIdx), CLVListItem);
+					if (!currItem || !currItem->fSuperItem)
+						return;
+					if (bytes[0] == B_LEFT_ARROW)
+						Collapse( currItem);
+					else if (bytes[0] == B_RIGHT_ARROW)
+						Expand( currItem);
+				} else {
+					// move horizontal scrollbar:
+					float min, max, smallStep, bigStep, value;
+					BScrollBar* bar = ScrollBar( B_HORIZONTAL);
+					if (!bar) 	return;
+					bar->GetRange( &min, &max);
+					bar->GetSteps( &smallStep, &bigStep);
+					value = bar->Value();
+					if (bytes[0] == B_LEFT_ARROW) {
+						value = MAX( value-smallStep, min);
+					} else if (bytes[0] == B_RIGHT_ARROW) {
+						value = MIN( value+smallStep, max);
 					}
+					bar->SetValue( value);
 				}
 				break;
+			}
 			case B_PAGE_DOWN: {
-					// avoid flicker when we are already at the bottom:
-					BScrollBar* vscroller = ScrollBar( B_VERTICAL);
-					if (vscroller) {
-						float min, max;
-						vscroller->GetRange( &min, &max);
-						if (max == vscroller->Value())
-							return;
-						
-					}
+				// avoid flicker when we are already at the bottom:
+				BScrollBar* vscroller = ScrollBar( B_VERTICAL);
+				if (vscroller) {
+					float min, max;
+					vscroller->GetRange( &min, &max);
+					if (max == vscroller->Value())
+						return;
+					
 				}
 				break;
+			}
+			case B_DOWN_ARROW: {
+				// In order to correctly scroll downwards when the user extends the
+				// selection via cursor-keys, we do the selection stuff ourselves
+				// (since BListView::KeyDown insists on calling ScrollToSelection())
+				// and then scroll the listview in such a way that the freshly selected
+				// item is at the bottom of the view:
+				int32 mods = Window()->CurrentMessage()->FindInt32("modifiers");
+				if (mods & B_SHIFT_KEY) {
+					int32 currIdx = -1;
+					int32 maxSelIdx = -1;
+					for( int32 i=0; (currIdx=CurrentSelection(i))>=0; ++i) {
+						if (maxSelIdx < currIdx)
+							maxSelIdx = currIdx;
+					}
+					if (maxSelIdx >= 0 && maxSelIdx+1<CountItems()) {
+						Select( ++maxSelIdx, true);
+						BRect frame = ItemFrame( maxSelIdx);
+						float newYPos = frame.bottom-Bounds().Height();
+						ScrollTo( BPoint( 0, MAX( 0, newYPos)));
+					}
+					return;
+				}
+				break;
+			}
+			case B_ESCAPE: {
+				DeselectAll();
+				break;
+			}
 			default:
 				break;
 		}

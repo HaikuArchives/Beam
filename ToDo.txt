@@ -16,19 +16,15 @@ Beam 0.913rc2:
 -	Rainer Riedl <riedl@navios.de>
 -	Tyler Dauwalder <tyler@dauwalder.net>
 
-***********
-Beam 0.913:
-***********
-
--	copy HTML address to clipboard (context-menu)
-
-
 
 ***********
 Beam 0.92:
 ***********
 
 -	add support for mail-filtering
+
+-	implement RFC2231 to facilitate correct handling of attachment
+	filenames that exceed us-ascii encoding
 
 -	correct node-monitoring for the case when mail-files are being
 	created and Beam accesses them before they are written out

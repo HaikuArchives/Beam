@@ -90,6 +90,15 @@ bool LivesInTrash( const entry_ref* eref) {
 		-	checks if the file specified by eref is of the given mimetype
 \*------------------------------------------------------------------------------*/
 bool CheckMimeType( const entry_ref* eref, const char* type) {
+	BString realMT = DetermineMimeType( eref);
+	return strcasecmp( type, realMT.String()) == 0;
+}
+
+/*------------------------------------------------------------------------------*\
+	DetermineMimeType( eref)
+		-	determines the mimetype of the given file (according to BeOS)
+\*------------------------------------------------------------------------------*/
+BString DetermineMimeType( const entry_ref* eref) {
 	BNode node( eref);
 	if (node.InitCheck() == B_OK) {
 		BNodeInfo nodeInfo( &node);
@@ -101,16 +110,14 @@ bool CheckMimeType( const entry_ref* eref, const char* type) {
 				BPath path;
 				entry.GetPath( &path);
 				status_t res=entry.InitCheck();
-				if (res==B_OK && path.InitCheck()==B_OK && path.Path()) {
+				if (res==B_OK && path.InitCheck()==B_OK && path.Path())
 					update_mime_info( path.Path(), false, true, false);
-					nodeInfo.GetType( mimetype);
-				}
 			}
 			nodeInfo.GetType( mimetype);
-			return strcasecmp( type, mimetype) == 0;
+			return mimetype;
 		}
 	}
-	return false;
+	return "<unknown>";
 }
 
 /*------------------------------------------------------------------------------*\

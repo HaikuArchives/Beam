@@ -239,7 +239,7 @@ void BmPrefs::InitDefaults() {
 	mDefaultsMsg.AddString( "ReplySubjectRX", "^\\s*(Re|Aw)(\\[\\d+\\])?:");
 	mDefaultsMsg.AddString( "ReplySubjectStr", "Re: %s");
 	mDefaultsMsg.AddString( "SignatureRX", "^---?\\s*\\n");
-	mDefaultsMsg.AddString( "MimeTypeTrustInfo", "<application/pdf:T><application:W><:T>");
+	mDefaultsMsg.AddString( "MimeTypeTrustInfo", "<application/pdf:T><application/zip:T><application:W><:T>");
 	mDefaultsMsg.AddBool( "InOutAlwaysAtTop", false);
 	mDefaultsMsg.AddMessage( "Shortcuts", GetShortcutDefaults());
 	mDefaultsMsg.AddString( "QuoteFormatting", "Push Margin");
