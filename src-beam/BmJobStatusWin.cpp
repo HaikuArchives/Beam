@@ -586,24 +586,7 @@ void BmPopperView::StartJob( BmJobModel* model, bool startInNewThread,
 \*------------------------------------------------------------------------------*/
 void BmPopperView::JobIsDone( bool completed) {
 	inherited::JobIsDone( completed);
-	if (--nActiveCount == 0) {
-		// [feature suggested by Rainer Riedl (and improved by Tyler Dauwalder)]:
-		// 	temporary hack: Execute possibly existing 'filter'-program to do 
-		//		mail filtering (this will be removed in Beam 0.92):
-		app_info appInfo;
-		bmApp->GetAppInfo( &appInfo); 
-		node_ref nref;
-		nref.device = appInfo.ref.device;
-		nref.node = appInfo.ref.directory;
-		BDirectory appDir( &nref);
-		BEntry appDirEntry;
-		appDir.GetEntry( &appDirEntry);
-		BPath appPath;
-		appDirEntry.GetPath( &appPath);
-		BmString filterCmd;
-		filterCmd << appPath.Path() << "/filter";
-		system( filterCmd.String());
-	}
+	--nActiveCount;
 }
 
 
