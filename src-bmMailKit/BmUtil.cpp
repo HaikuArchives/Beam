@@ -3,7 +3,8 @@
 		$Id$
 */
 
-#include <stdio.h>
+#include <iomanip>
+#include <strstream>
 
 #include "BmUtil.h"
 
@@ -126,3 +127,25 @@ void BmLogHandler::BmLogfile::Write( const char* const msg) {
 	fprintf( logfile, "<%012Ld>: %s\n", watch.ElapsedTime(), s.String());
 }
 
+//---------------------------------------------------
+string BytesToString( int32 bytes) {
+	ostrstream ostr; 
+	ostr << setiosflags( std::ios::fixed );
+	if (bytes >= 1024*1000) {
+		ostr 	<< setprecision(2) 
+				<< bytes/(1024*1000.0) 
+				<< " MB";
+	} else if (bytes >= 1024) {
+		ostr	<< setiosflags( std::ios::fixed )
+				<< setprecision(2)
+				<< bytes/1024.0
+				<< " KB";
+	} else {
+		ostr	<< setiosflags( std::ios::fixed )
+				<< setprecision(0) 
+				<< bytes 
+				<< " bytes";
+	}
+	ostr << '\0';								// terminate string!
+	return ostr.str();
+}

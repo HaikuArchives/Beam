@@ -84,4 +84,8 @@ namespace Beam {
 #endif
 #define LOGNAME "beam"
 
+//---------------------------------------------------
+string BytesToString( int32 bytes);
+
+
 #endif

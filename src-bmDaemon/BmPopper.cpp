@@ -349,14 +349,7 @@ void BmPopper::GetAnswer( bool SingleLineMode, int32 mailNr) {
 			firstBlock = false;
 			if (mailNr > 0) {
 				float delta = (100.0 * numBytes) / (mMsgTotalSize ? mMsgTotalSize : 1);
-				BString text;
-				if (mMsgSize >= 1024*1000) {
-					text = BString("(") << mMsgSize/(1024*1000) << " MB)  ";
-				} else if (mMsgSize >= 1024) {
-					text = BString("(") << mMsgSize/1024 << " KB)  ";
-				} else {
-					text = BString("(") << mMsgSize << " bytes)  ";
-				}
+				BString text = BString("(") << BytesToString( mMsgSize).c_str() << ")  ";
 				UpdateMailStatus( delta, text.String(), mailNr);
 			}
 		} while( !done);
@@ -382,7 +375,7 @@ int32 BmPopper::ReceiveBlock( char* buffer, int32 max) {
 		if (mPopServer.IsDataPending( BmPopper::FeedbackTimeout)) {
 			if ((numBytes = mPopServer.Receive( buffer, max-1)) > 0) {
 				buffer[numBytes] = '\0';
-				BmLOG( BString("<--\n") << buffer);
+//BmLOG( BString("<--\n") << buffer);
 				return numBytes;
 			} else if (numBytes < 0) {
 				throw network_error( "error during receive");
