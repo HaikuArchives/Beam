@@ -34,6 +34,7 @@
 #include <Entry.h>
 #include <MessageFilter.h>
 
+#include "BmRefManager.h"
 #include "BmWindow.h"
 
 /*------------------------------------------------------------------------------*\

@@ -280,6 +280,8 @@ bool BmMailEditWin::EditHeaders( )
 	BmRef<BmMail> mail = mMailView->CurrMail();
 	if (!mail)
 		return false;
+	if (!CreateMailFromFields( false))
+		return false;
 	// allow user to edit mail-header before we send it:
 	BRect screen( bmApp->ScreenFrame());
 	float w=600, h=400;
@@ -381,6 +383,7 @@ void BmMailEditWin::HandleFromSet( const BmString& from) {
 	mFromControl->TextView()->Select( fromString.Length(), 
 												 fromString.Length());
 	mFromControl->TextView()->ScrollToSelection();
+	mReplyToControl->SetText( ident->ReplyTo().String());
 	// mark selected identity:
 	mFromControl->Menu()->MarkItem( ident->Key().String());
 	// select corresponding smtp-account, if any:

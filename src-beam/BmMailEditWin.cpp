@@ -27,6 +27,9 @@
 /*                                                                       */
 /*************************************************************************/
 
+#include "BmDataModel.h"
+	// having this up here seems to reliably avoid an internal compiler error
+	// that shows up otherwise. Go figure...
 
 #include <FilePanel.h>
 #include <MenuItem.h>
@@ -45,23 +48,22 @@
 #include <Space.h>
 
 #include "BmApp.h"
-#include "BmBasics.h"
-#include "BmBodyPartView.h"
 #include "BmCheckControl.h"
+#include "BmBodyPartView.h"
+#include "BmBasics.h"
 #include "BmGuiUtil.h"
+#include "BmLogHandler.h"
 #include "BmMailEditWin.h"
 #include "BmMailRef.h"
 #include "BmMailView.h"
-#include "BmToolbarButton.h"
 #include "BmMenuControl.h"
 #include "BmMenuController.h"
 #include "BmMsgTypes.h"
 #include "BmPrefs.h"
-#include "BmResources.h"
 #include "BmRosterBase.h"
+#include "BmResources.h"
 #include "BmTextControl.h"
-
-#include "BmLogHandler.h"
+#include "BmToolbarButton.h"
 
 /********************************************************************************\
 	BmMailEditWin
@@ -397,11 +399,10 @@ void BmMailEditWin::CreateGUI() {
 						new BMessage( BM_FILEINTO_SELECTED), 
 						&BmRosterBase::RebuildFolderMenu
 					),
-					3.0
+					2.0
 				),
 				new Space(minimax(20,-1,20,-1)),
-				mEditHeaderControl = new BmCheckControl( "Edit Headers Before Send", 
-																	  1, false),
+				mEditHeaderControl = new BmCheckControl( "Edit Headers", 1, false),
 				0
 			),
 			mSeparator = new Space(minimax(-1,4,-1,4)),
