@@ -68,7 +68,7 @@ BmMultiLineTextControl::BmMultiLineTextControl( const char* label, bool labelIsM
 	else
 		ct_mpm = minimax( divPos + font.StringWidth("W")*10, height+6, 
 								1E5, fixedHeight ? height+6 : 1E5);
-	SetDivider( divPos);
+	inherited::SetDivider( divPos);
 	if (labelIsMenu) {
 		float width, height;
 		GetPreferredSize( &width, &height);
@@ -156,6 +156,8 @@ BRect BmMultiLineTextControl::layout(BRect frame) {
 	MoveTo(frame.LeftTop());
 	ResizeTo(frame.Width(),frame.Height());
 	float occupiedSpace = Divider()-11;
+	if (occupiedSpace<2)
+		occupiedSpace = 2;
 	m_text_view->MoveTo( occupiedSpace, 4);
 	m_text_view->ResizeTo( frame.Width()-occupiedSpace-5, 
 								  frame.Height()-m_text_view->Frame().top-4-2);
