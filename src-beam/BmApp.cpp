@@ -804,29 +804,28 @@ void BmApplication::MessageReceived( BMessage* msg) {
 			}
 			case BMM_TRASH: {
 				BmMailRef* mailRef = NULL;
-				int index=0;
-				while( msg->FindPointer( 
-					MSG_MAILREF, index++, (void**)&mailRef
-				) == B_OK)
-					;
-				entry_ref* refs = new entry_ref [index];
-				index=0;
-				for(  index=0; 
-						msg->FindPointer( 
-							MSG_MAILREF, index, (void**)&mailRef
-						) == B_OK; 
-						++index) {
-					BM_LOG( BM_LogApp, 
-							  BmString("Asked to trash mail <") 
-							  		<< mailRef->TrackerName() << ">");
-					refs[index] = mailRef->EntryRef();
-					mailRef->MarkAs( BM_MAIL_STATUS_READ);
-							// mark mail as read before moving to trash, so that
-							// we don't confuse our new-mail counter
-					mailRef->RemoveRef();	// msg is no more refering to mailRef
+				type_code typeFound;
+				int32 countFound;
+				msg->GetInfo( MSG_MAILREF, &typeFound, &countFound);
+				if (countFound>0) {
+					entry_ref refs[countFound];
+					int index=0;
+					for(  index=0; 
+							msg->FindPointer( 
+								MSG_MAILREF, index, (void**)&mailRef
+							) == B_OK; 
+							++index) {
+						BM_LOG( BM_LogApp, 
+								  BmString("Asked to trash mail <") 
+								  		<< mailRef->TrackerName() << ">");
+						refs[index] = mailRef->EntryRef();
+						mailRef->MarkAs( BM_MAIL_STATUS_READ);
+								// mark mail as read before moving to trash, so that
+								// we don't confuse our new-mail counter
+						mailRef->RemoveRef();	// msg is no more refering to mailRef
+					}
+					MoveToTrash( refs, index);
 				}
-				MoveToTrash( refs, index);
-				delete [] refs;
 				break;
 			}
 			case BM_FILL_MENU_FROM_LIST: {
