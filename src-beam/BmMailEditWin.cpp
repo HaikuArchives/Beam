@@ -14,13 +14,15 @@
 	using namespace regexx;
 
 #include "PrefilledBitmap.h"
+#include "TextEntryAlert.h"
 
-#include "Beam.h"
+#include "BmApp.h"
 #include "BmBasics.h"
 #include "BmBodyPartView.h"
 #include "BmEncoding.h"
 	using namespace BmEncoding;
 #include "BmLogHandler.h"
+#include "BmMailHeader.h"
 #include "BmMailRef.h"
 #include "BmMailView.h"
 #include "BmMailEditWin.h"
@@ -41,22 +43,34 @@
 /*------------------------------------------------------------------------------*\
 	types of messages handled by a BmMailEditWin:
 \*------------------------------------------------------------------------------*/
-#define BM_BCC_ADDED 		'bMYa'
-#define BM_CC_ADDED 			'bMYb'
-#define BM_FROM_ADDED 		'bMYc'
-#define BM_TO_ADDED 			'bMYd'
-#define BM_SMTP_SELECTED	'bMYe'
-#define BM_SHOWDETAILS		'bMYf'
-#define BM_FROM_SET	 		'bMYg'
+#define BM_BCC_ADDED 			'bMYa'
+#define BM_CC_ADDED 				'bMYb'
+#define BM_CHARSET_SELECTED	'bMYc'
+#define BM_FROM_ADDED 			'bMYd'
+#define BM_FROM_SET	 			'bMYe'
+#define BM_SHOWDETAILS			'bMYf'
+#define BM_SMTP_SELECTED		'bMYg'
+#define BM_TO_ADDED 				'bMYh'
+#define BM_EDIT_HEADER_DONE	'bMYi'
 
 /*------------------------------------------------------------------------------*\
 	CreateInstance()
 		-	creates a new mail-edit window
 		-	initialiazes the window's dimensions by reading its archive-file (if any)
 \*------------------------------------------------------------------------------*/
-BmMailEditWin* BmMailEditWin::CreateInstance() 
-{
-	BmMailEditWin* win = new BmMailEditWin;
+BmMailEditWin* BmMailEditWin::CreateInstance( BmMailRef* mailRef) {
+	BmMailEditWin* win = new BmMailEditWin( mailRef, NULL);
+	win->ReadStateInfo();
+	return win;
+}
+
+/*------------------------------------------------------------------------------*\
+	CreateInstance()
+		-	creates a new mail-edit window
+		-	initialiazes the window's dimensions by reading its archive-file (if any)
+\*------------------------------------------------------------------------------*/
+BmMailEditWin* BmMailEditWin::CreateInstance( BmMail* mail) {
+	BmMailEditWin* win = new BmMailEditWin( NULL, mail);
 	win->ReadStateInfo();
 	return win;
 }
@@ -65,15 +79,18 @@ BmMailEditWin* BmMailEditWin::CreateInstance()
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmMailEditWin::BmMailEditWin()
+BmMailEditWin::BmMailEditWin( BmMailRef* mailRef, BmMail* mail)
 	:	inherited( "MailEditWin", BRect(50,50,800,600), "Edit Mail", B_TITLED_WINDOW_LOOK, 
 					  B_NORMAL_WINDOW_FEEL, B_ASYNCHRONOUS_CONTROLS)
 	,	mShowDetails( false)
-	,	mRawMode( false)
 	,	mModified( false)
+	,	mModificationID( 0)
 {
 	CreateGUI();
-	mMailView->ShowMail( new BmMail( true));
+	if (mail)
+		EditMail( mail);
+	else
+		EditMail( mailRef);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -147,6 +164,7 @@ void BmMailEditWin::CreateGUI() {
 			new HGroup(
 				new Space(minimax(20,-1,20,-1)),
 				mBccControl = new BmTextControl( "Bcc:", true),
+				mEditHeaderControl = new MCheckBox( "Edit Headers Before Send", 1, false),
 				0
 			),
 			new HGroup(
@@ -214,19 +232,22 @@ void BmMailEditWin::CreateGUI() {
 
 	// add all encodings to menu:
 	for( int i=0; BM_Encodings[i].charset; ++i) {
-		mCharsetControl->Menu()->AddItem( new BMenuItem( BM_Encodings[i].charset, new BMessage('bmyy')));
+		mCharsetControl->Menu()->AddItem( new BMenuItem( BM_Encodings[i].charset, new BMessage(BM_CHARSET_SELECTED)));
 	}
 	// mark default charset:
 	item = mCharsetControl->Menu()->FindItem( EncodingToCharset( ThePrefs->GetInt( "DefaultEncoding")).String());
 	if (item)
 		item->SetMarked( true);
 
+	mMailView->SetModificationMessage( new BMessage( BM_TEXTFIELD_MODIFIED));
+	mSaveButton->SetEnabled( false);
+
+	// temporarily disabled:
+	mAttachButton->SetEnabled( false);
+	mPeopleButton->SetEnabled( false);
+	mPrintButton->SetEnabled( false);
+
 	AddChild( dynamic_cast<BView*>(mOuterGroup));
-	
-	mMailView->AddFilter( new BmMailViewFilter( BM_MAILVIEW_SHOWRAW, this));
-	mMailView->AddFilter( new BmMailViewFilter( BM_MAILVIEW_SHOWCOOKED, this));
-	mMailView->AddFilter( new BmMailViewFilter( B_SIMPLE_DATA, this));
-	mMailView->BodyPartView()->AddFilter( new BmMailViewFilter( B_SIMPLE_DATA, this));
 }
 
 /*------------------------------------------------------------------------------*\
@@ -319,15 +340,59 @@ void BmMailEditWin::MessageReceived( BMessage* msg) {
 				BmRef<BmMail> mail = mMailView->CurrMail();
 				if (!mail)
 					break;
-				mail->MarkAs( BM_MAIL_STATUS_PENDING);
 				if (msg->what == BMM_SEND_NOW) {
-					BmListModelItemRef smtpRef	= TheSmtpAccountList->FindItemByKey( mail->AccountName());
+					BmRef<BmListModelItem> smtpRef = TheSmtpAccountList->FindItemByKey( mail->AccountName());
 					BmSmtpAccount* smtpAcc = dynamic_cast< BmSmtpAccount*>( smtpRef.Get());
 					if (smtpAcc) {
-						smtpAcc->mMailVect.push_back( mail);
-						smtpAcc->SendQueuedMail();
-						Quit();
+						if (mEditHeaderControl->Value()) {
+							// allow user to edit mail-header before we send it:
+							BRect screen( bmApp->ScreenFrame());
+							float w=600, h=400;
+							BRect alertFrame( (screen.Width()-w)/2,(screen.Height()-h)/2,
+													(screen.Width()+w)/2,(screen.Height()+h)/2);
+							BString headerStr;
+							ConvertLinebreaksToLF( mail->Header()->HeaderString(), headerStr);
+							TextEntryAlert* alert = 
+								new TextEntryAlert( "Edit Headers", 
+														  "Please edit the mail-headers below:",
+														  headerStr.String(),
+														  "Cancel",
+														  "OK, Send Message",
+														  false, 80, 20, B_WIDTH_FROM_LABEL, true,
+														  &alertFrame
+								);
+							alert->SetShortcut( B_ESCAPE, 0);
+							alert->TextEntryView()->DisallowChar( 27);
+							alert->TextEntryView()->SetFontAndColor( be_fixed_font);
+							alert->Go( new BInvoker( new BMessage( BM_EDIT_HEADER_DONE), BMessenger( this)));
+						} else {
+							mail->MarkAs( BM_MAIL_STATUS_PENDING);
+							smtpAcc->mMailVect.push_back( mail);
+							smtpAcc->SendQueuedMail();
+							PostMessage( B_QUIT_REQUESTED);
+						}
 					}
+				} else 
+					mail->MarkAs( BM_MAIL_STATUS_PENDING);
+				break;
+			}
+			case BM_EDIT_HEADER_DONE: {
+				// User is done with editing the mail-header. We reconstruct the mail with
+				// the new header and then send it:
+				BmRef<BmMail> mail = mMailView->CurrMail();
+				int32 result;
+				const char* headerStr; 
+				if (!mail || msg->FindInt32( "which", &result) != B_OK 
+				|| msg->FindString( "entry_text", &headerStr) != B_OK || result != 1)
+					break;
+				BmRef<BmListModelItem> smtpRef = TheSmtpAccountList->FindItemByKey( mail->AccountName());
+				BmSmtpAccount* smtpAcc = dynamic_cast< BmSmtpAccount*>( smtpRef.Get());
+				if (smtpAcc) {
+					mail->SetNewHeader( headerStr);
+					mail->MarkAs( BM_MAIL_STATUS_PENDING);
+					smtpAcc->mMailVect.push_back( mail);
+					smtpAcc->SendQueuedMail();
+					PostMessage( B_QUIT_REQUESTED);
 				}
 				break;
 			}
@@ -341,7 +406,7 @@ void BmMailEditWin::MessageReceived( BMessage* msg) {
 				BMenuItem* item = NULL;
 				msg->FindPointer( "source", (void**)&item);
 				if (item) {
-					BmListModelItemRef accRef = ThePopAccountList->FindItemByKey( item->Label());
+					BmRef<BmListModelItem> accRef = ThePopAccountList->FindItemByKey( item->Label());
 					BmPopAccount* acc = dynamic_cast< BmPopAccount*>( accRef.Get()); 
 					if (acc) {
 						BString fromString = msg->what == BM_FROM_ADDED ? mFromControl->Text() : "";
@@ -372,8 +437,11 @@ void BmMailEditWin::MessageReceived( BMessage* msg) {
 			case BM_TO_ADDED: {
 				break;
 			}
-			case BM_FIELD_MODIFIED: {
+			case BM_CHARSET_SELECTED:
+			case BM_SMTP_SELECTED:
+			case BM_TEXTFIELD_MODIFIED: {
 				mModified = true;
+				mSaveButton->SetEnabled( true);
 				break;
 			}
 			case B_COPY:
@@ -384,6 +452,10 @@ void BmMailEditWin::MessageReceived( BMessage* msg) {
 				BView* focusView = CurrentFocus();
 				if (focusView)
 					PostMessage( msg, focusView);
+				break;
+			}
+			case BMM_NEW_MAIL: {
+				be_app_messenger.SendMessage( msg);
 				break;
 			}
 			default:
@@ -421,8 +493,8 @@ void BmMailEditWin::EditMail( BmMail* mail) {
 	CurrMail()
 		-	
 \*------------------------------------------------------------------------------*/
-BmMail* BmMailEditWin::CurrMail() const { 
-	return mMailView ? mMailView->CurrMail().Get() : NULL; 
+BmRef<BmMail> BmMailEditWin::CurrMail() const { 
+	return mMailView->CurrMail();
 }
 
 /*------------------------------------------------------------------------------*\
@@ -431,13 +503,13 @@ BmMail* BmMailEditWin::CurrMail() const {
 \*------------------------------------------------------------------------------*/
 void BmMailEditWin::SetFieldsFromMail( BmMail* mail) {
 	if (mail) {
-		mBccControl->SetText( mail->GetStrippedFieldVal( BM_FIELD_BCC).String());
-		mCcControl->SetText( mail->GetStrippedFieldVal( BM_FIELD_CC).String());
-		mFromControl->SetText( mail->GetStrippedFieldVal( BM_FIELD_FROM).String());
-		mSenderControl->SetText( mail->GetStrippedFieldVal( BM_FIELD_SENDER).String());
-		mSubjectControl->SetText( mail->GetFieldVal( BM_FIELD_SUBJECT).String());
-		mToControl->SetText( mail->GetStrippedFieldVal( BM_FIELD_TO).String());
-		mReplyToControl->SetText( mail->GetStrippedFieldVal( BM_FIELD_REPLY_TO).String());
+		mBccControl->SetTextSilently( mail->GetStrippedFieldVal( BM_FIELD_BCC).String());
+		mCcControl->SetTextSilently( mail->GetStrippedFieldVal( BM_FIELD_CC).String());
+		mFromControl->SetTextSilently( mail->GetStrippedFieldVal( BM_FIELD_FROM).String());
+		mSenderControl->SetTextSilently( mail->GetStrippedFieldVal( BM_FIELD_SENDER).String());
+		mSubjectControl->SetTextSilently( mail->GetFieldVal( BM_FIELD_SUBJECT).String());
+		mToControl->SetTextSilently( mail->GetStrippedFieldVal( BM_FIELD_TO).String());
+		mReplyToControl->SetTextSilently( mail->GetStrippedFieldVal( BM_FIELD_REPLY_TO).String());
 		// mark corresponding SMTP-account (if any):
 		BMenuItem* item = NULL;
 		BString smtpAccount = mail->AccountName();
@@ -451,7 +523,6 @@ void BmMailEditWin::SetFieldsFromMail( BmMail* mail) {
 		item = mCharsetControl->Menu()->FindItem( EncodingToCharset( mail->DefaultEncoding()).String());
 		if (item)
 			item->SetMarked( true);
-		mModified = false;
 	}
 }
 
@@ -472,56 +543,21 @@ bool BmMailEditWin::CreateMailFromFields() {
 		ConvertFromUTF8( encoding, editedText, convertedText);
 		BMenuItem* smtpItem = mSmtpControl->Menu()->FindMarked();
 		BString smtpAccount = smtpItem ? smtpItem->Label() : "";
-		if (mRawMode) {
-			// N.B.: In raw mode the user is editing the raw message
-			// 		text which may contain characters from different 
-			//			character-encodings. Since we have just converted the
-			//			raw message text from UTF8 to the single selected encoding,
-			//			we may have lost some characters on the way.
-			// 		This does not apply to quoted-printable- or base64-encoded
-			//			MIME-parts, but it will cause problems when using 8-bit-mime.
-			//			So we should probably forbid combining 8-bit-mime and 
-			//			raw-message-editing. 
-			//			Currently, Beam does not use 8-bit-mime, but we have to be
-			//			careful here, should we add support for it later...
-			mail->SetTo( convertedText, smtpAccount);
-			return mail->InitCheck() == B_OK;
-		} else {
-			mail->SetFieldVal( BM_FIELD_BCC, mBccControl->Text());
-			mail->SetFieldVal( BM_FIELD_CC, mCcControl->Text());
-			mail->SetFieldVal( BM_FIELD_FROM, mFromControl->Text());
-			mail->SetFieldVal( BM_FIELD_SENDER, mSenderControl->Text());
-			mail->SetFieldVal( BM_FIELD_SUBJECT, mSubjectControl->Text());
-			mail->SetFieldVal( BM_FIELD_TO, mToControl->Text());
-			mail->SetFieldVal( BM_FIELD_REPLY_TO, mReplyToControl->Text());
+		mail->SetFieldVal( BM_FIELD_BCC, mBccControl->Text());
+		mail->SetFieldVal( BM_FIELD_CC, mCcControl->Text());
+		mail->SetFieldVal( BM_FIELD_FROM, mFromControl->Text());
+		mail->SetFieldVal( BM_FIELD_SENDER, mSenderControl->Text());
+		mail->SetFieldVal( BM_FIELD_SUBJECT, mSubjectControl->Text());
+		mail->SetFieldVal( BM_FIELD_TO, mToControl->Text());
+		mail->SetFieldVal( BM_FIELD_REPLY_TO, mReplyToControl->Text());
 /* use the following line if mail-date should be bumped whenever the mail
 	has been edited:
-			mail->SetFieldVal( BM_FIELD_DATE, TimeToString( time( NULL), 
-																			"%a, %d %b %Y %H:%M:%S %z"));
+		mail->SetFieldVal( BM_FIELD_DATE, TimeToString( time( NULL), 
+																		"%a, %d %b %Y %H:%M:%S %z"));
 */
-			return mail->ConstructRawText( convertedText, encoding, smtpAccount);
-		}
+		return mail->ConstructRawText( convertedText, encoding, smtpAccount);
 	} else
 		return false;
-}
-
-/*------------------------------------------------------------------------------*\
-	SetEditMode()
-		-	
-\*------------------------------------------------------------------------------*/
-void BmMailEditWin::SetEditMode( int32 mode) {
-	mRawMode = (mode == BM_MAILVIEW_SHOWRAW);
-	bool enabled = (mRawMode == false);
-	mAttachButton->SetEnabled( enabled);
-	mPeopleButton->SetEnabled( enabled);
-	mPrintButton->SetEnabled( enabled);
-	mBccControl->SetEnabled( enabled);
-	mCcControl->SetEnabled( enabled);
-	mFromControl->SetEnabled( enabled);
-	mReplyToControl->SetEnabled( enabled);
-	mSenderControl->SetEnabled( enabled);
-	mSubjectControl->SetEnabled( enabled);
-	mToControl->SetEnabled( enabled);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -534,6 +570,8 @@ bool BmMailEditWin::SaveAndReloadMail() {
 	BmRef<BmMail> mail = mMailView->CurrMail();
 	if (mail && mail->Store()) {
 		EditMail( mail.Get());
+		mModified = false;
+		mSaveButton->SetEnabled( false);
 		return true;
 	}
 	return false;
@@ -546,6 +584,9 @@ bool BmMailEditWin::SaveAndReloadMail() {
 bool BmMailEditWin::QuitRequested() {
 	BM_LOG2( BM_LogMailEditWin, BString("MailEditWin has been asked to quit"));
 	if (mModified) {
+		if (IsMinimized())
+			Minimize( false);
+		Activate();
 		BAlert* alert = new BAlert( "title", "Save mail as draft before closing?",
 											 "Cancel", "Don't Save", "Save",
 											 B_WIDTH_AS_USUAL, B_OFFSET_SPACING, B_WARNING_ALERT);
@@ -568,43 +609,4 @@ void BmMailEditWin::Quit() {
 	mMailView->DetachModel();
 	BM_LOG2( BM_LogMailEditWin, BString("MailEditWin has quit"));
 	inherited::Quit();
-}
-
-
-
-/********************************************************************************\
-	BmMailViewFilter
-\********************************************************************************/
-
-/*------------------------------------------------------------------------------*\
-	BmMailViewFilter()
-		-	
-\*------------------------------------------------------------------------------*/
-BmMailViewFilter::BmMailViewFilter( int32 msgCmd, BmMailEditWin* editWin)
-	:	inherited( msgCmd)
-	,	mEditWin( editWin) 
-{
-}	
-
-/*------------------------------------------------------------------------------*\
-	Filter()
-		-	
-\*------------------------------------------------------------------------------*/
-filter_result BmMailViewFilter::Filter( BMessage* msg, BHandler** target) {
-	switch( msg->what) {
-		case BM_MAILVIEW_SHOWRAW:
-		case BM_MAILVIEW_SHOWCOOKED: {
-			if (mEditWin && mEditWin->SaveAndReloadMail()) {
-				mEditWin->SetEditMode( msg->what);
-				return B_DISPATCH_MESSAGE;
-			}
-			break;
-		}
-		case B_SIMPLE_DATA: {
-			if (mEditWin && !mEditWin->IsInRawMode()) {
-				return B_DISPATCH_MESSAGE;
-			}
-		}
-	}
-	return B_SKIP_MESSAGE;
 }

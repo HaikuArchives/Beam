@@ -13,11 +13,11 @@
 #include <Mime.h>
 
 #include "BmDataModel.h"
+#include "BmMailHeader.h"
 #include "BmUtil.h"
 
 class BmBodyPartList;
 class BmMailRef;
-class BmMailHeader;
 
 // mail-attribute types:
 #define BM_MAIL_ATTR_NAME 			B_MAIL_ATTR_NAME
@@ -87,15 +87,16 @@ class BmMail : public BmJobModel {
 	typedef BmJobModel inherited;
 
 public:
+	static BmRef<BmMail> CreateInstance( BmMailRef* ref);
 	BmMail( bool outbound);
 	BmMail( BString &msgText, const BString account=BString());
-	BmMail( BmMailRef* ref);
 	virtual ~BmMail();
 
 	// native methods:
 	bool ConstructRawText( const BString& editableText, int32 encoding,
 								  BString smtpAccount);
 	void SetTo( const BString &text, const BString account);
+	void SetNewHeader( const BString& headerStr);
 	bool Store();
 	//
 	const BString& GetFieldVal( const BString fieldName);
@@ -116,26 +117,32 @@ public:
 	bool StartJob();
 
 	// getters:
-	const status_t InitCheck()	const		{ return mInitCheck; }
-	const BString& AccountName()			{ return mAccountName; }
-	BmBodyPartList* Body() const			{ return mBody.Get(); }
-	BmMailHeader* Header() const			{ return mHeader; }
-	int32 HeaderLength() const				{ return mHeaderLength; }
-	const BString& RawText() const		{ return mText; }
-	const bool Outbound() const			{ return mOutbound; }
+	inline const status_t InitCheck() const	{ return mInitCheck; }
+	inline const BString& AccountName()			{ return mAccountName; }
+	inline BmBodyPartList* Body() const			{ return mBody.Get(); }
+	inline BmRef<BmMailHeader> Header() const	{ return mHeader; }
+	inline int32 HeaderLength() const			{ return mHeaderLength; }
+	inline const BString& RawText() const		{ return mText; }
+	inline const bool Outbound() const			{ return mOutbound; }
+	inline BmMailRef* MailRef() const			{ return mMailRef.Get(); }
 	uint32 DefaultEncoding()	const;
 
 	// static function that tries to reformat & quote a given multiline text
 	// in a way that avoids the usual (ugly) quoting-mishaps:
 	void QuoteText( const BString& in, BString& out, BString quote, int maxLen);
 
+	static const int32 BM_READ_MAIL_JOB = 1;
+
 protected:
+	BmMail( BmMailRef* ref);
+
 	BString CreateBasicFilename();
 	void StoreAttributes( BFile& mailFile);
 	BString CreateReplySubjectFor( const BString subject);
 	BString CreateForwardSubjectFor( const BString subject);
 	BString CreateReplyIntro();
 	BString CreateForwardIntro();
+	void SetBaseMailInfo( BmMailRef* ref, const BString newStatus);
 
 	BmRef<BmMailRef> mMailRef;
 	status_t mInitCheck;
@@ -145,7 +152,7 @@ private:
 	
 	const BString DefaultStatus() const;
 
-	BmMailHeader* mHeader;					// contains header-information
+	BmRef<BmMailHeader> mHeader;			// contains header-information
 	int32 mHeaderLength;
 
 	BmRef<BmBodyPartList> mBody;			// contains body-information (split into subparts)
@@ -157,6 +164,9 @@ private:
 	BEntry mEntry;								// filesystem-entry for this mail 
 
 	bool mOutbound;							// true if mail is for sending (as opposed to reveived)
+
+	BmRef<BmMailRef> mBaseMailRef;		// the mailref that created us (via forward/reply)
+	BString mNewBaseStatus;					// new status of base mail (forwarded/replied)
 
 	// Hide copy-constructor and assignment:
 	BmMail( const BmMail&);

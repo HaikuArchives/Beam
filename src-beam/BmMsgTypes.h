@@ -35,6 +35,7 @@
 #define BMM_REDIRECT						'bMdg'
 #define BMM_FILTER						'bMdh'
 #define BMM_TRASH							'bMdi'
+#define BMM_MARK_AS						'bMdj'
 
 // mail edit window
 #define BMM_ATTACH						'bMea'

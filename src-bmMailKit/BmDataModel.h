@@ -57,9 +57,9 @@ public:
 	virtual void RemoveController( BmController* controller);
 
 	// getters:
-	BString Name() const						{ return mModelName; }
-	BString ModelName() const				{ return mModelName; }
-	BLocker& ModelLocker() 					{ return mModelLocker; }
+	inline BString Name() const			{ return mModelName; }
+	inline BString ModelName() const		{ return mModelName; }
+	inline BLocker& ModelLocker() 		{ return mModelLocker; }
 
 	// overrides of BmRefObj
 	const BString& RefName() const		{ return mModelName; }
@@ -114,10 +114,10 @@ public:
 	virtual void PauseJob();
 	virtual void ContinueJob();
 	virtual void StopJob();
-	thread_id JobThreadID() const 		{ return mThreadID; }
+	inline thread_id JobThreadID() const		{ return mThreadID; }
 	bool IsJobRunning() const;
-	bool IsJobCompleted() const			{ return mJobState == JOB_COMPLETED; }
-	int32 CurrentJobSpecifier() const	{ return mJobSpecifier; }
+	inline bool IsJobCompleted() const			{ return mJobState == JOB_COMPLETED; }
+	inline int32 CurrentJobSpecifier() const	{ return mJobSpecifier; }
 
 	//	message component definitions for status-msgs:
 	static const char* const MSG_COMPLETED = 		"bm:completed";
@@ -140,6 +140,9 @@ protected:
 
 	BmJobState JobState() const 			{ return mJobState; }
 
+protected:
+	int32 mJobSpecifier;
+
 private:
 	// Hide copy-constructor and assignment:
 	BmJobModel( const BmJobModel&);
@@ -148,7 +151,6 @@ private:
 	virtual void doStartJob();
 
 	thread_id mThreadID;
-	int32 mJobSpecifier;
 };
 
 // flags indicating which parts are to be updated:
@@ -158,7 +160,6 @@ const BmUpdFlags UPD_ALL 			= 0xFFFFFFFF;
 
 class BmListModelItem;
 typedef map< BString, BmRef<BmListModelItem> > BmModelItemMap;
-typedef BmRef< BmListModelItem> BmListModelItemRef;
 /*------------------------------------------------------------------------------*\
 	BmListModelItem
 		-	base class for the items that will be part of a BmListModel
@@ -182,18 +183,18 @@ public:
 	virtual int16 ArchiveVersion() const = 0;
 
 	// getters:
-	BmModelItemMap::const_iterator begin() const	{ return mSubItemMap.begin(); }
-	BmModelItemMap::const_iterator end() const	{ return mSubItemMap.end(); }
-	size_t size() const						{ return mSubItemMap.size(); }
-	bool empty() const						{ return mSubItemMap.empty(); }
-	const BString& Key() const				{ return mKey; }
-	const BString& ParentKey() const		{ return mParent ? mParent->Key() : nEmptyParentKey; }
-	BmListModelItem* Parent() const		{ return mParent; }
-	BmListModel* ListModel() const		{ return mListModel; }
+	inline BmModelItemMap::const_iterator begin() const	{ return mSubItemMap.begin(); }
+	inline BmModelItemMap::const_iterator end() const	{ return mSubItemMap.end(); }
+	inline size_t size() const						{ return mSubItemMap.size(); }
+	inline bool empty() const						{ return mSubItemMap.empty(); }
+	inline const BString& Key() const			{ return mKey; }
+	inline const BString& ParentKey() const	{ return mParent ? mParent->Key() : nEmptyParentKey; }
+	inline BmListModelItem* Parent() const		{ return mParent; }
+	BmRef<BmListModel> ListModel() const;
 
 	// setters:
-	void Parent( BmListModelItem* parent)	{ mParent = parent; }
-	void Key( const BString k)				{ mKey = k; }
+	inline void Parent( BmListModelItem* parent)	{ mParent = parent; }
+	inline void Key( const BString k)				{ mKey = k; }
 
 	// overrides of BmRefObj
 	const BString& RefName() const		{ return mKey; }
@@ -212,7 +213,7 @@ protected:
 	virtual void TellModelItemUpdated( BmUpdFlags flags=UPD_ALL);
 
 	BmListModelItem* mParent;
-	BmListModel* mListModel;
+	BmWeakRef<BmListModel> mListModel;
 
 private:
 	// Hide assignment:
@@ -246,14 +247,14 @@ public:
 	virtual ~BmListModel();
 
 	// native methods:
-	BmListModelItemRef FindItemByKey( const BString& key);
+	BmRef<BmListModelItem> FindItemByKey( const BString& key);
 	bool AddItemToList( BmListModelItem* item, BmListModelItem* parent=NULL);
 	void RemoveItemFromList( BmListModelItem* item);
-	BmListModelItemRef RemoveItemFromList( const BString& key);
+	BmRef<BmListModelItem> RemoveItemFromList( const BString& key);
 	virtual bool Store();
 	virtual const BString SettingsFileName() = 0;
 	static BMessage* Restore( const BString settingsFile);
-	virtual void InitializeItems()		{	mInitCheck = B_OK; }
+	virtual void InitializeItems()								{	mInitCheck = B_OK; }
 	virtual void InstantiateItems( BMessage* archive)		{ mInitCheck = B_OK; }
 	virtual void Cleanup();
 	virtual int16 ArchiveVersion() const = 0;
@@ -271,12 +272,15 @@ public:
 	static const char* const MSG_UPD_FLAGS		= 		"bm:updflags";
 
 	// getters:
-	BmModelItemMap::const_iterator begin() const { return mModelItemMap.begin(); }
-	BmModelItemMap::const_iterator end() const	{ return mModelItemMap.end(); }
-	size_t size() const						{ return mModelItemMap.size(); }
-	bool empty() const						{ return mModelItemMap.empty(); }
-	status_t InitCheck() const				{ return mInitCheck; }
+	inline BmModelItemMap::const_iterator begin() const 	
+															{ return mModelItemMap.begin(); }
+	inline BmModelItemMap::const_iterator end() const		
+															{ return mModelItemMap.end(); }
+	inline size_t size() const						{ return mModelItemMap.size(); }
+	inline bool empty() const						{ return mModelItemMap.empty(); }
+	inline status_t InitCheck() const			{ return mInitCheck; }
 
+	static const char* const nProxyName = 		"BmListModel";
 
 protected:
 

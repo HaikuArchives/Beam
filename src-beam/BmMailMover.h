@@ -35,7 +35,7 @@ public:
 	BmMailMover( const BString& name, BList* refList, BmMailFolder* destFolder);
 	virtual ~BmMailMover();
 
-	BString Name() const						{ return ModelName(); }
+	inline BString Name() const			{ return ModelName(); }
 
 	bool StartJob();
 

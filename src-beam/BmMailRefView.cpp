@@ -54,42 +54,7 @@ enum Columns {
 BmMailRefItem::BmMailRefItem( BString key, BmListModelItem* _item)
 	:	inherited( key, _item)
 {
-	BmMailRef* ref = dynamic_cast<BmMailRef*>( _item);
-
-	Bold( ref->IsNew());
-
-	BString st = BString("Mail_") << ref->Status();
-	BBitmap* icon = TheResources->IconByName(st);
-	SetColumnContent( COL_STATUS_I, icon, 2.0, false);
-
-	if (ref->HasAttachments()) {
-		icon = TheResources->IconByName("Attachment");
-		SetColumnContent( COL_ATTACHMENTS_I, icon, 2.0, false);
-	}
-	
-	BString priority = BString("Priority_") << ref->Priority();
-	if ((icon = TheResources->IconByName(priority))) {
-		SetColumnContent( COL_PRIORITY_I, icon, 2.0, false);
-	}
-
-	BmListColumn cols[] = {
-		{ ref->From().String(),						false },
-		{ ref->Subject().String(),					false },
-		{ ref->WhenString().String(),				false },
-		{ ref->SizeString().String(),				true  },
-		{ ref->Cc().String(),						false },
-		{ ref->Account().String(),					false },
-		{ ref->To().String(),						false },
-		{ ref->ReplyTo().String(),					false },
-		{ ref->Name().String(),						false },
-		{ ref->CreatedString().String(),			false },
-		{ ref->TrackerName(),						false },
-		{ ref->Status().String(),					false },
-		{ ref->HasAttachments() ? "*" : "",		false },
-		{ ref->Priority().String(),				false },
-		{ NULL, false }
-	};
-	SetTextCols( nFirstTextCol, cols, !ThePrefs->GetBool("StripedListView"));
+	UpdateView( UPD_ALL);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -106,12 +71,43 @@ BmMailRefItem::~BmMailRefItem() {
 void BmMailRefItem::UpdateView( BmUpdFlags flags) {
 	inherited::UpdateView( flags);
 	BmMailRef* ref = ModelItem();
+	BBitmap* icon = NULL;
+
 	if (flags & BmMailRef::UPD_STATUS) {
 		Bold( ref->IsNew());
 		BString st = BString("Mail_") << ref->Status();
-		BBitmap* icon = TheResources->IconByName(st);
+		icon = TheResources->IconByName(st);
 		SetColumnContent( COL_STATUS_I, icon, 2.0, false);
 		SetColumnContent( COL_STATUS, ref->Status().String(), false);
+	}
+
+	if (flags == UPD_ALL) {
+		if (ref->HasAttachments()) {
+			icon = TheResources->IconByName("Attachment");
+			SetColumnContent( COL_ATTACHMENTS_I, icon, 2.0, false);
+		}
+		BString priority = BString("Priority_") << ref->Priority();
+		if ((icon = TheResources->IconByName(priority))) {
+			SetColumnContent( COL_PRIORITY_I, icon, 2.0, false);
+		}
+		BmListColumn cols[] = {
+			{ ref->From().String(),						false },
+			{ ref->Subject().String(),					false },
+			{ ref->WhenString().String(),				false },
+			{ ref->SizeString().String(),				true  },
+			{ ref->Cc().String(),						false },
+			{ ref->Account().String(),					false },
+			{ ref->To().String(),						false },
+			{ ref->ReplyTo().String(),					false },
+			{ ref->Name().String(),						false },
+			{ ref->CreatedString().String(),			false },
+			{ ref->TrackerName(),						false },
+			{ ref->Status().String(),					false },
+			{ ref->HasAttachments() ? "*" : "",		false },
+			{ ref->Priority().String(),				false },
+			{ NULL, false }
+		};
+		SetTextCols( nFirstTextCol, cols, !ThePrefs->GetBool("StripedListView"));
 	}
 }
 
@@ -188,8 +184,6 @@ BmMailRefView::BmMailRefView( minimax minmax, int32 width, int32 height)
 	:	inherited( minmax, BRect(0,0,width-1,height-1), "Beam_MailRefView", B_MULTIPLE_SELECTION_LIST, 
 					  false, true, true, true)
 	,	mCurrFolder( NULL)
-	,	mMouseIsDown( false)
-	,	mCurrMailRef( NULL)
 {
 	int32 flags = 0;
 	SetViewColor( B_TRANSPARENT_COLOR);
@@ -281,6 +275,18 @@ void BmMailRefView::MessageReceived( BMessage* msg) {
 				}
 				break;
 			}
+			case B_MOUSE_WHEEL_CHANGED: {
+				if (modifiers() & B_SHIFT_KEY) {
+					bool passedOn = false;
+					if (mPartnerMailView && !(passedOn = msg->FindBool("bm:passed_on"))) {
+						msg->AddBool("bm:passed_on", true);
+						Looper()->PostMessage( msg, mPartnerMailView);
+						return;
+					}
+				}
+				inherited::MessageReceived( msg);
+				break;
+			}
 			default:
 				inherited::MessageReceived( msg);
 		}
@@ -343,25 +349,7 @@ void BmMailRefView::KeyDown(const char *bytes, int32 numBytes) {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmMailRefView::MouseDown(BPoint point) {
-	BMessage* message = Window()->CurrentMessage();
-	if (message && message->FindInt32("buttons") == B_PRIMARY_MOUSE_BUTTON)
-		mMouseIsDown = true;
 	inherited::MouseDown( point); 
-}
-
-/*------------------------------------------------------------------------------*\
-	MouseUp( point)
-		-	
-\*------------------------------------------------------------------------------*/
-void BmMailRefView::MouseUp(BPoint point) { 
-	inherited::MouseUp( point); 
-	BMessage* message = Window()->CurrentMessage();
-	if (mMouseIsDown && message && !(message->FindInt32("buttons") & B_PRIMARY_MOUSE_BUTTON)) {
-		mMouseIsDown = false;
-		BRect bounds = Bounds();
-		if (bounds.Contains( point))
-			SelectionChanged();
-	}
 }
 
 /*------------------------------------------------------------------------------*\
@@ -371,6 +359,7 @@ void BmMailRefView::MouseUp(BPoint point) {
 bool BmMailRefView::InitiateDrag( BPoint where, int32 index, bool wasSelected) {
 	if (!wasSelected)
 		return false;
+	BM_LOG2( BM_LogRefView, "InitiateDrag() - enter");
 	BMessage dragMsg( B_SIMPLE_DATA);
 	dragMsg.AddString( "be:types", "text/x-email");
 	dragMsg.AddString( "be:type_descriptions", "E-mail");
@@ -385,6 +374,7 @@ bool BmMailRefView::InitiateDrag( BPoint where, int32 index, bool wasSelected) {
 	int32 selCount;
 	for( selCount=0; (currIdx=CurrentSelection( selCount))>=0; ++selCount)
 		;
+	BM_LOG2( BM_LogRefView, BString("InitiateDrag() - found ")<<selCount<<" selections");
 	BFont font;
 	GetFont( &font);
 	float lineHeight = MAX(TheResources->FontLineHeight( &font),20.0);
@@ -418,9 +408,13 @@ bool BmMailRefView::InitiateDrag( BPoint where, int32 index, bool wasSelected) {
 			dummyView->DrawString( indicator.String(), 
 										  BPoint( 20.0, i*lineHeight+baselineOffset));
 		}
+		if (i%100==0)
+			BM_LOG2( BM_LogRefView, BString("InitiateDrag() - processing ")<<i<<"th selection");
 	}
 	dragImage->Unlock();
 	DragMessage( &dragMsg, dragImage, B_OP_ALPHA, BPoint( 10.0, 10.0));
+	DeselectAll();
+	BM_LOG2( BM_LogRefView, "InitiateDrag() - exit");
 	return true;
 }
 
@@ -431,14 +425,12 @@ bool BmMailRefView::InitiateDrag( BPoint where, int32 index, bool wasSelected) {
 bool BmMailRefView::AcceptsDropOf( const BMessage* msg) {
 	if (mCurrFolder && msg && msg->what == B_SIMPLE_DATA) {
 		entry_ref eref;
-		bool containsMails = false;
 		for( int32 i=0; msg->FindRef( "refs", i, &eref) == B_OK; ++i) {
 			if (CheckMimeType( &eref, "text/x-email"))
-				containsMails = true;
+				return true;
 		}
-		return containsMails;
-	} else
-		return false;
+	}
+	return false;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -468,11 +460,11 @@ void BmMailRefView::HandleDrop( const BMessage* msg) {
 void BmMailRefView::ShowFolder( BmMailFolder* folder) {
 	try {
 		StopJob();
-		BmMailRefList* refList = folder ? folder->MailRefList() : NULL;
+		BmRef<BmMailRefList> refList( folder ? folder->MailRefList().Get() : NULL);
 		if (mPartnerMailView)
 			mPartnerMailView->ShowMail( static_cast< BmMailRef*>( NULL));
 		if (refList)
-			StartJob( refList, true);
+			StartJob( refList.Get(), true);
 		mCurrFolder = folder;
 		SelectionChanged();
 	}
@@ -499,36 +491,54 @@ const BMessage* BmMailRefView::DefaultLayout()		{
 }
 
 /*------------------------------------------------------------------------------*\
+	AddSelectedRefsToMsg( msg, fieldName)
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailRefView::AddSelectedRefsToMsg( BMessage* msg, BString fieldName) {
+	int32 selected = -1;
+	int32 numSelected = 0;
+	while( (selected = CurrentSelection(numSelected)) >= 0) {
+		BmMailRefItem* refItem;
+		refItem = dynamic_cast<BmMailRefItem*>(ItemAt( selected));
+		if (refItem) {
+			BmRef<BmMailRef> ref = dynamic_cast<BmMailRef*>( refItem->ModelItem());
+			msg->AddPointer( fieldName.String(), static_cast< void*>( ref.Get()));
+			ref->AddRef();						// the message now refers to the mailRef, too
+		}
+		numSelected++;
+	}
+}
+
+/*------------------------------------------------------------------------------*\
 	SelectionChanged()
 		-	
 \*------------------------------------------------------------------------------*/
 void BmMailRefView::SelectionChanged( void) {
+	BM_LOG2( BM_LogRefView, "SelectionChanged() - enter");
 	int32 temp;
 	int32 selection = -1;
 	int32 numSelected = 0;
-	if (mMouseIsDown)
-		return;									// only react when mouse-button is up again
-	while( (temp = CurrentSelection(numSelected)) >= 0) {
+	while( numSelected < 2 && (temp = CurrentSelection(numSelected)) >= 0) {
 		selection = temp;
 		numSelected++;
 	}
-	if (selection >= 0 && numSelected == 1) {
-		BmMailRefItem* refItem;
-		refItem = dynamic_cast<BmMailRefItem*>(ItemAt( selection));
-		if (refItem) {
-			mCurrMailRef = dynamic_cast<BmMailRef*>(refItem->ModelItem());
-			if (mCurrMailRef && mPartnerMailView)
-				mPartnerMailView->ShowMail( mCurrMailRef.Get());
-		}
-	} else {
-		mCurrMailRef = NULL;
-		if (mPartnerMailView)
-			mPartnerMailView->ShowMail( mCurrMailRef.Get());
+	if (mPartnerMailView) {
+		if (selection >= 0 && numSelected == 1) {
+			BmMailRefItem* refItem;
+			refItem = dynamic_cast<BmMailRefItem*>(ItemAt( selection));
+			if (refItem) {
+				BmRef<BmMailRef> ref = dynamic_cast<BmMailRef*>(refItem->ModelItem());
+				if (ref)
+					mPartnerMailView->ShowMail( ref.Get());
+			}
+		} else
+			mPartnerMailView->ShowMail( static_cast< BmMailRef*>( NULL));
 	}
 	
 	BMessage msg(BM_NTFY_MAILREF_SELECTION);
 	msg.AddInt32( MSG_MAILS_SELECTED, numSelected);
 	SendNotices( BM_NTFY_MAILREF_SELECTION, &msg);
+	BM_LOG2( BM_LogRefView, "SelectionChanged() - exit");
 }
 
 /*------------------------------------------------------------------------------*\
@@ -539,22 +549,17 @@ void BmMailRefView::ItemInvoked( int32 index) {
 	BmMailRefItem* refItem;
 	refItem = dynamic_cast<BmMailRefItem*>(ItemAt( index));
 	if (refItem) {
-		BmMailRef* ref = dynamic_cast<BmMailRef*>(refItem->ModelItem());
+		BmRef<BmMailRef> ref( dynamic_cast<BmMailRef*>(refItem->ModelItem()));
 		if (ref) {
-			BmRef<BmMailRef> detachedRef = ref->DetachedDuplicate();
 			if (ref->Status() == BM_MAIL_STATUS_DRAFT
 			|| ref->Status() == BM_MAIL_STATUS_PENDING) {
-				BmMailEditWin* editWin = BmMailEditWin::CreateInstance();
-				if (editWin) {
-					editWin->EditMail( detachedRef.Get());
+				BmMailEditWin* editWin = BmMailEditWin::CreateInstance( ref.Get());
+				if (editWin)
 					editWin->Show();
-				}
 			} else {
-				BmMailViewWin* viewWin = BmMailViewWin::CreateInstance();
-				if (viewWin) {
-					viewWin->ShowMail( detachedRef.Get());
+				BmMailViewWin* viewWin = BmMailViewWin::CreateInstance( ref.Get());
+				if (viewWin)
 					viewWin->Show();
-				}
 			}
 		}
 	}

@@ -157,8 +157,9 @@ bool BmMailFolder::CheckIfModifiedSince( time_t when, time_t* storeNewModTime) {
 void BmMailFolder::BumpNewMailCount( int32 offset) {
 	mNewMailCount += offset;
 	TheMailFolderList->TellModelItemUpdated( this, UPD_NAME);
-	if (Parent())
-		Parent()->BumpNewMailCountForSubfolders( offset);
+	BmMailFolder* parent( dynamic_cast< BmMailFolder*>( Parent()));
+	if (parent)
+		parent->BumpNewMailCountForSubfolders( offset);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -168,18 +169,19 @@ void BmMailFolder::BumpNewMailCount( int32 offset) {
 void BmMailFolder::BumpNewMailCountForSubfolders( int32 offset) {
 	mNewMailCountForSubfolders += offset;
 	TheMailFolderList->TellModelItemUpdated( this, UPD_NAME);
-	if (Parent())
-		Parent()->BumpNewMailCountForSubfolders( offset);
+	BmMailFolder* parent( dynamic_cast< BmMailFolder*>( Parent()));
+	if (parent)
+		parent->BumpNewMailCountForSubfolders( offset);
 }
 
 /*------------------------------------------------------------------------------*\
 	MailRefList()
 		-	
 \*------------------------------------------------------------------------------*/
-BmMailRefList* BmMailFolder::MailRefList() {
+BmRef<BmMailRefList> BmMailFolder::MailRefList() {
 	if (!mMailRefList)
 		CreateMailRefList();
-	return mMailRefList.Get();
+	return mMailRefList;
 }
 
 /*------------------------------------------------------------------------------*\

@@ -48,8 +48,8 @@ static const int32 BM_TIME_TO_REMOVE = 'BmZ2';
 		-	constructor
 \*------------------------------------------------------------------------------*/
 BmJobStatusView::BmJobStatusView( const char* name)
-	:	MBorder( M_ETCHED_BORDER, 2, const_cast<char*>(name))
-	,	BmJobController( name)
+	:	inheritedView( M_ETCHED_BORDER, 2, const_cast<char*>(name))
+	,	inherited( name)
 	,	mShowMsgRunner( NULL)
 	,	mRemoveMsgRunner( NULL)
 	,	mMSecsBeforeShow( 10)
@@ -181,7 +181,7 @@ BmMailMoverView::BmMailMoverView( const char* name)
 	,	mStatBar( NULL)
 	,	mBottomLabel( NULL)
 {
-	mMSecsBeforeShow = ThePrefs->GetInt( "MSecsBeforeMailMoverShows");
+	mMSecsBeforeShow = MAX(10,ThePrefs->GetInt( "MSecsBeforeMailMoverShows"));
 	BString labelText = BString("To: ") << ControllerName();
 	MView* view = new VGroup(
 		new MBViewWrapper(
@@ -270,7 +270,7 @@ BmPopperView::BmPopperView( const char* name)
 	,	mStatBar( NULL)
 	,	mMailBar( NULL)
 {
-	mMSecsBeforeRemove = ThePrefs->GetInt( "MSecsBeforePopperRemove");
+	mMSecsBeforeRemove = MAX(10,ThePrefs->GetInt( "MSecsBeforePopperRemove"));
 	MView* view = new VGroup(
 		new MBViewWrapper(
 			mStatBar = new BStatusBar( BRect(), name, name, ""), true, false, false
@@ -299,7 +299,7 @@ BmPopperView::~BmPopperView() {
 \*------------------------------------------------------------------------------*/
 BmJobModel* BmPopperView::CreateJobModel( BMessage* msg) {
 	BString accName = FindMsgString( msg, BmJobStatusWin::MSG_JOB_NAME);
-	BmListModelItemRef item = ThePopAccountList->FindItemByKey( accName);
+	BmRef<BmListModelItem> item = ThePopAccountList->FindItemByKey( accName);
 	BmPopAccount* account;
 	(account = dynamic_cast<BmPopAccount*>( item.Get()))
 													|| BM_THROW_INVALID( BString("Could not find BmPopAccount ") << accName);
@@ -391,7 +391,7 @@ BmSmtpView::BmSmtpView( const char* name)
 	,	mStatBar( NULL)
 	,	mMailBar( NULL)
 {
-	mMSecsBeforeRemove = ThePrefs->GetInt( "MSecsBeforeSmtpRemove");
+	mMSecsBeforeRemove = MAX(10,ThePrefs->GetInt( "MSecsBeforeSmtpRemove"));
 	MView* view = new VGroup(
 		new MBViewWrapper(
 			mStatBar = new BStatusBar( BRect(), name, name, ""), true, false, false
@@ -420,7 +420,7 @@ BmSmtpView::~BmSmtpView() {
 \*------------------------------------------------------------------------------*/
 BmJobModel* BmSmtpView::CreateJobModel( BMessage* msg) {
 	BString accName = FindMsgString( msg, BmJobStatusWin::MSG_JOB_NAME);
-	BmListModelItemRef item = TheSmtpAccountList->FindItemByKey( accName);
+	BmRef<BmListModelItem> item = TheSmtpAccountList->FindItemByKey( accName);
 	BmSmtpAccount* account;
 	(account = dynamic_cast<BmSmtpAccount*>( item.Get()))
 													|| BM_THROW_INVALID( BString("Could not find BmSmtpAccount ") << accName);
@@ -536,7 +536,7 @@ bool BmJobStatusWin::QuitRequested() {
 	BM_LOG2( BM_LogJobWin, BString("JobStatusWin has been asked to quit; stopping all jobs"));
 	JobMap::iterator iter;
 	for( iter = mActiveJobs.begin(); iter != mActiveJobs.end(); ++iter) {
-		BmJobStatusView* jobView = (*iter).second;
+		BmJobStatusView* jobView = iter->second;
 		if (jobView)
 			jobView->StopJob();
 	}

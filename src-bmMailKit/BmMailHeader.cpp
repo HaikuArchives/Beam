@@ -3,6 +3,7 @@
 		$Id$
 */
 
+#include <algorithm>
 #include <ctime>
 #include <parsedate.h>
 
@@ -25,8 +26,6 @@ using namespace regexx;
 
 #undef BM_LOGNAME
 #define BM_LOGNAME "MailParser"
-
-#define BM_LINE_WIDTH 75
 
 static BString BmAddressFieldNames = 
 	"<Bcc><Resent-Bcc><Cc><Resent-Cc><From><Resent-From><Reply-To><Resent-Reply-To><Sender><Resent-Sender><To><Resent-To>";
@@ -100,7 +99,7 @@ void BmAddress::ConstructRawText( BString& header, int32 encoding, int32 fieldNa
 	if (mPhrase.Length()) {
 		BString convertedPhrase = ConvertUTF8ToHeaderPart( mPhrase, encoding, true, 
 																			true, fieldNameLength);
-		if (convertedPhrase.Length()+convertedAddrSpec.Length()+3 > BM_LINE_WIDTH) {
+		if (convertedPhrase.Length()+convertedAddrSpec.Length()+3 > ThePrefs->GetInt( "MaxLineLen")) {
 			header << convertedPhrase << "\r\n";
 			header.Append( BM_SPACES, fieldNameLength+2);
 			header << "<" << convertedAddrSpec << ">";
@@ -132,7 +131,7 @@ BmAddressList::BmAddressList()
 BmAddressList::BmAddressList( BString strippedFieldVal)
 	:	mIsGroup( false) 
 {
-	mInitOK = Set( strippedFieldVal);
+	Set( strippedFieldVal);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -147,12 +146,21 @@ BmAddressList::~BmAddressList() {
 		-	
 \*------------------------------------------------------------------------------*/
 bool BmAddressList::Set( BString strippedFieldVal) {
+	mGroupName = "";
+	mAddrList.clear();
+
+	mInitOK = Add( strippedFieldVal);
+	return mInitOK;
+}
+	
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+bool BmAddressList::Add( BString strippedFieldVal) {
 	BString addrText;
 	Regexx rx;
 	bool res = true;
-
-	mGroupName = "";
-	mAddrList.clear();
 
 	if (rx.exec( strippedFieldVal, "^\\s*(.+?):(.+)?;\\s*$")) {
 		// it's a group list:
@@ -177,7 +185,20 @@ bool BmAddressList::Set( BString strippedFieldVal) {
 			res = false;
 		}
 	}
+	if (!mInitOK) 
+		mInitOK = res;
 	return res;
+}
+	
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmAddressList::Remove( BString singleAddress) {
+	BmAddress rmAddr( singleAddress);
+	BmAddrList::iterator pos = find( mAddrList.begin(), mAddrList.end(), rmAddr);
+	if (pos != mAddrList.end())
+		mAddrList.erase( pos);
 }
 	
 /*------------------------------------------------------------------------------*\
@@ -279,7 +300,7 @@ void BmAddressList::ConstructRawText( BString& header, int32 encoding,
 		pos->ConstructRawText( converted, encoding, fieldNameLength);
 		if (pos != mAddrList.begin()) {
 			fieldString += ", ";
-			if (fieldString.Length() + converted.Length() > BM_LINE_WIDTH) {
+			if (fieldString.Length() + converted.Length() > ThePrefs->GetInt( "MaxLineLen")) {
 				fieldString += "\r\n";
 				fieldString.Append( BM_SPACES, fieldNameLength+2);
 			}
@@ -353,6 +374,7 @@ int32 BmMailHeader::nCounter = 0;
 BmMailHeader::BmMailHeader( const BString &headerText, BmMail* mail)
 	:	mHeaderString( headerText)
 	,	mMail( mail)
+	,	mKey( RefPrintHex())					// generate dummy identifier from our address
 {
 	ParseHeader( headerText);
 }
@@ -428,7 +450,7 @@ void BmMailHeader::SetFieldVal( const BString fieldName, const BString value) {
 	mStrippedHeaders.Set( fieldName, strippedVal);
 	if (IsAddressField( fieldName)) {
 		// field contains an address-spec, we parse the address as well:
-		mAddrMap[fieldName] = BmAddressList( strippedVal);
+		mAddrMap[fieldName].Set( strippedVal);
 	}
 }
 
@@ -439,10 +461,10 @@ void BmMailHeader::SetFieldVal( const BString fieldName, const BString value) {
 void BmMailHeader::AddFieldVal( const BString fieldName, const BString value) {
 	mHeaders.Add( fieldName, value);
 	BString strippedVal = StripField( value);
-	mStrippedHeaders.Set( fieldName, strippedVal);
+	mStrippedHeaders.Add( fieldName, strippedVal);
 	if (IsAddressField( fieldName)) {
 		// field contains an address-spec, we parse the address as well:
-		mAddrMap[fieldName] = BmAddressList( strippedVal);
+		mAddrMap[fieldName].Add( strippedVal);
 	}
 }
 
@@ -456,6 +478,15 @@ void BmMailHeader::RemoveField( const BString fieldName) {
 	BmAddrMap::iterator iter = mAddrMap.find( fieldName);
 	if (iter != mAddrMap.end())
 		mAddrMap.erase( iter);
+}
+
+/*------------------------------------------------------------------------------*\
+	RemoveAddrFieldVal()
+	-	
+\*------------------------------------------------------------------------------*/
+void BmMailHeader::RemoveAddrFieldVal( const BString fieldName, const BString value) {
+	if (IsAddressField( fieldName))
+		mAddrMap[fieldName].Remove( value);
 }
 
 /*------------------------------------------------------------------------------*\

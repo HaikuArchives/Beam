@@ -3,10 +3,14 @@
 		$Id$
 */
 
+#include <Alert.h>
 #include <MenuItem.h>
 #include <PopUpMenu.h>
 #include <Roster.h>
 #include <Window.h>
+
+#include "regexx.hh"
+using namespace regexx;
 
 #include "BmApp.h"
 #include "BmBasics.h"
@@ -371,9 +375,30 @@ void BmBodyPartView::ItemInvoked( int32 index) {
 			msg.AddRef( "refs", &eref);
 			bmApp->RefsReceived( &msg);
 		} else {
-			status_t res = be_roster->Launch( &eref);
-			if (res != B_OK && res != B_ALREADY_RUNNING) {
-				ShowAlert( BString("Sorry, could not launch application for this attachment (unknown mimetype perhaps?)\n\nError: ") << strerror(res));
+			BString mimetype = bodyPart->MimeType();
+			BString mtTrustInfo = ThePrefs->GetString( "MimeTypeTrustInfo", 
+																	 "<application/pdf:T><application:W><:T>");
+			bool doIt = true;
+			Regexx rx;
+			int count = rx.exec( mtTrustInfo, "<(.*?):(\\w)>", Regexx::global);
+			for( int i=0; i<count; ++i) {
+				BString match = rx.match[i].atom[0];
+				if ( mimetype.ICompare( match, match.Length()) == 0) {
+					BString trustLevel = rx.match[i].atom[1];
+					if (trustLevel.ICompare( "T") != 0) {
+						BString s("The attachment may contain harmful content, are you sure to open it?");
+						BAlert* alert = new BAlert( "", s.String(), "Yes", "No");
+						alert->SetShortcut( 1, B_ESCAPE);
+						doIt = (alert->Go() == 0);
+					}
+					break;
+				}
+			}
+			if (doIt) {
+				status_t res = be_roster->Launch( &eref);
+				if (res != B_OK && res != B_ALREADY_RUNNING) {
+					ShowAlert( BString("Sorry, could not launch application for this attachment (unknown mimetype perhaps?)\n\nError: ") << strerror(res));
+				}
 			}
 		}
 		bodyPartItem->Highlight( false);

@@ -75,8 +75,8 @@ public:
 	BString StateInfoBasename();
 
 	// getters:
-	float FixedWidth() 						{ return 5000; }
-	bool ShowAllParts()						{ return mShowAllParts; }
+	inline float FixedWidth() 				{ return 5000; }
+	inline bool ShowAllParts()				{ return mShowAllParts; }
 
 	static const int16 nFirstTextCol;
 

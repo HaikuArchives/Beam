@@ -91,16 +91,16 @@ public:
 	void DetachModel();
 
 	// getters:
-	BmMailViewContainer* ContainerView() const	{ return mScrollView; }
-	BmRef<BmMail> CurrMail()				{ return mCurrMail; }
-	bool ShowRaw()								{ return mShowRaw; }
-	bool ShowInlinesSeparately()			{ return mShowInlinesSeparately; }
-	BmBodyPartView* BodyPartView()		{ return mBodyPartView; }
+	inline BmMailViewContainer* ContainerView() const	{ return mScrollView; }
+	inline BmRef<BmMail> CurrMail()				{ return mCurrMail; }
+	inline bool ShowRaw()							{ return mShowRaw; }
+	inline bool ShowInlinesSeparately()			{ return mShowInlinesSeparately; }
+	inline BmBodyPartView* BodyPartView()		{ return mBodyPartView; }
 
 	// setters:
-	void TeamUpWith( BmMailRefView* v)	{ mPartnerMailRefView = v; }
-	void ShowRaw( bool b) 					{ mShowRaw = b; }
-	void ShowInlinesSeparately( bool b) { mShowInlinesSeparately = b; }
+	inline void TeamUpWith( BmMailRefView* v)	{ mPartnerMailRefView = v; }
+	inline void ShowRaw( bool b) 					{ mShowRaw = b; }
+	inline void ShowInlinesSeparately( bool b)	{ mShowInlinesSeparately = b; }
 
 private:
 	void ShowMenu( BPoint point);

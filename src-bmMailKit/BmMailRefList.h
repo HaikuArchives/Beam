@@ -31,8 +31,8 @@ public:
 	virtual ~BmMailRefList();
 
 	// native methods:
-	BmMailRef* AddMailRef( entry_ref& eref, struct stat& st);
-	void MarkCacheAsDirty()					{ mNeedsCacheUpdate = true; }
+	BmRef<BmMailRef> AddMailRef( entry_ref& eref, struct stat& st);
+	inline void MarkCacheAsDirty()		{ mNeedsCacheUpdate = true; }
 
 	// overrides of list-model base:
 	bool StartJob();
@@ -41,7 +41,7 @@ public:
 	int16 ArchiveVersion() const			{ return nArchiveVersion; }
 	
 	// getters:
-	bool NeedsCacheUpdate() const 		{ return mNeedsCacheUpdate; }
+	inline bool NeedsCacheUpdate() const	{ return mNeedsCacheUpdate; }
 
 private:
 

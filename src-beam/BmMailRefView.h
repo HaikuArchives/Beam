@@ -66,7 +66,8 @@ public:
 
 	// native methods:
 	void ShowFolder( BmMailFolder* folder);
-	void TeamUpWith( BmMailView* mv) 	{ mPartnerMailView = mv; }
+	inline void TeamUpWith( BmMailView* mv) 	{ mPartnerMailView = mv; }
+	void AddSelectedRefsToMsg( BMessage* msg, BString fieldName);
 
 	// overrides of listview base:
 	void KeyDown(const char *bytes, int32 numBytes);
@@ -77,7 +78,6 @@ public:
 	void SelectionChanged( void);
 	void ItemInvoked( int32 index);
 	void MouseDown(BPoint point);
-	void MouseUp(BPoint point);
 
 	// overrides of controller base:
 	BString StateInfoBasename();
@@ -88,16 +88,11 @@ public:
 	BmListViewItem* CreateListViewItem( BmListModelItem* item, BMessage* archive=NULL);
 	const char* ItemNameForCaption()		{ return "message"; }
 
-	// getters:
-	BmRef<BmMailRef> CurrMailRef()		{ return mCurrMailRef; }
-
 	static BmMailRefView* theInstance;
 	
 private:
 	BmRef<BmMailFolder> mCurrFolder;
 	BmMailView* mPartnerMailView;
-	bool mMouseIsDown;
-	BmRef<BmMailRef> mCurrMailRef;
 
 	// Hide copy-constructor and assignment:
 	BmMailRefView( const BmMailRefView&);

@@ -47,13 +47,10 @@ public:
 	virtual ~BmPopper();
 
 	typedef bool BmPwdAcquisitorFunc( const BString, BString&);
-	void SetPwdAcquisitorFunc( BmPwdAcquisitorFunc* func)
+	inline void SetPwdAcquisitorFunc( BmPwdAcquisitorFunc* func)
 													{ mPwdAcquisitorFunc = func; }
-	
-	static int32 NextID() 					{ return ++mId; }
-
-	BString Name() const						{ return ModelName(); }
-
+	inline static int32 NextID() 			{ return ++mId; }
+	inline BString Name() const			{ return ModelName(); }
 	bool StartJob();
 
 private:

@@ -35,7 +35,7 @@ public:
 	BHandler* GetControllerHandler() 	{ return this; }
 	void JobIsDone( bool completed);
 
-	void SetAccountMenu( BMenu* m)		{ mAccountMenu = m; }
+	inline void SetAccountMenu( BMenu* m)	{ mAccountMenu = m; }
 	
 private:
 	BMenu* mAccountMenu;
@@ -71,6 +71,8 @@ public:
 	void MessageReceived( BMessage*);
 	bool QuitRequested();
 	void Quit();
+	void Show();
+	void WorkspacesChanged( uint32 oldWorkspaces, uint32 newWorkspaces);
 
 	static BmMainWindow* theInstance;
 

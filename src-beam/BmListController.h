@@ -61,7 +61,7 @@ public:
 	status_t Archive( BMessage* archive, bool deep = true) const;
 
 	// getters:
-	const BString Key() const				{ return mKey; }
+	inline const BString Key() const		{ return mKey; }
 	virtual BmListModelItem* ModelItem() const	{ return mModelItem.Get(); }
 	
 protected:
@@ -98,7 +98,7 @@ public:
 	
 	// setters:
 	void SetCaptionText( const char* text);
-	void SetCaptionWidth( float width) 	{ mCaptionWidth = width; }
+	inline void SetCaptionWidth( float width) 	{ mCaptionWidth = width; }
 
 private:
 	BmCaption* mCaption;
@@ -171,13 +171,14 @@ public:
 	void MakeEmpty();
 	void MessageReceived( BMessage* msg);
 	void MouseDown(BPoint point);
+	void MouseUp(BPoint point);
 	void MouseMoved( BPoint point, uint32 transit, const BMessage *msg);
 	BmCLVContainerView* ScrollView() 	{ return dynamic_cast<BmCLVContainerView*>(fScrollView); }
 
 	// getters:
-	CLVContainerView* ContainerView()	{ return inherited::fScrollView; }
-	BMessage* InitialStateInfo()			{ return mInitialStateInfo; }
-	virtual const char* ItemNameForCaption()		{ return "item"; }
+	inline CLVContainerView* ContainerView()	{ return inherited::fScrollView; }
+	inline BMessage* InitialStateInfo()			{ return mInitialStateInfo; }
+	virtual const char* ItemNameForCaption()	{ return "item"; }
 
 	// setters:
 	void UseStateCache( bool b) 			{ mUseStateCache = b; }

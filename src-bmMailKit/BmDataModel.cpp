@@ -452,14 +452,15 @@ void BmListModelItem::RemoveSubItem( BmListModelItem* subItem) {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmListModelItem::TellModelItemUpdated( BmUpdFlags flags=UPD_ALL) {
-	if (mListModel)
-		mListModel->TellModelItemUpdated( this, flags);
+	BmRef<BmListModel> listModel( ListModel());
+	if (listModel)
+		listModel->TellModelItemUpdated( this, flags);
 }
 
 /*------------------------------------------------------------------------------*\
 	FindItemByKey()
 		-	N.B.: The ListModel this item lives in must be locked when calling
-			this method (otherwise "bad things"(TM) happen!
+			this method, otherwise "bad things"(TM) happen!
 \*------------------------------------------------------------------------------*/
 BmListModelItem* BmListModelItem::FindItemByKey( const BString& key) {
 	BmListModelItem* found = NULL;
@@ -473,6 +474,15 @@ BmListModelItem* BmListModelItem::FindItemByKey( const BString& key) {
 	}
 	return found;
 }
+
+/*------------------------------------------------------------------------------*\
+	ListModel()
+		-	
+\*------------------------------------------------------------------------------*/
+BmRef<BmListModel> BmListModelItem::ListModel() const	{ 
+	return mListModel.Get(); 
+}
+
 
 
 /********************************************************************************\
@@ -546,13 +556,13 @@ void BmListModel::RemoveItemFromList( BmListModelItem* item) {
 	if (item) {
 		BmAutolock lock( mModelLocker);
 		lock.IsLocked()	 					|| BM_THROW_RUNTIME( ModelName() << ":RemoveItemFromList(): Unable to get lock");
-		BmListModelItem* parent = item->Parent();
+		BmRef<BmListModelItem> parent = item->Parent();
 		TellModelItemRemoved( item);
 		if (parent) {
 			parent->RemoveSubItem( item);
 			if (parent->size() == 0) {
 				// the parent has just become a non-superitem (and thus needs to be updated):
-				TellModelItemUpdated( parent, UPD_EXPANDER);
+				TellModelItemUpdated( parent.Get(), UPD_EXPANDER);
 			}
 		} else {
 			mModelItemMap.erase( item->Key());
@@ -564,10 +574,10 @@ void BmListModel::RemoveItemFromList( BmListModelItem* item) {
 	RemoveItemFromList()
 		-	
 \*------------------------------------------------------------------------------*/
-BmListModelItemRef BmListModel::RemoveItemFromList( const BString& key) {
+BmRef<BmListModelItem> BmListModel::RemoveItemFromList( const BString& key) {
 	BmAutolock lock( mModelLocker);
 	lock.IsLocked()	 						|| BM_THROW_RUNTIME( ModelName() << ":RemoveItemFromList(): Unable to get lock");
-	BmListModelItemRef item( FindItemByKey( key));
+	BmRef<BmListModelItem> item( FindItemByKey( key));
 	RemoveItemFromList( item.Get());
 	return item;
 }
@@ -576,7 +586,7 @@ BmListModelItemRef BmListModel::RemoveItemFromList( const BString& key) {
 	FindItemByKey()
 		-	
 \*------------------------------------------------------------------------------*/
-BmListModelItemRef BmListModel::FindItemByKey( const BString& key) {
+BmRef<BmListModelItem> BmListModel::FindItemByKey( const BString& key) {
 	BmListModelItem* found = NULL;
 	BmAutolock lock( mModelLocker);
 	lock.IsLocked()	 						|| BM_THROW_RUNTIME( ModelName() << ":FindItemByKey(): Unable to get lock");
@@ -584,11 +594,11 @@ BmListModelItemRef BmListModel::FindItemByKey( const BString& key) {
 	for( iter = begin(); !found && iter != end(); iter++) {
 		BmListModelItem* item = iter->second.Get();
 		if (item->Key() == key)
-			return BmListModelItemRef( item);
+			return BmRef<BmListModelItem>( item);
 		else if (!item->empty())
 			found = item->FindItemByKey( key);
 	}
-	return BmListModelItemRef( found);
+	return BmRef<BmListModelItem>( found);
 }
 
 /*------------------------------------------------------------------------------*\

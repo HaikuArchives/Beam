@@ -131,6 +131,7 @@ void BmLogHandler::LogToFile( const BString& logname, uint32 flag,
 			return;								// loglevel indicates to ignore this message
 		BMessage mess( BM_LOG_MSG);
 		mess.AddString( MSG_MESSAGE, msg);
+		mess.AddInt32( MSG_THREAD_ID, find_thread(NULL));
 		log->PostMessage( &mess);
 	}
 }
@@ -196,7 +197,7 @@ BmLogHandler::BmLogfile::~BmLogfile() {
 void BmLogHandler::BmLogfile::MessageReceived( BMessage* msg) {
 	switch( msg->what) {
 		case BM_LOG_MSG: {
-			Write( msg->FindString( MSG_MESSAGE));
+			Write( msg->FindString( MSG_MESSAGE), msg->FindInt32( MSG_THREAD_ID));
 			break;
 		}
 		default:
@@ -209,7 +210,7 @@ void BmLogHandler::BmLogfile::MessageReceived( BMessage* msg) {
 		-	writes given msg into log, including current timestamp
 		-	log is flushed after each write
 \*------------------------------------------------------------------------------*/
-void BmLogHandler::BmLogfile::Write( const char* const msg) {
+void BmLogHandler::BmLogfile::Write( const char* const msg, int32 threadId) {
 	if (logfile == NULL) {
 		BString fn = BString(LogPath) << filename;
 		if (fn.FindFirst(".log") == B_ERROR) {
@@ -222,8 +223,8 @@ void BmLogHandler::BmLogfile::Write( const char* const msg) {
 	s.ReplaceAll( "\r", "<CR>");
 	s.ReplaceAll( "\n\n", "\n");
 	s.ReplaceAll( "\n", "\n                       ");
-	int result = fprintf( logfile, "<%6ld|%012Ld>: %s\n", find_thread(NULL), TheLogHandler->StopWatch.ElapsedTime(), s.String());
+	int result = fprintf( logfile, "<%6ld|%012Ld>: %s\n", threadId, TheLogHandler->StopWatch.ElapsedTime(), s.String());
 	if (result < 0)
 		throw BM_runtime_error( BString("Unable to write to logfile ") << filename);
-	fflush( logfile);
+//	fflush( logfile);
 }

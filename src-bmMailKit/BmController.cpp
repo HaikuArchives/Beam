@@ -34,6 +34,7 @@ BmController::BmController( BString name)
 \*------------------------------------------------------------------------------*/
 BmController::~BmController() {
 	DetachModel();
+	BM_LOG2( BM_LogModelController, BString("Controller <") << ControllerName() << "> has been destructed.");
 }
 
 /*------------------------------------------------------------------------------*\

@@ -39,10 +39,10 @@ public:
 private:
 	BmMailFolder* parent;
 	ino_t lastParentInode;
-	BmListModelItemRef lastParentRef;
+	BmRef<BmListModelItem> lastParentRef;
 	BmMailFolder* oldParent;
 	ino_t lastOldParentInode;
-	BmListModelItemRef lastOldParentRef;
+	BmRef<BmListModelItem> lastOldParentRef;
 	int32 counter;
 
 	// Hide copy-constructor and assignment:

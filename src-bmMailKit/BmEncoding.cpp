@@ -16,7 +16,7 @@ using namespace regexx;
 #include "BmPrefs.h"
 #include "BmUtil.h"
 
-#define BM_MAX_LINE_LEN_QP 76
+#define BM_MAX_LINE_LEN 76
 							// as stated in [K. Johnson, p. 149f]
 
 #define HEXDIGIT2CHAR(d) (((d)>='0'&&(d)<='9') ? (d)-'0' : ((d)>='A'&&(d)<='F') ? (d)-'A'+10 : ((d)>='a'&&(d)<='f') ? (d)-'a'+10 : 0)
@@ -93,7 +93,7 @@ void BmEncoding::ConvertToUTF8( uint32 srcEncoding, const BString& src,
 		return;
 	char* destBuf = NULL;
 	int32 state=0;
-	int32 buflen = srcbuflen>92 ? (int32)(srcbuflen*1.5) : 128;
+	int32 buflen = MAX(128,(int32)(srcbuflen*1.5));
 	status_t st;
 
 	try {
@@ -135,7 +135,7 @@ void BmEncoding::ConvertFromUTF8( uint32 destEncoding, const BString& src,
 	if (!srcbuflen)
 		return;
 	int32 state=0;
-	int32 buflen = srcbuflen;
+	int32 buflen = MAX(128,srcbuflen);
 	status_t st;
 
 	try {
@@ -220,7 +220,7 @@ void BmEncoding::Encode( BString encodingStyle, const BString& src, BString& des
 				addChars << '=' << (char)CHAR2HIGHNIBBLE(c) << (char)CHAR2LOWNIBBLE(c);
 			}
 			int32 addLen = addChars.Length();
-			if (!isEncodedWord && lineLength + addLen >= BM_MAX_LINE_LEN_QP) {
+			if (!isEncodedWord && lineLength + addLen >= BM_MAX_LINE_LEN) {
 				// insert soft linebreak:
 				buf[destCount++] = '=';
 				buf[destCount++] = '\r';
@@ -437,7 +437,7 @@ BString BmEncoding::ConvertUTF8ToHeaderPart( const BString& utf8text, uint32 enc
 		// encoded-words (quoted-printable) are neccessary, since headerfield contains
 		// non-ASCII chars:
 		Encode( "Q", charsetString, encodedString, true);
-		int32 maxChars = 76 						// 76 chars maximum
+		int32 maxChars = BM_MAX_LINE_LEN		// 76 chars maximum
 							- (fieldLen + 2)		// space used by "fieldname: "
 							- charset.Length()	// length of charset in encoded-word
 							- 7;						// =?...?q?...?=
@@ -464,14 +464,19 @@ BString BmEncoding::ConvertUTF8ToHeaderPart( const BString& utf8text, uint32 enc
 	} else {
 		// simpler case, no encoded-words neccessary:
 		Encode( "7BIT", charsetString, encodedString, true);
-		int32 maxChars = 76 						// 76 chars maximum
+		int32 maxChars = BM_MAX_LINE_LEN		// 76 chars maximum
 							- (fieldLen + 2);		// space used by "fieldname: "
 		if (fold && encodedString.Length() > maxChars) {
 			// fold header-line, since it is too long:
 			BString foldedString;
 			while( encodedString.Length() > maxChars) {
+				int32 foldPos = encodedString.FindLast( ' ', maxChars-1);
+				if (foldPos == B_ERROR)
+					foldPos = maxChars;
+				else
+					foldPos++;					// leave space as last char on curr line
 				BString tmp;
-				encodedString.MoveInto( tmp, 0, maxChars);
+				encodedString.MoveInto( tmp, 0, foldPos);
 				foldedString << tmp << "\r\n";
 				foldedString.Append( BM_SPACES, fieldLen+2);
 			}

@@ -10,8 +10,8 @@
 #include <vector>
 
 #include "BmBasics.h"
+#include "BmRefManager.h"
 #include "BmUtil.h"
-
 
 class BmMail;
 
@@ -36,6 +36,11 @@ public:
 	BmAddress( BString addrText);
 	~BmAddress();
 
+	inline bool operator== (const BmAddress& a) {
+		return mPhrase == a.Phrase() 
+			&&  mAddrSpec == a.AddrSpec();
+	}
+
 	// native methods:
 	void ConstructRawText( BString& header, int32 encoding, int32 fieldNameLength) const;
 
@@ -43,10 +48,10 @@ public:
 	operator BString() const;
 						// returns address completely formatted (ready to be sent)
 	// getters:
-	bool InitOK() const						{ return mInitOK; }
-	bool HasPhrase() const					{ return mPhrase.Length() > 0; }
-	BString Phrase() const					{ return mPhrase; }
-	BString AddrSpec() const				{ return mAddrSpec; }
+	inline bool InitOK() const				{ return mInitOK; }
+	inline bool HasPhrase() const			{ return mPhrase.Length() > 0; }
+	inline BString Phrase() const			{ return mPhrase; }
+	inline BString AddrSpec() const		{ return mAddrSpec; }
 
 private:
 	bool mInitOK;
@@ -72,23 +77,25 @@ public:
 
 	// native methods:
 	bool Set( BString strippedFieldVal);
+	bool Add( BString strippedFieldVal);
+	void Remove( BString singleAddress);
 	BmStringList SplitIntoAddresses( BString addrList);
 	void ConstructRawText( BString& header, int32 encoding, int32 fieldNameLength) const;
 	//
-	BmAddrList::const_iterator begin() const { return mAddrList.begin(); }
-	BmAddrList::const_iterator end() const	{ return mAddrList.end(); }
-	size_t size() const						{ return mAddrList.size(); }
-	bool empty() const						{ return mAddrList.empty(); }
+	inline BmAddrList::const_iterator begin() const { return mAddrList.begin(); }
+	inline BmAddrList::const_iterator end() const	{ return mAddrList.end(); }
+	inline size_t size() const				{ return mAddrList.size(); }
+	inline bool empty() const				{ return mAddrList.empty(); }
 
 	// operators:
 	operator BString() const;
 							// returns address-list completely formatted (ready to be sent)
 	// getters:
-	bool InitOK() const						{ return mInitOK; }
-	bool IsGroup() const						{ return mIsGroup; }
-	int32 AddrCount() const					{ return mAddrList.size(); }
-	BString GroupName() const				{ return mGroupName; }
-	BmAddress FirstAddress() const		{ return mAddrList.size() > 0 ? mAddrList[0] : ""; }
+	inline bool InitOK() const				{ return mInitOK; }
+	inline bool IsGroup() const			{ return mIsGroup; }
+	inline int32 AddrCount() const		{ return mAddrList.size(); }
+	inline BString GroupName() const		{ return mGroupName; }
+	inline BmAddress FirstAddress() const		{ return mAddrList.size() > 0 ? mAddrList[0] : ""; }
 
 private:
 	bool mInitOK;
@@ -105,7 +112,7 @@ private:
 		- 	implements all mail-specific text-handling like header-parsing, en-/decoding,
 			en-/decrypting
 \*------------------------------------------------------------------------------*/
-class BmMailHeader {
+class BmMailHeader : public BmRefObj {
 
 	typedef vector< BString> BmValueList;
 	typedef map< BString, BmValueList> BmHeaderMap;
@@ -135,6 +142,7 @@ public:
 	void SetFieldVal( const BString fieldName, const BString value);
 	void AddFieldVal( const BString fieldName, const BString value);
 	void RemoveField( const BString fieldName);
+	void RemoveAddrFieldVal( const BString fieldName, const BString address);
 							// the next always produces US-ASCII (7-bit):
 	bool ConstructRawText( BString& header, int32 encoding);
 
@@ -142,13 +150,16 @@ public:
 	const BmAddressList GetAddressList( const BString fieldName);
 	bool IsFieldEmpty( const BString fieldName);
 
+	// overrides of BmRefObj
+	const BString& RefName() const				{ return mKey; }
+
 	// getters:
 	const BString& GetFieldVal( const BString fieldName);
 	const BString GetStrippedFieldVal( const BString fieldName);
-	int32 NumLines() const 					{ return mNumLines; }
-	const BString& HeaderString() const { return mHeaderString; }
-	const BString& Name() const			{ return mName; }
-	uint32 DefaultEncoding()	const		{ return mDefaultEncoding; }
+	inline int32 NumLines() const 				{ return mNumLines; }
+	inline const BString& HeaderString() const	{ return mHeaderString; }
+	inline const BString& Name() const			{ return mName; }
+	inline uint32 DefaultEncoding()	const		{ return mDefaultEncoding; }
 
 	// class-functions:
 	static bool IsAddressField( const BString fieldName);
@@ -190,6 +201,8 @@ private:
 							// The mail these headers belong to
 	BString mName;
 							// The "name" of the sender of this mail (MAIL:name attribute)
+	BString mKey;
+							// Since headers have no real key, we generate one from the this-value
 	uint32 mDefaultEncoding;
 							// charset-encoding to be used by this mail (if not specified otherwise)
 	int32 mNumLines;

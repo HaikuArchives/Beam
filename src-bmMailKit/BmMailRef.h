@@ -45,49 +45,52 @@ class BmMailRef : public BmListModelItem {
 
 public:
 	// creator-func, c'tors and d'tor:
-	static BmMailRef* CreateInstance( BmMailRefList* model, entry_ref &eref, 
-												 struct stat& st);
-	BmMailRef( BmMailRefList* model, entry_ref &eref, struct stat& st);
+	static BmRef<BmMailRef> CreateInstance( BmMailRefList* model, entry_ref &eref, 
+												 		 struct stat& st);
 	BmMailRef( BMessage* archive, BmMailRefList* model);
 	virtual ~BmMailRef();
 
 	// native methods:
 	void Status( const char* s);
-	BmRef<BmMailRef> DetachedDuplicate() const;
+	bool ReadAttributes( const struct stat* statInfo = NULL);
+	void ResyncFromDisk();
 
 	// overrides of archivable base:
 	status_t Archive( BMessage* archive, bool deep = true) const;
 	int16 ArchiveVersion() const			{ return nArchiveVersion; }
 
 	// getters:
-	const entry_ref& EntryRef() const 		{ return mEntryRef; }
-	const entry_ref* EntryRefPtr() const	{ return &mEntryRef; }
-	const char* TrackerName() const			{ return mEntryRef.name; }
-	const ino_t& Inode() const					{ return mInode; }
-	status_t InitCheck()	const					{ return mInitCheck; }
-	const BString& Account() const 			{ return mAccount; }
-	const BString& Cc() const 					{ return mCc; }
-	const BString& From() const 				{ return mFrom; }
-	const BString& Name() const				{ return mName; }
-	const BString& Priority() const 			{ return mPriority; }
-	const BString& ReplyTo() const 			{ return mReplyTo; }
-	const BString& Status() const 			{ return mStatus; }
-	const BString& Subject() const 			{ return mSubject; }
-	const BString& To() const 					{ return mTo; }
-	const time_t& When() const 				{ return mWhen; }
-	const BString& WhenString() const 		{ return mWhenString; }
-	const time_t& Created() const 			{ return mCreated; }
-	const BString& CreatedString() const 	{ return mCreatedString; }
-	const off_t& Size() const 					{ return mSize; }
-	const BString& SizeString() const 		{ return mSizeString; }
-	const bool& HasAttachments() const 		{ return mHasAttachments; }
-	const bool IsNew() const					{ return mStatus == "New"; }
+	inline const entry_ref& EntryRef() const 		{ return mEntryRef; }
+	inline const entry_ref* EntryRefPtr() const	{ return &mEntryRef; }
+	inline const char* TrackerName() const			{ return mEntryRef.name; }
+	inline const ino_t& Inode() const				{ return mInode; }
+	inline status_t InitCheck()	const				{ return mInitCheck; }
+	inline const BString& Account() const 			{ return mAccount; }
+	inline const BString& Cc() const 				{ return mCc; }
+	inline const BString& From() const 				{ return mFrom; }
+	inline const BString& Name() const				{ return mName; }
+	inline const BString& Priority() const 		{ return mPriority; }
+	inline const BString& ReplyTo() const 			{ return mReplyTo; }
+	inline const BString& Status() const 			{ return mStatus; }
+	inline const BString& Subject() const 			{ return mSubject; }
+	inline const BString& To() const 				{ return mTo; }
+	inline const time_t& When() const 				{ return mWhen; }
+	inline const BString& WhenString() const 		{ return mWhenString; }
+	inline const time_t& Created() const 			{ return mCreated; }
+	inline const BString& CreatedString() const 	{ return mCreatedString; }
+	inline const off_t& Size() const 				{ return mSize; }
+	inline const BString& SizeString() const 		{ return mSizeString; }
+	inline const bool& HasAttachments() const 	{ return mHasAttachments; }
+	inline const bool IsNew() const					{ return mStatus == "New"; }
 
 	// setters:
-	void EntryRef( entry_ref &e) 				{ mEntryRef = e; }
+	inline void EntryRef( entry_ref &e) 			{ mEntryRef = e; }
 
 	// flags indicating which parts are to be updated:
 	static const BmUpdFlags UPD_STATUS	= 1<<1;
+
+protected:
+	BmMailRef( BmMailRefList* model, entry_ref &eref, struct stat& st);
 
 private:
 	// the following members will be archived as part of BmFolderList:

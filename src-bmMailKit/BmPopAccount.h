@@ -67,35 +67,35 @@ public:
 	int16 ArchiveVersion() const			{ return nArchiveVersion; }
 
 	// getters:
-	const BString &AuthMethod() const	{ return mAuthMethod; }
-	bool CheckMail() const 					{ return mCheckMail; }
-	bool DeleteMailFromServer() const	{ return mDeleteMailFromServer; }
-	const BString &MailAddr() const 		{ return mMailAddr; }
-	bool MarkedAsDefault() const			{ return mMarkedAsDefault; }
-	const BString &Name() const 			{ return Key(); }
-	const BString &Password() const 		{ return mPassword; }
-	const BString &POPServer() const		{ return mPOPServer; }
-	int16 PortNr() const 					{ return mPortNr; }
-	bool PwdStoredOnDisk() const			{ return mPwdStoredOnDisk; }
-	const BString &RealName() const 		{ return mRealName; }
-	const BString &SignatureName() const	 { return mSignatureName; }
-	const BString &SMTPAccount() const	{ return mSMTPAccount; }
-	const BString &Username() const 		{ return mUsername; }
+	inline const BString &AuthMethod() const	{ return mAuthMethod; }
+	inline bool CheckMail() const 				{ return mCheckMail; }
+	inline bool DeleteMailFromServer() const	{ return mDeleteMailFromServer; }
+	inline const BString &MailAddr() const 	{ return mMailAddr; }
+	inline bool MarkedAsDefault() const			{ return mMarkedAsDefault; }
+	inline const BString &Name() const 			{ return Key(); }
+	inline const BString &Password() const 	{ return mPassword; }
+	inline const BString &POPServer() const	{ return mPOPServer; }
+	inline int16 PortNr() const 					{ return mPortNr; }
+	inline bool PwdStoredOnDisk() const			{ return mPwdStoredOnDisk; }
+	inline const BString &RealName() const 	{ return mRealName; }
+	inline const BString &SignatureName() const	 { return mSignatureName; }
+	inline const BString &SMTPAccount() const	{ return mSMTPAccount; }
+	inline const BString &Username() const 	{ return mUsername; }
 
 	// setters:
-	void AuthMethod( const BString &s) 	{ mAuthMethod = s; }
-	void CheckMail( bool b) 				{ mCheckMail = b; }
-	void DeleteMailFromServer( bool b)	{ mDeleteMailFromServer = b; }
-	void MailAddr( const BString &s) 	{ mMailAddr = s; }
-	void MarkedAsDefault( bool b)			{ mMarkedAsDefault = b; }
-	void Password( const BString &s) 	{ mPassword = s; }
-	void POPServer( const BString &s)	{ mPOPServer = s; }
-	void PortNr( int16 i) 					{ mPortNr = i; }
-	void PwdStoredOnDisk( bool b)			{ mPwdStoredOnDisk = b; }
-	void RealName( const BString &s) 	{ mRealName = s; }
-	void SignatureName( const BString &s)	 { mSignatureName = s; }
-	void SMTPAccount( const BString &s)	{ mSMTPAccount = s; }
-	void Username( const BString &s) 	{ mUsername = s; }
+	inline void AuthMethod( const BString &s) { mAuthMethod = s; }
+	inline void CheckMail( bool b) 				{ mCheckMail = b; }
+	inline void DeleteMailFromServer( bool b)	{ mDeleteMailFromServer = b; }
+	inline void MailAddr( const BString &s) 	{ mMailAddr = s; }
+	inline void MarkedAsDefault( bool b)		{ mMarkedAsDefault = b; }
+	inline void Password( const BString &s) 	{ mPassword = s; }
+	inline void POPServer( const BString &s)	{ mPOPServer = s; }
+	inline void PortNr( int16 i) 					{ mPortNr = i; }
+	inline void PwdStoredOnDisk( bool b)		{ mPwdStoredOnDisk = b; }
+	inline void RealName( const BString &s) 	{ mRealName = s; }
+	inline void SignatureName( const BString &s)	 { mSignatureName = s; }
+	inline void SMTPAccount( const BString &s){ mSMTPAccount = s; }
+	inline void Username( const BString &s) 	{ mUsername = s; }
 
 	bool GetPOPAddress( BNetAddress* addr) const;
 

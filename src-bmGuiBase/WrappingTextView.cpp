@@ -13,6 +13,8 @@
 //ColumnListView source, including modified versions, but keep this documentation and license with it.
 
 
+#include <Looper.h>
+#include <Message.h>
 #include <ScrollBar.h>
 #include <StringView.h>
 
@@ -26,12 +28,15 @@ WrappingTextView::WrappingTextView(BRect a_frame,const char* a_name,int32 a_resi
 	m_modified = false;
 	m_modified_disabled = false;
 	m_fixed_width = 0;
+	m_modification_msg = NULL;
 	ResetTextRect();
 }	
 
 
 WrappingTextView::~WrappingTextView()
-{ }
+{ 
+	delete m_modification_msg;
+}
 
 
 void WrappingTextView::DetachedFromWindow()
@@ -76,6 +81,14 @@ void WrappingTextView::InsertText(const char *a_text, int32 a_length, int32 a_of
 void WrappingTextView::Modified()
 {
 	m_modified = true;
+	if (m_modification_msg && Looper())
+		Looper()->PostMessage( m_modification_msg);
+}
+
+void WrappingTextView::SetModificationMessage( BMessage* msg)
+{
+	delete m_modification_msg;
+	m_modification_msg = msg;
 }
 
 

@@ -1126,35 +1126,24 @@ int32 ColumnListView::DetermineSortedPosHierarchical( CLVListItem* item, uint32 
 		return startIndex;
 	if (!fCompare || !SortDepth)
 		return ((int32)ThisLevelItems.LastItem())+1;
-	int32 currPos = numItems / 2;
+	int32 currPos = numItems/2;
 	int32 lb = 0;
 	int32 ub = numItems-1;
-	int32 offs = 1;
-	int32 last_offs = 1;
-	bool first = true;
-	while( (ub-lb > 0 && last_offs > 0) || first) {
-		first = false;
+	while( lb<=ub ) {
 		int CompareResult = 0;
 		for(int32 SortIteration = 0; SortIteration < SortDepth && CompareResult == 0; SortIteration++)
 		{
 			CLVColumn* Column = (CLVColumn*)fSortKeyList.ItemAt(SortIteration);
-			CompareResult = fCompare(item,(CLVListItem*)ItemAt((int32)ThisLevelItems.ItemAt(currPos)),fColumnList.IndexOf(Column),Column->Flags());
+			CompareResult = fCompare(item,(CLVListItem*)FullListItemAt((int32)ThisLevelItems.ItemAt(currPos)),fColumnList.IndexOf(Column),Column->Flags());
 			if(Column->fSortMode == Descending)
 				CompareResult = 0-CompareResult;
 		}
-		last_offs = offs;
 		if (CompareResult >= 0) {
-			lb = currPos;
-			offs = (ub-currPos) / 2;
-			currPos += offs ? offs : 1;
-			if (currPos > numItems)
-				currPos = numItems;
+			lb = currPos+1;
+			currPos = MIN((ub+lb+1) / 2, numItems);
 		} else {
-			ub = currPos;
-			offs = (currPos-lb) / 2;
-			currPos -= offs ? offs : 1;
-			if (currPos < 0)
-				currPos = 0;
+			ub = currPos-1;
+			currPos = MAX((ub+lb+1) / 2, 0);
 		}
 	}
 	if (currPos == numItems)
@@ -1197,14 +1186,10 @@ int32 ColumnListView::DetermineSortedPos(CLVListItem* item)
 	int32 numItems = FullListCountItems();
 	if (!numItems || !fCompare || !SortDepth)
 		return numItems;
-	int32 currPos = numItems / 2;
+	int32 currPos = numItems/2;
 	int32 lb = 0;
 	int32 ub = numItems-1;
-	int32 offs = 1;
-	int32 last_offs = 1;
-	bool first = true;
-	while( (ub-lb > 0 && last_offs > 0) || first) {
-		first = false;
+	while( lb<=ub ) {
 		int CompareResult = 0;
 		for(int32 SortIteration = 0; SortIteration < SortDepth && CompareResult == 0; SortIteration++)
 		{
@@ -1213,19 +1198,12 @@ int32 ColumnListView::DetermineSortedPos(CLVListItem* item)
 			if(Column->fSortMode == Descending)
 				CompareResult = 0-CompareResult;
 		}
-		last_offs = offs;
 		if (CompareResult >= 0) {
-			lb = currPos;
-			offs = (ub-currPos) / 2;
-			currPos += offs ? offs : 1;
-			if (currPos > numItems)
-				currPos = numItems;
+			lb = currPos+1;
+			currPos = MIN((ub+lb+1) / 2, numItems);
 		} else {
-			ub = currPos;
-			offs = (currPos-lb) / 2;
-			currPos -= offs ? offs : 1;
-			if (currPos < 0)
-				currPos = 0;
+			ub = currPos-1;
+			currPos = MAX((ub+lb+1) / 2, 0);
 		}
 	}
 	return currPos;

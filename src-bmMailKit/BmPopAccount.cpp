@@ -164,10 +164,8 @@ BmPopAccountList* BmPopAccountList::CreateInstance() {
 		-	default constructor, creates empty list
 \*------------------------------------------------------------------------------*/
 BmPopAccountList::BmPopAccountList()
-	:	inherited( "PopAccountList")
+	:	inherited( "PopAccountList") 
 {
-	// ugly HACK to ensure that add-messages are being sent during Job:
-	mFrozenCount = -100;						
 }
 
 /*------------------------------------------------------------------------------*\

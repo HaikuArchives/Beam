@@ -64,7 +64,8 @@ status_t BmMailHeaderView::Unarchive( BMessage* archive, bool deep=true) {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmMailHeaderView::ShowHeader( BmMailHeader* header, bool invalidate) {
-	mMailHeader = header;
+	if (mMailHeader != header)
+		mMailHeader = header;
 	float height = 0;
 	Regexx rx;
 	if (header) {
@@ -256,17 +257,17 @@ void BmMailHeaderView::MessageReceived( BMessage* msg) {
 		switch( msg->what) {
 			case BM_HEADERVIEW_SMALL: {
 				mDisplayMode = 0;
-				ShowHeader( mMailHeader);
+				ShowHeader( mMailHeader.Get());
 				break;
 			}
 			case BM_HEADERVIEW_LARGE: {
 				mDisplayMode = 1;
-				ShowHeader( mMailHeader);
+				ShowHeader( mMailHeader.Get());
 				break;
 			}
 			case BM_HEADERVIEW_FULL: {
 				mDisplayMode = 2;
-				ShowHeader( mMailHeader);
+				ShowHeader( mMailHeader.Get());
 				break;
 			}
 			default:

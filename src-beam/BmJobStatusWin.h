@@ -56,8 +56,8 @@ public:
 	void MessageReceived( BMessage* msg);
 
 	// getters:
-	int MSecsBeforeShow()					{ return MAX(10,mMSecsBeforeShow); }
-	int MSecsBeforeRemove()					{ return MAX(10,mMSecsBeforeRemove); }
+	inline int MSecsBeforeShow()			{ return MAX(0,mMSecsBeforeShow); }
+	inline int MSecsBeforeRemove()		{ return MAX(0,mMSecsBeforeRemove); }
 
 protected:
 	int mMSecsBeforeShow;
@@ -222,7 +222,7 @@ private:
 	void AddJob( BMessage* msg);
 	void RemoveJob( const char* name);
 
-	JobMap mActiveJobs;						// list of known jobs (some may be inactive)
+	JobMap mActiveJobs;						// list of known jobs
 	VGroup* mOuterGroup;						// the outmost view that the connection-interfaces live in
 	BLooper* mInvokingLooper;				// the looper we will tell that we are finished
 

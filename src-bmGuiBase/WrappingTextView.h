@@ -35,6 +35,8 @@ class WrappingTextView : public BTextView
 	public:
 		WrappingTextView(BRect a_frame,const char* a_name,int32 a_resize_mode,int32 a_flags);
 		virtual ~WrappingTextView();
+	
+		void SetModificationMessage( BMessage* msg);
 
 		//BTextView overrides
 		virtual void DetachedFromWindow();
@@ -60,6 +62,7 @@ class WrappingTextView : public BTextView
 		bool m_modified_disabled;
 		float m_vertical_offset;
 		int32 m_fixed_width;
+		BMessage* m_modification_msg;
 };
 
 #endif

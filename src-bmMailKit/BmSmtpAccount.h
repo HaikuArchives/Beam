@@ -63,25 +63,25 @@ public:
 	int16 ArchiveVersion() const			{ return nArchiveVersion; }
 
 	// getters:
-	const BString &Name() const 			{ return Key(); }
-	const BString &Username() const 		{ return mUsername; }
-	const BString &Password() const 		{ return mPassword; }
-	bool PwdStoredOnDisk() const			{ return mPwdStoredOnDisk; }
-	const BString &SMTPServer() const	{ return mSMTPServer; }
-	const BString &DomainToAnnounce() const 	{ return mDomainToAnnounce; }
-	const BString &AuthMethod() const 	{ return mAuthMethod; }
-	int16 PortNr() const 					{ return mPortNr; }
-	const BString &AccForSmtpAfterPop() const 	{ return mAccForSmtpAfterPop; }
+	inline const BString &Name() const 			{ return Key(); }
+	inline const BString &Username() const 	{ return mUsername; }
+	inline const BString &Password() const 	{ return mPassword; }
+	inline bool PwdStoredOnDisk() const			{ return mPwdStoredOnDisk; }
+	inline const BString &SMTPServer() const	{ return mSMTPServer; }
+	inline const BString &DomainToAnnounce() const 	{ return mDomainToAnnounce; }
+	inline const BString &AuthMethod() const 	{ return mAuthMethod; }
+	inline int16 PortNr() const 					{ return mPortNr; }
+	inline const BString &AccForSmtpAfterPop() const 	{ return mAccForSmtpAfterPop; }
 
 	// setters:
-	void Username( const BString &s) 	{ mUsername = s; }
-	void Password( const BString &s) 	{ mPassword = s; }
-	void PwdStoredOnDisk( bool b)			{ mPwdStoredOnDisk = b; }
-	void SMTPServer( const BString &s)	{ mSMTPServer = s; }
-	void DomainToAnnounce( const BString &s) 	{ mDomainToAnnounce = s; }
-	void AuthMethod( const BString &s) 	{ mAuthMethod = s; }
-	void PortNr( int16 i) 					{ mPortNr = i; }
-	void AccForSmtpAfterPop( const BString &s) 	{ mAccForSmtpAfterPop = s; }
+	inline void Username( const BString &s) 	{ mUsername = s; }
+	inline void Password( const BString &s) 	{ mPassword = s; }
+	inline void PwdStoredOnDisk( bool b)		{ mPwdStoredOnDisk = b; }
+	inline void SMTPServer( const BString &s)	{ mSMTPServer = s; }
+	inline void DomainToAnnounce( const BString &s) 	{ mDomainToAnnounce = s; }
+	inline void AuthMethod( const BString &s) { mAuthMethod = s; }
+	inline void PortNr( int16 i) 					{ mPortNr = i; }
+	inline void AccForSmtpAfterPop( const BString &s) 	{ mAccForSmtpAfterPop = s; }
 
 	bool GetSMTPAddress( BNetAddress* addr) const;
 

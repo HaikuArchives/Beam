@@ -20,6 +20,7 @@ class BmMenuControl;
 class BmToolbarButton;
 class BmTextControl;
 class CLVContainerView;
+class MCheckBox;
 class MPictureButton;
 
 class BmMailEditWin : public BmWindow
@@ -28,15 +29,15 @@ class BmMailEditWin : public BmWindow
 	friend class BmMailViewFilter;
 
 public:
-	// creator-func, c'tors and d'tor:
-	static BmMailEditWin* CreateInstance();
-	BmMailEditWin();
+	// creator-funcs, c'tors and d'tor:
+	static BmMailEditWin* CreateInstance( BmMailRef* mailRef=NULL);
+	static BmMailEditWin* CreateInstance( BmMail* mail=NULL);
+	BmMailEditWin( BmMailRef* mailRef=NULL, BmMail* mail=NULL);
 	~BmMailEditWin();
 
 	// native methods:
 	void EditMail( BmMailRef* ref);
 	void EditMail( BmMail* mail);
-	void SetEditMode( int32 mode);
 
 	// overrides of BWindow base:
 	void MessageReceived( BMessage*);
@@ -44,8 +45,7 @@ public:
 	void Quit();
 	
 	// getters:
-	bool IsInRawMode() const				{ return mRawMode; }
-	BmMail* CurrMail() const;
+	BmRef<BmMail> CurrMail() const;
 
 private:
 	BmMailViewContainer* CreateMailView( minimax minmax, BRect frame);
@@ -78,34 +78,18 @@ private:
 	BmMenuControl* mCharsetControl;
 	BmMenuControl* mSmtpControl;
 	
+	MCheckBox* mEditHeaderControl;
+
 	bool mShowDetails;
-	bool mRawMode;
 	MView* mOuterGroup;
 	bool mModified;
+	uint32 mModificationID;
 
 	// Hide copy-constructor and assignment:
 	BmMailEditWin( const BmMailEditWin&);
 	BmMailEditWin operator=( const BmMailEditWin&);
 };
 
-
-
-class BmMailViewFilter : public BMessageFilter {
-	typedef BMessageFilter inherited;
-public:
-	// c'tor:
-	BmMailViewFilter( int32 msgCmd, BmMailEditWin* editWin);
-	
-	// overrides of message-filter-base:
-	filter_result Filter( BMessage* msg, BHandler** target);
-
-private:
-	BmMailEditWin* mEditWin;
-
-	// Hide copy-constructor and assignment:
-	BmMailViewFilter( const BmMailViewFilter&);
-	BmMailViewFilter operator=( const BmMailViewFilter&);
-};
 
 
 #endif

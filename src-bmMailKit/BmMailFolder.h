@@ -58,18 +58,17 @@ public:
 	int16 ArchiveVersion() const			{ return nArchiveVersion; }
 
 	// getters:
-	const entry_ref& EntryRef() const 	{ return mEntryRef; }
-	const entry_ref* EntryRefPtr() const{ return &mEntryRef; }
-	const ino_t& Inode() const				{ return mInode; }
-	const int NewMailCount() const		{ return mNewMailCount; }
-	const int NewMailCountForSubfolders() const		{ return mNewMailCountForSubfolders; }
-	const time_t LastModified() const	{ return mLastModified; }
-	BmMailFolder* Parent() 					{ return dynamic_cast<BmMailFolder*>( mParent); }
-	BmMailRefList* MailRefList();
-	const BString& Name() const			{ return mName; }
+	inline const entry_ref& EntryRef() const 		{ return mEntryRef; }
+	inline const entry_ref* EntryRefPtr() const	{ return &mEntryRef; }
+	inline const ino_t& Inode() const				{ return mInode; }
+	inline const int NewMailCount() const			{ return mNewMailCount; }
+	inline const int NewMailCountForSubfolders() const		{ return mNewMailCountForSubfolders; }
+	inline const time_t LastModified() const		{ return mLastModified; }
+	BmRef<BmMailRefList> MailRefList();
+	inline const BString& Name() const				{ return mName; }
 
 	// setters:
-	void EntryRef( entry_ref &e) 			{ mEntryRef = e; mName = e.name; }
+	inline void EntryRef( entry_ref &e) 			{ mEntryRef = e; mName = e.name; }
 
 	// archival-fieldnames:
 	static const char* const MSG_ENTRYREF = 		"bm:eref";

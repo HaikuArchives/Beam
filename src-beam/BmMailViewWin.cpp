@@ -15,11 +15,12 @@
 
 #include "PrefilledBitmap.h"
 
-#include "Beam.h"
+#include "BmApp.h"
 #include "BmBasics.h"
 #include "BmEncoding.h"
 	using namespace BmEncoding;
 #include "BmLogHandler.h"
+#include "BmMailRef.h"
 #include "BmMailView.h"
 #include "BmMailViewWin.h"
 #include "BmMsgTypes.h"
@@ -37,9 +38,8 @@
 		-	creates a new mail-view window
 		-	initialiazes the window's dimensions by reading its archive-file (if any)
 \*------------------------------------------------------------------------------*/
-BmMailViewWin* BmMailViewWin::CreateInstance() 
-{
-	BmMailViewWin* win = new BmMailViewWin;
+BmMailViewWin* BmMailViewWin::CreateInstance( BmMailRef* mailRef) {
+	BmMailViewWin* win = new BmMailViewWin( mailRef);
 	win->ReadStateInfo();
 	return win;
 }
@@ -48,11 +48,12 @@ BmMailViewWin* BmMailViewWin::CreateInstance()
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmMailViewWin::BmMailViewWin()
+BmMailViewWin::BmMailViewWin( BmMailRef* mailRef)
 	:	inherited( "MailViewWin", BRect(50,50,800,600), "View Mail", B_TITLED_WINDOW_LOOK, 
 					  B_NORMAL_WINDOW_FEEL, B_ASYNCHRONOUS_CONTROLS)
 {
 	CreateGUI();
+	ShowMail( mailRef);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -104,6 +105,10 @@ void BmMailViewWin::CreateGUI() {
 			0
 		);
 		
+	// temporarily disabled:
+	mRedirectButton->SetEnabled( false);
+	mPrintButton->SetEnabled( false);
+
 	AddChild( dynamic_cast<BView*>(mOuterGroup));
 }
 
@@ -180,6 +185,26 @@ BmMailViewContainer* BmMailViewWin::CreateMailView( minimax minmax, BRect frame)
 void BmMailViewWin::MessageReceived( BMessage* msg) {
 	try {
 		switch( msg->what) {
+			case BMM_NEW_MAIL: {
+				be_app_messenger.SendMessage( msg);
+				break;
+			}
+			case BMM_REPLY:
+			case BMM_REPLY_ALL:
+			case BMM_FORWARD_ATTACHED:
+			case BMM_FORWARD_INLINE:
+			case BMM_FORWARD_INLINE_ATTACH: {
+				BmRef<BmMail> mail = mMailView->CurrMail();
+				if (mail) {
+					const BmRef<BmMailRef> mailRef = mail->MailRef();
+					if (mailRef) {
+						BMessage msg2( msg->what);
+						msg2.AddPointer( BmApplication::MSG_MAILREF, static_cast< void*>( mailRef.Get()));
+						be_app_messenger.SendMessage( &msg2, &msg2);
+					}
+				}
+				break;
+			}
 			case B_COPY:
 			case B_CUT: 
 			case B_PASTE: 
@@ -204,8 +229,8 @@ void BmMailViewWin::MessageReceived( BMessage* msg) {
 	ShowMail()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmMailViewWin::ShowMail( BmMailRef* ref) {
-	mMailView->ShowMail( ref);
+void BmMailViewWin::ShowMail( BmMailRef* mailRef) {
+	mMailView->ShowMail( mailRef);
 }
 
 /*------------------------------------------------------------------------------*\

@@ -8,65 +8,94 @@
 
 #include <stdio.h>
 
-//#include <typeinfo>
+#include <map>
+#include <typeinfo>
 
+#include <Autolock.h>
+#include <Locker.h>
 #include <String.h>
 
 #include "BmBasics.h"
 #include "BmLogHandler.h"
 
 
-#ifdef BM_REF_DEBUGGING
-#include <set>
-class BmRefObj;
-extern set<BmRefObj*> BM_REF_LIST;
-void BM_PrintRefsLeft();
-#endif
-
+template <class T> class BmRef;
+class BmProxy;
 /*------------------------------------------------------------------------------*\
 	BmRefObj
 		-	an object that can be reference-managed
 \*------------------------------------------------------------------------------*/
 class BmRefObj {
+	typedef map<BString,BmProxy*> BmProxyMap;
 
 public:
 	BmRefObj() : mRefCount(0) 				{}
-	BmRefObj( const BmRefObj&) : mRefCount( 0) {}
 	virtual ~BmRefObj() 						{}
 
 	virtual const BString& RefName() const = 0;
+	virtual const char* ProxyName() const
+													{ return typeid(*this).name(); }
 
 	// native methods:
 	void AddRef();
 	void RemoveRef();
-	BString RefPrintHex();
+	BString RefPrintHex() const;
+	
+	// getters:
+	inline int32 RefCount() const			{ return mRefCount; }
 
-	int32 mRefCount;
+	// statics:
+	static BmProxy* GetProxy( const char* const proxyName);
+#ifdef BM_REF_DEBUGGING
+	static void PrintRefsLeft();
+#endif
 
 private:
-	// Hide assignment:
+	int32 mRefCount;
+	static BmProxyMap nProxyMap;
+
+	// Hide copy-constructor and assignment:
+	BmRefObj( const BmRefObj&);
 	BmRefObj operator=( const BmRefObj&);
 };
 
+
+
+typedef map<BString,BmRefObj*> BmObjectMap;
+/*------------------------------------------------------------------------------*\
+	BmProxy
+		-	
+\*------------------------------------------------------------------------------*/
+class BmProxy {
+
+public:
+	inline BmProxy( BString name) : Locker(name.String()) {}
+	BLocker Locker;
+	BmObjectMap ObjectMap;
+	BmRefObj* FetchObject( const BString& key);
+};
+
+
+
 /*------------------------------------------------------------------------------*\
 	BmRef
-		-	smart-pointer class that implements reference-counting (via BmRefManager)
+		-	smart-pointer class that implements reference-counting (via BmRefObj)
 \*------------------------------------------------------------------------------*/
 template <class T> class BmRef {
-private:
+
 	T* mPtr;
 
 public:
-	BmRef(T* p = 0) : mPtr( p) {
+	inline BmRef(T* p = 0) : mPtr( p) {
 		AddRef( mPtr);
 	}
-	BmRef( const BmRef<T>& ref) : mPtr( ref.Get()) {
+	inline BmRef( const BmRef<T>& ref) : mPtr( ref.Get()) {
 		AddRef( mPtr);
 	}
-	~BmRef() {
+	inline ~BmRef() {
 		RemoveRef( mPtr);
 	}
-	BmRef<T>& operator= ( const BmRef<T>& ref) {
+	inline BmRef<T>& operator= ( const BmRef<T>& ref) {
 		if (mPtr != ref.Get()) {
 			// in order to behave correctly when being called recursively,
 			// we set new value before deleting old, so that a recursive call
@@ -78,7 +107,7 @@ public:
 		}
 		return *this;
 	}
-	BmRef<T>& operator= ( T* p) {
+	inline BmRef<T>& operator= ( T* p) {
 		if (mPtr != p) {
 			// in order to behave correctly when being called recursively,
 			// we set new value before deleting old, so that a recursive call
@@ -90,10 +119,16 @@ public:
 		}
 		return *this;
 	}
-	bool operator== ( const BmRef<T>& ref) {
+	inline bool operator== ( const BmRef<T>& ref) {
 		return mPtr == ref.Get();
 	}
-	void Clear() {
+	inline bool operator== ( const T* p) {
+		return mPtr == p;
+	}
+	inline bool operator!= ( const T* p) {
+		return mPtr != p;
+	}
+	inline void Clear() {
 		if (mPtr) {
 			// in order to behave correctly when being called recursively,
 			// we set new value before deleting old, so that a recursive call
@@ -103,14 +138,60 @@ public:
 			RemoveRef( p);
 		}
 	}
-	T* operator->() const   				{ return mPtr; }
-	T* Get() const 							{ return mPtr; }
-	operator bool() const 					{ return mPtr!=NULL; }
-private:
-	void AddRef(T* p) const   				{ if (p)	p->AddRef(); }
-	void RemoveRef(T* p) const 			{ if (p)	p->RemoveRef(); }
+	inline T* operator->() const   		{ return mPtr; }
+	inline T* Get() const 					{ return mPtr; }
+	inline operator bool() const 			{ return mPtr!=NULL; }
 
+private:
+	inline void AddRef(T* p) const   	{ if (p)	p->AddRef(); }
+	inline void RemoveRef(T* p) const 	{ if (p)	p->RemoveRef(); }
 };
+
+
+
+/*------------------------------------------------------------------------------*\
+	BmWeakRef
+		-	smart-pointer class that implements weak-referencing (via a set of BmRefObj)
+		-	a weak reference is not included in reference-counting, but it transparently
+			checks whether the weakly referenced object still exists or not.
+\*------------------------------------------------------------------------------*/
+template <class T> class BmWeakRef {
+
+	BString mName;
+	const char* mProxyName;
+
+public:
+	inline BmWeakRef(T* p = 0) 
+	:	mName( p ? p->RefName() : "") 
+	,	mProxyName( p ? p->ProxyName() : "") 
+	{
+		BM_LOG2( BM_LogUtil, BString("RefManager: weak-reference to <") << mName << "> created");
+	}
+	inline BmWeakRef<T>& operator= ( T* p) {
+		mName = p ? p->RefName() : NULL;
+		mProxyName = p ? p->ProxyName() : "";
+		return *this;
+	}
+	inline bool operator== ( const T* p) {
+		return p ? p->RefName() == mName : false;
+	}
+	inline bool operator!= ( const T* p) {
+		return p ? p->RefName() != mName : true;
+	}
+	inline operator bool() const 			{ return Get(); }
+	inline BmRef<T> Get() const 			{
+		BM_LOG2( BM_LogUtil, BString("RefManager: weak-reference to <") << mName << "> dereferenced");
+		BmProxy* proxy = BmRefObj::GetProxy( mProxyName);
+		if (proxy) {
+			BAutolock lock( &proxy->Locker);
+			return static_cast<T*>(proxy->FetchObject( mName));
+		} else 
+			return NULL;
+	}
+
+private:
+};
+
 
 
 #endif

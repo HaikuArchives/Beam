@@ -105,9 +105,9 @@ bool BmMailRefList::StartJob() {
 	AddMailRef()
 		-	
 \*------------------------------------------------------------------------------*/
-BmMailRef* BmMailRefList::AddMailRef( entry_ref& eref, struct stat& st) {
-	BmMailRef* newMailRef = BmMailRef::CreateInstance( this, eref, st);
-	if (AddItemToList( newMailRef))
+BmRef<BmMailRef> BmMailRefList::AddMailRef( entry_ref& eref, struct stat& st) {
+	BmRef<BmMailRef> newMailRef( BmMailRef::CreateInstance( this, eref, st));
+	if (AddItemToList( newMailRef.Get()))
 		return newMailRef;
 	else
 		return NULL;

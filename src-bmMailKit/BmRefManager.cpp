@@ -4,42 +4,28 @@
 		$Id$
 */
 
+#include <Alert.h>
+
 #include "BmRefManager.h"
 
-#ifdef BM_REF_DEBUGGING
-set<BmRefObj*> BM_REF_LIST;
-
-void BM_PrintRefsLeft() {
-	uint32 count = BM_REF_LIST.size();
-	BM_LOG2( BM_LogUtil, BString("RefManager: active list (")<<count<<" refs)\n--------------------");
-	set<BmRefObj*>::const_iterator iter;
-	for( iter=BM_REF_LIST.begin(); iter != BM_REF_LIST.end(); ++iter) {
-		BmRefObj* ref = *iter;
-		BM_LOG2( BM_LogUtil, BString("\t") << ref->RefName() << ":"<<ref->RefPrintHex()<<"> added, ref-count is "<<ref->mRefCount);
-	}
-	BM_LOG2( BM_LogUtil, BString("--------------------"));
-}
-#endif
-
-/*------------------------------------------------------------------------------*\
-	RefPrintHex()
-		-	helper-func that prints this-pointer as hex-number
-\*------------------------------------------------------------------------------*/
-BString BmRefObj::RefPrintHex() { 
-	char buf[20]; sprintf( buf, "%p", this);	return buf;	
-}
+BmRefObj::BmProxyMap BmRefObj::nProxyMap;
 
 /*------------------------------------------------------------------------------*\
 	AddRef()
 		-	add one reference to object
 \*------------------------------------------------------------------------------*/
 void BmRefObj::AddRef() {
-	++mRefCount;
-#ifdef BM_REF_DEBUGGING
-	if (mRefCount == 1)
-		BM_REF_LIST.insert( this);
-#endif
-	BM_LOG2( BM_LogUtil, BString("RefManager: reference to <") << RefName() << ":"<<RefPrintHex()<<"> added, ref-count is "<<mRefCount);
+	BmProxy* proxy = GetProxy( ProxyName());
+	if (proxy) {
+		BAutolock lock( &proxy->Locker);
+		if (!lock.IsLocked())
+			return;
+		++mRefCount;
+		if (mRefCount == 1)
+			proxy->ObjectMap[RefName()] = this;
+		BM_LOG2( BM_LogUtil, BString("RefManager: reference to <") << RefName() << ":"<<RefPrintHex()<<"> added, ref-count is "<<mRefCount);
+	} else
+		BM_SHOWERR(BString("AddRef(): Proxy ")<<ProxyName()<<" could not be created");
 }
 
 /*------------------------------------------------------------------------------*\
@@ -48,16 +34,81 @@ void BmRefObj::AddRef() {
 			if the new reference count is zero
 \*------------------------------------------------------------------------------*/
 void BmRefObj::RemoveRef() {
-	int32 currRefCount = --mRefCount;
-	BM_LOG2( BM_LogUtil, BString("RefManager: reference to <") << RefName() << ":"<<RefPrintHex()<<"> removed, ref-count is "<<currRefCount);
-	if (currRefCount == 0) {
+	BmProxy* proxy = GetProxy( ProxyName());
+	if (proxy) {
+		BAutolock lock( &proxy->Locker);
+		int32 currRefCount = --mRefCount;
+		BM_LOG2( BM_LogUtil, BString("RefManager: reference to <") << RefName() << ":"<<RefPrintHex()<<"> removed, ref-count is "<<currRefCount);
+		if (currRefCount == 0) {
+			proxy->ObjectMap.erase( RefName());
+			// removed last reference, so we delete the object:
 #ifdef BM_REF_DEBUGGING
-		BM_REF_LIST.erase( this);
+			BM_LOG( BM_LogUtil, BString("RefManager: ... object <") << typeid(*this).name() << ":" << RefName() << ":"<<RefPrintHex()<<"> will be deleted");
+#else
+			BM_LOG( BM_LogUtil, BString("RefManager: ... object <") << RefName() << ":"<<RefPrintHex()<<"> will be deleted");
 #endif
-		// removed last reference, so we delete the object:
-		BM_LOG( BM_LogUtil, BString("RefManager: ... object <") << RefName() << ":"<<RefPrintHex()<<"> will be deleted");
-		delete this;
-	}
+			delete this;
+		}
+	} else
+		BM_SHOWERR(BString("RemoveRef(): Proxy ")<<ProxyName()<<" not found");
 }
 
+/*------------------------------------------------------------------------------*\
+	GetProxy()
+		-	
+\*------------------------------------------------------------------------------*/
+BmProxy* BmRefObj::GetProxy( const char* const proxyName) {
+	BmProxyMap::iterator iter = nProxyMap.find( proxyName);
+	if (iter == nProxyMap.end())
+		return nProxyMap[proxyName] = new BmProxy( proxyName);
+	else
+		return iter->second;
+}
+
+#ifdef BM_REF_DEBUGGING
+/*------------------------------------------------------------------------------*\
+	PrintRefsLeft()
+		-	helper-func that prints all existing references:
+\*------------------------------------------------------------------------------*/
+void BmRefObj::PrintRefsLeft() {
+	int32 count = 0;
+	BmProxyMap::const_iterator iter;
+	BM_LOG2( BM_LogUtil, BString("RefManager: active list\n--------------------"));
+	for( iter = nProxyMap.begin(); iter != nProxyMap.end(); ++iter) {
+		BmProxy* proxy = iter->second;
+		BmObjectMap::const_iterator iter2;
+		for( iter2=proxy->ObjectMap.begin(); iter2 != proxy->ObjectMap.end(); ++iter2) {
+			BmRefObj* ref = iter2->second;
+			BM_LOG2( BM_LogUtil, BString("\t<") << typeid(*ref).name() << " " << ref->RefName() << ":"<<ref->RefPrintHex()<<"> alive, ref-count is "<<ref->RefCount());
+		}
+	}
+	BM_LOG2( BM_LogUtil, BString("--------------------\n(")<<count<<" refs)\n--------------------");
+	if (count > 0)
+		(new BAlert( "", "Reference-debugging showed that there are refs still alive, check logs.", "OK"))->Go();
+}
+#endif	/* BM_REF_DEBUGGING */
+
+
+/*------------------------------------------------------------------------------*\
+	RefPrintHex()
+		-	helper-func that prints this-pointer as hex-number
+\*------------------------------------------------------------------------------*/
+BString BmRefObj::RefPrintHex() const { 
+	char buf[20]; sprintf( buf, "%p", this);	return buf;	
+}
+
+
+
+/*------------------------------------------------------------------------------*\
+	FetchObject()
+		-	
+\*------------------------------------------------------------------------------*/
+BmRefObj* BmProxy::FetchObject( const BString& key) {
+	if (Locker.IsLocked()) {
+		BmObjectMap::const_iterator iter = ObjectMap.find( key);
+		return (iter != ObjectMap.end() ? iter->second : NULL);
+	} else
+		BM_SHOWERR("FetchObject(): Proxy must be locked!");
+	return NULL;
+}
 

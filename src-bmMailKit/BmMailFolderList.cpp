@@ -184,7 +184,7 @@ void BmNodeMonitor::HandleNodeMonitorMsg( BMessage* msg) {
 								TheMailFolderList->TellModelItemUpdated( folder, BmMailFolder::UPD_NAME);
 							} else {
 								// the folder has really changed position within filesystem-tree:
-								if (oldParent && folder && oldParent != folder->Parent())
+								if (oldParent && folder && folder->Parent() != oldParent)
 									return;			// folder not there anymore (e.g. in 2nd msg for move?)
 								if (!folder) {
 									// folder was unknown before, probably because it has been moved from
@@ -314,7 +314,7 @@ bool BmMailFolderList::StartJob() {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmMailFolderList::AddNewFlag( ino_t pnode, ino_t node) {
-	BmListModelItemRef parentRef = FindItemByKey( BString()<<pnode);
+	BmRef<BmListModelItem> parentRef = FindItemByKey( BString()<<pnode);
 	BmMailFolder* parent = dynamic_cast< BmMailFolder*>( parentRef.Get());
 	mNewMailNodeMap[ node] = parent;
 	if (parent)
@@ -326,7 +326,7 @@ void BmMailFolderList::AddNewFlag( ino_t pnode, ino_t node) {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmMailFolderList::RemoveNewFlag( ino_t pnode, ino_t node) {
-	BmListModelItemRef parentRef = FindItemByKey( BString()<<pnode);
+	BmRef<BmListModelItem> parentRef = FindItemByKey( BString()<<pnode);
 	mNewMailNodeMap.erase( node);
 	BmMailFolder* parent = dynamic_cast< BmMailFolder*>( parentRef.Get());
 	if (parent)

@@ -13,6 +13,7 @@
 #include "regexx.hh"
 using namespace regexx;
 
+#include "BmApp.h"
 #include "BmBasics.h"
 #include "BmBodyPartList.h"
 #include "BmBodyPartView.h"
@@ -199,6 +200,18 @@ void BmMailView::MessageReceived( BMessage* msg) {
 				mBodyPartView->AddAttachment( msg);
 				break;
 			}
+			case B_MOUSE_WHEEL_CHANGED: {
+				if (modifiers() & B_SHIFT_KEY) {
+					bool passedOn = false;
+					if (mPartnerMailRefView && !(passedOn = msg->FindBool("bm:passed_on"))) {
+						msg->AddBool("bm:passed_on", true);
+						Looper()->PostMessage( msg, mPartnerMailRefView);
+						return;
+					}
+				}
+				inherited::MessageReceived( msg);
+				break;
+			}
 			default:
 				inherited::MessageReceived( msg);
 		}
@@ -265,7 +278,7 @@ void BmMailView::MouseDown( BPoint point) {
 void BmMailView::MouseUp( BPoint point) {
 	inherited::MouseUp( point);
 	int32 offset =  OffsetAt( point);
-	if (mClickedTextRun == TextRunInfoAt( offset)) {
+	if (mCurrMail && mClickedTextRun == TextRunInfoAt( offset)) {
 		BmTextRunInfo runInfo = mClickedTextRun->second;
 		if (runInfo.isURL) {
 			BmTextRunIter next = mClickedTextRun;
@@ -356,8 +369,8 @@ void BmMailView::LaunchURL( BString url) {
 		result = be_roster->Launch( "application/x-vnd.Be.URL.file", 1, &urlStr);
 	else if (url.ICompare( "mailto:", 7) == 0) {
 		BMessage msg(BMM_NEW_MAIL);
-		msg.AddString( "to", urlStr+7);
-		TheMainWindow->PostMessage( &msg);
+		msg.AddString( BmApplication::MSG_WHO_TO, urlStr+7);
+		bmApp->PostMessage( &msg);
 		return;
 	}
 	else result = B_ERROR;
@@ -376,15 +389,17 @@ void BmMailView::ShowMail( BmMailRef* ref, bool async) {
 	try {
 		StopJob();
 		if (!ref) {
-			DetachModel();
+			if (DataModel())
+				DetachModel();
 			mHeaderView->ShowHeader( NULL);
+			mCurrMail = NULL;
 			BMessage msg(BM_NTFY_MAIL_VIEW);
 			msg.AddBool( MSG_HAS_MAIL, false);
 			SendNotices( BM_NTFY_MAIL_VIEW, &msg);
 			return;
 		}
 		ContainerView()->SetBusy();
-		mCurrMail = new BmMail( ref);
+		mCurrMail = BmMail::CreateInstance( ref);
 		StartJob( mCurrMail.Get(), async);
 	}
 	catch( exception &err) {
@@ -403,6 +418,7 @@ void BmMailView::ShowMail( BmMail* mail, bool async) {
 		if (!mail || mail->InitCheck() != B_OK) {
 			if (DataModel())
 				DetachModel();
+			mCurrMail = NULL;
 			mHeaderView->ShowHeader( NULL);
 			BMessage msg(BM_NTFY_MAIL_VIEW);
 			msg.AddBool( MSG_HAS_MAIL, false);
@@ -451,7 +467,7 @@ void BmMailView::JobIsDone( bool completed) {
 				// highlight URLs:
 				Regexx rx;
 				int32 count;
-				if ((count = rx.exec( displayText, "(https://|ftp://|nntp://|file://|mailto:)\\S+", 
+				if ((count = rx.exec( displayText, "(https?://|ftp://|nntp://|file://|mailto:)[^][<>(){}\\~|\"\\s]+", 
 					                   Regexx::nocase|Regexx::global|Regexx::newline)) > 0) {
 					for( int i=0; i<count; ++i) {
 						int32 start = rx.match[i].start();
@@ -483,7 +499,7 @@ void BmMailView::JobIsDone( bool completed) {
 		SetText( displayText.String(), displayText.Length(), textRunArray);
 		free( textRunArray);
 		BM_LOG2( BM_LogMailParse, BString("done, mail is visible"));
-		mHeaderView->ShowHeader( mCurrMail->Header());
+		mHeaderView->ShowHeader( mCurrMail->Header().Get());
 		ContainerView()->UnsetBusy();
 		ScrollTo( 0,0);
 		if (mCurrMail->Status() == BM_MAIL_STATUS_NEW)
@@ -492,6 +508,7 @@ void BmMailView::JobIsDone( bool completed) {
 		msg.AddBool( MSG_HAS_MAIL, true);
 		SendNotices( BM_NTFY_MAIL_VIEW, &msg);
 	} else {
+		BM_LOG2( BM_LogMailParse, BString("setting empty mail into textview"));
 		mHeaderView->ShowHeader( NULL);
 		SetText( "");
 		ContainerView()->UnsetBusy();
@@ -599,15 +616,12 @@ void BmMailView::ShowMenu( BPoint point) {
 		item->SetTarget( mBodyPartView);
 		item->SetMarked( mBodyPartView->ShowAllParts());
 		theMenu->AddItem( item);
-	}
+		item = new BMenuItem( "Show Raw Message", new BMessage( ShowRaw()
+									 ? BM_MAILVIEW_SHOWCOOKED : BM_MAILVIEW_SHOWRAW));
+		item->SetTarget( this);
+		item->SetMarked( ShowRaw());
+		theMenu->AddItem( item);
 
-	item = new BMenuItem( mOutbound ? "Edit Raw Message": "Show Raw Message", new BMessage( ShowRaw()
-								 ? BM_MAILVIEW_SHOWCOOKED : BM_MAILVIEW_SHOWRAW));
-	item->SetTarget( this);
-	item->SetMarked( ShowRaw());
-	theMenu->AddItem( item);
-
-	if (!mOutbound) {
 		item = new BMenuItem( "Separate Inlines", new BMessage( ShowInlinesSeparately() 
 									 ? BM_MAILVIEW_SHOWINLINES_CONCATENATED
 									 : BM_MAILVIEW_SHOWINLINES_SEPARATELY));

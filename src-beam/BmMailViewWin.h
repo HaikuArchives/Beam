@@ -20,12 +20,12 @@ class BmMailViewWin : public BmWindow
 
 public:
 	// creator-func, c'tors and d'tor:
-	static BmMailViewWin* CreateInstance();
-	BmMailViewWin();
+	static BmMailViewWin* CreateInstance( BmMailRef* mailRef=NULL);
+	BmMailViewWin( BmMailRef* mailRef=NULL);
 	~BmMailViewWin();
 
 	// native methods:
-	void ShowMail( BmMailRef* ref);
+	void ShowMail( BmMailRef* mailRef);
 
 	// overrides of BWindow base:
 	void MessageReceived( BMessage*);

@@ -45,7 +45,7 @@ public:
 	BmSmtp( const BString& name, BmSmtpAccount* account);
 	virtual ~BmSmtp();
 
-	BString Name() const						{ return ModelName(); }
+	inline BString Name() const			{ return ModelName(); }
 
 	bool StartJob();
 
@@ -102,7 +102,7 @@ private:
 	bool CheckForPositiveAnswer();
 	bool GetAnswer();
 	int32 ReceiveBlock( char* buffer, int32 max);
-	void SendCommand( BString cmd, BString secret="");
+	void SendCommand( BString cmd, BString secret="", bool isMailData=false);
 
 	bool mServerMayHaveSizeLimit;
 	bool mServerSupportsDSN;

@@ -13,10 +13,9 @@
 
 #include "UserResizeSplitView.h"
 
-#include "Beam.h"
+#include "BmApp.h"
 #include "BmBasics.h"
 #include "BmLogHandler.h"
-#include "BmMailEditWin.h"
 #include "BmMailFolderList.h"
 #include "BmMailFolderView.h"
 #include "BmMailRefView.h"
@@ -26,7 +25,6 @@
 #include "BmPopAccount.h"
 #include "BmPrefs.h"
 #include "BmResources.h"
-#include "BmSmtpAccount.h"
 #include "BmToolbarButton.h"
 #include "BmUtil.h"
 
@@ -53,6 +51,7 @@ BmMainMenuBar::BmMainMenuBar()
 void BmMainMenuBar::MessageReceived( BMessage* msg) {
 	try {
 		switch( msg->what) {
+			case BM_JOB_DONE:
 			case BM_LISTMODEL_ADD:
 			case BM_LISTMODEL_REMOVE: {
 				if (!IsMsgFromCurrentModel( msg)) break;
@@ -140,11 +139,6 @@ BmMainWindow::BmMainWindow()
 	,	mMailRefView( NULL)
 	,	mVertSplitter( NULL)
 {
-	TheMailFolderList = BmMailFolderList::CreateInstance();
-	TheSmtpAccountList = BmSmtpAccountList::CreateInstance();
-	TheSmtpAccountList->StartJob();
-	ThePopAccountList = BmPopAccountList::CreateInstance();
-
 	CreateMailFolderView( minimax(0,100,300,1E5), 120, 100);
 	CreateMailRefView( minimax(200,100,1E5,1E5), 400, 200);
 	CreateMailView( minimax(200,200,1E5,1E5), BRect(0,0,400,200));
@@ -226,9 +220,6 @@ BmMainWindow::BmMainWindow()
 		-	
 \*------------------------------------------------------------------------------*/
 BmMainWindow::~BmMainWindow() {
-	TheMailFolderList = NULL;
-	ThePopAccountList = NULL;
-	TheSmtpAccountList = NULL;
 	theInstance = NULL;
 }
 
@@ -295,6 +286,18 @@ MMenuBar* BmMainWindow::CreateMenu() {
 	}
 	menu->AddItem( new BMenuItem( "Redirect", new BMessage( BMM_REDIRECT), 'B'));
 	menu->AddSeparatorItem();
+	BMenu* statusMenu = new BMenu( "Mark Message As");
+	menu->AddItem( statusMenu);
+	const char* stats[] = {
+		"Draft",		"Forwarded",		"New",		"Pending",		"Read",		"Redirected",
+		"Replied",	"Sent",		NULL
+	};
+	for( int i=0; stats[i]; ++i) {
+		BMessage* msg = new BMessage( BMM_MARK_AS);
+		msg->AddString( BmApplication::MSG_STATUS, stats[i]);
+		statusMenu->AddItem( new BMenuItem( stats[i], msg));
+	}
+	menu->AddSeparatorItem();
 	menu->AddItem( new BMenuItem( "Apply Filter", new BMessage( BMM_FILTER)));
 	menu->AddSeparatorItem();
 	menu->AddItem( new BMenuItem( "Move To Trash", new BMessage( BMM_TRASH), 'T'));
@@ -342,7 +345,6 @@ void BmMainWindow::BeginLife() {
 	nIsAlive = true;
 	try {
 		// set target for foreign handlers:
-		mMainMenuBar->FindItem( B_QUIT_REQUESTED)->SetTarget( bmApp);
 		mMainMenuBar->FindItem( BMM_NEW_MAILFOLDER)->SetTarget( mMailFolderView);
 		mMainMenuBar->FindItem( BMM_RENAME_MAILFOLDER)->SetTarget( mMailFolderView);
 		mMainMenuBar->FindItem( BMM_DELETE_MAILFOLDER)->SetTarget( mMailFolderView);
@@ -355,13 +357,30 @@ void BmMainWindow::BeginLife() {
 		mMailFolderView->StartWatching( this, BM_NTFY_MAILFOLDER_SELECTION);
 		mMailRefView->StartWatching( this, BM_NTFY_MAILREF_SELECTION);
 		mMailView->StartWatching( this, BM_NTFY_MAIL_VIEW);
-		BM_LOG2( BM_LogMainWindow, BString("MainWindow begins life"));
 		mMailFolderView->StartJob( TheMailFolderList.Get());
 		mMainMenuBar->StartJob( ThePopAccountList.Get());
+		BM_LOG2( BM_LogMainWindow, BString("MainWindow begins life"));
 	} catch(...) {
 		nIsAlive = false;
 		throw;
 	}
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMainWindow::Show() {
+	inherited::Show();
+	WriteStateInfo();
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMainWindow::WorkspacesChanged( uint32 oldWorkspaces, uint32 newWorkspaces) {
+	bmApp->SetNewWorkspace( newWorkspaces);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -408,77 +427,25 @@ void BmMainWindow::MessageReceived( BMessage* msg) {
 					PostMessage( msg, focusView);
 				break;
 			}
+			case BMM_NEW_MAIL: 
 			case BMM_CHECK_MAIL: {
-				const char* key = NULL;
-				msg->FindString( BmPopAccountList::MSG_ITEMKEY, &key);
-				if (key)
-					ThePopAccountList->CheckMailFor( key);
-				else
-					ThePopAccountList->CheckMail();
+				be_app_messenger.SendMessage( msg);
 				break;
 			}
-			case BMM_NEW_MAIL: {
-				BmMailEditWin* editWin = BmMailEditWin::CreateInstance();
-				const char* to=NULL;
-				if ((to = msg->FindString( "to"))) {
-					BmRef<BmMail> mail = editWin->CurrMail();
-					if (mail) {
-						mail->SetFieldVal( BM_FIELD_TO, to);
-						editWin->EditMail( mail.Get());
-					}
-				}
-				if (editWin)
-					editWin->Show();
-				break;
-			}
+			case BMM_MARK_AS:
 			case BMM_REPLY:
-			case BMM_REPLY_ALL: {
-				BmRef<BmMail> mail = mMailView->CurrMail();
-				if (mail) {
-					BmRef<BmMail> reply = mail->CreateReply( msg->what == BMM_REPLY_ALL);
-					if (reply) {
-						BmMailEditWin* editWin = BmMailEditWin::CreateInstance();
-						if (editWin) {
-							editWin->EditMail( reply.Get());
-							editWin->Show();
-						}
-					}
-				}
-				break;
-			}
-			case BMM_FORWARD_ATTACHED: {
-				BmRef<BmMail> mail = mMailView->CurrMail();
-				if (mail) {
-					BmRef<BmMail> forward = mail->CreateAttachedForward();
-					if (forward) {
-						BmMailEditWin* editWin = BmMailEditWin::CreateInstance();
-						if (editWin) {
-							editWin->EditMail( forward.Get());
-							editWin->Show();
-						}
-					}
-				}
-				break;
-			}
+			case BMM_REPLY_ALL:
+			case BMM_FORWARD_ATTACHED:
 			case BMM_FORWARD_INLINE:
 			case BMM_FORWARD_INLINE_ATTACH: {
-				BmRef<BmMail> mail = mMailView->CurrMail();
-				if (mail) {
-					BmRef<BmMail> forward = mail->CreateInlineForward( msg->what == BMM_FORWARD_INLINE_ATTACH);
-					if (forward) {
-						BmMailEditWin* editWin = BmMailEditWin::CreateInstance();
-						if (editWin) {
-							editWin->EditMail( forward.Get());
-							editWin->Show();
-						}
-					}
-				}
+				mMailRefView->AddSelectedRefsToMsg( msg, BmApplication::MSG_MAILREF);
+				be_app_messenger.SendMessage( msg);
 				break;
 			}
 			case B_OBSERVER_NOTICE_CHANGE: {
 				switch( msg->FindInt32( B_OBSERVE_WHAT_CHANGE)) {
 					case BM_NTFY_MAILFOLDER_SELECTION: {
-						MailRefSelectionChanged( msg->FindInt32( BmMailFolderView::MSG_FOLDERS_SELECTED));
+						MailFolderSelectionChanged( msg->FindInt32( BmMailFolderView::MSG_FOLDERS_SELECTED));
 						break;
 					}
 					case BM_NTFY_MAILREF_SELECTION: {
@@ -490,6 +457,10 @@ void BmMainWindow::MessageReceived( BMessage* msg) {
 						break;
 					}
 				}
+				break;
+			}
+			case B_ABOUT_REQUESTED: {
+				be_app_messenger.SendMessage( msg);
 				break;
 			}
 			default:
@@ -508,7 +479,27 @@ void BmMainWindow::MessageReceived( BMessage* msg) {
 \*------------------------------------------------------------------------------*/
 bool BmMainWindow::QuitRequested() {
 	BM_LOG2( BM_LogMainWindow, BString("MainWindow has been asked to quit"));
-	return true;
+	if (bmApp->IsQuitting()) {
+		// ask all other windows if they are ready to quit, in which case we
+		// quit ourselves (only if ALL other windows will quit, too):
+		int32 count = bmApp->CountWindows();
+		for( int32 i=count-1; i>=0; --i) {
+			BWindow* win = bmApp->WindowAt( i);
+			if (win && win != this) {
+				if (win->QuitRequested()) {
+					win->LockLooper();
+					win->Quit();
+				} else {
+					return false;
+				}
+			}
+		}
+		Hide();			// to hide a possible delay in WriteStateInfo() from the user
+		return true;
+	} else {
+		bmApp->PostMessage( B_QUIT_REQUESTED);
+		return false;
+	}
 }
 
 /*------------------------------------------------------------------------------*\
@@ -516,8 +507,6 @@ bool BmMainWindow::QuitRequested() {
 		-	standard BeOS-behaviour, we quit
 \*------------------------------------------------------------------------------*/
 void BmMainWindow::Quit() {
-	ThePopAccountList->Store();
-	TheSmtpAccountList->Store();
 	mMailView->WriteStateInfo();
 	mMailView->DetachModel();
 	mMailRefView->DetachModel();
@@ -547,7 +536,7 @@ void BmMainWindow::MailRefSelectionChanged( int32 numSelected) {
 	mReplyButton->SetEnabled( numSelected > 0);
 	mReplyAllButton->SetEnabled( numSelected > 0);
 	mForwardButton->SetEnabled( numSelected > 0);
-	mRedirectButton->SetEnabled( numSelected > 0);
+	mRedirectButton->SetEnabled( 0 * numSelected > 0);
 	mPrintButton->SetEnabled( 0 * numSelected > 0);
 	mTrashButton->SetEnabled( numSelected > 0);
 	// adjust menu:

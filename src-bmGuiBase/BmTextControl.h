@@ -12,7 +12,7 @@
 
 class HGroup;
 
-#define BM_FIELD_MODIFIED 'bmfm'
+#define BM_TEXTFIELD_MODIFIED 'bmfm'
 
 class BmTextControl : public MView, public BTextControl
 {
@@ -26,6 +26,7 @@ public:
 	// native methods:
 	void DetachFromParent();
 	void ReattachToParent();
+	void SetTextSilently( const char* text);
 
 	// overrides of BTextControl:
 	void FrameResized( float new_width, float new_height);
@@ -33,9 +34,9 @@ public:
 	void SetText( const char* text);
 
 	// getters:
-	BTextView* TextView() const 			{ return mTextView; }
-	BMenuField* MenuField() const 		{ return mMenuField; }
-	BMenu* Menu() const 		{ return mMenuField ? mMenuField->Menu() : NULL; }
+	inline BTextView* TextView() const 	{ return mTextView; }
+	inline BMenuField* MenuField() const	{ return mMenuField; }
+	inline BMenu* Menu() const 			{ return mMenuField ? mMenuField->Menu() : NULL; }
 
 private:
 	minimax layoutprefs();

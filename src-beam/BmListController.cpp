@@ -159,8 +159,18 @@ void BmListViewController::AttachedToWindow() {
 void BmListViewController::MouseDown(BPoint point) { 
 	inherited::MouseDown( point); 
 	BView::MakeFocus( true);
+	SetMouseEventMask(B_POINTER_EVENTS,B_NO_POINTER_HISTORY);
 	// [zooey]: use the following line to draw blue frame indicating key-focus
 	// MakeFocus( true);
+}
+
+/*------------------------------------------------------------------------------*\
+	MouseUp( point)
+		-	
+\*------------------------------------------------------------------------------*/
+void BmListViewController::MouseUp(BPoint point) { 
+	inherited::MouseUp( point); 
+	SetMouseEventMask( 0);
 }
 
 /*------------------------------------------------------------------------------*\

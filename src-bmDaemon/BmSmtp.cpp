@@ -99,6 +99,7 @@ bool BmSmtp::StartJob() {
 					(this->*stateFunc)();
 				}
 				UpdateSMTPStatus( delta, NULL);
+				mSmtpAccount->mMailVect.clear();
 			}
 			catch( BM_runtime_error &err) {
 				// a problem occurred, we tell the user:
@@ -109,6 +110,7 @@ bool BmSmtp::StartJob() {
 				UpdateSMTPStatus( 0.0, NULL, failed);
 				BString text = Name() << "\n\n" << errstr;
 				BM_SHOWERR( BString("BmSmtp: ") << text);
+				mSmtpAccount->mMailVect.clear();
 				return false;
 			}
 			return true;
@@ -143,14 +145,7 @@ void BmSmtp::UpdateSMTPStatus( const float delta, const char* detailText,
 \*------------------------------------------------------------------------------*/
 void BmSmtp::UpdateMailStatus( const float delta, const char* detailText, 
 											int32 currMsg) {
-	BString text;
-/*
-	if (mNewMsgCount) {
-		text = BString() << currMsg << " of " << mNewMsgCount;
-	} else {
-		text = "none";
-	}
-*/
+	BString text = BString() << currMsg << " of " << mSmtpAccount->mMailVect.size();
 	auto_ptr<BMessage> msg( new BMessage( BM_JOB_UPDATE_STATE));
 	msg->AddString( MSG_SMTP, Name().String());
 	msg->AddString( BmJobModel::MSG_DOMAIN, "mailbar");
@@ -355,7 +350,7 @@ void BmSmtp::Data( BmMail* mail, BString forBcc) {
 	if (cmd[cmd.Length()-1] != '\n')
 		cmd << "\r\n";
 	cmd << ".\r\n";
-	SendCommand( cmd);
+	SendCommand( cmd, "", true);
 	CheckForPositiveAnswer();
 }
 
@@ -501,7 +496,7 @@ int32 BmSmtp::ReceiveBlock( char* buffer, int32 max) {
 	SendCommand( cmd)
 		-	sends the specified SMTP-command to the server.
 \*------------------------------------------------------------------------------*/
-void BmSmtp::SendCommand( BString cmd, BString secret) {
+void BmSmtp::SendCommand( BString cmd, BString secret, bool isMailData) {
 	BString command;
 	if (secret.Length()) {
 		command = cmd + secret;
@@ -514,9 +509,24 @@ void BmSmtp::SendCommand( BString cmd, BString secret) {
 	}
 	if (command[command.Length()-1] != '\n')
 		command << "\r\n";
-	int32 size = command.Length(), sentSize;
-	if ((sentSize = mSmtpServer.Send( command.String(), size)) != size) {
-		throw BM_network_error( BString("error during send, sent only ") << sentSize << " bytes instead of " << size);
+	int32 size = command.Length();
+	int32 sentSize;
+	if (isMailData) {
+		int32 blockSize = 15000;
+		for( int32 block=0; block*blockSize < size; ++block) {
+			int32 offs = block*blockSize;
+			int32 sz = MIN( size-offs, blockSize);
+			if ((sentSize = mSmtpServer.Send( command.String()+offs, sz)) != sz) {
+				throw BM_network_error( BString("error during send, sent only ") << sentSize << " bytes instead of " << sz);
+			}
+			float delta = (100.0 * sz) / (size ? size : 1);
+			BString text = BString("size: ") << BytesToString( size);
+			UpdateMailStatus( delta, text.String(), 1);
+		}
+	} else {
+		if ((sentSize = mSmtpServer.Send( command.String(), size)) != size) {
+			throw BM_network_error( BString("error during send, sent only ") << sentSize << " bytes instead of " << size);
+		}
 	}
 }
 

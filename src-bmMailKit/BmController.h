@@ -42,8 +42,8 @@ public:
 	virtual void ResetController()		{ }
 
 	// getters
-	const char* ControllerName() const	{ return mControllerName.String(); }
-	const BString ModelName() const		{ return mDataModel.Get() ? mDataModel->ModelName() : "***NULL***"; }
+	inline const char* ControllerName() const	{ return mControllerName.String(); }
+	inline const BString ModelName() const		{ return mDataModel.Get() ? mDataModel->ModelName() : "***NULL***"; }
 	virtual BmDataModel* DataModel()		{ return mDataModel.Get(); }
 
 protected:

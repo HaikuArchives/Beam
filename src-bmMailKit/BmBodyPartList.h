@@ -22,7 +22,7 @@ class BmContentField {
 
 public:
 	// c'tors and d'tor:
-	BmContentField()						{ mInitCheck = B_NO_INIT; }
+	BmContentField()							{ mInitCheck = B_NO_INIT; }
 	BmContentField( const BString cfString);
 	
 	// native methods:
@@ -30,8 +30,8 @@ public:
 	void SetParam( BString key, BString value);
 
 	// getters:
-	status_t InitCheck() const				{ return mInitCheck; }
-	const BString& Value() const			{ return mValue; }
+	inline status_t InitCheck() const	{ return mInitCheck; }
+	inline const BString& Value() const	{ return mValue; }
 	const BString& Param( BString key) const;
 
 	// operators:
@@ -44,8 +44,7 @@ private:
 
 	status_t mInitCheck;
 
-	// Hide copy-constructor and assignment:
-	BmContentField( const BmContentField&);
+	// Hide assignment:
 	BmContentField operator=( const BmContentField&);
 };
 
@@ -64,7 +63,7 @@ class BmBodyPart : public BmListModelItem {
 public:
 	// c'tors and d'tor:
 	BmBodyPart( BmBodyPartList* model, const BString& msgtext, int32 s, int32 l, 
-					BmMailHeader* mHeader=NULL, BmListModelItem* parent=NULL);
+					BmRef<BmMailHeader> mHeader=NULL, BmListModelItem* parent=NULL);
 	BmBodyPart( BmBodyPartList* model, const entry_ref* ref, BmListModelItem* parent=NULL);
 	~BmBodyPart();
 
@@ -72,7 +71,7 @@ public:
 	static BString BmBodyPart::NextObjectID();
 
 	// native methods:
-	void SetTo( const BString& msgtext, int32 s, int32 l, BmMailHeader* mHeader=NULL);
+	void SetTo( const BString& msgtext, int32 s, int32 l, BmRef<BmMailHeader> mHeader=NULL);
 	void SetBodyText( const BString& text, uint32 encoding);
 	bool IsText() const;
 	bool IsPlainText() const;
@@ -88,27 +87,27 @@ public:
 	int16 ArchiveVersion() const			{ return nArchiveVersion; }
 
 	// getters:
-	bool IsMultiPart() const				{ return mIsMultiPart; }
-	const BString& DecodedData() const	{ return mDecodedData; }
-	int32 DecodedLength() const			{ return mDecodedData.Length(); }
-	status_t InitCheck() const				{ return mInitCheck; }
+	inline bool IsMultiPart() const				{ return mIsMultiPart; }
+	inline const BString& DecodedData() const	{ return mDecodedData; }
+	inline int32 DecodedLength() const			{ return mDecodedData.Length(); }
+	inline status_t InitCheck() const			{ return mInitCheck; }
 
-	const BString& Charset() const		{ return mContentType.Param( "charset"); }
-	const BString& MimeType() const		{ return mContentType.Value(); }
-	const BString& Disposition() const	{ return mContentDisposition.Value(); }
-	const BString& FileName() const		{ return mFileName; }
-	const BString& TransferEncoding() const	{ return mContentTransferEncoding; }
-	const BString& ID() const				{ return mContentId; }
-	const BString& Description() const	{ return mContentDescription; }
-	const BString& Language() const		{ return mContentLanguage; }
-	const BString& TypeParam( BString key) const		{ return mContentType.Param( key); }
-	const BString& DispositionParam( BString key) const	{ return mContentDisposition.Param( key); }
+	inline const BString& Charset() const		{ return mContentType.Param( "charset"); }
+	inline const BString& MimeType() const		{ return mContentType.Value(); }
+	inline const BString& Disposition() const	{ return mContentDisposition.Value(); }
+	inline const BString& FileName() const		{ return mFileName; }
+	inline const BString& TransferEncoding() const	{ return mContentTransferEncoding; }
+	inline const BString& ID() const				{ return mContentId; }
+	inline const BString& Description() const	{ return mContentDescription; }
+	inline const BString& Language() const		{ return mContentLanguage; }
+	inline const BString& TypeParam( BString key) const		{ return mContentType.Param( key); }
+	inline const BString& DispositionParam( BString key) const	{ return mContentDisposition.Param( key); }
 
-	const entry_ref& EntryRef() const	{ return mEntryRef; }
+	inline const entry_ref& EntryRef() const	{ return mEntryRef; }
 
-	const bool Is7Bit() const				{ return mContentTransferEncoding.ICompare( "7bit") == 0; }
-	const bool Is8Bit() const				{ return mContentTransferEncoding.ICompare( "8bit") == 0; }
-	const bool IsBinary() const			{ return mContentTransferEncoding.ICompare( "binary") == 0; }
+	inline const bool Is7Bit() const				{ return mContentTransferEncoding.ICompare( "7bit") == 0; }
+	inline const bool Is8Bit() const				{ return mContentTransferEncoding.ICompare( "8bit") == 0; }
+	inline const bool IsBinary() const			{ return mContentTransferEncoding.ICompare( "binary") == 0; }
 
 	static int32 nBoundaryCounter;
 
@@ -129,8 +128,7 @@ private:
 
 	static int32 nObjectID;
 
-	// Hide copy-constructor and assignment:
-	BmBodyPart( const BmBodyPart&);
+	// Hide assignment:
 	BmBodyPart operator=( const BmBodyPart&);
 };
 
@@ -164,17 +162,18 @@ public:
 	int16 ArchiveVersion() const			{ return nArchiveVersion; }
 
 	// getters:
-	status_t InitCheck()						{ return mInitCheck; }
-	BmBodyPart* EditableTextBody() 		{ return mEditableTextBody; }
-	const BString& Signature() const		{ return mSignature; }
+	inline status_t InitCheck()					{ return mInitCheck; }
+	inline BmRef<BmBodyPart> EditableTextBody() const { return mEditableTextBody.Get(); }
+	inline const BString& Signature() const	{ return mSignature; }
+	bool IsMultiPart() const;
 
 	// setters:
-	void EditableTextBody( BmBodyPart* b) { mEditableTextBody = b; }
-	void Signature( const BString& s)	{ mSignature = s; }
+	inline void EditableTextBody( BmBodyPart* b) { mEditableTextBody = b; }
+	inline void Signature( const BString& s)		{ mSignature = s; }
 
 private:
 	BmMail* mMail;
-	BmBodyPart* mEditableTextBody;
+	BmWeakRef<BmBodyPart> mEditableTextBody;
 	status_t mInitCheck;
 	BString mSignature;						// signature (as found in mail-text)
 

@@ -8,7 +8,8 @@
 
 #include <View.h>
 
-class BmMailHeader;
+#include "BmMailHeader.h"
+#include "BmRefManager.h"
 
 /*------------------------------------------------------------------------------*\
 	types of messages handled by a BmMailHeaderView:
@@ -41,7 +42,7 @@ public:
 	void ShowMenu( BPoint point);
 	status_t Archive( BMessage* archive, bool deep=true) const;
 	status_t Unarchive( BMessage* archive, bool deep=true);
-	float FixedWidth() 						{ return 5000; }
+	inline float FixedWidth() 				{ return 5000; }
 
 	// overrides of BView base:
 	void Draw( BRect bounds);
@@ -49,7 +50,7 @@ public:
 	void MouseDown(BPoint point);
 
 private:
-	BmMailHeader* mMailHeader;
+	BmRef<BmMailHeader> mMailHeader;
 	int16 mDisplayMode;							// 0=small, 2=large, anyother=medium
 	BFont* mFont;								// font to be used for header-fields
 

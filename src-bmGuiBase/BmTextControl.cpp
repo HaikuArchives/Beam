@@ -35,7 +35,7 @@ BmTextControl::BmTextControl( const char* label, bool labelIsMenu)
 		mMenuField->SetDivider( 0);
 		AddChild( mMenuField);
 	}
-	SetModificationMessage( new BMessage(BM_FIELD_MODIFIED));
+	SetModificationMessage( new BMessage(BM_TEXTFIELD_MODIFIED));
 }
 
 /*------------------------------------------------------------------------------*\
@@ -83,6 +83,16 @@ void BmTextControl::SetEnabled( bool enabled) {
 void BmTextControl::SetText( const char* text) {
 	inherited::SetText( text);
 	TextView()->ScrollToSelection();
+}
+
+/*------------------------------------------------------------------------------*\
+	( )
+		-	
+\*------------------------------------------------------------------------------*/
+void BmTextControl::SetTextSilently( const char* text) {
+	SetModificationMessage( NULL);
+	SetText( text);
+	SetModificationMessage( new BMessage(BM_TEXTFIELD_MODIFIED));
 }
 
 /*------------------------------------------------------------------------------*\

@@ -46,7 +46,7 @@ public:
 	void LogToFile( const char* const logname, uint32 flag, const char* const msg, int8 minlevel=1);
 
 	// setters:
-	void LogLevels( uint32 loglevels)	{ mLoglevels = loglevels; }
+	inline void LogLevels( uint32 loglevels)	{ mLoglevels = loglevels; }
 
 	static BmLogHandler* theInstance;
 
@@ -59,6 +59,7 @@ private:
 
 	//	message component definitions for status-msgs:
 	static const char* const MSG_MESSAGE = 		"bm:msg";
+	static const char* const MSG_THREAD_ID = 		"bm:tid";
 
 	/*------------------------------------------------------------------------------*\*\
 		BmLogfile
@@ -70,7 +71,7 @@ private:
 	public:
 		BmLogfile( const BString &fn);
 		~BmLogfile();
-		void Write( const char* const msg);
+		void Write( const char* const msg, const int32 threadId);
 		void MessageReceived( BMessage* msg);
 	
 		static BString LogPath;
