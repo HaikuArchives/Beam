@@ -219,11 +219,14 @@ bool FetchFile( BmString fileName, BmString& contents) {
 	if (file.InitCheck() == B_OK) {
 		off_t size;
 		file.GetSize( &size);
-		char* buf = contents.LockBuffer( size);
-		ssize_t read = file.Read( buf, size);
-		read = MAX( 0, read);
-		buf[read] = '\0';
-		contents.UnlockBuffer( read);
+		if (size>0) {
+			char* buf = contents.LockBuffer( size);
+			ssize_t read = file.Read( buf, size);
+			read = MAX( 0, read);
+			buf[read] = '\0';
+			contents.UnlockBuffer( read);
+		} else
+			contents.Truncate( 0);
 		return true;
 	}
 	return false;
