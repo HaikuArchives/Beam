@@ -491,11 +491,13 @@ void BmPrefsFilterView::ShowFilter( int32 selection) {
 	} else {
 		BmFilterItem* filterItem = dynamic_cast<BmFilterItem*>(mFilterListView->ItemAt( selection));
 		if (filterItem) {
-			mCurrFilter = dynamic_cast<BmFilter*>( filterItem->ModelItem());
-			if (mCurrFilter) {
-				mFilterControl->SetTextSilently( mCurrFilter->Name().String());
-				mContentControl->SetTextSilently( mCurrFilter->Content().String());
-				mTestButton->SetEnabled( true);
+			if  (mCurrFilter.Get() != filterItem->ModelItem()) {
+				mCurrFilter = dynamic_cast<BmFilter*>( filterItem->ModelItem());
+				if (mCurrFilter) {
+					mFilterControl->SetTextSilently( mCurrFilter->Name().String());
+					mContentControl->SetTextSilently( mCurrFilter->Content().String());
+					mTestButton->SetEnabled( true);
+				}
 			}
 		} else
 			mCurrFilter = NULL;

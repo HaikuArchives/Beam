@@ -628,21 +628,23 @@ void BmPrefsSendMailView::ShowAccount( int32 selection) {
 	} else {
 		BmSendAccItem* accItem = dynamic_cast<BmSendAccItem*>(mAccListView->ItemAt( selection));
 		if (accItem) {
-			mCurrAcc = dynamic_cast<BmSmtpAccount*>(accItem->ModelItem());
-			if (mCurrAcc) {
-				mAccountControl->SetTextSilently( mCurrAcc->Name().String());
-				mDomainControl->SetTextSilently( mCurrAcc->DomainToAnnounce().String());
-				mLoginControl->SetTextSilently( mCurrAcc->Username().String());
-				mPortControl->SetTextSilently( mCurrAcc->PortNrString().String());
-				mPwdControl->SetTextSilently( mCurrAcc->Password().String());
-				mServerControl->SetTextSilently( mCurrAcc->SMTPServer().String());
-				mAuthControl->MarkItem( mCurrAcc->AuthMethod().Length() 
-													? mCurrAcc->AuthMethod().String()
-													: nEmptyItemLabel.String());
-				mPopControl->MarkItem( mCurrAcc->AccForSmtpAfterPop().Length()
-													? mCurrAcc->AccForSmtpAfterPop().String()
-													: nEmptyItemLabel.String());
-				mStorePwdControl->SetValue( mCurrAcc->PwdStoredOnDisk());
+			if  (mCurrAcc != accItem->ModelItem()) {
+				mCurrAcc = dynamic_cast<BmSmtpAccount*>(accItem->ModelItem());
+				if (mCurrAcc) {
+					mAccountControl->SetTextSilently( mCurrAcc->Name().String());
+					mDomainControl->SetTextSilently( mCurrAcc->DomainToAnnounce().String());
+					mLoginControl->SetTextSilently( mCurrAcc->Username().String());
+					mPortControl->SetTextSilently( mCurrAcc->PortNrString().String());
+					mPwdControl->SetTextSilently( mCurrAcc->Password().String());
+					mServerControl->SetTextSilently( mCurrAcc->SMTPServer().String());
+					mAuthControl->MarkItem( mCurrAcc->AuthMethod().Length() 
+														? mCurrAcc->AuthMethod().String()
+														: nEmptyItemLabel.String());
+					mPopControl->MarkItem( mCurrAcc->AccForSmtpAfterPop().Length()
+														? mCurrAcc->AccForSmtpAfterPop().String()
+														: nEmptyItemLabel.String());
+					mStorePwdControl->SetValue( mCurrAcc->PwdStoredOnDisk());
+				}
 			}
 		} else
 			mCurrAcc = NULL;

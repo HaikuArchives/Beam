@@ -848,36 +848,38 @@ void BmPrefsRecvMailView::ShowAccount( int32 selection) {
 	} else {
 		BmRecvAccItem* accItem = dynamic_cast<BmRecvAccItem*>(mAccListView->ItemAt( selection));
 		if (accItem) {
-			mCurrAcc = accItem->ModelItem();
-			if (mCurrAcc) {
-				mAccountControl->SetTextSilently( mCurrAcc->Name().String());
-				mAliasesControl->SetTextSilently( mCurrAcc->MailAliases().String());
-				mLoginControl->SetTextSilently( mCurrAcc->Username().String());
-				mMailAddrControl->SetTextSilently( mCurrAcc->MailAddr().String());
-				mPortControl->SetTextSilently( mCurrAcc->PortNrString().String());
-				mPwdControl->SetTextSilently( mCurrAcc->Password().String());
-				mRealNameControl->SetTextSilently( mCurrAcc->RealName().String());
-				mServerControl->SetTextSilently( mCurrAcc->POPServer().String());
-				mAuthControl->MarkItem( mCurrAcc->AuthMethod().String());
-				mSignatureControl->MarkItem( mCurrAcc->SignatureName().Length() 
-															? mCurrAcc->SignatureName().String()
-															: nEmptyItemLabel.String());
-				mFilterChainControl->MarkItem( mCurrAcc->FilterChain().Length() 
-													? mCurrAcc->FilterChain().String()
-													: nEmptyItemLabel.String());
-				mSmtpControl->MarkItem( mCurrAcc->SMTPAccount().Length() 
-													? mCurrAcc->SMTPAccount().String()
-													: nEmptyItemLabel.String());
-				mCheckAccountControl->SetValue( mCurrAcc->CheckMail());
-				mCheckEveryControl->SetValue( mCurrAcc->CheckInterval()>0 ? 1 : 0);
-				mCheckIntervalControl->SetTextSilently( mCurrAcc->CheckIntervalString().String());
-				mRemoveMailControl->SetValue( mCurrAcc->DeleteMailFromServer());
-				mIsDefaultControl->SetValue( mCurrAcc->MarkedAsDefault());
-				mIsBucketControl->SetValue( mCurrAcc->MarkedAsBitBucket());
-				mStorePwdControl->SetValue( mCurrAcc->PwdStoredOnDisk());
-				mPwdControl->SetEnabled( mCurrAcc->PwdStoredOnDisk());
-				mCheckIntervalControl->SetEnabled( mCurrAcc->CheckInterval()>0);
-				mMinutesLabel->SetHighColor( mCurrAcc->CheckInterval()>0 ? Black : BeInactiveGrey);
+			if  (mCurrAcc != accItem->ModelItem()) {
+				mCurrAcc = accItem->ModelItem();
+				if (mCurrAcc) {
+					mAccountControl->SetTextSilently( mCurrAcc->Name().String());
+					mAliasesControl->SetTextSilently( mCurrAcc->MailAliases().String());
+					mLoginControl->SetTextSilently( mCurrAcc->Username().String());
+					mMailAddrControl->SetTextSilently( mCurrAcc->MailAddr().String());
+					mPortControl->SetTextSilently( mCurrAcc->PortNrString().String());
+					mPwdControl->SetTextSilently( mCurrAcc->Password().String());
+					mRealNameControl->SetTextSilently( mCurrAcc->RealName().String());
+					mServerControl->SetTextSilently( mCurrAcc->POPServer().String());
+					mAuthControl->MarkItem( mCurrAcc->AuthMethod().String());
+					mSignatureControl->MarkItem( mCurrAcc->SignatureName().Length() 
+																? mCurrAcc->SignatureName().String()
+																: nEmptyItemLabel.String());
+					mFilterChainControl->MarkItem( mCurrAcc->FilterChain().Length() 
+														? mCurrAcc->FilterChain().String()
+														: nEmptyItemLabel.String());
+					mSmtpControl->MarkItem( mCurrAcc->SMTPAccount().Length() 
+														? mCurrAcc->SMTPAccount().String()
+														: nEmptyItemLabel.String());
+					mCheckAccountControl->SetValue( mCurrAcc->CheckMail());
+					mCheckEveryControl->SetValue( mCurrAcc->CheckInterval()>0 ? 1 : 0);
+					mCheckIntervalControl->SetTextSilently( mCurrAcc->CheckIntervalString().String());
+					mRemoveMailControl->SetValue( mCurrAcc->DeleteMailFromServer());
+					mIsDefaultControl->SetValue( mCurrAcc->MarkedAsDefault());
+					mIsBucketControl->SetValue( mCurrAcc->MarkedAsBitBucket());
+					mStorePwdControl->SetValue( mCurrAcc->PwdStoredOnDisk());
+					mPwdControl->SetEnabled( mCurrAcc->PwdStoredOnDisk());
+					mCheckIntervalControl->SetEnabled( mCurrAcc->CheckInterval()>0);
+					mMinutesLabel->SetHighColor( mCurrAcc->CheckInterval()>0 ? Black : BeInactiveGrey);
+				}
 			}
 		} else
 			mCurrAcc = NULL;
