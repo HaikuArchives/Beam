@@ -51,7 +51,7 @@
 	BmPrefsView
 \********************************************************************************/
 
-const char* const BmPrefsView::MSG_ACCOUNT = 	"bm:acc";
+const char* const BmPrefsView::MSG_ITEM = 		"bm:item";
 const char* const BmPrefsView::MSG_FIELD_NAME = "bm:fname";
 const char* const BmPrefsView::MSG_COMPLAINT = 	"bm:compl";
 
@@ -63,6 +63,7 @@ BmPrefsView::BmPrefsView( BmString label)
 	:	inherited( M_NO_BORDER, 0, (char*)label.String())
 	,	mInitDone( false)
 	,	mLabelView( NULL)
+	,	mChanged( false)
 {
 	MView* view;
 	if (label.Length()) {
@@ -133,6 +134,17 @@ void BmPrefsView::MessageReceived( BMessage* msg) {
 	}
 }
 
+/*------------------------------------------------------------------------------*\
+	NoticeChange()
+		-	propagates change-message to prefs-window
+\*------------------------------------------------------------------------------*/
+void BmPrefsView::NoticeChange() {
+	if (!mChanged) {
+		Window()->PostMessage( BM_PREFS_CHANGED);
+		mChanged = true;
+	}
+}
+
 
 
 /********************************************************************************\
@@ -180,7 +192,7 @@ void BmPrefsViewContainer::WriteStateInfo() {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-bool BmPrefsViewContainer::SaveData() {
+bool BmPrefsViewContainer::ApplyChanges() {
 	if (!mLayeredGroup)
 		return false;
 	if (!ThePrefs->GetBool( "AvoidPrefsSanityChecks", false)) {
@@ -194,8 +206,10 @@ bool BmPrefsViewContainer::SaveData() {
 	}
 	for( int i=0; i<mLayeredGroup->CountChildren(); ++i) {
 		BmPrefsView* pv = dynamic_cast<BmPrefsView*>( mLayeredGroup->ChildAt( i));
-		if (pv)
+		if (pv) {
 			pv->SaveData();
+			pv->ResetChanged();
+		}
 	}
 	return true;
 }
@@ -204,12 +218,31 @@ bool BmPrefsViewContainer::SaveData() {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmPrefsViewContainer::Finish() {
+void BmPrefsViewContainer::RevertChanges() {
 	if (!mLayeredGroup)
 		return;
 	for( int i=0; i<mLayeredGroup->CountChildren(); ++i) {
 		BmPrefsView* pv = dynamic_cast<BmPrefsView*>( mLayeredGroup->ChildAt( i));
-		if (pv)
-			pv->Finish();
+		if (pv) {
+			pv->UndoChanges();
+			pv->ResetChanged();
+			pv->Update();
+		}
+	}
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmPrefsViewContainer::SetDefaults() {
+	if (!mLayeredGroup)
+		return;
+	for( int i=0; i<mLayeredGroup->CountChildren(); ++i) {
+		BmPrefsView* pv = dynamic_cast<BmPrefsView*>( mLayeredGroup->ChildAt( i));
+		if (pv) {
+			pv->SetDefaults();
+			pv->Update();
+		}
 	}
 }

@@ -67,9 +67,11 @@ public:
 	
 	// overrides of BmPrefsView base:
 	void Initialize();
+	void Update();
 	void WriteStateInfo();
 	void SaveData();
 	void UndoChanges();
+	void SetDefaults();
 
 	// overrides of BView base:
 	void MessageReceived( BMessage* msg);

@@ -256,7 +256,7 @@ BmPrefsSendMailView::BmPrefsSendMailView()
 						new Space( minimax(0,5,0,5)),
 						new HGroup( 
 							mServerControl = new BmTextControl( "SMTP-Server/Port:"),
-							mPortControl = new BmTextControl( "", 5),
+							mPortControl = new BmTextControl( "", false, 0, 8),
 							0
 						),
 						new Space( minimax(0,5,0,5)),
@@ -267,8 +267,8 @@ BmPrefsSendMailView::BmPrefsSendMailView()
 						),
 						mPopControl = new BmMenuControl( "Pop-account:", new BPopUpMenu("")),
 						new HGroup( 
-							mLoginControl = new BmTextControl( "User/Pwd:", 0, 12),
-							mPwdControl = new BmTextControl( ""),
+							mLoginControl = new BmTextControl( "User/Pwd:"),
+							mPwdControl = new BmTextControl( "", false, 0, 8),
 							0
 						),
 						new Space( minimax(0,5,0,5)),
@@ -315,8 +315,10 @@ BmPrefsSendMailView::BmPrefsSendMailView()
 	mPopControl->SetDivider( divider);
 	mFilterControl->SetDivider( divider);
 
-	mPortControl->SetDivider( 5);
-	mPwdControl->SetDivider( 5);
+	mPortControl->SetDivider( 15);
+	mPortControl->ct_mpm.weight = 0.4;
+	mPwdControl->SetDivider( 15);
+	mPwdControl->ct_mpm.weight = 0.4;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -438,7 +440,7 @@ bool BmPrefsSendMailView::SanityCheck() {
 	for( iter = TheSmtpAccountList->begin(); iter != TheSmtpAccountList->end(); ++iter) {
 		BmSmtpAccount* acc = dynamic_cast<BmSmtpAccount*>( iter->second.Get());
 		if (acc && !acc->SanityCheck( complaint, fieldName)) {
-			msg.AddPointer( MSG_ACCOUNT, (void*)acc);
+			msg.AddPointer( MSG_ITEM, (void*)acc);
 			msg.AddString( MSG_COMPLAINT, complaint.String());
 			if (fieldName.Length())
 				msg.AddString( MSG_FIELD_NAME, fieldName.String());
@@ -472,6 +474,7 @@ void BmPrefsSendMailView::SaveData() {
 void BmPrefsSendMailView::UndoChanges() {
 	TheSmtpAccountList->Cleanup();
 	TheSmtpAccountList->StartJobInThisThread();
+	ShowAccount( -1);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -503,13 +506,16 @@ void BmPrefsSendMailView::MessageReceived( BMessage* msg) {
 						mCurrAcc->Password( mPwdControl->Text());
 					else if ( source == mServerControl)
 						mCurrAcc->SMTPServer( mServerControl->Text());
+					NoticeChange();
 					UpdateState();
 				}
 				break;
 			}
 			case BM_PWD_STORED_CHANGED: {
-				if (mCurrAcc)
+				if (mCurrAcc) {
 					mCurrAcc->PwdStoredOnDisk( mStorePwdControl->Value());
+					NoticeChange();
+				}
 				UpdateState();
 				break;
 			}
@@ -522,6 +528,7 @@ void BmPrefsSendMailView::MessageReceived( BMessage* msg) {
 						mAuthControl->MarkItem( suggestedAuthType.String());
 					else
 						mAuthControl->MarkItem( nEmptyItemLabel.String());
+					NoticeChange();
 				}
 				// yes, no break here, we want to proceed with updating the auth-menu...
 			}
@@ -531,6 +538,7 @@ void BmPrefsSendMailView::MessageReceived( BMessage* msg) {
 					mCurrAcc->AuthMethod( item->Label());
 				else
 					mCurrAcc->AuthMethod( "");
+				NoticeChange();
 				UpdateState();
 				break;
 			}
@@ -540,6 +548,7 @@ void BmPrefsSendMailView::MessageReceived( BMessage* msg) {
 					mCurrAcc->AccForSmtpAfterPop( item->Label());
 				else
 					mCurrAcc->AccForSmtpAfterPop( "");
+				NoticeChange();
 				UpdateState();
 				break;
 			}
@@ -549,6 +558,7 @@ void BmPrefsSendMailView::MessageReceived( BMessage* msg) {
 					mCurrAcc->FilterName( item->Label());
 				else
 					mCurrAcc->FilterName( "");
+				NoticeChange();
 				break;
 			}
 			case BM_ADD_ACCOUNT: {
@@ -559,6 +569,7 @@ void BmPrefsSendMailView::MessageReceived( BMessage* msg) {
 				TheSmtpAccountList->AddItemToList( new BmSmtpAccount( key.String(), TheSmtpAccountList.Get()));
 				mAccountControl->MakeFocus( true);
 				mAccountControl->TextView()->SelectAll();
+				NoticeChange();
 				break;
 			}
 			case BM_REMOVE_ACCOUNT: {
@@ -576,6 +587,7 @@ void BmPrefsSendMailView::MessageReceived( BMessage* msg) {
 					if (buttonPressed == 0) {
 						TheSmtpAccountList->RemoveItemFromList( mCurrAcc.Get());
 						mCurrAcc = NULL;
+						NoticeChange();
 					}
 				}
 				break;
@@ -593,7 +605,7 @@ void BmPrefsSendMailView::MessageReceived( BMessage* msg) {
 					alert->SetShortcut( 0, B_ESCAPE);
 					alert->Go( new BInvoker( new BMessage(*msg), BMessenger( this)));
 					BmSmtpAccount* acc=NULL;
-					msg->FindPointer( MSG_ACCOUNT, (void**)&acc);
+					msg->FindPointer( MSG_ITEM, (void**)&acc);
 					BmListViewItem* accItem = mAccListView->FindViewItemFor( acc);
 					if (accItem)
 						mAccListView->Select( mAccListView->IndexOf( accItem));

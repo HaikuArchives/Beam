@@ -285,7 +285,6 @@ so if you get complaints about strange/missing characters, try unchecking this."
 		AddItemToMenu( mDefaultEncodingControl->Menu(), 
 							new BMenuItem( BM_Encodings[i].charset, new BMessage(BM_ENCODING_SELECTED)), this);
 	}
-	mDefaultEncodingControl->MarkItem( EncodingToCharset( ThePrefs->GetInt( "DefaultEncoding")).String());
 
 	// add quote-formattings:
 	AddItemToMenu( mQuoteFormattingControl->Menu(), 
@@ -297,7 +296,6 @@ so if you get complaints about strange/missing characters, try unchecking this."
 	AddItemToMenu( mQuoteFormattingControl->Menu(), 
 						new BMenuItem( BmMail::BM_QUOTE_SIMPLE, new BMessage(BM_QUOTE_FORMATTING_SELECTED)), 
 						this);
-	mQuoteFormattingControl->MarkItem( ThePrefs->GetString("QuoteFormatting", BmMail::BM_QUOTE_AUTO_WRAP).String());
 
 	// add forward-types:
 	AddItemToMenu( mDefaultForwardTypeControl->Menu(), 
@@ -306,8 +304,36 @@ so if you get complaints about strange/missing characters, try unchecking this."
 	AddItemToMenu( mDefaultForwardTypeControl->Menu(), 
 						new BMenuItem( "Inline", new BMessage(BM_FORWARD_TYPE_SELECTED)), 
 						this);
-	mDefaultForwardTypeControl->MarkItem( ThePrefs->GetString( "DefaultForwardType").String());
+	Update();
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmPrefsMailConstrView::Update() {
+	mHardWrapControl->SetValueSilently( ThePrefs->GetBool("HardWrapMailText"));
 	mHardWrapAt78Control->SetEnabled( mHardWrapControl->Value());
+	mHardWrapAt78Control->SetValueSilently( ThePrefs->GetInt("MaxLineLenForHardWrap",998)<100);
+	mQuoteFormattingControl->MarkItem( ThePrefs->GetString("QuoteFormatting", BmMail::BM_QUOTE_AUTO_WRAP).String());
+	mDefaultForwardTypeControl->MarkItem( ThePrefs->GetString( "DefaultForwardType").String());
+	mDefaultEncodingControl->MarkItem( EncodingToCharset( ThePrefs->GetInt( "DefaultEncoding")).String());
+	mAllow8BitControl->SetValueSilently( ThePrefs->GetBool("Allow8BitMime"));
+	mSpecialForEachBccControl->SetValueSilently( ThePrefs->GetBool("SpecialHeaderForEachBcc"));
+	mPreferUserAgentControl->SetValueSilently( ThePrefs->GetBool("PreferUserAgentOverX-Mailer"));
+	mGenerateIDsControl->SetValueSilently( ThePrefs->GetBool("GenerateOwnMessageIDs"));
+	mMakeQpSafeControl->SetValueSilently( ThePrefs->GetBool("MakeQPSafeForEBCDIC"));
+	mDontAttachVCardsControl->SetValueSilently( ThePrefs->GetBool("DoNotAttachVCardsToForward"));
+	BmString val;
+	val << ThePrefs->GetInt("MaxLineLen");
+	mMaxLineLenControl->SetTextSilently( val.String());
+	mQuotingStringControl->SetTextSilently( ThePrefs->GetString("QuotingString").String());
+	mForwardIntroStrControl->SetTextSilently( ThePrefs->GetString("ForwardIntroStr").String());
+	mForwardSubjectStrControl->SetTextSilently( ThePrefs->GetString("ForwardSubjectStr").String());
+	mForwardSubjectRxControl->SetTextSilently( ThePrefs->GetString("ForwardSubjectRX").String());
+	mReplyIntroStrControl->SetTextSilently( ThePrefs->GetString("ReplyIntroStr").String());
+	mReplySubjectStrControl->SetTextSilently( ThePrefs->GetString("ReplySubjectStr").String());
+	mReplySubjectRxControl->SetTextSilently( ThePrefs->GetString("ReplySubjectRX").String());
 }
 
 /*------------------------------------------------------------------------------*\
@@ -353,34 +379,42 @@ void BmPrefsMailConstrView::MessageReceived( BMessage* msg) {
 					ThePrefs->SetString("ReplySubjectStr", mReplySubjectStrControl->Text());
 				else if ( source == mReplySubjectRxControl)
 					ThePrefs->SetString("ReplySubjectRX", mReplySubjectRxControl->Text());
+				NoticeChange();
 				break;
 			}
 			case BM_EACH_BCC_CHANGED: {
 				ThePrefs->SetBool("SpecialHeaderForEachBcc", mSpecialForEachBccControl->Value());
+				NoticeChange();
 				break;
 			}
 			case BM_PREFER_USER_AGENT_CHANGED: {
 				ThePrefs->SetBool("PreferUserAgentOverX-Mailer", mPreferUserAgentControl->Value());
+				NoticeChange();
 				break;
 			}
 			case BM_GENERATE_MSGIDS_CHANGED: {
 				ThePrefs->SetBool("GenerateOwnMessageIDs", mGenerateIDsControl->Value());
+				NoticeChange();
 				break;
 			}
 			case BM_QP_SAFE_CHANGED: {
 				ThePrefs->SetBool("MakeQPSafeForEBCDIC", mMakeQpSafeControl->Value());
+				NoticeChange();
 				break;
 			}
 			case BM_ATTACH_VCARDS_CHANGED: {
 				ThePrefs->SetBool("DoNotAttachVCardsToForward", mDontAttachVCardsControl->Value());
+				NoticeChange();
 				break;
 			}
 			case BM_ALLOW_8_BIT_CHANGED: {
 				ThePrefs->SetBool("Allow8BitMime", mAllow8BitControl->Value());
+				NoticeChange();
 				break;
 			}
 			case BM_HARD_WRAP_AT_78_CHANGED: {
 				ThePrefs->SetInt("MaxLineLenForHardWrap", mHardWrapAt78Control->Value() ? 78 : 998);
+				NoticeChange();
 				break;
 			}
 			case BM_HARD_WRAP_CHANGED: {
@@ -389,24 +423,28 @@ void BmPrefsMailConstrView::MessageReceived( BMessage* msg) {
 				mHardWrapAt78Control->SetEnabled( val);
 				if (!val)
 					mHardWrapAt78Control->SetValue( false);
+				NoticeChange();
 				break;
 			}
 			case BM_ENCODING_SELECTED: {
 				BMenuItem* item = mDefaultEncodingControl->Menu()->FindMarked();
 				if (item)
 					ThePrefs->SetInt("DefaultEncoding", CharsetToEncoding( item->Label()));
+				NoticeChange();
 				break;
 			}
 			case BM_QUOTE_FORMATTING_SELECTED: {
 				BMenuItem* item = mQuoteFormattingControl->Menu()->FindMarked();
 				if (item)
 					ThePrefs->SetString( "QuoteFormatting", item->Label());
+				NoticeChange();
 				break;
 			}
 			case BM_FORWARD_TYPE_SELECTED: {
 				BMenuItem* item = mDefaultForwardTypeControl->Menu()->FindMarked();
 				if (item)
 					ThePrefs->SetString( "DefaultForwardType", item->Label());
+				NoticeChange();
 				break;
 			}
 			default:

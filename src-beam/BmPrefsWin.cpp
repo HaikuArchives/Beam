@@ -74,8 +74,9 @@
 	BmPrefsWin
 \********************************************************************************/
 
-#define BM_SAVE_CHANGES 'bmSV'
-#define BM_UNDO_CHANGES 'bmUD'
+#define BM_APPLY_CHANGES   'bmWA'
+#define BM_REVERT_CHANGES  'bmWR'
+#define BM_SET_DEFAULTS    'bmWD'
 
 BmPrefsWin* BmPrefsWin::theInstance = NULL;
 
@@ -103,11 +104,11 @@ BmPrefsWin::BmPrefsWin()
 	:	inherited( "PrefsWin", BRect(50,50,549,449),
 					  "Beam Preferences",
 					  B_FLOATING_WINDOW_LOOK, B_NORMAL_WINDOW_FEEL, 
-					  B_ASYNCHRONOUS_CONTROLS | B_NOT_CLOSABLE)
+					  B_ASYNCHRONOUS_CONTROLS)
 	,	mPrefsListView( NULL)
 	,	mPrefsViewContainer( NULL)
 	,	mVertSplitter( NULL)
-	,	mFinishOnExit( true)
+	,	mChanged( false)
 {
 	MView* mOuterGroup = 
 		new VGroup( 
@@ -144,9 +145,11 @@ BmPrefsWin::BmPrefsWin()
 			new Space( minimax(0,10,0,10)),
 			new HGroup(
 				new Space(),
-				new MButton( "Cancel", new BMessage(BM_UNDO_CHANGES), this, minimax(-1,-1,-1,-1)),
+				mDefaultsButton = new MButton( "Defaults", new BMessage(BM_SET_DEFAULTS), this, minimax(-1,-1,-1,-1)),
+				new Space( minimax(40,0,40,0)),
+				mRevertButton = new MButton( "Revert", new BMessage(BM_REVERT_CHANGES), this, minimax(-1,-1,-1,-1)),
 				new Space( minimax(20,0,20,0)),
-				new MButton( "Save", new BMessage(BM_SAVE_CHANGES), this, minimax(-1,-1,-1,-1)),
+				mApplyButton = new MButton( "Apply", new BMessage(BM_APPLY_CHANGES), this, minimax(-1,-1,-1,-1)),
 				new Space( minimax(20,0,20,0)),
 				0
 			),
@@ -154,6 +157,8 @@ BmPrefsWin::BmPrefsWin()
 			0
 		);
 	AddChild( dynamic_cast<BView*>(mOuterGroup));
+	mApplyButton->SetEnabled( false);
+	mRevertButton->SetEnabled( false);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -272,17 +277,32 @@ void BmPrefsWin::MessageReceived( BMessage* msg) {
 				mPrefsViewContainer->ShowPrefs( 1+fullIndex);
 				break;
 			}
-			case BM_SAVE_CHANGES: {
-				if (mPrefsViewContainer->SaveData()) {
-					mFinishOnExit = false;
-					PostMessage( B_QUIT_REQUESTED);
+			case BM_PREFS_CHANGED: {
+				mChanged = true;
+				mApplyButton->SetEnabled( true);
+				mRevertButton->SetEnabled( true);
+				break;
+			}
+			case BM_APPLY_CHANGES: {
+				if (mPrefsViewContainer->ApplyChanges()) {
+					mApplyButton->SetEnabled( false);
+					mRevertButton->SetEnabled( false);
+					mChanged = false;
 				}
 				break;
 			}
-			case BM_UNDO_CHANGES: {
-				mPrefsViewContainer->Finish();
-				mFinishOnExit = false;
-				PostMessage( B_QUIT_REQUESTED);
+			case BM_REVERT_CHANGES: {
+				mPrefsViewContainer->RevertChanges();
+				mApplyButton->SetEnabled( false);
+				mRevertButton->SetEnabled( false);
+				mChanged = false;
+				break;
+			}
+			case BM_SET_DEFAULTS: {
+				mPrefsViewContainer->SetDefaults();
+				mApplyButton->SetEnabled( true);
+				mRevertButton->SetEnabled( true);
+				mChanged = true;
 				break;
 			}
 			default:
@@ -301,6 +321,22 @@ void BmPrefsWin::MessageReceived( BMessage* msg) {
 \*------------------------------------------------------------------------------*/
 bool BmPrefsWin::QuitRequested() {
 	BM_LOG2( BM_LogPrefsWin, BmString("PrefsWin has been asked to quit"));
+	if (mChanged) {
+		if (IsMinimized())
+			Minimize( false);
+		Activate();
+		BAlert* alert = new BAlert( "title", "The preferences have changed. Would you like to save changes before closing?",
+											 "Cancel", "Don't Save", "Save",
+											 B_WIDTH_AS_USUAL, B_OFFSET_SPACING, B_WARNING_ALERT);
+		alert->SetShortcut( 0, B_ESCAPE);
+		int32 result = alert->Go();
+		switch( result) {
+			case 0:
+				return false;
+			case 2:
+				return mPrefsViewContainer->ApplyChanges();
+		}
+	}
 	return true;
 }
 
@@ -309,8 +345,6 @@ bool BmPrefsWin::QuitRequested() {
 		-	standard BeOS-behaviour, we quit
 \*------------------------------------------------------------------------------*/
 void BmPrefsWin::Quit() {
-	if (mFinishOnExit)
-		mPrefsViewContainer->Finish();
 	mPrefsViewContainer->WriteStateInfo();
 	BM_LOG2( BM_LogPrefsWin, BmString("PrefsWin has quit"));
 	inherited::Quit();

@@ -84,7 +84,7 @@ public:
 
 	// overrides of BmPrefsView base:
 	void Initialize();
-	void Activated();
+	void Update();
 	void SaveData();
 	void UndoChanges();
 

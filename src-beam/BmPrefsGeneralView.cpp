@@ -251,7 +251,6 @@ void BmPrefsGeneralView::Initialize() {
 			label = "Current";
 		AddItemToMenu( mWorkspaceControl->Menu(), new BMenuItem( label.String(), msg), this);
 	}
-	mWorkspaceControl->MarkItem( ThePrefs->GetString("Workspace", "Current").String());
 
 	mMailMoverShowControl->SetTarget( this);
 	mPopperRemoveControl->SetTarget( this);
@@ -259,6 +258,36 @@ void BmPrefsGeneralView::Initialize() {
 	mRemoveFailedControl->SetTarget( this);
 	mNetBufSizeSendControl->SetTarget( this);
 	mNetRecvTimeoutControl->SetTarget( this);
+	Update();
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmPrefsGeneralView::Update() {
+	mWorkspaceControl->MarkItem( ThePrefs->GetString("Workspace", "Current").String());
+	mDynamicStatusWinControl->SetValueSilently( ThePrefs->GetBool("DynamicStatusWin"));
+	mRestoreFolderStatesControl->SetValueSilently( ThePrefs->GetBool("RestoreFolderStates"));
+	mInOutAtTopControl->SetValueSilently( ThePrefs->GetBool("InOutAlwaysAtTop", false));
+	mUseDeskbarControl->SetValueSilently( ThePrefs->GetBool("UseDeskbar", true));
+	mBeepNewMailControl->SetValueSilently( ThePrefs->GetBool("BeepWhenNewMailArrived", true));
+	mShowTooltipsControl->SetValueSilently( ThePrefs->GetBool("ShowTooltips", true));
+	mCacheRefsOnDiskControl->SetValueSilently( ThePrefs->GetBool("CacheRefsOnDisk"));
+	mCacheRefsInMemControl->SetValueSilently( ThePrefs->GetBool("CacheRefsInMem"));
+	BmString val;
+	val << ThePrefs->GetInt("MSecsBeforeMailMoverShows")/1000;
+	mMailMoverShowControl->SetTextSilently( val.String());
+	val = BmString("") << ThePrefs->GetInt("MSecsBeforePopperRemove")/1000;
+	mPopperRemoveControl->SetTextSilently( val.String());
+	val = BmString("") << ThePrefs->GetInt("MSecsBeforeSmtpRemove")/1000;
+	mSmtpRemoveControl->SetTextSilently( val.String());
+	val = BmString("") << ThePrefs->GetInt("MSecsBeforeRemoveFailed", 5000*1000)/1000;
+	mRemoveFailedControl->SetTextSilently( val.String());
+	val = BmString("") << ThePrefs->GetInt("NetSendBufferSize");
+	mNetBufSizeSendControl->SetTextSilently( val.String());
+	val = BmString("") << ThePrefs->GetInt("ReceiveTimeout");
+	mNetRecvTimeoutControl->SetTextSilently( val.String());
 }
 
 /*------------------------------------------------------------------------------*\
@@ -297,6 +326,21 @@ void BmPrefsGeneralView::UndoChanges() {
 }
 
 /*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmPrefsGeneralView::SetDefaults() {
+	bool lastInOutAtTop = ThePrefs->GetBool( "InOutAlwaysAtTop");
+	ThePrefs->ResetToDefault();
+	if (lastInOutAtTop != ThePrefs->GetBool( "InOutAlwaysAtTop")) {
+		if (TheMailFolderView->LockLooper()) {
+			TheMailFolderView->SortItems();
+			TheMailFolderView->UnlockLooper();
+		}
+	}
+}
+
+/*------------------------------------------------------------------------------*\
 	MessageReceived( msg)
 		-	
 \*------------------------------------------------------------------------------*/
@@ -319,22 +363,27 @@ void BmPrefsGeneralView::MessageReceived( BMessage* msg) {
 					ThePrefs->SetInt("NetSendBufferSize", atoi(mNetBufSizeSendControl->Text()));
 				else if ( source == mNetRecvTimeoutControl)
 					ThePrefs->SetInt("ReceiveTimeout", atoi(mNetRecvTimeoutControl->Text()));
+				NoticeChange();
 				break;
 			}
 			case BM_RESTORE_FOLDER_STATES_CHANGED: {
 				ThePrefs->SetBool("RestoreFolderStates", mRestoreFolderStatesControl->Value());
+				NoticeChange();
 				break;
 			}
 			case BM_DYNAMIC_STATUS_WIN_CHANGED: {
 				ThePrefs->SetBool("DynamicStatusWin", mDynamicStatusWinControl->Value());
+				NoticeChange();
 				break;
 			}
 			case BM_CACHE_REFS_DISK_CHANGED: {
 				ThePrefs->SetBool("CacheRefsOnDisk", mCacheRefsOnDiskControl->Value());
+				NoticeChange();
 				break;
 			}
 			case BM_CACHE_REFS_MEM_CHANGED: {
 				ThePrefs->SetBool("CacheRefsInMem", mCacheRefsInMemControl->Value());
+				NoticeChange();
 				break;
 			}
 			case BM_INOUT_AT_TOP_CHANGED: {
@@ -342,26 +391,32 @@ void BmPrefsGeneralView::MessageReceived( BMessage* msg) {
 				TheMailFolderView->LockLooper();
 				TheMailFolderView->SortItems();
 				TheMailFolderView->UnlockLooper();
+				NoticeChange();
 				break;
 			}
 			case BM_USE_DESKBAR_CHANGED: {
 				bool val = mUseDeskbarControl->Value();
 				ThePrefs->SetBool("UseDeskbar", val);
+				NoticeChange();
 				break;
 			}
 			case BM_BEEP_NEW_MAIL_CHANGED: {
 				ThePrefs->SetBool("BeepWhenNewMailArrived", mBeepNewMailControl->Value());
+				NoticeChange();
 				break;
 			}
 			case BM_SHOW_TOOLTIPS_CHANGED: {
 				ThePrefs->SetBool("ShowTooltips", mShowTooltipsControl->Value());
 				TheBubbleHelper.EnableHelp( mShowTooltipsControl->Value());
+				NoticeChange();
 				break;
 			}
 			case BM_WORKSPACE_SELECTED: {
 				BMenuItem* item = mWorkspaceControl->Menu()->FindMarked();
-				if (item)
+				if (item) {
 					ThePrefs->SetString( "Workspace", item->Label());
+					NoticeChange();
+				}
 				break;
 			}
 			case BM_MAKE_BEAM_STD_APP: {
@@ -386,6 +441,7 @@ void BmPrefsGeneralView::MessageReceived( BMessage* msg) {
 						mt.SetTo("message/rfc822");
 						if (mt.InitCheck() == B_OK)
 							mt.SetPreferredApp( appInfo.signature);
+						NoticeChange();
 						BAlert* alert = new BAlert( "Set Beam As Preferred App", 
 															 "Done, Beam is now the preferred Application for email.",
 														 	 "Good", NULL, NULL, B_WIDTH_AS_USUAL,
@@ -412,6 +468,7 @@ void BmPrefsGeneralView::MessageReceived( BMessage* msg) {
 						ThePrefs->SetString( "MailboxPath", path.Path());
 						mMailboxButton->SetLabel( MailboxButtonLabel().String());
 						TheMailFolderList->MailboxPathHasChanged( true);
+						NoticeChange();
 						BAlert* alert = new BAlert( "Mailbox Path", 
 															 "Done, Beam will use the new mailbox after a restart",
 														 	 "Ok", NULL, NULL, B_WIDTH_AS_USUAL,

@@ -358,6 +358,7 @@ void BmPrefsSignatureView::SaveData() {
 void BmPrefsSignatureView::UndoChanges() {
 	TheSignatureList->Cleanup();
 	TheSignatureList->StartJobInThisThread();
+	ShowSignature( -1);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -377,8 +378,10 @@ void BmPrefsSignatureView::MessageReceived( BMessage* msg) {
 					BView* srcView = NULL;
 					msg->FindPointer( "source", (void**)&srcView);
 					BmMultiLineTextControl* source = dynamic_cast<BmMultiLineTextControl*>( srcView);
-					if ( source == mContentControl)
+					if ( source == mContentControl) {
 						mCurrSig->Content( mContentControl->Text());
+						NoticeChange();
+					}
 				}
 				break;
 			}
@@ -390,6 +393,7 @@ void BmPrefsSignatureView::MessageReceived( BMessage* msg) {
 					TheSignatureList->RenameItem( mCurrSig->Name(), mSignatureControl->Text());
 				else if ( source == mSignatureRxControl)
 					ThePrefs->SetString("SignatureRX", mSignatureRxControl->Text());
+				NoticeChange();
 				break;
 			}
 			case BM_DYNAMIC_CHANGED: {
@@ -398,6 +402,7 @@ void BmPrefsSignatureView::MessageReceived( BMessage* msg) {
 					mCurrSig->Dynamic( val);
 				mCharsetControl->SetEnabled( val);
 				mTestButton->SetEnabled( val);
+				NoticeChange();
 				break;
 			}
 			case BM_CHARSET_SELECTED: {
@@ -407,6 +412,7 @@ void BmPrefsSignatureView::MessageReceived( BMessage* msg) {
 						mCurrSig->Encoding( CharsetToEncoding( item->Label()));
 					else
 						mCurrSig->Encoding( ThePrefs->GetInt( "DefaultEncoding"));
+					NoticeChange();
 				}
 				break;
 			}
@@ -432,6 +438,7 @@ void BmPrefsSignatureView::MessageReceived( BMessage* msg) {
 				TheSignatureList->AddItemToList( new BmSignature( key.String(), TheSignatureList.Get()));
 				mSignatureControl->MakeFocus( true);
 				mSignatureControl->TextView()->SelectAll();
+				NoticeChange();
 				break;
 			}
 			case BM_REMOVE_SIGNATURE: {
@@ -449,6 +456,7 @@ void BmPrefsSignatureView::MessageReceived( BMessage* msg) {
 					if (buttonPressed == 0) {
 						TheSignatureList->RemoveItemFromList( mCurrSig.Get());
 						mCurrSig = NULL;
+						NoticeChange();
 					}
 				}
 				break;

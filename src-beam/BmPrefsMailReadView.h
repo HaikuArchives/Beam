@@ -51,6 +51,7 @@ public:
 	
 	// overrides of BmPrefsView base:
 	void Initialize();
+	void Update();
 	void SaveData();
 	void UndoChanges();
 

@@ -287,7 +287,7 @@ BmPrefsRecvMailView::BmPrefsRecvMailView()
 						new Space( minimax(0,5,0,5)),
 						new HGroup( 
 							mServerControl = new BmTextControl( "POP-Server:"),
-							mPortControl = new BmTextControl( "", 5),
+							mPortControl = new BmTextControl( "", false, 0, 8),
 							0
 						),
 						new HGroup( 
@@ -296,8 +296,8 @@ BmPrefsRecvMailView::BmPrefsRecvMailView()
 							0
 						),
 						new HGroup( 
-							mLoginControl = new BmTextControl( "User/Pwd:", 0, 12),
-							mPwdControl = new BmTextControl( ""),
+							mLoginControl = new BmTextControl( "User/Pwd:"),
+							mPwdControl = new BmTextControl( "", false, 0, 8),
 							0
 						),
 						new Space( minimax(0,5,0,5)),
@@ -373,8 +373,10 @@ BmPrefsRecvMailView::BmPrefsRecvMailView()
 	mSmtpControl->SetDivider( divider);
 	mFilterControl->SetDivider( divider);
 
-	mPortControl->SetDivider( 5);
-	mPwdControl->SetDivider( 5);
+	mPortControl->SetDivider( 15);
+	mPortControl->ct_mpm.weight = 0.4;
+	mPwdControl->SetDivider( 15);
+	mPwdControl->ct_mpm.weight = 0.4;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -529,7 +531,7 @@ bool BmPrefsRecvMailView::SanityCheck() {
 	for( iter = ThePopAccountList->begin(); iter != ThePopAccountList->end(); ++iter) {
 		BmPopAccount* acc = dynamic_cast<BmPopAccount*>( iter->second.Get());
 		if (acc && !acc->SanityCheck( complaint, fieldName)) {
-			msg.AddPointer( MSG_ACCOUNT, (void*)acc);
+			msg.AddPointer( MSG_ITEM, (void*)acc);
 			msg.AddString( MSG_COMPLAINT, complaint.String());
 			if (fieldName.Length())
 				msg.AddString( MSG_FIELD_NAME, fieldName.String());
@@ -554,6 +556,7 @@ void BmPrefsRecvMailView::SaveData() {
 \*------------------------------------------------------------------------------*/
 void BmPrefsRecvMailView::UndoChanges() {
 	ThePopAccountList->ResetToSaved();
+	ShowAccount( -1);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -591,12 +594,15 @@ void BmPrefsRecvMailView::MessageReceived( BMessage* msg) {
 						mCurrAcc->POPServer( mServerControl->Text());
 					else if ( source == mCheckIntervalControl)
 						mCurrAcc->CheckInterval( MAX( 0,atoi(mCheckIntervalControl->Text())));
+					NoticeChange();
 				}
 				break;
 			}
 			case BM_CHECK_MAIL_CHANGED: {
-				if (mCurrAcc)
+				if (mCurrAcc) {
 					mCurrAcc->CheckMail( mCheckAccountControl->Value());
+					NoticeChange();
+				}
 				break;
 			}
 			case BM_CHECK_EVERY_CHANGED: {
@@ -609,16 +615,19 @@ void BmPrefsRecvMailView::MessageReceived( BMessage* msg) {
 				}
 				mMinutesLabel->SetHighColor( val ? Black : BeInactiveGrey);
 				mMinutesLabel->Invalidate();
+				NoticeChange();
 				break;
 			}
 			case BM_REMOVE_MAIL_CHANGED: {
 				if (mCurrAcc)
 					mCurrAcc->DeleteMailFromServer( mRemoveMailControl->Value());
+				NoticeChange();
 				break;
 			}
 			case BM_IS_BUCKET_CHANGED: {
 				if (mCurrAcc)
 					mCurrAcc->MarkedAsBitBucket( mIsBucketControl->Value());
+				NoticeChange();
 				break;
 			}
 			case BM_IS_DEFAULT_CHANGED: {
@@ -628,6 +637,7 @@ void BmPrefsRecvMailView::MessageReceived( BMessage* msg) {
 						ThePopAccountList->SetDefaultAccount( mCurrAcc->Key());
 					else
 						mCurrAcc->MarkedAsDefault( false);
+					NoticeChange();
 				}
 				break;
 			}
@@ -638,6 +648,7 @@ void BmPrefsRecvMailView::MessageReceived( BMessage* msg) {
 					mPwdControl->SetText("");
 				if (mCurrAcc)
 					mCurrAcc->PwdStoredOnDisk( val);
+				NoticeChange();
 				break;
 			}
 			case BM_CHECK_AND_SUGGEST: {
@@ -646,6 +657,7 @@ void BmPrefsRecvMailView::MessageReceived( BMessage* msg) {
 					popper->StartJobInThisThread( BmPopper::BM_CHECK_AUTH_TYPES_JOB);
 					BmString suggestedAuthType = popper->SuggestAuthType();
 					mAuthControl->MarkItem( suggestedAuthType.String());
+					NoticeChange();
 				}
 				// yes, no break here, we want to proceed with updating the auth-menu...
 			}
@@ -655,6 +667,7 @@ void BmPrefsRecvMailView::MessageReceived( BMessage* msg) {
 					mCurrAcc->AuthMethod( item->Label());
 				else
 					mCurrAcc->AuthMethod( "");
+				NoticeChange();
 				break;
 			}
 			case BM_SMTP_SELECTED: {
@@ -663,6 +676,7 @@ void BmPrefsRecvMailView::MessageReceived( BMessage* msg) {
 					mCurrAcc->SMTPAccount( item->Label());
 				else
 					mCurrAcc->SMTPAccount( "");
+				NoticeChange();
 				break;
 			}
 			case BM_SIGNATURE_SELECTED: {
@@ -671,6 +685,7 @@ void BmPrefsRecvMailView::MessageReceived( BMessage* msg) {
 					mCurrAcc->SignatureName( item->Label());
 				else
 					mCurrAcc->SignatureName( "");
+				NoticeChange();
 				break;
 			}
 			case BM_FILTER_SELECTED: {
@@ -679,6 +694,7 @@ void BmPrefsRecvMailView::MessageReceived( BMessage* msg) {
 					mCurrAcc->FilterName( item->Label());
 				else
 					mCurrAcc->FilterName( "");
+				NoticeChange();
 				break;
 			}
 			case BM_ADD_ACCOUNT: {
@@ -689,6 +705,7 @@ void BmPrefsRecvMailView::MessageReceived( BMessage* msg) {
 				ThePopAccountList->AddItemToList( new BmPopAccount( key.String(), ThePopAccountList.Get()));
 				mAccountControl->MakeFocus( true);
 				mAccountControl->TextView()->SelectAll();
+				NoticeChange();
 				break;
 			}
 			case BM_REMOVE_ACCOUNT: {
@@ -706,6 +723,7 @@ void BmPrefsRecvMailView::MessageReceived( BMessage* msg) {
 					if (buttonPressed == 0) {
 						ThePopAccountList->RemoveItemFromList( mCurrAcc.Get());
 						mCurrAcc = NULL;
+						NoticeChange();
 					}
 				}
 				break;
@@ -723,7 +741,7 @@ void BmPrefsRecvMailView::MessageReceived( BMessage* msg) {
 					alert->SetShortcut( 0, B_ESCAPE);
 					alert->Go( new BInvoker( new BMessage(*msg), BMessenger( this)));
 					BmPopAccount* acc=NULL;
-					msg->FindPointer( MSG_ACCOUNT, (void**)&acc);
+					msg->FindPointer( MSG_ITEM, (void**)&acc);
 					BmListViewItem* accItem = mAccListView->FindViewItemFor( acc);
 					if (accItem)
 						mAccListView->Select( mAccListView->IndexOf( accItem));

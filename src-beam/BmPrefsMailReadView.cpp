@@ -108,13 +108,6 @@ BmPrefsMailReadView::BmPrefsMailReadView()
 	divider = MAX( divider, mHeaderListLargeControl->Divider());
 	mHeaderListSmallControl->SetDivider( divider);
 	mHeaderListLargeControl->SetDivider( divider);
-
-	mHeaderListLargeControl->SetText( ThePrefs->GetString("HeaderListLarge").String());
-	mHeaderListSmallControl->SetText( ThePrefs->GetString("HeaderListSmall").String());
-	mMimeTypeTrustInfoControl->SetText( ThePrefs->GetString("MimeTypeTrustInfo").String());
-	BmString val;
-	val << ThePrefs->GetInt("MarkAsReadDelay");
-	mMarkAsReadDelayControl->SetText( val.String());
 }
 
 /*------------------------------------------------------------------------------*\
@@ -159,6 +152,21 @@ uncheck this, otherwise no automatic checks will happen!");
 	mHeaderListLargeControl->SetTarget( this);
 	mMarkAsReadDelayControl->SetTarget( this);
 	mMimeTypeTrustInfoControl->SetTarget( this);
+	Update();
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmPrefsMailReadView::Update() {
+	mAutoCheckIfPppUpControl->SetValueSilently( ThePrefs->GetBool("AutoCheckOnlyIfPPPRunning"));
+	BmString val;
+	val << ThePrefs->GetInt("MarkAsReadDelay");
+	mMarkAsReadDelayControl->SetTextSilently( val.String());
+	mHeaderListLargeControl->SetTextSilently( ThePrefs->GetString("HeaderListLarge").String());
+	mHeaderListSmallControl->SetTextSilently( ThePrefs->GetString("HeaderListSmall").String());
+	mMimeTypeTrustInfoControl->SetTextSilently( ThePrefs->GetString("MimeTypeTrustInfo").String());
 }
 
 /*------------------------------------------------------------------------------*\
@@ -196,10 +204,12 @@ void BmPrefsMailReadView::MessageReceived( BMessage* msg) {
 					ThePrefs->SetString("MimeTypeTrustInfo", mMimeTypeTrustInfoControl->Text());
 				else if ( source == mMarkAsReadDelayControl)
 					ThePrefs->SetInt("MarkAsReadDelay", atoi( mMarkAsReadDelayControl->Text()));
+				NoticeChange();
 				break;
 			}
 			case BM_CHECK_IF_PPP_UP_CHANGED: {
 				ThePrefs->SetBool("AutoCheckOnlyIfPPPRunning", mAutoCheckIfPppUpControl->Value());
+				NoticeChange();
 				break;
 			}
 			default:

@@ -176,6 +176,7 @@ void BmPrefsShortcutsView::Initialize() {
 
 	mListView->SetSelectionMessage( new BMessage( BM_SELECTION_CHANGED));
 	mListView->SetTarget( this);
+	Update();
 	ShowShortcut( -1);
 }
 
@@ -183,8 +184,26 @@ void BmPrefsShortcutsView::Initialize() {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmPrefsShortcutsView::Activated() {
-	inherited::Activated();
+void BmPrefsShortcutsView::Update() {
+	BmAutolock lock( ThePrefs->Locker());
+	lock.IsLocked()							|| BM_THROW_RUNTIME( "Unable to get lock on Prefs!");
+	BMessage* scMsg = ThePrefs->ShortcutsMsg();
+	if (scMsg) {
+		CLVEasyItem* item;
+		type_code type;
+#ifdef B_BEOS_VERSION_DANO
+		const char* name;
+#else
+		char* name;
+#endif
+		mListView->MakeEmpty();
+		for( int32 i=0; scMsg->GetInfo( B_STRING_TYPE, i, &name, &type)==B_OK; ++i) {
+			item = new CLVEasyItem( 0, false, false, 18.0);
+			item->SetColumnContent( 0, name, !ThePrefs->GetBool("StripedListView"));
+			item->SetColumnContent( 1, scMsg->FindString( name), !ThePrefs->GetBool("StripedListView"));
+			mListView->AddItem( item);
+		}
+	}
 }
 
 /*------------------------------------------------------------------------------*\
@@ -201,6 +220,7 @@ void BmPrefsShortcutsView::SaveData() {
 \*------------------------------------------------------------------------------*/
 void BmPrefsShortcutsView::UndoChanges() {
 	// prefs are already undone by General View
+	ShowShortcut( -1);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -229,6 +249,7 @@ void BmPrefsShortcutsView::MessageReceived( BMessage* msg) {
 							scItem->SetColumnContent( 1, sc.String(), !ThePrefs->GetBool("StripedListView"));
 						mListView->InvalidateItem( index);
 					}
+					NoticeChange();
 				}
 				break;
 			}
@@ -290,25 +311,6 @@ CLVContainerView* BmPrefsShortcutsView::CreateListView( minimax minmax, int32 wi
 										 be_bold_font);
 	mListView->AddColumn( new CLVColumn( "Menu-Item", 300.0, CLV_SORT_KEYABLE|flags, 100.0));
 	mListView->AddColumn( new CLVColumn( "Shortcut", 80.0, CLV_SORT_KEYABLE|flags, 4.0));
-
-	BmAutolock lock( ThePrefs->Locker());
-	lock.IsLocked()							|| BM_THROW_RUNTIME( "Unable to get lock on Prefs!");
-	BMessage* scMsg = ThePrefs->ShortcutsMsg();
-	if (scMsg) {
-		CLVEasyItem* item;
-		type_code type;
-#ifdef B_BEOS_VERSION_DANO
-		const char* name;
-#else
-		char* name;
-#endif
-		for( int32 i=0; scMsg->GetInfo( B_STRING_TYPE, i, &name, &type)==B_OK; ++i) {
-			item = new CLVEasyItem( 0, false, false, 18.0);
-			item->SetColumnContent( 0, name, !ThePrefs->GetBool("StripedListView"));
-			item->SetColumnContent( 1, scMsg->FindString( name), !ThePrefs->GetBool("StripedListView"));
-			mListView->AddItem( item);
-		}
-	}
 
 	mListView->SetSortFunction( CLVEasyItem::CompareItems);
 	mListView->SetSortKey( 0);

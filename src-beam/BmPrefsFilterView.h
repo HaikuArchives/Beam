@@ -110,6 +110,7 @@ class BmCheckControl;
 class BmMultiLineTextControl;
 class BmTextControl;
 class MButton;
+class MTabView;
 /*------------------------------------------------------------------------------*\
 	BmPrefsFilterView
 		-	
@@ -131,6 +132,7 @@ public:
 	void WriteStateInfo();
 	void SaveData();
 	void UndoChanges();
+	bool SanityCheck();
 
 	// overrides of BView base:
 	void MessageReceived( BMessage* msg);
@@ -152,6 +154,7 @@ private:
 	MButton* mAddButton;
 	MButton* mRemoveButton;
 	MButton* mTestButton;
+	MTabView* mTabView;
 
 	BmRef<BmFilter> mCurrFilter;
 	

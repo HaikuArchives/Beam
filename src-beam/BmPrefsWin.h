@@ -73,7 +73,10 @@ private:
 	BmPrefsViewContainer* mPrefsViewContainer;
 	UserResizeSplitView* mVertSplitter;
 	
-	bool mFinishOnExit;
+	bool mChanged;
+	MButton* mApplyButton;
+	MButton* mRevertButton;
+	MButton* mDefaultsButton;
 
 	// Hide copy-constructor and assignment:
 	BmPrefsWin( const BmPrefsWin&);

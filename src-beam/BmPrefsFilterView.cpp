@@ -46,6 +46,7 @@
 #include "Colors.h"
 #include "ColumnListView.h"
 #include "CLVEasyItem.h"
+#include "UserResizeSplitView.h"
 
 #include "BmCheckControl.h"
 #include "BmGuiUtil.h"
@@ -221,17 +222,21 @@ BmPrefsFilterView::BmPrefsFilterView( BmFilterList* filterList, bool outbound)
 	,	mFilterList( filterList)
 	,	mOutbound( outbound)
 {
-	MTabView* tabView = NULL;
+	MBorder* border = NULL;
 	MView* view = 
-		new VGroup(
-			CreateFilterListView( minimax(400,60,1E5,1E5,1), 400, 100),
-			new HGroup(
-				mAddButton = new MButton("Add Filter", new BMessage(BM_ADD_FILTER), this),
-				mRemoveButton = new MButton("Remove Filter", new BMessage( BM_REMOVE_FILTER), this),
+		new UserResizeSplitView(
+			new VGroup(
+				minimax(400,120),
+				CreateFilterListView( minimax(400,60,1E5,1E5), 400, 100),
+				new HGroup(
+					mAddButton = new MButton("Add Filter", new BMessage(BM_ADD_FILTER), this),
+					mRemoveButton = new MButton("Remove Filter", new BMessage( BM_REMOVE_FILTER), this),
+					0
+				),
+				new Space( minimax(0,5,0,5)),
 				0
 			),
-			new Space( minimax(0,10,0,10)),
-			new MBorder( M_LABELED_BORDER, 10, (char*)"Filter Info",
+			border = new MBorder( M_LABELED_BORDER, 10, (char*)"Filter Info",
 				new VGroup(
 					new HGroup( 
 						mFilterControl = new BmTextControl( "Filter name:"),
@@ -244,36 +249,35 @@ BmPrefsFilterView::BmPrefsFilterView( BmFilterList* filterList, bool outbound)
 						0
 					),
 					new Space( minimax(0,5,0,5)),
-					tabView = new MTabView(),
+					mTabView = new MTabView(),
 					0
 				)
 			),
-			0
+			"hsplitter", 150, B_HORIZONTAL, true, true, false, B_FOLLOW_NONE
 		);
 
-	tabView->Add(
+	border->ct_mpm = minimax(400,150);
+	mTabView->Add(
 		new MTab( 
-			new Space(minimax(0,0,1E5,1E5,0.5)), 
+			new Space(minimax(0,0,1E5,1E5)), 
 			(char*)"Graphical View"
 		)
 	);
-	tabView->Add(
+	mTabView->Add(
 		new MTab( 
 			new VGroup( 
-				mContentControl = new BmMultiLineTextControl( "SIEVE-script:", false, 15), 
+				mContentControl = new BmMultiLineTextControl( ""), 
 				new Space( minimax(0,2,0,2)),
 				0
 			),
-			(char*)"Plain View"
+			(char*)"Script View"
 		)
 	);
 
 	mGroupView->AddChild( dynamic_cast<BView*>(view));
 
 	float divider = mFilterControl->Divider();
-	divider = MAX( divider, mContentControl->Divider());
 	mFilterControl->SetDivider( divider);
-	mContentControl->SetDivider( divider);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -329,6 +333,30 @@ void BmPrefsFilterView::WriteStateInfo() {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
+bool BmPrefsFilterView::SanityCheck() {
+	if (!InitDone())
+		return true;
+	BmString complaint, fieldName;
+	BMessage msg( BM_COMPLAIN_ABOUT_FIELD);
+	BmModelItemMap::const_iterator iter;
+	for( iter = mFilterList->begin(); iter != mFilterList->end(); ++iter) {
+		BmFilter* filter = dynamic_cast<BmFilter*>( iter->second.Get());
+		if (filter && !filter->SanityCheck( complaint, fieldName)) {
+			msg.AddPointer( MSG_ITEM, (void*)filter);
+			msg.AddString( MSG_COMPLAINT, complaint.String());
+			if (fieldName.Length())
+				msg.AddString( MSG_FIELD_NAME, fieldName.String());
+			Looper()->PostMessage( &msg, this);
+			return false;
+		}
+	}
+	return true;
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
 void BmPrefsFilterView::SaveData() {
 	mFilterList->Store();
 }
@@ -340,6 +368,7 @@ void BmPrefsFilterView::SaveData() {
 void BmPrefsFilterView::UndoChanges() {
 	mFilterList->Cleanup();
 	mFilterList->StartJobInThisThread();
+	ShowFilter( -1);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -359,8 +388,10 @@ void BmPrefsFilterView::MessageReceived( BMessage* msg) {
 					BView* srcView = NULL;
 					msg->FindPointer( "source", (void**)&srcView);
 					BmMultiLineTextControl* source = dynamic_cast<BmMultiLineTextControl*>( srcView);
-					if ( source == mContentControl)
+					if ( source == mContentControl) {
 						mCurrFilter->Content( mContentControl->Text());
+						NoticeChange();
+					}
 				}
 				break;
 			}
@@ -374,6 +405,7 @@ void BmPrefsFilterView::MessageReceived( BMessage* msg) {
 							TheInboundFilterList->SetDefaultFilter( mCurrFilter->Key());
 					} else
 						mCurrFilter->MarkedAsDefault( false);
+					NoticeChange();
 				}
 				break;
 			}
@@ -381,19 +413,17 @@ void BmPrefsFilterView::MessageReceived( BMessage* msg) {
 				BView* srcView = NULL;
 				msg->FindPointer( "source", (void**)&srcView);
 				BmTextControl* source = dynamic_cast<BmTextControl*>( srcView);
-				if ( mCurrFilter && source == mFilterControl)
+				if ( mCurrFilter && source == mFilterControl) {
 					mFilterList->RenameItem( mCurrFilter->Name(), mFilterControl->Text());
+					NoticeChange();
+				}
 				break;
 			}
 			case BM_TEST_FILTER: {
 				if (mCurrFilter) {
 					if (!mCurrFilter->CompileScript()) {
-						BmString errString = mCurrFilter->LastErr() + "\n\n" 
-													<< "Error: " 
-													<< sieve_strerror(mCurrFilter->LastErrVal()) 
-													<< "\n\n"
-													<< mCurrFilter->LastSieveErr();
-						BAlert* alert = new BAlert( "Filter-Test", errString.String(),
+						BAlert* alert = new BAlert( "Filter-Test", 
+															 mCurrFilter->ErrorString().String(),
 													 		 "OK", NULL, NULL, B_WIDTH_AS_USUAL,
 													 		 B_INFO_ALERT);
 						alert->SetShortcut( 0, B_ESCAPE);
@@ -410,6 +440,7 @@ void BmPrefsFilterView::MessageReceived( BMessage* msg) {
 				mFilterList->AddItemToList( new BmFilter( key.String(), mFilterList));
 				mFilterControl->MakeFocus( true);
 				mFilterControl->TextView()->SelectAll();
+				NoticeChange();
 				break;
 			}
 			case BM_REMOVE_FILTER: {
@@ -427,7 +458,35 @@ void BmPrefsFilterView::MessageReceived( BMessage* msg) {
 					if (buttonPressed == 0) {
 						mFilterList->RemoveItemFromList( mCurrFilter.Get());
 						mCurrFilter = NULL;
+						NoticeChange();
 					}
+				}
+				break;
+			}
+			case BM_COMPLAIN_ABOUT_FIELD: {
+				int32 buttonPressed;
+				if (msg->FindInt32( "which", &buttonPressed) != B_OK) {
+					BmString complaint;
+					complaint = msg->FindString( MSG_COMPLAINT);
+					// first step, tell user about complaint:
+					BAlert* alert = new BAlert( "Sanity Check Failed", 
+														 complaint.String(),
+													 	 "OK", NULL, NULL, B_WIDTH_AS_USUAL,
+													 	 B_WARNING_ALERT);
+					alert->SetShortcut( 0, B_ESCAPE);
+					alert->Go( new BInvoker( new BMessage(*msg), BMessenger( this)));
+					BmFilter* filter=NULL;
+					msg->FindPointer( MSG_ITEM, (void**)&filter);
+					BmListViewItem* filterItem = mFilterListView->FindViewItemFor( filter);
+					if (filterItem)
+						mFilterListView->Select( mFilterListView->IndexOf( filterItem));
+					mTabView->Select( 1);
+				} else {
+					// second step, set corresponding focus:
+					BmString fieldName;
+					fieldName = msg->FindString( MSG_FIELD_NAME);
+					if (fieldName.ICompare( "content")==0)
+						mContentControl->MakeFocus( true);
 				}
 				break;
 			}

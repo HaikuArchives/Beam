@@ -40,6 +40,7 @@
 
 #define BM_SELECTION_CHANGED 		'bm_S'
 #define BM_COMPLAIN_ABOUT_FIELD 	'bm_C'
+#define BM_PREFS_CHANGED 			'bm_!'
 
 class MStringView;
 /*------------------------------------------------------------------------------*\
@@ -57,11 +58,15 @@ public:
 	// native methods:
 	virtual void Activated();
 	virtual void Initialize();
+	virtual void Update()					{}
 	virtual void SaveData()					{}
 	virtual void UndoChanges()				{}
+	virtual void SetDefaults()				{}
 	virtual bool SanityCheck()				{ return true; }
-	void Finish()								{ UndoChanges(); }
 	virtual void WriteStateInfo()			{}
+
+	void NoticeChange();
+	void ResetChanged()						{ mChanged = false; }
 
 	// overrides of BView base:
 	void MessageReceived( BMessage* msg);
@@ -70,14 +75,14 @@ public:
 	bool InitDone() const					{ return mInitDone; }
 
 	// message-fields:
-	static const char* const MSG_ACCOUNT;
+	static const char* const MSG_ITEM;
 	static const char* const MSG_FIELD_NAME;
 	static const char* const MSG_COMPLAINT;
 
 protected:
-
 	BView* mGroupView;
-	
+	bool mChanged;
+
 private:
 	MStringView* mLabelView;
 	bool mInitDone;
@@ -103,8 +108,9 @@ public:
 	// native methods:
 	void ShowPrefs( int index);
 	void WriteStateInfo();
-	bool SaveData();
-	void Finish();
+	bool ApplyChanges();
+	void RevertChanges();
+	void SetDefaults();
 
 private:
 	LayeredGroup* mLayeredGroup;
