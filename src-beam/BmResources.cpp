@@ -346,7 +346,7 @@ void BmResources::AddFontSubmenuTo( BMenu* menu, BHandler* target,
 	BMenu* sizeMenu = new BMenu( "Select Fontsize...");
 	sizeMenu->SetFont( &font);
 	const char* sizes[] 
-		= { "8","9","10","11","12","14","16","18","20","24",NULL };
+		= { "8","9","10","11","12","13","14","15","16","18","20","24",NULL };
 	for( int i=0; sizes[i]!=NULL; ++i) {
 		BMessage* msg = new BMessage( BM_FONTSIZE_SELECTED);
 		int16 size = atoi(sizes[i]);
