@@ -119,6 +119,7 @@ const char* BM_FIELD_X_MAILER				= "X-Mailer";
 const char* BM_FIELD_X_PRIORITY			= "X-Priority";
 
 const char* BM_MAIL_STATUS_DRAFT			= "Draft";
+const char* BM_MAIL_STATUS_ERROR			= "Error";
 const char* BM_MAIL_STATUS_FORWARDED	= "Forwarded";
 const char* BM_MAIL_STATUS_NEW			= "New";
 const char* BM_MAIL_STATUS_PENDING		= "Pending";
