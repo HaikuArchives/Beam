@@ -70,12 +70,14 @@ class BmFilterChainView : public BmListViewController
 	
 public:
 	// creator-func, c'tors and d'tor:
-	static BmFilterChainView* CreateInstance( minimax minmax, int32 width, int32 height);
+	static BmFilterChainView* CreateInstance( minimax minmax, int32 width, 
+															int32 height);
 	BmFilterChainView(  minimax minmax, int32 width, int32 height);
 	~BmFilterChainView();
 
 	// native methods:
-	BmListViewItem* CreateListViewItem( BmListModelItem* item, BMessage* archive=NULL);
+	BmListViewItem* CreateListViewItem( BmListModelItem* item, 
+													BMessage* archive=NULL);
 	
 	// overrides of controller base:
 	BmString StateInfoBasename()			{ return "FilterChainView"; }
@@ -140,12 +142,14 @@ class BmChainedFilterView : public BmListViewController
 	
 public:
 	// creator-func, c'tors and d'tor:
-	static BmChainedFilterView* CreateInstance( minimax minmax, int32 width, int32 height);
+	static BmChainedFilterView* CreateInstance( minimax minmax, int32 width, 
+															  int32 height);
 	BmChainedFilterView(  minimax minmax, int32 width, int32 height);
 	~BmChainedFilterView();
 
 	// native methods:
-	BmListViewItem* CreateListViewItem( BmListModelItem* item, BMessage* archive=NULL);
+	BmListViewItem* CreateListViewItem( BmListModelItem* item, 
+													BMessage* archive=NULL);
 	
 	// overrides of controller base:
 	BmString StateInfoBasename()			{ return "ChainedFilterView"; }
@@ -229,9 +233,12 @@ public:
 	// setters:
 
 private:
-	CLVContainerView* CreateFilterChainListView( minimax minmax, int32 width, int32 height);
-	CLVContainerView* CreateChainedFilterListView( minimax minmax, int32 width, int32 height);
-	CLVContainerView* CreateAvailableFilterListView( minimax minmax, int32 width, int32 height);
+	CLVContainerView* CreateFilterChainListView( minimax minmax, int32 width, 
+																int32 height);
+	CLVContainerView* CreateChainedFilterListView( minimax minmax, int32 width, 
+																  int32 height);
+	CLVContainerView* CreateAvailableFilterListView( minimax minmax, int32 width, 
+																	 int32 height);
 
 	BmListViewController* mFilterChainListView;
 	BmListViewController* mChainedFilterListView;
