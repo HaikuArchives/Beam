@@ -44,6 +44,13 @@ using namespace regexx;
 #include "BmMenuControl.h"
 #include "BmMenuControllerBase.h"
 
+
+#ifdef B_BEOS_VERSION_DANO
+const float BmMenuControl::nDividerAdjustment = 13;
+#else
+const float BmMenuControl::nDividerAdjustment = 0;
+#endif
+
 /*------------------------------------------------------------------------------*\
 	( )
 		-	
@@ -56,14 +63,18 @@ BmMenuControl::BmMenuControl( const char* label, BMenu* menu, float weight,
 	ResizeToPreferred();
 	BRect b = Bounds();
 	float labelWidth = StringWidth( label);
-	SetDivider( label ? labelWidth+27 : 0);
+	SetDivider( nDividerAdjustment + (label ? labelWidth+19 : 0));
 	if (fitText) {
 		float fixedWidth = StringWidth( fitText)+Divider()+27;
 		ct_mpm = minimax( fixedWidth, b.Height()+4, 
 								fixedWidth, b.Height()+4);
-	} else
-		ct_mpm = minimax( StringWidth("12345678901234567890123456789012345"), 
-								b.Height()+4, maxWidth, b.Height()+4, weight);
+	} else {
+		ct_mpm = minimax( 
+			StringWidth("1234567890")+Divider()+27, 
+			b.Height()+4, maxWidth, b.Height()+4, weight
+		);
+	}
+	ResizeTo( ct_mpm.mini.x, ct_mpm.mini.y);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -124,12 +135,20 @@ minimax BmMenuControl::layoutprefs() {
 	( )
 		-	
 \*------------------------------------------------------------------------------*/
+void BmMenuControl::SetDivider( float divider) {
+	inherited::SetDivider( divider-nDividerAdjustment);
+}
+
+/*------------------------------------------------------------------------------*\
+	( )
+		-	
+\*------------------------------------------------------------------------------*/
 BRect BmMenuControl::layout(BRect frame) {
 	if (frame == Frame())
 		return frame;
 	MoveTo(frame.LeftTop());
 	ResizeTo(frame.Width(),frame.Height());
-	float occupiedSpace = Divider()-10;
+	float occupiedSpace = Divider()+1+nDividerAdjustment;
 	if (occupiedSpace < 3)
 		occupiedSpace = 3;					// leave room for focus-rectangle
 	mMenu->MoveTo( occupiedSpace, mMenu->Frame().top);

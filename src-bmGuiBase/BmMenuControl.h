@@ -55,6 +55,7 @@ public:
 
 	// overrides:
 	void SetEnabled( bool enabled);
+	void SetDivider( float divider);
 
 private:
 
@@ -62,6 +63,8 @@ private:
 	BRect layout(BRect frame);
 	
 	BMenu* mMenu;
+	
+	static const float nDividerAdjustment;
 
 	// Hide copy-constructor and assignment:
 	BmMenuControl( const BmMenuControl&);
