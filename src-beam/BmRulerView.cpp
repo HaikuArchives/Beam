@@ -219,6 +219,8 @@ void BmRulerView::SetIndicatorPixelPos( float pixelPos) {
 void BmRulerView::SetIndicatorPos( int32 newPos) {
 	if (newPos > 78 && ThePrefs->GetBool( "NeverExceed78Chars", false))
 		newPos = 78;
+	if (newPos < 1)
+		newPos = 1;
 	if (newPos != mIndicatorPos) {
 		mIndicatorPos = newPos;
 		Invalidate();
