@@ -176,7 +176,7 @@ void BmPerson::AddToNoGroupMap( BmPersonMap& noGroupMap) const {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmPerson::AddToAllPeopleMap( BmPersonMap& allPeopleMap) const {
-	if (mName.Length() && !mEmails.empty()) {
+	if (mName.Length() || !mEmails.empty()) {
 		for( uint32 i=0; i<mEmails.size(); ++i) {
 			BmPersonInfo& personInfo = allPeopleMap[GenerateSortkeyFor( mName+mEmails[i])];
 			personInfo.name = mName + " (" + mEmails[i] + ")";
@@ -360,7 +360,9 @@ void BmPeopleList::InitializeItems() {
 	BmString email;
 	BmString groups;
 	
-	BmString peopleFolder = TheResources->HomePath + "/People";
+	bool integrateForeigners = !ThePrefs->GetBool( "LookForPeopleOnlyInPeopleFolder", true);
+	
+	BmString peopleFolder = TheResources->HomePath + "/People/";
 
 	BmAutolockCheckGlobal lock( mModelLocker);
 	lock.IsLocked() 							|| BM_THROW_RUNTIME( ModelNameNC() << ":InitializeItems(): Unable to get lock");
@@ -368,7 +370,7 @@ void BmPeopleList::InitializeItems() {
 	BM_LOG2( BM_LogUtil, "Start of people-query");
 	(err = mPeopleQuery.SetVolume( &TheResources->MailboxVolume)) == B_OK
 													|| BM_THROW_RUNTIME( BmString("SetVolume(): ") << strerror(err));
-	(err = mPeopleQuery.SetPredicate( "META:name == '**'")) == B_OK
+	(err = mPeopleQuery.SetPredicate( "META:name == '**' || META:email == '**'")) == B_OK
 													|| BM_THROW_RUNTIME( BmString("SetPredicate(): ") << strerror(err));
 	(err = mPeopleQuery.SetTarget( BMessenger( TheMailMonitor))) == B_OK
 													|| BM_THROW_RUNTIME( BmString("BmPeopleList::InitializeItems(): could not set query target.\n\nError:") << strerror(err));
@@ -392,11 +394,11 @@ void BmPeopleList::InitializeItems() {
 				BEntry entry( &eref);
 				BPath path;
 				entry.GetPath( &path);
-				bool foreign = ThePrefs->GetBool( "LookForPeopleOnlyInPeopleFolder", true);
-				if (path.InitCheck()==B_OK) {
+				bool foreign = false;
+				if (!integrateForeigners && path.InitCheck()==B_OK) {
 					BmString personPath( path.Path());
-					if (personPath.ICompare( peopleFolder, peopleFolder.Length()) == 0)
-						foreign = false;
+					if (personPath.ICompare( peopleFolder, peopleFolder.Length()) != 0)
+						foreign = true;
 				}
 				BmPerson* newPerson = new BmPerson( this, nref, name, nick, email, groups, foreign);
 				for( int c=1; c<9; ++c) {
