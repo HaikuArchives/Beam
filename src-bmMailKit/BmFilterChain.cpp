@@ -214,6 +214,33 @@ int32 BmFilterChain::NextPosition() {
 }
 
 /*------------------------------------------------------------------------------*\
+	RenameFilterInChain( oldName, newName)
+		-	removes filter with given name from this filter-chains.
+\*------------------------------------------------------------------------------*/
+void BmFilterChain::RenameFilterInChain( const BmString& oldName, 
+													  const BmString& newName) {
+	BmModelItemMap::const_iterator iter;
+	for( iter = inheritedList::begin(); iter != inheritedList::end(); ) {
+		BmChainedFilter* filter = dynamic_cast< BmChainedFilter*>( iter++->second.Get());
+		if (filter && filter->FilterName() == oldName)
+			filter->FilterName( newName);
+	}
+}
+
+/*------------------------------------------------------------------------------*\
+	RemoveFilterFromChain( filterName)
+		-	removes filter with given name from this filter-chains.
+\*------------------------------------------------------------------------------*/
+void BmFilterChain::RemoveFilterFromChain( const BmString& filterName) {
+	BmModelItemMap::const_iterator iter;
+	for( iter = inheritedList::begin(); iter != inheritedList::end(); ) {
+		BmChainedFilter* filter = dynamic_cast< BmChainedFilter*>( iter++->second.Get());
+		if (filter && filter->FilterName() == filterName)
+			inheritedList::RemoveItemFromList( filter);
+	}
+}
+
+/*------------------------------------------------------------------------------*\
 	RemoveItemFromList( item)
 		-	extends normal behaviour with renumbering of item-positions
 \*------------------------------------------------------------------------------*/
@@ -316,6 +343,36 @@ BmFilterChainList::~BmFilterChainList() {
 \*------------------------------------------------------------------------------*/
 const BmString BmFilterChainList::SettingsFileName() {
 	return BmString( TheResources->SettingsPath.Path()) << "/FilterChains";
+}
+
+/*------------------------------------------------------------------------------*\
+	ForeignKeyChanged( keyName, oldVal, newVal)
+		-	updates the specified foreign-key with the given new value
+\*------------------------------------------------------------------------------*/
+void BmFilterChainList::ForeignKeyChanged( const BmString& key, 
+														 const BmString& oldVal, 
+														 const BmString& newVal) {
+	BmAutolockCheckGlobal lock( ModelLocker());
+	lock.IsLocked() 							|| BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
+	if (key == BmChainedFilter::MSG_FILTERNAME) {
+		BmModelItemMap::const_iterator iter;
+		for( iter = begin(); iter != end(); ++iter) {
+			BmFilterChain* chain = dynamic_cast< BmFilterChain*>( iter->second.Get());
+			chain->RenameFilterInChain( oldVal, newVal);
+		}
+	}
+}
+
+/*------------------------------------------------------------------------------*\
+	RemoveFilterFromAllChains( filterName)
+		-	removes filter with given name from all filter-chains.
+\*------------------------------------------------------------------------------*/
+void BmFilterChainList::RemoveFilterFromAllChains( const BmString& filterName) {
+	BmModelItemMap::const_iterator iter;
+	for( iter = begin(); iter != end(); ++iter) {
+		BmFilterChain* chain = dynamic_cast< BmFilterChain*>( iter->second.Get());
+		chain->RemoveFilterFromChain( filterName);
+	}
 }
 
 /*------------------------------------------------------------------------------*\

@@ -48,11 +48,6 @@ class BmFilterChain;
 class BmChainedFilter : public BmListModelItem {
 	typedef BmListModelItem inherited;
 
-	// archivable components:
-	static const char* const MSG_POSITION;
-	static const char* const MSG_FILTERNAME;
-	static const int16 nArchiveVersion;
-
 public:
 	BmChainedFilter( const char* filterName, BmFilterChain* model);
 	BmChainedFilter( BMessage* archive, BmFilterChain* model);
@@ -70,6 +65,11 @@ public:
 
 	// setters:
 	inline void FilterName( const BmString& s) { mFilterName = s; TellModelItemUpdated( UPD_ALL); }
+
+	// archivable components:
+	static const char* const MSG_POSITION;
+	static const char* const MSG_FILTERNAME;
+	static const int16 nArchiveVersion;
 
 private:
 	BmChainedFilter();						// hide default constructor
@@ -107,6 +107,8 @@ public:
 	int32 NextPosition();
 	void MoveUp( int32 oldPos);
 	void MoveDown( int32 oldPos);
+	void RenameFilterInChain( const BmString& oldName, const BmString& newName);
+	void RemoveFilterFromChain( const BmString& filterName);
 
 	// overrides of item base:
 	status_t Archive( BMessage* archive, bool deep = true) const;
@@ -151,6 +153,9 @@ public:
 	~BmFilterChainList();
 	
 	// native methods:
+	void ForeignKeyChanged( const BmString& key, 
+								   const BmString& oldVal, const BmString& newVal);
+	void RemoveFilterFromAllChains( const BmString& filterName);
 	
 	// overrides of listmodel base:
 	const BmString SettingsFileName();
