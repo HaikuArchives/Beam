@@ -11,6 +11,8 @@ Beam 0.92:
 
 -	add support for mail-filtering
 
+-	support draft-folder
+
 -	implement RFC2231 to facilitate correct handling of attachment
 	filenames that exceed us-ascii encoding
 
