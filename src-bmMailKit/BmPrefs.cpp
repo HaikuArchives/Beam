@@ -216,6 +216,18 @@ void BmPrefs::ResetToSaved() {
 }
 
 /*------------------------------------------------------------------------------*\
+	ResetToDefault()
+		-	resets preferences to default state
+\*------------------------------------------------------------------------------*/
+void BmPrefs::ResetToDefault() {
+	BmAutolock lock( mLocker);
+	lock.IsLocked()	 						|| BM_THROW_RUNTIME( "Prefs: Unable to get lock!");
+	mPrefsMsg = mDefaultsMsg;
+	mShortcutsMsg.MakeEmpty();
+	GetShortcutDefaults( &mShortcutsMsg);
+}
+
+/*------------------------------------------------------------------------------*\
 	InitDefaults( )
 		-	constructs a BMessage containing all defaultVal values
 \*------------------------------------------------------------------------------*/

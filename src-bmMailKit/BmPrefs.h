@@ -74,6 +74,7 @@ public:
 	void SetString( const char* name, const BmString val);
 	//
 	void ResetToSaved();
+	void ResetToDefault();
 
 	BmString GetShortcutFor( const char* shortcutID);
 	void SetShortcutFor( const char* name, const BmString val);
