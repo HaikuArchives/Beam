@@ -14,6 +14,11 @@
 #include <StopWatch.h>
 #include <String.h>
 
+/*------------------------------------------------------------------------------*\
+	types of messages handled by a BmLogfile:
+\*------------------------------------------------------------------------------*/
+#define BM_LOG_MSG						'bmia'
+
 /*------------------------------------------------------------------------------*\*\
 	BmLogHandler
 		-	implements the global log-handler that received all logging requests and
@@ -93,6 +98,7 @@ extern const uint32 BM_LogRefView;
 extern const uint32 BM_LogMainWindow;
 extern const uint32 BM_LogModelController;
 extern const uint32 BM_LogMailEditWin;
+extern const uint32 BM_LogSmtp;
 extern const uint32 BM_LogAll;
 
 // macros to convert the loglevel for a specific flag 

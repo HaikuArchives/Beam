@@ -12,6 +12,7 @@
 #include <String.h>
 
 extern BString BM_SPACES;
+extern BString BM_DEFAULT_STRING;
 
 /*------------------------------------------------------------------------------*\*\
 	ShowAlert( text, logtext)
@@ -43,7 +44,7 @@ BString BytesToString( int32 bytes, bool mini=false);
 /*------------------------------------------------------------------------------*\*\
 	utility function to format a time into a string
 \*------------------------------------------------------------------------------*/
-BString TimeToString( time_t t);
+BString TimeToString( time_t t, const char* format="%Y-%m-%d %H:%M:%S");
 
 /*------------------------------------------------------------------------------*\*\
 	utility operator to easy concatenation of BStrings

@@ -30,6 +30,7 @@ private:
 	BRect layout(BRect frame);
 	
 	HGroup* mParent;
+	BMenu* mMenu;
 };
 
 

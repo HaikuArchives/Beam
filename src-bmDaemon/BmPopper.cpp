@@ -12,7 +12,6 @@
 #include "BmBasics.h"
 #include "BmLogHandler.h"
 #include "BmMail.h"
-#include "BmMsgTypes.h"
 #include "BmPopAccount.h"
 #include "BmPopper.h"
 #include "BmPrefs.h"

@@ -114,7 +114,9 @@ BmMailRef::BmMailRef( BmMailRefList* model, entry_ref &eref, ino_t node, struct 
 			}
 
 			mInitCheck = B_OK;
-		}
+		} else 
+			BM_LOG2( BM_LogMailTracking, BString("file <")<<eref.name<<" is not a mail, ignoring it.");
+		
 		buffer.UnlockBuffer( -1);
 	} catch( exception &e) {
 		buffer.UnlockBuffer( -1);

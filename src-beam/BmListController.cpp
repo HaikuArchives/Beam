@@ -19,7 +19,6 @@
 #include "BmDataModel.h"
 #include "BmListController.h"
 #include "BmLogHandler.h"
-#include "BmMsgTypes.h"
 #include "BmResources.h"
 #include "BmUtil.h"
 
@@ -113,6 +112,7 @@ BmListViewController::BmListViewController( minimax minmax, BRect rect,
 	,	mCurrHighlightItem( NULL)
 	,	mUpdatePulseRunner( NULL)
 	,	mCachedMessages( 20)
+	,	mSittingOnExpander( false)
 {
 }
 
@@ -184,12 +184,21 @@ void BmListViewController::MouseMoved( BPoint point, uint32 transit, const BMess
 					InvalidateItem( index);
 				}
 			}
-			if (Hierarchical() && !mCurrHighlightItem->IsExpanded()
-			&& mCurrHighlightItem->ExpanderRectContains( point)) {
-				// expand superitem if mouse is over expander (so that user can 
-				// navigate through the subitems that were previously hidden):
-				Expand( mCurrHighlightItem);
-			}
+			if (Hierarchical() && mCurrHighlightItem->ExpanderRectContains( point)) {
+				if (!mSittingOnExpander) {
+					if (!mCurrHighlightItem->IsExpanded()) {
+						// expand superitem if mouse is over expander (so that user can 
+						// navigate through the subitems that were previously hidden):
+						Expand( mCurrHighlightItem);
+					} else {
+						// collapse superitem if mouse is over expander (so that user can 
+						// hide subitems that were previously shown):
+						Collapse( mCurrHighlightItem);
+					}
+					mSittingOnExpander = true;
+				}
+			} else 
+				mSittingOnExpander = false;
 		} else if (transit == B_EXITED_VIEW || transit == B_OUTSIDE_VIEW) {
 			if (mCurrHighlightItem) {
 				mCurrHighlightItem->Highlight( false);
@@ -392,7 +401,7 @@ void BmListViewController::doAddModelItem( BmListViewItem* parent, BmListModelIt
 void BmListViewController::RemoveModelItem( BmListModelItem* item) {
 	BM_LOG2( BM_LogModelController, BString(ControllerName())<<": removing one item from listview");
 	if (item) {
-		DeselectAll();
+//		DeselectAll();
 		BmListViewItem* viewItem = FindViewItemFor( item);
 		if (viewItem) {
 			RemoveItem( viewItem);

@@ -27,14 +27,25 @@
 #include "BmPopAccount.h"
 #include "BmPrefs.h"
 #include "BmResources.h"
+#include "BmSmtpAccount.h"
 #include "BmTextControl.h"
 #include "BmToolbarButton.h"
 #include "BmUtil.h"
 
-#define BM_BCC_ADDED 	'bMbc'
-#define BM_CC_ADDED 		'bMcc'
-#define BM_FROM_ADDED 	'bMfc'
-#define BM_TO_ADDED 		'bMtc'
+/********************************************************************************\
+	BmMailEditWin
+\********************************************************************************/
+
+/*------------------------------------------------------------------------------*\
+	types of messages handled by a BmMailEditWin:
+\*------------------------------------------------------------------------------*/
+#define BM_BCC_ADDED 		'bMYa'
+#define BM_CC_ADDED 			'bMYb'
+#define BM_FROM_ADDED 		'bMYc'
+#define BM_TO_ADDED 			'bMYd'
+#define BM_SMTP_SELECTED	'bMYe'
+#define BM_SHOWDETAILS		'bMYf'
+#define BM_FROM_SET	 		'bMYg'
 
 /*------------------------------------------------------------------------------*\
 	CreateInstance()
@@ -58,7 +69,7 @@ BmMailEditWin::BmMailEditWin()
 	,	mShowDetails( false)
 {
 	CreateGUI();
-	mMailView->ShowMail( new BmMail());
+	mMailView->ShowMail( new BmMail( true));
 }
 
 /*------------------------------------------------------------------------------*\
@@ -105,6 +116,7 @@ void BmMailEditWin::CreateGUI() {
 			new HGroup(
 				new Space(minimax(20,-1,20,-1)),
 				mFromControl = new BmTextControl( "From:", true),
+				mSmtpControl = new BmMenuControl( "SMTP-Server:", new BPopUpMenu( "")),
 				0
 			),
 			new HGroup(
@@ -117,9 +129,10 @@ void BmMailEditWin::CreateGUI() {
 				new MPictureButton( minimax( 16,16,16,16), 
 										  TheResources->CreatePictureFor( &TheResources->mRightArrow, 16, 16), 
 										  TheResources->CreatePictureFor( &TheResources->mDownArrow, 16, 16), 
-										  new BMessage( BM_MAILEDIT_SHOWDETAILS), this, B_TWO_STATE_BUTTON),
+										  new BMessage( BM_SHOWDETAILS), this, B_TWO_STATE_BUTTON),
 				new Space(minimax(4,-1,4,-1)),
 				mSubjectControl = new BmTextControl( "Subject:", false),
+				mCharsetControl = new BmMenuControl( "Charset:", new BPopUpMenu( "")),
 				0
 			),
 			new HGroup(
@@ -135,53 +148,75 @@ void BmMailEditWin::CreateGUI() {
 			new HGroup(
 				new Space(minimax(20,-1,20,-1)),
 				mReplyToControl = new BmTextControl( "Reply-To:", false),
+				mSenderControl = new BmTextControl( "Sender:", false),
 				0
 			),
+/*
 			new HGroup(
 				new Space(minimax(20,-1,20,-1)),
-				mCharsetControl = new BmMenuControl( "Charset:", new BPopUpMenu( "Charset:")),
 				0
 			),
+*/
 			new Space(minimax(-1,4,-1,4)),
 			CreateMailView( minimax(200,200,1E5,1E5), BRect(0,0,400,200)),
 			0
 		);
 		
 	float divider = mToControl->Divider();
-	divider = max( divider, mSubjectControl->Divider());
-	divider = max( divider, mFromControl->Divider());
-	divider = max( divider, mCcControl->Divider());
-	divider = max( divider, mBccControl->Divider());
-	divider = max( divider, mReplyToControl->Divider());
+	divider = MAX( divider, mSubjectControl->Divider());
+	divider = MAX( divider, mFromControl->Divider());
+	divider = MAX( divider, mCcControl->Divider());
+	divider = MAX( divider, mBccControl->Divider());
+	divider = MAX( divider, mReplyToControl->Divider());
 	mToControl->SetDivider( divider);
 	mSubjectControl->SetDivider( divider);
 	mFromControl->SetDivider( divider);
 	mCcControl->SetDivider( divider);
 	mBccControl->SetDivider( divider);
-	mCharsetControl->SetDivider( divider);
 	mReplyToControl->SetDivider( divider);
+
+	divider = MAX( 0, mSmtpControl->Divider());
+	divider = MAX( divider, mCharsetControl->Divider());
+	mSmtpControl->SetDivider( divider-5);
+	mCharsetControl->SetDivider( divider-5);
+
 	mShowDetailsButton->SetFlags( mShowDetailsButton->Flags() & (0xFFFFFFFF^B_NAVIGABLE));
 
 	// initially, the detail-parts are hidden:
 	mCcControl->DetachFromParent();
 	mBccControl->DetachFromParent();
 	mReplyToControl->DetachFromParent();
-	mCharsetControl->DetachFromParent();
+	mSenderControl->DetachFromParent();
 
-	// add all popaccounts to from menu:
+	// add all popaccounts to from menu twice (one for single-address mode, one for adding addresses):
 	mFromControl->Menu()->SetLabelFromMarked( false);
 	BmModelItemMap::const_iterator iter;
+	BMenu* subMenu = new BMenu( "Add...");
 	for( iter = ThePopAccountList->begin(); iter != ThePopAccountList->end(); ++iter) {
 		BmPopAccount* acc = dynamic_cast< BmPopAccount*>( iter->second.Get());
-		mFromControl->Menu()->AddItem( new BMenuItem( acc->Key().String(), new BMessage( BM_FROM_ADDED)));
+		mFromControl->Menu()->AddItem( new BMenuItem( acc->Key().String(), new BMessage( BM_FROM_SET)));
+		subMenu->AddItem( new BMenuItem( acc->Key().String(), new BMessage( BM_FROM_ADDED)));
+	}
+	mFromControl->Menu()->AddItem( subMenu);
+
+	// add all smtpaccounts to smtp menu:
+	for( iter = TheSmtpAccountList->begin(); iter != TheSmtpAccountList->end(); ++iter) {
+		BmSmtpAccount* acc = dynamic_cast< BmSmtpAccount*>( iter->second.Get());
+		mSmtpControl->Menu()->AddItem( new BMenuItem( acc->Key().String(), new BMessage( BM_SMTP_SELECTED)));
 	}
 
 	// add all encodings to menu:
-	for( const char **enc = BmEncoding::BM_Encodings; *enc; ++enc) {
-		mCharsetControl->Menu()->AddItem( new BMenuItem( *enc, new BMessage('bmyy')));
+	for( int i=0; BM_Encodings[i].charset; ++i) {
+		mCharsetControl->Menu()->AddItem( new BMenuItem( BM_Encodings[i].charset, new BMessage('bmyy')));
 	}
+	// mark default charset:
+	BMenuItem* item = mCharsetControl->Menu()->FindItem( EncodingToCharset( ThePrefs->GetInt( "DefaultEncoding")).String());
+	if (item)
+		item->SetMarked( true);
 
 	AddChild( dynamic_cast<BView*>(mOuterGroup));
+	
+	mMailView->AddFilter( new BmMailViewFilter( this));
 }
 
 /*------------------------------------------------------------------------------*\
@@ -254,7 +289,7 @@ BmMailViewContainer* BmMailEditWin::CreateMailView( minimax minmax, BRect frame)
 void BmMailEditWin::MessageReceived( BMessage* msg) {
 	try {
 		switch( msg->what) {
-			case BM_MAILEDIT_SHOWDETAILS: {
+			case BM_SHOWDETAILS: {
 				int32 newVal = (mShowDetails ? B_CONTROL_OFF : B_CONTROL_ON);
 				mShowDetailsButton->SetValue( newVal);
 				mShowDetails = newVal != B_CONTROL_OFF;
@@ -262,12 +297,16 @@ void BmMailEditWin::MessageReceived( BMessage* msg) {
 					mCcControl->ReattachToParent();
 					mBccControl->ReattachToParent();
 					mReplyToControl->ReattachToParent();
-					mCharsetControl->ReattachToParent();
+					mSenderControl->ReattachToParent();
+//					mCharsetControl->ReattachToParent();
+//					mSmtpControl->ReattachToParent();
 				} else {
 					mCcControl->DetachFromParent();
 					mBccControl->DetachFromParent();
 					mReplyToControl->DetachFromParent();
-					mCharsetControl->DetachFromParent();
+					mSenderControl->DetachFromParent();
+//					mCharsetControl->DetachFromParent();
+//					mSmtpControl->DetachFromParent();
 				}
 				RecalcSize();
 				break;
@@ -278,8 +317,11 @@ void BmMailEditWin::MessageReceived( BMessage* msg) {
 			}
 			case BMM_SAVE: {
 				UpdateMailFields();
+				BmRef<BmMail> mail = mMailView->CurrMail();
+				mail->Store();
 				break;
 			}
+			case BM_FROM_SET:
 			case BM_FROM_ADDED: {
 				Regexx rx;
 				BMenuItem* item = NULL;
@@ -288,13 +330,15 @@ void BmMailEditWin::MessageReceived( BMessage* msg) {
 					BmListModelItemRef accRef = ThePopAccountList->FindItemByKey( item->Label());
 					BmPopAccount* acc = dynamic_cast< BmPopAccount*>( accRef.Get()); 
 					if (acc) {
-						BString fromString = mFromControl->Text();
-						if (rx.exec( fromString, "\\w+")) {
+						BString fromString = msg->what == BM_FROM_ADDED ? mFromControl->Text() : "";
+						if (rx.exec( fromString, "\\S+")) {
 							fromString << ", " << acc->GetFromAddress();
 						} else {
 							fromString << acc->GetFromAddress();
 						}
 						mFromControl->SetText( fromString.String());
+						mFromControl->TextView()->Select( fromString.Length(), fromString.Length());
+						mFromControl->TextView()->ScrollToSelection();
 					}
 				}
 				break;
@@ -338,7 +382,6 @@ void BmMailEditWin::UpdateMailFields() {
 		mail->SetFieldVal( BM_FIELD_BCC, mBccControl->Text());
 		mail->SetFieldVal( BM_FIELD_CC, mCcControl->Text());
 		mail->SetFieldVal( BM_FIELD_FROM, mFromControl->Text());
-//		mail->SetFieldVal( BM_FIELD_DATE, );
 		mail->SetFieldVal( BM_FIELD_SUBJECT, mSubjectControl->Text());
 		mail->SetFieldVal( BM_FIELD_TO, mToControl->Text());
 		mail->SetFieldVal( BM_FIELD_REPLY_TO, mReplyToControl->Text());
@@ -346,8 +389,9 @@ void BmMailEditWin::UpdateMailFields() {
 		int32 encoding = charsetItem ? CharsetToEncoding( charsetItem->Label()) 
 											  : ThePrefs->GetInt( "DefaultEncoding");
 		BString editedText = mMailView->Text();
-		mail->ConstructMailForSending( editedText, encoding);
-//		mail->SetFieldVal( , mCharsetControl->Menu->Label());
+		BMenuItem* smtpItem = mSmtpControl->Menu()->FindMarked();
+		BString smtpAccount = smtpItem ? smtpItem->Label() : "";
+		mail->ConstructRawText( editedText, encoding, smtpAccount);
 	}
 }
 
@@ -369,4 +413,32 @@ void BmMailEditWin::Quit() {
 	mMailView->DetachModel();
 	BM_LOG2( BM_LogMailEditWin, BString("MailEditWin has quit"));
 	inherited::Quit();
+}
+
+
+
+/********************************************************************************\
+	BmMailViewFilter
+\********************************************************************************/
+
+/*------------------------------------------------------------------------------*\
+	BmMailViewFilter()
+		-	
+\*------------------------------------------------------------------------------*/
+BmMailViewFilter::BmMailViewFilter( BmMailEditWin* editWin)
+	:	inherited( BM_MAILVIEW_SHOWRAW)
+	,	mEditWin( editWin) 
+{
+}	
+
+/*------------------------------------------------------------------------------*\
+	Filter()
+		-	
+\*------------------------------------------------------------------------------*/
+filter_result BmMailViewFilter::Filter( BMessage* msg, BHandler** target) {
+/*
+	if (mEditWin)
+		mEditWin->UpdateMailFields();
+*/
+	return B_DISPATCH_MESSAGE;
 }

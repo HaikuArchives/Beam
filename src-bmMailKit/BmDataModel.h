@@ -20,6 +20,23 @@
 class BmController;
 
 /*------------------------------------------------------------------------------*\
+	message types for BmDataModel (and subclasses), all msgs are sent to 
+	the handler specified via each Controllers GetControllerHandler()-method,
+	so these messages are sent from a datamodel to all its controllers:
+\*------------------------------------------------------------------------------*/
+#define BM_JOB_DONE						'bmda'
+							// the job has finished or was stopped
+#define BM_JOB_UPDATE_STATE			'bmdb'
+							// the job wants to update (one of) its state(s)
+#define BM_LISTMODEL_ADD				'bmdc'
+							// the listmodel has added a new item
+#define BM_LISTMODEL_REMOVE			'bmdd'
+							// the listmodel has removed an item
+#define BM_LISTMODEL_UPDATE			'bmde'
+							// the listmodel indicates a state-change of on of its items
+
+
+/*------------------------------------------------------------------------------*\
 	BmDataModel
 		-	an interface for informing other objects (e.g. MVC-like 
 			controllers) to be informed about state-changes of this

@@ -11,6 +11,7 @@
 #include "BmUtil.h"
 
 BString BM_SPACES("                                                                                ");
+BString BM_DEFAULT_STRING;
 
 /*------------------------------------------------------------------------------*\
 	FindMsgString( archive, name)
@@ -167,9 +168,8 @@ BString BytesToString( int32 bytes, bool mini) {
 	TimeToString( time)
 		-	converts the given time into a string
 \*------------------------------------------------------------------------------*/
-BString TimeToString( time_t t) {
+BString TimeToString( time_t t, const char* format) {
 	BString s;
-	const char* format = "%Y-%m-%d %H:%M:%S";
 	const int32 bufsize=40;
 	s.SetTo( '\0', bufsize);
 	char* buf=s.LockBuffer( 0);

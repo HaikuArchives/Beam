@@ -33,13 +33,14 @@ using namespace regexx;
 	BmMail()
 	-	standard c'tor
 \*------------------------------------------------------------------------------*/
-BmMail::BmMail()
+BmMail::BmMail( bool outbound)
 	:	inherited("MailModel_dummy")
 	,	mMailRef( NULL)
 	,	mHeader( NULL)
 	,	mHeaderLength( 0)
 	,	mBody( new BmBodyPartList( this))
 	,	mInitCheck( B_NO_INIT)
+	,	mOutbound( outbound)
 {
 	BString emptyMsg( "Mime: 1.0\r\n\r\n");
 	SetTo( emptyMsg, "");
@@ -57,6 +58,7 @@ BmMail::BmMail( BString &msgText, const BString account)
 	,	mBody( new BmBodyPartList( this))
 	,	mMailRef( NULL)
 	,	mInitCheck( B_NO_INIT)
+	,	mOutbound( false)
 {
 	SetTo( msgText, account);
 }
@@ -72,6 +74,7 @@ BmMail::BmMail( BmMailRef* ref)
 	,	mBody( new BmBodyPartList( this))
 	,	mMailRef( ref)
 	,	mInitCheck( B_NO_INIT)
+	,	mOutbound( false)
 {
 }
 
@@ -167,19 +170,21 @@ void BmMail::SetFieldVal( const BString fieldName, const BString value) {
 }
 
 /*------------------------------------------------------------------------------*\
-	ConstructMailForSending()
+	ConstructRawText()
 	-	
 \*------------------------------------------------------------------------------*/
-bool BmMail::ConstructMailForSending( const BString& editedText, int32 encoding) {
+bool BmMail::ConstructRawText( const BString& editedText, int32 encoding,
+										 const BString smtpAccount) {
 	BString msgText;
-	if (!mHeader->ConstructHeaderForSending( msgText, encoding))
+	mText.Truncate( 0);
+	if (!mHeader->ConstructRawText( msgText, encoding))
 		return false;
 	mBody->SetEditableText( editedText, encoding);
 	if (!mBody->ConstructBodyForSending( msgText))
 		return false;
-BM_LOG2( BM_LogMailParse, BString("CONSTRUCTED MSG: \n------------------\n") << msgText << "\n------------------");
-		
-	return true;
+	BM_LOG3( BM_LogMailParse, BString("CONSTRUCTED MSG: \n-----START--------\n") << msgText << "\n-----END----------");
+	SetTo( msgText, smtpAccount);
+	return mInitCheck == B_OK;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -202,16 +207,14 @@ bool BmMail::Store() {
 	status_t err;
 	ssize_t res;
 	BString basicFilename;
-	BString inboxPath;
+	BString inoutboxPath;
 	BDirectory homeDir;
 	BEntry mailEntry;
 
 	try {
-		if (mParentEntry.InitCheck() == B_NO_INIT) {
-			(inboxPath = ThePrefs->GetString("MailboxPath")) << "/mailbox";
-			(err = mParentEntry.SetTo( inboxPath.String(), true)) == B_OK
-													|| BM_THROW_RUNTIME( BString("Could not create entry for mail-folder <") << inboxPath << ">\n\n Result: " << strerror(err));
-		}
+		(inoutboxPath = ThePrefs->GetString("MailboxPath")) << (mOutbound ? "/out" : "/in");
+		(err = mParentEntry.SetTo( inoutboxPath.String(), true)) == B_OK
+													|| BM_THROW_RUNTIME( BString("Could not create entry for mail-folder <") << inoutboxPath << ">\n\n Result: " << strerror(err));
 
 		basicFilename = CreateBasicFilename();
 
@@ -269,7 +272,8 @@ bool BmMail::Store() {
 \*------------------------------------------------------------------------------*/
 void BmMail::StoreAttributes( BFile& mailFile) {
 	//
-	mailFile.WriteAttr( BM_MAIL_ATTR_STATUS, B_STRING_TYPE, 0, "New", 4);
+	BString st = mOutbound ? "Pending" : "New";
+	mailFile.WriteAttr( BM_MAIL_ATTR_STATUS, B_STRING_TYPE, 0, st.String(), st.Length()+1);
 	mailFile.WriteAttr( BM_MAIL_ATTR_ACCOUNT, B_STRING_TYPE, 0, mAccountName.String(), mAccountName.Length()+1);
 	//
 	int32 headerLength, contentLength;
@@ -293,12 +297,12 @@ void BmMail::StoreAttributes( BFile& mailFile) {
 \*------------------------------------------------------------------------------*/
 BString BmMail::CreateBasicFilename() {
 	static int32 counter = 1;
-	BString name = mHeader->Name();
+	BString name = mHeader->GetFieldVal(BM_FIELD_SUBJECT);
 	char now[16];
 	time_t t = time(NULL);
 	strftime( now, 15, "%0Y%0m%0d%0H%0M%0S", localtime( &t));
 	name << "_" << now << "_" << counter++;
-	RemoveSetFromString( name, "/ ':\"\t");
+	RemoveSetFromString( name, "/':\"\t");
 							// we avoid some characters in filename
 	return name;
 }

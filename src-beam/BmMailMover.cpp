@@ -13,7 +13,6 @@
 
 #include "BmBasics.h"
 #include "BmLogHandler.h"
-#include "BmMsgTypes.h"
 #include "BmMailFolder.h"
 #include "BmMailMover.h"
 #include "BmUtil.h"

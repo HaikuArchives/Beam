@@ -13,7 +13,6 @@
 #include "BmMailRefList.h"
 #include "BmMailRefView.h"
 #include "BmMailView.h"
-#include "BmMsgTypes.h"
 #include "BmPrefs.h"
 #include "BmResources.h"
 #include "BmStorageUtil.h"
@@ -314,10 +313,11 @@ void BmMailRefView::KeyDown(const char *bytes, int32 numBytes) {
 				break;
 			}
 			case B_DELETE: {
-				// move selected items to trash:
 				int32 selCount;
 				for( selCount=0; CurrentSelection( selCount)>=0; ++selCount)
 					;
+				if (!selCount)
+					break;
 				entry_ref* refs = new entry_ref [selCount];
 				int32 currIdx;
 				for( int32 i=0; i<selCount && (currIdx=CurrentSelection( i))>=0; ++i) {
@@ -326,6 +326,7 @@ void BmMailRefView::KeyDown(const char *bytes, int32 numBytes) {
 				}
 				MoveToTrash( refs, selCount);
 				delete [] refs;
+				Select( currIdx+1);			// select next item that remains in list
 			}
 			default:
 				inherited::KeyDown( bytes, numBytes);
@@ -341,7 +342,7 @@ void BmMailRefView::KeyDown(const char *bytes, int32 numBytes) {
 bool BmMailRefView::InitiateDrag( BPoint where, int32 index, bool wasSelected) {
 	if (!wasSelected)
 		return false;
-	BMessage dragMsg( BM_MAIL_DRAG);
+	BMessage dragMsg( B_SIMPLE_DATA);
 	dragMsg.AddString( "be:types", "text/x-email");
 	dragMsg.AddString( "be:type_descriptions", "E-mail");
 	dragMsg.AddInt32( "be:actions", B_MOVE_TARGET);

@@ -250,6 +250,8 @@ void BmBodyPart::SetTo( const BString& msgtext, int32 start, int32 length,
 	// encoding
 	BM_LOG2( BM_LogMailParse, "parsing Content-Transfer-Encoding");
 	encoding = header->GetFieldVal( BM_FIELD_CONTENT_TRANSFER_ENCODING);
+	encoding.RemoveSet( TheResources->WHITESPACE);
+							// some broken (webmail)-clients produce stuff like "7 bit"...
 	if (!encoding.Length())
 		encoding = "7bit";
 	mContentTransferEncoding = encoding;
@@ -385,6 +387,7 @@ entry_ref BmBodyPart::WriteToTempFile( BString filename) {
 void BmBodyPart::SetBodyText( const BString& text, int32 encoding) {
 	text.CopyInto( mDecodedData, 0, text.Length());
 	mContentType.SetParam( "charset", EncodingToCharset( encoding));
+	mContentTransferEncoding = NeedsEncoding( text) ? "quoted-printable" : "7bit";
 }
 
 /*------------------------------------------------------------------------------*\

@@ -20,31 +20,32 @@ using namespace regexx;
 #define CHAR2HIGHNIBBLE(c) (((c) > 0x9F ? 'A'-10 : '0')+((c)>>4))
 #define CHAR2LOWNIBBLE(c)  ((((c)&0x0F) > 9 ? 'A'-10 : '0')+((c)&0x0F))
 
-const char* BmEncoding::BM_Encodings[] = {
-	"ISO-8859-1",
-	"ISO-8859-2",
-	"ISO-8859-3",
-	"ISO-8859-4",
-	"ISO-8859-5",
-	"ISO-8859-6",
-	"ISO-8859-7",
-	"ISO-8859-8",
-	"ISO-8859-9",
-	"ISO-8859-10",
-	"Macintosh",
-	"SHIFT_JIS",
-	"EUC-JP",
-	"ISO-2022-JP",
-	"WINDOWS-1252",
-	"KOI8-R",
-	"WINDOWS-1251",
-	"IBM866",
-	"IBM850",
-	"EUC-KR",
-	"ISO-8859-13",
-	"ISO-8859-14",
-	"ISO-8859-15",
-	NULL
+BmEncoding::BmEncodingPair BmEncoding::BM_Encodings[] = {
+	{ "iso-8859-1", B_ISO1_CONVERSION },
+	{ "iso-8859-2", B_ISO2_CONVERSION },
+	{ "iso-8859-3", B_ISO3_CONVERSION },
+	{ "iso-8859-4", B_ISO4_CONVERSION },
+	{ "iso-8859-5", B_ISO5_CONVERSION },
+	{ "iso-8859-6", B_ISO6_CONVERSION },
+	{ "iso-8859-7", B_ISO7_CONVERSION },
+	{ "iso-8859-8", B_ISO8_CONVERSION },
+	{ "iso-8859-9", B_ISO9_CONVERSION },
+	{ "iso-8859-10", B_ISO10_CONVERSION },
+	{ "macintosh", B_MAC_ROMAN_CONVERSION },
+	{ "windows-1252", B_MS_WINDOWS_CONVERSION },
+	{ "windows-1251", B_MS_WINDOWS_1251_CONVERSION },
+	{ "ibm866", B_MS_DOS_866_CONVERSION },
+	{ "ibm850", B_MS_DOS_CONVERSION },
+	{ "shift_jis", B_SJIS_CONVERSION },
+	{ "euc-jp", B_EUC_CONVERSION },
+	{ "iso-2022-jp", B_JIS_CONVERSION },
+	{ "koi8-r", B_KOI8R_CONVERSION },
+	{ "euc-kr", B_EUC_KR_CONVERSION },
+	{ "iso-8859-13", B_ISO13_CONVERSION },
+	{ "iso-8859-14", B_ISO14_CONVERSION },
+	{ "iso-8859-15", B_ISO15_CONVERSION },
+	{ "utf8", BM_UTF8_CONVERSION },
+	{ NULL, 0 }
 };
 
 /*------------------------------------------------------------------------------*\
@@ -53,35 +54,10 @@ const char* BmEncoding::BM_Encodings[] = {
 \*------------------------------------------------------------------------------*/
 uint32 BmEncoding::CharsetToEncoding( const BString& charset) {
 	BString set( charset);
-	set.ToUpper();
-	if (set == "ISO-8859-1") 		return( B_ISO1_CONVERSION);
-	if (set == "ISO-8859-2") 		return( B_ISO2_CONVERSION);
-	if (set == "ISO-8859-3") 		return( B_ISO3_CONVERSION);
-	if (set == "ISO-8859-4") 		return( B_ISO4_CONVERSION);
-	if (set == "ISO-8859-5") 		return( B_ISO5_CONVERSION);
-	if (set == "ISO-8859-6") 		return( B_ISO6_CONVERSION);
-	if (set == "ISO-8859-7") 		return( B_ISO7_CONVERSION);
-	if (set == "ISO-8859-8") 		return( B_ISO8_CONVERSION);
-	if (set == "ISO-8859-9") 		return( B_ISO9_CONVERSION);
-	if (set == "ISO-8859-10") 		return( B_ISO10_CONVERSION);
-/*	
-	[zooey]:	does not seem to be registered with MIME ?!? */
-	if (set == "macintosh") 		return( B_MAC_ROMAN_CONVERSION);
-	if (set == "SHIFT_JIS") 		return( B_SJIS_CONVERSION);
-	if (set == "EUC-JP") 			return( B_EUC_CONVERSION);
-	if (set == "ISO-2022-JP")	 	return( B_JIS_CONVERSION);
-	if (set == "WINDOWS-1252") 	return( B_MS_WINDOWS_CONVERSION);
-	if (set == "KOI8-R") 			return( B_KOI8R_CONVERSION);
-	if (set == "WINDOWS-1251") 	return( B_MS_WINDOWS_1251_CONVERSION);
-	if (set == "IBM866") 			return( B_MS_DOS_866_CONVERSION);
-	if (set == "IBM850") 			return( B_MS_DOS_CONVERSION);
-	if (set == "EUC-KR") 			return( B_EUC_KR_CONVERSION);
-	if (set == "ISO-8859-13") 		return( B_ISO13_CONVERSION);
-	if (set == "ISO-8859-14") 		return( B_ISO14_CONVERSION);
-	if (set == "ISO-8859-15") 		return( B_ISO15_CONVERSION);
-
-	if (set == "UTF8") 				return( BM_UTF8_CONVERSION);
-
+	set.ToLower();
+	for( int i=0; BM_Encodings[i].charset; ++i)
+		if (charset == BM_Encodings[i].charset)
+			return( BM_Encodings[i].encoding);
 	return B_ISO1_CONVERSION;		// just anything that is compatible with us-ascii (which is the fallback)
 }
 
@@ -90,35 +66,10 @@ uint32 BmEncoding::CharsetToEncoding( const BString& charset) {
 		-	
 \*------------------------------------------------------------------------------*/
 BString BmEncoding::EncodingToCharset( const uint32 encoding) {
-	if (encoding == B_ISO1_CONVERSION) 		return( "ISO-8859-1");
-	if (encoding == B_ISO2_CONVERSION) 		return( "ISO-8859-2");
-	if (encoding == B_ISO3_CONVERSION) 		return( "ISO-8859-3");
-	if (encoding == B_ISO4_CONVERSION) 		return( "ISO-8859-4");
-	if (encoding == B_ISO5_CONVERSION) 		return( "ISO-8859-5");
-	if (encoding == B_ISO6_CONVERSION) 		return( "ISO-8859-6");
-	if (encoding == B_ISO7_CONVERSION) 		return( "ISO-8859-7");
-	if (encoding == B_ISO8_CONVERSION) 		return( "ISO-8859-8");
-	if (encoding == B_ISO9_CONVERSION) 		return( "ISO-8859-9");
-	if (encoding == B_ISO10_CONVERSION) 	return( "ISO-8859-10");
-/*	
-	[zooey]:	although it does not seem to be registered with MIME ?!? */
-	if (encoding == B_MAC_ROMAN_CONVERSION)	return( "macintosh");
-	if (encoding == B_SJIS_CONVERSION) 		return( "SHIFT_JIS");
-	if (encoding == B_EUC_CONVERSION) 		return( "EUC-JP");
-	if (encoding == B_JIS_CONVERSION)	 	return( "ISO-2022-JP");
-	if (encoding == B_MS_WINDOWS_CONVERSION) 	return( "WINDOWS-1252");
-	if (encoding == B_KOI8R_CONVERSION) 	return( "KOI8-R");
-	if (encoding == B_MS_WINDOWS_1251_CONVERSION) 	return( "WINDOWS-1251");
-	if (encoding == B_MS_DOS_866_CONVERSION)	return( "IBM866");
-	if (encoding == B_MS_DOS_CONVERSION) 	return( "IBM850");
-	if (encoding == B_EUC_KR_CONVERSION) 	return( "EUC-KR");
-	if (encoding == B_ISO13_CONVERSION) 	return( "ISO-8859-13");
-	if (encoding == B_ISO14_CONVERSION) 	return( "ISO-8859-14");
-	if (encoding == B_ISO15_CONVERSION) 	return( "ISO-8859-15");
-
-	if (encoding == BM_UTF8_CONVERSION) 		return( "UTF8");
-
-	return "US-ASCII";		// to indicate us-ascii (which is the fallback)
+	for( int i=0; BM_Encodings[i].charset; ++i)
+		if (encoding == BM_Encodings[i].encoding)
+			return( BM_Encodings[i].charset);
+	return "us-ascii";						// to indicate us-ascii (which is the fallback)
 }
 
 /*------------------------------------------------------------------------------*\
@@ -244,11 +195,18 @@ void BmEncoding::Encode( BString encodingStyle, const BString& src, BString& des
 				p++;
 				lineLength = 0;
 				continue;
+			} else if (c == '\n') {
+				// we encountered a newline without a preceding <CR>, we add that
+				// [in effect converting local newline (LF) to network newline (CRLF)]:
+				buf[destCount++] = '\r';
+				buf[destCount++] = '\n';
+				lineLength = 0;
+				continue;
 			} else {
 				addChars << '=' << (char)CHAR2HIGHNIBBLE(c) << (char)CHAR2LOWNIBBLE(c);
 			}
 			int32 addLen = addChars.Length();
-			if (lineLength + addLen > 76) {
+			if (!isEncodedWord && lineLength + addLen > 76) {
 				// insert soft linebreak:
 				buf[destCount++] = '=';
 				buf[destCount++] = '\r';
@@ -269,12 +227,17 @@ void BmEncoding::Encode( BString encodingStyle, const BString& src, BString& des
 		destLen = MAX( 0, destLen);		// if errors should occur we don't want to crash
 		buf[destLen] = '\0';
 		dest.UnlockBuffer( destLen);
+	} else if (encodingStyle == "7BIT" || encodingStyle == "8BIT") {
+		// replace local newline (LF) by network newline (CRLF):
+		dest = src;
+		dest.ReplaceAll( "\r\n", "\n");	// just in case there already are <CRLF>s in src...
+		dest.ReplaceAll( "\n", "\r\n");
 	} else {
-		if (!(encodingStyle == "7BIT" || encodingStyle == "8BIT" || encodingStyle == "BINARY")) {
+		if (encodingStyle != "BINARY") {
 			// oops, we don't know this one:
 			ShowAlert( BString("Encode(): Unrecognized encoding-style <")<<encodingStyle<<"> found.\nText will be passed through (not encoded).");
 		}
-		// no encoding (7bit, or 8bit)
+		// no encoding needed (binary or unknown):
 		dest = src;
 	}
 }
@@ -293,7 +256,10 @@ void BmEncoding::Decode( BString encodingStyle, const BString& src, BString& des
 		// remove trailing whitespace from all lines (may have been added during mail-transport):
 		BString text = rx.replace( src, "[\\t ]+(?=\\r\\n)", "", Regexx::newline | Regexx::global);
 		// join together lines that end with a softbreak:
-		text = rx.replace( text, "=\\r\\n", "", Regexx::newline | Regexx::global);
+//		text = rx.replace( text, "=\\r\\n", "", Regexx::newline | Regexx::global);
+		text.ReplaceAll( "=\r\n", "");
+		// replace network newline (CRLF) by local newline (LF):
+		text.ReplaceAll( "\r\n", "\n");
 		if (isEncodedWord) {
 			// in encoded-words, underlines are really spaces (a real underline is encoded):
 			text.ReplaceAll( "_", " ");
@@ -339,8 +305,13 @@ void BmEncoding::Decode( BString encodingStyle, const BString& src, BString& des
 		int32 destSize = decode_base64( destBuf, const_cast<char*>(src.String()), srcSize, convertCRs);
 		dest[destSize] = '\0';
 		dest.UnlockBuffer( destSize);
+	} else if (encodingStyle == "7BIT" || encodingStyle == "8BIT") {
+		// we copy the buffer...
+		dest = src;
+		// ... and replace network newline (CRLF) by local newline (LF):
+		dest.ReplaceAll( "\r\n", "\n");
 	} else {
-		if (!(encodingStyle == "7BIT" || encodingStyle == "8BIT" || encodingStyle == "BINARY")) {
+		if (encodingStyle != "BINARY") {
 			// oops, we don't know this one:
 			BM_SHOWERR( BString("Decode(): Unrecognized encoding-style <")<<encodingStyle<<"> found.\nNo decoding will take place.");
 		}
@@ -449,37 +420,70 @@ BString BmEncoding::ConvertUTF8ToHeaderPart( const BString& utf8text, int32 enco
 	bool needsQuotedPrintable = false;
 	BString charsetString;
 	ConvertFromUTF8( encoding, utf8text, charsetString);
-	if (useQuotedPrintableIfNeeded) {
-		// check if string needs quoted-printable encoding (...contains non-ASCII chars):
-		for( const char* p = charsetString.String(); *p; ++p) {
-			unsigned char c = *p;
-			if (c>127 || c<32) {
-				needsQuotedPrintable = true;
-				break;
-			}
-		}
-	}
+	if (useQuotedPrintableIfNeeded)
+		needsQuotedPrintable = NeedsEncoding( charsetString);
 	BString charset = EncodingToCharset( encoding);
 	BString encodedString;
-	Encode( needsQuotedPrintable?"Q":"7bit", charsetString, encodedString, true);
-	int32 maxChars = 76 						// 76 chars maximum
-						- (fieldLen + 2)		// space used by "fieldname: "
-						- charset.Length()	// length of charset in encoded-word
-						- 7;						// =?...?q?...?=
-	if (fold && encodedString.Length() > maxChars) {
-		BString foldedString;
-		while( encodedString.Length() > maxChars) {
-			BString tmp;
-			encodedString.MoveInto( tmp, 0, maxChars-5);
-			foldedString << "=?" << charset << "?q?" << tmp << "?=\r\n";
-			foldedString.Append( BM_SPACES, fieldLen+2);
-		}
-		foldedString << "=?" << charset << "?q?" << encodedString << "?=";
-		return foldedString;		
-	} else {
-		if (needsQuotedPrintable)
+	if (needsQuotedPrintable) {
+		// encoded-words (quoted-printable) are neccessary, since headerfield contains
+		// non-ASCII chars:
+		Encode( "Q", charsetString, encodedString, true);
+		int32 maxChars = 76 						// 76 chars maximum
+							- (fieldLen + 2)		// space used by "fieldname: "
+							- charset.Length()	// length of charset in encoded-word
+							- 7;						// =?...?q?...?=
+		if (fold && encodedString.Length() > maxChars) {
+			// fold header-line, since it is too long:
+			BString foldedString;
+			while( encodedString.Length() > maxChars) {
+				BString tmp;
+				int32 foldPos = maxChars;
+				int32 lastEqualSignPos = encodedString.FindLast( '=', foldPos);
+				if (lastEqualSignPos != B_ERROR && foldPos - lastEqualSignPos < 3) {
+					// we avoid folding within an encoded char (=XX) by moving the
+					// folding point just before the equal-sign:
+					foldPos = lastEqualSignPos;
+				}
+				encodedString.MoveInto( tmp, 0, foldPos);
+				foldedString << "=?" << charset << "?q?" << tmp << "?=\r\n";
+				foldedString.Append( BM_SPACES, fieldLen+2);
+			}
+			foldedString << "=?" << charset << "?q?" << encodedString << "?=";
+			return foldedString;		
+		} else
 			return BString("=?") + charset + "?q?" + encodedString + "?=";
-		else
+	} else {
+		// simpler case, no encoded-words neccessary:
+		Encode( "7BIT", charsetString, encodedString, true);
+		int32 maxChars = 76 						// 76 chars maximum
+							- (fieldLen + 2);		// space used by "fieldname: "
+		if (fold && encodedString.Length() > maxChars) {
+			// fold header-line, since it is too long:
+			BString foldedString;
+			while( encodedString.Length() > maxChars) {
+				BString tmp;
+				encodedString.MoveInto( tmp, 0, maxChars);
+				foldedString << tmp << "\r\n";
+				foldedString.Append( BM_SPACES, fieldLen+2);
+			}
+			foldedString << encodedString;
+			return foldedString;		
+		} else
 			return encodedString;
 	}
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+bool BmEncoding::NeedsEncoding( const BString& charsetString) {
+	// check if string needs quoted-printable/base64 encoding
+	// (which it does if it contains non-ASCII chars):
+	for( const char* p = charsetString.String(); *p; ++p) {
+		if (*p<32)
+			// this is a signed char, so c<32 means [0-31] and [128-255]
+			return true;
+	}
+	return false;
 }

@@ -103,7 +103,7 @@ void BmPrefs::InitDefaults() {
 	mDefaultsMsg.AddInt32( "ReceiveTimeout", 60);
 	mDefaultsMsg.AddInt32( "Loglevels", BM_LOGLVL2(BM_LogPop) 
 										+ BM_LOGLVL2(BM_LogJobWin) 
-										+ BM_LOGLVL2(BM_LogMailParse) 
+										+ BM_LOGLVL3(BM_LogMailParse) 
 										+ BM_LOGLVL2(BM_LogUtil) 
 										+ BM_LOGLVL2(BM_LogMailTracking)
 										+ BM_LOGLVL2(BM_LogFolderView)
@@ -111,6 +111,7 @@ void BmPrefs::InitDefaults() {
 										+ BM_LOGLVL2(BM_LogMainWindow)
 										+ BM_LOGLVL3(BM_LogModelController)
 										+ BM_LOGLVL2(BM_LogMailEditWin)
+										+ BM_LOGLVL3(BM_LogSmtp)
 										);
 	mDefaultsMsg.AddString( "MailboxPath", "/boot/home/mail");
 	mDefaultsMsg.AddBool( "CacheRefsInMem", false);

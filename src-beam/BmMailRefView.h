@@ -11,6 +11,12 @@
 #include "BmListController.h"
 #include "BmMailRef.h"
 
+/*------------------------------------------------------------------------------*\
+	types of messages sent via the observe/notify system:
+\*------------------------------------------------------------------------------*/
+#define BM_NTFY_MAILREF_SELECTION	'bmba'
+						// sent from BmMailRefView to observers whenever mail-selection changes
+
 class BmMailFolder;
 /*------------------------------------------------------------------------------*\
 	BmMailRefItem

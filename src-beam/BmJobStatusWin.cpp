@@ -25,7 +25,6 @@
 #include "BmLogHandler.h"
 #include "BmMailFolder.h"
 #include "BmMailMover.h"
-#include "BmMsgTypes.h"
 #include "BmPopAccount.h"
 #include "BmPopper.h"
 #include "BmPrefs.h"

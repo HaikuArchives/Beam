@@ -20,27 +20,23 @@
 #include "BmMailRef.h"
 #include "BmMailRefView.h"
 #include "BmMailView.h"
-#include "BmMsgTypes.h"
 #include "BmResources.h"
 
 /********************************************************************************\
 	BmMailView
 \********************************************************************************/
 
-#define BM_MAILVIEW_SHOWRAW		'bmMa'
-#define BM_MAILVIEW_SHOWCOOKED	'bmMb'
-
 /*------------------------------------------------------------------------------*\
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmMailView* BmMailView::CreateInstance( minimax minmax, BRect frame, bool editable) {
+BmMailView* BmMailView::CreateInstance( minimax minmax, BRect frame, bool outbound) {
 	// create standard mail-view:
-	BmMailView* instance = new BmMailView( minmax, frame, editable);
+	BmMailView* instance = new BmMailView( minmax, frame, outbound);
 	// try to open state-cache-file...
 	status_t err;
 	BFile archiveFile;
-	BString archiveFilename = BString("MailView");
+	BString archiveFilename = BString("MailView") << (outbound ? "_out" : "_in");
 	if ((err = archiveFile.SetTo( TheResources->StateInfoFolder(), archiveFilename.String(), B_READ_ONLY)) == B_OK) {
 		// ...ok, archive file found, we fetch our state from it:
 		try {
@@ -59,28 +55,28 @@ BmMailView* BmMailView::CreateInstance( minimax minmax, BRect frame, bool editab
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmMailView::BmMailView( minimax minmax, BRect frame, bool editable) 
+BmMailView::BmMailView( minimax minmax, BRect frame, bool outbound) 
 	:	inherited( frame, "MailView", B_FOLLOW_NONE, B_WILL_DRAW | B_NAVIGABLE)
 	,	inheritedController( "MailViewController")
-	,	mEditMode( editable)
+	,	mOutbound( outbound)
 	,	mCurrMail( NULL)
 	,	mPartnerMailRefView( NULL)
 	,	mShowRaw( false)
 	,	mFontSize( 12)
 {
 	mHeaderView = new BmMailHeaderView( NULL);
-	if (editable)
+	if (outbound)
 		mHeaderView->ResizeTo( 0,0);
 	else
 		AddChild( mHeaderView);
-	mBodyPartView = new BmBodyPartView( minimax( 0, 0, 1E5, 1E5), 800, 0, editable);
+	mBodyPartView = new BmBodyPartView( minimax( 0, 0, 1E5, 1E5), 800, 0, outbound);
 	mBodyPartView->RemoveSelf();
 	AddChild( mBodyPartView);
 	mBodyPartView->MoveTo( mHeaderView->Frame().LeftBottom());
 	mBodyPartView->ResizeTo( 800,0);
 	CalculateVerticalOffset();
-	MakeEditable( editable);
-	SetStylable( !editable);
+	MakeEditable( outbound);
+	SetStylable( !outbound);
 	SetWordWrap( true);
 	SetFontAndColor( be_fixed_font);
 	mScrollView = new BmMailViewContainer( minmax, this, B_FOLLOW_NONE, 
@@ -104,6 +100,8 @@ status_t BmMailView::Archive( BMessage* archive, bool deep=true) const {
 						|| archive->AddInt16( MSG_FONTSIZE, mFontSize);
 	if (ret == B_OK && deep && mHeaderView)
 		ret = mHeaderView->Archive( archive, deep);
+	if (ret == B_OK && deep && mBodyPartView)
+		ret = mBodyPartView->Archive( archive, deep);
 	return ret;
 }
 
@@ -117,6 +115,8 @@ status_t BmMailView::Unarchive( BMessage* archive, bool deep=true) {
 						|| archive->FindInt16( MSG_FONTSIZE, &mFontSize);
 	if (ret == B_OK && deep && mHeaderView)
 		ret = mHeaderView->Unarchive( archive, deep);
+	if (ret == B_OK && deep && mBodyPartView)
+		ret = mBodyPartView->Unarchive( archive, deep);
 	return ret;
 }
 
@@ -140,7 +140,7 @@ void BmMailView::MessageReceived( BMessage* msg) {
 			}
 			case BM_MAILVIEW_SHOWRAW: {
 				ShowRaw( true);
-				JobIsDone( true);
+				JobIsDone( true);				// trigger re-display:
 				break;
 			}
 			case BM_MAILVIEW_SHOWCOOKED: {
@@ -343,10 +343,10 @@ void BmMailView::DisplayBodyPart( BString& displayText, BmBodyPart* bodyPart) {
 			if (displayText.Length()) {
 				// we show a separator between two inline bodyparts
 				if (bodyPart->FileName().Length()) {
-					displayText << "- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -\r\n";
-					displayText << "<" << bodyPart->FileName() << ">\r\n";
+					displayText << "\n- - - - - - - - - - - - - - - - - - - -\n";
+					displayText << "Inline Attachment <" << bodyPart->FileName() << "> follows:\n";
 				}
-				displayText << "- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -\r\n";
+				displayText << "- - - - - - - - - - - - - - - - - - - -\n\n";
 			}
 			uint32 encoding = CharsetToEncoding( bodyPart->TypeParam("charset"));
 			BString utf8;
@@ -384,7 +384,7 @@ bool BmMailView::WriteStateInfo() {
 	status_t err;
 
 	try {
-		BString filename = BString( "MailView");
+		BString filename = BString( "MailView") << (mOutbound ? "_out": "_in");
 		this->Archive( &archive, true) == B_OK
 													|| BM_THROW_RUNTIME("Unable to archive MailView-object");
 		(err = cacheFile.SetTo( TheResources->StateInfoFolder(), filename.String(), 
@@ -406,19 +406,22 @@ bool BmMailView::WriteStateInfo() {
 void BmMailView::ShowMenu( BPoint point) {
 	BPopUpMenu* theMenu = new BPopUpMenu( "MailViewMenu", false, false);
 
-	BMenuItem* item = new BMenuItem( "Show All MIME-Bodies", 
-												new BMessage( mBodyPartView->ShowAllParts()
-																  ? BM_BODYPARTVIEW_SHOWINLINE
-																  : BM_BODYPARTVIEW_SHOWALL));
-	item->SetTarget( mBodyPartView);
-	item->SetMarked( mBodyPartView->ShowAllParts());
-	theMenu->AddItem( item);
+	BMenuItem* item = NULL;
+	if (!mOutbound) {
+		item = new BMenuItem( "Show All MIME-Bodies", 
+									 new BMessage( mBodyPartView->ShowAllParts()
+															  ? BM_BODYPARTVIEW_SHOWATTACHMENTS
+															  : BM_BODYPARTVIEW_SHOWALL));
+		item->SetTarget( mBodyPartView);
+		item->SetMarked( mBodyPartView->ShowAllParts());
+		theMenu->AddItem( item);
 
-	item = new BMenuItem( "Show Raw Message", new BMessage( ShowRaw() 
-								 ? BM_MAILVIEW_SHOWCOOKED : BM_MAILVIEW_SHOWRAW));
-	item->SetTarget( this);
-	item->SetMarked( ShowRaw());
-	theMenu->AddItem( item);
+		item = new BMenuItem( "Show Raw Message", new BMessage( ShowRaw() 
+									 ? BM_MAILVIEW_SHOWCOOKED : BM_MAILVIEW_SHOWRAW));
+		item->SetTarget( this);
+		item->SetMarked( ShowRaw());
+		theMenu->AddItem( item);
+	}
 
    ConvertToScreen(&point);
 	BRect openRect;

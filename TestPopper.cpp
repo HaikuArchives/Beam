@@ -11,7 +11,6 @@
 #include "BmApp.h"
 #include "BmJobStatusWin.h"
 #include "BmLogHandler.h"
-#include "BmMsgTypes.h"
 #include "BmPopAccount.h"
 #include "BmPopper.h"
 

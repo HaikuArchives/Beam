@@ -14,13 +14,15 @@
 		-	
 \*------------------------------------------------------------------------------*/
 BmMenuControl::BmMenuControl( const char* label, BMenu* menu) 
-	:	inherited( BRect(0,0,200,20), NULL, label, menu, false, B_FOLLOW_NONE)
+	:	inherited( BRect(0,0,200,20), NULL, label, menu, true, B_FOLLOW_NONE)
 	,	mParent( NULL)
+	,	mMenu( static_cast<BMenu*>( ChildAt( 0)))
 {
 	ResizeToPreferred();
 	BRect b = Bounds();
-	ct_mpm = minimax( b.Width(), b.Height()+3, 1E5, b.Height()+3);
-	SetDivider( label ? StringWidth( label)+27 : 0);
+	float labelWidth = StringWidth( label);
+	ct_mpm = minimax( StringWidth("123456789012345678901234567890"), b.Height()+4, -1, b.Height()+4);
+	SetDivider( label ? labelWidth+27 : 0);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -68,5 +70,8 @@ BRect BmMenuControl::layout(BRect frame) {
 		return frame;
 	MoveTo(frame.LeftTop());
 	ResizeTo(frame.Width(),frame.Height());
+	float occupiedSpace = Divider()-10;
+	mMenu->MoveTo( occupiedSpace, mMenu->Frame().top);
+	mMenu->ResizeTo( frame.Width()-occupiedSpace-6, mMenu->Frame().Height());
 	return frame;
 }

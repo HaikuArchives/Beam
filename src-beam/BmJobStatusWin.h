@@ -15,6 +15,14 @@
 #include "BmController.h"
 #include "BmWindow.h"
 
+/*------------------------------------------------------------------------------*\
+	types of messages handled by a BmJobStatusWin:
+\*------------------------------------------------------------------------------*/
+#define BM_JOBWIN_FETCHPOP				'bmea'
+						// sent to BmJobStatusWin in order to start pop-connection
+#define BM_JOBWIN_MOVEMAILS			'bmeb'
+						// sent to BmJobStatusWin in order to move mails
+
 class BmPopAccount;
 class BmPopper;
 

@@ -25,6 +25,7 @@
 #include "BmMsgTypes.h"
 #include "BmPopAccount.h"
 #include "BmResources.h"
+#include "BmSmtpAccount.h"
 #include "BmToolbarButton.h"
 #include "BmUtil.h"
 
@@ -139,6 +140,8 @@ BmMainWindow::BmMainWindow()
 	,	mVertSplitter( NULL)
 {
 	TheMailFolderList = BmMailFolderList::CreateInstance();
+	TheSmtpAccountList = BmSmtpAccountList::CreateInstance();
+	TheSmtpAccountList->StartJob();
 	ThePopAccountList = BmPopAccountList::CreateInstance();
 
 	MView* mOuterGroup = 
@@ -218,6 +221,7 @@ BmMainWindow::BmMainWindow()
 BmMainWindow::~BmMainWindow() {
 	TheMailFolderList = NULL;
 	ThePopAccountList = NULL;
+	TheSmtpAccountList = NULL;
 	theInstance = NULL;
 }
 

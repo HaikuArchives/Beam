@@ -19,6 +19,14 @@ class BmCaption;
 class BmListViewController;
 
 /*------------------------------------------------------------------------------*\
+	types of messages handled by a listview-controller:
+\*------------------------------------------------------------------------------*/
+#define BM_LISTVIEW_SHOW_COLUMN		'bmca'
+							// the user has chosen to show a column
+#define BM_LISTVIEW_HIDE_COLUMN		'bmcb'
+							// the user has chosen to hide a column
+
+/*------------------------------------------------------------------------------*\
 	BmListViewItem
 		-	
 \*------------------------------------------------------------------------------*/
@@ -183,6 +191,7 @@ protected:
 	BmListViewItem* mCurrHighlightItem;
 	BMessageRunner* mUpdatePulseRunner;
 	BList mCachedMessages;
+	bool mSittingOnExpander;
 };
 
 

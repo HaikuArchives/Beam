@@ -7,7 +7,6 @@
 
 #include "BmBasics.h"
 #include "BmLogHandler.h"
-#include "BmMsgTypes.h"
 #include "BmUtil.h"
 
 /*------------------------------------------------------------------------------*\
@@ -24,6 +23,7 @@ const uint32 BM_LogRefView				= 1UL<<6;
 const uint32 BM_LogMainWindow			= 1UL<<7;
 const uint32 BM_LogModelController	= 1UL<<8;
 const uint32 BM_LogMailEditWin		= 1UL<<9;
+const uint32 BM_LogSmtp					= 1UL<<10;
 // dummy constant meaning to log everything:
 const uint32 BM_LogAll  				= 0xffffffff;
 

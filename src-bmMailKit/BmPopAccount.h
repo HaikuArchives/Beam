@@ -31,14 +31,13 @@ class BmPopAccount : public BmListModelItem {
 	static const char* const MSG_USERNAME = 		"bm:username";
 	static const char* const MSG_PASSWORD = 		"bm:password";
 	static const char* const MSG_POP_SERVER = 	"bm:popserver";
-	static const char* const MSG_SMTP_SERVER = 	"bm:smtpserver";
+	static const char* const MSG_SMTP_ACCOUNT = 	"bm:smtpacc";
 	static const char* const MSG_REAL_NAME = 		"bm:realname";
 	static const char* const MSG_REPLY_TO = 		"bm:replyto";
 	static const char* const MSG_SIGNATURE_NAME = "bm:signaturename";
 	static const char* const MSG_CHECK_MAIL = 	"bm:checkmail";
 	static const char* const MSG_DELETE_MAIL = 	"bm:deletemail";
 	static const char* const MSG_PORT_NR = 		"bm:portnr";
-	static const char* const MSG_SMTP_PORT_NR = 	"bm:smtpportnr";
 	static const char* const MSG_UID = 				"bm:uid";
 public:
 	BmPopAccount( const char* name, BmPopAccountList* model);
@@ -59,30 +58,27 @@ public:
 	const BString &Username() const 		{ return mUsername; }
 	const BString &Password() const 		{ return mPassword; }
 	const BString &POPServer() const		{ return mPOPServer; }
-	const BString &SMTPServer() const	{ return mSMTPServer; }
+	const BString &SMTPAccount() const	{ return mSMTPAccount; }
 	const BString &RealName() const 		{ return mRealName; }
 	const BString &ReplyTo() const 		{ return mReplyTo; }
 	const BString &SignatureName() const	 { return mSignatureName; }
 	bool CheckMail() const 					{ return mCheckMail; }
 	bool DeleteMailFromServer() const	{ return mDeleteMailFromServer; }
 	int16 PortNr() const 					{ return mPortNr; }
-	int16 SMTPPortNr() const 				{ return mSMTPPortNr; }
 
 	// setters:
 	void Username( const BString &s) 	{ mUsername = s; }
 	void Password( const BString &s) 	{ mPassword = s; }
 	void POPServer( const BString &s)	{ mPOPServer = s; }
-	void SMTPServer( const BString &s)	{ mSMTPServer = s; }
+	void SMTPAccount( const BString &s)	{ mSMTPAccount = s; }
 	void RealName( const BString &s) 	{ mRealName = s; }
 	void ReplyTo( const BString &s) 		{ mReplyTo = s; }
 	void SignatureName( const BString &s)	 { mSignatureName = s; }
 	void CheckMail( bool b) 				{ mCheckMail = b; }
 	void DeleteMailFromServer( bool b)	{ mDeleteMailFromServer = b; }
 	void PortNr( int16 i) 					{ mPortNr = i; }
-	void SMTPPortNr( int16 i) 				{ mSMTPPortNr = i; }
 
 	BNetAddress POPAddress() const;
-	BNetAddress SMTPAddress() const;
 private:
 	BmPopAccount();					// hide default constructor
 
@@ -90,7 +86,7 @@ private:
 	BString mUsername;
 	BString mPassword;
 	BString mPOPServer;
-	BString mSMTPServer;				// SMTP-Server to use when sending 
+	BString mSMTPAccount;			// name of BmSmtpAccount to use when sending 
 											// mail "from" this POP-account
 	BString mRealName;
 	BString mReplyTo;
@@ -98,7 +94,6 @@ private:
 	bool mCheckMail;					// include this account in global mail-check?
 	bool mDeleteMailFromServer;	// delete mails upon receive?
 	int16 mPortNr;						// usually 110
-	int16 mSMTPPortNr;				// usually 25
 
 	vector<BString> mUIDs;			// list of UIDs seen in this account
 };

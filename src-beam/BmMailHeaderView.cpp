@@ -12,7 +12,6 @@
 #include "BmMailHeader.h"
 #include "BmMailHeaderView.h"
 #include "BmMailView.h"
-#include "BmMsgTypes.h"
 #include "BmPrefs.h"
 #include "BmResources.h"
 

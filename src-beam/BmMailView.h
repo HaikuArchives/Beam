@@ -21,6 +21,9 @@ class BmMailViewContainer;
 class BmMailHeaderView;
 class BmMailRefView;
 
+#define BM_MAILVIEW_SHOWRAW		'bmMa'
+#define BM_MAILVIEW_SHOWCOOKED	'bmMb'
+
 /*------------------------------------------------------------------------------*\
 	BmMailView
 		-	
@@ -36,8 +39,8 @@ class BmMailView : public WrappingTextView, public BmJobController {
 
 public:
 	// creator-func, c'tors and d'tor:
-	static BmMailView* CreateInstance(  minimax minmax, BRect frame, bool editable);
-	BmMailView( minimax minmax, BRect frame, bool editable);
+	static BmMailView* CreateInstance(  minimax minmax, BRect frame, bool outbound);
+	BmMailView( minimax minmax, BRect frame, bool outbound);
 	~BmMailView();
 
 	// native methods:
@@ -74,7 +77,7 @@ private:
 	void ShowMenu( BPoint point);
 
 	// will not be archived:
-	bool mEditMode;
+	bool mOutbound;
 	BmRef< BmMail> mCurrMail;
 	BmMailViewContainer* mScrollView;
 	BmMailHeaderView* mHeaderView;

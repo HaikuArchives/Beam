@@ -10,7 +10,6 @@
 
 #include "BmBasics.h"
 #include "BmJobStatusWin.h"
-#include "BmMsgTypes.h"
 #include "BmPopAccount.h"
 #include "BmResources.h"
 #include "BmUtil.h"
@@ -27,13 +26,13 @@ BmPopAccount::BmPopAccount( const char* name, BmPopAccountList* model)
 	:	inherited( name, model, (BmListModelItem*)NULL)
 	,	mCheckMail( false)
 	,	mDeleteMailFromServer( false)	
+	,	mPortNr( 110)
 {
 }
 
 /*------------------------------------------------------------------------------*\
 	BmPopAccount( archive)
 		-	constructs a BmPopAccount from a BMessage
-		-	N.B.: BMessage must be in NETWORK-BYTE-ORDER
 \*------------------------------------------------------------------------------*/
 BmPopAccount::BmPopAccount( BMessage* archive, BmPopAccountList* model) 
 	:	inherited( FindMsgString( archive, MSG_NAME), model, (BmListModelItem*)NULL)
@@ -41,14 +40,13 @@ BmPopAccount::BmPopAccount( BMessage* archive, BmPopAccountList* model)
 	mUsername = FindMsgString( archive, MSG_USERNAME);
 	mPassword = FindMsgString( archive, MSG_PASSWORD);
 	mPOPServer = FindMsgString( archive, MSG_POP_SERVER);
-	mSMTPServer = FindMsgString( archive, MSG_SMTP_SERVER);
+	mSMTPAccount = FindMsgString( archive, MSG_SMTP_ACCOUNT);
 	mRealName = FindMsgString( archive, MSG_REAL_NAME);
 	mReplyTo = FindMsgString( archive, MSG_REPLY_TO);
 	mSignatureName = FindMsgString( archive, MSG_SIGNATURE_NAME);
 	mCheckMail = FindMsgBool( archive, MSG_CHECK_MAIL);
 	mDeleteMailFromServer = FindMsgBool( archive, MSG_DELETE_MAIL);
 	mPortNr = FindMsgInt16( archive, MSG_PORT_NR);
-	mSMTPPortNr = FindMsgInt16( archive, MSG_SMTP_PORT_NR);
 	const char* uid;
 	for( int32 i=0; archive->FindString( MSG_UID, i, &uid) == B_OK; ++i) {
 		mUIDs.push_back( uid);
@@ -66,14 +64,13 @@ status_t BmPopAccount::Archive( BMessage* archive, bool deep) const {
 		||	archive->AddString( MSG_USERNAME, mUsername.String())
 		||	archive->AddString( MSG_PASSWORD, mPassword.String())
 		||	archive->AddString( MSG_POP_SERVER, mPOPServer.String())
-		||	archive->AddString( MSG_SMTP_SERVER, mSMTPServer.String())
+		||	archive->AddString( MSG_SMTP_ACCOUNT, mSMTPAccount.String())
 		||	archive->AddString( MSG_REAL_NAME, mRealName.String())
 		||	archive->AddString( MSG_REPLY_TO, mReplyTo.String())
 		||	archive->AddString( MSG_SIGNATURE_NAME, mSignatureName.String())
 		||	archive->AddBool( MSG_CHECK_MAIL, mCheckMail)
 		||	archive->AddBool( MSG_DELETE_MAIL, mDeleteMailFromServer)
-		||	archive->AddInt16( MSG_PORT_NR, mPortNr)
-		||	archive->AddInt16( MSG_SMTP_PORT_NR, mSMTPPortNr));
+		||	archive->AddInt16( MSG_PORT_NR, mPortNr));
 	int32 count = mUIDs.size();
 	for( int i=0; ret==B_OK && i<count; ++i) {
 		ret = archive->AddString( MSG_UID, mUIDs[i].String());
@@ -91,18 +88,6 @@ BNetAddress BmPopAccount::POPAddress() const {
 		return addr;
 	else
 		throw BM_runtime_error("BmPopAccount: Could not create PopAddress");
-}
-
-/*------------------------------------------------------------------------------*\
-	SMTPAddress()
-		-	returns the SMTP-connect-info as a BNetAddress
-\*------------------------------------------------------------------------------*/
-BNetAddress BmPopAccount::SMTPAddress() const {
-	BNetAddress addr( mSMTPServer.String(), mSMTPPortNr);
-	if (addr.InitCheck() == B_OK)
-		return addr;
-	else
-		throw BM_runtime_error("BmSMTPAccount: Could not create SMTPAddress");
 }
 
 /*------------------------------------------------------------------------------*\

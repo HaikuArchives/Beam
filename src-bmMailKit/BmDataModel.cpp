@@ -9,7 +9,6 @@
 #include "BmController.h"
 #include "BmDataModel.h"
 #include "BmLogHandler.h"
-#include "BmMsgTypes.h"
 #include "BmResources.h"
 #include "BmUtil.h"
 

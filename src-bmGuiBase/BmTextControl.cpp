@@ -24,7 +24,7 @@ BmTextControl::BmTextControl( const char* label, bool labelIsMenu)
 {
 	ResizeToPreferred();
 	BRect b = Bounds();
-	ct_mpm = minimax( b.Width(), b.Height()+3, 1E5, b.Height()+3);
+	ct_mpm = minimax( b.Width(), b.Height()+4, 1E5, b.Height()+4);
 	SetDivider( label ? StringWidth( label)+27 : 0);
 	if (labelIsMenu) {
 		float width, height;
@@ -92,7 +92,7 @@ BRect BmTextControl::layout(BRect frame) {
 		return frame;
 	MoveTo(frame.LeftTop());
 	ResizeTo(frame.Width(),frame.Height());
-	float occupiedSpace = Divider()+3;
+	float occupiedSpace = Divider()-10;
 	mTextView->MoveTo( occupiedSpace, 5);
 	mTextView->ResizeTo( frame.Width()-occupiedSpace-6, mTextView->Frame().Height());
 	return frame;

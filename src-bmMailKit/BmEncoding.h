@@ -11,7 +11,11 @@
 \*------------------------------------------------------------------------------*/
 namespace BmEncoding {
 	
-	extern const char* BM_Encodings[];
+	struct BmEncodingPair {
+		const char* charset;
+		const uint32 encoding;
+	};
+	extern BmEncodingPair BM_Encodings[];
 
 	const uint32 BM_UTF8_CONVERSION = 0xFFFF;
 
@@ -32,6 +36,7 @@ namespace BmEncoding {
 												bool useQuotedPrintableIfNeeded,
 												bool fold=false, int32 fieldLen=0);
 	
+	bool NeedsEncoding( const BString& charsetString);
 };
 
 #endif

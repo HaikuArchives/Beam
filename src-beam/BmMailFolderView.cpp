@@ -12,7 +12,6 @@
 #include "BmMailFolderList.h"
 #include "BmMailFolderView.h"
 #include "BmMailRefView.h"
-#include "BmMsgTypes.h"
 #include "BmPrefs.h"
 #include "BmResources.h"
 #include "BmUtil.h"
@@ -136,7 +135,7 @@ BmListViewItem* BmMailFolderView::CreateListViewItem( BmListModelItem* item,
 		-	
 \*------------------------------------------------------------------------------*/
 bool BmMailFolderView::AcceptsDropOf( const BMessage* msg) {
-	return (msg && (msg->what == BM_MAIL_DRAG || msg->what == B_SIMPLE_DATA));
+	return (msg && msg->what == B_SIMPLE_DATA);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -145,7 +144,7 @@ bool BmMailFolderView::AcceptsDropOf( const BMessage* msg) {
 \*------------------------------------------------------------------------------*/
 void BmMailFolderView::HandleDrop( const BMessage* msg) {
 	if (msg && mCurrHighlightItem
-	&& (msg->what == BM_MAIL_DRAG || msg->what == B_SIMPLE_DATA)) {
+	&& (msg->what == B_SIMPLE_DATA)) {
 		BmMailFolder* folder = dynamic_cast<BmMailFolder*>( mCurrHighlightItem->ModelItem());
 		if (folder) {
 			BMessage tmpMsg( BM_JOBWIN_MOVEMAILS);

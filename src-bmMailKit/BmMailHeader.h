@@ -37,8 +37,8 @@ public:
 	~BmAddress();
 
 	// native methods:
-	void ConstructHeaderForSending( BString& header, int32 encoding, 
-											  int32 fieldNameLength) const;
+	void ConstructRawText( BString& header, int32 encoding, int32 fieldNameLength) const;
+
 	// operators:
 	operator BString() const;
 						// returns address completely formatted (ready to be sent)
@@ -72,8 +72,8 @@ public:
 	// native methods:
 	bool Set( BString strippedFieldVal);
 	BmStringList SplitIntoAddresses( BString addrList);
-	void ConstructHeaderForSending( BString& header, int32 encoding, 
-											  int32 fieldNameLength);
+	void ConstructRawText( BString& header, int32 encoding, int32 fieldNameLength) const;
+
 	// operators:
 	operator BString() const;
 							// returns address-list completely formatted (ready to be sent)
@@ -110,7 +110,7 @@ class BmMailHeader {
 		void Remove( const BString fieldName);
 		BmHeaderMap::const_iterator begin() const { return mHeaders.begin(); }
 		BmHeaderMap::const_iterator end() const	{ return mHeaders.end(); }
-		BString& operator [] (const BString fieldName);
+		const BString& operator [] (const BString fieldName) const;
 	private:
 		BmHeaderMap mHeaders;
 	};
@@ -129,7 +129,8 @@ public:
 	void AddFieldVal( const BString fieldName, const BString value);
 	void RemoveField( const BString fieldName);
 							// the next always produces US-ASCII:
-	bool ConstructHeaderForSending( BString& header, int32 encoding);
+	bool ConstructRawText( BString& header, int32 encoding, 
+								  const BString forBcc=BString());
 
 	// getters:
 	const BString& GetFieldVal( const BString fieldName);
@@ -141,7 +142,7 @@ public:
 
 	// class-functions:
 	static bool IsAddressField( const BString fieldName);
-	static BString FoldLine( BString line, int fieldLength);
+	static bool IsEncodingOkForField( const BString fieldName);
 
 protected:
 	void ParseHeader( const BString &header);
@@ -183,6 +184,9 @@ private:
 							// encoding to be used by this mail (if not specified otherwise)
 	int32 mNumLines;
 							// number of lines in this header
+
+	static int32 nCounter;
+							// counter for message-id
 };
 
 #endif

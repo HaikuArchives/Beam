@@ -11,6 +11,12 @@
 #include "BmListController.h"
 
 /*------------------------------------------------------------------------------*\
+	types of messages handled by a BmBodyPartView:
+\*------------------------------------------------------------------------------*/
+#define BM_BODYPARTVIEW_SHOWALL				'bmga'
+#define BM_BODYPARTVIEW_SHOWATTACHMENTS	'bmgb'
+
+/*------------------------------------------------------------------------------*\
 	BmBodyPartItem
 		-	
 \*------------------------------------------------------------------------------*/
@@ -33,6 +39,9 @@ class BmBodyPartView : public BmListViewController
 {
 	typedef BmListViewController inherited;
 	
+	// archival-fieldnames:
+	static const char* const MSG_SHOWALL = 	"bm:showall";
+
 public:
 	// c'tors and d'tor:
 	BmBodyPartView( minimax minmax, int32 width, int32 height, bool editable=false);
@@ -50,6 +59,8 @@ public:
 	void KeyDown(const char *bytes, int32 numBytes);
 	void MessageReceived( BMessage* msg);
 	void MouseDown( BPoint point);
+	status_t Archive( BMessage* archive, bool deep=true) const;
+	status_t Unarchive( BMessage* archive, bool deep=true);
 
 	// overrides of controller base:
 	void AddAllModelItems();

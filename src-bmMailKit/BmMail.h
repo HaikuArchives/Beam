@@ -47,6 +47,7 @@ class BmMailHeader;
 #define BM_FIELD_CONTENT_ID 				"Content-Id"
 #define BM_FIELD_DATE 						"Date"
 #define BM_FIELD_FROM 						"From"
+#define BM_FIELD_MESSAGE_ID				"Message-Id"
 #define BM_FIELD_MIME 						"Mime-Version"
 #define BM_FIELD_PRIORITY					"Priority"
 #define BM_FIELD_REPLY_TO					"Reply-To"
@@ -74,12 +75,14 @@ class BmMail : public BmJobModel {
 	typedef BmJobModel inherited;
 
 public:
-	BmMail( );
+	BmMail( bool outbound);
 	BmMail( BString &msgText, const BString account=BString());
 	BmMail( BmMailRef* ref);
 	virtual ~BmMail();
 
 	// native methods:
+	bool ConstructRawText( const BString& editableText, int32 encoding,
+								  BString smtpAccount);
 	bool Store();
 	//
 	bool HasAttachments() const;
@@ -98,7 +101,7 @@ public:
 	BmMailHeader* Header() const			{ return mHeader; }
 	int32 HeaderLength() const				{ return mHeaderLength; }
 	const BString& RawText() const		{ return mText; }
-	bool ConstructMailForSending( const BString& editableText, int32 encoding);
+	const bool Outbound() const			{ return mOutbound; }
 
 protected:
 	BString CreateBasicFilename();
@@ -109,6 +112,8 @@ protected:
 	status_t mInitCheck;
 
 private:
+	BmMail();
+
 	BmMailHeader* mHeader;					// contains header-information
 	int32 mHeaderLength;
 
@@ -120,6 +125,8 @@ private:
 
 	BEntry mParentEntry;						// filesystem-entry for mailfolder this mail 
 													// lives in or should be stored into
+
+	bool mOutbound;							// true if mail is for sending (as opposed to reveived)
 };
 
 

@@ -13,7 +13,6 @@
 #include "BmBodyPartList.h"
 #include "BmBodyPartView.h"
 #include "BmMailView.h"
-#include "BmMsgTypes.h"
 #include "BmPrefs.h"
 #include "BmResources.h"
 #include "BmUtil.h"
@@ -117,6 +116,24 @@ BmBodyPartView::BmBodyPartView( minimax minmax, int32 width, int32 height,
 		-	
 \*------------------------------------------------------------------------------*/
 BmBodyPartView::~BmBodyPartView() { 
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+status_t BmBodyPartView::Archive( BMessage* archive, bool deep=true) const {
+	status_t ret = archive->AddBool( MSG_SHOWALL, mShowAllParts);
+	return ret;
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+status_t BmBodyPartView::Unarchive( BMessage* archive, bool deep=true) {
+	status_t ret = archive->FindBool( MSG_SHOWALL, &mShowAllParts);
+	return ret;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -275,7 +292,7 @@ void BmBodyPartView::MessageReceived( BMessage* msg) {
 				ShowBody( dynamic_cast<BmBodyPartList*>( DataModel()));
 				break;
 			}
-			case BM_BODYPARTVIEW_SHOWINLINE: {
+			case BM_BODYPARTVIEW_SHOWATTACHMENTS: {
 				mShowAllParts = false;
 				ShowBody( dynamic_cast<BmBodyPartList*>( DataModel()));
 				break;
@@ -365,7 +382,7 @@ void BmBodyPartView::ShowMenu( BPoint point) {
 
 	BMenuItem* item = new BMenuItem( "Show All MIME-Bodies", 
 												new BMessage( mShowAllParts
-																  ? BM_BODYPARTVIEW_SHOWINLINE
+																  ? BM_BODYPARTVIEW_SHOWATTACHMENTS
 																  : BM_BODYPARTVIEW_SHOWALL));
 	item->SetTarget( this);
 	item->SetMarked( mShowAllParts);
