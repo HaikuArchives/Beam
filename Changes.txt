@@ -2,6 +2,120 @@ change-history of Beam:
 		$Id$
 
 *******************************************************************************
+[Beam 1.0-rc4]
+*******************************************************************************
+
+< 2003-10-05: commit>
+
+BmBasics:
+	-	added context-parameter to BM_text_error
+
+BmBodyPartList:
+	-	added empty context-parameter when using BM_text_error.
+
+BmEncoding:
+	-	added us-ascii to charsets.
+	-	added check for conversion errors when converting header-
+		contents from UTF-8 to destination charset.
+
+BmMailEditWin:
+	-	now handles conversion-errors for header-fields, too (not just
+		for mail-text and attachments).
+
+BmMailHeader:
+	-	ConstructRawText() now throws a BM_text_error if the conversion
+		of one of the header-field contents to it's destination charset
+		failed.
+
+BmMainWindow:
+	-	changed shortcuts for network-menu to be in the same order as
+		on the keyboard (1234567890 instead if 0123456789).
+
+BmPrefs:
+	-	added 'us-ascii' to the frequently used charsets.
+
+< 2003-10-02: commit>
+
+BmApp, TestBeam:
+	-	improved startup-snychronisation between Beam and its testing
+		thread (synchronization is now two-way).
+
+BmJobStatusWin, BmNetJobModel:
+	-	reworked according to 80-chars-per-line rule.
+
+BmPopAccount:
+	-	removed unneded include of BmPopper.h
+
+BmPrefsMailReadView, BmPrefsRecvMailView:
+	-	moved check-only-if-PPP-is-up-setting to POP-accounts page
+		since too many people have had problems finding it where it
+		used to live.
+
+BmPrefs:
+	-	removed unneded setting of mailbox-path for testmode.
+
+BmSmtp:
+	-	fixed crash in StateAuthThroughPopServer() if only checking
+		for supported authentication-types.
+	-	checking for authentication-types works again.
+
+QuotedPrintableEncoderTest:
+	-	even more tests for encoded-word encoding (now with different
+		charset).
+
+< 2003-09-30: commit>
+
+BmMailEditWin, BmMenuControl, BmSieveFilter, BmTextControl:
+	-	established a layout that is consistent between R5 and Dano.
+
+BmMenuControllerBase, BmPrefsIdentityView, BmPrefsRecvMailView:
+	-	fixed minor problem with mark not always being set properly.
+
+BmSignature:
+	-	made sure to convert-charsets to lowercase
+
+QuotedPrintableEncoderTest:
+	-	added some more tests for problematic encoded-word encoding.
+
+< 2003-09-29: commit>
+
+BmMail, BmMailView:
+	-	fixed problem with long-word-handling messing up formatting of
+		asian text (that do not contain spaces and such appear as very 
+		long words). Now Beam explicitly checks for URLs and only keeps
+		those intact.
+
+BmMailEditWin:
+	-	convinced detail-buttons to work more reliably (not just every
+		second time...).
+
+WrappingTextView:
+	-	increased length of nLongLine-constant to make sense for asian
+		(very long) words, too.
+
+< 2003-09-29: commit>
+
+BmEncoding:
+	-	changed BmQpEncodedWordEncoder in such a way that it does the
+		character conversion (from utf-8 to the destination charset), too.
+		This should finally deal properly with the problem of not being
+		allowed to separate a multibyte-char across two encoded words.
+		RFC2047 is a nightmare...
+	-	made utf-8 encoding/decoding more robust against illegal multibyte
+		sequences.
+
+BmPrefsGeneralView:
+	-	fixed a typo and worked towards 80-chars-per-line.
+
+BmSmtp:
+	-	if a send-job is stopped, it no longer marks the current mail as
+		sent (it leaves it alone instead).
+
+QuotedPrintableEncoderTest:
+	-	added more tests for BmQpEncodedWordEncoder.
+
+
+*******************************************************************************
 [Beam 1.0-rc3]
 *******************************************************************************
 
