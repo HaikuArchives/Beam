@@ -420,7 +420,7 @@ BMessage* BmPrefs::GetShortcutDefaults( BMessage* shortcutsMsg) {
 	SetShortcutIfNew( shortcutsMsg, "Rename Folder", "");
 	SetShortcutIfNew( shortcutsMsg, "Reply", "R");
 	SetShortcutIfNew( shortcutsMsg, "Reply To List", "");
-	SetShortcutIfNew( shortcutsMsg, "Reply To Originator", "");
+	SetShortcutIfNew( shortcutsMsg, "Reply To Person", "");
 	SetShortcutIfNew( shortcutsMsg, "Reply To All", "<SHIFT>R");
 	SetShortcutIfNew( shortcutsMsg, "SaveMail", "S");
 	SetShortcutIfNew( shortcutsMsg, "Select All", "A");
