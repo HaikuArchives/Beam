@@ -58,6 +58,7 @@ class BmFilter : public BmListModelItem {
 	// archivable components:
 	static const char* const MSG_NAME;
 	static const char* const MSG_CONTENT;
+	static const char* const MSG_MARK_DEFAULT;
 	static const int16 nArchiveVersion;
 
 public:
@@ -67,6 +68,7 @@ public:
 	
 	// native methods:
 	bool CompileScript();
+	bool Execute( void* msgContext);
 	void RegisterCallbacks( sieve_interp_t* interp);
 
 	// SIEVE-callbacks:
@@ -80,12 +82,15 @@ public:
 	// getters:
 	inline const BmString &Content() const	{ return mContent; }
 	inline const BmString &Name() const		{ return Key(); }
+	inline bool MarkedAsDefault() const		{ return mMarkedAsDefault; }
+
 	inline int LastErrVal() const			{ return mLastErrVal; }
 	inline const BmString &LastErr() const	{ return mLastErr; }
 	inline const BmString &LastSieveErr() const { return mLastSieveErr; }
 
 	// setters:
-	inline void Content( const BmString &s) { mContent = s; TellModelItemUpdated( UPD_ALL); }
+	inline void Content( const BmString &s){ mContent = s; TellModelItemUpdated( UPD_ALL); }
+	inline void MarkedAsDefault( bool b)	{ mMarkedAsDefault = b;  TellModelItemUpdated( UPD_ALL); }
 
 private:
 	BmFilter();									// hide default constructor
@@ -95,6 +100,8 @@ private:
 
 	BmString mContent;
 							// the SIEVE-script represented by this filter
+	bool mMarkedAsDefault;
+							// is this the default filter?
 	sieve_script_t* mCompiledScript;
 							// the compiled SIEVE-script, ready to be thrown at messages
 	int mLastErrVal;
@@ -123,6 +130,8 @@ public:
 	~BmFilterList();
 	
 	// native methods:
+	BmRef<BmFilter> DefaultFilter();
+	void SetDefaultFilter( BmString filterName);
 	
 	// overrides of listmodel base:
 	const BmString SettingsFileName();

@@ -43,9 +43,14 @@
 	BmFilter
 \********************************************************************************/
 
-const char* const BmFilter::MSG_NAME = 		"bm:name";
-const char* const BmFilter::MSG_CONTENT = 	"bm:content";
-const int16 BmFilter::nArchiveVersion = 1;
+const char* const BmFilter::MSG_NAME = 			"bm:name";
+const char* const BmFilter::MSG_CONTENT = 		"bm:content";
+const char* const BmFilter::MSG_MARK_DEFAULT = 	"bm:markdefault";
+const int16 BmFilter::nArchiveVersion = 2;
+
+// standard logfile-name for this class:
+#undef BM_LOGNAME
+#define BM_LOGNAME "Filter"
 
 /*------------------------------------------------------------------------------*\
 	BmFilter()
@@ -54,6 +59,7 @@ const int16 BmFilter::nArchiveVersion = 1;
 BmFilter::BmFilter( const char* name, BmFilterList* model) 
 	:	inherited( name, model, (BmListModelItem*)NULL)
 	,	mCompiledScript( NULL)
+	,	mMarkedAsDefault( false)
 {
 }
 
@@ -70,6 +76,11 @@ BmFilter::BmFilter( BMessage* archive, BmFilterList* model)
 	if (archive->FindInt16( MSG_VERSION, &version) != B_OK)
 		version = 0;
 	mContent = FindMsgString( archive, MSG_CONTENT);
+	if (version > 1) {
+		mMarkedAsDefault = FindMsgBool( archive, MSG_MARK_DEFAULT);
+	} else {
+		mMarkedAsDefault = false;
+	}
 }
 
 /*------------------------------------------------------------------------------*\
@@ -89,8 +100,30 @@ BmFilter::~BmFilter() {
 status_t BmFilter::Archive( BMessage* archive, bool deep) const {
 	status_t ret = (inherited::Archive( archive, deep)
 		||	archive->AddString( MSG_NAME, Key().String())
+		||	archive->AddBool( MSG_MARK_DEFAULT, mMarkedAsDefault)
 		||	archive->AddString( MSG_CONTENT, mContent.String()));
 	return ret;
+}
+
+/*------------------------------------------------------------------------------*\
+	Execute()
+		-	
+\*------------------------------------------------------------------------------*/
+bool BmFilter::Execute( void* msgContext) {
+	if (!mCompiledScript) {
+		bool scriptOK = CompileScript();
+		if (!scriptOK || !mCompiledScript) {
+			BmString errString = LastErr() + "\n" 
+										<< "Error: " 
+										<< sieve_strerror(LastErrVal()) 
+										<< "\n"
+										<< LastSieveErr();
+			BM_LOGERR( errString);
+			return false;
+		}
+	}
+	int res = sieve_execute_script( mCompiledScript, msgContext);
+	return res == SIEVE_OK;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -132,6 +165,10 @@ bool BmFilter::CompileScript() {
 		goto cleanup;
 	}
 	// ...and compile the script:	
+	if (mCompiledScript) {
+		sieve_script_free( &mCompiledScript);
+		mCompiledScript = NULL;
+	}
 	res = sieve_script_parse( sieveInterp, scriptFile, this, &mCompiledScript);
 	if (res != SIEVE_OK) {
 		mLastErr = BmString(Key()) << ":\nThe script could not be parsed correctly";
@@ -161,6 +198,8 @@ void BmFilter::RegisterCallbacks( sieve_interp_t* interp) {
 
 	sieve_register_size( interp, BmMailFilter::sieve_get_size);
 	sieve_register_header( interp, BmMailFilter::sieve_get_header);
+
+	sieve_register_execute_error( interp, BmMailFilter::sieve_execute_error);
 
 	sieve_register_parse_error( interp, BmFilter::sieve_parse_error);
 }
@@ -237,6 +276,43 @@ BmFilterList::~BmFilterList() {
 const BmString BmFilterList::SettingsFileName() {
 	return BmString( TheResources->SettingsPath.Path()) << "/" 
 				<< "Filters_" << (TheOutboundFilterList==this ? "outbound" : "inbound");
+}
+
+/*------------------------------------------------------------------------------*\
+	DefaultFilter()
+		-	returns the filter that has been marked as default
+		-	if no filter has been marked as default, NULL is returned
+\*------------------------------------------------------------------------------*/
+BmRef<BmFilter> BmFilterList::DefaultFilter() {
+	BmAutolock lock( ModelLocker());
+	lock.IsLocked() 							|| BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
+	BmModelItemMap::const_iterator iter;
+	for( iter = begin(); iter != end(); ++iter) {
+		BmFilter* filter = dynamic_cast< BmFilter*>( iter->second.Get());
+		if (filter->MarkedAsDefault()) {
+			return filter;
+		}
+	}
+	return NULL;
+}
+
+/*------------------------------------------------------------------------------*\
+	SetDefaultFilter( filterName)
+		-	marks the filter with the given name as the default filter
+		-	any prior default-filter is being reset
+\*------------------------------------------------------------------------------*/
+void BmFilterList::SetDefaultFilter( BmString filterName) {
+	BmAutolock lock( ModelLocker());
+	lock.IsLocked() 							|| BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
+	BmModelItemMap::const_iterator iter;
+	for( iter = begin(); iter != end(); ++iter) {
+		BmFilter* filter = dynamic_cast< BmFilter*>( iter->second.Get());
+		if (filter->Key() == filterName) {
+			filter->MarkedAsDefault( true);
+		} else if (filter->MarkedAsDefault()) {
+			filter->MarkedAsDefault( false);
+		}
+	}
 }
 
 /*------------------------------------------------------------------------------*\
