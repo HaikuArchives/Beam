@@ -108,7 +108,10 @@ status_t BmSmtpAccount::Archive( BMessage* archive, bool deep) const {
 		-	returns the SMTP-connect-info as a BNetAddress
 \*------------------------------------------------------------------------------*/
 bool BmSmtpAccount::GetSMTPAddress( BNetAddress* addr) const {
-	return addr->SetTo( mSMTPServer.String(), mPortNr) == B_OK;
+	if (addr)
+		return addr->SetTo( mSMTPServer.String(), mPortNr) == B_OK;
+	else
+		return false;
 }
 
 /*------------------------------------------------------------------------------*\
