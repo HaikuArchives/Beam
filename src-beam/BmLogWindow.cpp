@@ -81,7 +81,8 @@ BmLogWindow::BmLogWindow( const BRect& frame, const BmString& title,
 	:	inherited( title.String(), frame, title.String(), 
 					  B_FLOATING_WINDOW_LOOK,
 					  B_NORMAL_WINDOW_FEEL, 
-					  B_NO_WORKSPACE_ACTIVATION | B_ASYNCHRONOUS_CONTROLS)
+					  B_NO_WORKSPACE_ACTIVATION | B_ASYNCHRONOUS_CONTROLS
+					  | B_AVOID_FOCUS | B_WILL_ACCEPT_FIRST_CLICK)
 	,	mLogfileName( logfileName)
 	,	mShowUponNews( showUponNews)
 	,	mClingToMainWin( clingToMainWin)
