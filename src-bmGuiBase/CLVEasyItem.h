@@ -62,6 +62,7 @@ class IMPEXPSANTAPARTSFORBEAM CLVEasyItem : public CLVListItem
 
 		virtual const int32 GetNumValueForColumn( int32) const 		{ return 0; }
 		virtual const time_t GetDateValueForColumn( int32) const 	{ return 0; }
+		virtual const bigtime_t GetBigtimeValueForColumn( int32) const 	{ return 0; }
 
 		void Highlight( bool b);
 		bool Highlight( );

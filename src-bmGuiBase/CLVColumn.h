@@ -93,7 +93,8 @@ enum
 	CLV_COLDATAMASK =			0x00006000,		//bitmap used by column-datatypes
 	CLV_COLDATA_STRING =		0x00000000,		//Column is a string, used in sorting. N.B.: this is the default
 	CLV_COLDATA_NUMBER =		0x00002000,		//Column is a number, used in sorting
-	CLV_COLDATA_DATE =		0x00004000		//Column is a date, used in sorting
+	CLV_COLDATA_DATE =		0x00004000,		//Column is a date, used in sorting
+	CLV_COLDATA_BIGTIME =	0x00006000		//Column is a bigtime, used in sorting
 };
 
 enum CLVSortMode

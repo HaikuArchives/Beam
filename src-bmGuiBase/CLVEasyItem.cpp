@@ -313,6 +313,11 @@ int CLVEasyItem::CompareItems(const CLVListItem *a_Item1, const CLVListItem *a_I
 		time_t date2 = Item2->GetDateValueForColumn( KeyColumn);
 
 		return date1<date2 ? -1 : (date1>date2 ? 1 : 0);
+	} else if (datatype == CLV_COLDATA_BIGTIME) {
+		bigtime_t date1 = Item1->GetBigtimeValueForColumn( KeyColumn);
+		bigtime_t date2 = Item2->GetBigtimeValueForColumn( KeyColumn);
+
+		return date1<date2 ? -1 : (date1>date2 ? 1 : 0);
 	} else {
 		const char* text1 = NULL;
 		const char* text2 = NULL;
