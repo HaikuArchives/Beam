@@ -252,7 +252,9 @@ const BmString BmIdentityList::SettingsFileName() {
 \*------------------------------------------------------------------------------*/
 status_t BmIdentityList::Archive( BMessage* archive, bool deep) const {
 	status_t ret = inherited::Archive( archive, deep)
-		||	archive->AddString( MSG_CURR_IDENTITY, mCurrIdentity->Key().String());
+		||	archive->AddString( MSG_CURR_IDENTITY, mCurrIdentity 
+																	? mCurrIdentity->Key().String()
+																	: "");
 	return ret;
 }
 
