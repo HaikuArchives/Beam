@@ -391,20 +391,27 @@ void BmBodyPart::SetTo( const BmString& msgtext, int32 start, int32 length,
 			mBodyLength = 0;
 		} else {
 			BM_LOG2( BM_LogMailParse, "looking for end-of-header...");
-			int32 pos = msgtext.FindFirst( "\r\n\r\n", start);
-			BM_LOG2( BM_LogMailParse, "...done (looking for end-of-header)");
-			if (pos == B_ERROR || pos >= start+length) {
-				BmString str;
-				msgtext.CopyInto( str, start, min( length, (int32)256));
-				BM_SHOWERR( BmString("Couldn't determine borderline between "
-											"MIME-header and body in string <")<<str<<">.");
-				return;
+			int32 end = start+length;
+			int32 pos = start;
+			if (pos<end+1 && msgtext[pos] == '\r' && msgtext[pos+1] == '\n') {
+				// ...first line is empty, meaning we have an empty header
+				mStartInRawText = pos+2;
+			} else {
+				// try to find the empty line that separates header from body:
+				pos = msgtext.FindFirst( "\r\n\r\n", start);
+				if (pos == B_ERROR || pos >= end) {
+					BmString str;
+					msgtext.CopyInto( str, start, min( length, (int32)256));
+					BM_SHOWERR( BmString("Couldn't determine borderline between "
+												"MIME-header and body in string <")<<str<<">.");
+					return;
+				}
+				mStartInRawText = pos+4;
 			}
-			BM_LOG2( BM_LogMailParse, "copying headerText...");
+			BM_LOG2( BM_LogMailParse, "...copying headerText...");
 			msgtext.CopyInto( headerText, start, pos-start+2);
-			BM_LOG2( BM_LogMailParse, "...done (copying headerText)");
-			mStartInRawText = pos+4;
-			mBodyLength = length - (pos+4-start);
+			BM_LOG2( BM_LogMailParse, "...done");
+			mBodyLength = length - (mStartInRawText-start);
 		}
 		BM_LOG2( BM_LogMailParse, BmString("MIME-Header found: ") << headerText);
 		header = new BmMailHeader( headerText, NULL);
