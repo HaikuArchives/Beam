@@ -50,6 +50,7 @@ using namespace regexx;
 #include "BmDeskbarView.h"
 #include "BmEncoding.h"
 #include "BmFilter.h"
+#include "BmFilterChain.h"
 #include "BmJobStatusWin.h"
 #include "BmLogHandler.h"
 #include "BmMailEditWin.h"
@@ -149,10 +150,11 @@ BmApplication::BmApplication( const char* sig)
 		BmSignatureList::CreateInstance();
 		TheSignatureList->StartJobInThisThread();
 
-		BmFilterList::CreateInboundInstance();
-		TheInboundFilterList->StartJobInThisThread();
-		BmFilterList::CreateOutboundInstance();
-		TheOutboundFilterList->StartJobInThisThread();
+		BmFilterList::CreateInstance();
+		TheFilterList->StartJobInThisThread();
+
+		BmFilterChainList::CreateInstance();
+		TheFilterChainList->StartJobInThisThread();
 
 		BmPeopleList::CreateInstance();
 		BmMailFolderList::CreateInstance();
@@ -189,8 +191,8 @@ BmApplication::~BmApplication() {
 	ThePopAccountList = NULL;
 	TheSmtpAccountList = NULL;
 	TheSignatureList = NULL;
-	TheInboundFilterList = NULL;
-	TheOutboundFilterList = NULL;
+	TheFilterChainList = NULL;
+	TheFilterList = NULL;
 #ifdef BM_REF_DEBUGGING
 	BmRefObj::PrintRefsLeft();
 #endif
