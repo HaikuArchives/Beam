@@ -47,7 +47,7 @@ class BmPopAccount;
 \*------------------------------------------------------------------------------*/
 class BM_mail_format_error : public BM_runtime_error {
 public:
-	BM_mail_format_error (const BString& what_arg): BM_runtime_error (what_arg.String()) { }
+	BM_mail_format_error (const BmString& what_arg): BM_runtime_error (what_arg.String()) { }
 	BM_mail_format_error (const char* const what_arg): BM_runtime_error (what_arg) { }
 };
 
@@ -60,7 +60,7 @@ class BmAddress {
 public:
 	// c'tors and d'tor:
 	BmAddress();
-	BmAddress( const BString& addrText);
+	BmAddress( const BmString& addrText);
 	~BmAddress();
 
 	inline bool operator== (const BmAddress& a) {
@@ -69,28 +69,28 @@ public:
 	}
 
 	// native methods:
-	bool SetTo( const BString& addrText);
-	void ConstructRawText( BString& header, int32 encoding, int32 fieldNameLength) const;
+	bool SetTo( const BmString& addrText);
+	void ConstructRawText( BmString& header, int32 encoding, int32 fieldNameLength) const;
 	bool IsHandledByAccount( BmPopAccount* acc) const;
 
 	// operators:
-	operator BString() const;
+	operator BmString() const;
 						// returns address completely formatted (ready to be sent)
 	// getters:
 	inline bool InitOK() const				{ return mInitOK; }
 	inline bool HasPhrase() const			{ return mPhrase.Length() > 0; }
-	inline const BString& Phrase() const		{ return mPhrase; }
+	inline const BmString& Phrase() const		{ return mPhrase; }
 	inline bool HasAddrSpec() const			{ return mAddrSpec.Length() > 0; }
-	inline const BString& AddrSpec() const		{ return mAddrSpec; }
+	inline const BmString& AddrSpec() const		{ return mAddrSpec; }
 
 private:
 	bool mInitOK;
-	BString mPhrase;
-	BString mAddrSpec;
+	BmString mPhrase;
+	BmString mAddrSpec;
 
 };
 
-typedef vector< BString> BmStringList;
+typedef vector< BmString> BmStringList;
 typedef vector< BmAddress> BmAddrList;
 /*------------------------------------------------------------------------------*\
 	BmAddressList
@@ -102,18 +102,18 @@ class BmAddressList {
 public:
 	// c'tors and d'tor:
 	BmAddressList();
-	BmAddressList( BString strippedFieldVal);
+	BmAddressList( BmString strippedFieldVal);
 	~BmAddressList();
 
 	// native methods:
-	bool Set( BString strippedFieldVal);
-	bool Add( BString strippedFieldVal);
-	void Remove( BString singleAddress);
-	BmStringList SplitIntoAddresses( BString addrList);
-	void ConstructRawText( BString& header, int32 encoding, int32 fieldNameLength) const;
-	BString FindAddressMatchingAccount( BmPopAccount* acc) const;
-	bool ContainsAddrSpec( BString addrSpec) const;
-	BString AddrSpecsAsString() const;
+	bool Set( BmString strippedFieldVal);
+	bool Add( BmString strippedFieldVal);
+	void Remove( BmString singleAddress);
+	BmStringList SplitIntoAddresses( BmString addrList);
+	void ConstructRawText( BmStrOStream& header, int32 encoding, int32 fieldNameLength) const;
+	BmString FindAddressMatchingAccount( BmPopAccount* acc) const;
+	bool ContainsAddrSpec( BmString addrSpec) const;
+	BmString AddrSpecsAsString() const;
 	//
 	inline BmAddrList::const_iterator begin() const { return mAddrList.begin(); }
 	inline BmAddrList::const_iterator end() const	{ return mAddrList.end(); }
@@ -121,19 +121,19 @@ public:
 	inline bool empty() const				{ return mAddrList.empty(); }
 
 	// operators:
-	operator BString() const;
+	operator BmString() const;
 							// returns address-list completely formatted (ready to be sent)
 	// getters:
 	inline bool InitOK() const				{ return mInitOK; }
 	inline bool IsGroup() const			{ return mIsGroup; }
 	inline int32 AddrCount() const		{ return mAddrList.size(); }
-	inline const BString& GroupName() const	{ return mGroupName; }
+	inline const BmString& GroupName() const	{ return mGroupName; }
 	inline BmAddress FirstAddress() const		{ return mAddrList.size() > 0 ? mAddrList[0] : ""; }
 
 private:
 	bool mInitOK;
 	bool mIsGroup;
-	BString mGroupName;
+	BmString mGroupName;
 	BmAddrList mAddrList;
 
 };
@@ -147,57 +147,56 @@ private:
 \*------------------------------------------------------------------------------*/
 class BmMailHeader : public BmRefObj {
 
-	typedef vector< BString> BmValueList;
-	typedef map< BString, BmValueList> BmHeaderMap;
+	typedef vector< BmString> BmValueList;
+	typedef map< BmString, BmValueList> BmHeaderMap;
 
 	class BmHeaderList {
 	public:
-		void Set( const BString& fieldName, const BString content);
-		void Add( const BString& fieldName, const BString content);
-		void Remove( const BString& fieldName);
+		void Set( const BmString& fieldName, const BmString content);
+		void Add( const BmString& fieldName, const BmString content);
+		void Remove( const BmString& fieldName);
 		BmHeaderMap::const_iterator begin() const { return mHeaders.begin(); }
 		BmHeaderMap::const_iterator end() const	{ return mHeaders.end(); }
-		const BString& operator [] (const BString& fieldName) const;
+		const BmString& operator [] (const BmString& fieldName) const;
 	private:
 		BmHeaderMap mHeaders;
 	};
 
-	typedef map< BString, BmAddressList> BmAddrMap;
+	typedef map< BmString, BmAddressList> BmAddrMap;
 	
 public:
 	// c'tors and d'tor:
-	BmMailHeader( const BString &headerText, BmMail* mail);
+	BmMailHeader( const BmString &headerText, BmMail* mail);
 	~BmMailHeader();
 
 	// native methods:
 	void StoreAttributes( BFile& mailFile);
 							//	the following three take UTF8 as input:
-	void SetFieldVal( BString fieldName, const BString value);
-	void AddFieldVal( BString fieldName, const BString value);
-	void RemoveField( BString fieldName);
-	void RemoveAddrFieldVal( BString fieldName, const BString address);
+	void SetFieldVal( BmString fieldName, const BmString value);
+	void AddFieldVal( BmString fieldName, const BmString value);
+	void RemoveField( BmString fieldName);
+	void RemoveAddrFieldVal( BmString fieldName, const BmString address);
 							// the next always produces US-ASCII (7-bit):
-	const BmAddressList GetAddressList( BString fieldName);
-	bool IsFieldEmpty( BString fieldName);
-	bool AddressFieldContainsAddrSpec( BString fieldName, const BString addrSpec);
+	const BmAddressList GetAddressList( BmString fieldName);
+	bool IsFieldEmpty( BmString fieldName);
+	bool AddressFieldContainsAddrSpec( BmString fieldName, const BmString addrSpec);
 	//
-	BString DetermineSender();
-	BString DetermineReceivingAddrFor( BmPopAccount* acc);
-	BString DetermineOriginator( bool bypassReplyTo=false);
-	BString DetermineListAddress( bool bypassSanityTest=false);
+	BmString DetermineSender();
+	BmString DetermineReceivingAddrFor( BmPopAccount* acc);
+	BmString DetermineOriginator( bool bypassReplyTo=false);
+	BmString DetermineListAddress( bool bypassSanityTest=false);
 	//
-	bool ConstructRawText( BString& header, int32 encoding);
+	bool ConstructRawText( BmStrOStream& header, int32 encoding);
 
 	// overrides of BmRefObj
-	const BString& RefName() const				{ return mKey; }
+	const BmString& RefName() const				{ return mKey; }
 
 	// getters:
-	const BString& GetFieldVal( BString fieldName);
-	const BString GetStrippedFieldVal( BString fieldName);
-	inline int32 NumLines() const 				{ return mNumLines; }
-	inline const BString& HeaderString() const	{ return mHeaderString; }
+	const BmString& GetFieldVal( BmString fieldName);
+	const BmString GetStrippedFieldVal( BmString fieldName);
+	inline const BmString& HeaderString() const	{ return mHeaderString; }
 	inline const int32 HeaderLength() const	{ return mHeaderString.Length(); }
-	inline const BString& Name() const			{ return mName; }
+	inline const BmString& Name() const			{ return mName; }
 	inline const bool IsRedirect() const		{ return mIsRedirect; }
 	inline const bool HasParsingErrors() const	{ return mHasParsingErrors; }
 
@@ -205,19 +204,17 @@ public:
 	inline void IsRedirect( bool b)				{ mIsRedirect = b; }
 
 	// class-functions:
-	static bool IsAddressField( const BString fieldName);
-	static bool IsEncodingOkForField( const BString fieldName);
-	static bool IsStrippingOkForField( const BString fieldName);
+	static bool IsAddressField( const BmString fieldName);
+	static bool IsEncodingOkForField( const BmString fieldName);
+	static bool IsStrippingOkForField( const BmString fieldName);
 
 protected:
-	void ParseHeader( const BString &header);
-	BString ParseHeaderField( BString fieldName, BString fieldValue);
-	BString StripField( BString fieldValue, BString* commentBuffer=NULL);
-
-	bool ParseDateTime( const BString& str, time_t& dateTime);
+	void ParseHeader( const BmString &header);
+	BmString ParseHeaderField( BmString fieldName, BmString fieldValue);
+	BmString StripField( BmString fieldValue, BmString* commentBuffer=NULL);
 
 private:
-	BString mHeaderString;
+	BmString mHeaderString;
 							// the complete original mail-header
 	BmHeaderList mHeaders;
 							// contains all headers as a list of corresponding
@@ -236,20 +233,17 @@ private:
 							// address-fields with detailed information about all
 							// the single address-entries that are contained within
 							// each field.
-							// In case a complete addresslist is accessed as a BString,
+							// In case a complete addresslist is accessed as a BmString,
 							// it will (in contrast to the stripped-field) deliver a
 							// completely parsed and reconstructed version of the address.
 							// This results in identical formatting for all addresses
 							// (i.e. no '"'s around phrases and the like)
 	BmMail* mMail;		
 							// The mail these headers belong to
-	BString mName;
+	BmString mName;
 							// The "name" of the sender of this mail (MAIL:name attribute)
-	BString mKey;
+	BmString mKey;
 							// Since headers have no real key, we generate one from the this-value
-	int32 mNumLines;
-							// number of lines in this header
-
 	bool mIsRedirect;	
 							// true if header contains redirect-fields (or will do in near future)
 
