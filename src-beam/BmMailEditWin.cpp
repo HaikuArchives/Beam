@@ -181,6 +181,9 @@ BmMailEditWin::BmMailEditWin( BmMailRef* mailRef, BmMail* mail)
 	,	mShowDetails1( false)
 	,	mShowDetails2( false)
 	,	mShowDetails3( false)
+	,	mPrefsShowDetails1( false)
+	,	mPrefsShowDetails2( false)
+	,	mPrefsShowDetails3( false)
 	,	mModified( false)
 	,	mHasNeverBeenSaved( mail ? mail->MailRef() == NULL : false)
 	,	mAttachPanel( NULL)
@@ -482,12 +485,9 @@ void BmMailEditWin::CreateGUI() {
 												& (0xFFFFFFFF^B_NAVIGABLE));
 
 	// initially, the detail-parts are hidden:
-	if (!mShowDetails2)
-		mDetails2Group->RemoveSelf();
-	if (!mShowDetails1)
-		mDetails1Group->RemoveSelf();
-	if (!mShowDetails3)
-		mDetails3Group->RemoveSelf();
+	mDetails2Group->RemoveSelf();
+	mDetails1Group->RemoveSelf();
+	mDetails3Group->RemoveSelf();
 
 	mSaveButton->SetEnabled( mModified);
 	mMailView->SetModificationMessage( new BMessage( BM_TEXTFIELD_MODIFIED));
@@ -509,9 +509,9 @@ void BmMailEditWin::CreateGUI() {
 \*------------------------------------------------------------------------------*/
 status_t BmMailEditWin::ArchiveState( BMessage* archive) const {
 	inherited::ArchiveState( archive);
-	status_t ret = archive->AddBool( MSG_DETAIL1, mShowDetails1)
-						|| archive->AddBool( MSG_DETAIL2, mShowDetails2)
-						|| archive->AddBool( MSG_DETAIL3, mShowDetails3);
+	status_t ret = archive->AddBool( MSG_DETAIL1, mPrefsShowDetails1)
+						|| archive->AddBool( MSG_DETAIL2, mPrefsShowDetails2)
+						|| archive->AddBool( MSG_DETAIL3, mPrefsShowDetails3);
 	return ret;
 }
 
@@ -539,12 +539,15 @@ status_t BmMailEditWin::UnarchiveState( BMessage* archive) {
 		frame.right = MIN( frame.right, scrFrame.right-5);
 		MoveTo( BPoint( nNextXPos, nNextYPos));
 		ResizeTo( frame.Width(), frame.Height());
-		if (archive->FindBool( MSG_DETAIL1))
-			ToggleDetailsButton( 1);
-		if (archive->FindBool( MSG_DETAIL2))
-			ToggleDetailsButton( 2);
-		if (archive->FindBool( MSG_DETAIL3))
-			ToggleDetailsButton( 3);
+		archive->FindBool( MSG_DETAIL1, &mPrefsShowDetails1);
+		if (mPrefsShowDetails1)
+			SetDetailsButton( 1, B_CONTROL_ON);
+		archive->FindBool( MSG_DETAIL2, &mPrefsShowDetails2);
+		if (mPrefsShowDetails2)
+			SetDetailsButton( 2, B_CONTROL_ON);
+		archive->FindBool( MSG_DETAIL3, &mPrefsShowDetails3);
+		if (mPrefsShowDetails3)
+			SetDetailsButton( 3, B_CONTROL_ON);
 		WriteStateInfo();
 	} else {
 		MoveTo( BPoint( nNextXPos, nNextYPos));
@@ -620,36 +623,39 @@ BmMailViewContainer* BmMailEditWin::CreateMailView( minimax minmax,
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmMailEditWin::ToggleDetailsButton( int32 nr) {
+void BmMailEditWin::SetDetailsButton( int32 nr, int32 newVal) {
 	switch( nr) {
 		case 1: {
-			int32 newVal = (mShowDetails1 ? B_CONTROL_OFF : B_CONTROL_ON);
-			mShowDetails1Button->SetValue( newVal);
-			mShowDetails1 = newVal != B_CONTROL_OFF;
-			if (mShowDetails1)
-				mOuterGroup->AddChild( mDetails1Group, mSubjectGroup);
-			else
-				mDetails1Group->RemoveSelf();
+			if (mShowDetails1 != (newVal == B_CONTROL_ON)) {
+				mShowDetails1Button->SetValue( newVal);
+				mShowDetails1 = (newVal == B_CONTROL_ON);
+				if (mShowDetails1)
+					mOuterGroup->AddChild( mDetails1Group, mSubjectGroup);
+				else
+					mDetails1Group->RemoveSelf();
+			}
 			break;
 		}
 		case 2: {
-			int32 newVal = (mShowDetails2 ? B_CONTROL_OFF : B_CONTROL_ON);
-			mShowDetails2Button->SetValue( newVal);
-			mShowDetails2 = newVal != B_CONTROL_OFF;
-			if (mShowDetails2)
-				mDetails1Group->AddChild( mDetails2Group);
-			else
-				mDetails2Group->RemoveSelf();
+			if (mShowDetails2 != (newVal == B_CONTROL_ON)) {
+				mShowDetails2Button->SetValue( newVal);
+				mShowDetails2 = (newVal == B_CONTROL_ON);
+				if (mShowDetails2)
+					mDetails1Group->AddChild( mDetails2Group);
+				else
+					mDetails2Group->RemoveSelf();
+			}
 			break;
 		}
 		case 3: {
-			int32 newVal = (mShowDetails3 ? B_CONTROL_OFF : B_CONTROL_ON);
-			mShowDetails3Button->SetValue( newVal);
-			mShowDetails3 = newVal != B_CONTROL_OFF;
-			if (mShowDetails3)
-				mOuterGroup->AddChild( mDetails3Group, mSeparator);
-			else
-				mDetails3Group->RemoveSelf();
+			if (mShowDetails3 != (newVal == B_CONTROL_ON)) {
+				mShowDetails3Button->SetValue( newVal);
+				mShowDetails3 = (newVal == B_CONTROL_ON);
+				if (mShowDetails3)
+					mOuterGroup->AddChild( mDetails3Group, mSeparator);
+				else
+					mDetails3Group->RemoveSelf();
+			}
 			break;
 		}
 	}
@@ -662,18 +668,25 @@ void BmMailEditWin::ToggleDetailsButton( int32 nr) {
 \*------------------------------------------------------------------------------*/
 void BmMailEditWin::MessageReceived( BMessage* msg) {
 	Regexx rx;
+	int32 newVal;
 	try {
 		switch( msg->what) {
 			case BM_SHOWDETAILS1: {
-				ToggleDetailsButton( 1);
+				newVal = mShowDetails1 ? B_CONTROL_OFF : B_CONTROL_ON;
+				SetDetailsButton( 1, newVal);
+				mPrefsShowDetails1 = (newVal == B_CONTROL_ON);
 				break;
 			}
 			case BM_SHOWDETAILS2: {
-				ToggleDetailsButton( 2);
+				newVal = mShowDetails2 ? B_CONTROL_OFF : B_CONTROL_ON;
+				SetDetailsButton( 2, newVal);
+				mPrefsShowDetails2 = (newVal == B_CONTROL_ON);
 				break;
 			}
 			case BM_SHOWDETAILS3: {
-				ToggleDetailsButton( 3);
+				newVal = mShowDetails3 ? B_CONTROL_OFF : B_CONTROL_ON;
+				SetDetailsButton( 3, newVal);
+				mPrefsShowDetails3 = (newVal == B_CONTROL_ON);
 				break;
 			}
 			case BMM_SEND_LATER:
@@ -1084,14 +1097,10 @@ void BmMailEditWin::SetFieldsFromMail( BmMail* mail) {
 		// now make certain fields visible if they contain values:
 		if (BmString(mCcControl->Text()).Length() 
 		|| BmString(mBccControl->Text()).Length()) {
-			mShowDetails1Button->SetValue( B_CONTROL_ON);
-			mShowDetails1Button->SetTarget( BMessenger( this));
-			mShowDetails1Button->Invoke();
+			SetDetailsButton( 1, B_CONTROL_ON);
 		}
 		if (BmString(mBccControl->Text()).Length()) {
-			mShowDetails2Button->SetValue( B_CONTROL_ON);
-			mShowDetails2Button->SetTarget( BMessenger( this));
-			mShowDetails2Button->Invoke();
+			SetDetailsButton( 2, B_CONTROL_ON);
 		}
 	}
 }

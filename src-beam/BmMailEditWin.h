@@ -123,7 +123,7 @@ private:
 	BmMailEditWin();
 	BmMailEditWin( BmMailRef* mailRef=NULL, BmMail* mail=NULL);
 
-	void ToggleDetailsButton( int32 nr);
+	void SetDetailsButton( int32 nr, int32 newVal);
 	void EditMail( BmMailRef* ref);
 	void EditMail( BmMail* mail);
 	BmMailViewContainer* CreateMailView( minimax minmax, BRect frame);
@@ -167,6 +167,9 @@ private:
 	bool mShowDetails1;
 	bool mShowDetails2;
 	bool mShowDetails3;
+	bool mPrefsShowDetails1;
+	bool mPrefsShowDetails2;
+	bool mPrefsShowDetails3;
 	VGroup* mDetails1Group;
 	HGroup* mDetails2Group;
 	HGroup* mDetails3Group;
