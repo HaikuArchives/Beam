@@ -149,8 +149,7 @@ void BmDataModel::ControllerAck( BmController* controller) {
 		-	if no interested controller exists, this does nothing
 		-	if this dataModel is frozen, nothing happens
 \*------------------------------------------------------------------------------*/
-void BmDataModel::TellControllers( BMessage* msg, bool waitForAck, 
-											  bool tellApp) {
+void BmDataModel::TellControllers( BMessage* msg, bool waitForAck) {
 	BmAutolockCheckGlobal lock( mModelLocker);
 	if (!lock.IsLocked())
 		BM_THROW_RUNTIME( 
@@ -193,8 +192,6 @@ void BmDataModel::TellControllers( BMessage* msg, bool waitForAck,
 					<< strerror(err)
 			);
 	}
-	if (tellApp)
-		be_app_messenger.SendMessage( msg);
 	if (waitForAck)
 		WaitForAllToAck();
 }
@@ -554,7 +551,7 @@ void BmJobModel::TellJobIsDone( bool completed) {
 		mJobState = JOB_COMPLETED;
 	BM_LOG2( BM_LogModelController, 
 				BmString("Job <") << name << "> tells it is done");
-	TellControllers( &msg, false, true);
+	TellControllers( &msg, false);
 }
 
 

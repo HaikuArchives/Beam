@@ -874,10 +874,6 @@ void BmApplication::MessageReceived( BMessage* msg) {
 				inherited::MessageReceived( msg);
 				break;
 			}
-			case BM_JOB_DONE: {
-				TheMainWindow->PostMessage( msg);
-				break;
-			}
 			default:
 				inherited::MessageReceived( msg);
 				break;
@@ -1226,7 +1222,8 @@ void BmApplication::PageSetup() {
 
 /*------------------------------------------------------------------------------*\
 	LaunchURL( url)
-		-	launches the corresponding program for the given URL (usually Netpositive)
+		-	launches the corresponding program for the given URL 
+			(usually Netpositive)
 		-	mailto: - URLs are handled internally
 \*------------------------------------------------------------------------------*/
 void BmApplication::LaunchURL( const BmString url) {

@@ -580,13 +580,6 @@ void BmMainWindow::MessageReceived( BMessage* msg) {
 								 "Bummer!"))->Go();
 				break;
 			}
-			case BM_JOB_DONE: {
-				BmString jobName = msg->FindString( BmDataModel::MSG_MODEL);
-				if (jobName == "PopAccountList") {
-					mAccountMenu->UpdateItemList();
-				}
-				break;
-			}
 			default:
 				inherited::MessageReceived( msg);
 		}

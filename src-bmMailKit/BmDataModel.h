@@ -101,8 +101,7 @@ protected:
 	virtual bool HasControllers();
 	virtual void InitOutstanding();
 	virtual bool ShouldContinue();
-	virtual void TellControllers( BMessage* msg, bool waitForAck=false,
-											bool tellApp=false);
+	virtual void TellControllers( BMessage* msg, bool waitForAck=false);
 	virtual void WaitForAllToAck();
 	virtual void WaitForAllToDetach();
 	virtual void HandleError( const BmString& errString);
