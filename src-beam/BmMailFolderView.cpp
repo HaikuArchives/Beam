@@ -6,84 +6,27 @@
 #include <String.h>
 
 #include "BmApp.h"
+#include "BmLogHandler.h"
+#include "BmMailFolder.h"
 #include "BmMailFolderList.h"
 #include "BmMailFolderView.h"
+#include "BmMailRefView.h"
 #include "BmUtil.h"
 
 /*------------------------------------------------------------------------------*\
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmMailFolderView* BmMailFolderView::CreateInstance( minimax minmax, int32 width, int32 height) {
-	BmMailFolderView* mailFolderView = new BmMailFolderView( minmax, width, height);
-	return mailFolderView;
-}
-
-/*------------------------------------------------------------------------------*\
-	()
-		-	
-\*------------------------------------------------------------------------------*/
-BmMailFolderView::BmMailFolderView( minimax minmax, int32 width, int32 height)
-	:	inherited( minmax, BRect(0,0,width-1,height-1), "Beam_FolderView", 
-					  B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE,
-					  B_SINGLE_SELECTION_LIST, true, false)
+BmMailFolderItem::BmMailFolderItem( BString key, BmListModelItem* _item, uint32 level, 
+												bool superitem, bool expanded)
+	:	inherited( key, _item, bmApp->FolderIcon, true, level, superitem, expanded)
 {
-	mContainerView = Initialize( BRect(0,0,width-1,height-1), 
-										  B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE,
-										  false, true, true, B_NO_BORDER);
-	AddColumn( new CLVColumn( NULL, 10.0, 
-									  CLV_EXPANDER | CLV_LOCK_AT_BEGINNING | CLV_NOT_MOVABLE));
-	AddColumn( new CLVColumn( NULL, 20.0, CLV_LOCK_AT_BEGINNING | CLV_NOT_MOVABLE 
-									  | CLV_NOT_RESIZABLE | CLV_PUSH_PASS | CLV_MERGE_WITH_RIGHT));
-	AddColumn( new CLVColumn( NULL, 300.0, CLV_HEADER_TRUNCATE | CLV_TELL_ITEMS_WIDTH, 
-									  50.0));
-	SetSortFunction( CLVEasyItem::CompareItems);
-
-	AddItem( mTopMailFolderItem = new BmMailFolderItem( 0, true, true, bmApp->FolderIcon, "Mail Folders"));
-	AddItem( mTopVirtualFolderItem = new BmMailFolderItem( 0, false, false, bmApp->FolderIcon, "Virtual Folders"));
-}
-
-/*------------------------------------------------------------------------------*\
-	()
-		-	
-\*------------------------------------------------------------------------------*/
-void BmMailFolderView::AddFolder( BMessage* msg) {
-	const char* folderName = NULL;
-	ino_t inode = 0;
-	ino_t pnode = 0;
-	BmMailFolderItem* parentItem = NULL;
-
-	folderName = FindMsgString( msg, BmMailFolderList::MSG_NAME);
-	inode = FindMsgInt64( msg, BmMailFolderList::MSG_INODE);
-	pnode = FindMsgInt64( msg, BmMailFolderList::MSG_PNODE);
-	if (!parentItem) {
-		parentItem = mTopMailFolderItem;
-	} else {
-		(parentItem = FindItemByID( pnode))
-													|| BM_THROW_RUNTIME( BString("AddFolder(): Parent-node ") << pnode << " not found for folder " << folderName);
-	}
-	parentItem->SetSuperItem( true);
-	AddUnder( new BmMailFolderItem( parentItem->OutlineLevel()+1, false, false, 
-											  bmApp->FolderIcon, folderName), parentItem);
-}
-
-/*------------------------------------------------------------------------------*\
-	()
-		-	
-\*------------------------------------------------------------------------------*/
-BmMailFolderItem* BmMailFolderView::FindItemByID( ino_t id) {
-	return NULL;
-}
-
-/*------------------------------------------------------------------------------*\
-	()
-		-	
-\*------------------------------------------------------------------------------*/
-BmMailFolderItem::BmMailFolderItem(uint32 level, bool superitem, bool expanded, BBitmap* icon, const char* text0)
-	:	inherited( level, superitem, expanded, 16.0)
-{
-	SetColumnContent(1, icon, 2.0, true);
-	SetColumnContent(2, text0);
+	BmMailFolder* folder = dynamic_cast<BmMailFolder*>( _item);
+	const char* textCols[] = {
+		folder->Name().String(),
+		NULL
+	};
+	SetTextCols( textCols);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -91,4 +34,93 @@ BmMailFolderItem::BmMailFolderItem(uint32 level, bool superitem, bool expanded, 
 		-	
 \*------------------------------------------------------------------------------*/
 BmMailFolderItem::~BmMailFolderItem() { 
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+const BString& BmMailFolderItem::GetSortKey( const BString& col) {
+	BmMailFolder* folder = dynamic_cast<BmMailFolder*>( mModelItem); 
+	return folder->Name();
+}
+
+	
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+BmMailFolderView* BmMailFolderView::CreateInstance( BRect rect) {
+	BmMailFolderView* mailFolderView = new BmMailFolderView( rect);
+	return mailFolderView;
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+BmMailFolderView::BmMailFolderView( BRect rect)
+	:	inherited( rect, "Beam_FolderView", B_SINGLE_SELECTION_LIST, 
+					  true, false)
+{
+	mContainerView = Initialize( rect,
+										  B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE,
+										  B_FOLLOW_NONE,
+										  false, true, false, B_FANCY_BORDER);
+	AddColumn( new CLVColumn( NULL, 10.0, 
+									  CLV_EXPANDER | CLV_LOCK_AT_BEGINNING | CLV_NOT_MOVABLE, 10.0));
+	AddColumn( new CLVColumn( NULL, 18.0, CLV_LOCK_AT_BEGINNING | CLV_NOT_MOVABLE 
+									  | CLV_NOT_RESIZABLE | CLV_PUSH_PASS | CLV_MERGE_WITH_RIGHT, 18.0));
+	AddColumn( new CLVColumn( NULL, 300.0, CLV_NOT_RESIZABLE | CLV_NOT_MOVABLE, 50.0));
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+BmMailFolderView::~BmMailFolderView() {
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+BmListViewItem* BmMailFolderView::CreateListViewItem( BmListModelItem* item,
+																		uint32 level) {
+	return new BmMailFolderItem( item->Key(), item, level, false, false);
+}
+
+/*------------------------------------------------------------------------------*\
+	MessageReceived( msg)
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailFolderView::MessageReceived( BMessage* msg) {
+	try {
+		switch( msg->what) {
+			default:
+				inherited::MessageReceived( msg);
+		}
+	}
+	catch( exception &err) {
+		// a problem occurred, we tell the user:
+		BM_SHOWERR( BString("MailFolderView: ") << err.what());
+	}
+}
+
+/*------------------------------------------------------------------------------*\
+	SelectionChanged()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailFolderView::SelectionChanged( void) {
+	uint32 selection = CurrentSelection();
+	if (selection >= 0) {
+		BmMailFolderItem* folderItem;
+		folderItem = dynamic_cast<BmMailFolderItem*>(ItemAt( selection));
+		if (folderItem) {
+			BmMailFolder* folder = dynamic_cast<BmMailFolder*>(folderItem->ModelItem());
+			if (folder)
+				bmApp->MailRefView->ShowFolder( folder);
+		}
+	}
 }

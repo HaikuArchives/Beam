@@ -6,34 +6,59 @@
 #ifndef _BmMailRefView_h
 #define _BmMailRefView_h
 
-#include "ColumnListView.h"
-#include "CLVEasyItem.h"
+#include <map>
 
-class BmMailRefView : public ColumnListView
+#include "BmController.h"
+
+class BmMailFolder;
+
+/*------------------------------------------------------------------------------*\
+	BmMailRefItem
+		-	
+\*------------------------------------------------------------------------------*/
+class BmMailRefItem : public BmListViewItem
 {
-	typedef ColumnListView inherited;
+	typedef BmListViewItem inherited;
 
+public:
+	BmMailRefItem( BString key, BmListModelItem* item);
+	~BmMailRefItem();
+	
+	//
+	const BString& GetSortKey( const BString& col);
+
+};
+
+/*------------------------------------------------------------------------------*\
+	BmMailRefView
+		-	
+\*------------------------------------------------------------------------------*/
+class BmMailRefView : public BmListViewController
+{
+	typedef BmListViewController inherited;
+	
 public:
 	//
-	static BmMailRefView* CreateInstance( minimax minmax, int32 width, int32 height);
-
+	static BmMailRefView* CreateInstance( BRect rect);
+	
 	//Constructor and destructor
-	BmMailRefView(	minimax minmax, int32 width, int32 height);
+	BmMailRefView(	BRect rect);
+	~BmMailRefView();
 
-	// getters:
-	CLVContainerView* ContainerView()	{ return mContainerView; };
+	//
+	void MessageReceived( BMessage* msg);
+	void ShowFolder( BmMailFolder* folder);
+
+	//
+	BmListViewItem* CreateListViewItem( BmListModelItem* item, uint32 level=0);
+	
+	//
+	void MakeEmpty( void);
 
 private:
-	CLVContainerView* mContainerView;
+	BmMailFolder* mCurrFolder;
+
 };
 
-class BmMailRefItem : public CLVEasyItem
-{
-	typedef CLVEasyItem inherited;
-
-public:
-	BmMailRefItem( uint32 level, bool superitem, bool expanded, BBitmap* icon, const char* text0);
-	~BmMailRefItem();
-};
 
 #endif

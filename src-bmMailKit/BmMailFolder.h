@@ -13,30 +13,21 @@
 #include <Node.h>
 #include <String.h>
 
+#include "BmDataModel.h"
+
 class BmMailFolder;
 
-class BmMailRef;
+class BmMailRefList;
 
-typedef map<ino_t, BmMailFolder*> BmFolderMap;
+typedef map<BString, BmMailFolder*> BmFolderMap;
 
-/*------------------------------------------------------------------------------*\*\
+/*------------------------------------------------------------------------------*\
 	BmMailFolder
 		-	class 
 \*------------------------------------------------------------------------------*/
-class BmMailFolder : public BArchivable {
-	typedef BArchivable inherited;
+class BmMailFolder : public BmListModelItem {
+	typedef BmListModelItem inherited;
 
-public:
-	// archival-fieldnames:
-	static const char* const MSG_ENTRYREF = 		"bm:eref";
-	static const char* const MSG_INODE = 			"bm:inod";
-	static const char* const MSG_NUMCHILDREN = 	"bm:nChl";
-	static const char* const MSG_CHILDREN = 		"bm:chld";
-	static const char* const MSG_LASTMODIFIED = 	"bm:lmod";
-
-private:
-	typedef map<node_ref, BmMailRef*> MailRefMap;
-	
 public:
 	BmMailFolder( entry_ref &eref, ino_t node, BmMailFolder* parent, time_t &modified);
 	BmMailFolder( BMessage* archive, BmMailFolder* parent);
@@ -47,40 +38,53 @@ public:
 	virtual status_t Archive( BMessage* archive, bool deep = true) const;
 
 	// getters:
-	const entry_ref& EntryRef() const 		{ return mEntryRef; }
-	const entry_ref* EntryRefPtr() const	{ return &mEntryRef; }
-	const BString Name() const					{ return mEntryRef.name; }
-	const ino_t& ID() const						{ return mInode; }
-	const ino_t& Inode() const					{ return mInode; }
-	const ino_t Pnode() const					{ return mParent ? mParent->Inode() : 0; }
-//	const time_t& LastModified() const		{ return mLastModified; }
-	const int NewMailCount() const			{ return mNewMailCount; }
+	const entry_ref& EntryRef() const 	{ return mEntryRef; }
+	const entry_ref* EntryRefPtr() const{ return &mEntryRef; }
+	const ino_t& Inode() const				{ return mInode; }
+	const int NewMailCount() const		{ return mNewMailCount; }
 	const int NewMailCountForSubfolders() const		{ return mNewMailCountForSubfolders; }
+	BmMailFolder* Parent() const			{ return dynamic_cast<BmMailFolder*>( mParent); }
+	BmMailRefList* MailRefList();
+	//
+	const BString& Name() const			{ return mName; }
 
 	// setters:
-	void EntryRef( entry_ref &e) 				{ mEntryRef = e; }
+	void EntryRef( entry_ref &e) 			{ mEntryRef = e; }
 
 	// 
-	void AddSubFolder( BmMailFolder* child);
 	void BumpNewMailCount();
 	void BumpNewMailCountForSubfolders();
 	bool CheckIfModifiedSince();
 
+	//
+	void CreateMailRefList();
+	void RemoveMailRefList();
+
+	// archival-fieldnames:
+	static const char* const MSG_ENTRYREF = 		"bm:eref";
+	static const char* const MSG_INODE = 			"bm:inod";
+	static const char* const MSG_NUMCHILDREN = 	"bm:nChl";
+	static const char* const MSG_CHILDREN = 		"bm:chld";
+	static const char* const MSG_LASTMODIFIED = 	"bm:lmod";
+
+	//	message component definitions for status-msgs:
+	static const char* const MSG_NAME = 			"bm:fname";
+
 private:
 	// the following members will be archived as part of BmFolderList:
 	entry_ref mEntryRef;
-	BmFolderMap mSubFolderMap;
 	ino_t mInode;
 	time_t mLastModified;
 
 	// the following members will be archived into their own files:
-	MailRefMap mMailRefMap;
+	BmMailRefList* mMailRefList;
 
 	// the following members will NOT be archived at all:
-	BmMailFolder* mParent;
 	bool mNeedsCacheUpdate;
 	int mNewMailCount;
 	int mNewMailCountForSubfolders;
+	BString mName;
+
 };
 
 #endif

@@ -48,7 +48,7 @@ BmPrefs* BmPrefs::CreateInstance()
 			}
 		}
 	} catch (exception &e) {
-		ShowAlert( e.what());
+		BM_SHOWERR( e.what());
 		return NULL;
 	}
 
@@ -64,17 +64,29 @@ BmPrefs::BmPrefs( void)
 	,	mDynamicConnectionWin( CONN_WIN_STATIC)
 	,	mReceiveTimeout( 60 )
 	,	mLoglevels( BM_LOGLVL2(BM_LogPop) 
-						| BM_LOGLVL2(BM_LogConnWin) 
-						| BM_LOGLVL2(BM_LogMailParse) 
-						| BM_LOGLVL2(BM_LogUtil) 
-						| BM_LOGLVL2(BM_LogMailFolders)
-						| BM_LOGLVL3(BM_LogFolderView)
-						| BM_LOGLVL3(BM_LogRefView)
-						| BM_LOGLVL3(BM_LogMainWindow)
-						| BM_LOGLVL3(BM_LogModelController)
+						+ BM_LOGLVL3(BM_LogConnWin) 
+						+ BM_LOGLVL2(BM_LogMailParse) 
+						+ BM_LOGLVL3(BM_LogUtil) 
+						+ BM_LOGLVL3(BM_LogMailFolders)
+						+ BM_LOGLVL3(BM_LogFolderView)
+						+ BM_LOGLVL3(BM_LogRefView)
+						+ BM_LOGLVL3(BM_LogMainWindow)
+						+ BM_LOGLVL2(BM_LogModelController)
 						)
 	,	mMailboxPath("/boot/home/mail_beam")			// TODO: change default to .../mail
 {
+#ifdef BM_LOGGING
+	BString s;
+	for( int i=31; i>=0; --i) {
+		if (mLoglevels & (01UL<<i))
+			s << "1";
+		else
+			s << "0";
+	}
+#endif
+	// transfer loglevel-definitions to log-handler:
+	bmApp->LogHandler->LogLevels( mLoglevels);
+	BM_LOG3( BM_LogUtil, BString("Initialized loglevels to binary value ") << s);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -89,6 +101,7 @@ BmPrefs::BmPrefs( BMessage* archive)
 	mReceiveTimeout = ntohs(FindMsgInt16( archive, MSG_RECEIVE_TIMEOUT));
 	mLoglevels = ntohl(FindMsgInt32( archive, MSG_LOGLEVELS));
 	mMailboxPath = FindMsgString( archive, MSG_MAILBOXPATH);
+	bmApp->LogHandler->LogLevels( mLoglevels);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -135,7 +148,7 @@ bool BmPrefs::Store() {
 		(err = archive.Flatten( &prefsFile)) == B_OK
 													|| BM_THROW_RUNTIME( BString("Could not store settings into file\n\t<") << prefsFilename << ">\n\n Result: " << strerror(err));
 	} catch( exception &e) {
-		ShowAlert( e.what());
+		BM_SHOWERR( e.what());
 		return false;
 	}
 	return true;

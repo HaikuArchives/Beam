@@ -126,6 +126,22 @@ float FindMsgFloat( BMessage* archive, const char* name) {
 }
 
 /*------------------------------------------------------------------------------*\
+	FindMsgPointer( archive, name)
+		-	extracts the msg-field with the specified name from the given archive and
+			returns it.
+		-	throws BM_invalid_argument if field is not contained withing archive
+\*------------------------------------------------------------------------------*/
+void* FindMsgPointer( BMessage* archive, const char* name) {
+	void* ptr;
+	BM_assert(archive && name);
+	if (archive->FindPointer( name, &ptr) == B_OK) {
+		return ptr;
+	} else {
+		throw BM_invalid_argument( BString( "unknown message-field: ") << name);
+	}
+}
+
+/*------------------------------------------------------------------------------*\
 	BytesToString( bytes)
 		-	returns the given number of bytes as a short, descriptive string:
 			* bytes < 1024 				-> "X bytes"
@@ -144,6 +160,21 @@ BString BytesToString( int32 bytes) {
 	}
 	return BString(buf);
 }
+
+/*------------------------------------------------------------------------------*\*\
+	TimeToString( time)
+		-	converts the given time into a string
+\*------------------------------------------------------------------------------*/
+BString TimeToString( time_t t) {
+	BString s;
+	const int32 bufsize=40;
+	s.SetTo( '\0', bufsize);
+	char* buf=s.LockBuffer( 0);
+	strftime( buf, bufsize, "%Y-%m-%d %H:%M:%S", localtime( &t));
+	s.UnlockBuffer( -1);
+	return s;
+}
+
 
 /*------------------------------------------------------------------------------*\*\
 	ShowAlert( text)

@@ -7,24 +7,23 @@
 
 #include "BmApp.h"
 #include "BmLogHandler.h"
-#include "BmPrefs.h"
 #include "BmUtil.h"
 
 /*------------------------------------------------------------------------------*\
 	the different "terrains" we will be logging, each of them
 	has its own loglevel:
 \*------------------------------------------------------------------------------*/
-const int16 BM_LogPop  					= 1<<0;
-const int16 BM_LogConnWin 				= 1<<1;
-const int16 BM_LogMailParse 			= 1<<2;
-const int16 BM_LogUtil		 			= 1<<3;
-const int16 BM_LogMailFolders			= 1<<4;
-const int16 BM_LogFolderView			= 1<<5;
-const int16 BM_LogRefView				= 1<<6;
-const int16 BM_LogMainWindow			= 1<<7;
-const int16 BM_LogModelController	= 1<<8;
+const uint32 BM_LogPop  				= 1UL<<0;
+const uint32 BM_LogConnWin 			= 1UL<<1;
+const uint32 BM_LogMailParse 			= 1UL<<2;
+const uint32 BM_LogUtil		 			= 1UL<<3;
+const uint32 BM_LogMailFolders		= 1UL<<4;
+const uint32 BM_LogFolderView			= 1UL<<5;
+const uint32 BM_LogRefView				= 1UL<<6;
+const uint32 BM_LogMainWindow			= 1UL<<7;
+const uint32 BM_LogModelController	= 1UL<<8;
 // dummy constant meaning to log everything:
-const int16 BM_LogAll  			= 0xffff;
+const uint32 BM_LogAll  				= 0xffffffff;
 
 static BmLogHandler* theLogHandler = NULL;
 
@@ -134,7 +133,6 @@ void BmLogHandler::BmLogfile::Write( const char* const msg, uint32 flag,
 		}
 		(logfile = fopen( fn.String(), "a"))
 													|| BM_THROW_RUNTIME( BString("Unable to open logfile ") << fn);
-//		fprintf( logfile, "<%012Ld>: %s\n", bmApp->Prefs->StopWatch.ElapsedTime(), "Session Started");
 	}
 	BString s(msg);
 	s.ReplaceAll( "\r", "<CR>");

@@ -6,44 +6,54 @@
 #ifndef _BmMailFolderView_h
 #define _BmMailFolderView_h
 
-#include "ColumnListView.h"
-#include "CLVEasyItem.h"
+#include <map>
 
-class BmMailFolderItem : public CLVEasyItem
+#include "BmController.h"
+
+
+/*------------------------------------------------------------------------------*\
+	BmMailFolderItem
+		-	
+\*------------------------------------------------------------------------------*/
+class BmMailFolderItem : public BmListViewItem
 {
-	typedef CLVEasyItem inherited;
+	typedef BmListViewItem inherited;
 
 public:
-	BmMailFolderItem( uint32 level, bool superitem, bool expanded, BBitmap* icon, const char* text0);
+	BmMailFolderItem( BString key, BmListModelItem* item, uint32 level, 
+							bool superitem, bool expanded);
 	~BmMailFolderItem();
+
+	//
+	const BString& GetSortKey( const BString& col);
+	
 };
 
 
-
-class BmMailFolderView : public ColumnListView
+/*------------------------------------------------------------------------------*\
+	BmMailFolderView
+		-	
+\*------------------------------------------------------------------------------*/
+class BmMailFolderView : public BmListViewController
 {
-	typedef ColumnListView inherited;
-
+	typedef BmListViewController inherited;
+	
 public:
 	//
-	static BmMailFolderView* CreateInstance( minimax minmax, int32 width, int32 height);
+	static BmMailFolderView* CreateInstance( BRect rect);
 	
 	//Constructor and destructor
-	BmMailFolderView(	minimax minmax, int32 width, int32 height);
-	~BmMailFolderView() 						{}
-
-	// getters:
-	CLVContainerView* ContainerView()	{ return mContainerView; };
+	BmMailFolderView(	BRect rect);
+	~BmMailFolderView();
 
 	//
-	void AddFolder( BMessage* msg);
+	BmListViewItem* CreateListViewItem( BmListModelItem* item, uint32 level=0);
+	
+	//
+	void MessageReceived( BMessage* msg);
+	void SelectionChanged( void);
 
 private:
-	CLVContainerView* mContainerView;
-	BmMailFolderItem* mTopMailFolderItem;
-	BmMailFolderItem* mTopVirtualFolderItem;
-
-	BmMailFolderItem* FindItemByID( ino_t id);
 };
 
 #endif

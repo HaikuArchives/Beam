@@ -29,7 +29,6 @@
 #include "CLVColumnLabelView.h"
 #include "NewStrings.h"
 
-
 //******************************************************************************************************
 //**** CLVColumn CLASS DEFINITION
 //******************************************************************************************************
@@ -38,8 +37,8 @@ CLVColumn::CLVColumn(const char* label,float width,uint32 flags,float min_width)
 	if(flags & CLV_EXPANDER)
 	{
 		label = NULL;
-		width = 20.0;
-		min_width = 20.0;
+		width = EXPANDER_SHIFT;
+		min_width = EXPANDER_SHIFT;
 		flags &= CLV_NOT_MOVABLE | CLV_LOCK_AT_BEGINNING | CLV_HIDDEN | CLV_LOCK_WITH_RIGHT;
 		flags |= CLV_EXPANDER | CLV_NOT_RESIZABLE | CLV_MERGE_WITH_RIGHT;
 	}

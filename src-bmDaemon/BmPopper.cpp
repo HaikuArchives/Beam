@@ -95,9 +95,8 @@ void BmPopper::StartJob() {
 			errstr << "\nerror: " << e << ", " << mPopServer.ErrorStr();
 		UpdatePOPStatus( 0.0, NULL, failed);
 		BString text = Name() << "\n\n" << errstr;
-		ShowAlert( BString("BmPopper: ") << text);
+		BM_SHOWERR( BString("BmPopper: ") << text);
 	}
-	TellJobIsDone();
 }
 
 /*------------------------------------------------------------------------------*\

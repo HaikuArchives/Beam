@@ -9,8 +9,6 @@
 
 #include <layout-all.h>
 
-#include "CLVColumn.h"
-
 #include "Beam.h"
 #include "BmLogHandler.h"
 #include "BmMailFolderList.h"
@@ -33,59 +31,42 @@ BmMainWindow::BmMainWindow()
 					  B_NORMAL_WINDOW_FEEL, B_ASYNCHRONOUS_CONTROLS)
 	,	mMailFolderView( NULL)
 	,	mMailRefView( NULL)
-	,	mMailFolderList( NULL)
 {
-	MView* mOuterGroup = 
-		new VGroup(
-			new HGroup(
-				minimax( -1, -1, 1E5, -1),
-				new MButton( "Lass gut sein...", new BMessage(B_QUIT_REQUESTED), be_app, minimax(-1,-1,-1,-1)),
-				new Space(),
-				0
-			),
-			new HGroup(
-				MVPTR(CreateMailFolderView( minimax( 0, 300, 1E5, 1E5, 0.3), 120, 300)),
-				new MSplitter(),
-				MVPTR(CreateMailRefView( minimax( 400, 300, 1E5, 1E5, 1.0), 400, 300)),
-				0
-			),
-			0
-		);
-	AddChild( dynamic_cast<BView*>(mOuterGroup));
+	BView* v1 = CreateMailFolderView( BRect( 0, 0, 120, 300));
+	BView* v2 = CreateMailRefView( BRect( 150, 0, 400, 300));
+	AddChild( v1);
+	AddChild( v2);
 }
 
 BmMainWindow::~BmMainWindow() {
-	delete mMailFolderList;
 }
 
 void BmMainWindow::BeginLife() {
 	nIsAlive = true;
 	try {
-		mMailFolderList = BmMailFolderList::CreateInstance( new BmFolderListInfo( this, &IsAlive));
+		bmApp->MailFolderList = new BmMailFolderList();
+		mMailFolderView->StartJob( bmApp->MailFolderList, true, false);
 	} catch(...) {
 		nIsAlive = false;
 		throw;
 	}
 }
 
-CLVContainerView* BmMainWindow::CreateMailFolderView( minimax minmax, int32 width, 
-																		int32 height) {
-	mMailFolderView = BmMailFolderView::CreateInstance( minmax, width, height);
+CLVContainerView* BmMainWindow::CreateMailFolderView( BRect rect) {
+	mMailFolderView = BmMailFolderView::CreateInstance( rect);
+	bmApp->MailFolderView = mMailFolderView;
 	return mMailFolderView->ContainerView();
 }
 
-CLVContainerView* BmMainWindow::CreateMailRefView( minimax minmax, int32 width, 
-																	int32 height) {
-	mMailRefView = BmMailRefView::CreateInstance( minmax, width, height);
+CLVContainerView* BmMainWindow::CreateMailRefView( BRect rect) {
+	mMailRefView = BmMailRefView::CreateInstance( rect);
+	bmApp->MailRefView = mMailRefView;
 	return mMailRefView->ContainerView();
 }
 
 void BmMainWindow::MessageReceived( BMessage* msg) {
 	try {
 		switch( msg->what) {
-			case BM_FOLDER_ADD:
-				mMailFolderView->AddFolder( msg);
-				break;
 			case B_QUIT_REQUESTED:
 				beamApp->PostMessage( B_QUIT_REQUESTED);
 				break;

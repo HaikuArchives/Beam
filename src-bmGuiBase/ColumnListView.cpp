@@ -21,9 +21,6 @@
 #include <ClassInfo.h>
 
 
-// adapted for liblayout
-#include "layout.h"
-
 //******************************************************************************************************
 //**** PROJECT HEADER FILES
 //******************************************************************************************************
@@ -69,11 +66,10 @@ uint8 CLVDownArrowData[132] =
 //******************************************************************************************************
 //**** ColumnListView CLASS DEFINITION
 //******************************************************************************************************
-CLVContainerView::CLVContainerView(minimax minmax, ColumnListView* target, uint32 resizingMode, uint32 flags,
+CLVContainerView::CLVContainerView(ColumnListView* target, uint32 resizingMode, uint32 flags,
 	bool horizontal, bool vertical, bool scroll_view_corner, border_style border) :
 BetterScrollView(NULL,target,resizingMode,flags,horizontal,vertical,scroll_view_corner,border)
 {
-	ct_mpm = minmax;
 	IsBeingDestroyed = false;
 };
 
@@ -83,24 +79,10 @@ CLVContainerView::~CLVContainerView()
 	IsBeingDestroyed = true;
 }
 
-// adapted for liblayout
-minimax CLVContainerView::layoutprefs()
-{
-	return mpm=ct_mpm;
-}
-
-BRect CLVContainerView::layout(BRect rect)
-{
-	MoveTo(rect.LeftTop());
-	ResizeTo(rect.Width(),rect.Height());
-	return rect;
-}
-// (end of adaptation)
-
 //******************************************************************************************************
 //**** ColumnListView CLASS DEFINITION
 //******************************************************************************************************
-ColumnListView::ColumnListView(minimax minmax, BRect Frame, const char *Name,
+ColumnListView::ColumnListView(BRect Frame, const char *Name,
 	uint32 flags, list_view_type Type, bool hierarchical, bool showLabelView)
 : BListView(Frame,Name,Type,B_FOLLOW_ALL_SIDES,flags),
 fHierarchical( hierarchical),
@@ -116,8 +98,7 @@ fCompare( NULL),
 fWatchingForDrag( false),
 fSelectedItemColorWindowActive( BeListSelectGrey),
 fSelectedItemColorWindowInactive( BeListSelectGrey),
-fWindowActive( false),
-fMinMax( minmax)
+fWindowActive( false)
 {
 }
 
@@ -165,7 +146,7 @@ ColumnListView::~ColumnListView()
 CLVContainerView* ColumnListView::CreateContainer(bool horizontal, bool vertical, bool scroll_view_corner, 
 	border_style border, uint32 ResizingMode, uint32 flags)
 {
-	return new CLVContainerView(fMinMax,this,ResizingMode,flags,horizontal,vertical,scroll_view_corner,border);
+	return new CLVContainerView(this,ResizingMode,flags,horizontal,vertical,scroll_view_corner,border);
 }
 
 
@@ -576,7 +557,7 @@ void ColumnListView::ColumnWidthChanged(int32 ColumnIndex, float NewWidth)
 			if(ThisColumn->fPushedByExpander || (ThisColumn->fFlags & CLV_EXPANDER))
 			{
 				float ColumnWidth = NewWidth;
-				float ExpanderShift = ThisItem->OutlineLevel() * 20.0;
+				float ExpanderShift = ThisItem->OutlineLevel() * EXPANDER_SHIFT;
 				if(ThisColumn->fFlags & CLV_EXPANDER)
 				{
 					if(ColumnEnd + ExpanderShift > PushMax)
@@ -660,7 +641,7 @@ void ColumnListView::DisplayOrderChanged(const int32* order)
 					ThisColumnRect.right = ColumnRight;
 					if(ThisColumn->fFlags & CLV_EXPANDER)
 					{
-						ThisColumnRect.right += item->OutlineLevel() * 20.0;
+						ThisColumnRect.right += item->OutlineLevel() * EXPANDER_SHIFT;
 						if(ThisColumnRect.right > PushMax)
 							ThisColumnRect.right = PushMax;
 					}
@@ -668,7 +649,7 @@ void ColumnListView::DisplayOrderChanged(const int32* order)
 					{
 						if(ThisColumn->fPushedByExpander)
 						{
-							float Shift = item->OutlineLevel() * 20.0;
+							float Shift = item->OutlineLevel() * EXPANDER_SHIFT;
 							ThisColumnRect.left += Shift;
 							ThisColumnRect.right += Shift;
 							if(Shift > 0.0 && ThisColumnRect.right > PushMax)
@@ -1726,6 +1707,20 @@ void ColumnListView::SortListArray(CLVListItem** SortArray, int32 NumberOfItems)
 		}
 }
 
+
+void ColumnListView::SetDisconnectScrollView( bool disconnect) {
+	// temporarily disconnects vertical scrollbar from listview in
+	// order to speed up addition of a large group of items:
+	// (this is "stolen" from Scooby... >:o)
+	BScrollBar *bar = ScrollBar( B_VERTICAL);
+	if (!bar)
+		return;
+	if (disconnect) {
+		bar->SetTarget( (BView*)NULL);
+	} else {
+		bar->SetTarget( this);
+	}
+}
 
 void ColumnListView::KeyDown(const char *bytes, int32 numBytes) 
 { 

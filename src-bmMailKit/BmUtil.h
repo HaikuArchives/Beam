@@ -6,6 +6,7 @@
 #ifndef _BmUtil_h
 #define _BmUtil_h
 
+#include <ctime>
 #include <stdexcept>
 
 #include <Message.h>
@@ -66,6 +67,7 @@ int32 FindMsgInt32( BMessage* archive, const char* name);
 int16 FindMsgInt16( BMessage* archive, const char* name);
 float FindMsgFloat( BMessage* archive, const char* name);
 BMessage* FindMsgMsg( BMessage* archive, const char* name, BMessage* msg);
+void* FindMsgPointer( BMessage* archive, const char* name);
 
 /*------------------------------------------------------------------------------*\*\
 	ShowAlert( text, logtext)
@@ -79,6 +81,11 @@ void ShowAlert( const BString &text);
 	utility function to format a number of bytes into a string
 \*------------------------------------------------------------------------------*/
 BString BytesToString( int32 bytes);
+
+/*------------------------------------------------------------------------------*\*\
+	utility function to format a time into a string
+\*------------------------------------------------------------------------------*/
+BString TimeToString( time_t t);
 
 /*------------------------------------------------------------------------------*\*\
 	utility defines to shorten the use of auto_ptrs

@@ -6,15 +6,15 @@
 #ifndef _BmMainWindow_h
 #define _BmMainWindow_h
 
-#include <MWindow.h>
+#include <Window.h>
 
 class BmMailFolderView;
 class BmMailRefView;
 class CLVContainerView;
 
-class BmMainWindow : public MWindow
+class BmMainWindow : public BWindow
 {
-	typedef MWindow inherited;
+	typedef BWindow inherited;
 
 public:
 	BmMainWindow();
@@ -32,18 +32,12 @@ public:
 	void BeginLife();
 
 	//
-	CLVContainerView* CreateMailFolderView( minimax, int32, int32);
-	CLVContainerView* CreateMailRefView( minimax, int32, int32);
+	CLVContainerView* CreateMailFolderView( BRect rect);
+	CLVContainerView* CreateMailRefView( BRect rect);
 
-	// getters:
-	BmMailFolderView* MailFolderView()	{ return mMailFolderView; }
-	BmMailRefView* MailRefView()			{ return mMailRefView; }
-	BmMailFolderList* MailFolderList()	{ return mMailFolderList; }
-	
 private:
 	BmMailFolderView* mMailFolderView;
 	BmMailRefView* mMailRefView;
-	BmMailFolderList* mMailFolderList;
 
 	static bool nIsAlive;
 };

@@ -5,6 +5,7 @@
 
 #include "Beam.h"
 #include "BmConnectionWin.h"
+#include "BmLogHandler.h"
 #include "BmMailFolderList.h"
 #include "BmMainWindow.h"
 #include "BmUtil.h"
@@ -14,12 +15,11 @@ BeamApp* beamApp = NULL;
 BeamApp::BeamApp()
 	:	inherited( "application/x-vnd.zooey-Beam")
 	,	mInitCheck( B_NO_INIT)
-	,	mMainWin( NULL)
 {
 	try {
 		beamApp = this;
-		mMainWin = new BmMainWindow();
-		mMainWin->Show();
+		MainWindow = new BmMainWindow();
+		MainWindow->Show();
 		mInitCheck = B_OK;
 	}
 	catch( exception &e) {
@@ -47,9 +47,8 @@ thread_id BeamApp::Run() {
 	}
 	thread_id tid = 0;
 	try {
-		mMainWin->BeginLife();
+		MainWindow->BeginLife();
 		tid = inherited::Run();
-mMainWin->MailFolderList()->Store();
 	} catch( exception &e) {
 		BM_SHOWERR( e.what());
 		exit(10);

@@ -23,10 +23,6 @@
 //******************************************************************************************************
 #include <ListView.h>
 
-// liblayout
-#include <layout.h>
-
-
 //******************************************************************************************************
 //**** PROJECT HEADER FILES AND CLASS NAME DECLARATIONS
 //******************************************************************************************************
@@ -45,6 +41,7 @@ class CLVContainerView;
 //******************************************************************************************************
 typedef int (*CLVCompareFuncPtr)(const CLVListItem* item1, const CLVListItem* item2, int32 sort_key);
 
+#define EXPANDER_SHIFT 14.0
 
 //******************************************************************************************************
 //**** ColumnListView CLASS DECLARATION
@@ -53,7 +50,7 @@ class ColumnListView : public BListView
 {
 	public:
 		//Constructor and destructor
-		ColumnListView(	minimax minmax, 
+		ColumnListView(
 						BRect Frame,
 						const char* Name = NULL,
 						uint32 flags = B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE,
@@ -156,6 +153,7 @@ class ColumnListView : public BListView
 		virtual BListItem* RemoveItem(int32 fullListIndex);			//Actually returns CLVListItem
 		virtual bool RemoveItems(int32 fullListIndex, int32 count);
 		virtual void MakeEmpty();
+		bool Hierarchical()					{ return fHierarchical; }
 		CLVListItem* FullListItemAt(int32 fullListIndex)  const;
 		int32 FullListIndexOf(const CLVListItem* item) const;
 		int32 FullListIndexOf(BPoint point) const;
@@ -177,6 +175,9 @@ class ColumnListView : public BListView
 		virtual CLVContainerView* CreateContainer(bool horizontal, bool vertical, bool scroll_view_corner,
 			border_style border, uint32 ResizingMode, uint32 flags);
 		virtual void KeyDown(const char *bytes, int32 numBytes);
+
+	protected:
+		void SetDisconnectScrollView( bool disconnect);
 
 	private:
 		friend class CLVMainView;
@@ -216,20 +217,14 @@ class ColumnListView : public BListView
 		rgb_color fSelectedItemColorWindowActive;
 		rgb_color fSelectedItemColorWindowInactive;
 		bool fWindowActive;
-		minimax fMinMax;
 };
 
-class CLVContainerView : public MView, public BetterScrollView
+class CLVContainerView : public BetterScrollView
 {
 	public:
-		CLVContainerView( minimax minmax, ColumnListView* target, uint32 resizingMode, uint32 flags, bool horizontal, bool vertical,
+		CLVContainerView( ColumnListView* target, uint32 resizingMode, uint32 flags, bool horizontal, bool vertical,
 			bool scroll_view_corner, border_style border);
 		~CLVContainerView();
-
-		// adapted for liblayout
-		virtual minimax layoutprefs();
-		virtual BRect layout(BRect);
-		// (end of adaptation)
 
 	private:
 		friend class ColumnListView;

@@ -24,7 +24,6 @@ public:
 
 private:
 	status_t mInitCheck;
-	BmMainWindow* mMainWin;
 
 	inline status_t InitCheck() 			{ return mInitCheck; }
 };

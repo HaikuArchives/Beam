@@ -27,7 +27,6 @@
 #include "ColumnListView.h"
 #include "CLVColumn.h"
 
-
 //******************************************************************************************************
 //**** CLVItem CLASS DEFINITION
 //******************************************************************************************************
@@ -80,7 +79,7 @@ BRect CLVListItem::ItemColumnFrame(int32 column_index, ColumnListView* owner)
 
 	if(ThisColumn->fFlags & CLV_EXPANDER)
 	{
-		ThisColumnRect.right += OutlineLevel() * 20.0;
+		ThisColumnRect.right += OutlineLevel() * EXPANDER_SHIFT;
 		if(ThisColumnRect.right > PushMax)
 			ThisColumnRect.right = PushMax;
 	}
@@ -88,7 +87,7 @@ BRect CLVListItem::ItemColumnFrame(int32 column_index, ColumnListView* owner)
 	{
 		if(ThisColumn->fPushedByExpander)
 		{
-			float Shift = OutlineLevel() * 20.0;
+			float Shift = OutlineLevel() * EXPANDER_SHIFT;
 			ThisColumnRect.left += Shift;
 			ThisColumnRect.right += Shift;
 			if(Shift > 0.0 && ThisColumnRect.right > PushMax)
@@ -110,7 +109,7 @@ void CLVListItem::DrawItem(BView* owner, BRect itemRect, bool complete)
 	float PushMax = itemRect.right;
 	CLVColumn* ThisColumn;
 	BRect ThisColumnRect = itemRect;
-	float ExpanderDelta = OutlineLevel() * 20.0;
+	float ExpanderDelta = OutlineLevel() * EXPANDER_SHIFT;
 	//Figure out what the limit is for expanders pushing other columns
 	for(int32 Counter = 0; Counter < NumberOfColumns; Counter++)
 	{
@@ -198,7 +197,7 @@ float CLVListItem::ExpanderShift(int32 column_index, ColumnListView* owner)
 	if(!(ThisColumn->fPushedByExpander || ThisColumn->fFlags & CLV_EXPANDER))
 		return 0.0;
 	else
-		return OutlineLevel() * 20.0;
+		return OutlineLevel() * EXPANDER_SHIFT;
 }
 
 

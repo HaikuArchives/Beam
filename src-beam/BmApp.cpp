@@ -7,6 +7,8 @@
 
 #include "BmApp.h"
 #include "BmLogHandler.h"
+#include "BmMailFolderList.h"
+#include "BmMainWindow.h"
 #include "BmPrefs.h"
 #include "BmUtil.h"
 
@@ -24,6 +26,10 @@ BmApplication::BmApplication( const char* sig)
 	,	Prefs( NULL)
 	,	FolderIcon( NULL)
 	,	WHITESPACE( " \t\n\r\f")
+	,	MailFolderList( NULL)
+	,	MailFolderView( NULL)
+	,	MailRefView( NULL)
+	,	MainWindow( NULL)
 	,	mIsQuitting( false)
 {
 	status_t err;
@@ -37,6 +43,9 @@ BmApplication::BmApplication( const char* sig)
 	bmApp = this;
 
 	try {
+		// create the log-handler
+		LogHandler = BmLogHandler::CreateInstance( 1);
+	
 		// determine the path to our home-directory:
 		find_directory( B_USER_DIRECTORY, &path) == B_OK
 														|| BM_THROW_RUNTIME( "Sorry, could not determine user's settings-dir !?!");
@@ -54,10 +63,7 @@ BmApplication::BmApplication( const char* sig)
 	
 		// load the preferences set by user (if any)
 		Prefs = BmPrefs::CreateInstance();
-	
-		// create the log-handler
-		LogHandler = BmLogHandler::CreateInstance( Prefs->Loglevels());
-	
+		
 		// now we fetch the neccessary icons:
 		FolderIcon = new BBitmap( BRect(0,0,15,15), B_CMAP8);
 		(err = mt.SetTo("application/x-vnd.Be-Directory")) == B_OK
@@ -65,6 +71,9 @@ BmApplication::BmApplication( const char* sig)
 		(err = mt.GetIcon( FolderIcon, B_MINI_ICON)) == B_OK
 														|| BM_THROW_RUNTIME( BString("Beam: Could not find icon for mimetype application/folder") << "\n\nError:" << strerror(err));
 	
+		// we fill necessary info about the standard font-height:
+		be_plain_font->GetHeight( &BePlainFontHeight);
+
 		InstanceCount++;
 	} catch (exception& err) {
 		ShowAlert( err.what());
@@ -78,6 +87,7 @@ BmApplication::BmApplication( const char* sig)
 \*------------------------------------------------------------------------------*/
 BmApplication::~BmApplication()
 {
+	delete MailFolderList;
 	delete FolderIcon;
 	delete Prefs;
 	delete LogHandler;
@@ -91,7 +101,29 @@ BmApplication::~BmApplication()
 bool BmApplication::QuitRequested() {
 	mIsQuitting = true;
 	bool shouldQuit = inherited::QuitRequested();
-	if (!shouldQuit)
+	if (shouldQuit) {
+		if (MailFolderList)
+			MailFolderList->Store();
+	} else {
 		mIsQuitting = false;
+	}
 	return shouldQuit;
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+float BmApplication::FontHeight() { 
+	return BePlainFontHeight.ascent + BePlainFontHeight.descent; 
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+float BmApplication::FontLineHeight() {
+	return BePlainFontHeight.ascent 
+			+ BePlainFontHeight.descent 
+			+ BePlainFontHeight.leading; 
 }

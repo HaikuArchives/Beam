@@ -8,12 +8,17 @@
 
 #include <Application.h>
 #include <Bitmap.h>
+#include <Font.h>
 #include <Path.h>
 #include <String.h>
 #include <Volume.h>
 
 class BmPrefs;
 class BmLogHandler;
+class BmMailFolderList;
+class BmMailFolderView;
+class BmMailRefView;
+class BmMainWindow;
 
 class BmApplication : public BApplication
 {
@@ -35,7 +40,16 @@ public:
 	BString HomePath;
 	BVolume MailboxVolume;
 	BPath	SettingsPath;
+	BmMailFolderList* MailFolderList;
+	BmMailFolderView* MailFolderView;
+	BmMailRefView* MailRefView;
+	BmMainWindow* MainWindow;
 
+	//
+	font_height BePlainFontHeight;
+	float FontHeight();
+	float FontLineHeight();
+	
 	//
 	const char* WHITESPACE;
 

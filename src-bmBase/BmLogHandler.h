@@ -34,6 +34,8 @@ public:
 	void LogToFile( const char* const logname, uint32 flag, const char* const msg, int8 minlevel=1)
 							{ LogToFile( BString(logname), flag, BString(msg), minlevel); }
 
+	void LogLevels( uint32 loglevels)	{ mLoglevels = loglevels; }
+
 	BStopWatch StopWatch;
 
 private:
@@ -68,23 +70,23 @@ private:
 
 // the different "terrains" we will be logging, each of them
 // has its own loglevel:
-extern const int16 BM_LogPop;
-extern const int16 BM_LogConnWin;
-extern const int16 BM_LogMailParse;
-extern const int16 BM_LogUtil;
-extern const int16 BM_LogMailFolders;
-extern const int16 BM_LogFolderView;
-extern const int16 BM_LogRefView;
-extern const int16 BM_LogMainWindow;
-extern const int16 BM_LogModelController;
-extern const int16 BM_LogAll;
+extern const uint32 BM_LogPop;
+extern const uint32 BM_LogConnWin;
+extern const uint32 BM_LogMailParse;
+extern const uint32 BM_LogUtil;
+extern const uint32 BM_LogMailFolders;
+extern const uint32 BM_LogFolderView;
+extern const uint32 BM_LogRefView;
+extern const uint32 BM_LogMainWindow;
+extern const uint32 BM_LogModelController;
+extern const uint32 BM_LogAll;
 
 // macros to convert the loglevel for a specific flag 
 // into it's internal bit-representation:
 #define BM_LOGLVL0(flag) (0)
 #define BM_LOGLVL1(flag) (flag)
 #define BM_LOGLVL2(flag) (flag<<16)
-#define BM_LOGLVL3(flag) (flag+flag<<16)
+#define BM_LOGLVL3(flag) (flag+(flag<<16))
 
 // the macros used for logging:
 #ifdef BM_LOGGING

@@ -168,7 +168,7 @@ bool BmMail::Store() {
 		}
 		mailFile.Sync();
 	} catch( exception &e) {
-		ShowAlert(e.what());
+		BM_SHOWERR(e.what());
 		return false;
 	}
 
