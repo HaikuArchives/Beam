@@ -43,8 +43,10 @@ class BmWindow;
 
 extern const char* BM_APP_SIG;
 
-#define BMM_SET_BUSY						'bMxa'
-#define BMM_UNSET_BUSY					'bMxb'
+enum {
+	BMM_SET_BUSY					= 'bMxa',
+	BMM_UNSET_BUSY					= 'bMxb'
+};
 
 class BmApplication : public BApplication
 {
@@ -61,7 +63,7 @@ public:
 	void SetNewWorkspace( uint32 newWorkspace);
 	void LaunchURL( const BmString url);
 	void ForwardMails( BMessage* msg, bool join);
-	void ReplyToMails( BMessage* msg, bool join);
+	void ReplyToMails( BMessage* msg, bool join, bool joinIntoOne);
 	void PageSetup();
 	void PrintMails( BMessage* msg);
 
@@ -75,6 +77,7 @@ public:
 	void ReadyToRun();
 	void ArgvReceived( int32 argc, char** argv);
 	void RefsReceived( BMessage* msg);
+	void AppActivated( bool active);
 	thread_id Run();
 
 	// getters

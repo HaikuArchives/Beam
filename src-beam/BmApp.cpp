@@ -150,6 +150,10 @@ BmApplication::BmApplication( const char* sig)
 		BmPrefs::CreateInstance();
 		BM_LOG( BM_LogApp, BmString("App-initialization started..."));
 
+		ColumnListView::SetExtendedSelectionPolicy( 
+									ThePrefs->GetBool( "ListviewLikeTracker", false));
+							// make sure this actually get's initialized...
+
 		// init charset-tables:
 		BmEncoding::InitCharsetMap();
 
@@ -187,8 +191,6 @@ BmApplication::BmApplication( const char* sig)
 													  TheIdentityList.Get());
 		TheSignatureList->AddForeignKey( BmIdentity::MSG_SIGNATURE_NAME,
 													TheIdentityList.Get());
-		TheFilterList->AddForeignKey( BmChainedFilter::MSG_FILTERNAME,
-													TheFilterChainList.Get());
 		TheFilterChainList->AddForeignKey( BmPopAccount::MSG_FILTER_CHAIN,
 													  ThePopAccountList.Get());
 		ThePopAccountList->AddForeignKey( BmSmtpAccount::MSG_ACC_FOR_SAP,
@@ -254,6 +256,15 @@ void BmApplication::ReadyToRun() {
 		TheMainWindow->SendBehind( mMailWin);
 		mMailWin = NULL;
 	}
+}
+
+/*------------------------------------------------------------------------------*\
+	AppActivated()
+		-	shows Beam's main-window
+\*------------------------------------------------------------------------------*/
+void BmApplication::AppActivated( bool active) {
+	if (TheMainWindow->IsMinimized())
+		TheMainWindow->Minimize( false);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -524,7 +535,7 @@ void BmApplication::MessageReceived( BMessage* msg) {
 			case BMM_REPLY_LIST:
 			case BMM_REPLY_ORIGINATOR:
 			case BMM_REPLY_ALL: {
-				int32 buttonPressed=1;
+				int32 buttonPressed=0;
 				type_code tc;
 				int32 msgCount;
 				status_t result = msg->GetInfo( MSG_MAILREF, &tc, &msgCount);
@@ -535,15 +546,12 @@ void BmApplication::MessageReceived( BMessage* msg) {
 					BmString s("You have selected more than one message.\n\nShould Beam join the message-bodies into one single mail and reply to that or would you prefer to keep the messages separate?");
 					BAlert* alert = new BAlert( "Forwarding Multiple Mails", 
 														 s.String(),
-													 	 "Cancel", "Keep Separate", "Join", B_WIDTH_AS_USUAL,
-													 	 B_OFFSET_SPACING, B_IDEA_ALERT);
-					alert->SetShortcut( 0, B_ESCAPE);
+													 	 "Keep Separate", "Join per Recipient", "Join All", B_WIDTH_AS_USUAL,
+													 	 B_EVEN_SPACING, B_IDEA_ALERT);
 					alert->Go( new BInvoker( new BMessage(*msg), BMessenger( this)));
 				} else {
-					if (buttonPressed > 0) {
-						BM_LOG( BM_LogApp, BmString("Asked to reply to ") << msgCount << " mails.");
-						ReplyToMails( msg, buttonPressed==2);
-					}
+					BM_LOG( BM_LogApp, BmString("Asked to reply to ") << msgCount << " mails.");
+					ReplyToMails( msg, buttonPressed>0, buttonPressed==2);
 				}
 				break;
 			}
@@ -739,6 +747,10 @@ void BmApplication::MessageReceived( BMessage* msg) {
 				inherited::MessageReceived( msg);
 				break;
 			}
+			case BM_JOB_DONE: {
+				TheMainWindow->PostMessage( msg);
+				break;
+			}
 			default:
 				inherited::MessageReceived( msg);
 				break;
@@ -859,7 +871,7 @@ void BmApplication::ForwardMails( BMessage* msg, bool join) {
 		-	depending on the param join, multiple mails are joined into one single 
 			reply (one per originator) or one reply is generated for each mail.
 \*------------------------------------------------------------------------------*/
-void BmApplication::ReplyToMails( BMessage* msg, bool join) {
+void BmApplication::ReplyToMails( BMessage* msg, bool join, bool joinIntoOne) {
 	if (!msg)
 		return;
 	bool replyGoesToPersonOnly = false;
@@ -896,13 +908,30 @@ void BmApplication::ReplyToMails( BMessage* msg, bool join) {
 					mail->StartJobInThisThread( BmMail::BM_READ_MAIL_JOB);
 				if (mail->InitCheck() != B_OK)
 					continue;
-				BmString replyAddr = mail->DetermineReplyAddress( msg->what, true,
-																				  replyGoesToPersonOnly);
-				BmRef<BmMail>& newMail = newMailMap[replyAddr];
-				if (!newMail) 
-					newMail = mail->CreateReply( msg->what, replyGoesToPersonOnly, selectedText);
-				else
-					newMail->AddPartsFromMail( mail, false, BM_IS_REPLY, replyGoesToPersonOnly);
+				BmString replyAddr 
+					= mail->DetermineReplyAddress( msg->what, true,
+															 replyGoesToPersonOnly);
+				BmString replyAddrSpec = BmAddress( replyAddr).AddrSpec(); 
+				BmString index = joinIntoOne ? "single" : replyAddrSpec;
+				BmRef<BmMail>& newMail = newMailMap[index];
+				if (!newMail) {
+					if (joinIntoOne)
+						newMail = mail->CreateReply( msg->what, selectedText);
+							// when joining all into one we need the names,
+							// since there are multiple recipients
+					else
+						newMail = mail->CreateReply( msg->what, 
+															  replyGoesToPersonOnly, 
+															  selectedText);
+				} else {
+					newMail->AddPartsFromMail( mail, false, BM_IS_REPLY, 
+														joinIntoOne 
+															? false
+															: replyGoesToPersonOnly);
+					BmRef<BmMailHeader> hdr( newMail->Header());
+					if (!hdr->AddressFieldContainsAddress( BM_FIELD_TO, replyAddr))
+						hdr->AddFieldVal( BM_FIELD_TO, replyAddr);
+				}
 				if (iter == sortedRefMap.begin()) {
 					// set subject for multiple replies:
 					BmString oldSub = mail->GetFieldVal( BM_FIELD_SUBJECT);
