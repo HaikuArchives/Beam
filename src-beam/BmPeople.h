@@ -133,9 +133,13 @@ public:
 	// native methods:
 	void AddPeopleToMenu( BMenu* menu, const BMessage& templateMsg, 
 								 const char* addrField);
+	BmRef< BmPerson> FindPersonByNodeRef( const node_ref& nref);
+	//
+	void AddPerson( const node_ref& nref, const entry_ref& eref);
+	void RemovePerson( const node_ref& nref);
 
 	// overrides of listmodel base:
-	const BmString SettingsFileName()		{ return ""; }
+	const BmString SettingsFileName()	{ return ""; }
 	int16 ArchiveVersion() const			{ return 0; }
 
 	static BmRef<BmPeopleList> theInstance;
@@ -161,5 +165,36 @@ private:
 };
 
 #define ThePeopleList BmPeopleList::theInstance
+
+
+/*------------------------------------------------------------------------------*\*\
+	BmPeopleMonitor
+		-	class 
+\*------------------------------------------------------------------------------*/
+class BmPeopleMonitor : public BLooper {
+	typedef BLooper inherited;
+
+public:
+	// creator-func and c'tor:
+	static BmPeopleMonitor* CreateInstance();
+	BmPeopleMonitor();
+
+	//	native methods:
+	void HandleQueryUpdateMsg( BMessage* msg);
+
+	// overrides of looper base:
+	void MessageReceived( BMessage* msg);
+
+	static BmPeopleMonitor* theInstance;
+	
+private:
+	int32 mCounter;
+
+	// Hide copy-constructor and assignment:
+	BmPeopleMonitor( const BmPeopleMonitor&);
+	BmPeopleMonitor operator=( const BmPeopleMonitor&);
+};
+
+#define ThePeopleMonitor BmPeopleMonitor::theInstance
 
 #endif

@@ -34,12 +34,12 @@
 #include <FindDirectory.h>
 #include <MenuItem.h>
 #include <Messenger.h>
+#include <NodeMonitor.h>
 #include <Path.h>
 
 #include "split.hh"
 using namespace regexx;
 
-#include "BmMailFolderList.h"
 #include "BmPeople.h"
 #include "BmPrefs.h"
 #include "BmResources.h"
@@ -233,6 +233,7 @@ BmPeopleList* BmPeopleList::CreateInstance() {
 BmPeopleList::BmPeopleList()
 	:	inherited( "PeopleList") 
 {
+	NeedControllersToContinue( false);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -344,7 +345,76 @@ BMenu* BmPeopleList::CreateSubmenuForPersonMap( const BmPersonMap& personMap,
 }
 
 /*------------------------------------------------------------------------------*\
-	QueryForNewMails()
+	FindPersonByNodeRef()
+		-	
+\*------------------------------------------------------------------------------*/
+BmRef< BmPerson> BmPeopleList::FindPersonByNodeRef( const node_ref& nref) {
+	BmAutolockCheckGlobal lock( ModelLocker());
+	lock.IsLocked() 							|| BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
+	BmModelItemMap::const_iterator iter;
+	for( iter = begin(); iter != end(); ++iter) {
+		BmPerson* person = dynamic_cast< BmPerson*>( iter->second.Get());
+		if (person && person->NodeRef() == nref)
+			return person;
+	}
+	return NULL;
+}
+
+/*------------------------------------------------------------------------------*\
+	AddPerson( nref, eref)
+		-	
+\*------------------------------------------------------------------------------*/
+void BmPeopleList::AddPerson( const node_ref& nref, const entry_ref& eref) {
+	BNode node;
+	BmString name;
+	BmString nick;
+	BmString email;
+	BmString groups;
+	if (!FindPersonByNodeRef( nref) && node.SetTo( &eref) == B_OK) {
+		BmString peopleFolder = ThePrefs->GetString( "PeopleFolder", TheResources->HomePath + "/People");
+		peopleFolder << "/";
+		BEntry entry( &eref);
+		BPath path;
+		entry.GetPath( &path);
+		bool foreign = false;
+		if (path.InitCheck()==B_OK) {
+			BmString personPath( path.Path());
+			if (personPath.ICompare( peopleFolder, peopleFolder.Length()) != 0)
+				foreign = true;
+		}
+		if (foreign && ThePrefs->GetBool( "LookForPeopleOnlyInPeopleFolder", true))
+			return;
+
+		name = nick = email = "";
+		BmReadStringAttr( &node, "META:name", name);
+		BmReadStringAttr( &node, "META:nickname", nick);
+		BmReadStringAttr( &node, "META:email", email);
+		BmReadStringAttr( &node, "META:group", groups);
+		BmPerson* newPerson = new BmPerson( this, nref, name, nick, email, groups, foreign);
+		for( int c=1; c<9; ++c) {
+			email.Truncate(0);
+			BmString emailAttr("META:email");
+			BmReadStringAttr( &node, (emailAttr<<c).String(), email);
+			if (email.Length())
+				newPerson->AddEmail( email);
+		}
+		AddItemToList( newPerson, NULL);
+	}
+}
+
+/*------------------------------------------------------------------------------*\
+	RemovePerson( nref)
+		-	
+\*------------------------------------------------------------------------------*/
+void BmPeopleList::RemovePerson( const node_ref& nref) {
+	BmRef<BmPerson> person = FindPersonByNodeRef( nref);
+	if (person) {
+		RemoveItemFromList( person.Get());
+	}
+}
+
+/*------------------------------------------------------------------------------*\
+	InitializeItems()
 		-	
 \*------------------------------------------------------------------------------*/
 void BmPeopleList::InitializeItems() {
@@ -354,25 +424,16 @@ void BmPeopleList::InitializeItems() {
 	node_ref nref;
 	entry_ref eref;
 	char buf[4096];
-	BNode node;
-	BmString name;
-	BmString nick;
-	BmString email;
-	BmString groups;
 	
-	bool integrateForeigners = !ThePrefs->GetBool( "LookForPeopleOnlyInPeopleFolder", true);
-	
-	BmString peopleFolder = TheResources->HomePath + "/People/";
-
 	BmAutolockCheckGlobal lock( mModelLocker);
 	lock.IsLocked() 							|| BM_THROW_RUNTIME( ModelNameNC() << ":InitializeItems(): Unable to get lock");
 
 	BM_LOG2( BM_LogUtil, "Start of people-query");
 	(err = mPeopleQuery.SetVolume( &TheResources->MailboxVolume)) == B_OK
 													|| BM_THROW_RUNTIME( BmString("SetVolume(): ") << strerror(err));
-	(err = mPeopleQuery.SetPredicate( "META:name == '**' || META:email == '**'")) == B_OK
+	(err = mPeopleQuery.SetPredicate( "META:email == '**'")) == B_OK
 													|| BM_THROW_RUNTIME( BmString("SetPredicate(): ") << strerror(err));
-	(err = mPeopleQuery.SetTarget( BMessenger( TheMailMonitor))) == B_OK
+	(err = mPeopleQuery.SetTarget( BMessenger( ThePeopleMonitor))) == B_OK
 													|| BM_THROW_RUNTIME( BmString("BmPeopleList::InitializeItems(): could not set query target.\n\nError:") << strerror(err));
 	(err = mPeopleQuery.Fetch()) == B_OK
 													|| BM_THROW_RUNTIME( BmString("Fetch(): ") << strerror(err));
@@ -385,34 +446,105 @@ void BmPeopleList::InitializeItems() {
 			eref.device = dent->d_pdev;
 			eref.directory = dent->d_pino;
 			eref.set_name( dent->d_name);
-			if (node.SetTo( &eref) == B_OK) {
-				name = nick = email = "";
-				BmReadStringAttr( &node, "META:name", name);
-				BmReadStringAttr( &node, "META:nickname", nick);
-				BmReadStringAttr( &node, "META:email", email);
-				BmReadStringAttr( &node, "META:group", groups);
-				BEntry entry( &eref);
-				BPath path;
-				entry.GetPath( &path);
-				bool foreign = false;
-				if (!integrateForeigners && path.InitCheck()==B_OK) {
-					BmString personPath( path.Path());
-					if (personPath.ICompare( peopleFolder, peopleFolder.Length()) != 0)
-						foreign = true;
-				}
-				BmPerson* newPerson = new BmPerson( this, nref, name, nick, email, groups, foreign);
-				for( int c=1; c<9; ++c) {
-					email.Truncate(0);
-					BmString emailAttr("META:email");
-					BmReadStringAttr( &node, (emailAttr<<c).String(), email);
-					if (email.Length())
-						newPerson->AddEmail( email);
-				}
-				AddItemToList( newPerson, NULL);
-			}
+
+			AddPerson( nref, eref);
+
 			// Bump the dirent-pointer by length of the dirent just handled:
 			dent = (dirent* )((char* )dent + dent->d_reclen);
 		}
 	}
 	BM_LOG2( BM_LogUtil, BmString("End of people-query (") << peopleCount << " people found)");
+	mInitCheck = B_OK;
+}
+
+
+
+/********************************************************************************\
+	BmPeopleMonitor
+\********************************************************************************/
+
+BmPeopleMonitor* BmPeopleMonitor::theInstance = NULL;
+
+/*------------------------------------------------------------------------------*\
+	CreateInstance()
+		-	creator-func
+\*------------------------------------------------------------------------------*/
+BmPeopleMonitor* BmPeopleMonitor::CreateInstance() {
+	if (!theInstance)
+		theInstance = new BmPeopleMonitor();
+	return theInstance;
+}
+
+/*------------------------------------------------------------------------------*\
+	BmPeopleMonitor()
+		-	standard c'tor
+\*------------------------------------------------------------------------------*/
+BmPeopleMonitor::BmPeopleMonitor()
+	:	BLooper("PeopleMonitor")
+	,	mCounter( 0)
+{
+	Run();
+}
+
+/*------------------------------------------------------------------------------*\
+	MessageReceived( msg)
+		-	
+\*------------------------------------------------------------------------------*/
+void BmPeopleMonitor::MessageReceived( BMessage* msg) {
+	try {
+		switch( msg->what) {
+			case B_QUERY_UPDATE: {
+				if (ThePeopleList)
+					HandleQueryUpdateMsg( msg);
+				break;
+			}
+			default:
+				inherited::MessageReceived( msg);
+		}
+	}
+	catch( exception &err) {
+		// a problem occurred, we tell the user:
+		BM_SHOWERR( BmString("PeopleMonitor: ") << err.what());
+	}
+}
+
+/*------------------------------------------------------------------------------*\
+	HandleQueryUpdateMsg()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmPeopleMonitor::HandleQueryUpdateMsg( BMessage* msg) {
+	int32 opcode = msg->FindInt32( "opcode");
+	status_t err;
+	node_ref nref;
+	BM_LOG2( BM_LogMailTracking, BmString("QueryUpdateMessage nr.") << ++mCounter << " received.");
+	try {
+		switch( opcode) {
+			case B_ENTRY_CREATED: {
+				entry_ref eref;
+				const char* name;
+				(err = msg->FindInt64( "directory", &eref.directory)) == B_OK
+													|| BM_THROW_RUNTIME( "Field 'directory' not found in msg !?!");
+				(err = msg->FindInt32( "device", &nref.device)) == B_OK
+													|| BM_THROW_RUNTIME( "Field 'device' not found in msg !?!");
+				(err = msg->FindInt64( "node", &nref.node)) == B_OK
+													|| BM_THROW_RUNTIME( BmString("Field 'node' not found in msg !?!"));
+				(err = msg->FindString( "name", &name)) == B_OK
+													|| BM_THROW_RUNTIME( BmString("Field 'name' not found in msg !?!"));
+				eref.set_name( name);
+				eref.device = nref.device;
+				ThePeopleList->AddPerson( nref, eref);
+				break;
+			}
+			case B_ENTRY_REMOVED: {
+				(err = msg->FindInt32( "device", &nref.device)) == B_OK
+													|| BM_THROW_RUNTIME( "Field 'device' not found in msg !?!");
+				(err = msg->FindInt64( "node", &nref.node)) == B_OK
+													|| BM_THROW_RUNTIME( BmString("Field 'node' not found in msg !?!"));
+				ThePeopleList->RemovePerson( nref);
+				break;
+			}
+		}
+	} catch( exception &e) {
+		BM_LOGERR( e.what());
+	}
 }
