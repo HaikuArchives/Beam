@@ -77,7 +77,7 @@ rule SetUpSubDirBuildSettings {
 	if $(DEBUG) > 0 {
 		OPTIMIZE = 0 ;
 		STRIP_APPS = 0 ;
-		DEFINES += DEBUG=$(DEBUG) ;
+		DEFINES += DEBUG=$(DEBUG) BM_REF_DEBUGGING ;
 		CCFLAGS += -g ;
 		C++FLAGS += -g ;
 		LINKFLAGS += -g ;

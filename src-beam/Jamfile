@@ -10,11 +10,8 @@ SubDirSysHdrs /boot/home/config/include/liblayout ;
 
 LINKFLAGS += -L/boot/home/config/lib ;
 
-DEFINES += BM_REF_DEBUGGING ;
-
-Application Beam
+StaticLibrary beamInParts.a
 	:  
-		Beam.cpp
 		BmApp.cpp
 		BmBodyPartList.cpp
 		BmBodyPartView.cpp
@@ -74,8 +71,15 @@ Application Beam
 		BmToolbarButton.cpp
 		BmUtil.cpp
 		BmWindow.cpp
+	;
+	
+MakeLocate beamInParts.a : [ FDirName $(OBJECTS_DIR) lib ] ;
+
+Application Beam
+	:  
+		Beam.cpp
 	: 	
-		santaPartsForBeam.so regexx.so bmBase.so 
+		beamInParts.a santaPartsForBeam.so regexx.so bmBase.so 
 		layout iconv pcre tracker $(STDC++LIB) netapi translation be 
 	;
 

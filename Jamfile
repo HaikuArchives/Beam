@@ -6,7 +6,7 @@ SubInclude TOP src-santaPartsForBeam ;
 SubInclude TOP src-beam ;
 SubInclude TOP src-deskbarItem ;
 SubInclude TOP src-filter-addons ;
-#SubInclude TOP src-tests ;
+SubInclude TOP src-tests ;
 
 MakeDistro distro ;
 

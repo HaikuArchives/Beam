@@ -1,0 +1,43 @@
+SubDir TOP src-tests ;
+
+SubDirHdrs $(TOP) src-beam ;
+SubDirHdrs $(TOP) src-bmBase ;
+SubDirHdrs $(TOP) src-libRegexx ;
+SubDirHdrs $(TOP) src-santaPartsForBeam ;
+SubDirHdrs $(TOP) src-deskbarItem ;
+
+SubDirSysHdrs /boot/home/config/include ;
+SubDirSysHdrs /boot/home/config/include/liblayout ;
+
+LINKFLAGS += -L/boot/home/config/lib ;
+
+Application TestBeam
+	:  
+		Base64DecoderTest.cpp
+		Base64EncoderTest.cpp  
+		BinaryDecoderTest.cpp  
+		BinaryEncoderTest.cpp  
+		EncodedWordEncoderTest.cpp  
+		FoldedLineEncoderTest.cpp   
+		LinebreakDecoderTest.cpp    
+		LinebreakEncoderTest.cpp    
+		MailMonitorTest.cpp             
+		MemIoTest.cpp                   
+		QuotedPrintableDecoderTest.cpp  
+		QuotedPrintableEncoderTest.cpp  
+		StringTest.cpp
+		TestBeam.cpp
+		Utf8DecoderTest.cpp
+		Utf8EncoderTest.cpp
+	: 	
+		beamInParts.a santaPartsForBeam.so regexx.so bmBase.so 
+		layout iconv pcre tracker cppunit $(STDC++LIB) netapi translation be
+	;
+
+XRes TestBeam 
+	: 
+		[ FDirName $(TOP) resources BmIcons.rsrc ]  
+		[ FDirName $(TOP) resources BmAppResources.rsrc ] 
+	;
+
+MimeSet TestBeam ;

@@ -36,6 +36,12 @@
 	#include <interface/EMailCompleter.h>
 #endif
 
+// HACK HACK HACK:
+//		in order to avoid an internal compiler error, we unset this
+#ifdef BM_REF_DEBUGGING
+#undef BM_REF_DEBUGGING
+#endif
+
 #include "BmString.h"
 
 #include <HGroup.h>
