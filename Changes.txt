@@ -1,6 +1,279 @@
 change-history of Beam:
 		$Id$
 
+< 2004-05-04: commit >
+
+BmMail, BmPrefsMailConstrView:
+	-	added support for %FA and %FN macros in reply-/forward-intro.
+
+BmMailFolderList:
+	-	we now filter out second event of a single B_ENTRY_MOVED node-monitor
+		message as we want to handle it only once.
+
+< 2004-04-30: moved current-devel >
+
+< 2004-04-27: commit >
+
+BmController:
+	-	removed left-overs from profiling
+
+BmListController:
+	-	added some more logging
+	-	cosmetical changes
+
+BmDataModel, BmMailFolder, BmMailRef, BmMailRefList:
+	-	implemented appending archives to cache for the case when the
+		cache isn't loaded. This speeds up use of long folders that are
+		the target of mail-filters, as the cache no longer needs to be
+		thrown away.
+
+BmMemIO:
+	-	removed ugly minSize-crutch.
+
+BmRefManager:
+	-	STL-related cleanups.
+
+ColumnListView:
+	-	AssertWindowLocked() works only in debug-mode from now on.
+
+many files:
+	-	A first try at establishing compatibility with Dano/Zeta UI-colors.
+
+< 2004-04-04: commit >
+
+BmBodyPartList:
+	-	added MimeTypeIsPotentiallyHarmful()-predicate
+
+BmBodyPartView:
+	-	moved judgement about harmfulness of a given bodypart out into
+		BmBodyPart for clarity
+	-	cleaned up invocation and dragging of attachments.
+
+BmEncoding:
+	-	fixed incorrect positioning of cursor when trying to show the
+		exact position of a conversion-problem in the mail-text.
+
+BmFilter:
+	-	minor cleanup
+
+BmMail:
+	-	when replying to a mail from ourselves, we use the original
+		sender as the target (not ourselves). This has been suggested
+		by Ingo Weinhold.
+
+BmMailRefView:
+	-	streamlined dragging-code (now we draw up to 10 items).
+
+BmSieveFilter:
+	-	fixed bugs in match-line removal code (we now move the model-data
+		accordingly, too, not just the GUI-contents).
+
+CLVEasyItem:
+	-	constructor now respects the AvoidColPushing-flag of the listview
+
+CLVListItem:
+	-	cosmetical fixes
+
+ColumnListView:
+	-	added flag fAvoidColPushing
+	-	fixed resorting-problem which caused an item to jump to the end
+		of similar items. Now this item just stays in place if sorting
+		order hasn't changed.
+
+< 2004-02-22: commit>
+
+Readme:
+	- added reference to PCRE
+
+< 2003-12-18: commit>
+
+many files:
+	-	some more optimisations concerning use of memory.
+	-	finished work on streamlining the update-semantics of listview-
+		items.
+	-	fixed sorting issues with new update-semantics.
+
+BmApp:
+	-	removed unneeded (and erraneous) showing of main-window in
+		AppActivated(). R5 just doesn't exhibit this problem, but Zeta
+		does...
+
+BmStorageUtil:
+	-	changed BmReadStringAttr() to return a bool that indicates
+		whether or not the attribute has actually changed from the
+		current value passed in via outStr.
+
+
+< 2003-12-09: commit>
+
+many files:
+	-	reworked ColumnListView-Update semantics to be finer grained
+		and to use less memory.
+
+BmDataModel:
+	-	added OutlineLevel() to BmListModelItem which returns the number
+		of parents (the level) for an item.
+
+BmMailFilter:
+	-	fixed ref-leak during (local) mail-filtering.
+
+BmNetJobModel:
+	-	enlarged size of buffer that is being logged from 1024 bytes
+		to 16KB. This way we will we log most emails completely.
+
+BmPrefsFilterView:
+	-	fixed crash when creating filter from a mail, we were using
+		delete[] instead of delete.
+	-	finished work on streamlining the update-semantics of listview-
+		items.
+
+BmSieveFilter:
+	-	added support for removing marked filter-lines instead of just
+		the last one. This was annoying esp. if you had created the
+		filter by 'Create Filter from Mail'.
+
+BmStorageUtil:
+	-	FetchFile doesn't crash anymore when it is asked to read an
+		existing, but empty file.
+
+pcre:
+	- fixed compilation issue with -DDEBUG
+
+< 2003-12-04: commit>
+
+many files:
+	-	changed technique used for transporting a mailref-selection
+		within Beam, now we no longer add each ref to the message,
+		but we pass a pointer to an allocated vector (which is freed
+		by the final receiver). This performs much better, actually.
+
+BmSmtp:
+	-	added support for filtering outgoing mail.
+
+< 2003-11-29: commit>
+
+many files:
+	- fixed compilation issues under zeta.
+
+BmMail:
+	-	added MoveToDestFolderpath().
+
+BmMailFilter:
+	-	optimized usual case of a filter-run resulting in all mails just
+		being moved to another folder.
+		This is now delegated to BmMail::MoveToDestFolderpath(), instead
+		of (re-)writing the whole mails to disk.
+
+BmMailFolder:
+	-	if a mail-ref is added/removed to/from a folder whose mailref-list
+		isn't currently loaded, the folder's mail-count is now set to
+		unknown in order to communicate that we really don't know
+		(anymore).
+
+BmMailHeaderView:
+	-	fixed bug when handling very large header-fields, which caused
+		incorrect textview-heights to be used, resulting in part of the
+		text being cut invisible.
+	-	fixed mistake that inhibited the user from selecting the complete
+		contents of a multiline header-field (you could only select a
+		single line).
+
+BmPeople:
+	-	improved behaviour if people-folder doesn't exist (we silently
+		ignore that now).
+	-	foreign-people submenu is only shown if there in fact are any
+		foreigners to be shown there.
+
+BmPrefs:
+	- improved the error message if the mailbox can not be found.
+
+
+< 2003-11-25: commit>
+
+BmApp:
+	-	updated BmMailRef-creation to new standards.
+
+BmDataModel:
+	-	added separate count for invalid items, so that the number of
+		valid items can easily be computed (size-invalidCount).
+	-	restricted calls to UpdatedMenuControllers() to JobIsDone(), since
+		it isn't needed in the other cases.
+
+BmListController:
+	-	optimised MakeEmpty() by means of telling the BList in advance, how
+		many items it will hold.
+
+BmMail:
+	-	fixed erraneous behaviour if mailbox does not live on same the
+		device as the temp-folder does.
+	-	instead of overwriting mail-files, we now leave a backup copy
+		which is removed after the new mail has been written on disk.
+		This way Beam should never lose a mail when crashing.
+
+BmMailEditWin:
+	-	added support for removal of mail-addresses by menu (use the
+		<remove> submenu for that).
+	
+BmMailFolder, BmMailRefView:
+	-	current position in a folder is now persistent.
+
+BmMailFolderList:
+	-	restricted locking of folder-list only to places where it really
+		is needed (hopefully we haven't opened up any locking-holes...).
+
+BmMailHeader:
+	-	minor cleanup.
+
+BmMailRef, BmMailRefList:
+	-	fixed bug with invalid items being shown in folder-count.
+
+BmMenuController, BmMenuControllerBase:
+	-	fixed linking problem under Zeta (why wasn't this shown on R5?).
+
+ColumnListView:
+	-	added support for proper reduction of a selection that has been
+		extended by pressing the SHIFT-modifier.
+
+
+*******************************************************************************
+[Beam 1.0] - 2003-11-23 - tagged and released
+*******************************************************************************
+
+< 2003-11-21: commit, moved tag "current-stable">
+
+BmPopAccount:
+	-	fixed int32-overflow when setting up check-interval runner, 
+		avoiding fetching mails in a tight loop (oops!).
+
+BmPopper:
+	-	fixed crash in StateCheck(), where free'd memory was accessed
+		(why didn't this crash more often?).
+		Solved this by dumping c-style string-functions in favour of
+		BString.
+
+*******************************************************************************
+[Beam 1.0-rc8] - 2003-11-20 - tagged and released
+*******************************************************************************
+
+< 2003-11-17: commit, moved tag "current-stable" >
+
+BmMailEditWin:
+	-	now we only overwrite a mail's identity if the user has actually
+		selected one.
+
+< 2003-11-16: commit, moved tag "current-stable" >
+
+BmMailEditWin:
+	-	fixed crashing-bug in destructor that depended on the window-map
+		key (the mail's entry_ref) being the same as it was when the window
+		was created. This resulted in windows not being removed from the
+		map when they should, which in turn lead to crashes.
+
+< 2003-11-14: commit, moved tag "current-stable" >
+
+BmPrefsMailConstrView:
+	-	fixed missing SetTarget() for mReplyIntroPrivateStrControl.
+
 *******************************************************************************
 [Beam 1.0-rc7]
 *******************************************************************************
