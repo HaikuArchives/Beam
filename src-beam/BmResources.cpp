@@ -222,6 +222,7 @@ void BmResources::FetchOwnFQDN() {
 	Regexx rx;
 #ifdef BEAM_FOR_BONE
 	FetchFile( "/etc/hostname", mOwnFQDN);
+	mOwnFQDN.RemoveSet( " \n\r\t");
 	if (!mOwnFQDN.Length())
 		mOwnFQDN = "bepc";
 	FetchFile( "/etc/resolv.conf", buffer);
@@ -474,6 +475,3 @@ BPicture* BmResources::CreatePictureFor( BBitmap* image, float width, float heig
 	delete drawImage;
 	return picture;
 }
-
-
-
