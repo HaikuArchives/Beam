@@ -686,10 +686,16 @@ void BmMailEditWin::MessageReceived( BMessage* msg) {
 						mMailView->SetSignatureByName( sigName);
 				}
 			}
+			case BM_TEXTFIELD_MODIFIED:
+				BControl* source;
+				if (msg->FindPointer( "source", (void**)&source)==B_OK
+				&& source==mSubjectControl) {
+					SetTitle( (BString("Edit Mail: ") + mSubjectControl->Text()).String());
+				}
+				// right, no break here...
 			case BM_CHARSET_SELECTED:
 			case BM_SMTP_SELECTED:
-			case B_OBSERVER_NOTICE_CHANGE:
-			case BM_TEXTFIELD_MODIFIED: {
+			case B_OBSERVER_NOTICE_CHANGE: {
 				mModified = true;
 				mSaveButton->SetEnabled( true);
 				break;
@@ -793,6 +799,7 @@ void BmMailEditWin::SetFieldsFromMail( BmMail* mail) {
 			mReplyToControl->SetTextSilently( mail->GetStrippedFieldVal( BM_FIELD_REPLY_TO).String());
 		}
 		mSubjectControl->SetTextSilently( mail->GetStrippedFieldVal( BM_FIELD_SUBJECT).String());
+		SetTitle( (BString("Edit Mail: ") + mSubjectControl->Text()).String());
 		// mark corresponding SMTP-account (if any):
 		BString smtpAccount = mail->AccountName();
 		mSmtpControl->MarkItem( smtpAccount.String());
