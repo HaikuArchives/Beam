@@ -835,8 +835,8 @@ static int makehash(unsigned char hash[HASHSIZE], char *s1, char *s2)
     MD5_CTX ctx;
 
     MD5Init(&ctx);
-    MD5Update(&ctx, s1, strlen(s1));
-    MD5Update(&ctx, s2, strlen(s2));
+    MD5Update(&ctx, (unsigned char*)s1, strlen(s1));
+    MD5Update(&ctx, (unsigned char*)s2, strlen(s2));
     MD5Final(hash, &ctx);
 
     return SIEVE_OK;

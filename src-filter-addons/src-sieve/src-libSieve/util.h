@@ -12,9 +12,13 @@
 #ifndef INCLUDED_UTIL_H
 #define INCLUDED_UTIL_H
 
-const unsigned char convert_to_lowercase[256];
+extern const unsigned char convert_to_lowercase[256];
 
 #define TOLOWER(c) (convert_to_lowercase[(unsigned char)(c)])
+
+#ifndef __GNUC__
+#define __attribute__(x)
+#endif
 
 /* convert string to all lower case
  */
