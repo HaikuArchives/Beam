@@ -81,7 +81,7 @@ BmPrefsGeneralView::BmPrefsGeneralView()
 			new Space( minimax(0,10,0,10)),
 			new MBorder( M_LABELED_BORDER, 10, (char*)"Mail-Listview Layout",
 				new VGroup(
-					CreateMailRefLayoutView( minimax(500,80,1E5,80), 500, 80),
+					CreateMailRefLayoutView( minimax(400,80,1E5,80), 400, 80),
 					new Space( minimax(0,4,0,4)),
 					mStripedListViewControl = new BmCheckControl( "Use striped version of listview (needs restart)", 
 																				 new BMessage(BM_STRIPED_LISTVIEW_CHANGED), 

@@ -71,6 +71,8 @@
 
 static const char* BM_BEEP_EVENT = "New E-mail";
 
+unsigned short BmPopperView::nActiveCount = 0;
+
 /********************************************************************************\
 	BmJobStatusView
 \********************************************************************************/
@@ -433,6 +435,43 @@ bool BmPopperView::AskUserForPwd( const BString accName, BString& pwd) {
 	} else
 		return false;
 }
+
+/*------------------------------------------------------------------------------*\
+	StartJob()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmPopperView::StartJob( BmJobModel* model, bool startInNewThread, 
+									  int32 jobSpecifier) {
+	nActiveCount++;
+	inherited::StartJob( model, startInNewThread, jobSpecifier);
+}
+
+/*------------------------------------------------------------------------------*\
+	JobIsDone()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmPopperView::JobIsDone( bool completed) {
+	inherited::JobIsDone( completed);
+	if (--nActiveCount == 0) {
+		// [suggested by Rainer Riedl (and improved by Tyler Dauwalder)]:
+		// 	temporary hack: Execute possibly existing 'filter'-program to do 
+		//		mail filtering (this will be removed in Beam 0.92):
+		app_info appInfo;
+		bmApp->GetAppInfo( &appInfo); 
+		node_ref nref;
+		nref.device = appInfo.ref.device;
+		nref.node = appInfo.ref.directory;
+		BDirectory appDir( &nref);
+		BEntry appDirEntry;
+		appDir.GetEntry( &appDirEntry);
+		BPath appPath;
+		appDirEntry.GetPath( &appPath);
+		BString filterCmd;
+		filterCmd << appPath.Path() << "/filter";
+		system( filterCmd.String());
+	}
+}
+
 
 
 
@@ -812,24 +851,6 @@ void BmJobStatusWin::RemoveJob( const char* name) {
 	RecalcSize();
 	mActiveJobs.erase( controller->ControllerName());
 	if (mActiveJobs.empty()) {
-		if (dynamic_cast<BmPopperView*>( controller)) {
-			// [suggested by Rainer Riedl]:
-			// 	temporary hack: Execute possibly existing 'filter'-program to do 
-			//		mail filtering (this will be removed in Beam 0.92):
-			app_info appInfo;
-			bmApp->GetAppInfo( &appInfo); 
-			node_ref nref;
-			nref.device = appInfo.ref.device;
-			nref.node = appInfo.ref.directory;
-			BDirectory appDir( &nref);
-			BEntry appDirEntry;
-			appDir.GetEntry( &appDirEntry);
-			BPath appPath;
-			appDirEntry.GetPath( &appPath);
-			BString filterCmd;
-			filterCmd << appPath.Path() << "/filter";
-			system( filterCmd.String());
-		}
 		while( !IsHidden())
 			Hide();
 	}

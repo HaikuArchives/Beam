@@ -751,7 +751,17 @@ void BmMailView::DisplayBodyPart( BString& displayText, BmBodyPart* bodyPart) {
 				}
 				displayText << "- - - - - - - - - - - - - - - - - - - -\n\n";
 			}
-			displayText.Append( bodyPart->DecodedData());
+			if (bodyPart->IsBinary()) {
+				// Binary subparts are not automatically being converted to local newlines.
+				// Since we are going to display this binary subpart in the mailview, we
+				// have to convert the newlines first:
+				BString convertedData;
+				ConvertLinebreaksToLF( bodyPart->DecodedData(), convertedData);
+				displayText.Append( convertedData);
+			} else {
+				// standard stuff, bodypart has already been converted to local newlines
+				displayText.Append( bodyPart->DecodedData());
+			}
 		}
 	} else {
 		BmModelItemMap::const_iterator iter;

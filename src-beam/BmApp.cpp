@@ -337,6 +337,7 @@ void BmApplication::MessageReceived( BMessage* msg) {
 				const char* subject = NULL;
 				if ((subject = msg->FindString( MSG_SUBJECT)))
 					mail->SetFieldVal( BM_FIELD_SUBJECT, subject);
+				BM_LOG( BM_LogMainWindow, BString("Asked to create new mail with subject <") << subject << ">");
 				BmMailEditWin* editWin = BmMailEditWin::CreateInstance( mail.Get());
 				if (editWin)
 					editWin->Show();
@@ -348,6 +349,7 @@ void BmApplication::MessageReceived( BMessage* msg) {
 				while( msg->FindPointer( MSG_MAILREF, index++, (void**)&mailRef) == B_OK) {
 					BmRef<BmMail> mail = BmMail::CreateInstance( mailRef);
 					if (mail) {
+						BM_LOG( BM_LogMainWindow, BString("Asked to redirect mail <") << mailRef->TrackerName() << ">");
 						mail->StartJobInThisThread( BmMail::BM_READ_MAIL_JOB);
 						if (mail->InitCheck() != B_OK)
 							continue;
@@ -451,8 +453,10 @@ void BmApplication::MessageReceived( BMessage* msg) {
 					break;
 				index=0;
 				while( msg->FindPointer( MSG_MAILREF, index++, (void**)&mailRef) == B_OK) {
-					if (buttonPressed==1 || mailRef->Status() == BM_MAIL_STATUS_NEW)
+					if (buttonPressed==1 || mailRef->Status() == BM_MAIL_STATUS_NEW) {
+						BM_LOG( BM_LogMainWindow, BString("marking mail <") << mailRef->TrackerName() << "> as " << newStatus);
 						mailRef->MarkAs( newStatus.String());
+					}
 					mailRef->RemoveRef();	// msg is no more refering to mailRef
 				}
 				break;
@@ -482,6 +486,7 @@ void BmApplication::MessageReceived( BMessage* msg) {
 				entry_ref* refs = new entry_ref [index];
 				index=0;
 				for( index=0; msg->FindPointer( MSG_MAILREF, index, (void**)&mailRef) == B_OK; ++index) {
+					BM_LOG( BM_LogMainWindow, BString("Asked to trash mail <") << mailRef->TrackerName() << ">");
 					refs[index] = mailRef->EntryRef();
 					mailRef->RemoveRef();	// msg is no more refering to mailRef
 				}

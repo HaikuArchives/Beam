@@ -72,8 +72,10 @@ void BmLogHandler::Log( const BString logname, uint32 flag, const BString& msg, 
 		-	logs only if a loghandler is actually present
 \*------------------------------------------------------------------------------*/
 void BmLogHandler::Log( const char* const logname, uint32 flag, const char* const msg, int8 minlevel=1) { 
+	BString theLogname(logname);
+	BString theMsg(msg);
 	if (theInstance)
-		theInstance->LogToFile( BString(logname), flag, BString(msg), minlevel);
+		theInstance->LogToFile( theLogname, flag, theMsg, minlevel);
 }
 
 /*------------------------------------------------------------------------------*\

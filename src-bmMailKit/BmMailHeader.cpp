@@ -602,7 +602,7 @@ BString BmMailHeader::DetermineOriginator() {
 		return "";
 	if (addrList.IsGroup())
 		return addrList.GroupName();
-	return addrList.FirstAddress();
+	return addrList;
 }
 
 /*------------------------------------------------------------------------------*\

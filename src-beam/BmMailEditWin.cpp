@@ -833,7 +833,10 @@ bool BmMailEditWin::SaveMail( bool hardWrapIfNeeded) {
 	if (mail && mail->Store()) {
 		mHasNeverBeenSaved = false;
 		mModified = false;
-		mSaveButton->SetEnabled( false);
+		if (LockLooper()) {
+			mSaveButton->SetEnabled( false);
+			UnlockLooper();
+		}
 		return true;
 	}
 	return false;

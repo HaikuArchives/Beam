@@ -74,6 +74,7 @@ BmEncoding::BmEncodingPair BmEncoding::BM_Encodings[] = {
 	{ "iso-8859-13", B_ISO13_CONVERSION },
 	{ "iso-8859-14", B_ISO14_CONVERSION },
 	{ "iso-8859-15", B_ISO15_CONVERSION },
+	{ "utf-8", BM_UTF8_CONVERSION },
 	{ "utf8", BM_UTF8_CONVERSION },
 	{ NULL, 0 }
 };
@@ -312,7 +313,7 @@ void BmEncoding::Decode( BString encodingStyle, const BString& src, BString& des
 		int32 destSize = src.Length();
 		if (!destSize)
 			return;
-		char* buf = dest.LockBuffer( destSize);
+		char* buf = dest.LockBuffer( destSize+1);
 		const char* pos = src.String();
 		char* newPos = buf;
 		char* lastSoftbreakPos = NULL;
@@ -324,8 +325,9 @@ void BmEncoding::Decode( BString encodingStyle, const BString& src, BString& des
 				while(newPos>buf && (*(newPos-1) == ' ' || *(newPos-1) == '\t'))
 					newPos--;
 				// join lines that have been divided by a soft linebreak:
-				if (newPos>buf && lastSoftbreakPos == newPos-1) {
-					newPos--;					// remove '=' from output
+				if (lastSoftbreakPos>0) {
+					newPos = lastSoftbreakPos;		// move back to '='-character
+					lastSoftbreakPos = 0;
 					pos++;						// skip '\n', too
 				}
 				pos++;							// skip '\r'
@@ -339,6 +341,7 @@ void BmEncoding::Decode( BString encodingStyle, const BString& src, BString& des
 					*newPos++ = HEXDIGIT2CHAR(c1)*16 + HEXDIGIT2CHAR(c2);
 					pos+=3;
 				} else {
+					// softbreak encountered, we keep note of it's position
 					lastSoftbreakPos = newPos;
 					*newPos++ = *pos++;
 				}
@@ -355,7 +358,7 @@ void BmEncoding::Decode( BString encodingStyle, const BString& src, BString& des
 		off_t srcSize = src.Length();
 		if (!srcSize)
 			return;
-		char* destBuf = dest.LockBuffer( srcSize);
+		char* destBuf = dest.LockBuffer( srcSize+1);
 		ssize_t destSize = decode64( destBuf, src.String(), srcSize);
 		if (destSize<0) {
 			BM_LOG( BM_LogMailParse, BString("Unable to decode base64-string. Error: ") << strerror(destSize));

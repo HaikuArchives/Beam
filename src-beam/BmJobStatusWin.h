@@ -142,6 +142,9 @@ public:
 	void ResetController();
 	void UpdateModelView( BMessage* msg);
 	BmJobModel* CreateJobModel( BMessage* msg);
+	void StartJob( BmJobModel* model = NULL, bool startInNewThread=true,
+						int32 jobSpecifier = BmJobModel::BM_DEFAULT_JOB);
+	void JobIsDone( bool completed);
 
 	// overrides of controller base:
 	BHandler* GetControllerHandler() 	{ return this; }
@@ -153,6 +156,10 @@ private:
 	BStatusBar* mStatBar;				// shows current status of this connection
 	BStatusBar* mMailBar;				// shows number of mails handled by this connection
 	bool mHaveBeeped;						// have we indicated arrival of new mail?
+
+	static unsigned short nActiveCount;
+												// countdown for active poppers, to start filter-hack 
+												// when appropriate (after all poppers have finished)
 
 	// Hide copy-constructor and assignment:
 	BmPopperView( const BmPopperView&);

@@ -232,7 +232,7 @@ BmPrefsSendMailView::BmPrefsSendMailView()
 {
 	MView* view = 
 		new VGroup(
-			CreateAccListView( minimax(500,60,1E5,1E5), 500, 80),
+			CreateAccListView( minimax(400,60,1E5,1E5), 400, 80),
 			new HGroup(
 				mAddButton = new MButton("Add Account", new BMessage(BM_ADD_ACCOUNT), this),
 				mRemoveButton = new MButton("Remove Account", new BMessage( BM_REMOVE_ACCOUNT), this),
@@ -242,7 +242,7 @@ BmPrefsSendMailView::BmPrefsSendMailView()
 			new HGroup(
 				new MBorder( M_LABELED_BORDER, 10, (char*)"Account Info",
 					new VGroup(
-						mAccountControl = new BmTextControl( "Account name:", false, 0, 35),
+						mAccountControl = new BmTextControl( "Account name:", false, 0, 25),
 						new Space( minimax(0,5,0,5)),
 						mServerControl = new BmTextControl( "SMTP-Server:"),
 						mPortControl = new BmTextControl( "Port:"),

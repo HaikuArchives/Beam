@@ -174,9 +174,9 @@ BString BytesToString( int32 bytes, bool mini) {
 \*------------------------------------------------------------------------------*/
 BString TimeToString( time_t t, const char* format) {
 	BString s;
-	const int32 bufsize=40;
+	const int32 bufsize=100;
 	s.SetTo( '\0', bufsize);
-	char* buf=s.LockBuffer( 40);
+	char* buf=s.LockBuffer( bufsize+1);
 	strftime( buf, bufsize, format, localtime( &t));
 	s.UnlockBuffer( strlen(buf));
 	return s;
@@ -233,7 +233,7 @@ BString operator+(const BString& s1, const char* s2)
 \*------------------------------------------------------------------------------*/
 BString& RemoveSetFromString( BString& str, const char* charsToRemove) {
 	if (!charsToRemove) return str;
-	char* buf = str.LockBuffer( str.Length());
+	char* buf = str.LockBuffer( str.Length()+1);
 	if (buf) {
 		char* pos = buf;
 		char* newPos = buf;
@@ -288,7 +288,7 @@ void ConvertLinebreaksToLF( const BString& in, BString& out) {
 		out = "";
 		return;
 	}
-	char* buf = out.LockBuffer( outSize);
+	char* buf = out.LockBuffer( outSize+1);
 	const char* pos = in.String();
 	char* newPos = buf;
 	while( *pos) {
@@ -312,7 +312,7 @@ void ConvertLinebreaksToCRLF( const BString& in, BString& out) {
 		out = "";
 		return;
 	}
-	char* buf = out.LockBuffer( outSize);
+	char* buf = out.LockBuffer( outSize+1);
 	const char* pos = in.String();
 	char* newPos = buf;
 	while( *pos) {
@@ -331,13 +331,13 @@ void ConvertLinebreaksToCRLF( const BString& in, BString& out) {
 		-	result is stored in out
 \*------------------------------------------------------------------------------*/
 void ConvertTabsToSpaces( const BString& in, BString& out) {
-	int32 outSize = in.Length()*2;
+	const int numSpaces = 3;
+	int32 outSize = in.Length()*numSpaces;
 	if (!outSize) {
 		out = "";
 		return;
 	}
-	const int numSpaces = 3;
-	char* buf = out.LockBuffer( outSize);
+	char* buf = out.LockBuffer( outSize+1);
 	const char* pos = in.String();
 	char* newPos = buf;
 	while( *pos) {
@@ -366,7 +366,7 @@ void DeUrlify( const BString& in, BString& out) {
 		out = "";
 		return;
 	}
-	char* buf = out.LockBuffer( outSize);
+	char* buf = out.LockBuffer( outSize+1);
 	const char* pos = in.String();
 	char* newPos = buf;
 	char c1, c2;
@@ -402,9 +402,14 @@ void WordWrap( const BString& in, BString& out, int32 maxLineLen, BString nl) {
 	}
 	int32 lastPos = 0;
 	const char *s = in.String();
-	for(	int32 pos = 0; 
-			(pos = in.FindFirst( nl, pos)) != B_ERROR; 
-			pos += nl.Length(), lastPos = pos) {
+	bool needBreak = false;
+	for(	int32 pos = 0;  !needBreak;  pos += nl.Length(), lastPos = pos) {
+		pos = in.FindFirst( nl, pos);
+		if (pos == B_ERROR) {
+			// handle the characters between last newline and end of string:
+			pos = in.Length();
+			needBreak = true;
+		}
 		// determine length of line in UTF8-characters (not bytes):
 		int32 lineLen = 0;
 		for( int i=lastPos; i<pos; ++i) {

@@ -3,6 +3,18 @@
 		$Id$
 */
 
+----------------------------------
+List of beta-testers:
+----------------------------------
+**************
+Beam 0.913rc2:
+**************
+-	Bernd Korz <bernd.korz@insidebeos.de>
+-	Charlie Clark <charlie@begeistert.org>
+-	Eberhard Hafermalz <ebor@ecosse.net>	(BONE)
+-	Linus Almstrom <linalm-7@sm.luth.se>
+-	Rainer Riedl <riedl@navios.de>
+-	Tyler Dauwalder <tyler@dauwalder.net>
 
 ***********
 Beam 0.913:

@@ -98,7 +98,7 @@ status_t BmListViewItem::Archive( BMessage* archive, bool deep) const {
 \*------------------------------------------------------------------------------*/
 void BmListViewItem::UpdateView( BmUpdFlags flags) {
 	BmListModelItem* item = ModelItem();
-	if (flags & (UPD_EXPANDER)) {
+	if (item && flags & (UPD_EXPANDER)) {
 		SetSuperItem( item->size() != 0);
 	}
 }
@@ -515,7 +515,7 @@ void BmListViewController::RemoveModelItem( BmListModelItem* item) {
 /*------------------------------------------------------------------------------*\
 	UpdateModelItem( msg)
 		-	Hook function that is called whenever an item needs to be updated 
-		-	default implementation does nothing
+		-	default implementation redraws item completely
 \*------------------------------------------------------------------------------*/
 BmListViewItem* BmListViewController::UpdateModelItem( BmListModelItem* item, 
 																		 BmUpdFlags updFlags) {

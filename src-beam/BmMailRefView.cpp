@@ -102,6 +102,8 @@ BmMailRefItem::~BmMailRefItem() {
 void BmMailRefItem::UpdateView( BmUpdFlags flags) {
 	inherited::UpdateView( flags);
 	BmMailRef* ref = ModelItem();
+	if (!ref)
+		return;
 	BBitmap* icon = NULL;
 
 	if (flags & BmMailRef::UPD_STATUS) {

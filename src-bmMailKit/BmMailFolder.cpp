@@ -305,7 +305,6 @@ void BmMailFolder::AddMailRef( entry_ref& eref, struct stat& st) {
 	if (mMailRefList) {
 		if (!mMailRefList->AddMailRef( eref, st)) {
 			BM_LOG2( BM_LogMailTracking, Name()+" mail-ref already exists.");
-			return;								// mail-ref already exists, we quit
 		}
 	}
 	// if mail-ref is flagged new, we have to tell the mailfolderlist that we own
@@ -340,7 +339,6 @@ void BmMailFolder::RemoveMailRef( ino_t node) {
 	if (mMailRefList) {
 		if (!mMailRefList->RemoveItemFromList( BString()<<node)) {
 			BM_LOG2( BM_LogMailTracking, Name()+" mail-ref doesn't exist.");
-			return;								// mail-ref didn't exist, we quit
 		}
 	}
 	// if mail-ref is flagged new, we have to tell the mailfolderlist that we no 

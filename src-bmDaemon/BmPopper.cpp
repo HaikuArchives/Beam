@@ -268,7 +268,7 @@ void BmPopper::Login() {
 			if (mServerTimestamp.Length()) {
 				BString secret( mServerTimestamp + pwd);
 				BString Digest;
-				char* buf = Digest.LockBuffer(33);
+				char* buf = Digest.LockBuffer(40);	// should only need 33
 				MD5Digest( (unsigned char*) secret.String(), buf);
 				Digest.UnlockBuffer();
 				BString cmd = BString("APOP ") << mPopAccount->Username() << " ";
@@ -323,16 +323,16 @@ void BmPopper::Check() {
 	cmd = BString("UIDL");
 	SendCommand( cmd);
 	// The UIDL-command may not be implemented by this server, so we 
-	// do not require a postive answer, we just hope for it:
+	// do not require a positive answer, we just hope for it:
 	if (!GetAnswer( MULTI_LINE)) 			
 		return;									// interrupted, we give up
 	if (mReplyLine[0] == '+') {
 		// ok, we've got the UIDL-listing, so we fetch it:
-		char msgUID[71];
+		char msgUID[128];
 		// fetch UIDLs one per line and store them in array:
 		const char *p = mAnswer.String();
 		for( int32 i=0; i<mMsgCount; ++i) {
-			if (sscanf( p, "%ld %70s", &msgNum, msgUID) != 2 || msgNum <= 0)
+			if (sscanf( p, "%ld %80s", &msgNum, msgUID) != 2 || msgNum <= 0)
 				throw BM_network_error( BString("answer to UIDL has unknown format, msg ") << i+1);
 			mMsgUIDs[i] = msgUID;
 			// skip to next line:
@@ -475,7 +475,7 @@ bool BmPopper::GetAnswer( bool SingleLineMode, int32 mailNr) {
 		BM_LOG2( BM_LogPop, BString("announced msg-size:") << mMsgSizes[mailNr-1]);
 	BM_LOG3( BM_LogPop, BString("bufSize:") << bufSize);
 	mAnswer.SetTo( '\0', bufSize);		// preallocate the bufsize we need
-	buffer = mAnswer.LockBuffer( bufSize);
+	buffer = mAnswer.LockBuffer( bufSize+1);
 	try {
 		do {
 			int32 bufFree = bufSize - offset;
@@ -483,7 +483,7 @@ bool BmPopper::GetAnswer( bool SingleLineMode, int32 mailNr) {
 				// bufsize is not sufficient, we enlarge the buffer:
 				bufSize *= 2;
 				mAnswer.UnlockBuffer( offset);
-				buffer = mAnswer.LockBuffer( bufSize);
+				buffer = mAnswer.LockBuffer( bufSize+1);
 				bufFree = bufSize - offset;
 				BM_LOG2( BM_LogPop, BString("bufSize enlarged to:") << bufSize);
 			}

@@ -270,6 +270,7 @@ void BmResources::FetchOwnFQDN() {
 #endif
 	if (!mOwnFQDN.Length())
 		mOwnFQDN << "bepc." << time( NULL) << ".fake";
+	RemoveSetFromString( mOwnFQDN, "\r\n");
 }
 
 /*------------------------------------------------------------------------------*\

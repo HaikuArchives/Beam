@@ -175,8 +175,8 @@ int32 BmBodyPart::nObjectID = 0;
 \*------------------------------------------------------------------------------*/
 BString BmBodyPart::NextObjectID() {
 	BString s;
-	char* buf=s.LockBuffer( 20);
-	sprintf( buf, "%5ld", ++nObjectID);
+	char* buf=s.LockBuffer( 10);
+	sprintf( buf, "%5.5ld", ++nObjectID);
 	s.UnlockBuffer( -1);
 	return s;
 }
@@ -217,7 +217,17 @@ BmBodyPart::BmBodyPart( BmBodyPartList* model, const entry_ref* ref, BmListModel
 														|| BM_THROW_RUNTIME( BString("Couldn't get file-size for <") << ref->name << "> \n\nError:" << strerror(err));
 		(err=nodeInfo.SetTo( &file)) == B_OK
 														|| BM_THROW_RUNTIME( BString("Couldn't create node-info for <") << ref->name << "> \n\nError:" << strerror(err));
-		nodeInfo.GetType( mt);
+		if (nodeInfo.GetType( mt)!=B_OK) {
+			// no mimetype info yet, we ask BeOS to determine mimetype and then try again:
+			BEntry entry( ref);
+			BPath path;
+			entry.GetPath( &path);
+			status_t res=entry.InitCheck();
+			if (res==B_OK && path.InitCheck()==B_OK && path.Path()) {
+				update_mime_info( path.Path(), false, true, false);
+				nodeInfo.GetType( mt);
+			}
+		}
 		BString mimetype( mt);
 		if (mimetype.ICompare("text/x-email")==0) {
 			// convert beos-own mail-mimetype into correct message/rfc822:
@@ -282,7 +292,7 @@ BmBodyPart::BmBodyPart( const BmBodyPart& in)
 {
 	int32 len = in.DecodedData().Length();
 	if (len) {
-		char* buf = mDecodedData.LockBuffer( len);
+		char* buf = mDecodedData.LockBuffer( len+1);
 		if (buf) {
 			memcpy( buf, in.DecodedData().String(), len);
 			buf[len] = 0;
@@ -562,6 +572,11 @@ entry_ref BmBodyPart::WriteToTempFile( BString filename) {
 		fileInfo.SetTo( &tempFile);
 		fileInfo.SetType( MimeType().String());
 		BEntry entry( &tempDir, filename.String());
+		BPath path;
+		entry.GetPath( &path);
+		err = entry.InitCheck();
+		if (err==B_OK && path.InitCheck()==B_OK && path.Path())
+			update_mime_info( path.Path(), false, true, false);
 		entry.GetRef( &eref);
 	}
 	return eref;
@@ -590,6 +605,15 @@ void BmBodyPart::SaveAs( const entry_ref& destDirRef, BString filename) {
 			destFile.Write( mDecodedData.String(), mDecodedData.Length());
 		fileInfo.SetTo( &destFile);
 		fileInfo.SetType( MimeType().String());
+		BEntry entry;
+		destDir.GetEntry( &entry);
+		BPath path;
+		entry.GetPath( &path);
+		if (path.InitCheck()==B_OK) {
+			BString fullpath( path.Path());
+			fullpath << "/" << filename;
+			update_mime_info( fullpath.String(), false, true, false);
+		}
 	} else
 		BM_SHOWERR( BString("Could not save attachment\n\t<") << filename << ">\n\n Result: " << strerror(err));
 }

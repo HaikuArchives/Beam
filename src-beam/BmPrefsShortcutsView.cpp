@@ -127,7 +127,7 @@ BmPrefsShortcutsView::BmPrefsShortcutsView()
 {
 	MView* view = 
 		new VGroup(
-			CreateListView( minimax(500,300,1E5,1E5), 500, 400),
+			CreateListView( minimax(400,300,1E5,1E5), 400, 400),
 			new Space( minimax(0,10,0,10)),
 			new MBorder( M_LABELED_BORDER, 10, (char*)"Shortcut Info",
 				new VGroup(

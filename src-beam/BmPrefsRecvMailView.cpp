@@ -260,7 +260,7 @@ BmPrefsRecvMailView::BmPrefsRecvMailView()
 {
 	MView* view = 
 		new VGroup(
-			CreateAccListView( minimax(500,100,1E5,1E5), 500, 100),
+			CreateAccListView( minimax(400,100,1E5,1E5), 400, 100),
 			new HGroup(
 				mAddButton = new MButton("Add Account", new BMessage(BM_ADD_ACCOUNT), this),
 				mRemoveButton = new MButton("Remove Account", new BMessage( BM_REMOVE_ACCOUNT), this),
@@ -270,7 +270,7 @@ BmPrefsRecvMailView::BmPrefsRecvMailView()
 			new HGroup(
 				new MBorder( M_LABELED_BORDER, 10, (char*)"Account Info",
 					new VGroup(
-						mAccountControl = new BmTextControl( "Account name:", false, 0, 30),
+						mAccountControl = new BmTextControl( "Account name:", false, 0, 25),
 						mRealNameControl = new BmTextControl( "Real name:"),
 						mMailAddrControl = new BmTextControl( "Mail address:"),
 						mAliasesControl = new BmTextControl( "Aliases:"),

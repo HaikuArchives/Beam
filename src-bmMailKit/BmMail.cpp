@@ -205,10 +205,13 @@ void BmMail::SetSignatureByName( const BString sigName, int32 encoding) {
 	if (!mBody || mSignatureName==sigName)
 		return;
 	mSignatureName = sigName;
+/*
 	BString encodedSig;
 	ConvertFromUTF8( encoding, 
 						  TheSignatureList->GetSignatureStringFor( sigName), encodedSig);
 	mBody->Signature( encodedSig);
+*/
+	mBody->Signature( TheSignatureList->GetSignatureStringFor( sigName));
 }
 
 /*------------------------------------------------------------------------------*\
@@ -356,14 +359,36 @@ BmRef<BmMail> BmMail::CreateReply( bool replyToAll, const BString selectedText) 
 	// fetch info about encoding from old mail:
 	int32 encoding = DefaultEncoding();
 	// Since we are replying, we generate the new mail's from-address 
-	// from the received mail's to-info:
+	// from the received mail's to-/cc-/bcc-info in several steps.
+	// First, we check if the account through which the mail has been received
+	// can be identified (not always possible, since the account may have been
+	// renamed or deleted by now):
 	BmRef<BmListModelItem> accRef = ThePopAccountList->FindItemByKey( AccountName());
 	BmPopAccount* acc = dynamic_cast< BmPopAccount*>( accRef.Get());
 	BString receivingAddr;
 	if (acc) {
+		// receiving account is known, we let it find the receiving address
 		receivingAddr = Header()->DetermineReceivingAddrFor( acc);
+		// if the receiving account doesn't handle any receiving address of this mail,
+		// we simply use the account's default address:
 		if (!receivingAddr.Length())
 			receivingAddr = acc->GetFromAddress();
+	}
+	if (!receivingAddr.Length()) {
+		// the receiving account could not be determined, so we iterate through all
+		// accounts and try to find one that (may) have received this mail.
+		BmAutolock lock( ThePopAccountList->ModelLocker());
+		lock.IsLocked() 						|| BM_THROW_RUNTIME( "CreateReply(): Unable to get lock on PopAccountList");
+		BmModelItemMap::const_iterator iter;
+		for( iter = ThePopAccountList->begin(); 
+			  iter != ThePopAccountList->end() && !receivingAddr.Length(); 
+			  ++iter) {
+			acc = dynamic_cast< BmPopAccount*>( iter->second.Get());
+			if (acc)
+				receivingAddr = Header()->DetermineReceivingAddrFor( acc);
+		}
+	}
+	if (acc && receivingAddr.Length()) {
 		newMail->SetFieldVal( BM_FIELD_FROM, receivingAddr);
 		newMail->SetSignatureByName( acc->SignatureName(), encoding);
 		newMail->AccountName( acc->SMTPAccount());
@@ -389,28 +414,12 @@ BmRef<BmMail> BmMail::CreateReply( bool replyToAll, const BString selectedText) 
 	BString subject = GetFieldVal( BM_FIELD_SUBJECT);
 	newMail->SetFieldVal( BM_FIELD_SUBJECT, CreateReplySubjectFor( subject));
 	newMail->AddPartsFromMail( this, false, BM_IS_REPLY, selectedText);
-/*
-	// copy and quote text-body:
-	BmRef<BmBodyPart> textBody( mBody->EditableTextBody());
-	BString quotedText;
-	int32 newMaxLineLen = QuoteText( (selectedText.Length() || !textBody)
-													? selectedText 
-													: textBody->DecodedData(),
-												quotedText,
-				 								ThePrefs->GetString( "QuotingString"),
-												ThePrefs->GetInt( "MaxLineLen"));
-	BString convertedText;
-	ConvertFromUTF8( encoding, quotedText, convertedText);
-	newMail->Body()->SetEditableText( CreateReplyIntro() << "\n" << convertedText, 
-												 encoding);
-	newMail->BumpRightMargin( newMaxLineLen);
-*/
 	newMail->SetBaseMailInfo( MailRef(), BM_MAIL_STATUS_REPLIED);
 	return newMail;
 }
 
 /*------------------------------------------------------------------------------*\
-	CreateResend()
+	CreateRedirect()
 	-	
 \*------------------------------------------------------------------------------*/
 BmRef<BmMail> BmMail::CreateRedirect() {
@@ -418,7 +427,7 @@ BmRef<BmMail> BmMail::CreateRedirect() {
 	BString msgText( mText);
 	newMail->SetTo( msgText, "");
 	if (newMail->IsRedirect()) {
-		// oops, mail already has been redirected, we clobber the existing Resent-fields,
+		// oops, mail already had been redirected, we clobber the existing Resent-fields,
 		// since STD11 says multiple Resent-fields result in undefined behaviour:
 		newMail->RemoveField( BM_FIELD_RESENT_BCC);
 		newMail->RemoveField( BM_FIELD_RESENT_CC);
@@ -432,6 +441,12 @@ BmRef<BmMail> BmMail::CreateRedirect() {
 	newMail->IsRedirect( true);
 	newMail->SetFieldVal( BM_FIELD_RESENT_DATE, 
 								 TimeToString( time( NULL), "%a, %d %b %Y %H:%M:%S %z"));
+	BmRef<BmPopAccount> accRef = ThePopAccountList->DefaultAccount();
+	if (accRef) {
+		newMail->SetFieldVal( BM_FIELD_RESENT_FROM, accRef->GetFromAddress());
+		newMail->AccountName( accRef->SMTPAccount());
+		newMail->SetSignatureByName( accRef->SignatureName(), DefaultEncoding());
+	}
 	newMail->SetBaseMailInfo( MailRef(), BM_MAIL_STATUS_REDIRECTED);
 	return newMail;
 }
@@ -483,9 +498,15 @@ BString BmMail::CreateReplyIntro() {
 							  Regexx::nocase|Regexx::global|Regexx::noatom);
 	intro = rx.replace( intro, "%S", mMailRef->Subject(), 
 							  Regexx::nocase|Regexx::global|Regexx::noatom);
-	BmAddress fromAddr = Header()->DetermineOriginator();
-	intro = rx.replace( intro, "%F", 
-							  fromAddr.HasPhrase() ? fromAddr.Phrase() : fromAddr.AddrSpec(), 
+	BmAddressList fromAddr = Header()->DetermineOriginator();
+	BString fromNicks;
+	BmAddrList::const_iterator pos;
+	for( pos=fromAddr.begin(); pos!=fromAddr.end(); ++pos) {
+		if (pos != fromAddr.begin())
+			fromNicks << ", ";
+		fromNicks << (pos->HasPhrase() ? pos->Phrase() : pos->AddrSpec());
+	}
+	intro = rx.replace( intro, "%F", fromNicks, 
 							  Regexx::nocase|Regexx::global|Regexx::noatom);
 	BString convertedIntro;
 	ConvertFromUTF8( DefaultEncoding(), intro, convertedIntro);
@@ -507,9 +528,15 @@ BString BmMail::CreateForwardIntro() {
 							  Regexx::nocase|Regexx::global|Regexx::noatom);
 	intro = rx.replace( intro, "%S", mMailRef->Subject(), 
 							  Regexx::nocase|Regexx::global|Regexx::noatom);
-	BmAddress fromAddr = Header()->DetermineOriginator();
-	intro = rx.replace( intro, "%F", 
-							  fromAddr.HasPhrase() ? fromAddr.Phrase() : fromAddr.AddrSpec(), 
+	BmAddressList fromAddr = Header()->DetermineOriginator();
+	BString fromNicks;
+	BmAddrList::const_iterator pos;
+	for( pos=fromAddr.begin(); pos!=fromAddr.end(); ++pos) {
+		if (pos != fromAddr.begin())
+			fromNicks << ", ";
+		fromNicks << (pos->HasPhrase() ? pos->Phrase() : pos->AddrSpec());
+	}
+	intro = rx.replace( intro, "%F", fromNicks, 
 							  Regexx::nocase|Regexx::global|Regexx::noatom);
 	BString convertedIntro;
 	ConvertFromUTF8( DefaultEncoding(), intro, convertedIntro);
@@ -774,7 +801,7 @@ BString BmMail::CreateBasicFilename() {
 	int32 nl=name.Length();
 	if (nl) {
 		// we remove some illegal characters from filename, if present:
-		char* buf = name.LockBuffer( nl);
+		char* buf = name.LockBuffer( nl+1);
 		unsigned char c;
 		BString illegalChars = "/`´:\"\\";
 		for( int i=0; i<nl; ++i) {
@@ -827,8 +854,12 @@ bool BmMail::StartJob() {
 			BM_LOG2( BM_LogMailTracking, BString("Node is locked for mail-file <") << eref.name << ">. We take a nap and try again...");
 			snooze( 200*1000);
 		}
-		if (err != B_OK)
-			throw BM_runtime_error(BString("Could not open mail-file <") << eref.name << "> \n\nError:" << strerror(err));
+		if (err != B_OK) {
+			// mail-file doesn't exist anymore, most probably because the user has deleted it
+			// (in a multi-delete operation), we now no longer throw, but return quietly
+			return false;
+//			throw BM_runtime_error(BString("Could not open mail-file <") << eref.name << "> \n\nError:" << strerror(err));
+		}
 		
 		// ...ok, mail-file found, we fetch the mail from it:
 		BString mailText;

@@ -482,10 +482,18 @@ void BmBodyPartView::ItemInvoked( int32 index) {
 				}
 			}
 			if (doIt) {
-				status_t res = be_roster->Launch( &eref);
-				if (res != B_OK && res != B_ALREADY_RUNNING) {
-					ShowAlert( BString("Sorry, could not launch application for this attachment (unknown mimetype perhaps?)\n\nError: ") << strerror(res));
-				}
+				BEntry entry( &eref);
+				BPath path;
+				entry.GetPath( &path);
+				status_t res=entry.InitCheck();
+				if (res==B_OK && path.InitCheck()==B_OK && path.Path()) {
+					update_mime_info( path.Path(), false, true, false);
+					res = be_roster->Launch( &eref);
+					if (res != B_OK && res != B_ALREADY_RUNNING) {
+						ShowAlert( BString("Sorry, could not launch application for this attachment (unknown mimetype perhaps?)\n\nError: ") << strerror(res));
+					}
+				} else
+					ShowAlert( BString("Sorry, could not open this attachment.\n\nError: ") << strerror(res));
 			}
 		}
 		bodyPartItem->Highlight( false);

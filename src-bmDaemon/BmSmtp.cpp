@@ -335,7 +335,7 @@ void BmSmtp::Auth() {
 				BString base64;
 				cmd = BString("_") << mSmtpAccount->Username() << "_" << mSmtpAccount->Password();
 				int32 len=cmd.Length();
-				char* buf = cmd.LockBuffer( len);
+				char* buf = cmd.LockBuffer( len+1);
 				buf[0] = '\0';
 				buf[mSmtpAccount->Username().Length()+1] = '\0';
 				cmd.UnlockBuffer( len);
@@ -572,7 +572,7 @@ bool BmSmtp::GetAnswer() {
 
 	BM_LOG3( BM_LogSmtp, BString("bufSize:") << bufSize);
 	mAnswer.SetTo( '\0', bufSize);		// preallocate the bufsize we need
-	buffer = mAnswer.LockBuffer( bufSize);
+	buffer = mAnswer.LockBuffer( bufSize+1);
 	try {
 		do {
 			int32 bufFree = bufSize - offset;
@@ -580,7 +580,7 @@ bool BmSmtp::GetAnswer() {
 				// bufsize is not sufficient, we enlarge the buffer:
 				bufSize *= 2;
 				mAnswer.UnlockBuffer( offset);
-				buffer = mAnswer.LockBuffer( bufSize);
+				buffer = mAnswer.LockBuffer( bufSize+1);
 				bufFree = bufSize - offset;
 				BM_LOG2( BM_LogSmtp, BString("bufSize enlarged to:") << bufSize);
 			}

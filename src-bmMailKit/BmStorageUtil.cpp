@@ -95,6 +95,17 @@ bool CheckMimeType( const entry_ref* eref, const char* type) {
 		BNodeInfo nodeInfo( &node);
 		if (nodeInfo.InitCheck() == B_OK) {
 			char mimetype[B_MIME_TYPE_LENGTH+1];
+			if (nodeInfo.GetType( mimetype)!=B_OK) {
+				// no mimetype info yet, we ask BeOS to determine mimetype and then try again:
+				BEntry entry( eref);
+				BPath path;
+				entry.GetPath( &path);
+				status_t res=entry.InitCheck();
+				if (res==B_OK && path.InitCheck()==B_OK && path.Path()) {
+					update_mime_info( path.Path(), false, true, false);
+					nodeInfo.GetType( mimetype);
+				}
+			}
 			nodeInfo.GetType( mimetype);
 			return strcasecmp( type, mimetype) == 0;
 		}

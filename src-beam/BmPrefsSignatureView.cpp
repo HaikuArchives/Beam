@@ -219,7 +219,7 @@ BmPrefsSignatureView::BmPrefsSignatureView()
 {
 	MView* view = 
 		new VGroup(
-			CreateSigListView( minimax(500,60,1E5,1E5), 500, 150),
+			CreateSigListView( minimax(400,60,1E5,1E5), 400, 150),
 			new HGroup(
 				mAddButton = new MButton("Add Signature", new BMessage(BM_ADD_SIGNATURE), this),
 				mRemoveButton = new MButton("Remove Signature", new BMessage( BM_REMOVE_SIGNATURE), this),
