@@ -1,7 +1,514 @@
 change-history of Beam:
 		$Id$
 
+*******************************************************************************
+[Beam test-03-01-27]:
+*******************************************************************************
+< 2003-01-27: commit >
+
+CLVColumn, CLVEasyItem:
+	-	removed support for string-truncation that is not used by Beam
+		but that used to eat a considerable amount of memory when 
+		browsing large mail-folders
+
+BmPrefsGeneralView:
+	-	removed default-refview-layout and useStripedListView, since
+		they did not really make sense
+
+BmMailRef, BmMailRefList:
+	-	removed dummy-items that used to be needed for the 
+		default-layout view provided in prefs (which is now gone)
+	-	changed constructors to take 'const BmString&'-parameters 
+		instead of BmString, avoiding the copying overhead
+
+BmBodyPartList, BmBodyPartView, BmDataModel, BmMailFolder, 
+BmMailFolderView, BmMailRefView, BmPrefsRecvMailView, 
+BmPrefsSendMailView, BmPrefsSignatureView:
+	-	changed constructors to take 'const BmString&'-parameters 
+		instead of BmString, avoiding the copying overhead
+
+BmListController:
+	-	optimised memory-footprint by providing the item-contents
+		through GetUserText() instead of statically copying them
+		into the list-view
+	-	changed constructors to take 'const BmString&'-parameters 
+		instead of BmString, avoiding the copying overhead
+
+BmMail:
+	-	changed iter++ to ++iter, just to be consistent (and because
+		pre-increment is better for objects than post-increment)
+
+BmMainWindow:
+	-	fiddled with default-sizes
+
+libSieve:
+	-	fixed warnings during compilation
+
+-------------------------------------------------------------------------------
+< 2003-01-22: commit >
+
+folder build_ppc/release
+	-	added project-files for PowerPC-version
+
+many files:
+	-	patched to compile & run under PowerPC
+
+-------------------------------------------------------------------------------
+< 2003-01-19: commit >
+
+Beam_in_Parts*.proj:
+	-	added BmNetJobModel.*
+
+BmBodyPartList:
+	-	changed first parameter of BmMemFilter-calls to be a pointer 
+		instead of a reference
+
+BmEncoding:
+	-	removed BmDotstuff-(de/en)coder-classes, they now live in
+		BmNetJobModel
+
+BmJobStatusWin:
+	-	QuitRequested() now takes a little snooze() in order to give 
+		running jobs a chance to stop
+
+BmLogHandler:
+	-	corrected wrong number of spaces in linebreak-reformatting
+
+BmMailView:
+	-	corrected automatic cursor-positioning when the selected signature
+		has changed
+
+BmMemIO:
+	-	BmStringIBuf now supports multiple buffers, i.e. you can add
+		any number of input buffers to a BmStringIBuf which will pass
+		them on to its output as if it was only one single buffer
+
+BmNetJobModel:
+	-	added this, which contains the following classes:
+		+	BmNetJobModel, an abstraction of job-models that run over
+			a network (i.e. send/receive data)
+		+	BmNetIBuf, a BmMemIBuf-subclass that reads from a socket
+		+	BmNetOBuf, a BmMemOBuf-subclass that writes to a socket
+		+	BmDotStuffEncoder & BmDotStuffDecoder, that implement
+			the dot-stuffing algorithm used by several mail-protocols
+		+	BmStatusFilter, an abstract class for fetching data from
+			a server and separate the answer into a status-part and an
+			optional part containing additional data
+
+BmPopAccount:
+	-	made GetPOPAddress() deal properly with NULL-pointers
+
+BmPopper:
+	-	reworked network-code to make use of BmNetJobModel base-class
+		(and other classes from BmNetJobModel)
+	-	added BmPopStatusFilter, a BmMemFilter that knows how to separate
+		POP3-status messages from additional answer-data and is able to
+		interprete the status-messages
+
+BmSmtpAccount:
+	-	made GetSMTPAddress() deal properly with NULL-pointers
+
+BmSmtp:
+	-	reworked network-code to make use of BmNetJobModel base-class
+		(and other classes from BmNetJobModel)
+	-	added BmSmtpStatusFilter, a BmMemFilter that knows how to separate
+		SMTP-status messages from additional answer-data and is able to
+		interprete the status-messages
+
+BmWindow, BmMainWindow, BmMailEditWin, BmMailViewWin:
+	-	fixed problem with CUT/COPY/UNDO-messages being sent in an
+		infinite loop if the focus-view does not understand them
+	-	moved handling of CUT/COPY/UNDO-messages into BmWindow
+
+-------------------------------------------------------------------------------
+< 2003-01-14: commit >
+
+BmBodyPartList:
+	-	fixed encoding/conversion being the wrong way round in
+		ConstructBodyForSending(). We have to convert first, then
+		encode...
+
+BmEncoding:
+	-	NeedsEncoding now explicitly takes an utf8-string (it
+		actually doesn't matter, but I wanted to clear things up).
+
+BmMail, BmMailEditWin:
+	-	ConstructBodyForSending now gets the editedText as UTF8-
+		string as opposed to a string in the mail's native charset
+
+BmPeople:
+	-	fixed bug where persons with empty emails would be added to
+		their respective groups, resulting in a crash when actually
+		trying to display this group's list of mail-addresses
+
+-------------------------------------------------------------------------------
+< 2003-01-12: commit >
+
+BmStorageUtil:
+	-	fixed bug in BmReadStringAttr that would read the terminating
+		'\0' into the string, too.
+
+-------------------------------------------------------------------------------
+< 2003-01-10: commit >
+
+*.proj:
+	-	added missing BmString-support to bone-/release-projects
+
+BmEncoding:
+	-	implemented a redesigned decoding/encoding scheme
+		based on BmMemFilter derivatives, quoted-printable and
+		base64 are done.
+
+< 2003-01-01: commit >
+
+BmBodyPartList, BmMail, BmMeilHeader, BmMailView:
+	-	reimplemented buffer handling to use BmMemFilters and/or
+		BmMemIO-classes, resulting in much less memory being used 
+		when handling large mails
+
+BmEncoding:
+	-	finished the redesigned decoding/encoding scheme
+		based on BmMemFilter derivatives
+	-	re-implemented the conversion and en/de-coding functions
+		to use BmMemfilters
+	-	optimzed quoted-printable and esp. base64-code
+
+BmMailHeaderView:
+	-	added timezone to string when displaying times converted to
+		localtime
+
+BmMailRef:
+	-	added missing support for swatch-time when reading attributes
+		directly from file (as opposed to reading from archive).
+
+BmMemIO:
+	-	finsished implementation of memory-/string-IO classes
+
+BmPopper:
+	-	enlarged network buffer-sizes to 64KB
+	-	switch from class-constant to Prefs-field "NetReceiveBufferSize"
+
+BmPrefs:
+	-	added field "NetReceiveBufferSize"
+
+BmSmtp:
+	-	enlarged network buffer-sizes to 64KB
+	-	reimplemented buffer handling to use BmMemFilters, resulting
+		in a much less memory being used when handling large mails
+
+BmString:
+	-	changed RemoveAll()-functions to use _ReplaceAll()
+
+BmUtil:
+	-	fixed local/utc-confusion in TimeToSwatchString()
+
+base64:
+	-	removed, functionality has been moved to BmEncoding
+
+-------------------------------------------------------------------------------
+< 2002-12-28: commit >
+
+BmApp, BmBasics, BmBusyView, BmController, BmDataModel, BmEncoding,
+BmGutUtil, BmJobStatusWin, BmListController, BmLogHandler, BmMailFolder,
+BmMailFolderView, BmMailMover, BmMailRef, BmMailRefList, BmMailView,
+BmMailViewWin, BmMainWindow, BmNetUtil, BmPeople, BmPopAccount,
+BmPopper, BmPrefs*View, BmPrefsWin, BmRefManager, BmResources,
+BmRulerView, BmSignature, BmSmtpAccount, BmToolbarButton, BmWindow,
+BmDeskbarView, regexx, split, WrappingTextView:
+	-	switched from BString to BmString
+
+BmBodyPartList:
+	-	switched from BString to BmString
+	-	we now decode/convert bodyparts only at the point when this
+		data is actually needed (lazy evaluation), resulting in a
+		better performance for the usual case where only an overview
+		of the bodypart is being displayed, but no data accessed.
+		N.B.: For best performance, we'd have to resort to displaying 
+		the length of each bodypart in its encoded form (set the Prefs-
+		value "ShowDecodedLength" to false for that), but 
+		since this might confuse our users, we better stick with 
+		showing the correct, decoded values.
+	-	fixed bug in multipart-parsing that caused any multipart
+		to actually handle the text contained within its boundaries
+		itself, in effect resulting in this text being added to a mail
+		twice during save, first by the multipart (incorrect) and the 
+		through its children (correct).
+
+BmBodyPartView:
+	-	switched from BString to BmString
+	-	added support for prefs value "ShowDecodedSizeOfAttachments"
+
+BmMail:
+	-	switched from BString to BmString
+	-	reactivated Mail-proxy, so that a mail exists only once in
+		Beam, no matter how often it is being used.
+
+BmMailEditWin:
+	-	switched from BString to BmString
+	-	fixed bug that caused Beam to ignore any changes within textviews
+		except the subject-field.
+
+BmMailFolderList:
+	-	switched from BString to BmString
+	-	improved performance of new-mail-detection on startup by
+		freezing the list during the query, then thawing it and update
+		the appropriate mail-folders manually, afterwards.
+
+BmMailHeader:
+	-	fixed bug in BmAddressList::SplitIntoAddresses() which caused
+		addr-lists that contained two phraseless route-addresses 
+		enclosed by <> to be garbled. The following address is an
+		example: 
+			<test1@xxx.de>, <test2@yyy.com>
+		came out as:
+			test1@xxx.de>, <test2@yyy.com
+	-	switched from BString to BmString
+
+BmMailHeaderView:
+	-	switched from BString to BmString
+	-	added support for pref-value "TimeModeInHeaderView", which can
+		be used to select between three time-modes:
+		   + native (showing the date as formatted within the mail)
+		   + local (showing date converted to localtime)
+		   + swatch (showing date converted to swatch-internet-time)
+
+BmMailRefView:
+	-	switched from BString to BmString
+	-	added support for showing timestamps as swatch-internet-time
+
+BmPrefs:
+	-	switched from BString to BmString
+	-	added fields: 
+		+ "TimeModeInHeaderView"
+		+ "UseSwatchTimeInRefView"
+
+BmSmtp:
+	-	switched from BString to BmString
+	-	optimized handling of sending large mails to several Bcc-
+		recipients. The mailtext is now prepared once (in advance)
+		instead of being prepared for each and every recipient.
+
+BmStorageUtil:
+	-	switched from BString to BmString
+	-	added BmReadStringAttr()
+
+BmString:
+	-	added to project, codebase is from OpenBeOS and has been 
+		renamed and modified for Beam's needs.
+
+BmUtil:
+	-	switched from BString to BmString
+	-	as a result of the switch to BmString, several util-methods
+		that used to reside in BmUtil have been integrated into BmString.
+
+-------------------------------------------------------------------------------
+< 2002-12-18: commit (new CVS-folder layout) >
+
+all:
+	-	reworked CVS-folder layout to be easier to understand and
+		work with
+
+BmApp:
+	-	in RefsReceived() we traverse links now
+
+BmBodyPartList:
+	-	fixed bug with initializers relying on declaration order
+		(which in fact was the other way around)
+	-	reworked & simplified multipart-handling (and introduced 
+		PruneUnneededMultiParts() for that purpose)
+
+BmBodyPartView:
+	-	we avoid complaining about mimetype-mismatches if the real
+		mimetype is (or rather, BeOS believes it to be) text/plain
+
+BmMail:
+	-	reworked things so that ConstructBodyForSending() does not
+		require reinitialization of mail. This way we avoid reparsing
+		the mail's contents during a save
+
+BmRulerView:
+	-	fixed initializers relying on declaration order
+
+BmStorageUtil:
+	-	in DetermineMimeType() we traverse links now
+
+-------------------------------------------------------------------------------
+< 2002-12-16: commit >
+
+BmBodyPartList:
+	-	when creating a bodypart from a given file, we no longer
+		doublecheck the files mimetype, since that exposes the
+		problem of the BeOS text/x-email mimetype sniffer-rule not
+		correctly identifying outgoing emails as such (it thinks
+		they are text/plain).
+		This fix complies with the following concept about data:
+		trust local info, but do not trust remote info.
+
+BmBodyPartView:
+	-	changed mimetype-check of attachments in such a way that
+		Beam now offers to open the attachment with the real or
+		the declared mimetype, thus allowing for easier handling of
+		cases where BeOS' idea of a files mimetype is wrong.
+
+BmMail:
+	-	always display correct originator in reply-intro, instead
+		of (under some circumstances) showing the list address
+
+BmMailEditWin:
+	-	the window-title now reflects the mail's current subject
+
+BmPeople:
+	-	fixed problem of duplicate mails being shown
+	-	added 'All People'-submenu
+
+BmStorageUtil:
+	-	minor cleanup
+
+-------------------------------------------------------------------------------
+< 2002-12-12: commit>
+
+BmApp:
+	-	fixed bug when replying to several mails: addresses 
+		with different phrases but identical addr-specs are now
+		handled as one single address
+
+BmBodyPartList:
+	-	redesigned and reactivated support for encoding-selection
+		by user
+
+BmBodyPartView:
+	-	now logs into MailParser.log
+
+BmLogHandler:
+	-	now show correct micro-seconds when logging
+
+BmMail:
+	-	added DetermineReplyAddress(), a central place where
+		the different reply-modes are handled
+		
+BmMailHeader:
+	-	added BmAddressList::AddrSpecsAsString(), which extracts
+		only the addr-specs from an addresslist
+
+BmMailEditWin:
+	-	changed people-selection-code to provide menus for
+		different groups of people
+
+BmMailView:
+	-	now logs into MailParser.log
+	-	redesigned and reactivated support for encoding-selection
+		by user
+
+BmPeople:
+	-	completed implementation of people-selection
+
+libregexx/split:
+	-	added split() and splitex() functions that return the
+		resulting vector through passed-in references (faster)
+	-	fixed incorrect handling of last match in split()/splitex()
+
+-------------------------------------------------------------------------------
+< 2002-12-10: commit>
+
+Beam_in_Parts_*bone.proj, Beam_in_Parts_release.proj:
+	-	added missing BmPeople.*
+
+-------------------------------------------------------------------------------
+< 2002-12-10: commit>
+
+BmListViewController:
+	-	added support for automatic scrolling during drag'n'drop
+
+BmMail:
+	-	added support for very long words (urls) being wrapped when 
+		they should not be
+
+BmMailView:
+	-	added support for very long words (urls) being wrapped when 
+		they should not be
+
+BmUtil:
+	-	ConvertTabsToSpaces(): made tabwidth configurable
+	-	WordWrap() now cares for words that exceed the maximum
+		line length (like URLs) to not be wrapped
+
+ColumnListView:
+	-	small cleanups
+
+WrappingTextView:
+	-	added support for moving cursor wordwise when pressing
+		ALT/CONTROL and cursor-keys
+
+-------------------------------------------------------------------------------
+< 2002-12-08: commit>
+
+BmApp:
+	-	mailto: now supports arbitrary parameters (not only subject)
+	-	added support for reply_list and reply_originator
+
+BmBodyPartList:
+	-	fixed bug with newlines not being handled correctly during
+		ContentField-parsing.
+		
+BmMail:
+	-	added two new reply-types, list and originator
+	-	made smart reply-type detection as the default reply-type,
+		where Beam automatically tries to determine wether to reply
+		to the list or to the person
+
+BmMailEditWin:
+	-	added variations to send-button
+	-	fixed bug with bcc-field not being visible (but latch indicating
+		that it should be)
+
+BmMailFolderView:
+	-	repaired non-working handling of latch by key-press
+
+BmMailHeader:
+	-	added DetermineListAddress()
+
+BmMailRefView:
+	-	added reply_list and reply_originator to menu
+
+BmMailViewWin:
+	-	added variations to reply- and forward-buttons
+
+BmMainWindow:
+	-	added variations to reply- and forward-buttons
+
+BmPrefs:
+	-	switched DefaultForwardType from int- to string-type
+
+BmPrefsMailConstrView:
+	-	switched DefaultForwardType from int- to string-type
+
+BmToolbarButton:
+	-	added support for action-variations (latch)
+
+libsieve:
+	-	upgraded to version 2.1.3
+
+-------------------------------------------------------------------------------
+< 2002-12-05: commit >
+
+BmApp:
+	-	added creation/deletion of BmPeopleList
+
+BmMailEditWin:
+	-	added support for selecting people in to/cc/bcc-fields, 
+	-	original patch has been submitted by Rainer Riedl, thanks!
+
+BmPeople:
+	-	created, contains BmPeopleList
+
+BmUtil:
+	-	added GenerateSortkeyFor()	
+
+
+
+*******************************************************************************
 [Beam v0.914, 2002-11-29]:
+*******************************************************************************
 	BmApplication:
 		-	mark mails as read before trashing them in order to avoid confusing
 			the new-mail counter.
