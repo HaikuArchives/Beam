@@ -831,9 +831,8 @@ void BmMailHeader::ParseHeader( const BmString &header) {
 		headerField.CopyInto( fieldBody, pos+1, headerField.Length());
 
 		// unfold the field-body and remove leading and trailing whitespace:
-		fieldBody = rxUnfold.replace( fieldBody, "\\r\\n\\s*", " ", Regexx::newline | Regexx::global);
-		fieldBody = rxUnfold.replace( fieldBody, "^\\s+", "", Regexx::global);
-		fieldBody = rxUnfold.replace( fieldBody, "\\s+$", "", Regexx::global);
+		fieldBody = rxUnfold.replace( fieldBody, "(\\s*\\r\\n)+\\s*", " ", Regexx::global);
+		fieldBody.Trim();
 
 		// insert pair into header-map:
 		AddFieldVal( fieldName, ConvertHeaderPartToUTF8( fieldBody, BmEncoding::DefaultCharset));
