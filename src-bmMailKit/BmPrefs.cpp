@@ -234,19 +234,19 @@ void BmPrefs::ResetToDefault() {
 void BmPrefs::InitDefaults() {
 	mDefaultsMsg.MakeEmpty();
 	mDefaultsMsg.AddInt16( MSG_VERSION, nPrefsVersion);
-	int32 loglevels = BM_LOGLVL2(BM_LogPop)
-							+ BM_LOGLVL2(BM_LogJobWin) 
-							+ BM_LOGLVL2(BM_LogMailParse) 
-							+ BM_LOGLVL2(BM_LogUtil) 
+	int32 loglevels = BM_LOGLVL1(BM_LogPop)
+							+ BM_LOGLVL0(BM_LogJobWin) 
+							+ BM_LOGLVL0(BM_LogMailParse) 
+							+ BM_LOGLVL0(BM_LogUtil) 
 							+ BM_LOGLVL0(BM_LogMailTracking)
-							+ BM_LOGLVL2(BM_LogFolderView)
+							+ BM_LOGLVL0(BM_LogFolderView)
 							+ BM_LOGLVL0(BM_LogRefView)
 							+ BM_LOGLVL0(BM_LogMainWindow)
 							+ BM_LOGLVL0(BM_LogModelController)
 							+ BM_LOGLVL0(BM_LogMailEditWin)
-							+ BM_LOGLVL2(BM_LogSmtp)
-							+ BM_LOGLVL2(BM_LogPrefsWin)
-							+ BM_LOGLVL2(BM_LogFilter);
+							+ BM_LOGLVL1(BM_LogSmtp)
+							+ BM_LOGLVL0(BM_LogPrefsWin)
+							+ BM_LOGLVL1(BM_LogFilter);
 
 	mDefaultsMsg.AddBool( "AutoCheckOnlyIfPPPRunning", true);
 	mDefaultsMsg.AddBool( "Allow8BitMime", false);
