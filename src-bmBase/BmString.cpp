@@ -138,7 +138,8 @@ BmString::CountChars() const
 BmString&
 BmString::operator=(const BmString &string)
 {
-	_DoAssign(string.String(), string.Length());
+	if (&string != this)
+		_DoAssign(string.String(), string.Length());
 	return *this;
 }
 
@@ -181,7 +182,8 @@ BmString::SetTo(const char *str, int32 length)
 BmString&
 BmString::SetTo(const BmString &from)
 {
-	_DoAssign(from.String(), from.Length());
+	if (&from != this)
+		_DoAssign(from.String(), from.Length());
 	return *this;
 }
 
@@ -189,6 +191,9 @@ BmString::SetTo(const BmString &from)
 BmString&
 BmString::Adopt(BmString &from)
 {
+	if (&from == this) // Avoid auto-adoption
+		return *this;
+		
 	if (_privateData)
 		free(_privateData - sizeof(int32));
 
@@ -202,7 +207,8 @@ BmString::Adopt(BmString &from)
 BmString&
 BmString::SetTo(const BmString &string, int32 length)
 {
-	_DoAssign(string.String(), min(length, string.Length()));
+	if (&string != this) // Avoid auto-assignment
+		_DoAssign(string.String(), min(length, string.Length()));
 	return *this;
 }
 
@@ -210,6 +216,9 @@ BmString::SetTo(const BmString &string, int32 length)
 BmString&
 BmString::Adopt(BmString &from, int32 length)
 {
+	if (&from == this) // Avoid auto-adoption
+		return *this;
+		
 	if (_privateData)
 		free(_privateData - sizeof(int32));
 
@@ -226,8 +235,8 @@ BmString::Adopt(BmString &from, int32 length)
 BmString&
 BmString::SetTo(char c, int32 count)
 {
-	_GrowBy(count - Length());
-	memset(_privateData, c, count);
+	if (_GrowBy(count - Length()))
+		memset(_privateData, c, count);
 	
 	return *this;	
 }
@@ -296,8 +305,8 @@ BmString&
 BmString::Append(char c, int32 count)
 {
 	int32 len = Length();
-	_GrowBy(count);
-	memset(_privateData + len, c, count);
+	if (_GrowBy(count))
+		memset(_privateData + len, c, count);
 
 	return *this;
 }
@@ -347,8 +356,8 @@ BmString::Prepend(const BmString &string, int32 len)
 BmString&
 BmString::Prepend(char c, int32 count)
 {
-	_OpenAtBy(0, count);
-	memset(_privateData, c, count);
+	if (_OpenAtBy(0, count))
+		memset(_privateData, c, count);
 	
 	return *this;
 }
@@ -364,8 +373,8 @@ BmString::Insert(const char *str, int32 pos)
 			pos = 0;
 		}
 		int32 len = (int32)strlen(str);
-		_privateData = _OpenAtBy(pos, len);
-		memcpy(_privateData + pos, str, len);
+		if (_OpenAtBy(pos, len))
+			memcpy(_privateData + pos, str, len);
 	}
 	return *this;
 }
@@ -383,8 +392,8 @@ BmString::Insert(const char *str, int32 length, int32 pos)
 		while( len<length && str[len])
 			len++;
 		len = min(len, length);
-		_privateData = _OpenAtBy(pos, len);
-		memcpy(_privateData + pos, str, len);
+		if (_OpenAtBy(pos, len))
+			memcpy(_privateData + pos, str, len);
 	}
 	return *this;
 }
@@ -398,8 +407,8 @@ BmString::Insert(const char *str, int32 fromOffset, int32 length, int32 pos)
 		while( len<length && str[fromOffset+len])
 			len++;
 		len = min(len, length);
-		_privateData = _OpenAtBy(pos, len);
-		memcpy(_privateData + pos, str + fromOffset, len);
+		if (_OpenAtBy(pos, len))
+			memcpy(_privateData + pos, str + fromOffset, len);
 	}
 	return *this;
 }
@@ -435,8 +444,8 @@ BmString::Insert(const BmString &string, int32 fromOffset, int32 length, int32 p
 BmString&
 BmString::Insert(char c, int32 count, int32 pos)
 {
-	_OpenAtBy(pos, count);
-	memset(_privateData + pos, c, count);
+	if (_OpenAtBy(pos, count))
+		memset(_privateData + pos, c, count);
 	
 	return *this;
 }
@@ -453,7 +462,7 @@ BmString::Truncate(int32 newLength, bool lazy)
 		if (lazy)
 			_SetLength( newLength);
 		else
-			_privateData = _GrowBy(newLength - Length()); //Negative	
+			_GrowBy(newLength - Length()); //Negative	
 		_privateData[Length()] = '\0';
 	}
 	return *this;
@@ -474,7 +483,7 @@ BmString::RemoveFirst(const BmString &string)
 	int32 pos = _ShortFindAfter(string.String(), string.Length());
 	
 	if (pos >= 0)
-		_privateData = _ShrinkAtBy(pos, string.Length());
+		_ShrinkAtBy(pos, string.Length());
 	
 	return *this;
 }
@@ -486,7 +495,7 @@ BmString::RemoveLast(const BmString &string)
 	int32 pos = _FindBefore(string.String(), Length(), string.Length());
 	
 	if (pos >= 0)
-		_privateData = _ShrinkAtBy(pos, string.Length());
+		_ShrinkAtBy(pos, string.Length());
 		
 	return *this;
 }
@@ -560,14 +569,20 @@ BmString::RemoveSet(const char *setOfCharsToRemove)
 BmString&
 BmString::MoveInto(BmString &into, int32 from, int32 length)
 {
-	int32 len = Length() - from;
+	// [zooey]: we differ from R5-/OBOS-BString here such that we do
+	//          move as many chars as possible if the caller has specified
+	//			   a length that exceeds this string. 
+	//				BString does not change this string in that case, but *does*
+	//				copy the characters to 'into' (tsk!).
+
+	if (&into == this)
+		return *this;
 	
+	int32 len = Length() - from;
 	len = min(len, length);
 	
-	into.SetTo(String() + from, length);
-	
-	if (from + length <= Length())
-		_privateData = _ShrinkAtBy(from, len);
+	into.SetTo(String() + from, len);
+	_ShrinkAtBy(from, len);
 
 	return *this;
 }
@@ -576,11 +591,17 @@ BmString::MoveInto(BmString &into, int32 from, int32 length)
 void
 BmString::MoveInto(char *into, int32 from, int32 length)
 {
+	// [zooey]: we differ from R5-/OBOS-BString here such that we do
+	//          move as many chars as possible if the caller has specified
+	//			   a length that exceeds this string. 
+	//				BString does not change this string in that case, but *does*
+	//				copy the characters to 'into' (tsk!).
+
 	if (into) {
-		memcpy(into, String() + from, length);
-		if (from + length <= Length())
-			_privateData = _ShrinkAtBy(from, length);
-		into[length] = '\0';
+		int32 len = Length() - from;
+		len = min(len, length);
+		memcpy(into, String() + from, len);
+		_ShrinkAtBy(from, len);
 	}		 
 }
 
@@ -1126,8 +1147,8 @@ BmString::ReplaceSet(const char *setOfChars, const char *with)
 		if (offset >= Length())
 			break;
 		
-		_OpenAtBy(offset, withLen - 1);
-		memcpy(_privateData + offset, with, withLen);
+		if (_OpenAtBy(offset, withLen - 1))
+			memcpy(_privateData + offset, with, withLen);
 		offset += withLen;
 	}
 	
@@ -1274,7 +1295,8 @@ BmString::CharacterEscape(const char *setOfCharsToEscape, char escapeWith)
 		offset += pos;
 		if (offset >= Length())
 			break;
-		_OpenAtBy(offset, 1);
+		if (!_OpenAtBy(offset, 1))
+			break;
 		memset(_privateData + offset, escapeWith, 1);
 		offset += 2;
 	}
@@ -1418,7 +1440,8 @@ BmString::_Init(const char* str, int32 len)
 	ASSERT(_privateData == NULL);
 
 	_privateData = (char*)malloc(len + sizeof(int32) + 1);
-	assert( _privateData);
+	if (!_privateData)
+		return;
 	_privateData += sizeof(int32);
 	
 	memcpy(_privateData, str, len);
@@ -1434,9 +1457,10 @@ BmString::_DoAssign(const char *str, int32 len)
 	ASSERT(str != NULL);	
 	int32 curLen = Length();
 	
-	if (len != curLen)
-		_privateData = _GrowBy(len - curLen);
-	
+	if (len != curLen) {
+		if (!_GrowBy(len - curLen))
+			return;
+	}	
 	memcpy(_privateData, str, len);
 }
 
@@ -1447,8 +1471,8 @@ BmString::_DoAppend(const char *str, int32 len)
 	ASSERT(str != NULL);
 	
 	int32 length = Length();
-	_privateData = _GrowBy(len);
-	memcpy(_privateData + length, str, len);
+	if (_GrowBy(len))
+		memcpy(_privateData + length, str, len);
 }
 
 
@@ -1466,12 +1490,11 @@ BmString::_GrowBy(int32 size)
 	_privateData = (char*)realloc(_privateData, 
 											curLen + size + sizeof(int32) + 1);
 		
-	assert( _privateData);
-
-	_privateData += sizeof(int32);
-	
-	_SetLength(curLen + size);	
-	_privateData[Length()] = '\0';
+	if (_privateData) {
+		_privateData += sizeof(int32);
+		_SetLength(curLen + size);	
+		_privateData[Length()] = '\0';
+	}
 	
 	return _privateData;
 }
@@ -1488,15 +1511,15 @@ BmString::_OpenAtBy(int32 offset, int32 length)
 		_privateData -= sizeof(int32);
 	
 	_privateData = (char*)realloc(_privateData , oldLength + length + sizeof(int32) + 1);
-	assert( _privateData);
-	_privateData += sizeof(int32);
+	if (_privateData) {
+		_privateData += sizeof(int32);
 	
-	memmove(_privateData + offset + length, _privateData + offset,
-			oldLength - offset);
+		memmove(_privateData + offset + length, _privateData + offset,
+				  oldLength - offset);
 	
-	_SetLength(oldLength + length);
-	_privateData[Length()] = '\0';
-	
+		_SetLength(oldLength + length);
+		_privateData[Length()] = '\0';
+	}	
 	return _privateData;	
 }
 
@@ -1514,12 +1537,11 @@ BmString::_ShrinkAtBy(int32 offset, int32 length)
 	
 	_privateData -= sizeof(int32);	
 	_privateData = (char*)realloc(_privateData, oldLength - length + sizeof(int32) + 1);
-	assert( _privateData);
-	_privateData += sizeof(int32);
-	
-	_SetLength(oldLength - length);	
-	_privateData[Length()] = '\0';
-	
+	if (_privateData) {
+		_privateData += sizeof(int32);
+		_SetLength(oldLength - length);	
+		_privateData[Length()] = '\0';
+	}	
 	return _privateData;
 }
 
@@ -1528,8 +1550,8 @@ void
 BmString::_DoPrepend(const char *str, int32 count)
 {
 	ASSERT(str != NULL);
-	_privateData = _OpenAtBy(0, count);
-	memcpy(_privateData, str, count);
+	if (_OpenAtBy(0, count))
+		memcpy(_privateData, str, count);
 }
 
 
