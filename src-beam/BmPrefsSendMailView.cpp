@@ -108,8 +108,7 @@ void BmSendAccItem::UpdateView( BmUpdFlags flags, bool redraw,
 			NULL
 		};
 		SetTextCols( 0, cols);
-		if (redraw)
-			updColBitmap = 0xFFFFFFFF;
+		updColBitmap = 0xFFFFFFFF;
 	}
 	inherited::UpdateView( flags, redraw, updColBitmap);
 }

@@ -134,43 +134,39 @@ void BmMailRefItem::UpdateView( BmUpdFlags flags, bool redraw,
 			icon = TheResources->IconByName("Attachment");
 			SetColumnContent( COL_ATTACHMENTS_I, icon);
 		}
-		if (redraw)
-			updColBitmap |= (1UL<<COL_ATTACHMENTS | 1UL<<COL_ATTACHMENTS_I);
+		updColBitmap |= (1UL<<COL_ATTACHMENTS | 1UL<<COL_ATTACHMENTS_I);
 	}
 	if (flags & BmMailRef::UPD_PRIORITY) {
 		BmString priority = BmString("Priority_") << ref->Priority();
 		if ((icon = TheResources->IconByName(priority))!=NULL) {
 			SetColumnContent( COL_PRIORITY_I, icon);
 		}
-		if (redraw)
-			updColBitmap |= (1UL<<COL_PRIORITY | 1UL<<COL_PRIORITY_I);
+		updColBitmap |= (1UL<<COL_PRIORITY | 1UL<<COL_PRIORITY_I);
 	}
-	if (redraw) {
-		if (flags & BmMailRef::UPD_ACCOUNT)
-			updColBitmap |= (1UL << COL_ACCOUNT);
-		if (flags & BmMailRef::UPD_CC)
-			updColBitmap |= (1UL << COL_CC);
-		if (flags & BmMailRef::UPD_FROM)
-			updColBitmap |= (1UL << COL_FROM);
-		if (flags & BmMailRef::UPD_NAME)
-			updColBitmap |= (1UL << COL_NAME);
-		if (flags & BmMailRef::UPD_WHEN_CREATED)
-			updColBitmap |= (1UL << COL_WHEN_CREATED);
-		if (flags & BmMailRef::UPD_REPLYTO)
-			updColBitmap |= (1UL << COL_REPLY_TO);
-		if (flags & BmMailRef::UPD_SIZE)
-			updColBitmap |= (1UL << COL_SIZE);
-		if (flags & BmMailRef::UPD_SUBJECT)
-			updColBitmap |= (1UL << COL_SUBJECT);
-		if (flags & BmMailRef::UPD_TO)
-			updColBitmap |= (1UL << COL_TO);
-		if (flags & BmMailRef::UPD_WHEN)
-			updColBitmap |= (1UL << COL_DATE);
-		if (flags & BmMailRef::UPD_IDENTITY)
-			updColBitmap |= (1UL << COL_IDENTITY);
-		if (flags & BmMailRef::UPD_TRACKERNAME)
-			updColBitmap |= (1UL << COL_TRACKER_NAME);
-	}
+	if (flags & BmMailRef::UPD_ACCOUNT)
+		updColBitmap |= (1UL << COL_ACCOUNT);
+	if (flags & BmMailRef::UPD_CC)
+		updColBitmap |= (1UL << COL_CC);
+	if (flags & BmMailRef::UPD_FROM)
+		updColBitmap |= (1UL << COL_FROM);
+	if (flags & BmMailRef::UPD_NAME)
+		updColBitmap |= (1UL << COL_NAME);
+	if (flags & BmMailRef::UPD_WHEN_CREATED)
+		updColBitmap |= (1UL << COL_WHEN_CREATED);
+	if (flags & BmMailRef::UPD_REPLYTO)
+		updColBitmap |= (1UL << COL_REPLY_TO);
+	if (flags & BmMailRef::UPD_SIZE)
+		updColBitmap |= (1UL << COL_SIZE);
+	if (flags & BmMailRef::UPD_SUBJECT)
+		updColBitmap |= (1UL << COL_SUBJECT);
+	if (flags & BmMailRef::UPD_TO)
+		updColBitmap |= (1UL << COL_TO);
+	if (flags & BmMailRef::UPD_WHEN)
+		updColBitmap |= (1UL << COL_DATE);
+	if (flags & BmMailRef::UPD_IDENTITY)
+		updColBitmap |= (1UL << COL_IDENTITY);
+	if (flags & BmMailRef::UPD_TRACKERNAME)
+		updColBitmap |= (1UL << COL_TRACKER_NAME);
 	inherited::UpdateView( flags, redraw, updColBitmap);
 }
 

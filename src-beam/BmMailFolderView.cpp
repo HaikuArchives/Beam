@@ -103,8 +103,7 @@ void BmMailFolderItem::UpdateView( BmUpdFlags flags, bool redraw,
 		else
 			icon = TheResources->IconByName("Folder");
 		SetColumnContent( COL_ICON, icon, 2.0);
-		if (redraw)
-			updColBitmap |= (1UL<<COL_ICON);
+		updColBitmap |= (1UL<<COL_ICON);
 	}
 	if (flags & BmMailFolder::UPD_NEW_COUNT) {
 		BmString newCountStr;
@@ -116,8 +115,7 @@ void BmMailFolderItem::UpdateView( BmUpdFlags flags, bool redraw,
 		else
 			newCountStr << newCount;
 		SetColumnContent( COL_NEW_COUNT, newCountStr.String());
-		if (redraw)
-			updColBitmap |= (1UL<<COL_NEW_COUNT);
+		updColBitmap |= (1UL<<COL_NEW_COUNT);
 	}
 	if (flags & BmMailFolder::UPD_TOTAL_COUNT) {
 		BmString totalCountStr;
@@ -129,8 +127,7 @@ void BmMailFolderItem::UpdateView( BmUpdFlags flags, bool redraw,
 		else
 			totalCountStr << totalCount;
 		SetColumnContent( COL_TOTAL_COUNT, totalCountStr.String());
-		if (redraw)
-			updColBitmap |= (1UL<<COL_TOTAL_COUNT);
+		updColBitmap |= (1UL<<COL_TOTAL_COUNT);
 	}
 	inherited::UpdateView( flags, redraw, updColBitmap);
 }

@@ -106,19 +106,20 @@ void BmListViewItem::UpdateView( BmUpdFlags flags, bool redraw,
 		if (item)
 			SetSuperItem( item->size() != 0);
 	}
-	if (redraw) {
-		BRegion updateRegion;
-		bool needReSort = false;
-		uint32 colCount = fOwner->CountColumns();
-		for( uint32 c=0; c<colCount; ++c) {
-			if (updColBitmap & (1UL<<c)) {
+	BRegion updateRegion;
+	bool needReSort = false;
+	uint32 colCount = fOwner->CountColumns();
+	for( uint32 c=0; c<colCount; ++c) {
+		if (updColBitmap & (1UL<<c)) {
+			if (fOwner->IsSortKey( c))
+				needReSort = true;
+			if (redraw)
 				updateRegion.Include( ItemColumnFrame( c));
-				if (fOwner->IsSortKey( c))
-					needReSort = true;
-			}
 		}
-		if (needReSort)
-			fOwner->ReSortItem( this);
+	}
+	if (needReSort)
+		fOwner->ReSortItem( this);
+	if (redraw) {
 		BRect updateRect = updateRegion.Frame();
 		if (updateRect.IsValid())
 			fOwner->Invalidate( updateRect);
