@@ -47,7 +47,7 @@
 #include "BmGuiUtil.h"
 #include "BmJobStatusWin.h"
 #include "BmLogHandler.h"
-#include "BmLogView.h"
+#include "BmLogWindow.h"
 #include "BmMailFolderList.h"
 #include "BmMailFolderView.h"
 #include "BmMailRefView.h"
@@ -357,7 +357,7 @@ void BmMainWindow::BeginLife() {
 		mMailView->StartWatching( this, BM_NTFY_MAIL_VIEW);
 		mMailFolderView->StartJob( TheMailFolderList.Get());
 		mAccountMenu->JobIsDone( true);
-		BM_LOG2( BM_LogMainWindow, BmString("MainWindow begins life"));
+		BM_LOG2( BM_LogGui, BmString("MainWindow begins life"));
 	} catch(...) {
 		nIsAlive = false;
 		throw;
@@ -473,9 +473,8 @@ void BmMainWindow::MessageReceived( BMessage* msg) {
 			}
 			case BMM_SHOW_LOGFILE: {
 				BmString logName = msg->FindString( "logfile");
-				BmString cmd("/boot/apps/Terminal /bin/tail -f ");
-				cmd << bmApp->AppPath() << "/logs/" << logName << " &";
-				system( cmd.String());
+				BmLogWindow::CreateAndStartInstanceFor( logName.String());
+				break;
 			}
 			default:
 				inherited::MessageReceived( msg);
@@ -492,7 +491,7 @@ void BmMainWindow::MessageReceived( BMessage* msg) {
 		-	standard BeOS-behaviour, we allow a quit
 \*------------------------------------------------------------------------------*/
 bool BmMainWindow::QuitRequested() {
-	BM_LOG2( BM_LogMainWindow, BmString("MainWindow has been asked to quit"));
+	BM_LOG2( BM_LogGui, BmString("MainWindow has been asked to quit"));
 	if (bmApp->IsQuitting()) {
 		Hide();			// to hide a possible delay in WriteStateInfo() from the user
 		return true;
@@ -511,7 +510,7 @@ void BmMainWindow::Quit() {
 	mMailView->DetachModel();
 	mMailRefView->DetachModel();
 	mMailFolderView->DetachModel();
-	BM_LOG2( BM_LogMainWindow, BmString("MainWindow has quit"));
+	BM_LOG2( BM_LogGui, BmString("MainWindow has quit"));
 #ifdef BM_DEBUG_MEM
 	(new BAlert( "", "End of MainWindow, check mem-usage!!!", "OK"))->Go();
 #endif

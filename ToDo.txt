@@ -7,7 +7,7 @@
 Beam 0.92:
 ***********
 
--	add support for mail-filtering
+-	add support for spam-filtering
 	(include SpamAssassin and Razor)
 
 -	implement RFC2231 to facilitate correct handling of attachment

@@ -121,16 +121,13 @@ BmPrefs::BmPrefs( BMessage* archive)
 	int32 loglevels = BM_LOGLVL_VAL(archive->FindInt16("Loglevel_Pop"),BM_LogPop)
 							+ BM_LOGLVL_VAL(archive->FindInt16("Loglevel_JobWin"),BM_LogJobWin) 
 							+ BM_LOGLVL_VAL(archive->FindInt16("Loglevel_MailParse"),BM_LogMailParse) 
-							+ BM_LOGLVL_VAL(archive->FindInt16("Loglevel_Util"),BM_LogUtil) 
+							+ BM_LOGLVL_VAL(archive->FindInt16("Loglevel_App"),BM_LogApp) 
 							+ BM_LOGLVL_VAL(archive->FindInt16("Loglevel_MailTracking"),BM_LogMailTracking)
-							+ BM_LOGLVL_VAL(archive->FindInt16("Loglevel_FolderView"),BM_LogFolderView)
-							+ BM_LOGLVL_VAL(archive->FindInt16("Loglevel_RefView"),BM_LogRefView)
-							+ BM_LOGLVL_VAL(archive->FindInt16("Loglevel_MainWindow"),BM_LogMainWindow)
+							+ BM_LOGLVL_VAL(archive->FindInt16("Loglevel_Gui"),BM_LogGui)
 							+ BM_LOGLVL_VAL(archive->FindInt16("Loglevel_ModelController"),BM_LogModelController)
-							+ BM_LOGLVL_VAL(archive->FindInt16("Loglevel_MailEditWin"),BM_LogMailEditWin)
 							+ BM_LOGLVL_VAL(archive->FindInt16("Loglevel_Smtp"),BM_LogSmtp)
-							+ BM_LOGLVL_VAL(archive->FindInt16("Loglevel_PrefsWin"),BM_LogPrefsWin)
-							+ BM_LOGLVL_VAL(archive->FindInt16("Loglevel_Filter"),BM_LogFilter);
+							+ BM_LOGLVL_VAL(archive->FindInt16("Loglevel_Filter"),BM_LogFilter)
+							+ BM_LOGLVL_VAL(archive->FindInt16("Loglevel_RefCount"),BM_LogRefCount);
 	mPrefsMsg.RemoveName("Loglevels");
 	mPrefsMsg.AddInt32("Loglevels", loglevels);
 	SetLoglevels();
@@ -248,16 +245,13 @@ void BmPrefs::InitDefaults() {
 	int32 loglevels = BM_LOGLVL1(BM_LogPop)
 							+ BM_LOGLVL0(BM_LogJobWin) 
 							+ BM_LOGLVL0(BM_LogMailParse) 
-							+ BM_LOGLVL0(BM_LogUtil) 
+							+ BM_LOGLVL1(BM_LogApp) 
 							+ BM_LOGLVL0(BM_LogMailTracking)
-							+ BM_LOGLVL0(BM_LogFolderView)
-							+ BM_LOGLVL0(BM_LogRefView)
-							+ BM_LOGLVL0(BM_LogMainWindow)
+							+ BM_LOGLVL0(BM_LogGui)
 							+ BM_LOGLVL0(BM_LogModelController)
-							+ BM_LOGLVL0(BM_LogMailEditWin)
 							+ BM_LOGLVL1(BM_LogSmtp)
-							+ BM_LOGLVL0(BM_LogPrefsWin)
-							+ BM_LOGLVL1(BM_LogFilter);
+							+ BM_LOGLVL1(BM_LogFilter)
+							+ BM_LOGLVL1(BM_LogRefCount);
 
 	mDefaultsMsg.AddBool( "AutoCheckOnlyIfPPPRunning", true);
 	mDefaultsMsg.AddBool( "Allow8BitMime", false);
@@ -280,15 +274,13 @@ void BmPrefs::InitDefaults() {
 	mDefaultsMsg.AddInt16( "Loglevel_Pop", BM_LOGLVL_FOR(loglevels,BM_LogPop));
 	mDefaultsMsg.AddInt16( "Loglevel_JobWin", BM_LOGLVL_FOR(loglevels,BM_LogJobWin));
 	mDefaultsMsg.AddInt16( "Loglevel_MailParse", BM_LOGLVL_FOR(loglevels,BM_LogMailParse));
-	mDefaultsMsg.AddInt16( "Loglevel_Util", BM_LOGLVL_FOR(loglevels,BM_LogUtil));
+	mDefaultsMsg.AddInt16( "Loglevel_App", BM_LOGLVL_FOR(loglevels,BM_LogApp));
 	mDefaultsMsg.AddInt16( "Loglevel_MailTracking", BM_LOGLVL_FOR(loglevels,BM_LogMailTracking));
-	mDefaultsMsg.AddInt16( "Loglevel_FolderView", BM_LOGLVL_FOR(loglevels,BM_LogFolderView));
-	mDefaultsMsg.AddInt16( "Loglevel_RefView", BM_LOGLVL_FOR(loglevels,BM_LogRefView));
-	mDefaultsMsg.AddInt16( "Loglevel_MainWindow", BM_LOGLVL_FOR(loglevels,BM_LogMainWindow));
+	mDefaultsMsg.AddInt16( "Loglevel_Gui", BM_LOGLVL_FOR(loglevels,BM_LogGui));
 	mDefaultsMsg.AddInt16( "Loglevel_ModelController", BM_LOGLVL_FOR(loglevels,BM_LogModelController));
-	mDefaultsMsg.AddInt16( "Loglevel_MailEditWin", BM_LOGLVL_FOR(loglevels,BM_LogMailEditWin));
 	mDefaultsMsg.AddInt16( "Loglevel_Smtp", BM_LOGLVL_FOR(loglevels,BM_LogSmtp));
-	mDefaultsMsg.AddInt16( "Loglevel_PrefsWin", BM_LOGLVL_FOR(loglevels,BM_LogPrefsWin));
+	mDefaultsMsg.AddInt16( "Loglevel_Filter", BM_LOGLVL_FOR(loglevels,BM_LogFilter));
+	mDefaultsMsg.AddInt16( "Loglevel_RefCount", BM_LOGLVL_FOR(loglevels,BM_LogRefCount));
 	mDefaultsMsg.AddMessage( "MailRefLayout", new BMessage);
 	mDefaultsMsg.AddString( "MailboxPath", "/boot/home/mail");
 	mDefaultsMsg.AddBool( "MakeQPSafeForEBCDIC", false);
@@ -459,7 +451,7 @@ void BmPrefs::SetLoglevels() {
 		else
 			s << "0";
 	}
-	BM_LOG3( BM_LogUtil, BmString("Initialized loglevels to binary value ") << s);
+	BM_LOG3( BM_LogApp, BmString("Initialized loglevels to binary value ") << s);
 #endif
 }
 

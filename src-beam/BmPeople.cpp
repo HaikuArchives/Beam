@@ -239,10 +239,8 @@ BmRef< BmPeopleList> BmPeopleList::theInstance( NULL);
 		-	initialiazes object by fetching all people
 \*------------------------------------------------------------------------------*/
 BmPeopleList* BmPeopleList::CreateInstance() {
-	if (!theInstance) {
+	if (!theInstance)
 		theInstance = new BmPeopleList();
-		theInstance->StartJobInThisThread();
-	}
 	return theInstance.Get();
 }
 
@@ -450,7 +448,7 @@ void BmPeopleList::InitializeItems() {
 	BmAutolockCheckGlobal lock( mModelLocker);
 	lock.IsLocked() 							|| BM_THROW_RUNTIME( ModelNameNC() << ":InitializeItems(): Unable to get lock");
 
-	BM_LOG2( BM_LogUtil, "Start of people-query");
+	BM_LOG2( BM_LogApp, "Start of people-query");
 	(err = mPeopleQuery.SetVolume( &TheResources->MailboxVolume)) == B_OK
 													|| BM_THROW_RUNTIME( BmString("SetVolume(): ") << strerror(err));
 	(err = mPeopleQuery.SetPredicate( "META:email == '**'")) == B_OK
@@ -475,7 +473,7 @@ void BmPeopleList::InitializeItems() {
 			dent = (dirent* )((char* )dent + dent->d_reclen);
 		}
 	}
-	BM_LOG2( BM_LogUtil, BmString("End of people-query (") << peopleCount << " people found)");
+	BM_LOG2( BM_LogApp, BmString("End of people-query (") << peopleCount << " people found)");
 	mInitCheck = B_OK;
 }
 

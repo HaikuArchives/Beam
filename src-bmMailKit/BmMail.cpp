@@ -853,11 +853,11 @@ bool BmMail::Store() {
 		} else if (newHomePath != mDestFolderpath) {
 			// try to file mail into a different destination-folder:
 			if ((err = homeDir.SetTo( mDestFolderpath.Path())) != B_OK) {
-				BmLogHandler::Log( "Filter", BM_LogAll, 
+				BmLogHandler::Log( "Filter", 
 										 BmString("Could not file message into mail-folder\n") << mDestFolderpath.Path()
 											<< "\nError: " << strerror(err)
 											<< "\n\nMessage will now be filed into the folder\n" 
-											<< newHomePath.Path(), 0);
+											<< newHomePath.Path());
 			} else
 				newHomePath = mDestFolderpath;
 		}

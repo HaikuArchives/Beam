@@ -40,7 +40,7 @@ BmWindow::~BmWindow() {
 \*------------------------------------------------------------------------------*/
 status_t BmWindow::ArchiveState( BMessage* archive) const {
 	BRect frame = Frame();
-BM_LOG2( BM_LogUtil, BmString("Window ") << Name() << " stored with left:" << frame.left << " top: " << frame.top << "\nwidth:" << frame.Width() << " height: " << frame.Height());
+	BM_LOG2( BM_LogApp, BmString("Window ") << Name() << " stored with left:" << frame.left << " top: " << frame.top << "\nwidth:" << frame.Width() << " height: " << frame.Height());
 	status_t ret = archive->AddRect( MSG_FRAME, frame);
 	return ret;
 }
@@ -53,7 +53,7 @@ status_t BmWindow::UnarchiveState( BMessage* archive) {
 	BRect frame;
 	status_t ret = archive->FindRect( MSG_FRAME, &frame);
 	if (ret == B_OK) {
-BM_LOG2( BM_LogUtil, BmString("Window ") << Name() << " opened at left:" << frame.left << " top: " << frame.top << "\nwidth:" << frame.Width() << " height: " << frame.Height());
+		BM_LOG2( BM_LogApp, BmString("Window ") << Name() << " opened at left:" << frame.left << " top: " << frame.top << "\nwidth:" << frame.Width() << " height: " << frame.Height());
 		MoveTo( frame.LeftTop());
 		ResizeTo( frame.Width(), frame.Height());
 	}
@@ -130,8 +130,8 @@ void BmWindow::Quit() {
 }
 
 /*------------------------------------------------------------------------------*\
-	Quit()
-		-	we write the state-info before we quit
+	MessageReceived()
+		-	double-dispatch standard editing messages to focus-view:
 \*------------------------------------------------------------------------------*/
 void BmWindow::MessageReceived( BMessage* msg) {
 	switch( msg->what) {

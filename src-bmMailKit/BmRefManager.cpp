@@ -55,9 +55,9 @@ void BmRefObj::AddRef() {
 #ifdef BM_REF_DEBUGGING
 	// check again to ensure no-one has clobbered with ref-count...
 	BM_ASSERT( mRefCount > 0 && mRefCount == lastCount+1);
-	BM_LOG2( BM_LogUtil, BmString("RefManager: reference to <") << typeid(*this).name() << ":" << RefName() << ":"<<RefPrintHex()<<"> added, ref-count is "<<mRefCount);
+	BM_LOG2( BM_LogRefCount, BmString("RefManager: reference to <") << typeid(*this).name() << ":" << RefName() << ":"<<RefPrintHex()<<"> added, ref-count is "<<mRefCount);
 #else
-	BM_LOG2( BM_LogUtil, BmString("RefManager: reference to <") << RefName() << ":"<<RefPrintHex()<<"> added, ref-count is "<<mRefCount);
+	BM_LOG2( BM_LogRefCount, BmString("RefManager: reference to <") << RefName() << ":"<<RefPrintHex()<<"> added, ref-count is "<<mRefCount);
 #endif
 }
 
@@ -73,9 +73,9 @@ void BmRefObj::RenameRef( const char* newName) {
 	BmProxy* proxy = GetProxy( ProxyName());
 	BM_ASSERT( proxy!=NULL && mRefCount >= 0);
 #ifdef BM_REF_DEBUGGING
-	BM_LOG2( BM_LogUtil, BmString("RefManager: reference to <") << typeid(*this).name() << ":" << RefName() << ":"<<RefPrintHex()<<"> renamed to "<<newName);
+	BM_LOG2( BM_LogRefCount, BmString("RefManager: reference to <") << typeid(*this).name() << ":" << RefName() << ":"<<RefPrintHex()<<"> renamed to "<<newName);
 #else
-	BM_LOG2( BM_LogUtil, BmString("RefManager: reference to <") << RefName() << ":"<<RefPrintHex()<<"> renamed to "<<newName);
+	BM_LOG2( BM_LogRefCount, BmString("RefManager: reference to <") << RefName() << ":"<<RefPrintHex()<<"> renamed to "<<newName);
 #endif
 	// find object...
 	BmObjectMap::iterator pos;
@@ -108,9 +108,9 @@ void BmRefObj::RemoveRef() {
 	
 #ifdef BM_REF_DEBUGGING
 		BM_ASSERT( lastCount > 0);
-		BM_LOG2( BM_LogUtil, BmString("RefManager: reference to <") << typeid(*this).name() << ":" << RefName() << ":"<<RefPrintHex()<<"> removed, new ref-count is "<<mRefCount);
+		BM_LOG2( BM_LogRefCount, BmString("RefManager: reference to <") << typeid(*this).name() << ":" << RefName() << ":"<<RefPrintHex()<<"> removed, new ref-count is "<<mRefCount);
 #else
-		BM_LOG2( BM_LogUtil, BmString("RefManager: reference to <") << RefName() << ":"<<RefPrintHex()<<"> removed, new ref-count is "<<mRefCount);
+		BM_LOG2( BM_LogRefCount, BmString("RefManager: reference to <") << RefName() << ":"<<RefPrintHex()<<"> removed, new ref-count is "<<mRefCount);
 #endif
 
 		if (lastCount == 1) {
@@ -123,13 +123,13 @@ void BmRefObj::RemoveRef() {
 			if (pos != proxy->ObjectMap.end())
 				proxy->ObjectMap.erase( pos);
 #ifdef BM_REF_DEBUGGING
-			BM_LOG( BM_LogUtil, BmString("RefManager: ... object <") << typeid(*this).name() << ":" << RefName() << ":"<<RefPrintHex()<<"> will be deleted");
+			BM_LOG( BM_LogRefCount, BmString("RefManager: ... object <") << typeid(*this).name() << ":" << RefName() << ":"<<RefPrintHex()<<"> will be deleted");
 			// check again to ensure no-one has clobbered with ref-count...
 			BM_ASSERT( mRefCount == 0);
 			// ...and make sure anyone trying to addref this object will visit the debugger
 			mRefCount = -1;
 #else
-			BM_LOG2( BM_LogUtil, BmString("RefManager: ... object <") << RefName() << ":"<<RefPrintHex()<<"> will be deleted");
+			BM_LOG2( BM_LogRefCount, BmString("RefManager: ... object <") << RefName() << ":"<<RefPrintHex()<<"> will be deleted");
 #endif
 			needsDelete = true;
 		}
@@ -187,16 +187,16 @@ void BmRefObj::PrintRefsLeft() {
 	int32 count = 0;
 	BmProxyMap::const_iterator iter;
 	try {
-		BM_LOG( BM_LogUtil, BmString("RefManager: active list\n--------------------"));
+		BM_LOG( BM_LogRefCount, BmString("RefManager: active list\n--------------------"));
 		for( iter = nProxyMap.begin(); iter != nProxyMap.end(); ++iter) {
 			BmProxy* proxy = iter->second;
 			BmObjectMap::const_iterator iter2;
 			for( iter2=proxy->ObjectMap.begin(); iter2 != proxy->ObjectMap.end(); ++iter2, ++count) {
 				BmRefObj* ref = iter2->second;
-				BM_LOG( BM_LogUtil, BmString("\t<") << typeid(*ref).name() << " " << ref->RefName() << ":"<<ref->RefPrintHex()<<"> alive, ref-count is "<<ref->mRefCount);
+				BM_LOG( BM_LogRefCount, BmString("\t<") << typeid(*ref).name() << " " << ref->RefName() << ":"<<ref->RefPrintHex()<<"> alive, ref-count is "<<ref->mRefCount);
 			}
 		}
-		BM_LOG( BM_LogUtil, BmString("--------------------\n(")<<count<<" refs)\n--------------------");
+		BM_LOG( BM_LogRefCount, BmString("--------------------\n(")<<count<<" refs)\n--------------------");
 	} catch( BM_runtime_error &err) {
 		BM_SHOWERR( err.what());
 	}
@@ -245,7 +245,7 @@ BmRefObj* BmProxy::FetchObject( const BmString& key, BmRefObj* ptr) {
 
 // helper function to keep logging out of header-file:
 void LogHelper( const BmString& text) {
-	BM_LOG2( BM_LogUtil, text);
+	BM_LOG2( BM_LogRefCount, text);
 }
 
 

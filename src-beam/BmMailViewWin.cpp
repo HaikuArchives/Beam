@@ -414,7 +414,7 @@ void BmMailViewWin::ShowMail( BmMailRef* mailRef, bool async) {
 		-	standard BeOS-behaviour, we allow a quit
 \*------------------------------------------------------------------------------*/
 bool BmMailViewWin::QuitRequested() {
-	BM_LOG2( BM_LogMainWindow, BmString("MailViewWin has been asked to quit"));
+	BM_LOG2( BM_LogGui, BmString("MailViewWin has been asked to quit"));
 	return true;
 }
 
@@ -424,7 +424,7 @@ bool BmMailViewWin::QuitRequested() {
 \*------------------------------------------------------------------------------*/
 void BmMailViewWin::Quit() {
 	mMailView->DetachModel();
-	BM_LOG2( BM_LogMainWindow, BmString("MailViewWin has quit"));
+	BM_LOG2( BM_LogGui, BmString("MailViewWin has quit"));
 	inherited::Quit();
 }
 

@@ -643,10 +643,10 @@ void BmMailEditWin::MessageReceived( BMessage* msg) {
 			}
 			case BMM_SEND_LATER:
 			case BMM_SEND_NOW: {
-				BM_LOG2( BM_LogMailEditWin, BmString("Asked to send mail"));
+				BM_LOG2( BM_LogGui, BmString("MailEditWin: Asked to send mail"));
 				if (!SaveMail( true))
 					break;
-				BM_LOG2( BM_LogMailEditWin, "...mail was saved");
+				BM_LOG2( BM_LogGui, "MailEditWin: ...mail was saved");
 				BmRef<BmMail> mail = mMailView->CurrMail();
 				if (!mail)
 					break;
@@ -687,10 +687,10 @@ void BmMailEditWin::MessageReceived( BMessage* msg) {
 							alert->Go( new BInvoker( new BMessage( BM_EDIT_HEADER_DONE), BMessenger( this)));
 							break;
 						} else {
-							BM_LOG2( BM_LogMailEditWin, "...marking mail as pending");
+							BM_LOG2( BM_LogGui, "MailEditWin: ...marking mail as pending");
 							mail->MarkAs( BM_MAIL_STATUS_PENDING);
 							smtpAcc->mMailVect.push_back( mail);
-							BM_LOG2( BM_LogMailEditWin, "...passing mail to smtp-account");
+							BM_LOG2( BM_LogGui, "MailEditWin: ...passing mail to smtp-account");
 							TheSmtpAccountList->SendQueuedMailFor( smtpAcc->Name());
 						}
 					} else {
@@ -1086,7 +1086,7 @@ bool BmMailEditWin::SaveMail( bool saveForSend) {
 		-	standard BeOS-behaviour, we allow a quit
 \*------------------------------------------------------------------------------*/
 bool BmMailEditWin::QuitRequested() {
-	BM_LOG2( BM_LogMailEditWin, BmString("MailEditWin has been asked to quit"));
+	BM_LOG2( BM_LogGui, BmString("MailEditWin has been asked to quit"));
 	if (mModified) {
 		if (IsMinimized())
 			Minimize( false);
@@ -1121,6 +1121,6 @@ bool BmMailEditWin::QuitRequested() {
 void BmMailEditWin::Quit() {
 	mMailView->WriteStateInfo();
 	mMailView->DetachModel();
-	BM_LOG2( BM_LogMailEditWin, BmString("MailEditWin has quit"));
+	BM_LOG2( BM_LogGui, BmString("MailEditWin has quit"));
 	inherited::Quit();
 }

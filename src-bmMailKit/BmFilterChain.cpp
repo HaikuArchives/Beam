@@ -147,19 +147,6 @@ BmFilterChain::~BmFilterChain() {
 status_t BmFilterChain::Archive( BMessage* archive, bool deep) const {
 	status_t ret = (inheritedList::Archive( archive, deep)
 		||	archive->AddString( MSG_NAME, Key().String()));
-	if (ret == B_OK) {
-		BmAutolockCheckGlobal lock( ModelLocker());
-		lock.IsLocked() 						|| BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
-		BMessage msg;
-		BmModelItemMap::const_iterator iter;
-		for( iter = inheritedList::begin(); iter != inheritedList::end(); ++iter) {
-			BmChainedFilter* filter = dynamic_cast< BmChainedFilter*>( iter->second.Get());
-			if ((ret = filter->Archive( &msg, true)) != B_OK)
-				break;
-			archive->AddMessage( MSG_CHILDREN, &msg); 
-		}
-		archive->AddInt32( MSG_NUMCHILDREN, inheritedList::size()); 
-	}
 	return ret;
 }
 
@@ -285,7 +272,7 @@ bool BmFilterChain::StartJob() {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmFilterChain::InstantiateItems( BMessage* archive) {
-	BM_LOG2( BM_LogUtil, BmString("Start of InstantiateItems() for FilterChain") << Key());
+	BM_LOG2( BM_LogFilter, BmString("Start of InstantiateItems() for FilterChain") << Key());
 	status_t err;
 	int32 numChildren = FindMsgInt32( archive, BmListModelItem::MSG_NUMCHILDREN);
 	for( int i=0; i<numChildren; ++i) {
@@ -293,10 +280,10 @@ void BmFilterChain::InstantiateItems( BMessage* archive) {
 		(err = archive->FindMessage( BmListModelItem::MSG_CHILDREN, i, &msg)) == B_OK
 													|| BM_THROW_RUNTIME(BmString("Could not find item nr. ") << i+1 << " \n\nError:" << strerror(err));
 		BmChainedFilter* newFilter = new BmChainedFilter( &msg, this);
-		BM_LOG3( BM_LogUtil, BmString("ChainedFilter <") << newFilter->Key() << "> read");
+		BM_LOG3( BM_LogFilter, BmString("ChainedFilter <") << newFilter->Key() << "> read");
 		AddItemToList( newFilter);
 	}
-	BM_LOG2( BM_LogUtil, BmString("End of InstantiateItems() for FilterChain") << Key());
+	BM_LOG2( BM_LogFilter, BmString("End of InstantiateItems() for FilterChain") << Key());
 	mInitCheck = B_OK;
 }
 
@@ -380,7 +367,7 @@ void BmFilterChainList::RemoveFilterFromAllChains( const BmString& filterName) {
 		-	initializes the signature-list from the given archive
 \*------------------------------------------------------------------------------*/
 void BmFilterChainList::InstantiateItems( BMessage* archive) {
-	BM_LOG2( BM_LogUtil, BmString("Start of InstantiateItems() for FilterChainList"));
+	BM_LOG2( BM_LogFilter, BmString("Start of InstantiateItems() for FilterChainList"));
 	status_t err;
 	int32 numChildren = FindMsgInt32( archive, BmListModelItem::MSG_NUMCHILDREN);
 	for( int i=0; i<numChildren; ++i) {
@@ -388,11 +375,11 @@ void BmFilterChainList::InstantiateItems( BMessage* archive) {
 		(err = archive->FindMessage( BmListModelItem::MSG_CHILDREN, i, &msg)) == B_OK
 													|| BM_THROW_RUNTIME(BmString("Could not find item nr. ") << i+1 << " \n\nError:" << strerror(err));
 		BmFilterChain* newChain = new BmFilterChain( &msg, this);
-		BM_LOG3( BM_LogUtil, BmString("FilterChain <") << newChain->Name() << "> read");
+		BM_LOG3( BM_LogFilter, BmString("FilterChain <") << newChain->Name() << "> read");
 		newChain->InstantiateItems( &msg);
 		AddItemToList( newChain);
 	}
-	BM_LOG2( BM_LogUtil, BmString("End of InstantiateItems() for FilterChainList"));
+	BM_LOG2( BM_LogFilter, BmString("End of InstantiateItems() for FilterChainList"));
 	mInitCheck = B_OK;
 }
 

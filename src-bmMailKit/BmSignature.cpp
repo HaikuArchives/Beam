@@ -139,7 +139,7 @@ BmString BmSignature::GetSignatureString() {
 		BmString sigFileName = TheTempFileList.NextTempFilenameWithPath();
 		BmString errFileName = TheTempFileList.NextTempFilenameWithPath();
 		BmString sysStr = BmString("/bin/sh <")+scriptFileName+" >"<<sigFileName<<" 2>"<<errFileName;
-		BM_LOG2( BM_LogUtil, BmString("Dynamic signature, executing script: ")<<sysStr);
+		BM_LOG2( BM_LogApp, BmString("Dynamic signature, executing script: ")<<sysStr);
 		int result = system( sysStr.String());
 		BmString sigString;
 		bool fileOk = FetchFile( sigFileName, sigString);
@@ -225,7 +225,7 @@ BmString BmSignatureList::GetSignatureStringFor( const BmString sigName) {
 		-	initializes the signature-list from the given archive
 \*------------------------------------------------------------------------------*/
 void BmSignatureList::InstantiateItems( BMessage* archive) {
-	BM_LOG2( BM_LogUtil, BmString("Start of InstantiateItems() for SignatureList"));
+	BM_LOG2( BM_LogApp, BmString("Start of InstantiateItems() for SignatureList"));
 	status_t err;
 	int32 numChildren = FindMsgInt32( archive, BmListModelItem::MSG_NUMCHILDREN);
 	for( int i=0; i<numChildren; ++i) {
@@ -233,10 +233,10 @@ void BmSignatureList::InstantiateItems( BMessage* archive) {
 		(err = archive->FindMessage( BmListModelItem::MSG_CHILDREN, i, &msg)) == B_OK
 													|| BM_THROW_RUNTIME(BmString("Could not find signature nr. ") << i+1 << " \n\nError:" << strerror(err));
 		BmSignature* newSig = new BmSignature( &msg, this);
-		BM_LOG3( BM_LogUtil, BmString("Signature <") << newSig->Name() << "," << newSig->Key() << "> read");
+		BM_LOG3( BM_LogApp, BmString("Signature <") << newSig->Name() << "," << newSig->Key() << "> read");
 		AddItemToList( newSig);
 	}
-	BM_LOG2( BM_LogUtil, BmString("End of InstantiateItems() for SignatureList"));
+	BM_LOG2( BM_LogApp, BmString("End of InstantiateItems() for SignatureList"));
 	mInitCheck = B_OK;
 }
 

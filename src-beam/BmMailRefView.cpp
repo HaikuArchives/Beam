@@ -497,7 +497,7 @@ void BmMailRefView::MouseDown(BPoint point) {
 bool BmMailRefView::InitiateDrag( BPoint, int32 index, bool wasSelected) {
 	if (!wasSelected)
 		return false;
-	BM_LOG2( BM_LogRefView, "InitiateDrag() - enter");
+	BM_LOG2( BM_LogGui, "MailRefView::InitiateDrag() - enter");
 	BMessage dragMsg( B_SIMPLE_DATA);
 	dragMsg.AddString( "be:types", "text/x-email");
 	dragMsg.AddString( "be:type_descriptions", "E-mail");
@@ -512,7 +512,7 @@ bool BmMailRefView::InitiateDrag( BPoint, int32 index, bool wasSelected) {
 	int32 selCount;
 	for( selCount=0; (currIdx=CurrentSelection( selCount))>=0; ++selCount)
 		;
-	BM_LOG2( BM_LogRefView, BmString("InitiateDrag() - found ")<<selCount<<" selections");
+	BM_LOG2( BM_LogGui, BmString("MailRefView::InitiateDrag() - found ")<<selCount<<" selections");
 	BFont font;
 	GetFont( &font);
 	float lineHeight = MAX(TheResources->FontLineHeight( &font),20.0);
@@ -548,12 +548,12 @@ bool BmMailRefView::InitiateDrag( BPoint, int32 index, bool wasSelected) {
 										  BPoint( 20.0, i*lineHeight+baselineOffset));
 		}
 		if (i%100==0)
-			BM_LOG2( BM_LogRefView, BmString("InitiateDrag() - processing ")<<i<<"th selection");
+			BM_LOG2( BM_LogGui, BmString("MailRefView::InitiateDrag() - processing ")<<i<<"th selection");
 	}
 	dragImage->Unlock();
 	DragMessage( &dragMsg, dragImage, B_OP_ALPHA, BPoint( 10.0, 10.0));
 	DeselectAll();
-	BM_LOG2( BM_LogRefView, "InitiateDrag() - exit");
+	BM_LOG2( BM_LogGui, "MailRefView::InitiateDrag() - exit");
 	return true;
 }
 
@@ -666,7 +666,7 @@ void BmMailRefView::AddSelectedRefsToMsg( BMessage* msg, BmString fieldName) {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmMailRefView::SelectionChanged( void) {
-	BM_LOG2( BM_LogRefView, "SelectionChanged() - enter");
+	BM_LOG2( BM_LogGui, "MailRefView::SelectionChanged() - enter");
 	int32 temp;
 	int32 selection = -1;
 	int32 numSelected = 0;
@@ -692,7 +692,7 @@ void BmMailRefView::SelectionChanged( void) {
 	}
 	
 	SendNoticesIfNeeded( numSelected > 0);
-	BM_LOG2( BM_LogRefView, "SelectionChanged() - exit");
+	BM_LOG2( BM_LogGui, "MailRefView::SelectionChanged() - exit");
 }
 
 /*------------------------------------------------------------------------------*\

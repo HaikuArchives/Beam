@@ -349,7 +349,7 @@ void BmPrefsWin::MessageReceived( BMessage* msg) {
 		-	standard BeOS-behaviour, we allow a quit
 \*------------------------------------------------------------------------------*/
 bool BmPrefsWin::QuitRequested() {
-	BM_LOG2( BM_LogPrefsWin, BmString("PrefsWin has been asked to quit"));
+	BM_LOG2( BM_LogApp, BmString("PrefsWin has been asked to quit"));
 	if (mChanged) {
 		if (IsMinimized())
 			Minimize( false);
@@ -375,7 +375,7 @@ bool BmPrefsWin::QuitRequested() {
 \*------------------------------------------------------------------------------*/
 void BmPrefsWin::Quit() {
 	mPrefsViewContainer->WriteStateInfo();
-	BM_LOG2( BM_LogPrefsWin, BmString("PrefsWin has quit"));
+	BM_LOG2( BM_LogApp, BmString("PrefsWin has quit"));
 	inherited::Quit();
 }
 
