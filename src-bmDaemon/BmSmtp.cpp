@@ -30,6 +30,8 @@
 /*************************************************************************/
 
 
+#include <vector>
+
 #include <ctype.h>
 #include <memory.h>
 #include <stdio.h>
@@ -484,10 +486,10 @@ void BmSmtp::StateSendMails() {
 	mMailCount = mQueuedRefVect.size();
 
 	mMsgTotalSize = 0;
-	BmRef<BmMailRef> mailRefs[mMailCount];
+	vector<BmRef<BmMailRef> > mailRefs;
 	BmRef<BmMail> mail;
 	for( int32 i=0; i<mMailCount; ++i) {
-		mailRefs[i] = BmMailRef::CreateInstance( mQueuedRefVect[i]);
+		mailRefs.push_back(BmMailRef::CreateInstance( mQueuedRefVect[i]));
 		if (mailRefs[i] && mailRefs[i]->ItemIsValid())
 			mMsgTotalSize += mailRefs[i]->Size();
 	}
