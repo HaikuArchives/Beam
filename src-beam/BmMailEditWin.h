@@ -31,13 +31,9 @@
 #ifndef _BmMailEditWin_h
 #define _BmMailEditWin_h
 
-#include <map>
-
 #include <Entry.h>
 #include <MessageFilter.h>
 
-#include "BmController.h"
-#include "BmTextControl.h"
 #include "BmWindow.h"
 
 class MMenuBar;
@@ -49,6 +45,8 @@ class BmMailRef;
 class BmMailViewContainer;
 class BmMenuControl;
 class BmMenuController;
+class BmMenuControllerBase;
+class BmTextControl;
 class BmToolbarButton;
 class CLVContainerView;
 class HGroup;
@@ -65,30 +63,9 @@ class BFilePanel;
 class BmMailEditWin : public BmWindow
 {
 	typedef BmWindow inherited;
-	typedef map< const entry_ref, BmMailEditWin*> BmEditWinMap;
+	typedef map< BmString, BmMailEditWin*> BmEditWinMap;
 
-	class BmShiftTabMsgFilter : public BMessageFilter {
-	public:
-		BmShiftTabMsgFilter( BControl* stControl, uint32 cmd)
-			: 	BMessageFilter( B_ANY_DELIVERY, B_ANY_SOURCE, cmd) 
-			,	mShiftTabToControl( stControl)
-		{
-		}
-		filter_result Filter( BMessage* msg, BHandler** handler);
-	private:
-		BControl* mShiftTabToControl;
-	};
-
-	friend class BmPeopleDropMsgFilter : public BMessageFilter {
-	public:
-		BmPeopleDropMsgFilter( uint32 cmd)
-			: 	BMessageFilter( B_DROPPED_DELIVERY, B_ANY_SOURCE, cmd) 
-		{
-		}
-		filter_result Filter( BMessage* msg, BHandler** handler);
-	};
-
-	static void RebuildPeopleMenu( BmMenuControllerBase* peopleMenu);
+	friend class BmPeopleDropMsgFilter;
 
 	// state-archival members:
 	static const char* const MSG_DETAIL1;
@@ -102,11 +79,9 @@ public:
 	~BmMailEditWin();
 
 	// overrides of BmWindow base:
-	void BeginLife();
 	void MessageReceived( BMessage*);
 	bool QuitRequested();
 	void Quit();
-	void Show();
 	status_t ArchiveState( BMessage* archive) const;
 	status_t UnarchiveState( BMessage* archive);
 	
@@ -120,7 +95,7 @@ public:
 private:
 	// hide constructors:
 	BmMailEditWin();
-	BmMailEditWin( BmMailRef* mailRef=NULL, BmMail* mail=NULL);
+	BmMailEditWin( BmMailRef* mailRef, BmMail* mail=NULL);
 
 	// native methods:
 	void AddAddressToTextControl( BmTextControl* cntrl, const BmString& email);
@@ -138,7 +113,7 @@ private:
 	bool SaveMail( bool hardWrapIfNeeded=true);
 	void SetFieldsFromMail( BmMail* mail);
 
-	static BmEditWinMap nEditWinMap;
+	static void RebuildPeopleMenu( BmMenuControllerBase* peopleMenu);
 
 	BmMailView* mMailView;
 	
@@ -186,6 +161,8 @@ private:
 
 	static float nNextXPos;
 	static float nNextYPos;
+
+	static BmEditWinMap nEditWinMap;
 
 	// Hide copy-constructor and assignment:
 	BmMailEditWin( const BmMailEditWin&);

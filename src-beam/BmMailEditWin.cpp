@@ -28,9 +28,8 @@
 /*************************************************************************/
 
 
-#include <File.h>
 #include <FilePanel.h>
-#include <InterfaceKit.h>
+#include <MenuItem.h>
 #include <Message.h>
 
 #ifdef BEOS_VERSION_6 	// Zeta	
@@ -39,12 +38,12 @@
 
 #include "BmString.h"
 
-#include <layout-all.h>
+#include <HGroup.h>
+#include <VGroup.h>
+#include <MBorder.h>
+#include <MMenuBar.h>
+#include <Space.h>
 
-#include "regexx.hh"
-	using namespace regexx;
-
-#include "PrefilledBitmap.h"
 #include "TextEntryAlert.h"
 
 #include "BmApp.h"
@@ -53,7 +52,7 @@
 #include "BmCheckControl.h"
 #include "BmEncoding.h"
 	using namespace BmEncoding;
-#include "BmFilter.h"
+//#include "BmFilter.h"
 #include "BmGuiUtil.h"
 #include "BmIdentity.h"
 #include "BmLogHandler.h"
@@ -102,12 +101,34 @@ enum {
 
 
 
+class BmShiftTabMsgFilter : public BMessageFilter {
+public:
+	BmShiftTabMsgFilter( BControl* stControl, uint32 cmd)
+		: 	BMessageFilter( B_ANY_DELIVERY, B_ANY_SOURCE, cmd) 
+		,	mShiftTabToControl( stControl)
+	{
+	}
+	filter_result Filter( BMessage* msg, BHandler** handler);
+private:
+	BControl* mShiftTabToControl;
+};
+
+class BmPeopleDropMsgFilter : public BMessageFilter {
+public:
+	BmPeopleDropMsgFilter( uint32 cmd)
+		: 	BMessageFilter( B_DROPPED_DELIVERY, B_ANY_SOURCE, cmd) 
+	{
+	}
+	filter_result Filter( BMessage* msg, BHandler** handler);
+};
+
 /********************************************************************************\
 	BmMailEditWin
 \********************************************************************************/
 
 float BmMailEditWin::nNextXPos = 300;
 float BmMailEditWin::nNextYPos = 100;
+
 BmMailEditWin::BmEditWinMap BmMailEditWin::nEditWinMap;
 
 const char* const BmMailEditWin::MSG_CONTROL = 	"ctrl";
@@ -123,12 +144,13 @@ const char* const BmMailEditWin::MSG_DETAIL3 = 	"det3";
 		-	initialiazes the window's dimensions by reading its archive-file (if any)
 \*------------------------------------------------------------------------------*/
 BmMailEditWin* BmMailEditWin::CreateInstance( BmMailRef* mailRef) {
-	BmEditWinMap::iterator pos = nEditWinMap.find( mailRef->EntryRef());
+	BmString key = BmString() << mailRef->NodeRef().node;
+	BmEditWinMap::iterator pos = nEditWinMap.find( key);
 	if (pos != nEditWinMap.end())
 		return pos->second;
 	BmMailEditWin* win = new BmMailEditWin( mailRef, NULL);
 	win->ReadStateInfo();
-	nEditWinMap[mailRef->EntryRef()] = win;
+	nEditWinMap[key] = win;
 	return win;
 }
 
@@ -139,15 +161,17 @@ BmMailEditWin* BmMailEditWin::CreateInstance( BmMailRef* mailRef) {
 \*------------------------------------------------------------------------------*/
 BmMailEditWin* BmMailEditWin::CreateInstance( BmMail* mail) {
 	BmMailRef* mailRef = mail->MailRef();
+	BmString key;
 	if (mailRef) {
-		BmEditWinMap::iterator pos = nEditWinMap.find( mailRef->EntryRef());
+		key = BmString() << mailRef->NodeRef().node;
+		BmEditWinMap::iterator pos = nEditWinMap.find( key);
 		if (pos != nEditWinMap.end())
 			return pos->second;
 	}
 	BmMailEditWin* win = new BmMailEditWin( NULL, mail);
 	win->ReadStateInfo();
 	if (mailRef)
-		nEditWinMap[mailRef->EntryRef()] = win;
+		nEditWinMap[key] = win;
 	return win;
 }
 
@@ -189,6 +213,7 @@ BmMailEditWin::BmMailEditWin( BmMailRef* mailRef, BmMail* mail)
 \*------------------------------------------------------------------------------*/
 BmMailEditWin::~BmMailEditWin() {
 	delete mAttachPanel;
+/*
 	BmRef<BmMail> mail = mMailView->CurrMail();
 	if (mail) {
 		// we remove ourselves from the existing edit-windows map in a safe manner
@@ -199,10 +224,11 @@ BmMailEditWin::~BmMailEditWin() {
 			if (iter->second == this) {
 				// remove ourselves and quit:
 				nEditWinMap.erase( iter);
-				return;
+				break;
 			}
 		}
 	}
+*/
 	// now manually delete all sub-views that are not currently added to the
 	// window:
 	if (!mShowDetails1)
@@ -217,7 +243,7 @@ BmMailEditWin::~BmMailEditWin() {
 	Filter()
 		-	
 \*------------------------------------------------------------------------------*/
-filter_result BmMailEditWin::BmShiftTabMsgFilter::Filter( BMessage* msg, 
+filter_result BmShiftTabMsgFilter::Filter( BMessage* msg, 
 																			 BHandler**) {
 	if (msg->what == B_KEY_DOWN) {
 		BmString bytes = msg->FindString( "bytes");
@@ -234,7 +260,7 @@ filter_result BmMailEditWin::BmShiftTabMsgFilter::Filter( BMessage* msg,
 	Filter()
 		-	
 \*------------------------------------------------------------------------------*/
-filter_result BmMailEditWin::BmPeopleDropMsgFilter::Filter( BMessage* msg, 
+filter_result BmPeopleDropMsgFilter::Filter( BMessage* msg, 
 																				BHandler** handler) {
 	filter_result res = B_DISPATCH_MESSAGE;
 	BView* cntrl = handler ? dynamic_cast< BView*>( *handler) : NULL;
@@ -341,7 +367,7 @@ static void RebuildFolderMenu( BmMenuControllerBase* menu) {
 	while( (old = menu->RemoveItem( (int32)0)) != NULL)
 		delete old;
 	
-	BeamRoster->FillMenuFromList( BM_ROSTER_FOLDERLIST, 
+	BeamRoster->FillMenuFromList( BmRosterBase::BM_ROSTER_FOLDERLIST, 
 											menu, 
 											menu->MsgTarget(),
 											menu->MsgTemplate());
@@ -748,7 +774,6 @@ void BmMailEditWin::SetDetailsButton( int32 nr, int32 newVal) {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmMailEditWin::MessageReceived( BMessage* msg) {
-	Regexx rx;
 	int32 newVal;
 	try {
 		switch( msg->what) {
@@ -839,7 +864,7 @@ void BmMailEditWin::MessageReceived( BMessage* msg) {
 							BM_LOG2( BM_LogGui, 
 										"MailEditWin: ...marking mail as pending");
 							mail->MarkAs( BM_MAIL_STATUS_PENDING);
-							mail->ApplyFilter( NULL, true);
+							mail->ApplyFilter( true);
 							smtpAcc->mMailVect.push_back( mail);
 							BM_LOG2( BM_LogGui, 
 										"MailEditWin: ...passing mail to smtp-account");
@@ -874,7 +899,7 @@ void BmMailEditWin::MessageReceived( BMessage* msg) {
 				if (smtpAcc) {
 					mail->SetNewHeader( headerStr);
 					mail->MarkAs( BM_MAIL_STATUS_PENDING);
-					mail->ApplyFilter( NULL, true);
+					mail->ApplyFilter( true);
 					smtpAcc->mMailVect.push_back( mail);
 					TheSmtpAccountList->SendQueuedMailFor( smtpAcc->Name());
 					PostMessage( B_QUIT_REQUESTED);
@@ -1085,15 +1110,16 @@ void BmMailEditWin::MessageReceived( BMessage* msg) {
 void BmMailEditWin::AddAddressToTextControl( BmTextControl* cntrl, 
 															const BmString& email) {
 	if (cntrl) {
-		Regexx rx;
 		BmString currStr = cntrl->Text();
+		currStr.Trim();
 		BmAddress addr( email);
 		BmString mailAddr;
 		if (ThePrefs->GetBool( "AddPeopleNameToMailAddr", true))
 			mailAddr = addr.AddrString();
 		else
 			mailAddr = addr.AddrSpec();
-		if (rx.exec( currStr, "\\S+"))
+		
+		if (currStr.Length() > 0)
 			currStr << ", " << mailAddr;
 		else
 			currStr << mailAddr;
@@ -1117,51 +1143,6 @@ void BmMailEditWin::RemoveAddressFromTextControl( BmTextControl* cntrl,
 		cntrl->TextView()->Select( currStr.Length(), currStr.Length());
 		cntrl->TextView()->ScrollToSelection();
 	}
-}
-
-/*------------------------------------------------------------------------------*\
-	BeginLife()
-		-	
-\*------------------------------------------------------------------------------*/
-void BmMailEditWin::BeginLife() {
-}
-
-/*------------------------------------------------------------------------------*\
-	Show()
-		-	
-\*------------------------------------------------------------------------------*/
-void BmMailEditWin::Show() {
-	if (!Looper()->IsLocked()) {
-		// showing living window, we bring it to front:
-		LockLooper();
-		if (IsMinimized())
-			Minimize( false);
-		inherited::Hide();
-		inherited::Show();
-		UnlockLooper();
-	} else
-		inherited::Show();
-}
-
-/*------------------------------------------------------------------------------*\
-	EditMail()
-		-	
-\*------------------------------------------------------------------------------*/
-void BmMailEditWin::EditMail( BmMailRef* ref) {
-	mMailView->ShowMail( ref, false);
-							// false=>sync (i.e. wait till mail is being displayed)
-	BmRef<BmMail> mail = mMailView->CurrMail();
-	SetFieldsFromMail( mail.Get());
-}
-
-/*------------------------------------------------------------------------------*\
-	EditMail()
-		-	
-\*------------------------------------------------------------------------------*/
-void BmMailEditWin::EditMail( BmMail* mail) {
-	mMailView->ShowMail( mail, false);
-							// false=>sync (i.e. wait till mail is being displayed)
-	SetFieldsFromMail( mail);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -1257,6 +1238,27 @@ void BmMailEditWin::SetFieldsFromMail( BmMail* mail) {
 			SetDetailsButton( 2, B_CONTROL_ON);
 		}
 	}
+}
+
+/*------------------------------------------------------------------------------*\
+	EditMail()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailEditWin::EditMail( BmMailRef* ref) {
+	mMailView->ShowMail( ref, false);
+							// false=>sync (i.e. wait till mail is being displayed)
+	BmRef<BmMail> mail = mMailView->CurrMail();
+	SetFieldsFromMail( mail.Get());
+}
+
+/*------------------------------------------------------------------------------*\
+	EditMail()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailEditWin::EditMail( BmMail* mail) {
+	mMailView->ShowMail( mail, false);
+							// false=>sync (i.e. wait till mail is being displayed)
+	SetFieldsFromMail( mail);
 }
 
 /*------------------------------------------------------------------------------*\
