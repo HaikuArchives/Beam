@@ -35,8 +35,11 @@
 #include <MenuItem.h>
 #include <MessageFilter.h>
 
-#ifdef BEOS_VERSION_6 	// Zeta	
-	#include <interface/EMailCompleter.h>
+#if B_ZETA_VERSION > B_ZETA_VERSION_BETA
+#	define ZETA_ONLY(x) x
+#	include <interface/EMailCompleter.h>
+#else
+#	define ZETA_ONLY(x)
 #endif
 
 #include "BmString.h"
@@ -452,11 +455,11 @@ void BmMailEditWin::CreateGUI() {
 	mMailView->BodyPartView()->StartWatching( this, 
 															BM_NTFY_LISTCONTROLLER_MODIFIED);
 
-#ifdef BEOS_VERSION_6 	// Zeta	
+ZETA_ONLY(
 	mToControl->TextView()->AddFilter(new BEMailCompleter);
 	mCcControl->TextView()->AddFilter(new BEMailCompleter);
 	mBccControl->TextView()->AddFilter(new BEMailCompleter);
-#endif
+)
 
 	AddChild( dynamic_cast<BView*>(mOuterGroup));
 }

@@ -28,6 +28,9 @@ if $(OSPLAT) = X86 {
 	local haveZeta = [ GLOB /boot/beos/system/lib : libzeta.so ] ;
 	if $(haveZeta)	{
 		LINKLIBS += -lzeta ;
+		CCFLAGS += -D_ZETA_USING_DEPRECATED_API_ ;
+		C++FLAGS += -D_ZETA_USING_DEPRECATED_API_ ;
+		SYSHDRS += /boot/develop/headers/liblayout /boot/develop/headers/pcre ;
 	}
 	# check for libbnetapi...
 	local haveLibbnetapi = [ GLOB /boot/develop/lib/x86 : libbnetapi.so ] ;
