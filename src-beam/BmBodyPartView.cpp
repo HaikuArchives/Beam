@@ -478,10 +478,14 @@ void BmBodyPartView::ItemInvoked( int32 index) {
 		BmString realMT = DetermineMimeType( &eref, true);
 		if (realMT.ICompare( bodyPart->MimeType())!=0) {
 			int32 choice = 0;
-			// we only complain if real mimetype is not text/plain because
-			// otherwise we would issue too many unneccessary complaints
-			// ('message/rfc822' being 'text/plain' and the like):
-			if (realMT.ICompare( "text/",5) != 0) {
+			if (bodyPart->MimeType().ICompare( "message/rfc822") == 0
+			&& realMT.ICompare( "text/",5) == 0) {
+				// skip complaining about emails being text/plain which comes
+				// up quite regularly due to the limited success of the corresponding
+				// BeOS-mimetype-sniffer-rules (they require a mail to start with 
+				// "Return-Path: ", which is not always the case):
+				choice = 1;		// revert to declared type
+			} else {
 				BmString s("ATTENTION!\n\nThe attachment has been declared to be of type \n\n\t");
 				s << bodyPart->MimeType()
 				  << "\n\nbut BeOS thinks it is in fact of type\n\n\t" << realMT
