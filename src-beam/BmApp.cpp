@@ -34,11 +34,8 @@
 #include <AppFileInfo.h>
 #include <Beep.h>
 #include <Deskbar.h>
-#include <MenuItem.h>
 #include <Roster.h>
 #include <Screen.h>
-
-#include <PictureButton.h>
 
 #include "regexx.hh"
 using namespace regexx;
@@ -54,7 +51,6 @@ using namespace regexx;
 #include "BmEncoding.h"
 #include "BmFilter.h"
 #include "BmFilterChain.h"
-#include "BmGuiUtil.h"
 #include "BmIdentity.h"
 #include "BmJobStatusWin.h"
 #include "BmLogHandler.h"
@@ -73,57 +69,11 @@ using namespace regexx;
 #include "BmPrefs.h"
 #include "BmPrefsWin.h"
 #include "BmResources.h"
-#include "BmRosterBase.h"
+#include "BmRoster.h"
 #include "BmSignature.h"
 #include "BmSmtpAccount.h"
 #include "BmStorageUtil.h"
 #include "BmUtil.h"
-
-/*------------------------------------------------------------------------------*\
-	BmRoster
-		-	a class that can be used by add-ons to retrieve info about
-			Beam's state.
-\*------------------------------------------------------------------------------*/
-class BmRoster : public BmRosterBase {
-
-public:
-	virtual ~BmRoster()						{}
-	
-	// overrides of base class:
-	void FillMenuFromList( const char* listName, BMenu* menu, 
-								  BHandler* menuTarget, BMessage* msgTemplate);
-};
-
-void BmRoster::FillMenuFromList( const char* ln, BMenu* menu, 
-										   BHandler* target, BMessage* msgTempl) {
-	BmString listName(ln);
-	if (menu) {
-		BFont font;
-		menu->GetFont( &font);
-		if (listName == BM_ROSTER_STATUSLIST) {
-			const char* stats[] = {
-				BM_MAIL_STATUS_DRAFT, BM_MAIL_STATUS_FORWARDED, 
-				BM_MAIL_STATUS_NEW, 
-				BM_MAIL_STATUS_PENDING, BM_MAIL_STATUS_READ, 
-				BM_MAIL_STATUS_REDIRECTED,
-				BM_MAIL_STATUS_REPLIED, BM_MAIL_STATUS_SENT,	NULL
-			};
-			for( int i=0; stats[i]; ++i) {
-				BMenuItem* item 
-					= new BMenuItem( stats[i], new BMessage(*msgTempl));
-				item->SetTarget( target);
-				menu->AddItem( item);
-			}
-		} else if (listName == BM_ROSTER_FOLDERLIST) {
-			AddListToMenu( TheMailFolderList.Get(), menu, msgTempl, 
-								target, &font, true);
-		} else if (listName == BM_ROSTER_IDENTITYLIST) {
-			AddListToMenu( TheIdentityList.Get(), menu, msgTempl, 
-								target, &font);
-		}
-	}
-}
-
 
 
 /*------------------------------------------------------------------------------*\
@@ -459,7 +409,19 @@ static int32 ForwardMails( void* data) {
 		BmString selectedText 
 			= msg->FindString( BmApplication::MSG_SELECTED_TEXT);
 
-		BmForwardFactory factory( msg->what, join, selectedText);
+		BmForwardMode forwardMode;
+		switch(msg->what) {
+			case BMM_FORWARD_INLINE_ATTACH:
+				forwardMode = BM_FORWARD_MODE_INLINE_ATTACH;
+				break;
+			case BMM_FORWARD_ATTACHED:
+				forwardMode = BM_FORWARD_MODE_ATTACHED;
+				break;
+			default: // BMM_FORWARD_INLINE:
+				forwardMode = BM_FORWARD_MODE_INLINE;
+				break;
+		};
+		BmForwardFactory factory( forwardMode, join, selectedText);
 		CreateMailsWithFactory( msg, refVect, &factory);
 	}
 	delete refVect;
@@ -505,7 +467,22 @@ static int32 ReplyToMails( void* data) {
 		BmString selectedText 
 			= msg->FindString( BmApplication::MSG_SELECTED_TEXT);
 	
-		BmReplyFactory factory( msg->what, join, joinIntoOne, selectedText);
+		BmReplyMode replyMode;
+		switch(msg->what) {
+			case BMM_REPLY_LIST:
+				replyMode = BM_REPLY_MODE_LIST;
+				break;
+			case BMM_REPLY_ORIGINATOR:
+				replyMode = BM_REPLY_MODE_PERSON;
+				break;
+			case BMM_REPLY_ALL:
+				replyMode = BM_REPLY_MODE_ALL;
+				break;
+			default: // BMM_REPLY:
+				replyMode = BM_REPLY_MODE_SMART;
+				break;
+		};
+		BmReplyFactory factory( replyMode, join, joinIntoOne, selectedText);
 		CreateMailsWithFactory( msg, refVect, &factory);
 	}
 	delete refVect;
@@ -706,11 +683,14 @@ BmApplication::BmApplication( const char* sig)
 		// create the log-handler:
 		BmLogHandler::CreateInstance( 1, &nref);
 
-		// load/determine all needed resources:
-		BmResources::CreateInstance();
+		// create the info-roster (used by add-ons):
+		BeamRoster = new BmRoster();
 		time_t appModTime;
 		appFile.GetModificationTime( &appModTime);
-		TheResources->CheckMimeTypeFile( sig, appModTime);
+		BeamRoster->UpdateMimeTypeFile( sig, appModTime);
+
+		// load/determine all needed resources:
+		BmResources::CreateInstance();
 
 		// create BubbleHelper:
 		BubbleHelper::CreateInstance();
@@ -736,9 +716,6 @@ BmApplication::BmApplication( const char* sig)
 		TheJobStatusWin->Hide();
 		TheJobStatusWin->Show();
 
-		// create the info-roster (used by add-ons):
-		BeamRoster = new BmRoster();
-
 		// create most of our list-models:
 		BmSignatureList::CreateInstance();
 
@@ -753,9 +730,9 @@ BmApplication::BmApplication( const char* sig)
 
 		BmIdentityList::CreateInstance();
 
-		BmSmtpAccountList::CreateInstance( TheJobStatusWin);
+		BmSmtpAccountList::CreateInstance();
 
-		BmPopAccountList::CreateInstance( TheJobStatusWin);
+		BmPopAccountList::CreateInstance();
 
 		BM_LOG( BM_LogApp, BmString("...setting up foreign-keys..."));
 		// now setup all foreign-key connections between these list-models:
@@ -845,6 +822,45 @@ void BmApplication::AppActivated( bool active) {
 }
 
 /*------------------------------------------------------------------------------*\
+	CreateRequiredIndices()
+		-	
+\*------------------------------------------------------------------------------*/
+static void CreateRequiredIndices() {
+	EnsureIndexExists( BM_MAIL_ATTR_ACCOUNT);
+	EnsureIndexExists( BM_MAIL_ATTR_IDENTITY);
+	EnsureIndexExists( BM_MAIL_ATTR_STATUS);
+
+// [zooey]: Should we activate this? It's too ugly, isn't it?
+/*
+	// There's a bug in BFS which sometimes causes an index to be removed when
+	// there's exactly one matching entry left. In order to avoid this, we
+	// make sure we have at least two files (non-mails), that live on the mailbox-
+	// volume:
+	BmString mboxPath = ThePrefs->GetString( "MailboxPath");
+	BDirectory mboxRoot( mboxPath.String());
+	if (mboxRoot.InitCheck() == B_OK) {
+		BmString txt(
+			"This file is one in a set of two that have been created by Beam\n"
+			"in order to circumvent a bug in BFS which may drop required indices\n"
+			"if they only contain one single entry.\n"
+		);
+		for( int i=1; i<=2; ++i) {
+			BmString nm("beam_mail_indices_anchor_");
+			nm << i;
+			BEntry entry( &mboxRoot, nm.String());
+			if (entry.InitCheck() != B_OK || !entry.Exists()) {
+				BFile f( &mboxRoot, nm.String(), B_WRITE_ONLY | B_CREATE_FILE);
+				f.WriteAttr( BM_MAIL_ATTR_ACCOUNT, B_STRING_TYPE, 0, "", 1);
+				f.WriteAttr( BM_MAIL_ATTR_IDENTITY, B_STRING_TYPE, 0, "", 1);
+				f.WriteAttr( BM_MAIL_ATTR_STATUS, B_STRING_TYPE, 0, "", 1);
+				f.Write( txt.String(), txt.Length());
+			}
+		}
+	}
+*/
+}
+
+/*------------------------------------------------------------------------------*\
 	Run()
 		-	starts Beam
 \*------------------------------------------------------------------------------*/
@@ -862,8 +878,7 @@ thread_id BmApplication::Run() {
 			mStartupLocker->Lock();
 		}
 
-		EnsureIndexExists( "MAIL:identity");
-		EnsureIndexExists( "MAIL:account");
+		CreateRequiredIndices();
 
 		if (ThePrefs->GetBool( "UseDeskbar"))
 			InstallDeskbarItem();
