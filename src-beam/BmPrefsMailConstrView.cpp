@@ -67,6 +67,7 @@ using namespace BmEncoding;
 \*------------------------------------------------------------------------------*/
 BmPrefsMailConstrView::BmPrefsMailConstrView() 
 	:	inherited( "Sending Mail")
+	,	mPeoplePanel( NULL)
 {
 	MView* view = 
 		new VGroup(
@@ -176,9 +177,6 @@ BmPrefsMailConstrView::BmPrefsMailConstrView()
 			0
 		);
 	mGroupView->AddChild( dynamic_cast<BView*>(view));
-	
-//	border1->ct_mpm.mini.x = border2->ct_mpm.mini.x = border3->ct_mpm.mini.x = 250;
-//	border1->ct_mpm.maxi.x = border2->ct_mpm.maxi.x = border3->ct_mpm.maxi.x = 250;
 	
 	float divider = mMaxLineLenControl->Divider();
 	divider = MAX( divider, mQuotingStringControl->Divider());
@@ -302,28 +300,28 @@ can lead to unwanted wrapping of structured text (e.g. code), Beam uses \n\
 'Push Margin' by default.");
 	TheBubbleHelper->SetHelp( mForwardIntroStrControl, "Here you can enter a string that will \nappear at the top of every forwarded mail.\n\
 The following macros are supported:\n\
-	%D  -  expands to the original mail's date.\n\
-	%F  -  expands to the sender of the original mail.\n\
-	%S  -  expands to the original mail's subject.\n\
-	%T  -  expands to the original mail's time.");
+	%d  -  expands to the original mail's date.\n\
+	%f  -  expands to the sender of the original mail.\n\
+	%s  -  expands to the original mail's subject.\n\
+	%t  -  expands to the original mail's time.");
 	TheBubbleHelper->SetHelp( mForwardSubjectStrControl, "Here you can influence the subject-string \nBeam generates for a forwarded mail.\n\
 The following macros are supported:\n\
-	%S  -  expands to the original mail's subject.");
+	%s  -  expands to the original mail's subject.");
 	TheBubbleHelper->SetHelp( mForwardSubjectRxControl, "This string is the regular-expression (perl-style) Beam uses\nto determine whether a given subject indicates\nthat the mail already is a forward.\nThis way subjects like \n\t'Fwd: Fwd: Fwd: fun-stuff'\ncan be avoided.");
 	TheBubbleHelper->SetHelp( mReplyIntroStrControl, "Here you can enter a string that will \nappear at the top of every reply.\n\
 The following macros are supported:\n\
-	%D  -  expands to the original mail's date.\n\
-	%F  -  expands to the sender of the original mail.\n\
-	%S  -  expands to the original mail's subject.\n\
-	%T  -  expands to the original mail's time.");
+	%d  -  expands to the original mail's date.\n\
+	%f  -  expands to the sender of the original mail.\n\
+	%s  -  expands to the original mail's subject.\n\
+	%t  -  expands to the original mail's time.");
 	TheBubbleHelper->SetHelp( mReplyIntroStrPrivateControl, "When replying to a person only, it seems inappropriate\n\
 to have: 'On ... Steve Miller wrote:' in the intro text.\n\
 In this field you can enter a text that will be used\n\
-instead of the name when expanding %F in order to\n\
+instead of the name when expanding %f in order to\n\
 achieve something like: 'On ... you wrote'.");
 	TheBubbleHelper->SetHelp( mReplySubjectStrControl, "Here you can influence the subject-string \nBeam generates for a reply.\n\
 The following macros are supported:\n\
-	%S  -  expands to the original mail's subject.");
+	%s  -  expands to the original mail's subject.");
 	TheBubbleHelper->SetHelp( mReplySubjectRxControl, "This string is the regular-expression (perl-style) Beam uses\nto determine whether a given subject indicates\nthat the mail already is a reply.\nThis way subjects like \n\t'Re: Re: Re: your offer'\ncan be avoided.");
 	TheBubbleHelper->SetHelp( mDefaultCharsetControl, "Here you can select the charset-encoding Beam should use by default.");
 	TheBubbleHelper->SetHelp( mUsedCharsetsControl, "Here you can select the charsets you are frequently using.\n\

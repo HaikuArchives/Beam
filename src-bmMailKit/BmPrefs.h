@@ -50,7 +50,7 @@ class BmPrefs : public BArchivable {
 
 	static const char* const MSG_VERSION;// = 	"bm:version";
 
-	static const int16 nPrefsVersion = 5;
+	static const int16 nPrefsVersion;
 	
 public:
 	// creator-func, c'tors and d'tor:
@@ -79,11 +79,20 @@ public:
 	BmString GetShortcutFor( const char* shortcutID);
 	void SetShortcutFor( const char* name, const BmString val);
 
+	const char* GetLogLevelFor( uint32 terrain);
+	void SetLogLevelForTo( uint32 terrain, BmString level);
+
 	// getters:
 	BMessage* ShortcutsMsg()				{ return &mShortcutsMsg; }
 	BLocker& Locker()							{ return mLocker; }
 
 	static BmPrefs* theInstance;
+
+	// log-levels as string (for prefs):
+	static const char* const LOG_LVL_0;
+	static const char* const LOG_LVL_1;
+	static const char* const LOG_LVL_2;
+	static const char* const LOG_LVL_3;
 
 private:
 

@@ -54,7 +54,7 @@ using namespace BmEncoding;
 
 BmCharsetMap BmEncoding::TheCharsetMap;
 
-BmString BmEncoding::DefaultCharset = "ISO-8859-15";
+BmString BmEncoding::DefaultCharset = "iso-8859-15";
 
 static iconv_t ICONV_ERR = (iconv_t)0xFFFFFFFF;
 

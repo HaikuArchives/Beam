@@ -48,6 +48,13 @@ BmPrefs* BmPrefs::theInstance = NULL;
 const char* const BmPrefs::PREFS_FILENAME = 	"General Settings";
 const char* const BmPrefs::MSG_VERSION	 = 	"bm:version";
 
+const char* const BmPrefs::LOG_LVL_0 = "Don't Log";
+const char* const BmPrefs::LOG_LVL_1 = "Log";
+const char* const BmPrefs::LOG_LVL_2 = "Log More";
+const char* const BmPrefs::LOG_LVL_3 = "Log Everything";
+
+const int16 BmPrefs::nPrefsVersion = 6;
+
 /*------------------------------------------------------------------------------*\
 	CreateInstance()
 		-	initialiazes preferences by reading them from a file
@@ -118,18 +125,6 @@ BmPrefs::BmPrefs( BMessage* archive)
 	mSavedPrefsMsg = mPrefsMsg = *archive;
 	int16 version = 0;
 	archive->FindInt16( MSG_VERSION, &version);
-	int32 loglevels = BM_LOGLVL_VAL(archive->FindInt16("Loglevel_Pop"),BM_LogPop)
-							+ BM_LOGLVL_VAL(archive->FindInt16("Loglevel_JobWin"),BM_LogJobWin) 
-							+ BM_LOGLVL_VAL(archive->FindInt16("Loglevel_MailParse"),BM_LogMailParse) 
-							+ BM_LOGLVL_VAL(archive->FindInt16("Loglevel_App"),BM_LogApp) 
-							+ BM_LOGLVL_VAL(archive->FindInt16("Loglevel_MailTracking"),BM_LogMailTracking)
-							+ BM_LOGLVL_VAL(archive->FindInt16("Loglevel_Gui"),BM_LogGui)
-							+ BM_LOGLVL_VAL(archive->FindInt16("Loglevel_ModelController"),BM_LogModelController)
-							+ BM_LOGLVL_VAL(archive->FindInt16("Loglevel_Smtp"),BM_LogSmtp)
-							+ BM_LOGLVL_VAL(archive->FindInt16("Loglevel_Filter"),BM_LogFilter)
-							+ BM_LOGLVL_VAL(archive->FindInt16("Loglevel_RefCount"),BM_LogRefCount);
-	mPrefsMsg.RemoveName("Loglevels");
-	mPrefsMsg.AddInt32("Loglevels", loglevels);
 	SetLoglevels();
 	
 	status_t scStatus = mPrefsMsg.FindMessage( "Shortcuts", &mShortcutsMsg);
@@ -187,6 +182,12 @@ BmPrefs::BmPrefs( BMessage* archive)
 		mPrefsMsg.RemoveName("DefaultEncoding");
 		mPrefsMsg.AddString( "DefaultCharset", charset.String());
 	}
+	if (version < 6) {
+		// changes introduced with version 6:
+		//
+		// remove field "SeparatorCharsForUndo" (is now called "UndoMode"):
+		mPrefsMsg.RemoveName("SeparatorCharsForUndo");
+	}
 	if (scStatus == B_OK) {
 		// add any missing (new) shortcuts:
 		GetShortcutDefaults( &mShortcutsMsg);
@@ -214,13 +215,14 @@ void BmPrefs::ResetToSaved() {
 	BAutolock lock( mLocker);
 	lock.IsLocked()	 						|| BM_THROW_RUNTIME( "Prefs: Unable to get lock!");
 	mPrefsMsg = mSavedPrefsMsg;
+	SetLoglevels();
 	if (mPrefsMsg.FindMessage( "Shortcuts", &mShortcutsMsg) == B_OK) {
 		// add any missing (new) shortcuts:
 		GetShortcutDefaults( &mShortcutsMsg);
 	} else {
 		// no shortcuts info yet, we add default settings:
 		mPrefsMsg.AddMessage( "Shortcuts", GetShortcutDefaults( &mShortcutsMsg));
-	} 
+	}
 }
 
 /*------------------------------------------------------------------------------*\
@@ -231,6 +233,7 @@ void BmPrefs::ResetToDefault() {
 	BAutolock lock( mLocker);
 	lock.IsLocked()	 						|| BM_THROW_RUNTIME( "Prefs: Unable to get lock!");
 	mPrefsMsg = mDefaultsMsg;
+	SetLoglevels();
 	mShortcutsMsg.MakeEmpty();
 	GetShortcutDefaults( &mShortcutsMsg);
 }
@@ -251,7 +254,7 @@ void BmPrefs::InitDefaults() {
 							+ BM_LOGLVL0(BM_LogModelController)
 							+ BM_LOGLVL1(BM_LogSmtp)
 							+ BM_LOGLVL1(BM_LogFilter)
-							+ BM_LOGLVL1(BM_LogRefCount);
+							+ BM_LOGLVL0(BM_LogRefCount);
 
 	mDefaultsMsg.AddBool( "AddPeopleNameToMailAddr", true);
 	mDefaultsMsg.AddBool( "AutoCheckOnlyIfPPPRunning", true);
@@ -264,7 +267,7 @@ void BmPrefs::InitDefaults() {
 	mDefaultsMsg.AddString( "DefaultForwardType", "Inline");
 	mDefaultsMsg.AddBool( "DoNotAttachVCardsToForward", true);
 	mDefaultsMsg.AddBool( "DynamicStatusWin", true);
-	mDefaultsMsg.AddString( "ForwardIntroStr", "On %D at %T, %F wrote:");
+	mDefaultsMsg.AddString( "ForwardIntroStr", "On %s at %t, %f wrote:");
 	mDefaultsMsg.AddString( "ForwardSubjectRX", "^\\s*\\[?\\s*Fwd(\\[\\d+\\])?:");
 	mDefaultsMsg.AddString( "ForwardSubjectStr", "Fwd: %s");
 	mDefaultsMsg.AddBool( "GenerateOwnMessageIDs", true);
@@ -302,8 +305,8 @@ void BmPrefs::InitDefaults() {
 	mDefaultsMsg.AddString( "PeopleFolder", "/boot/home/people");
 	mDefaultsMsg.AddBool( "PreferUserAgentOverX-Mailer", true);
 	mDefaultsMsg.AddInt32( "ReceiveTimeout", 60);
-	mDefaultsMsg.AddString( "ReplyIntroStr", "On %D at %T, you wrote:");
-	mDefaultsMsg.AddString( "ReplyListIntroStr", "On %D at %T, %F wrote:");
+	mDefaultsMsg.AddString( "ReplyIntroDefaultNick", "you");
+	mDefaultsMsg.AddString( "ReplyIntroStr", "On %d at %t, %f wrote:");
 	mDefaultsMsg.AddString( "ReplySubjectRX", "^\\s*(Re|Aw)(\\[\\d+\\])?:");
 	mDefaultsMsg.AddString( "ReplySubjectStr", "Re: %s");
 	mDefaultsMsg.AddBool( "RestoreFolderStates", true);
@@ -322,30 +325,30 @@ void BmPrefs::InitDefaults() {
 	mDefaultsMsg.AddBool( "UseDocumentResizer", true);
 	mDefaultsMsg.AddBool( "UseSwatchTimeInRefView", false);
 	mDefaultsMsg.AddString( "Workspace", "Current");
-	mDefaultsMsg.AddString( "StandardCharsets", (BmString("<ISO-8859-1>")
-									+"<ISO-8859-2>" 
-									+"<ISO-8859-3>"	
-									+"<ISO-8859-4>"
-									+"<ISO-8859-5>" 
-									+"<ISO-8859-6>" 
-									+"<ISO-8859-7>"
-									+"<ISO-8859-8>"
-									+"<ISO-8859-9>" 
-									+"<ISO-8859-10>" 
-									+"<ISO-8859-13>" 
-									+"<ISO-8859-14>"
-									+"<ISO-8859-15>" 
-									+"<MACROMAN>" 
-									+"<WINDOWS-1251>" 
-									+"<WINDOWS-1252>"
-									+"<CP866>"
-									+"<CP850>"
-									+"<ISO-2022-JP>"
-									+"<ISO-2022-JP-2>"
-									+"<KOI8-R>"
-									+"<EUC-KR>"
-									+"<BIG-5>"
-									+"<UTF-8>").String());
+	mDefaultsMsg.AddString( "StandardCharsets", (BmString("<iso-8859-1>")
+									+"<iso-8859-2>" 
+									+"<iso-8859-3>"	
+									+"<iso-8859-4>"
+									+"<iso-8859-5>" 
+									+"<iso-8859-6>" 
+									+"<iso-8859-7>"
+									+"<iso-8859-8>"
+									+"<iso-8859-9>" 
+									+"<iso-8859-10>" 
+									+"<iso-8859-13>" 
+									+"<iso-8859-14>"
+									+"<iso-8859-15>" 
+									+"<macroman>" 
+									+"<windows-1251>" 
+									+"<windows-1252>"
+									+"<cp866>"
+									+"<cp850>"
+									+"<iso-2022-jp>"
+									+"<iso-2022-jp-2>"
+									+"<koi8-r>"
+									+"<euc-kr>"
+									+"<big-5>"
+									+"<utf-8>").String());
 }
 
 /*------------------------------------------------------------------------------*\
@@ -440,12 +443,97 @@ BMessage* BmPrefs::GetShortcutDefaults( BMessage* shortcutsMsg) {
 }
 
 /*------------------------------------------------------------------------------*\
+	GetLogLevelFor( terrain)
+		-	returns the current log-level (as string) for the given terrain:
+\*------------------------------------------------------------------------------*/
+const char* BmPrefs::GetLogLevelFor( uint32 terrain) {
+	int32 level;
+	if (terrain == BM_LogPop)
+		level = mPrefsMsg.FindInt16("Loglevel_Pop");
+	else if (terrain == BM_LogSmtp)
+		level = mPrefsMsg.FindInt16("Loglevel_Smtp");
+	else if (terrain == BM_LogApp)
+		level = mPrefsMsg.FindInt16("Loglevel_App");
+	else if (terrain == BM_LogFilter)
+		level = mPrefsMsg.FindInt16("Loglevel_Filter");
+	else if (terrain == BM_LogMailParse)
+		level = mPrefsMsg.FindInt16("Loglevel_MailParse");
+	else if (terrain == BM_LogMailTracking)
+		level = mPrefsMsg.FindInt16("Loglevel_MailTracking");
+	else if (terrain == BM_LogJobWin)
+		level = mPrefsMsg.FindInt16("Loglevel_JobWin");
+	else if (terrain == BM_LogGui)
+		level = mPrefsMsg.FindInt16("Loglevel_Gui");
+	else if (terrain == BM_LogModelController)
+		level = mPrefsMsg.FindInt16("Loglevel_ModelController");
+	else if (terrain == BM_LogRefCount)
+		level = mPrefsMsg.FindInt16("Loglevel_RefCount");
+
+	if (level == 1)
+		return LOG_LVL_1;
+	else if (level == 2)
+		return LOG_LVL_2;
+	else if (level == 3)
+		return LOG_LVL_3;
+	else
+		return LOG_LVL_0;
+}
+
+/*------------------------------------------------------------------------------*\
+	SetLogLevelForTo( terrain, loglevel)
+		-	set the current log-level (given as string) for the given terrain
+\*------------------------------------------------------------------------------*/
+void BmPrefs::SetLogLevelForTo( uint32 terrain, BmString loglevel) {
+	int32 level;
+	if (loglevel.ICompare(LOG_LVL_1) == 0)
+		level = 1;
+	else if (loglevel.ICompare(LOG_LVL_2) == 0)
+		level = 2;
+	else if (loglevel.ICompare(LOG_LVL_3) == 0)
+		level = 3;
+	else
+		level = 0;
+
+	if (terrain == BM_LogPop)
+		mPrefsMsg.ReplaceInt16("Loglevel_Pop", level);
+	else if (terrain == BM_LogSmtp)
+		mPrefsMsg.ReplaceInt16("Loglevel_Smtp", level);
+	else if (terrain == BM_LogApp)
+		mPrefsMsg.ReplaceInt16("Loglevel_App", level);
+	else if (terrain == BM_LogFilter)
+		mPrefsMsg.ReplaceInt16("Loglevel_Filter", level);
+	else if (terrain == BM_LogMailParse)
+		mPrefsMsg.ReplaceInt16("Loglevel_MailParse", level);
+	else if (terrain == BM_LogMailTracking)
+		mPrefsMsg.ReplaceInt16("Loglevel_MailTracking", level);
+	else if (terrain == BM_LogJobWin)
+		mPrefsMsg.ReplaceInt16("Loglevel_JobWin", level);
+	else if (terrain == BM_LogGui)
+		mPrefsMsg.ReplaceInt16("Loglevel_Gui", level);
+	else if (terrain == BM_LogModelController)
+		mPrefsMsg.ReplaceInt16("Loglevel_ModelController", level);
+	else if (terrain == BM_LogRefCount)
+		mPrefsMsg.ReplaceInt16("Loglevel_RefCount", level);
+	
+	SetLoglevels();
+}
+
+/*------------------------------------------------------------------------------*\
 	SetLoglevels( )
 		-	
 \*------------------------------------------------------------------------------*/
 void BmPrefs::SetLoglevels() {
 	// transfer loglevel-definitions to log-handler:
-	int32 loglevels = GetInt("Loglevels");
+	int32 loglevels = BM_LOGLVL_VAL(mPrefsMsg.FindInt16("Loglevel_Pop"),BM_LogPop)
+							+ BM_LOGLVL_VAL(mPrefsMsg.FindInt16("Loglevel_JobWin"),BM_LogJobWin) 
+							+ BM_LOGLVL_VAL(mPrefsMsg.FindInt16("Loglevel_MailParse"),BM_LogMailParse) 
+							+ BM_LOGLVL_VAL(mPrefsMsg.FindInt16("Loglevel_App"),BM_LogApp) 
+							+ BM_LOGLVL_VAL(mPrefsMsg.FindInt16("Loglevel_MailTracking"),BM_LogMailTracking)
+							+ BM_LOGLVL_VAL(mPrefsMsg.FindInt16("Loglevel_Gui"),BM_LogGui)
+							+ BM_LOGLVL_VAL(mPrefsMsg.FindInt16("Loglevel_ModelController"),BM_LogModelController)
+							+ BM_LOGLVL_VAL(mPrefsMsg.FindInt16("Loglevel_Smtp"),BM_LogSmtp)
+							+ BM_LOGLVL_VAL(mPrefsMsg.FindInt16("Loglevel_Filter"),BM_LogFilter)
+							+ BM_LOGLVL_VAL(mPrefsMsg.FindInt16("Loglevel_RefCount"),BM_LogRefCount);
 	TheLogHandler->LogLevels( loglevels, 
 									  GetInt( "MinLogfileSize", 50*1024),
 									  GetInt( "MaxLogfileSize", 200*1024));
@@ -477,9 +565,6 @@ bool BmPrefs::Store() {
 		(err = prefsFile.SetTo( prefsFilename.String(), 
 										B_WRITE_ONLY | B_CREATE_FILE | B_ERASE_FILE)) == B_OK
 													|| BM_THROW_RUNTIME( BmString("Could not create settings file\n\t<") << prefsFilename << ">\n\n Result: " << strerror(err));
-		// in order to avoid storing loglevels as plain value, we take it out temporarily:
-		int32 loglevels = mPrefsMsg.FindInt32("Loglevels");
-		mPrefsMsg.RemoveName("Loglevels");
 		// update version:
 		mPrefsMsg.RemoveName( MSG_VERSION);
 		mPrefsMsg.AddInt16( MSG_VERSION, nPrefsVersion);
@@ -489,8 +574,6 @@ bool BmPrefs::Store() {
 		// store prefs-data inside file:		
 		(err = mPrefsMsg.Flatten( &prefsFile)) == B_OK
 													|| BM_THROW_RUNTIME( BmString("Could not store settings into file\n\t<") << prefsFilename << ">\n\n Result: " << strerror(err));
-		// put loglevels back in:
-		mPrefsMsg.AddInt32( "Loglevels", loglevels);
 		// update saved state to current:
 		mSavedPrefsMsg = mPrefsMsg;
 	} catch( BM_error &e) {
