@@ -77,6 +77,9 @@ public:
 	void Rename( BmString newName);
 	void MoveToTrash();
 
+	// overrides of listmodel-item base:
+	const BmString& DisplayKey() const	{ return mName; }
+
 	// overrides of archivable base:
 	status_t Archive( BMessage* archive, bool deep = true) const;
 	int16 ArchiveVersion() const			{ return nArchiveVersion; }
