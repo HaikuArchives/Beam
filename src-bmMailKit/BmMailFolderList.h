@@ -40,7 +40,7 @@
 #include "BmDataModel.h"
 #include "BmMailFolder.h"
 
-/*------------------------------------------------------------------------------*\*\
+/*------------------------------------------------------------------------------*\
 	BmMailMonitor
 		-	class 
 \*------------------------------------------------------------------------------*/
@@ -62,6 +62,14 @@ public:
 	static BmMailMonitor* theInstance;
 	
 private:
+	void EntryCreated( BmMailFolder* parent, node_ref& nref,
+							 entry_ref& eref, struct stat& st);
+	void EntryRemoved( BmMailFolder* parent, node_ref& nref);
+	void EntryMoved( BmMailFolder* parent, node_ref& nref,
+						  entry_ref& eref, struct stat& st,
+						  BmMailFolder* oldParent, entry_ref& erefFrom);
+	void EntryChanged( node_ref& nref);
+
 	int32 mCounter;
 
 	// Hide copy-constructor and assignment:
@@ -69,7 +77,8 @@ private:
 	BmMailMonitor operator=( const BmMailMonitor&);
 };
 
-/*------------------------------------------------------------------------------*\*\
+class BmMailRef;
+/*------------------------------------------------------------------------------*\
 	BmMailFolderList
 		-	class 
 \*------------------------------------------------------------------------------*/
@@ -96,6 +105,7 @@ public:
 	BmMailFolder* GetFolderForNodeFlaggedNew( const node_ref& nref);
 	bool NodeIsFlaggedNew( const node_ref& nref);
 	void QueryForNewMails();
+	BmRef<BmMailRef> FindMailRefByKey( const node_ref& nref);
 	
 	// overrides of list-model base:
 	bool StartJob();

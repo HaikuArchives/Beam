@@ -39,6 +39,7 @@
 #include "BmBasics.h"
 #include "BmLogHandler.h"
 #include "BmMailFolderList.h"
+#include "BmMailRef.h"
 #include "BmPrefs.h"
 #include "BmResources.h"
 #include "BmStorageUtil.h"
@@ -100,30 +101,26 @@ void BmMailMonitor::MessageReceived( BMessage* msg) {
 
 /*------------------------------------------------------------------------------*\
 	HandleMailMonitorMsg()
-		-	
+		-	N.B.: we do not currently support mailboxes that spread across devices
 \*------------------------------------------------------------------------------*/
 void BmMailMonitor::HandleMailMonitorMsg( BMessage* msg) {
-	status_t err;
-
-	node_ref pnref;
-	BmRef<BmMailFolder> parent;
-	node_ref opnref;
-	BmRef<BmMailFolder> oldParent;
-
-	const char *name;
-	struct stat st;
-	entry_ref eref;
-	node_ref nref;
-	BmRef<BmMailFolder> folder;
-
 	BM_LOG2( BM_LogMailTracking, 
 				BmString("MailMonitorMessage nr.") << ++mCounter << " received.");
 	try {
 		int32 opcode = msg->FindInt32( "opcode");
 		switch( opcode) {
-			case B_ENTRY_CREATED: 
+			case B_ENTRY_CREATED:
 			case B_ENTRY_REMOVED:
 			case B_ENTRY_MOVED: {
+				status_t err;
+				node_ref pnref;
+				BmRef<BmMailFolder> parent;
+				const char *name;
+				struct stat st;
+				entry_ref eref;
+				node_ref nref;
+				BmRef<BmMailFolder> folder;
+			
 				const char* directory 
 					= (opcode == B_ENTRY_MOVED)
 						? "to directory" 
@@ -134,14 +131,11 @@ void BmMailMonitor::HandleMailMonitorMsg( BMessage* msg) {
 				if ((err = msg->FindInt32( "device", &eref.device)) != B_OK)
 					BM_THROW_RUNTIME( "Field 'device' not found in msg !?!");
 				pnref.device = nref.device = eref.device;
-							// here we assume that the mailbox *DOES NOT* spread
-							// across devices!
 				pnref.node = eref.directory;
 				if ((err = msg->FindInt64( "node", &nref.node)) != B_OK)
 					BM_THROW_RUNTIME( "Field 'node' not found in msg !?!");
 				if (opcode != B_ENTRY_REMOVED) {
 					BNode aNode;
-					BNodeInfo nodeInfo;
 					if ((err = msg->FindString( "name", &name)) != B_OK)
 						BM_THROW_RUNTIME( "Field 'name' not found in msg !?!");
 					eref.set_name( name);
@@ -151,16 +145,6 @@ void BmMailMonitor::HandleMailMonitorMsg( BMessage* msg) {
 							BmString( "Couldn't create node for parent-node <") 
 						  		<< eref.directory << "> and name <" << eref.name 
 						  		<< "> \n\nError:" << strerror(err)
-						);
-						return;
-					}
-					if ((err = nodeInfo.SetTo( &aNode)) != B_OK) {
-						BM_LOG( 
-							BM_LogMailTracking, 
-							BmString("Couldn't create node-info for node --- "
-							  			"parent-node <")
-								<< eref.directory << "> and name <" << eref.name 
-								<< "> \n\nError:" << strerror(err)
 						);
 						return;
 					}
@@ -174,194 +158,241 @@ void BmMailMonitor::HandleMailMonitorMsg( BMessage* msg) {
 						return;
 					}
 				}
-				{	// new scope for lock:
+				if (opcode == B_ENTRY_CREATED) {
 					BmAutolockCheckGlobal lock( TheMailFolderList->mModelLocker);
 					if (!lock.IsLocked())
-						BM_THROW_RUNTIME( 
-							"HandleMailMonitorMsg(): Unable to get lock"
-						);
-
+						BM_THROW_RUNTIME( "MailMonitor(): Unable to get lock");
 					parent = dynamic_cast<BmMailFolder*>( 
 						TheMailFolderList->FindItemByKey( BM_REFKEY( pnref)).Get()
 					);
-
-					if (opcode == B_ENTRY_CREATED) {
-						if (!parent)
-							throw BM_runtime_error(
-								BmString("Folder with inode <") << eref.directory 
-									<< "> is unknown."
-							);
-						if (S_ISDIR(st.st_mode)) {
-							// a new mail-folder has been created, we add 
-							// it to our list:
-							BM_LOG2( BM_LogMailTracking, 
-										BmString("New mail-folder <") << eref.name 
-											<< "," << nref.node << "> detected.");
-							TheMailFolderList->AddMailFolder( 
-								eref, nref.node, parent.Get(), st.st_mtime
-							);
-						} else {
-							// a new mail has been created, we add it to the 
-							// parent folder:
-							BM_LOG2( BM_LogMailTracking, 
-										BmString("New mail <") << eref.name 
-											<< "," << nref.node << "> detected.");
-							parent->AddMailRef( eref, st);
-						}
-					} else if (opcode == B_ENTRY_REMOVED) {
-						// we have no entry that could tell us what kind of item 
-						// was removed, so we have to find out by ourselves:
-						if (parent)
-							folder = dynamic_cast< BmMailFolder*>( 
-								parent->FindItemByKey( BM_REFKEY( nref))
-							);
-						else
-							folder = NULL;
-						if (folder) {
-							// a folder has been deleted, we remove it from our list:
-							BM_LOG2( BM_LogMailTracking, 
-										BmString("Removal of mail-folder <") 
-											<< nref.node << "> detected.");
-							// adjust new-mail-count accordingly...
-							int32 newMailCount = folder->NewMailCount() 
-														+ folder->NewMailCountForSubfolders();
-							parent->BumpNewMailCountForSubfolders( -1*newMailCount);
-							// ...and remove folder from list:
-							TheMailFolderList->RemoveItemFromList( folder.Get());
-						} else {
-							// a mail has been deleted, we remove it from the 
-							// parent-folder:
-							BM_LOG2( BM_LogMailTracking, 
-										BmString("Removal of mail <") << nref.node 
-											<< "> detected.");
-							if (parent)
-								parent->RemoveMailRef( nref);
-						}
-					} else if (opcode == B_ENTRY_MOVED) {
-						entry_ref erefFrom;
-						if ((err = msg->FindInt64( 
-							"from directory", &erefFrom.directory
-						)) != B_OK)
-							BM_THROW_RUNTIME( 
-								"Field 'directory' not found in msg !?!"
-							);
-						if ((err = msg->FindInt32( 
-							"device", &erefFrom.device
-						)) != B_OK)
-							BM_THROW_RUNTIME( "Field 'device' not found in msg !?!");
-						if ((err = msg->FindString( "name", &name)) != B_OK)
-							BM_THROW_RUNTIME( "Field 'name' not found in msg !?!");
-						erefFrom.set_name( name);
-						opnref.node = erefFrom.directory;
-						opnref.device = erefFrom.device;
-						oldParent = dynamic_cast<BmMailFolder*>( 
-							TheMailFolderList->FindItemByKey( BM_REFKEY( opnref)).Get()
+					EntryCreated( parent.Get(), nref, eref, st);
+				} else if (opcode == B_ENTRY_REMOVED) {
+					BmAutolockCheckGlobal lock( TheMailFolderList->mModelLocker);
+					if (!lock.IsLocked())
+						BM_THROW_RUNTIME( "MailMonitor(): Unable to get lock");
+					parent = dynamic_cast<BmMailFolder*>( 
+						TheMailFolderList->FindItemByKey( BM_REFKEY( pnref)).Get()
+					);
+					EntryRemoved( parent.Get(), nref);
+				} else if (opcode == B_ENTRY_MOVED) {
+					entry_ref erefFrom;
+					node_ref opnref;
+					BmRef<BmMailFolder> oldParent;
+					if ((err = msg->FindInt64( 
+						"from directory", &erefFrom.directory
+					)) != B_OK)
+						BM_THROW_RUNTIME( 
+							"Field 'directory' not found in msg !?!"
 						);
-						if (S_ISDIR(st.st_mode)) {
-							// it's a mail-folder, we check for type of change:
-							folder = dynamic_cast<BmMailFolder*>( 
-								TheMailFolderList->FindItemByKey( 
-									BM_REFKEY( nref)
-								).Get()
-							);
-							if (erefFrom.directory == eref.directory) {
-								// rename only, we take the short path:
-								BM_LOG2( BM_LogMailTracking, 
-											BmString("Rename of mail-folder <") 
-												<< eref.name << "," << nref.node 
-												<< "> detected.");
-								folder->UpdateName( eref);
-							} else {
-								// the folder has really changed position within
-								// filesystem-tree:
-								if (oldParent && folder 
-								&& folder->Parent() != oldParent.Get())
-									// folder not there anymore (e.g. 2nd msg for move)
-									break;	
-								if (!folder) {
-									// folder was unknown before, probably because it 
-									// has been moved from a place outside the 
-									// /boot/home/mail substructure inside it.
-									// We create the new folder...
-									folder = TheMailFolderList->AddMailFolder( 
-										eref, 
-										nref.node, 
-										parent.Get(), 
-										st.st_mtime
-									);
-									// ...and scan for potential sub-folders:
-									TheMailFolderList->doInitializeMailFolders( 
-										folder.Get(), 
-										1
-									);
-									BM_LOG2( BM_LogMailTracking, 
-												BmString("Move of mail-folder <") 
-													<< eref.name << "," << nref.node 
-													<< "> detected.\nFrom: " 
-													<< (oldParent
-															? oldParent->Key()
-															: BmString("<outside>")) 
-													<<" to: " << 
-														(parent 
-															? parent->Key()
-															: BmString( "<outside>")));
-								} else {
-									// folder exists in our structure
-									BM_LOG2( BM_LogMailTracking, 
-												BmString("Move of mail-folder <") 
-													<< eref.name << "," << nref.node 
-													<< "> detected.\nFrom: "
-													<< (oldParent
-															? oldParent->Key()
-															: BmString( "<outside>"))
-													<< " to: "
-													<< (parent
-															? parent->Key()
-															: BmString( "<outside>")));
-									// adjust new-mail-count accordingly...
-									int32 newMailCount 
-										= folder->NewMailCount() 
-											+ folder->NewMailCountForSubfolders();
-									if (oldParent)
-										oldParent->BumpNewMailCountForSubfolders( 
-											-1*newMailCount
-										);
-									// ...and remove from folder-list:
-									TheMailFolderList->RemoveItemFromList( folder.Get());
-									if (parent) {
-										// new position is still underneath 
-										// /boot/home/mail, so we re-add the folder:
-										folder->EntryRef( eref);
-										TheMailFolderList->AddItemToList( 
-											folder.Get(), 
-											parent.Get()
-										);
-										// and adjust the new-mail-count accordingly:
-										parent->BumpNewMailCountForSubfolders( 
-											newMailCount
-										);
-									}
-								}
-							}
-						} else {
-							// it's a mail-ref, we remove it from old parent and add
-							// it to its new parent:
-							BM_LOG2( BM_LogMailTracking, 
-										BmString("Move of mail <") << eref.name 
-											<< "," << nref.node << "> detected.");
-							if (oldParent)
-								oldParent->RemoveMailRef( nref);
-							if (parent)
-								parent->AddMailRef( eref, st);
-						}
+					if ((err = msg->FindInt32( 
+						"device", &erefFrom.device
+					)) != B_OK)
+						BM_THROW_RUNTIME( "Field 'device' not found in msg !?!");
+					if ((err = msg->FindString( "name", &name)) != B_OK)
+						BM_THROW_RUNTIME( "Field 'name' not found in msg !?!");
+					erefFrom.set_name( name);
+					opnref.node = erefFrom.directory;
+					opnref.device = erefFrom.device;
+					oldParent = dynamic_cast<BmMailFolder*>( 
+						TheMailFolderList->FindItemByKey( BM_REFKEY( opnref)).Get()
+					);
+					{	// new scope for autolock:
+						BmAutolockCheckGlobal lock( TheMailFolderList->mModelLocker);
+						if (!lock.IsLocked())
+							BM_THROW_RUNTIME( "MailMonitor(): Unable to get lock");
+						parent = dynamic_cast<BmMailFolder*>( 
+							TheMailFolderList->FindItemByKey( BM_REFKEY( pnref)).Get()
+						);
+						EntryMoved( parent.Get(), nref, eref, st, 
+										oldParent.Get(), erefFrom);
 					}
 				}
+				break;
+			}
+			case B_STAT_CHANGED:
+			case B_ATTR_CHANGED: {
+				status_t err;
+				node_ref nref;
+				if ((err = msg->FindInt64( "node", &nref.node)) != B_OK)
+					BM_THROW_RUNTIME( "Field 'node' not found in msg !?!");
+				if ((err = msg->FindInt32( "device", &nref.device)) != B_OK)
+					BM_THROW_RUNTIME( "Field 'device' not found in msg !?!");
+				BmAutolockCheckGlobal lock( TheMailFolderList->mModelLocker);
+				if (!lock.IsLocked())
+					BM_THROW_RUNTIME( "MailMonitor(): Unable to get lock");
+				EntryChanged( nref);
 				break;
 			}
 		}
 	} catch( BM_error &e) {
 		BM_SHOWERR( e.what());
 	}
+}
+
+/*------------------------------------------------------------------------------*\
+	EntryCreated()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailMonitor::EntryCreated( BmMailFolder* parent, node_ref& nref,
+											 entry_ref& eref, struct stat& st) {
+	if (!parent)
+		throw BM_runtime_error(
+			BmString("Folder with inode <") << eref.directory 
+				<< "> is unknown."
+		);
+	if (S_ISDIR(st.st_mode)) {
+		// a new mail-folder has been created, we add 
+		// it to our list:
+		BM_LOG2( BM_LogMailTracking, 
+					BmString("New mail-folder <") << eref.name 
+						<< "," << nref.node << "> detected.");
+		TheMailFolderList->AddMailFolder( eref, nref.node, parent, st.st_mtime);
+	} else {
+		// a new mail has been created, we add it to the 
+		// parent folder:
+		BM_LOG2( BM_LogMailTracking, 
+					BmString("New mail <") << eref.name 
+						<< "," << nref.node << "> detected.");
+		parent->AddMailRef( eref, st);
+	}
+}
+
+/*------------------------------------------------------------------------------*\
+	EntryRemoved()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailMonitor::EntryRemoved( BmMailFolder* parent, node_ref& nref) {
+	BmRef<BmMailFolder> folder;
+	// we have no entry that could tell us what kind of item 
+	// was removed, so we have to find out by ourselves:
+	if (parent)
+		folder = dynamic_cast< BmMailFolder*>( 
+			parent->FindItemByKey( BM_REFKEY( nref))
+		);
+	else
+		folder = NULL;
+	if (folder) {
+		// a folder has been deleted, we remove it from our list:
+		BM_LOG2( BM_LogMailTracking, 
+					BmString("Removal of mail-folder <") 
+						<< nref.node << "> detected.");
+		// adjust new-mail-count accordingly...
+		int32 newMailCount = folder->NewMailCount() 
+									+ folder->NewMailCountForSubfolders();
+		parent->BumpNewMailCountForSubfolders( -1*newMailCount);
+		// ...and remove folder from list:
+		TheMailFolderList->RemoveItemFromList( folder.Get());
+	} else {
+		// a mail has been deleted, we remove it from the 
+		// parent-folder:
+		BM_LOG2( BM_LogMailTracking, 
+					BmString("Removal of mail <") << nref.node 
+						<< "> detected.");
+		if (parent)
+			parent->RemoveMailRef( nref);
+	}
+}
+
+/*------------------------------------------------------------------------------*\
+	EntryMoved()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailMonitor::EntryMoved( BmMailFolder* parent, node_ref& nref,
+										  entry_ref& eref, struct stat& st,
+										  BmMailFolder* oldParent, entry_ref& erefFrom) {
+	if (S_ISDIR(st.st_mode)) {
+		// it's a mail-folder, we check for type of change:
+		BmRef<BmMailFolder> folder;
+		folder = dynamic_cast<BmMailFolder*>( 
+			TheMailFolderList->FindItemByKey( BM_REFKEY( nref)).Get()
+		);
+		if (erefFrom.directory == eref.directory) {
+			// rename only, we take the short path:
+			BM_LOG2( BM_LogMailTracking, 
+						BmString("Rename of mail-folder <") 
+							<< eref.name << "," << nref.node 
+							<< "> detected.");
+			folder->UpdateName( eref);
+		} else {
+			// the folder has really changed position within the filesystem-tree:
+			if (oldParent && folder && folder->Parent() != oldParent)
+				// folder not there anymore (e.g. 2nd msg for move)
+				return;	
+			if (!folder) {
+				// folder was unknown before, probably because it has been moved 
+				// from a place outside of the mailbox-substructure inside it.
+				// We create the new folder...
+				folder = TheMailFolderList->AddMailFolder( 
+					eref, 
+					nref.node, 
+					parent, 
+					st.st_mtime
+				);
+				// ...and scan for potential sub-folders:
+				TheMailFolderList->doInitializeMailFolders( folder.Get(), 1);
+				BM_LOG2( BM_LogMailTracking, 
+							BmString("Move of mail-folder <") 
+								<< eref.name << "," << nref.node 
+								<< "> detected.\nFrom: " 
+								<< (oldParent
+										? oldParent->Key()
+										: BmString("<outside>")) 
+								<<" to: " << 
+									(parent 
+										? parent->Key()
+										: BmString( "<outside>")));
+			} else {
+				// folder exists in our structure
+				BM_LOG2( BM_LogMailTracking, 
+							BmString("Move of mail-folder <") 
+								<< eref.name << "," << nref.node 
+								<< "> detected.\nFrom: "
+								<< (oldParent
+										? oldParent->Key()
+										: BmString( "<outside>"))
+								<< " to: "
+								<< (parent
+										? parent->Key()
+										: BmString( "<outside>")));
+				// adjust new-mail-count accordingly...
+				int32 newMailCount = folder->NewMailCount() 
+											+ folder->NewMailCountForSubfolders();
+				if (oldParent)
+					oldParent->BumpNewMailCountForSubfolders( -1*newMailCount);
+				// ...and remove from folder-list:
+				TheMailFolderList->RemoveItemFromList( folder.Get());
+				if (parent) {
+					// new position is still underneath our mailbox,
+					// so we re-add the folder:
+					folder->EntryRef( eref);
+					TheMailFolderList->AddItemToList( folder.Get(), parent);
+					// and adjust the new-mail-count accordingly:
+					parent->BumpNewMailCountForSubfolders( newMailCount);
+				}
+			}
+		}
+	} else {
+		// it's a mail-ref, we remove it from old parent and add
+		// it to its new parent:
+		BM_LOG2( BM_LogMailTracking, 
+					BmString("Move of mail <") << eref.name 
+						<< "," << nref.node << "> detected.");
+		if (oldParent)
+			oldParent->RemoveMailRef( nref);
+		if (parent)
+			parent->AddMailRef( eref, st);
+	}
+}
+
+
+/*------------------------------------------------------------------------------*\
+	EntryChanged()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailMonitor::EntryChanged( node_ref& nref) {
+	BmRef<BmMailRef> ref = TheMailFolderList->FindMailRefByKey( nref);
+	if (ref)
+		ref->ResyncFromDisk();
 }
 
 /*------------------------------------------------------------------------------*\
@@ -541,6 +572,20 @@ BmMailFolder* BmMailFolderList::AddMailFolder( entry_ref& eref, int64 node,
 }
 
 /*------------------------------------------------------------------------------*\
+	FindMailRefByKey()
+		-	
+\*------------------------------------------------------------------------------*/
+BmRef<BmMailRef> BmMailFolderList::FindMailRefByKey( const node_ref& nref) {
+	BmRef<BmMailRef> ref;
+	if (mTopFolder) {	
+		BmString key = BM_REFKEY( nref);
+		BmRef<BmListModelItem> item = mTopFolder->FindMailRefByKey( key);
+		ref = dynamic_cast< BmMailRef*>( item.Get());
+	}
+	return ref;
+}
+
+/*------------------------------------------------------------------------------*\
 	StartJob()
 		-	
 \*------------------------------------------------------------------------------*/
@@ -687,6 +732,14 @@ void BmMailFolderList::InstantiateItems( BMessage* archive) {
 				ModelNameNC() << ":InstantiateMailFolders(): Unable to get lock"
 			);
 		mTopFolder = new BmMailFolder( &msg, this, NULL);
+		BNode node( ThePrefs->GetString( "MailboxPath").String());
+		node_ref nref;
+		node.GetNodeRef( &nref);
+		if (mTopFolder->NodeRef().node != nref.node) {
+			// mailbox-folder has changed since last session, we start afresh:
+			InitializeItems();
+			return;
+		}		
 		AddItemToList( mTopFolder.Get());
 		BM_LOG3( BM_LogMailTracking, 
 					BmString("Top-folder <") << mTopFolder->EntryRef().name << "," 
