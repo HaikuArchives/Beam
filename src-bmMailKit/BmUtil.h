@@ -95,4 +95,27 @@ BmString GenerateSortkeyFor( const BmString& name);
 #define IS_UTF8_STARTCHAR(c) (((c)&0xc0)==0xc0)
 #define IS_WITHIN_UTF8_MULTICHAR(c) (((c)&0xc0)==0x80)
 
+/*------------------------------------------------------------------------------*\*\
+	wrapper around BAutolock that enhances profiling output and debugging
+\*------------------------------------------------------------------------------*/
+#ifdef BM_REF_DEBUGGING
+	// during profiling/debugging we use this:
+class BLooper;
+class BmAutolockCheckGlobal {
+public:
+	BmAutolockCheckGlobal( BLooper* l);
+	BmAutolockCheckGlobal( BLocker* l);
+	BmAutolockCheckGlobal( BLocker& l);
+	~BmAutolockCheckGlobal();
+	void Init();
+	bool IsLocked();
+private:
+	BLocker* mLocker;
+	BLooper* mLooper;
+};
+#else
+	// otherwise, we use this:
+#define BmAutolockCheckGlobal BAutolock
+#endif
+
 #endif

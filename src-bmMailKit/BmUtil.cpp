@@ -40,6 +40,7 @@ using namespace regexx;
 #include "BmLogHandler.h"
 #include "BmMemIO.h"
 #include "BmPrefs.h"
+#include "BmRefManager.h"
 #include "BmUtil.h"
 
 BmString BM_SPACES("                                                                                                                                                                                    ");
@@ -54,7 +55,7 @@ BmString BM_DefaultItemLabel("<default>");
 \*------------------------------------------------------------------------------*/
 const char* FindMsgString( BMessage* archive, const char* name, int32 index) {
 	const char* str;
-	BM_assert(archive && name);
+	BM_ASSERT(archive && name);
 	if (archive->FindString( name, index, &str) != B_OK)
 		throw BM_invalid_argument( BmString( "unknown message-field: ") << name);
 	return str;
@@ -68,7 +69,7 @@ const char* FindMsgString( BMessage* archive, const char* name, int32 index) {
 \*------------------------------------------------------------------------------*/
 bool FindMsgBool( BMessage* archive, const char* name, int32 index) {
 	bool b;
-	BM_assert(archive && name);
+	BM_ASSERT(archive && name);
 	if (archive->FindBool( name, index, &b) != B_OK)
 		throw BM_invalid_argument( BmString( "unknown message-field: ") << name);
 	return b;
@@ -82,7 +83,7 @@ bool FindMsgBool( BMessage* archive, const char* name, int32 index) {
 \*------------------------------------------------------------------------------*/
 int64 FindMsgInt64( BMessage* archive, const char* name, int32 index) {
 	int64 i;
-	BM_assert(archive && name);
+	BM_ASSERT(archive && name);
 	if (archive->FindInt64( name, index, &i) != B_OK)
 		throw BM_invalid_argument( BmString( "unknown message-field: ") << name);
 	return i;
@@ -96,7 +97,7 @@ int64 FindMsgInt64( BMessage* archive, const char* name, int32 index) {
 \*------------------------------------------------------------------------------*/
 int32 FindMsgInt32( BMessage* archive, const char* name, int32 index) {
 	int32 i;
-	BM_assert(archive && name);
+	BM_ASSERT(archive && name);
 	if (archive->FindInt32( name, index, &i) != B_OK)
 		throw BM_invalid_argument( BmString( "unknown message-field: ") << name);
 	return i;
@@ -110,7 +111,7 @@ int32 FindMsgInt32( BMessage* archive, const char* name, int32 index) {
 \*------------------------------------------------------------------------------*/
 int16 FindMsgInt16( BMessage* archive, const char* name, int32 index) {
 	int16 i;
-	BM_assert(archive && name);
+	BM_ASSERT(archive && name);
 	if (archive->FindInt16( name, index, &i) != B_OK)
 		throw BM_invalid_argument( BmString( "unknown message-field: ") << name);
 	return i;
@@ -123,7 +124,7 @@ int16 FindMsgInt16( BMessage* archive, const char* name, int32 index) {
 		-	throws BM_invalid_argument if field is not contained withing archive
 \*------------------------------------------------------------------------------*/
 BMessage* FindMsgMsg( BMessage* archive, const char* name, BMessage* msg, int32 index) {
-	BM_assert(archive && name);
+	BM_ASSERT(archive && name);
 	if (!msg)
 		msg = new BMessage;
 	if (archive->FindMessage( name, index, msg) != B_OK)
@@ -139,7 +140,7 @@ BMessage* FindMsgMsg( BMessage* archive, const char* name, BMessage* msg, int32 
 \*------------------------------------------------------------------------------*/
 float FindMsgFloat( BMessage* archive, const char* name, int32 index) {
 	float f;
-	BM_assert(archive && name);
+	BM_ASSERT(archive && name);
 	if (archive->FindFloat( name, index, &f) != B_OK) {
 		BmString s( "unknown message-field: ");
 		s += name;
@@ -156,7 +157,7 @@ float FindMsgFloat( BMessage* archive, const char* name, int32 index) {
 \*------------------------------------------------------------------------------*/
 void* FindMsgPointer( BMessage* archive, const char* name, int32 index) {
 	void* ptr;
-	BM_assert(archive && name);
+	BM_ASSERT(archive && name);
 	if (archive->FindPointer( name, index, &ptr) != B_OK)
 		throw BM_invalid_argument( BmString( "unknown message-field: ") << name);
 	return ptr;
@@ -266,16 +267,18 @@ void WordWrap( const BmString& in, BmString& out, int32 maxLineLen, BmString nl,
 			pos = in.Length();
 			needBreak = true;
 		}
-		// determine length of line in UTF8-characters (not bytes):
+		// determine length of line in UTF8-characters (not bytes)
+		// and find last space before maxLineLen-border:
+		int32 lastSpcPos = B_ERROR;
 		int32 lineLen = 0;
 		for( int i=lastPos; i<pos; ++i) {
 			while( i<pos && IS_WITHIN_UTF8_MULTICHAR(s[i]))
 				i++;
+			if (s[i] == ' ' && lineLen<maxLineLen)
+				lastSpcPos = i;
 			lineLen++;
 		}
-		int32 lastSpcPos;
 		while (lineLen > maxLineLen) {
-			lastSpcPos = in.FindLast( " ", lastPos+maxLineLen);
 			if (keepLongWords && lastSpcPos>lastPos) {
 				// special-case lines containing only quotes and a long word,
 				// since in this case we want to avoid wrapping between quotes
@@ -327,9 +330,12 @@ void WordWrap( const BmString& in, BmString& out, int32 maxLineLen, BmString nl,
 				lastPos = lastSpcPos+1;
 			}
 			lineLen = 0;
+			lastSpcPos = B_ERROR;
 			for( int i=lastPos; i<pos; ++i) {
 				while( i<pos && IS_WITHIN_UTF8_MULTICHAR(s[i]))
 					i++;
+				if (s[i] == ' ' && lineLen<maxLineLen)
+					lastSpcPos = i;
 				lineLen++;
 			}
 		}
@@ -359,3 +365,67 @@ BmString GenerateSortkeyFor( const BmString& name) {
 	return skey;
 }
 
+
+
+#ifdef BM_REF_DEBUGGING
+/*------------------------------------------------------------------------------*\
+	BmAutolockCheckGlobal()
+		-	
+\*------------------------------------------------------------------------------*/
+BmAutolockCheckGlobal::BmAutolockCheckGlobal( BLooper* l) : mLooper( l), mLocker( NULL) {
+	Init();
+}
+
+/*------------------------------------------------------------------------------*\
+	BmAutolockCheckGlobal()
+		-	
+\*------------------------------------------------------------------------------*/
+BmAutolockCheckGlobal::BmAutolockCheckGlobal( BLocker* l) : mLooper( NULL), mLocker( l) {
+	Init();
+}
+
+/*------------------------------------------------------------------------------*\
+	BmAutolockCheckGlobal()
+		-	
+\*------------------------------------------------------------------------------*/
+BmAutolockCheckGlobal::BmAutolockCheckGlobal( BLocker& l) : mLooper( NULL), mLocker( &l) {
+	Init();
+}
+
+/*------------------------------------------------------------------------------*\
+	~BmAutolockCheckGlobal()
+		-	
+\*------------------------------------------------------------------------------*/
+BmAutolockCheckGlobal::~BmAutolockCheckGlobal() {
+	if (mLocker)
+		mLocker->Unlock();
+	if (mLooper)
+		mLooper->Unlock();
+}
+
+/*------------------------------------------------------------------------------*\
+	IsLocked()
+		-	
+\*------------------------------------------------------------------------------*/
+bool BmAutolockCheckGlobal::IsLocked() { 
+	return mLocker && mLocker->IsLocked()
+			|| mLooper && mLooper->IsLocked();
+}
+
+/*------------------------------------------------------------------------------*\
+	Init()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmAutolockCheckGlobal::Init() {
+	if (BmRefObj::GlobalLocker()->IsLocked()) {
+		DEBUGGER( ("GlobalLocker must not be locked when using BmAutolockCheckGlobal!"));
+		mLocker = NULL;
+		mLooper = NULL;
+	} else {
+		if (mLocker)
+			mLocker->Lock();
+		if (mLooper)
+			mLooper->Lock();
+	}
+}
+#endif
