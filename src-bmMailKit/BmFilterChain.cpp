@@ -225,8 +225,8 @@ void BmFilterChain::RemoveItemFromList( BmListModelItem* item) {
 		int32 removedPos = filter->Position();
 		inheritedList::RemoveItemFromList( filter);
 		BmModelItemMap::const_iterator iter;
-		for( iter = inheritedList::begin(); iter != inheritedList::end(); ++iter) {
-			BmChainedFilter* filter = dynamic_cast< BmChainedFilter*>( iter->second.Get());
+		for( iter = inheritedList::begin(); iter != inheritedList::end(); ) {
+			BmChainedFilter* filter = dynamic_cast< BmChainedFilter*>( iter++->second.Get());
 			if (filter->Position() > removedPos)
 				RenameItem( BmString()<<filter->Position(), BmString()<<(filter->Position()-1));
 		}
