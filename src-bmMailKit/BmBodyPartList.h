@@ -105,6 +105,7 @@ public:
 	bool ShouldBeShownInline()	const;
 	bool ContainsRef( const entry_ref& ref) const;
 	entry_ref WriteToTempFile( BmString filename="");
+	void WriteToFile( BFile& file);
 	void SaveAs( const entry_ref& destDirRef, BmString filename);
 	void PropagateHigherEncoding();
 	int32 PruneUnneededMultiParts();

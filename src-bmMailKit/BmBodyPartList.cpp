@@ -642,6 +642,22 @@ bool BmBodyPart::ContainsRef( const entry_ref& ref) const {
 }
 
 /*------------------------------------------------------------------------------*\
+	WriteToFile()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmBodyPart::WriteToFile( BFile& file) {
+	if (IsText() && !ThePrefs->GetBool( "ExportTextAsUtf8", false)) {
+		BmString convertedString;
+		ConvertFromUTF8( Charset(), DecodedData(), convertedString);
+		file.Write( convertedString.String(), convertedString.Length());
+	} else
+		file.Write( DecodedData().String(), DecodedLength());
+	BNodeInfo fileInfo;
+	fileInfo.SetTo( &file);
+	fileInfo.SetType( MimeType().String());
+}
+
+/*------------------------------------------------------------------------------*\
 	WriteToTempFile()
 		-	
 \*------------------------------------------------------------------------------*/
@@ -654,7 +670,6 @@ entry_ref BmBodyPart::WriteToTempFile( BmString filename) {
 	if (find_directory( B_COMMON_TEMP_DIRECTORY, &tempPath, true) == B_OK) {
 		BDirectory tempDir;
 		BFile tempFile;
-		BNodeInfo fileInfo;
 		status_t err;
 		tempDir.SetTo( tempPath.Path());
 		if ((err = tempFile.SetTo( &tempDir, filename.String(), 
@@ -663,14 +678,7 @@ entry_ref BmBodyPart::WriteToTempFile( BmString filename) {
 			return eref;
 		}
 		TheTempFileList.AddFile( BmString(tempPath.Path())<<"/"<<filename);
-		if (IsText() && !ThePrefs->GetBool( "ExportTextAsUtf8", false)) {
-			BmString convertedString;
-			ConvertFromUTF8( Charset(), DecodedData(), convertedString);
-			tempFile.Write( convertedString.String(), convertedString.Length());
-		} else
-			tempFile.Write( DecodedData().String(), DecodedLength());
-		fileInfo.SetTo( &tempFile);
-		fileInfo.SetType( MimeType().String());
+		WriteToFile( tempFile);
 		BEntry entry( &tempDir, filename.String());
 		BPath path;
 		entry.GetPath( &path);
