@@ -43,6 +43,7 @@ using namespace regexx;
 BmString BM_SPACES("                                                                                                                                                                                    ");
 BmString BM_DEFAULT_STRING;
 BmString BM_DefaultItemLabel("<default>");
+BmString BM_NoItemLabel("<none>");
 
 /*------------------------------------------------------------------------------*\
 	FindMsgString( archive, name)
@@ -182,13 +183,13 @@ BmString BytesToString( int32 bytes, bool mini) {
 
 /*------------------------------------------------------------------------------*\
 	TimeToSwatchString( time)
-		-	converts the given (local) time into a string representing 
+		-	converts the given (utc) time into a string representing 
 			swatch internet time
 \*------------------------------------------------------------------------------*/
 BmString TimeToSwatchString( time_t utc) {
 	time_t swatch = utc+3600;	// add one hour
 	int32 beats = ((swatch % 86400) * 1000) / 86400;
-	return TimeToString( swatch, "%Y-%m-%d @") << beats;
+	return TimeToString( utc, "%Y-%m-%d @") << beats;
 }
 
 /*------------------------------------------------------------------------------*\

@@ -40,6 +40,7 @@
 extern BmString BM_SPACES;
 extern BmString BM_DEFAULT_STRING;
 extern BmString BM_DefaultItemLabel;
+extern BmString BM_NoItemLabel;
 
 /*------------------------------------------------------------------------------*\
 	FindMsgXXX( archive, name)
@@ -71,10 +72,16 @@ bool ParseDateTime( const BmString& str, time_t& dateTime);
 \*------------------------------------------------------------------------------*/
 BmString GenerateSortkeyFor( const BmString& name);
 /*------------------------------------------------------------------------------*\
-	utility defines for UTF8-character parsing:
+	utility functions for UTF8-character parsing:
 \*------------------------------------------------------------------------------*/
-#define IS_PART_OF_UTF8_MULTICHAR(c) ((c)&0x80)
-#define IS_UTF8_STARTCHAR(c) (((c)&0xc0)==0xc0)
-#define IS_WITHIN_UTF8_MULTICHAR(c) (((c)&0xc0)==0x80)
+inline bool IS_PART_OF_UTF8_MULTICHAR( unsigned char c) {
+	return c & 0x80;
+}
+inline bool IS_UTF8_STARTCHAR( unsigned char c) {
+	return (c & 0xc0) == 0xc0;
+}
+inline bool IS_WITHIN_UTF8_MULTICHAR( unsigned char c) {
+	return (c & 0xc0) == 0x80;
+}
 
 #endif
