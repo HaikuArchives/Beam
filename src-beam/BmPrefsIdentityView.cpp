@@ -671,10 +671,10 @@ void BmPrefsIdentityView::ShowIdentity( int32 selection) {
 					);
 					mPopControl->MarkItem( mCurrIdent->POPAccount().Length() 
 													? mCurrIdent->POPAccount().String()
-													: BM_NoItemLabel.String());
+													: "");
 					mSmtpControl->MarkItem( mCurrIdent->SMTPAccount().Length() 
 														? mCurrIdent->SMTPAccount().String()
-														: BM_NoItemLabel.String());
+														: "");
 					mIsBucketControl->SetValue( mCurrIdent->MarkedAsBitBucket());
 				}
 			}

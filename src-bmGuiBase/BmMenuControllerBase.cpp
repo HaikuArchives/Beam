@@ -83,9 +83,13 @@ void BmMenuControllerBase::UpdateItemList( void) {
 		BMenuItem* labelItem = Superitem();
 		if (labelItem)
 			MarkItemInMenu( this, labelItem->Label());
+		else
+			ClearMarkInMenu( this);
 	} else {
 		if (mMarkedLabel.Length())
 			MarkItemInMenu( this, mMarkedLabel.String());
+		else
+			ClearMarkInMenu( this);
 	}
 }
 

@@ -741,8 +741,7 @@ void BmPrefsRecvMailView::MessageReceived( BMessage* msg) {
 						currMenu = currMenu->Supermenu();
 					}
 					mCurrAcc->HomeFolder( path);
-					item->SetMarked( true);
-					mHomeFolderControl->MenuItem()->SetLabel( path.String());
+					mHomeFolderControl->MarkItem( path.String());
 				} else {
 					mCurrAcc->HomeFolder( BM_MAIL_FOLDER_IN);
 					mHomeFolderControl->MarkItem( BM_MAIL_FOLDER_IN);
@@ -920,7 +919,7 @@ void BmPrefsRecvMailView::ShowAccount( int32 selection) {
 						mCurrAcc->POPServer().String());
 					mAuthControl->MarkItem( mCurrAcc->AuthMethod().String());
 					mHomeFolderControl->MarkItem( 
-						mCurrAcc->HomeFolder().String(), true);
+						mCurrAcc->HomeFolder().String());
 					mFilterChainControl->MarkItem( 
 						mCurrAcc->FilterChain().Length() 
 							? mCurrAcc->FilterChain().String()
