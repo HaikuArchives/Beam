@@ -74,8 +74,8 @@ BmMailHeaderFieldView::BmMailHeaderFieldView( BmString fieldName,
 	font->SetFace( B_BOLD_FACE);
 	if (titleWidth < 0)
 		titleWidth = font->StringWidth( fieldName.String());
-	float fhl = TheResources->FontLineHeight( font)+3;
-	BRect titleRect( leftOffs, textInset, 5+leftOffs+titleWidth, textInset+fhl-1);
+	float fhl = ceil(TheResources->FontHeight(font));
+	BRect titleRect( leftOffs, textInset, 5+leftOffs+titleWidth, textInset+fhl+1);
 	mTitleView = new BStringView( titleRect, "titleView", fieldName.String());
 	mTitleView->SetFont( font);
 	mTitleView->SetViewColor( BmWeakenColor( B_UI_PANEL_BACKGROUND_COLOR, 2));
@@ -84,7 +84,7 @@ BmMailHeaderFieldView::BmMailHeaderFieldView( BmString fieldName,
 	AddChild( mTitleView);
 	BRect contentRect( titleRect.left+titleRect.Width()+5, 0, fixedWidth, 10);
 	BRect textRect = contentRect.InsetByCopy( textInset, textInset);
-	textRect.OffsetTo( 4+textInset, textInset+1);
+	textRect.OffsetTo( 4+textInset, textInset);
 	font->SetFace( B_REGULAR_FACE);
 	rgb_color col = ui_color( B_UI_PANEL_TEXT_COLOR);
 	mContentView = new BTextView( contentRect, "contentView", textRect,
@@ -173,7 +173,7 @@ void BmMailHeaderFieldView::SetTitleWidth( float newTitleWidth,
 	mContentView->MoveTo( newTitleWidth, 0);
 	mContentView->ResizeTo( fixedWidth-newTitleWidth, 
 									mContentView->Frame().Height());
-	BRect textRect( 4, 2, fixedWidth-newTitleWidth-5, 
+	BRect textRect( 4, 1, fixedWidth-newTitleWidth-5, 
 						 mContentView->Frame().Height()-1);
 	mContentView->SetTextRect( textRect);
 }
