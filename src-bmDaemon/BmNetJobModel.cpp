@@ -181,13 +181,11 @@ void BmNetJobModel::GetAnswer( uint32 expectedSize, bool dotstuffDecoding,
 	} else
 		answerBuf.Write( mStatusFilter, blockSize);
 	mAnswerText.Adopt( answerBuf.TheString());
-#ifdef BM_LOGGING
 	BmString logStr( "<--\n");
 	logStr.Append( StatusText() + "\n");
 	logStr.Append( mAnswerText.String(), min( (int32)1024, 
 						mAnswerText.Length()));
 	BM_LOG( mLogType, logStr);
-#endif
 }
 
 /*------------------------------------------------------------------------------*\
@@ -206,7 +204,6 @@ void BmNetJobModel::SendCommand( const BmString& cmd, const BmString& secret,
 \*------------------------------------------------------------------------------*/
 void BmNetJobModel::SendCommand( BmStringIBuf& cmd, const BmString& secret,
 											bool dotstuffEncoding, bool update) {
-#ifdef BM_LOGGING
 	BmString logStr( "-->\n");
 	logStr.Append( cmd.FirstBuf(), min( (uint32)16384, cmd.FirstSize()));
 	if (secret.Length()) {
@@ -215,10 +212,6 @@ void BmNetJobModel::SendCommand( BmStringIBuf& cmd, const BmString& secret,
 		cmd.AddBuffer( secret);
 	}
 	BM_LOG( mLogType, logStr);
-#else
-	if (secret.Length())
-		cmd.AddBuffer( secret);
-#endif
 	if (!cmd.EndsWithNewline())
 		cmd.AddBuffer( "\r\n", 2);
 	uint32 blockSize = ThePrefs->GetInt( "NetSendBufferSize", 10*1500);

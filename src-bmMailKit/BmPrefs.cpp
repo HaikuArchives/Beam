@@ -647,7 +647,6 @@ void BmPrefs::SetLoglevels() {
 									  GetInt( "MinLogfileSize", 50*1024),
 									  GetInt( "MaxLogfileSize", 200*1024));
 	TheLogHandler->ShowErrorsOnScreen( GetBool( "ShowAlertForErrors", false));
-#ifdef BM_LOGGING
 	BmString s;
 	for( int i=31; i>=0; --i) {
 		if (loglevels & (01UL<<i))
@@ -657,7 +656,6 @@ void BmPrefs::SetLoglevels() {
 	}
 	BM_LOG3( BM_LogApp, 
 				BmString("Initialized loglevels to binary value ") << s);
-#endif
 }
 
 /*------------------------------------------------------------------------------*\
