@@ -136,6 +136,14 @@ void BmPrefsView::MessageReceived( BMessage* msg) {
 }
 
 /*------------------------------------------------------------------------------*\
+	Name()
+		-	returns name of label (not 'MBorder', as MBorder does...)
+\*------------------------------------------------------------------------------*/
+const char* BmPrefsView::Name() {
+	return mLabelView ? mLabelView->Text() : ""; 
+}
+
+/*------------------------------------------------------------------------------*\
 	NoticeChange()
 		-	propagates change-message to prefs-window
 \*------------------------------------------------------------------------------*/
@@ -160,6 +168,27 @@ BmPrefsViewContainer::BmPrefsViewContainer( LayeredGroup* group)
 	:	MBorder( M_NO_BORDER, 0, (char*)"PrefsViewContainer", group)
 	,	mLayeredGroup( group)
 {
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+BmPrefsView* BmPrefsViewContainer::ShowPrefsByName( const BmString name) {
+	if (!mLayeredGroup)
+		return NULL;
+	int32 count = mLayeredGroup->CountChildren();
+	for( int32 i=0; i<count; ++i) {
+		BmPrefsView* pv = dynamic_cast< BmPrefsView*>( mLayeredGroup->ChildAt( i));
+		if (pv) {
+			BmString pvName = pv->Name();
+			if (!name.ICompare( pvName)) {
+				ShowPrefs( i);
+				return pv;
+			}
+		}
+	}
+	return NULL;
 }
 
 /*------------------------------------------------------------------------------*\

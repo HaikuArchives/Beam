@@ -54,6 +54,7 @@ public:
 	~BmPrefsWin();
 
 	// native methods:
+	void SendMsgToSubView( const BmString& subViewName, BMessage* msg);
 
 	// overrides of BWindow base:
 	void MessageReceived( BMessage*);

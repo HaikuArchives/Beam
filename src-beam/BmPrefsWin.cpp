@@ -275,6 +275,17 @@ CLVContainerView* BmPrefsWin::CreatePrefsListView( minimax minmax, int32 width, 
 	()
 		-	
 \*------------------------------------------------------------------------------*/
+void BmPrefsWin::SendMsgToSubView( const BmString& subViewName, BMessage* msg) {
+	BmPrefsView* pv = mPrefsViewContainer->ShowPrefsByName( subViewName);
+	if (pv) {
+		PostMessage( msg, pv);
+	}
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
 void BmPrefsWin::MessageReceived( BMessage* msg) {
 	try {
 		switch( msg->what) {
@@ -312,6 +323,15 @@ void BmPrefsWin::MessageReceived( BMessage* msg) {
 				mApplyButton->SetEnabled( true);
 				mRevertButton->SetEnabled( true);
 				mChanged = true;
+				break;
+			}
+			case BMM_PREFERENCES: {
+				BmString subViewName = msg->FindString( "SubViewName");
+				if (subViewName.Length()) {
+					BMessage subViewMsg;
+					if (msg->FindMessage( "SubViewMsg", &subViewMsg) == B_OK)
+						SendMsgToSubView( subViewName, &subViewMsg);
+				}
 				break;
 			}
 			default:
@@ -365,4 +385,3 @@ void BmPrefsWin::Quit() {
 \*------------------------------------------------------------------------------*/
 void BmPrefsWin::PrefsListSelectionChanged( int32) {
 }
-

@@ -73,6 +73,7 @@ public:
 
 	// getters:
 	bool InitDone() const					{ return mInitDone; }
+	const char* Name();
 
 	// message-fields:
 	static const char* const MSG_ITEM;
@@ -111,6 +112,7 @@ public:
 	bool ApplyChanges();
 	void RevertChanges();
 	void SetDefaults();
+	BmPrefsView* ShowPrefsByName( const BmString name);
 
 private:
 	LayeredGroup* mLayeredGroup;
