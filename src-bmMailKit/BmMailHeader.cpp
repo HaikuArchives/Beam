@@ -57,7 +57,8 @@ static BmString BmAddressFieldNames =
 	"<Resent-Reply-To><Sender><Resent-Sender><To><Resent-To>";
 
 static BmString BmNoEncodingFieldNames = 
-	"<Received><Message-ID><Resent-Message-ID><Date><Resent-Date>";
+	"<Received><Message-ID><Resent-Message-ID><In-Reply-To><References><Date>"
+	"<Resent-Date>";
 
 static BmString BmNoStrippingFieldNames = 
 	"<Received><Subject><UserAgent>";
@@ -139,21 +140,27 @@ bool BmAddress::SetTo( const BmString& fullText) {
 }
 
 /*------------------------------------------------------------------------------*\
-	()
-		-	
+	QuotedPhrase()
+		-	returns the given phrase quoted if neccessary
+\*------------------------------------------------------------------------------*/
+BmString BmAddress::QuotedPhrase() const {
+	// quote the phrase if it contains "dangerous" characters:
+	BmString unsafeChars(",:;<>()\"");
+	size_t lenOk = strcspn( mPhrase.String(), unsafeChars.String());
+	if (lenOk < (size_t)mPhrase.Length())
+		return BmString("\"") << mPhrase << "\"";
+	else
+		return mPhrase;
+}
+
+/*------------------------------------------------------------------------------*\
+	AddrString()
+		-	generates UTF8-string for this address
 \*------------------------------------------------------------------------------*/
 const BmString& BmAddress::AddrString() const {
 	if (!mAddrString.Length()) {
 		if (mPhrase.Length()) {
-			// quote the phrase if it contains "dangerous" characters:
-			if (mPhrase.FindFirst(',')!=B_ERROR
-			|| mPhrase.FindFirst(':')!=B_ERROR
-			|| mPhrase.FindFirst('<')!=B_ERROR	
-			|| mPhrase.FindFirst('>')!=B_ERROR)
-				mAddrString = BmString("\"") << mPhrase << "\" <" 
-										<< mAddrSpec << ">";
-			else
-				mAddrString = mPhrase + " <" + mAddrSpec + ">";
+			mAddrString = QuotedPhrase() + " <" + mAddrSpec + ">";
 		} else
 			mAddrString = mAddrSpec;
 	}
@@ -172,25 +179,18 @@ bool BmAddress::IsHandledByAccount( BmIdentity* ident,
 }
 
 /*------------------------------------------------------------------------------*\
-	()
-		-	
+	ConstructRawText()
+		-	adds this address to the given header
+		-  the address is properly converted and formatted
 \*------------------------------------------------------------------------------*/
 void BmAddress::ConstructRawText( BmString& header, const BmString& charset, 
 											 int32 fieldNameLength) const {
 	BmString convertedAddrSpec 
 		= ConvertUTF8ToHeaderPart( mAddrSpec, charset, false, fieldNameLength);
 	if (mPhrase.Length()) {
-		// quote the phrase if it contains "dangerous" characters:
-		BmString phrase;
-		if (mPhrase.FindFirst(',')!=B_ERROR
-		|| mPhrase.FindFirst(':')!=B_ERROR
-		|| mPhrase.FindFirst('<')!=B_ERROR	
-		|| mPhrase.FindFirst('>')!=B_ERROR)
-			phrase = BmString("\"") << mPhrase << "\"";
-		else
-			phrase = mPhrase;
 		BmString convertedPhrase 
-			= ConvertUTF8ToHeaderPart( phrase, charset, true, fieldNameLength);
+			= ConvertUTF8ToHeaderPart( QuotedPhrase(), charset, true, 
+												fieldNameLength);
 		if (convertedPhrase.Length()+convertedAddrSpec.Length()+3 
 				> ThePrefs->GetInt( "MaxLineLen")) {
 			header << convertedPhrase << "\r\n <" << convertedAddrSpec << ">";

@@ -90,6 +90,9 @@ public:
 													{ return mAddrSpec; }
 
 private:
+
+	BmString QuotedPhrase() const;
+
 	bool mInitOK;
 	BmString mPhrase;
 	BmString mAddrSpec;
