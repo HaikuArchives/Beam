@@ -33,7 +33,11 @@
 
 #include <set>
 
+#include <Entry.h>
+#include <File.h>
+
 #include "BmString.h"
+
 
 struct entry_ref;
 
@@ -75,5 +79,33 @@ private:
 };
 
 extern BmTempFileList TheTempFileList;
+
+/*------------------------------------------------------------------------------*\
+	BmBackedFile
+		-	implements save storing into a file (by keeping a backup around).
+\*------------------------------------------------------------------------------*/
+class BmBackedFile {
+public:
+	BmBackedFile()								{}
+	BmBackedFile( const char* filename, const char *mimetype = NULL,
+					  const BEntry* = NULL);
+	BmBackedFile( const BEntry& entry, const char *mimetype = NULL,
+					  const BEntry* = NULL);
+	~BmBackedFile();
+	status_t SetTo( const char* filename, const char *mimetype = NULL,
+						 const BEntry* = NULL);
+	status_t SetTo( const BEntry& entry, const char *mimetype = NULL,
+						 const BEntry* = NULL);
+	ssize_t Write(const void *buffer, size_t size);
+	BFile& File()								{ return mFile; }
+	BEntry& BackupEntry()					{ return mBackupEntry; }
+private:
+	status_t Init();
+	BmString mFileName;
+	BmString mMimeType;
+	BFile mFile;
+	BmString mBackupName;
+	BEntry mBackupEntry;
+};
 
 #endif

@@ -295,3 +295,143 @@ bool BmReadStringAttr( const BNode* node, const char* attrName,
 	}
 	return false;		// nothing has changed
 }
+
+
+
+/*------------------------------------------------------------------------------*\
+	BmBackedFile()
+		-	construct backed-file from given path
+\*------------------------------------------------------------------------------*/
+BmBackedFile::BmBackedFile( const char* filename, const char *mimetype,
+									 const BEntry* backupEntry)
+{
+	SetTo( filename, mimetype, backupEntry);
+}
+
+/*------------------------------------------------------------------------------*\
+	BmBackedFile()
+		-	construct backed-file from given entry
+\*------------------------------------------------------------------------------*/
+BmBackedFile::BmBackedFile( const BEntry& entry, const char *mimetype,
+									 const BEntry* backupEntry)
+{
+	SetTo( entry, mimetype, backupEntry);
+}
+
+/*------------------------------------------------------------------------------*\
+	~BmBackedFile()
+		-	sync's new file and then removes backup.
+\*------------------------------------------------------------------------------*/
+BmBackedFile::~BmBackedFile() {
+	if (mFile.InitCheck() == B_OK)
+		mFile.Sync();
+	if (mBackupEntry.InitCheck() == B_OK && mBackupEntry.Exists())
+		mBackupEntry.Remove();
+}
+
+/*------------------------------------------------------------------------------*\
+	BmBackedFile()
+		-	construct backed-file from given path
+\*------------------------------------------------------------------------------*/
+status_t BmBackedFile::SetTo( const char* filename, const char *mimetype,
+										const BEntry* backupEntry)
+{
+	if (backupEntry)
+		mBackupEntry = *backupEntry;
+	mFileName = filename;
+	mMimeType = mimetype;
+	return Init();
+}
+
+/*------------------------------------------------------------------------------*\
+	BmBackedFile()
+		-	construct backed-file from given entry
+\*------------------------------------------------------------------------------*/
+status_t BmBackedFile::SetTo( const BEntry& entry, const char *mimetype,
+										const BEntry* backupEntry)
+{
+	BPath path;
+	status_t err = entry.GetPath( &path);
+	if (err != B_OK)
+		return err;
+	if (backupEntry)
+		mBackupEntry = *backupEntry;
+	mFileName = path.Path();
+	mMimeType = mimetype;
+	return Init();
+}
+
+/*------------------------------------------------------------------------------*\
+	Init()
+		-	makes backup, if file already exists and then creates new file
+\*------------------------------------------------------------------------------*/
+status_t BmBackedFile::Init() {
+	status_t err;
+	BNode node;
+	BNodeInfo nodeInfo;
+	if (mBackupEntry.InitCheck() != B_OK) {
+		if ((err = mBackupEntry.SetTo( mFileName.String())) != B_OK) {
+			BM_LOGERR( 
+				BmString("Could not set entry for backup-file to <")
+					<< mFileName << ">\n\n Result: " << strerror(err)
+			);
+			return err;
+		}
+	}
+	if (mBackupEntry.Exists()) {
+		// file exists, we rename it to a unique backup-name:
+		static int counter = 1;
+		BmString backupExt(" (beam-backup) ");
+		mBackupName.SetTo( mFileName, B_FILE_NAME_LENGTH-10-backupExt.Length());
+		mBackupName << backupExt << counter++;
+		if ((err = mBackupEntry.Rename( mBackupName.String(), true)) != B_OK) {
+			BM_LOGERR( 
+				BmString("Could not rename file <") << mFileName << "> to <"
+					<< mBackupName << ">\n\n Result: " << strerror(err)
+			);
+			return err;
+		}
+		if (mMimeType.Length()) {
+			// ...change the mime-type of the backup-file:
+			BmString backupMimeType = mMimeType;
+			backupMimeType << "-backup";
+			if ((err = node.SetTo( &mBackupEntry)) != B_OK)
+				BM_THROW_RUNTIME( 
+					BmString("Could not set node for backup file\n\t<") 
+						<< mBackupName << ">\n\n Result: " << strerror(err)
+				);
+			if ((err = nodeInfo.SetTo( &node)) != B_OK)
+				BM_THROW_RUNTIME( 
+					BmString("Could not set node-info for backup file\n\t<") 
+						<< mBackupName << ">\n\n Result: " << strerror(err)
+				);
+			nodeInfo.SetType( backupMimeType.String());
+		}
+	} else
+		mBackupEntry.Unset();
+	err = mFile.SetTo( mFileName.String(), B_WRITE_ONLY | B_CREATE_FILE);
+	if (err != B_OK) {
+		BM_LOGERR( 
+			BmString("Could not create file\n\t<") 
+				<< mFileName << ">\n\n Result: " << strerror(err)
+		);
+		return err;
+	}
+	if (mMimeType.Length()) {
+		if ((err = nodeInfo.SetTo( &mFile)) != B_OK)
+			BM_THROW_RUNTIME( 
+				BmString("Could not set node-info for file\n\t<") 
+					<< mFileName << ">\n\n Result: " << strerror(err)
+			);
+		nodeInfo.SetType( mMimeType.String());
+	}
+	return B_OK;
+}
+
+/*------------------------------------------------------------------------------*\
+	Write()
+		-	delegates writing to real file
+\*------------------------------------------------------------------------------*/
+ssize_t BmBackedFile::Write(const void *buffer, size_t size) {
+	return mFile.Write( buffer, size);
+}
