@@ -89,7 +89,13 @@ int
 main( int argc, char** argv) 
 {
 	const char* APP_SIG = "application/x-vnd.zooey-mailconverter";
-	BmApplication* app = new BmApplication( APP_SIG, true);
-	MailConverter( argv[1]);
-	delete app;
+	if (argc != 2) {
+		fprintf(stderr, "This program converts all files in a given path\n"
+							 "to BeOS-mail-files (with attributes and all that).\n"
+							 "usage:\n\t%s <path-to-mail-files>\n", argv[0]);
+	} else {
+		BmApplication* app = new BmApplication( APP_SIG, true);
+		MailConverter( argv[1]);
+		delete app;
+	}
 }
