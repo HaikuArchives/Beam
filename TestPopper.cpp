@@ -8,7 +8,11 @@
 #include <MButton.h>
 #include <MWindow.h>
 
+#include "BmApp.h"
 #include "BmConnectionWin.h"
+#include "BmLogHandler.h"
+#include "BmPopAccount.h"
+#include "BmPopper.h"
 
 static char buf[30];
 
@@ -23,7 +27,7 @@ public:
 	bool QuitRequested();
 };
 
-class GenericApp : public BApplication
+class GenericApp : public BmApplication
 {
 	BmConnectionWin *win;
 	GenericWin *gw;
@@ -44,7 +48,6 @@ int main()
 		BM_LOGERR( BString("Oops: %s") << e.what());
 	}
 	delete testApp;
-	delete Beam::Prefs;
 }
 
 GenericWin::GenericWin()
@@ -69,11 +72,8 @@ bool GenericWin::QuitRequested() {
 }
 
 GenericApp::GenericApp()
-: BApplication("application/x-vnd.OT-Generic"), win(0), count(0)
+: BmApplication("application/x-vnd.OT-Generic"), win(0), count(0)
 {
-	if (!BmPrefs::InitPrefs())
-		exit(10);
-	Beam::LogHandler = new BmLogHandler();
 	win = new BmConnectionWin( "ConnectionWin", this);
 	win->Hide();
 	win->Show();
@@ -83,7 +83,6 @@ GenericApp::GenericApp()
 
 GenericApp::~GenericApp()
 {
-	delete Beam::LogHandler;
 }
 
 void GenericApp::MessageReceived(BMessage* msg) {
@@ -93,8 +92,8 @@ void GenericApp::MessageReceived(BMessage* msg) {
 		case BM_MSG_NOCH_EINER: 
 
 			count++;
-			if (count % 3 == 2) {
-				archive = new BMessage(BM_POPWIN_FETCHMSGS);
+			archive = new BMessage(BM_CONNWIN_FETCHPOP);
+			if (count % 3 == 0) {
 				sprintf(buf, "mailtest@kiwi:110");
 				acc.Name( buf);
 				acc.Username( "mailtest");
@@ -103,10 +102,7 @@ void GenericApp::MessageReceived(BMessage* msg) {
 				acc.PortNr( 110);
 				acc.SMTPPortNr( 25);
 				acc.Archive( archive, false);
-				win->PostMessage( archive);
-				delete archive;
-			} else if (count % 3 == 0) {
-				archive = new BMessage(BM_POPWIN_FETCHMSGS);
+			} else if (count % 3 == 1) {
 				sprintf(buf, "zooey@kiwi:110");
 				acc.Name( buf);
 				acc.Username( "zooey");
@@ -115,10 +111,7 @@ void GenericApp::MessageReceived(BMessage* msg) {
 				acc.PortNr( 110);
 				acc.SMTPPortNr( 25);
 				acc.Archive( archive, false);
-				win->PostMessage( archive);
-				delete archive;
-			} else if (count % 3 == 1) {
-				archive = new BMessage(BM_POPWIN_FETCHMSGS);
+			} else if (count % 3 == 2) {
 				sprintf(buf, "mailtest2@kiwi:114");
 				acc.Name( buf);
 				acc.Username( "mailtest2");
@@ -127,9 +120,10 @@ void GenericApp::MessageReceived(BMessage* msg) {
 				acc.PortNr( 114);
 				acc.SMTPPortNr( 25);
 				acc.Archive( archive, false);
-				win->PostMessage( archive);
-				delete archive;
 			}
+			archive->AddString( BmConnectionWin::MSG_CONN_NAME, acc.Name());
+			win->PostMessage( archive);
+			delete archive;
 
 /*
 			archive = new BMessage(BM_POPWIN_FETCHMSGS);
@@ -146,10 +140,10 @@ void GenericApp::MessageReceived(BMessage* msg) {
 */
 
 			break;
-		case BM_POPWIN_DONE: 
+		case BM_CONNWIN_DONE: 
 //			PostMessage( B_QUIT_REQUESTED);
 			break;
 		default:
-			BApplication::MessageReceived( msg);
+			BmApplication::MessageReceived( msg);
 	}
 }

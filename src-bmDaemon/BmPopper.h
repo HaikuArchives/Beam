@@ -7,30 +7,22 @@
 #ifndef _BmPopper_h
 #define _BmPopper_h
 
-#include <stdio.h>
+#include <memory>
 
 #include <Message.h>
 #include <NetAddress.h>
 #include <NetEndpoint.h>
 
-#include "BmPrefs.h"
-#include "BmPopAccount.h"
+#include "BmDataModel.h"
+#include "BmUtil.h"
 
-// message constants for BmPopper, all msgs are sent to the looper 
-// specified via BmPopperInfo-struct:
-#define BM_POP_UPDATE_STATE	'bmpa'
-							// a new state has been entered during POP-session
-#define BM_POP_UPDATE_MAILS	'bmpb'
-							// a new mail is being dealt with during POP-session
-#define BM_POP_DONE				'bmpc'
-							// BmPopper has finished
+class BmPopAccount;
 
 /*------------------------------------------------------------------------------*\
 	BmPopperInfo
-		-	this structure represents a BmPopper's connection to the 
-			outer world.
-		-	a BmPopper begins life with a pointer to this structure,
-			nothing else is required
+		-	a BmPopper begins life with a pointer to this structure.
+		-	this struct is used to push the neccessary info through 
+			a thread-entry-function's data-ptr
 			
 \*------------------------------------------------------------------------------*/
 struct BmPopperInfo {
@@ -38,18 +30,10 @@ struct BmPopperInfo {
 							// the POP-account we have to deal with
 	BString name;
 							// name of this POP-session (used in GUI and for logging purposes)
-	BLooper *statusLooper;
-							// the looper that should receive status-messages from a BmPopper.
-							// In Beam, this is the BmConnectionWin-looper. OPTIONAL
-	bool (*aliveFunc)();
-							// a bool-function that returns true as long as the BmPopper
-							// should continue to run. OPTIONAL
 
-	BmPopperInfo( BmPopAccount* a, const BString &n, BLooper* sl, bool (*f)()) 
+	BmPopperInfo( BmPopAccount* a, const BString &n)
 			: account(a)
 			, name(n)
-			, statusLooper(sl)
-			, aliveFunc(f)
 			{}
 };
 
@@ -60,7 +44,9 @@ struct BmPopperInfo {
 		-	in general, each BmPopper is started as a thread which exits when the
 			POP-session has ended
 \*------------------------------------------------------------------------------*/
-class BmPopper {
+class BmPopper : public BmJobModel {
+	typedef BmJobModel inherited;
+	
 public:
 	//	message component definitions for status-msgs:
 	static const char* const MSG_POPPER = 		"bm:popper";
@@ -68,12 +54,14 @@ public:
 	static const char* const MSG_TRAILING = 	"bm:trailing";
 	static const char* const MSG_LEADING = 	"bm:leading";
 
-	BmPopper( BmPopperInfo* info);
+	BmPopper( const BString& name, BmPopAccount* account);
 	virtual ~BmPopper();
 
-	static int32 NewPopper( void* data);
 	static int32 NextID() 					{ return ++mId; }
-	void Start();
+
+	BString Name() const						{ return ModelName(); }
+
+	void StartJob();
 
 private:
 	static int32 mId;							// unique message ID, this is used if a 
@@ -86,12 +74,12 @@ private:
 	static const bool MULTI_LINE = false;
 	static const int32 NetBufSize = 16384;
 
-	BmPopperInfo* mPopperInfo;				// configuration-info
+	BmPtr<BmPopAccount> mPopAccount;		// Info about our pop-account
 
 	BNetEndpoint mPopServer;				// network-connection to POP-server
 	bool mConnected;							// are we connected to the server?
 
-	BString* mMsgUIDs;							// array of unique-IDs, one for each message
+	BString* mMsgUIDs;						// array of unique-IDs, one for each message
 	int32 mMsgCount;							// number of msgs to be received
 	int32 mMsgSize;							// size of current msg
 	int32 mMsgTotalSize;						// size of all msgs to be received
@@ -104,8 +92,8 @@ private:
 		POP_LOGIN,
 		POP_CHECK,
 		POP_RETRIEVE,
-		POP_UPDATE,
 		POP_DISCONNECT,
+		POP_DONE,
 		POP_FINAL
 	};
 
@@ -123,17 +111,16 @@ private:
 	void Login();
 	void Check();
 	void Retrieve();
-	void Update();
 	void Disconnect();
 	void Quit( bool WaitForAnswer=false);
 	void UpdatePOPStatus( const float, const char*, bool failed=false);
 	void UpdateMailStatus( const float, const char*, int32);
-	bool ShouldContinue();
-	void StoreAnswer( char *);
-	void CheckForPositiveAnswer( bool SingleLineMode, int32 mailNr=0);
-	void GetAnswer( bool SingleLineMode, int32 mailNr = 0);
+	void StoreAnswer( char* );
+	bool CheckForPositiveAnswer( bool SingleLineMode, int32 mailNr=0);
+	bool GetAnswer( bool SingleLineMode, int32 mailNr = 0);
 	int32 ReceiveBlock( char* buffer, int32 max);
 	void SendCommand( BString cmd);
+	void TellWeAreDone();
 };
 
 #endif

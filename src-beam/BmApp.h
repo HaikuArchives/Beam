@@ -7,23 +7,44 @@
 #define _BmApp_h
 
 #include <Application.h>
+#include <Bitmap.h>
+#include <Path.h>
+#include <String.h>
+#include <Volume.h>
 
-#include "BmConnectionWin.h"
-#include "BmMainWindow.h"
-#include "BmMailFolderList.h"
+class BmPrefs;
+class BmLogHandler;
 
-class BeamApp : public BApplication
+class BmApplication : public BApplication
 {
 	typedef BApplication inherited;
 
-	Beam beam;
-	BmMainWindow *mainWin;
-	BmMailFolderList *folderList;
 public:
-	BeamApp();
-	~BeamApp();
-	void MessageReceived(BMessage*);
+	//
+	BmApplication( const char *sig);
+	~BmApplication();
+	// beos-stuff
+	bool QuitRequested();
+	//
+	bool IsQuitting()							{ return mIsQuitting; }
+
+	//
+	BmLogHandler* LogHandler;
+	BmPrefs* Prefs;
+	BBitmap* FolderIcon;
+	BString HomePath;
+	BVolume MailboxVolume;
+	BPath	SettingsPath;
+
+	//
+	const char* WHITESPACE;
+
+private:
+	static int InstanceCount;
+	bool mIsQuitting;
+
 };
 
+extern BmApplication* bmApp;
 
 #endif

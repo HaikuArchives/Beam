@@ -9,18 +9,75 @@
 
 #include <map>
 
-#include <liblayout/MWindow.h>
-#include <liblayout/VGroup.h>
+#include <MBorder.h>
+#include <MWindow.h>
+#include <VGroup.h>
 
-#include "BmPopper.h"
+#include "BmController.h"
+
+class BmPopAccount;
+class BmPopper;
 
 /*------------------------------------------------------------------------------*\
 	types of message sent to/from a BmConnectionWin
 \*------------------------------------------------------------------------------*/
-#define BM_POPWIN_FETCHMSGS		'bmca'
-						// sent from App BmConnectionWin in order to start connection
-#define BM_POPWIN_DONE				'bmcb'
+#define BM_CONNWIN_FETCHPOP		'bmca'
+						// sent from App BmConnectionWin in order to start pop-connection
+#define BM_CONNWIN_DONE				'bmcb'
 						// sent from BmConnectionWin to app when a connection has finished
+
+/*------------------------------------------------------------------------------*\
+	BmConnectionView
+		-	controls a specific connection
+\*------------------------------------------------------------------------------*/
+class BmConnectionView : public MBorder, public BmJobController {
+
+public:
+
+	//
+	BmConnectionView( const char* name);
+	virtual ~BmConnectionView();
+
+	virtual BmJobModel* CreateJobModel( BMessage* msg) = 0;
+
+	BHandler* GetControllerHandler() 	{ return this; }
+
+	virtual bool WantsToStayVisible()	{ return false; }
+	virtual void ResetController()		{ }
+	virtual void UpdateModelView( BMessage* msg) = 0;
+
+	virtual void MessageReceived( BMessage* msg);
+	virtual void JobIsDone( bool completed);
+
+};
+
+/*------------------------------------------------------------------------------*\
+	BmPopperView
+		-	controls a specific POP3-connection
+\*------------------------------------------------------------------------------*/
+class BmPopperView : public BmConnectionView {
+
+public:
+	//
+	static BmPopperView* CreateInstance( const char* name);
+
+	//
+	BmPopperView( const char* name);
+	~BmPopperView();
+
+	BmJobModel* CreateJobModel( BMessage* msg);
+
+	BHandler* GetControllerHandler() 	{ return this; }
+	bool WantsToStayVisible();
+	void ResetController();
+
+	void UpdateModelView( BMessage* msg);
+
+private:
+	BStatusBar* mStatBar;				// shows current status of this connection
+	BStatusBar* mMailBar;				// shows number of mails handled by this connection
+
+};
 
 /*------------------------------------------------------------------------------*\
 	BmConnectionWin
@@ -31,66 +88,55 @@
 									when no more connections is active, the window will close.
 			* DYNAMIC_EMPTY:	Only POP-connections that actually received mail stay visible
 									after the connection has ended
-			* STATIC:			All connections are visible, even after close
+			* STATIC:			All connections are visible, even after connection-close
 		-	in general each connection to any server starts as a request to this class (better: the
 			one and only instance of this class). For every requested connection a new
 			interface is generated and displayed, then the connections is executed by the
-			corresponding connection-object (for insance a BmPopper).
-		-	connections will be executed inside a seperate thread.
+			corresponding connection-object (for instance a BmPopper).
+		-	connections and their interfaces are connected via the interface defined between
+			BmJobController and BmJobModel.
 \*------------------------------------------------------------------------------*/
 class BmConnectionWin : public MWindow {
 	typedef MWindow inherited;
-	
+
+	friend class BmConnectionView;
+
 	static const uint32 MyWinFlags = B_ASYNCHRONOUS_CONTROLS
 												|	B_NOT_ZOOMABLE
 												|	B_NOT_RESIZABLE;
 
-	static const rgb_color BM_COL_STATUSBAR;
-	
-	/*------------------------------------------------------------------------------*\
-		BmConnectionWinInfo
-			-	holds information about a specific connection
-	\*------------------------------------------------------------------------------*/
-	struct BmConnectionWinInfo {
-		MView* interface;						// the interface for this connection
-		thread_id thread;						// the thread the connection is running in
-		BStatusBar* statBar;					// shows current status of this connection
-		BStatusBar* mailBar;					// shows number of mails handled by this connection
-		BmConnectionWinInfo( thread_id t, MView* i, BStatusBar* sb, BStatusBar* mb)
-			: interface(i)
-			, thread(t)
-			, statBar(sb)
-			, mailBar(mb)
-			{}
-	};
-	typedef map<BString, BmConnectionWinInfo*> ConnectionMap;
+	typedef map<BString, BmConnectionView*> ConnectionMap;
 
-	// the following flag indicates, whether the user has requested a termination of
-	// the connections. All active connections check this flag periodically in order to
-	// find out if they should continue or not:
-	static bool ConnectionWinAlive;
 public:
-	static bool IsConnectionWinAlive();	// function used by connections for alive-check:
 
-	BmConnectionWin( const char* title, BLooper *invoker=NULL);
+	BmConnectionWin( const char* title, BLooper* invoker=NULL);
 	virtual ~BmConnectionWin();
 
 	// standard BeOS-stuff:
 	bool QuitRequested();
 	void Quit();
-	virtual void MessageReceived(BMessage *message);
+	virtual void MessageReceived( BMessage* msg);
+
+	//
+	static const rgb_color BM_COL_STATUSBAR;
+
+	//	
+	static BmConnectionWin* Instance;
+
+	//	message component definitions:
+	static const char* const MSG_CONN_NAME = 		"bm:connname";
+	static const char* const MSG_CONN_INFO = 		"bm:conninfo";
 
 private:
+	//
+	void AddConnection( BMessage* msg);
+	void RemoveConnection( const char* name);
+
 	ConnectionMap mActiveConnections;	// list of known connections (some may be inactive)
-	VGroup *mOuterGroup;						// the outmost view that the connection-interfaces live in
-	BLooper *mInvokingLooper;				// the looper we will tell that we are finished
+	VGroup* mOuterGroup;						// the outmost view that the connection-interfaces live in
+	BLooper* mInvokingLooper;				// the looper we will tell that we are finished
 	uint8 mActiveConnCount;					// number of currently active connections
 
-	void AddPopper( BmPopAccount* popAccount);
-	MView *AddPopperInterface( const char* name, BStatusBar*&, BStatusBar*&);
-	void UpdatePopperInterface( BMessage* msg);
-	void RemovePopper( const char* name);
-	void RemovePopperInterface( BmConnectionWinInfo* interface);
 };
 
 #endif

@@ -10,14 +10,16 @@
 
 #include <String.h>
 
+#include "BmUtil.h"
+
 /*------------------------------------------------------------------------------*\
 	mail_format_error
 		-	exception to indicate an error in the format of a mail-message
 \*------------------------------------------------------------------------------*/
-class mail_format_error : public runtime_error {
+class BM_mail_format_error : public BM_runtime_error {
 public:
-  mail_format_error (const BString& what_arg): runtime_error (what_arg.String()) { }
-  mail_format_error (const char *const what_arg): runtime_error (what_arg) { }
+	BM_mail_format_error (const BString& what_arg): BM_runtime_error (what_arg.String()) { }
+	BM_mail_format_error (const char* const what_arg): BM_runtime_error (what_arg) { }
 };
 
 /*------------------------------------------------------------------------------*\

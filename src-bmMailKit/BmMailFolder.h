@@ -6,9 +6,12 @@
 #ifndef _BmMailFolder_h
 #define _BmMailFolder_h
 
-#include <StorageKit.h>
+#include <map>
 
-#include "BmPrefs.h"
+#include <Archivable.h>
+#include <Entry.h>
+#include <Node.h>
+#include <String.h>
 
 class BmMailFolder;
 
@@ -35,19 +38,21 @@ private:
 	typedef map<node_ref, BmMailRef*> MailRefMap;
 	
 public:
-	BmMailFolder( entry_ref &eref, ino_t node, BmMailFolder *parent, time_t &modified);
-	BmMailFolder( BMessage *archive, BmMailFolder *parent);
+	BmMailFolder( entry_ref &eref, ino_t node, BmMailFolder* parent, time_t &modified);
+	BmMailFolder( BMessage* archive, BmMailFolder* parent);
 	virtual ~BmMailFolder();
 	
 	// archival stuff:
-	static BArchivable *Instantiate( BMessage *archive);
-	virtual status_t Archive( BMessage *archive, bool deep = true) const;
+	static BArchivable* Instantiate( BMessage* archive);
+	virtual status_t Archive( BMessage* archive, bool deep = true) const;
 
 	// getters:
 	const entry_ref& EntryRef() const 		{ return mEntryRef; }
 	const entry_ref* EntryRefPtr() const	{ return &mEntryRef; }
 	const BString Name() const					{ return mEntryRef.name; }
 	const ino_t& ID() const						{ return mInode; }
+	const ino_t& Inode() const					{ return mInode; }
+	const ino_t Pnode() const					{ return mParent ? mParent->Inode() : 0; }
 //	const time_t& LastModified() const		{ return mLastModified; }
 	const int NewMailCount() const			{ return mNewMailCount; }
 	const int NewMailCountForSubfolders() const		{ return mNewMailCountForSubfolders; }
@@ -56,7 +61,7 @@ public:
 	void EntryRef( entry_ref &e) 				{ mEntryRef = e; }
 
 	// 
-	void AddSubFolder( BmMailFolder *child);
+	void AddSubFolder( BmMailFolder* child);
 	void BumpNewMailCount();
 	void BumpNewMailCountForSubfolders();
 	bool CheckIfModifiedSince();
@@ -72,7 +77,7 @@ private:
 	MailRefMap mMailRefMap;
 
 	// the following members will NOT be archived at all:
-	BmMailFolder *mParent;
+	BmMailFolder* mParent;
 	bool mNeedsCacheUpdate;
 	int mNewMailCount;
 	int mNewMailCountForSubfolders;

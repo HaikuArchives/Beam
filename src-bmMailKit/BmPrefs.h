@@ -8,9 +8,7 @@
 #define _BmPrefs_h
 
 #include <Archivable.h>
-#include <StopWatch.h>
-
-#include "BmUtil.h"
+#include <String.h>
 
 /*------------------------------------------------------------------------------*\
 	BmPrefs 
@@ -24,25 +22,25 @@ class BmPrefs : public BArchivable {
 	static const char* const MSG_DYNAMIC_CONN_WIN = "bm:dynconnwin";
 	static const char* const MSG_RECEIVE_TIMEOUT = 	"bm:recvtimeout";
 	static const char* const MSG_LOGLEVELS = 			"bm:loglevels";
+	static const char* const MSG_MAILBOXPATH = 		"bm:mailboxpath";
 
 	static const char* const PREFS_FILENAME = 		"General Settings";
 
-
 public:
+	//
+	static BmPrefs* CreateInstance();
+	//
 	BmPrefs( void);
-	BmPrefs( BMessage *archive);
+	BmPrefs( BMessage* archive);
 	virtual ~BmPrefs() 						{}
 
 	bool Store();
 	
 	// stuff needed for BArchivable:
-	static BArchivable *Instantiate( BMessage *archive)
+	static BArchivable* Instantiate( BMessage* archive)
 			;
-	virtual status_t Archive( BMessage *archive, bool deep = true) const
+	virtual status_t Archive( BMessage* archive, bool deep = true) const
 			;
-
-	// path to beam's settings-dir:
-	static BPath mgPrefsPath;
 
 	// possible modes of BmConnectionWin:
 	enum TConnWinMode {
@@ -55,16 +53,14 @@ public:
 	TConnWinMode DynamicConnectionWin() const	{ return mDynamicConnectionWin; }
 	int16 ReceiveTimeout() const 			{ return mReceiveTimeout; }
 	int32 Loglevels() const 				{ return mLoglevels; }
+	BString MailboxPath() const 			{ return mMailboxPath; }
 
 	// setters:
 	void CheckMail( TConnWinMode m) 		{ mDynamicConnectionWin = m; }
 	void ReceiveTimeout( int16 i) 		{ mReceiveTimeout = i; }
 	void Loglevels( int32 i) 				{ mLoglevels = i; }
+	void MailboxPath( BString& s) 		{ mMailboxPath = s; }
 
-	bool static InitPrefs();
-
-	BStopWatch StopWatch;
-	
 private:
 	// TODO: make these configurable by user (i.e. write a GUI):
 	TConnWinMode mDynamicConnectionWin;	// show connections in connection-window only when
@@ -75,23 +71,7 @@ private:
 	int32 mLoglevels;							// default loglevels, for each logflag
 													// 2 bits are used (allowing levels from 
 													// 0 [off] to 3 [full])
-};
-
-/*------------------------------------------------------------------------------*\
-	Beam
-		-	the class for our global vars and definitions:
-\*------------------------------------------------------------------------------*/
-class Beam {
-public:
-	static BmLogHandler* LogHandler;
-	static BmPrefs* Prefs;
-	static BString HomePath;
-	static BVolume MailboxVolume;
-	static char *WHITESPACE;
-	static int InstanceCount;
-
-	Beam();
-	~Beam();
+	BString mMailboxPath;					// Path of mailbox-dir (usually '/boot/home/mail')
 };
 
 #endif

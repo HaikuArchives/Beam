@@ -7,7 +7,8 @@
 #include <regexx/regexx.hh>
 using namespace regexx;
 
-#include "BmPrefs.h"
+#include "BmApp.h"
+#include "BmLogHandler.h"
 #include "BmMail.h"
 
 #undef BM_LOGNAME
@@ -17,7 +18,8 @@ using namespace regexx;
 	default constructor
 \*------------------------------------------------------------------------------*/
 BmMail::BmMail( ) 
-:	mHasChanged( false) {
+	:	mHasChanged( false) 
+{
 }
 
 /*------------------------------------------------------------------------------*\
@@ -25,7 +27,8 @@ BmMail::BmMail( )
 		-	creates message with given text and unique-ID (as received from server)
 \*------------------------------------------------------------------------------*/
 BmMail::BmMail( BString &msgText, const BString &msgUID, const BString &account) 
-:	mHasChanged( true) {
+	:	mHasChanged( true) 
+{
 	Set( msgText, msgUID, account);
 }
 	
@@ -45,7 +48,7 @@ void BmMail::Set( BString &msgText, const BString &msgUID, const BString &accoun
 	int32 headerLen = msgText.FindFirst( "\r\n\r\n");
 							// STD11: empty-line seperates header from body
 	if (headerLen == B_ERROR) {
-		throw mail_format_error("BmMail: Could not determine borderline between header and text of message");
+		throw BM_mail_format_error("BmMail: Could not determine borderline between header and text of message");
 	}
 	headerLen += 2;							// include cr/nl in header-string
 
@@ -70,7 +73,7 @@ void BmMail::ParseHeader( const BString &header) {
 	rxHeaderFields.expr( "^(\\S.+?\\r\\n(?:\\s.+?\\r\\n)*)(?=(\\Z|\\S))");
 	rxHeaderFields.str( header.String());
 	if (!(nm=rxHeaderFields.exec( Regexx::global | Regexx::newline))) {
-		throw mail_format_error( BString("Could not find any header-fields in this header: \n") << header);
+		throw BM_mail_format_error( BString("Could not find any header-fields in this header: \n") << header);
 	}
 	vector<RegexxMatch>::const_iterator i;
 
@@ -84,9 +87,9 @@ void BmMail::ParseHeader( const BString &header) {
 		BString headerField, fieldName, fieldBody;
 		header.CopyInto( headerField, i->start(), i->Length());
 		int32 pos = headerField.FindFirst( ':');
-		if (pos == B_ERROR) { throw mail_format_error(""); }
+		if (pos == B_ERROR) { throw BM_mail_format_error(""); }
 		fieldName.SetTo( headerField, pos);
-		fieldName.RemoveSet( Beam::WHITESPACE);
+		fieldName.RemoveSet( bmApp->WHITESPACE);
 		fieldName.CapitalizeEachWord();	
 							// capitalized fieldnames seem to be popular...
 		headerField.CopyInto( fieldBody, pos+1, headerField.Length());

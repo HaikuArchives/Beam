@@ -3,20 +3,25 @@
 		$Id$
 */
 
+#include <Directory.h>
+
+#include "BmApp.h"
+#include "BmLogHandler.h"
 #include "BmMailFolder.h"
+#include "BmUtil.h"
 
 /*------------------------------------------------------------------------------*\
 	BmMailFolder( eref, parent, modified)
 		-	standard c'tor
 \*------------------------------------------------------------------------------*/
-BmMailFolder::BmMailFolder( entry_ref &eref, ino_t node, BmMailFolder *parent, 
+BmMailFolder::BmMailFolder( entry_ref &eref, ino_t node, BmMailFolder* parent, 
 									 time_t &modified)
-:	mEntryRef( eref)
-,	mInode( node)
-,	mLastModified( modified)
-,	mParent( parent)
-,	mNeedsCacheUpdate( false)
-,	mNewMailCount( 0)
+	:	mEntryRef( eref)
+	,	mInode( node)
+	,	mLastModified( modified)
+	,	mParent( parent)
+	,	mNeedsCacheUpdate( false)
+	,	mNewMailCount( 0)
 {
 	if (parent)
 		parent->AddSubFolder( this);
@@ -26,11 +31,11 @@ BmMailFolder::BmMailFolder( entry_ref &eref, ino_t node, BmMailFolder *parent,
 	BmMailFolder( archive)
 		-	unarchive c'tor
 \*------------------------------------------------------------------------------*/
-BmMailFolder::BmMailFolder( BMessage *archive, BmMailFolder *parent)
-:	mInode( 0)
-,	mParent( parent)
-,	mNeedsCacheUpdate( false)
-,	mNewMailCount( 0)
+BmMailFolder::BmMailFolder( BMessage* archive, BmMailFolder* parent)
+	:	mInode( 0)
+	,	mParent( parent)
+	,	mNeedsCacheUpdate( false)
+	,	mNewMailCount( 0)
 {
 	try {
 		status_t err;
@@ -41,7 +46,7 @@ BmMailFolder::BmMailFolder( BMessage *archive, BmMailFolder *parent)
 		if (parent)
 			parent->AddSubFolder( this);
 	} catch (exception &e) {
-		ShowAlert( e.what());
+		BM_SHOWERR( e.what());
 	}
 }
 
@@ -121,6 +126,6 @@ void BmMailFolder::BumpNewMailCountForSubfolders() {
 	AddSubFolder()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmMailFolder::AddSubFolder( BmMailFolder *child) {
+void BmMailFolder::AddSubFolder( BmMailFolder* child) {
 	mSubFolderMap[child->ID()] = child;
 }

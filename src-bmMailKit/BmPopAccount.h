@@ -13,8 +13,6 @@
 #include <String.h>
 #include <NetAddress.h>
 
-#include "BmUtil.h"
-
 /*------------------------------------------------------------------------------*\
 	BmPopAccount 
 		-	holds information about one specific POP3-account
@@ -40,12 +38,12 @@ public:
 		: BArchivable() 
 		, mCheckMail( false)
 		, mDeleteMailFromServer( false)	{}
-	BmPopAccount( BMessage *archive);
+	BmPopAccount( BMessage* archive);
 	virtual ~BmPopAccount() 				{}
 
 	// stuff needed for BArchivable:
-	static BArchivable *Instantiate( BMessage *archive);
-	virtual status_t Archive( BMessage *archive, bool deep = true) const;
+	static BArchivable* Instantiate( BMessage* archive);
+	virtual status_t Archive( BMessage* archive, bool deep = true) const;
 
 	// getters:
 	const BString &Name() const 			{ return mName; }

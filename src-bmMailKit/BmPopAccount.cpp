@@ -8,14 +8,15 @@
 #include <ByteOrder.h>
 
 #include "BmPopAccount.h"
+#include "BmUtil.h"
 
 /*------------------------------------------------------------------------------*\
 	BmPopAccount( archive)
 		-	constructs a BmPopAccount from a BMessage
 		-	N.B.: BMessage must be in NETWORK-BYTE-ORDER
 \*------------------------------------------------------------------------------*/
-BmPopAccount::BmPopAccount( BMessage *archive) 
-	: BArchivable( archive)
+BmPopAccount::BmPopAccount( BMessage* archive) 
+	:	BArchivable( archive)
 {
 	mName = FindMsgString( archive, MSG_NAME);
 	mUsername = FindMsgString( archive, MSG_USERNAME);
@@ -36,7 +37,7 @@ BmPopAccount::BmPopAccount( BMessage *archive)
 		-	writes BmPopAccount into archive
 		-	parameter deep makes no difference...
 \*------------------------------------------------------------------------------*/
-status_t BmPopAccount::Archive( BMessage *archive, bool deep) const {
+status_t BmPopAccount::Archive( BMessage* archive, bool deep) const {
 	status_t ret = (BArchivable::Archive( archive, deep)
 		||	archive->AddString("class", "BmPopAccount")
 		||	archive->AddString( MSG_NAME, mName.String())
@@ -58,7 +59,7 @@ status_t BmPopAccount::Archive( BMessage *archive, bool deep) const {
 	Instantiate( archive)
 		-	(re-)creates a PopAccount from a given BMessage
 \*------------------------------------------------------------------------------*/
-BArchivable* BmPopAccount::Instantiate( BMessage *archive) {
+BArchivable* BmPopAccount::Instantiate( BMessage* archive) {
 	if (!validate_instantiation( archive, "BmPopAccount"))
 		return NULL;
 	return new BmPopAccount( archive);
