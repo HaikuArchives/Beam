@@ -30,6 +30,8 @@
 #ifndef _BmEncoding_h
 #define _BmEncoding_h
 
+#include <memory>
+
 #include "BmString.h"
 #include "BmMemIO.h"
 
@@ -65,6 +67,55 @@ namespace BmEncoding {
 	
 	bool NeedsEncoding( const BmString& charsetString);
 	bool IsCompatibleWithText( const BmString& s);
+
+	typedef auto_ptr<BmMemFilter> BmMemFilterRef;
+	BmMemFilterRef FindDecoderFor( BmMemIBuf& input, 
+											 const BmString& encodingStyle,
+											 bool isEncodedWord=false, 
+											 uint32 blockSize=BmMemFilter::nBlockSize);
+	BmMemFilterRef FindEncoderFor( BmMemIBuf& input, 
+											 const BmString& encodingStyle,
+											 bool isEncodedWord=false, 
+											 uint32 blockSize=BmMemFilter::nBlockSize);
+};
+
+
+/*------------------------------------------------------------------------------*\
+	class BmUtf8Decoder
+		-	
+\*------------------------------------------------------------------------------*/
+class BmUtf8Decoder : public BmMemFilter {
+	typedef BmMemFilter inherited;
+
+public:
+	BmUtf8Decoder( BmMemIBuf& input, uint32 destEncoding, 
+						uint32 blockSize=nBlockSize);
+
+protected:
+	// overrides of BmMailFilter base:
+	void Filter( const char* srcBuf, uint32& srcLen, 
+					 char* destBuf, uint32& destLen);
+
+	uint32 mDestEncoding;
+};
+
+/*------------------------------------------------------------------------------*\
+	class BmUtf8Encoder
+		-	
+\*------------------------------------------------------------------------------*/
+class BmUtf8Encoder : public BmMemFilter {
+	typedef BmMemFilter inherited;
+
+public:
+	BmUtf8Encoder( BmMemIBuf& input, uint32 srcEncoding, 
+						uint32 blockSize=nBlockSize);
+
+protected:
+	// overrides of BmMailFilter base:
+	void Filter( const char* srcBuf, uint32& srcLen, 
+					 char* destBuf, uint32& destLen);
+
+	uint32 mSrcEncoding;
 };
 
 /*------------------------------------------------------------------------------*\
@@ -74,16 +125,18 @@ namespace BmEncoding {
 class BmQuotedPrintableDecoder : public BmMemFilter {
 	typedef BmMemFilter inherited;
 
+public:
 	BmQuotedPrintableDecoder( BmMemIBuf& input, bool isEncodedWord=false, 
-									  uint32 blockSize=65536);
+									  uint32 blockSize=nBlockSize);
 
 protected:
 	// overrides of BmMailFilter base:
-	uint32 DetermineBufferFixup( BmMemIBuf& input);
-	void DoFilter( const char* srcBuf, uint32& srcLen, 
-						char* destBuf, uint32& destLen);
+	void Filter( const char* srcBuf, uint32& srcLen, 
+					 char* destBuf, uint32& destLen);
 
 	bool mIsEncodedWord;
+	bool mLastWasLinebreak;
+	int mSpacesThatMayNeedRemoval;
 };
 
 /*------------------------------------------------------------------------------*\
@@ -93,15 +146,19 @@ protected:
 class BmQuotedPrintableEncoder : public BmMemFilter {
 	typedef BmMemFilter inherited;
 
+public:
 	BmQuotedPrintableEncoder( BmMemIBuf& input, bool isEncodedWord=false, 
-									  uint32 blockSize=65536);
+									  uint32 blockSize=nBlockSize);
 
 protected:
 	// overrides of BmMailFilter base:
-	void DoFilter( const char* srcBuf, uint32& srcLen, 
-						char* destBuf, uint32& destLen);
+	void Filter( const char* srcBuf, uint32& srcLen, 
+					 char* destBuf, uint32& destLen);
+	void Finalize( char* destBuf, uint32& destLen);
 
 	bool mIsEncodedWord;
+	int mCurrLineLen;
+	int mSpacesThatMayNeedEncoding;
 };
 
 /*------------------------------------------------------------------------------*\
@@ -111,16 +168,21 @@ protected:
 class BmBase64Decoder : public BmMemFilter {
 	typedef BmMemFilter inherited;
 
-	BmBase64Decoder( BmMemIBuf& input, uint32 blockSize=65536)
+public:
+	BmBase64Decoder( BmMemIBuf& input, uint32 blockSize=nBlockSize)
 		:	inherited( input, blockSize)
+		,	mConcat( 0)
 		,	mIndex( 0)							{}
+
+	static const int32 nBase64Alphabet[256];
 
 protected:
 	// overrides of BmMailFilter base:
-	uint32 DetermineBufferFixup( BmMemIBuf& input);
-	void DoFilter( const char* srcBuf, uint32& srcLen, 
-						char* destBuf, uint32& destLen);
+	void Filter( const char* srcBuf, uint32& srcLen, 
+					 char* destBuf, uint32& destLen);
+	void Finalize( char* destBuf, uint32& destLen);
 
+	uint32 mConcat;
 	uint32 mIndex;
 };
 
@@ -131,16 +193,128 @@ protected:
 class BmBase64Encoder : public BmMemFilter {
 	typedef BmMemFilter inherited;
 
-	BmBase64Encoder( BmMemIBuf& input, uint32 blockSize=65536)
+public:
+	BmBase64Encoder( BmMemIBuf& input, uint32 blockSize=nBlockSize)
 		:	inherited( input, blockSize)
+		,	mConcat( 0)
+		,	mIndex( 0)
 		,	mCurrLineLen( 0)					{}
+
+	static const char nBase64Alphabet[64];
 
 protected:
 	// overrides of BmMailFilter base:
-	void DoFilter( const char* srcBuf, uint32& srcLen, 
-						char* destBuf, uint32& destLen);
+	void Filter( const char* srcBuf, uint32& srcLen, 
+					 char* destBuf, uint32& destLen);
+	void Finalize( char* destBuf, uint32& destLen);
 	
+	uint32 mConcat;
+	uint32 mIndex;
 	int mCurrLineLen;
+};
+
+/*------------------------------------------------------------------------------*\
+	class BmLinebreakDecoder
+		-	
+\*------------------------------------------------------------------------------*/
+class BmLinebreakDecoder : public BmMemFilter {
+	typedef BmMemFilter inherited;
+
+public:
+	BmLinebreakDecoder( BmMemIBuf& input, uint32 blockSize=nBlockSize);
+
+protected:
+	// overrides of BmMailFilter base:
+	void Filter( const char* srcBuf, uint32& srcLen, 
+					 char* destBuf, uint32& destLen);
+
+};
+
+/*------------------------------------------------------------------------------*\
+	class BmLinebreakEncoder
+		-	
+\*------------------------------------------------------------------------------*/
+class BmLinebreakEncoder : public BmMemFilter {
+	typedef BmMemFilter inherited;
+
+public:
+	BmLinebreakEncoder( BmMemIBuf& input, uint32 blockSize=nBlockSize);
+
+protected:
+	// overrides of BmMailFilter base:
+	void Filter( const char* srcBuf, uint32& srcLen, 
+					 char* destBuf, uint32& destLen);
+
+	bool mLastWasCR;
+};
+
+/*------------------------------------------------------------------------------*\
+	class BmBinaryDecoder
+		-	
+\*------------------------------------------------------------------------------*/
+class BmBinaryDecoder : public BmMemFilter {
+	typedef BmMemFilter inherited;
+
+public:
+	BmBinaryDecoder( BmMemIBuf& input, uint32 blockSize=nBlockSize);
+
+protected:
+	// overrides of BmMailFilter base:
+	void Filter( const char* srcBuf, uint32& srcLen, 
+					 char* destBuf, uint32& destLen);
+
+};
+
+/*------------------------------------------------------------------------------*\
+	class BmBinaryEncoder
+		-	
+\*------------------------------------------------------------------------------*/
+class BmBinaryEncoder : public BmMemFilter {
+	typedef BmMemFilter inherited;
+
+public:
+	BmBinaryEncoder( BmMemIBuf& input, uint32 blockSize=nBlockSize);
+
+protected:
+	// overrides of BmMailFilter base:
+	void Filter( const char* srcBuf, uint32& srcLen, 
+					 char* destBuf, uint32& destLen);
+};
+
+/*------------------------------------------------------------------------------*\
+	class BmDotstuffDecoder
+		-	
+\*------------------------------------------------------------------------------*/
+class BmDotstuffDecoder : public BmMemFilter {
+	typedef BmMemFilter inherited;
+
+public:
+	BmDotstuffDecoder( BmMemIBuf& input, uint32 blockSize=nBlockSize);
+
+protected:
+	// overrides of BmMailFilter base:
+	void Filter( const char* srcBuf, uint32& srcLen, 
+					 char* destBuf, uint32& destLen);
+
+	bool mAtStartOfLine;
+};
+
+/*------------------------------------------------------------------------------*\
+	class BmDotstuffEncoder
+		-	
+\*------------------------------------------------------------------------------*/
+class BmDotstuffEncoder : public BmMemFilter {
+	typedef BmMemFilter inherited;
+
+public:
+	BmDotstuffEncoder( BmMemIBuf& input, uint32 blockSize=nBlockSize);
+
+protected:
+	// overrides of BmMailFilter base:
+	void Filter( const char* srcBuf, uint32& srcLen, 
+					 char* destBuf, uint32& destLen);
+
+	bool mAtStartOfLine;
 };
 
 #endif
