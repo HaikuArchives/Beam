@@ -190,6 +190,7 @@ public:
 	inline const BString& HeaderString() const	{ return mHeaderString; }
 	inline const BString& Name() const			{ return mName; }
 	inline const bool IsRedirect() const		{ return mIsRedirect; }
+	inline const bool HasParsingErrors() const	{ return mHasParsingErrors; }
 
 	// setters:
 	inline void IsRedirect( bool b)				{ mIsRedirect = b; }
@@ -242,6 +243,9 @@ private:
 
 	bool mIsRedirect;	
 							// true if header contains redirect-fields (or will do in near future)
+
+	bool mHasParsingErrors;	
+							// true if header contains parsing-errors
 
 	static int32 nCounter;
 							// counter for message-id

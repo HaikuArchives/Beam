@@ -446,6 +446,7 @@ BmMailHeader::BmMailHeader( const BString &headerText, BmMail* mail)
 	,	mMail( mail)
 	,	mKey( RefPrintHex())					// generate dummy identifier from our address
 	,	mIsRedirect( false)
+	,	mHasParsingErrors( false)
 {
 	ParseHeader( headerText);
 }
@@ -698,7 +699,8 @@ void BmMailHeader::ParseHeader( const BString &header) {
 		headerField = *i;
 		int32 pos = headerField.FindFirst( ':');
 		if (pos == B_ERROR) { 
-			BM_SHOWERR(BString("Could not determine field-name of mail-header-part:\n") << headerField << "\n\nThis header-field will be ignored."); 
+			mHasParsingErrors = true;
+			BM_LOGERR( BString("Could not determine field-name of mail-header-part:\n") << headerField << "\n\nThis header-field will be ignored."); 
 			continue;
 		}
 		fieldName.SetTo( headerField, pos);

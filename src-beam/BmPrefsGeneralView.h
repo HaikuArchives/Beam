@@ -47,10 +47,12 @@
 #define BM_MAKE_BEAM_STD_APP	 				'bmBS'
 #define BM_SELECT_MAILBOX		 				'bmSM'
 #define BM_BEEP_NEW_MAIL_CHANGED				'bmBN'
+#define BM_WORKSPACE_SELECTED					'bmWS'
 
 class BFilePanel;
 class BmTextControl;
 class BmCheckControl;
+class BmMenuControl;
 class MButton;
 /*------------------------------------------------------------------------------*\
 	BmPrefsGeneralView
@@ -72,6 +74,8 @@ public:
 
 	// overrides of BView base:
 	void MessageReceived( BMessage* msg);
+	
+	static const char* const MSG_WORKSPACE = "wspace";
 
 private:
 	CLVContainerView* CreateMailRefLayoutView( minimax minmax, int32 width, int32 height);
@@ -93,6 +97,7 @@ private:
 	BmCheckControl* mUseDeskbarControl;
 	BmCheckControl* mShowTooltipsControl;
 	BmCheckControl* mBeepNewMailControl;
+	BmMenuControl* mWorkspaceControl;
 	MButton* mMailboxButton;
 
 	BFilePanel* mMailboxPanel;

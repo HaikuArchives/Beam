@@ -36,6 +36,8 @@
 #include <Resources.h>
 #include <View.h>
 
+#include <socket.h>		// for BONE_VERSION, if we live under BONE
+
 #include "regexx.hh"
 using namespace regexx;
 
@@ -213,6 +215,35 @@ void BmResources::FetchIcons() {
 			from that.
 \*------------------------------------------------------------------------------*/
 void BmResources::FetchOwnFQDN() {
+#ifdef BONE_VERSION
+	BFile hostFile( "/etc/hostname", B_READ_ONLY);
+	if (hostFile.InitCheck() == B_OK) {
+		BString buffer;
+		char* buf = buffer.LockBuffer(4096);
+		ssize_t readSize = hostFile.Read( buf, 4095);
+		readSize = MAX(0,readSize);
+		buf[readSize] = 0;
+		buffer.UnlockBuffer( readSize);
+		mOwnFQDN = buffer;
+		if (!mOwnFQDN.Length())
+			mOwnFQDN = "bepc";
+	}
+	BFile domainFile( "/etc/resolv.conf", B_READ_ONLY);
+	if (domainFile.InitCheck() == B_OK) {
+		BString buffer;
+		char* buf = buffer.LockBuffer(4096);
+		ssize_t readSize = domainFile.Read( buf, 4095);
+		readSize = MAX(0,readSize);
+		buf[readSize] = 0;
+		buffer.UnlockBuffer( readSize);
+		Regexx rx;
+		if (rx.exec( buffer, "DOMAIN\\s*(\\S*)", Regexx::nocase)
+		&& rx.match[0].atom[0].Length())
+			mOwnFQDN << "." << rx.match[0].atom[0];
+		else
+			mOwnFQDN << "." << time( NULL) << ".fake";
+	}
+#else
 	BPath path;
 	if (find_directory( B_COMMON_SETTINGS_DIRECTORY, &path) == B_OK) {
 		BFile netFile( (BString(path.Path())<<"/network").String(), B_READ_ONLY);
@@ -220,13 +251,15 @@ void BmResources::FetchOwnFQDN() {
 			BString buffer;
 			char* buf = buffer.LockBuffer(4096);
 			ssize_t readSize = netFile.Read( buf, 4095);
-			buffer.UnlockBuffer( readSize > 0 ? readSize : 0);
+			readSize = MAX(0,readSize);
+			buf[readSize] = 0;
+			buffer.UnlockBuffer( readSize);
 			Regexx rx;
-			if (rx.exec( buffer, "HOSTNAME\\s*=[ \\t](\\S*)", Regexx::nocase)) {
+			if (rx.exec( buffer, "HOSTNAME\\s*=[ \\t]*(\\S*)", Regexx::nocase)) {
 				mOwnFQDN = rx.match[0].atom[0];
 				if (!mOwnFQDN.Length())
 					mOwnFQDN = "bepc";
-				if (rx.exec( buffer, "DNS_DOMAIN\\s*=[ \\t](\\S*)", Regexx::nocase)
+				if (rx.exec( buffer, "DNS_DOMAIN\\s*=[ \\t]*(\\S*)", Regexx::nocase)
 				&& rx.match[0].atom[0].Length())
 					mOwnFQDN << "." << rx.match[0].atom[0];
 				else
@@ -234,6 +267,7 @@ void BmResources::FetchOwnFQDN() {
 			}
 		}
 	}
+#endif
 	if (!mOwnFQDN.Length())
 		mOwnFQDN << "bepc." << time( NULL) << ".fake";
 }

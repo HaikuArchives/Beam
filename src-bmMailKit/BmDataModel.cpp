@@ -557,6 +557,7 @@ BmRef<BmListModel> BmListModelItem::ListModel() const	{
 BmListModel::BmListModel( const BString& name)
 	:  inherited( name)
 	,	mInitCheck( B_NO_INIT)
+	,	mNeedsStore( false)
 {
 }
 
@@ -575,6 +576,7 @@ void BmListModel::Cleanup() {
 	BmAutolock lock( mModelLocker);
 	lock.IsLocked() 							|| BM_THROW_RUNTIME( ModelName() << ":Cleanup(): Unable to get lock");
 	mModelItemMap.clear();
+	mNeedsStore = false;
 	mInitCheck = B_NO_INIT;
 }
 
@@ -589,6 +591,7 @@ bool BmListModel::AddItemToList( BmListModelItem* item, BmListModelItem* parent)
 		lock.IsLocked() 						|| BM_THROW_RUNTIME( ModelName() << ":AddItemToList(): Unable to get lock");
 		if (parent) {
 			if (parent->AddSubItem( item)) {
+				mNeedsStore = true;
 				TellModelItemAdded( item);
 				if (parent->size() == 1) {
 					// the parent has just become a superitem (and thus needs to be updated):
@@ -596,12 +599,12 @@ bool BmListModel::AddItemToList( BmListModelItem* item, BmListModelItem* parent)
 				}
 				return true;
 			}
-		}
-		else {
+		} else {
 			BmModelItemMap::iterator iter = mModelItemMap.find( item->Key());
 			if (iter == mModelItemMap.end()) {
 				mModelItemMap[item->Key()] = item;
 				item->Parent( NULL);
+				mNeedsStore = true;
 				TellModelItemAdded( item);
 				return true;
 			}
@@ -620,6 +623,7 @@ void BmListModel::RemoveItemFromList( BmListModelItem* item) {
 		BmAutolock lock( mModelLocker);
 		lock.IsLocked()	 					|| BM_THROW_RUNTIME( ModelName() << ":RemoveItemFromList(): Unable to get lock");
 		BmRef<BmListModelItem> parent = item->Parent();
+		mNeedsStore = true;
 		TellModelItemRemoved( item);
 		if (parent) {
 			parent->RemoveSubItem( item);
@@ -774,14 +778,14 @@ status_t BmListModel::Archive( BMessage* archive, bool deep) const {
 		ret = archive->AddInt32( BmListModelItem::MSG_NUMCHILDREN, size());
 	}
 	if (deep && ret == B_OK) {
-		BM_LOG2( BM_LogModelController, BString("ListModel <") << ModelName() << "> begins to archive");
+		BM_LOG( BM_LogModelController, BString("ListModel <") << ModelName() << "> begins to archive");
 		BmModelItemMap::const_iterator iter;
 		for( iter = begin(); iter != end() && ret == B_OK; ++iter) {
 			BMessage msg;
 			ret = iter->second->Archive( &msg, deep)
 					|| archive->AddMessage( BmListModelItem::MSG_CHILDREN, &msg);
 		}
-		BM_LOG2( BM_LogModelController, BString("ListModel <") << ModelName() << "> finished with archive");
+		BM_LOG( BM_LogModelController, BString("ListModel <") << ModelName() << "> finished with archive");
 	}
 	return ret;
 }

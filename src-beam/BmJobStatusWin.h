@@ -82,6 +82,7 @@ public:
 protected:
 	int mMSecsBeforeShow;
 	int mMSecsBeforeRemove;
+	bool mIsAutoJob;							// has this job been invoked automatically?
 	
 private:
 	BMessageRunner* mShowMsgRunner;
@@ -151,7 +152,7 @@ public:
 private:
 	BStatusBar* mStatBar;				// shows current status of this connection
 	BStatusBar* mMailBar;				// shows number of mails handled by this connection
-	bool mIsAutoCheck;					// has this job been invoked automatically?
+	bool mHaveBeeped;						// have we indicated arrival of new mail?
 
 	// Hide copy-constructor and assignment:
 	BmPopperView( const BmPopperView&);

@@ -58,8 +58,9 @@ enum Columns {
 	COL_NAME,
 	COL_MIMETYPE,
 	COL_SIZE,
-	COL_LANGUAGE,
-	COL_DESCRIPTION
+	COL_DESCRIPTION,
+	COL_TRANSFER_ENC,
+	COL_LANGUAGE
 };
 
 /*------------------------------------------------------------------------------*\
@@ -83,8 +84,9 @@ BmBodyPartItem::BmBodyPartItem( BString key, BmListModelItem* _item)
 		{ bodyPart->FileName().String(),					false },
 		{ bodyPart->MimeType().String(),					false },
 		{ sizeString.String(),								true },
-		{ bodyPart->Language().String(),					false },
 		{ bodyPart->Description().String(),				false },
+		{ bodyPart->TransferEncoding().String(),		false },
+		{ bodyPart->Language().String(),					false },
 		{ NULL, false }
 	};
 	SetTextCols( BmBodyPartView::nFirstTextCol, cols, false);
@@ -105,7 +107,7 @@ BmBodyPartItem::~BmBodyPartItem() {
 #define BACKGROUND_COL BeBackgroundGrey
 
 const int16 BmBodyPartView::nFirstTextCol = 2;
-float BmBodyPartView::nColWidths[10] = {20,100,100,70,70,200,0,0,0,0};
+float BmBodyPartView::nColWidths[10] = {10,20,20,20,20,20,20,20,0,0};
 
 /*------------------------------------------------------------------------------*\
 	()
@@ -114,10 +116,11 @@ float BmBodyPartView::nColWidths[10] = {20,100,100,70,70,200,0,0,0,0};
 BmBodyPartView::BmBodyPartView( minimax minmax, int32 width, int32 height, 
 										  bool editable)
 	:	inherited( minmax, BRect(0,0,width-1,height-1), "Beam_BodyPartView", 
-					  B_SINGLE_SELECTION_LIST, true, false)
+					  B_SINGLE_SELECTION_LIST, true, true)
 	,	mShowAllParts( false)
 	,	mEditable( editable)
 	,	mSavePanel( NULL)
+	,	mIsUsedForPrinting( false)
 {
 	SetViewColor( BACKGROUND_COL);
 	fLightColumnCol = BACKGROUND_COL;
@@ -138,15 +141,15 @@ BmBodyPartView::BmBodyPartView( minimax minmax, int32 width, int32 height,
 
 	UseStateCache( false);
 
-	AddColumn( new CLVColumn( NULL, 10.0, 
+	AddColumn( new CLVColumn( NULL, nColWidths[0], 
 									  CLV_EXPANDER | CLV_LOCK_AT_BEGINNING | CLV_NOT_MOVABLE, 10.0));
-	AddColumn( new CLVColumn( "Icon", nColWidths[0], CLV_PUSH_PASS, 18.0));
-	AddColumn( new CLVColumn( "Name", nColWidths[1], 0, 20.0));
-	AddColumn( new CLVColumn( "Mimetype", nColWidths[2], 0, 20.0));
-	AddColumn( new CLVColumn( "Size", nColWidths[3], CLV_RIGHT_JUSTIFIED, 20.0));
-	AddColumn( new CLVColumn( "Language", nColWidths[4], 0, 20.0));
+	AddColumn( new CLVColumn( "Icon", nColWidths[1], CLV_PUSH_PASS, 18.0));
+	AddColumn( new CLVColumn( "Name", nColWidths[2], 0, 20.0));
+	AddColumn( new CLVColumn( "Mimetype", nColWidths[3], 0, 20.0));
+	AddColumn( new CLVColumn( "Size", nColWidths[4], CLV_RIGHT_JUSTIFIED, 20.0));
 	AddColumn( new CLVColumn( "Description", nColWidths[5], 0, 20.0));
-
+	AddColumn( new CLVColumn( "Transfer", nColWidths[6], 0, 20.0));
+	AddColumn( new CLVColumn( "", nColWidths[7], 0, 20.0));
 }
 
 /*------------------------------------------------------------------------------*\
@@ -216,7 +219,7 @@ void BmBodyPartView::ShowBody( BmBodyPartList* body) {
 			SetViewColor( White);
 		} else {
 			SetViewColor( BACKGROUND_COL);
-			StartJob( body, false);
+			StartJob( body, !mIsUsedForPrinting);
 		}
 	}
 	catch( exception &err) {
@@ -287,7 +290,8 @@ void BmBodyPartView::AddAllModelItems() {
 		BmListViewItem* viewItem = dynamic_cast<BmListViewItem*>( FullListItemAt( i));
 		for( int c=nFirstTextCol; c<CountColumns(); ++c) {
 			float textWidth = StringWidth( viewItem->GetColumnContentText(c));
-			mColWidths[c] = MAX( mColWidths[c], textWidth+10);
+			mColWidths[c] = MAX( mColWidths[c], 
+										textWidth+10+EXPANDER_SHIFT*viewItem->OutlineLevel());
 		}
 		Expand(FullListItemAt(i));
 	}

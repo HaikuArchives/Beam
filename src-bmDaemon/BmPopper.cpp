@@ -71,7 +71,7 @@ BmPopper::PopState BmPopper::PopStates[BmPopper::POP_FINAL] = {
 BmPopper::BmPopper( const BString& name, BmPopAccount* account)
 	:	BmJobModel( name)
 	,	mPopAccount( account)
-	,	mPopServer()
+	,	mPopServer( NULL)
 	,	mConnected( false)
 	,	mMsgUIDs( NULL)
 	,	mMsgCount( 0)
@@ -123,8 +123,6 @@ bool BmPopper::ShouldContinue() {
 \*------------------------------------------------------------------------------*/
 bool BmPopper::StartJob() {
 	const float delta = (100.0 / POP_DONE);
-	mPopServer.InitCheck() == B_OK					
-													||	BM_THROW_RUNTIME("BmPopper: could not create NetEndpoint");
 	try {
 		for( mState=POP_CONNECT; ShouldContinue() && mState<POP_DONE; ++mState) {
 			TStateMethod stateFunc = PopStates[mState].func;
@@ -144,8 +142,8 @@ bool BmPopper::StartJob() {
 		// a problem occurred, we tell the user:
 		BString errstr = err.what();
 		int e;
-		if ((e = mPopServer.Error()))
-			errstr << "\nerror: " << e << ", " << mPopServer.ErrorStr();
+		if ((e = mPopServer->Error()))
+			errstr << "\nerror: " << e << ", " << mPopServer->ErrorStr();
 		UpdatePOPStatus( 0.0, NULL, true);
 		BString text = Name() << "\n\n" << errstr;
 		BM_SHOWERR( BString("BmPopper: ") << text);
@@ -205,12 +203,15 @@ void BmPopper::UpdateMailStatus( const float delta, const char* detailText,
 \*------------------------------------------------------------------------------*/
 void BmPopper::Connect() {
 	BNetAddress addr;
+	delete mPopServer;
+	mPopServer = new BNetEndpoint;
+	mPopServer->InitCheck() == B_OK		||	BM_THROW_RUNTIME("BmPopper: could not create NetEndpoint");
 	if (!mPopAccount->GetPOPAddress( &addr)) {
 		BString s = BString("Could not determine address of POP-Server ") << mPopAccount->POPServer();
 		throw BM_network_error( s);
 	}
 	status_t err;
-	if ((err=mPopServer.Connect( addr)) != B_OK) {
+	if ((err=mPopServer->Connect( addr)) != B_OK) {
 		BString s = BString("Could not connect to POP-Server ") << mPopAccount->POPServer() << "\n\bError:\n\t"<<strerror(err);
 		throw BM_network_error( s);
 	}
@@ -288,8 +289,8 @@ void BmPopper::Login() {
 			// most probably a wrong password...
 			BString errstr = err.what();
 			int e;
-			if ((e = mPopServer.Error()))
-				errstr << "\nerror: " << e << ", " << mPopServer.ErrorStr();
+			if ((e = mPopServer->Error()))
+				errstr << "\nerror: " << e << ", " << mPopServer->ErrorStr();
 			BString text = Name() << "\n\n" << errstr;
 			BM_SHOWERR( BString("BmPopper: ") << text);
 		}
@@ -426,7 +427,7 @@ void BmPopper::Quit( bool WaitForAnswer) {
 			GetAnswer( SINGLE_LINE);
 		}
 	} catch(...) {	}
-	mPopServer.Close();
+	mPopServer->Close();
 	mConnected = false;
 }
 
@@ -558,8 +559,8 @@ int32 BmPopper::ReceiveBlock( char* buffer, int32 max) {
 	int32 timeout = AnswerTimeout / BmPopper::FeedbackTimeout;
 	bool shouldCont;
 	for( int32 round=0; (shouldCont = ShouldContinue()) && round<timeout; ++round) {
-		if (mPopServer.IsDataPending( BmPopper::FeedbackTimeout)) {
-			if ((numBytes = mPopServer.Receive( buffer, max-1)) > 0) {
+		if (mPopServer->IsDataPending( BmPopper::FeedbackTimeout)) {
+			if ((numBytes = mPopServer->Receive( buffer, max-1)) > 0) {
 				buffer[numBytes] = '\0';
 				return numBytes;
 			} else if (numBytes < 0) {
@@ -591,7 +592,7 @@ void BmPopper::SendCommand( BString cmd, BString secret) {
 		command << "\r\n";
 	int32 size = command.Length();
 	int32 sentSize;
-	if ((sentSize = mPopServer.Send( command.String(), size)) != size) {
+	if ((sentSize = mPopServer->Send( command.String(), size)) != size) {
 		throw BM_network_error( BString("error during send, sent only ") << sentSize << " bytes instead of " << size);
 	}
 }

@@ -33,9 +33,12 @@
 #include <Autolock.h>
 #include <Beep.h>
 #include <ClassInfo.h>
+#include <Directory.h>
 #include <Entry.h>
 #include <InterfaceDefs.h>
 #include <MessageRunner.h>
+#include <Path.h>
+#include <Roster.h>
 #include <StatusBar.h>
 
 #include <layout.h>
@@ -86,6 +89,7 @@ BmJobStatusView::BmJobStatusView( const char* name)
 	,	mRemoveMsgRunner( NULL)
 	,	mMSecsBeforeShow( 10)
 	,	mMSecsBeforeRemove( 10)
+	,	mIsAutoJob( false)
 {
 }
 
@@ -127,10 +131,12 @@ void BmJobStatusView::MessageReceived( BMessage* msg) {
 				BM_LOG2( BM_LogModelController, BString("Controller <") << ControllerName() << "> has been told to show its view");
 				BmAutolock lock( TheJobStatusWin);
 				lock.IsLocked()				|| BM_THROW_RUNTIME( "JobStatusView(): could not lock window");
-				do {
-					TheJobStatusWin->Minimize( false);
-					TheJobStatusWin->Show();
-				} while (TheJobStatusWin->IsHidden());
+				if (!mIsAutoJob) {
+					do {
+						TheJobStatusWin->Minimize( false);
+							TheJobStatusWin->Show();
+					} while (TheJobStatusWin->IsHidden());
+				}
 				break;
 			}
 			case BM_TIME_TO_REMOVE: {
@@ -140,7 +146,8 @@ void BmJobStatusView::MessageReceived( BMessage* msg) {
 				DetachModel();
 				if (!IsHidden()) {
 					Hide();
-					TheJobStatusWin->Hide();
+					if (!mIsAutoJob)
+						TheJobStatusWin->Hide();
 				}
 				TheJobStatusWin->RemoveJob( ControllerName());
 				delete this;
@@ -316,14 +323,10 @@ BmPopperView::BmPopperView( const char* name, bool isAutoCheck)
 	:	BmJobStatusView( name)
 	,	mStatBar( NULL)
 	,	mMailBar( NULL)
-	,	mIsAutoCheck( isAutoCheck)
+	,	mHaveBeeped( false)
 {
+	mIsAutoJob = isAutoCheck;
 	mMSecsBeforeRemove = MAX(10,ThePrefs->GetInt( "MSecsBeforePopperRemove"));
-	if (mIsAutoCheck) {
-		// avoid changing state of job-status-window if in auto-mode:
-		mMSecsBeforeShow = 0;	
-		mMSecsBeforeRemove = 0;
-	}
 	MView* view = new VGroup(
 		new MBViewWrapper(
 			mStatBar = new BStatusBar( BRect(), name, name, ""), true, false, false
@@ -369,6 +372,7 @@ void BmPopperView::ResetController() {
 	mStatBar->Reset( ControllerName(), "");
 	mStatBar->SetTrailingText( "idle");
 	mMailBar->Reset( "Mails: ", NULL);
+	mHaveBeeped = false;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -392,9 +396,11 @@ void BmPopperView::UpdateModelView( BMessage* msg) {
 		if (domain == "mailbar") {
 			mMailBar->Update( delta, leading, trailing);
 			if (mMailBar->CurrentValue()==mMailBar->MaxValue()
+			&& !mHaveBeeped
 			&& ThePrefs->GetBool( "BeepWhenNewMailArrived", true)) {
 				// we indicate the arrival of new mail by a beep:
 				system_beep( BM_BEEP_EVENT);
+				mHaveBeeped = true;
 			}
 		} else { 
 			// domain == "statbar"
@@ -805,7 +811,26 @@ void BmJobStatusWin::RemoveJob( const char* name) {
 	ResizeBy( 0, -1-(rect.Height()));
 	RecalcSize();
 	mActiveJobs.erase( controller->ControllerName());
-	if (mActiveJobs.empty())
+	if (mActiveJobs.empty()) {
+		if (dynamic_cast<BmPopperView*>( controller)) {
+			// [suggested by Rainer Riedl]:
+			// 	temporary hack: Execute possibly existing 'filter'-program to do 
+			//		mail filtering (this will be removed in Beam 0.92):
+			app_info appInfo;
+			bmApp->GetAppInfo( &appInfo); 
+			node_ref nref;
+			nref.device = appInfo.ref.device;
+			nref.node = appInfo.ref.directory;
+			BDirectory appDir( &nref);
+			BEntry appDirEntry;
+			appDir.GetEntry( &appDirEntry);
+			BPath appPath;
+			appDirEntry.GetPath( &appPath);
+			BString filterCmd;
+			filterCmd << appPath.Path() << "/filter";
+			system( filterCmd.String());
+		}
 		while( !IsHidden())
 			Hide();
+	}
 }

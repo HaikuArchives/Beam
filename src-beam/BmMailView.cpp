@@ -42,6 +42,7 @@ using namespace regexx;
 #include "BmBusyView.h"
 #include "BmEncoding.h"
 	using namespace BmEncoding;
+#include "BmGuiUtil.h"
 #include "BmLogHandler.h"
 #include "BmMail.h"
 #include "BmMailHeader.h"
@@ -103,6 +104,7 @@ BmMailView::BmMailView( minimax minmax, BRect frame, bool outbound)
 	,	mFontSize( 12)
 	,	mReadRunner( NULL)
 	,	mShowingUrlCursor( false)
+	,	mSelectedEncoding( -1)
 {
 	mHeaderView = new BmMailHeaderView( NULL);
 	if (outbound)
@@ -254,6 +256,7 @@ void BmMailView::MessageReceived( BMessage* msg) {
 				if (mOutbound && mRulerView)
 					mRulerView->SetMailViewFont( mFont);
 				UpdateFont( mFont);
+				ResetTextRect();
 				WriteStateInfo();
 				break;
 			}
@@ -263,6 +266,7 @@ void BmMailView::MessageReceived( BMessage* msg) {
 				if (mOutbound && mRulerView)
 					mRulerView->SetMailViewFont( mFont);
 				UpdateFont( mFont);
+				ResetTextRect();
 				WriteStateInfo();
 				break;
 			}
@@ -270,6 +274,15 @@ void BmMailView::MessageReceived( BMessage* msg) {
 				mBodyPartView->AddAttachment( msg);
 				break;
 			}
+/*
+			case BM_MAILVIEW_SELECT_ENCODING: {
+				if (mCurrMail) {
+					mSelectedEncoding = msg->FindInt32( MSG_ENCODING);
+					JobIsDone( true);
+				}
+				break;
+			}
+*/
 			case BM_MARK_AS_READ: {
 				BmMail* mail=NULL;
 				msg->FindPointer( MSG_MAIL, (void**)&mail);
@@ -278,11 +291,12 @@ void BmMailView::MessageReceived( BMessage* msg) {
 				break;
 			}
 			case B_MOUSE_WHEEL_CHANGED: {
-				if (modifiers() & (B_SHIFT_KEY | B_CONTROL_KEY)) {
+				if (modifiers() & (B_SHIFT_KEY | B_LEFT_CONTROL_KEY | B_RIGHT_OPTION_KEY)) {
 					bool passedOn = false;
 					if (mPartnerMailRefView && !(passedOn = msg->FindBool("bm:passed_on"))) {
-						msg->AddBool("bm:passed_on", true);
-						Looper()->PostMessage( msg, mPartnerMailRefView);
+						BMessage msg2(*msg);
+						msg2.AddBool("bm:passed_on", true);
+						Looper()->PostMessage( &msg2, mPartnerMailRefView);
 						return;
 					}
 				}
@@ -313,12 +327,19 @@ void BmMailView::KeyDown(const char *bytes, int32 numBytes) {
 			case B_LEFT_ARROW:
 			case B_RIGHT_ARROW: {
 				int32 mods = Window()->CurrentMessage()->FindInt32("modifiers");
-				if (mods & (B_CONTROL_KEY | B_SHIFT_KEY)) {
+				if (mods & (B_LEFT_CONTROL_KEY | B_RIGHT_OPTION_KEY | B_SHIFT_KEY)) {
 					// remove modifiers so we don't ping-pong endlessly:
 					Window()->CurrentMessage()->ReplaceInt32("modifiers", 0);
 					if (mPartnerMailRefView)
 						mPartnerMailRefView->KeyDown( bytes, numBytes);
 				} else
+					inherited::KeyDown( bytes, numBytes);
+				break;
+			}
+			case B_DELETE: {
+				if (mCurrMail && mPartnerMailRefView)
+					mPartnerMailRefView->KeyDown( bytes, numBytes);
+				else
 					inherited::KeyDown( bytes, numBytes);
 				break;
 			}
@@ -454,15 +475,20 @@ void BmMailView::SetSignatureByName( const BString sigName) {
 		return;
 	textRunArray->count = 2;
 	textRunArray->runs[0].offset = 0;
-	textRunArray->runs[0].font = *be_fixed_font;
+	textRunArray->runs[0].font = mFont;
 	textRunArray->runs[0].color = Black;
 	textRunArray->runs[1].offset = text.Length();
-	textRunArray->runs[1].font = *be_fixed_font;
+	textRunArray->runs[1].font = mFont;
 	textRunArray->runs[1].color = BeShadow;
 	BString sig = TheSignatureList->GetSignatureStringFor( sigName);
+	int32 lastTextPos = text.Length();
 	if (sig.Length())
 		text << "-- \n" << sig;
 	SetText( text.String(), text.Length(), textRunArray);
+	// now show the signature that we've just inserted (position cursor right
+	// before it):
+	Select( lastTextPos, lastTextPos);
+	ScrollToSelection();
 }
 
 /*------------------------------------------------------------------------------*\
@@ -487,6 +513,43 @@ void BmMailView::UpdateFont( const BFont& font) {
 \*------------------------------------------------------------------------------*/
 bool BmMailView::AcceptsDrop( const BMessage* msg) {
 	return IsEditable();
+}
+
+/*------------------------------------------------------------------------------*\
+	CanEndLine()
+		-	
+\*------------------------------------------------------------------------------*/
+bool BmMailView::CanEndLine( int32 offset) {
+	if (ByteAt( offset) == '/')
+		return false;
+	return inherited::CanEndLine( offset);
+}
+
+/*------------------------------------------------------------------------------*\
+	InsertText()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailView::InsertText( const char *text, int32 length, int32 offset,
+									  const text_run_array *runs)
+{
+	if (mOutbound && mRulerView) {
+		int32 lineStart = OffsetAt( LineAt( offset));
+		BString line( Text()+lineStart, offset-lineStart);
+		int32 currLinePos = line.CountChars();
+		if (currLinePos > mRulerView->IndicatorPos()) {
+			while( currLinePos+length > mRulerView->IndicatorPos()+1 
+			&& (*text==B_SPACE || *text==B_TAB)) {
+				text++;
+				length--;
+			}
+		}
+	}
+  	if (mOutbound && runs) {
+  		text_run_array* r = const_cast<text_run_array*>( runs);
+  		for( int32 i=0; i<r->count; ++i)
+  			r->runs[i].font = mFont;
+  	}
+	inherited::InsertText( text, length, offset, runs);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -528,6 +591,7 @@ void BmMailView::ShowMail( BmMailRef* ref, bool async) {
 			SendNotices( BM_NTFY_MAIL_VIEW, &msg);
 			return;
 		}
+		mSelectedEncoding = -1;
 		mCurrMail = BmMail::CreateInstance( ref);
 		StartJob( mCurrMail.Get(), async);
 		if (async)
@@ -557,6 +621,7 @@ void BmMailView::ShowMail( BmMail* mail, bool async) {
 			SendNotices( BM_NTFY_MAIL_VIEW, &msg);
 			return;
 		}
+		mSelectedEncoding = -1;
 		mCurrMail = mail;
 		StartJob( mCurrMail.Get(), async);
 		if (async)
@@ -599,10 +664,9 @@ void BmMailView::JobIsDone( bool completed) {
 					if (displayText.ByteAt(displayText.Length()-1) != '\n')
 						displayText << '\n';
 					mTextRunMap[displayText.Length()] = BmTextRunInfo( BeShadow);
-					BString displaySignature;
-					uint32 encoding = mCurrMail->DefaultEncoding();
-					ConvertToUTF8( encoding, body->Signature(), displaySignature);
-					displayText << "-- \n" << displaySignature;
+					// signature within body is already in UTF8-encoding, so we
+					// just add it to out display-text:
+					displayText << "-- \n" << body->Signature();
 				}
 				if (!mOutbound) {
 					// highlight URLs:
@@ -687,10 +751,7 @@ void BmMailView::DisplayBodyPart( BString& displayText, BmBodyPart* bodyPart) {
 				}
 				displayText << "- - - - - - - - - - - - - - - - - - - -\n\n";
 			}
-			uint32 encoding = CharsetToEncoding( bodyPart->TypeParam("charset"));
-			BString utf8;
-			ConvertToUTF8( encoding, bodyPart->DecodedData(), utf8);
-			displayText.Append( utf8);
+			displayText.Append( bodyPart->DecodedData());
 		}
 	} else {
 		BmModelItemMap::const_iterator iter;
@@ -785,6 +846,23 @@ void BmMailView::ShowMenu( BPoint point) {
 		item->SetMarked( ShowInlinesSeparately());
 		theMenu->AddItem( item);
 		theMenu->AddSeparatorItem();
+/*
+		BMenu* menu = new BMenu( "Use Encoding...");
+		for( int i=0; BM_Encodings[i].charset; ++i) {
+			BMessage* msg = new BMessage( BM_MAILVIEW_SELECT_ENCODING);
+			msg->AddInt32( MSG_ENCODING, BM_Encodings[i].encoding);
+			item = CreateMenuItem( BM_Encodings[i].charset, msg);
+			if (mCurrMail) {
+				if (mSelectedEncoding==(int32)BM_Encodings[i].encoding)
+					item->SetMarked( true);
+				else if (mSelectedEncoding==-1 && mCurrMail->DefaultEncoding()==BM_Encodings[i].encoding)
+					item->SetMarked( true);
+			}
+			AddItemToMenu( menu, item, this);
+		}
+		theMenu->AddItem( menu);
+		theMenu->AddSeparatorItem();
+*/
 	}
 	TheResources->AddFontSubmenuTo( theMenu, this, &mFont);
 
@@ -810,7 +888,7 @@ void BmMailView::ShowMenu( BPoint point) {
 \*------------------------------------------------------------------------------*/
 BmMailViewContainer::BmMailViewContainer( minimax minmax, BmMailView* target, 
 														uint32 resizingMode, uint32 flags)
-	:	inherited( NULL, target, resizingMode, flags, true, true, true, B_FANCY_BORDER)
+	:	inherited( NULL, target, resizingMode, flags, true, true, false, B_FANCY_BORDER)
 {
 	SetViewColor( ui_color( B_PANEL_BACKGROUND_COLOR));
 	ct_mpm = minmax;
@@ -856,6 +934,11 @@ void BmMailViewContainer::Draw( BRect bounds) {
 		if (IsFocus() || m_target->IsFocus()) {
 			SetHighColor( keyboard_navigation_color());
 			StrokeRect( bounds);
+			BPoint lb( bounds.right-B_V_SCROLL_BAR_WIDTH, bounds.bottom);
+			BPoint lt( bounds.right-B_V_SCROLL_BAR_WIDTH, bounds.bottom-B_H_SCROLL_BAR_HEIGHT);
+			BPoint rt( bounds.right, bounds.bottom-B_H_SCROLL_BAR_HEIGHT);
+			StrokeLine( lb, lt);
+			StrokeLine( lt, rt);
 		} else {
 			const rgb_color BeDarkBorderPart = {184,184,184,255};
 			const rgb_color BeLightBorderPart = {255,255,255,255};

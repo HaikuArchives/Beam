@@ -45,6 +45,7 @@
 #include "BmDataModel.h"
 #include "BmListController.h"
 #include "BmLogHandler.h"
+#include "BmPrefs.h"
 #include "BmResources.h"
 #include "BmUtil.h"
 
@@ -137,8 +138,8 @@ BmListViewController::BmListViewController( minimax minmax, BRect rect,
 	,	mUseStateCache( true)
 	,	mCurrHighlightItem( NULL)
 	,	mUpdatePulseRunner( NULL)
-	,	mCachedMessages( 20)
 	,	mSittingOnExpander( false)
+	,	mExpandCollapseRunner( NULL)
 {
 }
 
@@ -147,6 +148,15 @@ BmListViewController::BmListViewController( minimax minmax, BRect rect,
 		-	standard d'tor
 \*------------------------------------------------------------------------------*/
 BmListViewController::~BmListViewController() {
+	BList tempList;
+		int32 count = FullListCountItems();
+		for( int i=0; i<count; ++i)
+			tempList.AddItem( FullListItemAt( i));
+		while( !tempList.IsEmpty()) {
+			BmListViewItem* subItem = static_cast<BmListViewItem*>(tempList.RemoveItem( (int32)0));
+			delete subItem;
+		}
+	delete mExpandCollapseRunner;
 	delete mUpdatePulseRunner;
 	delete mInitialStateInfo;
 }
@@ -217,6 +227,20 @@ void BmListViewController::MouseMoved( BPoint point, uint32 transit, const BMess
 					mCurrHighlightItem = dynamic_cast<BmListViewItem*>( ItemAt( index));
 					mCurrHighlightItem->Highlight( true);
 					InvalidateItem( index);
+					if (Hierarchical() && mCurrHighlightItem->IsSuperItem()) {
+						if (mExpandCollapseRunner) {
+							delete mExpandCollapseRunner;
+							mExpandCollapseRunner = NULL;
+						}
+						int32 expandCollapseDelay = ThePrefs->GetInt( "ExpandCollapseDelay", 1000);
+						if (expandCollapseDelay>0) {
+							BMessage* msg = new BMessage( BM_EXPAND_OR_COLLAPSE);
+							msg->AddPointer( MSG_HIGHITEM, (void*)mCurrHighlightItem);
+							BMessenger msgr( this);
+							mExpandCollapseRunner 
+								= new BMessageRunner( msgr, msg, expandCollapseDelay*1000, 1);
+						}
+					}
 				} else
 					mCurrHighlightItem = NULL;
 			}
@@ -324,6 +348,24 @@ void BmListViewController::MessageReceived( BMessage* msg) {
 			case B_CONTROL_INVOKED: {
 				// an item has been double-clicked:
 				ItemInvoked( FindMsgInt32( msg, "index"));
+				break;
+			}
+			case BM_EXPAND_OR_COLLAPSE: {
+				BmListViewItem* item = NULL;
+				msg->FindPointer( MSG_HIGHITEM, (void**)&item); 
+				if (item == mCurrHighlightItem) {
+					if (!mCurrHighlightItem->IsExpanded()) {
+						// expand superitem (so that user can 
+						// navigate through the subitems that were previously hidden):
+						Expand( mCurrHighlightItem);
+					} else {
+						// collapse superitem (so that user can 
+						// hide subitems that were previously shown):
+						Collapse( mCurrHighlightItem);
+					}
+				}
+				delete mExpandCollapseRunner;
+				mExpandCollapseRunner = NULL;
 				break;
 			}
 			default:

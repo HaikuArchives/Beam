@@ -52,6 +52,8 @@ class BmListViewController;
 							// the user has chosen to hide a column
 #define BM_NTFY_LISTCONTROLLER_MODIFIED 'bmcc'
 							// item has been added/removed
+#define BM_EXPAND_OR_COLLAPSE			 'bmcd'
+							// time to expand/collapse an item automatically
 
 /*------------------------------------------------------------------------------*\
 	BmListViewItem
@@ -225,8 +227,10 @@ protected:
 	bool mUseStateCache;
 	BmListViewItem* mCurrHighlightItem;
 	BMessageRunner* mUpdatePulseRunner;
-	BList mCachedMessages;
+	BMessageRunner* mExpandCollapseRunner;
 	bool mSittingOnExpander;
+
+	static const char* const MSG_HIGHITEM = "hitem";
 
 private:
 	BmListViewItem* doAddModelItem( BmListViewItem* parent, BmListModelItem* item);

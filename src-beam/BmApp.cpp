@@ -143,6 +143,11 @@ BmApplication::BmApplication( const char* sig)
 
 		BmMainWindow::CreateInstance();
 		
+		BString wspc = ThePrefs->GetString( "Workspace", "Current");
+		TheMainWindow->SetWorkspaces( wspc=="Current" 
+													? B_CURRENT_WORKSPACE 
+													: 1<<(atoi( wspc.String())-1));
+		
 		TheBubbleHelper.EnableHelp( ThePrefs->GetBool( "ShowTooltips", true));
 
 		mInitCheck = B_OK;
@@ -166,6 +171,7 @@ BmApplication::~BmApplication() {
 #ifdef BM_REF_DEBUGGING
 	BmRefObj::PrintRefsLeft();
 #endif
+//	TheLogHandler->ShutDown();
 	delete mPrintSetup;
 	delete ThePrefs;
 	delete TheResources;
@@ -276,6 +282,8 @@ void BmApplication::RefsReceived( BMessage* msg) {
 		if (entry.GetStat( &st) != B_OK)
 			continue;
 		BmRef<BmMailRef> ref = BmMailRef::CreateInstance( NULL, eref, st);
+		if (!ref)
+			continue;
 		if (ref->Status() == BM_MAIL_STATUS_DRAFT
 		|| ref->Status() == BM_MAIL_STATUS_PENDING) {
 			BmMailEditWin* editWin = BmMailEditWin::CreateInstance( ref.Get());
@@ -412,7 +420,7 @@ void BmApplication::MessageReceived( BMessage* msg) {
 					break;
 				int index=0;
 				BString newStatus = msg->FindString( MSG_STATUS);
-				if (msgCount>0 && msg->FindInt32( "which", &buttonPressed) != B_OK) {
+				if (msgCount>1 && msg->FindInt32( "which", &buttonPressed) != B_OK) {
 					// first step, check if user has asked to mark as read and has selected
 					// messages with advanced statii (like replied or forwarded). If so, 
 					// we ask the user about how to handle those:
@@ -730,6 +738,7 @@ void BmApplication::PrintMails( BMessage* msg) {
 		mailView->LockLooper();
 		mailWin->ResizeTo( printableRect.Width()+8, 600);
 		mailView->UnlockLooper();
+		mailView->BodyPartView()->IsUsedForPrinting( true);
 		// now we start printing...
 		mPrintJob.BeginJob();
 		int32 page = 1;
@@ -765,6 +774,7 @@ void BmApplication::PrintMails( BMessage* msg) {
 					// end of current mail reached
 					break;
 			}
+			mailRef->RemoveRef();	// msg is no more refering to mailRef
 		}
 		mPrintJob.CommitJob();
 		mailWin->PostMessage( B_QUIT_REQUESTED);
@@ -855,6 +865,10 @@ Atillâ Öztürk
 	for reporting problems with ISO-8859-9 and helping me 
 	find the 'Mime:' - bug
 
+Bernd Korz
+	for reporting many bugs and suggestions
+	for beta-testing 0.913
+
 Cedric Vincent
 	for pointing out that the 'network buffer size'-
 	prefs-field was disfunctional
@@ -890,6 +904,10 @@ Mathias Reitinger
 Max Hartmann
 	for bug-reports and suggestions
 	for beta-testing 0.912
+	for beta-testing 0.913
+
+MDR-team (MailDaemonReplacement)
+	for base64-routines that do not crash
 
 Nathan Whitehorn
 	for suggesting to integrate Beam with the MDR

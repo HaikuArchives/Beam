@@ -408,7 +408,7 @@ void WordWrap( const BString& in, BString& out, int32 maxLineLen, BString nl) {
 		// determine length of line in UTF8-characters (not bytes):
 		int32 lineLen = 0;
 		for( int i=lastPos; i<pos; ++i) {
-			while( i<pos && s[i]&0x80)
+			while( i<pos && IS_WITHIN_UTF8_MULTICHAR(s[i]))
 				i++;
 			lineLen++;
 		}
@@ -428,7 +428,7 @@ void WordWrap( const BString& in, BString& out, int32 maxLineLen, BString nl) {
 			}
 			lineLen = 0;
 			for( int i=lastPos; i<pos; ++i) {
-				while( i<pos && s[i]&0x80)
+				while( i<pos && IS_WITHIN_UTF8_MULTICHAR(s[i]))
 					i++;
 				lineLen++;
 			}

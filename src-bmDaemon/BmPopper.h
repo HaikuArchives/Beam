@@ -34,6 +34,11 @@
 
 #include <memory>
 
+#include <socket.h>
+#ifdef BONE_VERSION
+#include <netinet/in.h>
+#endif
+
 #include <Message.h>
 #include <NetAddress.h>
 #include <NetEndpoint.h>
@@ -112,7 +117,7 @@ private:
 
 	BmRef<BmPopAccount> mPopAccount;		// Info about our pop-account
 
-	BNetEndpoint mPopServer;				// network-connection to POP-server
+	BNetEndpoint* mPopServer;				// network-connection to POP-server
 	bool mConnected;							// are we connected to the server?
 
 	BString* mMsgUIDs;						// array of unique-IDs, one for each message

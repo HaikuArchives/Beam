@@ -105,6 +105,9 @@ public:
 	inline float FixedWidth() 				{ return 5000; }
 	inline bool ShowAllParts()				{ return mShowAllParts; }
 
+	// setters:
+	inline void IsUsedForPrinting( bool b) { mIsUsedForPrinting = b; }
+
 	static const int16 nFirstTextCol;
 
 private:
@@ -114,6 +117,7 @@ private:
 	float mColWidths[10];
 	bool mShowAllParts;
 	bool mEditable;
+	bool mIsUsedForPrinting;
 
 	BFilePanel* mSavePanel;
 

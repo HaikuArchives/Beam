@@ -31,6 +31,7 @@
 #include <Autolock.h>
 #include <Directory.h>
 #include <File.h>
+#include <NodeInfo.h>
 #include <NodeMonitor.h>
 #include <Path.h>
 
@@ -111,7 +112,6 @@ void BmMailMonitor::HandleMailMonitorMsg( BMessage* msg) {
 	int32 opcode = msg->FindInt32( "opcode");
 	entry_ref eref;
 	const char *name;
-	BEntry entry;
 	struct stat st;
 	status_t err;
 	ino_t node;
@@ -127,33 +127,36 @@ void BmMailMonitor::HandleMailMonitorMsg( BMessage* msg) {
 													|| BM_THROW_RUNTIME( BString("Field '")<<directory<<"' not found in msg !?!");
 				(err = msg->FindInt32( "device", &eref.device)) == B_OK
 													|| BM_THROW_RUNTIME( BString("Field 'device' not found in msg !?!"));
-				if (opcode == B_ENTRY_REMOVED) {
-					(err = msg->FindInt64( "node", &node)) == B_OK
+				(err = msg->FindInt64( "node", &node)) == B_OK
 													|| BM_THROW_RUNTIME( BString("Field 'node' not found in msg !?!"));
-				} else {
-					node_ref nref;
+				if (opcode != B_ENTRY_REMOVED) {
+					BNode aNode;
+					BNodeInfo nodeInfo;
 					(err = msg->FindString( "name", &name)) == B_OK
 													|| BM_THROW_RUNTIME( BString("Field 'name' not found in msg !?!"));
 					eref.set_name( name);
-					(err = entry.SetTo( &eref)) == B_OK
-													|| BM_THROW_RUNTIME( BString("Couldn't create entry for parent-node <")<<eref.directory<<"> and name <"<<eref.name << "> \n\nError:" << strerror(err));
-					(err = entry.GetStat( &st)) == B_OK
-													|| BM_THROW_RUNTIME( BString("Couldn't get stat for entry.") << " \n\nError:" << strerror(err));
-					if (opcode == B_ENTRY_CREATED && st.st_size == 0) {
+					(err = aNode.SetTo( &eref)) == B_OK
+													|| BM_THROW_RUNTIME( BString("Couldn't create node for parent-node <")<<eref.directory<<"> and name <"<<eref.name << "> \n\nError:" << strerror(err));
+					(err = nodeInfo.SetTo( &aNode)) == B_OK
+													|| BM_THROW_RUNTIME( BString("Couldn't create node-info for node --- parent-node <")<<eref.directory<<"> and name <"<<eref.name << "> \n\nError:" << strerror(err));
+/*
+					int i;
+					for( i=0; i<100 && (err=nodeInfo.GetType( mimeType)) != B_OK; ++i) {
 						// some programs create mails directly in the in-folder (instead of creating the mail-file
 						// in a temp-folder and then moving the complete file over to the mailbox).
-						// In order to avoid reading empty mail-files, we wait a little and then try again...
-						snooze( 200*1000);
-						(err = entry.GetStat( &st)) == B_OK
-													|| BM_THROW_RUNTIME( BString("Couldn't get stat for entry.") << " \n\nError:" << strerror(err));
+						// In order to avoid reading half-written mail-files, we wait til we find a mimetype and
+						// hope that this means the file is complete...
+						snooze( 10*1000);		// pause for 10ms
 					}
-					(err = entry.GetNodeRef( &nref)) == B_OK
-													|| BM_THROW_RUNTIME(BString("Could not get node-ref for entry.") << "> \n\nError:" << strerror(err));
-					node = nref.node;
+					if (err != B_OK)
+						BM_LOG2( BM_LogMailTracking, BString("Unable to determine file-type of file/folder ") << name);
+*/
+					(err = aNode.GetStat( &st)) == B_OK
+													|| BM_THROW_RUNTIME( BString("Couldn't get stats for node --- parent-node <")<<eref.directory<<"> and name <"<<eref.name << "> \n\nError:" << strerror(err));
 				}
 				{	// new scope for lock:
 					BmAutolock lock( TheMailFolderList->mModelLocker);
-					lock.IsLocked() 						|| BM_THROW_RUNTIME( "HandleMailMonitorMsg(): Unable to get lock");
+					lock.IsLocked() 			|| BM_THROW_RUNTIME( "HandleMailMonitorMsg(): Unable to get lock");
 					// check if the parent dir is the same as it was for the last message:
 					if (!lastParentRef || lastParentInode != eref.directory) {
 						// try to find new parent dir in our own structure:
@@ -363,7 +366,6 @@ void BmMailFolderList::AddNewFlag( ino_t pnode, ino_t node) {
 	mNewMailNodeMap[ node] = parent;
 	if (parent)
 		parent->BumpNewMailCount();
-	bmApp->PostMessage( BMM_SHOW_NEWMAIL_ICON);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -376,7 +378,6 @@ void BmMailFolderList::RemoveNewFlag( ino_t pnode, ino_t node) {
 	BmMailFolder* parent = dynamic_cast< BmMailFolder*>( parentRef.Get());
 	if (parent)
 		parent->BumpNewMailCount( -1);
-	bmApp->PostMessage( BMM_HIDE_NEWMAIL_ICON);
 }
 
 /*------------------------------------------------------------------------------*\

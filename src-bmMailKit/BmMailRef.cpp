@@ -221,8 +221,8 @@ BmMailRef::~BmMailRef() {
 		-	
 \*------------------------------------------------------------------------------*/
 status_t BmMailRef::Archive( BMessage* archive, bool deep) const {
-	status_t ret = inherited::Archive( archive, deep)
-		|| archive->AddString( MSG_ACCOUNT, mAccount)
+	status_t ret 
+		=  archive->AddString( MSG_ACCOUNT, mAccount)
 		|| archive->AddBool( MSG_ATTACHMENTS, mHasAttachments)
 		|| archive->AddString( MSG_CC, mCc)
 		|| archive->AddInt32( MSG_CREATED, mCreated)
@@ -247,42 +247,28 @@ status_t BmMailRef::Archive( BMessage* archive, bool deep) const {
 bool BmMailRef::ReadAttributes( const struct stat* statInfo) {
 	status_t err;
 	BNode node;
-	BString buffer;
 	BString filetype;
-	char* buf;
-	size_t bufsize = 256;
 	bool retval = false;
 	struct stat st;
 	
 	if (statInfo)
 		st = *statInfo;
-	else {
-		BEntry entry( &mEntryRef);
-		if ((err = entry.GetStat( &st)) != B_OK)
-			throw BM_runtime_error(BString("Could not get stat-info for mail-file <") << mEntryRef.name << "> \n\nError:" << strerror(err));
-	}
-
-	buffer.SetTo( '\0', bufsize);		// preallocate the bufsize we need
-	buf = buffer.LockBuffer( bufsize);
 
 	try {
 		for( int i=0; (err = node.SetTo( &mEntryRef)) == B_BUSY; ++i) {
-			if (i==100)
+			if (i==200)
 				throw BM_runtime_error( BString("Node is locked too long for mail-file <") << mEntryRef.name << "> \n\nError:" << strerror(err));
 			BM_LOG2( BM_LogMailTracking, BString("Node is locked for mail-file <") << mEntryRef.name << ">. We take a nap and try again...");
-			snooze( 50*1000);
+			snooze( 10*1000);					// pause for 10ms
 		}
 		if (err != B_OK)
 			throw BM_runtime_error(BString("Could not get node for mail-file <") << mEntryRef.name << "> \n\nError:" << strerror(err));
-
-		node.ReadAttr( "BEOS:TYPE", 		B_STRING_TYPE, 0, buf, bufsize);		filetype = buf; 	*buf=0;
-		if (filetype.ICompare("text/x-email") != 0 
-		&& filetype.ICompare("message/rfc822") != 0) {
-			// maybe this file has just been created and the mimetype has not yet been
-			// set, we give the creator some more time...
-			snooze(100*1000);
-			node.ReadAttr( "BEOS:TYPE", 	B_STRING_TYPE, 0, buf, bufsize);		filetype = buf; 	*buf=0;
+		if (!statInfo) {
+			if ((err = node.GetStat( &st)) != B_OK)
+				throw BM_runtime_error(BString("Could not get stat-info for mail-file <") << mEntryRef.name << "> \n\nError:" << strerror(err));
 		}
+
+		node.ReadAttrString( "BEOS:TYPE", &filetype);
 		if (!filetype.ICompare("text/x-email") 
 		|| !filetype.ICompare("message/rfc822") ) {
 			// file is indeed a mail, we fetch its attributes:
@@ -337,9 +323,7 @@ bool BmMailRef::ReadAttributes( const struct stat* statInfo) {
 			retval = true;
 		} else 
 			BM_LOG2( BM_LogMailTracking, BString("file <")<<mEntryRef.name<<" is not a mail, ignoring it.");
-		buffer.UnlockBuffer( -1);
 	} catch( exception &e) {
-		buffer.UnlockBuffer( -1);
 		BM_SHOWERR( e.what());
 	}
 	return retval;
@@ -370,6 +354,10 @@ void BmMailRef::MarkAs( const char* status) {
 													|| BM_THROW_RUNTIME( BString("Could not create node for current mail-file.\n\n Result: ") << strerror(err));
 		mailNode.WriteAttr( BM_MAIL_ATTR_STATUS, B_STRING_TYPE, 0, status, strlen( status)+1);
 		TellModelItemUpdated( UPD_STATUS);
+		BmRef<BmListModel> listModel( ListModel());
+		BmMailRefList* refList = dynamic_cast< BmMailRefList*>( listModel.Get());
+		if (refList)
+			refList->MarkAsChanged();
 	} catch( exception &e) {
 		BM_SHOWERR(e.what());
 	}

@@ -1,0 +1,84 @@
+/*
+	ToDo-List for Beam
+		$Id$
+*/
+
+
+***********
+Beam 0.913:
+***********
+
+-	copy HTML address to clipboard (context-menu)
+
+
+
+***********
+Beam 0.92:
+***********
+
+-	add support for mail-filtering
+
+-	correct node-monitoring for the case when mail-files are being
+	created and Beam accesses them before they are written out
+	completely
+
+-	before saving a mail, check if the mailtext could be converted
+	into the selected encoding correctly. If not, warn the user and
+	possibly mark up the offending chars.
+	
+-	show total number of messages and number of new messages for each folder.
+
+-	add navigation through mails in mailview-win (next,prev)
+
+-	add some integration with MDR:
+	+	fetch addresses from MDR-settings
+	+	add a mode to Beam that uses MDR for transport
+
+-	add support for stopping/pausing all jobs
+
+-	color-coded reply levels
+
+-	support hiding/showing preview-pane
+
+-	make non-menu keys and the corresponding actions configurable (esp. the
+	delete key).
+
+-	define add-on protocol and implement the add/remove-quote demo add-on.
+
+-	add log-windows, where selected log-events will be shown.
+
+-	collect error-messages from jobs in log-window instead of showing them 
+	as modal stoppers.
+	
+-	implement proper Deskbar-replicant
+
+-	make rulerview static (avoid scrolling it away).
+
+-	add Received-attribute and show it inside mailref-view (use topmost/latest
+	Received-header).
+
+
+***********
+Beam 0.93:
+***********
+
+-	add support for tagging messages
+
+-	advanced POP-dialog: keep mail on server for x days / until deleted locally
+
+-	implement 'send all pending messages'
+
+
+
+***********
+Beam 0.94:
+***********
+
+-	When quoting the sender in mailing lists use the real sender, not the 
+	reply-to address. (Eberhard)
+
+
+
+***********
+Beam 0.95:
+***********

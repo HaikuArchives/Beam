@@ -302,8 +302,12 @@ status_t BmMailHeaderView::Unarchive( BMessage* archive, bool deep=true) {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmMailHeaderView::ShowHeader( BmMailHeader* header, bool invalidate) {
-	if (mMailHeader != header)
+	bool hasErrors = false;
+	if (mMailHeader != header) {
 		mMailHeader = header;
+		if (header && header->HasParsingErrors())
+			hasErrors = true;
+	}
 	if (header) {
 		float height = AddFieldViews();
 		BmMailView* mailView = dynamic_cast<BmMailView*>( Parent());
@@ -318,6 +322,8 @@ void BmMailHeaderView::ShowHeader( BmMailHeader* header, bool invalidate) {
 	}
 	if (invalidate)
 		Invalidate();
+	if (hasErrors)
+		BM_SHOWERR( "The mail-header could not be parsed completely. Some information may be displayed incorrectly.");
 }
 
 /*------------------------------------------------------------------------------*\

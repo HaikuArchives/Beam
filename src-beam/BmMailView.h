@@ -59,6 +59,7 @@ class BmRulerView;
 #define BM_MAILVIEW_SHOWCOOKED					'bmMb'
 #define BM_MAILVIEW_SHOWINLINES_SEPARATELY	'bmMc'
 #define BM_MAILVIEW_SHOWINLINES_CONCATENATED	'bmMd'
+#define BM_MAILVIEW_SELECT_ENCODING				'bmMe'
 
 /*------------------------------------------------------------------------------*\
 	BmMailView
@@ -84,6 +85,7 @@ class BmMailView : public WrappingTextView, public BmJobController {
 	static const char* const MSG_FONTSIZE =	"bm:fntsz";
 	//
 	static const char* const MSG_MAIL =			"bm:mail";
+	static const char* const MSG_ENCODING =	"bm:encod";
 
 	static const int16 nArchiveVersion = 3;
 
@@ -109,7 +111,10 @@ public:
 	// overrides of BTextView base:
 	bool AcceptsDrop( const BMessage* msg);
 	void AttachedToWindow();
+	bool CanEndLine(int32 offset);
 	void FrameResized( float newWidth, float newHeight);
+	void InsertText(const char *text, int32 length, int32 offset,
+						 const text_run_array *runs);
 	void KeyDown(const char *bytes, int32 numBytes);
 	void MakeFocus(bool focused);
 	void MessageReceived( BMessage* msg);
@@ -151,6 +156,7 @@ private:
 	BmTextRunIter mClickedTextRun;
 	BMessageRunner* mReadRunner;
 	bool mShowingUrlCursor;
+	int32 mSelectedEncoding;
 	
 	// will be archived:
 	BString mFontName;

@@ -109,5 +109,11 @@ void DeUrlify( const BString& in, BString& out);
 	utility function to wrap lines at word boundary:
 \*------------------------------------------------------------------------------*/
 void WordWrap( const BString& in, BString& out, int32 maxLineLen, BString nl);
+/*------------------------------------------------------------------------------*\
+	utility defines for UTF8-character parsing:
+\*------------------------------------------------------------------------------*/
+#define IS_PART_OF_UTF8_MULTICHAR(c) ((c)&0x80)
+#define IS_UTF8_STARTCHAR(c) (((c)&0xc0)==0xc0)
+#define IS_WITHIN_UTF8_MULTICHAR(c) (((c)&0xc0)==0x80)
 
 #endif

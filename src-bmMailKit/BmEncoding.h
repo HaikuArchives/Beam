@@ -54,7 +54,7 @@ namespace BmEncoding {
 	void Encode( BString encodingStyle, const BString& src, BString& dest,
 					 bool isEncodedWord=false);
 	void Decode( BString encodingStyle, const BString& src, BString& dest,
-					 bool isEncodedWord, bool isText);
+					 bool isEncodedWord);
 //	int32 DecodedLength( const BString& encodingStyle, const char* text, int32 length);
 
 	BString ConvertHeaderPartToUTF8( const BString& headerPart, uint32 defaultEncoding);

@@ -77,7 +77,7 @@ BmSmtp::SmtpState BmSmtp::SmtpStates[BmSmtp::SMTP_FINAL] = {
 BmSmtp::BmSmtp( const BString& name, BmSmtpAccount* account)
 	:	BmJobModel( name)
 	,	mSmtpAccount( account)
-	,	mSmtpServer()
+	,	mSmtpServer( NULL)
 	,	mConnected( false)
 	,	mState( 0)
 	,	mServerMayHaveSizeLimit( false)
@@ -99,6 +99,7 @@ BmSmtp::~BmSmtp() {
 		// a good idea...(?)
 		Quit();
 	}
+	delete mSmtpServer;
 	TheLogHandler->FinishLog( BM_LOGNAME);
 }
 
@@ -126,7 +127,6 @@ bool BmSmtp::StartJob() {
 	const float delta = 100.0 / (SMTP_DONE-startState);
 	const bool failed=true;
 		
-	mSmtpServer.InitCheck() == B_OK		||	BM_THROW_RUNTIME("BmSmtp: could not create NetEndpoint");
 	try {
 		for( 	mState = startState; ShouldContinue() && mState<SMTP_DONE; ++mState) {
 			if (mState == SMTP_AUTH && mSmtpAccount->NeedsAuthViaPopServer())
@@ -149,8 +149,8 @@ bool BmSmtp::StartJob() {
 		// a problem occurred, we tell the user:
 		BString errstr = err.what();
 		int e;
-		if ((e = mSmtpServer.Error()))
-			errstr << "\nerror: " << e << ", " << mSmtpServer.ErrorStr();
+		if ((e = mSmtpServer->Error()))
+			errstr << "\nerror: " << e << ", " << mSmtpServer->ErrorStr();
 		UpdateSMTPStatus( 0.0, NULL, failed);
 		BString text = Name() << "\n\n" << errstr;
 		BM_SHOWERR( BString("BmSmtp: ") << text);
@@ -206,7 +206,10 @@ void BmSmtp::UpdateMailStatus( const float delta, const char* detailText,
 \*------------------------------------------------------------------------------*/
 void BmSmtp::Connect() {
 	BNetAddress addr;
-	if (!mSmtpAccount->GetSMTPAddress( &addr) || mSmtpServer.Connect( addr) != B_OK) {
+	delete mSmtpServer;
+	mSmtpServer = new BNetEndpoint;
+	mSmtpServer->InitCheck() == B_OK		||	BM_THROW_RUNTIME("BmSmtp: could not create NetEndpoint");
+	if (!mSmtpAccount->GetSMTPAddress( &addr) || mSmtpServer->Connect( addr) != B_OK) {
 		BString s = BString("Could not connect to SMTP-Server ") << mSmtpAccount->SMTPServer();
 		throw BM_network_error( s);
 	}
@@ -358,8 +361,8 @@ void BmSmtp::Auth() {
 			// most probably a wrong password...
 			BString errstr = err.what();
 			int e;
-			if ((e = mSmtpServer.Error()))
-				errstr << "\nerror: " << e << ", " << mSmtpServer.ErrorStr();
+			if ((e = mSmtpServer->Error()))
+				errstr << "\nerror: " << e << ", " << mSmtpServer->ErrorStr();
 			BString text = Name() << "\n\n" << errstr;
 			BM_SHOWERR( BString("BmSmtp: ") << text);
 		}
@@ -530,7 +533,7 @@ void BmSmtp::Quit( bool WaitForAnswer) {
 			GetAnswer();
 		}
 	} catch(...) {	}
-	mSmtpServer.Close();
+	mSmtpServer->Close();
 	mConnected = false;
 }
 
@@ -629,8 +632,8 @@ int32 BmSmtp::ReceiveBlock( char* buffer, int32 max) {
 	int32 timeout = AnswerTimeout / BmSmtp::FeedbackTimeout;
 	bool shouldCont;
 	for( int32 round=0; (shouldCont = ShouldContinue()) && round<timeout; ++round) {
-		if (mSmtpServer.IsDataPending( BmSmtp::FeedbackTimeout)) {
-			if ((numBytes = mSmtpServer.Receive( buffer, max-1)) > 0) {
+		if (mSmtpServer->IsDataPending( BmSmtp::FeedbackTimeout)) {
+			if ((numBytes = mSmtpServer->Receive( buffer, max-1)) > 0) {
 				buffer[numBytes] = '\0';
 				return numBytes;
 			} else if (numBytes < 0) {
@@ -667,7 +670,7 @@ void BmSmtp::SendCommand( BString cmd, BString secret, bool isMailData) {
 		for( int32 block=0; block*blockSize < size; ++block) {
 			int32 offs = block*blockSize;
 			int32 sz = MIN( size-offs, blockSize);
-			if ((sentSize = mSmtpServer.Send( command.String()+offs, sz)) != sz) {
+			if ((sentSize = mSmtpServer->Send( command.String()+offs, sz)) != sz) {
 				throw BM_network_error( BString("error during send, sent only ") << sentSize << " bytes instead of " << sz);
 			}
 			float delta = (100.0 * sz) / (size ? size : 1);
@@ -675,7 +678,7 @@ void BmSmtp::SendCommand( BString cmd, BString secret, bool isMailData) {
 			UpdateMailStatus( delta, text.String(), 1);
 		}
 	} else {
-		if ((sentSize = mSmtpServer.Send( command.String(), size)) != size) {
+		if ((sentSize = mSmtpServer->Send( command.String(), size)) != size) {
 			throw BM_network_error( BString("error during send, sent only ") << sentSize << " bytes instead of " << size);
 		}
 	}

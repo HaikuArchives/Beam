@@ -87,6 +87,10 @@ void BmMainMenuBar::MessageReceived( BMessage* msg) {
 			case BM_LISTMODEL_REMOVE: {
 				if (!IsMsgFromCurrentModel( msg)) 
 					break;
+				BmListModelItem* item=NULL;
+				msg->FindPointer( BmListModel::MSG_MODELITEM, (void**)&item);
+				if (!item) break;
+				item->RemoveRef();			// the msg is no longer referencing the item
 				const char* oldKey;
 				if (msg->what == BM_LISTMODEL_UPDATE
 				&& msg->FindString( BmListModel::MSG_OLD_KEY, &oldKey) != B_OK) 

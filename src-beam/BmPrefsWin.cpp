@@ -99,6 +99,7 @@ BmPrefsWin::BmPrefsWin()
 	,	mPrefsListView( NULL)
 	,	mPrefsViewContainer( NULL)
 	,	mVertSplitter( NULL)
+	,	mFinishOnExit( true)
 {
 	MView* mOuterGroup = 
 		new VGroup( 
@@ -254,12 +255,15 @@ void BmPrefsWin::MessageReceived( BMessage* msg) {
 				break;
 			}
 			case BM_SAVE_CHANGES: {
-				if (mPrefsViewContainer->SaveData())
+				if (mPrefsViewContainer->SaveData()) {
+					mFinishOnExit = false;
 					PostMessage( B_QUIT_REQUESTED);
+				}
 				break;
 			}
 			case BM_UNDO_CHANGES: {
 				mPrefsViewContainer->Finish();
+				mFinishOnExit = false;
 				PostMessage( B_QUIT_REQUESTED);
 				break;
 			}
@@ -287,7 +291,8 @@ bool BmPrefsWin::QuitRequested() {
 		-	standard BeOS-behaviour, we quit
 \*------------------------------------------------------------------------------*/
 void BmPrefsWin::Quit() {
-	mPrefsViewContainer->Finish();
+	if (mFinishOnExit)
+		mPrefsViewContainer->Finish();
 	mPrefsViewContainer->WriteStateInfo();
 	BM_LOG2( BM_LogPrefsWin, BString("PrefsWin has quit"));
 	inherited::Quit();

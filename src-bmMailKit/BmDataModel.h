@@ -318,6 +318,7 @@ protected:
 	bool StartJob();
 
 	status_t mInitCheck;
+	bool mNeedsStore;
 
 private:
 	// Hide copy-constructor and assignment:

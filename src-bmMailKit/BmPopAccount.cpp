@@ -382,12 +382,44 @@ void BmPopAccountList::InstantiateItems( BMessage* archive) {
 }
 
 /*------------------------------------------------------------------------------*\
+	ResetToSaved()
+		-	resets the POP3-accounts to last saved state
+		-	the list of downloaded messages is *not* reset, since resetting it
+			might cause Beam to download recent messages again.
+\*------------------------------------------------------------------------------*/
+void BmPopAccountList::ResetToSaved() {
+	BM_LOG2( BM_LogMailTracking, BString("Start of ResetToSaved() for PopAccountList"));
+	BmAutolock lock( ModelLocker());
+	lock.IsLocked() 							|| BM_THROW_RUNTIME( ModelName() << ": Unable to get lock");
+	// first we copy all uid-lists into a temp map...
+	map<BString, vector<BString> > uidListMap;
+	BmModelItemMap::const_iterator iter;
+	for( iter = begin(); iter != end(); ++iter) {
+		BmPopAccount* acc = dynamic_cast< BmPopAccount*>( iter->second.Get());
+		uidListMap[acc->Key()] = acc->mUIDs;
+	}
+	// ...now we reset to saved state...
+	Cleanup();
+	StartJobInThisThread();
+	// ...finally we update the uid-list of each account:
+	for( iter = begin(); iter != end(); ++iter) {
+		BmPopAccount* acc = dynamic_cast< BmPopAccount*>( iter->second.Get());
+		vector< BString>& uidList = uidListMap[acc->Key()];
+		if (!uidList.empty())
+			acc->mUIDs = uidList;
+	}
+	BM_LOG2( BM_LogMailTracking, BString("End of ResetToSaved() for PopAccountList"));
+}
+
+/*------------------------------------------------------------------------------*\
 	DefaultAccount()
 		-	returns the POP3-account that has been marked as default account
 		-	if no account has been marked as default, the first account is returned
 		-	if no POP3-account has been defined yet, NULL is returned
 \*------------------------------------------------------------------------------*/
 BmRef<BmPopAccount> BmPopAccountList::DefaultAccount() {
+	BmAutolock lock( ModelLocker());
+	lock.IsLocked() 							|| BM_THROW_RUNTIME( ModelName() << ": Unable to get lock");
 	BmModelItemMap::const_iterator iter;
 	for( iter = begin(); iter != end(); ++iter) {
 		BmPopAccount* acc = dynamic_cast< BmPopAccount*>( iter->second.Get());
@@ -407,6 +439,8 @@ BmRef<BmPopAccount> BmPopAccountList::DefaultAccount() {
 		-	any prior default-account is being reset
 \*------------------------------------------------------------------------------*/
 void BmPopAccountList::SetDefaultAccount( BString accName) {
+	BmAutolock lock( ModelLocker());
+	lock.IsLocked() 							|| BM_THROW_RUNTIME( ModelName() << ": Unable to get lock");
 	BmModelItemMap::const_iterator iter;
 	for( iter = begin(); iter != end(); ++iter) {
 		BmPopAccount* acc = dynamic_cast< BmPopAccount*>( iter->second.Get());
@@ -423,6 +457,8 @@ void BmPopAccountList::SetDefaultAccount( BString accName) {
 		-	determines to which account the given address belongs (if any)
 \*------------------------------------------------------------------------------*/
 BmRef<BmPopAccount> BmPopAccountList::FindAccountForAddress( const BString addr) {
+	BmAutolock lock( ModelLocker());
+	lock.IsLocked() 							|| BM_THROW_RUNTIME( ModelName() << ": Unable to get lock");
 	BmModelItemMap::const_iterator iter;
 	// we first check whether any account handles the given address (as primary
 	// address or as alias):
@@ -447,7 +483,6 @@ BmRef<BmPopAccount> BmPopAccountList::FindAccountForAddress( const BString addr)
 	return NULL;
 }
 
-
 /*------------------------------------------------------------------------------*\
 	CheckMail( allAccounts)
 		-	checks mail for the accounts that have been marked to be part of the
@@ -455,6 +490,8 @@ BmRef<BmPopAccount> BmPopAccountList::FindAccountForAddress( const BString addr)
 		-	if param allAccounts is set, all accounts will be checked
 \*------------------------------------------------------------------------------*/
 void BmPopAccountList::CheckMail( bool allAccounts) {
+	BmAutolock lock( ModelLocker());
+	lock.IsLocked() 							|| BM_THROW_RUNTIME( ModelName() << ": Unable to get lock");
 	BmModelItemMap::const_iterator iter;
 	for( iter = begin(); iter != end(); ++iter) {
 		BmPopAccount* acc = dynamic_cast< BmPopAccount*>( iter->second.Get());

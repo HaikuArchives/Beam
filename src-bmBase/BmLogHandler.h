@@ -80,11 +80,13 @@ public:
 
 	BStopWatch StopWatch;
 
+	bool mWaitingForShutdown;
+
 private:
 	// Hide copy-constructor and assignment:
 	BmLogHandler( const BmLogHandler&);
 	BmLogHandler operator=( const BmLogHandler&);
-
+	
 	//	message component definitions for status-msgs:
 	static const char* const MSG_MESSAGE = 		"bm:msg";
 	static const char* const MSG_THREAD_ID = 		"bm:tid";

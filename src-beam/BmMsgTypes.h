@@ -34,6 +34,10 @@
 /*------------------------------------------------------------------------------*\
 	Menu-messages:
 \*------------------------------------------------------------------------------*/
+
+// fake system-message for redo:
+#define B_REDO	'REDO'
+
 // main window
 #define BMM_NEW_MAILFOLDER				'bMaa'
 #define BMM_RENAME_MAILFOLDER			'bMab'

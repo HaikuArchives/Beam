@@ -30,7 +30,9 @@
 #include <Alert.h>
 #include <Entry.h>
 #include <FilePanel.h>
+#include <MenuItem.h>
 #include <Path.h>
+#include <PopUpMenu.h>
 #include <Roster.h>
 
 #include <BeBuild.h>
@@ -47,12 +49,14 @@
 
 #include "BmApp.h"
 #include "BmCheckControl.h"
+#include "BmGuiUtil.h"
 #include "BmLogHandler.h"
 #include "BmMailFolder.h"
 #include "BmMailFolderList.h"
 #include "BmMailFolderView.h"
 #include "BmMailRef.h"
 #include "BmMailRefList.h"
+#include "BmMenuControl.h"
 #include "BmPrefs.h"
 #include "BmPrefsGeneralView.h"
 #include "BmTextControl.h"
@@ -109,6 +113,8 @@ BmPrefsGeneralView::BmPrefsGeneralView()
 				new MBorder( M_LABELED_BORDER, 10, (char*)"General GUI Options",
 					new HGroup(
 						new VGroup(
+							mWorkspaceControl = new BmMenuControl( "Workspace to start in:", new BPopUpMenu("")),
+							new Space( minimax(0,10,0,10)),
 							mRestoreFolderStatesControl = new BmCheckControl( "Restore mailfolder-view state on startup", 
 																						 	  new BMessage(BM_RESTORE_FOLDER_STATES_CHANGED), 
 																						 	  this, ThePrefs->GetBool("RestoreFolderStates")),
@@ -232,6 +238,7 @@ void BmPrefsGeneralView::Initialize() {
 	TheBubbleHelper.SetHelp( mPopperRemoveControl, "Here you can enter the time (in ms) Beam will let a finished POP3-job linger inside the job-window \n(this way you can check the results before the job is removed).");
 	TheBubbleHelper.SetHelp( mSmtpRemoveControl, "Here you can enter the time (in ms) Beam will let a finished SMTP-job linger inside the job-window \n(this way you can check the results before the job is removed).");
 	TheBubbleHelper.SetHelp( mRemoveFailedControl, "Here you can enter the time (in ms) Beam will keep any failed job inside the job-status window\n (this way you can see that a problem occurred before the job is removed).");
+	TheBubbleHelper.SetHelp( mWorkspaceControl, "In this menu you can select the workspace that Beam should live in.");
 	TheBubbleHelper.SetHelp( mRestoreFolderStatesControl, "Checking this makes Beam remember the state of the mailfolder-view \n(which of the folders are expanded/collapsed).\nIf unchecked, Beam will always start with a collapsed mailfolder-view.");
 	TheBubbleHelper.SetHelp( mInOutAtTopControl, "Determines whether the in- and out-folder will be shown \nat the top of the mailfolder-list or if they \nwill be sorted in alphabetically.");
 	TheBubbleHelper.SetHelp( mUseDeskbarControl, "Checking this makes Beam show an icon in \nthe Deskbar when new mail has arrived.");
@@ -250,6 +257,20 @@ void BmPrefsGeneralView::Initialize() {
 	mRefList->AddItemToList( mRef.Get());
 	mLayoutView->StartJob( mRefList.Get());
 	
+	// add workspaces:
+	int32 count = count_workspaces();
+	for( int32 i=0; i<=count; ++i) {
+		BMessage* msg = new BMessage( BM_WORKSPACE_SELECTED);
+		msg->AddInt32( MSG_WORKSPACE, i);
+		BString label;
+		if (i)
+			label << i;
+		else
+			label = "Current";
+		AddItemToMenu( mWorkspaceControl->Menu(), new BMenuItem( label.String(), msg), this);
+	}
+	mWorkspaceControl->MarkItem( ThePrefs->GetString("Workspace", "Current").String());
+
 	mMailMoverShowControl->SetTarget( this);
 	mPopperRemoveControl->SetTarget( this);
 	mSmtpRemoveControl->SetTarget( this);
@@ -360,6 +381,12 @@ void BmPrefsGeneralView::MessageReceived( BMessage* msg) {
 			case BM_SHOW_TOOLTIPS_CHANGED: {
 				ThePrefs->SetBool("ShowTooltips", mShowTooltipsControl->Value());
 				TheBubbleHelper.EnableHelp( mShowTooltipsControl->Value());
+				break;
+			}
+			case BM_WORKSPACE_SELECTED: {
+				BMenuItem* item = mWorkspaceControl->Menu()->FindMarked();
+				if (item)
+					ThePrefs->SetString( "Workspace", item->Label());
 				break;
 			}
 			case BM_MAKE_BEAM_STD_APP: {

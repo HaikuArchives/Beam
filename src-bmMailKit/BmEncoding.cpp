@@ -30,7 +30,8 @@
 
 #include <string.h>
 
-#include <E-mail.h>
+#include <UTF8.h>
+#include "base64.h"
 
 #include "regexx.hh"
 using namespace regexx;
@@ -85,7 +86,7 @@ uint32 BmEncoding::CharsetToEncoding( const BString& charset) {
 	BString set( charset);
 	BmToLower( set);
 	for( int i=0; BM_Encodings[i].charset; ++i)
-		if (charset == BM_Encodings[i].charset)
+		if (set == BM_Encodings[i].charset)
 			return( BM_Encodings[i].encoding);
 	return B_ISO1_CONVERSION;		// just anything that is compatible with us-ascii (which is the fallback)
 }
@@ -277,7 +278,7 @@ void BmEncoding::Encode( BString encodingStyle, const BString& src, BString& des
 		BM_LOG( BM_LogMailParse, BString("starting to encode base64 of ") << srcLen << " bytes");
 		int32 destLen = srcLen*5/3;		// just to be sure... (need to be a little over 4/3)
 		char* buf = dest.LockBuffer( destLen+1);
-		destLen = encode_base64( buf, const_cast<char*>(src.String()), src.Length());
+		destLen = encode64( buf, src.String(), src.Length());
 		destLen = MAX( 0, destLen);		// if errors should occur we don't want to crash
 		buf[destLen] = '\0';
 		dest.UnlockBuffer( destLen);
@@ -302,7 +303,7 @@ void BmEncoding::Encode( BString encodingStyle, const BString& src, BString& des
 		-	
 \*------------------------------------------------------------------------------*/
 void BmEncoding::Decode( BString encodingStyle, const BString& src, BString& dest, 
-								 bool isEncodedWord, bool isText) {
+								 bool isEncodedWord) {
 	dest.Truncate(0);
 	Regexx rx;
 	if (encodingStyle.ICompare("q")==0 || encodingStyle.ICompare("quoted-printable")==0) {
@@ -314,6 +315,7 @@ void BmEncoding::Decode( BString encodingStyle, const BString& src, BString& des
 		char* buf = dest.LockBuffer( destSize);
 		const char* pos = src.String();
 		char* newPos = buf;
+		char* lastSoftbreakPos = NULL;
 		char c1,c2;
 		const BString qpChars("abcdef0123456789ABCDEF");
 		while( *pos) {
@@ -322,20 +324,24 @@ void BmEncoding::Decode( BString encodingStyle, const BString& src, BString& des
 				while(newPos>buf && (*(newPos-1) == ' ' || *(newPos-1) == '\t'))
 					newPos--;
 				// join lines that have been divided by a soft linebreak:
-				if (newPos>buf && *(newPos-1) == '=') {
+				if (newPos>buf && lastSoftbreakPos == newPos-1) {
 					newPos--;					// remove '=' from output
-					pos++;						// skip '\n'
+					pos++;						// skip '\n', too
 				}
 				pos++;							// skip '\r'
 			} else if (isEncodedWord && *pos == '_') {
 				// in encoded-words, underlines are really spaces (a real underline is encoded):
 				*newPos++ = ' ';
 				pos++;
-			} else if (*pos == '=' 
-						  && (c1=*(pos+1)) && qpChars.FindFirst(c1)!=B_ERROR 
-						  && (c2=*(pos+2)) && qpChars.FindFirst(c2)!=B_ERROR) {
-				*newPos++ = HEXDIGIT2CHAR(c1)*16 + HEXDIGIT2CHAR(c2);
-				pos+=3;
+			} else if (*pos == '=') {
+				if ((c1=*(pos+1)) && qpChars.FindFirst(c1)!=B_ERROR 
+				&& (c2=*(pos+2)) && qpChars.FindFirst(c2)!=B_ERROR) {
+					*newPos++ = HEXDIGIT2CHAR(c1)*16 + HEXDIGIT2CHAR(c2);
+					pos+=3;
+				} else {
+					lastSoftbreakPos = newPos;
+					*newPos++ = *pos++;
+				}
 			} else {
 				*newPos++ = *pos++;
 			}
@@ -346,12 +352,15 @@ void BmEncoding::Decode( BString encodingStyle, const BString& src, BString& des
 	} else if (encodingStyle.ICompare("b")==0 || encodingStyle.ICompare("base64")==0) {
 		// base64:
 		BM_LOG( BM_LogMailParse, BString("starting to decode base64 of ") << src.Length() << " bytes");
-		bool convertCRs = isText;
 		off_t srcSize = src.Length();
 		if (!srcSize)
 			return;
 		char* destBuf = dest.LockBuffer( srcSize);
-		int32 destSize = decode_base64( destBuf, const_cast<char*>(src.String()), srcSize, convertCRs);
+		ssize_t destSize = decode64( destBuf, src.String(), srcSize);
+		if (destSize<0) {
+			BM_LOG( BM_LogMailParse, BString("Unable to decode base64-string. Error: ") << strerror(destSize));
+			destSize=0;
+		}
 		destBuf[destSize] = '\0';
 		dest.UnlockBuffer( destSize);
 		BM_LOG( BM_LogMailParse, "base64-decode: done");
@@ -443,7 +452,7 @@ BString BmEncoding::ConvertHeaderPartToUTF8( const BString& headerPart,
 			const BString srcQuotingStyle( i->atom[1]);
 			const BString text( i->atom[2]);
 			BString decodedData;
-			Decode( srcQuotingStyle, text, decodedData, true, true);
+			Decode( srcQuotingStyle, text, decodedData, true);
 			if (decodedData.Length()) {
 				BString decodedAsUTF8;
 				ConvertToUTF8( CharsetToEncoding(srcCharset), decodedData, decodedAsUTF8);
@@ -547,3 +556,5 @@ bool BmEncoding::NeedsEncoding( const BString& charsetString) {
 	}
 	return false;
 }
+
+

@@ -26,11 +26,69 @@
 #define _SGB_WRAPPING_TEXT_VIEW_H_
 
 
+#include <vector>
+
+#include <String.h>
 #include <TextView.h>
 
+// fake system-message for redo:
+#define B_REDO	'REDO'
 
 class WrappingTextView : public BTextView
 {
+		struct UndoInfo {
+			bool isInsertion;
+			BString text;
+			uint32 offset;
+			text_run_array* text_runs;
+			UndoInfo()
+				:	text_runs( NULL)
+			{ 
+			}
+			UndoInfo( bool ins, const char* t, int32 len, uint32 offs,
+						 const text_run_array* runs)
+				:	isInsertion( ins)
+				,	text( t, len)
+				,	offset( offs)
+				,	text_runs( NULL)
+			{ 
+				if (runs) {
+					int32 sz = sizeof(int32)+runs->count*sizeof(text_run);
+					text_runs = (text_run_array*)malloc( sz);
+					memcpy( text_runs, runs, sz);
+				}
+			}
+			UndoInfo( const UndoInfo& ui)
+				:	isInsertion( ui.isInsertion)
+				,	text( ui.text)
+				,	offset( ui.offset)
+				,	text_runs( NULL)
+			{ 
+				if (ui.text_runs) {
+					int32 sz = sizeof(int32)+ui.text_runs->count*sizeof(text_run);
+					text_runs = (text_run_array*)malloc( sz);
+					memcpy( text_runs, ui.text_runs, sz);
+				}
+			}
+			UndoInfo operator=( const UndoInfo& ui) {
+				isInsertion = ui.isInsertion;
+				text = ui.text;
+				offset = ui.offset;
+				if (ui.text_runs) {
+					int32 sz = sizeof(int32)+ui.text_runs->count*sizeof(text_run);
+					text_runs = (text_run_array*)malloc( sz);
+					memcpy( text_runs, ui.text_runs, sz);
+				} else
+					text_runs = NULL;
+				return *this;
+			}
+			~UndoInfo() { 
+				if (text_runs)
+					free( text_runs); 
+			}
+		};
+		typedef vector< UndoInfo> TUndoVect;
+
 		static const char* const n_long_line = "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW";
 	public:
 		WrappingTextView(BRect a_frame,const char* a_name,int32 a_resize_mode,int32 a_flags);
@@ -45,17 +103,22 @@ class WrappingTextView : public BTextView
 		void SetText(const char *text, int32 length, const text_run_array *runs = NULL);
 		void SetText(const char *text, const text_run_array *runs = NULL);
 		void SetText(BFile *file, int32 offset, int32 length, const text_run_array *runs = NULL);
+		void DeleteText(int32 start, int32 finish);
 		virtual void StoreChange();
 		virtual void Modified();
 		bool HasBeenModified();
 		void ResetTextRect();
 		void CalculateVerticalOffset();
 		void KeyDown(const char *bytes, int32 numBytes);
+		void MessageReceived( BMessage* msg);
 		void SetFixedWidth( int32 i);
 		int32 FixedWidth() const			{ return m_fixed_width; }
 
 	protected:
 		virtual void InsertText(const char *a_text, int32 a_length, int32 a_offset, const text_run_array *a_runs);
+		virtual void UndoChange();
+		virtual void RedoChange();
+		virtual void ResetUndoBuffer();
 
 	private:
 		bool m_modified;
@@ -63,6 +126,11 @@ class WrappingTextView : public BTextView
 		float m_vertical_offset;
 		int32 m_fixed_width;
 		BMessage* m_modification_msg;
+		TUndoVect m_undo_vect;
+		uint32 m_curr_undo_index;
+		uint32 m_max_undo_index;
+		bool m_in_undo_redo;
+		void* m_undo_context;
 };
 
 #endif

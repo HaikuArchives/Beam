@@ -29,6 +29,10 @@ WrappingTextView::WrappingTextView(BRect a_frame,const char* a_name,int32 a_resi
 	m_modified_disabled = false;
 	m_fixed_width = 0;
 	m_modification_msg = NULL;
+	m_curr_undo_index = 0;
+	m_max_undo_index = 0;
+	m_in_undo_redo = false;
+	m_undo_context = NULL;
 	ResetTextRect();
 }	
 
@@ -68,15 +72,100 @@ void WrappingTextView::MakeFocus(bool a_focused)
 	}
 }
 
-
 void WrappingTextView::InsertText(const char *a_text, int32 a_length, int32 a_offset,
 	const text_run_array *a_runs)
 {
 	BTextView::InsertText(a_text, a_length, a_offset, a_runs);
+	if (IsEditable()) {
+		if (!m_in_undo_redo) {
+			uint32 sz = m_undo_vect.size();
+			if (m_curr_undo_index >= sz)
+				m_undo_vect.resize( MAX( 25, sz*2));
+			m_undo_vect[m_curr_undo_index++] = UndoInfo( true, a_text, a_length, a_offset, a_runs);
+			m_max_undo_index = MAX( m_max_undo_index, m_curr_undo_index);
+		}
+		if(!m_modified_disabled)
+			Modified();
+	}
+}
+
+void WrappingTextView::DeleteText(int32 start, int32 finish)
+{
+	if (IsEditable()) {
+		if (!m_in_undo_redo) {
+			uint32 sz = m_undo_vect.size();
+			if (m_curr_undo_index >= sz)
+				m_undo_vect.resize( MAX( 25, sz*2));
+			text_run_array* runs = RunArray( start, finish);
+			m_undo_vect[m_curr_undo_index++] = UndoInfo( false, Text()+start, finish-start, start, runs);
+			if (runs)
+				free( runs);
+			m_max_undo_index = MAX( m_max_undo_index, m_curr_undo_index);
+		}
+		if(!m_modified_disabled)
+			Modified();
+	}
+	BTextView::DeleteText( start, finish);
+}
+
+void WrappingTextView::ResetUndoBuffer() {
+	// throw away undo-buffer if context changes:
+	m_undo_vect.clear();
+	m_curr_undo_index = 0;
+	m_max_undo_index = 0;
+}
+
+void WrappingTextView::UndoChange() {
+	if (!m_curr_undo_index)
+		return;
+	UndoInfo info = m_undo_vect[--m_curr_undo_index];
+	m_in_undo_redo = true;
+	if (info.isInsertion) {
+		BTextView::Delete( info.offset, info.offset+info.text.Length());
+		Select( info.offset, info.offset);
+	} else {
+		BTextView::Insert( info.offset, info.text.String(), info.text.Length(), info.text_runs);
+		Select( info.offset+info.text.Length(), info.offset+info.text.Length());
+	}
+	ScrollToSelection();
+	m_in_undo_redo = false;
 	if(!m_modified_disabled)
 		Modified();
 }
 
+void WrappingTextView::RedoChange() {
+	if (m_curr_undo_index >= m_max_undo_index)
+		return;
+	UndoInfo info = m_undo_vect[m_curr_undo_index++];
+	m_in_undo_redo = true;
+	if (info.isInsertion) {
+		BTextView::Insert( info.offset, info.text.String(), info.text.Length(), info.text_runs);
+		Select( info.offset+info.text.Length(), info.offset+info.text.Length());
+	} else {
+		BTextView::Delete( info.offset, info.offset+info.text.Length());
+		Select( info.offset, info.offset);
+	}
+	ScrollToSelection();
+	m_in_undo_redo = false;
+	if(!m_modified_disabled)
+		Modified();
+}
+
+void WrappingTextView::MessageReceived( BMessage* msg)
+{
+	switch( msg->what) {
+		case B_UNDO: {
+			UndoChange();
+			break;
+		}
+		case B_REDO: {
+			RedoChange();
+			break;
+		}
+		default:
+			BTextView::MessageReceived( msg);
+	}
+}
 
 void WrappingTextView::Modified()
 {
@@ -96,6 +185,7 @@ void WrappingTextView::SetText(const char *text, int32 length, const text_run_ar
 {
 	m_modified_disabled = true;
 	BTextView::SetText(text,length,runs);
+	ResetUndoBuffer();
 	m_modified_disabled = false;
 }
 
@@ -104,6 +194,7 @@ void WrappingTextView::SetText(const char *text, const text_run_array *runs)
 {
 	m_modified_disabled = true;
 	BTextView::SetText(text,runs);
+	ResetUndoBuffer();
 	m_modified_disabled = false;
 }
 
@@ -112,9 +203,9 @@ void WrappingTextView::SetText(BFile *file, int32 offset, int32 length, const te
 {
 	m_modified_disabled = true;
 	BTextView::SetText(file,offset,length,runs);
+	ResetUndoBuffer();
 	m_modified_disabled = false;
 }
-
 
 void WrappingTextView::StoreChange()
 { }

@@ -1168,8 +1168,14 @@ int32 ColumnListView::DetermineSortedPosHierarchical( CLVListItem* item, uint32 
 			currPos = MAX((ub+lb+1) / 2, 0);
 		}
 	}
-	if (currPos == numItems)
-		return 1+(int32)ThisLevelItems.ItemAt( currPos-1);
+	if (currPos == numItems) {
+		int32 idx = 1+(int32)ThisLevelItems.ItemAt( numItems-1);
+		CLVListItem* item = (CLVListItem*)fFullItemList.ItemAt(idx);
+		while( item && item->fOutlineLevel > ThisLevel) {
+			item = (CLVListItem*)fFullItemList.ItemAt(++idx);
+		}
+		return idx;
+	}
 	else
 		return (int32)ThisLevelItems.ItemAt( currPos);
 }

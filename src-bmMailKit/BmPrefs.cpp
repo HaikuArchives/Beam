@@ -189,12 +189,12 @@ void BmPrefs::InitDefaults() {
 							+ BM_LOGLVL2(BM_LogJobWin) 
 							+ BM_LOGLVL2(BM_LogMailParse) 
 							+ BM_LOGLVL2(BM_LogUtil) 
-							+ BM_LOGLVL2(BM_LogMailTracking)
+							+ BM_LOGLVL0(BM_LogMailTracking)
 							+ BM_LOGLVL2(BM_LogFolderView)
-							+ BM_LOGLVL2(BM_LogRefView)
-							+ BM_LOGLVL2(BM_LogMainWindow)
-							+ BM_LOGLVL2(BM_LogModelController)
-							+ BM_LOGLVL2(BM_LogMailEditWin)
+							+ BM_LOGLVL0(BM_LogRefView)
+							+ BM_LOGLVL0(BM_LogMainWindow)
+							+ BM_LOGLVL0(BM_LogModelController)
+							+ BM_LOGLVL0(BM_LogMailEditWin)
 							+ BM_LOGLVL2(BM_LogSmtp)
 							+ BM_LOGLVL2(BM_LogPrefsWin);
 	mDefaultsMsg.AddInt32( "Loglevels", loglevels);
@@ -250,6 +250,7 @@ void BmPrefs::InitDefaults() {
 	mDefaultsMsg.AddInt32( "MarkAsReadDelay", 500);
 	mDefaultsMsg.AddBool( "HardWrapMailText", true);
 	mDefaultsMsg.AddBool( "BeepWhenNewMailArrived", true);
+	mDefaultsMsg.AddBool( "UseDocumentResizer", true);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -326,6 +327,7 @@ BMessage* BmPrefs::GetShortcutDefaults( BMessage* shortcutsMsg) {
 	SetShortcutIfNew( shortcutsMsg, "Quit Beam", "Q");
 	SetShortcutIfNew( shortcutsMsg, "Recache Folder", "");
 	SetShortcutIfNew( shortcutsMsg, "Redirect", "B");
+	SetShortcutIfNew( shortcutsMsg, "Redo", "<SHIFT>Z");
 	SetShortcutIfNew( shortcutsMsg, "Rename Folder", "");
 	SetShortcutIfNew( shortcutsMsg, "Reply", "R");
 	SetShortcutIfNew( shortcutsMsg, "Reply To All", "<SHIFT>R");

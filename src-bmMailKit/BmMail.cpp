@@ -388,20 +388,23 @@ BmRef<BmMail> BmMail::CreateReply( bool replyToAll, const BString selectedText) 
 	// massage subject, if neccessary:
 	BString subject = GetFieldVal( BM_FIELD_SUBJECT);
 	newMail->SetFieldVal( BM_FIELD_SUBJECT, CreateReplySubjectFor( subject));
+	newMail->AddPartsFromMail( this, false, BM_IS_REPLY, selectedText);
+/*
 	// copy and quote text-body:
 	BmRef<BmBodyPart> textBody( mBody->EditableTextBody());
-	BString text;
-	if (selectedText.Length())
-		ConvertFromUTF8( encoding, selectedText, text);
-	else
-		text = textBody ? textBody->DecodedData() : "";
 	BString quotedText;
-	int32 newMaxLineLen = QuoteText( text, quotedText,
+	int32 newMaxLineLen = QuoteText( (selectedText.Length() || !textBody)
+													? selectedText 
+													: textBody->DecodedData(),
+												quotedText,
 				 								ThePrefs->GetString( "QuotingString"),
 												ThePrefs->GetInt( "MaxLineLen"));
-	newMail->Body()->SetEditableText( CreateReplyIntro() << "\n" << quotedText, 
+	BString convertedText;
+	ConvertFromUTF8( encoding, quotedText, convertedText);
+	newMail->Body()->SetEditableText( CreateReplyIntro() << "\n" << convertedText, 
 												 encoding);
 	newMail->BumpRightMargin( newMaxLineLen);
+*/
 	newMail->SetBaseMailInfo( MailRef(), BM_MAIL_STATUS_REPLIED);
 	return newMail;
 }
@@ -471,10 +474,14 @@ BString BmMail::CreateForwardSubjectFor( const BString subject) {
 \*------------------------------------------------------------------------------*/
 BString BmMail::CreateReplyIntro() {
 	Regexx rx;
-	BString intro = ThePrefs->GetString( "ReplyIntroStr", "On %D at %T, %F wrote:");
+	BString intro = ThePrefs->GetString( "ReplyIntroStr");
 	intro = rx.replace( intro, "%D", TimeToString( mMailRef->When(), "%Y-%m-%d"), 
 							  Regexx::nocase|Regexx::global|Regexx::noatom);
 	intro = rx.replace( intro, "%T", TimeToString( mMailRef->When(), "%X [%z]"), 
+							  Regexx::nocase|Regexx::global|Regexx::noatom);
+	intro = rx.replace( intro, "\\n", "\n", 
+							  Regexx::nocase|Regexx::global|Regexx::noatom);
+	intro = rx.replace( intro, "%S", mMailRef->Subject(), 
 							  Regexx::nocase|Regexx::global|Regexx::noatom);
 	BmAddress fromAddr = Header()->DetermineOriginator();
 	intro = rx.replace( intro, "%F", 
@@ -491,10 +498,14 @@ BString BmMail::CreateReplyIntro() {
 \*------------------------------------------------------------------------------*/
 BString BmMail::CreateForwardIntro() {
 	Regexx rx;
-	BString intro = ThePrefs->GetString( "ForwardIntroStr", "On %D at %T, %F wrote:");
+	BString intro = ThePrefs->GetString( "ForwardIntroStr");
 	intro = rx.replace( intro, "%D", TimeToString( mMailRef->When(), "%Y-%m-%d"), 
 							  Regexx::nocase|Regexx::global|Regexx::noatom);
 	intro = rx.replace( intro, "%T", TimeToString( mMailRef->When(), "%X [%z]"), 
+							  Regexx::nocase|Regexx::global|Regexx::noatom);
+	intro = rx.replace( intro, "\\n", "\n", 
+							  Regexx::nocase|Regexx::global|Regexx::noatom);
+	intro = rx.replace( intro, "%S", mMailRef->Subject(), 
 							  Regexx::nocase|Regexx::global|Regexx::noatom);
 	BmAddress fromAddr = Header()->DetermineOriginator();
 	intro = rx.replace( intro, "%F", 
@@ -525,30 +536,29 @@ void BmMail::AddPartsFromMail( BmRef<BmMail> mail, bool withAttachments,
 		return;
 	// copy and quote text-body:
 	BmRef<BmBodyPart> newTextBody( mBody->EditableTextBody());
-	BString oldText = newTextBody ? newTextBody->DecodedData() : "";
+	BString oldText;
+	if (newTextBody) {
+		ConvertFromUTF8( CharsetToEncoding( newTextBody->Charset()), 
+							  newTextBody->DecodedData(), oldText);
+	}
 	BmRef<BmBodyPart> textBody( mail->Body()->EditableTextBody());
 	// copy info about encoding from old into new mail:
 	int32 encoding = mail->DefaultEncoding();
 	BString charset = EncodingToCharset( encoding);
-	BString newText;
-	if (textBody) {
-		charset = textBody->Charset();
-		if (selectedText.Length())
-			ConvertFromUTF8( encoding, selectedText, newText);
-		else
-			newText = textBody->DecodedData();
-	} else
-		newText = selectedText;
 	BString quotedText;
-	int32 newLineLen = QuoteText( newText, quotedText,
-											ThePrefs->GetString( "QuotingString"),
+	int32 newLineLen = QuoteText( (selectedText.Length() || !textBody)
+													? selectedText 
+													: textBody->DecodedData(),
+											quotedText,
+				 							ThePrefs->GetString( "QuotingString"),
 											ThePrefs->GetInt( "MaxLineLen"));
-	BumpRightMargin( newLineLen);
+	BString convertedText;
+	ConvertFromUTF8( encoding, quotedText, convertedText);
 	BString intro( isForward 
-							? mail->CreateForwardIntro() 
-							: mail->CreateReplyIntro() 
-						<< "\n");
-	mBody->SetEditableText( oldText + "\n" + intro + quotedText, CharsetToEncoding( charset));
+							? mail->CreateForwardIntro() << "\n"
+							: mail->CreateReplyIntro() << "\n");
+	mBody->SetEditableText( oldText + "\n" + intro + convertedText, encoding);
+	BumpRightMargin( newLineLen);
 	if (withAttachments && mail->Body()->HasAttachments()) {
 		BmModelItemMap::const_iterator iter, end;
 		if (mail->Body()->IsMultiPart()) {
@@ -718,7 +728,6 @@ bool BmMail::Store() {
 			mBaseRefVect[i]->MarkAs( mNewBaseStatus.String());
 		}
 		mBaseRefVect.clear();
-		StartJobInThisThread();
 	} catch( exception &e) {
 		BM_SHOWERR(e.what());
 		return false;
@@ -897,16 +906,17 @@ int32 BmMail::QuoteText( const BString& in, BString& out, BString inQuoteString,
 			// always respect maxLineLen, wrap when lines exceed right margin.
 			// This results in a combing-effect when long lines are wrapped
 			// around, producing a very short next line.
-			maxTextLen = maxLineLen - quote.Length() - quoteString.Length();
+			maxTextLen = maxLineLen - quote.CountChars() - quoteString.CountChars();
 		} else {
 			// qStyle == BM_QUOTE_PUSH_MARGIN
 			// push right margin for new quote-string, if needed, in effect leaving 
 			// the mail-formatting intact more often (but possibly exceeding 80 chars 
 			// per line):
-			maxTextLen = maxLineLen - quote.Length();
+			maxTextLen = maxLineLen - quote.CountChars();
 		}
 		text = rx.match[i].atom[1];
 		int32 len = text.Length();
+		// trim trailing spaces:
 		while( len>0 && text[len-1]==' ')
 			len--;
 		text.Truncate( len);
@@ -943,36 +953,37 @@ int32 BmMail::QuoteTextWithReWrap( const BString& in, BString& out,
 	for( int32 i=0; i<count; ++i) {
 		ConvertTabsToSpaces( rx.match[i].atom[0], quote);
 		line = rx.match[i].atom[1];
-		if ((line.Length() < minLenForWrappedLine && lastWasSpecialLine)
+		if ((line.CountChars() < minLenForWrappedLine && lastWasSpecialLine)
 		|| rxl.exec( line, ThePrefs->GetString( "QuotingLevelEmptyLineRX", "^[ \\t]*$"))
 		|| rxl.exec( line, ThePrefs->GetString( "QuotingLevelListLineRX", "^[*+\\-\\d]+.*?$"))) {
 			if (i != 0) {
-				maxTextLen = maxLineLen - currQuote.Length() - quoteString.Length();
+				maxTextLen = maxLineLen - currQuote.CountChars() - quoteString.CountChars();
 				AddQuotedText( text, out, currQuote, quoteString, maxTextLen);
 				text.Truncate(0);
 			}
 			lastWasSpecialLine = true;
 		} else if (lastWasSpecialLine || currQuote != quote || lastLineLen < minLenForWrappedLine) {
 			if (i != 0) {
-				maxTextLen = maxLineLen - currQuote.Length() - quoteString.Length();
+				maxTextLen = maxLineLen - currQuote.CountChars() - quoteString.CountChars();
 				AddQuotedText( text, out, currQuote, quoteString, maxTextLen);
 				text.Truncate(0);
 			}
 			lastWasSpecialLine = false;
 		}
 		currQuote = quote;
-		lastLineLen = line.Length();
+		lastLineLen = line.CountChars();
 		if (!text.Length())
 			text = line;
 		else {
 			int32 len = text.Length();
+			// trim trailing spaces:
 			while( len>0 && text[len-1]==' ')
 				len--;
 			text.Truncate( len);
 			text << " " << line;
 		}
 	}
-	maxTextLen = maxLineLen - currQuote.Length() - quoteString.Length();
+	maxTextLen = maxLineLen - currQuote.CountChars() - quoteString.CountChars();
 	AddQuotedText( text, out, currQuote, quoteString, maxTextLen);
 	BString emptyLinesAtEndRX = BString("(?:") << quoteString << "(" << currQuote << ")?[ \\t]*\\n)+\\z";
 	out = rx.replace( out, emptyLinesAtEndRX, "", Regexx::newline|Regexx::global|Regexx::noatom);
@@ -982,6 +993,11 @@ int32 BmMail::QuoteTextWithReWrap( const BString& in, BString& out,
 /*------------------------------------------------------------------------------*\
 	AddQuotedLine()
 		-	
+		-	N.B.: We use the character-count in order to determine line-lengths, 
+			which for some charsets (e.g. iso-2022-jp) results in lines longer than
+			78 *byte* hard-limit (it just respects a limit of 78 *characters*).
+			This probably violates the RFC, but I believe it just makes more sense
+			for the users (since characters is what they see on screen, not bytes).
 \*------------------------------------------------------------------------------*/
 int32 BmMail::AddQuotedText( const BString& inText, BString& out, 
 									  const BString& quote,
@@ -991,19 +1007,27 @@ int32 BmMail::AddQuotedText( const BString& inText, BString& out,
 	BString tmp;
 	BString text;
 	ConvertTabsToSpaces( inText, text);
-	while( text.Length() > maxTextLen) {
-		int32 spcPos = text.FindLast( " ", maxTextLen);
-		if (spcPos == B_ERROR)
-			spcPos = maxTextLen;
-		else if (spcPos < maxTextLen)
-			spcPos++;
-		text.MoveInto( tmp, 0, spcPos);
+	while( text.CountChars() > maxTextLen) {
+		int32 wrapPos = B_ERROR;
+		int32 idx=0;
+		for( int32 chars=0; chars<maxTextLen; ++chars) {
+			if (IS_UTF8_STARTCHAR(text[idx])) {
+				idx++;
+				while( IS_WITHIN_UTF8_MULTICHAR(text[idx]))
+					idx++;
+			} else {
+				if (text[idx]==B_SPACE)
+					wrapPos = idx+1;
+				idx++;
+			}
+		}
+		text.MoveInto( tmp, 0, wrapPos!=B_ERROR ? wrapPos : idx);
 		tmp.Prepend( quoteString + quote);
-		modifiedMaxLen = MAX( tmp.Length(), modifiedMaxLen);
+		modifiedMaxLen = MAX( tmp.CountChars(), modifiedMaxLen);
 		out << tmp << "\n";
 	}
 	tmp = quoteString + quote + text;
-	modifiedMaxLen = MAX( tmp.Length(), modifiedMaxLen);
+	modifiedMaxLen = MAX( tmp.CountChars(), modifiedMaxLen);
 	out << tmp << "\n";
 	return modifiedMaxLen;
 }

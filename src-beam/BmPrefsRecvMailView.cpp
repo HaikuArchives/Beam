@@ -518,8 +518,7 @@ void BmPrefsRecvMailView::SaveData() {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmPrefsRecvMailView::UndoChanges() {
-	ThePopAccountList->Cleanup();
-	ThePopAccountList->StartJobInThisThread();
+	ThePopAccountList->ResetToSaved();
 }
 
 /*------------------------------------------------------------------------------*\

@@ -32,6 +32,7 @@
 #include <netdb.h>
 #include <unistd.h>
 #ifdef BONE_VERSION
+#include <bone_serial_ppp.h>
 #define GETHOSTNAME_OK 0
 #else
 #define GETHOSTNAME_OK 1

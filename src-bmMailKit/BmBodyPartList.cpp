@@ -74,7 +74,7 @@ BmContentField::BmContentField( const BString cfString) {
 void BmContentField::SetTo( const BString cfString) {
 	Regexx rx;
 
-	if (rx.exec( cfString, "^\\s*([^\\s;]+)\\s*(;.*)?\\s*$")) {
+	if (rx.exec( cfString, "^\\s*([^\\s;]+)\\s*([;\\s].*)?\\s*$")) {
 		// extract value:
 		if (rx.match[0].atom.size() > 0) {
 			if (cfString[rx.match[0].atom[0].start()] == '"') {
@@ -215,11 +215,6 @@ BmBodyPart::BmBodyPart( BmBodyPartList* model, const entry_ref* ref, BmListModel
 														|| BM_THROW_RUNTIME( BString("Couldn't create file for <") << ref->name << "> \n\nError:" << strerror(err));
 		(err=file.GetSize( &size)) == B_OK
 														|| BM_THROW_RUNTIME( BString("Couldn't get file-size for <") << ref->name << "> \n\nError:" << strerror(err));
-		char* buf = mDecodedData.LockBuffer( size+1);
-		file.Read( buf, size);
-		buf[size] = '\0';
-		mDecodedData.UnlockBuffer( size);
-		
 		(err=nodeInfo.SetTo( &file)) == B_OK
 														|| BM_THROW_RUNTIME( BString("Couldn't create node-info for <") << ref->name << "> \n\nError:" << strerror(err));
 		nodeInfo.GetType( mt);
@@ -245,6 +240,22 @@ BmBodyPart::BmBodyPart( BmBodyPartList* model, const entry_ref* ref, BmListModel
 													: "7bit";
 		else
 			mContentTransferEncoding = "base64";
+
+		if (IsText() && !ThePrefs->GetBool( "ImportTextAsUtf8", false)) {
+			BString convertedString;
+			char* buf = convertedString.LockBuffer( size+1);
+			file.Read( buf, size);
+			buf[size] = '\0';
+			convertedString.UnlockBuffer( size);
+			ConvertToUTF8( ThePrefs->GetInt( "DefaultEncoding"), 
+								convertedString, mDecodedData);
+		} else {
+			char* buf = mDecodedData.LockBuffer( size+1);
+			file.Read( buf, size);
+			buf[size] = '\0';
+			mDecodedData.UnlockBuffer( size);
+		}
+		
 		mInitCheck = B_OK;
 	} catch( exception &err) {
 		// a problem occurred, we tell the user:
@@ -271,7 +282,7 @@ BmBodyPart::BmBodyPart( const BmBodyPart& in)
 {
 	int32 len = in.DecodedData().Length();
 	if (len) {
-		char* buf = mDecodedData.LockBuffer( len+1);
+		char* buf = mDecodedData.LockBuffer( len);
 		if (buf) {
 			memcpy( buf, in.DecodedData().String(), len);
 			buf[len] = 0;
@@ -342,6 +353,8 @@ void BmBodyPart::SetTo( const BString& msgtext, int32 start, int32 length,
 	transferEncoding = header->GetFieldVal( BM_FIELD_CONTENT_TRANSFER_ENCODING);
 	transferEncoding.RemoveSet( TheResources->WHITESPACE);
 							// some broken (webmail)-clients produce stuff like "7 bit"...
+	transferEncoding.IReplaceAll( "bits", "bit");
+							// others use '8bits' instead of '8bit'...
 	transferEncoding.IReplaceAll( "7-bit", "7bit");
 	transferEncoding.IReplaceAll( "8-bit", "8bit");
 							// other broken (webmail)-clients produce stuff like "7-bit" (argh)
@@ -357,7 +370,15 @@ void BmBodyPart::SetTo( const BString& msgtext, int32 start, int32 length,
 	} else {
 		// decode body:
 		BString bodyString( posInRawText, bodyLength);
-		Decode( mContentTransferEncoding, bodyString, mDecodedData, false, IsText());
+		if (IsText()) {
+			// text data is decoded and then converted from it's encoding into utf8:
+			BString decodedString;
+			Decode( mContentTransferEncoding, bodyString, decodedString, false);
+			ConvertToUTF8( CharsetToEncoding( Charset()), decodedString, mDecodedData);
+		} else {
+			// non-text data is just decoded:
+			Decode( mContentTransferEncoding, bodyString, mDecodedData, false);
+		}
 		if (body->EditableTextBody() == this) {
 			// split off signature, if any:
 			Regexx rx;
@@ -428,11 +449,16 @@ void BmBodyPart::SetTo( const BString& msgtext, int32 start, int32 length,
 						checkStr.SetTo( nPos, endOfLine-nPos);
 					else
 						checkStr.SetTo( nPos);
-					if (rx.exec( checkStr, BString("^")<<boundary<<"--\\s*$", Regexx::newline)) {
+					// checking for last boundary (with -- appended):
+					if (rx.exec( checkStr, "^(.+?)--\\s*$", Regexx::newline)
+					&& boundary.ICompare( rx.match[0].atom[0])==0) {
 						isLastBoundary = true;
 						break;
 					}
-					if (rx.exec( checkStr, BString("^")<<boundary<<"\\s*$", Regexx::newline))
+					// checking if found boundary starts line and is just followed by whitespace
+					// (if anything at all):
+					if (rx.exec( checkStr, "^(.+?)\\s*$", Regexx::newline)
+					&& boundary.ICompare( rx.match[0].atom[0])==0)
 						break;
 				}
 			}
@@ -450,12 +476,15 @@ void BmBodyPart::SetTo( const BString& msgtext, int32 start, int32 length,
 				if (start+length > startOffs) {
 					// the final boundary is missing, we include the remaining part as a 
 					// sub-bodypart anyway:
-					BM_LOG2( BM_LogMailParse, "Subpart of multipart found will be added to array");
-					BmBodyPart *subPart = new BmBodyPart( (BmBodyPartList*)ListModel().Get(), 
-																	  msgtext, startOffs, 
-																	  start+length-startOffs, 
-																	  NULL, this);
-					AddSubItem( subPart);
+					int32 nlPos=msgtext.FindFirst( "\r\n", startOffs+2);
+					if (nlPos!=B_ERROR && nlPos<start+length) {
+						BM_LOG2( BM_LogMailParse, "Subpart of multipart found will be added to array");
+						BmBodyPart *subPart = new BmBodyPart( (BmBodyPartList*)ListModel().Get(), 
+																		  msgtext, startOffs, 
+																		  start+length-startOffs, 
+																		  NULL, this);
+						AddSubItem( subPart);
+					}
 				}
 				break;
 			}
@@ -524,7 +553,12 @@ entry_ref BmBodyPart::WriteToTempFile( BString filename) {
 			return eref;
 		}
 		TheTempFileList.AddFile( BString(tempPath.Path())<<"/"<<filename);
-		tempFile.Write( mDecodedData.String(), mDecodedData.Length());
+		if (IsText() && !ThePrefs->GetBool( "ExportTextAsUtf8", false)) {
+			BString convertedString;
+			ConvertFromUTF8( CharsetToEncoding( Charset()), mDecodedData, convertedString);
+			tempFile.Write( convertedString.String(), convertedString.Length());
+		} else
+			tempFile.Write( mDecodedData.String(), mDecodedData.Length());
 		fileInfo.SetTo( &tempFile);
 		fileInfo.SetType( MimeType().String());
 		BEntry entry( &tempDir, filename.String());
@@ -548,7 +582,12 @@ void BmBodyPart::SaveAs( const entry_ref& destDirRef, BString filename) {
 			BM_SHOWERR( BString("Could not save attachment\n\t<") << filename << ">\n\n Result: " << strerror(err));
 			return;
 		}
-		destFile.Write( mDecodedData.String(), mDecodedData.Length());
+		if (IsText() && !ThePrefs->GetBool( "ExportTextAsUtf8", false)) {
+			BString convertedString;
+			ConvertFromUTF8( CharsetToEncoding( Charset()), mDecodedData, convertedString);
+			destFile.Write( convertedString.String(), convertedString.Length());
+		} else
+			destFile.Write( mDecodedData.String(), mDecodedData.Length());
 		fileInfo.SetTo( &destFile);
 		fileInfo.SetType( MimeType().String());
 	} else
@@ -560,7 +599,7 @@ void BmBodyPart::SaveAs( const entry_ref& destDirRef, BString filename) {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmBodyPart::SetBodyText( const BString& text, uint32 encoding) {
-	text.CopyInto( mDecodedData, 0, text.Length());
+	ConvertToUTF8( encoding, text, mDecodedData);
 	mContentType.SetParam( "charset", EncodingToCharset( encoding));
 	mContentTransferEncoding = NeedsEncoding( text) 
 											? (ThePrefs->GetBool( "Allow8BitMime", false)
@@ -621,9 +660,14 @@ void BmBodyPart::ConstructBodyForSending( BString &msgText) {
 	msgText << "\r\n";
 	if (IsMultiPart())
 		msgText << "This is a multi-part message in MIME format.\r\n\r\n";
-	BString encodedData;
-	BmEncoding::Encode( mContentTransferEncoding, mDecodedData, encodedData);
-	msgText << encodedData;
+	BString encodedString;
+	if (IsText()) {
+		BString convertedString;
+		ConvertFromUTF8( CharsetToEncoding( Charset()), mDecodedData, convertedString);
+		Encode( mContentTransferEncoding, convertedString, encodedString);
+	} else
+		Encode( mContentTransferEncoding, mDecodedData, encodedString);
+	msgText << encodedString;
 	if (msgText[msgText.Length()-1] != '\n')
 		msgText << "\r\n";
 	BmModelItemMap::const_iterator iter;
@@ -760,8 +804,7 @@ uint32 BmBodyPartList::DefaultEncoding() const {
 	BmRef<BmBodyPart> editableTextBody( EditableTextBody());
 	if (editableTextBody)
 		return CharsetToEncoding( editableTextBody->TypeParam( "charset"));
-	else 
-		return BM_UNKNOWN_ENCODING; 
+	return BM_UNKNOWN_ENCODING; 
 }
 
 /*------------------------------------------------------------------------------*\

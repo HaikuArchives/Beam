@@ -45,7 +45,7 @@ class BmMailRef;
 class BmMailRefList : public BmListModel {
 	typedef BmListModel inherited;
 
-	static const int16 nArchiveVersion = 1;
+	static const int16 nArchiveVersion = 2;
 
 public:
 
@@ -58,6 +58,7 @@ public:
 	void MarkCacheAsDirty();
 
 	// overrides of list-model base:
+	bool Store();
 	bool StartJob();
 	void RemoveController( BmController* controller);
 	const BString SettingsFileName();
@@ -65,16 +66,20 @@ public:
 	
 	// getters:
 	inline bool NeedsCacheUpdate() const	{ return mNeedsCacheUpdate; }
+	
+	// setters:
+	inline void MarkAsChanged() 			{ mNeedsStore = true; }
 
 private:
 
 	// native methods:
 	void InitializeItems();
-	void InstantiateItems( BMessage* archive);
+	void InstantiateItems( BDataIO* dataIO, int32 numChildren);
 
 	// the following members will NOT be archived at all:
-	BmRef<BmMailFolder> mFolder;
+	BmWeakRef<BmMailFolder> mFolder;
 	bool mNeedsCacheUpdate;
+	BString mSettingsFileName;
 
 	// Hide copy-constructor and assignment:
 	BmMailRefList( const BmMailRefList&);

@@ -66,6 +66,8 @@ class BMessageRunner;
 \*------------------------------------------------------------------------------*/
 class BmPopAccount : public BmListModelItem {
 	typedef BmListModelItem inherited;
+	friend BmPopAccountList;
+
 	// archivable components:
 	static const char* const MSG_NAME = 			"bm:name";
 	static const char* const MSG_USERNAME = 		"bm:username";
@@ -103,6 +105,12 @@ public:
 	// stuff needed for Archival:
 	status_t Archive( BMessage* archive, bool deep = true) const;
 	int16 ArchiveVersion() const			{ return nArchiveVersion; }
+
+	// debugging overrides:
+#ifdef BM_REF_DEBUGGING
+	void AddRef()								{ inherited::AddRef(); }
+	void RemoveRef()							{ inherited::RemoveRef(); }
+#endif // BM_REF_DEBUGGING
 
 	// getters:
 	inline const BString &AuthMethod() const	{ return mAuthMethod; }
@@ -204,6 +212,8 @@ public:
 	BmRef<BmPopAccount> DefaultAccount();
 	BmRef<BmPopAccount> FindAccountForAddress( const BString addr);
 	void SetDefaultAccount( BString accName);
+	//
+	void ResetToSaved();
 	
 	// overrides of listmodel base:
 	const BString SettingsFileName();

@@ -219,7 +219,7 @@ BmMailRefView::BmMailRefView( minimax minmax, int32 width, int32 height)
 	else 
 		flags |= CLV_TELL_ITEMS_WIDTH;
 	Initialize( BRect(0,0,width-1,height-1), B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE,
-					B_FOLLOW_ALL, true, true, true, B_FANCY_BORDER);
+					B_FOLLOW_NONE, true, true, true, B_FANCY_BORDER);
 
 	AddColumn( new CLVColumn( "", 18.0, CLV_SORT_KEYABLE | CLV_NOT_RESIZABLE | CLV_COLDATA_NUMBER, 
 									  18.0, "Status [Icon]"));
@@ -302,11 +302,12 @@ void BmMailRefView::MessageReceived( BMessage* msg) {
 				break;
 			}
 			case B_MOUSE_WHEEL_CHANGED: {
-				if (modifiers() & (B_SHIFT_KEY | B_CONTROL_KEY)) {
+				if (modifiers() & (B_SHIFT_KEY | B_LEFT_CONTROL_KEY | B_RIGHT_OPTION_KEY)) {
 					bool passedOn = false;
 					if (mPartnerMailView && !(passedOn = msg->FindBool("bm:passed_on"))) {
-						msg->AddBool("bm:passed_on", true);
-						Looper()->PostMessage( msg, mPartnerMailView);
+						BMessage msg2(*msg);
+						msg2.AddBool("bm:passed_on", true);
+						Looper()->PostMessage( &msg2, mPartnerMailView);
 						return;
 					}
 				}
@@ -338,7 +339,7 @@ void BmMailRefView::KeyDown(const char *bytes, int32 numBytes) {
 			case B_LEFT_ARROW:
 			case B_RIGHT_ARROW: {
 				int32 mods = Window()->CurrentMessage()->FindInt32("modifiers");
-				if (mods & (B_CONTROL_KEY)) {
+				if (mods & (B_LEFT_CONTROL_KEY | B_RIGHT_OPTION_KEY)) {
 					// remove modifiers so we don't ping-pong endlessly:
 					Window()->CurrentMessage()->ReplaceInt32("modifiers", 0);
 					if (mPartnerMailView)
@@ -480,7 +481,6 @@ void BmMailRefView::HandleDrop( const BMessage* msg) {
 		}
 		tmpMsg.AddString( BmJobModel::MSG_JOB_NAME, mCurrFolder->Name());
 		tmpMsg.AddString( BmJobModel::MSG_MODEL, mCurrFolder->Key());
-		mCurrFolder->AddRef();	// the message now refers to the folder, too
 		TheJobStatusWin->PostMessage( &tmpMsg);
 	}
 	inherited::HandleDrop( msg);

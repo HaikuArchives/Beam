@@ -107,7 +107,7 @@ void BmRefObj::RemoveRef() {
 #ifdef BM_REF_DEBUGGING
 			BM_LOG( BM_LogUtil, BString("RefManager: ... object <") << typeid(*this).name() << ":" << RefName() << ":"<<RefPrintHex()<<"> will be deleted");
 #else
-			BM_LOG( BM_LogUtil, BString("RefManager: ... object <") << RefName() << ":"<<RefPrintHex()<<"> will be deleted");
+			BM_LOG2( BM_LogUtil, BString("RefManager: ... object <") << RefName() << ":"<<RefPrintHex()<<"> will be deleted");
 #endif
 			delete this;
 		} else
@@ -147,20 +147,26 @@ BLocker* BmRefObj::GlobalLocker() {
 void BmRefObj::PrintRefsLeft() {
 	int32 count = 0;
 	BmProxyMap::const_iterator iter;
-	BAutolock lock( GlobalLocker());
-	BM_LOG2( BM_LogUtil, BString("RefManager: active list\n--------------------"));
-	for( iter = nProxyMap.begin(); iter != nProxyMap.end(); ++iter) {
-		BmProxy* proxy = iter->second;
-		BAutolock lock( &proxy->Locker);
+	try {
+		BAutolock lock( GlobalLocker());
 		if (!lock.IsLocked())
-			throw BM_runtime_error(BString("PrintRefsLeft(): Proxy ")<<iter->first<<" could not be locked");
-		BmObjectMap::const_iterator iter2;
-		for( iter2=proxy->ObjectMap.begin(); iter2 != proxy->ObjectMap.end(); ++iter2) {
-			BmRefObj* ref = iter2->second;
-			BM_LOG2( BM_LogUtil, BString("\t<") << typeid(*ref).name() << " " << ref->RefName() << ":"<<ref->RefPrintHex()<<"> alive, ref-count is "<<ref->RefCount());
+			throw BM_runtime_error("PrintRefsLeft(): Could not acquire global lock");
+		BM_LOG( BM_LogUtil, BString("RefManager: active list\n--------------------"));
+		for( iter = nProxyMap.begin(); iter != nProxyMap.end(); ++iter) {
+			BmProxy* proxy = iter->second;
+			BAutolock lock( &proxy->Locker);
+			if (!lock.IsLocked())
+				throw BM_runtime_error(BString("PrintRefsLeft(): Proxy ")<<iter->first<<" could not be locked");
+			BmObjectMap::const_iterator iter2;
+			for( iter2=proxy->ObjectMap.begin(); iter2 != proxy->ObjectMap.end(); ++iter2, ++count) {
+				BmRefObj* ref = iter2->second;
+				BM_LOG( BM_LogUtil, BString("\t<") << typeid(*ref).name() << " " << ref->RefName() << ":"<<ref->RefPrintHex()<<"> alive, ref-count is "<<ref->RefCount());
+			}
 		}
+		BM_LOG( BM_LogUtil, BString("--------------------\n(")<<count<<" refs)\n--------------------");
+	} catch( BM_runtime_error &err) {
+		BM_SHOWERR( err.what());
 	}
-	BM_LOG2( BM_LogUtil, BString("--------------------\n(")<<count<<" refs)\n--------------------");
 	if (count > 0)
 		(new BAlert( "", "Reference-debugging showed that there are refs still alive, check logs.", "OK"))->Go();
 }

@@ -284,6 +284,41 @@ void BmMailFolderView::JobIsDone( bool completed) {
 }
 
 /*------------------------------------------------------------------------------*\
+	KeyDown()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailFolderView::KeyDown(const char *bytes, int32 numBytes) {
+	if ( numBytes == 1 ) {
+		switch( bytes[0]) {
+			// implement remote navigation within ref-/mail-view (via cursor-keys with modifiers):
+			case B_PAGE_UP:
+			case B_PAGE_DOWN:
+			case B_UP_ARROW:
+			case B_DOWN_ARROW:
+			case B_LEFT_ARROW:
+			case B_RIGHT_ARROW: {
+				int32 mods = Window()->CurrentMessage()->FindInt32("modifiers");
+				if (mods & (B_LEFT_CONTROL_KEY | B_RIGHT_OPTION_KEY)) {
+					// leave in modifiers to address mailview:
+					if (mPartnerMailRefView)
+						mPartnerMailRefView->KeyDown( bytes, numBytes);
+				} else if (mods & (B_SHIFT_KEY)) {
+					// remove modifiers to address mailrefview:
+					Window()->CurrentMessage()->ReplaceInt32("modifiers", 0);
+					if (mPartnerMailRefView)
+						mPartnerMailRefView->KeyDown( bytes, numBytes);
+				} else 
+					inherited::KeyDown( bytes, numBytes);
+				break;
+			}
+			default:
+				inherited::KeyDown( bytes, numBytes);
+				break;
+		}
+	}
+}
+
+/*------------------------------------------------------------------------------*\
 	MessageReceived( msg)
 		-	
 \*------------------------------------------------------------------------------*/
@@ -360,6 +395,25 @@ void BmMailFolderView::MessageReceived( BMessage* msg) {
 				folder->RecreateCache();
 				if (mPartnerMailRefView)
 					mPartnerMailRefView->ShowFolder( folder.Get());
+				break;
+			}
+			case B_MOUSE_WHEEL_CHANGED: {
+				if (modifiers() & (B_LEFT_CONTROL_KEY | B_RIGHT_OPTION_KEY)) {
+					if (mPartnerMailRefView) {
+						BMessage msg2( *msg);
+						Looper()->PostMessage( &msg2, mPartnerMailRefView);
+						return;
+					}
+				}
+				if (modifiers() & B_SHIFT_KEY) {
+					if (mPartnerMailRefView) {
+						BMessage msg2( *msg);
+						msg2.AddBool("bm:passed_on", true);
+						Looper()->PostMessage( &msg2, mPartnerMailRefView);
+						return;
+					}
+				}
+				inherited::MessageReceived( msg);
 				break;
 			}
 			default:

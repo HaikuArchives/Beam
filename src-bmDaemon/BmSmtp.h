@@ -94,7 +94,7 @@ private:
 
 	BmRef<BmSmtpAccount> mSmtpAccount;	// Info about our smtp-account
 
-	BNetEndpoint mSmtpServer;				// network-connection to SMTP-server
+	BNetEndpoint* mSmtpServer;				// network-connection to SMTP-server
 	bool mConnected;							// are we connected to the server?
 
 	BString mAnswer;							// holds last answer of SMTP-server

@@ -54,7 +54,7 @@ using namespace regexx;
 BmSignature::BmSignature( const char* name, BmSignatureList* model) 
 	:	inherited( name, model, (BmListModelItem*)NULL)
 	,	mDynamic( false)
-	,	mEncoding( ThePrefs->GetInt("DefaultEncoding"))
+	,	mEncoding( BM_UTF8_CONVERSION)
 {
 }
 
@@ -107,9 +107,19 @@ BString BmSignature::GetSignatureString() {
 	if (!mContent.Length())
 		return "";
 	if (mDynamic) {
+		BString scriptFileName = TheTempFileList.NextTempFilenameWithPath();
+		BFile scriptFile;
+		status_t err = scriptFile.SetTo( scriptFileName.String(), 
+													B_CREATE_FILE | B_WRITE_ONLY);
+		if (err != B_OK) {
+			BM_SHOWERR( BString("Could not create temporary file\n\t<") << scriptFileName << ">\n\n Result: " << strerror(err));
+			return "";
+		}
+		scriptFile.Write( mContent.String(), mContent.Length());
+		scriptFile.Unset();
 		BString sigFileName = TheTempFileList.NextTempFilenameWithPath();
 		BString errFileName = TheTempFileList.NextTempFilenameWithPath();
-		BString sysStr = mContent+" >"<<sigFileName<<" 2>"<<errFileName;
+		BString sysStr = BString("/bin/sh <")+scriptFileName+" >"<<sigFileName<<" 2>"<<errFileName;
 		BM_LOG2( BM_LogUtil, BString("Dynamic signature, executing script: ")<<sysStr);
 		int result = system( sysStr.String());
 		BString sigString;
@@ -125,6 +135,7 @@ BString BmSignature::GetSignatureString() {
 		}
 		TheTempFileList.RemoveFile( sigFileName);
 		TheTempFileList.RemoveFile( errFileName);
+		TheTempFileList.RemoveFile( scriptFileName);
 		BString utf8;
 		ConvertToUTF8( mEncoding, sigString, utf8);
 		return utf8;

@@ -329,7 +329,10 @@ void BmMailEditWin::CreateGUI() {
 	for( iter = TheSmtpAccountList->begin(); iter != TheSmtpAccountList->end(); ++iter) {
 		BmSmtpAccount* acc = dynamic_cast< BmSmtpAccount*>( iter->second.Get());
 		mSmtpControl->Menu()->AddItem( new BMenuItem( acc->Key().String(), new BMessage( BM_SMTP_SELECTED)));
+		if (TheSmtpAccountList->size() == 1)
+			mSmtpControl->MarkItem( acc->Key().String());
 	}
+	
 	// add all encodings to menu:
 	for( int i=0; BM_Encodings[i].charset; ++i) {
 		mCharsetControl->Menu()->AddItem( new BMenuItem( BM_Encodings[i].charset, new BMessage(BM_CHARSET_SELECTED)));
@@ -403,6 +406,7 @@ MMenuBar* BmMailEditWin::CreateMenu() {
 	// Edit
 	menu = new BMenu( "Edit");
 	menu->AddItem( CreateMenuItem( "Undo", B_UNDO));
+	menu->AddItem( CreateMenuItem( "Redo", B_REDO));
 	menu->AddSeparatorItem();
 	menu->AddItem( CreateMenuItem( "Cut", B_CUT));
 	menu->AddItem( CreateMenuItem( "Copy", B_COPY));
@@ -647,6 +651,7 @@ void BmMailEditWin::MessageReceived( BMessage* msg) {
 			case B_CUT: 
 			case B_PASTE: 
 			case B_UNDO: 
+			case B_REDO: 
 			case B_SELECT_ALL: {
 				BView* focusView = CurrentFocus();
 				if (focusView)
@@ -806,23 +811,21 @@ bool BmMailEditWin::CreateMailFromFields( bool hardWrapIfNeeded) {
 			mail->SetFieldVal( BM_FIELD_REPLY_TO, mReplyToControl->Text());
 		}
 		mail->SetFieldVal( BM_FIELD_SUBJECT, mSubjectControl->Text());
-/* 
-	use the following line if mail-date should be bumped whenever the mail
-	has been edited:
-		mail->SetFieldVal( BM_FIELD_DATE, TimeToString( time( NULL), 
-																		"%a, %d %b %Y %H:%M:%S %z"));
-*/
+		if (ThePrefs->GetBool( "SetMailDateWithEverySave", true)) {
+			mail->SetFieldVal( BM_FIELD_DATE, TimeToString( time( NULL), 
+																			"%a, %d %b %Y %H:%M:%S %z"));
+		}
 		return mail->ConstructRawText( convertedText, encoding, smtpAccount);
 	} else
 		return false;
 }
 
 /*------------------------------------------------------------------------------*\
-	SaveAnd( hardWrapIfNeeded)
+	SaveMail( hardWrapIfNeeded)
 		-	
 \*------------------------------------------------------------------------------*/
 bool BmMailEditWin::SaveMail( bool hardWrapIfNeeded) {
-	if (!mModified && !mHasNeverBeenSaved)
+	if (!hardWrapIfNeeded && !mModified && !mHasNeverBeenSaved)
 		return true;
 	if (!CreateMailFromFields( hardWrapIfNeeded))
 		return false;

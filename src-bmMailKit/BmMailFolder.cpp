@@ -207,6 +207,13 @@ void BmMailFolder::BumpNewMailCount( int32 offset) {
 	BmMailFolder* parent( dynamic_cast< BmMailFolder*>( Parent()));
 	if (parent)
 		parent->BumpNewMailCountForSubfolders( offset);
+	else {
+		// root folder, we check if we need to tell app about a new-mail status change:
+		if (offset>0 && mNewMailCount==offset && mNewMailCountForSubfolders==0)
+			bmApp->PostMessage( BMM_SHOW_NEWMAIL_ICON);
+		if (offset<0 && mNewMailCount==0 && mNewMailCountForSubfolders==0)
+			bmApp->PostMessage( BMM_HIDE_NEWMAIL_ICON);
+	}
 }
 
 /*------------------------------------------------------------------------------*\
@@ -220,6 +227,13 @@ void BmMailFolder::BumpNewMailCountForSubfolders( int32 offset) {
 	BmMailFolder* parent( dynamic_cast< BmMailFolder*>( Parent()));
 	if (parent)
 		parent->BumpNewMailCountForSubfolders( offset);
+	else {
+		// root folder, we check if we need to tell app about a new-mail status change:
+		if (offset>0 && mNewMailCount==0 && mNewMailCountForSubfolders==offset)
+			bmApp->PostMessage( BMM_SHOW_NEWMAIL_ICON);
+		if (offset<0 && mNewMailCount==0 && mNewMailCountForSubfolders==0)
+			bmApp->PostMessage( BMM_HIDE_NEWMAIL_ICON);
+	}
 }
 
 /*------------------------------------------------------------------------------*\
