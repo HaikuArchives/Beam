@@ -123,7 +123,6 @@ BmPopAccount::BmPopAccount( BMessage* archive, BmPopAccountList* model)
 	mPortNr = FindMsgInt16( archive, MSG_PORT_NR);
 	mPortNrString << (uint32)mPortNr;
 	mAuthMethod = FindMsgString( archive, MSG_AUTH_METHOD);
-	mAuthMethod.ToUpper();
 	mMarkedAsDefault = FindMsgBool( archive, MSG_MARK_DEFAULT);
 	mPwdStoredOnDisk = FindMsgBool( archive, MSG_STORE_PWD);
 	if (version > 1) {
@@ -192,6 +191,10 @@ BmPopAccount::BmPopAccount( BMessage* archive, BmPopAccountList* model)
 		// load attributes introduced in version 7:
 		mDeleteMailDelay = archive->FindInt16( MSG_DELETE_DELAY);
 		mDeleteMailDelayString << mDeleteMailDelay;
+	}
+	if (version <= 7) {
+		if (mAuthMethod[0] != '<')
+			mAuthMethod.ToUpper();
 	}
 	if (version <= 8) {
 		// with version 9 we introduce auto-detection of best authentication

@@ -90,12 +90,15 @@ BmSmtpAccount::BmSmtpAccount( BMessage* archive, BmSmtpAccountList* model)
 	mSMTPServer = FindMsgString( archive, MSG_SMTP_SERVER);
 	mDomainToAnnounce = FindMsgString( archive, MSG_DOMAIN);
 	mAuthMethod = FindMsgString( archive, MSG_AUTH_METHOD);
-	mAuthMethod.ToUpper( );
 	mPortNr = FindMsgInt16( archive, MSG_PORT_NR);
 	mPortNrString << (uint32)mPortNr;
 	mPwdStoredOnDisk = FindMsgBool( archive, MSG_STORE_PWD);
 	if (version > 1) {
 		mAccForSmtpAfterPop = FindMsgString( archive, MSG_ACC_FOR_SAP);
+	}
+	if (version <= 4) {
+		if (mAuthMethod[0] != '<')
+			mAuthMethod.ToUpper( );
 	}
 	if (version <= 5) {
 		// with version 6 we introduce auto-detection of best authentication
