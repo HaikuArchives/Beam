@@ -40,6 +40,7 @@
 using namespace regexx;
 
 #include "BmBasics.h"
+#include "BmLogHandler.h"
 #include "BmPrefs.h"
 #include "BmResources.h"
 #include "BmStorageUtil.h"
@@ -111,7 +112,13 @@ BmResources::BmResources()
 	// determine the path to the user-settings-directory:
 	find_directory( B_USER_SETTINGS_DIRECTORY, &path) == B_OK
 													|| BM_THROW_RUNTIME( "Sorry, could not determine user's settings-dir !?!");
-	SettingsPath.SetTo( path.Path(), "Beam");
+	if (BeamInTestMode)
+		// in order to avoid clobbering precious settings,
+		// we use a different settings-folder  in tesmode:
+		SettingsPath.SetTo( path.Path(), "Beam_Test");
+	else
+		// standard settings folder:
+		SettingsPath.SetTo( path.Path(), "Beam");
 	
 	// Load all the needed icons from our resources:
 	FetchIcons();
@@ -203,7 +210,7 @@ void BmResources::FetchIcons() {
 	char *data;
 	for( int32 i=0; res->GetResourceInfo( iconType, i, &id, &name, &length); i++) {
 		if (!(data = (char*)res->LoadResource( iconType, id, &length))) {
-			ShowAlert( BmString("FetchIcons(): Could not read icon '") << name << "'");
+			BM_SHOWERR( BmString("FetchIcons(): Could not read icon '") << name << "'");
 			continue;
 		}
 		BArchivable* theObj = NULL;
@@ -435,7 +442,7 @@ BDirectory* BmResources::GetFolder( const BmString& name, BDirectory& dir) {
 		status_t res = dir.SetTo( name.String());
 		if (res != B_OK) {
 			if ((res = create_directory( name.String(), 0755) || dir.SetTo( name.String())) != B_OK) {
-				ShowAlert( BmString("Sorry, could not create folder ")<<name<<".\n\t Going down!");
+				BM_SHOWERR( BmString("Sorry, could not create folder ")<<name<<".\n\t Going down!");
 				exit( 10);
 			}
 		}
