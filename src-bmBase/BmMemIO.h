@@ -63,7 +63,7 @@ public:
 \*------------------------------------------------------------------------------*/
 class IMPEXPBMBASE BmMemFilter : public BmMemIBuf {
 	typedef BmMemIBuf inherited;
-
+	
 public:
 	BmMemFilter( BmMemIBuf* input, uint32 blockSize=65536, bool immediatePassOn=false);
 	~BmMemFilter();
@@ -107,10 +107,11 @@ protected:
 							// the remaining data will be ignored
 	bool mImmediatePassOnMode;
 							// indicates that instead of trying to fill its buffer, the
-							// filter will process every block of data it gets and immediately
-							// pass it on to its output buffer. Network-related filters 
-							// usually behave this way so that they process the data while
-							// more bytes are travelling through the net.
+							// filter will process every block of data it gets and 
+							// immediately pass it on to its output buffer. 
+							// Network-related filters usually behave this way so that 
+							// they process the data while more bytes are travelling 
+							// through the wire.
 };
 
 /*------------------------------------------------------------------------------*\
@@ -128,7 +129,8 @@ public:
 	// native methods:
 	void AddBuffer( const char* str, int32 len=-1);
 	inline void AddBuffer( const BmString& str)
-													{ AddBuffer( str.String(), str.Length()); }
+													{ AddBuffer( str.String(), 
+																	 str.Length()); }
 
 	// overrides of BmMemIBuf base:
 	uint32 Read( char* data, uint32 reqLen);

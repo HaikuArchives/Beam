@@ -49,7 +49,8 @@ const uint32 BmMemFilter::nBlockSize = 32768;
 	BmMemFilter()
 		-	constructor
 \*------------------------------------------------------------------------------*/
-BmMemFilter::BmMemFilter( BmMemIBuf* input, uint32 blockSize, bool immediatePassOn)
+BmMemFilter::BmMemFilter( BmMemIBuf* input, uint32 blockSize, 
+								  bool immediatePassOn)
 	:	mInput( input)
 	,	mBuf( new char [blockSize])
 	,	mCurrPos( 0)
@@ -90,25 +91,18 @@ void BmMemFilter::Reset( BmMemIBuf* input) {
 		-	
 \*------------------------------------------------------------------------------*/
 uint32 BmMemFilter::Read( char* data, uint32 reqLen) {
-	const uint32 minSize=10;
-							// Minimum size of destination-buffer that we need.
-							// The minSize must be larger than the biggest destination-
-							// size of any single source-byte. At the moment, the
-							// biggest possible destination-size of a single source-byte
-							// is produced by the UTF8-encoder, which may blow up a single
-							// character to 6 bytes (e.g.: =\r\n=FE).
 	uint32 readLen = 0;
 	uint32 srcLen;
 	uint32 destLen;
 	bool tooSmall = false;
 	assert( mInput);
-	while( !mHadError && !mEndReached && readLen < reqLen-minSize) {
+	while( !mHadError && !mEndReached && readLen < reqLen) {
 		if (mCurrPos==mCurrSize || tooSmall) {
 			// block is empty or too small, we need to fetch more data:
 			if (!tooSmall && mInput->IsAtEnd()) {
-				// there is no more input data in our input-MemIO, 
-				// this means that we have reached the end.
-				// We just have to finalize the filter-output:
+				// There is no more input data in our input-MemIO, 
+				// Having reached the end of our input,
+				// we just have to finalize the filter-output:
 				destLen = reqLen-readLen;
 				Finalize( data+readLen, destLen);
 				readLen += destLen;
@@ -119,7 +113,6 @@ uint32 BmMemFilter::Read( char* data, uint32 reqLen) {
 			memmove( mBuf, mBuf+mCurrPos, srcLen);
 			mCurrPos = 0;
 			mCurrSize = srcLen;
-			tooSmall = false;
 			// ...and (re-)fill the buffer from our input-stream:
 			mCurrSize += mInput->Read( mBuf+srcLen, mBlockSize-srcLen);
 		}
@@ -128,14 +121,20 @@ uint32 BmMemFilter::Read( char* data, uint32 reqLen) {
 			// actually filter one buffer-block:
 			destLen = reqLen-readLen;
 			Filter( mBuf+mCurrPos, srcLen, data+readLen, destLen);
-			if (!srcLen)
-				tooSmall = true;
 			mCurrPos += srcLen;
 			mSrcCount += srcLen;
 			readLen += destLen;
+			if (!srcLen) {
+				if (tooSmall)
+					// destination buffer is too small to continue, we break:
+					break;
+				tooSmall = true;
+			} else
+				tooSmall = false;
 			if (mImmediatePassOnMode && readLen)
 				break;
-		}
+		} else
+			tooSmall = false;
 	}
 	mDestCount += readLen;
 	return readLen;
