@@ -102,8 +102,10 @@ private:
 
 #define BM_ADD_FILTER			'bmAS'
 #define BM_REMOVE_FILTER		'bmRS'
+#define BM_MOVE_UP_FILTER		'bmFU'
+#define BM_MOVE_DOWN_FILTER	'bmFD'
 #define BM_TEST_FILTER			'bmTS'
-#define BM_IS_DEFAULT_CHANGED	'bmDC'
+#define BM_IS_ACTIVE_CHANGED	'bmAC'
 
 
 class BmCheckControl;
@@ -149,10 +151,12 @@ private:
 
 	BmListViewController* mFilterListView;
 	BmTextControl* mFilterControl;
-	BmCheckControl* mIsDefaultControl;
+	BmCheckControl* mIsActiveControl;
 	BmMultiLineTextControl* mContentControl;
 	MButton* mAddButton;
 	MButton* mRemoveButton;
+	MButton* mMoveUpButton;
+	MButton* mMoveDownButton;
 	MButton* mTestButton;
 	MTabView* mTabView;
 

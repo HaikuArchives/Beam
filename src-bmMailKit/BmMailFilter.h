@@ -110,6 +110,7 @@ public:
 	inline BmString Name() const			{ return ModelName(); }
 
 private:
+	void ExecuteFilter( MsgContext& msgContext);
 	void UpdateStatus( const float delta, const char* filename, const char* currentCount);
 
 	BmRef<BmFilter> mFilter;

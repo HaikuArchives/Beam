@@ -30,7 +30,6 @@
 /*************************************************************************/
 
 
-#include <memory.h>
 #include <memory>
 #include <stdio.h>
 
@@ -228,8 +227,7 @@ bool BmMailFilter::StartJob() {
 			if (mail) {
 				mail->StartJobInThisThread( BmMail::BM_READ_MAIL_JOB);
 				MsgContext msgContext( this, mail.Get());
-				if (mFilter->Execute( &msgContext) && msgContext.changed)
-					mail->Store();
+				ExecuteFilter( msgContext);
 			}
 			BmString currentCount = BmString()<<c++<<" of "<<count;
 			UpdateStatus( delta, mail->Name().String(), currentCount.String());
@@ -237,8 +235,7 @@ bool BmMailFilter::StartJob() {
 		mMailRefs.clear();
 		for( uint32 i=0; ShouldContinue() && i<mMails.size(); ++i) {
 			MsgContext msgContext( this, mMails[i].Get());
-			if (mFilter->Execute( &msgContext) && msgContext.changed)
-				mMails[i]->Store();
+			ExecuteFilter( msgContext);
 			BmString currentCount = BmString()<<c++<<" of "<<count;
 			UpdateStatus( delta, mMails[i]->Name().String(), 
 							  currentCount.String());
@@ -255,6 +252,42 @@ bool BmMailFilter::StartJob() {
 		BM_SHOWERR( BmString("BmMailFilter: ") << text);
 	}
 	return false;
+}
+
+typedef map< int32, BmRef<BmFilter> > BmOrderedFilterMap;
+/*------------------------------------------------------------------------------*\
+	ExecuteFilter()
+		-	applies mail-filtering to a single given mail
+\*------------------------------------------------------------------------------*/
+void BmMailFilter::ExecuteFilter( MsgContext& msgContext) {
+	if (!mFilter) {
+		// sort all appropriate active filters by their position and then execute each:
+		BmRef<BmFilterList> filterList = msgContext.mail->Outbound()
+														? TheOutboundFilterList 
+														: TheInboundFilterList;
+		BmOrderedFilterMap orderedFilterMap;
+		{
+			BmAutolock lock( filterList->ModelLocker());
+			lock.IsLocked() 							|| BM_THROW_RUNTIME( filterList->ModelNameNC() << ": Unable to get lock");
+			BmModelItemMap::const_iterator iter;
+			for( iter = filterList->begin(); iter != filterList->end(); ++iter) {
+				BmFilter* filter = dynamic_cast< BmFilter*>( iter->second.Get());
+				if (filter->Active())
+					orderedFilterMap[filter->Position()] = filter;
+			}
+		}
+		bool needToStore = false;
+		BmOrderedFilterMap::const_iterator ordIter;
+		for( ordIter = orderedFilterMap.begin(); ordIter != orderedFilterMap.end(); ++ordIter) {
+			needToStore |= (ordIter->second->Execute( &msgContext) 
+								&& msgContext.changed);
+		}
+		if (needToStore)
+			msgContext.mail->Store();
+	} else {
+		if (mFilter->Execute( &msgContext) && msgContext.changed)
+			msgContext.mail->Store();
+	}
 }
 
 /*------------------------------------------------------------------------------*\

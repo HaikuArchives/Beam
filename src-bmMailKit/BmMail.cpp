@@ -557,12 +557,15 @@ BmString BmMail::CreateReplyIntro() {
 							  Regexx::nocase|Regexx::global|Regexx::noatom);
 	BmAddressList fromAddr = Header()->DetermineOriginator( true);
 	BmString fromNicks;
-	BmAddrList::const_iterator pos;
-	for( pos=fromAddr.begin(); pos!=fromAddr.end(); ++pos) {
-		if (pos != fromAddr.begin())
-			fromNicks << ", ";
-		fromNicks << (pos->HasPhrase() ? pos->Phrase() : pos->AddrSpec());
-	}
+	if (HasComeFromList()) {
+		BmAddrList::const_iterator pos;
+		for( pos=fromAddr.begin(); pos!=fromAddr.end(); ++pos) {
+			if (pos != fromAddr.begin())
+				fromNicks << ", ";
+			fromNicks << (pos->HasPhrase() ? pos->Phrase() : pos->AddrSpec());
+		}
+	} else
+		fromNicks = ThePrefs->GetString( "ReplyIntroDefaultNick", "you");
 	intro = rx.replace( intro, "%F", fromNicks, 
 							  Regexx::nocase|Regexx::global|Regexx::noatom);
 	return intro;
@@ -764,50 +767,7 @@ bool BmMail::SetDestFoldername( const BmString& inFoldername) {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmMail::Filter( BmFilter* inFilter) {
-	BmRef<BmFilter> filter( inFilter);
-	BmString filterName;
-	if (!filter) {
-		// no filter specified, we fetch the corresponding account's filter:
-		if (mOutbound) {
-			// outbound mail, so we check SMTP-accounts:
-			BmRef<BmListModelItem> accRef = TheSmtpAccountList->FindItemByKey( AccountName());
-			BmSmtpAccount* acc = dynamic_cast< BmSmtpAccount*>( accRef.Get());
-			if (!acc)
-				return;
-			filterName = acc->FilterName();
-			if (filterName == BM_DefaultItemLabel) {
-				// account is set to use default filter, we have to fetch that:
-				filter = TheOutboundFilterList->DefaultFilter();
-				if (!filter)
-					return;
-			}
-		} else {
-			// inbound mail, so we check POP3-accounts:
-			BmRef<BmListModelItem> accRef = ThePopAccountList->FindItemByKey( AccountName());
-			BmPopAccount* acc = dynamic_cast< BmPopAccount*>( accRef.Get());
-			if (!acc)
-				return;
-			filterName = acc->FilterName();
-			if (filterName == BM_DefaultItemLabel) {
-				// account is set to use default filter, we have to fetch that:
-				filter = TheInboundFilterList->DefaultFilter();
-				if (!filter)
-					return;
-			}
-		}
-	}
-	if (!filter) {
-		// find filter by name:
-		if (!filterName.Length())
-			return;
-		BmRef<BmListModelItem> filterRef = mOutbound
-							? TheOutboundFilterList->FindItemByKey( filterName)
-							: TheInboundFilterList->FindItemByKey( filterName);
-		filter = dynamic_cast< BmFilter*>( filterRef.Get());
-		if (!filter)
-			return;
-	}
+void BmMail::ApplyFilter( BmRef<BmFilter> filter) {
 	BmRef<BmMailFilter> filterJob = new BmMailFilter( Name(), filter.Get());
 	filterJob->AddMail( this);
 	filterJob->StartJobInThisThread( BmMailFilter::BM_EXECUTE_FILTER);

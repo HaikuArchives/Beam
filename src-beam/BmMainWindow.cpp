@@ -406,11 +406,15 @@ void BmMainWindow::MessageReceived( BMessage* msg) {
 			case BMM_FILTER: {
 				BMessage tmpMsg( BM_JOBWIN_FILTER);
 				mMailRefView->AddSelectedRefsToMsg( &tmpMsg, BmFilter::MSG_MAILREF);
-				bool outbound = msg->FindString( BmFilter::MSG_OUTBOUND);
-				tmpMsg.AddBool( BmFilter::MSG_OUTBOUND, outbound);
+				bool outbound;
+				if (msg->FindBool( BmFilter::MSG_OUTBOUND, &outbound) == B_OK)
+					tmpMsg.AddBool( BmFilter::MSG_OUTBOUND, outbound);
 				BmString jobName = msg->FindString( BmListModel::MSG_ITEMKEY);
-				tmpMsg.AddString( BmListModel::MSG_ITEMKEY, jobName.String());
-				jobName << jobNum++;
+				if (jobName.Length()) {
+					tmpMsg.AddString( BmListModel::MSG_ITEMKEY, jobName.String());
+					jobName << jobNum++;
+				} else
+					jobName << "Filter_" << jobNum++;
 				tmpMsg.AddString( BmJobModel::MSG_JOB_NAME, jobName.String());
 				TheJobStatusWin->PostMessage( &tmpMsg);
 				break;

@@ -43,10 +43,11 @@
 	BmFilter
 \********************************************************************************/
 
+const char* const BmFilter::MSG_POSITION = 		"bm:pos";
 const char* const BmFilter::MSG_NAME = 			"bm:name";
 const char* const BmFilter::MSG_CONTENT = 		"bm:content";
-const char* const BmFilter::MSG_MARK_DEFAULT = 	"bm:markdefault";
-const int16 BmFilter::nArchiveVersion = 2;
+const char* const BmFilter::MSG_ACTIVE = 			"bm:active";
+const int16 BmFilter::nArchiveVersion = 4;
 
 const char* const BmFilter::MSG_OUTBOUND = 	"bm:outb";
 const char* const BmFilter::MSG_MAILREF = 	"bm:ref";
@@ -62,7 +63,8 @@ const char* const BmFilter::MSG_MAILREF = 	"bm:ref";
 BmFilter::BmFilter( const char* name, BmFilterList* model) 
 	:	inherited( name, model, (BmListModelItem*)NULL)
 	,	mCompiledScript( NULL)
-	,	mMarkedAsDefault( false)
+	,	mPosition( model->NextPosition())
+	,	mActive( true)
 {
 }
 
@@ -79,11 +81,14 @@ BmFilter::BmFilter( BMessage* archive, BmFilterList* model)
 	if (archive->FindInt16( MSG_VERSION, &version) != B_OK)
 		version = 0;
 	mContent = FindMsgString( archive, MSG_CONTENT);
-	if (version > 1) {
-		mMarkedAsDefault = FindMsgBool( archive, MSG_MARK_DEFAULT);
-	} else {
-		mMarkedAsDefault = false;
-	}
+	if (version > 2)
+		mPosition = FindMsgInt32( archive, MSG_POSITION);
+	else
+		mPosition = model->NextPosition();
+	if (version > 3)
+		mActive = FindMsgBool( archive, MSG_ACTIVE);
+	else
+		mActive = true;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -103,7 +108,8 @@ BmFilter::~BmFilter() {
 status_t BmFilter::Archive( BMessage* archive, bool deep) const {
 	status_t ret = (inherited::Archive( archive, deep)
 		||	archive->AddString( MSG_NAME, Key().String())
-		||	archive->AddBool( MSG_MARK_DEFAULT, mMarkedAsDefault)
+		||	archive->AddInt32( MSG_POSITION, mPosition)
+		||	archive->AddBool( MSG_ACTIVE, mActive)
 		||	archive->AddString( MSG_CONTENT, mContent.String()));
 	return ret;
 }
@@ -332,40 +338,61 @@ const BmString BmFilterList::SettingsFileName() {
 }
 
 /*------------------------------------------------------------------------------*\
-	DefaultFilter()
-		-	returns the filter that has been marked as default
-		-	if no filter has been marked as default, NULL is returned
+	MoveUp()
+		-	
+		-	
 \*------------------------------------------------------------------------------*/
-BmRef<BmFilter> BmFilterList::DefaultFilter() {
+void BmFilterList::MoveUp( int32 oldPos) {
+	if (oldPos <= 0)
+		return;
 	BmAutolock lock( ModelLocker());
 	lock.IsLocked() 							|| BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
 	BmModelItemMap::const_iterator iter;
 	for( iter = begin(); iter != end(); ++iter) {
 		BmFilter* filter = dynamic_cast< BmFilter*>( iter->second.Get());
-		if (filter->MarkedAsDefault()) {
-			return filter;
-		}
+		if (filter->Position() == oldPos)
+			filter->Position( oldPos-1);
+		else if (filter->Position() == oldPos-1)
+			filter->Position( oldPos);
 	}
-	return NULL;
 }
 
 /*------------------------------------------------------------------------------*\
-	SetDefaultFilter( filterName)
-		-	marks the filter with the given name as the default filter
-		-	any prior default-filter is being reset
+	MoveDown()
+		-	
+		-	
 \*------------------------------------------------------------------------------*/
-void BmFilterList::SetDefaultFilter( BmString filterName) {
+void BmFilterList::MoveDown( int32 oldPos) {
+	if (oldPos >= ((int32)size())-1)
+		return;
 	BmAutolock lock( ModelLocker());
 	lock.IsLocked() 							|| BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
 	BmModelItemMap::const_iterator iter;
 	for( iter = begin(); iter != end(); ++iter) {
 		BmFilter* filter = dynamic_cast< BmFilter*>( iter->second.Get());
-		if (filter->Key() == filterName) {
-			filter->MarkedAsDefault( true);
-		} else if (filter->MarkedAsDefault()) {
-			filter->MarkedAsDefault( false);
-		}
+		if (filter->Position() == oldPos)
+			filter->Position( oldPos+1);
+		else if (filter->Position() == oldPos+1)
+			filter->Position( oldPos);
 	}
+}
+
+/*------------------------------------------------------------------------------*\
+	NextPosition()
+		-	
+		-	
+\*------------------------------------------------------------------------------*/
+int32 BmFilterList::NextPosition() {
+	BmAutolock lock( ModelLocker());
+	lock.IsLocked() 							|| BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
+	BmModelItemMap::const_iterator iter;
+	int32 nextPos = -1;
+	for( iter = begin(); iter != end(); ++iter) {
+		BmFilter* filter = dynamic_cast< BmFilter*>( iter->second.Get());
+		if (filter->Position() > nextPos)
+			nextPos = filter->Position();
+	}
+	return nextPos+1;
 }
 
 /*------------------------------------------------------------------------------*\

@@ -40,6 +40,7 @@
 using namespace regexx;
 
 #include "BmBasics.h"
+#include "BmFilter.h"
 #include "BmLogHandler.h"
 #include "BmMail.h"
 #include "BmPopAccount.h"
@@ -462,7 +463,7 @@ void BmPopper::StateRetrieve() {
 		BmRef<BmMail> mail = new BmMail( mAnswerText, mPopAccount->Name());
 		if (mail->InitCheck() != B_OK)
 			goto CLEAN_UP;
-		mail->Filter();
+		mail->ApplyFilter();
 		if (!mail->Store())
 			goto CLEAN_UP;
 		mPopAccount->MarkUIDAsDownloaded( mMsgUIDs[i]);

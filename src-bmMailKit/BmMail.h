@@ -143,7 +143,7 @@ public:
 	void SetTo( BmString &text, const BmString account);
 	void SetNewHeader( const BmString& headerStr);
 	void SetSignatureByName( const BmString sigName);
-	void Filter( BmFilter* inFilter = NULL);
+	void ApplyFilter( BmRef<BmFilter> filter = NULL);
 	bool Store();
 	void ResyncFromDisk();
 	//

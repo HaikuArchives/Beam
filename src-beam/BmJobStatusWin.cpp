@@ -350,18 +350,20 @@ BmMailFilterView::~BmMailFilterView() {
 		-	creates and returns a new job-model, data may contain constructor args
 \*------------------------------------------------------------------------------*/
 BmJobModel* BmMailFilterView::CreateJobModel( BMessage* msg) {
-	const char* filterName;
-	if (msg->FindString( BmListModel::MSG_ITEMKEY, &filterName) != B_OK)
-		return NULL;
+	const char* filterName = NULL;
+	msg->FindString( BmListModel::MSG_ITEMKEY, &filterName);
 	bool outbound;
-	if (msg->FindBool( BmFilter::MSG_OUTBOUND, &outbound) != B_OK)
-		return NULL;
-	BmRef<BmListModelItem> filterRef = outbound
-						? TheOutboundFilterList->FindItemByKey( filterName)
-						: TheInboundFilterList->FindItemByKey( filterName);
-	BmFilter* filter = dynamic_cast< BmFilter*>( filterRef.Get());
-	if (!filter)
-		return NULL;
+	msg->FindBool( BmFilter::MSG_OUTBOUND, &outbound);
+	BmFilter* filter = NULL;
+	BmRef<BmListModelItem> filterRef;
+	if (filterName) {
+		filterRef = outbound
+							? TheOutboundFilterList->FindItemByKey( filterName)
+							: TheInboundFilterList->FindItemByKey( filterName);
+		filter = dynamic_cast< BmFilter*>( filterRef.Get());
+		if (!filter)
+			return NULL;
+	}
 	BmMailFilter* mailFilter = new BmMailFilter( ControllerName(), filter);
 	BmMailRef* ref;
 	for( int i=0; msg->FindPointer( BmFilter::MSG_MAILREF, i, (void**)&ref)==B_OK; ++i) {

@@ -48,6 +48,7 @@
 #include "BmCheckControl.h"
 #include "BmEncoding.h"
 	using namespace BmEncoding;
+#include "BmFilter.h"
 #include "BmGuiUtil.h"
 #include "BmLogHandler.h"
 #include "BmMailHeader.h"
@@ -913,7 +914,7 @@ bool BmMailEditWin::SaveMail( bool saveForSend) {
 		if (saveForSend) {
 			// set 'out'-folder as default and then start filter-job:
 			mail->SetDestFoldername( BM_MAIL_FOLDER_OUT);
-			mail->Filter();
+			mail->ApplyFilter();
 		} else {
 			// drop draft mails into 'draft'-folder:
 			if (mail->Status() == BM_MAIL_STATUS_DRAFT)
