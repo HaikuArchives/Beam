@@ -220,8 +220,7 @@ protected:
 	class BmNetOBuf
 		-	
 \*------------------------------------------------------------------------------*/
-class IMPEXPBMDAEMON BmNetOBuf : public BmMemOBuf {
-	typedef BmMemOBuf inherited;
+class IMPEXPBMDAEMON BmNetOBuf {
 
 public:
 	BmNetOBuf( BmNetJobModel* job);
