@@ -151,6 +151,10 @@ BmRef<BmMailRef> BmMailRef::CreateInstance( BMessage* archive) {
 BmMailRef::BmMailRef( entry_ref &eref, struct stat& st)
 	:	inherited( BM_REFKEYSTAT(st), NULL, (BmListModelItem*)NULL)
 	,	mEntryRef( eref)
+	,	mWhen( 0)
+	,	mWhenCreated( 0)
+	,	mSize( 0)
+	,	mHasAttachments( false)
 	,	mInitCheck( B_NO_INIT)
 {
 	mNodeRef.device = st.st_dev;
@@ -163,8 +167,12 @@ BmMailRef::BmMailRef( entry_ref &eref, struct stat& st)
 \*------------------------------------------------------------------------------*/
 BmMailRef::BmMailRef( BMessage* archive, node_ref& nref)
 	:	inherited( "", NULL, (BmListModelItem*)NULL)
-	,	mInitCheck( B_NO_INIT)
+	,	mWhen( 0)
+	,	mWhenCreated( 0)
+	,	mSize( 0)
+	,	mHasAttachments( false)
 	,	mNodeRef( nref)
+	,	mInitCheck( B_NO_INIT)
 {
 	try {
 		status_t err;
@@ -477,6 +485,10 @@ void BmMailRef::MarkAs( const char* status) {
 							 " Result: ") 
 					<< strerror(err)
 			);
+		// As there seems to be a problem with multiple Status-attributes
+		// (perhaps a bug in BeFS?) we try to remove the attribute before we
+		// write it. Let's see if that helps...
+		mailNode.RemoveAttr( BM_MAIL_ATTR_STATUS);
 		mailNode.WriteAttr( BM_MAIL_ATTR_STATUS, B_STRING_TYPE, 0, 
 								  status, strlen( status)+1);
 		TellModelItemUpdated( UPD_STATUS);
