@@ -2023,6 +2023,16 @@ BmString::operator<<(float f)
 }
 
 
+BmString&
+BmString::operator<<(double d)
+{
+	char num[64];
+	sprintf(num, "%.2g", d);
+	
+	return *this << num;
+}
+
+
 /*---- Private or Reserved ------------------------------------------------*/
 char*
 BmString::_Alloc(int32 dataLen)

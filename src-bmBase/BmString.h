@@ -295,6 +295,7 @@ public:
 	BmString 		&operator<<(int64);
 	BmString 		&operator<<(float);
 		/* float output hardcodes %.2f style formatting */
+	BmString 		&operator<<(double);
 	
 
 /*----- Private or reserved ------------------------------------------------*/
