@@ -218,8 +218,8 @@ BmApplication::BmApplication( const char* sig)
 													 ThePopAccountList.Get());
 		TheMailFolderList->AddForeignKey( BmFilterAddon::FK_FOLDER,
 													 TheFilterList.Get());
-		TheMailFolderList->AddForeignKey( BmFilterAddon::FK_IDENTITY,
-													 TheFilterList.Get());
+		TheIdentityList->AddForeignKey( BmFilterAddon::FK_IDENTITY,
+												  TheFilterList.Get());
 
 		add_system_beep_event( BM_BEEP_EVENT);
 
@@ -399,18 +399,33 @@ bool BmApplication::QuitRequested() {
 	BM_LOG( BM_LogApp, "App: quit requested, checking state...");
 	mIsQuitting = true;
 	TheMailMonitor->LockLooper();
-	bool shouldQuit = true;
-	// ask all windows if they are ready to quit, in which case we actually
-	// do quit (only if *ALL* windows indicate that they are prepared to quit!):
-	int32 count = CountWindows();
-	for( int32 i=count-1; shouldQuit && i>=0; --i) {
-		BWindow* win = bmApp->WindowAt( i);
-		win->Lock();
-		if (win && !win->QuitRequested())
-			shouldQuit = false;
-		win->Unlock();
-	}
 
+	bool shouldQuit = true;
+	int32 count = CountWindows();
+	// first check if there are any active jobs:
+	if (TheJobStatusWin && TheJobStatusWin->HasActiveJobs()) {
+		BAlert* alert = new BAlert( "Active Jobs", 
+			"There are still some jobs/connections active!"
+				"\nDo you really want to quit now?",
+			"Yes, Quit Now", "Cancel", NULL, B_WIDTH_AS_USUAL,
+			B_WARNING_ALERT
+		);
+		alert->SetShortcut( 1, B_ESCAPE);
+		if (alert->Go() == 1)
+			shouldQuit = false;
+	}
+	if (shouldQuit) {
+		// ask all windows if they are ready to quit, in which case we actually
+		// do quit (only if *ALL* windows indicate that they are prepared to quit!):
+		for( int32 i=count-1; shouldQuit && i>=0; --i) {
+			BWindow* win = bmApp->WindowAt( i);
+			win->Lock();
+			if (win && !win->QuitRequested())
+				shouldQuit = false;
+			win->Unlock();
+		}
+	}
+	
 	if (!shouldQuit) {
 		TheMailMonitor->UnlockLooper();
 		mIsQuitting = false;
@@ -436,29 +451,14 @@ bool BmApplication::QuitRequested() {
 \*------------------------------------------------------------------------------*/
 void BmApplication::ArgvReceived( int32 argc, char** argv) {
 	if (argc>1 && !BeamInTestMode) {
-		BMessage msg(BMM_NEW_MAIL);
 		BmString to( argv[1]);
-		if (to.ICompare("mailto:",7)==0) {
-			to.Remove( 0, 7);
-			int32 optPos = to.IFindFirst("?");
-			if (optPos != B_ERROR) {
-				BmString opts;
-				to.MoveInto( opts, optPos, to.Length());
-				Regexx rx;
-				int32 optCount = rx.exec( opts, "[?&]([^&=]+)=([^&]+)", 
-												  Regexx::global);
-				for( int i=0; i<optCount; ++i) {
-					BmString rawVal( rx.match[i].atom[1]);
-					rawVal.DeUrlify();
-					BmString field( rx.match[i].atom[0]);
-					msg.AddString( MSG_OPT_FIELD, field.String());
-					msg.AddString( MSG_OPT_VALUE, rawVal.String());
-				}
-			}
-			to.DeUrlify();
+		if (to.ICompare("mailto:",7)==0)
+			LaunchURL( to);
+		else {
+			BMessage msg(BMM_NEW_MAIL);
+			msg.AddString( MSG_WHO_TO, to.String());
+			PostMessage( &msg);
 		}
-		msg.AddString( MSG_WHO_TO, to.String());
-		PostMessage( &msg);
 	}
 }
 
@@ -1160,12 +1160,12 @@ void BmApplication::PrintMails( BMessage* msg) {
 				msg->FindPointer( MSG_MAILREF, mailIdx, (void**)&mailRef) == B_OK
 				&& page<=lastPage;
 				++mailIdx) {
-			mailView->ShowMail( mailRef, false);
 			mailView->LockLooper();
-			mailView->JobIsDone( true);
 			mailView->BodyPartView()->SetViewColor( White);
-			mailView->BodyPartView()->JobIsDone( true);
 			mailView->UnlockLooper();
+			mailView->ShowMail( mailRef, false);
+			while( !mailView->IsDisplayComplete())
+				snooze( 50*1000);
 			BRect currFrame = printableRect.OffsetToCopy( 0, 0);
 			BRect textRect = mailView->TextRect();
 			float totalHeight = textRect.top+mailView->TextHeight(0,100000);
@@ -1239,11 +1239,22 @@ void BmApplication::LaunchURL( const BmString url) {
 	else if (url.ICompare( "mailto:", 7) == 0) {
 		BMessage msg(BMM_NEW_MAIL);
 		BmString to( urlStr+7);
-		int32 subjPos = to.IFindFirst("?subject=");
-		if (subjPos != B_ERROR) {
-			msg.AddString( BmApplication::MSG_SUBJECT, to.String()+subjPos+9);
-			to.Truncate( subjPos);
+		int32 optPos = to.IFindFirst("?");
+		if (optPos != B_ERROR) {
+			BmString opts;
+			to.MoveInto( opts, optPos, to.Length());
+			Regexx rx;
+			int32 optCount = rx.exec( opts, "[?&]([^&=]+)=([^&]+)", 
+											  Regexx::global);
+			for( int i=0; i<optCount; ++i) {
+				BmString rawVal( rx.match[i].atom[1]);
+				rawVal.DeUrlify();
+				BmString field( rx.match[i].atom[0]);
+				msg.AddString( MSG_OPT_FIELD, field.String());
+				msg.AddString( MSG_OPT_VALUE, rawVal.String());
+			}
 		}
+		to.DeUrlify();
 		msg.AddString( BmApplication::MSG_WHO_TO, to.String());
 		bmApp->PostMessage( &msg);
 		return;
