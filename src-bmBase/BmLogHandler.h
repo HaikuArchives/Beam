@@ -62,8 +62,8 @@ class IMPEXPBMBASE BmLogHandler {
 
 public:
 	// static functions
-	static void Log( const BmString logname, uint32 flag, const BmString& msg, int8 minlevel=1);
-	static void Log( const char* const logname, uint32 flag, const char* const msg, int8 minlevel=1);
+	static void Log( const BmString logname, const BmString& msg);
+	static void Log( const char* const logname, const char* msg);
 	static void FinishLog( const BmString& logname);
 
 	// creator-func, c'tors and d'tor
@@ -75,8 +75,10 @@ public:
 	BmLogfile* LogfileFor( const BmString &logname);
 	BmLogfile* FindLogfile( const BmString &logname);
 	void CloseLog( const BmString &logname);
-	void LogToFile( const BmString &logname, uint32 flag, const BmString &msg, int8 minlevel=1);
-	void LogToFile( const char* const logname, uint32 flag, const char* const msg, int8 minlevel=1);
+	void LogToFile( const BmString& logname, const BmString &msg);
+	void LogToFile( const BmString& logname, const char* msg);
+	//
+	bool CheckLogLevel( uint32 flag, int8 minlevel) const;
 
 	void StartWatchingLogfile( BHandler* looper, const char* logfileName);
 	void StopWatchingLogfile( BHandler* looper, const char* logfileName);
@@ -89,6 +91,10 @@ public:
 	bool mWaitingForShutdown;
 
 	BList mActiveLogs;					// list of logfiles
+
+	//	message component definitions for status-msgs:
+	static const char* const MSG_MESSAGE;
+	static const char* const MSG_THREAD_ID;
 
 private:
 	// Hide copy-constructor and assignment:
@@ -109,10 +115,6 @@ private:
 		void Write( const char* const msg, const int32 threadId);
 		void MessageReceived( BMessage* msg);
 	
-		//	message component definitions for status-msgs:
-		static const char* const MSG_MESSAGE;
-		static const char* const MSG_THREAD_ID;
-
 		BList mWatchingHandlers;
 		BmString logname;
 
@@ -141,16 +143,13 @@ private:
 extern IMPEXPBMBASE const uint32 BM_LogPop;
 extern IMPEXPBMBASE const uint32 BM_LogJobWin;
 extern IMPEXPBMBASE const uint32 BM_LogMailParse;
-extern IMPEXPBMBASE const uint32 BM_LogUtil;
+extern IMPEXPBMBASE const uint32 BM_LogApp;
 extern IMPEXPBMBASE const uint32 BM_LogMailTracking;
-extern IMPEXPBMBASE const uint32 BM_LogFolderView;
-extern IMPEXPBMBASE const uint32 BM_LogRefView;
-extern IMPEXPBMBASE const uint32 BM_LogMainWindow;
+extern IMPEXPBMBASE const uint32 BM_LogGui;
 extern IMPEXPBMBASE const uint32 BM_LogModelController;
-extern IMPEXPBMBASE const uint32 BM_LogMailEditWin;
 extern IMPEXPBMBASE const uint32 BM_LogSmtp;
-extern IMPEXPBMBASE const uint32 BM_LogPrefsWin;
 extern IMPEXPBMBASE const uint32 BM_LogFilter;
+extern IMPEXPBMBASE const uint32 BM_LogRefCount;
 extern IMPEXPBMBASE const uint32 BM_LogAll;
 
 // macros to convert the loglevel for a specific flag 
@@ -191,14 +190,19 @@ IMPEXPBMBASE void ShowAlertWithType( const BmString &text, alert_type type);
 #ifdef BM_LOGGING
 
 #define BM_LOG(flag,msg) \
-	BmLogHandler::Log( BM_LOGNAME, flag, msg)
+	if (TheLogHandler && TheLogHandler->CheckLogLevel( flag, 1)) \
+		BmLogHandler::Log( BM_LOGNAME, msg)
 #define BM_LOG2(flag,msg) \
-	BmLogHandler::Log( BM_LOGNAME, flag, msg, 2)
+	if (TheLogHandler && TheLogHandler->CheckLogLevel( flag, 2)) \
+		BmLogHandler::Log( BM_LOGNAME, msg)
 #define BM_LOG3(flag,msg) \
-	BmLogHandler::Log( BM_LOGNAME, flag, msg, 3)
+	if (TheLogHandler && TheLogHandler->CheckLogLevel( flag, 3)) \
+		BmLogHandler::Log( BM_LOGNAME, msg)
 #define BM_LOGERR(msg) \
-	{ BmLogHandler::Log( BM_LOGNAME, BM_LogAll, msg, 0); \
-	  BmLogHandler::Log( "Errors", BM_LogAll, msg, 0);  }
+	if (TheLogHandler) { \
+	  BmLogHandler::Log( BM_LOGNAME, msg); \
+	  BmLogHandler::Log( "Errors", msg); \
+	}
 #define BM_LOG_FINISH(name) BmLogHandler::FinishLog( name)
 #define BM_LOGNAME "Beam"
 #define BM_SHOWERR(msg) \
@@ -213,8 +217,10 @@ IMPEXPBMBASE void ShowAlertWithType( const BmString &text, alert_type type);
 #define BM_LOG_FINISH(name) BmLogHandler::FinishLog( name)
 #define BM_LOGNAME "Beam"
 #define BM_LOGERR(msg) \
-	{ BmLogHandler::Log( BM_LOGNAME, BM_LogAll, msg, 0); \
-	  BmLogHandler::Log( "Errors", BM_LogAll, msg, 0);  }
+	if (TheLogHandler) { \
+	  BmLogHandler::Log( BM_LOGNAME, msg); \
+	  BmLogHandler::Log( "Errors", msg); \
+	}
 #define BM_SHOWERR(msg) \
 	{	BM_LOGERR(msg); \
 		ShowAlert( msg);	}

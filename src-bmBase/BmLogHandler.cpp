@@ -31,6 +31,7 @@
 #include <Directory.h>
 #include <File.h>
 #include <MessageQueue.h>
+#include <Messenger.h>
 
 #ifdef __POWERPC__
 #define BM_BUILDING_BMBASE 1
@@ -77,21 +78,19 @@ BmString TimeToString( time_t utc, const char* format) {
 
 /*------------------------------------------------------------------------------*\
 	the different "terrains" we will be logging, each of them
-	has its own loglevel:
+	has its own loglevel.
+	N.B.: the maximum number is 16, because we need two bits per terrain!
 \*------------------------------------------------------------------------------*/
 const uint32 BM_LogPop  				= 1UL<<0;
 const uint32 BM_LogJobWin 				= 1UL<<1;
 const uint32 BM_LogMailParse 			= 1UL<<2;
-const uint32 BM_LogUtil		 			= 1UL<<3;
+const uint32 BM_LogApp		 			= 1UL<<3;
 const uint32 BM_LogMailTracking		= 1UL<<4;
-const uint32 BM_LogFolderView			= 1UL<<5;
-const uint32 BM_LogRefView				= 1UL<<6;
-const uint32 BM_LogMainWindow			= 1UL<<7;
-const uint32 BM_LogModelController	= 1UL<<8;
-const uint32 BM_LogMailEditWin		= 1UL<<9;
-const uint32 BM_LogSmtp					= 1UL<<10;
-const uint32 BM_LogPrefsWin			= 1UL<<11;
-const uint32 BM_LogFilter				= 1UL<<12;
+const uint32 BM_LogGui					= 1UL<<5;
+const uint32 BM_LogModelController	= 1UL<<6;
+const uint32 BM_LogSmtp					= 1UL<<7;
+const uint32 BM_LogFilter				= 1UL<<8;
+const uint32 BM_LogRefCount			= 1UL<<9;
 // dummy constant meaning to log everything:
 const uint32 BM_LogAll  				= 0xffffffff;
 
@@ -102,20 +101,19 @@ BmLogHandler* TheLogHandler = NULL;
 	static logging-function
 		-	logs only if a loghandler is actually present
 \*------------------------------------------------------------------------------*/
-void BmLogHandler::Log( const BmString logname, uint32 flag, const BmString& msg, int8 minlevel) { 
+void BmLogHandler::Log( const BmString logname, const BmString& msg) { 
 	if (TheLogHandler)
-		TheLogHandler->LogToFile( logname, flag, msg, minlevel);
+		TheLogHandler->LogToFile( logname, msg.String());
 }
 
 /*------------------------------------------------------------------------------*\
 	static logging-function
 		-	logs only if a loghandler is actually present
 \*------------------------------------------------------------------------------*/
-void BmLogHandler::Log( const char* const logname, uint32 flag, const char* const msg, int8 minlevel) { 
+void BmLogHandler::Log( const char* const logname, const char* msg) { 
 	BmString theLogname(logname);
-	BmString theMsg(msg);
 	if (TheLogHandler)
-		TheLogHandler->LogToFile( theLogname, flag, theMsg, minlevel);
+		TheLogHandler->LogToFile( theLogname, msg);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -257,30 +255,35 @@ BmLogHandler::BmLogfile* BmLogHandler::FindLogfile( const BmString &ln) {
 }
 
 /*------------------------------------------------------------------------------*\
-	LogToFile( logname, msg)
-		-	writes msg into the logfile specified by logname
+	CheckLogLevel( flag)
+		-	returns whether or not the loglevel for the given flag is at least 
+		   minlevel
 \*------------------------------------------------------------------------------*/
-void BmLogHandler::LogToFile( const BmString& logname, uint32 flag,
-										const BmString& msg, int8 minlevel) {
-	BmLogfile* log = FindLogfile( logname);
-	if (log) {
-		int8 loglevel = BM_LOGLVL_FOR(mLoglevels, flag);
-		if (loglevel < minlevel)
-			return;								// loglevel indicates to ignore this message
-		BMessage mess( BM_LOG_MSG);
-		mess.AddString( BmLogfile::MSG_MESSAGE, msg.String());
-		mess.AddInt32( BmLogfile::MSG_THREAD_ID, find_thread(NULL));
-		log->PostMessage( &mess);
-	}
+bool BmLogHandler::CheckLogLevel( uint32 flag, int8 minlevel) const {
+	int8 loglevel = BM_LOGLVL_FOR(mLoglevels, flag);
+	return loglevel >= minlevel;
 }
 
 /*------------------------------------------------------------------------------*\
 	LogToFile( logname, msg)
-		-	writes msg into the logfile that is named logname
-		-	if no logfile of given name exists, it is created
+		-	dispatches msg to corrsponding logfile
 \*------------------------------------------------------------------------------*/
-void BmLogHandler::LogToFile( const char* const logname, uint32 flag, const char* const msg, int8 minlevel) { 
-	LogToFile( BmString(logname), flag, BmString(msg), minlevel);
+void BmLogHandler::LogToFile( const BmString& logname, const BmString& msg) {
+	LogToFile( logname, msg.String());
+}
+
+/*------------------------------------------------------------------------------*\
+	LogToFile( logname, msg)
+		-	dispatches msg to corrsponding logfile
+\*------------------------------------------------------------------------------*/
+void BmLogHandler::LogToFile( const BmString& logname, const char* msg) { 
+	BmLogfile* log = FindLogfile( logname);
+	if (log) {
+		BMessage mess( BM_LOG_MSG);
+		mess.AddString( MSG_MESSAGE, msg);
+		mess.AddInt32( MSG_THREAD_ID, find_thread(NULL));
+		log->PostMessage( &mess);
+	}
 }
 
 /*------------------------------------------------------------------------------*\
@@ -310,8 +313,8 @@ void BmLogHandler::CloseLog( const BmString &logname) {
 	}
 }
 
-const char* const BmLogHandler::BmLogfile::MSG_MESSAGE = 	"bm:msg";
-const char* const BmLogHandler::BmLogfile::MSG_THREAD_ID =	"bm:tid";
+const char* const BmLogHandler::MSG_MESSAGE = 	"bm:msg";
+const char* const BmLogHandler::MSG_THREAD_ID =	"bm:tid";
 
 /*------------------------------------------------------------------------------*\
 	BmLogfile()
@@ -369,10 +372,18 @@ void BmLogHandler::BmLogfile::Write( const char* const msg, int32 threadId) {
 					  threadId, 
 					  TimeToString( now, "%Y-%m-%d|%H:%M:%S").String(),
 					  nowMSecs);
+	s.Prepend( buf);
 	ssize_t result;
-	if ((result = mLogFile->Write( buf, strlen( buf))) < 0)
-		throw BM_runtime_error( BmString("Unable to write to logfile ") << filename);
 	if ((result = mLogFile->Write( s.String(), s.Length())) < 0)
 		throw BM_runtime_error( BmString("Unable to write to logfile ") << filename);
+	int32 watcherCount = mWatchingHandlers.CountItems();
+	if (watcherCount>0) {
+		BMessage msg( BM_LOG_MSG);
+		msg.AddString( MSG_MESSAGE, s.String());
+		for( int32 i=0; i<watcherCount; ++i) {
+			BMessenger watcher( static_cast< BHandler*>( mWatchingHandlers.ItemAt(i)));
+			watcher.SendMessage( &msg);
+		}
+	}
 	mLogFile->Sync();
 }
