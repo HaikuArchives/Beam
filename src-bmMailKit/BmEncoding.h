@@ -99,6 +99,10 @@ public:
 	void SetTransliterate( bool transliterate);
 	void SetDiscard( bool discard);
 
+	// getters:
+	bool HadToDiscardChars()				{ return mHadToDiscardChars; }
+	int32 FirstDiscardedPos()				{ return mFirstDiscardedPos; }
+
 	// overrides of BmMemFilter base:
 	void Reset( BmMemIBuf* input);
 
@@ -111,6 +115,8 @@ protected:
 	iconv_t mIconvDescr;
 	bool mTransliterate;
 	bool mDiscard;
+	bool mHadToDiscardChars;
+	int32 mFirstDiscardedPos;
 	bool mStoppedOnMultibyte;
 };
 
@@ -136,6 +142,7 @@ public:
 
 	// getters:
 	bool HadToDiscardChars()				{ return mHadToDiscardChars; }
+	int32 FirstDiscardedPos()				{ return mFirstDiscardedPos; }
 
 protected:
 	// overrides of BmMailFilter base:
@@ -147,6 +154,7 @@ protected:
 	bool mTransliterate;
 	bool mDiscard;
 	bool mHadToDiscardChars;
+	int32 mFirstDiscardedPos;
 	bool mStoppedOnMultibyte;
 };
 
@@ -211,6 +219,10 @@ public:
 									const BmString& charset=BM_DEFAULT_STRING);
 	virtual ~BmQpEncodedWordEncoder();
 
+	// getters:
+	bool HadToDiscardChars()				{ return mHadToDiscardChars; }
+	int32 FirstDiscardedPos()				{ return mFirstDiscardedPos; }
+
 protected:
 	// native methods:
 	void InitConverter();
@@ -235,6 +247,8 @@ protected:
 	//
 	BmString mDestCharset;
 	iconv_t mIconvDescr;
+	bool mHadToDiscardChars;
+	int32 mFirstDiscardedPos;
 	bool mStoppedOnMultibyte;
 
 	BmString mConversionBuf;
@@ -348,8 +362,6 @@ protected:
 	// overrides of BmMailFilter base:
 	void Filter( const char* srcBuf, uint32& srcLen, 
 					 char* destBuf, uint32& destLen);
-
-	bool mLastWasCR;
 };
 
 /*------------------------------------------------------------------------------*\

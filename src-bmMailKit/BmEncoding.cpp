@@ -360,15 +360,15 @@ BmString BmEncoding::ConvertUTF8ToHeaderPart( const BmString& utf8Text,
 		BmQpEncodedWordEncoder qpEncoder( &srcBuf, blockSize, fieldLen+2, 	
 													 charset);
 		tempIO.Write( &qpEncoder);
-		if (qpEncoder.HadError())
-			throw BM_text_error( "", "", qpEncoder.SrcCount());
+		if (qpEncoder.HadToDiscardChars())
+			throw BM_text_error( "", "", qpEncoder.FirstDiscardedPos());
 	} else {
 		BmUtf8Decoder textConverter( &srcBuf, charset);
 		BmFoldedLineEncoder foldEncoder( &textConverter, BM_MAX_LINE_LEN, 
 													blockSize, fieldLen+2);
 		tempIO.Write( &foldEncoder);
-		if (textConverter.HadError())
-			throw BM_text_error( "", "", textConverter.SrcCount());
+		if (textConverter.HadToDiscardChars())
+			throw BM_text_error( "", "", textConverter.FirstDiscardedPos());
 	}
 	BmString foldedString;
 	foldedString.Adopt( tempIO.TheString());
@@ -380,10 +380,19 @@ BmString BmEncoding::ConvertUTF8ToHeaderPart( const BmString& utf8Text,
 		-	
 \*------------------------------------------------------------------------------*/
 bool BmEncoding::NeedsEncoding( const BmString& utf8String) {
-	// check if string needs quoted-printable/base64 encoding:
-	// - encoding is needed if the string contains non-ASCII chars
+	// check if string needs quoted-printable/base64 encoding;
+	// encoding is needed: 
+	// 	- if the string contains non-ASCII chars
+	// 	- if the string contains lines longer than 998 characters
+	const char* lastNlPos = utf8String.String()-1;
 	for( const char* p = utf8String.String(); *p; ++p) {
-		if (*p<32 && *p!='\r' && *p!='\n' && *p!='\t')
+		signed char c = *p;
+		if (c=='\n') {
+			if (p - lastNlPos > 998)
+				// line is too long and needs to be encoded:
+				return true;
+			lastNlPos = p;
+		} else if (c<32 && c!='\r' && c!='\t')
 			// N.B.: This is a signed char, so c<32 means [0-31] and [128-255]
 			return true;
 	}
@@ -479,6 +488,8 @@ BmUtf8Decoder::BmUtf8Decoder( BmMemIBuf* input, const BmString& destCharset,
 	,	mIconvDescr( ICONV_ERR)
 	,	mTransliterate( false)
 	,	mDiscard( false)
+	,	mHadToDiscardChars( false)
+	,	mFirstDiscardedPos( -1)
 	,	mStoppedOnMultibyte( false)
 {
 	if (mDestCharset.ICompare("utf8")==0)
@@ -507,6 +518,8 @@ BmUtf8Decoder::~BmUtf8Decoder()
 void BmUtf8Decoder::Reset( BmMemIBuf* input) {
 	inherited::Reset( input);
 	InitConverter();
+	mHadToDiscardChars = false;
+	mFirstDiscardedPos = -1;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -590,7 +603,12 @@ void BmUtf8Decoder::Filter( const char* srcBuf, uint32& srcLen,
 		} else if (errno == EILSEQ) {
 			BM_LOG( BM_LogMailParse, 
 					  "Result in utf8-decode: invalid multibyte char found");
-			mHadError = true;
+			if (!mHadToDiscardChars) {
+				mFirstDiscardedPos = mSrcCount;
+				int on = 1;
+				iconvctl( mIconvDescr, ICONV_SET_DISCARD_ILSEQ, &on);
+				mHadToDiscardChars = true;
+			}
 		} else {
 			BM_SHOWERR( BmString("Unknown error-result in utf8-decode: ") 
 								<< errno);
@@ -620,6 +638,7 @@ BmUtf8Encoder::BmUtf8Encoder( BmMemIBuf* input, const BmString& srcCharset,
 	,	mTransliterate( false)
 	,	mDiscard( false)
 	,	mHadToDiscardChars( false)
+	,	mFirstDiscardedPos( -1)
 	,	mStoppedOnMultibyte( false)
 {
 	if (mSrcCharset.ICompare("utf8")==0)
@@ -649,6 +668,7 @@ void BmUtf8Encoder::Reset( BmMemIBuf* input) {
 	inherited::Reset( input);
 	InitConverter();
 	mHadToDiscardChars = false;
+	mFirstDiscardedPos = -1;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -733,9 +753,12 @@ void BmUtf8Encoder::Filter( const char* srcBuf, uint32& srcLen,
 		} else if (errno == EILSEQ) {
 			BM_LOG2( BM_LogMailParse, 
 						"Result in utf8-encode: invalid multibyte char found");
-			mHadToDiscardChars = true;
-			int on = 1;
-			iconvctl( mIconvDescr, ICONV_SET_DISCARD_ILSEQ, &on);
+			if (!mHadToDiscardChars) {
+				mFirstDiscardedPos = mSrcCount;
+				int on = 1;
+				iconvctl( mIconvDescr, ICONV_SET_DISCARD_ILSEQ, &on);
+				mHadToDiscardChars = true;
+			}
 		} else {
 			BM_SHOWERR( BmString("Unknown error-result in utf8-encode: ") 
 								<< errno);
@@ -1081,6 +1104,8 @@ BmQpEncodedWordEncoder::BmQpEncodedWordEncoder( BmMemIBuf* input,
 	,	mCharacterLen( 0)
 	,	mDestCharset( destCharset)
 	,	mIconvDescr( ICONV_ERR)
+	,	mHadToDiscardChars( false)
+	,	mFirstDiscardedPos( -1)
 	,	mStoppedOnMultibyte( false)
 {
 	if (mDestCharset.ICompare("utf8")==0)
@@ -1112,6 +1137,8 @@ BmQpEncodedWordEncoder::~BmQpEncodedWordEncoder()
 void BmQpEncodedWordEncoder::Reset( BmMemIBuf* input) {
 	inherited::Reset( input);
 	InitConverter();
+	mHadToDiscardChars = false;
+	mFirstDiscardedPos = -1;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -1279,7 +1306,12 @@ void BmQpEncodedWordEncoder::Filter( const char* srcBuf, uint32& srcLen,
 			} else if (errno == EILSEQ) {
 				BM_LOG( BM_LogMailParse, 
 						  "Result in utf8-decode: invalid multibyte char found");
-				mHadError = true;
+				if (!mHadToDiscardChars) {
+					mFirstDiscardedPos = mSrcCount;
+					int on = 1;
+					iconvctl( mIconvDescr, ICONV_SET_DISCARD_ILSEQ, &on);
+					mHadToDiscardChars = true;
+				}
 			} else {
 				BM_SHOWERR( BmString("Unknown error-result in utf8-decode: ") 
 									<< errno);
@@ -1639,7 +1671,6 @@ void BmLinebreakDecoder::Filter( const char* srcBuf, uint32& srcLen,
 \*------------------------------------------------------------------------------*/
 BmLinebreakEncoder::BmLinebreakEncoder( BmMemIBuf* input, uint32 blockSize)
 	:	inherited( input, blockSize)
-	,	mLastWasCR( false)
 {
 }
 
@@ -1660,12 +1691,14 @@ void BmLinebreakEncoder::Filter( const char* srcBuf, uint32& srcLen,
 
 	char c;
 	for( ; src<srcEnd && dest<destEnd; ++src) {
-		if ((c = *src)=='\n' && !mLastWasCR) {
+		if ((c = *src) == '\n') {
 			if (dest>destEnd-2)
 				break;
 			*dest++ = '\r';
-		}
-		*dest++ = c;
+		} 
+		if (c != '\r')
+			// copy character unless it's '\r' (we dump that):
+			*dest++ = c;
 	}
 
 	srcLen = src-srcBuf;
