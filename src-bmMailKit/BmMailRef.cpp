@@ -60,6 +60,7 @@ BmRef<BmMailRef> BmMailRef::CreateInstance( BmMailRefList* model, entry_ref &ere
 				mailRef->mListModel = model;
 			}
 			mailRef->EntryRef( eref);
+			mailRef->ResyncFromDisk();
 			return mailRef;
 		}
 	}
@@ -347,7 +348,8 @@ bool BmMailRef::ReadAttributes( const struct stat* statInfo) {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmMailRef::ResyncFromDisk() { 
-	ReadAttributes();
+	if (ReadAttributes())
+		mInitCheck = B_OK;
 	TellModelItemUpdated( UPD_ALL);
 }
 

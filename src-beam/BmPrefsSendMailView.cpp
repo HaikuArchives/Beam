@@ -243,11 +243,11 @@ BmPrefsSendMailView::BmPrefsSendMailView()
 					new VGroup(
 						mAccountControl = new BmTextControl( "Account name:", false, 0, 35),
 						new Space( minimax(0,5,0,5)),
-						mServerControl = new BmTextControl( "Server:"),
+						mServerControl = new BmTextControl( "SMTP-Server:"),
 						mPortControl = new BmTextControl( "Port:"),
 						new Space( minimax(0,5,0,5)),
 						mAuthControl = new BmMenuControl( "Auth-method:", new BPopUpMenu("")),
-						mLoginControl = new BmTextControl( "Login:"),
+						mLoginControl = new BmTextControl( "Username:"),
 						mPwdControl = new BmTextControl( "Password:"),
 						mPopControl = new BmMenuControl( "Pop-account:", new BPopUpMenu("")),
 						new Space( minimax(0,5,0,5)),
@@ -549,8 +549,11 @@ void BmPrefsSendMailView::ShowAccount( int32 selection) {
 													: nEmptyItemLabel.String());
 				mStorePwdControl->SetValue( mCurrAcc->PwdStoredOnDisk());
 				mPopControl->SetEnabled( mCurrAcc->NeedsAuthViaPopServer());
-				mLoginControl->SetEnabled( !mCurrAcc->NeedsAuthViaPopServer());
-				mPwdControl->SetEnabled( mCurrAcc->PwdStoredOnDisk() && !mCurrAcc->NeedsAuthViaPopServer());
+				mLoginControl->SetEnabled( mCurrAcc->AuthMethod().Length() 
+													&& !mCurrAcc->NeedsAuthViaPopServer());
+				mPwdControl->SetEnabled( mCurrAcc->PwdStoredOnDisk() 
+												 && mCurrAcc->AuthMethod().Length()
+												 && !mCurrAcc->NeedsAuthViaPopServer());
 			}
 		} else
 			mCurrAcc = NULL;
@@ -563,5 +566,6 @@ void BmPrefsSendMailView::ShowAccount( int32 selection) {
 \*------------------------------------------------------------------------------*/
 CLVContainerView* BmPrefsSendMailView::CreateAccListView( minimax minmax, int32 width, int32 height) {
 	mAccListView = BmSendAccView::CreateInstance( minmax, width, height);
+	mAccListView->ClickSetsFocus( true);
 	return mAccListView->ContainerView();
 }

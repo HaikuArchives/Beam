@@ -293,6 +293,33 @@ void ConvertLinebreaksToCRLF( const BString& in, BString& out) {
 }
 
 /*------------------------------------------------------------------------------*\
+	ConvertTabsToSpaces( in, out)
+		-	
+\*------------------------------------------------------------------------------*/
+void ConvertTabsToSpaces( const BString& in, BString& out) {
+	int32 outSize = in.Length()*2;
+	if (!outSize) {
+		out = "";
+		return;
+	}
+	const int numSpaces = 3;
+	char* buf = out.LockBuffer( outSize);
+	const char* pos = in.String();
+	char* newPos = buf;
+	while( *pos) {
+		if (*pos=='\t') {
+			for( int i=0; i<numSpaces; ++i)
+				*newPos++ = ' ';
+			pos++;
+		} else
+			*newPos++ = *pos++;
+	}
+	*newPos = 0;
+	out.UnlockBuffer( newPos-buf);
+	out.Truncate( newPos-buf);
+}
+
+/*------------------------------------------------------------------------------*\
 	WordWrap( in, out, maxLineLen)
 		-	
 \*------------------------------------------------------------------------------*/

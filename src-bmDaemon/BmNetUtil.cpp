@@ -47,26 +47,23 @@
 		-	tries to find out our own FQDN (full qualified domainname)
 \*------------------------------------------------------------------------------*/
 BString OwnFQDN() {
+	// since everything else seems to be too shaky, we rely on the FQDN that was
+	// built from scanning the network settings file:
+	return TheResources->mOwnFQDN;
+
+/*
 	char hostname[MAXHOSTNAMELEN+1];
 	hostname[MAXHOSTNAMELEN] = '\0';
 	int result;
 	if ((result=gethostname( hostname, MAXHOSTNAMELEN)) < GETHOSTNAME_OK) {
 		// in case we can't get a hostname, we try the network-settings
-		if (TheResources->mOwnFQDN.Length())
-			return TheResources->mOwnFQDN;		// FQDN that was built from network settings file
-		else {
-			BM_SHOWERR("Sorry, could not determine name of this host, giving up.");
-			return "";
-		}
+		BM_SHOWERR("Sorry, could not determine name of this host, giving up.");
+		return "";
 	}
 	hostent *hptr;
-	// in case we can't get a FQDN by means of gethostbyname, we try the network-settings
-	// file, if that fails as well, we return the hostname:
+	// in case we can't get a FQDN by means of gethostbyname, we return the hostname:
 	if ((hptr = gethostbyname( hostname)) == NULL) {
-		if (TheResources->mOwnFQDN.Length())
-			return TheResources->mOwnFQDN;		// FQDN that was built from network settings file
-		else
-			return hostname;
+		return hostname;
 	} else {
 		hostent *h2ptr;
 		if ((h2ptr = gethostbyaddr( hptr->h_addr_list[0], 4, AF_INET)) == NULL)
@@ -74,6 +71,7 @@ BString OwnFQDN() {
 		else
 			return h2ptr->h_name;
 	}
+*/
 }
 
 /*------------------------------------------------------------------------------*\
@@ -92,3 +90,22 @@ BString OwnDomain( BString fqdn) {
 	} else
 		return "";
 }
+
+/*------------------------------------------------------------------------------*\
+	IsPPPRunning()
+		-	checks whether or not PPP-daemon is running
+\*------------------------------------------------------------------------------*/
+bool IsPPPRunning() {
+	// the following has ruthlessly been ripped from the MailDaemonReplacement (MDR):
+#ifdef BONE_VERSION
+	int s = socket(AF_INET, SOCK_DGRAM, 0);
+	bsppp_status_t status;
+	strcpy(status.if_name, "ppp0");
+	if (ioctl(s, BONE_SERIAL_PPP_GET_STATUS, &status, sizeof(status)) == 0) {
+		if (status.connection_status == BSPPP_CONNECTED)
+			return true;
+	}
+#endif
+	return (find_thread("tty_thread") > 0);
+}
+

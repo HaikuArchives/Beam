@@ -39,4 +39,9 @@
 BString OwnFQDN();
 BString OwnDomain( BString fqdn="");
 
+/*------------------------------------------------------------------------------*\*\
+	utility function that checks if PPP is up and running:
+\*------------------------------------------------------------------------------*/
+bool IsPPPRunning();
+
 #endif

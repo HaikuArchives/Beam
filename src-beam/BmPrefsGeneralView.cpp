@@ -107,25 +107,26 @@ BmPrefsGeneralView::BmPrefsGeneralView()
 					)
 				),
 				new MBorder( M_LABELED_BORDER, 10, (char*)"General GUI Options",
-					new HGroup( 
-					new VGroup(
-						mRestoreFolderStatesControl = new BmCheckControl( "Restore mailfolder-view state on startup", 
-																					 	  new BMessage(BM_RESTORE_FOLDER_STATES_CHANGED), 
-																					 	  this, ThePrefs->GetBool("RestoreFolderStates")),
-						mInOutAtTopControl = new BmCheckControl( "Show in & out - folders at top of mailfolder-view", 
-																					 	  new BMessage(BM_INOUT_AT_TOP_CHANGED), 
-																					 	  this, ThePrefs->GetBool("InOutAlwaysAtTop", false)),
-						new Space( minimax(0,10,0,10)),
-						mUseDeskbarControl = new BmCheckControl( "Use Deskbar Icon to indicate new mail", 
-																			  new BMessage(BM_USE_DESKBAR_CHANGED), 
-																			  this, ThePrefs->GetBool("UseDeskbar", true)),
-						new Space( minimax(0,10,0,10)),
-						mShowTooltipsControl = new BmCheckControl( "Show Tooltips for Toolbar-Buttons and Prefs", 
-																			  new BMessage(BM_SHOW_TOOLTIPS_CHANGED), 
-																			  this, ThePrefs->GetBool("ShowTooltips", true)),
-						new Space(),
-						0
+					new HGroup(
+						new VGroup(
+							mRestoreFolderStatesControl = new BmCheckControl( "Restore mailfolder-view state on startup", 
+																						 	  new BMessage(BM_RESTORE_FOLDER_STATES_CHANGED), 
+																						 	  this, ThePrefs->GetBool("RestoreFolderStates")),
+							mInOutAtTopControl = new BmCheckControl( "Show in & out - folders at top of mailfolder-view", 
+																						 	  new BMessage(BM_INOUT_AT_TOP_CHANGED), 
+																						 	  this, ThePrefs->GetBool("InOutAlwaysAtTop", false)),
+							new Space( minimax(0,10,0,10)),
+							mUseDeskbarControl = new BmCheckControl( "Use Deskbar Icon to indicate new mail", 
+																				  new BMessage(BM_USE_DESKBAR_CHANGED), 
+																				  this, ThePrefs->GetBool("UseDeskbar", true)),
+							new Space( minimax(0,10,0,10)),
+							mShowTooltipsControl = new BmCheckControl( "Show Tooltips for Toolbar-Buttons and Prefs", 
+																				  new BMessage(BM_SHOW_TOOLTIPS_CHANGED), 
+																				  this, ThePrefs->GetBool("ShowTooltips", true)),
+							new Space(),
+							0
 						),
+						new Space(),
 						0
 					)
 				),
@@ -134,15 +135,19 @@ BmPrefsGeneralView::BmPrefsGeneralView()
 			new Space( minimax(0,10,0,10)),
 			new HGroup( 
 				new MBorder( M_LABELED_BORDER, 10, (char*)"Performance & Timing Options",
-					new VGroup(
-						mCacheRefsOnDiskControl = new BmCheckControl( "Cache mailfolders (on disk)", 
-																			 		new BMessage(BM_CACHE_REFS_DISK_CHANGED), 
-																			 		this, ThePrefs->GetBool("CacheRefsOnDisk")),
-						mCacheRefsInMemControl = new BmCheckControl( "Keep mailfolders in memory once loaded", 
-																			 		new BMessage(BM_CACHE_REFS_MEM_CHANGED), 
-																			 		this, ThePrefs->GetBool("CacheRefsInMem")),
-						mNetBufSizeSendControl = new BmTextControl( "Network buffer size when sending mail (bytes):", false, 5),
-						mNetRecvTimeoutControl = new BmTextControl( "Timeout for network-connections (seconds):", false, 5),
+					new HGroup( 
+						new VGroup(
+							mCacheRefsOnDiskControl = new BmCheckControl( "Cache mailfolders (on disk)", 
+																				 		new BMessage(BM_CACHE_REFS_DISK_CHANGED), 
+																				 		this, ThePrefs->GetBool("CacheRefsOnDisk")),
+							mCacheRefsInMemControl = new BmCheckControl( "Keep mailfolders in memory once loaded", 
+																				 		new BMessage(BM_CACHE_REFS_MEM_CHANGED), 
+																				 		this, ThePrefs->GetBool("CacheRefsInMem")),
+							mNetBufSizeSendControl = new BmTextControl( "Network buffer size when sending mail (bytes):", false, 5),
+							mNetRecvTimeoutControl = new BmTextControl( "Timeout for network-connections (seconds):", false, 5),
+							0
+						),
+						new Space(),
 						0
 					)
 				),
@@ -241,8 +246,6 @@ void BmPrefsGeneralView::Initialize() {
 	mRefList->AddItemToList( mRef.Get());
 	mLayoutView->StartJob( mRefList.Get());
 	
-	mLayoutView->Unarchive( ThePrefs->GetMsg("MailRefLayout"));
-
 	mMailMoverShowControl->SetTarget( this);
 	mPopperRemoveControl->SetTarget( this);
 	mSmtpRemoveControl->SetTarget( this);
@@ -415,5 +418,6 @@ void BmPrefsGeneralView::MessageReceived( BMessage* msg) {
 \*------------------------------------------------------------------------------*/
 CLVContainerView* BmPrefsGeneralView::CreateMailRefLayoutView( minimax minmax, int32 width, int32 height) {
 	mLayoutView = BmMailRefView::CreateInstance( minmax, width, height);
+	mLayoutView->Unarchive( ThePrefs->GetMsg("MailRefLayout"));
 	return mLayoutView->ContainerView();
 }

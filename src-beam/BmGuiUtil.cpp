@@ -58,13 +58,22 @@ BMenuItem* CreateMenuItem( const char* label, int32 msgWhat, const char* idForSh
 BMenuItem* CreateMenuItem( const char* label, BMessage* msg, const char* idForShortcut) {
 	BString shortcut = ThePrefs->GetShortcutFor( idForShortcut ? idForShortcut : label);
 	shortcut.RemoveSet( " \t");
+	shortcut.ToUpper();
 	int32 modifiers = 0;
 	int32 pos;
-	if ((pos=shortcut.IFindFirst("<SHIFT>")) != B_ERROR) {
+	if ((pos=shortcut.FindFirst("<SHIFT>")) != B_ERROR) {
 		modifiers |= B_SHIFT_KEY;
 		shortcut.Remove( pos, 7);
 	}
-	if (shortcut.Length())
+	if (shortcut=="<RIGHT_ARROW>")
+		return new BMenuItem( label, msg, B_RIGHT_ARROW, modifiers);
+	else if (shortcut=="<LEFT_ARROW>")
+		return new BMenuItem( label, msg, B_LEFT_ARROW, modifiers);
+	else if (shortcut=="<UP_ARROW>")
+		return new BMenuItem( label, msg, B_UP_ARROW, modifiers);
+	else if (shortcut=="<DOWN_ARROW>")
+		return new BMenuItem( label, msg, B_DOWN_ARROW, modifiers);
+	else if (shortcut.Length())
 		return new BMenuItem( label, msg, shortcut[0], modifiers);
 	else
 		return new BMenuItem( label, msg);

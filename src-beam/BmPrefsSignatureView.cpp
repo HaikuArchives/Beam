@@ -494,5 +494,6 @@ void BmPrefsSignatureView::ShowSignature( int32 selection) {
 \*------------------------------------------------------------------------------*/
 CLVContainerView* BmPrefsSignatureView::CreateSigListView( minimax minmax, int32 width, int32 height) {
 	mSigListView = BmSignatureView::CreateInstance( minmax, width, height);
+	mSigListView->ClickSetsFocus( true);
 	return mSigListView->ContainerView();
 }

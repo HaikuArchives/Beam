@@ -78,6 +78,9 @@ class BmMailFolderView : public BmListViewController
 {
 	typedef BmListViewController inherited;
 	
+	//	message component definitions for archive:
+	static const char* const MSG_CURR_FOLDER = "bm:currfolder";
+
 public:
 	static const char* const MSG_FOLDERS_SELECTED = 		"bm:fsel";
 
@@ -97,6 +100,10 @@ public:
 	BString StateInfoBasename()			{ return "MailFolderView"; }
 	void UpdateModelItem( BMessage* msg);
 	const char* ItemNameForCaption()		{ return "folder"; }
+	void JobIsDone( bool completed);
+	//
+	status_t Archive(BMessage* archive, bool deep=true) const;
+	status_t Unarchive(const BMessage* archive, bool deep=true);
 
 	// overrides of listview base:
 	void MessageReceived( BMessage* msg);
@@ -110,6 +117,8 @@ private:
 	BmRef<BmMailFolder> CurrentFolder( void) const;
 	
 	BmMailRefView* mPartnerMailRefView;
+	
+	BString mLastActiveKey;
 
 	// Hide copy-constructor and assignment:
 	BmMailFolderView( const BmMailFolderView&);

@@ -33,16 +33,9 @@
 
 #include "BmPrefsView.h"
 
-#define BM_EACH_BCC_CHANGED 				'bmBC'
-#define BM_PREFER_USER_AGENT_CHANGED 	'bmUA'
-#define BM_GENERATE_MSGIDS_CHANGED 		'bmGI'
-#define BM_QP_SAFE_CHANGED	 				'bmQP'
-#define BM_ATTACH_VCARDS_CHANGED 		'bmAV'
-#define BM_ENCODING_SELECTED		 		'bmES'
-#define BM_FORWARD_TYPE_SELECTED		 	'bmFS'
+#define BM_CHECK_IF_PPP_UP_CHANGED 	'bmCP'
 
 class BmCheckControl;
-class BmMenuControl;
 class BmTextControl;
 /*------------------------------------------------------------------------------*\
 	BmPrefsMailReadView
@@ -69,6 +62,7 @@ private:
 	BmTextControl* mHeaderListSmallControl;
 	BmTextControl* mHeaderListLargeControl;
 	BmTextControl* mMimeTypeTrustInfoControl;
+	BmCheckControl* mAutoCheckIfPppUpControl;
 
 	// Hide copy-constructor and assignment:
 	BmPrefsMailReadView( const BmPrefsMailReadView&);

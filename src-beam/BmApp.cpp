@@ -51,6 +51,7 @@
 #include "BmMailViewWin.h"
 #include "BmMainWindow.h"
 #include "BmMsgTypes.h"
+#include "BmNetUtil.h"
 #include "BmPopAccount.h"
 #include "BmPrefs.h"
 #include "BmResources.h"
@@ -290,7 +291,9 @@ void BmApplication::MessageReceived( BMessage* msg) {
 				msg->FindString( BmPopAccountList::MSG_ITEMKEY, &key);
 				if (key) {
 					bool isAutoCheck = msg->FindBool( BmPopAccountList::MSG_AUTOCHECK);
-					ThePopAccountList->CheckMailFor( key, isAutoCheck);
+					if (!isAutoCheck || !ThePrefs->GetBool( "AutoCheckOnlyIfPPPRunning", true) 
+					|| IsPPPRunning())
+						ThePopAccountList->CheckMailFor( key, isAutoCheck);
 				} else
 					ThePopAccountList->CheckMail();
 				break;
@@ -517,17 +520,30 @@ Heike Herfart
 ...and (in alphabetical order)...
 
 Charlie Clark
-	for reporting bugs
+	for reporting many bugs
+	and beta-testing Beam 0.91
+	for helping me fix bugs in offline-mode
 
 Helmar Rudolph
 	for advanced ideas
 
-Lars Müller
+Jace Cavacini
+	for many suggestions on usability issues
+
+Lars Müller (of SuSE)
 	for bug-reports in early testing-stages
+	and helping me fix a bug with header-encodings
 
 Linus Almstrom
 	for many bug-reports and suggestions
 	and helping me solve problems with node-monitoring
+	for beta-testing Beam 0.91
+
+Mathias Reitinger
+	for suggestions and pointing out usability issues
+
+Nathan Whitehorn
+	for suggesting to integrate Beam with the MDR
 
 qwilk
 	for suggesting to use <none> in menu-fields instead of ''
@@ -540,6 +556,10 @@ Stephen Butters
 
 Zach 
 	for bug-reports and suggestions 
+	and beta-testing Beam 0.91
+\n\n\n\n
+...and thanks to everyone I forgot, too!
+
 \n\n\n\n\n\n"
 	);
 	aboutWin->Show();

@@ -86,17 +86,28 @@ filter_result BmShortcutControl::FilterHook( BMessage* msg, BHandler** handler,
 \*------------------------------------------------------------------------------*/
 void BmShortcutControl::KeyDown(const char *bytes, int32 numBytes) { 
 	if (numBytes == 1) {
-		BString key( bytes);
-		if (!key.Length())
-			return;
-		key.ToUpper();
-		BString legalKeys("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789<>@#.,+-/*");
-		if (legalKeys.FindFirst(key[0]) != B_ERROR) {
-			int32 mods = Window()->CurrentMessage()->FindInt32("modifiers");
+		BMessage* currMsg = Window()->CurrentMessage();
+		int32 rawKey = currMsg->FindInt32( "raw_char");
+		BString key;
+		BString legalKeys("abcdefghijklmnopqrstuvwxyz0123456789<>@#.,:;+-/*^");
+		if (legalKeys.FindFirst((char)rawKey) != B_ERROR) {
+			key = BString("") << (char)rawKey;
+			key.ToUpper();
+		} else if (rawKey==B_RIGHT_ARROW)
+			key = BString("<RIGHT_ARROW>");
+		else if (rawKey==B_LEFT_ARROW)
+			key = BString("<LEFT_ARROW>");
+		else if (rawKey==B_UP_ARROW)
+			key = BString("<UP_ARROW>");
+		else if (rawKey==B_DOWN_ARROW)
+			key = BString("<DOWN_ARROW>");
+		if (key.Length()) {
+			int32 mods = currMsg->FindInt32("modifiers");
 			if (mods & B_SHIFT_KEY)
 				key.Prepend("<SHIFT>");
 			SetText( key.String());
-		}
+		} else
+			SetText( "");
 	}
 	BView::KeyDown( bytes, numBytes);
 }
@@ -260,6 +271,7 @@ CLVContainerView* BmPrefsShortcutsView::CreateListView( minimax minmax, int32 wi
 
 	mListView->SetSelectionMessage( new BMessage( BM_SELECTION_CHANGED));
 	mListView->SetTarget( this);
+	mListView->ClickSetsFocus( true);
 
 	int32 flags = 0;
 	if (ThePrefs->GetBool("StripedListView"))

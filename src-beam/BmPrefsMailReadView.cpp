@@ -39,6 +39,7 @@
 #include "Colors.h"
 #include "BubbleHelper.h"
 
+#include "BmCheckControl.h"
 #include "BmGuiUtil.h"
 #include "BmLogHandler.h"
 #include "BmPrefs.h"
@@ -73,6 +74,15 @@ BmPrefsMailReadView::BmPrefsMailReadView()
 			new MBorder( M_LABELED_BORDER, 10, (char*)"Trusted Mimetypes (when opening attachments)",
 				new VGroup(
 					mMimeTypeTrustInfoControl = new BmTextControl( "Mimetype trust info:"),
+					0
+				)
+			),
+			new Space( minimax(0,10,0,10)),
+			new MBorder( M_LABELED_BORDER, 10, (char*)"Network Options",
+				new VGroup(
+					mAutoCheckIfPppUpControl = new BmCheckControl( "Automatically check for mails only if PPP is up", 
+																				  new BMessage(BM_CHECK_IF_PPP_UP_CHANGED), 
+																				  this, ThePrefs->GetBool("AutoCheckOnlyIfPPPRunning")),
 					0
 				)
 			),
@@ -121,6 +131,10 @@ settings, the mimetype application/pdf has to be given trust before\n\
 the mimetype application can be set to warn-mode.\n\n\
 N.B.: I know this is clumsy and I promise that there will be\n\
 something better in one of the next versions of Beam.");
+	TheBubbleHelper.SetHelp( mAutoCheckIfPppUpControl, "If you check this, automatical checks take place only if you\n\
+have a running dialup-connection.\n\
+If you have a permanent connection to the internet, you MUST\n\
+uncheck this, otherwise no automatic checks will happen!");
 
 	mHeaderListSmallControl->SetTarget( this);
 	mHeaderListLargeControl->SetTarget( this);
@@ -160,6 +174,10 @@ void BmPrefsMailReadView::MessageReceived( BMessage* msg) {
 					ThePrefs->SetString("HeaderListLarge", mHeaderListLargeControl->Text());
 				else if ( source == mMimeTypeTrustInfoControl)
 					ThePrefs->SetString("MimeTypeTrustInfo", mMimeTypeTrustInfoControl->Text());
+				break;
+			}
+			case BM_CHECK_IF_PPP_UP_CHANGED: {
+				ThePrefs->SetBool("AutoCheckIfPPPRunning", mAutoCheckIfPppUpControl->Value());
 				break;
 			}
 			default:

@@ -882,8 +882,10 @@ bool BmMailHeader::ConstructRawText( BString& header, int32 encoding) {
 		if (!domain.Length()) {
 			// no account given or it has an empty domain, we try to find out manually:
 			domain = OwnFQDN();
-			if (!domain.Length())
-				return false;						// no FQHN, we should not continue
+			if (!domain.Length()) {
+				BM_SHOWERR( "Identity crisis!\nBeam is unable to determine full-qualified domainname of this computer, something is seriously wrong with network settings!\nBeam will use a fake name and continue");
+				domain = "bepc.fake.local";
+			}
 		}
 		SetFieldVal( mMail->IsRedirect() ? BM_FIELD_RESENT_MESSAGE_ID : BM_FIELD_MESSAGE_ID, 
 						 BString("<") << TimeToString( time( NULL), "%Y%m%d%H%M%S.")

@@ -209,7 +209,8 @@ CLVContainerView* BmBodyPartView::CreateContainer( bool horizontal, bool vertica
 void BmBodyPartView::ShowBody( BmBodyPartList* body) {
 	try {
 		StopJob();
-		StartJob( body, false);
+		StartJob( body);
+//		StartJob( body, false);
 	}
 	catch( exception &err) {
 		// a problem occurred, we tell the user:

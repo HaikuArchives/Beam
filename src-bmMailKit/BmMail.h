@@ -199,7 +199,7 @@ protected:
 	// static functions used for quote-formatting:
 	static int32 QuoteTextWithReWrap( const BString& in, BString& out, 
 											    BString quoteString, int maxLineLen);
-	static int32 AddQuotedText( BString& text, BString& out, 
+	static int32 AddQuotedText( const BString& text, BString& out, 
 										 const BString& quote, const BString& quoteString,
 								 		 int maxTextLen);
 

@@ -138,6 +138,7 @@ fWindowActive( false),
 fDeactivatedVerticalBar( NULL),
 fStripedBackground( false),
 fInsertAtSortedPos( true),
+fClickSetsFocus( false),
 fMinMax( minmax)
 {
 }
@@ -924,6 +925,8 @@ void ColumnListView::MouseDown(BPoint where)
 	int32 clicks = message->FindInt32("clicks");
 	if(message->FindInt32("buttons") != B_PRIMARY_MOUSE_BUTTON)
 		return;
+	if (fClickSetsFocus)
+		MakeFocus( true);
 	if(item_index >= 0)
 	{
 		CLVListItem* clicked_item = (CLVListItem*)BListView::ItemAt(item_index);

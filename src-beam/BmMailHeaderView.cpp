@@ -127,7 +127,10 @@ filter_result BmMailHeaderFieldView::BmMsgFilter::Filter( BMessage* msg,
 		return B_DISPATCH_MESSAGE;
 	}
 	if (msg->what == B_KEY_DOWN) {
-		return B_SKIP_MESSAGE;
+		BString bytes = msg->FindString( "bytes");
+		if (bytes.Length() 
+		&& (bytes[0]==B_UP_ARROW || bytes[0]==B_DOWN_ARROW))
+			return B_SKIP_MESSAGE;
 	}
 	return B_DISPATCH_MESSAGE;
 }

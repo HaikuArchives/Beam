@@ -120,6 +120,7 @@ void BmEncoding::ConvertToUTF8( uint32 srcEncoding, const BString& src,
 		return;
 	char* destBuf = NULL;
 	int32 state=0;
+	int32 lastSrcLen=-1;
 	int32 buflen = MAX(128,(int32)(srcbuflen*1.5));
 	status_t st;
 
@@ -127,16 +128,18 @@ void BmEncoding::ConvertToUTF8( uint32 srcEncoding, const BString& src,
 		for( bool finished=false; !finished; ) {
 			if (destBuf)
 				buflen *= 2;
-			destBuf = dest.LockBuffer( buflen);
+			(destBuf = dest.LockBuffer( buflen))
+														|| BM_THROW_RUNTIME( "ConvertToUTF8(): unable to lock buffer");
 			int32 srcLen = srcbuflen;
 			int32 destLen = buflen-1;		// to allow for the delimiting '\0' (see below)
 			(st=convert_to_utf8( srcEncoding, src.String(), &srcLen, destBuf, 
 										&destLen, &state)) == B_OK
 														|| BM_THROW_RUNTIME( BString("error in convert_to_utf8(): ") << strerror( st));
-			if (srcLen == srcbuflen) {
+			if (srcLen == srcbuflen || lastSrcLen == srcLen) {
 				finished = true;
 				destBuf[destLen] = '\0';
 			}
+			lastSrcLen = srcLen;
 			dest.UnlockBuffer( destLen);
 		}
 	} catch (...) {
@@ -162,6 +165,7 @@ void BmEncoding::ConvertFromUTF8( uint32 destEncoding, const BString& src,
 	if (!srcbuflen)
 		return;
 	int32 state=0;
+	int32 lastSrcLen=-1;
 	int32 buflen = MAX(128,srcbuflen);
 	status_t st;
 
@@ -169,19 +173,22 @@ void BmEncoding::ConvertFromUTF8( uint32 destEncoding, const BString& src,
 		for( bool finished=false; !finished; ) {
 			if (destBuf)
 				buflen *= 2;
-			destBuf = dest.LockBuffer( buflen);
+			(destBuf = dest.LockBuffer( buflen))
+														|| BM_THROW_RUNTIME( "ConvertFromUTF8(): unable to lock buffer");
 			int32 srcLen = srcbuflen;
 			int32 destLen = buflen-1;
 			(st=convert_from_utf8( destEncoding, src.String(), &srcLen, destBuf, &destLen, &state)) == B_OK
 														|| BM_THROW_RUNTIME( BString("error in convert_from_utf8(): ") << strerror( st));
-			if (srcLen == srcbuflen) {
+			if (srcLen == srcbuflen || lastSrcLen == srcLen) {
 				finished = true;
 				destBuf[destLen] = '\0';
 			}
+			lastSrcLen = srcLen;
 			dest.UnlockBuffer( destLen);
 		}
 	} catch (...) {
-		dest.UnlockBuffer( 0);
+		if (destBuf)
+			dest.UnlockBuffer( 0);
 		throw;
 	}
 }

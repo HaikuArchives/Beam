@@ -88,6 +88,10 @@ BString& RemoveSetFromString( BString& str, const char* chars);
 void ConvertLinebreaksToLF( const BString& in, BString& out);
 void ConvertLinebreaksToCRLF( const BString& in, BString& out);
 /*------------------------------------------------------------------------------*\
+	utility function to convert tabs to a fixed number of spaces:
+\*------------------------------------------------------------------------------*/
+void ConvertTabsToSpaces( const BString& in, BString& out);
+/*------------------------------------------------------------------------------*\
 	utility function to wrap lines at word boundary:
 \*------------------------------------------------------------------------------*/
 void WordWrap( const BString& in, BString& out, int32 maxLineLen, BString nl);

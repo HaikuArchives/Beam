@@ -189,6 +189,7 @@ CLVContainerView* BmPrefsWin::CreatePrefsListView( minimax minmax, int32 width, 
 	mPrefsListView->SetFont( &font);
 	mPrefsListView->SetSelectionMessage( new BMessage( BM_SELECTION_CHANGED));
 	mPrefsListView->SetTarget( this);
+	mPrefsListView->ClickSetsFocus( true);
 	CLVContainerView* container 
 		= mPrefsListView->Initialize( BRect( 0,0,width-1,height-1), 
 												B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE,

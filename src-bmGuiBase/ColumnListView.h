@@ -213,6 +213,8 @@ class ColumnListView : public BListView
 		inline bool StripedBackground( )	{ return fStripedBackground; }
 		inline void SetInsertAtSortedPos( bool b)		{ fInsertAtSortedPos = b; }
 		inline bool InsertAtSortedPos( )	{ return fInsertAtSortedPos; }
+		inline void ClickSetsFocus( bool b)		{ fClickSetsFocus = b; }
+		inline bool ClickSetsFocus( )	{ return fClickSetsFocus; }
 
 		virtual void MessageReceived( BMessage* msg);
 
@@ -267,6 +269,7 @@ class ColumnListView : public BListView
 		BScrollBar* fDeactivatedVerticalBar;
 		bool fStripedBackground;
 		bool fInsertAtSortedPos;
+		bool fClickSetsFocus;
 
 		minimax fMinMax;		
 };

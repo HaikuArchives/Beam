@@ -683,7 +683,10 @@ void BmListModel::TellModelItemAdded( BmListModelItem* item) {
 	if (HasControllers()) {
 		BMessage msg( BM_LISTMODEL_ADD);
 		msg.AddPointer( MSG_MODELITEM, static_cast<void*>(item));
-		item->AddRef();						// the message now refers to the item, too
+		// since each message will reference the item, we add
+		// as many refs to the item as we have controllers:
+		for( uint32 i=0; i<mControllerSet.size(); ++i)
+			item->AddRef();
 		BM_LOG2( BM_LogModelController, BString("ListModel <") << ModelName() << "> tells about added item " << item->Key());
 		TellControllers( &msg);
 	}
@@ -701,7 +704,10 @@ void BmListModel::TellModelItemRemoved( BmListModelItem* item) {
 	if (HasControllers()) {
 		BMessage msg( BM_LISTMODEL_REMOVE);
 		msg.AddPointer( MSG_MODELITEM, static_cast<void*>(item));
-		item->AddRef();						// the message now refers to the item, too
+		// since each message will reference the item, we add
+		// as many refs to the item as we have controllers:
+		for( uint32 i=0; i<mControllerSet.size(); ++i)
+			item->AddRef();
 		BM_LOG2( BM_LogModelController, BString("ListModel <") << ModelName() << "> tells about removed item " << item->Key());
 		TellControllers( &msg, true);
 	}
@@ -720,7 +726,10 @@ void BmListModel::TellModelItemUpdated( BmListModelItem* item, BmUpdFlags flags,
 	if (HasControllers()) {
 		BMessage msg( BM_LISTMODEL_UPDATE);
 		msg.AddPointer( MSG_MODELITEM, static_cast<void*>(item));
-		item->AddRef();						// the message now refers to the item, too
+		// since each message will reference the item, we add
+		// as many refs to the item as we have controllers:
+		for( uint32 i=0; i<mControllerSet.size(); ++i)
+			item->AddRef();
 		msg.AddInt32( MSG_UPD_FLAGS, flags);
 		if (oldKey.Length())
 			// item has been renamed, we include old key:

@@ -1,6 +1,33 @@
 change-history of Beam:
 		$Id$
 
+v0.91, 2002-03-24
+	-	header-view contents are now selectable and draggable.
+	-	added support for redirecting mails.
+	-	Beam now works under Dano (BeOS 5.1).
+	-	signature support added (for static and dynamic signatures).
+	-	added automatic mail-checking (every xx minutes).
+	-	all shortcuts are now configurable via prefs.
+	-	added better quoting-modes (simple, push-margin and auto-wrap)
+		in order to reduce comb-like effect.
+	-	added option to show in- & out-folders always at top.
+	-	added tooltips to all preferences-controls, which is one step
+		on the way to better usability (but Online-Help still missing).
+	-	added Deskbar icon indicating the presence of new mail.
+		(This seems to constantly crash the R5 Deskbar, but it works
+		for OpenTracker & Dano versions...)
+	-	Display-font can now be selected when viewing/editing mails.
+	-	Beam can now set itself up as preferred email application.
+	-	fixed problems with node-monitoring stopping to work after a
+		recreate-cache.
+	-	Beam now correctly shows BeOS standard-icons for mails, if 
+		Beam is preferred app.
+	-	fixed incorrect mail-address creation in case of phrases containing
+		commas (like: Meyer, Justin <xx@yyy.zz>). This would now be created
+		as "Meyer, Justin" <xx@yyy.zz>.
+	-	fixed problems with highlighting URLs that contain a tilde ('~').
+	-	many more bugfixes
+
 v0.903, 2002-02-22
 	-	Beam no longer complains about unknown prefs-field 'BeMailStyle'.
 
@@ -9,8 +36,6 @@ v0.902, 2002-02-22
 	-	disabled selecting and invoking for	the dummy-mailrefview used in prefs.
 	-	make the reply-mode with selected text work (only selected text will be
 		included in reply).
-Thanks for bugreports & suggestions:
-	Charlie Clark
 
 v0.901, 2002-02-21
 	-	enable people to send mail if there is no working name-service
@@ -28,8 +53,6 @@ v0.901, 2002-02-21
 		This is no complete solution, but I hope that this will increase 
 		compatibility with MailDaemonReplacement and other programs.
 	-	fixed a couple of smaller redraw/layout issues
-Thanks for bugreports & suggestions:
-	zach, Linus Almstrom
 
 v0.90, 2002-02-19
 	- first public release

@@ -200,9 +200,9 @@ Auto Wrap:\n\
 	This will cause Beam to automatically rewrap blocks of quoted lines in a way that\n\
 	tries to keep the paragraph structure of the original mail intact.\n\
 \n\
-Since 'Auto Wrap' usually gives the best results, Beam uses it by default, but if you \n\
-encounter mails where the automatic wrapping doesn't work, you should try one \n\
-of the other modes.");
+'Auto Wrap' usually gives the best results for normal text, but since it\n\
+can lead to unwanted wrapping of structured text (e.g. code), Beam uses \n\
+'Push Margin' by default.");
 	TheBubbleHelper.SetHelp( mForwardIntroStrControl, "Here you can enter a string that will \nappear at the top of every forwarded mail.\n\
 The following macros are supported:\n\
 	%D  -  expands to the original mail's date.\n\

@@ -206,13 +206,20 @@ void BmResources::FetchOwnFQDN() {
 			ssize_t readSize = netFile.Read( buf, 4095);
 			buffer.UnlockBuffer( readSize > 0 ? readSize : 0);
 			Regexx rx;
-			if (rx.exec( buffer, "HOSTNAME\\s*=\\s*(\\S+)", Regexx::nocase)) {
+			if (rx.exec( buffer, "HOSTNAME\\s*=[ \\t](\\S*)", Regexx::nocase)) {
 				mOwnFQDN = rx.match[0].atom[0];
-				if (rx.exec( buffer, "DNS_DOMAIN\\s*=\\s*(\\S+)", Regexx::nocase))
+				if (!mOwnFQDN.Length())
+					mOwnFQDN = "bepc";
+				if (rx.exec( buffer, "DNS_DOMAIN\\s*=[ \\t](\\S*)", Regexx::nocase)
+				&& rx.match[0].atom[0].Length())
 					mOwnFQDN << "." << rx.match[0].atom[0];
+				else
+					mOwnFQDN << ".fake-" << time( NULL) << ".local";
 			}
 		}
 	}
+	if (!mOwnFQDN.Length())
+		mOwnFQDN << "bepc.fake-" << time( NULL) << ".local";
 }
 
 /*------------------------------------------------------------------------------*\

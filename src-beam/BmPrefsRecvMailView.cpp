@@ -274,10 +274,10 @@ BmPrefsRecvMailView::BmPrefsRecvMailView()
 						mMailAddrControl = new BmTextControl( "Mail address:"),
 						mAliasesControl = new BmTextControl( "Aliases:"),
 						new Space( minimax(0,5,0,5)),
-						mServerControl = new BmTextControl( "Server:"),
+						mServerControl = new BmTextControl( "POP-Server:"),
 						mPortControl = new BmTextControl( "Port:"),
 						mAuthControl = new BmMenuControl( "Auth-method:", new BPopUpMenu("")),
-						mLoginControl = new BmTextControl( "Login:"),
+						mLoginControl = new BmTextControl( "Username:"),
 						mPwdControl = new BmTextControl( "Password:"),
 						new Space( minimax(0,5,0,5)),
 						mSignatureControl = new BmMenuControl( "Signature:", new BPopUpMenu("")),
@@ -289,11 +289,11 @@ BmPrefsRecvMailView::BmPrefsRecvMailView()
 				new VGroup(
 					new MBorder( M_LABELED_BORDER, 10, (char*)"Options",
 						new VGroup(
-							mCheckAccountControl = new BmCheckControl( "Check mail", 
+							mCheckAccountControl = new BmCheckControl( "Include in Manual Check", 
 																					 new BMessage(BM_CHECK_MAIL_CHANGED), 
 																					 this),
 							new HGroup(
-								mCheckEveryControl = new BmCheckControl( "Check every", 
+								mCheckEveryControl = new BmCheckControl( "Check automatically every", 
 																						 new BMessage(BM_CHECK_EVERY_CHANGED), 
 																						 this),
 								mCheckIntervalControl = new BmTextControl( "", false, 4),
@@ -541,6 +541,8 @@ void BmPrefsRecvMailView::MessageReceived( BMessage* msg) {
 					if (mCurrAcc)
 						mCurrAcc->CheckInterval( 0);
 				}
+				mMinutesLabel->SetHighColor( val ? Black : BeInactiveGrey);
+				mMinutesLabel->Invalidate();
 				break;
 			}
 			case BM_REMOVE_MAIL_CHANGED: {
@@ -725,5 +727,6 @@ void BmPrefsRecvMailView::ShowAccount( int32 selection) {
 \*------------------------------------------------------------------------------*/
 CLVContainerView* BmPrefsRecvMailView::CreateAccListView( minimax minmax, int32 width, int32 height) {
 	mAccListView = BmRecvAccView::CreateInstance( minmax, width, height);
+	mAccListView->ClickSetsFocus( true);
 	return mAccListView->ContainerView();
 }

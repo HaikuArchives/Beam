@@ -183,9 +183,9 @@ void BmListViewController::AttachedToWindow() {
 \*------------------------------------------------------------------------------*/
 void BmListViewController::MouseDown(BPoint point) { 
 	inherited::MouseDown( point); 
-	BView::MakeFocus( true);
+	// BView::MakeFocus( true);
 	// [zooey]: use the following line to draw blue frame indicating key-focus
-	// MakeFocus( true);
+	MakeFocus( true);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -737,14 +737,14 @@ void BmListViewController::ReadStateInfo() {
 			mInitialStateInfo = new BMessage;
 			(err = mInitialStateInfo->Unflatten( &stateInfoFile)) == B_OK
 													|| BM_THROW_RUNTIME( BString("Could not fetch state-info from file\n\t<") << stateInfoFilename << ">\n\n Result: " << strerror(err));
-			inherited::Unarchive( mInitialStateInfo);
+			Unarchive( mInitialStateInfo);
 		} catch (exception &e) {
 			delete mInitialStateInfo;
 			mInitialStateInfo = NULL;
 			BM_SHOWERR( e.what());
 		}
 	} else 
-		inherited::Unarchive( DefaultLayout());
+		Unarchive( DefaultLayout());
 }
 
 

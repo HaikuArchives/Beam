@@ -115,7 +115,10 @@ BmMailEditWin* BmMailEditWin::CreateInstance( BmMail* mail) {
 		-	
 \*------------------------------------------------------------------------------*/
 BmMailEditWin::BmMailEditWin( BmMailRef* mailRef, BmMail* mail)
-	:	inherited( "MailEditWin", BRect(50,50,800,600), "Edit Mail", B_TITLED_WINDOW_LOOK, 
+	:	inherited( "MailEditWin", BRect(50,50,800,600), "Edit Mail", 
+					  ThePrefs->GetBool( "UseDocumentResizer", false) 
+					  		? B_DOCUMENT_WINDOW_LOOK 
+					  		: B_TITLED_WINDOW_LOOK, 
 					  B_NORMAL_WINDOW_FEEL, B_ASYNCHRONOUS_CONTROLS)
 	,	mShowDetails1( false)
 	,	mShowDetails2( false)
@@ -337,6 +340,9 @@ status_t BmMailEditWin::UnarchiveState( BMessage* archive) {
 				nNextYPos = 100;
 			}
 		}
+		BRect scrFrame = bmApp->ScreenFrame();
+		frame.bottom = MIN( frame.bottom, scrFrame.bottom-5);
+		frame.right = MIN( frame.right, scrFrame.right-5);
 		MoveTo( BPoint( nNextXPos, nNextYPos));
 		ResizeTo( frame.Width(), frame.Height());
 		WriteStateInfo();
@@ -684,7 +690,7 @@ void BmMailEditWin::SetFieldsFromMail( BmMail* mail) {
 			mToControl->SetTextSilently( mail->GetStrippedFieldVal( BM_FIELD_TO).String());
 			mReplyToControl->SetTextSilently( mail->GetStrippedFieldVal( BM_FIELD_REPLY_TO).String());
 		}
-		mSubjectControl->SetTextSilently( mail->GetFieldVal( BM_FIELD_SUBJECT).String());
+		mSubjectControl->SetTextSilently( mail->GetStrippedFieldVal( BM_FIELD_SUBJECT).String());
 		// mark corresponding SMTP-account (if any):
 		BMenuItem* item = NULL;
 		BString smtpAccount = mail->AccountName();

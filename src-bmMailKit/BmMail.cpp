@@ -28,9 +28,6 @@
 /*************************************************************************/
 
 
-//#include <ctime>
-//#include <memory>
-
 #include <Directory.h>
 #include <FindDirectory.h>
 #include <NodeInfo.h>
@@ -456,9 +453,7 @@ BString BmMail::CreateReplySubjectFor( const BString subject) {
 		BString subjectStr = ThePrefs->GetString( "ReplySubjectStr", "Re: %s");
 		subjectStr = rx.replace( subjectStr, "%s", subject, 
 								 		 Regexx::nocase|Regexx::global|Regexx::noatom);
-		BString convertedSubject;
-		ConvertFromUTF8( DefaultEncoding(), subjectStr, convertedSubject);
-		return convertedSubject;
+		return subjectStr;
 	}
 	return subject;
 }
@@ -474,9 +469,7 @@ BString BmMail::CreateForwardSubjectFor( const BString subject) {
 		BString subjectStr = ThePrefs->GetString( "ForwardSubjectStr", "[Fwd: %s]");
 		subjectStr = rx.replace( subjectStr, "%s", subject, 
 										 Regexx::nocase|Regexx::global|Regexx::noatom);
-		BString convertedSubject;
-		ConvertFromUTF8( DefaultEncoding(), subjectStr, convertedSubject);
-		return convertedSubject;
+		return subjectStr;
 	}
 	return subject;
 }
@@ -855,11 +848,13 @@ void BmMail::ResyncFromDisk() {
 	QuoteText()
 		-	
 \*------------------------------------------------------------------------------*/
-int32 BmMail::QuoteText( const BString& in, BString& out, BString quoteString, 
+int32 BmMail::QuoteText( const BString& in, BString& out, BString inQuoteString, 
 								 int maxLineLen) {
 	out = "";
 	if (!in.Length())
 		return maxLineLen;
+	BString quoteString;
+	ConvertTabsToSpaces( inQuoteString, quoteString);
 	BString qStyle = ThePrefs->GetString( "QuoteFormatting");
 	if (qStyle == BM_QUOTE_AUTO_WRAP)
 		return QuoteTextWithReWrap( in, out, quoteString, maxLineLen);
@@ -872,7 +867,7 @@ int32 BmMail::QuoteText( const BString& in, BString& out, BString quoteString,
 	int maxTextLen;
 	int32 count = rx.exec( Regexx::study | Regexx::global | Regexx::newline);
 	for( int32 i=0; i<count; ++i) {
-		quote = rx.match[i].atom[0];
+		ConvertTabsToSpaces( rx.match[i].atom[0], quote);
 		if (qStyle == BM_QUOTE_SIMPLE) {
 			// always respect maxLineLen, wrap when lines exceed right margin.
 			// This results in a combing-effect when long lines are wrapped
@@ -916,7 +911,7 @@ int32 BmMail::QuoteTextWithReWrap( const BString& in, BString& out,
 	int32 lastLineLen = 0;
 	int32 count = rx.exec( Regexx::study | Regexx::global | Regexx::newline);
 	for( int32 i=0; i<count; ++i) {
-		quote = rx.match[i].atom[0];
+		ConvertTabsToSpaces( rx.match[i].atom[0], quote);
 		line = rx.match[i].atom[1];
 		if ((line.Length() < minLenForWrappedLine && lastWasSpecialLine)
 		|| rxl.exec( line, ThePrefs->GetString( "QuotingLevelEmptyLineRX", "^[ \\t]*$"))
@@ -958,12 +953,14 @@ int32 BmMail::QuoteTextWithReWrap( const BString& in, BString& out,
 	AddQuotedLine()
 		-	
 \*------------------------------------------------------------------------------*/
-int32 BmMail::AddQuotedText( BString& text, BString& out, 
+int32 BmMail::AddQuotedText( const BString& inText, BString& out, 
 									  const BString& quote,
 									  const BString& quoteString,
 								     int maxTextLen) {
 	int32 modifiedMaxLen = 0;
 	BString tmp;
+	BString text;
+	ConvertTabsToSpaces( inText, text);
 	while( text.Length() > maxTextLen) {
 		int32 spcPos = text.FindLast( " ", maxTextLen);
 		if (spcPos == B_ERROR)

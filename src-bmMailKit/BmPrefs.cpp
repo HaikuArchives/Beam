@@ -220,8 +220,9 @@ void BmPrefs::InitDefaults() {
 	mDefaultsMsg.AddString( "MimeTypeTrustInfo", "<application/pdf:T><application:W><:T>");
 	mDefaultsMsg.AddBool( "InOutAlwaysAtTop", false);
 	mDefaultsMsg.AddMessage( "Shortcuts", GetShortcutDefaults());
-	mDefaultsMsg.AddString( "QuoteFormatting", "Auto Wrap");
+	mDefaultsMsg.AddString( "QuoteFormatting", "Push Margin");
 	mDefaultsMsg.AddString( "QuotingLevelRX", "^((?:\\w?\\w?\\w?[>|]|[ \\t]*)*)(.*?)$");
+	mDefaultsMsg.AddBool( "AutoCheckOnlyIfPPPRunning", true);
 }
 
 /*------------------------------------------------------------------------------*\

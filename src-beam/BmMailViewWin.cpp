@@ -80,7 +80,10 @@ BmMailViewWin* BmMailViewWin::CreateInstance( BmMailRef* mailRef) {
 		-	
 \*------------------------------------------------------------------------------*/
 BmMailViewWin::BmMailViewWin( BmMailRef* mailRef)
-	:	inherited( "MailViewWin", BRect(50,50,800,600), "View Mail", B_TITLED_WINDOW_LOOK, 
+	:	inherited( "MailViewWin", BRect(50,50,800,600), "View Mail", 
+					  ThePrefs->GetBool( "UseDocumentResizer", false) 
+					  		? B_DOCUMENT_WINDOW_LOOK 
+					  		: B_TITLED_WINDOW_LOOK, 
 					  B_NORMAL_WINDOW_FEEL, B_ASYNCHRONOUS_CONTROLS)
 {
 	CreateGUI();
@@ -106,6 +109,9 @@ status_t BmMailViewWin::UnarchiveState( BMessage* archive) {
 				nNextYPos = 100;
 			}
 		}
+		BRect scrFrame = bmApp->ScreenFrame();
+		frame.bottom = MIN( frame.bottom, scrFrame.bottom-5);
+		frame.right = MIN( frame.right, scrFrame.right-5);
 		MoveTo( BPoint( nNextXPos, nNextYPos));
 		ResizeTo( frame.Width(), frame.Height());
 		WriteStateInfo();

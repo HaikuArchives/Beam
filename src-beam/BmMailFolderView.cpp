@@ -184,6 +184,29 @@ BmMailFolderView::~BmMailFolderView() {
 }
 
 /*------------------------------------------------------------------------------*\
+	Archive()
+		-	
+\*------------------------------------------------------------------------------*/
+status_t BmMailFolderView::Archive(BMessage* archive, bool deep) const {
+	status_t ret = inherited::Archive( archive, deep);
+	if (ret == B_OK) {
+		BmRef<BmMailFolder> currFolder = CurrentFolder();
+		if (currFolder)
+			archive->AddString( MSG_CURR_FOLDER, currFolder->Key().String());
+	}
+	return ret;
+}
+
+/*------------------------------------------------------------------------------*\
+	Unarchive()
+		-	
+\*------------------------------------------------------------------------------*/
+status_t BmMailFolderView::Unarchive(const BMessage* archive, bool deep) {
+	mLastActiveKey = archive->FindString( MSG_CURR_FOLDER);
+	return inherited::Unarchive( archive, deep);
+}
+
+/*------------------------------------------------------------------------------*\
 	()
 		-	
 \*------------------------------------------------------------------------------*/
@@ -241,6 +264,22 @@ void BmMailFolderView::MouseDown( BPoint point) {
 		else 
 			DeselectAll();
 		ShowMenu( point);
+	}
+}
+
+/*------------------------------------------------------------------------------*\
+	JobIsDone( completed)
+		-	Hook function that is called whenever the jobmodel associated to this 
+			controller indicates that it is done (meaning: the list has been fetched
+			and is now ready to be displayed).
+\*------------------------------------------------------------------------------*/
+void BmMailFolderView::JobIsDone( bool completed) {
+	inherited::JobIsDone( completed);
+	if (mLastActiveKey.Length()) {
+		BmRef<BmListModelItem> item = DataModel()->FindItemByKey( mLastActiveKey);
+		BmListViewItem* viewItem = FindViewItemFor( item.Get());
+		if (viewItem)
+			Select( IndexOf( viewItem));
 	}
 }
 
@@ -337,7 +376,6 @@ void BmMailFolderView::MessageReceived( BMessage* msg) {
 		-	Hook function that is called whenever an item needs to be updated 
 \*------------------------------------------------------------------------------*/
 void BmMailFolderView::UpdateModelItem( BMessage* msg) {
-	
 }
 
 /*------------------------------------------------------------------------------*\
