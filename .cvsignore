@@ -3,7 +3,7 @@ TestFolders
 Beam
 Beam_release
 Beam_DeskbarItem
-logs
+logs/
 filter
 \(*
 *.d
