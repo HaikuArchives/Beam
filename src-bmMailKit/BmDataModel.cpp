@@ -797,7 +797,7 @@ bool BmListModel::AddItemToList( BmListModelItem* item, BmListModelItem* parent)
 /*------------------------------------------------------------------------------*\
 	RemoveItemFromList( item)
 		-	removes the given item from this listmodel
-		-	save to call with empty item
+		-	safe to call with empty item
 \*------------------------------------------------------------------------------*/
 void BmListModel::RemoveItemFromList( BmListModelItem* item) {
 	if (item) {
@@ -808,7 +808,6 @@ void BmListModel::RemoveItemFromList( BmListModelItem* item) {
 			);
 		BmRef<BmListModelItem> parent = item->Parent();
 		mNeedsStore = true;
-		TellModelItemRemoved( item);
 		if (parent) {
 			parent->RemoveSubItem( item);
 			if (parent->size() == 0) {
@@ -819,6 +818,7 @@ void BmListModel::RemoveItemFromList( BmListModelItem* item) {
 		} else {
 			mModelItemMap.erase( item->Key());
 		}
+		TellModelItemRemoved( item);
 	}
 }
 
