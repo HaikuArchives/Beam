@@ -33,15 +33,11 @@
 #include <File.h>
 #include <Message.h>
 
-#ifdef BEAM_FOR_BONE
-# include <netinet/in.h>
-#endif
-#include <NetAddress.h>
-
 #include "BmBasics.h"
 #include "BmLogHandler.h"
+#include "BmMailQuery.h"
 #include "BmSmtpAccount.h"
-#include "BmResources.h"
+#include "BmRosterBase.h"
 #include "BmUtil.h"
 
 /********************************************************************************\
@@ -72,6 +68,8 @@ BmSmtpAccount::BmSmtpAccount( const char* name, BmSmtpAccountList* model)
 	,	mPortNr( 25)
 	,	mPortNrString( "25")
 	,	mPwdStoredOnDisk( false)
+	,	mSendInProgress( false)
+	,	mPendingQuery( new BmMailQuery())
 {
 }
 
@@ -83,6 +81,8 @@ BmSmtpAccount::BmSmtpAccount( const char* name, BmSmtpAccountList* model)
 BmSmtpAccount::BmSmtpAccount( BMessage* archive, BmSmtpAccountList* model) 
 	:	inherited( FindMsgString( archive, MSG_NAME), model, 
 					  (BmListModelItem*)NULL)
+	,	mSendInProgress( false)
+	,	mPendingQuery( new BmMailQuery())
 {
 	int16 version = FindMsgInt16( archive, MSG_VERSION);
 	mUsername = FindMsgString( archive, MSG_USERNAME);
@@ -104,6 +104,7 @@ BmSmtpAccount::BmSmtpAccount( BMessage* archive, BmSmtpAccountList* model)
 		-	standard d'tor
 \*------------------------------------------------------------------------------*/
 BmSmtpAccount::~BmSmtpAccount() {
+	delete mPendingQuery;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -126,14 +127,12 @@ status_t BmSmtpAccount::Archive( BMessage* archive, bool deep) const {
 }
 
 /*------------------------------------------------------------------------------*\
-	SMTPAddress()
+	AddressInfo()
 		-	returns the SMTP-connect-info as a BNetAddress
 \*------------------------------------------------------------------------------*/
-bool BmSmtpAccount::GetSMTPAddress( BNetAddress* addr) const {
-	if (addr)
-		return addr->SetTo( mSMTPServer.String(), mPortNr) == B_OK;
-	else
-		return false;
+void BmSmtpAccount::AddressInfo( BmString& server, uint16& port) const {
+	server = mSMTPServer;
+	port = mPortNr;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -172,6 +171,78 @@ bool BmSmtpAccount::SanityCheck( BmString& complaint,
 	return true;
 }
 
+/*------------------------------------------------------------------------------*\
+	FetchPendingMails()
+		-	updates the pending-mails array
+\*------------------------------------------------------------------------------*/
+void BmSmtpAccount::FetchPendingMails() {
+	BmString pred = "(MAIL:status = 'Pending') && (MAIL:account = '";
+	pred << Key() << "')";
+	mPendingQuery->SetPredicate(pred);
+	mPendingQuery->Execute();
+}
+
+/*------------------------------------------------------------------------------*\
+	HandoutPendingMails()
+		-	moves pending-mails info into given vector
+\*------------------------------------------------------------------------------*/
+void BmSmtpAccount::HandoutPendingMails(BmMailVect &outMailVect) {
+	mPendingQuery->HandoutMails( outMailVect);
+}
+
+/*------------------------------------------------------------------------------*\
+	HandoutPendingMails()
+		-	moves pending-mails info into given vector
+\*------------------------------------------------------------------------------*/
+BmMail* BmSmtpAccount::FirstPendingMail()
+{
+	if (mPendingQuery->mMailVect.empty())
+		return NULL;
+	else
+		return mPendingQuery->mMailVect[0].Get();
+}
+
+/*------------------------------------------------------------------------------*\
+	QueueMail( mail)
+		-	adds mail to queued list
+		-	the queued list just ensures that mails are kept in memory, it is
+			possible that more mails are being sent (all pending mails for this
+			account are sent).
+\*------------------------------------------------------------------------------*/
+void BmSmtpAccount::QueueMail(BmMail* mail)
+{
+	if (mail)
+		mQueuedMail.push_back(mail);
+}
+
+/*------------------------------------------------------------------------------*\
+	SendingFinished()
+		-	cleans up after a sending process
+\*------------------------------------------------------------------------------*/
+void BmSmtpAccount::SendingFinished()
+{
+	mQueuedMail.clear();
+	mSendInProgress = false;
+}
+
+/*------------------------------------------------------------------------------*\
+	SendQueuedMail()
+		-	sends all queued mails for this account (if any)
+\*------------------------------------------------------------------------------*/
+void BmSmtpAccount::SendQueuedMail() {
+	if (mSendInProgress)
+		return;
+	mSendInProgress = true;
+	FetchPendingMails();
+	if (mPendingQuery->mMailVect.size() > 0) {
+		// only start job if there's actually something to do:
+		BMessage archive(BM_JOBWIN_SMTP);
+		archive.AddString( BmJobModel::MSG_JOB_NAME, Key().String());
+		BeamRoster->JobMetaController()->PostMessage( &archive);
+	}
+}
+
+
 
 
 /********************************************************************************\
@@ -186,10 +257,9 @@ const int16 BmSmtpAccountList::nArchiveVersion = 1;
 	CreateInstance()
 		-	initialiazes object by reading info from settings file (if any)
 \*------------------------------------------------------------------------------*/
-BmSmtpAccountList* BmSmtpAccountList::CreateInstance( 
-																BLooper* jobMetaController) {
+BmSmtpAccountList* BmSmtpAccountList::CreateInstance() {
 	if (!theInstance) {
-		theInstance = new BmSmtpAccountList( jobMetaController);
+		theInstance = new BmSmtpAccountList();
 	}
 	return theInstance.Get();
 }
@@ -198,9 +268,8 @@ BmSmtpAccountList* BmSmtpAccountList::CreateInstance(
 	BmSmtpAccountList()
 		-	default constructor, creates empty list
 \*------------------------------------------------------------------------------*/
-BmSmtpAccountList::BmSmtpAccountList( BLooper* jobMetaController)
+BmSmtpAccountList::BmSmtpAccountList()
 	:	inherited( "SmtpAccountList")
-	,	mJobMetaController( jobMetaController)
 {
 	NeedControllersToContinue( false);
 }
@@ -218,7 +287,7 @@ BmSmtpAccountList::~BmSmtpAccountList() {
 		-	returns name of settings-file for list of SMTP-accounts
 \*------------------------------------------------------------------------------*/
 const BmString BmSmtpAccountList::SettingsFileName() {
-	return BmString( TheResources->SettingsPath.Path()) << "/" 
+	return BmString( BeamRoster->SettingsPath()) << "/" 
 				<< "Smtp Accounts";
 }
 
@@ -254,7 +323,8 @@ void BmSmtpAccountList::InstantiateItems( BMessage* archive) {
 		-	sends all queued mails for the account specified by accName
 \*------------------------------------------------------------------------------*/
 void BmSmtpAccountList::SendQueuedMailFor( const BmString accName) {
-	BMessage archive(BM_JOBWIN_SMTP);
-	archive.AddString( BmJobModel::MSG_JOB_NAME, accName.String());
-	mJobMetaController->PostMessage( &archive);
+	BmRef<BmListModelItem> itemRef = FindItemByKey( accName);
+	BmSmtpAccount* smtpAcc = dynamic_cast<BmSmtpAccount*>( itemRef.Get());
+	if (smtpAcc)
+		smtpAcc->SendQueuedMail();
 }

@@ -47,7 +47,6 @@ using namespace regexx;
 #include "BmEncoding.h"
 	using namespace BmEncoding;
 #include "BmFilter.h"
-#include "BmJobStatusWin.h"
 #include "BmIdentity.h"
 #include "BmLogHandler.h"
 #include "BmMail.h"
@@ -56,9 +55,10 @@ using namespace regexx;
 #include "BmNetUtil.h"
 #include "BmPopAccount.h"
 #include "BmPopper.h"
+#include "BmPrefs.h"
+#include "BmRosterBase.h"
 #include "BmSmtpAccount.h"
 #include "BmSmtp.h"
-#include "BmPrefs.h"
 #include "BmUtil.h"
 
 /********************************************************************************\
@@ -188,13 +188,13 @@ BmSmtp::BmSmtp( const BmString& name, BmSmtpAccount* account)
 	:	inherited( BmString("SMTP_")<<name, BM_LogSmtp, 
 					  new BmSmtpStatusFilter( NULL))
 	,	mSmtpAccount( account)
+	,	mMailCount( 0)
 	,	mMsgTotalSize( 0)
 	,	mCurrMailNr( 0)
 	,	mCurrMailSize( 0)
 	,	mState( 0)
 	,	mServerMayHaveSizeLimit( false)
 	,	mServerSupportsDSN( false)
-	,	mPopAccAcquisitorFunc( NULL)
 {
 }
 
@@ -252,7 +252,7 @@ bool BmSmtp::StartJob() {
 			UpdateSMTPStatus( 0.0, NULL, false, true);
 		else
 			UpdateSMTPStatus( delta, NULL);
-		mSmtpAccount->mMailVect.clear();
+		mSmtpAccount->SendingFinished();
 	}
 	catch( BM_runtime_error &err) {
 		// a problem occurred, we tell the user:
@@ -263,7 +263,7 @@ bool BmSmtp::StartJob() {
 		UpdateSMTPStatus( 0.0, NULL, failed);
 		BmString text = Name() << ":\n\n" << errstr;
 		HandleError( text);
-		mSmtpAccount->mMailVect.clear();
+		mSmtpAccount->SendingFinished();
 		return false;
 	}
 	return true;
@@ -302,8 +302,7 @@ void BmSmtp::UpdateSMTPStatus( const float delta, const char* detailText,
 \*------------------------------------------------------------------------------*/
 void BmSmtp::UpdateMailStatus( const float delta, const char* detailText, 
 										 int32 currMsg) {
-	BmString text = BmString() << currMsg << " of " 
-							<< mSmtpAccount->mMailVect.size();
+	BmString text = BmString() << currMsg << " of " << mMailCount;
 	auto_ptr<BMessage> msg( new BMessage( BM_JOB_UPDATE_STATE));
 	msg->AddString( MSG_SMTP, Name().String());
 	msg->AddString( BmJobModel::MSG_DOMAIN, "mailbar");
@@ -329,8 +328,11 @@ void BmSmtp::UpdateProgress( uint32 numBytes) {
 		-	Initiates network-connection to SMTP-server
 \*------------------------------------------------------------------------------*/
 void BmSmtp::StateConnect() {
+	BmString server;
+	uint16 port;
+	mSmtpAccount->AddressInfo( server, port);
 	BNetAddress addr;
-	if (!mSmtpAccount->GetSMTPAddress( &addr)) {
+	if (addr.SetTo( server.String(), port) != B_OK) {
 		BmString s = BmString("Could not determine address of SMTP-Server ") 
 							<< mSmtpAccount->SMTPServer();
 		throw BM_network_error( s);
@@ -355,7 +357,7 @@ void BmSmtp::StateConnect() {
 void BmSmtp::StateHelo() {
 	BmString domain = mSmtpAccount->DomainToAnnounce();
 	if (!domain.Length())
-		domain = OwnFQDN();
+		domain = BeamRoster->OwnFQDN();
 	BmString cmd = BmString("EHLO ") << domain;
 	SendCommand( cmd);
 	try {
@@ -385,7 +387,7 @@ void BmSmtp::StateHelo() {
 		-	authenticates through pop-server (SMTP_AFTER_POP)
 \*------------------------------------------------------------------------------*/
 void BmSmtp::StateAuthViaPopServer() {
-	BmMail* mail = mSmtpAccount->mMailVect[0].Get();
+	BmMail* mail = mSmtpAccount->FirstPendingMail();
 	if (mail) {
 		BmString sender = mail->Header()->DetermineSender();
 		BmString accName = mSmtpAccount->AccForSmtpAfterPop();
@@ -399,8 +401,8 @@ void BmSmtp::StateAuthViaPopServer() {
 		}
 		if (!sendingAcc) {
 			// still no pop-account found, we ask user, if possible:
-			if (mPopAccAcquisitorFunc) {
-				if (!mPopAccAcquisitorFunc( Name(), accName)) {
+			if (ShouldContinue()) {
+				if (!BeamRoster->AskUserForPopAcc( Name(), accName)) {
 					Disconnect();
 					StopJob();
 					return;
@@ -419,7 +421,6 @@ void BmSmtp::StateAuthViaPopServer() {
 			sendingAcc->Name(), 
 			sendingAcc.Get()
 		));
-		popper->SetPwdAcquisitorFunc( BmPopperView::AskUserForPwd);
 		popper->StartJobInThisThread( BmPopper::BM_AUTH_ONLY_JOB);
 	}
 }
@@ -440,14 +441,15 @@ void BmSmtp::StateAuth() {
 	while(!pwdOK) {
 		if (first && mSmtpAccount->PwdStoredOnDisk()) {
 			pwd = mSmtpAccount->Password();
-		} else if (mPwdAcquisitorFunc) {
-			if (!ShouldContinue() || !mPwdAcquisitorFunc( Name(), pwd)) {
+		} else {
+			BmString text( "Please enter password for SMTP-Account <");
+			text << Name() << ">:";
+			if (!ShouldContinue() || !BeamRoster->AskUserForPwd( text, pwd)) {
 				Disconnect();
 				StopJob();
 				return;
 			}
-		} else
-			BM_THROW_RUNTIME( "Unable to acquire password !?!");
+		}
 
 		first = false;
 		if (authMethod == BmSmtpAccount::AUTH_PLAIN) {
@@ -507,17 +509,20 @@ void BmSmtp::StateAuth() {
 			version for each Bcc-recipient (SpecialHeaderForEachBcc=true)
 \*------------------------------------------------------------------------------*/
 void BmSmtp::StateSendMails() {
-	Regexx rx;
+	BmSmtpAccount::BmMailVect mailVect;
+	mSmtpAccount->HandoutPendingMails(mailVect);
+	mMailCount = mailVect.size();
 	mMsgTotalSize = 0;
-	for( uint32 i=0; i<mSmtpAccount->mMailVect.size(); ++i) {
-		BmMail* mail = mSmtpAccount->mMailVect[i].Get();
+	for( int32 i=0; i<mMailCount; ++i) {
+		BmMail* mail = mailVect[i].Get();
 		if (mail)
 			mMsgTotalSize += mail->RawText().Length();
 	}
 
+	Regexx rx;
 	mCurrMailNr = 1;
-	for( uint32 i=0; i<mSmtpAccount->mMailVect.size(); ++i, ++mCurrMailNr) {
-		BmMail* mail = mSmtpAccount->mMailVect[i].Get();
+	for( int32 i=0; i<mMailCount; ++i, ++mCurrMailNr) {
+		BmMail* mail = mailVect[i].Get();
 		if (!mail) {
 			BM_LOGERR( BmString("SendMails(): mail no. ") << i 
 								<< " is NULL, skipping it.");
@@ -564,7 +569,6 @@ void BmSmtp::StateSendMails() {
 	}
 	mCurrMailSize = 0;
 	mCurrMailNr = 0;
-	mSmtpAccount->mMailVect.clear();
 }
 
 /*------------------------------------------------------------------------------*\

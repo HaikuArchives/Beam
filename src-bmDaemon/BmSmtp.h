@@ -96,10 +96,6 @@ public:
 	BmSmtp( const BmString& name, BmSmtpAccount* account);
 	virtual ~BmSmtp();
 
-	typedef bool BmPopAccAcquisitorFunc( const BmString, BmString&);
-	inline void SetPopAccAcquisitorFunc( BmPopAccAcquisitorFunc* func)
-													{ mPopAccAcquisitorFunc = func; }
-
 	BmString SuggestAuthType() const;
 
 	inline BmString Name() const			{ return ModelName(); }
@@ -114,6 +110,7 @@ public:
 private:
 	BmRef<BmSmtpAccount> mSmtpAccount;	// Info about our smtp-account
 
+	int32 mMailCount;
 	int32 mMsgTotalSize;
 	int32 mCurrMailNr;
 	int32 mCurrMailSize;
@@ -129,9 +126,6 @@ private:
 		SMTP_DONE,
 		SMTP_FINAL
 	};
-
-	// function that asks user for a pop-account (needed for SmtpAfterPop)
-	BmPopAccAcquisitorFunc* mPopAccAcquisitorFunc;
 
 	// stuff needed for internal SMTP-state-loop:
 	typedef void (BmSmtp::*TStateMethod)();

@@ -47,6 +47,7 @@ enum {
 						// smtp-connection
 };
 
+class BmMailQuery;
 class BNetAddress;
 class BmSmtpAccountList;
 /*------------------------------------------------------------------------------*\
@@ -55,7 +56,7 @@ class BmSmtpAccountList;
 		- 	derived from BArchivable, so it can be read from and
 			written to a file
 \*------------------------------------------------------------------------------*/
-class BmSmtpAccount : public BmListModelItem {
+class IMPEXPBMMAILKIT BmSmtpAccount : public BmListModelItem {
 	typedef BmListModelItem inherited;
 	typedef vector< BmRef< BmMail> > BmMailVect;
 
@@ -67,6 +68,12 @@ public:
 	// native methods:
 	bool NeedsAuthViaPopServer();
 	bool SanityCheck( BmString& complaint, BmString& fieldName) const;
+	void QueueMail( BmMail* mail);
+	void SendQueuedMail();
+	//
+	void HandoutPendingMails(BmMailVect &outMailVect);
+	BmMail* FirstPendingMail();
+	void SendingFinished();
 
 	// stuff needed for Archival:
 	status_t Archive( BMessage* archive, bool deep = true) const;
@@ -117,9 +124,7 @@ public:
 													{ mAccForSmtpAfterPop = s; 
 													  TellModelItemUpdated( UPD_ALL); }
 
-	bool GetSMTPAddress( BNetAddress* addr) const;
-
-	BmMailVect mMailVect;			// vector with mails that shall be sent
+	void AddressInfo( BmString& server, uint16& port) const;
 
 	static const char* const AUTH_SMTP_AFTER_POP;
 	static const char* const AUTH_PLAIN;
@@ -143,6 +148,8 @@ private:
 	BmSmtpAccount( const BmSmtpAccount&);
 	BmSmtpAccount operator=( const BmSmtpAccount&);
 
+	void FetchPendingMails();
+
 	//BmString mName;					// name is stored in key (base-class)
 	BmString mUsername;
 	BmString mPassword;
@@ -155,6 +162,9 @@ private:
 	bool mPwdStoredOnDisk;			// store Passwords unsafely on disk?
 	BmString mAccForSmtpAfterPop;	// pop-account to use for authentication
 
+	bool mSendInProgress;
+	BmMailVect mQueuedMail;
+	BmMailQuery* mPendingQuery;
 };
 
 
@@ -163,15 +173,15 @@ private:
 		-	holds list of all Smtp-Accounts
 		-	
 \*------------------------------------------------------------------------------*/
-class BmSmtpAccountList : public BmListModel {
+class IMPEXPBMMAILKIT BmSmtpAccountList : public BmListModel {
 	typedef BmListModel inherited;
 
 	static const int16 nArchiveVersion;
 
 public:
 	// creator-func, c'tors and d'tor:
-	static BmSmtpAccountList* CreateInstance( BLooper* jobMetaController);
-	BmSmtpAccountList( BLooper* jobMetaController);
+	static BmSmtpAccountList* CreateInstance();
+	BmSmtpAccountList();
 	~BmSmtpAccountList();
 	
 	// native methods:
@@ -188,8 +198,6 @@ private:
 	// Hide copy-constructor and assignment:
 	BmSmtpAccountList( const BmSmtpAccountList&);
 	BmSmtpAccountList operator=( const BmSmtpAccountList&);
-
-	BLooper* mJobMetaController;
 };
 
 #define TheSmtpAccountList BmSmtpAccountList::theInstance
