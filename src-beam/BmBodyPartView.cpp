@@ -418,6 +418,53 @@ void BmBodyPartView::MessageReceived( BMessage* msg) {
 				mSavePanel->Show();
 				break;
 			}
+			case BM_BODYPARTVIEW_DELETE_ATTACHMENT: {
+				int32 buttonPressed;
+				if (msg->FindInt32( "which", &buttonPressed) != B_OK) {
+					// first step, ask user about it:
+					int32 index = CurrentSelection( 0);
+					if (index < 0)
+						break;
+					BmBodyPartItem* bodyPartItem = dynamic_cast<BmBodyPartItem*>( FullListItemAt( index));
+					if (!bodyPartItem)
+						break;
+					BmBodyPart* bodyPart( bodyPartItem->ModelItem());
+					if (!bodyPart)
+						break;
+					BMessage* newMsg = new BMessage(BM_BODYPARTVIEW_DELETE_ATTACHMENT);
+					newMsg->AddInt32( "sel_index", index);
+					BmString s("Are you sure about removing the attachment ");
+					s << bodyPart->FileName() << " from the mail?";
+					BAlert* alert = new BAlert( "Remove Mail-Attachment", 
+														 s.String(),
+													 	 "Remove", "Cancel", NULL, B_WIDTH_AS_USUAL,
+													 	 B_WARNING_ALERT);
+					alert->SetShortcut( 1, B_ESCAPE);
+					alert->Go( new BInvoker( newMsg, BMessenger( this)));
+				} else {
+					// second step, do it if user said ok:
+					if (buttonPressed == 0) {
+						int32 index = -1;
+						msg->FindInt32( "sel_index", &index);
+						if (index < 0)
+							break;
+						BmBodyPartItem* bodyPartItem = dynamic_cast<BmBodyPartItem*>( FullListItemAt( index));
+						if (!bodyPartItem)
+							break;
+						BmBodyPart* bodyPart( bodyPartItem->ModelItem());
+						if (!bodyPart)
+							break;
+						BmRef<BmDataModel> modelRef( DataModel());
+						BmBodyPartList* bodyPartList 
+							= dynamic_cast<BmBodyPartList*>( modelRef.Get());
+						if (bodyPartList && bodyPartList->Mail()) {
+							bodyPartList->RemoveItemFromList( bodyPart);
+							bodyPartList->Mail()->ConstructAndStore();
+						}
+					}
+				}
+				break;
+			}
 			case B_CANCEL: {
 				// since a SavePanel seems to avoid quitting, thus stopping Beam from proper exit,
 				// we detroy the panel:
@@ -650,6 +697,14 @@ void BmBodyPartView::ShowMenu( BPoint point) {
 								 new BMessage( BM_BODYPARTVIEW_SAVE_ATTACHMENT));
 	item->SetTarget( this);
 	theMenu->AddItem( item);
+
+	if (!mEditable) {
+		theMenu->AddSeparatorItem();
+		item = new BMenuItem( "Remove Attachment from Mail...", 
+									 new BMessage( BM_BODYPARTVIEW_DELETE_ATTACHMENT));
+		item->SetTarget( this);
+		theMenu->AddItem( item);
+	}
 
    ConvertToScreen(&point);
 	BRect openRect;

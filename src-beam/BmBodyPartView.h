@@ -39,9 +39,12 @@
 /*------------------------------------------------------------------------------*\
 	types of messages handled by a BmBodyPartView:
 \*------------------------------------------------------------------------------*/
-#define BM_BODYPARTVIEW_SHOWALL				'bmga'
-#define BM_BODYPARTVIEW_SHOWATTACHMENTS	'bmgb'
-#define BM_BODYPARTVIEW_SAVE_ATTACHMENT	'bmgc'
+enum {
+	BM_BODYPARTVIEW_SHOWALL				 = 'bmga',
+	BM_BODYPARTVIEW_SHOWATTACHMENTS	 = 'bmgb',
+	BM_BODYPARTVIEW_SAVE_ATTACHMENT	 = 'bmgc',
+	BM_BODYPARTVIEW_DELETE_ATTACHMENT = 'bmgd'
+};
 
 /*------------------------------------------------------------------------------*\
 	BmBodyPartItem
