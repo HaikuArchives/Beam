@@ -267,7 +267,8 @@ void BmPrefs::InitDefaults() {
 	mDefaultsMsg.AddInt32( "MSecsBeforeMailMoverShows", 500*1000);
 	mDefaultsMsg.AddInt32( "MSecsBeforePopperRemove", 5000*1000);
 	mDefaultsMsg.AddInt32( "MSecsBeforeSmtpRemove", 0*1000);
-	mDefaultsMsg.AddInt32( "NetSendBufferSize", 10*1500);
+	mDefaultsMsg.AddInt32( "NetReceiveBufferSize", 65536);
+	mDefaultsMsg.AddInt32( "NetSendBufferSize", 65536);
 	mDefaultsMsg.AddString( "QuoteFormatting", "Push Margin");
 	mDefaultsMsg.AddString( "QuotingLevelRX", "^((?:\\w?\\w?\\w?[>|]|[ \\t]*)*)(.*?)$");
 	mDefaultsMsg.AddString( "QuotingString", "> ");
