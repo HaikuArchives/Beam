@@ -53,7 +53,6 @@ void MailConverter( const char* folder)
 		fprintf(stderr, "can't open folder %s\n", folder);
 		exit(5);
 	}
-	BmPrefs::CreateInstance();
 	entry_ref eref;
 	BFile file;
 	off_t size;
@@ -90,7 +89,7 @@ int
 main( int argc, char** argv) 
 {
 	const char* APP_SIG = "application/x-vnd.zooey-mailconverter";
-	BmApplication* app = new BmApplication( APP_SIG);
+	BmApplication* app = new BmApplication( APP_SIG, true);
 	MailConverter( argv[1]);
 	delete app;
 }
