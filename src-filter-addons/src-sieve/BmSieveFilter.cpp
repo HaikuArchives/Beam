@@ -75,7 +75,8 @@ BmFilterAddon* InstantiateFilter( const BmString& name,
 											 const BmString& kind);
 
 extern "C" __declspec(dllexport) 
-BmFilterAddonPrefsView* InstantiateFilterPrefs( minimax minmax, 
+BmFilterAddonPrefsView* InstantiateFilterPrefs( float minx, float miny,
+																float maxx, float maxy,
 																const BmString& kind);
 
 /********************************************************************************\
@@ -1987,12 +1988,13 @@ void BmSieveScriptFilterPrefs::ShowFilter( BmFilterAddon* addon) {
 		-	
 \*------------------------------------------------------------------------------*/
 extern "C" __declspec(dllexport) 
-BmFilterAddonPrefsView* InstantiateFilterPrefs( minimax minmax, 
+BmFilterAddonPrefsView* InstantiateFilterPrefs( float minx, float miny,
+																float maxx, float maxy,
 																const BmString& kind) {
 	if (!kind.ICompare( FILTER_SIEVE))
-		return new BmSieveFilterPrefs( minmax);
+		return new BmSieveFilterPrefs( minimax( minx, miny, maxx, maxy));
 	else if (!kind.ICompare( FILTER_SIEVE_SCRIPT))
-		return new BmSieveScriptFilterPrefs( minmax);
+		return new BmSieveScriptFilterPrefs( minimax( minx, miny, maxx, maxy));
 	else
 		return NULL;
 }
