@@ -78,6 +78,10 @@ public:
 	// setters:
 	void EntryRef( entry_ref &e) 				{ mEntryRef = e; }
 
+protected:
+	// flags indicating which parts are to be updated:
+	static const BmUpdFlags UPD_NAME	= 2<<0;
+
 private:
 	// the following members will be archived as part of BmFolderList:
 	entry_ref mEntryRef;

@@ -5,6 +5,7 @@
 
 #include <String.h>
 
+#include "BmBasics.h"
 #include "BmLogHandler.h"
 #include "BmMailFolder.h"
 #include "BmMailFolderList.h"
@@ -44,6 +45,7 @@ BmMailFolderItem::~BmMailFolderItem() {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmMailFolderItem::UpdateView( BmUpdFlags flags) {
+	inherited::UpdateView( flags);
 	BmMailFolder* folder = ModelItem();
 	if (flags & (UPD_EXPANDER | UPD_NAME)) {
 		BString displayName = folder->Name();
@@ -90,10 +92,10 @@ BmMailFolderView* BmMailFolderView::CreateInstance( minimax minmax, int32 width,
 \*------------------------------------------------------------------------------*/
 BmMailFolderView::BmMailFolderView( minimax minmax, int32 width, int32 height)
 	:	inherited( minmax, BRect(0,0,width-1,height-1), "Beam_FolderView", B_SINGLE_SELECTION_LIST, 
-					  true, true)
+					  true, true, true, true)
 {
 	Initialize( BRect( 0,0,width-1,height-1), B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE,
-					B_FOLLOW_TOP_BOTTOM, false, true, false, B_FANCY_BORDER);
+					B_FOLLOW_TOP_BOTTOM, true, true, true, B_FANCY_BORDER);
 	AddColumn( new CLVColumn( NULL, 10.0, 
 									  CLV_EXPANDER | CLV_LOCK_AT_BEGINNING | CLV_NOT_MOVABLE, 10.0));
 	AddColumn( new CLVColumn( NULL, 18.0, CLV_LOCK_AT_BEGINNING | CLV_NOT_MOVABLE 
@@ -155,14 +157,28 @@ bool BmMailFolderView::AcceptsDropOf( const BMessage* msg) {
 void BmMailFolderView::HandleDrop( const BMessage* msg) {
 	if (msg && msg->what == BM_MAIL_DRAG && mCurrHighlightItem) {
 		BList refList;
-		void* ref;
-		for( int i=0; msg->FindPointer( "refPtrs", i, &ref)==B_OK; ++i) {
-			refList.AddItem( ref);
+		entry_ref eref;
+		for( int i=0; msg->FindRef( "refs", i, &eref)==B_OK; ++i) {
+			refList.AddItem( new entry_ref( eref));
 		}
-		BmMailFolder* folder = dynamic_cast<BmMailFolder*>( mCurrHighlightItem->ModelItem());
-		folder->MoveMailsHere( refList);
+		if (refList.CountItems()) {
+			BmMailFolder* folder = dynamic_cast<BmMailFolder*>( mCurrHighlightItem->ModelItem());
+			if (folder)
+				folder->MoveMailsHere( refList);
+			entry_ref* ref;
+			while( (ref = static_cast<entry_ref*>( refList.RemoveItem( (int32)0))))
+				delete ref;
+		}
 	}
 	inherited::HandleDrop( msg);
+}
+
+/*------------------------------------------------------------------------------*\
+	UpdateModelItem( msg)
+		-	Hook function that is called whenever an item needs to be updated 
+\*------------------------------------------------------------------------------*/
+void BmMailFolderView::UpdateModelItem( BMessage* msg) {
+	
 }
 
 /*------------------------------------------------------------------------------*\
@@ -170,7 +186,7 @@ void BmMailFolderView::HandleDrop( const BMessage* msg) {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmMailFolderView::SelectionChanged( void) {
-	uint32 selection = CurrentSelection();
+	int32 selection = CurrentSelection();
 	if (selection >= 0) {
 		BmMailFolderItem* folderItem;
 		folderItem = dynamic_cast<BmMailFolderItem*>(ItemAt( selection));
@@ -179,5 +195,7 @@ void BmMailFolderView::SelectionChanged( void) {
 			if (folder)
 				TheMailRefView->ShowFolder( folder);
 		}
-	}
+	} else
+		if (TheMailRefView)
+			TheMailRefView->ShowFolder( NULL);
 }

@@ -5,6 +5,7 @@
 
 #include <Autolock.h>
 
+#include "BmBasics.h"
 #include "BmController.h"
 #include "BmDataModel.h"
 #include "BmLogHandler.h"
@@ -43,13 +44,11 @@ BmController::~BmController() {
 		-	safe to call with a NULL-model
 \*------------------------------------------------------------------------------*/
 void BmController::AttachModel( BmDataModel* model) {
-	if (model) {
-		if (mDataModel) {
-			// detach current model, since we shall control a new one:
-			DetachModel();
-		}
-		DataModel( model);
+	if (mDataModel) {
+		// detach current model, since we shall control a new one:
+		DetachModel();
 	}
+	DataModel( model);
 	if (mDataModel) {
 		BM_LOG2( BM_LogModelController, BString("Controller <") << ControllerName() << "> attaches to model " << ModelName());
 		mDataModel->AddController( this);
@@ -118,9 +117,7 @@ BmJobController::~BmJobController() {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmJobController::StartJob( BmJobModel* model, bool startInNewThread) {
-	if (model) {
-		AttachModel( model);
-	}
+	AttachModel( model);
 	if (DataModel()) {
 		BM_LOG2( BM_LogModelController, BString("Controller <") << ControllerName() << "> starts job " << ModelName());
 		if (startInNewThread)

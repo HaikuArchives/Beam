@@ -55,8 +55,7 @@ public:
 	void MouseDown( BPoint point);
 
 	// overrides of controller base:
-	void AddModelItemToList( BmListModelItem* modelItem);
-	void AddModelItemsToList();
+	void AddAllModelItems();
 	BmListViewItem* CreateListViewItem( BmListModelItem* item, BMessage* archive=NULL);
 	BString StateInfoBasename();
 

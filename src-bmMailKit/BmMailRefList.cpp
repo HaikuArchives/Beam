@@ -9,6 +9,7 @@
 #include <Path.h>
 #include <Query.h>
 
+#include "BmBasics.h"
 #include "BmLogHandler.h"
 #include "BmMailFolder.h"
 #include "BmMailRef.h"
@@ -42,11 +43,6 @@ BmMailRefList::~BmMailRefList() {
 		-	frees occupied memory
 \*------------------------------------------------------------------------------*/
 void BmMailRefList::Cleanup() {
-	BmModelItemMap::const_iterator iter;
-	for( iter = begin(); iter != end(); ++iter) {
-		BmMailRef* item = (BmMailRef*)iter->second;
-		delete item;
-	}
 	mModelItemMap.clear();
 	mInitCheck = B_NO_INIT;
 }
@@ -92,6 +88,7 @@ bool BmMailRefList::StartJob() {
 		return true;
 	}
 
+	Freeze();									// we shut up for better performance
 	try {
 		BString filename = CacheFileName();
 	
@@ -118,7 +115,18 @@ bool BmMailRefList::StartJob() {
 	} catch (exception &e) {
 		BM_SHOWERR( e.what());
 	}
+	Thaw();
 	return InitCheck() == B_OK;
+}
+
+/*------------------------------------------------------------------------------*\
+	AddMailRef()
+		-	
+\*------------------------------------------------------------------------------*/
+BmMailRef* BmMailRefList::AddMailRef( entry_ref& eref, int64 node, struct stat& st) {
+	BmMailRef* newMailRef = BmMailRef::CreateInstance( eref, node, st);
+	AddItemToList( newMailRef);
+	return newMailRef;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -155,13 +163,8 @@ void BmMailRefList::InitializeMailRefs() {
 				eref.device = dent->d_pdev;
 				eref.directory = dent->d_pino;
 				eref.set_name( dent->d_name);
-				BmMailRef* nextMailRef = BmMailRef::CreateInstance( eref, dent->d_ino, st);
-				if (nextMailRef) {
-					BAutolock lock( mModelLocker);
-					lock.IsLocked() 						|| BM_THROW_RUNTIME( ModelName() << ":InitializeMailRefs(): Unable to get lock");
-					mModelItemMap[nextMailRef->Key()] = nextMailRef;
+				if (AddMailRef( eref, dent->d_ino, st))
 					refCount++;
-				}
 			}
 			// Bump the dirent-pointer by length of the dirent just handled:
 			dent = (dirent* )((char* )dent + dent->d_reclen);

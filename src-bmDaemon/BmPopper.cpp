@@ -9,6 +9,7 @@
 #include <memory>
 #include <stdio.h>
 
+#include "BmBasics.h"
 #include "BmLogHandler.h"
 #include "BmMail.h"
 #include "BmMsgTypes.h"

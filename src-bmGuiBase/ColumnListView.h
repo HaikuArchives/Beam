@@ -178,7 +178,7 @@ class ColumnListView : public BListView
 		virtual BListItem* RemoveItem(int32 fullListIndex);			//Actually returns CLVListItem
 		virtual bool RemoveItems(int32 fullListIndex, int32 count);
 		virtual void MakeEmpty();
-		bool Hierarchical()					{ return fHierarchical; }
+		bool Hierarchical() const			{ return fHierarchical; }
 		CLVListItem* FullListItemAt(int32 fullListIndex)  const;
 		int32 FullListIndexOf(const CLVListItem* item) const;
 		int32 FullListIndexOf(BPoint point) const;

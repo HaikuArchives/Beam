@@ -21,6 +21,9 @@ class BmMailRefList;
 
 typedef map<BString, BmMailFolder*> BmFolderMap;
 
+// flags indicating which parts are to be updated:
+const BmUpdFlags UPD_NAME	= 1<<1;
+
 /*------------------------------------------------------------------------------*\
 	BmMailFolder
 		-	class 
@@ -40,6 +43,9 @@ public:
 	bool CheckIfModifiedSince( time_t when, time_t* storeNewModTime=NULL);
 	void CreateMailRefList();
 	void RemoveMailRefList();
+	void AddMailRef( entry_ref& eref, int64 node, struct stat& st);
+	bool HasMailRef( BString key);
+	void RemoveMailRef( BString key);
 	void MoveMailsHere( BList& refs);
 
 	// overrides of archivable base:
@@ -59,7 +65,7 @@ public:
 	const BString& Name() const			{ return mName; }
 
 	// setters:
-	void EntryRef( entry_ref &e) 			{ mEntryRef = e; }
+	void EntryRef( entry_ref &e) 			{ mEntryRef = e; mName = e.name; }
 
 	// archival-fieldnames:
 	static const char* const MSG_ENTRYREF = 		"bm:eref";
@@ -72,6 +78,9 @@ public:
 	static const char* const MSG_NAME = 			"bm:fname";
 
 private:
+	void StartNodeMonitor();
+	void StopNodeMonitor();
+
 	// the following members will be archived as part of BmFolderList:
 	entry_ref mEntryRef;
 	ino_t mInode;

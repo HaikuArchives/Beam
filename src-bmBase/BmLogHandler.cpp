@@ -5,6 +5,7 @@
 
 #include <Autolock.h>
 
+#include "BmBasics.h"
 #include "BmLogHandler.h"
 #include "BmUtil.h"
 
@@ -184,7 +185,8 @@ void BmLogHandler::BmLogfile::Write( const char* const msg, uint32 flag,
 	}
 	BString s(msg);
 	s.ReplaceAll( "\r", "<CR>");
-	s.ReplaceAll( "\n", "\n                ");
+	s.ReplaceAll( "\n\n", "\n");
+	s.ReplaceAll( "\n", "\n                       ");
 	fprintf( logfile, "<%6ld|%012Ld>: %s\n", find_thread(NULL), TheLogHandler->StopWatch.ElapsedTime(), s.String());
 	fflush( logfile);
 }

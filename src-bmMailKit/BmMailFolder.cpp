@@ -3,8 +3,11 @@
 		$Id$
 */
 
+#include <Application.h>
 #include <Directory.h>
+#include <NodeMonitor.h>
 
+#include "BmBasics.h"
 #include "BmLogHandler.h"
 #include "BmMailFolder.h"
 #include "BmMailRefList.h"
@@ -28,8 +31,7 @@ BmMailFolder::BmMailFolder( entry_ref &eref, ino_t node, BmMailFolder* parent,
 {
 	if (CheckIfModifiedSince( mLastModified, &mLastModified))
 		mNeedsCacheUpdate = true;
-	if (parent)
-		parent->AddSubItem( this);
+	StartNodeMonitor();
 }
 
 /*------------------------------------------------------------------------------*\
@@ -54,8 +56,7 @@ BmMailFolder::BmMailFolder( BMessage* archive, BmMailFolder* parent)
 		mName = mEntryRef.name;
 		if (CheckIfModifiedSince( mLastModified, &mLastModified))
 			mNeedsCacheUpdate = true;
-		if (parent)
-			parent->AddSubItem( this);
+		StartNodeMonitor();
 	} catch (exception &e) {
 		BM_SHOWERR( e.what());
 	}
@@ -66,7 +67,30 @@ BmMailFolder::BmMailFolder( BMessage* archive, BmMailFolder* parent)
 		-	d'tor
 \*------------------------------------------------------------------------------*/
 BmMailFolder::~BmMailFolder() {
+	StopNodeMonitor();
 	RemoveMailRefList();
+}
+
+/*------------------------------------------------------------------------------*\
+	StartNodeMonitor()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailFolder::StartNodeMonitor() {
+	node_ref nref;
+	nref.device = mEntryRef.device;
+	nref.node = mInode;
+	watch_node( &nref, B_WATCH_DIRECTORY, be_app_messenger);
+}
+
+/*------------------------------------------------------------------------------*\
+	StartNodeMonitor()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailFolder::StopNodeMonitor() {
+	node_ref nref;
+	nref.device = mEntryRef.device;
+	nref.node = mInode;
+	watch_node( &nref, B_STOP_WATCHING, be_app_messenger);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -111,7 +135,7 @@ bool BmMailFolder::CheckIfModifiedSince( time_t when, time_t* storeNewModTime) {
 													|| BM_THROW_RUNTIME(BString("Could not get mtime \nfor mail-folder <") << Name() << "> \n\nError:" << strerror(err));
 	BM_LOG3( BM_LogMailTracking, BString("checking if ") << Name() << ": (" << mtime << " > " << when << ")");
 	if (mtime > when) {
-		BM_LOG2( BM_LogMailTracking, BString("Mtime of folder has changed!"));
+		BM_LOG2( BM_LogMailTracking, BString("Mtime of folder <")<<Name()<<"> has changed!");
 		if (storeNewModTime)
 			*storeNewModTime = mtime;
 		hasChanged = true;
@@ -168,9 +192,7 @@ void BmMailFolder::CreateMailRefList() {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmMailFolder::RemoveMailRefList() {
-	if (mMailRefList) {
-		mMailRefList = NULL;
-	}
+	mMailRefList = NULL;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -194,3 +216,37 @@ void BmMailFolder::MoveMailsHere( BList& refs) {
 		}
 	}
 }
+
+/*------------------------------------------------------------------------------*\
+	AddMailRef()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailFolder::AddMailRef( entry_ref& eref, int64 node, struct stat& st) {
+	if (mMailRefList)
+		mMailRefList->AddMailRef( eref, node, st);
+	else
+		mNeedsCacheUpdate = true;
+}
+
+/*------------------------------------------------------------------------------*\
+	HasMailRef()
+		-	
+\*------------------------------------------------------------------------------*/
+bool BmMailFolder::HasMailRef( BString key) {
+	if (mMailRefList)
+		return mMailRefList->FindItemByKey( key) != NULL;
+	else
+		return false;
+}
+
+/*------------------------------------------------------------------------------*\
+	RemoveMailRef()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailFolder::RemoveMailRef( BString key) {
+	if (mMailRefList)
+		mMailRefList->RemoveItemFromList( key);
+	else
+		mNeedsCacheUpdate = true;
+}
+

@@ -18,8 +18,6 @@ class BmBusyView;
 class BmCaption;
 class BmListViewController;
 
-typedef uint32 BmUpdFlags;
-
 /*------------------------------------------------------------------------------*\
 	BmListViewItem
 		-	
@@ -41,10 +39,6 @@ protected:
 	static const char* const MSG_CHILDNAMES = 	"bm:chldnm";
 	static const char* const MSG_CHILDREN = 		"bm:chldrn";
 
-	// flags indicating which parts are to be updated
-	static const BmUpdFlags UPD_EXPANDER 	= 1<<0;
-	static const BmUpdFlags UPD_ALL 			= 0xFFFFFFFF;
-
 public:
 	//
 	BmListViewItem( BString& key, BmListModelItem* item, bool hierarchical=false, 
@@ -53,7 +47,6 @@ public:
 	
 	// native methods:
 	void SetTextCols( int16 firstTextCol, BmListColumn* columnVec, bool truncate=true);
-	void AddSubItemsToList( BmListViewController *view);
 	virtual void UpdateView( BmUpdFlags flags);
 
 	//	overrides from listitem-baseclass:
@@ -61,12 +54,11 @@ public:
 
 	// getters:
 	const BString Key() const				{ return mKey; }
-	BmListModelItem* ModelItem() 			{ return mModelItem; }
+	virtual BmListModelItem* ModelItem() const	{ return mModelItem.Get(); }
 	
 protected:
 	BString mKey;
-	BmListModelItem* mModelItem;
-	BList* mSubItemList;
+	BmRef<BmListModelItem> mModelItem;
 };
 
 /*------------------------------------------------------------------------------*\
@@ -81,7 +73,7 @@ public:
 							  uint32 flags, bool horizontal, bool vertical,
 							  bool scroll_view_corner, border_style border, 
 							  bool showCaption=false, bool showBusyView=false,
-							  float captionWidth=-1);
+							  float captionWidth=0);
 	~BmCLVContainerView();
 	
 	// native methods:
@@ -128,13 +120,15 @@ public:
 	virtual ~BmListViewController();
 
 	// native methods:
-	virtual void AddModelItemsToList();
-	virtual void AddModelItemToList( BMessage* msg);
-	void RemoveModelItem( BMessage* msg);
-	void UpdateModelItem( BMessage* msg);
-	void UpdateModelState( BMessage* msg);
-	void UpdateItem( BmListViewItem* item, BmUpdFlags flags);
-	void UpdateCaption( const char* text=NULL);
+	virtual void AddAllModelItems();
+	virtual void AddModelItem( BmListModelItem* item);
+	virtual void doAddModelItem( BmListViewItem* parent, BmListModelItem* item);
+	virtual void RemoveModelItem( BmListModelItem* item);
+	virtual void UpdateModelItem( BmListModelItem* item, BmUpdFlags updFlags);
+	virtual void UpdateModelState( BMessage* msg);
+	virtual void UpdateItem( BmListViewItem* item, BmUpdFlags flags);
+	virtual void UpdateCaption( const char* text=NULL);
+	BmListViewItem* FindViewItemFor( BmListModelItem* modelItem);
 	virtual bool AcceptsDropOf( const BMessage* msg)	{ return false; }
 	virtual void HandleDrop( const BMessage* msg);
 	void ShowOrHideColumn( BMessage* msg);
@@ -165,6 +159,7 @@ public:
 	// getters:
 	CLVContainerView* ContainerView()	{ return inherited::fScrollView; }
 	BMessage* InitialStateInfo()			{ return mInitialStateInfo; }
+	virtual const char* ItemNameForCaption()		{ return "item"; }
 
 	// setters:
 	void UseStateCache( bool b) 			{ mUseStateCache = b; }
@@ -178,7 +173,6 @@ protected:
 	virtual void ReadStateInfo();
 	virtual BMessage* DefaultLayout()	{ return NULL; }
 
-	BList* mItemList;
 	BMessage* mInitialStateInfo;
 	bool mShowCaption;
 	bool mShowBusyView;

@@ -9,6 +9,7 @@
 #include <map>
 
 #include "BmListController.h"
+#include "BmMailRef.h"
 
 class BmMailFolder;
 /*------------------------------------------------------------------------------*\
@@ -24,6 +25,9 @@ public:
 	BmMailRefItem( BString key, BmListModelItem* item);
 	~BmMailRefItem();
 	
+	// overrides of ListViewItem:
+	BmMailRef* ModelItem() const			{ return dynamic_cast< BmMailRef*>( mModelItem.Get()); }
+
 	// overrides of CLVEasyItem base:
 	const int32 GetNumValueForColumn( int32 column_index) const;
 	const time_t GetDateValueForColumn( int32 column_index) const;
@@ -52,18 +56,24 @@ public:
 	// overrides of listview base:
 	void KeyDown(const char *bytes, int32 numBytes);
 	bool InitiateDrag( BPoint point, int32 index, bool wasSelected);
+	bool AcceptsDropOf( const BMessage* msg);
+	void HandleDrop( const BMessage* msg);
 	void MessageReceived( BMessage* msg);
 	void SelectionChanged( void);
 
 	// overrides of controller base:
 	BString StateInfoBasename();
 	BMessage* DefaultLayout();
+	CLVContainerView* CreateContainer( bool horizontal, bool vertical, 
+												  bool scroll_view_corner, border_style border, 
+												  uint32 ResizingMode, uint32 flags);
 	BmListViewItem* CreateListViewItem( BmListModelItem* item, BMessage* archive=NULL);
+	const char* ItemNameForCaption()		{ return "message"; }
 
 	static BmMailRefView* theInstance;
 	
 private:
-	BmMailFolder* mCurrFolder;
+	BmRef<BmMailFolder> mCurrFolder;
 	BmMailView* mPartnerMailView;
 
 };

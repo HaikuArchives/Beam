@@ -11,6 +11,7 @@
 #include <Message.h>
 #include <UTF8.h>
 
+#include "BmBasics.h"
 #include "BmLogHandler.h"
 #include "BmPrefs.h"
 #include "BmResources.h"
@@ -83,6 +84,7 @@ BmPrefs::BmPrefs( void)
 	,	mStripedListView( true)
 	,	mMailRefLayout( new BMessage)
 	,	mRestoreFolderStates( true)
+	,	mShowDecodedLength( true)
 {
 #ifdef BM_LOGGING
 	BString s;
@@ -116,6 +118,7 @@ BmPrefs::BmPrefs( BMessage* archive)
 	mStripedListView = FindMsgBool( archive, MSG_STRIPED_LISTVIEW);
 	mMailRefLayout = FindMsgMsg( archive, MSG_MAILREF_LAYOUT);
 	mRestoreFolderStates = FindMsgBool( archive, MSG_RESTORE_FOLDERS);
+	mShowDecodedLength = FindMsgBool( archive, MSG_SHOW_DECODED_LENGTH);
 	TheLogHandler->LogLevels( mLoglevels);
 }
 
@@ -145,7 +148,8 @@ status_t BmPrefs::Archive( BMessage* archive, bool deep) const {
 		||	archive->AddInt32( MSG_DEFAULT_ENCODING, htonl(mDefaultEncoding))
 		||	archive->AddBool( MSG_STRIPED_LISTVIEW, mStripedListView)
 		||	archive->AddMessage( MSG_MAILREF_LAYOUT, mMailRefLayout)
-		||	archive->AddBool( MSG_RESTORE_FOLDERS, mRestoreFolderStates);
+		||	archive->AddBool( MSG_RESTORE_FOLDERS, mRestoreFolderStates)
+		||	archive->AddBool( MSG_SHOW_DECODED_LENGTH, mShowDecodedLength);
 	return ret;
 }
 

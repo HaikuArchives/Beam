@@ -3,6 +3,7 @@
 		$Id$
 */
 
+#include "BmBasics.h"
 #include "BmController.h"
 #include "BmDataModel.h"
 #include "BmLogHandler.h"
@@ -14,7 +15,7 @@
 	BmDataModel
 \********************************************************************************/
 
-BmRefManager<BmDataModel> BmDataModel::RefManager;
+BmRefManager<BmDataModel> BmDataModel::RefManager("DataModel_RefMan");
 
 /*------------------------------------------------------------------------------*\
 	BmDataModel( name)
@@ -23,7 +24,7 @@ BmRefManager<BmDataModel> BmDataModel::RefManager;
 BmDataModel::BmDataModel( const BString& name) 
 	:	mModelName( name)
 	,	mModelLocker( (BString("beam_dm_") << name).Truncate(B_OS_NAME_LENGTH).String(), false)
-	,	mStateVal( 0)
+	,	mFrozenCount( 0)
 {
 }
 
@@ -51,9 +52,8 @@ void BmDataModel::AddController( BmController* controller) {
 	BAutolock lock( mModelLocker);
 	lock.IsLocked()	 						|| BM_THROW_RUNTIME( mModelName << ":AddController(): Unable to get lock on controller-set");
 	BM_LOG2( BM_LogModelController, BString("Model <") << ModelName() << "> is adding controller " << controller->ControllerName());
-	// insert controller with state-value of 0 (indicating that the new controller 
-	//	should receive state-updates the next time we get to look at it):
-	mControllerMap[controller] = 0;
+	// add controller to set of connected controllers:
+	mControllerSet.insert( controller);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -66,38 +66,36 @@ void BmDataModel::RemoveController( BmController* controller) {
 	BAutolock lock( mModelLocker);
 	lock.IsLocked()	 						|| BM_THROW_RUNTIME( mModelName << ":RemoveController(): Unable to get lock on controller-set");
 	BM_LOG2( BM_LogModelController, BString("Model <") << ModelName() << "> is removing controller " << controller->ControllerName());
-	mControllerMap.erase( controller);
+	mControllerSet.erase( controller);
 }
 
 /*------------------------------------------------------------------------------*\
 	TellControllers( msg)
 		-	tells controllers about our new state (msg holding the state-description)
 		-	if no interested controller exists, this does nothing
+		-	if this dataModel is frozen, nothing happens
 \*------------------------------------------------------------------------------*/
-void BmDataModel::TellControllers( BMessage* msg, bool bumpStateVal) {
+void BmDataModel::TellControllers( BMessage* msg) {
 	BAutolock lock( mModelLocker);
 	lock.IsLocked()	 						|| BM_THROW_RUNTIME( mModelName << ":TellControllers(): Unable to get lock on controller-set");
 	BHandler* controller;
 	status_t err;
-	if (bumpStateVal) mStateVal++;
 	msg->AddString( MSG_MODEL, ModelName().String());
-	BmControllerMap::iterator iter;
-	iter = mControllerMap.begin();
-	if (iter == mControllerMap.end()) {
+	if (Frozen()) {
+		BM_LOG3( BM_LogModelController, BString("Model <") << ModelName() << "> is frozen, so this msg is being dropped.");
+	}
+	BmControllerSet::iterator iter;
+	iter = mControllerSet.begin();
+	if (iter == mControllerSet.end()) {
 		BM_LOG2( BM_LogModelController, BString("Model <") << ModelName() << "> has no controllers to talk to.");
 	}
-	for( ; iter != mControllerMap.end(); ++iter) {
-		(controller = iter->first->GetControllerHandler())
+	for( ; iter != mControllerSet.end(); ++iter) {
+		(controller = (*iter)->GetControllerHandler())
 													|| BM_THROW_RUNTIME( mModelName << ":TellControllers(): Controller found with NULL-handler!");
-		if (iter->second < mStateVal) {
-			BMessenger msgr( controller);
-			BM_LOG2( BM_LogModelController, BString("Talking to handler ") << iter->first->ControllerName());
-			(err=msgr.SendMessage( msg)) == B_OK
+		BMessenger msgr( controller);
+		BM_LOG2( BM_LogModelController, BString("Talking to handler ") << (*iter)->ControllerName());
+		(err=msgr.SendMessage( msg)) == B_OK
 													|| BM_THROW_RUNTIME( mModelName << ":TellControllers(): SendMessage() failed!");
-			if (bumpStateVal) {
-				iter->second = mStateVal;
-			}
-		}
 	}
 }
 
@@ -109,7 +107,7 @@ void BmDataModel::TellControllers( BMessage* msg, bool bumpStateVal) {
 bool BmDataModel::HasControllers() {
 	BAutolock lock( mModelLocker);
 	lock.IsLocked()	 						|| BM_THROW_RUNTIME( mModelName << ":HasControllers(): Unable to get lock on controller-set");
-	return !mControllerMap.empty();
+	return !mControllerSet.empty();
 }
 
 /*------------------------------------------------------------------------------*\
@@ -137,9 +135,9 @@ void BmDataModel::WaitForAllControllers() {
 		}
 		snooze(200*1000);
 		BM_LOG3( BM_LogModelController, BString("Job <") << ModelName() << "> is still waiting for some controllers to detach:");
-		BmControllerMap::iterator iter;
-		for( iter = mControllerMap.begin(); iter != mControllerMap.end(); ++iter) {
-			BM_LOG3( BM_LogModelController, BString("... <") << iter->first->ControllerName() << "> is still attached!");
+		BmControllerSet::iterator iter;
+		for( iter = mControllerSet.begin(); iter != mControllerSet.end(); ++iter) {
+			BM_LOG3( BM_LogModelController, BString("... <") << (*iter)->ControllerName() << "> is still attached!");
 		}
 		while(lCount--) {
 			mModelLocker.Lock();
@@ -201,7 +199,7 @@ BmJobModel::~BmJobModel() {
 \*------------------------------------------------------------------------------*/
 void BmJobModel::StartJobInNewThread() {
 	BAutolock lock( mModelLocker);
-	lock.IsLocked()	 					|| BM_THROW_RUNTIME( ModelName() << ":TellModelItemRemoved(): Unable to get lock");
+	lock.IsLocked()	 					|| BM_THROW_RUNTIME( ModelName() << ": Unable to get lock");
 	if (!mThreadID) {
 		// we create a new thread for this job...
 		BString tname = ModelName();
@@ -329,6 +327,8 @@ void BmJobModel::TellJobIsDone( bool completed) {
 	BmListModelItem
 \********************************************************************************/
 
+BmRefManager<BmListModelItem> BmListModelItem::RefManager("ListModelItem_RefMan");
+
 /*------------------------------------------------------------------------------*\
 	ListModelItem( key, parent)
 		-	c'tor
@@ -344,12 +344,6 @@ BmListModelItem::BmListModelItem( BString key, BmListModelItem* parent)
 		-	d'tor
 \*------------------------------------------------------------------------------*/
 BmListModelItem::~BmListModelItem() {
-	BmModelItemMap::iterator iter;
-	for( iter = mSubItemMap.begin(); iter != mSubItemMap.end(); ++iter) {
-		BmListModelItem* item = iter->second;
-		delete item;
-	}
-	mSubItemMap.clear();
 }
 
 /*------------------------------------------------------------------------------*\
@@ -361,14 +355,24 @@ void BmListModelItem::AddSubItem( BmListModelItem* subItem) {
 }
 
 /*------------------------------------------------------------------------------*\
+	AddSubItem()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmListModelItem::RemoveSubItem( BmListModelItem* subItem) {
+	mSubItemMap.erase( subItem->Key());
+}
+
+/*------------------------------------------------------------------------------*\
 	FindItemByKey()
 		-	
 \*------------------------------------------------------------------------------*/
 BmListModelItem* BmListModelItem::FindItemByKey( BString& key) {
 	BmListModelItem* found;
 	BmModelItemMap::const_iterator iter;
+	if (Key() == key)
+		return this;
 	for( iter = begin(); iter != end(); iter++) {
-		BmListModelItem* item = iter->second;
+		BmListModelItem* item = iter->second.Get();
 		if (item->Key() == key)
 			return item;
 		else {
@@ -399,22 +403,79 @@ BmListModel::BmListModel( const BString& name)
 		-	d'tor
 \*------------------------------------------------------------------------------*/
 BmListModel::~BmListModel() {
-	BmModelItemMap::iterator iter;
-	for( iter = mModelItemMap.begin(); iter != mModelItemMap.end(); ++iter) {
-		BmListModelItem* item = iter->second;
-		delete item;
-	}
-	mModelItemMap.clear();
 }
 
 /*------------------------------------------------------------------------------*\
-	RemovalNoticed()
+	AddItemToList()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmListModel::RemovalNoticed( BmController* controller) {
-	BAutolock lock( mModelLocker);
-	lock.IsLocked()	 						|| BM_THROW_RUNTIME( ModelName() << ":RemovalNoticed(): Unable to get lock on controller-set");
-	mOpenReplySet.erase( controller); 
+void BmListModel::AddItemToList( BmListModelItem* item, BmListModelItem* parent) {
+	if (item) {
+		BAutolock lock( mModelLocker);
+		lock.IsLocked() 						|| BM_THROW_RUNTIME( ModelName() << ":AddItemToList(): Unable to get lock");
+		item->Parent( parent);
+		if (parent) {
+			parent->AddSubItem( item);
+			TellModelItemAdded( item);
+			if (parent->size() == 1) {
+				// the parent has just become a superitem (and thus needs to be updated):
+				TellModelItemUpdated( parent, UPD_EXPANDER);
+			}
+		}
+		else {
+			mModelItemMap[item->Key()] = item;
+			TellModelItemAdded( item);
+		}
+	}
+}
+
+/*------------------------------------------------------------------------------*\
+	RemoveItemFromList()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmListModel::RemoveItemFromList( BmListModelItem* item) {
+	if (item) {
+		BmListModelItem* parent = item->Parent();
+		TellModelItemRemoved( item);
+		if (parent) {
+			parent->RemoveSubItem( item);
+			if (parent->size() == 0) {
+				// the parent has just become a non-superitem (and thus needs to be updated):
+				TellModelItemUpdated( parent, UPD_EXPANDER);
+			}
+		} else {
+			mModelItemMap.erase( item->Key());
+		}
+	}
+}
+
+/*------------------------------------------------------------------------------*\
+	RemoveItemFromList()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmListModel::RemoveItemFromList( BString key) {
+	BmListModelItem* item = FindItemByKey( key);
+	RemoveItemFromList( item);
+}
+
+/*------------------------------------------------------------------------------*\
+	FindItemByKey()
+		-	
+\*------------------------------------------------------------------------------*/
+BmListModelItem* BmListModel::FindItemByKey( BString& key) {
+	BmListModelItem* found;
+	BmModelItemMap::const_iterator iter;
+	for( iter = begin(); iter != end(); iter++) {
+		BmListModelItem* item = iter->second.Get();
+		if (item->Key() == key)
+			return item;
+		else {
+			found = item->FindItemByKey( key);
+			if (found)
+				return found;
+		}
+	}
+	return NULL;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -422,6 +483,8 @@ void BmListModel::RemovalNoticed( BmController* controller) {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmListModel::TellModelItemAdded( BmListModelItem* item) {
+	if (Frozen())
+		return;
 	BAutolock lock( mModelLocker);
 	lock.IsLocked()	 					|| BM_THROW_RUNTIME( ModelName() << ":TellModelItemRemoved(): Unable to get lock");
 	if (HasControllers()) {
@@ -437,28 +500,15 @@ void BmListModel::TellModelItemAdded( BmListModelItem* item) {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmListModel::TellModelItemRemoved( BmListModelItem* item) {
+	if (Frozen())
+		return;
 	BAutolock lock( mModelLocker);
 	lock.IsLocked()	 					|| BM_THROW_RUNTIME( ModelName() << ":TellModelItemRemoved(): Unable to get lock");
 	if (HasControllers()) {
 		BMessage msg( BM_LISTMODEL_REMOVE);
+		msg.AddPointer( MSG_MODELITEM, static_cast<void*>(item));
 		BM_LOG2( BM_LogModelController, BString("ListModel <") << ModelName() << "> tells about removed item " << item->Key());
-		// we copy each controller into the set of open replies (where they remove themselves
-		// from by calling RemovalNoticed()):
-		BmControllerMap::iterator iter;
-		for( iter=mControllerMap.begin(); iter != mControllerMap.end(); ++iter) {
-			mOpenReplySet.insert( iter->first);
-		}
-		// we inform all controllers about the removal...
 		TellControllers( &msg);
-		// ...and wait for all controllers to reply to the item-removal:
-		BM_LOG2( BM_LogModelController, BString("ListModel <") << ModelName() << "> waits for controllers to note deletion of item " << item->Key());
-		while( !mOpenReplySet.empty()) {
-			BM_LOG3( BM_LogModelController, BString("ListModel <") << ModelName() << "> is still waiting for " << mOpenReplySet.size() << " controllers to note deletion of item"  << item->Key());
-			mModelLocker.Unlock();
-			snooze(200*1000);
-			mModelLocker.Lock();
-		}
-		BM_LOG2( BM_LogModelController, BString("ListModel <") << ModelName() << "> has informed all controllers about deletion of item " << item->Key());
 	}
 }
 
@@ -466,11 +516,15 @@ void BmListModel::TellModelItemRemoved( BmListModelItem* item) {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmListModel::TellModelItemUpdated( BmListModelItem* item) {
+void BmListModel::TellModelItemUpdated( BmListModelItem* item, BmUpdFlags flags) {
+	if (Frozen())
+		return;
 	BAutolock lock( mModelLocker);
 	lock.IsLocked()	 					|| BM_THROW_RUNTIME( ModelName() << ":TellModelItemUpdated(): Unable to get lock");
 	if (HasControllers()) {
 		BMessage msg( BM_LISTMODEL_UPDATE);
+		msg.AddPointer( MSG_MODELITEM, static_cast<void*>(item));
+		msg.AddInt32( MSG_UPD_FLAGS, flags);
 		BM_LOG2( BM_LogModelController, BString("ListModel <") << ModelName() << "> tells about updated item " << item->Key());
 		TellControllers( &msg);
 	}

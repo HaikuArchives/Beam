@@ -8,6 +8,7 @@
 #include <FindDirectory.h>
 #include <Resources.h>
 
+#include "BmBasics.h"
 #include "BmResources.h"
 #include "BmUtil.h"
 

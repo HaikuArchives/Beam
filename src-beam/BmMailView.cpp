@@ -6,6 +6,7 @@
 #include <UTF8.h>
 #include <Window.h>
 
+#include "BmBasics.h"
 #include "BmBodyPartList.h"
 #include "BmBodyPartView.h"
 #include "BmBusyView.h"
@@ -237,7 +238,7 @@ void BmMailView::JobIsDone( bool completed) {
 			BM_LOG2( BM_LogMailParse, BString("extracting parts to be displayed from body-structure"));
 			BmModelItemMap::const_iterator iter;
 			for( iter=body->begin(); iter != body->end(); ++iter) {
-				BmBodyPart* bodyPart = dynamic_cast<BmBodyPart*>( iter->second);
+				BmBodyPart* bodyPart = dynamic_cast<BmBodyPart*>( iter->second.Get());
 				DisplayBodyPart( displayText, bodyPart);
 			}
 		}
@@ -273,7 +274,7 @@ void BmMailView::DisplayBodyPart( BString& displayText, BmBodyPart* bodyPart) {
 	} else {
 		BmModelItemMap::const_iterator iter;
 		for( iter=bodyPart->begin(); iter != bodyPart->end(); ++iter) {
-			BmBodyPart* subPart = dynamic_cast<BmBodyPart*>( iter->second);
+			BmBodyPart* subPart = dynamic_cast<BmBodyPart*>( iter->second.Get());
 			DisplayBodyPart( displayText, subPart);
 		}
 	}

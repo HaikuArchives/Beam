@@ -26,8 +26,8 @@ class BmController;
 			object.
 		-	contains functionality to add/remove controllers
 \*------------------------------------------------------------------------------*/
-class BmDataModel {
-	typedef map< BmController*, uint32> BmControllerMap;
+class BmDataModel : public BmRefObj {
+	typedef set< BmController*> BmControllerSet;
 
 public:
 	// c'tors & d'tor:
@@ -43,6 +43,9 @@ public:
 	BString ModelName() const				{ return mModelName; }
 	BLocker& ModelLocker() 					{ return mModelLocker; }
 
+	// overrides of BmRefObj
+	BString RefName() const					{ return mModelName; }
+
 	//	message component definitions for status-msgs:
 	static const char* const MSG_MODEL = 			"bm:model";
 
@@ -52,12 +55,15 @@ protected:
 	// native methods:
 	virtual bool HasControllers();
 	virtual bool ShouldContinue();
-	virtual void TellControllers( BMessage* msg, bool bumpStateVal=true);
+	virtual void TellControllers( BMessage* msg);
 	virtual void WaitForAllControllers();
+	inline void Freeze() 					{ mFrozenCount++; }
+	inline void Thaw()						{ mFrozenCount--; }
+	inline bool Frozen() 					{ return mFrozenCount!=0; }
 
 	BLocker mModelLocker;
-	BmControllerMap mControllerMap;
-	uint32 mStateVal;
+	BmControllerSet mControllerSet;
+	uint8 mFrozenCount;
 
 private:
 	BString mModelName;
@@ -113,14 +119,19 @@ private:
 	thread_id mThreadID;
 };
 
+// flags indicating which parts are to be updated:
+typedef uint32 BmUpdFlags;
+const BmUpdFlags UPD_EXPANDER 	= 1<<0;
+const BmUpdFlags UPD_ALL 			= 0xFFFFFFFF;
+
 class BmListModelItem;
-typedef map< BString, BmListModelItem*> BmModelItemMap;
+typedef map< BString, BmRef<BmListModelItem> > BmModelItemMap;
 
 /*------------------------------------------------------------------------------*\
 	BmListModelItem
 		-	base class for the items that will be part of a BmListModel
 \*------------------------------------------------------------------------------*/
-class BmListModelItem : public BArchivable {
+class BmListModelItem : public BArchivable, public BmRefObj {
 
 public:
 	// c'tors & d'tor:
@@ -128,8 +139,9 @@ public:
 	virtual ~BmListModelItem();
 
 	// native methods:
-	virtual void AddSubItem( BmListModelItem* subItem);
-	virtual BmListModelItem* FindItemByKey( BString& key);
+	void AddSubItem( BmListModelItem* subItem);
+	void RemoveSubItem( BmListModelItem* item);
+	BmListModelItem* FindItemByKey( BString& key);
 
 	// getters:
 	BmModelItemMap::const_iterator begin() const	{ return mSubItemMap.begin(); }
@@ -142,6 +154,11 @@ public:
 
 	// setters:
 	void Parent( BmListModelItem* parent)	{ mParent = parent; }
+
+	// overrides of BmRefObj
+	BString RefName() const					{ return mKey; }
+
+	static BmRefManager<BmListModelItem> RefManager;
 
 protected:
 	BString mKey;
@@ -161,15 +178,16 @@ protected:
 class BmListModel : public BmJobModel {
 	typedef BmJobModel inherited;
 	
-	typedef set< BmController*> BmOpenReplySet;
-
 public:
 	// c'tors & d'tor:
 	BmListModel( const BString& name);
 	virtual ~BmListModel();
 
 	// native methods:
-	virtual void RemovalNoticed( BmController* controller);
+	BmListModelItem* FindItemByKey( BString& key);
+	void AddItemToList( BmListModelItem* item, BmListModelItem* parent=NULL);
+	void RemoveItemFromList( BmListModelItem* item);
+	void RemoveItemFromList( BString key);
 
 	//	message component definitions for status-msgs:
 	static const char* const MSG_ITEMKEY 		=		"bm:ikey";
@@ -177,6 +195,7 @@ public:
 	static const char* const MSG_MODELITEM 	= 		"bm:item";
 	static const char* const MSG_NUM_CHILDREN = 		"bm:count";
 	static const char* const MSG_CHILDREN 		= 		"bm:children";
+	static const char* const MSG_UPD_FLAGS		= 		"bm:updflags";
 
 	// getters:
 	BmModelItemMap::const_iterator begin() const { return mModelItemMap.begin(); }
@@ -188,10 +207,9 @@ protected:
 	// native methods:
 	virtual void TellModelItemAdded( BmListModelItem* item);
 	virtual void TellModelItemRemoved( BmListModelItem* item);
-	virtual void TellModelItemUpdated( BmListModelItem* item);
+	virtual void TellModelItemUpdated( BmListModelItem* item, BmUpdFlags flags=UPD_ALL);
 
 	BmModelItemMap mModelItemMap;
-	BmOpenReplySet mOpenReplySet;
 };
 
 #endif

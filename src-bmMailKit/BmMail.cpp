@@ -11,6 +11,7 @@
 #include <regexx/regexx.hh>
 using namespace regexx;
 
+#include "BmBasics.h"
 #include "BmBodyPartList.h"
 #include "BmLogHandler.h"
 #include "BmMail.h"
@@ -82,7 +83,6 @@ BmMail::BmMail( BString &msgText, const BString &account)
 	-	standard d'tor
 \*------------------------------------------------------------------------------*/
 BmMail::~BmMail() {
-	delete mMailRef;
 	delete mHeader;
 }
 

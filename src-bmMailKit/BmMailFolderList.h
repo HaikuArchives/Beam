@@ -35,6 +35,7 @@ public:
 	virtual ~BmMailFolderList();
 	
 	//	native methods:
+	void HandleNodeMonitorMsg( BMessage* msg);
 	bool Store();
 
 	// overrides of datamodel base:
@@ -49,12 +50,14 @@ public:
 
 private:
 	// the following members will be archived as part of BmFolderList:
-	BmMailFolder* mTopFolder;
-	BmMailFolder* mCurrFolder;
+	BmRef<BmMailFolder> mTopFolder;
 
 	// the following members will NOT be archived at all:
 	status_t mInitCheck;
 
+	//
+	BmMailFolder* AddMailFolder( entry_ref& eref, int64 node, BmMailFolder* parent, 
+										  time_t mtime);
 	//
 	void InitializeMailFolders();
 	int doInitializeMailFolders( BmMailFolder* folder, int level);

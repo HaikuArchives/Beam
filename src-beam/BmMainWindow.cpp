@@ -13,6 +13,7 @@
 #include "UserResizeSplitView.h"
 
 #include "Beam.h"
+#include "BmBasics.h"
 #include "BmLogHandler.h"
 #include "BmMailFolderList.h"
 #include "BmMailFolderView.h"

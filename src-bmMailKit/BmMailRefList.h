@@ -11,9 +11,9 @@
 #include <Locker.h>
 
 #include "BmDataModel.h"
-#include "BmMailRef.h"
 
 class BmMailFolder;
+class BmMailRef;
 
 /*------------------------------------------------------------------------------*\*\
 	BmMailRefList
@@ -34,6 +34,7 @@ public:
 	virtual ~BmMailRefList();
 
 	// native methods:
+	BmMailRef* AddMailRef( entry_ref& eref, int64 node, struct stat& st);
 	bool Store();
 
 	// overrides of archivable base:
@@ -50,7 +51,7 @@ public:
 private:
 
 	// the following members will NOT be archived at all:
-	BmMailFolder* mFolder;
+	BmRef<BmMailFolder> mFolder;
 	status_t mInitCheck;
 	bool mUpdateCache;
 

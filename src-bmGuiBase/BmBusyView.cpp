@@ -7,6 +7,7 @@
 
 #include "Colors.h"
 
+#include "BmBasics.h"
 #include "BmBusyView.h"
 #include "BmLogHandler.h"
 #include "BmUtil.h"

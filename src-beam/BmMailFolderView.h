@@ -25,10 +25,6 @@ class BmMailFolderItem : public BmListViewItem
 		COL_MAX
 	};
 
-protected:
-	// flags indicating which parts are to be updated
-	static const BmUpdFlags UPD_NAME	= 2<<0;
-
 public:
 	// c'tors and d'tor:
 	BmMailFolderItem( BString key, BmListModelItem* item, bool superitem, 
@@ -37,7 +33,7 @@ public:
 
 	// overrides of listitem base:
 	void UpdateView( BmUpdFlags flags);
-	BmMailFolder* ModelItem() 	{ return dynamic_cast< BmMailFolder*>( mModelItem); }
+	BmMailFolder* ModelItem() const 		{ return dynamic_cast< BmMailFolder*>( mModelItem.Get()); }
 };
 
 
@@ -62,7 +58,8 @@ public:
 	bool AcceptsDropOf( const BMessage* msg);
 	void HandleDrop( const BMessage* msg);
 	BString StateInfoBasename()			{ return "MailFolderView"; }
-	void Update( BmUpdFlags flags);
+	void UpdateModelItem( BMessage* msg);
+	const char* ItemNameForCaption()		{ return "folder"; }
 
 	// overrides of listview base:
 	void MessageReceived( BMessage* msg);

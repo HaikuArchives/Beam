@@ -1210,6 +1210,7 @@ bool ColumnListView::AddListPrivate(BList* newItems, int32 fullListIndex)
 			if(!AddItemPrivate((CLVListItem*)newItems->ItemAt(count),fullListIndex+count))
 				return false;
 	} else {
+		fFullItemList.AddList(newItems);
 		if (!BListView::AddList( newItems, fullListIndex))
 			return false;
 	}
@@ -1314,14 +1315,20 @@ bool ColumnListView::RemoveItems(int32 fullListIndex, int32 count)
 CLVListItem* ColumnListView::FullListItemAt(int32 fullListIndex) const
 {
 	AssertWindowLocked();
-	return (CLVListItem*)fFullItemList.ItemAt(fullListIndex);
+	if (Hierarchical())
+		return (CLVListItem*)fFullItemList.ItemAt(fullListIndex);
+	else
+		return (CLVListItem*)ItemAt(fullListIndex);
 }
 
 
 int32 ColumnListView::FullListIndexOf(const CLVListItem* item) const
 {
 	AssertWindowLocked();
-	return fFullItemList.IndexOf((CLVListItem*)item);
+	if (Hierarchical())
+		return fFullItemList.IndexOf((CLVListItem*)item);
+	else
+		return IndexOf((CLVListItem*)item);
 }
 
 
@@ -1330,9 +1337,12 @@ int32 ColumnListView::FullListIndexOf(BPoint point) const
 	AssertWindowLocked();
 	int32 DisplayListIndex = IndexOf(point);
 	CLVListItem* TheItem = (CLVListItem*)ItemAt(DisplayListIndex);
-	if(TheItem)
-		return FullListIndexOf(TheItem);
-	else
+	if(TheItem) {
+		if (Hierarchical())
+			return FullListIndexOf(TheItem);
+		else
+			return IndexOf(TheItem);
+	} else
 		return -1;
 }
 
@@ -1340,28 +1350,40 @@ int32 ColumnListView::FullListIndexOf(BPoint point) const
 CLVListItem* ColumnListView::FullListFirstItem() const
 {
 	AssertWindowLocked();
-	return (CLVListItem*)fFullItemList.FirstItem();
+	if (Hierarchical())
+		return (CLVListItem*)fFullItemList.FirstItem();
+	else
+		return (CLVListItem*)FirstItem();
 }
 
 
 CLVListItem* ColumnListView::FullListLastItem() const
 {
 	AssertWindowLocked();
-	return (CLVListItem*)fFullItemList.LastItem();
+	if (Hierarchical())
+		return (CLVListItem*)fFullItemList.LastItem();
+	else
+		return (CLVListItem*)LastItem();
 }
 
 
 bool ColumnListView::FullListHasItem(const CLVListItem* item) const
 {
 	AssertWindowLocked();
-	return fFullItemList.HasItem((CLVListItem*)item);
+	if (Hierarchical())
+		return fFullItemList.HasItem((CLVListItem*)item);
+	else
+		return HasItem((CLVListItem*)item);
 }
 
 
 int32 ColumnListView::FullListCountItems() const
 {
 	AssertWindowLocked();
-	return fFullItemList.CountItems();
+	if (Hierarchical())
+		return fFullItemList.CountItems();
+	else
+		return CountItems();
 }
 
 
@@ -1383,7 +1405,10 @@ void ColumnListView::MakeEmptyPrivate()
 bool ColumnListView::FullListIsEmpty() const
 {
 	AssertWindowLocked();
-	return fFullItemList.IsEmpty();
+	if (Hierarchical())
+		return fFullItemList.IsEmpty();
+	else
+		return IsEmpty();
 }
 
 
@@ -1392,7 +1417,10 @@ int32 ColumnListView::FullListCurrentSelection(int32 index) const
 	AssertWindowLocked();
 	int32 Selection = CurrentSelection(index);
 	CLVListItem* SelectedItem = (CLVListItem*)ItemAt(Selection);
-	return FullListIndexOf(SelectedItem);
+	if (Hierarchical())
+		return FullListIndexOf(SelectedItem);
+	else
+		return IndexOf(SelectedItem);
 }
 
 
@@ -1401,8 +1429,12 @@ void ColumnListView::FullListDoForEach(bool (*func)(CLVListItem*))
 	AssertWindowLocked();
 	int32 NumberOfItems = fFullItemList.CountItems();
 	for(int32 Counter = 0; Counter < NumberOfItems; Counter++)
-		if(func((CLVListItem*)fFullItemList.ItemAt(Counter)) == true)
-			return;
+		if (Hierarchical())
+			if(func((CLVListItem*)fFullItemList.ItemAt(Counter)) == true)
+				return;
+		else
+			if(func((CLVListItem*)ItemAt(Counter)) == true)
+				return;
 }
 
 
@@ -1411,8 +1443,12 @@ void ColumnListView::FullListDoForEach(bool (*func)(CLVListItem*, void*), void* 
 	AssertWindowLocked();
 	int32 NumberOfItems = fFullItemList.CountItems();
 	for(int32 Counter = 0; Counter < NumberOfItems; Counter++)
-		if(func((CLVListItem*)fFullItemList.ItemAt(Counter),arg2) == true)
-			return;
+		if (Hierarchical())
+			if(func((CLVListItem*)fFullItemList.ItemAt(Counter),arg2) == true)
+				return;
+		else
+			if(func((CLVListItem*)ItemAt(Counter),arg2) == true)
+				return;
 }
 
 

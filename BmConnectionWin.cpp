@@ -17,6 +17,7 @@
 #include <Space.h>
 
 #include "BmApp.h"
+#include "BmBasics.h"
 #include "BmConnectionWin.h"
 #include "BmLogHandler.h"
 #include "BmMsgTypes.h"

@@ -65,7 +65,7 @@ private:
 	BEntry mMailEntry;						// filesystem-entry for this mail (N.B. the entry may
 													// be set although the mail does not yet exist on disk)
 
-	BmMailRef* mMailRef;
+	BmRef<BmMailRef> mMailRef;
 	status_t mInitCheck;
 };
 

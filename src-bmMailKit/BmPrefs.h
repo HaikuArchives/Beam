@@ -31,6 +31,7 @@ class BmPrefs : public BArchivable {
 	static const char* const MSG_MAILREF_LAYOUT = 		"bm:mreflayout";
 	static const char* const MSG_RESTORE_FOLDERS = 		"bm:rstfldrs";
 	static const char* const MSG_HEADERVIEW_MODE = 		"bm:hdrvmode";
+	static const char* const MSG_SHOW_DECODED_LENGTH = "bm:shwdeclen";
 
 	static const char* const PREFS_FILENAME = 			"General Settings";
 
@@ -66,8 +67,7 @@ public:
 	bool StripedListView() const 			{ return mStripedListView; }
 	BMessage* MailRefLayout() const		{ return mMailRefLayout; }
 	bool RestoreFolderStates() const 	{ return mRestoreFolderStates; }
-	// stubs for later use:
-	bool ShowDecodedLength() const 		{ return true; }
+	bool ShowDecodedLength() const 		{ return mShowDecodedLength; }
 
 	// setters:
 	void CheckMail( TConnWinMode m) 		{ mDynamicConnectionWin = m; }
@@ -80,6 +80,7 @@ public:
 	void StripedListView( bool b) 		{ mStripedListView = b; }
 	void MailRefLayout( BMessage* m) 	{ mMailRefLayout = m; }
 	void RestoreFolderStates( bool b) 	{ mRestoreFolderStates = b; }
+	void ShowDecodedLength( bool b) 		{ mShowDecodedLength = b; }
 
 	static BmPrefs* theInstance;
 
@@ -145,6 +146,10 @@ private:
 							// determines whether or not the states of each mail-folder
 							// (e.g. expanded or not) will be restored as they were at the
 							// end of the last sesson.
+
+	bool mShowDecodedLength;
+							// determines if the length of attachments should be computed
+							// for the decoded state (slower) or as is (less useful...)
 };
 
 #define ThePrefs BmPrefs::theInstance

@@ -9,6 +9,7 @@
 #include <map>
 #include <vector>
 
+#include "BmBasics.h"
 #include "BmUtil.h"
 
 

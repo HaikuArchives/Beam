@@ -8,6 +8,7 @@
 #include <regexx/regexx.hh>
 using namespace regexx;
 
+#include "BmBasics.h"
 #include "BmBodyPartList.h"
 #include "BmEncoding.h"
 	using namespace BmEncoding;
@@ -176,6 +177,8 @@ void BmBodyPart::SetTo( const BString& msgtext, int32 start, int32 length,
 		if (ThePrefs->ShowDecodedLength() && mContentTransferEncoding.Length())
 			mDecodedLength = BmEncoding::DecodedLength( mContentTransferEncoding, 
 																	  mPosInRawText, mLength);
+		else
+			mDecodedLength = mLength;
 	}
 	// id
 	BM_LOG2( BM_LogMailParse, "parsing Content-Id");

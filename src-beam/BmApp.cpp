@@ -4,6 +4,7 @@
 */
 
 #include "BmApp.h"
+#include "BmBasics.h"
 #include "BmDataModel.h"
 #include "BmLogHandler.h"
 #include "BmMailFolderList.h"
@@ -53,6 +54,8 @@ BmApplication::~BmApplication()
 {
 	delete ThePrefs;
 	delete TheResources;
+	BmDataModel::RefManager.PrintStatistics();
+	BmListModelItem::RefManager.PrintStatistics();
 	delete TheLogHandler;
 	InstanceCount--;
 }
@@ -69,3 +72,25 @@ bool BmApplication::QuitRequested() {
 	}
 	return shouldQuit;
 }
+
+/*------------------------------------------------------------------------------*\
+	MessageReceived( )
+		-	
+\*------------------------------------------------------------------------------*/
+void BmApplication::MessageReceived( BMessage* msg) {
+	try {
+		switch( msg->what) {
+			case B_NODE_MONITOR: {
+				TheMailFolderList->HandleNodeMonitorMsg( msg);
+				break;
+			}
+			default:
+				inherited::MessageReceived( msg);
+		}
+	}
+	catch( exception &err) {
+		// a problem occurred, we tell the user:
+		BM_SHOWERR( BString("BusyView: ") << err.what());
+	}
+}
+

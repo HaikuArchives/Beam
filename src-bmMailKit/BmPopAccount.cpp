@@ -7,6 +7,7 @@
 #include <Message.h>
 #include <ByteOrder.h>
 
+#include "BmBasics.h"
 #include "BmPopAccount.h"
 #include "BmUtil.h"
 

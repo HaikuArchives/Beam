@@ -4,6 +4,7 @@
 */
 
 #include "Beam.h"
+#include "BmBasics.h"
 #include "BmConnectionWin.h"
 #include "BmLogHandler.h"
 #include "BmMailFolderList.h"

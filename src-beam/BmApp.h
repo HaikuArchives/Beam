@@ -18,6 +18,7 @@ public:
 	~BmApplication();
 
 	// beos-stuff
+	void MessageReceived( BMessage* msg);
 	bool QuitRequested();
 
 	// getters

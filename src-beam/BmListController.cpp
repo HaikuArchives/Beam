@@ -11,6 +11,7 @@
 #include <StringView.h>
 #include <Window.h>
 
+#include "BmBasics.h"
 #include "BmBusyView.h"
 #include "BmCaption.h"
 #include "BmDataModel.h"
@@ -37,7 +38,6 @@ BmListViewItem::BmListViewItem( BString& key, BmListModelItem* modelItem,
 	:	inherited( 0, !modelItem->empty(), false, MAX( TheResources->FontLineHeight(), 18))
 	,	mKey( key)
 	,	mModelItem( modelItem)
-	,	mSubItemList( NULL)
 {
 	SetExpanded( archive ? archive->FindBool( MSG_EXPANDED) : false);
 }
@@ -47,14 +47,6 @@ BmListViewItem::BmListViewItem( BString& key, BmListModelItem* modelItem,
 		-	
 \*------------------------------------------------------------------------------*/
 BmListViewItem::~BmListViewItem() {
-	if (mSubItemList) {
-		while( !mSubItemList->IsEmpty()) {
-			BmListViewItem* subItem = static_cast<BmListViewItem*>(mSubItemList->RemoveItem( (int32)0));
-			delete subItem;
-		}
-		delete mSubItemList;
-		mSubItemList = NULL;
-	}
 }
 
 /*------------------------------------------------------------------------------*\
@@ -69,15 +61,6 @@ status_t BmListViewItem::Archive( BMessage* archive, bool deep) const {
 	// ...now we add this message with a corresponding key to the archive:
 	status_t ret = archive->AddMessage( MSG_CHILDREN, &msg)
 						|| archive->AddString( MSG_CHILDNAMES, Key());
-
-	if (deep && ret==B_OK && mSubItemList) {
-		// we repeat the procedure for all our subitems:
-		int32 numItems = mSubItemList->CountItems();
-		for( int32 i=0; i<numItems && ret==B_OK; ++i) {
-			BmListViewItem* item = static_cast< BmListViewItem*>( mSubItemList->ItemAt( i));
-			ret = item->Archive( archive, deep);
-		}
-	}
 	return ret;
 }
 
@@ -86,6 +69,10 @@ status_t BmListViewItem::Archive( BMessage* archive, bool deep) const {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmListViewItem::UpdateView( BmUpdFlags flags) {
+	BmListModelItem* item = ModelItem();
+	if (flags & (UPD_EXPANDER)) {
+		SetSuperItem( item->size() != 0);
+	}
 }
 
 /*------------------------------------------------------------------------------*\
@@ -97,27 +84,6 @@ void BmListViewItem::SetTextCols( int16 firstTextCol, BmListColumn* columnVec,
 	int16 offs = firstTextCol;
 	for( const BmListColumn* p = columnVec; p->text != NULL; ++p) {
 		SetColumnContent( offs++, p->text, truncate, p->rightJustified);
-	}
-}
-
-/*------------------------------------------------------------------------------*\
-	AddSubItemsToMap()
-		-	
-\*------------------------------------------------------------------------------*/
-void BmListViewItem::AddSubItemsToList( BmListViewController* view) {
-	BmModelItemMap::const_iterator iter;
-	if (!mModelItem->empty()) {
-		mSubItemList = new BList( mModelItem->size());
-		SetSuperItem( true);
-		for( iter = mModelItem->begin(); iter != mModelItem->end(); ++iter) {
-			BmListModelItem* subItem = iter->second;
-			BMessage archive;
-			view->GetArchiveForItemKey( subItem->Key(), &archive);
-			BmListViewItem* viewItem = view->CreateListViewItem( subItem, &archive);
-			mSubItemList->AddItem( viewItem);
-			view->AddUnder( viewItem, this);
-			viewItem->AddSubItemsToList( view);
-		}
 	}
 }
 
@@ -138,7 +104,6 @@ BmListViewController::BmListViewController( minimax minmax, BRect rect,
 	:	inherited( minmax, rect, Name, B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE, 
 					  Type, hierarchical, showLabelView)
 	,	inheritedController( Name)
-	,	mItemList( NULL)
 	,	mInitialStateInfo( NULL)
 	,	mShowCaption( showCaption)
 	,	mShowBusyView( showBusyView)
@@ -240,17 +205,25 @@ void BmListViewController::MessageReceived( BMessage* msg) {
 		switch( msg->what) {
 			case BM_LISTMODEL_ADD: {
 				if (!IsMsgFromCurrentModel( msg)) break;
-				AddModelItemToList( msg);
+				BmListModelItem* item=NULL;
+				msg->FindPointer( BmListModel::MSG_MODELITEM, (void**)&item);
+				AddModelItem( item);
 				break;
 			}
 			case BM_LISTMODEL_REMOVE: {
 				if (!IsMsgFromCurrentModel( msg)) break;
-				RemoveModelItem( msg);
+				BmListModelItem* item=NULL;
+				msg->FindPointer( BmListModel::MSG_MODELITEM, (void**)&item);
+				RemoveModelItem( item);
 				break;
 			}
 			case BM_LISTMODEL_UPDATE: {
 				if (!IsMsgFromCurrentModel( msg)) break;
-				UpdateModelItem( msg);
+				BmListModelItem* item=NULL;
+				msg->FindPointer( BmListModel::MSG_MODELITEM, (void**)&item);
+				BmUpdFlags flags = UPD_ALL;
+				msg->FindInt32( BmListModel::MSG_UPD_FLAGS, (int32*)&flags);
+				UpdateModelItem( item, flags);
 				break;
 			}
 			case BM_LISTVIEW_SHOW_COLUMN:
@@ -281,85 +254,106 @@ void BmListViewController::MessageReceived( BMessage* msg) {
 }
 
 /*------------------------------------------------------------------------------*\
-	AddModelItem( msg)
-		-	Hook function that is called whenever a new item has been added to the 
-			listmodel
+	FindViewItemFor( modelItem)
+		-	
 \*------------------------------------------------------------------------------*/
-void BmListViewController::AddModelItemToList( BMessage* msg) {
-/*
-	BmListViewItem* newItem = NULL;
-	BmListViewItem* parentItem = NULL;
-
-	BmListModelItem* item = static_cast<BmListModelItem*>(
-											FindMsgPointer( msg, BmListModel::MSG_MODELITEM));
-	BString key = item->Key();
-
-	// TODO: add mechanism for inserting at correct position
-	if (!Hierarchical()) {
-		newItem = CreateListViewItem( item);
-		mItemMap[key] = newItem;
-		AddItem( newItem);
-	} else {
-		BString pKey = item->ParentKey();
-		parentItem = mItemMap[pKey];
-		if (!parentItem) {
-			(parentItem = TopHierarchyItem())
-													|| BM_THROW_RUNTIME( BString("BmListViewController: No parent-item found that has key ") << pKey);
-		}
-		parentItem->SetSuperItem( true);
-		parentItem->SetExpanded( true);
-		
-		newItem = CreateListViewItem( item, parentItem->OutlineLevel()+1);
-		mItemMap[key] = newItem;
-		AddUnder( newItem, parentItem);
+BmListViewItem* BmListViewController::FindViewItemFor( BmListModelItem* modelItem) {
+	int32 count = FullListCountItems();
+	for( int32 i=0; i<count; ++i) {
+		BmListViewItem* viewItem = static_cast<BmListViewItem*>( FullListItemAt(i));
+		if (viewItem->ModelItem() == modelItem)
+			return viewItem;
 	}
-*/
+	return NULL;
 }
 
 /*------------------------------------------------------------------------------*\
-	AddAllModelItemsToList()
+	AddAllModelItems()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmListViewController::AddModelItemsToList() {
-	BM_LOG2( BM_LogMailParse, BString(ControllerName())<<": adding items to listview");
+void BmListViewController::AddAllModelItems() {
+	BM_LOG2( BM_LogModelController, BString(ControllerName())<<": adding items to listview");
 	BAutolock lock( DataModel()->ModelLocker());
-	lock.IsLocked()	 						|| BM_THROW_RUNTIME( BString() << ControllerName() << ":AddModelItemsToMap(): Unable to lock model");
+	lock.IsLocked()	 						|| BM_THROW_RUNTIME( BString() << ControllerName() << ":AddAllModelItems(): Unable to lock model");
 	BmListModel *model = DataModel();
-	mItemList = new BList( model->size());
+	BList* tempList = NULL;
+	if (!Hierarchical())
+		tempList = new BList( model->size());
 	SetDisconnectScrollView( true);
 	BmModelItemMap::const_iterator iter;
 	int32 count=1;
 	for( iter = model->begin(); iter != model->end(); ++iter, ++count) {
-		BmListModelItem* modelItem = iter->second;
+		BmListModelItem* modelItem = iter->second.Get();
 		BmListViewItem* viewItem;
 		if (Hierarchical()) {
-			BMessage* archive = GetArchiveForItemKey( modelItem->Key());
-			viewItem = CreateListViewItem( modelItem, archive);
-			mItemList->AddItem( viewItem);
-			// immediately add item and its subitems to the listview:
-			AddItem( viewItem);
-			viewItem->AddSubItemsToList( this);
+			// add item and its subitems to the listview:
+			doAddModelItem( NULL, modelItem);
 		} else {
 			viewItem = CreateListViewItem( modelItem);
-			mItemList->AddItem( viewItem);
+			if (viewItem)
+				tempList->AddItem( viewItem);
 		}
 		if (count%100==0) {
-			BString caption = BString("")<<count<<" messages";
 			ScrollView()->PulseBusyView();
+			BString caption = BString()<<count<<ItemNameForCaption()<<(count>1?"s":"");
 			UpdateCaption( caption.String());
 		}
 	}
-	BString caption = BString("")<<--count<<" messages";
-	UpdateCaption( caption.String());
 	if (!Hierarchical()) {
 		// add complete item-list for efficiency:
-		AddList( mItemList);
+		AddList( tempList);
+		delete tempList;
 	}
 	SortItems();
 	SetDisconnectScrollView( false);
 	UpdateColumnSizesDataRectSizeScrollBars( true);
 	UpdateCaption();
-	BM_LOG2( BM_LogMailParse, BString(ControllerName())<<": finished with adding items to listview");
+	BM_LOG3( BM_LogModelController, BString(ControllerName())<<": finished with adding items to listview");
+}
+
+/*------------------------------------------------------------------------------*\
+	AddModelItem( item)
+		-	Hook function that is called whenever a new item has been added to the 
+			listmodel
+\*------------------------------------------------------------------------------*/
+void BmListViewController::AddModelItem( BmListModelItem* item) {
+	BM_LOG2( BM_LogModelController, BString(ControllerName())<<": adding one item to listview");
+	BAutolock lock( DataModel()->ModelLocker());
+	lock.IsLocked()	 						|| BM_THROW_RUNTIME( BString() << ControllerName() << ":AddModelItem(): Unable to lock model");
+	if (!Hierarchical()) {
+		doAddModelItem( NULL, item);
+	} else {
+		BmListViewItem* parentItem = FindViewItemFor( item->Parent());
+		doAddModelItem( parentItem, item);
+	}
+	SortItems();
+	UpdateCaption();
+}
+
+/*------------------------------------------------------------------------------*\
+	doAddModelItem( BmListViewItem* parent, BmListModelItem)
+		-	
+\*------------------------------------------------------------------------------*/
+void BmListViewController::doAddModelItem( BmListViewItem* parent, BmListModelItem* item) {
+	BMessage* archive = Hierarchical() ? GetArchiveForItemKey( item->Key()) : NULL;
+	BmListViewItem* newItem = CreateListViewItem( item, archive);
+	if (newItem) {
+		if (Hierarchical() && !item->empty())
+			newItem->SetSuperItem( true);
+	
+		// TODO: add mechanism for inserting at correct position
+		if (parent)
+			AddUnder( newItem, parent);
+		else
+			AddItem( newItem);
+	}
+	
+	// add all sub-items of current item to the view as well:
+	BmModelItemMap::const_iterator iter;
+	for( iter = item->begin(); iter != item->end(); ++iter) {
+		BmListModelItem* subItem = iter->second.Get();
+		doAddModelItem( newItem, subItem);
+	}
 }
 
 /*------------------------------------------------------------------------------*\
@@ -372,10 +366,18 @@ void BmListViewController::AddModelItemsToList() {
 			is no longer valid. Otherwise, a controller might still access
 			an item that has already been deleted by the model.
 \*------------------------------------------------------------------------------*/
-void BmListViewController::RemoveModelItem( BMessage* msg) {
-	BmListModel *model = DataModel();
-	if (model) {
-		model->RemovalNoticed( this);
+void BmListViewController::RemoveModelItem( BmListModelItem* item) {
+	BM_LOG2( BM_LogModelController, BString(ControllerName())<<": removing one item from listview");
+	BAutolock lock( DataModel()->ModelLocker());
+	lock.IsLocked()	 						|| BM_THROW_RUNTIME( BString() << ControllerName() << ":RemoveModelItem(): Unable to lock model");
+	if (item) {
+		DeselectAll();
+		BmListViewItem* viewItem = FindViewItemFor( item);
+		if (viewItem) {
+			RemoveItem( viewItem);
+			delete viewItem;
+		}
+		UpdateCaption();
 	}
 }
 
@@ -384,7 +386,15 @@ void BmListViewController::RemoveModelItem( BMessage* msg) {
 		-	Hook function that is called whenever an item needs to be updated 
 		-	default implementation does nothing
 \*------------------------------------------------------------------------------*/
-void BmListViewController::UpdateModelItem( BMessage* msg) {
+void BmListViewController::UpdateModelItem( BmListModelItem* item, BmUpdFlags updFlags) {
+	BmListViewItem* viewItem = FindViewItemFor( item);
+	if (viewItem) {
+		viewItem->UpdateView( updFlags);
+		int32 idx = IndexOf(viewItem);
+		if (idx >= 0)
+			InvalidateItem( idx);
+	} else
+		BM_LOG2( BM_LogModelController, BString(ControllerName())<<": requested to update an unknown item <"<<item->Key()<<">");
 }
 
 /*------------------------------------------------------------------------------*\
@@ -406,12 +416,12 @@ void BmListViewController::UpdateCaption( const char* text) {
 		if (text) {
 			ScrollView()->SetCaptionText( text);
 		} else {
-			int32 numItems = mItemList ? mItemList->CountItems() : 0;
+			int32 numItems = FullListCountItems();
 			BString caption;
 			if (!numItems)
-				caption = BString("no messages");
+				caption = BString("no ")<<ItemNameForCaption()<<"s";
 			else
-				caption = BString("")<<numItems<<" message"<<(numItems>1 ? "s" : "");
+				caption = BString("")<<numItems<<" "<<ItemNameForCaption()<<(numItems>1 ? "s" : "");
 			ScrollView()->SetCaptionText( caption.String());
 		}
 		Window()->UpdateIfNeeded();
@@ -471,7 +481,7 @@ void BmListViewController::ShowLabelViewMenu( BPoint point) {
 \*------------------------------------------------------------------------------*/
 void BmListViewController::ExpansionChanged( CLVListItem* _item, bool expanded) {
 	BmListViewItem* item = dynamic_cast< BmListViewItem*>( _item);
-	UpdateItem( item, BmListViewItem::UPD_EXPANDER);
+	UpdateItem( item, UPD_EXPANDER);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -505,15 +515,16 @@ void BmListViewController::DetachModel() {
 	WriteStateInfo();
 	inheritedController::DetachModel();
 	ScrollView()->UnsetBusy();
+	BList tempList;
+	int32 count = FullListCountItems();
+	for( int i=0; i<count; ++i)
+		tempList.AddItem( FullListItemAt( i));
 	MakeEmpty();								// clear display
-	if (mItemList) {
-		while( !mItemList->IsEmpty()) {
-			BmListViewItem* subItem = static_cast<BmListViewItem*>(mItemList->RemoveItem( (int32)0));
-			delete subItem;
-		}		
-		delete mItemList;
-		mItemList = NULL;
-	}
+	UpdateCaption();
+	while( !tempList.IsEmpty()) {
+		BmListViewItem* subItem = static_cast<BmListViewItem*>(tempList.RemoveItem( (int32)0));
+		delete subItem;
+	}		
 }
 
 /*------------------------------------------------------------------------------*\
@@ -534,7 +545,9 @@ void BmListViewController::StartJob( BmJobModel* model, bool startInNewThread) {
 \*------------------------------------------------------------------------------*/
 void BmListViewController::JobIsDone( bool completed) {
 	if (completed) {
-		AddModelItemsToList();
+		AddAllModelItems();
+	} else {
+		UpdateCaption( "");
 	}
 	ScrollView()->UnsetBusy();
 }
@@ -572,10 +585,10 @@ void BmListViewController::WriteStateInfo() {
 \*------------------------------------------------------------------------------*/
 status_t BmListViewController::Archive(BMessage* archive, bool deep) const {
 	status_t ret = inherited::Archive( archive, deep);
-	if (deep && ret == B_OK && mItemList) {
-		int32 numItems = mItemList->CountItems();
+	if (deep && ret == B_OK) {
+		int32 numItems = FullListCountItems();
 		for( int32 i=0; i<numItems && ret==B_OK; ++i) {
-			BmListViewItem* item = static_cast< BmListViewItem*>( mItemList->ItemAt( i));
+			BmListViewItem* item = static_cast< BmListViewItem*>( FullListItemAt( i));
 			ret = item->Archive( archive, deep);
 		}
 	}
@@ -651,28 +664,48 @@ BmCLVContainerView::BmCLVContainerView( minimax minmax, ColumnListView* target,
 	:	inherited( minmax, target, resizingMode, flags, horizontal, vertical,
 					  scroll_view_corner, border)
 	,	mCaption( NULL)
-	,	mCaptionWidth( captionWidth > 0 ? captionWidth : be_plain_font->StringWidth(" 99999 messages "))
+	,	mCaptionWidth( captionWidth)
 	,	mBusyView( NULL)
 {
 	SetViewColor( ui_color( B_PANEL_BACKGROUND_COLOR));
-	BRect hsFrame;
-	BPoint hsLT;
-	BScrollBar* hScroller = ScrollBar( B_HORIZONTAL);
-	if (showBusyView && hScroller) {
-		hsFrame = hScroller->Frame();
-		hsLT = hsFrame.LeftTop();
-		float bvSize = hsFrame.Height();
-		hScroller->ResizeBy( -bvSize, 0.0);
-		hScroller->MoveBy( bvSize, 0.0);
-		mBusyView = new BmBusyView( BRect( hsLT.x, hsLT.y, hsLT.x+bvSize, hsLT.y+bvSize));
-		AddChild( mBusyView);
+	BRect frame;
+	BPoint LT;
+	BScrollBar* hScroller = horizontal ? ScrollBar( B_HORIZONTAL) : NULL;
+	if (hScroller) {
+		frame = hScroller->Frame();
+		if (showCaption && !mCaptionWidth) {
+			mCaptionWidth = frame.Width();
+			hScroller->Hide();
+		}
+	} else {
+		frame = Bounds();
+		frame.left += 2;
+		frame.right -= 2;
+		frame.top = frame.bottom - 1 - B_H_SCROLL_BAR_HEIGHT;
 	}
-	if (showCaption && hScroller) {
-		hsFrame = hScroller->Frame();
-		hsLT = hsFrame.LeftTop();
-		hScroller->ResizeBy( -mCaptionWidth, 0.0);
-		hScroller->MoveBy( mCaptionWidth, 0.0);
-		mCaption = new BmCaption( BRect( hsLT.x, hsLT.y, hsLT.x+mCaptionWidth, hsLT.y+hsFrame.Height()), "");
+	if (showBusyView) {
+		LT = frame.LeftTop();
+		float bvSize = frame.Height();
+		if (hScroller) {
+			// a horizontal scrollbar exists, we shrink it to make room for the busyview:
+			hScroller->ResizeBy( -bvSize, 0.0);
+			hScroller->MoveBy( bvSize, 0.0);
+		}
+		mBusyView = new BmBusyView( BRect( LT.x, LT.y, LT.x+bvSize, LT.y+bvSize));
+		AddChild( mBusyView);
+		frame.left += bvSize;
+		LT = frame.LeftTop();
+	}
+	if (showCaption) {
+		if (hScroller) {
+			// a horizontal scrollbar exists, we shrink it to make room for the caption:
+			hScroller->ResizeBy( -mCaptionWidth, 0.0);
+			hScroller->MoveBy( mCaptionWidth, 0.0);
+		} else {
+			// no horizontal scrollbar, so the caption occupies all the remaining space:
+			mCaptionWidth = frame.Width();
+		}
+		mCaption = new BmCaption( BRect( LT.x, LT.y, LT.x+mCaptionWidth, LT.y+frame.Height()), "");
 		AddChild( mCaption);
 	}
 }
@@ -723,16 +756,23 @@ void BmCLVContainerView::PulseBusyView() {
 \*------------------------------------------------------------------------------*/
 BRect BmCLVContainerView::layout( BRect rect) {
 	BRect r = inherited::layout( rect);
-	BScrollBar* hScroller = ScrollBar( B_HORIZONTAL);
-	if (mBusyView && hScroller) {
+	float fullCaptionWidth = r.Width();
+	fullCaptionWidth -= 2.0;
+	if (mBusyView) {
 		BRect bvFrame = mBusyView->Frame();
-		BRect hsFrame = hScroller->Frame();
-		mBusyView->MoveTo( bvFrame.left, hsFrame.bottom-bvFrame.Height());
+		mBusyView->MoveTo( bvFrame.left, rect.bottom-1-bvFrame.Height());
+		fullCaptionWidth -= bvFrame.Width();
 	}
-	if (mCaption && hScroller) {
+	if (mCaption) {
 		BRect cpFrame = mCaption->Frame();
-		BRect hsFrame = hScroller->Frame();
-		mCaption->MoveTo( cpFrame.left, hsFrame.bottom-cpFrame.Height());
+		mCaption->MoveTo( cpFrame.left, rect.bottom-1-cpFrame.Height());
+		BScrollBar* hScroller = ScrollBar( B_HORIZONTAL);
+		if (!hScroller || hScroller->IsHidden()) {
+			if (ScrollBar( B_VERTICAL))
+				fullCaptionWidth -= B_V_SCROLL_BAR_WIDTH + 1;
+			mCaption->ResizeTo( fullCaptionWidth, cpFrame.Height());
+			mCaption->Invalidate();
+		}
 	}
 	return r;
 }

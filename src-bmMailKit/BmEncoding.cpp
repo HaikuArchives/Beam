@@ -10,6 +10,7 @@
 #include <regexx/regexx.hh>
 using namespace regexx;
 
+#include "BmBasics.h"
 #include "BmEncoding.h"
 #include "BmLogHandler.h"
 #include "BmUtil.h"

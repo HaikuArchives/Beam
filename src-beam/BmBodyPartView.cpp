@@ -7,6 +7,7 @@
 #include <PopUpMenu.h>
 #include <Window.h>
 
+#include "BmBasics.h"
 #include "BmLogHandler.h"
 #include "BmBodyPartList.h"
 #include "BmBodyPartView.h"
@@ -74,7 +75,7 @@ float BmBodyPartView::nColWidths[10] = {20,100,100,70,70,200,0,0,0,0};
 \*------------------------------------------------------------------------------*/
 BmBodyPartView::BmBodyPartView( minimax minmax, int32 width, int32 height)
 	:	inherited( minmax, BRect(0,0,width-1,height-1), "Beam_BodyPartView", 
-					  B_SINGLE_SELECTION_LIST, false, false)
+					  B_SINGLE_SELECTION_LIST, true, false)
 	,	mShowAllParts( false)
 {
 	SetViewColor( White);
@@ -112,7 +113,12 @@ BmBodyPartView::~BmBodyPartView() {
 \*------------------------------------------------------------------------------*/
 BmListViewItem* BmBodyPartView::CreateListViewItem( BmListModelItem* item, 
 																	BMessage* archive) {
-	return new BmBodyPartItem( item->Key(), item);
+	BmBodyPart* modelItem = dynamic_cast<BmBodyPart*>( item);
+	if (!modelItem->mIsMultiPart && (mShowAllParts || !modelItem->ShouldBeShownInline())) {
+		return new BmBodyPartItem( item->Key(), item);
+	} else {
+		return NULL;
+	}
 }
 
 /*------------------------------------------------------------------------------*\
@@ -145,65 +151,39 @@ void BmBodyPartView::ShowBody( BmBodyPartList* body) {
 }
 
 /*------------------------------------------------------------------------------*\
-	AddModelItemToList()
+	AddAllModelItems()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmBodyPartView::AddModelItemToList( BmListModelItem* _item) {
-	BmBodyPart* modelItem = dynamic_cast<BmBodyPart*>(_item);
-	BAutolock lock( DataModel()->ModelLocker());
-	lock.IsLocked()	 						|| BM_THROW_RUNTIME( BString() << ControllerName() << ":AddModelItemToList(): Unable to lock model");
-	if (!modelItem->mIsMultiPart && (mShowAllParts || !modelItem->ShouldBeShownInline())) {
-		BmListViewItem* viewItem;
-		viewItem = CreateListViewItem( modelItem);
-		mItemList->AddItem( viewItem);
-		// adjust info about maximum column widths:
-		for( int i=nFirstTextCol; i<CountColumns(); ++i) {
-			float textWidth = StringWidth( viewItem->GetColumnContentText(i));
-			mColWidths[i] = MAX( mColWidths[i], textWidth+10);
-		}
-	}
-	// continue with any subitems:
-	BmModelItemMap::const_iterator iter;
-	for( iter = modelItem->begin(); iter != modelItem->end(); ++iter) {
-		BmListModelItem* subItem = iter->second;
-		AddModelItemToList( subItem);
-	}
-}
-
-/*------------------------------------------------------------------------------*\
-	AddAllModelItemsToList()
-		-	
-\*------------------------------------------------------------------------------*/
-void BmBodyPartView::AddModelItemsToList() {
+void BmBodyPartView::AddAllModelItems() {
 	// initializations:
 	BmBodyPartItem::ResetUnnamedFileCounter();
 	int i;
 	for( i=nFirstTextCol; i<CountColumns(); ++i) {
 		mColWidths[i] = nColWidths[i];
 	}
-	BM_LOG2( BM_LogMailParse, BString(ControllerName())<<": adding items to listview");
-	// start adding all items:
-	BAutolock lock( DataModel()->ModelLocker());
-	lock.IsLocked()	 						|| BM_THROW_RUNTIME( BString() << ControllerName() << ":AddModelItemsToList(): Unable to lock model");
-	BmListModel *model = DataModel();
-	mItemList = new BList( model->size());
-	BmModelItemMap::const_iterator iter;
-	for( iter = model->begin(); iter != model->end(); ++iter) {
-		AddModelItemToList( iter->second);
-	}
-	AddList( mItemList);
+	// do add all items:
+	inherited::AddAllModelItems();
+	// adjust size accordingly:
 	float width = Bounds().Width();
-	int32 count = mItemList->CountItems();
+	int32 count = FullListCountItems();
 	float itemHeight = count ? ItemAt(0)->Height() : 0;
+							// makes this view disappear if no BodyPart is shown
 	ResizeTo( width, count*itemHeight);
+	// update info about maximum column widths:
+	for( int i=0; i<count; ++i) {
+		BmListViewItem* viewItem = dynamic_cast<BmListViewItem*>( FullListItemAt( i));
+		for( int c=nFirstTextCol; c<CountColumns(); ++c) {
+			float textWidth = StringWidth( viewItem->GetColumnContentText(c));
+			mColWidths[c] = MAX( mColWidths[c], textWidth+10);
+		}
+	}
+	// adjust column widths, if neccessary:
 	BmMailView* mailView = (BmMailView*)Parent();
-	// adjust column widths, if neccessary
 	for( i=nFirstTextCol; i<CountColumns(); ++i) {
 		ColumnAt( i)->SetWidth( mColWidths[i]);
 	}
 	if (mailView)
 		mailView->CalculateVerticalOffset();
-	BM_LOG2( BM_LogMailParse, BString(ControllerName())<<": finished with adding items to listview");
 }
 
 /*------------------------------------------------------------------------------*\

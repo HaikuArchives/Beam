@@ -7,6 +7,7 @@
 
 #include <File.h>
 
+#include "BmBasics.h"
 #include "BmLogHandler.h"
 #include "BmMailRef.h"
 #include "BmUtil.h"

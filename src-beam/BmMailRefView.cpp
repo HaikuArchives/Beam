@@ -5,8 +5,10 @@
 
 #include <Window.h>
 
+#include "BmBasics.h"
 #include "BmLogHandler.h"
 #include "BmMailFolder.h"
+#include "BmMailRef.h"
 #include "BmMailRefList.h"
 #include "BmMailRefView.h"
 #include "BmMailView.h"
@@ -78,7 +80,7 @@ BmMailRefItem::~BmMailRefItem() {
 		-	
 \*------------------------------------------------------------------------------*/
 const int32 BmMailRefItem::GetNumValueForColumn( int32 column_index) const {
-	BmMailRef* ref = dynamic_cast<BmMailRef*>( mModelItem);
+	BmMailRef* ref = ModelItem();
 	if (column_index == 0 || column_index == 14) {
 		// status
 		BString st = ref->Status();
@@ -110,7 +112,7 @@ const int32 BmMailRefItem::GetNumValueForColumn( int32 column_index) const {
 		-	
 \*------------------------------------------------------------------------------*/
 const time_t BmMailRefItem::GetDateValueForColumn( int32 column_index) const {
-	BmMailRef* ref = dynamic_cast<BmMailRef*>( mModelItem);
+	const BmMailRef* ref = ModelItem();
 	if (column_index == 5)
 		return ref->When();
 	else if (column_index == 12)
@@ -190,6 +192,22 @@ BmMailRefView::~BmMailRefView() {
 }
 
 /*------------------------------------------------------------------------------*\
+	CreateContainer()
+		-	
+\*------------------------------------------------------------------------------*/
+CLVContainerView* BmMailRefView::CreateContainer( bool horizontal, bool vertical, 
+												  				  bool scroll_view_corner, 
+												  				  border_style border, 
+																  uint32 ResizingMode, 
+																  uint32 flags) 
+{
+	return new BmCLVContainerView( fMinMax, this, ResizingMode, flags, horizontal, 
+											 vertical, scroll_view_corner, border, mShowCaption,
+											 mShowBusyView, 
+											 be_plain_font->StringWidth(" 99999 messages "));
+}
+
+/*------------------------------------------------------------------------------*\
 	()
 		-	
 \*------------------------------------------------------------------------------*/
@@ -205,31 +223,19 @@ BmListViewItem* BmMailRefView::CreateListViewItem( BmListModelItem* item,
 void BmMailRefView::MessageReceived( BMessage* msg) {
 	try {
 		switch( msg->what) {
-			case B_COPY_TARGET: {
-				// [zooey]: this actually never happens. I am clueless to why Tracker 
-				//				does the copy on it's own, without ever telling us!
-				//				(is this a bug?)
-				if (msg->IsReply()) {
-					BMessage dataMsg( B_MIME_DATA);
-					dataMsg.AddString( "text/email", "sdjkfhksjdhfkh\nfjshdkfksdj\n");
-					msg->SendReply( &dataMsg);
-				}
-				break;
-			}
-			case B_MOVE_TARGET: {
-				if (msg->IsReply()) {
-					BMessage dataMsg( B_MIME_DATA);
-					dataMsg.AddString( "text/email", "sdjkfhksjdhfkh\nfjshdkfksdj\n");
-					msg->SendReply( &dataMsg);
-				}
-				break;
-			}
 			case B_TRASH_TARGET: {
 				if (msg->IsReply()) {
-					entry_ref eref;
 					const BMessage* origMsg = msg->Previous();
-					for( int i=0; origMsg->FindRef( "refs", i, &eref) == B_OK; ++i) {
-						MoveToTrash( eref);
+					if (origMsg) {
+						int32 count;
+						type_code code;
+						origMsg->GetInfo( "refs", &code, &count);
+						entry_ref* refs = new entry_ref [count];
+						int i=0;
+						while( origMsg->FindRef( "refs", i, &refs[i]) == B_OK)
+							++i;
+						MoveToTrash( refs, i);
+						delete [] refs;
 					}
 				}
 				break;
@@ -258,7 +264,6 @@ void BmMailRefView::KeyDown(const char *bytes, int32 numBytes) {
 			case B_LEFT_ARROW:
 			case B_RIGHT_ARROW: {
 				int32 mods = Window()->CurrentMessage()->FindInt32("modifiers");
-//				if (mods & (B_CONTROL_KEY | B_SHIFT_KEY)) {
 				if (mods & (B_CONTROL_KEY)) {
 					// remove modifiers so we don't ping-pong endlessly:
 					Window()->CurrentMessage()->ReplaceInt32("modifiers", 0);
@@ -284,9 +289,7 @@ bool BmMailRefView::InitiateDrag( BPoint where, int32 index, bool wasSelected) {
 		return false;
 	BMessage dragMsg( BM_MAIL_DRAG);
 	dragMsg.AddString( "be:types", "text/x-email");
-//	dragMsg.AddString( "be:filetypes", "text/x-email");
 	dragMsg.AddString( "be:type_descriptions", "E-mail");
-	dragMsg.AddInt32( "be:actions", B_COPY_TARGET);
 	dragMsg.AddInt32( "be:actions", B_MOVE_TARGET);
 	dragMsg.AddInt32( "be:actions", B_TRASH_TARGET);
 	BmMailRefItem* refItem = dynamic_cast<BmMailRefItem*>(ItemAt( index));
@@ -317,7 +320,6 @@ bool BmMailRefView::InitiateDrag( BPoint where, int32 index, bool wasSelected) {
 		refItem = dynamic_cast<BmMailRefItem*>(ItemAt( currIdx));
 		ref = dynamic_cast<BmMailRef*>(refItem->ModelItem());
 		dragMsg.AddRef( "refs", ref->EntryRefPtr());
-		dragMsg.AddPointer( "refPtrs", ref->EntryRefPtr());
 		if (i<3) {
 			// add only the first three selections to drag-image:
 			const BBitmap* icon = refItem->GetColumnContentBitmap( 0);
@@ -339,16 +341,53 @@ bool BmMailRefView::InitiateDrag( BPoint where, int32 index, bool wasSelected) {
 }
 
 /*------------------------------------------------------------------------------*\
+	AcceptsDropOf( msg)
+		-	
+\*------------------------------------------------------------------------------*/
+bool BmMailRefView::AcceptsDropOf( const BMessage* msg) {
+	if (mCurrFolder && msg && msg->what == B_SIMPLE_DATA) {
+		entry_ref eref;
+		bool containsMails = false;
+		for( int32 i=0; msg->FindRef( "refs", i, &eref) == B_OK; ++i) {
+			if (CheckMimeType( &eref, "text/x-email"))
+				containsMails = true;
+		}
+		return containsMails;
+	} else
+		return false;
+}
+
+/*------------------------------------------------------------------------------*\
+	HandleDrop( msg)
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailRefView::HandleDrop( const BMessage* msg) {
+	if (mCurrFolder && msg && msg->what == B_SIMPLE_DATA) {
+		BList refList;
+		entry_ref eref;
+		for( int i=0; msg->FindRef( "refs", i, &eref)==B_OK; ++i) {
+			refList.AddItem( new entry_ref( eref));
+		}
+		mCurrFolder->MoveMailsHere( refList);
+		entry_ref* ref;
+		while( (ref = static_cast<entry_ref*>( refList.RemoveItem( (int32)0))))
+			delete ref;
+	}
+	inherited::HandleDrop( msg);
+}
+
+/*------------------------------------------------------------------------------*\
 	ShowFolder()
 		-	
 \*------------------------------------------------------------------------------*/
 void BmMailRefView::ShowFolder( BmMailFolder* folder) {
 	try {
 		StopJob();
-		BmMailRefList* refList = folder->MailRefList();
+		BmMailRefList* refList = folder ? folder->MailRefList() : NULL;
 		if (mPartnerMailView)
 			mPartnerMailView->ShowMail( NULL);
-		StartJob( refList, true);
+		if (refList)
+			StartJob( refList, true);
 		mCurrFolder = folder;
 	}
 	catch( exception &err) {
@@ -378,7 +417,7 @@ BMessage* BmMailRefView::DefaultLayout()		{
 		-	
 \*------------------------------------------------------------------------------*/
 void BmMailRefView::SelectionChanged( void) {
-	uint32 selection = CurrentSelection();
+	int32 selection = CurrentSelection();
 	if (selection >= 0) {
 		BmMailRefItem* refItem;
 		refItem = dynamic_cast<BmMailRefItem*>(ItemAt( selection));
@@ -387,5 +426,7 @@ void BmMailRefView::SelectionChanged( void) {
 			if (ref && mPartnerMailView)
 				mPartnerMailView->ShowMail( ref);
 		}
-	}
+	} else
+		if (mPartnerMailView)
+			mPartnerMailView->ShowMail( NULL);
 }
