@@ -58,6 +58,7 @@
 #include "BmMsgTypes.h"
 #include "BmPrefsView.h"
 #include "BmPrefsFilterView.h"
+#include "BmPrefsFilterChainView.h"
 #include "BmPrefsGeneralView.h"
 #include "BmPrefsMailConstrView.h"
 #include "BmPrefsMailReadView.h"
@@ -129,11 +130,11 @@ BmPrefsWin::BmPrefsWin()
 								new BmPrefsShortcutsView(),
 								new BmPrefsMailConstrView(),
 								new BmPrefsSendMailView(),
-								new BmPrefsFilterView( TheOutboundFilterList.Get(), true),
 								new BmPrefsSignatureView(),
 								new BmPrefsMailReadView(),
 								new BmPrefsRecvMailView(),
-								new BmPrefsFilterView( TheInboundFilterList.Get(), false),
+								new BmPrefsFilterView(),
+								new BmPrefsFilterChainView(),
 								0
 							)
 						),
@@ -239,10 +240,6 @@ CLVContainerView* BmPrefsWin::CreatePrefsListView( minimax minmax, int32 width, 
 	mPrefsListView->AddItem( item);
 
 	item = new CLVEasyItem( 1, false, false, 18.0);
-	item->SetColumnContent( 1, "Filters");
-	mPrefsListView->AddItem( item);
-
-	item = new CLVEasyItem( 1, false, false, 18.0);
 	item->SetColumnContent( 1, "Signatures");
 	mPrefsListView->AddItem( item);
 
@@ -255,8 +252,13 @@ CLVContainerView* BmPrefsWin::CreatePrefsListView( minimax minmax, int32 width, 
 	item->SetColumnContent( 1, "Accounts");
 	mPrefsListView->AddItem( item);
 
+	item = new CLVEasyItem( 0, true, false, 18.0);
+	item->SetColumnContent( 1, "Filtering Mail");
+	mPrefsListView->AddItem( item);
+	mPrefsListView->Expand( item);
+
 	item = new CLVEasyItem( 1, false, false, 18.0);
-	item->SetColumnContent( 1, "Filters");
+	item->SetColumnContent( 1, "Chains");
 	mPrefsListView->AddItem( item);
 
 	return container;

@@ -36,8 +36,11 @@
 #include "BmBasics.h"
 #include "BmLogHandler.h"
 #include "BmFilter.h"
+#include "BmFilterChain.h"
 #include "BmMail.h"
 #include "BmMailFilter.h"
+#include "BmPopAccount.h"
+#include "BmSmtpAccount.h"
 #include "BmUtil.h"
 
 // standard logfile-name for this class:
@@ -254,36 +257,42 @@ bool BmMailFilter::StartJob() {
 	return false;
 }
 
-typedef map< int32, BmRef<BmFilter> > BmOrderedFilterMap;
 /*------------------------------------------------------------------------------*\
 	ExecuteFilter()
 		-	applies mail-filtering to a single given mail
 \*------------------------------------------------------------------------------*/
 void BmMailFilter::ExecuteFilter( MsgContext& msgContext) {
 	if (!mFilter) {
-		// sort all appropriate active filters by their position and then execute each:
-		BmRef<BmFilterList> filterList = msgContext.mail->Outbound()
-														? TheOutboundFilterList 
-														: TheInboundFilterList;
-		BmOrderedFilterMap orderedFilterMap;
-		{
-			BmAutolockCheckGlobal lock( filterList->ModelLocker());
-			lock.IsLocked() 							|| BM_THROW_RUNTIME( filterList->ModelNameNC() << ": Unable to get lock");
+		// first we find the correct filter-chain for this mail...
+		BmRef< BmListModelItem> accItem;
+		BmRef< BmListModelItem> chainItem;
+		if (msgContext.mail->Outbound()) {
+			// we have only one outbound chain:
+			chainItem = TheFilterChainList->FindItemByKey( BM_DefaultOutItemLabel);
+		} else {
+			// fetch the corresponding inbound-chain:
+			accItem = ThePopAccountList->FindItemByKey( msgContext.mail->AccountName());
+			BmPopAccount* popAcc = dynamic_cast< BmPopAccount*>( accItem.Get());
+			if (popAcc)
+				chainItem = TheFilterChainList->FindItemByKey( popAcc->FilterChain());
+		}
+		BmFilterChain* chain = dynamic_cast< BmFilterChain*>( chainItem.Get());
+		if (chain) {
+			// execute all the chain's filters:
+			bool needToStore = false;
+			BmAutolockCheckGlobal lock( chain->ModelLocker());
+			lock.IsLocked() 					|| BM_THROW_RUNTIME( chain->ModelNameNC() << ": Unable to get lock");
 			BmModelItemMap::const_iterator iter;
-			for( iter = filterList->begin(); iter != filterList->end(); ++iter) {
-				BmFilter* filter = dynamic_cast< BmFilter*>( iter->second.Get());
-				if (filter->Active())
-					orderedFilterMap[filter->Position()] = filter;
+			for( iter = chain->BmListModel::begin(); iter != chain->BmListModel::end(); ++iter) {
+				BmChainedFilter* chainedFilter = dynamic_cast< BmChainedFilter*>( iter->second.Get());
+				BmRef< BmListModelItem> filterItem = TheFilterList->FindItemByKey( chainedFilter->FilterName());
+				BmFilter* filter = dynamic_cast< BmFilter*>( filterItem.Get());
+				if (filter)
+					needToStore |= (filter->Execute( &msgContext) && msgContext.changed);
 			}
+			if (needToStore && CurrentJobSpecifier()!=BM_EXECUTE_FILTER_IN_MEM)
+				msgContext.mail->Store();
 		}
-		bool needToStore = false;
-		BmOrderedFilterMap::const_iterator ordIter;
-		for( ordIter = orderedFilterMap.begin(); ordIter != orderedFilterMap.end(); ++ordIter) {
-			needToStore |= (ordIter->second->Execute( &msgContext) 
-								&& msgContext.changed);
-		}
-		if (needToStore && CurrentJobSpecifier()!=BM_EXECUTE_FILTER_IN_MEM)
-			msgContext.mail->Store();
 	} else {
 		if (mFilter->Execute( &msgContext) && msgContext.changed
 		&& CurrentJobSpecifier()!=BM_EXECUTE_FILTER_IN_MEM) {

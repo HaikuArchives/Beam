@@ -45,6 +45,7 @@
 #include "CLVEasyItem.h"
 
 #include "BmCheckControl.h"
+#include "BmFilterChain.h"
 #include "BmGuiUtil.h"
 #include "BmLogHandler.h"
 #include "BmMenuControl.h"
@@ -70,6 +71,7 @@ enum Columns {
 	COL_MAIL_ALIASES,
 	COL_BITBUCKET,
 	COL_SIGNATURE,
+	COL_FILTER_CHAIN,
 	COL_SERVER,
 	COL_PORT,
 	COL_CHECK_INTERVAL,
@@ -114,6 +116,7 @@ void BmRecvAccItem::UpdateView( BmUpdFlags flags) {
 			{ acc->MailAliases().String(),			false },
 			{ acc->MarkedAsBitBucket() ? "*" : "",	false },
 			{ acc->SignatureName().String(),			false },
+			{ acc->FilterChain().String(),			false },
 			{ acc->POPServer().String(),				false },
 			{ acc->PortNrString().String(),			true  },
 			{ acc->CheckIntervalString().String(),	true  },
@@ -175,6 +178,7 @@ BmRecvAccView::BmRecvAccView( minimax minmax, int32 width, int32 height)
 	AddColumn( new CLVColumn( "Aliases", 80.0, CLV_SORT_KEYABLE|flags, 40.0));
 	AddColumn( new CLVColumn( "F", 20.0, CLV_SORT_KEYABLE|flags, 20.0, "(F)allback Account?"));
 	AddColumn( new CLVColumn( "Signature", 80.0, CLV_SORT_KEYABLE|flags, 40.0));
+	AddColumn( new CLVColumn( "FilterChain", 80.0, CLV_SORT_KEYABLE|flags, 40.0));
 	AddColumn( new CLVColumn( "Server", 80.0, CLV_SORT_KEYABLE|flags, 40.0));
 	AddColumn( new CLVColumn( "Port", 40.0, flags, 40.0));
 	AddColumn( new CLVColumn( "Interval", 40.0, flags, 40.0));
@@ -299,6 +303,8 @@ BmPrefsRecvMailView::BmPrefsRecvMailView()
 						new Space( minimax(0,5,0,5)),
 						mSignatureControl = new BmMenuControl( "Signature:", new BPopUpMenu("")),
 						new Space( minimax(0,5,0,5)),
+						mFilterChainControl = new BmMenuControl( "Filter-Chain:", new BPopUpMenu("")),
+						new Space( minimax(0,5,0,5)),
 						mSmtpControl = new BmMenuControl( "SMTP-account:", new BPopUpMenu("")),
 						0
 					)
@@ -355,6 +361,7 @@ BmPrefsRecvMailView::BmPrefsRecvMailView()
 	divider = MAX( divider, mAuthControl->Divider());
 	divider = MAX( divider, mSignatureControl->Divider());
 	divider = MAX( divider, mSmtpControl->Divider());
+	divider = MAX( divider, mFilterChainControl->Divider());
 	mAccountControl->SetDivider( divider);
 	mAliasesControl->SetDivider( divider);
 	mLoginControl->SetDivider( divider);
@@ -364,6 +371,7 @@ BmPrefsRecvMailView::BmPrefsRecvMailView()
 	mAuthControl->SetDivider( divider);
 	mSignatureControl->SetDivider( divider);
 	mSmtpControl->SetDivider( divider);
+	mFilterChainControl->SetDivider( divider);
 
 	mPortControl->SetDivider( 15);
 	mPortControl->ct_mpm.weight = 0.4;
@@ -395,6 +403,7 @@ BmPrefsRecvMailView::~BmPrefsRecvMailView() {
 	TheBubbleHelper.SetHelp( mAuthControl, NULL);
 	TheBubbleHelper.SetHelp( mSignatureControl, NULL);
 	TheBubbleHelper.SetHelp( mSmtpControl, NULL);
+	TheBubbleHelper.SetHelp( mFilterChainControl, NULL);
 	TheBubbleHelper.SetHelp( mCheckAndSuggestButton, NULL);
 }
 
@@ -439,6 +448,8 @@ APOP  -  is a somewhat safer mode, passwords are encrypted.");
 for every mail sent from this account.");
 	TheBubbleHelper.SetHelp( mSmtpControl, "Here you can select the SMTP-account that shall be used\n\
 to send mails from this account.");
+	TheBubbleHelper.SetHelp( mFilterChainControl, "Here you can select the filter-chain to be used \n\
+for every mail received through this account.");
 	TheBubbleHelper.SetHelp( mCheckAndSuggestButton, "When you click here, Beam will connect to the POP-server,\n\
 check which authentication types it supports and select\n\
 the most secure.");
@@ -502,6 +513,18 @@ void BmPrefsRecvMailView::Activated() {
 		BmSignature* sig = dynamic_cast< BmSignature*>( iter->second.Get());
 		AddItemToMenu( mSignatureControl->Menu(), 
 							new BMenuItem( sig->Key().String(), new BMessage( BM_SIGNATURE_SELECTED)), 
+							this);
+	}
+
+	// update all entries of filter-menu:
+	while( (item = mFilterChainControl->Menu()->RemoveItem( (int32)0))!=NULL)
+		delete item;
+	AddItemToMenu( mFilterChainControl->Menu(), 
+					   new BMenuItem( nEmptyItemLabel.String(), new BMessage( BM_FILTER_CHAIN_SELECTED)), this);
+	for( iter = TheFilterChainList->begin(); iter != TheFilterChainList->end(); ++iter) {
+		BmFilterChain* chain = dynamic_cast< BmFilterChain*>( iter->second.Get());
+		AddItemToMenu( mFilterChainControl->Menu(), 
+							new BMenuItem( chain->Key().String(), new BMessage( BM_FILTER_CHAIN_SELECTED)), 
 							this);
 	}
 }
@@ -684,6 +707,15 @@ void BmPrefsRecvMailView::MessageReceived( BMessage* msg) {
 				NoticeChange();
 				break;
 			}
+			case BM_FILTER_CHAIN_SELECTED: {
+				BMenuItem* item = mFilterChainControl->Menu()->FindMarked();
+				if (item && nEmptyItemLabel != item->Label())
+					mCurrAcc->FilterChain( item->Label());
+				else
+					mCurrAcc->FilterChain( "");
+				NoticeChange();
+				break;
+			}
 			case BM_ADD_ACCOUNT: {
 				BmString key( "new account");
 				for( int32 i=1; ThePopAccountList->FindItemByKey( key); ++i) {
@@ -748,6 +780,8 @@ void BmPrefsRecvMailView::MessageReceived( BMessage* msg) {
 						mStorePwdControl->MakeFocus( true);
 					else if (fieldName.ICompare( "authmethod")==0)
 						mAuthControl->MakeFocus( true);
+					else if (fieldName.ICompare( "authmethod")==0)
+						mSmtpControl->MakeFocus( true);
 				}
 				break;
 			}
@@ -776,6 +810,7 @@ void BmPrefsRecvMailView::ShowAccount( int32 selection) {
 	mServerControl->SetEnabled( enabled);
 	mAuthControl->SetEnabled( enabled);
 	mSignatureControl->SetEnabled( enabled);
+	mFilterChainControl->SetEnabled( enabled);
 	mSmtpControl->SetEnabled( enabled);
 	mRemoveButton->SetEnabled( enabled);
 	mCheckAccountControl->SetEnabled( enabled);
@@ -799,6 +834,7 @@ void BmPrefsRecvMailView::ShowAccount( int32 selection) {
 		mCheckIntervalControl->SetTextSilently( "");
 		mAuthControl->ClearMark();
 		mSignatureControl->ClearMark();
+		mFilterChainControl->ClearMark();
 		mSmtpControl->ClearMark();
 		mCheckAccountControl->SetValue( 0);
 		mCheckEveryControl->SetValue( 0);
@@ -826,6 +862,9 @@ void BmPrefsRecvMailView::ShowAccount( int32 selection) {
 				mSignatureControl->MarkItem( mCurrAcc->SignatureName().Length() 
 															? mCurrAcc->SignatureName().String()
 															: nEmptyItemLabel.String());
+				mFilterChainControl->MarkItem( mCurrAcc->FilterChain().Length() 
+													? mCurrAcc->FilterChain().String()
+													: nEmptyItemLabel.String());
 				mSmtpControl->MarkItem( mCurrAcc->SMTPAccount().Length() 
 													? mCurrAcc->SMTPAccount().String()
 													: nEmptyItemLabel.String());

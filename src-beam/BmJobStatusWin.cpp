@@ -352,21 +352,17 @@ BmMailFilterView::~BmMailFilterView() {
 BmJobModel* BmMailFilterView::CreateJobModel( BMessage* msg) {
 	const char* filterName = NULL;
 	msg->FindString( BmListModel::MSG_ITEMKEY, &filterName);
-	bool outbound;
-	msg->FindBool( BmFilter::MSG_OUTBOUND, &outbound);
 	BmFilter* filter = NULL;
 	BmRef<BmListModelItem> filterRef;
 	if (filterName) {
-		filterRef = outbound
-							? TheOutboundFilterList->FindItemByKey( filterName)
-							: TheInboundFilterList->FindItemByKey( filterName);
+		filterRef = TheFilterList->FindItemByKey( filterName);
 		filter = dynamic_cast< BmFilter*>( filterRef.Get());
 		if (!filter)
 			return NULL;
 	}
 	BmMailFilter* mailFilter = new BmMailFilter( ControllerName(), filter);
 	BmMailRef* ref;
-	for( int i=0; msg->FindPointer( BmFilter::MSG_MAILREF, i, (void**)&ref)==B_OK; ++i) {
+	for( int i=0; msg->FindPointer( BmApplication::MSG_MAILREF, i, (void**)&ref)==B_OK; ++i) {
 		mailFilter->AddMailRef( ref);
 		ref->RemoveRef();						// message no longer refers to mail-ref
 	}

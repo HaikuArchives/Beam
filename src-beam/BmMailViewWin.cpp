@@ -88,8 +88,7 @@ BmMailViewWin::BmMailViewWin( BmMailRef* mailRef)
 					  		? B_DOCUMENT_WINDOW_LOOK 
 					  		: B_TITLED_WINDOW_LOOK, 
 					  B_NORMAL_WINDOW_FEEL, B_ASYNCHRONOUS_CONTROLS)
-	,	mInboundFilterMenu( NULL)
-	,	mOutboundFilterMenu( NULL)
+	,	mFilterMenu( NULL)
 {
 	CreateGUI();
 	if (mailRef)
@@ -247,8 +246,7 @@ MMenuBar* BmMailViewWin::CreateMenu() {
 	menu = new BMenu( "Message");
 	menu->AddItem( CreateMenuItem( "New Message", BMM_NEW_MAIL));
 	menu->AddSeparatorItem();
-	BmMailRefView::AddMailRefMenu( menu, this, this, &mInboundFilterMenu,
-											 &mOutboundFilterMenu);
+	BmMailRefView::AddMailRefMenu( menu, this, this, false, &mFilterMenu);
 	menu->AddSeparatorItem();
 	menu->AddItem( CreateMenuItem( "Toggle Header Mode", BMM_SWITCH_HEADER));
 	menu->AddItem( CreateMenuItem( "Show Raw Message", BMM_SWITCH_RAW));
@@ -336,8 +334,6 @@ void BmMailViewWin::MessageReceived( BMessage* msg) {
 					const BmRef<BmMailRef> mailRef = mail->MailRef();
 					tmpMsg.AddPointer( BmApplication::MSG_MAILREF, static_cast< void*>( mailRef.Get()));
 					mailRef->AddRef();	// the message now refers to the mailRef, too
-					bool outbound = msg->FindString( BmFilter::MSG_OUTBOUND);
-					tmpMsg.AddBool( BmFilter::MSG_OUTBOUND, outbound);
 					BmString jobName = msg->FindString( BmListModel::MSG_ITEMKEY);
 					tmpMsg.AddString( BmListModel::MSG_ITEMKEY, jobName.String());
 					jobName << jobNum++;
@@ -369,10 +365,8 @@ void BmMailViewWin::MessageReceived( BMessage* msg) {
 			case BM_LISTMODEL_REMOVE: {
 				// double-dispatch job-related messages to our mene-controllers:
 				BmMenuController* ctrlr = NULL;
-				if (mInboundFilterMenu->IsMsgFromCurrentModel( msg))
-					ctrlr = mInboundFilterMenu;
-				else if (mOutboundFilterMenu->IsMsgFromCurrentModel( msg))
-					ctrlr = mOutboundFilterMenu;
+				if (mFilterMenu->IsMsgFromCurrentModel( msg))
+					ctrlr = mFilterMenu;
 				else 
 					break;
 				BmListModelItem* item=NULL;

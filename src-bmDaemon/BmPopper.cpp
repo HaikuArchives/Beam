@@ -168,7 +168,7 @@ BmPopper::BmPopper( const BmString& name, BmPopAccount* account)
 		-	frees all associated memory (hopefully)
 \*------------------------------------------------------------------------------*/
 BmPopper::~BmPopper() { 
-	TheLogHandler->FinishLog( BM_LOGNAME);
+	BM_LOG_FINISH( BM_LOGNAME);
 }
 
 /*------------------------------------------------------------------------------*\

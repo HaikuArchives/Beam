@@ -103,8 +103,7 @@ BmMainWindow::BmMainWindow()
 	,	mMailRefView( NULL)
 	,	mVertSplitter( NULL)
 	,	mAccountMenu( NULL)
-	,	mInboundFilterMenu( NULL)
-	,	mOutboundFilterMenu( NULL)
+	,	mFilterMenu( NULL)
 {
 	CreateMailFolderView( minimax(0,100,300,1E5), 200, 400);
 	CreateMailRefView( minimax(200,100,1E5,1E5), 400, 200);
@@ -266,8 +265,7 @@ MMenuBar* BmMainWindow::CreateMenu() {
 	menu = new BMenu( "Message");
 	menu->AddItem( CreateMenuItem( "New Message...", BMM_NEW_MAIL));
 	menu->AddSeparatorItem();
-	mMailRefView->AddMailRefMenu( menu, this, this, &mInboundFilterMenu, 
-											&mOutboundFilterMenu);
+	mMailRefView->AddMailRefMenu( menu, this, this, false, &mFilterMenu);
 	menu->AddSeparatorItem();
 	menu->AddItem( CreateMenuItem( "Toggle Header Mode", BMM_SWITCH_HEADER));
 	menu->AddItem( CreateMenuItem( "Show Raw Message", BMM_SWITCH_RAW));
@@ -405,10 +403,7 @@ void BmMainWindow::MessageReceived( BMessage* msg) {
 			}
 			case BMM_FILTER: {
 				BMessage tmpMsg( BM_JOBWIN_FILTER);
-				mMailRefView->AddSelectedRefsToMsg( &tmpMsg, BmFilter::MSG_MAILREF);
-				bool outbound;
-				if (msg->FindBool( BmFilter::MSG_OUTBOUND, &outbound) == B_OK)
-					tmpMsg.AddBool( BmFilter::MSG_OUTBOUND, outbound);
+				mMailRefView->AddSelectedRefsToMsg( &tmpMsg, BmApplication::MSG_MAILREF);
 				BmString jobName = msg->FindString( BmListModel::MSG_ITEMKEY);
 				if (jobName.Length()) {
 					tmpMsg.AddString( BmListModel::MSG_ITEMKEY, jobName.String());
@@ -448,10 +443,8 @@ void BmMainWindow::MessageReceived( BMessage* msg) {
 				BmMenuController* ctrlr = NULL;
 				if (mAccountMenu->IsMsgFromCurrentModel( msg))
 					ctrlr = mAccountMenu;
-				else if (mInboundFilterMenu->IsMsgFromCurrentModel( msg))
-					ctrlr = mInboundFilterMenu;
-				else if (mOutboundFilterMenu->IsMsgFromCurrentModel( msg))
-					ctrlr = mOutboundFilterMenu;
+				else if (mFilterMenu->IsMsgFromCurrentModel( msg))
+					ctrlr = mFilterMenu;
 				else 
 					break;
 				BmListModelItem* item=NULL;
@@ -531,13 +524,16 @@ void BmMainWindow::MailRefSelectionChanged( bool haveSelectedRef) {
 	mPrintButton->SetEnabled( haveSelectedRef);
 	// adjust menu:
 	mMainMenuBar->FindItem( BMM_REPLY)->SetEnabled( haveSelectedRef);
+	mMainMenuBar->FindItem( BMM_REPLY_LIST)->SetEnabled( haveSelectedRef);
+	mMainMenuBar->FindItem( BMM_REPLY_ORIGINATOR)->SetEnabled( haveSelectedRef);
+	mMainMenuBar->FindItem( BMM_REPLY_ALL)->SetEnabled( haveSelectedRef);
 	mMainMenuBar->FindItem( BMM_FORWARD_ATTACHED)->SetEnabled( haveSelectedRef);
 	mMainMenuBar->FindItem( BMM_FORWARD_INLINE)->SetEnabled( haveSelectedRef);
 	mMainMenuBar->FindItem( BMM_FORWARD_INLINE_ATTACH)->SetEnabled( haveSelectedRef);
 	mMainMenuBar->FindItem( BMM_REDIRECT)->SetEnabled( haveSelectedRef);
 	mMainMenuBar->FindItem( BmMailRefView::MENU_MARK_AS)->SetEnabled( haveSelectedRef);
-	mMainMenuBar->FindItem( BmMailRefView::MENU_INBOUND_FILTER)->SetEnabled( haveSelectedRef);
-	mMainMenuBar->FindItem( BmMailRefView::MENU_OUTBOUND_FILTER)->SetEnabled( haveSelectedRef);
+	mMainMenuBar->FindItem( BMM_FILTER)->SetEnabled( haveSelectedRef);
+	mMainMenuBar->FindItem( BmMailRefView::MENU_FILTER)->SetEnabled( haveSelectedRef);
 	mMainMenuBar->FindItem( BMM_PRINT)->SetEnabled( haveSelectedRef);
 	mMainMenuBar->FindItem( BMM_TRASH)->SetEnabled( haveSelectedRef);
 }

@@ -78,8 +78,7 @@ private:
 	
 	MView* mOuterGroup;
 
-	BmMenuController* mInboundFilterMenu;
-	BmMenuController* mOutboundFilterMenu;
+	BmMenuController* mFilterMenu;
 
 	static float nNextXPos;
 	static float nNextYPos;

@@ -43,14 +43,9 @@
 	BmFilter
 \********************************************************************************/
 
-const char* const BmFilter::MSG_POSITION = 		"bm:pos";
 const char* const BmFilter::MSG_NAME = 			"bm:name";
 const char* const BmFilter::MSG_CONTENT = 		"bm:content";
-const char* const BmFilter::MSG_ACTIVE = 			"bm:active";
-const int16 BmFilter::nArchiveVersion = 4;
-
-const char* const BmFilter::MSG_OUTBOUND = 	"bm:outb";
-const char* const BmFilter::MSG_MAILREF = 	"bm:ref";
+const int16 BmFilter::nArchiveVersion = 5;
 
 // standard logfile-name for this class:
 #undef BM_LOGNAME
@@ -63,8 +58,6 @@ const char* const BmFilter::MSG_MAILREF = 	"bm:ref";
 BmFilter::BmFilter( const char* name, BmFilterList* model) 
 	:	inherited( name, model, (BmListModelItem*)NULL)
 	,	mCompiledScript( NULL)
-	,	mPosition( model->NextPosition())
-	,	mActive( true)
 {
 }
 
@@ -81,14 +74,6 @@ BmFilter::BmFilter( BMessage* archive, BmFilterList* model)
 	if (archive->FindInt16( MSG_VERSION, &version) != B_OK)
 		version = 0;
 	mContent = FindMsgString( archive, MSG_CONTENT);
-	if (version > 2)
-		mPosition = FindMsgInt32( archive, MSG_POSITION);
-	else
-		mPosition = model->NextPosition();
-	if (version > 3)
-		mActive = FindMsgBool( archive, MSG_ACTIVE);
-	else
-		mActive = true;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -108,8 +93,6 @@ BmFilter::~BmFilter() {
 status_t BmFilter::Archive( BMessage* archive, bool deep) const {
 	status_t ret = (inherited::Archive( archive, deep)
 		||	archive->AddString( MSG_NAME, Key().String())
-		||	archive->AddInt32( MSG_POSITION, mPosition)
-		||	archive->AddBool( MSG_ACTIVE, mActive)
 		||	archive->AddString( MSG_CONTENT, mContent.String()));
 	return ret;
 }
@@ -283,29 +266,18 @@ bool BmFilter::SanityCheck( BmString& complaint, BmString& fieldName) {
 	BmFilterList
 \********************************************************************************/
 
-BmRef< BmFilterList> BmFilterList::theInboundInstance( NULL);
-BmRef< BmFilterList> BmFilterList::theOutboundInstance( NULL);
+BmRef< BmFilterList> BmFilterList::theInstance( NULL);
 
 const int16 BmFilterList::nArchiveVersion = 1;
 
 /*------------------------------------------------------------------------------*\
-	CreateInboundInstance()
+	CreateInstance()
 		-	initialiazes object by reading info from settings file (if any)
 \*------------------------------------------------------------------------------*/
-BmFilterList* BmFilterList::CreateInboundInstance() {
-	if (!theInboundInstance)
-		theInboundInstance = new BmFilterList( "FilterList_Inbound");
-	return theInboundInstance.Get();
-}
-
-/*------------------------------------------------------------------------------*\
-	CreateOutboundInstance()
-		-	initialiazes object by reading info from settings file (if any)
-\*------------------------------------------------------------------------------*/
-BmFilterList* BmFilterList::CreateOutboundInstance() {
-	if (!theOutboundInstance)
-		theOutboundInstance = new BmFilterList( "FilterList_Outbound");
-	return theOutboundInstance.Get();
+BmFilterList* BmFilterList::CreateInstance() {
+	if (!theInstance)
+		theInstance = new BmFilterList( "FilterList");
+	return theInstance.Get();
 }
 
 /*------------------------------------------------------------------------------*\
@@ -322,10 +294,7 @@ BmFilterList::BmFilterList( const char* name)
 		-	standard destructor
 \*------------------------------------------------------------------------------*/
 BmFilterList::~BmFilterList() {
-	if (theInboundInstance == this)
-		theInboundInstance = NULL;
-	else if (theOutboundInstance == this)
-		theOutboundInstance = NULL;
+	theInstance = NULL;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -333,66 +302,7 @@ BmFilterList::~BmFilterList() {
 		-	returns the name of the settings-file for the signature-list
 \*------------------------------------------------------------------------------*/
 const BmString BmFilterList::SettingsFileName() {
-	return BmString( TheResources->SettingsPath.Path()) << "/" 
-				<< "Filters_" << (TheOutboundFilterList==this ? "outbound" : "inbound");
-}
-
-/*------------------------------------------------------------------------------*\
-	MoveUp()
-		-	
-		-	
-\*------------------------------------------------------------------------------*/
-void BmFilterList::MoveUp( int32 oldPos) {
-	if (oldPos <= 0)
-		return;
-	BmAutolockCheckGlobal lock( ModelLocker());
-	lock.IsLocked() 							|| BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
-	BmModelItemMap::const_iterator iter;
-	for( iter = begin(); iter != end(); ++iter) {
-		BmFilter* filter = dynamic_cast< BmFilter*>( iter->second.Get());
-		if (filter->Position() == oldPos)
-			filter->Position( oldPos-1);
-		else if (filter->Position() == oldPos-1)
-			filter->Position( oldPos);
-	}
-}
-
-/*------------------------------------------------------------------------------*\
-	MoveDown()
-		-	
-		-	
-\*------------------------------------------------------------------------------*/
-void BmFilterList::MoveDown( int32 oldPos) {
-	if (oldPos >= ((int32)size())-1)
-		return;
-	BmAutolockCheckGlobal lock( ModelLocker());
-	lock.IsLocked() 							|| BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
-	BmModelItemMap::const_iterator iter;
-	for( iter = begin(); iter != end(); ++iter) {
-		BmFilter* filter = dynamic_cast< BmFilter*>( iter->second.Get());
-		if (filter->Position() == oldPos)
-			filter->Position( oldPos+1);
-		else if (filter->Position() == oldPos+1)
-			filter->Position( oldPos);
-	}
-}
-
-/*------------------------------------------------------------------------------*\
-	NextPosition()
-		-	
-		-	
-\*------------------------------------------------------------------------------*/
-int32 BmFilterList::NextPosition() {
-	BmAutolockCheckGlobal lock( ModelLocker());
-	lock.IsLocked() 							|| BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
-	BmModelItemMap::const_iterator iter;
-	int32 nextPos = -1;
-	for( iter = begin(); iter != end(); ++iter) {
-		BmFilter* filter = dynamic_cast< BmFilter*>( iter->second.Get());
-		if (filter->Position() > nextPos)
-			nextPos = filter->Position();
-	}
-	return nextPos+1;
+	return BmString( TheResources->SettingsPath.Path()) << "/Filters";
 }
 
 /*------------------------------------------------------------------------------*\
@@ -408,7 +318,7 @@ void BmFilterList::InstantiateItems( BMessage* archive) {
 		(err = archive->FindMessage( BmListModelItem::MSG_CHILDREN, i, &msg)) == B_OK
 													|| BM_THROW_RUNTIME(BmString("Could not find signature nr. ") << i+1 << " \n\nError:" << strerror(err));
 		BmFilter* newFilter = new BmFilter( &msg, this);
-		BM_LOG3( BM_LogUtil, BmString("Filter <") << newFilter->Name() << "," << newFilter->Key() << "> read");
+		BM_LOG3( BM_LogUtil, BmString("Filter <") << newFilter->Key() << "> read");
 		AddItemToList( newFilter);
 	}
 	BM_LOG2( BM_LogUtil, BmString("End of InstantiateItems() for FilterList"));

@@ -85,6 +85,7 @@ class BmPopAccount : public BmListModelItem {
 	static const char* const MSG_MAIL_ALIASES;
 	static const char* const MSG_MARK_BUCKET;
 	static const char* const MSG_CHECK_INTERVAL;
+	static const char* const MSG_FILTER_CHAIN;
 	static const int16 nArchiveVersion;
 
 public:
@@ -124,6 +125,7 @@ public:
 	inline const BmString &Username() const 	{ return mUsername; }
 	inline int16 CheckInterval() const 			{ return mCheckInterval; }
 	inline const BmString &CheckIntervalString() const{ return mCheckIntervalString; }
+	inline const BmString &FilterChain() const{ return mFilterChain; }
 
 	// setters:
 	inline void AuthMethod( const BmString &s) { mAuthMethod = s; TellModelItemUpdated( UPD_ALL); }
@@ -142,6 +144,7 @@ public:
 	inline void SMTPAccount( const BmString &s){ mSMTPAccount = s;  TellModelItemUpdated( UPD_ALL); }
 	inline void Username( const BmString &s) 	{ mUsername = s;  TellModelItemUpdated( UPD_ALL); }
 	void CheckInterval( int16 i);
+	inline void FilterChain( const BmString &s){ mFilterChain = s;  TellModelItemUpdated( UPD_ALL); }
 
 	bool GetPOPAddress( BNetAddress* addr) const;
 
@@ -176,6 +179,7 @@ private:
 	bool mMarkedAsBitBucket;		// is this account a catch-all-account for failed delivery?
 	int16 mCheckInterval;			// check mail every ... minutes
 	BmString mCheckIntervalString;	// check-interval as String
+	BmString mFilterChain;			// the filter-chain to be used by this account
 
 	vector<BmString> mUIDs;			// list of UIDs seen in this account
 	BMessageRunner* mIntervalRunner;

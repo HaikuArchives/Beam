@@ -62,10 +62,7 @@
 \********************************************************************************/
 
 enum Columns {
-	COL_POS = 0,
-	COL_ACTIVE,
-	COL_KEY,
-	COL_CONTENT
+	COL_KEY = 0,
 };
 
 /*------------------------------------------------------------------------------*\
@@ -93,17 +90,8 @@ void BmFilterItem::UpdateView( BmUpdFlags flags) {
 	inherited::UpdateView( flags);
 	BmFilter* filter( dynamic_cast<BmFilter*>( ModelItem()));
 	if (flags & UPD_ALL) {
-		BmString beautifiedContent( filter->Content());
-		beautifiedContent.ReplaceAll( "\n", "\\n");
-		beautifiedContent.ReplaceAll( "\t", "\\t");
-		
-		BmString pos;
-		pos << filter->Position();
 		BmListColumn cols[] = {
-			{ pos.String(),						true },
-			{ filter->Active() ? " *" : "",	false },
 			{ filter->Key().String(),			false },
-			{ beautifiedContent.String(),		false },
 			{ NULL, false }
 		};
 		SetTextCols( 0, cols);
@@ -142,13 +130,10 @@ BmFilterView::BmFilterView( minimax minmax, int32 width, int32 height)
 					B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE,
 					B_FOLLOW_TOP_BOTTOM, true, true, true, B_FANCY_BORDER);
 
-	AddColumn( new CLVColumn( "P", 20.0, CLV_SORT_KEYABLE|CLV_RIGHT_JUSTIFIED|flags, 20.0, "(P)osition"));
-	AddColumn( new CLVColumn( "A", 20.0, CLV_SORT_KEYABLE|flags, 20.0, "(A)ctive"));
-	AddColumn( new CLVColumn( "Name", 120.0, flags, 50.0));
-	AddColumn( new CLVColumn( "Content", 400.0, flags, 40.0));
+	AddColumn( new CLVColumn( "Name", 300.0, flags, 50.0));
 
 	SetSortFunction( CLVEasyItem::CompareItems);
-	SetSortKey( COL_POS);
+	SetSortKey( COL_KEY);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -222,36 +207,31 @@ void BmFilterView::MessageReceived( BMessage* msg) {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmPrefsFilterView::BmPrefsFilterView( BmFilterList* filterList, bool outbound) 
-	:	inherited( (BmString("Filters ")<<(outbound?"(outbound)":"(inbound)")).String())
-	,	mFilterList( filterList)
-	,	mOutbound( outbound)
+BmPrefsFilterView::BmPrefsFilterView() 
+	:	inherited( "Filters")
 {
 	MBorder* border = NULL;
 	MView* view = 
 		new UserResizeSplitView(
 			new VGroup(
-				minimax(400,120),
-				CreateFilterListView( minimax(400,60,1E5,1E5), 400, 100),
+				minimax(200,60),
 				new HGroup(
-					mAddButton = new MButton("Add Filter", new BMessage(BM_ADD_FILTER), this),
-					mRemoveButton = new MButton("Remove Filter", new BMessage( BM_REMOVE_FILTER), this),
-					new Space(),
-					mMoveUpButton = new MButton("Move Up", new BMessage(BM_MOVE_UP_FILTER), this),
-					mMoveDownButton = new MButton("Move Down", new BMessage(BM_MOVE_DOWN_FILTER), this),
+					CreateFilterListView( minimax(200,60,1E5,1E5), 200, 120),
+					new Space( minimax(5,0,5,0)),
+					new VGroup(
+						mAddButton = new MButton("Add Filter", new BMessage(BM_ADD_FILTER), this),
+						mRemoveButton = new MButton("Remove Filter", new BMessage( BM_REMOVE_FILTER), this),
+						new Space(),
+						0
+					),
 					0
 				),
-				new Space( minimax(0,5,0,5)),
 				0
 			),
 			border = new MBorder( M_LABELED_BORDER, 10, (char*)"Filter Info",
 				new VGroup(
 					new HGroup( 
 						mFilterControl = new BmTextControl( "Filter name:"),
-						new Space(),
-						mIsActiveControl = new BmCheckControl( "This filter is active", 
-																			 new BMessage(BM_IS_ACTIVE_CHANGED), 
-																			 this),
 						new Space(),
 						mTestButton = new MButton( "Check the SIEVE-script", new BMessage( BM_TEST_FILTER), this, minimax(-1,-1,-1,-1)),
 						0
@@ -261,7 +241,7 @@ BmPrefsFilterView::BmPrefsFilterView( BmFilterList* filterList, bool outbound)
 					0
 				)
 			),
-			"hsplitter", 150, B_HORIZONTAL, true, true, false, B_FOLLOW_NONE
+			"hsplitter", 120, B_HORIZONTAL, true, true, false, B_FOLLOW_NONE
 		);
 
 	border->ct_mpm = minimax(400,150);
@@ -295,7 +275,6 @@ BmPrefsFilterView::BmPrefsFilterView( BmFilterList* filterList, bool outbound)
 BmPrefsFilterView::~BmPrefsFilterView() {
 	TheBubbleHelper.SetHelp( mFilterListView, NULL);
 	TheBubbleHelper.SetHelp( mFilterControl, NULL);
-	TheBubbleHelper.SetHelp( mIsActiveControl, NULL);
 	TheBubbleHelper.SetHelp( mContentControl, NULL);
 	TheBubbleHelper.SetHelp( mTestButton, NULL);
 }
@@ -309,17 +288,15 @@ void BmPrefsFilterView::Initialize() {
 
 	TheBubbleHelper.SetHelp( mFilterListView, "This listview shows every filter you have defined.");
 	TheBubbleHelper.SetHelp( mFilterControl, "Here you can enter a name for this filter.\nThis name is used to identify this filter in Beam.");
-	TheBubbleHelper.SetHelp( mIsActiveControl, "If this is checked Beam will use this filter during mail-filtering. You can deactivate a filter by unchecking this control.");
 	TheBubbleHelper.SetHelp( mContentControl, "Here you can enter the content of this filter (a SIEVE script).");
 	TheBubbleHelper.SetHelp( mTestButton, "Here you can check the syntax of the SIEVE-script.");
 
 	mFilterControl->SetTarget( this);
 	mContentControl->SetTarget( this);
-	mIsActiveControl->SetTarget( this);
 
 	mFilterListView->SetSelectionMessage( new BMessage( BM_SELECTION_CHANGED));
 	mFilterListView->SetTarget( this);
-	mFilterListView->StartJob( mFilterList);
+	mFilterListView->StartJob( TheFilterList.Get());
 	ShowFilter( -1);
 }
 
@@ -349,7 +326,7 @@ bool BmPrefsFilterView::SanityCheck() {
 	BmString complaint, fieldName;
 	BMessage msg( BM_COMPLAIN_ABOUT_FIELD);
 	BmModelItemMap::const_iterator iter;
-	for( iter = mFilterList->begin(); iter != mFilterList->end(); ++iter) {
+	for( iter = TheFilterList->begin(); iter != TheFilterList->end(); ++iter) {
 		BmFilter* filter = dynamic_cast<BmFilter*>( iter->second.Get());
 		if (filter && !filter->SanityCheck( complaint, fieldName)) {
 			msg.AddPointer( MSG_ITEM, (void*)filter);
@@ -368,7 +345,7 @@ bool BmPrefsFilterView::SanityCheck() {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmPrefsFilterView::SaveData() {
-	mFilterList->Store();
+	TheFilterList->Store();
 }
 
 /*------------------------------------------------------------------------------*\
@@ -376,8 +353,8 @@ void BmPrefsFilterView::SaveData() {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmPrefsFilterView::UndoChanges() {
-	mFilterList->Cleanup();
-	mFilterList->StartJobInThisThread();
+	TheFilterList->Cleanup();
+	TheFilterList->StartJobInThisThread();
 	ShowFilter( -1);
 }
 
@@ -405,19 +382,12 @@ void BmPrefsFilterView::MessageReceived( BMessage* msg) {
 				}
 				break;
 			}
-			case BM_IS_ACTIVE_CHANGED: {
-				if (mCurrFilter) {
-					mCurrFilter->Active( mIsActiveControl->Value());
-					NoticeChange();
-				}
-				break;
-			}
 			case BM_TEXTFIELD_MODIFIED: {
 				BView* srcView = NULL;
 				msg->FindPointer( "source", (void**)&srcView);
 				BmTextControl* source = dynamic_cast<BmTextControl*>( srcView);
 				if ( mCurrFilter && source == mFilterControl) {
-					mFilterList->RenameItem( mCurrFilter->Name(), mFilterControl->Text());
+					TheFilterList->RenameItem( mCurrFilter->Name(), mFilterControl->Text());
 					NoticeChange();
 				}
 				break;
@@ -437,10 +407,10 @@ void BmPrefsFilterView::MessageReceived( BMessage* msg) {
 			}
 			case BM_ADD_FILTER: {
 				BmString key( "new filter");
-				for( int32 i=1; mFilterList->FindItemByKey( key); ++i) {
+				for( int32 i=1; TheFilterList->FindItemByKey( key); ++i) {
 					key = BmString("new filter_")<<i;
 				}
-				mFilterList->AddItemToList( new BmFilter( key.String(), mFilterList));
+				TheFilterList->AddItemToList( new BmFilter( key.String(), TheFilterList.Get()));
 				mFilterControl->MakeFocus( true);
 				mFilterControl->TextView()->SelectAll();
 				NoticeChange();
@@ -459,21 +429,11 @@ void BmPrefsFilterView::MessageReceived( BMessage* msg) {
 				} else {
 					// second step, do it if user said ok:
 					if (buttonPressed == 0) {
-						mFilterList->RemoveItemFromList( mCurrFilter.Get());
+						TheFilterList->RemoveItemFromList( mCurrFilter.Get());
 						mCurrFilter = NULL;
 						NoticeChange();
 					}
 				}
-				break;
-			}
-			case BM_MOVE_UP_FILTER: {
-				mFilterList->MoveUp( mCurrFilter->Position());
-				NoticeChange();
-				break;
-			}
-			case BM_MOVE_DOWN_FILTER: {
-				mFilterList->MoveDown( mCurrFilter->Position());
-				NoticeChange();
 				break;
 			}
 			case BM_COMPLAIN_ABOUT_FIELD: {
@@ -520,16 +480,12 @@ void BmPrefsFilterView::MessageReceived( BMessage* msg) {
 void BmPrefsFilterView::ShowFilter( int32 selection) {
 	bool enabled = (selection != -1);
 	mFilterControl->SetEnabled( enabled);
-	mIsActiveControl->SetEnabled( enabled);
 	mContentControl->SetEnabled( enabled);
 	mRemoveButton->SetEnabled( enabled);
-	mMoveUpButton->SetEnabled( enabled);
-	mMoveDownButton->SetEnabled( enabled);
 	
 	if (selection == -1) {
 		mCurrFilter = NULL;
 		mFilterControl->SetTextSilently( "");
-		mIsActiveControl->SetValue( 0);
 		mContentControl->SetTextSilently( "");
 		mTestButton->SetEnabled( false);
 	} else {
@@ -539,7 +495,6 @@ void BmPrefsFilterView::ShowFilter( int32 selection) {
 			if (mCurrFilter) {
 				mFilterControl->SetTextSilently( mCurrFilter->Name().String());
 				mContentControl->SetTextSilently( mCurrFilter->Content().String());
-				mIsActiveControl->SetValue( mCurrFilter->Active());
 				mTestButton->SetEnabled( true);
 			}
 		} else

@@ -104,8 +104,7 @@ private:
 	
 	MMenuBar* mMainMenuBar;
 	BmMenuController* mAccountMenu;
-	BmMenuController* mInboundFilterMenu;
-	BmMenuController* mOutboundFilterMenu;
+	BmMenuController* mFilterMenu;
 
 	static bool nIsAlive;
 

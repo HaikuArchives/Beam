@@ -58,10 +58,8 @@ class BmFilter : public BmListModelItem {
 	typedef BmListModelItem inherited;
 
 	// archivable components:
-	static const char* const MSG_POSITION;
 	static const char* const MSG_NAME;
 	static const char* const MSG_CONTENT;
-	static const char* const MSG_ACTIVE;
 	static const int16 nArchiveVersion;
 
 public:
@@ -85,22 +83,15 @@ public:
 	int16 ArchiveVersion() const			{ return nArchiveVersion; }
 
 	// getters:
-	inline int32 Position() const			{ return mPosition; }
 	inline const BmString &Content() const	{ return mContent; }
 	inline const BmString &Name() const		{ return Key(); }
-	inline bool Active() const				{ return mActive; }
 
 	inline int LastErrVal() const			{ return mLastErrVal; }
 	inline const BmString &LastErr() const	{ return mLastErr; }
 	inline const BmString &LastSieveErr() const { return mLastSieveErr; }
 
 	// setters:
-	inline void Position( int32 pos)		{ mPosition = pos; TellModelItemUpdated( UPD_ALL | UPD_SORT); }
 	inline void Content( const BmString &s){ mContent = s; TellModelItemUpdated( UPD_ALL); }
-	inline void Active( bool b)			{ mActive = b;  TellModelItemUpdated( UPD_ALL); }
-
-	static const char* const MSG_OUTBOUND;
-	static const char* const MSG_MAILREF;
 
 private:
 	BmFilter();									// hide default constructor
@@ -112,8 +103,6 @@ private:
 							// position of this filter in execution list
 	BmString mContent;
 							// the SIEVE-script represented by this filter
-	bool mActive;
-							// is this filter active?
 	sieve_script_t* mCompiledScript;
 							// the compiled SIEVE-script, ready to be thrown at messages
 	int mLastErrVal;
@@ -123,6 +112,7 @@ private:
 	BmString mLastSieveErr;
 							// the last SIEVE-error that occurred
 };
+
 
 
 /*------------------------------------------------------------------------------*\
@@ -136,23 +126,18 @@ class BmFilterList : public BmListModel {
 
 public:
 	// creator-func, c'tors and d'tor:
-	static BmFilterList* CreateInboundInstance();
-	static BmFilterList* CreateOutboundInstance();
+	static BmFilterList* CreateInstance();
 	BmFilterList( const char* name);
 	~BmFilterList();
 	
 	// native methods:
-	int32 NextPosition();
-	void MoveUp( int32 oldPos);
-	void MoveDown( int32 oldPos);
-	
+
 	// overrides of listmodel base:
 	const BmString SettingsFileName();
 	void InstantiateItems( BMessage* archive);
 	int16 ArchiveVersion() const			{ return nArchiveVersion; }
 
-	static BmRef<BmFilterList> theInboundInstance;
-	static BmRef<BmFilterList> theOutboundInstance;
+	static BmRef<BmFilterList> theInstance;
 
 private:
 	// Hide copy-constructor and assignment:
@@ -161,7 +146,6 @@ private:
 	
 };
 
-#define TheInboundFilterList BmFilterList::theInboundInstance
-#define TheOutboundFilterList BmFilterList::theOutboundInstance
+#define TheFilterList BmFilterList::theInstance
 
 #endif

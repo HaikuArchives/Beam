@@ -67,7 +67,8 @@ const char* const BmPopAccount::MSG_STORE_PWD = 	"bm:storepwd";
 const char* const BmPopAccount::MSG_MAIL_ALIASES = "bm:mailaliases";
 const char* const BmPopAccount::MSG_MARK_BUCKET = 	"bm:markbucket";
 const char* const BmPopAccount::MSG_CHECK_INTERVAL = "bm:checkinterval";
-const int16 BmPopAccount::nArchiveVersion = 4;
+const char* const BmPopAccount::MSG_FILTER_CHAIN = "bm:filterch";
+const int16 BmPopAccount::nArchiveVersion = 5;
 
 const char* const BmPopAccount::AUTH_POP3 = "POP3";
 const char* const BmPopAccount::AUTH_APOP = "APOP";
@@ -89,6 +90,7 @@ BmPopAccount::BmPopAccount( const char* name, BmPopAccountList* model)
 	,	mCheckInterval( 0)
 	,	mCheckIntervalString( "")
 	,	mIntervalRunner( NULL)
+	,	mFilterChain( BM_DefaultItemLabel)
 {
 	SetupIntervalRunner();
 }
@@ -133,6 +135,10 @@ BmPopAccount::BmPopAccount( BMessage* archive, BmPopAccountList* model)
 	} else {
 		mCheckInterval = 0;
 	}
+	if (version > 4)
+		mFilterChain = FindMsgString( archive, MSG_FILTER_CHAIN);
+	if (!mFilterChain.Length())
+		mFilterChain = BM_DefaultItemLabel;
 	SetupIntervalRunner();
 }
 
@@ -167,7 +173,8 @@ status_t BmPopAccount::Archive( BMessage* archive, bool deep) const {
 		||	archive->AddBool( MSG_MARK_DEFAULT, mMarkedAsDefault)
 		||	archive->AddBool( MSG_STORE_PWD, mPwdStoredOnDisk)
 		||	archive->AddBool( MSG_MARK_BUCKET, mMarkedAsBitBucket)
-		||	archive->AddInt16( MSG_CHECK_INTERVAL, mCheckInterval);
+		||	archive->AddInt16( MSG_CHECK_INTERVAL, mCheckInterval)
+		||	archive->AddString( MSG_FILTER_CHAIN, mFilterChain.String());
 	int32 count = mUIDs.size();
 	for( int i=0; ret==B_OK && i<count; ++i) {
 		ret = archive->AddString( MSG_UID, mUIDs[i].String());
@@ -337,6 +344,11 @@ bool BmPopAccount::SanityCheck( BmString& complaint, BmString& fieldName) const 
 	if (mCheckInterval>0 && !mPwdStoredOnDisk) {
 		complaint = "In order to check this account for mail automatically,\nthe password needs to be stored on disk.";
 		fieldName = "pwdstoredondisk";
+		return false;
+	}
+	if (!mSMTPAccount.Length()) {
+		complaint = "Please select a sending-account to be associated with this receiving account.";
+		fieldName = "smtpaccount";
 		return false;
 	}
 	return true;

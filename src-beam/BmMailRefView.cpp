@@ -258,8 +258,7 @@ const char* BmMailRefItem::GetUserText(int32 colIdx, float colWidth) const {
 
 const char* const BmMailRefView::MSG_MAILS_SELECTED = 	"bm:msel";
 const char* const BmMailRefView::MENU_MARK_AS =				"Mark Message As";
-const char* const BmMailRefView::MENU_INBOUND_FILTER = 	"Apply Inbound Filter";
-const char* const BmMailRefView::MENU_OUTBOUND_FILTER =	"Apply Outbound Filter";
+const char* const BmMailRefView::MENU_FILTER = 	"Apply Specific Filter";
 
 /*------------------------------------------------------------------------------*\
 	()
@@ -730,8 +729,8 @@ void BmMailRefView::ItemInvoked( int32 index) {
 \*------------------------------------------------------------------------------*/
 void BmMailRefView::AddMailRefMenu( BMenu* menu, BHandler* target, 
 												BHandler* menuControllerHandler, 
-												BmMenuController** inFilterMenuPtr, 
-												BmMenuController** outFilterMenuPtr) {
+												bool isContextMenu,
+												BmMenuController** filterMenuPtr) {
 	if (!menu)
 		return;
 	AddItemToMenu( menu, CreateMenuItem( "Reply", BMM_REPLY), target);
@@ -756,41 +755,31 @@ void BmMailRefView::AddMailRefMenu( BMenu* menu, BHandler* target,
 	}
 	BFont font( *be_plain_font);
 	font.SetSize( 10);
-	statusMenu->SetFont( &font);
+	if (isContextMenu)
+		statusMenu->SetFont( &font);
 	menu->AddItem( statusMenu);
 	menu->AddSeparatorItem();
 
-	AddItemToMenu( menu, CreateMenuItem( "Apply Filter", new BMessage( BMM_FILTER)), target);
+	AddItemToMenu( menu, CreateMenuItem( "Filter (Applies Associated Chain)", new BMessage( BMM_FILTER), "Filter"), target);
 
-	BMessage inMsgTempl( BMM_FILTER);
-	inMsgTempl.AddBool( BmFilter::MSG_OUTBOUND, false);
-	BmMenuController* inFilterMenu
-		= new BmMenuController( MENU_INBOUND_FILTER, "InboundFilterController",
-										inMsgTempl, menuControllerHandler);
-	inFilterMenu->SetFont( &font);
-	menu->AddItem( inFilterMenu);
-	if (inFilterMenuPtr)
-		*inFilterMenuPtr = inFilterMenu;
-	inFilterMenu->StartJob( TheInboundFilterList.Get(), false);
-	if (!inFilterMenuPtr)
-		inFilterMenu->JobIsDone( true);
-
-	BMessage outMsgTempl( BMM_FILTER);
-	outMsgTempl.AddBool( BmFilter::MSG_OUTBOUND, true);
-	BmMenuController* outFilterMenu
-		= new BmMenuController( MENU_OUTBOUND_FILTER, "OutboundFilterController",
-										outMsgTempl, menuControllerHandler);
-	outFilterMenu->SetFont( &font);
-	menu->AddItem( outFilterMenu);
-	if (outFilterMenuPtr)
-		*outFilterMenuPtr = outFilterMenu;
-	outFilterMenu->StartJob( TheOutboundFilterList.Get(), false);
-	if (!outFilterMenuPtr)
-		outFilterMenu->JobIsDone( true);
+	BMessage msgTempl( BMM_FILTER);
+	BmMenuController* filterMenu
+		= new BmMenuController( MENU_FILTER, "FilterController",
+										msgTempl, menuControllerHandler);
+	if (isContextMenu)
+		filterMenu->SetFont( &font);
+	menu->AddItem( filterMenu);
+	if (filterMenuPtr)
+		*filterMenuPtr = filterMenu;
+	filterMenu->StartJob( TheFilterList.Get(), false);
+	if (!filterMenuPtr)
+		filterMenu->JobIsDone( true);
 	menu->AddSeparatorItem();
 
-	AddItemToMenu( menu, CreateMenuItem( "Print Message(s)...", BMM_PRINT, "Print Message..."), target);
-	menu->AddSeparatorItem();
+	if (isContextMenu) {
+		AddItemToMenu( menu, CreateMenuItem( "Print Message(s)...", BMM_PRINT, "Print Message..."), target);
+		menu->AddSeparatorItem();
+	}
 	AddItemToMenu( menu, CreateMenuItem( "Move To Trash", BMM_TRASH), target);
 }
 
@@ -799,16 +788,13 @@ void BmMailRefView::AddMailRefMenu( BMenu* menu, BHandler* target,
 		-	
 \*------------------------------------------------------------------------------*/
 void BmMailRefView::ShowMenu( BPoint point) {
-	if (CurrentSelection(0) == -1)
-		return; 
-
 	BPopUpMenu* theMenu = new BPopUpMenu( "MailFolderViewMenu", false, false);
 
 	BFont font( *be_plain_font);
 	font.SetSize( 10);
 	theMenu->SetFont( &font);
 
-	AddMailRefMenu( theMenu, Window(), Window());
+	AddMailRefMenu( theMenu, Window(), Window(), true);
 
    ConvertToScreen(&point);
 	BRect openRect;

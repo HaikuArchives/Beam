@@ -101,10 +101,7 @@ private:
 
 #define BM_ADD_FILTER			'bmAS'
 #define BM_REMOVE_FILTER		'bmRS'
-#define BM_MOVE_UP_FILTER		'bmFU'
-#define BM_MOVE_DOWN_FILTER	'bmFD'
 #define BM_TEST_FILTER			'bmTS'
-#define BM_IS_ACTIVE_CHANGED	'bmAC'
 
 
 class BmCheckControl;
@@ -121,7 +118,7 @@ class BmPrefsFilterView : public BmPrefsView {
 
 public:
 	// c'tors and d'tor:
-	BmPrefsFilterView( BmFilterList* filterList, bool outbound=false);
+	BmPrefsFilterView();
 	virtual ~BmPrefsFilterView();
 	
 	// native methods:
@@ -145,17 +142,11 @@ public:
 private:
 	CLVContainerView* CreateFilterListView( minimax minmax, int32 width, int32 height);
 
-	bool mOutbound;
-	BmFilterList* mFilterList;
-
 	BmListViewController* mFilterListView;
 	BmTextControl* mFilterControl;
-	BmCheckControl* mIsActiveControl;
 	BmMultiLineTextControl* mContentControl;
 	MButton* mAddButton;
 	MButton* mRemoveButton;
-	MButton* mMoveUpButton;
-	MButton* mMoveDownButton;
 	MButton* mTestButton;
 	MTabView* mTabView;
 
