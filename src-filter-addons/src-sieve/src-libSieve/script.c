@@ -46,6 +46,8 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "sieve.h"
 #include "message.h"
 
+#define BUF_SZ 4096
+
 /* does this interpretor support this requirement? */
 int script_require(sieve_script_t *s, char *req)
 {
@@ -413,7 +415,7 @@ static int eval(sieve_interp_t *i, commandlist_t *c,
 	case VACATION:
 	    {
 		const char **body;
-		char buf[128], *fromaddr;
+		char buf[BUF_SZ+1], *fromaddr;
 		char *found = NULL;
 		char *myaddr = NULL;
 		char *reply_to = NULL;
@@ -528,7 +530,11 @@ static int eval(sieve_interp_t *i, commandlist_t *c,
 			    while (!strncasecmp(origsubj, "Re: ", 4)) {
 				origsubj += 4;
 			    }
+#ifdef __MWERKS__
+			    sprintf(buf, "Re: %.128s", origsubj);
+#else
 			    snprintf(buf, sizeof(buf), "Re: %s", origsubj);
+#endif
 			}
 		    } else {
 			/* user specified subject */
@@ -852,7 +858,7 @@ int sieve_execute_script(sieve_script_t *s, void *message_context)
     action_list_t *actions = NULL, *a;
     action_t lastaction = ACTION_NULL;
     notify_list_t *notify_list = NULL;
-    char actions_string[4096] = "";
+    char actions_string[BUF_SZ+1] = "";
     const char *errmsg = NULL;
 
     if (s->support.notify) {
@@ -892,9 +898,16 @@ int sieve_execute_script(sieve_script_t *s, void *message_context)
 				   &errmsg);
 	    
 	    if (ret == SIEVE_OK)
+#ifdef __MWERKS__
+		sprintf(actions_string+strlen(actions_string),
+			"Rejected with: %.*s\n",
+			sizeof(actions_string)-strlen(actions_string)-40,
+			a->u.rej.msg);
+#else
 		snprintf(actions_string+strlen(actions_string),
 			 sizeof(actions_string)-strlen(actions_string), 
 			 "Rejected with: %s\n", a->u.rej.msg);
+#endif
 
 	    break;
 	case ACTION_FILEINTO:
@@ -908,9 +921,16 @@ int sieve_execute_script(sieve_script_t *s, void *message_context)
 				     &errmsg);
 
 	    if (ret == SIEVE_OK)
+#ifdef __MWERKS__
+		sprintf(actions_string+strlen(actions_string),
+			"Filed into: %.*s\n",
+			 sizeof(actions_string)-strlen(actions_string)-40,
+			 a->u.fil.mailbox);
+#else
 		snprintf(actions_string+strlen(actions_string),
 			 sizeof(actions_string)-strlen(actions_string),
 			 "Filed into: %s\n",a->u.fil.mailbox);
+#endif
 	    break;
 	case ACTION_KEEP:
 	    implicit_keep = 0;
@@ -922,9 +942,14 @@ int sieve_execute_script(sieve_script_t *s, void *message_context)
 				 message_context,
 				 &errmsg);
 	    if (ret == SIEVE_OK)
+#ifdef __MWERKS__
+		sprintf(actions_string+strlen(actions_string),
+			"Kept\n");
+#else
 		snprintf(actions_string+strlen(actions_string),
 			 sizeof(actions_string)-strlen(actions_string),
 			 "Kept\n");
+#endif
 	    break;
 	case ACTION_REDIRECT:
 	    implicit_keep = 0;
@@ -936,9 +961,16 @@ int sieve_execute_script(sieve_script_t *s, void *message_context)
 				     message_context,
 				     &errmsg);
 	    if (ret == SIEVE_OK)
+#ifdef __MWERKS__
+		sprintf(actions_string+strlen(actions_string),
+			"Redirected to %.*s\n", 
+			sizeof(actions_string)-strlen(actions_string)-40,
+			a->u.red.addr);
+#else
 		snprintf(actions_string+strlen(actions_string),
 			 sizeof(actions_string)-strlen(actions_string),
 			 "Redirected to %s\n", a->u.red.addr);
+#endif
 	    break;
 	case ACTION_DISCARD:
 	    implicit_keep = 0;
@@ -948,9 +980,14 @@ int sieve_execute_script(sieve_script_t *s, void *message_context)
 					message_context,
 					&errmsg);
 	    if (ret == SIEVE_OK)
+#ifdef __MWERKS__
+		sprintf(actions_string+strlen(actions_string),
+			"Discarded\n");
+#else
 		snprintf(actions_string+strlen(actions_string),
 			 sizeof(actions_string)-strlen(actions_string),
 			 "Discarded\n");
+#endif
 	    break;
 
 	case ACTION_VACATION:
@@ -981,14 +1018,24 @@ int sieve_execute_script(sieve_script_t *s, void *message_context)
 							    &errmsg);
 
 		    if (ret == SIEVE_OK)
+#ifdef __MWERKS__
+			sprintf(actions_string+strlen(actions_string),
+				"Sent vacation reply\n");
+#else
 			snprintf(actions_string+strlen(actions_string),
 				 sizeof(actions_string)-strlen(actions_string),
 				 "Sent vacation reply\n");
+#endif
 
 		} else if (ret == SIEVE_DONE) {
+#ifdef __MWERKS__
+		    sprintf(actions_string+strlen(actions_string),
+			    "Vacation reply suppressed\n");
+#else
 		    snprintf(actions_string+strlen(actions_string),
 			     sizeof(actions_string)-strlen(actions_string),
 			     "Vacation reply suppressed\n");
+#endif
 
 		    ret = SIEVE_OK;
 		}
@@ -1050,26 +1097,51 @@ int sieve_execute_script(sieve_script_t *s, void *message_context)
  
     if (ret != SIEVE_OK) {
 	if (lastaction == ACTION_NULL) /* we never executed an action */
+#ifdef __MWERKS__
+	    sprintf(actions_string+strlen(actions_string),
+		    "script execution failed: %.*s\n",
+		    sizeof(actions_string)-strlen(actions_string)-40,
+		    errmsg ? errmsg : sieve_errstr(ret));
+#else
 	    snprintf(actions_string+strlen(actions_string),
 		     sizeof(actions_string)-strlen(actions_string),
 		     "script execution failed: %s\n",
 		     errmsg ? errmsg : sieve_errstr(ret));
+#endif
 	else
+#ifdef __MWERKS__
+	    sprintf(actions_string+strlen(actions_string),
+		    "%.100s action failed: %.*s\n",
+		    action_to_string(lastaction),
+		    sizeof(actions_string)-strlen(actions_string)-140,
+		    errmsg ? errmsg : sieve_errstr(ret));
+#else
 	    snprintf(actions_string+strlen(actions_string),
 		     sizeof(actions_string)-strlen(actions_string),
 		     "%s action failed: %s\n",
 		     action_to_string(lastaction),
 		     errmsg ? errmsg : sieve_errstr(ret));
+#endif
     }
  
     if ((ret != SIEVE_OK) && s->interp.err) {
-	char buf[1024];
+	char buf[BUF_SZ+1];
 	if (lastaction == -1) /* we never executed an action */
+#ifdef __MWERKS__
+            sprintf(buf, "%.400s",
+                     errmsg ? errmsg : sieve_errstr(ret));
+#else
             snprintf(buf, sizeof(buf), "%s",
                      errmsg ? errmsg : sieve_errstr(ret));
+#endif
         else
+#ifdef __MWERKS__
+	    sprintf(buf, "%.400s: %400s", action_to_string(lastaction),
+                     errmsg ? errmsg : sieve_errstr(ret));
+#else
 	    snprintf(buf, sizeof(buf), "%s: %s", action_to_string(lastaction),
                      errmsg ? errmsg : sieve_errstr(ret));
+#endif
  
 	ret |= s->interp.execute_err(buf, s->interp.interp_context,
 				     s->script_context, message_context);
@@ -1088,9 +1160,14 @@ int sieve_execute_script(sieve_script_t *s, void *message_context)
 			     s->script_context, message_context, &errmsg);
 	ret |= keep_ret;
         if (keep_ret == SIEVE_OK)
+#ifdef __MWERKS__
+            sprintf(actions_string+strlen(actions_string),
+		    "Kept\n");
+#else
             snprintf(actions_string+strlen(actions_string),
 		     sizeof(actions_string)-strlen(actions_string),
 		     "Kept\n");
+#endif
 	else {
 	    goto error;		/* process the implicit keep error */
 	}
