@@ -53,7 +53,7 @@ public:
 	TConnWinMode DynamicConnectionWin() const	{ return mDynamicConnectionWin; }
 	int16 ReceiveTimeout() const 			{ return mReceiveTimeout; }
 	int32 Loglevels() const 				{ return mLoglevels; }
-	BString MailboxPath() const 			{ return mMailboxPath; }
+	const BString& MailboxPath() const 	{ return mMailboxPath; }
 
 	// setters:
 	void CheckMail( TConnWinMode m) 		{ mDynamicConnectionWin = m; }

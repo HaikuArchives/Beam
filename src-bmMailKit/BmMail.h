@@ -63,6 +63,7 @@ public:
 
 	// file-related:
 	bool Store( );
+	void StoreAttributes( BFile& mailFile);
 
 private:
 	typedef map<BString, BString> HeaderMap;
@@ -70,14 +71,17 @@ private:
 	BString mText;								// text of complete message
 	BString mUID;								// unique-ID of this message
 	BString mAccountName;					// name of POP-account this message came from (or goes to)
-	
+	BString mStatus;							// status of this mail (client-status that is, e.g. "Read" or "New")
+	bool mHasAttachments;					// flag indicating the presence of attachments
+
 	bool mHasChanged;							// flag indicating new or edited mail
-	BString mParentEntry;					// filesystem-entry for mailfolder this mail currently lives in
-	BString mMyEntry;							// filesystem-entry for this mail (N.B. the entry may
+	BEntry mParentEntry;						// filesystem-entry for mailfolder this mail currently lives in
+	BEntry mMailEntry;						// filesystem-entry for this mail (N.B. the entry may
 													// be set although the mail does not yet exist on disk)
 
 	void ParseHeader( const BString &header);
 	void Set( BString &msgText, const BString &msgUID, const BString &account);	
+	BString CreateBasicFilename();
 };
 
 #endif

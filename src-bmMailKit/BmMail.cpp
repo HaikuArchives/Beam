@@ -3,6 +3,9 @@
 		$Id$
 */
 
+#include <ctime>
+
+#include <NodeInfo.h>
 
 #include <regexx/regexx.hh>
 using namespace regexx;
@@ -10,6 +13,7 @@ using namespace regexx;
 #include "BmApp.h"
 #include "BmLogHandler.h"
 #include "BmMail.h"
+#include "BmPrefs.h"
 
 #undef BM_LOGNAME
 #define BM_LOGNAME mAccountName
@@ -18,7 +22,9 @@ using namespace regexx;
 	default constructor
 \*------------------------------------------------------------------------------*/
 BmMail::BmMail( ) 
-	:	mHasChanged( false) 
+	:	mHasChanged( false)
+	,	mStatus( "New")
+	,	mHasAttachments( false)
 {
 }
 
@@ -28,8 +34,10 @@ BmMail::BmMail( )
 \*------------------------------------------------------------------------------*/
 BmMail::BmMail( BString &msgText, const BString &msgUID, const BString &account) 
 	:	mHasChanged( true) 
+	,	mHasAttachments( false)
 {
 	Set( msgText, msgUID, account);
+	mStatus = "New";
 }
 	
 /*------------------------------------------------------------------------------*\
@@ -111,40 +119,94 @@ void BmMail::ParseHeader( const BString &header) {
 		-	stores mail-data and attributes inside a file
 \*------------------------------------------------------------------------------*/
 bool BmMail::Store() {
-/*
 	BFile mailFile;
+	BNodeInfo mailInfo;
+	BPath path;
 	status_t err;
-	BString inboxPath = "/boot/home/mail/in";
+	ssize_t res;
+	BString basicFilename;
+	BString inboxPath;
 
 	try {
 		if (mParentEntry.InitCheck() == B_NO_INIT) {
+			(inboxPath = bmApp->Prefs->MailboxPath()) << "/mailbox";
 			(err = mParentEntry.SetTo( inboxPath.String(), true)) == B_OK
 													|| BM_THROW_RUNTIME( BString("Could not create entry for mail-folder <") << inboxPath << ">\n\n Result: " << strerror(err));
 		}
-		if (mMyEntry.InitCheck() == B_NO_INIT) {
-			BString basicFilename = CreateBasicFilename();
-			for( int i=0; i<100; i++) {
-				BString filename( mParentEntry.GetPath() << "/" << basicFilename);
-				if (i) 
-					filename << " " << i;
-				(err = mMailEntry.SetTo( filename.String())) == B_OK
-													|| BM_THROW_RUNTIME( BString("Could not create entry for new mail-file <") << filename << ">\n\n Result: " << strerror(err));
-				if (!mMailEntry.Exists())
-					break;
-			}
-			if (mMailEntry.Exists()) {
-				BM_THROW_RUNTIME( BString("Unable to create a unique filename for mail <") << basicFilename << ">, giving up after 10 tries.\n\n Result: " << strerror(err));
+		basicFilename = CreateBasicFilename();
+		int max=100;
+		for( int i=0; i<max; i++) {
+			mParentEntry.GetPath( &path);
+			BString filename( BString(path.Path()) << "/" << basicFilename);
+			if (i) 
+				filename << " " << i;
+			(err = mMailEntry.SetTo( filename.String())) == B_OK
+												|| BM_THROW_RUNTIME( BString("Could not create entry for new mail-file <") << filename << ">\n\n Result: " << strerror(err));
+			if (!mMailEntry.Exists())
+				break;
+		}
+		if (mMailEntry.Exists()) {
+			BM_THROW_RUNTIME( BString("Unable to create a unique filename for mail <") << basicFilename << ">, giving up after "<<max<<" tries.\n\n Result: " << strerror(err));
+		}
+		// we create the new mailfile...
+		(err = mailFile.SetTo( &mMailEntry, B_WRITE_ONLY | B_CREATE_FILE)) == B_OK
+													|| BM_THROW_RUNTIME( BString("Could not create mail-file\n\t<") << basicFilename << ">\n\n Result: " << strerror(err));
+		// ...set the correct mime-type...
+		(err = mailInfo.SetTo( &mailFile)) == B_OK
+													|| BM_THROW_RUNTIME( BString("Could not set node-info for mail-file\n\t<") << basicFilename << ">\n\n Result: " << strerror(err));
+		mailInfo.SetType( "text/x-email");
+		// ...store all other attributes...
+		StoreAttributes( mailFile);
+		// ...and finally write the raw mail into the file:
+		int32 len = mText.Length();
+		if ((res = mailFile.Write( mText.String(), len)) < len) {
+			if (res < 0) {
+				BM_THROW_RUNTIME( BString("Unable to write into mailfile <") << basicFilename << ">\n\n Result: " << strerror(err));
+			} else {
+				BM_THROW_RUNTIME( BString("Could not write complete mail into file.\nWrote ") << res << " bytes instead of " << len);
 			}
 		}
-		(err = mailFile.SetTo( mMailPath.String(), B_WRITE_ONLY | B_CREATE_FILE)) == B_OK
-													|| BM_THROW_RUNTIME( BString("Could not create settings file\n\t<") << PrefsFilePath << ">\n\n Result: " << strerror(err));
-		(err = archive.Flatten( &prefsFile)) == B_OK
-													|| BM_THROW_RUNTIME( BString("Could not store settings into file\n\t<") << PrefsFilePath << ">\n\n Result: " << strerror(err));
+		mailFile.Sync();
 	} catch( exception &e) {
-		ShowAlert();
+		ShowAlert(e.what());
 		return false;
 	}
-*/
+
 	return true;
 }
 
+/*------------------------------------------------------------------------------*\
+	StoreAttributes()
+		-	stores mail-attributes inside a file
+\*------------------------------------------------------------------------------*/
+void BmMail::StoreAttributes( BFile& mailFile) {
+	//
+	mailFile.WriteAttr( "MAIL:name", B_STRING_TYPE, 0, mHeaders["Name"].String(), mHeaders["Name"].Length()+1);
+	mailFile.WriteAttr( "MAIL:status", B_STRING_TYPE, 0, mStatus.String(), mStatus.Length()+1);
+	mailFile.WriteAttr( "MAIL:account", B_STRING_TYPE, 0, mHeaders["Account"].String(), mHeaders["Account"].Length()+1);
+	mailFile.WriteAttr( "MAIL:reply", B_STRING_TYPE, 0, mHeaders["Reply-To"].String(), mHeaders["Reply-To"].Length()+1);
+	mailFile.WriteAttr( "MAIL:from", B_STRING_TYPE, 0, mHeaders["From"].String(), mHeaders["From"].Length()+1);
+	mailFile.WriteAttr( "MAIL:subject", B_STRING_TYPE, 0, mHeaders["Subject"].String(), mHeaders["Subject"].Length()+1);
+	mailFile.WriteAttr( "MAIL:to", B_STRING_TYPE, 0, mHeaders["To"].String(), mHeaders["To"].Length()+1);
+	mailFile.WriteAttr( "MAIL:cc", B_STRING_TYPE, 0, mHeaders["Cc"].String(), mHeaders["Cc"].Length()+1);
+	//
+	time_t t = time(NULL);
+	mailFile.WriteAttr( "MAIL:when", B_TIME_TYPE, 0, &t, sizeof(t));
+	//
+	mailFile.WriteAttr( "MAIL:attachments", B_BOOL_TYPE, 0, &mHasAttachments, sizeof(mHasAttachments));
+}
+
+/*------------------------------------------------------------------------------*\
+	CreateBasicFilename()
+		-	
+\*------------------------------------------------------------------------------*/
+BString BmMail::CreateBasicFilename() {
+	BString name = mHeaders["From"];
+	char now[16];
+	time_t t = time(NULL);
+	strftime( now, 15, "%0Y%0m%0d%0H%0M%0S", localtime( &t));
+	name << "_" << now;
+	name.ReplaceAll( "/", "-");
+							// we avoid slashes in filename
+	return name;
+}
