@@ -42,11 +42,13 @@
 /*------------------------------------------------------------------------------*\
 	types of messages handled by a BmMailHeaderView:
 \*------------------------------------------------------------------------------*/
-#define BM_HEADERVIEW_SMALL			'bmfa'
-#define BM_HEADERVIEW_LARGE			'bmfb'
-#define BM_HEADERVIEW_FULL				'bmfc'
-#define BM_HEADERVIEW_SWITCH_RESENT	'bmfd'
-#define BM_HEADERVIEW_COPY_HEADER	'bmfe'
+enum {
+	BM_HEADERVIEW_SMALL			= 'bmfa',
+	BM_HEADERVIEW_LARGE			= 'bmfb',
+	BM_HEADERVIEW_FULL			= 'bmfc',
+	BM_HEADERVIEW_SWITCH_RESENT= 'bmfd',
+	BM_HEADERVIEW_COPY_HEADER	= 'bmfe'
+};
 
 class BStringView;
 class BTextView;

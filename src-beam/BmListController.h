@@ -46,16 +46,18 @@ class BmListViewController;
 /*------------------------------------------------------------------------------*\
 	types of messages handled by a listview-controller:
 \*------------------------------------------------------------------------------*/
-#define BM_LISTVIEW_SHOW_COLUMN		'bmca'
+enum {
+	BM_LISTVIEW_SHOW_COLUMN		= 'bmca',
 							// the user has chosen to show a column
-#define BM_LISTVIEW_HIDE_COLUMN		'bmcb'
+	BM_LISTVIEW_HIDE_COLUMN		= 'bmcb',
 							// the user has chosen to hide a column
-#define BM_NTFY_LISTCONTROLLER_MODIFIED 'bmcc'
+	BM_NTFY_LISTCONTROLLER_MODIFIED = 'bmcc',
 							// item has been added/removed
-#define BM_EXPAND_OR_COLLAPSE			 'bmcd'
+	BM_EXPAND_OR_COLLAPSE		= 'bmcd',
 							// time to expand/collapse an item automatically
-#define BM_PULSED_SCROLL				 'bmce'
+	BM_PULSED_SCROLL				= 'bmce'
 							// time to scroll listview upwards/downwards
+};
 
 /*------------------------------------------------------------------------------*\
 	BmListViewItem
@@ -223,6 +225,7 @@ public:
 
 	// setters:
 	void UseStateCache( bool b) 			{ mUseStateCache = b; }
+	void DragBetweenItems( bool b) 		{ mDragBetweenItems = b; }
 
 protected:
 	// archival of the controller's state-info:
@@ -244,6 +247,7 @@ protected:
 	bool mSittingOnExpander;
 	BMessageRunner* mPulsedScrollRunner;
 	int32 mPulsedScrollStep;
+	bool mDragBetweenItems;
 
 	static const char* const MSG_HIGHITEM;
 	static const char* const MSG_EXPAND;

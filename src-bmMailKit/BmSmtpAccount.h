@@ -48,8 +48,11 @@
 #include "BmDataModel.h"
 #include "BmMail.h"
 
-#define BM_JOBWIN_SMTP					'bmeb'
-						// sent to JobMetaController in order to start smtp-connection
+enum {
+	BM_JOBWIN_SMTP			= 'bmeb'
+						// sent to JobMetaController in order to start
+						// smtp-connection
+};
 
 class BmSmtpAccountList;
 /*------------------------------------------------------------------------------*\
@@ -76,26 +79,48 @@ public:
 	int16 ArchiveVersion() const			{ return nArchiveVersion; }
 
 	// getters:
-	inline const BmString &Name() const 			{ return Key(); }
-	inline const BmString &Username() const 	{ return mUsername; }
-	inline const BmString &Password() const 	{ return mPassword; }
-	inline bool PwdStoredOnDisk() const			{ return mPwdStoredOnDisk; }
-	inline const BmString &SMTPServer() const	{ return mSMTPServer; }
-	inline const BmString &DomainToAnnounce() const 	{ return mDomainToAnnounce; }
-	inline const BmString &AuthMethod() const 	{ return mAuthMethod; }
-	inline uint16 PortNr() const			 		{ return mPortNr; }
-	inline const BmString &PortNrString() const{ return mPortNrString; }
-	inline const BmString &AccForSmtpAfterPop() const{ return mAccForSmtpAfterPop; }
+	inline const BmString &Name() const { return Key(); }
+	inline const BmString &Username() const 	
+													{ return mUsername; }
+	inline const BmString &Password() const 	
+													{ return mPassword; }
+	inline bool PwdStoredOnDisk() const	{ return mPwdStoredOnDisk; }
+	inline const BmString &SMTPServer() const	
+													{ return mSMTPServer; }
+	inline const BmString &DomainToAnnounce() const 	
+													{ return mDomainToAnnounce; }
+	inline const BmString &AuthMethod() const 	
+													{ return mAuthMethod; }
+	inline uint16 PortNr() const			{ return mPortNr; }
+	inline const BmString &PortNrString() const
+													{ return mPortNrString; }
+	inline const BmString &AccForSmtpAfterPop() const
+													{ return mAccForSmtpAfterPop; }
 
 	// setters:
-	inline void Username( const BmString &s) 	{ mUsername = s;   TellModelItemUpdated( UPD_ALL); }
-	inline void Password( const BmString &s) 	{ mPassword = s;   TellModelItemUpdated( UPD_ALL); }
-	inline void PwdStoredOnDisk( bool b)		{ mPwdStoredOnDisk = b;   TellModelItemUpdated( UPD_ALL); }
-	inline void SMTPServer( const BmString &s)	{ mSMTPServer = s;   TellModelItemUpdated( UPD_ALL); }
-	inline void DomainToAnnounce( const BmString &s) 	{ mDomainToAnnounce = s;   TellModelItemUpdated( UPD_ALL); }
-	inline void AuthMethod( const BmString &s) { mAuthMethod = s;   TellModelItemUpdated( UPD_ALL); }
-	inline void PortNr( uint16 i)					{ mPortNr = i; mPortNrString = BmString()<<i;  TellModelItemUpdated( UPD_ALL); }
-	inline void AccForSmtpAfterPop( const BmString &s)	{ mAccForSmtpAfterPop = s;   TellModelItemUpdated( UPD_ALL); }
+	inline void Username( const BmString &s) 	
+													{ mUsername = s;   
+													  TellModelItemUpdated( UPD_ALL); }
+	inline void Password( const BmString &s) 	
+													{ mPassword = s; 
+													  TellModelItemUpdated( UPD_ALL); }
+	inline void PwdStoredOnDisk( bool b){ mPwdStoredOnDisk = b; 
+													  TellModelItemUpdated( UPD_ALL); }
+	inline void SMTPServer( const BmString &s)	
+													{ mSMTPServer = s; 
+													  TellModelItemUpdated( UPD_ALL); }
+	inline void DomainToAnnounce( const BmString &s) 	
+													{ mDomainToAnnounce = s; 
+													  TellModelItemUpdated( UPD_ALL); }
+	inline void AuthMethod( const BmString &s) 
+													{ mAuthMethod = s; 
+													  TellModelItemUpdated( UPD_ALL); }
+	inline void PortNr( uint16 i)			{ mPortNr = i; 
+													  mPortNrString = BmString()<<i;
+													  TellModelItemUpdated( UPD_ALL); }
+	inline void AccForSmtpAfterPop( const BmString &s)	
+													{ mAccForSmtpAfterPop = s; 
+													  TellModelItemUpdated( UPD_ALL); }
 
 	bool GetSMTPAddress( BNetAddress* addr) const;
 
@@ -127,8 +152,8 @@ private:
 	BmString mUsername;
 	BmString mPassword;
 	BmString mSMTPServer;			// 
-	BmString mDomainToAnnounce;	// domain-name that will be used when we announce
-											// ourselves to the server (HELO/EHLO)
+	BmString mDomainToAnnounce;	// domain-name that will be used when we
+											// announce ourselves to the server (HELO/EHLO)
 	BmString mAuthMethod;			// authentication method to use
 	uint16 mPortNr;					// usually 25
 	BmString mPortNrString;			// Port-Nr as String

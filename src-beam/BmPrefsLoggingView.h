@@ -33,17 +33,6 @@
 
 #include "BmPrefsView.h"
 
-#define BM_LOG_POP_SELECTED 				'bmPO'
-#define BM_LOG_JOBWIN_SELECTED 			'bmJW'
-#define BM_LOG_MAILPARSE_SELECTED 		'bmMP'
-#define BM_LOG_APP_SELECTED 				'bmAP'
-#define BM_LOG_MAILTRACKING_SELECTED	'bmMT'
-#define BM_LOG_GUI_SELECTED 				'bmGU'
-#define BM_LOG_MODELCONTROLLER_SELECTED 'bmMC'
-#define BM_LOG_SMTP_SELECTED 				'bmSM'
-#define BM_LOG_FILTER_SELECTED 			'bmFI'
-#define BM_LOG_REFCOUNT_SELECTED 		'bmRC'
-
 class BmTextControl;
 class BmMenuControl;
 /*------------------------------------------------------------------------------*\
@@ -53,6 +42,19 @@ class BmMenuControl;
 class BmPrefsLoggingView : public BmPrefsView {
 	typedef BmPrefsView inherited;
 
+	enum {
+		BM_LOG_POP_SELECTED 				= 'bmPO',
+		BM_LOG_JOBWIN_SELECTED 			= 'bmJW',
+		BM_LOG_MAILPARSE_SELECTED 		= 'bmMP',
+		BM_LOG_APP_SELECTED 				= 'bmAP',
+		BM_LOG_MAILTRACKING_SELECTED	= 'bmMT',
+		BM_LOG_GUI_SELECTED 				= 'bmGU',
+		BM_LOG_MODELCONTROLLER_SELECTED = 'bmMC',
+		BM_LOG_SMTP_SELECTED 			= 'bmSM',
+		BM_LOG_FILTER_SELECTED 			= 'bmFI',
+		BM_LOG_REFCOUNT_SELECTED 		= 'bmRC'
+	};
+	
 public:
 	// c'tors and d'tor:
 	BmPrefsLoggingView();

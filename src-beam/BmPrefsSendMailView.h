@@ -103,14 +103,6 @@ private:
 
 
 
-#define BM_AUTH_SELECTED 			'bmAS'
-#define BM_POP_SELECTED 			'bmPS'
-#define BM_PWD_STORED_CHANGED 	'bmPC'
-#define BM_CHECK_AND_SUGGEST		'bmCS'
-#define BM_ADD_ACCOUNT 				'bmAA'
-#define BM_REMOVE_ACCOUNT 			'bmRA'
-
-
 class BmTextControl;
 class BmMenuControl;
 class BmCheckControl;
@@ -121,6 +113,16 @@ class MButton;
 \*------------------------------------------------------------------------------*/
 class BmPrefsSendMailView : public BmPrefsView {
 	typedef BmPrefsView inherited;
+
+	enum {
+		BM_AUTH_SELECTED 			= 'bmAS',
+		BM_POP_SELECTED 			= 'bmPS',
+		BM_PWD_STORED_CHANGED 	= 'bmPC',
+		BM_CHECK_AND_SUGGEST		= 'bmCS',
+		BM_ADD_ACCOUNT 			= 'bmAA',
+		BM_REMOVE_ACCOUNT 		= 'bmRA'
+	};
+
 
 public:
 	// c'tors and d'tor:
@@ -165,8 +167,6 @@ private:
 
 	BmRef<BmSmtpAccount> mCurrAcc;
 	
-	static const BmString nEmptyItemLabel;
-
 	// Hide copy-constructor and assignment:
 	BmPrefsSendMailView( const BmPrefsSendMailView&);
 	BmPrefsSendMailView operator=( const BmPrefsSendMailView&);

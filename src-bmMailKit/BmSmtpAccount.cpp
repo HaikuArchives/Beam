@@ -68,6 +68,9 @@ BmSmtpAccount::BmSmtpAccount( const char* name, BmSmtpAccountList* model)
 	,	mPortNrString( "25")
 	,	mPwdStoredOnDisk( false)
 {
+	TheLogHandler->FindLogfile( BmString("SMTP_")<<Key());
+							// create logfile in advance so it can
+							// be shown in log-menu
 }
 
 /*------------------------------------------------------------------------------*\
@@ -76,7 +79,8 @@ BmSmtpAccount::BmSmtpAccount( const char* name, BmSmtpAccountList* model)
 		-	constructs a BmSmtpAccount from a BMessage
 \*------------------------------------------------------------------------------*/
 BmSmtpAccount::BmSmtpAccount( BMessage* archive, BmSmtpAccountList* model) 
-	:	inherited( FindMsgString( archive, MSG_NAME), model, (BmListModelItem*)NULL)
+	:	inherited( FindMsgString( archive, MSG_NAME), model, 
+					  (BmListModelItem*)NULL)
 {
 	int16 version = FindMsgInt16( archive, MSG_VERSION);
 	mUsername = FindMsgString( archive, MSG_USERNAME);
@@ -91,6 +95,9 @@ BmSmtpAccount::BmSmtpAccount( BMessage* archive, BmSmtpAccountList* model)
 	if (version > 1) {
 		mAccForSmtpAfterPop = FindMsgString( archive, MSG_ACC_FOR_SAP);
 	}
+	TheLogHandler->FindLogfile( BmString("SMTP_")<<Key());
+							// create logfile in advance so it can
+							// be shown in log-menu
 }
 
 /*------------------------------------------------------------------------------*\
@@ -145,13 +152,15 @@ bool BmSmtpAccount::NeedsAuthViaPopServer() {
 			given out-params
 		-	returns true if values are ok, false (and error-info) if not
 \*------------------------------------------------------------------------------*/
-bool BmSmtpAccount::SanityCheck( BmString& complaint, BmString& fieldName) const {
+bool BmSmtpAccount::SanityCheck( BmString& complaint, 
+											BmString& fieldName) const {
 	if (!mSMTPServer.Length()) {
 		complaint = "Please enter the address of this account's SMTP-Server.";
 		fieldName = "smtpserver";
 		return false;
 	}
-	if ((mAuthMethod==AUTH_PLAIN || mAuthMethod==AUTH_LOGIN) && !mUsername.Length()) {
+	if ((mAuthMethod==AUTH_PLAIN || mAuthMethod==AUTH_LOGIN) 
+	&& !mUsername.Length()) {
 		complaint = "Please enter a username to use during authentication.";
 		fieldName = "username";
 		return false;
@@ -178,7 +187,8 @@ const int16 BmSmtpAccountList::nArchiveVersion = 1;
 	CreateInstance()
 		-	initialiazes object by reading info from settings file (if any)
 \*------------------------------------------------------------------------------*/
-BmSmtpAccountList* BmSmtpAccountList::CreateInstance( BLooper* jobMetaController) {
+BmSmtpAccountList* BmSmtpAccountList::CreateInstance( 
+																BLooper* jobMetaController) {
 	if (!theInstance) {
 		theInstance = new BmSmtpAccountList( jobMetaController);
 	}
@@ -209,7 +219,8 @@ BmSmtpAccountList::~BmSmtpAccountList() {
 		-	returns name of settings-file for list of SMTP-accounts
 \*------------------------------------------------------------------------------*/
 const BmString BmSmtpAccountList::SettingsFileName() {
-	return BmString( TheResources->SettingsPath.Path()) << "/" << "Smtp Accounts";
+	return BmString( TheResources->SettingsPath.Path()) << "/" 
+				<< "Smtp Accounts";
 }
 
 /*------------------------------------------------------------------------------*\
@@ -217,18 +228,23 @@ const BmString BmSmtpAccountList::SettingsFileName() {
 		-	fetches SMTP-accounts from given message-archive
 \*------------------------------------------------------------------------------*/
 void BmSmtpAccountList::InstantiateItems( BMessage* archive) {
-	BM_LOG2( BM_LogMailTracking, BmString("Start of InstantiateItems() for SmtpAccountList"));
+	BM_LOG2( BM_LogMailTracking, 
+				BmString("Start of InstantiateItems() for SmtpAccountList"));
 	status_t err;
 	int32 numChildren = FindMsgInt32( archive, BmListModelItem::MSG_NUMCHILDREN);
 	for( int i=0; i<numChildren; ++i) {
 		BMessage msg;
-		(err = archive->FindMessage( BmListModelItem::MSG_CHILDREN, i, &msg)) == B_OK
+		(err = archive->FindMessage( BmListModelItem::MSG_CHILDREN, i, &msg)) 
+			== B_OK
 													|| BM_THROW_RUNTIME(BmString("Could not find smtp-account nr. ") << i+1 << " \n\nError:" << strerror(err));
 		BmSmtpAccount* newAcc = new BmSmtpAccount( &msg, this);
-		BM_LOG3( BM_LogMailTracking, BmString("SmtpAccount <") << newAcc->Name() << "," << newAcc->Key() << "> read");
+		BM_LOG3( BM_LogMailTracking, 
+					BmString("SmtpAccount <") << newAcc->Name() << "," 
+						<< newAcc->Key() << "> read");
 		AddItemToList( newAcc);
 	}
-	BM_LOG2( BM_LogMailTracking, BmString("End of InstantiateMailRefs() for SmtpAccountList"));
+	BM_LOG2( BM_LogMailTracking, 
+				BmString("End of InstantiateMailRefs() for SmtpAccountList"));
 	mInitCheck = B_OK;
 }
 

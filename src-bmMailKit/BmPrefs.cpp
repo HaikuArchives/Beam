@@ -275,6 +275,7 @@ void BmPrefs::InitDefaults() {
 	mDefaultsMsg.AddString( "HeaderListLarge", "Subject,From,Date,To,Cc,User-Agent/X-Mailer");
 	mDefaultsMsg.AddString( "HeaderListSmall", "Subject,From,Date");
 	mDefaultsMsg.AddBool( "InOutAlwaysAtTop", true);
+	mDefaultsMsg.AddBool( "ListviewLikeTracker", false);
 	mDefaultsMsg.AddInt32( "Loglevels", loglevels);
 	mDefaultsMsg.AddInt16( "Loglevel_Pop", BM_LOGLVL_FOR(loglevels,BM_LogPop));
 	mDefaultsMsg.AddInt16( "Loglevel_JobWin", BM_LOGLVL_FOR(loglevels,BM_LogJobWin));
@@ -447,7 +448,7 @@ BMessage* BmPrefs::GetShortcutDefaults( BMessage* shortcutsMsg) {
 		-	returns the current log-level (as string) for the given terrain:
 \*------------------------------------------------------------------------------*/
 const char* BmPrefs::GetLogLevelFor( uint32 terrain) {
-	int32 level;
+	int32 level = 0;
 	if (terrain == BM_LogPop)
 		level = mPrefsMsg.FindInt16("Loglevel_Pop");
 	else if (terrain == BM_LogSmtp)

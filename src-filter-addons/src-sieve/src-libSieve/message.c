@@ -477,7 +477,7 @@ char *get_address(address_part_t addrpart,
 	case ADDRESS_USER:
 	    if (a->mailbox) {
 		char *p = strchr(a->mailbox, '+');
-		int len = p ? p - a->mailbox : strlen(a->mailbox);
+		unsigned int len = p ? p - a->mailbox : strlen(a->mailbox);
 
 		am->freeme = (char *) xmalloc(len + 1);
 		strncpy(am->freeme, a->mailbox, len);

@@ -103,17 +103,6 @@ private:
 
 
 
-#define BM_AUTH_SELECTED 			'bmAS'
-#define BM_FILTER_CHAIN_SELECTED 'bmFS'
-#define BM_HOME_FOLDER_SELECTED  'bmHS'
-#define BM_CHECK_MAIL_CHANGED 	'bmCC'
-#define BM_CHECK_EVERY_CHANGED 	'bmCE'
-#define BM_REMOVE_MAIL_CHANGED 	'bmRC'
-#define BM_PWD_STORED_CHANGED 	'bmPC'
-#define BM_CHECK_AND_SUGGEST		'bmCS'
-#define BM_ADD_ACCOUNT 				'bmAA'
-#define BM_REMOVE_ACCOUNT 			'bmRA'
-
 
 class BmTextControl;
 class BmMenuControl;
@@ -127,6 +116,19 @@ class MStringView;
 class BmPrefsRecvMailView : public BmPrefsView {
 	typedef BmPrefsView inherited;
 
+	enum {
+		BM_AUTH_SELECTED 			 = 'bmAS',
+		BM_FILTER_CHAIN_SELECTED = 'bmFS',
+		BM_HOME_FOLDER_SELECTED  = 'bmHS',
+		BM_CHECK_MAIL_CHANGED 	 = 'bmCC',
+		BM_CHECK_EVERY_CHANGED 	 = 'bmCE',
+		BM_REMOVE_MAIL_CHANGED 	 = 'bmRC',
+		BM_PWD_STORED_CHANGED 	 = 'bmPC',
+		BM_CHECK_AND_SUGGEST		 = 'bmCS',
+		BM_ADD_ACCOUNT 			 = 'bmAA',
+		BM_REMOVE_ACCOUNT 		 = 'bmRA'
+	};
+	
 public:
 	// c'tors and d'tor:
 	BmPrefsRecvMailView();
@@ -160,6 +162,7 @@ private:
 	BmTextControl* mPwdControl;
 	BmTextControl* mServerControl;
 	BmTextControl* mCheckIntervalControl;
+	BmTextControl* mDeleteMailDelayControl;
 	BmMenuControl* mAuthControl;
 	BmMenuControl* mFilterChainControl;
 	BmMenuControl* mHomeFolderControl;
@@ -171,11 +174,10 @@ private:
 	MButton* mAddButton;
 	MButton* mRemoveButton;
 	MStringView* mMinutesLabel;
+	MStringView* mDaysLabel;
 
 	BmRef<BmPopAccount> mCurrAcc;
 	
-	static const BmString nEmptyItemLabel;
-
 	// Hide copy-constructor and assignment:
 	BmPrefsRecvMailView( const BmPrefsRecvMailView&);
 	BmPrefsRecvMailView operator=( const BmPrefsRecvMailView&);

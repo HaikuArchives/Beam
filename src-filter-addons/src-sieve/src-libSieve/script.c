@@ -48,6 +48,8 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #define BUF_SZ 4096
 
+char **stringlist_to_chararray(stringlist_t **list);
+
 /* does this interpretor support this requirement? */
 int script_require(sieve_script_t *s, char *req)
 {

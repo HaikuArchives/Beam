@@ -378,19 +378,6 @@ void BmMailViewWin::MessageReceived( BMessage* msg) {
 				}
 				break;
 			}
-			case BM_JOB_DONE:
-			case BM_LISTMODEL_ADD:
-			case BM_LISTMODEL_UPDATE:
-			case BM_LISTMODEL_REMOVE: {
-				// double-dispatch job-related messages to our menu-controllers:
-				BmListModelItem* item=NULL;
-				msg->FindPointer( BmListModel::MSG_MODELITEM, (void**)&item);
-				if (item)
-					item->RemoveRef();		// the msg is no longer referencing the item
-				if (mFilterMenu->IsMsgFromCurrentModel( msg))
-					mFilterMenu->JobIsDone( true);
-				break;
-			}
 			default:
 				inherited::MessageReceived( msg);
 		}

@@ -48,6 +48,7 @@ class BmMailView;
 class BmMailRef;
 class BmMailViewContainer;
 class BmMenuControl;
+class BmMenuController;
 class BmToolbarButton;
 class CLVContainerView;
 class HGroup;
@@ -55,36 +56,6 @@ class MPictureButton;
 class Space;
 class VGroup;
 class BFilePanel;
-
-
-/*------------------------------------------------------------------------------*\
-	BmPeopleControl
-		-	
-\*------------------------------------------------------------------------------*/
-class BmPeopleControl : public BmTextControl, public BmJobController
-{
-	typedef BmTextControl inherited;
-	typedef BmJobController inheritedController;
-
-public:
-	// creator-func, c'tors and d'tor:
-	BmPeopleControl( const char* label);
-	~BmPeopleControl();
-
-	// overrides of controller base:
-	BHandler* GetControllerHandler() 	{ return this; }
-	void JobIsDone( bool completed);
-
-	// overrides of BView base:
-	void MessageReceived( BMessage* msg);
-	void AttachedToWindow( void);
-	void DetachedFromWindow( void);
-
-private:
-	// Hide copy-constructor and assignment:
-	BmPeopleControl( const BmPeopleControl&);
-	BmPeopleControl operator=( const BmPeopleControl&);
-};
 
 
 /*------------------------------------------------------------------------------*\
@@ -171,9 +142,9 @@ private:
 	BmToolbarButton* mPeopleButton;
 	BmToolbarButton* mPrintButton;
 	
-	BmPeopleControl* mBccControl;
-	BmPeopleControl* mCcControl;
-	BmPeopleControl* mToControl;
+	BmTextControl* mBccControl;
+	BmTextControl* mCcControl;
+	BmTextControl* mToControl;
 
 	BmTextControl* mFromControl;
 	BmTextControl* mReplyToControl;

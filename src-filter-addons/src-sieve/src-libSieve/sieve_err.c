@@ -9,6 +9,8 @@
 #define const
 #endif
 
+#include "sieve_err.h"
+
 static const char * const text[] = {
 	"Generic Sieve error",
 	"Sieve interpretor not finalized",

@@ -42,8 +42,10 @@
 
 class BmFilterList;
 
-#define BM_JOBWIN_FILTER					'bmed'
+enum {
+	BM_JOBWIN_FILTER 				= 'bmed'
 						// sent to JobMetaController in order to start filter-job
+};
 
 /*------------------------------------------------------------------------------*\
 	BmFilterAddonDescr

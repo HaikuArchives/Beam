@@ -36,8 +36,10 @@
 /*------------------------------------------------------------------------------*\
 	types of messages sent by a rulerview:
 \*------------------------------------------------------------------------------*/
-#define BM_RULERVIEW_NEW_POS		'bmra'
+enum {
+	BM_RULERVIEW_NEW_POS		= 'bmra'
 							// the user has moved the right-marging-indicator
+};
 
 /*------------------------------------------------------------------------------*\
 	BmRulerView

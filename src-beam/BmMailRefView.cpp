@@ -163,7 +163,8 @@ const int32 BmMailRefItem::GetNumValueForColumn( int32 column_index) const {
 				 st == BM_MAIL_STATUS_FORWARDED	? 5 :
 				 st == BM_MAIL_STATUS_REPLIED		? 6 :
 				 st == BM_MAIL_STATUS_REDIRECTED	? 7 : 99;
-	} else if (column_index == COL_ATTACHMENTS_I || column_index == COL_ATTACHMENT) {
+	} else if (column_index == COL_ATTACHMENTS_I 
+	|| column_index == COL_ATTACHMENT) {
 		return ref->HasAttachments() ? 0 : 1;	
 							// show mails with attachment at top
 	} else if (column_index == COL_PRIORITY_I || column_index == COL_PRIORITY) {
@@ -261,10 +262,10 @@ const char* BmMailRefItem::GetUserText(int32 colIdx, float colWidth) const {
 \********************************************************************************/
 
 
-const char* const BmMailRefView::MSG_MAILS_SELECTED = 	"bm:msel";
-const char* const BmMailRefView::MENU_MARK_AS =				"Mark Message As";
-const char* const BmMailRefView::MENU_FILTER = 				"Apply Specific Filter";
-const char* const BmMailRefView::MENU_MOVE =					"Move Message To";
+const char* const BmMailRefView::MSG_MAILS_SELECTED = "bm:msel";
+const char* const BmMailRefView::MENU_MARK_AS =			"Mark Message As";
+const char* const BmMailRefView::MENU_FILTER = 			"Apply Specific Filter";
+const char* const BmMailRefView::MENU_MOVE =				"Move Message To";
 
 const BmString BmDragId = "beam/ref";
 
@@ -272,7 +273,8 @@ const BmString BmDragId = "beam/ref";
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmMailRefView* BmMailRefView::CreateInstance( minimax minmax, int32 width, int32 height) {
+BmMailRefView* BmMailRefView::CreateInstance( minimax minmax, int32 width, 
+															 int32 height) {
 	return new BmMailRefView( minmax, width, height);
 }
 
@@ -281,41 +283,50 @@ BmMailRefView* BmMailRefView::CreateInstance( minimax minmax, int32 width, int32
 		-	
 \*------------------------------------------------------------------------------*/
 BmMailRefView::BmMailRefView( minimax minmax, int32 width, int32 height)
-	:	inherited( minmax, BRect(0,0,width-1,height-1), "Beam_MailRefView", B_MULTIPLE_SELECTION_LIST, 
-					  false, true, true, true)
+	:	inherited( minmax, BRect(0,0,width-1,height-1), "Beam_MailRefView", 
+					  B_MULTIPLE_SELECTION_LIST, false, true, true, true)
 	,	mCurrFolder( NULL)
 	,	mAvoidInvoke( false)
 	,	mHaveSelectedRef( false)
 {
-	int32 flags = 0;
+	int32 flags = CLV_SORT_KEYABLE;
 	SetViewColor( B_TRANSPARENT_COLOR);
 	if (ThePrefs->GetBool("StripedListView"))
 		SetStripedBackground( true);
 
-	Initialize( BRect(0,0,width-1,height-1), B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE,
+	Initialize( BRect(0,0,width-1,height-1), 
+					B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE,
 					B_FOLLOW_NONE, true, true, true, B_FANCY_BORDER);
 
-	AddColumn( new CLVColumn( "", 18.0, CLV_SORT_KEYABLE | CLV_NOT_RESIZABLE | CLV_COLDATA_NUMBER, 
+	AddColumn( new CLVColumn( "", 18.0, 
+									  flags | CLV_NOT_RESIZABLE | CLV_COLDATA_NUMBER, 
 									  18.0, "Status [Icon]"));
-	AddColumn( new CLVColumn( "A", 18.0, CLV_SORT_KEYABLE | CLV_NOT_RESIZABLE | CLV_COLDATA_NUMBER, 
+	AddColumn( new CLVColumn( "A", 18.0, 
+									  flags | CLV_NOT_RESIZABLE | CLV_COLDATA_NUMBER, 
 									  18.0, "(A)ttachments [Icon]"));
-	AddColumn( new CLVColumn( "P", 18.0, CLV_SORT_KEYABLE | CLV_NOT_RESIZABLE | CLV_COLDATA_NUMBER, 
+	AddColumn( new CLVColumn( "P", 18.0, 
+									  flags | CLV_NOT_RESIZABLE | CLV_COLDATA_NUMBER, 
 									  18.0, "(P)riority [Icon]"));
-	AddColumn( new CLVColumn( "From", 200.0, CLV_SORT_KEYABLE | flags, 20.0));
-	AddColumn( new CLVColumn( "Subject", 200.0, CLV_SORT_KEYABLE | flags, 20.0));
-	AddColumn( new CLVColumn( "Date", 100.0, CLV_SORT_KEYABLE | CLV_COLDATA_DATE | flags, 20.0));
-	AddColumn( new CLVColumn( "Size", 50.0, CLV_SORT_KEYABLE | CLV_COLDATA_NUMBER | CLV_RIGHT_JUSTIFIED | flags, 20.0));
-	AddColumn( new CLVColumn( "Cc", 100.0, CLV_SORT_KEYABLE | flags, 20.0));
-	AddColumn( new CLVColumn( "Account", 100.0, CLV_SORT_KEYABLE | flags, 20.0));
-	AddColumn( new CLVColumn( "To", 100.0, CLV_SORT_KEYABLE | flags, 20.0));
-	AddColumn( new CLVColumn( "Reply-To", 150.0, CLV_SORT_KEYABLE | flags, 20.0));
-	AddColumn( new CLVColumn( "Name", 150.0, CLV_SORT_KEYABLE | flags, 20.0));
-	AddColumn( new CLVColumn( "Created", 100.0, CLV_SORT_KEYABLE | CLV_COLDATA_DATE | flags, 20.0));
-	AddColumn( new CLVColumn( "Tracker-Name", 150.0, CLV_SORT_KEYABLE | flags, 20.0));
-	AddColumn( new CLVColumn( "S", 100.0, CLV_SORT_KEYABLE, 40.0, "(S)tatus [Text]"));
-	AddColumn( new CLVColumn( "A", 100.0, CLV_SORT_KEYABLE | CLV_COLDATA_NUMBER, 18.0, "(A)ttachments [Text]"));
-	AddColumn( new CLVColumn( "P", 100.0, CLV_SORT_KEYABLE | CLV_COLDATA_NUMBER, 18.0, "(P)riority [Text]"));
-	AddColumn( new CLVColumn( "Identity", 100.0, CLV_SORT_KEYABLE | flags, 20.0));
+	AddColumn( new CLVColumn( "From", 200.0, flags, 20.0));
+	AddColumn( new CLVColumn( "Subject", 200.0, flags, 20.0));
+	AddColumn( new CLVColumn( "Date", 100.0, flags | CLV_COLDATA_DATE, 20.0));
+	AddColumn( new CLVColumn( "Size", 50.0, 
+									  flags | CLV_COLDATA_NUMBER | CLV_RIGHT_JUSTIFIED,
+									  20.0));
+	AddColumn( new CLVColumn( "Cc", 100.0, flags, 20.0));
+	AddColumn( new CLVColumn( "Account", 100.0, flags, 20.0));
+	AddColumn( new CLVColumn( "To", 100.0, flags, 20.0));
+	AddColumn( new CLVColumn( "Reply-To", 150.0, flags, 20.0));
+	AddColumn( new CLVColumn( "Name", 150.0, flags, 20.0));
+	AddColumn( new CLVColumn( "Created", 100.0, flags | CLV_COLDATA_DATE,
+									  20.0));
+	AddColumn( new CLVColumn( "Tracker-Name", 150.0, flags, 20.0));
+	AddColumn( new CLVColumn( "S", 100.0, flags, 40.0, "(S)tatus [Text]"));
+	AddColumn( new CLVColumn( "A", 100.0, flags | CLV_COLDATA_NUMBER, 18.0, 
+									  "(A)ttachments [Text]"));
+	AddColumn( new CLVColumn( "P", 100.0, flags | CLV_COLDATA_NUMBER, 18.0, 
+									  "(P)riority [Text]"));
+	AddColumn( new CLVColumn( "Identity", 100.0, flags, 20.0));
 	SetSortFunction( CLVEasyItem::CompareItems);
 	SetSortKey( COL_DATE);
 	SetSortMode( COL_DATE, Descending, false);
@@ -332,16 +343,19 @@ BmMailRefView::~BmMailRefView() {
 	CreateContainer()
 		-	
 \*------------------------------------------------------------------------------*/
-CLVContainerView* BmMailRefView::CreateContainer( bool horizontal, bool vertical, 
+CLVContainerView* BmMailRefView::CreateContainer( bool horizontal, 
+																  bool vertical, 
 												  				  bool scroll_view_corner, 
 												  				  border_style border, 
 																  uint32 ResizingMode, 
 																  uint32 flags) 
 {
-	return new BmCLVContainerView( fMinMax, this, ResizingMode, flags, horizontal, 
-											 vertical, scroll_view_corner, border, mShowCaption,
-											 mShowBusyView, 
-											 be_plain_font->StringWidth(" 99999 messages "));
+	return 
+		new BmCLVContainerView( 
+			fMinMax, this, ResizingMode, flags, horizontal, vertical, 
+			scroll_view_corner, border, mShowCaption, mShowBusyView, 
+			be_plain_font->StringWidth(" 99999 messages ")
+		);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -378,9 +392,11 @@ void BmMailRefView::MessageReceived( BMessage* msg) {
 				break;
 			}
 			case B_MOUSE_WHEEL_CHANGED: {
-				if (modifiers() & (B_SHIFT_KEY | B_LEFT_CONTROL_KEY | B_RIGHT_OPTION_KEY)) {
+				if (modifiers() 
+				& (B_SHIFT_KEY | B_LEFT_CONTROL_KEY | B_RIGHT_OPTION_KEY)) {
 					bool passedOn = false;
-					if (mPartnerMailView && !(passedOn = msg->FindBool("bm:passed_on"))) {
+					if (mPartnerMailView 
+					&& !(passedOn = msg->FindBool("bm:passed_on"))) {
 						BMessage msg2(*msg);
 						msg2.AddBool("bm:passed_on", true);
 						Looper()->PostMessage( &msg2, mPartnerMailView);
@@ -407,7 +423,8 @@ void BmMailRefView::MessageReceived( BMessage* msg) {
 void BmMailRefView::KeyDown(const char *bytes, int32 numBytes) { 
 	if ( numBytes == 1 ) {
 		switch( bytes[0]) {
-			// implement remote navigation within mail-view (via cursor-keys with modifiers):
+			// implement remote navigation within mail-view
+			// (via cursor-keys with modifiers):
 			case B_PAGE_UP:
 			case B_PAGE_DOWN:
 			case B_UP_ARROW:
@@ -443,22 +460,27 @@ void BmMailRefView::KeyDown(const char *bytes, int32 numBytes) {
 				AddSelectedRefsToMsg( &msg, BmApplication::MSG_MAILREF);
 				// now move cursor onwards...
 				if (indexVect.back().end < CountItems()-1)
-					Select( indexVect.back().end+1);		// select next item that remains in list
+					Select( indexVect.back().end+1);		
+							// select next item that remains in list
 				else if (indexVect.front().start > 0)
-					Select( indexVect.front().start-1);		// select last item that remains in list
+					Select( indexVect.front().start-1);		
+							// select last item that remains in list
 				else
 					DeselectAll();
 				// remove view-items immediately because that looks better and it 
 				// avoids double deletions (which cause Tracker to complain):
 				for( int32 i=indexVect.size()-1; i>=0; --i) {
-					RemoveItems( indexVect[i].start, 1+indexVect[i].end-indexVect[i].start);
+					RemoveItems( indexVect[i].start, 
+									 1+indexVect[i].end-indexVect[i].start);
 				}
 				UpdateCaption();
 				{	// scope for lock
 					BmAutolockCheckGlobal lock( DataModel()->ModelLocker());
 					lock.IsLocked()			|| BM_THROW_RUNTIME( BmString() << ControllerName() << "KeyDown(): Unable to lock model");
 					for( uint32 i=0; i<itemVect.size(); ++i) {
-						doRemoveModelItem( ((BmListViewItem*)itemVect[i])->ModelItem());
+						doRemoveModelItem( 
+							((BmListViewItem*)itemVect[i])->ModelItem()
+						);
 					}
 				}
 				// finally we instruct our app to remove the mail
@@ -514,7 +536,8 @@ bool BmMailRefView::InitiateDrag( BPoint, int32 index, bool wasSelected) {
 	int32 selCount;
 	for( selCount=0; (currIdx=CurrentSelection( selCount))>=0; ++selCount)
 		;
-	BM_LOG2( BM_LogGui, BmString("MailRefView::InitiateDrag() - found ")<<selCount<<" selections");
+	BM_LOG2( BM_LogGui, BmString("MailRefView::InitiateDrag() - found ")
+								<<selCount<<" selections");
 	BFont font;
 	GetFont( &font);
 	float lineHeight = MAX(TheResources->FontLineHeight( &font),20.0);
@@ -599,7 +622,9 @@ void BmMailRefView::HandleDrop( const BMessage* msg) {
 void BmMailRefView::ShowFolder( BmMailFolder* folder) {
 	try {
 		StopJob();
-		BmRef<BmMailRefList> refList( folder ? folder->MailRefList().Get() : NULL);
+		BmRef<BmMailRefList> refList( folder 
+													? folder->MailRefList().Get() 
+													: NULL);
 		if (mPartnerMailView)
 			mPartnerMailView->ShowMail( static_cast< BmMailRef*>( NULL));
 		if (refList)
@@ -654,9 +679,11 @@ void BmMailRefView::AddSelectedRefsToMsg( BMessage* msg, BmString fieldName) {
 		if (refItem) {
 			BmMailRef* ref( refItem->ModelItem());
 			msg->AddPointer( fieldName.String(), static_cast< void*>( ref));
-			ref->AddRef();						// the message now refers to the mailRef, too
+			ref->AddRef();						
+							// the message now refers to the mailRef, too
 			if (selectedText.Length())
-				msg->AddString( BmApplication::MSG_SELECTED_TEXT, selectedText.String());
+				msg->AddString( BmApplication::MSG_SELECTED_TEXT, 
+									 selectedText.String());
 			msg->AddMessenger( BmApplication::MSG_SENDING_REFVIEW, msngr);
 		}
 		numSelected++;
@@ -743,12 +770,24 @@ void BmMailRefView::AddMailRefMenu( BMenu* menu, BHandler* target,
 	if (!menu)
 		return;
 	AddItemToMenu( menu, CreateMenuItem( "Reply", BMM_REPLY), target);
-	AddItemToMenu( menu, CreateMenuItem( "Reply To List", BMM_REPLY_LIST), target);
-	AddItemToMenu( menu, CreateMenuItem( "Reply To Person", BMM_REPLY_ORIGINATOR), target);
-	AddItemToMenu( menu, CreateMenuItem( "Reply To All", BMM_REPLY_ALL), target);
-	AddItemToMenu( menu, CreateMenuItem( "Forward As Attachment", BMM_FORWARD_ATTACHED), target);
-	AddItemToMenu( menu, CreateMenuItem( "Forward Inline", BMM_FORWARD_INLINE), target);
-	AddItemToMenu( menu, CreateMenuItem( "Forward Inline (With Attachments)", BMM_FORWARD_INLINE_ATTACH), target);
+	AddItemToMenu( menu, 
+						CreateMenuItem( "Reply To List", BMM_REPLY_LIST), target);
+	AddItemToMenu( menu, 
+						CreateMenuItem( "Reply To Person", BMM_REPLY_ORIGINATOR), 
+						target);
+	AddItemToMenu( menu, 
+						CreateMenuItem( "Reply To All", BMM_REPLY_ALL), target);
+	AddItemToMenu( menu, 
+						CreateMenuItem( "Forward As Attachment", 
+											 BMM_FORWARD_ATTACHED), 
+						target);
+	AddItemToMenu( menu, 
+						CreateMenuItem( "Forward Inline", BMM_FORWARD_INLINE), 
+						target);
+	AddItemToMenu( menu, 
+						CreateMenuItem( "Forward Inline (With Attachments)", 
+											 BMM_FORWARD_INLINE_ATTACH), 
+						target);
 	AddItemToMenu( menu, CreateMenuItem( "Redirect", BMM_REDIRECT), target);
 	menu->AddSeparatorItem();
 
@@ -761,7 +800,10 @@ void BmMailRefView::AddMailRefMenu( BMenu* menu, BHandler* target,
 	for( int i=0; stats[i]; ++i) {
 		BMessage* msg = new BMessage( BMM_MARK_AS);
 		msg->AddString( BmApplication::MSG_STATUS, stats[i]);
-		AddItemToMenu( statusMenu, CreateMenuItem( stats[i], msg, (BmString("MarkAs")+stats[i]).String()), target);
+		AddItemToMenu( statusMenu, 
+							CreateMenuItem( stats[i], msg, 
+												(BmString("MarkAs")+stats[i]).String()), 
+							target);
 	}
 	BFont font( *be_plain_font);
 	font.SetSize( 10);
@@ -770,28 +812,38 @@ void BmMailRefView::AddMailRefMenu( BMenu* menu, BHandler* target,
 	menu->AddItem( statusMenu);
 	menu->AddSeparatorItem();
 
-	BMessage moveMsgTempl( BMM_MOVE);
 	BmMenuController* moveMenu
-		= new BmMenuController( MENU_MOVE, target, moveMsgTempl, TheMailFolderList.Get(), true);
+		= new BmMenuController( MENU_MOVE, target, new BMessage( BMM_MOVE), 
+										TheMailFolderList.Get(), 
+										BM_MC_SKIP_FIRST_LEVEL | BM_MC_MOVE_RIGHT);
 	if (isContextMenu)
 		moveMenu->SetFont( &font);
 	menu->AddItem( moveMenu);
 	menu->AddSeparatorItem();
 
-	AddItemToMenu( menu, CreateMenuItem( "Filter (Applies Associated Chain)", new BMessage( BMM_FILTER), "Filter"), target);
+	AddItemToMenu( menu, 
+						CreateMenuItem( "Filter (Applies Associated Chain)", 
+											 new BMessage( BMM_FILTER), "Filter"), 
+						target);
 
-	BMessage filterMsgTempl( BMM_FILTER);
 	BmMenuController* filterMenu
-		= new BmMenuController( MENU_FILTER, target,	filterMsgTempl, TheFilterList.Get());
+		= new BmMenuController( MENU_FILTER, target,	new BMessage( BMM_FILTER), 
+										TheFilterList.Get(), BM_MC_MOVE_RIGHT);
 	if (isContextMenu)
 		filterMenu->SetFont( &font);
 	menu->AddItem( filterMenu);
-	AddItemToMenu( menu, CreateMenuItem( "Create Filter From Mail...", new BMessage( BMM_CREATE_FILTER)), target);
+	AddItemToMenu( menu, 
+						CreateMenuItem( "Create Filter From Mail...", 
+											 new BMessage( BMM_CREATE_FILTER)), 
+						target);
 
 	menu->AddSeparatorItem();
 
 	if (isContextMenu) {
-		AddItemToMenu( menu, CreateMenuItem( "Print Message(s)...", BMM_PRINT, "Print Message..."), target);
+		AddItemToMenu( menu, 
+							CreateMenuItem( "Print Message(s)...", 
+												 BMM_PRINT, "Print Message..."), 
+							target);
 		menu->AddSeparatorItem();
 	}
 	AddItemToMenu( menu, CreateMenuItem( "Move To Trash", BMM_TRASH), target);

@@ -42,7 +42,8 @@ class HGroup;
 
 #define BM_TEXTFIELD_MODIFIED 'bmfm'
 
-class IMPEXPSANTAPARTSFORBEAM BmTextControl : public MView, public BTextControl
+class IMPEXPSANTAPARTSFORBEAM BmTextControl : public MView, 
+															 public BTextControl
 {
 	typedef BTextControl inherited;
 
@@ -50,9 +51,13 @@ public:
 	// creator-func, c'tors and d'tor:
 	BmTextControl( const char* label, bool labelIsMenu=false,
 						int32 fixedTextLen=0, int32 minTextLen=0);
+	BmTextControl( const char* label, BPopUpMenu* menu, int32 fixedTextLen=0, 
+						int32 minTextLen=0);
 	~BmTextControl();
 	
 	// native methods:
+	void InitSize( const char* label, int32 fixedTextLen, int32 minTextLen,
+						BPopUpMenu* popup);
 	void SetTextSilently( const char* text);
 
 	// overrides of BTextControl:
@@ -64,7 +69,9 @@ public:
 	// getters:
 	inline BTextView* TextView() const 	{ return mTextView; }
 	inline BMenuField* MenuField() const	{ return mMenuField; }
-	inline BMenu* Menu() const 			{ return mMenuField ? mMenuField->Menu() : NULL; }
+	inline BMenu* Menu() const 			{ return mMenuField 
+																	? mMenuField->Menu() 
+																	: NULL; }
 
 private:
 	minimax layoutprefs();

@@ -51,6 +51,7 @@
 #include "BmIdentity.h"
 #include "BmLogHandler.h"
 #include "BmMenuControl.h"
+#include "BmMenuController.h"
 #include "BmMultiLineTextControl.h"
 #include "BmPrefs.h"
 #include "BmPrefsSignatureView.h"
@@ -118,7 +119,8 @@ BmSignatureView* BmSignatureView::theInstance = NULL;
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmSignatureView* BmSignatureView::CreateInstance( minimax minmax, int32 width, int32 height) {
+BmSignatureView* BmSignatureView::CreateInstance( minimax minmax, int32 width, 
+																  int32 height) {
 	if (theInstance)
 		return theInstance;
 	else 
@@ -174,16 +176,18 @@ BmListViewItem* BmSignatureView::CreateListViewItem( BmListModelItem* item,
 	CreateContainer()
 		-	
 \*------------------------------------------------------------------------------*/
-CLVContainerView* BmSignatureView::CreateContainer( bool horizontal, bool vertical, 
-												  				  bool scroll_view_corner, 
-												  				  border_style border, 
-																  uint32 ResizingMode, 
-																  uint32 flags) 
+CLVContainerView* BmSignatureView::CreateContainer( bool horizontal, 
+																	 bool vertical, 
+												  				    bool scroll_view_corner, 
+												  				    border_style border, 
+																    uint32 ResizingMode, 
+																    uint32 flags) 
 {
-	return new BmCLVContainerView( fMinMax, this, ResizingMode, flags, horizontal, 
-											 vertical, scroll_view_corner, border, mShowCaption,
-											 mShowBusyView, 
-											 be_plain_font->StringWidth(" 99 signatures "));
+	return new BmCLVContainerView( fMinMax, this, ResizingMode, flags, 
+											 horizontal, vertical, scroll_view_corner, 
+											 border, mShowCaption, mShowBusyView, 
+											 be_plain_font->StringWidth(
+											 	" 99 signatures "));
 }
 
 /*------------------------------------------------------------------------------*\
@@ -232,8 +236,12 @@ BmPrefsSignatureView::BmPrefsSignatureView()
 		new VGroup(
 			CreateSigListView( minimax(400,60,1E5,1E5), 400, 150),
 			new HGroup(
-				mAddButton = new MButton("Add Signature", new BMessage(BM_ADD_SIGNATURE), this),
-				mRemoveButton = new MButton("Remove Signature", new BMessage( BM_REMOVE_SIGNATURE), this),
+				mAddButton = new MButton( "Add Signature", 
+												  new BMessage(BM_ADD_SIGNATURE), 
+												  this),
+				mRemoveButton = new MButton( "Remove Signature", 
+													  new BMessage( BM_REMOVE_SIGNATURE), 
+													  this),
 				0
 			),
 			new Space( minimax(0,10,0,10)),
@@ -241,18 +249,34 @@ BmPrefsSignatureView::BmPrefsSignatureView()
 				new VGroup(
 					mSignatureControl = new BmTextControl( "Signature name:"),
 					new Space( minimax(0,5,0,5)),
-					mContentControl = new BmMultiLineTextControl( "Content:", false, 4, 0, true),
+					mContentControl = new BmMultiLineTextControl( 
+						"Content:", false, 4, 0, true
+					),
 					new Space( minimax(0,5,0,5)),
 					new HGroup( 
-						mDynamicControl = new BmCheckControl( "Content is dynamic (execute the given command via shell, fetch stdout as signature)", 
-																		  new BMessage(BM_DYNAMIC_CHANGED), 
-																		  this),
+						mDynamicControl = new BmCheckControl( 
+							"Content is dynamic (execute the given command via shell"
+								", fetch stdout as signature)", 
+							new BMessage(BM_DYNAMIC_CHANGED), 
+							this
+						),
 						new Space(),
-						mTestButton = new MButton( "Test this signature", new BMessage( BM_TEST_SIGNATURE), this, minimax(-1,-1,-1,-1)),
+						mTestButton = new MButton( 
+							"Test this signature", 
+							new BMessage( BM_TEST_SIGNATURE), 
+							this, minimax(-1,-1,-1,-1)
+						),
 						0
 					),
 					new HGroup( 
-						mCharsetControl = new BmMenuControl( "Charset:", new BPopUpMenu("")),
+						mCharsetControl = new BmMenuControl( 
+							"Charset:", 
+							new BmMenuController( "", this, 
+														 new BMessage( BM_CHARSET_SELECTED), 
+														 BmRebuildCharsetMenu,
+														 BM_MC_LABEL_FROM_MARKED
+							)
+						),
 						new Space(),
 						0
 					),
@@ -262,7 +286,9 @@ BmPrefsSignatureView::BmPrefsSignatureView()
 			new Space( minimax(0,10,0,10)),
 			new MBorder( M_LABELED_BORDER, 10, (char*)"Signature Display",
 				new VGroup(
-					mSignatureRxControl = new BmTextControl( "Regex that finds start of signature:"),
+					mSignatureRxControl = new BmTextControl( 
+						"Regex that finds start of signature:"
+					),
 					0
 				)
 			),
@@ -302,20 +328,46 @@ BmPrefsSignatureView::~BmPrefsSignatureView() {
 void BmPrefsSignatureView::Initialize() {
 	inherited::Initialize();
 
-	TheBubbleHelper->SetHelp( mSigListView, "This listview shows every signature you have defined.");
-	TheBubbleHelper->SetHelp( mSignatureControl, "Here you can enter a name for this signature.\nThis name is used to identify this signature in Beam.");
-	TheBubbleHelper->SetHelp( mContentControl, "Here you can enter the signature text (static mode) \nor a shell-command (dynamic mode).");
-	TheBubbleHelper->SetHelp( mDynamicControl, "Beam supports two kinds of signatures:\n\
-static:\n\
-	The text entered into the content field represents the signature itself.\n\
-	Exactly this text will be appended to a mail that uses this sig.\n\
-dynamic:\n\
-	The text entered into the content field is a shell-command whose output (STDOUT)\n\
-	represents the signature. You can use this mode to implement things like\n\
-	random signature selection from an external database, for instance.");
-	TheBubbleHelper->SetHelp( mCharsetControl, "Here you can define the charset of the signature-text.\nIf in doubt, just leave the default.");
-	TheBubbleHelper->SetHelp( mSignatureRxControl, "This is the regular expression (perl-style) used by Beam\nto split off the signature when viewing mails.");
-	TheBubbleHelper->SetHelp( mTestButton, "Here you can testrun a dynamic signature.");
+	TheBubbleHelper->SetHelp( 
+		mSigListView, 
+		"This listview shows every signature you have defined."
+	);
+	TheBubbleHelper->SetHelp( 
+		mSignatureControl, 
+		"Here you can enter a name for this signature.\n"
+		"This name is used to identify this signature in Beam."
+	);
+	TheBubbleHelper->SetHelp( 
+		mContentControl, 
+		"Here you can enter the signature text (static mode) \n"
+		"or a shell-command (dynamic mode)."
+	);
+	TheBubbleHelper->SetHelp( 
+		mDynamicControl, 
+		"Beam supports two kinds of signatures:\n"
+		"static:\n"
+		"	The text entered into the content field represents the\n"
+		"	signature itself. Exactly this text will be appended to\n"
+		"	a mail that uses this sig.\n"
+		"dynamic:\n"
+		"	The text entered into the content field is a shell-command\n"
+		"	whose output (STDOUT) represents the signature.\n"
+		"	You can use this mode to implement things like random signature\n"
+		"	selection from an external database, for instance.");
+	TheBubbleHelper->SetHelp( 
+		mCharsetControl, 
+		"Here you can define the charset of the signature-text.\n"
+		"If in doubt, just leave the default."
+	);
+	TheBubbleHelper->SetHelp( 
+		mSignatureRxControl, 
+		"This is the regular expression (perl-style) used by Beam\n"
+		"to split off the signature when viewing mails."
+	);
+	TheBubbleHelper->SetHelp( 
+		mTestButton, 
+		"Here you can testrun a dynamic signature."
+	);
 
 	mSignatureControl->SetTarget( this);
 	mContentControl->SetTarget( this);
@@ -386,7 +438,8 @@ void BmPrefsSignatureView::MessageReceived( BMessage* msg) {
 				if (mCurrSig) {
 					BView* srcView = NULL;
 					msg->FindPointer( "source", (void**)&srcView);
-					BmMultiLineTextControl* source = dynamic_cast<BmMultiLineTextControl*>( srcView);
+					BmMultiLineTextControl* source 
+						= dynamic_cast<BmMultiLineTextControl*>( srcView);
 					if ( source == mContentControl) {
 						mCurrSig->Content( mContentControl->Text());
 						NoticeChange();
@@ -405,8 +458,10 @@ void BmPrefsSignatureView::MessageReceived( BMessage* msg) {
 					BmModelItemMap::const_iterator iter;
 					// update any links to this signature:
 					BAutolock lock( TheIdentityList->ModelLocker());
-					for( iter = TheIdentityList->begin(); iter != TheIdentityList->end(); ++iter) {
-						BmIdentity* ident = dynamic_cast<BmIdentity*>( iter->second.Get());
+					for(  iter = TheIdentityList->begin(); 
+							iter != TheIdentityList->end(); ++iter) {
+						BmIdentity* ident 
+							= dynamic_cast<BmIdentity*>( iter->second.Get());
 						if (ident && ident->SignatureName()==oldName)
 							ident->SignatureName( newName);
 					}
@@ -444,10 +499,13 @@ void BmPrefsSignatureView::MessageReceived( BMessage* msg) {
 				if (mCurrSig) {
 					BmString sigString = mCurrSig->GetSignatureString();
 					if (sigString.Length()) {
-						BAlert* alert = new BAlert( "Signature-Test", 
-														 (BmString("Please check the results below.\n-- \n")<<sigString).String(),
-													 	 "OK", NULL, NULL, B_WIDTH_AS_USUAL,
-													 	 B_INFO_ALERT);
+						BAlert* alert = new BAlert( 
+							"Signature-Test", 
+							(BmString("Please check the results below.\n-- \n")
+								<< sigString).String(),
+							"OK", NULL, NULL, B_WIDTH_AS_USUAL,
+							B_INFO_ALERT
+						);
 						alert->SetShortcut( 0, B_ESCAPE);
 						alert->Go();
 					}
@@ -459,7 +517,10 @@ void BmPrefsSignatureView::MessageReceived( BMessage* msg) {
 				for( int32 i=1; TheSignatureList->FindItemByKey( key); ++i) {
 					key = BmString("new signature_")<<i;
 				}
-				TheSignatureList->AddItemToList( new BmSignature( key.String(), TheSignatureList.Get()));
+				TheSignatureList->AddItemToList( 
+					new BmSignature( key.String(), 
+										  TheSignatureList.Get())
+				);
 				mSignatureControl->MakeFocus( true);
 				mSignatureControl->TextView()->SelectAll();
 				NoticeChange();
@@ -469,12 +530,16 @@ void BmPrefsSignatureView::MessageReceived( BMessage* msg) {
 				int32 buttonPressed;
 				if (msg->FindInt32( "which", &buttonPressed) != B_OK) {
 					// first step, ask user about it:
-					BAlert* alert = new BAlert( "Remove Signature", 
-														 (BmString("Are you sure about removing the signature <") << mCurrSig->Name() << ">?").String(),
-													 	 "Remove", "Cancel", NULL, B_WIDTH_AS_USUAL,
-													 	 B_WARNING_ALERT);
+					BAlert* alert = new BAlert( 
+						"Remove Signature", 
+						(BmString("Are you sure about removing the signature <") 
+							<< mCurrSig->Name() << ">?").String(),
+						"Remove", "Cancel", NULL, B_WIDTH_AS_USUAL,
+						B_WARNING_ALERT
+					);
 					alert->SetShortcut( 1, B_ESCAPE);
-					alert->Go( new BInvoker( new BMessage(BM_REMOVE_SIGNATURE), BMessenger( this)));
+					alert->Go( new BInvoker( new BMessage(BM_REMOVE_SIGNATURE), 
+													 BMessenger( this)));
 				} else {
 					// second step, do it if user said ok:
 					if (buttonPressed == 0) {
@@ -516,7 +581,8 @@ void BmPrefsSignatureView::ShowSignature( int32 selection) {
 		mCharsetControl->MenuItem()->SetLabel( charset.String());
 		mTestButton->SetEnabled( false);
 	} else {
-		BmSignatureItem* sigItem = dynamic_cast<BmSignatureItem*>(mSigListView->ItemAt( selection));
+		BmSignatureItem* sigItem 
+			= dynamic_cast<BmSignatureItem*>(mSigListView->ItemAt( selection));
 		if (sigItem) {
 			BmSignature* sig = dynamic_cast<BmSignature*>( sigItem->ModelItem());
 			if  (mCurrSig != sig) {
@@ -542,7 +608,9 @@ void BmPrefsSignatureView::ShowSignature( int32 selection) {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-CLVContainerView* BmPrefsSignatureView::CreateSigListView( minimax minmax, int32 width, int32 height) {
+CLVContainerView* BmPrefsSignatureView::CreateSigListView( minimax minmax, 
+																			  int32 width, 
+																			  int32 height) {
 	mSigListView = BmSignatureView::CreateInstance( minmax, width, height);
 	mSigListView->ClickSetsFocus( true);
 	return mSigListView->ContainerView();

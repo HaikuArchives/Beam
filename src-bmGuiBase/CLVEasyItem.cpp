@@ -202,6 +202,22 @@ void CLVEasyItem::DrawItemColumn(BView *owner, BRect item_column_rect, int32 col
 	Region.Include(item_column_rect);
 	owner->ConstrainClippingRegion(&Region);
 
+	if (HighlightTop()) {
+		BRect highlightRect( item_column_rect.left, 0,
+									item_column_rect.right, 1);
+		owner->SetHighColor( BeListSelectGrey);
+		owner->FillRect( highlightRect);
+	}
+
+	if (HighlightBottom()) {
+		BRect highlightRect( item_column_rect.left, 
+									item_column_rect.bottom-1,
+									item_column_rect.right, 
+									item_column_rect.bottom);
+		owner->SetHighColor( BeListSelectGrey);
+		owner->FillRect( highlightRect);
+	}
+
 	if(type == CLVColStaticText || type == CLVColUserText)
 	{
 		const char* text = NULL;
@@ -328,6 +344,22 @@ void CLVEasyItem::Highlight( bool b) {
 
 bool CLVEasyItem::Highlight( ) { 
 	return (style_flags & CLV_STYLE_HIGHLIGHT) != 0; 
+}
+
+void CLVEasyItem::HighlightTop( bool b) { 
+	SetStyleFlag( CLV_STYLE_HIGHLIGHT_TOP, b); 
+}
+
+bool CLVEasyItem::HighlightTop( ) { 
+	return (style_flags & CLV_STYLE_HIGHLIGHT_TOP) != 0; 
+}
+
+void CLVEasyItem::HighlightBottom( bool b) { 
+	SetStyleFlag( CLV_STYLE_HIGHLIGHT_BOTTOM, b); 
+}
+
+bool CLVEasyItem::HighlightBottom( ) { 
+	return (style_flags & CLV_STYLE_HIGHLIGHT_BOTTOM) != 0; 
 }
 
 void CLVEasyItem::Bold( bool b) { 

@@ -9,7 +9,7 @@
 #define SIEVE_INTERNAL_ERROR                     (-1237848060L)
 #define SIEVE_NOMEM                              (-1237848059L)
 #define SIEVE_DONE                               (-1237848058L)
-extern void initialize_siev_error_table ();
+void initialize_siev_error_table( void);
 #define ERROR_TABLE_BASE_siev (-1237848064L)
 
 /* for compatibility with older versions... */

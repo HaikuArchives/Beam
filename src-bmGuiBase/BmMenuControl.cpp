@@ -62,8 +62,8 @@ BmMenuControl::BmMenuControl( const char* label, BMenu* menu, float weight,
 		ct_mpm = minimax( fixedWidth, b.Height()+4, 
 								fixedWidth, b.Height()+4);
 	} else
-		ct_mpm = minimax( StringWidth("12345678901234567890123456789012345"), b.Height()+4, 
-								maxWidth, b.Height()+4, weight);
+		ct_mpm = minimax( StringWidth("12345678901234567890123456789012345"), 
+								b.Height()+4, maxWidth, b.Height()+4, weight);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -80,7 +80,7 @@ BmMenuControl::~BmMenuControl() {
 void BmMenuControl::MarkItem( const char* label, bool recurse) {
 	BMenuItem* item = NULL;
 	if (recurse) {
-		ClearMark();
+		doClearMark( Menu());
 		MenuItem()->SetLabel( label);
 		// we walk down the tree to find the corresponding menu-item:
 		vector<BmString> itemVect;

@@ -35,11 +35,11 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "sieve.h"
 
 static int tonum(char *c);
-static char *chkBuf();
+static char *chkBuf( void);
 static char *mlbuf = NULL;
 static size_t mlbufsz, mlcur = 0;
-extern int sieveerror(char *);
-void reset_sieve_lexer();
+int sieveerror(const char *);
+void reset_sieve_lexer( FILE* sievein);
 %}
 
 %option prefix="sieve"

@@ -39,6 +39,15 @@
 	BmFilterAddon
 \********************************************************************************/
 
+const char* MSG_LIST_NAME 				= "bm:lstnm";
+const char* MSG_MENU_POINTER			= "bm:mptr";
+const char* MSG_MENU_TARGET			= "bm:trgt";
+const char* MSG_MSG_TEMPLATE			= "bm:tmpl";
+
+const char* BM_FOLDERLIST_NAME		= "FolderList";
+const char* BM_STATUSLIST_NAME		= "StatusList";
+const char* BM_IDENTITYLIST_NAME		= "IdentityList";
+
 const char* const BmFilterAddon::FK_FOLDER =   "bm:folder";
 const char* const BmFilterAddon::FK_IDENTITY = "bm:identity";
 

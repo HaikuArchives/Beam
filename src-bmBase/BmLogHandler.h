@@ -50,11 +50,12 @@
 class BDirectory;
 class BFile;
 struct node_ref;
-/*------------------------------------------------------------------------------*\*\
+/*------------------------------------------------------------------------------*\
 	BmLogHandler
 		-	implements the global log-handler that received all logging requests and
 			executes them
-		-	different logfiles are identified by their name and will be created on demand
+		-	different logfiles are identified by their name and will be created 
+			on demand
 \*------------------------------------------------------------------------------*/
 class IMPEXPBMBASE BmLogHandler {
 
@@ -72,7 +73,6 @@ public:
 	~BmLogHandler();
 
 	// native methods:
-	BmLogfile* LogfileFor( const BmString &logname);
 	BmLogfile* FindLogfile( const BmString &logname);
 	void CloseLog( const BmString &logname);
 	void LogToFile( const BmString& logname, const BmString &msg);
@@ -90,22 +90,28 @@ public:
 
 	bool mWaitingForShutdown;
 
-	BList mActiveLogs;					// list of logfiles
+	BList mActiveLogs;					
+							// list of logfiles
+	BLocker mLocker;
+							// benaphore used to lock write-access to list
 
 	//	message component definitions for status-msgs:
 	static const char* const MSG_MESSAGE;
 	static const char* const MSG_THREAD_ID;
 
 private:
+
+	BmLogfile* LogfileFor( const BmString &logname);
+
 	// Hide copy-constructor and assignment:
 	BmLogHandler( const BmLogHandler&);
 	BmLogHandler operator=( const BmLogHandler&);
 	
-	/*------------------------------------------------------------------------------*\*\
+	/*---------------------------------------------------------------------------*\
 		BmLogfile
 			-	implements a single logfile
 			-	the actual logging takes place in here
-	\*------------------------------------------------------------------------------*/
+	\*---------------------------------------------------------------------------*/
 	class IMPEXPBMBASE BmLogfile : public BLooper{
 		typedef BLooper inherited;
 		friend BmLogHandler;
@@ -127,14 +133,13 @@ private:
 		BmLogfile operator=( const BmLogfile&);
 	};
 
-	BLocker mLocker;							// benaphore used to lock write-access to list
 	uint32 mLoglevels;
 	BDirectory* mAppFolder;
 	int32 mMinFileSize;
 	int32 mMaxFileSize;
 };
 
-/*------------------------------------------------------------------------------*\*\
+/*------------------------------------------------------------------------------*\
 	macros, constants and defines that facilitate logging-functionality:
 \*------------------------------------------------------------------------------*/
 
@@ -172,7 +177,8 @@ extern IMPEXPBMBASE const uint32 BM_LogAll;
 /*------------------------------------------------------------------------------*\
 	time-related utility functions
 \*------------------------------------------------------------------------------*/
-IMPEXPBMBASE BmString TimeToString( time_t t, const char* format="%Y-%m-%d %H:%M:%S");
+IMPEXPBMBASE BmString TimeToString( time_t t, 
+												const char* format="%Y-%m-%d %H:%M:%S");
 
 /*------------------------------------------------------------------------------*\
 	ShowAlert( text)

@@ -39,7 +39,9 @@ class BBitmap;
 class IMPEXPSANTAPARTSFORBEAM CLVEasyItem : public CLVListItem
 {
 		static const int8 CLV_STYLE_HIGHLIGHT = 1<<0;
-		static const int8 CLV_STYLE_BOLD = 1<<1;
+		static const int8 CLV_STYLE_HIGHLIGHT_TOP = 1<<1;
+		static const int8 CLV_STYLE_HIGHLIGHT_BOTTOM = 1<<2;
+		static const int8 CLV_STYLE_BOLD = 1<<3;
 		
 	public:
 		//Constructor and destructor
@@ -63,6 +65,10 @@ class IMPEXPSANTAPARTSFORBEAM CLVEasyItem : public CLVListItem
 
 		void Highlight( bool b);
 		bool Highlight( );
+		void HighlightTop( bool b);
+		bool HighlightTop( );
+		void HighlightBottom( bool b);
+		bool HighlightBottom( );
 		void Bold( bool b);
 		bool Bold( );
 

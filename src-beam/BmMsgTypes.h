@@ -35,51 +35,50 @@
 	Menu-messages:
 \*------------------------------------------------------------------------------*/
 
-// fake system-message for redo:
-#define B_REDO	'REDO'
-
-// main window
-#define BMM_NEW_MAILFOLDER				'bMaa'
-#define BMM_RENAME_MAILFOLDER			'bMab'
-#define BMM_DELETE_MAILFOLDER			'bMac'
-#define BMM_RECACHE_MAILFOLDER		'bMad'
-#define BMM_PAGE_SETUP					'bMae'
-#define BMM_PRINT							'bMaf'
-#define BMM_PREFERENCES					'bMag'
-#define BMM_SHOW_LOGFILE				'bMah'
-
-#define BMM_FIND							'bMba'
-#define BMM_FIND_MESSAGES				'bMbb'
-#define BMM_FIND_NEXT					'bMbc'
-
-#define BMM_CHECK_MAIL					'bMca'
-#define BMM_CHECK_ALL					'bMcb'
-#define BMM_SEND_PENDING				'bMcc'
-
-#define BMM_NEW_MAIL						'bMda'
-#define BMM_REPLY							'bMdb'
-#define BMM_REPLY_LIST					'bMdc'
-#define BMM_REPLY_ORIGINATOR			'bMdd'
-#define BMM_REPLY_ALL					'bMde'
-#define BMM_FORWARD_ATTACHED			'bMdf'
-#define BMM_FORWARD_INLINE				'bMdg'
-#define BMM_FORWARD_INLINE_ATTACH	'bMdh'
-#define BMM_REDIRECT						'bMdi'
-#define BMM_FILTER						'bMdj'
-#define BMM_TRASH							'bMdk'
-#define BMM_MARK_AS						'bMdl'
-#define BMM_SWITCH_RAW					'bMdm'
-#define BMM_SWITCH_HEADER				'bMdn'
-#define BMM_MOVE							'bMdo'
-#define BMM_CREATE_FILTER				'bMdp'
-
-// mail edit window
-#define BMM_ATTACH						'bMea'
-#define BMM_OPEN							'bMeb'
-#define BMM_SAVE							'bMec'
-#define BMM_SEND_LATER					'bMed'
-#define BMM_SEND_NOW						'bMee'
-#define BMM_SHOW_PEOPLE					'bMef'
-
+enum {
+	// main window
+	BMM_NEW_MAILFOLDER			= 'bMaa',
+	BMM_RENAME_MAILFOLDER		= 'bMab',
+	BMM_DELETE_MAILFOLDER		= 'bMac',
+	BMM_RECACHE_MAILFOLDER		= 'bMad',
+	BMM_PAGE_SETUP					= 'bMae',
+	BMM_PRINT						= 'bMaf',
+	BMM_PREFERENCES				= 'bMag',
+	BMM_SHOW_LOGFILE				= 'bMah',
+	
+	BMM_FIND							= 'bMba',
+	BMM_FIND_MESSAGES				= 'bMbb',
+	BMM_FIND_NEXT					= 'bMbc',
+	
+	BMM_CHECK_MAIL					= 'bMca',
+	BMM_CHECK_ALL					= 'bMcb',
+	BMM_SEND_PENDING				= 'bMcc',
+	
+	BMM_NEW_MAIL					= 'bMda',
+	BMM_REPLY						= 'bMdb',
+	BMM_REPLY_LIST					= 'bMdc',
+	BMM_REPLY_ORIGINATOR			= 'bMdd',
+	BMM_REPLY_ALL					= 'bMde',
+	BMM_FORWARD_ATTACHED			= 'bMdf',
+	BMM_FORWARD_INLINE			= 'bMdg',
+	BMM_FORWARD_INLINE_ATTACH	= 'bMdh',
+	BMM_REDIRECT					= 'bMdi',
+	BMM_FILTER						= 'bMdj',
+	BMM_TRASH						= 'bMdk',
+	BMM_MARK_AS						= 'bMdl',
+	BMM_SWITCH_RAW					= 'bMdm',
+	BMM_SWITCH_HEADER				= 'bMdn',
+	BMM_MOVE							= 'bMdo',
+	BMM_CREATE_FILTER				= 'bMdp',
+	
+	// mail edit window
+	BMM_ATTACH						= 'bMea',
+	BMM_OPEN							= 'bMeb',
+	BMM_SAVE							= 'bMec',
+	BMM_SEND_LATER					= 'bMed',
+	BMM_SEND_NOW					= 'bMee',
+	BMM_SHOW_PEOPLE				= 'bMef'
+	
+};
 
 #endif

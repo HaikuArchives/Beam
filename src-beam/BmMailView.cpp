@@ -172,7 +172,9 @@ void WordWrap( const BmString& in, BmString& out, int32 maxLineLen, BmString nl,
 	BmMailView
 \********************************************************************************/
 
-#define BM_MARK_AS_READ 'BmMR'
+enum {
+	BM_MARK_AS_READ = 'BmMR'
+};
 
 const char* const BmMailView::MSG_VERSION =	"bm:version";
 const char* const BmMailView::MSG_RAW = 		"bm:raw";

@@ -45,15 +45,46 @@
 	( )
 		-	
 \*------------------------------------------------------------------------------*/
-BmTextControl::BmTextControl( const char* label, bool labelIsMenu, int32 fixedTextLen,
-										int32 minTextLen)
-	:	inherited( BRect(0,0,0,0), NULL, labelIsMenu ? "" : label, NULL, NULL, B_FOLLOW_NONE)
+BmTextControl::BmTextControl( const char* label, bool labelIsMenu, 
+										int32 fixedTextLen, int32 minTextLen)
+	:	inherited( BRect(0,0,0,0), NULL, labelIsMenu ? "" : label, NULL, NULL, 
+					  B_FOLLOW_NONE)
 	,	mLabelIsMenu( labelIsMenu)
 	,	mTextView( static_cast<BTextView*>( ChildAt( 0)))
 {
+	InitSize( label, fixedTextLen, minTextLen, NULL);
+}
+
+/*------------------------------------------------------------------------------*\
+	( )
+		-	
+\*------------------------------------------------------------------------------*/
+BmTextControl::BmTextControl( const char* label, BPopUpMenu* menu, 
+										int32 fixedTextLen, int32 minTextLen)
+	:	inherited( BRect(0,0,0,0), NULL, "", NULL, NULL, B_FOLLOW_NONE)
+	,	mLabelIsMenu( true)
+	,	mTextView( static_cast<BTextView*>( ChildAt( 0)))
+{
+	InitSize( label, fixedTextLen, minTextLen, menu);
+}
+
+/*------------------------------------------------------------------------------*\
+	( )
+		-	
+\*------------------------------------------------------------------------------*/
+BmTextControl::~BmTextControl() {
+}
+
+/*------------------------------------------------------------------------------*\
+	( )
+		-	
+\*------------------------------------------------------------------------------*/
+void BmTextControl::InitSize( const char* label, int32 fixedTextLen, 
+										int32 minTextLen, BPopUpMenu* popup) {
 	ResizeToPreferred();
 	BRect b = Bounds();
 	float divPos = label ? StringWidth( label)+27 : 0;
+	inherited::SetDivider( divPos);
 	BFont font;
 	mTextView->GetFont( &font);
 	if (fixedTextLen) {
@@ -62,28 +93,23 @@ BmTextControl::BmTextControl( const char* label, bool labelIsMenu, int32 fixedTe
 		ct_mpm = minimax( width, b.Height()+4, width, b.Height()+4);
 	} else {
 		if (minTextLen)
-			ct_mpm = minimax( divPos + font.StringWidth("W")*minTextLen, b.Height()+4, 1E5, b.Height()+4);
+			ct_mpm = minimax( divPos + font.StringWidth("W")*minTextLen, 
+									b.Height()+4, 1E5, b.Height()+4);
 		else
-			ct_mpm = minimax( divPos + font.StringWidth("W")*10, b.Height()+4, 1E5, b.Height()+4);
+			ct_mpm = minimax( divPos + font.StringWidth("W")*10, b.Height()+4, 
+									1E5, b.Height()+4);
 	}
-	inherited::SetDivider( divPos);
-	if (labelIsMenu) {
+	if (mLabelIsMenu) {
 		float width, height;
 		GetPreferredSize( &width, &height);
-		BPopUpMenu* popup = new BPopUpMenu( label, true, false);
-		mMenuField = new BMenuField( BRect( 2,0,Divider(),height), NULL, label, popup, 
-											  true, B_FOLLOW_NONE, B_WILL_DRAW);
+		if (!popup)
+			popup = new BPopUpMenu( label, true, false);
+		mMenuField = new BMenuField( BRect( 2,0,Divider(),height), NULL, label,
+											  popup, true, B_FOLLOW_NONE, B_WILL_DRAW);
 		mMenuField->SetDivider( 0);
 		AddChild( mMenuField);
 	}
 	SetModificationMessage( new BMessage(BM_TEXTFIELD_MODIFIED));
-}
-
-/*------------------------------------------------------------------------------*\
-	( )
-		-	
-\*------------------------------------------------------------------------------*/
-BmTextControl::~BmTextControl() {
 }
 
 /*------------------------------------------------------------------------------*\
@@ -161,6 +187,7 @@ BRect BmTextControl::layout(BRect frame) {
 	if (occupiedSpace < 3)
 		occupiedSpace = 3;					// leave room for focus-rectangle
 	mTextView->MoveTo( occupiedSpace, 5);
-	mTextView->ResizeTo( frame.Width()-occupiedSpace-6, mTextView->Frame().Height());
+	mTextView->ResizeTo( frame.Width()-occupiedSpace-6, 
+								mTextView->Frame().Height());
 	return frame;
 }

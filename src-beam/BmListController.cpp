@@ -162,6 +162,7 @@ BmListViewController::BmListViewController( minimax minmax, BRect rect,
 	,	mExpandCollapseRunner( NULL)
 	,	mPulsedScrollRunner( NULL)
 	,	mPulsedScrollStep( 0)
+	,	mDragBetweenItems( false)
 {
 }
 
@@ -281,6 +282,8 @@ void BmListViewController::MouseMoved( BPoint point, uint32 transit, const BMess
 		} else if (transit == B_EXITED_VIEW || transit == B_OUTSIDE_VIEW) {
 			if (mCurrHighlightItem) {
 				mCurrHighlightItem->Highlight( false);
+				mCurrHighlightItem->HighlightTop( false);
+				mCurrHighlightItem->HighlightBottom( false);
 				InvalidateItem( IndexOf( mCurrHighlightItem));
 				mCurrHighlightItem = NULL;
 			}
@@ -304,17 +307,39 @@ void BmListViewController::MouseMoved( BPoint point, uint32 transit, const BMess
 		-	
 \*------------------------------------------------------------------------------*/
 void BmListViewController::HighlightItemAt( const BPoint& point) {
-	int32 index = IndexOf( point);
-	if (IndexOf( mCurrHighlightItem) != index) {
+	int32 index;
+	bool needToHighlightTop = false;
+	bool forceUpdate = false;
+	if (mDragBetweenItems) {
+		BRect firstItemRect = ItemFrame( 0);
+		BPoint highPt( point.x, point.y-firstItemRect.Height()/2.0);
+		index = IndexOf( highPt);
+		if (index < 0) {
+			if (highPt.y < firstItemRect.top && point.y >= firstItemRect.top) {
+				index = 0;
+				needToHighlightTop = true;
+			}
+		}
+		if (index == 0)
+			forceUpdate = true;
+	} else
+		index = IndexOf( point);
+	if (forceUpdate || IndexOf( mCurrHighlightItem) != index) {
 		if (mCurrHighlightItem) {
 			// remove old highlight:
 			mCurrHighlightItem->Highlight( false);
+			mCurrHighlightItem->HighlightTop( false);
+			mCurrHighlightItem->HighlightBottom( false);
 			InvalidateItem( IndexOf( mCurrHighlightItem));
 		}
 		if (index >= 0) {
 			// highlight current destination:
 			mCurrHighlightItem = dynamic_cast<BmListViewItem*>( ItemAt( index));
-			mCurrHighlightItem->Highlight( true);
+			if (mDragBetweenItems) {
+				mCurrHighlightItem->HighlightTop( needToHighlightTop);
+				mCurrHighlightItem->HighlightBottom( !needToHighlightTop);
+			} else
+				mCurrHighlightItem->Highlight( true);
 			InvalidateItem( index);
 			if (Hierarchical() && mCurrHighlightItem->IsSuperItem()) {
 				if (mExpandCollapseRunner) {
@@ -344,6 +369,8 @@ void BmListViewController::HandleDrop( const BMessage*) {
 	// remove the drag-highlight, if neccessary:
 	if (mCurrHighlightItem) {
 		mCurrHighlightItem->Highlight( false);
+		mCurrHighlightItem->HighlightTop( false);
+		mCurrHighlightItem->HighlightBottom( false);
 		InvalidateItem( IndexOf( mCurrHighlightItem));
 		mCurrHighlightItem = NULL;
 	}

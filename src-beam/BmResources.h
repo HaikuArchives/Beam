@@ -49,8 +49,10 @@
 class BBitmap;
 class BPicture;
 
-#define BM_FONT_SELECTED 'bmFN'
-#define BM_FONTSIZE_SELECTED 'bmFS'
+enum { 
+	BM_FONT_SELECTED 		= 'bmFN',
+	BM_FONTSIZE_SELECTED = 'bmFS'
+};
 
 /*------------------------------------------------------------------------------*\
 	BmResources 

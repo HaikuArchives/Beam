@@ -38,9 +38,11 @@
 #include <layout.h>
 #include <MBorder.h>
 
-#define BM_SELECTION_CHANGED 		'bm_S'
-#define BM_COMPLAIN_ABOUT_FIELD 	'bm_C'
-#define BM_PREFS_CHANGED 			'bm_!'
+enum {
+	BM_SELECTION_CHANGED 		= 'bm_S',
+	BM_COMPLAIN_ABOUT_FIELD 	= 'bm_C',
+	BM_PREFS_CHANGED 				= 'bm_!'
+};
 
 class MStringView;
 /*------------------------------------------------------------------------------*\

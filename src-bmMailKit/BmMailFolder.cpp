@@ -345,7 +345,7 @@ void BmMailFolder::RemoveMailRef( const node_ref& nref) {
  	BmString key( BM_REFKEY( nref));
  	BM_LOG2( BM_LogMailTracking, Name()+" removing mail-ref " << key);
 	if (mMailRefList) {
-		if (!mMailRefList->RemoveItemByName( key)) {
+		if (!mMailRefList->RemoveItemByKey( key)) {
 			BM_LOG2( BM_LogMailTracking, Name()+" mail-ref doesn't exist.");
 		}
 	}

@@ -42,7 +42,7 @@ extern "C" {
 #include "BmFilterAddon.h"
 #include "BmFilterAddonPrefs.h"
 
-#define BM_MAX_MATCH_COUNT 20
+const int BM_MAX_MATCH_COUNT = 20;
 
 /*------------------------------------------------------------------------------*\
 	BmSieveFilter 
@@ -88,7 +88,8 @@ public:
 	static int sieve_parse_error( int lineno, const char *msg, 
 											void *interp_context, void *script_context);
 	// SIEVE-helpers:
-	static void SetMailFlags( sieve_imapflags_t* flags, BmMsgContext* msgContext);
+	static void SetMailFlags( sieve_imapflags_t* flags, 
+									  BmMsgContext* msgContext);
 
 	static int sieve_execute_error( const char* msg, void* interp_context,
 											  void* script_context, void* message_context);
@@ -115,7 +116,7 @@ protected:
 	BmString mContent;
 							// the SIEVE-script represented by this filter
 	sieve_script_t* mCompiledScript;
-							// the compiled SIEVE-script, ready to be thrown at messages
+							// the compiled SIEVE-script, ready to be thrown at mails
 	sieve_interp_t* mSieveInterp;
 							// the interpreter that compiled the SIEVE-script
 	int mLastErrVal;
@@ -198,7 +199,7 @@ private:
 	BmString mActionSetIdentityValue;
 	bool mStopProcessing;
 
-	BmGraphicalSieveFilter();									// hide default constructor
+	BmGraphicalSieveFilter();				// hide default constructor
 	// Hide copy-constructor and assignment:
 	BmGraphicalSieveFilter( const BmGraphicalSieveFilter&);
 	BmGraphicalSieveFilter operator=( const BmGraphicalSieveFilter&);
@@ -221,25 +222,27 @@ class BmFilterScrollView;
 class BmFilterGroup;
 class Space;
 
-#define BM_ANY_ALL_SELECTED			'bmTa'
-#define BM_ACTION_SELECTED				'bmTb'
-#define BM_MAILPART_SELECTED			'bmTc'
-#define BM_OPERATOR_SELECTED			'bmTd'
-#define BM_SELECT_FILTER_VALUE		'bmTe'
-#define BM_SELECT_ACTION_VALUE		'bmTf'
-#define BM_ADD_FILTER_LINE				'bmTg'
-#define BM_REMOVE_FILTER_LINE			'bmTh'
+enum {
+	BM_ANY_ALL_SELECTED			= 'bmTa',
+	BM_ACTION_SELECTED			= 'bmTb',
+	BM_MAILPART_SELECTED			= 'bmTc',
+	BM_OPERATOR_SELECTED			= 'bmTd',
+	BM_SELECT_FILTER_VALUE		= 'bmTe',
+	BM_SELECT_ACTION_VALUE		= 'bmTf',
+	BM_ADD_FILTER_LINE			= 'bmTg',
+	BM_REMOVE_FILTER_LINE		= 'bmTh',
 
-#define BM_FILEINTO_CHANGED			'bmTi'
-#define BM_FILEINTO_SELECTED			'bmTj'
-#define BM_DISCARD_CHANGED				'bmTk'
-#define BM_SET_STATUS_CHANGED			'bmTl'
-#define BM_SET_STATUS_SELECTED		'bmTm'
-#define BM_SET_IDENTITY_CHANGED		'bmTn'
-#define BM_SET_IDENTITY_SELECTED		'bmTo'
-#define BM_STOP_PROCESSING_CHANGED	'bmTp'
+	BM_FILEINTO_CHANGED			= 'bmTi',
+	BM_FILEINTO_SELECTED			= 'bmTj',
+	BM_DISCARD_CHANGED			= 'bmTk',
+	BM_SET_STATUS_CHANGED		= 'bmTl',
+	BM_SET_STATUS_SELECTED		= 'bmTm',
+	BM_SET_IDENTITY_CHANGED		= 'bmTn',
+	BM_SET_IDENTITY_SELECTED	= 'bmTo',
+	BM_STOP_PROCESSING_CHANGED	= 'bmTp',
 
-#define BM_ADDRPART_SELECTED			'bmTq'
+	 BM_ADDRPART_SELECTED		= 'bmTq'
+};
 
 
 class BmSieveFilterPrefs : public BmFilterAddonPrefsView {
@@ -312,7 +315,9 @@ private:
 
 class BmMultiLineTextControl;
 
-#define BM_TEST_FILTER			'bmTs'
+enum {
+	BM_TEST_FILTER			= 'bmTs'
+};
 
 class BmSieveScriptFilterPrefs : public BmFilterAddonPrefsView {
 	typedef BmFilterAddonPrefsView inherited;

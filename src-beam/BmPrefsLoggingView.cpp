@@ -78,26 +78,38 @@ BmPrefsLoggingView::BmPrefsLoggingView()
 			new HGroup(
 				new MBorder( M_LABELED_BORDER, 10, (char*)"Levels of Logging",
 					new VGroup(
-						mLogPopControl = new BmMenuControl( "Receiving Mail (POP3):", new BPopUpMenu("")),
-						mLogSmtpControl = new BmMenuControl( "Sending Mail (SMTP):", new BPopUpMenu("")),
+						mLogPopControl = new BmMenuControl( "Receiving Mail (POP3):", 
+																		new BPopUpMenu("")),
+						mLogSmtpControl = new BmMenuControl( "Sending Mail (SMTP):", 
+																		 new BPopUpMenu("")),
 						new Space( minimax(0,10,0,10)),
-						mLogFilterControl = new BmMenuControl( "Filtering Mails:", new BPopUpMenu("")),
+						mLogFilterControl = new BmMenuControl( "Filtering Mails:", 
+																			new BPopUpMenu("")),
 						new Space( minimax(0,10,0,10)),
-						mLogAppControl = new BmMenuControl( "Application State:", new BPopUpMenu("")),
+						mLogAppControl = new BmMenuControl( "Application State:", 
+																		new BPopUpMenu("")),
 						new Space(),
 						0
 					)
 				),
 				new MBorder( M_LABELED_BORDER, 10, (char*)"Levels of Debug-Logging",
 					new VGroup(
-						mLogMailTrackingControl = new BmMenuControl( "Tracking Mails:", new BPopUpMenu("")),
-						mLogMailParseControl = new BmMenuControl( "Parsing Mails:", new BPopUpMenu("")),
+						mLogMailTrackingControl 
+							= new BmMenuControl( "Tracking Mails:", 
+														new BPopUpMenu("")),
+						mLogMailParseControl = new BmMenuControl( "Parsing Mails:", 
+																				new BPopUpMenu("")),
 						new Space( minimax(0,10,0,10)),
-						mLogJobWinControl = new BmMenuControl( "Status Window:", new BPopUpMenu("")),
-						mLogGuiControl = new BmMenuControl( "General GUI:", new BPopUpMenu("")),
+						mLogJobWinControl = new BmMenuControl( "Status Window:", 
+																			new BPopUpMenu("")),
+						mLogGuiControl = new BmMenuControl( "General GUI:", 
+																		new BPopUpMenu("")),
 						new Space( minimax(0,10,0,10)),
-						mLogModelControllerControl = new BmMenuControl( "Info-Transport:", new BPopUpMenu("")),
-						mLogRefCountControl = new BmMenuControl( "Memory:", new BPopUpMenu("")),
+						mLogModelControllerControl 
+							= new BmMenuControl( "Info-Transport:", 
+														new BPopUpMenu("")),
+						mLogRefCountControl = new BmMenuControl( "Memory:", 
+																			  new BPopUpMenu("")),
 						0
 					)
 				),
@@ -108,8 +120,12 @@ BmPrefsLoggingView::BmPrefsLoggingView()
 			new HGroup(
 				new MBorder( M_LABELED_BORDER, 10, (char*)"Logfile Sizes",
 					new VGroup(
-						mMaxLogfileSizeControl = new BmTextControl( "Maximum size for logfile (KB):", false, 8),
-						mMinLogfileSizeControl = new BmTextControl( "Minimum size for logfile (KB):", false, 8),
+						mMaxLogfileSizeControl 
+							= new BmTextControl( "Maximum size for logfile (KB):", 
+														false, 8),
+						mMinLogfileSizeControl 
+							= new BmTextControl( "Minimum size for logfile (KB):", 
+														false, 8),
 						0
 					)
 				),
@@ -175,56 +191,87 @@ BmPrefsLoggingView::~BmPrefsLoggingView() {
 void BmPrefsLoggingView::Initialize() {
 	inherited::Initialize();
 
-	TheBubbleHelper->SetHelp( mLogPopControl, "Here you can select how much shall be logged when receiving mails.\n\
-If you encounter problems with one of your POP-accounts,\n\
-you can increase this setting in order to get more info.\n\
-Please note that logging everything here means that complete\n\
-e-mails will be logged, so this can produce a lot of data.");
-	TheBubbleHelper->SetHelp( mLogSmtpControl, "Here you can select how much shall be logged when sending mails.\n\
-If you encounter problems with one of your SMTP-accounts,\n\
-you can increase this setting in order to get more info.\n\
-Please note that logging everything here means that complete\n\
-e-mails will be logged, so this can produce a lot of data.");
-	TheBubbleHelper->SetHelp( mLogAppControl, "This logging-terrain concerns the general state of\n\
-the application.\n\
-Startup- and shutdown-times are shown in 'Log'-mode.");
-	TheBubbleHelper->SetHelp( mLogFilterControl, "Here you can select how much will be logged\n\
-when filtering mails.\n\
-'Log'-mode will log executed actions only, while\n\
-'Log More'-mode will give additional info about\n\
-which filters are being executed.\n\
-If you have problems getting a specific filter to\n\
-work properly, increasing this setting might help.");
-	TheBubbleHelper->SetHelp( mLogMailParseControl, "This is for debugging only!\n\
-If you think Beam is displaying a specific mail\n\
-incorrectly, increasing this setting may help to\n\
-find out what is going wrong.");
-	TheBubbleHelper->SetHelp( mLogMailTrackingControl, "This is for debugging only!\n\
-If you encounter a problem when tracking mails,\n\
-increasing this setting may help to find out\n\
-what is going wrong.");
-	TheBubbleHelper->SetHelp( mLogGuiControl, "This is for debugging only!\n\
-If there seems to be a problem with the window-layout\n\
-or any other GUI-related issue, increasing this setting\n\
-may help to find out what is going wrong.");
-	TheBubbleHelper->SetHelp( mLogJobWinControl, "This is for debugging only!\n\
-If there seems to be a problem related to\n\
-the status-window, increasing this setting\n\
-may help to find out what is going wrong.");
-	TheBubbleHelper->SetHelp( mLogModelControllerControl, "This is for debugging only!\n\
-This setting concerns the internal passing of information.\n\
-So if you think Beam is not reacting on state changes properly\n\
-(like when you move mails or switch to another folder),\n\
-increasing this setting may help to find out what is going wrong.");
-	TheBubbleHelper->SetHelp( mLogRefCountControl, "This is for debugging only!\n\
-Increasing this setting will log more details about\n\
-the memory allocation/deallocation that is going on.\n\
-This may help if Beam seems to be leaking memory or\n\
-is crashing even (gasp!).");
-	const char* t = "With minimum and maximum size, you can control the size of logfiles.\n\
-When Beam starts, every logfile is checked against the maximum size\n\
-and if it exceeds that size, the file is cut back (from the front)\n\
-to the given minium size.";
+	TheBubbleHelper->SetHelp( 
+		mLogPopControl, 
+		"Here you can select how much shall be logged when receiving mails.\n"
+		"If you encounter problems with one of your POP-accounts,\n"
+		"you can increase this setting in order to get more info.\n"
+		"Please note that logging everything here means that complete\n"
+		"e-mails will be logged, so this can produce a lot of data."
+	);
+	TheBubbleHelper->SetHelp( 
+		mLogSmtpControl, 
+		"Here you can select how much shall be logged when sending mails.\n"
+		"If you encounter problems with one of your SMTP-accounts,\n"
+		"you can increase this setting in order to get more info.\n"
+		"Please note that logging everything here means that complete\n"
+		"e-mails will be logged, so this can produce a lot of data."
+	);
+	TheBubbleHelper->SetHelp( 
+		mLogAppControl, 
+		"This logging-terrain concerns the general state of\n"
+		"the application.\n"
+		"Startup- and shutdown-times are shown in 'Log'-mode."
+	);
+	TheBubbleHelper->SetHelp( 
+		mLogFilterControl, 
+		"Here you can select how much will be logged\n"
+		"when filtering mails.\n"
+		"'Log'-mode will log executed actions only, while\n"
+		"'Log More'-mode will give additional info about\n"
+		"which filters are being executed.\n"
+		"If you have problems getting a specific filter to\n"
+		"work properly, increasing this setting might help."
+	);
+	TheBubbleHelper->SetHelp( 
+		mLogMailParseControl, 
+		"This is for debugging only!\n"
+		"If you think Beam is displaying a specific mail\n"
+		"incorrectly, increasing this setting may help to\n"
+		"find out what is going wrong."
+	);
+	TheBubbleHelper->SetHelp( 
+		mLogMailTrackingControl, 
+		"This is for debugging only!\n"
+		"If you encounter a problem when tracking mails,\n"
+		"increasing this setting may help to find out\n"
+		"what is going wrong."
+	);
+	TheBubbleHelper->SetHelp( 
+		mLogGuiControl, 
+		"This is for debugging only!\n"
+		"If there seems to be a problem with the window-layout\n"
+		"or any other GUI-related issue, increasing this setting\n"
+		"may help to find out what is going wrong."
+	);
+	TheBubbleHelper->SetHelp( 
+		mLogJobWinControl, 
+		"This is for debugging only!\n"
+		"If there seems to be a problem related to\n"
+		"the status-window, increasing this setting\n"
+		"may help to find out what is going wrong."
+	);
+	TheBubbleHelper->SetHelp( 
+		mLogModelControllerControl, 
+		"This is for debugging only!\n"
+		"This setting concerns the internal passing of information.\n"
+		"So if you think Beam is not reacting on state changes properly\n"
+		"(like when you move mails or switch to another folder),\n"
+		"increasing this setting may help to find out what is going wrong."
+	);
+	TheBubbleHelper->SetHelp( 
+		mLogRefCountControl, 
+		"This is for debugging only!\n"
+		"Increasing this setting will log more details about\n"
+		"the memory allocation/deallocation that is going on.\n"
+		"This may help if Beam seems to be leaking memory or\n"
+		"is crashing even (gasp!)."
+	);
+	const char* t 
+		= "With minimum and maximum size, you can control the size of logfiles.\n"
+		  "When Beam starts, every logfile is checked against the maximum size\n"
+		  "and if it exceeds that size, the file is cut back (from the front)\n"
+		  "to the given minium size.";
 	TheBubbleHelper->SetHelp( mMaxLogfileSizeControl, t);
 	TheBubbleHelper->SetHelp( mMinLogfileSizeControl, t);
 
@@ -241,34 +288,48 @@ to the given minium size.";
 	};
 	for( int32 i=0; logModes[i]; ++i) {
 		AddItemToMenu( mLogPopControl->Menu(), 
-							new BMenuItem( logModes[i], new BMessage( BM_LOG_POP_SELECTED)),
+							new BMenuItem( logModes[i], 
+												new BMessage( BM_LOG_POP_SELECTED)),
 							this);
 		AddItemToMenu( mLogSmtpControl->Menu(), 
-							new BMenuItem( logModes[i], new BMessage( BM_LOG_SMTP_SELECTED)),
+							new BMenuItem( logModes[i], 
+												new BMessage( BM_LOG_SMTP_SELECTED)),
 							this);
 		AddItemToMenu( mLogAppControl->Menu(), 
-							new BMenuItem( logModes[i], new BMessage( BM_LOG_APP_SELECTED)),
+							new BMenuItem( logModes[i], 
+												new BMessage( BM_LOG_APP_SELECTED)),
 							this);
 		AddItemToMenu( mLogFilterControl->Menu(), 
-							new BMenuItem( logModes[i], new BMessage( BM_LOG_FILTER_SELECTED)),
+							new BMenuItem( logModes[i], 
+												new BMessage( BM_LOG_FILTER_SELECTED)),
 							this);
 		AddItemToMenu( mLogMailParseControl->Menu(), 
-							new BMenuItem( logModes[i], new BMessage( BM_LOG_MAILPARSE_SELECTED)),
+							new BMenuItem( logModes[i], 
+												new BMessage( BM_LOG_MAILPARSE_SELECTED)),
 							this);
-		AddItemToMenu( mLogMailTrackingControl->Menu(), 
-							new BMenuItem( logModes[i], new BMessage( BM_LOG_MAILTRACKING_SELECTED)),
-							this);
+		AddItemToMenu( 
+			mLogMailTrackingControl->Menu(), 
+				new BMenuItem( logModes[i], 
+									new BMessage( BM_LOG_MAILTRACKING_SELECTED)),
+				this
+		);
 		AddItemToMenu( mLogGuiControl->Menu(), 
-							new BMenuItem( logModes[i], new BMessage( BM_LOG_GUI_SELECTED)),
+							new BMenuItem( logModes[i], 
+												new BMessage( BM_LOG_GUI_SELECTED)),
 							this);
 		AddItemToMenu( mLogJobWinControl->Menu(), 
-							new BMenuItem( logModes[i], new BMessage( BM_LOG_JOBWIN_SELECTED)),
+							new BMenuItem( logModes[i],
+												new BMessage( BM_LOG_JOBWIN_SELECTED)),
 							this);
-		AddItemToMenu( mLogModelControllerControl->Menu(), 
-							new BMenuItem( logModes[i], new BMessage( BM_LOG_MODELCONTROLLER_SELECTED)),
-							this);
+		AddItemToMenu( 
+			mLogModelControllerControl->Menu(), 
+				new BMenuItem( logModes[i], 
+									new BMessage( BM_LOG_MODELCONTROLLER_SELECTED)),
+				this
+			);
 		AddItemToMenu( mLogRefCountControl->Menu(), 
-							new BMenuItem( logModes[i], new BMessage( BM_LOG_REFCOUNT_SELECTED)),
+							new BMenuItem( logModes[i], 
+												new BMessage( BM_LOG_REFCOUNT_SELECTED)),
 							this);
 	}
 
@@ -281,20 +342,22 @@ to the given minium size.";
 \*------------------------------------------------------------------------------*/
 void BmPrefsLoggingView::Update() {
 	BmString val;
-	val << static_cast< int>( ThePrefs->GetInt("MinLogfileSize",50*1024) / 1024);
+	val << static_cast<int>( ThePrefs->GetInt("MinLogfileSize",50*1024)/1024);
 	mMinLogfileSizeControl->SetTextSilently( val.String());
 	val = "";
-	val << static_cast< int>( ThePrefs->GetInt("MaxLogfileSize",200*1024) / 1024);
+	val << static_cast<int>( ThePrefs->GetInt("MaxLogfileSize",200*1024)/1024);
 	mMaxLogfileSizeControl->SetTextSilently( val.String());
 	mLogPopControl->MarkItem( ThePrefs->GetLogLevelFor( BM_LogPop));
 	mLogSmtpControl->MarkItem( ThePrefs->GetLogLevelFor( BM_LogSmtp));
 	mLogFilterControl->MarkItem( ThePrefs->GetLogLevelFor( BM_LogFilter));
 	mLogAppControl->MarkItem( ThePrefs->GetLogLevelFor( BM_LogApp));
 	mLogMailParseControl->MarkItem( ThePrefs->GetLogLevelFor( BM_LogMailParse));
-	mLogMailTrackingControl->MarkItem( ThePrefs->GetLogLevelFor( BM_LogMailTracking));
+	mLogMailTrackingControl->MarkItem( 
+		ThePrefs->GetLogLevelFor( BM_LogMailTracking));
 	mLogJobWinControl->MarkItem( ThePrefs->GetLogLevelFor( BM_LogJobWin));
 	mLogGuiControl->MarkItem( ThePrefs->GetLogLevelFor( BM_LogGui));
-	mLogModelControllerControl->MarkItem( ThePrefs->GetLogLevelFor( BM_LogModelController));
+	mLogModelControllerControl->MarkItem( 
+		ThePrefs->GetLogLevelFor( BM_LogModelController));
 	mLogRefCountControl->MarkItem( ThePrefs->GetLogLevelFor( BM_LogRefCount));
 }
 
@@ -326,9 +389,11 @@ void BmPrefsLoggingView::MessageReceived( BMessage* msg) {
 				msg->FindPointer( "source", (void**)&srcView);
 				BmTextControl* source = dynamic_cast<BmTextControl*>( srcView);
 				if ( source == mMinLogfileSizeControl)
-					ThePrefs->SetInt("MinLogfileSize", atoi(mMinLogfileSizeControl->Text())*1024);
+					ThePrefs->SetInt( "MinLogfileSize", 
+										   atoi(mMinLogfileSizeControl->Text())*1024);
 				else if ( source == mMaxLogfileSizeControl)
-					ThePrefs->SetInt("MaxLogfileSize", atoi(mMaxLogfileSizeControl->Text())*1024);
+					ThePrefs->SetInt( "MaxLogfileSize", 
+										   atoi(mMaxLogfileSizeControl->Text())*1024);
 				NoticeChange();
 				break;
 			}
@@ -391,7 +456,8 @@ void BmPrefsLoggingView::MessageReceived( BMessage* msg) {
 			case BM_LOG_MODELCONTROLLER_SELECTED: {
 				BMenuItem* item = mLogModelControllerControl->Menu()->FindMarked();
 				if (item) {
-					ThePrefs->SetLogLevelForTo( BM_LogModelController, item->Label());
+					ThePrefs->SetLogLevelForTo( BM_LogModelController, 
+														 item->Label());
 					NoticeChange();
 				}
 			}

@@ -69,7 +69,7 @@
 #include "BmSmtp.h"
 
 
-#define BM_MINSIZE 200
+static const int BM_MINSIZE = 200;
 
 static const char* BM_BEEP_EVENT = "New E-mail";
 

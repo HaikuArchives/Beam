@@ -37,16 +37,16 @@
 #include "BmBase.h"
 #include "BmString.h"
 
-#define BM_FILL_MENU_FROM_LIST	'bmFM'
+const int32 BM_FILL_MENU_FROM_LIST = 'bmFM';
 
-#define MSG_LIST_NAME 				"bm:lstnm"
-#define MSG_MENU_POINTER			"bm:mptr"
-#define MSG_MENU_TARGET				"bm:trgt"
-#define MSG_MSG_TEMPLATE			"bm:tmpl"
+extern const char* MSG_LIST_NAME;
+extern const char* MSG_MENU_POINTER;
+extern const char* MSG_MENU_TARGET;
+extern const char* MSG_MSG_TEMPLATE;
 
-#define BM_FOLDERLIST_NAME			"FolderList"
-#define BM_STATUSLIST_NAME			"StatusList"
-#define BM_IDENTITYLIST_NAME		"IdentityList"
+extern const char* BM_FOLDERLIST_NAME;
+extern const char* BM_STATUSLIST_NAME;
+extern const char* BM_IDENTITYLIST_NAME;
 
 /*------------------------------------------------------------------------------*\
 	BmFilterAddon 

@@ -40,7 +40,9 @@
 
 class BmSmtpAccount;
 
-#define BM_SMTP_NEEDS_PWD						'bmSp'
+enum {
+	BM_SMTP_NEEDS_PWD			= 'bmSp'
+};
 
 /*------------------------------------------------------------------------------*\
 	BmSmtpStatusFilter

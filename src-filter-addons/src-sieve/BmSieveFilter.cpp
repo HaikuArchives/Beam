@@ -72,7 +72,8 @@ BmFilterAddon* InstantiateFilter( const BmString& name,
 											 const BmString& kind);
 
 extern "C" __declspec(dllexport) 
-BmFilterAddonPrefsView* InstantiateFilterPrefs( minimax minmax, const BmString& kind);
+BmFilterAddonPrefsView* InstantiateFilterPrefs( minimax minmax, 
+																const BmString& kind);
 
 /********************************************************************************\
 	BmSieveFilter
@@ -87,8 +88,8 @@ BLocker* BmSieveFilter::nSieveLock = NULL;
 #undef BM_LOGNAME
 #define BM_LOGNAME "Filter"
 
-#define FILTER_SIEVE 			"Sieve"
-#define FILTER_SIEVE_SCRIPT 	"Sieve-Script"
+const char* FILTER_SIEVE 			= "Sieve";
+const char* FILTER_SIEVE_SCRIPT 	= "Sieve-Script";
 
 extern "C" __declspec(dllexport) const char* FilterKinds[] = {
 	FILTER_SIEVE,
@@ -161,10 +162,12 @@ bool BmSieveFilter::Execute( void* message_context) {
 	BmString mailId;
 	if (msgContext)
 		mailId = msgContext->mailId;
-	BM_LOG2( BM_LogFilter, BmString("Sieve-Addon: asked to execute filter <") << Name() 
+	BM_LOG2( BM_LogFilter, BmString("Sieve-Addon: asked to execute filter <") 
+									<< Name() 
 									<< "> on mail with Id <" << mailId << ">");
 	if (!mCompiledScript) {
-		BM_LOG2( BM_LogFilter, BmString("Sieve-Addon: compiling SIEVE-script of filter ") << Name()); 
+		BM_LOG2( BM_LogFilter, BmString("Sieve-Addon: compiling SIEVE-script of "
+												  "filter ") << Name()); 
 		bool scriptOK = CompileScript();
 		if (!scriptOK || !mCompiledScript) {
 			BmString errString = LastErr() + "\n" 
@@ -172,7 +175,7 @@ bool BmSieveFilter::Execute( void* message_context) {
 										<< sieve_strerror(LastErrVal()) 
 										<< "\n"
 										<< LastSieveErr();
-			BM_LOGERR( BmString("Sieve-Addon: compilation failed.\n") << errString); 
+			BM_LOGERR( BmString("Sieve-Addon: compilation failed.\n")<<errString);
 			return false;
 		}
 	}
@@ -210,11 +213,15 @@ bool BmSieveFilter::CompileScript() {
 	}
 	RegisterCallbacks( mSieveInterp);
 
-	// create temporary file with script-contents (since SIEVE parses from file only):
+	// create temporary file with script-contents 
+	// (since SIEVE parses from file only):
 	scriptFileName = "/tmp/bm_sieve_script";
-	err = scriptBFile.SetTo( scriptFileName.String(), B_CREATE_FILE | B_ERASE_FILE | B_WRITE_ONLY);
+	err = scriptBFile.SetTo( scriptFileName.String(), 
+									 B_CREATE_FILE | B_ERASE_FILE | B_WRITE_ONLY);
 	if (err != B_OK) {
-		mLastErr = BmString(Name()) << ":\nCould not create temporary file\n\t<" << scriptFileName << ">\n\n Result: " << strerror(err);
+		mLastErr = BmString(Name()) << ":\nCould not create temporary file\n\t<" 
+											 << scriptFileName << ">\n\n Result: " 
+											 << strerror(err);
 		goto cleanup;
 	}
 	scriptBFile.Write( mContent.String(), mContent.Length());
@@ -223,7 +230,8 @@ bool BmSieveFilter::CompileScript() {
 	// open script file for sieve...
 	scriptFile = fopen( scriptFileName.String(), "r");
 	if (!scriptFile) {
-		mLastErr = BmString(Name()) << ":\nCould not re-open file \n\t<" << scriptFileName << ">";
+		mLastErr = BmString(Name()) << ":\nCould not re-open file \n\t<" 
+											 << scriptFileName << ">";
 		goto cleanup;
 	}
 	// ...and compile the script:	
@@ -233,7 +241,8 @@ bool BmSieveFilter::CompileScript() {
 	}
 	res = sieve_script_parse( mSieveInterp, scriptFile, this, &mCompiledScript);
 	if (res != SIEVE_OK) {
-		mLastErr = BmString(Name()) << ":\nThe script could not be parsed correctly";
+		mLastErr = BmString(Name()) 
+							<< ":\nThe script could not be parsed correctly";
 		goto cleanup;
 	}
 	ret = true;
@@ -308,8 +317,10 @@ bool BmSieveFilter::SanityCheck( BmString& complaint, BmString& fieldName) {
 	sieve_redirect()
 		-	
 \*------------------------------------------------------------------------------*/
-int BmSieveFilter::sieve_redirect( void* /*action_context*/, void* /*interp_context*/, 
-			   							  void* /*script_context*/, void* /*message_context*/, 
+int BmSieveFilter::sieve_redirect( void* /*action_context*/, 
+											  void* /*interp_context*/, 
+			   							  void* /*script_context*/, 
+			   							  void* /*message_context*/, 
 			   							  const char** /*errmsg*/) {
 	return SIEVE_OK;
 }
@@ -318,11 +329,13 @@ int BmSieveFilter::sieve_redirect( void* /*action_context*/, void* /*interp_cont
 	SetMailFlags()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmSieveFilter::SetMailFlags( sieve_imapflags_t* flags, BmMsgContext* msgContext) {
+void BmSieveFilter::SetMailFlags( sieve_imapflags_t* flags, 
+											 BmMsgContext* msgContext) {
 	if (msgContext && flags) {
 		for( int i=0; i<flags->nflags; ++i) {
 			BmString flag( flags->flag[i]);
-			BM_LOG3( BM_LogFilter, BmString("Sieve-Addon: SetMailFlags called with flag ") << flag); 
+			BM_LOG3( BM_LogFilter, BmString("Sieve-Addon: SetMailFlags called "
+													  "with flag ") << flag); 
 			if (!flag.ICompare( "\\Seen"))
 				msgContext->status = "Read";
 		}
@@ -370,7 +383,9 @@ int BmSieveFilter::sieve_fileinto( void* action_context, void*,
 	sieve_fileinto_context* fileintoContext 
 		= static_cast< sieve_fileinto_context*>( action_context);
 	if (msgContext && fileintoContext) {
-		BM_LOG3( BM_LogFilter, BmString("Sieve-Addon: sieve_fileinto called with folder ")<<fileintoContext->mailbox); 
+		BM_LOG3( BM_LogFilter, BmString("Sieve-Addon: sieve_fileinto called "
+												  "with folder ")
+												  <<fileintoContext->mailbox);
 		SetMailFlags( fileintoContext->imapflags, msgContext);
 		msgContext->folderName = fileintoContext->mailbox;
 	}
@@ -388,9 +403,11 @@ int BmSieveFilter::sieve_notify( void* action_context, void*,
 	sieve_notify_context* notifyContext 
 		= static_cast< sieve_notify_context*>( action_context);
 	if (msgContext && notifyContext) {
-		BM_LOG3( BM_LogFilter, BmString("Sieve-Addon: sieve_notify called with method ")<<notifyContext->method);
+		BM_LOG3( BM_LogFilter, BmString("Sieve-Addon: sieve_notify called with "
+												  "method ")<<notifyContext->method);
 		for( int i=0; notifyContext->options[i]; ++i) {
-			BM_LOG3( BM_LogFilter, BmString("option[")<<i<<"] = "<<notifyContext->options[i]);
+			BM_LOG3( BM_LogFilter, BmString("option[")<<i<<"] = "
+												<< notifyContext->options[i]);
 		}
 		if (!BmNotifySetIdentity.ICompare( notifyContext->method)) {
 			// set identity for mail according to notify-options:
@@ -414,7 +431,9 @@ int BmSieveFilter::sieve_get_size( void* message_context, int* sizePtr) {
 	BmMsgContext* msgContext = static_cast< BmMsgContext*>( message_context);
 	if (msgContext && sizePtr)
 		*sizePtr = msgContext->rawMsgText.Length();
-	BM_LOG3( BM_LogFilter, BmString("Sieve-Addon: sieve_get_size called, answer = ")<<msgContext->rawMsgText.Length());
+	BM_LOG3( BM_LogFilter, 
+				BmString("Sieve-Addon: sieve_get_size called, answer = ")
+					<< msgContext->rawMsgText.Length());
 	return SIEVE_OK;
 }
 
@@ -424,7 +443,9 @@ int BmSieveFilter::sieve_get_size( void* message_context, int* sizePtr) {
 \*------------------------------------------------------------------------------*/
 int BmSieveFilter::sieve_get_header( void* message_context, const char* header,
 			  									 const char*** contentsPtr) {
-	BM_LOG3( BM_LogFilter, BmString("Sieve-Addon: sieve_get_header called for header ")<<header);
+	BM_LOG3( BM_LogFilter, 
+				BmString("Sieve-Addon: sieve_get_header called for header ")
+					<< header);
 	static const char* dummy[] = { NULL };
 	BmMsgContext* msgContext = static_cast< BmMsgContext*>( message_context);
 	if (msgContext && contentsPtr && header) {
@@ -433,8 +454,9 @@ int BmSieveFilter::sieve_get_header( void* message_context, const char* header,
 			if (!msgContext->headerInfos[i].fieldName.ICompare( header)) {
 				*contentsPtr = msgContext->headerInfos[i].values;
 				for( int v=0; msgContext->headerInfos[i].values[v]; ++v) {
-					BM_LOG3( BM_LogFilter, BmString("Sieve-Addon: sieve_get_header returns value[")<<v<<"] = "
-													<<msgContext->headerInfos[i].values[v]);
+					BM_LOG3( BM_LogFilter, 
+								BmString("Sieve-Addon: sieve_get_header returns value[")
+									<<v<<"] = " <<msgContext->headerInfos[i].values[v]);
 				}
 				break;
 			}
@@ -448,7 +470,8 @@ int BmSieveFilter::sieve_get_header( void* message_context, const char* header,
 		-	
 \*------------------------------------------------------------------------------*/
 int BmSieveFilter::sieve_execute_error( const char* msg, void*,
-													void* script_context, void* message_context) {
+													 void* script_context, 
+													 void* message_context) {
 	BmString filterName = "<unknown>";
 	BmString mailName = "<unknown>";
 	if (script_context) {
@@ -473,8 +496,8 @@ int BmSieveFilter::sieve_execute_error( const char* msg, void*,
 	BmGraphicalSieveFilter
 \********************************************************************************/
 
-#define BM_MAILPART_OTHER  "<Specify field>..."
-#define BM_MAILPART_BODY   "<Message-Text>"
+const char * BM_MAILPART_OTHER  = "<Specify field>...";
+const char * BM_MAILPART_BODY   = "<Message-Text>";
 
 // the fields that can be selected directly:
 BmString BM_MP_SEPARATOR = "---";
@@ -496,13 +519,14 @@ static const char* mailParts[] = {
 
 // address-fields:
 static BmString BmAddressFieldNames = 
-	"<Bcc><Resent-Bcc><Cc><List-Id><Resent-Cc><From><Resent-From><Reply-To><Resent-Reply-To><Sender><Resent-Sender><To><Resent-To>";
+	"<Bcc><Resent-Bcc><Cc><List-Id><Resent-Cc><From><Resent-From><Reply-To>"
+	"<Resent-Reply-To><Sender><Resent-Sender><To><Resent-To>";
 
 // the address-parts:
-#define BM_ADDRPART_COMPLETE  "(Complete)"
-#define BM_ADDRPART_ADDRESS   "(Address)"
-#define BM_ADDRPART_DOMAIN    "(Domain)"
-#define BM_ADDRPART_LOCALPART "(Localpart)"
+const char* BM_ADDRPART_COMPLETE  = "(Complete)";
+const char* BM_ADDRPART_ADDRESS   = "(Address)";
+const char* BM_ADDRPART_DOMAIN    = "(Domain)";
+const char* BM_ADDRPART_LOCALPART = "(Localpart)";
 
 static const char* addrParts[] = {
 	BM_ADDRPART_COMPLETE,
@@ -511,7 +535,7 @@ static const char* addrParts[] = {
 	BM_ADDRPART_LOCALPART,
 	NULL
 };
-#define BM_LONGEST_OP "does not match regex"
+const char* BM_LONGEST_OP = "does not match regex";
 static const char* operators[][3] = {
 	{ "is", "", "is"},
 	{ "is not", "not", "is"},
@@ -559,7 +583,8 @@ const char* const BmGraphicalSieveFilter::MSG_STOP_PROCESSING =	"bm:stop";
 		-	c'tor
 		-	constructs a BmGraphicalSieveFilter from a BMessage
 \*------------------------------------------------------------------------------*/
-BmGraphicalSieveFilter::BmGraphicalSieveFilter( const BmString& name, const BMessage* archive) 
+BmGraphicalSieveFilter::BmGraphicalSieveFilter( const BmString& name, 
+																const BMessage* archive) 
 	:	inherited( name, archive)
 	,	mMatchCount( 1)
 	,	mMatchAnyAll( choices[0])
@@ -613,16 +638,23 @@ status_t BmGraphicalSieveFilter::Archive( BMessage* archive, bool) const {
 		||	archive->AddString( MSG_FILEINTO_VALUE, mActionFileIntoValue.String())
 		|| archive->AddBool( MSG_DISCARD, mActionDiscard)
 		|| archive->AddBool( MSG_SET_STATUS, mActionSetStatus)
-		||	archive->AddString( MSG_SET_STATUS_VALUE, mActionSetStatusValue.String())
+		||	archive->AddString( MSG_SET_STATUS_VALUE, 
+									  mActionSetStatusValue.String())
 		|| archive->AddBool( MSG_SET_IDENTITY, mActionSetIdentity)
-		||	archive->AddString( MSG_SET_IDENTITY_VALUE, mActionSetIdentityValue.String())
+		||	archive->AddString( MSG_SET_IDENTITY_VALUE, 
+									  mActionSetIdentityValue.String())
 		|| archive->AddBool( MSG_STOP_PROCESSING, mStopProcessing));
 	for( int i=0; ret==B_OK && i<mMatchCount; ++i) {
-		ret = (archive->AddString( MSG_MATCH_MAILPART, mMatchMailPart[i].String())
-			 || archive->AddString( MSG_MATCH_ADDRPART, mMatchAddrPart[i].String())
-			 || archive->AddString( MSG_MATCH_FIELDNAME, mMatchFieldName[i].String())
-			 || archive->AddString( MSG_MATCH_OPERATOR, mMatchOperator[i].String())
-			 || archive->AddString( MSG_MATCH_VALUE, mMatchValue[i].String()));
+		ret = (archive->AddString( MSG_MATCH_MAILPART, 
+											mMatchMailPart[i].String())
+			 || archive->AddString( MSG_MATCH_ADDRPART, 
+			 								mMatchAddrPart[i].String())
+			 || archive->AddString( MSG_MATCH_FIELDNAME, 
+			 								mMatchFieldName[i].String())
+			 || archive->AddString( MSG_MATCH_OPERATOR, 
+			 								mMatchOperator[i].String())
+			 || archive->AddString( MSG_MATCH_VALUE, 
+			 								mMatchValue[i].String()));
 	}
 	return ret;
 }
@@ -660,7 +692,8 @@ void BmGraphicalSieveFilter::SetupFromMailData( const BmString& subject,
 		-	returns if the given field-name is an address-field.
 \*------------------------------------------------------------------------------*/
 bool BmGraphicalSieveFilter::IsAddrField( const BmString& addrField) {
-	return BmAddressFieldNames.IFindFirst( BmString("<")<<addrField<<">") != B_ERROR;
+	return BmAddressFieldNames.IFindFirst( BmString("<")<<addrField<<">") 
+				!= B_ERROR;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -669,17 +702,20 @@ bool BmGraphicalSieveFilter::IsAddrField( const BmString& addrField) {
 			given out-params
 		-	returns true if values are ok, false (and error-info) if not
 \*------------------------------------------------------------------------------*/
-bool BmGraphicalSieveFilter::SanityCheck( BmString& complaint, BmString& fieldName) {
+bool BmGraphicalSieveFilter::SanityCheck( BmString& complaint, 
+														BmString& fieldName) {
 	if (mActionFileInto && !mActionFileIntoValue.Length()) {
 		complaint = "Please select a folder to file the matching mails into";
 		fieldName = "fileIntoValue";
 		return false;
 	} else if (mActionSetStatus && !mActionSetStatusValue.Length()) {
-		complaint = "Please select the status that matching mails should be set to";
+		complaint 
+			= "Please select the status that matching mails should be set to";
 		fieldName = "setStatusValue";
 		return false;
 	} else if (mActionSetIdentity && !mActionSetIdentityValue.Length()) {
-		complaint = "Please select the identity that matching mails should be associated with";
+		complaint = "Please select the identity that matching mails should "
+						"be associated with";
 		fieldName = "setIdentityValue";
 		return false;
 	}
@@ -693,8 +729,10 @@ bool BmGraphicalSieveFilter::SanityCheck( BmString& complaint, BmString& fieldNa
 			complaint = "Please select the mail-part that is to be filtered";
 			fieldName = BmString("mailPart:") << i;
 			return false;
-		} else if (mMatchMailPart[i] == BM_MAILPART_OTHER && !mMatchFieldName[i].Length()) {
-			complaint = "Please enter the name of the header-field that is to be filtered";
+		} else if (mMatchMailPart[i] == BM_MAILPART_OTHER 
+		&& !mMatchFieldName[i].Length()) {
+			complaint = "Please enter the name of the header-field that is to "
+							"be filtered";
 			fieldName = BmString("fieldName") << i;
 			return false;
 		} else if (!mMatchOperator[i].Length()) {
@@ -702,13 +740,15 @@ bool BmGraphicalSieveFilter::SanityCheck( BmString& complaint, BmString& fieldNa
 			fieldName = BmString("operator") << i;
 			return false;
 		} else if (!mMatchValue[i].Length()) {
-			complaint = "Please select the value that is to be used for the comparison";
+			complaint = "Please select the value that is to be used for the "
+							"comparison";
 			fieldName = BmString("value") << i;
 			return false;
 		}
 	}
 	if (!validMatchCount && mActionDiscard) {
-		complaint = "You have created a filter that will throw away each and every mail!\n\nMy advice: don't do that >:o)";
+		complaint = "You have created a filter that will throw away each and "
+						"every mail!\n\nMy advice: don't do that >:o)";
 		return false;
 	}
 	BuildScriptFromStrings();
@@ -721,7 +761,7 @@ bool BmGraphicalSieveFilter::SanityCheck( BmString& complaint, BmString& fieldNa
 \*------------------------------------------------------------------------------*/
 bool BmGraphicalSieveFilter::BuildScriptFromStrings() {
 	vector<BmString> valueVect;
-	BmString script("# generated by Beam's GUI-editor, please do not edit >:o)\n");
+	BmString script("# generated by Beam's GUI-editor, please do not edit!\n");
 	bool needRegex = false;
 	for( int i=0; i<mMatchCount; ++i) {
 		if (mMatchOperator[i].IFindFirst("regex") != B_ERROR) {
@@ -765,7 +805,10 @@ bool BmGraphicalSieveFilter::BuildScriptFromStrings() {
 		}
 		// add operator and field-name:
 		line	<< ":" << op << " "
-				<< "\"" << (otherField ? mMatchFieldName[i] : mMatchMailPart[i]) << "\" ";
+				<< "\"" << (otherField 
+									? mMatchFieldName[i] 
+									: mMatchMailPart[i]) 
+						  << "\" ";
 		// add list of values:
 		line << "[";
 		split( "\n", mMatchValue[i], valueVect);
@@ -891,7 +934,8 @@ BRect BmFilterGroup::layout(BRect rect) {
 		if (!mvkid)
 			continue;
 		minimax kid_mpm = mvkid->mpm;
-		BRect kidRect = mvkid->layout( BRect( rect.left, yPos, rect.right, yPos+kid_mpm.mini.y));
+		BRect kidRect = mvkid->layout( BRect( rect.left, yPos, 
+														  rect.right, yPos+kid_mpm.mini.y));
 		yPos += kidRect.Height();
 	}
 	return rect;
@@ -900,7 +944,8 @@ BRect BmFilterGroup::layout(BRect rect) {
 class BmFilterScrollView: public MView, public BScrollView
 {
 	public:
-		BmFilterScrollView(MView *target, bool horizontal=false, bool vertical=false,
+		BmFilterScrollView(MView *target, bool horizontal=false, 
+								 bool vertical=false,
 			border_style border=B_FANCY_BORDER, minimax size=0)
 		:	BScrollView( "scroller", dynamic_cast<BView*>(target), 
 							 B_FOLLOW_NONE, B_WILL_DRAW|B_FRAME_EVENTS,
@@ -982,9 +1027,10 @@ BmSieveFilterPrefs::BmSieveFilterPrefs( minimax minmax)
 						mAddButton = new MButton( "Add Line", 
 														  new BMessage( BM_ADD_FILTER_LINE), 
 														  this, minimax(-1,-1,-1,-1)),
-						mRemoveButton = new MButton( "Remove (Last) Line", 
-															  new BMessage( BM_REMOVE_FILTER_LINE), 
-															  this, minimax(-1,-1,-1,-1)),
+						mRemoveButton 
+							= new MButton( "Remove (Last) Line", 
+											   new BMessage( BM_REMOVE_FILTER_LINE), 
+												this, minimax(-1,-1,-1,-1)),
 						0
 					),
 					mFilterScrollView = new BmFilterScrollView( 
@@ -999,16 +1045,23 @@ BmSieveFilterPrefs::BmSieveFilterPrefs( minimax minmax)
 					new HGroup(
 						new VGroup(
 							new HGroup(
-								mFileIntoControl = new BmCheckControl( "File into", 
-																				 	new BMessage(BM_FILEINTO_CHANGED), 
-																					this),
-								mFileIntoValueControl = new BmMenuControl( NULL, new BPopUpMenu("")),
+								mFileIntoControl 
+									= new BmCheckControl( 
+										"File into", 
+										new BMessage(BM_FILEINTO_CHANGED), 
+										this
+									),
+								mFileIntoValueControl 
+									= new BmMenuControl( NULL, new BPopUpMenu("")),
 								0
 							),
 							new HGroup(
-								mDiscardControl = new BmCheckControl( "Move to trash", 
-																				 	new BMessage(BM_DISCARD_CHANGED), 
-																					this),
+								mDiscardControl 
+									= new BmCheckControl( 
+										"Move to trash", 
+										new BMessage(BM_DISCARD_CHANGED), 
+										this
+									),
 								new Space(),
 								0
 							),
@@ -1018,23 +1071,34 @@ BmSieveFilterPrefs::BmSieveFilterPrefs( minimax minmax)
 						new Space( minimax( 10,0,10,1e5)),
 						new VGroup(
 							new HGroup(
-								mSetStatusControl = new BmCheckControl( "Set Status", 
-																					 new BMessage(BM_SET_STATUS_CHANGED), 
-																					 this),
-								mSetStatusValueControl = new BmMenuControl( NULL, new BPopUpMenu("")),
+								mSetStatusControl 
+									= new BmCheckControl( 
+										"Set Status", 
+										new BMessage(BM_SET_STATUS_CHANGED), 
+										this
+									),
+								mSetStatusValueControl 
+									= new BmMenuControl( NULL, new BPopUpMenu("")),
 								0
 							),
 							new HGroup(
-								mSetIdentityControl = new BmCheckControl( "Set Identity", 
-																					 new BMessage(BM_SET_IDENTITY_CHANGED), 
-																					 this),
-								mSetIdentityValueControl = new BmMenuControl( NULL, new BPopUpMenu("")),
+								mSetIdentityControl 
+									= new BmCheckControl( 
+										"Set Identity", 
+										new BMessage(BM_SET_IDENTITY_CHANGED), 
+										this
+									),
+								mSetIdentityValueControl 
+									= new BmMenuControl( NULL, new BPopUpMenu("")),
 								0
 							),
 							new HGroup(
-								mStopProcessingControl = new BmCheckControl( "Stop processing if filter matches", 
-																					 		new BMessage(BM_STOP_PROCESSING_CHANGED), 
-																					 		this),
+								mStopProcessingControl 
+									= new BmCheckControl( 
+										"Stop processing if filter matches", 
+										new BMessage(BM_STOP_PROCESSING_CHANGED), 
+										this
+									),
 								new Space(),
 								0
 							),
@@ -1050,7 +1114,8 @@ BmSieveFilterPrefs::BmSieveFilterPrefs( minimax minmax)
 	
 	float width, maxWidth, height; 
 	mFileIntoControl->GetPreferredSize( &maxWidth, &height);
-	mFileIntoControl->ct_mpm.maxi.x = mFileIntoControl->ct_mpm.mini.x = maxWidth+5;
+	mFileIntoControl->ct_mpm.maxi.x 
+		= mFileIntoControl->ct_mpm.mini.x = maxWidth+5;
 
 	mSetStatusControl->GetPreferredSize( &maxWidth, &height);
 	mSetIdentityControl->GetPreferredSize( &width, &height);
@@ -1068,18 +1133,20 @@ BmSieveFilterPrefs::BmSieveFilterPrefs( minimax minmax)
 	for( int i=0; i<BM_MAX_MATCH_COUNT; ++i) {
 		mFilterLine[i] = 
 			new HGroup(
-				mMailPartControl[i] = new BmMenuControl( NULL, new BPopUpMenu( ""), 
+				mMailPartControl[i] = new BmMenuControl( NULL, new BPopUpMenu( ""),
 																	  0, 0, BM_MAILPART_OTHER),
 				mFieldSpecLayer[i] = new LayeredGroup(
 					new Space(),
-					mAddrPartControl[i] = new BmMenuControl( NULL, new BPopUpMenu( ""),
-																		  0, 0, BM_ADDRPART_LOCALPART),
-					mFieldNameControl[i] = new BmTextControl( NULL),
+					mAddrPartControl[i] 
+						= new BmMenuControl( NULL, new BPopUpMenu( ""), 0, 0, 
+													BM_ADDRPART_LOCALPART),
+					mFieldNameControl[i] = new BmTextControl( (const char *)NULL),
 					NULL
 				),
 				mOperatorControl[i] = new BmMenuControl( NULL, new BPopUpMenu( ""),
 																	  0, 0, BM_LONGEST_OP),
-				mValueControl[i] = new BmMultiLineTextControl( NULL, false, 1, 0, true),
+				mValueControl[i] = new BmMultiLineTextControl( NULL, false, 1, 
+																			  0, true),
 				0
 			);
 		mMailPartControl[i]->ct_mpm.maxi.y = 1E5;
@@ -1124,41 +1191,89 @@ BmSieveFilterPrefs::~BmSieveFilterPrefs() {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmSieveFilterPrefs::Initialize() {
-	TheBubbleHelper->SetHelp( mAnyAllControl, "Here you can select if a mail matches the filter if \n\
-any of the criteria matches (OR-operation) or if\n\
-all if the criteria match (AND-operation).");
+	TheBubbleHelper->SetHelp( 
+		mAnyAllControl, 
+		"Here you can select if a mail matches the filter if \n"
+		"any of the criteria matches (OR-operation) or if\n"
+		"all if the criteria match (AND-operation)."
+	);
 	for( int i=0; i<BM_MAX_MATCH_COUNT; ++i) {
-		TheBubbleHelper->SetHelp( mMailPartControl[i], "Please select the part of the mail (a header-field)\n\
-that shall be matched.");
-		TheBubbleHelper->SetHelp( mAddrPartControl[i], "This field is only shown if the selected header is an addres-field.\n\
-Here you can choose, which part of the address-field the filter should look at.\n\
-Assuming a FROM header of 'Elliot Smith <esmith@test.org>' the choices are:\n\
-   (complete): the complete address-field will be used, i.e. 'Elliot Smith <esmith@test.org>'\n\
-   (address): just the address-part (addr-spec) will be used, i.e. 'esmith@test.org'\n\
-   (domain): just the domain-part will be used, i.e. 'test.org'\n\
-   (localpart): just the localpart (mailbox-name) will be used, i.e. 'esmith'");
-		TheBubbleHelper->SetHelp( mFieldNameControl[i], "If you have chosen to specify the fieldname yourself,\n\
-you can do so in this textfield.");
-		TheBubbleHelper->SetHelp( mOperatorControl[i], "Here you can select what kind of match shall be done.");
-		TheBubbleHelper->SetHelp( mValueControl[i], "Here you can enter the one or more values that\n\
-the selected field will be matched against.\n\
-If any of the given values matches, the filter-line\n\
-is satisfied (values ar ORed).");
+		TheBubbleHelper->SetHelp( 
+			mMailPartControl[i], 
+			"Please select the part of the mail (a header-field)\n"
+			"that shall be matched."
+		);
+		TheBubbleHelper->SetHelp( 
+			mAddrPartControl[i], 
+			"This field is only shown if the selected header is an addres-field.\n"
+			"Here you can choose, which part of the address-field\n"
+			"the filter should look at.\n"
+			"Assuming a FROM header of 'Elliot Smith <esmith@test.org>',\n"
+			"the choices are:\n"
+			"   (complete): the complete address-field will be used,\n"
+			"               i.e. 'Elliot Smith <esmith@test.org>'\n"
+			"   (address): just the address-part (addr-spec) will be used,\n"
+			"              i.e. 'esmith@test.org'\n"
+			"   (domain): just the domain-part will be used, i.e. 'test.org'\n"
+			"   (localpart): just the localpart (mailbox-name) will be used,\n"
+			"                i.e. 'esmith'"
+		);
+		TheBubbleHelper->SetHelp( 
+			mFieldNameControl[i], 
+			"If you have chosen to specify the fieldname yourself,\n"
+			"you can do so in this textfield."
+		);
+		TheBubbleHelper->SetHelp( 
+			mOperatorControl[i], 
+			"Here you can select what kind of match shall be done."
+		);
+		TheBubbleHelper->SetHelp( 
+			mValueControl[i], 
+			"Here you can enter the one or more values that\n"
+			"the selected field will be matched against.\n"
+			"If any of the given values matches, the filter-line\n"
+			"is satisfied (values ar ORed)."
+		);
 	}
-	TheBubbleHelper->SetHelp( mFileIntoControl, "Check this to move matching mails into a specific folder.");
-	TheBubbleHelper->SetHelp( mFileIntoValueControl, "Here you can select the folder to file mails into.");
-	TheBubbleHelper->SetHelp( mSetStatusControl, "Check this to modify the status of matching mails.");
-	TheBubbleHelper->SetHelp( mSetStatusValueControl, "Please select the new status here.");
-	TheBubbleHelper->SetHelp( mSetIdentityControl, "Check this if you want to associate matching mails\n\
-with a given identity (e.g. useful for mailing-lists).");
-	TheBubbleHelper->SetHelp( mSetIdentityControl, "Please select the associated identity here.");
-	TheBubbleHelper->SetHelp( mDiscardControl, "Check this to directly move matching mails to trash.");
-	TheBubbleHelper->SetHelp( mStopProcessingControl, "Check this if you want to stop filter-processing\n\
-if this filter matches. Any subsequent filters\n\
-of the active filter-chain will be ignored.");
+	TheBubbleHelper->SetHelp( 
+		mFileIntoControl, 
+		"Check this to move matching mails into a specific folder."
+	);
+	TheBubbleHelper->SetHelp( 
+		mFileIntoValueControl, 
+		"Here you can select the folder to file mails into."
+	);
+	TheBubbleHelper->SetHelp( 
+		mSetStatusControl, 
+		"Check this to modify the status of matching mails."
+	);
+	TheBubbleHelper->SetHelp( 
+		mSetStatusValueControl, 
+		"Please select the new status here."
+	);
+	TheBubbleHelper->SetHelp( 
+		mSetIdentityControl, 
+		"Check this if you want to associate matching mails\n"
+		"with a given identity (e.g. useful for mailing-lists)."
+	);
+	TheBubbleHelper->SetHelp( 
+		mSetIdentityControl, 
+		"Please select the associated identity here."
+	);
+	TheBubbleHelper->SetHelp( 
+		mDiscardControl, 
+		"Check this to directly move matching mails to trash."
+	);
+	TheBubbleHelper->SetHelp( 
+		mStopProcessingControl, 
+		"Check this if you want to stop filter-processing\n"
+		"if this filter matches. Any subsequent filters\n"
+		"of the active filter-chain will be ignored."
+	);
 
 	for( const char** itemP = choices; *itemP; ++itemP) {
-		BMenuItem* item = new BMenuItem( *itemP, new BMessage( BM_ANY_ALL_SELECTED));
+		BMenuItem* item = new BMenuItem( *itemP, 
+													new BMessage( BM_ANY_ALL_SELECTED));
 		item->SetTarget( this);
 		mAnyAllControl->Menu()->AddItem( item);
 	}
@@ -1224,7 +1339,7 @@ void BmSieveFilterPrefs::Activate() {
 	//
 	BMessage identityTempl( BM_SET_IDENTITY_SELECTED);
 	msg.MakeEmpty();
-	while( (item = mSetIdentityValueControl->Menu()->RemoveItem( (int32)0))!=NULL)
+	while( (item = mSetIdentityValueControl->Menu()->RemoveItem((int32)0))!=NULL)
 		delete item;
 	msg.AddString( MSG_LIST_NAME, BM_IDENTITYLIST_NAME);
 	msg.AddPointer( MSG_MENU_POINTER, mSetIdentityValueControl->Menu());
@@ -1284,7 +1399,8 @@ void BmSieveFilterPrefs::AdjustScrollView() {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmSieveFilterPrefs::AdjustSizeOfValueControl( BmMultiLineTextControl* control) {
+void BmSieveFilterPrefs::AdjustSizeOfValueControl( 
+															BmMultiLineTextControl* control) {
 	// adjust size of multiline-textview to accommodate its content:
 	BFont font;
 	control->GetFont( &font);
@@ -1347,7 +1463,8 @@ void BmSieveFilterPrefs::MessageReceived( BMessage* msg) {
 				BmTextControl* source = dynamic_cast<BmTextControl*>( srcView);
 				for( int idx=0; idx<mVisibleLines; ++idx) {
 					if (source == mFieldNameControl[idx]) {
-						mCurrFilterAddon->mMatchFieldName[idx] = mFieldNameControl[idx]->Text();
+						mCurrFilterAddon->mMatchFieldName[idx] 
+							= mFieldNameControl[idx]->Text();
 						UpdateState();
 						PropagateChange();
 						break;
@@ -1360,11 +1477,13 @@ void BmSieveFilterPrefs::MessageReceived( BMessage* msg) {
 			if (mCurrFilterAddon) {
 				BView* srcView = NULL;
 				msg->FindPointer( "source", (void**)&srcView);
-				BmMultiLineTextControl* source = dynamic_cast<BmMultiLineTextControl*>( srcView);
+				BmMultiLineTextControl* source 
+					= dynamic_cast<BmMultiLineTextControl*>( srcView);
 				for( int idx=0; idx<mVisibleLines; ++idx) {
 					if (source == mValueControl[idx]) {
 						AdjustSizeOfValueControl( source);
-						mCurrFilterAddon->mMatchValue[idx] = mValueControl[idx]->Text();
+						mCurrFilterAddon->mMatchValue[idx] 
+							= mValueControl[idx]->Text();
 						AdjustScrollView();
 						UpdateState();
 						PropagateChange();
@@ -1441,7 +1560,8 @@ void BmSieveFilterPrefs::MessageReceived( BMessage* msg) {
 					BMenuItem* currItem = item;
 					BMenu* currMenu = item->Menu();
 					BmString path;
-					while( currMenu && currItem && currItem!=mFileIntoValueControl->MenuItem()) {
+					while( currMenu && currItem 
+					&& currItem!=mFileIntoValueControl->MenuItem()) {
 						if (!path.Length())
 							path.Prepend( BmString(currItem->Label()));
 						else
@@ -1553,23 +1673,33 @@ void BmSieveFilterPrefs::ShowFilter( BmFilterAddon* addon) {
 		mAnyAllControl->MarkItem( mCurrFilterAddon->mMatchAnyAll.String());
 
 		for( int idx=0; idx<mVisibleLines; ++idx) {
-			mMailPartControl[idx]->MarkItem( mCurrFilterAddon->mMatchMailPart[idx].String());
-			mAddrPartControl[idx]->MarkItem( mCurrFilterAddon->mMatchAddrPart[idx].String());
-			mFieldNameControl[idx]->SetTextSilently( mCurrFilterAddon->mMatchFieldName[idx].String());
-			mOperatorControl[idx]->MarkItem( mCurrFilterAddon->mMatchOperator[idx].String());
-			mValueControl[idx]->SetTextSilently( mCurrFilterAddon->mMatchValue[idx].String());
+			mMailPartControl[idx]->MarkItem( 
+				mCurrFilterAddon->mMatchMailPart[idx].String());
+			mAddrPartControl[idx]->MarkItem( 
+				mCurrFilterAddon->mMatchAddrPart[idx].String());
+			mFieldNameControl[idx]->SetTextSilently( 
+				mCurrFilterAddon->mMatchFieldName[idx].String());
+			mOperatorControl[idx]->MarkItem( 
+				mCurrFilterAddon->mMatchOperator[idx].String());
+			mValueControl[idx]->SetTextSilently( 
+				mCurrFilterAddon->mMatchValue[idx].String());
 			AdjustSizeOfValueControl( mValueControl[idx]);
 		}
 		AdjustScrollView();
 
 		mFileIntoControl->SetValueSilently( mCurrFilterAddon->mActionFileInto);
-		mFileIntoValueControl->MarkItem( mCurrFilterAddon->mActionFileIntoValue.String(), true);
+		mFileIntoValueControl->MarkItem( 
+			mCurrFilterAddon->mActionFileIntoValue.String(), true);
 		mDiscardControl->SetValueSilently( mCurrFilterAddon->mActionDiscard);
 		mSetStatusControl->SetValueSilently( mCurrFilterAddon->mActionSetStatus);
-		mSetStatusValueControl->MarkItem( mCurrFilterAddon->mActionSetStatusValue.String());
-		mSetIdentityControl->SetValueSilently( mCurrFilterAddon->mActionSetIdentity);
-		mSetIdentityValueControl->MarkItem( mCurrFilterAddon->mActionSetIdentityValue.String());
-		mStopProcessingControl->SetValueSilently( mCurrFilterAddon->mStopProcessing);
+		mSetStatusValueControl->MarkItem( 
+			mCurrFilterAddon->mActionSetStatusValue.String());
+		mSetIdentityControl->SetValueSilently( 
+			mCurrFilterAddon->mActionSetIdentity);
+		mSetIdentityValueControl->MarkItem( 
+			mCurrFilterAddon->mActionSetIdentityValue.String());
+		mStopProcessingControl->SetValueSilently( 
+			mCurrFilterAddon->mStopProcessing);
 	}
 
 	UpdateState();
@@ -1627,7 +1757,9 @@ BmSieveScriptFilterPrefs::BmSieveScriptFilterPrefs( minimax minmax)
 			),
 			new Space( minimax( 5, 0, 5, 1e5)),
 			new VGroup( 
-				mTestButton = new MButton( "Check the SIEVE-script", new BMessage( BM_TEST_FILTER), this, minimax(-1,-1,-1,-1)),
+				mTestButton = new MButton( "Check the SIEVE-script", 
+													new BMessage( BM_TEST_FILTER), 
+													this, minimax(-1,-1,-1,-1)),
 				new Space(),
 				0
 			),
@@ -1651,8 +1783,14 @@ BmSieveScriptFilterPrefs::~BmSieveScriptFilterPrefs() {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmSieveScriptFilterPrefs::Initialize() {
-	TheBubbleHelper->SetHelp( mContentControl, "Here you can enter the content of this filter (a SIEVE script).");
-	TheBubbleHelper->SetHelp( mTestButton, "Here you can check the syntax of the SIEVE-script.");
+	TheBubbleHelper->SetHelp( 
+		mContentControl, 
+		"Here you can enter the content of this filter (a SIEVE script)."
+	);
+	TheBubbleHelper->SetHelp( 
+		mTestButton, 
+		"Here you can check the syntax of the SIEVE-script."
+	);
 
 	mContentControl->SetTarget( this);
 }
@@ -1675,7 +1813,8 @@ void BmSieveScriptFilterPrefs::MessageReceived( BMessage* msg) {
 			if (mCurrFilterAddon) {
 				BView* srcView = NULL;
 				msg->FindPointer( "source", (void**)&srcView);
-				BmMultiLineTextControl* source = dynamic_cast<BmMultiLineTextControl*>( srcView);
+				BmMultiLineTextControl* source 
+					= dynamic_cast<BmMultiLineTextControl*>( srcView);
 				if ( source == mContentControl) {
 					mCurrFilterAddon->Content( mContentControl->Text());
 					PropagateChange();
@@ -1686,10 +1825,11 @@ void BmSieveScriptFilterPrefs::MessageReceived( BMessage* msg) {
 		case BM_TEST_FILTER: {
 			if (mCurrFilterAddon) {
 				if (!mCurrFilterAddon->CompileScript()) {
-					BAlert* alert = new BAlert( "Filter-Test", 
-														 mCurrFilterAddon->ErrorString().String(),
-												 		 "OK", NULL, NULL, B_WIDTH_AS_USUAL,
-												 		 B_INFO_ALERT);
+					BAlert* alert 
+						= new BAlert( "Filter-Test", 
+										  mCurrFilterAddon->ErrorString().String(),
+										  "OK", NULL, NULL, B_WIDTH_AS_USUAL,
+										  B_INFO_ALERT);
 					alert->SetShortcut( 0, B_ESCAPE);
 					alert->Go();
 				}
@@ -1728,7 +1868,8 @@ void BmSieveScriptFilterPrefs::ShowFilter( BmFilterAddon* addon) {
 		-	
 \*------------------------------------------------------------------------------*/
 extern "C" __declspec(dllexport) 
-BmFilterAddonPrefsView* InstantiateFilterPrefs( minimax minmax, const BmString& kind) {
+BmFilterAddonPrefsView* InstantiateFilterPrefs( minimax minmax, 
+																const BmString& kind) {
 	if (!kind.ICompare( FILTER_SIEVE))
 		return new BmSieveFilterPrefs( minmax);
 	else if (!kind.ICompare( FILTER_SIEVE_SCRIPT))

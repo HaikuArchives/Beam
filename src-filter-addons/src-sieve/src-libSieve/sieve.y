@@ -43,8 +43,9 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "util.h"
 #include "imparse.h"
 
-    /* definitions */
-    extern int addrparse(void);
+/* definitions */
+int addrparse(void);
+void reset_sieve_lexer( FILE* sievein);
 
 struct vtags {
     int days;
@@ -114,7 +115,7 @@ static patternlist_t *verify_regexs(stringlist_t *sl, char *comp);
 #endif
 static int ok_header(char *s);
 
-extern int sieveerror(char *msg);
+extern int sieveerror(const char *msg);
 extern int sievelex(void);
 
 #define YYERROR_VERBOSE /* i want better error messages! */
@@ -489,7 +490,7 @@ commandlist_t *sieve_parse(sieve_script_t *script, FILE *f)
     return t;
 }
 
-int sieveerror(char *msg)
+int sieveerror(const char *msg)
 {
     extern int sievelineno;
     int ret;

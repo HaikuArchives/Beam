@@ -40,7 +40,7 @@
 #include "BmBasics.h"
 #include "BmLogHandler.h"
 
-/*------------------------------------------------------------------------------*\*\
+/*------------------------------------------------------------------------------*\
 	ShowAlert( text)
 		-	pops up an Alert showing the passed (error-)text
 \*------------------------------------------------------------------------------*/
@@ -50,7 +50,7 @@ void ShowAlert( const BmString &text) {
 	alert->Go();
 }
 
-/*------------------------------------------------------------------------------*\*\
+/*------------------------------------------------------------------------------*\
 	ShowAlertWithType( text, type)
 		-	pops up an Alert of given type, showing the passed text
 \*------------------------------------------------------------------------------*/
@@ -129,7 +129,8 @@ void BmLogHandler::FinishLog( const BmString& logname) {
 	( )
 		-	
 \*------------------------------------------------------------------------------*/
-void BmLogHandler::StartWatchingLogfile( BHandler* handler, const char* logfileName) {
+void BmLogHandler::StartWatchingLogfile( BHandler* handler, 
+													  const char* logfileName) {
 	mLocker.Lock();
 	BmLogfile* log = LogfileFor( logfileName);
 	if (log && !log->mWatchingHandlers.HasItem( handler))
@@ -141,7 +142,8 @@ void BmLogHandler::StartWatchingLogfile( BHandler* handler, const char* logfileN
 	( )
 		-	
 \*------------------------------------------------------------------------------*/
-void BmLogHandler::StopWatchingLogfile( BHandler* handler, const char* logfileName) {
+void BmLogHandler::StopWatchingLogfile( BHandler* handler, 
+													 const char* logfileName) {
 	mLocker.Lock();
 	BmLogfile* log = LogfileFor( logfileName);
 	if (log)
@@ -153,7 +155,8 @@ void BmLogHandler::StopWatchingLogfile( BHandler* handler, const char* logfileNa
 	static creator-function
 		-	singleton creator
 \*------------------------------------------------------------------------------*/
-BmLogHandler* BmLogHandler::CreateInstance( uint32 logLevels, node_ref* appFolder) {
+BmLogHandler* BmLogHandler::CreateInstance( uint32 logLevels, 
+														  node_ref* appFolder) {
 	if (TheLogHandler)
 		return TheLogHandler;
 	else
@@ -192,7 +195,8 @@ BmLogHandler::~BmLogHandler() {
 	LogLevels
 		-	
 \*------------------------------------------------------------------------------*/
-void BmLogHandler::LogLevels( uint32 loglevels, int32 minFileSize, int32 maxFileSize) {
+void BmLogHandler::LogLevels( uint32 loglevels, int32 minFileSize, 
+										int32 maxFileSize) {
 	mLoglevels = loglevels;
 	mMinFileSize = minFileSize;
 	mMaxFileSize = maxFileSize;
@@ -375,13 +379,15 @@ void BmLogHandler::BmLogfile::Write( const char* const msg, int32 threadId) {
 	s.Prepend( buf);
 	ssize_t result;
 	if ((result = mLogFile->Write( s.String(), s.Length())) < 0)
-		throw BM_runtime_error( BmString("Unable to write to logfile ") << filename);
+		throw BM_runtime_error( BmString("Unable to write to logfile ") 
+											<< filename);
 	int32 watcherCount = mWatchingHandlers.CountItems();
 	if (watcherCount>0) {
 		BMessage msg( BM_LOG_MSG);
 		msg.AddString( MSG_MESSAGE, s.String());
 		for( int32 i=0; i<watcherCount; ++i) {
-			BMessenger watcher( static_cast< BHandler*>( mWatchingHandlers.ItemAt(i)));
+			BMessenger watcher( 
+							static_cast< BHandler*>( mWatchingHandlers.ItemAt(i)));
 			watcher.SendMessage( &msg);
 		}
 	}

@@ -207,15 +207,15 @@ public:
 
 	//	overrides of listmodel base:
 	bool StartJob();
-	const BmString SettingsFileName()		{ return NULL; }
+	const BmString SettingsFileName()	{ return NULL; }
 	int16 ArchiveVersion() const			{ return nArchiveVersion; }
 	void RemoveItemFromList( BmListModelItem* item);
 
 	// getters:
-	inline status_t InitCheck()					{ return mInitCheck; }
+	inline status_t InitCheck()			{ return mInitCheck; }
 	inline BmRef<BmBodyPart> EditableTextBody() const { return mEditableTextBody.Get(); }
 	inline const BmString& Signature() const	{ return mSignature; }
-	inline const BmMail* Mail() const			{ return mMail; }
+	inline BmMail* Mail() const			{ return mMail; }
 	bool IsMultiPart() const;
 
 	// setters:

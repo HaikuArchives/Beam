@@ -38,8 +38,10 @@
 /*------------------------------------------------------------------------------*\
 	types of messages sent via the observe/notify system:
 \*------------------------------------------------------------------------------*/
-#define BM_NTFY_MAILFOLDER_SELECTION	'bmbb'
+enum {
+	BM_NTFY_MAILFOLDER_SELECTION = 'bmbb'
 						// sent from BmMailFolderView to observers whenever selection changes
+};
 
 /*------------------------------------------------------------------------------*\
 	BmMailFolderItem

@@ -183,6 +183,8 @@ public:
 	const BmAddressList& GetAddressList( BmString fieldName);
 	bool IsFieldEmpty( BmString fieldName);
 	bool AddressFieldContainsAddrSpec( BmString fieldName, const BmString addrSpec);
+	bool AddressFieldContainsAddress( BmString fieldName, 
+												 const BmString& address);
 	//
 	BmString DetermineSender();
 	BmString DetermineReceivingAddrFor( BmIdentity* ident);

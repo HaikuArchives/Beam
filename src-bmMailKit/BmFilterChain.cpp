@@ -33,6 +33,7 @@
 
 #include "BmBasics.h"
 #include "BmPrefs.h"
+#include "BmFilter.h"
 #include "BmFilterChain.h"
 #include "BmLogHandler.h"
 #include "BmResources.h"
@@ -46,7 +47,7 @@
 const char* const BmChainedFilter::MSG_POSITION = 	"bm:pos";
 const char* const BmChainedFilter::MSG_FILTERNAME = "bm:fname";
 
-const int16 BmChainedFilter::nArchiveVersion = 1;
+const int16 BmChainedFilter::nArchiveVersion = 2;
 
 BmString BM_DefaultOutItemLabel("<outbound>");
 
@@ -59,9 +60,12 @@ BmString BM_DefaultOutItemLabel("<outbound>");
 		-	c'tor
 \*------------------------------------------------------------------------------*/
 BmChainedFilter::BmChainedFilter( const char* name, BmFilterChain* model) 
-	:	inherited( BmString()<<model->NextPosition(), model, (BmListModelItem*)NULL)
-	,	mFilterName( name)
+	:	inherited( name, model, (BmListModelItem*)NULL)
+	,	mPosition( 9999)		// a number larger than the number of chained filters
+									// so that this filter is appended to the list
 {
+	if (model)
+		model->RenumberPos();
 }
 
 /*------------------------------------------------------------------------------*\
@@ -70,12 +74,13 @@ BmChainedFilter::BmChainedFilter( const char* name, BmFilterChain* model)
 		-	constructs a BmFilterChain from a BMessage
 \*------------------------------------------------------------------------------*/
 BmChainedFilter::BmChainedFilter( BMessage* archive, BmFilterChain* model) 
-	:	inherited( BmString()<<FindMsgInt32( archive, MSG_POSITION), model, (BmListModelItem*)NULL)
+	:	inherited( BmString()<<FindMsgString( archive, MSG_FILTERNAME), model, 
+					  (BmListModelItem*)NULL)
 {
 	int16 version;
 	if (archive->FindInt16( MSG_VERSION, &version) != B_OK)
 		version = 0;
-	mFilterName = FindMsgString( archive, MSG_FILTERNAME);
+	mPosition = FindMsgInt32( archive, MSG_POSITION);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -92,8 +97,8 @@ BmChainedFilter::~BmChainedFilter() {
 \*------------------------------------------------------------------------------*/
 status_t BmChainedFilter::Archive( BMessage* archive, bool deep) const {
 	status_t ret = (inherited::Archive( archive, deep)
-		||	archive->AddString( MSG_FILTERNAME, mFilterName.String())
-		||	archive->AddInt32( MSG_POSITION, atoi(Key().String())));
+		||	archive->AddString( MSG_FILTERNAME, Key().String())
+		||	archive->AddInt32( MSG_POSITION, mPosition));
 	return ret;
 }
 
@@ -116,6 +121,8 @@ BmFilterChain::BmFilterChain( const char* name, BmFilterChainList* model)
 	:	inheritedItem( name, model, (BmListModelItem*)NULL)
 	,	inheritedList( name)
 {
+	// tell filter-list that our items have a foreign-key on its items:
+	TheFilterList->AddForeignKey( BmChainedFilter::MSG_FILTERNAME,	this);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -124,12 +131,15 @@ BmFilterChain::BmFilterChain( const char* name, BmFilterChainList* model)
 		-	constructs a BmFilterChain from a BMessage
 \*------------------------------------------------------------------------------*/
 BmFilterChain::BmFilterChain( BMessage* archive, BmFilterChainList* model) 
-	:	inheritedItem( FindMsgString( archive, MSG_NAME), model, (BmListModelItem*)NULL)
+	:	inheritedItem( FindMsgString( archive, MSG_NAME), 
+							model, (BmListModelItem*)NULL)
 	,	inheritedList( FindMsgString( archive, MSG_NAME))
 {
 	int16 version;
 	if (archive->FindInt16( inheritedItem::MSG_VERSION, &version) != B_OK)
 		version = 0;
+	// tell filter-list that our items have a foreign-key on its items:
+	TheFilterList->AddForeignKey( BmChainedFilter::MSG_FILTERNAME,	this);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -151,79 +161,51 @@ status_t BmFilterChain::Archive( BMessage* archive, bool deep) const {
 }
 
 /*------------------------------------------------------------------------------*\
-	MoveUp()
-		-	
-		-	
+	ForeignKeyChanged( keyName, oldVal, newVal)
+		-	updates the specified foreign-key with the given new value
 \*------------------------------------------------------------------------------*/
-void BmFilterChain::MoveUp( int32 oldPos) {
-	if (oldPos <= 1)
-		return;
-	BmString oldKey = BmString() << oldPos;
-	BmString newKey = BmString() << oldPos-1;
-	BmString tmpKey( "tmp");
-	RenameItem( oldKey, tmpKey);
-	RenameItem( newKey, oldKey);
-	RenameItem( tmpKey, newKey);
-}
-
-/*------------------------------------------------------------------------------*\
-	MoveDown()
-		-	
-		-	
-\*------------------------------------------------------------------------------*/
-void BmFilterChain::MoveDown( int32 oldPos) {
-	if (oldPos >= (int32)inheritedList::size())
-		return;
-	BmString oldKey = BmString() << oldPos;
-	BmString newKey = BmString() << oldPos+1;
-	BmString tmpKey( "tmp");
-	RenameItem( oldKey, tmpKey);
-	RenameItem( newKey, oldKey);
-	RenameItem( tmpKey, newKey);
-}
-
-/*------------------------------------------------------------------------------*\
-	NextPosition()
-		-	
-		-	
-\*------------------------------------------------------------------------------*/
-int32 BmFilterChain::NextPosition() {
+void BmFilterChain::ForeignKeyChanged( const BmString& key, 
+													const BmString& oldVal, 
+													const BmString& newVal) {
 	BmAutolockCheckGlobal lock( ModelLocker());
 	lock.IsLocked() 							|| BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
 	BmModelItemMap::const_iterator iter;
-	int32 highestPos = 0;
 	for( iter = inheritedList::begin(); iter != inheritedList::end(); ++iter) {
 		BmChainedFilter* filter = dynamic_cast< BmChainedFilter*>( iter->second.Get());
-		if (filter->Position() > highestPos)
-			highestPos = filter->Position();
-	}
-	return highestPos+1;
-}
-
-/*------------------------------------------------------------------------------*\
-	RenameFilterInChain( oldName, newName)
-		-	removes filter with given name from this filter-chains.
-\*------------------------------------------------------------------------------*/
-void BmFilterChain::RenameFilterInChain( const BmString& oldName, 
-													  const BmString& newName) {
-	BmModelItemMap::const_iterator iter;
-	for( iter = inheritedList::begin(); iter != inheritedList::end(); ) {
-		BmChainedFilter* filter = dynamic_cast< BmChainedFilter*>( iter++->second.Get());
-		if (filter && filter->FilterName() == oldName)
-			filter->FilterName( newName);
+		if (key == BmChainedFilter::MSG_FILTERNAME) {
+			if (filter && filter->Key() == oldVal)
+				RenameItem( oldVal, newVal);
+		}
 	}
 }
 
 /*------------------------------------------------------------------------------*\
-	RemoveFilterFromChain( filterName)
-		-	removes filter with given name from this filter-chains.
+	RenumberPos()
+		-	makes sure that there are no holes in the numerical order of filters
+			belonging to this chain
+		-	N.B.: In fact there are holes, but regularly, such that the
+			items are numbered by a step of 2.
 \*------------------------------------------------------------------------------*/
-void BmFilterChain::RemoveFilterFromChain( const BmString& filterName) {
+void BmFilterChain::RenumberPos() {
+	BmAutolockCheckGlobal lock( ModelLocker());
+	lock.IsLocked() 							|| BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
+	// first create a temporary map that is sorted by position:
+	BmFilterPosMap tempMap;
 	BmModelItemMap::const_iterator iter;
-	for( iter = inheritedList::begin(); iter != inheritedList::end(); ) {
-		BmChainedFilter* filter = dynamic_cast< BmChainedFilter*>( iter++->second.Get());
-		if (filter && filter->FilterName() == filterName)
-			inheritedList::RemoveItemFromList( filter);
+	for( iter = inheritedList::begin(); iter != inheritedList::end(); ++iter) {
+		BmChainedFilter* filter = dynamic_cast< BmChainedFilter*>( iter->second.Get());
+		tempMap[filter->Position()] = filter;
+	}
+	// now copy over to mPosMap and renumber while we're at it:
+	int32 currPos = 1;
+	mPosMap.clear();
+	BmFilterPosMap::iterator posIter;
+	for( posIter = tempMap.begin(); posIter != tempMap.end(); ++posIter) {
+		BmChainedFilter* filter = posIter->second;
+		if (filter->Position() != currPos)
+			filter->Position( currPos);
+		mPosMap[currPos] = filter;
+		currPos += 2;
 	}
 }
 
@@ -234,16 +216,8 @@ void BmFilterChain::RemoveFilterFromChain( const BmString& filterName) {
 void BmFilterChain::RemoveItemFromList( BmListModelItem* item) {
 	BmChainedFilter* filter = dynamic_cast< BmChainedFilter*>( item);
 	if (filter) {
-		BmAutolockCheckGlobal lock( mModelLocker);
-		lock.IsLocked()	 					|| BM_THROW_RUNTIME( ModelNameNC() << ":RemoveItemFromList(): Unable to get lock");
-		int32 removedPos = filter->Position();
 		inheritedList::RemoveItemFromList( filter);
-		BmModelItemMap::const_iterator iter;
-		for( iter = inheritedList::begin(); iter != inheritedList::end(); ) {
-			BmChainedFilter* filter = dynamic_cast< BmChainedFilter*>( iter++->second.Get());
-			if (filter->Position() > removedPos)
-				RenameItem( BmString()<<filter->Position(), BmString()<<(filter->Position()-1));
-		}
+		RenumberPos();
 	}
 }
 
@@ -284,6 +258,7 @@ void BmFilterChain::InstantiateItems( BMessage* archive) {
 		AddItemToList( newFilter);
 	}
 	BM_LOG2( BM_LogFilter, BmString("End of InstantiateItems() for FilterChain") << Key());
+	RenumberPos();
 	mInitCheck = B_OK;
 }
 
@@ -345,7 +320,7 @@ void BmFilterChainList::ForeignKeyChanged( const BmString& key,
 		BmModelItemMap::const_iterator iter;
 		for( iter = begin(); iter != end(); ++iter) {
 			BmFilterChain* chain = dynamic_cast< BmFilterChain*>( iter->second.Get());
-			chain->RenameFilterInChain( oldVal, newVal);
+			chain->RenameItem( oldVal, newVal);
 		}
 	}
 }
@@ -358,7 +333,7 @@ void BmFilterChainList::RemoveFilterFromAllChains( const BmString& filterName) {
 	BmModelItemMap::const_iterator iter;
 	for( iter = begin(); iter != end(); ++iter) {
 		BmFilterChain* chain = dynamic_cast< BmFilterChain*>( iter->second.Get());
-		chain->RemoveFilterFromChain( filterName);
+		chain->RemoveItemByKey( filterName);
 	}
 }
 

@@ -53,15 +53,16 @@ class BmRulerView;
 /*------------------------------------------------------------------------------*\
 	types of messages sent via the observe/notify system:
 \*------------------------------------------------------------------------------*/
-#define BM_NTFY_MAIL_VIEW	'bmbc'
+enum {
+	BM_NTFY_MAIL_VIEW							= 'bmbc',
 						// sent from BmMailView to observers whenever selection changes
-
-#define BM_MAILVIEW_SHOWRAW						'bmMa'
-#define BM_MAILVIEW_SHOWCOOKED					'bmMb'
-#define BM_MAILVIEW_SHOWINLINES_SEPARATELY	'bmMc'
-#define BM_MAILVIEW_SHOWINLINES_CONCATENATED	'bmMd'
-#define BM_MAILVIEW_SELECT_CHARSET				'bmMe'
-#define BM_MAILVIEW_COPY_URL						'bmMf'
+	BM_MAILVIEW_SHOWRAW						= 'bmMa',
+	BM_MAILVIEW_SHOWCOOKED					= 'bmMb',
+	BM_MAILVIEW_SHOWINLINES_SEPARATELY	= 'bmMc',
+	BM_MAILVIEW_SHOWINLINES_CONCATENATED= 'bmMd',
+	BM_MAILVIEW_SELECT_CHARSET				= 'bmMe',
+	BM_MAILVIEW_COPY_URL						= 'bmMf'
+};
 
 /*------------------------------------------------------------------------------*\
 	utility function to wrap lines at word boundary:

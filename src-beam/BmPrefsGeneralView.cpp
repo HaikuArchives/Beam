@@ -135,6 +135,9 @@ BmPrefsGeneralView::BmPrefsGeneralView()
 							mInOutAtTopControl = new BmCheckControl( "Show in & out - folders at top of mailfolder-view", 
 																						 	  new BMessage(BM_INOUT_AT_TOP_CHANGED), 
 																						 	  this, ThePrefs->GetBool("InOutAlwaysAtTop", false)),
+							mListviewLikeTrackerControl = new BmCheckControl( "Simulate Tracker's listview", 
+																						 	  new BMessage(BM_LISTVIEW_LIKE_TRACKER_CHANGED), 
+																						 	  this, ThePrefs->GetBool("ListviewLikeTracker", false)),
 							new Space( minimax(0,10,0,10)),
 							mUseDeskbarControl = new BmCheckControl( "Show Deskbar Icon", 
 																				  new BMessage(BM_USE_DESKBAR_CHANGED), 
@@ -227,6 +230,7 @@ BmPrefsGeneralView::~BmPrefsGeneralView() {
 	TheBubbleHelper->SetHelp( mWorkspaceControl, NULL);
 	TheBubbleHelper->SetHelp( mRestoreFolderStatesControl, NULL);
 	TheBubbleHelper->SetHelp( mInOutAtTopControl, NULL);
+	TheBubbleHelper->SetHelp( mListviewLikeTrackerControl, NULL);
 	TheBubbleHelper->SetHelp( mUseDeskbarControl, NULL);
 	TheBubbleHelper->SetHelp( mBeepNewMailControl, NULL);
 	TheBubbleHelper->SetHelp( mShowTooltipsControl, NULL);
@@ -266,6 +270,7 @@ void BmPrefsGeneralView::Initialize() {
 	TheBubbleHelper->SetHelp( mWorkspaceControl, "In this menu you can select the workspace that Beam should live in.");
 	TheBubbleHelper->SetHelp( mRestoreFolderStatesControl, "Checking this makes Beam remember the state of the mailfolder-view \n(which of the folders are expanded/collapsed).\nIf unchecked, Beam will always start with a collapsed mailfolder-view.");
 	TheBubbleHelper->SetHelp( mInOutAtTopControl, "Determines whether the in-, out- & drafts-folders will be shown\nat the top of the mailfolder-list or if they \nwill be sorted in alphabetically.");
+	TheBubbleHelper->SetHelp( mListviewLikeTrackerControl, "If checked, Beam's listviews will behave like the one's in Tracker:\nShift-Click toggles selection, Option-Click expands selection.");
 	TheBubbleHelper->SetHelp( mUseDeskbarControl, "Checking this makes Beam show an icon \nin the Deskbar.");
 	TheBubbleHelper->SetHelp( mBeepNewMailControl, "Checking this makes Beam play the 'New E-mail' beep-event\nwhen new mail has arrived.\nYou can change the corresponding sound in the BeOS Sound-preferences.");
 	TheBubbleHelper->SetHelp( mShowTooltipsControl, "Checking this makes Beam show a small \ninfo-window (just like this one) when the \nmouse-pointer lingers over a GUI-item.");
@@ -325,6 +330,7 @@ void BmPrefsGeneralView::Update() {
 	mDynamicStatusWinControl->SetValueSilently( ThePrefs->GetBool("DynamicStatusWin"));
 	mRestoreFolderStatesControl->SetValueSilently( ThePrefs->GetBool("RestoreFolderStates"));
 	mInOutAtTopControl->SetValueSilently( ThePrefs->GetBool("InOutAlwaysAtTop", false));
+	mListviewLikeTrackerControl->SetValueSilently( ThePrefs->GetBool("ListviewLikeTracker", false));
 	mUseDeskbarControl->SetValueSilently( ThePrefs->GetBool("UseDeskbar", true));
 	mBeepNewMailControl->SetValueSilently( ThePrefs->GetBool("BeepWhenNewMailArrived", true));
 	mShowTooltipsControl->SetValueSilently( ThePrefs->GetBool("ShowTooltips", true));
@@ -450,6 +456,13 @@ void BmPrefsGeneralView::MessageReceived( BMessage* msg) {
 				TheMailFolderView->LockLooper();
 				TheMailFolderView->SortItems();
 				TheMailFolderView->UnlockLooper();
+				NoticeChange();
+				break;
+			}
+			case BM_LISTVIEW_LIKE_TRACKER_CHANGED: {
+				bool b = mListviewLikeTrackerControl->Value();
+				ThePrefs->SetBool("ListviewLikeTracker", b);
+				ColumnListView::SetExtendedSelectionPolicy( b);
 				NoticeChange();
 				break;
 			}

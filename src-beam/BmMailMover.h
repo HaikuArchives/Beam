@@ -39,8 +39,10 @@
 #include "BmDataModel.h"
 #include "BmUtil.h"
 
-#define BM_JOBWIN_MOVEMAILS			'bmec'
+enum {
+	BM_JOBWIN_MOVEMAILS = 'bmec'
 						// sent to JobMetaController in order to move mails
+};
 
 class BmMailFolder;
 

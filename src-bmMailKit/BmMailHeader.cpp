@@ -602,6 +602,18 @@ bool BmMailHeader::AddressFieldContainsAddrSpec( BmString fieldName,
 }
 
 /*------------------------------------------------------------------------------*\
+	AddressFieldContainsAddress()
+		-	
+\*------------------------------------------------------------------------------*/
+bool BmMailHeader::AddressFieldContainsAddress( BmString fieldName, 
+																const BmString& address) {
+	fieldName.CapitalizeEachWord();
+	IsAddressField( fieldName)				|| BM_THROW_RUNTIME( BmString("BmMailHeader.AddressFieldContainsAddress(): Field is not an address-field."));
+	BmAddress addr( address);
+	return mAddrMap[fieldName].ContainsAddrSpec( addr.AddrSpec());
+}
+
+/*------------------------------------------------------------------------------*\
 	GetAddressList()
 		-	
 \*------------------------------------------------------------------------------*/

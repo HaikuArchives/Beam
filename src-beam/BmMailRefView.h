@@ -39,11 +39,13 @@
 /*------------------------------------------------------------------------------*\
 	types of messages sent via the observe/notify system:
 \*------------------------------------------------------------------------------*/
-#define BM_NTFY_MAILREF_SELECTION	'bmba'
+enum {
+	BM_NTFY_MAILREF_SELECTION	= 'bmba',
 						// sent from BmMailRefView to observers whenever mail-selection changes
-#define BM_MAILREF_INVOKED				'bmbb'
+	BM_MAILREF_INVOKED			= 'bmbb'
 						// sent from BmMailRefView whenever a mail-ref is invoked (should be shown
 						// inside a window of it's own).
+};
 
 class BmMailFolder;
 /*------------------------------------------------------------------------------*\

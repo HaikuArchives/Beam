@@ -91,7 +91,7 @@ void BmToolbarButton::CalcMaxSize( float& width, float& height, const char* labe
 		// Label only
 		w = labelWidth+2*DIVLABELW + (needsLatch?DIVLATCHW:0);
 		h = labelHeight+2*DIVLABELH;
-	} else if (showIcons && labelMode == "Hide") {
+	} else /* if (showIcons && labelMode == "Hide") */ {
 		// Icon only
 		w = iconWidth+2*DIVICONW + (needsLatch?DIVLATCHW:0);
 		h = iconHeight+2*DIVICONH;

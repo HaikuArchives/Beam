@@ -35,7 +35,7 @@
 #include "BmString.h"
 
 // fake system-message for redo:
-#define B_REDO	'REDO'
+const int32 B_REDO = 'REDO';
 
 class IMPEXPSANTAPARTSFORBEAM WrappingTextView : public BTextView
 {

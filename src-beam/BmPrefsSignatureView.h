@@ -101,12 +101,6 @@ private:
 
 
 
-#define BM_DYNAMIC_CHANGED 		'bmDC'
-#define BM_CHARSET_SELECTED 		'bmCS'
-#define BM_ADD_SIGNATURE			'bmAS'
-#define BM_REMOVE_SIGNATURE		'bmRS'
-#define BM_TEST_SIGNATURE			'bmTS'
-
 
 class BmMultiLineTextControl;
 class BmTextControl;
@@ -120,6 +114,14 @@ class MButton;
 class BmPrefsSignatureView : public BmPrefsView {
 	typedef BmPrefsView inherited;
 
+	enum {
+		BM_DYNAMIC_CHANGED 		= 'bmDC',
+		BM_CHARSET_SELECTED 		= 'bmCS',
+		BM_ADD_SIGNATURE			= 'bmAS',
+		BM_REMOVE_SIGNATURE		= 'bmRS',
+		BM_TEST_SIGNATURE			= 'bmTS'
+	};
+	
 public:
 	// c'tors and d'tor:
 	BmPrefsSignatureView();

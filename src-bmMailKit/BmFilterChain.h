@@ -60,11 +60,11 @@ public:
 	int16 ArchiveVersion() const			{ return nArchiveVersion; }
 
 	// getters:
-	inline int32 Position() const			{ return atoi( Key().String()); }
-	inline const BmString &FilterName() const		{ return mFilterName; }
+	inline int32 Position() const			{ return mPosition; }
 
 	// setters:
-	inline void FilterName( const BmString& s) { mFilterName = s; TellModelItemUpdated( UPD_ALL); }
+	inline void Position( int32 p)		{ mPosition = p;  
+													  TellModelItemUpdated( UPD_ALL | UPD_SORT); }
 
 	// archivable components:
 	static const char* const MSG_POSITION;
@@ -77,11 +77,16 @@ private:
 	BmChainedFilter( const BmChainedFilter&);
 	BmChainedFilter operator=( const BmChainedFilter&);
 	
-	BmString mFilterName;
-							// name of corresponding BmFilter-object
+	int mPosition;
+							// position of chained filter in chain
+							// numbering uses step of two, (i.e. 1,3,5,7, etc.)
+							// in order to be able to squeeze in an element
+							// during drag'n'drop operations.
 };
 
 
+
+typedef map< int32, BmChainedFilter*> BmFilterPosMap;
 
 /*------------------------------------------------------------------------------*\
 	BmFilterChain
@@ -104,11 +109,10 @@ public:
 	virtual ~BmFilterChain();
 	
 	// native methods:
-	int32 NextPosition();
-	void MoveUp( int32 oldPos);
-	void MoveDown( int32 oldPos);
-	void RenameFilterInChain( const BmString& oldName, const BmString& newName);
-	void RemoveFilterFromChain( const BmString& filterName);
+	void RenumberPos();
+	//
+	inline BmFilterPosMap::const_iterator posBegin() const { return mPosMap.begin(); }
+	inline BmFilterPosMap::const_iterator posEnd() const { return mPosMap.end(); }
 
 	// overrides of item base:
 	status_t Archive( BMessage* archive, bool deep = true) const;
@@ -121,6 +125,9 @@ public:
 	int16 ListArchiveVersion() const		{ return nListArchiveVersion; }
 	void RemoveItemFromList( BmListModelItem* item);
 	bool StartJob();
+	void ForeignKeyChanged( const BmString& key, 
+									const BmString& oldVal, 
+									const BmString& newVal);
 
 	// getters:
 	inline const BmString &Name() const	{ return Key(); }
@@ -132,6 +139,8 @@ private:
 	// Hide copy-constructor and assignment:
 	BmFilterChain( const BmFilterChain&);
 	BmFilterChain operator=( const BmFilterChain&);
+	
+	BmFilterPosMap mPosMap;
 
 };
 
