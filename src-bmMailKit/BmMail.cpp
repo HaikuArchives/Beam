@@ -134,6 +134,7 @@ const char* BM_MAIL_STATUS_SENT			= "Sent";
 const char* BM_MAIL_FOLDER_DRAFT			= "draft";
 const char* BM_MAIL_FOLDER_IN				= "in";
 const char* BM_MAIL_FOLDER_OUT			= "out";
+const char* BM_MAIL_FOLDER_SPAM			= "spam";
 
 const char* BM_MAIL_CLASS_SPAM			= "Spam";
 const char* BM_MAIL_CLASS_TOFU			= "Genuine";
@@ -883,6 +884,7 @@ bool BmMail::Store() {
 			BmString newBox( newHomePath.Path());
 			if (newBox ==  mbox + BM_MAIL_FOLDER_IN
 			|| newBox == mbox + BM_MAIL_FOLDER_OUT
+			|| newBox == mbox + BM_MAIL_FOLDER_SPAM
 			|| newBox == mbox + BM_MAIL_FOLDER_DRAFT) {
 				// yep, its a system folder, so we silently (re-)create it:
 				create_directory( newHomePath.Path(), 0755);
