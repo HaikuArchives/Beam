@@ -605,6 +605,7 @@ bool BmMail::Store() {
 			// in the temp-folder::
 			BString homePath  = ThePrefs->GetString("MailboxPath") 
 									+ (mOutbound ? "/out" : "/in");
+			create_directory( homePath.String(), 0755);
 			(err = homeDir.SetTo( homePath.String())) == B_OK
 													|| BM_THROW_RUNTIME( BString("Could not set directory to <") << homePath << ">\n\n Result: " << strerror(err));
 			BString newName  = BString(tmpPath.Path()) + "/" + CreateBasicFilename();
