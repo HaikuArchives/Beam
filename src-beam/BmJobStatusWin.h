@@ -70,7 +70,6 @@ public:
 	void StartJob( BmJobModel* model = NULL, bool startInNewThread=true,
 						int32 jobSpecifier = BmJobModel::BM_DEFAULT_JOB);
 	BHandler* GetControllerHandler() 	{ return this; }
-	void JobIsDone( bool completed);
 
 	// overrides of view base:
 	void MessageReceived( BMessage* msg);
@@ -80,6 +79,8 @@ public:
 	inline int MSecsBeforeRemove()		{ return MAX(0,mMSecsBeforeRemove); }
 
 protected:
+	void JobIsDone( bool completed);
+
 	int mMSecsBeforeShow;
 	int mMSecsBeforeRemove;
 	bool mIsAutoJob;	
@@ -180,13 +181,15 @@ public:
 	BmJobModel* CreateJobModel( BMessage* msg);
 	void StartJob( BmJobModel* model = NULL, bool startInNewThread=true,
 						int32 jobSpecifier = BmJobModel::BM_DEFAULT_JOB);
-	void JobIsDone( bool completed);
 
 	// overrides of controller base:
 	BHandler* GetControllerHandler() 	{ return this; }
 
 	// class-functions:
 	static bool AskUserForPwd( const BmString accName, BmString& pwd);
+
+protected:
+	void JobIsDone( bool completed);
 
 private:
 	BStatusBar* mStatBar;
@@ -282,6 +285,9 @@ public:
 	bool QuitRequested();
 	void Quit();
 	void MessageReceived( BMessage* msg);
+
+	// getters:
+	bool HasActiveJobs() const				{ return !mActiveJobs.empty(); }
 
 	//
 	static const rgb_color BM_COL_STATUSBAR;

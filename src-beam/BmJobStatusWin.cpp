@@ -827,7 +827,7 @@ bool BmJobStatusWin::QuitRequested() {
 	while( !IsHidden())
 		Hide();
 	BM_LOG2( BM_LogJobWin, 
-				BmString("JobStatusWin has been asked to quit; stopping all jobs"));
+				"JobStatusWin has been asked to quit; stopping all jobs");
 	JobMap::iterator iter;
 	for( iter = mActiveJobs.begin(); iter != mActiveJobs.end(); ++iter) {
 		BmJobStatusView* jobView = iter->second;
