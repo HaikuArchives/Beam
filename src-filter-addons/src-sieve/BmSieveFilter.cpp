@@ -164,6 +164,14 @@ bool BmSieveFilter::Execute( BmMsgContext* msgContext) {
 	BM_LOG2( BM_LogFilter, BmString("Sieve-Addon: asked to execute filter <") 
 									<< Name() 
 									<< "> on mail with Id <" << mailId << ">");
+
+	// set lock to serialize SIEVE-calls:
+	BAutolock lock( SieveLock());
+	if (!lock.IsLocked()) {
+		mLastErr = "Unable to get SIEVE-lock";
+		return false;
+	}
+
 	if (!mCompiledScript) {
 		bool scriptOK = CompileScript();
 		if (!scriptOK || !mCompiledScript) {
@@ -203,6 +211,9 @@ bool BmSieveFilter::CompileScript() {
 		mLastErr = "Unable to get SIEVE-lock";
 		return false;
 	}
+	if (mCompiledScript)
+		// script has already been compiled
+		return true;
 
 	mLastErr = mLastSieveErr = "";
 
@@ -262,6 +273,19 @@ cleanup:
 }
 
 /*------------------------------------------------------------------------------*\
+	Content()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmSieveFilter::Content( const BmString &s)
+{
+	mContent = s;
+	if (mCompiledScript) {
+		sieve_script_free(&mCompiledScript);
+		mCompiledScript = NULL; 
+	}
+}
+
+/*------------------------------------------------------------------------------*\
 	RegisterCallbacks()
 		-	
 \*------------------------------------------------------------------------------*/
@@ -304,6 +328,15 @@ BmString BmSieveFilter::ErrorString() const {
 	return LastErr() + "\n\n" 
 				<< "Error: " << sieve_strerror(LastErrVal()) << "\n\n"
 				<< LastSieveErr();
+}
+
+/*------------------------------------------------------------------------------*\
+	Initialize()
+		-	prepares the filter for execution (compiles the script).
+\*------------------------------------------------------------------------------*/
+void BmSieveFilter::Initialize()
+{
+	CompileScript();
 }
 
 /*------------------------------------------------------------------------------*\

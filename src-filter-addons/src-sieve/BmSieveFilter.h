@@ -64,6 +64,7 @@ public:
 
 	// implementations for abstract BmFilterAddon-methods:
 	bool Execute( BmMsgContext* msgContext);
+	virtual void Initialize();
 	bool SanityCheck( BmString& complaint, BmString& fieldName);
 	status_t Archive( BMessage* archive, bool deep = true) const;
 	BmString ErrorString() const;
@@ -100,15 +101,18 @@ public:
 											  void* script_context, void* message_context);
 
 	// getters:
-	inline const BmString &Content() const	{ return mContent; }
+	inline const BmString &Content() const	
+													{ return mContent; }
 	inline const BmString &Name() const	{ return mName; }
 
 	inline int LastErrVal() const			{ return mLastErrVal; }
-	inline const BmString &LastErr() const	{ return mLastErr; }
-	inline const BmString &LastSieveErr() const { return mLastSieveErr; }
+	inline const BmString &LastErr() const	
+													{ return mLastErr; }
+	inline const BmString &LastSieveErr() const 
+													{ return mLastSieveErr; }
 
 	// setters:
-	inline void Content( const BmString &s){ mContent = s; }
+	void Content( const BmString &s);
 
 	// archivable components:
 	static const char* const MSG_VERSION;

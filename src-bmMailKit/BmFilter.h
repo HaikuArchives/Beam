@@ -147,6 +147,7 @@ public:
 	void LoadAddons();
 	void UnloadAddons();
 	BmString DefaultNameForFilterKind( const BmString& filterKind);
+	bool HaveSpamFilter() const;
 
 	// overrides of listmodel base:
 	void ForeignKeyChanged( const BmString& key, 

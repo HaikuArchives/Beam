@@ -78,17 +78,20 @@ public:
 	
 	// native methods:
 	virtual bool Execute( BmMsgContext* msgContext) = 0;
+	virtual void Initialize()				{}
 	virtual bool SanityCheck( BmString& complaint, BmString& fieldName) = 0;
 	virtual status_t Archive( BMessage* archive, bool deep = true) const = 0;
 	virtual BmString ErrorString() const = 0;
 
 	virtual void ForeignKeyChanged( const BmString& /* key */, 
 											  const BmString& /* oldVal */, 
-											  const BmString& /* newVal */) {}
+											  const BmString& /* newVal */) 
+											  		{}
 
 	virtual void SetupFromMailData( const BmString& /* subject */, 
 											  const BmString& /* from */, 
-											  const BmString& /* To */)	  {}
+											  const BmString& /* To */)	  
+											  		{}
 
 	// foreign-key identifiers:
 	static const char* const FK_FOLDER;

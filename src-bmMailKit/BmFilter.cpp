@@ -114,11 +114,12 @@ void BmFilter::SetupAddonPart() {
 		BmInstantiateFilterFunc instFunc 
 			= FilterAddonMap[mKind].instantiateFilterFunc;
 		if (instFunc 
-		&& (mAddon = (*instFunc)( Key(), &mAddonArchive, mKind)) != NULL)
+		&& (mAddon = (*instFunc)( Key(), &mAddonArchive, mKind)) != NULL) {
 			BM_LOG2( BM_LogFilter, 
 						BmString("Instantiated Filter-Addon <") << mKind << ":" 
 							<< Key() << ">");
-		else
+			mAddon->Initialize();
+		} else
 			BM_LOG2( BM_LogFilter, 
 						BmString("Unable to instantiate Filter-Addon <") << mKind 
 							<< ":" << Key() << ">. This filter will be disabled.");
@@ -339,6 +340,15 @@ void BmFilterList::UnloadAddons() {
 BmString BmFilterList::DefaultNameForFilterKind( const BmString& filterKind)
 {
 	return FilterAddonMap[filterKind].defaultFilterName;
+}
+
+/*------------------------------------------------------------------------------*\
+	HaveSpamFilter()
+		-	determines whether or not the SPAM-filter has been loaded
+\*------------------------------------------------------------------------------*/
+bool BmFilterList::HaveSpamFilter() const
+{
+	return FilterAddonMap.find("Spam") != FilterAddonMap.end();
 }
 
 /*------------------------------------------------------------------------------*\
