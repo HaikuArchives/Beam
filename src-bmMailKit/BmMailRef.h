@@ -142,6 +142,7 @@ public:
 													{ mWhenCreated = t; }
 	inline void Classification( const BmString& c)
 													{ mClassification = c; }
+	void RatioSpam( float rs);
 
 	// flags indicating which parts are to be updated:
 	static const BmUpdFlags UPD_ACCOUNT			= 1<<2;
@@ -165,6 +166,7 @@ public:
 	// additional fieldnames for appended archives:
 	static const char* const MSG_OPCODE;
 							// indicates whether an item has been added or removed
+	static const float UNKNOWN_RATIO;
 
 protected:
 	BmMailRef( entry_ref &eref, struct stat& st);

@@ -73,6 +73,8 @@ const int16 BmMailRef::nArchiveVersion = 5;
 // additional fieldnames for appended archives:
 const char* const BmMailRef::MSG_OPCODE = 	"bm:op";
 
+const float BmMailRef::UNKNOWN_RATIO = 100.0;
+
 /*------------------------------------------------------------------------------*\
 	CreateInstance( )
 		-	static creator-func
@@ -162,7 +164,7 @@ BmMailRef::BmMailRef( entry_ref &eref, const node_ref& nref)
 	,	mWhenCreated( 0)
 	,	mSize( 0)
 	,	mHasAttachments( false)
-	,	mRatioSpam( 0)
+	,	mRatioSpam( UNKNOWN_RATIO)
 	,	mInitCheck( B_NO_INIT)
 {
 	mNodeRef = nref;
@@ -179,7 +181,7 @@ BmMailRef::BmMailRef( entry_ref &eref, struct stat& st)
 	,	mWhenCreated( 0)
 	,	mSize( 0)
 	,	mHasAttachments( false)
-	,	mRatioSpam( 0)
+	,	mRatioSpam( UNKNOWN_RATIO)
 	,	mInitCheck( B_NO_INIT)
 {
 	mNodeRef.device = st.st_dev;
@@ -197,7 +199,7 @@ BmMailRef::BmMailRef( BMessage* archive, node_ref& nref)
 	,	mSize( 0)
 	,	mHasAttachments( false)
 	,	mNodeRef( nref)
-	,	mRatioSpam( 0)
+	,	mRatioSpam( UNKNOWN_RATIO)
 	,	mInitCheck( B_NO_INIT)
 {
 	try {
@@ -240,8 +242,7 @@ BmMailRef::BmMailRef( BMessage* archive, node_ref& nref)
 		if (version >= 5) {
 			mClassification = FindMsgString( archive, MSG_CLASSIFICATION);
 			mRatioSpam = FindMsgFloat( archive, MSG_RATIO_SPAM);
-		} else
-			mClassification = "Genuine";
+		}
 
 		mSizeString = BytesToString( mSize,true);
 		mWhenCreatedString = ThePrefs->GetBool( "UseSwatchTimeInRefView", false)
@@ -250,7 +251,8 @@ BmMailRef::BmMailRef( BMessage* archive, node_ref& nref)
 		mWhenString = 	ThePrefs->GetBool( "UseSwatchTimeInRefView", false)
 								? TimeToSwatchString( mWhen)
 								: TimeToString( mWhen);
-		mRatioSpamString << mRatioSpam;
+		if (mRatioSpam != UNKNOWN_RATIO)
+			mRatioSpamString << mRatioSpam;
 
 		mInitCheck = B_OK;
 	} catch (BM_error &e) {
@@ -387,14 +389,16 @@ bool BmMailRef::ReadAttributes( const struct stat* statInfo,
 			updFlags |= UPD_WHEN;
 		}
 
-		float ratio;
-		node.ReadAttr( BM_MAIL_ATTR_RATIO_SPAM, B_FLOAT_TYPE, 0, 
-							&ratio, sizeof(float));
-		if (ratio != mRatioSpam) {
-			mRatioSpam = ratio;
-			mRatioSpamString = "";
-			mRatioSpamString << ratio;
-			updFlags |= UPD_RATIO_SPAM;
+		float ratio = UNKNOWN_RATIO;
+		ssize_t sz = node.ReadAttr( BM_MAIL_ATTR_RATIO_SPAM, B_FLOAT_TYPE, 0, 
+											 &ratio, sizeof(float));
+		if (sz != sizeof(float)) {
+			RatioSpam(UNKNOWN_RATIO);
+		} else {
+			if (ratio != mRatioSpam) {
+				RatioSpam(ratio);
+				updFlags |= UPD_RATIO_SPAM;
+			}
 		}
 
 		int32 att1 = 0;
@@ -481,6 +485,9 @@ bool BmMailRef::ReadAttributes( const struct stat* statInfo,
 		mSize = 0;
 		mSizeString = "";
 		mPriority = "";
+		mClassification = "";
+		mRatioSpam = 100;
+		mRatioSpamString = "";
 
 		BM_LOG2( BM_LogMailTracking, 
 					BmString("file <") << mEntryRef.name 
@@ -556,6 +563,17 @@ void BmMailRef::MarkAs( const char* status) {
 }
 
 /*------------------------------------------------------------------------------*\
+	RatioSpam()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailRef::RatioSpam(float rs) {
+	mRatioSpam = rs;
+	mRatioSpamString = "";
+	if (mRatioSpam != UNKNOWN_RATIO)
+		mRatioSpamString << mRatioSpam;
+}
+
+/*------------------------------------------------------------------------------*\
 	MarkAsSpam()
 		-	
 \*------------------------------------------------------------------------------*/
@@ -581,7 +599,7 @@ void BmMailRef::MarkAsSpamOrTofu( bool asSpam) {
 	try {
 		BNode mailNode;
 		status_t err;
-		mClassification = asSpam ? "Spam" : "Genuine";
+		mClassification = asSpam ? BM_MAIL_CLASS_SPAM : BM_MAIL_CLASS_TOFU;
 		if ((err = mailNode.SetTo( &mEntryRef)) != B_OK)
 			BM_THROW_RUNTIME( 
 				BmString( "Could not create node for current mail-file.\n\n"
