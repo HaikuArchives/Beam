@@ -2,8 +2,34 @@
 	BmUtil.cpp
 		$Id$
 */
+/*************************************************************************/
+/*                                                                       */
+/*  Beam - BEware Another Mailer                                         */
+/*                                                                       */
+/*  http://www.hirschkaefer.de/beam                                      */
+/*                                                                       */
+/*  Copyright (C) 2002 Oliver Tappe <beam@hirschkaefer.de>               */
+/*                                                                       */
+/*  This program is free software; you can redistribute it and/or        */
+/*  modify it under the terms of the GNU General Public License          */
+/*  as published by the Free Software Foundation; either version 2       */
+/*  of the License, or (at your option) any later version.               */
+/*                                                                       */
+/*  This program is distributed in the hope that it will be useful,      */
+/*  but WITHOUT ANY WARRANTY; without even the implied warranty of       */
+/*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU    */
+/*  General Public License for more details.                             */
+/*                                                                       */
+/*  You should have received a copy of the GNU General Public            */
+/*  License along with this program; if not, write to the                */
+/*  Free Software Foundation, Inc., 59 Temple Place - Suite 330,         */
+/*  Boston, MA  02111-1307, USA.                                         */
+/*                                                                       */
+/*************************************************************************/
 
 #include <stdio.h>
+#include <ctime>
+#include <parsedate.h>
 
 #include <Alert.h>
 
@@ -15,8 +41,8 @@ using namespace regexx;
 #include "BmPrefs.h"
 #include "BmUtil.h"
 
-BString BM_SPACES("                                                                                                                                                                                    ");
-BString BM_DEFAULT_STRING;
+BmString BM_SPACES("                                                                                                                                                                                    ");
+BmString BM_DEFAULT_STRING;
 
 /*------------------------------------------------------------------------------*\
 	FindMsgString( archive, name)
@@ -30,7 +56,7 @@ const char* FindMsgString( BMessage* archive, const char* name, int32 index) {
 	if (archive->FindString( name, index, &str) == B_OK) {
 		return str;
 	} else {
-		throw BM_invalid_argument( BString( "unknown message-field: ") << name);
+		throw BM_invalid_argument( BmString( "unknown message-field: ") << name);
 	}
 }
 
@@ -46,7 +72,7 @@ bool FindMsgBool( BMessage* archive, const char* name, int32 index) {
 	if (archive->FindBool( name, index, &b) == B_OK) {
 		return b;
 	} else {
-		throw BM_invalid_argument( BString( "unknown message-field: ") << name);
+		throw BM_invalid_argument( BmString( "unknown message-field: ") << name);
 	}
 }
 
@@ -62,7 +88,7 @@ int64 FindMsgInt64( BMessage* archive, const char* name, int32 index) {
 	if (archive->FindInt64( name, index, &i) == B_OK) {
 		return i;
 	} else {
-		throw BM_invalid_argument( BString( "unknown message-field: ") << name);
+		throw BM_invalid_argument( BmString( "unknown message-field: ") << name);
 	}
 }
 
@@ -78,7 +104,7 @@ int32 FindMsgInt32( BMessage* archive, const char* name, int32 index) {
 	if (archive->FindInt32( name, index, &i) == B_OK) {
 		return i;
 	} else {
-		throw BM_invalid_argument( BString( "unknown message-field: ") << name);
+		throw BM_invalid_argument( BmString( "unknown message-field: ") << name);
 	}
 }
 
@@ -94,7 +120,7 @@ int16 FindMsgInt16( BMessage* archive, const char* name, int32 index) {
 	if (archive->FindInt16( name, index, &i) == B_OK) {
 		return i;
 	} else {
-		throw BM_invalid_argument( BString( "unknown message-field: ") << name);
+		throw BM_invalid_argument( BmString( "unknown message-field: ") << name);
 	}
 }
 
@@ -111,7 +137,7 @@ BMessage* FindMsgMsg( BMessage* archive, const char* name, BMessage* msg, int32 
 	if (archive->FindMessage( name, index, msg) == B_OK) {
 		return msg;
 	} else {
-		throw BM_invalid_argument( BString( "unknown message-field: ") << name);
+		throw BM_invalid_argument( BmString( "unknown message-field: ") << name);
 	}
 }
 
@@ -127,7 +153,7 @@ float FindMsgFloat( BMessage* archive, const char* name, int32 index) {
 	if (archive->FindFloat( name, index, &f) == B_OK) {
 		return f;
 	} else {
-		BString s( "unknown message-field: ");
+		BmString s( "unknown message-field: ");
 		s += name;
 		throw BM_invalid_argument( s.String());
 	}
@@ -145,7 +171,7 @@ void* FindMsgPointer( BMessage* archive, const char* name, int32 index) {
 	if (archive->FindPointer( name, index, &ptr) == B_OK) {
 		return ptr;
 	} else {
-		throw BM_invalid_argument( BString( "unknown message-field: ") << name);
+		throw BM_invalid_argument( BmString( "unknown message-field: ") << name);
 	}
 }
 
@@ -157,7 +183,7 @@ void* FindMsgPointer( BMessage* archive, const char* name, int32 index) {
 			* 1048576 < bytes 			-> "X.xx MB"
 		-	we define a Mega-Byte as 1024**2 bytes (as Tracker does)
 \*------------------------------------------------------------------------------*/
-BString BytesToString( int32 bytes, bool mini) {
+BmString BytesToString( int32 bytes, bool mini) {
 	char buf[20];
 	if (bytes >= 1048576) {
 		sprintf( buf, "%6.2f MB", bytes/1048576.0);
@@ -166,29 +192,54 @@ BString BytesToString( int32 bytes, bool mini) {
 	} else {
 		sprintf( buf, "%ld %s", bytes, mini ? "b" : "bytes");
 	}
-	return BString(buf);
+	return BmString(buf);
 }
 
 /*------------------------------------------------------------------------------*\
 	TimeToString( time)
 		-	converts the given time into a string
 \*------------------------------------------------------------------------------*/
-BString TimeToString( time_t t, const char* format) {
-	BString s;
+BmString TimeToString( time_t t, const char* format) {
+	BmString s;
 	const int32 bufsize=100;
 	s.SetTo( '\0', bufsize);
-	char* buf=s.LockBuffer( bufsize+1);
-	strftime( buf, bufsize, format, localtime( &t));
+	char* buf=s.LockBuffer( bufsize);
+	struct tm ltm;
+	localtime_r( &t, &ltm);
+	strftime( buf, bufsize, format, &ltm);
 	s.UnlockBuffer( strlen(buf));
 	return s;
 }
 
+/*------------------------------------------------------------------------------*\
+	TimeToSwatchString( time)
+		-	converts the given (local) time into a string representing 
+			swatch internet time
+\*------------------------------------------------------------------------------*/
+BmString TimeToSwatchString( time_t t) {
+	struct tm utctm;
+	gmtime_r( &t, &utctm);
+	time_t utc = mktime( &utctm);
+	time_t swatch = utc+3600;	// add one hour
+	int32 beats = ((swatch % 86400) * 1000) / 86400;
+	return TimeToString( swatch, "%Y-%m-%d @") << beats;
+}
+
+/*------------------------------------------------------------------------------*\
+	ParseDateTime()
+		-	parses the given string for a legal date
+\*------------------------------------------------------------------------------*/
+bool ParseDateTime( const BmString& str, time_t& dateTime) {
+	if (!str.Length()) return false;
+	dateTime = parsedate( str.String(), -1);
+	return dateTime != -1;
+}
 
 /*------------------------------------------------------------------------------*\*\
 	ShowAlert( text)
 		-	pops up an Alert showing the passed (error-)text
 \*------------------------------------------------------------------------------*/
-void ShowAlert( const BString &text) {
+void ShowAlert( const BmString &text) {
 	BAlert* alert = new BAlert( NULL, text.String(), "OK", NULL, NULL, 
 										 B_WIDTH_AS_USUAL, B_STOP_ALERT);
 	alert->Go();
@@ -198,238 +249,10 @@ void ShowAlert( const BString &text) {
 	ShowAlertWithType( text, type)
 		-	pops up an Alert of given type, showing the passed text
 \*------------------------------------------------------------------------------*/
-void ShowAlertWithType( const BString &text, alert_type type) {
+void ShowAlertWithType( const BmString &text, alert_type type) {
 	BAlert* alert = new BAlert( NULL, text.String(), "OK", NULL, NULL, 
 										 B_WIDTH_AS_USUAL, type);
 	alert->Go();
-}
-
-/*------------------------------------------------------------------------------*\
-	BString::operator+
-		-	utility operators for easier concatenation
-\*------------------------------------------------------------------------------*/
-BString operator+(const BString& s1, const BString& s2) 
-{
-	BString result(s1);
-	result += s2;
-	return result;
-}
-BString operator+(const char* s1, const BString& s2) 
-{
-	BString result(s1);
-	result += s2;
-	return result;
-}
-BString operator+(const BString& s1, const char* s2) 
-{
-	BString result(s1);
-	result += s2;
-	return result;
-}
-
-/*------------------------------------------------------------------------------*\
-	RemoveSetFromString( string, charsToRemove)
-		-	removes the given chars form the given string
-		-	this function performs *much* better than BString::RemoveSet()
-\*------------------------------------------------------------------------------*/
-BString& RemoveSetFromString( BString& str, const char* charsToRemove) {
-	if (!charsToRemove) return str;
-	char* buf = str.LockBuffer( str.Length()+1);
-	if (buf) {
-		char* pos = buf;
-		char* newPos = buf;
-		while( *pos) {
-			if (strchr( charsToRemove, *pos))
-				pos++;
-			else {
-				if (pos != newPos)
-					*newPos++ = *pos++;
-				else {
-					newPos++;
-					pos++;
-				}
-			}
-		}
-		*newPos = 0;
-		str.UnlockBuffer( newPos-buf);
-	}
-	return str;
-}
-
-/*------------------------------------------------------------------------------*\
-	ReplaceSubstringWith( str, findStr, replaceStr)
-		-	replaces all occurrences of findStr in str with replaceStr
-		-	this function performs *much* better than BString::ReplaceAll()
-\*------------------------------------------------------------------------------*/
-BString& ReplaceSubstringWith( BString& str, const BString findStr, 
-										 const BString replaceStr) {
-	if (!findStr.Length() || !str.Length())
-		return str;
-	int32 newbufLen = (int32)MAX( MAX( replaceStr.Length(), 128), str.Length()*1.5);
-	char* newbuf = (char*)malloc( newbufLen+1);
-	if (newbuf) {
-		int32 destPos = 0;
-		int32 lastSrcPos = 0;
-		int32 len;
-		for( int32 srcPos=0; (srcPos=str.FindFirst( findStr, lastSrcPos))!=B_ERROR; ) {
-			len = srcPos-lastSrcPos;
-			if (destPos+len+replaceStr.Length() >= newbufLen) {
-				newbufLen = MAX( 2*newbufLen, destPos+len+replaceStr.Length());
-				newbuf = (char*)realloc( newbuf, newbufLen+1);
-			}
-			if (len>0) {
-				str.CopyInto( newbuf+destPos, lastSrcPos, len);
-				destPos+=len;
-			}
-			replaceStr.CopyInto( newbuf+destPos, 0, replaceStr.Length());
-			destPos += replaceStr.Length();
-			lastSrcPos = srcPos+findStr.Length();
-		}
-		if ((len = str.Length()-lastSrcPos)) {
-			if (destPos+len >= newbufLen) {
-				newbufLen = MAX( 2*newbufLen, destPos+len);
-				newbuf = (char*)realloc( newbuf, newbufLen+1);
-			}
-			str.CopyInto( newbuf+destPos, lastSrcPos, len);
-			destPos += len;
-		}
-		*(newbuf+destPos) = '\0';
-		str.SetTo( newbuf);
-		free( newbuf);
-	}
-	return str;
-}
-
-/*------------------------------------------------------------------------------*\
-	BmToLower( string)
-		-	calls ToLower() on given string in a DANO-compatible way:
-\*------------------------------------------------------------------------------*/
-BString& BmToLower( BString& str) {
-	if (str.Length())
-		// check introduced for Dano compatibility, otherwise "mysterious things"(TM) happen:
-		str.ToLower();
-	return str;
-}
-
-/*------------------------------------------------------------------------------*\
-	BmToUpper( string)
-		-	calls ToUpper() on given string in a DANO-compatible way:
-\*------------------------------------------------------------------------------*/
-BString& BmToUpper( BString& str) {
-	if (str.Length())
-		// check introduced for Dano compatibility, otherwise "mysterious things"(TM) happen:
-		str.ToUpper();
-	return str;
-}
-
-/*------------------------------------------------------------------------------*\
-	ConvertLinebreaksToLF( in, out)
-		-	converts linebreaks of given in-string from CRLF to LF
-		-	result is stored in out
-\*------------------------------------------------------------------------------*/
-void ConvertLinebreaksToLF( const BString& in, BString& out) {
-	int32 outSize = in.Length();
-	if (!outSize) {
-		out = "";
-		return;
-	}
-	char* buf = out.LockBuffer( outSize+1);
-	const char* pos = in.String();
-	char* newPos = buf;
-	while( *pos) {
-		if (*pos == '\r' && *(pos+1) == '\n')
-			pos++;
-		else
-			*newPos++ = *pos++;
-	}
-	*newPos = 0;
-	out.UnlockBuffer( newPos-buf);
-}
-
-/*------------------------------------------------------------------------------*\
-	ConvertLinebreaksToCRLF( string)
-		-	converts linebreaks of given in-string from LF to CRLF
-		-	result is stored in out
-\*------------------------------------------------------------------------------*/
-void ConvertLinebreaksToCRLF( const BString& in, BString& out) {
-	int32 outSize = in.Length()*2;
-	if (!outSize) {
-		out = "";
-		return;
-	}
-	char* buf = out.LockBuffer( outSize+1);
-	const char* pos = in.String();
-	char* newPos = buf;
-	while( *pos) {
-		if (*pos=='\n' && (pos==in.String() || *(pos-1)!='\r'))
-			*newPos++ = '\r';
-		*newPos++ = *pos++;
-	}
-	*newPos = 0;
-	out.UnlockBuffer( newPos-buf);
-	out.Truncate( newPos-buf);
-}
-
-/*------------------------------------------------------------------------------*\
-	ConvertTabsToSpaces( in, out, numSpaces)
-		-	converts all tabs of given in-string into numSpaces spaces
-		-	result is stored in out
-\*------------------------------------------------------------------------------*/
-void ConvertTabsToSpaces( const BString& in, BString& out, int numSpaces) {
-	int32 outSize = in.Length()*numSpaces;
-	if (!outSize) {
-		out = "";
-		return;
-	}
-	char* buf = out.LockBuffer( outSize+1);
-	const char* pos = in.String();
-	char* newPos = buf;
-	while( *pos) {
-		if (*pos=='\t') {
-			for( int i=0; i<numSpaces; ++i)
-				*newPos++ = ' ';
-			pos++;
-		} else
-			*newPos++ = *pos++;
-	}
-	*newPos = 0;
-	out.UnlockBuffer( newPos-buf);
-	out.Truncate( newPos-buf);
-}
-
-/*------------------------------------------------------------------------------*\
-	DeUrlify( in, out)
-		-	converts all %xx sequences into the corresponding chars
-		-	result is stored in out
-\*------------------------------------------------------------------------------*/
-#define HEXDIGIT2CHAR(d) (((d)>='0'&&(d)<='9') ? (d)-'0' : ((d)>='A'&&(d)<='F') ? (d)-'A'+10 : ((d)>='a'&&(d)<='f') ? (d)-'a'+10 : 0)
-//
-void DeUrlify( const BString& in, BString& out) {
-	int32 outSize = in.Length()*2;
-	if (!outSize) {
-		out = "";
-		return;
-	}
-	char* buf = out.LockBuffer( outSize+1);
-	const char* pos = in.String();
-	char* newPos = buf;
-	char c1, c2;
-	while( *pos) {
-		if (*pos=='%' && (c1=*(pos+1)) && c1!='%' && (c2=*(pos+2))) {
-			c1 = toupper(c1);
-			c2 = toupper(c2);
-			if (c1<'0' || c1>'9' && c1<'A' || c1>'F'
-			||  c2<'0' || c2>'9' && c2<'A' || c2>'F') {
-				*newPos++ = *pos++;
-				continue;
-			}
-			*newPos++ = HEXDIGIT2CHAR(c1)*16+HEXDIGIT2CHAR(c2);
-			pos+=3;
-		} else
-			*newPos++ = *pos++;
-	}
-	*newPos = 0;
-	out.UnlockBuffer( newPos-buf);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -441,17 +264,18 @@ void DeUrlify( const BString& in, BString& out) {
 		-	if keepLongWords is set, single words whose length exceeds maxLineLen 
 			(like URLs) will be preserved (i.e. not be wrapped).
 \*------------------------------------------------------------------------------*/
-void WordWrap( const BString& in, BString& out, int32 maxLineLen, BString nl, 
+void WordWrap( const BmString& in, BmString& out, int32 maxLineLen, BmString nl, 
 					bool keepLongWords) {
 	if (!in.Length()) {
-		out = "";
+		out.Truncate( 0, false);
 		return;
 	}
 	Regexx rx;
 	int32 lastPos = 0;
 	const char *s = in.String();
 	bool needBreak = false;
-	for(	int32 pos = 0;  !needBreak;  pos += nl.Length(), lastPos = pos) {
+	BmStrOStream tempIO( in.Length()*1.1, 1.1);
+	for( int32 pos = 0;  !needBreak;  pos += nl.Length(), lastPos = pos) {
 		pos = in.FindFirst( nl, pos);
 		if (pos == B_ERROR) {
 			// handle the characters between last newline and end of string:
@@ -472,10 +296,10 @@ void WordWrap( const BString& in, BString& out, int32 maxLineLen, BString nl,
 				// special-case lines containing only quotes and a long word,
 				// since in this case we want to avoid wrapping between quotes
 				// and the word:
-				BString lineBeforeSpace;
+				BmString lineBeforeSpace;
 				in.CopyInto( lineBeforeSpace, lastPos, 1+lastSpcPos-lastPos);
 				if (rx.exec( lineBeforeSpace, ThePrefs->GetString( "QuotingLevelRX"))) {
-					BString text=rx.match[0].atom[1];
+					BmString text=rx.match[0].atom[1];
 					if (!text.Length()) {
 						// the subpart before last space consists only of the quote,
 						// we avoid wrapping this line:
@@ -493,29 +317,29 @@ void WordWrap( const BString& in, BString& out, int32 maxLineLen, BString nl,
 					if (nextSpcPos==B_ERROR || nlPos<nextSpcPos) {
 						// have no space in line, we keep whole line:
 						if (nlPos == B_ERROR) {
-							out.Append( in.String()+lastPos);
-							out.Append( nl);
+							tempIO.Write( in.String()+lastPos, in.Length()-lastPos);
+							tempIO.Write( nl);
 							lastPos = in.Length();
 						} else {
-							out.Append( in.String()+lastPos, nl.Length()+nlPos-lastPos);
+							tempIO.Write( in.String()+lastPos, nl.Length()+nlPos-lastPos);
 							lastPos = nlPos + nl.Length();
 						}
 					} else {
 						// break long line at a space behind right margin:
-						out.Append( in.String()+lastPos, 1+nextSpcPos-lastPos);
-						out.Append( nl);
+						tempIO.Write( in.String()+lastPos, 1+nextSpcPos-lastPos);
+						tempIO.Write( nl);
 						lastPos = nextSpcPos+1;
 					}
 				} else {
 					// break line at right margin:
-					out.Append( in.String()+lastPos, maxLineLen);
-					out.Append( nl);
+					tempIO.Write( in.String()+lastPos, maxLineLen);
+					tempIO.Write( nl);
 					lastPos += maxLineLen;
 				}
 			} else {
 				// wrap line after last space:
-				out.Append( in.String()+lastPos, 1+lastSpcPos-lastPos);
-				out.Append( nl);
+				tempIO.Write( in.String()+lastPos, 1+lastSpcPos-lastPos);
+				tempIO.Write( nl);
 				lastPos = lastSpcPos+1;
 			}
 			lineLen = 0;
@@ -525,28 +349,27 @@ void WordWrap( const BString& in, BString& out, int32 maxLineLen, BString nl,
 				lineLen++;
 			}
 		}
-		out.Append( in.String()+lastPos, nl.Length()+pos-lastPos);
+		if (!needBreak)
+			tempIO.Write( in.String()+lastPos, nl.Length()+pos-lastPos);
 	}
 	if (lastPos < in.Length())
-		out.Append( in.String()+lastPos, in.Length()-lastPos);
+		tempIO.Write( in.String()+lastPos, in.Length()-lastPos);
+	out.Adopt( tempIO.TheString());
 }
 
 /*------------------------------------------------------------------------------*\
 	GenerateSortkeyFor( name))
 		-	returns the sortkey for the given name
 \*------------------------------------------------------------------------------*/
-BString GenerateSortkeyFor( const BString& name) {
-	BString skey( name);
+BmString GenerateSortkeyFor( const BmString& name) {
+	BmString skey( name);
 	if (!skey.Length()) 
 		return skey;
 	skey.ToLower();
-	ReplaceSubstringWith( skey, BString("Ä"), BString("ae"));
-	ReplaceSubstringWith( skey, BString("Ü"), BString("ue"));
-	ReplaceSubstringWith( skey, BString("Ö"), BString("oe"));
-	ReplaceSubstringWith( skey, BString("ä"), BString("ae"));
-	ReplaceSubstringWith( skey, BString("ü"), BString("ue"));
-	ReplaceSubstringWith( skey, BString("ö"), BString("oe"));
-	ReplaceSubstringWith( skey, BString("ß"), BString("ss"));
+	skey.IReplaceAll( "ä", "ae");
+	skey.IReplaceAll( "ö", "oe");
+	skey.IReplaceAll( "ü", "ue");
+	skey.ReplaceAll( "ß", "ss");
 	// that's it for now, decomposition for other chars later...
 	return skey;
 }

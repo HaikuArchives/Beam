@@ -35,22 +35,22 @@
 
 #include <Alert.h>
 #include <Message.h>
-#include <String.h>
+#include "BmString.h"
 
-extern BString BM_SPACES;
-extern BString BM_DEFAULT_STRING;
+extern BmString BM_SPACES;
+extern BmString BM_DEFAULT_STRING;
 
 /*------------------------------------------------------------------------------*\
 	ShowAlert( text)
 		-	pops up an Alert showing the passed text
 \*------------------------------------------------------------------------------*/
-void ShowAlert( const BString &text);
+void ShowAlert( const BmString &text);
 
 /*------------------------------------------------------------------------------*\
 	ShowAlertWithType( text, type)
 		-	pops up an Alert of given type, showing the passed text
 \*------------------------------------------------------------------------------*/
-void ShowAlertWithType( const BString &text, alert_type type);
+void ShowAlertWithType( const BmString &text, alert_type type);
 
 /*------------------------------------------------------------------------------*\
 	FindMsgXXX( archive, name)
@@ -69,53 +69,24 @@ void* FindMsgPointer( BMessage* archive, const char* name, int32 index=0);
 /*------------------------------------------------------------------------------*\
 	utility function to format a number of bytes into a string
 \*------------------------------------------------------------------------------*/
-BString BytesToString( int32 bytes, bool mini=false);
+BmString BytesToString( int32 bytes, bool mini=false);
 
 /*------------------------------------------------------------------------------*\
-	utility function to format a time into a string
+	time-related utility functions
 \*------------------------------------------------------------------------------*/
-BString TimeToString( time_t t, const char* format="%Y-%m-%d %H:%M:%S");
+BmString TimeToString( time_t t, const char* format="%Y-%m-%d %H:%M:%S");
+BmString TimeToSwatchString( time_t t);
+bool ParseDateTime( const BmString& str, time_t& dateTime);
 
-/*------------------------------------------------------------------------------*\
-	utility operator to easy concatenation of BStrings
-\*------------------------------------------------------------------------------*/
-BString operator+(const BString& s1, const BString& s2);
-BString operator+(const char* s1, const BString& s2);
-BString operator+(const BString& s1, const char* s2);
-/*------------------------------------------------------------------------------*\
-	utility function that removes a set of chars from a BString
-	(needed since performance of BString::RemoveAll() is so pathetic...)
-\*------------------------------------------------------------------------------*/
-BString& RemoveSetFromString( BString& str, const char* chars);
-BString& ReplaceSubstringWith( BString& str, const BString findStr, 
-										 const BString replaceStr);
-/*------------------------------------------------------------------------------*\
-	utility function to lower/upper a string (needed for Dano):
-\*------------------------------------------------------------------------------*/
-BString& BmToLower( BString& str);
-BString& BmToUpper( BString& str);
-/*------------------------------------------------------------------------------*\
-	utility functions to convert between different linebreak-styles:
-\*------------------------------------------------------------------------------*/
-void ConvertLinebreaksToLF( const BString& in, BString& out);
-void ConvertLinebreaksToCRLF( const BString& in, BString& out);
-/*------------------------------------------------------------------------------*\
-	utility function to convert tabs to a fixed number of spaces:
-\*------------------------------------------------------------------------------*/
-void ConvertTabsToSpaces( const BString& in, BString& out, int numSpaces);
-/*------------------------------------------------------------------------------*\
-	utility function to convert URL-encoded chars (%xx) to real chars
-\*------------------------------------------------------------------------------*/
-void DeUrlify( const BString& in, BString& out);
 /*------------------------------------------------------------------------------*\
 	utility function to wrap lines at word boundary:
 \*------------------------------------------------------------------------------*/
-void WordWrap( const BString& in, BString& out, int32 maxLineLen, 
-					BString nl, bool keepLongWords);
+void WordWrap( const BmString& in, BmString& out, int32 maxLineLen, 
+					BmString nl, bool keepLongWords);
 /*------------------------------------------------------------------------------*\
 	utility function to generate the sortkey for a given name:
 \*------------------------------------------------------------------------------*/
-BString GenerateSortkeyFor( const BString& name);
+BmString GenerateSortkeyFor( const BmString& name);
 /*------------------------------------------------------------------------------*\
 	utility defines for UTF8-character parsing:
 \*------------------------------------------------------------------------------*/
