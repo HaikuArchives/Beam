@@ -1,0 +1,88 @@
+$Id$
+
+Build-Howto for Beam:
+---------------------------
+
+In order to be able to compile Beam, you need to have the following setup:
+
+
+1.	You need the Beam-source (yes, trust me!), either get the current source-
+	release (beam_src_xxx.zip) or fetch the up-to-date source fresh from 
+	Beam's CVS-server:
+	
+	1. Open a Terminal and cd into the folder where you would like Beam to 
+	   live (a folder named beam will be created in here, see below).
+
+	2. Login to the CVS-server:
+
+		cvs -d:pserver:anonymous@cvs.sourceforge.net:/cvsroot/beam login
+
+		(press return when you are asked for a password)
+ 
+	3. Fetch the CVS-tree:
+
+		cvs -z3 -d:pserver:anonymous@cvs.sourceforge.net:/cvsroot/beam co beam
+
+		(that will take some time)
+	
+	After that has finished, a folder named 'beam' should have been created 
+	which contains the complete source-files.
+
+
+
+2.	Since Beam requires liblayout to run, it needs the liblayout-SDK during
+	compilation, so fetch this from:
+
+		http://www.xs4all.nl/~marcone/be.html
+
+	and install (copy) the "headers"-folder included in the archive to 
+		~/config/include/ 
+	and rename it to "liblayout", after which there should exist a file 
+		~/config/include/liblayout/layout.h 
+	(and several others...)
+
+
+
+3.	In order to compile the libSieve-subproject, Beam requires a BeIDE plugin
+	that knows how to handle yacc and flex input files (.y and .l files). 
+	Please fetch this plugin from BeBits:
+	
+		http://bebits.bebits.com/app/3166
+		
+	and install it (by dragging the plugin into the folder "drag_plugin_here").
+	
+	Please note that you need to fetch the 0.5 version of the plugin (or newer), 
+	since with the initial version, Beam won't link correctly.
+
+
+4.	In order to finally compile Beam, you just have to open and make the 
+	appropriate BeIDE-project, but since there are quite a few of those, you 
+	need to decide if you just want to use Beam or if you want to fiddle 
+	with its code (and thus would like debugging and logging facilities):
+
+	a. Compiling Beam for general use (a release build):
+
+		- For BeOS R5 x86, select beam/build/release/Beam_release.proj
+		- For BeOS BONE or Dano, select beam/build/release/Beam_bone_release.proj
+		- For BeOS R5 PPC, select beam/build_ppc/release/Beam_ppc.proj
+
+	b. Compiling Beam with debugging and logging (a development build):
+
+		- For BeOS R5 x86, select beam/build/devel/Beam.proj
+		- For BeOS BONE or Dano, select beam/build/devel/Beam_bone.proj
+		- (For BeOS R5 PPC there currently is no devel-project, sorry)
+
+	After you have opened the appropriate project-file, you will see that it uses 
+	a number of sub-projects. Just do a make on the top-level project and a 
+	couple of minutes later, Beam should be all done.
+
+
+Have fun!
+
+
+Please don't hesitate to ask me if you encounter any problems during compilation.
+
+
+cheers,
+	Oliver   <beam@hirschkaefer.de>
+
