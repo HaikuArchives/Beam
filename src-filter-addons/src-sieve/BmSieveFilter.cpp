@@ -157,7 +157,10 @@ status_t BmSieveFilter::Archive( BMessage* archive, bool) const {
 	Execute()
 		-	
 \*------------------------------------------------------------------------------*/
-bool BmSieveFilter::Execute( BmMsgContext* msgContext) {
+bool 
+BmSieveFilter::Execute( BmMsgContext* msgContext, 
+								const BmString& /*jobSpecifier*/)
+{
 	BmString mailId;
 	if (msgContext)
 		mailId = msgContext->mail->Name();
