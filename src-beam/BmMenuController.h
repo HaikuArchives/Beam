@@ -33,12 +33,6 @@
 
 #include "BmMenuControllerBase.h"
 
-extern const int32 BM_MC_MOVE_RIGHT;
-extern const int32 BM_MC_SKIP_FIRST_LEVEL;
-extern const int32 BM_MC_ADD_NONE_ITEM;
-extern const int32 BM_MC_LABEL_FROM_MARKED;
-extern const int32 BM_MC_RADIO_MODE;
-
 /*------------------------------------------------------------------------------*\
 	BmMenuController
 		-	

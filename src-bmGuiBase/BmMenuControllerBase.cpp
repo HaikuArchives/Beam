@@ -40,12 +40,6 @@ using namespace regexx;
 #include "BmMenuControllerBase.h"
 
 
-const int32 BM_MC_MOVE_RIGHT			= 1<<0;
-const int32 BM_MC_SKIP_FIRST_LEVEL	= 1<<1;
-const int32 BM_MC_ADD_NONE_ITEM		= 1<<2;
-const int32 BM_MC_LABEL_FROM_MARKED	= 1<<3;
-const int32 BM_MC_RADIO_MODE			= 1<<4;
-
 /*------------------------------------------------------------------------------*\
 	BmMenuControllerBase()
 		-	

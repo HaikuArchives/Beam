@@ -39,14 +39,6 @@ using namespace regexx;
 #include "BmMenuController.h"
 
 
-const int32 BM_MC_MOVE_RIGHT			= 1<<0;
-const int32 BM_MC_SKIP_FIRST_LEVEL	= 1<<1;
-const int32 BM_MC_ADD_NONE_ITEM		= 1<<2;
-const int32 BM_MC_LABEL_FROM_MARKED	= 1<<3;
-const int32 BM_MC_RADIO_MODE			= 1<<4;
-
-
-
 /*------------------------------------------------------------------------------*\
 	()
 		-	
@@ -107,19 +99,32 @@ BmMenuController::~BmMenuController() {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmMenuController::UpdateItemList( void) {
-	if (mListModel) {
-		// create menu according to list-model:
-		BmAutolockCheckGlobal lock( mListModel->ModelLocker());
-		if (!lock.IsLocked())
-			BM_THROW_RUNTIME( "UpdateItemList(): Unable to lock model");
-		BMenuItem* old;
-		while( (old = RemoveItem( (int32)0))!=NULL)
-			delete old;
-		BFont font;
-		GetFont( &font);
-		AddListToMenu( mListModel, this, mMsgTemplate, mMsgTarget,
-							&font, mFlags & BM_MC_SKIP_FIRST_LEVEL, 
-							mFlags & BM_MC_ADD_NONE_ITEM, mShortcuts);
+	// lock window first...
+	BLooper* win = Looper();
+	if (win)
+		win->Lock();
+	try {
+		if (mListModel) {
+			// ...then lock model:
+			BmAutolockCheckGlobal lock( mListModel->ModelLocker());
+			if (!lock.IsLocked())
+				BM_THROW_RUNTIME( "UpdateItemList(): Unable to lock model");
+			// now create menu according to list-model:
+			BMenuItem* old;
+			while( (old = RemoveItem( (int32)0))!=NULL)
+				delete old;
+			BFont font;
+			GetFont( &font);
+			AddListToMenu( mListModel, this, mMsgTemplate, mMsgTarget,
+								&font, mFlags & BM_MC_SKIP_FIRST_LEVEL, 
+								mFlags & BM_MC_ADD_NONE_ITEM, mShortcuts);
+		}
+		inherited::UpdateItemList();
+	} catch(...) {
+		if (win)
+			win->Unlock();
+		throw;
 	}
-	inherited::UpdateItemList();
+	if (win)
+		win->Unlock();
 }
