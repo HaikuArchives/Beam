@@ -31,7 +31,13 @@
 #ifndef _BmGuiUtil_h
 #define _BmGuiUtil_h
 
+class BFont;
+class BHandler;
+class BMenu;
+class BMenuItem;
 class BMessage;
+class BmListModel;
+class BmListModelItem;
 /*------------------------------------------------------------------------------*\*\
 	utility functions that make menu-creation easier:
 \*------------------------------------------------------------------------------*/
@@ -43,5 +49,11 @@ BMenuItem* CreateMenuItem( const char* label, BMessage* msg,
 
 extern const char* const MSG_CHARSET;
 void AddCharsetMenu( BMenu* menu, BHandler* target, int32 msgType);
+
+void AddListToMenu( BmListModel* list, BMenu* menu, BMessage* msgTemplate,
+						  BHandler* msgTarget, BFont* font, bool skipFirstLevel=false);
+void AddListItemToMenu( BmListModelItem* item, BMenu* menu, BMessage* msgTemplate,
+								BHandler* msgTarget,	BFont* font, 
+								bool skipThisButAddChildren=false, char shortcut=0);
 
 #endif

@@ -31,15 +31,18 @@
 #ifndef _BmMultiLineTextControl_h
 #define _BmMultiLineTextControl_h
 
+#include <MenuField.h>
+
 #include <layout.h>
 
+#include "SantaPartsForBeam.h"
 #include "MultiLineTextControl.h"
 
 class HGroup;
 
 #define BM_MULTILINE_TEXTFIELD_MODIFIED 'bmfn'
 
-class BmMultiLineTextControl : public MView, public MultiLineTextControl
+class IMPEXPSANTAPARTSFORBEAM BmMultiLineTextControl : public MView, public MultiLineTextControl
 {
 	typedef MultiLineTextControl inherited;
 

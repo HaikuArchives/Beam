@@ -29,21 +29,24 @@
 #ifndef REGEXX_HH
 #define REGEXX_HH
 
-#include "BmString.h"
 #include <vector>
+
+#include "libregexx.h"
+
+#include "BmString.h"
 #include "split.hh"
 #include "pcre.h"
 
 namespace regexx {
 
-	extern BmString BM_REGEXX_DEFAULT_STRING;
+	extern IMPEXPLIBREGEXX BmString BM_REGEXX_DEFAULT_STRING;
 	
   /** Class to store atoms.
    *
    *  @author Gustavo Niemeyer
    *
    */
-  class RegexxMatchAtom
+  class IMPEXPLIBREGEXX RegexxMatchAtom
   {
 
   public:
@@ -117,7 +120,7 @@ namespace regexx {
    *  @author Gustavo Niemeyer
    *
    */
-  class RegexxMatch
+  class IMPEXPLIBREGEXX RegexxMatch
   {
 
   public:
@@ -199,7 +202,7 @@ namespace regexx {
    * @author Gustavo Niemeyer
    *
    **/
-  class Regexx
+  class IMPEXPLIBREGEXX Regexx
   {
 
   public:

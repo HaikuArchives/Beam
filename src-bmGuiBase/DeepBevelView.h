@@ -40,11 +40,12 @@
 //******************************************************************************************************
 #include <View.h>
 
+#include "SantaPartsForBeam.h"
 
 //******************************************************************************************************
 //**** DeepBevelView
 //******************************************************************************************************
-class DeepBevelView : public BView
+class IMPEXPSANTAPARTSFORBEAM DeepBevelView : public BView
 {
 	public:
 		DeepBevelView(BRect frame, const char* name, uint32 resize_mask, uint32 flags);

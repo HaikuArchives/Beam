@@ -31,14 +31,15 @@
 #ifndef _BmLogHandler_h
 #define _BmLogHandler_h
 
-#include <map>
 #include <stdio.h>
 
+#include <Alert.h>
+#include <List.h>
 #include <Locker.h>
 #include <Looper.h>
 #include <StopWatch.h>
 
-#include "BmBasics.h"
+#include "BmBase.h"
 #include "BmString.h"
 
 /*------------------------------------------------------------------------------*\
@@ -55,7 +56,7 @@ struct node_ref;
 			executes them
 		-	different logfiles are identified by their name and will be created on demand
 \*------------------------------------------------------------------------------*/
-class BmLogHandler {
+class IMPEXPBMBASE BmLogHandler {
 
 	class BmLogfile;
 
@@ -71,19 +72,23 @@ public:
 	~BmLogHandler();
 
 	// native methods:
+	BmLogfile* LogfileFor( const BmString &logname);
 	BmLogfile* FindLogfile( const BmString &logname);
 	void CloseLog( const BmString &logname);
 	void LogToFile( const BmString &logname, uint32 flag, const BmString &msg, int8 minlevel=1);
 	void LogToFile( const char* const logname, uint32 flag, const char* const msg, int8 minlevel=1);
 
-	// setters:
-	inline void LogLevels( uint32 loglevels)	{ mLoglevels = loglevels; }
+	void StartWatchingLogfile( BHandler* looper, const char* logfileName);
+	void StopWatchingLogfile( BHandler* looper, const char* logfileName);
 
-	static BmLogHandler* theInstance;
+	// setters:
+	void LogLevels( uint32 loglevels, int32 minFileSize, int32 maxFileSize);
 
 	BStopWatch StopWatch;
 
 	bool mWaitingForShutdown;
+
+	BList mActiveLogs;					// list of logfiles
 
 private:
 	// Hide copy-constructor and assignment:
@@ -95,10 +100,11 @@ private:
 			-	implements a single logfile
 			-	the actual logging takes place in here
 	\*------------------------------------------------------------------------------*/
-	class BmLogfile : public BLooper{
+	class IMPEXPBMBASE BmLogfile : public BLooper{
 		typedef BLooper inherited;
+		friend BmLogHandler;
 	public:
-		BmLogfile( BFile* file, const char* fn);
+		BmLogfile( BFile* file, const char* fn, const char* ln);
 		~BmLogfile();
 		void Write( const char* const msg, const int32 threadId);
 		void MessageReceived( BMessage* msg);
@@ -106,6 +112,9 @@ private:
 		//	message component definitions for status-msgs:
 		static const char* const MSG_MESSAGE;
 		static const char* const MSG_THREAD_ID;
+
+		BList mWatchingHandlers;
+		BmString logname;
 
 	private:
 		BFile* mLogFile;
@@ -116,11 +125,11 @@ private:
 		BmLogfile operator=( const BmLogfile&);
 	};
 
-	typedef map<const BmString, BmLogfile*> LogfileMap;
-	LogfileMap mActiveLogs;					// map of names to logfiles
-	BLocker mLocker;							// benaphore used to lock write-access to map
+	BLocker mLocker;							// benaphore used to lock write-access to list
 	uint32 mLoglevels;
 	BDirectory* mAppFolder;
+	int32 mMinFileSize;
+	int32 mMaxFileSize;
 };
 
 /*------------------------------------------------------------------------------*\*\
@@ -129,20 +138,20 @@ private:
 
 // the different "terrains" we will be logging, each of them
 // has its own loglevel:
-extern const uint32 BM_LogPop;
-extern const uint32 BM_LogJobWin;
-extern const uint32 BM_LogMailParse;
-extern const uint32 BM_LogUtil;
-extern const uint32 BM_LogMailTracking;
-extern const uint32 BM_LogFolderView;
-extern const uint32 BM_LogRefView;
-extern const uint32 BM_LogMainWindow;
-extern const uint32 BM_LogModelController;
-extern const uint32 BM_LogMailEditWin;
-extern const uint32 BM_LogSmtp;
-extern const uint32 BM_LogPrefsWin;
-extern const uint32 BM_LogFilter;
-extern const uint32 BM_LogAll;
+extern IMPEXPBMBASE const uint32 BM_LogPop;
+extern IMPEXPBMBASE const uint32 BM_LogJobWin;
+extern IMPEXPBMBASE const uint32 BM_LogMailParse;
+extern IMPEXPBMBASE const uint32 BM_LogUtil;
+extern IMPEXPBMBASE const uint32 BM_LogMailTracking;
+extern IMPEXPBMBASE const uint32 BM_LogFolderView;
+extern IMPEXPBMBASE const uint32 BM_LogRefView;
+extern IMPEXPBMBASE const uint32 BM_LogMainWindow;
+extern IMPEXPBMBASE const uint32 BM_LogModelController;
+extern IMPEXPBMBASE const uint32 BM_LogMailEditWin;
+extern IMPEXPBMBASE const uint32 BM_LogSmtp;
+extern IMPEXPBMBASE const uint32 BM_LogPrefsWin;
+extern IMPEXPBMBASE const uint32 BM_LogFilter;
+extern IMPEXPBMBASE const uint32 BM_LogAll;
 
 // macros to convert the loglevel for a specific flag 
 // into it's internal bit-representation:
@@ -160,6 +169,23 @@ extern const uint32 BM_LogAll;
 // given flag:
 #define BM_LOGLVL_VAL(loglevel,flag) \
 (((loglevel & 1) ? flag : 0) + ((loglevel & 2) ? flag<<16 : 0))
+
+/*------------------------------------------------------------------------------*\
+	time-related utility functions
+\*------------------------------------------------------------------------------*/
+IMPEXPBMBASE BmString TimeToString( time_t t, const char* format="%Y-%m-%d %H:%M:%S");
+
+/*------------------------------------------------------------------------------*\
+	ShowAlert( text)
+		-	pops up an Alert showing the passed text
+\*------------------------------------------------------------------------------*/
+IMPEXPBMBASE void ShowAlert( const BmString &text);
+
+/*------------------------------------------------------------------------------*\
+	ShowAlertWithType( text, type)
+		-	pops up an Alert of given type, showing the passed text
+\*------------------------------------------------------------------------------*/
+IMPEXPBMBASE void ShowAlertWithType( const BmString &text, alert_type type);
 
 // the macros used for logging:
 #ifdef BM_LOGGING
@@ -195,6 +221,6 @@ extern const uint32 BM_LogAll;
 
 #endif
 
-#define TheLogHandler BmLogHandler::theInstance
+extern "C" IMPEXPBMBASE BmLogHandler* TheLogHandler;
 
 #endif

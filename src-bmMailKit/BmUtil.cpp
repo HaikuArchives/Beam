@@ -38,9 +38,6 @@ using namespace regexx;
 
 #include "BmBasics.h"
 #include "BmLogHandler.h"
-#include "BmMemIO.h"
-#include "BmPrefs.h"
-#include "BmRefManager.h"
 #include "BmUtil.h"
 
 BmString BM_SPACES("                                                                                                                                                                                    ");
@@ -184,22 +181,6 @@ BmString BytesToString( int32 bytes, bool mini) {
 }
 
 /*------------------------------------------------------------------------------*\
-	TimeToString( time)
-		-	converts the given time into a string
-\*------------------------------------------------------------------------------*/
-BmString TimeToString( time_t utc, const char* format) {
-	BmString s;
-	const int32 bufsize=100;
-	s.SetTo( '\0', bufsize);
-	char* buf=s.LockBuffer( bufsize);
-	struct tm ltm;
-	localtime_r( &utc, &ltm);
-	strftime( buf, bufsize, format, &ltm);
-	s.UnlockBuffer( strlen(buf));
-	return s;
-}
-
-/*------------------------------------------------------------------------------*\
 	TimeToSwatchString( time)
 		-	converts the given (local) time into a string representing 
 			swatch internet time
@@ -216,136 +197,19 @@ BmString TimeToSwatchString( time_t utc) {
 \*------------------------------------------------------------------------------*/
 bool ParseDateTime( const BmString& str, time_t& dateTime) {
 	if (!str.Length()) return false;
-	dateTime = parsedate( str.String(), -1);
-	return dateTime != -1;
-}
-
-/*------------------------------------------------------------------------------*\*\
-	ShowAlert( text)
-		-	pops up an Alert showing the passed (error-)text
-\*------------------------------------------------------------------------------*/
-void ShowAlert( const BmString &text) {
-	BAlert* alert = new BAlert( NULL, text.String(), "OK", NULL, NULL, 
-										 B_WIDTH_AS_USUAL, B_STOP_ALERT);
-	alert->Go();
-}
-
-/*------------------------------------------------------------------------------*\*\
-	ShowAlertWithType( text, type)
-		-	pops up an Alert of given type, showing the passed text
-\*------------------------------------------------------------------------------*/
-void ShowAlertWithType( const BmString &text, alert_type type) {
-	BAlert* alert = new BAlert( NULL, text.String(), "OK", NULL, NULL, 
-										 B_WIDTH_AS_USUAL, type);
-	alert->Go();
-}
-
-/*------------------------------------------------------------------------------*\
-	WordWrap( in, out, maxLineLen)
-		-	wraps given in-string along word-boundary
-		-	param maxLineLen indicates right border for wrap
-		-	resulting text is stored in param out
-		-	the string in has to be UTF8-encoded for this function to work correctly!
-		-	if keepLongWords is set, single words whose length exceeds maxLineLen 
-			(like URLs) will be preserved (i.e. not be wrapped).
-\*------------------------------------------------------------------------------*/
-void WordWrap( const BmString& in, BmString& out, int32 maxLineLen, BmString nl, 
-					bool keepLongWords) {
-	if (!in.Length()) {
-		out.Truncate( 0, false);
-		return;
-	}
+	// some mail-clients (notably BeMail!) generate date-formats with doubled
+	// time-zone information which confuses parsedatetime(). 
+	// N.B. Some other mailers enclose the same textual representation in
+	// comments (parantheses), which is perfectly legal and will be handled
+	// by the mail-header parsing code (the comments will not be present
+	// in the string handled here).
 	Regexx rx;
-	int32 lastPos = 0;
-	const char *s = in.String();
-	bool needBreak = false;
-	BmStringOBuf tempIO( in.Length()*1.1, 1.1);
-	for( int32 pos = 0;  !needBreak;  pos += nl.Length(), lastPos = pos) {
-		pos = in.FindFirst( nl, pos);
-		if (pos == B_ERROR) {
-			// handle the characters between last newline and end of string:
-			pos = in.Length();
-			needBreak = true;
-		}
-		// determine length of line in UTF8-characters (not bytes)
-		// and find last space before maxLineLen-border:
-		int32 lastSpcPos = B_ERROR;
-		int32 lineLen = 0;
-		for( int i=lastPos; i<pos; ++i) {
-			while( i<pos && IS_WITHIN_UTF8_MULTICHAR(s[i]))
-				i++;
-			if (s[i] == ' ' && lineLen<maxLineLen)
-				lastSpcPos = i;
-			lineLen++;
-		}
-		while (lineLen > maxLineLen) {
-			if (keepLongWords && lastSpcPos>lastPos) {
-				// special-case lines containing only quotes and a long word,
-				// since in this case we want to avoid wrapping between quotes
-				// and the word:
-				BmString lineBeforeSpace;
-				in.CopyInto( lineBeforeSpace, lastPos, 1+lastSpcPos-lastPos);
-				if (rx.exec( lineBeforeSpace, ThePrefs->GetString( "QuotingLevelRX"))) {
-					BmString text=rx.match[0].atom[1];
-					if (!text.Length()) {
-						// the subpart before last space consists only of the quote,
-						// we avoid wrapping this line:
-						lastSpcPos=B_ERROR;
-					}
-				}
-			}
-			if (lastSpcPos==B_ERROR || lastSpcPos<lastPos) {
-				// line doesn't contain any space character (before maxline-length), 
-				// we simply break it at right margin (unless keepLongWords is set):
-				if (keepLongWords) {
-					// find next space or end of line and break line there:
-					int32 nextSpcPos = in.FindFirst( " ", lastPos+maxLineLen);
-					int32 nlPos = in.FindFirst( nl, lastPos+maxLineLen);
-					if (nextSpcPos==B_ERROR || nlPos<nextSpcPos) {
-						// have no space in line, we keep whole line:
-						if (nlPos == B_ERROR) {
-							tempIO.Write( in.String()+lastPos, in.Length()-lastPos);
-							tempIO.Write( nl);
-							lastPos = in.Length();
-						} else {
-							tempIO.Write( in.String()+lastPos, nl.Length()+nlPos-lastPos);
-							lastPos = nlPos + nl.Length();
-						}
-					} else {
-						// break long line at a space behind right margin:
-						tempIO.Write( in.String()+lastPos, 1+nextSpcPos-lastPos);
-						tempIO.Write( nl);
-						lastPos = nextSpcPos+1;
-					}
-				} else {
-					// break line at right margin:
-					tempIO.Write( in.String()+lastPos, maxLineLen);
-					tempIO.Write( nl);
-					lastPos += maxLineLen;
-				}
-			} else {
-				// wrap line after last space:
-				tempIO.Write( in.String()+lastPos, 1+lastSpcPos-lastPos);
-				tempIO.Write( nl);
-				lastPos = lastSpcPos+1;
-			}
-			lineLen = 0;
-			lastSpcPos = B_ERROR;
-			for( int i=lastPos; i<pos; ++i) {
-				while( i<pos && IS_WITHIN_UTF8_MULTICHAR(s[i]))
-					i++;
-				if (s[i] == ' ' && lineLen<maxLineLen)
-					lastSpcPos = i;
-				lineLen++;
-			}
-		}
-		if (needBreak)
-			break;
-		tempIO.Write( in.String()+lastPos, nl.Length()+pos-lastPos);
-	}
-	if (lastPos < in.Length())
-		tempIO.Write( in.String()+lastPos, in.Length()-lastPos);
-	out.Adopt( tempIO.TheString());
+	// remove superfluous timezone information, i.e. convert something
+	// like '12:11:10 +0200 CEST' to '12:11:10 +0200':
+	const BmString s = rx.replace( str, "([+\\-]\\d+)[\\D]+$", "$1");
+	// convert datetime-string into time_t:
+	dateTime = parsedate( s.String(), -1);
+	return dateTime != -1;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -365,67 +229,3 @@ BmString GenerateSortkeyFor( const BmString& name) {
 	return skey;
 }
 
-
-
-#ifdef BM_REF_DEBUGGING
-/*------------------------------------------------------------------------------*\
-	BmAutolockCheckGlobal()
-		-	
-\*------------------------------------------------------------------------------*/
-BmAutolockCheckGlobal::BmAutolockCheckGlobal( BLooper* l) : mLooper( l), mLocker( NULL) {
-	Init();
-}
-
-/*------------------------------------------------------------------------------*\
-	BmAutolockCheckGlobal()
-		-	
-\*------------------------------------------------------------------------------*/
-BmAutolockCheckGlobal::BmAutolockCheckGlobal( BLocker* l) : mLooper( NULL), mLocker( l) {
-	Init();
-}
-
-/*------------------------------------------------------------------------------*\
-	BmAutolockCheckGlobal()
-		-	
-\*------------------------------------------------------------------------------*/
-BmAutolockCheckGlobal::BmAutolockCheckGlobal( BLocker& l) : mLooper( NULL), mLocker( &l) {
-	Init();
-}
-
-/*------------------------------------------------------------------------------*\
-	~BmAutolockCheckGlobal()
-		-	
-\*------------------------------------------------------------------------------*/
-BmAutolockCheckGlobal::~BmAutolockCheckGlobal() {
-	if (mLocker)
-		mLocker->Unlock();
-	if (mLooper)
-		mLooper->Unlock();
-}
-
-/*------------------------------------------------------------------------------*\
-	IsLocked()
-		-	
-\*------------------------------------------------------------------------------*/
-bool BmAutolockCheckGlobal::IsLocked() { 
-	return mLocker && mLocker->IsLocked()
-			|| mLooper && mLooper->IsLocked();
-}
-
-/*------------------------------------------------------------------------------*\
-	Init()
-		-	
-\*------------------------------------------------------------------------------*/
-void BmAutolockCheckGlobal::Init() {
-	if (BmRefObj::GlobalLocker()->IsLocked()) {
-		DEBUGGER( ("GlobalLocker must not be locked when using BmAutolockCheckGlobal!"));
-		mLocker = NULL;
-		mLooper = NULL;
-	} else {
-		if (mLocker)
-			mLocker->Lock();
-		if (mLooper)
-			mLooper->Lock();
-	}
-}
-#endif

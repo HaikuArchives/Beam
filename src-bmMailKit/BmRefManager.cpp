@@ -31,7 +31,9 @@
 
 #include <Alert.h>
 
+#include "BmLogHandler.h"
 #include "BmRefManager.h"
+#include "BmUtil.h"
 
 BmRefObj::BmProxyMap BmRefObj::nProxyMap;
 BLocker* BmRefObj::nGlobalLocker = NULL;
@@ -240,3 +242,72 @@ BmRefObj* BmProxy::FetchObject( const BmString& key, BmRefObj* ptr) {
 		BM_SHOWERR("FetchObject(): BmRefObj::GlobalLocker() must be locked!");
 	return NULL;
 }
+
+// helper function to keep logging out of header-file:
+void LogHelper( const BmString& text) {
+	BM_LOG2( BM_LogUtil, text);
+}
+
+
+#ifdef BM_REF_DEBUGGING
+/*------------------------------------------------------------------------------*\
+	BmAutolockCheckGlobal()
+		-	
+\*------------------------------------------------------------------------------*/
+BmAutolockCheckGlobal::BmAutolockCheckGlobal( BLooper* l) : mLooper( l), mLocker( NULL) {
+	Init();
+}
+
+/*------------------------------------------------------------------------------*\
+	BmAutolockCheckGlobal()
+		-	
+\*------------------------------------------------------------------------------*/
+BmAutolockCheckGlobal::BmAutolockCheckGlobal( BLocker* l) : mLooper( NULL), mLocker( l) {
+	Init();
+}
+
+/*------------------------------------------------------------------------------*\
+	BmAutolockCheckGlobal()
+		-	
+\*------------------------------------------------------------------------------*/
+BmAutolockCheckGlobal::BmAutolockCheckGlobal( BLocker& l) : mLooper( NULL), mLocker( &l) {
+	Init();
+}
+
+/*------------------------------------------------------------------------------*\
+	~BmAutolockCheckGlobal()
+		-	
+\*------------------------------------------------------------------------------*/
+BmAutolockCheckGlobal::~BmAutolockCheckGlobal() {
+	if (mLocker)
+		mLocker->Unlock();
+	if (mLooper)
+		mLooper->Unlock();
+}
+
+/*------------------------------------------------------------------------------*\
+	IsLocked()
+		-	
+\*------------------------------------------------------------------------------*/
+bool BmAutolockCheckGlobal::IsLocked() { 
+	return mLocker && mLocker->IsLocked()
+			|| mLooper && mLooper->IsLocked();
+}
+
+/*------------------------------------------------------------------------------*\
+	Init()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmAutolockCheckGlobal::Init() {
+	if (BmRefObj::GlobalLocker()->IsLocked()) {
+		DEBUGGER( ("GlobalLocker must not be locked when using BmAutolockCheckGlobal!"));
+		mLocker = NULL;
+		mLooper = NULL;
+	} else {
+		if (mLocker)
+			mLocker->Lock();
+		if (mLooper)
+			mLooper->Lock();
+	}
+}
+#endif

@@ -62,7 +62,7 @@ BmRulerView::BmRulerView( const BFont& font)
 		-	
 \*------------------------------------------------------------------------------*/
 BmRulerView::~BmRulerView() {
-	TheBubbleHelper.SetHelp( this, NULL);
+	TheBubbleHelper->SetHelp( this, NULL);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -150,9 +150,9 @@ void BmRulerView::MouseDown( BPoint point) {
 		BmString s = BmString("The right margin is currently fixed\nto a maximum of ") 
 							<< maxLineLen 
 							<< " characters.\n\nPlease check Preferences.";
-		TheBubbleHelper.SetHelp( this, s.String());
+		TheBubbleHelper->SetHelp( this, s.String());
 	} else
-		TheBubbleHelper.SetHelp( this, NULL);
+		TheBubbleHelper->SetHelp( this, NULL);
 	BMessage* msg = Looper()->CurrentMessage();
 	int32 buttons;
 	if (msg->FindInt32( "buttons", &buttons) == B_OK 

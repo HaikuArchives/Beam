@@ -33,9 +33,11 @@
 
 #include <MCheckBox.h>
 
+#include "SantaPartsForBeam.h"
+
 class HGroup;
 
-class BmCheckControl : public MCheckBox
+class IMPEXPSANTAPARTSFORBEAM BmCheckControl : public MCheckBox
 {
 	typedef MCheckBox inherited;
 

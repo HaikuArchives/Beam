@@ -28,8 +28,8 @@
 /*************************************************************************/
 
 
-#include <stdio.h> 
-#include <string.h> 
+//#include <stdio.h> 
+//#include <string.h> 
 
 #include <Directory.h> 
 #include <Messenger.h> 
@@ -37,11 +37,13 @@
 #include <File.h>
 #include <FindDirectory.h>
 #include <fs_attr.h> 
+#include <fs_index.h> 
 #include <NodeInfo.h> 
 #include <Path.h> 
 
 #include "BmBasics.h"
 #include "BmLogHandler.h"
+#include "BmResources.h"
 #include "BmStorageUtil.h"
 
 BmTempFileList TheTempFileList;
@@ -68,8 +70,14 @@ bool MoveToTrash( const entry_ref* refs, int32 count) {
 	if (refs && tracker.IsValid()) {
 		BMessage msg( B_DELETE_PROPERTY);
 		BMessage specifier( 'sref' );
+		char buf[1024];
 		for( int i=0; i<count; ++i) {
-			specifier.AddRef( "refs", &refs[i]);
+			// add refs through AddData in order to set the array's size in advance:
+			int32 nmLen = strlen( refs[i].name);
+			memcpy( buf, &refs[i], sizeof( entry_ref));
+			strcpy( buf+sizeof( entry_ref)-sizeof(char*), refs[i].name);
+			specifier.AddData( "refs", B_REF_TYPE, buf, 
+									 sizeof( const entry_ref)-sizeof(char*)+nmLen+1, false, count);
 		}
 		specifier.AddString( "property", "Entry" );
 		msg.AddSpecifier( &specifier );
@@ -101,7 +109,7 @@ bool MoveToTrash( const entry_ref* refs, int32 count) {
 \*------------------------------------------------------------------------------*/
 bool CheckMimeType( const entry_ref* eref, const char* type) {
 	BmString realMT = DetermineMimeType( eref);
-	return strcasecmp( type, realMT.String()) == 0;
+	return realMT.ICompare( type) == 0;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -134,6 +142,17 @@ BmString DetermineMimeType( const entry_ref* inref, bool doublecheck) {
 		}
 	}
 	return "application/octet-stream";	// basically means "unknown"
+}
+
+/*------------------------------------------------------------------------------*\
+	EnsureIndexExists( attrName)
+		-	create an index for the given attribute-name
+\*------------------------------------------------------------------------------*/
+void EnsureIndexExists( const char* attrName) {
+	status_t res = fs_create_index( TheResources->MailboxVolume.Device(), attrName,
+											  B_STRING_TYPE, 0);
+	if (res != B_OK && res != B_FILE_EXISTS)
+		BM_LOGERR( BmString("Could not create index for attribute ")<<attrName<<".\n\nError: "<<strerror( res));
 }
 
 /*------------------------------------------------------------------------------*\

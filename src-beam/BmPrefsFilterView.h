@@ -69,8 +69,9 @@ class BmFilterView : public BmListViewController
 	
 public:
 	// creator-func, c'tors and d'tor:
-	static BmFilterView* CreateInstance( minimax minmax, int32 width, int32 height);
-	BmFilterView(  minimax minmax, int32 width, int32 height);
+	static BmFilterView* CreateInstance( minimax minmax, int32 width, int32 height,
+													 bool showCaption=true);
+	BmFilterView(  minimax minmax, int32 width, int32 height, bool showCaption=true);
 	~BmFilterView();
 
 	// native methods:
@@ -99,16 +100,16 @@ private:
 
 
 
-#define BM_ADD_FILTER			'bmAS'
-#define BM_REMOVE_FILTER		'bmRS'
-#define BM_TEST_FILTER			'bmTS'
+#define BM_ADD_FILTER			'bmAF'
+#define BM_REMOVE_FILTER		'bmRF'
 
 
-class BmCheckControl;
-class BmMultiLineTextControl;
-class BmTextControl;
 class MButton;
-class MTabView;
+class MPopup;
+class MStringView;
+class VGroup;
+class LayeredGroup;
+class BmTextControl;
 /*------------------------------------------------------------------------------*\
 	BmPrefsFilterView
 		-	
@@ -143,14 +144,16 @@ private:
 	CLVContainerView* CreateFilterListView( minimax minmax, int32 width, int32 height);
 
 	BmListViewController* mFilterListView;
-	BmTextControl* mFilterControl;
-	BmMultiLineTextControl* mContentControl;
-	MButton* mAddButton;
+	MPopup* mAddPopup;
 	MButton* mRemoveButton;
-	MButton* mTestButton;
-	MTabView* mTabView;
+
+	MStringView* mInfoLabel;
+
+	LayeredGroup* mLayeredAddonGroup;
+	BmTextControl* mFilterControl;
 
 	BmRef<BmFilter> mCurrFilter;
+	BmFilterAddonPrefsView* mCurrAddonView;
 	
 	// Hide copy-constructor and assignment:
 	BmPrefsFilterView( const BmPrefsFilterView&);

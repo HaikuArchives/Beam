@@ -28,14 +28,15 @@
 /*************************************************************************/
 
 
-#include "BmString.h"
+#ifdef __POWERPC__
+#define BM_BUILDING_SANTAPARTSFORBEAM 1
+#endif
 
 #include "Colors.h"
 
 #include "BmBasics.h"
 #include "BmBusyView.h"
-#include "BmLogHandler.h"
-#include "BmUtil.h"
+#include "BmString.h"
 
 #define BM_PULSE 'bmPL'
 static BMessage pulseMsg(BM_PULSE);
@@ -46,8 +47,8 @@ static BMessage pulseMsg(BM_PULSE);
 \*------------------------------------------------------------------------------*/
 BmBusyView::BmBusyView( BRect frame)
 	:	inherited( frame, "BmBusyView", B_FOLLOW_NONE, B_WILL_DRAW)
-	,	mMsgRunner( NULL)
 	,	mCachedBounds( Bounds())
+	,	mMsgRunner( NULL)
 	,	mBusyCount( 0)
 	,	mCurrState( 0)
 {
@@ -68,7 +69,6 @@ BmBusyView::~BmBusyView() {
 \*------------------------------------------------------------------------------*/
 void BmBusyView::SetBusy() {
 	mBusyCount++;
-	BM_LOG2( BM_LogUtil, BmString("BusyView::SetBusy() busyCount:")<<mBusyCount);
 	if (!mMsgRunner) {
 		BMessenger ourselvesAsTarget( this);
 		if (!ourselvesAsTarget.IsValid())
@@ -87,7 +87,6 @@ void BmBusyView::SetBusy() {
 void BmBusyView::UnsetBusy() {
 	if (mBusyCount > 0) {
 		mBusyCount--;
-		BM_LOG2( BM_LogUtil, BmString("BusyView::UnsetBusy() busyCount:")<<mBusyCount);
 		if (!mBusyCount) {
 			delete mMsgRunner;
 			mMsgRunner = NULL;
@@ -102,19 +101,13 @@ void BmBusyView::UnsetBusy() {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmBusyView::MessageReceived( BMessage* msg) {
-	try {
-		switch( msg->what) {
-			case BM_PULSE: {
-				Pulse();
-				break;
-			}
-			default:
-				inherited::MessageReceived( msg);
+	switch( msg->what) {
+		case BM_PULSE: {
+			Pulse();
+			break;
 		}
-	}
-	catch( exception &err) {
-		// a problem occurred, we tell the user:
-		BM_SHOWERR( BmString("BusyView: ") << err.what());
+		default:
+			inherited::MessageReceived( msg);
 	}
 }
 
@@ -123,7 +116,6 @@ void BmBusyView::MessageReceived( BMessage* msg) {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmBusyView::Pulse() {
-	BM_LOG2( BM_LogUtil, BmString("BusyView::Pulse()"));
 	if (mBusyCount > 0) {
 		mCurrState+=10;
 		Invalidate();

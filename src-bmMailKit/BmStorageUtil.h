@@ -43,6 +43,8 @@ bool CheckMimeType( const entry_ref* eref, const char* type);
 
 BmString DetermineMimeType( const entry_ref* eref, bool doublecheck=false);
 
+void EnsureIndexExists( const char* attrName);
+
 bool FetchFile( BmString fileName, BmString& contents);
 
 void BmReadStringAttr( const BNode* node, const char* attrName, BmString& out);

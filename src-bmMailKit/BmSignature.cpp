@@ -37,6 +37,7 @@ using namespace regexx;
 #include "BmBasics.h"
 #include "BmEncoding.h"
 	using namespace BmEncoding;
+#include "BmLogHandler.h"
 #include "BmPrefs.h"
 #include "BmResources.h"
 #include "BmSignature.h"

@@ -46,10 +46,12 @@
 #include <layout.h>
 #include <MGroup.h>
 
+#include "SantaPartsForBeam.h"
+
 //******************************************************************************************************
 //**** UserResizeSplitView
 //******************************************************************************************************
-class UserResizeSplitView : public MGroup, public BView
+class IMPEXPSANTAPARTSFORBEAM UserResizeSplitView : public MGroup, public BView
 {
 	public:
 		UserResizeSplitView( MView* top_or_left_child, MView* right_or_bottom_child, 

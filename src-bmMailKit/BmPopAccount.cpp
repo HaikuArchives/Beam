@@ -39,6 +39,9 @@
 using namespace regexx;
 
 #include "BmBasics.h"
+#include "BmIdentity.h"
+#include "BmLogHandler.h"
+#include "BmMail.h"
 #include "BmMsgTypes.h"
 #include "BmPopAccount.h"
 #include "BmPopper.h"
@@ -53,10 +56,6 @@ const char* const BmPopAccount::MSG_NAME = 			"bm:name";
 const char* const BmPopAccount::MSG_USERNAME = 		"bm:username";
 const char* const BmPopAccount::MSG_PASSWORD = 		"bm:password";
 const char* const BmPopAccount::MSG_POP_SERVER = 	"bm:popserver";
-const char* const BmPopAccount::MSG_SMTP_ACCOUNT = "bm:smtpacc";
-const char* const BmPopAccount::MSG_REAL_NAME = 	"bm:realname";
-const char* const BmPopAccount::MSG_MAIL_ADDR = 	"bm:mailaddr";
-const char* const BmPopAccount::MSG_SIGNATURE_NAME = "bm:signaturename";
 const char* const BmPopAccount::MSG_CHECK_MAIL = 	"bm:checkmail";
 const char* const BmPopAccount::MSG_DELETE_MAIL = 	"bm:deletemail";
 const char* const BmPopAccount::MSG_PORT_NR = 		"bm:portnr";
@@ -64,11 +63,10 @@ const char* const BmPopAccount::MSG_UID = 			"bm:uid";
 const char* const BmPopAccount::MSG_AUTH_METHOD = 	"bm:authmethod";
 const char* const BmPopAccount::MSG_MARK_DEFAULT = "bm:markdefault";
 const char* const BmPopAccount::MSG_STORE_PWD = 	"bm:storepwd";
-const char* const BmPopAccount::MSG_MAIL_ALIASES = "bm:mailaliases";
-const char* const BmPopAccount::MSG_MARK_BUCKET = 	"bm:markbucket";
 const char* const BmPopAccount::MSG_CHECK_INTERVAL = "bm:checkinterval";
 const char* const BmPopAccount::MSG_FILTER_CHAIN = "bm:filterch";
-const int16 BmPopAccount::nArchiveVersion = 5;
+const char* const BmPopAccount::MSG_HOME_FOLDER =  "bm:homefold";
+const int16 BmPopAccount::nArchiveVersion = 6;
 
 const char* const BmPopAccount::AUTH_POP3 = "POP3";
 const char* const BmPopAccount::AUTH_APOP = "APOP";
@@ -85,7 +83,6 @@ BmPopAccount::BmPopAccount( const char* name, BmPopAccountList* model)
 	,	mPortNrString( "110")
 	,	mAuthMethod( "POP3")
 	,	mMarkedAsDefault( false)
-	,	mMarkedAsBitBucket( false)
 	,	mPwdStoredOnDisk( false)
 	,	mCheckInterval( 0)
 	,	mCheckIntervalString( "")
@@ -110,11 +107,6 @@ BmPopAccount::BmPopAccount( BMessage* archive, BmPopAccountList* model)
 	mUsername = FindMsgString( archive, MSG_USERNAME);
 	mPassword = FindMsgString( archive, MSG_PASSWORD);
 	mPOPServer = FindMsgString( archive, MSG_POP_SERVER);
-	mSMTPAccount = FindMsgString( archive, MSG_SMTP_ACCOUNT);
-	mRealName = FindMsgString( archive, MSG_REAL_NAME);
-	mMailAddr = FindMsgString( archive, MSG_MAIL_ADDR);
-	mMailAliases = FindMsgString( archive, MSG_MAIL_ALIASES);
-	mSignatureName = FindMsgString( archive, MSG_SIGNATURE_NAME);
 	mCheckMail = FindMsgBool( archive, MSG_CHECK_MAIL);
 	mDeleteMailFromServer = FindMsgBool( archive, MSG_DELETE_MAIL);
 	mPortNr = FindMsgInt16( archive, MSG_PORT_NR);
@@ -123,7 +115,6 @@ BmPopAccount::BmPopAccount( BMessage* archive, BmPopAccountList* model)
 	mAuthMethod.ToUpper();
 	mMarkedAsDefault = FindMsgBool( archive, MSG_MARK_DEFAULT);
 	mPwdStoredOnDisk = FindMsgBool( archive, MSG_STORE_PWD);
-	mMarkedAsBitBucket = FindMsgBool( archive, MSG_MARK_BUCKET);
 	const char* uid;
 	for( int32 i=0; archive->FindString( MSG_UID, i, &uid) == B_OK; ++i) {
 		mUIDs.push_back( uid);
@@ -139,6 +130,22 @@ BmPopAccount::BmPopAccount( BMessage* archive, BmPopAccountList* model)
 		mFilterChain = FindMsgString( archive, MSG_FILTER_CHAIN);
 	if (!mFilterChain.Length())
 		mFilterChain = BM_DefaultItemLabel;
+	if (version<=5) {
+		// with version 6 we introduced identities, so we split some info off
+		// the pop-account and create appropriate identities from it:
+		BmIdentity* ident = new BmIdentity( Key().String(), TheIdentityList.Get());
+		ident->POPAccount( Key());
+		ident->SMTPAccount( FindMsgString( archive, BmIdentity::MSG_SMTP_ACCOUNT));
+		ident->RealName( FindMsgString( archive, BmIdentity::MSG_REAL_NAME));
+		ident->MailAddr( FindMsgString( archive, BmIdentity::MSG_MAIL_ADDR));
+		ident->MailAliases( FindMsgString( archive, BmIdentity::MSG_MAIL_ALIASES));
+		ident->SignatureName( FindMsgString( archive, BmIdentity::MSG_SIGNATURE_NAME));
+		ident->MarkedAsBitBucket( FindMsgBool( archive, BmIdentity::MSG_MARK_BUCKET));
+		TheIdentityList->AddItemToList( ident);
+	}
+	mHomeFolder = archive->FindString( MSG_HOME_FOLDER);
+	if (!mHomeFolder.Length())
+		mHomeFolder = BM_MAIL_FOLDER_IN;
 	SetupIntervalRunner();
 }
 
@@ -161,20 +168,15 @@ status_t BmPopAccount::Archive( BMessage* archive, bool deep) const {
 		||	archive->AddString( MSG_USERNAME, mUsername.String())
 		||	archive->AddString( MSG_PASSWORD, mPassword.String())
 		||	archive->AddString( MSG_POP_SERVER, mPOPServer.String())
-		||	archive->AddString( MSG_SMTP_ACCOUNT, mSMTPAccount.String())
-		||	archive->AddString( MSG_REAL_NAME, mRealName.String())
-		||	archive->AddString( MSG_MAIL_ADDR, mMailAddr.String())
-		||	archive->AddString( MSG_MAIL_ALIASES, mMailAliases.String())
-		||	archive->AddString( MSG_SIGNATURE_NAME, mSignatureName.String())
 		||	archive->AddBool( MSG_CHECK_MAIL, mCheckMail)
 		||	archive->AddBool( MSG_DELETE_MAIL, mDeleteMailFromServer)
 		||	archive->AddInt16( MSG_PORT_NR, mPortNr)
 		||	archive->AddString( MSG_AUTH_METHOD, mAuthMethod.String())
 		||	archive->AddBool( MSG_MARK_DEFAULT, mMarkedAsDefault)
 		||	archive->AddBool( MSG_STORE_PWD, mPwdStoredOnDisk)
-		||	archive->AddBool( MSG_MARK_BUCKET, mMarkedAsBitBucket)
 		||	archive->AddInt16( MSG_CHECK_INTERVAL, mCheckInterval)
-		||	archive->AddString( MSG_FILTER_CHAIN, mFilterChain.String());
+		||	archive->AddString( MSG_FILTER_CHAIN, mFilterChain.String())
+		||	archive->AddString( MSG_HOME_FOLDER, mHomeFolder.String());
 	int32 count = mUIDs.size();
 	for( int i=0; ret==B_OK && i<count; ++i) {
 		ret = archive->AddString( MSG_UID, mUIDs[i].String());
@@ -210,52 +212,6 @@ BmString BmPopAccount::GetDomainName() const {
 							// return the address without the leading domain part
 	} else
 		return "";
-}
-
-/*------------------------------------------------------------------------------*\
-	GetFromAddress()
-		-	returns the constructed from - address for this account
-\*------------------------------------------------------------------------------*/
-BmString BmPopAccount::GetFromAddress() const {
-	BmString addr( mRealName);
-	BmString domainPart = GetDomainName();
-	if (domainPart.Length())
-		domainPart.Prepend( "@");
-	if (addr.Length()) {
-		if (mMailAddr.Length())
-			addr << " <" << mMailAddr << ">";
-		else
-			addr << " <" << mUsername << domainPart << ">";
-	} else {
-		if (mMailAddr.Length())
-			addr << mMailAddr;
-		else
-			addr << mUsername << domainPart;
-	}
-	return addr;
-}
-
-/*------------------------------------------------------------------------------*\
-	HandlesAddress()
-		-	determines if the given address belongs to this POP-account
-\*------------------------------------------------------------------------------*/
-bool BmPopAccount::HandlesAddress( BmString addr, bool needExactMatch) const {
-	Regexx rx;
-	if (addr==GetFromAddress() || addr==mMailAddr || addr==mUsername)
-		return true;
-	int32 atPos = addr.FindFirst("@");
-	if (atPos != B_ERROR) {
-		BmString addrDomain( addr.String()+atPos+1);
-		if (addrDomain != GetDomainName())
-			return false;						// address is from different domain
-		if (addr == mUsername+"@"+addrDomain)
-			return true;
-		addr.Truncate( atPos);
-	}
-	if (!needExactMatch && mMarkedAsBitBucket)
-		return true;
-	BmString regex = BmString("\\b") + addr + "\\b";
-	return rx.exec( mMailAliases, regex) > 0;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -353,11 +309,6 @@ bool BmPopAccount::SanityCheck( BmString& complaint, BmString& fieldName) const 
 		fieldName = "pwdstoredondisk";
 		return false;
 	}
-	if (!mSMTPAccount.Length()) {
-		complaint = "Please select a sending-account to be associated with this receiving account.";
-		fieldName = "smtpaccount";
-		return false;
-	}
 	return true;
 }
 
@@ -370,7 +321,7 @@ bool BmPopAccount::SanityCheck( BmString& complaint, BmString& fieldName) const 
 BmRef< BmPopAccountList> BmPopAccountList::theInstance( NULL);
 
 const char* const BmPopAccountList::MSG_AUTOCHECK = "bm:auto";
-const int16 BmPopAccountList::nArchiveVersion = 1;
+const int16 BmPopAccountList::nArchiveVersion = 2;
 
 /*------------------------------------------------------------------------------*\
 	CreateInstance()
@@ -415,6 +366,9 @@ const BmString BmPopAccountList::SettingsFileName() {
 		-	initializes the POP3-accounts info from the given message
 \*------------------------------------------------------------------------------*/
 void BmPopAccountList::InstantiateItems( BMessage* archive) {
+	int16 version;
+	if (archive->FindInt16( MSG_VERSION, &version) != B_OK)
+		version = 0;
 	BM_LOG2( BM_LogMailTracking, BmString("Start of InstantiateItems() for PopAccountList"));
 	status_t err;
 	int32 numChildren = FindMsgInt32( archive, BmListModelItem::MSG_NUMCHILDREN);
@@ -428,6 +382,13 @@ void BmPopAccountList::InstantiateItems( BMessage* archive) {
 	}
 	BM_LOG2( BM_LogMailTracking, BmString("End of InstantiateItems() for PopAccountList"));
 	mInitCheck = B_OK;
+	if (version<2) {
+		// with version 2 we introduced identities, so we have split some info off
+		// the pop-accounts and have created appropriate identities from it.
+		// In order to keep this info we store both lists:
+		TheIdentityList->Store();
+		this->Store();
+	}
 }
 
 /*------------------------------------------------------------------------------*\
@@ -458,78 +419,6 @@ void BmPopAccountList::ResetToSaved() {
 			acc->mUIDs = uidList;
 	}
 	BM_LOG2( BM_LogMailTracking, BmString("End of ResetToSaved() for PopAccountList"));
-}
-
-/*------------------------------------------------------------------------------*\
-	DefaultAccount()
-		-	returns the POP3-account that has been marked as default account
-		-	if no account has been marked as default, the first account is returned
-		-	if no POP3-account has been defined yet, NULL is returned
-\*------------------------------------------------------------------------------*/
-BmRef<BmPopAccount> BmPopAccountList::DefaultAccount() {
-	BmAutolockCheckGlobal lock( ModelLocker());
-	lock.IsLocked() 							|| BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
-	BmModelItemMap::const_iterator iter;
-	for( iter = begin(); iter != end(); ++iter) {
-		BmPopAccount* acc = dynamic_cast< BmPopAccount*>( iter->second.Get());
-		if (acc->MarkedAsDefault()) {
-			return acc;
-		}
-	}
-	if (size() >= 1)
-		return dynamic_cast< BmPopAccount*>( begin()->second.Get());
-	else
-		return NULL;
-}
-
-/*------------------------------------------------------------------------------*\
-	SetDefaultAccount( accName)
-		-	marks the account with the given name as the default account
-		-	any prior default-account is being reset
-\*------------------------------------------------------------------------------*/
-void BmPopAccountList::SetDefaultAccount( BmString accName) {
-	BmAutolockCheckGlobal lock( ModelLocker());
-	lock.IsLocked() 							|| BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
-	BmModelItemMap::const_iterator iter;
-	for( iter = begin(); iter != end(); ++iter) {
-		BmPopAccount* acc = dynamic_cast< BmPopAccount*>( iter->second.Get());
-		if (acc->Key() == accName) {
-			acc->MarkedAsDefault( true);
-		} else if (acc->MarkedAsDefault()) {
-			acc->MarkedAsDefault( false);
-		}
-	}
-}
-
-/*------------------------------------------------------------------------------*\
-	FindAccountForAddress( addr)
-		-	determines to which account the given address belongs (if any)
-\*------------------------------------------------------------------------------*/
-BmRef<BmPopAccount> BmPopAccountList::FindAccountForAddress( const BmString addr) {
-	BmAutolockCheckGlobal lock( ModelLocker());
-	lock.IsLocked() 							|| BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
-	BmModelItemMap::const_iterator iter;
-	// we first check whether any account handles the given address (as primary
-	// address or as alias):
-	for( iter = begin(); iter != end(); ++iter) {
-		BmPopAccount* acc = dynamic_cast< BmPopAccount*>( iter->second.Get());
-		if (acc->HandlesAddress( addr, true)) {
-			return acc;
-		}
-	}
-	// may we have a bit-bucket account (catch-all for failed delivery):
-	for( iter = begin(); iter != end(); ++iter) {
-		BmPopAccount* acc = dynamic_cast< BmPopAccount*>( iter->second.Get());
-		if (acc->MarkedAsBitBucket()) {
-			// check if the bit-bucket is for the given address's domain
-			BmString regex = acc->GetDomainName()<<"$";
-			Regexx rx;
-			if (rx.exec( addr, regex))
-				return acc;
-		}
-	}
-	// nothing found !?!
-	return NULL;
 }
 
 /*------------------------------------------------------------------------------*\

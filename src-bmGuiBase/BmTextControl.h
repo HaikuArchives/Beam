@@ -36,11 +36,13 @@
 
 #include <layout.h>
 
+#include "SantaPartsForBeam.h"
+
 class HGroup;
 
 #define BM_TEXTFIELD_MODIFIED 'bmfm'
 
-class BmTextControl : public MView, public BTextControl
+class IMPEXPSANTAPARTSFORBEAM BmTextControl : public MView, public BTextControl
 {
 	typedef BTextControl inherited;
 

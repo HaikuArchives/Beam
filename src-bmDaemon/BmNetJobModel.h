@@ -201,7 +201,7 @@ protected:
 	class BmNetIBuf
 		-	
 \*------------------------------------------------------------------------------*/
-class BmNetIBuf : public virtual BmMemIBuf {
+class BmNetIBuf : public BmMemIBuf {
 	typedef BmMemIBuf inherited;
 
 public:
@@ -224,7 +224,7 @@ protected:
 	class BmNetOBuf
 		-	
 \*------------------------------------------------------------------------------*/
-class BmNetOBuf : public virtual BmMemOBuf {
+class BmNetOBuf : public BmMemOBuf {
 	typedef BmMemOBuf inherited;
 
 public:

@@ -79,6 +79,7 @@ public:
 
 	// getters
 	inline bool IsQuitting()				{ return mIsQuitting; }
+	inline const BmString& AppPath()		{ return mAppPath; }
 
 	BmString BmAppVersion;
 	BmString BmAppName;
@@ -103,6 +104,8 @@ private:
 
 	BMessage* mPrintSetup;
 	BPrintJob mPrintJob;
+	
+	BmString mAppPath;
 	
 	static int InstanceCount;
 

@@ -33,7 +33,6 @@
 #define _BmMailFilter_h
 
 #include <vector>
-//#include <memory>
 
 #include <Message.h>
 
@@ -53,16 +52,6 @@ class BmMailFilter : public BmJobModel {
 	typedef vector< BmRef< BmMail> > BmMailVect;
 	typedef vector< const char**> BmHeaderVect;
 	
-	struct MsgContext {
-		MsgContext( BmMailFilter* mf, BmMail* m)
-			: mailFilter( mf), mail( m), headers( NULL), changed( false) 	{}
-		~MsgContext() 							{ if (headers) delete [] headers; }
-		BmMailFilter* mailFilter;
-		BmMail* mail;
-		const char** headers;
-		bool changed;
-	};
-
 public:
 	//	message component definitions for status-msgs:
 	static const char* const MSG_FILTER;
@@ -83,25 +72,6 @@ public:
 	void AddMail( BmMail* mail);
 	void ManageHeaderVect( const char**header);
 
-	// SIEVE-callbacks:
-	static int sieve_redirect( void* action_context, void* interp_context, 
-			   						void* script_context, void* message_context, 
-			   						const char** errmsg);
-	static int sieve_keep( void* action_context, void* interp_context, 
-			   				  void* script_context, void* message_context, 
-			   				  const char** errmsg);
-	static int sieve_fileinto( void* action_context, void* interp_context, 
-			   				  		void* script_context, void* message_context, 
-			   				  		const char** errmsg);
-	static int sieve_get_size( void* message_context, int* size);
-	static int sieve_get_header( void* message_context, const char* header,
-			  							  const char*** contents);
-	// SIEVE-helpers:
-	static void SetMailFlags( sieve_imapflags_t* flags, MsgContext* msgContext);
-
-	static int sieve_execute_error( const char* msg, void* interp_context,
-											  void* script_context, void* message_context);
-
 	// overrides of BmJobModel base:
 	bool StartJob();
 	bool ShouldContinue();
@@ -110,7 +80,7 @@ public:
 	inline BmString Name() const			{ return ModelName(); }
 
 private:
-	void ExecuteFilter( MsgContext& msgContext);
+	void ExecuteFilter( BmMail* mail);
 	void UpdateStatus( const float delta, const char* filename, const char* currentCount);
 
 	BmRef<BmFilter> mFilter;

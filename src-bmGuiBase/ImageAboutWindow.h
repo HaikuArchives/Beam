@@ -37,6 +37,8 @@
 #include <View.h>
 
 
+#include "SantaPartsForBeam.h"
+
 //******************************************************************************************************
 //**** Forward name declarations
 //******************************************************************************************************
@@ -48,15 +50,15 @@ class BStringView;
 //******************************************************************************************************
 //**** Constants
 //******************************************************************************************************
-const uint32 c_about_window_to_front = 'AbTF';
-const uint32 c_about_window_closed = 'AbCl';
-const uint32 c_about_window_url_invoked = 'AbUr';
+IMPEXPSANTAPARTSFORBEAM const uint32 c_about_window_to_front = 'AbTF';
+IMPEXPSANTAPARTSFORBEAM const uint32 c_about_window_closed = 'AbCl';
+IMPEXPSANTAPARTSFORBEAM const uint32 c_about_window_url_invoked = 'AbUr';
 
 
 //******************************************************************************************************
 //**** ImageAboutWindow
 //******************************************************************************************************
-class ImageAboutWindow : public BWindow
+class IMPEXPSANTAPARTSFORBEAM ImageAboutWindow : public BWindow
 {
 	public:
 		//Constructor and destructor

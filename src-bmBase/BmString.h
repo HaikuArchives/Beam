@@ -35,7 +35,9 @@
 
 char * strcasestr(const char *s, const char *find);
 
-class BmString {
+#include "BmBase.h"
+
+class IMPEXPBMBASE BmString {
 public:
 						BmString();
 						BmString(const char *);
@@ -501,8 +503,8 @@ operator!=(const char *str, const BmString &string)
 /*------------------------------------------------------------------------------*\
 	utility operator to easy concatenation of BStrings
 \*------------------------------------------------------------------------------*/
-BmString operator+(const BmString& s1, const BmString& s2);
-BmString operator+(const char* s1, const BmString& s2);
-BmString operator+(const BmString& s1, const char* s2);
+IMPEXPBMBASE BmString operator+(const BmString& s1, const BmString& s2);
+IMPEXPBMBASE BmString operator+(const char* s1, const BmString& s2);
+IMPEXPBMBASE BmString operator+(const BmString& s1, const char* s2);
 
 #endif /* __BSTRING__ */

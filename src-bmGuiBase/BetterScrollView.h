@@ -47,13 +47,14 @@
 //******************************************************************************************************
 //**** PROJECT HEADER FILES
 //******************************************************************************************************
+#include "SantaPartsForBeam.h"
 #include "ScrollViewCorner.h"
 
 
 //******************************************************************************************************
 //**** CLASS DECLARATIONS
 //******************************************************************************************************
-class BetterScrollView : public BScrollView
+class IMPEXPSANTAPARTSFORBEAM BetterScrollView : public BScrollView
 {
 	public:
 		BetterScrollView(const char *name, BView *target, uint32 resizeMask = B_FOLLOW_LEFT | B_FOLLOW_TOP,

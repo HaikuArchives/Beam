@@ -27,11 +27,12 @@
 //******************************************************************************************************
 #include <Bitmap.h>
 
+#include "SantaPartsForBeam.h"
 
 //******************************************************************************************************
 //**** CLASS DECLARATIONS
 //******************************************************************************************************
-class PrefilledBitmap : public BBitmap
+class IMPEXPSANTAPARTSFORBEAM PrefilledBitmap : public BBitmap
 {
 	public:
 		PrefilledBitmap(BRect bounds, color_space space, const void *data, int32 length = 0,

@@ -387,7 +387,7 @@ void BmMailRefView::MessageReceived( BMessage* msg) {
 				inherited::MessageReceived( msg);
 		}
 	}
-	catch( exception &err) {
+	catch( BM_error &err) {
 		// a problem occurred, we tell the user:
 		BM_SHOWERR( BmString("MailRefView: ") << err.what());
 	}
@@ -597,12 +597,14 @@ void BmMailRefView::ShowFolder( BmMailFolder* folder) {
 			mPartnerMailView->ShowMail( static_cast< BmMailRef*>( NULL));
 		if (refList)
 			StartJob( refList.Get());
-		else
+		else {
+			DetachModel();
 			MakeEmpty();
+		}
 		mCurrFolder = folder;
 		SelectionChanged();
 	}
-	catch( exception &err) {
+	catch( BM_error &err) {
 		// a problem occurred, we tell the user:
 		BM_SHOWERR( BmString("MailRefView: ") << err.what());
 	}
@@ -745,8 +747,9 @@ void BmMailRefView::AddMailRefMenu( BMenu* menu, BHandler* target,
 
 	BMenu* statusMenu = new BMenu( MENU_MARK_AS);
 	const char* stats[] = {
-		"Draft",		"Forwarded",		"New",		"Pending",		"Read",		"Redirected",
-		"Replied",	"Sent",		NULL
+		BM_MAIL_STATUS_DRAFT, BM_MAIL_STATUS_FORWARDED, BM_MAIL_STATUS_NEW, 
+		BM_MAIL_STATUS_PENDING, BM_MAIL_STATUS_READ, BM_MAIL_STATUS_REDIRECTED,
+		BM_MAIL_STATUS_REPLIED, BM_MAIL_STATUS_SENT,	NULL
 	};
 	for( int i=0; stats[i]; ++i) {
 		BMessage* msg = new BMessage( BMM_MARK_AS);
@@ -804,6 +807,6 @@ void BmMailRefView::ShowMenu( BPoint point) {
 	openRect.bottom = point.y + 5;
 	openRect.left = point.x - 5;
 	openRect.right = point.x + 5;
-  	theMenu->Go( point, true, false, openRect);
-  	delete theMenu;
+	theMenu->SetAsyncAutoDestruct( true);
+  	theMenu->Go( point, true, false, openRect, true);
 }

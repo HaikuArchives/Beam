@@ -37,6 +37,8 @@
 #include <TextView.h>
 
 
+#include "SantaPartsForBeam.h"
+
 //******************************************************************************************************
 //**** Forward name declarations
 //******************************************************************************************************
@@ -46,7 +48,7 @@ class MultiLineTextControlTextView;
 //******************************************************************************************************
 //**** MultiLineTextControl
 //******************************************************************************************************
-class MultiLineTextControl : public BControl
+class IMPEXPSANTAPARTSFORBEAM MultiLineTextControl : public BControl
 {
 	public:
 		MultiLineTextControl(BRect frame, const char* name, const char* label, bool inline_label,

@@ -160,8 +160,8 @@ BmPrefsShortcutsView::BmPrefsShortcutsView()
 		-	
 \*------------------------------------------------------------------------------*/
 BmPrefsShortcutsView::~BmPrefsShortcutsView() {
-	TheBubbleHelper.SetHelp( mListView, NULL);
-	TheBubbleHelper.SetHelp( mShortcutControl, NULL);
+	TheBubbleHelper->SetHelp( mListView, NULL);
+	TheBubbleHelper->SetHelp( mShortcutControl, NULL);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -171,8 +171,8 @@ BmPrefsShortcutsView::~BmPrefsShortcutsView() {
 void BmPrefsShortcutsView::Initialize() {
 	inherited::Initialize();
 
-	TheBubbleHelper.SetHelp( mListView, "This listview contains all menu-items of Beam \nwith their current shortcuts.");
-	TheBubbleHelper.SetHelp( mShortcutControl, "Here you can define the shortcut to be used for the currently selected item.\nJust type the shortcut you wish to use, but leave out the menu-key \n(i.e. <ALT> or <CTRL>), that is added automatically.");
+	TheBubbleHelper->SetHelp( mListView, "This listview contains all menu-items of Beam \nwith their current shortcuts.");
+	TheBubbleHelper->SetHelp( mShortcutControl, "Here you can define the shortcut to be used for the currently selected item.\nJust type the shortcut you wish to use, but leave out the menu-key \n(i.e. <ALT> or <CTRL>), that is added automatically.");
 
 	mShortcutControl->SetTarget( this);
 
@@ -259,7 +259,7 @@ void BmPrefsShortcutsView::MessageReceived( BMessage* msg) {
 				inherited::MessageReceived( msg);
 		}
 	}
-	catch( exception &err) {
+	catch( BM_error &err) {
 		// a problem occurred, we tell the user:
 		BM_SHOWERR( BmString("PrefsView_") << Name() << ":\n\t" << err.what());
 	}

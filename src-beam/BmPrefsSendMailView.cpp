@@ -46,6 +46,7 @@
 
 #include "BmCheckControl.h"
 #include "BmGuiUtil.h"
+#include "BmIdentity.h"
 #include "BmLogHandler.h"
 #include "BmMenuControl.h"
 #include "BmPopAccount.h"
@@ -215,7 +216,7 @@ void BmSendAccView::MessageReceived( BMessage* msg) {
 			default:
 				inherited::MessageReceived( msg);
 		}
-	} catch( exception &err) {
+	} catch( BM_error &err) {
 		// a problem occurred, we tell the user:
 		BM_SHOWERR( BmString("SendAccView:\n\t") << err.what());
 	}
@@ -318,16 +319,16 @@ BmPrefsSendMailView::BmPrefsSendMailView()
 		-	
 \*------------------------------------------------------------------------------*/
 BmPrefsSendMailView::~BmPrefsSendMailView() {
-	TheBubbleHelper.SetHelp( mAccListView, NULL);
-	TheBubbleHelper.SetHelp( mAccountControl, NULL);
-	TheBubbleHelper.SetHelp( mDomainControl, NULL);
-	TheBubbleHelper.SetHelp( mLoginControl, NULL);
-	TheBubbleHelper.SetHelp( mPwdControl, NULL);
-	TheBubbleHelper.SetHelp( mServerControl, NULL);
-	TheBubbleHelper.SetHelp( mPortControl, NULL);
-	TheBubbleHelper.SetHelp( mAuthControl, NULL);
-	TheBubbleHelper.SetHelp( mPopControl, NULL);
-	TheBubbleHelper.SetHelp( mCheckAndSuggestButton, NULL);
+	TheBubbleHelper->SetHelp( mAccListView, NULL);
+	TheBubbleHelper->SetHelp( mAccountControl, NULL);
+	TheBubbleHelper->SetHelp( mDomainControl, NULL);
+	TheBubbleHelper->SetHelp( mLoginControl, NULL);
+	TheBubbleHelper->SetHelp( mPwdControl, NULL);
+	TheBubbleHelper->SetHelp( mServerControl, NULL);
+	TheBubbleHelper->SetHelp( mPortControl, NULL);
+	TheBubbleHelper->SetHelp( mAuthControl, NULL);
+	TheBubbleHelper->SetHelp( mPopControl, NULL);
+	TheBubbleHelper->SetHelp( mCheckAndSuggestButton, NULL);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -337,31 +338,31 @@ BmPrefsSendMailView::~BmPrefsSendMailView() {
 void BmPrefsSendMailView::Initialize() {
 	inherited::Initialize();
 
-	TheBubbleHelper.SetHelp( mAccListView, "This listview shows every SMTP-account you have defined.");
-	TheBubbleHelper.SetHelp( mAccountControl, "Here you can enter a name for this SMTP-account.\nThis name is used to identify this account in Beam.");
-	TheBubbleHelper.SetHelp( mDomainControl, "Some SMTP-Servers check the domain announced by the client\n\
+	TheBubbleHelper->SetHelp( mAccListView, "This listview shows every SMTP-account you have defined.");
+	TheBubbleHelper->SetHelp( mAccountControl, "Here you can enter a name for this SMTP-account.\nThis name is used to identify this account in Beam.");
+	TheBubbleHelper->SetHelp( mDomainControl, "Some SMTP-Servers check the domain announced by the client\n\
 at session-start. This check will fail if the domain of the client-pc\n\
 differs from the real internet-domain (usually the case if\n\
 the client-pc has no permanent connection to the internet).\n\n\
 If the SMTP-server rejects connections, you should try to enter\n\
 your dial-in-provider's domain into this field, otherwise leave\n\
 the field empty.");
-	TheBubbleHelper.SetHelp( mLoginControl, "Here you can enter the username which \nwill be used during authentication.");
-	TheBubbleHelper.SetHelp( mPwdControl, "Here you can enter the password which \nwill be used during authentication.\n(You can only edit this field if you checked 'Store Password on Disk').");
-	TheBubbleHelper.SetHelp( mStorePwdControl, "Checking this allows Beam to store the given \n\
+	TheBubbleHelper->SetHelp( mLoginControl, "Here you can enter the username which \nwill be used during authentication.");
+	TheBubbleHelper->SetHelp( mPwdControl, "Here you can enter the password which \nwill be used during authentication.\n(You can only edit this field if you checked 'Store Password on Disk').");
+	TheBubbleHelper->SetHelp( mStorePwdControl, "Checking this allows Beam to store the given \n\
 password unsafely on disk.\n\
 If you uncheck this, Beam will ask you for the password\n\
 everytime you use this account.");
-	TheBubbleHelper.SetHelp( mServerControl, "Please enter the full name of the SMTP-server \ninto this field (e.g. 'mail.xxx.org').");
-	TheBubbleHelper.SetHelp( mPortControl, "Please enter the SMTP-port of the server \ninto this field (usually 25).");
-	TheBubbleHelper.SetHelp( mAuthControl, "Here you can select the authentication type to use:\n\
+	TheBubbleHelper->SetHelp( mServerControl, "Please enter the full name of the SMTP-server \ninto this field (e.g. 'mail.xxx.org').");
+	TheBubbleHelper->SetHelp( mPortControl, "Please enter the SMTP-port of the server \ninto this field (usually 25).");
+	TheBubbleHelper->SetHelp( mAuthControl, "Here you can select the authentication type to use:\n\
 <none> -  is the default mode, no authentication at all.\n\
 PLAIN  -  is a simple auth-mode which sends passwords in cleartext\n\
 LOGIN  -  is another simple auth-mode that sends passwords in cleartext\n\
 SMTP-AFTER-POP  -  does SMTP-authentication via the use of a POP3-server.");
-	TheBubbleHelper.SetHelp( mPopControl, "Here you can select the POP3-account that shall be used\n\
+	TheBubbleHelper->SetHelp( mPopControl, "Here you can select the POP3-account that shall be used\n\
 when authenticating via SMTP-AFTER-POP.");
-	TheBubbleHelper.SetHelp( mCheckAndSuggestButton, "When you click here, Beam will connect to the SMTP-server,\n\
+	TheBubbleHelper->SetHelp( mCheckAndSuggestButton, "When you click here, Beam will connect to the SMTP-server,\n\
 check which authentication types it supports and select\n\
 the most secure.");
 
@@ -411,6 +412,9 @@ void BmPrefsSendMailView::Activated() {
 							new BMenuItem( acc->Key().String(), new BMessage( BM_POP_SELECTED)), 
 							this);
 	}
+	mPopControl->MarkItem( mCurrAcc && mCurrAcc->AccForSmtpAfterPop().Length()
+									? mCurrAcc->AccForSmtpAfterPop().String()
+									: nEmptyItemLabel.String());
 }
 
 /*------------------------------------------------------------------------------*\
@@ -481,7 +485,17 @@ void BmPrefsSendMailView::MessageReceived( BMessage* msg) {
 					msg->FindPointer( "source", (void**)&srcView);
 					BmTextControl* source = dynamic_cast<BmTextControl*>( srcView);
 					if ( source == mAccountControl) {
-						TheSmtpAccountList->RenameItem( mCurrAcc->Name(), mAccountControl->Text());
+						BmString oldName = mCurrAcc->Name();
+						BmString newName = mAccountControl->Text();
+						TheSmtpAccountList->RenameItem( oldName, newName);
+						BmModelItemMap::const_iterator iter;
+						// update any links to this smtp-account:
+						BAutolock lock( TheIdentityList->ModelLocker());
+						for( iter = TheIdentityList->begin(); iter != TheIdentityList->end(); ++iter) {
+							BmIdentity* ident = dynamic_cast<BmIdentity*>( iter->second.Get());
+							if (ident && ident->SMTPAccount()==oldName)
+								ident->SMTPAccount( newName);
+						}
 					} else if ( source == mDomainControl)
 						mCurrAcc->DomainToAnnounce( mDomainControl->Text());
 					else if ( source == mLoginControl)
@@ -603,7 +617,7 @@ void BmPrefsSendMailView::MessageReceived( BMessage* msg) {
 				inherited::MessageReceived( msg);
 		}
 	}
-	catch( exception &err) {
+	catch( BM_error &err) {
 		// a problem occurred, we tell the user:
 		BM_SHOWERR( BmString("PrefsView_") << Name() << ":\n\t" << err.what());
 	}

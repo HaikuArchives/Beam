@@ -50,6 +50,7 @@
 	using namespace BmEncoding;
 #include "BmFilter.h"
 #include "BmGuiUtil.h"
+#include "BmIdentity.h"
 #include "BmLogHandler.h"
 #include "BmMailHeader.h"
 #include "BmMailRef.h"
@@ -57,7 +58,6 @@
 #include "BmMailEditWin.h"
 #include "BmMenuControl.h"
 #include "BmMsgTypes.h"
-#include "BmPopAccount.h"
 #include "BmPrefs.h"
 #include "BmResources.h"
 #include "BmSignature.h"
@@ -139,7 +139,7 @@ void BmPeopleControl::MessageReceived( BMessage* msg) {
 				inherited::MessageReceived( msg);
 		}
 	}
-	catch( exception &err) {
+	catch( BM_error &err) {
 		// a problem occurred, we tell the user:
 		BM_SHOWERR( ModelNameNC() << ": " << err.what());
 	}
@@ -454,14 +454,15 @@ void BmMailEditWin::CreateGUI() {
 	if (!mShowDetails3)
 		mDetails3Group->RemoveSelf();
 
-	// add all popaccounts to from menu twice (one for single-address mode, one for adding addresses):
+	// add all identities to from menu twice (one for single-address mode, one for adding addresses):
 	mFromControl->Menu()->SetLabelFromMarked( false);
 	BmModelItemMap::const_iterator iter;
 	BMenu* subMenu = new BMenu( "Add...");
-	for( iter = ThePopAccountList->begin(); iter != ThePopAccountList->end(); ++iter) {
-		BmPopAccount* acc = dynamic_cast< BmPopAccount*>( iter->second.Get());
-		mFromControl->Menu()->AddItem( new BMenuItem( acc->Key().String(), new BMessage( BM_FROM_SET)));
-		subMenu->AddItem( new BMenuItem( acc->Key().String(), new BMessage( BM_FROM_ADDED)));
+	vector<BmString> aliases;
+	for( iter = TheIdentityList->begin(); iter != TheIdentityList->end(); ++iter) {
+		BmIdentity* ident = dynamic_cast< BmIdentity*>( iter->second.Get());
+		mFromControl->Menu()->AddItem( new BMenuItem( ident->Key().String(), new BMessage( BM_FROM_SET)));
+		subMenu->AddItem( new BMenuItem( ident->Key().String(), new BMessage( BM_FROM_ADDED)));
 	}
 	mFromControl->Menu()->AddItem( subMenu);
 
@@ -738,24 +739,27 @@ void BmMailEditWin::MessageReceived( BMessage* msg) {
 				BMenuItem* item = NULL;
 				msg->FindPointer( "source", (void**)&item);
 				if (item) {
-					BmRef<BmListModelItem> accRef = ThePopAccountList->FindItemByKey( item->Label());
-					BmPopAccount* acc = dynamic_cast< BmPopAccount*>( accRef.Get()); 
-					if (acc) {
-						BmString fromString = msg->what == BM_FROM_ADDED ? mFromControl->Text() : "";
-						if (rx.exec( fromString, "\\S+")) {
-							fromString << ", " << acc->GetFromAddress();
-						} else {
-							fromString << acc->GetFromAddress();
-						}
-						mFromControl->SetText( fromString.String());
-						mFromControl->TextView()->Select( fromString.Length(), fromString.Length());
-						mFromControl->TextView()->ScrollToSelection();
+					BmRef<BmListModelItem> identRef = TheIdentityList->FindItemByKey( item->Label());
+					BmIdentity* ident = dynamic_cast< BmIdentity*>( identRef.Get()); 
+					if (!ident)
+						break;
+					TheIdentityList->CurrIdentity( ident);
+					BmString fromString = msg->what == BM_FROM_ADDED ? mFromControl->Text() : "";
+					if (rx.exec( fromString, "\\S+")) {
+						fromString << ", " << ident->GetFromAddress();
+					} else {
+						fromString << ident->GetFromAddress();
 					}
+					mFromControl->SetText( fromString.String());
+					mFromControl->TextView()->Select( fromString.Length(), fromString.Length());
+					mFromControl->TextView()->ScrollToSelection();
 					if (msg->what == BM_FROM_SET) {
+						// mark selected identity:
+						item->SetMarked( true);
 						// select corresponding smtp-account, if any:
-						mSmtpControl->MarkItem( acc->SMTPAccount().String());
+						mSmtpControl->MarkItem( ident->SMTPAccount().String());
 						// update signature:
-						BmString sigName = acc->SignatureName();
+						BmString sigName = ident->SignatureName();
 						mMailView->SetSignatureByName( sigName);
 						if (sigName.Length())
 							mSignatureControl->MarkItem( sigName.String());
@@ -830,7 +834,7 @@ void BmMailEditWin::MessageReceived( BMessage* msg) {
 				inherited::MessageReceived( msg);
 		}
 	}
-	catch( exception &err) {
+	catch( BM_error &err) {
 		// a problem occurred, we tell the user:
 		BM_SHOWERR( BmString("MailEditWin: ") << err.what());
 	}
@@ -914,12 +918,15 @@ BmRef<BmMail> BmMailEditWin::CurrMail() const {
 \*------------------------------------------------------------------------------*/
 void BmMailEditWin::SetFieldsFromMail( BmMail* mail) {
 	if (mail) {
+		BmString fromAddrSpec;
 		if (mail->IsRedirect()) {
 			mBccControl->SetTextSilently( mail->GetFieldVal( BM_FIELD_RESENT_BCC).String());
 			mCcControl->SetTextSilently( mail->GetFieldVal( BM_FIELD_RESENT_CC).String());
 			mFromControl->SetTextSilently( mail->GetFieldVal( BM_FIELD_RESENT_FROM).String());
 			mSenderControl->SetTextSilently( mail->GetFieldVal( BM_FIELD_RESENT_SENDER).String());
 			mToControl->SetTextSilently( mail->GetFieldVal( BM_FIELD_RESENT_TO).String());
+			fromAddrSpec 
+				= mail->Header()->GetAddressList( BM_FIELD_RESENT_FROM).FirstAddress().AddrSpec();
 		} else {
 			mBccControl->SetTextSilently( mail->GetFieldVal( BM_FIELD_BCC).String());
 			mCcControl->SetTextSilently( mail->GetFieldVal( BM_FIELD_CC).String());
@@ -927,9 +934,18 @@ void BmMailEditWin::SetFieldsFromMail( BmMail* mail) {
 			mSenderControl->SetTextSilently( mail->GetFieldVal( BM_FIELD_SENDER).String());
 			mToControl->SetTextSilently( mail->GetFieldVal( BM_FIELD_TO).String());
 			mReplyToControl->SetTextSilently( mail->GetFieldVal( BM_FIELD_REPLY_TO).String());
+			fromAddrSpec 
+				= mail->Header()->GetAddressList( BM_FIELD_FROM).FirstAddress().AddrSpec();
 		}
 		mSubjectControl->SetTextSilently( mail->GetFieldVal( BM_FIELD_SUBJECT).String());
 		SetTitle( (BmString("Edit Mail: ") + mSubjectControl->Text()).String());
+		// mark corresponding identity:
+		BmRef<BmIdentity> identRef = TheIdentityList->FindIdentityForAddrSpec( fromAddrSpec);
+		if (identRef) {
+			BMenuItem* item = mFromControl->Menu()->FindItem( identRef->Key().String());
+			if (item)
+				item->SetMarked( true);
+		}
 		// mark corresponding SMTP-account (if any):
 		BmString smtpAccount = mail->AccountName();
 		mSmtpControl->MarkItem( smtpAccount.String());
@@ -940,8 +956,10 @@ void BmMailEditWin::SetFieldsFromMail( BmMail* mail) {
 		else
 			mSignatureControl->MarkItem( "<none>");
 		// mark corresponding charset:
-		mCharsetControl->MenuItem()->SetLabel( mail->DefaultCharset().String());
-		mCharsetControl->MarkItem( mail->DefaultCharset().String());
+		BmString charset = mail->DefaultCharset();
+		charset.ToLower();
+		mCharsetControl->MenuItem()->SetLabel( charset.String());
+		mCharsetControl->MarkItem( charset.String());
 		// try to set convenient focus:
 		if (!mFromControl->TextView()->TextLength())
 			mFromControl->MakeFocus( true);

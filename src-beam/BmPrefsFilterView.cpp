@@ -28,17 +28,15 @@
 /*************************************************************************/
 
 #include <Alert.h>
+#include <MenuBar.h>
 #include <MenuItem.h>
 #include <PopUpMenu.h>
 
-
-//#include <liblayout/LayeredGroup.h>
 #include <liblayout/HGroup.h>
 #include <liblayout/LayeredGroup.h>
 #include <liblayout/MButton.h>
 #include <liblayout/MPopup.h>
 #include <liblayout/MStringView.h>
-#include <liblayout/MTabView.h>
 #include <liblayout/Space.h>
 #include <liblayout/VGroup.h>
 
@@ -49,6 +47,7 @@
 #include "UserResizeSplitView.h"
 
 #include "BmCheckControl.h"
+#include "BmFilterChain.h"
 #include "BmGuiUtil.h"
 #include "BmLogHandler.h"
 #include "BmMultiLineTextControl.h"
@@ -63,6 +62,7 @@
 
 enum Columns {
 	COL_KEY = 0,
+	COL_STATE
 };
 
 /*------------------------------------------------------------------------------*\
@@ -92,6 +92,7 @@ void BmFilterItem::UpdateView( BmUpdFlags flags) {
 	if (flags & UPD_ALL) {
 		BmListColumn cols[] = {
 			{ filter->Key().String(),			false },
+			{ filter->IsDisabled() ? "DISABLED" : "",			false },
 			{ NULL, false }
 		};
 		SetTextCols( 0, cols);
@@ -108,18 +109,20 @@ void BmFilterItem::UpdateView( BmUpdFlags flags) {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmFilterView* BmFilterView::CreateInstance( minimax minmax, int32 width, int32 height) {
-	return new BmFilterView( minmax, width, height);
+BmFilterView* BmFilterView::CreateInstance( minimax minmax, int32 width, int32 height,
+														  bool showCaption) {
+	return new BmFilterView( minmax, width, height, showCaption);
 }
 
 /*------------------------------------------------------------------------------*\
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmFilterView::BmFilterView( minimax minmax, int32 width, int32 height)
+BmFilterView::BmFilterView( minimax minmax, int32 width, int32 height, 
+									 bool showCaption)
 	:	inherited( minmax, BRect(0,0,width-1,height-1), "Beam_FilterView", 
 					  B_SINGLE_SELECTION_LIST, 
-					  false, true, true, false)
+					  false, true, showCaption, false)
 {
 	int32 flags = 0;
 	SetViewColor( B_TRANSPARENT_COLOR);
@@ -130,7 +133,8 @@ BmFilterView::BmFilterView( minimax minmax, int32 width, int32 height)
 					B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE,
 					B_FOLLOW_TOP_BOTTOM, true, true, true, B_FANCY_BORDER);
 
-	AddColumn( new CLVColumn( "Name", 300.0, flags, 50.0));
+	AddColumn( new CLVColumn( "Name", 200.0, flags, 50.0));
+	AddColumn( new CLVColumn( "State", 80.0, flags, 50.0));
 
 	SetSortFunction( CLVEasyItem::CompareItems);
 	SetSortKey( COL_KEY);
@@ -165,7 +169,9 @@ CLVContainerView* BmFilterView::CreateContainer( bool horizontal, bool vertical,
 	return new BmCLVContainerView( fMinMax, this, ResizingMode, flags, horizontal, 
 											 vertical, scroll_view_corner, border, mShowCaption,
 											 mShowBusyView, 
-											 be_plain_font->StringWidth(" 99 filters "));
+											 mShowCaption 
+											 		? be_plain_font->StringWidth(" 99 filters ")
+											 		: 0);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -191,7 +197,7 @@ void BmFilterView::MessageReceived( BMessage* msg) {
 			default:
 				inherited::MessageReceived( msg);
 		}
-	} catch( exception &err) {
+	} catch( BM_error &err) {
 		// a problem occurred, we tell the user:
 		BM_SHOWERR( BmString("FilterView:\n\t") << err.what());
 	}
@@ -209,18 +215,52 @@ void BmFilterView::MessageReceived( BMessage* msg) {
 \*------------------------------------------------------------------------------*/
 BmPrefsFilterView::BmPrefsFilterView() 
 	:	inherited( "Filters")
+	,	mCurrAddonView( NULL)
 {
-	MBorder* border = NULL;
+	// N.B.: Since a LayeredGroup does not seem to work properly when it gets its
+	//       children added through AddChild(), we take the somewhat ugly path of
+	//			filling the addon-views into an array and statically stuff the array's 
+	//			items into the LayeredGroup (see below):
+	BmFilterAddonPrefsView* prefsView[10] 
+		= { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL };
+	// We collect the different addon-kinds in another arraay in order to stuff
+	// them into the add-filter popup-menu:
+	char* k[10] 
+		= { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL };
+
+	// collect filter-addon-views and addon-names:
+	int pv=0;
+	int kk=0;
+	BmFilterAddonMap::iterator iter;
+	for( iter = FilterAddonMap.begin(); iter != FilterAddonMap.end(); ++iter) {
+		BmInstantiateFilterPrefsFunc func = iter->second.instantiateFilterPrefsFunc;
+		if (func) {
+			BmFilterAddonPrefsView* pview 
+				= (*func)( minimax( 400, 200, 1E5, 1E5), iter->first);
+			prefsView[pv++] = iter->second.addonPrefsView = pview;
+			k[kk++] = (char*)pview->Kind();
+		}
+	}
+
 	MView* view = 
 		new UserResizeSplitView(
 			new VGroup(
-				minimax(200,60),
+				minimax(200,120),
 				new HGroup(
-					CreateFilterListView( minimax(200,60,1E5,1E5), 200, 120),
+					CreateFilterListView( minimax(200,60,1E5,1E5), 200, 100),
 					new Space( minimax(5,0,5,0)),
 					new VGroup(
-						mAddButton = new MButton("Add Filter", new BMessage(BM_ADD_FILTER), this),
-						mRemoveButton = new MButton("Remove Filter", new BMessage( BM_REMOVE_FILTER), this),
+						mAddPopup = new MPopup( NULL, 
+														new BMessage(BM_ADD_FILTER), this, 
+														k[0], k[1], k[2], k[3], k[4], k[5], 
+														k[6], k[7], k[8], k[9], NULL),
+						new HGroup(
+							mRemoveButton = new MButton( "Remove Filter", 
+																  new BMessage( BM_REMOVE_FILTER), 
+																  this, minimax( -1, -1, -1, -1)),
+							new Space(),
+							0
+						),
 						new Space(),
 						0
 					),
@@ -228,44 +268,41 @@ BmPrefsFilterView::BmPrefsFilterView()
 				),
 				0
 			),
-			border = new MBorder( M_LABELED_BORDER, 10, (char*)"Filter Info",
-				new VGroup(
-					new HGroup( 
-						mFilterControl = new BmTextControl( "Filter name:"),
-						new Space(),
-						mTestButton = new MButton( "Check the SIEVE-script", new BMessage( BM_TEST_FILTER), this, minimax(-1,-1,-1,-1)),
+			new VGroup(
+				minimax(400,300),
+				mFilterControl = new BmTextControl( "Filter name:"),
+				new Space( minimax(0,5,0,5)),
+				mLayeredAddonGroup = new LayeredGroup(
+					// the first (more or less empty) view is used when no filter is
+					// selected or the add-on for the current filter is not available:
+					new VGroup(
+						new Space( minimax(5,0,5,0)),
+						mInfoLabel = new MStringView( ""),
+						new Space( ),
 						0
 					),
-					new Space( minimax(0,5,0,5)),
-					mTabView = new MTabView(),
+					// now add up to 10 addon-views (this means that Beam currently only
+					// supports 10 different filter-addon types):
+					prefsView[0],
+					prefsView[1],
+					prefsView[2],
+					prefsView[3],
+					prefsView[4],
+					prefsView[5],
+					prefsView[6],
+					prefsView[7],
+					prefsView[8],
+					prefsView[9],
 					0
-				)
+				),
+				0
 			),
 			"hsplitter", 120, B_HORIZONTAL, true, true, false, B_FOLLOW_NONE
 		);
 
-	border->ct_mpm = minimax(400,150);
-	mTabView->Add(
-		new MTab( 
-			new Space(minimax(0,0,1E5,1E5)), 
-			(char*)"Graphical View"
-		)
-	);
-	mTabView->Add(
-		new MTab( 
-			new VGroup( 
-				mContentControl = new BmMultiLineTextControl( ""), 
-				new Space( minimax(0,2,0,2)),
-				0
-			),
-			(char*)"Script View"
-		)
-	);
+	mFilterControl->SetDivider( 80);
 
 	mGroupView->AddChild( dynamic_cast<BView*>(view));
-
-	float divider = mFilterControl->Divider();
-	mFilterControl->SetDivider( divider);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -273,10 +310,8 @@ BmPrefsFilterView::BmPrefsFilterView()
 		-	
 \*------------------------------------------------------------------------------*/
 BmPrefsFilterView::~BmPrefsFilterView() {
-	TheBubbleHelper.SetHelp( mFilterListView, NULL);
-	TheBubbleHelper.SetHelp( mFilterControl, NULL);
-	TheBubbleHelper.SetHelp( mContentControl, NULL);
-	TheBubbleHelper.SetHelp( mTestButton, NULL);
+	TheBubbleHelper->SetHelp( mFilterListView, NULL);
+	TheBubbleHelper->SetHelp( mFilterControl, NULL);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -286,17 +321,29 @@ BmPrefsFilterView::~BmPrefsFilterView() {
 void BmPrefsFilterView::Initialize() {
 	inherited::Initialize();
 
-	TheBubbleHelper.SetHelp( mFilterListView, "This listview shows every filter you have defined.");
-	TheBubbleHelper.SetHelp( mFilterControl, "Here you can enter a name for this filter.\nThis name is used to identify this filter in Beam.");
-	TheBubbleHelper.SetHelp( mContentControl, "Here you can enter the content of this filter (a SIEVE script).");
-	TheBubbleHelper.SetHelp( mTestButton, "Here you can check the syntax of the SIEVE-script.");
+	TheBubbleHelper->SetHelp( mFilterListView, "This listview shows every filter you have defined.");
+	TheBubbleHelper->SetHelp( mFilterControl, "Here you can enter a name for this filter.\nThis name is used to identify this filter in Beam.");
 
 	mFilterControl->SetTarget( this);
-	mContentControl->SetTarget( this);
 
 	mFilterListView->SetSelectionMessage( new BMessage( BM_SELECTION_CHANGED));
 	mFilterListView->SetTarget( this);
 	mFilterListView->StartJob( TheFilterList.Get());
+
+	mAddPopup->Menu()->SetLabelFromMarked( false);
+	mAddPopup->MenuBar()->SetLabelFromMarked( false);
+	mAddPopup->MenuItem()->SetLabel( "  Add Filter...  ");
+
+	// now initialize all addon-views:
+	BmFilterAddonMap::const_iterator iter;
+	for( iter = FilterAddonMap.begin(); iter != FilterAddonMap.end(); ++iter) {
+		BmFilterAddonPrefsView* prefsView = iter->second.addonPrefsView;
+		if (prefsView) {
+			prefsView->Initialize();
+			prefsView->StartWatching( this, BM_NTFY_FILTER_ADDON_MODIFIED);
+		}
+	}
+
 	ShowFilter( -1);
 }
 
@@ -306,6 +353,15 @@ void BmPrefsFilterView::Initialize() {
 \*------------------------------------------------------------------------------*/
 void BmPrefsFilterView::Activated() {
 	inherited::Activated();
+
+	// now activate all addon-views:
+	BmFilterAddonMap::const_iterator iter;
+	for( iter = FilterAddonMap.begin(); iter != FilterAddonMap.end(); ++iter) {
+		BmFilterAddonPrefsView* prefsView = iter->second.addonPrefsView;
+		if (prefsView)
+			prefsView->Activate();
+	}
+
 }
 
 /*------------------------------------------------------------------------------*\
@@ -370,38 +426,30 @@ void BmPrefsFilterView::MessageReceived( BMessage* msg) {
 				ShowFilter( index);
 				break;
 			}
-			case BM_MULTILINE_TEXTFIELD_MODIFIED: {
-				if (mCurrFilter) {
-					BView* srcView = NULL;
-					msg->FindPointer( "source", (void**)&srcView);
-					BmMultiLineTextControl* source = dynamic_cast<BmMultiLineTextControl*>( srcView);
-					if ( source == mContentControl) {
-						mCurrFilter->Content( mContentControl->Text());
-						NoticeChange();
-					}
-				}
-				break;
-			}
 			case BM_TEXTFIELD_MODIFIED: {
 				BView* srcView = NULL;
 				msg->FindPointer( "source", (void**)&srcView);
 				BmTextControl* source = dynamic_cast<BmTextControl*>( srcView);
 				if ( mCurrFilter && source == mFilterControl) {
-					TheFilterList->RenameItem( mCurrFilter->Name(), mFilterControl->Text());
-					NoticeChange();
-				}
-				break;
-			}
-			case BM_TEST_FILTER: {
-				if (mCurrFilter) {
-					if (!mCurrFilter->CompileScript()) {
-						BAlert* alert = new BAlert( "Filter-Test", 
-															 mCurrFilter->ErrorString().String(),
-													 		 "OK", NULL, NULL, B_WIDTH_AS_USUAL,
-													 		 B_INFO_ALERT);
-						alert->SetShortcut( 0, B_ESCAPE);
-						alert->Go();
+					BmString oldName = mCurrFilter->Name();
+					BmString newName = mFilterControl->Text();
+					TheFilterList->RenameItem( oldName, newName);
+					// now rename any references to this filter in the filter-chains:
+					BmModelItemMap::const_iterator chainIter;
+					for(  chainIter = TheFilterChainList->begin(); 
+							chainIter != TheFilterChainList->end(); ++chainIter) {
+						BmFilterChain* chain = dynamic_cast< BmFilterChain*>( chainIter->second.Get());
+						if (!chain)
+							continue;
+						BmModelItemMap::const_iterator filterIter;
+						for(  filterIter = chain->inheritedList::begin(); 
+								filterIter != chain->inheritedList::end(); ++filterIter) {
+							BmChainedFilter* filter = dynamic_cast< BmChainedFilter*>( filterIter->second.Get());
+							if (filter && filter->FilterName() == oldName)
+								filter->FilterName( newName);
+						}
 					}
+					NoticeChange();
 				}
 				break;
 			}
@@ -410,10 +458,14 @@ void BmPrefsFilterView::MessageReceived( BMessage* msg) {
 				for( int32 i=1; TheFilterList->FindItemByKey( key); ++i) {
 					key = BmString("new filter_")<<i;
 				}
-				TheFilterList->AddItemToList( new BmFilter( key.String(), TheFilterList.Get()));
-				mFilterControl->MakeFocus( true);
-				mFilterControl->TextView()->SelectAll();
-				NoticeChange();
+				BMenuItem* item = mAddPopup->Menu()->FindMarked();
+				if (item) {
+					BmString sieveKind( item->Label());
+					TheFilterList->AddItemToList( new BmFilter( key.String(), sieveKind, TheFilterList.Get()));
+					mFilterControl->MakeFocus( true);
+					mFilterControl->TextView()->SelectAll();
+					NoticeChange();
+				}
 				break;
 			}
 			case BM_REMOVE_FILTER: {
@@ -421,7 +473,7 @@ void BmPrefsFilterView::MessageReceived( BMessage* msg) {
 				if (msg->FindInt32( "which", &buttonPressed) != B_OK) {
 					// first step, ask user about it:
 					BAlert* alert = new BAlert( "Remove Filter", 
-														 (BmString("Are you sure about removing the filter <") << mCurrFilter->Name() << ">?").String(),
+														 (BmString("Are you sure about removing the filter\n\n\t<") << mCurrFilter->Name() << ">?").String(),
 													 	 "Remove", "Cancel", NULL, B_WIDTH_AS_USUAL,
 													 	 B_WARNING_ALERT);
 					alert->SetShortcut( 1, B_ESCAPE);
@@ -432,6 +484,15 @@ void BmPrefsFilterView::MessageReceived( BMessage* msg) {
 						TheFilterList->RemoveItemFromList( mCurrFilter.Get());
 						mCurrFilter = NULL;
 						NoticeChange();
+					}
+				}
+				break;
+			}
+			case B_OBSERVER_NOTICE_CHANGE: {
+				switch( msg->FindInt32( B_OBSERVE_WHAT_CHANGE)) {
+					case BM_NTFY_FILTER_ADDON_MODIFIED: {
+						NoticeChange();
+						break;
 					}
 				}
 				break;
@@ -453,13 +514,10 @@ void BmPrefsFilterView::MessageReceived( BMessage* msg) {
 					BmListViewItem* filterItem = mFilterListView->FindViewItemFor( filter);
 					if (filterItem)
 						mFilterListView->Select( mFilterListView->IndexOf( filterItem));
-					mTabView->Select( 1);
 				} else {
 					// second step, set corresponding focus:
 					BmString fieldName;
 					fieldName = msg->FindString( MSG_FIELD_NAME);
-					if (fieldName.ICompare( "content")==0)
-						mContentControl->MakeFocus( true);
 				}
 				break;
 			}
@@ -467,7 +525,7 @@ void BmPrefsFilterView::MessageReceived( BMessage* msg) {
 				inherited::MessageReceived( msg);
 		}
 	}
-	catch( exception &err) {
+	catch( BM_error &err) {
 		// a problem occurred, we tell the user:
 		BM_SHOWERR( BmString("PrefsView_") << Name() << ":\n\t" << err.what());
 	}
@@ -480,14 +538,14 @@ void BmPrefsFilterView::MessageReceived( BMessage* msg) {
 void BmPrefsFilterView::ShowFilter( int32 selection) {
 	bool enabled = (selection != -1);
 	mFilterControl->SetEnabled( enabled);
-	mContentControl->SetEnabled( enabled);
 	mRemoveButton->SetEnabled( enabled);
 	
 	if (selection == -1) {
 		mCurrFilter = NULL;
+		mCurrAddonView = NULL;
+		mInfoLabel->SetText("");
+		mLayeredAddonGroup->ActivateLayer( 0);
 		mFilterControl->SetTextSilently( "");
-		mContentControl->SetTextSilently( "");
-		mTestButton->SetEnabled( false);
 	} else {
 		BmFilterItem* filterItem = dynamic_cast<BmFilterItem*>(mFilterListView->ItemAt( selection));
 		if (filterItem) {
@@ -495,8 +553,25 @@ void BmPrefsFilterView::ShowFilter( int32 selection) {
 				mCurrFilter = dynamic_cast<BmFilter*>( filterItem->ModelItem());
 				if (mCurrFilter) {
 					mFilterControl->SetTextSilently( mCurrFilter->Name().String());
-					mContentControl->SetTextSilently( mCurrFilter->Content().String());
-					mTestButton->SetEnabled( true);
+					// now find corresponding addon-view...
+					mCurrAddonView = FilterAddonMap[mCurrFilter->Kind()].addonPrefsView;
+					// ...activate it (have to search through LayeredGroup, tsk!)...
+					for( int i=0; i<mLayeredAddonGroup->CountChildren(); ++i) {
+						BmFilterAddonPrefsView* view
+								= dynamic_cast< BmFilterAddonPrefsView*>( 
+																	mLayeredAddonGroup->ChildAt( i));
+						if (view == mCurrAddonView)
+							mLayeredAddonGroup->ActivateLayer( i);
+					}
+					// ...and show the filter's data inside the addon-view:
+					if (mCurrAddonView)
+						mCurrAddonView->ShowFilter( mCurrFilter->Addon());
+					else {
+						// addon has not been loaded, we tell user:
+						mLayeredAddonGroup->ActivateLayer( 0);
+						BmString s = BmString("The corresponding add-on (")<<mCurrFilter->Kind()<<") could not be loaded, so this filter has been disabled!";
+						mInfoLabel->SetText( s.String());
+					}
 				}
 			}
 		} else

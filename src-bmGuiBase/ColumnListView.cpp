@@ -15,6 +15,10 @@
 //ColumnListView source, including modified versions, but keep this documentation and license with it.
 
 
+#ifdef __POWERPC__
+#define BM_BUILDING_SANTAPARTSFORBEAM 1
+#endif
+
 //******************************************************************************************************
 //**** SYSTEM HEADER FILES
 //******************************************************************************************************

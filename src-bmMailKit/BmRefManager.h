@@ -41,7 +41,6 @@
 #include "BmString.h"
 
 #include "BmBasics.h"
-#include "BmLogHandler.h"
 
 template <class T> class BmRef;
 class BmProxy;
@@ -120,7 +119,7 @@ public:
 		AddRef( mPtr);
 	}
 	inline ~BmRef() {
-		RemoveRef( mPtr);
+		*this = NULL;
 	}
 	inline BmRef<T>& operator= ( const BmRef<T>& ref) {
 		if (mPtr != ref.Get()) {
@@ -174,14 +173,15 @@ private:
 	inline void RemoveRef(T* p) const 	{ if (p)	p->RemoveRef(); }
 };
 
-
-
 /*------------------------------------------------------------------------------*\
 	BmWeakRef
 		-	smart-pointer class that implements weak-referencing (via a set of BmRefObj)
 		-	a weak reference is not included in reference-counting, but it transparently
 			checks whether the weakly referenced object still exists or not.
 \*------------------------------------------------------------------------------*/
+// helper function to keep logging out of header-file:
+void LogHelper( const BmString& text);
+
 template <class T> class BmWeakRef {
 
 	BmString mName;
@@ -194,7 +194,7 @@ public:
 	,	mPtr( p)
 	,	mProxyName( p ? p->ProxyName() : "") 
 	{
-		BM_LOG2( BM_LogUtil, BmString("RefManager: weak-reference to <") << mName << ":" << BmRefObj::RefPrintHex(mPtr) << "> created");
+		LogHelper( BmString("RefManager: weak-reference to <") << mName << ":" << BmRefObj::RefPrintHex(mPtr) << "> created");
 	}
 	inline BmWeakRef<T>& operator= ( T* p) {
 		mName = p ? p->RefName() : BM_DEFAULT_STRING;
@@ -210,7 +210,7 @@ public:
 	}
 	inline operator bool() const 			{ return Get(); }
 	inline BmRef<T> Get() const 			{
-		BM_LOG2( BM_LogUtil, BmString("RefManager: weak-reference to <") << mName << ":" << BmRefObj::RefPrintHex(mPtr) << "> dereferenced");
+		LogHelper( BmString("RefManager: weak-reference to <") << mName << ":" << BmRefObj::RefPrintHex(mPtr) << "> dereferenced");
 		BAutolock lock( BmRefObj::GlobalLocker());
 		BmProxy* proxy = BmRefObj::GetProxy( mProxyName);
 		if (proxy) {
@@ -222,6 +222,30 @@ public:
 private:
 };
 
+
+/*------------------------------------------------------------------------------*\*\
+	wrapper around BAutolock that enhances profiling output and debugging
+\*------------------------------------------------------------------------------*/
+#ifdef BM_REF_DEBUGGING
+	// during profiling/debugging we use this:
+class BLocker;
+class BLooper;
+class BmAutolockCheckGlobal {
+public:
+	BmAutolockCheckGlobal( BLooper* l);
+	BmAutolockCheckGlobal( BLocker* l);
+	BmAutolockCheckGlobal( BLocker& l);
+	~BmAutolockCheckGlobal();
+	void Init();
+	bool IsLocked();
+private:
+	BLocker* mLocker;
+	BLooper* mLooper;
+};
+#else
+	// otherwise, we use this:
+#define BmAutolockCheckGlobal BAutolock
+#endif
 
 
 #endif

@@ -42,7 +42,7 @@ BmToolbarButton::BmToolbarButton( const char *label, BBitmap* image,
 					  message, handler)
 	,	mHighlighted( false)
 {
-	TheBubbleHelper.SetHelp( this, tipText);
+	TheBubbleHelper->SetHelp( this, tipText);
 	BPicture* picture = CreatePicture( STATE_DISABLED, label, image, 
 												  width, height, needsLatch);
 	SetDisabledOff( picture);
@@ -53,7 +53,7 @@ BmToolbarButton::BmToolbarButton( const char *label, BBitmap* image,
 		-	
 \*------------------------------------------------------------------------------*/
 BmToolbarButton::~BmToolbarButton() {
-	TheBubbleHelper.SetHelp( this, NULL);
+	TheBubbleHelper->SetHelp( this, NULL);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -281,7 +281,7 @@ void BmToolbarButton::ShowMenu( BPoint point) {
 	openRect.bottom = point.y + 10;
 	openRect.left = point.x - 10;
 	openRect.right = point.x + 105;
-  	theMenu->Go( point, true, false, openRect);
-  	delete theMenu;
+	theMenu->SetAsyncAutoDestruct( true);
+  	theMenu->Go( point, true, false, openRect, true);
 }
 

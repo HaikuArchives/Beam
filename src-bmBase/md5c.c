@@ -27,6 +27,10 @@ documentation and/or software.
 #include <cstdio>
 #include <cstring>
 
+#ifdef __POWERPC__
+#define BM_BUILDING_BMBASE 1
+#endif
+
 #include "md5global.h"
 #include "md5.h"
 

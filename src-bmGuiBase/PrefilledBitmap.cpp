@@ -12,6 +12,10 @@
 //can take advantage of enhancements and bug fixes as they become available. Feel free to distribute the 
 //ColumnListView source, including modified versions, but keep this documentation and license with it.
 
+#ifdef __POWERPC__
+#define BM_BUILDING_SANTAPARTSFORBEAM 1
+#endif
+
 #include "PrefilledBitmap.h"
 
 PrefilledBitmap::PrefilledBitmap(BRect bounds, color_space space, const void *data, int32 length,

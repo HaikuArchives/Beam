@@ -28,6 +28,7 @@
 //******************************************************************************************************
 //**** PROJECT HEADER FILES AND CLASS NAME DECLARATIONS
 //******************************************************************************************************
+#include "SantaPartsForBeam.h"
 #include "CLVListItem.h"
 
 class BBitmap;
@@ -35,7 +36,7 @@ class BBitmap;
 //******************************************************************************************************
 //**** CLVEasyItem CLASS DECLARATION
 //******************************************************************************************************
-class CLVEasyItem : public CLVListItem
+class IMPEXPSANTAPARTSFORBEAM CLVEasyItem : public CLVListItem
 {
 		static const int8 CLV_STYLE_HIGHLIGHT = 1<<0;
 		static const int8 CLV_STYLE_BOLD = 1<<1;

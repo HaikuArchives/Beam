@@ -40,6 +40,7 @@ using namespace regexx;
 #include "BmEncoding.h"
 	using namespace BmEncoding;
 #include "BmFilter.h"
+#include "BmIdentity.h"
 #include "BmLogHandler.h"
 #include "BmMail.h"
 #include "BmMailFilter.h"
@@ -105,11 +106,12 @@ BmMail::BmMail( bool outbound)
 	SetTo( emptyMsg, "");
 	if (outbound) {
 		// if outbound, stuff basic info (from-address, smtp-account, sig) into mail:
-		BmRef<BmPopAccount> accRef = ThePopAccountList->DefaultAccount();
-		if (accRef) {
-			SetFieldVal( BM_FIELD_FROM, accRef->GetFromAddress());
-			mAccountName = accRef->SMTPAccount();
-			SetSignatureByName( accRef->SignatureName());
+		BmRef<BmIdentity> identRef = TheIdentityList->CurrIdentity();
+		if (identRef) {
+			SetFieldVal( BM_FIELD_FROM, identRef->GetFromAddress());
+			mAccountName = identRef->SMTPAccount();
+			SetSignatureByName( identRef->SignatureName());
+			mIdentityName = identRef->Key();
 		}
 	}
 }
@@ -128,6 +130,12 @@ BmMail::BmMail( BmString &msgText, const BmString account)
 	,	mOutbound( false)
 	,	mRightMargin( ThePrefs->GetInt( "MaxLineLen"))
 {
+	// set default-identity according to given account:
+	BmRef<BmIdentity> identRef = TheIdentityList->FindIdentityForPopAccount( account);
+	BmIdentity* ident = dynamic_cast< BmIdentity*>( identRef.Get());
+	if (ident)
+		mIdentityName = ident->Key();
+
 	SetTo( msgText, account);
 }
 	
@@ -207,7 +215,7 @@ void BmMail::SetNewHeader( const BmString& headerStr) {
 	if (newMsgText[len-1] != '\n')
 		newMsgText << "\r\n";
 	newMsgText << mText.String()+HeaderLength();
-	mText.Adopt( newMsgText);
+	SetTo( newMsgText, mAccountName);
 	Store();
 	StartJobInThisThread();
 }
@@ -247,7 +255,7 @@ void BmMail::MarkAs( const char* status) {
 													|| BM_THROW_RUNTIME( BmString("Could not create node for current mail-file.\n\n Result: ") << strerror(err));
 			mailNode.WriteAttr( BM_MAIL_ATTR_STATUS, B_STRING_TYPE, 0, status, strlen( status)+1);
 		}
-	} catch( exception &e) {
+	} catch( BM_error &e) {
 		BM_SHOWERR(e.what());
 	}
 }
@@ -411,38 +419,43 @@ BmRef<BmMail> BmMail::CreateReply( int32 replyMode, const BmString selectedText)
 	newMail->SetFieldVal( BM_FIELD_TO, newTo);
 	// Since we are replying, we generate the new mail's from-address 
 	// from the received mail's to-/cc-/bcc-info in several steps.
-	// First, we check if the account through which the mail has been received
-	// can be identified (not always possible, since the account may have been
-	// renamed or deleted by now):
-	BmRef<BmListModelItem> accRef = ThePopAccountList->FindItemByKey( AccountName());
-	BmPopAccount* acc = dynamic_cast< BmPopAccount*>( accRef.Get());
+	// First, we check if this mail has an identity assigned to it:
 	BmString receivingAddr;
-	if (acc) {
-		// receiving account is known, we let it find the receiving address
-		receivingAddr = Header()->DetermineReceivingAddrFor( acc);
-		// if the receiving account doesn't handle any receiving address of this mail,
-		// we simply use the account's default address:
+	BmRef<BmListModelItem> identRef = TheIdentityList->FindItemByKey( mIdentityName);
+	BmIdentity* ident = dynamic_cast< BmIdentity*>( identRef.Get());
+	if (!ident) {
+		// second, we check if the account through which the mail has been received
+		// can be identified (not always possible, since the account may have been
+		// renamed or deleted by now):
+		BmRef<BmIdentity> identRef = TheIdentityList->FindIdentityForPopAccount( mAccountName);
+		ident = dynamic_cast< BmIdentity*>( identRef.Get());
+	}
+	if (ident) {
+		// receiving identity is known, we let it find the receiving address
+		receivingAddr = Header()->DetermineReceivingAddrFor( ident);
+		// if the identity doesn't handle any receiving address of this mail,
+		// we simply use the identity's default address:
 		if (!receivingAddr.Length())
-			receivingAddr = acc->GetFromAddress();
+			receivingAddr = ident->GetFromAddress();
 	}
 	if (!receivingAddr.Length()) {
-		// the receiving account could not be determined, so we iterate through all
-		// accounts and try to find one that (may) have received this mail.
+		// the receiving address could not be determined, so we iterate through all
+		// identities and try to find one that (may) have received this mail.
 		BmAutolockCheckGlobal lock( ThePopAccountList->ModelLocker());
 		lock.IsLocked() 						|| BM_THROW_RUNTIME( "CreateReply(): Unable to get lock on PopAccountList");
 		BmModelItemMap::const_iterator iter;
-		for( iter = ThePopAccountList->begin(); 
-			  iter != ThePopAccountList->end() && !receivingAddr.Length(); 
+		for( iter = TheIdentityList->begin(); 
+			  iter != TheIdentityList->end() && !receivingAddr.Length(); 
 			  ++iter) {
-			acc = dynamic_cast< BmPopAccount*>( iter->second.Get());
-			if (acc)
-				receivingAddr = Header()->DetermineReceivingAddrFor( acc);
+			ident = dynamic_cast< BmIdentity*>( iter->second.Get());
+			if (ident)
+				receivingAddr = Header()->DetermineReceivingAddrFor( ident);
 		}
 	}
-	if (acc && receivingAddr.Length()) {
+	if (ident && receivingAddr.Length()) {
 		newMail->SetFieldVal( BM_FIELD_FROM, receivingAddr);
-		newMail->SetSignatureByName( acc->SignatureName());
-		newMail->AccountName( acc->SMTPAccount());
+		newMail->SetSignatureByName( ident->SignatureName());
+		newMail->AccountName( ident->SMTPAccount());
 	}
 	// if we are replying to all, we may need to include more addresses:
 	if (replyMode == BMM_REPLY_ALL) {
@@ -490,11 +503,11 @@ BmRef<BmMail> BmMail::CreateRedirect() {
 	newMail->IsRedirect( true);
 	newMail->SetFieldVal( BM_FIELD_RESENT_DATE, 
 								 TimeToString( time( NULL), "%a, %d %b %Y %H:%M:%S %z"));
-	BmRef<BmPopAccount> accRef = ThePopAccountList->DefaultAccount();
-	if (accRef) {
-		newMail->SetFieldVal( BM_FIELD_RESENT_FROM, accRef->GetFromAddress());
-		newMail->AccountName( accRef->SMTPAccount());
-		newMail->SetSignatureByName( accRef->SignatureName());
+	BmRef<BmIdentity> identRef = TheIdentityList->CurrIdentity();
+	if (identRef) {
+		newMail->SetFieldVal( BM_FIELD_RESENT_FROM, identRef->GetFromAddress());
+		newMail->AccountName( identRef->SMTPAccount());
+		newMail->SetSignatureByName( identRef->SignatureName());
 	}
 	newMail->SetBaseMailInfo( MailRef(), BM_MAIL_STATUS_REDIRECTED);
 	return newMail;
@@ -860,7 +873,7 @@ bool BmMail::Store() {
 				throw BM_runtime_error( BmString("Could not set directory to <") << newHomePath.Path() << ">\n\n Result: " << strerror(err));
 		}
 			
-		// we create the new mailfile...
+		// we create/open the new mailfile...
 		(err = mailFile.SetTo( &mEntry, B_WRITE_ONLY | B_ERASE_FILE | B_CREATE_FILE)) == B_OK
 													|| BM_THROW_RUNTIME( BmString("Could not create mail-file\n\t<") << basicFilename << ">\n\n Result: " << strerror(err));
 		// ...set the correct mime-type...
@@ -897,7 +910,7 @@ bool BmMail::Store() {
 			mBaseRefVect[i]->MarkAs( mNewBaseStatus.String());
 		}
 		mBaseRefVect.clear();
-	} catch( exception &e) {
+	} catch( BM_error &e) {
 		BM_SHOWERR(e.what());
 		return false;
 	}
@@ -914,6 +927,7 @@ void BmMail::StoreAttributes( BFile& mailFile) {
 	BmString st = Status();
 	mailFile.WriteAttr( BM_MAIL_ATTR_STATUS, B_STRING_TYPE, 0, st.String(), st.Length()+1);
 	mailFile.WriteAttr( BM_MAIL_ATTR_ACCOUNT, B_STRING_TYPE, 0, mAccountName.String(), mAccountName.Length()+1);
+	mailFile.WriteAttr( BM_MAIL_ATTR_IDENTITY, B_STRING_TYPE, 0, mIdentityName.String(), mIdentityName.Length()+1);
 	//
 	int32 headerLength = HeaderLength();
 	int32 contentLength = MAX( 0, mText.Length()-headerLength);
@@ -1027,9 +1041,10 @@ bool BmMail::StartJob() {
 		mailText.UnlockBuffer( realSize);
 		// we initialize the BmMail-internals from the plain text:
 		BM_LOG2( BM_LogMailParse, BmString("initializing BmMail from msgtext"));
+		mIdentityName = mMailRef->Identity();
 		SetTo( mailText, mMailRef->Account());
 		BM_LOG2( BM_LogMailParse, BmString("Done, mail is initialized"));
-	} catch (exception &e) {
+	} catch (BM_error &e) {
 		BM_SHOWERR( e.what());
 	}
 	return InitCheck() == B_OK;

@@ -42,18 +42,6 @@ extern BmString BM_DEFAULT_STRING;
 extern BmString BM_DefaultItemLabel;
 
 /*------------------------------------------------------------------------------*\
-	ShowAlert( text)
-		-	pops up an Alert showing the passed text
-\*------------------------------------------------------------------------------*/
-void ShowAlert( const BmString &text);
-
-/*------------------------------------------------------------------------------*\
-	ShowAlertWithType( text, type)
-		-	pops up an Alert of given type, showing the passed text
-\*------------------------------------------------------------------------------*/
-void ShowAlertWithType( const BmString &text, alert_type type);
-
-/*------------------------------------------------------------------------------*\
 	FindMsgXXX( archive, name)
 		-	functions that extract the msg-field of a specified name from the given 
 			archive and return it.
@@ -75,15 +63,9 @@ BmString BytesToString( int32 bytes, bool mini=false);
 /*------------------------------------------------------------------------------*\
 	time-related utility functions
 \*------------------------------------------------------------------------------*/
-BmString TimeToString( time_t t, const char* format="%Y-%m-%d %H:%M:%S");
 BmString TimeToSwatchString( time_t t);
 bool ParseDateTime( const BmString& str, time_t& dateTime);
 
-/*------------------------------------------------------------------------------*\
-	utility function to wrap lines at word boundary:
-\*------------------------------------------------------------------------------*/
-void WordWrap( const BmString& in, BmString& out, int32 maxLineLen, 
-					BmString nl, bool keepLongWords);
 /*------------------------------------------------------------------------------*\
 	utility function to generate the sortkey for a given name:
 \*------------------------------------------------------------------------------*/
@@ -94,28 +76,5 @@ BmString GenerateSortkeyFor( const BmString& name);
 #define IS_PART_OF_UTF8_MULTICHAR(c) ((c)&0x80)
 #define IS_UTF8_STARTCHAR(c) (((c)&0xc0)==0xc0)
 #define IS_WITHIN_UTF8_MULTICHAR(c) (((c)&0xc0)==0x80)
-
-/*------------------------------------------------------------------------------*\*\
-	wrapper around BAutolock that enhances profiling output and debugging
-\*------------------------------------------------------------------------------*/
-#ifdef BM_REF_DEBUGGING
-	// during profiling/debugging we use this:
-class BLooper;
-class BmAutolockCheckGlobal {
-public:
-	BmAutolockCheckGlobal( BLooper* l);
-	BmAutolockCheckGlobal( BLocker* l);
-	BmAutolockCheckGlobal( BLocker& l);
-	~BmAutolockCheckGlobal();
-	void Init();
-	bool IsLocked();
-private:
-	BLocker* mLocker;
-	BLooper* mLooper;
-};
-#else
-	// otherwise, we use this:
-#define BmAutolockCheckGlobal BAutolock
-#endif
 
 #endif

@@ -47,6 +47,7 @@
 #include "BmGuiUtil.h"
 #include "BmJobStatusWin.h"
 #include "BmLogHandler.h"
+#include "BmLogView.h"
 #include "BmMailFolderList.h"
 #include "BmMailFolderView.h"
 #include "BmMailRefView.h"
@@ -183,6 +184,7 @@ BmMainWindow::BmMainWindow()
 				),
 				0
 			),
+//			new MBViewWrapper( new BmLogView( "logs/Errors")),
 			0
 		);
 
@@ -216,6 +218,26 @@ BmMainWindow::~BmMainWindow() {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
+void RebuildLogMenu( BMenu* logMenu) {
+	BMenuItem* old;
+	while( (old = logMenu->RemoveItem( (int32)0))!=NULL)
+		;
+	int32 count = TheLogHandler->mActiveLogs.CountItems();
+	for( int i=0; i<count; ++i) {
+		BmLogHandler::BmLogfile* log 
+			= static_cast< BmLogHandler::BmLogfile*>( TheLogHandler->mActiveLogs.ItemAt(i));
+		if (log) {
+			BMessage* logMsg = new BMessage( BMM_SHOW_LOGFILE);
+			logMsg->AddString( "logfile", log->logname.String());
+			logMenu->AddItem( new BMenuItem( log->logname.String(), logMsg));
+		}
+	}
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
 MMenuBar* BmMainWindow::CreateMenu() {
 	mMainMenuBar = new MMenuBar();
 	BMenu* menu = NULL;
@@ -230,6 +252,12 @@ MMenuBar* BmMainWindow::CreateMenu() {
 	menu->AddItem( CreateMenuItem( "Print Message(s)...", BMM_PRINT, "Print Message..."));
 	menu->AddSeparatorItem();
 	AddItemToMenu( menu, CreateMenuItem( "Preferences...", BMM_PREFERENCES), bmApp);
+	menu->AddSeparatorItem();
+	BMessage showLogfileTempl( BMM_SHOW_LOGFILE);
+	BmMenuController* logMenu;
+	menu->AddItem( logMenu =  
+							new BmMenuController( "Show Logfile", this, showLogfileTempl, NULL));
+	logMenu->SetRebuildMenuFunc( RebuildLogMenu);
 	menu->AddSeparatorItem();
 	menu->AddItem( CreateMenuItem( "About Beam...", B_ABOUT_REQUESTED));
 	menu->AddSeparatorItem();
@@ -328,6 +356,7 @@ void BmMainWindow::BeginLife() {
 		mMailRefView->StartWatching( this, BM_NTFY_MAILREF_SELECTION);
 		mMailView->StartWatching( this, BM_NTFY_MAIL_VIEW);
 		mMailFolderView->StartJob( TheMailFolderList.Get());
+		mAccountMenu->JobIsDone( true);
 		BM_LOG2( BM_LogMainWindow, BmString("MainWindow begins life"));
 	} catch(...) {
 		nIsAlive = false;
@@ -434,29 +463,17 @@ void BmMainWindow::MessageReceived( BMessage* msg) {
 				be_app_messenger.SendMessage( msg);
 				break;
 			}
-/*
-			case BM_JOB_DONE:
-			case BM_LISTMODEL_ADD:
-			case BM_LISTMODEL_UPDATE:
-			case BM_LISTMODEL_REMOVE: {
-				// double-dispatch job-related messages to our menu-controllers:
-				BmListModelItem* item=NULL;
-				msg->FindPointer( BmListModel::MSG_MODELITEM, (void**)&item);
-				if (item)
-					item->RemoveRef();		// the msg is no longer referencing the item
-
-				if (mAccountMenu->IsMsgFromCurrentModel( msg))
-					mAccountMenu->JobIsDone( true);
-				else if (mFilterMenu->IsMsgFromCurrentModel( msg))
-					mFilterMenu->JobIsDone( true);
-				break;
+			case BMM_SHOW_LOGFILE: {
+				BmString logName = msg->FindString( "logfile");
+				BmString cmd("/boot/apps/Terminal /bin/tail -f ");
+				cmd << bmApp->AppPath() << "/logs/" << logName << " &";
+				system( cmd.String());
 			}
-*/
 			default:
 				inherited::MessageReceived( msg);
 		}
 	}
-	catch( exception &err) {
+	catch( BM_error &err) {
 		// a problem occurred, we tell the user:
 		BM_SHOWERR( BmString("MainWindow: ") << err.what());
 	}
@@ -526,6 +543,7 @@ void BmMainWindow::MailRefSelectionChanged( bool haveSelectedRef) {
 	mMainMenuBar->FindItem( BMM_FORWARD_INLINE_ATTACH)->SetEnabled( haveSelectedRef);
 	mMainMenuBar->FindItem( BMM_REDIRECT)->SetEnabled( haveSelectedRef);
 	mMainMenuBar->FindItem( BmMailRefView::MENU_MARK_AS)->SetEnabled( haveSelectedRef);
+	mMainMenuBar->FindItem( BmMailRefView::MENU_MOVE)->SetEnabled( haveSelectedRef);
 	mMainMenuBar->FindItem( BMM_FILTER)->SetEnabled( haveSelectedRef);
 	mMainMenuBar->FindItem( BmMailRefView::MENU_FILTER)->SetEnabled( haveSelectedRef);
 	mMainMenuBar->FindItem( BMM_PRINT)->SetEnabled( haveSelectedRef);

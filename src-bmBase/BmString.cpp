@@ -29,9 +29,7 @@
 //------------------------------------------------------------------------------
 
 // Standard Includes -----------------------------------------------------------
-#ifdef __MWERKS__
 #include <assert.h>
-#endif
 #include <algobase.h>
 #include <ctype.h>
 #include <stdio.h>
@@ -41,6 +39,10 @@
 
 #include <Debug.h>
 #include <UTF8.h>
+
+#ifdef __POWERPC__
+#define BM_BUILDING_BMBASE 1
+#endif
 
 #include "BmString.h"
 #include "BmMemIO.h"
@@ -1459,8 +1461,11 @@ BmString::_GrowBy(int32 size)
 		_privateData -= sizeof(int32);
 	}
 		
-	_privateData = (char*)realloc(_privateData, 
-		curLen + size + sizeof(int32) + 1);
+	if (_privateData)
+		_privateData = (char*)realloc(_privateData, 
+												curLen + size + sizeof(int32) + 1);
+	else
+		_privateData = (char*)malloc(curLen + size + sizeof(int32) + 1);
 		
 	assert( _privateData);
 

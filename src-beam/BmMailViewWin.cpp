@@ -41,9 +41,6 @@
 #include "PrefilledBitmap.h"
 
 #include "BmApp.h"
-#include "BmBasics.h"
-#include "BmEncoding.h"
-	using namespace BmEncoding;
 #include "BmFilter.h"
 #include "BmGuiUtil.h"
 #include "BmJobStatusWin.h"
@@ -58,7 +55,6 @@
 #include "BmPrefs.h"
 #include "BmResources.h"
 #include "BmToolbarButton.h"
-#include "BmUtil.h"
 
 /********************************************************************************\
 	BmMailViewWin
@@ -376,7 +372,7 @@ void BmMailViewWin::MessageReceived( BMessage* msg) {
 				inherited::MessageReceived( msg);
 		}
 	}
-	catch( exception &err) {
+	catch( BM_error &err) {
 		// a problem occurred, we tell the user:
 		BM_SHOWERR( BmString("MailViewWin: ") << err.what());
 	}

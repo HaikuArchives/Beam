@@ -34,6 +34,7 @@
 #include <Message.h>
 
 #include "BmBasics.h"
+#include "BmLogHandler.h"
 #include "BmSmtpAccount.h"
 #include "BmResources.h"
 #include "BmUtil.h"

@@ -32,6 +32,9 @@
 //******************************************************************************************************
 #include <Application.h>
 
+#ifdef __POWERPC__
+#define BM_BUILDING_SANTAPARTSFORBEAM 1
+#endif
 
 //******************************************************************************************************
 //**** Project header files
@@ -72,9 +75,9 @@ UserResizeSplitView::UserResizeSplitView(MView* top_or_left, MView* right_or_bot
 	AddChild( m_left_or_top_BV);
 	AddChild( m_right_or_bottom_BV);
 	if (m_posture==B_VERTICAL)
-		TheBubbleHelper.SetCursor( this, c_v_resize_cursor());
+		TheBubbleHelper->SetCursor( this, c_v_resize_cursor());
 	else
-		TheBubbleHelper.SetCursor( this, c_h_resize_cursor());
+		TheBubbleHelper->SetCursor( this, c_h_resize_cursor());
 }
 
 
@@ -158,6 +161,7 @@ void UserResizeSplitView::ResizeLeftOrTopChildTo(float width_or_height)
 void UserResizeSplitView::ResizeRightOrBottomChildTo(float width_or_height)
 {
 	BRect bounds = Bounds();
+	m_right_or_bottom->layoutprefs();
 	if(m_posture == B_HORIZONTAL)
 		m_right_or_bottom->layout(BRect(0,bounds.bottom-width_or_height,bounds.right,bounds.bottom));
 	else
@@ -225,7 +229,7 @@ void UserResizeSplitView::MouseDown(BPoint where)
 		m_drag_mouse_offset = mouse_position-m_divider_left_or_top;
 		SetMouseEventMask(B_POINTER_EVENTS,B_NO_POINTER_HISTORY | B_LOCK_WINDOW_FOCUS);
 	}
-	TheBubbleHelper.EnableHelp( false);
+	TheBubbleHelper->EnableHelp( false);
 	if (m_posture==B_VERTICAL)
 		be_app->SetCursor( c_v_resize_cursor());
 	else
@@ -236,7 +240,7 @@ void UserResizeSplitView::MouseDown(BPoint where)
 void UserResizeSplitView::MouseUp(BPoint where)
 {
 	be_app->SetCursor( B_CURSOR_SYSTEM_DEFAULT);
-	TheBubbleHelper.EnableHelp( true);
+	TheBubbleHelper->EnableHelp( true);
 	m_dragging = false;
 	float mouse_position = 0;
 	if(m_posture == B_HORIZONTAL)

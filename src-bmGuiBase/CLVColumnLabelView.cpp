@@ -23,9 +23,14 @@
 #include <Window.h>
 
 
+#ifdef __POWERPC__
+#define BM_BUILDING_SANTAPARTSFORBEAM 1
+#endif
+
 //******************************************************************************************************
 //**** PROJECT HEADER FILES
 //******************************************************************************************************
+#include "BubbleHelper.h"
 #include "CLVColumnLabelView.h"
 #include "ColumnListView.h"
 #include "CLVColumn.h"
@@ -490,13 +495,11 @@ void CLVColumnLabelView::MouseMoved(BPoint where, uint32 code, const BMessage *)
 	fPreviousMousePos = where;
 	if(fModifiedCursor && !should_show_modified_cursor)
 	{
-		be_app->SetCursor(B_HAND_CURSOR);
-		be_app->ShowCursor();
+		TheBubbleHelper->SetCursor( this, NULL);
 	}
 	if(should_show_modified_cursor && !fModifiedCursor)
 	{
-		be_app->SetCursor(c_v_resize_cursor());
-		be_app->ShowCursor();
+		TheBubbleHelper->SetCursor( this, c_v_resize_cursor());
 	}
 	fModifiedCursor = should_show_modified_cursor;
 }
@@ -562,8 +565,7 @@ void CLVColumnLabelView::MouseUp(BPoint)
 	fColumnResizing = false;
 	if(fModifiedCursor)
 	{
-		be_app->SetCursor(B_HAND_CURSOR);
-		be_app->ShowCursor();
+		TheBubbleHelper->SetCursor( this, NULL);
 		fModifiedCursor = false;
 	}
 }

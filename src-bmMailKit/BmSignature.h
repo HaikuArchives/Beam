@@ -32,8 +32,6 @@
 #ifndef _BmSignature_h
 #define _BmSignature_h
 
-#include <stdexcept>
-
 #include <Archivable.h>
 #include "BmString.h"
 

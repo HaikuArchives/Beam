@@ -428,7 +428,7 @@ void BmMailFolderView::MessageReceived( BMessage* msg) {
 			default:
 				inherited::MessageReceived( msg);
 		}
-	} catch( exception &err) {
+	} catch( BM_error &err) {
 		// a problem occurred, we tell the user:
 		BM_SHOWERR( BmString("MailFolderView:\n\t") << err.what());
 	}
@@ -540,7 +540,7 @@ void BmMailFolderView::ShowMenu( BPoint point) {
 	openRect.bottom = point.y + 5;
 	openRect.left = point.x - 5;
 	openRect.right = point.x + 5;
-  	theMenu->Go( point, true, false, openRect);
-  	delete theMenu;
+	theMenu->SetAsyncAutoDestruct( true);
+  	theMenu->Go( point, true, false, openRect, true);
 }
 

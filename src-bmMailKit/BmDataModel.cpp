@@ -35,6 +35,7 @@
 #include "BmController.h"
 #include "BmDataModel.h"
 #include "BmLogHandler.h"
+#include "BmPrefs.h"
 #include "BmUtil.h"
 
 
@@ -238,10 +239,11 @@ void BmDataModel::WaitForAllToDetach() {
 			user if the dataModel should currently continue
 \*------------------------------------------------------------------------------*/
 void BmDataModel::HandleError( const BmString& errStr) {
-	if (ShouldContinue()) {
+	if (ShouldContinue() && ThePrefs->GetBool( "ShowAlertForErrors", false)) {
 		BM_SHOWERR( errStr);
 	} else {
 		BM_LOGERR( errStr);
+		snooze(200*1000);
 	}
 }
 
@@ -385,7 +387,7 @@ void BmJobModel::doStartJob() {
 	try {
 		bool result = StartJob();
 		TellJobIsDone( result && mJobState != JOB_STOPPED);
-	} catch( exception& e) {
+	} catch( BM_error& e) {
 		BM_SHOWERR( e.what());
 	}
 	while(lCount--) {
@@ -855,6 +857,7 @@ status_t BmListModel::Archive( BMessage* archive, bool deep) const {
 	status_t ret = BArchivable::Archive( archive, deep);
 	if (ret == B_OK) {
 		ret = archive->AddInt32( BmListModelItem::MSG_NUMCHILDREN, size());
+		ret = archive->AddInt16( BmListModelItem::MSG_VERSION, ArchiveVersion());
 	}
 	if (deep && ret == B_OK) {
 		BM_LOG( BM_LogModelController, BmString("ListModel <") << ModelName() << "> begins to archive");
@@ -889,7 +892,7 @@ bool BmListModel::Store() {
 													|| BM_THROW_RUNTIME( BmString("Could not create settings-file\n\t<") << filename << ">\n\n Result: " << strerror(err));
 		(err = archive.Flatten( &cacheFile)) == B_OK
 													|| BM_THROW_RUNTIME( BmString("Could not store settings into file\n\t<") << filename << ">\n\n Result: " << strerror(err));
-	} catch( exception &e) {
+	} catch( BM_error &e) {
 		BM_SHOWERR( e.what());
 		return false;
 	}
@@ -912,7 +915,7 @@ BMessage* BmListModel::Restore( const BmString filename) {
 			archive = new BMessage;
 			(err = archive->Unflatten( &file)) == B_OK
 													|| BM_THROW_RUNTIME( BmString("Could not fetch settings from file\n\t<") << filename << ">\n\n Result: " << strerror(err));
-		} catch (exception &e) {
+		} catch (BM_error &e) {
 			BM_SHOWERR( e.what());
 			delete archive;
 			archive = NULL;
@@ -945,7 +948,7 @@ bool BmListModel::StartJob() {
 			// ...no cache file found, we fetch the existing items by hand...
 			InitializeItems();
 		}
-	} catch (exception &e) {
+	} catch (BM_error &e) {
 		BM_SHOWERR( e.what());
 	}
 	Thaw();

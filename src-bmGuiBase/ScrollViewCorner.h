@@ -31,11 +31,12 @@
 //******************************************************************************************************
 #include <View.h>
 
+#include "SantaPartsForBeam.h"
 
 //******************************************************************************************************
 //**** CLASS DECLARATIONS
 //******************************************************************************************************
-class ScrollViewCorner : public BView
+class IMPEXPSANTAPARTSFORBEAM ScrollViewCorner : public BView
 {
 	public:
 		ScrollViewCorner(float Left,float Top);

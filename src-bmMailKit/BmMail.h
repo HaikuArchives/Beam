@@ -62,6 +62,7 @@ class BmMailRef;
 #define BM_MAIL_ATTR_CONTENT		B_MAIL_ATTR_CONTENT
 #define BM_MAIL_ATTR_ATTACHMENTS "MAIL:has_attachment"
 #define BM_MAIL_ATTR_ACCOUNT	 	"MAIL:account"
+#define BM_MAIL_ATTR_IDENTITY	 	"MAIL:identity"
 //
 #define BM_MAIL_ATTR_MARGIN	 	"MAIL:margin"
 
@@ -197,6 +198,7 @@ public:
 	inline BmMailRef* MailRef() const			{ return mMailRef.Get(); }
 	const BmString& DefaultCharset()	const;
 	inline BmString SignatureName() const		{ return mSignatureName; }
+	inline const BmString& IdentityName() const	{ return mIdentityName; }
 
 	// setters:
 	inline void BumpRightMargin( int32 i)		{ mRightMargin = MAX(i,mRightMargin); }
@@ -204,6 +206,7 @@ public:
 	inline void IsRedirect( bool b)				{ if (mHeader) mHeader->IsRedirect( b); }
 	inline void Outbound( bool b)					{ mOutbound = b; }
 	inline void AccountName( const BmString& s){ mAccountName = s; }
+	inline void IdentityName( const BmString& s){ mIdentityName = s; }
 
 	// static functions that try to reformat & quote a given multiline text
 	// in a way that avoids the usual (ugly) quoting-mishaps.
@@ -244,6 +247,8 @@ private:
 							// text of complete message
 	BmString mAccountName;
 							// name of account this message came from/is sent through
+	BmString mIdentityName;
+							// name of identity this message belongs to
 	BEntry mEntry;
 							// filesystem-entry for this mail 
 	BmRef<BmMailRef> mMailRef;

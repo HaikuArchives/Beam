@@ -75,7 +75,6 @@ private:
 \*------------------------------------------------------------------------------*/
 class BmMailFolderList : public BmListModel {
 	typedef BmListModel inherited;
-	typedef map< BmString, BmMailFolder*> BmNewNodeMap;
 
 	friend class BmMailFolder;
 	friend BmMailMonitor;
@@ -125,7 +124,7 @@ private:
 	
 	// the following members will NOT be archived at all:
 	BQuery mNewMailQuery;
-	BmNewNodeMap mNewMailNodeMap;
+	BmFolderMap mNewMailNodeMap;
 	bool mMailboxPathHasChanged;
 
 	// Hide copy-constructor and assignment:

@@ -40,7 +40,7 @@
 using namespace regexx;
 
 #include "BmEncoding.h"
-using namespace BmEncoding;
+	using namespace BmEncoding;
 #include "BmLogHandler.h"
 #include "BmMailHeader.h"
 #include "BmMailHeaderView.h"
@@ -229,8 +229,8 @@ void BmMailHeaderFieldView::ShowMenu( BPoint point) {
 	openRect.bottom = point.y + 5;
 	openRect.left = point.x - 5;
 	openRect.right = point.x + 5;
-  	theMenu->Go( point, true, false, openRect);
-  	delete theMenu;
+	theMenu->SetAsyncAutoDestruct( true);
+  	theMenu->Go( point, true, false, openRect, true);
 }
 
 
@@ -414,17 +414,6 @@ float BmMailHeaderView::AddFieldViews() {
 				if (fieldName == BM_FIELD_DATE) {
 					BmString timeMode = ThePrefs->GetString( "TimeModeInHeaderView", "native");
 					if (timeMode.ICompare( "native") != 0) {
-						// some mail-clients (notable BeMail) generate date-formats with double
-						// time-zone information which confuses parsedatetime(). 
-						// N.B. Some other mailers enclose the same textual representation in
-						// comments (parantheses), which is perfectly legal and will be handled
-						// by the mail-header parsing code (the comments will not be present
-						// in the string handled here).
-						Regexx rx;
-						// remove superfluous timezone information, i.e. convert something
-						// like '12:11:10 +0200 CEST' to '12:11:10 +0200':
-						fieldVal = rx.replace( fieldVal, "([+\\-]\\d+)\\s*[\\w()\\s]+$", "$1");
-						// convert datetime-string into time_t:
 						time_t lt = 0;
 						ParseDateTime( fieldVal, lt);
 						if (timeMode.ICompare( "swatch") == 0)
@@ -560,7 +549,7 @@ void BmMailHeaderView::MessageReceived( BMessage* msg) {
 				inherited::MessageReceived( msg);
 		}
 	}
-	catch( exception &err) {
+	catch( BM_error &err) {
 		// a problem occurred, we tell the user:
 		BM_SHOWERR( BmString("MailHeaderView:\n\t") << err.what());
 	}

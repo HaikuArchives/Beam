@@ -27,16 +27,53 @@
 /*                                                                       */
 /*************************************************************************/
 
-
 #include <Autolock.h>
 #include <Directory.h>
 #include <File.h>
 #include <MessageQueue.h>
 
+#ifdef __POWERPC__
+#define BM_BUILDING_BMBASE 1
+#endif
+
 #include "BmBasics.h"
 #include "BmLogHandler.h"
-#include "BmPrefs.h"
-#include "BmUtil.h"
+
+/*------------------------------------------------------------------------------*\*\
+	ShowAlert( text)
+		-	pops up an Alert showing the passed (error-)text
+\*------------------------------------------------------------------------------*/
+void ShowAlert( const BmString &text) {
+	BAlert* alert = new BAlert( NULL, text.String(), "OK", NULL, NULL, 
+										 B_WIDTH_AS_USUAL, B_STOP_ALERT);
+	alert->Go();
+}
+
+/*------------------------------------------------------------------------------*\*\
+	ShowAlertWithType( text, type)
+		-	pops up an Alert of given type, showing the passed text
+\*------------------------------------------------------------------------------*/
+void ShowAlertWithType( const BmString &text, alert_type type) {
+	BAlert* alert = new BAlert( NULL, text.String(), "OK", NULL, NULL, 
+										 B_WIDTH_AS_USUAL, type);
+	alert->Go();
+}
+
+/*------------------------------------------------------------------------------*\
+	TimeToString( time)
+		-	converts the given time into a string
+\*------------------------------------------------------------------------------*/
+BmString TimeToString( time_t utc, const char* format) {
+	BmString s;
+	const int32 bufsize=100;
+	s.SetTo( '\0', bufsize);
+	char* buf=s.LockBuffer( bufsize);
+	struct tm ltm;
+	localtime_r( &utc, &ltm);
+	strftime( buf, bufsize, format, &ltm);
+	s.UnlockBuffer( strlen(buf));
+	return s;
+}
 
 /*------------------------------------------------------------------------------*\
 	the different "terrains" we will be logging, each of them
@@ -59,15 +96,15 @@ const uint32 BM_LogFilter				= 1UL<<12;
 const uint32 BM_LogAll  				= 0xffffffff;
 
 
-BmLogHandler* BmLogHandler::theInstance = NULL;
+BmLogHandler* TheLogHandler = NULL;
 
 /*------------------------------------------------------------------------------*\
 	static logging-function
 		-	logs only if a loghandler is actually present
 \*------------------------------------------------------------------------------*/
 void BmLogHandler::Log( const BmString logname, uint32 flag, const BmString& msg, int8 minlevel) { 
-	if (theInstance)
-		theInstance->LogToFile( logname, flag, msg, minlevel);
+	if (TheLogHandler)
+		TheLogHandler->LogToFile( logname, flag, msg, minlevel);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -77,8 +114,8 @@ void BmLogHandler::Log( const BmString logname, uint32 flag, const BmString& msg
 void BmLogHandler::Log( const char* const logname, uint32 flag, const char* const msg, int8 minlevel) { 
 	BmString theLogname(logname);
 	BmString theMsg(msg);
-	if (theInstance)
-		theInstance->LogToFile( theLogname, flag, theMsg, minlevel);
+	if (TheLogHandler)
+		TheLogHandler->LogToFile( theLogname, flag, theMsg, minlevel);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -86,8 +123,32 @@ void BmLogHandler::Log( const char* const logname, uint32 flag, const char* cons
 		-	logs only if a loghandler is actually present
 \*------------------------------------------------------------------------------*/
 void BmLogHandler::FinishLog( const BmString& logname) { 
-	if (theInstance)
-		theInstance->CloseLog( logname);
+	if (TheLogHandler)
+		TheLogHandler->CloseLog( logname);
+}
+
+/*------------------------------------------------------------------------------*\
+	( )
+		-	
+\*------------------------------------------------------------------------------*/
+void BmLogHandler::StartWatchingLogfile( BHandler* handler, const char* logfileName) {
+	mLocker.Lock();
+	BmLogfile* log = LogfileFor( logfileName);
+	if (log && !log->mWatchingHandlers.HasItem( handler))
+		log->mWatchingHandlers.AddItem( handler);
+	mLocker.Unlock();
+}
+
+/*------------------------------------------------------------------------------*\
+	( )
+		-	
+\*------------------------------------------------------------------------------*/
+void BmLogHandler::StopWatchingLogfile( BHandler* handler, const char* logfileName) {
+	mLocker.Lock();
+	BmLogfile* log = LogfileFor( logfileName);
+	if (log)
+		log->mWatchingHandlers.RemoveItem( handler);
+	mLocker.Unlock();
 }
 
 /*------------------------------------------------------------------------------*\
@@ -95,10 +156,10 @@ void BmLogHandler::FinishLog( const BmString& logname) {
 		-	singleton creator
 \*------------------------------------------------------------------------------*/
 BmLogHandler* BmLogHandler::CreateInstance( uint32 logLevels, node_ref* appFolder) {
-	if (theInstance)
-		return theInstance;
+	if (TheLogHandler)
+		return TheLogHandler;
 	else
-		return theInstance = new BmLogHandler( logLevels, appFolder);
+		return TheLogHandler = new BmLogHandler( logLevels, appFolder);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -106,8 +167,8 @@ BmLogHandler* BmLogHandler::CreateInstance( uint32 logLevels, node_ref* appFolde
 		-	initializes StopWatch()
 \*------------------------------------------------------------------------------*/
 BmLogHandler::BmLogHandler( uint32 logLevels, node_ref* appFolder)
-	:	mLocker("beam_loghandler")
-	,	StopWatch( "Beam_watch", true)
+	:	StopWatch( "Beam_watch", true)
+	,	mLocker("beam_loghandler")
 	,	mLoglevels( logLevels)
 	,	mAppFolder( new BDirectory( appFolder))
 {
@@ -118,15 +179,40 @@ BmLogHandler::BmLogHandler( uint32 logLevels, node_ref* appFolder)
 		-	frees each and every log-file
 \*------------------------------------------------------------------------------*/
 BmLogHandler::~BmLogHandler() {
-	for(  LogfileMap::iterator logIter = mActiveLogs.begin();
-			logIter != mActiveLogs.end();
-			++logIter) {
-		BLooper* looper = (*logIter).second;
+	int32 count = mActiveLogs.CountItems();
+	for( int i=0; i<count; ++i) {
+		BLooper* looper = static_cast< BLooper*>( mActiveLogs.ItemAt(i));
 		looper->LockLooper();
 		looper->Quit();
 	}
+	mActiveLogs.MakeEmpty();
 	delete mAppFolder;
-	theInstance = NULL;
+	TheLogHandler = NULL;
+}
+
+/*------------------------------------------------------------------------------*\
+	LogLevels
+		-	
+\*------------------------------------------------------------------------------*/
+void BmLogHandler::LogLevels( uint32 loglevels, int32 minFileSize, int32 maxFileSize) {
+	mLoglevels = loglevels;
+	mMinFileSize = minFileSize;
+	mMaxFileSize = maxFileSize;
+}
+
+/*------------------------------------------------------------------------------*\
+	LogfileFor( logname)
+		-	tries to find the logfile of the given name in the logfile-map
+\*------------------------------------------------------------------------------*/
+BmLogHandler::BmLogfile* BmLogHandler::LogfileFor( const BmString &logname) {
+	BmLogfile* log = NULL;
+	int32 count = mActiveLogs.CountItems();
+	for( int i=0; i<count; ++i) {
+		log = static_cast< BmLogfile*>( mActiveLogs.ItemAt(i));
+		if (log && log->logname == logname)
+			return log;
+	}
+	return NULL;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -134,15 +220,14 @@ BmLogHandler::~BmLogHandler() {
 		-	tries to find the logfile of the given name in the logfile-map
 		-	if logfile does not exist yet, it is created and added to map
 \*------------------------------------------------------------------------------*/
-BmLogHandler::BmLogfile* BmLogHandler::FindLogfile( const BmString &logname) {
+BmLogHandler::BmLogfile* BmLogHandler::FindLogfile( const BmString &ln) {
 	BAutolock lock( mLocker);
 	if (!lock.IsLocked())
 		throw BM_runtime_error("LogToFile(): Unable to get lock on loghandler");
-	BmString name = logname.Length() ? logname : BmString("Beam");
-	name = BmString("logs/") + name + ".log";
-	LogfileMap::iterator logIter = mActiveLogs.find( name);
-	BmLogfile* log;
-	if (logIter == mActiveLogs.end()) {
+	BmString logname = ln.Length() ? ln : BmString("Beam");
+	BmString name = BmString("logs/") + logname + ".log";
+	BmLogfile* log = LogfileFor( logname);
+	if (!log) {
 		// logfile doesn't exists, so we create it:
 		mAppFolder->CreateDirectory( "logs", NULL);
 						// ensure that the logs-folder exists
@@ -151,9 +236,8 @@ BmLogHandler::BmLogfile* BmLogHandler::FindLogfile( const BmString &logname) {
 		if (logfile->InitCheck() != B_OK)
 			throw BM_runtime_error( BmString("Unable to open logfile ") << name);
 		// shrink logfile if it has become too large:
-		off_t maxSize = ThePrefs->GetInt( "MaxLogfileSize", 200*1024);
-		if (logfile->Position() > maxSize) {
-			off_t newSize = ThePrefs->GetInt( "MinLogfileSize", 50*1024);
+		if (logfile->Position() > mMaxFileSize) {
+			off_t newSize = mMinFileSize;
 			char* buf = new char [newSize+1];
 			newSize = logfile->ReadAt( logfile->Position()-newSize, buf, newSize);
 			buf[newSize] = '\0';
@@ -166,10 +250,8 @@ BmLogHandler::BmLogfile* BmLogHandler::FindLogfile( const BmString &logname) {
 			logfile->WriteAt( 0, buf+offs, newSize-offs);
 			delete [] buf;
 		}
-		log = new BmLogfile( logfile, name.String());
-		mActiveLogs[name] = log;
-	} else {
-		log = (*logIter).second;
+		log = new BmLogfile( logfile, name.String(), logname.String());
+		mActiveLogs.AddItem( log);
 	}
 	return log;
 }
@@ -208,13 +290,9 @@ void BmLogHandler::LogToFile( const char* const logname, uint32 flag, const char
 void BmLogHandler::CloseLog( const BmString &logname) {
 	BAutolock lock( mLocker);
 	if (lock.IsLocked()) {
-		BmString name = logname.Length() ? logname : BmString("Beam");
-		name = BmString("logs/") + name + ".log";
-		LogfileMap::iterator logIter = mActiveLogs.find( name);
-		BmLogfile* log;
-		if (logIter != mActiveLogs.end()) {
-			log = (*logIter).second;
-			mActiveLogs.erase( logIter);
+		BmLogfile* log = LogfileFor( logname);
+		if (log) {
+			mActiveLogs.RemoveItem( log);
 			// wait until the logfile has no more entries to process...
 			BMessageQueue* msgQueue = log->MessageQueue();
 			bool done = false;
@@ -240,8 +318,9 @@ const char* const BmLogHandler::BmLogfile::MSG_THREAD_ID =	"bm:tid";
 		-	c'tor
 		-	starts Looper's message-loop
 \*------------------------------------------------------------------------------*/
-BmLogHandler::BmLogfile::BmLogfile( BFile* file, const char* fn)
-	:	BLooper( (BmString("log_")<<fn).String(), B_DISPLAY_PRIORITY, 500)
+BmLogHandler::BmLogfile::BmLogfile( BFile* file, const char* fn, const char* ln)
+	:	BLooper( (BmString("log_")<<ln).String(), B_DISPLAY_PRIORITY, 500)
+	,	logname( ln)
 	,	mLogFile( file)
 	,	filename( fn)
 {

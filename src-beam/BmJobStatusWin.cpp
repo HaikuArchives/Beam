@@ -137,9 +137,13 @@ void BmJobStatusView::MessageReceived( BMessage* msg) {
 				lock.IsLocked()				|| BM_THROW_RUNTIME( "JobStatusView(): could not lock window");
 				if (!mIsAutoJob) {
 					TheJobStatusWin->Minimize( false);
+					while (TheJobStatusWin->IsHidden())
+						TheJobStatusWin->Show();
+/*
 					do {
 						TheJobStatusWin->Show();
 					} while (TheJobStatusWin->IsHidden());
+*/
 				}
 				break;
 			}
@@ -150,8 +154,8 @@ void BmJobStatusView::MessageReceived( BMessage* msg) {
 				DetachModel();
 				if (!IsHidden()) {
 					Hide();
-					if (!mIsAutoJob)
-						TheJobStatusWin->Hide();
+//					if (!mIsAutoJob)
+//						TheJobStatusWin->Hide();
 				}
 				TheJobStatusWin->RemoveJob( ControllerName());
 				delete this;
@@ -166,7 +170,7 @@ void BmJobStatusView::MessageReceived( BMessage* msg) {
 				inheritedView::MessageReceived( msg);
 		}
 	}
-	catch( exception &err) {
+	catch( BM_error &err) {
 		// a problem occurred, we tell the user:
 		BM_SHOWERR( BmString("JobStatusView: ") << err.what());
 	}
@@ -836,7 +840,7 @@ void BmJobStatusWin::MessageReceived(BMessage* msg) {
 				inherited::MessageReceived( msg);
 		}
 	}
-	catch( exception &err) {
+	catch( BM_error &err) {
 		// a problem occurred, we tell the user:
 		BM_SHOWERR( BmString("JobStatusWindow: ") << err.what());
 	}

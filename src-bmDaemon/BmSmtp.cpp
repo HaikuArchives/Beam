@@ -30,8 +30,9 @@
 /*************************************************************************/
 
 
+#include <ctype.h>
 #include <memory.h>
-#include <memory>
+//#include <memory>
 #include <stdio.h>
 
 #include "regexx.hh"
@@ -41,6 +42,7 @@ using namespace regexx;
 #include "BmEncoding.h"
 	using namespace BmEncoding;
 #include "BmJobStatusWin.h"
+#include "BmIdentity.h"
 #include "BmLogHandler.h"
 #include "BmMail.h"
 #include "BmMailHeader.h"
@@ -366,11 +368,11 @@ void BmSmtp::StateAuthViaPopServer() {
 		BmString sender = mail->Header()->DetermineSender();
 		BmString accName = mSmtpAccount->AccForSmtpAfterPop();
 		BmRef<BmPopAccount> sendingAcc 
-			= dynamic_cast<BmPopAccount*>( ThePopAccountList->FindItemByKey( accName).Get());;
+			= dynamic_cast<BmPopAccount*>( ThePopAccountList->FindItemByKey( accName).Get());
 		if (!sendingAcc) {
 			// no default pop-account set, we try to find out by looking at the
 			// sender address:
-			sendingAcc = ThePopAccountList->FindAccountForAddress( sender);
+			sendingAcc = TheIdentityList->FindPopAccountForAddrSpec( sender);
 		}
 		if (!sendingAcc) {
 			// still no pop-account found, we ask user, if possible:
@@ -559,7 +561,7 @@ void BmSmtp::Mail( BmMail* mail) {
 \*------------------------------------------------------------------------------*/
 bool BmSmtp::HasStdRcpts( BmMail* mail, BmRcptVect& rcptVect) {
 	BmAddrList::const_iterator iter;
-	const BmAddressList toList = mail->IsRedirect() 
+	const BmAddressList& toList = mail->IsRedirect() 
 											? mail->Header()->GetAddressList( BM_FIELD_RESENT_TO)
 											: mail->Header()->GetAddressList( BM_FIELD_TO);
 	for( iter=toList.begin(); iter != toList.end(); ++iter) {
@@ -569,7 +571,7 @@ bool BmSmtp::HasStdRcpts( BmMail* mail, BmRcptVect& rcptVect) {
 			continue;
 		rcptVect.push_back( iter->AddrSpec());
 	}
-	const BmAddressList ccList = mail->IsRedirect() 
+	const BmAddressList& ccList = mail->IsRedirect() 
 											? mail->Header()->GetAddressList( BM_FIELD_RESENT_CC)
 											: mail->Header()->GetAddressList( BM_FIELD_CC);
 	for( iter=ccList.begin(); iter != ccList.end(); ++iter) {
@@ -602,9 +604,9 @@ void BmSmtp::Rcpt( const BmRcptVect& rcptVect) {
 \*------------------------------------------------------------------------------*/
 void BmSmtp::BccRcpt( BmMail* mail, bool sendDataForEachBcc, const BmString& headerText) {
 	BmAddrList::const_iterator iter;
-	const BmAddressList bccList = mail->IsRedirect() 
-											? mail->Header()->GetAddressList( BM_FIELD_RESENT_BCC)
-											: mail->Header()->GetAddressList( BM_FIELD_BCC);
+	const BmAddressList& bccList = mail->IsRedirect() 
+												? mail->Header()->GetAddressList( BM_FIELD_RESENT_BCC)
+												: mail->Header()->GetAddressList( BM_FIELD_BCC);
 	for( iter=bccList.begin(); iter != bccList.end(); ++iter) {
 		if (sendDataForEachBcc)
 			Mail( mail);

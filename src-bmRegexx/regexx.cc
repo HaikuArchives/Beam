@@ -26,6 +26,10 @@
 // $Revision$
 // $Date$
 
+#ifdef __POWERPC__
+#define BM_BUILDING_LIBREGEXX 1
+#endif
+
 #include "regexx.hh"
 #include "pcre.h"
 

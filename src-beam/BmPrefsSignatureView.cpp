@@ -48,6 +48,7 @@
 #include "BmEncoding.h"
 	using namespace BmEncoding;
 #include "BmGuiUtil.h"
+#include "BmIdentity.h"
 #include "BmLogHandler.h"
 #include "BmMenuControl.h"
 #include "BmMultiLineTextControl.h"
@@ -208,7 +209,7 @@ void BmSignatureView::MessageReceived( BMessage* msg) {
 			default:
 				inherited::MessageReceived( msg);
 		}
-	} catch( exception &err) {
+	} catch( BM_error &err) {
 		// a problem occurred, we tell the user:
 		BM_SHOWERR( BmString("SignatureView:\n\t") << err.what());
 	}
@@ -285,13 +286,13 @@ BmPrefsSignatureView::BmPrefsSignatureView()
 		-	
 \*------------------------------------------------------------------------------*/
 BmPrefsSignatureView::~BmPrefsSignatureView() {
-	TheBubbleHelper.SetHelp( mSigListView, NULL);
-	TheBubbleHelper.SetHelp( mSignatureControl, NULL);
-	TheBubbleHelper.SetHelp( mContentControl, NULL);
-	TheBubbleHelper.SetHelp( mDynamicControl, NULL);
-	TheBubbleHelper.SetHelp( mCharsetControl, NULL);
-	TheBubbleHelper.SetHelp( mSignatureRxControl, NULL);
-	TheBubbleHelper.SetHelp( mTestButton, NULL);
+	TheBubbleHelper->SetHelp( mSigListView, NULL);
+	TheBubbleHelper->SetHelp( mSignatureControl, NULL);
+	TheBubbleHelper->SetHelp( mContentControl, NULL);
+	TheBubbleHelper->SetHelp( mDynamicControl, NULL);
+	TheBubbleHelper->SetHelp( mCharsetControl, NULL);
+	TheBubbleHelper->SetHelp( mSignatureRxControl, NULL);
+	TheBubbleHelper->SetHelp( mTestButton, NULL);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -301,10 +302,10 @@ BmPrefsSignatureView::~BmPrefsSignatureView() {
 void BmPrefsSignatureView::Initialize() {
 	inherited::Initialize();
 
-	TheBubbleHelper.SetHelp( mSigListView, "This listview shows every signature you have defined.");
-	TheBubbleHelper.SetHelp( mSignatureControl, "Here you can enter a name for this signature.\nThis name is used to identify this signature in Beam.");
-	TheBubbleHelper.SetHelp( mContentControl, "Here you can enter the signature text (static mode) \nor a shell-command (dynamic mode).");
-	TheBubbleHelper.SetHelp( mDynamicControl, "Beam supports two kinds of signatures:\n\
+	TheBubbleHelper->SetHelp( mSigListView, "This listview shows every signature you have defined.");
+	TheBubbleHelper->SetHelp( mSignatureControl, "Here you can enter a name for this signature.\nThis name is used to identify this signature in Beam.");
+	TheBubbleHelper->SetHelp( mContentControl, "Here you can enter the signature text (static mode) \nor a shell-command (dynamic mode).");
+	TheBubbleHelper->SetHelp( mDynamicControl, "Beam supports two kinds of signatures:\n\
 static:\n\
 	The text entered into the content field represents the signature itself.\n\
 	Exactly this text will be appended to a mail that uses this sig.\n\
@@ -312,9 +313,9 @@ dynamic:\n\
 	The text entered into the content field is a shell-command whose output (STDOUT)\n\
 	represents the signature. You can use this mode to implement things like\n\
 	random signature selection from an external database, for instance.");
-	TheBubbleHelper.SetHelp( mCharsetControl, "Here you can define the charset of the signature-text.\nIf in doubt, just leave the default.");
-	TheBubbleHelper.SetHelp( mSignatureRxControl, "This is the regular expression (perl-style) used by Beam\nto split off the signature when viewing mails.");
-	TheBubbleHelper.SetHelp( mTestButton, "Here you can testrun a dynamic signature.");
+	TheBubbleHelper->SetHelp( mCharsetControl, "Here you can define the charset of the signature-text.\nIf in doubt, just leave the default.");
+	TheBubbleHelper->SetHelp( mSignatureRxControl, "This is the regular expression (perl-style) used by Beam\nto split off the signature when viewing mails.");
+	TheBubbleHelper->SetHelp( mTestButton, "Here you can testrun a dynamic signature.");
 
 	mSignatureControl->SetTarget( this);
 	mContentControl->SetTarget( this);
@@ -397,9 +398,19 @@ void BmPrefsSignatureView::MessageReceived( BMessage* msg) {
 				BView* srcView = NULL;
 				msg->FindPointer( "source", (void**)&srcView);
 				BmTextControl* source = dynamic_cast<BmTextControl*>( srcView);
-				if ( mCurrSig && source == mSignatureControl)
-					TheSignatureList->RenameItem( mCurrSig->Name(), mSignatureControl->Text());
-				else if ( source == mSignatureRxControl)
+				if ( mCurrSig && source == mSignatureControl) {
+					BmString oldName = mCurrSig->Name();
+					BmString newName = mSignatureControl->Text();
+					TheSignatureList->RenameItem( oldName, newName);
+					BmModelItemMap::const_iterator iter;
+					// update any links to this signature:
+					BAutolock lock( TheIdentityList->ModelLocker());
+					for( iter = TheIdentityList->begin(); iter != TheIdentityList->end(); ++iter) {
+						BmIdentity* ident = dynamic_cast<BmIdentity*>( iter->second.Get());
+						if (ident && ident->SignatureName()==oldName)
+							ident->SignatureName( newName);
+					}
+				} else if ( source == mSignatureRxControl)
 					ThePrefs->SetString("SignatureRX", mSignatureRxControl->Text());
 				NoticeChange();
 				break;
@@ -478,7 +489,7 @@ void BmPrefsSignatureView::MessageReceived( BMessage* msg) {
 				inherited::MessageReceived( msg);
 		}
 	}
-	catch( exception &err) {
+	catch( BM_error &err) {
 		// a problem occurred, we tell the user:
 		BM_SHOWERR( BmString("PrefsView_") << Name() << ":\n\t" << err.what());
 	}
@@ -507,17 +518,20 @@ void BmPrefsSignatureView::ShowSignature( int32 selection) {
 	} else {
 		BmSignatureItem* sigItem = dynamic_cast<BmSignatureItem*>(mSigListView->ItemAt( selection));
 		if (sigItem) {
-			mCurrSig = dynamic_cast<BmSignature*>( sigItem->ModelItem());
-			if (mCurrSig) {
-				mSignatureControl->SetTextSilently( mCurrSig->Name().String());
-				mContentControl->SetTextSilently( mCurrSig->Content().String());
-				mDynamicControl->SetValue( mCurrSig->Dynamic());
-				BmString charset( mCurrSig->Charset());
-				mCharsetControl->ClearMark();
-				mCharsetControl->MarkItem( charset.String());
-				mCharsetControl->MenuItem()->SetLabel( charset.String());
-				mCharsetControl->SetEnabled( mCurrSig->Dynamic());
-				mTestButton->SetEnabled( mCurrSig->Dynamic());
+			BmSignature* sig = dynamic_cast<BmSignature*>( sigItem->ModelItem());
+			if  (mCurrSig != sig) {
+				mCurrSig = sig;
+				if (mCurrSig) {
+					mSignatureControl->SetTextSilently( mCurrSig->Name().String());
+					mContentControl->SetTextSilently( mCurrSig->Content().String());
+					mDynamicControl->SetValue( mCurrSig->Dynamic());
+					BmString charset( mCurrSig->Charset());
+					mCharsetControl->ClearMark();
+					mCharsetControl->MarkItem( charset.String());
+					mCharsetControl->MenuItem()->SetLabel( charset.String());
+					mCharsetControl->SetEnabled( mCurrSig->Dynamic());
+					mTestButton->SetEnabled( mCurrSig->Dynamic());
+				}
 			}
 		} else
 			mCurrSig = NULL;

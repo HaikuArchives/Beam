@@ -32,8 +32,6 @@
 #ifndef _BmFilterChain_h
 #define _BmFilterChain_h
 
-#include <stdexcept>
-
 #include <Archivable.h>
 
 #include "BmString.h"

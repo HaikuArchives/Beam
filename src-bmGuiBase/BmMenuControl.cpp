@@ -33,7 +33,14 @@
 
 #include <HGroup.h>
 
+#ifdef __POWERPC__
+#define BM_BUILDING_SANTAPARTSFORBEAM 1
+#endif
+
 #include "Colors.h"
+
+#include "split.hh"
+using namespace regexx;
 
 #include "BmMenuControl.h"
 
@@ -65,10 +72,26 @@ BmMenuControl::~BmMenuControl() {
 	( )
 		-	
 \*------------------------------------------------------------------------------*/
-void BmMenuControl::MarkItem( const char* label) {
-	BMenuItem* item = Menu()->FindItem( label);
+void BmMenuControl::MarkItem( const char* label, bool recurse) {
+	BMenuItem* item = NULL;
+	if (recurse) {
+		ClearMark();
+		MenuItem()->SetLabel( label);
+		// we walk down the tree to find the corresponding menu-item:
+		vector<BmString> itemVect;
+		split( "/", label, itemVect);
+		BMenu* currMenu = Menu();
+		for( uint32 i=0; currMenu && i<itemVect.size(); ++i) {
+			BmString str = itemVect[i];
+			item = currMenu->FindItem( str.String());
+			currMenu = item->Submenu();
+		}
+	} else
+		item = Menu()->FindItem( label);
 	if (item)
 		item->SetMarked( true);
+	else
+		ClearMark();
 }
 
 /*------------------------------------------------------------------------------*\
@@ -76,10 +99,26 @@ void BmMenuControl::MarkItem( const char* label) {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmMenuControl::ClearMark() {
-	BMenuItem* item = mMenu->FindMarked();
-	if (item)
+	MenuItem()->SetLabel("");
+	doClearMark( Menu());
+}
+
+/*------------------------------------------------------------------------------*\
+	( )
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMenuControl::doClearMark( BMenu* menu) {
+	if (!menu)
+		return;
+	BMenuItem* item;
+	while( (item = menu->FindMarked()))
 		item->SetMarked( false);
-	MarkItem("");
+	int32 count=menu->CountItems();
+	for( int i=0; i<count; ++i) {
+		BMenu* subMenu = menu->SubmenuAt( i);
+		if (subMenu)
+			doClearMark( subMenu);
+	}
 }
 
 /*------------------------------------------------------------------------------*\

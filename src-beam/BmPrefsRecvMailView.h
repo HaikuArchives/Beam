@@ -104,14 +104,11 @@ private:
 
 
 #define BM_AUTH_SELECTED 			'bmAS'
-#define BM_SIGNATURE_SELECTED 	'bmGS'
-#define BM_SMTP_SELECTED 			'bmSS'
 #define BM_FILTER_CHAIN_SELECTED 'bmFS'
+#define BM_HOME_FOLDER_SELECTED  'bmHS'
 #define BM_CHECK_MAIL_CHANGED 	'bmCC'
 #define BM_CHECK_EVERY_CHANGED 	'bmCE'
 #define BM_REMOVE_MAIL_CHANGED 	'bmRC'
-#define BM_IS_DEFAULT_CHANGED 	'bmDC'
-#define BM_IS_BUCKET_CHANGED	 	'bmFC'
 #define BM_PWD_STORED_CHANGED 	'bmPC'
 #define BM_CHECK_AND_SUGGEST		'bmCS'
 #define BM_ADD_ACCOUNT 				'bmAA'
@@ -158,21 +155,15 @@ private:
 
 	BmListViewController* mAccListView;
 	BmTextControl* mAccountControl;
-	BmTextControl* mAliasesControl;
 	BmTextControl* mLoginControl;
-	BmTextControl* mMailAddrControl;
 	BmTextControl* mPortControl;
 	BmTextControl* mPwdControl;
-	BmTextControl* mRealNameControl;
 	BmTextControl* mServerControl;
 	BmTextControl* mCheckIntervalControl;
 	BmMenuControl* mAuthControl;
-	BmMenuControl* mSignatureControl;
-	BmMenuControl* mSmtpControl;
 	BmMenuControl* mFilterChainControl;
+	BmMenuControl* mHomeFolderControl;
 	BmCheckControl* mCheckAccountControl;
-	BmCheckControl* mIsBucketControl;
-	BmCheckControl* mIsDefaultControl;
 	BmCheckControl* mRemoveMailControl;
 	BmCheckControl* mStorePwdControl;
 	BmCheckControl* mCheckEveryControl;

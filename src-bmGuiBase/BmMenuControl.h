@@ -35,9 +35,11 @@
 
 #include <layout.h>
 
+#include "SantaPartsForBeam.h"
+
 class HGroup;
 
-class BmMenuControl : public MView, public BMenuField
+class IMPEXPSANTAPARTSFORBEAM BmMenuControl : public MView, public BMenuField
 {
 	typedef BMenuField inherited;
 
@@ -48,13 +50,15 @@ public:
 	~BmMenuControl();
 	
 	// native methods:
-	void MarkItem( const char* label);
+	void MarkItem( const char* label, bool recurse=false);
 	void ClearMark();
 
 	// overrides:
 	void SetEnabled( bool enabled);
 
 private:
+	void doClearMark( BMenu* menu);
+
 	minimax layoutprefs();
 	BRect layout(BRect frame);
 	

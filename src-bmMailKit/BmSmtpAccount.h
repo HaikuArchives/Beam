@@ -32,7 +32,6 @@
 #ifndef _BmSmtpAccount_h
 #define _BmSmtpAccount_h
 
-#include <stdexcept>
 #include <vector>
 
 #include <Archivable.h>

@@ -34,6 +34,7 @@
 #include "BmBasics.h"
 #include "BmPrefs.h"
 #include "BmFilterChain.h"
+#include "BmLogHandler.h"
 #include "BmResources.h"
 #include "BmStorageUtil.h"
 #include "BmUtil.h"
@@ -314,7 +315,7 @@ BmFilterChainList::~BmFilterChainList() {
 		-	returns the name of the settings-file for the filterchain-list
 \*------------------------------------------------------------------------------*/
 const BmString BmFilterChainList::SettingsFileName() {
-	return BmString( TheResources->SettingsPath.Path()) << "/FiltersChains";
+	return BmString( TheResources->SettingsPath.Path()) << "/FilterChains";
 }
 
 /*------------------------------------------------------------------------------*\

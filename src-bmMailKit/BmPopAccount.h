@@ -32,7 +32,6 @@
 #ifndef _BmPopAccount_h
 #define _BmPopAccount_h
 
-#include <stdexcept>
 #include <vector>
 
 #include <Archivable.h>
@@ -71,10 +70,6 @@ class BmPopAccount : public BmListModelItem {
 	static const char* const MSG_USERNAME;
 	static const char* const MSG_PASSWORD;
 	static const char* const MSG_POP_SERVER;
-	static const char* const MSG_SMTP_ACCOUNT;
-	static const char* const MSG_REAL_NAME;
-	static const char* const MSG_MAIL_ADDR;
-	static const char* const MSG_SIGNATURE_NAME;
 	static const char* const MSG_CHECK_MAIL;
 	static const char* const MSG_DELETE_MAIL;
 	static const char* const MSG_PORT_NR;
@@ -82,10 +77,9 @@ class BmPopAccount : public BmListModelItem {
 	static const char* const MSG_AUTH_METHOD;
 	static const char* const MSG_MARK_DEFAULT;
 	static const char* const MSG_STORE_PWD;
-	static const char* const MSG_MAIL_ALIASES;
-	static const char* const MSG_MARK_BUCKET;
 	static const char* const MSG_CHECK_INTERVAL;
 	static const char* const MSG_FILTER_CHAIN;
+	static const char* const MSG_HOME_FOLDER;
 	static const int16 nArchiveVersion;
 
 public:
@@ -96,9 +90,7 @@ public:
 	// native methods:
 	bool IsUIDDownloaded( BmString uid);
 	void MarkUIDAsDownloaded( BmString uid);
-	BmString GetFromAddress() const;
 	BmString GetDomainName() const;
-	bool HandlesAddress( BmString addr, bool needExactMatch=false) const;
 	bool SanityCheck( BmString& complaint, BmString& fieldName) const;
 
 	// stuff needed for Archival:
@@ -109,42 +101,32 @@ public:
 	inline const BmString &AuthMethod() const	{ return mAuthMethod; }
 	inline bool CheckMail() const 				{ return mCheckMail; }
 	inline bool DeleteMailFromServer() const	{ return mDeleteMailFromServer; }
-	inline const BmString &MailAddr() const 	{ return mMailAddr; }
-	inline const BmString &MailAliases() const { return mMailAliases; }
 	inline bool MarkedAsDefault() const			{ return mMarkedAsDefault; }
-	inline bool MarkedAsBitBucket() const		{ return mMarkedAsBitBucket; }
-	inline const BmString &Name() const 			{ return Key(); }
+	inline const BmString &Name() const 		{ return Key(); }
 	inline const BmString &Password() const 	{ return mPassword; }
 	inline const BmString &POPServer() const	{ return mPOPServer; }
 	inline uint16 PortNr() const					{ return mPortNr; }
 	inline const BmString &PortNrString() const{ return mPortNrString; }
 	inline bool PwdStoredOnDisk() const			{ return mPwdStoredOnDisk; }
-	inline const BmString &RealName() const 	{ return mRealName; }
-	inline const BmString &SignatureName() const	 { return mSignatureName; }
-	inline const BmString &SMTPAccount() const	{ return mSMTPAccount; }
 	inline const BmString &Username() const 	{ return mUsername; }
 	inline int16 CheckInterval() const 			{ return mCheckInterval; }
 	inline const BmString &CheckIntervalString() const{ return mCheckIntervalString; }
 	inline const BmString &FilterChain() const{ return mFilterChain; }
+	inline const BmString &HomeFolder() const { return mHomeFolder; }
 
 	// setters:
 	inline void AuthMethod( const BmString &s) { mAuthMethod = s; TellModelItemUpdated( UPD_ALL); }
 	inline void CheckMail( bool b) 				{ mCheckMail = b;  TellModelItemUpdated( UPD_ALL); }
 	inline void DeleteMailFromServer( bool b)	{ mDeleteMailFromServer = b;  TellModelItemUpdated( UPD_ALL); }
-	inline void MailAddr( const BmString &s) 	{ mMailAddr = s;  TellModelItemUpdated( UPD_ALL); }
-	inline void MailAliases( const BmString &s){ mMailAliases = s;  TellModelItemUpdated( UPD_ALL); }
 	inline void MarkedAsDefault( bool b)		{ mMarkedAsDefault = b;  TellModelItemUpdated( UPD_ALL); }
-	inline void MarkedAsBitBucket( bool b)		{ mMarkedAsBitBucket = b;  TellModelItemUpdated( UPD_ALL); }
 	inline void Password( const BmString &s) 	{ mPassword = s;  TellModelItemUpdated( UPD_ALL); }
 	inline void POPServer( const BmString &s)	{ mPOPServer = s;  TellModelItemUpdated( UPD_ALL); }
 	inline void PortNr( uint16 i)					{ mPortNr = i; mPortNrString = BmString()<<i;  TellModelItemUpdated( UPD_ALL); }
 	inline void PwdStoredOnDisk( bool b)		{ mPwdStoredOnDisk = b;  TellModelItemUpdated( UPD_ALL); }
-	inline void RealName( const BmString &s) 	{ mRealName = s;  TellModelItemUpdated( UPD_ALL); }
-	inline void SignatureName( const BmString &s)	 { mSignatureName = s;  TellModelItemUpdated( UPD_ALL); }
-	inline void SMTPAccount( const BmString &s){ mSMTPAccount = s;  TellModelItemUpdated( UPD_ALL); }
 	inline void Username( const BmString &s) 	{ mUsername = s;  TellModelItemUpdated( UPD_ALL); }
 	void CheckInterval( int16 i);
 	inline void FilterChain( const BmString &s){ mFilterChain = s;  TellModelItemUpdated( UPD_ALL); }
+	inline void HomeFolder( const BmString &s){ mHomeFolder = s;  TellModelItemUpdated( UPD_ALL); }
 
 	bool GetPOPAddress( BNetAddress* addr) const;
 
@@ -163,12 +145,6 @@ private:
 	BmString mUsername;
 	BmString mPassword;
 	BmString mPOPServer;
-	BmString mSMTPAccount;			// name of BmSmtpAccount to use when sending 
-											// mail "from" this POP-account
-	BmString mRealName;
-	BmString mMailAddr;				// address to use (instead of composed address)
-	BmString mMailAliases;			// addresses that belong to this POP-Account, too
-	BmString mSignatureName;		// name of signature file
 	uint16 mPortNr;					// usually 110
 	BmString mPortNrString;			// mPortNr as String
 	bool mCheckMail;					// include this account in global mail-check?
@@ -176,10 +152,11 @@ private:
 	BmString mAuthMethod;			// authentication method
 	bool mMarkedAsDefault;			// is this the default account?
 	bool mPwdStoredOnDisk;			// store Passwords unsafely on disk?
-	bool mMarkedAsBitBucket;		// is this account a catch-all-account for failed delivery?
 	int16 mCheckInterval;			// check mail every ... minutes
 	BmString mCheckIntervalString;	// check-interval as String
 	BmString mFilterChain;			// the filter-chain to be used by this account
+	BmString mHomeFolder;			// the folder where mails from this account shall
+											// be stored into (by default, filters may change that)
 
 	vector<BmString> mUIDs;			// list of UIDs seen in this account
 	BMessageRunner* mIntervalRunner;
@@ -205,9 +182,6 @@ public:
 	// native methods:
 	void CheckMail( bool allAccounts=false);
 	void CheckMailFor( BmString accName, bool isAutoCheck=false);
-	BmRef<BmPopAccount> DefaultAccount();
-	BmRef<BmPopAccount> FindAccountForAddress( const BmString addr);
-	void SetDefaultAccount( BmString accName);
 	//
 	void ResetToSaved();
 	

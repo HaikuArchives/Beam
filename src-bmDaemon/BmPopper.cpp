@@ -460,10 +460,15 @@ void BmPopper::StateRetrieve() {
 		SendCommand( cmd);
 		if (!CheckForPositiveAnswer( mNewMsgSizes[mCurrMailNr-1], true, true))
 			goto CLEAN_UP;
+		// now cteate a mail from the received data...
 		BmRef<BmMail> mail = new BmMail( mAnswerText, mPopAccount->Name());
 		if (mail->InitCheck() != B_OK)
 			goto CLEAN_UP;
+		// ...set default folder according to pop-account settings...
+		mail->SetDestFoldername( mPopAccount->HomeFolder());
+		// ...execute mail-filters for this mail...
 		mail->ApplyFilter();
+		// ...and store mail on disk:
 		if (!mail->Store())
 			goto CLEAN_UP;
 		mPopAccount->MarkUIDAsDownloaded( mMsgUIDs[i]);

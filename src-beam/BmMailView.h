@@ -64,6 +64,12 @@ class BmRulerView;
 #define BM_MAILVIEW_COPY_URL						'bmMf'
 
 /*------------------------------------------------------------------------------*\
+	utility function to wrap lines at word boundary:
+\*------------------------------------------------------------------------------*/
+void WordWrap( const BmString& in, BmString& out, int32 maxLineLen, 
+					BmString nl, bool keepLongWords);
+
+/*------------------------------------------------------------------------------*\
 	BmMailView
 		-	
 \*------------------------------------------------------------------------------*/

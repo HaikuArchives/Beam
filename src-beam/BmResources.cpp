@@ -45,6 +45,9 @@ using namespace regexx;
 #include "BmStorageUtil.h"
 #include "BmUtil.h"
 
+// forward declaration
+void ShowAlert( const BmString &text);
+
 BmResources* BmResources::theInstance = NULL;
 
 extern uint8 CLVRightArrowData[132];

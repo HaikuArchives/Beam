@@ -191,7 +191,7 @@ void BmFilterChainView::MessageReceived( BMessage* msg) {
 			default:
 				inherited::MessageReceived( msg);
 		}
-	} catch( exception &err) {
+	} catch( BM_error &err) {
 		// a problem occurred, we tell the user:
 		BM_SHOWERR( BmString("FilterChainView:\n\t") << err.what());
 	}
@@ -205,7 +205,7 @@ void BmFilterChainView::MessageReceived( BMessage* msg) {
 
 enum Columns2 {
 	COL2_POS = 0,
-	COL2_KEY,
+	COL2_KEY
 };
 
 /*------------------------------------------------------------------------------*\
@@ -337,7 +337,7 @@ void BmChainedFilterView::MessageReceived( BMessage* msg) {
 			default:
 				inherited::MessageReceived( msg);
 		}
-	} catch( exception &err) {
+	} catch( BM_error &err) {
 		// a problem occurred, we tell the user:
 		BM_SHOWERR( BmString("ChainedFilterView:\n\t") << err.what());
 	}
@@ -359,32 +359,45 @@ BmPrefsFilterChainView::BmPrefsFilterChainView()
 	MBorder* borderl = NULL;
 	MBorder* borderr = NULL;
 	MView* view = 
-		new VGroup(
+		new UserResizeSplitView(
 			new HGroup(
-				CreateFilterChainListView( minimax(200,120,1E5,1E5), 200, 200),
+				minimax( 400,120),
+				CreateFilterChainListView( minimax(200,150,1E5,1E5), 200, 200),
 				new Space( minimax(5,0,5,1E5)),
 				new VGroup(
-					mAddButton = new MButton("Add Chain", new BMessage(BM_ADD_CHAIN), this),
-					mRemoveButton = new MButton("Remove Chain", new BMessage( BM_REMOVE_CHAIN), this),
+					new HGroup(
+						mAddButton = new MButton( "Add Chain", new BMessage(BM_ADD_CHAIN), 
+													  this, minimax(-1,-1,-1,-1)),
+						new Space(),
+						0
+					),
+					new HGroup(
+						mRemoveButton = new MButton( "Remove Chain", new BMessage( BM_REMOVE_CHAIN), 
+														  this, minimax(-1,-1,-1,-1)),
+						new Space(),
+						0
+					),
 					new Space(),
 					0
 				),
 				0
 			),
 			new HGroup(
-				minimax( 400,120),
+				minimax( 400,250),
 				borderl = new MBorder( M_LABELED_BORDER, 10, (char*)"Filter-Chain Info",
 					new VGroup(
 						new HGroup( 
 							mChainControl = new BmTextControl( "Filter-Chain name:"),
 							0
 						),
-						CreateChainedFilterListView( minimax(200,60,1E5,1E5), 200, 200),
+						CreateChainedFilterListView( minimax(200,120,1E5,1E5), 200, 200),
 						new HGroup(
-								mMoveUpButton = new MButton( "Move Up", new BMessage( BM_MOVE_UP_FILTER), this, minimax(-1,-1,-1,-1)),
-								new Space(),
-								mMoveDownButton = new MButton( "Move Down", new BMessage( BM_MOVE_DOWN_FILTER), this, minimax(-1,-1,-1,-1)),
-								0
+							new Space(),
+							mMoveUpButton = new MButton( "Move Up", new BMessage( BM_MOVE_UP_FILTER), this, minimax(-1,-1,-1,-1)),
+							new Space(),
+							mMoveDownButton = new MButton( "Move Down", new BMessage( BM_MOVE_DOWN_FILTER), this, minimax(-1,-1,-1,-1)),
+							new Space(),
+							0
 						),
 						0
 					)
@@ -400,15 +413,17 @@ BmPrefsFilterChainView::BmPrefsFilterChainView()
 				),
 				new Space( minimax(10, 0, 10, 1E5)),
 				borderr = new MBorder( M_LABELED_BORDER, 10, (char*)"Available Filters",
-					CreateAvailableFilterListView( minimax(200,60,1E5,1E5), 200, 200)
+					CreateAvailableFilterListView( minimax(200,120,1E5,1E5), 200, 200)
 				),
 				0
 			),
-			0
+			"hsplitter", 150, B_HORIZONTAL, true, true, false, B_FOLLOW_NONE
 		);
 
-	borderl->ct_mpm = minimax(250,250);
-	borderr->ct_mpm = minimax(250,250);
+	mAddButton->ct_mpm = mRemoveButton->ct_mpm;
+
+	borderl->ct_mpm = minimax(150,150);
+	borderr->ct_mpm = minimax(150,200);
 
 	mGroupView->AddChild( dynamic_cast<BView*>(view));
 }
@@ -418,12 +433,12 @@ BmPrefsFilterChainView::BmPrefsFilterChainView()
 		-	
 \*------------------------------------------------------------------------------*/
 BmPrefsFilterChainView::~BmPrefsFilterChainView() {
-	TheBubbleHelper.SetHelp( mFilterChainListView, NULL);
-	TheBubbleHelper.SetHelp( mChainedFilterListView, NULL);
-	TheBubbleHelper.SetHelp( mAvailableFilterListView, NULL);
-	TheBubbleHelper.SetHelp( mMoveUpButton, NULL);
-	TheBubbleHelper.SetHelp( mMoveDownButton, NULL);
-	TheBubbleHelper.SetHelp( mChainControl, NULL);
+	TheBubbleHelper->SetHelp( mFilterChainListView, NULL);
+	TheBubbleHelper->SetHelp( mChainedFilterListView, NULL);
+	TheBubbleHelper->SetHelp( mAvailableFilterListView, NULL);
+	TheBubbleHelper->SetHelp( mMoveUpButton, NULL);
+	TheBubbleHelper->SetHelp( mMoveDownButton, NULL);
+	TheBubbleHelper->SetHelp( mChainControl, NULL);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -433,11 +448,7 @@ BmPrefsFilterChainView::~BmPrefsFilterChainView() {
 void BmPrefsFilterChainView::Initialize() {
 	inherited::Initialize();
 
-/*
-	TheBubbleHelper.SetHelp( mFilterListView, "This listview shows every filter you have defined.");
-	TheBubbleHelper.SetHelp( mTestButton, "Here you can check the syntax of the SIEVE-script.");
-*/
-	TheBubbleHelper.SetHelp( mChainControl, "Here you can enter a name for this filter-chain.\nThis name is used to identify this filter-chain in Beam.");
+	TheBubbleHelper->SetHelp( mChainControl, "Here you can enter a name for this filter-chain.\nThis name is used to identify this filter-chain in Beam.");
 
 	mChainControl->SetTarget( this);
 
@@ -512,15 +523,18 @@ void BmPrefsFilterChainView::MessageReceived( BMessage* msg) {
 					= (selection != -1)
 							? dynamic_cast<BmFilterChainItem*>( mFilterChainListView->ItemAt( selection))
 							: NULL;
-				mCurrFilterChain 
+				BmFilterChain* chain 
 					= filterChainItem
 							? dynamic_cast<BmFilterChain*>( filterChainItem->ModelItem())
 							: NULL;
-				if (mCurrFilterChain) {
-					mChainedFilterListView->StartJob( mCurrFilterChain.Get(), false);
-				} else
-					mChainedFilterListView->DetachModel();
-				UpdateState();
+				if  (mCurrFilterChain != chain) {
+					mCurrFilterChain = chain;
+					if (mCurrFilterChain)
+						mChainedFilterListView->StartJob( mCurrFilterChain.Get(), false);
+					else
+						mChainedFilterListView->DetachModel();
+					UpdateState();
+				}
 				break;
 			}
 			case BM_CHAINED_SELECTION_CHANGED: {
@@ -634,7 +648,7 @@ void BmPrefsFilterChainView::MessageReceived( BMessage* msg) {
 				inherited::MessageReceived( msg);
 		}
 	}
-	catch( exception &err) {
+	catch( BM_error &err) {
 		// a problem occurred, we tell the user:
 		BM_SHOWERR( BmString("PrefsView_") << Name() << ":\n\t" << err.what());
 	}
@@ -654,7 +668,17 @@ void BmPrefsFilterChainView::UpdateState() {
 										&& mCurrFilterChain->Key()!=BM_DefaultOutItemLabel);
 	mMoveUpButton->SetEnabled( haveChain && haveChained);
 	mMoveDownButton->SetEnabled( haveChain && haveChained);
-	mAddFilterButton->SetEnabled( haveChain && haveAvailable);
+	bool alreadyIn = false;
+	if (haveAvailable && haveChain) {
+		BmModelItemMap::const_iterator iter;
+		for(  iter = mCurrFilterChain->inheritedList::begin(); 
+				iter != mCurrFilterChain->inheritedList::end(); ++iter) {
+			BmChainedFilter* filter = dynamic_cast< BmChainedFilter*>( iter->second.Get());
+			if (filter->FilterName() == mCurrAvailableFilter->Key())
+				alreadyIn = true;
+		}
+	}
+	mAddFilterButton->SetEnabled( haveChain && haveAvailable && !alreadyIn);
 	mRemoveFilterButton->SetEnabled( haveChain && haveChained);
 	mEmptyChainButton->SetEnabled( haveChain);
 	
@@ -690,7 +714,7 @@ CLVContainerView* BmPrefsFilterChainView::CreateChainedFilterListView( minimax m
 		-	
 \*------------------------------------------------------------------------------*/
 CLVContainerView* BmPrefsFilterChainView::CreateAvailableFilterListView( minimax minmax, int32 width, int32 height) {
-	mAvailableFilterListView = BmFilterView::CreateInstance( minmax, width, height);
+	mAvailableFilterListView = BmFilterView::CreateInstance( minmax, width, height, false);
 	mAvailableFilterListView->ClickSetsFocus( true);
 	return mAvailableFilterListView->ContainerView();
 }

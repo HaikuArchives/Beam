@@ -40,6 +40,7 @@
 #include "split.hh"
 using namespace regexx;
 
+#include "BmLogHandler.h"
 #include "BmPeople.h"
 #include "BmPrefs.h"
 #include "BmResources.h"
@@ -502,7 +503,7 @@ void BmPeopleMonitor::MessageReceived( BMessage* msg) {
 				inherited::MessageReceived( msg);
 		}
 	}
-	catch( exception &err) {
+	catch( BM_error &err) {
 		// a problem occurred, we tell the user:
 		BM_SHOWERR( BmString("PeopleMonitor: ") << err.what());
 	}
@@ -544,7 +545,7 @@ void BmPeopleMonitor::HandleQueryUpdateMsg( BMessage* msg) {
 				break;
 			}
 		}
-	} catch( exception &e) {
+	} catch( BM_error &e) {
 		BM_LOGERR( e.what());
 	}
 }

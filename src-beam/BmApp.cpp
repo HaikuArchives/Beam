@@ -32,6 +32,7 @@
 #include <AppFileInfo.h>
 #include <Beep.h>
 #include <Deskbar.h>
+#include <MenuItem.h>
 #include <Roster.h>
 #include <Screen.h>
 
@@ -51,6 +52,8 @@ using namespace regexx;
 #include "BmEncoding.h"
 #include "BmFilter.h"
 #include "BmFilterChain.h"
+#include "BmGuiUtil.h"
+#include "BmIdentity.h"
 #include "BmJobStatusWin.h"
 #include "BmLogHandler.h"
 #include "BmMailEditWin.h"
@@ -121,11 +124,17 @@ BmApplication::BmApplication( const char* sig)
 			BmAppVersion = vInfo.short_info;
 		}
 		BmAppNameWithVersion = BmAppName + " " + BmAppVersion;
-
-		// create the log-handler:
 		node_ref nref;
 		nref.device = appInfo.ref.device;
 		nref.node = appInfo.ref.directory;
+		BDirectory appDir( &nref);
+		BEntry appDirEntry;
+		appDir.GetEntry( &appDirEntry);
+		BPath appPath;
+		appDirEntry.GetPath( &appPath);
+		mAppPath = appPath.Path();
+
+		// create the log-handler:
 		BmLogHandler::CreateInstance( 1, &nref);
 
 		// load/determine all needed resources:
@@ -133,6 +142,9 @@ BmApplication::BmApplication( const char* sig)
 		time_t appModTime;
 		appFile.GetModificationTime( &appModTime);
 		TheResources->CheckMimeTypeFile( sig, appModTime);
+
+		// create BubbleHelper:
+		BubbleHelper::CreateInstance();
 
 		// load the preferences set by user (if any):
 		BmPrefs::CreateInstance();
@@ -162,11 +174,14 @@ BmApplication::BmApplication( const char* sig)
 
 		BmMailFolderList::CreateInstance();
 
-		BmSmtpAccountList::CreateInstance( TheJobStatusWin);
-		TheSmtpAccountList->StartJobInNewThread();
+		BmIdentityList::CreateInstance();
+		TheIdentityList->StartJobInThisThread();
 
 		BmPopAccountList::CreateInstance( TheJobStatusWin);
-		ThePopAccountList->StartJobInNewThread();
+		ThePopAccountList->StartJobInThisThread();
+
+		BmSmtpAccountList::CreateInstance( TheJobStatusWin);
+		TheSmtpAccountList->StartJobInThisThread();
 
 		add_system_beep_event( BM_BEEP_EVENT);
 
@@ -177,11 +192,11 @@ BmApplication::BmApplication( const char* sig)
 													? B_CURRENT_WORKSPACE 
 													: 1<<(atoi( wspc.String())-1));
 		
-		TheBubbleHelper.EnableHelp( ThePrefs->GetBool( "ShowTooltips", true));
+		TheBubbleHelper->EnableHelp( ThePrefs->GetBool( "ShowTooltips", true));
 
 		mInitCheck = B_OK;
 		InstanceCount++;
-	} catch (exception& err) {
+	} catch (BM_error& err) {
 		ShowAlert( err.what());
 		exit( 10);
 	}
@@ -195,6 +210,7 @@ BmApplication::~BmApplication() {
 	RemoveDeskbarItem();
 	ThePeopleList = NULL;
 	TheMailFolderList = NULL;
+	TheIdentityList = NULL;
 	ThePopAccountList = NULL;
 	TheSmtpAccountList = NULL;
 	TheSignatureList = NULL;
@@ -238,11 +254,16 @@ thread_id BmApplication::Run() {
 	try {
 		if (ThePrefs->GetBool( "UseDeskbar"))
 			InstallDeskbarItem();
-		TheSmtpAccountList->StartJobInThisThread();
+		EnsureIndexExists( "MAIL:identity");
+		EnsureIndexExists( "MAIL:account");
 		TheMainWindow->Show();
 		tid = inherited::Run();
 		ThePopAccountList->Store();
-		TheSmtpAccountList->Store();
+							// always store pop-account-list since the list of received
+							// mails may have changed
+		TheIdentityList->Store();
+							// always store identity-list since the current identity
+							// may have changed
 #ifdef BM_DEBUG_MEM
 		(new BAlert( "", "End of Beam(1), check mem-usage!!!", "OK"))->Go();
 		ThePopAccountList = NULL;
@@ -252,7 +273,7 @@ thread_id BmApplication::Run() {
 		TheMailFolderList = NULL;
 		(new BAlert( "", "End of Beam(4), check mem-usage!!!", "OK"))->Go();
 #endif
-	} catch( exception &e) {
+	} catch( BM_error &e) {
 		BM_SHOWERR( e.what());
 		exit(10);
 	}
@@ -271,7 +292,7 @@ void BmApplication::InstallDeskbarItem() {
 			int32 id;
 			appInfo.ref.set_name( BM_DeskbarItemName);
 			if ((res = mDeskbar.AddItem( &appInfo.ref, &id)) != B_OK)
-				BM_SHOWERR( BmString("Unable to install Beam_DeskbarItem.\nError: \n\t") << strerror( res))
+				BM_SHOWERR( BmString("Unable to install Beam_DeskbarItem (")<<BM_DeskbarItemName<<").\nError: \n\t" << strerror( res))
 		}
 	}
 }
@@ -624,6 +645,41 @@ void BmApplication::MessageReceived( BMessage* msg) {
 				delete [] refs;
 				break;
 			}
+			case BM_FILL_MENU_FROM_LIST: {
+				BmString listName = msg->FindString( MSG_LIST_NAME);
+				BMenu* menu;
+				if (msg->FindPointer( MSG_MENU_POINTER, (void**)&menu) != B_OK)
+					break;
+				BHandler* target;
+				if (msg->FindPointer( MSG_MENU_TARGET, (void**)&target) != B_OK)
+					break;
+				BMessage msgTempl;
+				if (msg->FindMessage( MSG_MSG_TEMPLATE, &msgTempl) != B_OK)
+					break;
+				if (menu) {
+					BFont font;
+					menu->GetFont( &font);
+					if (listName == BM_STATUSLIST_NAME) {
+						const char* stats[] = {
+							BM_MAIL_STATUS_DRAFT, BM_MAIL_STATUS_FORWARDED, BM_MAIL_STATUS_NEW, 
+							BM_MAIL_STATUS_PENDING, BM_MAIL_STATUS_READ, BM_MAIL_STATUS_REDIRECTED,
+							BM_MAIL_STATUS_REPLIED, BM_MAIL_STATUS_SENT,	NULL
+						};
+						for( int i=0; stats[i]; ++i) {
+							BMenuItem* item = new BMenuItem( stats[i], new BMessage(msgTempl));
+							item->SetTarget( target);
+							menu->AddItem( item);
+						}
+					} else if (listName == BM_FOLDERLIST_NAME) {
+						AddListToMenu( TheMailFolderList.Get(), menu, &msgTempl, target, 
+											&font, true);
+					} else if (listName == BM_IDENTITYLIST_NAME) {
+						AddListToMenu( TheIdentityList.Get(), menu, &msgTempl, target, 
+											&font);
+					}
+				}
+				break;
+			}
 			case B_SILENT_RELAUNCH: {
 				BM_LOG2( BM_LogAll, "App: silently relaunched");
 				if (TheMainWindow->IsMinimized())
@@ -638,7 +694,7 @@ void BmApplication::MessageReceived( BMessage* msg) {
 				break;
 		}
 	}
-	catch( exception &err) {
+	catch( BM_error &err) {
 		// a problem occurred, we tell the user:
 		BM_SHOWERR( BmString("BmApp: ") << err.what());
 	}

@@ -26,6 +26,10 @@
 // $Revision$
 // $Date$
 
+#ifdef __POWERPC__
+#define BM_BUILDING_LIBREGEXX 1
+#endif
+
 #include "split.hh"
 
 vector<BmString>

@@ -31,10 +31,12 @@
 class ColumnListView;
 class BList;
 
+#include "SantaPartsForBeam.h"
+
 //******************************************************************************************************
 //**** CLVListItem CLASS DECLARATION
 //******************************************************************************************************
-class CLVListItem : public BListItem
+class IMPEXPSANTAPARTSFORBEAM CLVListItem : public BListItem
 {
 	public:
 		//Constructor and destructor

@@ -33,7 +33,9 @@
 
 #include <StringView.h>
 
-class BmCaption : public BStringView
+#include "SantaPartsForBeam.h"
+
+class IMPEXPSANTAPARTSFORBEAM BmCaption : public BStringView
 {
 	typedef BStringView inherited;
 

@@ -35,12 +35,13 @@
 #include <vector>
 
 #include "BmBasics.h"
+#include "BmFilterAddon.h"
 #include "BmMemIO.h"
 #include "BmRefManager.h"
 #include "BmUtil.h"
 
 class BmMail;
-class BmPopAccount;
+class BmIdentity;
 
 /*------------------------------------------------------------------------------*\
 	mail_format_error
@@ -73,7 +74,7 @@ public:
 	bool SetTo( const BmString& addrText);
 	void ConstructRawText( BmString& header, const BmString& charset, 
 								  int32 fieldNameLength) const;
-	bool IsHandledByAccount( BmPopAccount* acc, bool needExactMatch=false) const;
+	bool IsHandledByAccount( BmIdentity* ident, bool needExactMatch=false) const;
 	const BmString& AddrString() const;
 
 	// getters:
@@ -112,7 +113,7 @@ public:
 	BmStringList SplitIntoAddresses( BmString addrList);
 	void ConstructRawText( BmStringOBuf& header, const BmString& charset, 
 								  int32 fieldNameLength) const;
-	const BmString& FindAddressMatchingAccount( BmPopAccount* acc, bool needExactMatch=false) const;
+	const BmString& FindAddressMatchingAccount( BmIdentity* ident, bool needExactMatch=false) const;
 	bool ContainsAddrSpec( BmString addrSpec) const;
 	BmString AddrSpecsAsString() const;
 	const BmString& AddrString() const;
@@ -159,8 +160,8 @@ private:
 		BmHeaderMap::const_iterator begin() const { return mHeaders.begin(); }
 		BmHeaderMap::const_iterator end() const	{ return mHeaders.end(); }
 		const BmString& operator [] (const BmString& fieldName) const;
-		void GetAllValuesFor( const BmString& fieldName,
-									 const char**& valList) const;
+		void GetAllValues( BmMsgContext& msgContext) const;
+
 	private:
 		BmHeaderMap mHeaders;
 	};
@@ -180,12 +181,12 @@ public:
 	void RemoveField( BmString fieldName);
 	void RemoveAddrFieldVal( BmString fieldName, const BmString address);
 							// the next always produces US-ASCII (7-bit):
-	const BmAddressList GetAddressList( BmString fieldName);
+	const BmAddressList& GetAddressList( BmString fieldName);
 	bool IsFieldEmpty( BmString fieldName);
 	bool AddressFieldContainsAddrSpec( BmString fieldName, const BmString addrSpec);
 	//
 	BmString DetermineSender();
-	BmString DetermineReceivingAddrFor( BmPopAccount* acc);
+	BmString DetermineReceivingAddrFor( BmIdentity* ident);
 	BmString DetermineOriginator( bool bypassReplyTo=false);
 	BmString DetermineListAddress( bool bypassSanityTest=false);
 	//
@@ -195,7 +196,7 @@ public:
 	const BmString& RefName() const				{ return mKey; }
 
 	// getters:
-	void GetAllFieldValues( BmString fieldName, const char**& valList) const;
+	void GetAllFieldValues( BmMsgContext& msgContext) const;
 	const BmString& GetFieldVal( BmString fieldName);
 	inline const BmString& HeaderString() const	{ return mHeaderString; }
 	inline const int32 HeaderLength() const	{ return mHeaderString.Length(); }

@@ -132,7 +132,7 @@ bool BmMailRefList::Store() {
 			cacheFile.Write( memIO.Buffer(), memIO.BufferLength());
 			BM_LOG( BM_LogModelController, BmString("ListModel <") << ModelName() << "> finished with archive");
 		}
-	} catch( exception &e) {
+	} catch( BM_error &e) {
 		BM_SHOWERR( e.what());
 		return false;
 	}
@@ -206,7 +206,7 @@ bool BmMailRefList::StartJob() {
 		BM_LOG( BM_LogMailTracking, BmString("RefList <") << ModelName() << "> has (estimated) size of " << objSize << " bytes");
 #endif
 
-	} catch (exception &e) {
+	} catch (BM_error &e) {
 		BM_SHOWERR( e.what());
 	}
 	Thaw();

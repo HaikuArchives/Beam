@@ -32,21 +32,27 @@
 #include <Region.h>
 #include <Screen.h>
 #include <Cursor.h>
+#include <List.h>
+#include <Locker.h>
+
+#ifdef __POWERPC__
+#define BM_BUILDING_SANTAPARTSFORBEAM 1
+#endif
 
 #include "BubbleHelper.h"
 
-BubbleHelper TheBubbleHelper;
-
 long BubbleHelper::runcount=0;
+BubbleHelper* TheBubbleHelper = NULL;
 
-struct BubbleInfo {
-    const char* text;
-    const BCursor* cursor;
-};
-typedef map< BView*, BubbleInfo> BubbleInfoMap;
-BubbleInfoMap infoMap;
+void BubbleHelper::CreateInstance()
+{
+	if (!TheBubbleHelper)
+		TheBubbleHelper = new BubbleHelper();
+}
 
 BubbleHelper::BubbleHelper()
+	:	infoList( new BList(100))
+	,	infoLocker( new BLocker( "BubbleHelperLock"))
 {
     // You only need one instance per application.
     if(atomic_add(&runcount,1)==0)
@@ -79,37 +85,87 @@ BubbleHelper::~BubbleHelper()
     	    textwin->Unlock();
     	}
     }
+    delete infoLocker;
+    delete infoList;
+    TheBubbleHelper = NULL;
     atomic_add(&runcount,-1);
+}
+
+BubbleHelper::BubbleInfo* BubbleHelper::FindInfo( BView *view)
+{
+	BubbleInfo* info;
+	for( int i=0; i<infoList->CountItems(); ++i) {
+		info = (BubbleInfo*)infoList->ItemAt( i);
+		if (info && info->view == view)
+			return info;
+	}
+	return NULL;
 }
 
 void BubbleHelper::SetHelp(BView *view, const char *text)
 {
     if (!text)
         DropInfo( view);
-    else if (this && view)
-	     infoMap[view].text = text;
+    else if (this && view) {
+    	infoLocker->Lock();
+    	BubbleInfo* info = FindInfo( view);
+    	if (info) {
+    	  	info->text = text;
+    	} else {
+    		info = new BubbleInfo( view, text, NULL);
+    	  	infoList->AddItem( info);
+		}
+		infoLocker->Unlock();
+    }
 }
 
 void BubbleHelper::SetCursor(BView *view, const BCursor* cursor)
 {
-    if (this && view)
-        infoMap[view].cursor = cursor;
+    if (this && view) {
+    	infoLocker->Lock();
+    	BubbleInfo* info = FindInfo( view);
+    	if (info) {
+    	  	info->cursor = cursor;
+    	} else {
+    		info = new BubbleInfo( view, NULL, cursor);
+    	  	infoList->AddItem( info);
+		}
+		infoLocker->Unlock();
+    }
 }
 
 void BubbleHelper::DropInfo( BView *view)
 {
-    if (this && view)
-        infoMap.erase( view);
+    if (this && view) {
+    	infoLocker->Lock();
+    	BubbleInfo* info = FindInfo( view);
+    	if (info)
+    		infoList->RemoveItem( info);
+    	delete info;
+		infoLocker->Unlock();
+    }
 }
 
 const char *BubbleHelper::GetHelp(BView *view)
 {
-    return infoMap[view].text;
+  	const char* text = NULL;
+  	infoLocker->Lock();
+   	BubbleInfo* info = FindInfo( view);
+   	if (info)
+   	  	text = info->text;
+	infoLocker->Unlock();
+	return text;
 }
 
 const BCursor* BubbleHelper::GetCursor(BView *view)
 {
-    return infoMap[view].cursor;
+  	const BCursor* cursor = NULL;
+  	infoLocker->Lock();
+   	BubbleInfo* info = FindInfo( view);
+   	if (info)
+   	  	cursor = info->cursor;
+	infoLocker->Unlock();
+	return cursor;
 }
 
 long BubbleHelper::_helper(void *arg)

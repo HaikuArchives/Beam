@@ -92,7 +92,7 @@ void BmMailMonitor::MessageReceived( BMessage* msg) {
 				inherited::MessageReceived( msg);
 		}
 	}
-	catch( exception &err) {
+	catch( BM_error &err) {
 		// a problem occurred, we tell the user:
 		BM_SHOWERR( BmString("MailMonitor: ") << err.what());
 	}
@@ -257,7 +257,7 @@ void BmMailMonitor::HandleMailMonitorMsg( BMessage* msg) {
 				break;
 			}
 		}
-	} catch( exception &e) {
+	} catch( BM_error &e) {
 		BM_LOGERR( e.what());
 	}
 }
@@ -299,7 +299,7 @@ void BmMailMonitor::HandleQueryUpdateMsg( BMessage* msg) {
 				break;
 			}
 		}
-	} catch( exception &e) {
+	} catch( BM_error &e) {
 		BM_LOGERR( e.what());
 	}
 }
@@ -447,7 +447,7 @@ void BmMailFolderList::InitializeItems() {
 	BmString mailDirName( ThePrefs->GetString("MailboxPath"));
 	time_t mtime;
 
-	BM_LOG2( BM_LogMailTracking, "Start of initFolders");
+	BM_LOG( BM_LogMailTracking, "Start of initFolders");
 
 	mailDir.SetTo( mailDirName.String());
 	(err = mailDir.GetModificationTime( &mtime)) == B_OK
@@ -472,7 +472,7 @@ void BmMailFolderList::InitializeItems() {
 #else
 		doInitializeMailFolders( mTopFolder.Get(), 1);
 #endif
-		BM_LOG2( BM_LogMailTracking, BmString("End of initFolders (") << numDirs << " folders found)");
+		BM_LOG( BM_LogMailTracking, BmString("End of initFolders (") << numDirs << " folders found)");
 		mInitCheck = B_OK;
 	}
 }
@@ -530,7 +530,7 @@ int BmMailFolderList::doInitializeMailFolders( BmMailFolder* folder, int level) 
 \*------------------------------------------------------------------------------*/
 void BmMailFolderList::InstantiateItems( BMessage* archive) {
 	status_t err;
-	BM_LOG2( BM_LogMailTracking, BmString("Starting to read folder-cache"));
+	BM_LOG( BM_LogMailTracking, BmString("Starting to read folder-cache"));
 	BMessage msg;
 	(err = archive->FindMessage( BmListModelItem::MSG_CHILDREN, &msg)) == B_OK
 												|| BM_THROW_RUNTIME(BmString("BmMailFolderList: Could not find msg-field <") << BmListModelItem::MSG_CHILDREN << "> \n\nError:" << strerror(err));
@@ -545,7 +545,7 @@ void BmMailFolderList::InstantiateItems( BMessage* archive) {
 		} else {
 			doInstantiateMailFolders( mTopFolder.Get(), &msg, 1);
 		}
-		BM_LOG2( BM_LogMailTracking, BmString("End of reading folder-cache (") << size() << " folders found)");
+		BM_LOG( BM_LogMailTracking, BmString("End of reading folder-cache (") << size() << " folders found)");
 		mInitCheck = B_OK;
 	}
 }

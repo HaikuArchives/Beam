@@ -64,6 +64,7 @@ class BmMailRef : public BmListModelItem {
 	static const char* const MSG_SUBJECT;
 	static const char* const MSG_TO;
 	static const char* const MSG_WHEN;
+	static const char* const MSG_IDENTITY;
 	static const int16 nArchiveVersion;
 
 public:
@@ -109,6 +110,7 @@ public:
 	inline const BmString& SizeString() const 	{ return mSizeString; }
 	inline const bool& HasAttachments() const 	{ return mHasAttachments; }
 	inline const bool IsNew() const					{ return mStatus == "New"; }
+	inline const BmString& Identity() const 		{ return mIdentity; }
 
 	// setters:
 	inline void EntryRef( entry_ref &e) 			{ mEntryRef = e; }
@@ -139,6 +141,7 @@ private:
 	off_t mSize;
 	BmString mSizeString;
 	bool mHasAttachments;
+	BmString mIdentity;
 
 	// the following members will not be archived at all:
 	status_t mInitCheck;

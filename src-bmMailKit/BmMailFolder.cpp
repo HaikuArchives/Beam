@@ -92,7 +92,7 @@ BmMailFolder::BmMailFolder( BMessage* archive, BmMailFolderList* model, BmMailFo
 		Key( BM_REFKEY( mNodeRef));
 		mName = mEntryRef.name;
 		StartNodeMonitor();
-	} catch (exception &e) {
+	} catch (BM_error &e) {
 		BM_SHOWERR( e.what());
 	}
 }

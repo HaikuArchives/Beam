@@ -33,11 +33,11 @@
 #include "regexx.hh"
 using namespace regexx;
 
+#include "BmDataModel.h"
 #include "BmEncoding.h"
 using namespace BmEncoding;
 #include "BmGuiUtil.h"
 #include "BmPrefs.h"
-#include "BmUtil.h"
 
 /*------------------------------------------------------------------------------*\
 	AddItemToMenu( menu, item, target)
@@ -93,6 +93,7 @@ const char* const MSG_CHARSET = "bm:chset";
 		-	
 \*------------------------------------------------------------------------------*/
 void AddCharsetMenu( BMenu* menu, BHandler* target, int32 msgType) {
+	BmString charset;
 	if (!menu)
 		return;
 	menu->SetLabelFromMarked( false);
@@ -101,7 +102,8 @@ void AddCharsetMenu( BMenu* menu, BHandler* target, int32 msgType) {
 	BmString stdSets = ThePrefs->GetString( "StandardCharsets");
 	int32 numStdSets = rx.exec( stdSets, "<(.+?)>", Regexx::global);
 	for( int i=0; i<numStdSets; ++i) {
-		BmString charset( rx.match[i].atom[0]);
+		charset = rx.match[i].atom[0];
+		charset.ToLower();
 		BMessage* msg = new BMessage( msgType);
 		msg->AddString( MSG_CHARSET, charset.String());
 		AddItemToMenu( menu, CreateMenuItem( charset.String(), msg), target);
@@ -114,12 +116,83 @@ void AddCharsetMenu( BMenu* menu, BHandler* target, int32 msgType) {
 	moreMenu->SetFont( &font);
 	BmCharsetMap::const_iterator iter;
 	for( iter = TheCharsetMap.begin(); iter != TheCharsetMap.end(); ++iter) {
+		charset = iter->first;
+		charset.ToLower();
 		BMessage* msg = new BMessage( msgType);
-		msg->AddString( MSG_CHARSET, iter->first.String());
+		msg->AddString( MSG_CHARSET, charset.String());
 		if (iter->second)
-			AddItemToMenu( moreMenu, CreateMenuItem( iter->first.String(), msg), target);
+			AddItemToMenu( moreMenu, CreateMenuItem( charset.String(), msg), target);
 	}
 	menu->AddSeparatorItem();
 	menu->AddItem( moreMenu);
 }
 
+/*------------------------------------------------------------------------------*\
+	AddListToMenu()
+		-	
+\*------------------------------------------------------------------------------*/
+typedef map< BmString, BmListModelItem* > BmSortedItemMap;
+
+void AddListToMenu( BmListModel* list, BMenu* menu, BMessage* msgTemplate,
+						  BHandler* msgTarget, BFont* font, bool skipFirstLevel) {
+	BmSortedItemMap sortedMap;
+	if (list) {
+		BmModelItemMap::const_iterator iter;
+		for( iter = list->begin();  iter != list->end();  ++iter) {
+			BmString sortKey = iter->second->DisplayKey();
+			sortedMap[sortKey.ToLower()] = iter->second.Get();
+		}
+		BmSortedItemMap::const_iterator siter;
+		for( siter = sortedMap.begin(); siter != sortedMap.end(); ++siter)
+			AddListItemToMenu( siter->second, menu, msgTemplate, msgTarget, font,
+									 skipFirstLevel);
+	}
+}
+								
+/*------------------------------------------------------------------------------*\
+	AddListItemToMenu()
+		-	
+\*------------------------------------------------------------------------------*/
+void AddListItemToMenu( BmListModelItem* item, BMenu* menu, BMessage* msgTemplate,
+								BHandler* msgTarget,	BFont* font,
+								bool skipThisButAddChildren, char shortcut) {
+	if (item && menu) {
+		BmSortedItemMap sortedMap;
+		if (skipThisButAddChildren) {
+			if (!item->empty()) {
+				BmModelItemMap::const_iterator iter;
+				for( iter = item->begin();  iter != item->end();  ++iter) {
+					BmString sortKey = iter->second->DisplayKey();
+					sortedMap[sortKey.ToLower()] = iter->second.Get();
+				}
+				BmSortedItemMap::const_iterator siter;
+				for( siter = sortedMap.begin(); siter != sortedMap.end(); ++siter)
+					AddListItemToMenu( siter->second, menu, msgTemplate, msgTarget, font);
+			}
+		} else {
+			BMessage* msg = new BMessage( *msgTemplate);
+			msg->AddString( BmListModel::MSG_ITEMKEY, item->Key().String());
+			BMenuItem* menuItem;
+			if (!item->empty()) {
+				BMenu* subMenu = new BMenu( item->DisplayKey().String());
+				if (font)
+					subMenu->SetFont( font);
+				BmModelItemMap::const_iterator iter;
+				for( iter = item->begin();  iter != item->end();  ++iter) {
+					BmString sortKey = iter->second->DisplayKey();
+					sortedMap[sortKey.ToLower()] = iter->second.Get();
+				}
+				BmSortedItemMap::const_iterator siter;
+				for( siter = sortedMap.begin(); siter != sortedMap.end(); ++siter)
+					AddListItemToMenu( siter->second, subMenu, msgTemplate, msgTarget, font);
+				menuItem = new BMenuItem( subMenu, msg);
+			} else {
+				menuItem = new BMenuItem( item->DisplayKey().String(), msg);
+			}
+			if (shortcut)
+				menuItem->SetShortcut( shortcut, 0);
+			menuItem->SetTarget( msgTarget);
+			menu->AddItem( menuItem);
+		}
+	}
+}

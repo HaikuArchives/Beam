@@ -28,13 +28,16 @@
 
 #include <vector>
 
-#include "BmString.h"
 #include <TextView.h>
+
+#include "SantaPartsForBeam.h"
+
+#include "BmString.h"
 
 // fake system-message for redo:
 #define B_REDO	'REDO'
 
-class WrappingTextView : public BTextView
+class IMPEXPSANTAPARTSFORBEAM WrappingTextView : public BTextView
 {
 	typedef BTextView inherited;
 	

@@ -28,7 +28,7 @@
 /*************************************************************************/
 
 
-#include <cstring>
+#include <ctype.h>
 
 #include "regexx.hh"
 using namespace regexx;

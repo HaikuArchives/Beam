@@ -30,13 +30,19 @@
 
 #include <assert.h>
 
-#include <algorithm>
+#include <SupportDefs.h>
+
+#ifdef __POWERPC__
+#define BM_BUILDING_BMBASE 1
+#endif
 
 #include "BmMemIO.h"
 
 /********************************************************************************\
 	BmMemFilter
 \********************************************************************************/
+
+const uint32 BmMemFilter::nBlockSize = 32768;
 
 /*------------------------------------------------------------------------------*\
 	BmMemFilter()
@@ -116,7 +122,7 @@ uint32 BmMemFilter::Read( char* data, uint32 reqLen) {
 			// ...and (re-)fill the buffer from our input-stream:
 			mCurrSize += mInput->Read( mBuf+srcLen, mBlockSize-srcLen);
 		}
-		srcLen = max( (uint32)0, mCurrSize - mCurrPos);
+		srcLen = max_c( (uint32)0, (uint32)(mCurrSize - mCurrPos));
 		if (srcLen) {
 			// actually filter one buffer-block:
 			destLen = reqLen-readLen;
@@ -171,11 +177,38 @@ BmStringIBuf::BmStringIBuf( const BmString& str)
 }
 
 /*------------------------------------------------------------------------------*\
+	~BmStringIBuf()
+		-	destructor
+\*------------------------------------------------------------------------------*/
+BmStringIBuf::~BmStringIBuf() {
+	for( int i=0; i<mBufInfo.CountItems(); ++i)
+		delete static_cast< BufInfo*>( mBufInfo.ItemAt(i));
+}
+
+/*------------------------------------------------------------------------------*\
 	AddBuffer( str, len)
 		-	
 \*------------------------------------------------------------------------------*/
 void BmStringIBuf::AddBuffer( const char* str, int32 len) {
-	mBufInfo.push_back( BufInfo( str, len<0 ? strlen( str) : len));
+	mBufInfo.AddItem( new BufInfo( str, len<0 ? strlen( str) : len));
+}
+
+/*------------------------------------------------------------------------------*\
+	FirstBuf()
+		-	
+\*------------------------------------------------------------------------------*/
+const char* BmStringIBuf::FirstBuf() const {
+	BufInfo* bufInfo = static_cast< BufInfo*>( mBufInfo.ItemAt(0));
+	return bufInfo ? bufInfo->buf : 0;
+}
+
+/*------------------------------------------------------------------------------*\
+	FirstSize()
+		-	
+\*------------------------------------------------------------------------------*/
+uint32 BmStringIBuf::FirstSize() const {
+	BufInfo* bufInfo = static_cast< BufInfo*>( mBufInfo.ItemAt(0));
+	return bufInfo ? bufInfo->size : 0;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -185,11 +218,14 @@ void BmStringIBuf::AddBuffer( const char* str, int32 len) {
 uint32 BmStringIBuf::Read( char* data, uint32 reqLen) {
 	uint32 readLen = 0;
 	while( readLen < reqLen && !IsAtEnd()) {
-		uint32 size = min( reqLen-readLen, mBufInfo[mIndex].size-mBufInfo[mIndex].currPos);
-		memcpy( data+readLen, mBufInfo[mIndex].buf+mBufInfo[mIndex].currPos, size);
+		BufInfo* bufInfo = static_cast< BufInfo*>( mBufInfo.ItemAt(mIndex));
+		if (!bufInfo)
+			break;
+		uint32 size = min_c( reqLen-readLen, bufInfo->size - bufInfo->currPos);
+		memcpy( data+readLen, bufInfo->buf + bufInfo->currPos, size);
 		readLen += size;
-		mBufInfo[mIndex].currPos += size;
-		if (mBufInfo[mIndex].currPos == mBufInfo[mIndex].size)
+		bufInfo->currPos += size;
+		if (bufInfo->currPos == bufInfo->size)
 			mIndex++;
 	}
 	return readLen;
@@ -200,8 +236,12 @@ uint32 BmStringIBuf::Read( char* data, uint32 reqLen) {
 		-	
 \*------------------------------------------------------------------------------*/
 bool BmStringIBuf::IsAtEnd() {
-	while (mIndex < mBufInfo.size()) {
-		if (mBufInfo[mIndex].currPos < mBufInfo[mIndex].size)
+	uint32 count = mBufInfo.CountItems();
+	while (mIndex < count) {
+		BufInfo* bufInfo = static_cast< BufInfo*>( mBufInfo.ItemAt(mIndex));
+		if (!bufInfo)
+			break;
+		if (bufInfo->currPos < bufInfo->size)
 			return false;
 		mIndex++;
 	}
@@ -213,9 +253,13 @@ bool BmStringIBuf::IsAtEnd() {
 		-	
 \*------------------------------------------------------------------------------*/
 bool BmStringIBuf::EndsWithNewline() {
-	uint32 lst = mBufInfo.size()-1;
-	return lst && mBufInfo[lst].size 
-			 && mBufInfo[lst].buf[mBufInfo[lst].size-1] == '\n';
+	uint32 lst = mBufInfo.CountItems()-1;
+	if (lst) {
+		BufInfo* bufInfo = static_cast< BufInfo*>( mBufInfo.ItemAt(lst));
+		if (bufInfo)
+			return bufInfo->buf[bufInfo->size-1] == '\n';
+	}
+	return false;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -224,8 +268,13 @@ bool BmStringIBuf::EndsWithNewline() {
 \*------------------------------------------------------------------------------*/
 uint32 BmStringIBuf::Size() const {
 	uint32 sz = 0;
-	for( uint32 i=0; i<mBufInfo.size(); ++i)
-		sz += mBufInfo[i].size;
+	uint32 count = mBufInfo.CountItems();
+	for( uint32 i=0; i<count; ++i) {
+		BufInfo* bufInfo = static_cast< BufInfo*>( mBufInfo.ItemAt(i));
+		if (!bufInfo)
+			break;
+		sz += bufInfo->size;
+	}
 	return sz;
 }
 
@@ -241,7 +290,7 @@ uint32 BmStringIBuf::Size() const {
 \*------------------------------------------------------------------------------*/
 BmStringOBuf::BmStringOBuf( uint32 startLen, float growFactor)
 	:	mBufLen( startLen)
-	,	mGrowFactor( max((float)1.0, growFactor))
+	,	mGrowFactor( max_c((float)1.0, growFactor))
 	,	mBuf( NULL)
 	,	mCurrPos( 0)
 {
@@ -273,9 +322,9 @@ bool BmStringOBuf::GrowBufferToFit( uint32 len) {
 	if (!mBuf || mCurrPos+len > mBufLen) {
 		if (mBuf) {
 			mStr.UnlockBuffer( mBufLen);
-			mBufLen = (uint32)max( mGrowFactor*mBufLen, mGrowFactor*(mCurrPos+len));
+			mBufLen = (uint32)max_c( mGrowFactor*mBufLen, mGrowFactor*(mCurrPos+len));
 		} else
-			mBufLen = (uint32)max( mBufLen, mCurrPos+len);
+			mBufLen = (uint32)max_c( mBufLen, mCurrPos+len);
 		mBuf = mStr.LockBuffer( mBufLen);
 		if (!mBuf)
 			return false;
@@ -310,6 +359,38 @@ uint32 BmStringOBuf::Write( BmMemIBuf* input, uint32 blockSize) {
 		mCurrPos += len;
 	}
 	return writeLen;
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+const char* BmStringOBuf::Buffer() const {
+	return mBuf; 
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+bool BmStringOBuf::HasData() const { 
+	return mBuf!=NULL; 
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+char BmStringOBuf::ByteAt( uint32 pos) const {
+	return (!mBuf||pos<0||pos>=mCurrPos) ? 0 : mBuf[pos];
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+uint32 BmStringOBuf::CurrPos() const {
+	return mCurrPos;
 }
 
 /*------------------------------------------------------------------------------*\

@@ -30,86 +30,87 @@
 #ifndef _BmBasics_h
 #define _BmBasics_h
 
-#include <stdexcept>
-#include <string>
-
 #include <Debug.h>
 
+#include "BmBase.h"
 #include "BmString.h"
 
 #define BM_ASSERT(E)		(!(E) ? _debuggerAssert(__FILE__,__LINE__, (char*)#E) : (int)0)
 
-void ShowAlert( const BmString &text);	// forward declaration
+/*------------------------------------------------------------------------------*\
+	BM_error
+		-	base-class for any Beam-exception
+\*------------------------------------------------------------------------------*/
+class IMPEXPBMBASE BM_error {
+public:
+	BM_error( const BmString& what_arg);
+	BM_error( const char* what_arg);
+	const char* const what() const;
+private:
+	BmString mWhat;
+};
 
-/*------------------------------------------------------------------------------*\*\
+/*------------------------------------------------------------------------------*\
 	BM_runtime_error
 		-	exception to indicate a general runtime error
 \*------------------------------------------------------------------------------*/
-class BM_runtime_error : public runtime_error {
-	typedef runtime_error inherited;
+class IMPEXPBMBASE BM_runtime_error : public BM_error {
+	typedef BM_error inherited;
 public:
-	BM_runtime_error (const BmString& what_arg): inherited (what_arg.String()) { }
-	BM_runtime_error (const char* const what_arg): inherited (string(what_arg)) { }
+	BM_runtime_error (const BmString& what_arg);
+	BM_runtime_error (const char* const what_arg);
 };
 
-/*------------------------------------------------------------------------------*\*\
+/*------------------------------------------------------------------------------*\
 	BM_invalid_argument
 		-	exception to indicate an invalid-argument error
 \*------------------------------------------------------------------------------*/
-class BM_invalid_argument : public invalid_argument {
-	typedef invalid_argument inherited;
+class IMPEXPBMBASE BM_invalid_argument : public BM_error {
+	typedef BM_error inherited;
 public:
-	BM_invalid_argument (const BmString& what_arg): inherited (what_arg.String()) { }
-	BM_invalid_argument (const char* const what_arg): inherited (what_arg) { }
+	BM_invalid_argument (const BmString& what_arg);
+	BM_invalid_argument (const char* const what_arg);
 };
 
-/*------------------------------------------------------------------------------*\*\
+/*------------------------------------------------------------------------------*\
 	BM_network_error
 		-	exception to indicate an error during network communication
 \*------------------------------------------------------------------------------*/
-class BM_network_error : public BM_runtime_error {
-	typedef BM_runtime_error inherited;
+class IMPEXPBMBASE BM_network_error : public BM_error {
+	typedef BM_error inherited;
 public:
-	BM_network_error (const BmString& what_arg): inherited (what_arg.String()) { }
-	BM_network_error (const char* const what_arg): inherited (what_arg) { }
+	BM_network_error (const BmString& what_arg);
+	BM_network_error (const char* const what_arg);
 };
 
-/*------------------------------------------------------------------------------*\*\
+/*------------------------------------------------------------------------------*\
 	BM_text_error
 		-	exception to indicate a problem with a given text
 		-	additionally, a character position may be given that indicates
 			the position of the problem within the text
 \*------------------------------------------------------------------------------*/
-class BM_text_error : public runtime_error {
-	typedef runtime_error inherited;
+class IMPEXPBMBASE BM_text_error : public BM_error {
+	typedef BM_error inherited;
 public:
-	BM_text_error (const BmString& what_arg, int32 pos=-1)
-		: inherited (what_arg.String())
-		, posInText( pos)						{ }
-	BM_text_error (const char* const what_arg, int32 pos=-1)
-		: inherited (string(what_arg)) 
-		, posInText( pos)						{ }
+	BM_text_error (const BmString& what_arg, int32 pos=-1);
+	BM_text_error (const char* const what_arg, int32 pos=-1);
 	int32 posInText;
 };
 
-/*------------------------------------------------------------------------------*\*\
+/*------------------------------------------------------------------------------*\
 	BM_THROW_...
 		-	throws exception of specific type
 \*------------------------------------------------------------------------------*/
 #define BM_THROW_RUNTIME(s) BM_Throw_Runtime(s,__LINE__,__FILE__)
-inline bool BM_Throw_Runtime( const BmString &s, int line, const char* file) { 
-	throw BM_runtime_error(BmString("*** Exception at ")<<file<<":"<<line<<" ***\n"<<s); 
-}
-#define BM_THROW_INVALID(s) BM_Throw_Invalid(s,__LINE__,__FILE__)
-inline bool BM_Throw_Invalid( const BmString &s, int line, const char* file) { 
-	throw BM_invalid_argument(BmString("*** Exception at ")<<file<<":"<<line<<" ***\n"<<s); 
-}
-#define BM_THROW_NETWORK(s) BM_Throw_Network(s,__LINE__,__FILE__)
-inline bool BM_Throw_Network( const BmString &s, int line, const char* file) { 
-	throw BM_network_error(BmString("*** Exception at ")<<file<<":"<<line<<" ***\n"<<s); 
-}
+IMPEXPBMBASE bool BM_Throw_Runtime( const BmString &s, int line, const char* file);
 
-/*------------------------------------------------------------------------------*\*\
+#define BM_THROW_INVALID(s) BM_Throw_Invalid(s,__LINE__,__FILE__)
+IMPEXPBMBASE bool BM_Throw_Invalid( const BmString &s, int line, const char* file);
+
+#define BM_THROW_NETWORK(s) BM_Throw_Network(s,__LINE__,__FILE__)
+IMPEXPBMBASE bool BM_Throw_Network( const BmString &s, int line, const char* file);
+
+/*------------------------------------------------------------------------------*\
 	utility defines to shorten the use of auto_ptrs
 \*------------------------------------------------------------------------------*/
 #define BmPtr const auto_ptr

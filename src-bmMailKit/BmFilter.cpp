@@ -29,36 +29,43 @@
 /*************************************************************************/
 
 
+#include <FindDirectory.h>
 #include <Message.h>
+
+#include "BubbleHelper.h"
 
 #include "BmBasics.h"
 #include "BmPrefs.h"
 #include "BmFilter.h"
+#include "BmLogHandler.h"
 #include "BmMailFilter.h"
 #include "BmResources.h"
 #include "BmStorageUtil.h"
 #include "BmUtil.h"
+
+// standard logfile-name for this class:
+#undef BM_LOGNAME
+#define BM_LOGNAME "Filter"
 
 /********************************************************************************\
 	BmFilter
 \********************************************************************************/
 
 const char* const BmFilter::MSG_NAME = 			"bm:name";
-const char* const BmFilter::MSG_CONTENT = 		"bm:content";
-const int16 BmFilter::nArchiveVersion = 5;
-
-// standard logfile-name for this class:
-#undef BM_LOGNAME
-#define BM_LOGNAME "Filter"
+const char* const BmFilter::MSG_KIND = 			"bm:kind";
+const char* const BmFilter::MSG_ADDON_ARCHIVE = "bm:addonarc";
+const int16 BmFilter::nArchiveVersion = 6;
 
 /*------------------------------------------------------------------------------*\
 	BmFilter()
 		-	c'tor
 \*------------------------------------------------------------------------------*/
-BmFilter::BmFilter( const char* name, BmFilterList* model) 
+BmFilter::BmFilter( const char* name, const BmString& kind, BmFilterList* model) 
 	:	inherited( name, model, (BmListModelItem*)NULL)
-	,	mCompiledScript( NULL)
+	,	mAddon( NULL)
+	,	mKind( kind)
 {
+	SetupAddonPart();
 }
 
 /*------------------------------------------------------------------------------*\
@@ -68,12 +75,20 @@ BmFilter::BmFilter( const char* name, BmFilterList* model)
 \*------------------------------------------------------------------------------*/
 BmFilter::BmFilter( BMessage* archive, BmFilterList* model) 
 	:	inherited( FindMsgString( archive, MSG_NAME), model, (BmListModelItem*)NULL)
-	,	mCompiledScript( NULL)
+	,	mAddon( NULL)
 {
 	int16 version;
 	if (archive->FindInt16( MSG_VERSION, &version) != B_OK)
 		version = 0;
-	mContent = FindMsgString( archive, MSG_CONTENT);
+	if (version>5)
+		archive->FindMessage( MSG_ADDON_ARCHIVE, &mAddonArchive);
+	else {
+		// take along the contents from our old (SIEVE) filters:
+		mAddonArchive.AddString( "bm:content", archive->FindString("bm:content"));
+		archive->AddString( MSG_KIND, "Sieve");
+	}
+	mKind = archive->FindString( MSG_KIND);
+	SetupAddonPart();
 }
 
 /*------------------------------------------------------------------------------*\
@@ -81,8 +96,22 @@ BmFilter::BmFilter( BMessage* archive, BmFilterList* model)
 		-	standard d'tor
 \*------------------------------------------------------------------------------*/
 BmFilter::~BmFilter() {
-	if (mCompiledScript)
-		sieve_script_free( &mCompiledScript);
+}
+
+/*------------------------------------------------------------------------------*\
+	SetupAddonPart()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmFilter::SetupAddonPart() {
+	if (mKind.Length()) {
+		mKind.CapitalizeEachWord();
+		BmInstantiateFilterFunc instFunc = FilterAddonMap[mKind].instantiateFilterFunc;
+		if (instFunc && (mAddon = (*instFunc)( Key(), &mAddonArchive, mKind)))
+			BM_LOG2( BM_LogFilter, BmString("Instantiated Filter-Addon <") << mKind << ":" << Key() << ">");
+		else
+			BM_LOG2( BM_LogFilter, BmString("Unable to instantiate Filter-Addon <") << mKind << ":" << Key() << ">. This filter will be disabled.");
+	} else
+		BM_LOG2( BM_LogFilter, BmString("Unable to instantiate Filter-Addon <") << Key() << "> since it has no kind!. This filter will be disabled.");
 }
 
 /*------------------------------------------------------------------------------*\
@@ -93,156 +122,15 @@ BmFilter::~BmFilter() {
 status_t BmFilter::Archive( BMessage* archive, bool deep) const {
 	status_t ret = (inherited::Archive( archive, deep)
 		||	archive->AddString( MSG_NAME, Key().String())
-		||	archive->AddString( MSG_CONTENT, mContent.String()));
-	return ret;
-}
-
-/*------------------------------------------------------------------------------*\
-	Execute()
-		-	
-\*------------------------------------------------------------------------------*/
-bool BmFilter::Execute( void* msgContext) {
-	// lock filter-list in order to serialize SIEVE-calls:
-	BmRef<BmListModel> filterList( ListModel());
-	if (!filterList) {
-		mLastErr = "Unable to get filter-list";
-		return false;
-	}
-	BmAutolockCheckGlobal lock( filterList->ModelLocker());
-	if (!lock.IsLocked()) {
-		mLastErr = "Unable to lock filter-list";
-		return false;
-	}
-
-	if (!mCompiledScript) {
-		bool scriptOK = CompileScript();
-		if (!scriptOK || !mCompiledScript) {
-			BmString errString = LastErr() + "\n" 
-										<< "Error: " 
-										<< sieve_strerror(LastErrVal()) 
-										<< "\n"
-										<< LastSieveErr();
-			BM_LOGERR( errString);
-			return false;
+		||	archive->AddString( MSG_KIND, mKind.String()));
+	if (ret==B_OK) {
+		if (mAddon) {
+			mAddonArchive.MakeEmpty();
+			ret = mAddon->Archive( &mAddonArchive, deep);
 		}
+		ret = archive->AddMessage( MSG_ADDON_ARCHIVE, &mAddonArchive);
 	}
-	int res = sieve_execute_script( mCompiledScript, msgContext);
-	return res == SIEVE_OK;
-}
-
-/*------------------------------------------------------------------------------*\
-	CompileScript()
-		-	
-\*------------------------------------------------------------------------------*/
-bool BmFilter::CompileScript() {
-	bool ret = false;
-	sieve_interp_t* sieveInterp = NULL;
-	FILE* scriptFile = NULL;
-	BmString scriptFileName;
-	status_t err;
-	BFile scriptBFile;
-
-	mLastErr = mLastSieveErr = "";
-
-	// lock filter-list in order to serialize SIEVE-calls:
-	BmRef<BmListModel> filterList( ListModel());
-	if (!filterList) {
-		mLastErr = "Unable to get filter-list";
-		return false;
-	}
-	BmAutolockCheckGlobal lock( filterList->ModelLocker());
-	if (!lock.IsLocked()) {
-		mLastErr = "Unable to lock filter-list";
-		return false;
-	}
-
-	// create sieve interpreter:
-	int res = sieve_interp_alloc( &sieveInterp, this);
-	if (res != SIEVE_OK) {
-		mLastErr = BmString(Key()) << ": Could not create SIEVE-interpreter";
-		goto cleanup;
-	}
-	RegisterCallbacks( sieveInterp);
-
-	// create temporary file with script-contents (since SIEVE parses from file only):
-	scriptFileName = TheTempFileList.NextTempFilenameWithPath();
-	err = scriptBFile.SetTo( scriptFileName.String(), B_CREATE_FILE | B_WRITE_ONLY);
-	if (err != B_OK) {
-		mLastErr = BmString(Key()) << ":\nCould not create temporary file\n\t<" << scriptFileName << ">\n\n Result: " << strerror(err);
-		goto cleanup;
-	}
-	scriptBFile.Write( mContent.String(), mContent.Length());
-	scriptBFile.Unset();
-
-	// open script file for sieve...
-	scriptFile = fopen( scriptFileName.String(), "r");
-	if (!scriptFile) {
-		mLastErr = BmString(Key()) << ":\nCould not re-open file \n\t<" << scriptFileName << ">";
-		goto cleanup;
-	}
-	// ...and compile the script:	
-	if (mCompiledScript) {
-		sieve_script_free( &mCompiledScript);
-		mCompiledScript = NULL;
-	}
-	res = sieve_script_parse( sieveInterp, scriptFile, this, &mCompiledScript);
-	if (res != SIEVE_OK) {
-		mLastErr = BmString(Key()) << ":\nThe script could not be parsed correctly";
-		goto cleanup;
-	}
-	ret = true;
-
-cleanup:
-	mLastErrVal = res;
-	if (scriptFile)
-		fclose( scriptFile);
-	if (scriptFileName.Length())
-		TheTempFileList.RemoveFile( scriptFileName);
-	if (sieveInterp)
-		sieve_interp_free( &sieveInterp);
 	return ret;
-}
-
-/*------------------------------------------------------------------------------*\
-	RegisterCallbacks()
-		-	
-\*------------------------------------------------------------------------------*/
-void BmFilter::RegisterCallbacks( sieve_interp_t* interp) {
-	sieve_register_redirect( interp, BmMailFilter::sieve_redirect);
-	sieve_register_keep( interp, BmMailFilter::sieve_keep);
-	sieve_register_fileinto( interp, BmMailFilter::sieve_fileinto);
-	sieve_register_imapflags( interp, NULL);
-
-	sieve_register_size( interp, BmMailFilter::sieve_get_size);
-	sieve_register_header( interp, BmMailFilter::sieve_get_header);
-
-	sieve_register_execute_error( interp, BmMailFilter::sieve_execute_error);
-
-	sieve_register_parse_error( interp, BmFilter::sieve_parse_error);
-}
-
-/*------------------------------------------------------------------------------*\
-	sieve_parse_error()
-		-	
-\*------------------------------------------------------------------------------*/
-int BmFilter::sieve_parse_error( int lineno, const char* msg, 
-											void* interp_context, void* script_context) {
-	if (script_context) {
-		BmFilter* filter = static_cast< BmFilter*>( script_context);
-		if (filter)
-			filter->mLastSieveErr = BmString("Line ")<<lineno<<": "<<msg;
-	}
-	return SIEVE_OK;
-}
-
-/*------------------------------------------------------------------------------*\
-	sieve_parse_error()
-		-	
-\*------------------------------------------------------------------------------*/
-BmString BmFilter::ErrorString() const {
-	return LastErr() + "\n\n" 
-				<< "Error: " << sieve_strerror(LastErrVal()) << "\n\n"
-				<< LastSieveErr();
 }
 
 /*------------------------------------------------------------------------------*\
@@ -250,13 +138,11 @@ BmString BmFilter::ErrorString() const {
 		-	checks if the current values make sense and returns error-info through
 			given out-params
 		-	returns true if values are ok, false (and error-info) if not
+		-	double-dispatches check to addon
 \*------------------------------------------------------------------------------*/
 bool BmFilter::SanityCheck( BmString& complaint, BmString& fieldName) {
-	if (!CompileScript()) {
-		complaint = ErrorString();
-		fieldName = "content";
-		return false;
-	}
+	if (Addon())
+		return Addon()->SanityCheck( complaint, fieldName);
 	return true;
 }
 
@@ -269,6 +155,8 @@ bool BmFilter::SanityCheck( BmString& complaint, BmString& fieldName) {
 BmRef< BmFilterList> BmFilterList::theInstance( NULL);
 
 const int16 BmFilterList::nArchiveVersion = 1;
+
+BmFilterAddonMap FilterAddonMap;
 
 /*------------------------------------------------------------------------------*\
 	CreateInstance()
@@ -287,6 +175,7 @@ BmFilterList* BmFilterList::CreateInstance() {
 BmFilterList::BmFilterList( const char* name)
 	:	inherited( name)
 {
+	LoadAddons();
 }
 
 /*------------------------------------------------------------------------------*\
@@ -294,6 +183,7 @@ BmFilterList::BmFilterList( const char* name)
 		-	standard destructor
 \*------------------------------------------------------------------------------*/
 BmFilterList::~BmFilterList() {
+	UnloadAddons();
 	theInstance = NULL;
 }
 
@@ -306,11 +196,92 @@ const BmString BmFilterList::SettingsFileName() {
 }
 
 /*------------------------------------------------------------------------------*\
+	LoadAddons()
+		-	loads all available filter-addons
+\*------------------------------------------------------------------------------*/
+void BmFilterList::LoadAddons() {
+	BDirectory addonDir;
+	BPath path;
+	BEntry entry;
+	status_t err;
+
+	BM_LOG2( BM_LogFilter, BmString("Start of LoadAddons() for FilterList"));
+
+	// determine the path to the user-config-directory:
+	find_directory( B_USER_ADDONS_DIRECTORY, &path) == B_OK
+													|| BM_THROW_RUNTIME( "Sorry, could not determine user's addon-dir !?!");
+	BmString addonPath = BmString(path.Path()) << "/Beam/Filters";
+	TheResources->GetFolder( addonPath, addonDir);
+
+	// ...and scan through all its entries for other mail-folders:
+	while ( addonDir.GetNextEntry( &entry, true) == B_OK) {
+		if (entry.IsFile()) {
+			char nameBuf[B_FILE_NAME_LENGTH];
+			entry.GetName( nameBuf);
+			// try to load addon:
+			const char** filterKinds;
+			BmFilterAddonDescr ao;
+			ao.name = nameBuf;
+			ao.name.CapitalizeEachWord();
+			entry.GetPath( &path);
+			if ((ao.image = load_add_on( path.Path())) < 0) {
+				BM_LOGERR( BmString("Unable to load filter-addon\n\t")<<ao.name<<"\n\nError:\n\t"<<strerror( ao.image));
+				continue;
+			}
+			if ((err = get_image_symbol( ao.image, "InstantiateFilter", 
+												  B_SYMBOL_TYPE_ANY, (void**)&ao.instantiateFilterFunc)) != B_OK) {
+				BM_LOGERR( BmString("Unable to load filter-addon\n\t")<<ao.name<<"\n\nMissing symbol 'InstantiateFilter'");
+				continue;
+			}
+			if ((err = get_image_symbol( ao.image, "InstantiateFilterPrefs", 
+												  B_SYMBOL_TYPE_ANY, (void**)&ao.instantiateFilterPrefsFunc)) != B_OK) {
+				BM_LOGERR( BmString("Unable to load filter-addon\n\t")<<ao.name<<"\n\nMissing symbol 'InstantiateFilterPrefs'");
+				continue;
+			}
+			if ((err = get_image_symbol( ao.image, "FilterKinds", 
+												  B_SYMBOL_TYPE_ANY, (void**)&filterKinds)) != B_OK) {
+				BM_LOGERR( BmString("Unable to load filter-addon\n\t")<<ao.name<<"\n\nMissing symbol 'FilterKinds'");
+				continue;
+			}
+			// we try to set TheBubbleHelper and TheLogHandler globals inside the addon to our current
+			// values:
+			BubbleHelper** bhPtr;
+			if (get_image_symbol( ao.image, "TheBubbleHelper", B_SYMBOL_TYPE_ANY, 
+										 (void**)&bhPtr) == B_OK) {
+				*bhPtr = TheBubbleHelper;
+			}
+			BmLogHandler** lhPtr;
+			if (get_image_symbol( ao.image, "TheLogHandler", B_SYMBOL_TYPE_ANY, 
+										 (void**)&lhPtr) == B_OK) {
+				*lhPtr = TheLogHandler;
+			}
+			// now we add the addon to our map (one entry per filter-kind):
+			while( *filterKinds)
+				FilterAddonMap[*filterKinds++] = ao;
+			BM_LOG( BM_LogFilter, BmString("Successfully loaded addon ") << ao.name);
+		}
+	}
+	BM_LOG2( BM_LogFilter, BmString("End of LoadAddons() for FilterList"));
+}
+
+/*------------------------------------------------------------------------------*\
+	UnloadAddons()
+		-	unloads all loaded filter-addons
+\*------------------------------------------------------------------------------*/
+void BmFilterList::UnloadAddons() {
+	BmFilterAddonMap::const_iterator iter;
+	for( iter = FilterAddonMap.begin(); iter != FilterAddonMap.end(); ++iter) {
+		unload_add_on( iter->second.image);
+	}
+	FilterAddonMap.clear();
+}
+
+/*------------------------------------------------------------------------------*\
 	InstantiateItems( archive)
 		-	initializes the signature-list from the given archive
 \*------------------------------------------------------------------------------*/
 void BmFilterList::InstantiateItems( BMessage* archive) {
-	BM_LOG2( BM_LogUtil, BmString("Start of InstantiateItems() for FilterList"));
+	BM_LOG2( BM_LogFilter, BmString("Start of InstantiateItems() for FilterList"));
 	status_t err;
 	int32 numChildren = FindMsgInt32( archive, BmListModelItem::MSG_NUMCHILDREN);
 	for( int i=0; i<numChildren; ++i) {
@@ -318,10 +289,9 @@ void BmFilterList::InstantiateItems( BMessage* archive) {
 		(err = archive->FindMessage( BmListModelItem::MSG_CHILDREN, i, &msg)) == B_OK
 													|| BM_THROW_RUNTIME(BmString("Could not find signature nr. ") << i+1 << " \n\nError:" << strerror(err));
 		BmFilter* newFilter = new BmFilter( &msg, this);
-		BM_LOG3( BM_LogUtil, BmString("Filter <") << newFilter->Key() << "> read");
 		AddItemToList( newFilter);
 	}
-	BM_LOG2( BM_LogUtil, BmString("End of InstantiateItems() for FilterList"));
+	BM_LOG2( BM_LogFilter, BmString("End of InstantiateItems() for FilterList"));
 	mInitCheck = B_OK;
 }
 

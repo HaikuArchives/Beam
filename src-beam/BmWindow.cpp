@@ -76,7 +76,7 @@ bool BmWindow::ReadStateInfo() {
 			(err = archive.Unflatten( &winFile)) == B_OK
 													|| BM_THROW_RUNTIME( BmString("Could not fetch window archive from file\n\t<") << mStatefileName << ">\n\n Result: " << strerror(err));
 			UnarchiveState( &archive);
-		} catch (exception &e) {
+		} catch (BM_error &e) {
 			BM_SHOWERR( e.what());
 			return false;
 		}
@@ -101,7 +101,7 @@ bool BmWindow::WriteStateInfo() {
 													|| BM_THROW_RUNTIME( BmString("Could not create cache file\n\t<") << mStatefileName << ">\n\n Result: " << strerror(err));
 		(err = archive.Flatten( &cacheFile)) == B_OK
 													|| BM_THROW_RUNTIME( BmString("Could not store state-cache into file\n\t<") << mStatefileName << ">\n\n Result: " << strerror(err));
-	} catch( exception &e) {
+	} catch( BM_error &e) {
 		BM_SHOWERR( e.what());
 		return false;
 	}

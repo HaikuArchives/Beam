@@ -32,11 +32,12 @@
 class ColumnListView;
 class CLVColumn;
 
+#include "SantaPartsForBeam.h"
 
 //******************************************************************************************************
 //**** CLASS AND STRUCTURE DECLARATIONS, ASSOCIATED CONSTANTS AND STATIC FUNCTIONS
 //******************************************************************************************************
-struct CLVDragGroup
+struct IMPEXPSANTAPARTSFORBEAM CLVDragGroup
 {
 	int32 GroupStartDispListIndex;		//Indices in the column display list where this group starts
 	int32 GroupStopDispListIndex;		//and finishes
@@ -49,7 +50,7 @@ struct CLVDragGroup
 };
 
 
-class CLVColumnLabelView : public BView
+class IMPEXPSANTAPARTSFORBEAM CLVColumnLabelView : public BView
 {
 		typedef BView inherited;
 	public:

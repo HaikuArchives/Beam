@@ -183,25 +183,25 @@ BmPrefsMailConstrView::BmPrefsMailConstrView()
 		-	
 \*------------------------------------------------------------------------------*/
 BmPrefsMailConstrView::~BmPrefsMailConstrView() {
-	TheBubbleHelper.SetHelp( mMaxLineLenControl, NULL);
-	TheBubbleHelper.SetHelp( mQuotingStringControl, NULL);
-	TheBubbleHelper.SetHelp( mQuoteFormattingControl, NULL);
-	TheBubbleHelper.SetHelp( mForwardIntroStrControl, NULL);
-	TheBubbleHelper.SetHelp( mForwardSubjectStrControl, NULL);
-	TheBubbleHelper.SetHelp( mForwardSubjectRxControl, NULL);
-	TheBubbleHelper.SetHelp( mReplyIntroStrControl, NULL);
-	TheBubbleHelper.SetHelp( mReplySubjectStrControl, NULL);
-	TheBubbleHelper.SetHelp( mReplySubjectRxControl, NULL);
-	TheBubbleHelper.SetHelp( mDefaultCharsetControl, NULL);
-	TheBubbleHelper.SetHelp( mSpecialForEachBccControl, NULL);
-	TheBubbleHelper.SetHelp( mPreferUserAgentControl, NULL);
-	TheBubbleHelper.SetHelp( mGenerateIDsControl, NULL);
-	TheBubbleHelper.SetHelp( mMakeQpSafeControl, NULL);
-	TheBubbleHelper.SetHelp( mDefaultForwardTypeControl, NULL);
-	TheBubbleHelper.SetHelp( mDontAttachVCardsControl, NULL);
-	TheBubbleHelper.SetHelp( mHardWrapControl, NULL);
-	TheBubbleHelper.SetHelp( mHardWrapAt78Control, NULL);
-	TheBubbleHelper.SetHelp( mAllow8BitControl, NULL);
+	TheBubbleHelper->SetHelp( mMaxLineLenControl, NULL);
+	TheBubbleHelper->SetHelp( mQuotingStringControl, NULL);
+	TheBubbleHelper->SetHelp( mQuoteFormattingControl, NULL);
+	TheBubbleHelper->SetHelp( mForwardIntroStrControl, NULL);
+	TheBubbleHelper->SetHelp( mForwardSubjectStrControl, NULL);
+	TheBubbleHelper->SetHelp( mForwardSubjectRxControl, NULL);
+	TheBubbleHelper->SetHelp( mReplyIntroStrControl, NULL);
+	TheBubbleHelper->SetHelp( mReplySubjectStrControl, NULL);
+	TheBubbleHelper->SetHelp( mReplySubjectRxControl, NULL);
+	TheBubbleHelper->SetHelp( mDefaultCharsetControl, NULL);
+	TheBubbleHelper->SetHelp( mSpecialForEachBccControl, NULL);
+	TheBubbleHelper->SetHelp( mPreferUserAgentControl, NULL);
+	TheBubbleHelper->SetHelp( mGenerateIDsControl, NULL);
+	TheBubbleHelper->SetHelp( mMakeQpSafeControl, NULL);
+	TheBubbleHelper->SetHelp( mDefaultForwardTypeControl, NULL);
+	TheBubbleHelper->SetHelp( mDontAttachVCardsControl, NULL);
+	TheBubbleHelper->SetHelp( mHardWrapControl, NULL);
+	TheBubbleHelper->SetHelp( mHardWrapAt78Control, NULL);
+	TheBubbleHelper->SetHelp( mAllow8BitControl, NULL);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -220,9 +220,9 @@ void BmPrefsMailConstrView::Initialize() {
 	mReplySubjectStrControl->SetTarget( this);
 	mReplySubjectRxControl->SetTarget( this);
 
-	TheBubbleHelper.SetHelp( mMaxLineLenControl, "Here you can enter the maximum number of characters\nper line Beam should allow in the mailtext.\nThis corresponds to the right margin in the mail-editor.");
-	TheBubbleHelper.SetHelp( mQuotingStringControl, "Here you can enter the string used for quoting.\nThis string will be prepended to every quoted line.");
-	TheBubbleHelper.SetHelp( mQuoteFormattingControl, "This menu controls the way Beam formats quoted lines of a reply/forward.\n\n\
+	TheBubbleHelper->SetHelp( mMaxLineLenControl, "Here you can enter the maximum number of characters\nper line Beam should allow in the mailtext.\nThis corresponds to the right margin in the mail-editor.");
+	TheBubbleHelper->SetHelp( mQuotingStringControl, "Here you can enter the string used for quoting.\nThis string will be prepended to every quoted line.");
+	TheBubbleHelper->SetHelp( mQuoteFormattingControl, "This menu controls the way Beam formats quoted lines of a reply/forward.\n\n\
 Simple:\n\
 	Beam will simply prepend the quote-string to every line. Lines that exceed\n\
 	the maximum line length will be wrapped around, resulting in a very short line.\n\
@@ -239,26 +239,26 @@ Auto Wrap:\n\
 'Auto Wrap' usually gives the best results for normal text, but since it\n\
 can lead to unwanted wrapping of structured text (e.g. code), Beam uses \n\
 'Push Margin' by default.");
-	TheBubbleHelper.SetHelp( mForwardIntroStrControl, "Here you can enter a string that will \nappear at the top of every forwarded mail.\n\
+	TheBubbleHelper->SetHelp( mForwardIntroStrControl, "Here you can enter a string that will \nappear at the top of every forwarded mail.\n\
 The following macros are supported:\n\
 	%D  -  expands to the original mail's date.\n\
 	%T  -  expands to the original mail's time.\n\
 	%F  -  expands to the sender of the original mail.");
-	TheBubbleHelper.SetHelp( mForwardSubjectStrControl, "Here you can influence the subject-string \nBeam generates for a forwarded mail.\n\
+	TheBubbleHelper->SetHelp( mForwardSubjectStrControl, "Here you can influence the subject-string \nBeam generates for a forwarded mail.\n\
 The following macros are supported:\n\
 	%S  -  expands to the original mail's subject.");
-	TheBubbleHelper.SetHelp( mForwardSubjectRxControl, "This string is the regular-expression (perl-style) Beam uses\nto determine whether a given subject indicates\nthat the mail already is a forward.\nThis way subjects like \n\t'Fwd: Fwd: Fwd: fun-stuff'\ncan be avoided.");
-	TheBubbleHelper.SetHelp( mReplyIntroStrControl, "Here you can enter a string that will \nappear at the top of every reply.\n\
+	TheBubbleHelper->SetHelp( mForwardSubjectRxControl, "This string is the regular-expression (perl-style) Beam uses\nto determine whether a given subject indicates\nthat the mail already is a forward.\nThis way subjects like \n\t'Fwd: Fwd: Fwd: fun-stuff'\ncan be avoided.");
+	TheBubbleHelper->SetHelp( mReplyIntroStrControl, "Here you can enter a string that will \nappear at the top of every reply.\n\
 The following macros are supported:\n\
 	%D  -  expands to the original mail's date.\n\
 	%T  -  expands to the original mail's time.\n\
 	%F  -  expands to the sender of the original mail.");
-	TheBubbleHelper.SetHelp( mReplySubjectStrControl, "Here you can influence the subject-string \nBeam generates for a reply.\n\
+	TheBubbleHelper->SetHelp( mReplySubjectStrControl, "Here you can influence the subject-string \nBeam generates for a reply.\n\
 The following macros are supported:\n\
 	%S  -  expands to the original mail's subject.");
-	TheBubbleHelper.SetHelp( mReplySubjectRxControl, "This string is the regular-expression (perl-style) Beam uses\nto determine whether a given subject indicates\nthat the mail already is a reply.\nThis way subjects like \n\t'Re: Re: Re: your offer'\ncan be avoided.");
-	TheBubbleHelper.SetHelp( mDefaultCharsetControl, "Here you can select the charset-encoding Beam should use by default.");
-	TheBubbleHelper.SetHelp( mSpecialForEachBccControl, "Here you can select the way Beam sends mails with Bcc recipients\n\
+	TheBubbleHelper->SetHelp( mReplySubjectRxControl, "This string is the regular-expression (perl-style) Beam uses\nto determine whether a given subject indicates\nthat the mail already is a reply.\nThis way subjects like \n\t'Re: Re: Re: your offer'\ncan be avoided.");
+	TheBubbleHelper->SetHelp( mDefaultCharsetControl, "Here you can select the charset-encoding Beam should use by default.");
+	TheBubbleHelper->SetHelp( mSpecialForEachBccControl, "Here you can select the way Beam sends mails with Bcc recipients\n\
 	\n\
 Checked:\n\
 	Beam will send separate mails to each Bcc-recipient, each of which will \n\
@@ -270,16 +270,16 @@ Unchecked:\n\
 	Bcc-headers. \n\
 	This results in less network traffic but makes it more likely that the mail\n\
 	is filtered right into the spam-folder on the recipient's side.");
-	TheBubbleHelper.SetHelp( mPreferUserAgentControl, "Email-clients used to identify themselves in a header-field called 'X-Mailer'.\nLately, the use of a header-field named 'UserAgent' became popular.\nBy checking/unchecking this control you can decide which field Beam should use.");
-	TheBubbleHelper.SetHelp( mGenerateIDsControl, "This control determines if Beam should generate the message-IDs\n\
+	TheBubbleHelper->SetHelp( mPreferUserAgentControl, "Email-clients used to identify themselves in a header-field called 'X-Mailer'.\nLately, the use of a header-field named 'UserAgent' became popular.\nBy checking/unchecking this control you can decide which field Beam should use.");
+	TheBubbleHelper->SetHelp( mGenerateIDsControl, "This control determines if Beam should generate the message-IDs\n\
 used to uniquely identify every mail on the net.\n\
 If unchecked, the SMTP-server will generate these IDs, which is usually ok,\n\
 but makes sorting mails by thread less reliable (since mail-threading is \n\
 currently not implemented this doesn't apply for now).");
-	TheBubbleHelper.SetHelp( mMakeQpSafeControl, "This makes Beam generate quoted-printables that are safe for EBCDIC-gateways\n (if you don't know what EBCDIC is, don't worry and leave this as is).");
-	TheBubbleHelper.SetHelp( mDefaultForwardTypeControl, "Here you can select the forwarding-type Beam should use when you press the 'Forward'-button.");
-	TheBubbleHelper.SetHelp( mDontAttachVCardsControl, "Checking this causes Beam to NOT include \nvcard-attachments (appended address-info) in a forwarded mail.");
-	TheBubbleHelper.SetHelp( mHardWrapControl, "Checking this causes Beam to hard-wrap the mailtext at the given right margin.\n\
+	TheBubbleHelper->SetHelp( mMakeQpSafeControl, "This makes Beam generate quoted-printables that are safe for EBCDIC-gateways\n (if you don't know what EBCDIC is, don't worry and leave this as is).");
+	TheBubbleHelper->SetHelp( mDefaultForwardTypeControl, "Here you can select the forwarding-type Beam should use when you press the 'Forward'-button.");
+	TheBubbleHelper->SetHelp( mDontAttachVCardsControl, "Checking this causes Beam to NOT include \nvcard-attachments (appended address-info) in a forwarded mail.");
+	TheBubbleHelper->SetHelp( mHardWrapControl, "Checking this causes Beam to hard-wrap the mailtext at the given right margin.\n\
 This means that the mail will be sent exactly as you see it on screen,\n\
 so that every other mail-program will be able to correctly display this mail.\n\
 Uncheck this if you want soft-wrapped paragraphs, that will be layouted by\n\
@@ -289,10 +289,10 @@ quoted text will *always* be hard-wrapped.\n\n\
 Hint: Use soft-wrap only if you know that the receiving mail-program\n\
 is able to handle long lines nicely (most modern mailers do, but some\n\
 mailing-list software does not).");
-	TheBubbleHelper.SetHelp( mHardWrapAt78Control, "Checking this causes Beam to ensure that no single line of a mail\n\
+	TheBubbleHelper->SetHelp( mHardWrapAt78Control, "Checking this causes Beam to ensure that no single line of a mail\n\
 exceeds the length of 78 characters (as suggested by RFC2822).\n\
 This will fix the right margin to at most 78 chars.");
-	TheBubbleHelper.SetHelp( mAllow8BitControl, "Checking this causes Beam to allow 8-bit characters\ninside a mail-body without encoding them.\n\
+	TheBubbleHelper->SetHelp( mAllow8BitControl, "Checking this causes Beam to allow 8-bit characters\ninside a mail-body without encoding them.\n\
 This avoids the use of quoted-printables and is usually ok with \n\
 modern mail-servers, but it *may* cause problems during transport,\n\
 so if you get complaints about strange/missing characters, try unchecking this.");
@@ -472,7 +472,7 @@ void BmPrefsMailConstrView::MessageReceived( BMessage* msg) {
 				inherited::MessageReceived( msg);
 		}
 	}
-	catch( exception &err) {
+	catch( BM_error &err) {
 		// a problem occurred, we tell the user:
 		BM_SHOWERR( BmString("PrefsView_") << Name() << ":\n\t" << err.what());
 	}

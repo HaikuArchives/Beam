@@ -358,33 +358,36 @@ void BmListViewController::MessageReceived( BMessage* msg) {
 		BmRef<BmDataModel> dataModel( DataModel());
 		switch( msg->what) {
 			case BM_LISTMODEL_ADD: {
-				if (!IsMsgFromCurrentModel( msg)) break;
 				BmListModelItem* item=NULL;
 				msg->FindPointer( BmListModel::MSG_MODELITEM, (void**)&item);
 				if (!item) break;
-				AddModelItem( item);
+				if (IsMsgFromCurrentModel( msg)) {
+					AddModelItem( item);
+					UpdateCaption();
+				}
 				item->RemoveRef();			// the msg is no longer referencing the item
-				UpdateCaption();
 				break;
 			}
 			case BM_LISTMODEL_REMOVE: {
-				if (!IsMsgFromCurrentModel( msg)) break;
 				BmListModelItem* item=NULL;
 				msg->FindPointer( BmListModel::MSG_MODELITEM, (void**)&item);
 				if (!item) break;
-				RemoveModelItem( item);
+				if (IsMsgFromCurrentModel( msg)) {
+					RemoveModelItem( item);
+					UpdateCaption();
+				}
 				item->RemoveRef();			// the msg is no longer referencing the item
-				UpdateCaption();
 				break;
 			}
 			case BM_LISTMODEL_UPDATE: {
-				if (!IsMsgFromCurrentModel( msg)) break;
 				BmListModelItem* item=NULL;
 				msg->FindPointer( BmListModel::MSG_MODELITEM, (void**)&item);
 				if (!item) break;
-				BmUpdFlags flags = UPD_ALL;
-				msg->FindInt32( BmListModel::MSG_UPD_FLAGS, (int32*)&flags);
-				UpdateModelItem( item, flags);
+				if (IsMsgFromCurrentModel( msg)) {
+					BmUpdFlags flags = UPD_ALL;
+					msg->FindInt32( BmListModel::MSG_UPD_FLAGS, (int32*)&flags);
+					UpdateModelItem( item, flags);
+				}
 				item->RemoveRef();			// the msg is no longer referencing the item
 				break;
 			}
@@ -470,7 +473,7 @@ void BmListViewController::MessageReceived( BMessage* msg) {
 		if (MsgNeedsAck( msg) && dataModel)
 			dataModel->ControllerAck( this);
 	}
-	catch( exception &err) {
+	catch( BM_error &err) {
 		// a problem occurred, we tell the user:
 		BM_SHOWERR( BmString(ControllerName()) << ":\n\t" << err.what());
 	}
@@ -505,8 +508,9 @@ void BmListViewController::AddAllModelItems() {
 	SetDisconnectScrollView( true);
 	SetInsertAtSortedPos( false);
 	BmModelItemMap::const_iterator iter;
+	BmModelItemMap::const_iterator endIter = model->end();
 	int32 count=1;
-	for( iter = model->begin(); iter != model->end(); ++iter, ++count) {
+	for( iter = model->begin(); iter != endIter; ++iter, ++count) {
 		BmListModelItem* modelItem = iter->second.Get();
 		BmListViewItem* viewItem;
 		if (Hierarchical()) {
@@ -587,7 +591,8 @@ BmListViewItem* BmListViewController::doAddModelItem( BmListViewItem* parent, Bm
 	
 	// add all sub-items of current item to the view as well:
 	BmModelItemMap::const_iterator iter;
-	for( iter = item->begin(); iter != item->end(); ++iter) {
+	BmModelItemMap::const_iterator endIter = item->end();
+	for( iter = item->begin(); iter != endIter; ++iter) {
 		BmListModelItem* subItem = iter->second.Get();
 		doAddModelItem( newItem, subItem);
 	}
@@ -626,7 +631,8 @@ void BmListViewController::doRemoveModelItem( BmListModelItem* item) {
 			BM_LOG2( BM_LogMailTracking, BmString("ListView <") << ModelName() << "> removed view-item " << viewItem->Key());
 			// remove all sub-items of current item from the view as well:
 			BmModelItemMap::const_iterator iter;
-			for( iter = item->begin(); iter != item->end(); ++iter) {
+			BmModelItemMap::const_iterator endIter = item->end();
+			for( iter = item->begin(); iter != endIter; ++iter) {
 				BmListModelItem* subItem = iter->second.Get();
 				doRemoveModelItem( subItem);
 			}
@@ -743,9 +749,10 @@ void BmListViewController::ShowLabelViewMenu( BPoint point) {
 		openRect.bottom = point.y + 5;
 		openRect.left = point.x - 5;
 		openRect.right = point.x + 5;
-  		theMenu->Go( point, true, false, openRect);
-	}
-  	delete theMenu;
+		theMenu->SetAsyncAutoDestruct( true);
+  		theMenu->Go( point, true, false, openRect, true);
+	} else
+	  	delete theMenu;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -807,8 +814,8 @@ void BmListViewController::MakeEmpty() {
 		int c;
 		while( !tempList.IsEmpty()) {
 			BmListViewItem* subItem = static_cast<BmListViewItem*>(tempList.RemoveItem( (int32)0));
-			c = mViewModelMap.erase( subItem->ModelItem());
-			BM_ASSERT( c==1);
+			if ((c = mViewModelMap.erase( subItem->ModelItem())) != 1)
+				BM_LOGERR( BmString("unable to erase subItem ") << subItem->Key() << "from ViewModelMap.\nResult of erase() is: "<<c);
 			delete subItem;
 		}
 		UpdateCaption();
@@ -865,7 +872,7 @@ void BmListViewController::WriteStateInfo() {
 													|| BM_THROW_RUNTIME( BmString("Could not create state-info file\n\t<") << stateInfoFilename << ">\n\n Result: " << strerror(err));
 		(err = archive.Flatten( &stateInfoFile)) == B_OK
 													|| BM_THROW_RUNTIME( BmString("Could not store state-info into file\n\t<") << stateInfoFilename << ">\n\n Result: " << strerror(err));
-	} catch( exception &e) {
+	} catch( BM_error &e) {
 		BM_SHOWERR( e.what());
 	}
 }
@@ -940,7 +947,7 @@ void BmListViewController::ReadStateInfo() {
 													|| BM_THROW_RUNTIME( BmString("Could not fetch state-info from file\n\t<") << stateInfoFilename << ">\n\n Result: " << strerror(err));
 			if (mInitialStateInfo)
 				Unarchive( mInitialStateInfo);
-		} catch (exception &e) {
+		} catch (BM_error &e) {
 			delete mInitialStateInfo;
 			mInitialStateInfo = NULL;
 			BM_SHOWERR( e.what());

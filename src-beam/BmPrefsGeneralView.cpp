@@ -204,21 +204,21 @@ BmPrefsGeneralView::BmPrefsGeneralView()
 \*------------------------------------------------------------------------------*/
 BmPrefsGeneralView::~BmPrefsGeneralView() {
 	delete mMailboxPanel;
-	TheBubbleHelper.SetHelp( mDynamicStatusWinControl, NULL);
-	TheBubbleHelper.SetHelp( mMailMoverShowControl, NULL);
-	TheBubbleHelper.SetHelp( mPopperRemoveControl, NULL);
-	TheBubbleHelper.SetHelp( mSmtpRemoveControl, NULL);
-	TheBubbleHelper.SetHelp( mRemoveFailedControl, NULL);
-	TheBubbleHelper.SetHelp( mWorkspaceControl, NULL);
-	TheBubbleHelper.SetHelp( mRestoreFolderStatesControl, NULL);
-	TheBubbleHelper.SetHelp( mInOutAtTopControl, NULL);
-	TheBubbleHelper.SetHelp( mUseDeskbarControl, NULL);
-	TheBubbleHelper.SetHelp( mBeepNewMailControl, NULL);
-	TheBubbleHelper.SetHelp( mShowTooltipsControl, NULL);
-	TheBubbleHelper.SetHelp( mCacheRefsOnDiskControl, NULL);
-	TheBubbleHelper.SetHelp( mCacheRefsInMemControl, NULL);
-	TheBubbleHelper.SetHelp( mNetBufSizeSendControl, NULL);
-	TheBubbleHelper.SetHelp( mNetRecvTimeoutControl, NULL);
+	TheBubbleHelper->SetHelp( mDynamicStatusWinControl, NULL);
+	TheBubbleHelper->SetHelp( mMailMoverShowControl, NULL);
+	TheBubbleHelper->SetHelp( mPopperRemoveControl, NULL);
+	TheBubbleHelper->SetHelp( mSmtpRemoveControl, NULL);
+	TheBubbleHelper->SetHelp( mRemoveFailedControl, NULL);
+	TheBubbleHelper->SetHelp( mWorkspaceControl, NULL);
+	TheBubbleHelper->SetHelp( mRestoreFolderStatesControl, NULL);
+	TheBubbleHelper->SetHelp( mInOutAtTopControl, NULL);
+	TheBubbleHelper->SetHelp( mUseDeskbarControl, NULL);
+	TheBubbleHelper->SetHelp( mBeepNewMailControl, NULL);
+	TheBubbleHelper->SetHelp( mShowTooltipsControl, NULL);
+	TheBubbleHelper->SetHelp( mCacheRefsOnDiskControl, NULL);
+	TheBubbleHelper->SetHelp( mCacheRefsInMemControl, NULL);
+	TheBubbleHelper->SetHelp( mNetBufSizeSendControl, NULL);
+	TheBubbleHelper->SetHelp( mNetRecvTimeoutControl, NULL);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -238,21 +238,21 @@ BmString BmPrefsGeneralView::MailboxButtonLabel() {
 void BmPrefsGeneralView::Initialize() {
 	inherited::Initialize();
 	
-	TheBubbleHelper.SetHelp( mDynamicStatusWinControl, "Determines the layout of the job-status window.\n\tif checked, the job-status window will only display currently active jobs (it will grow/shrink accordingly)\n\tif unchecked, the job-status window will be static and show all known jobs, even if they are not active.");
-	TheBubbleHelper.SetHelp( mMailMoverShowControl, "Here you can enter the time (in ms) Beam will let pass before it \nwill show the GUI for a mail-moving operation inside the job-window.");
-	TheBubbleHelper.SetHelp( mPopperRemoveControl, "Here you can enter the time (in ms) Beam will let a finished POP3-job linger inside the job-window \n(this way you can check the results before the job is removed).");
-	TheBubbleHelper.SetHelp( mSmtpRemoveControl, "Here you can enter the time (in ms) Beam will let a finished SMTP-job linger inside the job-window \n(this way you can check the results before the job is removed).");
-	TheBubbleHelper.SetHelp( mRemoveFailedControl, "Here you can enter the time (in ms) Beam will keep any failed job inside the job-status window\n (this way you can see that a problem occurred before the job is removed).");
-	TheBubbleHelper.SetHelp( mWorkspaceControl, "In this menu you can select the workspace that Beam should live in.");
-	TheBubbleHelper.SetHelp( mRestoreFolderStatesControl, "Checking this makes Beam remember the state of the mailfolder-view \n(which of the folders are expanded/collapsed).\nIf unchecked, Beam will always start with a collapsed mailfolder-view.");
-	TheBubbleHelper.SetHelp( mInOutAtTopControl, "Determines whether the in- and out-folder will be shown \nat the top of the mailfolder-list or if they \nwill be sorted in alphabetically.");
-	TheBubbleHelper.SetHelp( mUseDeskbarControl, "Checking this makes Beam show an icon \nin the Deskbar.");
-	TheBubbleHelper.SetHelp( mBeepNewMailControl, "Checking this makes Beam play the 'New E-mail' beep-event\nwhen new mail has arrived.\nYou can change the corresponding sound in the BeOS Sound-preferences.");
-	TheBubbleHelper.SetHelp( mShowTooltipsControl, "Checking this makes Beam show a small \ninfo-window (just like this one) when the \nmouse-pointer lingers over a GUI-item.");
-	TheBubbleHelper.SetHelp( mCacheRefsOnDiskControl, "Checking this will cause Beam to cache \nmail-folder contents on disk.\n\nDoing this speeds up the display \nof a mail-folder's contents quite a lot.");
-	TheBubbleHelper.SetHelp( mCacheRefsInMemControl, "Checking this will cause Beam to keep \nany mail-folder's contents in memory even\nif the user selects another folder.\n\nThis gives best performance, but \nmay use *A LOT* of memory.");
-	TheBubbleHelper.SetHelp( mNetBufSizeSendControl, "Here you can enter the network buffer size (in bytes)\nBeam will use for outgoing connections.\n\nIf sending seems slow, try a larger value in here.");
-	TheBubbleHelper.SetHelp( mNetRecvTimeoutControl, "Here you can enter the time (in ms) Beam\n will wait for an answer from a remote network-server.");
+	TheBubbleHelper->SetHelp( mDynamicStatusWinControl, "Determines the layout of the job-status window.\n\tif checked, the job-status window will only display currently active jobs (it will grow/shrink accordingly)\n\tif unchecked, the job-status window will be static and show all known jobs, even if they are not active.");
+	TheBubbleHelper->SetHelp( mMailMoverShowControl, "Here you can enter the time (in ms) Beam will let pass before it \nwill show the GUI for a mail-moving operation inside the job-window.");
+	TheBubbleHelper->SetHelp( mPopperRemoveControl, "Here you can enter the time (in ms) Beam will let a finished POP3-job linger inside the job-window \n(this way you can check the results before the job is removed).");
+	TheBubbleHelper->SetHelp( mSmtpRemoveControl, "Here you can enter the time (in ms) Beam will let a finished SMTP-job linger inside the job-window \n(this way you can check the results before the job is removed).");
+	TheBubbleHelper->SetHelp( mRemoveFailedControl, "Here you can enter the time (in ms) Beam will keep any failed job inside the job-status window\n (this way you can see that a problem occurred before the job is removed).");
+	TheBubbleHelper->SetHelp( mWorkspaceControl, "In this menu you can select the workspace that Beam should live in.");
+	TheBubbleHelper->SetHelp( mRestoreFolderStatesControl, "Checking this makes Beam remember the state of the mailfolder-view \n(which of the folders are expanded/collapsed).\nIf unchecked, Beam will always start with a collapsed mailfolder-view.");
+	TheBubbleHelper->SetHelp( mInOutAtTopControl, "Determines whether the in- and out-folder will be shown \nat the top of the mailfolder-list or if they \nwill be sorted in alphabetically.");
+	TheBubbleHelper->SetHelp( mUseDeskbarControl, "Checking this makes Beam show an icon \nin the Deskbar.");
+	TheBubbleHelper->SetHelp( mBeepNewMailControl, "Checking this makes Beam play the 'New E-mail' beep-event\nwhen new mail has arrived.\nYou can change the corresponding sound in the BeOS Sound-preferences.");
+	TheBubbleHelper->SetHelp( mShowTooltipsControl, "Checking this makes Beam show a small \ninfo-window (just like this one) when the \nmouse-pointer lingers over a GUI-item.");
+	TheBubbleHelper->SetHelp( mCacheRefsOnDiskControl, "Checking this will cause Beam to cache \nmail-folder contents on disk.\n\nDoing this speeds up the display \nof a mail-folder's contents quite a lot.");
+	TheBubbleHelper->SetHelp( mCacheRefsInMemControl, "Checking this will cause Beam to keep \nany mail-folder's contents in memory even\nif the user selects another folder.\n\nThis gives best performance, but \nmay use *A LOT* of memory.");
+	TheBubbleHelper->SetHelp( mNetBufSizeSendControl, "Here you can enter the network buffer size (in bytes)\nBeam will use for outgoing connections.\n\nIf sending seems slow, try a larger value in here.");
+	TheBubbleHelper->SetHelp( mNetRecvTimeoutControl, "Here you can enter the time (in ms) Beam\n will wait for an answer from a remote network-server.");
 	
 	// add workspaces:
 	int32 count = count_workspaces();
@@ -422,7 +422,7 @@ void BmPrefsGeneralView::MessageReceived( BMessage* msg) {
 			}
 			case BM_SHOW_TOOLTIPS_CHANGED: {
 				ThePrefs->SetBool("ShowTooltips", mShowTooltipsControl->Value());
-				TheBubbleHelper.EnableHelp( mShowTooltipsControl->Value());
+				TheBubbleHelper->EnableHelp( mShowTooltipsControl->Value());
 				NoticeChange();
 				break;
 			}
@@ -497,7 +497,7 @@ void BmPrefsGeneralView::MessageReceived( BMessage* msg) {
 				inherited::MessageReceived( msg);
 		}
 	}
-	catch( exception &err) {
+	catch( BM_error &err) {
 		// a problem occurred, we tell the user:
 		BM_SHOWERR( BmString("PrefsView_") << Name() << ":\n\t" << err.what());
 	}

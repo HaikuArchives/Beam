@@ -32,88 +32,95 @@
 #ifndef _BmFilter_h
 #define _BmFilter_h
 
-#include <stdexcept>
-
 #include <Archivable.h>
+#include <Message.h>
 
-extern "C" {
-	#include "sieve_interface.h"
-}
-
-#include "BmString.h"
+#include "BmFilterAddon.h"
+#include "BmFilterAddonPrefs.h"
 #include "BmDataModel.h"
-
+#include "BmString.h"
 
 class BmFilterList;
 
 #define BM_JOBWIN_FILTER					'bmed'
 						// sent to JobMetaController in order to start filter-job
+
+/*------------------------------------------------------------------------------*\
+	BmFilterAddonDescr
+		-	holds the known info about a single addon
+\*------------------------------------------------------------------------------*/
+struct BmFilterAddonDescr {
+	BmFilterAddonDescr()
+		:	image( 0)
+		,	instantiateFilterFunc( NULL)
+		,	instantiateFilterPrefsFunc( NULL)
+		,	addonPrefsView( NULL)			{}
+
+	image_id image;
+	BmString name;
+	BmInstantiateFilterFunc instantiateFilterFunc;
+	BmInstantiateFilterPrefsFunc instantiateFilterPrefsFunc;
+	BmFilterAddonPrefsView* addonPrefsView;
+};
+
 /*------------------------------------------------------------------------------*\
 	BmFilter 
-		-	holds information about one filter (a SIEVE-script)
-		- 	derived from BArchivable, so it can be read from and
-			written to a file
+		-	base class for all filters
 \*------------------------------------------------------------------------------*/
 class BmFilter : public BmListModelItem {
 	typedef BmListModelItem inherited;
 
-	// archivable components:
-	static const char* const MSG_NAME;
-	static const char* const MSG_CONTENT;
-	static const int16 nArchiveVersion;
-
 public:
-	BmFilter( const char* name, BmFilterList* model);
+	BmFilter( const char* name, const BmString& kind, BmFilterList* model);
 	BmFilter( BMessage* archive, BmFilterList* model);
 	virtual ~BmFilter();
 	
 	// native methods:
-	bool CompileScript();
-	bool Execute( void* msgContext);
-	void RegisterCallbacks( sieve_interp_t* interp);
 	bool SanityCheck( BmString& complaint, BmString& fieldName);
-	BmString ErrorString() const;
-
-	// SIEVE-callbacks:
-	static int sieve_parse_error( int lineno, const char *msg, 
-											void *interp_context, void *script_context);
 
 	// stuff needed for Archival:
 	status_t Archive( BMessage* archive, bool deep = true) const;
 	int16 ArchiveVersion() const			{ return nArchiveVersion; }
 
 	// getters:
-	inline const BmString &Content() const	{ return mContent; }
-	inline const BmString &Name() const		{ return Key(); }
+	inline bool IsDisabled() const		{ return mAddon == NULL; }
+	inline const BmString &Name() const	{ return Key(); }
+	inline const BmString &Kind() const	{ return mKind; }
 
-	inline int LastErrVal() const			{ return mLastErrVal; }
-	inline const BmString &LastErr() const	{ return mLastErr; }
-	inline const BmString &LastSieveErr() const { return mLastSieveErr; }
-
+	inline BmFilterAddon* Addon()			{ return mAddon; }
+	
 	// setters:
-	inline void Content( const BmString &s){ mContent = s; TellModelItemUpdated( UPD_ALL); }
+	inline void Addon( BmFilterAddon* fa) { mAddon = fa; }
 
+	// archivable components:
+	static const char* const MSG_NAME;
+	static const char* const MSG_KIND;
+	static const char* const MSG_ADDON_ARCHIVE;
+	static const int16 nArchiveVersion;
+
+protected:
+	void SetupAddonPart();
+							// instantiates addon-part of filter
+	BmFilterAddon* mAddon;
+							// the addon-part that implements this filter.
+							// This is NULL if addon could not be loaded
+	mutable BMessage mAddonArchive;
+							// the last archived state of the addon (this is used to 
+							// save the data when the addon can not be loaded)
+	BmString mKind;
+							// type of filter (name of addon)
 private:
 	BmFilter();									// hide default constructor
+	
 	// Hide copy-constructor and assignment:
 	BmFilter( const BmFilter&);
 	BmFilter operator=( const BmFilter&);
-
-	int32 mPosition;
-							// position of this filter in execution list
-	BmString mContent;
-							// the SIEVE-script represented by this filter
-	sieve_script_t* mCompiledScript;
-							// the compiled SIEVE-script, ready to be thrown at messages
-	int mLastErrVal;
-							// last error-value we got
-	BmString mLastErr;
-							// the last (general) error that occurred
-	BmString mLastSieveErr;
-							// the last SIEVE-error that occurred
 };
 
 
+
+typedef map< BmString, BmFilterAddonDescr> BmFilterAddonMap;
+extern BmFilterAddonMap FilterAddonMap;
 
 /*------------------------------------------------------------------------------*\
 	BmFilterList 
@@ -131,19 +138,21 @@ public:
 	~BmFilterList();
 	
 	// native methods:
+	void LoadAddons();
+	void UnloadAddons();
 
 	// overrides of listmodel base:
 	const BmString SettingsFileName();
 	void InstantiateItems( BMessage* archive);
 	int16 ArchiveVersion() const			{ return nArchiveVersion; }
 
-	static BmRef<BmFilterList> theInstance;
+	static BmRef< BmFilterList> theInstance;
 
 private:
+
 	// Hide copy-constructor and assignment:
 	BmFilterList( const BmFilterList&);
 	BmFilterList operator=( const BmFilterList&);
-	
 };
 
 #define TheFilterList BmFilterList::theInstance

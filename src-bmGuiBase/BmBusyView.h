@@ -35,7 +35,9 @@
 #include <Messenger.h>
 #include <View.h>
 
-class BmBusyView : public BView
+#include "SantaPartsForBeam.h"
+
+class IMPEXPSANTAPARTSFORBEAM BmBusyView : public BView
 {
 	typedef BView inherited;
 

@@ -94,116 +94,6 @@ void BmMailFilter::AddMail( BmMail* mail) {
 }
 
 /*------------------------------------------------------------------------------*\
-	sieve_redirect()
-		-	
-\*------------------------------------------------------------------------------*/
-int BmMailFilter::sieve_redirect( void* action_context, void* interp_context, 
-			   							 void* script_context, void* message_context, 
-			   							 const char** errmsg) {
-	return SIEVE_OK;
-}
-
-/*------------------------------------------------------------------------------*\
-	SetMailFlags()
-		-	
-\*------------------------------------------------------------------------------*/
-void BmMailFilter::SetMailFlags( sieve_imapflags_t* flags, MsgContext* msgContext) {
-	if (msgContext && flags) {
-		for( int i=0; i<flags->nflags; ++i) {
-			BmString flag( flags->flag[i]);
-			if (!flag.ICompare( "\\Seen")
-			&& msgContext->mail->Status() != BM_MAIL_STATUS_READ) {
-				msgContext->mail->MarkAs( BM_MAIL_STATUS_READ);
-				msgContext->changed = true;
-			}
-		}
-	}
-}
-
-/*------------------------------------------------------------------------------*\
-	sieve_keep()
-		-	
-\*------------------------------------------------------------------------------*/
-int BmMailFilter::sieve_keep( void* action_context, void* interp_context, 
-			   				  		void* script_context, void* message_context, 
-			   				  		const char** errmsg) {
-	MsgContext* msgContext = static_cast< MsgContext*>( message_context);
-	sieve_keep_context* keepContext 
-		= static_cast< sieve_keep_context*>( action_context);
-	if (msgContext && msgContext->mail && keepContext)
-		SetMailFlags( keepContext->imapflags, msgContext);
-	return SIEVE_OK;
-}
-
-/*------------------------------------------------------------------------------*\
-	sieve_fileinto()
-		-	
-\*------------------------------------------------------------------------------*/
-int BmMailFilter::sieve_fileinto( void* action_context, void* interp_context, 
-			   				  			 void* script_context, void* message_context, 
-			   				 			 const char** errmsg) {
-	MsgContext* msgContext = static_cast< MsgContext*>( message_context);
-	sieve_fileinto_context* fileintoContext 
-		= static_cast< sieve_fileinto_context*>( action_context);
-	if (msgContext && msgContext->mail && fileintoContext) {
-		SetMailFlags( fileintoContext->imapflags, msgContext);
-		if (msgContext->mail->SetDestFoldername( fileintoContext->mailbox))
-			msgContext->changed = true;
-	}
-	return SIEVE_OK;
-}
-
-/*------------------------------------------------------------------------------*\
-	sieve_get_size()
-		-	
-\*------------------------------------------------------------------------------*/
-int BmMailFilter::sieve_get_size( void* message_context, int* sizePtr) {
-	MsgContext* msgContext = static_cast< MsgContext*>( message_context);
-	if (msgContext && msgContext->mail && sizePtr) {
-		*sizePtr = msgContext->mail->RawText().Length();
-	}
-	return SIEVE_OK;
-}
-
-/*------------------------------------------------------------------------------*\
-	sieve_get_header()
-		-	
-\*------------------------------------------------------------------------------*/
-int BmMailFilter::sieve_get_header( void* message_context, const char* header,
-			  									const char*** contents) {
-	MsgContext* msgContext = static_cast< MsgContext*>( message_context);
-	if (msgContext && msgContext->mail) {
-		msgContext->mail->Header()->GetAllFieldValues( header, msgContext->headers);
-		*contents = msgContext->headers;
-	}	
-	return SIEVE_OK;
-}
-
-/*------------------------------------------------------------------------------*\
-	execute_error()
-		-	
-\*------------------------------------------------------------------------------*/
-int BmMailFilter::sieve_execute_error( const char* msg, void* interp_context,
-													void* script_context, void* message_context) {
-	BmString filterName = "<unknown>";
-	BmString mailName = "<unknown>";
-	if (script_context) {
-		BmFilter* filter = static_cast< BmFilter*>( script_context);
-		if (filter)
-			filterName = filter->Name();
-	}
-	MsgContext* msgContext = static_cast< MsgContext*>( message_context);
-	if (msgContext && msgContext->mail)
-			mailName = msgContext->mail->Name();
-	BmString err("An error occurred during execution of a mail-filter.");
-	err << "\nFilter: " << filterName;
-	err << "\nMail-ID: " << mailName;
-	err << "\n\nError: " << (msg ? msg : "");
-	BM_SHOWERR( err);
-	return SIEVE_OK;
-}
-
-/*------------------------------------------------------------------------------*\
 	ShouldContinue()
 		-	determines whether or not the mail-filter should continue to run
 		-	in addition to the inherited behaviour, the mail-filter should continue
@@ -229,16 +119,14 @@ bool BmMailFilter::StartJob() {
 			mail = BmMail::CreateInstance( mMailRefs[i].Get());
 			if (mail) {
 				mail->StartJobInThisThread( BmMail::BM_READ_MAIL_JOB);
-				MsgContext msgContext( this, mail.Get());
-				ExecuteFilter( msgContext);
+				ExecuteFilter( mail.Get());
 			}
 			BmString currentCount = BmString()<<c++<<" of "<<count;
 			UpdateStatus( delta, mail->Name().String(), currentCount.String());
 		}
 		mMailRefs.clear();
 		for( uint32 i=0; ShouldContinue() && i<mMails.size(); ++i) {
-			MsgContext msgContext( this, mMails[i].Get());
-			ExecuteFilter( msgContext);
+			ExecuteFilter( mMails[i].Get());
 			BmString currentCount = BmString()<<c++<<" of "<<count;
 			UpdateStatus( delta, mMails[i]->Name().String(), 
 							  currentCount.String());
@@ -261,25 +149,28 @@ bool BmMailFilter::StartJob() {
 	ExecuteFilter()
 		-	applies mail-filtering to a single given mail
 \*------------------------------------------------------------------------------*/
-void BmMailFilter::ExecuteFilter( MsgContext& msgContext) {
+void BmMailFilter::ExecuteFilter( BmMail* mail) {
+	BmMsgContext msgContext( mail->RawText(), mail->Name());
+	mail->Header()->GetAllFieldValues( msgContext);
 	if (!mFilter) {
 		// first we find the correct filter-chain for this mail...
 		BmRef< BmListModelItem> accItem;
 		BmRef< BmListModelItem> chainItem;
-		if (msgContext.mail->Outbound()) {
+		if (mail->Outbound()) {
 			// we have only one outbound chain:
 			chainItem = TheFilterChainList->FindItemByKey( BM_DefaultOutItemLabel);
 		} else {
 			// fetch the corresponding inbound-chain:
-			accItem = ThePopAccountList->FindItemByKey( msgContext.mail->AccountName());
+			accItem = ThePopAccountList->FindItemByKey( mail->AccountName());
 			BmPopAccount* popAcc = dynamic_cast< BmPopAccount*>( accItem.Get());
 			if (popAcc)
 				chainItem = TheFilterChainList->FindItemByKey( popAcc->FilterChain());
+			else
+				chainItem = TheFilterChainList->FindItemByKey( BM_DefaultItemLabel);
 		}
 		BmFilterChain* chain = dynamic_cast< BmFilterChain*>( chainItem.Get());
 		if (chain) {
 			// execute all the chain's filters:
-			bool needToStore = false;
 			BmAutolockCheckGlobal lock( chain->ModelLocker());
 			lock.IsLocked() 					|| BM_THROW_RUNTIME( chain->ModelNameNC() << ": Unable to get lock");
 			BmModelItemMap::const_iterator iter;
@@ -287,18 +178,29 @@ void BmMailFilter::ExecuteFilter( MsgContext& msgContext) {
 				BmChainedFilter* chainedFilter = dynamic_cast< BmChainedFilter*>( iter->second.Get());
 				BmRef< BmListModelItem> filterItem = TheFilterList->FindItemByKey( chainedFilter->FilterName());
 				BmFilter* filter = dynamic_cast< BmFilter*>( filterItem.Get());
-				if (filter)
-					needToStore |= (filter->Execute( &msgContext) && msgContext.changed);
+				if (filter && filter->Addon())
+					filter->Addon()->Execute( &msgContext);
 			}
-			if (needToStore && CurrentJobSpecifier()!=BM_EXECUTE_FILTER_IN_MEM)
-				msgContext.mail->Store();
 		}
 	} else {
-		if (mFilter->Execute( &msgContext) && msgContext.changed
-		&& CurrentJobSpecifier()!=BM_EXECUTE_FILTER_IN_MEM) {
-			msgContext.mail->Store();
-		}
+		if (mFilter->Addon())
+			mFilter->Addon()->Execute( &msgContext);
 	}
+	bool needToStore = false;
+	if (msgContext.folderName.Length()) {
+		if (mail->SetDestFoldername( msgContext.folderName))
+			needToStore = true;
+	}
+	if (msgContext.identity.Length()) {
+		mail->IdentityName( msgContext.identity);
+		needToStore = true;
+	}
+	if (msgContext.status.Length() && mail->Status() != msgContext.status) {
+		mail->MarkAs( msgContext.status.String());
+		needToStore = true;
+	}
+	if (needToStore && CurrentJobSpecifier()!=BM_EXECUTE_FILTER_IN_MEM)
+		mail->Store();
 }
 
 /*------------------------------------------------------------------------------*\

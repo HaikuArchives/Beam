@@ -289,7 +289,7 @@ BmBodyPart::BmBodyPart( BmBodyPartList* model, const entry_ref* ref, BmListModel
 		}
 		
 		mInitCheck = B_OK;
-	} catch( exception &err) {
+	} catch( BM_error &err) {
 		// a problem occurred, we tell the user:
 		BM_SHOWERR( BmString("BodyPart:\n\t") << err.what());
 	}
@@ -944,7 +944,7 @@ bool BmBodyPartList::StartJob() {
 	Freeze();									// we shut up for better performance
 	try {
 		ParseMail();
-	} catch (exception &e) {
+	} catch (BM_error &e) {
 		BM_SHOWERR( e.what());
 	}
 	Thaw();

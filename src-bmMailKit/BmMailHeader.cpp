@@ -29,6 +29,7 @@
 
 
 #include <algorithm>
+#include <ctype.h>
 
 #include <List.h>
 #include <NodeInfo.h>
@@ -39,11 +40,11 @@ using namespace regexx;
 #include "BmApp.h"
 #include "BmEncoding.h"
 	using namespace BmEncoding;
+#include "BmIdentity.h"
 #include "BmLogHandler.h"
 #include "BmMail.h"
 #include "BmMailHeader.h"
 #include "BmNetUtil.h"
-#include "BmPopAccount.h"
 #include "BmPrefs.h"
 #include "BmResources.h"
 #include "BmSmtpAccount.h"
@@ -151,10 +152,10 @@ const BmString& BmAddress::AddrString() const {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-bool BmAddress::IsHandledByAccount( BmPopAccount* acc, bool needExactMatch) const {
-	if (!acc)
+bool BmAddress::IsHandledByAccount( BmIdentity* ident, bool needExactMatch) const {
+	if (!ident)
 		return false;
-	return acc->HandlesAddress( mAddrSpec, needExactMatch);
+	return ident->HandlesAddrSpec( mAddrSpec, needExactMatch);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -278,11 +279,11 @@ void BmAddressList::Remove( BmString singleAddress) {
 	SplitIntoAddresses()
 		-	
 \*------------------------------------------------------------------------------*/
-const BmString& BmAddressList::FindAddressMatchingAccount( BmPopAccount* acc, 
-																	 bool needExactMatch) const {
+const BmString& BmAddressList::FindAddressMatchingAccount( BmIdentity* ident, 
+																	 		  bool needExactMatch) const {
 	int32 count = mAddrList.size();
 	for( int i=0; i<count; ++i) {
-		if (mAddrList[i].IsHandledByAccount( acc, needExactMatch))
+		if (mAddrList[i].IsHandledByAccount( ident, needExactMatch))
 			return mAddrList[i].AddrString();
 	}
 	return BM_DEFAULT_STRING;
@@ -481,19 +482,19 @@ void BmMailHeader::BmHeaderList::Remove( const BmString& fieldName) {
 	()
 		-	returns all values found for given fieldName
 \*------------------------------------------------------------------------------*/
-void BmMailHeader::BmHeaderList::GetAllValuesFor( const BmString& fieldName,
-																  const char**& valList) const {
-	valList = NULL;
-	BmHeaderMap::const_iterator iter = mHeaders.find(fieldName);
-	if (iter != mHeaders.end()) {
+void BmMailHeader::BmHeaderList::GetAllValues( BmMsgContext& msgContext) const {
+	msgContext.headerInfoCount = mHeaders.size();
+	msgContext.headerInfos = new BmHeaderInfo [msgContext.headerInfoCount];
+	int i = 0;
+	BmHeaderMap::const_iterator iter;
+	for( iter=mHeaders.begin(); iter != mHeaders.end(); ++iter, ++i) {
 		const BmValueList& valueList = iter->second;
-		valList = new const char* [valueList.size()+1];
-		for( uint32 i=0; i<valueList.size(); ++i)
-			valList[i] = valueList[i].String();
-		valList[valueList.size()] = NULL;
-	} else {
-		valList = new const char* [1];
-		valList[0] = NULL;
+		const char** values = new const char* [valueList.size()+1];
+		for( uint32 v=0; v<valueList.size(); ++v)
+			values[v] = valueList[v].String();
+		values[valueList.size()] = NULL;
+		msgContext.headerInfos[i].values = values;
+		msgContext.headerInfos[i].fieldName = iter->first;
 	}
 }
 
@@ -593,10 +594,8 @@ bool BmMailHeader::IsFieldEmpty( BmString fieldName) {
 	GetAllFieldValues()
 	-	
 \*------------------------------------------------------------------------------*/
-void BmMailHeader::GetAllFieldValues( BmString fieldName,
-												  const char**& valList) const {
-	fieldName.CapitalizeEachWord();
-	mHeaders.GetAllValuesFor( fieldName, valList);
+void BmMailHeader::GetAllFieldValues( BmMsgContext& msgContext) const {
+	mHeaders.GetAllValues( msgContext);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -626,7 +625,7 @@ bool BmMailHeader::AddressFieldContainsAddrSpec( BmString fieldName,
 	GetAddressList()
 		-	
 \*------------------------------------------------------------------------------*/
-const BmAddressList BmMailHeader::GetAddressList( BmString fieldName) {
+const BmAddressList& BmMailHeader::GetAddressList( BmString fieldName) {
 	fieldName.CapitalizeEachWord();
 	IsAddressField( fieldName)				|| BM_THROW_RUNTIME( BmString("BmMailHeader.GetAddressList(): Field is not an address-field."));
 	return mAddrMap[fieldName];
@@ -761,20 +760,20 @@ BmString BmMailHeader::DetermineListAddress( bool bypassSanityTest) {
 	DetermineReceivingAddrFor()
 		-	
 \*------------------------------------------------------------------------------*/
-BmString BmMailHeader::DetermineReceivingAddrFor( BmPopAccount* acc) {
+BmString BmMailHeader::DetermineReceivingAddrFor( BmIdentity* ident) {
 	BmString addr;
 	bool needExactMatch = true;
 	// in the first loop-run, we check whether any of the addresses matches
-	// the given account exactly, in the second loop-run, we accept matches
-	// by catch-all-accounts, too:
+	// the given identity exactly, in the second loop-run, we accept matches
+	// by catch-all-identities, too:
 	for( int i=0;  !addr.Length() && i<2;  ++i) {
-		addr = mAddrMap[BM_FIELD_TO].FindAddressMatchingAccount( acc, needExactMatch);
+		addr = mAddrMap[BM_FIELD_TO].FindAddressMatchingAccount( ident, needExactMatch);
 		if (addr.Length())
 			break;
-		addr = mAddrMap[BM_FIELD_CC].FindAddressMatchingAccount( acc, needExactMatch);
+		addr = mAddrMap[BM_FIELD_CC].FindAddressMatchingAccount( ident, needExactMatch);
 		if (addr.Length())
 			break;
-		addr = mAddrMap[BM_FIELD_BCC].FindAddressMatchingAccount( acc, needExactMatch);
+		addr = mAddrMap[BM_FIELD_BCC].FindAddressMatchingAccount( ident, needExactMatch);
 		needExactMatch = false;
 	}
 	return addr;

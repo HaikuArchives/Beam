@@ -16,6 +16,10 @@
 #include <Font.h>
 #include <Looper.h>
 
+#ifdef __POWERPC__
+#define BM_BUILDING_SANTAPARTSFORBEAM 1
+#endif
+
 #include "NewStrings.h"
 
 float GetStringsMaxWidth(const char** strings, int32 num_strings, const BFont* font,

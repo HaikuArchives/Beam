@@ -36,13 +36,14 @@
 #include <TextView.h>
 #include <Window.h>
 
+#include "SantaPartsForBeam.h"
 #include "ColumnListView.h"
 #include "CLVEasyItem.h"
 
 //******************************************************************************************************
 //**** ListSelectionAlert
 //******************************************************************************************************
-class ListSelectionAlert : public BWindow
+class IMPEXPSANTAPARTSFORBEAM ListSelectionAlert : public BWindow
 {
 	public:
 		ListSelectionAlert(const char* title, const char* info_text, BList& items, 

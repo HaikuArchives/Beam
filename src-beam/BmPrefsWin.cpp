@@ -60,6 +60,7 @@
 #include "BmPrefsFilterView.h"
 #include "BmPrefsFilterChainView.h"
 #include "BmPrefsGeneralView.h"
+#include "BmPrefsIdentityView.h"
 #include "BmPrefsMailConstrView.h"
 #include "BmPrefsMailReadView.h"
 #include "BmPrefsRecvMailView.h"
@@ -130,9 +131,10 @@ BmPrefsWin::BmPrefsWin()
 								new BmPrefsShortcutsView(),
 								new BmPrefsMailConstrView(),
 								new BmPrefsSendMailView(),
-								new BmPrefsSignatureView(),
 								new BmPrefsMailReadView(),
 								new BmPrefsRecvMailView(),
+								new BmPrefsIdentityView(),
+								new BmPrefsSignatureView(),
 								new BmPrefsFilterView(),
 								new BmPrefsFilterChainView(),
 								0
@@ -239,10 +241,6 @@ CLVContainerView* BmPrefsWin::CreatePrefsListView( minimax minmax, int32 width, 
 	item->SetColumnContent( 1, "Accounts");
 	mPrefsListView->AddItem( item);
 
-	item = new CLVEasyItem( 1, false, false, 18.0);
-	item->SetColumnContent( 1, "Signatures");
-	mPrefsListView->AddItem( item);
-
 	item = new CLVEasyItem( 0, true, false, 18.0);
 	item->SetColumnContent( 1, "Receiving Mail");
 	mPrefsListView->AddItem( item);
@@ -250,6 +248,15 @@ CLVContainerView* BmPrefsWin::CreatePrefsListView( minimax minmax, int32 width, 
 
 	item = new CLVEasyItem( 1, false, false, 18.0);
 	item->SetColumnContent( 1, "Accounts");
+	mPrefsListView->AddItem( item);
+
+	item = new CLVEasyItem( 0, true, false, 18.0);
+	item->SetColumnContent( 1, "Identities");
+	mPrefsListView->AddItem( item);
+	mPrefsListView->Expand( item);
+
+	item = new CLVEasyItem( 1, false, false, 18.0);
+	item->SetColumnContent( 1, "Signatures");
 	mPrefsListView->AddItem( item);
 
 	item = new CLVEasyItem( 0, true, false, 18.0);
@@ -311,7 +318,7 @@ void BmPrefsWin::MessageReceived( BMessage* msg) {
 				inherited::MessageReceived( msg);
 		}
 	}
-	catch( exception &err) {
+	catch( BM_error &err) {
 		// a problem occurred, we tell the user:
 		BM_SHOWERR( BmString("PrefsWin: ") << err.what());
 	}

@@ -31,8 +31,6 @@
 #ifndef _BmController_h
 #define _BmController_h
 
-#include <vector>
-
 #include "BmDataModel.h"
 #include "BmUtil.h"
 

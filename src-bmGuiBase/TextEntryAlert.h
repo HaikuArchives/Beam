@@ -36,6 +36,7 @@
 #include <TextView.h>
 #include <MessageFilter.h>
 
+#include "SantaPartsForBeam.h"
 
 //******************************************************************************************************
 //**** Forward name declarations
@@ -46,7 +47,7 @@ class TextEntryAlertTextEntryView;
 //******************************************************************************************************
 //**** TextEntryAlert
 //******************************************************************************************************
-class TextEntryAlert : public BWindow
+class IMPEXPSANTAPARTSFORBEAM TextEntryAlert : public BWindow
 {
 	public:
 		TextEntryAlert(const char* title, const char* info_text, const char* initial_entry_text, 

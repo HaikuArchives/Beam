@@ -42,6 +42,7 @@
 
 #include "Colors.h"
 
+#include "BmBasics.h"
 #include "BmLogHandler.h"
 #include "BmPrefs.h"
 #include "BmPrefsView.h"
@@ -128,7 +129,7 @@ void BmPrefsView::MessageReceived( BMessage* msg) {
 				inherited::MessageReceived( msg);
 		}
 	}
-	catch( exception &err) {
+	catch( BM_error &err) {
 		// a problem occurred, we tell the user:
 		BM_SHOWERR( BmString("PrefsView_") << mLabelView->Text() << ":\n\t" << err.what());
 	}

@@ -25,6 +25,8 @@
 #include <ListView.h>
 #include <layout.h>
 
+#include "SantaPartsForBeam.h"
+
 //******************************************************************************************************
 //**** PROJECT HEADER FILES AND CLASS NAME DECLARATIONS
 //******************************************************************************************************
@@ -45,12 +47,15 @@ typedef int (*CLVCompareFuncPtr)(const CLVListItem* item1, const CLVListItem* it
 
 #define EXPANDER_SHIFT 14.0
 
-extern const float darken_tint;
+extern IMPEXPSANTAPARTSFORBEAM const float darken_tint;
+
+extern IMPEXPSANTAPARTSFORBEAM uint8 CLVRightArrowData[132];
+extern IMPEXPSANTAPARTSFORBEAM uint8 CLVDownArrowData[132];
 
 //******************************************************************************************************
 //**** ColumnListView CLASS DECLARATION
 //******************************************************************************************************
-class ColumnListView : public BListView
+class IMPEXPSANTAPARTSFORBEAM ColumnListView : public BListView
 {
 		typedef BListView inherited;
 
@@ -274,7 +279,7 @@ class ColumnListView : public BListView
 		minimax fMinMax;		
 };
 
-class CLVContainerView : public MView, public BetterScrollView
+class IMPEXPSANTAPARTSFORBEAM CLVContainerView : public MView, public BetterScrollView
 {
 		typedef BetterScrollView inherited;
 	public:

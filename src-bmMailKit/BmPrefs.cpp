@@ -71,7 +71,7 @@ BmPrefs* BmPrefs::CreateInstance() {
 			(err = archive.Unflatten( &prefsFile)) == B_OK
 													|| BM_THROW_RUNTIME( BmString("Could not fetch settings from file\n\t<") << prefsFilename << ">\n\n Result: " << strerror(err));
 			prefs = new BmPrefs( &archive);
-		} catch (exception &e) {
+		} catch (BM_error &e) {
 			BM_SHOWERR( e.what());
 			prefs = NULL;
 		}
@@ -443,12 +443,14 @@ BMessage* BmPrefs::GetShortcutDefaults( BMessage* shortcutsMsg) {
 
 /*------------------------------------------------------------------------------*\
 	SetLoglevels( )
-		-	constructs a BMessage containing all defaultVal values
+		-	
 \*------------------------------------------------------------------------------*/
 void BmPrefs::SetLoglevels() {
 	// transfer loglevel-definitions to log-handler:
 	int32 loglevels = GetInt("Loglevels");
-	TheLogHandler->LogLevels( loglevels);
+	TheLogHandler->LogLevels( loglevels, 
+									  GetInt( "MinLogfileSize", 50*1024),
+									  GetInt( "MaxLogfileSize", 200*1024));
 #ifdef BM_LOGGING
 	BmString s;
 	for( int i=31; i>=0; --i) {
@@ -490,7 +492,7 @@ bool BmPrefs::Store() {
 		mPrefsMsg.AddInt32( "Loglevels", loglevels);
 		// update saved state to current:
 		mSavedPrefsMsg = mPrefsMsg;
-	} catch( exception &e) {
+	} catch( BM_error &e) {
 		BM_SHOWERR( e.what());
 		return false;
 	}

@@ -39,11 +39,13 @@ class BmMenuController : public BMenu, public BmJobController
 {
 	typedef BMenu inherited;
 	typedef BmJobController inheritedController;
+	
+	typedef void (*RebuildMenuFunc)( BMenu*);
 
 public:
 
 	BmMenuController( const char* label, BHandler* msgTarget, 
-							BMessage& msgTemplate, BmJobModel* jobModel,
+							BMessage& msgTemplate, BmListModel* listModel,
 							bool skipFirstLevel=false);
 
 	// overrides of controller-base
@@ -56,6 +58,7 @@ public:
 	void DetachedFromWindow();
 
 	void Shortcuts( const BmString s) 	{ mShortcuts = s; }
+	void SetRebuildMenuFunc( RebuildMenuFunc fn) { mRebuildMenuFunc = fn; }
 
 private:
 	
@@ -64,10 +67,11 @@ private:
 							  char shortcut=0);
 
 	BMessage mMsgTemplate;
-	BmJobModel* mJobModel;
+	BmListModel* mListModel;
 	BHandler* mMsgTarget;
 	BmString mShortcuts;
 	bool mSkipFirstLevel;
+	RebuildMenuFunc mRebuildMenuFunc;
 
 	// Hide copy-constructor and assignment:
 	BmMenuController( const BmMenuController&);

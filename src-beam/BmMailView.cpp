@@ -60,6 +60,114 @@ using namespace regexx;
 #undef BM_LOGNAME
 #define BM_LOGNAME "MailParser"
 
+/*------------------------------------------------------------------------------*\
+	WordWrap( in, out, maxLineLen)
+		-	wraps given in-string along word-boundary
+		-	param maxLineLen indicates right border for wrap
+		-	resulting text is stored in param out
+		-	the string in has to be UTF8-encoded for this function to work correctly!
+		-	if keepLongWords is set, single words whose length exceeds maxLineLen 
+			(like URLs) will be preserved (i.e. not be wrapped).
+\*------------------------------------------------------------------------------*/
+void WordWrap( const BmString& in, BmString& out, int32 maxLineLen, BmString nl, 
+					bool keepLongWords) {
+	if (!in.Length()) {
+		out.Truncate( 0, false);
+		return;
+	}
+	Regexx rx;
+	int32 lastPos = 0;
+	const char *s = in.String();
+	bool needBreak = false;
+	BmStringOBuf tempIO( in.Length()*1.1, 1.1);
+	for( int32 pos = 0;  !needBreak;  pos += nl.Length(), lastPos = pos) {
+		pos = in.FindFirst( nl, pos);
+		if (pos == B_ERROR) {
+			// handle the characters between last newline and end of string:
+			pos = in.Length();
+			needBreak = true;
+		}
+		// determine length of line in UTF8-characters (not bytes)
+		// and find last space before maxLineLen-border:
+		int32 lastSpcPos = B_ERROR;
+		int32 lineLen = 0;
+		for( int i=lastPos; i<pos; ++i) {
+			while( i<pos && IS_WITHIN_UTF8_MULTICHAR(s[i]))
+				i++;
+			if (s[i] == ' ' && lineLen<maxLineLen)
+				lastSpcPos = i;
+			lineLen++;
+		}
+		while (lineLen > maxLineLen) {
+			if (keepLongWords && lastSpcPos>lastPos) {
+				// special-case lines containing only quotes and a long word,
+				// since in this case we want to avoid wrapping between quotes
+				// and the word:
+				BmString lineBeforeSpace;
+				in.CopyInto( lineBeforeSpace, lastPos, 1+lastSpcPos-lastPos);
+				if (rx.exec( lineBeforeSpace, ThePrefs->GetString( "QuotingLevelRX"))) {
+					BmString text=rx.match[0].atom[1];
+					if (!text.Length()) {
+						// the subpart before last space consists only of the quote,
+						// we avoid wrapping this line:
+						lastSpcPos=B_ERROR;
+					}
+				}
+			}
+			if (lastSpcPos==B_ERROR || lastSpcPos<lastPos) {
+				// line doesn't contain any space character (before maxline-length), 
+				// we simply break it at right margin (unless keepLongWords is set):
+				if (keepLongWords) {
+					// find next space or end of line and break line there:
+					int32 nextSpcPos = in.FindFirst( " ", lastPos+maxLineLen);
+					int32 nlPos = in.FindFirst( nl, lastPos+maxLineLen);
+					if (nextSpcPos==B_ERROR || nlPos<nextSpcPos) {
+						// have no space in line, we keep whole line:
+						if (nlPos == B_ERROR) {
+							tempIO.Write( in.String()+lastPos, in.Length()-lastPos);
+							tempIO.Write( nl);
+							lastPos = in.Length();
+						} else {
+							tempIO.Write( in.String()+lastPos, nl.Length()+nlPos-lastPos);
+							lastPos = nlPos + nl.Length();
+						}
+					} else {
+						// break long line at a space behind right margin:
+						tempIO.Write( in.String()+lastPos, 1+nextSpcPos-lastPos);
+						tempIO.Write( nl);
+						lastPos = nextSpcPos+1;
+					}
+				} else {
+					// break line at right margin:
+					tempIO.Write( in.String()+lastPos, maxLineLen);
+					tempIO.Write( nl);
+					lastPos += maxLineLen;
+				}
+			} else {
+				// wrap line after last space:
+				tempIO.Write( in.String()+lastPos, 1+lastSpcPos-lastPos);
+				tempIO.Write( nl);
+				lastPos = lastSpcPos+1;
+			}
+			lineLen = 0;
+			lastSpcPos = B_ERROR;
+			for( int i=lastPos; i<pos; ++i) {
+				while( i<pos && IS_WITHIN_UTF8_MULTICHAR(s[i]))
+					i++;
+				if (s[i] == ' ' && lineLen<maxLineLen)
+					lastSpcPos = i;
+				lineLen++;
+			}
+		}
+		if (needBreak)
+			break;
+		tempIO.Write( in.String()+lastPos, nl.Length()+pos-lastPos);
+	}
+	if (lastPos < in.Length())
+		tempIO.Write( in.String()+lastPos, in.Length()-lastPos);
+	out.Adopt( tempIO.TheString());
+}
+
 /********************************************************************************\
 	BmMailView
 \********************************************************************************/
@@ -95,7 +203,7 @@ BmMailView* BmMailView::CreateInstance( minimax minmax, BRect frame, bool outbou
 			(err = archive.Unflatten( &archiveFile)) == B_OK
 												|| BM_THROW_RUNTIME( BmString("Could not fetch mail-view archive from file\n\t<") << archiveFilename << ">\n\n Result: " << strerror(err));
 			instance->Unarchive( &archive);
-		} catch (exception &e) {
+		} catch (BM_error &e) {
 			BM_SHOWERR( e.what());
 		}
 	}
@@ -335,7 +443,7 @@ void BmMailView::MessageReceived( BMessage* msg) {
 				inherited::MessageReceived( msg);
 		}
 	}
-	catch( exception &err) {
+	catch( BM_error &err) {
 		// a problem occurred, we tell the user:
 		BM_SHOWERR( BmString(ControllerName()) << ":\n\t" << err.what());
 	}
@@ -645,7 +753,7 @@ void BmMailView::ShowMail( BmMailRef* ref, bool async) {
 		if (async)
 			ContainerView()->SetBusy();
 	}
-	catch( exception &err) {
+	catch( BM_error &err) {
 		// a problem occurred, we tell the user:
 		BM_SHOWERR( BmString("MailView: ") << err.what());
 	}
@@ -672,7 +780,7 @@ void BmMailView::ShowMail( BmMail* mail, bool async) {
 		if (async)
 			ContainerView()->SetBusy();
 	}
-	catch( exception &err) {
+	catch( BM_error &err) {
 		// a problem occurred, we tell the user:
 		BM_SHOWERR( BmString("MailView: ") << err.what());
 	}
@@ -894,7 +1002,7 @@ bool BmMailView::WriteStateInfo() {
 													|| BM_THROW_RUNTIME( BmString("Could not create cache file\n\t<") << filename << ">\n\n Result: " << strerror(err));
 		(err = archive.Flatten( &cacheFile)) == B_OK
 													|| BM_THROW_RUNTIME( BmString("Could not store state-cache into file\n\t<") << filename << ">\n\n Result: " << strerror(err));
-	} catch( exception &e) {
+	} catch( BM_error &e) {
 		BM_SHOWERR( e.what());
 		return false;
 	}
@@ -968,8 +1076,8 @@ void BmMailView::ShowMenu( BPoint point) {
 	openRect.bottom = point.y + 5;
 	openRect.left = point.x - 5;
 	openRect.right = point.x + 5;
-  	theMenu->Go( point, true, false, openRect);
-  	delete theMenu;
+	theMenu->SetAsyncAutoDestruct( true);
+  	theMenu->Go( point, true, false, openRect, true);
 }
 
 

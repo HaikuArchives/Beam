@@ -42,9 +42,11 @@
 #include <liblayout/Space.h>
 #include <liblayout/VGroup.h>
 
+
 #include "Colors.h"
 #include "BubbleHelper.h"
 
+#include "BmBasics.h"
 #include "BmCheckControl.h"
 #include "BmGuiUtil.h"
 #include "BmLogHandler.h"
@@ -115,11 +117,11 @@ BmPrefsMailReadView::BmPrefsMailReadView()
 		-	
 \*------------------------------------------------------------------------------*/
 BmPrefsMailReadView::~BmPrefsMailReadView() {
-	TheBubbleHelper.SetHelp( mHeaderListSmallControl, NULL);
-	TheBubbleHelper.SetHelp( mHeaderListLargeControl, NULL);
-	TheBubbleHelper.SetHelp( mMimeTypeTrustInfoControl, NULL);
-	TheBubbleHelper.SetHelp( mMarkAsReadDelayControl, NULL);
-	TheBubbleHelper.SetHelp( mAutoCheckIfPppUpControl, NULL);
+	TheBubbleHelper->SetHelp( mHeaderListSmallControl, NULL);
+	TheBubbleHelper->SetHelp( mHeaderListLargeControl, NULL);
+	TheBubbleHelper->SetHelp( mMimeTypeTrustInfoControl, NULL);
+	TheBubbleHelper->SetHelp( mMarkAsReadDelayControl, NULL);
+	TheBubbleHelper->SetHelp( mAutoCheckIfPppUpControl, NULL);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -129,9 +131,9 @@ BmPrefsMailReadView::~BmPrefsMailReadView() {
 void BmPrefsMailReadView::Initialize() {
 	inherited::Initialize();
 
-	TheBubbleHelper.SetHelp( mHeaderListSmallControl, "Here you can enter the list of header-fields that will be displayed\nin the 'Small'-mode of the mailheader-view.\nJust enter the header-fields in the order you wish them to appear\nand separate them by a ',' (comma).");
-	TheBubbleHelper.SetHelp( mHeaderListLargeControl, "Here you can enter the list of header-fields that will be displayed\nin the 'Large'-mode of the mailheader-view.\nJust enter the header-fields in the order you wish them to appear\nand separate them by a ',' (comma).");
-	TheBubbleHelper.SetHelp( mMimeTypeTrustInfoControl, "When you double-click an attachment, Beam checks \n\
+	TheBubbleHelper->SetHelp( mHeaderListSmallControl, "Here you can enter the list of header-fields that will be displayed\nin the 'Small'-mode of the mailheader-view.\nJust enter the header-fields in the order you wish them to appear\nand separate them by a ',' (comma).");
+	TheBubbleHelper->SetHelp( mHeaderListLargeControl, "Here you can enter the list of header-fields that will be displayed\nin the 'Large'-mode of the mailheader-view.\nJust enter the header-fields in the order you wish them to appear\nand separate them by a ',' (comma).");
+	TheBubbleHelper->SetHelp( mMimeTypeTrustInfoControl, "When you double-click an attachment, Beam checks \n\
 if the mimetype of the attachment can be trusted.\n\
 Here you can define how Beam should treat different mimetypes.\n\
 Each single entry is of the form: <mtSubString:action>\n\
@@ -145,10 +147,10 @@ settings, the mimetype application/pdf has to be given trust before\n\
 the mimetype application can be set to warn-mode.\n\n\
 N.B.: I know this is clumsy and I promise that there will be\n\
 something better in one of the next versions of Beam.");
-	TheBubbleHelper.SetHelp( mMarkAsReadDelayControl, "When you select a new mail and it is displayed in the mail-view\n\
+	TheBubbleHelper->SetHelp( mMarkAsReadDelayControl, "When you select a new mail and it is displayed in the mail-view\n\
 it will be marked as 'read', after a certain delay.\n\
 You can enter this delay into this field.");
-	TheBubbleHelper.SetHelp( mAutoCheckIfPppUpControl, "If you check this, automatical checks take place only if you\n\
+	TheBubbleHelper->SetHelp( mAutoCheckIfPppUpControl, "If you check this, automatical checks take place only if you\n\
 have a running dialup-connection.\n\
 If you have a permanent connection to the internet, you MUST\n\
 uncheck this, otherwise no automatic checks will happen!");
@@ -221,7 +223,7 @@ void BmPrefsMailReadView::MessageReceived( BMessage* msg) {
 				inherited::MessageReceived( msg);
 		}
 	}
-	catch( exception &err) {
+	catch( BM_error &err) {
 		// a problem occurred, we tell the user:
 		BM_SHOWERR( BmString("PrefsView_") << Name() << ":\n\t" << err.what());
 	}

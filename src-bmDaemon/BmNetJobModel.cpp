@@ -28,6 +28,7 @@
 /*                                                                       */
 /*************************************************************************/
 
+#include "BmLogHandler.h"
 #include "BmNetJobModel.h"
 #include "BmPrefs.h"
 
@@ -212,7 +213,7 @@ void BmNetJobModel::SendCommand( BmStringIBuf& cmd, const BmString& secret,
 #endif
 	if (!cmd.EndsWithNewline())
 		cmd.AddBuffer( "\r\n", 2);
-	uint32 blockSize = ThePrefs->GetInt( "NetReceiveBufferSize", 10*1500);
+	uint32 blockSize = ThePrefs->GetInt( "NetSendBufferSize", 10*1500);
 	mWriter->DoUpdate( update);
 	uint32 writtenLen;
 	if (dotstuffEncoding) {
@@ -220,7 +221,7 @@ void BmNetJobModel::SendCommand( BmStringIBuf& cmd, const BmString& secret,
 		writtenLen = mWriter->Write( &encoder, blockSize);
 	} else
 		writtenLen = mWriter->Write( &cmd, blockSize);
-	if (writtenLen < cmd.Size()) {
+	if (ShouldContinue() && writtenLen < cmd.Size()) {
 		BmString s = BmString( "Wrote only ") << writtenLen 
 							<< " bytes when at least " << cmd.Size() 
 							<< " should have been written";
@@ -426,9 +427,8 @@ BmNetOBuf::BmNetOBuf( BmNetJobModel* job)
 \*------------------------------------------------------------------------------*/
 uint32 BmNetOBuf::Write( const char* data, uint32 len) {
 	uint32 sentSize=0;
-	uint32 blockSize = ThePrefs->GetInt("NetSendBufferSize", 10*1500);
-	for( uint32 offs=0; offs<len; ) {
-		int32 sz = MIN( len-offs, blockSize);
+	for( uint32 offs=0; mJob->ShouldContinue() && offs<len; ) {
+		int32 sz = len-offs;
 		BM_LOG3( mJob->LogType(), BmString("Trying to send ") << sz << " bytes...");
 		int32 sent = Connection()->Send( data+offs, sz);
 		BM_LOG3( mJob->LogType(), BmString("...sent ") << sent << " bytes");
@@ -455,12 +455,12 @@ uint32 BmNetOBuf::Write( BmMemIBuf* input, uint32 blockSize) {
 	uint32 writeLen=0;
 	try {
 		uint32 len;
-		while( !input->IsAtEnd()) {
+		while( mJob->ShouldContinue() && !input->IsAtEnd()) {
 			len = input->Read( buf, blockSize);
 			writeLen += Write( buf, len);
 		}
 		delete [] buf;
-	} catch (exception& err) {
+	} catch (BM_error& err) {
 		delete [] buf;
 		throw err;
 	}

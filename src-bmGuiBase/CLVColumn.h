@@ -33,6 +33,7 @@ class ColumnListView;
 class CLVColumn;
 class CLVListItem;
 
+#include "SantaPartsForBeam.h"
 
 //******************************************************************************************************
 //**** TYPE DEFINITIONS AND CONSTANTS
@@ -113,7 +114,7 @@ void GetTruncatedString(const char* full_string, char* truncated, float width, i
 //******************************************************************************************************
 //**** ColumnListView CLASS DECLARATION
 //******************************************************************************************************
-class CLVColumn
+class IMPEXPSANTAPARTSFORBEAM CLVColumn
 {
 	public:
 		//Constructor and destructor

@@ -31,15 +31,16 @@
 #ifndef _BmMemIO_h
 #define _BmMemIO_h
 
-#include <vector>
+#include <List.h>
 
+#include "BmBase.h"
 #include "BmString.h"
 
 /*------------------------------------------------------------------------------*\
 	class BmMemIBuf
 		-	
 \*------------------------------------------------------------------------------*/
-class BmMemIBuf {
+class IMPEXPBMBASE BmMemIBuf {
 public:
 	virtual ~BmMemIBuf()						{}
 	virtual uint32 Read( char* data, uint32 reqLen) = 0;
@@ -50,7 +51,7 @@ public:
 	class BmMemOBuf
 		-	
 \*------------------------------------------------------------------------------*/
-class BmMemOBuf {
+class IMPEXPBMBASE BmMemOBuf {
 public:
 	virtual ~BmMemOBuf()						{}
 	virtual uint32 Write( const char* data, uint32 dataLen) = 0;
@@ -60,7 +61,7 @@ public:
 	class BmMemFilter
 		-	
 \*------------------------------------------------------------------------------*/
-class BmMemFilter : public virtual BmMemIBuf {
+class IMPEXPBMBASE BmMemFilter : public BmMemIBuf {
 	typedef BmMemIBuf inherited;
 
 public:
@@ -79,7 +80,7 @@ public:
 	uint32 SrcCount() const					{ return mSrcCount; }
 	uint32 DestCount() const				{ return mDestCount; }
 
-	static const uint32 nBlockSize = 65536;
+	static IMPEXPBMBASE const uint32 nBlockSize;
 
 protected:
 	// native methods:
@@ -116,12 +117,13 @@ protected:
 	class BmStringIBuf
 		-	
 \*------------------------------------------------------------------------------*/
-class BmStringIBuf : public virtual BmMemIBuf {
+class IMPEXPBMBASE BmStringIBuf : public BmMemIBuf {
 	typedef BmMemIBuf inherited;
 
 public:
 	BmStringIBuf( const char* str, int32 len=-1);
 	BmStringIBuf( const BmString& str);
+	~BmStringIBuf();
 
 	// native methods:
 	void AddBuffer( const char* str, int32 len=-1);
@@ -135,8 +137,8 @@ public:
 
 	// getters:
 	uint32 Size() const;
-	inline const char* FirstBuf() const	{ return mBufInfo[0].buf; }
-	inline uint32 FirstSize() const		{ return mBufInfo[0].size; }
+	const char* FirstBuf() const;
+	uint32 FirstSize() const;
 
 private:
 	struct BufInfo {
@@ -148,8 +150,7 @@ private:
 		BufInfo( const char* b, uint32 s)
 			: buf( b), currPos( 0), size( s)		{}
 	};
-	typedef vector<BufInfo> BmBufInfoVect;
-	BmBufInfoVect mBufInfo;
+	BList mBufInfo;
 	uint32 mIndex;
 
 	// Hide copy-constructor and assignment:
@@ -161,7 +162,7 @@ private:
 	class BmStringOBuf
 		-	
 \*------------------------------------------------------------------------------*/
-class BmStringOBuf : public virtual BmMemOBuf {
+class IMPEXPBMBASE BmStringOBuf : public BmMemOBuf {
 	typedef BmMemOBuf inherited;
 
 public:
@@ -175,13 +176,13 @@ public:
 	
 	// native methods:
 	BmString& TheString();
-	inline const char* Buffer() const	{ return mBuf; }
-	inline bool HasData() const 			{ return mBuf!=NULL; }
-	inline char ByteAt( uint32 pos) const { return (!mBuf||pos<0||pos>=mCurrPos) ? 0 : mBuf[pos]; }
+	const char* Buffer() const;
+	bool HasData() const;
+	char ByteAt( uint32 pos) const;
 	void Reset();
 
 	// getters:
-	inline uint32 CurrPos() const 		{ return mCurrPos; }
+	uint32 CurrPos() const;
 
 	BmStringOBuf 		&operator<<(const char *);
 	BmStringOBuf 		&operator<<(const BmString &);

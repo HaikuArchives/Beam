@@ -30,13 +30,24 @@
 class BWindow;
 class BView;
 class BTextView;
-class BList;
 class BCursor;
+class BLocker;
+class BList;
 
-class BubbleHelper
+#include "SantaPartsForBeam.h"
+
+class IMPEXPSANTAPARTSFORBEAM BubbleHelper
 {
+		struct BubbleInfo {
+			 BView* view;
+		    const char* text;
+		    const BCursor* cursor;
+		    BubbleInfo( BView* v, const char* t, const BCursor* c)
+		    	:	view( v), text( t), cursor( c) {}
+		};
+
 	public:
-		BubbleHelper();
+		static void CreateInstance();
 		virtual ~BubbleHelper();
 
 		void SetHelp(BView *view, const char *text);
@@ -56,13 +67,21 @@ class BubbleHelper
 		static long _helper(void *arg);
 		BView		*FindView(BPoint where);
 		bool		enabled;
+
+		BList*	infoList;
+		BLocker*	infoLocker;
 		
+		BubbleInfo* FindInfo( BView *view);
+
 		void HideBubble();
 		void ShowBubble(BPoint dest);
 		
+		BubbleHelper();		// hide default constructor
+
 		static long runcount;
+public:
 };
 
-extern BubbleHelper TheBubbleHelper;
+extern "C" IMPEXPSANTAPARTSFORBEAM BubbleHelper* TheBubbleHelper;
 
 #endif

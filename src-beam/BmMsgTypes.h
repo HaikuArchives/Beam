@@ -46,6 +46,7 @@
 #define BMM_PAGE_SETUP					'bMae'
 #define BMM_PRINT							'bMaf'
 #define BMM_PREFERENCES					'bMag'
+#define BMM_SHOW_LOGFILE				'bMah'
 
 #define BMM_FIND							'bMba'
 #define BMM_FIND_MESSAGES				'bMbb'

@@ -29,19 +29,21 @@
 #ifndef SPLIT_HH
 #define SPLIT_HH
 
-#include "BmString.h"
 #include <vector>
+
+#include "libregexx.h"
+#include "BmString.h"
 #include "regexx.hh"
 
 namespace regexx {
 
-  vector<BmString> split(const BmString& _where, const BmString& _str);
+  IMPEXPLIBREGEXX vector<BmString> split(const BmString& _where, const BmString& _str);
 
-  void split(const BmString& _where, const BmString& _str, vector<BmString>& v);
+  IMPEXPLIBREGEXX void split(const BmString& _where, const BmString& _str, vector<BmString>& v);
 
-  vector<BmString> splitex(const BmString& _exp, const BmString& _str);
+  IMPEXPLIBREGEXX vector<BmString> splitex(const BmString& _exp, const BmString& _str);
 
-  void splitex(const BmString& _regex, const BmString& _str, vector<BmString>& v);
+  IMPEXPLIBREGEXX void splitex(const BmString& _regex, const BmString& _str, vector<BmString>& v);
 
 }
 
