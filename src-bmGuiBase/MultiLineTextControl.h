@@ -48,7 +48,7 @@ class MultiLineTextControlTextView;
 //******************************************************************************************************
 //**** MultiLineTextControl
 //******************************************************************************************************
-class IMPEXPSANTAPARTSFORBEAM MultiLineTextControl : public BControl
+class IMPEXPBMGUIBASE MultiLineTextControl : public BControl
 {
 	public:
 		MultiLineTextControl(BRect frame, const char* name, const char* label, bool inline_label,

@@ -34,6 +34,7 @@
 #include <map>
 
 #include "BmListController.h"
+#include "BmMailFolder.h"
 #include "BmMailRef.h"
 
 /*------------------------------------------------------------------------------*\
@@ -47,7 +48,6 @@ enum {
 						// inside a window of it's own).
 };
 
-class BmMailFolder;
 /*------------------------------------------------------------------------------*\
 	BmMailRefItem
 		-	

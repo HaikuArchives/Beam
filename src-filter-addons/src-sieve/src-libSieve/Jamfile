@@ -1,4 +1,4 @@
-SubDir TOP src-filter-addons src-sieve src-libSieve src ;
+SubDir TOP src-filter-addons src-sieve src-libSieve ;
 
 SubDirHdrs $(TOP) src-bmBase ;
 
@@ -29,3 +29,5 @@ StaticLibrary libsieve.a
 		xmalloc.c
 	: 	
 	;
+
+MakeLocate libsieve.a : [ FDirName $(OBJECTS_DIR) lib ] ;

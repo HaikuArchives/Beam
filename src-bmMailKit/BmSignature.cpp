@@ -39,7 +39,7 @@ using namespace regexx;
 	using namespace BmEncoding;
 #include "BmLogHandler.h"
 #include "BmPrefs.h"
-#include "BmResources.h"
+#include "BmRosterBase.h"
 #include "BmSignature.h"
 #include "BmStorageUtil.h"
 #include "BmUtil.h"
@@ -211,7 +211,7 @@ BmSignatureList::~BmSignatureList() {
 		-	returns the name of the settings-file for the signature-list
 \*------------------------------------------------------------------------------*/
 const BmString BmSignatureList::SettingsFileName() {
-	return BmString( TheResources->SettingsPath.Path()) << "/" << "Signatures";
+	return BmString( BeamRoster->SettingsPath()) << "/" << "Signatures";
 }
 
 /*------------------------------------------------------------------------------*\

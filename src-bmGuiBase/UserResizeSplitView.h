@@ -51,7 +51,7 @@
 //******************************************************************************************************
 //**** UserResizeSplitView
 //******************************************************************************************************
-class IMPEXPSANTAPARTSFORBEAM UserResizeSplitView : public MGroup, public BView
+class IMPEXPBMGUIBASE UserResizeSplitView : public MGroup, public BView
 {
 	public:
 		UserResizeSplitView( MView* top_or_left_child, MView* right_or_bottom_child, 

@@ -30,6 +30,8 @@
 #ifndef _BmEncoding_h
 #define _BmEncoding_h
 
+#include "BmMailKit.h"
+
 #include <memory>
 #include <map>
 
@@ -44,42 +46,55 @@
 \*------------------------------------------------------------------------------*/
 namespace BmEncoding {
 	
-	extern const int16 BM_MAX_HEADER_LINE_LEN;
-	extern const int16 BM_MAX_BODY_LINE_LEN;
+	extern IMPEXPBMMAILKIT const int16 BM_MAX_HEADER_LINE_LEN;
+	extern IMPEXPBMMAILKIT const int16 BM_MAX_BODY_LINE_LEN;
 
 	typedef map< BmString, bool> BmCharsetMap;
-	extern BmCharsetMap TheCharsetMap;
+	extern IMPEXPBMMAILKIT BmCharsetMap TheCharsetMap;
 
-	extern BmString DefaultCharset;
+	extern IMPEXPBMMAILKIT BmString DefaultCharset;
 	
+	IMPEXPBMMAILKIT 
 	void InitCharsetMap();
 
+	IMPEXPBMMAILKIT 
 	const char* ConvertFromBeosToLibiconv( uint32 encoding);
 
+	IMPEXPBMMAILKIT 
 	void ConvertToUTF8( const BmString& srcCharset, const BmString& src, 
 							  BmString& dest);
+	
+	IMPEXPBMMAILKIT 
 	void ConvertFromUTF8( const BmString& destCharset, const BmString& src, 
 								 BmString& dest);
 
+	IMPEXPBMMAILKIT 
 	void Encode( BmString encodingStyle, const BmString& src, BmString& dest);
+	IMPEXPBMMAILKIT 
 	void Decode( BmString encodingStyle, const BmString& src, BmString& dest);
 
+	IMPEXPBMMAILKIT 
 	BmString ConvertHeaderPartToUTF8( const BmString& headerPart, 
 												 const BmString& defaultCharset);
+	IMPEXPBMMAILKIT 
 	BmString ConvertUTF8ToHeaderPart( const BmString& utf8text, 
 												 const BmString& charset,
 												 bool useQuotedPrintableIfNeeded, 
 												 int32 fieldLen);
 	
+	IMPEXPBMMAILKIT 
 	bool NeedsQuotedPrintableEncoding( const BmString& utf8String, 
 												  uint16 maxLineLen=0);
+	IMPEXPBMMAILKIT 
 	bool IsCompatibleWithText( const BmString& s);
 
 	typedef auto_ptr<BmMemFilter> BmMemFilterRef;
+	IMPEXPBMMAILKIT 
 	BmMemFilterRef FindDecoderFor( BmMemIBuf* input, 
 											 const BmString& encodingStyle,
 											 bool isEncodedWord=false, 
 											 uint32 blockSize=BmMemFilter::nBlockSize);
+	IMPEXPBMMAILKIT 
 	BmMemFilterRef FindEncoderFor( BmMemIBuf* input, 
 											 const BmString& encodingStyle,
 											 uint32 blockSize=BmMemFilter::nBlockSize);
@@ -91,7 +106,7 @@ namespace BmEncoding {
 	class BmUtf8Decoder
 		-	
 \*------------------------------------------------------------------------------*/
-class BmUtf8Decoder : public BmMemFilter {
+class IMPEXPBMMAILKIT BmUtf8Decoder : public BmMemFilter {
 	typedef BmMemFilter inherited;
 
 public:
@@ -130,7 +145,7 @@ protected:
 	class BmUtf8Encoder
 		-	
 \*------------------------------------------------------------------------------*/
-class BmUtf8Encoder : public BmMemFilter {
+class IMPEXPBMMAILKIT BmUtf8Encoder : public BmMemFilter {
 	typedef BmMemFilter inherited;
 
 public:
@@ -169,7 +184,7 @@ protected:
 	class BmQuotedPrintableDecoder
 		-	
 \*------------------------------------------------------------------------------*/
-class BmQuotedPrintableDecoder : public BmMemFilter {
+class IMPEXPBMMAILKIT BmQuotedPrintableDecoder : public BmMemFilter {
 	typedef BmMemFilter inherited;
 
 public:
@@ -191,7 +206,7 @@ protected:
 	class BmQuotedPrintableEncoder
 		-	
 \*------------------------------------------------------------------------------*/
-class BmQuotedPrintableEncoder : public BmMemFilter {
+class IMPEXPBMMAILKIT BmQuotedPrintableEncoder : public BmMemFilter {
 	typedef BmMemFilter inherited;
 
 public:
@@ -217,7 +232,7 @@ protected:
 	class BmQuotedPrintableEncoder
 		-	
 \*------------------------------------------------------------------------------*/
-class BmQpEncodedWordEncoder : public BmMemFilter {
+class IMPEXPBMMAILKIT BmQpEncodedWordEncoder : public BmMemFilter {
 	typedef BmMemFilter inherited;
 
 public:
@@ -265,7 +280,7 @@ protected:
 	class BmFoldedLineEncoder
 		-	
 \*------------------------------------------------------------------------------*/
-class BmFoldedLineEncoder : public BmMemFilter {
+class IMPEXPBMMAILKIT BmFoldedLineEncoder : public BmMemFilter {
 	typedef BmMemFilter inherited;
 
 public:
@@ -290,7 +305,7 @@ protected:
 	class BmBase64Decoder
 		-	
 \*------------------------------------------------------------------------------*/
-class BmBase64Decoder : public BmMemFilter {
+class IMPEXPBMMAILKIT BmBase64Decoder : public BmMemFilter {
 	typedef BmMemFilter inherited;
 
 public:
@@ -315,7 +330,7 @@ protected:
 	class BmBase64Encoder
 		-	
 \*------------------------------------------------------------------------------*/
-class BmBase64Encoder : public BmMemFilter {
+class IMPEXPBMMAILKIT BmBase64Encoder : public BmMemFilter {
 	typedef BmMemFilter inherited;
 
 public:
@@ -342,7 +357,7 @@ protected:
 	class BmLinebreakDecoder
 		-	
 \*------------------------------------------------------------------------------*/
-class BmLinebreakDecoder : public BmMemFilter {
+class IMPEXPBMMAILKIT BmLinebreakDecoder : public BmMemFilter {
 	typedef BmMemFilter inherited;
 
 public:
@@ -359,7 +374,7 @@ protected:
 	class BmLinebreakEncoder
 		-	
 \*------------------------------------------------------------------------------*/
-class BmLinebreakEncoder : public BmMemFilter {
+class IMPEXPBMMAILKIT BmLinebreakEncoder : public BmMemFilter {
 	typedef BmMemFilter inherited;
 
 public:
@@ -375,7 +390,7 @@ protected:
 	class BmBinaryDecoder
 		-	
 \*------------------------------------------------------------------------------*/
-class BmBinaryDecoder : public BmMemFilter {
+class IMPEXPBMMAILKIT BmBinaryDecoder : public BmMemFilter {
 	typedef BmMemFilter inherited;
 
 public:
@@ -392,7 +407,7 @@ protected:
 	class BmBinaryEncoder
 		-	
 \*------------------------------------------------------------------------------*/
-class BmBinaryEncoder : public BmMemFilter {
+class IMPEXPBMMAILKIT BmBinaryEncoder : public BmMemFilter {
 	typedef BmMemFilter inherited;
 
 public:

@@ -37,7 +37,7 @@
 
 class HGroup;
 
-class IMPEXPSANTAPARTSFORBEAM BmCheckControl : public MCheckBox
+class IMPEXPBMGUIBASE BmCheckControl : public MCheckBox
 {
 	typedef MCheckBox inherited;
 

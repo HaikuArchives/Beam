@@ -4,12 +4,13 @@
 */
 
 #include <File.h>
+#include <View.h>
 
 #include "BmApp.h"
 #include "BmBasics.h"
 #include "BmLogHandler.h"
 #include "BmMsgTypes.h"
-#include "BmResources.h"
+#include "BmRosterBase.h"
 #include "BmUtil.h"
 #include "BmWindow.h"
 
@@ -81,7 +82,7 @@ bool BmWindow::ReadStateInfo() {
 	BFile winFile;
 
 	// try to open state-cache-file...
-	if ((err = winFile.SetTo( TheResources->StateInfoFolder(), mStatefileName.String(), B_READ_ONLY)) == B_OK) {
+	if ((err = winFile.SetTo( BeamRoster->StateInfoFolder(), mStatefileName.String(), B_READ_ONLY)) == B_OK) {
 		// ...ok, archive file found, we fetch our dimensions from it:
 		try {
 			BMessage archive;
@@ -112,7 +113,7 @@ bool BmWindow::WriteStateInfo() {
 		if (this->ArchiveState( &archive) != B_OK)
 			BM_THROW_RUNTIME("Unable to archive Window-object");
 		if ((err = cacheFile.SetTo( 
-			TheResources->StateInfoFolder(), 
+			BeamRoster->StateInfoFolder(), 
 			mStatefileName.String(), 
 			B_WRITE_ONLY | B_CREATE_FILE | B_ERASE_FILE
 		)) != B_OK)

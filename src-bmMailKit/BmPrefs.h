@@ -32,6 +32,8 @@
 #ifndef _BmPrefs_h
 #define _BmPrefs_h
 
+#include "BmMailKit.h"
+
 #include <Archivable.h>
 #include <Locker.h>
 #include <Message.h>
@@ -44,7 +46,7 @@
 		- 	derived from BArchivable, so it can be read from and
 			written to a file
 \*------------------------------------------------------------------------------*/
-class BmPrefs : public BArchivable {
+class IMPEXPBMMAILKIT BmPrefs : public BArchivable {
 	typedef BArchivable inherited;
 
 	static const char* const PREFS_FILENAME;

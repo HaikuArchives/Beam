@@ -52,8 +52,8 @@ class BmPeopleList;
 typedef vector< BmString> BmStringVect;
 
 struct BmPersonInfo {
-	BmString nick;
 	BmString name;
+	BmString nick;
 	BmStringVect emails;
 	BmPersonInfo()								{}
 	BmPersonInfo( const BmString& nm, const BmString& nk, const BmString& em)

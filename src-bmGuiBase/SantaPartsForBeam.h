@@ -33,10 +33,10 @@
 #include <BeBuild.h>
 
 // import-/export-declarations for the SantaPartsForBeam shared-lib
-#ifdef BM_BUILDING_SANTAPARTSFORBEAM
-#define IMPEXPSANTAPARTSFORBEAM _EXPORT
+#ifdef BM_BUILDING_BMGUIBASE
+#define IMPEXPBMGUIBASE _EXPORT
 #else
-#define IMPEXPSANTAPARTSFORBEAM _IMPORT
+#define IMPEXPBMGUIBASE _IMPORT
 #endif
 
 #endif

@@ -44,7 +44,7 @@
 //******************************************************************************************************
 //**** ListSelectionAlert
 //******************************************************************************************************
-class IMPEXPSANTAPARTSFORBEAM ListSelectionAlert : public BWindow
+class IMPEXPBMGUIBASE ListSelectionAlert : public BWindow
 {
 	public:
 		ListSelectionAlert(const char* title, const char* info_text, BList& items, 

@@ -35,10 +35,6 @@
 #include <MessageQueue.h>
 #include <Messenger.h>
 
-#ifdef __POWERPC__
-#define BM_BUILDING_BMBASE 1
-#endif
-
 #include "BmBasics.h"
 #include "BmLogHandler.h"
 

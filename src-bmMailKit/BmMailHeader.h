@@ -31,6 +31,8 @@
 #ifndef _BmMailHeader_h
 #define _BmMailHeader_h
 
+#include "BmMailKit.h"
+
 #include <map>
 #include <vector>
 
@@ -47,7 +49,7 @@ class BmIdentity;
 	mail_format_error
 		-	exception to indicate an error in the format of a mail-message
 \*------------------------------------------------------------------------------*/
-class BM_mail_format_error : public BM_runtime_error {
+class IMPEXPBMMAILKIT BM_mail_format_error : public BM_runtime_error {
 public:
 	BM_mail_format_error (const BmString& what_arg)
 		: BM_runtime_error (what_arg.String()) 
@@ -61,7 +63,7 @@ public:
 		-	represents a single mail-addresses (parsed and split into 
 			its components)
 \*------------------------------------------------------------------------------*/
-class BmAddress {
+class IMPEXPBMMAILKIT BmAddress {
 
 public:
 	// c'tors and d'tor:
@@ -106,7 +108,7 @@ typedef vector< BmAddress> BmAddrList;
 		-	represents an adress-group or (one or more) mail-addresses 
 		-	each address is parsed and split into its components
 \*------------------------------------------------------------------------------*/
-class BmAddressList {
+class IMPEXPBMMAILKIT BmAddressList {
 
 public:
 	// c'tors and d'tor:
@@ -159,14 +161,14 @@ private:
 		- 	implements all mail-specific text-handling like header-parsing, 
 			en-/decoding, en-/decrypting
 \*------------------------------------------------------------------------------*/
-class BmMailHeader : public BmRefObj {
+class IMPEXPBMMAILKIT BmMailHeader : public BmRefObj {
 
 public:
 	typedef vector< BmString> BmValueList;
 	typedef map< BmString, BmValueList> BmHeaderMap;
 
 private:
-	class BmHeaderList {
+	class IMPEXPBMMAILKIT BmHeaderList {
 	public:
 		void Set( const BmString& fieldName, const BmString content);
 		void Add( const BmString& fieldName, const BmString content);

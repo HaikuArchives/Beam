@@ -14,10 +14,10 @@ class BCursor;
 //******************************************************************************************************
 //**** CONSTANT DEFINITIONS
 //******************************************************************************************************
-IMPEXPSANTAPARTSFORBEAM const BCursor* c_v_resize_cursor();
-IMPEXPSANTAPARTSFORBEAM const BCursor* c_h_resize_cursor();
-IMPEXPSANTAPARTSFORBEAM const BCursor* c_crosshairs_cursor();
-IMPEXPSANTAPARTSFORBEAM const BCursor* c_magnify_cursor();
+IMPEXPBMGUIBASE const BCursor* c_v_resize_cursor();
+IMPEXPBMGUIBASE const BCursor* c_h_resize_cursor();
+IMPEXPBMGUIBASE const BCursor* c_crosshairs_cursor();
+IMPEXPBMGUIBASE const BCursor* c_magnify_cursor();
 
 
 #endif //_SGB_CURSORS_H_

@@ -36,7 +36,7 @@ class BBitmap;
 //******************************************************************************************************
 //**** CLVEasyItem CLASS DECLARATION
 //******************************************************************************************************
-class IMPEXPSANTAPARTSFORBEAM CLVEasyItem : public CLVListItem
+class IMPEXPBMGUIBASE CLVEasyItem : public CLVListItem
 {
 		static const uint8 CLV_STYLE_HIGHLIGHT = 1<<1;
 		static const uint8 CLV_STYLE_HIGHLIGHT_TOP = 1<<2;

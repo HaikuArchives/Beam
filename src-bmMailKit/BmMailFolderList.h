@@ -31,6 +31,8 @@
 #ifndef _BmMailFolderList_h
 #define _BmMailFolderList_h
 
+#include "BmMailKit.h"
+
 #include <sys/stat.h>
 
 #include <map>
@@ -46,7 +48,7 @@
 	BmMailMonitor
 		-	class 
 \*------------------------------------------------------------------------------*/
-class BmMailMonitor : public BLooper {
+class IMPEXPBMMAILKIT BmMailMonitor : public BLooper {
 	typedef BLooper inherited;
 
 public:
@@ -99,7 +101,7 @@ class BmMailRef;
 	BmMailFolderList
 		-	class 
 \*------------------------------------------------------------------------------*/
-class BmMailFolderList : public BmListModel {
+class IMPEXPBMMAILKIT BmMailFolderList : public BmListModel {
 	typedef BmListModel inherited;
 
 	friend class BmMailFolder;

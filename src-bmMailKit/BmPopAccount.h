@@ -32,6 +32,8 @@
 #ifndef _BmPopAccount_h
 #define _BmPopAccount_h
 
+#include "BmMailKit.h"
+
 #include <vector>
 
 #include <Archivable.h>
@@ -63,7 +65,7 @@ typedef vector<BmUidInfo> BmUidVect;
 		- 	derived from BArchivable, so it can be read from and
 			written to a file
 \*------------------------------------------------------------------------------*/
-class BmPopAccount : public BmListModelItem {
+class IMPEXPBMMAILKIT BmPopAccount : public BmListModelItem {
 	typedef BmListModelItem inherited;
 	friend BmPopAccountList;
 
@@ -155,7 +157,7 @@ public:
 													{ mHomeFolder = s;  
 													  TellModelItemUpdated( UPD_ALL); }
 
-	bool GetPOPAddress( BNetAddress* addr) const;
+	void AddressInfo( BmString& server, uint16& port) const;
 
 	static const char* const AUTH_POP3;
 	static const char* const AUTH_APOP;
@@ -217,15 +219,15 @@ private:
 		-	holds list of all Pop-Accounts
 		-	includes functionality for checking some/all POP-servers for new mail
 \*------------------------------------------------------------------------------*/
-class BmPopAccountList : public BmListModel {
+class IMPEXPBMMAILKIT BmPopAccountList : public BmListModel {
 	typedef BmListModel inherited;
 
 	static const int16 nArchiveVersion;
 
 public:
 	// creator-func, c'tors and d'tor:
-	static BmPopAccountList* CreateInstance( BLooper* jobMetaController);
-	BmPopAccountList( BLooper* jobMetaController);
+	static BmPopAccountList* CreateInstance();
+	BmPopAccountList();
 	~BmPopAccountList();
 	
 	// native methods:
@@ -250,8 +252,6 @@ private:
 	BmPopAccountList( const BmPopAccountList&);
 	BmPopAccountList operator=( const BmPopAccountList&);
 	
-	BLooper* mJobMetaController;
-
 };
 
 #define ThePopAccountList BmPopAccountList::theInstance

@@ -86,7 +86,6 @@ BmNetJobModel::BmNetJobModel( const BmString& name, uint32 logType,
 	,	mConnection( NULL)
 	,	mConnected( false)
 	,	mStatusFilter( statusFilter)
-	,	mPwdAcquisitorFunc( NULL)
 	,	mLogType( logType)
 {
 	mReader = new BmNetIBuf( this);

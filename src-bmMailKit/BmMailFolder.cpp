@@ -31,7 +31,6 @@
 #include <Directory.h>
 #include <NodeMonitor.h>
 
-#include "BmApp.h"
 #include "BmBasics.h"
 #include "BmLogHandler.h"
 #include "BmMailFolder.h"
@@ -39,7 +38,6 @@
 #include "BmMailRef.h"
 #include "BmMailRefList.h"
 #include "BmPrefs.h"
-#include "BmResources.h"
 #include "BmStorageUtil.h"
 #include "BmUtil.h"
 

@@ -37,9 +37,8 @@
 #include "BmBasics.h"
 #include "BmEncoding.h"
 #include "BmLogHandler.h"
-#include "BmMsgTypes.h"
 #include "BmPrefs.h"
-#include "BmResources.h"
+#include "BmRosterBase.h"
 #include "BmUtil.h"
 
 
@@ -74,7 +73,7 @@ BmPrefs* BmPrefs::CreateInstance() {
 
 	// try to open settings-file...
 	prefsFilename 
-		= BmString( TheResources->SettingsPath.Path()) << "/" << PREFS_FILENAME;
+		= BmString( BeamRoster->SettingsPath()) << "/" << PREFS_FILENAME;
 	if ((err = prefsFile.SetTo( prefsFilename.String(), B_READ_ONLY)) == B_OK) {
 		// ...ok, settings file found, we fetch our prefs from it:
 		try {
@@ -94,7 +93,7 @@ BmPrefs* BmPrefs::CreateInstance() {
 		// ...no settings file yet, we start with defaultVal settings...
 		prefs = new BmPrefs;
 		// ...and create a new and shiny settings file:
-		create_directory( TheResources->SettingsPath.Path(), 0755);
+		create_directory( BeamRoster->SettingsPath(), 0755);
 		prefs->Store();
 	}
 
@@ -690,7 +689,7 @@ bool BmPrefs::Store() {
 
 	try {
 		BmString prefsFilename 
-			= BmString( TheResources->SettingsPath.Path()) 
+			= BmString( BeamRoster->SettingsPath()) 
 					<< "/" << PREFS_FILENAME;
 		if ((err = prefsFile.SetTo( 
 			prefsFilename.String(), 

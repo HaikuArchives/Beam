@@ -47,15 +47,15 @@ typedef int (*CLVCompareFuncPtr)(const CLVListItem* item1, const CLVListItem* it
 
 #define EXPANDER_SHIFT 14.0
 
-extern IMPEXPSANTAPARTSFORBEAM const float darken_tint;
+extern IMPEXPBMGUIBASE const float darken_tint;
 
-extern IMPEXPSANTAPARTSFORBEAM uint8 CLVRightArrowData[132];
-extern IMPEXPSANTAPARTSFORBEAM uint8 CLVDownArrowData[132];
+extern IMPEXPBMGUIBASE uint8 CLVRightArrowData[132];
+extern IMPEXPBMGUIBASE uint8 CLVDownArrowData[132];
 
 //******************************************************************************************************
 //**** ColumnListView CLASS DECLARATION
 //******************************************************************************************************
-class IMPEXPSANTAPARTSFORBEAM ColumnListView : public BListView
+class IMPEXPBMGUIBASE ColumnListView : public BListView
 {
 		typedef BListView inherited;
 
@@ -291,7 +291,7 @@ class IMPEXPSANTAPARTSFORBEAM ColumnListView : public BListView
 		minimax fMinMax;		
 };
 
-class IMPEXPSANTAPARTSFORBEAM CLVContainerView : public MView, public BetterScrollView
+class IMPEXPBMGUIBASE CLVContainerView : public MView, public BetterScrollView
 {
 		typedef BetterScrollView inherited;
 	public:

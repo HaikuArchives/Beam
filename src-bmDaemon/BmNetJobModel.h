@@ -118,9 +118,6 @@ public:
 													{ return mStatusFilter->StatusText(); }
 
 	// setters:
-	typedef bool BmPwdAcquisitorFunc( const BmString, BmString&);
-	inline void SetPwdAcquisitorFunc( BmPwdAcquisitorFunc* func)
-													{ mPwdAcquisitorFunc = func; }
 
 protected:
 	BNetEndpoint* mConnection;
@@ -130,8 +127,6 @@ protected:
 							// part (the status part is kept inside the filter object)
 	BmString mAnswerText;
 							// data part of server-reply
-	BmPwdAcquisitorFunc* mPwdAcquisitorFunc;
-							// function that asks user for a password (may be NULL)
 	BmString mErrorString;
 							// error-text of last failed command (Beam-generated, 
 							// not from server)

@@ -28,6 +28,9 @@
 /*************************************************************************/
 
 
+#include <map>
+#include <vector>
+
 #include <Application.h>
 #include <Bitmap.h>
 #include <FindDirectory.h>
@@ -37,19 +40,13 @@
 #include <TranslationUtils.h>
 #include <View.h>
 
-#include "regexx.hh"
-using namespace regexx;
-
-#include "BmApp.h"
 #include "BmBasics.h"
 #include "BmLogHandler.h"
 #include "BmPrefs.h"
 #include "BmResources.h"
+#include "BmRosterBase.h"
 #include "BmStorageUtil.h"
 #include "BmUtil.h"
-
-// forward declaration
-void ShowAlert( const BmString &text);
 
 BmResources* BmResources::theInstance = NULL;
 
@@ -75,6 +72,13 @@ const char* const BmResources::BM_MSG_FONT_FAMILY = "fontfamily";
 const char* const BmResources::BM_MSG_FONT_STYLE = "fontstyle";
 const char* const BmResources::BM_MSG_FONT_SIZE = "fontsize";
 
+typedef map< BmString, BBitmap*> BmIconMap;
+typedef vector< BmString> BmFontStyleVect;
+typedef map< BmString, BmFontStyleVect> BmFontMap;
+//
+static BmIconMap mIconMap;
+static BmFontMap mFontMap;
+
 /*------------------------------------------------------------------------------*\
 	CreateInstance()
 		-	initialiazes preferences by reading them from a file
@@ -92,35 +96,13 @@ BmResources* BmResources::CreateInstance() {
 		-	constructor
 \*------------------------------------------------------------------------------*/
 BmResources::BmResources()
-	:	WHITESPACE( " \t\n\r\f")
-	,	mRightArrow( BRect(0.0,0.0,10.0,10.0), B_COLOR_8_BIT, CLVRightArrowData)
+	:	mRightArrow( BRect(0.0,0.0,10.0,10.0), B_COLOR_8_BIT, CLVRightArrowData)
 	,	mDownArrow( BRect(0.0,0.0,10.0,10.0), B_COLOR_8_BIT, CLVDownArrowData)
 	,	mUrlCursor( url_cursor)
 {
-	BMimeType mt;
-	BPath path;
-
-	// determine the path to the user-settings-directory:
-	if (find_directory( B_USER_SETTINGS_DIRECTORY, &path) != B_OK)
-		BM_THROW_RUNTIME( "Sorry, could not determine user's settings-dir !?!");
-	if (BeamInTestMode)
-		// in order to avoid clobbering precious settings,
-		// we use a different settings-folder  in testmode:
-		SettingsPath.SetTo( path.Path(), "Beam_Test");
-	else if (BeamInDevelMode)
-		// in order to avoid clobbering precious settings,
-		// we use a different settings-folder  in devel-mode:
-		SettingsPath.SetTo( path.Path(), "Beam_Devel");
-	else
-		// standard settings folder:
-		SettingsPath.SetTo( path.Path(), "Beam");
-	
 	// Load all font-info:
 	FetchFonts();
 
-	// Determine our own FQDN from network settings file, if possible:
-	FetchOwnFQDN();
-	
 	// we fill necessary info about the standard font-height:
 	be_plain_font->GetHeight( &BePlainFontHeight);
 }
@@ -211,7 +193,7 @@ void BmResources::FetchIcons() {
 	const char* name;
 	size_t length;
 	char *data;
-	BmString defaultIconPath = bmApp->AppPath() + ThePrefs->nDefaultIconset;
+	BmString defaultIconPath = BeamRoster->AppPath() + ThePrefs->nDefaultIconset;
 	BmString iconPath 
 		= ThePrefs->GetString( "IconPath", defaultIconPath.String());
 	for( 	int32 i=0; 
@@ -236,46 +218,6 @@ void BmResources::FetchIcons() {
 }
 
 /*------------------------------------------------------------------------------*\
-	FetchOwnFQDN()
-		-	fetches hostname and domainname from network settings and build FQDN 
-			from that.
-\*------------------------------------------------------------------------------*/
-void BmResources::FetchOwnFQDN() {
-	BmString buffer;
-	Regexx rx;
-#ifdef BEAM_FOR_BONE
-	FetchFile( "/etc/hostname", mOwnFQDN);
-	mOwnFQDN.RemoveSet( " \n\r\t");
-	if (!mOwnFQDN.Length())
-		mOwnFQDN = "bepc";
-	FetchFile( "/etc/resolv.conf", buffer);
-	if (rx.exec( buffer, "DOMAIN\\s*(\\S*)", Regexx::nocase)
-	&& rx.match[0].atom[0].Length())
-		mOwnFQDN << "." << rx.match[0].atom[0];
-	else
-		mOwnFQDN << "." << time( NULL) << ".fake";
-#else
-	BPath path;
-	if (find_directory( B_COMMON_SETTINGS_DIRECTORY, &path) == B_OK) {
-		FetchFile( BmString(path.Path())<<"/network", buffer);
-		if (rx.exec( buffer, "HOSTNAME\\s*=[ \\t]*(\\S*)", Regexx::nocase)) {
-			mOwnFQDN = rx.match[0].atom[0];
-			if (!mOwnFQDN.Length())
-				mOwnFQDN = "bepc";
-			if (rx.exec( buffer, "DNS_DOMAIN\\s*=[ \\t]*(\\S*)", Regexx::nocase)
-			&& rx.match[0].atom[0].Length())
-				mOwnFQDN << "." << rx.match[0].atom[0];
-			else
-				mOwnFQDN << "." << time( NULL) << ".fake";
-		}
-	}
-#endif
-	if (!mOwnFQDN.Length())
-		mOwnFQDN << "bepc." << time( NULL) << ".fake";
-	mOwnFQDN.RemoveSet( "\r\n");
-}
-
-/*------------------------------------------------------------------------------*\
 	FetchFonts()
 		-	reads info about all existing font families & styles into the font-map.
 \*------------------------------------------------------------------------------*/
@@ -290,31 +232,6 @@ void BmResources::FetchFonts() {
 				font_style style;
 				if ( get_font_style(family, j, &style, &flags) == B_OK ) {
 					mFontMap[family].push_back( style);
-				}
-			}
-		}
-	}
-}
-
-/*------------------------------------------------------------------------------*\
-	CheckMimeTypeFile( sig, appModTime)
-		-	checks age of our own mimetype-file 
-			(.../settings/beos_mime/application/x-vnd.zooey-beam)
-			and removes the file if it's older than the application file.
-\*------------------------------------------------------------------------------*/
-void BmResources::CheckMimeTypeFile( BmString sig, time_t appModTime) {
-	BPath path;
-	if (find_directory( B_COMMON_SETTINGS_DIRECTORY, &path) == B_OK) {
-		sig.ToLower();
-		BEntry mtEntry( (BmString(path.Path())<<"/beos_mime/"<<sig).String());
-		if (mtEntry.InitCheck() == B_OK) {
-			time_t modTime;
-			if (mtEntry.GetModificationTime( &modTime) == B_OK) {
-				if (appModTime > modTime) {
-					// application is newer than mimetype-file, we simply remove
-					// that and let BeOS recreate it when needed. The new version
-					// will then contain all current icons, etc.
-					mtEntry.Remove();
 				}
 			}
 		}
@@ -424,48 +341,6 @@ float BmResources::FontLineHeight( const BFont* font) {
 	return fh.ascent 
 			+ fh.descent 
 			+ fh.leading; 
-}
-
-/*------------------------------------------------------------------------------*\
-	MailCacheFolder()
-		-	returns a Directory* that is set to the folder where Beam's mail-cache
-			lives (normally .../settings/Beam/MailCache/)
-\*------------------------------------------------------------------------------*/
-BDirectory* BmResources::MailCacheFolder() {
-	return GetFolder( BmString( SettingsPath.Path()) << "/MailCache/", 
-							mMailCacheFolder);
-}
-
-/*------------------------------------------------------------------------------*\
-	StateInfoFolder()
-		-	returns a Directory* that is set to the folder where Beam's state-info
-			lives (normally .../settings/Beam/StateInfo/)
-\*------------------------------------------------------------------------------*/
-BDirectory* BmResources::StateInfoFolder() {
-	return GetFolder( BmString( SettingsPath.Path()) << "/StateInfo/", 
-							mStateInfoFolder);
-}
-
-/*------------------------------------------------------------------------------*\
-	GetFolder( name, dir)
-		-	initializes the given BDirectory dir to the given path name
-		-	if the directory does not yet exist, it is created
-		-	a pointer to the initialized directory is returned, so you probably
-			don't want to delete that
-\*------------------------------------------------------------------------------*/
-BDirectory* BmResources::GetFolder( const BmString& name, BDirectory& dir) {
-	if (dir.InitCheck() != B_OK) {
-		status_t res = dir.SetTo( name.String());
-		if (res != B_OK) {
-			if ((res = create_directory( name.String(), 0755) 
-			|| dir.SetTo( name.String())) != B_OK) {
-				BM_SHOWERR( BmString("Sorry, could not create folder ") << name
-									<< ".\n\t Going down!");
-				exit( 10);
-			}
-		}
-	}
-	return &dir;
 }
 
 /*------------------------------------------------------------------------------*\

@@ -31,6 +31,8 @@
 #ifndef _BmStorageUtil_h
 #define _BmStorageUtil_h
 
+#include "BmMailKit.h"
+
 #include <set>
 
 #include <Entry.h>
@@ -41,27 +43,38 @@
 
 struct entry_ref;
 
+IMPEXPBMMAILKIT 
 status_t WatchNode( const node_ref *node, uint32 flags, BHandler *handler);
 
+IMPEXPBMMAILKIT 
 bool MoveToTrash( const entry_ref* refs, int32 count);
 
+IMPEXPBMMAILKIT 
 bool CheckMimeType( const entry_ref* eref, const char* type);
 
+IMPEXPBMMAILKIT 
 BmString DetermineMimeType( const entry_ref* eref, bool doublecheck=false);
 
+IMPEXPBMMAILKIT 
 void EnsureIndexExists( const char* attrName);
 
+IMPEXPBMMAILKIT 
 bool FetchFile( BmString fileName, BmString& contents);
 
+IMPEXPBMMAILKIT 
 bool BmReadStringAttr( const BNode* node, const char* attrName, BmString& out);
 
+IMPEXPBMMAILKIT 
 BmString BM_REFKEY( const node_ref& nref);
+
+IMPEXPBMMAILKIT 
+status_t SetupFolder( const BmString& name, BDirectory* dir);
 
 /*------------------------------------------------------------------------------*\
 	BmTempFileList
 		-	
 \*------------------------------------------------------------------------------*/
-class BmTempFileList {
+class IMPEXPBMMAILKIT BmTempFileList {
 	typedef set<BmString> BmFileSet;
 public:
 	BmTempFileList() : mCount(0) 			{}

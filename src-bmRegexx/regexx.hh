@@ -40,14 +40,14 @@
 
 namespace regexx {
 
-	extern IMPEXPLIBREGEXX BmString BM_REGEXX_DEFAULT_STRING;
+	extern IMPEXPBMREGEXX BmString BM_REGEXX_DEFAULT_STRING;
 	
   /** Class to store atoms.
    *
    *  @author Gustavo Niemeyer
    *
    */
-  class IMPEXPLIBREGEXX RegexxMatchAtom
+  class IMPEXPBMREGEXX RegexxMatchAtom
   {
 
   public:
@@ -121,7 +121,7 @@ namespace regexx {
    *  @author Gustavo Niemeyer
    *
    */
-  class IMPEXPLIBREGEXX RegexxMatch
+  class IMPEXPBMREGEXX RegexxMatch
   {
 
   public:
@@ -203,7 +203,7 @@ namespace regexx {
    * @author Gustavo Niemeyer
    *
    **/
-  class IMPEXPLIBREGEXX Regexx
+  class IMPEXPBMREGEXX Regexx
   {
 
   public:

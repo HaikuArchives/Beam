@@ -53,6 +53,7 @@ using namespace regexx;
 #include "BmPopAccount.h"
 #include "BmPopper.h"
 #include "BmPrefs.h"
+#include "BmRosterBase.h"
 #include "BmUtil.h"
 
 // standard logfile-name for this class:
@@ -293,8 +294,11 @@ void BmPopper::UpdateProgress( uint32 numBytes) {
 		-	Initiates network-connection to POP-server
 \*------------------------------------------------------------------------------*/
 void BmPopper::StateConnect() {
+	BmString server;
+	uint16 port;
+	mPopAccount->AddressInfo( server, port);
 	BNetAddress addr;
-	if (!mPopAccount->GetPOPAddress( &addr)) {
+	if (addr.SetTo( server.String(), port) != B_OK) {
 		BmString s = BmString("Could not determine address of POP-Server ") 
 							<< mPopAccount->POPServer();
 		throw BM_network_error( s);
@@ -341,9 +345,11 @@ void BmPopper::StateLogin() {
 			// use stored password:
 			pwd = mPopAccount->Password();
 			pwdGiven = true;
-		} else if (mPwdAcquisitorFunc && ShouldContinue()) {
+		} else if (ShouldContinue()) {
 			// ask user about password:
-			pwdGiven = mPwdAcquisitorFunc( Name(), pwd);
+			BmString text( "Please enter password for POP-Account <");
+			text << Name() << ">:";
+			pwdGiven = BeamRoster->AskUserForPwd( text, pwd);
 		}
 		if (!pwdGiven || !ShouldContinue()) {
 			// user has cancelled, we stop

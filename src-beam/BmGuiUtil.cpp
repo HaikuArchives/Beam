@@ -103,7 +103,8 @@ BMenuItem* CreateSubMenuItem( const char* label, int32 msgWhat,
 		-	
 \*------------------------------------------------------------------------------*/
 BMenuItem* CreateSubMenuItem( const char* label, BMessage* msg, 
-										const char* idForShortcut) {
+										const char* idForShortcut) 
+{
 	BmString name( idForShortcut ? idForShortcut : label);
 	name.RemoveAll( "...");
 	BmString shortcut = ThePrefs->GetShortcutFor( name.String());
@@ -128,50 +129,6 @@ BMenuItem* CreateSubMenuItem( const char* label, BMessage* msg,
 	else if (shortcut.Length())
 		item->SetShortcut( shortcut[0], modifiers);
 	return item;
-}
-
-const char* const MSG_CHARSET = "bm:chset";
-/*------------------------------------------------------------------------------*\
-	( )
-		-	
-\*------------------------------------------------------------------------------*/
-void AddCharsetMenu( BMenu* menu, BHandler* target, int32 msgType) {
-	BmString charset;
-	if (!menu)
-		return;
-	menu->SetLabelFromMarked( false);
-	// add standard entries:
-	vector<BmString> charsets;
-	BmString sets = ThePrefs->GetString( "StandardCharsets");
-	split( BmPrefs::nListSeparator, sets, charsets);
-	int32 numStdSets = charsets.size();
-	for( int i=0; i<numStdSets; ++i) {
-		charset = charsets[i];
-		charset.ToLower();
-		BMessage* msg = new BMessage( msgType);
-		msg->AddString( MSG_CHARSET, charset.String());
-		AddItemToMenu( menu, CreateMenuItem( charset.String(), msg), target);
-	}
-	// add all other charsets:
-	BMenu* moreMenu = new BMenu( "<show all>");
-	moreMenu->SetLabelFromMarked( false);
-	BFont font( *be_plain_font);
-	font.SetSize( 10);
-	moreMenu->SetFont( &font);
-	BmCharsetMap::const_iterator iter;
-	for( iter = TheCharsetMap.begin(); iter != TheCharsetMap.end(); ++iter) {
-		if (iter->second) {
-			charset = iter->first;
-			charset.ToLower();
-			BMessage* msg = new BMessage( msgType);
-			msg->AddString( MSG_CHARSET, charset.String());
-			AddItemToMenu( moreMenu, 
-								CreateMenuItem( charset.String(), msg), 
-								target);
-		}
-	}
-	menu->AddSeparatorItem();
-	menu->AddItem( moreMenu);
 }
 
 /*------------------------------------------------------------------------------*\

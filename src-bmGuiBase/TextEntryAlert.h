@@ -47,7 +47,7 @@ class TextEntryAlertTextEntryView;
 //******************************************************************************************************
 //**** TextEntryAlert
 //******************************************************************************************************
-class IMPEXPSANTAPARTSFORBEAM TextEntryAlert : public BWindow
+class IMPEXPBMGUIBASE TextEntryAlert : public BWindow
 {
 	public:
 		TextEntryAlert(const char* title, const char* info_text, const char* initial_entry_text, 

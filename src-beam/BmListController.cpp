@@ -50,12 +50,16 @@ using namespace regexx;
 #include "BmLogHandler.h"
 #include "BmPrefs.h"
 #include "BmResources.h"
+#include "BmRosterBase.h"
 #include "BmUtil.h"
 
 /********************************************************************************\
 	BmListViewItem
 \********************************************************************************/
 
+enum Columns {
+	COL_EXPANDER = 0
+};
 
 const char* const BmListViewItem::MSG_EXPANDED = 	"bm:expnd";
 const char* const BmListViewItem::MSG_CHILDNAMES = "bm:chldnm";
@@ -105,6 +109,7 @@ void BmListViewItem::UpdateView( BmUpdFlags flags, bool redraw,
 		BmListModelItem* item = ModelItem();
 		if (item)
 			SetSuperItem( item->size() != 0);
+		updColBitmap |= (1UL<<COL_EXPANDER);
 	}
 	BRegion updateRegion;
 	bool needReSort = false;
@@ -960,7 +965,7 @@ void BmListViewController::WriteStateInfo() {
 			BM_THROW_RUNTIME( BmString("Unable to archive State-Info for ")
 										<< Name());
 		if ((err = stateInfoFile.SetTo( 
-			TheResources->StateInfoFolder(), 
+			BeamRoster->StateInfoFolder(), 
 			stateInfoFilename.String(), 
 			B_WRITE_ONLY | B_CREATE_FILE | B_ERASE_FILE
 		)) != B_OK)
@@ -1035,7 +1040,7 @@ void BmListViewController::ReadStateInfo() {
 	stateInfoFilename = StateInfoBasename() << "_" << ModelName();
 	if (mUseStateCache
 	&& (err = stateInfoFile.SetTo( 
-		TheResources->StateInfoFolder(), 
+		BeamRoster->StateInfoFolder(), 
 		stateInfoFilename.String(), 
 		B_READ_ONLY
 	)) != B_OK) {
@@ -1045,13 +1050,13 @@ void BmListViewController::ReadStateInfo() {
 		Regexx rx( stateInfoFilename, "^(.+?_.+?_\\d+)_\\d+(.+?)$", "$1$2");
 		BmString oldStateInfoFilename = rx;
 		BEntry entry( 
-			TheResources->StateInfoFolder(), oldStateInfoFilename.String()
+			BeamRoster->StateInfoFolder(), oldStateInfoFilename.String()
 		);
 		err = (entry.InitCheck() || entry.Rename( stateInfoFilename.String()));
 	}
 	if (mUseStateCache
 	&& (err = stateInfoFile.SetTo( 
-		TheResources->StateInfoFolder(), 
+		BeamRoster->StateInfoFolder(), 
 		stateInfoFilename.String(), 
 		B_READ_ONLY
 	)) == B_OK) {

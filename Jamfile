@@ -1,12 +1,15 @@
 SubDir TOP ;
 
 SubInclude TOP src-bmBase ;
-SubInclude TOP src-libRegexx ;
-SubInclude TOP src-santaPartsForBeam ;
+SubInclude TOP src-bmRegexx ;
+SubInclude TOP src-bmMailKit ;
+SubInclude TOP src-bmDaemon ;
+SubInclude TOP src-bmGuiBase ;
 SubInclude TOP src-beam ;
 SubInclude TOP src-deskbarItem ;
 SubInclude TOP src-filter-addons ;
 SubInclude TOP src-tests ;
 
-MakeDistro distro ;
+Distro distro ;
 
+FullDistro fulldistro ;

@@ -50,15 +50,15 @@ class BStringView;
 //******************************************************************************************************
 //**** Constants
 //******************************************************************************************************
-IMPEXPSANTAPARTSFORBEAM const uint32 c_about_window_to_front = 'AbTF';
-IMPEXPSANTAPARTSFORBEAM const uint32 c_about_window_closed = 'AbCl';
-IMPEXPSANTAPARTSFORBEAM const uint32 c_about_window_url_invoked = 'AbUr';
+IMPEXPBMGUIBASE const uint32 c_about_window_to_front = 'AbTF';
+IMPEXPBMGUIBASE const uint32 c_about_window_closed = 'AbCl';
+IMPEXPBMGUIBASE const uint32 c_about_window_url_invoked = 'AbUr';
 
 
 //******************************************************************************************************
 //**** ImageAboutWindow
 //******************************************************************************************************
-class IMPEXPSANTAPARTSFORBEAM ImageAboutWindow : public BWindow
+class IMPEXPBMGUIBASE ImageAboutWindow : public BWindow
 {
 	public:
 		//Constructor and destructor

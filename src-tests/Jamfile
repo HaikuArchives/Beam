@@ -2,8 +2,10 @@ SubDir TOP src-tests ;
 
 SubDirHdrs $(TOP) src-beam ;
 SubDirHdrs $(TOP) src-bmBase ;
-SubDirHdrs $(TOP) src-libRegexx ;
-SubDirHdrs $(TOP) src-santaPartsForBeam ;
+SubDirHdrs $(TOP) src-bmRegexx ;
+SubDirHdrs $(TOP) src-bmMailKit ;
+SubDirHdrs $(TOP) src-bmDaemon ;
+SubDirHdrs $(TOP) src-bmGuiBase ;
 SubDirHdrs $(TOP) src-deskbarItem ;
 
 SubDirSysHdrs /boot/home/config/include ;
@@ -34,14 +36,13 @@ Application TestBeam
 		Utf8DecoderTest.cpp
 		Utf8EncoderTest.cpp
 	: 	
-		beamInParts.a santaPartsForBeam.so regexx.so bmBase.so 
-		layout iconv pcre tracker cppunit $(STDC++LIB) netapi translation be
+		beamInParts.a bmMailKit.so bmDaemon.so 
+		bmGuiBase.so bmRegexx.so bmBase.so 
+		layout tracker cppunit $(STDC++LIB) netapi translation be
 	;
-
 XRes TestBeam 
 	: 
 		[ FDirName $(TOP) resources BmIcons.rsrc ]  
 		[ FDirName $(TOP) resources BmTestAppResources.rsrc ] 
 	;
-
 MimeSet TestBeam ;

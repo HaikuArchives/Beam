@@ -36,7 +36,7 @@
 #include "BmFilter.h"
 #include "BmFilterChain.h"
 #include "BmLogHandler.h"
-#include "BmResources.h"
+#include "BmRosterBase.h"
 #include "BmStorageUtil.h"
 #include "BmUtil.h"
 
@@ -375,7 +375,7 @@ BmFilterChainList::~BmFilterChainList() {
 		-	returns the name of the settings-file for the filterchain-list
 \*------------------------------------------------------------------------------*/
 const BmString BmFilterChainList::SettingsFileName() {
-	return BmString( TheResources->SettingsPath.Path()) << "/FilterChains";
+	return BmString( BeamRoster->SettingsPath()) << "/FilterChains";
 }
 
 /*------------------------------------------------------------------------------*\

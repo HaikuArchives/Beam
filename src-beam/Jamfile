@@ -1,8 +1,10 @@
 SubDir TOP src-beam ;
 
 SubDirHdrs $(TOP) src-bmBase ;
-SubDirHdrs $(TOP) src-libRegexx ;
-SubDirHdrs $(TOP) src-santaPartsForBeam ;
+SubDirHdrs $(TOP) src-bmRegexx ;
+SubDirHdrs $(TOP) src-bmMailKit ;
+SubDirHdrs $(TOP) src-bmDaemon ;
+SubDirHdrs $(TOP) src-bmGuiBase ;
 SubDirHdrs $(TOP) src-deskbarItem ;
 
 SubDirSysHdrs /boot/home/config/include ;
@@ -13,41 +15,22 @@ LINKFLAGS += -L/boot/home/config/lib ;
 StaticLibrary beamInParts.a
 	:  
 		BmApp.cpp
-		BmBodyPartList.cpp
 		BmBodyPartView.cpp
-		BmController.cpp
-		BmDataModel.cpp
-		BmEncoding.cpp
-		BmFilter.cpp
-		BmFilterChain.cpp
 		BmGuiUtil.cpp
-		BmIdentity.cpp
 		BmJobStatusWin.cpp
 		BmListController.cpp
 		BmLogWindow.cpp
-		BmMail.cpp
 		BmMailEditWin.cpp
-		BmMailFactory.cpp
-		BmMailFilter.cpp
-		BmMailFolder.cpp
-		BmMailFolderList.cpp
+		BmMailEditWinPart2.cpp
 		BmMailFolderView.cpp
-		BmMailHeader.cpp
 		BmMailHeaderView.cpp
 		BmMailMover.cpp
-		BmMailRef.cpp
-		BmMailRefList.cpp
 		BmMailRefView.cpp
 		BmMailView.cpp
 		BmMailViewWin.cpp
 		BmMainWindow.cpp
 		BmMenuController.cpp
-		BmNetJobModel.cpp
-		BmNetUtil.cpp
 		BmPeople.cpp
-		BmPopAccount.cpp
-		BmPopper.cpp
-		BmPrefs.cpp
 		BmPrefsFilterChainView.cpp
 		BmPrefsFilterView.cpp
 		BmPrefsGeneralView.cpp
@@ -61,15 +44,10 @@ StaticLibrary beamInParts.a
 		BmPrefsSignatureView.cpp
 		BmPrefsView.cpp
 		BmPrefsWin.cpp
-		BmRefManager.cpp
 		BmResources.cpp
+		BmRoster.cpp
 		BmRulerView.cpp
-		BmSignature.cpp
-		BmSmtp.cpp
-		BmSmtpAccount.cpp
-		BmStorageUtil.cpp
 		BmToolbarButton.cpp
-		BmUtil.cpp
 		BmWindow.cpp
 	;
 	
@@ -79,8 +57,9 @@ Application Beam
 	:  
 		Beam.cpp
 	: 	
-		beamInParts.a santaPartsForBeam.so regexx.so bmBase.so 
-		layout iconv pcre tracker $(STDC++LIB) netapi translation be 
+		bmBase.so bmRegexx.so bmMailKit.so bmDaemon.so 
+		bmGuiBase.so beamInParts.a
+		layout tracker $(STDC++LIB) translation be 
 	;
 
 XRes Beam 

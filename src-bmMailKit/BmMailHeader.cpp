@@ -37,16 +37,14 @@
 #include "regexx.hh"
 using namespace regexx;
 
-#include "BmApp.h"
 #include "BmEncoding.h"
 	using namespace BmEncoding;
 #include "BmIdentity.h"
 #include "BmLogHandler.h"
 #include "BmMail.h"
 #include "BmMailHeader.h"
-#include "BmNetUtil.h"
 #include "BmPrefs.h"
-#include "BmResources.h"
+#include "BmRosterBase.h"
 #include "BmSmtpAccount.h"
 
 #undef BM_LOGNAME
@@ -900,7 +898,7 @@ void BmMailHeader::ParseHeader( const BmString &header) {
 			continue;
 		}
 		fieldName.SetTo( headerField, pos);
-		fieldName.RemoveSet( TheResources->WHITESPACE);
+		fieldName.RemoveSet( BM_WHITESPACE.String());
 		headerField.CopyInto( fieldBody, pos+1, headerField.Length());
 
 		// unfold the field-body and remove leading and trailing whitespace:
@@ -1131,7 +1129,7 @@ bool BmMailHeader::ConstructRawText( BmStringOBuf& msgText,
 	BmString agentField = ThePrefs->GetBool( "PreferUserAgentOverX-Mailer", true)
 								? BM_FIELD_USER_AGENT : BM_FIELD_X_MAILER;
 	if (IsFieldEmpty( agentField)) {
-		BmString ourID = bmApp->BmAppNameWithVersion;
+		BmString ourID = BeamRoster->AppNameWithVersion();
 		SetFieldVal( agentField, ourID.String());
 	}
 
@@ -1149,7 +1147,7 @@ bool BmMailHeader::ConstructRawText( BmStringOBuf& msgText,
 		if (!domain.Length()) {
 			// no account given or it has an empty domain, we try to 
 			// find out manually:
-			domain = OwnFQDN();
+			domain = BeamRoster->OwnFQDN();
 			if (!domain.Length()) {
 				BM_SHOWERR( "Identity crisis!\nBeam is unable to determine "
 								"full-qualified domainname of this computer, "

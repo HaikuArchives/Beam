@@ -35,13 +35,12 @@
 #include <NodeMonitor.h>
 #include <Path.h>
 
-#include "BmApp.h"
 #include "BmBasics.h"
 #include "BmLogHandler.h"
 #include "BmMailFolderList.h"
 #include "BmMailRef.h"
 #include "BmPrefs.h"
-#include "BmResources.h"
+#include "BmRosterBase.h"
 #include "BmStorageUtil.h"
 #include "BmUtil.h"
 
@@ -920,14 +919,14 @@ void BmMailFolderList::RemoveController( BmController* controller) {
 		BEntry folderCache( SettingsFileName().String());
 		folderCache.Remove();
 		// remove mailref-caches:
-		BDirectory* mailCacheDir = TheResources->MailCacheFolder();
+		BDirectory* mailCacheDir = BeamRoster->MailCacheFolder();
 		mailCacheDir->Rewind();
 		BEntry mailCache;
 		while( mailCacheDir->GetNextEntry( &mailCache) == B_OK) {
 			mailCache.Remove();
 		}
 		// remove state-info caches for mailref- & folder-listview:
-		BDirectory* stateCacheDir = TheResources->StateInfoFolder();
+		BDirectory* stateCacheDir = BeamRoster->StateInfoFolder();
 		stateCacheDir->Rewind();
 		BEntry stateCache;
 		while( stateCacheDir->GetNextEntry( &stateCache) == B_OK) {
@@ -946,5 +945,5 @@ void BmMailFolderList::RemoveController( BmController* controller) {
 		-	
 \*------------------------------------------------------------------------------*/
 const BmString BmMailFolderList::SettingsFileName() {
-	return BmString( TheResources->SettingsPath.Path()) << "/" << "Folder Cache";
+	return BmString( BeamRoster->SettingsPath()) << "/" << "Folder Cache";
 }

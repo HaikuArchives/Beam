@@ -37,13 +37,13 @@
 
 namespace regexx {
 
-  IMPEXPLIBREGEXX vector<BmString> split(const BmString& _where, const BmString& _str);
+  IMPEXPBMREGEXX vector<BmString> split(const BmString& _where, const BmString& _str);
 
-  IMPEXPLIBREGEXX void split(const BmString& _where, const BmString& _str, vector<BmString>& v);
+  IMPEXPBMREGEXX void split(const BmString& _where, const BmString& _str, vector<BmString>& v);
 
-  IMPEXPLIBREGEXX vector<BmString> splitex(const BmString& _exp, const BmString& _str);
+  IMPEXPBMREGEXX vector<BmString> splitex(const BmString& _exp, const BmString& _str);
 
-  IMPEXPLIBREGEXX void splitex(const BmString& _regex, const BmString& _str, vector<BmString>& v);
+  IMPEXPBMREGEXX void splitex(const BmString& _regex, const BmString& _str, vector<BmString>& v);
 
 }
 

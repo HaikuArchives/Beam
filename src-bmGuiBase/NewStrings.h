@@ -22,23 +22,23 @@
 //Fills the StringsWidths array with the width of each individual string in the array using 
 //BFont::GetStringWidths(), then finds the longest string width in the array and returns that width.
 //If a string_widths array is provided, it fills it in with the length of each string.
-IMPEXPSANTAPARTSFORBEAM 
+IMPEXPBMGUIBASE 
 float GetStringsMaxWidth(const char** strings, int32 num_strings, const BFont* font,
 	float* string_widths = NULL);
 
 //Each of these functions either duplicates or concatenates the strings into a new char array allocated
 //with new.  The resulting char array must be delete[]'d when finished with it.
-IMPEXPSANTAPARTSFORBEAM char *Strdup_new(const char *source);
-IMPEXPSANTAPARTSFORBEAM char *Strcat_new(const char *string_1, const char *string_2);
-IMPEXPSANTAPARTSFORBEAM char *Strcat_new(const char *string_1, const char *string_2, const char *string_3);
-IMPEXPSANTAPARTSFORBEAM char *Strcat_new(const char *string_1, const char *string_2, const char *string_3, const char *string_4);
+IMPEXPBMGUIBASE char *Strdup_new(const char *source);
+IMPEXPBMGUIBASE char *Strcat_new(const char *string_1, const char *string_2);
+IMPEXPBMGUIBASE char *Strcat_new(const char *string_1, const char *string_2, const char *string_3);
+IMPEXPBMGUIBASE char *Strcat_new(const char *string_1, const char *string_2, const char *string_3, const char *string_4);
 
 //Added because due to some error, the Be libraries on x86 don't export strtcopy.  Len includes the null
 //terminator.
-IMPEXPSANTAPARTSFORBEAM char *Strtcpy(char *dst, const char *src, int len);
+IMPEXPBMGUIBASE char *Strtcpy(char *dst, const char *src, int len);
 
 //Just some handy functions....
-IMPEXPSANTAPARTSFORBEAM void StrToUpper(char* string);
-IMPEXPSANTAPARTSFORBEAM void StrToLower(char* string);
+IMPEXPBMGUIBASE void StrToUpper(char* string);
+IMPEXPBMGUIBASE void StrToLower(char* string);
 
 #endif

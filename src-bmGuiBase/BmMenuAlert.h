@@ -23,7 +23,7 @@ class BmMenuControl;
 //******************************************************************************************************
 //**** BmMenuAlert
 //******************************************************************************************************
-class IMPEXPSANTAPARTSFORBEAM BmMenuAlert : public MWindow
+class IMPEXPBMGUIBASE BmMenuAlert : public MWindow
 {
 	public:
 		BmMenuAlert(float width, float height, const char* title, const char* info_text, 

@@ -32,11 +32,12 @@
 #ifndef _BmFilter_h
 #define _BmFilter_h
 
+#include "BmMailKit.h"
+
 #include <Archivable.h>
 #include <Message.h>
 
 #include "BmFilterAddon.h"
-#include "BmFilterAddonPrefs.h"
 #include "BmDataModel.h"
 #include "BmString.h"
 
@@ -47,11 +48,13 @@ enum {
 						// sent to JobMetaController in order to start filter-job
 };
 
+class BmFilterAddonPrefsView;
+
 /*------------------------------------------------------------------------------*\
 	BmFilterAddonDescr
 		-	holds the known info about a single addon
 \*------------------------------------------------------------------------------*/
-struct BmFilterAddonDescr {
+struct IMPEXPBMMAILKIT BmFilterAddonDescr {
 	BmFilterAddonDescr()
 		:	image( 0)
 		,	instantiateFilterFunc( NULL)
@@ -69,7 +72,7 @@ struct BmFilterAddonDescr {
 	BmFilter 
 		-	base class for all filters
 \*------------------------------------------------------------------------------*/
-class BmFilter : public BmListModelItem {
+class IMPEXPBMMAILKIT BmFilter : public BmListModelItem {
 	typedef BmListModelItem inherited;
 
 public:
@@ -122,13 +125,13 @@ private:
 
 
 typedef map< BmString, BmFilterAddonDescr> BmFilterAddonMap;
-extern BmFilterAddonMap FilterAddonMap;
+extern IMPEXPBMMAILKIT BmFilterAddonMap FilterAddonMap;
 
 /*------------------------------------------------------------------------------*\
 	BmFilterList 
 		-	holds list of all Filters
 \*------------------------------------------------------------------------------*/
-class BmFilterList : public BmListModel {
+class IMPEXPBMMAILKIT BmFilterList : public BmListModel {
 	typedef BmListModel inherited;
 
 	static const int16 nArchiveVersion;

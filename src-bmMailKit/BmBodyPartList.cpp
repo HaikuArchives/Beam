@@ -32,6 +32,7 @@
 #include <Invoker.h>
 
 #include <Autolock.h>
+#include <Directory.h>
 #include <File.h>
 #include <FindDirectory.h>
 #include <NodeInfo.h>
@@ -49,7 +50,7 @@ using namespace regexx;
 #include "BmMail.h"
 #include "BmMailHeader.h"
 #include "BmPrefs.h"
-#include "BmResources.h"
+#include "BmRosterBase.h"
 #include "BmStorageUtil.h"
 #include "BmUtil.h"
 
@@ -445,7 +446,7 @@ void BmBodyPart::SetTo( const BmString& msgtext, int32 start, int32 length,
 	// transferEncoding
 	BM_LOG2( BM_LogMailParse, "parsing Content-Transfer-Encoding");
 	transferEncoding = header->GetFieldVal( BM_FIELD_CONTENT_TRANSFER_ENCODING);
-	transferEncoding.RemoveSet( TheResources->WHITESPACE);
+	transferEncoding.RemoveSet( BM_WHITESPACE.String());
 							// some broken (webmail)-clients produce stuff like
 							// "7 bit"...
 	transferEncoding.IReplaceAll( "bits", "bit");

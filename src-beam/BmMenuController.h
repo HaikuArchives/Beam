@@ -44,30 +44,18 @@ class BmMenuController : public BmMenuControllerBase
 public:
 
 	BmMenuController( const char* label, BHandler* msgTarget, 
-							BMessage* msgTemplate, BmListModel* listModel,
-							int32 flags=0);
-
-	BmMenuController( const char* label, BHandler* msgTarget, 
 							BMessage* msgTemplate,
-							RebuildMenuFunc fn, int32 flags=0);
+							BmRebuildMenuFunc fn, int32 flags=0);
 	
 	~BmMenuController();
 
-	// native methods
+	// overrides of base-methods:
 	void UpdateItemList();
 	
-protected:
-	BmListModel* mListModel;
-
 private:
 	// Hide copy-constructor and assignment:
 	BmMenuController( const BmMenuController&);
 	BmMenuController operator=( const BmMenuController&);
 };
-
-
-
-void BmRebuildCharsetMenu( BmMenuControllerBase*);
-
 
 #endif

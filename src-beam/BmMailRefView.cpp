@@ -51,6 +51,7 @@
 #include "BmMsgTypes.h"
 #include "BmPrefs.h"
 #include "BmResources.h"
+#include "BmRosterBase.h"
 #include "BmStorageUtil.h"
 #include "BmUtil.h"
 
@@ -591,8 +592,8 @@ bool BmMailRefView::InitiateDrag( BPoint, int32 index, bool wasSelected) {
 	dummyView->SetHighColor( B_TRANSPARENT_COLOR);
 	dummyView->FillRect( dragRect);
 	dummyView->SetDrawingMode( B_OP_ALPHA);
-	dummyView->SetHighColor( 0, 0, 0, 128);
-	dummyView->SetBlendingMode( B_CONSTANT_ALPHA, B_ALPHA_COMPOSITE);
+	dummyView->SetHighColor( ui_color( B_UI_PANEL_TEXT_COLOR));
+	dummyView->SetBlendingMode( B_PIXEL_ALPHA, B_ALPHA_COMPOSITE);
 	// now we add all selected items to drag-image and to drag-msg:
 	for( int32 i=0; (currIdx=CurrentSelection( i))>=0; ++i) {
 		refItem = dynamic_cast<BmMailRefItem*>(ItemAt( currIdx));
@@ -887,7 +888,7 @@ void BmMailRefView::AddMailRefMenu( BMenu* menu, BHandler* target,
 
 	BmMenuController* moveMenu
 		= new BmMenuController( MENU_MOVE, target, new BMessage( BMM_MOVE), 
-										TheMailFolderList.Get(), 
+										&BmRosterBase::RebuildFolderMenu, 
 										BM_MC_SKIP_FIRST_LEVEL | BM_MC_MOVE_RIGHT);
 	if (isContextMenu)
 		moveMenu->SetFont( &font);
@@ -901,7 +902,8 @@ void BmMailRefView::AddMailRefMenu( BMenu* menu, BHandler* target,
 
 	BmMenuController* filterMenu
 		= new BmMenuController( MENU_FILTER, target,	new BMessage( BMM_FILTER), 
-										TheFilterList.Get(), BM_MC_MOVE_RIGHT);
+										&BmRosterBase::RebuildFilterMenu, 
+										BM_MC_MOVE_RIGHT);
 	if (isContextMenu)
 		filterMenu->SetFont( &font);
 	menu->AddItem( filterMenu);
@@ -912,7 +914,8 @@ void BmMailRefView::AddMailRefMenu( BMenu* menu, BHandler* target,
 
 	menu->AddSeparatorItem();
 
-	AddItemToMenu( menu, CreateMenuItem( "Edit As New...", BMM_EDIT_AS_NEW), target);
+	AddItemToMenu( menu, CreateMenuItem( "Edit As New...", BMM_EDIT_AS_NEW), 
+						target);
 	menu->AddSeparatorItem();
 
 	if (isContextMenu) {

@@ -28,8 +28,6 @@
 /*                                                                       */
 /*************************************************************************/
 
-#include "BmBase.h"
-
 #include "BmRosterBase.h"
 
 const char* BmRosterBase::BM_ROSTER_FOLDERLIST		= "FolderList";

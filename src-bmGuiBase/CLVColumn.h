@@ -123,7 +123,7 @@ void GetTruncatedString(const char* full_string, char* truncated, float width, i
 //******************************************************************************************************
 //**** ColumnListView CLASS DECLARATION
 //******************************************************************************************************
-class IMPEXPSANTAPARTSFORBEAM CLVColumn
+class IMPEXPBMGUIBASE CLVColumn
 {
 	public:
 		//Constructor and destructor

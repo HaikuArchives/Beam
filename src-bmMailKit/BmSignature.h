@@ -32,6 +32,8 @@
 #ifndef _BmSignature_h
 #define _BmSignature_h
 
+#include "BmMailKit.h"
+
 #include <Archivable.h>
 #include "BmString.h"
 
@@ -45,7 +47,7 @@ class BmSignatureList;
 		- 	derived from BArchivable, so it can be read from and
 			written to a file
 \*------------------------------------------------------------------------------*/
-class BmSignature : public BmListModelItem {
+class IMPEXPBMMAILKIT BmSignature : public BmListModelItem {
 	typedef BmListModelItem inherited;
 	// archivable components:
 	static const char* const MSG_NAME;
@@ -95,7 +97,7 @@ private:
 	BmSignatureList 
 		-	holds list of all Signatures
 \*------------------------------------------------------------------------------*/
-class BmSignatureList : public BmListModel {
+class IMPEXPBMMAILKIT BmSignatureList : public BmListModel {
 	typedef BmListModel inherited;
 
 	static const int16 nArchiveVersion;

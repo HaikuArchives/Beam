@@ -50,9 +50,6 @@
 #include <MStringView.h>
 #include <Space.h>
 
-#include "TextEntryAlert.h"
-#include "ListSelectionAlert.h"
-
 #include "BmApp.h"
 #include "BmBasics.h"
 #include "BmFilter.h"
@@ -487,7 +484,6 @@ BmJobModel* BmPopperView::CreateJobModel( BMessage* msg) {
 	if (!(account = dynamic_cast<BmPopAccount*>( item.Get())))
 		BM_THROW_INVALID( BmString("Could not find BmPopAccount ") << accName);
 	BmPopper* popper = new BmPopper( account->Name(), account);
-	popper->SetPwdAcquisitorFunc( AskUserForPwd);
 	return popper;
 }
 
@@ -536,30 +532,6 @@ void BmPopperView::UpdateModelView( BMessage* msg) {
 	} else
 		throw BM_runtime_error( "BmPopperView::UpdateModelView(): could not "
 										"lock window");
-}
-
-/*------------------------------------------------------------------------------*\
-	()
-		-	
-\*------------------------------------------------------------------------------*/
-bool BmPopperView::AskUserForPwd( const BmString accName, BmString& pwd) {
-	// ask user about password:
-	BmString text = BmString( "Please enter password for POP-Account <")
-					   << accName << ">:";
-	TextEntryAlert* alert = new TextEntryAlert( "Info needed", text.String(),
-									 						  "", "Cancel", "OK");
-	alert->SetFeel( B_FLOATING_APP_WINDOW_FEEL);
-	alert->SetLook( B_FLOATING_WINDOW_LOOK);
-	alert->TextEntryView()->HideTyping( true);
-	alert->SetShortcut( 0, B_ESCAPE);
-	char buf[128];
-	int32 result = alert->Go( buf, 128);
-	if (result == 1) {
-		pwd = buf;
-		memset( buf, '*', 128);
-		return true;
-	} else
-		return false;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -645,8 +617,6 @@ BmJobModel* BmSmtpView::CreateJobModel( BMessage* msg) {
 	if (!(account = dynamic_cast<BmSmtpAccount*>( item.Get())))
 		BM_THROW_INVALID( BmString("Could not find BmSmtpAccount ") << accName);
 	BmSmtp* smtp = new BmSmtp( account->Name(), account);
-	smtp->SetPwdAcquisitorFunc( AskUserForPwd);
-	smtp->SetPopAccAcquisitorFunc( AskUserForPopAcc);
 	return smtp;
 }
 
@@ -687,61 +657,6 @@ void BmSmtpView::UpdateModelView( BMessage* msg) {
 	} else
 		throw BM_runtime_error( "BmSmtpView::UpdateModelView(): could not "
 										"lock window");
-}
-
-/*------------------------------------------------------------------------------*\
-	()
-		-	
-\*------------------------------------------------------------------------------*/
-bool BmSmtpView::AskUserForPwd( const BmString accName, BmString& pwd) {
-	// ask user about password:
-   BmString text = BmString( "Please enter password for SMTP-account <")
-   				   << accName << ">:";
-	TextEntryAlert* alert = new TextEntryAlert( "Info needed", text.String(),
-									 						  "", "Cancel", "OK");
-	alert->SetFeel( B_FLOATING_APP_WINDOW_FEEL);
-	alert->SetLook( B_FLOATING_WINDOW_LOOK);
-	alert->TextEntryView()->HideTyping( true);
-	alert->SetShortcut( 0, B_ESCAPE);
-	char buf[128];
-	int32 result = alert->Go( buf, 128);
-	if (result == 1) {
-		pwd = buf;
-		memset( buf, '*', 128);
-		return true;
-	} else
-		return false;
-}
-
-/*------------------------------------------------------------------------------*\
-	()
-		-	
-\*------------------------------------------------------------------------------*/
-bool BmSmtpView::AskUserForPopAcc( const BmString accName, BmString& popAccName) {
-	// ask user about password:
-   BmString text = BmString( "Please select the POP3-account\nto be used "
-   									  "in authentication\nfor SMTP-account <" )
-	   				   << accName << ">:";
-	BList list;
-	BmModelItemMap::const_iterator iter;
-	for(	iter = ThePopAccountList->begin(); 
-			iter != ThePopAccountList->end(); ++iter) {
-		BmPopAccount* acc = dynamic_cast<BmPopAccount*>( iter->second.Get());
-		list.AddItem( (void*)acc->Name().String());
-	}
-	ListSelectionAlert* alert = new ListSelectionAlert( 
-		"Pop-Account", text.String(), list, "", "Cancel", "OK"
-	);
-	alert->SetFeel( B_FLOATING_APP_WINDOW_FEEL);
-	alert->SetLook( B_FLOATING_WINDOW_LOOK);
-	alert->SetShortcut( 0, B_ESCAPE);
-	char buf[128];
-	int32 result = alert->Go( buf, 128);
-	if (result == 1) {
-		popAccName = buf;
-		return popAccName.Length() > 0;
-	} else
-		return false;
 }
 
 

@@ -117,7 +117,6 @@ void BmObjectList::CleanupObjectLists()
 
 
 
-
 /*------------------------------------------------------------------------------*\
 	AddRef()
 		-	add one reference to object
@@ -439,4 +438,5 @@ void BmAutolockCheckGlobal::Init()
 			mLooper->Lock();
 	}
 }
+
 #endif

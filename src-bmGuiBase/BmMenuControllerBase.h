@@ -35,6 +35,8 @@
 
 #include "BmString.h"
 
+#include "BmRosterBase.h"
+
 #include "SantaPartsForBeam.h"
 
 
@@ -52,22 +54,22 @@ enum {
 
 class BMenuItem;
 
-class IMPEXPSANTAPARTSFORBEAM BmMenuControllerBase : public BPopUpMenu
+typedef void (BmRosterBase::*BmRebuildMenuFunc)(BmMenuControllerBase*);
+
+class IMPEXPBMGUIBASE BmMenuControllerBase : public BPopUpMenu
 {
 	typedef BPopUpMenu inherited;
 	
-	typedef void (*RebuildMenuFunc)( BmMenuControllerBase*);
 
 public:
 
 	BmMenuControllerBase( const char* label, BHandler* msgTarget, 
 								 BMessage* msgTemplate,
-								 RebuildMenuFunc fn, int32 flags=0);
+								 BmRebuildMenuFunc fn, int32 flags=0);
 
 	virtual ~BmMenuControllerBase();
 
 	// native methods
-	virtual void UpdateItemList();
 	void MarkItem( const char* label);
 	void ClearMark();
 	//
@@ -87,10 +89,12 @@ public:
 	void Shortcuts( const BmString s) 	{ mShortcuts = s; }
 
 protected:
+	virtual void UpdateItemList();
+
 	BHandler* mMsgTarget;
 	BMessage* mMsgTemplate;
 	BmString mShortcuts;
-	RebuildMenuFunc mRebuildMenuFunc;
+	BmRebuildMenuFunc mRebuildMenuFunc;
 	int32 mFlags;
 	BmString mMarkedLabel;
 

@@ -33,10 +33,10 @@
 #include <BeBuild.h>
 
 /* import-/export-declarations for the libregexx shared-lib */
-#ifdef BM_BUILDING_LIBREGEXX
-#define IMPEXPLIBREGEXX _EXPORT
+#ifdef BM_BUILDING_BMREGEXX
+#define IMPEXPBMREGEXX _EXPORT
 #else
-#define IMPEXPLIBREGEXX _IMPORT
+#define IMPEXPBMREGEXX _IMPORT
 #endif
 
 #endif

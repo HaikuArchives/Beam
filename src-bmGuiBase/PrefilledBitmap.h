@@ -32,7 +32,7 @@
 //******************************************************************************************************
 //**** CLASS DECLARATIONS
 //******************************************************************************************************
-class IMPEXPSANTAPARTSFORBEAM PrefilledBitmap : public BBitmap
+class IMPEXPBMGUIBASE PrefilledBitmap : public BBitmap
 {
 	public:
 		PrefilledBitmap(BRect bounds, color_space space, const void *data, int32 length = 0,

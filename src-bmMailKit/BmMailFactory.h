@@ -31,6 +31,8 @@
 #ifndef _BmMailFactory_h
 #define _BmMailFactory_h
 
+#include "BmMailKit.h"
+
 #include <vector>
 
 #include "BmMail.h"
@@ -46,7 +48,7 @@ typedef vector< BmRef< BmMail> > BmMailVect;
 		-	this class encapsulates the generation of new mails that are based
 			on other mails (like replies and forwards).
 \*------------------------------------------------------------------------------*/
-class BmMailFactory {
+class IMPEXPBMMAILKIT BmMailFactory {
 
 public:
 	BmMailFactory()							{}
@@ -83,7 +85,6 @@ protected:
 										 const BmString& quote, 
 										 const BmString& quoteString,
 								 		 int maxTextLen);
-	typedef vector< BmRef< BmMailRef> > BmMailRefVect;
 	BmMailRefVect mBaseRefVect;
 							// the mailref(s) that created us (via forward/reply)
 };
@@ -94,10 +95,16 @@ protected:
 	BmReplyFactory
 		-	this class encapsulates the generation of reply-mails
 \*------------------------------------------------------------------------------*/
-class BmReplyFactory : public BmMailFactory {
+enum BmReplyMode {
+	BM_REPLY_MODE_SMART = 0,
+	BM_REPLY_MODE_LIST,
+	BM_REPLY_MODE_PERSON,
+	BM_REPLY_MODE_ALL
+};
+class IMPEXPBMMAILKIT BmReplyFactory : public BmMailFactory {
 
 public:
-	BmReplyFactory( int32 replyMode, bool join, bool joinIntoOne,
+	BmReplyFactory( BmReplyMode replyMode, bool join, bool joinIntoOne,
 						 const BmString& selectedText = BM_DEFAULT_STRING);
 	~BmReplyFactory();
 	
@@ -113,7 +120,7 @@ private:
 										  const BmString& selectedText,
 										  bool demandNonPersonal = false);
 
-	int32 mReplyMode;
+	BmReplyMode mReplyMode;
 		// mode of reply (smart, to-list, to-person, to-all)
 	bool mJoin;
 		// should the mails be joined at all?
@@ -129,10 +136,15 @@ private:
 	BmForwardFactory
 		-	this class encapsulates the generation of forwarded mails
 \*------------------------------------------------------------------------------*/
-class BmForwardFactory : public BmMailFactory {
+enum BmForwardMode {
+	BM_FORWARD_MODE_INLINE = 0,
+	BM_FORWARD_MODE_ATTACHED,
+	BM_FORWARD_MODE_INLINE_ATTACH
+};
+class IMPEXPBMMAILKIT BmForwardFactory : public BmMailFactory {
 
 public:
-	BmForwardFactory( int32 forwardMode, bool join, 
+	BmForwardFactory( BmForwardMode forwardMode, bool join, 
 						 	const BmString& selectedText = BM_DEFAULT_STRING);
 	~BmForwardFactory();
 	
@@ -146,7 +158,7 @@ private:
 										  		  const BmString& selectedText);
 	BmRef<BmMail> CreateAttachedForward( BmRef<BmMail>& oldMail);
 
-	int32 mForwardMode;
+	BmForwardMode mForwardMode;
 		// mode of forward (inline, inline_with_attachments, attached)
 	bool mJoin;
 		// should the mails be joined at all?
@@ -160,7 +172,7 @@ private:
 	BmRedirectFactory
 		-	this class encapsulates the redirection of mails (as new)
 \*------------------------------------------------------------------------------*/
-class BmRedirectFactory : public BmMailFactory {
+class IMPEXPBMMAILKIT BmRedirectFactory : public BmMailFactory {
 
 public:
 	BmRedirectFactory();
@@ -179,7 +191,7 @@ private:
 	BmCopyMailFactory
 		-	this class encapsulates the copying of mails (as new)
 \*------------------------------------------------------------------------------*/
-class BmCopyMailFactory : public BmMailFactory {
+class IMPEXPBMMAILKIT BmCopyMailFactory : public BmMailFactory {
 
 public:
 	BmCopyMailFactory();

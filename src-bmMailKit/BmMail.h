@@ -31,6 +31,8 @@
 #ifndef _BmMail_h
 #define _BmMail_h
 
+#include "BmMailKit.h"
+
 #include <vector>
 
 #include <E-mail.h>
@@ -39,89 +41,88 @@
 #include <Path.h>
 #include "BmString.h"
 
+#include "BmBodyPartList.h"
 #include "BmDataModel.h"
+#include "BmMailRef.h"
 #include "BmUtil.h"
 
-class BmBodyPartList;
 class BmIdentity;
-class BmMailHeader;
-class BmMailRef;
 
 // mail-attribute types:
-extern const char* BM_MAIL_ATTR_NAME;
-extern const char* BM_MAIL_ATTR_STATUS;
-extern const char* BM_MAIL_ATTR_PRIORITY;
-extern const char* BM_MAIL_ATTR_TO;
-extern const char* BM_MAIL_ATTR_CC;
-extern const char* BM_MAIL_ATTR_FROM;
-extern const char* BM_MAIL_ATTR_SUBJECT;
-extern const char* BM_MAIL_ATTR_REPLY;
-extern const char* BM_MAIL_ATTR_WHEN;
-extern const char* BM_MAIL_ATTR_FLAGS;
-extern const char* BM_MAIL_ATTR_RECIPIENTS;
-extern const char* BM_MAIL_ATTR_MIME;
-extern const char* BM_MAIL_ATTR_HEADER;
-extern const char* BM_MAIL_ATTR_CONTENT;
-extern const char* BM_MAIL_ATTR_ATTACHMENTS;
-extern const char* BM_MAIL_ATTR_ACCOUNT;
+extern IMPEXPBMMAILKIT const char* BM_MAIL_ATTR_NAME;
+extern IMPEXPBMMAILKIT const char* BM_MAIL_ATTR_STATUS;
+extern IMPEXPBMMAILKIT const char* BM_MAIL_ATTR_PRIORITY;
+extern IMPEXPBMMAILKIT const char* BM_MAIL_ATTR_TO;
+extern IMPEXPBMMAILKIT const char* BM_MAIL_ATTR_CC;
+extern IMPEXPBMMAILKIT const char* BM_MAIL_ATTR_FROM;
+extern IMPEXPBMMAILKIT const char* BM_MAIL_ATTR_SUBJECT;
+extern IMPEXPBMMAILKIT const char* BM_MAIL_ATTR_REPLY;
+extern IMPEXPBMMAILKIT const char* BM_MAIL_ATTR_WHEN;
+extern IMPEXPBMMAILKIT const char* BM_MAIL_ATTR_FLAGS;
+extern IMPEXPBMMAILKIT const char* BM_MAIL_ATTR_RECIPIENTS;
+extern IMPEXPBMMAILKIT const char* BM_MAIL_ATTR_MIME;
+extern IMPEXPBMMAILKIT const char* BM_MAIL_ATTR_HEADER;
+extern IMPEXPBMMAILKIT const char* BM_MAIL_ATTR_CONTENT;
+extern IMPEXPBMMAILKIT const char* BM_MAIL_ATTR_ATTACHMENTS;
+extern IMPEXPBMMAILKIT const char* BM_MAIL_ATTR_ACCOUNT;
 // Beam's own attributes:
-extern const char* BM_MAIL_ATTR_IDENTITY;
-extern const char* BM_MAIL_ATTR_MARGIN;
-extern const char* BM_MAIL_ATTR_WHEN_CREATED;
+extern IMPEXPBMMAILKIT const char* BM_MAIL_ATTR_IDENTITY;
+extern IMPEXPBMMAILKIT const char* BM_MAIL_ATTR_MARGIN;
+extern IMPEXPBMMAILKIT const char* BM_MAIL_ATTR_WHEN_CREATED;
 
-extern const char* BM_FIELD_BCC;
-extern const char* BM_FIELD_CC;
-extern const char* BM_FIELD_CONTENT_TYPE;
-extern const char* BM_FIELD_CONTENT_DISPOSITION;
-extern const char* BM_FIELD_CONTENT_DESCRIPTION;
-extern const char* BM_FIELD_CONTENT_LANGUAGE;
-extern const char* BM_FIELD_CONTENT_TRANSFER_ENCODING;
-extern const char* BM_FIELD_CONTENT_ID;
-extern const char* BM_FIELD_DATE;
-extern const char* BM_FIELD_FROM;
-extern const char* BM_FIELD_IN_REPLY_TO;
-extern const char* BM_FIELD_LIST_ARCHIVE;
-extern const char* BM_FIELD_LIST_HELP;
-extern const char* BM_FIELD_LIST_ID;
-extern const char* BM_FIELD_LIST_POST;
-extern const char* BM_FIELD_LIST_SUBSCRIBE;
-extern const char* BM_FIELD_LIST_UNSUBSCRIBE;
-extern const char* BM_FIELD_MAIL_FOLLOWUP_TO;
-extern const char* BM_FIELD_MAIL_REPLY_TO;
-extern const char* BM_FIELD_MAILING_LIST;
-extern const char* BM_FIELD_MESSAGE_ID;
-extern const char* BM_FIELD_MIME;
-extern const char* BM_FIELD_PRIORITY;
-extern const char* BM_FIELD_REFERENCES;
-extern const char* BM_FIELD_REPLY_TO;
-extern const char* BM_FIELD_RESENT_BCC;
-extern const char* BM_FIELD_RESENT_CC;
-extern const char* BM_FIELD_RESENT_DATE;
-extern const char* BM_FIELD_RESENT_FROM;
-extern const char* BM_FIELD_RESENT_MESSAGE_ID;
-extern const char* BM_FIELD_RESENT_REPLY_TO;
-extern const char* BM_FIELD_RESENT_SENDER;
-extern const char* BM_FIELD_RESENT_TO;
-extern const char* BM_FIELD_SENDER;
-extern const char* BM_FIELD_SUBJECT;
-extern const char* BM_FIELD_TO;
-extern const char* BM_FIELD_USER_AGENT;
-extern const char* BM_FIELD_X_LIST;
-extern const char* BM_FIELD_X_MAILER;
-extern const char* BM_FIELD_X_PRIORITY;
+extern IMPEXPBMMAILKIT const char* BM_FIELD_BCC;
+extern IMPEXPBMMAILKIT const char* BM_FIELD_CC;
+extern IMPEXPBMMAILKIT const char* BM_FIELD_CONTENT_TYPE;
+extern IMPEXPBMMAILKIT const char* BM_FIELD_CONTENT_DISPOSITION;
+extern IMPEXPBMMAILKIT const char* BM_FIELD_CONTENT_DESCRIPTION;
+extern IMPEXPBMMAILKIT const char* BM_FIELD_CONTENT_LANGUAGE;
+extern IMPEXPBMMAILKIT const char* BM_FIELD_CONTENT_TRANSFER_ENCODING;
+extern IMPEXPBMMAILKIT const char* BM_FIELD_CONTENT_ID;
+extern IMPEXPBMMAILKIT const char* BM_FIELD_DATE;
+extern IMPEXPBMMAILKIT const char* BM_FIELD_FROM;
+extern IMPEXPBMMAILKIT const char* BM_FIELD_IN_REPLY_TO;
+extern IMPEXPBMMAILKIT const char* BM_FIELD_LIST_ARCHIVE;
+extern IMPEXPBMMAILKIT const char* BM_FIELD_LIST_HELP;
+extern IMPEXPBMMAILKIT const char* BM_FIELD_LIST_ID;
+extern IMPEXPBMMAILKIT const char* BM_FIELD_LIST_POST;
+extern IMPEXPBMMAILKIT const char* BM_FIELD_LIST_SUBSCRIBE;
+extern IMPEXPBMMAILKIT const char* BM_FIELD_LIST_UNSUBSCRIBE;
+extern IMPEXPBMMAILKIT const char* BM_FIELD_MAIL_FOLLOWUP_TO;
+extern IMPEXPBMMAILKIT const char* BM_FIELD_MAIL_REPLY_TO;
+extern IMPEXPBMMAILKIT const char* BM_FIELD_MAILING_LIST;
+extern IMPEXPBMMAILKIT const char* BM_FIELD_MESSAGE_ID;
+extern IMPEXPBMMAILKIT const char* BM_FIELD_MIME;
+extern IMPEXPBMMAILKIT const char* BM_FIELD_PRIORITY;
+extern IMPEXPBMMAILKIT const char* BM_FIELD_REFERENCES;
+extern IMPEXPBMMAILKIT const char* BM_FIELD_REPLY_TO;
+extern IMPEXPBMMAILKIT const char* BM_FIELD_RESENT_BCC;
+extern IMPEXPBMMAILKIT const char* BM_FIELD_RESENT_CC;
+extern IMPEXPBMMAILKIT const char* BM_FIELD_RESENT_DATE;
+extern IMPEXPBMMAILKIT const char* BM_FIELD_RESENT_FROM;
+extern IMPEXPBMMAILKIT const char* BM_FIELD_RESENT_MESSAGE_ID;
+extern IMPEXPBMMAILKIT const char* BM_FIELD_RESENT_REPLY_TO;
+extern IMPEXPBMMAILKIT const char* BM_FIELD_RESENT_SENDER;
+extern IMPEXPBMMAILKIT const char* BM_FIELD_RESENT_TO;
+extern IMPEXPBMMAILKIT const char* BM_FIELD_SENDER;
+extern IMPEXPBMMAILKIT const char* BM_FIELD_SUBJECT;
+extern IMPEXPBMMAILKIT const char* BM_FIELD_TO;
+extern IMPEXPBMMAILKIT const char* BM_FIELD_USER_AGENT;
+extern IMPEXPBMMAILKIT const char* BM_FIELD_X_LIST;
+extern IMPEXPBMMAILKIT const char* BM_FIELD_X_MAILER;
+extern IMPEXPBMMAILKIT const char* BM_FIELD_X_PRIORITY;
 
-extern const char* BM_MAIL_STATUS_DRAFT;
-extern const char* BM_MAIL_STATUS_FORWARDED;
-extern const char* BM_MAIL_STATUS_NEW;
-extern const char* BM_MAIL_STATUS_PENDING;
-extern const char* BM_MAIL_STATUS_READ;
-extern const char* BM_MAIL_STATUS_REDIRECTED;
-extern const char* BM_MAIL_STATUS_REPLIED;
-extern const char* BM_MAIL_STATUS_SENT;
+extern IMPEXPBMMAILKIT const char* BM_MAIL_STATUS_DRAFT;
+extern IMPEXPBMMAILKIT const char* BM_MAIL_STATUS_FORWARDED;
+extern IMPEXPBMMAILKIT const char* BM_MAIL_STATUS_NEW;
+extern IMPEXPBMMAILKIT const char* BM_MAIL_STATUS_PENDING;
+extern IMPEXPBMMAILKIT const char* BM_MAIL_STATUS_READ;
+extern IMPEXPBMMAILKIT const char* BM_MAIL_STATUS_REDIRECTED;
+extern IMPEXPBMMAILKIT const char* BM_MAIL_STATUS_REPLIED;
+extern IMPEXPBMMAILKIT const char* BM_MAIL_STATUS_SENT;
 
-extern const char* BM_MAIL_FOLDER_DRAFT;
-extern const char* BM_MAIL_FOLDER_IN;
-extern const char* BM_MAIL_FOLDER_OUT;
+extern IMPEXPBMMAILKIT const char* BM_MAIL_FOLDER_DRAFT;
+extern IMPEXPBMMAILKIT const char* BM_MAIL_FOLDER_IN;
+extern IMPEXPBMMAILKIT const char* BM_MAIL_FOLDER_OUT;
 
 class BmFilter;
 /*------------------------------------------------------------------------------*\
@@ -132,7 +133,7 @@ class BmFilter;
 		-	can store mail in a file and send it via ESMTP
 		-	is a job-model (thus can be controlled by a view [e.g. BmMailView])
 \*------------------------------------------------------------------------------*/
-class BmMail : public BmJobModel {
+class IMPEXPBMMAILKIT BmMail : public BmJobModel {
 	typedef BmJobModel inherited;
 
 	typedef map<int32,BmString> BmQuoteLevelMap;
@@ -185,8 +186,8 @@ public:
 	inline const status_t InitCheck() const	
 													{ return mInitCheck; }
 	inline const BmString& AccountName(){ return mAccountName; }
-	inline BmBodyPartList* Body() const	{ return mBody.Get(); }
-	inline BmMailHeader* Header() const	{ return mHeader.Get(); }
+	BmBodyPartList* Body() const;
+	BmMailHeader* Header() const;
 	int32 HeaderLength() const;
 	inline int32 RightMargin() const		{ return mRightMargin; }
 	inline const BmString& RawText() const		
@@ -194,7 +195,7 @@ public:
 	const BmString& HeaderText() const;
 	inline const bool Outbound() const	{ return mOutbound; }
 	bool IsRedirect() const;
-	inline BmMailRef* MailRef() const	{ return mMailRef.Get(); }
+	BmMailRef* MailRef() const;
 	const BmString& DefaultCharset()	const;
 	inline BmString SignatureName() const		
 													{ return mSignatureName; }

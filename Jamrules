@@ -3,6 +3,7 @@
 BUILD_DIR			= [ FDirName $(TOP) build-jam ] ;
 GENERATED_DIR		= [ FDirName $(TOP) generated ] ;
 DISTRO_DIR			= [ FDirName $(TOP) generated distro ] ;
+FULL_DISTRO_DIR	= [ FDirName $(TOP) generated distro_with_libs ] ;
 
 include [ FDirName $(BUILD_DIR) HelperRules ] ;
 include [ FDirName $(BUILD_DIR) ConfigRules ] ;
@@ -29,18 +30,46 @@ JCACHEFILE = jamfile_cache ;
 LOCATE on $(HCACHEFILE) $(JCACHEFILE) = $(GENERATED_DIR) ;
 
 
-rule MakeDistro
+rule Distro
 {
-	# MakeDistro <target> 
-
 	local target = $(1) ;
 
 	NotFile $(target) ;
 	Always $(target) ;
 }
 
-actions MakeDistro
+actions Distro
 {
-	echo "making distro" ;
+	echo "making distro $(DISTRO_DIR)" ;
+	rm -rf $(DISTRO_DIR)/TestBeam $(DISTRO_DIR)/logs*
+	mkdir -p $(DISTRO_DIR)/Icons ;
+	cp -a $(TOP)/resources/iconset* $(DISTRO_DIR)/Icons/ ;
+	cp -a $(TOP)/Changes.txt $(DISTRO_DIR)/ ;
+	cp -a $(TOP)/Readme.txt $(DISTRO_DIR)/ ;
+	cp -a $(TOP)/GnuGeneralPublicLicense.txt $(DISTRO_DIR)/ ;
+	find $(DISTRO_DIR)/Icons -maxdepth 2 -name CVS -exec rm -r {} \; ;
+	mimeset $(DISTRO_DIR) ;
+}
+
+Depends fulldistro : distro ;
+
+rule FullDistro
+{
+	local target = $(1) ;
+
+	NotFile $(target) ;
+	Always $(target) ;
+}
+
+actions FullDistro
+{
+	echo "making full distro $(FULL_DISTRO_DIR)" ;
+	rm -rf $(FULL_DISTRO_DIR) ;
+	cp -a $(DISTRO_DIR) $(FULL_DISTRO_DIR) ;
+	cp -a /boot/home/config/lib/libpcre.so $(FULL_DISTRO_DIR)/lib/ ;
+	cp -a /boot/home/config/lib/libpcreposix.so $(FULL_DISTRO_DIR)/lib/ ;
+	cp -a /boot/home/config/lib/libiconv.so $(FULL_DISTRO_DIR)/lib/ ;
+	cp -a /boot/home/config/lib/liblayout.so $(FULL_DISTRO_DIR)/lib/ ;
+	mimeset $(FULL_DISTRO_DIR) ;
 }
 

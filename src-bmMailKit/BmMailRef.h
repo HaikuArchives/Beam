@@ -31,6 +31,8 @@
 #ifndef _BmMailRef_h
 #define _BmMailRef_h
 
+#include "BmMailKit.h"
+
 #include <vector>
 
 #include <Entry.h>
@@ -44,7 +46,7 @@ class BmMailRefList;
 	BmMailRef
 		-	class 
 \*------------------------------------------------------------------------------*/
-class BmMailRef : public BmListModelItem {
+class IMPEXPBMMAILKIT BmMailRef : public BmListModelItem {
 	typedef BmListModelItem inherited;
 
 	// archival-fieldnames:

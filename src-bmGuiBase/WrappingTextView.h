@@ -41,7 +41,7 @@ enum {
 };
 #endif
 
-class IMPEXPSANTAPARTSFORBEAM WrappingTextView : public BTextView
+class IMPEXPBMGUIBASE WrappingTextView : public BTextView
 {
 	typedef BTextView inherited;
 	

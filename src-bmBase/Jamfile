@@ -14,3 +14,6 @@ SharedLibrary bmBase.so
 	: 	
 		be 
 	;
+
+MakeLocate bmBase.so : [ FDirName $(DISTRO_DIR) lib ] ;
+

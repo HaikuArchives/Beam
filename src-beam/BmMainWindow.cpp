@@ -58,6 +58,7 @@
 #include "BmPopAccount.h"
 #include "BmPrefs.h"
 #include "BmResources.h"
+#include "BmRosterBase.h"
 #include "BmSmtpAccount.h"
 #include "BmToolbarButton.h"
 #include "BmUtil.h"
@@ -262,49 +263,6 @@ BmMainWindow::~BmMainWindow() {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-static void RebuildLogMenu( BmMenuControllerBase* logMenu) {
-	const char* logNames[] = {
-		"Beam",
-		"Filter",
-		"MailParser",
-		NULL
-	};
-	BMenuItem* old;
-	while( (old = logMenu->RemoveItem( (int32)0))!=NULL)
-		delete old;
-	for( int i=0; logNames[i] != NULL; ++i) {
-		BMessage* logMsg( new BMessage( logMenu->MsgTemplate()->what));
-		logMsg->AddString( "logfile", logNames[i]);
-		logMenu->AddItem( new BMenuItem( logNames[i], logMsg));
-	}
-	// POP
-	BMenu* popMenu = new BMenu( "POP-Accounts");
-	BmModelItemMap::const_iterator iter;
-	for( 	iter = ThePopAccountList->begin(); 
-			iter != ThePopAccountList->end(); ++iter) {
-		BmString logname = BmString("POP_") + iter->second->Key();
-		BMessage* logMsg( new BMessage( logMenu->MsgTemplate()->what));
-		logMsg->AddString( "logfile", logname.String());
-		popMenu->AddItem( new BMenuItem( iter->second->Key().String(), logMsg));
-	}
-	logMenu->AddItem( popMenu);
-	// SMTP
-	BMenu* smtpMenu = new BMenu( "SMTP-Accounts");
-	for( 	iter = TheSmtpAccountList->begin(); 
-			iter != TheSmtpAccountList->end(); ++iter) {
-		BmString logname = BmString("SMTP_") + iter->second->Key();
-		BMessage* logMsg( new BMessage( logMenu->MsgTemplate()->what));
-		logMsg->AddString( "logfile", logname.String());
-		smtpMenu->AddItem( new BMenuItem( iter->second->Key().String(), logMsg));
-	}
-	logMenu->AddItem( smtpMenu);
-	TheLogHandler->mLocker.Unlock();
-}
-
-/*------------------------------------------------------------------------------*\
-	()
-		-	
-\*------------------------------------------------------------------------------*/
 MMenuBar* BmMainWindow::CreateMenu() {
 	mMainMenuBar = new MMenuBar();
 	BMenu* menu = NULL;
@@ -326,7 +284,7 @@ MMenuBar* BmMainWindow::CreateMenu() {
 	menu->AddItem( 
 		new BmMenuController( "Show Log", this, 
 									 new BMessage( BMM_SHOW_LOGFILE), 
-									 RebuildLogMenu, BM_MC_MOVE_RIGHT)
+									 &BmRosterBase::RebuildLogMenu, BM_MC_MOVE_RIGHT)
 	);
 	menu->AddSeparatorItem();
 	menu->AddItem( CreateMenuItem( "About Beam...", B_ABOUT_REQUESTED));
@@ -351,7 +309,7 @@ MMenuBar* BmMainWindow::CreateMenu() {
 	mAccountMenu = new BmMenuController( 
 		"Check Mail For", this,
 		new BMessage( BMM_CHECK_MAIL), 
-		ThePopAccountList.Get(),
+		&BmRosterBase::RebuildPopAccountMenu,
 		BM_MC_MOVE_RIGHT
 	);
 	mAccountMenu->Shortcuts( "1234567890");

@@ -31,6 +31,8 @@
 #ifndef _BmRefManager_h
 #define _BmRefManager_h
 
+#include "BmMailKit.h"
+
 #include <stdio.h>
 
 #include <typeinfo>
@@ -49,7 +51,7 @@ class BmObjectList;
 	BmRefObj
 		-	an object that can be reference-managed
 \*------------------------------------------------------------------------------*/
-class BmRefObj {
+class IMPEXPBMMAILKIT BmRefObj {
 	
 public:
 	BmRefObj() : mRefCount(0) 				{}
@@ -93,21 +95,21 @@ private:
 	BmRef
 		-	smart-pointer class that implements reference-counting (via BmRefObj)
 \*------------------------------------------------------------------------------*/
-template <class T> class BmRef {
+template <class T> class IMPEXPBMMAILKIT BmRef {
 
 	T* mPtr;
 
 public:
-	inline BmRef(T* p = 0) : mPtr( p) {
+	BmRef(T* p = 0) : mPtr( p) {
 		AddRef( mPtr);
 	}
-	inline BmRef( const BmRef<T>& ref) : mPtr( ref.Get()) {
+	BmRef( const BmRef<T>& ref) : mPtr( ref.Get()) {
 		AddRef( mPtr);
 	}
-	inline ~BmRef() {
+	~BmRef() {
 		*this = NULL;
 	}
-	inline BmRef<T>& operator= ( const BmRef<T>& ref) {
+	BmRef<T>& operator= ( const BmRef<T>& ref) {
 		if (mPtr != ref.Get()) {
 			// in order to behave correctly when being called recursively,
 			// we set new value before deleting old, so that a recursive call
@@ -119,7 +121,7 @@ public:
 		}
 		return *this;
 	}
-	inline BmRef<T>& operator= ( T* p) {
+	BmRef<T>& operator= ( T* p) {
 		if (mPtr != p) {
 			// in order to behave correctly when being called recursively,
 			// we set new value before deleting old, so that a recursive call
@@ -131,16 +133,16 @@ public:
 		}
 		return *this;
 	}
-	inline bool operator== ( const BmRef<T>& ref) {
+	bool operator== ( const BmRef<T>& ref) {
 		return mPtr == ref.Get();
 	}
-	inline bool operator== ( const T* p) {
+	bool operator== ( const T* p) {
 		return mPtr == p;
 	}
-	inline bool operator!= ( const T* p) {
+	bool operator!= ( const T* p) {
 		return mPtr != p;
 	}
-	inline void Clear() {
+	void Clear() {
 		if (mPtr) {
 			// in order to behave correctly when being called recursively,
 			// we set new value before deleting old, so that a recursive call
@@ -150,13 +152,23 @@ public:
 			RemoveRef( p);
 		}
 	}
-	inline T* operator->() const   		{ return mPtr; }
-	inline T* Get() const 					{ return mPtr; }
-	inline operator bool() const 			{ return mPtr!=NULL; }
+	T* operator->() const { 
+		return mPtr; 
+	}
+	T* Get() const { 
+		return mPtr; 
+	}
+	operator bool() const { 
+		return mPtr!=NULL; 
+	}
 
 private:
-	inline void AddRef(T* p) const   	{ if (p)	p->AddRef(); }
-	inline void RemoveRef(T* p) const 	{ if (p)	p->RemoveRef(); }
+	void AddRef(T* p) const { 
+		if (p)	p->AddRef(); 
+	}
+	void RemoveRef(T* p) const { 
+		if (p)	p->RemoveRef(); 
+	}
 };
 
 /*------------------------------------------------------------------------------*\
@@ -170,7 +182,7 @@ private:
 // helper function to keep logging out of header-file:
 void LogHelper( const BmString& text);
 
-template <class T> class BmWeakRef {
+template <class T> class IMPEXPBMMAILKIT BmWeakRef {
 
 	BmString mName;
 	T* mPtr;
@@ -218,7 +230,7 @@ private:
 	// during profiling/debugging we use this:
 class BLocker;
 class BLooper;
-class BmAutolockCheckGlobal {
+class IMPEXPBMMAILKIT BmAutolockCheckGlobal {
 public:
 	BmAutolockCheckGlobal( BLooper* l);
 	BmAutolockCheckGlobal( BLocker* l);

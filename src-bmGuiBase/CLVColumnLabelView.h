@@ -37,7 +37,7 @@ class CLVColumn;
 //******************************************************************************************************
 //**** CLASS AND STRUCTURE DECLARATIONS, ASSOCIATED CONSTANTS AND STATIC FUNCTIONS
 //******************************************************************************************************
-struct IMPEXPSANTAPARTSFORBEAM CLVDragGroup
+struct IMPEXPBMGUIBASE CLVDragGroup
 {
 	int32 GroupStartDispListIndex;		//Indices in the column display list where this group starts
 	int32 GroupStopDispListIndex;		//and finishes
@@ -50,7 +50,7 @@ struct IMPEXPSANTAPARTSFORBEAM CLVDragGroup
 };
 
 
-class IMPEXPSANTAPARTSFORBEAM CLVColumnLabelView : public BView
+class IMPEXPBMGUIBASE CLVColumnLabelView : public BView
 {
 		typedef BView inherited;
 	public:

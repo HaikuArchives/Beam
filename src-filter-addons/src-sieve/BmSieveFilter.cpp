@@ -78,8 +78,6 @@ extern "C" __declspec(dllexport)
 BmFilterAddonPrefsView* InstantiateFilterPrefs( minimax minmax, 
 																const BmString& kind);
 
-static void RebuildFolderMenu( BmMenuControllerBase* menu);
-
 /********************************************************************************\
 	BmSieveFilter
 \********************************************************************************/
@@ -402,7 +400,7 @@ int BmSieveFilter::sieve_fileinto( void* action_context, void* script_context,
 					new BmMenuControllerBase( 
 						fileintoContext->mailbox, NULL,
 						new BMessage( BM_MENUITEM_SELECTED), 
-						RebuildFolderMenu
+						&BmRosterBase::RebuildFolderMenu
 					)
 				),
 				"Cancel", "OK"
@@ -1039,45 +1037,11 @@ BRect BmFilterScrollView::layout(BRect rect) {
 const char* const BmSieveFilterPrefs::MSG_IDX = 		"bm:idx";
 
 /*------------------------------------------------------------------------------*\
-	()
-		-	
-\*------------------------------------------------------------------------------*/
-static void RebuildFolderMenu( BmMenuControllerBase* menu) {
-	BMenuItem* old;
-	while( (old = menu->RemoveItem( (int32)0)) != NULL)
-		delete old;
-	
-	// add all folders to menu:
-	BeamRoster->FillMenuFromList( BmRosterBase::BM_ROSTER_FOLDERLIST, 
-											menu, 
-											menu->MsgTarget(),
-											menu->MsgTemplate());
-}
-
-/*------------------------------------------------------------------------------*\
-	()
-		-	
-\*------------------------------------------------------------------------------*/
-static void RebuildIdentityMenu( BmMenuControllerBase* menu) {
-	BMenuItem* old;
-	while( (old = menu->RemoveItem( (int32)0)) != NULL)
-		delete old;
-	
-	// add all identities to menu:
-	BeamRoster->FillMenuFromList( BmRosterBase::BM_ROSTER_IDENTITYLIST, 
-											menu, 
-											menu->MsgTarget(),
-											menu->MsgTemplate());
-}
-
-
-
-/*------------------------------------------------------------------------------*\
 	BmSieveFilterPrefs()
 		-	
 \*------------------------------------------------------------------------------*/
 BmSieveFilterPrefs::BmSieveFilterPrefs( minimax minmax)
-	:	inherited( minmax)
+	:	inherited( minmax.mini.x, minmax.mini.y, minmax.maxi.x, minmax.maxi.y)
 	,	mCurrFilterAddon( NULL)
 {
 	mFilterGroup = new BmFilterGroup();
@@ -1132,7 +1096,7 @@ BmSieveFilterPrefs::BmSieveFilterPrefs( minimax minmax)
 									new BmMenuControllerBase( 
 										"", this, 
 										new BMessage( BM_FILEINTO_SELECTED), 
-										RebuildFolderMenu
+										&BmRosterBase::RebuildFolderMenu
 									)
 								),
 								0
@@ -1167,7 +1131,13 @@ BmSieveFilterPrefs::BmSieveFilterPrefs( minimax minmax)
 									this
 								),
 								mSetStatusValueControl = new BmMenuControl( 
-									NULL, new BPopUpMenu("")
+									NULL, 
+									new BmMenuControllerBase( 
+										"", this, 
+										new BMessage( BM_SET_STATUS_SELECTED), 
+										&BmRosterBase::RebuildStatusMenu, 
+										BM_MC_LABEL_FROM_MARKED
+									)
 								),
 								0
 							),
@@ -1182,7 +1152,7 @@ BmSieveFilterPrefs::BmSieveFilterPrefs( minimax minmax)
 									new BmMenuControllerBase( 
 										"", this, 
 										new BMessage( BM_SET_IDENTITY_SELECTED), 
-										RebuildIdentityMenu, 
+										&BmRosterBase::RebuildIdentityMenu, 
 										BM_MC_LABEL_FROM_MARKED
 									)
 								),
@@ -1430,16 +1400,6 @@ void BmSieveFilterPrefs::Initialize() {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmSieveFilterPrefs::Activate() {
-	BMenuItem* item;
-	//
-	BMessage statusTempl( BM_SET_STATUS_SELECTED);
-	while( (item = mSetStatusValueControl->Menu()->RemoveItem( (int32)0))!=NULL)
-		delete item;
-
-	BeamRoster->FillMenuFromList( BmRosterBase::BM_ROSTER_STATUSLIST, 
-											mSetStatusValueControl->Menu(),
-											dynamic_cast<BHandler*>(this),
-											&statusTempl);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -1899,7 +1859,7 @@ void BmSieveFilterPrefs::UpdateState() {
 		-	
 \*------------------------------------------------------------------------------*/
 BmSieveScriptFilterPrefs::BmSieveScriptFilterPrefs( minimax minmax)
-	:	inherited( minmax)
+	:	inherited( minmax.mini.x, minmax.mini.y, minmax.maxi.x, minmax.maxi.y)
 	,	mCurrFilterAddon( NULL)
 {
 	// 

@@ -35,7 +35,7 @@
 
 class MView;
 
-class IMPEXPSANTAPARTSFORBEAM BmDividable
+class IMPEXPBMGUIBASE BmDividable
 {
 public:
 	virtual void SetDivider( float div) = 0;

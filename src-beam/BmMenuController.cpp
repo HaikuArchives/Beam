@@ -39,21 +39,6 @@ using namespace regexx;
 #include "BmMenuController.h"
 
 
-/*------------------------------------------------------------------------------*\
-	()
-		-	
-\*------------------------------------------------------------------------------*/
-void BmRebuildCharsetMenu( BmMenuControllerBase* menu) {
-	BMenuItem* old;
-	while( (old = menu->RemoveItem( (int32)0)) != NULL)
-		delete old;
-	
-	// add all charsets to menu:
-	AddCharsetMenu( menu, menu->MsgTarget(), menu->MsgTemplate()->what);
-}
-
-
-
 /********************************************************************************\
 	BmMenuController
 \********************************************************************************/
@@ -64,24 +49,8 @@ void BmRebuildCharsetMenu( BmMenuControllerBase* menu) {
 \*------------------------------------------------------------------------------*/
 BmMenuController::BmMenuController( const char* label, BHandler* msgTarget,
 												BMessage* msgTemplate, 
-												BmListModel* listModel,	int32 flags)
-	:	inherited( label, msgTarget, msgTemplate, NULL, flags)
-	,	mListModel( listModel)
-{
-	UpdateItemList();
-	if (mListModel)
-		mListModel->AddMenuController( this);
-}
-
-/*------------------------------------------------------------------------------*\
-	BmMenuController()
-		-	
-\*------------------------------------------------------------------------------*/
-BmMenuController::BmMenuController( const char* label, BHandler* msgTarget,
-												BMessage* msgTemplate, 
-												RebuildMenuFunc func, int32 flags)
+												BmRebuildMenuFunc func, int32 flags)
 	:	inherited( label, msgTarget, msgTemplate, func, flags)
-	,	mListModel( NULL)
 {
 }
 
@@ -90,8 +59,6 @@ BmMenuController::BmMenuController( const char* label, BHandler* msgTarget,
 		-	
 \*------------------------------------------------------------------------------*/
 BmMenuController::~BmMenuController() {
-	if (mListModel)
-		mListModel->RemoveMenuController( this);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -104,21 +71,6 @@ void BmMenuController::UpdateItemList( void) {
 	if (win)
 		win->Lock();
 	try {
-		if (mListModel) {
-			// ...then lock model:
-			BmAutolockCheckGlobal lock( mListModel->ModelLocker());
-			if (!lock.IsLocked())
-				BM_THROW_RUNTIME( "UpdateItemList(): Unable to lock model");
-			// now create menu according to list-model:
-			BMenuItem* old;
-			while( (old = RemoveItem( (int32)0))!=NULL)
-				delete old;
-			BFont font;
-			GetFont( &font);
-			AddListToMenu( mListModel, this, mMsgTemplate, mMsgTarget,
-								&font, mFlags & BM_MC_SKIP_FIRST_LEVEL, 
-								mFlags & BM_MC_ADD_NONE_ITEM, mShortcuts);
-		}
 		inherited::UpdateItemList();
 	} catch(...) {
 		if (win)

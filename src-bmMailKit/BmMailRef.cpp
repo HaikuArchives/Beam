@@ -40,7 +40,6 @@
 #include "BmMailRef.h"
 #include "BmMailRefList.h"
 #include "BmPrefs.h"
-#include "BmResources.h"
 #include "BmStorageUtil.h"
 #include "BmUtil.h"
 
@@ -80,12 +79,12 @@ const char* const BmMailRef::MSG_OPCODE = 	"bm:op";
 \*------------------------------------------------------------------------------*/
 BmRef<BmMailRef> BmMailRef::CreateInstance( entry_ref &eref, 
 												  		  struct stat& st) {
+	BmString key( BM_REFKEYSTAT( st));
 	GlobalLocker()->Lock();
 	if (!GlobalLocker()->IsLocked()) {
 		BM_SHOWERR("BmMailRef::CreateInstance(): Could not acquire global lock!");
 		return NULL;
 	}
-	BmString key( BM_REFKEYSTAT( st));
 	BmRef<BmMailRef> mailRef( 
 		dynamic_cast<BmMailRef*>( 
 			BmRefObj::FetchObject( typeid(BmMailRef).name(), key)
@@ -109,11 +108,6 @@ BmRef<BmMailRef> BmMailRef::CreateInstance( entry_ref &eref,
 			because otherwise we may risk deadlocks
 \*------------------------------------------------------------------------------*/
 BmRef<BmMailRef> BmMailRef::CreateInstance( BMessage* archive) {
-	GlobalLocker()->Lock();
-	if (!GlobalLocker()->IsLocked()) {
-		BM_SHOWERR("BmMailRef::CreateInstance(): Could not acquire global lock!");
-		return NULL;
-	}
 	status_t err;
 	node_ref nref;
 	if ((err = archive->FindInt64( MSG_INODE, &nref.node)) != B_OK) {
@@ -123,6 +117,11 @@ BmRef<BmMailRef> BmMailRef::CreateInstance( BMessage* archive) {
 	}
 	nref.device = ThePrefs->MailboxVolume.Device();
 	BmString key( BM_REFKEY( nref));
+	GlobalLocker()->Lock();
+	if (!GlobalLocker()->IsLocked()) {
+		BM_SHOWERR("BmMailRef::CreateInstance(): Could not acquire global lock!");
+		return NULL;
+	}
 	BmRef<BmMailRef> mailRef( 
 		dynamic_cast<BmMailRef*>( 
 			BmRefObj::FetchObject( typeid(BmMailRef).name(), key)

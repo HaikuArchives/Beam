@@ -36,7 +36,6 @@
 #include "BmController.h"
 #include "BmDataModel.h"
 #include "BmLogHandler.h"
-#include "BmMenuController.h"
 #include "BmPrefs.h"
 #include "BmStorageUtil.h"
 #include "BmUtil.h"
@@ -1074,55 +1073,6 @@ void BmListModel::TellModelItemUpdated( BmListModelItem* item,
 \*------------------------------------------------------------------------------*/
 void BmListModel::TellJobIsDone( bool completed) {
 	inherited::TellJobIsDone( completed);
-	UpdateMenuControllers();
-}
-
-/*------------------------------------------------------------------------------*\
-	UpdateMenuControllers()
-		-	updates all menu-controllers that have subscribed to this job
-\*------------------------------------------------------------------------------*/
-void BmListModel::UpdateMenuControllers() {
-	BmMenuControllerSet tempSet;
-	{ // scope for lock
-		BmAutolockCheckGlobal lock( mModelLocker);
-		if (!lock.IsLocked())
-			BM_THROW_RUNTIME( 
-				ModelNameNC() << ":UpdateMenuControllers(): Unable to get lock"
-			);
-		tempSet.insert( mInterestedMenuControllers.begin(), 
-							 mInterestedMenuControllers.end());
-		// now release lock since UpdateItemList will have to acquire a lock
-		// on the menu's window (and we do not want risk a deadlock!):
-	}
-	BmMenuControllerSet::iterator iter;
-	for( iter = tempSet.begin(); iter != tempSet.end(); ++iter)
-		(*iter)->UpdateItemList();
-}
-
-/*------------------------------------------------------------------------------*\
-	()
-		-	
-\*------------------------------------------------------------------------------*/
-void BmListModel::AddMenuController( BmMenuController* mc) {
-	BmAutolockCheckGlobal lock( mModelLocker);
-	if (!lock.IsLocked())
-		BM_THROW_RUNTIME( 
-			ModelNameNC() << ":AddMenuController(): Unable to get lock"
-		);
-	mInterestedMenuControllers.insert( mc);
-}
-
-/*------------------------------------------------------------------------------*\
-	()
-		-	
-\*------------------------------------------------------------------------------*/
-void BmListModel::RemoveMenuController( BmMenuController* mc) {
-	BmAutolockCheckGlobal lock( mModelLocker);
-	if (!lock.IsLocked())
-		BM_THROW_RUNTIME( 
-			ModelNameNC() << ":RemoveMenuController(): Unable to get lock"
-		);
-	mInterestedMenuControllers.erase( mc);
 }
 
 /*------------------------------------------------------------------------------*\

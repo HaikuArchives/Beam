@@ -29,10 +29,6 @@
 /*************************************************************************/
 
 
-#ifdef __POWERPC__
-#define BM_BUILDING_SANTAPARTSFORBEAM 1
-#endif
-
 #include "BmFilterAddonPrefs.h"
 
 /********************************************************************************\
@@ -43,8 +39,9 @@
 	BmFilterAddonPrefsView()
 		-	c'tor
 \*------------------------------------------------------------------------------*/
-BmFilterAddonPrefsView::BmFilterAddonPrefsView( minimax minmax)
-	:	inherited( minmax, NULL)
+BmFilterAddonPrefsView::BmFilterAddonPrefsView(float minX, float minY, 
+															  float maxX, float maxY)
+	:	inherited( minimax( minX, minY, maxX, maxY), NULL)
 {
 }
 

@@ -36,7 +36,7 @@ class BList;
 //******************************************************************************************************
 //**** CLVListItem CLASS DECLARATION
 //******************************************************************************************************
-class IMPEXPSANTAPARTSFORBEAM CLVListItem : public BListItem
+class IMPEXPBMGUIBASE CLVListItem : public BListItem
 {
 		static const uint8 CLV_STYLE_SUPERITEM = 1<<0;
 	public:

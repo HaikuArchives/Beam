@@ -40,7 +40,7 @@
 
 class HGroup;
 
-class IMPEXPSANTAPARTSFORBEAM BmMenuControl : public MView, 
+class IMPEXPBMGUIBASE BmMenuControl : public MView, 
 															 public BMenuField,
 															 public BmDividable
 {

@@ -185,9 +185,6 @@ public:
 	// overrides of controller base:
 	BHandler* GetControllerHandler() 	{ return this; }
 
-	// class-functions:
-	static bool AskUserForPwd( const BmString accName, BmString& pwd);
-
 protected:
 	void JobIsDone( bool completed);
 
@@ -228,10 +225,6 @@ public:
 
 	// overrides of controller base:
 	BHandler* GetControllerHandler() 	{ return this; }
-
-	// class-functions:
-	static bool AskUserForPwd( const BmString accName, BmString& pwd);
-	static bool AskUserForPopAcc( const BmString accName, BmString& popAccName);
 
 private:
 	BStatusBar* mStatBar;

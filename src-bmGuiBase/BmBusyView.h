@@ -37,7 +37,7 @@
 
 #include "SantaPartsForBeam.h"
 
-class IMPEXPSANTAPARTSFORBEAM BmBusyView : public BView
+class IMPEXPBMGUIBASE BmBusyView : public BView
 {
 	typedef BView inherited;
 

@@ -39,10 +39,9 @@
 using namespace regexx;
 
 #include "BmBasics.h"
-#include "BmMsgTypes.h"
 #include "BmIdentity.h"
 #include "BmLogHandler.h"
-#include "BmResources.h"
+#include "BmRosterBase.h"
 #include "BmUtil.h"
 
 /********************************************************************************\
@@ -245,7 +244,7 @@ BmIdentityList::~BmIdentityList() {
 		-	returns the name of the settins-file for the POP3-accounts-list
 \*------------------------------------------------------------------------------*/
 const BmString BmIdentityList::SettingsFileName() {
-	return BmString( TheResources->SettingsPath.Path()) << "/" << "Identities";
+	return BmString( BeamRoster->SettingsPath()) << "/" << "Identities";
 }
 
 /*------------------------------------------------------------------------------*\

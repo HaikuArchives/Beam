@@ -33,10 +33,6 @@
 #include <MenuItem.h>
 #include <Window.h>
 
-#ifdef __POWERPC__
-#define BM_BUILDING_SANTAPARTSFORBEAM 1
-#endif
-
 #include "BmMenuControllerBase.h"
 
 
@@ -47,7 +43,7 @@
 BmMenuControllerBase::BmMenuControllerBase( const char* label, 
 														  BHandler* msgTarget,
 														  BMessage* msgTemplate, 
-														  RebuildMenuFunc func, 
+														  BmRebuildMenuFunc func, 
 														  int32 flags)
 	:	inherited( label, flags & (BM_MC_RADIO_MODE|BM_MC_LABEL_FROM_MARKED),
 					  flags & BM_MC_LABEL_FROM_MARKED)
@@ -74,7 +70,7 @@ BmMenuControllerBase::~BmMenuControllerBase() {
 void BmMenuControllerBase::UpdateItemList( void) {
 	if (mRebuildMenuFunc) {
 		// menu is created by a dedicated function:
-		(*mRebuildMenuFunc)( this);
+		(BeamRoster->*mRebuildMenuFunc)( this);
 	}
 	if (mFlags & BM_MC_LABEL_FROM_MARKED) {
 		// mark the item corresponding to the label of our controlling menu-item:

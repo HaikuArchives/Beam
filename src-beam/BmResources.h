@@ -32,21 +32,15 @@
 #ifndef _BmResources_h
 #define _BmResources_h
 
-#include <map>
-#include <vector>
-
 #include <Cursor.h>
-#include <Directory.h>
 #include <Font.h>
-#include <Menu.h>
-#include <Path.h>
 #include "BmString.h"
-#include <Volume.h>
 
 #include "Colors.h"
 #include "PrefilledBitmap.h"
 
 class BBitmap;
+class BMenu;
 class BPicture;
 
 enum { 
@@ -60,9 +54,6 @@ enum {
 		- 	additionally holds the paths used within Beam
 \*------------------------------------------------------------------------------*/
 class BmResources {
-	typedef map< BmString, BBitmap*> BmIconMap;
-	typedef vector< BmString> BmFontStyleVect;
-	typedef map< BmString, BmFontStyleVect> BmFontMap;
 
 public:
 	// creator-func, c'tors and d'tor:
@@ -71,14 +62,9 @@ public:
 	~BmResources();
 
 	// native methods:
-	BDirectory* MailCacheFolder();
-	BDirectory* StateInfoFolder();
-	BDirectory* GetFolder( const BmString& name, BDirectory& dir);
 	void InitializeWithPrefs();
 
 	BBitmap* IconByName( const BmString name);
-	//
-	BPath	SettingsPath;
 	//
 	font_height BePlainFontHeight;
 	float FontBaselineOffset( const BFont* font=NULL);
@@ -89,15 +75,11 @@ public:
 										 rgb_color background = BeBackgroundColor,
 										 bool transparentBack = false);
 	//
-	void CheckMimeTypeFile( BmString sig, time_t appModTime);
-	//
 	void AddFontSubmenuTo( BMenu* menu, BHandler* target=NULL, 
 								  BFont* selectedFont=NULL);
 	//
-	const char* WHITESPACE;
 	PrefilledBitmap mRightArrow;
 	PrefilledBitmap mDownArrow;
-	BmString mOwnFQDN;
 	//
 	BCursor mUrlCursor;
 
@@ -112,14 +94,6 @@ private:
 	void FetchOwnFQDN();
 	void FetchFonts();
 
-	//
-	BmIconMap mIconMap;
-	BmFontMap mFontMap;
-
-	// folders living under settings/Beam/:
-	BDirectory mMailCacheFolder;
-	BDirectory mStateInfoFolder;
-	
 	BResources* mResources;
 };
 

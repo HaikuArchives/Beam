@@ -75,7 +75,10 @@ typedef BmFilterAddon* (*BmInstantiateFilterFunc)( const BmString& name,
 																	const BMessage* archive,
 																	const BmString& kind);
 
-
+class BmFilterAddonPrefsView;
+typedef BmFilterAddonPrefsView* (*BmInstantiateFilterPrefsFunc)( 
+	float minX, float minY, float maxX, float maxY, const BmString& kind
+);
 
 /*------------------------------------------------------------------------------*\
 	BmMsgContext

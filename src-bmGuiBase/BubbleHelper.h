@@ -36,7 +36,7 @@ class BList;
 
 #include "SantaPartsForBeam.h"
 
-class IMPEXPSANTAPARTSFORBEAM BubbleHelper
+class IMPEXPBMGUIBASE BubbleHelper
 {
 		struct BubbleInfo {
 			 BView* view;
@@ -82,6 +82,6 @@ class IMPEXPSANTAPARTSFORBEAM BubbleHelper
 public:
 };
 
-extern "C" IMPEXPSANTAPARTSFORBEAM BubbleHelper* TheBubbleHelper;
+extern "C" IMPEXPBMGUIBASE BubbleHelper* TheBubbleHelper;
 
 #endif

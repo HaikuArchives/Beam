@@ -44,6 +44,7 @@ BmString BM_SPACES("                                                            
 BmString BM_DEFAULT_STRING;
 BmString BM_DefaultItemLabel("<default>");
 BmString BM_NoItemLabel("<none>");
+BmString BM_WHITESPACE = " \t\n\r\f";
 
 /*------------------------------------------------------------------------------*\
 	FindMsgString( archive, name)

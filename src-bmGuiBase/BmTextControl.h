@@ -45,7 +45,7 @@ class HGroup;
 
 class BmMenuControllerBase;
 
-class IMPEXPSANTAPARTSFORBEAM BmTextControl : public MView, 
+class IMPEXPBMGUIBASE BmTextControl : public MView, 
 															 public BTextControl,
 															 public BmDividable
 {

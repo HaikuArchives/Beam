@@ -31,17 +31,18 @@
 #ifndef _BmMailFolder_h
 #define _BmMailFolder_h
 
+#include "BmMailKit.h"
+
 #include <map>
 
 #include <Entry.h>
 #include "BmString.h"
 
 #include "BmDataModel.h"
+#include "BmMailRefList.h"
 
 class BmMailFolder;
 class BmMailFolderList;
-
-class BmMailRefList;
 
 typedef map<BmString, BmMailFolder*> BmFolderMap;
 
@@ -49,7 +50,7 @@ typedef map<BmString, BmMailFolder*> BmFolderMap;
 	BmMailFolder
 		-	class 
 \*------------------------------------------------------------------------------*/
-class BmMailFolder : public BmListModelItem {
+class IMPEXPBMMAILKIT BmMailFolder : public BmListModelItem {
 	typedef BmListModelItem inherited;
 
 	static const int16 nArchiveVersion = 3;

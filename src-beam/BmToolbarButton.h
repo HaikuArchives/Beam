@@ -33,8 +33,12 @@
 
 #include <vector>
 
+#include <Message.h>
+
 #include <MPictureButton.h>
 #include <Space.h>
+
+#include "BmString.h"
 
 class ToolbarSpace :  public Space
 {

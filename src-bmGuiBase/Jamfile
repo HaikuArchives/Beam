@@ -1,16 +1,16 @@
-SubDir TOP src-santaPartsForBeam ;
+SubDir TOP src-bmGuiBase ;
 
 SubDirHdrs $(TOP) src-bmBase ;
-SubDirHdrs $(TOP) src-libRegexx ;
+SubDirHdrs $(TOP) src-bmRegexx ;
 
 SubDirSysHdrs /boot/home/config/include ;
 SubDirSysHdrs /boot/home/config/include/liblayout ;
 
 LINKFLAGS += -L/boot/home/config/lib ;
 
-DEFINES += BM_BUILDING_SANTAPARTSFORBEAM ;
+DEFINES += BM_BUILDING_BMGUIBASE ;
 
-SharedLibrary santaPartsForBeam.so
+SharedLibrary bmGuiBase.so
 	:  
 		BetterScrollView.cpp
 		BmBusyView.cpp
@@ -42,5 +42,9 @@ SharedLibrary santaPartsForBeam.so
 		UserResizeSplitView.cpp
 		WrappingTextView.cpp
 	: 	
-		layout regexx.so bmBase.so pcre $(STDC++LIB) be 
+		bmRegexx.so bmBase.so 
+		layout pcre $(STDC++LIB) be 
 	;
+
+MakeLocate bmGuiBase.so : [ FDirName $(DISTRO_DIR) lib ] ;
+

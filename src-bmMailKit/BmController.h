@@ -31,6 +31,8 @@
 #ifndef _BmController_h
 #define _BmController_h
 
+#include "BmMailKit.h"
+
 #include "BmDataModel.h"
 #include "BmUtil.h"
 
@@ -49,7 +51,7 @@ class BHandler;
 			The Controller on the other hand sometimes requires immediate access
 			to the DataModel (for instance when it needs to stop the DataModel).
 \*------------------------------------------------------------------------------*/
-class BmController {
+class IMPEXPBMMAILKIT BmController {
 
 public:
 	//
@@ -99,7 +101,7 @@ private:
 			job(thread)-control.
 		-	jobs can be started/stopped and have their status checked.
 \*------------------------------------------------------------------------------*/
-class BmJobController : public BmController {
+class IMPEXPBMMAILKIT BmJobController : public BmController {
 	typedef BmController inherited;
 
 public:

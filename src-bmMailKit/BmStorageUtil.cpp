@@ -435,3 +435,25 @@ status_t BmBackedFile::Init() {
 ssize_t BmBackedFile::Write(const void *buffer, size_t size) {
 	return mFile.Write( buffer, size);
 }
+
+/*------------------------------------------------------------------------------*\
+	SetupFolder( name, dir)
+		-	initializes the given BDirectory dir to the given path name
+		-	if the directory does not yet exist, it is created
+		-	a pointer to the initialized directory is returned, so you probably
+			don't want to delete that
+\*------------------------------------------------------------------------------*/
+status_t SetupFolder( const BmString& name, BDirectory* dir) {
+	status_t res = B_BAD_VALUE;
+	if (dir) {
+		res = dir->SetTo( name.String());
+		if (res != B_OK) {
+			if ((res = create_directory( name.String(), 0755) 
+			|| (res = dir->SetTo( name.String()))) != B_OK) {
+				BM_SHOWERR( BmString("Sorry, could not create folder ") << name
+									<< ".\n\t Error:" << strerror( res));
+			}
+		}
+	}
+	return res;
+}

@@ -18,19 +18,19 @@
 //**** CONSTANT DEFINITIONS
 //******************************************************************************************************
 //Be standard UI colors
-extern IMPEXPSANTAPARTSFORBEAM const rgb_color BeBackgroundColor;
-extern IMPEXPSANTAPARTSFORBEAM const int BeShadowMod;
+extern IMPEXPBMGUIBASE const rgb_color BeBackgroundColor;
+extern IMPEXPBMGUIBASE const int BeShadowMod;
 
 class BView;
 /*------------------------------------------------------------------------------*\
 	Functions for retrieving UI-colors, independent from whether or not the
 	current BeOS supports it or not (on R5 they just return the fixed values):
 \*------------------------------------------------------------------------------*/
-status_t IMPEXPSANTAPARTSFORBEAM BmSetViewUIColor( BView* view, const char* uiColName);
-status_t IMPEXPSANTAPARTSFORBEAM BmSetHighUIColor( BView* view, const char* uiColName);
-status_t IMPEXPSANTAPARTSFORBEAM BmSetLowUIColor( BView* view, const char* uiColName);
+status_t IMPEXPBMGUIBASE BmSetViewUIColor( BView* view, const char* uiColName);
+status_t IMPEXPBMGUIBASE BmSetHighUIColor( BView* view, const char* uiColName);
+status_t IMPEXPBMGUIBASE BmSetLowUIColor( BView* view, const char* uiColName);
 
-rgb_color IMPEXPSANTAPARTSFORBEAM BmFixupColor( const char* uiColName, int level, bool weaken);
+rgb_color IMPEXPBMGUIBASE BmFixupColor( const char* uiColName, int level, bool weaken);
 
 inline rgb_color BmWeakenColor( const char* uiColName, int level) {
 	return BmFixupColor( uiColName, level, true);
@@ -43,29 +43,29 @@ inline rgb_color BmStrengthenColor( const char* uiColName, int level) {
 #ifndef B_BEOS_VERSION_DANO
 
 // backport of UI-colors to R5:
-extern IMPEXPSANTAPARTSFORBEAM const char *B_UI_PANEL_BACKGROUND_COLOR;
-extern IMPEXPSANTAPARTSFORBEAM const char *B_UI_PANEL_TEXT_COLOR;
-extern IMPEXPSANTAPARTSFORBEAM const char *B_UI_DOCUMENT_BACKGROUND_COLOR;
-extern IMPEXPSANTAPARTSFORBEAM const char *B_UI_DOCUMENT_TEXT_COLOR;
-extern IMPEXPSANTAPARTSFORBEAM const char *B_UI_CONTROL_BACKGROUND_COLOR;
-extern IMPEXPSANTAPARTSFORBEAM const char *B_UI_CONTROL_TEXT_COLOR;
-extern IMPEXPSANTAPARTSFORBEAM const char *B_UI_CONTROL_BORDER_COLOR;
-extern IMPEXPSANTAPARTSFORBEAM const char *B_UI_CONTROL_HIGHLIGHT_COLOR;
-extern IMPEXPSANTAPARTSFORBEAM const char *B_UI_NAVIGATION_BASE_COLOR;
-extern IMPEXPSANTAPARTSFORBEAM const char *B_UI_NAVIGATION_PULSE_COLOR;
-extern IMPEXPSANTAPARTSFORBEAM const char *B_UI_SHINE_COLOR;
-extern IMPEXPSANTAPARTSFORBEAM const char *B_UI_SHADOW_COLOR;
-extern IMPEXPSANTAPARTSFORBEAM const char *B_UI_TOOLTIP_BACKGROUND_COLOR;
-extern IMPEXPSANTAPARTSFORBEAM const char *B_UI_TOOLTIP_TEXT_COLOR;
-extern IMPEXPSANTAPARTSFORBEAM const char *B_UI_MENU_BACKGROUND_COLOR;
-extern IMPEXPSANTAPARTSFORBEAM const char *B_UI_MENU_SELECTED_BACKGROUND_COLOR;
-extern IMPEXPSANTAPARTSFORBEAM const char *B_UI_MENU_ITEM_TEXT_COLOR;
-extern IMPEXPSANTAPARTSFORBEAM const char *B_UI_MENU_SELECTED_ITEM_TEXT_COLOR;
-extern IMPEXPSANTAPARTSFORBEAM const char *B_UI_MENU_SELECTED_BORDER_COLOR;
-extern IMPEXPSANTAPARTSFORBEAM const char *B_UI_SUCCESS_COLOR;
-extern IMPEXPSANTAPARTSFORBEAM const char *B_UI_FAILURE_COLOR;
+extern IMPEXPBMGUIBASE const char *B_UI_PANEL_BACKGROUND_COLOR;
+extern IMPEXPBMGUIBASE const char *B_UI_PANEL_TEXT_COLOR;
+extern IMPEXPBMGUIBASE const char *B_UI_DOCUMENT_BACKGROUND_COLOR;
+extern IMPEXPBMGUIBASE const char *B_UI_DOCUMENT_TEXT_COLOR;
+extern IMPEXPBMGUIBASE const char *B_UI_CONTROL_BACKGROUND_COLOR;
+extern IMPEXPBMGUIBASE const char *B_UI_CONTROL_TEXT_COLOR;
+extern IMPEXPBMGUIBASE const char *B_UI_CONTROL_BORDER_COLOR;
+extern IMPEXPBMGUIBASE const char *B_UI_CONTROL_HIGHLIGHT_COLOR;
+extern IMPEXPBMGUIBASE const char *B_UI_NAVIGATION_BASE_COLOR;
+extern IMPEXPBMGUIBASE const char *B_UI_NAVIGATION_PULSE_COLOR;
+extern IMPEXPBMGUIBASE const char *B_UI_SHINE_COLOR;
+extern IMPEXPBMGUIBASE const char *B_UI_SHADOW_COLOR;
+extern IMPEXPBMGUIBASE const char *B_UI_TOOLTIP_BACKGROUND_COLOR;
+extern IMPEXPBMGUIBASE const char *B_UI_TOOLTIP_TEXT_COLOR;
+extern IMPEXPBMGUIBASE const char *B_UI_MENU_BACKGROUND_COLOR;
+extern IMPEXPBMGUIBASE const char *B_UI_MENU_SELECTED_BACKGROUND_COLOR;
+extern IMPEXPBMGUIBASE const char *B_UI_MENU_ITEM_TEXT_COLOR;
+extern IMPEXPBMGUIBASE const char *B_UI_MENU_SELECTED_ITEM_TEXT_COLOR;
+extern IMPEXPBMGUIBASE const char *B_UI_MENU_SELECTED_BORDER_COLOR;
+extern IMPEXPBMGUIBASE const char *B_UI_SUCCESS_COLOR;
+extern IMPEXPBMGUIBASE const char *B_UI_FAILURE_COLOR;
 
-rgb_color IMPEXPSANTAPARTSFORBEAM ui_color( const char* uiColName);
+rgb_color IMPEXPBMGUIBASE ui_color( const char* uiColName);
 
 // [HACK-HACK-HACK]:
 // 	map calls to SetXXXUIColor to use BmSetXXXUIColor automagically:

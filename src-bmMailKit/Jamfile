@@ -1,0 +1,41 @@
+SubDir TOP src-bmMailKit ;
+
+SubDirHdrs $(TOP) src-bmBase ;
+SubDirHdrs $(TOP) src-bmRegexx ;
+
+SubDirSysHdrs /boot/home/config/include ;
+
+LINKFLAGS += -L/boot/home/config/lib ;
+
+SharedLibrary bmMailKit.so
+	:  
+		BmBodyPartList.cpp
+		BmController.cpp
+		BmDataModel.cpp
+		BmEncoding.cpp
+		BmFilter.cpp
+		BmFilterChain.cpp
+		BmIdentity.cpp
+		BmMail.cpp
+		BmMailFactory.cpp
+		BmMailFilter.cpp
+		BmMailFolder.cpp
+		BmMailFolderList.cpp
+		BmMailHeader.cpp
+		BmMailQuery.cpp
+		BmMailRef.cpp
+		BmMailRefList.cpp
+		BmPopAccount.cpp
+		BmPrefs.cpp
+		BmRefManager.cpp
+		BmSignature.cpp
+		BmSmtpAccount.cpp
+		BmStorageUtil.cpp
+		BmUtil.cpp
+	:  
+		bmBase.so bmRegexx.so 
+		iconv $(STDC++LIB) be 
+	;
+
+MakeLocate bmMailKit.so : [ FDirName $(DISTRO_DIR) lib ] ;
+

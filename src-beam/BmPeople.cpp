@@ -43,7 +43,6 @@ using namespace regexx;
 #include "BmLogHandler.h"
 #include "BmPeople.h"
 #include "BmPrefs.h"
-#include "BmResources.h"
 #include "BmStorageUtil.h"
 #include "BmUtil.h"
 

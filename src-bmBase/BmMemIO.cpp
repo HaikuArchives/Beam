@@ -33,10 +33,6 @@
 #include <stdlib.h>
 #include <new>
 
-#ifdef __POWERPC__
-#define BM_BUILDING_BMBASE 1
-#endif
-
 #include "BmMemIO.h"
 
 /********************************************************************************\

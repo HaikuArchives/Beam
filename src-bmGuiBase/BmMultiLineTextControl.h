@@ -43,7 +43,7 @@ class HGroup;
 
 #define BM_MULTILINE_TEXTFIELD_MODIFIED 'bmfn'
 
-class IMPEXPSANTAPARTSFORBEAM BmMultiLineTextControl 
+class IMPEXPBMGUIBASE BmMultiLineTextControl 
 	: public MView,
 	  public MultiLineTextControl,
 	  public BmDividable

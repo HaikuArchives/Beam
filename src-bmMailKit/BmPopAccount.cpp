@@ -35,11 +35,6 @@
 #include <Message.h>
 #include <MessageRunner.h>
 
-#ifdef BEAM_FOR_BONE
-# include <netinet/in.h>
-#endif
-#include <NetAddress.h>
-
 #include "regexx.hh"
 using namespace regexx;
 
@@ -47,9 +42,8 @@ using namespace regexx;
 #include "BmIdentity.h"
 #include "BmLogHandler.h"
 #include "BmMail.h"
-#include "BmMsgTypes.h"
 #include "BmPopAccount.h"
-#include "BmResources.h"
+#include "BmRosterBase.h"
 #include "BmUtil.h"
 
 /********************************************************************************\
@@ -252,14 +246,12 @@ void BmPopAccount::IntegrateAppendedArchive( BMessage* archive) {
 }
 
 /*------------------------------------------------------------------------------*\
-	GetPOPAddress()
-		-	returns the POP3-connect-info as a BNetAddress
+	AddressInfo()
+		-	returns the POP3-connect-info
 \*------------------------------------------------------------------------------*/
-bool BmPopAccount::GetPOPAddress( BNetAddress* addr) const {
-	if (addr)
-		return addr->SetTo( mPOPServer.String(), mPortNr) == B_OK;
-	else
-		return false;
+void BmPopAccount::AddressInfo( BmString& server, uint16& port) const {
+	server = mPOPServer;
+	port = mPortNr;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -373,7 +365,7 @@ void BmPopAccount::SetupIntervalRunner() {
 			  BmString("PopAccount.") << Key() << " sets check interval to " 
 			  	<< mCheckInterval);
 	if (mCheckInterval>0) {
-		BMessage msg( BMM_CHECK_MAIL);
+		BMessage msg( BeamRoster->MessageTypeForCheckMail());
 		msg.AddString( BmPopAccountList::MSG_ITEMKEY, Key().String());
 		msg.AddBool( BmPopAccountList::MSG_AUTOCHECK, true);
 		mIntervalRunner = new BMessageRunner( 
@@ -445,9 +437,9 @@ const int16 BmPopAccountList::nArchiveVersion = 2;
 		-	initialiazes object by reading info from settings file (if any)
 \*------------------------------------------------------------------------------*/
 BmPopAccountList* BmPopAccountList
-::CreateInstance( BLooper* jobMetaController) {
+::CreateInstance() {
 	if (!theInstance) {
-		theInstance = new BmPopAccountList( jobMetaController);
+		theInstance = new BmPopAccountList();
 	}
 	return theInstance.Get();
 }
@@ -456,9 +448,8 @@ BmPopAccountList* BmPopAccountList
 	BmPopAccountList()
 		-	default constructor, creates empty list
 \*------------------------------------------------------------------------------*/
-BmPopAccountList::BmPopAccountList( BLooper* jobMetaController)
+BmPopAccountList::BmPopAccountList()
 	:	inherited( "PopAccountList") 
-	,	mJobMetaController( jobMetaController)
 {
 	NeedControllersToContinue( false);
 }
@@ -476,7 +467,7 @@ BmPopAccountList::~BmPopAccountList() {
 		-	returns the name of the settins-file for the POP3-accounts-list
 \*------------------------------------------------------------------------------*/
 const BmString BmPopAccountList::SettingsFileName() {
-	return BmString( TheResources->SettingsPath.Path()) 
+	return BmString( BeamRoster->SettingsPath()) 
 				<< "/" << "Pop Accounts";
 }
 
@@ -603,5 +594,5 @@ void BmPopAccountList::CheckMailFor( BmString accName, bool isAutoCheck) {
 	BMessage archive(BM_JOBWIN_POP);
 	archive.AddString( BmJobModel::MSG_JOB_NAME, accName.String());
 	archive.AddBool( MSG_AUTOCHECK, isAutoCheck);
-	mJobMetaController->PostMessage( &archive);
+	BeamRoster->JobMetaController()->PostMessage( &archive);
 }

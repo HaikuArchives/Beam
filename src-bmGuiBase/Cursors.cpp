@@ -4,10 +4,6 @@
 //******************************************************************************************************
 #include <Cursor.h>
 
-#ifdef __POWERPC__
-#define BM_BUILDING_SANTAPARTSFORBEAM 1
-#endif
-
 #include "Cursors.h"
 
 

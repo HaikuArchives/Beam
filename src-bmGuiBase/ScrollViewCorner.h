@@ -36,7 +36,7 @@
 //******************************************************************************************************
 //**** CLASS DECLARATIONS
 //******************************************************************************************************
-class IMPEXPSANTAPARTSFORBEAM ScrollViewCorner : public BView
+class IMPEXPBMGUIBASE ScrollViewCorner : public BView
 {
 	public:
 		ScrollViewCorner(float Left,float Top);

@@ -45,9 +45,7 @@
 #include "BmMailFilter.h"
 #include "BmMailHeader.h"
 #include "BmMailRef.h"
-#include "BmMsgTypes.h"
 #include "BmPrefs.h"
-#include "BmResources.h"
 #include "BmSignature.h"
 #include "BmStorageUtil.h"
 
@@ -1022,6 +1020,33 @@ bool BmMail::IsFieldEmpty( const BmString fieldName)
 	return mHeader 
 				? mHeader->IsFieldEmpty(fieldName)
 				: true; 
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+BmBodyPartList* BmMail::Body() const
+{
+	return mBody.Get(); 
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+BmMailRef* BmMail::MailRef() const
+{
+	return mMailRef.Get();
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+BmMailHeader* BmMail::Header() const
+{
+	return mHeader.Get(); 
 }
 
 /*------------------------------------------------------------------------------*\

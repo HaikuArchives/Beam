@@ -53,9 +53,6 @@ BMenuItem* CreateSubMenuItem( const char* label, int32 msgWhat,
 BMenuItem* CreateSubMenuItem( const char* label, BMessage* msg, 
 										const char* idForShortcut);
 
-extern const char* const MSG_CHARSET;
-void AddCharsetMenu( BMenu* menu, BHandler* target, int32 msgType);
-
 void AddListToMenu( BmListModel* list, BMenu* menu, BMessage* msgTemplate,
 						  BHandler* msgTarget, BFont* font, 
 						  bool skipFirstLevel=false,

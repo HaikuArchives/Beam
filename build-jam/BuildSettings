@@ -105,16 +105,6 @@ rule SetUpSubDirBuildSettings {
 	LOCATE_TARGET = $(objdir) ;
 
 	# setup main targets location
-	SetConfigVar LOCATE_MAIN_TARGET : TOP src-filter-addons
-		: [ FDirName $(DISTRO_DIR) add-ons Filters ] ;
-	SetConfigVar LOCATE_MAIN_TARGET : TOP src-libRegexx
-		: [ FDirName $(DISTRO_DIR) lib ] ;
-	SetConfigVar LOCATE_MAIN_TARGET : TOP src-bmBase
-		: [ FDirName $(DISTRO_DIR) lib ] ;
-	SetConfigVar LOCATE_MAIN_TARGET : TOP src-santaPartsForBeam
-		: [ FDirName $(DISTRO_DIR) lib ] ;
-	SetConfigVar LOCATE_MAIN_TARGET : TOP src-filter-addons src-sieve src-libSieve src
-		: [ FDirName $(OBJECTS_DIR) lib ] ;
 	LOCATE_MAIN_TARGET ?= [ FDirName $(DISTRO_DIR) ] ;
 }
 

@@ -32,6 +32,8 @@
 #ifndef _BmMailFilter_h
 #define _BmMailFilter_h
 
+#include "BmMailKit.h"
+
 #include <vector>
 
 #include <Message.h>
@@ -45,7 +47,7 @@ class BmFilter;
 	BmMailFilter
 		-	
 \*------------------------------------------------------------------------------*/
-class BmMailFilter : public BmJobModel {
+class IMPEXPBMMAILKIT BmMailFilter : public BmJobModel {
 	typedef BmJobModel inherited;
 
 	typedef vector< BmRef< BmMail> > BmMailVect;

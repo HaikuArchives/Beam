@@ -1,22 +1,24 @@
 SubDir TOP src-filter-addons src-sieve ;
 
 SubDirHdrs $(TOP) src-bmBase ;
-SubDirHdrs $(TOP) src-libRegexx ;
-SubDirHdrs $(TOP) src-santaPartsForBeam ;
-SubDirHdrs $(TOP) src-filter-addons src-sieve src-libSieve src ;
-SubDirHdrs $(OBJECTS_DIR) src-filter-addons src-sieve src-libSieve src ;
+SubDirHdrs $(TOP) src-bmRegexx ;
+SubDirHdrs $(TOP) src-bmGuiBase ;
+SubDirHdrs $(TOP) src-filter-addons src-sieve src-libSieve ;
+SubDirHdrs $(OBJECTS_DIR) src-filter-addons src-sieve src-libSieve ;
 
 SubDirSysHdrs /boot/home/config/include ;
 SubDirSysHdrs /boot/home/config/include/liblayout ;
+
 LINKFLAGS += -L/boot/home/config/lib ;
 
 AddOn Sieve
 	:  
 		BmSieveFilter.cpp
 	: 	
-		libsieve.a santaPartsForBeam.so regexx.so bmBase.so 
+		libsieve.a bmGuiBase.so bmRegexx.so bmBase.so 
 		layout pcreposix be
 	;
 
 SubInclude TOP src-filter-addons src-sieve src-libSieve ;
 
+MakeLocate Sieve : [ FDirName $(DISTRO_DIR) add-ons Filters ] ;

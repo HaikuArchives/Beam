@@ -34,14 +34,13 @@
 using namespace regexx;
 
 #include "BmBasics.h"
-#include "BmApp.h"
 #include "BmBodyPartList.h"
 #include "BmIdentity.h"
 #include "BmLogHandler.h"
 #include "BmMailFactory.h"
 #include "BmMailHeader.h"
-#include "BmMsgTypes.h"
 #include "BmPrefs.h"
+#include "BmRosterBase.h"
 
 #undef BM_LOGNAME
 #define BM_LOGNAME "MailParser"
@@ -424,7 +423,8 @@ int32 BmMailFactory::AddQuotedText( const BmString& inText, BmString& out,
 	BmReplyFactory()
 		-	standard c'tor
 \*------------------------------------------------------------------------------*/
-BmReplyFactory::BmReplyFactory( int32 replyMode, bool join, bool joinIntoOne,
+BmReplyFactory::BmReplyFactory( BmReplyMode replyMode, 
+										  bool join, bool joinIntoOne,
 										  const BmString& selectedText)
 	:	mReplyMode( replyMode)
 	,	mJoin( join)
@@ -465,7 +465,7 @@ void BmReplyFactory::Produce()
 		typedef map< BmString, BmRef<BmMail> >BmNewMailMap;
 		BmNewMailMap newMailMap;
 		for(  BmMailRefVect::const_iterator iter = mBaseRefVect.begin(); 
-				!bmApp->IsQuitting() && iter != mBaseRefVect.end(); 
+				!BeamRoster->IsQuitting() && iter != mBaseRefVect.end(); 
 				++iter) {
 			mailRef = iter->Get();
 			BmRef<BmMail> mail = BmMail::CreateInstance( mailRef);
@@ -517,7 +517,7 @@ void BmReplyFactory::Produce()
 		}
 		// ...and now add all the freshly generated mails:
 		for(  BmNewMailMap::const_iterator iter = newMailMap.begin(); 
-			   !bmApp->IsQuitting() && iter != newMailMap.end(); 
+			   !BeamRoster->IsQuitting() && iter != newMailMap.end(); 
 			   ++iter) {
 			TheMails.push_back( iter->second);
 		}
@@ -525,7 +525,7 @@ void BmReplyFactory::Produce()
 		// create one reply per mail:
 		BmRef<BmMail> newMail;
 		for(  BmMailRefVect::const_iterator iter = mBaseRefVect.begin(); 
-				!bmApp->IsQuitting() && iter != mBaseRefVect.end(); 
+				!BeamRoster->IsQuitting() && iter != mBaseRefVect.end(); 
 				++iter) {
 			mailRef = iter->Get();
 			BmRef<BmMail> mail = BmMail::CreateInstance( mailRef);
@@ -562,7 +562,7 @@ BmString BmReplyFactory::DetermineReplyAddress( BmRef<BmMail>& mail,
 		// if replying to outbound messages, we re-use the original recipients,
 		// not ourselves:
 		replyAddr = header->GetAddressList( BM_FIELD_TO).AddrString();
-	} else if (mReplyMode == BMM_REPLY) {
+	} else if (mReplyMode == BM_REPLY_MODE_SMART) {
 		// smart (*cough*) mode: If the mail has come from a list, we react
 		// according to user prefs (reply-to-list or reply-to-originator).
 		bool hasComeFromList = mail->HasComeFromList();
@@ -574,16 +574,16 @@ BmString BmReplyFactory::DetermineReplyAddress( BmRef<BmMail>& mail,
 		if (!replyAddr.Length()) {
 			replyAddr = header->DetermineOriginator();
 		}
-	} else if (mReplyMode == BMM_REPLY_LIST) {
+	} else if (mReplyMode == BM_REPLY_MODE_LIST) {
 		// blindly use list-address for reply (this might mean that we send
 		// a reply to the list although the messages has not come from the list):
 		replyAddr = header->DetermineListAddress( true);
-	} else if (mReplyMode == BMM_REPLY_ORIGINATOR) {
+	} else if (mReplyMode == BM_REPLY_MODE_PERSON) {
 		// bypass the reply-to, this way one can send mail to the 
 		// original author of a mail which has been 'reply-to'-munged 
 		// by a mailing-list processor:
 		replyAddr = header->DetermineOriginator( true);
-	} else if (mReplyMode == BMM_REPLY_ALL) {
+	} else if (mReplyMode == BM_REPLY_MODE_ALL) {
 		// since we are replying to all recipients of this message,
 		// we now include the Originator (plain and standard way):
 		replyAddr = header->DetermineOriginator();
@@ -600,9 +600,9 @@ BmString BmReplyFactory::DetermineReplyAddress( BmRef<BmMail>& mail,
 \*------------------------------------------------------------------------------*/
 bool BmReplyFactory::IsReplyToPersonOnly( BmRef<BmMail>& mail)
 {
-	if (mReplyMode == BMM_REPLY)
+	if (mReplyMode == BM_REPLY_MODE_SMART)
 		return !mail->HasComeFromList();
-	else if (mReplyMode == BMM_REPLY_ORIGINATOR)
+	else if (mReplyMode == BM_REPLY_MODE_PERSON)
 		return true;
 	else
 		return false;
@@ -671,7 +671,7 @@ BmRef<BmMail> BmReplyFactory::CreateReplyTo( BmRef<BmMail>& oldMail,
 	}
 
 	// if we are replying to all, we may need to include more addresses:
-	if (mReplyMode == BMM_REPLY_ALL) {
+	if (mReplyMode == BM_REPLY_MODE_ALL) {
 		BmString newCc = oldMail->GetFieldVal( BM_FIELD_CC);
 		if (newCc != newTo)
 			// add address only if not already done so
@@ -708,7 +708,7 @@ BmRef<BmMail> BmReplyFactory::CreateReplyTo( BmRef<BmMail>& oldMail,
 	BmForwardFactory()
 		-	standard c'tor
 \*------------------------------------------------------------------------------*/
-BmForwardFactory::BmForwardFactory( int32 forwardMode, bool join, 
+BmForwardFactory::BmForwardFactory( BmForwardMode forwardMode, bool join, 
 												const BmString& selectedText)
 	:	mForwardMode( forwardMode)
 	,	mJoin( join)
@@ -741,7 +741,7 @@ void BmForwardFactory::Produce()
 		typedef map< BmString, BmRef<BmMail> >BmNewMailMap;
 		BmNewMailMap newMailMap;
 		for(  BmMailRefVect::const_iterator iter = mBaseRefVect.begin(); 
-				!bmApp->IsQuitting() && iter != mBaseRefVect.end(); 
+				!BeamRoster->IsQuitting() && iter != mBaseRefVect.end(); 
 				++iter) {
 			mailRef = iter->Get();
 			BmRef<BmMail> mail = BmMail::CreateInstance( mailRef);
@@ -751,7 +751,7 @@ void BmForwardFactory::Produce()
 				if (mail->InitCheck() != B_OK)
 					// couldn't read this mail, ignore it:
 					continue;
-				if (mForwardMode == BMM_FORWARD_ATTACHED) {
+				if (mForwardMode == BM_FORWARD_MODE_ATTACHED) {
 					if (iter == mBaseRefVect.begin())
 						newMail = CreateAttachedForward( mail);
 					else
@@ -760,13 +760,14 @@ void BmForwardFactory::Produce()
 				} else {
 					if (iter == mBaseRefVect.begin())
 						newMail = CreateInlineForward(
-							mail, mForwardMode == BMM_FORWARD_INLINE_ATTACH, 
+							mail, mForwardMode == BM_FORWARD_MODE_INLINE_ATTACH, 
 							mSelectedText
 						);
 					else {
 						BmString intro = CreateForwardIntro( mail);
 						CopyMailParts( 
-							newMail, mail, mForwardMode == BMM_FORWARD_INLINE_ATTACH,
+							newMail, mail, 
+							mForwardMode == BM_FORWARD_MODE_INLINE_ATTACH,
 							BM_IS_FORWARD, intro
 						);
 					}
@@ -795,7 +796,7 @@ void BmForwardFactory::Produce()
 		// create one forward per mail:
 		BmRef<BmMail> newMail;
 		for(  BmMailRefVect::const_iterator iter = mBaseRefVect.begin(); 
-				!bmApp->IsQuitting() && iter != mBaseRefVect.end(); 
+				!BeamRoster->IsQuitting() && iter != mBaseRefVect.end(); 
 				++iter) {
 			mailRef = iter->Get();
 			BmRef<BmMail> mail = BmMail::CreateInstance( mailRef);
@@ -805,11 +806,11 @@ void BmForwardFactory::Produce()
 				if (mail->InitCheck() != B_OK)
 					// couldn't read this mail, ignore it:
 					continue;
-				if (mForwardMode == BMM_FORWARD_ATTACHED) {
+				if (mForwardMode == BM_FORWARD_MODE_ATTACHED) {
 					newMail = CreateAttachedForward( mail);
 				} else {
 					newMail = CreateInlineForward( 
-						mail, mForwardMode == BMM_FORWARD_INLINE_ATTACH, 
+						mail, mForwardMode == BM_FORWARD_MODE_INLINE_ATTACH, 
 						iter == mBaseRefVect.begin() 
 									? mSelectedText 
 									: BM_DEFAULT_STRING
@@ -945,7 +946,7 @@ void BmRedirectFactory::Produce()
 
 	// create one redirection per mail:
 	for(  BmMailRefVect::const_iterator iter = mBaseRefVect.begin(); 
-			!bmApp->IsQuitting() && iter != mBaseRefVect.end(); 
+			!BeamRoster->IsQuitting() && iter != mBaseRefVect.end(); 
 			++iter) {
 		mailRef = iter->Get();
 		BmRef<BmMail> mail = BmMail::CreateInstance( mailRef);
@@ -1036,7 +1037,7 @@ void BmCopyMailFactory::Produce()
 
 	// create one copy per mail:
 	for(  BmMailRefVect::const_iterator iter = mBaseRefVect.begin(); 
-			!bmApp->IsQuitting() && iter != mBaseRefVect.end(); 
+			!BeamRoster->IsQuitting() && iter != mBaseRefVect.end(); 
 			++iter) {
 		mailRef = iter->Get();
 		BmRef<BmMail> mail = BmMail::CreateInstance( mailRef);

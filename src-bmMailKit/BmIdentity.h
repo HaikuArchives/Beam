@@ -32,6 +32,8 @@
 #ifndef _BmIdentity_h
 #define _BmIdentity_h
 
+#include "BmMailKit.h"
+
 #include <vector>
 
 #include <Archivable.h>
@@ -48,7 +50,7 @@ class BmIdentityList;
 		- 	derived from BArchivable, so it can be read from and
 			written to a file
 \*------------------------------------------------------------------------------*/
-class BmIdentity : public BmListModelItem {
+class IMPEXPBMMAILKIT BmIdentity : public BmListModelItem {
 	typedef BmListModelItem inherited;
 	friend BmIdentityList;
 
@@ -121,7 +123,7 @@ private:
 	BmIdentityList 
 		-	holds list of all Identities
 \*------------------------------------------------------------------------------*/
-class BmIdentityList : public BmListModel {
+class IMPEXPBMMAILKIT BmIdentityList : public BmListModel {
 	typedef BmListModel inherited;
 
 	static const int16 nArchiveVersion;

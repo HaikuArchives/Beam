@@ -54,6 +54,7 @@ using namespace regexx;
 #include "BmMsgTypes.h"
 #include "BmPrefs.h"
 #include "BmResources.h"
+#include "BmRosterBase.h"
 #include "BmRulerView.h"
 #include "BmSignature.h"
 
@@ -211,7 +212,7 @@ BmMailView* BmMailView::CreateInstance( minimax minmax, BRect frame,
 	BFile archiveFile;
 	BmString archiveFilename 
 		= BmString("MailView") << (outbound ? "_out" : "_in");
-	if ((err = archiveFile.SetTo( TheResources->StateInfoFolder(), 
+	if ((err = archiveFile.SetTo( BeamRoster->StateInfoFolder(), 
 											archiveFilename.String(), 
 											B_READ_ONLY)) == B_OK) {
 		// ...ok, archive file found, we fetch our state from it:
@@ -446,11 +447,13 @@ void BmMailView::MessageReceived( BMessage* msg) {
 				break;
 			}
 			case BM_MAILVIEW_SELECT_CHARSET: {
-				if (mCurrMail) {
+				BMenuItem* item = NULL;
+				msg->FindPointer( "source", (void**)&item);
+				if (mCurrMail && item) {
 					BmRef< BmBodyPart> textBody( 
 						mCurrMail->Body()->EditableTextBody());
 					if (textBody) {
-						textBody->SuggestCharset( msg->FindString( MSG_CHARSET));
+						textBody->SuggestCharset( item->Label());
 						JobIsDone( true);
 					}
 				}
@@ -1067,7 +1070,7 @@ bool BmMailView::WriteStateInfo() {
 		if (this->Archive( &archive, true) != B_OK)
 			BM_THROW_RUNTIME("Unable to archive MailView-object");
 		if ((err = cacheFile.SetTo( 
-			TheResources->StateInfoFolder(), 
+			BeamRoster->StateInfoFolder(), 
 			filename.String(), 
 			B_WRITE_ONLY | B_CREATE_FILE | B_ERASE_FILE
 		)) != B_OK)
@@ -1142,7 +1145,7 @@ void BmMailView::ShowMenu( BPoint point) {
 			if (textBody) {
 				BMenu* menu = new BMenu( "Try Charset...");
 				menu->SetFont( &font);
-				AddCharsetMenu( menu, this, BM_MAILVIEW_SELECT_CHARSET);
+				BeamRoster->AddCharsetMenu( menu, this, BM_MAILVIEW_SELECT_CHARSET);
 				BMenuItem* curr 
 					= menu->FindItem( textBody->SuggestedCharset().String());
 				if (curr)

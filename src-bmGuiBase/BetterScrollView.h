@@ -54,7 +54,7 @@
 //******************************************************************************************************
 //**** CLASS DECLARATIONS
 //******************************************************************************************************
-class IMPEXPSANTAPARTSFORBEAM BetterScrollView : public BScrollView
+class IMPEXPBMGUIBASE BetterScrollView : public BScrollView
 {
 	public:
 		BetterScrollView(const char *name, BView *target, uint32 resizeMask = B_FOLLOW_LEFT | B_FOLLOW_TOP,

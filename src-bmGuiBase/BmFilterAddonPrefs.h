@@ -52,11 +52,11 @@ class BmFilterAddon;
 \*------------------------------------------------------------------------------*/
 #define BM_NTFY_FILTER_ADDON_MODIFIED 'bmFX'
 							// the filter-addon has been changed
-class IMPEXPSANTAPARTSFORBEAM BmFilterAddonPrefsView : public VGroup {
+class IMPEXPBMGUIBASE BmFilterAddonPrefsView : public VGroup {
 	typedef VGroup inherited;
 
 public:
-	BmFilterAddonPrefsView( minimax minmax);
+	BmFilterAddonPrefsView(float minX, float minY, float maxX, float maxY);
 	virtual ~BmFilterAddonPrefsView();
 	
 	// native methods:
@@ -75,9 +75,5 @@ private:
 // PPC-codewarrior doesn't like the following...
 //	BmFilterAddonPrefsView operator=( const BmFilterAddonPrefsView&);
 };
-
-typedef BmFilterAddonPrefsView* (*BmInstantiateFilterPrefsFunc)( minimax minmax, 
-																					  const BmString& kind);
-
 
 #endif

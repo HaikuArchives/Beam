@@ -31,6 +31,8 @@
 #ifndef _BmMailRefList_h
 #define _BmMailRefList_h
 
+#include "BmMailKit.h"
+
 #include <sys/stat.h>
 
 #include "BmDataModel.h"
@@ -42,7 +44,7 @@ class BmMailRef;
 	BmMailRefList
 		-	class 
 \*------------------------------------------------------------------------------*/
-class BmMailRefList : public BmListModel {
+class IMPEXPBMMAILKIT BmMailRefList : public BmListModel {
 	typedef BmListModel inherited;
 
 	static const int16 nArchiveVersion = 2;

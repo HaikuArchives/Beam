@@ -32,6 +32,8 @@
 #ifndef _BmFilterChain_h
 #define _BmFilterChain_h
 
+#include "BmMailKit.h"
+
 #include <Archivable.h>
 
 #include "BmString.h"
@@ -48,7 +50,7 @@ class BmFilterChain;
 	BmChainedFilter 
 		-	describes the position of a filter within a chain
 \*------------------------------------------------------------------------------*/
-class BmChainedFilter : public BmListModelItem {
+class IMPEXPBMMAILKIT BmChainedFilter : public BmListModelItem {
 	typedef BmListModelItem inherited;
 
 public:
@@ -98,7 +100,7 @@ typedef multimap< int32, BmChainedFilter*> BmFilterPosMap;
 	BmChainedFilterList
 		- 	represents a list of chained filters.
 \*------------------------------------------------------------------------------*/
-class BmChainedFilterList : public BmListModel {
+class IMPEXPBMMAILKIT BmChainedFilterList : public BmListModel {
 	typedef BmListModel inherited;
 
 	// archivable components:
@@ -146,7 +148,7 @@ private:
 		-	additionally, each of these items contains a ordered list of chained
 			filters, so each item represents (contains) a list-model, too
 \*------------------------------------------------------------------------------*/
-class BmFilterChain : public BmListModelItem {
+class IMPEXPBMMAILKIT BmFilterChain : public BmListModelItem {
 	typedef BmListModelItem inherited;
 
 	// archivable components:
@@ -194,7 +196,7 @@ private:
 	BmFilterChainList 
 		-	holds list of all filter-chains
 \*------------------------------------------------------------------------------*/
-class BmFilterChainList : public BmListModel {
+class IMPEXPBMMAILKIT BmFilterChainList : public BmListModel {
 	typedef BmListModel inherited;
 
 	static const int16 nArchiveVersion;

@@ -31,6 +31,8 @@
 #ifndef _BmDataModel_h
 #define _BmDataModel_h
 
+#include "BmMailKit.h"
+
 #include <map>
 #include <memory>
 #include <set>
@@ -69,7 +71,7 @@ enum {
 			object.
 		-	contains functionality to add/remove controllers
 \*------------------------------------------------------------------------------*/
-class BmDataModel : public BmRefObj {
+class IMPEXPBMMAILKIT BmDataModel : public BmRefObj {
 	typedef set< BmController*> BmControllerSet;
 	
 	friend class MailMonitorTest;
@@ -130,14 +132,13 @@ private:
 	BmString mModelName;
 };
 
-class BmMenuController;
 /*------------------------------------------------------------------------------*\
 	BmJobModel
 		-	an interface that extends a datamodel with the ability to execute a 
 			specific job in its own thread and tell the controllers when it is done
 		-	supports pause-, continue- and stop-functionalities
 \*------------------------------------------------------------------------------*/
-class BmJobModel : public BmDataModel {
+class IMPEXPBMMAILKIT BmJobModel : public BmDataModel {
 	typedef BmDataModel inherited;
 
 public:
@@ -200,9 +201,9 @@ private:
 
 // flags indicating which parts are to be updated:
 typedef uint32 BmUpdFlags;
-const BmUpdFlags UPD_EXPANDER 	= 1<<0;
-const BmUpdFlags UPD_KEY		 	= 1<<1;
-const BmUpdFlags UPD_ALL 			= 0xFFFFFFFFUL;
+IMPEXPBMMAILKIT const BmUpdFlags UPD_EXPANDER 	= 1<<0;
+IMPEXPBMMAILKIT const BmUpdFlags UPD_KEY		 	= 1<<1;
+IMPEXPBMMAILKIT const BmUpdFlags UPD_ALL 			= 0xFFFFFFFFUL;
 
 class BmListModelItem;
 typedef map< BmString, BmRef<BmListModelItem> > BmModelItemMap;
@@ -210,7 +211,7 @@ typedef map< BmString, BmRef<BmListModelItem> > BmModelItemMap;
 	BmListModelItem
 		-	base class for the items that will be part of a BmListModel
 \*------------------------------------------------------------------------------*/
-class BmListModelItem : public BmRefObj, public BArchivable {
+class IMPEXPBMMAILKIT BmListModelItem : public BmRefObj, public BArchivable {
 	typedef BmRefObj inherited;
 	typedef BArchivable inheritedArchivable;
 	friend class BmListModel;
@@ -292,7 +293,7 @@ private:
 		-	any attaching controller automatically receives a list of all 
 			objects currently contained in the list-model
 \*------------------------------------------------------------------------------*/
-class BmListModel : public BmJobModel, public BArchivable {
+class IMPEXPBMMAILKIT BmListModel : public BmJobModel, public BArchivable {
 	typedef BmJobModel inherited;
 	friend BmListModelItem;
 
@@ -302,8 +303,6 @@ class BmListModel : public BmJobModel, public BArchivable {
 	};
 	typedef vector< BmForeignKey> BmForeignKeyVect;
 	
-	typedef set< BmMenuController*> BmMenuControllerSet;
-
 protected:
 	static const char* const MSG_VERSION;
 
@@ -327,9 +326,6 @@ public:
 											  const BmString& /*oldVal*/, 
 											  const BmString& /*newVal*/)	
 											  		{ }
-	//
-	void AddMenuController( BmMenuController* mc);
-	void RemoveMenuController( BmMenuController* mc);
 	//
 	virtual bool Store();
 	virtual const BmString SettingsFileName() = 0;
@@ -378,7 +374,6 @@ protected:
 	virtual void TellModelItemUpdated( BmListModelItem* item, 
 												  BmUpdFlags flags=UPD_ALL,
 												  const BmString oldKey="");
-	virtual void UpdateMenuControllers();
 	//
 	static void FetchAppendedArchives( BDataIO* dataIO, 
 												  BList* appendedArchives);
@@ -391,10 +386,6 @@ protected:
 	bool mNeedsStore;
 	BmForeignKeyVect mForeignKeyVect;
 	int32 mInvalidCount;
-
-	BmMenuControllerSet mInterestedMenuControllers;
-							// list of BMenuControllers viewing this list for changes
-
 
 private:
 	// Hide copy-constructor and assignment:

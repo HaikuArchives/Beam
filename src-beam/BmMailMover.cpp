@@ -1,6 +1,5 @@
 /*
 	BmMailMover.cpp
-		- Implements the main POP3-client-class: BmMailMover
 
 		$Id$
 */

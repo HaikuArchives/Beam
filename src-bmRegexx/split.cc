@@ -26,9 +26,7 @@
 // $Revision$
 // $Date$
 
-#ifdef __POWERPC__
-#define BM_BUILDING_LIBREGEXX 1
-#endif
+#define BM_BUILDING_BMREGEXX 1
 
 #include "split.hh"
 

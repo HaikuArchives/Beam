@@ -31,19 +31,21 @@
 #ifndef _BmBodyPartList_h
 #define _BmBodyPartList_h
 
+#include "BmMailKit.h"
+
 #include <Entry.h>
 
 #include "BmDataModel.h"
+#include "BmMailHeader.h"
 #include "BmMemIO.h"
 
 class BmMail;
-class BmMailHeader;
 
 /*------------------------------------------------------------------------------*\
 	BmContentField
 		-	
 \*------------------------------------------------------------------------------*/
-class BmContentField {
+class IMPEXPBMMAILKIT BmContentField {
 	typedef map< BmString, BmString> BmParamMap;
 
 public:
@@ -82,7 +84,7 @@ class BmBodyPartList;
 	BmBodyPart
 		-	
 \*------------------------------------------------------------------------------*/
-class BmBodyPart : public BmListModelItem {
+class IMPEXPBMMAILKIT BmBodyPart : public BmListModelItem {
 	typedef BmListModelItem inherited;
 
 	static const int16 nArchiveVersion = 1;
@@ -210,7 +212,7 @@ struct entry_ref;
 	BmBodyPartList
 		-	class 
 \*------------------------------------------------------------------------------*/
-class BmBodyPartList : public BmListModel {
+class IMPEXPBMMAILKIT BmBodyPartList : public BmListModel {
 	typedef BmListModel inherited;
 
 	static const int16 nArchiveVersion = 1;

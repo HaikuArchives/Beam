@@ -32,12 +32,17 @@
 #ifndef _BmRosterBase_h
 #define _BmRosterBase_h
 
+#include <time.h>
+
 #include "BmBase.h"
+#include "BmString.h"
 
 class BHandler;
+class BLooper;
 class BMenu;
 class BMessage;
 
+class BmMenuControllerBase;
 /*------------------------------------------------------------------------------*\
 	BmRosterBase
 		-	abstract class that can be used by add-ons to retrieve info about
@@ -51,9 +56,39 @@ public:
 	virtual ~BmRosterBase() 				{}
 	
 	// native methods:
-	virtual void FillMenuFromList( const char* listName, BMenu* menu, 
-											 BHandler* menuTarget, 
-											 BMessage* msgTemplate) {}
+	virtual BLooper* JobMetaController() = 0;
+
+	virtual bool IsQuitting() = 0;
+
+	virtual const char* AppNameWithVersion() = 0;
+
+	virtual const char* AppPath() = 0;
+	virtual const char* SettingsPath() = 0;
+
+	virtual BDirectory* MailCacheFolder() = 0;
+	virtual BDirectory* StateInfoFolder() = 0;
+
+	virtual const char* OwnFQDN() = 0;
+
+	virtual void UpdateMimeTypeFile( const char* sig, time_t appModTime) = 0;
+
+	virtual int32 MessageTypeForCheckMail() = 0;
+	virtual bool AskUserForPwd( const BmString& text, BmString& pwd) = 0;
+	virtual bool AskUserForPopAcc( const BmString& accName, 
+											 BmString& popAccName) = 0;
+
+	virtual void RebuildCharsetMenu( BmMenuControllerBase* menu) = 0;
+	virtual void AddCharsetMenu( BMenu* menu, BHandler* target, int32 msgType) = 0;
+	virtual void RebuildFilterMenu( BmMenuControllerBase* menu) = 0;
+	virtual void RebuildFilterChainMenu( BmMenuControllerBase* menu) = 0;
+	virtual void RebuildFolderMenu( BmMenuControllerBase* menu) = 0;
+	virtual void RebuildIdentityMenu( BmMenuControllerBase* menu) = 0;
+	virtual void RebuildLogMenu( BmMenuControllerBase* menu) = 0;
+	virtual void RebuildPeopleMenu( BmMenuControllerBase* menu) = 0;
+	virtual void RebuildPopAccountMenu( BmMenuControllerBase* menu) = 0;
+	virtual void RebuildSignatureMenu( BmMenuControllerBase* menu) = 0;
+	virtual void RebuildSmtpAccountMenu( BmMenuControllerBase* menu) = 0;
+	virtual void RebuildStatusMenu( BmMenuControllerBase* menu) = 0;
 
 	static IMPEXPBMBASE const char* BM_ROSTER_FOLDERLIST;
 	static IMPEXPBMBASE const char* BM_ROSTER_STATUSLIST;

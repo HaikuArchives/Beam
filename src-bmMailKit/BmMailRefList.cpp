@@ -44,7 +44,7 @@ using namespace regexx;
 #include "BmMailRef.h"
 #include "BmMailRefList.h"
 #include "BmPrefs.h"
-#include "BmResources.h"
+#include "BmRosterBase.h"
 #include "BmUtil.h"
 
 /*------------------------------------------------------------------------------*\
@@ -90,7 +90,7 @@ void BmMailRefList::MarkCacheAsDirty() {
 		-	
 \*------------------------------------------------------------------------------*/
 const BmString BmMailRefList::SettingsFileName() {
-	BDirectory* mailCacheDir = TheResources->MailCacheFolder();
+	BDirectory* mailCacheDir = BeamRoster->MailCacheFolder();
 	BEntry entry;
 	if (!mailCacheDir || mailCacheDir->GetEntry( &entry)!=B_OK)
 		return BmString("");
@@ -187,7 +187,7 @@ bool BmMailRefList::StartJob() {
 											<< folder->Key()
 											<< "_" << ThePrefs->MailboxVolume.Device()
 											<< " (" << folder->Name() << ")";
-			BEntry entry( TheResources->MailCacheFolder(), oldFilename.String());
+			BEntry entry( BeamRoster->MailCacheFolder(), oldFilename.String());
 			time_t mtime;
 			err = (entry.InitCheck() 
 					|| entry.GetModificationTime( &mtime) 

@@ -30,17 +30,18 @@
 
 
 #include <FindDirectory.h>
+#include <Directory.h>
 #include <Message.h>
+#include <Path.h>
 
-#include "BubbleHelper.h"
+//#include "BubbleHelper.h"
 
 #include "BmBasics.h"
-#include "BmApp.h"
 #include "BmPrefs.h"
 #include "BmFilter.h"
 #include "BmLogHandler.h"
 #include "BmMailFilter.h"
-#include "BmResources.h"
+#include "BmRosterBase.h"
 #include "BmStorageUtil.h"
 #include "BmUtil.h"
 
@@ -197,7 +198,7 @@ BmFilterList::~BmFilterList() {
 		-	returns the name of the settings-file for the signature-list
 \*------------------------------------------------------------------------------*/
 const BmString BmFilterList::SettingsFileName() {
-	return BmString( TheResources->SettingsPath.Path()) << "/Filters";
+	return BmString( BeamRoster->SettingsPath()) << "/Filters";
 }
 
 /*------------------------------------------------------------------------------*\
@@ -233,8 +234,8 @@ void BmFilterList::LoadAddons() {
 	// determine the path to the user-config-directory:
 	if (find_directory( B_USER_ADDONS_DIRECTORY, &path) != B_OK)
 		BM_THROW_RUNTIME( "Sorry, could not determine user's addon-dir !?!");
-	BmString addonPath = bmApp->AppPath() + "/add-ons/Filters";
-	TheResources->GetFolder( addonPath, addonDir);
+	BmString addonPath = BmString(BeamRoster->AppPath()) + "/add-ons/Filters";
+	SetupFolder( addonPath.String(), &addonDir);
 
 	// ...and scan through all its entries for filter-add-ons:
 	while ( addonDir.GetNextEntry( &entry, true) == B_OK) {
@@ -268,11 +269,13 @@ void BmFilterList::LoadAddons() {
 			}
 			// we try to set TheBubbleHelper and TheLogHandler globals inside the addon to our current
 			// values:
+/*
 			BubbleHelper** bhPtr;
 			if (get_image_symbol( ao.image, "TheBubbleHelper", B_SYMBOL_TYPE_ANY, 
 										 (void**)&bhPtr) == B_OK) {
 				*bhPtr = TheBubbleHelper;
 			}
+*/
 			BmLogHandler** lhPtr;
 			if (get_image_symbol( ao.image, "TheLogHandler", B_SYMBOL_TYPE_ANY, 
 										 (void**)&lhPtr) == B_OK) {
