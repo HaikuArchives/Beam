@@ -28,6 +28,7 @@
 /*                                                                       */
 /*************************************************************************/
 
+#include <algorithm>
 
 #include <Message.h>
 
@@ -169,31 +170,21 @@ void BmChainedFilterList::RenumberPos() {
 	BmAutolockCheckGlobal lock( ModelLocker());
 	if (!lock.IsLocked())
 		BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
-	// first create a temporary map that is sorted by position:
-	BmFilterPosMap tempMap;
+	// first fill pos-vect from chained filters:
 	BmModelItemMap::const_iterator iter;
 	for( iter = begin(); iter != end(); ++iter) {
 		BmChainedFilter* filter 
 			= dynamic_cast< BmChainedFilter*>( iter->second.Get());
-		tempMap.insert( 
-			pair<const long, BmChainedFilter*>( 
-				filter->Position(), filter
-			)
-		);
+		mPosVect.push_back(filter);
 	}
-	// now copy over to mPosMap and renumber while we're at it:
+	sort(mPosVect.begin(), mPosVect.end());
+	// now renumber all elements in mPosVect:
 	int32 currPos = 1;
-	mPosMap.clear();
-	BmFilterPosMap::iterator posIter;
-	for( posIter = tempMap.begin(); posIter != tempMap.end(); ++posIter) {
-		BmChainedFilter* filter = posIter->second;
+	BmFilterPosVect::iterator posIter;
+	for( posIter = mPosVect.begin(); posIter != mPosVect.end(); ++posIter) {
+		BmChainedFilter* filter = *posIter;
 		if (filter->Position() != currPos)
 			filter->Position( currPos);
-		mPosMap.insert( 
-			pair<const long, BmChainedFilter*>( 
-				currPos, filter
-			)
-		);
 		currPos += 2;
 	}
 }
@@ -408,6 +399,11 @@ void BmFilterChainList::ForeignKeyChanged( const BmString& key,
 		-	removes filter with given name from all filter-chains.
 \*------------------------------------------------------------------------------*/
 void BmFilterChainList::RemoveFilterFromAllChains( const BmString& filterName) {
+	BmAutolockCheckGlobal lock( ModelLocker());
+	if (!lock.IsLocked())
+		BM_THROW_RUNTIME( 
+			ModelNameNC() << ": Unable to get lock"
+		);
 	BmModelItemMap::const_iterator iter;
 	for( iter = begin(); iter != end(); ++iter) {
 		BmFilterChain* chain = dynamic_cast< BmFilterChain*>( iter->second.Get());

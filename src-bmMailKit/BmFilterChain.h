@@ -39,7 +39,7 @@
 #include "BmString.h"
 #include "BmDataModel.h"
 
-#include <map.h>
+#include <vector.h>
 
 extern IMPEXPBMMAILKIT BmString BM_OutboundPreEditLabel;
 extern IMPEXPBMMAILKIT BmString BM_OutboundPreSendLabel;
@@ -60,6 +60,8 @@ public:
 	virtual ~BmChainedFilter();
 	
 	// native methods:
+	bool operator < (const BmChainedFilter& right)
+													{ return mPosition < right.mPosition; }
 
 	// stuff needed for Archival:
 	status_t Archive( BMessage* archive, bool deep = true) const;
@@ -95,7 +97,7 @@ private:
 
 
 
-typedef multimap< int32, BmChainedFilter*> BmFilterPosMap;
+typedef vector< BmChainedFilter*> BmFilterPosVect;
 
 /*------------------------------------------------------------------------------*\
 	BmChainedFilterList
@@ -116,10 +118,10 @@ public:
 	// native methods:
 	void RenumberPos();
 	//
-	inline BmFilterPosMap::const_iterator posBegin() const 
-													{ return mPosMap.begin(); }
-	inline BmFilterPosMap::const_iterator posEnd() const 
-													{ return mPosMap.end(); }
+	inline BmFilterPosVect::const_iterator posBegin() const 
+													{ return mPosVect.begin(); }
+	inline BmFilterPosVect::const_iterator posEnd() const 
+													{ return mPosVect.end(); }
 
 	// overrides of listmodel base:
 	int16 ArchiveVersion() const			{ return nArchiveVersion; }
@@ -138,7 +140,7 @@ private:
 	BmChainedFilterList( const BmChainedFilterList&);
 	BmChainedFilterList operator=( const BmChainedFilterList&);
 	
-	BmFilterPosMap mPosMap;
+	BmFilterPosVect mPosVect;
 
 };
 
@@ -171,9 +173,9 @@ public:
 	// double-dispatches for convenience:
 	inline BmString ModelNameNC() const	{ return mChainedFilters->ModelName(); }
 	inline BLocker& ModelLocker() const	{ return mChainedFilters->ModelLocker(); }
-	inline BmFilterPosMap::const_iterator posBegin() const 
+	inline BmFilterPosVect::const_iterator posBegin() const 
 													{ return mChainedFilters->posBegin(); }
-	inline BmFilterPosMap::const_iterator posEnd() const 
+	inline BmFilterPosVect::const_iterator posEnd() const 
 													{ return mChainedFilters->posEnd(); }
 
 	// getters:

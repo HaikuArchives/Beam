@@ -207,9 +207,9 @@ void BmMailFilter::ExecuteFilter( BmMail* mail) {
 			BmAutolockCheckGlobal lock( chain->ModelLocker());
 			if (!lock.IsLocked())
 				BM_THROW_RUNTIME( chain->ModelNameNC() << ": Unable to get lock");
-			BmFilterPosMap::const_iterator iter;
+			BmFilterPosVect::const_iterator iter;
 			for( iter = chain->posBegin(); iter != chain->posEnd(); ++iter) {
-				BmChainedFilter* chainedFilter = iter->second;
+				BmChainedFilter* chainedFilter = *iter;
 				BmRef< BmListModelItem> filterItem 
 					= TheFilterList->FindItemByKey( chainedFilter->Key());
 				BmFilter* filter = dynamic_cast< BmFilter*>( filterItem.Get());
