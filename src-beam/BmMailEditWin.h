@@ -13,6 +13,7 @@
 class MMenuBar;
 
 class BmMailView;
+class BmMailRef;
 class BmMailViewContainer;
 class BmMenuControl;
 class BmToolbarButton;
@@ -32,7 +33,10 @@ public:
 	~BmMailEditWin();
 
 	// native methods:
-	bool UpdateMailFields();
+	bool CreateMailFromFields();
+	void EditMail( BmMailRef* ref);
+	bool SaveAndReloadMail();
+	void SetEditMode( int32 mode);
 
 	// overrides of BWindow base:
 	void MessageReceived( BMessage*);
@@ -67,6 +71,7 @@ private:
 	BmMenuControl* mSmtpControl;
 	
 	bool mShowDetails;
+	bool mRawMode;
 	MView* mOuterGroup;
 };
 
@@ -76,7 +81,7 @@ class BmMailViewFilter : public BMessageFilter {
 	typedef BMessageFilter inherited;
 public:
 	// c'tor:
-	BmMailViewFilter( BmMailEditWin* editWin);
+	BmMailViewFilter( int32 msgCmd, BmMailEditWin* editWin);
 	
 	// overrides of message-filter-base:
 	filter_result Filter( BMessage* msg, BHandler** target);

@@ -22,7 +22,8 @@
 \********************************************************************************/
 
 enum Columns {
-	COL_ICON = 0,
+	COL_EXPANDER = 0,
+	COL_ICON,
 	COL_NAME,
 	COL_MIMETYPE,
 	COL_SIZE,
@@ -42,7 +43,9 @@ BmBodyPartItem::BmBodyPartItem( BString key, BmListModelItem* _item)
 	BBitmap* icon = TheResources->IconByName( bodyPart->MimeType());
 	SetColumnContent( COL_ICON, icon, 2.0, false);
 
-	BString sizeString = BytesToString( bodyPart->DecodedLength(), true);
+	BString sizeString = bodyPart->IsMultiPart() 
+								? "" 
+								: BytesToString( bodyPart->DecodedLength(), true);
 
 	// set column-values:
 	BmListColumn cols[] = {
@@ -102,6 +105,8 @@ BmBodyPartView::BmBodyPartView( minimax minmax, int32 width, int32 height,
 
 	UseStateCache( false);
 
+	AddColumn( new CLVColumn( NULL, 10.0, 
+									  CLV_EXPANDER | CLV_LOCK_AT_BEGINNING | CLV_NOT_MOVABLE, 10.0));
 	AddColumn( new CLVColumn( "Icon", 18.0, 0, 18.0));
 	AddColumn( new CLVColumn( "Name", nColWidths[2], 0, 20.0));
 	AddColumn( new CLVColumn( "Mimetype", nColWidths[1], 0, 20.0));
@@ -143,7 +148,7 @@ status_t BmBodyPartView::Unarchive( BMessage* archive, bool deep=true) {
 BmListViewItem* BmBodyPartView::CreateListViewItem( BmListModelItem* item, 
 																	BMessage* archive) {
 	BmBodyPart* modelItem = dynamic_cast<BmBodyPart*>( item);
-	if (!modelItem->IsMultiPart() && (mShowAllParts || !modelItem->ShouldBeShownInline())) {
+	if (mShowAllParts || !modelItem->IsMultiPart() && !modelItem->ShouldBeShownInline()) {
 		return new BmBodyPartItem( item->Key(), item);
 	} else {
 		return NULL;
@@ -197,6 +202,33 @@ void BmBodyPartView::AddAttachment( BMessage* msg) {
 }
 
 /*------------------------------------------------------------------------------*\
+	AdjustVerticalSize()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmBodyPartView::AdjustVerticalSize() {
+	float width = Bounds().Width();
+	int32 count = CountItems();
+	float itemHeight = count ? ItemAt(0)->Height()+1 : 0;
+							// makes this view disappear if no BodyPart is shown
+	ResizeTo( width, count*itemHeight);
+	Invalidate();
+	BmMailView* mailView = (BmMailView*)Parent();
+	if (mailView) {
+		mailView->ScrollTo( 0, 0);
+		mailView->CalculateVerticalOffset();
+	}
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmBodyPartView::ExpansionChanged( CLVListItem* _item, bool expanded) {
+	inherited::ExpansionChanged( _item, expanded);
+	AdjustVerticalSize();
+}
+
+/*------------------------------------------------------------------------------*\
 	AddAllModelItems()
 		-	
 \*------------------------------------------------------------------------------*/
@@ -208,29 +240,38 @@ void BmBodyPartView::AddAllModelItems() {
 	}
 	// do add all items:
 	inherited::AddAllModelItems();
-	// adjust size accordingly:
-	float width = Bounds().Width();
-	int32 count = FullListCountItems();
-	float itemHeight = count ? ItemAt(0)->Height()+1 : 0;
-							// makes this view disappear if no BodyPart is shown
-	ResizeTo( width, count*itemHeight);
 	// update info about maximum column widths:
+	int32 count = FullListCountItems();
 	for( int i=0; i<count; ++i) {
 		BmListViewItem* viewItem = dynamic_cast<BmListViewItem*>( FullListItemAt( i));
 		for( int c=nFirstTextCol; c<CountColumns(); ++c) {
 			float textWidth = StringWidth( viewItem->GetColumnContentText(c));
 			mColWidths[c] = MAX( mColWidths[c], textWidth+10);
 		}
+		Expand(FullListItemAt(i));
 	}
 	// adjust column widths, if neccessary:
-	BmMailView* mailView = (BmMailView*)Parent();
 	for( i=nFirstTextCol; i<CountColumns(); ++i) {
 		ColumnAt( i)->SetWidth( mColWidths[i]);
 	}
-	if (mailView) {
-		mailView->ScrollTo( 0, 0);
-		mailView->CalculateVerticalOffset();
-	}
+
+	AdjustVerticalSize();
+}
+
+/*------------------------------------------------------------------------------*\
+	RemoveModelItem( msg)
+		-	Hook function that is called whenever an item has been deleted from the
+			listmodel
+		-	this implementation informs the model that we have noticed the removal 
+			of the item. This is neccessary since the model is waiting for all 
+			controllers to signal that they have understood that the deleted item
+			is no longer valid. Otherwise, a controller might still access
+			an item that has already been deleted by the model.
+\*------------------------------------------------------------------------------*/
+void BmBodyPartView::RemoveModelItem( BmListModelItem* item) {
+	BM_LOG2( BM_LogModelController, BString(ControllerName())<<": removing one item from listview");
+	BmBodyPartList* bodyPartList = dynamic_cast<BmBodyPartList*>( DataModel());
+	ShowBody( bodyPartList);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -275,7 +316,7 @@ void BmBodyPartView::MouseDown( BPoint point) {
 	BPoint mousePos;
 	uint32 buttons;
 	GetMouse( &mousePos, &buttons);
-	if (buttons == B_SECONDARY_MOUSE_BUTTON) {
+	if (!mEditable && buttons == B_SECONDARY_MOUSE_BUTTON) {
 		ShowMenu( point);
 	}
 }

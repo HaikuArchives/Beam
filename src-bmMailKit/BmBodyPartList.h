@@ -6,6 +6,8 @@
 #ifndef _BmBodyPartList_h
 #define _BmBodyPartList_h
 
+#include <Entry.h>
+
 #include "BmDataModel.h"
 
 class BmMail;
@@ -60,12 +62,16 @@ public:
 	BmBodyPart( BmBodyPartList* model, entry_ref* ref, BmListModelItem* parent=NULL);
 	~BmBodyPart();
 
+	// class methods:
+	static BString BmBodyPart::NextObjectID();
+
 	// native methods:
 	void SetTo( const BString& msgtext, int32 s, int32 l, BmMailHeader* mHeader=NULL);
-	void SetBodyText( const BString& text, int32 encoding);
+	void SetBodyText( const BString& text, uint32 encoding);
 	bool IsText() const;
 	bool IsPlainText() const;
 	bool ShouldBeShownInline()	const;
+	bool ContainsRef( const entry_ref& ref) const;
 	entry_ref WriteToTempFile( BString filename="");
 	void ConstructBodyForSending( BString &msgText);
 
@@ -80,12 +86,14 @@ public:
 	const BString& MimeType() const		{ return mContentType.Value(); }
 	const BString& Disposition() const	{ return mContentDisposition.Value(); }
 	const BString& FileName() const		{ return mFileName; }
-	const BString& Encoding() const		{ return mContentTransferEncoding; }
+	const BString& TransferEncoding() const	{ return mContentTransferEncoding; }
 	const BString& ID() const				{ return mContentId; }
 	const BString& Description() const	{ return mContentDescription; }
 	const BString& Language() const		{ return mContentLanguage; }
 	const BString& TypeParam( BString key) const		{ return mContentType.Param( key); }
 	const BString& DispositionParam( BString key) const	{ return mContentDisposition.Param( key); }
+
+	const entry_ref& EntryRef() const	{ return mEntryRef; }
 
 	static int32 nBoundaryCounter;
 
@@ -99,10 +107,12 @@ private:
 	BString mContentDescription;
 	BString mContentLanguage;
 	BString mFileName;
+	
+	entry_ref mEntryRef;
 
 	status_t mInitCheck;
 
-	static int32 nCounter;
+	static int32 nObjectID;
 
 };
 
@@ -125,7 +135,8 @@ public:
 	bool HasAttachments() const;
 	void AddAttachmentFromRef( entry_ref* ref);
 	bool ConstructBodyForSending( BString& msgText);
-	void SetEditableText( const BString& text, int32 encoding);
+	void SetEditableText( const BString& text, uint32 encoding);
+	uint32 DefaultEncoding()	const;
 
 	//	overrides of listmodel base:
 	bool StartJob();

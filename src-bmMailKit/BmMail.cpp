@@ -10,11 +10,13 @@
 #include <FindDirectory.h>
 #include <NodeInfo.h>
 
-#include <regexx/regexx.hh>
+#include "regexx.hh"
 using namespace regexx;
 
 #include "BmBasics.h"
 #include "BmBodyPartList.h"
+#include "BmEncoding.h"
+	using namespace BmEncoding;
 #include "BmLogHandler.h"
 #include "BmMail.h"
 #include "BmMailHeader.h"
@@ -38,7 +40,7 @@ BmMail::BmMail( bool outbound)
 	,	mMailRef( NULL)
 	,	mHeader( NULL)
 	,	mHeaderLength( 0)
-	,	mBody( new BmBodyPartList( this))
+	,	mBody( NULL)
 	,	mInitCheck( B_NO_INIT)
 	,	mOutbound( outbound)
 {
@@ -55,7 +57,7 @@ BmMail::BmMail( BString &msgText, const BString account)
 	:	inherited( "MailModel_dummy")
 	,	mHeader( NULL)
 	,	mHeaderLength( 0)
-	,	mBody( new BmBodyPartList( this))
+	,	mBody( NULL)
 	,	mMailRef( NULL)
 	,	mInitCheck( B_NO_INIT)
 	,	mOutbound( false)
@@ -71,7 +73,7 @@ BmMail::BmMail( BmMailRef* ref)
 	:	inherited( BString("MailModel_") << ref->Inode())
 	,	mHeader( NULL)
 	,	mHeaderLength( 0)
-	,	mBody( new BmBodyPartList( this))
+	,	mBody( NULL)
 	,	mMailRef( ref)
 	,	mInitCheck( B_NO_INIT)
 	,	mOutbound( false)
@@ -111,13 +113,14 @@ void BmMail::SetTo( BString &msgText, const BString account) {
 	header.SetTo( mText, headerLen);
 	mHeader = new BmMailHeader( header, this);
 	
+	mBody = new BmBodyPartList( this);
 	mBody->ParseMail();
 
 	mInitCheck = B_OK;
 }
 	
 /*------------------------------------------------------------------------------*\
-	MarkAsRead()
+	MarkAs()
 		-	
 \*------------------------------------------------------------------------------*/
 void BmMail::MarkAs( const char* status) {
@@ -142,7 +145,15 @@ void BmMail::MarkAs( const char* status) {
 		-	
 \*------------------------------------------------------------------------------*/
 const BString BmMail::Status() const { 
-	return mMailRef ? mMailRef->Status() : "New";
+	return mMailRef ? mMailRef->Status() : DefaultStatus();
+}
+
+/*------------------------------------------------------------------------------*\
+	DefaultStatus()
+		-	
+\*------------------------------------------------------------------------------*/
+const BString BmMail::DefaultStatus() const { 
+	return mOutbound ? BM_MAIL_STATUS_DRAFT : BM_MAIL_STATUS_NEW;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -160,9 +171,22 @@ bool BmMail::HasAttachments() const {
 	SetFieldVal()
 	-	
 \*------------------------------------------------------------------------------*/
+const BString& BmMail::GetFieldVal( const BString fieldName) {
+	if (mHeader)
+		return mHeader->GetFieldVal( fieldName);
+	else
+		return BM_DEFAULT_STRING;
+}
+
+/*------------------------------------------------------------------------------*\
+	SetFieldVal()
+	-	
+\*------------------------------------------------------------------------------*/
 void BmMail::SetFieldVal( const BString fieldName, const BString value) {
 	// we set the field-value inside the mail-header only if it has content
 	// otherwise we remove the field from the header:
+	if (!mHeader)
+		return;
 	if (value.Length())
 		mHeader->SetFieldVal( fieldName, value);
 	else
@@ -197,6 +221,17 @@ void BmMail::RemoveField( const BString fieldName) {
 }
 
 /*------------------------------------------------------------------------------*\
+	DefaultEncoding()
+		-	
+\*------------------------------------------------------------------------------*/
+uint32 BmMail::DefaultEncoding() const {
+	uint32 defEncoding;
+	if (mBody && (defEncoding = mBody->DefaultEncoding())!=BM_UNKNOWN_ENCODING)
+		return defEncoding;
+	return mHeader ? mHeader->DefaultEncoding() : B_ISO1_CONVERSION;
+}
+
+/*------------------------------------------------------------------------------*\
 	Store()
 		-	stores mail-data and attributes inside a file
 \*------------------------------------------------------------------------------*/
@@ -210,29 +245,38 @@ bool BmMail::Store() {
 	BString basicFilename;
 	BString inoutboxPath;
 	BDirectory homeDir;
-	BEntry mailEntry;
+	BEntry tmpEntry;
+	BEntry parentEntry;
 
 	try {
 		(inoutboxPath = ThePrefs->GetString("MailboxPath")) << (mOutbound ? "/out" : "/in");
-		(err = mParentEntry.SetTo( inoutboxPath.String(), true)) == B_OK
+		(err = parentEntry.SetTo( inoutboxPath.String(), true)) == B_OK
 													|| BM_THROW_RUNTIME( BString("Could not create entry for mail-folder <") << inoutboxPath << ">\n\n Result: " << strerror(err));
 
-		basicFilename = CreateBasicFilename();
-
+		if (mMailRef && mMailRef->InitCheck() == B_OK) {
+			// mail has been read from disk, we recycle the old name:
+			basicFilename = mMailRef->TrackerName();
+		} else if (mEntry.InitCheck() == B_OK) {
+			// mail has just been written to disk, we recycle the old name:
+			char* buf = basicFilename.LockBuffer( B_FILE_NAME_LENGTH);
+			mEntry.GetName( buf);
+			basicFilename.UnlockBuffer();
+		} else {
+			// mail is new, we create a new filename for it:
+			basicFilename = CreateBasicFilename();
+		}
+			
+		// determine tmp-folder where the mail is being created:
 		find_directory( B_COMMON_TEMP_DIRECTORY, &tmpPath, true) == B_OK
 													|| BM_THROW_RUNTIME( BString("Could not find tmp-directory on this system") << "\n\n Result: " << strerror(err));
-		// determine real home of new mail:		
-		mParentEntry.GetPath( &path);
-		BString filename( BString(path.Path()) << "/" << basicFilename);
-		// determing tmp-folder where the mail is being created:
 		BString tmpFilename( BString(tmpPath.Path()) << "/" << basicFilename);
-		(err = mailEntry.SetTo( tmpFilename.String())) == B_OK
+		(err = tmpEntry.SetTo( tmpFilename.String())) == B_OK
 											|| BM_THROW_RUNTIME( BString("Could not create entry for new mail-file <") << tmpFilename << ">\n\n Result: " << strerror(err));
-		if (mailEntry.Exists()) {
+		if (tmpEntry.Exists()) {
 			BM_THROW_RUNTIME( BString("Unable to create a unique filename for mail <") << basicFilename << ">.\n\n Result: " << strerror(err));
 		}
 		// we create the new mailfile...
-		(err = mailFile.SetTo( &mailEntry, B_WRITE_ONLY | B_CREATE_FILE)) == B_OK
+		(err = mailFile.SetTo( &tmpEntry, B_WRITE_ONLY | B_CREATE_FILE)) == B_OK
 													|| BM_THROW_RUNTIME( BString("Could not create mail-file\n\t<") << basicFilename << ">\n\n Result: " << strerror(err));
 		// ...lock the file so no-one will be reading while we write...
 		mailFile.Lock();
@@ -254,11 +298,15 @@ bool BmMail::Store() {
 		}
 		mailFile.Sync();
 		mailFile.Unlock();
+
 		// finally we move the mail-file to its new home:
-		(err = homeDir.SetTo( &mParentEntry)) == B_OK
+		parentEntry.GetPath( &path);
+		(err = homeDir.SetTo( &parentEntry)) == B_OK
 													|| BM_THROW_RUNTIME( BString("Could not get directory for \n\t<") << path.Path() << ">\n\n Result: " << strerror(err));
-		(err = mailEntry.MoveTo( &homeDir)) == B_OK
-													|| BM_THROW_RUNTIME( BString("Could not move mail from tmp-folder to \n\t<") << filename << ">\n\n Result: " << strerror(err));
+		bool clobber = (mEntry.InitCheck() == B_OK);
+		(err = tmpEntry.MoveTo( &homeDir, NULL, clobber)) == B_OK
+													|| BM_THROW_RUNTIME( BString("Could not move mail from tmp-folder to \n\t<") << path.Path() << "/" << basicFilename << ">\n\n Result: " << strerror(err));
+		mEntry = tmpEntry;
 	} catch( exception &e) {
 		BM_SHOWERR(e.what());
 		return false;
@@ -273,7 +321,7 @@ bool BmMail::Store() {
 \*------------------------------------------------------------------------------*/
 void BmMail::StoreAttributes( BFile& mailFile) {
 	//
-	BString st = mOutbound ? "Pending" : "New";
+	BString st = DefaultStatus();
 	mailFile.WriteAttr( BM_MAIL_ATTR_STATUS, B_STRING_TYPE, 0, st.String(), st.Length()+1);
 	mailFile.WriteAttr( BM_MAIL_ATTR_ACCOUNT, B_STRING_TYPE, 0, mAccountName.String(), mAccountName.Length()+1);
 	//
@@ -307,12 +355,6 @@ BString BmMail::CreateBasicFilename() {
 							// we avoid some characters in filename
 	return name;
 }
-
-
-
-/********************************************************************************\
-	BmLocalMail
-\********************************************************************************/
 
 /*------------------------------------------------------------------------------*\
 	StartJob()

@@ -23,11 +23,13 @@
 
 /*------------------------------------------------------------------------------*\
 	SmtpStates[]
-		-	array of SMTP3-states, each with title and corresponding handler-method
+		-	array of SMTP-states, each with title and corresponding handler-method
 \*------------------------------------------------------------------------------*/
 BmSmtp::SmtpState BmSmtp::SmtpStates[BmSmtp::SMTP_FINAL] = {
 	SmtpState( "connect...", &BmSmtp::Connect),
+	SmtpState( "helo...", &BmSmtp::Helo),
 	SmtpState( "auth...", &BmSmtp::Auth),
+	SmtpState( "mail...", &BmSmtp::Mail),
 	SmtpState( "rcpt...", &BmSmtp::Rcpt),
 	SmtpState( "data...", &BmSmtp::Data),
 	SmtpState( "quit...", &BmSmtp::Disconnect),
@@ -96,7 +98,7 @@ bool BmSmtp::StartJob() {
 
 /*------------------------------------------------------------------------------*\
 	UpdateSMTPStatus( delta, detailText, failed)
-		-	informs the interested party about a change in the current SMTP3-state
+		-	informs the interested party about a change in the current SMTP-state
 		-	failed==true means that we only want to indicate the failure of the
 			current stage (the BString "FAILED!" will be shown)
 \*------------------------------------------------------------------------------*/
@@ -167,6 +169,13 @@ void BmSmtp::Auth() {
 		CheckForPositiveAnswer( SINGLE_LINE);
 	}
 */
+}
+
+/*------------------------------------------------------------------------------*\
+	Mail()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmSmtp::Mail() {
 }
 
 /*------------------------------------------------------------------------------*\

@@ -550,7 +550,7 @@ void BmJobStatusWin::RemoveJob( const char* name) {
 
 	BRect rect = controller->Bounds();
 	mOuterGroup->RemoveChild( controller);
-	ResizeBy( 0, 0-(rect.Height()));
+	ResizeBy( 0, -1-(rect.Height()));
 	RecalcSize();
 	mActiveJobs.erase( controller->ControllerName());
 	if (mActiveJobs.empty())

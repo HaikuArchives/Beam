@@ -16,6 +16,9 @@
 \*------------------------------------------------------------------------------*/
 #define BM_NTFY_MAILREF_SELECTION	'bmba'
 						// sent from BmMailRefView to observers whenever mail-selection changes
+#define BM_MAILREF_INVOKED				'bmbb'
+						// sent from BmMailRefView whenever a mail-ref is invoked (should be shown
+						// inside a window of it's own).
 
 class BmMailFolder;
 /*------------------------------------------------------------------------------*\
@@ -69,6 +72,9 @@ public:
 	void HandleDrop( const BMessage* msg);
 	void MessageReceived( BMessage* msg);
 	void SelectionChanged( void);
+	void ItemInvoked( int32 index);
+	void MouseDown(BPoint point);
+	void MouseUp(BPoint point);
 
 	// overrides of controller base:
 	BString StateInfoBasename();
@@ -84,6 +90,7 @@ public:
 private:
 	BmRef<BmMailFolder> mCurrFolder;
 	BmMailView* mPartnerMailView;
+	bool mMouseIsDown;
 
 };
 

@@ -128,9 +128,8 @@ public:
 	void SetFieldVal( const BString fieldName, const BString value);
 	void AddFieldVal( const BString fieldName, const BString value);
 	void RemoveField( const BString fieldName);
-							// the next always produces US-ASCII:
-	bool ConstructRawText( BString& header, int32 encoding, 
-								  const BString forBcc=BString());
+							// the next always produces US-ASCII (7-bit):
+	bool ConstructRawText( BString& header, int32 encoding);
 
 	// getters:
 	const BString& GetFieldVal( const BString fieldName);
@@ -138,7 +137,7 @@ public:
 	int32 NumLines() const 					{ return mNumLines; }
 	const BString& HeaderString() const { return mHeaderString; }
 	const BString& Name() const			{ return mName; }
-	int32 DefaultEncoding()	const			{ return mDefaultEncoding; }
+	uint32 DefaultEncoding()	const		{ return mDefaultEncoding; }
 
 	// class-functions:
 	static bool IsAddressField( const BString fieldName);
@@ -180,8 +179,8 @@ private:
 							// The mail these headers belong to
 	BString mName;
 							// The "name" of the sender of this mail (MAIL:name attribute)
-	int32 mDefaultEncoding;
-							// encoding to be used by this mail (if not specified otherwise)
+	uint32 mDefaultEncoding;
+							// charset-encoding to be used by this mail (if not specified otherwise)
 	int32 mNumLines;
 							// number of lines in this header
 

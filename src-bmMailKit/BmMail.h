@@ -63,6 +63,15 @@ class BmMailHeader;
 #define BM_FIELD_X_MAILER					"X-Mailer"
 #define BM_FIELD_X_PRIORITY				"X-Priority"
 
+#define BM_MAIL_STATUS_DRAFT			"Draft"
+#define BM_MAIL_STATUS_FORWARDED		"Forwarded"
+#define BM_MAIL_STATUS_NEW				"New"
+#define BM_MAIL_STATUS_PENDING		"Pending"
+#define BM_MAIL_STATUS_READ			"Read"
+#define BM_MAIL_STATUS_REDIRECTED	"Redirected"
+#define BM_MAIL_STATUS_REPLIED		"Replied"
+#define BM_MAIL_STATUS_SENT			"Sent"
+
 /*------------------------------------------------------------------------------*\
 	BmMail 
 		-	represents a single mail-message in Beam
@@ -83,8 +92,10 @@ public:
 	// native methods:
 	bool ConstructRawText( const BString& editableText, int32 encoding,
 								  BString smtpAccount);
+	void SetTo( BString &msgText, const BString account);
 	bool Store();
 	//
+	const BString& GetFieldVal( const BString fieldName);
 	bool HasAttachments() const;
 	void MarkAs( const char* status);
 	void RemoveField( const BString fieldName);
@@ -102,10 +113,10 @@ public:
 	int32 HeaderLength() const				{ return mHeaderLength; }
 	const BString& RawText() const		{ return mText; }
 	const bool Outbound() const			{ return mOutbound; }
+	uint32 DefaultEncoding()	const;
 
 protected:
 	BString CreateBasicFilename();
-	void SetTo( BString &msgText, const BString account);
 	void StoreAttributes( BFile& mailFile);
 
 	BmRef<BmMailRef> mMailRef;
@@ -113,6 +124,8 @@ protected:
 
 private:
 	BmMail();
+	
+	const BString DefaultStatus() const;
 
 	BmMailHeader* mHeader;					// contains header-information
 	int32 mHeaderLength;
@@ -123,8 +136,7 @@ private:
 
 	BString mAccountName;					// name of account this message came from
 
-	BEntry mParentEntry;						// filesystem-entry for mailfolder this mail 
-													// lives in or should be stored into
+	BEntry mEntry;								// filesystem-entry for this mail 
 
 	bool mOutbound;							// true if mail is for sending (as opposed to reveived)
 };

@@ -46,8 +46,8 @@ public:
 	~BmMailView();
 
 	// native methods:
-	void ShowMail( BmMailRef* ref);
-	void ShowMail( BmMail* mail);
+	void ShowMail( BmMailRef* ref, bool async=true);
+	void ShowMail( BmMail* mail, bool async=true);
 	void DisplayBodyPart( BString& displayText, BmBodyPart* bodyPart);
 	status_t Archive( BMessage* archive, bool deep=true) const;
 	status_t Unarchive( BMessage* archive, bool deep=true);

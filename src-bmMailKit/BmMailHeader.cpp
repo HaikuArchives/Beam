@@ -10,7 +10,7 @@
 #include <NodeInfo.h>
 #include <netdb.h>
 
-#include <regexx/regexx.hh>
+#include "regexx.hh"
 using namespace regexx;
 
 #include "BmApp.h"
@@ -671,14 +671,14 @@ void BmMailHeader::StoreAttributes( BFile& mailFile) {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-bool BmMailHeader::ConstructRawText( BString& header, int32 encoding, BString forBcc) {
+bool BmMailHeader::ConstructRawText( BString& header, int32 encoding) {
 	if (!mAddrMap[BM_FIELD_FROM].InitOK()) {
 		BM_SHOWERR("Please enter at least one address into the <FROM> field, thank you.");
 		return false;
 	}
 	if (!mAddrMap[BM_FIELD_TO].InitOK() && !mAddrMap[BM_FIELD_CC].InitOK()) {
 		if (!mAddrMap[BM_FIELD_BCC].InitOK()) {
-			BM_SHOWERR("Please enter at least one address into the <TO>,<CC> or <BCC> field, thank you.");
+			BM_SHOWERR("Please enter at least one address into the\n\t<TO>,<CC> or <BCC>\nfield, thank you.");
 			return false;
 		} else {
 			// only hidden recipients via use of bcc, we set a dummy-<TO> value:
@@ -702,7 +702,6 @@ bool BmMailHeader::ConstructRawText( BString& header, int32 encoding, BString fo
 	}
 	if (!domain.Length()) {
 		// no account given or it has an empty domain, we try to find out manually:
-//			const int MAXHOSTNAMELEN = 128;
 		char hostname[MAXHOSTNAMELEN+1];
 		hostname[MAXHOSTNAMELEN] = '\0';
 		int result;
@@ -729,17 +728,6 @@ bool BmMailHeader::ConstructRawText( BString& header, int32 encoding, BString fo
 	BmHeaderMap::const_iterator iter;
 	for( iter = mStrippedHeaders.begin(); iter != mStrippedHeaders.end(); ++iter) {
 		const BString fieldName = iter->first;
-		if (fieldName == BM_FIELD_BCC) {
-			if (!forBcc.Length() || !ThePrefs->GetBool( "GenerateHeaderForEachBcc", true)) {
-				// we don't include BCC-list in generated standard header:
-			} else {
-				// we are constructing the header for a specific bcc-recipient, so we include
-				// that one into the BCC-field (this allows a bcc-recipient to see that
-				// he/she/it has received the message through use of BCC):
-				header << fieldName << ": " << forBcc << "\r\n";
-			}
-			continue;
-		}
 		if (fieldName.Compare("Content-",8) == 0) {
 			// do not include MIME-header, since that will be added by body-part:
 			continue;

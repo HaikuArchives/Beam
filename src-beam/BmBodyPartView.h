@@ -48,8 +48,9 @@ public:
 	~BmBodyPartView();
 
 	// native methods:
-	void ShowBody( BmBodyPartList* body);
 	void AddAttachment( BMessage* msg);
+	void AdjustVerticalSize();
+	void ShowBody( BmBodyPartList* body);
 
 	// overrides of listview base:
 	CLVContainerView* CreateContainer( bool horizontal, bool vertical, 
@@ -65,7 +66,9 @@ public:
 	// overrides of controller base:
 	void AddAllModelItems();
 	BmListViewItem* CreateListViewItem( BmListModelItem* item, BMessage* archive=NULL);
+	void ExpansionChanged( CLVListItem* item, bool expanded);
 	void ItemInvoked( int32 index);
+	void RemoveModelItem( BmListModelItem* item);
 	BString StateInfoBasename();
 
 	// getters:

@@ -8,7 +8,7 @@
 #include <FindDirectory.h>
 #include <NodeInfo.h>
 
-#include <regexx/regexx.hh>
+#include "regexx.hh"
 using namespace regexx;
 
 #include "BmBasics.h"
@@ -136,7 +136,19 @@ BmContentField::operator BString() const {
 \********************************************************************************/
 
 int32 BmBodyPart::nBoundaryCounter = 0;
-int32 BmBodyPart::nCounter = 0;
+int32 BmBodyPart::nObjectID = 0;
+
+/*------------------------------------------------------------------------------*\
+	BmBodyPart( msgtext, start, length, contentType)
+	-	c'tor
+\*------------------------------------------------------------------------------*/
+BString BmBodyPart::NextObjectID() {
+	BString s;
+	char* buf=s.LockBuffer( 20);
+	sprintf( buf, "%5ld", ++nObjectID);
+	s.UnlockBuffer( -1);
+	return s;
+}
 
 /*------------------------------------------------------------------------------*\
 	BmBodyPart( msgtext, start, length, contentType)
@@ -144,9 +156,10 @@ int32 BmBodyPart::nCounter = 0;
 \*------------------------------------------------------------------------------*/
 BmBodyPart::BmBodyPart( BmBodyPartList* model, const BString& msgtext, int32 start, 
 								int32 length, BmMailHeader* header, BmListModelItem* parent)
-	:	inherited( BString("")<<++nCounter, model, parent)
+	:	inherited( BString("")<<NextObjectID(), model, parent)
 	,	mIsMultiPart( false)
 	,	mInitCheck( B_NO_INIT)
+	,	mEntryRef()
 {
 	SetTo( msgtext, start, length, header);
 }
@@ -156,9 +169,10 @@ BmBodyPart::BmBodyPart( BmBodyPartList* model, const BString& msgtext, int32 sta
 	-	c'tor
 \*------------------------------------------------------------------------------*/
 BmBodyPart::BmBodyPart( BmBodyPartList* model, entry_ref* ref, BmListModelItem* parent)
-	:	inherited( BString("")<<++nCounter, model, parent)
+	:	inherited( BString("")<<NextObjectID(), model, parent)
 	,	mIsMultiPart( false)
 	,	mInitCheck( B_NO_INIT)
+	,	mEntryRef( *ref)
 {
 	try {
 		status_t err;
@@ -204,7 +218,7 @@ void BmBodyPart::SetTo( const BString& msgtext, int32 start, int32 length,
 								BmMailHeader* header)
 {
 	BString type;
-	BString encoding;
+	BString transferEncoding;
 	BString id;
 	BString disposition;
 	BString description;
@@ -250,14 +264,14 @@ void BmBodyPart::SetTo( const BString& msgtext, int32 start, int32 length,
 	if (IsPlainText() && body->EditableTextBody() == NULL) {
 		body->EditableTextBody( this);
 	}
-	// encoding
+	// transferEncoding
 	BM_LOG2( BM_LogMailParse, "parsing Content-Transfer-Encoding");
-	encoding = header->GetFieldVal( BM_FIELD_CONTENT_TRANSFER_ENCODING);
-	encoding.RemoveSet( TheResources->WHITESPACE);
+	transferEncoding = header->GetFieldVal( BM_FIELD_CONTENT_TRANSFER_ENCODING);
+	transferEncoding.RemoveSet( TheResources->WHITESPACE);
 							// some broken (webmail)-clients produce stuff like "7 bit"...
-	if (!encoding.Length())
-		encoding = "7bit";
-	mContentTransferEncoding = encoding;
+	if (!transferEncoding.Length())
+		transferEncoding = "7bit";
+	mContentTransferEncoding = transferEncoding;
 	BM_LOG2( BM_LogMailParse, BString("...found value: ")<<mContentTransferEncoding);
 
 	// MIME-Decoding:
@@ -355,6 +369,20 @@ bool BmBodyPart::ShouldBeShownInline()	const {
 }
 
 /*------------------------------------------------------------------------------*\
+	ContainsRef()
+	-	
+\*------------------------------------------------------------------------------*/
+bool BmBodyPart::ContainsRef( const entry_ref& ref) const {
+	BmModelItemMap::const_iterator iter;
+	for( iter = begin(); iter != end(); iter++) {
+		BmBodyPart* bodyPart = dynamic_cast< BmBodyPart*>( iter->second.Get());
+		if (bodyPart->EntryRef() == ref)
+			return true;
+	}
+	return false;
+}
+
+/*------------------------------------------------------------------------------*\
 	WriteToTempFile()
 		-	
 \*------------------------------------------------------------------------------*/
@@ -389,7 +417,7 @@ entry_ref BmBodyPart::WriteToTempFile( BString filename) {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmBodyPart::SetBodyText( const BString& text, int32 encoding) {
+void BmBodyPart::SetBodyText( const BString& text, uint32 encoding) {
 	text.CopyInto( mDecodedData, 0, text.Length());
 	mContentType.SetParam( "charset", EncodingToCharset( encoding));
 	mContentTransferEncoding = NeedsEncoding( text) ? "quoted-printable" : "7bit";
@@ -520,20 +548,47 @@ bool BmBodyPartList::HasAttachments() const {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmBodyPartList::AddAttachmentFromRef( entry_ref* ref) {
-	BmBodyPart* bodyPart = new BmBodyPart( this, ref, NULL);
-	if (bodyPart->InitCheck() == B_OK)
-		AddItemToList( bodyPart);
-	else
-		delete bodyPart;
+	BmBodyPart* parent = dynamic_cast< BmBodyPart*>( mEditableTextBody 
+																		? mEditableTextBody->Parent() 
+																		: NULL);
+	bool alreadyPresent = false;
+	if (parent)
+		alreadyPresent = parent->ContainsRef( *ref);
+	else {
+		BmModelItemMap::const_iterator iter;
+		for( iter = begin(); !alreadyPresent && iter != end(); iter++) {
+			BmBodyPart* bodyPart = dynamic_cast< BmBodyPart*>( iter->second.Get());
+			if (bodyPart->EntryRef() == *ref)
+				alreadyPresent = true;
+		}
+	}
+	if (!alreadyPresent) {
+		BmBodyPart* bodyPart = new BmBodyPart( this, ref, parent);
+		if (bodyPart->InitCheck() == B_OK) {
+			AddItemToList( bodyPart, parent);
+		} else
+			delete bodyPart;
+	}
 }
 
 /*------------------------------------------------------------------------------*\
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmBodyPartList::SetEditableText( const BString& text, int32 encoding) {
+void BmBodyPartList::SetEditableText( const BString& text, uint32 encoding) {
 	if (mEditableTextBody)
 		mEditableTextBody->SetBodyText( text, encoding);
+}
+
+/*------------------------------------------------------------------------------*\
+	DefaultEncoding()
+		-	
+\*------------------------------------------------------------------------------*/
+uint32 BmBodyPartList::DefaultEncoding() const {
+	if (mEditableTextBody)
+		return CharsetToEncoding( mEditableTextBody->TypeParam( "charset"));
+	else 
+		return BM_UNKNOWN_ENCODING; 
 }
 
 /*------------------------------------------------------------------------------*\
@@ -541,9 +596,12 @@ void BmBodyPartList::SetEditableText( const BString& text, int32 encoding) {
 		-	
 \*------------------------------------------------------------------------------*/
 bool BmBodyPartList::ConstructBodyForSending( BString& msgText) {
-	bool isMultiPart = size() > 1;
+	bool hasMultiPartTop = mEditableTextBody && mEditableTextBody->Parent();
+	bool isMultiPart = hasMultiPartTop
+								? mEditableTextBody->Parent()->size() > 1
+								: size() > 1;
 	BString boundary;
-	if (isMultiPart) {
+	if (isMultiPart && !hasMultiPartTop) {
 		boundary = BmBodyPart::GenerateBoundary();
 		msgText << BM_FIELD_CONTENT_TYPE << ": multipart/mixed; boundary=\""<<boundary<<"\"\r\n";
 		msgText << BM_FIELD_CONTENT_TRANSFER_ENCODING << ": 7bit\r\n\r\n";
@@ -551,11 +609,23 @@ bool BmBodyPartList::ConstructBodyForSending( BString& msgText) {
 		msgText << "--"<<boundary<<"\r\n";
 	}
 	BmModelItemMap::const_iterator iter;
-	for( iter = begin(); iter != end(); ++iter) {
-		BmBodyPart* bodyPart = dynamic_cast< BmBodyPart*>( iter->second.Get());
-		bodyPart->ConstructBodyForSending( msgText);
-		if (isMultiPart)
-			msgText << "--"<<boundary<<"\r\n";
+	if (hasMultiPartTop && !isMultiPart) {
+		// The mail thinks it is a multipart-mail, while in fact it isn't (any more).
+		// This means that the user has removed attachments from the mail, so that
+		// now there is no need for the multipart at the top, so we skip it:
+		BmBodyPart* topPart = dynamic_cast< BmBodyPart*>( mEditableTextBody->Parent());
+		for( iter = topPart->begin(); iter != topPart->end(); ++iter) {
+			BmBodyPart* bodyPart = dynamic_cast< BmBodyPart*>( iter->second.Get());
+			bodyPart->ConstructBodyForSending( msgText);
+		}
+	} else {
+		// The mail is either a simple text-mail or it is/should be a multipart-mail:
+		for( iter = begin(); iter != end(); ++iter) {
+			BmBodyPart* bodyPart = dynamic_cast< BmBodyPart*>( iter->second.Get());
+			bodyPart->ConstructBodyForSending( msgText);
+			if (isMultiPart && !hasMultiPartTop)
+				msgText << "--"<<boundary<<"\r\n";
+		}
 	}
 	return true;
 }

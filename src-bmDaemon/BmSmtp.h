@@ -55,13 +55,15 @@ private:
 
 	BString mAnswer;							// holds last answer of SMTP-server
 
-	int32 mState;								// current SMTP3-state (refer enum below)
+	int32 mState;								// current SMTP-state (refer enum below)
 	enum States {
 		SMTP_CONNECT = 0,
+		SMTP_HELO,
 		SMTP_AUTH,
 		SMTP_MAIL,
 		SMTP_RCPT,
 		SMTP_DATA,
+		SMTP_QUIT,
 		SMTP_DONE,
 		SMTP_FINAL
 	};
@@ -77,6 +79,7 @@ private:
 
 	// private functions:
 	void Connect();
+	void Helo();
 	void Auth();
 	void Mail();
 	void Rcpt();

@@ -61,10 +61,14 @@ bool BmMailMover::StartJob() {
 	char filename[B_FILE_NAME_LENGTH+1];
 	entry_ref* ref;
 	BEntry entry;
+	node_ref destNodeRef;
+	destDir.GetNodeRef( &destNodeRef);
 	// move each mailref into the destination folder:
 	try {
 		for( int32 i=0; i<refCount; ++i) {
 			ref = static_cast<entry_ref*>( mRefList->ItemAt(i));
+			if (ref->directory == destNodeRef.node && ref->device == destNodeRef.device)
+				continue;						// no move neccessary, already at 'new' home
 			(err = entry.SetTo( ref)) == B_OK
 													||	BM_THROW_RUNTIME(BString("couldn't create entry for <")<<ref->name<<"> \n\nError:" << strerror(err));
 			err = entry.MoveTo( &destDir);
@@ -81,7 +85,8 @@ bool BmMailMover::StartJob() {
 				BString currentCount = BString()<<i<<" of "<<refCount;
 				UpdateStatus( delta, filename, currentCount.String());
 			}
-			snooze( 20*1000);
+			snooze( 20*1000);					// give node-monitor a chance to keep up... 
+													// (it will drop messages if we go too fast)
 		}
 		entry.GetName( filename);
 		BString currentCount = BString()<<refCount<<" of "<<refCount;

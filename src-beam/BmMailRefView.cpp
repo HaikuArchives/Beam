@@ -8,11 +8,13 @@
 #include "BmBasics.h"
 #include "BmJobStatusWin.h"
 #include "BmLogHandler.h"
+#include "BmMailEditWin.h"
 #include "BmMailFolder.h"
 #include "BmMailRef.h"
 #include "BmMailRefList.h"
 #include "BmMailRefView.h"
 #include "BmMailView.h"
+#include "BmMailViewWin.h"
 #include "BmPrefs.h"
 #include "BmResources.h"
 #include "BmStorageUtil.h"
@@ -122,26 +124,25 @@ const int32 BmMailRefItem::GetNumValueForColumn( int32 column_index) const {
 	if (column_index == 0 || column_index == 14) {
 		// status
 		BString st = ref->Status();
-		return st == "New" 			? 0 :
-				 st == "Read" 			? 1 :
-				 st == "Forwarded" 	? 2 :
-				 st == "Replied" 		? 3 :
-				 st == "Pending" 		? 4 :
-				 st == "Sent" 			? 5 : 99;
-	} else if (column_index == 1 || column_index == 15) {
-		// attachment
+		return st == BM_MAIL_STATUS_NEW			? 0 :
+				 st == BM_MAIL_STATUS_DRAFT		? 1 :
+				 st == BM_MAIL_STATUS_PENDING		? 2 :
+				 st == BM_MAIL_STATUS_READ			? 3 :
+				 st == BM_MAIL_STATUS_SENT			? 4 : 
+				 st == BM_MAIL_STATUS_FORWARDED	? 5 :
+				 st == BM_MAIL_STATUS_REPLIED		? 6 :
+				 st == BM_MAIL_STATUS_REDIRECTED	? 7 : 99;
+	} else if (column_index == COL_ATTACHMENTS_I || column_index == COL_ATTACHMENT) {
 		return ref->HasAttachments() ? 0 : 1;	
-							// show mails with attachment at top (with sortmode 'ascending')
-	} else if (column_index == 2 || column_index == 16) {
-		// priority
+							// show mails with attachment at top
+	} else if (column_index == COL_PRIORITY_I || column_index == COL_PRIORITY) {
 		int16 prio = atol( ref->Priority().String());
 		return (prio>=1 && prio<=5) ? prio : 3;
 							// illdefined priority means medium priority (=3)
-	} else if (column_index == 6) {
-		// size
+	} else if (column_index == COL_SIZE) {
 		return ref->Size();
 	} else {
-		return 0;
+		return 0;		// we don't know this number-column !?!
 	}
 }
 
@@ -151,12 +152,12 @@ const int32 BmMailRefItem::GetNumValueForColumn( int32 column_index) const {
 \*------------------------------------------------------------------------------*/
 const time_t BmMailRefItem::GetDateValueForColumn( int32 column_index) const {
 	const BmMailRef* ref = ModelItem();
-	if (column_index == 5)
+	if (column_index == COL_DATE)
 		return ref->When();
-	else if (column_index == 12)
+	else if (column_index == COL_CREATED)
 		return ref->Created();
 	else
-		return 0;
+		return 0;		// we don't know this date-column !?!
 }
 
 
@@ -187,6 +188,7 @@ BmMailRefView::BmMailRefView( minimax minmax, int32 width, int32 height)
 	:	inherited( minmax, BRect(0,0,width-1,height-1), "Beam_MailRefView", B_MULTIPLE_SELECTION_LIST, 
 					  false, true, true, true)
 	,	mCurrFolder( NULL)
+	,	mMouseIsDown( false)
 {
 	int32 flags = 0;
 	SetViewColor( B_TRANSPARENT_COLOR);
@@ -336,6 +338,32 @@ void BmMailRefView::KeyDown(const char *bytes, int32 numBytes) {
 }
 
 /*------------------------------------------------------------------------------*\
+	MouseDown( point)
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailRefView::MouseDown(BPoint point) {
+	BMessage* message = Window()->CurrentMessage();
+	if (message && message->FindInt32("buttons") == B_PRIMARY_MOUSE_BUTTON)
+		mMouseIsDown = true;
+	inherited::MouseDown( point); 
+}
+
+/*------------------------------------------------------------------------------*\
+	MouseUp( point)
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailRefView::MouseUp(BPoint point) { 
+	inherited::MouseUp( point); 
+	BMessage* message = Window()->CurrentMessage();
+	if (mMouseIsDown && message && !(message->FindInt32("buttons") & B_PRIMARY_MOUSE_BUTTON)) {
+		mMouseIsDown = false;
+		BRect bounds = Bounds();
+		if (bounds.Contains( point))
+			SelectionChanged();
+	}
+}
+
+/*------------------------------------------------------------------------------*\
 	InitiateDrag()
 		-	
 \*------------------------------------------------------------------------------*/
@@ -477,11 +505,13 @@ void BmMailRefView::SelectionChanged( void) {
 	int32 temp;
 	int32 selection = -1;
 	int32 numSelected = 0;
+	if (mMouseIsDown)
+		return;									// only react when mouse-button is up again
 	while( (temp = CurrentSelection(numSelected)) >= 0) {
 		selection = temp;
 		numSelected++;
 	}
-	if (selection >= 0) {
+	if (selection >= 0 && numSelected == 1) {
 		BmMailRefItem* refItem;
 		refItem = dynamic_cast<BmMailRefItem*>(ItemAt( selection));
 		if (refItem) {
@@ -496,4 +526,32 @@ void BmMailRefView::SelectionChanged( void) {
 	BMessage msg(BM_NTFY_MAILREF_SELECTION);
 	msg.AddInt32( MSG_MAILS_SELECTED, numSelected);
 	SendNotices( BM_NTFY_MAILREF_SELECTION, &msg);
+}
+
+/*------------------------------------------------------------------------------*\
+	ItemInvoked( index)
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailRefView::ItemInvoked( int32 index) {
+	BmMailRefItem* refItem;
+	refItem = dynamic_cast<BmMailRefItem*>(ItemAt( index));
+	if (refItem) {
+		BmMailRef* ref = dynamic_cast<BmMailRef*>(refItem->ModelItem());
+		if (ref) {
+			if (ref->Status() == BM_MAIL_STATUS_DRAFT
+			|| ref->Status() == BM_MAIL_STATUS_PENDING) {
+				BmMailEditWin* editWin = BmMailEditWin::CreateInstance();
+				if (editWin) {
+					editWin->EditMail( ref);
+					editWin->Show();
+				}
+			} else {
+				BmMailViewWin* viewWin = BmMailViewWin::CreateInstance();
+				if (viewWin) {
+					viewWin->ShowMail( ref);
+					viewWin->Show();
+				}
+			}
+		}
+	}
 }

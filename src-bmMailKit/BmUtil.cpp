@@ -153,7 +153,7 @@ void* FindMsgPointer( BMessage* archive, const char* name, int32 index) {
 		-	we define a Mega-Byte as 1024**2 bytes (as Tracker does)
 \*------------------------------------------------------------------------------*/
 BString BytesToString( int32 bytes, bool mini) {
-	char buf[100];
+	char buf[20];
 	if (bytes >= 1048576) {
 		sprintf( buf, "%6.2f MB", bytes/1048576.0);
 	} else if (bytes >= 1024) {

@@ -17,7 +17,8 @@ namespace BmEncoding {
 	};
 	extern BmEncodingPair BM_Encodings[];
 
-	const uint32 BM_UTF8_CONVERSION = 0xFFFF;
+	const uint32 BM_UTF8_CONVERSION = 0xFF;
+	const uint32 BM_UNKNOWN_ENCODING = 0xFFFF;
 
 	uint32 CharsetToEncoding( const BString& charset);
 	BString EncodingToCharset( const uint32 encoding);
@@ -31,8 +32,8 @@ namespace BmEncoding {
 					 bool isEncodedWord, bool isText);
 //	int32 DecodedLength( const BString& encodingStyle, const char* text, int32 length);
 
-	BString ConvertHeaderPartToUTF8( const BString& headerPart, int32 defaultEncoding);
-	BString ConvertUTF8ToHeaderPart( const BString& utf8text, int32 encoding,
+	BString ConvertHeaderPartToUTF8( const BString& headerPart, uint32 defaultEncoding);
+	BString ConvertUTF8ToHeaderPart( const BString& utf8text, uint32 encoding,
 												bool useQuotedPrintableIfNeeded,
 												bool fold=false, int32 fieldLen=0);
 	

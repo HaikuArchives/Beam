@@ -31,7 +31,7 @@
 
 #include <String.h>
 #include <vector>
-#include <split.hh>
+#include "split.hh"
 
 namespace regexx {
 

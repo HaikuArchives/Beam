@@ -7,7 +7,7 @@
 
 #include <E-mail.h>
 
-#include <regexx/regexx.hh>
+#include "regexx.hh"
 using namespace regexx;
 
 #include "BmBasics.h"
@@ -370,7 +370,7 @@ int32 BmEncoding::DecodedLength( const BString& encodingStyle, const char* text,
 		-	
 \*------------------------------------------------------------------------------*/
 BString BmEncoding::ConvertHeaderPartToUTF8( const BString& headerPart, 
-															int32 defaultEncoding) {
+															uint32 defaultEncoding) {
 	int32 nm;
 	Regexx rx;
 	rx.expr( "=\\?(.+?)\\?(.)\\?(.+?)\\?=\\s*");
@@ -412,7 +412,7 @@ BString BmEncoding::ConvertHeaderPartToUTF8( const BString& headerPart,
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BString BmEncoding::ConvertUTF8ToHeaderPart( const BString& utf8text, int32 encoding,
+BString BmEncoding::ConvertUTF8ToHeaderPart( const BString& utf8text, uint32 encoding,
 															bool useQuotedPrintableIfNeeded,
 															bool fold, int32 fieldLen) {
 	bool needsQuotedPrintable = false;
@@ -479,7 +479,7 @@ bool BmEncoding::NeedsEncoding( const BString& charsetString) {
 	// check if string needs quoted-printable/base64 encoding
 	// (which it does if it contains non-ASCII chars):
 	for( const char* p = charsetString.String(); *p; ++p) {
-		if (*p<32)
+		if (*p<32 && *p!='\r' && *p!='\n')
 			// this is a signed char, so c<32 means [0-31] and [128-255]
 			return true;
 	}

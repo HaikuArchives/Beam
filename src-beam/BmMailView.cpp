@@ -16,6 +16,7 @@
 	using namespace BmEncoding;
 #include "BmLogHandler.h"
 #include "BmMail.h"
+#include "BmMailHeader.h"
 #include "BmMailHeaderView.h"
 #include "BmMailRef.h"
 #include "BmMailRefView.h"
@@ -96,7 +97,7 @@ BmMailView::~BmMailView() {
 		-	
 \*------------------------------------------------------------------------------*/
 status_t BmMailView::Archive( BMessage* archive, bool deep=true) const {
-	status_t ret = archive->AddBool( MSG_RAW, mShowRaw)
+	status_t ret = archive->AddBool( MSG_RAW, mOutbound ? false : mShowRaw)
 						|| archive->AddString( MSG_FONTNAME, mFontName.String())
 						|| archive->AddInt16( MSG_FONTSIZE, mFontSize);
 	if (ret == B_OK && deep && mHeaderView)
@@ -231,7 +232,7 @@ bool BmMailView::AcceptsDrop( const BMessage* msg) {
 	ShowMail()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmMailView::ShowMail( BmMailRef* ref) {
+void BmMailView::ShowMail( BmMailRef* ref, bool async) {
 	try {
 		StopJob();
 		if (!ref) {
@@ -241,7 +242,7 @@ void BmMailView::ShowMail( BmMailRef* ref) {
 		}
 		ContainerView()->SetBusy();
 		mCurrMail = new BmMail( ref);
-		StartJob( mCurrMail.Get(), true);
+		StartJob( mCurrMail.Get(), async);
 	}
 	catch( exception &err) {
 		// a problem occurred, we tell the user:
@@ -253,7 +254,7 @@ void BmMailView::ShowMail( BmMailRef* ref) {
 	ShowMail()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmMailView::ShowMail( BmMail* mail) {
+void BmMailView::ShowMail( BmMail* mail, bool async) {
 	try {
 		StopJob();
 		if (!mail || mail->InitCheck() != B_OK) {
@@ -263,7 +264,7 @@ void BmMailView::ShowMail( BmMail* mail) {
 		}
 		ContainerView()->SetBusy();
 		mCurrMail = mail;
-		StartJob( mCurrMail.Get(), true);
+		StartJob( mCurrMail.Get(), async);
 	}
 	catch( exception &err) {
 		// a problem occurred, we tell the user:
@@ -309,14 +310,15 @@ void BmMailView::FrameResized( float newWidth, float newHeight) {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmMailView::JobIsDone( bool completed) {
-	if (completed && mCurrMail) {
+	if (completed && mCurrMail && mCurrMail->Header()) {
 		BString displayText;
 		BmBodyPartList* body = mCurrMail->Body();
 		if (body) {
 			mBodyPartView->ShowBody( body);
 			if (mShowRaw) {
 				BM_LOG2( BM_LogMailParse, BString("displaying raw message"));
-				displayText = mCurrMail->RawText();
+				uint32 encoding = mCurrMail->Header()->DefaultEncoding();
+				ConvertToUTF8( encoding, mCurrMail->RawText(), displayText);
 			} else {
 				BM_LOG2( BM_LogMailParse, BString("extracting parts to be displayed from body-structure"));
 				BmModelItemMap::const_iterator iter;
@@ -334,8 +336,8 @@ void BmMailView::JobIsDone( bool completed) {
 		mHeaderView->ShowHeader( mCurrMail->Header());
 		ContainerView()->UnsetBusy();
 		ScrollTo( 0,0);
-		if (mCurrMail->Status() == "New")
-			mCurrMail->MarkAs( "Read");
+		if (mCurrMail->Status() == BM_MAIL_STATUS_NEW)
+			mCurrMail->MarkAs( BM_MAIL_STATUS_READ);
 	} else {
 		mHeaderView->ShowHeader( NULL);
 		SetText( "");
@@ -426,13 +428,15 @@ void BmMailView::ShowMenu( BPoint point) {
 		item->SetTarget( mBodyPartView);
 		item->SetMarked( mBodyPartView->ShowAllParts());
 		theMenu->AddItem( item);
+	}
 
-		item = new BMenuItem( "Show Raw Message", new BMessage( ShowRaw() 
-									 ? BM_MAILVIEW_SHOWCOOKED : BM_MAILVIEW_SHOWRAW));
-		item->SetTarget( this);
-		item->SetMarked( ShowRaw());
-		theMenu->AddItem( item);
+	item = new BMenuItem( mOutbound ? "Edit Raw Message": "Show Raw Message", new BMessage( ShowRaw()
+								 ? BM_MAILVIEW_SHOWCOOKED : BM_MAILVIEW_SHOWRAW));
+	item->SetTarget( this);
+	item->SetMarked( ShowRaw());
+	theMenu->AddItem( item);
 
+	if (!mOutbound) {
 		item = new BMenuItem( "Separate Inlines", new BMessage( ShowInlinesSeparately() 
 									 ? BM_MAILVIEW_SHOWINLINES_CONCATENATED
 									 : BM_MAILVIEW_SHOWINLINES_SEPARATELY));
