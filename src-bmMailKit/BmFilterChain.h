@@ -32,12 +32,12 @@
 #ifndef _BmFilterChain_h
 #define _BmFilterChain_h
 
-#include <multimap.h>
-
 #include <Archivable.h>
 
 #include "BmString.h"
 #include "BmDataModel.h"
+
+#include <multimap.h>
 
 extern BmString BM_DefaultOutItemLabel;
 

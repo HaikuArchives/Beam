@@ -32,7 +32,6 @@
 #define _BmPrefsFilterChainView_h
 
 #include "BmListController.h"
-#include "BmFilter.h"
 #include "BmFilterChain.h"
 #include "BmPrefsView.h"
 

@@ -43,7 +43,6 @@
 #include "CLVEasyItem.h"
 
 #include "BmCheckControl.h"
-#include "BmFilterChain.h"
 #include "BmGuiUtil.h"
 #include "BmLogHandler.h"
 #include "BmMenuControl.h"

@@ -48,6 +48,7 @@
 
 #include "BmApp.h"
 #include "BmCheckControl.h"
+#include "BmFilter.h"
 #include "BmFilterChain.h"
 #include "BmGuiUtil.h"
 #include "BmLogHandler.h"
