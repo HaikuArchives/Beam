@@ -29,7 +29,6 @@
 
 #include <Alert.h>
 #include <MenuItem.h>
-#include <PopUpMenu.h>
 
 #include <liblayout/HGroup.h>
 #include <liblayout/LayeredGroup.h>
@@ -48,6 +47,7 @@
 #include "BmGuiUtil.h"
 #include "BmLogHandler.h"
 #include "BmMenuControl.h"
+#include "BmMenuController.h"
 #include "BmPopAccount.h"
 #include "BmPrefs.h"
 #include "BmPrefsIdentityView.h"
@@ -123,7 +123,8 @@ BmRecvIdentView* BmRecvIdentView::theInstance = NULL;
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmRecvIdentView* BmRecvIdentView::CreateInstance( minimax minmax, int32 width, int32 height) {
+BmRecvIdentView* BmRecvIdentView::CreateInstance( minimax minmax, int32 width, 
+																  int32 height) {
 	if (theInstance)
 		return theInstance;
 	else 
@@ -135,11 +136,11 @@ BmRecvIdentView* BmRecvIdentView::CreateInstance( minimax minmax, int32 width, i
 		-	
 \*------------------------------------------------------------------------------*/
 BmRecvIdentView::BmRecvIdentView( minimax minmax, int32 width, int32 height)
-	:	inherited( minmax, BRect(0,0,width-1,height-1), "Beam_RecvIdentView", 
+	:	inherited( minmax, BRect(0,0,width-1,height-1), "Beam_IdentView", 
 					  B_SINGLE_SELECTION_LIST, 
 					  false, true, true, false)
 {
-	int32 flags = 0;
+	int32 flags = CLV_SORT_KEYABLE;
 	SetViewColor( B_TRANSPARENT_COLOR);
 	if (ThePrefs->GetBool("StripedListView"))
 		SetStripedBackground( true);
@@ -150,14 +151,14 @@ BmRecvIdentView::BmRecvIdentView( minimax minmax, int32 width, int32 height)
 					B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE,
 					B_FOLLOW_TOP_BOTTOM, true, true, true, B_FANCY_BORDER);
 
-	AddColumn( new CLVColumn( "Identity", 80.0, CLV_SORT_KEYABLE|flags, 50.0));
-	AddColumn( new CLVColumn( "Real Name", 80.0, CLV_SORT_KEYABLE|flags, 40.0));
-	AddColumn( new CLVColumn( "Mailaddress", 80.0, CLV_SORT_KEYABLE|flags, 40.0));
-	AddColumn( new CLVColumn( "Aliases", 80.0, CLV_SORT_KEYABLE|flags, 40.0));
-	AddColumn( new CLVColumn( "POP-Account", 80.0, CLV_SORT_KEYABLE|flags, 40.0));
-	AddColumn( new CLVColumn( "F", 20.0, CLV_SORT_KEYABLE|flags, 20.0, "(F)allback Identity?"));
-	AddColumn( new CLVColumn( "Signature", 80.0, CLV_SORT_KEYABLE|flags, 40.0));
-	AddColumn( new CLVColumn( "SMTP-Account", 80.0, CLV_SORT_KEYABLE|flags, 40.0));
+	AddColumn( new CLVColumn( "Identity", 80.0, flags, 50.0));
+	AddColumn( new CLVColumn( "Real Name", 80.0, flags, 40.0));
+	AddColumn( new CLVColumn( "Mailaddress", 80.0, flags, 40.0));
+	AddColumn( new CLVColumn( "Aliases", 80.0, flags, 40.0));
+	AddColumn( new CLVColumn( "POP-Account", 80.0, flags, 40.0));
+	AddColumn( new CLVColumn( "F", 20.0, flags, 20.0, "(F)allback Identity?"));
+	AddColumn( new CLVColumn( "Signature", 80.0, flags, 40.0));
+	AddColumn( new CLVColumn( "SMTP-Account", 80.0, flags, 40.0));
 
 	SetSortFunction( CLVEasyItem::CompareItems);
 	SetSortKey( COL_KEY);
@@ -184,16 +185,17 @@ BmListViewItem* BmRecvIdentView::CreateListViewItem( BmListModelItem* item,
 	CreateContainer()
 		-	
 \*------------------------------------------------------------------------------*/
-CLVContainerView* BmRecvIdentView::CreateContainer( bool horizontal, bool vertical, 
-												  				  bool scroll_view_corner, 
-												  				  border_style border, 
-																  uint32 ResizingMode, 
-																  uint32 flags) 
+CLVContainerView* BmRecvIdentView::CreateContainer( bool horizontal, 
+																	 bool vertical, 
+												  				 	 bool scroll_view_corner, 
+												  				 	 border_style border, 
+																 	 uint32 ResizingMode, 
+																 	 uint32 flags) 
 {
-	return new BmCLVContainerView( fMinMax, this, ResizingMode, flags, horizontal, 
-											 vertical, scroll_view_corner, border, mShowCaption,
-											 mShowBusyView, 
-											 be_plain_font->StringWidth(" 99 identities "));
+	return new BmCLVContainerView( fMinMax, this, ResizingMode, flags, 
+											 horizontal, vertical, scroll_view_corner, 
+											 border, mShowCaption, mShowBusyView, 
+											 be_plain_font->StringWidth(" 99 items "));
 }
 
 /*------------------------------------------------------------------------------*\
@@ -231,46 +233,79 @@ void BmRecvIdentView::MessageReceived( BMessage* msg) {
 	BmPrefsIdentityView
 \********************************************************************************/
 
-const BmString BmPrefsIdentityView::nEmptyItemLabel("<none>");
-
 /*------------------------------------------------------------------------------*\
 	()
 		-	
 \*------------------------------------------------------------------------------*/
 BmPrefsIdentityView::BmPrefsIdentityView() 
-	:	inherited( "Receiving Mail-Identitys (POP3)")
+	:	inherited( "Identities")
 {
 	MView* view = 
 		new VGroup(
 			CreateIdentListView( minimax(400,100,1E5,1E5), 400, 100),
 			new HGroup(
-				mAddButton = new MButton("Add Identity", new BMessage(BM_ADD_IDENTITY), this),
-				mRemoveButton = new MButton("Remove Identity", new BMessage( BM_REMOVE_IDENTITY), this),
+				mAddButton = new MButton( "Add Identity", 
+												  new BMessage(BM_ADD_IDENTITY), 
+												  this),
+				mRemoveButton = new MButton("Remove Identity", 
+													 new BMessage( BM_REMOVE_IDENTITY), 
+													 this),
 				0
 			),
 			new Space( minimax(0,10,0,10)),
 			new HGroup(
 				new MBorder( M_LABELED_BORDER, 10, (char*)"Identity Info",
 					new VGroup(
-						mIdentityControl = new BmTextControl( "Identity name:", false, 0, 25),
+						mIdentityControl = new BmTextControl( "Identity name:", 
+																		  false, 0, 25),
 						mRealNameControl = new BmTextControl( "Real name:"),
 						mMailAddrControl = new BmTextControl( "Mail address:"),
 						mAliasesControl = new BmTextControl( "Aliases:"),
 						new Space( minimax(0,5,0,5)),
-						mPopControl = new BmMenuControl( "POP-account:", new BPopUpMenu("")),
+						mPopControl = new BmMenuControl( 
+							"POP-account:", 
+							new BmMenuController( 
+								"POP-account:", 
+								this, 
+								new BMessage( BM_POP_SELECTED),
+								ThePopAccountList.Get(), 
+								BM_MC_LABEL_FROM_MARKED
+							)
+						),
 						new Space( minimax(0,5,0,5)),
-						mSmtpControl = new BmMenuControl( "SMTP-account:", new BPopUpMenu("")),
+						mSmtpControl = new BmMenuControl( 
+							"SMTP-account:", 
+							new BmMenuController( 
+								"SMTP-account:", 
+								this, 
+								new BMessage( BM_SMTP_SELECTED),
+								TheSmtpAccountList.Get(), 
+								BM_MC_LABEL_FROM_MARKED
+							)
+						),
 						new Space( minimax(0,5,0,5)),
-						mSignatureControl = new BmMenuControl( "Signature:", new BPopUpMenu("")),
+						mSignatureControl = new BmMenuControl( 
+							"Signature:", 
+							new BmMenuController( 
+								"Signature:", 
+								this, 
+								new BMessage( BM_SIGNATURE_SELECTED),
+								TheSignatureList.Get(), 
+								BM_MC_LABEL_FROM_MARKED | BM_MC_ADD_NONE_ITEM
+							)
+						),
 						0
 					)
 				),
 				new VGroup(
 					new MBorder( M_LABELED_BORDER, 10, (char*)"Options",
 						new VGroup(
-							mIsBucketControl = new BmCheckControl( "Use as fallback identity for the POP-account", 
-																				new BMessage(BM_IS_BUCKET_CHANGED), 
-																				this),
+							mIsBucketControl 
+								= new BmCheckControl( 
+									"Use as fallback identity for the POP-account", 
+									new BMessage(BM_IS_BUCKET_CHANGED), 
+									this
+								),
 							0
 						)
 					),
@@ -322,25 +357,56 @@ BmPrefsIdentityView::~BmPrefsIdentityView() {
 void BmPrefsIdentityView::Initialize() {
 	inherited::Initialize();
 
-	TheBubbleHelper->SetHelp( mIdentListView, "This listview shows every identity you have defined.");
-	TheBubbleHelper->SetHelp( mIdentityControl, "Here you can enter a name for this identity.\nThis name is used when you select an identity in Beam.");
-	TheBubbleHelper->SetHelp( mMailAddrControl, "Here you can define the mail-address this identity will use.\nBeam creates the mail-address automatically, \nbut you can override this by specifying the address here.");
-	TheBubbleHelper->SetHelp( mAliasesControl, "Some email-providers allow definition of aliases for mail-accounts.\n\
-In this case mails addressed to any of the aliases will be delivered\n\
-to the real account. If you have defined such aliases, you can enter them here.\n\n\
-(This information is used by Beam when trying to determine the identity to use\n\
-when replying to mails that were addressed to one of the aliases).");
-	TheBubbleHelper->SetHelp( mRealNameControl, "Please enter your real name here (e.g. 'Bob Meyer').");
-	TheBubbleHelper->SetHelp( mIsBucketControl, "Check this if the corresponding pop-account is a catch-all account, \n\
-and this identity should be used for unknown addresses\n\
-(Beam uses this information when trying to determine\n\
-the identity to use when replying to mails).");
-	TheBubbleHelper->SetHelp( mSignatureControl, "Here you can select the signature to be used \n\
-for every mail sent from this identity.");
-	TheBubbleHelper->SetHelp( mPopControl, "Here you can select the POP3-account that corresponds\n\
-to this identity.");
-	TheBubbleHelper->SetHelp( mSmtpControl, "Here you can select the SMTP-account that shall be used\n\
-to send mails from this identity.");
+	TheBubbleHelper->SetHelp( 
+		mIdentListView, 
+		"This listview shows every identity you have defined."
+	);
+	TheBubbleHelper->SetHelp( 
+		mIdentityControl, 
+		"Here you can enter a name for this identity.\n"
+		"This name is used when you select an identity in Beam."
+	);
+	TheBubbleHelper->SetHelp( 
+		mMailAddrControl, 
+		"Here you can define the mail-address this identity will use.\n"
+		"Beam creates the mail-address automatically,\n"
+		"but you can override this by specifying the address here."
+	);
+	TheBubbleHelper->SetHelp( 
+		mAliasesControl, 
+			"Some email-providers allow definition of aliases for mail-accounts.\n"
+			"In this case mails addressed to any of the aliases will be\n"
+			"delivered to the real account. If you have defined such aliases,\n"
+			"you can enter them here.\n\n"
+			"(This information is used by Beam when trying to determine the\n"
+			"identity to use when replying to mails that were addressed\n"
+			"to one of the aliases).");
+	TheBubbleHelper->SetHelp( 
+		mRealNameControl, 
+		"Please enter your real name here (e.g. 'Bob Meyer')."
+	);
+	TheBubbleHelper->SetHelp( 
+		mIsBucketControl, 
+		"Check this if the corresponding pop-account is a catch-all account,\n"
+		"and this identity should be used for unknown addresses\n"
+		"(Beam uses this information when trying to determine\n"
+		"the identity to use when replying to mails)."
+	);
+	TheBubbleHelper->SetHelp( 
+		mSignatureControl, 
+		"Here you can select the signature to be used \n"
+		"for every mail sent from this identity."
+	);
+	TheBubbleHelper->SetHelp( 
+		mPopControl, 
+		"Here you can select the POP3-account that corresponds\n"
+		"to this identity."
+	);
+	TheBubbleHelper->SetHelp( 
+		mSmtpControl, 
+		"Here you can select the SMTP-account that shall be used\n"
+		"to send mails from this identity."
+	);
 
 	mIdentityControl->SetTarget( this);
 	mMailAddrControl->SetTarget( this);
@@ -360,53 +426,6 @@ to send mails from this identity.");
 \*------------------------------------------------------------------------------*/
 void BmPrefsIdentityView::Activated() {
 	inherited::Activated();
-
-	// update all entries of SMTP-account-menu:
-	BMenuItem* item;
-	while( (item = mSmtpControl->Menu()->RemoveItem( (int32)0))!=NULL)
-		delete item;
-	AddItemToMenu( mSmtpControl->Menu(), 
-					   new BMenuItem( nEmptyItemLabel.String(), new BMessage( BM_SMTP_SELECTED)), this);
-	BmModelItemMap::const_iterator iter;
-	for( iter = TheSmtpAccountList->begin(); iter != TheSmtpAccountList->end(); ++iter) {
-		BmSmtpAccount* acc = dynamic_cast< BmSmtpAccount*>( iter->second.Get());
-		AddItemToMenu( mSmtpControl->Menu(), 
-							new BMenuItem( acc->Key().String(), new BMessage( BM_SMTP_SELECTED)), 
-							this);
-	}
-	mSmtpControl->MarkItem( mCurrIdent && mCurrIdent->SMTPAccount().Length() 
-									? mCurrIdent->SMTPAccount().String()
-									: nEmptyItemLabel.String());
-
-	// update all entries of POP-account-menu:
-	while( (item = mPopControl->Menu()->RemoveItem( (int32)0))!=NULL)
-		delete item;
-	AddItemToMenu( mPopControl->Menu(), 
-					   new BMenuItem( nEmptyItemLabel.String(), new BMessage( BM_POP_SELECTED)), this);
-	for( iter = ThePopAccountList->begin(); iter != ThePopAccountList->end(); ++iter) {
-		BmPopAccount* acc = dynamic_cast< BmPopAccount*>( iter->second.Get());
-		AddItemToMenu( mPopControl->Menu(), 
-							new BMenuItem( acc->Key().String(), new BMessage( BM_POP_SELECTED)), 
-							this);
-	}
-	mPopControl->MarkItem( mCurrIdent && mCurrIdent->POPAccount().Length() 
-									? mCurrIdent->POPAccount().String()
-									: nEmptyItemLabel.String());
-
-	// update all entries of signature-menu:
-	while( (item = mSignatureControl->Menu()->RemoveItem( (int32)0))!=NULL)
-		delete item;
-	AddItemToMenu( mSignatureControl->Menu(), 
-					   new BMenuItem( nEmptyItemLabel.String(), new BMessage( BM_SIGNATURE_SELECTED)), this);
-	for( iter = TheSignatureList->begin(); iter != TheSignatureList->end(); ++iter) {
-		BmSignature* sig = dynamic_cast< BmSignature*>( iter->second.Get());
-		AddItemToMenu( mSignatureControl->Menu(), 
-							new BMenuItem( sig->Key().String(), new BMessage( BM_SIGNATURE_SELECTED)), 
-							this);
-	}
-	mSignatureControl->MarkItem( mCurrIdent && mCurrIdent->SignatureName().Length() 
-											? mCurrIdent->SignatureName().String()
-											: nEmptyItemLabel.String());
 }
 
 /*------------------------------------------------------------------------------*\
@@ -427,7 +446,8 @@ bool BmPrefsIdentityView::SanityCheck() {
 	BmString complaint, fieldName;
 	BMessage msg( BM_COMPLAIN_ABOUT_FIELD);
 	BmModelItemMap::const_iterator iter;
-	for( iter = TheIdentityList->begin(); iter != TheIdentityList->end(); ++iter) {
+	for(	iter = TheIdentityList->begin(); 
+			iter != TheIdentityList->end(); ++iter) {
 		BmIdentity* ident = dynamic_cast<BmIdentity*>( iter->second.Get());
 		if (ident && !ident->SanityCheck( complaint, fieldName)) {
 			msg.AddPointer( MSG_ITEM, (void*)ident);
@@ -476,7 +496,8 @@ void BmPrefsIdentityView::MessageReceived( BMessage* msg) {
 					msg->FindPointer( "source", (void**)&srcView);
 					BmTextControl* source = dynamic_cast<BmTextControl*>( srcView);
 					if ( source == mIdentityControl)
-						TheIdentityList->RenameItem( mCurrIdent->Name(), mIdentityControl->Text());
+						TheIdentityList->RenameItem( mCurrIdent->Name(), 
+															  mIdentityControl->Text());
 					else if ( source == mMailAddrControl)
 						mCurrIdent->MailAddr( mMailAddrControl->Text());
 					else if ( source == mAliasesControl)
@@ -495,7 +516,7 @@ void BmPrefsIdentityView::MessageReceived( BMessage* msg) {
 			}
 			case BM_SMTP_SELECTED: {
 				BMenuItem* item = mSmtpControl->Menu()->FindMarked();
-				if (item && nEmptyItemLabel != item->Label())
+				if (item && BM_NoItemLabel != item->Label())
 					mCurrIdent->SMTPAccount( item->Label());
 				else
 					mCurrIdent->SMTPAccount( "");
@@ -504,7 +525,7 @@ void BmPrefsIdentityView::MessageReceived( BMessage* msg) {
 			}
 			case BM_POP_SELECTED: {
 				BMenuItem* item = mPopControl->Menu()->FindMarked();
-				if (item && nEmptyItemLabel != item->Label())
+				if (item && BM_NoItemLabel != item->Label())
 					mCurrIdent->POPAccount( item->Label());
 				else
 					mCurrIdent->POPAccount( "");
@@ -513,7 +534,7 @@ void BmPrefsIdentityView::MessageReceived( BMessage* msg) {
 			}
 			case BM_SIGNATURE_SELECTED: {
 				BMenuItem* item = mSignatureControl->Menu()->FindMarked();
-				if (item && nEmptyItemLabel != item->Label())
+				if (item && BM_NoItemLabel != item->Label())
 					mCurrIdent->SignatureName( item->Label());
 				else
 					mCurrIdent->SignatureName( "");
@@ -525,7 +546,10 @@ void BmPrefsIdentityView::MessageReceived( BMessage* msg) {
 				for( int32 i=1; TheIdentityList->FindItemByKey( key); ++i) {
 					key = BmString("new identity_")<<i;
 				}
-				TheIdentityList->AddItemToList( new BmIdentity( key.String(), TheIdentityList.Get()));
+				TheIdentityList->AddItemToList( 
+					new BmIdentity( key.String(), 
+										 TheIdentityList.Get())
+				);
 				mIdentityControl->MakeFocus( true);
 				mIdentityControl->TextView()->SelectAll();
 				NoticeChange();
@@ -535,12 +559,18 @@ void BmPrefsIdentityView::MessageReceived( BMessage* msg) {
 				int32 buttonPressed;
 				if (msg->FindInt32( "which", &buttonPressed) != B_OK) {
 					// first step, ask user about it:
-					BAlert* alert = new BAlert( "Remove Mail-Identity", 
-														 (BmString("Are you sure about removing the identity <") << mCurrIdent->Name() << ">?").String(),
-													 	 "Remove", "Cancel", NULL, B_WIDTH_AS_USUAL,
-													 	 B_WARNING_ALERT);
+					BAlert* alert 
+						= new BAlert( "Remove Mail-Identity", 
+										  (BmString(
+										  		"Are you sure about removing the "
+										  		"identity <") << mCurrIdent->Name() 
+											   << ">?"
+										  ).String(),
+										  "Remove", "Cancel", NULL, B_WIDTH_AS_USUAL,
+										  B_WARNING_ALERT);
 					alert->SetShortcut( 1, B_ESCAPE);
-					alert->Go( new BInvoker( new BMessage(BM_REMOVE_IDENTITY), BMessenger( this)));
+					alert->Go( new BInvoker( new BMessage(BM_REMOVE_IDENTITY), 
+													 BMessenger( this)));
 				} else {
 					// second step, do it if user said ok:
 					if (buttonPressed == 0) {
@@ -565,7 +595,8 @@ void BmPrefsIdentityView::MessageReceived( BMessage* msg) {
 					alert->Go( new BInvoker( new BMessage(*msg), BMessenger( this)));
 					BmIdentity* ident=NULL;
 					msg->FindPointer( MSG_ITEM, (void**)&ident);
-					BmListViewItem* accItem = mIdentListView->FindViewItemFor( ident);
+					BmListViewItem* accItem 
+						= mIdentListView->FindViewItemFor( ident);
 					if (accItem)
 						mIdentListView->Select( mIdentListView->IndexOf( accItem));
 				} else {
@@ -616,24 +647,35 @@ void BmPrefsIdentityView::ShowIdentity( int32 selection) {
 		mSmtpControl->ClearMark();
 		mIsBucketControl->SetValue( 0);
 	} else {
-		BmRecvIdentItem* identItem = dynamic_cast<BmRecvIdentItem*>(mIdentListView->ItemAt( selection));
+		BmRecvIdentItem* identItem 
+			= dynamic_cast<BmRecvIdentItem*>(mIdentListView->ItemAt( selection));
 		if (identItem) {
 			if  (mCurrIdent != identItem->ModelItem()) {
 				mCurrIdent = identItem->ModelItem();
 				if (mCurrIdent) {
-					mIdentityControl->SetTextSilently( mCurrIdent->Name().String());
-					mMailAddrControl->SetTextSilently( mCurrIdent->MailAddr().String());
-					mAliasesControl->SetTextSilently( mCurrIdent->MailAliases().String());
-					mRealNameControl->SetTextSilently( mCurrIdent->RealName().String());
-					mSignatureControl->MarkItem( mCurrIdent->SignatureName().Length() 
-																? mCurrIdent->SignatureName().String()
-																: nEmptyItemLabel.String());
+					mIdentityControl->SetTextSilently( 
+						mCurrIdent->Name().String()
+					);
+					mMailAddrControl->SetTextSilently( 
+						mCurrIdent->MailAddr().String()
+					);
+					mAliasesControl->SetTextSilently( 
+						mCurrIdent->MailAliases().String()
+					);
+					mRealNameControl->SetTextSilently( 
+						mCurrIdent->RealName().String()
+					);
+					mSignatureControl->MarkItem( 
+						mCurrIdent->SignatureName().Length() 
+							? mCurrIdent->SignatureName().String()
+							: BM_NoItemLabel.String()
+					);
 					mPopControl->MarkItem( mCurrIdent->POPAccount().Length() 
 													? mCurrIdent->POPAccount().String()
-													: nEmptyItemLabel.String());
+													: BM_NoItemLabel.String());
 					mSmtpControl->MarkItem( mCurrIdent->SMTPAccount().Length() 
 														? mCurrIdent->SMTPAccount().String()
-														: nEmptyItemLabel.String());
+														: BM_NoItemLabel.String());
 					mIsBucketControl->SetValue( mCurrIdent->MarkedAsBitBucket());
 				}
 			}
@@ -646,7 +688,9 @@ void BmPrefsIdentityView::ShowIdentity( int32 selection) {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-CLVContainerView* BmPrefsIdentityView::CreateIdentListView( minimax minmax, int32 width, int32 height) {
+CLVContainerView* BmPrefsIdentityView::CreateIdentListView( minimax minmax, 
+																				int32 width, 
+																				int32 height) {
 	mIdentListView = BmRecvIdentView::CreateInstance( minmax, width, height);
 	mIdentListView->ClickSetsFocus( true);
 	return mIdentListView->ContainerView();

@@ -79,10 +79,9 @@ public:
 	BmListViewItem* CreateListViewItem( BmListModelItem* item, BMessage* archive=NULL);
 	
 	// overrides of controller base:
-	BmString StateInfoBasename()			{ return "RecvIdentView"; }
+	BmString StateInfoBasename()			{ return "IdentView"; }
 	void UpdateModelItem( BMessage* msg);
 	BmListViewItem* AddModelItem( BmListModelItem* item);
-	const char* ItemNameForCaption()		{ return "account"; }
 	CLVContainerView* CreateContainer( bool horizontal, bool vertical, 
 												  bool scroll_view_corner, 
 												  border_style border, 
@@ -103,13 +102,6 @@ private:
 
 
 
-#define BM_POP_SELECTED 			'bmPS'
-#define BM_SIGNATURE_SELECTED 	'bmGS'
-#define BM_SMTP_SELECTED 			'bmSS'
-#define BM_IS_BUCKET_CHANGED	 	'bmFC'
-#define BM_ADD_IDENTITY 			'bmAI'
-#define BM_REMOVE_IDENTITY 		'bmRI'
-
 
 class BmTextControl;
 class BmMenuControl;
@@ -122,6 +114,15 @@ class MButton;
 class BmPrefsIdentityView : public BmPrefsView {
 	typedef BmPrefsView inherited;
 
+	enum {
+		BM_POP_SELECTED 			= 'bmPS',
+		BM_SIGNATURE_SELECTED 	= 'bmGS',
+		BM_SMTP_SELECTED 			= 'bmSS',
+		BM_IS_BUCKET_CHANGED	 	= 'bmFC',
+		BM_ADD_IDENTITY 			= 'bmAI',
+		BM_REMOVE_IDENTITY 		= 'bmRI'
+	};
+	
 public:
 	// c'tors and d'tor:
 	BmPrefsIdentityView();
@@ -162,8 +163,6 @@ private:
 
 	BmRef<BmIdentity> mCurrIdent;
 	
-	static const BmString nEmptyItemLabel;
-
 	// Hide copy-constructor and assignment:
 	BmPrefsIdentityView( const BmPrefsIdentityView&);
 	BmPrefsIdentityView operator=( const BmPrefsIdentityView&);
