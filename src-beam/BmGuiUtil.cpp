@@ -116,12 +116,13 @@ void AddCharsetMenu( BMenu* menu, BHandler* target, int32 msgType) {
 	moreMenu->SetFont( &font);
 	BmCharsetMap::const_iterator iter;
 	for( iter = TheCharsetMap.begin(); iter != TheCharsetMap.end(); ++iter) {
-		charset = iter->first;
-		charset.ToLower();
-		BMessage* msg = new BMessage( msgType);
-		msg->AddString( MSG_CHARSET, charset.String());
-		if (iter->second)
+		if (iter->second) {
+			charset = iter->first;
+			charset.ToLower();
+			BMessage* msg = new BMessage( msgType);
+			msg->AddString( MSG_CHARSET, charset.String());
 			AddItemToMenu( moreMenu, CreateMenuItem( charset.String(), msg), target);
+		}
 	}
 	menu->AddSeparatorItem();
 	menu->AddItem( moreMenu);
