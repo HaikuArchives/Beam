@@ -154,6 +154,9 @@ BmPrefsGeneralView::BmPrefsGeneralView()
 							mShowToolbarIconsControl = new BmCheckControl( "Show Icons in Toolbar-Buttons", 
 																						  new BMessage(BM_SHOW_TOOLBAR_ICONS_CHANGED), 
 																						  this, ThePrefs->GetBool("ShowToolbarIcons", true)),
+							mShowToolbarBorderControl = new BmCheckControl( "Show Border around Toolbar-Buttons", 
+																						  new BMessage(BM_SHOW_TOOLBAR_BORDER_CHANGED), 
+																						  this, ThePrefs->GetBool("ShowToolbarBorder", false)),
 							mToolbarLabelControl = new BmMenuControl( "Layout of Labels in Toolbar:", new BPopUpMenu("")),
 							new Space( minimax(0,10,0,10)),
 							mCloseViewWinControl = new BmCheckControl( "Close Mail-Window Upon Reply", 
@@ -232,6 +235,7 @@ BmPrefsGeneralView::~BmPrefsGeneralView() {
 	TheBubbleHelper->SetHelp( mNetBufSizeSendControl, NULL);
 	TheBubbleHelper->SetHelp( mNetRecvTimeoutControl, NULL);
 	TheBubbleHelper->SetHelp( mShowToolbarIconsControl, NULL);
+	TheBubbleHelper->SetHelp( mShowToolbarBorderControl, NULL);
 	TheBubbleHelper->SetHelp( mToolbarLabelControl, NULL);
 	TheBubbleHelper->SetHelp( mShowAlertForErrorsControl, NULL);
 	TheBubbleHelper->SetHelp( mCloseViewWinControl, NULL);
@@ -261,7 +265,7 @@ void BmPrefsGeneralView::Initialize() {
 	TheBubbleHelper->SetHelp( mRemoveFailedControl, "Here you can enter the time (in ms) Beam will keep any failed job inside the job-status window\n (this way you can see that a problem occurred before the job is removed).");
 	TheBubbleHelper->SetHelp( mWorkspaceControl, "In this menu you can select the workspace that Beam should live in.");
 	TheBubbleHelper->SetHelp( mRestoreFolderStatesControl, "Checking this makes Beam remember the state of the mailfolder-view \n(which of the folders are expanded/collapsed).\nIf unchecked, Beam will always start with a collapsed mailfolder-view.");
-	TheBubbleHelper->SetHelp( mInOutAtTopControl, "Determines whether the in- and out-folder will be shown \nat the top of the mailfolder-list or if they \nwill be sorted in alphabetically.");
+	TheBubbleHelper->SetHelp( mInOutAtTopControl, "Determines whether the in-, out- & drafts-folders will be shown\nat the top of the mailfolder-list or if they \nwill be sorted in alphabetically.");
 	TheBubbleHelper->SetHelp( mUseDeskbarControl, "Checking this makes Beam show an icon \nin the Deskbar.");
 	TheBubbleHelper->SetHelp( mBeepNewMailControl, "Checking this makes Beam play the 'New E-mail' beep-event\nwhen new mail has arrived.\nYou can change the corresponding sound in the BeOS Sound-preferences.");
 	TheBubbleHelper->SetHelp( mShowTooltipsControl, "Checking this makes Beam show a small \ninfo-window (just like this one) when the \nmouse-pointer lingers over a GUI-item.");
@@ -270,6 +274,7 @@ void BmPrefsGeneralView::Initialize() {
 	TheBubbleHelper->SetHelp( mNetBufSizeSendControl, "Here you can enter the network buffer size (in bytes)\nBeam will use for outgoing connections.\n\nIf sending seems slow, try a larger value in here.");
 	TheBubbleHelper->SetHelp( mNetRecvTimeoutControl, "Here you can enter the time (in ms) Beam\n will wait for an answer from a remote network-server.");
 	TheBubbleHelper->SetHelp( mShowToolbarIconsControl, "If checked, Beam will display icons in each toolbar-button.");
+	TheBubbleHelper->SetHelp( mShowToolbarBorderControl, "If you check this a border is drawn around\neach toolbar-button (like in Postmaster).");
 	TheBubbleHelper->SetHelp( mToolbarLabelControl, "Here you can select if and where the label\nshall be shown inside a toolbar-button");
 	TheBubbleHelper->SetHelp( mShowAlertForErrorsControl, "If unchecked, Beam will not display error-messages on-screen,\nbut they will just be logged (written to a log-file) instead.\nIf in doubt, leave this checked.");
 	TheBubbleHelper->SetHelp( mCloseViewWinControl, "If you check this, Beam will automatically close\n\the mail-view-window if you reply to that mail.");
@@ -326,6 +331,7 @@ void BmPrefsGeneralView::Update() {
 	mCacheRefsOnDiskControl->SetValueSilently( ThePrefs->GetBool("CacheRefsOnDisk"));
 	mCacheRefsInMemControl->SetValueSilently( ThePrefs->GetBool("CacheRefsInMem"));
 	mShowToolbarIconsControl->SetValueSilently( ThePrefs->GetBool("ShowToolbarIcons", true));
+	mShowToolbarBorderControl->SetValueSilently( ThePrefs->GetBool("ShowToolbarBorder", true));
 	mShowAlertForErrorsControl->SetValueSilently( ThePrefs->GetBool("ShowAlertForErrors", true));
 	mCloseViewWinControl->SetValueSilently( ThePrefs->GetBool("CloseViewWinAfterMailAction", true));
 	BmString val;
@@ -466,6 +472,11 @@ void BmPrefsGeneralView::MessageReceived( BMessage* msg) {
 			}
 			case BM_SHOW_TOOLBAR_ICONS_CHANGED: {
 				ThePrefs->SetBool("ShowToolbarIcons", mShowToolbarIconsControl->Value());
+				NoticeChange();
+				break;
+			}
+			case BM_SHOW_TOOLBAR_BORDER_CHANGED: {
+				ThePrefs->SetBool("ShowToolbarBorder", mShowToolbarBorderControl->Value());
 				NoticeChange();
 				break;
 			}

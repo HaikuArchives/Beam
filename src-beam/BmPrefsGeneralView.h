@@ -49,6 +49,7 @@
 #define BM_WORKSPACE_SELECTED					'bmWS'
 #define BM_TOOLBAR_LABEL_SELECTED			'bmTL'
 #define BM_SHOW_TOOLBAR_ICONS_CHANGED		'bmTI'
+#define BM_SHOW_TOOLBAR_BORDER_CHANGED		'bmTB'
 #define BM_SHOW_ALERTS_FOR_ERRORS_CHANGED	'bmAE'
 #define BM_CLOSE_VIEWWIN_CHANGED				'bmCW'
 
@@ -101,6 +102,7 @@ private:
 	BmCheckControl* mBeepNewMailControl;
 	BmCheckControl* mShowAlertForErrorsControl;
 	BmCheckControl* mShowToolbarIconsControl;
+	BmCheckControl* mShowToolbarBorderControl;
 	BmCheckControl* mCloseViewWinControl;
 	BmMenuControl* mWorkspaceControl;
 	BmMenuControl* mToolbarLabelControl;
