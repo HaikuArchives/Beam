@@ -246,7 +246,7 @@ MMenuBar* BmMailViewWin::CreateMenu() {
 	menu = new BMenu( "Message");
 	menu->AddItem( CreateMenuItem( "New Message", BMM_NEW_MAIL));
 	menu->AddSeparatorItem();
-	BmMailRefView::AddMailRefMenu( menu, this, this, false, &mFilterMenu);
+	BmMailRefView::AddMailRefMenu( menu, this, false);
 	menu->AddSeparatorItem();
 	menu->AddItem( CreateMenuItem( "Toggle Header Mode", BMM_SWITCH_HEADER));
 	menu->AddItem( CreateMenuItem( "Show Raw Message", BMM_SWITCH_RAW));
@@ -363,21 +363,13 @@ void BmMailViewWin::MessageReceived( BMessage* msg) {
 			case BM_LISTMODEL_ADD:
 			case BM_LISTMODEL_UPDATE:
 			case BM_LISTMODEL_REMOVE: {
-				// double-dispatch job-related messages to our mene-controllers:
-				BmMenuController* ctrlr = NULL;
-				if (mFilterMenu->IsMsgFromCurrentModel( msg))
-					ctrlr = mFilterMenu;
-				else 
-					break;
+				// double-dispatch job-related messages to our menu-controllers:
 				BmListModelItem* item=NULL;
 				msg->FindPointer( BmListModel::MSG_MODELITEM, (void**)&item);
 				if (item)
 					item->RemoveRef();		// the msg is no longer referencing the item
-				const char* oldKey;
-				if (msg->what == BM_LISTMODEL_UPDATE
-				&& msg->FindString( BmListModel::MSG_OLD_KEY, &oldKey) != B_OK) 
-					break;
-				ctrlr->JobIsDone( true);
+				if (mFilterMenu->IsMsgFromCurrentModel( msg))
+					mFilterMenu->JobIsDone( true);
 				break;
 			}
 			default:

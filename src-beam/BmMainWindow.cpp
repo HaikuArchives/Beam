@@ -252,9 +252,8 @@ MMenuBar* BmMainWindow::CreateMenu() {
 	menu->AddItem( CreateMenuItem( "Check Mail", BMM_CHECK_MAIL));
 	BMessage checkMsgTempl( BMM_CHECK_MAIL);
 	menu->AddItem( mAccountMenu = 
-							new BmMenuController( "Check Mail For", 
-														 "PopAccountMenuController",
-														 checkMsgTempl, this));
+							new BmMenuController( "Check Mail For", this,
+														 checkMsgTempl, ThePopAccountList.Get()));
 	mAccountMenu->Shortcuts( "0123456789");
 	menu->AddItem( CreateMenuItem( "Check All Accounts", BMM_CHECK_ALL));
 	menu->AddSeparatorItem();
@@ -265,7 +264,7 @@ MMenuBar* BmMainWindow::CreateMenu() {
 	menu = new BMenu( "Message");
 	menu->AddItem( CreateMenuItem( "New Message...", BMM_NEW_MAIL));
 	menu->AddSeparatorItem();
-	mMailRefView->AddMailRefMenu( menu, this, this, false, &mFilterMenu);
+	mMailRefView->AddMailRefMenu( menu, this, false);
 	menu->AddSeparatorItem();
 	menu->AddItem( CreateMenuItem( "Toggle Header Mode", BMM_SWITCH_HEADER));
 	menu->AddItem( CreateMenuItem( "Show Raw Message", BMM_SWITCH_RAW));
@@ -329,7 +328,6 @@ void BmMainWindow::BeginLife() {
 		mMailRefView->StartWatching( this, BM_NTFY_MAILREF_SELECTION);
 		mMailView->StartWatching( this, BM_NTFY_MAIL_VIEW);
 		mMailFolderView->StartJob( TheMailFolderList.Get());
-		mAccountMenu->StartJob( ThePopAccountList.Get());
 		BM_LOG2( BM_LogMainWindow, BmString("MainWindow begins life"));
 	} catch(...) {
 		nIsAlive = false;
@@ -386,6 +384,7 @@ void BmMainWindow::MessageReceived( BMessage* msg) {
 				be_app_messenger.SendMessage( msg);
 				break;
 			}
+			case BMM_MOVE:
 			case BMM_MARK_AS:
 			case BMM_TRASH:
 			case BMM_PRINT:
@@ -435,29 +434,24 @@ void BmMainWindow::MessageReceived( BMessage* msg) {
 				be_app_messenger.SendMessage( msg);
 				break;
 			}
+/*
 			case BM_JOB_DONE:
 			case BM_LISTMODEL_ADD:
 			case BM_LISTMODEL_UPDATE:
 			case BM_LISTMODEL_REMOVE: {
-				// double-dispatch job-related messages to our mene-controllers:
-				BmMenuController* ctrlr = NULL;
-				if (mAccountMenu->IsMsgFromCurrentModel( msg))
-					ctrlr = mAccountMenu;
-				else if (mFilterMenu->IsMsgFromCurrentModel( msg))
-					ctrlr = mFilterMenu;
-				else 
-					break;
+				// double-dispatch job-related messages to our menu-controllers:
 				BmListModelItem* item=NULL;
 				msg->FindPointer( BmListModel::MSG_MODELITEM, (void**)&item);
 				if (item)
 					item->RemoveRef();		// the msg is no longer referencing the item
-				const char* oldKey;
-				if (msg->what == BM_LISTMODEL_UPDATE
-				&& msg->FindString( BmListModel::MSG_OLD_KEY, &oldKey) != B_OK) 
-					break;
-				ctrlr->JobIsDone( true);
+
+				if (mAccountMenu->IsMsgFromCurrentModel( msg))
+					mAccountMenu->JobIsDone( true);
+				else if (mFilterMenu->IsMsgFromCurrentModel( msg))
+					mFilterMenu->JobIsDone( true);
 				break;
 			}
+*/
 			default:
 				inherited::MessageReceived( msg);
 		}
