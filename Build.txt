@@ -92,14 +92,25 @@ In order to be able to compile Beam, you need to have the following setup:
 	by the folder-names.
 
 
-4.	Instead of using BeIDE or make, Beam now exclusively supports jam as
+4.	Beam requires libiconv.so (an encoding conversion library) to run, so 
+	during compilation Beam	expects the following files to exist:
+		/boot/home/config/include/iconv.h
+
+	If you haven't got libiconv.so already, you can fetch it from:
+
+		http://www.bebits.com/app/3527
+
+	After extracting the archive, simply start the package-file.
+
+
+5.	Instead of using BeIDE or make, Beam now exclusively supports jam as
 	build engine. You can fetch jam (v2.5-obos) from here:
 	
 		http://www.hirschkaefer.de/beos/jam-2.5-obos.zip
 		
 	Simply extract the archive and move 'jam' to /boot/home/config/bin.
 
-5.	In order to finally compile Beam, you just need to open a terminal,
+6.	In order to finally compile Beam, you just need to open a terminal,
 	cd into Beam's main-folder and start jam. This will take a while...
 
 	After jam is finished, you can find the result in generated/distro 
