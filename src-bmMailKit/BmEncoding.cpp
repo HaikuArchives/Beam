@@ -43,14 +43,8 @@ using namespace BmEncoding;
 #undef BM_LOGNAME
 #define BM_LOGNAME "MailParser"
 
-#define BM_MAX_LINE_LEN 76
+const int BM_MAX_LINE_LEN = 76;
 							// as stated in [K. Johnson, p. 149f]
-
-#define HEXDIGIT2CHAR(d) (((d)>='0'&&(d)<='9') ? (d)-'0' : ((d)>='A'&&(d)<='F') ? (d)-'A'+10 : ((d)>='a'&&(d)<='f') ? (d)-'a'+10 : 0)
-
-#define CHAR2HIGHNIBBLE(c) (((c) > 0x9F ? 'A'-10 : '0')+((c)>>4))
-#define CHAR2LOWNIBBLE(c)  ((((c)&0x0F) > 9 ? 'A'-10 : '0')+((c)&0x0F))
-
 
 BmCharsetMap BmEncoding::TheCharsetMap;
 
@@ -619,6 +613,10 @@ void BmUtf8Encoder::Filter( const char* srcBuf, uint32& srcLen,
 	BmQuotedPrintableDecoder
 \********************************************************************************/
 
+inline unsigned char HEXDIGIT2CHAR( unsigned int d) {
+	return (((d)>='0'&&(d)<='9') ? (d)-'0' : ((d)>='A'&&(d)<='F') ? (d)-'A'+10 : ((d)>='a'&&(d)<='f') ? (d)-'a'+10 : 0);
+}
+
 /*------------------------------------------------------------------------------*\
 	()
 		-	
@@ -675,20 +673,30 @@ void BmQuotedPrintableDecoder::Filter( const char* srcBuf, uint32& srcLen,
 			mLastWasLinebreak = false;
 		} else if (c == '=') {
 			if (src>srcEnd-3 && !mInput->IsAtEnd())
-				break;							// need two more characters in buffer
-			if (src<=srcEnd-3 
-			&& (c1=*(src+1))!=0 && qpChars.FindFirst(c1)!=B_ERROR 
-			&& (c2=*(src+2))!=0 && qpChars.FindFirst(c2)!=B_ERROR) {
-				// decode a single character:
-				*dest++ = HEXDIGIT2CHAR(c1)*16 + HEXDIGIT2CHAR(c2);
-				src += 2;
-				mLastWasLinebreak = false;
-			} else {
-				// softbreak encountered, we keep note of it's position
-				mLastWasLinebreak = true;
-				if (src<=srcEnd-3)
+				break;							// want two more characters in buffer
+			if (src<=srcEnd-3 && (c1=*(src+1))!=0 && (c2=*(src+2))!=0) {
+				if (qpChars.FindFirst(c1)!=B_ERROR && qpChars.FindFirst(c2)!=B_ERROR) {
+					// decode a single character:
+					*dest++ = HEXDIGIT2CHAR(c1)*16 + HEXDIGIT2CHAR(c2);
 					src += 2;
+					mLastWasLinebreak = false;
+				} else {
+					// it's either a softbreak or broken encoding, check:
+					if (c1=='\r' && c2=='\n') {
+						// softbreak encountered, we keep note of it's position
+						mLastWasLinebreak = true;
+						src += 2;
 							// skip over "\r\n" in order to join the line
+					} else {
+						// broken encoding, we just copy:
+						*dest++ = c;
+						mLastWasLinebreak = false;
+					}
+				}
+			} else {
+				// characters missing at end (broken encoding), we just copy:
+				*dest++ = c;
+				mLastWasLinebreak = false;
 			}
 		} else if (c == '\r') {
 			// skip over carriage-returns
@@ -708,6 +716,13 @@ void BmQuotedPrintableDecoder::Filter( const char* srcBuf, uint32& srcLen,
 /********************************************************************************\
 	BmQuotedPrintableEncoder
 \********************************************************************************/
+
+inline unsigned int CHAR2HIGHNIBBLE( unsigned char c) {
+	return (((c) > 0x9F ? 'A'-10 : '0')+((c)>>4));
+}
+inline unsigned int CHAR2LOWNIBBLE( unsigned char c) {
+	return ((((c)&0x0F) > 9 ? 'A'-10 : '0')+((c)&0x0F));
+}
 
 /*------------------------------------------------------------------------------*\
 	()
@@ -977,7 +992,9 @@ void BmFoldedLineEncoder::Filter( const char* srcBuf, uint32& srcLen,
 	char* dest = destBuf;
 	char* destEnd = destBuf+destLen;
 	if (mAddQueuedChars) {
-		if (mCurrLineLen + mQueuedChars.Length() > mMaxLineLen) {
+		int corr = (mQueuedChars[mQueuedChars.Length()-1]==' ' ? 0 : 1);
+		// if last char is not space, line is full and needs to be folded:
+		if (mCurrLineLen + mQueuedChars.Length() + corr > mMaxLineLen) {
 			if (dest<=destEnd-3) {
 				*dest++ = '\r';
 				*dest++ = '\n';
