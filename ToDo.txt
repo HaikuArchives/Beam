@@ -6,17 +6,6 @@
 ----------------------------------
 List of beta-testers:
 ----------------------------------
-**************
-Beam 0.913rc2:
-**************
--	Bernd Korz <bernd.korz@insidebeos.de>
--	Charlie Clark <charlie@begeistert.org>
--	Eberhard Hafermalz <ebor@ecosse.net>	(BONE)
--	Linus Almstrom <linalm-7@sm.luth.se>
--	Rainer Riedl <riedl@navios.de>
--	Tyler Dauwalder <tyler@dauwalder.net>
-
-
 ***********
 Beam 0.92:
 ***********
@@ -25,6 +14,9 @@ Beam 0.92:
 
 -	implement RFC2231 to facilitate correct handling of attachment
 	filenames that exceed us-ascii encoding
+
+-	implement RFC2111 (cid: and mid: url-domains) to facilitate 
+	better display of html-pages
 
 -	correct node-monitoring for the case when mail-files are being
 	created and Beam accesses them before they are written out
@@ -54,11 +46,6 @@ Beam 0.92:
 -	define add-on protocol and implement the add/remove-quote demo add-on.
 
 -	add log-windows, where selected log-events will be shown.
-
--	collect error-messages from jobs in log-window instead of showing them 
-	as modal stoppers.
-	
--	implement proper Deskbar-replicant
 
 -	make rulerview static (avoid scrolling it away).
 
