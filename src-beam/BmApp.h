@@ -57,6 +57,7 @@ public:
 	bool QuitRequested();
 	void AboutRequested();
 	void ReadyToRun();
+	void ArgvReceived( int32 argc, char** argv);
 	void RefsReceived( BMessage* msg);
 	thread_id Run();
 
