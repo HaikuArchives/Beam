@@ -153,6 +153,7 @@ fStripedBackground( false),
 fInsertAtSortedPos( true),
 fClickSetsFocus( false),
 fExtendingDownwards( true),
+fAvoidColPushing( false),
 fMinItemHeight( 5),
 fMinMax( minmax)
 {
@@ -1281,8 +1282,18 @@ void ColumnListView::ReSortItem( CLVListItem* item)
 			}
 		}
 	} else {
-		// move item to new position:
 		int32 oldPos = IndexOf( item);
+		// first check if resorting is required at all...
+		CLVListItem *prevItem = FullListItemAt(oldPos-1);
+		int ComparePrevResult = prevItem ? CompareItems(prevItem, item) : 0;
+		CLVListItem *nextItem = FullListItemAt(oldPos+1);
+		int CompareNextResult = nextItem ? CompareItems(item, nextItem) : 0;
+		if (ComparePrevResult <= 0 && CompareNextResult <= 0)
+			// item still belongs at current position, we we avoid resorting, as
+			// that would move this item to the end of a list of items that are 
+			// equal (with respect to sorting).
+			return;
+		// ok, need to resort, so we move item to new position:
 		int32 newPos = DetermineSortedPos( item);
 		if (newPos > oldPos)
 			newPos--;
@@ -1300,8 +1311,8 @@ int32 ColumnListView::DetermineSortedPos(CLVListItem* item)
 	int32 lb = 0;
 	int32 ub = numItems-1;
 	CLVListItem* compItem;
+	int CompareResult;
 	while( lb<=ub ) {
-		int CompareResult = 0;
 		compItem = (CLVListItem*)ItemAt(currPos);
 		if (item == compItem) {
 			// avoid comparing with ourselves, since that would give unwanted results:
@@ -1315,13 +1326,7 @@ int32 ColumnListView::DetermineSortedPos(CLVListItem* item)
 				return currPos;
 			currPos = cp;
 		}
-		for(int32 SortIteration = 0; SortIteration < SortDepth && CompareResult == 0; SortIteration++)
-		{
-			CLVColumn* Column = (CLVColumn*)fSortKeyList.ItemAt(SortIteration);
-			CompareResult = fCompare(item,compItem,fColumnList.IndexOf(Column),Column->Flags());
-			if(Column->fSortMode == Descending)
-				CompareResult = 0-CompareResult;
-		}
+		CompareResult = CompareItems(item,compItem);
 		if (CompareResult >= 0) {
 			lb = currPos+1;
 			currPos = MIN((ub+lb+1) / 2, numItems);
@@ -1852,6 +1857,21 @@ void ColumnListView::SetSortFunction(CLVCompareFuncPtr compare)
 	fCompare = compare;
 }
 
+
+int ColumnListView::CompareItems(const CLVListItem *item1, const CLVListItem *item2)
+{
+	int32 SortDepth = fSortKeyList.CountItems();
+	int CompareResult = 0;
+	for(int32 SortIteration = 0; SortIteration < SortDepth && CompareResult == 0; SortIteration++)
+	{
+		CLVColumn* Column = (CLVColumn*)fSortKeyList.ItemAt(SortIteration);
+		CompareResult = fCompare(item1, item2, fColumnList.IndexOf(Column), Column->Flags());
+		if(Column->fSortMode == Descending)
+			CompareResult = 0-CompareResult;
+	}
+	return CompareResult;
+}
+	
 
 void ColumnListView::SortItems()
 {

@@ -233,6 +233,7 @@ class IMPEXPSANTAPARTSFORBEAM ColumnListView : public BListView
 		void UpdateColumnSizesDataRectSizeScrollBars(bool scrolling_allowed = true);
 		void ColumnsChanged();
 		virtual void ShowLabelViewMenu( BPoint)	{ }
+		int CompareItems(const CLVListItem *item1, const CLVListItem *item2);
 
 	protected:
 		friend class CLVMainView;
@@ -284,6 +285,7 @@ class IMPEXPSANTAPARTSFORBEAM ColumnListView : public BListView
 		static int32 fExtendSelMask;
 		static int32 fToggleSelMask;
 		bool fExtendingDownwards;
+		bool fAvoidColPushing;
 		float fMinItemHeight;
 
 		minimax fMinMax;		
