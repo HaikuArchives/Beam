@@ -297,9 +297,9 @@ const char* BmMailRefItem::GetUserText(int32 colIdx, float /*colWidth*/) const {
 
 
 const char* const BmMailRefView::MSG_MAILS_SELECTED = "bm:msel";
-const char* const BmMailRefView::MENU_MARK_AS =			"Mark Message As";
+const char* const BmMailRefView::MENU_MARK_AS =			"Set Status To";
 const char* const BmMailRefView::MENU_FILTER = 			"Apply Specific Filter";
-const char* const BmMailRefView::MENU_MOVE =				"Move Message To";
+const char* const BmMailRefView::MENU_MOVE =				"Move To";
 
 const BmString BmDragId = "beam/ref";
 
@@ -835,22 +835,31 @@ void BmMailRefView::AddMailRefMenu( BMenu* menu, BHandler* target,
 												bool isContextMenu) {
 	if (!menu)
 		return;
-	AddItemToMenu( menu, CreateMenuItem( "Reply", BMM_REPLY), target);
-	AddItemToMenu( menu, 
+	BFont font( *be_plain_font);
+	font.SetSize( 10);
+	BMenuItem* replyMenuItem = CreateSubMenuItem( "Reply", BMM_REPLY);
+	BMenu* replyMenu = replyMenuItem->Submenu();
+	if (isContextMenu)
+		replyMenu->SetFont( &font);
+	AddItemToMenu( menu, replyMenuItem, target);
+	AddItemToMenu( replyMenu, 
 						CreateMenuItem( "Reply To List", BMM_REPLY_LIST), target);
-	AddItemToMenu( menu, 
+	AddItemToMenu( replyMenu, 
 						CreateMenuItem( "Reply To Person", BMM_REPLY_ORIGINATOR), 
 						target);
-	AddItemToMenu( menu, 
+	AddItemToMenu( replyMenu, 
 						CreateMenuItem( "Reply To All", BMM_REPLY_ALL), target);
-	AddItemToMenu( menu, 
+
+	BMenuItem* fwdMenuItem = CreateSubMenuItem( "Forward", BMM_FORWARD_INLINE);
+	BMenu* fwdMenu = fwdMenuItem->Submenu();
+	if (isContextMenu)
+		fwdMenu->SetFont( &font);
+	AddItemToMenu( menu, fwdMenuItem, target);
+	AddItemToMenu( fwdMenu, 
 						CreateMenuItem( "Forward As Attachment", 
 											 BMM_FORWARD_ATTACHED), 
 						target);
-	AddItemToMenu( menu, 
-						CreateMenuItem( "Forward Inline", BMM_FORWARD_INLINE), 
-						target);
-	AddItemToMenu( menu, 
+	AddItemToMenu( fwdMenu, 
 						CreateMenuItem( "Forward Inline (With Attachments)", 
 											 BMM_FORWARD_INLINE_ATTACH), 
 						target);
@@ -871,8 +880,6 @@ void BmMailRefView::AddMailRefMenu( BMenu* menu, BHandler* target,
 												(BmString("MarkAs")+stats[i]).String()), 
 							target);
 	}
-	BFont font( *be_plain_font);
-	font.SetSize( 10);
 	if (isContextMenu)
 		statusMenu->SetFont( &font);
 	menu->AddItem( statusMenu);
@@ -910,7 +917,7 @@ void BmMailRefView::AddMailRefMenu( BMenu* menu, BHandler* target,
 
 	if (isContextMenu) {
 		AddItemToMenu( menu, 
-							CreateMenuItem( "Print Message(s)...", 
+							CreateMenuItem( "Print...", 
 												 BMM_PRINT, "Print Message..."), 
 							target);
 		menu->AddSeparatorItem();
