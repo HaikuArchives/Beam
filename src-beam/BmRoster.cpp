@@ -217,6 +217,8 @@ bool BmRoster::AskUserForPopAcc( const BmString& accName, BmString& popAccName)
 		return false;
 }
 
+namespace BmPrivate {
+
 /*------------------------------------------------------------------------------*\
 	ClearMenu()
 		-	
@@ -232,10 +234,6 @@ static void ClearMenu( BmMenuControllerBase* menu)
 							menu->MsgTarget());
 	}
 }
-
-
-
-namespace BmPrivate {
 
 /*------------------------------------------------------------------------------*\
 	ListMenuBuilder()
@@ -497,8 +495,10 @@ void BmRoster::RebuildStatusMenu( BmMenuControllerBase* menu)
 		BM_MAIL_STATUS_REPLIED, BM_MAIL_STATUS_SENT,	NULL
 	};
 	for( int i=0; stats[i]; ++i) {
+		BMessage* msg = new BMessage(*(menu->MsgTemplate()));
+		msg->AddString(BmApplication::MSG_STATUS, stats[i]);
 		BMenuItem* item 
-			= new BMenuItem( stats[i], new BMessage(*(menu->MsgTemplate())));
+			= new BMenuItem( stats[i], msg);
 		item->SetTarget( menu->MsgTarget());
 		menu->AddItem( item);
 	}
