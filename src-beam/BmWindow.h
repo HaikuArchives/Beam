@@ -60,6 +60,7 @@ public:
 	// overrides of BWindow-base:
 	void Quit();
 	void Show();
+	void MessageReceived( BMessage*);
 	
 protected:
 	BmString mStatefileName;

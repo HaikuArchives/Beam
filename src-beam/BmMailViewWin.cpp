@@ -338,16 +338,6 @@ void BmMailViewWin::MessageReceived( BMessage* msg) {
 				}
 				break;
 			}
-			case B_COPY:
-			case B_CUT: 
-			case B_PASTE: 
-			case B_UNDO: 
-			case B_SELECT_ALL: {
-				BView* focusView = CurrentFocus();
-				if (focusView)
-					PostMessage( msg, focusView);
-				break;
-			}
 			default:
 				inherited::MessageReceived( msg);
 		}

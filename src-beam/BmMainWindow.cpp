@@ -453,16 +453,6 @@ BmMailViewContainer* BmMainWindow::CreateMailView( minimax minmax, BRect frame) 
 void BmMainWindow::MessageReceived( BMessage* msg) {
 	try {
 		switch( msg->what) {
-			case B_COPY:
-			case B_CUT: 
-			case B_PASTE: 
-			case B_UNDO: 
-			case B_SELECT_ALL: {
-				BView* focusView = CurrentFocus();
-				if (focusView)
-					PostMessage( msg, focusView);
-				break;
-			}
 			case BMM_NEW_MAIL: 
 			case BMM_CHECK_MAIL:
 			case BMM_CHECK_ALL: {

@@ -7,6 +7,7 @@
 
 #include "BmBasics.h"
 #include "BmLogHandler.h"
+#include "BmMsgTypes.h"
 #include "BmResources.h"
 #include "BmUtil.h"
 #include "BmWindow.h"
@@ -126,3 +127,29 @@ void BmWindow::Quit() {
 	inherited::Quit();
 }
 
+/*------------------------------------------------------------------------------*\
+	Quit()
+		-	we write the state-info before we quit
+\*------------------------------------------------------------------------------*/
+void BmWindow::MessageReceived( BMessage* msg) {
+	switch( msg->what) {
+		case B_COPY:
+		case B_CUT: 
+		case B_PASTE: 
+		case B_UNDO: 
+		case B_REDO: 
+		case B_SELECT_ALL: {
+			bool seenThis;
+			if (msg->FindBool( "seenThis", &seenThis) != B_OK) {
+				msg->AddBool( "seenThis", true);
+				BView* focusView = CurrentFocus();
+				if (focusView)
+					PostMessage( msg, focusView);
+			}
+			break;
+		}
+		default: {
+			inherited::MessageReceived( msg);
+		}
+	}
+}

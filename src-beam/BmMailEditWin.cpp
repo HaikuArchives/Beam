@@ -702,17 +702,6 @@ void BmMailEditWin::MessageReceived( BMessage* msg) {
 				mSaveButton->SetEnabled( true);
 				break;
 			}
-			case B_COPY:
-			case B_CUT: 
-			case B_PASTE: 
-			case B_UNDO: 
-			case B_REDO: 
-			case B_SELECT_ALL: {
-				BView* focusView = CurrentFocus();
-				if (focusView)
-					PostMessage( msg, focusView);
-				break;
-			}
 			case BMM_NEW_MAIL: {
 				be_app_messenger.SendMessage( msg);
 				break;
