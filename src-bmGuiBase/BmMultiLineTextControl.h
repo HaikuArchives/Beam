@@ -61,18 +61,15 @@ public:
 	void SetDivider( float divider);
 	void SetEnabled( bool enabled);
 	void SetText( const char* text);
+	minimax layoutprefs();
+	BRect layout(BRect frame);
 
 	// getters:
-	inline BTextView* TextView() const 	{ return mTextView; }
 	inline BMenuField* MenuField() const	{ return mMenuField; }
 	inline BMenu* Menu() const 			{ return mMenuField ? mMenuField->Menu() : NULL; }
 
 private:
-	minimax layoutprefs();
-	BRect layout(BRect frame);
-
 	bool mLabelIsMenu;
-	BTextView* mTextView;
 	BMenuField* mMenuField;
 
 	// Hide copy-constructor and assignment:

@@ -32,12 +32,15 @@
 #include <PopUpMenu.h>
 
 #include <HGroup.h>
+#include <MWindow.h>
 
 #ifdef __POWERPC__
 #define BM_BUILDING_SANTAPARTSFORBEAM 1
 #endif
 
 #include "Colors.h"
+
+#include "BmString.h"
 
 #include "BmMultiLineTextControl.h"
 
@@ -55,7 +58,10 @@ BmMultiLineTextControl::BmMultiLineTextControl( const char* label, bool labelIsM
 	float divPos = label ? StringWidth( label)+27 : 0;
 	BFont font;
 	m_text_view->GetFont( &font);
-	float height = m_text_view->LineHeight()*lineCount+12;
+	font_height fh;
+	font.GetHeight( &fh);
+	float lineHeight = fh.ascent + fh.descent + fh.leading; 
+	float height = lineHeight*lineCount+12;
 	if (minTextLen)
 		ct_mpm = minimax( divPos + font.StringWidth("W")*minTextLen, height+4, 
 								1E5, fixedHeight ? height+4 : 1E5);
