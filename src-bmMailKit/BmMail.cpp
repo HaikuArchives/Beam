@@ -237,10 +237,11 @@ void BmMail::MarkAs( const char* status) {
 			status_t err;
 			entry_ref eref;
 			// we write the new status...
-			if (mEntry.InitCheck() == B_OK)
-				mEntry.GetRef( &eref);
-			else
+			if (mEntry.InitCheck() != B_OK) {
+				mDefaultStatus = status;
 				return;
+			}
+			mEntry.GetRef( &eref);
 			(err = mailNode.SetTo( &eref)) == B_OK
 													|| BM_THROW_RUNTIME( BmString("Could not create node for current mail-file.\n\n Result: ") << strerror(err));
 			mailNode.WriteAttr( BM_MAIL_ATTR_STATUS, B_STRING_TYPE, 0, status, strlen( status)+1);
@@ -262,8 +263,12 @@ const BmString BmMail::Status() const {
 	DefaultStatus()
 		-	
 \*------------------------------------------------------------------------------*/
-const BmString BmMail::DefaultStatus() const { 
-	return mOutbound ? BM_MAIL_STATUS_DRAFT : BM_MAIL_STATUS_NEW;
+const BmString BmMail::DefaultStatus() const {
+	if (!mDefaultStatus.Length())
+		mDefaultStatus = mOutbound 
+								? BM_MAIL_STATUS_DRAFT 
+								: BM_MAIL_STATUS_NEW;
+	return mDefaultStatus;
 }
 
 /*------------------------------------------------------------------------------*\

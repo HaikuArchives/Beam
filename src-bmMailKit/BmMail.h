@@ -260,6 +260,9 @@ private:
 	BmString mDestFoldername;
 							// name of folder where the mail shall be stored in
 							// (this may be set by a mail-filter)
+	mutable BmString mDefaultStatus;
+							// default status of this mail, only relevant
+							// before mail lives on disk
 
 	// Hide copy-constructor and assignment:
 	BmMail( const BmMail&);
