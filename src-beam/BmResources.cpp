@@ -34,13 +34,16 @@
 #include <MenuItem.h>
 #include <Picture.h>
 #include <Resources.h>
+#include <TranslationUtils.h>
 #include <View.h>
 
 #include "regexx.hh"
 using namespace regexx;
 
+#include "BmApp.h"
 #include "BmBasics.h"
 #include "BmLogHandler.h"
+#include "BmPrefs.h"
 #include "BmResources.h"
 #include "BmStorageUtil.h"
 #include "BmUtil.h"
@@ -112,9 +115,6 @@ BmResources::BmResources()
 		// standard settings folder:
 		SettingsPath.SetTo( path.Path(), "Beam");
 	
-	// Load all the needed icons from our resources:
-	FetchIcons();
-
 	// Load all font-info:
 	FetchFonts();
 
@@ -143,6 +143,16 @@ BmResources::~BmResources()
 	delete mResources;
 
 	theInstance = NULL;
+}
+
+/*------------------------------------------------------------------------------*\
+	InitializeWithPrefs()
+		-	do final initialization, this time we are sure ThePrefs is valid
+\*------------------------------------------------------------------------------*/
+void BmResources::InitializeWithPrefs()
+{
+	// Load all the needed icons from our resources:
+	FetchIcons();
 }
 
 /*------------------------------------------------------------------------------*\
@@ -201,18 +211,26 @@ void BmResources::FetchIcons() {
 	const char* name;
 	size_t length;
 	char *data;
+	BmString defaultIconPath = bmApp->AppPath() + ThePrefs->nDefaultIconset;
+	BmString iconPath 
+		= ThePrefs->GetString( "IconPath", defaultIconPath.String());
 	for( 	int32 i=0; 
 			res->GetResourceInfo( iconType, i, &id, &name, &length); i++) {
-		if (!(data = (char*)res->LoadResource( iconType, id, &length))) {
-			BM_SHOWERR( BmString("FetchIcons(): Could not read icon '") << name 
-								<< "'");
-			continue;
-		}
-		BArchivable* theObj = NULL;
-		BMessage msg;
-		if (msg.Unflatten( data) == B_OK) {
-			theObj = instantiate_object( &msg);
-			mIconMap[name] = dynamic_cast< BBitmap*>( theObj);
+		BmString picFile = iconPath + "/" + name;
+		mIconMap[name] = BTranslationUtils::GetBitmap( picFile.String());
+		if (!mIconMap[name]) {
+			// load default pic from resources:
+			if (!(data = (char*)res->LoadResource( iconType, id, &length))) {
+				BM_SHOWERR( BmString("FetchIcons(): Could not read icon '") << name 
+									<< "'");
+				continue;
+			}
+			BArchivable* theObj = NULL;
+			BMessage msg;
+			if (msg.Unflatten( data) == B_OK) {
+				theObj = instantiate_object( &msg);
+				mIconMap[name] = dynamic_cast< BBitmap*>( theObj);
+			}
 		}
 	}
 }

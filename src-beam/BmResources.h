@@ -74,6 +74,7 @@ public:
 	BDirectory* MailCacheFolder();
 	BDirectory* StateInfoFolder();
 	BDirectory* GetFolder( const BmString& name, BDirectory& dir);
+	void InitializeWithPrefs();
 
 	BBitmap* IconByName( const BmString name);
 	//
