@@ -417,6 +417,59 @@ void BmMailRefView::MessageReceived( BMessage* msg) {
 }
 
 /*------------------------------------------------------------------------------*\
+	RemoveSelectedMessagesFromView()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailRefView::RemoveSelectedMessagesFromView() { 
+	vector< BmIndexDesc> indexVect;
+	vector< BListItem*> itemVect;
+	int32 currIdx;
+	int32 index=-1;
+	// note down selection:
+	for( int32 i=0; (currIdx=CurrentSelection( i))>=0; ++i) {
+		if (index==-1 || indexVect[index].end != currIdx-1) {
+			indexVect.push_back( BmIndexDesc( currIdx));
+			index++;
+		} else
+			indexVect[index].end = currIdx;
+		itemVect.push_back( ItemAt( currIdx));
+	}
+	if (indexVect.empty())
+		return;
+
+	// now move cursor onwards...
+	if (indexVect.back().end < CountItems()-1)
+		Select( indexVect.back().end+1);		
+				// select next item that remains in list
+	else if (indexVect.front().start > 0)
+		Select( indexVect.front().start-1);		
+				// select last item that remains in list
+	else
+		DeselectAll();
+
+	// remove view-items immediately because that looks better and it 
+	// avoids that the user erraneously deletes a mail that is already
+	// on the way to trash (just has not been done yet):
+	for( int32 i=indexVect.size()-1; i>=0; --i) {
+		RemoveItems( indexVect[i].start, 
+						 1+indexVect[i].end-indexVect[i].start);
+	}
+	ScrollToSelection();
+	UpdateCaption();
+	{	// scope for lock
+		BmAutolockCheckGlobal lock( DataModel()->ModelLocker());
+		if (!lock.IsLocked())
+			BM_THROW_RUNTIME( BmString() << ControllerName() 
+										<< "KeyDown(): Unable to lock model");
+		for( uint32 i=0; i<itemVect.size(); ++i) {
+			doRemoveModelItem( 
+				((BmListViewItem*)itemVect[i])->ModelItem()
+			);
+		}
+	}
+}
+
+/*------------------------------------------------------------------------------*\
 	KeyDown()
 		-	
 \*------------------------------------------------------------------------------*/
@@ -443,49 +496,8 @@ void BmMailRefView::KeyDown(const char *bytes, int32 numBytes) {
 			}
 			case B_DELETE: {
 				BMessage msg(BMM_TRASH);
-				vector< BmIndexDesc> indexVect;
-				vector< BListItem*> itemVect;
-				int32 currIdx;
-				int32 index=-1;
-				for( int32 i=0; (currIdx=CurrentSelection( i))>=0; ++i) {
-					if (index==-1 || indexVect[index].end != currIdx-1) {
-						indexVect.push_back( BmIndexDesc( currIdx));
-						index++;
-					} else
-						indexVect[index].end = currIdx;
-					itemVect.push_back( ItemAt( currIdx));
-				}
-				if (indexVect.empty())
-					break;
 				AddSelectedRefsToMsg( &msg, BmApplication::MSG_MAILREF);
-				// now move cursor onwards...
-				if (indexVect.back().end < CountItems()-1)
-					Select( indexVect.back().end+1);		
-							// select next item that remains in list
-				else if (indexVect.front().start > 0)
-					Select( indexVect.front().start-1);		
-							// select last item that remains in list
-				else
-					DeselectAll();
-				// remove view-items immediately because that looks better and it 
-				// avoids double deletions (which cause Tracker to complain):
-				for( int32 i=indexVect.size()-1; i>=0; --i) {
-					RemoveItems( indexVect[i].start, 
-									 1+indexVect[i].end-indexVect[i].start);
-				}
-				UpdateCaption();
-				{	// scope for lock
-					BmAutolockCheckGlobal lock( DataModel()->ModelLocker());
-					if (!lock.IsLocked())
-						BM_THROW_RUNTIME( BmString() << ControllerName() 
-													<< "KeyDown(): Unable to lock model");
-					for( uint32 i=0; i<itemVect.size(); ++i) {
-						doRemoveModelItem( 
-							((BmListViewItem*)itemVect[i])->ModelItem()
-						);
-					}
-				}
-				// finally we instruct our app to remove the mail
+				RemoveSelectedMessagesFromView();
 				be_app_messenger.SendMessage( &msg);
 				break;
 			}
@@ -665,30 +677,39 @@ BMessage* BmMailRefView::DefaultLayout()		{
 		-	
 \*------------------------------------------------------------------------------*/
 void BmMailRefView::AddSelectedRefsToMsg( BMessage* msg, BmString fieldName) {
-	BmString selectedText;
 	if (mPartnerMailView) {
+		BmString selectedText;
 		int32 start, finish;
 		mPartnerMailView->GetSelection( &start, &finish);
 		if (start < finish)
 			selectedText.SetTo(mPartnerMailView->Text()+start, finish-start);
+		if (selectedText.Length())
+			msg->AddString( BmApplication::MSG_SELECTED_TEXT, 
+								 selectedText.String());
 	}
+	BMessenger msngr( this);
+	msg->AddMessenger( BmApplication::MSG_SENDING_REFVIEW, msngr);
+	BmMailRefItem* refItem;
 	int32 selected = -1;
 	int32 numSelected = 0;
-	BMessenger msngr( this);
-	while( (selected = CurrentSelection(numSelected)) >= 0) {
-		BmMailRefItem* refItem;
-		refItem = dynamic_cast<BmMailRefItem*>(ItemAt( selected));
-		if (refItem) {
-			BmMailRef* ref( refItem->ModelItem());
-			msg->AddPointer( fieldName.String(), static_cast< void*>( ref));
-			ref->AddRef();						
-							// the message now refers to the mailRef, too
-			if (selectedText.Length())
-				msg->AddString( BmApplication::MSG_SELECTED_TEXT, 
-									 selectedText.String());
-			msg->AddMessenger( BmApplication::MSG_SENDING_REFVIEW, msngr);
-		}
+	while( (selected = CurrentSelection(numSelected)) >= 0)
 		numSelected++;
+	if (numSelected) {
+		BmMailRef* ref = NULL;
+		int32 idx=0;
+		while( (selected = CurrentSelection(idx)) >= 0) {
+			refItem = dynamic_cast<BmMailRefItem*>(ItemAt( selected));
+			if (refItem) {
+				ref = refItem->ModelItem();
+				ref->AddRef();
+								// the message will refer to the mailRef, too
+			} else
+				ref = NULL;
+			msg->AddData( fieldName.String(), B_POINTER_TYPE, 
+							  static_cast< void*>( &ref), sizeof( void*), 
+							  true, numSelected);
+			idx++;
+		}
 	}
 }
 

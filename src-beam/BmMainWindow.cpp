@@ -501,9 +501,15 @@ void BmMainWindow::MessageReceived( BMessage* msg) {
 				be_app_messenger.SendMessage( msg);
 				break;
 			}
+			case BMM_TRASH: {
+				mMailRefView->AddSelectedRefsToMsg( msg, 
+																BmApplication::MSG_MAILREF);
+				mMailRefView->RemoveSelectedMessagesFromView();
+				be_app_messenger.SendMessage( msg);
+				break;
+			}
 			case BMM_MOVE:
 			case BMM_MARK_AS:
-			case BMM_TRASH:
 			case BMM_PRINT:
 			case BMM_REDIRECT:
 			case BMM_REPLY:

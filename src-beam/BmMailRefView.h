@@ -105,6 +105,7 @@ public:
 	static void AddMailRefMenu( BMenu* menu, BHandler* target,
 										 bool isContextMenu);
 	void SendNoticesIfNeeded( bool haveSelectedRef);
+	void RemoveSelectedMessagesFromView();
 
 	// overrides of listview base:
 	void KeyDown(const char *bytes, int32 numBytes);
