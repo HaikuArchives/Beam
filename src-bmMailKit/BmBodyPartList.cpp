@@ -37,7 +37,9 @@
 #include <NodeInfo.h>
 
 #include "regexx.hh"
+#include "split.hh"
 using namespace regexx;
+
 
 #include "BmBasics.h"
 #include "BmBodyPartList.h"
@@ -1038,20 +1040,25 @@ void BmBodyPart::ConstructBodyForSending( BmStringOBuf &msgText) {
 		-	
 \*------------------------------------------------------------------------------*/
 bool BmBodyPart::MimeTypeIsPotentiallyHarmful( const BmString& realMT) {
-	BmString mtTrustInfo 
-		= ThePrefs->GetString( 
-			"MimeTypeTrustInfo", 
-			"<application/pdf:T><application/zip:T><application:W><:T>"
-		);
-	Regexx rx;
-	int count = rx.exec( mtTrustInfo, "<(.*?):(\\w)>", Regexx::global);
-	for( int i=0; i<count; ++i) {
-		BmString match = rx.match[i].atom[0];
-		if ( realMT.ICompare( match, match.Length()) == 0) {
-			BmString trustLevel = rx.match[i].atom[1];
-			if (trustLevel.ICompare( "T") != 0)
-				return true;
-			break;
+	vector<BmString> trustInfos;
+	BmString ti = ThePrefs->GetString( "MimeTypeTrustInfo");
+	split( BmPrefs::nListSeparator, ti, trustInfos);
+	int32 numTrustInfos = trustInfos.size();
+	BmString mt;
+	BmString trust;
+	BmString trustInfo;
+	int32 colonPos;
+	for( int32 i=0; i<numTrustInfos; ++i) {
+		trustInfo = trustInfos[i];
+		colonPos = trustInfo.FindFirst( ":");
+		if (colonPos >= B_OK) {
+			trustInfo.CopyInto( mt, 0, colonPos);
+			if ( realMT.ICompare( mt, mt.Length()) == 0) {
+				trustInfo.CopyInto( trust, colonPos+1, 1);
+				if (trust.ICompare( "T") != 0)
+					return true;
+				break;
+			}
 		}
 	}
 	return false;

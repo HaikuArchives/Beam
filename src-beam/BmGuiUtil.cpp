@@ -30,7 +30,7 @@
 #include <Menu.h>
 #include <MenuItem.h>
 
-#include "regexx.hh"
+#include "split.hh"
 using namespace regexx;
 
 #include "BmDataModel.h"
@@ -100,11 +100,12 @@ void AddCharsetMenu( BMenu* menu, BHandler* target, int32 msgType) {
 		return;
 	menu->SetLabelFromMarked( false);
 	// add standard entries:
-	Regexx rx;
-	BmString stdSets = ThePrefs->GetString( "StandardCharsets");
-	int32 numStdSets = rx.exec( stdSets, "<(.+?)>", Regexx::global);
+	vector<BmString> charsets;
+	BmString sets = ThePrefs->GetString( "StandardCharsets");
+	split( BmPrefs::nListSeparator, sets, charsets);
+	int32 numStdSets = charsets.size();
 	for( int i=0; i<numStdSets; ++i) {
-		charset = rx.match[i].atom[0];
+		charset = charsets[i];
 		charset.ToLower();
 		BMessage* msg = new BMessage( msgType);
 		msg->AddString( MSG_CHARSET, charset.String());

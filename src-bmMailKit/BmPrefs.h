@@ -98,6 +98,8 @@ public:
 	static const char* const LOG_LVL_2;
 	static const char* const LOG_LVL_3;
 
+	static const BmString nListSeparator;
+
 private:
 
 	void InitDefaults();

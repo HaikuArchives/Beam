@@ -37,7 +37,9 @@
 #include "Colors.h"
 
 #include "regexx.hh"
+#include "split.hh"
 using namespace regexx;
+
 
 #include "BmEncoding.h"
 	using namespace BmEncoding;
@@ -388,19 +390,21 @@ void BmMailHeaderView::RemoveFieldViews() {
 float BmMailHeaderView::AddFieldViews() {
 	vector<BmString> titles;
 	vector<BmString> fields;
-	BmString fieldList;
 	Regexx rx;
 
 	RemoveFieldViews();
 
 	if (mDisplayMode != FULL_HEADERS) {
+		vector<BmString> fieldList;
+		BmString fs;
 		if (mDisplayMode == SMALL_HEADERS)
-			fieldList = ThePrefs->GetString( "HeaderListSmall");
+			fs = ThePrefs->GetString( "HeaderListSmall");
 		else
-			fieldList = ThePrefs->GetString( "HeaderListLarge");
-		int numShown = rx.exec( fieldList, "[\\w\\-/]+", Regexx::global);
+			fs = ThePrefs->GetString( "HeaderListLarge");
+		split( BmPrefs::nListSeparator, fs, fieldList);
+		int numShown = fieldList.size();
 		for( int i=0; i<numShown; ++i) {
-			BmString field = rx.match[i];
+			BmString field = fieldList[i];
 			field.CapitalizeEachWord();
 			fields.push_back( field);
 			int32 pos = field.FindFirst("/");

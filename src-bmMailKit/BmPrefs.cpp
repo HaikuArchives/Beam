@@ -53,7 +53,9 @@ const char* const BmPrefs::LOG_LVL_1 = "Log";
 const char* const BmPrefs::LOG_LVL_2 = "Log More";
 const char* const BmPrefs::LOG_LVL_3 = "Log Everything";
 
-const int16 BmPrefs::nPrefsVersion = 8;
+const BmString BmPrefs::nListSeparator = ",";
+
+const int16 BmPrefs::nPrefsVersion = 9;
 
 /*------------------------------------------------------------------------------*\
 	CreateInstance()
@@ -236,6 +238,20 @@ BmPrefs::BmPrefs( BMessage* archive)
 		mPrefsMsg.RemoveName( "MaxLineLenForHardWrap");
 		mPrefsMsg.AddBool( "NeverExceed78Chars", mlen < 100);
 	}
+	if (version < 9) {
+		// changes introduced with version 9:
+		//
+		// replace <>-separators by simple commas:
+		const char *fields[] = { "MimeTypeTrustInfo", "StandardCharsets", NULL };
+		BmString s;
+		for( const char** f = fields; *f; f++) {
+			BmString s = mPrefsMsg.FindString( *f);
+			s.RemoveAll( "<");
+			s.ReplaceAll( ">", ",");
+			s.RemoveLast( ",");
+			mPrefsMsg.ReplaceString( *f, s.String());
+		}
+	}
 
 	SetLoglevels();
 	SetupMailboxVolume();
@@ -365,7 +381,7 @@ void BmPrefs::InitDefaults() {
 	mDefaultsMsg.AddBool( "NeverExceed78Chars", false);
 	mDefaultsMsg.AddString( 
 		"MimeTypeTrustInfo", 
-		"<application/pdf:T><application/zip:T><application:W><:T>"
+		"application/pdf:T,application/zip:T,application:W,:T"
 	);
 	mDefaultsMsg.AddInt32( "MSecsBeforeMailMoverShows", 500*1000);
 	mDefaultsMsg.AddInt32( "MSecsBeforePopperRemove", 5000*1000);
@@ -400,31 +416,31 @@ void BmPrefs::InitDefaults() {
 	mDefaultsMsg.AddBool( "UseSwatchTimeInRefView", false);
 	mDefaultsMsg.AddString( "Workspace", "Current");
 	mDefaultsMsg.AddString( "StandardCharsets", 
-									"<iso-8859-1>"
-									"<iso-8859-2>" 
-									"<iso-8859-3>"	
-									"<iso-8859-4>"
-									"<iso-8859-5>" 
-									"<iso-8859-6>" 
-									"<iso-8859-7>"
-									"<iso-8859-8>"
-									"<iso-8859-9>" 
-									"<iso-8859-10>" 
-									"<iso-8859-13>" 
-									"<iso-8859-14>"
-									"<iso-8859-15>" 
-									"<macroman>" 
-									"<windows-1251>" 
-									"<windows-1252>"
-									"<cp866>"
-									"<cp850>"
-									"<iso-2022-jp>"
-									"<iso-2022-jp-2>"
-									"<koi8-r>"
-									"<euc-kr>"
-									"<big-5>"
-									"<us-ascii>"
-									"<utf-8>");
+									"iso-8859-1,"
+									"iso-8859-2," 
+									"iso-8859-3,"	
+									"iso-8859-4,"
+									"iso-8859-5," 
+									"iso-8859-6," 
+									"iso-8859-7,"
+									"iso-8859-8,"
+									"iso-8859-9," 
+									"iso-8859-10," 
+									"iso-8859-13," 
+									"iso-8859-14,"
+									"iso-8859-15," 
+									"macroman," 
+									"windows-1251," 
+									"windows-1252,"
+									"cp866,"
+									"cp850,"
+									"iso-2022-jp,"
+									"iso-2022-jp-2,"
+									"koi8-r,"
+									"euc-kr,"
+									"big-5,"
+									"us-ascii,"
+									"utf-8");
 }
 
 /*------------------------------------------------------------------------------*\
