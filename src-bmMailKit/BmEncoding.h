@@ -76,9 +76,11 @@ namespace BmEncoding {
 								 BmString& dest);
 
 	IMPEXPBMMAILKIT 
-	void Encode( BmString encodingStyle, const BmString& src, BmString& dest);
+	void Encode( BmString encodingStyle, const BmString& src, BmString& dest,
+					 const BmString& tags=BM_DEFAULT_STRING);
 	IMPEXPBMMAILKIT 
-	void Decode( BmString encodingStyle, const BmString& src, BmString& dest);
+	void Decode( BmString encodingStyle, const BmString& src, BmString& dest,
+					 const BmString& tags=BM_DEFAULT_STRING);
 
 	IMPEXPBMMAILKIT 
 	BmString ConvertHeaderPartToUTF8( const BmString& headerPart, 
@@ -100,12 +102,13 @@ namespace BmEncoding {
 	IMPEXPBMMAILKIT 
 	BmMemFilterRef FindDecoderFor( BmMemIBuf* input, 
 											 const BmString& encodingStyle,
-											 bool isEncodedWord=false, 
-											 uint32 blockSize=BmMemFilter::nBlockSize);
+											 uint32 blockSize=BmMemFilter::nBlockSize,
+											 const BmString& tags=BM_DEFAULT_STRING);
 	IMPEXPBMMAILKIT 
 	BmMemFilterRef FindEncoderFor( BmMemIBuf* input, 
 											 const BmString& encodingStyle,
-											 uint32 blockSize=BmMemFilter::nBlockSize);
+											 uint32 blockSize=BmMemFilter::nBlockSize,
+											 const BmString& tags=BM_DEFAULT_STRING);
 
 }
 
@@ -119,7 +122,8 @@ class IMPEXPBMMAILKIT BmUtf8Decoder : public BmMemFilter {
 
 public:
 	BmUtf8Decoder( BmMemIBuf* input, const BmString& destCharset, 
-						uint32 blockSize=nBlockSize);
+						uint32 blockSize=nBlockSize, 
+						const BmString& tags=BM_DEFAULT_STRING);
 	~BmUtf8Decoder();
 	
 	// native methods:
@@ -134,6 +138,9 @@ public:
 	// overrides of BmMemFilter base:
 	void Reset( BmMemIBuf* input);
 
+	static IMPEXPBMMAILKIT const char* nTagTransliterate;
+	static IMPEXPBMMAILKIT const char* nTagDiscard;
+
 protected:
 	// overrides of BmMailFilter base:
 	void Filter( const char* srcBuf, uint32& srcLen, 
@@ -142,8 +149,6 @@ protected:
 
 	BmString mDestCharset;
 	iconv_t mIconvDescr;
-	bool mTransliterate;
-	bool mDiscard;
 	bool mHadToDiscardChars;
 	int32 mFirstDiscardedPos;
 	bool mStoppedOnMultibyte;
@@ -158,7 +163,8 @@ class IMPEXPBMMAILKIT BmUtf8Encoder : public BmMemFilter {
 
 public:
 	BmUtf8Encoder( BmMemIBuf* input, const BmString& srcCharset, 
-						uint32 blockSize=nBlockSize);
+						uint32 blockSize=nBlockSize, 
+						const BmString& tags=BM_DEFAULT_STRING);
 	~BmUtf8Encoder();
 
 	// native methods:
@@ -173,6 +179,9 @@ public:
 	bool HadToDiscardChars()				{ return mHadToDiscardChars; }
 	int32 FirstDiscardedPos()				{ return mFirstDiscardedPos; }
 
+	static IMPEXPBMMAILKIT const char* nTagTransliterate;
+	static IMPEXPBMMAILKIT const char* nTagDiscard;
+
 protected:
 	// overrides of BmMailFilter base:
 	void Filter( const char* srcBuf, uint32& srcLen, 
@@ -180,8 +189,6 @@ protected:
 
 	BmString mSrcCharset;
 	iconv_t mIconvDescr;
-	bool mTransliterate;
-	bool mDiscard;
 	bool mHadToDiscardChars;
 	int32 mFirstDiscardedPos;
 	bool mStoppedOnMultibyte;
@@ -196,16 +203,16 @@ class IMPEXPBMMAILKIT BmQuotedPrintableDecoder : public BmMemFilter {
 	typedef BmMemFilter inherited;
 
 public:
-	BmQuotedPrintableDecoder( BmMemIBuf* input, bool isEncodedWord=false, 
-									  uint32 blockSize=nBlockSize);
+	BmQuotedPrintableDecoder( BmMemIBuf* input, uint32 blockSize=nBlockSize,
+									  const BmString& tags=BM_DEFAULT_STRING);
 
+	static IMPEXPBMMAILKIT const char* nTagIsEncodedWord;
 protected:
 	// overrides of BmMailFilter base:
 	void Filter( const char* srcBuf, uint32& srcLen, 
 					 char* destBuf, uint32& destLen);
 	void Finalize( char* destBuf, uint32& destLen);
 
-	bool mIsEncodedWord;
 	int mSpacesThatMayNeedRemoval;
 	bool mSoftbreakPending;
 };
@@ -317,10 +324,7 @@ class IMPEXPBMMAILKIT BmBase64Decoder : public BmMemFilter {
 	typedef BmMemFilter inherited;
 
 public:
-	BmBase64Decoder( BmMemIBuf* input, uint32 blockSize=nBlockSize)
-		:	inherited( input, blockSize)
-		,	mConcat( 0)
-		,	mIndex( 0)							{}
+	BmBase64Decoder( BmMemIBuf* input, uint32 blockSize=nBlockSize);
 
 	static const int32 nBase64Alphabet[256];
 
@@ -342,13 +346,12 @@ class IMPEXPBMMAILKIT BmBase64Encoder : public BmMemFilter {
 	typedef BmMemFilter inherited;
 
 public:
-	BmBase64Encoder( BmMemIBuf* input, uint32 blockSize=nBlockSize)
-		:	inherited( input, blockSize)
-		,	mConcat( 0)
-		,	mIndex( 0)
-		,	mCurrLineLen( 0)					{}
+	BmBase64Encoder( BmMemIBuf* input, uint32 blockSize=nBlockSize, 
+						  const BmString& tags=BM_DEFAULT_STRING);
 
 	static const char nBase64Alphabet[64];
+
+	static IMPEXPBMMAILKIT const char* nTagOnSingleLine;
 
 protected:
 	// overrides of BmMailFilter base:

@@ -220,11 +220,12 @@ void BmEncoding::ConvertFromUTF8( const BmString& destCharset,
 		-	
 \*------------------------------------------------------------------------------*/
 void BmEncoding::Encode( BmString encodingStyle, const BmString& src, 
-								 BmString& dest) {
+								 BmString& dest, const BmString& tags) {
 	BmStringIBuf srcBuf( src);
 	const uint32 blockSize = max( (int32)128, src.Length());
 	BmStringOBuf destBuf( blockSize);
-	BmMemFilterRef encoder = FindEncoderFor( &srcBuf, encodingStyle, blockSize);
+	BmMemFilterRef encoder 
+		= FindEncoderFor( &srcBuf, encodingStyle, blockSize, tags);
 	destBuf.Write( encoder.get(), blockSize);
 	dest.Adopt( destBuf.TheString());
 }
@@ -234,12 +235,12 @@ void BmEncoding::Encode( BmString encodingStyle, const BmString& src,
 		-	
 \*------------------------------------------------------------------------------*/
 void BmEncoding::Decode( BmString encodingStyle, const BmString& src, 
-								 BmString& dest) {
+								 BmString& dest, const BmString& tags) {
 	BmStringIBuf srcBuf( src);
 	const uint32 blockSize = max( (int32)128, src.Length());
 	BmStringOBuf destBuf( blockSize);
 	BmMemFilterRef decoder 
-		= FindDecoderFor( &srcBuf, encodingStyle, false, blockSize);
+		= FindDecoderFor( &srcBuf, encodingStyle, blockSize, tags);
 	destBuf.Write( decoder.get(), blockSize);
 	dest.Adopt( destBuf.TheString());
 }
@@ -382,8 +383,9 @@ BmString BmEncoding::ConvertHeaderPartToUTF8( const BmString& headerPart,
 			} else {
 				// encoded-words, need decoding + character-conversion:
 				BmStringIBuf text( textPart.text);
+				BmString tags = BmQuotedPrintableDecoder::nTagIsEncodedWord;
 				BmMemFilterRef decoder 
-					= FindDecoderFor(&text, textPart.encodingStyle, true, blockSize);
+					= FindDecoderFor(&text, textPart.encodingStyle, blockSize, tags);
 				BmUtf8Encoder textConverter( decoder.get(), charset, blockSize);
 				utf8.Write( &textConverter, blockSize);
 				if (textConverter.HadError() || textConverter.HadToDiscardChars())
@@ -511,12 +513,12 @@ bool BmEncoding::IsCompatibleWithText( const BmString& s) {
 \*------------------------------------------------------------------------------*/
 BmMemFilterRef BmEncoding::FindDecoderFor( BmMemIBuf* input, 
 														 const BmString& encodingStyle, 
-														 bool isEncodedWord, 
-														 uint32 blockSize) {
+														 uint32 blockSize,
+														 const BmString& tags) {
 	BmMemFilter* filter = NULL;
 	if (encodingStyle.ICompare("q")==0 
 	|| encodingStyle.ICompare("quoted-printable")==0)
-		filter = new BmQuotedPrintableDecoder( input, isEncodedWord, blockSize);
+		filter = new BmQuotedPrintableDecoder( input, blockSize, tags);
 	else if (encodingStyle.ICompare("b")==0 
 	|| encodingStyle.ICompare("base64")==0)
 		filter = new BmBase64Decoder( input, blockSize);
@@ -539,14 +541,15 @@ BmMemFilterRef BmEncoding::FindDecoderFor( BmMemIBuf* input,
 \*------------------------------------------------------------------------------*/
 BmMemFilterRef BmEncoding::FindEncoderFor( BmMemIBuf* input, 
 														 const BmString& encodingStyle,
-														 uint32 blockSize) {
+														 uint32 blockSize, 
+														 const BmString& tags) {
 	BmMemFilter* filter = NULL;
 	if (encodingStyle.ICompare("q")==0 
 	|| encodingStyle.ICompare("quoted-printable")==0)
 		filter = new BmQuotedPrintableEncoder( input, blockSize);
 	else if (encodingStyle.ICompare("b")==0 
 	|| encodingStyle.ICompare("base64")==0)
-		filter = new BmBase64Encoder( input, blockSize);
+		filter = new BmBase64Encoder( input, blockSize, tags);
 	else if (encodingStyle.ICompare("7bit")==0 
 	|| encodingStyle.ICompare("8bit")==0)
 		filter = new BmLinebreakEncoder( input, blockSize);
@@ -567,17 +570,18 @@ BmMemFilterRef BmEncoding::FindEncoderFor( BmMemIBuf* input,
 	BmUtf8Decoder
 \********************************************************************************/
 
+const char* BmUtf8Decoder::nTagTransliterate = "<Translit>";
+const char* BmUtf8Decoder::nTagDiscard = "<Discard>";
+
 /*------------------------------------------------------------------------------*\
 	()
 		-	
 \*------------------------------------------------------------------------------*/
 BmUtf8Decoder::BmUtf8Decoder( BmMemIBuf* input, const BmString& destCharset, 
-										uint32 blockSize)
-	:	inherited( input, blockSize)
+										uint32 blockSize, const BmString& tags)
+	:	inherited( input, blockSize, tags)
 	,	mDestCharset( destCharset)
 	,	mIconvDescr( ICONV_ERR)
-	,	mTransliterate( false)
-	,	mDiscard( false)
 	,	mHadToDiscardChars( false)
 	,	mFirstDiscardedPos( -1)
 	,	mStoppedOnMultibyte( false)
@@ -623,9 +627,9 @@ void BmUtf8Decoder::InitConverter() {
 		mIconvDescr = ICONV_ERR;
 	}
 	BmString flag;
-	if (mTransliterate)
+	if (IsTagSet(nTagTransliterate))
 		flag = "//TRANSLIT";
-	else if (mDiscard)
+	else if (IsTagSet(nTagDiscard))
 		flag = "//IGNORE";
 	BmString toSet = mDestCharset	+ flag;
 	if (!mDestCharset.Length()
@@ -642,9 +646,8 @@ void BmUtf8Decoder::InitConverter() {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmUtf8Decoder::SetTransliterate( bool transliterate) {
-	if (mIconvDescr != ICONV_ERR && mTransliterate == transliterate)
+	if (mIconvDescr != ICONV_ERR && !SetTag( nTagTransliterate, transliterate))
 		return;
-	mTransliterate = transliterate;
 	InitConverter();
 }
 
@@ -653,9 +656,8 @@ void BmUtf8Decoder::SetTransliterate( bool transliterate) {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmUtf8Decoder::SetDiscard( bool discard) {
-	if (mIconvDescr != ICONV_ERR && mDiscard == discard)
+	if (mIconvDescr != ICONV_ERR && !SetTag( nTagDiscard, discard))
 		return;
-	mDiscard = discard;
 	InitConverter();
 }
 
@@ -743,17 +745,18 @@ void BmUtf8Decoder::Finalize( char* destBuf, uint32& destLen) {
 	BmUtf8Encoder
 \********************************************************************************/
 
+const char* BmUtf8Encoder::nTagTransliterate = "<Translit>";
+const char* BmUtf8Encoder::nTagDiscard = "<Discard>";
+
 /*------------------------------------------------------------------------------*\
 	()
 		-	
 \*------------------------------------------------------------------------------*/
 BmUtf8Encoder::BmUtf8Encoder( BmMemIBuf* input, const BmString& srcCharset, 
-										uint32 blockSize)
-	:	inherited( input, blockSize)
+										uint32 blockSize, const BmString& tags)
+	:	inherited( input, blockSize, tags)
 	,	mSrcCharset( srcCharset)
 	,	mIconvDescr( ICONV_ERR)
-	,	mTransliterate( false)
-	,	mDiscard( false)
 	,	mHadToDiscardChars( false)
 	,	mFirstDiscardedPos( -1)
 	,	mStoppedOnMultibyte( false)
@@ -801,9 +804,9 @@ void BmUtf8Encoder::InitConverter() {
 		mIconvDescr = ICONV_ERR;
 	}
 	BmString flag;
-	if (mTransliterate)
+	if (IsTagSet(nTagTransliterate))
 		flag = "//TRANSLIT";
-	else if (mDiscard)
+	else if (IsTagSet(nTagDiscard))
 		flag = "//IGNORE";
 	BmString toSet = BmString("utf-8") + flag;
 	if (!mSrcCharset.Length()
@@ -822,9 +825,8 @@ void BmUtf8Encoder::InitConverter() {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmUtf8Encoder::SetTransliterate( bool transliterate) {
-	if (mIconvDescr != ICONV_ERR && mTransliterate == transliterate)
+	if (mIconvDescr != ICONV_ERR && !SetTag( nTagTransliterate, transliterate))
 		return;
-	mTransliterate = transliterate;
 	InitConverter();
 }
 
@@ -833,9 +835,8 @@ void BmUtf8Encoder::SetTransliterate( bool transliterate) {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmUtf8Encoder::SetDiscard( bool discard) {
-	if (mIconvDescr != ICONV_ERR && mDiscard == discard)
+	if (mIconvDescr != ICONV_ERR && !SetTag( nTagDiscard, discard))
 		return;
-	mDiscard = discard;
 	InitConverter();
 }
 
@@ -915,15 +916,16 @@ inline unsigned char HEXDIGIT2CHAR( unsigned char d) {
 									: 0);
 }
 
+const char* BmQuotedPrintableDecoder::nTagIsEncodedWord = "<EncWord>";
+
 /*------------------------------------------------------------------------------*\
 	()
 		-	
 \*------------------------------------------------------------------------------*/
 BmQuotedPrintableDecoder::BmQuotedPrintableDecoder( BmMemIBuf* input, 
-																	 bool isEncodedWord, 
-																	 uint32 blockSize)
-	:	inherited( input, blockSize)
-	,	mIsEncodedWord( isEncodedWord)
+																	 uint32 blockSize,
+																	 const BmString& tags)
+	:	inherited( input, blockSize, tags)
 	,	mSpacesThatMayNeedRemoval( 0)
 	,	mSoftbreakPending( false)
 {
@@ -1005,7 +1007,7 @@ void BmQuotedPrintableDecoder::Filter( const char* srcBuf, uint32& srcLen,
 					// characters missing at end (broken encoding), we just copy:
 					*dest++ = c;
 				}
-			} else if (mIsEncodedWord && c == '_') {
+			} else if (IsTagSet(nTagIsEncodedWord) && c == '_') {
 				// in encoded-words, underlines are really spaces 
 				// (a real underline is encoded):
 				*dest++ = ' ';
@@ -1625,6 +1627,17 @@ const int32 BmBase64Decoder::nBase64Alphabet[256] = {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
+BmBase64Decoder::BmBase64Decoder( BmMemIBuf* input, uint32 blockSize)
+	:	inherited( input, blockSize)
+	,	mConcat( 0)
+	,	mIndex( 0)
+{
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
 void BmBase64Decoder::Filter( const char* srcBuf, uint32& srcLen, 
 										char* destBuf, uint32& destLen) {
 
@@ -1693,6 +1706,8 @@ void BmBase64Decoder::Finalize( char* destBuf, uint32& destLen) {
 	BmBase64Encoder
 \********************************************************************************/
 
+const char* BmBase64Encoder::nTagOnSingleLine = "<OnSingleLine>";
+
 const char BmBase64Encoder::nBase64Alphabet[64] = {
 	'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 
 	'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
@@ -1702,6 +1717,19 @@ const char BmBase64Encoder::nBase64Alphabet[64] = {
 	'+',
 	'/'
 };
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+BmBase64Encoder::BmBase64Encoder( BmMemIBuf* input, uint32 blockSize, 
+											 const BmString& tags)
+	:	inherited( input, blockSize, tags)
+	,	mConcat( 0)
+	,	mIndex( 0)
+	,	mCurrLineLen( 0)
+{
+}
 
 /*------------------------------------------------------------------------------*\
 	()
@@ -1727,7 +1755,8 @@ void BmBase64Encoder::Filter( const char* srcBuf, uint32& srcLen,
 			*dest++ = nBase64Alphabet[mConcat & 63];
 			mConcat = mIndex = 0;
 			mCurrLineLen += 4;
-			if (mCurrLineLen >= BM_MAX_HEADER_LINE_LEN) {
+			if (!IsTagSet(nTagOnSingleLine) 
+			&& mCurrLineLen >= BM_MAX_HEADER_LINE_LEN) {
 				*dest++ = '\r';
 				*dest++ = '\n';
 				mCurrLineLen = 0;
