@@ -65,12 +65,8 @@ status_t BmSmtpAccount::Archive( BMessage* archive, bool deep) const {
 	SMTPAddress()
 		-	returns the SMTP-connect-info as a BNetAddress
 \*------------------------------------------------------------------------------*/
-BNetAddress BmSmtpAccount::SMTPAddress() const {
-	BNetAddress addr( mSMTPServer.String(), mPortNr);
-	if (addr.InitCheck() == B_OK)
-		return addr;
-	else
-		throw BM_runtime_error("BmSMTPAccount: Could not create SMTPAddress");
+bool BmSmtpAccount::GetSMTPAddress( BNetAddress* addr) const {
+	return addr->SetTo( mSMTPServer.String(), mPortNr) == B_OK;
 }
 
 /*------------------------------------------------------------------------------*\

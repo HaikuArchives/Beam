@@ -32,7 +32,7 @@ public:
 	~BmMailEditWin();
 
 	// native methods:
-	void UpdateMailFields();
+	bool UpdateMailFields();
 
 	// overrides of BWindow base:
 	void MessageReceived( BMessage*);

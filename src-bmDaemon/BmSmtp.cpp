@@ -144,7 +144,8 @@ void BmSmtp::UpdateMailStatus( const float delta, const char* detailText,
 		-	Initiates network-connection to SMTP-server
 \*------------------------------------------------------------------------------*/
 void BmSmtp::Connect() {
-	if (mSmtpServer.Connect( mSmtpAccount->SMTPAddress()) != B_OK) {
+	BNetAddress addr;
+	if (!mSmtpAccount->GetSMTPAddress( &addr) || mSmtpServer.Connect( addr) != B_OK) {
 		BString s = BString("Could not connect to SMTP-Server ") << mSmtpAccount->SMTPServer();
 		throw BM_network_error( s);
 	}

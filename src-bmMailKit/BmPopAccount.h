@@ -78,7 +78,8 @@ public:
 	void DeleteMailFromServer( bool b)	{ mDeleteMailFromServer = b; }
 	void PortNr( int16 i) 					{ mPortNr = i; }
 
-	BNetAddress POPAddress() const;
+	bool GetPOPAddress( BNetAddress* addr) const;
+
 private:
 	BmPopAccount();					// hide default constructor
 

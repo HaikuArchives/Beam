@@ -473,7 +473,7 @@ void BmMailHeader::ParseHeader( const BString &header) {
 	// split header into separate header-fields:
 	rxHeaderFields.expr( "^(\\S.*?\\r\\n(?:\\s.*?\\r\\n)*)(?=(\\Z|\\S))");
 	rxHeaderFields.str( header.String());
-	if (!(nm=rxHeaderFields.exec( Regexx::global | Regexx::newline))) {
+	if (!(nm=rxHeaderFields.exec( Regexx::global | Regexx::newline)) && mMail) {
 		throw BM_mail_format_error( BString("Could not find any header-fields in this header: \n") << header);
 	}
 	vector<RegexxMatch>::const_iterator i;
@@ -692,46 +692,45 @@ bool BmMailHeader::ConstructRawText( BString& header, int32 encoding, BString fo
 	BString ourID = BString(BmAppName) << " " << BmAppVersion;
 	SetFieldVal( BM_FIELD_X_MAILER, ourID.String());
 
-	// set message-id if not already done:
-	if (!mStrippedHeaders[BM_FIELD_MESSAGE_ID].Length()) {
-		BString domain;
-		BString accName = mMail->AccountName();
-		if (accName.Length()) {
-			BmSmtpAccount* account = dynamic_cast<BmSmtpAccount*>( TheSmtpAccountList->FindItemByKey( accName).Get());
-			if (account)
-				domain = account->DomainToAnnounce();
-		}
-		if (!domain.Length()) {
-			// no account given or it has an empty domain, we try to find out manually:
-//			const int MAXHOSTNAMELEN = 128;
-			char hostname[MAXHOSTNAMELEN+1];
-			hostname[MAXHOSTNAMELEN] = '\0';
-			if (gethostname( hostname, MAXHOSTNAMELEN) != 0) {
-				BM_SHOWERR("Sorry, could not determine name of this host, giving up.");
-				return false;
-			}
-			hostent *hptr;
-			if ((hptr = gethostbyname( hostname)) == NULL) {
-				BM_SHOWERR("Sorry, could not determine IP-address of this host, giving up.");
-				return false;
-			}
-			if ((hptr = gethostbyaddr( hptr->h_addr_list[0], 4, AF_INET)) == NULL) {
-				BM_SHOWERR("Sorry, could not determine FQHN of this host, giving up.");
-				return false;
-			}
-			domain = hptr->h_name;
-		}
-		SetFieldVal( BM_FIELD_MESSAGE_ID, 
-						 BString("<") << TimeToString( time( NULL), "%Y%m%d%H%M%S.")
-						 				  << find_thread(NULL) << "." << ++nCounter << "@" 
-						 				  << domain << ">");
+	// set message-id:
+	BString domain;
+	BString accName = mMail->AccountName();
+	if (accName.Length()) {
+		BmSmtpAccount* account = dynamic_cast<BmSmtpAccount*>( TheSmtpAccountList->FindItemByKey( accName).Get());
+		if (account)
+			domain = account->DomainToAnnounce();
 	}
+	if (!domain.Length()) {
+		// no account given or it has an empty domain, we try to find out manually:
+//			const int MAXHOSTNAMELEN = 128;
+		char hostname[MAXHOSTNAMELEN+1];
+		hostname[MAXHOSTNAMELEN] = '\0';
+		int result;
+		if ((result=gethostname( hostname, MAXHOSTNAMELEN)) < 1) {
+			BM_SHOWERR("Sorry, could not determine name of this host, giving up.");
+			return false;
+		}
+		hostent *hptr;
+		if ((hptr = gethostbyname( hostname)) == NULL) {
+			BM_SHOWERR("Sorry, could not determine IP-address of this host, giving up.");
+			return false;
+		}
+		if ((hptr = gethostbyaddr( hptr->h_addr_list[0], 4, AF_INET)) == NULL) {
+			BM_SHOWERR("Sorry, could not determine FQHN of this host, giving up.");
+			return false;
+		}
+		domain = hptr->h_name;
+	}
+	SetFieldVal( BM_FIELD_MESSAGE_ID, 
+					 BString("<") << TimeToString( time( NULL), "%Y%m%d%H%M%S.")
+					 				  << find_thread(NULL) << "." << ++nCounter << "@" 
+					 				  << domain << ">");
 
 	BmHeaderMap::const_iterator iter;
 	for( iter = mStrippedHeaders.begin(); iter != mStrippedHeaders.end(); ++iter) {
 		const BString fieldName = iter->first;
 		if (fieldName == BM_FIELD_BCC) {
-			if (!forBcc.Length()) {
+			if (!forBcc.Length() || !ThePrefs->GetBool( "GenerateHeaderForEachBcc", true)) {
 				// we don't include BCC-list in generated standard header:
 			} else {
 				// we are constructing the header for a specific bcc-recipient, so we include
@@ -739,6 +738,10 @@ bool BmMailHeader::ConstructRawText( BString& header, int32 encoding, BString fo
 				// he/she/it has received the message through use of BCC):
 				header << fieldName << ": " << forBcc << "\r\n";
 			}
+			continue;
+		}
+		if (fieldName.Compare("Content-",8) == 0) {
+			// do not include MIME-header, since that will be added by body-part:
 			continue;
 		}
 		if (IsAddressField( fieldName)) {

@@ -151,7 +151,8 @@ void BmPopper::UpdateMailStatus( const float delta, const char* detailText,
 		-	Initiates network-connection to POP-server
 \*------------------------------------------------------------------------------*/
 void BmPopper::Connect() {
-	if (mPopServer.Connect( mPopAccount->POPAddress()) != B_OK) {
+	BNetAddress addr;
+	if (!mPopAccount->GetPOPAddress( &addr) || mPopServer.Connect( addr) != B_OK) {
 		BString s = BString("Could not connect to POP-Server ") << mPopAccount->POPServer();
 		throw BM_network_error( s);
 	}

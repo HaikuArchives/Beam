@@ -312,11 +312,13 @@ void BmMailEditWin::MessageReceived( BMessage* msg) {
 				break;
 			}
 			case BMM_SEND_NOW: {
-				UpdateMailFields();
+				if (!UpdateMailFields())
+					break;
 				break;
 			}
 			case BMM_SAVE: {
-				UpdateMailFields();
+				if (!UpdateMailFields())
+					break;
 				BmRef<BmMail> mail = mMailView->CurrMail();
 				mail->Store();
 				break;
@@ -376,7 +378,7 @@ void BmMailEditWin::MessageReceived( BMessage* msg) {
 	UpdateMailFields()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmMailEditWin::UpdateMailFields() {
+bool BmMailEditWin::UpdateMailFields() {
 	BmRef<BmMail> mail = mMailView->CurrMail();
 	if (mail) {
 		mail->SetFieldVal( BM_FIELD_BCC, mBccControl->Text());
@@ -391,8 +393,9 @@ void BmMailEditWin::UpdateMailFields() {
 		BString editedText = mMailView->Text();
 		BMenuItem* smtpItem = mSmtpControl->Menu()->FindMarked();
 		BString smtpAccount = smtpItem ? smtpItem->Label() : "";
-		mail->ConstructRawText( editedText, encoding, smtpAccount);
-	}
+		return mail->ConstructRawText( editedText, encoding, smtpAccount);
+	} else
+		return false;
 }
 
 /*------------------------------------------------------------------------------*\

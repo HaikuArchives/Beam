@@ -21,8 +21,10 @@ class BmMailViewContainer;
 class BmMailHeaderView;
 class BmMailRefView;
 
-#define BM_MAILVIEW_SHOWRAW		'bmMa'
-#define BM_MAILVIEW_SHOWCOOKED	'bmMb'
+#define BM_MAILVIEW_SHOWRAW						'bmMa'
+#define BM_MAILVIEW_SHOWCOOKED					'bmMb'
+#define BM_MAILVIEW_SHOWINLINES_SEPARATELY	'bmMc'
+#define BM_MAILVIEW_SHOWINLINES_CONCATENATED	'bmMd'
 
 /*------------------------------------------------------------------------------*\
 	BmMailView
@@ -68,10 +70,12 @@ public:
 	BmMailViewContainer* ContainerView() const	{ return mScrollView; }
 	BmRef<BmMail> CurrMail()				{ return mCurrMail; }
 	bool ShowRaw()								{ return mShowRaw; }
+	bool ShowInlinesSeparately()			{ return mShowInlinesSeparately; }
 
 	// setters:
 	void TeamUpWith( BmMailRefView* v)	{ mPartnerMailRefView = v; }
 	void ShowRaw( bool b) 					{ mShowRaw = b; }
+	void ShowInlinesSeparately( bool b) { mShowInlinesSeparately = b; }
 
 private:
 	void ShowMenu( BPoint point);
@@ -87,6 +91,7 @@ private:
 	BString mFontName;
 	int16 mFontSize;
 	bool mShowRaw;
+	bool mShowInlinesSeparately;
 };
 
 class BmBusyView;

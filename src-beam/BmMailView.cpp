@@ -62,6 +62,7 @@ BmMailView::BmMailView( minimax minmax, BRect frame, bool outbound)
 	,	mCurrMail( NULL)
 	,	mPartnerMailRefView( NULL)
 	,	mShowRaw( false)
+	,	mShowInlinesSeparately( true)
 	,	mFontSize( 12)
 {
 	mHeaderView = new BmMailHeaderView( NULL);
@@ -145,7 +146,17 @@ void BmMailView::MessageReceived( BMessage* msg) {
 			}
 			case BM_MAILVIEW_SHOWCOOKED: {
 				ShowRaw( false);
-				JobIsDone( true);
+				JobIsDone( true);				// trigger re-display:
+				break;
+			}
+			case BM_MAILVIEW_SHOWINLINES_SEPARATELY: {
+				ShowInlinesSeparately( true);
+				JobIsDone( true);				// trigger re-display:
+				break;
+			}
+			case BM_MAILVIEW_SHOWINLINES_CONCATENATED: {
+				ShowInlinesSeparately( false);
+				JobIsDone( true);				// trigger re-display:
 				break;
 			}
 			case B_SIMPLE_DATA: {
@@ -340,7 +351,7 @@ void BmMailView::DisplayBodyPart( BString& displayText, BmBodyPart* bodyPart) {
 	if (!bodyPart->IsMultiPart()) {
 		if (bodyPart->ShouldBeShownInline()) {
 			// MIME-block should be shown inline, so we add it to our textview:
-			if (displayText.Length()) {
+			if (displayText.Length() && mShowInlinesSeparately) {
 				// we show a separator between two inline bodyparts
 				if (bodyPart->FileName().Length()) {
 					displayText << "\n- - - - - - - - - - - - - - - - - - - -\n";
@@ -420,6 +431,13 @@ void BmMailView::ShowMenu( BPoint point) {
 									 ? BM_MAILVIEW_SHOWCOOKED : BM_MAILVIEW_SHOWRAW));
 		item->SetTarget( this);
 		item->SetMarked( ShowRaw());
+		theMenu->AddItem( item);
+
+		item = new BMenuItem( "Separate Inlines", new BMessage( ShowInlinesSeparately() 
+									 ? BM_MAILVIEW_SHOWINLINES_CONCATENATED
+									 : BM_MAILVIEW_SHOWINLINES_SEPARATELY));
+		item->SetTarget( this);
+		item->SetMarked( ShowInlinesSeparately());
 		theMenu->AddItem( item);
 	}
 

@@ -1183,7 +1183,10 @@ int32 ColumnListView::DetermineSortedPos(CLVListItem* item)
 	int32 currPos = numItems / 2;
 	int32 lb = 0;
 	int32 ub = numItems-1;
-	while( ub-lb > 1) {
+	int32 offs = 2;
+	bool first = true;
+	while( (ub-lb > 0 && offs > 0) || first) {
+		first = false;
 		int CompareResult = 0;
 		for(int32 SortIteration = 0; SortIteration < SortDepth && CompareResult == 0; SortIteration++)
 		{
@@ -1194,12 +1197,16 @@ int32 ColumnListView::DetermineSortedPos(CLVListItem* item)
 		}
 		if (CompareResult >= 0) {
 			lb = currPos;
-			int32 offs = (ub-currPos) / 2;
+			offs = (ub-currPos) / 2;
 			currPos += offs ? offs : 1;
+			if (currPos > numItems)
+				currPos = numItems;
 		} else {
 			ub = currPos;
-			int32 offs = (currPos-lb) / 2;
+			offs = (currPos-lb) / 2;
 			currPos -= offs ? offs : 1;
+			if (currPos < 0)
+				currPos = 0;
 		}
 	}
 	return currPos;

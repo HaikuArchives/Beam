@@ -67,7 +67,7 @@ public:
 	void PortNr( int16 i) 					{ mPortNr = i; }
 	void AuthMethod( int16 i) 				{ mAuthMethod = i; }
 
-	BNetAddress SMTPAddress() const;
+	bool GetSMTPAddress( BNetAddress* addr) const;
 
 private:
 	BmSmtpAccount();					// hide default constructor

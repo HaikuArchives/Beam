@@ -311,7 +311,8 @@ void BmBodyPart::SetTo( const BString& msgtext, int32 start, int32 length,
 		int32 count = 0;
 		for( ; (nPos = strstr( msgtext.String()+startPos+boundary.Length(), boundary.String())); ++count) {
 			int32 nextPos = nPos - msgtext.String();
-			int32 sPos = startPos+boundary.Length()+2;
+//			int32 sPos = startPos+boundary.Length()+2;
+			int32 sPos = startPos+boundary.Length();
 			BM_LOG2( BM_LogMailParse, "Subpart of multipart found will be added to array");
 			BmBodyPart *subPart = new BmBodyPart( (BmBodyPartList*)ListModel(), msgtext, sPos, nextPos-sPos, NULL, this);
 			AddSubItem( subPart);
@@ -466,6 +467,8 @@ BmBodyPartList::~BmBodyPartList() {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmBodyPartList::ParseMail() {
+	mEditableTextBody = NULL;
+	Cleanup();
 	if (mMail) {
 		const BString& msgText = mMail->RawText();
 		BmBodyPart* bodyPart = new BmBodyPart( this, msgText, mMail->HeaderLength()+2, 

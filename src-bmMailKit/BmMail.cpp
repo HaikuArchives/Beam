@@ -177,6 +177,7 @@ bool BmMail::ConstructRawText( const BString& editedText, int32 encoding,
 										 const BString smtpAccount) {
 	BString msgText;
 	mText.Truncate( 0);
+	mAccountName = smtpAccount;
 	if (!mHeader->ConstructRawText( msgText, encoding))
 		return false;
 	mBody->SetEditableText( editedText, encoding);

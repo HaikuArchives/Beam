@@ -79,15 +79,11 @@ status_t BmPopAccount::Archive( BMessage* archive, bool deep) const {
 }
 
 /*------------------------------------------------------------------------------*\
-	POPAddress()
+	GetPOPAddress()
 		-	returns the POP3-connect-info as a BNetAddress
 \*------------------------------------------------------------------------------*/
-BNetAddress BmPopAccount::POPAddress() const {
-	BNetAddress addr( mPOPServer.String(), mPortNr);
-	if (addr.InitCheck() == B_OK)
-		return addr;
-	else
-		throw BM_runtime_error("BmPopAccount: Could not create PopAddress");
+bool BmPopAccount::GetPOPAddress( BNetAddress* addr) const {
+	return addr->SetTo( mPOPServer.String(), mPortNr) == B_OK;
 }
 
 /*------------------------------------------------------------------------------*\
