@@ -179,6 +179,9 @@ void BmMailHeaderFieldView::MouseDown( BPoint point) {
 \*------------------------------------------------------------------------------*/
 void BmMailHeaderFieldView::ShowMenu( BPoint point) {
 	BPopUpMenu* theMenu = new BPopUpMenu( "HeaderViewMenu", false, false);
+	BFont font( *be_plain_font);
+	font.SetSize( 10);
+	theMenu->SetFont( &font);
 
 	// we fetch real point of click from message (since we may have modified it
 	// in the message-filter):
@@ -426,6 +429,7 @@ float BmMailHeaderView::AddFieldViews() {
 										Regexx::newline | Regexx::global);
 
 		const char *start = mMailHeader->HeaderString().String();
+		BmString line;
 		for( int l=0; l<numLines; l++) {
 			BmString field;
 			const char* end = strchr( start, '\n');
@@ -440,10 +444,15 @@ float BmMailHeaderView::AddFieldViews() {
 			}
 			for( ; start<end-1 && (*start==' ' || *start=='\t'); ++start)
 				;
-			BmString line( start, end-start-1);
+			if (end<=start) {
+				// we make sure to ignore malformed header-lines
+				start = end+1;
+				continue;
+			}
+			line.SetTo( start, end-start-1);
 			start = end+1;
 			BmString utf8Line;
-			ConvertToUTF8( B_ISO1_CONVERSION, line, utf8Line);
+			ConvertToUTF8( BmEncoding::DefaultCharset, line, utf8Line);
 			BmMailHeaderFieldView* fv 
 				= new BmMailHeaderFieldView( field, utf8Line, &mFont, FixedWidth());
 			mFieldViews.push_back( fv);
