@@ -408,10 +408,10 @@ void BmBodyPart::SetTo( const BmString& msgtext, int32 start, int32 length,
 			// text data is decoded and then converted from it's encoding into utf8:
 			BM_LOG2( BM_LogMailParse, BmString("decoding text-part of mail (length ")<<mBodyLength<<" bytes) ...");
 			BmStringIBuf text( msgtext.String()+mStartInRawText, mBodyLength);
-			BmMemFilterRef decoder = FindDecoderFor( text, mContentTransferEncoding);
+			BmMemFilterRef decoder = FindDecoderFor( &text, mContentTransferEncoding);
 			BmStringOBuf tempIO( mBodyLength);
-			BmUtf8Encoder textConverter( *decoder, mSuggestedEncoding);
-			tempIO.Write( textConverter);
+			BmUtf8Encoder textConverter( decoder.get(), mSuggestedEncoding);
+			tempIO.Write( &textConverter);
 			mDecodedData.Adopt( tempIO.TheString());
 			BM_LOG2( BM_LogMailParse, "...splitting off signature...");
 			// split off signature, if any:
@@ -585,17 +585,17 @@ const BmString& BmBodyPart::DecodedData() const {
 			const BmMail* mail;
 			if (bodyPartList && (mail=bodyPartList->Mail())) {
 				BmStringIBuf text( mail->RawText().String()+mStartInRawText, mBodyLength);
-				BmMemFilterRef decoder = FindDecoderFor( text, mContentTransferEncoding);
+				BmMemFilterRef decoder = FindDecoderFor( &text, mContentTransferEncoding);
 				BmStringOBuf tempIO( mBodyLength, 1.2);
 				if (IsText()) {
 					// text data is decoded and then converted from it's encoding into utf8:
 					BM_LOG2( BM_LogMailParse, BmString( "(re-)converting bodytext of ") << mBodyLength << " bytes...");
-					BmUtf8Encoder textConverter( *decoder, mSuggestedEncoding);
-					tempIO.Write( textConverter);
+					BmUtf8Encoder textConverter( decoder.get(), mSuggestedEncoding);
+					tempIO.Write( &textConverter);
 					mCurrentEncoding = mSuggestedEncoding;
 				} else {
 					BM_LOG2( BM_LogMailParse, BmString( "decoding bodytext of ") << mBodyLength << " bytes...");
-					tempIO.Write( *decoder);
+					tempIO.Write( decoder.get());
 				}
 				mDecodedData.Adopt( tempIO.TheString());
 				BM_LOG2( BM_LogMailParse, "done");
@@ -836,13 +836,13 @@ void BmBodyPart::ConstructBodyForSending( BmStringOBuf &msgText) {
 			if (IsText()) {
 				BM_LOG2( BM_LogMailParse, BmString( "encoding/converting bodytext of ") << DecodedLength() << " bytes...");
 				BM_LOG2( BM_LogMailParse, "to native encoding...");
-				BmUtf8Decoder textConverter( text, CharsetToEncoding( Charset()));
-				BmMemFilterRef encoder = FindEncoderFor( textConverter, mContentTransferEncoding);
-				mBodyLength = msgText.Write( *encoder);
+				BmUtf8Decoder textConverter( &text, CharsetToEncoding( Charset()));
+				BmMemFilterRef encoder = FindEncoderFor( &textConverter, mContentTransferEncoding);
+				mBodyLength = msgText.Write( encoder.get());
 			} else {
 				BM_LOG2( BM_LogMailParse, BmString( "encoding bodytext of ") << DecodedLength() << " bytes...");
-				BmMemFilterRef encoder = FindEncoderFor( text, mContentTransferEncoding);
-				mBodyLength = msgText.Write( *encoder);
+				BmMemFilterRef encoder = FindEncoderFor( &text, mContentTransferEncoding);
+				mBodyLength = msgText.Write( encoder.get());
 			}
 			BM_LOG2( BM_LogMailParse, "...done (bodytext)");
 		}
