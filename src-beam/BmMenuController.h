@@ -42,19 +42,32 @@ class BmMenuController : public BMenu, public BmJobController
 
 public:
 
-	BmMenuController( const char* label, const char* name, 
-							BMessage& msgTemplate, BHandler* target);
+	BmMenuController( const char* label, BHandler* msgTarget, 
+							BMessage& msgTemplate, BmJobModel* jobModel,
+							bool skipFirstLevel=false);
 
-	BHandler* GetControllerHandler() 	{ return mTarget ? mTarget : Window(); }
+	// overrides of controller-base
+	BHandler* GetControllerHandler() 	{ return this; }
 	void JobIsDone( bool completed);
 	
+	// overrides of view-base
+	void MessageReceived( BMessage* msg);
+	void AttachedToWindow();
+	void DetachedFromWindow();
+
 	void Shortcuts( const BmString s) 	{ mShortcuts = s; }
 
 private:
 	
+	void AddItemToMenu( BmListModelItem* item, BMenu* menu,
+							  bool skipThisButAddChildren=false,
+							  char shortcut=0);
+
 	BMessage mMsgTemplate;
-	BHandler* mTarget;
+	BmJobModel* mJobModel;
+	BHandler* mMsgTarget;
 	BmString mShortcuts;
+	bool mSkipFirstLevel;
 
 	// Hide copy-constructor and assignment:
 	BmMenuController( const BmMenuController&);
