@@ -34,6 +34,7 @@
 
 #include "BmBasics.h"
 #include "BmLogHandler.h"
+#include "BmPrefs.h"
 #include "BmUtil.h"
 
 /*------------------------------------------------------------------------------*\
@@ -145,9 +146,25 @@ BmLogHandler::BmLogfile* BmLogHandler::FindLogfile( const BmString &logname) {
 		mAppFolder->CreateDirectory( "logs", NULL);
 						// ensure that the logs-folder exists
 		BFile* logfile = new BFile( mAppFolder, name.String(),
-											 B_WRITE_ONLY|B_CREATE_FILE|B_OPEN_AT_END);
+											 B_READ_WRITE|B_CREATE_FILE|B_OPEN_AT_END);
 		if (logfile->InitCheck() != B_OK)
 			throw BM_runtime_error( BmString("Unable to open logfile ") << name);
+		// shrink logfile if it has become too large:
+		off_t maxSize = ThePrefs->GetInt( "MaxLogfileSize", 200*1024);
+		if (logfile->Position() > maxSize) {
+			off_t newSize = ThePrefs->GetInt( "MinLogfileSize", 50*1024);
+			char* buf = new char [newSize+1];
+			newSize = logfile->ReadAt( logfile->Position()-newSize, buf, newSize);
+			buf[newSize] = '\0';
+			int32 offs = 0;
+			char* pos = strchr( buf, '\n');
+			if (pos != NULL)
+				offs = 1+pos-buf;
+			logfile->SetSize( 0);
+			logfile->Seek( SEEK_SET, 0);
+			logfile->WriteAt( 0, buf+offs, newSize-offs);
+			delete [] buf;
+		}
 		log = new BmLogfile( logfile, name.String());
 		mActiveLogs[name] = log;
 	} else {
