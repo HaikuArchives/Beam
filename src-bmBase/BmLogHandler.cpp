@@ -248,11 +248,14 @@ void BmLogHandler::BmLogfile::Write( const char* const msg, int32 threadId) {
 	ReplaceSubstringWith( s, "\n\n", "\n");
 	ReplaceSubstringWith( s, "\n", "\n                                   ");
 	s << "\n";
-	static char buf[40];
-	sprintf( buf, "<%6ld|%s.%04Ld>: ", 
+	bigtime_t rtNow = real_time_clock_usecs();
+	time_t now = rtNow/1000000;
+	int32 nowMSecs = (rtNow/1000)%1000;
+	char buf[40];
+	sprintf( buf, "<%6ld|%s.%03ld>: ", 
 					  threadId, 
-					  TimeToString( time( NULL), "%Y-%m-%d|%H:%M:%S").String(),
-					  (system_time()/1000)%1000);
+					  TimeToString( now, "%Y-%m-%d|%H:%M:%S").String(),
+					  nowMSecs);
 	ssize_t result;
 	if ((result = mLogFile->Write( buf, strlen( buf))) < 0)
 		throw BM_runtime_error( BString("Unable to write to logfile ") << filename);
