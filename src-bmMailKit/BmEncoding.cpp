@@ -120,8 +120,8 @@ void BmEncoding::ConvertToUTF8( uint32 srcEncoding, const BmString& src,
 	BmStringIBuf srcBuf( src);
 	const uint32 blockSize = max( (int32)128, src.Length());
 	BmStringOBuf destBuf( blockSize);
-	BmUtf8Encoder encoder( srcBuf, srcEncoding, blockSize);
-	destBuf.Write( encoder, blockSize);
+	BmUtf8Encoder encoder( &srcBuf, srcEncoding, blockSize);
+	destBuf.Write( &encoder, blockSize);
 	dest.Adopt( destBuf.TheString());
 }
 
@@ -139,8 +139,8 @@ void BmEncoding::ConvertFromUTF8( uint32 destEncoding, const BmString& src,
 	BmStringIBuf srcBuf( src);
 	const uint32 blockSize = max( (int32)128, src.Length());
 	BmStringOBuf destBuf( blockSize);
-	BmUtf8Decoder encoder( srcBuf, destEncoding, blockSize);
-	destBuf.Write( encoder, blockSize);
+	BmUtf8Decoder encoder( &srcBuf, destEncoding, blockSize);
+	destBuf.Write( &encoder, blockSize);
 	dest.Adopt( destBuf.TheString());
 }
 
@@ -153,8 +153,8 @@ void BmEncoding::Encode( BmString encodingStyle, const BmString& src, BmString& 
 	BmStringIBuf srcBuf( src);
 	const uint32 blockSize = max( (int32)128, src.Length());
 	BmStringOBuf destBuf( blockSize);
-	BmMemFilterRef encoder = FindEncoderFor( srcBuf, encodingStyle, isEncodedWord, blockSize);
-	destBuf.Write( *encoder, blockSize);
+	BmMemFilterRef encoder = FindEncoderFor( &srcBuf, encodingStyle, isEncodedWord, blockSize);
+	destBuf.Write( encoder.get(), blockSize);
 	dest.Adopt( destBuf.TheString());
 }
 
@@ -167,8 +167,8 @@ void BmEncoding::Decode( BmString encodingStyle, const BmString& src, BmString& 
 	BmStringIBuf srcBuf( src);
 	const uint32 blockSize = max( (int32)128, src.Length());
 	BmStringOBuf destBuf( blockSize);
-	BmMemFilterRef decoder = FindDecoderFor( srcBuf, encodingStyle, isEncodedWord, blockSize);
-	destBuf.Write( *decoder, blockSize);
+	BmMemFilterRef decoder = FindDecoderFor( &srcBuf, encodingStyle, isEncodedWord, blockSize);
+	destBuf.Write( decoder.get(), blockSize);
 	dest.Adopt( destBuf.TheString());
 }
 
@@ -198,9 +198,9 @@ BmString BmEncoding::ConvertHeaderPartToUTF8( const BmString& headerPart,
 			const BmString srcCharset( i->atom[0]);
 			const BmString srcQuotingStyle( i->atom[1]);
 			BmStringIBuf text( headerPart.String()+i->atom[2].start(), i->atom[2].Length());
-			BmMemFilterRef decoder = FindDecoderFor( text, srcQuotingStyle, true, blockSize);
-			BmUtf8Encoder textConverter( *decoder, CharsetToEncoding( srcCharset), blockSize);
-			utf8.Write( textConverter, blockSize);
+			BmMemFilterRef decoder = FindDecoderFor( &text, srcQuotingStyle, true, blockSize);
+			BmUtf8Encoder textConverter( decoder.get(), CharsetToEncoding( srcCharset), blockSize);
+			utf8.Write( &textConverter, blockSize);
 			curr = i->start()+i->Length();
 		}
 		if (curr<len) {
@@ -208,8 +208,8 @@ BmString BmEncoding::ConvertHeaderPartToUTF8( const BmString& headerPart,
 		}
 	} else {
 		BmStringIBuf text( headerPart);
-		BmUtf8Encoder textConverter( text, defaultEncoding);
-		utf8.Write( textConverter);
+		BmUtf8Encoder textConverter( &text, defaultEncoding);
+		utf8.Write( &textConverter);
 	}
 	return utf8.TheString();
 }
@@ -322,7 +322,7 @@ bool BmEncoding::IsCompatibleWithText( const BmString& s) {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmMemFilterRef BmEncoding::FindDecoderFor( BmMemIBuf& input, 
+BmMemFilterRef BmEncoding::FindDecoderFor( BmMemIBuf* input, 
 														 const BmString& encodingStyle, 
 														 bool isEncodedWord, uint32 blockSize) {
 	BmMemFilter* filter = NULL;
@@ -345,7 +345,7 @@ BmMemFilterRef BmEncoding::FindDecoderFor( BmMemIBuf& input,
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmMemFilterRef BmEncoding::FindEncoderFor( BmMemIBuf& input, 
+BmMemFilterRef BmEncoding::FindEncoderFor( BmMemIBuf* input, 
 														 const BmString& encodingStyle, 
 														 bool isEncodedWord, uint32 blockSize) {
 	BmMemFilter* filter = NULL;
@@ -375,7 +375,7 @@ BmMemFilterRef BmEncoding::FindEncoderFor( BmMemIBuf& input,
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmUtf8Decoder::BmUtf8Decoder( BmMemIBuf& input, uint32 destEncoding, 
+BmUtf8Decoder::BmUtf8Decoder( BmMemIBuf* input, uint32 destEncoding, 
 										uint32 blockSize)
 	:	inherited( input, blockSize)
 	,	mDestEncoding( destEncoding)
@@ -418,7 +418,7 @@ void BmUtf8Decoder::Filter( const char* srcBuf, uint32& srcLen,
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmUtf8Encoder::BmUtf8Encoder( BmMemIBuf& input, uint32 srcEncoding, 
+BmUtf8Encoder::BmUtf8Encoder( BmMemIBuf* input, uint32 srcEncoding, 
 										uint32 blockSize)
 	:	inherited( input, blockSize)
 	,	mSrcEncoding( srcEncoding)
@@ -461,7 +461,7 @@ void BmUtf8Encoder::Filter( const char* srcBuf, uint32& srcLen,
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmQuotedPrintableDecoder::BmQuotedPrintableDecoder( BmMemIBuf& input, 
+BmQuotedPrintableDecoder::BmQuotedPrintableDecoder( BmMemIBuf* input, 
 																	 bool isEncodedWord, 
 																	 uint32 blockSize)
 	:	inherited( input, blockSize)
@@ -512,7 +512,7 @@ void BmQuotedPrintableDecoder::Filter( const char* srcBuf, uint32& srcLen,
 			*dest++ = ' ';
 			mLastWasLinebreak = false;
 		} else if (c == '=') {
-			if (src>srcEnd-3 && !mInput.IsAtEnd())
+			if (src>srcEnd-3 && !mInput->IsAtEnd())
 				break;							// need two more characters in buffer
 			if (src<=srcEnd-3 
 			&& (c1=*(src+1)) && qpChars.FindFirst(c1)!=B_ERROR 
@@ -551,7 +551,7 @@ void BmQuotedPrintableDecoder::Filter( const char* srcBuf, uint32& srcLen,
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmQuotedPrintableEncoder::BmQuotedPrintableEncoder( BmMemIBuf& input, 
+BmQuotedPrintableEncoder::BmQuotedPrintableEncoder( BmMemIBuf* input, 
 																	 bool isEncodedWord, 
 																	 uint32 blockSize)
 	:	inherited( input, blockSize)
@@ -801,18 +801,21 @@ void BmBase64Encoder::Filter( const char* srcBuf, uint32& srcLen,
 void BmBase64Encoder::Finalize( char* destBuf, uint32& destLen) {
 	char* dest = destBuf;
 	char* destEnd = destBuf+destLen;
-	if (mIndex && dest<=destEnd-4) {
-		// output remaining bytes and pad if neccessary:
-		*dest++ = nBase64Alphabet[(mConcat >> 18) & 63];
-		*dest++ = nBase64Alphabet[(mConcat >> 12) & 63];
-		if (mIndex==2)
-			*dest++ = nBase64Alphabet[(mConcat >> 6) & 63];
-		else
+	if (mIndex) {
+		if (dest<=destEnd-4) {
+			// output remaining bytes and pad if neccessary:
+			*dest++ = nBase64Alphabet[(mConcat >> 18) & 63];
+			*dest++ = nBase64Alphabet[(mConcat >> 12) & 63];
+			if (mIndex==2)
+				*dest++ = nBase64Alphabet[(mConcat >> 6) & 63];
+			else
+				*dest++ = '=';
 			*dest++ = '=';
-		*dest++ = '=';
-	}
+			mIsFinalized = true;
+		}
+	} else
+		mIsFinalized = true;
 	destLen = dest-destBuf;
-	mIsFinalized = true;
 }
 
 
@@ -825,7 +828,7 @@ void BmBase64Encoder::Finalize( char* destBuf, uint32& destLen) {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmLinebreakDecoder::BmLinebreakDecoder( BmMemIBuf& input, uint32 blockSize)
+BmLinebreakDecoder::BmLinebreakDecoder( BmMemIBuf* input, uint32 blockSize)
 	:	inherited( input, blockSize)
 {
 }
@@ -863,7 +866,7 @@ void BmLinebreakDecoder::Filter( const char* srcBuf, uint32& srcLen,
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmLinebreakEncoder::BmLinebreakEncoder( BmMemIBuf& input, uint32 blockSize)
+BmLinebreakEncoder::BmLinebreakEncoder( BmMemIBuf* input, uint32 blockSize)
 	:	inherited( input, blockSize)
 	,	mLastWasCR( false)
 {
@@ -907,7 +910,7 @@ void BmLinebreakEncoder::Filter( const char* srcBuf, uint32& srcLen,
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmBinaryDecoder::BmBinaryDecoder( BmMemIBuf& input, uint32 blockSize)
+BmBinaryDecoder::BmBinaryDecoder( BmMemIBuf* input, uint32 blockSize)
 	:	inherited( input, blockSize)
 {
 }
@@ -937,7 +940,7 @@ void BmBinaryDecoder::Filter( const char* srcBuf, uint32& srcLen,
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmBinaryEncoder::BmBinaryEncoder( BmMemIBuf& input, uint32 blockSize)
+BmBinaryEncoder::BmBinaryEncoder( BmMemIBuf* input, uint32 blockSize)
 	:	inherited( input, blockSize)
 {
 }
@@ -956,91 +959,3 @@ void BmBinaryEncoder::Filter( const char* srcBuf, uint32& srcLen,
 	srcLen = destLen = size;
 	BM_LOG3( BM_LogMailParse, "binary-encode: done");
 }
-
-
-
-/********************************************************************************\
-	BmDotstuffDecoder
-\********************************************************************************/
-
-/*------------------------------------------------------------------------------*\
-	()
-		-	
-\*------------------------------------------------------------------------------*/
-BmDotstuffDecoder::BmDotstuffDecoder( BmMemIBuf& input, uint32 blockSize)
-	:	inherited( input, blockSize)
-	,	mAtStartOfLine( true)
-{
-}
-
-/*------------------------------------------------------------------------------*\
-	()
-		-	
-\*------------------------------------------------------------------------------*/
-void BmDotstuffDecoder::Filter( const char* srcBuf, uint32& srcLen, 
-											char* destBuf, uint32& destLen) {
-	BM_LOG3( BM_LogMailParse, BmString("starting to decode dot-stuffing of ") << srcLen << " bytes");
-	const char* src = srcBuf;
-	const char* srcEnd = srcBuf+srcLen;
-	char* dest = destBuf;
-	char* destEnd = destBuf+destLen;
-
-	char c;
-	for( ; src<srcEnd && dest<destEnd; ++src) {
-		if ((c = *src)!='.' || !mAtStartOfLine)
-			*dest++ = c;
-		mAtStartOfLine = (c=='\n');
-	}
-
-	srcLen = src-srcBuf;
-	destLen = dest-destBuf;
-	BM_LOG3( BM_LogMailParse, "dotstuff-decode: done");
-}
-
-
-
-/********************************************************************************\
-	BmDotstuffEncoder
-\********************************************************************************/
-
-/*------------------------------------------------------------------------------*\
-	()
-		-	
-\*------------------------------------------------------------------------------*/
-BmDotstuffEncoder::BmDotstuffEncoder( BmMemIBuf& input, uint32 blockSize)
-	:	inherited( input, blockSize)
-	,	mAtStartOfLine( true)
-{
-}
-
-/*------------------------------------------------------------------------------*\
-	()
-		-	
-\*------------------------------------------------------------------------------*/
-void BmDotstuffEncoder::Filter( const char* srcBuf, uint32& srcLen, 
-										  char* destBuf, uint32& destLen) {
-	BM_LOG3( BM_LogMailParse, BmString("starting to dot-stuff a string of ") << srcLen << " bytes");
-
-	const char* src = srcBuf;
-	const char* srcEnd = srcBuf+srcLen;
-	char* dest = destBuf;
-	char* destEnd = destBuf+destLen;
-
-	char c;
-	for( ; src<srcEnd && dest<destEnd; ++src) {
-		if ((c = *src)=='.' && mAtStartOfLine) {
-			if (dest>destEnd-2)
-				break;
-			*dest++ = c;
-		}
-		*dest++ = c;
-		mAtStartOfLine = (c=='\n');
-	}
-
-	srcLen = src-srcBuf;
-	destLen = dest-destBuf;
-	BM_LOG3( BM_LogMailParse, "dotstuff-encode: done");
-}
-
-
-
