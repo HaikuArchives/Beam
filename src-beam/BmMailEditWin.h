@@ -150,8 +150,6 @@ private:
 	BmToolbarButton* mSaveButton;
 	BmToolbarButton* mNewButton;
 	BmToolbarButton* mAttachButton;
-//	BmToolbarButton* mPeopleButton;
-//	BmToolbarButton* mPrintButton;
 	
 	BmTextControl* mBccControl;
 	BmTextControl* mCcControl;
@@ -165,6 +163,7 @@ private:
 	BmMenuControl* mCharsetControl;
 	BmMenuControl* mSmtpControl;
 	BmMenuControl* mSignatureControl;
+	BmMenuControl* mFileIntoControl;
 	
 	BmCheckControl* mEditHeaderControl;
 

@@ -66,6 +66,7 @@
 #include "BmMsgTypes.h"
 #include "BmPrefs.h"
 #include "BmResources.h"
+#include "BmRosterBase.h"
 #include "BmSignature.h"
 #include "BmSmtpAccount.h"
 #include "BmStorageUtil.h"
@@ -95,7 +96,8 @@ enum {
 	BM_SIGNATURE_SELECTED= 'bMYo',
 	BM_TO_REMOVE			= 'bMYp',
 	BM_CC_REMOVE			= 'bMYq',
-	BM_BCC_REMOVE			= 'bMYr'
+	BM_BCC_REMOVE			= 'bMYr',
+	BM_FILEINTO_SELECTED	= 'bMYs'
 };
 
 
@@ -331,6 +333,21 @@ void BmMailEditWin::RebuildPeopleMenu( BmMenuControllerBase* peopleMenu) {
 }
 
 /*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+static void RebuildFolderMenu( BmMenuControllerBase* menu) {
+	BMenuItem* old;
+	while( (old = menu->RemoveItem( (int32)0)) != NULL)
+		delete old;
+	
+	BeamRoster->FillMenuFromList( BM_ROSTER_FOLDERLIST, 
+											menu, 
+											menu->MsgTarget(),
+											menu->MsgTemplate());
+}
+
+/*------------------------------------------------------------------------------*\
 	CreateGUI()
 		-	
 \*------------------------------------------------------------------------------*/
@@ -345,12 +362,6 @@ void BmMailEditWin::CreateGUI() {
 											TheResources->IconByName("Button_New"));
 	BmToolbarButton::CalcMaxSize( width, height, "Attach",
 											TheResources->IconByName("Button_Attachment"));
-/*
-	BmToolbarButton::CalcMaxSize( width, height, "People",
-											TheResources->IconByName("Button_Person"));
-	BmToolbarButton::CalcMaxSize( width, height, "Print",
-											TheResources->IconByName("Button_Print"));
-*/
 
 	mOuterGroup = 
 		new VGroup(
@@ -391,24 +402,6 @@ void BmMailEditWin::CreateGUI() {
 									new BMessage(BMM_ATTACH), this, 
 									"Attach a file to this mail"
 								),
-/*
-					mPeopleButton 
-						= new BmToolbarButton( 
-									"People", 
-									TheResources->IconByName("Button_Person"), 
-									width, height,
-									new BMessage(BMM_SHOW_PEOPLE), this, 
-									"Show people information (addresses)"
-								),
-					mPrintButton 
-						= new BmToolbarButton( 
-									"Print", 
-									TheResources->IconByName("Button_Print"), 
-									width, height,
-									new BMessage(BMM_PRINT), this, 
-									"Print selected messages(s)"
-								),
-*/
 					new ToolbarSpace(),
 					0
 				)
@@ -429,7 +422,7 @@ void BmMailEditWin::CreateGUI() {
 												 new BMessage( BM_SMTP_SELECTED), 
 												 TheSmtpAccountList.Get(), 
 												 BM_MC_LABEL_FROM_MARKED),
-					0.4
+					0.5
 				),
 				0
 			),
@@ -456,7 +449,7 @@ void BmMailEditWin::CreateGUI() {
 												 new BMessage( BM_CHARSET_SELECTED), 
 												 BmRebuildCharsetMenu, 
 												 BM_MC_LABEL_FROM_MARKED),
-					0.4
+					0.5
 				),
 				0
 			),
@@ -518,9 +511,18 @@ void BmMailEditWin::CreateGUI() {
 					)
 				),
 				new Space(minimax(20,-1,20,-1)),
+				mFileIntoControl = new BmMenuControl( 
+					"Target Folder:",
+					new BmMenuControllerBase( 
+						"out", this, 
+						new BMessage( BM_FILEINTO_SELECTED), 
+						RebuildFolderMenu
+					),
+					3.0
+				),
+				new Space(minimax(20,-1,20,-1)),
 				mEditHeaderControl = new BmCheckControl( "Edit Headers Before Send", 
 																	  1, false),
-				new Space(),
 				0
 			),
 			mSeparator = new Space(minimax(-1,4,-1,4)),
@@ -531,27 +533,23 @@ void BmMailEditWin::CreateGUI() {
 	mSendButton->AddActionVariation( "Send Now", new BMessage(BMM_SEND_NOW));
 	mSendButton->AddActionVariation( "Send Later", new BMessage(BMM_SEND_LATER));
 
-	float divider = mToControl->Divider();
-	divider = MAX( divider, mSubjectControl->Divider());
-	divider = MAX( divider, mFromControl->Divider());
-	divider = MAX( divider, mCcControl->Divider());
-	divider = MAX( divider, mBccControl->Divider());
-	divider = MAX( divider, mReplyToControl->Divider());
-	divider = MAX( divider, mSenderControl->Divider());
-	divider = MAX( divider, mSignatureControl->Divider());
-	mToControl->SetDivider( divider);
-	mSubjectControl->SetDivider( divider);
-	mFromControl->SetDivider( divider);
-	mCcControl->SetDivider( divider);
-	mBccControl->SetDivider( divider);
-	mReplyToControl->SetDivider( divider);
-	mSenderControl->SetDivider( divider);
-	mSignatureControl->SetDivider( divider);
+	BmDividable::DivideSame(
+		mToControl,
+		mSubjectControl,
+		mFromControl,
+		mCcControl,
+		mBccControl,
+		mReplyToControl,
+		mSenderControl,
+		mSignatureControl,
+		NULL
+	);
 
-	divider = MAX( 0, mSmtpControl->Divider());
-	divider = MAX( divider, mCharsetControl->Divider());
-	mSmtpControl->SetDivider( divider);
-	mCharsetControl->SetDivider( divider);
+	BmDividable::DivideSame(
+		mSmtpControl,
+		mCharsetControl,
+		NULL
+	);
 	mCharsetControl->ct_mpm = mSmtpControl->ct_mpm;
 
 	mShowDetails1Button->SetFlags( mShowDetails1Button->Flags() 
@@ -841,6 +839,7 @@ void BmMailEditWin::MessageReceived( BMessage* msg) {
 							BM_LOG2( BM_LogGui, 
 										"MailEditWin: ...marking mail as pending");
 							mail->MarkAs( BM_MAIL_STATUS_PENDING);
+							mail->ApplyFilter( NULL, true);
 							smtpAcc->mMailVect.push_back( mail);
 							BM_LOG2( BM_LogGui, 
 										"MailEditWin: ...passing mail to smtp-account");
@@ -875,6 +874,7 @@ void BmMailEditWin::MessageReceived( BMessage* msg) {
 				if (smtpAcc) {
 					mail->SetNewHeader( headerStr);
 					mail->MarkAs( BM_MAIL_STATUS_PENDING);
+					mail->ApplyFilter( NULL, true);
 					smtpAcc->mMailVect.push_back( mail);
 					TheSmtpAccountList->SendQueuedMailFor( smtpAcc->Name());
 					PostMessage( B_QUIT_REQUESTED);
@@ -1041,6 +1041,31 @@ void BmMailEditWin::MessageReceived( BMessage* msg) {
 			}
 			case BMM_NEW_MAIL: {
 				be_app_messenger.SendMessage( msg);
+				break;
+			}
+			case BM_FILEINTO_SELECTED: {
+				BView* srcView = NULL;
+				msg->FindPointer( "source", (void**)&srcView);
+				BMenuItem* item = dynamic_cast<BMenuItem*>( srcView);
+				if (item) {
+					BMenuItem* currItem = item;
+					BMenu* currMenu = item->Menu();
+					BmString path;
+					while( currMenu && currItem 
+					&& currItem!=mFileIntoControl->MenuItem()) {
+						if (!path.Length())
+							path.Prepend( BmString(currItem->Label()));
+						else
+							path.Prepend( BmString(currItem->Label()) << "/");
+						currItem = currMenu->Superitem();
+						currMenu = currMenu->Supermenu();
+					}
+					mFileIntoControl->ClearMark();
+					item->SetMarked( true);
+					mFileIntoControl->MenuItem()->SetLabel( path.String());
+				} else {
+					mFileIntoControl->ClearMark();
+				}
 				break;
 			}
 			default:
@@ -1324,9 +1349,11 @@ bool BmMailEditWin::SaveMail( bool saveForSend) {
 	if (mail) {
 		mail->Outbound( true);				// just to make sure... >:o)
 		if (saveForSend) {
-			// set 'out'-folder as default and then start filter-job:
-			mail->SetDestFoldername( BM_MAIL_FOLDER_OUT);
-			mail->ApplyFilter();
+			// set selected folder as default and then start filter-job:
+			BMenuItem* labelItem = mFileIntoControl->MenuItem();
+			BmString destFolderName 
+				= labelItem ? labelItem->Label() : BM_MAIL_FOLDER_OUT;
+			mail->SetDestFoldername( destFolderName);
 		} else {
 			// drop draft mails into 'draft'-folder:
 			if (mail->Status() == BM_MAIL_STATUS_DRAFT)
