@@ -31,25 +31,27 @@
 #ifndef _BmLogWindow_h
 #define _BmLogWindow_h
 
-#include <MWindow.h>
 
 #include "BmLogHandler.h"
+#include "BmWindow.h"
 
 enum {
 	BM_LOGENTRY_ADDED = 'bmle'
 };
 
-class BmLogWindow : public MWindow
+class BmLogWindow : public BmWindow
 {
-	typedef MWindow inherited;
+	typedef BmWindow inherited;
 
 public:
 	// creator-func, c'tors and d'tor:
 	static BmLogWindow* CreateAndStartInstanceFor( const char* logfileName,
-																  bool showUponNews=false);
+																  bool showUponNews=false,
+																  bool clingToMainWin=false);
 	BmLogWindow( const BRect& frame, const BmString& title, 
-					 const char* logfileName, bool showUponNews);
-	~BmLogWindow();
+					 const char* logfileName, bool showUponNews, 
+					 bool clingToMainWin);
+	virtual ~BmLogWindow();
 	
 	// overrides of BWindow-base:
 	void MessageReceived( BMessage* msg);
@@ -59,6 +61,7 @@ private:
 	BmString mLogfileName;
 	MTextView* mLogView;
 	bool mShowUponNews;
+	bool mClingToMainWin;
 
 	static int32 nWinCount;
 

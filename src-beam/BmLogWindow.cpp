@@ -41,6 +41,7 @@
 
 #include "BmApp.h"
 #include "BmLogWindow.h"
+#include "BmMainWindow.h"
 #include "BmPrefs.h"
 
 int32 BmLogWindow::nWinCount = 0;
@@ -50,13 +51,15 @@ int32 BmLogWindow::nWinCount = 0;
 		-	
 \*------------------------------------------------------------------------------*/
 BmLogWindow* BmLogWindow::CreateAndStartInstanceFor( const char* logfileName,
-																	  bool showUponNews) {
+																	  bool showUponNews,
+																	  bool clingToMainWin) {
 	float x = 50+(nWinCount*20)%300;
 	float y = 50+(nWinCount*20)%300;
-	BRect frame( x, y, x+599, y+199);
+	BRect frame( x, y, x+599, y + (clingToMainWin ? 99 : 199));
 	BmString title("Beam-Log: ");
 	title << logfileName;
-	BmLogWindow* win = new BmLogWindow( frame, title, logfileName, showUponNews);
+	BmLogWindow* win = new BmLogWindow( frame, title, logfileName, showUponNews,
+													clingToMainWin);
 	if (showUponNews) {
 		win->Hide();							// pre-hide window, shows upon message
 		win->SetWorkspaces( bmApp->CurrWorkspace());
@@ -72,12 +75,14 @@ BmLogWindow* BmLogWindow::CreateAndStartInstanceFor( const char* logfileName,
 		-	
 \*------------------------------------------------------------------------------*/
 BmLogWindow::BmLogWindow( const BRect& frame, const BmString& title, 
-								  const char* logfileName, bool showUponNews)
-	:	inherited( frame, title.String(), 
+								  const char* logfileName, bool showUponNews,
+								  bool clingToMainWin)
+	:	inherited( title.String(), frame, title.String(), 
 					  B_FLOATING_WINDOW_LOOK,
 					  B_NORMAL_WINDOW_FEEL, B_ASYNCHRONOUS_CONTROLS)
 	,	mLogfileName( logfileName)
 	,	mShowUponNews( showUponNews)
+	,	mClingToMainWin( clingToMainWin)
 {
 	mLogView = new MTextView();
 	mLogView->MakeEditable( false);
@@ -122,10 +127,20 @@ void BmLogWindow::MessageReceived( BMessage* msg) {
 			mLogView->Select( len, len);
 			mLogView->Insert( logMsg.String());
 			mLogView->ScrollToOffset( len + logMsg.Length());
-			if (mShowUponNews) {
+			if (mShowUponNews 
+			&& !ThePrefs->GetBool( "ShowAlertForErrors", false)) {
 				SetWorkspaces( bmApp->CurrWorkspace());
 				if (IsMinimized())
 					Minimize( false);
+				if (IsHidden() && mClingToMainWin) {
+					BRect mainWinRect = TheMainWindow->Frame();
+					BRect screenRect = bmApp->ScreenFrame();
+					BPoint pt( mainWinRect.left-2, mainWinRect.bottom+6);
+					if (pt.y > screenRect.bottom-100)
+						pt.y = screenRect.bottom-100;
+					MoveTo( pt);
+					ResizeTo( mainWinRect.Width()+4, Frame().Height());
+				}
 				while( IsHidden())
 					Show();
 			}
@@ -147,7 +162,8 @@ bool BmLogWindow::QuitRequested() {
 		while( !IsHidden())
 			Hide();
 		Unlock();
-	}
-	return bmApp->IsQuitting();
+		return bmApp->IsQuitting();
+	} else
+		return true;
 }
 
