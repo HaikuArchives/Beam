@@ -182,6 +182,15 @@ bool BmMemFilter::IsAtEnd() {
 	BmStringIBuf()
 		-	constructor
 \*------------------------------------------------------------------------------*/
+BmStringIBuf::BmStringIBuf()
+	:	mIndex( 0)
+{
+}
+
+/*------------------------------------------------------------------------------*\
+	BmStringIBuf()
+		-	constructor
+\*------------------------------------------------------------------------------*/
 BmStringIBuf::BmStringIBuf( const char* str, int32 len)
 	:	mIndex( 0)
 {

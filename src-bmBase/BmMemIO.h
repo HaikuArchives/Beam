@@ -124,6 +124,7 @@ class IMPEXPBMBASE BmStringIBuf : public BmMemIBuf {
 	typedef BmMemIBuf inherited;
 
 public:
+	BmStringIBuf();
 	BmStringIBuf( const char* str, int32 len=-1);
 	BmStringIBuf( const BmString& str);
 	~BmStringIBuf();
