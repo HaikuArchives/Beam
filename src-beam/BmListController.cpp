@@ -523,8 +523,10 @@ void BmListViewController::AddAllModelItems() {
 	BmModelItemMap::const_iterator iter;
 	BmModelItemMap::const_iterator endIter = model->end();
 	int32 count=1;
-	for( iter = model->begin(); iter != endIter; ++iter, ++count) {
+	for( iter = model->begin(); iter != endIter; ++iter) {
 		BmListModelItem* modelItem = iter->second.Get();
+		if (!modelItem->ItemIsValid())
+			continue;
 		BmListViewItem* viewItem;
 		if (Hierarchical()) {
 			// add item and its subitems to the listview:
@@ -541,6 +543,7 @@ void BmListViewController::AddAllModelItems() {
 			BmString caption = BmString()<<count<<" "<<ItemNameForCaption()<<(count>1?"s":"");
 			UpdateCaption( caption.String());
 		}
+		count++;
 	}
 	if (!Hierarchical()) {
 		// add complete item-list for efficiency:
