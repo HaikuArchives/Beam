@@ -563,9 +563,9 @@ void BmListViewController::AddAllModelItems() {
 	SetDisconnectScrollView( true);
 	SetInsertAtSortedPos( false);
 	BmModelItemMap::const_iterator iter;
-	BmModelItemMap::const_iterator endIter = model->end();
+	BmModelItemMap::const_iterator end = model->end();
 	int32 count=1;
-	for( iter = model->begin(); iter != endIter; ++iter) {
+	for( iter = model->begin(); iter != end; ++iter) {
 		BmListModelItem* modelItem = iter->second.Get();
 		if (!modelItem->ItemIsValid())
 			continue;
@@ -602,14 +602,17 @@ void BmListViewController::AddAllModelItems() {
 		delete tempList;
 	}
 
+	BM_LOG2( BM_LogModelController, 
+				BmString(ControllerName())
+					<< ": added all items to listview, now sorting");
 	SortItems();
 	SetInsertAtSortedPos( true);
 	SetDisconnectScrollView( false);
 	UpdateColumnSizesDataRectSizeScrollBars( true);
 	UpdateCaption();
-	BM_LOG3( BM_LogModelController, 
+	BM_LOG2( BM_LogModelController, 
 				BmString(ControllerName())
-					<< ": finished with adding items to listview");
+					<< ": finished with sorting added items");
 }
 
 /*------------------------------------------------------------------------------*\
