@@ -676,6 +676,8 @@ void ColumnListView::DisplayOrderChanged(const int32* order)
 		for(int32 Counter = 0; Counter < num_columns; Counter++)
 		{
 			ThisColumn = (CLVColumn*)fColumnDisplayList.ItemAt(Counter);
+			if (!ThisColumn)
+				continue;
 			if((ThisColumn->fFlags & CLV_EXPANDER) || ThisColumn->fPushedByExpander)
 				PushMax = ThisColumn->fColumnEnd;
 		}
@@ -688,7 +690,7 @@ void ColumnListView::DisplayOrderChanged(const int32* order)
 	for(int column = 0; column < num_columns; column++)
 	{
 		ThisColumn = (CLVColumn*)fColumnList.ItemAt(column);
-		if(ThisColumn->fFlags & CLV_TELL_ITEMS_WIDTH)
+		if(ThisColumn && ThisColumn->fFlags & CLV_TELL_ITEMS_WIDTH)
 		{
 			float ColumnLeft = ThisColumn->fColumnBegin;
 			float ColumnRight = ThisColumn->fColumnEnd;
