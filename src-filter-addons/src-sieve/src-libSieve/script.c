@@ -145,10 +145,14 @@ int sieve_script_parse(sieve_interp_t *interp, FILE *script,
 }
 
 char **stringlist_to_chararray(stringlist_t **list)
+/* [zooey]:
+	I changed the semantics of this function to NOT destroy the
+	given list, but to keep it intact. Otherwise, the compiled script
+	could not be reused properly.
+*/
 {
     int size = 0;
     stringlist_t *tmp; 
-    stringlist_t *tofree;
     char **ret;
     int lup;
 
@@ -172,18 +176,6 @@ char **stringlist_to_chararray(stringlist_t **list)
     }
 
     ret[size]=NULL;
-
-    /* free element holders */
-    tmp = *list;
-
-    while (tmp!=NULL)
-    {
-	tofree = tmp;
-	tmp=tmp->next;
-	free(tofree);
-    }
-
-    *list = NULL;
 
     return ret;
 }
@@ -782,14 +774,8 @@ static int send_notify_callback(sieve_script_t *s, void *message_context,
 			   message_context,
 			   errmsg);    
 
-    if (nc.options) {
-	char **opts = nc.options;
-	while (opts && *opts) {
-	    free(*opts);
-	    opts++;
-	}
+    if (nc.options)
 	free(nc.options);
-    }
     free(nc.message);
 
     return ret;
@@ -872,6 +858,8 @@ int sieve_execute_script(sieve_script_t *s, void *message_context)
 	ret = SIEVE_NOMEM;
 	goto error;
     }
+ 
+    free_imapflags(&s->interp.curflags);
  
     if (eval(&s->interp, s->cmds, message_context, actions,
 	     notify_list, &errmsg) < 0)
