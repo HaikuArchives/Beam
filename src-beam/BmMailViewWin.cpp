@@ -312,8 +312,10 @@ void BmMailViewWin::MessageReceived( BMessage* msg) {
 					const BmRef<BmMailRef> mailRef = mail->MailRef();
 					if (mailRef) {
 						BMessage msg2( msg->what);
-						msg2.AddPointer( BmApplication::MSG_MAILREF, static_cast< void*>( mailRef.Get()));
-						mailRef->AddRef();	// the message now refers to the mailRef, too
+						BmMailRefVect* refVect = new BmMailRefVect();
+						refVect->push_back( mailRef);
+						msg2.AddPointer( BmApplication::MSG_MAILREF_VECT, 
+											  static_cast< void*>( refVect));
 						if (selectedText.Length())
 							msg2.AddString( BmApplication::MSG_SELECTED_TEXT, selectedText.String());
 						be_app_messenger.SendMessage( &msg2, &msg2);
@@ -336,9 +338,10 @@ void BmMailViewWin::MessageReceived( BMessage* msg) {
 				if (mail && mail->MailRef()) {
 					static int32 jobNum = 1;
 					BMessage tmpMsg( BM_JOBWIN_FILTER);
-					const BmRef<BmMailRef> mailRef = mail->MailRef();
-					tmpMsg.AddPointer( BmApplication::MSG_MAILREF, static_cast< void*>( mailRef.Get()));
-					mailRef->AddRef();	// the message now refers to the mailRef, too
+					BmMailRefVect* refVect = new BmMailRefVect();
+					refVect->push_back( mail->MailRef());
+					tmpMsg.AddPointer( BmApplication::MSG_MAILREF_VECT, 
+											  static_cast< void*>( refVect));
 					BmString jobName = msg->FindString( BmListModel::MSG_ITEMKEY);
 					tmpMsg.AddString( BmListModel::MSG_ITEMKEY, jobName.String());
 					jobName << jobNum++;
@@ -349,16 +352,15 @@ void BmMailViewWin::MessageReceived( BMessage* msg) {
 			}
 			case BMM_CREATE_FILTER: {
 				BmRef<BmMail> mail = mMailView->CurrMail();
-				if (mail) {
-					const BmRef<BmMailRef> mailRef = mail->MailRef();
-					if (mailRef) {
-						msg->AddPointer( BmApplication::MSG_MAILREF, static_cast< void*>( mailRef.Get()));
-						mailRef->AddRef();	// the message now refers to the mailRef, too
-						BMessage appMsg( BMM_PREFERENCES);
-						appMsg.AddString( "SubViewName", "Filters");
-						appMsg.AddMessage( "SubViewMsg", msg);
-						be_app_messenger.SendMessage( &appMsg);
-					}
+				if (mail && mail->MailRef()) {
+					BmMailRefVect* refVect = new BmMailRefVect();
+					refVect->push_back( mail->MailRef());
+					msg->AddPointer( BmApplication::MSG_MAILREF_VECT, 
+										  static_cast< void*>( refVect));
+					BMessage appMsg( BMM_PREFERENCES);
+					appMsg.AddString( "SubViewName", "Filters");
+					appMsg.AddMessage( "SubViewMsg", msg);
+					be_app_messenger.SendMessage( &appMsg);
 				}
 				break;
 			}

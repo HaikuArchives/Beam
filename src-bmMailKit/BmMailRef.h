@@ -32,11 +32,11 @@
 #define _BmMailRef_h
 
 #include <map>
-
+#include <vector>
 
 #include <Entry.h>
-#include "BmString.h"
 
+#include "BmString.h"
 #include "BmDataModel.h"
 
 class BmMail;
@@ -167,5 +167,7 @@ private:
 	BmMailRef( const BmMailRef&);
 	BmMailRef operator=( const BmMailRef&);
 };
+
+typedef vector< BmRef<BmMailRef> > BmMailRefVect;
 
 #endif

@@ -421,7 +421,7 @@ void BmMailRef::ResyncFromDisk( entry_ref* newRef) {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmMailRef::MarkAs( const char* status) {
-	if (InitCheck() != B_OK)
+	if (InitCheck() != B_OK || mStatus == status)
 		return;
 	try {
 		BNode mailNode;

@@ -248,7 +248,6 @@ BmMailMoverView::BmMailMoverView( const char* name)
 	,	mBottomLabel( NULL)
 {
 	mMSecsBeforeShow = MAX(10,ThePrefs->GetInt( "MSecsBeforeMailMoverShows"));
-	BmString labelText = BmString("To: ") << name;
 	MView* view = new VGroup(
 		new MBViewWrapper(
 			mStatBar = new BStatusBar( 
@@ -257,7 +256,7 @@ BmMailMoverView::BmMailMoverView( const char* name)
 			true, false, false
 		),
 		new HGroup(
-			mBottomLabel = new MStringView( labelText.String()),
+			mBottomLabel = new MStringView( ""),
 			new MStop( this),
 			0
 		),
@@ -284,12 +283,11 @@ BmJobModel* BmMailMoverView::CreateJobModel( BMessage* msg) {
 	BmMailFolder* folder;
 	if (!(folder = dynamic_cast<BmMailFolder*>( item.Get())))
 		BM_THROW_INVALID( BmString("Could not find BmMailFolder ") << key);
-	BList* refList = new BList;
-	entry_ref eref;
-	for( int i=0; msg->FindRef( BmMailMover::MSG_REFS, i, &eref)==B_OK; ++i) {
-		refList->AddItem( new entry_ref( eref));
-	}
-	return new BmMailMover( ControllerName(), refList, folder);
+	entry_ref* refs = NULL;
+	mBottomLabel->SetText( (BmString("To: ") << folder->DisplayKey()).String());
+	msg->FindPointer( BmMailMover::MSG_REFS, (void**)&refs);
+	int32 refCount = msg->FindInt32( BmMailMover::MSG_REF_COUNT);
+	return new BmMailMover( ControllerName(), refs, refCount, folder);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -306,7 +304,6 @@ void BmMailMoverView::ResetController() {
 \*------------------------------------------------------------------------------*/
 void BmMailMoverView::UpdateModelView( BMessage* msg) {
 	BmString name = FindMsgString( msg, BmMailMover::MSG_MOVER);
-	BmString domain = FindMsgString( msg, BmJobModel::MSG_DOMAIN);
 
 	float delta = FindMsgFloat( msg, BmMailMover::MSG_DELTA);
 	const char* leading = NULL;
@@ -386,15 +383,14 @@ BmJobModel* BmMailFilterView::CreateJobModel( BMessage* msg) {
 			return NULL;
 	}
 	BmMailFilter* mailFilter = new BmMailFilter( ControllerName(), filter);
-	BmMailRef* ref;
-	for( 	int i=0; 
-			msg->FindPointer( 
-				BmApplication::MSG_MAILREF, 
-				i, 
-				(void**)&ref
-			)==B_OK; ++i) {
-		mailFilter->AddMailRef( ref);
-		ref->RemoveRef();						// message no longer refers to mail-ref
+	BmMailRefVect* refVect = NULL;
+	msg->FindPointer( BmApplication::MSG_MAILREF_VECT, (void**)&refVect);
+	if (refVect) {
+		BmMailRefVect::iterator iter;
+		for( iter = refVect->begin(); iter != refVect->end(); ++iter) {
+			mailFilter->AddMailRef( iter->Get());
+		}
+		delete [] refVect;
 	}
 	return mailFilter;
 }

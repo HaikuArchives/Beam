@@ -93,7 +93,7 @@ public:
 	BmString BmAppNameWithVersion;
 
 	// message-fields:
-	static const char* const MSG_MAILREF;
+	static const char* const MSG_MAILREF_VECT;
 	static const char* const MSG_STATUS;
 	static const char* const MSG_WHO_TO;
 	static const char* const MSG_OPT_FIELD;

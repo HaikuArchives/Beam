@@ -53,15 +53,17 @@ const char* const BmMailMover::MSG_DELTA = 		"bm:delta";
 const char* const BmMailMover::MSG_TRAILING = 	"bm:trailing";
 const char* const BmMailMover::MSG_LEADING = 	"bm:leading";
 const char* const BmMailMover::MSG_REFS = 		"refs";
+const char* const BmMailMover::MSG_REF_COUNT = 	"refc";
 
 /*------------------------------------------------------------------------------*\
 	BmMailMover()
 		-	contructor
 \*------------------------------------------------------------------------------*/
-BmMailMover::BmMailMover( const BmString& name, BList* refList, 
-								  BmMailFolder* destFolder)
+BmMailMover::BmMailMover( const BmString& name, entry_ref* refs, 
+								  int32 refCount, BmMailFolder* destFolder)
 	:	BmJobModel( name)
-	,	mRefList( refList)
+	,	mRefs( refs)
+	,	mRefCount( refCount)
 	,	mDestFolder( destFolder)
 {
 }
@@ -71,14 +73,7 @@ BmMailMover::BmMailMover( const BmString& name, BList* refList,
 		-	destructor
 \*------------------------------------------------------------------------------*/
 BmMailMover::~BmMailMover() { 
-	if (mRefList) {
-		entry_ref* ref;
-		while( (ref = static_cast<entry_ref*>( 
-			mRefList->RemoveItem( (int32)0)
-		))!=NULL)
-			delete ref;
-		delete mRefList;
-	}
+	delete [] mRefs;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -87,8 +82,9 @@ BmMailMover::~BmMailMover() {
 \*------------------------------------------------------------------------------*/
 bool BmMailMover::StartJob() {
 
-	int32 refCount = mRefList->CountItems();
-	const float delta =  100.0 / (refCount / GRAIN);
+	if (!mRefs)
+		return false;
+	const float delta =  100.0 / (mRefCount / GRAIN);
 	status_t err;
 
 	BDirectory destDir( mDestFolder->EntryRefPtr());
@@ -100,8 +96,8 @@ bool BmMailMover::StartJob() {
 	// move each mailref into the destination folder:
 	try {
 		int32 i;
-		for( i=0; ShouldContinue() && i<refCount; ++i) {
-			ref = static_cast<entry_ref*>( mRefList->ItemAt(i));
+		for( i=0; ShouldContinue() && i < mRefCount; ++i) {
+			ref = &mRefs[i];
 			if (ref->directory == destNodeRef.node 
 			&& ref->device == destNodeRef.device)
 				continue;						
@@ -127,7 +123,7 @@ bool BmMailMover::StartJob() {
 				);
 			if ((i+1)%(int)GRAIN == 0) {
 				entry.GetName( filename);
-				BmString currentCount = BmString()<<i<<" of "<<refCount;
+				BmString currentCount = BmString()<<i<<" of "<<mRefCount;
 				UpdateStatus( delta, filename, currentCount.String());
 			}
 			snooze( 20*1000);
@@ -135,7 +131,7 @@ bool BmMailMover::StartJob() {
 							// (it will drop messages if we go too fast)
 		}
 		entry.GetName( filename);
-		BmString currentCount = BmString()<<i<<" of "<<refCount;
+		BmString currentCount = BmString()<<i<<" of "<<mRefCount;
 		UpdateStatus( delta, filename, currentCount.String());
 	}
 	catch( BM_runtime_error &err) {

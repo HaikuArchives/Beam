@@ -114,7 +114,8 @@ void BmFilterItem::UpdateView( BmUpdFlags flags) {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmFilterView* BmFilterView::CreateInstance( minimax minmax, int32 width, int32 height,
+BmFilterView* BmFilterView::CreateInstance( minimax minmax, int32 width, 
+														  int32 height,
 														  bool showCaption) {
 	return new BmFilterView( minmax, width, height, showCaption);
 }
@@ -157,7 +158,7 @@ BmFilterView::~BmFilterView() {
 		-	
 \*------------------------------------------------------------------------------*/
 BmListViewItem* BmFilterView::CreateListViewItem( BmListModelItem* item,
-																	  BMessage*) {
+																  BMessage*) {
 	return new BmFilterItem( item->Key(), item);
 }
 
@@ -165,18 +166,21 @@ BmListViewItem* BmFilterView::CreateListViewItem( BmListModelItem* item,
 	CreateContainer()
 		-	
 \*------------------------------------------------------------------------------*/
-CLVContainerView* BmFilterView::CreateContainer( bool horizontal, bool vertical, 
-												  				  bool scroll_view_corner, 
-												  				  border_style border, 
-																  uint32 ResizingMode, 
-																  uint32 flags) 
+CLVContainerView* BmFilterView::CreateContainer( bool horizontal, 
+																 bool vertical, 
+												  				 bool scroll_view_corner, 
+												  				 border_style border, 
+																 uint32 ResizingMode, 
+																 uint32 flags) 
 {
-	return new BmCLVContainerView( fMinMax, this, ResizingMode, flags, horizontal, 
-											 vertical, scroll_view_corner, border, mShowCaption,
-											 mShowBusyView, 
-											 mShowCaption 
-											 		? be_plain_font->StringWidth(" 99 filters ")
-											 		: 0);
+	return new BmCLVContainerView( 
+		fMinMax, this, ResizingMode, flags, horizontal, 
+		vertical, scroll_view_corner, border, 
+		mShowCaption, mShowBusyView, 
+		mShowCaption 
+			? be_plain_font->StringWidth(" 99 filters ")
+			: 0
+	);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -224,8 +228,8 @@ BmPrefsFilterView::BmPrefsFilterView()
 {
 	// N.B.: Since a LayeredGroup does not seem to work properly when it gets its
 	//       children added through AddChild(), we take the somewhat ugly path of
-	//			filling the addon-views into an array and statically stuff the array's 
-	//			items into the LayeredGroup (see below):
+	//			filling the addon-views into an array and statically stuff the 
+	//			array's items into the LayeredGroup (see below):
 	BmFilterAddonPrefsView* prefsView[10] 
 		= { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL };
 	// We collect the different addon-kinds in another arraay in order to stuff
@@ -238,7 +242,8 @@ BmPrefsFilterView::BmPrefsFilterView()
 	int kk=0;
 	BmFilterAddonMap::iterator iter;
 	for( iter = FilterAddonMap.begin(); iter != FilterAddonMap.end(); ++iter) {
-		BmInstantiateFilterPrefsFunc func = iter->second.instantiateFilterPrefsFunc;
+		BmInstantiateFilterPrefsFunc func 
+			= iter->second.instantiateFilterPrefsFunc;
 		if (func) {
 			BmFilterAddonPrefsView* pview 
 				= (*func)( minimax( 400, 200, 1E5, 1E5), iter->first);
@@ -256,19 +261,25 @@ BmPrefsFilterView::BmPrefsFilterView()
 					new Space( minimax(5,0,5,0)),
 					new VGroup(
 						new HGroup(
-							mAddPopup = new MPopup( NULL, 
-															new BMessage(BM_ADD_FILTER), this, 
-															k[0], k[1], k[2], k[3], k[4], k[5], 
-															k[6], k[7], k[8], k[9], NULL),
-							mAddToChainControl = new BmCheckControl( "Add new filter to default-chain, too", 
-																				  new BMessage(BM_ADD_TO_CHAIN_CHANGED), 
-																				  this),
+							mAddPopup = new MPopup( 
+								NULL, 
+								new BMessage(BM_ADD_FILTER), this, 
+								k[0], k[1], k[2], k[3], k[4], k[5], 
+								k[6], k[7], k[8], k[9], NULL
+							),
+							mAddToChainControl = new BmCheckControl( 
+								"Add new filter to default-chain, too", 
+								new BMessage(BM_ADD_TO_CHAIN_CHANGED), 
+								this
+							),
 							0
 						),
 						new HGroup(
-							mRemoveButton = new MButton( "Remove Filter", 
-																  new BMessage( BM_REMOVE_FILTER), 
-																  this, minimax( -1, -1, -1, -1)),
+							mRemoveButton = new MButton( 
+								"Remove Filter", 
+								new BMessage( BM_REMOVE_FILTER), 
+								this, minimax( -1, -1, -1, -1)
+							),
 							new Space(),
 							0
 						),
@@ -285,15 +296,15 @@ BmPrefsFilterView::BmPrefsFilterView()
 				new Space( minimax(0,5,0,5)),
 				mLayeredAddonGroup = new LayeredGroup(
 					// the first (more or less empty) view is used when no filter is
-					// selected or the add-on for the current filter is not available:
+					// selected or the add-on for the current filter isn't available:
 					new VGroup(
 						new Space( minimax(5,0,5,0)),
 						mInfoLabel = new MStringView( ""),
 						new Space( ),
 						0
 					),
-					// now add up to 10 addon-views (this means that Beam currently only
-					// supports 10 different filter-addon types):
+					// now add up to 10 addon-views (this means that Beam currently
+					// only supports 10 different filter-addon types):
 					prefsView[0],
 					prefsView[1],
 					prefsView[2],
@@ -335,9 +346,20 @@ BmPrefsFilterView::~BmPrefsFilterView() {
 void BmPrefsFilterView::Initialize() {
 	inherited::Initialize();
 
-	TheBubbleHelper->SetHelp( mFilterListView, "This listview shows every filter you have defined.");
-	TheBubbleHelper->SetHelp( mFilterControl, "Here you can enter a name for this filter.\nThis name is used to identify this filter in Beam.");
-	TheBubbleHelper->SetHelp( mAddToChainControl, "If checked, new filters will be added\nto the default chain automatically.");
+	TheBubbleHelper->SetHelp( 
+		mFilterListView, 
+		"This listview shows every filter you have defined."
+	);
+	TheBubbleHelper->SetHelp( 
+		mFilterControl, 
+		"Here you can enter a name for this filter.\n"
+		"This name is used to identify this filter in Beam."
+	);
+	TheBubbleHelper->SetHelp( 
+		mAddToChainControl, 
+		"If checked, new filters will be added\n"
+		"to the default chain automatically."
+	);
 
 	mFilterControl->SetTarget( this);
 	mAddToChainControl->SetTarget( this);
@@ -448,7 +470,9 @@ void BmPrefsFilterView::MessageReceived( BMessage* msg) {
 				BmTextControl* source = dynamic_cast<BmTextControl*>( srcView);
 				if ( mCurrFilter && source == mFilterControl) {
 					// rename filter:
-					TheFilterList->RenameItem( mCurrFilter->Name(), mFilterControl->Text());
+					TheFilterList->RenameItem( 
+						mCurrFilter->Name(), mFilterControl->Text()
+					);
 					NoticeChange();
 				}
 				break;
@@ -469,8 +493,12 @@ void BmPrefsFilterView::MessageReceived( BMessage* msg) {
 					if (mAddToChainControl->Value()) {
 						// add new filter to default chain:
 						BmRef< BmListModelItem> chainItem;
-						chainItem = TheFilterChainList->FindItemByKey( BM_DefaultItemLabel);
-						BmFilterChain* chain = dynamic_cast< BmFilterChain*>( chainItem.Get());
+						chainItem = TheFilterChainList->FindItemByKey( 
+							BM_DefaultItemLabel
+						);
+						BmFilterChain* chain = dynamic_cast< BmFilterChain*>( 
+							chainItem.Get()
+						);
 						if (chain) {
 							BmChainedFilter* chainedFilter 
 								= new BmChainedFilter( newFilter->Key().String(), 
@@ -483,6 +511,12 @@ void BmPrefsFilterView::MessageReceived( BMessage* msg) {
 				break;
 			}
 			case BMM_CREATE_FILTER: {
+				BmMailRefVect* refVect = NULL;
+				msg->FindPointer( BmApplication::MSG_MAILREF_VECT, 
+									  (void**)&refVect);
+				if (!refVect || refVect->empty())
+					break;
+				BmMailRef* ref = refVect->front().Get();
 				BmString key( "new filter");
 				for( int32 i=1; TheFilterList->FindItemByKey( key); ++i) {
 					key = BmString("new filter_")<<i;
@@ -490,20 +524,23 @@ void BmPrefsFilterView::MessageReceived( BMessage* msg) {
 				BmString sieveKind( "SIEVE");
 				BmFilter* newFilter = new BmFilter( key.String(), sieveKind, 
 															   TheFilterList.Get());
-				BmMailRef* ref = NULL;
-				msg->FindPointer( BmApplication::MSG_MAILREF, (void**)&ref);
 				BmFilterAddon* addon = newFilter->Addon();
 				if (ref && addon) {
-					addon->SetupFromMailData( ref->Subject(), ref->From(), ref->To());
-					ref->RemoveRef();			// msg is no longer refering to mail-ref
+					addon->SetupFromMailData( 
+						ref->Subject(), ref->From(), ref->To()
+					);
 					TheFilterList->AddItemToList( newFilter);
 					mFilterControl->MakeFocus( true);
 					mFilterControl->TextView()->SelectAll();
 					if (mAddToChainControl->Value()) {
 						// add new filter to default chain:
 						BmRef< BmListModelItem> chainItem;
-						chainItem = TheFilterChainList->FindItemByKey( BM_DefaultItemLabel);
-						BmFilterChain* chain = dynamic_cast< BmFilterChain*>( chainItem.Get());
+						chainItem = TheFilterChainList->FindItemByKey( 
+							BM_DefaultItemLabel
+						);
+						BmFilterChain* chain = dynamic_cast< BmFilterChain*>( 
+							chainItem.Get()
+						);
 						if (chain) {
 							BmChainedFilter* chainedFilter 
 								= new BmChainedFilter( newFilter->Key().String(), 
@@ -513,22 +550,31 @@ void BmPrefsFilterView::MessageReceived( BMessage* msg) {
 					}
 					NoticeChange();
 				}
+				delete [] refVect;
 				break;
 			}
 			case BM_REMOVE_FILTER: {
 				int32 buttonPressed;
 				if (msg->FindInt32( "which", &buttonPressed) != B_OK) {
 					// first step, ask user about it:
-					BAlert* alert = new BAlert( "Remove Filter", 
-														 (BmString("Are you sure about removing the filter\n\n\t<") << mCurrFilter->Name() << ">?").String(),
-													 	 "Remove", "Cancel", NULL, B_WIDTH_AS_USUAL,
-													 	 B_WARNING_ALERT);
+					BAlert* alert = new BAlert( 
+						"Remove Filter", 
+						(BmString("Are you sure about removing the filter\n\n\t<") 
+							<< mCurrFilter->Name() << ">?").String(),
+						"Remove", "Cancel", NULL, B_WIDTH_AS_USUAL,
+						B_WARNING_ALERT
+					);
 					alert->SetShortcut( 1, B_ESCAPE);
-					alert->Go( new BInvoker( new BMessage(BM_REMOVE_FILTER), BMessenger( this)));
+					alert->Go( new BInvoker( 
+						new BMessage(BM_REMOVE_FILTER), 
+						BMessenger( this)
+					));
 				} else {
 					// second step, do it if user said ok:
 					if (buttonPressed == 0) {
-						TheFilterChainList->RemoveFilterFromAllChains( mCurrFilter->Key());
+						TheFilterChainList->RemoveFilterFromAllChains( 
+							mCurrFilter->Key()
+						);
 						TheFilterList->RemoveItemFromList( mCurrFilter.Get());
 						mCurrFilter = NULL;
 						NoticeChange();
@@ -559,9 +605,12 @@ void BmPrefsFilterView::MessageReceived( BMessage* msg) {
 					alert->Go( new BInvoker( new BMessage(*msg), BMessenger( this)));
 					BmFilter* filter=NULL;
 					msg->FindPointer( MSG_ITEM, (void**)&filter);
-					BmListViewItem* filterItem = mFilterListView->FindViewItemFor( filter);
+					BmListViewItem* filterItem 
+						= mFilterListView->FindViewItemFor( filter);
 					if (filterItem)
-						mFilterListView->Select( mFilterListView->IndexOf( filterItem));
+						mFilterListView->Select( 
+							mFilterListView->IndexOf( filterItem)
+						);
 				} else {
 					// second step, set corresponding focus:
 					BmString fieldName;
@@ -595,19 +644,23 @@ void BmPrefsFilterView::ShowFilter( int32 selection) {
 		mLayeredAddonGroup->ActivateLayer( 0);
 		mFilterControl->SetTextSilently( "");
 	} else {
-		BmFilterItem* filterItem = dynamic_cast<BmFilterItem*>(mFilterListView->ItemAt( selection));
+		BmFilterItem* filterItem = dynamic_cast< BmFilterItem*>(
+			mFilterListView->ItemAt( selection)
+		);
 		if (filterItem) {
 			if  (mCurrFilter.Get() != filterItem->ModelItem()) {
 				mCurrFilter = dynamic_cast<BmFilter*>( filterItem->ModelItem());
 				if (mCurrFilter) {
 					mFilterControl->SetTextSilently( mCurrFilter->Name().String());
 					// now find corresponding addon-view...
-					mCurrAddonView = FilterAddonMap[mCurrFilter->Kind()].addonPrefsView;
+					mCurrAddonView 
+						= FilterAddonMap[mCurrFilter->Kind()].addonPrefsView;
 					// ...activate it (have to search through LayeredGroup, tsk!)...
 					for( int i=0; i<mLayeredAddonGroup->CountChildren(); ++i) {
-						BmFilterAddonPrefsView* view
-								= dynamic_cast< BmFilterAddonPrefsView*>( 
-																	mLayeredAddonGroup->ChildAt( i));
+						BmFilterAddonPrefsView* view 
+							= dynamic_cast< BmFilterAddonPrefsView*>( 
+									mLayeredAddonGroup->ChildAt( i)
+							  );
 						if (view == mCurrAddonView)
 							mLayeredAddonGroup->ActivateLayer( i);
 					}
@@ -617,7 +670,10 @@ void BmPrefsFilterView::ShowFilter( int32 selection) {
 					else {
 						// addon has not been loaded, we tell user:
 						mLayeredAddonGroup->ActivateLayer( 0);
-						BmString s = BmString("The corresponding add-on (")<<mCurrFilter->Kind()<<") could not be loaded, so this filter has been disabled!";
+						BmString s = BmString("The corresponding add-on (")
+											<< mCurrFilter->Kind() 
+											<< ") could not be loaded, so this filter "
+											<< "has been disabled!";
 						mInfoLabel->SetText( s.String());
 					}
 				}
@@ -631,7 +687,9 @@ void BmPrefsFilterView::ShowFilter( int32 selection) {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-CLVContainerView* BmPrefsFilterView::CreateFilterListView( minimax minmax, int32 width, int32 height) {
+CLVContainerView* BmPrefsFilterView::CreateFilterListView( minimax minmax, 
+																			  int32 width, 
+																			  int32 height) {
 	mFilterListView = BmFilterView::CreateInstance( minmax, width, height);
 	mFilterListView->ClickSetsFocus( true);
 	return mFilterListView->ContainerView();

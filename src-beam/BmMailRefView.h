@@ -101,12 +101,12 @@ public:
 	// native methods:
 	void ShowFolder( BmMailFolder* folder);
 	inline void TeamUpWith( BmMailView* mv) 	{ mPartnerMailView = mv; }
-	void AddSelectedRefsToMsg( BMessage* msg, BmString fieldName);
+	void AddSelectedRefsToMsg( BMessage* msg);
 	void ShowMenu( BPoint point);
 	static void AddMailRefMenu( BMenu* menu, BHandler* target,
 										 bool isContextMenu);
 	void SendNoticesIfNeeded( bool haveSelectedRef);
-	void RemoveSelectedMessagesFromView();
+	void TrashSelectedMessages();
 
 	// overrides of listview base:
 	void KeyDown(const char *bytes, int32 numBytes);

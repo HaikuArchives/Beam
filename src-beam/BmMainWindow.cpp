@@ -502,10 +502,7 @@ void BmMainWindow::MessageReceived( BMessage* msg) {
 				break;
 			}
 			case BMM_TRASH: {
-				mMailRefView->AddSelectedRefsToMsg( msg, 
-																BmApplication::MSG_MAILREF);
-				mMailRefView->RemoveSelectedMessagesFromView();
-				be_app_messenger.SendMessage( msg);
+				mMailRefView->TrashSelectedMessages();
 				break;
 			}
 			case BMM_MOVE:
@@ -520,15 +517,13 @@ void BmMainWindow::MessageReceived( BMessage* msg) {
 			case BMM_FORWARD_INLINE:
 			case BMM_FORWARD_INLINE_ATTACH: 
 			case BMM_EDIT_AS_NEW: {
-				mMailRefView->AddSelectedRefsToMsg( msg, 
-																BmApplication::MSG_MAILREF);
+				mMailRefView->AddSelectedRefsToMsg( msg);
 				be_app_messenger.SendMessage( msg);
 				break;
 			}
 			case BMM_FILTER: {
 				BMessage tmpMsg( BM_JOBWIN_FILTER);
-				mMailRefView->AddSelectedRefsToMsg( &tmpMsg, 
-																BmApplication::MSG_MAILREF);
+				mMailRefView->AddSelectedRefsToMsg( &tmpMsg);
 				BmString jobName = msg->FindString( BmListModel::MSG_ITEMKEY);
 				if (jobName.Length()) {
 					tmpMsg.AddString( BmListModel::MSG_ITEMKEY, jobName.String());
@@ -540,8 +535,7 @@ void BmMainWindow::MessageReceived( BMessage* msg) {
 				break;
 			}
 			case BMM_CREATE_FILTER: {
-				mMailRefView->AddSelectedRefsToMsg( msg, 
-																BmApplication::MSG_MAILREF);
+				mMailRefView->AddSelectedRefsToMsg( msg);
 				BMessage appMsg( BMM_PREFERENCES);
 				appMsg.AddString( "SubViewName", "Filters");
 				appMsg.AddMessage( "SubViewMsg", msg);

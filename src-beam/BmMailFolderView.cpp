@@ -283,19 +283,22 @@ bool BmMailFolderView::AcceptsDropOf( const BMessage* msg) {
 \*------------------------------------------------------------------------------*/
 void BmMailFolderView::HandleDrop( const BMessage* msg) {
 	static int jobNum = 1;
-	if (msg && mCurrHighlightItem
-	&& (msg->what == B_SIMPLE_DATA)) {
-		BmMailFolder* folder( 
+	type_code tc;
+	int32 refCount;
+	if (msg && mCurrHighlightItem	&& (msg->what == B_SIMPLE_DATA)
+	&& msg->GetInfo( "refs", &tc, &refCount) == B_OK) {
+		BmRef<BmMailFolder> folder( 
 			dynamic_cast<BmMailFolder*>( mCurrHighlightItem->ModelItem())
 		);
 		if (folder) {
 			BMessage tmpMsg( BM_JOBWIN_MOVEMAILS);
 			entry_ref eref;
-			for(	int i=0; 
-					msg->FindRef( BmMailMover::MSG_REFS, i, &eref)==B_OK; 
-					++i) {
-				tmpMsg.AddRef( BmMailMover::MSG_REFS, &eref);
-			}
+			entry_ref* refs = new entry_ref [refCount];
+			int i=0;
+			while(  msg->FindRef( "refs", i, &refs[i]) == B_OK)
+				++i;
+			tmpMsg.AddPointer( BmMailMover::MSG_REFS, (void*)refs);
+			tmpMsg.AddInt32( BmMailMover::MSG_REF_COUNT, i);
 			BmString jobName = folder->Name();
 			jobName << jobNum++;
 			tmpMsg.AddString( BmJobModel::MSG_JOB_NAME, jobName.String());

@@ -426,57 +426,34 @@ void BmMailRefView::MessageReceived( BMessage* msg) {
 }
 
 /*------------------------------------------------------------------------------*\
-	RemoveSelectedMessagesFromView()
+	TrashSelectedMessages()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmMailRefView::RemoveSelectedMessagesFromView() { 
-	vector< BmIndexDesc> indexVect;
-	vector< BListItem*> itemVect;
-	int32 currIdx;
-	int32 index=-1;
-	// note down selection:
-	for( int32 i=0; (currIdx=CurrentSelection( i))>=0; ++i) {
-		if (index==-1 || indexVect[index].end != currIdx-1) {
-			indexVect.push_back( BmIndexDesc( currIdx));
-			index++;
-		} else
-			indexVect[index].end = currIdx;
-		itemVect.push_back( ItemAt( currIdx));
-	}
-	if (indexVect.empty())
-		return;
+void BmMailRefView::TrashSelectedMessages() {
+	BMessage msg(BMM_TRASH);
+	AddSelectedRefsToMsg( &msg);
 
-	bool selectNext = ThePrefs->GetBool( "SelectNextMailAfterDelete", true);
-	// now move cursor onwards...
-	if (selectNext && indexVect.back().end < CountItems()-1)
-		Select( indexVect.back().end+1);		
+	// note down selection...
+	int32 firstIdx = CurrentSelection( 0);
+	int32 currIdx;
+	int32 lastIdx;
+	for( int32 i=0; (currIdx=CurrentSelection( i))>=0; ++i)
+		lastIdx = currIdx;
+
+	// ...and move cursor onwards...
+	bool selectNext 
+		= ThePrefs->GetBool( "SelectNextMailAfterDelete", true);
+	if (selectNext && lastIdx < CountItems()-1)
+		Select( lastIdx+1);
 				// select next item that remains in list
-	else if (selectNext && indexVect.front().start > 0)
-		Select( indexVect.front().start-1);		
+	else if (selectNext && firstIdx > 0)
+		Select( firstIdx-1);
 				// select last item that remains in list
 	else
 		DeselectAll();
 
-	// remove view-items immediately because that looks better and it 
-	// avoids that the user erraneously deletes a mail that is already
-	// on the way to trash (just has not been done yet):
-	for( int32 i=indexVect.size()-1; i>=0; --i) {
-		RemoveItems( indexVect[i].start, 
-						 1+indexVect[i].end-indexVect[i].start);
-	}
-	ScrollToSelection();
-	UpdateCaption();
-	{	// scope for lock
-		BmAutolockCheckGlobal lock( DataModel()->ModelLocker());
-		if (!lock.IsLocked())
-			BM_THROW_RUNTIME( BmString() << ControllerName() 
-										<< "KeyDown(): Unable to lock model");
-		for( uint32 i=0; i<itemVect.size(); ++i) {
-			doRemoveModelItem( 
-				((BmListViewItem*)itemVect[i])->ModelItem()
-			);
-		}
-	}
+	// ...finally tell app to delete mails:
+	be_app_messenger.SendMessage( &msg);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -505,10 +482,7 @@ void BmMailRefView::KeyDown(const char *bytes, int32 numBytes) {
 				break;
 			}
 			case B_DELETE: {
-				BMessage msg(BMM_TRASH);
-				AddSelectedRefsToMsg( &msg, BmApplication::MSG_MAILREF);
-				RemoveSelectedMessagesFromView();
-				be_app_messenger.SendMessage( &msg);
+				TrashSelectedMessages();
 				break;
 			}
 			default:
@@ -626,12 +600,18 @@ bool BmMailRefView::AcceptsDropOf( const BMessage* msg) {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmMailRefView::HandleDrop( const BMessage* msg) {
-	if (mCurrFolder && msg && msg->what == B_SIMPLE_DATA) {
+	type_code tc;
+	int32 refCount;
+	if (mCurrFolder && msg && msg->what == B_SIMPLE_DATA
+	&& msg->GetInfo( "refs", &tc, &refCount) == B_OK) {
 		BMessage tmpMsg( BM_JOBWIN_MOVEMAILS);
 		entry_ref eref;
-		for( int i=0; msg->FindRef( BmMailMover::MSG_REFS, i, &eref)==B_OK; ++i) {
-			tmpMsg.AddRef( BmMailMover::MSG_REFS, &eref);
-		}
+		entry_ref* refs = new entry_ref [refCount];
+		int i=0;
+		while(  msg->FindRef( "refs", i, &refs[i]) == B_OK)
+			++i;
+		tmpMsg.AddPointer( BmMailMover::MSG_REFS, (void*)refs);
+		tmpMsg.AddInt32( BmMailMover::MSG_REF_COUNT, i);
 		tmpMsg.AddString( BmJobModel::MSG_JOB_NAME, mCurrFolder->Name().String());
 		tmpMsg.AddString( BmJobModel::MSG_MODEL, mCurrFolder->Key().String());
 		TheJobStatusWin->PostMessage( &tmpMsg);
@@ -707,10 +687,10 @@ BMessage* BmMailRefView::DefaultLayout()		{
 }
 
 /*------------------------------------------------------------------------------*\
-	AddSelectedRefsToMsg( msg, fieldName)
+	AddSelectedRefsToMsg( msg)
 		-	
 \*------------------------------------------------------------------------------*/
-void BmMailRefView::AddSelectedRefsToMsg( BMessage* msg, BmString fieldName) {
+void BmMailRefView::AddSelectedRefsToMsg( BMessage* msg) {
 	if (mPartnerMailView) {
 		BmString selectedText;
 		int32 start, finish;
@@ -723,27 +703,17 @@ void BmMailRefView::AddSelectedRefsToMsg( BMessage* msg, BmString fieldName) {
 	}
 	BMessenger msngr( this);
 	msg->AddMessenger( BmApplication::MSG_SENDING_REFVIEW, msngr);
-	BmMailRefItem* refItem;
 	int32 selected = -1;
-	int32 numSelected = 0;
-	while( (selected = CurrentSelection(numSelected)) >= 0)
-		numSelected++;
-	if (numSelected) {
-		BmMailRef* ref = NULL;
-		int32 idx=0;
-		while( (selected = CurrentSelection(idx)) >= 0) {
-			refItem = dynamic_cast<BmMailRefItem*>(ItemAt( selected));
-			if (refItem) {
-				ref = refItem->ModelItem();
-				ref->AddRef();
-								// the message will refer to the mailRef, too
-			} else
-				ref = NULL;
-			msg->AddData( fieldName.String(), B_POINTER_TYPE, 
-							  static_cast< void*>( &ref), sizeof( void*), 
-							  true, numSelected);
-			idx++;
+	if (CurrentSelection(0) >= 0) {
+		BmMailRefVect* refs = new BmMailRefVect();
+		BmMailRefItem* refItem;
+		for( int32 idx=0; (selected = CurrentSelection(idx)) >= 0; ++idx) {
+			refItem = dynamic_cast<BmMailRefItem*>( ItemAt( selected));
+			if (refItem)
+				refs->push_back( refItem->ModelItem());
 		}
+		msg->AddPointer( BmApplication::MSG_MAILREF_VECT, 
+						  	  static_cast< void*>( refs));
 	}
 }
 

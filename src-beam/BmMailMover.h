@@ -32,8 +32,6 @@
 #ifndef _BmMailMover_h
 #define _BmMailMover_h
 
-#include <memory>
-
 #include <Message.h>
 
 #include "BmDataModel.h"
@@ -62,8 +60,11 @@ public:
 	static const char* const MSG_TRAILING;
 	static const char* const MSG_LEADING;
 	static const char* const MSG_REFS;
+	static const char* const MSG_REF_COUNT;
 
-	BmMailMover( const BmString& name, BList* refList, BmMailFolder* destFolder);
+	BmMailMover( const BmString& name, entry_ref* refs, int32 refCount,
+					 BmMailFolder* destFolder);
+							// BmMailMover takes ownership of given refs-array!
 	virtual ~BmMailMover();
 
 	inline BmString Name() const			{ return ModelName(); }
@@ -74,7 +75,8 @@ private:
 	void UpdateStatus( const float delta, const char* filename, 
 							 const char* currentCount);
 	
-	BList* mRefList;
+	entry_ref* mRefs;
+	int32 mRefCount;
 	BmMailFolder* mDestFolder;
 
 	// Hide copy-constructor and assignment:
