@@ -44,6 +44,7 @@ using namespace regexx;
 
 BmString BM_SPACES("                                                                                                                                                                                    ");
 BmString BM_DEFAULT_STRING;
+BmString BM_DefaultItemLabel("<default>");
 
 /*------------------------------------------------------------------------------*\
 	FindMsgString( archive, name)
@@ -332,8 +333,9 @@ void WordWrap( const BmString& in, BmString& out, int32 maxLineLen, BmString nl,
 				lineLen++;
 			}
 		}
-		if (!needBreak)
-			tempIO.Write( in.String()+lastPos, nl.Length()+pos-lastPos);
+		if (needBreak)
+			break;
+		tempIO.Write( in.String()+lastPos, nl.Length()+pos-lastPos);
 	}
 	if (lastPos < in.Length())
 		tempIO.Write( in.String()+lastPos, in.Length()-lastPos);

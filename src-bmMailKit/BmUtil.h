@@ -39,6 +39,7 @@
 
 extern BmString BM_SPACES;
 extern BmString BM_DEFAULT_STRING;
+extern BmString BM_DefaultItemLabel;
 
 /*------------------------------------------------------------------------------*\
 	ShowAlert( text)
