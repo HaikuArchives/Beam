@@ -38,6 +38,7 @@
 #include <Picture.h>
 #include <Resources.h>
 #include <TranslationUtils.h>
+#include <TranslatorRoster.h>
 #include <View.h>
 
 #include "BmBasics.h"
@@ -200,10 +201,25 @@ void BmResources::FetchIcons() {
 	size_t length;
 	char *data;
 	BmString iconPath = ThePrefs->GetString("IconPath");
+	BTranslatorRoster pngTR;
+	// first try "local" version of PNGTranslator...
+	pngTR.AddTranslators( "/boot/home/config/add-ons/Translators/PNGTranslator");
+	// AddTranslators() *always* returns B_OK, even if translator wasn't found,
+	// so we fetch info about loaded translators manually:
+	translator_id* trIDs = NULL;
+	int32 trCount=0;
+	pngTR.GetAllTranslators(&trIDs, &trCount);
+	delete [] trIDs;
+	if (!trCount)
+		// no translator found, try "system" version of PNGTranslator...
+		pngTR.AddTranslators("/system/add-ons/Translators/PNGTranslator");
 	for( 	int32 i=0; 
 			res->GetResourceInfo( iconType, i, &id, &name, &length); i++) {
 		BmString picFile = iconPath + "/" + name;
-		BBitmap* bitmap = BTranslationUtils::GetBitmap( picFile.String());
+		BBitmap* bitmap = BTranslationUtils::GetBitmap( picFile.String(), &pngTR);
+		if (!bitmap)
+			// PNG not available (or file is no PNG), try any translator:
+			bitmap = BTranslationUtils::GetBitmap( picFile.String());
 		if (!bitmap) {
 			// load default pic from resources:
 			if (!(data = (char*)res->LoadResource( iconType, id, &length))) {
