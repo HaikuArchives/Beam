@@ -192,6 +192,7 @@ BmSmtpAccountList::BmSmtpAccountList( BLooper* jobMetaController)
 	:	inherited( "SmtpAccountList")
 	,	mJobMetaController( jobMetaController)
 {
+	NeedControllersToContinue( false);
 }
 
 /*------------------------------------------------------------------------------*\
