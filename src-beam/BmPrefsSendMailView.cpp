@@ -415,10 +415,13 @@ void BmPrefsSendMailView::Initialize() {
 	TheBubbleHelper->SetHelp( 
 		mAuthControl, 
 		"Here you can select the authentication type to use:\n"
-		"<none> -  is the default mode, no authentication at all.\n"
-		"PLAIN  -  is a simple auth-mode which sends passwords in cleartext\n"
-		"LOGIN  -  is another simple auth-mode that sends passwords in cleartext\n"
-		"SMTP-AFTER-POP  -  does SMTP-authentication via the use of a POP3-server."
+		"<AUTO> means the best (safest) available mode is used automatically.\n"
+		"DIGEST-MD5 is safe, neither password nor user are sent in cleartext.\n"
+		"CRAM-MD5 is safe, neither password nor user are sent in cleartext.\n"
+		"PLAIN is a simple auth-mode which sends passwords in cleartext\n"
+		"LOGIN is another simple auth-mode that sends passwords in cleartext\n"
+		"SMTP-AFTER-POP does SMTP-authentication via the use of a POP3-server."
+		"<none> is the simplest mode, no authentication at all.\n"
 	);
 	TheBubbleHelper->SetHelp( 
 		mPopControl, 
@@ -441,12 +444,16 @@ void BmPrefsSendMailView::Initialize() {
 	mStorePwdControl->SetTarget( this);
 
 	AddItemToMenu( mAuthControl->Menu(), 
-						new BMenuItem( BM_NoItemLabel.String(), 
+						new BMenuItem( BmSmtpAccount::AUTH_AUTO, 
 											new BMessage(BM_AUTH_SELECTED)), 
 						this);
 	AddItemToMenu( mAuthControl->Menu(), 
-						new BMenuItem( BmSmtpAccount::AUTH_SMTP_AFTER_POP, 
-											new BMessage(BM_AUTH_SELECTED)),
+						new BMenuItem( BmSmtpAccount::AUTH_DIGEST_MD5, 
+											new BMessage(BM_AUTH_SELECTED)), 
+						this);
+	AddItemToMenu( mAuthControl->Menu(), 
+						new BMenuItem( BmSmtpAccount::AUTH_CRAM_MD5, 
+											new BMessage(BM_AUTH_SELECTED)), 
 						this);
 	AddItemToMenu( mAuthControl->Menu(), 
 						new BMenuItem( BmSmtpAccount::AUTH_PLAIN, 
@@ -457,11 +464,11 @@ void BmPrefsSendMailView::Initialize() {
 											new BMessage(BM_AUTH_SELECTED)), 
 						this);
 	AddItemToMenu( mAuthControl->Menu(), 
-						new BMenuItem( BmSmtpAccount::AUTH_CRAM_MD5, 
-											new BMessage(BM_AUTH_SELECTED)), 
+						new BMenuItem( BmSmtpAccount::AUTH_SMTP_AFTER_POP, 
+											new BMessage(BM_AUTH_SELECTED)),
 						this);
 	AddItemToMenu( mAuthControl->Menu(), 
-						new BMenuItem( BmSmtpAccount::AUTH_DIGEST_MD5, 
+						new BMenuItem( BM_NoItemLabel.String(), 
 											new BMessage(BM_AUTH_SELECTED)), 
 						this);
 

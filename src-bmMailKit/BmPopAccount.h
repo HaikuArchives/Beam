@@ -159,6 +159,7 @@ public:
 
 	void AddressInfo( BmString& server, uint16& port) const;
 
+	static const char* const AUTH_AUTO;
 	static const char* const AUTH_POP3;
 	static const char* const AUTH_APOP;
 	static const char* const AUTH_CRAM_MD5;

@@ -119,6 +119,7 @@ public:
 
 	void AddressInfo( BmString& server, uint16& port) const;
 
+	static const char* const AUTH_AUTO;
 	static const char* const AUTH_SMTP_AFTER_POP;
 	static const char* const AUTH_PLAIN;
 	static const char* const AUTH_LOGIN;

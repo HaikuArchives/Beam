@@ -66,8 +66,9 @@ const char* const BmPopAccount::MSG_STORE_PWD = 	"bm:storepwd";
 const char* const BmPopAccount::MSG_CHECK_INTERVAL = "bm:checkinterval";
 const char* const BmPopAccount::MSG_FILTER_CHAIN = "bm:filterch";
 const char* const BmPopAccount::MSG_HOME_FOLDER =  "bm:homefold";
-const int16 BmPopAccount::nArchiveVersion = 7;
+const int16 BmPopAccount::nArchiveVersion = 8;
 
+const char* const BmPopAccount::AUTH_AUTO = 			"<AUTO>";
 const char* const BmPopAccount::AUTH_POP3 = 			"POP3";
 const char* const BmPopAccount::AUTH_APOP = 			"APOP";
 const char* const BmPopAccount::AUTH_CRAM_MD5 = 	"CRAM-MD5";
@@ -191,6 +192,11 @@ BmPopAccount::BmPopAccount( BMessage* archive, BmPopAccountList* model)
 		// load attributes introduced in version 7:
 		mDeleteMailDelay = archive->FindInt16( MSG_DELETE_DELAY);
 		mDeleteMailDelayString << mDeleteMailDelay;
+	}
+	if (version <= 7) {
+		// with version 8 we introduce auto-detection of best authentication
+		// method. This is now the default:
+		mAuthMethod = AUTH_AUTO;
 	}
 	SetupIntervalRunner();
 }

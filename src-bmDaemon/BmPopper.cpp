@@ -337,7 +337,8 @@ void BmPopper::StateLogin() {
 	bool pwdOK = false;
 	bool first = true;
 	BmString authMethod = mPopAccount->AuthMethod();
-	authMethod.ToUpper();
+	if (authMethod == BmPopAccount::AUTH_AUTO)
+		authMethod = SuggestAuthType();
 	while(!pwdOK) {
 		bool pwdGiven = false;
 		if (first && mPopAccount->PwdStoredOnDisk()) {

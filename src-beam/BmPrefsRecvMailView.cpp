@@ -493,8 +493,11 @@ void BmPrefsRecvMailView::Initialize() {
 	TheBubbleHelper->SetHelp( 
 		mAuthControl, 
 		"Here you can select the authentication type to use:\n"
-		"POP3  -  is the standard mode, which sends passwords in cleartext\n"
-		"APOP  -  is a somewhat safer mode, passwords are encrypted."
+		"<AUTO>		- means the best (safest) available mode is used automatically.\n"
+		"DIGEST-MD5 - is safe, neither password nor user or sent in clear.\n"
+		"CRAM-MD5   - is safe, neither password nor user or sent in clear.\n"
+		"APOP       - is somewhat safe, password is encrypted (but user isn't).\n"
+		"POP3       - is very unsafe, password is sent in cleartext"
 	);
 	TheBubbleHelper->SetHelp( 
 		mHomeFolderControl, 
@@ -536,11 +539,11 @@ void BmPrefsRecvMailView::Initialize() {
 	mStorePwdControl->SetTarget( this);
 
 	AddItemToMenu( mAuthControl->Menu(), 
-						new BMenuItem( BmPopAccount::AUTH_POP3, 
+						new BMenuItem( BmPopAccount::AUTH_AUTO, 
 											new BMessage(BM_AUTH_SELECTED)), 
 						this);
 	AddItemToMenu( mAuthControl->Menu(), 
-						new BMenuItem( BmPopAccount::AUTH_APOP, 
+						new BMenuItem( BmPopAccount::AUTH_DIGEST_MD5, 
 											new BMessage(BM_AUTH_SELECTED)), 
 						this);
 	AddItemToMenu( mAuthControl->Menu(), 
@@ -548,7 +551,11 @@ void BmPrefsRecvMailView::Initialize() {
 											new BMessage(BM_AUTH_SELECTED)), 
 						this);
 	AddItemToMenu( mAuthControl->Menu(), 
-						new BMenuItem( BmPopAccount::AUTH_DIGEST_MD5, 
+						new BMenuItem( BmPopAccount::AUTH_APOP, 
+											new BMessage(BM_AUTH_SELECTED)), 
+						this);
+	AddItemToMenu( mAuthControl->Menu(), 
+						new BMenuItem( BmPopAccount::AUTH_POP3, 
 											new BMessage(BM_AUTH_SELECTED)), 
 						this);
 

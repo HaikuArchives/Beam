@@ -421,7 +421,8 @@ void BmSmtp::StateAuth() {
 	bool pwdOK = false;
 	bool first = true;
 	BmString authMethod = mSmtpAccount->AuthMethod();
-	authMethod.ToUpper();
+	if (authMethod == BmSmtpAccount::AUTH_AUTO)
+		authMethod = SuggestAuthType();
 	if (!authMethod.Length())
 		return;			// no authentication needed...
 	while(!pwdOK) {
