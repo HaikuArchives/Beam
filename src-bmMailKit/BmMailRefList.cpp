@@ -9,12 +9,12 @@
 #include <Path.h>
 #include <Query.h>
 
-#include "BmApp.h"
 #include "BmLogHandler.h"
 #include "BmMailFolder.h"
 #include "BmMailRef.h"
 #include "BmMailRefList.h"
 #include "BmPrefs.h"
+#include "BmResources.h"
 #include "BmUtil.h"
 
 /*------------------------------------------------------------------------------*\
@@ -22,7 +22,7 @@
 		-	standard c'tor
 \*------------------------------------------------------------------------------*/
 BmMailRefList::BmMailRefList( BmMailFolder* folder, bool updateCache)
-	:	BmListModel( BString("MailRefList_") << folder->Key())
+	:	BmListModel( BString("MailRefList_") << folder->Key() << " (" << folder->Name()<<")")
 	,	mFolder( folder)
 	,	mInitCheck( B_NO_INIT)
 	,	mUpdateCache( updateCache)
@@ -45,7 +45,8 @@ BmMailRefList::~BmMailRefList() {
 void BmMailRefList::Cleanup() {
 	BmModelItemMap::const_iterator iter;
 	for( iter = begin(); iter != end(); ++iter) {
-		delete iter->second;
+		BmMailRef* item = (BmMailRef*)iter->second;
+		delete item;
 	}
 	mModelItemMap.clear();
 	mInitCheck = B_NO_INIT;
@@ -85,10 +86,10 @@ void BmMailRefList::StartJob() {
 			return;
 		}
 	
-		BString filename = BString("folder_") << mFolder->Key();
+		BString filename = BString("folder_") << mFolder->Key()<<" ("<<mFolder->Name()<<")";
 	
 		if (!mUpdateCache 
-		&& (err = cacheFile.SetTo( bmApp->MailCacheFolder(), filename.String(), B_READ_ONLY)) == B_OK) {
+		&& (err = cacheFile.SetTo( TheResources->MailCacheFolder(), filename.String(), B_READ_ONLY)) == B_OK) {
 			// ...ok, cache-file found, we fetch our data from it:
 			BMessage archive;
 			(err = archive.Unflatten( &cacheFile)) == B_OK
@@ -159,7 +160,7 @@ void BmMailRefList::InitializeMailRefs() {
 		Cleanup();
 	} else {
 		mUpdateCache = false;
-		mStoreCache = false;
+		mStoreCache = true;
 		mInitCheck = B_OK;
 	}
 }
@@ -205,9 +206,9 @@ void BmMailRefList::InstantiateMailRefs( BMessage* archive) {
 			is deactivated
 \*------------------------------------------------------------------------------*/
 void BmMailRefList::RemoveController( BmController* controller) {
-	inheritedModel::RemoveController( controller);
 	Store();
-	if (!(bmApp->Prefs->RefCaching() || HasControllers())) {
+	inheritedModel::RemoveController( controller);
+	if (!(ThePrefs->RefCaching() || HasControllers())) {
 		mFolder->RemoveMailRefList();
 	}
 }
@@ -225,10 +226,10 @@ bool BmMailRefList::Store() {
 	try {
 		BAutolock lock( mModelLocker);
 		lock.IsLocked() 						|| BM_THROW_RUNTIME( ModelName() << ":Store(): Unable to get lock");
-		BString filename = BString("folder_") << mFolder->Key();
+		BString filename = BString("folder_") << mFolder->Key()<<" ("<<mFolder->Name()<<")";
 		this->Archive( &archive, true) == B_OK
 													|| BM_THROW_RUNTIME("Unable to archive BmMailRefList-object");
-		(err = cacheFile.SetTo( bmApp->MailCacheFolder(), filename.String(), 
+		(err = cacheFile.SetTo( TheResources->MailCacheFolder(), filename.String(), 
 										B_WRITE_ONLY | B_CREATE_FILE | B_ERASE_FILE)) == B_OK
 													|| BM_THROW_RUNTIME( BString("Could not create mail-cache file\n\t<") << filename << ">\n\n Result: " << strerror(err));
 		(err = archive.Flatten( &cacheFile)) == B_OK

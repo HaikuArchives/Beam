@@ -14,6 +14,8 @@
 #include "BmController.h"
 #include "BmDataModel.h"
 
+class BmBusyView;
+class BmCaption;
 class BmListViewController;
 
 typedef uint32 BmUpdFlags;
@@ -68,6 +70,40 @@ protected:
 };
 
 /*------------------------------------------------------------------------------*\
+	BmCLVContainerView
+		-	
+\*------------------------------------------------------------------------------*/
+class BmCLVContainerView : public CLVContainerView
+{
+	typedef CLVContainerView inherited;
+public:
+	BmCLVContainerView( minimax minmax, ColumnListView* target, uint32 resizingMode, 
+							  uint32 flags, bool horizontal, bool vertical,
+							  bool scroll_view_corner, border_style border, 
+							  bool showCaption=false, bool showBusyView=false,
+							  float captionWidth=-1);
+	~BmCLVContainerView();
+	
+	// native methods:
+	void SetBusy();
+	void UnsetBusy();
+	void PulseBusyView();
+
+	// overrides of MView base:
+	BRect layout( BRect);
+	
+	// setters:
+	void SetCaptionText( const char* text);
+	void SetCaptionWidth( float width) 	{ mCaptionWidth = width; }
+
+private:
+	BmCaption* mCaption;
+	float mCaptionWidth;
+	BmBusyView* mBusyView;
+
+};
+
+/*------------------------------------------------------------------------------*\
 	BmListViewController
 		-	
 \*------------------------------------------------------------------------------*/
@@ -81,12 +117,14 @@ class BmListViewController : public ColumnListView, public BmJobController
 	static const char* const MSG_COLUMN_POS = "bm:colps";
 
 public:
-	//
+	//c'tors and d'tor:
 	BmListViewController( minimax minmax,BRect rect,
 								 const char* Name = NULL,
 								 list_view_type Type = B_SINGLE_SELECTION_LIST,
 								 bool hierarchical = false,
-								 bool showLabelView = true);
+								 bool showLabelView = true,
+								 bool showCaption = false,
+								 bool showBusyView = false);
 	virtual ~BmListViewController();
 
 	// native methods:
@@ -96,6 +134,7 @@ public:
 	void UpdateModelItem( BMessage* msg);
 	void UpdateModelState( BMessage* msg);
 	void UpdateItem( BmListViewItem* item, BmUpdFlags flags);
+	void UpdateCaption( const char* text=NULL);
 	void ShowOrHideColumn( BMessage* msg);
 	//
 	virtual BmListViewItem* CreateListViewItem( BmListModelItem* item, 
@@ -107,13 +146,18 @@ public:
 	void AttachModel( BmDataModel* model=NULL);
 	void DetachModel();
 	BHandler* GetControllerHandler() 	{ return this; }
+	void StartJob( BmJobModel* model = NULL, bool startInNewThread=true);
 	void JobIsDone( bool completed);
 
 	// overrides of listview base:
+	CLVContainerView* CreateContainer( bool horizontal, bool vertical, 
+												  bool scroll_view_corner, border_style border, 
+												  uint32 ResizingMode, uint32 flags);
 	void ExpansionChanged( CLVListItem* item, bool expanded);
 	void ShowLabelViewMenu( BPoint pos);
 	void MessageReceived( BMessage* msg);
 	void MouseDown(BPoint point);
+	BmCLVContainerView* ScrollView() 	{ return dynamic_cast<BmCLVContainerView*>(fScrollView); }
 
 	// getters:
 	CLVContainerView* ContainerView()	{ return inherited::fScrollView; }
@@ -130,6 +174,9 @@ protected:
 
 	BList* mItemList;
 	BMessage* mInitialStateInfo;
+	bool mShowCaption;
+	bool mShowBusyView;
+
 };
 
 

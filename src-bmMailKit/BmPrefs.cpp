@@ -11,25 +11,30 @@
 #include <Message.h>
 #include <UTF8.h>
 
-#include "BmApp.h"
 #include "BmLogHandler.h"
 #include "BmPrefs.h"
+#include "BmResources.h"
 #include "BmUtil.h"
+
+
+BmPrefs* BmPrefs::theInstance = NULL;
 
 /*------------------------------------------------------------------------------*\
 	CreateInstance()
 		-	initialiazes preferences by reading them from a file
 		-	if no preference-file is found, default prefs are used
 \*------------------------------------------------------------------------------*/
-BmPrefs* BmPrefs::CreateInstance() 
-{
+BmPrefs* BmPrefs::CreateInstance() {
 	BmPrefs *prefs = NULL;
 	status_t err;
 	BString prefsFilename;
 	BFile prefsFile;
 
+	if (theInstance) 
+		return theInstance;
+
 	// try to open settings-file...
-	prefsFilename = BString(bmApp->SettingsPath.Path()) << "/" << PREFS_FILENAME;
+	prefsFilename = BString( TheResources->SettingsPath.Path()) << "/" << PREFS_FILENAME;
 	if ((err = prefsFile.SetTo( prefsFilename.String(), B_READ_ONLY)) == B_OK) {
 		// ...ok, settings file found, we fetch our prefs from it:
 		try {
@@ -49,6 +54,7 @@ BmPrefs* BmPrefs::CreateInstance()
 		prefs->Store();
 	}
 
+	theInstance = prefs;
 	return prefs;
 }
 
@@ -61,13 +67,13 @@ BmPrefs::BmPrefs( void)
 	,	mDynamicConnectionWin( CONN_WIN_STATIC)
 	,	mReceiveTimeout( 60 )
 	,	mLoglevels( BM_LOGLVL2(BM_LogPop) 
-						+ BM_LOGLVL3(BM_LogConnWin) 
+						+ BM_LOGLVL2(BM_LogConnWin) 
 						+ BM_LOGLVL2(BM_LogMailParse) 
-						+ BM_LOGLVL3(BM_LogUtil) 
-						+ BM_LOGLVL3(BM_LogMailFolders)
-						+ BM_LOGLVL3(BM_LogFolderView)
-						+ BM_LOGLVL3(BM_LogRefView)
-						+ BM_LOGLVL3(BM_LogMainWindow)
+						+ BM_LOGLVL2(BM_LogUtil) 
+						+ BM_LOGLVL2(BM_LogMailFolders)
+						+ BM_LOGLVL2(BM_LogFolderView)
+						+ BM_LOGLVL2(BM_LogRefView)
+						+ BM_LOGLVL2(BM_LogMainWindow)
 						+ BM_LOGLVL2(BM_LogModelController)
 						)
 	,	mMailboxPath("/boot/home/mail")			// TODO: change default to .../mail
@@ -87,7 +93,7 @@ BmPrefs::BmPrefs( void)
 	}
 #endif
 	// transfer loglevel-definitions to log-handler:
-	bmApp->LogHandler->LogLevels( mLoglevels);
+	TheLogHandler->LogLevels( mLoglevels);
 	BM_LOG3( BM_LogUtil, BString("Initialized loglevels to binary value ") << s);
 }
 
@@ -108,7 +114,7 @@ BmPrefs::BmPrefs( BMessage* archive)
 	mStripedListView = FindMsgBool( archive, MSG_STRIPED_LISTVIEW);
 	mMailRefLayout = FindMsgMsg( archive, MSG_MAILREF_LAYOUT);
 	mRestoreFolderStates = FindMsgBool( archive, MSG_RESTORE_FOLDERS);
-	bmApp->LogHandler->LogLevels( mLoglevels);
+	TheLogHandler->LogLevels( mLoglevels);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -117,7 +123,9 @@ BmPrefs::BmPrefs( BMessage* archive)
 \*------------------------------------------------------------------------------*/
 BmPrefs::~BmPrefs() {
 	delete mMailRefLayout;
+	theInstance = NULL;
 }
+
 /*------------------------------------------------------------------------------*\
 	Archive( archive, deep)
 		-	writes BmPrefs into archive
@@ -158,7 +166,7 @@ bool BmPrefs::Store() {
 	status_t err;
 
 	try {
-		BString prefsFilename = BString(bmApp->SettingsPath.Path()) << "/" << PREFS_FILENAME;
+		BString prefsFilename = BString( TheResources->SettingsPath.Path()) << "/" << PREFS_FILENAME;
 		this->Archive( &archive) == B_OK
 													|| BM_THROW_RUNTIME("Unable to archive BmPrefs-object");
 		(err = prefsFile.SetTo( prefsFilename.String(), 

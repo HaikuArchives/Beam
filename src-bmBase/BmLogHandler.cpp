@@ -5,7 +5,6 @@
 
 #include <Autolock.h>
 
-#include "BmApp.h"
 #include "BmLogHandler.h"
 #include "BmUtil.h"
 
@@ -25,14 +24,45 @@ const uint32 BM_LogModelController	= 1UL<<8;
 // dummy constant meaning to log everything:
 const uint32 BM_LogAll  				= 0xffffffff;
 
-static BmLogHandler* theLogHandler = NULL;
+
+BmLogHandler* BmLogHandler::theInstance = NULL;
+
+/*------------------------------------------------------------------------------*\
+	static logging-function
+		- logs only if a loghandler is actually present
+\*------------------------------------------------------------------------------*/
+void BmLogHandler::Log( const BString& logname, uint32 flag, const BString& msg, int8 minlevel=1) { 
+	if (theInstance)
+		theInstance->LogToFile( logname, flag, msg, minlevel);
+}
+
+/*------------------------------------------------------------------------------*\
+	static logging-function
+		- logs only if a loghandler is actually present
+\*------------------------------------------------------------------------------*/
+void BmLogHandler::Log( const char* const logname, uint32 flag, const char* const msg, int8 minlevel=1) { 
+	if (theInstance)
+		theInstance->LogToFile( BString(logname), flag, BString(msg), minlevel);
+}
+
+/*------------------------------------------------------------------------------*\
+	static logging-function
+		- logs only if a loghandler is actually present
+\*------------------------------------------------------------------------------*/
+void BmLogHandler::FinishLog( const BString& logname) { 
+	if (theInstance)
+		theInstance->CloseLog( logname);
+}
 
 /*------------------------------------------------------------------------------*\
 	static creator-function
 		-
 \*------------------------------------------------------------------------------*/
 BmLogHandler* BmLogHandler::CreateInstance( uint32 logLevels) {
-	return new BmLogHandler( logLevels);
+	if (theInstance)
+		return theInstance;
+	else
+		return theInstance = new BmLogHandler( logLevels);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -44,7 +74,6 @@ BmLogHandler::BmLogHandler( uint32 logLevels)
 	,	StopWatch( "Beam_watch", true)
 	,	mLoglevels( logLevels)
 {
-	theLogHandler = this;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -57,6 +86,7 @@ BmLogHandler::~BmLogHandler() {
 			++logIter) {
 		delete (*logIter).second;
 	}
+	theInstance = NULL;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -80,6 +110,15 @@ void BmLogHandler::LogToFile( const BString &logname, uint32 flag,
 		log->Write( msg.String(), flag, minlevel, mLoglevels);
 	} else
 		throw BM_runtime_error("LogToFile(): Unable to get lock on loghandler");
+}
+
+/*------------------------------------------------------------------------------*\
+	LogToFile( logname, msg)
+		-	writes msg into the logfile that is named logname
+		-	if no logfile of given name exists, it is created
+\*------------------------------------------------------------------------------*/
+void BmLogHandler::LogToFile( const char* const logname, uint32 flag, const char* const msg, int8 minlevel=1) { 
+	LogToFile( BString(logname), flag, BString(msg), minlevel);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -116,6 +155,14 @@ BmLogHandler::BmLogfile::BmLogfile( const BString &fn)
 {}
 
 /*------------------------------------------------------------------------------*\
+	destructor
+		- standard
+\*------------------------------------------------------------------------------*/
+BmLogHandler::BmLogfile::~BmLogfile() {
+	if (logfile) fclose(logfile);
+}
+
+/*------------------------------------------------------------------------------*\
 	Write( msg)
 		-	writes given msg into log, including current timestamp
 		-	log is flushed after each write
@@ -137,6 +184,6 @@ void BmLogHandler::BmLogfile::Write( const char* const msg, uint32 flag,
 	BString s(msg);
 	s.ReplaceAll( "\r", "<CR>");
 	s.ReplaceAll( "\n", "\n                ");
-	fprintf( logfile, "<%6ld|%012Ld>: %s\n", find_thread(NULL), theLogHandler->StopWatch.ElapsedTime(), s.String());
+	fprintf( logfile, "<%6ld|%012Ld>: %s\n", find_thread(NULL), TheLogHandler->StopWatch.ElapsedTime(), s.String());
 	fflush( logfile);
 }

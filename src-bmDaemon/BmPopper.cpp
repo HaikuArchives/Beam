@@ -9,9 +9,6 @@
 #include <memory>
 #include <stdio.h>
 
-#include <Application.h>
-
-#include "BmApp.h"
 #include "BmLogHandler.h"
 #include "BmMailReceived.h"
 #include "BmMsgTypes.h"
@@ -400,7 +397,7 @@ bool BmPopper::GetAnswer( bool SingleLineMode, int32 mailNr) {
 \*------------------------------------------------------------------------------*/
 int32 BmPopper::ReceiveBlock( char* buffer, int32 max) {
 	int32 numBytes;
-	int32 AnswerTimeout = bmApp->Prefs->ReceiveTimeout()*1000*1000;
+	int32 AnswerTimeout = ThePrefs->ReceiveTimeout()*1000*1000;
 	int32 timeout = AnswerTimeout / BmPopper::FeedbackTimeout;
 	bool shouldCont;
 	for( int32 round=0; (shouldCont = ShouldContinue()) && round<timeout; ++round) {

@@ -18,7 +18,7 @@ BeamApp::BeamApp()
 {
 	try {
 		beamApp = this;
-		MainWindow = BmMainWindow::CreateInstance();
+		TheMainWindow = BmMainWindow::CreateInstance();
 		mInitCheck = B_OK;
 	}
 	catch( exception &e) {
@@ -33,15 +33,21 @@ BeamApp::~BeamApp()
 
 void BeamApp::ReadyToRun()
 {
-	MainWindow->Show();
+	TheMainWindow->Show();
 }
 
 void BeamApp::MessageReceived(BMessage* msg) {
-	switch( msg->what) {
-		case B_QUIT_REQUESTED: 
-			BM_LOG3( BM_LogAll, "App: quit requested");
-		default:
-			inherited::MessageReceived( msg);
+	try {
+		switch( msg->what) {
+			case B_QUIT_REQUESTED: 
+				BM_LOG2( BM_LogAll, "App: quit requested");
+			default:
+				inherited::MessageReceived( msg);
+		}
+	}
+	catch( exception &err) {
+		// a problem occurred, we tell the user:
+		BM_SHOWERR( BString("BeamApp: ") << err.what());
 	}
 }
 
@@ -51,7 +57,7 @@ thread_id BeamApp::Run() {
 	}
 	thread_id tid = 0;
 	try {
-		MainWindow->BeginLife();
+		TheMainWindow->BeginLife();
 		tid = inherited::Run();
 	} catch( exception &e) {
 		BM_SHOWERR( e.what());

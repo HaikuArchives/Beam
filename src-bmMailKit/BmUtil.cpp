@@ -6,10 +6,7 @@
 #include <stdio.h>
 
 #include <Alert.h>
-#include <Autolock.h>
 
-#include "BmApp.h"
-#include "BmPrefs.h"
 #include "BmUtil.h"
 
 /*------------------------------------------------------------------------------*\

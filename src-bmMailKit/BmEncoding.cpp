@@ -10,10 +10,7 @@
 #include <regexx/regexx.hh>
 using namespace regexx;
 
-#include "BmApp.h"
-#include "BmLogHandler.h"
 #include "BmEncoding.h"
-#include "BmPrefs.h"
 #include "BmUtil.h"
 
 #define HEXDIGIT2CHAR(d) (((d)>='0'&&(d)<='9') ? (d)-'0' : ((d)>='A'&&(d)<='F') ? (d)-'A'+10 : ((d)>='a'&&(d)<='f') ? (d)-'a'+10 : 0)

@@ -22,19 +22,25 @@
 class BmLogHandler {
 
 public:
-	//
+	// static functions
+	static void Log( const BString &logname, uint32 flag, const BString &msg, int8 minlevel=1);
+	static void Log( const char* const logname, uint32 flag, const char* const msg, int8 minlevel=1);
+	static void FinishLog( const BString& logname);
+
+	// creator-func, c'tors and d'tor
 	static BmLogHandler* CreateInstance( uint32 logLevels);
-	//
 	BmLogHandler( uint32 logLevels);
 	~BmLogHandler();
 
+	// native methods:
 	void CloseLog( const BString &logname);
-
 	void LogToFile( const BString &logname, uint32 flag, const BString &msg, int8 minlevel=1);
-	void LogToFile( const char* const logname, uint32 flag, const char* const msg, int8 minlevel=1)
-							{ LogToFile( BString(logname), flag, BString(msg), minlevel); }
+	void LogToFile( const char* const logname, uint32 flag, const char* const msg, int8 minlevel=1);
 
+	// setters:
 	void LogLevels( uint32 loglevels)	{ mLoglevels = loglevels; }
+
+	static BmLogHandler* theInstance;
 
 	BStopWatch StopWatch;
 
@@ -47,9 +53,8 @@ private:
 	class BmLogfile {
 	public:
 		BmLogfile( const BString &fn);
-		~BmLogfile() 							{ if (logfile) fclose(logfile); }
-		void Write( const char* const msg, uint32 flag, 
-						int8 minlevel, uint32 loglevels);
+		~BmLogfile();
+		void Write( const char* const msg, uint32 flag, int8 minlevel, uint32 loglevels);
 	
 		static BString LogPath;
 	
@@ -92,19 +97,17 @@ extern const uint32 BM_LogAll;
 #ifdef BM_LOGGING
 
 #define BM_LOG(flag,msg) \
-	bmApp->LogHandler->LogToFile( BM_LOGNAME, flag, msg)
+	BmLogHandler::Log( BM_LOGNAME, flag, msg)
 #define BM_LOG2(flag,msg) \
-	bmApp->LogHandler->LogToFile( BM_LOGNAME, flag, msg, 2)
+	BmLogHandler::Log( BM_LOGNAME, flag, msg, 2)
 #define BM_LOG3(flag,msg) \
-	bmApp->LogHandler->LogToFile( BM_LOGNAME, flag, msg, 3)
+	BmLogHandler::Log( BM_LOGNAME, flag, msg, 3)
 #define BM_LOGERR(msg) \
-	bmApp->LogHandler->LogToFile( "Errors", BM_LogAll, msg, 0)
-#define BM_LOG_FINISH(name) bmApp->LogHandler->CloseLog( name)
+	BmLogHandler::Log( "Errors", BM_LogAll, msg, 0)
+#define BM_LOG_FINISH(name) BmLogHandler::FinishLog( name)
 #define BM_LOGNAME "Beam"
 #define BM_SHOWERR(msg) \
-	{	if (bmApp->LogHandler) { \
-			bmApp->LogHandler->LogToFile( BM_LOGNAME, BM_LogAll, msg, 0); \
-		}\
+	{	BmLogHandler::Log( BM_LOGNAME, BM_LogAll, msg, 0); \
 		BM_LOGERR(msg); \
 		ShowAlert( msg);	}
 
@@ -120,5 +123,6 @@ extern const uint32 BM_LogAll;
 
 #endif
 
+#define TheLogHandler BmLogHandler::theInstance
 
 #endif

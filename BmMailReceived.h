@@ -8,6 +8,7 @@
 
 #include <map>
 
+#include <Entry.h>
 #include <String.h>
 
 #include "BmUtil.h"

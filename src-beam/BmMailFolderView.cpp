@@ -5,18 +5,19 @@
 
 #include <String.h>
 
-#include "BmApp.h"
 #include "BmLogHandler.h"
 #include "BmMailFolder.h"
 #include "BmMailFolderList.h"
 #include "BmMailFolderView.h"
 #include "BmMailRefView.h"
 #include "BmPrefs.h"
+#include "BmResources.h"
 #include "BmUtil.h"
 
 /********************************************************************************\
 	BmMailFolderItem
 \********************************************************************************/
+
 
 
 /*------------------------------------------------------------------------------*\
@@ -55,9 +56,9 @@ void BmMailFolderItem::UpdateView( BmUpdFlags flags) {
 		SetColumnContent( COL_NAME, displayName.String(), false);
 		BBitmap* icon;
 		if (folder->NewMailCount())
-			icon = bmApp->IconMap["Folder_WithNew"];
+			icon = TheResources->IconMap["Folder_WithNew"];
 		else
-			icon = bmApp->IconMap["Folder"];
+			icon = TheResources->IconMap["Folder"];
 		SetColumnContent( COL_ICON, icon, 2.0, false);
 	}
 }
@@ -69,13 +70,17 @@ void BmMailFolderItem::UpdateView( BmUpdFlags flags) {
 \********************************************************************************/
 
 
+BmMailFolderView* BmMailFolderView::theInstance = NULL;
+
 /*------------------------------------------------------------------------------*\
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmMailFolderView* BmMailFolderView::CreateInstance(  minimax minmax, int32 width, int32 height) {
-	BmMailFolderView* mailFolderView = new BmMailFolderView( minmax, width, height);
-	return mailFolderView;
+BmMailFolderView* BmMailFolderView::CreateInstance( minimax minmax, int32 width, int32 height) {
+	if (theInstance)
+		return theInstance;
+	else 
+		return theInstance = new BmMailFolderView( minmax, width, height);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -102,6 +107,7 @@ BmMailFolderView::BmMailFolderView( minimax minmax, int32 width, int32 height)
 		-	
 \*------------------------------------------------------------------------------*/
 BmMailFolderView::~BmMailFolderView() {
+	theInstance = NULL;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -110,7 +116,7 @@ BmMailFolderView::~BmMailFolderView() {
 \*------------------------------------------------------------------------------*/
 BmListViewItem* BmMailFolderView::CreateListViewItem( BmListModelItem* item,
 																		BMessage* archive) {
-	if (bmApp->Prefs->RestoreFolderStates())
+	if (ThePrefs->RestoreFolderStates())
 		return new BmMailFolderItem( item->Key(), item, true, archive);
 	else
 		return new BmMailFolderItem( item->Key(), item, true, NULL);
@@ -145,7 +151,7 @@ void BmMailFolderView::SelectionChanged( void) {
 		if (folderItem) {
 			BmMailFolder* folder = dynamic_cast<BmMailFolder*>(folderItem->ModelItem());
 			if (folder)
-				bmApp->MailRefView->ShowFolder( folder);
+				TheMailRefView->ShowFolder( folder);
 		}
 	}
 }

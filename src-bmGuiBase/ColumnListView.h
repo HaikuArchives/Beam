@@ -235,6 +235,7 @@ class ColumnListView : public BListView
 		static int PlainBListSortFunc(BListItem** item1, BListItem** item2);
 		static int HierarchicalBListSortFunc(BListItem** item1, BListItem** item2);
 		void AssertWindowLocked() const;
+		virtual CLVContainerView* ScrollView() 	{ return fScrollView; }
 
 		CLVColumnLabelView* fColumnLabelView;
 		CLVContainerView* fScrollView;

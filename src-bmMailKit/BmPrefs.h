@@ -32,20 +32,18 @@ class BmPrefs : public BArchivable {
 	static const char* const PREFS_FILENAME = 			"General Settings";
 
 public:
-	//
+	// creator-func, c'tors and d'tor:
 	static BmPrefs* CreateInstance();
-	//
 	BmPrefs( void);
 	BmPrefs( BMessage* archive);
 	virtual ~BmPrefs();
 
+	// native methods:
 	bool Store();
-	
-	// stuff needed for BArchivable:
-	static BArchivable* Instantiate( BMessage* archive)
-			;
-	virtual status_t Archive( BMessage* archive, bool deep = true) const
-			;
+
+	// overrides of BArchivable base:
+	static BArchivable* Instantiate( BMessage* archive);
+	status_t Archive( BMessage* archive, bool deep = true) const;
 
 	// possible modes of BmConnectionWin:
 	enum TConnWinMode {
@@ -76,6 +74,7 @@ public:
 	void MailRefLayout( BMessage* m) 	{ mMailRefLayout = m; }
 	void RestoreFolderStates( bool b) 	{ mRestoreFolderStates = b; }
 
+	static BmPrefs* theInstance;
 
 private:
 	// TODO: make these configurable by user (i.e. write a GUI):
@@ -116,5 +115,7 @@ private:
 							// (e.g. expanded or not) will be restored as they were at the
 							// end of the last sesson.
 };
+
+#define ThePrefs BmPrefs::theInstance
 
 #endif

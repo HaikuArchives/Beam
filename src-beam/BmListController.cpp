@@ -8,13 +8,16 @@
 #include <Autolock.h>
 #include <MenuItem.h>
 #include <PopUpMenu.h>
+#include <StringView.h>
+#include <Window.h>
 
-#include "BmApp.h"
-#include "BmListController.h"
+#include "BmBusyView.h"
+#include "BmCaption.h"
 #include "BmDataModel.h"
+#include "BmListController.h"
 #include "BmLogHandler.h"
 #include "BmMsgTypes.h"
-#include "BmPrefs.h"
+#include "BmResources.h"
 #include "BmUtil.h"
 
 //#include <Profile.h>
@@ -31,7 +34,7 @@
 \*------------------------------------------------------------------------------*/
 BmListViewItem::BmListViewItem( BString& key, BmListModelItem* modelItem,
 										  bool hierarchical, BMessage* archive)
-	:	inherited( 0, !modelItem->empty(), false, MAX(bmApp->FontLineHeight(), 18))
+	:	inherited( 0, !modelItem->empty(), false, MAX( TheResources->FontLineHeight(), 18))
 	,	mKey( key)
 	,	mModelItem( modelItem)
 	,	mSubItemList( NULL)
@@ -130,12 +133,14 @@ void BmListViewItem::AddSubItemsToList( BmListViewController* view) {
 \*------------------------------------------------------------------------------*/
 BmListViewController::BmListViewController( minimax minmax, BRect rect,
 								 const char* Name, list_view_type Type, bool hierarchical, 
-								 bool showLabelView)
+								 bool showLabelView, bool showCaption, bool showBusyView)
 	:	inherited( minmax, rect, Name, B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE, 
 					  Type, hierarchical, showLabelView)
 	,	inheritedController( Name)
 	,	mItemList( NULL)
 	,	mInitialStateInfo( NULL)
+	,	mShowCaption( showCaption)
+	,	mShowBusyView( showBusyView)
 {
 }
 
@@ -145,6 +150,21 @@ BmListViewController::BmListViewController( minimax minmax, BRect rect,
 \*------------------------------------------------------------------------------*/
 BmListViewController::~BmListViewController() {
 	delete mInitialStateInfo;
+}
+
+/*------------------------------------------------------------------------------*\
+	CreateContainer()
+		-	
+\*------------------------------------------------------------------------------*/
+CLVContainerView* BmListViewController::CreateContainer( bool horizontal, bool vertical, 
+												  							bool scroll_view_corner, 
+												  							border_style border, 
+																		   uint32 ResizingMode, 
+																		   uint32 flags) 
+{
+	return new BmCLVContainerView( fMinMax, this, ResizingMode, flags, horizontal, 
+											 vertical, scroll_view_corner, border, mShowCaption,
+											 mShowBusyView);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -251,7 +271,8 @@ void BmListViewController::AddModelItemsToList() {
 	mItemList = new BList( model->size());
 	SetDisconnectScrollView( true);
 	BmModelItemMap::const_iterator iter;
-	for( iter = model->begin(); iter != model->end(); ++iter) {
+	int32 count=1;
+	for( iter = model->begin(); iter != model->end(); ++iter, ++count) {
 		BmListModelItem* modelItem = iter->second;
 		BmListViewItem* viewItem;
 		if (Hierarchical()) {
@@ -265,7 +286,14 @@ void BmListViewController::AddModelItemsToList() {
 			viewItem = CreateListViewItem( modelItem);
 			mItemList->AddItem( viewItem);
 		}
+		if (count%100==0) {
+			BString caption = BString("")<<count<<" messages";
+			ScrollView()->PulseBusyView();
+			UpdateCaption( caption.String());
+		}
 	}
+	BString caption = BString("")<<--count<<" messages";
+	UpdateCaption( caption.String());
 	if (!Hierarchical()) {
 		// add complete item-list for efficiency:
 		AddList( mItemList);
@@ -273,6 +301,7 @@ void BmListViewController::AddModelItemsToList() {
 	SortItems();
 	SetDisconnectScrollView( false);
 	UpdateColumnSizesDataRectSizeScrollBars( true);
+	UpdateCaption();
 }
 
 /*------------------------------------------------------------------------------*\
@@ -307,6 +336,28 @@ void BmListViewController::UpdateModelItem( BMessage* msg) {
 		-	default implementation does nothing
 \*------------------------------------------------------------------------------*/
 void BmListViewController::UpdateModelState( BMessage* msg) {
+//	UpdateCaption();
+}
+
+/*------------------------------------------------------------------------------*\
+	UpdateCaption()
+		-
+\*------------------------------------------------------------------------------*/
+void BmListViewController::UpdateCaption( const char* text) {
+	if (mShowCaption && fScrollView) {
+		if (text) {
+			ScrollView()->SetCaptionText( text);
+		} else {
+			int32 numItems = mItemList ? mItemList->CountItems() : 0;
+			BString caption;
+			if (!numItems)
+				caption = BString("no messages");
+			else
+				caption = BString("")<<numItems<<" messages";
+			ScrollView()->SetCaptionText( caption.String());
+		}
+		Window()->UpdateIfNeeded();
+	}
 }
 
 /*------------------------------------------------------------------------------*\
@@ -402,6 +453,7 @@ void BmListViewController::AttachModel( BmDataModel* model) {
 void BmListViewController::DetachModel() {
 	WriteStateInfo();
 	inheritedController::DetachModel();
+	ScrollView()->UnsetBusy();
 	MakeEmpty();								// clear display
 	if (mItemList) {
 		while( !mItemList->IsEmpty()) {
@@ -414,6 +466,16 @@ void BmListViewController::DetachModel() {
 }
 
 /*------------------------------------------------------------------------------*\
+	WriteStateInfo( )
+		-	
+\*------------------------------------------------------------------------------*/
+void BmListViewController::StartJob( BmJobModel* model, bool startInNewThread) {
+	ScrollView()->SetBusy();
+	UpdateCaption( "tracking...");
+	inheritedController::StartJob( model, startInNewThread);
+}
+
+/*------------------------------------------------------------------------------*\
 	JobIsDone( completed)
 		-	Hook function that is called whenever the jobmodel associated to this 
 			controller indicates that it is done (meaning: the list has been fetched
@@ -423,6 +485,7 @@ void BmListViewController::JobIsDone( bool completed) {
 	if (completed) {
 		AddModelItemsToList();
 	}
+	ScrollView()->UnsetBusy();
 }
 
 /*------------------------------------------------------------------------------*\
@@ -442,7 +505,7 @@ void BmListViewController::WriteStateInfo() {
 		stateInfoFilename = StateInfoBasename() << "_" << ModelName();
 		this->Archive( archive.get(), Hierarchical()) == B_OK
 													|| BM_THROW_RUNTIME( BString("Unable to archive State-Info for ")<<Name());
-		(err = stateInfoFile.SetTo( bmApp->StateInfoFolder(), stateInfoFilename.String(), 
+		(err = stateInfoFile.SetTo( TheResources->StateInfoFolder(), stateInfoFilename.String(), 
 											 B_WRITE_ONLY | B_CREATE_FILE | B_ERASE_FILE)) == B_OK
 													|| BM_THROW_RUNTIME( BString("Could not create state-info file\n\t<") << stateInfoFilename << ">\n\n Result: " << strerror(err));
 		(err = archive->Flatten( &stateInfoFile)) == B_OK
@@ -500,7 +563,7 @@ void BmListViewController::ReadStateInfo() {
 
 	// try to open state-info-file...
 	stateInfoFilename = StateInfoBasename() << "_" << ModelName();
-	if ((err = stateInfoFile.SetTo( bmApp->StateInfoFolder(), stateInfoFilename.String(), B_READ_ONLY)) == B_OK) {
+	if ((err = stateInfoFile.SetTo( TheResources->StateInfoFolder(), stateInfoFilename.String(), B_READ_ONLY)) == B_OK) {
 		// ...ok, file found, we fetch our state(s) from it:
 		try {
 			mInitialStateInfo = new BMessage;
@@ -514,4 +577,109 @@ void BmListViewController::ReadStateInfo() {
 		}
 	} else 
 		inherited::Unarchive( DefaultLayout());
+}
+
+
+
+/********************************************************************************\
+	BmCLVContainerView
+\********************************************************************************/
+
+/*------------------------------------------------------------------------------*\
+	( )
+		-	
+\*------------------------------------------------------------------------------*/
+BmCLVContainerView::BmCLVContainerView( minimax minmax, ColumnListView* target, 
+													 uint32 resizingMode, uint32 flags, 
+													 bool horizontal, bool vertical,
+													 bool scroll_view_corner, border_style border, 
+													 bool showCaption, bool showBusyView,
+													 float captionWidth)
+	:	inherited( minmax, target, resizingMode, flags, horizontal, vertical,
+					  scroll_view_corner, border)
+	,	mCaption( NULL)
+	,	mCaptionWidth( captionWidth > 0 ? captionWidth : be_plain_font->StringWidth(" 99999 messages "))
+	,	mBusyView( NULL)
+{
+	SetViewColor( ui_color( B_PANEL_BACKGROUND_COLOR));
+	BRect hsFrame;
+	BPoint hsLT;
+	BScrollBar* hScroller = ScrollBar( B_HORIZONTAL);
+	if (showBusyView && hScroller) {
+		hsFrame = hScroller->Frame();
+		hsLT = hsFrame.LeftTop();
+		float bvSize = hsFrame.Height();
+		hScroller->ResizeBy( bvSize, 0.0);
+		hScroller->MoveBy( bvSize, 0.0);
+		mBusyView = new BmBusyView( BRect( hsLT.x, hsLT.y, hsLT.x+bvSize, hsLT.y+bvSize));
+		AddChild( mBusyView);
+	}
+	if (showCaption && hScroller) {
+		hsFrame = hScroller->Frame();
+		hsLT = hsFrame.LeftTop();
+		hScroller->ResizeBy( mCaptionWidth, 0.0);
+		hScroller->MoveBy( mCaptionWidth, 0.0);
+		mCaption = new BmCaption( BRect( hsLT.x, hsLT.y, hsLT.x+mCaptionWidth, hsLT.y+hsFrame.Height()), "");
+		AddChild( mCaption);
+	}
+}
+
+/*------------------------------------------------------------------------------*\
+	( )
+		-	
+\*------------------------------------------------------------------------------*/
+BmCLVContainerView::~BmCLVContainerView() {
+}
+	
+/*------------------------------------------------------------------------------*\
+	( )
+		-	
+\*------------------------------------------------------------------------------*/
+void BmCLVContainerView::SetCaptionText( const char* text) {
+	if (mCaption)
+		mCaption->SetText( text);
+}
+
+/*------------------------------------------------------------------------------*\
+	( )
+		-	
+\*------------------------------------------------------------------------------*/
+void BmCLVContainerView::SetBusy() {
+	if (mBusyView) mBusyView->SetBusy();
+}
+
+/*------------------------------------------------------------------------------*\
+	( )
+		-	
+\*------------------------------------------------------------------------------*/
+void BmCLVContainerView::UnsetBusy() {
+	if (mBusyView) mBusyView->UnsetBusy();
+}
+
+/*------------------------------------------------------------------------------*\
+	( )
+		-	
+\*------------------------------------------------------------------------------*/
+void BmCLVContainerView::PulseBusyView() {
+	if (mBusyView) mBusyView->Pulse();
+}
+
+/*------------------------------------------------------------------------------*\
+	( )
+		-	
+\*------------------------------------------------------------------------------*/
+BRect BmCLVContainerView::layout( BRect rect) {
+	BRect r = inherited::layout( rect);
+	BScrollBar* hScroller = ScrollBar( B_HORIZONTAL);
+	if (mBusyView && hScroller) {
+		BRect bvFrame = mBusyView->Frame();
+		BRect hsFrame = hScroller->Frame();
+		mBusyView->MoveTo( bvFrame.left, hsFrame.bottom-bvFrame.Height());
+	}
+	if (mCaption && hScroller) {
+		BRect cpFrame = mCaption->Frame();
+		BRect hsFrame = hScroller->Frame();
+		mCaption->MoveTo( cpFrame.left, hsFrame.bottom-cpFrame.Height());
+	}
+	return r;
 }

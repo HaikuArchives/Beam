@@ -25,6 +25,12 @@
 #include "BmPrefs.h"
 
 
+
+/********************************************************************************\
+	BmConnectionView
+\********************************************************************************/
+
+
 /*------------------------------------------------------------------------------*\
 	BmConnectionView()
 		-	constructor
@@ -87,8 +93,8 @@ void BmConnectionView::MessageReceived( BMessage* msg) {
 void BmConnectionView::JobIsDone( bool completed) {
 	BM_LOG2( BM_LogModelController, BString("Controller <") << ControllerName() << "> has been told that job " << ModelName() << " is done");
 	BmConnectionWin::Instance->RemoveConnection( ControllerName());
-	if (bmApp->Prefs->DynamicConnectionWin() == BmPrefs::CONN_WIN_DYNAMIC 
-	|| (bmApp->Prefs->DynamicConnectionWin() == BmPrefs::CONN_WIN_DYNAMIC_EMPTY
+	if (ThePrefs->DynamicConnectionWin() == BmPrefs::CONN_WIN_DYNAMIC 
+	|| (ThePrefs->DynamicConnectionWin() == BmPrefs::CONN_WIN_DYNAMIC_EMPTY
 		&& !WantsToStayVisible())) {
 			delete this;
 	} else {
@@ -96,6 +102,13 @@ void BmConnectionView::JobIsDone( bool completed) {
 			ResetController();
 	}
 }
+
+
+
+/********************************************************************************\
+	BmPopperView
+\********************************************************************************/
+
 
 /*------------------------------------------------------------------------------*\
 	CreateInstance( name)
@@ -195,6 +208,13 @@ void BmPopperView::UpdateModelView( BMessage* msg) {
 		throw BM_runtime_error("BmPopperView::UpdateModelView(): could not lock window");
 }
 
+
+
+/********************************************************************************\
+	BmConnectionWin
+\********************************************************************************/
+
+
 /*------------------------------------------------------------------------------*\
 	static members of BmConnectionWin:
 		- the color used for a status-bar's gauge:
@@ -222,7 +242,7 @@ BmConnectionWin::BmConnectionWin( const char* title, BLooper* invoker)
 	AddChild( dynamic_cast<BView*>(mOuterGroup));
 
 	Instance = this;
-	BM_LOG3( BM_LogConnWin, "ConnectionWin has started");
+	BM_LOG2( BM_LogConnWin, "ConnectionWin has started");
 }
 
 /*------------------------------------------------------------------------------*\
@@ -256,7 +276,7 @@ bool BmConnectionWin::QuitRequested() {
 		-	standard BeOS-behaviour, we quit
 \*------------------------------------------------------------------------------*/
 void BmConnectionWin::Quit() {
-	BM_LOG3( BM_LogConnWin, BString("ConnectionWin has quit"));
+	BM_LOG2( BM_LogConnWin, BString("ConnectionWin has quit"));
 	inherited::Quit();
 }
 
@@ -374,8 +394,8 @@ void BmConnectionWin::RemoveConnection( const char* name) {
 	controller->StopJob();
 
 	// remove interface only if mode indicates to do so:
-	if (bmApp->Prefs->DynamicConnectionWin() == BmPrefs::CONN_WIN_DYNAMIC 
-	|| (bmApp->Prefs->DynamicConnectionWin() == BmPrefs::CONN_WIN_DYNAMIC_EMPTY
+	if (ThePrefs->DynamicConnectionWin() == BmPrefs::CONN_WIN_DYNAMIC 
+	|| (ThePrefs->DynamicConnectionWin() == BmPrefs::CONN_WIN_DYNAMIC_EMPTY
 		&& !controller->WantsToStayVisible())) {
 		BM_LOG2( BM_LogConnWin, BString("Removing interface of connection ") << name);
 		BAutolock lock( this);
@@ -387,7 +407,7 @@ void BmConnectionWin::RemoveConnection( const char* name) {
 		mActiveConnections.erase( name);
 	}
 	mActiveConnCount--;
-	if (mActiveConnections.empty() && bmApp->Prefs->DynamicConnectionWin()) {
+	if (mActiveConnections.empty() && ThePrefs->DynamicConnectionWin()) {
 		Hide();
 	}
 }

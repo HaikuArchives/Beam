@@ -43,6 +43,8 @@ public:
 	void Quit();
 	status_t Archive( BMessage* archive, bool deep=true) const;
 
+	static BmMainWindow* theInstance;
+
 private:
 	BmMailFolderView* mMailFolderView;
 	BmMailRefView* mMailRefView;
@@ -51,5 +53,6 @@ private:
 	static bool nIsAlive;
 };
 
+#define TheMainWindow BmMainWindow::theInstance
 
 #endif

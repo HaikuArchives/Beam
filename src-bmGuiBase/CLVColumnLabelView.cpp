@@ -141,7 +141,7 @@ void CLVColumnLabelView::Draw(BRect update_rect)
 
 				bool focus;
 				bool sort_key;
-				int32 sortPrio;
+				int32 sortPrio = 0;
 				if(ThisColumn == fColumnClicked && !fColumnResizing)
 					focus = true;
 				else

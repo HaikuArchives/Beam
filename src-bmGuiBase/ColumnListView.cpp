@@ -1758,7 +1758,6 @@ void ColumnListView::SortListArray(CLVListItem** SortArray, int32 NumberOfItems)
 void ColumnListView::SetDisconnectScrollView( bool disconnect) {
 	// temporarily disconnects vertical scrollbar from listview in
 	// order to speed up addition of a large group of items:
-	// (this is "stolen" from Scooby... >:o)
 	if (disconnect)
 		fDeactivatedVerticalBar = ScrollBar( B_VERTICAL);
 	if (!fDeactivatedVerticalBar)

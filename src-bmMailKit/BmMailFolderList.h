@@ -29,7 +29,8 @@ class BmMailFolderList : public BArchivable, public BmListModel {
 	static const char* const ARCHIVE_FILENAME = 	"Folder Cache";
 
 public:
-	// c'tors and d'tor
+	// creator-func, c'tors and d'tor:
+	static BmMailFolderList* CreateInstance();
 	BmMailFolderList();
 	virtual ~BmMailFolderList();
 	
@@ -43,6 +44,8 @@ public:
 
 	// getters:
 	status_t InitCheck()						{ return mInitCheck; }
+
+	static BmMailFolderList* theInstance;
 
 private:
 	// the following members will be archived as part of BmFolderList:
@@ -62,5 +65,6 @@ private:
 	void QueryForNewMails();
 };
 
+#define TheMailFolderList BmMailFolderList::theInstance
 
 #endif

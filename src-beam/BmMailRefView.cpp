@@ -3,16 +3,21 @@
 		$Id$
 */
 
-#include "BmApp.h"
 #include "BmLogHandler.h"
 #include "BmMailFolder.h"
 #include "BmMailRefList.h"
 #include "BmMailRefView.h"
 #include "BmMsgTypes.h"
 #include "BmPrefs.h"
+#include "BmResources.h"
 #include "BmUtil.h"
 
 const int16 BmMailRefItem::nFirstTextCol = 3;
+
+/********************************************************************************\
+	BmMailRefItem
+\********************************************************************************/
+
 
 /*------------------------------------------------------------------------------*\
 	()
@@ -24,16 +29,16 @@ BmMailRefItem::BmMailRefItem( BString key, BmListModelItem* _item)
 	BmMailRef* ref = dynamic_cast<BmMailRef*>( _item);
 
 	BString st = BString("Mail_") << ref->Status();
-	BBitmap* icon = bmApp->IconMap[st];
+	BBitmap* icon = TheResources->IconMap[st];
 	SetColumnContent( 0, icon, 2.0, false);
 
 	if (ref->HasAttachments()) {
-		icon = bmApp->IconMap["Attachment"];
+		icon = TheResources->IconMap["Attachment"];
 		SetColumnContent( 1, icon, 2.0, false);
 	}
 	
 	BString priority = BString("Priority_") << ref->Priority();
-	if ((icon = bmApp->IconMap[priority])) {
+	if ((icon = TheResources->IconMap[priority])) {
 		SetColumnContent( 2, icon, 2.0, false);
 	}
 
@@ -51,7 +56,7 @@ BmMailRefItem::BmMailRefItem( BString key, BmListModelItem* _item)
 		{ ref->TrackerName(),						false },
 		{ NULL, false }
 	};
-	SetTextCols( nFirstTextCol, cols, !bmApp->Prefs->StripedListView());
+	SetTextCols( nFirstTextCol, cols, !ThePrefs->StripedListView());
 }
 
 /*------------------------------------------------------------------------------*\
@@ -109,13 +114,22 @@ const time_t BmMailRefItem::GetDateValueForColumn( int32 column_index) const {
 
 
 
+/********************************************************************************\
+	BmMailRefView
+\********************************************************************************/
+
+
+BmMailRefView* BmMailRefView::theInstance = NULL;
+
 /*------------------------------------------------------------------------------*\
 	()
 		-	
 \*------------------------------------------------------------------------------*/
 BmMailRefView* BmMailRefView::CreateInstance( minimax minmax, int32 width, int32 height) {
-	BmMailRefView* mailRefView = new BmMailRefView( minmax, width, height);
-	return mailRefView;
+	if (theInstance)
+		return theInstance;
+	else 
+		return theInstance = new BmMailRefView( minmax, width, height);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -124,12 +138,12 @@ BmMailRefView* BmMailRefView::CreateInstance( minimax minmax, int32 width, int32
 \*------------------------------------------------------------------------------*/
 BmMailRefView::BmMailRefView( minimax minmax, int32 width, int32 height)
 	:	inherited( minmax, BRect(0,0,width,height), "Beam_MailRefView", B_MULTIPLE_SELECTION_LIST, 
-					  false, true)
+					  false, true, true, true)
 	,	mCurrFolder( NULL)
 {
 	int32 flags = 0;
 	SetViewColor( B_TRANSPARENT_COLOR);
-	if (bmApp->Prefs->StripedListView())
+	if (ThePrefs->StripedListView())
 		SetStripedBackground( true);
 	else 
 		flags |= CLV_TELL_ITEMS_WIDTH;
@@ -162,6 +176,7 @@ BmMailRefView::BmMailRefView( minimax minmax, int32 width, int32 height)
 		-	
 \*------------------------------------------------------------------------------*/
 BmMailRefView::~BmMailRefView() { 
+	theInstance = NULL;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -195,10 +210,16 @@ void BmMailRefView::MessageReceived( BMessage* msg) {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmMailRefView::ShowFolder( BmMailFolder* folder) {
-	StopJob();
-	BmMailRefList* refList = folder->MailRefList();
-	StartJob( refList, true, false);
-	mCurrFolder = folder;
+	try {
+		StopJob();
+		BmMailRefList* refList = folder->MailRefList();
+		StartJob( refList, true);
+		mCurrFolder = folder;
+	}
+	catch( exception &err) {
+		// a problem occurred, we tell the user:
+		BM_SHOWERR( BString("MailRefView: ") << err.what());
+	}
 }
 
 /*------------------------------------------------------------------------------*\
@@ -214,5 +235,5 @@ BString BmMailRefView::StateInfoBasename()	{
 		-	
 \*------------------------------------------------------------------------------*/
 BMessage* BmMailRefView::DefaultLayout()		{ 
-	return bmApp->Prefs->MailRefLayout(); 
+	return ThePrefs->MailRefLayout(); 
 }

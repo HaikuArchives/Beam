@@ -66,6 +66,9 @@ public:
 	void MessageReceived( BMessage* msg);
 	void SelectionChanged( void);
 
+	static BmMailFolderView* theInstance;
 };
+
+#define TheMailFolderView BmMailFolderView::theInstance;
 
 #endif

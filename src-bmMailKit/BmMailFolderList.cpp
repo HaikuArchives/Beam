@@ -9,11 +9,25 @@
 #include <Path.h>
 #include <Query.h>
 
-#include "BmApp.h"
 #include "BmLogHandler.h"
 #include "BmMailFolderList.h"
 #include "BmPrefs.h"
+#include "BmResources.h"
 #include "BmUtil.h"
+
+
+BmMailFolderList* BmMailFolderList::theInstance = NULL;
+
+/*------------------------------------------------------------------------------*\
+	CreateInstance()
+		-	creator-func
+\*------------------------------------------------------------------------------*/
+BmMailFolderList* BmMailFolderList::CreateInstance() {
+	if (theInstance)
+		return theInstance;
+	else
+		return theInstance = new BmMailFolderList();
+}
 
 /*------------------------------------------------------------------------------*\
 	BmMailFolderList()
@@ -32,6 +46,7 @@ BmMailFolderList::BmMailFolderList()
 		-	standard d'tor
 \*------------------------------------------------------------------------------*/
 BmMailFolderList::~BmMailFolderList() {
+	theInstance = NULL;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -48,7 +63,7 @@ void BmMailFolderList::StartJob() {
 			return;
 		}
 	
-		BString filename = BString(bmApp->SettingsPath.Path()) << "/" << ARCHIVE_FILENAME;
+		BString filename = BString(TheResources->SettingsPath.Path()) << "/" << ARCHIVE_FILENAME;
 	
 		if ((err = cacheFile.SetTo( filename.String(), B_READ_ONLY)) == B_OK) {
 			// ...ok, folder-cache found, we fetch our data from it:
@@ -97,7 +112,7 @@ void BmMailFolderList::InitializeMailFolders() {
 	BDirectory mailDir;
 	entry_ref eref;
 	status_t err;
-	BString mailDirName( bmApp->Prefs->MailboxPath());
+	BString mailDirName( ThePrefs->MailboxPath());
 	time_t mtime;
 
 	BM_LOG2( BM_LogMailFolders, "Start of initFolders");
@@ -235,7 +250,7 @@ void BmMailFolderList::QueryForNewMails() {
 	char buf[4096];
 
 	BM_LOG2( BM_LogMailFolders, "Start of newMail-query");
-	(err = query.SetVolume( &bmApp->MailboxVolume)) == B_OK
+	(err = query.SetVolume( &TheResources->MailboxVolume)) == B_OK
 													|| BM_THROW_RUNTIME( BString("SetVolume(): ") << strerror(err));
 	(err = query.SetPredicate( "MAIL:status == 'New'")) == B_OK
 													|| BM_THROW_RUNTIME( BString("SetPredicate(): ") << strerror(err));
@@ -261,7 +276,7 @@ void BmMailFolderList::QueryForNewMails() {
 				entry.GetPath( &path) == B_OK
 													|| BM_THROW_RUNTIME( BString("Could not get path for unread mail <") << dent->d_name << ">\n\nError: "<< strerror(err));
 				dirPath = path.Path();
-				BString mboxPath = bmApp->Prefs->MailboxPath();
+				BString mboxPath = ThePrefs->MailboxPath();
 				mboxPath << "/";
 				if (dirPath.FindFirst( mboxPath) != 0) {
 					// mail lives somewhere else (not under /boot/home/mail), we ignore it:
@@ -305,7 +320,7 @@ bool BmMailFolderList::Store() {
 	try {
 		BAutolock lock( mModelLocker);
 		lock.IsLocked() 						|| BM_THROW_RUNTIME( ModelName() << ":Store(): Unable to get lock");
-		BString filename = BString( bmApp->SettingsPath.Path()) << "/" << ARCHIVE_FILENAME;
+		BString filename = BString( TheResources->SettingsPath.Path()) << "/" << ARCHIVE_FILENAME;
 		this->Archive( &archive, true) == B_OK
 													|| BM_THROW_RUNTIME("Unable to archive BmFolderList-object");
 		(err = cacheFile.SetTo( filename.String(), 

@@ -8,10 +8,6 @@
 
 #include "BmApp.h"
 
-class BmConnectionWin;
-class BmMainWindow;
-class BmMailFolderList;
-
 class BeamApp : public BmApplication
 {
 	typedef BmApplication inherited;

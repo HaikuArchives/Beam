@@ -3,7 +3,6 @@
 		$Id$
 */
 
-#include "BmApp.h"
 #include "BmLogHandler.h"
 #include "BmMailRef.h"
 #include "BmUtil.h"
@@ -133,6 +132,7 @@ BmMailRef::BmMailRef( BMessage* archive)
 		-	d'tor
 \*------------------------------------------------------------------------------*/
 BmMailRef::~BmMailRef() {
+	BM_LOG3( BM_LogMailFolders, BString("destructor of MailRef ") << Key() << " called");
 }
 
 /*------------------------------------------------------------------------------*\

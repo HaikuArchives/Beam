@@ -5,7 +5,6 @@
 
 #include <Directory.h>
 
-#include "BmApp.h"
 #include "BmLogHandler.h"
 #include "BmMailFolder.h"
 #include "BmMailRefList.h"
@@ -63,7 +62,7 @@ BmMailFolder::BmMailFolder( BMessage* archive, BmMailFolder* parent)
 		-	d'tor
 \*------------------------------------------------------------------------------*/
 BmMailFolder::~BmMailFolder() {
-	delete mMailRefList;
+	RemoveMailRefList();
 }
 
 /*------------------------------------------------------------------------------*\
@@ -142,7 +141,7 @@ void BmMailFolder::BumpNewMailCountForSubfolders() {
 		-	
 \*------------------------------------------------------------------------------*/
 BmMailRefList* BmMailFolder::MailRefList() {
-	if (!mMailRefList) {
+	if (!mMailRefList || mNeedsCacheUpdate) {
 		CreateMailRefList();
 	}
 	return mMailRefList;
@@ -153,10 +152,12 @@ BmMailRefList* BmMailFolder::MailRefList() {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmMailFolder::CreateMailRefList() {
-	if (!mMailRefList || mNeedsCacheUpdate) {
-		mMailRefList = new BmMailRefList( this, mNeedsCacheUpdate);
-		mNeedsCacheUpdate = false;
+	if (mMailRefList) {
+		RemoveMailRefList();
 	}
+	mMailRefList = new BmMailRefList( this, mNeedsCacheUpdate);
+	TheModelManager->AddRef( mMailRefList);
+	mNeedsCacheUpdate = false;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -164,6 +165,8 @@ void BmMailFolder::CreateMailRefList() {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmMailFolder::RemoveMailRefList() {
-	delete mMailRefList;
-	mMailRefList = NULL;
+	if (mMailRefList) {
+		TheModelManager->RemoveRef( mMailRefList);
+		mMailRefList = NULL;
+	}
 }

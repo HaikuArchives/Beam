@@ -22,7 +22,6 @@ class BmMailRefItem : public BmListViewItem
 	static const int16 nFirstTextCol;
 
 public:
-	// c'tors and d'tor:
 	BmMailRefItem( BString key, BmListModelItem* item);
 	~BmMailRefItem();
 	
@@ -41,10 +40,8 @@ class BmMailRefView : public BmListViewController
 	typedef BmListViewController inherited;
 	
 public:
-	//
+	// creator-func, c'tors and d'tor:
 	static BmMailRefView* CreateInstance( minimax minmax, int32 width, int32 height);
-	
-	// c'tors and d'tor:
 	BmMailRefView( minimax minmax, int32 width, int32 height);
 	~BmMailRefView();
 
@@ -58,11 +55,14 @@ public:
 	BString StateInfoBasename();
 	BMessage* DefaultLayout();
 	BmListViewItem* CreateListViewItem( BmListModelItem* item, BMessage* archive=NULL);
+
+	static BmMailRefView* theInstance;
 	
 private:
 	BmMailFolder* mCurrFolder;
 
 };
 
+#define TheMailRefView BmMailRefView::theInstance
 
 #endif

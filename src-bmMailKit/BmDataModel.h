@@ -74,13 +74,12 @@ public:
 
 	// native methods:
 	static int32 ThreadStartFunc(  void*);
-	virtual void StartJobInNewThread( bool deleteWhenDone);
+	virtual void StartJobInNewThread();
 	virtual void StartJobInThisThread();
 	virtual void PauseJob();
 	virtual void ContinueJob();
 	virtual void StopJob();
 	thread_id JobThreadID() const 		{ return mThreadID; }
-	bool DeleteWhenDone() const			{ return mDeleteWhenDone; }
 	bool IsJobRunning() const;
 	bool IsJobCompleted() const			{ return mJobState == JOB_COMPLETED; }
 
@@ -107,7 +106,6 @@ private:
 	virtual void doStartJob();
 
 	thread_id mThreadID;
-	bool mDeleteWhenDone;
 };
 
 class BmListModelItem;
@@ -190,5 +188,34 @@ protected:
 	BmModelItemMap mModelItemMap;
 	BmOpenReplySet mOpenReplySet;
 };
+
+
+
+/*------------------------------------------------------------------------------*\
+	BmDataModelManager
+		-	manages all instances of DataModels (esp their deletion)
+\*------------------------------------------------------------------------------*/
+class BmDataModelManager {
+	typedef map< BmDataModel*, int32> BmRefMap;
+
+public:
+	// creator-func, c'tors & d'tor:
+	static BmDataModelManager* CreateInstance();
+	BmDataModelManager();
+	~BmDataModelManager();
+	
+	// native methods:
+	void AddRef( BmDataModel* model);
+	void RemoveRef( BmDataModel* model);
+
+	static BmDataModelManager* theInstance;
+
+private:
+	BmRefMap mRefMap;
+	BLocker mLocker;
+};
+
+#define TheModelManager BmDataModelManager::theInstance
+
 
 #endif

@@ -5,11 +5,9 @@
 
 #include <Autolock.h>
 
-#include "BmApp.h"
 #include "BmController.h"
 #include "BmDataModel.h"
 #include "BmLogHandler.h"
-#include "BmMainWindow.h"
 #include "BmUtil.h"
 
 //#include <Profile.h>
@@ -54,6 +52,7 @@ void BmController::AttachModel( BmDataModel* model) {
 	}
 	if (mDataModel) {
 		BM_LOG2( BM_LogModelController, BString("Controller <") << ControllerName() << "> attaches to model " << ModelName());
+		TheModelManager->AddRef( mDataModel);
 		mDataModel->AddController( this);
 	}
 }
@@ -67,6 +66,7 @@ void BmController::DetachModel() {
 	if (mDataModel) {
 		BM_LOG2( BM_LogModelController, BString("Controller <") << ControllerName() << "> detaches from model " << ModelName());
 		mDataModel->RemoveController( this);
+		TheModelManager->RemoveRef( mDataModel);
 		mDataModel = NULL;
 	}
 }
@@ -107,15 +107,14 @@ BmJobController::~BmJobController() {
 	StartJob()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmJobController::StartJob( BmJobModel* model, bool startInNewThread, 
-										  bool deleteWhenDone) {
+void BmJobController::StartJob( BmJobModel* model, bool startInNewThread) {
 	if (model) {
 		AttachModel( model);
 	}
 	if (DataModel()) {
 		BM_LOG2( BM_LogModelController, BString("Controller <") << ControllerName() << "> starts job " << ModelName());
 		if (startInNewThread)
-			DataModel()->StartJobInNewThread( deleteWhenDone);
+			DataModel()->StartJobInNewThread();
 		else
 			DataModel()->StartJobInThisThread();
 	}
@@ -154,11 +153,11 @@ void BmJobController::ContinueJob( BMessage* msg) {
 \*------------------------------------------------------------------------------*/
 void BmJobController::StopJob() {
 	BmJobModel* job = DataModel();
-	if (job) {
+	if (job && !job->IsJobCompleted()) {
 		BM_LOG2( BM_LogModelController, BString("Controller <") << ControllerName() << "> stops job " << ModelName());
 		job->StopJob();
-		DetachModel();
 	}
+	DetachModel();
 }
 
 /*------------------------------------------------------------------------------*\

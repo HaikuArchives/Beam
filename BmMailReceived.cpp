@@ -11,12 +11,12 @@
 #include <regexx/regexx.hh>
 using namespace regexx;
 
-#include "BmApp.h"
 #include "BmEncoding.h"
 	using namespace BmEncoding;
 #include "BmLogHandler.h"
 #include "BmMailReceived.h"
 #include "BmPrefs.h"
+#include "BmResources.h"
 
 #undef BM_LOGNAME
 #define BM_LOGNAME mAccountName
@@ -170,7 +170,7 @@ void BmMailReceived::ParseHeader( const BString &header) {
 			continue;
 		}
 		fieldName.SetTo( headerField, pos);
-		fieldName.RemoveSet( bmApp->WHITESPACE);
+		fieldName.RemoveSet( TheResources->WHITESPACE);
 		fieldName.CapitalizeEachWord();
 							// capitalized fieldnames seem to be popular...
 		headerField.CopyInto( fieldBody, pos+1, headerField.Length());
@@ -241,8 +241,8 @@ bool BmMailReceived::Store() {
 
 	try {
 		if (mParentEntry.InitCheck() == B_NO_INIT) {
-//			(inboxPath = bmApp->Prefs->MailboxPath()) << "/mailbox";
-			(inboxPath = bmApp->Prefs->MailboxPath()) << "/in_beam";
+//			(inboxPath = ThePrefs->MailboxPath()) << "/mailbox";
+			(inboxPath = ThePrefs->MailboxPath()) << "/in_beam";
 			(err = mParentEntry.SetTo( inboxPath.String(), true)) == B_OK
 													|| BM_THROW_RUNTIME( BString("Could not create entry for mail-folder <") << inboxPath << ">\n\n Result: " << strerror(err));
 		}

@@ -3,6 +3,7 @@
 		$Id$
 */
 
+#include <File.h>
 #include <InterfaceKit.h>
 #include <Message.h>
 #include <String.h>
@@ -17,7 +18,11 @@
 #include "BmMailFolderView.h"
 #include "BmMailRefView.h"
 #include "BmMainWindow.h"
+#include "BmResources.h"
 #include "BmUtil.h"
+
+
+BmMainWindow* BmMainWindow::theInstance = NULL;
 
 /*------------------------------------------------------------------------------*\
 	flag and access-function that indicate a user's request-to-stop:
@@ -26,7 +31,6 @@ bool BmMainWindow::nIsAlive = false;
 bool BmMainWindow::IsAlive() {
 	return BmMainWindow::nIsAlive;
 }
-
 
 /*------------------------------------------------------------------------------*\
 	CreateInstance()
@@ -40,11 +44,14 @@ BmMainWindow* BmMainWindow::CreateInstance()
 	BString winFilename;
 	BFile winFile;
 
+	if (theInstance)
+		return theInstance;
+
 	// create standard main-window:
 	win = new BmMainWindow;
 	// try to open state-cache-file...
 	winFilename = BString("MainWindow");
-	if ((err = winFile.SetTo( bmApp->StateInfoFolder(), winFilename.String(), B_READ_ONLY)) == B_OK) {
+	if ((err = winFile.SetTo( TheResources->StateInfoFolder(), winFilename.String(), B_READ_ONLY)) == B_OK) {
 		// ...ok, archive file found, we fetch our dimensions from it:
 		try {
 			BMessage archive;
@@ -55,6 +62,7 @@ BmMainWindow* BmMainWindow::CreateInstance()
 			BM_SHOWERR( e.what());
 		}
 	}
+	theInstance = win;
 	return win;
 }
 
@@ -69,6 +77,9 @@ BmMainWindow::BmMainWindow()
 	,	mMailRefView( NULL)
 	,	mVertSplitter( NULL)
 {
+	TheMailFolderList = BmMailFolderList::CreateInstance();
+	TheModelManager->AddRef( TheMailFolderList);
+
 	MView* mOuterGroup = 
 		new VGroup(
 			minimax( 600, 200, 1E5, 1E5),
@@ -98,6 +109,8 @@ BmMainWindow::BmMainWindow()
 		-	
 \*------------------------------------------------------------------------------*/
 BmMainWindow::~BmMainWindow() {
+	TheModelManager->RemoveRef( TheMailFolderList);
+	theInstance = NULL;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -134,8 +147,8 @@ status_t BmMainWindow::Unarchive( BMessage* archive, bool deep=true) {
 void BmMainWindow::BeginLife() {
 	nIsAlive = true;
 	try {
-		bmApp->MailFolderList = new BmMailFolderList();
-		mMailFolderView->StartJob( bmApp->MailFolderList, true, false);
+		BM_LOG2( BM_LogMainWindow, BString("MainWindow begins life"));
+		mMailFolderView->StartJob( TheMailFolderList, true);
 	} catch(...) {
 		nIsAlive = false;
 		throw;
@@ -148,7 +161,6 @@ void BmMainWindow::BeginLife() {
 \*------------------------------------------------------------------------------*/
 CLVContainerView* BmMainWindow::CreateMailFolderView( minimax minmax, int32 width, int32 height) {
 	mMailFolderView = BmMailFolderView::CreateInstance( minmax, width, height);
-	bmApp->MailFolderView = mMailFolderView;
 	return mMailFolderView->ContainerView();
 }
 
@@ -158,7 +170,6 @@ CLVContainerView* BmMainWindow::CreateMailFolderView( minimax minmax, int32 widt
 \*------------------------------------------------------------------------------*/
 CLVContainerView* BmMainWindow::CreateMailRefView( minimax minmax, int32 width, int32 height) {
 	mMailRefView = BmMailRefView::CreateInstance( minmax, width, height);
-	bmApp->MailRefView = mMailRefView;
 	return mMailRefView->ContainerView();
 }
 
@@ -187,7 +198,7 @@ void BmMainWindow::MessageReceived( BMessage* msg) {
 		-	standard BeOS-behaviour, we allow a quit
 \*------------------------------------------------------------------------------*/
 bool BmMainWindow::QuitRequested() {
-	BM_LOG3( BM_LogMainWindow, BString("MainWindow has been asked to quit"));
+	BM_LOG2( BM_LogMainWindow, BString("MainWindow has been asked to quit"));
 	Store();
 	beamApp->PostMessage( B_QUIT_REQUESTED);
 	return true;
@@ -200,7 +211,7 @@ bool BmMainWindow::QuitRequested() {
 void BmMainWindow::Quit() {
 	mMailRefView->DetachModel();
 	mMailFolderView->DetachModel();
-	BM_LOG3( BM_LogMainWindow, BString("MainWindow has quit"));
+	BM_LOG2( BM_LogMainWindow, BString("MainWindow has quit"));
 	inherited::Quit();
 }
 
@@ -217,7 +228,7 @@ bool BmMainWindow::Store() {
 		BString filename = BString( "MainWindow");
 		this->Archive( &archive, true) == B_OK
 													|| BM_THROW_RUNTIME("Unable to archive MainWindow-object");
-		(err = cacheFile.SetTo( bmApp->StateInfoFolder(), filename.String(), 
+		(err = cacheFile.SetTo( TheResources->StateInfoFolder(), filename.String(), 
 										B_WRITE_ONLY | B_CREATE_FILE | B_ERASE_FILE)) == B_OK
 													|| BM_THROW_RUNTIME( BString("Could not create cache file\n\t<") << filename << ">\n\n Result: " << strerror(err));
 		(err = archive.Flatten( &cacheFile)) == B_OK
