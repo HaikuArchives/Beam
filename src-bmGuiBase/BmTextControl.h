@@ -45,16 +45,16 @@ class BmTextControl : public MView, public BTextControl
 
 public:
 	// creator-func, c'tors and d'tor:
-	BmTextControl( const char* label, bool labelIsMenu=false);
+	BmTextControl( const char* label, bool labelIsMenu=false,
+						int32 fixedTextLen=0, int32 minTextLen=0);
 	~BmTextControl();
 	
 	// native methods:
-	void DetachFromParent();
-	void ReattachToParent();
 	void SetTextSilently( const char* text);
 
 	// overrides of BTextControl:
 	void FrameResized( float new_width, float new_height);
+	void SetDivider( float divider);
 	void SetEnabled( bool enabled);
 	void SetText( const char* text);
 
@@ -70,7 +70,6 @@ private:
 	bool mLabelIsMenu;
 	BTextView* mTextView;
 	BMenuField* mMenuField;
-	HGroup* mParent;
 
 	// Hide copy-constructor and assignment:
 	BmTextControl( const BmTextControl&);

@@ -44,7 +44,11 @@
 #include "BmLogHandler.h"
 #include "BmMsgTypes.h"
 #include "BmPrefsView.h"
+#include "BmPrefsGeneralView.h"
+#include "BmPrefsMailConstrView.h"
+#include "BmPrefsMailReadView.h"
 #include "BmPrefsRecvMailView.h"
+#include "BmPrefsSendMailView.h"
 #include "BmPrefsWin.h"
 #include "BmUtil.h"
 
@@ -80,8 +84,8 @@ BmPrefsWin* BmPrefsWin::CreateInstance()
 BmPrefsWin::BmPrefsWin()
 	:	inherited( "PrefsWin", BRect(50,50,549,449),
 					  "Beam Preferences",
-					  B_TITLED_WINDOW_LOOK, B_NORMAL_WINDOW_FEEL, 
-					  B_ASYNCHRONOUS_CONTROLS)
+					  B_FLOATING_WINDOW_LOOK, B_NORMAL_WINDOW_FEEL, 
+					  B_ASYNCHRONOUS_CONTROLS | B_NOT_CLOSABLE)
 	,	mPrefsListView( NULL)
 	,	mPrefsViewContainer( NULL)
 	,	mVertSplitter( NULL)
@@ -93,6 +97,7 @@ BmPrefsWin::BmPrefsWin()
 					minimax(500,200),
 					mVertSplitter = new UserResizeSplitView(
 						new VGroup(
+							minimax(100,200,200,1E5),
 							CreatePrefsListView( minimax(100,200,200,1E5), 120, 200),
 							new Space( minimax(0,2,0,2)),
 							0
@@ -100,9 +105,11 @@ BmPrefsWin::BmPrefsWin()
 						mPrefsViewContainer = new BmPrefsViewContainer(
 							new LayeredGroup( 
 								new BmPrefsView( NULL),
+								new BmPrefsGeneralView(),
+								new BmPrefsMailConstrView(),
+								new BmPrefsSendMailView(),
+								new BmPrefsMailReadView(),
 								new BmPrefsRecvMailView(),
-								new BmPrefsView( "Prefs Test 2"),
-								new BmPrefsView( "Prefs Test 3"),
 								0
 							)
 						),
@@ -114,9 +121,9 @@ BmPrefsWin::BmPrefsWin()
 			new Space( minimax(0,10,0,10)),
 			new HGroup(
 				new Space(),
-				new MButton( "Cancel", BM_UNDO_CHANGES, minimax(-1,-1,-1,-1)),
+				new MButton( "Cancel", new BMessage(BM_UNDO_CHANGES), this, minimax(-1,-1,-1,-1)),
 				new Space( minimax(20,0,20,0)),
-				new MButton( "Save", BM_SAVE_CHANGES, minimax(-1,-1,-1,-1)),
+				new MButton( "Save", new BMessage(BM_SAVE_CHANGES), this, minimax(-1,-1,-1,-1)),
 				new Space( minimax(20,0,20,0)),
 				0
 			),
@@ -168,7 +175,6 @@ CLVContainerView* BmPrefsWin::CreatePrefsListView( minimax minmax, int32 width, 
 													 B_SINGLE_SELECTION_LIST, true, true);
 
 	BFont font(*be_bold_font);
-//	font.SetSize(14);
 	mPrefsListView->SetFont( &font);
 	mPrefsListView->SetSelectionMessage( new BMessage( BM_SELECTION_CHANGED));
 	mPrefsListView->SetTarget( this);
@@ -181,19 +187,30 @@ CLVContainerView* BmPrefsWin::CreatePrefsListView( minimax minmax, int32 width, 
 		new CLVColumn( NULL, 10.0, 
 							CLV_EXPANDER | CLV_LOCK_AT_BEGINNING | CLV_NOT_MOVABLE, 10.0));
 	mPrefsListView->AddColumn( 
-		new CLVColumn( "Category", 300.0, 
+		new CLVColumn( "   Category", 300.0, 
 							CLV_NOT_MOVABLE|CLV_NOT_RESIZABLE|CLV_TELL_ITEMS_WIDTH, 300.0));
 
-	CLVEasyItem* item = new CLVEasyItem( 0, false, false, 18.0);
-	item->SetColumnContent( 1, "Test1");
+	CLVEasyItem* item;	
+	item = new CLVEasyItem( 0, false, false, 18.0);
+	item->SetColumnContent( 1, "General");
 	mPrefsListView->AddItem( item);
 
-	item = new CLVEasyItem( 0, false, false, 18.0);
-	item->SetColumnContent( 1, "Test2");
+	item = new CLVEasyItem( 0, true, false, 18.0);
+	item->SetColumnContent( 1, "Sending Mail");
+	mPrefsListView->AddItem( item);
+	mPrefsListView->Expand( item);
+
+	item = new CLVEasyItem( 1, false, false, 18.0);
+	item->SetColumnContent( 1, "Accounts");
 	mPrefsListView->AddItem( item);
 
-	item = new CLVEasyItem( 0, false, false, 18.0);
-	item->SetColumnContent( 1, "Test3");
+	item = new CLVEasyItem( 0, true, false, 18.0);
+	item->SetColumnContent( 1, "Receiving Mail");
+	mPrefsListView->AddItem( item);
+	mPrefsListView->Expand( item);
+
+	item = new CLVEasyItem( 1, false, false, 18.0);
+	item->SetColumnContent( 1, "Accounts");
 	mPrefsListView->AddItem( item);
 
 	return container;
@@ -208,15 +225,20 @@ void BmPrefsWin::MessageReceived( BMessage* msg) {
 		switch( msg->what) {
 			case BM_SELECTION_CHANGED: {
 				int32 index = mPrefsListView->CurrentSelection( 0);
-				mPrefsViewContainer->ShowPrefs( 1+index);
+				int32 fullIndex = mPrefsListView->FullListIndexOf( 
+					(CLVListItem*)mPrefsListView->ItemAt( index)
+				);
+				mPrefsViewContainer->ShowPrefs( 1+fullIndex);
 				break;
 			}
 			case BM_SAVE_CHANGES: {
 				mPrefsViewContainer->SaveData();
+				PostMessage( B_QUIT_REQUESTED);
 				break;
 			}
 			case BM_UNDO_CHANGES: {
 				mPrefsViewContainer->Finish();
+				PostMessage( B_QUIT_REQUESTED);
 				break;
 			}
 			default:

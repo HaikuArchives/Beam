@@ -227,7 +227,9 @@ void CLVEasyItem::DrawItemColumn(BView *owner, BRect item_column_rect, int32 col
 	}
 	owner->SetDrawingMode(B_OP_COPY);
 
-	int32 index = ((ColumnListView*)owner)->GetDisplayIndexForColumn( column_index);
+	int32 index = ((ColumnListView*)owner)->GetDisplayIndexForColumn( abs(column_index));
+	if (column_index < 0)
+		index = abs(column_index);
 	if (striped && index % 2) {
 		owner->SetLowColor( tinted_color);
 	} else {
@@ -235,7 +237,7 @@ void CLVEasyItem::DrawItemColumn(BView *owner, BRect item_column_rect, int32 col
 	}
 	owner->FillRect( item_column_rect, B_SOLID_LOW);
 	
-	if(column_index == -1)
+	if(column_index < 0)
 		return;
 
 	int32 type = (int32)m_column_types.ItemAt(column_index);
@@ -460,6 +462,11 @@ void CLVEasyItem::ColumnWidthChanged(int32 column_index, float column_width, Col
 		BRect bounds = the_view->Bounds();
 		if(cached_rect->top <= bounds.bottom && cached_rect->bottom >= bounds.top)
 		{
+			BFont orig_font;
+			the_view->GetFont(&orig_font);
+			if (Bold())
+				the_view->SetFont( be_bold_font);
+	
 			//If it's onscreen, truncate and invalidate the changed area
 			the_view->GetFont(&view_font);
 			invalid = TruncateText(column_index, column_width,&view_font);
@@ -471,6 +478,8 @@ void CLVEasyItem::ColumnWidthChanged(int32 column_index, float column_width, Col
 				else
 					the_view->Invalidate(*cached_rect);
 			}
+			if (Bold())
+				the_view->SetFont( &orig_font);
 		}
 		else
 			//If it's not onscreen flag it for truncation the next time it's drawn

@@ -188,7 +188,7 @@ void CLVListItem::DrawItem(BView* owner, BRect itemRect, bool complete)
 	ThisColumnRect.left = LastColumnEnd + 1.0;
 	ThisColumnRect.right = owner->Bounds().right;
 	if(ThisColumnRect.left <= ThisColumnRect.right && ClippingRegion.Intersects(ThisColumnRect))
-		DrawItemColumn(owner, ThisColumnRect,-1,complete);
+		DrawItemColumn(owner, ThisColumnRect,-NumberOfColumns,complete);
 }
 
 

@@ -198,19 +198,21 @@ void BmEncoding::Encode( BString encodingStyle, const BString& src, BString& des
 									: "%&/()?+*,.;:<>-_!\"#$@[]\\^'{|}~";
 	if (encodingStyle == "Q" || encodingStyle == "QUOTED-PRINTABLE") {
 		// quoted printable:
+		BM_LOG( BM_LogMailParse, BString("starting to encode quoted-printable of ") << srcLen << " bytes");
 		int32 destLen = srcLen*3;
 		char* buf = dest.LockBuffer( destLen+1);
 		int32 destCount = 0;
-		int32 lineLength = 0;
-		for( const char* p=src.String(); *p; ++p) {
-			BString addChars;
+		int32 qpLineLen = 0;
+		char add[4];
+		int32 addLen = 0;
+		for( const char* p=src.String(); *p; ++p, addLen=0) {
 			unsigned char c = *p;
 			if (isalnum(c) || strchr( safeChars, c)) {
-				addChars += c;
+				add[addLen++] = c;
 			} else if (c == ' ') {
 				// in encoded-words, we always replace SPACE by underline:
 				if (c == ' ' && isEncodedWord)
-					addChars += '_';
+					add[addLen++] = '_';
 				else {
 					// check if whitespace is at end of line (thus needs encoding):
 					bool needsEncoding = true;
@@ -223,52 +225,62 @@ void BmEncoding::Encode( BString encodingStyle, const BString& src, BString& des
 						}
 					}
 					if (needsEncoding) {
-						addChars << '=' << (char)CHAR2HIGHNIBBLE(c) << (char)CHAR2LOWNIBBLE(c);
+						add[0] = '='; 
+						add[1] = (char)CHAR2HIGHNIBBLE(c); 
+						add[2] = (char)CHAR2LOWNIBBLE(c);
+						addLen=3;
 					} else {
-						addChars += c;
+						add[addLen++] = c;
 					}
 				}
 			} else if (c == '\r' && *(p+1) == '\n') {
 				buf[destCount++] = '\r';
 				buf[destCount++] = '\n';
-				p++;
-				lineLength = 0;
+				qpLineLen = 0;
+				p++;								// skip over '\n'
 				continue;
 			} else if (c == '\n') {
 				// we encountered a newline without a preceding <CR>, we add that
 				// [in effect converting local newline (LF) to network newline (CRLF)]:
 				buf[destCount++] = '\r';
 				buf[destCount++] = '\n';
-				lineLength = 0;
+				qpLineLen = 0;
 				continue;
 			} else {
-				addChars << '=' << (char)CHAR2HIGHNIBBLE(c) << (char)CHAR2LOWNIBBLE(c);
+				add[0] = '='; 
+				add[1] = (char)CHAR2HIGHNIBBLE(c); 
+				add[2] = (char)CHAR2LOWNIBBLE(c);
+				addLen=3;
 			}
-			int32 addLen = addChars.Length();
-			if (!isEncodedWord && lineLength + addLen >= BM_MAX_LINE_LEN) {
+			if (!isEncodedWord && qpLineLen + addLen >= BM_MAX_LINE_LEN) {
 				// insert soft linebreak:
 				buf[destCount++] = '=';
 				buf[destCount++] = '\r';
 				buf[destCount++] = '\n';
-				lineLength = 0;
+				qpLineLen = 0;
 			}
-			addChars.CopyInto( buf+destCount, 0, addLen);
+			memcpy( buf+destCount, add, addLen);
 			destCount += addLen;
-			lineLength += addLen;
+			qpLineLen += addLen;
 		}
 		buf[destCount] = '\0';
 		dest.UnlockBuffer( destCount);
+		BM_LOG( BM_LogMailParse, "qp-encode: done");
 	} else if (encodingStyle == "B" || encodingStyle == "BASE64") {
 		// base64:
+		BM_LOG( BM_LogMailParse, BString("starting to encode base64 of ") << srcLen << " bytes");
 		int32 destLen = srcLen*5/3;		// just to be sure... (need to be a little over 4/3)
 		char* buf = dest.LockBuffer( destLen+1);
 		destLen = encode_base64( buf, const_cast<char*>(src.String()), src.Length());
 		destLen = MAX( 0, destLen);		// if errors should occur we don't want to crash
 		buf[destLen] = '\0';
 		dest.UnlockBuffer( destLen);
+		BM_LOG( BM_LogMailParse, "base64-encode: done");
 	} else if (encodingStyle == "7BIT" || encodingStyle == "8BIT") {
 		// replace local newline (LF) by network newline (CRLF):
+		BM_LOG2( BM_LogMailParse, "7bit/8bit-encode: converting linebreaks");
 		ConvertLinebreaksToCRLF( src, dest);
+		BM_LOG( BM_LogMailParse, "7bit/8bit-encode: done");
 	} else {
 		if (encodingStyle != "BINARY") {
 			// oops, we don't know this one:
@@ -290,49 +302,45 @@ void BmEncoding::Decode( BString encodingStyle, const BString& src, BString& des
 	Regexx rx;
 	if (encodingStyle == "Q" || encodingStyle == "QUOTED-PRINTABLE") {
 		// quoted printable:
-		// remove trailing whitespace from all lines (may have been added during mail-transport):
-		BString netText = rx.replace( src, "[\\t ]+(?=\\r\\n)", "", Regexx::newline | Regexx::global);
-		// join together lines that end with a softbreak:
-		netText = rx.replace( netText, "=\\r\\n", "", Regexx::newline | Regexx::global);
-		BString text;
-		ConvertLinebreaksToLF( netText, text);
-		if (isEncodedWord) {
-			// in encoded-words, underlines are really spaces (a real underline is encoded):
-			text = rx.replace( text, "_", " ", Regexx::newline | Regexx::global);
-		}
-		// now we decode the quoted printables:
-		rx.expr( "=([0-9A-F][0-9A-F])");
-		rx.str( text);
-		int32 len=text.Length();
-		const char* buf = text.String();
-		int32 nm;
-		
-		if ((nm = rx.exec( Regexx::global | Regexx::nocase))) {
-			unsigned char ch;
-			char* destBuf = dest.LockBuffer( len+1);
-			int32 neg_offs=0;
-			int32 curr=0;
-			vector<RegexxMatch>::const_iterator i;
-			for( i = rx.match.begin(); i != rx.match.end(); ++i) {
-				int32 pos = i->start();
-				if (curr<pos) {
-					memcpy( destBuf+curr-neg_offs, buf+curr, pos-curr);
+		BM_LOG( BM_LogMailParse, BString("starting to decode quoted-printable of ") << src.Length() << " bytes");
+		int32 destSize = src.Length();
+		if (!destSize)
+			return;
+		char* buf = dest.LockBuffer( destSize);
+		const char* pos = src.String();
+		char* newPos = buf;
+		char c1,c2;
+		const BString qpChars("abcdef0123456789ABCDEF");
+		while( *pos) {
+			if (*pos == '\r' && *(pos+1) == '\n') {
+				// make sure to remove any trailing whitespace:
+				while(newPos>buf && (*(newPos-1) == ' ' || *(newPos-1) == '\t'))
+					newPos--;
+				// join lines that have been divided by a soft linebreak:
+				if (newPos>buf && *(newPos-1) == '=') {
+					newPos--;					// remove '=' from output
+					pos++;						// skip '\n'
 				}
-				ch = HEXDIGIT2CHAR(buf[pos+1])*16 + HEXDIGIT2CHAR(buf[pos+2]);
-				destBuf[pos-neg_offs] = ch;
-				curr = pos+3;
-				neg_offs += 2;
+				pos++;							// skip '\r'
+			} else if (isEncodedWord && *pos == '_') {
+				// in encoded-words, underlines are really spaces (a real underline is encoded):
+				*newPos++ = ' ';
+				pos++;
+			} else if (*pos == '=' 
+						  && (c1=*(pos+1)) && qpChars.FindFirst(c1)!=B_ERROR 
+						  && (c2=*(pos+2)) && qpChars.FindFirst(c2)!=B_ERROR) {
+				*newPos++ = HEXDIGIT2CHAR(c1)*16 + HEXDIGIT2CHAR(c2);
+				pos+=3;
+			} else {
+				*newPos++ = *pos++;
 			}
-			if (curr<len) {
-				memcpy( destBuf+curr-neg_offs, buf+curr, len-curr);
-			}
-			destBuf[len-neg_offs] = '\0';
-			dest.UnlockBuffer( len-neg_offs);
-		} else {
-			dest = text;
 		}
+		*newPos = 0;
+		dest.UnlockBuffer( newPos-buf);
+		BM_LOG( BM_LogMailParse, "qp-decode: done");
 	} else if (encodingStyle == "B" || encodingStyle == "BASE64") {
 		// base64:
+		BM_LOG( BM_LogMailParse, BString("starting to decode base64 of ") << src.Length() << " bytes");
 		bool convertCRs = isText;
 		off_t srcSize = src.Length();
 		if (!srcSize)
@@ -341,9 +349,12 @@ void BmEncoding::Decode( BString encodingStyle, const BString& src, BString& des
 		int32 destSize = decode_base64( destBuf, const_cast<char*>(src.String()), srcSize, convertCRs);
 		dest[destSize] = '\0';
 		dest.UnlockBuffer( destSize);
+		BM_LOG( BM_LogMailParse, "base64-decode: done");
 	} else if (encodingStyle == "7BIT" || encodingStyle == "8BIT") {
 		// we copy the buffer and replace network newline (CRLF) by local newline (LF):
+		BM_LOG2( BM_LogMailParse, "7bit/8bit-decode: converting linebreaks");
 		ConvertLinebreaksToLF( src, dest);
+		BM_LOG( BM_LogMailParse, "7bit/8bit-decode: done");
 	} else {
 		if (encodingStyle != "BINARY") {
 			// oops, we don't know this one:

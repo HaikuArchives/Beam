@@ -60,7 +60,8 @@ public:
 	virtual BmJobModel* CreateJobModel( BMessage* msg) = 0;
 
 	// overrides of controller base:
-	void StartJob( BmJobModel* model = NULL, bool startInNewThread=true);
+	void StartJob( BmJobModel* model = NULL, bool startInNewThread=true,
+						int32 jobSpecifier = BmJobModel::BM_DEFAULT_JOB);
 	BHandler* GetControllerHandler() 	{ return this; }
 	void JobIsDone( bool completed);
 
@@ -212,6 +213,10 @@ public:
 	BmJobStatusWin();
 	virtual ~BmJobStatusWin();
 
+	// native methods:
+	void AddJob( BMessage* msg);
+	void RemoveJob( const char* name);
+
 	// overrides of BWindow base:
 	bool QuitRequested();
 	void Quit();
@@ -223,8 +228,6 @@ public:
 	static BmJobStatusWin* theInstance;
 
 private:
-	void AddJob( BMessage* msg);
-	void RemoveJob( const char* name);
 
 	JobMap mActiveJobs;						// list of known jobs
 	VGroup* mOuterGroup;						// the outmost view that the connection-interfaces live in

@@ -77,8 +77,8 @@ public:
 	// getters:
 	inline bool InitOK() const				{ return mInitOK; }
 	inline bool HasPhrase() const			{ return mPhrase.Length() > 0; }
-	inline BString Phrase() const			{ return mPhrase; }
-	inline BString AddrSpec() const		{ return mAddrSpec; }
+	inline const BString& Phrase() const		{ return mPhrase; }
+	inline const BString& AddrSpec() const		{ return mAddrSpec; }
 
 private:
 	bool mInitOK;
@@ -122,7 +122,7 @@ public:
 	inline bool InitOK() const				{ return mInitOK; }
 	inline bool IsGroup() const			{ return mIsGroup; }
 	inline int32 AddrCount() const		{ return mAddrList.size(); }
-	inline BString GroupName() const		{ return mGroupName; }
+	inline const BString& GroupName() const	{ return mGroupName; }
 	inline BmAddress FirstAddress() const		{ return mAddrList.size() > 0 ? mAddrList[0] : ""; }
 
 private:

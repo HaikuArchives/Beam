@@ -55,6 +55,7 @@ class BmMailFolder : public BmListModelItem {
 	static const int16 nArchiveVersion = 1;
 
 public:
+	static BmRef<BmMailFolder> CreateDummyInstance();
 	BmMailFolder( BmMailFolderList* model, entry_ref &eref, ino_t node,
 					  BmMailFolder* parent, time_t &modified);
 	BmMailFolder( BMessage* archive, BmMailFolderList* model, BmMailFolder* parent);

@@ -121,23 +121,26 @@ public:
 	inline const BString &Username() const 	{ return mUsername; }
 
 	// setters:
-	inline void AuthMethod( const BString &s) { mAuthMethod = s; }
-	inline void CheckMail( bool b) 				{ mCheckMail = b; }
-	inline void DeleteMailFromServer( bool b)	{ mDeleteMailFromServer = b; }
-	inline void MailAddr( const BString &s) 	{ mMailAddr = s; }
-	inline void MailAliases( const BString &s){ mMailAliases = s; }
-	inline void MarkedAsDefault( bool b)		{ mMarkedAsDefault = b; }
-	inline void MarkedAsBitBucket( bool b)		{ mMarkedAsBitBucket = b; }
-	inline void Password( const BString &s) 	{ mPassword = s; }
-	inline void POPServer( const BString &s)	{ mPOPServer = s; }
-	inline void PortNr( int16 i) 					{ mPortNr = i; mPortNrString = BString()<<i; }
-	inline void PwdStoredOnDisk( bool b)		{ mPwdStoredOnDisk = b; }
-	inline void RealName( const BString &s) 	{ mRealName = s; }
-	inline void SignatureName( const BString &s)	 { mSignatureName = s; }
-	inline void SMTPAccount( const BString &s){ mSMTPAccount = s; }
-	inline void Username( const BString &s) 	{ mUsername = s; }
+	inline void AuthMethod( const BString &s) { mAuthMethod = s; TellModelItemUpdated( UPD_ALL); }
+	inline void CheckMail( bool b) 				{ mCheckMail = b;  TellModelItemUpdated( UPD_ALL); }
+	inline void DeleteMailFromServer( bool b)	{ mDeleteMailFromServer = b;  TellModelItemUpdated( UPD_ALL); }
+	inline void MailAddr( const BString &s) 	{ mMailAddr = s;  TellModelItemUpdated( UPD_ALL); }
+	inline void MailAliases( const BString &s){ mMailAliases = s;  TellModelItemUpdated( UPD_ALL); }
+	inline void MarkedAsDefault( bool b)		{ mMarkedAsDefault = b;  TellModelItemUpdated( UPD_ALL); }
+	inline void MarkedAsBitBucket( bool b)		{ mMarkedAsBitBucket = b;  TellModelItemUpdated( UPD_ALL); }
+	inline void Password( const BString &s) 	{ mPassword = s;  TellModelItemUpdated( UPD_ALL); }
+	inline void POPServer( const BString &s)	{ mPOPServer = s;  TellModelItemUpdated( UPD_ALL); }
+	inline void PortNr( int16 i) 					{ mPortNr = i; mPortNrString = BString()<<i;  TellModelItemUpdated( UPD_ALL); }
+	inline void PwdStoredOnDisk( bool b)		{ mPwdStoredOnDisk = b;  TellModelItemUpdated( UPD_ALL); }
+	inline void RealName( const BString &s) 	{ mRealName = s;  TellModelItemUpdated( UPD_ALL); }
+	inline void SignatureName( const BString &s)	 { mSignatureName = s;  TellModelItemUpdated( UPD_ALL); }
+	inline void SMTPAccount( const BString &s){ mSMTPAccount = s;  TellModelItemUpdated( UPD_ALL); }
+	inline void Username( const BString &s) 	{ mUsername = s;  TellModelItemUpdated( UPD_ALL); }
 
 	bool GetPOPAddress( BNetAddress* addr) const;
+
+	static const char* const AUTH_POP3 = "POP3";
+	static const char* const AUTH_APOP = "APOP";
 
 private:
 	BmPopAccount();					// hide default constructor
@@ -191,6 +194,7 @@ public:
 	void AuthOnlyFor( BString accName);
 	BmRef<BmPopAccount> DefaultAccount();
 	BmRef<BmPopAccount> FindAccountForAddress( const BString addr);
+	void SetDefaultAccount( BString accName);
 	
 	// overrides of listmodel base:
 	const BString SettingsFileName();

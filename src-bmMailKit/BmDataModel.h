@@ -149,6 +149,7 @@ public:
 
 	static const int32 BM_DEFAULT_JOB = 0;
 	static const char* const MSG_JOB_SPEC = 		"bm:jobspec";
+	static const char* const MSG_JOB_THREAD = 	"bm:jobthread";
 
 protected:
 	// native methods:
@@ -275,6 +276,7 @@ public:
 	BmRef<BmListModelItem> FindItemByKey( const BString& key);
 	bool AddItemToList( BmListModelItem* item, BmListModelItem* parent=NULL);
 	void RemoveItemFromList( BmListModelItem* item);
+	bool RenameItem( const BString oldKey, const BString newKey);
 	BmRef<BmListModelItem> RemoveItemFromList( const BString& key);
 	virtual bool Store();
 	virtual const BString SettingsFileName() = 0;
@@ -284,9 +286,6 @@ public:
 	virtual void Cleanup();
 	virtual int16 ArchiveVersion() const = 0;
 
-	// overrides of job-model base:
-	bool StartJob();
-
 	// overrides of Archivable base:
 	status_t Archive( BMessage* archive, bool deep) const;
 
@@ -295,6 +294,7 @@ public:
 	static const char* const MSG_PARENTKEY 	= 		"bm:pkey";
 	static const char* const MSG_MODELITEM 	= 		"bm:item";
 	static const char* const MSG_UPD_FLAGS		= 		"bm:updflags";
+	static const char* const MSG_OLD_KEY		= 		"bm:oldkey";
 
 	// getters:
 	inline BmModelItemMap::const_iterator begin() const 	
@@ -312,7 +312,11 @@ protected:
 	// native methods:
 	virtual void TellModelItemAdded( BmListModelItem* item);
 	virtual void TellModelItemRemoved( BmListModelItem* item);
-	virtual void TellModelItemUpdated( BmListModelItem* item, BmUpdFlags flags=UPD_ALL);
+	virtual void TellModelItemUpdated( BmListModelItem* item, BmUpdFlags flags=UPD_ALL,
+												  const BString oldKey="");
+
+	// overrides of job-model base:
+	bool StartJob();
 
 	status_t mInitCheck;
 

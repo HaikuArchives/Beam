@@ -1,5 +1,5 @@
 /*
-	BmMenuControl.h
+	BmPrefsMailConstrView.h
 		$Id$
 */
 /*************************************************************************/
@@ -28,38 +28,65 @@
 /*************************************************************************/
 
 
-#ifndef _BmMenuControl_h
-#define _BmMenuControl_h
+#ifndef _BmPrefsMailConstrView_h
+#define _BmPrefsMailConstrView_h
 
-#include <MenuField.h>
+#include "BmPrefsView.h"
 
-#include <layout.h>
+#define BM_EACH_BCC_CHANGED 				'bmBC'
+#define BM_PREFER_USER_AGENT_CHANGED 	'bmUA'
+#define BM_GENERATE_MSGIDS_CHANGED 		'bmGI'
+#define BM_QP_SAFE_CHANGED	 				'bmQP'
+#define BM_ATTACH_VCARDS_CHANGED 		'bmAV'
+#define BM_ENCODING_SELECTED		 		'bmES'
+#define BM_FORWARD_TYPE_SELECTED		 	'bmFS'
 
-class HGroup;
-
-class BmMenuControl : public MView, public BMenuField
-{
-	typedef BMenuField inherited;
+class BmCheckControl;
+class BmMenuControl;
+class BmTextControl;
+/*------------------------------------------------------------------------------*\
+	BmPrefsMailConstrView
+		-	
+\*------------------------------------------------------------------------------*/
+class BmPrefsMailConstrView : public BmPrefsView {
+	typedef BmPrefsView inherited;
 
 public:
-	// creator-func, c'tors and d'tor:
-	BmMenuControl( const char* label, BMenu* menu, float weight=1.0);
-	~BmMenuControl();
+	// c'tors and d'tor:
+	BmPrefsMailConstrView();
+	virtual ~BmPrefsMailConstrView();
 	
-	// native methods:
-	void MarkItem( const char* label);
-	void ClearMark();
+	// overrides of BmPrefsView base:
+	void Initialize();
+	void SaveData();
+	void UndoChanges();
+
+	// overrides of BView base:
+	void MessageReceived( BMessage* msg);
 
 private:
-	minimax layoutprefs();
-	BRect layout(BRect frame);
-	
-	BMenu* mMenu;
+
+	BmCheckControl* mGenerateIDsControl;
+	BmCheckControl* mMakeQpSafeControl;
+	BmCheckControl* mSpecialForEachBccControl;
+	BmCheckControl* mPreferUserAgentControl;
+	BmTextControl* mMaxLineLenControl;
+	BmMenuControl* mDefaultEncodingControl;
+	BmTextControl* mQuotingStringControl;
+
+	BmMenuControl* mDefaultForwardTypeControl;
+	BmTextControl* mForwardIntroStrControl;
+	BmTextControl* mForwardSubjectStrControl;
+	BmTextControl* mForwardSubjectRxControl;
+	BmCheckControl* mDontAttachVCardsControl;
+
+	BmTextControl* mReplyIntroStrControl;
+	BmTextControl* mReplySubjectStrControl;
+	BmTextControl* mReplySubjectRxControl;
 
 	// Hide copy-constructor and assignment:
-	BmMenuControl( const BmMenuControl&);
-	BmMenuControl operator=( const BmMenuControl&);
+	BmPrefsMailConstrView( const BmPrefsMailConstrView&);
+	BmPrefsMailConstrView operator=( const BmPrefsMailConstrView&);
 };
-
 
 #endif

@@ -65,8 +65,9 @@ BmSmtpAccount::BmSmtpAccount( BMessage* archive, BmSmtpAccountList* model)
 	mSMTPServer = FindMsgString( archive, MSG_SMTP_SERVER);
 	mDomainToAnnounce = FindMsgString( archive, MSG_DOMAIN);
 	mAuthMethod = FindMsgString( archive, MSG_AUTH_METHOD);
+	mAuthMethod.ToUpper();
 	mPortNr = FindMsgInt16( archive, MSG_PORT_NR);
-	mAccForSmtpAfterPop = FindMsgString( archive, MSG_ACC_FOR_SAP);
+	mPortNrString << mPortNr;
 	mPwdStoredOnDisk = FindMsgBool( archive, MSG_STORE_PWD);
 }
 
@@ -84,7 +85,6 @@ status_t BmSmtpAccount::Archive( BMessage* archive, bool deep) const {
 		||	archive->AddString( MSG_DOMAIN, mDomainToAnnounce.String())
 		||	archive->AddString( MSG_AUTH_METHOD, mAuthMethod.String())
 		||	archive->AddInt16( MSG_PORT_NR, mPortNr)
-		||	archive->AddString( MSG_ACC_FOR_SAP, mAccForSmtpAfterPop.String())
 		||	archive->AddBool( MSG_STORE_PWD, mPwdStoredOnDisk));
 	return ret;
 }
@@ -102,7 +102,7 @@ bool BmSmtpAccount::GetSMTPAddress( BNetAddress* addr) const {
 		-	
 \*------------------------------------------------------------------------------*/
 bool BmSmtpAccount::NeedsAuthViaPopServer() {
-	return mAuthMethod.ICompare("SMTPAFTERPOP") == 0;
+	return mAuthMethod.ICompare(AUTH_SMTP_AFTER_POP) == 0;
 }
 
 

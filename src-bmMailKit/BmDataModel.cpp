@@ -279,6 +279,8 @@ BmJobModel::~BmJobModel() {
 void BmJobModel::StartJobInNewThread( int32 jobSpecifier) {
 	BmAutolock lock( mModelLocker);
 	lock.IsLocked()	 						|| BM_THROW_RUNTIME( ModelName() << ": Unable to get lock");
+	if (mJobState == JOB_RUNNING)
+		return; 			// job is already running, we won't disturb
 	mJobSpecifier = jobSpecifier;
 	if (!mThreadID) {
 		// we create a new thread for this job...
@@ -309,8 +311,27 @@ void BmJobModel::StartJobInNewThread( int32 jobSpecifier) {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmJobModel::StartJobInThisThread( int32 jobSpecifier) {
-	mJobSpecifier = jobSpecifier;
-	doStartJob();
+	bool isRunning;
+	{	// scope for autolock
+		BmAutolock lock( mModelLocker);
+		lock.IsLocked()	 						|| BM_THROW_RUNTIME( ModelName() << ": Unable to get lock");
+		isRunning = (mJobState == JOB_RUNNING);
+	}
+	if (isRunning) {
+		// job is already running, we need to wait till job has finished...
+		while( isRunning) {
+			snooze(200*1000);
+			{
+				BmAutolock lock( mModelLocker);
+				lock.IsLocked()	 						|| BM_THROW_RUNTIME( ModelName() << ": Unable to get lock");
+				isRunning = (mJobState == JOB_RUNNING);
+			}
+ 		}
+	} else {
+		// start job:
+		mJobSpecifier = jobSpecifier;
+		doStartJob();
+	}
 }
 
 /*------------------------------------------------------------------------------*\
@@ -606,6 +627,26 @@ BmRef<BmListModelItem> BmListModel::RemoveItemFromList( const BString& key) {
 }
 
 /*------------------------------------------------------------------------------*\
+	RemoveItemFromList()
+		-	
+\*------------------------------------------------------------------------------*/
+bool BmListModel::RenameItem( const BString oldKey, const BString newKey) {
+	BmAutolock lock( mModelLocker);
+	lock.IsLocked()	 						|| BM_THROW_RUNTIME( ModelName() << ":RemoveItemFromList(): Unable to get lock");
+	BmRef<BmListModelItem> doubleItem( FindItemByKey( newKey));
+	if (doubleItem)
+		return false;							// item with given (new) key already exists
+	BmRef<BmListModelItem> item( FindItemByKey( oldKey));
+	if (!item)
+		return false;
+	mModelItemMap.erase( oldKey);
+	item->Key( newKey);
+	mModelItemMap[newKey] = item.Get();
+	TellModelItemUpdated( item.Get(), UPD_ALL, oldKey);
+	return true;
+}
+
+/*------------------------------------------------------------------------------*\
 	FindItemByKey()
 		-	
 \*------------------------------------------------------------------------------*/
@@ -664,7 +705,8 @@ void BmListModel::TellModelItemRemoved( BmListModelItem* item) {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmListModel::TellModelItemUpdated( BmListModelItem* item, BmUpdFlags flags) {
+void BmListModel::TellModelItemUpdated( BmListModelItem* item, BmUpdFlags flags,
+													 const BString oldKey) {
 	if (Frozen())
 		return;
 	BmAutolock lock( mModelLocker);
@@ -674,6 +716,9 @@ void BmListModel::TellModelItemUpdated( BmListModelItem* item, BmUpdFlags flags)
 		msg.AddPointer( MSG_MODELITEM, static_cast<void*>(item));
 		item->AddRef();						// the message now refers to the item, too
 		msg.AddInt32( MSG_UPD_FLAGS, flags);
+		if (oldKey.Length())
+			// item has been renamed, we include old key:
+			msg.AddString( MSG_OLD_KEY, oldKey.String());
 		BM_LOG2( BM_LogModelController, BString("ListModel <") << ModelName() << "> tells about updated item " << item->Key());
 		TellControllers( &msg);
 	}

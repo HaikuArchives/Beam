@@ -72,7 +72,7 @@ const BString BmMailRefList::SettingsFileName() {
 	if (!mailCacheDir || mailCacheDir->GetEntry( &entry)!=B_OK)
 		return BString("");
 	BPath path;
-	if (entry.GetPath( &path) != B_OK)
+	if (!mFolder || entry.GetPath( &path) != B_OK)
 		return BString("");
 	return BString( path.Path()) 
 				<< "/folder_" 
@@ -94,7 +94,7 @@ bool BmMailRefList::StartJob() {
 	if (InitCheck() == B_OK && !mNeedsCacheUpdate) {
 		return true;
 	}
-
+	
 	Freeze();									// we shut up for better performance
 	try {
 		BString filename = SettingsFileName();

@@ -1,5 +1,5 @@
 /*
-	BmMenuControl.h
+	BmCheckControl.cpp
 		$Id$
 */
 /*************************************************************************/
@@ -28,38 +28,56 @@
 /*************************************************************************/
 
 
-#ifndef _BmMenuControl_h
-#define _BmMenuControl_h
+#include <HGroup.h>
 
-#include <MenuField.h>
+#include "BmCheckControl.h"
 
-#include <layout.h>
-
-class HGroup;
-
-class BmMenuControl : public MView, public BMenuField
+/*------------------------------------------------------------------------------*\
+	( )
+		-	
+\*------------------------------------------------------------------------------*/
+BmCheckControl::BmCheckControl( const char* label, ulong id, bool state) 
+	:	inherited( label, id, state)
 {
-	typedef BMenuField inherited;
+	ResizeToPreferred();
+}
 
-public:
-	// creator-func, c'tors and d'tor:
-	BmMenuControl( const char* label, BMenu* menu, float weight=1.0);
-	~BmMenuControl();
-	
-	// native methods:
-	void MarkItem( const char* label);
-	void ClearMark();
+/*------------------------------------------------------------------------------*\
+	( )
+		-	
+\*------------------------------------------------------------------------------*/
+BmCheckControl::BmCheckControl( const char* label, BMessage* msg, 
+										  BHandler* target, bool state)
+	:	inherited( label, msg, target, state)
+{
+	ResizeToPreferred();
+}
 
-private:
-	minimax layoutprefs();
-	BRect layout(BRect frame);
-	
-	BMenu* mMenu;
+/*------------------------------------------------------------------------------*\
+	( )
+		-	
+\*------------------------------------------------------------------------------*/
+BmCheckControl::~BmCheckControl() {
+}
 
-	// Hide copy-constructor and assignment:
-	BmMenuControl( const BmMenuControl&);
-	BmMenuControl operator=( const BmMenuControl&);
-};
+/*------------------------------------------------------------------------------*\
+	( )
+		-	
+\*------------------------------------------------------------------------------*/
+float BmCheckControl::LabelWidth() {
+	const char* label = Label();
+	if (!label)
+		return 0;
+	BFont font;
+	GetFont( &font);
+	return font.StringWidth( label);
+}
 
+/*------------------------------------------------------------------------------*\
+	( )
+		-	
+\*------------------------------------------------------------------------------*/
+void BmCheckControl::AdjustToMaxLabelWidth( float maxWidth) {
+	ct_mpm.maxi.x = ct_mpm.mini.x = mpm.maxi.x = mpm.mini.x = maxWidth;
+}
 
-#endif

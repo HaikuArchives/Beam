@@ -28,6 +28,9 @@
 /*************************************************************************/
 
 
+#ifdef BM_DEBUG_MEM
+#include <Alert.h>
+#endif
 #include <Autolock.h>
 #include <File.h>
 #include <InterfaceKit.h>
@@ -79,8 +82,14 @@ void BmMainMenuBar::MessageReceived( BMessage* msg) {
 		switch( msg->what) {
 			case BM_JOB_DONE:
 			case BM_LISTMODEL_ADD:
+			case BM_LISTMODEL_UPDATE:
 			case BM_LISTMODEL_REMOVE: {
-				if (!IsMsgFromCurrentModel( msg)) break;
+				if (!IsMsgFromCurrentModel( msg)) 
+					break;
+				const char* oldKey;
+				if (msg->what == BM_LISTMODEL_UPDATE
+				&& msg->FindString( BmListModel::MSG_OLD_KEY, &oldKey) != B_OK) 
+					break;
 				JobIsDone( true);
 				break;
 			}
@@ -95,7 +104,7 @@ void BmMainMenuBar::MessageReceived( BMessage* msg) {
 }
 
 /*------------------------------------------------------------------------------*\
-	MessageReceived( msg)
+	JobIsDone()
 		-	
 \*------------------------------------------------------------------------------*/
 void BmMainMenuBar::JobIsDone( bool completed) {
@@ -228,6 +237,7 @@ BmMainWindow::BmMainWindow()
 			0
 		);
 
+	mMailFolderView->TeamUpWith( mMailRefView);
 	mMailRefView->TeamUpWith( mMailView);
 	mMailView->TeamUpWith( mMailRefView);
 	MailFolderSelectionChanged( 0);
@@ -504,6 +514,9 @@ void BmMainWindow::Quit() {
 	mMailRefView->DetachModel();
 	mMailFolderView->DetachModel();
 	BM_LOG2( BM_LogMainWindow, BString("MainWindow has quit"));
+#ifdef BM_DEBUG_MEM
+	(new BAlert( "", "End of MainWindow, check mem-usage!!!", "OK"))->Go();
+#endif
 	inherited::Quit();
 }
 

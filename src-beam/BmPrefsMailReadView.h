@@ -1,5 +1,5 @@
 /*
-	BmMenuControl.h
+	BmPrefsMailReadView.h
 		$Id$
 */
 /*************************************************************************/
@@ -28,38 +28,52 @@
 /*************************************************************************/
 
 
-#ifndef _BmMenuControl_h
-#define _BmMenuControl_h
+#ifndef _BmPrefsMailReadView_h
+#define _BmPrefsMailReadView_h
 
-#include <MenuField.h>
+#include "BmPrefsView.h"
 
-#include <layout.h>
+#define BM_EACH_BCC_CHANGED 				'bmBC'
+#define BM_PREFER_USER_AGENT_CHANGED 	'bmUA'
+#define BM_GENERATE_MSGIDS_CHANGED 		'bmGI'
+#define BM_QP_SAFE_CHANGED	 				'bmQP'
+#define BM_ATTACH_VCARDS_CHANGED 		'bmAV'
+#define BM_ENCODING_SELECTED		 		'bmES'
+#define BM_FORWARD_TYPE_SELECTED		 	'bmFS'
 
-class HGroup;
-
-class BmMenuControl : public MView, public BMenuField
-{
-	typedef BMenuField inherited;
+class BmCheckControl;
+class BmMenuControl;
+class BmTextControl;
+/*------------------------------------------------------------------------------*\
+	BmPrefsMailReadView
+		-	
+\*------------------------------------------------------------------------------*/
+class BmPrefsMailReadView : public BmPrefsView {
+	typedef BmPrefsView inherited;
 
 public:
-	// creator-func, c'tors and d'tor:
-	BmMenuControl( const char* label, BMenu* menu, float weight=1.0);
-	~BmMenuControl();
+	// c'tors and d'tor:
+	BmPrefsMailReadView();
+	virtual ~BmPrefsMailReadView();
 	
-	// native methods:
-	void MarkItem( const char* label);
-	void ClearMark();
+	// overrides of BmPrefsView base:
+	void Initialize();
+	void SaveData();
+	void UndoChanges();
+
+	// overrides of BView base:
+	void MessageReceived( BMessage* msg);
 
 private:
-	minimax layoutprefs();
-	BRect layout(BRect frame);
-	
-	BMenu* mMenu;
+
+	BmTextControl* mHeaderListSmallControl;
+	BmTextControl* mHeaderListLargeControl;
+	BmTextControl* mSignatureRxControl;
+	BmTextControl* mMimeTypeTrustInfoControl;
 
 	// Hide copy-constructor and assignment:
-	BmMenuControl( const BmMenuControl&);
-	BmMenuControl operator=( const BmMenuControl&);
+	BmPrefsMailReadView( const BmPrefsMailReadView&);
+	BmPrefsMailReadView operator=( const BmPrefsMailReadView&);
 };
-
 
 #endif

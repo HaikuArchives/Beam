@@ -40,11 +40,13 @@ using namespace regexx;
 #include "BmBasics.h"
 #include "BmEncoding.h"
 	using namespace BmEncoding;
+#include "BmJobStatusWin.h"
 #include "BmLogHandler.h"
 #include "BmMail.h"
 #include "BmMailHeader.h"
 #include "BmNetUtil.h"
 #include "BmPopAccount.h"
+#include "BmPopper.h"
 #include "BmSmtpAccount.h"
 #include "BmSmtp.h"
 #include "BmPrefs.h"
@@ -121,6 +123,8 @@ bool BmSmtp::StartJob() {
 													||	BM_THROW_RUNTIME("BmSmtp: could not create NetEndpoint");
 			try {
 				for( 	mState = startState; ShouldContinue() && mState<SMTP_DONE; ++mState) {
+					if (mState == SMTP_AUTH && mSmtpAccount->NeedsAuthViaPopServer())
+						continue;
 					TStateMethod stateFunc = SmtpStates[mState].func;
 					UpdateSMTPStatus( (mState==startState ? 0.0 : delta), NULL);
 					(this->*stateFunc)();
@@ -230,7 +234,16 @@ void BmSmtp::Helo() {
 		-	authenticates through pop-server (SMTP_AFTER_POP)
 \*------------------------------------------------------------------------------*/
 void BmSmtp::AuthViaPopServer() {
-	ThePopAccountList->AuthOnlyFor( mSmtpAccount->AccForSmtpAfterPop());
+	BmMail* mail = mSmtpAccount->mMailVect[0].Get();
+	if (mail) {
+		BString sender = mail->Header()->DetermineSender();
+		BmRef<BmPopAccount> sendingAcc = ThePopAccountList->FindAccountForAddress( sender);
+		BMessage msg(BM_JOBWIN_POP);
+		msg.AddString( BmJobModel::MSG_JOB_NAME, sendingAcc->Name().String());
+		msg.AddInt32( BmJobModel::MSG_JOB_SPEC, BmPopper::BM_AUTH_ONLY_JOB);
+		msg.AddBool( BmJobModel::MSG_JOB_THREAD, false);
+		TheJobStatusWin->AddJob( &msg);
+	}
 }
 
 /*------------------------------------------------------------------------------*\
@@ -243,6 +256,8 @@ void BmSmtp::Auth() {
 	bool first = true;
 	BString authMethod = mSmtpAccount->AuthMethod();
 	authMethod.ToUpper();
+	if (!authMethod.Length())
+		return;			// no authentication needed...
 	while(!pwdOK) {
 		if (first && mSmtpAccount->PwdStoredOnDisk()) {
 			pwd = mSmtpAccount->Password();
@@ -256,7 +271,7 @@ void BmSmtp::Auth() {
 			BM_THROW_RUNTIME( "Unable to acquire password !?!");
 
 		first = false;
-		if (authMethod == "PLAIN") {
+		if (authMethod == BmSmtpAccount::AUTH_PLAIN) {
 			// PLAIN-method: send single base64-encoded string that is composed like this:
 			// authenticateID + \0 + username + \0 + password
 			// (where authenticateID is currently always empty)
@@ -270,7 +285,7 @@ void BmSmtp::Auth() {
 				Encode( "base64", cmd, base64);
 				SendCommand( "", base64);
 			}
-		} else if (authMethod == "LOGIN") {
+		} else if (authMethod == BmSmtpAccount::AUTH_PLAIN) {
 			// LOGIN-method: send base64-encoded username, then send base64-encoded password:
 			BString cmd = BString("AUTH LOGIN");
 			SendCommand( cmd);
@@ -554,7 +569,6 @@ void BmSmtp::SendCommand( BString cmd, BString secret, bool isMailData) {
 	BString command;
 	if (secret.Length()) {
 		command = cmd + secret;
-//		if (ThePrefs->LogLevel
 		BM_LOG( BM_LogSmtp, BString("-->\n") << cmd << " secret_data_omitted_here");
 													// we do not want to log any passwords...
 	} else {
@@ -566,7 +580,7 @@ void BmSmtp::SendCommand( BString cmd, BString secret, bool isMailData) {
 	int32 size = command.Length();
 	int32 sentSize;
 	if (isMailData) {
-		int32 blockSize = 15000;
+		int32 blockSize = ThePrefs->GetInt("NetSendBufferSize", 10*1500);
 		for( int32 block=0; block*blockSize < size; ++block) {
 			int32 offs = block*blockSize;
 			int32 sz = MIN( size-offs, blockSize);

@@ -69,6 +69,10 @@ public:
 	BString GetString( const char* name);
 	BString GetString( const char* name, const BString defaultVal);
 
+	// getters:
+	BMessage* PrefsMsg()						{ return &mPrefsMsg; }
+	BMessage* DefaultsMsg()					{ return &mDefaultsMsg; }
+
 	static BmPrefs* theInstance;
 
 private:

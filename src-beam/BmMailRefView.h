@@ -115,8 +115,6 @@ public:
 	BmListViewItem* CreateListViewItem( BmListModelItem* item, BMessage* archive=NULL);
 	const char* ItemNameForCaption()		{ return "message"; }
 
-	static BmMailRefView* theInstance;
-	
 private:
 	BmRef<BmMailFolder> mCurrFolder;
 	BmMailView* mPartnerMailView;
@@ -125,7 +123,5 @@ private:
 	BmMailRefView( const BmMailRefView&);
 	BmMailRefView operator=( const BmMailRefView&);
 };
-
-#define TheMailRefView BmMailRefView::theInstance
 
 #endif

@@ -98,21 +98,24 @@ public:
 	inline const BString &DomainToAnnounce() const 	{ return mDomainToAnnounce; }
 	inline const BString &AuthMethod() const 	{ return mAuthMethod; }
 	inline int16 PortNr() const 					{ return mPortNr; }
-	inline const BString &AccForSmtpAfterPop() const 	{ return mAccForSmtpAfterPop; }
+	inline const BString &PortNrString() const{ return mPortNrString; }
 
 	// setters:
-	inline void Username( const BString &s) 	{ mUsername = s; }
-	inline void Password( const BString &s) 	{ mPassword = s; }
-	inline void PwdStoredOnDisk( bool b)		{ mPwdStoredOnDisk = b; }
-	inline void SMTPServer( const BString &s)	{ mSMTPServer = s; }
-	inline void DomainToAnnounce( const BString &s) 	{ mDomainToAnnounce = s; }
-	inline void AuthMethod( const BString &s) { mAuthMethod = s; }
-	inline void PortNr( int16 i) 					{ mPortNr = i; }
-	inline void AccForSmtpAfterPop( const BString &s) 	{ mAccForSmtpAfterPop = s; }
+	inline void Username( const BString &s) 	{ mUsername = s;   TellModelItemUpdated( UPD_ALL); }
+	inline void Password( const BString &s) 	{ mPassword = s;   TellModelItemUpdated( UPD_ALL); }
+	inline void PwdStoredOnDisk( bool b)		{ mPwdStoredOnDisk = b;   TellModelItemUpdated( UPD_ALL); }
+	inline void SMTPServer( const BString &s)	{ mSMTPServer = s;   TellModelItemUpdated( UPD_ALL); }
+	inline void DomainToAnnounce( const BString &s) 	{ mDomainToAnnounce = s;   TellModelItemUpdated( UPD_ALL); }
+	inline void AuthMethod( const BString &s) { mAuthMethod = s;   TellModelItemUpdated( UPD_ALL); }
+	inline void PortNr( int16 i) 					{ mPortNr = i; mPortNrString = BString()<<i;  TellModelItemUpdated( UPD_ALL); }
 
 	bool GetSMTPAddress( BNetAddress* addr) const;
 
 	BmMailVect mMailVect;			// vector with mails that shall be sent
+
+	static const char* const AUTH_SMTP_AFTER_POP = 	"SMTP-AFTER-POP";
+	static const char* const AUTH_PLAIN = 				"PLAIN";
+	static const char* const AUTH_LOGIN = 				"LOGIN";
 
 private:
 	BmSmtpAccount();					// hide default constructor
@@ -128,7 +131,7 @@ private:
 											// ourselves to the server (HELO/EHLO)
 	BString mAuthMethod;				// authentication method to use
 	int16 mPortNr;						// usually 25
-	BString mAccForSmtpAfterPop;	// POP-account to use for SmtpAfterPop
+	BString mPortNrString;			// Port-Nr as String
 	bool mPwdStoredOnDisk;			// store Passwords unsafely on disk?
 
 };
@@ -157,7 +160,7 @@ public:
 	const BString SettingsFileName();
 	void InstantiateItems( BMessage* archive);
 	int16 ArchiveVersion() const			{ return nArchiveVersion; }
-
+	
 	static BmRef<BmSmtpAccountList> theInstance;
 
 private:

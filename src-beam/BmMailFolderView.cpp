@@ -130,6 +130,7 @@ BmMailFolderView* BmMailFolderView::CreateInstance( minimax minmax, int32 width,
 BmMailFolderView::BmMailFolderView( minimax minmax, int32 width, int32 height)
 	:	inherited( minmax, BRect(0,0,width-1,height-1), "Beam_FolderView", B_SINGLE_SELECTION_LIST, 
 					  true, true, true, true)
+	,	mPartnerMailRefView( NULL)
 {
 	Initialize( BRect( 0,0,width-1,height-1), B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE,
 					B_FOLLOW_TOP_BOTTOM, true, true, true, B_FANCY_BORDER);
@@ -281,8 +282,8 @@ void BmMailFolderView::MessageReceived( BMessage* msg) {
 				if (!folder)
 					return;
 				folder->RecreateCache();
-				if (TheMailRefView)
-					TheMailRefView->ShowFolder( folder.Get());
+				if (mPartnerMailRefView)
+					mPartnerMailRefView->ShowFolder( folder.Get());
 				break;
 			}
 			default:
@@ -307,13 +308,13 @@ void BmMailFolderView::UpdateModelItem( BMessage* msg) {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmMailFolderView::SelectionChanged( void) {
-	if (!TheMailRefView)
+	if (!mPartnerMailRefView)
 		return;
 	BmRef<BmMailFolder> folder = CurrentFolder();
 	if (folder)
-		TheMailRefView->ShowFolder( folder.Get());
+		mPartnerMailRefView->ShowFolder( folder.Get());
 	else
-		TheMailRefView->ShowFolder( NULL);
+		mPartnerMailRefView->ShowFolder( NULL);
 
 	BMessage msg(BM_NTFY_MAILFOLDER_SELECTION);
 	msg.AddInt32( MSG_FOLDERS_SELECTED, folder ? 1 : 0);

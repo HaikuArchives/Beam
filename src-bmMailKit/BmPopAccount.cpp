@@ -52,9 +52,12 @@ using namespace regexx;
 \*------------------------------------------------------------------------------*/
 BmPopAccount::BmPopAccount( const char* name, BmPopAccountList* model) 
 	:	inherited( name, model, (BmListModelItem*)NULL)
-	,	mCheckMail( false)
+	,	mCheckMail( true)
 	,	mDeleteMailFromServer( false)
 	,	mPortNr( 110)
+	,	mAuthMethod( "POP3")
+	,	mMarkedAsDefault( false)
+	,	mMarkedAsBitBucket( false)
 	,	mPwdStoredOnDisk( false)
 {
 }
@@ -82,6 +85,7 @@ BmPopAccount::BmPopAccount( BMessage* archive, BmPopAccountList* model)
 	mPortNr = FindMsgInt16( archive, MSG_PORT_NR);
 	mPortNrString << mPortNr;
 	mAuthMethod = FindMsgString( archive, MSG_AUTH_METHOD);
+	mAuthMethod.ToUpper();
 	mMarkedAsDefault = FindMsgBool( archive, MSG_MARK_DEFAULT);
 	mPwdStoredOnDisk = FindMsgBool( archive, MSG_STORE_PWD);
 	mMarkedAsBitBucket = FindMsgBool( archive, MSG_MARK_BUCKET);
@@ -290,6 +294,22 @@ BmRef<BmPopAccount> BmPopAccountList::DefaultAccount() {
 		return dynamic_cast< BmPopAccount*>( begin()->second.Get());
 	else
 		return NULL;
+}
+
+/*------------------------------------------------------------------------------*\
+	DefaultAccount()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmPopAccountList::SetDefaultAccount( BString accName) {
+	BmModelItemMap::const_iterator iter;
+	for( iter = begin(); iter != end(); ++iter) {
+		BmPopAccount* acc = dynamic_cast< BmPopAccount*>( iter->second.Get());
+		if (acc->Key() == accName) {
+			acc->MarkedAsDefault( true);
+		} else if (acc->MarkedAsDefault()) {
+			acc->MarkedAsDefault( false);
+		}
+	}
 }
 
 /*------------------------------------------------------------------------------*\

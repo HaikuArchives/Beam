@@ -41,16 +41,28 @@
 	( )
 		-	
 \*------------------------------------------------------------------------------*/
-BmTextControl::BmTextControl( const char* label, bool labelIsMenu) 
+BmTextControl::BmTextControl( const char* label, bool labelIsMenu, int32 fixedTextLen,
+										int32 minTextLen)
 	:	inherited( BRect(0,0,0,0), NULL, labelIsMenu ? "" : label, NULL, NULL, B_FOLLOW_NONE)
 	,	mLabelIsMenu( labelIsMenu)
 	,	mTextView( static_cast<BTextView*>( ChildAt( 0)))
-	,	mParent( NULL)
 {
 	ResizeToPreferred();
 	BRect b = Bounds();
-	ct_mpm = minimax( b.Width(), b.Height()+4, 1E5, b.Height()+4);
-	SetDivider( label ? StringWidth( label)+27 : 0);
+	float divPos = label ? StringWidth( label)+27 : 0;
+	BFont font;
+	mTextView->GetFont( &font);
+	if (fixedTextLen) {
+		mTextView->SetMaxBytes( fixedTextLen);
+		float width = divPos + font.StringWidth("W")*fixedTextLen;
+		ct_mpm = minimax( width, b.Height()+4, width, b.Height()+4);
+	} else {
+		if (minTextLen)
+			ct_mpm = minimax( divPos + font.StringWidth("W")*minTextLen, b.Height()+4, 1E5, b.Height()+4);
+		else
+			ct_mpm = minimax( divPos + font.StringWidth("W")*10, b.Height()+4, 1E5, b.Height()+4);
+	}
+	SetDivider( divPos);
 	if (labelIsMenu) {
 		float width, height;
 		GetPreferredSize( &width, &height);
@@ -74,21 +86,10 @@ BmTextControl::~BmTextControl() {
 	( )
 		-	
 \*------------------------------------------------------------------------------*/
-void BmTextControl::DetachFromParent() {
-	if (Parent()) {
-		mParent = dynamic_cast<HGroup*>(Parent());
-		RemoveSelf();
-	}
-}
-
-/*------------------------------------------------------------------------------*\
-	( )
-		-	
-\*------------------------------------------------------------------------------*/
-void BmTextControl::ReattachToParent() {
-	if (mParent) {
-		mParent->AddChild( this);
-	}
+void BmTextControl::SetDivider( float divider) {
+	float diff = divider-Divider();
+	ct_mpm.maxi.x += diff;
+	inherited::SetDivider( divider);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -128,9 +129,7 @@ void BmTextControl::FrameResized( float new_width, float new_height) {
 	BRect curr = Bounds();
 	Invalidate( BRect( Divider(), 0, new_width-1, curr.Height()));
 	inherited::FrameResized( new_width, new_height);
-//	TextView()->Select( 0, 0);
 	TextView()->ScrollToSelection();
-//	TextView()->GoToLine( 0);
 }
 
 /*------------------------------------------------------------------------------*\

@@ -42,8 +42,8 @@
 #define BM_REFKEY(x) (BString() << x.st_ino)
 
 /*------------------------------------------------------------------------------*\
-	BmMailRef( archive)
-		-	unarchive c'tor
+	CreateInstance( )
+		-	static creator-func
 \*------------------------------------------------------------------------------*/
 BmRef<BmMailRef> BmMailRef::CreateInstance( BmMailRefList* model, entry_ref &eref, 
 												  		  struct stat& st) {
@@ -64,6 +64,53 @@ BmRef<BmMailRef> BmMailRef::CreateInstance( BmMailRefList* model, entry_ref &ere
 	} else {
 		return mailRef;
 	}
+}
+
+/*------------------------------------------------------------------------------*\
+	CreateDummyInstance( id)
+		-	static creator-func, creates dummy mail-refs (used in prefs)
+\*------------------------------------------------------------------------------*/
+BmRef<BmMailRef> BmMailRef::CreateDummyInstance( BmMailRefList* model, int id) {
+	if (id==0) {
+		BMessage archive;
+		entry_ref eref( 1,1,"dummy_0");
+		archive.AddString( MSG_ACCOUNT, "test-acc");
+		archive.AddBool( MSG_ATTACHMENTS, false);
+		archive.AddString( MSG_CC, "");
+		archive.AddInt32( MSG_CREATED, time(NULL));
+		archive.AddRef( MSG_ENTRYREF, &eref);
+		archive.AddString( MSG_FROM, "from@test.org");
+		archive.AddInt64( MSG_INODE, 0);
+		archive.AddString( MSG_NAME, "name@test.org");
+		archive.AddString( MSG_PRIORITY, "3");
+		archive.AddString( MSG_REPLYTO, "");
+		archive.AddInt64( MSG_SIZE, 42);
+		archive.AddString( MSG_STATUS, "New");
+		archive.AddString( MSG_SUBJECT, "dummy-mail, just for preferences");
+		archive.AddString( MSG_TO, "to@test.org");
+		archive.AddInt32( MSG_WHEN, time(NULL));
+		return new BmMailRef( &archive, model);
+	} else if (id==1) {
+		BMessage archive;
+		entry_ref eref( 1,1,"dummy_1");
+		archive.AddString( MSG_ACCOUNT, "test-acc");
+		archive.AddBool( MSG_ATTACHMENTS, true);
+		archive.AddString( MSG_CC, "cc@test.org");
+		archive.AddInt32( MSG_CREATED, time(NULL));
+		archive.AddRef( MSG_ENTRYREF, &eref);
+		archive.AddString( MSG_FROM, "from@test.org");
+		archive.AddInt64( MSG_INODE, 1);
+		archive.AddString( MSG_NAME, "name@test.org");
+		archive.AddString( MSG_PRIORITY, "2");
+		archive.AddString( MSG_REPLYTO, "reply.to@test.org");
+		archive.AddInt64( MSG_SIZE, 42*42*42*42);
+		archive.AddString( MSG_STATUS, "Read");
+		archive.AddString( MSG_SUBJECT, "another dummy-mail, just for preferences");
+		archive.AddString( MSG_TO, "another.to@test.org");
+		archive.AddInt32( MSG_WHEN, time(NULL));
+		return new BmMailRef( &archive, model);
+	} else
+		return NULL;
 }
 
 /*------------------------------------------------------------------------------*\

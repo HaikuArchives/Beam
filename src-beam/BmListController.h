@@ -163,8 +163,7 @@ public:
 
 	// native methods:
 	virtual void AddAllModelItems();
-	virtual void AddModelItem( BmListModelItem* item);
-	virtual void doAddModelItem( BmListViewItem* parent, BmListModelItem* item);
+	virtual BmListViewItem* AddModelItem( BmListModelItem* item);
 	virtual void RemoveModelItem( BmListModelItem* item);
 	virtual void UpdateModelItem( BmListModelItem* item, BmUpdFlags updFlags);
 	virtual void UpdateModelState( BMessage* msg);
@@ -190,6 +189,7 @@ public:
 	BHandler* GetControllerHandler() 	{ return this; }
 	void StartJob( BmJobModel* model = NULL, bool startInNewThread=true);
 	void JobIsDone( bool completed);
+	status_t Archive(BMessage* archive, bool deep=true) const;
 
 	// overrides of listview base:
 	CLVContainerView* CreateContainer( bool horizontal, bool vertical, 
@@ -216,7 +216,6 @@ public:
 protected:
 	virtual BmListModel* DataModel()		{ return dynamic_cast<BmListModel*>(BmController::DataModel()); }
 	// archival of the controller's state-info:
-	virtual status_t Archive(BMessage* archive, bool deep=true) const;
 	virtual BString StateInfoBasename()				= 0;
 	virtual const BMessage* DefaultLayout()	{ return NULL; }
 
@@ -228,6 +227,9 @@ protected:
 	BMessageRunner* mUpdatePulseRunner;
 	BList mCachedMessages;
 	bool mSittingOnExpander;
+
+private:
+	BmListViewItem* doAddModelItem( BmListViewItem* parent, BmListModelItem* item);
 
 	// Hide copy-constructor and assignment:
 	BmListViewController( const BmListViewController&);

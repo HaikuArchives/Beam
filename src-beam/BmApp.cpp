@@ -159,12 +159,21 @@ thread_id BmApplication::Run() {
 	}
 	thread_id tid = 0;
 	try {
-		TheSmtpAccountList->StartJob();
+		TheSmtpAccountList->StartJobInThisThread();
 		TheMainWindow->BeginLife();
 		TheMainWindow->Show();
 		tid = inherited::Run();
 		ThePopAccountList->Store();
 		TheSmtpAccountList->Store();
+#ifdef BM_DEBUG_MEM
+		(new BAlert( "", "End of Beam(1), check mem-usage!!!", "OK"))->Go();
+		ThePopAccountList = NULL;
+		(new BAlert( "", "End of Beam(2), check mem-usage!!!", "OK"))->Go();
+		TheSmtpAccountList = NULL;
+		(new BAlert( "", "End of Beam(3), check mem-usage!!!", "OK"))->Go();
+		TheMailFolderList = NULL;
+		(new BAlert( "", "End of Beam(4), check mem-usage!!!", "OK"))->Go();
+#endif
 	} catch( exception &e) {
 		BM_SHOWERR( e.what());
 		exit(10);

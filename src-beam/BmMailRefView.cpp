@@ -194,17 +194,12 @@ const time_t BmMailRefItem::GetDateValueForColumn( int32 column_index) const {
 \********************************************************************************/
 
 
-BmMailRefView* BmMailRefView::theInstance = NULL;
-
 /*------------------------------------------------------------------------------*\
 	()
 		-	
 \*------------------------------------------------------------------------------*/
 BmMailRefView* BmMailRefView::CreateInstance( minimax minmax, int32 width, int32 height) {
-	if (theInstance)
-		return theInstance;
-	else 
-		return theInstance = new BmMailRefView( minmax, width, height);
+	return new BmMailRefView( minmax, width, height);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -254,7 +249,6 @@ BmMailRefView::BmMailRefView( minimax minmax, int32 width, int32 height)
 		-	
 \*------------------------------------------------------------------------------*/
 BmMailRefView::~BmMailRefView() { 
-	theInstance = NULL;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -451,7 +445,8 @@ bool BmMailRefView::InitiateDrag( BPoint where, int32 index, bool wasSelected) {
 										  BPoint( 20.0, i*lineHeight+baselineOffset));
 		} else if (i==3) {
 			// add an indicator that more items are being dragged than shown:
-			BString indicator = BString("(...and ") << selCount-3 << " more items)";
+			BString indicator = BString("(...and ") << selCount-3 
+				<< (selCount-3 == 1 ? " more item)" : " more items)");
 			dummyView->DrawString( indicator.String(), 
 										  BPoint( 20.0, i*lineHeight+baselineOffset));
 		}

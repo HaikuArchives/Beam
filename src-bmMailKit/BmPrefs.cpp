@@ -35,6 +35,7 @@
 
 #include "BmBasics.h"
 #include "BmLogHandler.h"
+#include "BmMsgTypes.h"
 #include "BmPrefs.h"
 #include "BmResources.h"
 #include "BmUtil.h"
@@ -104,6 +105,21 @@ BmPrefs::BmPrefs( BMessage* archive)
 {
 	InitDefaults();
 	mPrefsMsg = *archive;
+	int32 loglevels = BM_LOGLVL_VAL(archive->FindInt16("Loglevel_Pop"),BM_LogPop)
+							+ BM_LOGLVL_VAL(archive->FindInt16("Loglevel_JobWin"),BM_LogJobWin) 
+							+ BM_LOGLVL_VAL(archive->FindInt16("Loglevel_MailParse"),BM_LogMailParse) 
+							+ BM_LOGLVL_VAL(archive->FindInt16("Loglevel_Util"),BM_LogUtil) 
+							+ BM_LOGLVL_VAL(archive->FindInt16("Loglevel_MailTracking"),BM_LogMailTracking)
+							+ BM_LOGLVL_VAL(archive->FindInt16("Loglevel_FolderView"),BM_LogFolderView)
+							+ BM_LOGLVL_VAL(archive->FindInt16("Loglevel_RefView"),BM_LogRefView)
+							+ BM_LOGLVL_VAL(archive->FindInt16("Loglevel_MainWindow"),BM_LogMainWindow)
+							+ BM_LOGLVL_VAL(archive->FindInt16("Loglevel_ModelController"),BM_LogModelController)
+							+ BM_LOGLVL_VAL(archive->FindInt16("Loglevel_MailEditWin"),BM_LogMailEditWin)
+							+ BM_LOGLVL_VAL(archive->FindInt16("Loglevel_Smtp"),BM_LogSmtp)
+							+ BM_LOGLVL_VAL(archive->FindInt16("Loglevel_PrefsWin"),BM_LogPrefsWin);
+	mPrefsMsg.RemoveName("Loglevels");
+	mPrefsMsg.AddInt32("Loglevels", loglevels);
+	
 	SetLoglevels();
 }
 
@@ -123,19 +139,31 @@ void BmPrefs::InitDefaults() {
 	mDefaultsMsg.MakeEmpty();
 	mDefaultsMsg.AddBool( "DynamicStatusWin", true);
 	mDefaultsMsg.AddInt32( "ReceiveTimeout", 60);
-	mDefaultsMsg.AddInt32( "Loglevels", BM_LOGLVL2(BM_LogPop) 
-										+ BM_LOGLVL2(BM_LogJobWin) 
-										+ BM_LOGLVL2(BM_LogMailParse) 
-										+ BM_LOGLVL2(BM_LogUtil) 
-										+ BM_LOGLVL2(BM_LogMailTracking)
-										+ BM_LOGLVL2(BM_LogFolderView)
-										+ BM_LOGLVL2(BM_LogRefView)
-										+ BM_LOGLVL2(BM_LogMainWindow)
-										+ BM_LOGLVL2(BM_LogModelController)
-										+ BM_LOGLVL2(BM_LogMailEditWin)
-										+ BM_LOGLVL2(BM_LogSmtp)
-										+ BM_LOGLVL2(BM_LogPrefsWin)
-										);
+	int32 loglevels = BM_LOGLVL2(BM_LogPop)
+							+ BM_LOGLVL2(BM_LogJobWin) 
+							+ BM_LOGLVL2(BM_LogMailParse) 
+							+ BM_LOGLVL2(BM_LogUtil) 
+							+ BM_LOGLVL2(BM_LogMailTracking)
+							+ BM_LOGLVL2(BM_LogFolderView)
+							+ BM_LOGLVL2(BM_LogRefView)
+							+ BM_LOGLVL2(BM_LogMainWindow)
+							+ BM_LOGLVL2(BM_LogModelController)
+							+ BM_LOGLVL2(BM_LogMailEditWin)
+							+ BM_LOGLVL2(BM_LogSmtp)
+							+ BM_LOGLVL2(BM_LogPrefsWin);
+	mDefaultsMsg.AddInt32( "Loglevels", loglevels);
+	mDefaultsMsg.AddInt16( "Loglevel_Pop", BM_LOGLVL_FOR(loglevels,BM_LogPop));
+	mDefaultsMsg.AddInt16( "Loglevel_JobWin", BM_LOGLVL_FOR(loglevels,BM_LogJobWin));
+	mDefaultsMsg.AddInt16( "Loglevel_MailParse", BM_LOGLVL_FOR(loglevels,BM_LogMailParse));
+	mDefaultsMsg.AddInt16( "Loglevel_Util", BM_LOGLVL_FOR(loglevels,BM_LogUtil));
+	mDefaultsMsg.AddInt16( "Loglevel_MailTracking", BM_LOGLVL_FOR(loglevels,BM_LogMailTracking));
+	mDefaultsMsg.AddInt16( "Loglevel_FolderView", BM_LOGLVL_FOR(loglevels,BM_LogFolderView));
+	mDefaultsMsg.AddInt16( "Loglevel_RefView", BM_LOGLVL_FOR(loglevels,BM_LogRefView));
+	mDefaultsMsg.AddInt16( "Loglevel_MainWindow", BM_LOGLVL_FOR(loglevels,BM_LogMainWindow));
+	mDefaultsMsg.AddInt16( "Loglevel_ModelController", BM_LOGLVL_FOR(loglevels,BM_LogModelController));
+	mDefaultsMsg.AddInt16( "Loglevel_MailEditWin", BM_LOGLVL_FOR(loglevels,BM_LogMailEditWin));
+	mDefaultsMsg.AddInt16( "Loglevel_Smtp", BM_LOGLVL_FOR(loglevels,BM_LogSmtp));
+	mDefaultsMsg.AddInt16( "Loglevel_PrefsWin", BM_LOGLVL_FOR(loglevels,BM_LogPrefsWin));
 	mDefaultsMsg.AddString( "MailboxPath", "/boot/home/mail");
 	mDefaultsMsg.AddBool( "CacheRefsInMem", false);
 	mDefaultsMsg.AddBool( "CacheRefsOnDisk", true);
@@ -150,9 +178,22 @@ void BmPrefs::InitDefaults() {
 	mDefaultsMsg.AddInt32( "MSecsBeforeMailMoverShows", 500*1000);
 	mDefaultsMsg.AddInt32( "MSecsBeforePopperRemove", 5000*1000);
 	mDefaultsMsg.AddInt32( "MSecsBeforeSmtpRemove", 0*1000);
-	mDefaultsMsg.AddString( "DefaultSmtpAccount", "");
 	mDefaultsMsg.AddString( "QuotingString", "> ");
 	mDefaultsMsg.AddInt32( "MaxLineLen", 76);
+	mDefaultsMsg.AddInt32( "NetSendBufferSize", 10*1500);
+	mDefaultsMsg.AddBool( "MakeQPSafeForEBCDIC", false);
+	mDefaultsMsg.AddBool("SpecialHeaderForEachBcc", true);
+	mDefaultsMsg.AddBool( "PreferUserAgentOverX-Mailer", true);
+	mDefaultsMsg.AddInt32( "DefaultForwardType", BMM_FORWARD_INLINE);
+	mDefaultsMsg.AddString( "ForwardIntroStr", "On %D at %T, %F wrote:");
+	mDefaultsMsg.AddString( "ForwardSubjectRX", "^\\s*\\[?\\s*Fwd(\\[\\d+\\])?:");
+	mDefaultsMsg.AddString( "ForwardSubjectStr", "[Fwd: %s]");
+	mDefaultsMsg.AddBool( "DoNotAttachVCardsToForward", true);
+	mDefaultsMsg.AddString( "ReplyIntroStr", "On %D at %T, %F wrote:");
+	mDefaultsMsg.AddString( "ReplySubjectRX", "^\\s*(Re|Aw)(\\[\\d+\\])?:");
+	mDefaultsMsg.AddString( "ReplySubjectStr", "Re: %s");
+	mDefaultsMsg.AddString( "SignatureRX", "\\A---?\\s*\\n");
+	mDefaultsMsg.AddString( "MimeTypeTrustInfo", "<application/pdf:T><application:W><:T>");
 }
 
 /*------------------------------------------------------------------------------*\
@@ -171,8 +212,8 @@ void BmPrefs::SetLoglevels() {
 		else
 			s << "0";
 	}
-#endif
 	BM_LOG3( BM_LogUtil, BString("Initialized loglevels to binary value ") << s);
+#endif
 }
 
 
@@ -189,8 +230,11 @@ bool BmPrefs::Store() {
 		(err = prefsFile.SetTo( prefsFilename.String(), 
 										B_WRITE_ONLY | B_CREATE_FILE | B_ERASE_FILE)) == B_OK
 													|| BM_THROW_RUNTIME( BString("Could not create settings file\n\t<") << prefsFilename << ">\n\n Result: " << strerror(err));
+		int32 loglevels = mPrefsMsg.FindInt32("Loglevels");
+		mPrefsMsg.RemoveName("Loglevels");
 		(err = mPrefsMsg.Flatten( &prefsFile)) == B_OK
 													|| BM_THROW_RUNTIME( BString("Could not store settings into file\n\t<") << prefsFilename << ">\n\n Result: " << strerror(err));
+		mPrefsMsg.AddInt32( "Loglevels", loglevels);
 	} catch( exception &e) {
 		BM_SHOWERR( e.what());
 		return false;

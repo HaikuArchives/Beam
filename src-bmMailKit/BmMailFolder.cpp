@@ -42,6 +42,21 @@
 #include "BmUtil.h"
 
 /*------------------------------------------------------------------------------*\
+	CreateDummyInstance()
+		-	static creator-func, creates dummy mail-folder (used in prefs)
+\*------------------------------------------------------------------------------*/
+BmRef<BmMailFolder> BmMailFolder::CreateDummyInstance() {
+	BMessage archive;
+	entry_ref eref;
+	eref.set_name("dummy");
+	archive.AddRef( MSG_ENTRYREF, &eref);
+	archive.AddInt64( MSG_INODE, 0);
+	archive.AddInt32( MSG_LASTMODIFIED, time(NULL));
+	archive.AddInt32( MSG_NUMCHILDREN, 0);
+	return new BmMailFolder( &archive, NULL, NULL);
+}
+
+/*------------------------------------------------------------------------------*\
 	BmMailFolder( eref, parent, modified)
 		-	standard c'tor
 \*------------------------------------------------------------------------------*/
@@ -123,7 +138,9 @@ status_t BmMailFolder::Archive( BMessage* archive, bool deep) const {
 	status_t ret = inherited::Archive( archive, deep)
 		|| archive->AddRef( MSG_ENTRYREF, &mEntryRef)
 		|| archive->AddInt64( MSG_INODE, mInode)
-		|| archive->AddInt32( MSG_LASTMODIFIED, mLastModified)
+//		|| archive->AddInt32( MSG_LASTMODIFIED, mLastModified)
+		|| archive->AddInt32( MSG_LASTMODIFIED, time(NULL))
+							// bump time to the last time folder-cache has been written
 		|| archive->AddInt32( MSG_NUMCHILDREN, size());
 	if (deep && ret == B_OK) {
 		BmModelItemMap::const_iterator pos;
@@ -154,6 +171,9 @@ bool BmMailFolder::CheckIfModifiedSince( time_t when, time_t* storeNewModTime) {
 	status_t err;
 	BDirectory mailDir;
 	bool hasChanged = false;
+	
+	if (!mInode)
+		return false;							// dummy folder has never modified
 
 	BM_LOG3( BM_LogMailTracking, "BmMailFolder::CheckIfModifiedSince() - start");
 	mailDir.SetTo( this->EntryRefPtr());

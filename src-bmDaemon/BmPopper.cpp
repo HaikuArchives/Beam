@@ -232,7 +232,7 @@ void BmPopper::Login() {
 			return;
 		}
 		first = false;
-		if (authMethod == "APOP") {
+		if (authMethod == BmPopAccount::AUTH_APOP) {
 			// APOP-method: 
 			if (mServerTimestamp.Length()) {
 				BString secret( mServerTimestamp + pwd);
@@ -245,7 +245,7 @@ void BmPopper::Login() {
 			} else
 				BM_THROW_RUNTIME( "Server did not supply a timestamp, so APOP doesn't work.");
 		} else {
-			// standard POP-method: send username and password as plain text:
+			// authMethod == AUTH_POP3: send username and password as plain text:
 			BString cmd = BString("USER ") << mPopAccount->Username();
 			SendCommand( cmd);
 			if (CheckForPositiveAnswer( SINGLE_LINE)) {

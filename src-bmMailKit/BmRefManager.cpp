@@ -101,6 +101,7 @@ void BmRefObj::PrintRefsLeft() {
 	BM_LOG2( BM_LogUtil, BString("RefManager: active list\n--------------------"));
 	for( iter = nProxyMap.begin(); iter != nProxyMap.end(); ++iter) {
 		BmProxy* proxy = iter->second;
+		BAutolock lock( &proxy->Locker);
 		BmObjectMap::const_iterator iter2;
 		for( iter2=proxy->ObjectMap.begin(); iter2 != proxy->ObjectMap.end(); ++iter2) {
 			BmRefObj* ref = iter2->second;

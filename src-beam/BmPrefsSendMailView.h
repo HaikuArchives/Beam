@@ -1,5 +1,5 @@
 /*
-	BmMailFolderView.h
+	BmPrefsSendMailView.h
 		$Id$
 */
 /*************************************************************************/
@@ -28,91 +28,140 @@
 /*************************************************************************/
 
 
-#ifndef _BmMailFolderView_h
-#define _BmMailFolderView_h
-
-#include <map>
+#ifndef _BmPrefsSendMailView_h
+#define _BmPrefsSendMailView_h
 
 #include "BmListController.h"
+#include "BmSmtpAccount.h"
+#define BmSendAcc BmSmtpAccount
+#include "BmPrefsView.h"
 
 /*------------------------------------------------------------------------------*\
-	types of messages sent via the observe/notify system:
-\*------------------------------------------------------------------------------*/
-#define BM_NTFY_MAILFOLDER_SELECTION	'bmbb'
-						// sent from BmMailFolderView to observers whenever selection changes
-
-/*------------------------------------------------------------------------------*\
-	BmMailFolderItem
+	BmSendAccItem
 		-	
 \*------------------------------------------------------------------------------*/
-class BmMailFolderItem : public BmListViewItem
+class BmSendAccItem : public BmListViewItem
 {
 	typedef BmListViewItem inherited;
 
 public:
 	// c'tors and d'tor:
-	BmMailFolderItem( BString key, BmListModelItem* item, bool superitem, 
-							BMessage* archive);
-	~BmMailFolderItem();
+	BmSendAccItem( BString key, BmListModelItem* item);
+	~BmSendAccItem();
 
 	// overrides of listitem base:
 	void UpdateView( BmUpdFlags flags);
-	BmMailFolder* ModelItem() const 		{ return dynamic_cast< BmMailFolder*>( mModelItem.Get()); }
+	BmSendAcc* ModelItem() const 			{ return dynamic_cast< BmSendAcc*>( mModelItem.Get()); }
 
 private:
 	// Hide copy-constructor and assignment:
-	BmMailFolderItem( const BmMailFolderItem&);
-	BmMailFolderItem operator=( const BmMailFolderItem&);
+	BmSendAccItem( const BmSendAccItem&);
+	BmSendAccItem operator=( const BmSendAccItem&);
 };
 
 
-class BmMailRefView;
+
 /*------------------------------------------------------------------------------*\
-	BmMailFolderView
+	BmSendAccView
 		-	
 \*------------------------------------------------------------------------------*/
-class BmMailFolderView : public BmListViewController
+class BmSendAccView : public BmListViewController
 {
 	typedef BmListViewController inherited;
 	
 public:
-	static const char* const MSG_FOLDERS_SELECTED = 		"bm:fsel";
-
 	// creator-func, c'tors and d'tor:
-	static BmMailFolderView* CreateInstance(  minimax minmax, int32 width, int32 height);
-	BmMailFolderView(  minimax minmax, int32 width, int32 height);
-	~BmMailFolderView();
+	static BmSendAccView* CreateInstance(  minimax minmax, int32 width, int32 height);
+	BmSendAccView(  minimax minmax, int32 width, int32 height);
+	~BmSendAccView();
 
 	// native methods:
 	BmListViewItem* CreateListViewItem( BmListModelItem* item, BMessage* archive=NULL);
-	void ShowMenu( BPoint point);
-	inline void TeamUpWith( BmMailRefView* mrv) 	{ mPartnerMailRefView = mrv; }
 	
 	// overrides of controller base:
-	bool AcceptsDropOf( const BMessage* msg);
-	void HandleDrop( const BMessage* msg);
-	BString StateInfoBasename()			{ return "MailFolderView"; }
+	BString StateInfoBasename()			{ return "SendAccView"; }
 	void UpdateModelItem( BMessage* msg);
-	const char* ItemNameForCaption()		{ return "folder"; }
+	BmListViewItem* AddModelItem( BmListModelItem* item);
+	const char* ItemNameForCaption()		{ return "account"; }
+	CLVContainerView* CreateContainer( bool horizontal, bool vertical, 
+												  bool scroll_view_corner, 
+												  border_style border, 
+												  uint32 ResizingMode, 
+												  uint32 flags);
 
 	// overrides of listview base:
 	void MessageReceived( BMessage* msg);
-	void MouseDown( BPoint point);
-	void SelectionChanged( void);
 
-	static BmMailFolderView* theInstance;
+	static BmSendAccView* theInstance;
 
 private:
 
-	BmRef<BmMailFolder> CurrentFolder( void) const;
-	
-	BmMailRefView* mPartnerMailRefView;
-
 	// Hide copy-constructor and assignment:
-	BmMailFolderView( const BmMailFolderView&);
-	BmMailFolderView operator=( const BmMailFolderView&);
+	BmSendAccView( const BmSendAccView&);
+	BmSendAccView operator=( const BmSendAccView&);
 };
 
-#define TheMailFolderView BmMailFolderView::theInstance
+
+
+#define BM_AUTH_SELECTED 			'bmAS'
+#define BM_PWD_STORED_CHANGED 	'bmPC'
+#define BM_ADD_ACCOUNT 				'bmAA'
+#define BM_REMOVE_ACCOUNT 			'bmRA'
+
+
+class BmTextControl;
+class BmMenuControl;
+class BmCheckControl;
+class MButton;
+/*------------------------------------------------------------------------------*\
+	BmPrefsSendMailView
+		-	
+\*------------------------------------------------------------------------------*/
+class BmPrefsSendMailView : public BmPrefsView {
+	typedef BmPrefsView inherited;
+
+public:
+	// c'tors and d'tor:
+	BmPrefsSendMailView();
+	virtual ~BmPrefsSendMailView();
+	
+	// native methods:
+	void ShowAccount( int32 selection);
+
+	// overrides of BmPrefsView base:
+	void Initialize();
+	void Activated();
+	void WriteStateInfo();
+	void SaveData();
+	void UndoChanges();
+
+	// overrides of BView base:
+	void MessageReceived( BMessage* msg);
+
+	// getters:
+
+	// setters:
+
+private:
+	CLVContainerView* CreateAccListView( minimax minmax, int32 width, int32 height);
+
+	BmListViewController* mAccListView;
+	BmTextControl* mAccountControl;
+	BmTextControl* mDomainControl;
+	BmTextControl* mLoginControl;
+	BmTextControl* mPortControl;
+	BmTextControl* mPwdControl;
+	BmTextControl* mServerControl;
+	BmMenuControl* mAuthControl;
+	BmCheckControl* mStorePwdControl;
+	MButton* mAddButton;
+	MButton* mRemoveButton;
+
+	BmRef<BmSmtpAccount> mCurrAcc;
+	
+	// Hide copy-constructor and assignment:
+	BmPrefsSendMailView( const BmPrefsSendMailView&);
+	BmPrefsSendMailView operator=( const BmPrefsSendMailView&);
+};
 
 #endif

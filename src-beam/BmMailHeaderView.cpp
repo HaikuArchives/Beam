@@ -155,6 +155,7 @@ void BmMailHeaderView::Draw( BRect bounds) {
 		int numShown = rx.exec( fieldList, "[\\w\\-/]+", Regexx::global);
 		for( int i=0; i<numShown; ++i) {
 			BString field = rx.match[i];
+			field.CapitalizeEachWord();
 			fields.push_back( field);
 			int32 pos = field.FindFirst("/");
 			if (pos != B_ERROR)

@@ -1,5 +1,5 @@
 /*
-	BmMenuControl.h
+	BmCheckControl.h
 		$Id$
 */
 /*************************************************************************/
@@ -28,37 +28,31 @@
 /*************************************************************************/
 
 
-#ifndef _BmMenuControl_h
-#define _BmMenuControl_h
+#ifndef _BmCheckControl_h
+#define _BmCheckControl_h
 
-#include <MenuField.h>
-
-#include <layout.h>
+#include <MCheckBox.h>
 
 class HGroup;
 
-class BmMenuControl : public MView, public BMenuField
+class BmCheckControl : public MCheckBox
 {
-	typedef BMenuField inherited;
+	typedef MCheckBox inherited;
 
 public:
 	// creator-func, c'tors and d'tor:
-	BmMenuControl( const char* label, BMenu* menu, float weight=1.0);
-	~BmMenuControl();
+	BmCheckControl( const char* label, ulong id=0, bool state=false);
+	BmCheckControl( const char* label, BMessage* msg, BHandler* target=NULL, bool state=false);
+	~BmCheckControl();
 	
 	// native methods:
-	void MarkItem( const char* label);
-	void ClearMark();
+	float LabelWidth();
+	void AdjustToMaxLabelWidth( float maxWidth);
 
 private:
-	minimax layoutprefs();
-	BRect layout(BRect frame);
-	
-	BMenu* mMenu;
-
 	// Hide copy-constructor and assignment:
-	BmMenuControl( const BmMenuControl&);
-	BmMenuControl operator=( const BmMenuControl&);
+	BmCheckControl( const BmCheckControl&);
+	BmCheckControl operator=( const BmCheckControl&);
 };
 
 

@@ -400,23 +400,25 @@ void BmListViewController::AddAllModelItems() {
 		-	Hook function that is called whenever a new item has been added to the 
 			listmodel
 \*------------------------------------------------------------------------------*/
-void BmListViewController::AddModelItem( BmListModelItem* item) {
+BmListViewItem* BmListViewController::AddModelItem( BmListModelItem* item) {
 	BM_LOG2( BM_LogModelController, BString(ControllerName())<<": adding one item to listview");
+	BmListViewItem* newItem;
 	if (!Hierarchical()) {
-		doAddModelItem( NULL, item);
+		newItem = doAddModelItem( NULL, item);
 	} else {
 		BmListViewItem* parentItem = FindViewItemFor( item->Parent());
-		doAddModelItem( parentItem, item);
+		newItem = doAddModelItem( parentItem, item);
 	}
 	BMessage msg( BM_NTFY_LISTCONTROLLER_MODIFIED);
 	SendNotices( BM_NTFY_LISTCONTROLLER_MODIFIED, &msg);
+	return newItem;
 }
 
 /*------------------------------------------------------------------------------*\
 	doAddModelItem( BmListViewItem* parent, BmListModelItem)
 		-	
 \*------------------------------------------------------------------------------*/
-void BmListViewController::doAddModelItem( BmListViewItem* parent, BmListModelItem* item) {
+BmListViewItem* BmListViewController::doAddModelItem( BmListViewItem* parent, BmListModelItem* item) {
 	auto_ptr<BMessage> archive( Hierarchical() ? GetArchiveForItemKey( item->Key()) : NULL);
 	BmListViewItem* newItem = CreateListViewItem( item, archive.get());
 	if (newItem) {
@@ -434,6 +436,7 @@ void BmListViewController::doAddModelItem( BmListViewItem* parent, BmListModelIt
 		BmListModelItem* subItem = iter->second.Get();
 		doAddModelItem( newItem, subItem);
 	}
+	return newItem;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -449,7 +452,6 @@ void BmListViewController::doAddModelItem( BmListViewItem* parent, BmListModelIt
 void BmListViewController::RemoveModelItem( BmListModelItem* item) {
 	BM_LOG2( BM_LogModelController, BString(ControllerName())<<": removing one item from listview");
 	if (item) {
-//		DeselectAll();
 		BmListViewItem* viewItem = FindViewItemFor( item);
 		if (viewItem) {
 			RemoveItem( viewItem);
@@ -484,7 +486,6 @@ void BmListViewController::UpdateModelItem( BmListModelItem* item, BmUpdFlags up
 		-	default implementation does nothing
 \*------------------------------------------------------------------------------*/
 void BmListViewController::UpdateModelState( BMessage* msg) {
-//	UpdateCaption();
 }
 
 /*------------------------------------------------------------------------------*\
@@ -797,9 +798,9 @@ BmCLVContainerView::BmCLVContainerView( minimax minmax, ColumnListView* target,
 		mBusyView = new BmBusyView( BRect( LT.x, LT.y, LT.x+bvSize, LT.y+bvSize));
 		AddChild( mBusyView);
 		frame.left += bvSize;
-		LT = frame.LeftTop();
 	}
 	if (showCaption) {
+		LT = frame.LeftTop();
 		if (hScroller) {
 			// a horizontal scrollbar exists, we shrink it to make room for the caption:
 			hScroller->ResizeBy( -mCaptionWidth, 0.0);

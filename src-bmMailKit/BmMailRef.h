@@ -67,9 +67,10 @@ class BmMailRef : public BmListModelItem {
 	static const int16 nArchiveVersion = 1;
 
 public:
-	// creator-func, c'tors and d'tor:
+	// creator-funcs, c'tors and d'tor:
 	static BmRef<BmMailRef> CreateInstance( BmMailRefList* model, entry_ref &eref, 
 												 		 struct stat& st);
+	static BmRef<BmMailRef> CreateDummyInstance( BmMailRefList* model, int id);
 	BmMailRef( BMessage* archive, BmMailRefList* model);
 	virtual ~BmMailRef();
 

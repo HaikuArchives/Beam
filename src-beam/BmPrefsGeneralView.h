@@ -1,5 +1,5 @@
 /*
-	BmMenuControl.h
+	BmPrefsGeneralView.h
 		$Id$
 */
 /*************************************************************************/
@@ -28,38 +28,60 @@
 /*************************************************************************/
 
 
-#ifndef _BmMenuControl_h
-#define _BmMenuControl_h
+#ifndef _BmPrefsGeneralView_h
+#define _BmPrefsGeneralView_h
 
-#include <MenuField.h>
+#include "BmMailRefView.h"
+#include "BmPrefsView.h"
 
-#include <layout.h>
 
-class HGroup;
+#define BM_STRIPED_LISTVIEW_CHANGED 		'bmSC'
+#define BM_RESTORE_FOLDER_STATES_CHANGED 	'bmRF'
+#define BM_DYNAMIC_STATUS_WIN_CHANGED 		'bmDS'
+#define BM_CACHE_REFS_DISK_CHANGED	 		'bmCD'
+#define BM_CACHE_REFS_MEM_CHANGED 			'bmCM'
 
-class BmMenuControl : public MView, public BMenuField
-{
-	typedef BMenuField inherited;
+class BmTextControl;
+class BmCheckControl;
+/*------------------------------------------------------------------------------*\
+	BmPrefsGeneralView
+		-	
+\*------------------------------------------------------------------------------*/
+class BmPrefsGeneralView : public BmPrefsView {
+	typedef BmPrefsView inherited;
 
 public:
-	// creator-func, c'tors and d'tor:
-	BmMenuControl( const char* label, BMenu* menu, float weight=1.0);
-	~BmMenuControl();
+	// c'tors and d'tor:
+	BmPrefsGeneralView();
+	virtual ~BmPrefsGeneralView();
 	
-	// native methods:
-	void MarkItem( const char* label);
-	void ClearMark();
+	// overrides of BmPrefsView base:
+	void Initialize();
+	void WriteStateInfo();
+	void SaveData();
+	void UndoChanges();
+
+	// overrides of BView base:
+	void MessageReceived( BMessage* msg);
 
 private:
-	minimax layoutprefs();
-	BRect layout(BRect frame);
-	
-	BMenu* mMenu;
+	CLVContainerView* CreateMailRefLayoutView( minimax minmax, int32 width, int32 height);
+
+	BmMailRefView* mLayoutView;
+	BmTextControl* mMailMoverShowControl;
+	BmTextControl* mPopperRemoveControl;
+	BmTextControl* mSmtpRemoveControl;
+	BmTextControl* mNetBufSizeSendControl;
+	BmTextControl* mNetRecvTimeoutControl;
+	BmCheckControl* mRestoreFolderStatesControl;
+	BmCheckControl* mStripedListViewControl;
+	BmCheckControl* mDynamicStatusWinControl;
+	BmCheckControl* mCacheRefsInMemControl;
+	BmCheckControl* mCacheRefsOnDiskControl;
 
 	// Hide copy-constructor and assignment:
-	BmMenuControl( const BmMenuControl&);
-	BmMenuControl operator=( const BmMenuControl&);
+	BmPrefsGeneralView( const BmPrefsGeneralView&);
+	BmPrefsGeneralView operator=( const BmPrefsGeneralView&);
 };
-
 
 #endif

@@ -1,5 +1,5 @@
 /*
-	BmPrefsRecvMailView.cpp
+	BmPrefsSendMailView.cpp
 		$Id$
 */
 /*************************************************************************/
@@ -41,39 +41,31 @@
 #include "BmGuiUtil.h"
 #include "BmLogHandler.h"
 #include "BmMenuControl.h"
+#include "BmPopAccount.h"
 #include "BmPrefs.h"
-#include "BmPrefsRecvMailView.h"
-#include "BmSmtpAccount.h"
+#include "BmPrefsSendMailView.h"
 #include "BmTextControl.h"
 #include "BmUtil.h"
 
 /********************************************************************************\
-	BmRecvAccItem
+	BmSendAccItem
 \********************************************************************************/
 
 enum Columns {
 	COL_KEY = 0,
-	COL_CHECK,
-	COL_DEFAULT,
-	COL_DELETE,
-	COL_REAL_NAME,
-	COL_MAIL_ADDR,
-	COL_MAIL_ALIASES,
-	COL_BITBUCKET,
-	COL_SIGNATURE,
 	COL_SERVER,
-	COL_PORT,
 	COL_AUTH_METHOD,
 	COL_USER,
 	COL_PWD,
-	COL_SMTP_ACC
+	COL_DOMAIN,
+	COL_PORT
 };
 
 /*------------------------------------------------------------------------------*\
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmRecvAccItem::BmRecvAccItem( BString key, BmListModelItem* _item)
+BmSendAccItem::BmSendAccItem( BString key, BmListModelItem* _item)
 	:	inherited( key, _item, false)
 {
 	UpdateView( UPD_ALL);
@@ -83,33 +75,25 @@ BmRecvAccItem::BmRecvAccItem( BString key, BmListModelItem* _item)
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmRecvAccItem::~BmRecvAccItem() { 
+BmSendAccItem::~BmSendAccItem() { 
 }
 
 /*------------------------------------------------------------------------------*\
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmRecvAccItem::UpdateView( BmUpdFlags flags) {
+void BmSendAccItem::UpdateView( BmUpdFlags flags) {
 	inherited::UpdateView( flags);
-	BmRecvAcc* acc = ModelItem();
+	BmSendAcc* acc = ModelItem();
 	if (flags & UPD_ALL) {
 		BmListColumn cols[] = {
 			{ acc->Key().String(),						false },
-			{ acc->CheckMail() ? "*" : "",			false },
-			{ acc->MarkedAsDefault() ? "*" : "",	false },
-			{ acc->DeleteMailFromServer() ? "*" : "",	false },
-			{ acc->RealName().String(),				false },
-			{ acc->MailAddr().String(),				false },
-			{ acc->MailAliases().String(),			false },
-			{ acc->MarkedAsBitBucket() ? "*" : "",	false },
-			{ acc->SignatureName().String(),			false },
-			{ acc->POPServer().String(),				false },
-			{ acc->PortNrString().String(),			true  },
+			{ acc->SMTPServer().String(),				false },
 			{ acc->AuthMethod().String(),				false },
 			{ acc->Username().String(),				false },
 			{ acc->PwdStoredOnDisk() ? "*****":"",	false },
-			{ acc->SMTPAccount().String(),			false },
+			{ acc->DomainToAnnounce().String(),		false },
+			{ acc->PortNrString().String(),			true  },
 			{ NULL, false }
 		};
 		SetTextCols( 0, cols, !ThePrefs->GetBool("StripedListView"));
@@ -119,28 +103,28 @@ void BmRecvAccItem::UpdateView( BmUpdFlags flags) {
 
 
 /********************************************************************************\
-	BmRecvAccView
+	BmSendAccView
 \********************************************************************************/
 
-BmRecvAccView* BmRecvAccView::theInstance = NULL;
+BmSendAccView* BmSendAccView::theInstance = NULL;
 
 /*------------------------------------------------------------------------------*\
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmRecvAccView* BmRecvAccView::CreateInstance( minimax minmax, int32 width, int32 height) {
+BmSendAccView* BmSendAccView::CreateInstance( minimax minmax, int32 width, int32 height) {
 	if (theInstance)
 		return theInstance;
 	else 
-		return theInstance = new BmRecvAccView( minmax, width, height);
+		return theInstance = new BmSendAccView( minmax, width, height);
 }
 
 /*------------------------------------------------------------------------------*\
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmRecvAccView::BmRecvAccView( minimax minmax, int32 width, int32 height)
-	:	inherited( minmax, BRect(0,0,width-1,height-1), "Beam_RecvAccView", 
+BmSendAccView::BmSendAccView( minimax minmax, int32 width, int32 height)
+	:	inherited( minmax, BRect(0,0,width-1,height-1), "Beam_SendAccView", 
 					  B_SINGLE_SELECTION_LIST, 
 					  false, true, true, false)
 {
@@ -156,20 +140,12 @@ BmRecvAccView::BmRecvAccView( minimax minmax, int32 width, int32 height)
 					B_FOLLOW_TOP_BOTTOM, true, true, true, B_FANCY_BORDER);
 
 	AddColumn( new CLVColumn( "Account", 80.0, CLV_SORT_KEYABLE|flags, 50.0));
-	AddColumn( new CLVColumn( "C", 20.0, CLV_SORT_KEYABLE|flags, 20.0, "(C)heck?"));
-	AddColumn( new CLVColumn( "D", 20.0, CLV_SORT_KEYABLE|flags, 20.0, "(D)efault?"));
-	AddColumn( new CLVColumn( "R", 20.0, CLV_SORT_KEYABLE|flags, 20.0, "(R)emove Mails from Server?"));
-	AddColumn( new CLVColumn( "Real Name", 80.0, CLV_SORT_KEYABLE|flags, 40.0));
-	AddColumn( new CLVColumn( "Mailaddress", 80.0, CLV_SORT_KEYABLE|flags, 40.0));
-	AddColumn( new CLVColumn( "Aliases", 80.0, CLV_SORT_KEYABLE|flags, 40.0));
-	AddColumn( new CLVColumn( "F", 20.0, CLV_SORT_KEYABLE|flags, 20.0, "(F)allback Account?"));
-	AddColumn( new CLVColumn( "Signature", 80.0, CLV_SORT_KEYABLE|flags, 40.0));
 	AddColumn( new CLVColumn( "Server", 80.0, CLV_SORT_KEYABLE|flags, 40.0));
-	AddColumn( new CLVColumn( "Port", 40.0, flags, 40.0));
 	AddColumn( new CLVColumn( "Auth-Method", 80.0, CLV_SORT_KEYABLE|flags, 40.0));
 	AddColumn( new CLVColumn( "User", 80.0, CLV_SORT_KEYABLE|flags, 40.0));
 	AddColumn( new CLVColumn( "Pwd", 50.0, CLV_SORT_KEYABLE|flags, 40.0));
-	AddColumn( new CLVColumn( "SMTP-Account", 80.0, CLV_SORT_KEYABLE|flags, 40.0));
+	AddColumn( new CLVColumn( "Domain", 80.0, CLV_SORT_KEYABLE|flags, 40.0));
+	AddColumn( new CLVColumn( "Port", 40.0, flags, 40.0));
 
 	SetSortFunction( CLVEasyItem::CompareItems);
 	SetSortKey( COL_KEY);
@@ -179,7 +155,7 @@ BmRecvAccView::BmRecvAccView( minimax minmax, int32 width, int32 height)
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmRecvAccView::~BmRecvAccView() {
+BmSendAccView::~BmSendAccView() {
 	theInstance = NULL;
 }
 
@@ -187,16 +163,16 @@ BmRecvAccView::~BmRecvAccView() {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmListViewItem* BmRecvAccView::CreateListViewItem( BmListModelItem* item,
+BmListViewItem* BmSendAccView::CreateListViewItem( BmListModelItem* item,
 																		BMessage* archive) {
-	return new BmRecvAccItem( item->Key(), item);
+	return new BmSendAccItem( item->Key(), item);
 }
 
 /*------------------------------------------------------------------------------*\
 	CreateContainer()
 		-	
 \*------------------------------------------------------------------------------*/
-CLVContainerView* BmRecvAccView::CreateContainer( bool horizontal, bool vertical, 
+CLVContainerView* BmSendAccView::CreateContainer( bool horizontal, bool vertical, 
 												  				  bool scroll_view_corner, 
 												  				  border_style border, 
 																  uint32 ResizingMode, 
@@ -212,7 +188,7 @@ CLVContainerView* BmRecvAccView::CreateContainer( bool horizontal, bool vertical
 	MessageReceived( msg)
 		-	
 \*------------------------------------------------------------------------------*/
-BmListViewItem* BmRecvAccView::AddModelItem( BmListModelItem* item) {
+BmListViewItem* BmSendAccView::AddModelItem( BmListModelItem* item) {
 	BmListViewItem* viewItem = inherited::AddModelItem( item);
 	if (viewItem) {
 		Select( IndexOf(viewItem));
@@ -225,7 +201,7 @@ BmListViewItem* BmRecvAccView::AddModelItem( BmListModelItem* item) {
 	MessageReceived( msg)
 		-	
 \*------------------------------------------------------------------------------*/
-void BmRecvAccView::MessageReceived( BMessage* msg) {
+void BmSendAccView::MessageReceived( BMessage* msg) {
 	try {
 		switch( msg->what) {
 			default:
@@ -233,26 +209,26 @@ void BmRecvAccView::MessageReceived( BMessage* msg) {
 		}
 	} catch( exception &err) {
 		// a problem occurred, we tell the user:
-		BM_SHOWERR( BString("RecvAccView:\n\t") << err.what());
+		BM_SHOWERR( BString("SendAccView:\n\t") << err.what());
 	}
 }
 
 
 
 /********************************************************************************\
-	BmPrefsRecvMailView
+	BmPrefsSendMailView
 \********************************************************************************/
 
 /*------------------------------------------------------------------------------*\
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmPrefsRecvMailView::BmPrefsRecvMailView() 
-	:	inherited( "Receiving Mail-Accounts (POP3)")
+BmPrefsSendMailView::BmPrefsSendMailView() 
+	:	inherited( "Sending Mail-Accounts (SMTP)")
 {
 	MView* view = 
 		new VGroup(
-			CreateAccListView( minimax(500,100,1E5,1E5), 500, 100),
+			CreateAccListView( minimax(500,60,1E5,1E5), 500, 80),
 			new HGroup(
 				mAddButton = new MButton("Add Account", new BMessage(BM_ADD_ACCOUNT), this),
 				mRemoveButton = new MButton("Remove Account", new BMessage( BM_REMOVE_ACCOUNT), this),
@@ -262,40 +238,22 @@ BmPrefsRecvMailView::BmPrefsRecvMailView()
 			new HGroup(
 				new MBorder( M_LABELED_BORDER, 10, (char*)"Account Info",
 					new VGroup(
-						mAccountControl = new BmTextControl( "Account Name:", false, 0, 30),
-						mRealNameControl = new BmTextControl( "Real Name:"),
-						mMailAddrControl = new BmTextControl( "Mail-Address:"),
-						mAliasesControl = new BmTextControl( "Aliases:"),
+						mAccountControl = new BmTextControl( "Account Name:", false, 0, 35),
 						new Space( minimax(0,5,0,5)),
 						mServerControl = new BmTextControl( "Servername:"),
 						mPortControl = new BmTextControl( "Port:"),
+						new Space( minimax(0,5,0,5)),
 						mAuthControl = new BmMenuControl( "Auth-Method:", new BPopUpMenu("")),
 						mLoginControl = new BmTextControl( "Login:"),
 						mPwdControl = new BmTextControl( "Password:"),
 						new Space( minimax(0,5,0,5)),
-						mSignatureControl = new BmMenuControl( "Signature:", new BPopUpMenu("")),
-						new Space( minimax(0,5,0,5)),
-						mSmtpControl = new BmMenuControl( "SMTP-Account:", new BPopUpMenu("")),
+						mDomainControl = new BmTextControl( "Domain to Announce:"),
 						0
 					)
 				),
 				new VGroup(
 					new MBorder( M_LABELED_BORDER, 10, (char*)"Options",
 						new VGroup(
-							mCheckAccountControl = new BmCheckControl( "Check mail", 
-																					 new BMessage(BM_CHECK_MAIL_CHANGED), 
-																					 this),
-							mRemoveMailControl = new BmCheckControl( "Remove Mails from Server", 
-																				  new BMessage(BM_REMOVE_MAIL_CHANGED), 
-																				  this),
-							new Space( minimax(0,10,0,10)),
-							mIsDefaultControl = new BmCheckControl( "Use this as default account", 
-																				 new BMessage(BM_IS_DEFAULT_CHANGED), 
-																				 this),
-							mIsBucketControl = new BmCheckControl( "This is a fallback account", 
-																				new BMessage(BM_IS_BUCKET_CHANGED), 
-																				this),
-							new Space( minimax(0,10,0,10)),
 							mStorePwdControl = new BmCheckControl( "Store Password on Disk (UNSAFE!)", 
 																				new BMessage(BM_PWD_STORED_CHANGED), 
 																				this),
@@ -307,74 +265,66 @@ BmPrefsRecvMailView::BmPrefsRecvMailView()
 				),
 				0
 			),
+			new Space(minimax(0,0,1E5,1E5,0.5)),
 			0
 		);
 	mGroupView->AddChild( dynamic_cast<BView*>(view));
 	
 	mPwdControl->TextView()->HideTyping( true);
-	
+
 	float divider = mAccountControl->Divider();
-	divider = MAX( divider, mAliasesControl->Divider());
+	divider = MAX( divider, mDomainControl->Divider());
 	divider = MAX( divider, mLoginControl->Divider());
-	divider = MAX( divider, mMailAddrControl->Divider());
 	divider = MAX( divider, mPortControl->Divider());
 	divider = MAX( divider, mPwdControl->Divider());
-	divider = MAX( divider, mRealNameControl->Divider());
 	divider = MAX( divider, mServerControl->Divider());
 	divider = MAX( divider, mAuthControl->Divider());
-	divider = MAX( divider, mSignatureControl->Divider());
-	divider = MAX( divider, mSmtpControl->Divider());
 	mAccountControl->SetDivider( divider);
-	mAliasesControl->SetDivider( divider);
+	mDomainControl->SetDivider( divider);
 	mLoginControl->SetDivider( divider);
-	mMailAddrControl->SetDivider( divider);
 	mPortControl->SetDivider( divider);
 	mPwdControl->SetDivider( divider);
-	mRealNameControl->SetDivider( divider);
 	mServerControl->SetDivider( divider);
 	mAuthControl->SetDivider( divider);
-	mSignatureControl->SetDivider( divider);
-	mSmtpControl->SetDivider( divider);
 }
 
 /*------------------------------------------------------------------------------*\
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmPrefsRecvMailView::~BmPrefsRecvMailView() {
+BmPrefsSendMailView::~BmPrefsSendMailView() {
 }
 
 /*------------------------------------------------------------------------------*\
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmPrefsRecvMailView::Initialize() {
+void BmPrefsSendMailView::Initialize() {
 	inherited::Initialize();
 
 	mAccountControl->SetTarget( this);
-	mAliasesControl->SetTarget( this);
+	mDomainControl->SetTarget( this);
 	mLoginControl->SetTarget( this);
-	mMailAddrControl->SetTarget( this);
 	mPortControl->SetTarget( this);
 	mPwdControl->SetTarget( this);
-	mRealNameControl->SetTarget( this);
 	mServerControl->SetTarget( this);
-	mCheckAccountControl->SetTarget( this);
-	mIsBucketControl->SetTarget( this);
-	mIsDefaultControl->SetTarget( this);
-	mRemoveMailControl->SetTarget( this);
 	mStorePwdControl->SetTarget( this);
 
 	AddItemToMenu( mAuthControl->Menu(), 
-						new BMenuItem( BmPopAccount::AUTH_POP3, new BMessage(BM_AUTH_SELECTED)), 
+						new BMenuItem( "", new BMessage(BM_AUTH_SELECTED)), this);
+	AddItemToMenu( mAuthControl->Menu(), 
+						new BMenuItem( BmSmtpAccount::AUTH_SMTP_AFTER_POP, new BMessage(BM_AUTH_SELECTED)), 
 						this);
 	AddItemToMenu( mAuthControl->Menu(), 
-						new BMenuItem( BmPopAccount::AUTH_APOP, new BMessage(BM_AUTH_SELECTED)), 
+						new BMenuItem( BmSmtpAccount::AUTH_PLAIN, new BMessage(BM_AUTH_SELECTED)), 
+						this);
+	AddItemToMenu( mAuthControl->Menu(), 
+						new BMenuItem( BmSmtpAccount::AUTH_LOGIN, new BMessage(BM_AUTH_SELECTED)), 
 						this);
 
 	mAccListView->SetSelectionMessage( new BMessage( BM_SELECTION_CHANGED));
 	mAccListView->SetTarget( this);
-	mAccListView->StartJob( ThePopAccountList.Get());
+	mAccListView->StartJob( TheSmtpAccountList.Get());
 	ShowAccount( -1);
 }
 
@@ -382,35 +332,15 @@ void BmPrefsRecvMailView::Initialize() {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmPrefsRecvMailView::Activated() {
+void BmPrefsSendMailView::Activated() {
 	inherited::Activated();
-
-	// update all entries of SMTP-account-menu:
-	BMenuItem* item;
-	while( (item = mSmtpControl->Menu()->RemoveItem( (int32)0)))
-		delete item;
-	AddItemToMenu( mSmtpControl->Menu(), 
-					   new BMenuItem( "", new BMessage( BM_SMTP_SELECTED)), this);
-	BmModelItemMap::const_iterator iter;
-	for( iter = TheSmtpAccountList->begin(); iter != TheSmtpAccountList->end(); ++iter) {
-		BmSmtpAccount* acc = dynamic_cast< BmSmtpAccount*>( iter->second.Get());
-		AddItemToMenu( mSmtpControl->Menu(), 
-							new BMenuItem( acc->Key().String(), new BMessage( BM_SMTP_SELECTED)), 
-							this);
-	}
-
-	// update all entries of signature-menu:
-	while( (item = mSignatureControl->Menu()->RemoveItem( (int32)0)))
-		delete item;
-	AddItemToMenu( mSignatureControl->Menu(), 
-						new BMenuItem( "", new BMessage(BM_SIGNATURE_SELECTED)), this);
 }
 
 /*------------------------------------------------------------------------------*\
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmPrefsRecvMailView::WriteStateInfo() {
+void BmPrefsSendMailView::WriteStateInfo() {
 	mAccListView->WriteStateInfo();
 }
 
@@ -418,24 +348,24 @@ void BmPrefsRecvMailView::WriteStateInfo() {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmPrefsRecvMailView::SaveData() {
-	ThePopAccountList->Store();
+void BmPrefsSendMailView::SaveData() {
+	TheSmtpAccountList->Store();
 }
 
 /*------------------------------------------------------------------------------*\
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmPrefsRecvMailView::UndoChanges() {
-	ThePopAccountList->Cleanup();
-	ThePopAccountList->StartJobInThisThread();
+void BmPrefsSendMailView::UndoChanges() {
+	TheSmtpAccountList->Cleanup();
+	TheSmtpAccountList->StartJobInThisThread();
 }
 
 /*------------------------------------------------------------------------------*\
 	MessageReceived( msg)
 		-	
 \*------------------------------------------------------------------------------*/
-void BmPrefsRecvMailView::MessageReceived( BMessage* msg) {
+void BmPrefsSendMailView::MessageReceived( BMessage* msg) {
 	try {
 		switch( msg->what) {
 			case BM_SELECTION_CHANGED: {
@@ -449,51 +379,22 @@ void BmPrefsRecvMailView::MessageReceived( BMessage* msg) {
 					msg->FindPointer( "source", (void**)&srcView);
 					BmTextControl* source = dynamic_cast<BmTextControl*>( srcView);
 					if ( source == mAccountControl) {
-						if (!ThePopAccountList->RenameItem( mCurrAcc->Name(), mAccountControl->Text())) {
+						if (!TheSmtpAccountList->RenameItem( mCurrAcc->Name(), mAccountControl->Text())) {
 							for( int32 i = 1;
-								  !ThePopAccountList->RenameItem( mCurrAcc->Name(), BString(mAccountControl->Text())<<"_"<<i);
+								  !TheSmtpAccountList->RenameItem( mCurrAcc->Name(), BString(mAccountControl->Text())<<"_"<<i);
 								  ++i) {
 							}
 						}
-					} else if ( source == mAliasesControl)
-						mCurrAcc->MailAliases( mAliasesControl->Text());
+					} else if ( source == mDomainControl)
+						mCurrAcc->DomainToAnnounce( mDomainControl->Text());
 					else if ( source == mLoginControl)
 						mCurrAcc->Username( mLoginControl->Text());
-					else if ( source == mMailAddrControl)
-						mCurrAcc->MailAddr( mMailAddrControl->Text());
 					else if ( source == mPortControl)
 						mCurrAcc->PortNr( atoi(mPortControl->Text()));
 					else if ( source == mPwdControl)
 						mCurrAcc->Password( mPwdControl->Text());
-					else if ( source == mRealNameControl)
-						mCurrAcc->RealName( mRealNameControl->Text());
 					else if ( source == mServerControl)
-						mCurrAcc->POPServer( mServerControl->Text());
-				}
-				break;
-			}
-			case BM_CHECK_MAIL_CHANGED: {
-				if (mCurrAcc)
-					mCurrAcc->CheckMail( mCheckAccountControl->Value());
-				break;
-			}
-			case BM_REMOVE_MAIL_CHANGED: {
-				if (mCurrAcc)
-					mCurrAcc->DeleteMailFromServer( mRemoveMailControl->Value());
-				break;
-			}
-			case BM_IS_BUCKET_CHANGED: {
-				if (mCurrAcc)
-					mCurrAcc->MarkedAsBitBucket( mIsBucketControl->Value());
-				break;
-			}
-			case BM_IS_DEFAULT_CHANGED: {
-				if (mCurrAcc) {
-					bool val = mIsDefaultControl->Value();
-					if (val)
-						ThePopAccountList->SetDefaultAccount( mCurrAcc->Key());
-					else
-						mCurrAcc->MarkedAsDefault( false);
+						mCurrAcc->SMTPServer( mServerControl->Text());
 				}
 				break;
 			}
@@ -514,28 +415,12 @@ void BmPrefsRecvMailView::MessageReceived( BMessage* msg) {
 					mCurrAcc->AuthMethod( "");
 				break;
 			}
-			case BM_SMTP_SELECTED: {
-				BMenuItem* item = mSmtpControl->Menu()->FindMarked();
-				if (item)
-					mCurrAcc->SMTPAccount( item->Label());
-				else
-					mCurrAcc->SMTPAccount( "");
-				break;
-			}
-			case BM_SIGNATURE_SELECTED: {
-				BMenuItem* item = mSignatureControl->Menu()->FindMarked();
-				if (item)
-					mCurrAcc->SignatureName( item->Label());
-				else
-					mCurrAcc->SignatureName( "");
-				break;
-			}
 			case BM_ADD_ACCOUNT: {
 				BString key( "new account");
-				for( int32 i=1; ThePopAccountList->FindItemByKey( key); ++i) {
+				for( int32 i=1; TheSmtpAccountList->FindItemByKey( key); ++i) {
 					key = BString("new account_")<<i;
 				}
-				ThePopAccountList->AddItemToList( new BmPopAccount( key.String(), ThePopAccountList.Get()));
+				TheSmtpAccountList->AddItemToList( new BmSmtpAccount( key.String(), TheSmtpAccountList.Get()));
 				break;
 			}
 			case BM_REMOVE_ACCOUNT: {
@@ -551,7 +436,7 @@ void BmPrefsRecvMailView::MessageReceived( BMessage* msg) {
 				} else {
 					// second step, do it if user said ok:
 					if (buttonPressed == 0) {
-						ThePopAccountList->RemoveItemFromList( mCurrAcc.Get());
+						TheSmtpAccountList->RemoveItemFromList( mCurrAcc.Get());
 						mCurrAcc = NULL;
 					}
 				}
@@ -571,64 +456,40 @@ void BmPrefsRecvMailView::MessageReceived( BMessage* msg) {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmPrefsRecvMailView::ShowAccount( int32 selection) {
+void BmPrefsSendMailView::ShowAccount( int32 selection) {
 	bool enabled = (selection != -1);
 	mAccountControl->SetEnabled( enabled);
-	mAliasesControl->SetEnabled( enabled);
+	mDomainControl->SetEnabled( enabled);
 	mLoginControl->SetEnabled( enabled);
-	mMailAddrControl->SetEnabled( enabled);
 	mPortControl->SetEnabled( enabled);
-	mRealNameControl->SetEnabled( enabled);
 	mServerControl->SetEnabled( enabled);
 	mAuthControl->SetEnabled( enabled);
-	mSignatureControl->SetEnabled( enabled);
-	mSmtpControl->SetEnabled( enabled);
 	mRemoveButton->SetEnabled( enabled);
-	mCheckAccountControl->SetEnabled( enabled);
-	mRemoveMailControl->SetEnabled( enabled);
-	mIsDefaultControl->SetEnabled( enabled);
-	mIsBucketControl->SetEnabled( enabled);
 	mStorePwdControl->SetEnabled( enabled);
 	
 	if (selection == -1) {
 		mCurrAcc = NULL;
 		mAccountControl->SetTextSilently( "");
-		mAliasesControl->SetTextSilently( "");
+		mDomainControl->SetTextSilently( "");
 		mLoginControl->SetTextSilently( "");
-		mMailAddrControl->SetTextSilently( "");
 		mPortControl->SetTextSilently( "");
 		mPwdControl->SetTextSilently( "");
-		mRealNameControl->SetTextSilently( "");
 		mServerControl->SetTextSilently( "");
 		mAuthControl->ClearMark();
-		mSignatureControl->ClearMark();
-		mSmtpControl->ClearMark();
-		mCheckAccountControl->SetValue( 0);
-		mRemoveMailControl->SetValue( 0);
-		mIsDefaultControl->SetValue( 0);
-		mIsBucketControl->SetValue( 0);
 		mStorePwdControl->SetValue( 0);
 		mPwdControl->SetEnabled( false);
 	} else {
-		BmRecvAccItem* accItem = dynamic_cast<BmRecvAccItem*>(mAccListView->ItemAt( selection));
+		BmSendAccItem* accItem = dynamic_cast<BmSendAccItem*>(mAccListView->ItemAt( selection));
 		if (accItem) {
-			mCurrAcc = dynamic_cast<BmPopAccount*>(accItem->ModelItem());
+			mCurrAcc = dynamic_cast<BmSmtpAccount*>(accItem->ModelItem());
 			if (mCurrAcc) {
 				mAccountControl->SetTextSilently( mCurrAcc->Name().String());
-				mAliasesControl->SetTextSilently( mCurrAcc->MailAliases().String());
+				mDomainControl->SetTextSilently( mCurrAcc->DomainToAnnounce().String());
 				mLoginControl->SetTextSilently( mCurrAcc->Username().String());
-				mMailAddrControl->SetTextSilently( mCurrAcc->MailAddr().String());
 				mPortControl->SetTextSilently( mCurrAcc->PortNrString().String());
 				mPwdControl->SetTextSilently( mCurrAcc->Password().String());
-				mRealNameControl->SetTextSilently( mCurrAcc->RealName().String());
-				mServerControl->SetTextSilently( mCurrAcc->POPServer().String());
+				mServerControl->SetTextSilently( mCurrAcc->SMTPServer().String());
 				mAuthControl->MarkItem( mCurrAcc->AuthMethod().String());
-				mSignatureControl->MarkItem( mCurrAcc->SignatureName().String());
-				mSmtpControl->MarkItem( mCurrAcc->SMTPAccount().String());
-				mCheckAccountControl->SetValue( mCurrAcc->CheckMail());
-				mRemoveMailControl->SetValue( mCurrAcc->DeleteMailFromServer());
-				mIsDefaultControl->SetValue( mCurrAcc->MarkedAsDefault());
-				mIsBucketControl->SetValue( mCurrAcc->MarkedAsBitBucket());
 				mStorePwdControl->SetValue( mCurrAcc->PwdStoredOnDisk());
 				mPwdControl->SetEnabled( mCurrAcc->PwdStoredOnDisk());
 			}
@@ -641,7 +502,7 @@ void BmPrefsRecvMailView::ShowAccount( int32 selection) {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-CLVContainerView* BmPrefsRecvMailView::CreateAccListView( minimax minmax, int32 width, int32 height) {
-	mAccListView = BmRecvAccView::CreateInstance( minmax, width, height);
+CLVContainerView* BmPrefsSendMailView::CreateAccListView( minimax minmax, int32 width, int32 height) {
+	mAccListView = BmSendAccView::CreateInstance( minmax, width, height);
 	return mAccListView->ContainerView();
 }

@@ -162,8 +162,7 @@ void BmLogHandler::LogToFile( const BString& logname, uint32 flag,
 										const BString& msg, int8 minlevel) {
 	BmLogfile* log = FindLogfile( logname);
 	if (log) {
-		int8 loglevel = ((mLoglevels & flag) ? 1 : 0)
-						  + ((mLoglevels & flag<<16) ? 2 : 0);
+		int8 loglevel = BM_LOGLVL_FOR(mLoglevels, flag);
 		if (loglevel < minlevel)
 			return;								// loglevel indicates to ignore this message
 		BMessage mess( BM_LOG_MSG);

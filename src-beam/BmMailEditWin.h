@@ -37,6 +37,7 @@
 
 class MMenuBar;
 
+class BmCheckControl;
 class BmMail;
 class BmMailView;
 class BmMailRef;
@@ -45,8 +46,10 @@ class BmMenuControl;
 class BmToolbarButton;
 class BmTextControl;
 class CLVContainerView;
-class MCheckBox;
+class HGroup;
 class MPictureButton;
+class Space;
+class VGroup;
 
 class BmMailEditWin : public BmWindow
 {
@@ -79,12 +82,14 @@ private:
 	MMenuBar* CreateMenu();
 
 	bool CreateMailFromFields();
-	bool SaveAndReloadMail();
+	bool SaveMail();
 	void SetFieldsFromMail( BmMail* mail);
 
 	BmMailView* mMailView;
 	
-	MPictureButton* mShowDetailsButton;
+	MPictureButton* mShowDetails1Button;
+	MPictureButton* mShowDetails2Button;
+	MPictureButton* mShowDetails3Button;
 
 	BmToolbarButton* mSendButton;
 	BmToolbarButton* mSaveButton;
@@ -104,10 +109,17 @@ private:
 	BmMenuControl* mCharsetControl;
 	BmMenuControl* mSmtpControl;
 	
-	MCheckBox* mEditHeaderControl;
+	BmCheckControl* mEditHeaderControl;
 
-	bool mShowDetails;
-	MView* mOuterGroup;
+	bool mShowDetails1;
+	bool mShowDetails2;
+	bool mShowDetails3;
+	VGroup* mDetails1Group;
+	HGroup* mDetails2Group;
+	HGroup* mDetails3Group;
+	HGroup* mSubjectGroup;
+	VGroup* mOuterGroup;
+	Space* mSeparator;
 	bool mModified;
 
 	static float nNextXPos;

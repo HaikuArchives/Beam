@@ -262,14 +262,8 @@ void ConvertLinebreaksToLF( const BString& in, BString& out) {
 	while( *pos) {
 		if (*pos == '\r' && *(pos+1) == '\n')
 			pos++;
-		else {
-			if (pos != newPos)
-				*newPos++ = *pos++;
-			else {
-				newPos++;
-				pos++;
-			}
-		}
+		else
+			*newPos++ = *pos++;
 	}
 	*newPos = 0;
 	out.UnlockBuffer( newPos-buf);
@@ -291,12 +285,7 @@ void ConvertLinebreaksToCRLF( const BString& in, BString& out) {
 	while( *pos) {
 		if (*pos=='\n' && (pos==in.String() || *(pos-1)!='\r'))
 			*newPos++ = '\r';
-		if (pos != newPos)
-			*newPos++ = *pos++;
-		else {
-			newPos++;
-			pos++;
-		}
+		*newPos++ = *pos++;
 	}
 	*newPos = 0;
 	out.UnlockBuffer( newPos-buf);

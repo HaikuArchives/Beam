@@ -1943,12 +1943,20 @@ void ColumnListView::Draw( BRect updateRect) {
 			ThisColumnRect.left = ThisColumn->ColumnBegin();
 			ThisColumnRect.right = ThisColumn->ColumnEnd();
 			if(ClippingRegion.Intersects(ThisColumnRect))
-			{
 				DrawColumn( ThisColumnRect, fColumnList.IndexOf(ThisColumn));
-			}
 		}
+		// draw space extending last column:
+		ThisColumnRect.left = ThisColumnRect.right+1;
+		ThisColumnRect.right = updateRect.right;
+		if (NumberOfColumns % 2)
+			SetLowColor( fDarkColumnCol);
+		else
+			SetLowColor( fLightColumnCol);
+		FillRect( ThisColumnRect, B_SOLID_LOW);
 	} else {
 		SetViewColor( White);
+		SetLowColor( White);
+		FillRect( updateRect, B_SOLID_LOW);
 	}
 	inherited::Draw( updateRect);
 }

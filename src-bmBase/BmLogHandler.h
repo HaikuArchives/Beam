@@ -145,6 +145,16 @@ extern const uint32 BM_LogAll;
 #define BM_LOGLVL2(flag) (flag<<16)
 #define BM_LOGLVL3(flag) (flag+(flag<<16))
 
+// macro to obtain the loglevel for a specific flag 
+// from it's internal bit-representation:
+#define BM_LOGLVL_FOR(loglevels,flag) \
+(((loglevels & flag) ? 1 : 0) + ((loglevels & flag<<16) ? 2 : 0))
+
+// macro to bit-encode a single loglevel for the
+// given flag:
+#define BM_LOGLVL_VAL(loglevel,flag) \
+(((loglevel & 1) ? flag : 0) + ((loglevel & 2) ? flag<<16 : 0))
+
 // the macros used for logging:
 #ifdef BM_LOGGING
 

@@ -161,14 +161,15 @@ void BmJobStatusView::MessageReceived( BMessage* msg) {
 	StartJob()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmJobStatusView::StartJob( BmJobModel* model, bool startInNewThread) {
+void BmJobStatusView::StartJob( BmJobModel* model, bool startInNewThread, 
+										  int32 jobSpecifier) {
 	delete mShowMsgRunner;
 	mShowMsgRunner = NULL;
 	BMessage* timerMsg = new BMessage( BM_TIME_TO_SHOW);
 	BM_LOG2( BM_LogModelController, BString("Controller <") << ControllerName() << "> sets timer-to-show to "<<MSecsBeforeShow()<<" msecs");
 	mShowMsgRunner = new BMessageRunner( BMessenger( this), timerMsg, 
 													 MSecsBeforeShow(), 1);
-	inherited::StartJob( model, startInNewThread);
+	inherited::StartJob( model, startInNewThread, jobSpecifier);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -653,6 +654,12 @@ void BmJobStatusWin::AddJob( BMessage* msg) {
 	BM_assert( msg);
 
 	BString name = FindMsgString( msg, BmJobModel::MSG_JOB_NAME);
+	int32 jobSpecifier;
+	if (msg->FindInt32( BmJobModel::MSG_JOB_SPEC, &jobSpecifier) != B_OK)
+		jobSpecifier = BmJobModel::BM_DEFAULT_JOB;
+	bool inNewThread;
+	if (msg->FindBool( BmJobModel::MSG_JOB_THREAD, &inNewThread) != B_OK)
+		inNewThread = true;
 	BmJobStatusView* controller = NULL;
 
 	BM_LOG( BM_LogJobWin, BString("Adding job ") << name);
@@ -709,7 +716,7 @@ void BmJobStatusWin::AddJob( BMessage* msg) {
 
 	// ...and activate the Job via its controller:
 	BM_LOG2( BM_LogJobWin, BString("Starting job thread "));
-	controller->StartJob( job);
+	controller->StartJob( job, inNewThread, jobSpecifier);
 }
 
 /*------------------------------------------------------------------------------*\

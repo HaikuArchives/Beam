@@ -28,6 +28,7 @@
 /*************************************************************************/
 
 
+#include <MenuBar.h>
 #include <MenuItem.h>
 
 #include <HGroup.h>
@@ -40,15 +41,15 @@
 	( )
 		-	
 \*------------------------------------------------------------------------------*/
-BmMenuControl::BmMenuControl( const char* label, BMenu* menu) 
-	:	inherited( BRect(0,0,200,20), NULL, label, menu, true, B_FOLLOW_NONE)
-	,	mParent( NULL)
+BmMenuControl::BmMenuControl( const char* label, BMenu* menu, float weight) 
+	:	inherited( BRect(0,0,400,20), NULL, label, menu, true, B_FOLLOW_NONE)
 	,	mMenu( static_cast<BMenu*>( ChildAt( 0)))
 {
 	ResizeToPreferred();
 	BRect b = Bounds();
 	float labelWidth = StringWidth( label);
-	ct_mpm = minimax( StringWidth("123456789012345678901234567890"), b.Height()+4, -1, b.Height()+4);
+	ct_mpm = minimax( StringWidth("12345678901234567890123456789012345"), b.Height()+4, 
+							1E5, b.Height()+4, weight);
 	SetDivider( label ? labelWidth+27 : 0);
 }
 
@@ -63,31 +64,21 @@ BmMenuControl::~BmMenuControl() {
 	( )
 		-	
 \*------------------------------------------------------------------------------*/
-void BmMenuControl::DetachFromParent() {
-	if (Parent()) {
-		mParent = dynamic_cast<HGroup*>(Parent());
-		RemoveSelf();
-	}
-}
-
-/*------------------------------------------------------------------------------*\
-	( )
-		-	
-\*------------------------------------------------------------------------------*/
-void BmMenuControl::ReattachToParent() {
-	if (mParent) {
-		mParent->AddChild( this);
-	}
-}
-
-/*------------------------------------------------------------------------------*\
-	( )
-		-	
-\*------------------------------------------------------------------------------*/
 void BmMenuControl::MarkItem( const char* label) {
 	BMenuItem* item = Menu()->FindItem( label);
 	if (item)
 		item->SetMarked( true);
+}
+
+/*------------------------------------------------------------------------------*\
+	( )
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMenuControl::ClearMark() {
+	BMenuItem* item = mMenu->FindMarked();
+	if (item)
+		item->SetMarked( false);
+	MarkItem("");
 }
 
 /*------------------------------------------------------------------------------*\

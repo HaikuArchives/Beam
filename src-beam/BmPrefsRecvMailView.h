@@ -81,6 +81,7 @@ public:
 	// overrides of controller base:
 	BString StateInfoBasename()			{ return "RecvAccView"; }
 	void UpdateModelItem( BMessage* msg);
+	BmListViewItem* AddModelItem( BmListModelItem* item);
 	const char* ItemNameForCaption()		{ return "account"; }
 	CLVContainerView* CreateContainer( bool horizontal, bool vertical, 
 												  bool scroll_view_corner, 
@@ -102,10 +103,22 @@ private:
 
 
 
+#define BM_AUTH_SELECTED 			'bmAS'
+#define BM_SIGNATURE_SELECTED 	'bmGS'
+#define BM_SMTP_SELECTED 			'bmSS'
+#define BM_CHECK_MAIL_CHANGED 	'bmCC'
+#define BM_REMOVE_MAIL_CHANGED 	'bmRC'
+#define BM_IS_DEFAULT_CHANGED 	'bmDC'
+#define BM_IS_BUCKET_CHANGED	 	'bmFC'
+#define BM_PWD_STORED_CHANGED 	'bmPC'
+#define BM_ADD_ACCOUNT 				'bmAA'
+#define BM_REMOVE_ACCOUNT 			'bmRA'
+
+
 class BmTextControl;
 class BmMenuControl;
+class BmCheckControl;
 class MButton;
-class MCheckBox;
 /*------------------------------------------------------------------------------*\
 	BmPrefsRecvMailView
 		-	
@@ -150,14 +163,16 @@ private:
 	BmMenuControl* mAuthControl;
 	BmMenuControl* mSignatureControl;
 	BmMenuControl* mSmtpControl;
-	MCheckBox* mCheckAccountControl;
-	MCheckBox* mIsBucketControl;
-	MCheckBox* mIsDefaultControl;
-	MCheckBox* mRemoveMailControl;
-	MCheckBox* mStorePwdControl;
+	BmCheckControl* mCheckAccountControl;
+	BmCheckControl* mIsBucketControl;
+	BmCheckControl* mIsDefaultControl;
+	BmCheckControl* mRemoveMailControl;
+	BmCheckControl* mStorePwdControl;
 	MButton* mAddButton;
 	MButton* mRemoveButton;
 
+	BmRef<BmPopAccount> mCurrAcc;
+	
 	// Hide copy-constructor and assignment:
 	BmPrefsRecvMailView( const BmPrefsRecvMailView&);
 	BmPrefsRecvMailView operator=( const BmPrefsRecvMailView&);
