@@ -1069,7 +1069,7 @@ BmSieveFilterPrefs::BmSieveFilterPrefs( minimax minmax)
 							this, minimax(-1,-1,-1,-1)
 						),
 						mRemoveButton = new MButton( 
-							"Remove (Last) Line", 
+							"Remove Marked Lines", 
 							new BMessage( BM_REMOVE_FILTER_LINE), 
 							this, minimax(-1,-1,-1,-1)
 						),
@@ -1211,6 +1211,7 @@ BmSieveFilterPrefs::BmSieveFilterPrefs( minimax minmax)
 					NULL, false, 1, 
 					0, true
 				),
+				mMarkControl[i] = new BmCheckControl( "[Mark]", NULL,	this),
 				0
 			);
 		mMailPartControl[i]->ct_mpm.maxi.y = 1E5;
@@ -1220,6 +1221,7 @@ BmSieveFilterPrefs::BmSieveFilterPrefs( minimax minmax)
 		mFieldNameControl[i]->ct_mpm = minimax(80,-1,80,1E5);
 		mValueControl[i]->SetTabAllowed( false);
 		mValueControl[i]->ct_mpm = minimax(140,-1,1E5,1E5);
+		mMarkControl[i]->ct_mpm = minimax(-1,-1,-1,1E5);
 		mFilterGroup->AddChild( mFilterLine[i]);
 	}		
 	mFilterGroup->AddChild( mSpaceAtBottom = new Space());
@@ -1404,12 +1406,39 @@ void BmSieveFilterPrefs::AddFilterLine() {
 }
 
 /*------------------------------------------------------------------------------*\
-	RemoveFilterLine()
+	RemoveMarkedFilterLines()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmSieveFilterPrefs::RemoveFilterLine() { 
-	if (mVisibleLines>1) {
-		mVisibleLines--;
+void BmSieveFilterPrefs::RemoveMarkedFilterLines() {
+	int32 currIdx = 0;
+	for( int32 i=0; i<mVisibleLines; ++i) {
+		if (!mMarkControl[i]->Value()) {
+			if (i != currIdx) {
+				mMailPartControl[currIdx]->MenuItem()->SetLabel(
+					mMailPartControl[i]->MenuItem()->Label()
+				);
+				mMailPartControl[currIdx]->MarkItem(
+					mMailPartControl[i]->MenuItem()->Label()
+				);
+				mFieldNameControl[currIdx]->SetText(
+					mFieldNameControl[i]->Text()
+				);
+				mOperatorControl[currIdx]->MarkItem(
+					mOperatorControl[i]->MenuItem()->Label()
+				);
+				mOperatorControl[currIdx]->MenuItem()->SetLabel(
+					mOperatorControl[i]->MenuItem()->Label()
+				);
+				mValueControl[currIdx]->SetText(
+					mValueControl[i]->Text()
+				);
+			}
+			currIdx++;
+		} else
+			mMarkControl[i]->SetValue( false);
+	}
+	while( mVisibleLines > currIdx) {
+		--mVisibleLines;
 		mMailPartControl[mVisibleLines]->ClearMark();
 		mMailPartControl[mVisibleLines]->MenuItem()->SetLabel("");
 		mFieldNameControl[mVisibleLines]->SetText("");
@@ -1480,8 +1509,8 @@ void BmSieveFilterPrefs::MessageReceived( BMessage* msg) {
 		}
 		case BM_REMOVE_FILTER_LINE: {
 			if (mVisibleLines>1 && mCurrFilterAddon) {
-				RemoveFilterLine();
-				mCurrFilterAddon->mMatchCount--;
+				RemoveMarkedFilterLines();
+				mCurrFilterAddon->mMatchCount = mVisibleLines;
 				AdjustScrollView();
 				UpdateState();
 				PropagateChange();
@@ -1709,8 +1738,16 @@ void BmSieveFilterPrefs::ShowFilter( BmFilterAddon* addon) {
 	mCurrFilterAddon = dynamic_cast< BmGraphicalSieveFilter*>( addon);
 
 	if (mCurrFilterAddon) {
-		while( mVisibleLines > mCurrFilterAddon->mMatchCount)
-			RemoveFilterLine();
+		while( mVisibleLines > mCurrFilterAddon->mMatchCount) {
+			mVisibleLines--;
+			mMailPartControl[mVisibleLines]->ClearMark();
+			mMailPartControl[mVisibleLines]->MenuItem()->SetLabel("");
+			mFieldNameControl[mVisibleLines]->SetText("");
+			mOperatorControl[mVisibleLines]->ClearMark();
+			mOperatorControl[mVisibleLines]->MenuItem()->SetLabel("");
+			mValueControl[mVisibleLines]->SetText("");
+			mFilterLine[mVisibleLines]->RemoveSelf();
+		}
 		while( mVisibleLines < mCurrFilterAddon->mMatchCount)
 			AddFilterLine();
 
@@ -1756,7 +1793,6 @@ void BmSieveFilterPrefs::ShowFilter( BmFilterAddon* addon) {
 void BmSieveFilterPrefs::UpdateState() {
 	if (mCurrFilterAddon) {
 		mAddButton->SetEnabled( mVisibleLines < BM_MAX_MATCH_COUNT);
-		mRemoveButton->SetEnabled( mVisibleLines > 1);
 		for( int idx=0; idx<mVisibleLines; ++idx) {
 			BmString mailPart = mCurrFilterAddon->mMatchMailPart[idx];
 			if (!mailPart.ICompare( BM_MAILPART_OTHER))

@@ -241,7 +241,7 @@ enum {
 	BM_SET_IDENTITY_SELECTED	= 'bmTo',
 	BM_STOP_PROCESSING_CHANGED	= 'bmTp',
 
-	 BM_ADDRPART_SELECTED		= 'bmTq'
+	BM_ADDRPART_SELECTED			= 'bmTq'
 };
 
 
@@ -270,7 +270,7 @@ private:
 	static const char* const MSG_IDX;
 
 	void AddFilterLine();
-	void RemoveFilterLine();
+	void RemoveMarkedFilterLines();
 	void UpdateState();
 
 	BmFilterGroup* mFilterGroup;
@@ -288,6 +288,7 @@ private:
 	BmTextControl* mFieldNameControl[BM_MAX_MATCH_COUNT];
 	BmMenuControl* mOperatorControl[BM_MAX_MATCH_COUNT];
 	BmMultiLineTextControl* mValueControl[BM_MAX_MATCH_COUNT];
+	BmCheckControl* mMarkControl[BM_MAX_MATCH_COUNT];
 	int32 mVisibleLines;
 	
 	BmCheckControl* mFileIntoControl;
