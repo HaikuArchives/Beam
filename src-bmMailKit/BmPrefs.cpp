@@ -55,7 +55,7 @@ const char* const BmPrefs::LOG_LVL_3 = "Log Everything";
 
 const BmString BmPrefs::nListSeparator = ",";
 
-const BmString BmPrefs::nDefaultIconset = "/Icons/iconset 22 nuvola be-red";
+const BmString BmPrefs::nDefaultIconset = "/Icons/iconset 22 nuvola grey-red";
 const int16 BmPrefs::nPrefsVersion = 10;
 
 /*------------------------------------------------------------------------------*\
@@ -343,9 +343,9 @@ void BmPrefs::InitDefaults() {
 	mDefaultsMsg.AddString( "DefaultCharset", 
 									BmEncoding::DefaultCharset.String());
 	mDefaultsMsg.AddString( "DefaultForwardType", "Inline");
-	mDefaultsMsg.AddBool( "DoNotAttachVCardsToForward", true);
+	mDefaultsMsg.AddBool( "DoNotAttachVCardsToForward", false);
 	mDefaultsMsg.AddBool( "DynamicStatusWin", true);
-	mDefaultsMsg.AddString( "ForwardIntroStr", "On %s at %t, %f wrote:");
+	mDefaultsMsg.AddString( "ForwardIntroStr", "On %d at %t, %f wrote:");
 	mDefaultsMsg.AddString( "ForwardSubjectRX", 
 									"^\\s*\\[?\\s*Fwd(\\[\\d+\\])?:");
 	mDefaultsMsg.AddString( "ForwardSubjectStr", "Fwd: %s");
@@ -394,8 +394,8 @@ void BmPrefs::InitDefaults() {
 	mDefaultsMsg.AddInt32( "MSecsBeforeMailMoverShows", 500*1000);
 	mDefaultsMsg.AddInt32( "MSecsBeforePopperRemove", 5000*1000);
 	mDefaultsMsg.AddInt32( "MSecsBeforeSmtpRemove", 0*1000);
-	mDefaultsMsg.AddInt32( "NetReceiveBufferSize", 65536);
-	mDefaultsMsg.AddInt32( "NetSendBufferSize", 65536);
+	mDefaultsMsg.AddInt32( "NetReceiveBufferSize", 15000);
+	mDefaultsMsg.AddInt32( "NetSendBufferSize", 15000);
 	mDefaultsMsg.AddString( "QuoteFormatting", "Push Margin");
 	mDefaultsMsg.AddString( "QuotingLevelRX", 
 									"^((?:\\w?\\w?\\w?[>|]|[ \\t]*)*)(.*?)$");
@@ -415,7 +415,7 @@ void BmPrefs::InitDefaults() {
 	mDefaultsMsg.AddBool( "ShowToolbarIcons", true);
 	mDefaultsMsg.AddString( "ShowToolbarLabel", "Right");
 	mDefaultsMsg.AddString( "SignatureRX", "^---?\\s*\\n");
-	mDefaultsMsg.AddBool("SpecialHeaderForEachBcc", true);
+	mDefaultsMsg.AddBool("SpecialHeaderForEachBcc", false);
 	mDefaultsMsg.AddBool( "StripedListView", true);
 	mDefaultsMsg.AddString( "TimeModeInHeaderView", "Local");
 	mDefaultsMsg.AddString( "UndoMode", "Words");
