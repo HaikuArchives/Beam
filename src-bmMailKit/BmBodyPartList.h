@@ -143,7 +143,7 @@ public:
 													{ return mFileName; }
 	inline const BmString& TransferEncoding() const	
 													{ return mContentTransferEncoding; }
-	inline const BmString& ID() const	
+	inline const BmString& Id() const	
 													{ return mContentId; }
 	inline const BmString& Description() const	
 													{ return mContentDescription; }
