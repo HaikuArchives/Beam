@@ -2072,7 +2072,7 @@ void ColumnListView::KeyDown(const char *bytes, int32 numBytes)
 				// and then scroll the listview in such a way that the freshly selected
 				// item is at the bottom of the view:
 				int32 mods = Window()->CurrentMessage()->FindInt32("modifiers");
-				if (mods & B_SHIFT_KEY) {
+				if (mods & B_SHIFT_KEY && ListType() == B_MULTIPLE_SELECTION_LIST) {
 					int32 currIdx = -1;
 					int32 maxSelIdx = -1;
 					for( int32 i=0; (currIdx=CurrentSelection(i))>=0; ++i) {
