@@ -58,6 +58,7 @@
 #include "BmBasics.h"
 #include "BmGuiUtil.h"
 #include "BmLogHandler.h"
+#include "BmToolbarButton.h"
 #include "BmMailEditWin.h"
 #include "BmMailView.h"
 #include "BmMenuControl.h"
@@ -67,7 +68,6 @@
 #include "BmRosterBase.h"
 #include "BmResources.h"
 #include "BmTextControl.h"
-#include "BmToolbarButton.h"
 
 /********************************************************************************\
 	BmMailEditWin
