@@ -58,18 +58,25 @@ const char* const BmPopAccount::MSG_PASSWORD = 		"bm:password";
 const char* const BmPopAccount::MSG_POP_SERVER = 	"bm:popserver";
 const char* const BmPopAccount::MSG_CHECK_MAIL = 	"bm:checkmail";
 const char* const BmPopAccount::MSG_DELETE_MAIL = 	"bm:deletemail";
+const char* const BmPopAccount::MSG_DELETE_DELAY = "bm:deletedelay";
 const char* const BmPopAccount::MSG_PORT_NR = 		"bm:portnr";
 const char* const BmPopAccount::MSG_UID = 			"bm:uid";
+const char* const BmPopAccount::MSG_UID_TIME = 		"bm:uidtm";
 const char* const BmPopAccount::MSG_AUTH_METHOD = 	"bm:authmethod";
 const char* const BmPopAccount::MSG_MARK_DEFAULT = "bm:markdefault";
 const char* const BmPopAccount::MSG_STORE_PWD = 	"bm:storepwd";
 const char* const BmPopAccount::MSG_CHECK_INTERVAL = "bm:checkinterval";
 const char* const BmPopAccount::MSG_FILTER_CHAIN = "bm:filterch";
 const char* const BmPopAccount::MSG_HOME_FOLDER =  "bm:homefold";
-const int16 BmPopAccount::nArchiveVersion = 6;
+const int16 BmPopAccount::nArchiveVersion = 7;
 
 const char* const BmPopAccount::AUTH_POP3 = "POP3";
 const char* const BmPopAccount::AUTH_APOP = "APOP";
+
+enum {
+	BM_APPENDED_UID	= 'bmez'
+							// a uid that has been appended to archive
+};
 
 /*------------------------------------------------------------------------------*\
 	BmPopAccount()
@@ -79,6 +86,7 @@ BmPopAccount::BmPopAccount( const char* name, BmPopAccountList* model)
 	:	inherited( name, model, (BmListModelItem*)NULL)
 	,	mCheckMail( true)
 	,	mDeleteMailFromServer( false)
+	,	mDeleteMailDelay( 3)
 	,	mPortNr( 110)
 	,	mPortNrString( "110")
 	,	mAuthMethod( "POP3")
@@ -88,8 +96,12 @@ BmPopAccount::BmPopAccount( const char* name, BmPopAccountList* model)
 	,	mCheckIntervalString( "")
 	,	mIntervalRunner( NULL)
 	,	mFilterChain( BM_DefaultItemLabel)
+	,	mHomeFolder( "in")
 {
 	SetupIntervalRunner();
+	TheLogHandler->FindLogfile( BmString("POP_")<<Key());
+							// create logfile in advance so it can
+							// be shown in log-menu
 }
 
 /*------------------------------------------------------------------------------*\
@@ -98,7 +110,8 @@ BmPopAccount::BmPopAccount( const char* name, BmPopAccountList* model)
 		-	constructs a BmPopAccount from a BMessage
 \*------------------------------------------------------------------------------*/
 BmPopAccount::BmPopAccount( BMessage* archive, BmPopAccountList* model) 
-	:	inherited( FindMsgString( archive, MSG_NAME), model, (BmListModelItem*)NULL)
+	:	inherited( FindMsgString( archive, MSG_NAME), model, 
+										  (BmListModelItem*)NULL)
 	,	mIntervalRunner( NULL)
 {
 	int16 version;
@@ -115,10 +128,6 @@ BmPopAccount::BmPopAccount( BMessage* archive, BmPopAccountList* model)
 	mAuthMethod.ToUpper();
 	mMarkedAsDefault = FindMsgBool( archive, MSG_MARK_DEFAULT);
 	mPwdStoredOnDisk = FindMsgBool( archive, MSG_STORE_PWD);
-	const char* uid;
-	for( int32 i=0; archive->FindString( MSG_UID, i, &uid) == B_OK; ++i) {
-		mUIDs.push_back( uid);
-	}
 	if (version > 1) {
 		mCheckInterval = FindMsgInt16( archive, MSG_CHECK_INTERVAL);
 		if (mCheckInterval)
@@ -133,20 +142,63 @@ BmPopAccount::BmPopAccount( BMessage* archive, BmPopAccountList* model)
 	if (version<=5) {
 		// with version 6 we introduced identities, so we split some info off
 		// the pop-account and create appropriate identities from it:
-		BmIdentity* ident = new BmIdentity( Key().String(), TheIdentityList.Get());
+		BmIdentity* ident = new BmIdentity( Key().String(), 
+														TheIdentityList.Get());
 		ident->POPAccount( Key());
-		ident->SMTPAccount( FindMsgString( archive, BmIdentity::MSG_SMTP_ACCOUNT));
-		ident->RealName( FindMsgString( archive, BmIdentity::MSG_REAL_NAME));
-		ident->MailAddr( FindMsgString( archive, BmIdentity::MSG_MAIL_ADDR));
-		ident->MailAliases( FindMsgString( archive, BmIdentity::MSG_MAIL_ALIASES));
-		ident->SignatureName( FindMsgString( archive, BmIdentity::MSG_SIGNATURE_NAME));
-		ident->MarkedAsBitBucket( FindMsgBool( archive, BmIdentity::MSG_MARK_BUCKET));
+		ident->SMTPAccount( FindMsgString( archive, 
+													  BmIdentity::MSG_SMTP_ACCOUNT));
+		ident->RealName( FindMsgString( archive, 
+												  BmIdentity::MSG_REAL_NAME));
+		ident->MailAddr( FindMsgString( archive, 
+												  BmIdentity::MSG_MAIL_ADDR));
+		ident->MailAliases( FindMsgString( archive, 
+													  BmIdentity::MSG_MAIL_ALIASES));
+		ident->SignatureName( FindMsgString( archive, 
+														 BmIdentity::MSG_SIGNATURE_NAME));
+		ident->MarkedAsBitBucket( FindMsgBool( archive, 
+															BmIdentity::MSG_MARK_BUCKET));
 		TheIdentityList->AddItemToList( ident);
 	}
 	mHomeFolder = archive->FindString( MSG_HOME_FOLDER);
 	if (!mHomeFolder.Length())
 		mHomeFolder = BM_MAIL_FOLDER_IN;
+	if (version <= 6) {
+		// with version 7 we changed the UID-format, we convert old format:
+		const char* uidStr;
+		const char* pos;
+		BmUidInfo uidInfo;
+		for( int32 i=0; archive->FindString( MSG_UID, i, &uidStr) == B_OK; ++i) {
+			pos = strchr( uidStr, ' ');
+			if (pos)
+				uidInfo.uid = BmString( uidStr, pos-uidStr);
+			else
+				uidInfo.uid = uidStr;
+			uidInfo.timeDownloaded = time( NULL);
+			mUIDs.push_back( uidInfo);
+		}
+		// initialize attributes introduced in version 7:
+		mDeleteMailDelay = 3;
+		mDeleteMailDelayString << mDeleteMailDelay;
+	} else {
+		// load new UID-format:
+		const char* uidStr;
+		BmUidInfo uidInfo;
+		for( int32 i=0; 
+			  archive->FindString( MSG_UID, i, &uidStr) == B_OK
+			  && archive->FindInt32( MSG_UID_TIME, i, 
+			  								 &uidInfo.timeDownloaded) == B_OK;  
+			  ++i) {
+			uidInfo.uid = uidStr;
+			mUIDs.push_back( uidInfo);
+		}
+		// load attributes introduced in version 7:
+		mDeleteMailDelay = archive->FindInt16( MSG_DELETE_DELAY);
+		mDeleteMailDelayString << mDeleteMailDelay;
+	}
 	SetupIntervalRunner();
+	TheLogHandler->FindLogfile( BmString("POP_")<<Key());
+							// create logfile in advance so it can
+							// be shown in log-menu
 }
 
 /*------------------------------------------------------------------------------*\
@@ -170,6 +222,7 @@ status_t BmPopAccount::Archive( BMessage* archive, bool deep) const {
 		||	archive->AddString( MSG_POP_SERVER, mPOPServer.String())
 		||	archive->AddBool( MSG_CHECK_MAIL, mCheckMail)
 		||	archive->AddBool( MSG_DELETE_MAIL, mDeleteMailFromServer)
+		||	archive->AddInt16( MSG_DELETE_DELAY, mDeleteMailDelay)
 		||	archive->AddInt16( MSG_PORT_NR, mPortNr)
 		||	archive->AddString( MSG_AUTH_METHOD, mAuthMethod.String())
 		||	archive->AddBool( MSG_MARK_DEFAULT, mMarkedAsDefault)
@@ -179,9 +232,25 @@ status_t BmPopAccount::Archive( BMessage* archive, bool deep) const {
 		||	archive->AddString( MSG_HOME_FOLDER, mHomeFolder.String());
 	int32 count = mUIDs.size();
 	for( int i=0; ret==B_OK && i<count; ++i) {
-		ret = archive->AddString( MSG_UID, mUIDs[i].String());
+		ret = archive->AddString( MSG_UID, mUIDs[i].uid.String())
+				|| archive->AddInt32( MSG_UID_TIME, mUIDs[i].timeDownloaded);
 	}
 	return ret;
+}
+
+/*------------------------------------------------------------------------------*\
+	IntegrateAppendedArchive( archive)
+		-	
+\*------------------------------------------------------------------------------*/
+void BmPopAccount::IntegrateAppendedArchive( BMessage* archive) {
+	switch( archive->what) {
+		case BM_APPENDED_UID: {
+			BmUidInfo uidInfo;
+			uidInfo.uid = archive->FindString( MSG_UID);
+			uidInfo.timeDownloaded = archive->FindInt32( MSG_UID_TIME);
+			mUIDs.push_back( uidInfo);
+		}
+	};
 }
 
 /*------------------------------------------------------------------------------*\
@@ -219,14 +288,18 @@ BmString BmPopAccount::GetDomainName() const {
 		-	checks if a mail with the given uid (unique-ID) has already been 
 			downloaded
 \*------------------------------------------------------------------------------*/
-bool BmPopAccount::IsUIDDownloaded( BmString uid) {
-	uid << " ";									// append a space to avoid matching only in parts
-	int32 uidLen = uid.Length();
+bool BmPopAccount::IsUIDDownloaded( const BmString& uid, 
+												time_t* downloadTime) {
 	int32 count = mUIDs.size();
 	for( int32 i=count-1; i>=0; --i) {
-		if (!mUIDs[i].Compare( uid, uidLen))
+		if (!mUIDs[i].uid.Compare( uid)) {
+			if (downloadTime)
+				*downloadTime = mUIDs[i].timeDownloaded;
 			return true;
+		}
 	}
+	if (downloadTime)
+		*downloadTime = 0;
 	return false;
 }
 
@@ -236,8 +309,46 @@ bool BmPopAccount::IsUIDDownloaded( BmString uid) {
 		-	this method should be called directly after a message has succesfully
 			been stored locally
 \*------------------------------------------------------------------------------*/
-void BmPopAccount::MarkUIDAsDownloaded( BmString uid) {
-	mUIDs.push_back( uid << " " << system_time());
+void BmPopAccount::MarkUIDAsDownloaded( const BmString& uid) {
+	BmUidInfo uidInfo;
+	uidInfo.uid = uid;
+	uidInfo.timeDownloaded = time( NULL);
+	mUIDs.push_back( uidInfo);
+	// append info about new downloaded UID to settings-file:
+	BMessage archive( BM_APPENDED_UID);
+	archive.AddString( BmListModel::MSG_ITEMKEY, Key().String());
+	archive.AddString( MSG_UID, uid.String());
+	archive.AddInt32( MSG_UID_TIME, uidInfo.timeDownloaded);
+	ThePopAccountList->AppendArchive( &archive);
+}
+
+/*------------------------------------------------------------------------------*\
+	AdjustToCurrentServerUids( serverUids)
+		-	removes all UIDs unless they are contained in the given vector.
+			This way we throw away old UIDs that no longer exist on server.
+\*------------------------------------------------------------------------------*/
+BmString BmPopAccount::AdjustToCurrentServerUids( 
+														const vector<BmString>& serverUids) {
+	BmString removedInfo;
+	BmUidVect newUids;
+	int32 lcount = mUIDs.size();
+	int32 scount = serverUids.size();
+	for( int32 l=0; l<lcount; ++l) {
+		bool found = false;
+		for( int32 s=0; s<scount; ++s) {
+			if (!mUIDs[l].uid.Compare( serverUids[s])) {
+				newUids.push_back( mUIDs[l]);
+				found = true;
+				break;
+			}
+		}
+		if (!found) {
+			removedInfo << "Removed local UID " << mUIDs[l].uid 
+							<< " since it is not listed by the server anymore.\n";
+		}
+	}
+	mUIDs = newUids;
+	return removedInfo;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -260,7 +371,9 @@ void BmPopAccount::CheckInterval( int16 i) {
 void BmPopAccount::SetupIntervalRunner() {
 	delete mIntervalRunner;
 	mIntervalRunner = NULL;
-	BM_LOG( BM_LogPop, BmString("PopAccount.") << Key() << " sets check interval to " << mCheckInterval);
+	BM_LOG( BM_LogPop, 
+			  BmString("PopAccount.") << Key() << " sets check interval to " 
+			  	<< mCheckInterval);
 	if (mCheckInterval>0) {
 		BMessage* msg = new BMessage( BMM_CHECK_MAIL);
 		msg->AddString( BmPopAccountList::MSG_ITEMKEY, Key().String());
@@ -268,7 +381,8 @@ void BmPopAccount::SetupIntervalRunner() {
 		mIntervalRunner = new BMessageRunner( be_app_messenger, msg, 
 														  mCheckInterval*60*1000*1000, -1);
 		if (mIntervalRunner->InitCheck() != B_OK)
-			ShowAlert( BmString("Could not initialize check-interval runner for PopAccount ")<<Key());
+			BM_SHOWERR( BmString("Could not initialize check-interval runner"
+									   "for PopAccount ")<<Key());
 	}
 }
 
@@ -278,7 +392,8 @@ void BmPopAccount::SetupIntervalRunner() {
 			given out-params
 		-	returns true if values are ok, false (and error-info) if not
 \*------------------------------------------------------------------------------*/
-bool BmPopAccount::SanityCheck( BmString& complaint, BmString& fieldName) const {
+bool BmPopAccount::SanityCheck( BmString& complaint, 
+										  BmString& fieldName) const {
 	if (!mUsername.Length()) {
 		complaint = "Please enter a username for this account.";
 		fieldName = "username";
@@ -305,7 +420,8 @@ bool BmPopAccount::SanityCheck( BmString& complaint, BmString& fieldName) const 
 		return false;
 	}
 	if (mCheckInterval>0 && !mPwdStoredOnDisk) {
-		complaint = "In order to check this account for mail automatically,\nthe password needs to be stored on disk.";
+		complaint = "In order to check this account for mail automatically,\n"
+						"the password needs to be stored on disk.";
 		fieldName = "pwdstoredondisk";
 		return false;
 	}
@@ -327,7 +443,8 @@ const int16 BmPopAccountList::nArchiveVersion = 2;
 	CreateInstance()
 		-	initialiazes object by reading info from settings file (if any)
 \*------------------------------------------------------------------------------*/
-BmPopAccountList* BmPopAccountList::CreateInstance( BLooper* jobMetaController) {
+BmPopAccountList* BmPopAccountList
+::CreateInstance( BLooper* jobMetaController) {
 	if (!theInstance) {
 		theInstance = new BmPopAccountList( jobMetaController);
 	}
@@ -358,7 +475,8 @@ BmPopAccountList::~BmPopAccountList() {
 		-	returns the name of the settins-file for the POP3-accounts-list
 \*------------------------------------------------------------------------------*/
 const BmString BmPopAccountList::SettingsFileName() {
-	return BmString( TheResources->SettingsPath.Path()) << "/" << "Pop Accounts";
+	return BmString( TheResources->SettingsPath.Path()) 
+				<< "/" << "Pop Accounts";
 }
 
 /*------------------------------------------------------------------------------*\
@@ -369,22 +487,27 @@ void BmPopAccountList::InstantiateItems( BMessage* archive) {
 	int16 version;
 	if (archive->FindInt16( MSG_VERSION, &version) != B_OK)
 		version = 0;
-	BM_LOG2( BM_LogMailTracking, BmString("Start of InstantiateItems() for PopAccountList"));
+	BM_LOG2( BM_LogMailTracking, 
+				BmString("Start of InstantiateItems() for PopAccountList"));
 	status_t err;
 	int32 numChildren = FindMsgInt32( archive, BmListModelItem::MSG_NUMCHILDREN);
 	for( int i=0; i<numChildren; ++i) {
 		BMessage msg;
-		(err = archive->FindMessage( BmListModelItem::MSG_CHILDREN, i, &msg)) == B_OK
+		(err = archive->FindMessage( BmListModelItem::MSG_CHILDREN, 
+											  i, &msg)) == B_OK
 													|| BM_THROW_RUNTIME(BmString("Could not find pop-account nr. ") << i+1 << " \n\nError:" << strerror(err));
 		BmPopAccount* newAcc = new BmPopAccount( &msg, this);
-		BM_LOG3( BM_LogMailTracking, BmString("PopAccount <") << newAcc->Name() << "," << newAcc->Key() << "> read");
+		BM_LOG3( BM_LogMailTracking, 
+					BmString("PopAccount <") << newAcc->Name() << "," 
+						<< newAcc->Key() << "> read");
 		AddItemToList( newAcc);
 	}
-	BM_LOG2( BM_LogMailTracking, BmString("End of InstantiateItems() for PopAccountList"));
+	BM_LOG2( BM_LogMailTracking, 
+				BmString("End of InstantiateItems() for PopAccountList"));
 	mInitCheck = B_OK;
 	if (version<2) {
-		// with version 2 we introduced identities, so we have split some info off
-		// the pop-accounts and have created appropriate identities from it.
+		// with version 2 we introduced identities, so we have split some info
+		// off the pop-accounts and have created appropriate identities from it.
 		// In order to keep this info we store both lists:
 		TheIdentityList->Store();
 		this->Store();
@@ -398,11 +521,12 @@ void BmPopAccountList::InstantiateItems( BMessage* archive) {
 			might cause Beam to download recent messages again.
 \*------------------------------------------------------------------------------*/
 void BmPopAccountList::ResetToSaved() {
-	BM_LOG2( BM_LogMailTracking, BmString("Start of ResetToSaved() for PopAccountList"));
+	BM_LOG2( BM_LogMailTracking, 
+				BmString("Start of ResetToSaved() for PopAccountList"));
 	BmAutolockCheckGlobal lock( ModelLocker());
 	lock.IsLocked() 							|| BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
 	// first we copy all uid-lists into a temp map...
-	map<BmString, vector<BmString> > uidListMap;
+	map<BmString, BmUidVect > uidListMap;
 	BmModelItemMap::const_iterator iter;
 	for( iter = begin(); iter != end(); ++iter) {
 		BmPopAccount* acc = dynamic_cast< BmPopAccount*>( iter->second.Get());
@@ -414,11 +538,12 @@ void BmPopAccountList::ResetToSaved() {
 	// ...finally we update the uid-list of each account:
 	for( iter = begin(); iter != end(); ++iter) {
 		BmPopAccount* acc = dynamic_cast< BmPopAccount*>( iter->second.Get());
-		vector< BmString>& uidList = uidListMap[acc->Key()];
+		BmUidVect& uidList = uidListMap[acc->Key()];
 		if (!uidList.empty())
 			acc->mUIDs = uidList;
 	}
-	BM_LOG2( BM_LogMailTracking, BmString("End of ResetToSaved() for PopAccountList"));
+	BM_LOG2( BM_LogMailTracking, 
+				BmString("End of ResetToSaved() for PopAccountList"));
 }
 
 /*------------------------------------------------------------------------------*\

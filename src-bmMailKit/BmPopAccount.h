@@ -51,10 +51,18 @@ class BHandler;
 class BmPopAccountList;
 
 
-#define BM_JOBWIN_POP					'bmea'
-						// sent to JobMetaController in order to start pop-connection
+enum {
+	BM_JOBWIN_POP				= 'bmea'
+							// sent to JobMetaController in order to 
+							// start pop-connection
+};
 
 class BMessageRunner;
+struct BmUidInfo {
+	BmString uid;
+	int32 timeDownloaded;
+};
+typedef vector<BmUidInfo> BmUidVect;
 /*------------------------------------------------------------------------------*\
 	BmPopAccount 
 		-	holds information about one specific POP3-account
@@ -65,51 +73,91 @@ class BmPopAccount : public BmListModelItem {
 	typedef BmListModelItem inherited;
 	friend BmPopAccountList;
 
+
 public:
 	BmPopAccount( const char* name, BmPopAccountList* model);
 	BmPopAccount( BMessage* archive, BmPopAccountList* model);
 	virtual ~BmPopAccount();
 	
 	// native methods:
-	bool IsUIDDownloaded( BmString uid);
-	void MarkUIDAsDownloaded( BmString uid);
+	bool IsUIDDownloaded( const BmString& uid, time_t* downloadTime=NULL);
+	void MarkUIDAsDownloaded( const BmString& uid);
+	BmString AdjustToCurrentServerUids( const vector<BmString>& serverUids);
+	//	
 	BmString GetDomainName() const;
 	bool SanityCheck( BmString& complaint, BmString& fieldName) const;
 
 	// stuff needed for Archival:
 	status_t Archive( BMessage* archive, bool deep = true) const;
 	int16 ArchiveVersion() const			{ return nArchiveVersion; }
+	void IntegrateAppendedArchive( BMessage* archive);
 
 	// getters:
-	inline const BmString &AuthMethod() const	{ return mAuthMethod; }
-	inline bool CheckMail() const 				{ return mCheckMail; }
-	inline bool DeleteMailFromServer() const	{ return mDeleteMailFromServer; }
-	inline bool MarkedAsDefault() const			{ return mMarkedAsDefault; }
-	inline const BmString &Name() const 		{ return Key(); }
-	inline const BmString &Password() const 	{ return mPassword; }
-	inline const BmString &POPServer() const	{ return mPOPServer; }
-	inline uint16 PortNr() const					{ return mPortNr; }
-	inline const BmString &PortNrString() const{ return mPortNrString; }
-	inline bool PwdStoredOnDisk() const			{ return mPwdStoredOnDisk; }
-	inline const BmString &Username() const 	{ return mUsername; }
-	inline int16 CheckInterval() const 			{ return mCheckInterval; }
-	inline const BmString &CheckIntervalString() const{ return mCheckIntervalString; }
-	inline const BmString &FilterChain() const{ return mFilterChain; }
-	inline const BmString &HomeFolder() const { return mHomeFolder; }
+	inline const BmString &AuthMethod() const	
+													{ return mAuthMethod; }
+	inline bool CheckMail() const 		{ return mCheckMail; }
+	inline bool DeleteMailFromServer() const	
+													{ return mDeleteMailFromServer; }
+	inline uint16 DeleteMailDelay() const
+													{ return mDeleteMailDelay; }
+	inline const BmString &DeleteMailDelayString() const
+													{ return mDeleteMailDelayString; }
+	inline bool MarkedAsDefault() const	{ return mMarkedAsDefault; }
+	inline const BmString &Name() const { return Key(); }
+	inline const BmString &Password() const
+													{ return mPassword; }
+	inline const BmString &POPServer() const	
+													{ return mPOPServer; }
+	inline uint16 PortNr() const			{ return mPortNr; }
+	inline const BmString &PortNrString() const
+													{ return mPortNrString; }
+	inline bool PwdStoredOnDisk() const	{ return mPwdStoredOnDisk; }
+	inline const BmString &Username() const 	
+													{ return mUsername; }
+	inline int16 CheckInterval() const 	{ return mCheckInterval; }
+	inline const BmString &CheckIntervalString() const
+													{ return mCheckIntervalString; }
+	inline const BmString &FilterChain() const
+													{ return mFilterChain; }
+	inline const BmString &HomeFolder() const 
+													{ return mHomeFolder; }
 
 	// setters:
-	inline void AuthMethod( const BmString &s) { mAuthMethod = s; TellModelItemUpdated( UPD_ALL); }
-	inline void CheckMail( bool b) 				{ mCheckMail = b;  TellModelItemUpdated( UPD_ALL); }
-	inline void DeleteMailFromServer( bool b)	{ mDeleteMailFromServer = b;  TellModelItemUpdated( UPD_ALL); }
-	inline void MarkedAsDefault( bool b)		{ mMarkedAsDefault = b;  TellModelItemUpdated( UPD_ALL); }
-	inline void Password( const BmString &s) 	{ mPassword = s;  TellModelItemUpdated( UPD_ALL); }
-	inline void POPServer( const BmString &s)	{ mPOPServer = s;  TellModelItemUpdated( UPD_ALL); }
-	inline void PortNr( uint16 i)					{ mPortNr = i; mPortNrString = BmString()<<i;  TellModelItemUpdated( UPD_ALL); }
-	inline void PwdStoredOnDisk( bool b)		{ mPwdStoredOnDisk = b;  TellModelItemUpdated( UPD_ALL); }
-	inline void Username( const BmString &s) 	{ mUsername = s;  TellModelItemUpdated( UPD_ALL); }
+	inline void AuthMethod( const BmString &s)
+													{ mAuthMethod = s; 
+													  TellModelItemUpdated( UPD_ALL); }
+	inline void CheckMail( bool b) 		{ mCheckMail = b;  
+													  TellModelItemUpdated( UPD_ALL); }
+	inline void DeleteMailFromServer( bool b)	
+													{ mDeleteMailFromServer = b;
+													  TellModelItemUpdated( UPD_ALL); }
+	inline void DeleteMailDelay( uint16 i)			
+													{ mDeleteMailDelay = i; 
+													  mDeleteMailDelayString = BmString()<<i;  
+													  TellModelItemUpdated( UPD_ALL); }
+	inline void MarkedAsDefault( bool b){ mMarkedAsDefault = b;  
+													  TellModelItemUpdated( UPD_ALL); }
+	inline void Password( const BmString &s) 	
+													{ mPassword = s;  
+													  TellModelItemUpdated( UPD_ALL); }
+	inline void POPServer( const BmString &s)	
+													{ mPOPServer = s;  
+													  TellModelItemUpdated( UPD_ALL); }
+	inline void PortNr( uint16 i)			{ mPortNr = i; 
+													  mPortNrString = BmString()<<i;  
+													  TellModelItemUpdated( UPD_ALL); }
+	inline void PwdStoredOnDisk( bool b){ mPwdStoredOnDisk = b;  
+													  TellModelItemUpdated( UPD_ALL); }
+	inline void Username( const BmString &s) 	
+													{ mUsername = s;  
+													  TellModelItemUpdated( UPD_ALL); }
 	void CheckInterval( int16 i);
-	inline void FilterChain( const BmString &s){ mFilterChain = s;  TellModelItemUpdated( UPD_ALL); }
-	inline void HomeFolder( const BmString &s){ mHomeFolder = s;  TellModelItemUpdated( UPD_ALL); }
+	inline void FilterChain( const BmString &s)
+													{ mFilterChain = s;  
+													  TellModelItemUpdated( UPD_ALL); }
+	inline void HomeFolder( const BmString &s)
+													{ mHomeFolder = s;  
+													  TellModelItemUpdated( UPD_ALL); }
 
 	bool GetPOPAddress( BNetAddress* addr) const;
 
@@ -125,12 +173,14 @@ public:
 	static const char* const MSG_DELETE_MAIL;
 	static const char* const MSG_PORT_NR;
 	static const char* const MSG_UID;
+	static const char* const MSG_UID_TIME;
 	static const char* const MSG_AUTH_METHOD;
 	static const char* const MSG_MARK_DEFAULT;
 	static const char* const MSG_STORE_PWD;
 	static const char* const MSG_CHECK_INTERVAL;
 	static const char* const MSG_FILTER_CHAIN;
 	static const char* const MSG_HOME_FOLDER;
+	static const char* const MSG_DELETE_DELAY;
 	static const int16 nArchiveVersion;
 
 private:
@@ -149,16 +199,19 @@ private:
 	BmString mPortNrString;			// mPortNr as String
 	bool mCheckMail;					// include this account in global mail-check?
 	bool mDeleteMailFromServer;	// delete mails upon receive?
+	int16 mDeleteMailDelay;			// delete delay in days
+	BmString mDeleteMailDelayString;		// mDeleteMailDelay as String
 	BmString mAuthMethod;			// authentication method
 	bool mMarkedAsDefault;			// is this the default account?
 	bool mPwdStoredOnDisk;			// store Passwords unsafely on disk?
 	int16 mCheckInterval;			// check mail every ... minutes
-	BmString mCheckIntervalString;	// check-interval as String
+	BmString mCheckIntervalString;// check-interval as String
 	BmString mFilterChain;			// the filter-chain to be used by this account
-	BmString mHomeFolder;			// the folder where mails from this account shall
-											// be stored into (by default, filters may change that)
+	BmString mHomeFolder;			// the folder where mails from this account
+											// shall be stored into (by default, filters 
+											// may change that)
 
-	vector<BmString> mUIDs;			// list of UIDs seen in this account
+	BmUidVect mUIDs;					// list of UIDs downloaded by this account
 	BMessageRunner* mIntervalRunner;
 };
 
@@ -186,8 +239,8 @@ public:
 	void ResetToSaved();
 	
 	// overrides of listmodel base:
-	void ForeignKeyChanged( const BmString& key, 
-									const BmString& oldVal, const BmString& newVal);
+	void ForeignKeyChanged( const BmString& key, const BmString& oldVal, 
+									const BmString& newVal);
 	const BmString SettingsFileName();
 	void InstantiateItems( BMessage* archive);
 	int16 ArchiveVersion() const			{ return nArchiveVersion; }
