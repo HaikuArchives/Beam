@@ -874,20 +874,10 @@ void BmMailRefView::AddMailRefMenu( BMenu* menu, BHandler* target,
 	AddItemToMenu( menu, CreateMenuItem( "Redirect", BMM_REDIRECT), target);
 	menu->AddSeparatorItem();
 
-	BMenu* statusMenu = new BMenu( MENU_MARK_AS);
-	const char* stats[] = {
-		BM_MAIL_STATUS_DRAFT, BM_MAIL_STATUS_FORWARDED, BM_MAIL_STATUS_NEW, 
-		BM_MAIL_STATUS_PENDING, BM_MAIL_STATUS_READ, BM_MAIL_STATUS_REDIRECTED,
-		BM_MAIL_STATUS_REPLIED, BM_MAIL_STATUS_SENT,	NULL
-	};
-	for( int i=0; stats[i]; ++i) {
-		BMessage* msg = new BMessage( BMM_MARK_AS);
-		msg->AddString( BmApplication::MSG_STATUS, stats[i]);
-		AddItemToMenu( statusMenu, 
-							CreateMenuItem( stats[i], msg, 
-												(BmString("MarkAs")+stats[i]).String()), 
-							target);
-	}
+	BmMenuController* statusMenu
+		= new BmMenuController( MENU_MARK_AS, target, new BMessage( BMM_MARK_AS), 
+										&BmRosterBase::RebuildStatusMenu, 
+										BM_MC_MOVE_RIGHT);
 	if (isContextMenu)
 		statusMenu->SetFont( &font);
 	menu->AddItem( statusMenu);
