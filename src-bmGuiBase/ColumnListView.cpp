@@ -121,6 +121,9 @@ const char* const ColumnListView::MSG_SORTKEY = 		"bm:sortk";
 const char* const ColumnListView::MSG_SORTMODE = 		"bm:sortm";
 const char* const ColumnListView::MSG_COLWIDTH = 		"bm:colw";
 
+int32 ColumnListView::fExtendSelMask = B_SHIFT_KEY;
+int32 ColumnListView::fToggleSelMask = B_OPTION_KEY|B_COMMAND_KEY;
+
 //******************************************************************************************************
 //**** ColumnListView CLASS DEFINITION
 //******************************************************************************************************
@@ -955,7 +958,7 @@ void ColumnListView::MouseDown(BPoint where)
 			{
 				//Clicked a new item...select it.
 				list_view_type type = ListType();
-				if((modifier_keys & B_SHIFT_KEY) && type != B_SINGLE_SELECTION_LIST)
+				if((modifier_keys & fExtendSelMask) && type != B_SINGLE_SELECTION_LIST)
 				{
 					//If shift held down, expand the selection to include all intervening items.
 					int32 min_selection = 0x7FFFFFFF;
@@ -981,7 +984,7 @@ void ColumnListView::MouseDown(BPoint where)
 						Select(min_selection,max_selection,false);
 					}
 				}
-				else if((modifier_keys & (B_OPTION_KEY | B_CONTROL_KEY )) && type != B_SINGLE_SELECTION_LIST)
+				else if((modifier_keys & fToggleSelMask) && type != B_SINGLE_SELECTION_LIST)
 					//If option held down, expand the selection to include just it.
 					Select(item_index,true);
 				else
@@ -996,10 +999,10 @@ void ColumnListView::MouseDown(BPoint where)
 			else
 			{
 				//Clicked an already selected item...
-				if(modifier_keys & (B_OPTION_KEY | B_CONTROL_KEY ))
+				if(modifier_keys & fToggleSelMask)
 					//if option held down, remove it.
 					Deselect(item_index);
-				else if(modifier_keys & B_SHIFT_KEY)
+				else if(modifier_keys & fExtendSelMask)
 				{
 					//If shift held down, ignore it and just watch for drag.
 					fLastMouseDown = where;
@@ -1111,21 +1114,20 @@ bool ColumnListView::AddUnder(BListItem* a_item, BListItem* a_superitem)
 	item->fOutlineLevel = SuperItemLevel + 1;
 	if (fInsertAtSortedPos)
 		ItemPos = DetermineSortedPosHierarchical( item, SuperItemPos+1);
-	else {
+	else
 		ItemPos = SuperItemPos + 1;
-		while(true)
+	while(true)
+	{
+		CLVListItem* Temp = (CLVListItem*)fFullItemList.ItemAt(ItemPos);
+		if(Temp)
 		{
-			CLVListItem* Temp = (CLVListItem*)fFullItemList.ItemAt(ItemPos);
-			if(Temp)
-			{
-				if(Temp->fOutlineLevel > SuperItemLevel)
-					ItemPos++;
-				else
-					break;
-			}
+			if(Temp->fOutlineLevel > item->fOutlineLevel)
+				ItemPos++;
 			else
 				break;
 		}
+		else
+			break;
 	}
 	return AddItemPrivate(item,ItemPos);
 }
@@ -2256,4 +2258,14 @@ status_t ColumnListView::Unarchive(const BMessage* archive, bool) {
 	SetDisplayOrder( displayCols);
 
 	return B_OK;
+}
+
+void ColumnListView::SetExtendedSelectionPolicy( bool likeTracker) {
+	if (likeTracker) {
+		fExtendSelMask = B_OPTION_KEY|B_COMMAND_KEY;
+		fToggleSelMask = B_SHIFT_KEY;
+	} else {
+		fExtendSelMask = B_SHIFT_KEY;
+		fToggleSelMask = B_OPTION_KEY|B_COMMAND_KEY;
+	}
 }

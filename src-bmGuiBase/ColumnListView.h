@@ -223,6 +223,8 @@ class IMPEXPSANTAPARTSFORBEAM ColumnListView : public BListView
 
 		virtual void MessageReceived( BMessage* msg);
 
+		static void SetExtendedSelectionPolicy( bool likeTracker);
+
 	protected:
 		void SetDisconnectScrollView( bool disconnect);
 		void UpdateColumnSizesDataRectSizeScrollBars(bool scrolling_allowed = true);
@@ -275,6 +277,8 @@ class IMPEXPSANTAPARTSFORBEAM ColumnListView : public BListView
 		bool fStripedBackground;
 		bool fInsertAtSortedPos;
 		bool fClickSetsFocus;
+		static int32 fExtendSelMask;
+		static int32 fToggleSelMask;
 
 		minimax fMinMax;		
 };
