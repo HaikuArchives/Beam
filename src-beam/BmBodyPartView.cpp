@@ -68,6 +68,8 @@ enum Columns {
 #undef BM_LOGNAME
 #define BM_LOGNAME "MailParser"
 
+const BmString BmDragId = "beam/att";
+
 /*------------------------------------------------------------------------------*\
 	()
 		-	
@@ -445,6 +447,34 @@ void BmBodyPartView::MessageReceived( BMessage* msg) {
 				}
 				break;
 			}
+			case B_TRASH_TARGET:
+			case B_COPY_TARGET: {
+				if (msg->IsReply()) {
+					const BMessage* dragMsg = msg->Previous();
+					if (!dragMsg || BmDragId!=dragMsg->FindString("be:originator"))
+						break;
+					BmString key=dragMsg->FindString("be:originator_data");
+					BmRef<BmDataModel> modelRef( DataModel());
+					BmBodyPartList* bodyPartList = dynamic_cast<BmBodyPartList*>( modelRef.Get());
+					if (!bodyPartList)
+						break;
+					BmRef<BmListModelItem> bodyPartItem = bodyPartList->FindItemByKey( key);
+					BmBodyPart* bodyPart = dynamic_cast<BmBodyPart*>( bodyPartItem.Get());
+					if (bodyPart) {
+						if (msg->what == B_COPY_TARGET) {
+							entry_ref dref;
+							msg->FindRef( "directory", &dref);
+							BDirectory dir( &dref);
+							BFile file( &dir, msg->FindString("name"), B_WRITE_ONLY);
+							if (file.InitCheck() == B_OK)
+								bodyPart->WriteToFile( file);
+						} else if (msg->what == B_TRASH_TARGET && mEditable) {
+							bodyPartList->RemoveItemFromList( bodyPart);
+						}
+					}
+				}
+				break;
+			}
 			case B_SIMPLE_DATA: {
 				AddAttachment( msg);
 				break;
@@ -563,10 +593,15 @@ bool BmBodyPartView::InitiateDrag( BPoint, int32 index, bool wasSelected) {
 	BmBodyPartItem* bodyPartItem = dynamic_cast<BmBodyPartItem*>(ItemAt( index));
 	BmBodyPart* bodyPart( bodyPartItem->ModelItem());
 	const char* filename = bodyPartItem->GetColumnContentText( COL_NAME);
-	entry_ref eref = bodyPart->WriteToTempFile( filename);
-	dragMsg.AddInt32( "be:actions", B_MOVE_TARGET);
+//	entry_ref eref = bodyPart->WriteToTempFile( filename);
+	dragMsg.AddInt32( "be:actions", B_COPY_TARGET);
+	dragMsg.AddInt32( "be:actions", B_TRASH_TARGET);
+	dragMsg.AddString( "be:types", B_FILE_MIME_TYPE);
+	dragMsg.AddString( "be:filetypes", bodyPart->MimeType().String());
 	dragMsg.AddString( "be:clip_name", filename);
-	dragMsg.AddRef( "refs", &eref);
+	dragMsg.AddString( "be:originator", BmDragId.String());
+	dragMsg.AddString( "be:originator_data", bodyPart->Key().String());
+//	dragMsg.AddRef( "refs", &eref);
 	BFont font;
 	GetFont( &font);
 	float lineHeight = MAX(TheResources->FontLineHeight( &font),20.0);
