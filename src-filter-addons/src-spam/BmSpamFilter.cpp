@@ -53,6 +53,7 @@
 #include "BmMail.h"
 #include "BmRosterBase.h"
 #include "BmSpamFilter.h"
+#include "BmStorageUtil.h"
 
 
 // standard logfile-name for this file:
@@ -1206,7 +1207,7 @@ bool BmSpamFilter::OsbfClassifier::Classify( BmMsgContext* msgContext)
 	}
 	
 	double overallPr;
-	bool status = DoClassify(msgContext, overallPr);
+	bool status = DoActualClassification(msgContext, overallPr);
 	if (status) {
 		int32 ThresholdForSpam = 0;
 		int32 ThresholdForTofu = 0;
@@ -1253,9 +1254,9 @@ bool BmSpamFilter::OsbfClassifier::Classify( BmMsgContext* msgContext)
 			overallPr = clampMax;
 		float ratioSpam = 0.5;
 		if (isSpam)
-			ratioSpam -= overallPr / (clampMin/0.5);
+			ratioSpam -= fabs(overallPr / (clampMin/0.5));
 		else
-			ratioSpam += overallPr / (clampMax/0.5);
+			ratioSpam += fabs(overallPr / (clampMax/0.5));
 		msgContext->data.AddFloat("RatioSpam", ratioSpam);
 	}
 	
@@ -1263,11 +1264,11 @@ bool BmSpamFilter::OsbfClassifier::Classify( BmMsgContext* msgContext)
 }
 
 /*------------------------------------------------------------------------------*\
-	Classify()
+	DoActualClassification()
 		-	
 \*------------------------------------------------------------------------------*/
-bool BmSpamFilter::OsbfClassifier::DoClassify( BmMsgContext* msgContext,
-															  double& overallPr)
+bool BmSpamFilter::OsbfClassifier
+::DoActualClassification( BmMsgContext* msgContext, double& overallPr)
 {
 	BmStringIBuf text;
 	SpamRelevantMailtextSelector selector(msgContext->mail);
@@ -1319,7 +1320,30 @@ bool BmSpamFilter::OsbfClassifier::Reset( BmMsgContext* msgContext)
 }
 
 /*------------------------------------------------------------------------------*\
-	Reset()
+	Reload()
+		-	
+\*------------------------------------------------------------------------------*/
+bool BmSpamFilter::OsbfClassifier::Reload( BmMsgContext* msgContext)
+{
+	BM_LOG( BM_LogFilter, "Spam-Addon: reloading datafiles");
+	// set lock to serialize OSBF-calls:
+	BAutolock lock( &mLock);
+	if (!lock.IsLocked()) {
+		mLastErr = "Unable to get SPAM-lock";
+		return false;
+	}
+	delete [] mTofuHash;
+	mTofuHash = NULL;
+	delete [] mSpamHash;
+	mSpamHash = NULL;
+
+	Initialize();
+
+	return true;
+}
+
+/*------------------------------------------------------------------------------*\
+	ResetStatistics()
 		-	
 \*------------------------------------------------------------------------------*/
 bool BmSpamFilter::OsbfClassifier::ResetStatistics( BmMsgContext* msgContext)
@@ -1893,6 +1917,9 @@ BmSpamFilter::Execute( BmMsgContext* msgContext, const BMessage* _jobSpecs)
 	} else if (!jobSpecifier.ICompare("Reset")) {
 		BM_LOG2( BM_LogFilter, "Spam-Addon: starting Reset job...");
 		result = nClassifier.Reset( msgContext);
+	} else if (!jobSpecifier.ICompare("Reload")) {
+		BM_LOG2( BM_LogFilter, "Spam-Addon: starting Reload job...");
+		result = nClassifier.Reload( msgContext);
 	} else if (!jobSpecifier.ICompare("GetStatistics")) {
 		BM_LOG2( BM_LogFilter, "Spam-Addon: starting GetStatistics job...");
 		result = nClassifier.GetStatistics( msgContext);
@@ -1902,10 +1929,10 @@ BmSpamFilter::Execute( BmMsgContext* msgContext, const BMessage* _jobSpecs)
 	} else {	// Classify
 		BM_LOG2( BM_LogFilter, "Spam-Addon: starting Classify job...");
 		int32 dummy;
-		if (jobSpecs.FindInt32("SpamThreshold", &dummy) != B_OK)
-			jobSpecs.AddInt32("SpamThreshold", mSpamThreshold);
-		if (jobSpecs.FindInt32("TofuThreshold", &dummy) != B_OK)
-			jobSpecs.AddInt32("TofuThreshold", mTofuThreshold);
+		if (jobSpecs.FindInt32("ThresholdForSpam", &dummy) != B_OK)
+			jobSpecs.AddInt32("ThresholdForSpam", mSpamThreshold);
+		if (jobSpecs.FindInt32("ThresholdForTofu", &dummy) != B_OK)
+			jobSpecs.AddInt32("ThresholdForTofu", mTofuThreshold);
 		result = nClassifier.Classify( msgContext);
 		if (result) {
 			bool isSpam = msgContext->data.FindBool("IsSpam");
@@ -2012,12 +2039,18 @@ BmSpamFilterPrefs::BmSpamFilterPrefs( minimax minmax)
 						new BMessage( BM_SHOW_STATISTICS), 
 						this, minimax(-1,-1,-1,-1)
 					),
+					new Space(minimax(5, 0, 5, 1e5)),
 					mResetStatisticsButton = new MButton(
 						"Reset Statistics" B_UTF8_ELLIPSIS,
 						new BMessage( BM_RESET_STATISTICS),
 						this, minimax(-1,-1,-1,-1)
 					),
 					new Space(minimax(0, 0, 1e5, 1e5)),
+					mTrainButton = new MButton(
+						"Train Filter" B_UTF8_ELLIPSIS,
+						new BMessage( BM_TRAIN_FILTER),
+						this, minimax(-1,-1,-1,-1)
+					),
 					0
 				),
 				new Space(minimax(0, 0, 1e5, 1e5)),
@@ -2084,6 +2117,7 @@ BmSpamFilterPrefs::~BmSpamFilterPrefs() {
 	TheBubbleHelper->SetHelp( mTofuThresholdBar, NULL);
 	TheBubbleHelper->SetHelp( mShowStatisticsButton, NULL);
 	TheBubbleHelper->SetHelp( mResetStatisticsButton, NULL);
+	TheBubbleHelper->SetHelp( mTrainButton, NULL);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -2150,6 +2184,15 @@ void BmSpamFilterPrefs::Initialize() {
 		mResetStatisticsButton, 
 		"Pressing this will reset the performance statistics of the SPAM-filter.\n"
 		"This is useful if you want to restart performance measurement."
+	);
+	TheBubbleHelper->SetHelp( 
+		mTrainButton, 
+		"Initially, the SPAM-filter knows nothing about your mails, but you\n"
+		"have to tell the filter, whenever it makes mistakes.\n"
+		"In order to improve initial performance, you can start a training\n"
+		"session of the SPAM-filter with the mails found on your disk.\n\n"
+		"In order for this to work, you need to have SPAM- as well as\n" 
+		"TOFU-mails on your disk."
 	);
 }
 
@@ -2249,8 +2292,10 @@ void BmSpamFilterPrefs::MessageReceived( BMessage* msg) {
 			alert->TextEntryView()->MakeEditable(false);
 			alert->TextEntryView()->SetFontAndColor(be_fixed_font);
 			alert->TextEntryView()->SetText(stats.String());
-			BmString dummy;
-			alert->Go(dummy);
+			alert->Go( new BInvoker( 
+				new BMessage('BmXX'),
+				BMessenger( this)
+			));
 			break;
 		}
 		case BM_RESET_STATISTICS: {
@@ -2262,7 +2307,7 @@ void BmSpamFilterPrefs::MessageReceived( BMessage* msg) {
 							  "(the SPAM-/TOFU-data itself is not changed at all).\n\n"
 							  "Would you like to proceed?");
 				BAlert* alert = new BAlert( 
-					"Reset Statistics", s.String(), "Yes, Proceed", "Cancel", NULL, 
+					"Reset Statistics", s.String(), "Yes, Proceed", "No, Cancel", NULL, 
 					B_WIDTH_AS_USUAL, B_WARNING_ALERT
 				);
 				alert->SetShortcut( 1, B_ESCAPE);
@@ -2316,6 +2361,67 @@ void BmSpamFilterPrefs::MessageReceived( BMessage* msg) {
 		case BM_PROTECTMYTOFU_CHANGED: {
 			if (UpdateState(false))
 				PropagateChange();
+			break;
+		}
+		case BM_TRAIN_FILTER: {
+			int32 buttonPressed;
+			if (msg->FindInt32( "which", &buttonPressed) != B_OK) {
+				// first step, ask user about it:
+				BmString s("Beam will search for (up to 1000) SPAM/TOFU mails\n"
+							  "and automatically train the SPAM-filter with these\n"
+							  "mails.\n\n"
+							  "In order for this to work, the SPAM-mails should\n"
+							  "have the attribute MAIL:classification == 'Spam'\n"
+							  "or should live below a folder named 'spam'.\n\n"
+							  "Would you like to proceed?");
+				BAlert* alert = new BAlert( 
+					"Train SPAM-Filter", s.String(), "Yes, Proceed", "No, Cancel", NULL, 
+					B_WIDTH_AS_USUAL, B_WARNING_ALERT
+				);
+				alert->SetShortcut( 1, B_ESCAPE);
+				alert->Go( new BInvoker( 
+					new BMessage(BM_TRAIN_FILTER),
+					BMessenger( this)
+				));
+			} else {
+				// second step, do it if user said ok:
+				if (buttonPressed == 0) {
+					BmString spamometer = BeamRoster->AppPath();
+					spamometer 
+						<< "/tools/SpamOMeter --dehtml --keep-atags"
+						<< " --rst=" << mCurrFilterAddon->mSpamThreshold 
+						<< " --rtt=" << mCurrFilterAddon->mTofuThreshold
+						<< " --do-training";
+					BmString trainCmd("Terminal -t \"Beam SPAM-Filter Training Session\"");
+					trainCmd << " /bin/sh -c '" << spamometer << ";"
+								<<	" read -p \"press <Return> to close window\"'";
+					int32 result = system(trainCmd.String());
+					BmString s;
+					BmString b;
+					if (result == 0) {
+						BMessage specs;
+						specs.AddString("jobSpecifier", "Reload");
+						mCurrFilterAddon->Execute( NULL, &specs);
+						s << "The training sessions was successful and the\n"
+						  << "SPAM- & TOFU-data has been reloaded.\n";
+						b << "Cool!";
+					} else {
+						if (result == 5)
+							s << "The training could not be done, because Beam\n"
+							  << "could not find enough SPAM- & TOFU-mails for the\n"
+							  << "training (at least 10 of each are required!).";
+						else
+							s << "The training session failed.\n";
+						b << "Bummer!";
+					}
+					BAlert* alert = new BAlert( 
+						"Train SPAM-Filter", s.String(), b.String(), NULL, NULL, 
+						B_WIDTH_AS_USUAL, B_WARNING_ALERT
+					);
+					alert->SetShortcut( 0, B_ESCAPE);
+					alert->Go( new BInvoker( new BMessage( 'bmXX'), this));
+				}
+			}
 			break;
 		}
 		default:

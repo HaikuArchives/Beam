@@ -73,6 +73,7 @@ class BmSpamFilter : public BmFilterAddon {
 		bool LearnAsTofu( BmMsgContext* msgContext);
 		bool Classify( BmMsgContext* msgContext);
 		bool Reset( BmMsgContext* msgContext);
+		bool Reload( BmMsgContext* msgContext);
 		bool ResetStatistics( BmMsgContext* msgContext);
 		bool GetStatistics( BmMsgContext* msgContext);
 		void JobSpecs( const BMessage* jobSpecs)
@@ -280,7 +281,7 @@ class BmSpamFilter : public BmFilterAddon {
 
 
 		bool Learn( BmMsgContext* msgContext, bool learnAsSpam, bool revert);
-		bool DoClassify( BmMsgContext* msgContext, double& overallPr);
+		bool DoActualClassification( BmMsgContext* msgContext, double& overallPr);
 		void Store();
 		status_t CreateDataFile( const BmString& filename);
 		status_t ReadDataFile( const BmString& filename, Header& header,
@@ -365,7 +366,8 @@ enum {
 	BM_THRESHOLD_CHANGED			= 'bmTe',
 	BM_PROTECTMYTOFU_CHANGED	= 'bmTf',
 	BM_RESET_STATISTICS			= 'bmTg',
-	BM_MARKSPAM_CHANGED			= 'bmTh'
+	BM_MARKSPAM_CHANGED			= 'bmTh',
+	BM_TRAIN_FILTER				= 'bmTi'
 };
 
 
@@ -393,6 +395,7 @@ private:
 
 	MButton* mShowStatisticsButton;
 	MButton* mResetStatisticsButton;
+	MButton* mTrainButton;
 	MSlider* mThresholdControl;
 	MSlider* mProtectMyTofuControl;
 	BStatusBar* mSpamThresholdBar;

@@ -40,7 +40,9 @@
 #include <stdarg.h>
 
 #include <Directory.h>
+#include <Entry.h>
 #include <File.h>
+#include <Query.h>
 
 #include "split.hh"
 using namespace regexx;
@@ -50,9 +52,13 @@ using namespace regexx;
 #include "BmMail.h"
 #include "BmMailFilter.h"
 #include "BmMailRef.h"
+#include "BmPrefs.h"
+#include "BmStorageUtil.h"
 
 static bool Verbose = false;
 static bool Statistics = false;
+
+static bool TrainingMode = false;
 
 static int32 ThresholdForSpam = 0;
 static int32 ThresholdForTofu = 0;
@@ -105,6 +111,112 @@ static BMessage ClassifyJob;
 static BMessage LearnAsSpamJob;
 static BMessage LearnAsTofuJob;
 static BMessage GetStatisticsJob;
+
+static vector<BmString> TrainingMailsSpam;
+static vector<BmString> TrainingMailsTofu;
+static const uint16 MaxTrainingCount = 1000;
+static const uint16 MinTrainingCount =   10;
+static uint16 TrainCount = 0;
+
+/*------------------------------------------------------------------------------*\
+	FindTrainingMails()
+		-	
+\*------------------------------------------------------------------------------*/
+status_t FindTrainingMails( BmString &msgFileName)
+{
+	int32 count;
+	status_t err;
+	dirent* dent;
+	entry_ref eref;
+	BEntry entry;
+	BPath path;
+	BNode node;
+	BQuery query;
+	BmString pathStr;
+	BmString classif;
+	bool isSpam;
+	char buf[4096];
+
+	time_t now = time(NULL);
+	time_t then = now-60*60*24*365;		// one year ago
+
+	TrainingMailsSpam.clear();
+	TrainingMailsTofu.clear();
+
+	if (!Verbose)
+		printf("querying...");
+
+	query.SetVolume(&ThePrefs->MailboxVolume);
+	query.PushAttr("MAIL:when");
+	query.PushUInt32((uint32)then);
+	query.PushOp(B_GT);
+	if ((err = query.Fetch()) != B_OK)
+		return err;
+	bool done = false;
+	while ((count = query.GetNextDirents((dirent* )buf, 4096)) > 0 && !done) {
+		dent = (dirent* )buf;
+		while (count-- > 0 && !done) {
+			eref.device = dent->d_pdev;
+			eref.directory = dent->d_pino;
+			eref.set_name(dent->d_name);
+			entry.SetTo(&eref);
+			entry.GetPath(&path);
+			pathStr = path.Path();
+			node.SetTo(&eref);
+			classif = "";
+			BmReadStringAttr( &node, BM_MAIL_ATTR_CLASSIFICATION, classif);
+			isSpam = false;
+			Out("found mail '%s' => ", eref.name);
+			if (!classif.ICompare("Spam"))
+				isSpam = true;
+			else {
+				int32 pos = pathStr.IFindFirst("spam/");
+				if (pos >= 0 && (pos==0 || pathStr[pos-1]=='/'))
+					isSpam = true;
+			}
+			if (isSpam) {
+				Out("SPAM\n");
+				if (TrainingMailsSpam.size() < MaxTrainingCount)
+					TrainingMailsSpam.push_back(pathStr);
+			} else {
+				Out("TOFU\n");
+				if (TrainingMailsTofu.size() < MaxTrainingCount)
+					TrainingMailsTofu.push_back(pathStr);
+			}
+			if (TrainingMailsTofu.size() == MaxTrainingCount 
+			&& TrainingMailsSpam.size() == MaxTrainingCount)
+				done = true;
+			
+			// Bump the dirent-pointer by length of the dirent just handled:
+			dent = (dirent* )((char* )dent + dent->d_reclen);
+		}
+	}
+
+	if (!Verbose)
+		printf(" \n");
+
+	TrainCount = min_c(TrainingMailsSpam.size(), TrainingMailsTofu.size());
+	if (TrainCount < MinTrainingCount)
+		// no mails found for training
+		return B_BAD_VALUE;
+
+	printf("Starting training with %u SPAM- & TOFU-mails\n", TrainCount);
+
+	BmString paths;
+	for( uint16 i=0; i<TrainCount; ++i) {
+		paths << TrainingMailsTofu[i] << "\n";
+		paths << TrainingMailsSpam[i] << "\n";
+	}
+
+	msgFileName = "/boot/var/tmp/SPAM-Filter-Training";
+	TheTempFileList.AddFile(msgFileName);
+	{
+		BFile msgFile(msgFileName.String(), B_READ_WRITE | B_CREATE_FILE);
+		msgFile.Write( paths.String(), paths.Length());
+	}
+
+	return B_OK;
+}
 
 /*------------------------------------------------------------------------------*\
 	()
@@ -178,7 +290,8 @@ void SpamOMeter( const char* pathfileName, ResInfo& ri)
 			Out("SPAM(%f)...", overallPr);
 		else if (isTofu)
 			Out("TOFU(%f)...", overallPr);
-		if (pathVect[i].IFindFirst("spam") >= B_OK) {
+		if (pathVect[i].IFindFirst("spam/") >= B_OK 
+		|| mail->MailRef()->Classification().ICompare("Spam") == 0) {
 			if (overallPr >= 0) {
 				// false negative
 				if (isReinforced)
@@ -260,6 +373,7 @@ void SpamOMeter( const char* pathfileName, ResInfo& ri)
 int 
 main( int argc, char** argv) 
 {
+	int exitVal = 0;
 	int as = 1;
 	while( as<argc && *argv[as] == '-') {
 		if (!strcmp(argv[as], "--verbose"))
@@ -286,49 +400,115 @@ main( int argc, char** argv)
 			DeHtml = true;
 		else if (!strcmp(argv[as], "--keep-atags"))
 			KeepATags = true;
+		else if (!strcmp(argv[as], "--do-training"))
+			TrainingMode = true;
 		else 
 			fprintf(stderr, "unknown option %s ignored\n", argv[as]);
 		as++;
 	}
-	if (argc>as) {
-		ResetJob.AddString("jobSpecifier", "Reset");
-		ClassifyJob.AddString("jobSpecifier", "Classify");
-		LearnAsSpamJob.AddString("jobSpecifier", "LearnAsSpam");
-		LearnAsTofuJob.AddString("jobSpecifier", "LearnAsTofu");
-		GetStatisticsJob.AddString("jobSpecifier", "GetStatistics");
-		if (DeHtml) {
-			ClassifyJob.AddBool("DeHtml", true);
-			LearnAsSpamJob.AddBool("DeHtml", true);
-			LearnAsTofuJob.AddBool("DeHtml", true);
-		}
-		if (KeepATags) {
-			ClassifyJob.AddBool("KeepATags", true);
-			LearnAsSpamJob.AddBool("KeepATags", true);
-			LearnAsTofuJob.AddBool("KeepATags", true);
-		}
-		ClassifyJob.AddInt32("ThresholdForSpam", ThresholdForSpam);
-		ClassifyJob.AddInt32("ThresholdForTofu", ThresholdForTofu);
-		ClassifyJob.AddInt32("UnsureForSpam", UnsureForSpam);
-		ClassifyJob.AddInt32("UnsureForTofu", UnsureForTofu);
-		
-		ResInfo resInfo[argc];
-		const char* APP_SIG = "application/x-vnd.zooey-spamometer";
-		BmApplication* app = new BmApplication( APP_SIG, true);
-		TheFilterList->StartJobInThisThread();
+	if (argc<=as && !TrainingMode) {
+		fprintf(stderr, "usage:\n\t%s [options] path-files\n", argv[0]);
+		fprintf(stderr, "where options can be any combination of:\n"
+				  "\t[--dehtml]\n"
+				  "\t\tremove html-tags from mails before classifying\n"
+				  "\t[--do-training]\n"
+				  "\t\tquery for mails and automatically start training\n"
+				  "\t[--keep-atags]\n"
+				  "\t\tkeep <a>-tags (links) when removing html\n"
+				  "\t[--limit=<num>]\n"
+				  "\t\tstop after <num> mails have been classified\n"
+				  "\t[--perf-count=<num>]\n"
+				  "\t\tdo performance measurement for last <num> mails\n"
+				  "\t\t(the default is one fifth of total number of mails)\n"
+				  "\t[--reinforce-spam-threshold=<num>]\n"
+				  "\t\tdo auto-learning if classification is below <num> for SPAM\n"
+				  "\t[--reinforce-tofu-threshold=<num>]\n"
+				  "\t\tdo auto-learning if classification is below <num> for TOFU\n"
+				  "\t[--unsure-spam-threshold=<num>]\n"
+				  "\t\ttreat mail as unsure if classification is below <num> for SPAM\n"
+				  "\t[--unsure-tofu-threshold=<num>]\n"
+				  "\t\ttreat mail as unsure if classification is below <num> for TOFU\n"
+				  "\t[--statistics]\n" 
+				  "\t\tshow resulting SPAM-filter statistics\n"
+				  "\t[--verbose]\n"
+				  "\t\tprint each mail and its classification-result\n");
+		exit(5);
+	}
+
+	ResetJob.AddString("jobSpecifier", "Reset");
+	ClassifyJob.AddString("jobSpecifier", "Classify");
+	LearnAsSpamJob.AddString("jobSpecifier", "LearnAsSpam");
+	LearnAsTofuJob.AddString("jobSpecifier", "LearnAsTofu");
+	GetStatisticsJob.AddString("jobSpecifier", "GetStatistics");
+	if (DeHtml) {
+		ClassifyJob.AddBool("DeHtml", true);
+		LearnAsSpamJob.AddBool("DeHtml", true);
+		LearnAsTofuJob.AddBool("DeHtml", true);
+	}
+	if (KeepATags) {
+		ClassifyJob.AddBool("KeepATags", true);
+		LearnAsSpamJob.AddBool("KeepATags", true);
+		LearnAsTofuJob.AddBool("KeepATags", true);
+	}
+	ClassifyJob.AddInt32("ThresholdForSpam", ThresholdForSpam);
+	ClassifyJob.AddInt32("ThresholdForTofu", ThresholdForTofu);
+	ClassifyJob.AddInt32("UnsureForSpam", UnsureForSpam);
+	ClassifyJob.AddInt32("UnsureForTofu", UnsureForTofu);
 	
-		{
-			BmRef<BmFilter> anySpamFilter = TheFilterList->LearnAsSpamFilter();
-			// remove data-files (start with empty database):
-			spamAddon = anySpamFilter->Addon();
-			if (!spamAddon) {
-				fprintf(stderr, "could not access spam-filter-addon (not loaded)!\n");
-				exit(5);
-			}
+	if (TrainingMode) {
+		// make room for faked argument:
+		argc++;
+	};
+
+	ResInfo resInfo[argc];
+	const char* APP_SIG = "application/x-vnd.zooey-spamometer";
+	BmApplication* app 
+		= new BmApplication( APP_SIG, TrainingMode ? false : true);
+	TheFilterList->StartJobInThisThread();
+
+	{
+		BmRef<BmFilter> anySpamFilter = TheFilterList->LearnAsSpamFilter();
+		// remove data-files (start with empty database):
+		spamAddon = anySpamFilter->Addon();
+		if (!spamAddon) {
+			fprintf(stderr, "could not access spam-filter-addon (not loaded)!\n");
+			exitVal = 10;
+			goto out;
 		}
+	}
 	
+	if (TrainingMode) {
+		BmString pathsFileName;
+		printf("%c]2;Beam SPAM-Filter Training Session   (querying for mails...)%c\n", 27, 7);
+		status_t err = FindTrainingMails( pathsFileName);
+		if (err == B_OK) {
+			printf("%c]2;Beam SPAM-Filter Training Session   (training...)%c\n", 27, 7);
+			SpamOMeter( pathsFileName.String(), resInfo[as]);
+			printf("%c]2;Beam SPAM-Filter Training Session   (done!)%c\n", 27, 7);
+			fprintf(stderr, "%u mails have been succesfully trained.\n", TrainCount);
+		} else if (err == B_BAD_VALUE) {
+			printf("%c]2;Beam SPAM-Filter Training Session   (error!)%c\n", 27, 7);
+			fprintf(stderr, 
+					  "There aren't enough mails for training available.\n"
+					  "At least %u SPAM- & TOFU-mails are required.\n"
+					  "No training has been done!\n", MinTrainingCount);
+			exitVal = 5;
+			goto out;
+		} else {
+			printf("%c]2;Beam SPAM-Filter Training Session   (error!)%c\n", 27, 7);
+			fprintf(stderr, 
+					  "Couldn't query for training mails.\n"
+					  "Error: %s\n"
+					  "No training has been done!\n", strerror(err));
+			exitVal = 10;
+			goto out;
+		}
+	} else {
 		for( int a=as; a<argc; ++a)
 			SpamOMeter( argv[a], resInfo[a]);
-	
+	}
+
+	if (argc-as > 1) {
 		ResInfo& ri = resInfo[0];
 		for( int r=as; r<argc; ++r) {
 			ri.corrSpam += resInfo[r].corrSpam;
@@ -362,53 +542,53 @@ main( int argc, char** argv)
 		fprintf(stderr,"\tunsure:           %6.2f\n", ri.unsure);
 		fprintf(stderr,"\tcorrectness (FP): %6.2f   correctness (all): %6.2f\n", ri.totalFalsePos, ri.totalOverall);
 		fprintf(stderr,"############################################################\n");
+	}
 
-		if (Statistics) {
-			BmMsgContext result;
-			spamAddon->Execute( &result, &GetStatisticsJob);
-			int32	spamBuckets = result.data.FindInt32("SpamBuckets");
-			int32	spamBucketsUsed = result.data.FindInt32("SpamBucketsUsed");
-			int32	spamLearnings = result.data.FindInt32("SpamLearnings");
-			int32	spamClassifications = result.data.FindInt32("SpamClassifications");
-			int32	spamMistakes = result.data.FindInt32("SpamMistakes");
-			int32	spamAverageValue = result.data.FindInt32("SpamAverageValue");
-			int32	spamChainsAverageLength = result.data.FindInt32("SpamChainsAverageLength");
-			int32	tofuBuckets = result.data.FindInt32("TofuBuckets");
-			int32	tofuBucketsUsed = result.data.FindInt32("TofuBucketsUsed");
-			int32	tofuLearnings = result.data.FindInt32("TofuLearnings");
-			int32	tofuClassifications = result.data.FindInt32("TofuClassifications");
-			int32	tofuMistakes = result.data.FindInt32("TofuMistakes");
-			int32	tofuAverageValue = result.data.FindInt32("TofuAverageValue");
-			int32	tofuChainsAverageLength = result.data.FindInt32("TofuChainsAverageLength");
-			double errorsFP = spamClassifications 
-										? 100.0*spamMistakes/(float)spamClassifications
-										: 0;
-			double errorsAll = (spamClassifications+tofuClassifications)
-										? 100.0*(tofuMistakes+spamMistakes)
-											/(double)(tofuClassifications+spamClassifications)
-										: 0;
-			fprintf(stderr,"************************************************************\n");
-			fprintf(stderr, "          SPAM-datafile       |          TOFU-datafile\n");
-			fprintf(stderr, " features: %6ld (%3ld%% used) | features: %6ld (%3ld%% used)\n",
-									spamBuckets, 100*spamBucketsUsed/spamBuckets, 
-									tofuBuckets, 100*tofuBucketsUsed/tofuBuckets);
-			fprintf(stderr, " average value:       %6ld  | average value:        %6ld\n",
-									spamAverageValue, tofuAverageValue);
-			fprintf(stderr, " average chain-length: %5ld  | average chain-length:  %5ld\n",
-									spamChainsAverageLength, tofuChainsAverageLength);
-			fprintf(stderr, " learnings:           %6ld  | learnings:            %6ld\n",
-									spamLearnings, tofuLearnings);
-			fprintf(stderr, " classifications:     %6ld  | classifications:      %6ld\n",
-									spamClassifications, tofuClassifications);
-			fprintf(stderr, " mistakes:            %6ld  | mistakes:             %6ld\n",
-									spamMistakes, tofuMistakes);
-			fprintf(stderr, " correctness(FP):     %6.2f  | correctness (all):    %6.2f\n",
-									100.0-errorsFP, 100.0-errorsAll);
-			fprintf(stderr,"************************************************************\n");
-		}
-		TheFilterList = NULL;
-		delete app;
-	} else
-		fprintf(stderr, "usage:\n\t%s [--verbose] [--reinforce-threshold=<num>] "
-				  "path-files\n", argv[0]);
+	if (Statistics) {
+		BmMsgContext result;
+		spamAddon->Execute( &result, &GetStatisticsJob);
+		int32	spamBuckets = result.data.FindInt32("SpamBuckets");
+		int32	spamBucketsUsed = result.data.FindInt32("SpamBucketsUsed");
+		int32	spamLearnings = result.data.FindInt32("SpamLearnings");
+		int32	spamClassifications = result.data.FindInt32("SpamClassifications");
+		int32	spamMistakes = result.data.FindInt32("SpamMistakes");
+		int32	spamAverageValue = result.data.FindInt32("SpamAverageValue");
+		int32	spamChainsAverageLength = result.data.FindInt32("SpamChainsAverageLength");
+		int32	tofuBuckets = result.data.FindInt32("TofuBuckets");
+		int32	tofuBucketsUsed = result.data.FindInt32("TofuBucketsUsed");
+		int32	tofuLearnings = result.data.FindInt32("TofuLearnings");
+		int32	tofuClassifications = result.data.FindInt32("TofuClassifications");
+		int32	tofuMistakes = result.data.FindInt32("TofuMistakes");
+		int32	tofuAverageValue = result.data.FindInt32("TofuAverageValue");
+		int32	tofuChainsAverageLength = result.data.FindInt32("TofuChainsAverageLength");
+		double errorsFP = spamClassifications 
+									? 100.0*spamMistakes/(float)spamClassifications
+									: 0;
+		double errorsAll = (spamClassifications+tofuClassifications)
+									? 100.0*(tofuMistakes+spamMistakes)
+										/(double)(tofuClassifications+spamClassifications)
+									: 0;
+		fprintf(stderr,"************************************************************\n");
+		fprintf(stderr, "          SPAM-datafile       |          TOFU-datafile\n");
+		fprintf(stderr, " features: %6ld (%3ld%% used) | features: %6ld (%3ld%% used)\n",
+								spamBuckets, 100*spamBucketsUsed/spamBuckets, 
+								tofuBuckets, 100*tofuBucketsUsed/tofuBuckets);
+		fprintf(stderr, " average value:       %6ld  | average value:        %6ld\n",
+								spamAverageValue, tofuAverageValue);
+		fprintf(stderr, " average chain-length: %5ld  | average chain-length:  %5ld\n",
+								spamChainsAverageLength, tofuChainsAverageLength);
+		fprintf(stderr, " learnings:           %6ld  | learnings:            %6ld\n",
+								spamLearnings, tofuLearnings);
+		fprintf(stderr, " classifications:     %6ld  | classifications:      %6ld\n",
+								spamClassifications, tofuClassifications);
+		fprintf(stderr, " mistakes:            %6ld  | mistakes:             %6ld\n",
+								spamMistakes, tofuMistakes);
+		fprintf(stderr, " correctness(FP):     %6.2f  | correctness (all):    %6.2f\n",
+								100.0-errorsFP, 100.0-errorsAll);
+		fprintf(stderr,"************************************************************\n");
+	}
+out:
+	TheFilterList = NULL;
+	delete app;
+	return exitVal;
 }
