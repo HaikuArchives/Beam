@@ -876,6 +876,7 @@ void BmMailView::AddParsingError( const BmString& errStr)
 void BmMailView::JobIsDone( bool completed) {
 	if (completed && mCurrMail && mCurrMail->Header()) {
 		mParsingErrors.Truncate( 0);
+		ContainerView()->SetErrorText(mParsingErrors);
 		BmString displayText;
 		BmStringOBuf displayBuf( mShowRaw 
 											? mCurrMail->RawText().Length()
@@ -1052,7 +1053,7 @@ void BmMailView::DisplayBodyPart( BmStringOBuf& displayBuf,
 				displayBuf << bodyPart->DecodedData();
 				if (bodyPart->HadErrorDuringConversion())
 					AddParsingError(
-						BmString("The mailtext contains characters that could not")
+						BmString("The mailtext contains characters that could not ")
 							<< "be converted from the proposed charset\n"
 							<< "   " << bodyPart->SuggestedCharset() << "\n"
 							<< "into UTF-8.\n"
