@@ -680,8 +680,15 @@ void BmPrefsRecvMailView::MessageReceived( BMessage* msg) {
 				break;
 			}
 			case BM_REMOVE_MAIL_CHANGED: {
-				if (mCurrAcc)
-					mCurrAcc->DeleteMailFromServer( mRemoveMailControl->Value());
+				bool val = mRemoveMailControl->Value();
+				mDeleteMailDelayControl->SetEnabled( val);
+				if (!val) {
+					mDeleteMailDelayControl->SetTextSilently( "");
+					if (mCurrAcc)
+						mCurrAcc->DeleteMailDelay( 0);
+				}
+				mDaysLabel->SetHighColor( val ? Black : BeInactiveGrey);
+				mDaysLabel->Invalidate();
 				NoticeChange();
 				break;
 			}
