@@ -196,6 +196,14 @@ BmMailEditWin::~BmMailEditWin() {
 			}
 		}
 	}
+	// now manually delete all sub-views that are not currently added to the
+	// window:
+	if (!mShowDetails1)
+		delete mDetails1Group;
+	if (!mShowDetails2)
+		delete mDetails2Group;
+	if (!mShowDetails3)
+		delete mDetails3Group;
 }
 
 /*------------------------------------------------------------------------------*\
