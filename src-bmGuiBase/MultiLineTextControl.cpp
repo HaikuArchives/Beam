@@ -166,7 +166,7 @@ void MultiLineTextControl::Draw(BRect update_rect)
 			}
 			else
 			{
-				SetHighColor( BmWeakenColor(B_UI_SHADOW_COLOR, BeShadowMod));
+				SetHighColor(m_dark_2_color);
 				StrokeLine(BPoint(m_entry_text_rect.left+1,m_entry_text_rect.top+1),
 					BPoint(m_entry_text_rect.right-1,m_entry_text_rect.top+1));
 				StrokeLine(BPoint(m_entry_text_rect.left+1,m_entry_text_rect.top+2),
@@ -186,7 +186,7 @@ void MultiLineTextControl::Draw(BRect update_rect)
 		if(update_rect.Intersects(m_entry_text_rect))
 		{
 			rgb_color original_color = HighColor();
-			SetHighColor(ui_color( B_UI_CONTROL_BORDER_COLOR));
+			SetHighColor(m_dark_1_color);
 			StrokeLine(BPoint(m_entry_text_rect.left,m_entry_text_rect.top),
 				BPoint(m_entry_text_rect.right,m_entry_text_rect.top));
 			StrokeLine(BPoint(m_entry_text_rect.left,m_entry_text_rect.top+1),
