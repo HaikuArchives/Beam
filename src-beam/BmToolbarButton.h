@@ -97,7 +97,8 @@ public:
 	// creator-func, c'tors and d'tor:
 	BmToolbarButton( const char *label, float width, float height, 
 						  BMessage *message, BHandler *handler, 
-						  const char* tipText=NULL, bool needsLatch=false);
+						  const char* tipText=NULL, bool needsLatch=false,
+						  const char* resourceName=NULL);
 	~BmToolbarButton();
 	
 	// native methods:
@@ -123,6 +124,7 @@ private:
 	BRect mLatchRect;
 	BPoint mMenuPoint;
 	BmString mLabel;
+	BmString mResourceName;
 	
 	BmUpdateVariationsFunc* mUpdateVariationsFunc;
 

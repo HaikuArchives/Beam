@@ -169,13 +169,15 @@ void BmToolbarSpace::Draw( BRect updateRect) {
 \*------------------------------------------------------------------------------*/
 BmToolbarButton::BmToolbarButton( const char *label, float width, float height, 
 											 BMessage *message, BHandler *handler, 
-											 const char* tipText, bool needsLatch)
+											 const char* tipText, bool needsLatch,
+											 const char* resourceName)
 	:	inherited( minimax( width, height, -1 ,-1), 
 					  &BmDummyPicture, &BmDummyPicture, message, handler)
 	,	mHighlighted( false)
 	,	mNeedsLatch( needsLatch)
 	,	mUpdateVariationsFunc( NULL)
 	,	mLabel( label)
+	,	mResourceName( resourceName ? resourceName : label)
 {
 	TheBubbleHelper->SetHelp( this, tipText);
 	SetViewColor( B_TRANSPARENT_COLOR);
@@ -226,7 +228,7 @@ BPicture* BmToolbarButton::CreatePicture( int32 mode, float width,
 														float height) {
 	const char* label = mLabel.String();
 	BmBitmapHandle* imageHandle 
-		= TheResources->IconByName(BmString("Button_")<<label);
+		= TheResources->IconByName(BmString("Button_")<<mResourceName);
 	BBitmap* image = imageHandle ? imageHandle->bitmap : NULL;
 	// Calc icon/label positions
 	BFont font( be_plain_font);
