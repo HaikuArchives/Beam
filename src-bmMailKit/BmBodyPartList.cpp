@@ -450,11 +450,13 @@ void BmBodyPart::SetTo( const BmString& msgtext, int32 start, int32 length,
 	BM_LOG2( BM_LogMailParse, 
 				BmString("...found value: ")<<mContentTransferEncoding);
 
+	// determine charset of bodypart, trying to not make use of:
+	// 	-	an empty charset
+	//		-	the (dummy) charset "unknown-8bit"
 	mCurrentCharset = mSuggestedCharset = mContentType.Param( "charset"); 
-	if (!mCurrentCharset.Length())
-		mCurrentCharset = mSuggestedCharset 
-			= defaultCharset;
-	if (!mCurrentCharset.Length())
+	if (!mCurrentCharset.Length() || !mCurrentCharset.ICompare("unknown-8bit"))
+		mCurrentCharset = mSuggestedCharset = defaultCharset;
+	if (!mCurrentCharset.Length() || !mCurrentCharset.ICompare("unknown-8bit"))
 		mCurrentCharset = mSuggestedCharset 
 			= ThePrefs->GetBool( "ImportExportTextAsUtf8", true)
 				? "utf-8"

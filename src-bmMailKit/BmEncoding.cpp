@@ -218,7 +218,7 @@ struct BmTextPart {
 	BmTextPart( const BmString& cs, const BmString& t, const BmString& es)
 		:	charset( cs)
 		,	text( t)
-		,	encodingStyle( es)		{}
+		,	encodingStyle( es) 				{ }
 };
 /*------------------------------------------------------------------------------*\
 	()
@@ -262,7 +262,10 @@ BmString BmEncoding::ConvertHeaderPartToUTF8( const BmString& headerPart,
 				}
 			}
 			// convert the match (an encoded word) into UTF8:
-			const BmString srcCharset( i->atom[0]);
+			BmString srcCharset( i->atom[0]);
+			if (!srcCharset.Length() || !srcCharset.ICompare("unknown-8bit"))
+				// avoid empty charsets and the (dummy) charset "unknown-8bit"
+				srcCharset = defaultCharset;
 			const BmString srcEncodingStyle( i->atom[1]);
 			BmString chars( headerPart.String()+i->atom[2].start(), 
 								 i->atom[2].Length());
