@@ -252,9 +252,7 @@ void BmResources::FetchFonts() {
 void BmResources::CheckMimeTypeFile( BString sig, time_t appModTime) {
 	BPath path;
 	if (find_directory( B_COMMON_SETTINGS_DIRECTORY, &path) == B_OK) {
-		if (sig.Length())
-			// check introduced for Dano compatibility, otherwise "mysterious things"(TM) happen:
-			sig.ToLower();
+		BmToLower( sig);
 		BEntry mtEntry( (BString(path.Path())<<"/beos_mime/"<<sig).String());
 		if (mtEntry.InitCheck() == B_OK) {
 			time_t modTime;

@@ -95,7 +95,7 @@ BmPopAccount::BmPopAccount( BMessage* archive, BmPopAccountList* model)
 	mPortNr = FindMsgInt16( archive, MSG_PORT_NR);
 	mPortNrString << mPortNr;
 	mAuthMethod = FindMsgString( archive, MSG_AUTH_METHOD);
-	mAuthMethod.ToUpper();
+	BmToUpper( mAuthMethod);
 	mMarkedAsDefault = FindMsgBool( archive, MSG_MARK_DEFAULT);
 	mPwdStoredOnDisk = FindMsgBool( archive, MSG_STORE_PWD);
 	mMarkedAsBitBucket = FindMsgBool( archive, MSG_MARK_BUCKET);

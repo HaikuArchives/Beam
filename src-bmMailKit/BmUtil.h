@@ -88,6 +88,11 @@ BString operator+(const BString& s1, const char* s2);
 \*------------------------------------------------------------------------------*/
 BString& RemoveSetFromString( BString& str, const char* chars);
 /*------------------------------------------------------------------------------*\
+	utility function to lower/upper a string (needed for Dano):
+\*------------------------------------------------------------------------------*/
+BString& BmToLower( BString& str);
+BString& BmToUpper( BString& str);
+/*------------------------------------------------------------------------------*\
 	utility functions to convert between different linebreak-styles:
 \*------------------------------------------------------------------------------*/
 void ConvertLinebreaksToLF( const BString& in, BString& out);

@@ -256,6 +256,28 @@ BString& RemoveSetFromString( BString& str, const char* charsToRemove) {
 }
 
 /*------------------------------------------------------------------------------*\
+	BmToLower( string)
+		-	calls ToLower() on given string in a DANO-compatible way:
+\*------------------------------------------------------------------------------*/
+BString& BmToLower( BString& str) {
+	if (str.Length())
+		// check introduced for Dano compatibility, otherwise "mysterious things"(TM) happen:
+		str.ToLower();
+	return str;
+}
+
+/*------------------------------------------------------------------------------*\
+	BmToUpper( string)
+		-	calls ToUpper() on given string in a DANO-compatible way:
+\*------------------------------------------------------------------------------*/
+BString& BmToUpper( BString& str) {
+	if (str.Length())
+		// check introduced for Dano compatibility, otherwise "mysterious things"(TM) happen:
+		str.ToUpper();
+	return str;
+}
+
+/*------------------------------------------------------------------------------*\
 	ConvertLinebreaksToLF( in, out)
 		-	converts linebreaks of given in-string from CRLF to LF
 		-	result is stored in out

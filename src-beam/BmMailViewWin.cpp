@@ -249,9 +249,8 @@ void BmMailViewWin::BeginLife() {
 		menuBar->FindItem( BMM_SWITCH_RAW)->SetTarget( mMailView);
 		menuBar->FindItem( BMM_SWITCH_RAW)->SetMarked( mMailView->ShowRaw());
 		menuBar->FindItem( BMM_SWITCH_HEADER)->SetTarget( mMailView->HeaderView());
+		menuBar->FindItem( BMM_PAGE_SETUP)->SetTarget( bmApp);
 	}
-	// temporarily disabled:
-	mPrintButton->SetEnabled( false);
 	mMailView->MakeFocus( true);
 }
 

@@ -306,7 +306,7 @@ void BmSmtp::Auth() {
 	bool pwdOK = false;
 	bool first = true;
 	BString authMethod = mSmtpAccount->AuthMethod();
-	authMethod.ToUpper();
+	BmToUpper( authMethod);
 	if (!authMethod.Length())
 		return;			// no authentication needed...
 	while(!pwdOK) {

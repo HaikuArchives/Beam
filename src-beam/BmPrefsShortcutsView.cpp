@@ -92,7 +92,7 @@ void BmShortcutControl::KeyDown(const char *bytes, int32 numBytes) {
 		BString legalKeys("abcdefghijklmnopqrstuvwxyz0123456789<>@#.,:;+-/*^");
 		if (legalKeys.FindFirst((char)rawKey) != B_ERROR) {
 			key = BString("") << (char)rawKey;
-			key.ToUpper();
+			BmToUpper( key);
 		} else if (rawKey==B_RIGHT_ARROW)
 			key = BString("<RIGHT_ARROW>");
 		else if (rawKey==B_LEFT_ARROW)

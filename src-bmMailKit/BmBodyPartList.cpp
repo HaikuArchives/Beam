@@ -84,9 +84,7 @@ void BmContentField::SetTo( const BString cfString) {
 				mValue = rx.match[0].atom[0];
 			}
 		}
-		if (mValue.Length())
-			// check introduced for Dano compatibility, otherwise "mysterious things"(TM) happen:
-			mValue.ToLower();
+		BmToLower( mValue);
 		BM_LOG2( BM_LogMailParse, BString("...found value: ")<<mValue);
 		// parse and extract parameters:
 		BString params;
@@ -108,9 +106,7 @@ void BmContentField::SetTo( const BString cfString) {
 							val = rx.match[i].atom[1];
 						}
 					}
-					if (key.Length())
-						// check introduced for Dano compatibility, otherwise "mysterious things"(TM) happen:
-						key.ToLower();
+					BmToLower( key);
 					mParams[key] = val;
 					BM_LOG2( BM_LogMailParse, BString("...found param: ")<<key<<" with value: "<<val);
 				}
@@ -129,9 +125,7 @@ void BmContentField::SetTo( const BString cfString) {
 \*------------------------------------------------------------------------------*/
 const BString& BmContentField::Param( BString key) const {
 	static BString nullStr;
-	if (key.Length())
-		// check introduced for Dano compatibility, otherwise "mysterious things"(TM) happen:
-		key.ToLower();
+	BmToLower( key);
 	BmParamMap::const_iterator iter = mParams.find( key);
 	if (iter != mParams.end()) {
 		return iter->second;
@@ -144,9 +138,7 @@ const BString& BmContentField::Param( BString key) const {
 	-	sets the parameter to the given value:
 \*------------------------------------------------------------------------------*/
 void BmContentField::SetParam( BString key, BString value) {
-	if (key.Length())
-		// check introduced for Dano compatibility, otherwise "mysterious things"(TM) happen:
-		key.ToLower();
+	BmToLower( key);
 	mParams[key] = value;
 }
 
@@ -395,9 +387,7 @@ void BmBodyPart::SetTo( const BString& msgtext, int32 start, int32 length,
 	// Language
 	BM_LOG2( BM_LogMailParse, "parsing Content-Language");
 	mContentLanguage = header->GetFieldVal( BM_FIELD_CONTENT_LANGUAGE);
-	if (mContentLanguage.Length())
-		// check introduced for Dano compatibility, otherwise "mysterious things"(TM) happen:
-		mContentLanguage.ToLower();
+	BmToLower( mContentLanguage);
 	BM_LOG2( BM_LogMailParse, BString("...found value: ")<<mContentLanguage);
 	// determine a filename (if possible)
 	mFileName = mContentDisposition.Param("filename");

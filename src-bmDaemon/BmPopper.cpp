@@ -244,7 +244,7 @@ void BmPopper::Login() {
 	bool pwdOK = false;
 	bool first = true;
 	BString authMethod = mPopAccount->AuthMethod();
-	authMethod.ToUpper();
+	BmToUpper( authMethod);
 	while(!pwdOK) {
 		bool pwdGiven = false;
 		if (first && mPopAccount->PwdStoredOnDisk()) {

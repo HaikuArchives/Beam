@@ -32,6 +32,7 @@
 
 #include "BmGuiUtil.h"
 #include "BmPrefs.h"
+#include "BmUtil.h"
 
 /*------------------------------------------------------------------------------*\
 	AddItemToMenu( menu, item, target)
@@ -58,7 +59,7 @@ BMenuItem* CreateMenuItem( const char* label, int32 msgWhat, const char* idForSh
 BMenuItem* CreateMenuItem( const char* label, BMessage* msg, const char* idForShortcut) {
 	BString shortcut = ThePrefs->GetShortcutFor( idForShortcut ? idForShortcut : label);
 	shortcut.RemoveSet( " \t");
-	shortcut.ToUpper();
+	BmToUpper( shortcut);
 	int32 modifiers = 0;
 	int32 pos;
 	if ((pos=shortcut.FindFirst("<SHIFT>")) != B_ERROR) {
