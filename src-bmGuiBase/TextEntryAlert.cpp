@@ -234,7 +234,6 @@ TextEntryAlert::TextEntryAlert(const char* title, const char* info_text, const c
 	//Complete the setup
 	m_invoker = NULL;
 	m_done_mutex = B_ERROR;
-	m_text_entry_buffer = NULL;
 	m_button_pressed = NULL;
 	float min_width = c_item_spacing;
 	if(m_buttons[0])
@@ -264,12 +263,11 @@ TextEntryAlert::~TextEntryAlert()
 }
 
 
-int32 TextEntryAlert::Go(char* text_entry_buffer, int32 buffer_size)
+int32 TextEntryAlert::Go(BmString& text_entry_buffer)
 {
 	int32 button_pressed = -1;
 	m_text_entry_buffer = text_entry_buffer;
 	m_button_pressed = &button_pressed;
-	m_buffer_size = buffer_size;
 	sem_id done_mutex = create_sem(0,"text_entry_alert_done");
 	m_done_mutex = done_mutex;
 	if(done_mutex < B_NO_ERROR)
@@ -278,7 +276,6 @@ int32 TextEntryAlert::Go(char* text_entry_buffer, int32 buffer_size)
 		return -1;
 	}
 	m_text_entry_view->MakeFocus(true);
-	m_text_entry_view->SetMaxBytes(buffer_size);
 	Show();
 	acquire_sem(done_mutex);
 	delete_sem(done_mutex);
@@ -387,8 +384,7 @@ void TextEntryAlert::MessageReceived(BMessage* message)
 				//Synchronous version: set the result button and text buffer, then release the thread
 				//that created me
 				*m_button_pressed = which;
-				if(m_text_entry_buffer)
-					Strtcpy(m_text_entry_buffer,text,m_buffer_size);
+				m_text_entry_buffer.SetTo(text);
 				release_sem(m_done_mutex);
 				m_done_mutex = B_ERROR;
 			}

@@ -38,6 +38,8 @@
 
 #include "BmGuiBase.h"
 
+#include "BmString.h"
+
 //******************************************************************************************************
 //**** Forward name declarations
 //******************************************************************************************************
@@ -66,7 +68,7 @@ class IMPEXPBMGUIBASE TextEntryAlert : public BWindow
 			//lines of text, regardless of the height of the text box.
 		~TextEntryAlert();
 
-		int32 Go(char* text_entry_buffer, int32 buffer_size);
+		int32 Go(BmString& text_entry_buffer);
 			//Synchronous version: The function doesn't return until the user has clicked a button and
 			//the panel has been removed from the screen.  The value it returns is the index of 
 			//the clicked button (0 or 1, left-to-right).  The user-entered (or unchanged) text is
@@ -117,9 +119,8 @@ class IMPEXPBMGUIBASE TextEntryAlert : public BWindow
 
 		//For the synchronous version (pointers point to data areas owned by thread that called Go)
 		sem_id m_done_mutex;		//Mutex to release when the user hits a button or the window closes
-		char* m_text_entry_buffer;	//Buffer to store the user-entered text when the user hits a button
+		BmString m_text_entry_buffer;	//Buffer to store the user-entered text when the user hits a button
 		int32* m_button_pressed;	//Place to store the button index that the user hit
-		int32 m_buffer_size;
 
 		//For the asynchronous version
 		BInvoker *m_invoker;		//I own this object and will delete it when done.
