@@ -753,13 +753,6 @@ BeamApplication::~BeamApplication() {
 	ThePeopleMonitor = NULL;
 	TheMailMonitor = NULL;
 	ThePeopleList = NULL;
-	TheMailFolderList = NULL;
-	TheIdentityList = NULL;
-	ThePopAccountList = NULL;
-	TheSmtpAccountList = NULL;
-	TheSignatureList = NULL;
-	TheFilterChainList = NULL;
-	TheFilterList = NULL;
 #ifdef BM_REF_DEBUGGING
 	BmRefObj::PrintRefsLeft();
 #endif

@@ -224,6 +224,14 @@ BmApplication::BmApplication( const char* sig)
 \*------------------------------------------------------------------------------*/
 BmApplication::~BmApplication() 
 {
+	ThePopAccountList = NULL;
+	TheSmtpAccountList = NULL;
+	TheIdentityList = NULL;
+	TheMailFolderList = NULL;
+	TheFilterChainList = NULL;
+	TheFilterList = NULL;
+	TheSignatureList = NULL;
+
 	delete ThePrefs;
 	delete TheLogHandler;
 	delete mStartupLocker;
