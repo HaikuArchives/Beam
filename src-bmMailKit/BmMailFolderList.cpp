@@ -696,11 +696,6 @@ void BmMailFolderList::InitializeItems() {
 									<< mailDirName << "> \n\nError:" << strerror(err));
 
 	{	// scope for autolocker
-		BmAutolockCheckGlobal lock( mModelLocker);
-		if (!lock.IsLocked())
-			BM_THROW_RUNTIME( 
-				ModelNameNC() << ":InitializeMailFolders(): Unable to get lock"
-			);
 		BM_LOG3( BM_LogMailTracking, 
 					BmString("Top-folder <") << eref.name << "," << nref.node 
 						<< "> found");
@@ -711,7 +706,8 @@ void BmMailFolderList::InitializeItems() {
 		BM_LOG( BM_LogMailTracking, 
 				  BmString("End of initFolders (") << folderCount 
 				  		<< " folders found)");
-		mInitCheck = B_OK;
+		if (ShouldContinue())
+			mInitCheck = B_OK;
 	}
 }
 
@@ -743,6 +739,8 @@ int BmMailFolderList::doInitializeMailFolders( BmMailFolder* folder,
 	while ((count = mailDir.GetNextDirents((dirent* )buf, 4096)) > 0) {
 		dent = (dirent* )buf;
 		while (count-- > 0) {
+			if (!ShouldContinue())
+				goto out;
 			if (!strcmp(dent->d_name, ".") || !strcmp(dent->d_name, ".."))
 				continue;						// ignore . and .. dirs
 			if ((err = mailDir.GetStatFor( dent->d_name, &st)) != B_OK)
@@ -770,6 +768,7 @@ int BmMailFolderList::doInitializeMailFolders( BmMailFolder* folder,
 			dent = (dirent* )((char* )dent + dent->d_reclen);
 		}
 	}
+out:
 	return folderCount;
 }
 
@@ -790,11 +789,6 @@ void BmMailFolderList::InstantiateItems( BMessage* archive) {
 									<< "> \n\nError:" << strerror(err));
 	{	// scope for autolock
 		int32 folderCount = 1;
-		BmAutolockCheckGlobal lock( mModelLocker);
-		if (!lock.IsLocked())
-			BM_THROW_RUNTIME( 
-				ModelNameNC() << ":InstantiateMailFolders(): Unable to get lock"
-			);
 		mTopFolder = new BmMailFolder( &msg, this, NULL);
 		BNode node( ThePrefs->GetString( "MailboxPath").String());
 		node_ref nref;
