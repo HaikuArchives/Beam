@@ -120,15 +120,15 @@ MailMonitorTest::MailRefTest(void)
 	NextSubTest();
 	node.SetTo( "mail/in/testmail_1");
 	CPPUNIT_ASSERT( node.GetNodeRef( &nref) == B_OK);
-	system("mv mail/in/testmail_1 /var/tmp/");
+	system("mv mail/in/testmail_1 .");
 	snooze( NAPTIME);
 	CPPUNIT_ASSERT( inList->FindItemByKey( BM_REFKEY(nref)) == NULL);
 
 	// move of one mail from outside of mailbox into it
 	NextSubTest();
-	node.SetTo( "/var/tmp/testmail_1");
+	node.SetTo( "./testmail_1");
 	CPPUNIT_ASSERT( node.GetNodeRef( &nref) == B_OK);
-	system("mv /var/tmp/testmail_1 mail/folder1/");
+	system("mv ./testmail_1 mail/folder1/");
 	snooze( NAPTIME);
 	CPPUNIT_ASSERT( folder1List->FindItemByKey( BM_REFKEY(nref)) != NULL);
 
