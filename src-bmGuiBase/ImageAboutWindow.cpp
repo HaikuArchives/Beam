@@ -56,7 +56,8 @@
 ImageAboutWindow::ImageAboutWindow(const char* window_title, const char* app_title,
 	const BBitmap* bmap, float icon_sidebar_offset, const char* body_text,
 	const char* email, const char* web, const char* credits)
-: BWindow(BRect(-1,-1,-1,-1),"",B_TITLED_WINDOW,B_NOT_RESIZABLE|B_PULSE_NEEDED)
+: BWindow(BRect(-1,-1,-1,-1),"",B_TITLED_WINDOW,
+			 B_NOT_RESIZABLE|B_NOT_ZOOMABLE|B_PULSE_NEEDED)
 , m_credits_pos( 0)
 {
 	SetTitle(window_title);
