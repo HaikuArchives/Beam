@@ -823,7 +823,7 @@ void BmMailView::JobIsDone( bool completed) {
 				// add signature, if any:
 				if (body->Signature().Length()) {
 					uint32 len = displayBuf.CurrPos();
-					if (len && displayBuf.ByteAt(len-1) != '\n')
+					if (!len || displayBuf.ByteAt(len-1) != '\n')
 						displayBuf << "\n";
 					mTextRunMap[displayBuf.CurrPos()] = BmTextRunInfo( BeShadow);
 					// signature within body is already in UTF8-encoding, so we
