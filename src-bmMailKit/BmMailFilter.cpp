@@ -180,10 +180,11 @@ void BmMailFilter::ExecuteFilter( BmMail* mail) {
 			// execute all the chain's filters:
 			BmAutolockCheckGlobal lock( chain->ModelLocker());
 			lock.IsLocked() 					|| BM_THROW_RUNTIME( chain->ModelNameNC() << ": Unable to get lock");
-			BmModelItemMap::const_iterator iter;
-			for( iter = chain->BmListModel::begin(); iter != chain->BmListModel::end(); ++iter) {
-				BmChainedFilter* chainedFilter = dynamic_cast< BmChainedFilter*>( iter->second.Get());
-				BmRef< BmListModelItem> filterItem = TheFilterList->FindItemByKey( chainedFilter->FilterName());
+			BmFilterPosMap::const_iterator iter;
+			for( iter = chain->posBegin(); iter != chain->posEnd(); ++iter) {
+				BmChainedFilter* chainedFilter = iter->second;
+				BmRef< BmListModelItem> filterItem 
+					= TheFilterList->FindItemByKey( chainedFilter->Key());
 				BmFilter* filter = dynamic_cast< BmFilter*>( filterItem.Get());
 				if (filter) {
 					if (filter->IsDisabled()) {
@@ -197,6 +198,10 @@ void BmMailFilter::ExecuteFilter( BmMail* mail) {
 							BM_LOG( BM_LogFilter, BmString("Filter ") << filter->Name() << ": setting status to " << msgContext.status);
 						if (msgContext.moveToTrash)
 							BM_LOG( BM_LogFilter, BmString("Filter ") << filter->Name() << ": moving mail to trash.");
+						if (msgContext.stopProcessing) {
+							BM_LOG( BM_LogFilter, BmString("Filter ") << filter->Name() << ": has ordered to stop processing this chain.");
+							break;
+						}
 					}
 				}
 			}
