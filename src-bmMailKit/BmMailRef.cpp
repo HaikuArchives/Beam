@@ -451,7 +451,9 @@ void BmMailRef::ResyncFromDisk( entry_ref* newRef,
 	}
 	if (ReadAttributes( statInfo, &updFlags))
 		mInitCheck = B_OK;
-	TellModelItemUpdated( updFlags);
+	if (updFlags)
+		// update only if anything has changed:
+		TellModelItemUpdated( updFlags);
 	BmRef<BmListModel> listModel( ListModel());
 	BmMailRefList* refList = dynamic_cast< BmMailRefList*>( listModel.Get());
 	if (refList)
