@@ -59,7 +59,8 @@ class IMPEXPBMBASE BmMemFilter : public BmMemIBuf {
 	typedef BmMemIBuf inherited;
 	
 public:
-	BmMemFilter( BmMemIBuf* input, uint32 blockSize=65536, bool immediatePassOn=false);
+	BmMemFilter( BmMemIBuf* input, uint32 blockSize=65536, 
+					 const BmString& tags=BM_DEFAULT_STRING);
 	~BmMemFilter();
 
 	// native methods:
@@ -75,6 +76,13 @@ public:
 	uint32 DestCount() const				{ return mDestCount; }
 
 	static IMPEXPBMBASE const uint32 nBlockSize;
+	static IMPEXPBMBASE const char* nTagImmediatePassOn;
+							// indicates that instead of trying to fill its buffer, the
+							// filter will process every block of data it gets and 
+							// immediately pass it on to its output buffer. 
+							// Network-related filters usually behave this way so that 
+							// they process the data while more bytes are travelling 
+							// through the wire.
 
 protected:
 	// native methods:
@@ -82,6 +90,9 @@ protected:
 								char* destBuf, uint32& destLen) = 0;
 	virtual void Finalize( char* , uint32& destLen) 
 													{ destLen=0; mIsFinalized = true; }
+	//
+	bool SetTag( const char* tag, bool newVal);
+	bool IsTagSet( const char* tag);
 	
 	BmMemIBuf* mInput;
 	char* mBuf;
@@ -90,6 +101,9 @@ protected:
 	uint32 mBlockSize;
 	uint32 mSrcCount;
 	uint32 mDestCount;
+	BmString mTags;
+							// tags influencing the behaviour of the filter
+							// (subclasses may add new tags for themselves)
 	bool mIsFinalized;
 							// indicates that Finalize() has completed
 	bool mHadError;
@@ -99,13 +113,6 @@ protected:
 							// the filter has reached a byte-combination that indicates
 							// the end of data (e.g. "\r\n.\r\n" in dotstuffed encoding
 							// the remaining data will be ignored
-	bool mImmediatePassOnMode;
-							// indicates that instead of trying to fill its buffer, the
-							// filter will process every block of data it gets and 
-							// immediately pass it on to its output buffer. 
-							// Network-related filters usually behave this way so that 
-							// they process the data while more bytes are travelling 
-							// through the wire.
 };
 
 /*------------------------------------------------------------------------------*\

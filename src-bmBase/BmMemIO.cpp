@@ -40,13 +40,14 @@
 \********************************************************************************/
 
 const uint32 BmMemFilter::nBlockSize = 32768;
+const char* BmMemFilter::nTagImmediatePassOn = "<ImmPassOn>";
 
 /*------------------------------------------------------------------------------*\
 	BmMemFilter()
 		-	constructor
 \*------------------------------------------------------------------------------*/
 BmMemFilter::BmMemFilter( BmMemIBuf* input, uint32 blockSize, 
-								  bool immediatePassOn)
+								  const BmString& tags)
 	:	mInput( input)
 	,	mBuf( new char [blockSize])
 	,	mCurrPos( 0)
@@ -54,10 +55,10 @@ BmMemFilter::BmMemFilter( BmMemIBuf* input, uint32 blockSize,
 	,	mBlockSize( blockSize)
 	,	mSrcCount( 0)
 	,	mDestCount( 0)
+	,	mTags( tags)
 	,	mIsFinalized( false)
 	,	mHadError( false)
 	,	mEndReached( false)
-	,	mImmediatePassOnMode( immediatePassOn)
 {
 }
 
@@ -127,13 +128,38 @@ uint32 BmMemFilter::Read( char* data, uint32 reqLen) {
 				tooSmall = true;
 			} else
 				tooSmall = false;
-			if (mImmediatePassOnMode && readLen)
+			if (IsTagSet(nTagImmediatePassOn) && readLen)
+				// in immediate-pass-on mode, we pass-on data as soon as we got 
+				// some:
 				break;
 		} else
 			tooSmall = false;
 	}
 	mDestCount += readLen;
 	return readLen;
+}
+
+/*------------------------------------------------------------------------------*\
+	IsTagSet()
+		-	
+\*------------------------------------------------------------------------------*/
+bool BmMemFilter::IsTagSet( const char* tag) {
+	return mTags.FindFirst(tag) >= B_OK;
+}
+
+/*------------------------------------------------------------------------------*\
+	SetTag()
+		-	
+\*------------------------------------------------------------------------------*/
+bool BmMemFilter::SetTag( const char* tag, bool newVal) {
+	if ((mTags.FindFirst(tag) >= B_OK) == newVal)
+		// no change
+		return false;
+	if (newVal)
+		mTags << tag;
+	else
+		mTags.RemoveFirst(tag);
+	return true;
 }
 
 /*------------------------------------------------------------------------------*\
