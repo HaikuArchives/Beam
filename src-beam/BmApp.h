@@ -89,6 +89,7 @@ public:
 	static const char* const MSG_MAILREF = 	"bm:mref";
 	static const char* const MSG_STATUS = 		"bm:status";
 	static const char* const MSG_WHO_TO = 		"bm:to";
+	static const char* const MSG_SUBJECT = 	"bm:subj";
 	static const char* const MSG_SELECTED_TEXT = 	"bm:seltext";
 	static const char* const MSG_SENDING_REFVIEW = 	"bm:srefv";
 

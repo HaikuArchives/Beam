@@ -761,9 +761,10 @@ void BmListViewController::ReadStateInfo() {
 			BM_SHOWERR( e.what());
 		}
 	} else {
-		const BMessage* defLayout = DefaultLayout();
-		if (defLayout)
-			Unarchive( defLayout);
+		delete mInitialStateInfo;
+		mInitialStateInfo = DefaultLayout();
+		if (mInitialStateInfo)
+			Unarchive( mInitialStateInfo);
 	}
 }
 

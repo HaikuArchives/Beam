@@ -217,7 +217,7 @@ protected:
 	virtual BmListModel* DataModel()		{ return dynamic_cast<BmListModel*>(BmController::DataModel()); }
 	// archival of the controller's state-info:
 	virtual BString StateInfoBasename()				= 0;
-	virtual const BMessage* DefaultLayout()	{ return NULL; }
+	virtual BMessage* DefaultLayout()	{ return NULL; }
 
 	BMessage* mInitialStateInfo;
 	bool mShowCaption;

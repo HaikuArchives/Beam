@@ -198,10 +198,7 @@ TextEntryAlert::TextEntryAlert(const char* title, const char* info_text, const c
 			m_buttons[0]->ResizeTo(button_0_width,buttons_height);
 		else //if(width_style == B_WIDTH_FROM_WIDEST)
 			m_buttons[0]->ResizeTo(max_buttons_width,buttons_height);
-		if(inline_label)
-			button_left = info_text_box.left;
-		else
-			button_left = right_button->Frame().left-m_buttons[0]->Frame().Width()-10;
+		button_left = right_button->Frame().left-m_buttons[0]->Frame().Width()-10;
 		m_buttons[0]->MoveTo(button_left,entry_text_rect.bottom+c_item_spacing);
 	}
 

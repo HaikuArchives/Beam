@@ -140,7 +140,7 @@ BmBodyPartView::BmBodyPartView( minimax minmax, int32 width, int32 height,
 
 	AddColumn( new CLVColumn( NULL, 10.0, 
 									  CLV_EXPANDER | CLV_LOCK_AT_BEGINNING | CLV_NOT_MOVABLE, 10.0));
-	AddColumn( new CLVColumn( "Icon", nColWidths[0], 0, 18.0));
+	AddColumn( new CLVColumn( "Icon", nColWidths[0], CLV_PUSH_PASS, 18.0));
 	AddColumn( new CLVColumn( "Name", nColWidths[1], 0, 20.0));
 	AddColumn( new CLVColumn( "Mimetype", nColWidths[2], 0, 20.0));
 	AddColumn( new CLVColumn( "Size", nColWidths[3], CLV_RIGHT_JUSTIFIED, 20.0));

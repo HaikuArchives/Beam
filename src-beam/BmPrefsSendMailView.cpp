@@ -262,14 +262,11 @@ BmPrefsSendMailView::BmPrefsSendMailView()
 				),
 				new VGroup(
 					new MBorder( M_LABELED_BORDER, 10, (char*)"Options",
-						new HGroup(
-							new VGroup(
-								mStorePwdControl = new BmCheckControl( "Store password on disk (UNSAFE!)", 
-																					new BMessage(BM_PWD_STORED_CHANGED), 
-																					this),
-								0
-							),
-							new Space( minimax(50,0,50,0)),
+						new VGroup(
+							mStorePwdControl = new BmCheckControl( "Store password on disk (UNSAFE!)", 
+																				new BMessage(BM_PWD_STORED_CHANGED), 
+																				this),
+							new Space( minimax(250,0,250,0)),
 							0
 						)
 					),
@@ -397,6 +394,30 @@ void BmPrefsSendMailView::Activated() {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
+bool BmPrefsSendMailView::SanityCheck() {
+	if (!InitDone())
+		return true;
+	BString complaint, fieldName;
+	BMessage msg( BM_COMPLAIN_ABOUT_FIELD);
+	BmModelItemMap::const_iterator iter;
+	for( iter = TheSmtpAccountList->begin(); iter != TheSmtpAccountList->end(); ++iter) {
+		BmSmtpAccount* acc = dynamic_cast<BmSmtpAccount*>( iter->second.Get());
+		if (acc && !acc->SanityCheck( complaint, fieldName)) {
+			msg.AddPointer( MSG_ACCOUNT, (void*)acc);
+			msg.AddString( MSG_COMPLAINT, complaint);
+			if (fieldName.Length())
+				msg.AddString( MSG_FIELD_NAME, fieldName.String());
+			Looper()->PostMessage( &msg, this);
+			return false;
+		}
+	}
+	return true;
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
 void BmPrefsSendMailView::WriteStateInfo() {
 	mAccListView->WriteStateInfo();
 }
@@ -447,16 +468,14 @@ void BmPrefsSendMailView::MessageReceived( BMessage* msg) {
 						mCurrAcc->Password( mPwdControl->Text());
 					else if ( source == mServerControl)
 						mCurrAcc->SMTPServer( mServerControl->Text());
+					UpdateState();
 				}
 				break;
 			}
 			case BM_PWD_STORED_CHANGED: {
-				bool val = mStorePwdControl->Value();
-				mPwdControl->SetEnabled( val);
-				if (!val)
-					mPwdControl->SetText("");
 				if (mCurrAcc)
-					mCurrAcc->PwdStoredOnDisk( val);
+					mCurrAcc->PwdStoredOnDisk( mStorePwdControl->Value());
+				UpdateState();
 				break;
 			}
 			case BM_CHECK_AND_SUGGEST: {
@@ -477,6 +496,7 @@ void BmPrefsSendMailView::MessageReceived( BMessage* msg) {
 					mCurrAcc->AuthMethod( item->Label());
 				else
 					mCurrAcc->AuthMethod( "");
+				UpdateState();
 				break;
 			}
 			case BM_POP_SELECTED: {
@@ -485,6 +505,7 @@ void BmPrefsSendMailView::MessageReceived( BMessage* msg) {
 					mCurrAcc->AccForSmtpAfterPop( item->Label());
 				else
 					mCurrAcc->AccForSmtpAfterPop( "");
+				UpdateState();
 				break;
 			}
 			case BM_ADD_ACCOUNT: {
@@ -516,6 +537,36 @@ void BmPrefsSendMailView::MessageReceived( BMessage* msg) {
 				}
 				break;
 			}
+			case BM_COMPLAIN_ABOUT_FIELD: {
+				int32 buttonPressed;
+				if (msg->FindInt32( "which", &buttonPressed) != B_OK) {
+					BString complaint;
+					complaint = msg->FindString( MSG_COMPLAINT);
+					// first step, tell user about complaint:
+					BAlert* alert = new BAlert( "Sanity Check Failed", 
+														 complaint.String(),
+													 	 "OK", NULL, NULL, B_WIDTH_AS_USUAL,
+													 	 B_WARNING_ALERT);
+					alert->SetShortcut( 0, B_ESCAPE);
+					alert->Go( new BInvoker( new BMessage(*msg), BMessenger( this)));
+					BmSmtpAccount* acc=NULL;
+					msg->FindPointer( MSG_ACCOUNT, (void**)&acc);
+					BmListViewItem* accItem = mAccListView->FindViewItemFor( acc);
+					if (accItem)
+						mAccListView->Select( mAccListView->IndexOf( accItem));
+				} else {
+					// second step, set corresponding focus:
+					BString fieldName;
+					fieldName = msg->FindString( MSG_FIELD_NAME);
+					if (fieldName.ICompare( "username")==0)
+						mLoginControl->MakeFocus( true);
+					else if (fieldName.ICompare( "smtpserver")==0)
+						mServerControl->MakeFocus( true);
+					else if (fieldName.ICompare( "portnr")==0)
+						mPortControl->MakeFocus( true);
+				}
+				break;
+			}
 			default:
 				inherited::MessageReceived( msg);
 		}
@@ -531,16 +582,6 @@ void BmPrefsSendMailView::MessageReceived( BMessage* msg) {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmPrefsSendMailView::ShowAccount( int32 selection) {
-	bool enabled = (selection != -1);
-	mAccountControl->SetEnabled( enabled);
-	mDomainControl->SetEnabled( enabled);
-	mPortControl->SetEnabled( enabled);
-	mServerControl->SetEnabled( enabled);
-	mAuthControl->SetEnabled( enabled);
-	mCheckAndSuggestButton->SetEnabled( enabled);
-	mRemoveButton->SetEnabled( enabled);
-	mStorePwdControl->SetEnabled( enabled);
-	
 	if (selection == -1) {
 		mCurrAcc = NULL;
 		mAccountControl->SetTextSilently( "");
@@ -551,10 +592,7 @@ void BmPrefsSendMailView::ShowAccount( int32 selection) {
 		mServerControl->SetTextSilently( "");
 		mAuthControl->ClearMark();
 		mPopControl->ClearMark();
-		mPopControl->SetEnabled( false);
-		mLoginControl->SetEnabled( false);
 		mStorePwdControl->SetValue( 0);
-		mPwdControl->SetEnabled( false);
 	} else {
 		BmSendAccItem* accItem = dynamic_cast<BmSendAccItem*>(mAccListView->ItemAt( selection));
 		if (accItem) {
@@ -573,15 +611,43 @@ void BmPrefsSendMailView::ShowAccount( int32 selection) {
 													? mCurrAcc->AccForSmtpAfterPop().String()
 													: nEmptyItemLabel.String());
 				mStorePwdControl->SetValue( mCurrAcc->PwdStoredOnDisk());
-				mPopControl->SetEnabled( mCurrAcc->NeedsAuthViaPopServer());
-				mLoginControl->SetEnabled( mCurrAcc->AuthMethod().Length() 
-													&& !mCurrAcc->NeedsAuthViaPopServer());
-				mPwdControl->SetEnabled( mCurrAcc->PwdStoredOnDisk() 
-												 && mCurrAcc->AuthMethod().Length()
-												 && !mCurrAcc->NeedsAuthViaPopServer());
 			}
 		} else
 			mCurrAcc = NULL;
+	}
+	UpdateState();
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmPrefsSendMailView::UpdateState() {
+	bool accSelected = mCurrAcc ? true : false;
+
+	mAccountControl->SetEnabled( accSelected);
+	mDomainControl->SetEnabled( accSelected);
+	mPortControl->SetEnabled( accSelected);
+	mServerControl->SetEnabled( accSelected);
+	mAuthControl->SetEnabled( accSelected);
+	mCheckAndSuggestButton->SetEnabled( accSelected);
+	mRemoveButton->SetEnabled( accSelected);
+	mStorePwdControl->SetEnabled( accSelected);
+
+	if (!accSelected) {
+		mPopControl->SetEnabled( false);
+		mLoginControl->SetEnabled( false);
+		mPwdControl->SetEnabled( false);
+	} else {
+		mPopControl->SetEnabled( mCurrAcc->NeedsAuthViaPopServer());
+		mLoginControl->SetEnabled( mCurrAcc->AuthMethod().Length() 
+											&& !mCurrAcc->NeedsAuthViaPopServer());
+		bool pwdEnabled = mCurrAcc->PwdStoredOnDisk() 
+								&& mCurrAcc->AuthMethod().Length()
+								&& !mCurrAcc->NeedsAuthViaPopServer();
+		mPwdControl->SetEnabled( pwdEnabled);
+		if (!pwdEnabled)
+			mPwdControl->SetTextSilently("");
 	}
 }
 

@@ -151,6 +151,7 @@ uncheck this, otherwise no automatic checks will happen!");
 
 	mHeaderListSmallControl->SetTarget( this);
 	mHeaderListLargeControl->SetTarget( this);
+	mMarkAsReadDelayControl->SetTarget( this);
 	mMimeTypeTrustInfoControl->SetTarget( this);
 }
 
@@ -192,7 +193,7 @@ void BmPrefsMailReadView::MessageReceived( BMessage* msg) {
 				break;
 			}
 			case BM_CHECK_IF_PPP_UP_CHANGED: {
-				ThePrefs->SetBool("AutoCheckIfPPPRunning", mAutoCheckIfPppUpControl->Value());
+				ThePrefs->SetBool("AutoCheckOnlyIfPPPRunning", mAutoCheckIfPppUpControl->Value());
 				break;
 			}
 			default:

@@ -435,7 +435,7 @@ the most secure.");
 
 	mAccListView->SetSelectionMessage( new BMessage( BM_SELECTION_CHANGED));
 	mAccListView->SetTarget( this);
-	mAccListView->StartJob( ThePopAccountList.Get());
+	mAccListView->StartJob( ThePopAccountList.Get(), false);
 	ShowAccount( -1);
 }
 
@@ -479,6 +479,30 @@ void BmPrefsRecvMailView::Activated() {
 \*------------------------------------------------------------------------------*/
 void BmPrefsRecvMailView::WriteStateInfo() {
 	mAccListView->WriteStateInfo();
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+bool BmPrefsRecvMailView::SanityCheck() {
+	if (!InitDone())
+		return true;
+	BString complaint, fieldName;
+	BMessage msg( BM_COMPLAIN_ABOUT_FIELD);
+	BmModelItemMap::const_iterator iter;
+	for( iter = ThePopAccountList->begin(); iter != ThePopAccountList->end(); ++iter) {
+		BmPopAccount* acc = dynamic_cast<BmPopAccount*>( iter->second.Get());
+		if (acc && !acc->SanityCheck( complaint, fieldName)) {
+			msg.AddPointer( MSG_ACCOUNT, (void*)acc);
+			msg.AddString( MSG_COMPLAINT, complaint);
+			if (fieldName.Length())
+				msg.AddString( MSG_FIELD_NAME, fieldName.String());
+			Looper()->PostMessage( &msg, this);
+			return false;
+		}
+	}
+	return true;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -641,6 +665,42 @@ void BmPrefsRecvMailView::MessageReceived( BMessage* msg) {
 						ThePopAccountList->RemoveItemFromList( mCurrAcc.Get());
 						mCurrAcc = NULL;
 					}
+				}
+				break;
+			}
+			case BM_COMPLAIN_ABOUT_FIELD: {
+				int32 buttonPressed;
+				if (msg->FindInt32( "which", &buttonPressed) != B_OK) {
+					BString complaint;
+					complaint = msg->FindString( MSG_COMPLAINT);
+					// first step, tell user about complaint:
+					BAlert* alert = new BAlert( "Sanity Check Failed", 
+														 complaint.String(),
+													 	 "OK", NULL, NULL, B_WIDTH_AS_USUAL,
+													 	 B_WARNING_ALERT);
+					alert->SetShortcut( 0, B_ESCAPE);
+					alert->Go( new BInvoker( new BMessage(*msg), BMessenger( this)));
+					BmPopAccount* acc=NULL;
+					msg->FindPointer( MSG_ACCOUNT, (void**)&acc);
+					BmListViewItem* accItem = mAccListView->FindViewItemFor( acc);
+					if (accItem)
+						mAccListView->Select( mAccListView->IndexOf( accItem));
+				} else {
+					// second step, set corresponding focus:
+					BString fieldName;
+					fieldName = msg->FindString( MSG_FIELD_NAME);
+					if (fieldName.ICompare( "username")==0)
+						mLoginControl->MakeFocus( true);
+					else if (fieldName.ICompare( "popserver")==0)
+						mServerControl->MakeFocus( true);
+					else if (fieldName.ICompare( "portnr")==0)
+						mPortControl->MakeFocus( true);
+					else if (fieldName.ICompare( "checkinterval")==0)
+						mCheckIntervalControl->MakeFocus( true);
+					else if (fieldName.ICompare( "pwdstoredondisk")==0)
+						mStorePwdControl->MakeFocus( true);
+					else if (fieldName.ICompare( "authmethod")==0)
+						mAuthControl->MakeFocus( true);
 				}
 				break;
 			}

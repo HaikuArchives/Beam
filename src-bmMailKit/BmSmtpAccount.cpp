@@ -120,6 +120,32 @@ bool BmSmtpAccount::NeedsAuthViaPopServer() {
 	return mAuthMethod.ICompare(AUTH_SMTP_AFTER_POP) == 0;
 }
 
+/*------------------------------------------------------------------------------*\
+	SanityCheck()
+		-	checks if the current values make sense and returns error-info through
+			given out-params
+		-	returns true if values are ok, false (and error-info) if not
+\*------------------------------------------------------------------------------*/
+bool BmSmtpAccount::SanityCheck( BString& complaint, BString& fieldName) const {
+	if (!mSMTPServer.Length()) {
+		complaint = "Please enter the address of this account's SMTP-Server.";
+		fieldName = "smtpserver";
+		return false;
+	}
+	if ((mAuthMethod==AUTH_PLAIN || mAuthMethod==AUTH_LOGIN) && !mUsername.Length()) {
+		complaint = "Please enter a username to use during authentication.";
+		fieldName = "username";
+		return false;
+	}
+	if (mPortNr<=0) {
+		complaint = "Please enter a valid port-nr (1-65535) for this account.";
+		fieldName = "portnr";
+		return false;
+	}
+	return true;
+}
+
+
 
 /********************************************************************************\
 	BmSmtpAccountList

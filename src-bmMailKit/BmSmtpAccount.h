@@ -84,6 +84,7 @@ public:
 	
 	// native methods:
 	bool NeedsAuthViaPopServer();
+	bool SanityCheck( BString& complaint, BString& fieldName) const;
 
 	// stuff needed for Archival:
 	status_t Archive( BMessage* archive, bool deep = true) const;
@@ -97,7 +98,7 @@ public:
 	inline const BString &SMTPServer() const	{ return mSMTPServer; }
 	inline const BString &DomainToAnnounce() const 	{ return mDomainToAnnounce; }
 	inline const BString &AuthMethod() const 	{ return mAuthMethod; }
-	inline int16 PortNr() const 					{ return mPortNr; }
+	inline uint16 PortNr() const			 		{ return mPortNr; }
 	inline const BString &PortNrString() const{ return mPortNrString; }
 	inline const BString &AccForSmtpAfterPop() const{ return mAccForSmtpAfterPop; }
 
@@ -108,7 +109,7 @@ public:
 	inline void SMTPServer( const BString &s)	{ mSMTPServer = s;   TellModelItemUpdated( UPD_ALL); }
 	inline void DomainToAnnounce( const BString &s) 	{ mDomainToAnnounce = s;   TellModelItemUpdated( UPD_ALL); }
 	inline void AuthMethod( const BString &s) { mAuthMethod = s;   TellModelItemUpdated( UPD_ALL); }
-	inline void PortNr( int16 i) 					{ mPortNr = i; mPortNrString = BString()<<i;  TellModelItemUpdated( UPD_ALL); }
+	inline void PortNr( uint16 i)					{ mPortNr = i; mPortNrString = BString()<<i;  TellModelItemUpdated( UPD_ALL); }
 	inline void AccForSmtpAfterPop( const BString &s)	{ mAccForSmtpAfterPop = s;   TellModelItemUpdated( UPD_ALL); }
 
 	bool GetSMTPAddress( BNetAddress* addr) const;
@@ -132,7 +133,7 @@ private:
 	BString mDomainToAnnounce;		// domain-name that will be used when we announce
 											// ourselves to the server (HELO/EHLO)
 	BString mAuthMethod;				// authentication method to use
-	int16 mPortNr;						// usually 25
+	uint16 mPortNr;					// usually 25
 	BString mPortNrString;			// Port-Nr as String
 	bool mPwdStoredOnDisk;			// store Passwords unsafely on disk?
 	BString mAccForSmtpAfterPop;	// pop-account to use for authentication

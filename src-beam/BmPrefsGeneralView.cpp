@@ -119,6 +119,9 @@ BmPrefsGeneralView::BmPrefsGeneralView()
 							mUseDeskbarControl = new BmCheckControl( "Use Deskbar Icon to indicate new mail", 
 																				  new BMessage(BM_USE_DESKBAR_CHANGED), 
 																				  this, ThePrefs->GetBool("UseDeskbar", true)),
+							mBeepNewMailControl = new BmCheckControl( "Beep when new mail has arrived", 
+																				  new BMessage(BM_BEEP_NEW_MAIL_CHANGED), 
+																				  this, ThePrefs->GetBool("BeepWhenNewMailArrived", true)),
 							new Space( minimax(0,10,0,10)),
 							mShowTooltipsControl = new BmCheckControl( "Show Tooltips for Toolbar-Buttons and Prefs", 
 																				  new BMessage(BM_SHOW_TOOLTIPS_CHANGED), 
@@ -232,6 +235,7 @@ void BmPrefsGeneralView::Initialize() {
 	TheBubbleHelper.SetHelp( mRestoreFolderStatesControl, "Checking this makes Beam remember the state of the mailfolder-view \n(which of the folders are expanded/collapsed).\nIf unchecked, Beam will always start with a collapsed mailfolder-view.");
 	TheBubbleHelper.SetHelp( mInOutAtTopControl, "Determines whether the in- and out-folder will be shown \nat the top of the mailfolder-list or if they \nwill be sorted in alphabetically.");
 	TheBubbleHelper.SetHelp( mUseDeskbarControl, "Checking this makes Beam show an icon in \nthe Deskbar when new mail has arrived.");
+	TheBubbleHelper.SetHelp( mBeepNewMailControl, "Checking this makes Beam play the 'New E-mail' beep-event\nwhen new mail has arrived.\nYou can change the corresponding sound in the BeOS Sound-preferences.");
 	TheBubbleHelper.SetHelp( mShowTooltipsControl, "Checking this makes Beam show a small \ninfo-window (just like this one) when the \nmouse-pointer lingers over a GUI-item.");
 	TheBubbleHelper.SetHelp( mCacheRefsOnDiskControl, "Checking this will cause Beam to cache \nmail-folder contents on disk.\n\nDoing this speeds up the display \nof a mail-folder's contents quite a lot.");
 	TheBubbleHelper.SetHelp( mCacheRefsInMemControl, "Checking this will cause Beam to keep \nany mail-folder's contents in memory even\nif the user selects another folder.\n\nThis gives best performance, but \nmay use *A LOT* of memory.");
@@ -278,11 +282,15 @@ void BmPrefsGeneralView::SaveData() {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmPrefsGeneralView::UndoChanges() {
+	bool lastInOutAtTop = ThePrefs->GetBool( "InOutAlwaysAtTop");
 	ThePrefs->ResetToSaved();
-	mLayoutView->Unarchive( ThePrefs->GetMsg( "MailRefLayout"));
-	if (TheMailFolderView->LockLooper()) {
-		TheMailFolderView->SortItems();
-		TheMailFolderView->UnlockLooper();
+	auto_ptr<BMessage> layoutMsg( ThePrefs->GetMsg( "MailRefLayout"));
+	mLayoutView->Unarchive( layoutMsg.get());
+	if (lastInOutAtTop != ThePrefs->GetBool( "InOutAlwaysAtTop")) {
+		if (TheMailFolderView->LockLooper()) {
+			TheMailFolderView->SortItems();
+			TheMailFolderView->UnlockLooper();
+		}
 	}
 }
 
@@ -343,6 +351,10 @@ void BmPrefsGeneralView::MessageReceived( BMessage* msg) {
 				ThePrefs->SetBool("UseDeskbar", val);
 				if (!val)
 					be_app->PostMessage( BMM_HIDE_NEWMAIL_ICON);
+				break;
+			}
+			case BM_BEEP_NEW_MAIL_CHANGED: {
+				ThePrefs->SetBool("BeepWhenNewMailArrived", mBeepNewMailControl->Value());
 				break;
 			}
 			case BM_SHOW_TOOLTIPS_CHANGED: {
@@ -423,6 +435,7 @@ void BmPrefsGeneralView::MessageReceived( BMessage* msg) {
 \*------------------------------------------------------------------------------*/
 CLVContainerView* BmPrefsGeneralView::CreateMailRefLayoutView( minimax minmax, int32 width, int32 height) {
 	mLayoutView = BmMailRefView::CreateInstance( minmax, width, height);
-	mLayoutView->Unarchive( ThePrefs->GetMsg("MailRefLayout"));
+	auto_ptr<BMessage> layoutMsg( ThePrefs->GetMsg( "MailRefLayout"));
+	mLayoutView->Unarchive( layoutMsg.get());
 	return mLayoutView->ContainerView();
 }

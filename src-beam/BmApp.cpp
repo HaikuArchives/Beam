@@ -243,7 +243,18 @@ bool BmApplication::QuitRequested() {
 void BmApplication::ArgvReceived( int32 argc, char** argv) {
 	if (argc>1) {
 		BMessage msg(BMM_NEW_MAIL);
-		msg.AddString( MSG_WHO_TO, argv[1]);
+		BString to( argv[1]);
+		if (to.ICompare("mailto:",7)==0) {
+			to.Remove( 0, 7);
+			int32 subjPos = to.IFindFirst("?subject=");
+			if (subjPos != B_ERROR) {
+				BString sub;
+				DeUrlify( to.String()+subjPos+9, sub);
+				msg.AddString( MSG_SUBJECT, sub.String());
+				to.Truncate( subjPos);
+			}
+		}
+		msg.AddString( MSG_WHO_TO, to.String());
 		PostMessage( &msg);
 	}
 }
@@ -301,6 +312,8 @@ void BmApplication::MessageReceived( BMessage* msg) {
 				msg->FindString( BmPopAccountList::MSG_ITEMKEY, &key);
 				if (key) {
 					bool isAutoCheck = msg->FindBool( BmPopAccountList::MSG_AUTOCHECK);
+					BM_LOG( BM_LogPop, BString("PopAccount ") << key << " checks mail " 
+							  << (isAutoCheck ? "(auto)" : "(manual)"));
 					if (!isAutoCheck || !ThePrefs->GetBool( "AutoCheckOnlyIfPPPRunning", true) 
 					|| IsPPPRunning())
 						ThePopAccountList->CheckMailFor( key, isAutoCheck);
@@ -311,12 +324,11 @@ void BmApplication::MessageReceived( BMessage* msg) {
 			case BMM_NEW_MAIL: {
 				BmRef<BmMail> mail = new BmMail( true);
 				const char* to = NULL;
-				if ((to = msg->FindString( MSG_WHO_TO))) {
-					BString toAddr( to);
-					if (toAddr.ICompare( "mailto:",7) == 0)
-						toAddr.Remove( 0,7);
-					mail->SetFieldVal( BM_FIELD_TO, toAddr);
-				}
+				if ((to = msg->FindString( MSG_WHO_TO)))
+					mail->SetFieldVal( BM_FIELD_TO, to);
+				const char* subject = NULL;
+				if ((subject = msg->FindString( MSG_SUBJECT)))
+					mail->SetFieldVal( BM_FIELD_SUBJECT, subject);
 				BmMailEditWin* editWin = BmMailEditWin::CreateInstance( mail.Get());
 				if (editWin)
 					editWin->Show();
@@ -353,7 +365,7 @@ void BmApplication::MessageReceived( BMessage* msg) {
 					break;
 				if (msgCount>1 && msg->FindInt32( "which", &buttonPressed) != B_OK) {
 					// first step, ask user about how to forward multiple messages:
-					BString s("You have selected more than one message.\n\nShall Beam join the message-bodies into one single mail and reply to that or would you prefer to keep the messages separate?");
+					BString s("You have selected more than one message.\n\nShould Beam join the message-bodies into one single mail and reply to that or would you prefer to keep the messages separate?");
 					BAlert* alert = new BAlert( "Forwarding Multiple Mails", 
 														 s.String(),
 													 	 "Cancel", "Keep Separate", "Join", B_WIDTH_AS_USUAL,
@@ -377,7 +389,7 @@ void BmApplication::MessageReceived( BMessage* msg) {
 					break;
 				if (msgCount>1 && msg->FindInt32( "which", &buttonPressed) != B_OK) {
 					// first step, ask user about how to forward multiple messages:
-					BString s("You have selected more than one message.\n\nShall Beam join the message-bodies into one single mail and forward that or would you prefer to keep the messages separate?");
+					BString s("You have selected more than one message.\n\nShould Beam join the message-bodies into one single mail and forward that or would you prefer to keep the messages separate?");
 					BAlert* alert = new BAlert( "Forwarding Multiple Mails", 
 														 s.String(),
 													 	 "Cancel", "Keep Separate", "Join", B_WIDTH_AS_USUAL,
@@ -391,10 +403,48 @@ void BmApplication::MessageReceived( BMessage* msg) {
 				break;
 			}
 			case BMM_MARK_AS: {
+				int32 buttonPressed=1;
 				BmMailRef* mailRef = NULL;
+				type_code tc;
+				int32 msgCount;
+				status_t result = msg->GetInfo( MSG_MAILREF, &tc, &msgCount);
+				if (result != B_OK)
+					break;
 				int index=0;
+				BString newStatus = msg->FindString( MSG_STATUS);
+				if (msgCount>0 && msg->FindInt32( "which", &buttonPressed) != B_OK) {
+					// first step, check if user has asked to mark as read and has selected
+					// messages with advanced statii (like replied or forwarded). If so, 
+					// we ask the user about how to handle those:
+					if (newStatus == BM_MAIL_STATUS_READ) {
+						bool hasAdvanced = false;
+						while( msg->FindPointer( MSG_MAILREF, index++, (void**)&mailRef) == B_OK) {
+							if (mailRef->Status() != BM_MAIL_STATUS_NEW
+							&&  mailRef->Status() != BM_MAIL_STATUS_READ) {
+								hasAdvanced = true;
+								break;
+							}
+						}
+						if (hasAdvanced) {
+							BString s("Some of the selected messages are not new.\n\nShould Beam mark only the new messages as being read?");
+							BAlert* alert = new BAlert( "Mark Mails As", 
+																 s.String(),
+															 	 "Cancel", "Mark All Messages", "Just Mark New Messages", B_WIDTH_AS_USUAL,
+															 	 B_OFFSET_SPACING, B_IDEA_ALERT);
+							alert->SetShortcut( 0, B_ESCAPE);
+							alert->Go( new BInvoker( new BMessage(*msg), BMessenger( this)));
+							break;
+						} else
+							buttonPressed = 1;	// mark all messages
+					} else
+						buttonPressed = 1;	// mark all messages
+				}
+				if (buttonPressed == 0)
+					break;
+				index=0;
 				while( msg->FindPointer( MSG_MAILREF, index++, (void**)&mailRef) == B_OK) {
-					mailRef->MarkAs( msg->FindString( MSG_STATUS));
+					if (buttonPressed==1 || mailRef->Status() == BM_MAIL_STATUS_NEW)
+						mailRef->MarkAs( newStatus.String());
 					mailRef->RemoveRef();	// msg is no more refering to mailRef
 				}
 				break;
@@ -433,10 +483,9 @@ void BmApplication::MessageReceived( BMessage* msg) {
 			}
 			case BMM_SHOW_NEWMAIL_ICON: {
 				BM_LOG2( BM_LogAll, "App: asked to show new-mail icon in deskbar");
-				if (ThePrefs->GetBool( "UseDeskbar", true) 
+				if (ThePrefs->GetBool( "UseDeskbar") 
 				&& !mDeskbar.HasItem( BM_DeskbarItemName)) {
 					mDeskbar.AddItem( mDeskbarView);
-					system_beep( BM_BEEP_EVENT);
 				}
 				break;
 			}
@@ -503,16 +552,19 @@ void BmApplication::ForwardMails( BMessage* msg, bool join) {
 					if (index == 0) 
 						newMail = mail->CreateInlineForward( false, selectedText);
 					else
-						newMail->AddPartsFromMail( mail, false);
+						newMail->AddPartsFromMail( mail, false, BM_IS_FORWARD);
 				} else if (msg->what == BMM_FORWARD_INLINE_ATTACH) {
 					if (index == 0) 
 						newMail = mail->CreateInlineForward( true, selectedText);
 					else
-						newMail->AddPartsFromMail( mail, true);
+						newMail->AddPartsFromMail( mail, true, BM_IS_FORWARD);
 				}
-				if (index == 1)
-					// set simple subject for multiple forwards:
-					newMail->SetFieldVal( BM_FIELD_SUBJECT, "Fwd: (multiple messages)");
+				if (index == 0) {
+					// set subject for multiple forwards:
+					BString oldSub = mail->GetFieldVal( BM_FIELD_SUBJECT);
+					BString subject = newMail->CreateForwardSubjectFor( oldSub + " (and more...)");
+					newMail->SetFieldVal( BM_FIELD_SUBJECT, subject);
+				}
 			}
 			mailRef->RemoveRef();	// msg is no more refering to mailRef
 		}
@@ -588,16 +640,19 @@ void BmApplication::ReplyToMails( BMessage* msg, bool join) {
 					if (!newMail) 
 						newMail = mail->CreateReply( false, selectedText);
 					else
-						newMail->AddPartsFromMail( mail, false);
+						newMail->AddPartsFromMail( mail, false, BM_IS_REPLY);
 				} else if (msg->what == BMM_REPLY_ALL) {
 					if (!newMail) 
 						newMail = mail->CreateReply( true, selectedText);
 					else
-						newMail->AddPartsFromMail( mail, false);
+						newMail->AddPartsFromMail( mail, false, BM_IS_REPLY);
 				}
-				if (index == 1)
-					// set simple subject for multiple forwards:
-					newMail->SetFieldVal( BM_FIELD_SUBJECT, "Fwd: (multiple messages)");
+				if (index == 0) {
+					// set subject for multiple forwards:
+					BString oldSub = mail->GetFieldVal( BM_FIELD_SUBJECT);
+					BString subject = newMail->CreateReplySubjectFor( oldSub + " (and more...)");
+					newMail->SetFieldVal( BM_FIELD_SUBJECT, subject);
+				}
 			}
 			mailRef->RemoveRef();	// msg is no more refering to mailRef
 		}
@@ -609,7 +664,7 @@ void BmApplication::ReplyToMails( BMessage* msg, bool join) {
 				editWin->Show();
 		}
 	} else {
-		// create one forward per mail:
+		// create one reply per mail:
 		BmRef<BmMail> newMail;
 		for(  int index=0; 
 				msg->FindPointer( MSG_MAILREF, index, (void**)&mailRef) == B_OK;
@@ -752,7 +807,13 @@ void BmApplication::LaunchURL( const BString url) {
 		result = be_roster->Launch( "application/x-vnd.Be.URL.file", 1, &urlStr);
 	else if (url.ICompare( "mailto:", 7) == 0) {
 		BMessage msg(BMM_NEW_MAIL);
-		msg.AddString( BmApplication::MSG_WHO_TO, urlStr+7);
+		BString to( urlStr+7);
+		int32 subjPos = to.IFindFirst("?subject=");
+		if (subjPos != B_ERROR) {
+			msg.AddString( BmApplication::MSG_SUBJECT, to.String()+subjPos+9);
+			to.Truncate( subjPos);
+		}
+		msg.AddString( BmApplication::MSG_WHO_TO, to.String());
 		bmApp->PostMessage( &msg);
 		return;
 	}
@@ -791,10 +852,12 @@ Adam McNutt
 	for reporting bugs
 
 Atillâ Öztürk
-	for reporting problems with ISO-8859-9 and helping me find the 'Mime:' - bug
+	for reporting problems with ISO-8859-9 and helping me 
+	find the 'Mime:' - bug
 
 Cedric Vincent
-	for pointing out that the 'network buffer size'-prefs-field was disfunctional
+	for pointing out that the 'network buffer size'-
+	prefs-field was disfunctional
 	
 Charlie Clark
 	for reporting many bugs

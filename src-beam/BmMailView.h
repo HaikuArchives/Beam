@@ -102,7 +102,7 @@ public:
 	status_t Archive( BMessage* archive, bool deep=true) const;
 	status_t Unarchive( BMessage* archive, bool deep=true);
 	bool WriteStateInfo();
-	void GetWrappedText( BString& out);
+	void GetWrappedText( BString& out, bool hardWrapIfNeeded=true);
 	void SetSignatureByName( const BString sigName);
 	void UpdateFont( const BFont& font);
 
@@ -115,7 +115,8 @@ public:
 	void MessageReceived( BMessage* msg);
 	void MouseDown( BPoint point);
 	void MouseUp( BPoint point);
-
+	void MouseMoved( BPoint point, uint32 transit, const BMessage *message);
+	
 	// overrides of BmController base:
 	BHandler* GetControllerHandler()		{ return this; }
 	void JobIsDone( bool completed);
@@ -149,6 +150,7 @@ private:
 	BmTextRunMap mTextRunMap;
 	BmTextRunIter mClickedTextRun;
 	BMessageRunner* mReadRunner;
+	bool mShowingUrlCursor;
 	
 	// will be archived:
 	BString mFontName;

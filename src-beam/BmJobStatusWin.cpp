@@ -31,6 +31,7 @@
 #include <stdio.h>
 
 #include <Autolock.h>
+#include <Beep.h>
 #include <ClassInfo.h>
 #include <Entry.h>
 #include <InterfaceDefs.h>
@@ -64,6 +65,8 @@
 
 
 #define BM_MINSIZE 200
+
+static const char* BM_BEEP_EVENT = "New E-mail";
 
 /********************************************************************************\
 	BmJobStatusView
@@ -316,8 +319,11 @@ BmPopperView::BmPopperView( const char* name, bool isAutoCheck)
 	,	mIsAutoCheck( isAutoCheck)
 {
 	mMSecsBeforeRemove = MAX(10,ThePrefs->GetInt( "MSecsBeforePopperRemove"));
-	if (mIsAutoCheck)
-		mMSecsBeforeShow = 0;	// avoid showing if in auto-mode.
+	if (mIsAutoCheck) {
+		// avoid changing state of job-status-window if in auto-mode:
+		mMSecsBeforeShow = 0;	
+		mMSecsBeforeRemove = 0;
+	}
 	MView* view = new VGroup(
 		new MBViewWrapper(
 			mStatBar = new BStatusBar( BRect(), name, name, ""), true, false, false
@@ -385,6 +391,11 @@ void BmPopperView::UpdateModelView( BMessage* msg) {
 	if (lock.IsLocked()) {
 		if (domain == "mailbar") {
 			mMailBar->Update( delta, leading, trailing);
+			if (mMailBar->CurrentValue()==mMailBar->MaxValue()
+			&& ThePrefs->GetBool( "BeepWhenNewMailArrived", true)) {
+				// we indicate the arrival of new mail by a beep:
+				system_beep( BM_BEEP_EVENT);
+			}
 		} else { 
 			// domain == "statbar"
 			mStatBar->Update( delta, leading, trailing);
@@ -403,10 +414,11 @@ bool BmPopperView::AskUserForPwd( const BString accName, BString& pwd) {
 					   << accName << ">:";
 	TextEntryAlert* alert = new TextEntryAlert( "Info needed", text.String(),
 									 						  "", "Cancel", "OK");
+	alert->SetFeel( B_FLOATING_APP_WINDOW_FEEL);
+	alert->SetLook( B_FLOATING_WINDOW_LOOK);
 	alert->TextEntryView()->HideTyping( true);
 	alert->SetShortcut( 0, B_ESCAPE);
 	char buf[128];
-	TheJobStatusWin->UpdateIfNeeded();
 	int32 result = alert->Go( buf, 128);
 	if (result == 1) {
 		pwd = buf;
@@ -526,6 +538,8 @@ bool BmSmtpView::AskUserForPwd( const BString accName, BString& pwd) {
    				   << accName << ">:";
 	TextEntryAlert* alert = new TextEntryAlert( "Info needed", text.String(),
 									 						  "", "Cancel", "OK");
+	alert->SetFeel( B_FLOATING_APP_WINDOW_FEEL);
+	alert->SetLook( B_FLOATING_WINDOW_LOOK);
 	alert->TextEntryView()->HideTyping( true);
 	alert->SetShortcut( 0, B_ESCAPE);
 	char buf[128];
@@ -554,6 +568,8 @@ bool BmSmtpView::AskUserForPopAcc( const BString accName, BString& popAccName) {
 	}
 	ListSelectionAlert* alert 
 		= new ListSelectionAlert( "Pop-Account", text.String(), list, "", "Cancel", "OK");
+	alert->SetFeel( B_FLOATING_APP_WINDOW_FEEL);
+	alert->SetLook( B_FLOATING_WINDOW_LOOK);
 	alert->SetShortcut( 0, B_ESCAPE);
 	char buf[128];
 	int32 result = alert->Go( buf, 128);

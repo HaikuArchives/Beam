@@ -354,6 +354,41 @@ void ConvertTabsToSpaces( const BString& in, BString& out) {
 }
 
 /*------------------------------------------------------------------------------*\
+	DeUrlify( in, out)
+		-	converts all %xx sequences into the corresponding chars
+		-	result is stored in out
+\*------------------------------------------------------------------------------*/
+#define HEXDIGIT2CHAR(d) (((d)>='0'&&(d)<='9') ? (d)-'0' : ((d)>='A'&&(d)<='F') ? (d)-'A'+10 : ((d)>='a'&&(d)<='f') ? (d)-'a'+10 : 0)
+//
+void DeUrlify( const BString& in, BString& out) {
+	int32 outSize = in.Length()*2;
+	if (!outSize) {
+		out = "";
+		return;
+	}
+	char* buf = out.LockBuffer( outSize);
+	const char* pos = in.String();
+	char* newPos = buf;
+	char c1, c2;
+	while( *pos) {
+		if (*pos=='%' && (c1=*(pos+1)) && c1!='%' && (c2=*(pos+2))) {
+			c1 = toupper(c1);
+			c2 = toupper(c2);
+			if (c1<'0' || c1>'9' && c1<'A' || c1>'F'
+			||  c2<'0' || c2>'9' && c2<'A' || c2>'F') {
+				*newPos++ = *pos++;
+				continue;
+			}
+			*newPos++ = HEXDIGIT2CHAR(c1)*16+HEXDIGIT2CHAR(c2);
+			pos+=3;
+		} else
+			*newPos++ = *pos++;
+	}
+	*newPos = 0;
+	out.UnlockBuffer( newPos-buf);
+}
+
+/*------------------------------------------------------------------------------*\
 	WordWrap( in, out, maxLineLen)
 		-	wraps given in-string along word-boundary
 		-	param maxLineLen indicates right border for wrap

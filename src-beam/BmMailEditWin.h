@@ -99,8 +99,8 @@ private:
 	void CreateGUI();
 	MMenuBar* CreateMenu();
 
-	bool CreateMailFromFields();
-	bool SaveMail();
+	bool CreateMailFromFields( bool hardWrapIfNeeded=true);
+	bool SaveMail( bool hardWrapIfNeeded=true);
 	void SetFieldsFromMail( BmMail* mail);
 	
 	static BmEditWinMap nEditWinMap;

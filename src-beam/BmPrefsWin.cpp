@@ -254,8 +254,8 @@ void BmPrefsWin::MessageReceived( BMessage* msg) {
 				break;
 			}
 			case BM_SAVE_CHANGES: {
-				mPrefsViewContainer->SaveData();
-				PostMessage( B_QUIT_REQUESTED);
+				if (mPrefsViewContainer->SaveData())
+					PostMessage( B_QUIT_REQUESTED);
 				break;
 			}
 			case BM_UNDO_CHANGES: {

@@ -213,11 +213,9 @@ void BmPrefsShortcutsView::MessageReceived( BMessage* msg) {
 				BView* srcView = NULL;
 				msg->FindPointer( "source", (void**)&srcView);
 				BmTextControl* source = dynamic_cast<BmTextControl*>( srcView);
-				BMessage* scMsg = ThePrefs->ShortcutsMsg();
-				if (scMsg && source == mShortcutControl) {
+				if (source == mShortcutControl) {
 					BString sc = mShortcutControl->Text();
-					scMsg->RemoveName( mNameControl->Text());
-					scMsg->AddString( mNameControl->Text(), sc.String());
+					ThePrefs->SetShortcutFor( mNameControl->Text(), sc.String());
 					int32 index = mListView->CurrentSelection( 0);
 					if (index != -1) {
 						CLVEasyItem* scItem = dynamic_cast<CLVEasyItem*>(mListView->ItemAt( index));
@@ -287,6 +285,8 @@ CLVContainerView* BmPrefsShortcutsView::CreateListView( minimax minmax, int32 wi
 	mListView->AddColumn( new CLVColumn( "Menu-Item", 300.0, CLV_SORT_KEYABLE|flags, 100.0));
 	mListView->AddColumn( new CLVColumn( "Shortcut", 80.0, CLV_SORT_KEYABLE|flags, 4.0));
 
+	BmAutolock lock( ThePrefs->Locker());
+	lock.IsLocked()							|| BM_THROW_RUNTIME( "Unable to get lock on Prefs!");
 	BMessage* scMsg = ThePrefs->ShortcutsMsg();
 	if (scMsg) {
 		CLVEasyItem* item;

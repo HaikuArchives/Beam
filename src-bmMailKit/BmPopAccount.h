@@ -98,6 +98,7 @@ public:
 	BString GetFromAddress() const;
 	BString GetDomainName() const;
 	bool HandlesAddress( BString addr, bool needExactMatch=false) const;
+	bool SanityCheck( BString& complaint, BString& fieldName) const;
 
 	// stuff needed for Archival:
 	status_t Archive( BMessage* archive, bool deep = true) const;
@@ -114,7 +115,7 @@ public:
 	inline const BString &Name() const 			{ return Key(); }
 	inline const BString &Password() const 	{ return mPassword; }
 	inline const BString &POPServer() const	{ return mPOPServer; }
-	inline int16 PortNr() const 					{ return mPortNr; }
+	inline uint16 PortNr() const					{ return mPortNr; }
 	inline const BString &PortNrString() const{ return mPortNrString; }
 	inline bool PwdStoredOnDisk() const			{ return mPwdStoredOnDisk; }
 	inline const BString &RealName() const 	{ return mRealName; }
@@ -134,7 +135,7 @@ public:
 	inline void MarkedAsBitBucket( bool b)		{ mMarkedAsBitBucket = b;  TellModelItemUpdated( UPD_ALL); }
 	inline void Password( const BString &s) 	{ mPassword = s;  TellModelItemUpdated( UPD_ALL); }
 	inline void POPServer( const BString &s)	{ mPOPServer = s;  TellModelItemUpdated( UPD_ALL); }
-	inline void PortNr( int16 i) 					{ mPortNr = i; mPortNrString = BString()<<i;  TellModelItemUpdated( UPD_ALL); }
+	inline void PortNr( uint16 i)					{ mPortNr = i; mPortNrString = BString()<<i;  TellModelItemUpdated( UPD_ALL); }
 	inline void PwdStoredOnDisk( bool b)		{ mPwdStoredOnDisk = b;  TellModelItemUpdated( UPD_ALL); }
 	inline void RealName( const BString &s) 	{ mRealName = s;  TellModelItemUpdated( UPD_ALL); }
 	inline void SignatureName( const BString &s)	 { mSignatureName = s;  TellModelItemUpdated( UPD_ALL); }
@@ -165,7 +166,7 @@ private:
 	BString mMailAddr;				// address to use (instead of composed address)
 	BString mMailAliases;			// addresses that belong to this POP-Account, too
 	BString mSignatureName;			// name&path of signature file
-	int16 mPortNr;						// usually 110
+	uint16 mPortNr;					// usually 110
 	BString mPortNrString;			// mPortNr as String
 	bool mCheckMail;					// include this account in global mail-check?
 	bool mDeleteMailFromServer;	// delete mails upon receive?

@@ -38,7 +38,8 @@
 #include <layout.h>
 #include <MBorder.h>
 
-#define BM_SELECTION_CHANGED 'bmSC'
+#define BM_SELECTION_CHANGED 		'bm_S'
+#define BM_COMPLAIN_ABOUT_FIELD 	'bm_C'
 
 class MStringView;
 /*------------------------------------------------------------------------------*\
@@ -58,6 +59,7 @@ public:
 	virtual void Initialize();
 	virtual void SaveData()					{}
 	virtual void UndoChanges()				{}
+	virtual bool SanityCheck()				{ return true; }
 	void Finish()								{ UndoChanges(); }
 	virtual void WriteStateInfo()			{}
 
@@ -65,8 +67,12 @@ public:
 	void MessageReceived( BMessage* msg);
 
 	// getters:
+	bool InitDone() const					{ return mInitDone; }
 
-	// setters:
+	// message-fields:
+	static const char* const MSG_ACCOUNT = 		"bm:acc";
+	static const char* const MSG_FIELD_NAME = 	"bm:fname";
+	static const char* const MSG_COMPLAINT = 		"bm:compl";
 
 protected:
 
@@ -97,7 +103,7 @@ public:
 	// native methods:
 	void ShowPrefs( int index);
 	void WriteStateInfo();
-	void SaveData();
+	bool SaveData();
 	void Finish();
 
 private:

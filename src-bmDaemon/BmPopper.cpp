@@ -587,9 +587,10 @@ void BmPopper::SendCommand( BString cmd, BString secret) {
 		command = cmd;
 		BM_LOG( BM_LogPop, BString("-->\n") << cmd);
 	}
-	if (command[command.Length()-1] != '\n')
+	if (!command.Length() || command[command.Length()-1] != '\n')
 		command << "\r\n";
-	int32 size = command.Length(), sentSize;
+	int32 size = command.Length();
+	int32 sentSize;
 	if ((sentSize = mPopServer.Send( command.String(), size)) != size) {
 		throw BM_network_error( BString("error during send, sent only ") << sentSize << " bytes instead of " << size);
 	}

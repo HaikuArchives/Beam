@@ -142,6 +142,7 @@ public:
 	void Activated();
 	void WriteStateInfo();
 	void SaveData();
+	bool SanityCheck();
 	void UndoChanges();
 
 	// overrides of BView base:

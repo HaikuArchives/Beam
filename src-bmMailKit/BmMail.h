@@ -151,9 +151,14 @@ public:
 										  		  const BString selectedText="");
 	BmRef<BmMail> CreateReply( bool replyToAll, const BString selectedText="");
 	BmRef<BmMail> CreateRedirect();
+	BString CreateReplySubjectFor( const BString subject);
+	BString CreateForwardSubjectFor( const BString subject);
+	BString CreateReplyIntro();
+	BString CreateForwardIntro();
 	//
 	void AddAttachmentFromRef( const entry_ref* ref);
 	void AddPartsFromMail( BmRef<BmMail> mail, bool withAttachments,
+								  bool isForward,
 								  const BString selectedText="");
 	
 	// overrides of jobmodel base:
@@ -195,10 +200,6 @@ protected:
 
 	BString CreateBasicFilename();
 	void StoreAttributes( BFile& mailFile);
-	BString CreateReplySubjectFor( const BString subject);
-	BString CreateForwardSubjectFor( const BString subject);
-	BString CreateReplyIntro();
-	BString CreateForwardIntro();
 	void SetBaseMailInfo( BmMailRef* ref, const BString newStatus);
 	void AddBaseMailRef( BmMailRef* ref);
 
@@ -242,5 +243,8 @@ private:
 	BmMail operator=( const BmMail&);
 };
 
+// convenience-defines for AddPartsFromMail()-param isForward:
+#define BM_IS_FORWARD true
+#define BM_IS_REPLY  false
 
 #endif

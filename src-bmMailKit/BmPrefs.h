@@ -32,9 +32,8 @@
 #ifndef _BmPrefs_h
 #define _BmPrefs_h
 
-#include <map>
-
 #include <Archivable.h>
+#include <Locker.h>
 #include <Message.h>
 #include <String.h>
 
@@ -61,15 +60,12 @@ public:
 	virtual ~BmPrefs();
 
 	// native methods:
-	void InitDefaults();
-	void SetLoglevels();
 	bool Store();
 	bool GetBool( const char* name);
 	bool GetBool( const char* name, const bool defaultVal);
 	int32 GetInt( const char* name);
 	int32 GetInt( const char* name, const int32 defaultVal);
-	const BMessage* GetMsg( const char* name);
-//	const BMessage* GetMsg( const char* name, const BMessage* defaultVal);
+	BMessage* GetMsg( const char* name);
 	BString GetString( const char* name);
 	BString GetString( const char* name, const BString defaultVal);
 	void SetBool( const char* name, const bool val);
@@ -80,16 +76,18 @@ public:
 	void ResetToSaved();
 
 	BString GetShortcutFor( const char* shortcutID);
+	void SetShortcutFor( const char* name, const BString val);
 
 	// getters:
-	BMessage* PrefsMsg()						{ return &mPrefsMsg; }
-	BMessage* DefaultsMsg()					{ return &mDefaultsMsg; }
 	BMessage* ShortcutsMsg()				{ return &mShortcutsMsg; }
+	BLocker& Locker()							{ return mLocker; }
 
 	static BmPrefs* theInstance;
 
 private:
 
+	void InitDefaults();
+	void SetLoglevels();
 	BMessage* GetShortcutDefaults( BMessage* msg=NULL);
 	void SetShortcutIfNew( BMessage* msg, const char* name, const BString val);
 
@@ -98,7 +96,7 @@ private:
 	BMessage mShortcutsMsg;
 	BMessage mSavedPrefsMsg;
 
-	map<BString, BMessage*> mMsgCache;
+	BLocker mLocker;
 
 	// Hide copy-constructor and assignment:
 	BmPrefs( const BmPrefs&);

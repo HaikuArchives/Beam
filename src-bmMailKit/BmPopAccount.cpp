@@ -264,13 +264,56 @@ void BmPopAccount::CheckInterval( int16 i) {
 void BmPopAccount::SetupIntervalRunner() {
 	delete mIntervalRunner;
 	mIntervalRunner = NULL;
+	BM_LOG( BM_LogPop, BString("PopAccount.") << Key() << " sets check interval to " << mCheckInterval);
 	if (mCheckInterval>0) {
 		BMessage* msg = new BMessage( BMM_CHECK_MAIL);
 		msg->AddString( BmPopAccountList::MSG_ITEMKEY, Key().String());
 		msg->AddBool( BmPopAccountList::MSG_AUTOCHECK, true);
 		mIntervalRunner = new BMessageRunner( be_app_messenger, msg, 
 														  mCheckInterval*60*1000*1000, -1);
+		if (mIntervalRunner->InitCheck() != B_OK)
+			ShowAlert( BString("Could not initialize check-interval runner for PopAccount ")<<Key());
 	}
+}
+
+/*------------------------------------------------------------------------------*\
+	SanityCheck()
+		-	checks if the current values make sense and returns error-info through
+			given out-params
+		-	returns true if values are ok, false (and error-info) if not
+\*------------------------------------------------------------------------------*/
+bool BmPopAccount::SanityCheck( BString& complaint, BString& fieldName) const {
+	if (!mUsername.Length()) {
+		complaint = "Please enter a username for this account.";
+		fieldName = "username";
+		return false;
+	}
+	if (!mPOPServer.Length()) {
+		complaint = "Please enter the address of this account's POP-Server.";
+		fieldName = "popserver";
+		return false;
+	}
+	if (mPortNr<=0) {
+		complaint = "Please enter a valid port-nr (1-65535) for this account.";
+		fieldName = "portnr";
+		return false;
+	}
+	if (mCheckInterval<0) {
+		complaint = "Please enter a positive checking interval.";
+		fieldName = "checkinterval";
+		return false;
+	}
+	if (!mAuthMethod.Length()) {
+		complaint = "Please select an authentication method for this account.";
+		fieldName = "authmethod";
+		return false;
+	}
+	if (mCheckInterval>0 && !mPwdStoredOnDisk) {
+		complaint = "In order to check this account for mail automatically,\nthe password needs to be stored on disk.";
+		fieldName = "pwdstoredondisk";
+		return false;
+	}
+	return true;
 }
 
 

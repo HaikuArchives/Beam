@@ -484,7 +484,7 @@ void BmMailEditWin::MessageReceived( BMessage* msg) {
 			case BMM_SEND_LATER:
 			case BMM_SEND_NOW: {
 				BM_LOG2( BM_LogMailEditWin, BString("Asked to send mail"));
-				if (!SaveMail())
+				if (!SaveMail( true))
 					break;
 				BM_LOG2( BM_LogMailEditWin, "...mail was saved");
 				BmRef<BmMail> mail = mMailView->CurrMail();
@@ -563,7 +563,7 @@ void BmMailEditWin::MessageReceived( BMessage* msg) {
 				break;
 			}
 			case BMM_SAVE: {
-				SaveMail();
+				SaveMail( false);
 				break;
 			}
 			case BM_FROM_SET:
@@ -777,12 +777,12 @@ void BmMailEditWin::SetFieldsFromMail( BmMail* mail) {
 	CreateMailFromFields()
 		-	
 \*------------------------------------------------------------------------------*/
-bool BmMailEditWin::CreateMailFromFields() {
+bool BmMailEditWin::CreateMailFromFields( bool hardWrapIfNeeded) {
 	BmRef<BmMail> mail = mMailView->CurrMail();
 	if (mail) {
 		BString editedText;
 		BString convertedText;
-		mMailView->GetWrappedText( editedText);
+		mMailView->GetWrappedText( editedText, hardWrapIfNeeded);
 		BMenuItem* charsetItem = mCharsetControl->Menu()->FindMarked();
 		int32 encoding = charsetItem 
 								? CharsetToEncoding( charsetItem->Label())
@@ -818,13 +818,13 @@ bool BmMailEditWin::CreateMailFromFields() {
 }
 
 /*------------------------------------------------------------------------------*\
-	SaveAndReloadMail()
+	SaveAnd( hardWrapIfNeeded)
 		-	
 \*------------------------------------------------------------------------------*/
-bool BmMailEditWin::SaveMail() {
+bool BmMailEditWin::SaveMail( bool hardWrapIfNeeded) {
 	if (!mModified && !mHasNeverBeenSaved)
 		return true;
-	if (!CreateMailFromFields())
+	if (!CreateMailFromFields( hardWrapIfNeeded))
 		return false;
 	BmRef<BmMail> mail = mMailView->CurrMail();
 	if (mail && mail->Store()) {
@@ -863,7 +863,7 @@ bool BmMailEditWin::QuitRequested() {
 				break;
 			}
 			case 2:
-				return SaveMail();
+				return SaveMail( false);
 		}
 	}
 	return true;

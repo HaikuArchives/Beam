@@ -129,12 +129,14 @@ public:
 	
 	// native methods:
 	void ShowAccount( int32 selection);
+	void UpdateState();
 
 	// overrides of BmPrefsView base:
 	void Initialize();
 	void Activated();
 	void WriteStateInfo();
 	void SaveData();
+	bool SanityCheck();
 	void UndoChanges();
 
 	// overrides of BView base:

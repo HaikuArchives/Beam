@@ -320,7 +320,7 @@ BmRef<BmMail> BmMail::CreateInlineForward( bool withAttachments, const BString s
 	// massage subject, if neccessary:
 	BString subject = GetFieldVal( BM_FIELD_SUBJECT);
 	newMail->SetFieldVal( BM_FIELD_SUBJECT, CreateForwardSubjectFor( subject));
-	newMail->AddPartsFromMail( this, withAttachments, selectedText);
+	newMail->AddPartsFromMail( this, withAttachments, BM_IS_FORWARD, selectedText);
 	newMail->SetBaseMailInfo( MailRef(), BM_MAIL_STATUS_FORWARDED);
 	return newMail;
 }
@@ -519,6 +519,7 @@ void BmMail::AddAttachmentFromRef( const entry_ref* ref) {
 	-	
 \*------------------------------------------------------------------------------*/
 void BmMail::AddPartsFromMail( BmRef<BmMail> mail, bool withAttachments, 
+										 bool isForward,
 										 const BString selectedText) {
 	if (!mail || !mail->Body() || !mBody)
 		return;
@@ -543,7 +544,10 @@ void BmMail::AddPartsFromMail( BmRef<BmMail> mail, bool withAttachments,
 											ThePrefs->GetString( "QuotingString"),
 											ThePrefs->GetInt( "MaxLineLen"));
 	BumpRightMargin( newLineLen);
-	BString intro( mail->CreateForwardIntro() << "\n");
+	BString intro( isForward 
+							? mail->CreateForwardIntro() 
+							: mail->CreateReplyIntro() 
+						<< "\n");
 	mBody->SetEditableText( oldText + "\n" + intro + quotedText, CharsetToEncoding( charset));
 	if (withAttachments && mail->Body()->HasAttachments()) {
 		BmModelItemMap::const_iterator iter, end;
@@ -758,12 +762,25 @@ void BmMail::StoreAttributes( BFile& mailFile) {
 BString BmMail::CreateBasicFilename() {
 	static int32 counter = 1;
 	BString name = mHeader->GetFieldVal(BM_FIELD_SUBJECT);
+	int32 nl=name.Length();
+	if (nl) {
+		// we remove some illegal characters from filename, if present:
+		char* buf = name.LockBuffer( nl);
+		unsigned char c;
+		BString illegalChars = "/`´:\"\\";
+		for( int i=0; i<nl; ++i) {
+			c = buf[i];
+			if (c < 32 || illegalChars.FindFirst( c)!=B_ERROR)
+				buf[i] = '_';
+		}
+		name.UnlockBuffer( nl);
+	}
+	if (nl > B_FILE_NAME_LENGTH-25)
+		name.Truncate( B_FILE_NAME_LENGTH-25);
 	char now[16];
 	time_t t = time(NULL);
 	strftime( now, 15, "%0Y%0m%0d%0H%0M%0S", localtime( &t));
 	name << "_" << now << "_" << counter++;
-	RemoveSetFromString( name, "/':\"\t");
-							// we avoid some characters in filename
 	return name;
 }
 
@@ -884,10 +901,15 @@ int32 BmMail::QuoteText( const BString& in, BString& out, BString inQuoteString,
 		} else {
 			// qStyle == BM_QUOTE_PUSH_MARGIN
 			// push right margin for new quote-string, if needed, in effect leaving 
-			// the mail-formatting intact (but possibly exceeding 80 chars per line):
+			// the mail-formatting intact more often (but possibly exceeding 80 chars 
+			// per line):
 			maxTextLen = maxLineLen - quote.Length();
 		}
 		text = rx.match[i].atom[1];
+		int32 len = text.Length();
+		while( len>0 && text[len-1]==' ')
+			len--;
+		text.Truncate( len);
 		int32 newLen = AddQuotedText( text, out, quote, quoteString, maxTextLen);
 		modifiedMaxLen = MAX( newLen, modifiedMaxLen);
 	}
@@ -943,10 +965,10 @@ int32 BmMail::QuoteTextWithReWrap( const BString& in, BString& out,
 		if (!text.Length())
 			text = line;
 		else {
-			int32 len = text.Length()-1;
-			while( len>=0 && text[len]==' ')
+			int32 len = text.Length();
+			while( len>0 && text[len-1]==' ')
 				len--;
-			text.Truncate( len+1);
+			text.Truncate( len);
 			text << " " << line;
 		}
 	}

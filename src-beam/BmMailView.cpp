@@ -27,7 +27,6 @@
 /*                                                                       */
 /*************************************************************************/
 
-
 #include <MenuItem.h>
 #include <PopUpMenu.h>
 #include <UTF8.h>
@@ -103,6 +102,7 @@ BmMailView::BmMailView( minimax minmax, BRect frame, bool outbound)
 	,	mShowInlinesSeparately( true)
 	,	mFontSize( 12)
 	,	mReadRunner( NULL)
+	,	mShowingUrlCursor( false)
 {
 	mHeaderView = new BmMailHeaderView( NULL);
 	if (outbound)
@@ -370,6 +370,29 @@ void BmMailView::MouseUp( BPoint point) {
 }
 
 /*------------------------------------------------------------------------------*\
+	MouseMoved( point, transit, msg)
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailView::MouseMoved( BPoint point, uint32 transit, const BMessage *msg) {
+	inherited::MouseMoved( point, transit, msg);
+	if (mCurrMail && mTextRunMap.size() > 0) {
+		int32 currPos = OffsetAt( point);
+		BmTextRunMap::const_iterator iter = TextRunInfoAt( currPos);
+		if (iter != mTextRunMap.end() && iter->second.isURL) {
+			if (!mShowingUrlCursor) {
+				SetViewCursor( &TheResources->mUrlCursor);
+				mShowingUrlCursor = true;
+			}
+		} else {
+			if (mShowingUrlCursor) {
+				SetViewCursor( B_CURSOR_I_BEAM);
+				mShowingUrlCursor = false;
+			}
+		}
+	}
+}
+
+/*------------------------------------------------------------------------------*\
 	MakeFocus( focused)
 		-	
 \*------------------------------------------------------------------------------*/
@@ -467,13 +490,13 @@ bool BmMailView::AcceptsDrop( const BMessage* msg) {
 }
 
 /*------------------------------------------------------------------------------*\
-	WrappedText()
+	GetWrappedText()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmMailView::GetWrappedText( BString& out) {
+void BmMailView::GetWrappedText( BString& out, bool hardWrapIfNeeded) {
 	BString editedText = Text();
 	int32 lineLen;
-	if (ThePrefs->GetBool( "HardWrapMailText")) {
+	if (hardWrapIfNeeded && ThePrefs->GetBool( "HardWrapMailText")) {
 		// we are in hard-wrap mode, so we use the right margin from the rulerview
 		// as right border:
 		lineLen = mRulerView->IndicatorPos();

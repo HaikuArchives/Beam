@@ -107,9 +107,9 @@ BmRef<BmMailRef> BmMailRef::CreateDummyInstance( BmMailRefList* model, int id) {
 		archive.AddString( MSG_ACCOUNT, "test-acc");
 		archive.AddBool( MSG_ATTACHMENTS, true);
 		archive.AddString( MSG_CC, "cc@test.org");
-		archive.AddInt32( MSG_CREATED, time(NULL));
+		archive.AddInt32( MSG_CREATED, MAX(0,time(NULL)-100000));
 		archive.AddRef( MSG_ENTRYREF, &eref);
-		archive.AddString( MSG_FROM, "from@test.org");
+		archive.AddString( MSG_FROM, "another@test.org");
 		archive.AddInt64( MSG_INODE, 1);
 		archive.AddString( MSG_NAME, "name@test.org");
 		archive.AddString( MSG_PRIORITY, "2");

@@ -46,6 +46,7 @@
 #define BM_SHOW_TOOLTIPS_CHANGED 			'bmTC'
 #define BM_MAKE_BEAM_STD_APP	 				'bmBS'
 #define BM_SELECT_MAILBOX		 				'bmSM'
+#define BM_BEEP_NEW_MAIL_CHANGED				'bmBN'
 
 class BFilePanel;
 class BmTextControl;
@@ -91,6 +92,7 @@ private:
 	BmCheckControl* mInOutAtTopControl;
 	BmCheckControl* mUseDeskbarControl;
 	BmCheckControl* mShowTooltipsControl;
+	BmCheckControl* mBeepNewMailControl;
 	MButton* mMailboxButton;
 
 	BFilePanel* mMailboxPanel;

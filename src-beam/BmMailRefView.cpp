@@ -521,7 +521,7 @@ BString BmMailRefView::StateInfoBasename()	{
 	( )
 		-	
 \*------------------------------------------------------------------------------*/
-const BMessage* BmMailRefView::DefaultLayout()		{ 
+BMessage* BmMailRefView::DefaultLayout()		{ 
 	return ThePrefs->GetMsg("MailRefLayout"); 
 }
 

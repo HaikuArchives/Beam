@@ -102,6 +102,10 @@ void ConvertLinebreaksToCRLF( const BString& in, BString& out);
 \*------------------------------------------------------------------------------*/
 void ConvertTabsToSpaces( const BString& in, BString& out);
 /*------------------------------------------------------------------------------*\
+	utility function to convert URL-encoded chars (%xx) to real chars
+\*------------------------------------------------------------------------------*/
+void DeUrlify( const BString& in, BString& out);
+/*------------------------------------------------------------------------------*\
 	utility function to wrap lines at word boundary:
 \*------------------------------------------------------------------------------*/
 void WordWrap( const BString& in, BString& out, int32 maxLineLen, BString nl);

@@ -40,6 +40,7 @@
 #include "Colors.h"
 
 #include "BmLogHandler.h"
+#include "BmPrefs.h"
 #include "BmPrefsView.h"
 #include "BmUtil.h"
 
@@ -172,14 +173,24 @@ void BmPrefsViewContainer::WriteStateInfo() {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmPrefsViewContainer::SaveData() {
+bool BmPrefsViewContainer::SaveData() {
 	if (!mLayeredGroup)
-		return;
+		return false;
+	if (!ThePrefs->GetBool( "AvoidPrefsSanityChecks", false)) {
+		for( int i=0; i<mLayeredGroup->CountChildren(); ++i) {
+			BmPrefsView* pv = dynamic_cast<BmPrefsView*>( mLayeredGroup->ChildAt( i));
+			if (pv && !pv->SanityCheck()) {
+				ShowPrefs( i);
+				return false;
+			}
+		}
+	}
 	for( int i=0; i<mLayeredGroup->CountChildren(); ++i) {
 		BmPrefsView* pv = dynamic_cast<BmPrefsView*>( mLayeredGroup->ChildAt( i));
 		if (pv)
 			pv->SaveData();
 	}
+	return true;
 }
 
 /*------------------------------------------------------------------------------*\

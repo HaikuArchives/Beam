@@ -658,7 +658,7 @@ void BmSmtp::SendCommand( BString cmd, BString secret, bool isMailData) {
 		command = cmd;
 		BM_LOG( BM_LogSmtp, BString("-->\n") << cmd);
 	}
-	if (command[command.Length()-1] != '\n')
+	if (!command.Length() || command[command.Length()-1] != '\n')
 		command << "\r\n";
 	int32 size = command.Length();
 	int32 sentSize;

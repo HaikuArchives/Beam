@@ -35,6 +35,7 @@
 #include <map>
 #include <vector>
 
+#include <Cursor.h>
 #include <Directory.h>
 #include <Font.h>
 #include <Path.h>
@@ -95,6 +96,8 @@ public:
 	PrefilledBitmap mRightArrow;
 	PrefilledBitmap mDownArrow;
 	BString mOwnFQDN;
+	//
+	BCursor mUrlCursor;
 
 	static BmResources* theInstance;
 	
