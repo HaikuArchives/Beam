@@ -1206,11 +1206,20 @@ bool BmBodyPartList::StartJob() {
 		-	
 \*------------------------------------------------------------------------------*/
 bool BmBodyPartList::HasAttachments() const {
+	BmAutolockCheckGlobal lock( ModelLocker());
+	if (!lock.IsLocked())
+		BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
 	if (empty())
 		return false;
 	if (!mEditableTextBody)
 		return true;
-	return IsMultiPart();
+	if (size()==1) {
+		BmBodyPart* firstBody 
+			= dynamic_cast<BmBodyPart*>( begin()->second.Get());
+		if (firstBody)
+			return firstBody->IsMultiPart() && firstBody->size()>1;
+	}
+	return size()>1;
 }
 
 /*------------------------------------------------------------------------------*\
