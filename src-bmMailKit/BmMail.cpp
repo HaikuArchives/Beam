@@ -34,6 +34,9 @@
 #include <FindDirectory.h>
 #include <NodeInfo.h>
 
+#include "split.hh"
+using namespace regexx;
+
 #include "BmBasics.h"
 #include "BmBodyPartList.h"
 #include "BmEncoding.h"
@@ -255,6 +258,24 @@ BmMail::~BmMail() {
 }
 
 /*------------------------------------------------------------------------------*\
+	SetDefaultHeaders()
+	-	
+\*------------------------------------------------------------------------------*/
+void BmMail::SetDefaultHeaders( const BmString& defaultHeaders)
+{
+	if (mHeader) {
+		mHeader->UnplugDefaultHeader( mDefaultHeader.Get());
+		if (defaultHeaders.Length()) {
+			BmString defaultHeadersCrLf;
+			defaultHeadersCrLf.ConvertLinebreaksToCRLF(&defaultHeaders);
+			mDefaultHeader = new BmMailHeader( defaultHeadersCrLf, NULL);
+			mHeader->PlugDefaultHeader( mDefaultHeader.Get());
+		} else
+			mDefaultHeader = NULL;
+	}
+}
+
+/*------------------------------------------------------------------------------*\
 	SetupFromIdentityAndRecvAddr()
 	-	
 \*------------------------------------------------------------------------------*/
@@ -268,11 +289,12 @@ void BmMail::SetupFromIdentityAndRecvAddr( BmIdentity* ident,
 		SetSignatureByName( ident->SignatureName());
 		AccountName( ident->SMTPAccount());
 		IdentityName( ident->Key());
+		SetDefaultHeaders( ident->SpecialHeaders());
 	}
 }
 
 /*------------------------------------------------------------------------------*\
-	SetTo( msgText, msgUID)
+	SetTo( msgText, account)
 		-	initializes mail-object with given data
 		-	the mail-header is extracted from msgText and is parsed
 		-	account is the name of the POP/IMAP-account this message was 
@@ -280,6 +302,8 @@ void BmMail::SetupFromIdentityAndRecvAddr( BmIdentity* ident,
 \*------------------------------------------------------------------------------*/
 void BmMail::SetTo( BmString &text, const BmString account) {
 	BM_LOG2( BM_LogMailParse, "Converting Linebreaks to CRLF...");
+	text.ReplaceAll( 0, 32);
+		// take care to remove all binary nulls
 	text.ConvertLinebreaksToCRLF();
 	BM_LOG2( BM_LogMailParse, "done (Converting Linebreaks to CRLF)");
 
@@ -651,9 +675,7 @@ bool BmMail::MoveToDestFolderpath() {
 				return false;
 			}
 			// create a (new) mail-ref for the freshly saved mail:
-			struct stat st;
-			mEntry.GetStat( &st);
-			mMailRef = BmMailRef::CreateInstance( eref, st);
+			mMailRef = BmMailRef::CreateInstance( eref);
 			return true;
 		}
 	}
@@ -687,20 +709,10 @@ bool BmMail::SetDestFoldername( const BmString& inFoldername) {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmMail::ApplyPreEditFilters() {
-	BmRef<BmMailFilter> filterJob = new BmMailFilter( Name(), NULL, true, false);
-	filterJob->AddMail( this);
-	filterJob->StartJobInThisThread( BmMailFilter::BM_EXECUTE_PRE_EDIT);
-}
-
-/*------------------------------------------------------------------------------*\
-	()
-		-	
-\*------------------------------------------------------------------------------*/
-void BmMail::ApplyPreSendFilters() {
+void BmMail::ApplyOutboundFilters() {
 	BmRef<BmMailFilter> filterJob = new BmMailFilter( Name(), NULL, false, false);
 	filterJob->AddMail( this);
-	filterJob->StartJobInThisThread( BmMailFilter::BM_EXECUTE_PRE_SEND);
+	filterJob->StartJobInThisThread();
 }
 
 /*------------------------------------------------------------------------------*\
@@ -721,17 +733,16 @@ bool BmMail::Send(bool now)
 {
 	if (!mOutbound)
 		return false;
-	BmRef<BmListModelItem> smtpRef 
-		= TheSmtpAccountList->FindItemByKey( AccountName());
-	BmSmtpAccount* smtpAcc 
-		= dynamic_cast< BmSmtpAccount*>( smtpRef.Get());
-	if (!smtpAcc)
-		return false;
 	MarkAs( BM_MAIL_STATUS_PENDING);
-	ApplyInboundFilters();
+	ApplyOutboundFilters();
 	if (now) {
-		smtpAcc->QueueMail( this);
-		TheSmtpAccountList->SendQueuedMailFor( smtpAcc->Name());
+		BmRef<BmListModelItem> smtpRef 
+			= TheSmtpAccountList->FindItemByKey( AccountName());
+		BmSmtpAccount* smtpAcc 
+			= dynamic_cast< BmSmtpAccount*>( smtpRef.Get());
+		if (!smtpAcc || !mMailRef)
+			return false;
+		smtpAcc->SendMail( mMailRef->EntryRef());
 	}
 	return true;
 }
@@ -876,9 +887,7 @@ bool BmMail::Store() {
 		if (mMoveToTrash)
 			::MoveToTrash( &eref, 1);
 		// create a (new) mail-ref for the freshly saved mail:
-		struct stat st;
-		mEntry.GetStat( &st);
-		mMailRef = BmMailRef::CreateInstance( eref, st);
+		mMailRef = BmMailRef::CreateInstance( eref);
 		for( uint32 i=0; i<mBaseRefVect.size(); ++i) {
 			mBaseRefVect[i]->MarkAs( mNewBaseStatus.String());
 		}
@@ -1047,6 +1056,8 @@ bool BmMail::StartJob() {
 					BmString("...real size is ") << realSize << " bytes");
 		buf[realSize] = '\0';
 		mailText.UnlockBuffer( realSize);
+		// take care to remove all binary nulls:
+		mailText.ReplaceAll( 0, 32);
 		// we initialize the BmMail-internals from the plain text:
 		BM_LOG2( BM_LogMailParse, BmString("initializing BmMail from msgtext"));
 		mIdentityName = mMailRef->Identity();

@@ -156,8 +156,7 @@ public:
 	void SetupFromIdentityAndRecvAddr( BmIdentity* ident, 
 												  const BmString& recvAddr);
 	//
-	void ApplyPreEditFilters();
-	void ApplyPreSendFilters();
+	void ApplyOutboundFilters();
 	void ApplyInboundFilters();
 	bool Send( bool now=true);
 	bool Store();
@@ -230,6 +229,7 @@ protected:
 								 bigtime_t whenCreated);
 
 private:
+	void SetDefaultHeaders( const BmString& defaultHeaders);
 	BmMail();
 	
 	const BmString DefaultStatus() const;
@@ -259,6 +259,8 @@ private:
 							// new status of base mail (forwarded/replied)
 	BmString mSignatureName;
 							// name of signature to use in this mail
+	BmRef<BmMailHeader> mDefaultHeader;
+							// default header-values (comes from identity)
 	bool mMoveToTrash;
 							// indicates that this mail should be trashed (after being
 							// stored)
