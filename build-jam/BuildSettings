@@ -19,8 +19,8 @@ if $(OSPLAT) = X86 {
 	# check for BONE...
 	local haveBone = [ GLOB /boot/develop/headers/be/bone/arpa : inet.h ] ;
 	if $(haveBone)	{
-		CCFLAGS += -DBONE_BUILD ;
-		C++FLAGS += -DBONE_BUILD ;
+		CCFLAGS += -DBEAM_FOR_BONE ;
+		C++FLAGS += -DBEAM_FOR_BONE ;
 		SYSHDRS += /boot/develop/headers/be/bone /boot/develop/headers/be/bone/sys ;
 		LINKLIBS += -lsocket -lbind ;
 	}
@@ -29,9 +29,9 @@ if $(OSPLAT) = X86 {
 	if $(haveZeta)	{
 		LINKLIBS += -lzeta ;
 	}
-	# check for libnetapi...
-	local haveLibnetapi = [ GLOB /boot/develop/lib/x86 : libnetapi.so ] ;
-	if ! $(haveLibnetapi) {
+	# check for libbnetapi...
+	local haveLibbnetapi = [ GLOB /boot/develop/lib/x86 : libbnetapi.so ] ;
+	if $(haveLibbnetapi) {
 		LIBNETAPI = bnetapi ;
 	}
 }
