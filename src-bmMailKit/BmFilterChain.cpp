@@ -55,14 +55,17 @@ BmString BM_DefaultOutItemLabel("<outbound>");
 #undef BM_LOGNAME
 #define BM_LOGNAME "Filter"
 
+static const int32 BM_UNDEFINED_POSITION = 9999;	
+							// a number larger than the number of chained filters
+							// so that this filter is appended to the list
+
 /*------------------------------------------------------------------------------*\
 	BmChainedFilter()
 		-	c'tor
 \*------------------------------------------------------------------------------*/
 BmChainedFilter::BmChainedFilter( const char* name, BmFilterChain* model) 
 	:	inherited( name, model, (BmListModelItem*)NULL)
-	,	mPosition( 9999)		// a number larger than the number of chained filters
-									// so that this filter is appended to the list
+	,	mPosition( BM_UNDEFINED_POSITION)
 {
 	if (model)
 		model->RenumberPos();
@@ -195,7 +198,7 @@ void BmFilterChain::RenumberPos() {
 	BmModelItemMap::const_iterator iter;
 	for( iter = inheritedList::begin(); iter != inheritedList::end(); ++iter) {
 		BmChainedFilter* filter = dynamic_cast< BmChainedFilter*>( iter->second.Get());
-		tempMap[filter->Position()] = filter;
+		tempMap.insert( make_pair( filter->Position(), filter));
 	}
 	// now copy over to mPosMap and renumber while we're at it:
 	int32 currPos = 1;
@@ -205,9 +208,22 @@ void BmFilterChain::RenumberPos() {
 		BmChainedFilter* filter = posIter->second;
 		if (filter->Position() != currPos)
 			filter->Position( currPos);
-		mPosMap[currPos] = filter;
+		mPosMap.insert( make_pair( currPos, filter));
 		currPos += 2;
 	}
+}
+
+/*------------------------------------------------------------------------------*\
+	AddItemToList( item)
+		-	extends normal behaviour with renumbering of item-positions
+\*------------------------------------------------------------------------------*/
+void BmFilterChain::AddItemToList( BmListModelItem* item) {
+	BmAutolockCheckGlobal lock( ModelLocker());
+	lock.IsLocked() 							|| BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
+	inheritedList::AddItemToList( item);
+	BmChainedFilter* filter = dynamic_cast< BmChainedFilter*>( item);
+	if (filter->Position() == BM_UNDEFINED_POSITION)
+		RenumberPos();
 }
 
 /*------------------------------------------------------------------------------*\
@@ -215,11 +231,10 @@ void BmFilterChain::RenumberPos() {
 		-	extends normal behaviour with renumbering of item-positions
 \*------------------------------------------------------------------------------*/
 void BmFilterChain::RemoveItemFromList( BmListModelItem* item) {
-	BmChainedFilter* filter = dynamic_cast< BmChainedFilter*>( item);
-	if (filter) {
-		inheritedList::RemoveItemFromList( filter);
-		RenumberPos();
-	}
+	BmAutolockCheckGlobal lock( ModelLocker());
+	lock.IsLocked() 							|| BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
+	inheritedList::RemoveItemFromList( item);
+	RenumberPos();
 }
 
 /*------------------------------------------------------------------------------*\
@@ -319,9 +334,8 @@ void BmFilterChainList::ForeignKeyChanged( const BmString& key,
 	lock.IsLocked() 							|| BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
 	if (key == BmChainedFilter::MSG_FILTERNAME) {
 		BmModelItemMap::const_iterator iter;
-		for( iter = begin(); iter != end(); ) {
-			BmFilterChain* chain = dynamic_cast< BmFilterChain*>( iter++->second.Get());
-							// need iter++ here because RenameItem will destroy iter!
+		for( iter = begin(); iter != end(); ++iter) {
+			BmFilterChain* chain = dynamic_cast< BmFilterChain*>( iter->second.Get());
 			chain->RenameItem( oldVal, newVal);
 		}
 	}

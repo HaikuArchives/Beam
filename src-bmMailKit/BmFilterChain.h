@@ -32,6 +32,8 @@
 #ifndef _BmFilterChain_h
 #define _BmFilterChain_h
 
+#include <multimap.h>
+
 #include <Archivable.h>
 
 #include "BmString.h"
@@ -86,7 +88,7 @@ private:
 
 
 
-typedef map< int32, BmChainedFilter*> BmFilterPosMap;
+typedef multimap< int32, BmChainedFilter*> BmFilterPosMap;
 
 /*------------------------------------------------------------------------------*\
 	BmFilterChain
@@ -123,6 +125,7 @@ public:
 	const BmString SettingsFileName();
 	void InstantiateItems( BMessage* archive);
 	int16 ListArchiveVersion() const		{ return nListArchiveVersion; }
+	void AddItemToList( BmListModelItem* item);
 	void RemoveItemFromList( BmListModelItem* item);
 	bool StartJob();
 	void ForeignKeyChanged( const BmString& key, 
