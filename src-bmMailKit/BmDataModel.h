@@ -379,6 +379,9 @@ protected:
 												  BmUpdFlags flags=UPD_ALL,
 												  const BmString oldKey="");
 	virtual void UpdateMenuControllers();
+	//
+	static void FetchAppendedArchives( BDataIO* dataIO, 
+												  BList* appendedArchives);
 
 	// overrides of job-model base:
 	void TellJobIsDone( bool completed=true);

@@ -1195,7 +1195,6 @@ BMessage* BmListModel::Restore( const BmString filename,
 	status_t err;
 	BFile file;
 	BMessage* archive = NULL;
-	BMessage* appendedArchive = NULL;
 
 	// try to open settings-file...
 	if ((err = file.SetTo( filename.String(), B_READ_ONLY)) == B_OK) {
@@ -1207,13 +1206,7 @@ BMessage* BmListModel::Restore( const BmString filename,
 					BmString("Could not fetch settings from file\n\t<") 
 						<< filename << ">\n\n Result: " << strerror(err)
 				);
-			appendedArchive = new BMessage;
-			while ((err = appendedArchive->Unflatten( &file)) == B_OK) {
-				appendedArchives.AddItem( appendedArchive);
-				appendedArchive = new BMessage;
-			}
-			delete appendedArchive;
-
+			FetchAppendedArchives( &file, &appendedArchives);
 		} catch (BM_error &e) {
 			BM_SHOWERR( e.what());
 			delete archive;
@@ -1224,6 +1217,19 @@ BMessage* BmListModel::Restore( const BmString filename,
 }
 
 /*------------------------------------------------------------------------------*\
+	FetchAppendedArchives()
+		-	fetches appended archives from given file and puts them into given list
+\*------------------------------------------------------------------------------*/
+void BmListModel::FetchAppendedArchives( BDataIO* dataIO, BList* appendedArchives) {
+	BMessage* appendedArchive = new BMessage;
+	while (appendedArchive->Unflatten( dataIO) == B_OK) {
+		appendedArchives->AddItem( appendedArchive);
+		appendedArchive = new BMessage;
+	}
+	delete appendedArchive;
+}
+
+/*------------------------------------------------------------------------------*\
 	AppendArchive()
 		-	adds given archive at end of settings-file
 \*------------------------------------------------------------------------------*/
@@ -1231,8 +1237,6 @@ bool BmListModel::AppendArchive( BMessage* archive) {
 	BFile file;
 	status_t err;
 
-	if (mInitCheck != B_OK) 
-		return true;
 	try {
 		BmAutolockCheckGlobal lock( mModelLocker);
 		if (!lock.IsLocked())
@@ -1246,7 +1250,7 @@ bool BmListModel::AppendArchive( BMessage* archive) {
 			Store();
 			if ((err = file.SetTo( 
 				filename.String(), 
-				B_WRITE_ONLY | B_OPEN_AT_END
+				B_WRITE_ONLY | B_OPEN_AT_END | B_CREATE_FILE
 			))	!= B_OK)
 				BM_THROW_RUNTIME( BmString("Could not append to settings-file\n\t<")
 										 	<< filename << ">\n\n Result: " 
@@ -1308,9 +1312,8 @@ bool BmListModel::StartJob() {
 			// ...no cache file found, we fetch the existing items by hand...
 			InitializeItems();
 		}
-		if (appendedArchives.CountItems() > 0) {
+		if (appendedArchives.CountItems() > 0)
 			IntegrateAppendedArchives( appendedArchives);
-		}
 	} catch (BM_error &e) {
 		BM_SHOWERR( e.what());
 	}

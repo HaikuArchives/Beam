@@ -55,6 +55,7 @@ public:
 
 	// native methods:
 	BmRef<BmMailRef> AddMailRef( entry_ref& eref, struct stat& st);
+	BmRef<BmListModelItem> BmMailRefList::RemoveMailRef( const BmString& key);
 	void MarkCacheAsDirty();
 
 	// overrides of list-model base:
@@ -67,6 +68,7 @@ public:
 							  BmListModelItem* parent=NULL);
 	void RemoveItemFromList( BmListModelItem* item);
 	void SetItemValidity(  BmListModelItem* item, bool isValid);
+	void IntegrateAppendedArchives( BList& appendedArchives);
 	
 	// getters:
 	inline bool NeedsCacheUpdate() const

@@ -148,6 +148,10 @@ public:
 	static const BmUpdFlags UPD_IDENTITY		= 1<<15;
 	static const BmUpdFlags UPD_TRACKERNAME	= 1<<16;
 
+	// additional fieldnames for appended archives:
+	static const char* const MSG_OPCODE;
+							// indicates whether an item has been added or removed
+
 protected:
 	BmMailRef( entry_ref &eref, struct stat& st);
 	BmMailRef( BMessage* archive, node_ref& nref);

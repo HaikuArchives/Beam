@@ -48,7 +48,7 @@ static BmString BM_REFKEYSTAT( const struct stat& x) {
 	return BmString() << x.st_ino;
 }
 
-	// archival-fieldnames:
+// archival-fieldnames:
 const char* const BmMailRef::MSG_ACCOUNT = 	"bm:ac";
 const char* const BmMailRef::MSG_ATTACHMENTS= "bm:at";
 const char* const BmMailRef::MSG_CC = 			"bm:cc";
@@ -67,6 +67,9 @@ const char* const BmMailRef::MSG_WHEN = 		"bm:wh";
 const char* const BmMailRef::MSG_IDENTITY = 	"bm:id";
 const char* const BmMailRef::MSG_IS_VALID = 	"bm:iv";
 const int16 BmMailRef::nArchiveVersion = 4;
+
+// additional fieldnames for appended archives:
+const char* const BmMailRef::MSG_OPCODE = 	"bm:op";
 
 /*------------------------------------------------------------------------------*\
 	CreateInstance( )

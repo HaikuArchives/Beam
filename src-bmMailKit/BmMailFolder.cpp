@@ -373,12 +373,12 @@ void BmMailFolder::AddMailRef( entry_ref& eref, struct stat& st) {
 	nref.device = st.st_dev;
 	BmString key( BM_REFKEY( nref));
 	BM_LOG2( BM_LogMailTracking, Name()+" adding mail-ref " << key);
-	if (mMailRefList) {
+	if (MailRefList()) {
 		if (!mMailRefList->AddMailRef( eref, st)) {
 			BM_LOG2( BM_LogMailTracking, Name()+" mail-ref already exists.");
 		}
 	} else
-		// mail-ref isn't loaded, we just mark the mail-count as unknown:
+		// ref-list couldn't be created (?!?) we mark the mail-count as unknown:
 		MailCount( -1);
 	// if mail-ref is flagged new, we have to tell the mailfolderlist that we own
 	// this new-mail and increment our new-mail-counter (causing an update):
@@ -423,12 +423,12 @@ void BmMailFolder::RemoveMailRef( const node_ref& nref) {
 		BM_THROW_RUNTIME( Name() + ":RemoveMailRef(): Unable to get lock");
  	BmString key( BM_REFKEY( nref));
  	BM_LOG2( BM_LogMailTracking, Name()+" removing mail-ref " << key);
-	if (mMailRefList) {
-		if (!mMailRefList->RemoveItemByKey( key)) {
+	if (MailRefList()) {
+		if (!mMailRefList->RemoveMailRef( key)) {
 			BM_LOG2( BM_LogMailTracking, Name()+" mail-ref doesn't exist.");
 		}
 	} else
-		// mail-ref isn't loaded, we just mark the mail-count as unknown:
+		// ref-list couldn't be created (?!?) we mark the mail-count as unknown:
 		MailCount( -1);
 	// if mail-ref is flagged new, we have to tell the mailfolderlist that we no 
 	// longer own this new-mail and decrement our new-mail-counter 
