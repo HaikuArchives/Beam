@@ -526,7 +526,7 @@ BmRef<BmMail> BmMail::CreateReply( int32 replyMode,
 BmRef<BmMail> BmMail::CreateReply( int32 replyMode, 
 											  bool& replyGoesToPersonOnly,
 											  const BmString selectedText) {
-	return doCreateReply( replyMode, replyGoesToPersonOnly, selectedText, true);
+	return doCreateReply( replyMode, replyGoesToPersonOnly, selectedText, false);
 }
 
 /*------------------------------------------------------------------------------*\
