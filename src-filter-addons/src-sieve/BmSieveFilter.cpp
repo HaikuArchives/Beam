@@ -90,7 +90,7 @@ BLocker* BmSieveFilter::nSieveLock = NULL;
 #define FILTER_SIEVE 			"Sieve"
 #define FILTER_SIEVE_SCRIPT 	"Sieve-Script"
 
-extern "C" const char* FilterKinds[] = {
+extern "C" __declspec(dllexport) const char* FilterKinds[] = {
 	FILTER_SIEVE,
 	FILTER_SIEVE_SCRIPT,
 	NULL
