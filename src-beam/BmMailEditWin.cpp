@@ -1122,6 +1122,9 @@ bool BmMailEditWin::CreateMailFromFields( bool hardWrapIfNeeded) {
 		BMenuItem* smtpItem = mSmtpControl->Menu()->FindMarked();
 		BmString smtpAccount = smtpItem ? smtpItem->Label() : "";
 		mail->AccountName( smtpAccount);
+		BMenuItem* identItem = mFromControl->Menu()->FindMarked();
+		BmString identName = identItem ? identItem->Label() : "";
+		mail->IdentityName( identName);
 		if (mail->IsRedirect()) {
 			mail->SetFieldVal( BM_FIELD_RESENT_BCC, mBccControl->Text());
 			mail->SetFieldVal( BM_FIELD_RESENT_CC, mCcControl->Text());
