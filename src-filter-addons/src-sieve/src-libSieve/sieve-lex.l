@@ -34,6 +34,8 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "tree.h"
 #include "sieve.h"
 
+int sievelex(void );
+
 static int tonum(char *c);
 static char *chkBuf( void);
 static char *mlbuf = NULL;

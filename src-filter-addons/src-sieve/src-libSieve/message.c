@@ -457,8 +457,8 @@ char *get_address(address_part_t addrpart,
 #define U_DOMAIN "unspecified-domain"
 #define U_USER "unknown-user"
 	    if (a->mailbox || a->domain) {
-		char *m = a->mailbox ? a->mailbox : U_USER;
-		char *d = a->domain ? a->domain : U_DOMAIN;
+		const char *m = a->mailbox ? a->mailbox : U_USER;
+		const char *d = a->domain ? a->domain : U_DOMAIN;
 		am->freeme = xstrconcat(m, "@", d, NULL);
 		ret = am->freeme;
 	    } else {

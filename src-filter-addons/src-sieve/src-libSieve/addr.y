@@ -33,7 +33,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "addr.h"
 #include "xmalloc.h"
 
-extern int addrerror(char *msg);
+extern int addrerror(const char *msg);
 extern int addrlex(void);
 
 #define YYERROR_VERBOSE /* i want better error messages! */
@@ -84,7 +84,7 @@ qstring: '"' QTEXT '"'
 %%
 
 /* copy address error message into buffer provided by sieve parser */
-int addrerror(char *s)
+int addrerror(const char *s)
 {
     extern char *addrerr;
 

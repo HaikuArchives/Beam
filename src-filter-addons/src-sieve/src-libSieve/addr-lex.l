@@ -30,6 +30,8 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "addr.h"
 #include <string.h>
 
+int addrlex(void );
+
 #undef YY_INPUT
 #define YY_INPUT(b, r, ms) (r = addrinput(b, ms))
 

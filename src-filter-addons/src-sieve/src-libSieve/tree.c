@@ -136,6 +136,7 @@ void free_pl(patternlist_t *pl, int comptag)
     }
 }
 
+void free_tl(testlist_t *tl);
 void free_test(test_t *t);
 
 void free_tl(testlist_t *tl)
