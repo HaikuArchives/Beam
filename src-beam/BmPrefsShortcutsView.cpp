@@ -139,7 +139,7 @@ BmPrefsShortcutsView::BmPrefsShortcutsView()
 				new VGroup(
 					mNameControl = new BmTextControl( "Menu-Item:"),
 					new Space( minimax(0,5,0,5)),
-					mShortcutControl = new BmShortcutControl( "Shortcut name:"),
+					mShortcutControl = new BmShortcutControl( "Shortcut:"),
 					0
 				)
 			),
