@@ -43,28 +43,28 @@ class BmMailHeader;
 		-	
 \*------------------------------------------------------------------------------*/
 class BmContentField {
-	typedef map< BString, BString> BmParamMap;
+	typedef map< BmString, BmString> BmParamMap;
 
 public:
 	// c'tors and d'tor:
 	BmContentField()							{ mInitCheck = B_NO_INIT; }
-	BmContentField( const BString cfString);
+	BmContentField( const BmString cfString);
 	
 	// native methods:
-	void SetTo( const BString cfString);
-	void SetParam( BString key, BString value);
+	void SetTo( const BmString cfString);
+	void SetParam( BmString key, BmString value);
 
 	// getters:
 	inline status_t InitCheck() const	{ return mInitCheck; }
-	inline const BString& Value() const	{ return mValue; }
-	const BString& Param( BString key) const;
+	inline const BmString& Value() const	{ return mValue; }
+	const BmString& Param( BmString key) const;
 
 	// operators:
-	operator BString() const;
+	operator BmString() const;
 							// returns contentfield completely formatted (ready to be sent)
 
 private:
-	BString mValue;
+	BmString mValue;
 	BmParamMap mParams;
 
 	status_t mInitCheck;
@@ -87,53 +87,53 @@ class BmBodyPart : public BmListModelItem {
 
 public:
 	// c'tors and d'tor:
-	BmBodyPart( BmBodyPartList* model, const BString& msgtext, int32 s, int32 l, 
+	BmBodyPart( BmBodyPartList* model, const BmString& msgtext, int32 s, int32 l, 
 					BmRef<BmMailHeader> mHeader=NULL, BmListModelItem* parent=NULL);
 	BmBodyPart( BmBodyPartList* model, const entry_ref* ref, BmListModelItem* parent=NULL);
 	BmBodyPart( const BmBodyPart& bodyPart);
 	~BmBodyPart();
 
 	// class methods:
-	static BString BmBodyPart::NextObjectID();
+	static BmString BmBodyPart::NextObjectID();
 
 	// native methods:
-	void SetTo( const BString& msgtext, int32 s, int32 l, BmRef<BmMailHeader> mHeader=NULL);
-	void SetBodyText( const BString& text, uint32 encoding);
+	void SetTo( const BmString& msgtext, int32 s, int32 l, BmRef<BmMailHeader> mHeader=NULL);
+	void SetBodyText( const BmString& text, uint32 encoding);
 	bool IsText() const;
 	bool IsPlainText() const;
 	bool ShouldBeShownInline()	const;
 	bool ContainsRef( const entry_ref& ref) const;
-	entry_ref WriteToTempFile( BString filename="");
-	void SaveAs( const entry_ref& destDirRef, BString filename);
+	entry_ref WriteToTempFile( BmString filename="");
+	void SaveAs( const entry_ref& destDirRef, BmString filename);
 	void PropagateHigherEncoding();
 	int32 PruneUnneededMultiParts();
-	void ConstructBodyForSending( BString &msgText);
+	void ConstructBodyForSending( BmStrOStream &msgText);
 	void SuggestEncoding( int32 enc) 			{ mSuggestedEncoding = enc; }
 
-	static BString GenerateBoundary();
+	static BmString GenerateBoundary();
 
 	// overrides of listmodelitem base:
 	int16 ArchiveVersion() const			{ return nArchiveVersion; }
 
 	// getters:
 	inline bool IsMultiPart() const				{ return mIsMultiPart; }
-	inline const BString& DecodedData() const;
+	const BmString& DecodedData() const;
 	inline int32 DecodedLength() const			{ return DecodedData().Length(); }
 	inline status_t InitCheck() const			{ return mInitCheck; }
 
-	inline const BString ContentTypeAsString() const	{ return mContentType; }
-	inline const BString ContentDispositionAsString() const	{ return mContentDisposition; }
+	inline const BmString ContentTypeAsString() const	{ return mContentType; }
+	inline const BmString ContentDispositionAsString() const	{ return mContentDisposition; }
 
-	inline const BString& Charset() const		{ return mContentType.Param( "charset"); }
-	inline const BString& MimeType() const		{ return mContentType.Value(); }
-	inline const BString& Disposition() const	{ return mContentDisposition.Value(); }
-	inline const BString& FileName() const		{ return mFileName; }
-	inline const BString& TransferEncoding() const	{ return mContentTransferEncoding; }
-	inline const BString& ID() const				{ return mContentId; }
-	inline const BString& Description() const	{ return mContentDescription; }
-	inline const BString& Language() const		{ return mContentLanguage; }
-	inline const BString& TypeParam( BString key) const		{ return mContentType.Param( key); }
-	inline const BString& DispositionParam( BString key) const	{ return mContentDisposition.Param( key); }
+	inline const BmString& Charset() const		{ return mContentType.Param( "charset"); }
+	inline const BmString& MimeType() const		{ return mContentType.Value(); }
+	inline const BmString& Disposition() const	{ return mContentDisposition.Value(); }
+	inline const BmString& FileName() const		{ return mFileName; }
+	inline const BmString& TransferEncoding() const	{ return mContentTransferEncoding; }
+	inline const BmString& ID() const				{ return mContentId; }
+	inline const BmString& Description() const	{ return mContentDescription; }
+	inline const BmString& Language() const		{ return mContentLanguage; }
+	inline const BmString& TypeParam( BmString key) const		{ return mContentType.Param( key); }
+	inline const BmString& DispositionParam( BmString key) const	{ return mContentDisposition.Param( key); }
 	inline int32 BodyLength() const				{ return mBodyLength; }
 	inline int32 SuggestedEncoding() const		{ return mSuggestedEncoding; }
 	inline int32 CurrentEncoding() const		{ return mCurrentEncoding; }
@@ -149,14 +149,15 @@ public:
 private:
 	bool mIsMultiPart;
 	BmContentField mContentType;
-	BString mContentTransferEncoding;
-	BString mContentId;
+	BmString mContentTransferEncoding;
+	BmString mContentId;
 	BmContentField mContentDisposition;
-	BString mContentDescription;
-	BString mContentLanguage;
-	BString mFileName;
+	BmString mContentDescription;
+	BmString mContentLanguage;
+	BmString mFileName;
 
-	mutable BString mDecodedData;
+	mutable bool mHaveDecodedData;
+	mutable BmString mDecodedData;
 	int32 mStartInRawText;
 	int32 mBodyLength;
 	
@@ -194,31 +195,32 @@ public:
 	bool HasAttachments() const;
 	void AddAttachmentFromRef( const entry_ref* ref);
 	void PruneUnneededMultiParts();
-	bool ConstructBodyForSending( BString& msgText);
-	void SetEditableText( const BString& text, uint32 encoding);
+	bool ConstructBodyForSending( BmStrOStream& msgText);
+	void SetEditableText( const BmString& text, uint32 encoding);
 	uint32 DefaultEncoding()	const;
 
 	//	overrides of listmodel base:
 	bool StartJob();
-	const BString SettingsFileName()		{ return NULL; }
+	const BmString SettingsFileName()		{ return NULL; }
 	int16 ArchiveVersion() const			{ return nArchiveVersion; }
+	void RemoveItemFromList( BmListModelItem* item);
 
 	// getters:
 	inline status_t InitCheck()					{ return mInitCheck; }
 	inline BmRef<BmBodyPart> EditableTextBody() const { return mEditableTextBody.Get(); }
-	inline const BString& Signature() const	{ return mSignature; }
+	inline const BmString& Signature() const	{ return mSignature; }
 	inline const BmMail* Mail() const			{ return mMail; }
 	bool IsMultiPart() const;
 
 	// setters:
 	inline void EditableTextBody( BmBodyPart* b) { mEditableTextBody = b; }
-	inline void Signature( const BString& s)		{ mSignature = s; }
+	inline void Signature( const BmString& s)		{ mSignature = s; }
 
 private:
 	BmMail* mMail;
 	BmRef<BmBodyPart> mEditableTextBody;
 	status_t mInitCheck;
-	BString mSignature;						// signature (as found in mail-text)
+	BmString mSignature;						// signature (as found in mail-text)
 
 	// Hide copy-constructor and assignment:
 	BmBodyPartList( const BmBodyPartList&);
