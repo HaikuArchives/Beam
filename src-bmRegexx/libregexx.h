@@ -30,7 +30,7 @@
 #ifndef _libregexx_h
 #define _libregexx_h
 
-// import-/export-declarations for the libregexx shared-lib
+/* import-/export-declarations for the libregexx shared-lib */
 #ifdef __POWERPC__
 #ifdef BM_BUILDING_LIBREGEXX
 #define IMPEXPLIBREGEXX __declspec(dllexport)
