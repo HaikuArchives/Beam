@@ -46,7 +46,7 @@ BmRulerView::BmRulerView( const BFont& font)
 	,	mMailViewFont( font)
 	,	mIndicatorPos( ThePrefs->GetInt( "MaxLineLen"))
 	,	mIndicatorGrabbed( false)
-	,	mSingleCharWidth( mMailViewFont.StringWidth( MEDIUM_WIDTH_CHAR))
+	,	mSingleCharWidth( font.StringWidth( MEDIUM_WIDTH_CHAR))
 {
 	SetViewColor( BeInactiveControlGrey);
 	BFont font( be_plain_font);
