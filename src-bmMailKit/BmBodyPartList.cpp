@@ -28,7 +28,6 @@
 /*************************************************************************/
 
 
-#include <Alert.h>
 #include <Application.h>
 #include <Invoker.h>
 
@@ -1032,6 +1031,30 @@ void BmBodyPart::ConstructBodyForSending( BmStringOBuf &msgText) {
 	}
 	if (IsMultiPart())
 		msgText << "--"<<boundary<<"--\r\n";
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+bool BmBodyPart::MimeTypeIsPotentiallyHarmful( const BmString& realMT) {
+	BmString mtTrustInfo 
+		= ThePrefs->GetString( 
+			"MimeTypeTrustInfo", 
+			"<application/pdf:T><application/zip:T><application:W><:T>"
+		);
+	Regexx rx;
+	int count = rx.exec( mtTrustInfo, "<(.*?):(\\w)>", Regexx::global);
+	for( int i=0; i<count; ++i) {
+		BmString match = rx.match[i].atom[0];
+		if ( realMT.ICompare( match, match.Length()) == 0) {
+			BmString trustLevel = rx.match[i].atom[1];
+			if (trustLevel.ICompare( "T") != 0)
+				return true;
+			break;
+		}
+	}
+	return false;
 }
 
 

@@ -100,6 +100,7 @@ public:
 
 	// class methods:
 	static BmString NextObjectID();
+	static bool MimeTypeIsPotentiallyHarmful( const BmString& realMT);
 
 	// native methods:
 	void SetTo( const BmString& msgtext, int32 s, int32 l, 
