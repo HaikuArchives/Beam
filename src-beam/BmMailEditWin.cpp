@@ -1148,11 +1148,31 @@ bool BmMailEditWin::CreateMailFromFields( bool hardWrapIfNeeded) {
 			return res;
 		} catch( BM_text_error& textErr) {
 			if (textErr.posInText >= 0) {
+				BTextView* textView;
 				int32 end = 1+textErr.posInText;
-				while( IS_WITHIN_UTF8_MULTICHAR( mMailView->ByteAt( end)))
+				if (textErr.context==BM_FIELD_SUBJECT)
+					textView = mSubjectControl->TextView();
+				else if (textErr.context==BM_FIELD_FROM)
+					textView = mFromControl->TextView();
+				else if (textErr.context==BM_FIELD_TO)
+					textView = mToControl->TextView();
+				else if (textErr.context==BM_FIELD_CC) {
+					textView = mCcControl->TextView();
+					if (!mShowDetails1)
+						SetDetailsButton( 1, B_CONTROL_ON);
+				} else if (textErr.context==BM_FIELD_BCC) {
+					textView = mBccControl->TextView();
+					if (!mShowDetails1)
+						SetDetailsButton( 1, B_CONTROL_ON);
+					if (!mShowDetails2)
+						SetDetailsButton( 2, B_CONTROL_ON);
+				} else
+					textView = mMailView;
+				while( IS_WITHIN_UTF8_MULTICHAR( textView->ByteAt( end)))
 					end++;
-				mMailView->Select( textErr.posInText, end);
-				mMailView->ScrollToSelection();
+				textView->Select( textErr.posInText, end);
+				textView->ScrollToSelection();
+				textView->MakeFocus( true);
 			}
 			ShowAlertWithType( textErr.what(), B_WARNING_ALERT);
 			return false;
