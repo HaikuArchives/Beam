@@ -132,7 +132,7 @@ const char* DefaultFilterName = "<<< SPAM-filter >>>";
 \*------------------------------------------------------------------------------*/
 BmSpamFilter::OsbfClassifier
 ::FeatureFilter::FeatureFilter( BmMemIBuf* input, uint32 blockSize)
-	:	inherited( input, blockSize, true)
+	:	inherited( input, blockSize, nTagImmediatePassOn)
 {
 }
 
