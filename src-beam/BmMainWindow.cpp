@@ -348,7 +348,7 @@ MMenuBar* BmMainWindow::CreateMenu() {
 		ThePopAccountList.Get(),
 		BM_MC_MOVE_RIGHT
 	);
-	mAccountMenu->Shortcuts( "0123456789");
+	mAccountMenu->Shortcuts( "1234567890");
 	menu->AddItem( mAccountMenu);
 	menu->AddItem( CreateMenuItem( "Check All Accounts", BMM_CHECK_ALL));
 	menu->AddSeparatorItem();
