@@ -34,6 +34,7 @@
 
 #include "BmApp.h"
 #include "BmBasics.h"
+#include "BmFilter.h"
 #include "BmGuiUtil.h"
 #include "BmJobStatusWin.h"
 #include "BmLogHandler.h"
@@ -245,7 +246,10 @@ const char* BmMailRefItem::GetUserText(int32 colIdx, float colWidth) const {
 \********************************************************************************/
 
 
-const char* const BmMailRefView::MSG_MAILS_SELECTED = "bm:msel";
+const char* const BmMailRefView::MSG_MAILS_SELECTED = 	"bm:msel";
+const char* const BmMailRefView::MENU_MARK_AS =				"Mark Message As";
+const char* const BmMailRefView::MENU_INBOUND_FILTER = 	"Apply Inbound Filter";
+const char* const BmMailRefView::MENU_OUTBOUND_FILTER =	"Apply Outbound Filter";
 
 /*------------------------------------------------------------------------------*\
 	()
@@ -686,7 +690,7 @@ void BmMailRefView::AddMailRefMenu( BMenu* menu, BHandler* target) {
 	AddItemToMenu( menu, CreateMenuItem( "Redirect", BMM_REDIRECT), target);
 	menu->AddSeparatorItem();
 
-	BMenu* statusMenu = new BMenu( "Mark Message As");
+	BMenu* statusMenu = new BMenu( MENU_MARK_AS);
 	const char* stats[] = {
 		"Draft",		"Forwarded",		"New",		"Pending",		"Read",		"Redirected",
 		"Replied",	"Sent",		NULL
@@ -698,14 +702,30 @@ void BmMailRefView::AddMailRefMenu( BMenu* menu, BHandler* target) {
 	}
 	menu->AddItem( statusMenu);
 	menu->AddSeparatorItem();
-	AddItemToMenu( menu, CreateMenuItem( "Apply Filter", BMM_FILTER), target);
+	for( int i=0; i<2; ++i) {
+		bool outbound = (i==1);
+		BMenu* filterMenu = new BMenu( outbound 
+													? MENU_OUTBOUND_FILTER
+													: MENU_INBOUND_FILTER);
+		BmRef<BmFilterList> filterList = outbound 
+											? TheOutboundFilterList 
+											: TheInboundFilterList;
+		for(  BmModelItemMap::const_iterator iter = filterList->begin();
+				iter != filterList->end(); ++iter) {
+			BmFilter* filter = dynamic_cast< BmFilter*>( iter->second.Get());
+			if (!filter)
+				continue;
+			BMessage* msg = new BMessage( BMM_FILTER);
+			msg->AddString( BmFilter::MSG_FILTER, filter->Name().String());
+			msg->AddBool( BmFilter::MSG_OUTBOUND, outbound);
+			AddItemToMenu( filterMenu, CreateMenuItem( filter->Name().String(), msg, ""), target);
+		}
+		menu->AddItem( filterMenu);
+	}
 	menu->AddSeparatorItem();
 	AddItemToMenu( menu, CreateMenuItem( "Print Message(s)...", BMM_PRINT, "Print Message..."), target);
 	menu->AddSeparatorItem();
 	AddItemToMenu( menu, CreateMenuItem( "Move To Trash", BMM_TRASH), target);
-
-	// temporary deactivations:
-	menu->FindItem( BMM_FILTER)->SetEnabled( false);
 }
 
 /*------------------------------------------------------------------------------*\

@@ -85,6 +85,10 @@ class BmMailRefView : public BmListViewController
 public:
 	static const char* const MSG_MAILS_SELECTED;
 
+	static const char* const MENU_MARK_AS;
+	static const char* const MENU_INBOUND_FILTER;
+	static const char* const MENU_OUTBOUND_FILTER;
+
 	// creator-func, c'tors and d'tor:
 	static BmMailRefView* CreateInstance( minimax minmax, int32 width, int32 height);
 	BmMailRefView( minimax minmax, int32 width, int32 height);

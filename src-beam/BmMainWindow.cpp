@@ -43,7 +43,9 @@
 
 #include "BmApp.h"
 #include "BmBasics.h"
+#include "BmFilter.h"
 #include "BmGuiUtil.h"
+#include "BmJobStatusWin.h"
 #include "BmLogHandler.h"
 #include "BmMailFolderList.h"
 #include "BmMailFolderView.h"
@@ -455,6 +457,7 @@ BmMailViewContainer* BmMainWindow::CreateMailView( minimax minmax, BRect frame) 
 \*------------------------------------------------------------------------------*/
 void BmMainWindow::MessageReceived( BMessage* msg) {
 	try {
+		static int32 jobNum=1;
 		switch( msg->what) {
 			case BMM_NEW_MAIL: 
 			case BMM_CHECK_MAIL:
@@ -475,6 +478,18 @@ void BmMainWindow::MessageReceived( BMessage* msg) {
 			case BMM_FORWARD_INLINE_ATTACH: {
 				mMailRefView->AddSelectedRefsToMsg( msg, BmApplication::MSG_MAILREF);
 				be_app_messenger.SendMessage( msg);
+				break;
+			}
+			case BMM_FILTER: {
+				BMessage tmpMsg( BM_JOBWIN_FILTER);
+				mMailRefView->AddSelectedRefsToMsg( &tmpMsg, BmFilter::MSG_MAILREF);
+				bool outbound = msg->FindString( BmFilter::MSG_OUTBOUND);
+				tmpMsg.AddBool( BmFilter::MSG_OUTBOUND, outbound);
+				BmString jobName = msg->FindString( BmFilter::MSG_FILTER);
+				tmpMsg.AddString( BmFilter::MSG_FILTER, jobName.String());
+				jobName << jobNum++;
+				tmpMsg.AddString( BmJobModel::MSG_JOB_NAME, jobName.String());
+				TheJobStatusWin->PostMessage( &tmpMsg);
 				break;
 			}
 			case B_OBSERVER_NOTICE_CHANGE: {
@@ -581,8 +596,10 @@ void BmMainWindow::MailRefSelectionChanged( int32 numSelected) {
 	mMainMenuBar->FindItem( BMM_FORWARD_INLINE)->SetEnabled( numSelected > 0);
 	mMainMenuBar->FindItem( BMM_FORWARD_INLINE_ATTACH)->SetEnabled( numSelected > 0);
 	mMainMenuBar->FindItem( BMM_REDIRECT)->SetEnabled( numSelected > 0);
-	mMainMenuBar->FindItem( "Mark Message As")->SetEnabled( numSelected > 0);
-	mMainMenuBar->FindItem( BMM_FILTER)->SetEnabled( 0 * numSelected > 0);
+	mMainMenuBar->FindItem( BmMailRefView::MENU_MARK_AS)->SetEnabled( numSelected > 0);
+	mMainMenuBar->FindItem( BmMailRefView::MENU_INBOUND_FILTER)->SetEnabled( numSelected > 0);
+	mMainMenuBar->FindItem( BmMailRefView::MENU_OUTBOUND_FILTER)->SetEnabled( numSelected > 0);
+	mMainMenuBar->FindItem( BMM_FILTER)->SetEnabled( numSelected > 0);
 	mMainMenuBar->FindItem( BMM_PRINT)->SetEnabled( numSelected > 0);
 	mMainMenuBar->FindItem( BMM_TRASH)->SetEnabled( numSelected > 0);
 }

@@ -290,6 +290,7 @@ void BmMailViewWin::MessageReceived( BMessage* msg) {
 				break;
 			}
 			case BMM_MARK_AS:
+			case BMM_FILTER:
 			case BMM_REDIRECT:
 			case BMM_REPLY:
 			case BMM_REPLY_LIST:
