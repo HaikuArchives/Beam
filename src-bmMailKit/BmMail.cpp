@@ -47,6 +47,7 @@
 #include "BmMailRef.h"
 #include "BmPrefs.h"
 #include "BmSignature.h"
+#include "BmSmtpAccount.h"
 #include "BmStorageUtil.h"
 
 #undef BM_LOGNAME
@@ -465,11 +466,11 @@ void BmMail::DetermineRecvAddrAndIdentity( BmString& receivingAddr,
 	if (!receivingAddr.Length()) {
 		// the receiving address could not be determined, so we iterate through 
 		// all identities and try to find one that (may) have received this mail.
-		BmAutolockCheckGlobal lock( ThePopAccountList->ModelLocker());
+		BmAutolockCheckGlobal lock( TheIdentityList->ModelLocker());
 		if (!lock.IsLocked())
 			BM_THROW_RUNTIME( 
 				"DetermineRecvAddrAndIdentity(): "
-				"Unable to get lock on PopAccountList"
+				"Unable to get lock on IdentityList"
 			);
 		BmModelItemMap::const_iterator iter;
 		for( iter = TheIdentityList->begin(); 
@@ -671,13 +672,53 @@ bool BmMail::SetDestFoldername( const BmString& inFoldername) {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmMail::ApplyFilter( bool storeIfNeeded) {
-	BmRef<BmMailFilter> filterJob = new BmMailFilter( Name(), NULL);
+void BmMail::ApplyPreEditFilters() {
+	BmRef<BmMailFilter> filterJob = new BmMailFilter( Name(), NULL, true, false);
 	filterJob->AddMail( this);
-	if (storeIfNeeded)
-		filterJob->StartJobInThisThread( BmMailFilter::BM_EXECUTE_AND_STORE);
-	else
-		filterJob->StartJobInThisThread( BmMailFilter::BM_EXECUTE_FILTER_IN_MEM);
+	filterJob->StartJobInThisThread( BmMailFilter::BM_EXECUTE_PRE_EDIT);
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMail::ApplyPreSendFilters() {
+	BmRef<BmMailFilter> filterJob = new BmMailFilter( Name(), NULL, false, false);
+	filterJob->AddMail( this);
+	filterJob->StartJobInThisThread( BmMailFilter::BM_EXECUTE_PRE_SEND);
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMail::ApplyInboundFilters() {
+	BmRef<BmMailFilter> filterJob = new BmMailFilter( Name(), NULL, true, false);
+	filterJob->AddMail( this);
+	filterJob->StartJobInThisThread();
+}
+
+/*------------------------------------------------------------------------------*\
+	Send()
+		-	queues this mail for sending
+\*------------------------------------------------------------------------------*/
+bool BmMail::Send(bool now) 
+{
+	if (!mOutbound)
+		return false;
+	BmRef<BmListModelItem> smtpRef 
+		= TheSmtpAccountList->FindItemByKey( AccountName());
+	BmSmtpAccount* smtpAcc 
+		= dynamic_cast< BmSmtpAccount*>( smtpRef.Get());
+	if (!smtpAcc)
+		return false;
+	MarkAs( BM_MAIL_STATUS_PENDING);
+	ApplyInboundFilters();
+	if (now) {
+		smtpAcc->QueueMail( this);
+		TheSmtpAccountList->SendQueuedMailFor( smtpAcc->Name());
+	}
+	return true;
 }
 
 /*------------------------------------------------------------------------------*\

@@ -57,18 +57,21 @@ const char* const BmMailFilter::MSG_LEADING = 	"bm:leading";
 const char* const BmMailFilter::MSG_REFS = 		"refs";
 
 // alternate job-specifiers:
-const int32 BmMailFilter::BM_EXECUTE_FILTER_IN_MEM = 	1;
-const int32 BmMailFilter::BM_EXECUTE_AND_STORE = 		2;
+const int32 BmMailFilter::BM_EXECUTE_PRE_EDIT = 1;
+const int32 BmMailFilter::BM_EXECUTE_PRE_SEND = 2;
 
 /*------------------------------------------------------------------------------*\
 	BmMailFilter()
 		-	contructor
 \*------------------------------------------------------------------------------*/
-BmMailFilter::BmMailFilter( const BmString& name, BmFilter* filter)
+BmMailFilter::BmMailFilter( const BmString& name, BmFilter* filter, 
+									 bool executeInMem, bool needControllers)
 	:	BmJobModel( name)
 	,	mFilter( filter)
 	,	mMailRefs( NULL)
+	,	mExecuteInMem( executeInMem)
 {
+	NeedControllersToContinue( needControllers);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -108,8 +111,7 @@ void BmMailFilter::AddMail( BmMail* mail) {
 \*------------------------------------------------------------------------------*/
 bool BmMailFilter::ShouldContinue() {
 	return inherited::ShouldContinue() 
-			 || CurrentJobSpecifier() == BM_EXECUTE_FILTER_IN_MEM
-			 || CurrentJobSpecifier() == BM_EXECUTE_AND_STORE;
+			 || !NeedControllersToContinue();
 }
 
 /*------------------------------------------------------------------------------*\
@@ -178,8 +180,13 @@ void BmMailFilter::ExecuteFilter( BmMail* mail) {
 		BmRef< BmListModelItem> accItem;
 		BmRef< BmListModelItem> chainItem;
 		if (mail->Outbound()) {
-			// we have only one outbound chain:
-			chainItem = TheFilterChainList->FindItemByKey( BM_DefaultOutItemLabel);
+			if (CurrentJobSpecifier() == BM_EXECUTE_PRE_EDIT) {
+				// use the (outbound) pre-edit chain:
+				chainItem = TheFilterChainList->FindItemByKey(BM_OutboundPreEditLabel);
+			} else {
+				// use the (outbound) pre-send chain:
+				chainItem = TheFilterChainList->FindItemByKey(BM_OutboundPreSendLabel);
+			}
 		} else {
 			// fetch the corresponding inbound-chain:
 			accItem = ThePopAccountList->FindItemByKey( mail->AccountName());
@@ -285,7 +292,7 @@ void BmMailFilter::ExecuteFilter( BmMail* mail) {
 	}
 	if (msgContext.folderName.Length()) {
 		if (mail->SetDestFoldername( msgContext.folderName)) {
-			if (!needToStore && CurrentJobSpecifier()!=BM_EXECUTE_FILTER_IN_MEM) {
+			if (!needToStore && !mExecuteInMem) {
 				// optimize the (usual) case where folder-change is the only thing
 				// that has happened, if so, we just move the mail (but do not
 				// rewrite it completely);
@@ -295,7 +302,7 @@ void BmMailFilter::ExecuteFilter( BmMail* mail) {
 				needToStore = true;
 		}
 	}
-	if (needToStore && CurrentJobSpecifier()!=BM_EXECUTE_FILTER_IN_MEM) {
+	if (needToStore && !mExecuteInMem) {
 		BM_LOG3( BM_LogFilter, 
 					"Filtering has changed something, so mail will be stored now.");
 		mail->Store();

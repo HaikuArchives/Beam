@@ -153,7 +153,10 @@ public:
 	void SetTo( BmString &text, const BmString account);
 	void SetNewHeader( const BmString& headerStr);
 	void SetSignatureByName( const BmString sigName);
-	void ApplyFilter( bool storeIfNeeded=false);
+	void ApplyPreEditFilters();
+	void ApplyPreSendFilters();
+	void ApplyInboundFilters();
+	bool Send( bool now=true);
 	bool Store();
 	void ResyncFromDisk();
 	//

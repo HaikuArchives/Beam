@@ -49,7 +49,8 @@ const char* const BmChainedFilter::MSG_FILTERNAME = "bm:fname";
 
 const int16 BmChainedFilter::nArchiveVersion = 2;
 
-BmString BM_DefaultOutItemLabel("<outbound>");
+BmString BM_OutboundPreEditLabel("<outbound-before-edit>");
+BmString BM_OutboundPreSendLabel("<outbound-before-send>");
 
 // flags indicating which parts are to be updated:
 const BmUpdFlags BmChainedFilter::UPD_POS  = 1<<2;
@@ -285,7 +286,7 @@ void BmChainedFilterList::InstantiateItems( BMessage* archive) {
 	BmFilterChain
 \********************************************************************************/
 
-const int16 BmFilterChain::nArchiveVersion = 1;
+const int16 BmFilterChain::nArchiveVersion = 2;
 
 const char* const BmFilterChain::MSG_NAME = "bm:name";
 
@@ -313,6 +314,11 @@ BmFilterChain::BmFilterChain( BMessage* archive, BmFilterChainList* model)
 	int16 version;
 	if (archive->FindInt16( MSG_VERSION, &version) != B_OK)
 		version = 0;
+	if (version < 2) {
+		// rename <outbound> to <outbound-pre-send>:
+		if (Key() == "<outbound>")
+			Key(BM_OutboundPreSendLabel);
+	}
 }
 
 /*------------------------------------------------------------------------------*\
@@ -411,7 +417,7 @@ void BmFilterChainList::RemoveFilterFromAllChains( const BmString& filterName) {
 
 /*------------------------------------------------------------------------------*\
 	InstantiateItems( archive)
-		-	initializes the signature-list from the given archive
+		-	initializes the filterchain-list from the given archive
 \*------------------------------------------------------------------------------*/
 void BmFilterChainList::InstantiateItems( BMessage* archive) {
 	BM_LOG2( BM_LogFilter, BmString("Start of InstantiateItems() for FilterChainList"));
@@ -441,8 +447,10 @@ bool BmFilterChainList::StartJob() {
 	bool res = inherited::StartJob();
 	if (!FindItemByKey( BM_DefaultItemLabel))
 		AddItemToList( new BmFilterChain( BM_DefaultItemLabel.String(), this));
-	if (!FindItemByKey( BM_DefaultOutItemLabel))
-		AddItemToList( new BmFilterChain( BM_DefaultOutItemLabel.String(), this));
+	if (!FindItemByKey( BM_OutboundPreEditLabel))
+		AddItemToList( new BmFilterChain( BM_OutboundPreEditLabel.String(), this));
+	if (!FindItemByKey( BM_OutboundPreSendLabel))
+		AddItemToList( new BmFilterChain( BM_OutboundPreSendLabel.String(), this));
 	return res;
 }
 

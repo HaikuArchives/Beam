@@ -62,14 +62,11 @@ public:
 	static const char* const MSG_REFS;
 
 	// alternate job-specifiers:
-	static const int32 BM_EXECUTE_FILTER_IN_MEM;
-							// for filter-execution without any controllers being 
-							// present
-	static const int32 BM_EXECUTE_AND_STORE;
-							// for filter-execution and storing without any 
-							// controllers being present 
+	static const int32 BM_EXECUTE_PRE_EDIT;
+	static const int32 BM_EXECUTE_PRE_SEND;
 
-	BmMailFilter( const BmString& name, BmFilter* filter);
+	BmMailFilter( const BmString& name, BmFilter* filter, 
+					  bool executeInMem = false, bool needControllers = true);
 	virtual ~BmMailFilter();
 
 	// native methods:
@@ -95,6 +92,9 @@ private:
 							// the mail-refs we shall be filtering
 	BmMailVect mMails;
 							// the mails we shall be filtering
+	bool mExecuteInMem;
+							// indicates whether the mail shall be stored
+							// after the filtering process (false) or not (true).
 
 	// Hide copy-constructor and assignment:
 	BmMailFilter( const BmMailFilter&);
