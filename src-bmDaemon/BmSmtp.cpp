@@ -223,12 +223,14 @@ bool BmSmtp::ShouldContinue() {
 			corresponding handlers
 \*------------------------------------------------------------------------------*/
 bool BmSmtp::StartJob() {
-	int32 startState = mSmtpAccount->NeedsAuthViaPopServer() 
-								? SMTP_AUTH_VIA_POP 
-								: SMTP_CONNECT;
+	int32 startState = SMTP_CONNECT;
+	if (mSmtpAccount->NeedsAuthViaPopServer()
+	&& CurrentJobSpecifier() != BM_CHECK_CAPABILITIES_JOB)
+		// authentication through pop-server takes place before anything else:
+		startState = SMTP_AUTH_VIA_POP;
+
 	const float delta = 100.0 / (SMTP_DONE-startState);
 	const bool failed=true;
-		
 	try {
 		for( 	mState = startState; 
 				ShouldContinue() && mState<SMTP_DONE; ++mState) {
@@ -239,6 +241,7 @@ bool BmSmtp::StartJob() {
 			(this->*stateFunc)();
 			if (CurrentJobSpecifier() == BM_CHECK_CAPABILITIES_JOB 
 			&& mState==SMTP_HELO) {
+				// CHECK-CAPABILITIES-job is done after HELO:
 				UpdateSMTPStatus( delta*(SMTP_DONE-mState), NULL);
 				return true;
 			}
@@ -354,15 +357,16 @@ void BmSmtp::StateHelo() {
 	BmString cmd = BmString("EHLO ") << domain;
 	SendCommand( cmd);
 	try {
-		CheckForPositiveAnswer();
+		CheckForPositiveAnswer( true);
+							// we expect a multiline string as answer
 		Regexx rx;
-		if (rx.exec( mAnswerText, "^\\d\\d\\d.SIZE\\b", Regexx::newline)) {
+		if (rx.exec( StatusText(), "^\\d\\d\\d.SIZE\\b", Regexx::newline)) {
 			mServerMayHaveSizeLimit = true;
 		}
-		if (rx.exec( mAnswerText, "^\\d\\d\\d.DSN\\b", Regexx::newline)) {
+		if (rx.exec( StatusText(), "^\\d\\d\\d.DSN\\b", Regexx::newline)) {
 			mServerSupportsDSN = true;
 		}
-		if (rx.exec( mAnswerText, "^\\d\\d\\d.AUTH\\b(.*?)$", Regexx::newline)) {
+		if (rx.exec( StatusText(), "^\\d\\d\\d.AUTH\\W+(.*?)$", Regexx::newline)) {
 			mSupportedAuthTypes = rx.match[0].atom[0];
 		}
 	} catch(...) {
