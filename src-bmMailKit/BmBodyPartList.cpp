@@ -422,8 +422,9 @@ void BmBodyPart::SetTo( const BmString& msgtext, int32 start, int32 length,
 			BmStringOBuf tempIO( mBodyLength);
 			BmUtf8Encoder textConverter( decoder.get(), mSuggestedCharset);
 			tempIO.Write( &textConverter);
+			mHadErrorDuringConversion = 
+				textConverter.HadToDiscardChars() || textConverter.HadError();
 			mDecodedData.Adopt( tempIO.TheString());
-			mHadErrorDuringConversion = textConverter.HadError();
 			BM_LOG2( BM_LogMailParse, "...splitting off signature...");
 			// split off signature, if any:
 			Regexx rx;
@@ -608,7 +609,8 @@ const BmString& BmBodyPart::DecodedData() const {
 					BmUtf8Encoder textConverter( decoder.get(), mSuggestedCharset);
 					tempIO.Write( &textConverter);
 					mCurrentCharset = mSuggestedCharset;
-					mHadErrorDuringConversion = textConverter.HadError();
+					mHadErrorDuringConversion = 
+						textConverter.HadToDiscardChars() || textConverter.HadError();
 				} else {
 					BM_LOG2( BM_LogMailParse, BmString( "decoding bodytext of ") << mBodyLength << " bytes...");
 					tempIO.Write( decoder.get());
