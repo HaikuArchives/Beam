@@ -108,7 +108,6 @@ BmMailView::BmMailView( minimax minmax, BRect frame, bool outbound)
 	,	mFontSize( 12)
 	,	mReadRunner( NULL)
 	,	mShowingUrlCursor( false)
-	,	mSelectedEncoding( -1)
 {
 	mHeaderView = new BmMailHeaderView( NULL);
 	if (outbound)
@@ -290,15 +289,16 @@ void BmMailView::MessageReceived( BMessage* msg) {
 				}
 				break;
 			}
-/*
 			case BM_MAILVIEW_SELECT_ENCODING: {
 				if (mCurrMail) {
-					mSelectedEncoding = msg->FindInt32( MSG_ENCODING);
-					JobIsDone( true);
+					BmRef< BmBodyPart> textBody( mCurrMail->Body()->EditableTextBody());
+					if (textBody) {
+						textBody->SuggestEncoding( msg->FindInt32( MSG_ENCODING));
+						JobIsDone( true);
+					}
 				}
 				break;
 			}
-*/
 			case BM_MARK_AS_READ: {
 				BmMail* mail=NULL;
 				msg->FindPointer( MSG_MAIL, (void**)&mail);
@@ -630,7 +630,6 @@ void BmMailView::ShowMail( BmMailRef* ref, bool async) {
 			SendNotices( BM_NTFY_MAIL_VIEW, &msg);
 			return;
 		}
-		mSelectedEncoding = -1;
 		mCurrMail = BmMail::CreateInstance( ref);
 		StartJob( mCurrMail.Get(), async);
 		if (async)
@@ -660,7 +659,6 @@ void BmMailView::ShowMail( BmMail* mail, bool async) {
 			SendNotices( BM_NTFY_MAIL_VIEW, &msg);
 			return;
 		}
-		mSelectedEncoding = -1;
 		mCurrMail = mail;
 		StartJob( mCurrMail.Get(), async);
 		if (async)
@@ -917,23 +915,23 @@ void BmMailView::ShowMenu( BPoint point) {
 			theMenu->AddItem( item);
 			theMenu->AddSeparatorItem();
 		}
-/*
-		BMenu* menu = new BMenu( "Use Encoding...");
-		for( int i=0; BM_Encodings[i].charset; ++i) {
-			BMessage* msg = new BMessage( BM_MAILVIEW_SELECT_ENCODING);
-			msg->AddInt32( MSG_ENCODING, BM_Encodings[i].encoding);
-			item = CreateMenuItem( BM_Encodings[i].charset, msg);
-			if (mCurrMail) {
-				if (mSelectedEncoding==(int32)BM_Encodings[i].encoding)
-					item->SetMarked( true);
-				else if (mSelectedEncoding==-1 && mCurrMail->DefaultEncoding()==BM_Encodings[i].encoding)
-					item->SetMarked( true);
+		
+		if (mCurrMail) {
+			BmRef< BmBodyPart> textBody( mCurrMail->Body()->EditableTextBody());
+			if (textBody) {
+				BMenu* menu = new BMenu( "Use Encoding...");
+				for( int i=0; BM_Encodings[i].charset; ++i) {
+					BMessage* msg = new BMessage( BM_MAILVIEW_SELECT_ENCODING);
+					msg->AddInt32( MSG_ENCODING, BM_Encodings[i].encoding);
+					item = CreateMenuItem( BM_Encodings[i].charset, msg);
+					if (textBody->SuggestedEncoding()==(int32)BM_Encodings[i].encoding)
+						item->SetMarked( true);
+					AddItemToMenu( menu, item, this);
+				}
+				theMenu->AddItem( menu);
+				theMenu->AddSeparatorItem();
 			}
-			AddItemToMenu( menu, item, this);
 		}
-		theMenu->AddItem( menu);
-		theMenu->AddSeparatorItem();
-*/
 	}
 	TheResources->AddFontSubmenuTo( theMenu, this, &mFont);
 

@@ -107,6 +107,7 @@ public:
 	void SaveAs( const entry_ref& destDirRef, BString filename);
 	void PropagateHigherEncoding();
 	void ConstructBodyForSending( BString &msgText);
+	void SuggestEncoding( int32 enc) 			{ mSuggestedEncoding = enc; }
 
 	static BString GenerateBoundary();
 
@@ -115,8 +116,8 @@ public:
 
 	// getters:
 	inline bool IsMultiPart() const				{ return mIsMultiPart; }
-	inline const BString& DecodedData() const	{ return mDecodedData; }
-	inline int32 DecodedLength() const			{ return mDecodedData.Length(); }
+	inline const BString& DecodedData() const;
+	inline int32 DecodedLength() const			{ return DecodedData().Length(); }
 	inline status_t InitCheck() const			{ return mInitCheck; }
 
 	inline const BString ContentTypeAsString() const	{ return mContentType; }
@@ -132,6 +133,9 @@ public:
 	inline const BString& Language() const		{ return mContentLanguage; }
 	inline const BString& TypeParam( BString key) const		{ return mContentType.Param( key); }
 	inline const BString& DispositionParam( BString key) const	{ return mContentDisposition.Param( key); }
+	inline int32 BodyLength() const				{ return mBodyLength; }
+	inline int32 SuggestedEncoding() const		{ return mSuggestedEncoding; }
+	inline int32 CurrentEncoding() const		{ return mCurrentEncoding; }
 
 	inline const entry_ref& EntryRef() const	{ return mEntryRef; }
 
@@ -143,7 +147,6 @@ public:
 
 private:
 	bool mIsMultiPart;
-	BString mDecodedData;
 	BmContentField mContentType;
 	BString mContentTransferEncoding;
 	BString mContentId;
@@ -151,6 +154,13 @@ private:
 	BString mContentDescription;
 	BString mContentLanguage;
 	BString mFileName;
+
+	mutable BString mDecodedData;
+	int32 mStartInRawText;
+	int32 mBodyLength;
+	
+	mutable int32 mCurrentEncoding;
+	int32 mSuggestedEncoding;
 	
 	entry_ref mEntryRef;
 
@@ -195,6 +205,7 @@ public:
 	inline status_t InitCheck()					{ return mInitCheck; }
 	inline BmRef<BmBodyPart> EditableTextBody() const { return mEditableTextBody.Get(); }
 	inline const BString& Signature() const	{ return mSignature; }
+	inline const BmMail* Mail() const			{ return mMail; }
 	bool IsMultiPart() const;
 
 	// setters:

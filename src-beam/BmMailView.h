@@ -160,7 +160,6 @@ private:
 	BmTextRunIter mClickedTextRun;
 	BMessageRunner* mReadRunner;
 	bool mShowingUrlCursor;
-	int32 mSelectedEncoding;
 	
 	// will be archived:
 	BString mFontName;
