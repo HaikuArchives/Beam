@@ -59,6 +59,7 @@ const int16 BmSignature::nArchiveVersion = 1;
 \*------------------------------------------------------------------------------*/
 BmSignature::BmSignature( const char* name, BmSignatureList* model) 
 	:	inherited( name, model, (BmListModelItem*)NULL)
+	,	mAccessLock( (BmString("access_sig_") << name).Truncate(B_OS_NAME_LENGTH).String())
 	,	mDynamic( false)
 	,	mEncoding( BM_UTF8_CONVERSION)
 {
@@ -71,6 +72,8 @@ BmSignature::BmSignature( const char* name, BmSignatureList* model)
 \*------------------------------------------------------------------------------*/
 BmSignature::BmSignature( BMessage* archive, BmSignatureList* model) 
 	:	inherited( FindMsgString( archive, MSG_NAME), model, (BmListModelItem*)NULL)
+	,	mAccessLock( (BmString("access_sig_") 
+						<< FindMsgString( archive, MSG_NAME)).Truncate(B_OS_NAME_LENGTH).String())
 {
 	int16 version;
 	if (archive->FindInt16( MSG_VERSION, &version) != B_OK)
@@ -110,9 +113,12 @@ status_t BmSignature::Archive( BMessage* archive, bool deep) const {
 		-	always returns UTF8-encoded string
 \*------------------------------------------------------------------------------*/
 BmString BmSignature::GetSignatureString() {
+	BmAutolock lock( mAccessLock);
+	lock.IsLocked()	 						|| BM_THROW_RUNTIME( BmString(Key()) << "-destructor: Unable to get access-lock");
 	if (!mContent.Length())
 		return "";
 	if (mDynamic) {
+		
 		BmString scriptFileName = TheTempFileList.NextTempFilenameWithPath();
 		BFile scriptFile;
 		status_t err = scriptFile.SetTo( scriptFileName.String(), 

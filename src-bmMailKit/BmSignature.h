@@ -85,7 +85,9 @@ private:
 	BmSignature( const BmSignature&);
 	BmSignature operator=( const BmSignature&);
 
-	BmString mContent;
+	BLocker mAccessLock;				// needed serialize access
+
+	BmString mContent;				// the signature data as entered by user
 	bool mDynamic;						// if mContents is static text or a script-call
 	uint32 mEncoding;					// character-encoding of this sig
 };
