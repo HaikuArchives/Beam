@@ -2216,7 +2216,6 @@ status_t ColumnListView::Archive(BMessage* archive, bool) const {
 \*------------------------------------------------------------------------------*/
 status_t ColumnListView::Unarchive(const BMessage* archive, bool) {
 	AssertWindowLocked();
-	status_t ret = B_OK;
 	int i;
 	
 	if (!archive || archive->IsEmpty()) return B_OK;
@@ -2228,36 +2227,33 @@ status_t ColumnListView::Unarchive(const BMessage* archive, bool) {
 #else
 	int32 displayCols[numCols];
 #endif
-	for( i=0; i<numCols && ret==B_OK; ++i) { 
-		ret = archive->FindInt32( MSG_DISPLAYORDER, i, &displayCols[i]);
+	for( i=0; i<numCols; ++i) { 
+		archive->FindInt32( MSG_DISPLAYORDER, i, &displayCols[i]);
 	}
-	if (ret == B_OK) {
-		// sortkeys and -modes:
-		int32 numSortKeys = 0;
-		ret = archive->FindInt32( MSG_NUMSORTKEYS, &numSortKeys);
-#ifdef __POWERPC__
-		int32 sortKeys[100];
-		CLVSortMode sortModes[100];
-#else
-		int32 sortKeys[numSortKeys];
-		CLVSortMode sortModes[numSortKeys];
-#endif
-		for( i = 0; i<numSortKeys && ret==B_OK; ++i) {
-			ret = archive->FindInt32( MSG_SORTKEY, i, &sortKeys[i])
-				||	archive->FindInt32( MSG_SORTMODE, i, (int32*)&sortModes[i]);
-		}
-		if (ret == B_OK) {
-			SetSorting( numSortKeys, sortKeys, sortModes);
 
-			// set each column's width:
-			float width;
-			for( i=0; i<numCols && ret==B_OK; ++i) { 
-				ret = archive->FindFloat( MSG_COLWIDTH, i, &width);
-				if (ret == B_OK)
-					((CLVColumn*)fColumnList.ItemAt(i))->SetWidth( width);
-			}
-		}
-		SetDisplayOrder( displayCols);
+	// sortkeys and -modes:
+	int32 numSortKeys = 0;
+	archive->FindInt32( MSG_NUMSORTKEYS, &numSortKeys);
+#ifdef __POWERPC__
+	int32 sortKeys[100];
+	CLVSortMode sortModes[100];
+#else
+	int32 sortKeys[numSortKeys];
+	CLVSortMode sortModes[numSortKeys];
+#endif
+	for( i = 0; i<numSortKeys; ++i) {
+		archive->FindInt32( MSG_SORTKEY, i, &sortKeys[i]);
+		archive->FindInt32( MSG_SORTMODE, i, (int32*)&sortModes[i]);
 	}
-	return ret;
+	SetSorting( numSortKeys, sortKeys, sortModes);
+
+	// set each column's width:
+	float width;
+	for( i=0; i<numCols; ++i) { 
+		archive->FindFloat( MSG_COLWIDTH, i, &width);
+		((CLVColumn*)fColumnList.ItemAt(i))->SetWidth( width);
+	}
+	SetDisplayOrder( displayCols);
+
+	return B_OK;
 }
