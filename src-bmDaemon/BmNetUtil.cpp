@@ -108,7 +108,7 @@ bool IsPPPRunning() {
 			running = true;
 	}
 	close (s);
-#elsif
+#else
 	running = (find_thread("tty_thread") > 0);
 #endif
 	return running;
