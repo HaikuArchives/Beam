@@ -46,8 +46,9 @@ LEX = flex ;
 # mkdir shall not fail, if the directory already exists.
 MKDIR = mkdir -p ;
 
-# by default we do not strip:
+# by default we do not strip and do not build tests:
 STRIP_APPS ?= 0 ;
+BUILD_TESTS ?= 0 ;
 
 rule SetUpSubDirBuildSettings {
 	# SetUpSubDirBuildSettings <dir> ;

@@ -8,7 +8,12 @@ SubInclude TOP src-bmGuiBase ;
 SubInclude TOP src-beam ;
 SubInclude TOP src-deskbarItem ;
 SubInclude TOP src-filter-addons ;
-SubInclude TOP src-tests ;
+
+# build tests only if we have cppunit:
+local haveCppunit = [ GLOB /boot/home/config/include/cppunit : Test.h ] ;
+if $(BUILD_TESTS) != 0 && $(haveCppunit) {
+	SubInclude TOP src-tests ;
+}
 
 Distro distro ;
 

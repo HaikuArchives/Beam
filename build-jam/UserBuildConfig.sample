@@ -6,6 +6,8 @@
 #
 # The following variables can be set:
 # 
+# BUILD_TESTS			- If not empty, all tests (TestBeam) will be build, too.
+#							  Default is 0, i.e. no tests.
 # CCFLAGS, C++FLAGS		- Flags passed to the C/C++ compiler.
 # DEBUG					- If not empty, will turn on debugging, i.e. will
 #						  add respective C/C++ compiler and linker flags and
