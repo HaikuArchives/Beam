@@ -79,7 +79,9 @@ BmPrefsLoggingView::BmPrefsLoggingView()
 				new MBorder( M_LABELED_BORDER, 10, (char*)"Levels of Logging",
 					new VGroup(
 						mLogPopControl = new BmMenuControl( "Receiving Mail (POP3):", 
-																		new BPopUpMenu("")),
+																		new BPopUpMenu(""), 
+																		1.0, 0,
+																		"Log Everything"),
 						mLogSmtpControl = new BmMenuControl( "Sending Mail (SMTP):", 
 																		 new BPopUpMenu("")),
 						new Space( minimax(0,10,0,10)),
