@@ -74,6 +74,11 @@ public:
 	uint32 Read( char* data, uint32 reqLen);
 	bool IsAtEnd();
 
+	// getters
+	bool HadError() const					{ return mHadError; }
+	uint32 SrcCount() const					{ return mSrcCount; }
+	uint32 DestCount() const				{ return mDestCount; }
+
 	static const uint32 nBlockSize = 65536;
 
 protected:
