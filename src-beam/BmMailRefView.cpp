@@ -582,11 +582,12 @@ bool BmMailRefView::InitiateDrag( BPoint, int32 index, bool wasSelected) {
 		;
 	BM_LOG2( BM_LogGui, BmString("MailRefView::InitiateDrag() - found ")
 								<<selCount<<" selections");
+	const int32 th=10;
 	BFont font;
 	GetFont( &font);
 	float lineHeight = MAX(TheResources->FontLineHeight( &font),20.0);
 	float baselineOffset = TheResources->FontBaselineOffset( &font);
-	BRect dragRect( 0, 0, 200-1, MIN(selCount,4.0)*lineHeight-1);
+	BRect dragRect( 0, 0, 200-1, MIN(selCount,th)*lineHeight-1);
 	BView* dummyView = new BView( dragRect, NULL, B_FOLLOW_NONE, 0);
 	BBitmap* dragImage = new BBitmap( dragRect, B_RGBA32, true);
 	dragImage->AddChild( dummyView);
@@ -596,23 +597,23 @@ bool BmMailRefView::InitiateDrag( BPoint, int32 index, bool wasSelected) {
 	dummyView->SetDrawingMode( B_OP_ALPHA);
 	dummyView->SetHighColor( 0, 0, 0, 128);
 	dummyView->SetBlendingMode( B_CONSTANT_ALPHA, B_ALPHA_COMPOSITE);
+	// now we add all selected items to drag-image and to drag-msg:
 	for( int32 i=0; (currIdx=CurrentSelection( i))>=0; ++i) {
-		// now we add all selected items to drag-image and to drag-msg:
 		refItem = dynamic_cast<BmMailRefItem*>(ItemAt( currIdx));
 		BmMailRef* ref( refItem->ModelItem());
 		dragMsg.AddRef( "refs", ref->EntryRefPtr());
-		if (i<3) {
-			// add only the first three selections to drag-image:
+		if (i<th) {
+			// add only the first ten selections to drag-image:
 			const BBitmap* icon = refItem->GetColumnContentBitmap( 0);
 			if (icon) {
 				dummyView->DrawBitmapAsync( icon, BPoint(0,i*lineHeight));
 			}
 			dummyView->DrawString( ref->Subject().String(), 
 										  BPoint( 20.0, i*lineHeight+baselineOffset));
-		} else if (i==3) {
+		} else if (i==th) {
 			// add an indicator that more items are being dragged than shown:
-			BmString indicator = BmString("(...and ") << selCount-3 
-				<< (selCount-3 == 1 ? " more item)" : " more items)");
+			BmString indicator = BmString("(...and ") << selCount-th 
+				<< (selCount-th == 1 ? " more item)" : " more items)");
 			dummyView->DrawString( indicator.String(), 
 										  BPoint( 20.0, i*lineHeight+baselineOffset));
 		}
