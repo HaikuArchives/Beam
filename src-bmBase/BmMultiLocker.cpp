@@ -1,8 +1,10 @@
 /* BmMultiLocker.cpp */
+/* multiple-reader single-writer locking class */
 /*
-	Copyright 1999, Be Incorporated.   All Rights Reserved.
-	This file may be used under the terms of the Be Sample Code License.
+	inspired by BMultiLocker, which is
+			Copyright 1999, Be Incorporated.   All Rights Reserved.
 */
+
 
 #include <cstdio>
 
@@ -21,15 +23,14 @@ struct Spinlock
 Spinlock::Spinlock(int32& guardVar) 
 	:	mGuardVar(guardVar)
 {
-	while(atomic_add(&mGuardVar, 1) > 0) {
-		atomic_add(&mGuardVar, -1);
+	while(atomic_or(&mGuardVar, 1) > 0) {
 		snooze( SpinlockTime);
 	}
 }
 
 Spinlock::~Spinlock() 
 {
-	atomic_add(&mGuardVar, -1);
+	atomic_and(&mGuardVar, ~1UL);
 }
 
 

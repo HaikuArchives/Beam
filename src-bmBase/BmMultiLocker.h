@@ -1,10 +1,10 @@
 /* BmMultiLocker.h */
+/* multiple-reader single-writer locking class */
 /*
 	inspired by BMultiLocker, which is
 			Copyright 1999, Be Incorporated.   All Rights Reserved.
 */
 
-/* multiple-reader single-writer locking class */
 
 #ifndef BM_MULTI_LOCKER_H
 #define BM_MULTI_LOCKER_H
