@@ -128,6 +128,9 @@ extern IMPEXPBMMAILKIT const char* BM_MAIL_FOLDER_DRAFT;
 extern IMPEXPBMMAILKIT const char* BM_MAIL_FOLDER_IN;
 extern IMPEXPBMMAILKIT const char* BM_MAIL_FOLDER_OUT;
 
+extern IMPEXPBMMAILKIT const char* BM_MAIL_CLASS_SPAM;
+extern IMPEXPBMMAILKIT const char* BM_MAIL_CLASS_TOFU;
+
 class BmFilter;
 /*------------------------------------------------------------------------------*\
 	BmMail 
@@ -179,6 +182,7 @@ public:
 	bool IsFieldEmpty( const BmString fieldName);
 	const BmString Status() const;
 	//
+	void RatioSpam( float rs);
 	void MarkAsSpam();
 	void MarkAsTofu();
 	bool IsMarkedAsSpam() const;
@@ -228,6 +232,8 @@ public:
 													{ mAccountName = s; }
 	inline void IdentityName( const BmString& s)
 													{ mIdentityName = s; }
+	inline void Classification( const BmString& s)
+													{ mClassification = s; }
 	inline void MoveToTrash( bool b)		{ mMoveToTrash = b; }
 
 	static const int32 BM_READ_MAIL_JOB = 1;
@@ -255,6 +261,10 @@ private:
 							// name of account this message came from/is sent through
 	BmString mIdentityName;
 							// name of identity this message belongs to
+	BmString mClassification;
+							// genuine or spam
+	float mRatioSpam;
+							// 0.00 (genuine) .. 1.0 (spam)
 	BEntry mEntry;
 							// filesystem-entry for this mail 
 	BmRef<BmMailRef> mMailRef;

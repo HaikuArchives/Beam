@@ -135,6 +135,8 @@ const char* BM_MAIL_FOLDER_DRAFT			= "draft";
 const char* BM_MAIL_FOLDER_IN				= "in";
 const char* BM_MAIL_FOLDER_OUT			= "out";
 
+const char* BM_MAIL_CLASS_SPAM			= "Spam";
+const char* BM_MAIL_CLASS_TOFU			= "Genuine";
 /********************************************************************************\
 	BmMail
 \********************************************************************************/
@@ -610,6 +612,7 @@ void BmMail::AddBaseMailRef( BmMailRef* ref) {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmMail::MarkAsSpam() {
+	mClassification = BM_MAIL_CLASS_SPAM;
 	if (mMailRef)
 		mMailRef->MarkAsSpam();
 }
@@ -619,8 +622,20 @@ void BmMail::MarkAsSpam() {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmMail::MarkAsTofu() {
+	mClassification = BM_MAIL_CLASS_TOFU;
 	if (mMailRef)
 		mMailRef->MarkAsTofu();
+}
+
+/*------------------------------------------------------------------------------*\
+	RatioSpam()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMail::RatioSpam( float rs)
+{
+	mRatioSpam = rs;
+	if (mMailRef)
+		mMailRef->RatioSpam(rs);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -995,6 +1010,12 @@ void BmMail::StoreAttributes( BFile& mailFile, const BmString& status,
 	//
 	mailFile.WriteAttr( BM_MAIL_ATTR_WHEN_CREATED, B_UINT64_TYPE, 0, 
 							  &whenCreated, sizeof(whenCreated));
+	//
+	mailFile.WriteAttr( BM_MAIL_ATTR_CLASSIFICATION, B_STRING_TYPE, 0, 
+							  mClassification.String(), mClassification.Length()+1);
+	if (mRatioSpam != BmMailRef::UNKNOWN_RATIO)
+		mailFile.WriteAttr( BM_MAIL_ATTR_RATIO_SPAM, B_FLOAT_TYPE, 0, 
+								  &mRatioSpam, sizeof(mRatioSpam));
 }
 
 /*------------------------------------------------------------------------------*\
