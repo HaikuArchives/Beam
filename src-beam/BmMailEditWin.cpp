@@ -435,10 +435,12 @@ void BmMailEditWin::CreateGUI() {
 				new Space(minimax(20,-1,20,-1)),
 				mSignatureControl = new BmMenuControl( 
 					"Signature:", 
-					new BmMenuController( "Signature:", this, 
-												 new BMessage( BM_SIGNATURE_SELECTED), 
-												 TheSignatureList.Get(), 
-												 BM_MC_ADD_NONE_ITEM)
+					new BmMenuController( 
+						"Signature:", this, 
+						new BMessage( BM_SIGNATURE_SELECTED), 
+						TheSignatureList.Get(), 
+						BM_MC_ADD_NONE_ITEM | BM_MC_LABEL_FROM_MARKED
+					)
 				),
 				new Space(minimax(20,-1,20,-1)),
 				mEditHeaderControl = new BmCheckControl( "Edit Headers Before Send", 
@@ -475,7 +477,7 @@ void BmMailEditWin::CreateGUI() {
 	divider = MAX( divider, mCharsetControl->Divider());
 	mSmtpControl->SetDivider( divider);
 	mCharsetControl->SetDivider( divider);
-	mEditHeaderControl->ct_mpm = mSmtpControl->ct_mpm;
+	mCharsetControl->ct_mpm = mSmtpControl->ct_mpm;
 
 	mShowDetails1Button->SetFlags( mShowDetails1Button->Flags() 
 												& (0xFFFFFFFF^B_NAVIGABLE));
