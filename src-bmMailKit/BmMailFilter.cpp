@@ -45,6 +45,17 @@
 #undef BM_LOGNAME
 #define BM_LOGNAME "Filter"
 
+static const float GRAIN = 1.0;
+
+const char* const BmMailFilter::MSG_FILTER = 	"bm:filter";
+const char* const BmMailFilter::MSG_DELTA = 		"bm:delta";
+const char* const BmMailFilter::MSG_TRAILING = 	"bm:trailing";
+const char* const BmMailFilter::MSG_LEADING = 	"bm:leading";
+const char* const BmMailFilter::MSG_REFS = 		"refs";
+
+// alternate job-specifiers:
+const int32 BmMailFilter::BM_EXECUTE_FILTER = 	1;
+
 /*------------------------------------------------------------------------------*\
 	BmMailFilter()
 		-	contructor
@@ -94,12 +105,15 @@ int BmMailFilter::sieve_redirect( void* action_context, void* interp_context,
 	SetMailFlags()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmMailFilter::SetMailFlags( sieve_imapflags_t* flags, BmMail* mail) {
-	if (mail && flags) {
+void BmMailFilter::SetMailFlags( sieve_imapflags_t* flags, MsgContext* msgContext) {
+	if (msgContext && flags) {
 		for( int i=0; i<flags->nflags; ++i) {
 			BmString flag( flags->flag[i]);
-			if (!flag.ICompare( "\\Seen"))
-				mail->MarkAs( BM_MAIL_STATUS_READ);
+			if (!flag.ICompare( "\\Seen")
+			&& msgContext->mail->Status() != BM_MAIL_STATUS_READ) {
+				msgContext->mail->MarkAs( BM_MAIL_STATUS_READ);
+				msgContext->changed = true;
+			}
 		}
 	}
 }
@@ -115,7 +129,7 @@ int BmMailFilter::sieve_keep( void* action_context, void* interp_context,
 	sieve_keep_context* keepContext 
 		= static_cast< sieve_keep_context*>( action_context);
 	if (msgContext && msgContext->mail && keepContext)
-		SetMailFlags( keepContext->imapflags, msgContext->mail);
+		SetMailFlags( keepContext->imapflags, msgContext);
 	return SIEVE_OK;
 }
 
@@ -130,8 +144,9 @@ int BmMailFilter::sieve_fileinto( void* action_context, void* interp_context,
 	sieve_fileinto_context* fileintoContext 
 		= static_cast< sieve_fileinto_context*>( action_context);
 	if (msgContext && msgContext->mail && fileintoContext) {
-		SetMailFlags( fileintoContext->imapflags, msgContext->mail);
-		msgContext->mail->DestFoldername( fileintoContext->mailbox);
+		SetMailFlags( fileintoContext->imapflags, msgContext);
+		if (msgContext->mail->SetDestFoldername( fileintoContext->mailbox))
+			msgContext->changed = true;
 	}
 	return SIEVE_OK;
 }
@@ -187,27 +202,50 @@ int BmMailFilter::sieve_execute_error( const char* msg, void* interp_context,
 }
 
 /*------------------------------------------------------------------------------*\
+	ShouldContinue()
+		-	determines whether or not the mail-filter should continue to run
+		-	in addition to the inherited behaviour, the mail-filter should continue
+			when it executes special jobs (not BM_DEFAULT_JOB), since in that
+			case there are no controllers present.
+\*------------------------------------------------------------------------------*/
+bool BmMailFilter::ShouldContinue() {
+	return inherited::ShouldContinue() 
+			 || CurrentJobSpecifier() == BM_EXECUTE_FILTER;
+}
+
+/*------------------------------------------------------------------------------*\
 	StartJob()
 		-	the job, executes the filter on all given mail-refs
 \*------------------------------------------------------------------------------*/
 bool BmMailFilter::StartJob() {
 	try {
+		int32 count = mMailRefs.size() + mMails.size();
+		int32 c=0;
+		const float delta =  100.0 / (count / GRAIN);
 		BmRef<BmMail> mail;
-		for( uint32 i=0; i<mMailRefs.size(); ++i) {
+		for( uint32 i=0; ShouldContinue() && i<mMailRefs.size(); ++i) {
 			mail = BmMail::CreateInstance( mMailRefs[i].Get());
 			if (mail) {
+				mail->StartJobInThisThread( BmMail::BM_READ_MAIL_JOB);
 				MsgContext msgContext( this, mail.Get());
-				if (!mFilter->Execute( &msgContext))
-					break;
+				if (mFilter->Execute( &msgContext) && msgContext.changed)
+					mail->Store();
 			}
+			BmString currentCount = BmString()<<c++<<" of "<<count;
+			UpdateStatus( delta, mail->Name().String(), currentCount.String());
 		}
 		mMailRefs.clear();
-		for( uint32 i=0; i<mMails.size(); ++i) {
+		for( uint32 i=0; ShouldContinue() && i<mMails.size(); ++i) {
 			MsgContext msgContext( this, mMails[i].Get());
-			if (!mFilter->Execute( &msgContext))
-				break;
+			if (mFilter->Execute( &msgContext) && msgContext.changed)
+				mMails[i]->Store();
+			BmString currentCount = BmString()<<c++<<" of "<<count;
+			UpdateStatus( delta, mMails[i]->Name().String(), 
+							  currentCount.String());
 		}
 		mMails.clear();
+		BmString currentCount = BmString()<<count<<" of "<<count;
+		UpdateStatus( delta, "", currentCount.String());
 		return true;
 	}
 	catch( BM_runtime_error &err) {
@@ -217,4 +255,19 @@ bool BmMailFilter::StartJob() {
 		BM_SHOWERR( BmString("BmMailFilter: ") << text);
 	}
 	return false;
+}
+
+/*------------------------------------------------------------------------------*\
+	UpdateStatus()
+		-	informs the interested party about a change in the current state
+\*------------------------------------------------------------------------------*/
+void BmMailFilter::UpdateStatus( const float delta, const char* filename, 
+										   const char* currentCount) {
+	auto_ptr<BMessage> msg( new BMessage( BM_JOB_UPDATE_STATE));
+	msg->AddString( MSG_FILTER, Name().String());
+	msg->AddString( BmJobModel::MSG_DOMAIN, "statbar");
+	msg->AddFloat( MSG_DELTA, delta);
+	msg->AddString( MSG_LEADING, filename);
+	msg->AddString( MSG_TRAILING, currentCount);
+	TellControllers( msg.get());
 }

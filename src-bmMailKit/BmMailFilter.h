@@ -55,14 +55,26 @@ class BmMailFilter : public BmJobModel {
 	
 	struct MsgContext {
 		MsgContext( BmMailFilter* mf, BmMail* m)
-			: mailFilter( mf), mail( m), headers( NULL) 	{}
+			: mailFilter( mf), mail( m), headers( NULL), changed( false) 	{}
 		~MsgContext() 							{ if (headers) delete [] headers; }
 		BmMailFilter* mailFilter;
 		BmMail* mail;
 		const char** headers;
+		bool changed;
 	};
 
 public:
+	//	message component definitions for status-msgs:
+	static const char* const MSG_FILTER;
+	static const char* const MSG_DELTA;
+	static const char* const MSG_TRAILING;
+	static const char* const MSG_LEADING;
+	static const char* const MSG_REFS;
+
+	// alternate job-specifiers:
+	static const int32 BM_EXECUTE_FILTER;
+							// for filter-execution without any controllers being present
+
 	BmMailFilter( const BmString& name, BmFilter* filter);
 	virtual ~BmMailFilter();
 
@@ -85,18 +97,21 @@ public:
 	static int sieve_get_header( void* message_context, const char* header,
 			  							  const char*** contents);
 	// SIEVE-helpers:
-	static void SetMailFlags( sieve_imapflags_t* flags, BmMail* mail);
+	static void SetMailFlags( sieve_imapflags_t* flags, MsgContext* msgContext);
 
 	static int sieve_execute_error( const char* msg, void* interp_context,
 											  void* script_context, void* message_context);
 
 	// overrides of BmJobModel base:
 	bool StartJob();
+	bool ShouldContinue();
 
 	// getters:
 	inline BmString Name() const			{ return ModelName(); }
 
 private:
+	void UpdateStatus( const float delta, const char* filename, const char* currentCount);
+
 	BmRef<BmFilter> mFilter;
 							// the actual SIEVE-filter
 	BmMailRefVect mMailRefs;
