@@ -1,5 +1,5 @@
 /*
-	BmMenuController.cpp
+	BmMenuControllerBase.cpp
 		$Id$
 */
 /*************************************************************************/
@@ -28,15 +28,12 @@
 /*************************************************************************/
 
 
-#include <MenuBar.h>
 #include <MenuItem.h>
 
 #include "split.hh"
 using namespace regexx;
 
-#include "BmDataModel.h"
-#include "BmGuiUtil.h"
-#include "BmMenuController.h"
+#include "BmMenuControllerBase.h"
 
 
 const int32 BM_MC_MOVE_RIGHT			= 1<<0;
@@ -45,69 +42,114 @@ const int32 BM_MC_ADD_NONE_ITEM		= 1<<2;
 const int32 BM_MC_LABEL_FROM_MARKED	= 1<<3;
 const int32 BM_MC_RADIO_MODE			= 1<<4;
 
-
-
 /*------------------------------------------------------------------------------*\
-	()
+	BmMenuControllerBase()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmRebuildCharsetMenu( BmMenuControllerBase* menu) {
-	BMenuItem* old;
-	while( (old = menu->RemoveItem( (int32)0)) != NULL)
-		delete old;
-	
-	// add all charsets to menu:
-	AddCharsetMenu( menu, menu->MsgTarget(), menu->MsgTemplate()->what);
-}
-
-
-
-/********************************************************************************\
-	BmMenuController
-\********************************************************************************/
-
-/*------------------------------------------------------------------------------*\
-	BmMenuController()
-		-	
-\*------------------------------------------------------------------------------*/
-BmMenuController::BmMenuController( const char* label, BHandler* msgTarget,
-												BMessage* msgTemplate, 
-												BmListModel* listModel,	int32 flags)
-	:	inherited( label, msgTarget, msgTemplate, NULL, flags)
-	,	mListModel( listModel)
+BmMenuControllerBase::BmMenuControllerBase( const char* label, 
+														  BHandler* msgTarget,
+														  BMessage* msgTemplate, 
+														  RebuildMenuFunc func, 
+														  int32 flags)
+	:	inherited( label, flags & (BM_MC_RADIO_MODE|BM_MC_LABEL_FROM_MARKED),
+					  flags & BM_MC_LABEL_FROM_MARKED)
+	,	mMsgTarget( msgTarget)
+	,	mMsgTemplate( msgTemplate)
+	,	mRebuildMenuFunc( func)
+	,	mFlags( flags)
 {
 	UpdateItemList();
 }
 
 /*------------------------------------------------------------------------------*\
-	BmMenuController()
+	~BmMenuControllerBase()
 		-	
 \*------------------------------------------------------------------------------*/
-BmMenuController::BmMenuController( const char* label, BHandler* msgTarget,
-												BMessage* msgTemplate, 
-												RebuildMenuFunc func, int32 flags)
-	:	inherited( label, msgTarget, msgTemplate, func, flags)
-	,	mListModel( NULL)
-{
+BmMenuControllerBase::~BmMenuControllerBase() {
+	delete mMsgTemplate;
 }
 
 /*------------------------------------------------------------------------------*\
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmMenuController::UpdateItemList( void) {
-	if (mListModel) {
-		// create menu according to list-model:
-		BmAutolockCheckGlobal lock( mListModel->ModelLocker());
-		lock.IsLocked()	 					|| BM_THROW_RUNTIME( "UpdateItemList(): Unable to lock model");
-		BMenuItem* old;
-		while( (old = RemoveItem( (int32)0))!=NULL)
-			delete old;
-		BFont font;
-		GetFont( &font);
-		AddListToMenu( mListModel, this, mMsgTemplate, mMsgTarget,
-							&font, mFlags & BM_MC_SKIP_FIRST_LEVEL, 
-							mFlags & BM_MC_ADD_NONE_ITEM, mShortcuts);
+void BmMenuControllerBase::UpdateItemList( void) {
+	if (mRebuildMenuFunc) {
+		// menu is created by a dedicated function:
+		(*mRebuildMenuFunc)( this);
 	}
-	inherited::UpdateItemList();
+	BMenuItem* labelItem = Superitem();
+	if (labelItem)
+		MarkItemInMenu( this, labelItem->Label());
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+BMenuItem* BmMenuControllerBase::MarkItemInMenu( BMenu* menu, 	
+																 const char* label) {
+	// we walk down the tree to find the corresponding menu-item:
+	if (!menu || !label)
+		return NULL;
+	BMenuItem* item = NULL;
+	vector<BmString> itemVect;
+	split( "/", label, itemVect);
+	BMenu* currMenu = menu;
+	for( uint32 i=0; currMenu && i<itemVect.size(); ++i) {
+		BmString str = itemVect[i];
+		item = currMenu->FindItem( str.String());
+		currMenu = item 
+						? item->Submenu()
+						: NULL;
+	}
+	if (item)
+		item->SetMarked( true);
+	else
+		ClearMarkInMenu( menu);
+	return item;
+}
+
+/*------------------------------------------------------------------------------*\
+	( )
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMenuControllerBase::ClearMarkInMenu( BMenu* menu) {
+	if (!menu)
+		return;
+	BMenuItem* item;
+	while( (item = menu->FindMarked()) != NULL)
+		item->SetMarked( false);
+	int32 count=menu->CountItems();
+	for( int i=0; i<count; ++i) {
+		BMenu* subMenu = menu->SubmenuAt( i);
+		if (subMenu)
+			ClearMarkInMenu( subMenu);
+	}
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMenuControllerBase::AttachedToWindow( void) {
+	UpdateItemList();
+	inherited::AttachedToWindow();
+	Invalidate();
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+BPoint BmMenuControllerBase::ScreenLocation() {
+	BPoint pt = inherited::ScreenLocation();
+	if (mFlags & BM_MC_MOVE_RIGHT) {
+		// we are part of a real menu (no simple popup), so we have to move
+		// the menu to the right edge of its controlling item:
+		BMenuItem* item = Superitem();
+		if (item)
+			pt.x += item->Frame().Width()+2;
+	}
+	return pt;
 }

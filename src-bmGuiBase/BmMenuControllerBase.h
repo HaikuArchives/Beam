@@ -1,5 +1,5 @@
 /*
-	BmMenuController.h
+	BmMenuControllerBase.h
 		$Id$
 */
 /*************************************************************************/
@@ -28,10 +28,12 @@
 /*************************************************************************/
 
 
-#ifndef _BmMenuController_h
-#define _BmMenuController_h
+#ifndef _BmMenuControllerBase_h
+#define _BmMenuControllerBase_h
 
-#include "BmMenuControllerBase.h"
+#include <PopUpMenu.h>
+
+#include "BmString.h"
 
 extern const int32 BM_MC_MOVE_RIGHT;
 extern const int32 BM_MC_SKIP_FIRST_LEVEL;
@@ -39,39 +41,51 @@ extern const int32 BM_MC_ADD_NONE_ITEM;
 extern const int32 BM_MC_LABEL_FROM_MARKED;
 extern const int32 BM_MC_RADIO_MODE;
 
-/*------------------------------------------------------------------------------*\
-	BmMenuController
-		-	
-\*------------------------------------------------------------------------------*/
-class BmMenuController : public BmMenuControllerBase
+class BMenuItem;
+
+class BmMenuControllerBase : public BPopUpMenu
 {
-	typedef BmMenuControllerBase inherited;
+	typedef BPopUpMenu inherited;
 	
+	typedef void (*RebuildMenuFunc)( BmMenuControllerBase*);
+
 public:
 
-	BmMenuController( const char* label, BHandler* msgTarget, 
-							BMessage* msgTemplate, BmListModel* listModel,
-							int32 flags=0);
+	BmMenuControllerBase( const char* label, BHandler* msgTarget, 
+								 BMessage* msgTemplate,
+								 RebuildMenuFunc fn, int32 flags=0);
 
-	BmMenuController( const char* label, BHandler* msgTarget, 
-							BMessage* msgTemplate,
-							RebuildMenuFunc fn, int32 flags=0);
+	virtual ~BmMenuControllerBase();
 
 	// native methods
-	void UpdateItemList();
+	virtual void UpdateItemList();
+	//
+	static BMenuItem* MarkItemInMenu( BMenu* menu, const char* label);
+	static void ClearMarkInMenu( BMenu* menu);
 	
+	// overrides of view-base
+	void AttachedToWindow();
+	BPoint ScreenLocation();
+
+	// getters:
+	BHandler* MsgTarget() const 			{ return mMsgTarget; }
+	BMessage* MsgTemplate() 		 		{ return mMsgTemplate; }
+
+	// setters:
+	void Shortcuts( const BmString s) 	{ mShortcuts = s; }
+
 protected:
-	BmListModel* mListModel;
+	BHandler* mMsgTarget;
+	BMessage* mMsgTemplate;
+	BmString mShortcuts;
+	RebuildMenuFunc mRebuildMenuFunc;
+	int32 mFlags;
 
 private:
 	// Hide copy-constructor and assignment:
-	BmMenuController( const BmMenuController&);
-	BmMenuController operator=( const BmMenuController&);
+	BmMenuControllerBase( const BmMenuControllerBase&);
+	BmMenuControllerBase operator=( const BmMenuControllerBase&);
 };
-
-
-
-void BmRebuildCharsetMenu( BmMenuControllerBase*);
 
 
 #endif
