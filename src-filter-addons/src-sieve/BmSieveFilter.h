@@ -59,6 +59,7 @@ public:
 	bool CompileScript();
 	void RegisterCallbacks( sieve_interp_t* interp);
 	BLocker* SieveLock();
+	virtual bool AskBeforeFileInto()		{ return false; }
 
 	// implementations for abstract BmFilterAddon-methods:
 	bool Execute( void* msgContext);
@@ -156,6 +157,7 @@ class BmGraphicalSieveFilter : public BmSieveFilter {
 	static const char* const MSG_MATCH_VALUE;
 	static const char* const MSG_FILEINTO;
 	static const char* const MSG_FILEINTO_VALUE;
+	static const char* const MSG_FILEINTO_ASK;
 	static const char* const MSG_DISCARD;
 	static const char* const MSG_SET_STATUS;
 	static const char* const MSG_SET_STATUS_VALUE;
@@ -179,6 +181,7 @@ public:
 	void SetupFromMailData( const BmString& subject, 
 									const BmString& from, 
 									const BmString& To);
+	bool AskBeforeFileInto()				{ return mActionFileIntoAsk; }
 
 private:
 
@@ -192,6 +195,7 @@ private:
 	BmString mMatchValue[BM_MAX_MATCH_COUNT];
 	bool mActionFileInto;
 	BmString mActionFileIntoValue;
+	bool mActionFileIntoAsk;
 	bool mActionDiscard;
 	bool mActionSetStatus;
 	BmString mActionSetStatusValue;
@@ -241,7 +245,8 @@ enum {
 	BM_SET_IDENTITY_SELECTED	= 'bmTo',
 	BM_STOP_PROCESSING_CHANGED	= 'bmTp',
 
-	BM_ADDRPART_SELECTED			= 'bmTq'
+	BM_ADDRPART_SELECTED			= 'bmTq',
+	BM_FILEINTO_ASK_CHANGED		= 'bmTr'
 };
 
 
@@ -293,6 +298,7 @@ private:
 	
 	BmCheckControl* mFileIntoControl;
 	BmMenuControl* mFileIntoValueControl;
+	BmCheckControl* mFileIntoAskControl;
 	BmCheckControl* mDiscardControl;
 	BmCheckControl* mSetStatusControl;
 	BmMenuControl* mSetStatusValueControl;

@@ -61,9 +61,11 @@ extern "C" {
 #include "BmLogHandler.h"
 #include "BmSieveFilter.h"
 #include "BmCheckControl.h"
+#include "BmMenuAlert.h"
 #include "BmMenuControl.h"
 #include "BmMenuControllerBase.h"
 #include "BmMultiLineTextControl.h"
+#include "BmRosterBase.h"
 #include "BmTextControl.h"
 
 
@@ -75,6 +77,8 @@ BmFilterAddon* InstantiateFilter( const BmString& name,
 extern "C" __declspec(dllexport) 
 BmFilterAddonPrefsView* InstantiateFilterPrefs( minimax minmax, 
 																const BmString& kind);
+
+static void RebuildFolderMenu( BmMenuControllerBase* menu);
 
 /********************************************************************************\
 	BmSieveFilter
@@ -377,18 +381,38 @@ int BmSieveFilter::sieve_discard( void* /*action_context*/, void*,
 	sieve_fileinto()
 		-	
 \*------------------------------------------------------------------------------*/
-int BmSieveFilter::sieve_fileinto( void* action_context, void*, 
+int BmSieveFilter::sieve_fileinto( void* action_context, void* script_context, 
 			   				  			 void*, void* message_context, 
 			   				 			 const char**) {
 	BmMsgContext* msgContext = static_cast< BmMsgContext*>( message_context);
 	sieve_fileinto_context* fileintoContext 
 		= static_cast< sieve_fileinto_context*>( action_context);
-	if (msgContext && fileintoContext) {
+	BmSieveFilter* filter = static_cast< BmSieveFilter*>( script_context);
+	if (msgContext && filter && fileintoContext) {
 		BM_LOG3( BM_LogFilter, BmString("Sieve-Addon: sieve_fileinto called "
 												  "with folder ")
 												  <<fileintoContext->mailbox);
 		SetMailFlags( fileintoContext->imapflags, msgContext);
-		msgContext->folderName = fileintoContext->mailbox;
+		if (msgContext->outbound && filter->AskBeforeFileInto()) {
+			BmMenuAlert* alert = new BmMenuAlert( 
+				300, 100, "File Into Folder", 
+				"Please select the folder this mail\n should be filed into:",
+				new BmMenuControl(
+					"Target Folder:",
+					new BmMenuControllerBase( 
+						fileintoContext->mailbox, NULL,
+						new BMessage( BM_MENUITEM_SELECTED), 
+						RebuildFolderMenu
+					)
+				),
+				"Cancel", "OK"
+			);
+			alert->SetShortcut( 0, B_ESCAPE);
+			char pathbuf[1024];
+			if (alert->Go( pathbuf, 1024) == 1)
+				msgContext->folderName = pathbuf;
+		} else
+			msgContext->folderName = fileintoContext->mailbox;
 	}
 	return SIEVE_OK;
 }
@@ -447,19 +471,29 @@ int BmSieveFilter::sieve_get_header( void* message_context, const char* header,
 	BM_LOG3( BM_LogFilter, 
 				BmString("Sieve-Addon: sieve_get_header called for header ")
 					<< header);
-	static const char* dummy[] = { NULL };
+	static const char* dummy[2] = { NULL, NULL };
 	BmMsgContext* msgContext = static_cast< BmMsgContext*>( message_context);
 	if (msgContext && contentsPtr && header) {
+		BmString headerName( header);
 		*contentsPtr = dummy;
-		for( int i=0; i<msgContext->headerInfoCount; ++i) {
-			if (!msgContext->headerInfos[i].fieldName.ICompare( header)) {
-				*contentsPtr = msgContext->headerInfos[i].values;
-				for( int v=0; msgContext->headerInfos[i].values[v]; ++v) {
-					BM_LOG3( BM_LogFilter, 
-								BmString("Sieve-Addon: sieve_get_header returns value[")
-									<<v<<"] = " <<msgContext->headerInfos[i].values[v]);
+		if (headerName.ICompare("Status") == 0)
+			dummy[0] = msgContext->status.String();
+		else if (headerName.ICompare("Account") == 0)
+			dummy[0] = msgContext->account.String();
+		else if (headerName.ICompare("Outbound") == 0)
+			dummy[0] = msgContext->outbound ? "true" : "false";
+		else {
+			dummy[0] = NULL;
+			for( int i=0; i<msgContext->headerInfoCount; ++i) {
+				if (!msgContext->headerInfos[i].fieldName.ICompare( header)) {
+					*contentsPtr = msgContext->headerInfos[i].values;
+					for( int v=0; msgContext->headerInfos[i].values[v]; ++v) {
+						BM_LOG3( BM_LogFilter, 
+									BmString("Sieve-Addon: sieve_get_header returns value[")
+										<<v<<"] = " <<msgContext->headerInfos[i].values[v]);
+					}
+					break;
 				}
-				break;
 			}
 		}
 	}
@@ -512,6 +546,9 @@ static const char* mailParts[] = {
 	BM_MP_SEPARATOR.String(),
 	"List-Id",
 	"Mailing-List",
+	BM_MP_SEPARATOR.String(),
+	"Status",
+	"Account",
 	BM_MP_SEPARATOR.String(),
 	BM_MAILPART_OTHER,
 //	BM_MAILPART_BODY,
@@ -572,6 +609,7 @@ const char* const BmGraphicalSieveFilter::MSG_MATCH_OPERATOR = 	"bm:op";
 const char* const BmGraphicalSieveFilter::MSG_MATCH_VALUE = 		"bm:vl";
 const char* const BmGraphicalSieveFilter::MSG_FILEINTO = 			"bm:fi";
 const char* const BmGraphicalSieveFilter::MSG_FILEINTO_VALUE = 	"bm:fiv";
+const char* const BmGraphicalSieveFilter::MSG_FILEINTO_ASK = 		"bm:fia";
 const char* const BmGraphicalSieveFilter::MSG_DISCARD = 				"bm:ds";
 const char* const BmGraphicalSieveFilter::MSG_SET_STATUS = 			"bm:sst";
 const char* const BmGraphicalSieveFilter::MSG_SET_STATUS_VALUE = 	"bm:sstv";
@@ -590,6 +628,7 @@ BmGraphicalSieveFilter::BmGraphicalSieveFilter( const BmString& name,
 	,	mMatchCount( 1)
 	,	mMatchAnyAll( choices[0])
 	,	mActionFileInto( false)
+	,	mActionFileIntoAsk( false)
 	,	mActionDiscard( false)
 	,	mActionSetStatus( false)
 	,	mActionSetIdentity( false)
@@ -604,6 +643,7 @@ BmGraphicalSieveFilter::BmGraphicalSieveFilter( const BmString& name,
 			mMatchAnyAll = choices[0];
 		mActionFileInto = archive->FindBool( MSG_FILEINTO);
 		mActionFileIntoValue = archive->FindString( MSG_FILEINTO_VALUE);
+		archive->FindBool( MSG_FILEINTO_ASK, &mActionFileIntoAsk);
 		mActionDiscard = archive->FindBool( MSG_DISCARD);
 		mActionSetStatus = archive->FindBool( MSG_SET_STATUS);
 		mActionSetStatusValue = archive->FindString( MSG_SET_STATUS_VALUE);
@@ -637,6 +677,7 @@ status_t BmGraphicalSieveFilter::Archive( BMessage* archive, bool) const {
 		||	archive->AddString( MSG_MATCH_ANYALL, mMatchAnyAll.String())
 		|| archive->AddBool( MSG_FILEINTO, mActionFileInto)
 		||	archive->AddString( MSG_FILEINTO_VALUE, mActionFileIntoValue.String())
+		|| archive->AddBool( MSG_FILEINTO_ASK, mActionFileIntoAsk)
 		|| archive->AddBool( MSG_DISCARD, mActionDiscard)
 		|| archive->AddBool( MSG_SET_STATUS, mActionSetStatus)
 		||	archive->AddString( MSG_SET_STATUS_VALUE, 
@@ -1006,14 +1047,11 @@ static void RebuildFolderMenu( BmMenuControllerBase* menu) {
 	while( (old = menu->RemoveItem( (int32)0)) != NULL)
 		delete old;
 	
-	// add all folder to menu:
-	BMessage msg( BM_FILL_MENU_FROM_LIST);
-	BMessage reply;
-	msg.AddString( MSG_LIST_NAME, BM_FOLDERLIST_NAME);
-	msg.AddPointer( MSG_MENU_POINTER, menu);
-	msg.AddPointer( MSG_MENU_TARGET, menu->MsgTarget());
-	msg.AddMessage( MSG_MSG_TEMPLATE, menu->MsgTemplate());
-	be_app_messenger.SendMessage( &msg);
+	// add all folders to menu:
+	BeamRoster->FillMenuFromList( BM_ROSTER_FOLDERLIST, 
+											menu, 
+											menu->MsgTarget(),
+											menu->MsgTemplate());
 }
 
 /*------------------------------------------------------------------------------*\
@@ -1025,14 +1063,11 @@ static void RebuildIdentityMenu( BmMenuControllerBase* menu) {
 	while( (old = menu->RemoveItem( (int32)0)) != NULL)
 		delete old;
 	
-	// add all folder to menu:
-	BMessage msg( BM_FILL_MENU_FROM_LIST);
-	BMessage reply;
-	msg.AddString( MSG_LIST_NAME, BM_IDENTITYLIST_NAME);
-	msg.AddPointer( MSG_MENU_POINTER, menu);
-	msg.AddPointer( MSG_MENU_TARGET, menu->MsgTarget());
-	msg.AddMessage( MSG_MSG_TEMPLATE, menu->MsgTemplate());
-	be_app_messenger.SendMessage( &msg);
+	// add all identities to menu:
+	BeamRoster->FillMenuFromList( BM_ROSTER_IDENTITYLIST, 
+											menu, 
+											menu->MsgTarget(),
+											menu->MsgTemplate());
 }
 
 
@@ -1099,6 +1134,15 @@ BmSieveFilterPrefs::BmSieveFilterPrefs( minimax minmax)
 										new BMessage( BM_FILEINTO_SELECTED), 
 										RebuildFolderMenu
 									)
+								),
+								0
+							),
+							new HGroup(
+								new Space(),
+								mFileIntoAskControl = new BmCheckControl( 
+									"Manually File Outbound Messages", 
+									new BMessage(BM_FILEINTO_ASK_CHANGED), 
+									this
 								),
 								0
 							),
@@ -1245,6 +1289,7 @@ BmSieveFilterPrefs::~BmSieveFilterPrefs() {
 	}
 	TheBubbleHelper->SetHelp( mFileIntoControl, NULL);
 	TheBubbleHelper->SetHelp( mFileIntoValueControl, NULL);
+	TheBubbleHelper->SetHelp( mFileIntoAskControl, NULL);
 	TheBubbleHelper->SetHelp( mSetStatusControl, NULL);
 	TheBubbleHelper->SetHelp( mSetStatusValueControl, NULL);
 	TheBubbleHelper->SetHelp( mSetIdentityControl, NULL);
@@ -1309,6 +1354,11 @@ void BmSieveFilterPrefs::Initialize() {
 	TheBubbleHelper->SetHelp( 
 		mFileIntoValueControl, 
 		"Here you can select the folder to file mails into."
+	);
+	TheBubbleHelper->SetHelp( 
+		mFileIntoAskControl, 
+		"Check this if you want to be asked for acknowledgement\n"
+		"before any outbound mail matching the filter is filed.\n"
 	);
 	TheBubbleHelper->SetHelp( 
 		mSetStatusControl, 
@@ -1380,18 +1430,16 @@ void BmSieveFilterPrefs::Initialize() {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmSieveFilterPrefs::Activate() {
-	BMessage reply;
-	BMessage msg( BM_FILL_MENU_FROM_LIST);
 	BMenuItem* item;
 	//
 	BMessage statusTempl( BM_SET_STATUS_SELECTED);
 	while( (item = mSetStatusValueControl->Menu()->RemoveItem( (int32)0))!=NULL)
 		delete item;
-	msg.AddString( MSG_LIST_NAME, BM_STATUSLIST_NAME);
-	msg.AddPointer( MSG_MENU_POINTER, mSetStatusValueControl->Menu());
-	msg.AddPointer( MSG_MENU_TARGET, dynamic_cast<BHandler*>(this));
-	msg.AddMessage( MSG_MSG_TEMPLATE, &statusTempl);
-	be_app_messenger.SendMessage( &msg, &reply);
+
+	BeamRoster->FillMenuFromList( BM_ROSTER_STATUSLIST, 
+											mSetStatusValueControl->Menu(),
+											dynamic_cast<BHandler*>(this),
+											&statusTempl);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -1627,10 +1675,21 @@ void BmSieveFilterPrefs::MessageReceived( BMessage* msg) {
 			if (mCurrFilterAddon) {
 				bool newVal = mFileIntoControl->Value();
 				mCurrFilterAddon->mActionFileInto = newVal;
-				if (!newVal)
+				if (!newVal) {
 					mCurrFilterAddon->mActionFileIntoValue = "";
+					mCurrFilterAddon->mActionFileIntoAsk = false;
+				}
 				if (newVal && mCurrFilterAddon->mActionDiscard)
 					mDiscardControl->SetValue( false);
+				UpdateState();
+				PropagateChange();
+			}
+			break;
+		}
+		case BM_FILEINTO_ASK_CHANGED: {
+			if (mCurrFilterAddon) {
+				bool newVal = mFileIntoControl->Value();
+				mCurrFilterAddon->mActionFileIntoAsk = newVal;
 				UpdateState();
 				PropagateChange();
 			}
@@ -1783,6 +1842,8 @@ void BmSieveFilterPrefs::ShowFilter( BmFilterAddon* addon) {
 		mFileIntoControl->SetValueSilently( mCurrFilterAddon->mActionFileInto);
 		mFileIntoValueControl->MarkItem( 
 			mCurrFilterAddon->mActionFileIntoValue.String());
+		mFileIntoAskControl->SetValueSilently( 
+			mCurrFilterAddon->mActionFileIntoAsk);
 		mDiscardControl->SetValueSilently( mCurrFilterAddon->mActionDiscard);
 		mSetStatusControl->SetValueSilently( mCurrFilterAddon->mActionSetStatus);
 		mSetStatusValueControl->MarkItem( 
@@ -1815,6 +1876,7 @@ void BmSieveFilterPrefs::UpdateState() {
 				mFieldSpecLayer[idx]->ActivateLayer( 0);
 		}
 		mFileIntoValueControl->SetEnabled( mFileIntoControl->Value());
+		mFileIntoAskControl->SetEnabled( mFileIntoControl->Value());
 		if (!mFileIntoControl->Value())
 			mFileIntoValueControl->ClearMark();
 		mSetStatusValueControl->SetEnabled( mSetStatusControl->Value());
