@@ -960,10 +960,16 @@ void BmMailEditWin::AddAddressToTextControl( BmTextControl* cntrl,
 	if (cntrl) {
 		Regexx rx;
 		BmString currStr = cntrl->Text();
-		if (rx.exec( currStr, "\\S+"))
-			currStr << ", " << email;
+		BmAddress addr( email);
+		BmString mailAddr;
+		if (ThePrefs->GetBool( "AddPeopleNameToMailAddr", true))
+			mailAddr = addr.AddrString();
 		else
-			currStr << email;
+			mailAddr = addr.AddrSpec();
+		if (rx.exec( currStr, "\\S+"))
+			currStr << ", " << mailAddr;
+		else
+			currStr << mailAddr;
 		cntrl->SetText( currStr.String());
 		cntrl->TextView()->Select( currStr.Length(), currStr.Length());
 		cntrl->TextView()->ScrollToSelection();

@@ -133,16 +133,9 @@ bool BmPerson::AddEmail( const BmString& em) {
 		-	
 \*------------------------------------------------------------------------------*/
 BmString BmPerson::GenerateMailAddr( const BmString& name, const BmString& email) {
-	if (ThePrefs->GetBool( "AddPeopleNameToMailAddr", true) && name.Length()) {
-		// quote the name if it contains "dangerous" characters:
-		if (name.FindFirst(',')!=B_ERROR
-		|| name.FindFirst(':')!=B_ERROR
-		|| name.FindFirst('<')!=B_ERROR	
-		|| name.FindFirst('>')!=B_ERROR)
-			return BmString("\"") << name << "\" <" << email << ">";
-		else
-			return name + " <" + email + ">";
-	} else
+	if (name.Length() > 0)
+		return BmString("\"") << name << "\" <" << email << ">";
+	else
 		return email;
 }
 
