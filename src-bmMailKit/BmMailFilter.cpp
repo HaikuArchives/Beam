@@ -112,6 +112,7 @@ bool BmMailFilter::ShouldContinue() {
 bool BmMailFilter::StartJob() {
 	try {
 		int32 count = mMailRefs.size() + mMails.size();
+		BM_LOG2( BM_LogFilter, BmString("Starting filter-job for ") << count << " mails.");
 		int32 c=0;
 		const float delta =  100.0 / (count / GRAIN);
 		BmRef<BmMail> mail;
@@ -134,6 +135,10 @@ bool BmMailFilter::StartJob() {
 		mMails.clear();
 		BmString currentCount = BmString()<<c<<" of "<<count;
 		UpdateStatus( delta, "", currentCount.String());
+		if (ShouldContinue())
+			BM_LOG2( BM_LogFilter, "Filter-job has finished.");
+		else
+			BM_LOG2( BM_LogFilter, "Filter-job has been stopped.");
 		return true;
 	}
 	catch( BM_runtime_error &err) {
@@ -153,6 +158,7 @@ void BmMailFilter::ExecuteFilter( BmMail* mail) {
 	BmMsgContext msgContext( mail->RawText(), mail->Name());
 	mail->Header()->GetAllFieldValues( msgContext);
 	if (!mFilter) {
+		BM_LOG2( BM_LogFilter, BmString("Searching filter-chain for mail with Id <") << mail->Name() << ">...");
 		// first we find the correct filter-chain for this mail...
 		BmRef< BmListModelItem> accItem;
 		BmRef< BmListModelItem> chainItem;
@@ -170,6 +176,7 @@ void BmMailFilter::ExecuteFilter( BmMail* mail) {
 		}
 		BmFilterChain* chain = dynamic_cast< BmFilterChain*>( chainItem.Get());
 		if (chain) {
+			BM_LOG2( BM_LogFilter, BmString("...found chain ") << chain->DisplayKey() << ", applying all its filters...");
 			// execute all the chain's filters:
 			BmAutolockCheckGlobal lock( chain->ModelLocker());
 			lock.IsLocked() 					|| BM_THROW_RUNTIME( chain->ModelNameNC() << ": Unable to get lock");
@@ -178,35 +185,55 @@ void BmMailFilter::ExecuteFilter( BmMail* mail) {
 				BmChainedFilter* chainedFilter = dynamic_cast< BmChainedFilter*>( iter->second.Get());
 				BmRef< BmListModelItem> filterItem = TheFilterList->FindItemByKey( chainedFilter->FilterName());
 				BmFilter* filter = dynamic_cast< BmFilter*>( filterItem.Get());
-				if (filter && filter->Addon())
-					filter->Addon()->Execute( &msgContext);
-				if (msgContext.stopProcessing)
-					break;
+				if (filter) {
+					if (filter->IsDisabled()) {
+						BM_LOG2( BM_LogFilter, BmString("Addon for Filter ") << filter->Name() << " (type=" << filter->Kind() << ") has not been loaded, we skip this filter.");
+					} else {
+						BM_LOG2( BM_LogFilter, BmString("Executing Filter ") << filter->Name() << " (type=" << filter->Kind() << ")...");
+						filter->Addon()->Execute( &msgContext);
+						if (msgContext.stopProcessing)
+							break;
+					}
+				}
 			}
+		} else {
+			BM_LOG2( BM_LogFilter, "...no chain found -> nothing to do.");
+			return;
 		}
 	} else {
-		if (mFilter->Addon())
+		if (mFilter->IsDisabled()) {
+			BM_LOG2( BM_LogFilter, BmString("Addon for Filter ") << mFilter->Name() << " (type=" << mFilter->Kind() << ") has not been loaded, we skip this filter.");
+			return;
+		} else {
+			BM_LOG2( BM_LogFilter, BmString("Executing Filter ") << mFilter->Name() << " (type=" << mFilter->Kind() << ")...");
 			mFilter->Addon()->Execute( &msgContext);
+		}
 	}
 	bool needToStore = false;
 	if (msgContext.folderName.Length()) {
+		BM_LOG( BM_LogFilter, BmString("Filter ") << mFilter->Name() << ": moving mail to folder " << msgContext.folderName);
 		if (mail->SetDestFoldername( msgContext.folderName))
 			needToStore = true;
 	}
 	if (msgContext.identity.Length()) {
+		BM_LOG( BM_LogFilter, BmString("Filter ") << mFilter->Name() << ": setting identity to " << msgContext.identity);
 		mail->IdentityName( msgContext.identity);
 		needToStore = true;
 	}
 	if (msgContext.status.Length() && mail->Status() != msgContext.status) {
+		BM_LOG( BM_LogFilter, BmString("Filter ") << mFilter->Name() << ": setting status to " << msgContext.status);
 		mail->MarkAs( msgContext.status.String());
 		needToStore = true;
 	}
 	if (msgContext.moveToTrash) {
+		BM_LOG( BM_LogFilter, BmString("Filter ") << mFilter->Name() << ": moving mail to trash.");
 		if (mail->SetDestFoldername( BM_MAIL_FOLDER_TRASH))
 			needToStore = true;
-	}		
-	if (needToStore && CurrentJobSpecifier()!=BM_EXECUTE_FILTER_IN_MEM)
+	}
+	if (needToStore && CurrentJobSpecifier()!=BM_EXECUTE_FILTER_IN_MEM) {
+		BM_LOG3( BM_LogFilter, BmString("Filter ") << mFilter->Name() << " has changed something, so mail will be stored now.");
 		mail->Store();
+	}
 }
 
 /*------------------------------------------------------------------------------*\

@@ -149,7 +149,14 @@ bool BmSieveFilter::Execute( void* message_context) {
 		mLastErr = "Unable to get SIEVE-lock";
 		return false;
 	}
+	BmMsgContext* msgContext = static_cast< BmMsgContext*>( message_context);
+	BmString mailId;
+	if (msgContext)
+		mailId = msgContext->mailId;
+	BM_LOG2( BM_LogFilter, BmString("Sieve-Addon: asked to execute filter <") << Name() 
+									<< "> on mail with Id <" << mailId << ">");
 	if (!mCompiledScript) {
+		BM_LOG2( BM_LogFilter, BmString("Sieve-Addon: compiling SIEVE-script of filter ") << Name()); 
 		bool scriptOK = CompileScript();
 		if (!scriptOK || !mCompiledScript) {
 			BmString errString = LastErr() + "\n" 
@@ -157,16 +164,13 @@ bool BmSieveFilter::Execute( void* message_context) {
 										<< sieve_strerror(LastErrVal()) 
 										<< "\n"
 										<< LastSieveErr();
+			BM_LOGERR( BmString("Sieve-Addon: compilation failed.\n") << errString); 
 			return false;
 		}
 	}
-	BmMsgContext* msgContext = static_cast< BmMsgContext*>( message_context);
-	BmString mailId;
-	if (msgContext)
-		mailId = msgContext->mailId;
-	BM_LOG2( BM_LogFilter, BmString("Executing Sieve-filter <") << Name() 
-									<< "> on mail with Id <" << mailId << ">");
+	BM_LOG2( BM_LogFilter, "Sieve-Addon: starting execution of script...");
 	int res = sieve_execute_script( mCompiledScript, msgContext);
+	BM_LOG2( BM_LogFilter, "Sieve-Addon: done with script.");
 	return res == SIEVE_OK;
 }
 
@@ -310,6 +314,7 @@ void BmSieveFilter::SetMailFlags( sieve_imapflags_t* flags, BmMsgContext* msgCon
 	if (msgContext && flags) {
 		for( int i=0; i<flags->nflags; ++i) {
 			BmString flag( flags->flag[i]);
+			BM_LOG3( BM_LogFilter, BmString("Sieve-Addon: SetMailFlags called with flag ") << flag); 
 			if (!flag.ICompare( "\\Seen"))
 				msgContext->status = "Read";
 		}
@@ -323,6 +328,7 @@ void BmSieveFilter::SetMailFlags( sieve_imapflags_t* flags, BmMsgContext* msgCon
 int BmSieveFilter::sieve_keep( void* action_context, void*, 
 			   				  		 void*, void* message_context, 
 			   				  		 const char**) {
+	BM_LOG3( BM_LogFilter, BmString("Sieve-Addon: sieve_keep called")); 
 	BmMsgContext* msgContext = static_cast< BmMsgContext*>( message_context);
 	sieve_keep_context* keepContext 
 		= static_cast< sieve_keep_context*>( action_context);
@@ -338,6 +344,7 @@ int BmSieveFilter::sieve_keep( void* action_context, void*,
 int BmSieveFilter::sieve_discard( void* action_context, void*, 
 			   				  		    void*, void* message_context, 
 			   				  		    const char**) {
+	BM_LOG3( BM_LogFilter, BmString("Sieve-Addon: sieve_discard called")); 
 	BmMsgContext* msgContext = static_cast< BmMsgContext*>( message_context);
 	if (msgContext)
 		msgContext->moveToTrash = true;
@@ -355,6 +362,7 @@ int BmSieveFilter::sieve_fileinto( void* action_context, void*,
 	sieve_fileinto_context* fileintoContext 
 		= static_cast< sieve_fileinto_context*>( action_context);
 	if (msgContext && fileintoContext) {
+		BM_LOG3( BM_LogFilter, BmString("Sieve-Addon: sieve_fileinto called with folder ")<<fileintoContext->mailbox); 
 		SetMailFlags( fileintoContext->imapflags, msgContext);
 		msgContext->folderName = fileintoContext->mailbox;
 	}
@@ -372,6 +380,10 @@ int BmSieveFilter::sieve_notify( void* action_context, void*,
 	sieve_notify_context* notifyContext 
 		= static_cast< sieve_notify_context*>( action_context);
 	if (msgContext && notifyContext) {
+		BM_LOG3( BM_LogFilter, BmString("Sieve-Addon: sieve_notify called with method ")<<notifyContext->method);
+		for( int i=0; notifyContext->options[i]; ++i) {
+			BM_LOG3( BM_LogFilter, BmString("option[")<<i<<"] = "<<notifyContext->options[i]);
+		}
 		if (!BmNotifySetIdentity.ICompare( notifyContext->method)) {
 			// set identity for mail according to notify-options:
 			msgContext->identity = notifyContext->options[0];
@@ -394,6 +406,7 @@ int BmSieveFilter::sieve_get_size( void* message_context, int* sizePtr) {
 	BmMsgContext* msgContext = static_cast< BmMsgContext*>( message_context);
 	if (msgContext && sizePtr)
 		*sizePtr = msgContext->rawMsgText.Length();
+	BM_LOG3( BM_LogFilter, BmString("Sieve-Addon: sieve_get_size called, answer = ")<<msgContext->rawMsgText.Length());
 	return SIEVE_OK;
 }
 
@@ -403,6 +416,7 @@ int BmSieveFilter::sieve_get_size( void* message_context, int* sizePtr) {
 \*------------------------------------------------------------------------------*/
 int BmSieveFilter::sieve_get_header( void* message_context, const char* header,
 			  									 const char*** contentsPtr) {
+	BM_LOG3( BM_LogFilter, BmString("Sieve-Addon: sieve_get_header called for header ")<<header);
 	static const char* dummy[] = { NULL };
 	BmMsgContext* msgContext = static_cast< BmMsgContext*>( message_context);
 	if (msgContext && contentsPtr && header) {
@@ -410,6 +424,10 @@ int BmSieveFilter::sieve_get_header( void* message_context, const char* header,
 		for( int i=0; i<msgContext->headerInfoCount; ++i) {
 			if (!msgContext->headerInfos[i].fieldName.ICompare( header)) {
 				*contentsPtr = msgContext->headerInfos[i].values;
+				for( int v=0; msgContext->headerInfos[i].values[v]; ++v) {
+					BM_LOG3( BM_LogFilter, BmString("Sieve-Addon: sieve_get_header returns value[")<<v<<"] = "
+													<<msgContext->headerInfos[i].values[v]);
+				}
 				break;
 			}
 		}
