@@ -97,16 +97,20 @@ BmString OwnDomain( BmString fqdn) {
 		-	checks whether or not PPP-daemon is running
 \*------------------------------------------------------------------------------*/
 bool IsPPPRunning() {
-	// the following has ruthlessly been ripped from the MailDaemonReplacement (MDR):
+	bool running = false;
 #ifdef BEAM_FOR_BONE
+	// the following has ruthlessly been ripped from the MailDaemonReplacement (MDR):
 	int s = socket(AF_INET, SOCK_DGRAM, 0);
 	bsppp_status_t status;
 	strcpy(status.if_name, "ppp0");
 	if (ioctl(s, BONE_SERIAL_PPP_GET_STATUS, &status, sizeof(status)) == 0) {
 		if (status.connection_status == BSPPP_CONNECTED)
-			return true;
+			running = true;
 	}
+	close (s);
+#elsif
+	running = (find_thread("tty_thread") > 0);
 #endif
-	return (find_thread("tty_thread") > 0);
+	return running;
 }
 
