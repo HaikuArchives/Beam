@@ -46,6 +46,7 @@
 #include "BmMailRefView.h"
 #include "BmMailView.h"
 #include "BmMailViewWin.h"
+#include "BmMenuController.h"
 #include "BmMsgTypes.h"
 #include "BmPrefs.h"
 #include "BmResources.h"
@@ -677,7 +678,10 @@ void BmMailRefView::ItemInvoked( int32 index) {
 	( )
 		-	
 \*------------------------------------------------------------------------------*/
-void BmMailRefView::AddMailRefMenu( BMenu* menu, BHandler* target) {
+void BmMailRefView::AddMailRefMenu( BMenu* menu, BHandler* target, 
+												BHandler* menuControllerHandler, 
+												BmMenuController** inFilterMenuPtr, 
+												BmMenuController** outFilterMenuPtr) {
 	if (!menu)
 		return;
 	AddItemToMenu( menu, CreateMenuItem( "Reply", BMM_REPLY), target);
@@ -702,27 +706,32 @@ void BmMailRefView::AddMailRefMenu( BMenu* menu, BHandler* target) {
 	}
 	menu->AddItem( statusMenu);
 	menu->AddSeparatorItem();
-	for( int i=0; i<2; ++i) {
-		bool outbound = (i==1);
-		BMenu* filterMenu = new BMenu( outbound 
-													? MENU_OUTBOUND_FILTER
-													: MENU_INBOUND_FILTER);
-		BmRef<BmFilterList> filterList = outbound 
-											? TheOutboundFilterList 
-											: TheInboundFilterList;
-		for(  BmModelItemMap::const_iterator iter = filterList->begin();
-				iter != filterList->end(); ++iter) {
-			BmFilter* filter = dynamic_cast< BmFilter*>( iter->second.Get());
-			if (!filter)
-				continue;
-			BMessage* msg = new BMessage( BMM_FILTER);
-			msg->AddString( BmFilter::MSG_FILTER, filter->Name().String());
-			msg->AddBool( BmFilter::MSG_OUTBOUND, outbound);
-			AddItemToMenu( filterMenu, CreateMenuItem( filter->Name().String(), msg, ""), target);
-		}
-		menu->AddItem( filterMenu);
-	}
+
+	BMessage inMsgTempl( BMM_FILTER);
+	inMsgTempl.AddBool( BmFilter::MSG_OUTBOUND, false);
+	BmMenuController* inFilterMenu
+		= new BmMenuController( MENU_INBOUND_FILTER, "InboundFilterController",
+										inMsgTempl, menuControllerHandler);
+	menu->AddItem( inFilterMenu);
+	if (inFilterMenuPtr)
+		*inFilterMenuPtr = inFilterMenu;
+	inFilterMenu->StartJob( TheInboundFilterList.Get(), false);
+	if (!inFilterMenuPtr)
+		inFilterMenu->JobIsDone( true);
+
+	BMessage outMsgTempl( BMM_FILTER);
+	outMsgTempl.AddBool( BmFilter::MSG_OUTBOUND, true);
+	BmMenuController* outFilterMenu
+		= new BmMenuController( MENU_OUTBOUND_FILTER, "OutboundFilterController",
+										outMsgTempl, menuControllerHandler);
+	menu->AddItem( outFilterMenu);
+	if (outFilterMenuPtr)
+		*outFilterMenuPtr = outFilterMenu;
+	outFilterMenu->StartJob( TheOutboundFilterList.Get(), false);
+	if (!outFilterMenuPtr)
+		outFilterMenu->JobIsDone( true);
 	menu->AddSeparatorItem();
+
 	AddItemToMenu( menu, CreateMenuItem( "Print Message(s)...", BMM_PRINT, "Print Message..."), target);
 	menu->AddSeparatorItem();
 	AddItemToMenu( menu, CreateMenuItem( "Move To Trash", BMM_TRASH), target);
@@ -738,7 +747,7 @@ void BmMailRefView::ShowMenu( BPoint point) {
 
 	BPopUpMenu* theMenu = new BPopUpMenu( "MailFolderViewMenu", false, false);
 
-	AddMailRefMenu( theMenu, Window());
+	AddMailRefMenu( theMenu, Window(), Window());
 
    ConvertToScreen(&point);
 	BRect openRect;

@@ -38,6 +38,7 @@
 
 class BMenu;
 
+class BmMenuController;
 class BmMailFolderView;
 class BmMailRefView;
 class BmMailView;
@@ -45,32 +46,6 @@ class BmMailViewContainer;
 class BmToolbarButton;
 class CLVContainerView;
 class UserResizeSplitView;
-
-class BmMainMenuBar : public MMenuBar, public BmJobController
-{
-	typedef MMenuBar inherited;
-	typedef BmJobController inheritedController;
-
-public:
-
-	BmMainMenuBar();
-
-	void MessageReceived( BMessage* msg);
-
-	BHandler* GetControllerHandler() 	{ return this; }
-	void JobIsDone( bool completed);
-
-	inline void SetAccountMenu( BMenu* m)	{ mAccountMenu = m; }
-	
-private:
-	BMenu* mAccountMenu;
-
-	// Hide copy-constructor and assignment:
-	BmMainMenuBar( const BmMainMenuBar&);
-	BmMainMenuBar operator=( const BmMainMenuBar&);
-};
-
-
 
 class BmMainWindow : public BmWindow
 {
@@ -127,7 +102,10 @@ private:
 	BmToolbarButton* mPrintButton;
 	BmToolbarButton* mTrashButton;
 	
-	BmMainMenuBar* mMainMenuBar;
+	MMenuBar* mMainMenuBar;
+	BmMenuController* mAccountMenu;
+	BmMenuController* mInboundFilterMenu;
+	BmMenuController* mOutboundFilterMenu;
 
 	static bool nIsAlive;
 

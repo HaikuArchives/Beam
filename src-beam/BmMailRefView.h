@@ -74,6 +74,7 @@ public:
 };
 
 class BmMailView;
+class BmMenuController;
 /*------------------------------------------------------------------------------*\
 	BmMailRefView
 		-	
@@ -99,7 +100,10 @@ public:
 	inline void TeamUpWith( BmMailView* mv) 	{ mPartnerMailView = mv; }
 	void AddSelectedRefsToMsg( BMessage* msg, BmString fieldName);
 	void ShowMenu( BPoint point);
-	static void AddMailRefMenu( BMenu* menu, BHandler* target=NULL);
+	static void AddMailRefMenu( BMenu* menu, BHandler* target,
+										 BHandler* menuControllerHandler,
+										 BmMenuController** inFilterMenuPtr=NULL, 
+										 BmMenuController** outFilterMenuPtr=NULL);
 
 	// overrides of listview base:
 	void KeyDown(const char *bytes, int32 numBytes);

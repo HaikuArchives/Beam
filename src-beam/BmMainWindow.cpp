@@ -52,6 +52,7 @@
 #include "BmMailRefView.h"
 #include "BmMailView.h"
 #include "BmMainWindow.h"
+#include "BmMenuController.h"
 #include "BmMsgTypes.h"
 #include "BmPopAccount.h"
 #include "BmPrefs.h"
@@ -59,90 +60,6 @@
 #include "BmResources.h"
 #include "BmToolbarButton.h"
 #include "BmUtil.h"
-
-
-/********************************************************************************\
-	BmMainMenuBar
-\********************************************************************************/
-
-/*------------------------------------------------------------------------------*\
-	BmMainMenuBar()
-		-	
-\*------------------------------------------------------------------------------*/
-BmMainMenuBar::BmMainMenuBar()
-	:	inherited()
-	,	inheritedController( "PopAccountListController")
-	,	mAccountMenu( NULL)
-{
-}
-
-/*------------------------------------------------------------------------------*\
-	MessageReceived( msg)
-		-	
-\*------------------------------------------------------------------------------*/
-void BmMainMenuBar::MessageReceived( BMessage* msg) {
-	try {
-		switch( msg->what) {
-			case BM_JOB_DONE:
-			case BM_LISTMODEL_ADD:
-			case BM_LISTMODEL_UPDATE:
-			case BM_LISTMODEL_REMOVE: {
-				if (!IsMsgFromCurrentModel( msg)) 
-					break;
-				BmListModelItem* item=NULL;
-				msg->FindPointer( BmListModel::MSG_MODELITEM, (void**)&item);
-				if (item)
-					item->RemoveRef();		// the msg is no longer referencing the item
-				const char* oldKey;
-				if (msg->what == BM_LISTMODEL_UPDATE
-				&& msg->FindString( BmListModel::MSG_OLD_KEY, &oldKey) != B_OK) 
-					break;
-				JobIsDone( true);
-				break;
-			}
-			default:
-				inherited::MessageReceived( msg);
-		}
-	}
-	catch( exception &err) {
-		// a problem occurred, we tell the user:
-		BM_SHOWERR( BmString(ControllerName()) << ":\n\t" << err.what());
-	}
-}
-
-/*------------------------------------------------------------------------------*\
-	JobIsDone()
-		-	
-\*------------------------------------------------------------------------------*/
-void BmMainMenuBar::JobIsDone( bool completed) {
-	if (completed && mAccountMenu) {
-		BmAutolock lock( DataModel()->ModelLocker());
-		lock.IsLocked()	 						|| BM_THROW_RUNTIME( BmString() << ControllerName() << ":AddAllModelItems(): Unable to lock model");
-		BMenuItem* old;
-		while( (old = mAccountMenu->RemoveItem( (int32)0))!=NULL)
-			delete old;
-		BmListModel *model = dynamic_cast<BmListModel*>( DataModel());
-		BmModelItemMap::const_iterator iter;
-		int i=0;
-		for( iter = model->begin();  iter != model->end();  ++iter, ++i) {
-			BmListModelItem* item = iter->second.Get();
-			BMessage* msg = new BMessage( BMM_CHECK_MAIL);
-			msg->AddString( BmPopAccountList::MSG_ITEMKEY, item->Key().String());
-			if (item) {
-				if (i<10)
-					mAccountMenu->AddItem( new BMenuItem( item->Key().String(), msg, '0'+i));
-				else
-					mAccountMenu->AddItem( new BMenuItem( item->Key().String(), msg, i));
-			}
-		}
-	}
-}
-
-
-
-/********************************************************************************\
-	BmMainWindow
-\********************************************************************************/
 
 BmMainWindow* BmMainWindow::theInstance = NULL;
 
@@ -186,6 +103,9 @@ BmMainWindow::BmMainWindow()
 	,	mMailFolderView( NULL)
 	,	mMailRefView( NULL)
 	,	mVertSplitter( NULL)
+	,	mAccountMenu( NULL)
+	,	mInboundFilterMenu( NULL)
+	,	mOutboundFilterMenu( NULL)
 {
 	CreateMailFolderView( minimax(0,100,300,1E5), 200, 400);
 	CreateMailRefView( minimax(200,100,1E5,1E5), 400, 200);
@@ -299,7 +219,7 @@ BmMainWindow::~BmMainWindow() {
 		-	
 \*------------------------------------------------------------------------------*/
 MMenuBar* BmMainWindow::CreateMenu() {
-	mMainMenuBar = new BmMainMenuBar();
+	mMainMenuBar = new MMenuBar();
 	BMenu* menu = NULL;
 	// File
 	menu = new BMenu( "File");
@@ -330,11 +250,13 @@ MMenuBar* BmMainWindow::CreateMenu() {
 	mMainMenuBar->AddItem( menu);
 
 	// Network
-	BMenu* accMenu = new BMenu( "Check Mail For");
-	mMainMenuBar->SetAccountMenu( accMenu);
 	menu = new BMenu( "Network");
 	menu->AddItem( CreateMenuItem( "Check Mail", BMM_CHECK_MAIL));
-	menu->AddItem( accMenu);
+	BMessage checkMsgTempl( BMM_CHECK_MAIL);
+	menu->AddItem( mAccountMenu = 
+							new BmMenuController( "Check Mail For", 
+														 "PopAccountMenuController",
+														 checkMsgTempl, this));
 	menu->AddItem( CreateMenuItem( "Check All Accounts", BMM_CHECK_ALL));
 	menu->AddSeparatorItem();
 	menu->AddItem( CreateMenuItem( "Send Pending Messages...", BMM_SEND_PENDING));
@@ -344,7 +266,8 @@ MMenuBar* BmMainWindow::CreateMenu() {
 	menu = new BMenu( "Message");
 	menu->AddItem( CreateMenuItem( "New Message...", BMM_NEW_MAIL));
 	menu->AddSeparatorItem();
-	mMailRefView->AddMailRefMenu( menu);
+	mMailRefView->AddMailRefMenu( menu, this, this, &mInboundFilterMenu, 
+											&mOutboundFilterMenu);
 	menu->AddSeparatorItem();
 	menu->AddItem( CreateMenuItem( "Toggle Header Mode", BMM_SWITCH_HEADER));
 	menu->AddItem( CreateMenuItem( "Show Raw Message", BMM_SWITCH_RAW));
@@ -408,7 +331,7 @@ void BmMainWindow::BeginLife() {
 		mMailRefView->StartWatching( this, BM_NTFY_MAILREF_SELECTION);
 		mMailView->StartWatching( this, BM_NTFY_MAIL_VIEW);
 		mMailFolderView->StartJob( TheMailFolderList.Get());
-		mMainMenuBar->StartJob( ThePopAccountList.Get());
+		mAccountMenu->StartJob( ThePopAccountList.Get());
 		BM_LOG2( BM_LogMainWindow, BmString("MainWindow begins life"));
 	} catch(...) {
 		nIsAlive = false;
@@ -485,8 +408,8 @@ void BmMainWindow::MessageReceived( BMessage* msg) {
 				mMailRefView->AddSelectedRefsToMsg( &tmpMsg, BmFilter::MSG_MAILREF);
 				bool outbound = msg->FindString( BmFilter::MSG_OUTBOUND);
 				tmpMsg.AddBool( BmFilter::MSG_OUTBOUND, outbound);
-				BmString jobName = msg->FindString( BmFilter::MSG_FILTER);
-				tmpMsg.AddString( BmFilter::MSG_FILTER, jobName.String());
+				BmString jobName = msg->FindString( BmListModel::MSG_ITEMKEY);
+				tmpMsg.AddString( BmListModel::MSG_ITEMKEY, jobName.String());
 				jobName << jobNum++;
 				tmpMsg.AddString( BmJobModel::MSG_JOB_NAME, jobName.String());
 				TheJobStatusWin->PostMessage( &tmpMsg);
@@ -524,6 +447,31 @@ void BmMainWindow::MessageReceived( BMessage* msg) {
 						ThePrefsWin->UnlockLooper();
 					}
 				}
+				break;
+			}
+			case BM_JOB_DONE:
+			case BM_LISTMODEL_ADD:
+			case BM_LISTMODEL_UPDATE:
+			case BM_LISTMODEL_REMOVE: {
+				// double-dispatch job-related messages to our mene-controllers:
+				BmMenuController* ctrlr = NULL;
+				if (mAccountMenu->IsMsgFromCurrentModel( msg))
+					ctrlr = mAccountMenu;
+				else if (mInboundFilterMenu->IsMsgFromCurrentModel( msg))
+					ctrlr = mInboundFilterMenu;
+				else if (mOutboundFilterMenu->IsMsgFromCurrentModel( msg))
+					ctrlr = mOutboundFilterMenu;
+				else 
+					break;
+				BmListModelItem* item=NULL;
+				msg->FindPointer( BmListModel::MSG_MODELITEM, (void**)&item);
+				if (item)
+					item->RemoveRef();		// the msg is no longer referencing the item
+				const char* oldKey;
+				if (msg->what == BM_LISTMODEL_UPDATE
+				&& msg->FindString( BmListModel::MSG_OLD_KEY, &oldKey) != B_OK) 
+					break;
+				ctrlr->JobIsDone( true);
 				break;
 			}
 			default:
@@ -599,7 +547,6 @@ void BmMainWindow::MailRefSelectionChanged( int32 numSelected) {
 	mMainMenuBar->FindItem( BmMailRefView::MENU_MARK_AS)->SetEnabled( numSelected > 0);
 	mMainMenuBar->FindItem( BmMailRefView::MENU_INBOUND_FILTER)->SetEnabled( numSelected > 0);
 	mMainMenuBar->FindItem( BmMailRefView::MENU_OUTBOUND_FILTER)->SetEnabled( numSelected > 0);
-	mMainMenuBar->FindItem( BMM_FILTER)->SetEnabled( numSelected > 0);
 	mMainMenuBar->FindItem( BMM_PRINT)->SetEnabled( numSelected > 0);
 	mMainMenuBar->FindItem( BMM_TRASH)->SetEnabled( numSelected > 0);
 }

@@ -37,6 +37,7 @@ class MMenuBar;
 
 class BmMailView;
 class BmMailViewContainer;
+class BmMenuController;
 class BmToolbarButton;
 
 class BmMailViewWin : public BmWindow
@@ -76,6 +77,9 @@ private:
 	BmToolbarButton* mTrashButton;
 	
 	MView* mOuterGroup;
+
+	BmMenuController* mInboundFilterMenu;
+	BmMenuController* mOutboundFilterMenu;
 
 	static float nNextXPos;
 	static float nNextYPos;

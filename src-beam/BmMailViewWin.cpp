@@ -44,13 +44,16 @@
 #include "BmBasics.h"
 #include "BmEncoding.h"
 	using namespace BmEncoding;
+#include "BmFilter.h"
 #include "BmGuiUtil.h"
+#include "BmJobStatusWin.h"
 #include "BmLogHandler.h"
 #include "BmMailHeaderView.h"
 #include "BmMailRef.h"
 #include "BmMailRefView.h"
 #include "BmMailView.h"
 #include "BmMailViewWin.h"
+#include "BmMenuController.h"
 #include "BmMsgTypes.h"
 #include "BmPrefs.h"
 #include "BmResources.h"
@@ -85,6 +88,8 @@ BmMailViewWin::BmMailViewWin( BmMailRef* mailRef)
 					  		? B_DOCUMENT_WINDOW_LOOK 
 					  		: B_TITLED_WINDOW_LOOK, 
 					  B_NORMAL_WINDOW_FEEL, B_ASYNCHRONOUS_CONTROLS)
+	,	mInboundFilterMenu( NULL)
+	,	mOutboundFilterMenu( NULL)
 {
 	CreateGUI();
 	if (mailRef)
@@ -240,7 +245,8 @@ MMenuBar* BmMailViewWin::CreateMenu() {
 	menu = new BMenu( "Message");
 	menu->AddItem( CreateMenuItem( "New Message", BMM_NEW_MAIL));
 	menu->AddSeparatorItem();
-	BmMailRefView::AddMailRefMenu( menu);
+	BmMailRefView::AddMailRefMenu( menu, this, this, &mInboundFilterMenu,
+											 &mOutboundFilterMenu);
 	menu->AddSeparatorItem();
 	menu->AddItem( CreateMenuItem( "Toggle Header Mode", BMM_SWITCH_HEADER));
 	menu->AddItem( CreateMenuItem( "Show Raw Message", BMM_SWITCH_RAW));
@@ -290,7 +296,6 @@ void BmMailViewWin::MessageReceived( BMessage* msg) {
 				break;
 			}
 			case BMM_MARK_AS:
-			case BMM_FILTER:
 			case BMM_REDIRECT:
 			case BMM_REPLY:
 			case BMM_REPLY_LIST:
@@ -322,6 +327,24 @@ void BmMailViewWin::MessageReceived( BMessage* msg) {
 				}
 				break;
 			}
+			case BMM_FILTER: {
+				BmRef<BmMail> mail = mMailView->CurrMail();
+				if (mail && mail->MailRef()) {
+					static int32 jobNum = 1;
+					BMessage tmpMsg( BM_JOBWIN_FILTER);
+					const BmRef<BmMailRef> mailRef = mail->MailRef();
+					tmpMsg.AddPointer( BmApplication::MSG_MAILREF, static_cast< void*>( mailRef.Get()));
+					mailRef->AddRef();	// the message now refers to the mailRef, too
+					bool outbound = msg->FindString( BmFilter::MSG_OUTBOUND);
+					tmpMsg.AddBool( BmFilter::MSG_OUTBOUND, outbound);
+					BmString jobName = msg->FindString( BmListModel::MSG_ITEMKEY);
+					tmpMsg.AddString( BmListModel::MSG_ITEMKEY, jobName.String());
+					jobName << jobNum++;
+					tmpMsg.AddString( BmJobModel::MSG_JOB_NAME, jobName.String());
+					TheJobStatusWin->PostMessage( &tmpMsg);
+				}
+				break;
+			}
 			case B_OBSERVER_NOTICE_CHANGE: {
 				switch( msg->FindInt32( B_OBSERVE_WHAT_CHANGE)) {
 					case BM_NTFY_MAIL_VIEW: {
@@ -337,6 +360,29 @@ void BmMailViewWin::MessageReceived( BMessage* msg) {
 						break;
 					}
 				}
+				break;
+			}
+			case BM_JOB_DONE:
+			case BM_LISTMODEL_ADD:
+			case BM_LISTMODEL_UPDATE:
+			case BM_LISTMODEL_REMOVE: {
+				// double-dispatch job-related messages to our mene-controllers:
+				BmMenuController* ctrlr = NULL;
+				if (mInboundFilterMenu->IsMsgFromCurrentModel( msg))
+					ctrlr = mInboundFilterMenu;
+				else if (mOutboundFilterMenu->IsMsgFromCurrentModel( msg))
+					ctrlr = mOutboundFilterMenu;
+				else 
+					break;
+				BmListModelItem* item=NULL;
+				msg->FindPointer( BmListModel::MSG_MODELITEM, (void**)&item);
+				if (item)
+					item->RemoveRef();		// the msg is no longer referencing the item
+				const char* oldKey;
+				if (msg->what == BM_LISTMODEL_UPDATE
+				&& msg->FindString( BmListModel::MSG_OLD_KEY, &oldKey) != B_OK) 
+					break;
+				ctrlr->JobIsDone( true);
 				break;
 			}
 			default:
