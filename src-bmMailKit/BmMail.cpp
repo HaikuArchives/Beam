@@ -532,7 +532,8 @@ BmString BmMail::CreateForwardSubjectFor( const BmString subject) {
 
 /*------------------------------------------------------------------------------*\
 	CreateReplyIntro()
-	-	
+		-	creates an appropriate intro-line for a reply-message
+		-	the returned string is the intro in UTF8
 \*------------------------------------------------------------------------------*/
 BmString BmMail::CreateReplyIntro() {
 	Regexx rx;
@@ -555,14 +556,13 @@ BmString BmMail::CreateReplyIntro() {
 	}
 	intro = rx.replace( intro, "%F", fromNicks, 
 							  Regexx::nocase|Regexx::global|Regexx::noatom);
-	BmString convertedIntro;
-	ConvertFromUTF8( DefaultEncoding(), intro, convertedIntro);
-	return convertedIntro;
+	return intro;
 }
 
 /*------------------------------------------------------------------------------*\
 	CreateForwardIntro()
-	-	
+		-	creates an appropriate intro-line for a forwarded message
+		-	the returned string is the intro in UTF8
 \*------------------------------------------------------------------------------*/
 BmString BmMail::CreateForwardIntro() {
 	Regexx rx;
@@ -585,9 +585,7 @@ BmString BmMail::CreateForwardIntro() {
 	}
 	intro = rx.replace( intro, "%F", fromNicks, 
 							  Regexx::nocase|Regexx::global|Regexx::noatom);
-	BmString convertedIntro;
-	ConvertFromUTF8( DefaultEncoding(), intro, convertedIntro);
-	return convertedIntro;
+	return intro;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -610,11 +608,6 @@ void BmMail::AddPartsFromMail( BmRef<BmMail> mail, bool withAttachments,
 		return;
 	// copy and quote text-body:
 	BmRef<BmBodyPart> newTextBody( mBody->EditableTextBody());
-	BmString oldText;
-	if (newTextBody) {
-		ConvertFromUTF8( CharsetToEncoding( newTextBody->Charset()), 
-							  newTextBody->DecodedData(), oldText);
-	}
 	BmRef<BmBodyPart> textBody( mail->Body()->EditableTextBody());
 	// copy info about encoding from old into new mail:
 	int32 encoding = mail->DefaultEncoding();
@@ -626,12 +619,14 @@ void BmMail::AddPartsFromMail( BmRef<BmMail> mail, bool withAttachments,
 											quotedText,
 				 							ThePrefs->GetString( "QuotingString"),
 											ThePrefs->GetInt( "MaxLineLen"));
-	BmString convertedText;
-	ConvertFromUTF8( encoding, quotedText, convertedText);
 	BmString intro( isForward 
 							? mail->CreateForwardIntro() << "\n"
 							: mail->CreateReplyIntro() << "\n");
-	mBody->SetEditableText( oldText + "\n" + intro + convertedText, encoding);
+	if (newTextBody)
+		mBody->SetEditableText( newTextBody->DecodedData() + "\n" + intro + quotedText, 
+										encoding);
+	else
+		mBody->SetEditableText( intro + quotedText, encoding);
 	BumpRightMargin( newLineLen);
 	if (withAttachments && mail->Body()->HasAttachments()) {
 		BmModelItemMap::const_iterator iter, end;
@@ -661,16 +656,16 @@ void BmMail::AddPartsFromMail( BmRef<BmMail> mail, bool withAttachments,
 	ConstructRawText()
 	-	
 \*------------------------------------------------------------------------------*/
-bool BmMail::ConstructRawText( const BmString& editedText, int32 encoding,
+bool BmMail::ConstructRawText( const BmString& editedUtf8Text, int32 encoding,
 										 const BmString smtpAccount) {
-	int32 startSize = mBody->EstimateEncodedSize() + editedText.Length() 
+	int32 startSize = mBody->EstimateEncodedSize() + editedUtf8Text.Length() 
 							+ max( mHeader->HeaderLength(), (int32)4096)+4096;
 	startSize += 65536-(startSize%65536);
 	BmStringOBuf msgText( startSize, 1.2);
 	mAccountName = smtpAccount;
 	if (!mHeader->ConstructRawText( msgText, encoding))
 		return false;
-	mBody->SetEditableText( editedText, encoding);
+	mBody->SetEditableText( editedUtf8Text, encoding);
 	if (!mBody->ConstructBodyForSending( msgText))
 		return false;
 	uint32 len = msgText.CurrPos();

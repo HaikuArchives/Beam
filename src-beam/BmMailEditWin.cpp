@@ -844,13 +844,11 @@ bool BmMailEditWin::CreateMailFromFields( bool hardWrapIfNeeded) {
 	BmRef<BmMail> mail = mMailView->CurrMail();
 	if (mail) {
 		BmString editedText;
-		BmString convertedText;
 		mMailView->GetWrappedText( editedText, hardWrapIfNeeded);
 		BMenuItem* charsetItem = mCharsetControl->Menu()->FindMarked();
 		int32 encoding = charsetItem 
 								? CharsetToEncoding( charsetItem->Label())
 						 		: ThePrefs->GetInt("DefaultEncoding");
-		ConvertFromUTF8( encoding, editedText, convertedText);
 		BMenuItem* smtpItem = mSmtpControl->Menu()->FindMarked();
 		BmString smtpAccount = smtpItem ? smtpItem->Label() : "";
 		mail->AccountName( smtpAccount);
@@ -874,8 +872,7 @@ bool BmMailEditWin::CreateMailFromFields( bool hardWrapIfNeeded) {
 			mail->SetFieldVal( BM_FIELD_DATE, TimeToString( time( NULL), 
 																			"%a, %d %b %Y %H:%M:%S %z"));
 		}
-		bool res = mail->ConstructRawText( convertedText, encoding, smtpAccount);
-//		mMailView->UpdateControllers();
+		bool res = mail->ConstructRawText( editedText, encoding, smtpAccount);
 		return res;
 	} else
 		return false;

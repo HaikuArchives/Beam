@@ -131,7 +131,7 @@ public:
 	virtual ~BmMail();
 
 	// native methods:
-	bool ConstructRawText( const BmString& editableText, int32 encoding,
+	bool ConstructRawText( const BmString& editableUtf8Text, int32 encoding,
 								  BmString smtpAccount);
 	void SetTo( BmString &text, const BmString account);
 	void SetNewHeader( const BmString& headerStr);
