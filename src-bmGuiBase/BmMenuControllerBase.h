@@ -54,7 +54,7 @@ enum {
 
 class BMenuItem;
 
-typedef void (BmRosterBase::*BmRebuildMenuFunc)(BmMenuControllerBase*);
+typedef void (BmGuiRosterBase::*BmRebuildMenuFunc)(BmMenuControllerBase*);
 
 class IMPEXPBMGUIBASE BmMenuControllerBase : public BPopUpMenu
 {

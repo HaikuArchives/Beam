@@ -111,7 +111,7 @@ BmPrefsMailConstrView::BmPrefsMailConstrView()
 								"Default-charset:", 
 								new BmMenuController( "", this, 
 															 new BMessage( BM_CHARSET_SELECTED), 
-															 &BmRosterBase::RebuildCharsetMenu,
+															 &BmGuiRosterBase::RebuildCharsetMenu,
 															 BM_MC_LABEL_FROM_MARKED
 								)
 							),

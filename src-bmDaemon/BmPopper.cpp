@@ -349,7 +349,7 @@ void BmPopper::StateLogin() {
 			// ask user about password:
 			BmString text( "Please enter password for POP-Account <");
 			text << Name() << ">:";
-			pwdGiven = BeamRoster->AskUserForPwd( text, pwd);
+			pwdGiven = BeamGuiRoster->AskUserForPwd( text, pwd);
 		}
 		if (!pwdGiven || !ShouldContinue()) {
 			// user has cancelled, we stop

@@ -301,7 +301,7 @@ BmPrefsRecvMailView::BmPrefsRecvMailView()
 							new BmMenuController( 
 								"", this, 
 								new BMessage( BM_HOME_FOLDER_SELECTED), 
-								&BmRosterBase::RebuildFolderMenu, 
+								&BmGuiRosterBase::RebuildFolderMenu, 
 								BM_MC_SKIP_FIRST_LEVEL
 							)
 						),
@@ -310,7 +310,7 @@ BmPrefsRecvMailView::BmPrefsRecvMailView()
 							new BmMenuController( 
 								"", this, 
 								new BMessage( BM_FILTER_CHAIN_SELECTED), 
-								&BmRosterBase::RebuildFilterChainMenu, 
+								&BmGuiRosterBase::RebuildFilterChainMenu, 
 								BM_MC_ADD_NONE_ITEM | BM_MC_LABEL_FROM_MARKED
 							)
 						),

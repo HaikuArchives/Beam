@@ -36,7 +36,7 @@
 #include "regexx.hh"
 using namespace regexx;
 
-#include "BmApp.h"
+#include "BeamApp.h"
 #include "BmBasics.h"
 #include "BmBodyPartList.h"
 #include "BmBodyPartView.h"
@@ -580,7 +580,7 @@ void BmMailView::MouseUp( BPoint point) {
 		BmTextRunInfo runInfo = mClickedTextRun->second;
 		if (runInfo.isURL) {
 			BmString url = GetTextForTextrun( mClickedTextRun);
-			bmApp->LaunchURL( url);
+			beamApp->LaunchURL( url);
 		}
 	}
 	mClickedTextRun = mTextRunMap.end();
@@ -1192,7 +1192,7 @@ void BmMailView::ShowMenu( BPoint point) {
 			if (textBody) {
 				BMenu* menu = new BMenu( "Try Charset");
 				menu->SetFont( &font);
-				BeamRoster->AddCharsetMenu( menu, this, BM_MAILVIEW_SELECT_CHARSET);
+				BeamGuiRoster->AddCharsetMenu( menu, this, BM_MAILVIEW_SELECT_CHARSET);
 				BMenuItem* curr 
 					= menu->FindItem( textBody->SuggestedCharset().String());
 				if (curr)

@@ -90,7 +90,7 @@ class BmMailEditWin : public BmWindow
 	typedef BmWindow inherited;
 
 	friend class BmPeopleDropMsgFilter;
-	friend class BmRoster;
+	friend class BmGuiRoster;
 
 	// state-archival members:
 	static const char* const MSG_DETAIL1;

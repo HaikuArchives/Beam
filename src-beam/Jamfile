@@ -14,8 +14,9 @@ LINKFLAGS += -L/boot/home/config/lib ;
 
 StaticLibrary beamInParts.a
 	:  
-		BmApp.cpp
+		BeamApp.cpp
 		BmBodyPartView.cpp
+		BmGuiRoster.cpp
 		BmGuiUtil.cpp
 		BmJobStatusWin.cpp
 		BmListController.cpp
@@ -44,7 +45,6 @@ StaticLibrary beamInParts.a
 		BmPrefsView.cpp
 		BmPrefsWin.cpp
 		BmResources.cpp
-		BmRoster.cpp
 		BmRulerView.cpp
 		BmToolbarButton.cpp
 		BmWindow.cpp

@@ -53,6 +53,7 @@
 #include "BmPrefs.h"
 #include "BmPrefsIdentityView.h"
 #include "BmPrefsWin.h"
+#include "BmRosterBase.h"
 #include "BmSignature.h"
 #include "BmSmtpAccount.h"
 #include "BmTextControl.h"
@@ -283,7 +284,7 @@ BmPrefsIdentityView::BmPrefsIdentityView()
 								"POP-account:", 
 								this, 
 								new BMessage( BM_POP_SELECTED),
-								&BmRosterBase::RebuildPopAccountMenu, 
+								&BmGuiRosterBase::RebuildPopAccountMenu, 
 								BM_MC_LABEL_FROM_MARKED
 							)
 						),
@@ -294,7 +295,7 @@ BmPrefsIdentityView::BmPrefsIdentityView()
 								"SMTP-account:", 
 								this, 
 								new BMessage( BM_SMTP_SELECTED),
-								&BmRosterBase::RebuildSmtpAccountMenu, 
+								&BmGuiRosterBase::RebuildSmtpAccountMenu, 
 								BM_MC_LABEL_FROM_MARKED
 							)
 						),
@@ -305,7 +306,7 @@ BmPrefsIdentityView::BmPrefsIdentityView()
 								"Signature:", 
 								this, 
 								new BMessage( BM_SIGNATURE_SELECTED),
-								&BmRosterBase::RebuildSignatureMenu, 
+								&BmGuiRosterBase::RebuildSignatureMenu, 
 								BM_MC_LABEL_FROM_MARKED | BM_MC_ADD_NONE_ITEM
 							)
 						),

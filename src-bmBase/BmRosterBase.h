@@ -44,21 +44,20 @@ class BMenu;
 class BMessage;
 
 class BmMenuControllerBase;
+
 /*------------------------------------------------------------------------------*\
 	BmRosterBase
-		-	abstract class that can be used by add-ons to retrieve info about
-			Beam's state.
+		-	abstract class that can be used by other classes and add-ons to 
+			retrieve info about bmMailKit's state.
 		-	The implementation lives in a derived class called BmRoster.
 \*------------------------------------------------------------------------------*/
 class IMPEXPBMBASE BmRosterBase {
 
 public:
-	BmRosterBase() 							{}
-	virtual ~BmRosterBase() 				{}
+	BmRosterBase()								{}
+	virtual ~BmRosterBase()					{}
 	
 	// native methods:
-	virtual BLooper* JobMetaController() = 0;
-
 	virtual bool IsQuitting() = 0;
 
 	virtual const char* AppNameWithVersion() = 0;
@@ -70,10 +69,28 @@ public:
 	virtual BDirectory* StateInfoFolder() = 0;
 
 	virtual const char* OwnFQDN() = 0;
+};
 
-	virtual void UpdateMimeTypeFile( const char* sig, time_t appModTime) = 0;
+extern IMPEXPBMBASE BmRosterBase* BeamRoster;
 
-	virtual int32 MessageTypeForCheckMail() = 0;
+
+/*------------------------------------------------------------------------------*\
+	BmGuiRosterBase
+		-	abstract class that can be used by other classes and add-ons to 
+			retrieve info from the user (through a GUI) or fill menus.
+		-	The implementation lives in a derived class called BmGuiRoster.
+\*------------------------------------------------------------------------------*/
+extern BLooper* TheJobMetaController;
+
+class IMPEXPBMBASE BmGuiRosterBase {
+
+public:
+	BmGuiRosterBase() 						{}
+	virtual ~BmGuiRosterBase() 			{}
+	
+	// native methods:
+	BLooper* JobMetaController()			{ return TheJobMetaController; }
+
 	virtual bool AskUserForPwd( const BmString& text, BmString& pwd) = 0;
 	virtual bool AskUserForPopAcc( const BmString& accName, 
 											 BmString& popAccName) = 0;
@@ -90,12 +107,8 @@ public:
 	virtual void RebuildSignatureMenu( BmMenuControllerBase* menu) = 0;
 	virtual void RebuildSmtpAccountMenu( BmMenuControllerBase* menu) = 0;
 	virtual void RebuildStatusMenu( BmMenuControllerBase* menu) = 0;
-
-	static IMPEXPBMBASE const char* BM_ROSTER_FOLDERLIST;
-	static IMPEXPBMBASE const char* BM_ROSTER_STATUSLIST;
-	static IMPEXPBMBASE const char* BM_ROSTER_IDENTITYLIST;
 };
 
-extern IMPEXPBMBASE BmRosterBase* BeamRoster;
+extern IMPEXPBMBASE BmGuiRosterBase* BeamGuiRoster;
 
 #endif

@@ -30,10 +30,8 @@
 
 #include "BmRosterBase.h"
 
-const char* BmRosterBase::BM_ROSTER_FOLDERLIST		= "FolderList";
-const char* BmRosterBase::BM_ROSTER_STATUSLIST		= "StatusList";
-const char* BmRosterBase::BM_ROSTER_IDENTITYLIST	= "IdentityList";
-
 BmRosterBase* BeamRoster = 0;
 
+BmGuiRosterBase* BeamGuiRoster = 0;
 
+BLooper* TheJobMetaController = 0;

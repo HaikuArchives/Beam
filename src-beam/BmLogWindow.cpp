@@ -39,7 +39,7 @@
 #include <MScrollView.h>
 #include <MTextView.h>
 
-#include "BmApp.h"
+#include "BeamApp.h"
 #include "BmBasics.h"
 #include "BmLogWindow.h"
 #include "BmMainWindow.h"
@@ -63,7 +63,7 @@ BmLogWindow* BmLogWindow::CreateAndStartInstanceFor( const char* logfileName,
 													clingToMainWin);
 	if (showUponNews) {
 		win->Hide();							// pre-hide window, shows upon message
-		win->SetWorkspaces( bmApp->CurrWorkspace());
+		win->SetWorkspaces( beamApp->CurrWorkspace());
 	}
 	win->Show();
 	TheLogHandler->StartWatchingLogfile( win, logfileName);
@@ -132,12 +132,12 @@ void BmLogWindow::MessageReceived( BMessage* msg) {
 			mLogView->ScrollToOffset( len + logMsg.Length());
 			if (mShowUponNews && !BeamInTestMode
 			&& !ThePrefs->GetBool( "ShowAlertForErrors", false)) {
-				SetWorkspaces( bmApp->CurrWorkspace());
+				SetWorkspaces( beamApp->CurrWorkspace());
 				if (IsMinimized())
 					Minimize( false);
 				if (IsHidden() && mClingToMainWin) {
 					BRect mainWinRect = TheMainWindow->Frame();
-					BRect screenRect = bmApp->ScreenFrame();
+					BRect screenRect = beamApp->ScreenFrame();
 					BPoint pt( mainWinRect.left-2, mainWinRect.bottom+6);
 					if (pt.y > screenRect.bottom-100)
 						pt.y = screenRect.bottom-100;
@@ -165,7 +165,7 @@ bool BmLogWindow::QuitRequested() {
 		while( !IsHidden())
 			Hide();
 		Unlock();
-		return bmApp->IsQuitting();
+		return beamApp->IsQuitting();
 	} else
 		return true;
 }

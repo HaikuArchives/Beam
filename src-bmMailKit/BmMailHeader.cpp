@@ -950,7 +950,7 @@ void BmMailHeader::ParseHeader( const BmString &header) {
 	}
 	int32 nm = subparts.size();
 	if (!nm && mMail) {
-		throw BM_mail_format_error( 
+		BM_LOGERR ( 
 			BmString("Could not find any header-fields in this header: \n") 
 				<< header
 		);

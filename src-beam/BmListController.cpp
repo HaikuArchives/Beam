@@ -41,7 +41,7 @@ using namespace regexx;
 
 #include "CLVColumnLabelView.h"
 
-#include "BmApp.h"
+#include "BeamApp.h"
 #include "BmBasics.h"
 #include "BmBusyView.h"
 #include "BmCaption.h"

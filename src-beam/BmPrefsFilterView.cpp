@@ -46,7 +46,7 @@
 #include "CLVEasyItem.h"
 #include "UserResizeSplitView.h"
 
-#include "BmApp.h"
+#include "BeamApp.h"
 #include "BmCheckControl.h"
 #include "BmFilter.h"
 #include "BmFilterAddonPrefs.h"
@@ -501,7 +501,7 @@ void BmPrefsFilterView::MessageReceived( BMessage* msg) {
 			}
 			case BMM_CREATE_FILTER: {
 				BmMailRefVect* refVect = NULL;
-				msg->FindPointer( BmApplication::MSG_MAILREF_VECT, 
+				msg->FindPointer( BeamApplication::MSG_MAILREF_VECT, 
 									  (void**)&refVect);
 				if (!refVect || refVect->empty())
 					break;

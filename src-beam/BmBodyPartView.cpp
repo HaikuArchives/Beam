@@ -39,7 +39,7 @@
 #include "regexx.hh"
 using namespace regexx;
 
-#include "BmApp.h"
+#include "BeamApp.h"
 #include "BmBasics.h"
 #include "BmLogHandler.h"
 #include "BmBodyPartList.h"
@@ -646,11 +646,11 @@ void BmBodyPartView::ItemInvoked( int32 index) {
 					return;
 			}
 		}
-		if (bmApp->HandlesMimetype( realMT)) {
+		if (beamApp->HandlesMimetype( realMT)) {
 			// take care of text/x-email and message/rfc822 ourselves:
 			BMessage msg( B_REFS_RECEIVED);
 			msg.AddRef( "refs", &eref);
-			bmApp->RefsReceived( &msg);
+			beamApp->RefsReceived( &msg);
 		} else {
 			bool doIt = true;
 			if (BmBodyPart::MimeTypeIsPotentiallyHarmful( realMT)) {

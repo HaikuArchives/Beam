@@ -6,7 +6,7 @@
 #include <File.h>
 #include <View.h>
 
-#include "BmApp.h"
+#include "BeamApp.h"
 #include "BmBasics.h"
 #include "BmLogHandler.h"
 #include "BmMsgTypes.h"
@@ -57,7 +57,7 @@ status_t BmWindow::UnarchiveState( BMessage* archive) {
 	status_t ret = archive->FindRect( MSG_FRAME, &frame);
 	if (ret == B_OK) {
 		// make sure this window is at least partially on-screen:
-		BRect screenFrame( bmApp->ScreenFrame());
+		BRect screenFrame( beamApp->ScreenFrame());
 		if (frame.right < treshold)
 			frame.OffsetBy( treshold-frame.right, 0.0);
 		if (frame.left > screenFrame.right-treshold)

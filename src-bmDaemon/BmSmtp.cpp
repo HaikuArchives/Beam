@@ -431,7 +431,7 @@ void BmSmtp::StateAuth() {
 		} else {
 			BmString text( "Please enter password for SMTP-Account <");
 			text << Name() << ">:";
-			if (!ShouldContinue() || !BeamRoster->AskUserForPwd( text, pwd)) {
+			if (!ShouldContinue() || !BeamGuiRoster->AskUserForPwd( text, pwd)) {
 				Disconnect();
 				StopJob();
 				return;

@@ -40,7 +40,7 @@
 
 #include "PrefilledBitmap.h"
 
-#include "BmApp.h"
+#include "BeamApp.h"
 #include "BmFilter.h"
 #include "BmGuiUtil.h"
 #include "BmJobStatusWin.h"
@@ -110,7 +110,7 @@ status_t BmMailViewWin::UnarchiveState( BMessage* archive) {
 				nNextYPos = 100;
 			}
 		}
-		BRect scrFrame = bmApp->ScreenFrame();
+		BRect scrFrame = beamApp->ScreenFrame();
 		frame.bottom = MIN( frame.bottom, scrFrame.bottom-5);
 		frame.right = MIN( frame.right, scrFrame.right-5);
 		MoveTo( BPoint( nNextXPos, nNextYPos));
@@ -210,11 +210,11 @@ MMenuBar* BmMailViewWin::CreateMenu() {
 	menu->AddItem( CreateMenuItem( "Page Setup...", BMM_PAGE_SETUP));
 	menu->AddItem( CreateMenuItem( "Print Message...", BMM_PRINT));
 	menu->AddSeparatorItem();
-	AddItemToMenu( menu, CreateMenuItem( "Preferences...", BMM_PREFERENCES), bmApp);
+	AddItemToMenu( menu, CreateMenuItem( "Preferences...", BMM_PREFERENCES), beamApp);
 	menu->AddSeparatorItem();
 	menu->AddItem( CreateMenuItem( "Close", B_QUIT_REQUESTED));
 	menu->AddSeparatorItem();
-	AddItemToMenu( menu, CreateMenuItem( "Quit Beam", B_QUIT_REQUESTED), bmApp);
+	AddItemToMenu( menu, CreateMenuItem( "Quit Beam", B_QUIT_REQUESTED), beamApp);
 	menubar->AddItem( menu);
 
 	// Edit
@@ -263,7 +263,7 @@ void BmMailViewWin::BeginLife() {
 		menuBar->FindItem( BMM_SWITCH_RAW)->SetTarget( mMailView);
 		menuBar->FindItem( BMM_SWITCH_RAW)->SetMarked( mMailView->ShowRaw());
 		menuBar->FindItem( BMM_SWITCH_HEADER)->SetTarget( mMailView->HeaderView());
-		menuBar->FindItem( BMM_PAGE_SETUP)->SetTarget( bmApp);
+		menuBar->FindItem( BMM_PAGE_SETUP)->SetTarget( beamApp);
 	}
 	mMailView->MakeFocus( true);
 }
@@ -302,10 +302,10 @@ void BmMailViewWin::MessageReceived( BMessage* msg) {
 					if (mailRef) {
 						BmMailRefVect* refVect = new BmMailRefVect();
 						refVect->push_back( mailRef);
-						msg->AddPointer( BmApplication::MSG_MAILREF_VECT, 
+						msg->AddPointer( BeamApplication::MSG_MAILREF_VECT, 
 											  static_cast< void*>( refVect));
 						if (selectedText.Length())
-							msg->AddString( BmApplication::MSG_SELECTED_TEXT, 
+							msg->AddString( BeamApplication::MSG_SELECTED_TEXT, 
 												 selectedText.String());
 						be_app_messenger.SendMessage( msg);
 					}
@@ -332,7 +332,7 @@ void BmMailViewWin::MessageReceived( BMessage* msg) {
 					BMessage tmpMsg( BM_JOBWIN_FILTER);
 					BmMailRefVect* refVect = new BmMailRefVect();
 					refVect->push_back( mail->MailRef());
-					tmpMsg.AddPointer( BmApplication::MSG_MAILREF_VECT, 
+					tmpMsg.AddPointer( BeamApplication::MSG_MAILREF_VECT, 
 											  static_cast< void*>( refVect));
 					BmString jobName = msg->FindString( BmListModel::MSG_ITEMKEY);
 					tmpMsg.AddString( BmListModel::MSG_ITEMKEY, jobName.String());
@@ -347,7 +347,7 @@ void BmMailViewWin::MessageReceived( BMessage* msg) {
 				if (mail && mail->MailRef()) {
 					BmMailRefVect* refVect = new BmMailRefVect();
 					refVect->push_back( mail->MailRef());
-					msg->AddPointer( BmApplication::MSG_MAILREF_VECT, 
+					msg->AddPointer( BeamApplication::MSG_MAILREF_VECT, 
 										  static_cast< void*>( refVect));
 					BMessage appMsg( BMM_PREFERENCES);
 					appMsg.AddString( "SubViewName", "Filters");

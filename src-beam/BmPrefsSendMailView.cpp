@@ -286,7 +286,7 @@ BmPrefsSendMailView::BmPrefsSendMailView()
 								"POP-account:", 
 								this, 
 								new BMessage( BM_POP_SELECTED),
-								&BmRosterBase::RebuildPopAccountMenu, 
+								&BmGuiRosterBase::RebuildPopAccountMenu, 
 								BM_MC_LABEL_FROM_MARKED | BM_MC_ADD_NONE_ITEM
 							)
 						),

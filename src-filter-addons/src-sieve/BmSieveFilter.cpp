@@ -441,7 +441,7 @@ int BmSieveFilter::sieve_fileinto( void* action_context, void* script_context,
 					new BmMenuControllerBase( 
 						fileintoContext->mailbox, NULL,
 						new BMessage( BM_MENUITEM_SELECTED), 
-						&BmRosterBase::RebuildFolderMenu
+						&BmGuiRosterBase::RebuildFolderMenu
 					)
 				),
 				"Cancel", "OK"
@@ -1162,7 +1162,7 @@ BmSieveFilterPrefs::BmSieveFilterPrefs( minimax minmax)
 									new BmMenuControllerBase( 
 										"", this, 
 										new BMessage( BM_FILEINTO_SELECTED), 
-										&BmRosterBase::RebuildFolderMenu
+										&BmGuiRosterBase::RebuildFolderMenu
 									)
 								),
 								mFileIntoAskControl = new BmCheckControl( 
@@ -1183,7 +1183,7 @@ BmSieveFilterPrefs::BmSieveFilterPrefs( minimax minmax)
 									new BmMenuControllerBase( 
 										"", this, 
 										new BMessage( BM_SET_STATUS_SELECTED), 
-										&BmRosterBase::RebuildStatusMenu, 
+										&BmGuiRosterBase::RebuildStatusMenu, 
 										BM_MC_LABEL_FROM_MARKED
 									)
 								),
@@ -1200,7 +1200,7 @@ BmSieveFilterPrefs::BmSieveFilterPrefs( minimax minmax)
 									new BmMenuControllerBase( 
 										"", this, 
 										new BMessage( BM_SET_IDENTITY_SELECTED), 
-										&BmRosterBase::RebuildIdentityMenu, 
+										&BmGuiRosterBase::RebuildIdentityMenu, 
 										BM_MC_LABEL_FROM_MARKED
 									)
 								),

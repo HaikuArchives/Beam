@@ -28,11 +28,11 @@
 /*************************************************************************/
 
 
-#include "BmApp.h"
+#include "BeamApp.h"
 
 int main()
 {
-	BmApplication* app = new BmApplication( BM_APP_SIG);
+	BeamApplication* app = new BeamApplication( BM_APP_SIG);
 	app->Run();
 	delete app;
 }

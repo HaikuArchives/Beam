@@ -191,7 +191,9 @@ void BmSmtpAccount::SendMail( const entry_ref& eref) {
 	BMessage archive(BM_JOBWIN_SMTP);
 	archive.AddString( BmJobModel::MSG_JOB_NAME, Key().String());
 	archive.AddRef( MSG_REF, &eref);
-	BeamRoster->JobMetaController()->PostMessage( &archive);
+	BLooper* controller = BeamGuiRoster->JobMetaController();
+	if (controller)
+		controller->PostMessage( &archive);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -211,7 +213,9 @@ void BmSmtpAccount::SendPendingMails() {
 		archive.AddString( BmJobModel::MSG_JOB_NAME, Key().String());
 		for( uint32 i=0; i<count; ++i)
 			archive.AddRef( MSG_REF, &pendingQuery.mRefVect[i]);
-		BeamRoster->JobMetaController()->PostMessage( &archive);
+		BLooper* controller = BeamGuiRoster->JobMetaController();
+		if (controller)
+			controller->PostMessage( &archive);
 	}
 }
 

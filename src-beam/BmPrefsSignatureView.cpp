@@ -276,7 +276,7 @@ BmPrefsSignatureView::BmPrefsSignatureView()
 							"Charset:", 
 							new BmMenuController( "", this, 
 														 new BMessage( BM_CHARSET_SELECTED), 
-														 &BmRosterBase::RebuildCharsetMenu,
+														 &BmGuiRosterBase::RebuildCharsetMenu,
 														 BM_MC_LABEL_FROM_MARKED
 							)
 						),
@@ -360,8 +360,8 @@ void BmPrefsSignatureView::Initialize() {
 	mDynamicControl->SetTarget( this);
 
 	// add all encodings to menu:
-	BeamRoster->AddCharsetMenu( mCharsetControl->Menu(), this, 
-										 BM_CHARSET_SELECTED);
+	BeamGuiRoster->AddCharsetMenu( mCharsetControl->Menu(), this, 
+											 BM_CHARSET_SELECTED);
 
 	// mark default charset:
 	BmString charset( ThePrefs->GetString( "DefaultCharset"));

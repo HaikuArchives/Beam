@@ -49,7 +49,7 @@ class BmPopAccountList;
 
 enum {
 	BM_JOBWIN_POP				= 'bmea'
-							// sent to JobMetaController in order to 
+							// sent to JobMetaController (or app) in order to 
 							// start pop-connection
 };
 

@@ -8,6 +8,7 @@ SubInclude TOP src-bmGuiBase ;
 SubInclude TOP src-beam ;
 SubInclude TOP src-deskbarItem ;
 SubInclude TOP src-filter-addons ;
+SubInclude TOP src-tools ;
 
 # build tests only if we have cppunit:
 local haveCppunit = [ GLOB /boot/home/config/include/cppunit/cppunit : Test.h ] ;

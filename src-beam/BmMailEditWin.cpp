@@ -48,7 +48,7 @@
 
 #include "TextEntryAlert.h"
 
-#include "BmApp.h"
+#include "BeamApp.h"
 #include "BmBasics.h"
 #include "BmBodyPartList.h"
 #include "BmBodyPartView.h"
@@ -316,7 +316,7 @@ status_t BmMailEditWin::UnarchiveState( BMessage* archive) {
 				nNextYPos = 100;
 			}
 		}
-		BRect scrFrame = bmApp->ScreenFrame();
+		BRect scrFrame = beamApp->ScreenFrame();
 		frame.bottom = MIN( frame.bottom, scrFrame.bottom-5);
 		frame.right = MIN( frame.right, scrFrame.right-5);
 		MoveTo( BPoint( nNextXPos, nNextYPos));
@@ -398,14 +398,14 @@ void BmMailEditWin::CreateGUI() {
 					"From:", 
 					new BmMenuController( "From:", this, 
 												 new BMessage( BM_FROM_SET), 
-												 &BmRosterBase::RebuildIdentityMenu,
+												 &BmGuiRosterBase::RebuildIdentityMenu,
 												 BM_MC_RADIO_MODE)
 				),
 				mSmtpControl = new BmMenuControl( 
 					"SMTP-Server:", 
 					new BmMenuController( "", this, 
 												 new BMessage( BM_SMTP_SELECTED), 
-												 &BmRosterBase::RebuildSmtpAccountMenu, 
+												 &BmGuiRosterBase::RebuildSmtpAccountMenu, 
 												 BM_MC_LABEL_FROM_MARKED),
 					0.5
 				),
@@ -426,13 +426,13 @@ void BmMailEditWin::CreateGUI() {
 					"To:", 
 					new BmMenuController( "To:", this, 
 												 new BMessage( BM_TO_ADDED), 
-												 &BmRosterBase::RebuildPeopleMenu)
+												 &BmGuiRosterBase::RebuildPeopleMenu)
 				),
 				mCharsetControl = new BmMenuControl( 
 					"Charset:", 
 					new BmMenuController( "", this, 
 												 new BMessage( BM_CHARSET_SELECTED), 
-												 &BmRosterBase::RebuildCharsetMenu, 
+												 &BmGuiRosterBase::RebuildCharsetMenu, 
 												 BM_MC_LABEL_FROM_MARKED),
 					0.5
 				),
@@ -453,7 +453,7 @@ void BmMailEditWin::CreateGUI() {
 						"Cc:", 
 						new BmMenuController( "Cc:", this, 
 													 new BMessage( BM_CC_ADDED), 
-													 &BmRosterBase::RebuildPeopleMenu)
+													 &BmGuiRosterBase::RebuildPeopleMenu)
 					),
 					mReplyToControl = new BmTextControl( "Reply-To:", false),
 					0
@@ -464,7 +464,7 @@ void BmMailEditWin::CreateGUI() {
 						"Bcc:", 
 						new BmMenuController( "Bcc:", this, 
 													 new BMessage( BM_BCC_ADDED), 
-													 &BmRosterBase::RebuildPeopleMenu)
+													 &BmGuiRosterBase::RebuildPeopleMenu)
 					),
 					mSenderControl = new BmTextControl( "Sender:", false),
 					0
@@ -491,7 +491,7 @@ void BmMailEditWin::CreateGUI() {
 					new BmMenuController( 
 						"Signature:", this, 
 						new BMessage( BM_SIGNATURE_SELECTED), 
-						&BmRosterBase::RebuildSignatureMenu, 
+						&BmGuiRosterBase::RebuildSignatureMenu, 
 						BM_MC_ADD_NONE_ITEM | BM_MC_LABEL_FROM_MARKED
 					)
 				),
@@ -501,7 +501,7 @@ void BmMailEditWin::CreateGUI() {
 					new BmMenuControllerBase( 
 						"out", this, 
 						new BMessage( BM_FILEINTO_SELECTED), 
-						&BmRosterBase::RebuildFolderMenu
+						&BmGuiRosterBase::RebuildFolderMenu
 					),
 					2.0
 				),
@@ -938,7 +938,7 @@ bool BmMailEditWin::EditHeaders( )
 	if (!CreateMailFromFields( false))
 		return false;
 	// allow user to edit mail-header before we send it:
-	BRect screen( bmApp->ScreenFrame());
+	BRect screen( beamApp->ScreenFrame());
 	float w=600, h=400;
 	BRect alertFrame( (screen.Width()-w)/2,
 							(screen.Height()-h)/2,
@@ -1248,11 +1248,11 @@ MMenuBar* BmMailEditWin::CreateMenu() {
 	menu->AddItem( CreateMenuItem( "Save", BMM_SAVE, "SaveMail"));
 	menu->AddSeparatorItem();
 	AddItemToMenu( menu, CreateMenuItem( "Preferences...", 
-						BMM_PREFERENCES), bmApp);
+						BMM_PREFERENCES), beamApp);
 	menu->AddSeparatorItem();
 	menu->AddItem( CreateMenuItem( "Close", B_QUIT_REQUESTED));
 	menu->AddSeparatorItem();
-	AddItemToMenu( menu, CreateMenuItem( "Quit Beam", B_QUIT_REQUESTED), bmApp);
+	AddItemToMenu( menu, CreateMenuItem( "Quit Beam", B_QUIT_REQUESTED), beamApp);
 	menubar->AddItem( menu);
 
 	// Edit

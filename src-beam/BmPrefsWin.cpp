@@ -52,7 +52,7 @@
 #include "CLVEasyItem.h"
 #include "UserResizeSplitView.h"
 
-#include "BmApp.h"
+#include "BeamApp.h"
 #include "BmBasics.h"
 #include "BmLogHandler.h"
 #include "BmMsgTypes.h"

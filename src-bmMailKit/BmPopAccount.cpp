@@ -376,7 +376,7 @@ void BmPopAccount::SetupIntervalRunner() {
 			  BmString("PopAccount.") << Key() << " sets check interval to " 
 			  	<< mCheckInterval);
 	if (mCheckInterval>0) {
-		BMessage msg( BeamRoster->MessageTypeForCheckMail());
+		BMessage msg( BM_JOBWIN_POP);
 		msg.AddString( BmPopAccountList::MSG_ITEMKEY, Key().String());
 		msg.AddBool( BmPopAccountList::MSG_AUTOCHECK, true);
 		mIntervalRunner = new BMessageRunner( 
@@ -605,5 +605,7 @@ void BmPopAccountList::CheckMailFor( BmString accName, bool isAutoCheck) {
 	BMessage archive(BM_JOBWIN_POP);
 	archive.AddString( BmJobModel::MSG_JOB_NAME, accName.String());
 	archive.AddBool( MSG_AUTOCHECK, isAutoCheck);
-	BeamRoster->JobMetaController()->PostMessage( &archive);
+	BLooper* controller = BeamGuiRoster->JobMetaController();
+	if (controller)
+		controller->PostMessage( &archive);
 }

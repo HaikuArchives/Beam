@@ -70,7 +70,7 @@ BmMenuControllerBase::~BmMenuControllerBase() {
 void BmMenuControllerBase::UpdateItemList( void) {
 	if (mRebuildMenuFunc) {
 		// menu is created by a dedicated function:
-		(BeamRoster->*mRebuildMenuFunc)( this);
+		(BeamGuiRoster->*mRebuildMenuFunc)( this);
 	}
 	if (mFlags & BM_MC_LABEL_FROM_MARKED) {
 		// mark the item corresponding to the label of our controlling menu-item:

@@ -11,6 +11,7 @@ DEFINES += BM_BUILDING_BMMAILKIT ;
 
 SharedLibrary bmMailKit.so
 	:  
+		BmApp.cpp
 		BmBodyPartList.cpp
 		BmController.cpp
 		BmDataModel.cpp
@@ -30,6 +31,7 @@ SharedLibrary bmMailKit.so
 		BmPopAccount.cpp
 		BmPrefs.cpp
 		BmRefManager.cpp
+		BmRoster.cpp
 		BmSignature.cpp
 		BmSmtpAccount.cpp
 		BmStorageUtil.cpp

@@ -32,7 +32,7 @@
 #include <PopUpMenu.h>
 #include <Window.h>
 
-#include "BmApp.h"
+#include "BeamApp.h"
 #include "BmBasics.h"
 #include "BmFilter.h"
 #include "BmGuiUtil.h"
@@ -742,11 +742,11 @@ void BmMailRefView::AddSelectedRefsToMsg( BMessage* msg) {
 		if (start < finish)
 			selectedText.SetTo(mPartnerMailView->Text()+start, finish-start);
 		if (selectedText.Length())
-			msg->AddString( BmApplication::MSG_SELECTED_TEXT, 
+			msg->AddString( BeamApplication::MSG_SELECTED_TEXT, 
 								 selectedText.String());
 	}
 	BMessenger msngr( this);
-	msg->AddMessenger( BmApplication::MSG_SENDING_REFVIEW, msngr);
+	msg->AddMessenger( BeamApplication::MSG_SENDING_REFVIEW, msngr);
 	int32 selected = -1;
 	if (CurrentSelection(0) >= 0) {
 		BmMailRefVect* refs = new BmMailRefVect();
@@ -756,7 +756,7 @@ void BmMailRefView::AddSelectedRefsToMsg( BMessage* msg) {
 			if (refItem)
 				refs->push_back( refItem->ModelItem());
 		}
-		msg->AddPointer( BmApplication::MSG_MAILREF_VECT, 
+		msg->AddPointer( BeamApplication::MSG_MAILREF_VECT, 
 						  	  static_cast< void*>( refs));
 	}
 }
@@ -876,7 +876,7 @@ void BmMailRefView::AddMailRefMenu( BMenu* menu, BHandler* target,
 
 	BmMenuController* statusMenu
 		= new BmMenuController( MENU_MARK_AS, target, new BMessage( BMM_MARK_AS), 
-										&BmRosterBase::RebuildStatusMenu, 
+										&BmGuiRosterBase::RebuildStatusMenu, 
 										BM_MC_MOVE_RIGHT);
 	if (isContextMenu)
 		statusMenu->SetFont( &font);
@@ -885,7 +885,7 @@ void BmMailRefView::AddMailRefMenu( BMenu* menu, BHandler* target,
 
 	BmMenuController* moveMenu
 		= new BmMenuController( MENU_MOVE, target, new BMessage( BMM_MOVE), 
-										&BmRosterBase::RebuildFolderMenu, 
+										&BmGuiRosterBase::RebuildFolderMenu, 
 										BM_MC_SKIP_FIRST_LEVEL | BM_MC_MOVE_RIGHT);
 	if (isContextMenu)
 		moveMenu->SetFont( &font);
@@ -899,7 +899,7 @@ void BmMailRefView::AddMailRefMenu( BMenu* menu, BHandler* target,
 
 	BmMenuController* filterMenu
 		= new BmMenuController( MENU_FILTER, target,	new BMessage( BMM_FILTER), 
-										&BmRosterBase::RebuildFilterMenu, 
+										&BmGuiRosterBase::RebuildFilterMenu, 
 										BM_MC_MOVE_RIGHT);
 	if (isContextMenu)
 		filterMenu->SetFont( &font);

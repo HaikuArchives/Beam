@@ -41,7 +41,7 @@
 
 #include "UserResizeSplitView.h"
 
-#include "BmApp.h"
+#include "BeamApp.h"
 #include "BmBasics.h"
 #include "BmFilter.h"
 #include "BmGuiUtil.h"
@@ -115,7 +115,7 @@ BmMainWindow* BmMainWindow::CreateInstance()
 \*------------------------------------------------------------------------------*/
 BmMainWindow::BmMainWindow()
 	:	inherited( "MainWindow", BRect(50,50,800,600), 
-					  bmApp->BmAppName.String(),
+					  beamApp->BmAppName.String(),
 					  ThePrefs->GetBool( "UseDocumentResizer", true)
 					  		? B_DOCUMENT_WINDOW_LOOK 
 					  		: B_TITLED_WINDOW_LOOK, 
@@ -267,12 +267,12 @@ MMenuBar* BmMainWindow::CreateMenu() {
 	menu->AddSeparatorItem();
 	AddItemToMenu( menu, 
 						CreateMenuItem( "Preferences...", BMM_PREFERENCES), 
-						bmApp);
+						beamApp);
 	menu->AddSeparatorItem();
 	menu->AddItem( 
 		new BmMenuController( "Show Log", this, 
 									 new BMessage( BMM_SHOW_LOGFILE), 
-									 &BmRosterBase::RebuildLogMenu, BM_MC_MOVE_RIGHT)
+									 &BmGuiRosterBase::RebuildLogMenu, BM_MC_MOVE_RIGHT)
 	);
 	menu->AddSeparatorItem();
 	menu->AddItem( CreateMenuItem( "About Beam...", B_ABOUT_REQUESTED));
@@ -297,7 +297,7 @@ MMenuBar* BmMainWindow::CreateMenu() {
 	mAccountMenu = new BmMenuController( 
 		"Check Mail For", this,
 		new BMessage( BMM_CHECK_MAIL), 
-		&BmRosterBase::RebuildPopAccountMenu,
+		&BmGuiRosterBase::RebuildPopAccountMenu,
 		BM_MC_MOVE_RIGHT
 	);
 	menu->AddItem( mAccountMenu);
@@ -306,7 +306,7 @@ MMenuBar* BmMainWindow::CreateMenu() {
 	subMenu = new BmMenuController( 
 		"Send Pending Messages For", this,
 		new BMessage( BMM_SEND_PENDING), 
-		&BmRosterBase::RebuildSmtpAccountMenu,
+		&BmGuiRosterBase::RebuildSmtpAccountMenu,
 		BM_MC_MOVE_RIGHT
 	);
 	menu->AddItem( subMenu);
@@ -375,7 +375,7 @@ void BmMainWindow::BeginLife() {
 			->SetTarget( mMailFolderView);
 		mMainMenuBar->FindItem( BMM_RECACHE_MAILFOLDER)
 			->SetTarget( mMailFolderView);
-		mMainMenuBar->FindItem( BMM_PAGE_SETUP)->SetTarget( bmApp);
+		mMainMenuBar->FindItem( BMM_PAGE_SETUP)->SetTarget( beamApp);
 		mMainMenuBar->FindItem( BMM_SWITCH_RAW)->SetTarget( mMailView);
 		mMainMenuBar->FindItem( BMM_SWITCH_RAW)->SetMarked( mMailView->ShowRaw());
 		mMainMenuBar->FindItem( BMM_SWITCH_HEADER)
@@ -408,7 +408,7 @@ void BmMainWindow::BeginLife() {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmMainWindow::WorkspacesChanged( uint32, uint32 newWorkspaces) {
-	bmApp->SetNewWorkspace( newWorkspaces);
+	beamApp->SetNewWorkspace( newWorkspaces);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -552,12 +552,12 @@ void BmMainWindow::MessageReceived( BMessage* msg) {
 \*------------------------------------------------------------------------------*/
 bool BmMainWindow::QuitRequested() {
 	BM_LOG2( BM_LogGui, BmString("MainWindow has been asked to quit"));
-	if (bmApp->IsQuitting()) {
+	if (beamApp->IsQuitting()) {
 		Hide();			// to hide a possible delay in WriteStateInfo()
 							// from the user
 		return true;
 	} else {
-		bmApp->PostMessage( B_QUIT_REQUESTED);
+		beamApp->PostMessage( B_QUIT_REQUESTED);
 		return false;
 	}
 }

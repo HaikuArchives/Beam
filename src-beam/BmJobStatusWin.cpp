@@ -50,7 +50,7 @@
 #include <MStringView.h>
 #include <Space.h>
 
-#include "BmApp.h"
+#include "BeamApp.h"
 #include "BmBasics.h"
 #include "BmFilter.h"
 #include "BmJobStatusWin.h"
@@ -381,7 +381,7 @@ BmJobModel* BmMailFilterView::CreateJobModel( BMessage* msg) {
 	}
 	BmMailFilter* mailFilter = new BmMailFilter( ControllerName(), filter);
 	BmMailRefVect* refVect = NULL;
-	msg->FindPointer( BmApplication::MSG_MAILREF_VECT, (void**)&refVect);
+	msg->FindPointer( BeamApplication::MSG_MAILREF_VECT, (void**)&refVect);
 	mailFilter->SetMailRefVect( refVect);
 	return mailFilter;
 }
@@ -698,7 +698,7 @@ BmJobStatusWin* BmJobStatusWin::CreateInstance() {
 \*------------------------------------------------------------------------------*/
 BmJobStatusWin::BmJobStatusWin()
 	:	BmWindow( "JobStatusWindow", 
-					BRect(bmApp->ScreenFrame().right-BM_MINSIZE-4,20,0,0), 
+					BRect(beamApp->ScreenFrame().right-BM_MINSIZE-4,20,0,0), 
 					"Jobs",
 					B_FLOATING_WINDOW_LOOK, B_NORMAL_WINDOW_FEEL,
 					B_ASYNCHRONOUS_CONTROLS	|	B_NOT_ZOOMABLE	|	B_NOT_V_RESIZABLE
@@ -746,7 +746,7 @@ bool BmJobStatusWin::QuitRequested() {
 	snooze( ThePrefs->GetInt( "FeedbackTimeout", 200)*1500);
 							// give jobs a chance to stop
 	BM_LOG2( BM_LogJobWin, BmString("JobStatusWin has stopped all jobs"));
-	return bmApp->IsQuitting();
+	return beamApp->IsQuitting();
 }
 
 /*------------------------------------------------------------------------------*\
