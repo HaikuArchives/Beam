@@ -645,6 +645,9 @@ void BmApplication::MessageReceived( BMessage* msg) {
 						ThePrefsWin->UnlockLooper();
 					}
 				}
+				BmString subViewName = msg->FindString( "SubViewName");
+				if (subViewName.Length())
+					ThePrefsWin->PostMessage( msg);
 				break;
 			}
 			case BMM_TRASH: {
@@ -1063,44 +1066,44 @@ void BmApplication::AboutRequested() {
 		"BEware, Another Mailer\n(c) Oliver Tappe, Berlin, Germany",
 		"mailto:beam@hirschkaefer.de",
 		"http://www.hirschkaefer.de/beam",
-		"\n\n\n\n\n\n\nThanks to:\
-\
-Heike Herfart \
-	for understanding the geek, \
-	the testing sessions \
-	and many, many suggestions. \
-\
-\
-...and (in alphabetical order):\
-\
-Adam McNutt\
-Atillâ Öztürk\
-Bernd Korz\
-Cedric Vincent\
-Charlie Clark\
-Eberhard Hafermalz\
-Eugenia Loli-Queru\
-Helmar Rudolph\
-Jace Cavacini\
-Kevin Musick\
-Lars Müller (of SuSE)\
-Linus Almstrom\
-Mathias Reitinger\
-Max Hartmann\
-MDR-team (MailDaemonReplacement)\
-qwilk\
-Paweł Lewicki\
-Rainer Riedl\
-Rob Lund\
-Shard\
-Stephan Buelling\
-Stephen Butters\
-Tyler Dauwalder\
-Zach \
-\
+		"\n\n\n\n\n\n\nThanks to:\n\
+\n\
+Heike Herfart \n\
+	for understanding the geek, \n\
+	the testing sessions \n\
+	and many, many suggestions. \n\
+\n\
+\n\
+...and (in alphabetical order):\n\
+\n\
+Adam McNutt\n\
+Atillâ Öztürk\n\
+Bernd Korz\n\
+Cedric Vincent\n\
+Charlie Clark\n\
+Eberhard Hafermalz\n\
+Eugenia Loli-Queru\n\
+Helmar Rudolph\n\
+Jace Cavacini\n\
+Kevin Musick\n\
+Lars Müller\n\
+Linus Almstrom\n\
+Mathias Reitinger\n\
+Max Hartmann\n\
+MDR-team (MailDaemonReplacement)\n\
+qwilk\n\
+Paweł Lewicki\n\
+Rainer Riedl\n\
+Rob Lund\n\
+Shard\n\
+Stephan Buelling\n\
+Stephen Butters\n\
+Tyler Dauwalder\n\
+Zach\n\
+\n\
 \n\n\n\n\
-...and thanks to everyone I forgot, too!\
-\
+...and thanks to everyone I forgot, too!\n\
+\n\
 \n\n\n\n\n\n"
 	);
 	aboutWin->Show();

@@ -71,6 +71,7 @@
 #define BMM_SWITCH_RAW					'bMdm'
 #define BMM_SWITCH_HEADER				'bMdn'
 #define BMM_MOVE							'bMdo'
+#define BMM_CREATE_FILTER				'bMdp'
 
 // mail edit window
 #define BMM_ATTACH						'bMea'

@@ -442,6 +442,14 @@ void BmMainWindow::MessageReceived( BMessage* msg) {
 				TheJobStatusWin->PostMessage( &tmpMsg);
 				break;
 			}
+			case BMM_CREATE_FILTER: {
+				mMailRefView->AddSelectedRefsToMsg( msg, BmApplication::MSG_MAILREF);
+				BMessage appMsg( BMM_PREFERENCES);
+				appMsg.AddString( "SubViewName", "Filters");
+				appMsg.AddMessage( "SubViewMsg", msg);
+				be_app_messenger.SendMessage( &appMsg);
+				break;
+			}
 			case B_OBSERVER_NOTICE_CHANGE: {
 				switch( msg->FindInt32( B_OBSERVE_WHAT_CHANGE)) {
 					case BM_NTFY_MAILFOLDER_SELECTION: {
@@ -545,6 +553,7 @@ void BmMainWindow::MailRefSelectionChanged( bool haveSelectedRef) {
 	mMainMenuBar->FindItem( BmMailRefView::MENU_MARK_AS)->SetEnabled( haveSelectedRef);
 	mMainMenuBar->FindItem( BmMailRefView::MENU_MOVE)->SetEnabled( haveSelectedRef);
 	mMainMenuBar->FindItem( BMM_FILTER)->SetEnabled( haveSelectedRef);
+	mMainMenuBar->FindItem( BMM_CREATE_FILTER)->SetEnabled( haveSelectedRef);
 	mMainMenuBar->FindItem( BmMailRefView::MENU_FILTER)->SetEnabled( haveSelectedRef);
 	mMainMenuBar->FindItem( BMM_PRINT)->SetEnabled( haveSelectedRef);
 	mMainMenuBar->FindItem( BMM_TRASH)->SetEnabled( haveSelectedRef);

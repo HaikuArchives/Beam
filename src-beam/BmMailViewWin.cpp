@@ -346,6 +346,21 @@ void BmMailViewWin::MessageReceived( BMessage* msg) {
 				}
 				break;
 			}
+			case BMM_CREATE_FILTER: {
+				BmRef<BmMail> mail = mMailView->CurrMail();
+				if (mail) {
+					const BmRef<BmMailRef> mailRef = mail->MailRef();
+					if (mailRef) {
+						msg->AddPointer( BmApplication::MSG_MAILREF, static_cast< void*>( mailRef.Get()));
+						mailRef->AddRef();	// the message now refers to the mailRef, too
+						BMessage appMsg( BMM_PREFERENCES);
+						appMsg.AddString( "SubViewName", "Filters");
+						appMsg.AddMessage( "SubViewMsg", msg);
+						be_app_messenger.SendMessage( &appMsg);
+					}
+				}
+				break;
+			}
 			case B_OBSERVER_NOTICE_CHANGE: {
 				switch( msg->FindInt32( B_OBSERVE_WHAT_CHANGE)) {
 					case BM_NTFY_MAIL_VIEW: {
