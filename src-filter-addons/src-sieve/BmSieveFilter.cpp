@@ -62,6 +62,7 @@ extern "C" {
 #include "BmSieveFilter.h"
 #include "BmCheckControl.h"
 #include "BmMenuControl.h"
+#include "BmMenuControllerBase.h"
 #include "BmMultiLineTextControl.h"
 #include "BmTextControl.h"
 
@@ -999,6 +1000,46 @@ BRect BmFilterScrollView::layout(BRect rect) {
 const char* const BmSieveFilterPrefs::MSG_IDX = 		"bm:idx";
 
 /*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+static void RebuildFolderMenu( BmMenuControllerBase* menu) {
+	BMenuItem* old;
+	while( (old = menu->RemoveItem( (int32)0)) != NULL)
+		delete old;
+	
+	// add all folder to menu:
+	BMessage msg( BM_FILL_MENU_FROM_LIST);
+	BMessage reply;
+	msg.AddString( MSG_LIST_NAME, BM_FOLDERLIST_NAME);
+	msg.AddPointer( MSG_MENU_POINTER, menu);
+	msg.AddPointer( MSG_MENU_TARGET, menu->MsgTarget());
+	msg.AddMessage( MSG_MSG_TEMPLATE, menu->MsgTemplate());
+	be_app_messenger.SendMessage( &msg);
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+static void RebuildIdentityMenu( BmMenuControllerBase* menu) {
+	BMenuItem* old;
+	while( (old = menu->RemoveItem( (int32)0)) != NULL)
+		delete old;
+	
+	// add all folder to menu:
+	BMessage msg( BM_FILL_MENU_FROM_LIST);
+	BMessage reply;
+	msg.AddString( MSG_LIST_NAME, BM_IDENTITYLIST_NAME);
+	msg.AddPointer( MSG_MENU_POINTER, menu);
+	msg.AddPointer( MSG_MENU_TARGET, menu->MsgTarget());
+	msg.AddMessage( MSG_MSG_TEMPLATE, menu->MsgTemplate());
+	be_app_messenger.SendMessage( &msg);
+}
+
+
+
+/*------------------------------------------------------------------------------*\
 	BmSieveFilterPrefs()
 		-	
 \*------------------------------------------------------------------------------*/
@@ -1024,13 +1065,16 @@ BmSieveFilterPrefs::BmSieveFilterPrefs( minimax minmax)
 																		new BPopUpMenu( "")),
 						new MStringView( (char*)" the following is true"),
 						new Space( minimax(1,1,1e5,1)),
-						mAddButton = new MButton( "Add Line", 
-														  new BMessage( BM_ADD_FILTER_LINE), 
-														  this, minimax(-1,-1,-1,-1)),
-						mRemoveButton 
-							= new MButton( "Remove (Last) Line", 
-											   new BMessage( BM_REMOVE_FILTER_LINE), 
-												this, minimax(-1,-1,-1,-1)),
+						mAddButton = new MButton( 
+							"Add Line", 
+							new BMessage( BM_ADD_FILTER_LINE), 
+							this, minimax(-1,-1,-1,-1)
+						),
+						mRemoveButton = new MButton( 
+							"Remove (Last) Line", 
+							new BMessage( BM_REMOVE_FILTER_LINE), 
+							this, minimax(-1,-1,-1,-1)
+						),
 						0
 					),
 					mFilterScrollView = new BmFilterScrollView( 
@@ -1045,23 +1089,28 @@ BmSieveFilterPrefs::BmSieveFilterPrefs( minimax minmax)
 					new HGroup(
 						new VGroup(
 							new HGroup(
-								mFileIntoControl 
-									= new BmCheckControl( 
-										"File into", 
-										new BMessage(BM_FILEINTO_CHANGED), 
-										this
-									),
-								mFileIntoValueControl 
-									= new BmMenuControl( NULL, new BPopUpMenu("")),
+								mFileIntoControl = new BmCheckControl( 
+									"File into", 
+									new BMessage(BM_FILEINTO_CHANGED), 
+									this
+								),
+								mFileIntoValueControl = new BmMenuControl( 
+									NULL,
+									new BmMenuControllerBase( 
+										"", this, 
+										new BMessage( BM_FILEINTO_SELECTED), 
+										RebuildFolderMenu, 
+										BM_MC_LABEL_FROM_MARKED
+									)
+								),
 								0
 							),
 							new HGroup(
-								mDiscardControl 
-									= new BmCheckControl( 
-										"Move to trash", 
-										new BMessage(BM_DISCARD_CHANGED), 
-										this
-									),
+								mDiscardControl = new BmCheckControl( 
+									"Move to trash", 
+									new BMessage(BM_DISCARD_CHANGED), 
+									this
+								),
 								new Space(),
 								0
 							),
@@ -1071,34 +1120,39 @@ BmSieveFilterPrefs::BmSieveFilterPrefs( minimax minmax)
 						new Space( minimax( 10,0,10,1e5)),
 						new VGroup(
 							new HGroup(
-								mSetStatusControl 
-									= new BmCheckControl( 
-										"Set Status", 
-										new BMessage(BM_SET_STATUS_CHANGED), 
-										this
-									),
-								mSetStatusValueControl 
-									= new BmMenuControl( NULL, new BPopUpMenu("")),
+								mSetStatusControl = new BmCheckControl( 
+									"Set Status", 
+									new BMessage(BM_SET_STATUS_CHANGED), 
+									this
+								),
+								mSetStatusValueControl = new BmMenuControl( 
+									NULL, new BPopUpMenu("")
+								),
 								0
 							),
 							new HGroup(
-								mSetIdentityControl 
-									= new BmCheckControl( 
-										"Set Identity", 
-										new BMessage(BM_SET_IDENTITY_CHANGED), 
-										this
-									),
-								mSetIdentityValueControl 
-									= new BmMenuControl( NULL, new BPopUpMenu("")),
+								mSetIdentityControl = new BmCheckControl( 
+									"Set Identity", 
+									new BMessage(BM_SET_IDENTITY_CHANGED), 
+									this
+								),
+								mSetIdentityValueControl = new BmMenuControl( 
+									NULL, 
+									new BmMenuControllerBase( 
+										"", this, 
+										new BMessage( BM_SET_IDENTITY_SELECTED), 
+										RebuildIdentityMenu, 
+										BM_MC_LABEL_FROM_MARKED
+									)
+								),
 								0
 							),
 							new HGroup(
-								mStopProcessingControl 
-									= new BmCheckControl( 
-										"Stop processing if filter matches", 
-										new BMessage(BM_STOP_PROCESSING_CHANGED), 
-										this
-									),
+								mStopProcessingControl = new BmCheckControl( 
+									"Stop processing if filter matches", 
+									new BMessage(BM_STOP_PROCESSING_CHANGED), 
+									this
+								),
 								new Space(),
 								0
 							),
@@ -1133,20 +1187,27 @@ BmSieveFilterPrefs::BmSieveFilterPrefs( minimax minmax)
 	for( int i=0; i<BM_MAX_MATCH_COUNT; ++i) {
 		mFilterLine[i] = 
 			new HGroup(
-				mMailPartControl[i] = new BmMenuControl( NULL, new BPopUpMenu( ""),
-																	  0, 0, BM_MAILPART_OTHER),
+				mMailPartControl[i] = new BmMenuControl( 
+					NULL, new BPopUpMenu( ""),
+					0, 0, BM_MAILPART_OTHER
+				),
 				mFieldSpecLayer[i] = new LayeredGroup(
 					new Space(),
-					mAddrPartControl[i] 
-						= new BmMenuControl( NULL, new BPopUpMenu( ""), 0, 0, 
-													BM_ADDRPART_LOCALPART),
+					mAddrPartControl[i] = new BmMenuControl( 
+						NULL, new BPopUpMenu( ""), 0, 0, 
+						BM_ADDRPART_LOCALPART
+					),
 					mFieldNameControl[i] = new BmTextControl( (const char *)NULL),
 					NULL
 				),
-				mOperatorControl[i] = new BmMenuControl( NULL, new BPopUpMenu( ""),
-																	  0, 0, BM_LONGEST_OP),
-				mValueControl[i] = new BmMultiLineTextControl( NULL, false, 1, 
-																			  0, true),
+				mOperatorControl[i] = new BmMenuControl( 
+					NULL, new BPopUpMenu( ""),
+					0, 0, BM_LONGEST_OP
+				),
+				mValueControl[i] = new BmMultiLineTextControl( 
+					NULL, false, 1, 
+					0, true
+				),
 				0
 			);
 		mMailPartControl[i]->ct_mpm.maxi.y = 1E5;
@@ -1317,34 +1378,13 @@ void BmSieveFilterPrefs::Activate() {
 	BMessage msg( BM_FILL_MENU_FROM_LIST);
 	BMenuItem* item;
 	//
-	BMessage folderTempl( BM_FILEINTO_SELECTED);
-	msg.MakeEmpty();
-	while( (item = mFileIntoValueControl->Menu()->RemoveItem( (int32)0))!=NULL)
-		delete item;
-	msg.AddString( MSG_LIST_NAME, BM_FOLDERLIST_NAME);
-	msg.AddPointer( MSG_MENU_POINTER, mFileIntoValueControl->Menu());
-	msg.AddPointer( MSG_MENU_TARGET, dynamic_cast<BHandler*>(this));
-	msg.AddMessage( MSG_MSG_TEMPLATE, &folderTempl);
-	be_app_messenger.SendMessage( &msg, &reply);
-	//
 	BMessage statusTempl( BM_SET_STATUS_SELECTED);
-	msg.MakeEmpty();
 	while( (item = mSetStatusValueControl->Menu()->RemoveItem( (int32)0))!=NULL)
 		delete item;
 	msg.AddString( MSG_LIST_NAME, BM_STATUSLIST_NAME);
 	msg.AddPointer( MSG_MENU_POINTER, mSetStatusValueControl->Menu());
 	msg.AddPointer( MSG_MENU_TARGET, dynamic_cast<BHandler*>(this));
 	msg.AddMessage( MSG_MSG_TEMPLATE, &statusTempl);
-	be_app_messenger.SendMessage( &msg, &reply);
-	//
-	BMessage identityTempl( BM_SET_IDENTITY_SELECTED);
-	msg.MakeEmpty();
-	while( (item = mSetIdentityValueControl->Menu()->RemoveItem((int32)0))!=NULL)
-		delete item;
-	msg.AddString( MSG_LIST_NAME, BM_IDENTITYLIST_NAME);
-	msg.AddPointer( MSG_MENU_POINTER, mSetIdentityValueControl->Menu());
-	msg.AddPointer( MSG_MENU_TARGET, dynamic_cast<BHandler*>(this));
-	msg.AddMessage( MSG_MSG_TEMPLATE, &identityTempl);
 	be_app_messenger.SendMessage( &msg, &reply);
 }
 
@@ -1752,14 +1792,18 @@ BmSieveScriptFilterPrefs::BmSieveScriptFilterPrefs( minimax minmax)
 	AddChild( dynamic_cast<BView*>( 
 		new HGroup(
 			new VGroup( 
-				mContentControl = new BmMultiLineTextControl( "", false, 10),
+				mContentControl = new BmMultiLineTextControl( 
+					"", false, 10
+				),
 				0
 			),
 			new Space( minimax( 5, 0, 5, 1e5)),
 			new VGroup( 
-				mTestButton = new MButton( "Check the SIEVE-script", 
-													new BMessage( BM_TEST_FILTER), 
-													this, minimax(-1,-1,-1,-1)),
+				mTestButton = new MButton( 
+					"Check the SIEVE-script", 
+					new BMessage( BM_TEST_FILTER), 
+					this, minimax(-1,-1,-1,-1)
+				),
 				new Space(),
 				0
 			),
@@ -1825,11 +1869,12 @@ void BmSieveScriptFilterPrefs::MessageReceived( BMessage* msg) {
 		case BM_TEST_FILTER: {
 			if (mCurrFilterAddon) {
 				if (!mCurrFilterAddon->CompileScript()) {
-					BAlert* alert 
-						= new BAlert( "Filter-Test", 
-										  mCurrFilterAddon->ErrorString().String(),
-										  "OK", NULL, NULL, B_WIDTH_AS_USUAL,
-										  B_INFO_ALERT);
+					BAlert* alert = new BAlert( 
+						"Filter-Test", 
+						mCurrFilterAddon->ErrorString().String(),
+						"OK", NULL, NULL, B_WIDTH_AS_USUAL,
+						B_INFO_ALERT
+					);
 					alert->SetShortcut( 0, B_ESCAPE);
 					alert->Go();
 				}
