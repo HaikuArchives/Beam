@@ -167,7 +167,7 @@ public:
 	void ApplyOutboundFilters();
 	void ApplyInboundFilters();
 	bool Send( bool now=true);
-	bool Store();
+	bool Store(bool storeOnlyAttributesIfPossible);
 	void StoreIntoFile( const BmString& filename, const BmString& status,
 							  bigtime_t whenCreated, BEntry* backupEntry = NULL);
 	void ResyncFromDisk();
@@ -243,7 +243,7 @@ protected:
 	BmMail( BmMailRef* ref);
 
 	BmString CreateBasicFilename();
-	void StoreAttributes( BFile& mailFile, const BmString& status, 
+	void StoreAttributes( BNode& mailNode, const BmString& status, 
 								 bigtime_t whenCreated);
 
 private:

@@ -356,7 +356,7 @@ void BmMail::SetNewHeader( const BmString& headerStr) {
 		newMsgText << "\r\n";
 	newMsgText << mText.String()+HeaderLength();
 	SetTo( newMsgText, mAccountName);
-	Store();
+	Store(false);
 	StartJobInThisThread();
 }
 
@@ -550,7 +550,7 @@ void BmMail::ConstructAndStore() {
 	if (bodyPart && ConstructRawText( bodyPart->DecodedData(),
 												 DefaultCharset(), 
 												 mAccountName)) {
-		Store();
+		Store(false);
 	}
 }
 
@@ -805,7 +805,7 @@ bool BmMail::Send(bool now)
 	Store()
 		-	determines where this mail should be living and the stores it there
 \*------------------------------------------------------------------------------*/
-bool BmMail::Store() {
+bool BmMail::Store( bool storeOnlyAttributesIfPossible) {
 	BEntry folderEntry, backupEntry;
 	status_t err = B_NO_INIT;
 	BPath newHomePath;
@@ -900,7 +900,26 @@ bool BmMail::Store() {
 			// reuse old name for mail that already lives on disk:
 			newName = BmString(newHomePath.Path()) + "/" + filename;
 
-		StoreIntoFile( newName, status, whenCreated, &backupEntry);
+		if (storeOnlyAttributesIfPossible && mEntry.InitCheck() == B_OK) {
+			// rewrite attributes only, most probably as the result of a
+			// filtering process:
+			if ((err = mEntry.SetTo( newName.String())) != B_OK)
+				BM_THROW_RUNTIME( 
+					BmString("Could not create entry for mail-file <") 
+						<< filename << ">\n\n Result: " << strerror(err)
+				);
+			BNode mailNode;
+			if ((err = mailNode.SetTo( newName.String())) != B_OK)
+				BM_THROW_RUNTIME(
+					BmString("Could not create node for mail-file <") 
+						<< filename << ">\n\n Result: " << strerror(err)
+				);
+			BM_LOG2( BM_LogMailParse, "storing mail-attributes...");
+			StoreAttributes( mailNode, status, whenCreated);
+		} else {
+			// write complete mail to disk:
+			StoreIntoFile( newName, status, whenCreated, &backupEntry);
+		}
 
 		entry_ref eref;
 		if ((err = mEntry.GetRef( &eref)) != B_OK)
@@ -946,7 +965,7 @@ void BmMail::StoreIntoFile( const BmString& filename, const BmString& status,
 			BmString("Could not create backed mail-file\n\t<") 
 				<< filename << ">\n\n Result: " << strerror(err)
 		);
-	// ...store all other attributes...
+	// ...store all attributes...
 	BM_LOG2( BM_LogMailParse, "storing mail-attributes...");
 	StoreAttributes( mailFile.File(), status, whenCreated);
 	BM_LOG2( BM_LogMailParse, "storing header-attributes...");
@@ -973,14 +992,14 @@ void BmMail::StoreIntoFile( const BmString& filename, const BmString& status,
 	StoreAttributes()
 		-	stores mail-attributes inside a file
 \*------------------------------------------------------------------------------*/
-void BmMail::StoreAttributes( BFile& mailFile, const BmString& status, 
+void BmMail::StoreAttributes( BNode& mailNode, const BmString& status, 
 										bigtime_t whenCreated) {
 	//
-	mailFile.WriteAttr( BM_MAIL_ATTR_STATUS, B_STRING_TYPE, 0, 
+	mailNode.WriteAttr( BM_MAIL_ATTR_STATUS, B_STRING_TYPE, 0, 
 							  status.String(), status.Length()+1);
-	mailFile.WriteAttr( BM_MAIL_ATTR_ACCOUNT, B_STRING_TYPE, 0, 
+	mailNode.WriteAttr( BM_MAIL_ATTR_ACCOUNT, B_STRING_TYPE, 0, 
 							  mAccountName.String(), mAccountName.Length()+1);
-	mailFile.WriteAttr( BM_MAIL_ATTR_IDENTITY, B_STRING_TYPE, 0, 
+	mailNode.WriteAttr( BM_MAIL_ATTR_IDENTITY, B_STRING_TYPE, 0, 
 							  mIdentityName.String(), mIdentityName.Length()+1);
 	//
 	if (mOutbound) {
@@ -991,32 +1010,32 @@ void BmMail::StoreAttributes( BFile& mailFile, const BmString& status,
 			flags = B_MAIL_PENDING | B_MAIL_SAVE;
 		else if (status==BM_MAIL_STATUS_SENT)
 			flags = B_MAIL_SENT;
-		mailFile.WriteAttr( BM_MAIL_ATTR_FLAGS, B_INT32_TYPE, 0, 
+		mailNode.WriteAttr( BM_MAIL_ATTR_FLAGS, B_INT32_TYPE, 0, 
 								  &flags, sizeof(int32));
 	}
 	//
 	int32 headerLength = HeaderLength();
 	int32 contentLength = MAX( 0, mText.Length()-headerLength);
 	
-	mailFile.WriteAttr( BM_MAIL_ATTR_HEADER, B_INT32_TYPE, 0, 
+	mailNode.WriteAttr( BM_MAIL_ATTR_HEADER, B_INT32_TYPE, 0, 
 							  &headerLength, sizeof(int32));
-	mailFile.WriteAttr( BM_MAIL_ATTR_CONTENT, B_INT32_TYPE, 0, 
+	mailNode.WriteAttr( BM_MAIL_ATTR_CONTENT, B_INT32_TYPE, 0, 
 							  &contentLength, sizeof(int32));
 	//
 	int32 hasAttachments = HasAttachments();
-	mailFile.WriteAttr( BM_MAIL_ATTR_ATTACHMENTS, B_INT32_TYPE, 0, 
+	mailNode.WriteAttr( BM_MAIL_ATTR_ATTACHMENTS, B_INT32_TYPE, 0, 
 							  &hasAttachments, sizeof(hasAttachments));
 	//
-	mailFile.WriteAttr( BM_MAIL_ATTR_MARGIN, B_INT32_TYPE, 0, 
+	mailNode.WriteAttr( BM_MAIL_ATTR_MARGIN, B_INT32_TYPE, 0, 
 							  &mRightMargin, sizeof(int32));
 	//
-	mailFile.WriteAttr( BM_MAIL_ATTR_WHEN_CREATED, B_UINT64_TYPE, 0, 
+	mailNode.WriteAttr( BM_MAIL_ATTR_WHEN_CREATED, B_UINT64_TYPE, 0, 
 							  &whenCreated, sizeof(whenCreated));
 	//
-	mailFile.WriteAttr( BM_MAIL_ATTR_CLASSIFICATION, B_STRING_TYPE, 0, 
+	mailNode.WriteAttr( BM_MAIL_ATTR_CLASSIFICATION, B_STRING_TYPE, 0, 
 							  mClassification.String(), mClassification.Length()+1);
 	if (mRatioSpam != BmMailRef::UNKNOWN_RATIO)
-		mailFile.WriteAttr( BM_MAIL_ATTR_RATIO_SPAM, B_FLOAT_TYPE, 0, 
+		mailNode.WriteAttr( BM_MAIL_ATTR_RATIO_SPAM, B_FLOAT_TYPE, 0, 
 								  &mRatioSpam, sizeof(mRatioSpam));
 }
 
