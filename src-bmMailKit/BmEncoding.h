@@ -53,15 +53,20 @@ namespace BmEncoding {
 
 	const char* ConvertFromBeosToLibiconv( uint32 encoding);
 
-	void ConvertToUTF8( const BmString& srcCharset, const BmString& src, BmString& dest);
-	void ConvertFromUTF8( const BmString& destCharset, const BmString& src, BmString& dest);
+	void ConvertToUTF8( const BmString& srcCharset, const BmString& src, 
+							  BmString& dest);
+	void ConvertFromUTF8( const BmString& destCharset, const BmString& src, 
+								 BmString& dest);
 
 	void Encode( BmString encodingStyle, const BmString& src, BmString& dest);
 	void Decode( BmString encodingStyle, const BmString& src, BmString& dest);
 
-	BmString ConvertHeaderPartToUTF8( const BmString& headerPart, const BmString& defaultCharset);
-	BmString ConvertUTF8ToHeaderPart( const BmString& utf8text, const BmString& charset,
-												 bool useQuotedPrintableIfNeeded, int32 fieldLen);
+	BmString ConvertHeaderPartToUTF8( const BmString& headerPart, 
+												 const BmString& defaultCharset);
+	BmString ConvertUTF8ToHeaderPart( const BmString& utf8text, 
+												 const BmString& charset,
+												 bool useQuotedPrintableIfNeeded, 
+												 int32 fieldLen);
 	
 	bool NeedsEncoding( const BmString& utf8String);
 	bool IsCompatibleWithText( const BmString& s);
@@ -180,9 +185,15 @@ protected:
 	void Filter( const char* srcBuf, uint32& srcLen, 
 					 char* destBuf, uint32& destLen);
 	void Finalize( char* destBuf, uint32& destLen);
+	void Queue( const char* chars, uint32 len);
+	bool OutputLineIfNeeded( char* &dest, const char* destEnd);
 
-	int mCurrLineLen;
+	BmRingBuf mQueuedChars;
 	int mSpacesThatMayNeedEncoding;
+	int mLastAddedLen;
+	int mCurrAddedLen;
+	bool mNeedFlush;
+	int mKeepLen;
 };
 
 /*------------------------------------------------------------------------------*\
@@ -202,10 +213,41 @@ protected:
 	void Filter( const char* srcBuf, uint32& srcLen, 
 					 char* destBuf, uint32& destLen);
 	void Finalize( char* destBuf, uint32& destLen);
+	void Queue( const char* chars, uint32 len);
+	bool OutputLineIfNeeded( char* &dest, const char* destEnd);
 
 	BmString mEncodedWord;
-	BmString mQueuedChars;
-	int mCurrLineLen;
+	BmRingBuf mQueuedChars;
+	int mStartAtOffset;
+	int mLastAddedLen;
+	int mCurrAddedLen;
+	bool mNeedFlush;
+	int mKeepLen;
+};
+
+/*------------------------------------------------------------------------------*\
+	class BmFoldedLineEncoder
+		-	
+\*------------------------------------------------------------------------------*/
+class BmFoldedLineEncoder : public BmMemFilter {
+	typedef BmMemFilter inherited;
+
+public:
+	BmFoldedLineEncoder( BmMemIBuf* input, int lineLen,
+							   uint32 blockSize=nBlockSize, int startAtOffset=0);
+
+protected:
+	// overrides of BmMailFilter base:
+	void Filter( const char* srcBuf, uint32& srcLen, 
+					 char* destBuf, uint32& destLen);
+	void Finalize( char* destBuf, uint32& destLen);
+	bool OutputLineIfNeeded( char* &dest, const char* destEnd);
+
+	int mStartAtOffset;
+	int mMaxLineLen;
+	int mLastSpacePos;
+	BmRingBuf mQueuedChars;
+	bool mNeedFlush;
 };
 
 /*------------------------------------------------------------------------------*\
@@ -326,29 +368,6 @@ protected:
 	// overrides of BmMailFilter base:
 	void Filter( const char* srcBuf, uint32& srcLen, 
 					 char* destBuf, uint32& destLen);
-};
-
-/*------------------------------------------------------------------------------*\
-	class BmFoldedLineEncoder
-		-	
-\*------------------------------------------------------------------------------*/
-class BmFoldedLineEncoder : public BmMemFilter {
-	typedef BmMemFilter inherited;
-
-public:
-	BmFoldedLineEncoder( BmMemIBuf* input, int lineLen,
-							   uint32 blockSize=nBlockSize, int startAtOffset=0);
-
-protected:
-	// overrides of BmMailFilter base:
-	void Filter( const char* srcBuf, uint32& srcLen, 
-					 char* destBuf, uint32& destLen);
-	void Finalize( char* destBuf, uint32& destLen);
-
-	int mCurrLineLen;
-	int mMaxLineLen;
-	bool mAddQueuedChars;
-	BmString mQueuedChars;
 };
 
 #endif

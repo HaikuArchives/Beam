@@ -60,7 +60,8 @@ static iconv_t ICONV_ERR = (iconv_t)0xFFFFFFFF;
 			some regular expressions). 
 			If so, the name Beam prefers is used, the first name otherwise.
 \*------------------------------------------------------------------------------*/
-static int HandleOneCharset( unsigned int namescount, const char * const * names,
+static int HandleOneCharset( unsigned int namescount, 
+									  const char * const * names,
                              void* data) {
 	static const char* rxs[] = {
 		"^ISO-",
@@ -143,7 +144,8 @@ const char* BmEncoding::ConvertFromBeosToLibiconv( uint32 encoding) {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmEncoding::ConvertToUTF8( const BmString& srcCharset, const BmString& src,
+void BmEncoding::ConvertToUTF8( const BmString& srcCharset, 
+										  const BmString& src,
 										  BmString& dest) {
 	if (srcCharset == "utf-8") {
 		// source already is utf-8...
@@ -162,7 +164,8 @@ void BmEncoding::ConvertToUTF8( const BmString& srcCharset, const BmString& src,
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmEncoding::ConvertFromUTF8( const BmString& destCharset, const BmString& src, 
+void BmEncoding::ConvertFromUTF8( const BmString& destCharset, 
+											 const BmString& src, 
 											 BmString& dest) {
 	if (destCharset == "utf-8") {
 		// destination shall be utf-8, too...
@@ -181,7 +184,8 @@ void BmEncoding::ConvertFromUTF8( const BmString& destCharset, const BmString& s
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmEncoding::Encode( BmString encodingStyle, const BmString& src, BmString& dest) {
+void BmEncoding::Encode( BmString encodingStyle, const BmString& src, 
+								 BmString& dest) {
 	BmStringIBuf srcBuf( src);
 	const uint32 blockSize = max( (int32)128, src.Length());
 	BmStringOBuf destBuf( blockSize);
@@ -194,11 +198,13 @@ void BmEncoding::Encode( BmString encodingStyle, const BmString& src, BmString& 
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmEncoding::Decode( BmString encodingStyle, const BmString& src, BmString& dest) {
+void BmEncoding::Decode( BmString encodingStyle, const BmString& src, 
+								 BmString& dest) {
 	BmStringIBuf srcBuf( src);
 	const uint32 blockSize = max( (int32)128, src.Length());
 	BmStringOBuf destBuf( blockSize);
-	BmMemFilterRef decoder = FindDecoderFor( &srcBuf, encodingStyle, false, blockSize);
+	BmMemFilterRef decoder 
+		= FindDecoderFor( &srcBuf, encodingStyle, false, blockSize);
 	destBuf.Write( decoder.get(), blockSize);
 	dest.Adopt( destBuf.TheString());
 }
@@ -233,8 +239,10 @@ BmString BmEncoding::ConvertHeaderPartToUTF8( const BmString& headerPart,
 			// convert the match (an encoded word) into UTF8:
 			const BmString srcCharset( i->atom[0]);
 			const BmString srcQuotingStyle( i->atom[1]);
-			BmStringIBuf text( headerPart.String()+i->atom[2].start(), i->atom[2].Length());
-			BmMemFilterRef decoder = FindDecoderFor( &text, srcQuotingStyle, true, blockSize);
+			BmStringIBuf text( headerPart.String()+i->atom[2].start(), 
+									 i->atom[2].Length());
+			BmMemFilterRef decoder 
+				= FindDecoderFor( &text, srcQuotingStyle, true, blockSize);
 			BmUtf8Encoder textConverter( decoder.get(), srcCharset, blockSize);
 			utf8.Write( &textConverter, blockSize);
 			curr = i->start()+i->Length();
@@ -262,7 +270,8 @@ BmString BmEncoding::ConvertUTF8ToHeaderPart( const BmString& utf8Text,
 	BmString transferEncoding = "7bit";
 	if (useQuotedPrintableIfNeeded)
 		needsQuotedPrintable = NeedsEncoding( utf8Text);
-	if (ThePrefs->GetBool( "Allow8BitMimeInHeader", false) && needsQuotedPrintable) {
+	if (ThePrefs->GetBool( "Allow8BitMimeInHeader", false) 
+	&& needsQuotedPrintable) {
 		transferEncoding = "8bit";
 		needsQuotedPrintable = false;
 	}
@@ -271,8 +280,8 @@ BmString BmEncoding::ConvertUTF8ToHeaderPart( const BmString& utf8Text,
 	BmUtf8Decoder textConverter( &srcBuf, charset);
 	BmStringOBuf tempIO( blockSize, 2);
 	if (needsQuotedPrintable) {
-		// encoded-words (quoted-printable) are neccessary, since headerfield contains
-		// non-ASCII chars:
+		// encoded-words (quoted-printable) are neccessary, since 
+		// headerfield contains non-ASCII chars:
 		BmQpEncodedWordEncoder qpEncoder( &textConverter, blockSize, 
 													 fieldLen+2, charset);
 		tempIO.Write( &qpEncoder);
@@ -291,8 +300,8 @@ BmString BmEncoding::ConvertUTF8ToHeaderPart( const BmString& utf8Text,
 		-	
 \*------------------------------------------------------------------------------*/
 bool BmEncoding::NeedsEncoding( const BmString& utf8String) {
-	// check if string needs quoted-printable/base64 encoding
-	// (which it does if it contains non-ASCII chars):
+	// check if string needs quoted-printable/base64 encoding:
+	// - encoding is needed if the string contains non-ASCII chars
 	for( const char* p = utf8String.String(); *p; ++p) {
 		if (*p<32 && *p!='\r' && *p!='\n' && *p!='\t')
 			// N.B.: This is a signed char, so c<32 means [0-31] and [128-255]
@@ -323,18 +332,23 @@ bool BmEncoding::IsCompatibleWithText( const BmString& s) {
 \*------------------------------------------------------------------------------*/
 BmMemFilterRef BmEncoding::FindDecoderFor( BmMemIBuf* input, 
 														 const BmString& encodingStyle, 
-														 bool isEncodedWord, uint32 blockSize) {
+														 bool isEncodedWord, 
+														 uint32 blockSize) {
 	BmMemFilter* filter = NULL;
-	if (encodingStyle.ICompare("q")==0 || encodingStyle.ICompare("quoted-printable")==0)
+	if (encodingStyle.ICompare("q")==0 
+	|| encodingStyle.ICompare("quoted-printable")==0)
 		filter = new BmQuotedPrintableDecoder( input, isEncodedWord, blockSize);
-	else if (encodingStyle.ICompare("b")==0 || encodingStyle.ICompare("base64")==0)
+	else if (encodingStyle.ICompare("b")==0 
+	|| encodingStyle.ICompare("base64")==0)
 		filter = new BmBase64Decoder( input, blockSize);
-	else if (encodingStyle.ICompare("7bit")==0 || encodingStyle.ICompare("8bit")==0)
+	else if (encodingStyle.ICompare("7bit")==0 
+	|| encodingStyle.ICompare("8bit")==0)
 		filter = new BmLinebreakDecoder( input, blockSize);
 	else if (encodingStyle.ICompare("binary")==0)
 		filter = new BmBinaryDecoder( input, blockSize);
 	else {
-		BM_SHOWERR( BmString("FindDecoderFor(): Unrecognized encoding-style <")<<encodingStyle<<"> found.\nAssuming 7bit.");
+		BM_SHOWERR( BmString("FindDecoderFor(): Unrecognized encoding-style <")
+							<< encodingStyle << "> found.\nAssuming 7bit.");
 		filter = new BmLinebreakDecoder( input, blockSize);
 	}
 	return BmMemFilterRef( filter);
@@ -348,16 +362,20 @@ BmMemFilterRef BmEncoding::FindEncoderFor( BmMemIBuf* input,
 														 const BmString& encodingStyle,
 														 uint32 blockSize) {
 	BmMemFilter* filter = NULL;
-	if (encodingStyle.ICompare("q")==0 || encodingStyle.ICompare("quoted-printable")==0)
+	if (encodingStyle.ICompare("q")==0 
+	|| encodingStyle.ICompare("quoted-printable")==0)
 		filter = new BmQuotedPrintableEncoder( input, blockSize);
-	else if (encodingStyle.ICompare("b")==0 || encodingStyle.ICompare("base64")==0)
+	else if (encodingStyle.ICompare("b")==0 
+	|| encodingStyle.ICompare("base64")==0)
 		filter = new BmBase64Encoder( input, blockSize);
-	else if (encodingStyle.ICompare("7bit")==0 || encodingStyle.ICompare("8bit")==0)
+	else if (encodingStyle.ICompare("7bit")==0 
+	|| encodingStyle.ICompare("8bit")==0)
 		filter = new BmLinebreakEncoder( input, blockSize);
 	else if (encodingStyle.ICompare("binary")==0)
 		filter = new BmBinaryEncoder( input, blockSize);
 	else {
-		BM_SHOWERR( BmString("FindEncoderFor(): Unrecognized encoding-style <")<<encodingStyle<<"> found.\nAssuming 7bit.");
+		BM_SHOWERR( BmString("FindEncoderFor(): Unrecognized encoding-style <")
+							<< encodingStyle << "> found.\nAssuming 7bit.");
 		filter = new BmLinebreakEncoder( input, blockSize);
 	}
 	return BmMemFilterRef( filter);
@@ -427,7 +445,8 @@ void BmUtf8Decoder::InitConverter() {
 	BmString toSet = mDestCharset	+ flag;
 	if (!mDestCharset.Length()
 	|| (mIconvDescr = iconv_open( toSet.String(), "utf-8")) == ICONV_ERR) {
-		BM_SHOWERR( BmString("libiconv: unable to convert from utf-8 to ") << toSet);
+		BM_SHOWERR( BmString("libiconv: unable to convert from utf-8 to ") 
+							<< toSet);
 		mHadError = true;
 		return;
 	}
@@ -461,25 +480,32 @@ void BmUtf8Decoder::SetDiscard( bool discard) {
 \*------------------------------------------------------------------------------*/
 void BmUtf8Decoder::Filter( const char* srcBuf, uint32& srcLen, 
 									 char* destBuf, uint32& destLen) {
-	BM_LOG3( BM_LogMailParse, BmString("starting to decode utf8 of ") << srcLen << " bytes");
+	BM_LOG3( BM_LogMailParse, 
+				BmString("starting to decode utf8 of ") << srcLen << " bytes");
 
 	const char* inBuf = srcBuf;
 	size_t inBytesLeft = srcLen;
 	char* outBuf = destBuf;
 	size_t outBytesLeft = destLen;
-	size_t irrevCount = iconv( mIconvDescr, &inBuf, &inBytesLeft, &outBuf, &outBytesLeft);
+	size_t irrevCount = iconv( mIconvDescr, &inBuf, &inBytesLeft, 
+										&outBuf, &outBytesLeft);
 	srcLen -= inBytesLeft;
 	destLen -= outBytesLeft;
 	if (irrevCount == (size_t)-1) {
 		if (errno == E2BIG)
-			BM_LOG3( BM_LogMailParse, "Result in utf8-decode: too big, need to continue");
+			BM_LOG3( BM_LogMailParse, 
+						"Result in utf8-decode: too big, need to continue");
 		else if (errno == EINVAL)
-			BM_LOG3( BM_LogMailParse, "Result in utf8-decode: stopped on multibyte char, need to continue");
+			BM_LOG3( BM_LogMailParse, 
+						"Result in utf8-decode: stopped on multibyte char, "
+						"need to continue");
 		else if (errno == EILSEQ) {
-			BM_LOG( BM_LogMailParse, "Result in utf8-decode: invalid multibyte char found");
+			BM_LOG( BM_LogMailParse, 
+					  "Result in utf8-decode: invalid multibyte char found");
 			mHadError = true;
 		} else {
-			BM_SHOWERR( BmString("Unknown error-result in utf8-decode: ") << errno);
+			BM_SHOWERR( BmString("Unknown error-result in utf8-decode: ") 
+								<< errno);
 			mHadError = true;
 		}
 	}
@@ -551,8 +577,10 @@ void BmUtf8Encoder::InitConverter() {
 		flag = "//IGNORE";
 	BmString toSet = BmString("utf-8") + flag;
 	if (!mSrcCharset.Length()
-	|| (mIconvDescr = iconv_open( toSet.String(), mSrcCharset.String())) == ICONV_ERR) {
-		BM_SHOWERR( BmString("libiconv: unable to convert from ") << mSrcCharset << " to " << toSet);
+	|| (mIconvDescr = iconv_open( toSet.String(), 
+											mSrcCharset.String())) == ICONV_ERR) {
+		BM_SHOWERR( BmString("libiconv: unable to convert from ") 
+							<< mSrcCharset << " to " << toSet);
 		mHadError = true;
 		return;
 	}
@@ -586,27 +614,34 @@ void BmUtf8Encoder::SetDiscard( bool discard) {
 \*------------------------------------------------------------------------------*/
 void BmUtf8Encoder::Filter( const char* srcBuf, uint32& srcLen, 
 									 char* destBuf, uint32& destLen) {
-	BM_LOG3( BM_LogMailParse, BmString("starting to encode utf8 of ") << srcLen << " bytes");
+	BM_LOG3( BM_LogMailParse, 
+				BmString("starting to encode utf8 of ") << srcLen << " bytes");
 
 	const char* inBuf = srcBuf;
 	size_t inBytesLeft = srcLen;
 	char* outBuf = destBuf;
 	size_t outBytesLeft = destLen;
-	size_t irrevCount = iconv( mIconvDescr, &inBuf, &inBytesLeft, &outBuf, &outBytesLeft);
+	size_t irrevCount 
+		= iconv( mIconvDescr, &inBuf, &inBytesLeft, &outBuf, &outBytesLeft);
 	srcLen -= inBytesLeft;
 	destLen -= outBytesLeft;
 	if (irrevCount == (size_t)-1) {
 		if (errno == E2BIG)
-			BM_LOG3( BM_LogMailParse, "Result in utf8-encode: too big, need to continue");
+			BM_LOG3( BM_LogMailParse, 
+						"Result in utf8-encode: too big, need to continue");
 		else if (errno == EINVAL)
-			BM_LOG3( BM_LogMailParse, "Result in utf8-encode: stopped on multibyte char, need to continue");
+			BM_LOG3( BM_LogMailParse, 
+						"Result in utf8-encode: stopped on multibyte char, "
+						"need to continue");
 		else if (errno == EILSEQ) {
-			BM_LOG2( BM_LogMailParse, "Result in utf8-encode: invalid multibyte char found");
+			BM_LOG2( BM_LogMailParse, 
+						"Result in utf8-encode: invalid multibyte char found");
 			mHadToDiscardChars = true;
 			int on = 1;
 			iconvctl( mIconvDescr, ICONV_SET_DISCARD_ILSEQ, &on);
 		} else {
-			BM_SHOWERR( BmString("Unknown error-result in utf8-encode: ") << errno);
+			BM_SHOWERR( BmString("Unknown error-result in utf8-encode: ") 
+								<< errno);
 			mHadError = true;
 		}
 	}
@@ -621,7 +656,13 @@ void BmUtf8Encoder::Filter( const char* srcBuf, uint32& srcLen,
 \********************************************************************************/
 
 inline unsigned char HEXDIGIT2CHAR( unsigned int d) {
-	return (((d)>='0'&&(d)<='9') ? (d)-'0' : ((d)>='A'&&(d)<='F') ? (d)-'A'+10 : ((d)>='a'&&(d)<='f') ? (d)-'a'+10 : 0);
+	return (((d)>='0'&&(d)<='9') 
+					? (d)-'0' 
+					: ((d)>='A'&&(d)<='F') 
+							? (d)-'A'+10 
+							: ((d)>='a'&&(d)<='f') 
+									? (d)-'a'+10 
+									: 0);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -644,7 +685,9 @@ BmQuotedPrintableDecoder::BmQuotedPrintableDecoder( BmMemIBuf* input,
 \*------------------------------------------------------------------------------*/
 void BmQuotedPrintableDecoder::Filter( const char* srcBuf, uint32& srcLen, 
 													char* destBuf, uint32& destLen) {
-	BM_LOG3( BM_LogMailParse, BmString("starting to decode quoted-printable of ") << srcLen << " bytes");
+	BM_LOG3( BM_LogMailParse, 
+				BmString("starting to decode quoted-printable of ") 
+						<< srcLen << " bytes");
 	const char* src = srcBuf;
 	const char* srcEnd = srcBuf+srcLen;
 	char* dest = destBuf;
@@ -684,6 +727,8 @@ void BmQuotedPrintableDecoder::Filter( const char* srcBuf, uint32& srcLen,
 				// be added as all other chars:
 				while( dest<destEnd && mSpacesThatMayNeedRemoval--)
 					*dest++ = ' ';
+				if (mSpacesThatMayNeedRemoval < 0)
+					mSpacesThatMayNeedRemoval = 0;
 			}
 			if (dest>=destEnd)
 				break;
@@ -695,9 +740,10 @@ void BmQuotedPrintableDecoder::Filter( const char* srcBuf, uint32& srcLen,
 			mSpacesThatMayNeedRemoval = 0;
 			if (c == '=') {
 				if (src>srcEnd-3 && !mInput->IsAtEnd())
-					break;							// want two more characters in buffer
+					break;						// want two more characters in buffer
 				if (src<=srcEnd-3 && (c1=*(src+1))!=0 && (c2=*(src+2))!=0) {
-					if (qpChars.FindFirst(c1)!=B_ERROR && qpChars.FindFirst(c2)!=B_ERROR) {
+					if (qpChars.FindFirst(c1)!=B_ERROR 
+					&& qpChars.FindFirst(c2)!=B_ERROR) {
 						// decode a single character:
 						*dest++ = HEXDIGIT2CHAR(c1)*16 + HEXDIGIT2CHAR(c2);
 						src += 2;
@@ -710,7 +756,8 @@ void BmQuotedPrintableDecoder::Filter( const char* srcBuf, uint32& srcLen,
 					*dest++ = c;
 				}
 			} else if (mIsEncodedWord && c == '_') {
-				// in encoded-words, underlines are really spaces (a real underline is encoded):
+				// in encoded-words, underlines are really spaces 
+				// (a real underline is encoded):
 				*dest++ = ' ';
 			} else {
 				// anything else is just copied:
@@ -759,9 +806,67 @@ inline unsigned int CHAR2LOWNIBBLE( unsigned char c) {
 BmQuotedPrintableEncoder::BmQuotedPrintableEncoder( BmMemIBuf* input, 
 																	 uint32 blockSize)
 	:	inherited( input, blockSize)
-	,	mCurrLineLen( 0)
+	,	mQueuedChars( 80)
 	,	mSpacesThatMayNeedEncoding( 0)
+	,	mLastAddedLen( 0)
+	,	mCurrAddedLen( 0)
+	,	mNeedFlush( false)
+	,	mKeepLen( 0)
 {
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmQuotedPrintableEncoder::Queue( const char* chars, uint32 len) {
+	mQueuedChars.Put( chars, len);
+	mLastAddedLen = mCurrAddedLen;
+	mCurrAddedLen = len;
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+bool BmQuotedPrintableEncoder::OutputLineIfNeeded( char* &dest, 
+																	const char* destEnd) {
+	if (!mNeedFlush && mQueuedChars.Length() > BM_MAX_LINE_LEN) {
+		// line is too long and needs soft break:
+		mKeepLen 
+			= (mQueuedChars.Length() - mCurrAddedLen < BM_MAX_LINE_LEN)
+				? mCurrAddedLen
+						// last char-group fits on line, so we include it.
+				: mLastAddedLen + mCurrAddedLen;
+						// last char-group won't fit, so we need to fold
+						// before it.
+		mNeedFlush = true;
+	}
+	if (mNeedFlush) {
+		// line is too long or needs hard break, we output all chars up to
+		// the group added last:
+		if (mQueuedChars.PeekTail() != '\n') {
+			while (mQueuedChars.Length() > mKeepLen) {
+				if (dest>=destEnd)
+					return false;
+				*dest++ = mQueuedChars.Get();
+			}
+			// insert soft linebreak:
+			if (dest+3>=destEnd)
+				return false;
+			*dest++ = '=';
+			*dest++ = '\r';
+			*dest++ = '\n';
+		} else {
+			while (mQueuedChars.Length() > 0) {
+				if (dest>=destEnd)
+					return false;
+				*dest++ = mQueuedChars.Get();
+			}
+		}
+		mNeedFlush = false;
+	}
+	return true;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -770,72 +875,59 @@ BmQuotedPrintableEncoder::BmQuotedPrintableEncoder( BmMemIBuf* input,
 \*------------------------------------------------------------------------------*/
 void BmQuotedPrintableEncoder::Filter( const char* srcBuf, uint32& srcLen, 
 													char* destBuf, uint32& destLen) {
-	BM_LOG3( BM_LogMailParse, BmString("starting to encode quoted-printable of ") << srcLen << " bytes");
+	BM_LOG3( BM_LogMailParse, 
+				BmString("starting to encode quoted-printable of ") 
+						<< srcLen << " bytes");
 	const char* safeChars = 
 				(ThePrefs->GetBool( "MakeQPSafeForEBCDIC", false)
 					? "%&/()?+*,.;:<>-_"
 					: "%&/()?+*,.;:<>-_!\"#$@[]\\^'{|}~");
-							// in bodies, the underscore is safe, i.e. it need not be encoded.
-	char add[4];
-	int32 addLen = 0;
+							// in bodies, the underscore is safe, i.e. it need
+							// not be encoded.
 	const char* src = srcBuf;
 	const char* srcEnd = srcBuf+srcLen;
 	char* dest = destBuf;
 	char* destEnd = destBuf+destLen;
-	unsigned char c;
-	for( ; src<srcEnd && dest<destEnd; ++src, addLen=0) {
+	char c;
+	for( ; src<srcEnd && dest<destEnd; ++src) {
+		if (!OutputLineIfNeeded( dest, destEnd))
+			break;
 		c = *src;
+		if (c=='\r')
+			continue;							// ignore '\r'
 		if (mSpacesThatMayNeedEncoding && c!=' ') {
-			if (c=='\r' || c=='\n') {
+			// now we can decide if this group of spaces need to be encoded
+			// or not:
+			if (c=='\n') {
 				// this group of spaces lives immediately before a newline,
 				// which means that it requires encoding:
-				++mSpacesThatMayNeedEncoding;
-				while( dest<=destEnd-3 && --mSpacesThatMayNeedEncoding) {
-					*dest++ = '=';
-					*dest++ = (char)CHAR2HIGHNIBBLE(' ');
-					*dest++ = (char)CHAR2LOWNIBBLE(' ');
-				}
+				Queue( "=20", 3);
+				mSpacesThatMayNeedEncoding--;
 			} else {
-				// this group of spaces does not require encoding:
-				++mSpacesThatMayNeedEncoding;
-				while( dest<destEnd && --mSpacesThatMayNeedEncoding)
-					*dest++ = ' ';
+				// no encoding neccessary for this group of spaces:
+				Queue( " ", 1);
+				mSpacesThatMayNeedEncoding--;
 			}
-			if (dest>=destEnd)
-				break;
-		}
-		if (isalnum(c) || strchr( safeChars, c)) {
-			add[addLen++] = c;
-		} else if (c == ' ') {
-			mSpacesThatMayNeedEncoding++;
-			continue;
-		} else if (c=='\r') {
-			continue;							// ignore '\r'
-		} else if (c=='\n') {
-			if (dest+2>=destEnd)
-				break;
-			*dest++ = '\r';
-			*dest++ = '\n';
-			mCurrLineLen = 0;
+			--src;								// reprocess current character
 			continue;
 		} else {
-			add[0] = '='; 
-			add[1] = (char)CHAR2HIGHNIBBLE(c); 
-			add[2] = (char)CHAR2LOWNIBBLE(c);
-			addLen=3;
+			// normal processing, convert chars as needed and queue them:
+			if (isalnum(c) || strchr( safeChars, c)) {
+				Queue( &c, 1);
+			} else if (c == ' ') {
+				mSpacesThatMayNeedEncoding++;
+			} else if (c=='\n') {
+				Queue( "\r\n", 2);
+				mNeedFlush = true;
+			} else {
+				char enc[3] = {
+					'=',
+					(char)CHAR2HIGHNIBBLE(c),
+				 	(char)CHAR2LOWNIBBLE(c)
+				};
+				Queue( enc, 3);
+			}
 		}
-		if (mCurrLineLen + addLen >= BM_MAX_LINE_LEN) {
-			if (dest+addLen+3>=destEnd)
-				break;
-			// insert soft linebreak:
-			*dest++ = '=';
-			*dest++ = '\r';
-			*dest++ = '\n';
-			mCurrLineLen = 0;
-		}
-		for( int i=0; i<addLen; ++i)
-			*dest++ = add[i];
-		mCurrLineLen += addLen;
 	}
 	srcLen = src-srcBuf;
 	destLen = dest-destBuf;
@@ -849,14 +941,22 @@ void BmQuotedPrintableEncoder::Filter( const char* srcBuf, uint32& srcLen,
 void BmQuotedPrintableEncoder::Finalize( char* destBuf, uint32& destLen) {
 	char* dest = destBuf;
 	char* destEnd = destBuf+destLen;
-	++mSpacesThatMayNeedEncoding;
-	while( dest<=destEnd-3 && --mSpacesThatMayNeedEncoding) {
-		*dest++ = '=';
-		*dest++ = (char)CHAR2HIGHNIBBLE(' ');
-		*dest++ = (char)CHAR2LOWNIBBLE(' ');
+	if (OutputLineIfNeeded( dest, destEnd)) {
+		// spaces at end of string are considered to live immediately before 
+		// a newline, which means that they require encoding:
+		while( mSpacesThatMayNeedEncoding) {
+			Queue( "=20", 3);
+			mSpacesThatMayNeedEncoding--;
+		}
+		// output remaining chars (will fit on one line):
+		while (mQueuedChars.Length()) {
+			if (dest>=destEnd)
+				break;
+			*dest++ = mQueuedChars.Get();
+		}
 	}
 	destLen = dest-destBuf;
-	mIsFinalized = (mSpacesThatMayNeedEncoding==0);
+	mIsFinalized = (mQueuedChars.Length()==0 && mSpacesThatMayNeedEncoding==0);
 }
 
 
@@ -874,10 +974,68 @@ BmQpEncodedWordEncoder::BmQpEncodedWordEncoder( BmMemIBuf* input,
 																int startAtOffset,
 																const BmString& charset)
 	:	inherited( input, blockSize)
-	,	mCurrLineLen( startAtOffset)
+	,	mQueuedChars( 80)
+	,	mStartAtOffset( startAtOffset)
+	,	mLastAddedLen( 0)
+	,	mCurrAddedLen( 0)
+	,	mNeedFlush( false)
+	,	mKeepLen( 0)
 {
 	mEncodedWord = BmString("=?")<<charset<<"?q?";
-	mQueuedChars = mEncodedWord;
+	mQueuedChars << mEncodedWord;
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmQpEncodedWordEncoder::Queue( const char* chars, uint32 len) {
+	mQueuedChars.Put( chars, len);
+	mLastAddedLen = mCurrAddedLen;
+	mCurrAddedLen = len;
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+bool BmQpEncodedWordEncoder::OutputLineIfNeeded( char* &dest, 
+																 const char* destEnd) {
+	if (!mNeedFlush 
+	&& mStartAtOffset+mQueuedChars.Length()+2 > BM_MAX_LINE_LEN) {
+		// line is too long and needs soft break:
+		mKeepLen 
+			= (mStartAtOffset + mQueuedChars.Length() 
+				- mCurrAddedLen < BM_MAX_LINE_LEN)
+				? mCurrAddedLen
+						// last char-group fits on line, so we include it.
+				: mLastAddedLen + mCurrAddedLen;
+						// last char-group won't fit, so we need to fold
+						// before it.
+		mNeedFlush = true;
+	}
+	if (mNeedFlush) {
+		// line is too long or needs hard break, we output all chars up to
+		// the group added last:
+		while (mStartAtOffset+mQueuedChars.Length() > mKeepLen) {
+			if (dest>=destEnd)
+				return false;
+			*dest++ = mQueuedChars.Get();
+		}
+		// insert soft linebreak:
+		if (dest+5+mEncodedWord.Length()>=destEnd)
+			return false;
+		*dest++ = '?';
+		*dest++ = '=';
+		*dest++ = '\r';
+		*dest++ = '\n';
+		*dest++ = ' ';
+		for( int i=0; i<mEncodedWord.Length(); ++i)
+			*dest++ = mEncodedWord[i];
+		mNeedFlush = false;
+		mStartAtOffset = 0;
+	}
+	return true;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -886,69 +1044,42 @@ BmQpEncodedWordEncoder::BmQpEncodedWordEncoder( BmMemIBuf* input,
 \*------------------------------------------------------------------------------*/
 void BmQpEncodedWordEncoder::Filter( const char* srcBuf, uint32& srcLen, 
 												 char* destBuf, uint32& destLen) {
-	BM_LOG3( BM_LogMailParse, BmString("starting to qp-word-encode ") << srcLen << " bytes");
+	BM_LOG3( BM_LogMailParse, 
+				BmString("starting to qp-word-encode ") << srcLen << " bytes");
 	const char* safeChars = 
 			 (ThePrefs->GetBool( "MakeQPSafeForEBCDIC", false)
 					? "%&/()+*,.;:<>-"
 					: "%&/()+*,.;:<>-!\"#$@[]\\^'{|}~");
-							// in encoded words, underscore has to be encoded, since it
-							// is used for spaces!
-							// and the question-mark has to be encoded, too, since it
+							// in encoded words, underscore has to be encoded, since
+							// it is used for spaces!
+							// the question-mark has to be encoded, too, since it
 							// is part of the encoded-word markers!
 	const char* src = srcBuf;
 	const char* srcEnd = srcBuf+srcLen;
 	char* dest = destBuf;
 	char* destEnd = destBuf+destLen;
-	if (mQueuedChars.Length()) {
-		if (mCurrLineLen + mQueuedChars.Length() + 2 > BM_MAX_LINE_LEN) {
-			if (dest<=destEnd-5) {
-				*dest++ = '?';
-				*dest++ = '=';
-				*dest++ = '\r';
-				*dest++ = '\n';
-				*dest++ = ' ';
-				mCurrLineLen = 1;
-				mQueuedChars.Prepend( mEncodedWord);
-			} else
-				goto out;
-		}
-		while( dest<destEnd && mQueuedChars.Length()) {
-			*dest++ = mQueuedChars[0];
-			mQueuedChars.Remove( 0, 1);
-			mCurrLineLen++;
-		}
-	}
-	
-	unsigned char c;
-	char add[4];
-	int32 addLen;
-	for( addLen=0; src<srcEnd && dest<destEnd; ++src, addLen=0) {
+	char c;
+	for( ; src<srcEnd && dest<destEnd; ++src) {
+		if (!OutputLineIfNeeded( dest, destEnd))
+			break;
 		c = *src;
 		if (isalnum(c) || strchr( safeChars, c)) {
-			add[addLen++] = c;
+			Queue( &c, 1);
 		} else if (c == ' ') {
 			// in encoded-words, we always replace SPACE by underline:
-			add[addLen++] = '_';
+			Queue( "_", 1);
+		} else if (c == '\r') {
+			continue;							// dump '\r'
 		} else {
-			add[addLen++] = '=';
-			add[addLen++] = (char)CHAR2HIGHNIBBLE(c);
-			add[addLen++] = (char)CHAR2LOWNIBBLE(c);
+			// qp-encode a single character:
+			char enc[3] = {
+				'=',
+				(char)CHAR2HIGHNIBBLE(c),
+			 	(char)CHAR2LOWNIBBLE(c)
+			};
+			Queue( enc, 3);
 		}
-		if (mCurrLineLen + mQueuedChars.Length() + 2 + addLen >= BM_MAX_LINE_LEN) {
-			if (!mQueuedChars.Length() && dest<=destEnd-5) {
-				*dest++ = '?';
-				*dest++ = '=';
-				*dest++ = '\r';
-				*dest++ = '\n';
-				*dest++ = ' ';
-				mCurrLineLen = 1;
-				mQueuedChars.Prepend( mEncodedWord);
-			}
-			break;
-		}
-		mQueuedChars.Append( add, addLen);
 	}
-out:
 	srcLen = src-srcBuf;
 	destLen = dest-destBuf;
 	BM_LOG3( BM_LogMailParse, "qp-word-encode: done");
@@ -961,30 +1092,14 @@ out:
 void BmQpEncodedWordEncoder::Finalize( char* destBuf, uint32& destLen) {
 	char* dest = destBuf;
 	char* destEnd = destBuf+destLen;
-	if (mQueuedChars.Length()) {
-		if (mCurrLineLen + mQueuedChars.Length() + 2 > BM_MAX_LINE_LEN) {
-			if (dest<=destEnd-5) {
-				*dest++ = '?';
-				*dest++ = '=';
-				*dest++ = '\r';
-				*dest++ = '\n';
-				*dest++ = ' ';
-				mCurrLineLen = 1;
-				mQueuedChars.Prepend( mEncodedWord);
-			} else
-				goto out;
-		}
+	if (OutputLineIfNeeded( dest, destEnd)) {
+		// output remaining chars (followed by "?="):
+		if (mQueuedChars.PeekTail() != '=')
+			Queue( "?=", 2);
 		while( dest<destEnd && mQueuedChars.Length()) {
-			*dest++ =mQueuedChars[0];
-			mCurrLineLen++;
-			mQueuedChars.Remove( 0, 1);
-		}
-		if (dest<=destEnd-2) {
-			*dest++ = '?';
-			*dest++ = '=';
+			*dest++ = mQueuedChars.Get();
 		}
 	}
-out:
 	destLen = dest-destBuf;
 	mIsFinalized = (mQueuedChars.Length()==0);
 }
@@ -1002,10 +1117,58 @@ out:
 BmFoldedLineEncoder::BmFoldedLineEncoder( BmMemIBuf* input, int lineLen,
 														uint32 blockSize, int startAtOffset)
 	:	inherited( input, blockSize)
-	,	mCurrLineLen( startAtOffset)
+	,	mStartAtOffset( startAtOffset)
 	,	mMaxLineLen( lineLen)
-	,	mAddQueuedChars( false)
+	,	mLastSpacePos( -1)
+	,	mQueuedChars( 80)
+	,	mNeedFlush( false)
 {
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+bool BmFoldedLineEncoder::OutputLineIfNeeded( char* &dest, 
+															 const char* destEnd) {
+	if (!mNeedFlush && mStartAtOffset+mQueuedChars.Length() > BM_MAX_LINE_LEN) {
+		// line is too long and needs soft break:
+		mNeedFlush = true;
+	}
+	if (mNeedFlush) {
+		// line is too long we output chars and insert a soft-break:
+		if (mLastSpacePos == -1) {
+			// no space in this line, so we output all chars except 
+			// the last one (so that line is full):
+			while (mQueuedChars.Length() > 1) {
+				if (dest>=destEnd)
+					return false;
+				*dest++ = mQueuedChars.Get();
+			}
+		} else {
+			// output all chars up to the last space:
+			while (mLastSpacePos>=0) {
+				if (dest>=destEnd)
+					return false;
+				if (mLastSpacePos>0)
+					// output character
+					*dest++ = mQueuedChars.Get();
+				else
+					// suppress space as last character of a line:
+					mQueuedChars.Get();
+				mLastSpacePos--;
+			}
+		}
+		// insert soft linebreak:
+		if (dest+3>=destEnd)
+			return false;
+		*dest++ = '\r';
+		*dest++ = '\n';
+		*dest++ = ' ';
+		mNeedFlush = false;
+		mStartAtOffset = 1;
+	}
+	return true;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -1014,44 +1177,26 @@ BmFoldedLineEncoder::BmFoldedLineEncoder( BmMemIBuf* input, int lineLen,
 \*------------------------------------------------------------------------------*/
 void BmFoldedLineEncoder::Filter( const char* srcBuf, uint32& srcLen, 
 											 char* destBuf, uint32& destLen) {
-	BM_LOG3( BM_LogMailParse, BmString("starting to line-fold ") << srcLen << " bytes");
+	BM_LOG3( BM_LogMailParse, 
+				BmString("starting to line-fold ") << srcLen << " bytes");
 	const char* src = srcBuf;
 	const char* srcEnd = srcBuf+srcLen;
 	char* dest = destBuf;
 	char* destEnd = destBuf+destLen;
-	if (mAddQueuedChars) {
-		int corr = (mQueuedChars[mQueuedChars.Length()-1]==' ' ? 0 : 1);
-		// if last char is not space, line is full and needs to be folded:
-		if (mCurrLineLen + mQueuedChars.Length() + corr > mMaxLineLen) {
-			if (dest<=destEnd-3) {
-				*dest++ = '\r';
-				*dest++ = '\n';
-				*dest++ = ' ';
-				mCurrLineLen = 1;
-			} else
-				goto out;
-		}
-		while( dest<destEnd && mQueuedChars.Length()) {
-			*dest++ = mQueuedChars[0];
-			mQueuedChars.Remove( 0, 1);
-			mCurrLineLen++;
-		}
-		if (!mQueuedChars.Length())
-			mAddQueuedChars = false;
-	}
 	unsigned char c;
-	for( ; src<srcEnd && dest<destEnd && !mAddQueuedChars; ++src) {
+	for( ; src<srcEnd && dest<destEnd; ++src) {
+		if (!OutputLineIfNeeded( dest, destEnd))
+			break;
 		c = *src;
 		if (c == ' ') {
-			mQueuedChars.Append( ' ', 1);
-			mAddQueuedChars = true;
+			mLastSpacePos = mQueuedChars.Length();
+			mQueuedChars << ' ';
+		} else if (c == '\r') {
+			continue;							// dump '\r'
 		} else {
-			mQueuedChars.Append( c, 1);
-			if (mCurrLineLen + mQueuedChars.Length() >= mMaxLineLen)
-				mAddQueuedChars = true;		// line is full
+			mQueuedChars << c;
 		}
 	}
-out:
 	srcLen = src-srcBuf;
 	destLen = dest-destBuf;
 	BM_LOG3( BM_LogMailParse, "line-fold: done");
@@ -1064,21 +1209,12 @@ out:
 void BmFoldedLineEncoder::Finalize( char* destBuf, uint32& destLen) {
 	char* dest = destBuf;
 	char* destEnd = destBuf+destLen;
-	if (mCurrLineLen + mQueuedChars.Length() > mMaxLineLen) {
-		if (dest<=destEnd-3) {
-			*dest++ = '\r';
-			*dest++ = '\n';
-			*dest++ = ' ';
-			mCurrLineLen = 1;
-		} else
-			goto out;
+	if (OutputLineIfNeeded( dest, destEnd)) {
+		// output remaining chars:
+		while( dest<destEnd && mQueuedChars.Length()) {
+			*dest++ = mQueuedChars.Get();
+		}
 	}
-	while( dest<destEnd && mQueuedChars.Length()) {
-		*dest++ = mQueuedChars[0];
-		mQueuedChars.Remove( 0, 1);
-		mCurrLineLen++;
-	}
-out:
 	destLen = dest-destBuf;
 	mIsFinalized = (mQueuedChars.Length()==0);
 }
@@ -1115,7 +1251,8 @@ const int32 BmBase64Decoder::nBase64Alphabet[256] = {
 void BmBase64Decoder::Filter( const char* srcBuf, uint32& srcLen, 
 										char* destBuf, uint32& destLen) {
 
-	BM_LOG3( BM_LogMailParse, BmString("starting to decode base64 of ") << srcLen << " bytes");
+	BM_LOG3( BM_LogMailParse, 
+				BmString("starting to decode base64 of ") << srcLen << " bytes");
 
 	int32 value;
 	const unsigned char* src = (const unsigned char*)srcBuf;
@@ -1149,12 +1286,12 @@ void BmBase64Decoder::Filter( const char* srcBuf, uint32& srcLen,
 void BmBase64Decoder::Finalize( char* destBuf, uint32& destLen) {
 	char* dest = destBuf;
 	char* destEnd = destBuf+destLen;
-	if (mIndex) {
+	if (mIndex > 1) {
 		// output remaining characters:
 		BM_ASSERT( dest<=destEnd-3);
 							// must be the case for mIndex!=0
 		*dest++ = (mConcat & 0x00ff0000) >> 16;
-		if (mIndex>2)
+		if (mIndex > 2)
 			*dest++ = (mConcat & 0x0000ff00) >> 8;
 		mConcat = mIndex = 0;
 	}
@@ -1169,8 +1306,10 @@ void BmBase64Decoder::Finalize( char* destBuf, uint32& destLen) {
 \********************************************************************************/
 
 const char BmBase64Encoder::nBase64Alphabet[64] = {
-	'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
-	'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
+	'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 
+	'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+	'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 
+	'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
 	'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
 	'+',
 	'/'
@@ -1183,7 +1322,8 @@ const char BmBase64Encoder::nBase64Alphabet[64] = {
 void BmBase64Encoder::Filter( const char* srcBuf, uint32& srcLen, 
 										char* destBuf, uint32& destLen) {
 
-	BM_LOG3( BM_LogMailParse, BmString("starting to encode base64 of ") << srcLen << " bytes");
+	BM_LOG3( BM_LogMailParse, 
+				BmString("starting to encode base64 of ") << srcLen << " bytes");
 
 	const unsigned char* src = (unsigned char*)srcBuf;
 	const unsigned char* srcEnd = (unsigned char*)srcBuf+srcLen;
@@ -1257,7 +1397,9 @@ BmLinebreakDecoder::BmLinebreakDecoder( BmMemIBuf* input, uint32 blockSize)
 \*------------------------------------------------------------------------------*/
 void BmLinebreakDecoder::Filter( const char* srcBuf, uint32& srcLen, 
 											char* destBuf, uint32& destLen) {
-	BM_LOG3( BM_LogMailParse, BmString("starting to decode linebreaks of ") << srcLen << " bytes");
+	BM_LOG3( BM_LogMailParse, 
+				BmString("starting to decode linebreaks of ") 
+					<< srcLen << " bytes");
 	const char* src = srcBuf;
 	const char* srcEnd = srcBuf+srcLen;
 	char* dest = destBuf;
@@ -1296,7 +1438,9 @@ BmLinebreakEncoder::BmLinebreakEncoder( BmMemIBuf* input, uint32 blockSize)
 \*------------------------------------------------------------------------------*/
 void BmLinebreakEncoder::Filter( const char* srcBuf, uint32& srcLen, 
 											char* destBuf, uint32& destLen) {
-	BM_LOG3( BM_LogMailParse, BmString("starting to encode linebreaks of ") << srcLen << " bytes");
+	BM_LOG3( BM_LogMailParse, 
+				BmString("starting to encode linebreaks of ") 
+					<< srcLen << " bytes");
 
 	const char* src = srcBuf;
 	const char* srcEnd = srcBuf+srcLen;
@@ -1339,7 +1483,8 @@ BmBinaryDecoder::BmBinaryDecoder( BmMemIBuf* input, uint32 blockSize)
 \*------------------------------------------------------------------------------*/
 void BmBinaryDecoder::Filter( const char* srcBuf, uint32& srcLen, 
 										char* destBuf, uint32& destLen) {
-	BM_LOG3( BM_LogMailParse, BmString("starting to decode binary of ") << srcLen << " bytes");
+	BM_LOG3( BM_LogMailParse, 
+				BmString("starting to decode binary of ") << srcLen << " bytes");
 
 	uint32 size = min( destLen, srcLen);
 	memcpy( destBuf, srcBuf, size);
@@ -1369,7 +1514,8 @@ BmBinaryEncoder::BmBinaryEncoder( BmMemIBuf* input, uint32 blockSize)
 \*------------------------------------------------------------------------------*/
 void BmBinaryEncoder::Filter( const char* srcBuf, uint32& srcLen, 
 										char* destBuf, uint32& destLen) {
-	BM_LOG3( BM_LogMailParse, BmString("starting to encode binary of ") << srcLen << " bytes");
+	BM_LOG3( BM_LogMailParse, 
+				BmString("starting to encode binary of ") << srcLen << " bytes");
 
 	uint32 size = min( destLen, srcLen);
 	memcpy( destBuf, srcBuf, size);
