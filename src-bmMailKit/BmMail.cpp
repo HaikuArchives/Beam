@@ -28,6 +28,8 @@
 /*************************************************************************/
 
 
+#include <algorithm>
+
 #include <Directory.h>
 #include <FindDirectory.h>
 #include <NodeInfo.h>
@@ -725,13 +727,44 @@ BmString BmMail::CreateForwardSubjectFor( const BmString subject) {
 }
 
 /*------------------------------------------------------------------------------*\
-	CreateReplyIntro()
-		-	creates an appropriate intro-line for a reply-message
-		-	the returned string is the intro in UTF8
+	ExpandIntroMacros()
+		-	expands all macros within the given intro-string
 \*------------------------------------------------------------------------------*/
-BmString BmMail::CreateReplyIntro( bool mailIsToPersonOnly) {
+enum AddrKind {
+	AK_FULL = 0,
+	AK_NAME,
+	AK_ADDR
+};
+
+struct AddrCollector {
+	AddrCollector( AddrKind kind) : kind(kind), count(0) {}
+	void operator()( const BmAddress& addr) {
+		if (count++ > 0)
+			result << ", ";
+		switch( kind) {
+			case AK_NAME: {
+				// use name if that exists, use addr-spec otherwise:
+				result << (addr.HasPhrase() ? addr.Phrase() : addr.AddrSpec());
+				break;
+			}
+			case AK_ADDR: {
+				// use addr-spec only:
+				result << addr.AddrSpec();
+				break;
+			}
+			default: {
+				// use full address:
+				result << addr.AddrString();
+			}
+		}
+	}
+	AddrKind kind;
+	int count;
+	BmString result;
+};
+
+void BmMail::ExpandIntroMacros( BmString& intro, bool mailIsToPersonOnly) {
 	Regexx rx;
-	BmString intro = ThePrefs->GetString( "ReplyIntroStr");
 	intro = rx.replace( intro, "%D", 
 							  TimeToString( mMailRef->When(), "%Y-%m-%d"),
 							  Regexx::nocase|Regexx::global|Regexx::noatom);
@@ -742,23 +775,45 @@ BmString BmMail::CreateReplyIntro( bool mailIsToPersonOnly) {
 							  Regexx::nocase|Regexx::global|Regexx::noatom);
 	intro = rx.replace( intro, "%S", mMailRef->Subject(), 
 							  Regexx::nocase|Regexx::global|Regexx::noatom);
-	BmString fromNicks;
-	if (!mailIsToPersonOnly) {
-		// the more formal approach, we replace %F by the originator(s) 
-		// nickname or address:
-		BmAddressList fromAddr = Header()->DetermineOriginator( true);
-		BmAddrList::const_iterator pos;
-		for( pos=fromAddr.begin(); pos!=fromAddr.end(); ++pos) {
-			if (pos != fromAddr.begin())
-				fromNicks << ", ";
-			fromNicks << (pos->HasPhrase() ? pos->Phrase() : pos->AddrSpec());
-		}
-	} else
-		// less formal way, replace %F by ReplyIntroDefaultNick in order
-		// to say something like "On xxx, you wrote":
-		fromNicks = ThePrefs->GetString( "ReplyIntroDefaultNick", "you");
-	intro = rx.replace( intro, "%F", fromNicks, 
-							  Regexx::nocase|Regexx::global|Regexx::noatom);
+
+	BmAddressList addrs = Header()->DetermineOriginator( true);
+	if (intro.IFindFirst( "%FN") >= B_OK) {
+		BmString fromNames;
+		if (!mailIsToPersonOnly) {
+			// the more formal approach, we replace %F by the originator(s) 
+			// name:
+			AddrCollector collector( AK_NAME);
+			fromNames = for_each( addrs.begin(), addrs.end(), collector).result;
+		} else
+			// less formal way, replace %F by ReplyIntroDefaultNick in order
+			// to say something like "On xxx, you wrote":
+			fromNames = ThePrefs->GetString( "ReplyIntroDefaultNick", "you");
+		intro.IReplaceAll( "%FN", fromNames.String()); 
+	} 
+	if (intro.IFindFirst( "%FA") >= B_OK) {
+		// replace %FA by the originator(s) addr-spec:
+		BmString fromAddrs;
+		AddrCollector collector( AK_ADDR);
+		fromAddrs = for_each( addrs.begin(), addrs.end(), collector).result;
+		intro.IReplaceAll( "%FA", fromAddrs.String()); 
+	}
+	if (intro.IFindFirst( "%F") >= B_OK) {
+		// replace %F by the originator(s) full address:
+		BmString fromAddrs;
+		AddrCollector collector( AK_FULL);
+		fromAddrs = for_each( addrs.begin(), addrs.end(), collector).result;
+		intro.IReplaceAll( "%F", fromAddrs.String()); 
+	}
+}
+
+/*------------------------------------------------------------------------------*\
+	CreateReplyIntro()
+		-	creates an appropriate intro-line for a reply-message
+		-	the returned string is the intro in UTF8
+\*------------------------------------------------------------------------------*/
+BmString BmMail::CreateReplyIntro( bool mailIsToPersonOnly) {
+	BmString intro = ThePrefs->GetString( "ReplyIntroStr");
+	ExpandIntroMacros( intro, mailIsToPersonOnly);
 	return intro;
 }
 
@@ -768,28 +823,8 @@ BmString BmMail::CreateReplyIntro( bool mailIsToPersonOnly) {
 		-	the returned string is the intro in UTF8
 \*------------------------------------------------------------------------------*/
 BmString BmMail::CreateForwardIntro() {
-	Regexx rx;
 	BmString intro = ThePrefs->GetString( "ForwardIntroStr");
-	intro = rx.replace( intro, "%D", 
-							  TimeToString( mMailRef->When(), "%Y-%m-%d"), 
-							  Regexx::nocase|Regexx::global|Regexx::noatom);
-	intro = rx.replace( intro, "%T", 
-							  TimeToString( mMailRef->When(), "%X [%z]"), 
-							  Regexx::nocase|Regexx::global|Regexx::noatom);
-	intro = rx.replace( intro, "\\n", "\n", 
-							  Regexx::nocase|Regexx::global|Regexx::noatom);
-	intro = rx.replace( intro, "%S", mMailRef->Subject(), 
-							  Regexx::nocase|Regexx::global|Regexx::noatom);
-	BmAddressList fromAddr = Header()->DetermineOriginator();
-	BmString fromNicks;
-	BmAddrList::const_iterator pos;
-	for( pos=fromAddr.begin(); pos!=fromAddr.end(); ++pos) {
-		if (pos != fromAddr.begin())
-			fromNicks << ", ";
-		fromNicks << (pos->HasPhrase() ? pos->Phrase() : pos->AddrSpec());
-	}
-	intro = rx.replace( intro, "%F", fromNicks, 
-							  Regexx::nocase|Regexx::global|Regexx::noatom);
+	ExpandIntroMacros( intro, false);
 	return intro;
 }
 

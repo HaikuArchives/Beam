@@ -384,11 +384,13 @@ void BmPrefsMailConstrView::Initialize() {
 		mForwardIntroStrControl, 
 		"Here you can enter a string that will\n"
 		"appear at the top of every forwarded mail.\n"
-		"The following macros are supported:\n"
-		"	%d  -  expands to the original mail's date.\n"
-		"	%f  -  expands to the sender of the original mail.\n"
-		"	%s  -  expands to the original mail's subject.\n"
-		"	%t  -  expands to the original mail's time."
+		"The following macros (case insensitive) are supported:\n"
+		"	%d  -  expands to the date.\n"
+		"	%f  -  expands to the sender.\n"
+		"	%fa -  expands to the sender's address.\n"
+		"	%fn -  expands to the sender's name.\n"
+		"	%s  -  expands to the subject.\n"
+		"	%t  -  expands to the time."
 	);
 	TheBubbleHelper->SetHelp( 
 		mForwardSubjectStrControl, 
@@ -409,11 +411,13 @@ void BmPrefsMailConstrView::Initialize() {
 		mReplyIntroStrControl, 
 		"Here you can enter a string that will \n"
 		"appear at the top of every reply.\n"
-		"The following macros are supported:\n"
-		"	%d  -  expands to the original mail's date.\n"
-		"	%f  -  expands to the sender of the original mail.\n"
-		"	%s  -  expands to the original mail's subject.\n"
-		"	%t  -  expands to the original mail's time."
+		"The following macros (case insensitive) are supported:\n"
+		"	%d  -  expands to the date.\n"
+		"	%f  -  expands to the sender.\n"
+		"	%fa -  expands to the sender's address.\n"
+		"	%fn -  expands to the sender's name.\n"
+		"	%s  -  expands to the subject.\n"
+		"	%t  -  expands to the time."
 	);
 	TheBubbleHelper->SetHelp( 
 		mReplyIntroStrPrivateControl, 
