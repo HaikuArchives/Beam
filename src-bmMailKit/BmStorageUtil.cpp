@@ -34,6 +34,7 @@
 #include <Directory.h> 
 #include <Messenger.h> 
 #include <Message.h> 
+#include <NodeMonitor.h> 
 #include <File.h>
 #include <FindDirectory.h>
 #include <fs_attr.h> 
@@ -52,6 +53,39 @@ BmTempFileList TheTempFileList;
 // -----------------------------------------------------------------------------
 BmString BM_REFKEY( const node_ref& nref) {
 	return BmString() << nref.node;
+}
+
+/*------------------------------------------------------------------------------*\
+	WatchNode()
+		-	tries to add a node-watcher, if limit is reached, we bump it
+		-	Ripped from OpenTracker
+\*------------------------------------------------------------------------------*/
+extern "C" int _kset_mon_limit_(int num);
+
+status_t WatchNode( const node_ref *node, uint32 flags, BHandler *handler) {
+	static int32 gNodeMonitorCount = 4096;
+	static const int32 kNodeMonitorBumpValue = 1024;
+
+	status_t result = watch_node( node, flags, BMessenger(handler));
+
+	if (result == B_OK || result != ENOMEM)
+		// need to make sure this uses the same error value as
+		// the node monitor code
+		return result;
+
+	gNodeMonitorCount += kNodeMonitorBumpValue;
+	BM_LOG2( BM_LogMailTracking, 
+				BmString("Failed to add monitor, trying to bump limit to ")
+					<< gNodeMonitorCount << " nodes.");
+	result = _kset_mon_limit_(gNodeMonitorCount);
+	if (result != B_OK) {
+		BM_LOGERR( BmString("Failed to allocate more node monitors, error: ")
+						<< strerror(result));
+		return result;
+	}
+
+	// try again, this time with more node monitors
+	return watch_node(node, flags, BMessenger(handler));
 }
 
 /*------------------------------------------------------------------------------*\

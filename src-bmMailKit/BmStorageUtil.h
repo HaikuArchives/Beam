@@ -37,6 +37,8 @@
 
 struct entry_ref;
 
+status_t WatchNode( const node_ref *node, uint32 flags, BHandler *handler);
+
 bool MoveToTrash( const entry_ref* refs, int32 count);
 
 bool CheckMimeType( const entry_ref* eref, const char* type);
