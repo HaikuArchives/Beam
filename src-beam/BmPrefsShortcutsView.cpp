@@ -201,8 +201,8 @@ void BmPrefsShortcutsView::Update() {
 		mListView->MakeEmpty();
 		for( int32 i=0; scMsg->GetInfo( B_STRING_TYPE, i, &name, &type)==B_OK; ++i) {
 			item = new CLVEasyItem( 0, false, false, 18.0);
-			item->SetColumnContent( 0, name, !ThePrefs->GetBool("StripedListView"));
-			item->SetColumnContent( 1, scMsg->FindString( name), !ThePrefs->GetBool("StripedListView"));
+			item->SetColumnContent( 0, name);
+			item->SetColumnContent( 1, scMsg->FindString( name));
 			mListView->AddItem( item);
 		}
 	}
@@ -303,8 +303,6 @@ CLVContainerView* BmPrefsShortcutsView::CreateListView( minimax minmax, int32 wi
 	int32 flags = 0;
 	if (ThePrefs->GetBool("StripedListView"))
 		mListView->SetStripedBackground( true);
-	else 
-		flags |= CLV_TELL_ITEMS_WIDTH;
 
 	CLVContainerView* container 
 		= mListView->Initialize( BRect( 0,0,width-1,height-1), 
