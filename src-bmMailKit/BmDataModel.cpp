@@ -340,11 +340,13 @@ int32 BmJobModel::ThreadStartFunc( void* data) {
 	if (job) {
 		{
 			BmAutolockCheckGlobal lock( job->mModelLocker);
-			if (!lock.IsLocked())
-				BM_THROW_RUNTIME( 
+			if (!lock.IsLocked()) {
+				BM_LOGERR( 
 					job->ModelNameNC() 
-						<< ":ThreadStartFunc(): Unable to get lock on controller-set"
+						<< ":ThreadStartFunc(): Unable to get lock, thread stops!"
 				);
+				return 10;
+			}
 			BM_LOG2( BM_LogModelController, 
 						BmString("Thread is started for job <") << job->ModelName() 
 							<< ">");
