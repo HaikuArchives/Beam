@@ -29,7 +29,7 @@
 
 
 //#include <stdio.h> 
-//#include <string.h> 
+#include <errno.h> 
 
 #include <Directory.h> 
 #include <Messenger.h> 
@@ -149,10 +149,13 @@ BmString DetermineMimeType( const entry_ref* inref, bool doublecheck) {
 		-	create an index for the given attribute-name
 \*------------------------------------------------------------------------------*/
 void EnsureIndexExists( const char* attrName) {
-	status_t res = fs_create_index( TheResources->MailboxVolume.Device(), attrName,
-											  B_STRING_TYPE, 0);
-	if (res != B_OK && res != B_FILE_EXISTS)
-		BM_LOGERR( BmString("Could not create index for attribute ")<<attrName<<".\n\nError: "<<strerror( res));
+	struct index_info idxInfo;
+	if (fs_stat_index( TheResources->MailboxVolume.Device(), attrName, &idxInfo) != 0) {
+		status_t res = fs_create_index( TheResources->MailboxVolume.Device(), attrName,
+												  B_STRING_TYPE, 0);
+		if (res == -1)
+			BM_LOGERR( BmString("Could not create index for attribute ")<<attrName<<".\n\nError: "<<strerror( errno));
+	}
 }
 
 /*------------------------------------------------------------------------------*\
