@@ -48,6 +48,7 @@ public:
 	// native methods:
 	bool IsUIDDownloaded( BString uid);
 	void MarkUIDAsDownloaded( BString uid);
+	BString GetFromAddress() const;
 
 	// stuff needed for BArchivable:
 	static BArchivable* Instantiate( BMessage* archive);

@@ -12,6 +12,7 @@
 #include <regexx/regexx.hh>
 using namespace regexx;
 
+#include "BmApp.h"
 #include "BmEncoding.h"
 	using namespace BmEncoding;
 #include "BmLogHandler.h"
@@ -22,6 +23,8 @@ using namespace regexx;
 
 #undef BM_LOGNAME
 #define BM_LOGNAME "MailParser"
+
+#define BM_LINE_WIDTH 75
 
 static BString BmAddressFieldNames = 
 	"<Bcc><Resent-Bcc><Cc><Resent-Cc><From><Resent-From><Reply-To><Resent-Reply-To><Sender><Resent-Sender><To><Resent-To>";
@@ -226,15 +229,39 @@ BmAddressList::operator BString() const {
 		addrString << mGroupName << ": ";
 	BmAddrList::const_iterator pos;
 	for( pos=mAddrList.begin(); pos!=mAddrList.end(); ++pos) {
-		addrString << BString( *pos) << ", ";
+		if (pos != mAddrList.begin())
+			addrString << ", ";
+		addrString << BString( *pos);
 	}
-	addrString.Truncate( addrString.Length()-2);
-							// remove trailing comma+space
 	if (mIsGroup)
 		addrString << ";";
 	return addrString;
 }
 
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmAddressList::ConstructHeaderForSending( BString& header, int32 encoding, 
+															  int32 fieldNameLength) {
+	static BString spaces("                                                     ");
+	if (mIsGroup)
+		header << mGroupName << ": ";
+	BmAddrList::const_iterator pos;
+	for( pos=mAddrList.begin(); pos!=mAddrList.end(); ++pos) {
+		BString converted = ConvertUTF8ToHeaderPart( *pos, encoding);
+		if (pos != mAddrList.begin()) {
+			header << ",";
+			if (header.Length() + converted.Length() > BM_LINE_WIDTH) {
+				header << "\r\n";
+				header.Append( spaces, fieldNameLength+2);
+			}
+		}
+		header << converted;
+	}
+	if (mIsGroup)
+		header << ";";
+}
 
 
 /********************************************************************************\
@@ -269,30 +296,6 @@ void BmMailHeader::BmHeaderList::Remove( const BString fieldName) {
 }
 
 /*------------------------------------------------------------------------------*\
-	()
-		-	
-\*------------------------------------------------------------------------------*/
-BString BmMailHeader::BmHeaderList::FoldLine( BString line, int fieldLength) const {
-	BString spaces("                                                            ");
-	BString temp;
-	BString foldedLine;
-	while( line.Length() > 76) {
-		int32 pos;
-		if ((pos = line.FindLast( " ", 75)) != B_ERROR
-		|| (pos = line.FindLast( "\t", 75)) != B_ERROR
-		|| (pos = line.FindLast( ",", 75)) != B_ERROR) {
-			line.MoveInto( temp, 0, pos+1);
-		} else {
-			line.MoveInto( temp, 0, 76);
-		}
-		foldedLine << temp << "\r\n";
-		foldedLine.Append( spaces, fieldLength+2);
-	}
-	return foldedLine << line;
-}
-
-
-/*------------------------------------------------------------------------------*\
 	operator [] ( fieldName)
 		-	returns first value found for given fieldName
 \*------------------------------------------------------------------------------*/
@@ -301,26 +304,6 @@ BString& BmMailHeader::BmHeaderList::operator [] (const BString fieldName) {
 	if (valueList.empty())
 		valueList.push_back( "");
 	return valueList.front();
-}
-
-/*------------------------------------------------------------------------------*\
-	()
-		-	
-\*------------------------------------------------------------------------------*/
-BmMailHeader::BmHeaderList::operator BString() const {
-	BString fieldString;
-	BmHeaderMap::const_iterator iter;
-	for( iter = mHeaders.begin(); iter != mHeaders.end(); ++iter) {
-		BString fieldName = iter->first;
-		const BmValueList& valueList = iter->second;
-		int count = valueList.size();
-		for( int i=0; i<count; ++i) {
-			fieldString << FoldLine( BString(fieldName) << ": " << valueList[i], 
-											 fieldName.Length()) 
-							<< "\r\n";
-		}
-	}
-	return fieldString;
 }
 
 
@@ -416,6 +399,14 @@ void BmMailHeader::RemoveField( const BString fieldName) {
 /*------------------------------------------------------------------------------*\
 	ParseHeader( header)
 		-	parses mail-header and splits it into fieldname/fieldbody - pairs
+		-	we try to determine the mails' encoding by finding a charset given within
+			the header.	Some sending mail-clients cut some corners and incorporate 
+			non-ASCII characters	unencoded inside any header-fields (the subject comes 
+			to mind) [thus relying on the transport system being 8bit-clean].
+			In this case we hope that the header contains a content-type specification 
+			as well with the charset that was actually used. We feed the charset found 
+			into the default encoding that is being used for header-field conversion 
+			(if any only if nothing else is specified in a header-field)
 \*------------------------------------------------------------------------------*/
 void BmMailHeader::ParseHeader( const BString &header) {
 	Regexx rxHeaderFields, rxUnfold, rx;
@@ -423,7 +414,7 @@ void BmMailHeader::ParseHeader( const BString &header) {
 
 	// set default encoding
 	mDefaultEncoding = ThePrefs->GetInt("DefaultEncoding");
-	// try to determine the mails' encoding by finding a charset given within the header:
+	// we look for a default charset for this mail:
 	rx.expr( "^Content-Type:\\s*.+?;charset\\s*=[\\s\"]*([^\\s\"]+)");
 	rx.str( header.String());
 	if (rx.exec( Regexx::nocase | Regexx::newline)) {
@@ -437,10 +428,10 @@ void BmMailHeader::ParseHeader( const BString &header) {
 	mNumLines = rx.exec( header, "\\n", Regexx::newline | Regexx::global);
 
 	// split header into separate header-fields:
-	rxHeaderFields.expr( "^(\\S.+?\\r\\n(?:\\s.+?\\r\\n)*)(?=(\\Z|\\S))");
+	rxHeaderFields.expr( "^(\\S.*?\\r\\n(?:\\s.*?\\r\\n)*)(?=(\\Z|\\S))");
 	rxHeaderFields.str( header.String());
 	if (!(nm=rxHeaderFields.exec( Regexx::global | Regexx::newline))) {
-//		throw BM_mail_format_error( BString("Could not find any header-fields in this header: \n") << header);
+		throw BM_mail_format_error( BString("Could not find any header-fields in this header: \n") << header);
 	}
 	vector<RegexxMatch>::const_iterator i;
 
@@ -579,35 +570,43 @@ bool BmMailHeader::ParseDateTime( const BString& str, time_t& dateTime) {
 \*------------------------------------------------------------------------------*/
 void BmMailHeader::StoreAttributes( BFile& mailFile) {
 	//
-	BString s = mStrippedHeaders["Name"];
+	BString s = Name();
 	mailFile.WriteAttr( BM_MAIL_ATTR_NAME, B_STRING_TYPE, 0, s.String(), s.Length()+1);
-	s = mAddrMap["Reply-To"];
+	s = mAddrMap[BM_FIELD_REPLY_TO];
 	mailFile.WriteAttr( BM_MAIL_ATTR_REPLY, B_STRING_TYPE, 0, s.String(), s.Length()+1);
-	s = mAddrMap["From"];
+	s = mAddrMap[BM_FIELD_FROM];
 	mailFile.WriteAttr( BM_MAIL_ATTR_FROM, B_STRING_TYPE, 0, s.String(), s.Length()+1);
-	mailFile.WriteAttr( BM_MAIL_ATTR_SUBJECT, B_STRING_TYPE, 0, mHeaders["Subject"].String(), mHeaders["Subject"].Length()+1);
-	s = mAddrMap["To"];
+	mailFile.WriteAttr( BM_MAIL_ATTR_SUBJECT, B_STRING_TYPE, 0, 
+							  mHeaders[BM_FIELD_SUBJECT].String(), mHeaders[BM_FIELD_SUBJECT].Length()+1);
+	mailFile.WriteAttr( BM_MAIL_ATTR_MIME, B_STRING_TYPE, 0, 
+							  mHeaders[BM_FIELD_MIME].String(), mHeaders[BM_FIELD_MIME].Length()+1);
+	s = mAddrMap[BM_FIELD_TO];
 	mailFile.WriteAttr( BM_MAIL_ATTR_TO, B_STRING_TYPE, 0, s.String(), s.Length()+1);
-	s = mAddrMap["Cc"];
+	s = mAddrMap[BM_FIELD_CC];
 	mailFile.WriteAttr( BM_MAIL_ATTR_CC, B_STRING_TYPE, 0, s.String(), s.Length()+1);
 	// we determine the mail's priority, first we look at X-Priority...
-	BString priority = mHeaders["X-Priority"];
+	BString priority = mHeaders[BM_FIELD_X_PRIORITY];
 	// ...if that is not defined we check the Priority field:
 	if (!priority.Length()) {
 		// need to translate from text to number:
-		BString prio = mHeaders["Priority"];
+		BString prio = mHeaders[BM_FIELD_PRIORITY];
 		if (!prio.ICompare("Highest")) priority = "1";
 		else if (!prio.ICompare("High")) priority = "2";
 		else if (!prio.ICompare("Normal")) priority = "3";
 		else if (!prio.ICompare("Low")) priority = "4";
 		else if (!prio.ICompare("Lowest")) priority = "5";
 	}
+	if (!priority.Length()) {
+		priority = "3";						// we default to normal priority
+	}
 	mailFile.WriteAttr( BM_MAIL_ATTR_PRIORITY, B_STRING_TYPE, 0, priority.String(), priority.Length()+1);
-	//
+	// if the message was resent, we take the date of the resending operation, not the
+	// original date (note, however, that from- and reply-attributes and the like are 
+	// filled from the original fields [the ones without "resent-"]).
 	time_t t;
-	if (ParseDateTime( mHeaders["Resent-Date"], t)) {
+	if (ParseDateTime( mHeaders[BM_FIELD_RESENT_DATE], t)) {
 		mailFile.WriteAttr( BM_MAIL_ATTR_WHEN, B_TIME_TYPE, 0, &t, sizeof(t));
-	} else if (ParseDateTime( mHeaders["Date"], t)) {
+	} else if (ParseDateTime( mHeaders[BM_FIELD_DATE], t)) {
 		mailFile.WriteAttr( BM_MAIL_ATTR_WHEN, B_TIME_TYPE, 0, &t, sizeof(t));
 	}
 }
@@ -616,9 +615,59 @@ void BmMailHeader::StoreAttributes( BFile& mailFile) {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmMailHeader::operator BString() const {
-	const BString& header = mStrippedHeaders;
-	BM_LOG2( BM_LogMailParse, BString("CONSTRUCTED HEADER: \n------------------\n") << header << "\n------------------");
-	return header;
+BString BmMailHeader::FoldLine( BString line, int fieldLength) {
+	BString spaces("                                                            ");
+	BString temp;
+	BString foldedLine;
+	while( line.Length() > BM_LINE_WIDTH) {
+		int32 pos;
+		if ((pos = line.FindLast( " ", BM_LINE_WIDTH-1)) != B_ERROR
+		|| (pos = line.FindLast( "\t", BM_LINE_WIDTH-1)) != B_ERROR
+		|| (pos = line.FindLast( ",", BM_LINE_WIDTH-1)) != B_ERROR) {
+			line.MoveInto( temp, 0, pos+1);
+		} else {
+			line.MoveInto( temp, 0, BM_LINE_WIDTH);
+		}
+		foldedLine << temp << "\r\n";
+		foldedLine.Append( spaces, fieldLength+2);
+	}
+	return foldedLine << line;
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+bool BmMailHeader::ConstructHeaderForSending( BString& header, int32 encoding) {
+	if (!mStrippedHeaders[BM_FIELD_FROM].Length()) {
+		BM_SHOWERR("Please enter at least one address into the <FROM> field, thank you.");
+		return false;
+	}
+	if (!mStrippedHeaders[BM_FIELD_TO].Length()) {
+		BM_SHOWERR("Please enter at least one address into the <TO> field, thank you.");
+		return false;
+	}
+	BString ourID = BString(BmAppName) << " " << BmAppVersion;
+	SetFieldVal( BM_FIELD_X_MAILER, ourID.String());
+
+	BmHeaderMap::const_iterator iter;
+	for( iter = mStrippedHeaders.begin(); iter != mStrippedHeaders.end(); ++iter) {
+		const BString fieldName = iter->first;
+		if (IsAddressField( fieldName)) {
+			header << fieldName << ": ";
+			mAddrMap[fieldName].ConstructHeaderForSending( header, encoding, 
+																		  fieldName.Length());
+			header << "\r\n";
+		} else {
+			const BmValueList& valueList = iter->second;
+			int count = valueList.size();
+			for( int i=0; i<count; ++i) {
+				header << FoldLine( BString(fieldName) << ": " << valueList[i], 
+										  fieldName.Length()) 
+						 << "\r\n";
+			}
+		}
+	}
+	return true;
 }
 

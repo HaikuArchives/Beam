@@ -7,9 +7,9 @@
 #define _BmMainWindow_h
 
 #include <MMenuBar.h>
-#include <MWindow.h>
 
 #include "BmController.h"
+#include "BmWindow.h"
 
 class BMenu;
 
@@ -43,12 +43,11 @@ private:
 
 
 
-class BmMainWindow : public MWindow
+class BmMainWindow : public BmWindow
 {
-	typedef MWindow inherited;
+	typedef BmWindow inherited;
 
 	// archival-fieldnames:
-	static const char* const MSG_FRAME = 		"bm:frm";
 	static const char* const MSG_VSPLITTER = 	"bm:vspl";
 	static const char* const MSG_HSPLITTER = 	"bm:hspl";
 
@@ -68,17 +67,18 @@ public:
 	void MessageReceived( BMessage*);
 	bool QuitRequested();
 	void Quit();
-	status_t Archive( BMessage* archive, bool deep=true) const;
 
 	static BmMainWindow* theInstance;
+
+protected:
+	status_t ArchiveState( BMessage* archive) const;
+	status_t UnarchiveState( BMessage* archive);
 
 private:
 	CLVContainerView* CreateMailFolderView( minimax minmax, int32 width, int32 height);
 	CLVContainerView* CreateMailRefView( minimax minmax, int32 width, int32 height);
 	BmMailViewContainer* CreateMailView( minimax minmax, BRect frame);
 	MMenuBar* CreateMenu();
-	bool Store();
-	status_t Unarchive( BMessage* archive, bool deep=true);
 	void MailRefSelectionChanged( int32 numSelected);
 
 	BmMailFolderView* mMailFolderView;

@@ -10,22 +10,31 @@
 
 #include <layout-all.h>
 
+#include <regexx.hh>
+	using namespace regexx;
+
 #include "PrefilledBitmap.h"
 
 #include "Beam.h"
 #include "BmBasics.h"
 #include "BmEncoding.h"
+	using namespace BmEncoding;
 #include "BmLogHandler.h"
 #include "BmMailView.h"
 #include "BmMailEditWin.h"
 #include "BmMenuControl.h"
 #include "BmMsgTypes.h"
 #include "BmPopAccount.h"
+#include "BmPrefs.h"
 #include "BmResources.h"
 #include "BmTextControl.h"
 #include "BmToolbarButton.h"
 #include "BmUtil.h"
 
+#define BM_BCC_ADDED 	'bMbc'
+#define BM_CC_ADDED 		'bMcc'
+#define BM_FROM_ADDED 	'bMfc'
+#define BM_TO_ADDED 		'bMtc'
 
 /*------------------------------------------------------------------------------*\
 	CreateInstance()
@@ -34,26 +43,8 @@
 \*------------------------------------------------------------------------------*/
 BmMailEditWin* BmMailEditWin::CreateInstance() 
 {
-	BmMailEditWin *win = NULL;
-	status_t err;
-	BString winFilename;
-	BFile winFile;
-
-	// create standard main-window:
-	win = new BmMailEditWin;
-	// try to open state-cache-file...
-	winFilename = BString("MailEditWin");
-	if ((err = winFile.SetTo( TheResources->StateInfoFolder(), winFilename.String(), B_READ_ONLY)) == B_OK) {
-		// ...ok, archive file found, we fetch our dimensions from it:
-		try {
-			BMessage archive;
-			(err = archive.Unflatten( &winFile)) == B_OK
-													|| BM_THROW_RUNTIME( BString("Could not fetch window archive from file\n\t<") << winFilename << ">\n\n Result: " << strerror(err));
-			win->Unarchive( &archive);
-		} catch (exception &e) {
-			BM_SHOWERR( e.what());
-		}
-	}
+	BmMailEditWin* win = new BmMailEditWin;
+	win->ReadStateInfo();
 	return win;
 }
 
@@ -62,10 +53,19 @@ BmMailEditWin* BmMailEditWin::CreateInstance()
 		-	
 \*------------------------------------------------------------------------------*/
 BmMailEditWin::BmMailEditWin()
-	:	inherited( BRect(50,50,800,600), "Edit Mail", B_TITLED_WINDOW_LOOK, 
+	:	inherited( "MailEditWin", BRect(50,50,800,600), "Edit Mail", B_TITLED_WINDOW_LOOK, 
 					  B_NORMAL_WINDOW_FEEL, B_ASYNCHRONOUS_CONTROLS)
 	,	mShowDetails( false)
 {
+	CreateGUI();
+	mMailView->ShowMail( new BmMail());
+}
+
+/*------------------------------------------------------------------------------*\
+	CreateGUI()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailEditWin::CreateGUI() {
 	mOuterGroup = 
 		new VGroup(
 			minimax( 500, 400, 1E5, 1E5),
@@ -104,12 +104,12 @@ BmMailEditWin::BmMailEditWin()
 			new Space(minimax(-1,4,-1,4)),
 			new HGroup(
 				new Space(minimax(20,-1,20,-1)),
-				mFromControl = new BmMenuControl( "From:", BM_FIELD_FROM, new BPopUpMenu( "Mail Accounts")),
+				mFromControl = new BmTextControl( "From:", true),
 				0
 			),
 			new HGroup(
 				new Space(minimax(20,-1,20,-1)),
-				mToControl = new BmTextControl( "To:", BM_FIELD_TO, true),
+				mToControl = new BmTextControl( "To:", true),
 				0
 			),
 			new HGroup(
@@ -119,22 +119,27 @@ BmMailEditWin::BmMailEditWin()
 										  TheResources->CreatePictureFor( &TheResources->mDownArrow, 16, 16), 
 										  new BMessage( BM_MAILEDIT_SHOWDETAILS), this, B_TWO_STATE_BUTTON),
 				new Space(minimax(4,-1,4,-1)),
-				mSubjectControl = new BmTextControl( "Subject:", BM_FIELD_SUBJECT, false),
+				mSubjectControl = new BmTextControl( "Subject:", false),
 				0
 			),
 			new HGroup(
 				new Space(minimax(20,-1,20,-1)),
-				mCcControl = new BmTextControl( "Cc:", BM_FIELD_CC, true),
+				mCcControl = new BmTextControl( "Cc:", true),
 				0
 			),
 			new HGroup(
 				new Space(minimax(20,-1,20,-1)),
-				mBccControl = new BmTextControl( "Bcc:", BM_FIELD_BCC, true),
+				mBccControl = new BmTextControl( "Bcc:", true),
 				0
 			),
 			new HGroup(
 				new Space(minimax(20,-1,20,-1)),
-				mEncodingControl = new BmMenuControl( "Encoding:", BM_FIELD_CONTENT_TRANSFER_ENCODING, new BPopUpMenu( "Encoding:")),
+				mReplyToControl = new BmTextControl( "Reply-To:", false),
+				0
+			),
+			new HGroup(
+				new Space(minimax(20,-1,20,-1)),
+				mCharsetControl = new BmMenuControl( "Charset:", new BPopUpMenu( "Charset:")),
 				0
 			),
 			new Space(minimax(-1,4,-1,4)),
@@ -147,29 +152,33 @@ BmMailEditWin::BmMailEditWin()
 	divider = max( divider, mFromControl->Divider());
 	divider = max( divider, mCcControl->Divider());
 	divider = max( divider, mBccControl->Divider());
+	divider = max( divider, mReplyToControl->Divider());
 	mToControl->SetDivider( divider);
 	mSubjectControl->SetDivider( divider);
 	mFromControl->SetDivider( divider);
 	mCcControl->SetDivider( divider);
 	mBccControl->SetDivider( divider);
-	mEncodingControl->SetDivider( divider);
+	mCharsetControl->SetDivider( divider);
+	mReplyToControl->SetDivider( divider);
 	mShowDetailsButton->SetFlags( mShowDetailsButton->Flags() & (0xFFFFFFFF^B_NAVIGABLE));
 
 	// initially, the detail-parts are hidden:
 	mCcControl->DetachFromParent();
 	mBccControl->DetachFromParent();
-	mEncodingControl->DetachFromParent();
+	mReplyToControl->DetachFromParent();
+	mCharsetControl->DetachFromParent();
 
-	// add all popaccounts to menu:
+	// add all popaccounts to from menu:
+	mFromControl->Menu()->SetLabelFromMarked( false);
 	BmModelItemMap::const_iterator iter;
 	for( iter = ThePopAccountList->begin(); iter != ThePopAccountList->end(); ++iter) {
 		BmPopAccount* acc = dynamic_cast< BmPopAccount*>( iter->second.Get());
-		mFromControl->Menu()->AddItem( new BMenuItem( acc->Key().String(), new BMessage('bmyy')));
+		mFromControl->Menu()->AddItem( new BMenuItem( acc->Key().String(), new BMessage( BM_FROM_ADDED)));
 	}
 
 	// add all encodings to menu:
 	for( const char **enc = BmEncoding::BM_Encodings; *enc; ++enc) {
-		mEncodingControl->Menu()->AddItem( new BMenuItem( *enc, new BMessage('bmyy')));
+		mCharsetControl->Menu()->AddItem( new BMenuItem( *enc, new BMessage('bmyy')));
 	}
 
 	AddChild( dynamic_cast<BView*>(mOuterGroup));
@@ -189,7 +198,6 @@ BmMailEditWin::~BmMailEditWin() {
 MMenuBar* BmMailEditWin::CreateMenu() {
 	MMenuBar* menubar = new MMenuBar();
 	BMenu* menu = NULL;
-//	BMenuItem* item = NULL;
 	// File
 	menu = new BMenu( "File");
 	menu->AddItem( new BMenuItem( "Open...", new BMessage( BMM_OPEN), 'O'));
@@ -234,29 +242,6 @@ MMenuBar* BmMailEditWin::CreateMenu() {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-status_t BmMailEditWin::Archive( BMessage* archive, bool deep=true) const {
-	status_t ret = archive->AddRect( MSG_FRAME, Frame());
-	return ret;
-}
-
-/*------------------------------------------------------------------------------*\
-	()
-		-	
-\*------------------------------------------------------------------------------*/
-status_t BmMailEditWin::Unarchive( BMessage* archive, bool deep=true) {
-	BRect frame;
-	status_t ret = archive->FindRect( MSG_FRAME, &frame);
-	if (ret == B_OK) {
-		MoveTo( frame.LeftTop());
-		ResizeTo( frame.Width(), frame.Height());
-	}
-	return ret;
-}
-
-/*------------------------------------------------------------------------------*\
-	()
-		-	
-\*------------------------------------------------------------------------------*/
 BmMailViewContainer* BmMailEditWin::CreateMailView( minimax minmax, BRect frame) {
 	mMailView = BmMailView::CreateInstance( minmax, frame, true);
 	return mMailView->ContainerView();
@@ -276,24 +261,51 @@ void BmMailEditWin::MessageReceived( BMessage* msg) {
 				if (mShowDetails) {
 					mCcControl->ReattachToParent();
 					mBccControl->ReattachToParent();
-					mEncodingControl->ReattachToParent();
+					mReplyToControl->ReattachToParent();
+					mCharsetControl->ReattachToParent();
 				} else {
 					mCcControl->DetachFromParent();
 					mBccControl->DetachFromParent();
-					mEncodingControl->DetachFromParent();
+					mReplyToControl->DetachFromParent();
+					mCharsetControl->DetachFromParent();
 				}
 				RecalcSize();
 				break;
 			}
-			case BM_TEXT_CHANGED: {
-				BTextControl* control = NULL;
-				msg->FindPointer( "source", (void**)&control);
-				if (control) {
-					BmRef<BmMail> mail = mMailView->CurrMail();
-					if (mail) {
-						mail->SetFieldVal( control->Name(), control->Text());
+			case BMM_SEND_NOW: {
+				UpdateMailFields();
+				break;
+			}
+			case BMM_SAVE: {
+				UpdateMailFields();
+				break;
+			}
+			case BM_FROM_ADDED: {
+				Regexx rx;
+				BMenuItem* item = NULL;
+				msg->FindPointer( "source", (void**)&item);
+				if (item) {
+					BmListModelItemRef accRef = ThePopAccountList->FindItemByKey( item->Label());
+					BmPopAccount* acc = dynamic_cast< BmPopAccount*>( accRef.Get()); 
+					if (acc) {
+						BString fromString = mFromControl->Text();
+						if (rx.exec( fromString, "\\w+")) {
+							fromString << ", " << acc->GetFromAddress();
+						} else {
+							fromString << acc->GetFromAddress();
+						}
+						mFromControl->SetText( fromString.String());
 					}
 				}
+				break;
+			}
+			case BM_BCC_ADDED: {
+				break;
+			}
+			case BM_CC_ADDED: {
+				break;
+			}
+			case BM_TO_ADDED: {
 				break;
 			}
 			case B_COPY:
@@ -317,12 +329,34 @@ void BmMailEditWin::MessageReceived( BMessage* msg) {
 }
 
 /*------------------------------------------------------------------------------*\
+	UpdateMailFields()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailEditWin::UpdateMailFields() {
+	BmRef<BmMail> mail = mMailView->CurrMail();
+	if (mail) {
+		mail->SetFieldVal( BM_FIELD_BCC, mBccControl->Text());
+		mail->SetFieldVal( BM_FIELD_CC, mCcControl->Text());
+		mail->SetFieldVal( BM_FIELD_FROM, mFromControl->Text());
+//		mail->SetFieldVal( BM_FIELD_DATE, );
+		mail->SetFieldVal( BM_FIELD_SUBJECT, mSubjectControl->Text());
+		mail->SetFieldVal( BM_FIELD_TO, mToControl->Text());
+		mail->SetFieldVal( BM_FIELD_REPLY_TO, mReplyToControl->Text());
+		BMenuItem* charsetItem = mCharsetControl->Menu()->FindMarked();
+		int32 encoding = charsetItem ? CharsetToEncoding( charsetItem->Label()) 
+											  : ThePrefs->GetInt( "DefaultEncoding");
+		BString editedText = mMailView->Text();
+		mail->ConstructMailForSending( editedText, encoding);
+//		mail->SetFieldVal( , mCharsetControl->Menu->Label());
+	}
+}
+
+/*------------------------------------------------------------------------------*\
 	QuitRequested()
 		-	standard BeOS-behaviour, we allow a quit
 \*------------------------------------------------------------------------------*/
 bool BmMailEditWin::QuitRequested() {
 	BM_LOG2( BM_LogMailEditWin, BString("MailEditWin has been asked to quit"));
-	Store();
 	return true;
 }
 
@@ -331,34 +365,8 @@ bool BmMailEditWin::QuitRequested() {
 		-	standard BeOS-behaviour, we quit
 \*------------------------------------------------------------------------------*/
 void BmMailEditWin::Quit() {
+	mMailView->WriteStateInfo();
 	mMailView->DetachModel();
 	BM_LOG2( BM_LogMailEditWin, BString("MailEditWin has quit"));
 	inherited::Quit();
-}
-
-/*------------------------------------------------------------------------------*\
-	Store()
-		-	stores MailEditWin-state inside StateCache-folder:
-\*------------------------------------------------------------------------------*/
-bool BmMailEditWin::Store() {
-	BMessage archive;
-	BFile cacheFile;
-	status_t err;
-
-	try {
-		BString filename = BString( "MailEditWin");
-		this->Archive( &archive, true) == B_OK
-													|| BM_THROW_RUNTIME("Unable to archive MailEditWin-object");
-		(err = cacheFile.SetTo( TheResources->StateInfoFolder(), filename.String(), 
-										B_WRITE_ONLY | B_CREATE_FILE | B_ERASE_FILE)) == B_OK
-													|| BM_THROW_RUNTIME( BString("Could not create cache file\n\t<") << filename << ">\n\n Result: " << strerror(err));
-		(err = archive.Flatten( &cacheFile)) == B_OK
-													|| BM_THROW_RUNTIME( BString("Could not store state-cache into file\n\t<") << filename << ">\n\n Result: " << strerror(err));
-		if (mMailView)
-			mMailView->Store();
-	} catch( exception &e) {
-		BM_SHOWERR( e.what());
-		return false;
-	}
-	return true;
 }

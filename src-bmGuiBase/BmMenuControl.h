@@ -18,7 +18,7 @@ class BmMenuControl : public MView, public BMenuField
 
 public:
 	// creator-func, c'tors and d'tor:
-	BmMenuControl( const char* label, const char* name, BMenu* menu);
+	BmMenuControl( const char* label, BMenu* menu);
 	~BmMenuControl();
 	
 	// native methods:

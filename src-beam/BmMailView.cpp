@@ -3,6 +3,8 @@
 		$Id$
 */
 
+#include <MenuItem.h>
+#include <PopUpMenu.h>
 #include <UTF8.h>
 #include <Window.h>
 
@@ -24,6 +26,9 @@
 /********************************************************************************\
 	BmMailView
 \********************************************************************************/
+
+#define BM_MAILVIEW_SHOWRAW		'bmMa'
+#define BM_MAILVIEW_SHOWCOOKED	'bmMb'
 
 /*------------------------------------------------------------------------------*\
 	()
@@ -58,9 +63,9 @@ BmMailView::BmMailView( minimax minmax, BRect frame, bool editable)
 	:	inherited( frame, "MailView", B_FOLLOW_NONE, B_WILL_DRAW | B_NAVIGABLE)
 	,	inheritedController( "MailViewController")
 	,	mEditMode( editable)
-	,	mCurrMail( new BmMail())
+	,	mCurrMail( NULL)
 	,	mPartnerMailRefView( NULL)
-	,	mRaw( false)
+	,	mShowRaw( false)
 	,	mFontSize( 12)
 {
 	mHeaderView = new BmMailHeaderView( NULL);
@@ -68,7 +73,7 @@ BmMailView::BmMailView( minimax minmax, BRect frame, bool editable)
 		mHeaderView->ResizeTo( 0,0);
 	else
 		AddChild( mHeaderView);
-	mBodyPartView = new BmBodyPartView( minimax( 0, 0, 1E5, 1E5), 800, 0);
+	mBodyPartView = new BmBodyPartView( minimax( 0, 0, 1E5, 1E5), 800, 0, editable);
 	mBodyPartView->RemoveSelf();
 	AddChild( mBodyPartView);
 	mBodyPartView->MoveTo( mHeaderView->Frame().LeftBottom());
@@ -94,7 +99,7 @@ BmMailView::~BmMailView() {
 		-	
 \*------------------------------------------------------------------------------*/
 status_t BmMailView::Archive( BMessage* archive, bool deep=true) const {
-	status_t ret = archive->AddBool( MSG_RAW, mRaw)
+	status_t ret = archive->AddBool( MSG_RAW, mShowRaw)
 						|| archive->AddString( MSG_FONTNAME, mFontName.String())
 						|| archive->AddInt16( MSG_FONTSIZE, mFontSize);
 	if (ret == B_OK && deep && mHeaderView)
@@ -107,7 +112,7 @@ status_t BmMailView::Archive( BMessage* archive, bool deep=true) const {
 		-	
 \*------------------------------------------------------------------------------*/
 status_t BmMailView::Unarchive( BMessage* archive, bool deep=true) {
-	status_t ret = archive->FindBool( MSG_RAW, &mRaw)
+	status_t ret = archive->FindBool( MSG_RAW, &mShowRaw)
 						|| archive->FindString( MSG_FONTNAME, &mFontName)
 						|| archive->FindInt16( MSG_FONTSIZE, &mFontSize);
 	if (ret == B_OK && deep && mHeaderView)
@@ -131,6 +136,20 @@ void BmMailView::MessageReceived( BMessage* msg) {
 				if (!IsMsgFromCurrentModel( msg)) return;
 				BM_LOG2( BM_LogModelController, BString("Model <")<<FindMsgString( msg, BmDataModel::MSG_MODEL)<<"> has told it is done.");
 				JobIsDone( FindMsgBool( msg, BmJobModel::MSG_COMPLETED));
+				break;
+			}
+			case BM_MAILVIEW_SHOWRAW: {
+				ShowRaw( true);
+				JobIsDone( true);
+				break;
+			}
+			case BM_MAILVIEW_SHOWCOOKED: {
+				ShowRaw( false);
+				JobIsDone( true);
+				break;
+			}
+			case B_SIMPLE_DATA: {
+				mBodyPartView->AddAttachment( msg);
 				break;
 			}
 			default:
@@ -175,6 +194,29 @@ void BmMailView::KeyDown(const char *bytes, int32 numBytes) {
 }
 
 /*------------------------------------------------------------------------------*\
+	MouseDown( point)
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailView::MouseDown( BPoint point) {
+	BPoint mousePos;
+	uint32 buttons;
+	GetMouse( &mousePos, &buttons);
+	if (buttons == B_SECONDARY_MOUSE_BUTTON) {
+		ShowMenu( point);
+		return;
+	}
+	inherited::MouseDown( point);
+}
+
+/*------------------------------------------------------------------------------*\
+	ShowMail()
+		-	
+\*------------------------------------------------------------------------------*/
+bool BmMailView::AcceptsDrop( const BMessage* msg) {
+	return IsEditable();
+}
+
+/*------------------------------------------------------------------------------*\
 	ShowMail()
 		-	
 \*------------------------------------------------------------------------------*/
@@ -188,6 +230,28 @@ void BmMailView::ShowMail( BmMailRef* ref) {
 		}
 		ContainerView()->SetBusy();
 		mCurrMail = new BmMail( ref);
+		StartJob( mCurrMail.Get(), true);
+	}
+	catch( exception &err) {
+		// a problem occurred, we tell the user:
+		BM_SHOWERR( BString("MailView: ") << err.what());
+	}
+}
+
+/*------------------------------------------------------------------------------*\
+	ShowMail()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailView::ShowMail( BmMail* mail) {
+	try {
+		StopJob();
+		if (!mail || mail->InitCheck() != B_OK) {
+			DetachModel();
+			mHeaderView->ShowHeader( NULL);
+			return;
+		}
+		ContainerView()->SetBusy();
+		mCurrMail = mail;
 		StartJob( mCurrMail.Get(), true);
 	}
 	catch( exception &err) {
@@ -239,11 +303,16 @@ void BmMailView::JobIsDone( bool completed) {
 		BmBodyPartList* body = mCurrMail->Body();
 		if (body) {
 			mBodyPartView->ShowBody( body);
-			BM_LOG2( BM_LogMailParse, BString("extracting parts to be displayed from body-structure"));
-			BmModelItemMap::const_iterator iter;
-			for( iter=body->begin(); iter != body->end(); ++iter) {
-				BmBodyPart* bodyPart = dynamic_cast<BmBodyPart*>( iter->second.Get());
-				DisplayBodyPart( displayText, bodyPart);
+			if (mShowRaw) {
+				BM_LOG2( BM_LogMailParse, BString("displaying raw message"));
+				displayText = mCurrMail->RawText();
+			} else {
+				BM_LOG2( BM_LogMailParse, BString("extracting parts to be displayed from body-structure"));
+				BmModelItemMap::const_iterator iter;
+				for( iter=body->begin(); iter != body->end(); ++iter) {
+					BmBodyPart* bodyPart = dynamic_cast<BmBodyPart*>( iter->second.Get());
+					DisplayBodyPart( displayText, bodyPart);
+				}
 			}
 		}
 		BM_LOG2( BM_LogMailParse, BString("remove <CR>s from mailtext"));
@@ -273,12 +342,16 @@ void BmMailView::DisplayBodyPart( BString& displayText, BmBodyPart* bodyPart) {
 			// MIME-block should be shown inline, so we add it to our textview:
 			if (displayText.Length()) {
 				// we show a separator between two inline bodyparts
-				displayText<<"- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -";
+				if (bodyPart->FileName().Length()) {
+					displayText << "- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -\r\n";
+					displayText << "<" << bodyPart->FileName() << ">\r\n";
+				}
+				displayText << "- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -\r\n";
 			}
 			uint32 encoding = CharsetToEncoding( bodyPart->TypeParam("charset"));
-			char* data = (char*)bodyPart->DecodedData();
-			displayText.Append( ConvertToUTF8( encoding, data));
-			free( data);
+			BString utf8;
+			ConvertToUTF8( encoding, bodyPart->DecodedData(), utf8);
+			displayText.Append( utf8);
 		}
 	} else {
 		BmModelItemMap::const_iterator iter;
@@ -300,6 +373,63 @@ void BmMailView::DetachModel() {
 	SetText( "");
 	mHeaderView->ShowHeader( NULL, false);
 }
+
+/*------------------------------------------------------------------------------*\
+	WriteStateInfo()
+		-	stores MailView-state inside StateCache-folder:
+\*------------------------------------------------------------------------------*/
+bool BmMailView::WriteStateInfo() {
+	BMessage archive;
+	BFile cacheFile;
+	status_t err;
+
+	try {
+		BString filename = BString( "MailView");
+		this->Archive( &archive, true) == B_OK
+													|| BM_THROW_RUNTIME("Unable to archive MailView-object");
+		(err = cacheFile.SetTo( TheResources->StateInfoFolder(), filename.String(), 
+										B_WRITE_ONLY | B_CREATE_FILE | B_ERASE_FILE)) == B_OK
+													|| BM_THROW_RUNTIME( BString("Could not create cache file\n\t<") << filename << ">\n\n Result: " << strerror(err));
+		(err = archive.Flatten( &cacheFile)) == B_OK
+													|| BM_THROW_RUNTIME( BString("Could not store state-cache into file\n\t<") << filename << ">\n\n Result: " << strerror(err));
+	} catch( exception &e) {
+		BM_SHOWERR( e.what());
+		return false;
+	}
+	return true;
+}
+
+/*------------------------------------------------------------------------------*\
+	( )
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailView::ShowMenu( BPoint point) {
+	BPopUpMenu* theMenu = new BPopUpMenu( "MailViewMenu", false, false);
+
+	BMenuItem* item = new BMenuItem( "Show All MIME-Bodies", 
+												new BMessage( mBodyPartView->ShowAllParts()
+																  ? BM_BODYPARTVIEW_SHOWINLINE
+																  : BM_BODYPARTVIEW_SHOWALL));
+	item->SetTarget( mBodyPartView);
+	item->SetMarked( mBodyPartView->ShowAllParts());
+	theMenu->AddItem( item);
+
+	item = new BMenuItem( "Show Raw Message", new BMessage( ShowRaw() 
+								 ? BM_MAILVIEW_SHOWCOOKED : BM_MAILVIEW_SHOWRAW));
+	item->SetTarget( this);
+	item->SetMarked( ShowRaw());
+	theMenu->AddItem( item);
+
+   ConvertToScreen(&point);
+	BRect openRect;
+	openRect.top = point.y - 5;
+	openRect.bottom = point.y + 5;
+	openRect.left = point.x - 5;
+	openRect.right = point.x + 5;
+  	theMenu->Go( point, true, false, openRect);
+  	delete theMenu;
+}
+
 
 
 /********************************************************************************\
@@ -419,29 +549,4 @@ void BmMailViewContainer::UnsetBusy() {
 \*------------------------------------------------------------------------------*/
 void BmMailViewContainer::PulseBusyView() {
 	if (mBusyView) mBusyView->Pulse();
-}
-
-/*------------------------------------------------------------------------------*\
-	Store()
-		-	stores MailView-state inside StateCache-folder:
-\*------------------------------------------------------------------------------*/
-bool BmMailView::Store() {
-	BMessage archive;
-	BFile cacheFile;
-	status_t err;
-
-	try {
-		BString filename = BString( "MailView");
-		this->Archive( &archive, true) == B_OK
-													|| BM_THROW_RUNTIME("Unable to archive MailView-object");
-		(err = cacheFile.SetTo( TheResources->StateInfoFolder(), filename.String(), 
-										B_WRITE_ONLY | B_CREATE_FILE | B_ERASE_FILE)) == B_OK
-													|| BM_THROW_RUNTIME( BString("Could not create cache file\n\t<") << filename << ">\n\n Result: " << strerror(err));
-		(err = archive.Flatten( &cacheFile)) == B_OK
-													|| BM_THROW_RUNTIME( BString("Could not store state-cache into file\n\t<") << filename << ">\n\n Result: " << strerror(err));
-	} catch( exception &e) {
-		BM_SHOWERR( e.what());
-		return false;
-	}
-	return true;
 }

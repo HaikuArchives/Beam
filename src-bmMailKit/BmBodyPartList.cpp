@@ -4,6 +4,7 @@
 */
 
 #include <Autolock.h>
+#include <File.h>
 #include <FindDirectory.h>
 #include <NodeInfo.h>
 
@@ -102,25 +103,40 @@ const BString& BmContentField::Param( BString key) const {
 		return nullStr;
 }
 
+/*------------------------------------------------------------------------------*\
+	Param( key)
+	-	sets the parameter to the given value:
+\*------------------------------------------------------------------------------*/
+void BmContentField::SetParam( BString key, BString value) {
+	mParams[key.ToLower()] = value;
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+BmContentField::operator BString() const {
+	BString fieldString;
+	fieldString << mValue;
+
+	BmParamMap::const_iterator iter;
+	if (!mParams.empty()) {
+		fieldString << ";";	
+		for( iter = mParams.begin(); iter != mParams.end(); ++iter) {
+			fieldString << " " << iter->first << "=\"" << iter->second << '"';
+		}
+	}
+	return fieldString;
+}
+
+
 
 /********************************************************************************\
 	BmBodyPart
 \********************************************************************************/
 
+int32 BmBodyPart::nBoundaryCounter = 0;
 int32 BmBodyPart::nCounter = 0;
-
-/*------------------------------------------------------------------------------*\
-	BmBodyPart()
-	-	default c'tor
-\*------------------------------------------------------------------------------*/
-BmBodyPart::BmBodyPart( BmBodyPartList* model, BmListModelItem* parent)
-	:	inherited( BString("")<<++nCounter, model, parent)
-	,	mIsMultiPart( false)
-	,	mPosInRawText( NULL)
-	,	mLength( 0)
-	,	mDecodedLength( 0)
-{
-}
 
 /*------------------------------------------------------------------------------*\
 	BmBodyPart( msgtext, start, length, contentType)
@@ -130,11 +146,54 @@ BmBodyPart::BmBodyPart( BmBodyPartList* model, const BString& msgtext, int32 sta
 								int32 length, BmMailHeader* header, BmListModelItem* parent)
 	:	inherited( BString("")<<++nCounter, model, parent)
 	,	mIsMultiPart( false)
-	,	mPosInRawText( NULL)
-	,	mLength( 0)
-	,	mDecodedLength( 0)
+	,	mInitCheck( B_NO_INIT)
 {
 	SetTo( msgtext, start, length, header);
+}
+
+/*------------------------------------------------------------------------------*\
+	BmBodyPart()
+	-	c'tor
+\*------------------------------------------------------------------------------*/
+BmBodyPart::BmBodyPart( BmBodyPartList* model, entry_ref* ref, BmListModelItem* parent)
+	:	inherited( BString("")<<++nCounter, model, parent)
+	,	mIsMultiPart( false)
+	,	mInitCheck( B_NO_INIT)
+{
+	try {
+		status_t err;
+		BFile file;
+		BNodeInfo nodeInfo;
+		off_t size;
+		char mimetype[B_MIME_TYPE_LENGTH+1];
+		(err=file.SetTo( ref, B_READ_ONLY)) == B_OK		
+														|| BM_THROW_RUNTIME( BString("Couldn't create file for <") << ref->name << "> \n\nError:" << strerror(err));
+		(err=file.GetSize( &size)) == B_OK
+														|| BM_THROW_RUNTIME( BString("Couldn't get file-size for <") << ref->name << "> \n\nError:" << strerror(err));
+		char* buf = mDecodedData.LockBuffer( size+1);
+		file.Read( buf, size);
+		buf[size] = '\0';
+		mDecodedData.UnlockBuffer( size);
+		
+		(err=nodeInfo.SetTo( &file)) == B_OK
+														|| BM_THROW_RUNTIME( BString("Couldn't create node-info for <") << ref->name << "> \n\nError:" << strerror(err));
+		nodeInfo.GetType( mimetype);
+		mFileName = ref->name;
+		mContentType.SetTo( BString(mimetype)<<"; name=\"" << ref->name << '"');
+		mContentDisposition.SetTo( BString( "attachment; filename=\"")<<ref->name<<'"');
+		mContentTransferEncoding = BString(mimetype).ICompare( "text", 4) ? "base64" : "quoted-printable";
+		mInitCheck = B_OK;
+	} catch( exception &err) {
+		// a problem occurred, we tell the user:
+		BM_SHOWERR( BString("BodyPart:\n\t") << err.what());
+	}
+}
+	
+/*------------------------------------------------------------------------------*\
+	~BmBodyPart()
+	-	d'tor
+\*------------------------------------------------------------------------------*/
+BmBodyPart::~BmBodyPart() {
 }
 
 /*------------------------------------------------------------------------------*\
@@ -151,6 +210,9 @@ void BmBodyPart::SetTo( const BString& msgtext, int32 start, int32 length,
 	BString description;
 	BString language;
 	bool deleteHeader = false;
+	const char* posInRawText = NULL;
+	int32 bodyLength;
+	BmBodyPartList* body = dynamic_cast< BmBodyPartList*>( mListModel);
 
 	if (!header) {
 		// this is not the main body, so we have to split the MIME-headers from
@@ -164,21 +226,27 @@ void BmBodyPart::SetTo( const BString& msgtext, int32 start, int32 length,
 			return;
 		}
 		msgtext.CopyInto( headerText, start, pos-start+2);
-		mPosInRawText = msgtext.String()+pos+4;
-		mLength = length - (pos+4-start);
+		posInRawText = msgtext.String()+pos+4;
+		bodyLength = length - (pos+4-start);
 		BM_LOG2( BM_LogMailParse, BString("MIME-Header found: ") << headerText);
 		header = new BmMailHeader( headerText, NULL);
 		deleteHeader = true;
 	} else {
-		mPosInRawText = msgtext.String()+start;
-		mLength = length;
+		posInRawText = msgtext.String()+start;
+		bodyLength = length;
 	}
 	// MIME-type
 	BM_LOG2( BM_LogMailParse, "parsing Content-Type");
 	type = header->GetFieldVal( BM_FIELD_CONTENT_TYPE);
-	if (!type.Length() || type.ICompare("text")==0)
+	if (!type.Length() || type.ICompare("text")==0) {
+		// set content-type to default if is empty or contains "text"
+		// (which is illegal but used by some broken mail-clients, it seems...)
 		type = "text/plain; charset=us-ascii";
+	}
 	mContentType.SetTo( type);
+	if (IsPlainText() && body->EditableTextBody() == NULL) {
+		body->EditableTextBody( this);
+	}
 	// encoding
 	BM_LOG2( BM_LogMailParse, "parsing Content-Transfer-Encoding");
 	encoding = header->GetFieldVal( BM_FIELD_CONTENT_TRANSFER_ENCODING);
@@ -187,14 +255,12 @@ void BmBodyPart::SetTo( const BString& msgtext, int32 start, int32 length,
 	mContentTransferEncoding = encoding;
 	BM_LOG2( BM_LogMailParse, BString("...found value: ")<<mContentTransferEncoding);
 	// decoded length
-	if (!mIsMultiPart) {
-		// unneccessary for multiparts, since they are never handled on their own 
-		// (they are split into their subparts instead)
-		if (ThePrefs->GetBool("ShowDecodedLength") && mContentTransferEncoding.Length())
-			mDecodedLength = BmEncoding::DecodedLength( mContentTransferEncoding, 
-																	  mPosInRawText, mLength);
-		else
-			mDecodedLength = mLength;
+	if (mIsMultiPart) {
+		// decoding is unneccessary for multiparts, since they are never handled on 
+		// their own (they are split into their subparts instead)
+	} else {
+		BString body( posInRawText, bodyLength);
+		Decode( mContentTransferEncoding, body, mDecodedData, false, IsText());
 	}
 	// id
 	BM_LOG2( BM_LogMailParse, "parsing Content-Id");
@@ -234,7 +300,7 @@ void BmBodyPart::SetTo( const BString& msgtext, int32 start, int32 length,
 			BM_SHOWERR( "No boundary specified within multipart-message!");
 			return;
 		}
-		int32 startPos = int32(strstr( mPosInRawText, boundary.String())-msgtext.String());
+		int32 startPos = int32(strstr( posInRawText, boundary.String())-msgtext.String());
 		if (startPos == B_ERROR) {
 			BM_SHOWERR( BString("Boundary <")<<boundary<<"> not found within message.");
 			return;
@@ -254,6 +320,7 @@ void BmBodyPart::SetTo( const BString& msgtext, int32 start, int32 length,
 			return;
 		}
 	}
+	mInitCheck = B_OK;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -281,22 +348,6 @@ bool BmBodyPart::ShouldBeShownInline()	const {
 }
 
 /*------------------------------------------------------------------------------*\
-	DecodedTextData( msgtext, start, length, contentType)
-	-	
-\*------------------------------------------------------------------------------*/
-void* BmBodyPart::DecodedData( int32* dataLen) const {
-	BString buf( mPosInRawText, mLength);
-	if (mContentTransferEncoding.Length()) {
-		int32 decodedSize = 0;
-		void* decodedData = Decode( mContentTransferEncoding, buf, false, IsText(), decodedSize);
-		if (dataLen)
-			*dataLen = decodedSize;
-		return decodedData;
-	}
-	return NULL;
-}
-
-/*------------------------------------------------------------------------------*\
 	WriteToTempFile()
 		-	
 \*------------------------------------------------------------------------------*/
@@ -318,10 +369,7 @@ entry_ref BmBodyPart::WriteToTempFile( BString filename) {
 			return eref;
 		}
 		TheTempFileList.AddFile( BString(tempPath.Path())<<"/"<<filename);
-		int32 dataLen;
-		void* data = DecodedData( &dataLen);
-		tempFile.Write( data, dataLen);
-		free( data);
+		tempFile.Write( mDecodedData.String(), mDecodedData.Length());
 		fileInfo.SetTo( &tempFile);
 		fileInfo.SetType( MimeType().String());
 		BEntry entry( &tempDir, filename.String());
@@ -329,6 +377,62 @@ entry_ref BmBodyPart::WriteToTempFile( BString filename) {
 	}
 	return eref;
 }
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmBodyPart::SetBodyText( const BString& text, int32 encoding) {
+	text.CopyInto( mDecodedData, 0, text.Length());
+	mContentType.SetParam( "charset", EncodingToCharset( encoding));
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+BString BmBodyPart::GenerateBoundary() {
+	return BString("_=_BOUNDARY_")<<system_time()<<"_"<<++nBoundaryCounter<<"_=_";
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmBodyPart::ConstructBodyForSending( BString &msgText) {
+	BString boundary;
+	if (IsMultiPart()) {
+		boundary = GenerateBoundary();
+		mContentType.SetParam( "boundary", boundary);
+	}
+	msgText << BM_FIELD_CONTENT_TYPE << ": " << mContentType << "\r\n";
+	msgText << BM_FIELD_CONTENT_TRANSFER_ENCODING << ": " << mContentTransferEncoding << "\r\n";
+	msgText << BM_FIELD_CONTENT_DISPOSITION << ": " << mContentDisposition << "\r\n";
+	if (mContentDescription.Length())
+		msgText << BM_FIELD_CONTENT_DESCRIPTION << ": " << mContentDescription << "\r\n";
+	if (mContentId.Length())
+		msgText << BM_FIELD_CONTENT_ID << ": " << mContentId << "\r\n";
+	if (mContentLanguage.Length())
+		msgText << BM_FIELD_CONTENT_LANGUAGE << ": " << mContentLanguage << "\r\n";
+	msgText << "\r\n";
+	BString convertedData;
+	ConvertFromUTF8( CharsetToEncoding(TypeParam( "charset")), mDecodedData, convertedData);
+	BString encodedData;
+	BmEncoding::Encode( mContentTransferEncoding, convertedData, encodedData);
+	msgText << encodedData;
+	if (msgText[msgText.Length()-1] != '\n')
+		msgText << "\r\n";
+	if (IsMultiPart())
+		msgText << "--"<<boundary<<"\r\n";
+	BmModelItemMap::const_iterator iter;
+	for( iter = begin(); iter != end(); ++iter) {
+		BmBodyPart* subPart = dynamic_cast< BmBodyPart*>( iter->second.Get());
+		subPart->ConstructBodyForSending( msgText);
+		if (IsMultiPart())
+			msgText << "--"<<boundary<<"\r\n";
+	}
+}
+
 
 
 /********************************************************************************\
@@ -342,6 +446,7 @@ entry_ref BmBodyPart::WriteToTempFile( BString filename) {
 BmBodyPartList::BmBodyPartList( BmMail* mail)
 	:	inherited( BString("BodyPartList_") << mail->ModelName())
 	,	mMail( mail)
+	,	mEditableTextBody( NULL)
 	,	mInitCheck( B_NO_INIT)
 {
 }
@@ -399,3 +504,49 @@ bool BmBodyPartList::HasAttachments() const {
 	BmBodyPart* bodyPart = dynamic_cast< BmBodyPart*>( begin()->second.Get());
 	return bodyPart ? bodyPart->IsMultiPart() : false;
 }
+
+/*------------------------------------------------------------------------------*\
+	AddAttachmentFromRef()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmBodyPartList::AddAttachmentFromRef( entry_ref* ref) {
+	BmBodyPart* bodyPart = new BmBodyPart( this, ref, NULL);
+	if (bodyPart->InitCheck() == B_OK)
+		AddItemToList( bodyPart);
+	else
+		delete bodyPart;
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmBodyPartList::SetEditableText( const BString& text, int32 encoding) {
+	if (mEditableTextBody)
+		mEditableTextBody->SetBodyText( text, encoding);
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+bool BmBodyPartList::ConstructBodyForSending( BString& msgText) {
+	bool isMultiPart = size() > 1;
+	BString boundary;
+	if (isMultiPart) {
+		boundary = BmBodyPart::GenerateBoundary();
+		msgText << BM_FIELD_CONTENT_TYPE << ": multipart/mixed; boundary=\""<<boundary<<"\"\r\n";
+		msgText << BM_FIELD_CONTENT_TRANSFER_ENCODING << ": 7bit\r\n\r\n";
+		msgText << "This is a multi-part message in MIME format.\r\n\r\n";
+		msgText << "--"<<boundary<<"\r\n";
+	}
+	BmModelItemMap::const_iterator iter;
+	for( iter = begin(); iter != end(); ++iter) {
+		BmBodyPart* bodyPart = dynamic_cast< BmBodyPart*>( iter->second.Get());
+		bodyPart->ConstructBodyForSending( msgText);
+		if (isMultiPart)
+			msgText << "--"<<boundary<<"\r\n";
+	}
+	return true;
+}
+

@@ -3,6 +3,8 @@
 		$Id$
 */
 
+#include <Screen.h>
+
 #include "BmApp.h"
 #include "BmBasics.h"
 #include "BmDataModel.h"
@@ -103,3 +105,13 @@ void BmApplication::MessageReceived( BMessage* msg) {
 	}
 }
 
+/*------------------------------------------------------------------------------*\
+	MessageReceived( )
+		-	
+\*------------------------------------------------------------------------------*/
+BRect BmApplication::ScreenFrame() {
+	BScreen screen;
+	if (!screen.IsValid())
+		BM_SHOWERR( BString("Could not initialize BScreen object !?!"));
+	return screen.Frame();
+}

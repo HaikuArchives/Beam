@@ -118,31 +118,11 @@ bool BmMainWindow::IsAlive() {
 \*------------------------------------------------------------------------------*/
 BmMainWindow* BmMainWindow::CreateInstance() 
 {
-	BmMainWindow *win = NULL;
-	status_t err;
-	BString winFilename;
-	BFile winFile;
-
-	if (theInstance)
-		return theInstance;
-
-	// create standard main-window:
-	win = new BmMainWindow;
-	// try to open state-cache-file...
-	winFilename = BString("MainWindow");
-	if ((err = winFile.SetTo( TheResources->StateInfoFolder(), winFilename.String(), B_READ_ONLY)) == B_OK) {
-		// ...ok, archive file found, we fetch our dimensions from it:
-		try {
-			BMessage archive;
-			(err = archive.Unflatten( &winFile)) == B_OK
-													|| BM_THROW_RUNTIME( BString("Could not fetch main-window archive from file\n\t<") << winFilename << ">\n\n Result: " << strerror(err));
-			win->Unarchive( &archive);
-		} catch (exception &e) {
-			BM_SHOWERR( e.what());
-		}
+	if (!theInstance) {
+		theInstance = new BmMainWindow;
+		theInstance->ReadStateInfo();
 	}
-	theInstance = win;
-	return win;
+	return theInstance;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -150,8 +130,10 @@ BmMainWindow* BmMainWindow::CreateInstance()
 		-	
 \*------------------------------------------------------------------------------*/
 BmMainWindow::BmMainWindow()
-	:	inherited( BRect(50,50,800,600), "Beam 0.x", B_TITLED_WINDOW_LOOK, 
-					  B_NORMAL_WINDOW_FEEL, B_ASYNCHRONOUS_CONTROLS)
+	:	inherited( "MainWindow", BRect(50,50,800,600), 
+					  (BString(BmAppName)<<" "<<BmAppVersion).String(),
+					  B_TITLED_WINDOW_LOOK, B_NORMAL_WINDOW_FEEL, 
+					  B_ASYNCHRONOUS_CONTROLS | B_QUIT_ON_WINDOW_CLOSE)
 	,	mMailFolderView( NULL)
 	,	mMailRefView( NULL)
 	,	mVertSplitter( NULL)
@@ -311,8 +293,8 @@ MMenuBar* BmMainWindow::CreateMenu() {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-status_t BmMainWindow::Archive( BMessage* archive, bool deep=true) const {
-	status_t ret = archive->AddRect( MSG_FRAME, Frame())
+status_t BmMainWindow::ArchiveState( BMessage* archive) const {
+	status_t ret = inherited::ArchiveState( archive)
 						|| archive->AddFloat( MSG_VSPLITTER, mVertSplitter->DividerLeftOrTop())
 						|| archive->AddFloat( MSG_HSPLITTER, mHorzSplitter->DividerLeftOrTop());
 	return ret;
@@ -322,15 +304,12 @@ status_t BmMainWindow::Archive( BMessage* archive, bool deep=true) const {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-status_t BmMainWindow::Unarchive( BMessage* archive, bool deep=true) {
-	BRect frame;
+status_t BmMainWindow::UnarchiveState( BMessage* archive) {
 	float vDividerPos, hDividerPos;
-	status_t ret = archive->FindRect( MSG_FRAME, &frame)
+	status_t ret = inherited::UnarchiveState( archive)
 						|| archive->FindFloat( MSG_VSPLITTER, &vDividerPos)
 						|| archive->FindFloat( MSG_HSPLITTER, &hDividerPos);
 	if (ret == B_OK) {
-		MoveTo( frame.LeftTop());
-		ResizeTo( frame.Width(), frame.Height());
 		mVertSplitter->SetPreferredDividerLeftOrTop( vDividerPos);
 		mHorzSplitter->SetPreferredDividerLeftOrTop( hDividerPos);
 	}
@@ -441,9 +420,6 @@ void BmMainWindow::MessageReceived( BMessage* msg) {
 \*------------------------------------------------------------------------------*/
 bool BmMainWindow::QuitRequested() {
 	BM_LOG2( BM_LogMainWindow, BString("MainWindow has been asked to quit"));
-	ThePopAccountList->Store();
-	Store();
-	beamApp->PostMessage( B_QUIT_REQUESTED);
 	return true;
 }
 
@@ -452,38 +428,13 @@ bool BmMainWindow::QuitRequested() {
 		-	standard BeOS-behaviour, we quit
 \*------------------------------------------------------------------------------*/
 void BmMainWindow::Quit() {
+	ThePopAccountList->Store();
+	mMailView->WriteStateInfo();
 	mMailView->DetachModel();
 	mMailRefView->DetachModel();
 	mMailFolderView->DetachModel();
 	BM_LOG2( BM_LogMainWindow, BString("MainWindow has quit"));
 	inherited::Quit();
-}
-
-/*------------------------------------------------------------------------------*\
-	Store()
-		-	stores MainWindow-state inside StateCache-folder:
-\*------------------------------------------------------------------------------*/
-bool BmMainWindow::Store() {
-	BMessage archive;
-	BFile cacheFile;
-	status_t err;
-
-	try {
-		BString filename = BString( "MainWindow");
-		this->Archive( &archive, true) == B_OK
-													|| BM_THROW_RUNTIME("Unable to archive MainWindow-object");
-		(err = cacheFile.SetTo( TheResources->StateInfoFolder(), filename.String(), 
-										B_WRITE_ONLY | B_CREATE_FILE | B_ERASE_FILE)) == B_OK
-													|| BM_THROW_RUNTIME( BString("Could not create cache file\n\t<") << filename << ">\n\n Result: " << strerror(err));
-		(err = archive.Flatten( &cacheFile)) == B_OK
-													|| BM_THROW_RUNTIME( BString("Could not store state-cache into file\n\t<") << filename << ">\n\n Result: " << strerror(err));
-		if (mMailView)
-			mMailView->Store();
-	} catch( exception &e) {
-		BM_SHOWERR( e.what());
-		return false;
-	}
-	return true;
 }
 
 /*------------------------------------------------------------------------------*\

@@ -41,7 +41,7 @@ BmMail::BmMail()
 	,	mBody( new BmBodyPartList( this))
 	,	mInitCheck( B_NO_INIT)
 {
-	BString emptyMsg( "\r\n\r\n");
+	BString emptyMsg( "Mime: 1.0\r\n\r\n");
 	SetTo( emptyMsg, "");
 }
 
@@ -98,7 +98,7 @@ void BmMail::SetTo( BString &msgText, const BString account) {
 	if (headerLen == B_ERROR) {
 		throw BM_mail_format_error("BmMail: Could not determine borderline between header and text of message");
 	}
-	headerLen += 2;							// include cr/nl in header-string
+	headerLen += 2;							// don't include separator-line in header-string
 	mHeaderLength = headerLen;
 
 	mText.Adopt( msgText);					// take over the msg-string
@@ -109,6 +109,7 @@ void BmMail::SetTo( BString &msgText, const BString account) {
 	mHeader = new BmMailHeader( header, this);
 	
 	mBody->ParseMail();
+
 	mInitCheck = B_OK;
 }
 	
@@ -163,8 +164,22 @@ void BmMail::SetFieldVal( const BString fieldName, const BString value) {
 		mHeader->SetFieldVal( fieldName, value);
 	else
 		mHeader->RemoveField( fieldName);
+}
 
-BString s = *mHeader;
+/*------------------------------------------------------------------------------*\
+	ConstructMailForSending()
+	-	
+\*------------------------------------------------------------------------------*/
+bool BmMail::ConstructMailForSending( const BString& editedText, int32 encoding) {
+	BString msgText;
+	if (!mHeader->ConstructHeaderForSending( msgText, encoding))
+		return false;
+	mBody->SetEditableText( editedText, encoding);
+	if (!mBody->ConstructBodyForSending( msgText))
+		return false;
+BM_LOG2( BM_LogMailParse, BString("CONSTRUCTED MSG: \n------------------\n") << msgText << "\n------------------");
+		
+	return true;
 }
 
 /*------------------------------------------------------------------------------*\

@@ -7,6 +7,10 @@
 #define _BmApp_h
 
 #include <Application.h>
+#include <Rect.h>
+
+extern const char* BmAppVersion;
+extern const char* BmAppName;
 
 class BmApplication : public BApplication
 {
@@ -16,6 +20,9 @@ public:
 	//
 	BmApplication( const char *sig);
 	~BmApplication();
+
+	// native methods:
+	BRect ScreenFrame();
 
 	// beos-stuff
 	void MessageReceived( BMessage* msg);

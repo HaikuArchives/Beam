@@ -37,18 +37,30 @@ class BmMailHeader;
 #define BM_MAIL_ATTR_ATTACHMENTS "MAIL:has_attachment"
 #define BM_MAIL_ATTR_ACCOUNT	 	"MAIL:account"
 
-#define BM_FIELD_FROM 						"From"
-#define BM_FIELD_TO 							"To"
-#define BM_FIELD_SUBJECT 					"Subject"
-#define BM_FIELD_CC 							"Cc"
 #define BM_FIELD_BCC 						"Bcc"
-#define BM_FIELD_DATE 						"Date"
+#define BM_FIELD_CC 							"Cc"
 #define BM_FIELD_CONTENT_TYPE 			"Content-Type"
 #define BM_FIELD_CONTENT_DISPOSITION 	"Content-Disposition"
 #define BM_FIELD_CONTENT_DESCRIPTION 	"Content-Description"
 #define BM_FIELD_CONTENT_LANGUAGE 		"Content-Language"
 #define BM_FIELD_CONTENT_TRANSFER_ENCODING 	"Content-Transfer-Encoding"
 #define BM_FIELD_CONTENT_ID 				"Content-Id"
+#define BM_FIELD_DATE 						"Date"
+#define BM_FIELD_FROM 						"From"
+#define BM_FIELD_MIME 						"Mime-Version"
+#define BM_FIELD_PRIORITY					"Priority"
+#define BM_FIELD_REPLY_TO					"Reply-To"
+#define BM_FIELD_RESENT_BCC				"Resent-Bcc"
+#define BM_FIELD_RESENT_CC					"Resent-Cc"
+#define BM_FIELD_RESENT_DATE				"Resent-Date"
+#define BM_FIELD_RESENT_FROM				"Resent-From"
+#define BM_FIELD_RESENT_SENDER 			"Resent-Sender"
+#define BM_FIELD_RESENT_TO					"Resent-To"
+#define BM_FIELD_SENDER 					"Sender"
+#define BM_FIELD_SUBJECT 					"Subject"
+#define BM_FIELD_TO 							"To"
+#define BM_FIELD_X_MAILER					"X-Mailer"
+#define BM_FIELD_X_PRIORITY				"X-Priority"
 
 /*------------------------------------------------------------------------------*\
 	BmMail 
@@ -86,6 +98,7 @@ public:
 	BmMailHeader* Header() const			{ return mHeader; }
 	int32 HeaderLength() const				{ return mHeaderLength; }
 	const BString& RawText() const		{ return mText; }
+	bool ConstructMailForSending( const BString& editableText, int32 encoding);
 
 protected:
 	BString CreateBasicFilename();
@@ -98,9 +111,11 @@ protected:
 private:
 	BmMailHeader* mHeader;					// contains header-information
 	int32 mHeaderLength;
+
 	BmRef<BmBodyPartList> mBody;			// contains body-information (split into subparts)
 
 	BString mText;								// text of complete message
+
 	BString mAccountName;					// name of account this message came from
 
 	BEntry mParentEntry;						// filesystem-entry for mailfolder this mail 

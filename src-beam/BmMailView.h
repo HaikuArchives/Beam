@@ -42,16 +42,19 @@ public:
 
 	// native methods:
 	void ShowMail( BmMailRef* ref);
+	void ShowMail( BmMail* mail);
 	void DisplayBodyPart( BString& displayText, BmBodyPart* bodyPart);
 	status_t Archive( BMessage* archive, bool deep=true) const;
 	status_t Unarchive( BMessage* archive, bool deep=true);
-	bool Store();
+	bool WriteStateInfo();
 
 	// overrides of BTextView base:
+	bool AcceptsDrop( const BMessage* msg);
 	void FrameResized( float newWidth, float newHeight);
 	void KeyDown(const char *bytes, int32 numBytes);
 	void MakeFocus(bool focused);
 	void MessageReceived( BMessage* msg);
+	void MouseDown( BPoint point);
 
 	// overrides of BmController base:
 	BHandler* GetControllerHandler()		{ return this; }
@@ -61,11 +64,15 @@ public:
 	// getters:
 	BmMailViewContainer* ContainerView() const	{ return mScrollView; }
 	BmRef<BmMail> CurrMail()				{ return mCurrMail; }
+	bool ShowRaw()								{ return mShowRaw; }
 
 	// setters:
 	void TeamUpWith( BmMailRefView* v)	{ mPartnerMailRefView = v; }
+	void ShowRaw( bool b) 					{ mShowRaw = b; }
 
 private:
+	void ShowMenu( BPoint point);
+
 	// will not be archived:
 	bool mEditMode;
 	BmRef< BmMail> mCurrMail;
@@ -76,7 +83,7 @@ private:
 	// will be archived:
 	BString mFontName;
 	int16 mFontSize;
-	bool mRaw;
+	bool mShowRaw;
 };
 
 class BmBusyView;

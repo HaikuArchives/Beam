@@ -602,19 +602,19 @@ void BmListViewController::WriteStateInfo() {
 	status_t err;
 	BString stateInfoFilename;
 	BFile stateInfoFile;
-	auto_ptr< BMessage> archive( new BMessage);
+	BMessage archive;
 	
 	if (!DataModel() || !mUseStateCache)
 		return;
 
 	try {
 		stateInfoFilename = StateInfoBasename() << "_" << ModelName();
-		this->Archive( archive.get(), Hierarchical()) == B_OK
+		this->Archive( &archive, Hierarchical()) == B_OK
 													|| BM_THROW_RUNTIME( BString("Unable to archive State-Info for ")<<Name());
 		(err = stateInfoFile.SetTo( TheResources->StateInfoFolder(), stateInfoFilename.String(), 
 											 B_WRITE_ONLY | B_CREATE_FILE | B_ERASE_FILE)) == B_OK
 													|| BM_THROW_RUNTIME( BString("Could not create state-info file\n\t<") << stateInfoFilename << ">\n\n Result: " << strerror(err));
-		(err = archive->Flatten( &stateInfoFile)) == B_OK
+		(err = archive.Flatten( &stateInfoFile)) == B_OK
 													|| BM_THROW_RUNTIME( BString("Could not store state-info into file\n\t<") << stateInfoFilename << ">\n\n Result: " << strerror(err));
 	} catch( exception &e) {
 		BM_SHOWERR( e.what());

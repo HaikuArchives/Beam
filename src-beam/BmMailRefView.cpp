@@ -296,6 +296,7 @@ void BmMailRefView::MessageReceived( BMessage* msg) {
 void BmMailRefView::KeyDown(const char *bytes, int32 numBytes) { 
 	if ( numBytes == 1 ) {
 		switch( bytes[0]) {
+			// implement remote navigation within mail-view (via cursor-keys with modifiers):
 			case B_PAGE_UP:
 			case B_PAGE_DOWN:
 			case B_UP_ARROW:
@@ -311,6 +312,20 @@ void BmMailRefView::KeyDown(const char *bytes, int32 numBytes) {
 				} else
 					inherited::KeyDown( bytes, numBytes);
 				break;
+			}
+			case B_DELETE: {
+				// move selected items to trash:
+				int32 selCount;
+				for( selCount=0; CurrentSelection( selCount)>=0; ++selCount)
+					;
+				entry_ref* refs = new entry_ref [selCount];
+				int32 currIdx;
+				for( int32 i=0; i<selCount && (currIdx=CurrentSelection( i))>=0; ++i) {
+					BmMailRefItem* refItem = dynamic_cast<BmMailRefItem*>(ItemAt( currIdx));
+					refs[i] = dynamic_cast<BmMailRef*>(refItem->ModelItem())->EntryRef();
+				}
+				MoveToTrash( refs, selCount);
+				delete [] refs;
 			}
 			default:
 				inherited::KeyDown( bytes, numBytes);
@@ -425,7 +440,7 @@ void BmMailRefView::ShowFolder( BmMailFolder* folder) {
 		StopJob();
 		BmMailRefList* refList = folder ? folder->MailRefList() : NULL;
 		if (mPartnerMailView)
-			mPartnerMailView->ShowMail( NULL);
+			mPartnerMailView->ShowMail( static_cast< BmMailRef*>( NULL));
 		if (refList)
 			StartJob( refList, true);
 		mCurrFolder = folder;
@@ -475,7 +490,7 @@ void BmMailRefView::SelectionChanged( void) {
 		}
 	} else
 		if (mPartnerMailView)
-			mPartnerMailView->ShowMail( NULL);
+			mPartnerMailView->ShowMail( static_cast< BmMailRef*>( NULL));
 	
 	BMessage msg(BM_NTFY_MAILREF_SELECTION);
 	msg.AddInt32( MSG_MAILS_SELECTED, numSelected);

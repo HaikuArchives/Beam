@@ -31,6 +31,7 @@
 #include "BmPrefs.h"
 
 
+#define BM_MINSIZE 200
 
 /********************************************************************************\
 	BmJobStatusView
@@ -48,8 +49,8 @@ BmJobStatusView::BmJobStatusView( const char* name)
 	,	BmJobController( name)
 	,	mShowMsgRunner( NULL)
 	,	mRemoveMsgRunner( NULL)
-	,	mMSecsBeforeShow( 100)
-	,	mMSecsBeforeRemove( 100)
+	,	mMSecsBeforeShow( 10)
+	,	mMSecsBeforeRemove( 10)
 {
 }
 
@@ -89,12 +90,18 @@ void BmJobStatusView::MessageReceived( BMessage* msg) {
 			}
 			case BM_TIME_TO_SHOW: {
 				BM_LOG2( BM_LogModelController, BString("Controller <") << ControllerName() << "> has been told to show its view");
+				BmAutolock lock( TheJobStatusWin);
+				lock.IsLocked()				|| BM_THROW_RUNTIME( "JobStatusView(): could not lock window");
 				Show();
-				TheJobStatusWin->Show();
+				do {
+					TheJobStatusWin->Show();
+				} while (TheJobStatusWin->IsHidden());
 				break;
 			}
 			case BM_TIME_TO_REMOVE: {
 				BM_LOG2( BM_LogModelController, BString("Controller <") << ControllerName() << "> has been told to remove its view");
+				BmAutolock lock( TheJobStatusWin);
+				lock.IsLocked()				|| BM_THROW_RUNTIME( "JobStatusView(): could not lock window");
 				DetachModel();
 				if (!IsHidden()) {
 					Hide();
@@ -137,15 +144,13 @@ void BmJobStatusView::StartJob( BmJobModel* model, bool startInNewThread) {
 \*------------------------------------------------------------------------------*/
 void BmJobStatusView::JobIsDone( bool completed) {
 	BM_LOG2( BM_LogModelController, BString("Controller <") << ControllerName() << "> has been told that job " << ModelName() << " is done");
-	if (!completed)
-		ResetController();
 	if (ThePrefs->GetBool("DynamicStatusWin") || AlwaysRemoveWhenDone()) {
+		int32 timeToWait = TheJobStatusWin->IsHidden() ? 1 : MSecsBeforeRemove();
 		delete mRemoveMsgRunner;
 		mRemoveMsgRunner = NULL;
 		BMessage* timerMsg = new BMessage( BM_TIME_TO_REMOVE);
 		BM_LOG2( BM_LogModelController, BString("Controller <") << ControllerName() << "> sets timer-to-remove to "<<MSecsBeforeRemove()<<" msecs");
-		mRemoveMsgRunner = new BMessageRunner( BMessenger( this), timerMsg, 
-															MSecsBeforeRemove(), 1);
+		mRemoveMsgRunner = new BMessageRunner( BMessenger( this), timerMsg, timeToWait, 1);
 	}
 }
 
@@ -183,7 +188,7 @@ BmMailMoverView::BmMailMoverView( const char* name)
 		0
 	);
 	AddChild( dynamic_cast<BView*>(view));
-	mStatBar->SetBarHeight( 12.0);
+	mStatBar->SetBarHeight( 8.0);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -266,10 +271,10 @@ BmPopperView::BmPopperView( const char* name)
 	mMSecsBeforeRemove = ThePrefs->GetInt( "MSecsBeforePopperRemove", 5000*1000);
 	MView* view = new VGroup(
 		new MBViewWrapper(
-			mStatBar = new BStatusBar( BRect(), name, "State: ", name), true, false, false
+			mStatBar = new BStatusBar( BRect(), name, name, ""), true, false, false
 		),
 		new MBViewWrapper(
-			mMailBar = new BStatusBar( BRect(), name, "Messages: ", ""), true, false, false
+			mMailBar = new BStatusBar( BRect(), name, "Mails: ", ""), true, false, false
 		),
 		0
 	);
@@ -304,9 +309,9 @@ BmJobModel* BmPopperView::CreateJobModel( BMessage* msg) {
 		-	reinitializes the view in order to start another job
 \*------------------------------------------------------------------------------*/
 void BmPopperView::ResetController() {
-	mStatBar->Reset( "State: ", ControllerName());
-	mStatBar->SetText( "idle");
-	mMailBar->Reset( "Messages: ", NULL);
+	mStatBar->Reset( ControllerName(), "");
+	mStatBar->SetTrailingText( "idle");
+	mMailBar->Reset( "Mails: ", NULL);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -359,24 +364,27 @@ BmJobStatusWin* BmJobStatusWin::theInstance = NULL;
 		-	
 \*------------------------------------------------------------------------------*/
 BmJobStatusWin* BmJobStatusWin::CreateInstance() {
-	if (theInstance)
-		return theInstance;
-	else 
-		return theInstance = new BmJobStatusWin( "JobStatusWin");
+	if (!theInstance) {
+		theInstance = new BmJobStatusWin;
+		theInstance->ReadStateInfo();
+	}
+	return theInstance;
 }
 
 /*------------------------------------------------------------------------------*\
 	BmJobStatusWin()
 		-	constructor, creates outer view that will take up the job-interfaces
 \*------------------------------------------------------------------------------*/
-BmJobStatusWin::BmJobStatusWin( const char* title)
-	:	MWindow( BRect(50,50,0,0), "Jobs",
+BmJobStatusWin::BmJobStatusWin()
+	:	BmWindow( "JobStatusWindow", 
+					BRect(bmApp->ScreenFrame().right-BM_MINSIZE-2,20,0,0), 
+					"Jobs",
 					B_FLOATING_WINDOW_LOOK, B_NORMAL_WINDOW_FEEL,
-					MyWinFlags)
+					B_ASYNCHRONOUS_CONTROLS	|	B_NOT_ZOOMABLE	|	B_NOT_V_RESIZABLE)
 { 
 	mOuterGroup = 
 		new VGroup(
-			new Space( minimax( 300,0,1E5,1E5,1)),
+			new Space( minimax( BM_MINSIZE,0,1E5,1E5,1)),
 			0
 		);
 	AddChild( dynamic_cast<BView*>(mOuterGroup));
@@ -399,11 +407,10 @@ BmJobStatusWin::~BmJobStatusWin() {
 		-	standard BeOS-behaviour, we allow a quit
 \*------------------------------------------------------------------------------*/
 bool BmJobStatusWin::QuitRequested() {
-	if (!bmApp->IsQuitting()) {
-		return false;
-	}
 	BmAutolock lock( this);
 	lock.IsLocked()						|| BM_THROW_RUNTIME( "QuitRequested(): could not lock window");
+	while( !IsHidden())
+		Hide();
 	BM_LOG2( BM_LogJobWin, BString("JobStatusWin has been asked to quit; stopping all jobs"));
 	JobMap::iterator iter;
 	for( iter = mActiveJobs.begin(); iter != mActiveJobs.end(); ++iter) {
@@ -420,8 +427,8 @@ bool BmJobStatusWin::QuitRequested() {
 		-	standard BeOS-behaviour, we quit
 \*------------------------------------------------------------------------------*/
 void BmJobStatusWin::Quit() {
-	BM_LOG2( BM_LogJobWin, BString("JobStatusWin has quit"));
 	inherited::Quit();
+	BM_LOG2( BM_LogJobWin, BString("JobStatusWin has quit"));
 }
 
 /*------------------------------------------------------------------------------*\
@@ -433,6 +440,8 @@ void BmJobStatusWin::Quit() {
 void BmJobStatusWin::MessageReceived(BMessage* msg) {
 	try {
 		switch( msg->what) {
+			case B_QUIT_REQUESTED:
+				break;
 			case BM_JOBWIN_FETCHPOP:
 			case BM_JOBWIN_MOVEMAILS: {
 				// request to start a new job
@@ -545,4 +554,7 @@ void BmJobStatusWin::RemoveJob( const char* name) {
 	ResizeBy( 0, 0-(rect.Height()));
 	RecalcSize();
 	mActiveJobs.erase( controller->ControllerName());
+	if (mActiveJobs.empty())
+		while( !IsHidden())
+			Hide();
 }

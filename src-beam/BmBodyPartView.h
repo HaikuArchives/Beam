@@ -35,18 +35,19 @@ class BmBodyPartView : public BmListViewController
 	
 public:
 	// c'tors and d'tor:
-	BmBodyPartView( minimax minmax, int32 width, int32 height);
+	BmBodyPartView( minimax minmax, int32 width, int32 height, bool editable=false);
 	~BmBodyPartView();
 
 	// native methods:
 	void ShowBody( BmBodyPartList* body);
-	void ShowMenu( BPoint point);
+	void AddAttachment( BMessage* msg);
 
 	// overrides of listview base:
 	CLVContainerView* CreateContainer( bool horizontal, bool vertical, 
 												  bool scroll_view_corner, border_style border, 
 												  uint32 ResizingMode, uint32 flags);
 	bool InitiateDrag( BPoint point, int32 index, bool wasSelected);
+	void KeyDown(const char *bytes, int32 numBytes);
 	void MessageReceived( BMessage* msg);
 	void MouseDown( BPoint point);
 
@@ -58,13 +59,17 @@ public:
 
 	// getters:
 	float FixedWidth() 						{ return 5000; }
+	bool ShowAllParts()						{ return mShowAllParts; }
 
 	static const int16 nFirstTextCol;
 
 private:
+	void ShowMenu( BPoint point);
+
 	static float nColWidths[10];
 	float mColWidths[10];
 	bool mShowAllParts;
+	bool mEditable;
 };
 
 #endif

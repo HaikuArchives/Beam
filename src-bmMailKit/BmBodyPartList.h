@@ -25,11 +25,16 @@ public:
 	
 	// native methods:
 	void SetTo( const BString cfString);
+	void SetParam( BString key, BString value);
 
 	// getters:
 	status_t InitCheck() const				{ return mInitCheck; }
 	const BString& Value() const			{ return mValue; }
 	const BString& Param( BString key) const;
+
+	// operators:
+	operator BString() const;
+							// returns contentfield completely formatted (ready to be sent)
 
 private:
 	BString mValue;
@@ -50,23 +55,27 @@ class BmBodyPart : public BmListModelItem {
 
 public:
 	// c'tors and d'tor:
-	BmBodyPart( BmBodyPartList* model, BmListModelItem* parent=NULL);
 	BmBodyPart( BmBodyPartList* model, const BString& msgtext, int32 s, int32 l, 
 					BmMailHeader* mHeader=NULL, BmListModelItem* parent=NULL);
+	BmBodyPart( BmBodyPartList* model, entry_ref* ref, BmListModelItem* parent=NULL);
+	~BmBodyPart();
 
 	// native methods:
 	void SetTo( const BString& msgtext, int32 s, int32 l, BmMailHeader* mHeader=NULL);
-	void* DecodedData( int32* dataLen=NULL) const;
+	void SetBodyText( const BString& text, int32 encoding);
 	bool IsText() const;
 	bool IsPlainText() const;
 	bool ShouldBeShownInline()	const;
 	entry_ref WriteToTempFile( BString filename="");
+	void ConstructBodyForSending( BString &msgText);
+
+	static BString GenerateBoundary();
 
 	// getters:
 	bool IsMultiPart() const				{ return mIsMultiPart; }
-	const char* PosInRawText() const		{ return mPosInRawText; }
-	int32 Length() const						{ return mLength; }
-	int32 DecodedLength() const			{ return mDecodedLength; }
+	const BString& DecodedData() const	{ return mDecodedData; }
+	int32 DecodedLength() const			{ return mDecodedData.Length(); }
+	status_t InitCheck() const				{ return mInitCheck; }
 
 	const BString& MimeType() const		{ return mContentType.Value(); }
 	const BString& Disposition() const	{ return mContentDisposition.Value(); }
@@ -78,11 +87,11 @@ public:
 	const BString& TypeParam( BString key) const		{ return mContentType.Param( key); }
 	const BString& DispositionParam( BString key) const	{ return mContentDisposition.Param( key); }
 
+	static int32 nBoundaryCounter;
+
 private:
 	bool mIsMultiPart;
-	const char* mPosInRawText;
-	int32 mLength;
-	int32 mDecodedLength;
+	BString mDecodedData;
 	BmContentField mContentType;
 	BString mContentTransferEncoding;
 	BString mContentId;
@@ -91,12 +100,14 @@ private:
 	BString mContentLanguage;
 	BString mFileName;
 
+	status_t mInitCheck;
+
 	static int32 nCounter;
 
 };
 
 
-
+struct entry_ref;
 /*------------------------------------------------------------------------------*\
 	BmBodyPartList
 		-	class 
@@ -112,6 +123,9 @@ public:
 	// native methods:
 	void ParseMail();
 	bool HasAttachments() const;
+	void AddAttachmentFromRef( entry_ref* ref);
+	bool ConstructBodyForSending( BString& msgText);
+	void SetEditableText( const BString& text, int32 encoding);
 
 	//	overrides of listmodel base:
 	bool StartJob();
@@ -119,9 +133,14 @@ public:
 
 	// getters:
 	status_t InitCheck()						{ return mInitCheck; }
+	BmBodyPart* EditableTextBody() 		{ return mEditableTextBody; }
+
+	// setters:
+	void EditableTextBody( BmBodyPart* b) { mEditableTextBody = b; }
 
 private:
 	BmMail* mMail;
+	BmBodyPart* mEditableTextBody;
 	status_t mInitCheck;
 
 };

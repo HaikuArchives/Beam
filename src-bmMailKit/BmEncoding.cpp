@@ -122,55 +122,76 @@ BString BmEncoding::EncodingToCharset( const uint32 encoding) {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BString BmEncoding::ConvertToUTF8( uint32 srcEncoding, const char* srcBuf) {
-	BString utf8String;
+void BmEncoding::ConvertToUTF8( uint32 srcEncoding, const BString& src,
+										  BString& dest) {
+	dest.Truncate(0);
+	if (srcEncoding == BM_UTF8_CONVERSION)
+		return;									// source already is UTF8, we do nothing
+	int32 srcbuflen = src.Length();
+	if (!srcbuflen)
+		return;
 	char* destBuf = NULL;
-	int32 srcbuflen = strlen(srcBuf);
 	int32 state=0;
 	int32 buflen = srcbuflen>92 ? (int32)(srcbuflen*1.5) : 128;
 	status_t st;
-	if (!srcbuflen)
-		return "";
-	if (srcEncoding == BM_UTF8_CONVERSION)
-		return srcBuf;							// source already is UTF8, we do nothing
 
 	try {
 		for( bool finished=false; !finished; ) {
 			if (destBuf)
 				buflen *= 2;
-			destBuf = utf8String.LockBuffer( buflen);
+			destBuf = dest.LockBuffer( buflen);
 			int32 srcLen = srcbuflen;
-			int32 destLen = buflen-1;
-			(st=convert_to_utf8( srcEncoding, srcBuf, &srcLen, destBuf, &destLen, &state)) == B_OK
+			int32 destLen = buflen-1;		// to allow for the delimiting '\0' (see below)
+			(st=convert_to_utf8( srcEncoding, src.String(), &srcLen, destBuf, 
+										&destLen, &state)) == B_OK
 														|| BM_THROW_RUNTIME( BString("error in convert_to_utf8(): ") << strerror( st));
 			if (srcLen == srcbuflen) {
 				finished = true;
 				destBuf[destLen] = '\0';
 			}
-			utf8String.UnlockBuffer( destLen);
+			dest.UnlockBuffer( destLen);
 		}
 	} catch (...) {
-		utf8String.UnlockBuffer( 0);
+		dest.UnlockBuffer( 0);
 		throw;
 	}
-	return utf8String;
 }
 
 /*------------------------------------------------------------------------------*\
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-const char* BmEncoding::Encode( const BString& encodingStyle, void* data, int32 dataLen) {
-	if (encodingStyle.ICompare( "Q") == 0) {
-		// quoted printable:
-		return "";
-	} else if (encodingStyle.ICompare( "B") == 0) {
-		// base64:
-		return "";
-	} else {
-		// oops, we don't know this one:
-		ShowAlert( BString("Encode(): Unrecognized encoding-style <")<<encodingStyle<<"> found.\nEncoded text will be passed through.");
-		return "";
+void BmEncoding::ConvertFromUTF8( uint32 destEncoding, const BString& src, 
+											 BString& dest) {
+	dest.Truncate( 0);
+	if (destEncoding == BM_UTF8_CONVERSION)
+		return;									// nothing to do!
+	char* destBuf = NULL;
+	int32 srcbuflen = src.Length();
+	if (!srcbuflen)
+		return;
+	int32 state=0;
+	int32 buflen = srcbuflen;
+	status_t st;
+
+	try {
+		for( bool finished=false; !finished; ) {
+			if (destBuf)
+				buflen *= 2;
+			destBuf = dest.LockBuffer( buflen);
+			int32 srcLen = srcbuflen;
+			int32 destLen = buflen-1;
+			(st=convert_from_utf8( destEncoding, src.String(), &srcLen, destBuf, &destLen, &state)) == B_OK
+														|| BM_THROW_RUNTIME( BString("error in convert_from_utf8(): ") << strerror( st));
+			if (srcLen == srcbuflen) {
+				finished = true;
+				destBuf[destLen] = '\0';
+			}
+			dest.UnlockBuffer( destLen);
+		}
+	} catch (...) {
+		dest.UnlockBuffer( 0);
+		throw;
 	}
 }
 
@@ -178,14 +199,45 @@ const char* BmEncoding::Encode( const BString& encodingStyle, void* data, int32 
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-void* BmEncoding::Decode( const BString& encodingStyle, BString& text, 
-								  bool isEncodedWord, bool isText, ssize_t& outSize) {
-	char* dest = (char*)malloc( text.Length()+1);
-	if (encodingStyle.ICompare( "Q")==0 || encodingStyle.ICompare("Quoted-Printable")==0) {
+void BmEncoding::Encode( BString encodingStyle, const BString& src, BString& dest, 
+								 bool isEncodedWord) {
+	int32 srcLen = src.Length();
+	encodingStyle.ToUpper();
+	dest.Truncate(0,false);
+	if (encodingStyle == "Q" || encodingStyle == "QUOTED-PRINTABLE") {
+		// quoted printable:
+		dest = src;
+	} else if (encodingStyle == "B" || encodingStyle == "BASE64") {
+		// base64:
+		int32 destLen = srcLen*5/3;		// just to be sure... (need to be a little over 4/3)
+		char* buf = dest.LockBuffer( destLen+1);
+		destLen = encode_base64( buf, const_cast<char*>(src.String()), src.Length());
+		destLen = MAX( 0, destLen);		// if errors should occur we don't want to crash
+		buf[destLen] = '\0';
+		dest.UnlockBuffer( destLen);
+	} else {
+		if (!(encodingStyle == "7BIT" || encodingStyle == "8BIT" || encodingStyle == "BINARY")) {
+			// oops, we don't know this one:
+			ShowAlert( BString("Encode(): Unrecognized encoding-style <")<<encodingStyle<<"> found.\nText will be passed through (not encoded).");
+		}
+		// no encoding (7bit, or 8bit)
+		dest = src;
+	}
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmEncoding::Decode( BString encodingStyle, const BString& src, BString& dest, 
+								 bool isEncodedWord, bool isText) {
+	encodingStyle.ToUpper();
+	dest.Truncate(0,false);
+	if (encodingStyle == "Q" || encodingStyle == "QUOTED-PRINTABLE") {
 		// quoted printable:
 		Regexx rx;
-		// remove trailing whitespace (was added during mail-transport):
-		text = rx.replace( text, "[\\t ]+(?=\\r\\n)", "", Regexx::newline | Regexx::global);
+		// remove trailing whitespace from all lines (may have been added during mail-transport):
+		BString text = rx.replace( src, "[\\t ]+(?=\\r\\n)", "", Regexx::newline | Regexx::global);
 		// join together lines that end with a softbreak:
 		text = rx.replace( text, "=\\r\\n", "", Regexx::newline | Regexx::global);
 		if (isEncodedWord) {
@@ -198,53 +250,49 @@ void* BmEncoding::Decode( const BString& encodingStyle, BString& text,
 		int32 len=text.Length();
 		const char* buf = text.String();
 		int32 nm;
+		
 		if ((nm = rx.exec( Regexx::global | Regexx::nocase))) {
 			unsigned char ch;
+			char* destBuf = dest.LockBuffer( len+1);
 			int32 neg_offs=0;
 			int32 curr=0;
 			vector<RegexxMatch>::const_iterator i;
 			for( i = rx.match.begin(); i != rx.match.end(); ++i) {
 				int32 pos = i->start();
 				if (curr<pos) {
-					memcpy( dest+curr-neg_offs, buf+curr, pos-curr);
+					memcpy( destBuf+curr-neg_offs, buf+curr, pos-curr);
 				}
 				ch = HEXDIGIT2CHAR(buf[pos+1])*16 + HEXDIGIT2CHAR(buf[pos+2]);
-				dest[pos-neg_offs] = ch;
+				destBuf[pos-neg_offs] = ch;
 				curr = pos+3;
 				neg_offs += 2;
 			}
 			if (curr<len) {
-				memcpy( dest+curr-neg_offs, buf+curr, len-curr);
+				memcpy( destBuf+curr-neg_offs, buf+curr, len-curr);
 			}
-			dest[len-neg_offs] = '\0';
-			outSize = len-neg_offs;
+			destBuf[len-neg_offs] = '\0';
+			dest.UnlockBuffer( len-neg_offs);
 		} else {
-			memcpy( dest, buf, len+1);
-			outSize = len;
+			dest = text;
 		}
-	} else if (encodingStyle.ICompare( "B") == 0 || encodingStyle.ICompare("Base64")==0) {
+	} else if (encodingStyle == "B" || encodingStyle == "BASE64") {
 		// base64:
 		bool convertCRs = isText;
-		off_t inSize = text.Length();
-		if (!inSize)
-			return dest;
-		char* in = text.LockBuffer(0);
-		outSize = decode_base64( dest, in, inSize, convertCRs);
-		dest[outSize] = '\0';
-		text.UnlockBuffer( inSize);
+		off_t srcSize = src.Length();
+		if (!srcSize)
+			return;
+		char* destBuf = dest.LockBuffer( srcSize);
+		int32 destSize = decode_base64( destBuf, const_cast<char*>(src.String()), srcSize, convertCRs);
+		dest[destSize] = '\0';
+		dest.UnlockBuffer( destSize);
 	} else {
-		if (encodingStyle.ICompare( "7bit") && encodingStyle.ICompare( "8bit")
-		&& encodingStyle.ICompare( "binary")) {
+		if (!(encodingStyle == "7BIT" || encodingStyle == "8BIT" || encodingStyle == "BINARY")) {
 			// oops, we don't know this one:
 			BM_SHOWERR( BString("Decode(): Unrecognized encoding-style <")<<encodingStyle<<"> found.\nNo decoding will take place.");
-			outSize = 0;
-		} else {
-			// we simply copy the buffer, since the encoding type needs no conversion at all:
-			memcpy( dest, text.String(), text.Length()+1);
-			outSize = text.Length();
 		}
+		// we simply copy the buffer, since the encoding type needs no conversion at all:
+		dest = src;
 	}
-	return dest;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -252,6 +300,7 @@ void* BmEncoding::Decode( const BString& encodingStyle, BString& text,
 		-	returns length of given encoded text after it has been decoded
 		-	value will be computed, NO actual decoding happening here!
 \*------------------------------------------------------------------------------*/
+/*
 int32 BmEncoding::DecodedLength( const BString& encodingStyle, const char* text, 
 											int32 length) {
 	if (encodingStyle.ICompare( "Q")==0 || encodingStyle.ICompare("Quoted-Printable")==0) {
@@ -291,6 +340,7 @@ int32 BmEncoding::DecodedLength( const BString& encodingStyle, const char* text,
 	}
 	return length;
 }
+*/
 
 /*------------------------------------------------------------------------------*\
 	()
@@ -314,14 +364,15 @@ BString BmEncoding::ConvertHeaderPartToUTF8( const BString& headerPart,
 				utf8.Append( headerPart.String()+curr, i->start()-curr);
 			}
 			// convert the match (an encoded word) into UTF8:
-			BString srcCharset( i->atom[0]);
-			BString srcQuotingStyle( i->atom[1]);
-			BString text( i->atom[2]);
-			int32 decodedSize;
-			char* decodedData = (char*)Decode( srcQuotingStyle, text, true, true, decodedSize);
-			if (decodedData) {
-				utf8 += ConvertToUTF8( CharsetToEncoding(srcCharset), decodedData);
-				free( decodedData);
+			const BString srcCharset( i->atom[0]);
+			const BString srcQuotingStyle( i->atom[1]);
+			const BString text( i->atom[2]);
+			BString decodedData;
+			Decode( srcQuotingStyle, text, decodedData, true, true);
+			if (decodedData.Length()) {
+				BString decodedAsUTF8;
+				ConvertToUTF8( CharsetToEncoding(srcCharset), decodedData, decodedAsUTF8);
+				utf8 << decodedAsUTF8;
 			}
 			curr = i->start()+i->Length();
 		}
@@ -329,7 +380,7 @@ BString BmEncoding::ConvertHeaderPartToUTF8( const BString& headerPart,
 			utf8.Append( headerPart.String()+curr, len-curr);
 		}
 	} else {
-		utf8 = ConvertToUTF8( defaultEncoding, headerPart.String());
+		ConvertToUTF8( defaultEncoding, headerPart, utf8);
 	}
 	return utf8;
 }
@@ -338,7 +389,8 @@ BString BmEncoding::ConvertHeaderPartToUTF8( const BString& headerPart,
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BString BmEncoding::ConvertUTF8ToHeaderPart( const BString& utf8text) {
-	BString headerPart;
-	return headerPart;
+BString BmEncoding::ConvertUTF8ToHeaderPart( const BString& utf8text, int32 encoding) {
+//	BString quotedPrintable = Encode( );
+	
+	return utf8text;
 }

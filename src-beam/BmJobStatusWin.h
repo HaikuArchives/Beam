@@ -10,10 +10,10 @@
 #include <map>
 
 #include <MBorder.h>
-#include <MWindow.h>
 #include <VGroup.h>
 
 #include "BmController.h"
+#include "BmWindow.h"
 
 class BmPopAccount;
 class BmPopper;
@@ -45,8 +45,8 @@ public:
 	void MessageReceived( BMessage* msg);
 
 	// getters:
-	int MSecsBeforeShow()					{ return mMSecsBeforeShow; }
-	int MSecsBeforeRemove()					{ return mMSecsBeforeRemove; }
+	int MSecsBeforeShow()					{ return MAX(10,mMSecsBeforeShow); }
+	int MSecsBeforeRemove()					{ return MAX(10,mMSecsBeforeRemove); }
 
 protected:
 	int mMSecsBeforeShow;
@@ -133,21 +133,17 @@ private:
 		-	connections and their interfaces are connected via the interface defined between
 			BmJobController and BmJobModel.
 \*------------------------------------------------------------------------------*/
-class BmJobStatusWin : public MWindow {
-	typedef MWindow inherited;
+class BmJobStatusWin : public BmWindow {
+	typedef BmWindow inherited;
 
 	friend class BmJobStatusView;
-
-	static const uint32 MyWinFlags = B_ASYNCHRONOUS_CONTROLS
-												|	B_NOT_ZOOMABLE
-												|	B_NOT_RESIZABLE;
 
 	typedef map<BString, BmJobStatusView*> JobMap;
 
 public:
 	// creator-func, c'tors and d'tor:
 	static BmJobStatusWin* CreateInstance();
-	BmJobStatusWin( const char* title);
+	BmJobStatusWin();
 	virtual ~BmJobStatusWin();
 
 	// overrides of BWindow base:

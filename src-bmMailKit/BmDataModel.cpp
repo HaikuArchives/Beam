@@ -360,6 +360,7 @@ bool BmListModelItem::AddSubItem( BmListModelItem* subItem) {
 	BmModelItemMap::iterator iter = mSubItemMap.find( subItem->Key());
 	if (iter == mSubItemMap.end()) {
 		mSubItemMap[subItem->Key()] = subItem;
+		subItem->Parent( this);
 		return true;
 	}
 	return false;
@@ -441,7 +442,6 @@ bool BmListModel::AddItemToList( BmListModelItem* item, BmListModelItem* parent)
 	if (item) {
 		BmAutolock lock( mModelLocker);
 		lock.IsLocked() 						|| BM_THROW_RUNTIME( ModelName() << ":AddItemToList(): Unable to get lock");
-		item->Parent( parent);
 		if (parent) {
 			if (parent->AddSubItem( item)) {
 				TellModelItemAdded( item);
@@ -456,6 +456,7 @@ bool BmListModel::AddItemToList( BmListModelItem* item, BmListModelItem* parent)
 			BmModelItemMap::iterator iter = mModelItemMap.find( item->Key());
 			if (iter == mModelItemMap.end()) {
 				mModelItemMap[item->Key()] = item;
+				item->Parent( NULL);
 				TellModelItemAdded( item);
 				return true;
 			}

@@ -53,6 +53,7 @@ void BmMailFolderItem::UpdateView( BmUpdFlags flags) {
 	inherited::UpdateView( flags);
 	BmMailFolder* folder = ModelItem();
 	if (flags & (UPD_EXPANDER | BmMailFolder::UPD_NAME)) {
+		Bold( folder->NewMailCount());
 		BString displayName = folder->Name();
 		if (folder->HasNewMail()) {
 			int32 count = folder->NewMailCount();

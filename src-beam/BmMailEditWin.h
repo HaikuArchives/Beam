@@ -6,7 +6,7 @@
 #ifndef _BmMailEditWin_h
 #define _BmMailEditWin_h
 
-#include <MWindow.h>
+#include "BmWindow.h"
 
 class MMenuBar;
 
@@ -18,12 +18,9 @@ class BmTextControl;
 class CLVContainerView;
 class MPictureButton;
 
-class BmMailEditWin : public MWindow
+class BmMailEditWin : public BmWindow
 {
-	typedef MWindow inherited;
-
-	// archival-fieldnames:
-	static const char* const MSG_FRAME = 		"bm:frm";
+	typedef BmWindow inherited;
 
 public:
 	// creator-func, c'tors and d'tor:
@@ -31,17 +28,18 @@ public:
 	BmMailEditWin();
 	~BmMailEditWin();
 
+	// native methods:
+	void UpdateMailFields();
+
 	// overrides of BWindow base:
 	void MessageReceived( BMessage*);
 	bool QuitRequested();
 	void Quit();
-	status_t Archive( BMessage* archive, bool deep=true) const;
 
 private:
 	BmMailViewContainer* CreateMailView( minimax minmax, BRect frame);
+	void CreateGUI();
 	MMenuBar* CreateMenu();
-	bool Store();
-	status_t Unarchive( BMessage* archive, bool deep=true);
 
 	BmMailView* mMailView;
 	
@@ -54,13 +52,14 @@ private:
 	BmToolbarButton* mPeopleButton;
 	BmToolbarButton* mPrintButton;
 	
-	BmTextControl* mToControl;
-	BmTextControl* mSubjectControl;
-	BmTextControl* mCcControl;
 	BmTextControl* mBccControl;
+	BmTextControl* mCcControl;
+	BmTextControl* mFromControl;
+	BmTextControl* mReplyToControl;
+	BmTextControl* mSubjectControl;
+	BmTextControl* mToControl;
 	
-	BmMenuControl* mFromControl;
-	BmMenuControl* mEncodingControl;
+	BmMenuControl* mCharsetControl;
 	
 	bool mShowDetails;
 	MView* mOuterGroup;

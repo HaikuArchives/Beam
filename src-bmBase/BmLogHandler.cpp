@@ -34,7 +34,7 @@ BmLogHandler* BmLogHandler::theInstance = NULL;
 	static logging-function
 		- logs only if a loghandler is actually present
 \*------------------------------------------------------------------------------*/
-void BmLogHandler::Log( const BString& logname, uint32 flag, const BString& msg, int8 minlevel=1) { 
+void BmLogHandler::Log( const BString logname, uint32 flag, const BString& msg, int8 minlevel=1) { 
 	if (theInstance)
 		theInstance->LogToFile( logname, flag, msg, minlevel);
 }
@@ -121,8 +121,8 @@ BmLogHandler::BmLogfile* BmLogHandler::FindLogfile( const BString &logname) {
 		-	writes msg into the logfile that is named logname
 		-	if no logfile of given name exists, it is created
 \*------------------------------------------------------------------------------*/
-void BmLogHandler::LogToFile( const BString &logname, uint32 flag,
-										const BString &msg, int8 minlevel) {
+void BmLogHandler::LogToFile( const BString& logname, uint32 flag,
+										const BString& msg, int8 minlevel) {
 	BmLogfile* log = FindLogfile( logname);
 	if (log) {
 		int8 loglevel = ((mLoglevels & flag) ? 1 : 0)
@@ -156,7 +156,8 @@ void BmLogHandler::CloseLog( const BString &logname) {
 		if (logIter != mActiveLogs.end()) {
 			log = (*logIter).second;
 			mActiveLogs.erase( logname);
-			delete log;
+			log->Lock();
+			log->Quit();
 		}
 	}
 }
@@ -221,6 +222,7 @@ void BmLogHandler::BmLogfile::Write( const char* const msg) {
 	s.ReplaceAll( "\r", "<CR>");
 	s.ReplaceAll( "\n\n", "\n");
 	s.ReplaceAll( "\n", "\n                       ");
-	fprintf( logfile, "<%6ld|%012Ld>: %s\n", find_thread(NULL), TheLogHandler->StopWatch.ElapsedTime(), s.String());
+	fprintf( logfile, "<%6ld|%012Ld>: %s\n", find_thread(NULL), TheLogHandler->StopWatch.ElapsedTime(), s.String())>=0
+													|| BM_THROW_RUNTIME( BString("Unable to write to logfile ") << filename);
 	fflush( logfile);
 }

@@ -63,8 +63,9 @@ BmPopper::~BmPopper() {
 		//	We try to inform POP-server about QUIT, if still connected.
 		// This probably means that we ran into an exception, so maybe it's not really
 		// a good idea...(?)
-		this->Quit();
+		Quit();
 	}
+	TheLogHandler->FinishLog( BM_LOGNAME);
 	if (mMsgSizes)
 		delete [] mMsgSizes;
 	if (mMsgUIDs)
@@ -116,11 +117,11 @@ void BmPopper::UpdatePOPStatus( const float delta, const char* detailText,
 	msg->AddString( BmJobModel::MSG_DOMAIN, "statbar");
 	msg->AddFloat( MSG_DELTA, delta);
 	if (failed)
-		msg->AddString( MSG_LEADING, BString(PopStates[mState].text) << "   FAILED!");
+		msg->AddString( MSG_TRAILING, BString(PopStates[mState].text) << " FAILED!");
 	else
-		msg->AddString( MSG_LEADING, PopStates[mState].text);
+		msg->AddString( MSG_TRAILING, PopStates[mState].text);
 	if (detailText)
-		msg->AddString( MSG_TRAILING, detailText);
+		msg->AddString( MSG_LEADING, detailText);
 	TellControllers( msg.get());
 }
 

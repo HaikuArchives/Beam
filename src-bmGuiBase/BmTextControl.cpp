@@ -16,9 +16,8 @@
 	( )
 		-	
 \*------------------------------------------------------------------------------*/
-BmTextControl::BmTextControl( const char* label, const char*name, bool labelIsMenu) 
-	:	inherited( BRect(0,0,0,0), name, labelIsMenu ? "" : label, NULL, 
-					  new BMessage( BM_TEXT_CHANGED), B_FOLLOW_NONE)
+BmTextControl::BmTextControl( const char* label, bool labelIsMenu) 
+	:	inherited( BRect(0,0,0,0), NULL, labelIsMenu ? "" : label, NULL, NULL, B_FOLLOW_NONE)
 	,	mLabelIsMenu( labelIsMenu)
 	,	mTextView( static_cast<BTextView*>( ChildAt( 0)))
 	,	mParent( NULL)

@@ -164,7 +164,7 @@ void BmJobController::StopJob() {
 		BM_LOG2( BM_LogModelController, BString("Controller <") << ControllerName() << "> stops job " << ModelName());
 		job->StopJob();
 	}
-	DetachModel();
+//	DetachModel();
 }
 
 /*------------------------------------------------------------------------------*\

@@ -68,7 +68,8 @@ public:
 	// native methods:
 	bool Set( BString strippedFieldVal);
 	BmStringList SplitIntoAddresses( BString addrList);
-	
+	void ConstructHeaderForSending( BString& header, int32 encoding, 
+											  int32 fieldNameLength);
 	// operators:
 	operator BString() const;
 							// returns address-list completely formatted (ready to be sent)
@@ -95,16 +96,17 @@ private:
 \*------------------------------------------------------------------------------*/
 class BmMailHeader {
 
+	typedef vector< BString> BmValueList;
+	typedef map< BString, BmValueList> BmHeaderMap;
+
 	class BmHeaderList {
-		typedef vector< BString> BmValueList;
-		typedef map< BString, BmValueList> BmHeaderMap;
 	public:
 		void Set( const BString fieldName, const BString content);
 		void Add( const BString fieldName, const BString content);
 		void Remove( const BString fieldName);
-		BString FoldLine( BString line, int fieldLength) const;
+		BmHeaderMap::const_iterator begin() const { return mHeaders.begin(); }
+		BmHeaderMap::const_iterator end() const	{ return mHeaders.end(); }
 		BString& operator [] (const BString fieldName);
-		operator BString() const;
 	private:
 		BmHeaderMap mHeaders;
 	};
@@ -118,9 +120,12 @@ public:
 
 	// native methods:
 	void StoreAttributes( BFile& mailFile);
+							//	the following three take UTF8 as input:
 	void SetFieldVal( const BString fieldName, const BString value);
 	void AddFieldVal( const BString fieldName, const BString value);
 	void RemoveField( const BString fieldName);
+							// the next always produces US-ASCII:
+	bool ConstructHeaderForSending( BString& header, int32 encoding);
 
 	// getters:
 	const BString& GetFieldVal( const BString fieldName);
@@ -128,12 +133,13 @@ public:
 	int32 NumLines() const 					{ return mNumLines; }
 	const BString& HeaderString() const { return mHeaderString; }
 	const BString& Name() const			{ return mName; }
+	int32 DefaultEncoding()	const			{ return mDefaultEncoding; }
 
-	// operators:
-	operator BString() const;				// returns concatenated header-fields (ready to be sent)
+	// class-functions:
+	static bool IsAddressField( const BString fieldName);
+	static BString FoldLine( BString line, int fieldLength);
 
 protected:
-	bool IsAddressField( const BString fieldName);
 	void ParseHeader( const BString &header);
 	BString ParseHeaderField( BString fieldName, BString fieldValue);
 	BString StripField( BString fieldValue, BString* commentBuffer=NULL);

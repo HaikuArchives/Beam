@@ -106,6 +106,26 @@ BNetAddress BmPopAccount::SMTPAddress() const {
 }
 
 /*------------------------------------------------------------------------------*\
+	GetFromAddress()
+		-	returns the constructed from - address for this account
+\*------------------------------------------------------------------------------*/
+BString BmPopAccount::GetFromAddress() const {
+	BString addr( mRealName);
+	if (addr.Length()) {
+		if (mReplyTo.Length())
+			addr << " <" << mReplyTo << ">";
+		else
+			addr << " <" << mUsername << "@" << mPOPServer << ">";
+	} else {
+		if (mReplyTo.Length())
+			addr << mReplyTo;
+		else
+			addr << mUsername << "@" << mPOPServer;
+	}
+	return addr;
+}
+
+/*------------------------------------------------------------------------------*\
 	IsUIDDownloaded()
 		-	
 \*------------------------------------------------------------------------------*/

@@ -11,6 +11,9 @@
 #include "BmMainWindow.h"
 #include "BmUtil.h"
 
+const char* BmAppVersion = "0.x (development version)";
+const char* BmAppName = "Beam";
+
 BeamApp* beamApp = NULL;
 
 BeamApp::BeamApp()

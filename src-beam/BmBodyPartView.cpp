@@ -77,15 +77,22 @@ float BmBodyPartView::nColWidths[10] = {20,100,100,70,70,200,0,0,0,0};
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmBodyPartView::BmBodyPartView( minimax minmax, int32 width, int32 height)
+BmBodyPartView::BmBodyPartView( minimax minmax, int32 width, int32 height, 
+										  bool editable)
 	:	inherited( minmax, BRect(0,0,width-1,height-1), "Beam_BodyPartView", 
 					  B_SINGLE_SELECTION_LIST, true, false)
 	,	mShowAllParts( false)
+	,	mEditable( editable)
 {
-	SetViewColor( White);
-	fSelectedItemColorWindowActive = 
-	fSelectedItemColorWindowInactive = 
+	SetViewColor( BeBackgroundGrey);
 	fLightColumnCol = 						BeBackgroundGrey;
+	if (!editable) {	
+		fSelectedItemColorWindowActive = 
+		fSelectedItemColorWindowInactive = BeBackgroundGrey;
+	} else {
+		fSelectedItemColorWindowActive = 
+		fSelectedItemColorWindowInactive = BeShadow;
+	}
 
 	Initialize( BRect(0,0,800,40), B_WILL_DRAW | B_FRAME_EVENTS,
 					B_FOLLOW_NONE, false, false, false, B_FANCY_BORDER);
@@ -156,6 +163,23 @@ void BmBodyPartView::ShowBody( BmBodyPartList* body) {
 }
 
 /*------------------------------------------------------------------------------*\
+	AddAttachment()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmBodyPartView::AddAttachment( BMessage* msg) {
+	if (!mEditable)
+		return;
+	entry_ref ref;
+	BmBodyPartList* bodyPartList = dynamic_cast<BmBodyPartList*>( DataModel());
+	if (!bodyPartList)
+		return;
+	for( int i=0; msg->FindRef( "refs", i, &ref) == B_OK; ++i) {
+		bodyPartList->AddAttachmentFromRef( &ref);
+	}
+	ShowBody( bodyPartList);
+}
+
+/*------------------------------------------------------------------------------*\
 	AddAllModelItems()
 		-	
 \*------------------------------------------------------------------------------*/
@@ -170,7 +194,7 @@ void BmBodyPartView::AddAllModelItems() {
 	// adjust size accordingly:
 	float width = Bounds().Width();
 	int32 count = FullListCountItems();
-	float itemHeight = count ? ItemAt(0)->Height() : 0;
+	float itemHeight = count ? ItemAt(0)->Height()+1 : 0;
 							// makes this view disappear if no BodyPart is shown
 	ResizeTo( width, count*itemHeight);
 	// update info about maximum column widths:
@@ -186,8 +210,10 @@ void BmBodyPartView::AddAllModelItems() {
 	for( i=nFirstTextCol; i<CountColumns(); ++i) {
 		ColumnAt( i)->SetWidth( mColWidths[i]);
 	}
-	if (mailView)
+	if (mailView) {
+		mailView->ScrollTo( 0, 0);
 		mailView->CalculateVerticalOffset();
+	}
 }
 
 /*------------------------------------------------------------------------------*\
@@ -199,12 +225,35 @@ BString BmBodyPartView::StateInfoBasename()	{
 }
 
 /*------------------------------------------------------------------------------*\
+	KeyDown()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmBodyPartView::KeyDown(const char *bytes, int32 numBytes) { 
+	if ( numBytes == 1 && mEditable) {
+		switch( bytes[0]) {
+			case B_DELETE: {
+				int32 idx = CurrentSelection(0);
+				if (idx >= 0) {
+					BmBodyPartList* body = dynamic_cast<BmBodyPartList*>( DataModel());
+					BmBodyPartItem* bodyItem = dynamic_cast<BmBodyPartItem*>(ItemAt( idx));
+					body->RemoveItemFromList( dynamic_cast<BmBodyPart*>( bodyItem->ModelItem()));
+				}				
+			}
+			default:
+				inherited::KeyDown( bytes, numBytes);
+				break;
+		}
+	} else 
+		inherited::KeyDown( bytes, numBytes);
+}
+
+/*------------------------------------------------------------------------------*\
 	MouseDown( point)
 		-	
 \*------------------------------------------------------------------------------*/
 void BmBodyPartView::MouseDown( BPoint point) {
 	inherited::MouseDown( point); 
-	if (Parent())
+	if (!mEditable && Parent())
 		Parent()->MakeFocus( true);
 	BPoint mousePos;
 	uint32 buttons;
@@ -231,11 +280,14 @@ void BmBodyPartView::MessageReceived( BMessage* msg) {
 				ShowBody( dynamic_cast<BmBodyPartList*>( DataModel()));
 				break;
 			}
+			case B_SIMPLE_DATA: {
+				AddAttachment( msg);
+				break;
+			}
 			default:
 				inherited::MessageReceived( msg);
 		}
-	}
-	catch( exception &err) {
+	} catch( exception &err) {
 		// a problem occurred, we tell the user:
 		BM_SHOWERR( BString("MailHeaderView:\n\t") << err.what());
 	}
@@ -309,7 +361,7 @@ bool BmBodyPartView::InitiateDrag( BPoint where, int32 index, bool wasSelected) 
 		-	
 \*------------------------------------------------------------------------------*/
 void BmBodyPartView::ShowMenu( BPoint point) {
-	BPopUpMenu* theMenu = new BPopUpMenu( "HeaderViewMenu", false, false);
+	BPopUpMenu* theMenu = new BPopUpMenu( "BodyPartViewMenu", false, false);
 
 	BMenuItem* item = new BMenuItem( "Show All MIME-Bodies", 
 												new BMessage( mShowAllParts
