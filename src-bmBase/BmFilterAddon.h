@@ -68,6 +68,10 @@ public:
 											  const BmString& oldVal, 
 											  const BmString& newVal) {}
 
+	virtual void SetupFromMailData( const BmString& subject, 
+											  const BmString& from, 
+											  const BmString& To)	  {}
+
 	// foreign-key identifiers:
 	static const char* const FK_FOLDER;
 	static const char* const FK_IDENTITY;
