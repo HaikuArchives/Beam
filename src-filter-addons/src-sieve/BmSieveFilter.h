@@ -42,7 +42,7 @@ extern "C" {
 #include "BmFilterAddon.h"
 #include "BmFilterAddonPrefs.h"
 
-#define BM_MAX_MATCH_COUNT 5
+#define BM_MAX_MATCH_COUNT 20
 
 /*------------------------------------------------------------------------------*\
 	BmSieveFilter 
@@ -149,6 +149,7 @@ class BmGraphicalSieveFilter : public BmSieveFilter {
 	static const char* const MSG_MATCH_COUNT;
 	static const char* const MSG_MATCH_ANYALL;
 	static const char* const MSG_MATCH_MAILPART;
+	static const char* const MSG_MATCH_ADDRPART;
 	static const char* const MSG_MATCH_FIELDNAME;
 	static const char* const MSG_MATCH_OPERATOR;
 	static const char* const MSG_MATCH_VALUE;
@@ -166,6 +167,7 @@ public:
 	
 	// native methods:
 	bool BuildScriptFromStrings();
+	bool IsAddrField( const BmString& addrField);
 
 	// overrides of BmSieve-base:
 	void ForeignKeyChanged( const BmString& key, 
@@ -180,6 +182,7 @@ private:
 	int16 mMatchCount;
 	BmString mMatchAnyAll;
 	BmString mMatchMailPart[BM_MAX_MATCH_COUNT];
+	BmString mMatchAddrPart[BM_MAX_MATCH_COUNT];
 	BmString mMatchFieldName[BM_MAX_MATCH_COUNT];
 	BmString mMatchOperator[BM_MAX_MATCH_COUNT];
 	BmString mMatchValue[BM_MAX_MATCH_COUNT];
@@ -209,6 +212,10 @@ private:
 class BmCheckControl;
 class BmMenuControl;
 class BmTextControl;
+class BmMultiLineTextControl;
+class LayeredGroup;
+class BmFilterScrollView;
+class Space;
 
 #define BM_ANY_ALL_SELECTED			'bmTa'
 #define BM_ACTION_SELECTED				'bmTb'
@@ -228,6 +235,9 @@ class BmTextControl;
 #define BM_SET_IDENTITY_SELECTED		'bmTo'
 #define BM_STOP_PROCESSING_CHANGED	'bmTp'
 
+#define BM_ADDRPART_SELECTED			'bmTq'
+
+
 class BmSieveFilterPrefs : public BmFilterAddonPrefsView {
 	typedef BmFilterAddonPrefsView inherited;
 
@@ -236,6 +246,8 @@ public:
 	virtual ~BmSieveFilterPrefs();
 	
 	// native methods:
+	void AdjustScrollView();
+	void AdjustSizeOfValueControl( BmMultiLineTextControl* control);
 
 	// implementations for abstract base-class methods:
 	const char *Kind() const;
@@ -256,15 +268,19 @@ private:
 
 	VGroup* mFilterGroup;
 	VGroup* mActionGroup;
+	BmFilterScrollView* mFilterScrollView;
+	Space* mSpaceAtBottom;
 	
 	BmMenuControl* mAnyAllControl;
 	MButton* mAddButton;
 	MButton* mRemoveButton;
 	HGroup* mFilterLine[BM_MAX_MATCH_COUNT];
 	BmMenuControl* mMailPartControl[BM_MAX_MATCH_COUNT];
-	BmMenuControl* mOperatorControl[BM_MAX_MATCH_COUNT];
+	LayeredGroup* mFieldSpecLayer[BM_MAX_MATCH_COUNT];
+	BmMenuControl* mAddrPartControl[BM_MAX_MATCH_COUNT];
 	BmTextControl* mFieldNameControl[BM_MAX_MATCH_COUNT];
-	BmTextControl* mValueControl[BM_MAX_MATCH_COUNT];
+	BmMenuControl* mOperatorControl[BM_MAX_MATCH_COUNT];
+	BmMultiLineTextControl* mValueControl[BM_MAX_MATCH_COUNT];
 	int32 mVisibleLines;
 	
 	BmCheckControl* mFileIntoControl;
