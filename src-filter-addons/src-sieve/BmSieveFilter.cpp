@@ -1095,31 +1095,13 @@ BmSieveFilterPrefs::BmSieveFilterPrefs( minimax minmax)
 										&BmRosterBase::RebuildFolderMenu
 									)
 								),
-								0
-							),
-							new HGroup(
-								new Space(),
 								mFileIntoAskControl = new BmCheckControl( 
-									"Manually File Outbound Messages", 
+									"Ask", 
 									new BMessage(BM_FILEINTO_ASK_CHANGED), 
 									this
 								),
 								0
 							),
-							new HGroup(
-								mDiscardControl = new BmCheckControl( 
-									"Move to trash", 
-									new BMessage(BM_DISCARD_CHANGED), 
-									this
-								),
-								new Space(),
-								0
-							),
-							new Space(),
-							0
-						),
-						new Space( minimax( 10,0,10,1e5)),
-						new VGroup(
 							new HGroup(
 								mSetStatusControl = new BmCheckControl( 
 									"Set Status", 
@@ -1154,6 +1136,20 @@ BmSieveFilterPrefs::BmSieveFilterPrefs( minimax minmax)
 								),
 								0
 							),
+							0
+						),
+						new Space( minimax( 20,0,20,1e5)),
+						new VGroup(
+							minimax(-1,-1,1e5,1e5,0.7),
+							new HGroup(
+								mDiscardControl = new BmCheckControl( 
+									"Move to trash", 
+									new BMessage(BM_DISCARD_CHANGED), 
+									this
+								),
+								new Space(),
+								0
+							),
 							new HGroup(
 								mStopProcessingControl = new BmCheckControl( 
 									"Stop processing if filter matches", 
@@ -1163,6 +1159,7 @@ BmSieveFilterPrefs::BmSieveFilterPrefs( minimax minmax)
 								new Space(),
 								0
 							),
+							new Space(),
 							0
 						),
 						0
@@ -1175,14 +1172,16 @@ BmSieveFilterPrefs::BmSieveFilterPrefs( minimax minmax)
 	
 	float width, maxWidth, height; 
 	mFileIntoControl->GetPreferredSize( &maxWidth, &height);
-	mFileIntoControl->ct_mpm.maxi.x 
-		= mFileIntoControl->ct_mpm.mini.x = maxWidth+5;
+	mFileIntoAskControl->ct_mpm = minimax(-1,-1,-1,-1);
 
-	mSetStatusControl->GetPreferredSize( &maxWidth, &height);
+	mSetStatusControl->GetPreferredSize( &width, &height);
+	if (width>maxWidth)
+		maxWidth = width;
 	mSetIdentityControl->GetPreferredSize( &width, &height);
 	if (width>maxWidth)
 		maxWidth = width;
-	mSetStatusControl->ct_mpm.maxi.x = mSetStatusControl->ct_mpm.mini.x 
+	mFileIntoControl->ct_mpm.maxi.x = mFileIntoControl->ct_mpm.mini.x
+	= mSetStatusControl->ct_mpm.maxi.x = mSetStatusControl->ct_mpm.mini.x 
 	= mSetIdentityControl->ct_mpm.maxi.x = mSetIdentityControl->ct_mpm.mini.x 
 	= maxWidth+5;
 
@@ -1324,7 +1323,7 @@ void BmSieveFilterPrefs::Initialize() {
 	TheBubbleHelper->SetHelp( 
 		mFileIntoAskControl, 
 		"Check this if you want to be asked for acknowledgement\n"
-		"before any outbound mail matching the filter is filed.\n"
+		"before any outbound mail matching the filter is filed."
 	);
 	TheBubbleHelper->SetHelp( 
 		mSetStatusControl, 
