@@ -23,34 +23,29 @@
 \*------------------------------------------------------------------------------*/
 class BmPopAccount : public BArchivable {
 	// archivable components:
-	static char* const MSG_NAME = 			"bm:name";
-	static char* const MSG_USERNAME = 		"bm:username";
-	static char* const MSG_PASSWORD = 		"bm:password";
-	static char* const MSG_POP_SERVER = 	"bm:popserver";
-	static char* const MSG_SMTP_SERVER = 	"bm:smtpserver";
-	static char* const MSG_REAL_NAME = 		"bm:realname";
-	static char* const MSG_REPLY_TO = 		"bm:replyto";
-	static char* const MSG_SIGNATURE_NAME = "bm:signaturename";
-	static char* const MSG_CHECK_MAIL = 	"bm:checkmail";
-	static char* const MSG_DELETE_MAIL = 	"bm:deletemail";
-	static char* const MSG_PORT_NR = 		"bm:portnr";
-	static char* const MSG_SMTP_PORT_NR = 	"bm:smtpportnr";
+	static const char* const MSG_NAME = 			"bm:name";
+	static const char* const MSG_USERNAME = 		"bm:username";
+	static const char* const MSG_PASSWORD = 		"bm:password";
+	static const char* const MSG_POP_SERVER = 	"bm:popserver";
+	static const char* const MSG_SMTP_SERVER = 	"bm:smtpserver";
+	static const char* const MSG_REAL_NAME = 		"bm:realname";
+	static const char* const MSG_REPLY_TO = 		"bm:replyto";
+	static const char* const MSG_SIGNATURE_NAME = "bm:signaturename";
+	static const char* const MSG_CHECK_MAIL = 	"bm:checkmail";
+	static const char* const MSG_DELETE_MAIL = 	"bm:deletemail";
+	static const char* const MSG_PORT_NR = 		"bm:portnr";
+	static const char* const MSG_SMTP_PORT_NR = 	"bm:smtpportnr";
 public:
 	BmPopAccount( void) 
 		: BArchivable() 
 		, mCheckMail( false)
-		, mDeleteMailFromServer( false)
-			{}
-	BmPopAccount( BMessage *archive)
-			;
-	virtual ~BmPopAccount() 
-			{}
+		, mDeleteMailFromServer( false)	{}
+	BmPopAccount( BMessage *archive);
+	virtual ~BmPopAccount() 				{}
 
 	// stuff needed for BArchivable:
-	static BArchivable *Instantiate( BMessage *archive)
-			;
-	virtual status_t Archive( BMessage *archive, bool deep = true) const
-			;
+	static BArchivable *Instantiate( BMessage *archive);
+	virtual status_t Archive( BMessage *archive, bool deep = true) const;
 
 	// getters:
 	const BString &Name() const 			{ return mName; }
@@ -80,10 +75,8 @@ public:
 	void PortNr( int16 i) 					{ mPortNr = i; }
 	void SMTPPortNr( int16 i) 				{ mSMTPPortNr = i; }
 
-	BNetAddress POPAddress() const
-			;
-	BNetAddress SMTPAddress() const
-			;
+	BNetAddress POPAddress() const;
+	BNetAddress SMTPAddress() const;
 private:
 	BString mName;						// name of this POP-account
 	BString mUsername;

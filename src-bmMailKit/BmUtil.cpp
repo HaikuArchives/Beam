@@ -6,16 +6,7 @@
 #include <Alert.h>
 
 #include "BmUtil.h"
-
-/*------------------------------------------------------------------------------*\
-	LogHandler
-		-	the global object that handles all logging requests
-\*------------------------------------------------------------------------------*/
-namespace Beam {
-	BmLogHandler* LogHandler = NULL;
-	int8 BM_LOGLEVEL = 1;
-	char *WHITESPACE = "\n\r\t ";
-};
+#include "BmPrefs.h"
 
 /*------------------------------------------------------------------------------*\
 	the different "terrains" we will be logging, each of them
@@ -25,6 +16,7 @@ const int16 BM_LogPop  			= 1<<0;
 const int16 BM_LogConnWin 		= 1<<1;
 const int16 BM_LogMailParse 	= 1<<2;
 const int16 BM_LogUtil		 	= 1<<3;
+const int16 BM_LogMailFolders	= 1<<4;
 // dummy constant meaning to log everything:
 const int16 BM_LogAll  			= 0xffff;
 
@@ -32,9 +24,9 @@ const int16 BM_LogAll  			= 0xffff;
 	FindMsgString( archive, name)
 		-	extracts the msg-field with the specified name from the given archive and
 			returns it.
-		-	throws invalid_argument if field is not contained withing archive
+		-	throws BM_invalid_argument if field is not contained withing archive
 \*------------------------------------------------------------------------------*/
-const char *FindMsgString( BMessage* archive, char* name) {
+const char *FindMsgString( BMessage* archive, const char* name) {
 	const char *str;
 	assert(archive && name);
 	if (archive->FindString( name, &str) == B_OK) {
@@ -42,7 +34,7 @@ const char *FindMsgString( BMessage* archive, char* name) {
 	} else {
 		BString s( "unknown message-field: ");
 		s += name;
-		throw invalid_argument( s.String());
+		throw BM_invalid_argument( s.String());
 	}
 }
 
@@ -50,9 +42,9 @@ const char *FindMsgString( BMessage* archive, char* name) {
 	FindMsgBool( archive, name)
 		-	extracts the msg-field with the specified name from the given archive and
 			returns it.
-		-	throws invalid_argument if field is not contained withing archive
+		-	throws BM_invalid_argument if field is not contained withing archive
 \*------------------------------------------------------------------------------*/
-bool FindMsgBool( BMessage* archive, char* name) {
+bool FindMsgBool( BMessage* archive, const char* name) {
 	bool b;
 	assert(archive && name);
 	if (archive->FindBool( name, &b) == B_OK) {
@@ -60,7 +52,25 @@ bool FindMsgBool( BMessage* archive, char* name) {
 	} else {
 		BString s( "unknown message-field: ");
 		s += name;
-		throw invalid_argument( s.String());
+		throw BM_invalid_argument( s.String());
+	}
+}
+
+/*------------------------------------------------------------------------------*\
+	FindMsgInt64( archive, name)
+		-	extracts the msg-field with the specified name from the given archive and
+			returns it.
+		-	throws BM_invalid_argument if field is not contained withing archive
+\*------------------------------------------------------------------------------*/
+int64 FindMsgInt64( BMessage* archive, const char* name) {
+	int64 i;
+	assert(archive && name);
+	if (archive->FindInt64( name, &i) == B_OK) {
+		return i;
+	} else {
+		BString s( "unknown message-field: ");
+		s += name;
+		throw BM_invalid_argument( s.String());
 	}
 }
 
@@ -68,9 +78,9 @@ bool FindMsgBool( BMessage* archive, char* name) {
 	FindMsgInt32( archive, name)
 		-	extracts the msg-field with the specified name from the given archive and
 			returns it.
-		-	throws invalid_argument if field is not contained withing archive
+		-	throws BM_invalid_argument if field is not contained withing archive
 \*------------------------------------------------------------------------------*/
-int32 FindMsgInt32( BMessage* archive, char* name) {
+int32 FindMsgInt32( BMessage* archive, const char* name) {
 	int32 i;
 	assert(archive && name);
 	if (archive->FindInt32( name, &i) == B_OK) {
@@ -78,7 +88,7 @@ int32 FindMsgInt32( BMessage* archive, char* name) {
 	} else {
 		BString s( "unknown message-field: ");
 		s += name;
-		throw invalid_argument( s.String());
+		throw BM_invalid_argument( s.String());
 	}
 }
 
@@ -86,9 +96,9 @@ int32 FindMsgInt32( BMessage* archive, char* name) {
 	FindMsgInt16( archive, name)
 		-	extracts the msg-field with the specified name from the given archive and
 			returns it.
-		-	throws invalid_argument if field is not contained withing archive
+		-	throws BM_invalid_argument if field is not contained withing archive
 \*------------------------------------------------------------------------------*/
-int16 FindMsgInt16( BMessage* archive, char* name) {
+int16 FindMsgInt16( BMessage* archive, const char* name) {
 	int16 i;
 	assert(archive && name);
 	if (archive->FindInt16( name, &i) == B_OK) {
@@ -96,7 +106,7 @@ int16 FindMsgInt16( BMessage* archive, char* name) {
 	} else {
 		BString s( "unknown message-field: ");
 		s += name;
-		throw invalid_argument( s.String());
+		throw BM_invalid_argument( s.String());
 	}
 }
 
@@ -104,9 +114,9 @@ int16 FindMsgInt16( BMessage* archive, char* name) {
 	FindMsgFloat( archive, name)
 		-	extracts the msg-field with the specified name from the given archive and
 			returns it.
-		-	throws invalid_argument if field is not contained withing archive
+		-	throws BM_invalid_argument if field is not contained withing archive
 \*------------------------------------------------------------------------------*/
-float FindMsgFloat( BMessage* archive, char* name) {
+float FindMsgFloat( BMessage* archive, const char* name) {
 	float f;
 	assert(archive && name);
 	if (archive->FindFloat( name, &f) == B_OK) {
@@ -114,7 +124,7 @@ float FindMsgFloat( BMessage* archive, char* name) {
 	} else {
 		BString s( "unknown message-field: ");
 		s += name;
-		throw invalid_argument( s.String());
+		throw BM_invalid_argument( s.String());
 	}
 }
 
@@ -128,7 +138,6 @@ BmLogHandler::~BmLogHandler() {
 			++logIter) {
 		delete (*logIter).second;
 	}
-	BM_LOG3( BM_LogUtil, "locking result: %ld");
 }
 
 /*------------------------------------------------------------------------------*\
@@ -197,8 +206,8 @@ BString BmLogHandler::BmLogfile::LogPath = "/boot/home/Sources/beam/logs/";
 		-	log is flushed after each write
 \*------------------------------------------------------------------------------*/
 void BmLogHandler::BmLogfile::Write( const char* const msg, uint32 flag, int8 minlevel) {
-	int8 loglevel = ((loglevels && flag) ? 1 : 0)
-					  + ((loglevels && flag<<16) ? 2 : 0);
+	int8 loglevel = ((loglevels & flag) ? 1 : 0)
+					  + ((loglevels & flag<<16) ? 2 : 0);
 	if (loglevel < minlevel)
 		return;
 	if (logfile == NULL) {
@@ -206,11 +215,9 @@ void BmLogHandler::BmLogfile::Write( const char* const msg, uint32 flag, int8 mi
 		if (fn.FindFirst(".log") == B_ERROR) {
 			fn << ".log";
 		}
-		if (!(logfile = fopen( fn.String(), "a"))) {
-			BString s = BString("Unable to open logfile ") << fn;
-			throw runtime_error( s.String());
-		}
-		fprintf( logfile, "<%012Ld>: %s\n", Beam::Prefs->StopWatch.ElapsedTime(), "Session Started");
+		(logfile = fopen( fn.String(), "a"))
+													|| BM_THROW_RUNTIME( BString("Unable to open logfile ") << fn);
+//		fprintf( logfile, "<%012Ld>: %s\n", Beam::Prefs->StopWatch.ElapsedTime(), "Session Started");
 	}
 	BString s(msg);
 	s.ReplaceAll( "\r", "<CR>");
@@ -244,7 +251,7 @@ BString BytesToString( int32 bytes) {
 		-	logs text unless logtext is specified, in which case that is 
 			written to the logfile
 \*------------------------------------------------------------------------------*/
-void ShowAlert( BString &text, BString logtext) {
+void ShowAlert( const BString &text, const BString logtext) {
 	if (!logtext.Length()) {
 		BM_LOGERR( text);
 	} else {

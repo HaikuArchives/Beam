@@ -7,7 +7,7 @@
 #include <regexx/regexx.hh>
 using namespace regexx;
 
-#include "BmUtil.h"
+#include "BmPrefs.h"
 #include "BmMail.h"
 
 #undef BM_LOGNAME
@@ -16,14 +16,16 @@ using namespace regexx;
 /*------------------------------------------------------------------------------*\
 	default constructor
 \*------------------------------------------------------------------------------*/
-BmMail::BmMail( ) {
+BmMail::BmMail( ) 
+:	mHasChanged( false) {
 }
 
 /*------------------------------------------------------------------------------*\
 	constructor( msgText, msgUID)
 		-	creates message with given text and unique-ID (as received from server)
 \*------------------------------------------------------------------------------*/
-BmMail::BmMail( BString &msgText, const BString &msgUID, const BString &account) {
+BmMail::BmMail( BString &msgText, const BString &msgUID, const BString &account) 
+:	mHasChanged( true) {
 	Set( msgText, msgUID, account);
 }
 	
@@ -100,3 +102,46 @@ void BmMail::ParseHeader( const BString &header) {
 		BM_LOG2( BM_LogMailParse, fieldName << ": " << fieldBody << "\n------------------");
 	}
 }
+
+/*------------------------------------------------------------------------------*\
+	Store()
+		-	stores mail-data and attributes inside a file
+\*------------------------------------------------------------------------------*/
+bool BmMail::Store() {
+/*
+	BFile mailFile;
+	status_t err;
+	BString inboxPath = "/boot/home/mail/in";
+
+	try {
+		if (mParentEntry.InitCheck() == B_NO_INIT) {
+			(err = mParentEntry.SetTo( inboxPath.String(), true)) == B_OK
+													|| BM_THROW_RUNTIME( BString("Could not create entry for mail-folder <") << inboxPath << ">\n\n Result: " << strerror(err));
+		}
+		if (mMyEntry.InitCheck() == B_NO_INIT) {
+			BString basicFilename = CreateBasicFilename();
+			for( int i=0; i<100; i++) {
+				BString filename( mParentEntry.GetPath() << "/" << basicFilename);
+				if (i) 
+					filename << " " << i;
+				(err = mMailEntry.SetTo( filename.String())) == B_OK
+													|| BM_THROW_RUNTIME( BString("Could not create entry for new mail-file <") << filename << ">\n\n Result: " << strerror(err));
+				if (!mMailEntry.Exists())
+					break;
+			}
+			if (mMailEntry.Exists()) {
+				BM_THROW_RUNTIME( BString("Unable to create a unique filename for mail <") << basicFilename << ">, giving up after 10 tries.\n\n Result: " << strerror(err));
+			}
+		}
+		(err = mailFile.SetTo( mMailPath.String(), B_WRITE_ONLY | B_CREATE_FILE)) == B_OK
+													|| BM_THROW_RUNTIME( BString("Could not create settings file\n\t<") << PrefsFilePath << ">\n\n Result: " << strerror(err));
+		(err = archive.Flatten( &prefsFile)) == B_OK
+													|| BM_THROW_RUNTIME( BString("Could not store settings into file\n\t<") << PrefsFilePath << ">\n\n Result: " << strerror(err));
+	} catch( exception &e) {
+		ShowAlert();
+		return false;
+	}
+*/
+	return true;
+}
+

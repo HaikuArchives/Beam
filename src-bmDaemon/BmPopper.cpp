@@ -30,7 +30,7 @@ int32 BmPopper::NewPopper( void* data) {
 			popper.Start();
 			BM_LOG_FINISH(pInfo->name);
 		} else
-			throw runtime_error("NewPopper(): No valid BmPopperInfo* given!");
+			throw BM_runtime_error("NewPopper(): No valid BmPopperInfo* given!");
 		return 0;
 	} catch( exception &e) {
 		ShowAlert( BString(pInfo->name) << "\n\n" << e.what(),
@@ -103,9 +103,7 @@ void BmPopper::Start() {
 	const float delta = (100.0 / POP_DISCONNECT);
 	const bool failed=true;
 
-	if (mPopServer.InitCheck() != B_OK) {
-		throw runtime_error("BmPopper: could not create NetEndpoint");
-	}
+	mPopServer.InitCheck() == B_OK									||	BM_THROW_RUNTIME("BmPopper: could not create NetEndpoint");
 	try {
 		for( mState=POP_CONNECT; ShouldContinue() && mState<POP_FINAL; ++mState) {
 			TStateMethod stateFunc = PopStates[mState].func;
@@ -114,7 +112,7 @@ void BmPopper::Start() {
 // snooze( 200*1000);
 		}
 	}
-	catch( runtime_error &err) {
+	catch( BM_runtime_error &err) {
 		// a problem occurred, we tell the user:
 		BString errstr = err.what();
 		int e;
@@ -191,7 +189,7 @@ void BmPopper::UpdateMailStatus( const float delta, const char* detailText,
 void BmPopper::Connect() {
 	if (mPopServer.Connect( mPopperInfo->account->POPAddress()) != B_OK) {
 		BString s = BString("Could not connect to POP-Server ") << mPopperInfo->account->POPServer();
-		throw network_error( s);
+		throw BM_network_error( s);
 	}
 	mConnected = true;
 	CheckForPositiveAnswer( SINGLE_LINE);
@@ -219,7 +217,7 @@ void BmPopper::Check() {
 	SendCommand( cmd);
 	CheckForPositiveAnswer( SINGLE_LINE);
 	if (sscanf( mReplyLine.String()+4, "%ld %ld", &mMsgCount, &mMsgTotalSize) != 2 || mMsgCount < 0)
-		throw network_error( "answer to STAT has unknown format");
+		throw BM_network_error( "answer to STAT has unknown format");
 	if (mMsgCount == 0) {
 		UpdateMailStatus( 0, NULL, 0);
 		return;									// no messages found, nothing more to do
@@ -240,11 +238,11 @@ void BmPopper::Check() {
 		const char *p = mAnswer.String();
 		for( int32 i=0; i<mMsgCount; i++) {
 			if (sscanf( p, "%ld %70s", &msgNum, msgUID) != 2 || msgNum <= 0)
-				throw network_error( "answer to UIDL has unknown format");
+				throw BM_network_error( "answer to UIDL has unknown format");
 			mMsgUIDs[i] = msgUID;
 			// skip to next line:
 			if (!(p = strstr( p, "\r\n")))
-				throw network_error( "answer to UIDL has unknown format");
+				throw BM_network_error( "answer to UIDL has unknown format");
 			p += 2;
 		}
 	} else {
@@ -264,11 +262,12 @@ void BmPopper::Retrieve() {
 		SendCommand( cmd);
 		CheckForPositiveAnswer( SINGLE_LINE);
 		if (sscanf( mReplyLine.String()+4, "%ld %ld", &num, &mMsgSize) != 2 || num != i+1)
-		throw network_error( "answer to LIST has unknown format");
+		throw BM_network_error( "answer to LIST has unknown format");
 		cmd = BString("RETR ") << i+1;
 		SendCommand( cmd);
 		CheckForPositiveAnswer( MULTI_LINE, i+1);
 		BmMail mail( mAnswer, mMsgUIDs[i], mPopperInfo->name);
+		mail.Store();
 // snooze( 200*1000);
 	}
 	UpdateMailStatus( 0, "done", mMsgCount);
@@ -336,7 +335,7 @@ void BmPopper::CheckForPositiveAnswer( bool SingleLineMode, int32 mailNr) {
 		BString err("Server answers: \n");
 		err += mReplyLine;
 		err.RemoveAll( "\r");
-		throw network_error( err);
+		throw BM_network_error( err);
 	}
 }
 
@@ -443,12 +442,12 @@ int32 BmPopper::ReceiveBlock( char* buffer, int32 max) {
 				buffer[numBytes] = '\0';
 				return numBytes;
 			} else if (numBytes < 0) {
-				throw network_error( "error during receive");
+				throw BM_network_error( "error during receive");
 			}
 		}
 	}
 	if (shouldCont) {
-		throw network_error( "timeout during receive from POP-server");
+		throw BM_network_error( "timeout during receive from POP-server");
 	}
 	return 0;
 }
@@ -467,7 +466,7 @@ void BmPopper::SendCommand( BString cmd) {
 		BM_LOG( BM_LogPop, BString("-->\n") << cmd);
 	}
 	if ((sentSize = mPopServer.Send( cmd.String(), size)) != size) {
-		throw network_error( BString("error during send, sent only ") << sentSize << " bytes instead of " << size);
+		throw BM_network_error( BString("error during send, sent only ") << sentSize << " bytes instead of " << size);
 	}
 }
 

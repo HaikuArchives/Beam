@@ -63,10 +63,10 @@ struct BmPopperInfo {
 class BmPopper {
 public:
 	//	message component definitions for status-msgs:
-	static char* const MSG_POPPER = 		"bm:popper";
-	static char* const MSG_DELTA = 		"bm:delta";
-	static char* const MSG_TRAILING = 	"bm:trailing";
-	static char* const MSG_LEADING = 	"bm:leading";
+	static const char* const MSG_POPPER = 		"bm:popper";
+	static const char* const MSG_DELTA = 		"bm:delta";
+	static const char* const MSG_TRAILING = 	"bm:trailing";
+	static const char* const MSG_LEADING = 	"bm:leading";
 
 	BmPopper( BmPopperInfo* info);
 	virtual ~BmPopper();

@@ -106,7 +106,7 @@ void BmConnectionWin::MessageReceived(BMessage *msg) {
 					if (IsHidden())
 						Show();
 				} else {
-					throw invalid_argument( "Could not create BmPopAccount-instance from message of type MSG_FETCHMSGS");
+					throw BM_invalid_argument( "Could not create BmPopAccount-instance from message of type MSG_FETCHMSGS");
 								// Illegal message data !?!
 				}
 				break;
@@ -171,7 +171,7 @@ void BmConnectionWin::AddPopper( BmPopAccount *account) {
 	thread_id t_id = spawn_thread( &BmPopper::NewPopper, tname, 
 											 B_NORMAL_PRIORITY, popperInfo);
 	if (t_id < 0)
-		throw runtime_error("AddPopper(): Could not create new popper-thread");
+		throw BM_runtime_error("AddPopper(): Could not create new popper-thread");
 
 	if (interfaceIter == mActiveConnections.end())
 	{	// account is inactive, so we create a new interface for it...
@@ -226,7 +226,7 @@ MView *BmConnectionWin::AddPopperInterface( const char* name, BStatusBar* &statB
 		RecalcSize();
 		return newView;
 	}
-	throw runtime_error("AddPopperInterface(): could not lock window");
+	throw BM_runtime_error("AddPopperInterface(): could not lock window");
 }
 
 /*------------------------------------------------------------------------------*\
@@ -257,7 +257,7 @@ void BmConnectionWin::UpdatePopperInterface( BMessage* msg) {
 			interfaceInfo->mailBar->Update( delta, leading, trailing);
 		}
 	} else
-		throw runtime_error("UpdatePopperInterface(): could not lock window");
+		throw BM_runtime_error("UpdatePopperInterface(): could not lock window");
 }
 
 /*------------------------------------------------------------------------------*\
@@ -312,7 +312,7 @@ void BmConnectionWin::RemovePopperInterface( BmConnectionWinInfo* popperInfo) {
 			delete view;
 			return;
 		}
-		throw invalid_argument("RemovePopperInterface(): received view of incorrect type");
+		throw BM_invalid_argument("RemovePopperInterface(): received view of incorrect type");
 	}
-	throw runtime_error("RemovePopperInterface(): could not lock window");
+	throw BM_runtime_error("RemovePopperInterface(): could not lock window");
 }

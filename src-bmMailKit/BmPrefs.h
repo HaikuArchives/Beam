@@ -7,11 +7,8 @@
 #ifndef _BmPrefs_h
 #define _BmPrefs_h
 
-#include <stdexcept>
-
 #include <Archivable.h>
 #include <StopWatch.h>
-#include <String.h>
 
 #include "BmUtil.h"
 
@@ -24,30 +21,28 @@
 class BmPrefs : public BArchivable {
 	typedef BArchivable inherited;
 	// archivable components:
-	static char* const MSG_DYNAMIC_CONN_WIN = "bm:dynconnwin";
-	static char* const MSG_RECEIVE_TIMEOUT = 	"bm:recvtimeout";
-	static char* const MSG_LOGLEVELS = 			"bm:loglevels";
+	static const char* const MSG_DYNAMIC_CONN_WIN = "bm:dynconnwin";
+	static const char* const MSG_RECEIVE_TIMEOUT = 	"bm:recvtimeout";
+	static const char* const MSG_LOGLEVELS = 			"bm:loglevels";
 
-	static char* const PREFS_FILENAME = 		"General Settings";
+	static const char* const PREFS_FILENAME = 		"General Settings";
 
-	static BString PrefsFilePath;
 
 public:
-	BmPrefs( void)
-			;
-	BmPrefs( BMessage *archive)
-			;
-	virtual ~BmPrefs() 
-			{}
+	BmPrefs( void);
+	BmPrefs( BMessage *archive);
+	virtual ~BmPrefs() 						{}
 
-	bool BmPrefs::Store()
-			;
-
+	bool Store();
+	
 	// stuff needed for BArchivable:
 	static BArchivable *Instantiate( BMessage *archive)
 			;
 	virtual status_t Archive( BMessage *archive, bool deep = true) const
 			;
+
+	// path to beam's settings-dir:
+	static BPath mgPrefsPath;
 
 	// possible modes of BmConnectionWin:
 	enum TConnWinMode {
@@ -82,9 +77,21 @@ private:
 													// 0 [off] to 3 [full])
 };
 
-// global pointer to preferences:
-namespace Beam {
-	extern BmPrefs* Prefs;
-}
+/*------------------------------------------------------------------------------*\
+	Beam
+		-	the class for our global vars and definitions:
+\*------------------------------------------------------------------------------*/
+class Beam {
+public:
+	static BmLogHandler* LogHandler;
+	static BmPrefs* Prefs;
+	static BString HomePath;
+	static BVolume MailboxVolume;
+	static char *WHITESPACE;
+	static int InstanceCount;
+
+	Beam();
+	~Beam();
+};
 
 #endif

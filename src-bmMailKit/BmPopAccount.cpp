@@ -73,7 +73,7 @@ BNetAddress BmPopAccount::POPAddress() const {
 	if (addr.InitCheck() == B_OK)
 		return addr;
 	else
-		throw runtime_error("BmPopAccount: Could not create PopAddress");
+		throw BM_runtime_error("BmPopAccount: Could not create PopAddress");
 }
 
 /*------------------------------------------------------------------------------*\
@@ -85,5 +85,5 @@ BNetAddress BmPopAccount::SMTPAddress() const {
 	if (addr.InitCheck() == B_OK)
 		return addr;
 	else
-		throw runtime_error("BmSMTPAccount: Could not create SMTPAddress");
+		throw BM_runtime_error("BmSMTPAccount: Could not create SMTPAddress");
 }

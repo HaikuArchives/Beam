@@ -17,7 +17,7 @@
 class mail_format_error : public runtime_error {
 public:
   mail_format_error (const BString& what_arg): runtime_error (what_arg.String()) { }
-  mail_format_error (char *const what_arg): runtime_error (what_arg) { }
+  mail_format_error (const char *const what_arg): runtime_error (what_arg) { }
 };
 
 /*------------------------------------------------------------------------------*\
@@ -59,12 +59,20 @@ public:
 	void Subject( const BString &s) 		{ mHeaders["Subject"] = s; }
 	void To( const BString &s) 			{ mHeaders["To"] = s; }
 
+	// file-related:
+	bool Store( );
+
 private:
 	typedef map<BString, BString> HeaderMap;
 	HeaderMap mHeaders;						// contains complete headers as fieldname/fieldbody-pairs
 	BString mText;								// text of complete message
 	BString mUID;								// unique-ID of this message
 	BString mAccountName;					// name of POP-account this message came from (or goes to)
+	
+	bool mHasChanged;							// flag indicating new or edited mail
+	BString mParentEntry;					// filesystem-entry for mailfolder this mail currently lives in
+	BString mMyEntry;							// filesystem-entry for this mail (N.B. the entry may
+													// be set although the mail does not yet exist on disk)
 
 	void ParseHeader( const BString &header);
 	void Set( BString &msgText, const BString &msgUID, const BString &account);	
