@@ -915,20 +915,20 @@ BmRef<BmMail> BmMailEditWin::CurrMail() const {
 void BmMailEditWin::SetFieldsFromMail( BmMail* mail) {
 	if (mail) {
 		if (mail->IsRedirect()) {
-			mBccControl->SetTextSilently( mail->GetStrippedFieldVal( BM_FIELD_RESENT_BCC).String());
-			mCcControl->SetTextSilently( mail->GetStrippedFieldVal( BM_FIELD_RESENT_CC).String());
-			mFromControl->SetTextSilently( mail->GetStrippedFieldVal( BM_FIELD_RESENT_FROM).String());
-			mSenderControl->SetTextSilently( mail->GetStrippedFieldVal( BM_FIELD_RESENT_SENDER).String());
-			mToControl->SetTextSilently( mail->GetStrippedFieldVal( BM_FIELD_RESENT_TO).String());
+			mBccControl->SetTextSilently( mail->GetFieldVal( BM_FIELD_RESENT_BCC).String());
+			mCcControl->SetTextSilently( mail->GetFieldVal( BM_FIELD_RESENT_CC).String());
+			mFromControl->SetTextSilently( mail->GetFieldVal( BM_FIELD_RESENT_FROM).String());
+			mSenderControl->SetTextSilently( mail->GetFieldVal( BM_FIELD_RESENT_SENDER).String());
+			mToControl->SetTextSilently( mail->GetFieldVal( BM_FIELD_RESENT_TO).String());
 		} else {
-			mBccControl->SetTextSilently( mail->GetStrippedFieldVal( BM_FIELD_BCC).String());
-			mCcControl->SetTextSilently( mail->GetStrippedFieldVal( BM_FIELD_CC).String());
-			mFromControl->SetTextSilently( mail->GetStrippedFieldVal( BM_FIELD_FROM).String());
-			mSenderControl->SetTextSilently( mail->GetStrippedFieldVal( BM_FIELD_SENDER).String());
-			mToControl->SetTextSilently( mail->GetStrippedFieldVal( BM_FIELD_TO).String());
-			mReplyToControl->SetTextSilently( mail->GetStrippedFieldVal( BM_FIELD_REPLY_TO).String());
+			mBccControl->SetTextSilently( mail->GetFieldVal( BM_FIELD_BCC).String());
+			mCcControl->SetTextSilently( mail->GetFieldVal( BM_FIELD_CC).String());
+			mFromControl->SetTextSilently( mail->GetFieldVal( BM_FIELD_FROM).String());
+			mSenderControl->SetTextSilently( mail->GetFieldVal( BM_FIELD_SENDER).String());
+			mToControl->SetTextSilently( mail->GetFieldVal( BM_FIELD_TO).String());
+			mReplyToControl->SetTextSilently( mail->GetFieldVal( BM_FIELD_REPLY_TO).String());
 		}
-		mSubjectControl->SetTextSilently( mail->GetStrippedFieldVal( BM_FIELD_SUBJECT).String());
+		mSubjectControl->SetTextSilently( mail->GetFieldVal( BM_FIELD_SUBJECT).String());
 		SetTitle( (BmString("Edit Mail: ") + mSubjectControl->Text()).String());
 		// mark corresponding SMTP-account (if any):
 		BmString smtpAccount = mail->AccountName();
