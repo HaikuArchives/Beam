@@ -780,7 +780,12 @@ BmString BmMailHeader::DetermineListAddress( bool bypassSanityTest) {
 	if (!listAddr.InitOK()) {
 		// ...we have a look at Mail-Followup-To:
 		if (!IsFieldEmpty( BM_FIELD_MAIL_FOLLOWUP_TO))
-			listAddr = mAddrMap[BM_FIELD_LIST_ID].FirstAddress();
+			listAddr = mAddrMap[BM_FIELD_MAIL_FOLLOWUP_TO].FirstAddress();
+	}
+	if (!listAddr.InitOK()) {
+		// ...still nothing (?!?): getting desparate, we have a look at ReplyTo:
+		if (!IsFieldEmpty( BM_FIELD_REPLY_TO))
+			listAddr = mAddrMap[BM_FIELD_REPLY_TO].FirstAddress();
 	}
 	if (!bypassSanityTest) {
 		// Sanity-check: the list-address *has* to be found somewhere within
@@ -791,7 +796,12 @@ BmString BmMailHeader::DetermineListAddress( bool bypassSanityTest) {
 		if (!(AddressFieldContainsAddrSpec( BM_FIELD_TO, listAddr.AddrSpec())
 		|| AddressFieldContainsAddrSpec( BM_FIELD_CC, listAddr.AddrSpec())
 		|| AddressFieldContainsAddrSpec( BM_FIELD_BCC, listAddr.AddrSpec())
-		|| AddressFieldContainsAddrSpec( BM_FIELD_FROM, listAddr.AddrSpec())))	{
+		|| AddressFieldContainsAddrSpec( BM_FIELD_FROM, listAddr.AddrSpec())
+		|| AddressFieldContainsAddrSpec( BM_FIELD_REPLY_TO, listAddr.AddrSpec())
+		|| AddressFieldContainsAddrSpec( BM_FIELD_RESENT_TO, listAddr.AddrSpec())
+		|| AddressFieldContainsAddrSpec( BM_FIELD_RESENT_CC, listAddr.AddrSpec())
+		|| AddressFieldContainsAddrSpec( BM_FIELD_RESENT_BCC, listAddr.AddrSpec())
+		|| AddressFieldContainsAddrSpec( BM_FIELD_RESENT_FROM, listAddr.AddrSpec())))	{
 			// We do not want to send any replies to administrative mails back to 
 			// the list, so we clear the List-Address:
 			return "";
@@ -1036,9 +1046,7 @@ void BmMailHeader::StoreAttributes( BFile& mailFile) {
 	mailFile.WriteAttr( BM_MAIL_ATTR_REPLY, B_STRING_TYPE, 0, s.String(), 
 							  s.Length()+1);
 	//
-	s = mAddrMap[BM_FIELD_RESENT_FROM].AddrString();
-	if (!s.Length())
-		s = mAddrMap[BM_FIELD_FROM].AddrString();
+	s = mAddrMap[BM_FIELD_FROM].AddrString();
 	mailFile.WriteAttr( BM_MAIL_ATTR_FROM, B_STRING_TYPE, 0, s.String(), 
 							  s.Length()+1);
 	//
@@ -1050,25 +1058,19 @@ void BmMailHeader::StoreAttributes( BFile& mailFile) {
 							  mHeaders[BM_FIELD_MIME].String(), 
 							  mHeaders[BM_FIELD_MIME].Length()+1);
 	//
-	s = mAddrMap[BM_FIELD_RESENT_TO].AddrString();
-	if (!s.Length())
-		s = mAddrMap[BM_FIELD_TO].AddrString();
+	s = mAddrMap[BM_FIELD_TO].AddrString();
 	mailFile.WriteAttr( BM_MAIL_ATTR_TO, B_STRING_TYPE, 0, s.String(), 
 							  s.Length()+1);
 	if (outbound && s.Length())
 		recipients << s << ",";
 	//
-	s = mAddrMap[BM_FIELD_RESENT_CC].AddrString();
-	if (!s.Length())
-		s = mAddrMap[BM_FIELD_CC].AddrString();
+	s = mAddrMap[BM_FIELD_CC].AddrString();
 	mailFile.WriteAttr( BM_MAIL_ATTR_CC, B_STRING_TYPE, 0, s.String(), 
 							  s.Length()+1);
 	if (outbound) {
 		if (s.Length())
 			recipients << s << ",";
-		s = mAddrMap[BM_FIELD_RESENT_BCC].AddrString();
-		if (!s.Length())
-			s = mAddrMap[BM_FIELD_BCC].AddrString();
+		s = mAddrMap[BM_FIELD_BCC].AddrString();
 		if (s.Length())
 			recipients << s;
 	}
@@ -1097,7 +1099,7 @@ void BmMailHeader::StoreAttributes( BFile& mailFile) {
 	mailFile.WriteAttr( BM_MAIL_ATTR_PRIORITY, B_STRING_TYPE, 0, 
 							  priority.String(), priority.Length()+1);
 	// if the message was resent, we take the date of the resending operation,
-	// not the original date.
+	// not the original date:
 	time_t t;
 	if (!ParseDateTime( mHeaders[BM_FIELD_RESENT_DATE], t)
 	&& !ParseDateTime( mHeaders[BM_FIELD_DATE], t))
