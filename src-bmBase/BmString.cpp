@@ -29,6 +29,9 @@
 //------------------------------------------------------------------------------
 
 // Standard Includes -----------------------------------------------------------
+#ifdef __MWERKS__
+#include <assert.h>
+#endif
 #include <algobase.h>
 #include <ctype.h>
 #include <stdio.h>
