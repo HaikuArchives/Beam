@@ -1090,7 +1090,7 @@ BmCLVContainerView::BmCLVContainerView( minimax minmax, ColumnListView* target,
 	,	mCaptionWidth( captionWidth)
 	,	mBusyView( NULL)
 {
-	SetViewColor( BmWeakenColor( B_UI_SHADOW_COLOR, BeShadowMod));
+	SetViewUIColor( B_UI_PANEL_BACKGROUND_COLOR);
 	BRect frame;
 	BPoint LT;
 	BScrollBar* hScroller = horizontal ? ScrollBar( B_HORIZONTAL) : NULL;
@@ -1195,7 +1195,11 @@ BRect BmCLVContainerView::layout( BRect rect) {
 		BScrollBar* hScroller = ScrollBar( B_HORIZONTAL);
 		if (!mCaptionWidth && (!hScroller || hScroller->IsHidden())) {
 			if (ScrollBar( B_VERTICAL))
+#ifdef B_BEOS_VERSION_DANO
 				fullCaptionWidth -= B_V_SCROLL_BAR_WIDTH + 3;
+#else
+				fullCaptionWidth -= B_V_SCROLL_BAR_WIDTH + 2;
+#endif
 			mCaption->ResizeTo( fullCaptionWidth, cpFrame.Height());
 			mCaption->Invalidate();
 		}

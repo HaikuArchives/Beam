@@ -1192,7 +1192,7 @@ BmMailViewContainer::BmMailViewContainer( minimax minmax, BmMailView* target,
 		hScroller->ResizeBy( -bvSize, 0.0);
 		hScroller->MoveBy( bvSize, 0.0);
 		mBusyView = new BmBusyView( BRect( hsLT.x, hsLT.y, 
-													  hsLT.x+bvSize, hsLT.y+bvSize));
+													  hsLT.x+bvSize-1, hsLT.y+bvSize));
 		AddChild( mBusyView);
 	}
 }
@@ -1225,7 +1225,6 @@ void BmMailViewContainer::Draw( BRect bounds) {
 		BPoint lt( bounds.right-B_V_SCROLL_BAR_WIDTH, 
 					  bounds.bottom-B_H_SCROLL_BAR_HEIGHT);
 		BPoint rt( bounds.right, bounds.bottom-B_H_SCROLL_BAR_HEIGHT);
-/*
 		if (IsFocus() || m_target->IsFocus()) {
 			SetHighColor( keyboard_navigation_color());
 			StrokeLine( bounds.LeftBottom(), lb);
@@ -1246,7 +1245,6 @@ void BmMailViewContainer::Draw( BRect bounds) {
 			StrokeLine( bounds.LeftTop(), bounds.RightTop());
 			StrokeLine( bounds.LeftTop(), bounds.LeftBottom());
 		}
-*/
 	}
 }
 

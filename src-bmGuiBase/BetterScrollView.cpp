@@ -57,6 +57,13 @@ BetterScrollView::BetterScrollView(const char *name, BView *target, uint32 resiz
 	m_data_rect.Set(-1,-1,-1,-1);
 	m_h_scrollbar = ScrollBar(B_HORIZONTAL);
 	m_v_scrollbar = ScrollBar(B_VERTICAL);
+#ifndef B_BEOS_VERSION_DANO
+	// on R5, we need to correct the h-scroller-position slightly:
+	if (m_h_scrollbar) {
+		m_h_scrollbar->MoveBy( 1.0, 0.0);
+		m_h_scrollbar->ResizeBy( -1.0, 0.0);
+	}		
+#endif
 	if(scroll_view_corner && horizontal && vertical)
 	{
 		m_scroll_view_corner = new ScrollViewCorner(m_v_scrollbar->Frame().left+1,
