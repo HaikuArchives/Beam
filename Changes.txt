@@ -1,0 +1,33 @@
+change-history of Beam:
+		$Id$
+
+v0.902, 2002-02-22
+	-	removed crashing bug when wildly moving through mailfolder-view.
+	-	disabled selecting and invoking for	the dummy-mailrefview used in prefs.
+	-	make the reply-mode with selected text work (only selected text will be
+		included in reply).
+Thanks for bugreports & suggestions:
+	Charlie Clark
+
+v0.901, 2002-02-21
+	-	enable people to send mail if there is no working name-service
+		(Beam used to complain that it could not determine own hostname).
+		In this case, Beam now uses host/domain info from network settings-file.
+													[thx to the many people who reported this]
+	-	preferences window is now moved to front when a user tries to open it twice
+		(instead of crashing, as before).
+	-	recreating a mailfolder-cache now works.
+	-	new prefs-flag that selects BeMail-compatible shortcuts.
+	-	when a new node has been detected and seems to have zero size, we assume
+		that an application is creating the mail-file directly inside the in-folder.
+		In this case, we snooze for a short amount of time and then proceed to
+		read the file, which hopefully is now completely written.
+		This is no complete solution, but I hope that this will increase 
+		compatibility with MailDaemonReplacement and other programs.
+	-	fixed a couple of smaller redraw/layout issues
+Thanks for bugreports & suggestions:
+	zach, Linus Almstrom
+
+v0.90, 2002-02-19
+	- first public release
+	
