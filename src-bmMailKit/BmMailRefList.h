@@ -74,7 +74,7 @@ private:
 
 	// native methods:
 	void InitializeItems();
-	void InstantiateItems( BDataIO* dataIO, int32 numChildren);
+	void MyInstantiateItems( BDataIO* dataIO, int32 numChildren);
 
 	// the following members will NOT be archived at all:
 	BmWeakRef<BmMailFolder> mFolder;

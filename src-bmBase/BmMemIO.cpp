@@ -29,6 +29,8 @@
 /*************************************************************************/
 
 #include <assert.h>
+#include <malloc.h>
+#include <new>
 #include <stdexcept>
 
 #include <SupportDefs.h>

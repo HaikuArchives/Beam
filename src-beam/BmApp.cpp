@@ -284,7 +284,7 @@ void BmApplication::ReadyToRun() {
 		-	shows Beam's main-window
 \*------------------------------------------------------------------------------*/
 void BmApplication::AppActivated( bool active) {
-	if (TheMainWindow->IsMinimized())
+	if (active && TheMainWindow->IsMinimized())
 		TheMainWindow->Minimize( false);
 }
 
@@ -1018,8 +1018,7 @@ void BmApplication::ReplyToMails( BMessage* msg, bool join, bool joinIntoOne) {
 		sendingRefView.SendMessage( BMM_SET_BUSY);
 
 	BmMailRef* mailRef = NULL;
-	const char* selectedText = NULL;
-	msg->FindString( MSG_SELECTED_TEXT, &selectedText);
+	BmString selectedText = msg->FindString( MSG_SELECTED_TEXT);
 	if (join) {
 		// fetch mail-refs from message and sort them chronologically:
 		typedef multimap< time_t, BmMailRef* >BmSortedRefMap;
@@ -1048,7 +1047,9 @@ void BmApplication::ReplyToMails( BMessage* msg, bool join, bool joinIntoOne) {
 					= mail->DetermineReplyAddress( msg->what, true,
 															 replyGoesToPersonOnly);
 				BmString replyAddrSpec = BmAddress( replyAddr).AddrSpec(); 
-				BmString index = joinIntoOne ? "single" : replyAddrSpec;
+				BmString index = joinIntoOne 
+											? BmString("single") 
+											: replyAddrSpec;
 				BmRef<BmMail>& newMail = newMailMap[index];
 				if (!newMail) {
 					if (joinIntoOne)
@@ -1100,7 +1101,9 @@ void BmApplication::ReplyToMails( BMessage* msg, bool join, bool joinIntoOne) {
 				if (mail->InitCheck() != B_OK)
 					continue;
 				newMail = mail->CreateReply( msg->what, replyGoesToPersonOnly, 
-													  index==0 ? selectedText : NULL);
+													  index==0 
+													  		? selectedText 
+													  		: BM_DEFAULT_STRING);
 				if (newMail) {
 					BmMailEditWin* editWin 
 						= BmMailEditWin::CreateInstance( newMail.Get());

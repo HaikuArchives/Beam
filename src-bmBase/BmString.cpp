@@ -126,7 +126,8 @@ BmString::CountChars() const
 		count++;
 
 		// Jump to next UTF8 character
-		 for ( ; (*ptr & 0xc0) == 0x80; ptr++);
+		while( (*ptr & 0xc0) == 0x80)
+		 	ptr++;
 	}
 
 	return count;

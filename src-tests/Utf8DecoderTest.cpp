@@ -70,7 +70,7 @@ static void DecodeUtf8AndCheck( BmString input, BmString result,
 \*------------------------------------------------------------------------------*/
 static void DecodeUtf8AndCheck( BmString input, BmString result, 
 										  BmString destCharset, int32 firstDiscardedPos,
-										  bool hasError=false) {
+										  bool hasError) {
 	BmString decodedStr;
 	int32 blockSize = 128;
 	BmStringIBuf srcBuf( input);

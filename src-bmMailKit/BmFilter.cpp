@@ -109,7 +109,7 @@ void BmFilter::SetupAddonPart() {
 	if (mKind.Length()) {
 		mKind.CapitalizeEachWord();
 		BmInstantiateFilterFunc instFunc = FilterAddonMap[mKind].instantiateFilterFunc;
-		if (instFunc && (mAddon = (*instFunc)( Key(), &mAddonArchive, mKind)))
+		if (instFunc && (mAddon = (*instFunc)( Key(), &mAddonArchive, mKind)) != NULL)
 			BM_LOG2( BM_LogFilter, BmString("Instantiated Filter-Addon <") << mKind << ":" << Key() << ">");
 		else
 			BM_LOG2( BM_LogFilter, BmString("Unable to instantiate Filter-Addon <") << mKind << ":" << Key() << ">. This filter will be disabled.");

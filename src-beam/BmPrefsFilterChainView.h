@@ -80,7 +80,6 @@ public:
 	
 	// overrides of controller base:
 	BmString StateInfoBasename()			{ return "FilterChainView"; }
-	void UpdateModelItem( BMessage* msg);
 	BmListViewItem* AddModelItem( BmListModelItem* item);
 	const char* ItemNameForCaption()		{ return "filter-chain"; }
 	CLVContainerView* CreateContainer( bool horizontal, bool vertical, 
@@ -152,7 +151,6 @@ public:
 	
 	// overrides of controller base:
 	BmString StateInfoBasename()			{ return "ChainedFilterView"; }
-	void UpdateModelItem( BMessage* msg);
 	BmListViewItem* AddModelItem( BmListModelItem* item);
 	const char* ItemNameForCaption()		{ return "filter"; }
 	CLVContainerView* CreateContainer( bool horizontal, bool vertical, 
@@ -203,7 +201,7 @@ class BmPrefsFilterChainView : public BmPrefsView {
 		BM_CHAINED_SELECTION_CHANGED	= 'bmCC',
 		BM_CHAINED_ITEM_INVOKED			= 'bmCI',
 		BM_AVAILABLE_SELECTION_CHANGED= 'bmAC',
-		BM_AVAILABLE_ITEM_INVOKED		= 'bmAI',
+		BM_AVAILABLE_ITEM_INVOKED		= 'bmAI'
 	};
 
 public:

@@ -37,7 +37,7 @@
 #include "BmString.h"
 #include "BmDataModel.h"
 
-#include <multimap.h>
+#include <map.h>
 
 extern BmString BM_DefaultOutItemLabel;
 
@@ -125,7 +125,7 @@ public:
 	const BmString SettingsFileName();
 	void InstantiateItems( BMessage* archive);
 	int16 ListArchiveVersion() const		{ return nListArchiveVersion; }
-	void AddItemToList( BmListModelItem* item);
+	bool AddItemToList( BmListModelItem* item, BmListModelItem* parent=NULL);
 	void RemoveItemFromList( BmListModelItem* item);
 	bool StartJob();
 	void ForeignKeyChanged( const BmString& key, 

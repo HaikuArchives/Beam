@@ -36,6 +36,10 @@ restrictions:
 /* Include the internals header, which itself includes Standard C headers plus
 the external pcre header. */
 
+#ifdef __POWERPC__
+#define BM_BUILDING_LIBREGEXX 1
+#endif
+
 #include "internal.h"
 
 

@@ -33,6 +33,10 @@
 #include "split.hh"
 using namespace regexx;
 
+#ifdef __POWERPC__
+#define BM_BUILDING_SANTAPARTSFORBEAM 1
+#endif
+
 #include "BmMenuControllerBase.h"
 
 

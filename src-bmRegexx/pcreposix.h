@@ -15,6 +15,8 @@ be there. I hope. */
 
 #include <stdlib.h>
 
+#include "libregexx.h"
+
 /* Allow for C++ users */
 
 #ifdef __cplusplus
@@ -76,10 +78,10 @@ typedef struct {
 
 /* The functions */
 
-extern int regcomp(regex_t *, const char *, int);
-extern int regexec(const regex_t *, const char *, size_t, regmatch_t *, int);
-extern size_t regerror(int, const regex_t *, char *, size_t);
-extern void regfree(regex_t *);
+extern IMPEXPLIBREGEXX int regcomp(regex_t *, const char *, int);
+extern IMPEXPLIBREGEXX int regexec(const regex_t *, const char *, size_t, regmatch_t *, int);
+extern IMPEXPLIBREGEXX size_t regerror(int, const regex_t *, char *, size_t);
+extern IMPEXPLIBREGEXX void regfree(regex_t *);
 
 #ifdef __cplusplus
 }   /* extern "C" */

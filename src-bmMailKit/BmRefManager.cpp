@@ -184,7 +184,7 @@ BmProxy* BmRefObj::GetProxy( const char* const proxyName) {
 		throw BM_runtime_error( "GetProxy(): Could not acquire global lock!");
 	BmProxyMap::iterator iter = nProxyMap.find( proxyName);
 	if (iter == nProxyMap.end())
-		return nProxyMap[proxyName] = new BmProxy( proxyName);
+		return nProxyMap[proxyName] = new BmProxy();
 	else
 		return iter->second;
 }

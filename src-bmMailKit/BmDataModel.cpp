@@ -612,7 +612,7 @@ status_t BmListModelItem::Archive( BMessage* archive, bool deep) const {
 	IntegrateAppendedArchive( archive)
 		-	
 \*------------------------------------------------------------------------------*/
-void BmListModelItem::IntegrateAppendedArchive( BMessage* archive) {
+void BmListModelItem::IntegrateAppendedArchive( BMessage* /*archive*/) {
 }
 
 /*------------------------------------------------------------------------------*\
@@ -903,7 +903,7 @@ BmString BmListModel::RenameItem( const BmString oldKey,
 	// ...determine path to item (needed for handling of foreign-keys):
 	BmString path;
 	BmListModelItem* curr = item.Get();
-	while( (curr = curr->Parent().Get())) {
+	while( (curr = curr->Parent().Get()) != NULL) {
 		if (!path.Length())
 			path.Prepend( curr->DisplayKey());
 		else		

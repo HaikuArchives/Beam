@@ -219,9 +219,9 @@ public:
 
 	// native methods:
 	void Put( const char* data, uint32 len);
-	char BmRingBuf::Get();
-	char BmRingBuf::PeekFront() const;
-	char BmRingBuf::PeekTail() const;
+	char Get();
+	char PeekFront() const;
+	char PeekTail() const;
 	int32 Length() const;
 	void Reset();
 	

@@ -79,7 +79,8 @@ namespace BmEncoding {
 	BmMemFilterRef FindEncoderFor( BmMemIBuf* input, 
 											 const BmString& encodingStyle,
 											 uint32 blockSize=BmMemFilter::nBlockSize);
-};
+
+}
 
 
 /*------------------------------------------------------------------------------*\

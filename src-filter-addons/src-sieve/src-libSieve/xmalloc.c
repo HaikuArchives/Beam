@@ -114,4 +114,5 @@ void *fatal(const char *message, int rc)
 {
     fprintf(stderr, "fatal error: %s\n", message);
     exit(rc);
+    return NULL;
 }

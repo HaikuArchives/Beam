@@ -217,7 +217,7 @@ BmBodyPart::BmBodyPart( BmBodyPartList* model, const BmString& msgtext,
 	if (!mSuggestedCharset.Length())
 		mCurrentCharset = mSuggestedCharset 
 			= ThePrefs->GetBool( "ImportExportTextAsUtf8", true)
-				? "utf-8"
+				? BmString("utf-8")
 				: ThePrefs->GetString( "DefaultCharset");
 	SetTo( msgtext, start, length, defaultCharset, header);
 }
@@ -244,7 +244,7 @@ BmBodyPart::BmBodyPart( BmBodyPartList* model, const entry_ref* ref,
 	if (!mSuggestedCharset.Length())
 		mCurrentCharset = mSuggestedCharset 
 			= ThePrefs->GetBool( "ImportExportTextAsUtf8", true)
-				? "utf-8"
+				? BmString("utf-8")
 				: ThePrefs->GetString( "DefaultCharset");
 	try {
 		status_t err;
@@ -459,7 +459,7 @@ void BmBodyPart::SetTo( const BmString& msgtext, int32 start, int32 length,
 	if (!mCurrentCharset.Length() || !mCurrentCharset.ICompare("unknown-8bit"))
 		mCurrentCharset = mSuggestedCharset 
 			= ThePrefs->GetBool( "ImportExportTextAsUtf8", true)
-				? "utf-8"
+				? BmString("utf-8")
 				: ThePrefs->GetString( "DefaultCharset");
 
 	// MIME-Decoding:

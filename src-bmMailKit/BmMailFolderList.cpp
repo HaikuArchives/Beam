@@ -298,11 +298,11 @@ void BmMailMonitor::HandleMailMonitorMsg( BMessage* msg) {
 													<< "> detected.\nFrom: " 
 													<< (oldParent
 															? oldParent->Key()
-															:"<outside>") 
+															: BmString("<outside>")) 
 													<<" to: " << 
 														(parent 
 															? parent->Key()
-															:"<outside>"));
+															: BmString( "<outside>")));
 								} else {
 									// folder exists in our structure
 									BM_LOG2( BM_LogMailTracking, 
@@ -311,11 +311,11 @@ void BmMailMonitor::HandleMailMonitorMsg( BMessage* msg) {
 													<< "> detected.\nFrom: "
 													<< (oldParent
 															? oldParent->Key()
-															: "<outside>")
+															: BmString( "<outside>"))
 													<< " to: "
 													<< (parent
 															? parent->Key()
-															: "<outside>"));
+															: BmString( "<outside>")));
 									// adjust new-mail-count accordingly...
 									int32 newMailCount 
 										= folder->NewMailCount() 

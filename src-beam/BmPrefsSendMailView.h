@@ -80,7 +80,6 @@ public:
 	
 	// overrides of controller base:
 	BmString StateInfoBasename()			{ return "SendAccView"; }
-	void UpdateModelItem( BMessage* msg);
 	BmListViewItem* AddModelItem( BmListModelItem* item);
 	const char* ItemNameForCaption()		{ return "account"; }
 	CLVContainerView* CreateContainer( bool horizontal, bool vertical, 

@@ -39,14 +39,14 @@
 
 const int32 BM_FILL_MENU_FROM_LIST = 'bmFM';
 
-extern const char* MSG_LIST_NAME;
-extern const char* MSG_MENU_POINTER;
-extern const char* MSG_MENU_TARGET;
-extern const char* MSG_MSG_TEMPLATE;
+extern IMPEXPBMBASE const char* MSG_LIST_NAME;
+extern IMPEXPBMBASE const char* MSG_MENU_POINTER;
+extern IMPEXPBMBASE const char* MSG_MENU_TARGET;
+extern IMPEXPBMBASE const char* MSG_MSG_TEMPLATE;
 
-extern const char* BM_FOLDERLIST_NAME;
-extern const char* BM_STATUSLIST_NAME;
-extern const char* BM_IDENTITYLIST_NAME;
+extern IMPEXPBMBASE const char* BM_FOLDERLIST_NAME;
+extern IMPEXPBMBASE const char* BM_STATUSLIST_NAME;
+extern IMPEXPBMBASE const char* BM_IDENTITYLIST_NAME;
 
 /*------------------------------------------------------------------------------*\
 	BmFilterAddon 

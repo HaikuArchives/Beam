@@ -35,6 +35,7 @@
 #include <OS.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <iostream>
 
 #ifdef B_BEOS_VERSION_DANO
 class BPath;
@@ -215,7 +216,7 @@ int32 StartTests( void* args) {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-int main(int argc, char *argv[]) {
+int main(int argc, char **argv) {
 
 	ArgsInfo argsInfo;
 	argsInfo.argc = argc;

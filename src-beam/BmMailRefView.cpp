@@ -196,7 +196,7 @@ const time_t BmMailRefItem::GetDateValueForColumn( int32 column_index) const {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-const char* BmMailRefItem::GetUserText(int32 colIdx, float colWidth) const {
+const char* BmMailRefItem::GetUserText(int32 colIdx, float /*colWidth*/) const {
 	BmMailRef* ref( ModelItem());
 	if (!ref)
 		return "";

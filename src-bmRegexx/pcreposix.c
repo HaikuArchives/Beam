@@ -35,6 +35,10 @@ restrictions:
 -----------------------------------------------------------------------------
 */
 
+#ifdef __POWERPC__
+#define BM_BUILDING_LIBREGEXX 1
+#endif
+
 #include "internal.h"
 #include "pcreposix.h"
 #include "stdlib.h"

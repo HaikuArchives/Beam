@@ -262,7 +262,7 @@ static int evaltest(sieve_interp_t *i, test_t *t, void *m)
     stringlist_t *sl;
     patternlist_t *pl;
     int res = 0;
-    int addrpart = 0;
+    address_part_t addrpart = ADDRESS_ALL;
 
     switch (t->type) {
     case ADDRESS:

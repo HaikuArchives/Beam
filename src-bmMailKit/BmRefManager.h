@@ -96,7 +96,7 @@ typedef multimap<BmString,BmRefObj*> BmObjectMap;
 class BmProxy {
 
 public:
-	inline BmProxy( BmString name) {}
+	inline BmProxy() 							{}
 	BmObjectMap ObjectMap;
 	BmRefObj* FetchObject( const BmString& key, BmRefObj* ptr=NULL);
 };

@@ -80,7 +80,6 @@ public:
 	
 	// overrides of controller base:
 	BmString StateInfoBasename()			{ return "IdentView"; }
-	void UpdateModelItem( BMessage* msg);
 	BmListViewItem* AddModelItem( BmListModelItem* item);
 	CLVContainerView* CreateContainer( bool horizontal, bool vertical, 
 												  bool scroll_view_corner, 

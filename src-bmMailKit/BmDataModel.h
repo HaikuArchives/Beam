@@ -318,9 +318,9 @@ public:
 	virtual BmString RenameItem( const BmString oldKey, const BmString& newKey);
 	virtual void AddForeignKey( const char* key, BmListModel* model);
 	void AdjustForeignKeys( const BmString& oldVal, const BmString& newVal);
-	virtual void ForeignKeyChanged( const BmString& key, 
-											  const BmString& oldVal, 
-											  const BmString& newVal)	
+	virtual void ForeignKeyChanged( const BmString& /*key*/, 
+											  const BmString& /*oldVal*/, 
+											  const BmString& /*newVal*/)	
 											  		{ }
 	//
 	virtual bool Store();

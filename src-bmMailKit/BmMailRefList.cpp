@@ -200,7 +200,7 @@ bool BmMailRefList::StartJob() {
 		}
 		if (cacheFileUpToDate) {
 			// ...ok, cache-file should contain up-to-date info, we fetch our data from it:
-			InstantiateItems( &cacheFile, FindMsgInt32( &msg, BmListModelItem::MSG_NUMCHILDREN));
+			MyInstantiateItems( &cacheFile, FindMsgInt32( &msg, BmListModelItem::MSG_NUMCHILDREN));
 		} else {
 			// ...caching disabled or no cache file found or update required/requested, 
 			// we fetch the existing mails from disk...
@@ -301,7 +301,7 @@ void BmMailRefList::InitializeItems() {
 	InstantiateMailRefs( archive)
 		-	
 \*------------------------------------------------------------------------------*/
-void BmMailRefList::InstantiateItems( BDataIO* dataIO, int32 numChildren) {
+void BmMailRefList::MyInstantiateItems( BDataIO* dataIO, int32 numChildren) {
 	BmRef<BmMailFolder> folder( mFolder.Get());	
 							// hold a ref on the corresponding folder while we use it
 	BM_LOG( BM_LogMailTracking, BmString("Start of InstantiateMailRefs() for folder ") << folder->Name());

@@ -62,7 +62,7 @@ static iconv_t ICONV_ERR = (iconv_t)0xFFFFFFFF;
 \*------------------------------------------------------------------------------*/
 static int HandleOneCharset( unsigned int namescount, 
 									  const char * const * names,
-                             void* data) {
+                             void* /*data*/) {
 	// the preferred names of charsets:
 	static const char* rxs[] = {
 		"^US-ASCII$",
@@ -215,6 +215,7 @@ struct BmTextPart {
 	BmString charset;
 	BmString text;
 	BmString encodingStyle;
+	BmTextPart()								{ }
 	BmTextPart( const BmString& cs, const BmString& t, const BmString& es)
 		:	charset( cs)
 		,	text( t)

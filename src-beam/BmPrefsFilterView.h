@@ -79,7 +79,6 @@ public:
 	
 	// overrides of controller base:
 	BmString StateInfoBasename()			{ return "FilterView"; }
-	void UpdateModelItem( BMessage* msg);
 	BmListViewItem* AddModelItem( BmListModelItem* item);
 	const char* ItemNameForCaption()		{ return "filter"; }
 	CLVContainerView* CreateContainer( bool horizontal, bool vertical, 

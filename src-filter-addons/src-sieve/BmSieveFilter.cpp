@@ -363,7 +363,7 @@ int BmSieveFilter::sieve_keep( void* action_context, void*,
 	sieve_discard()
 		-	
 \*------------------------------------------------------------------------------*/
-int BmSieveFilter::sieve_discard( void* action_context, void*, 
+int BmSieveFilter::sieve_discard( void* /*action_context*/, void*, 
 			   				  		    void*, void* message_context, 
 			   				  		    const char**) {
 	BM_LOG3( BM_LogFilter, BmString("Sieve-Addon: sieve_discard called")); 
@@ -945,9 +945,7 @@ BRect BmFilterGroup::layout(BRect rect) {
 class BmFilterScrollView: public MView, public BScrollView
 {
 	public:
-		BmFilterScrollView(MView *target, bool horizontal=false, 
-								 bool vertical=false,
-			border_style border=B_FANCY_BORDER, minimax size=0)
+		BmFilterScrollView(MView *target, border_style border=B_FANCY_BORDER)
 		:	BScrollView( "scroller", dynamic_cast<BView*>(target), 
 							 B_FOLLOW_NONE, B_WILL_DRAW|B_FRAME_EVENTS,
 							false, true, border)
@@ -1079,7 +1077,7 @@ BmSieveFilterPrefs::BmSieveFilterPrefs( minimax minmax)
 					),
 					mFilterScrollView = new BmFilterScrollView( 
 						mFilterGroup,
-						false, true, B_FANCY_BORDER
+						B_FANCY_BORDER
 					),
 					0
 				)

@@ -35,7 +35,7 @@
 
 #include "BmString.h"
 
-class entry_ref;
+struct entry_ref;
 
 bool MoveToTrash( const entry_ref* refs, int32 count);
 

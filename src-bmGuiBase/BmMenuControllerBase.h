@@ -35,15 +35,17 @@
 
 #include "BmString.h"
 
-extern const int32 BM_MC_MOVE_RIGHT;
-extern const int32 BM_MC_SKIP_FIRST_LEVEL;
-extern const int32 BM_MC_ADD_NONE_ITEM;
-extern const int32 BM_MC_LABEL_FROM_MARKED;
-extern const int32 BM_MC_RADIO_MODE;
+#include "SantaPartsForBeam.h"
+
+extern const IMPEXPSANTAPARTSFORBEAM int32 BM_MC_MOVE_RIGHT;
+extern const IMPEXPSANTAPARTSFORBEAM int32 BM_MC_SKIP_FIRST_LEVEL;
+extern const IMPEXPSANTAPARTSFORBEAM int32 BM_MC_ADD_NONE_ITEM;
+extern const IMPEXPSANTAPARTSFORBEAM int32 BM_MC_LABEL_FROM_MARKED;
+extern const IMPEXPSANTAPARTSFORBEAM int32 BM_MC_RADIO_MODE;
 
 class BMenuItem;
 
-class BmMenuControllerBase : public BPopUpMenu
+class IMPEXPSANTAPARTSFORBEAM BmMenuControllerBase : public BPopUpMenu
 {
 	typedef BPopUpMenu inherited;
 	
