@@ -426,7 +426,7 @@ MMenuBar* BmMailEditWin::CreateMenu() {
 
 	// Message
 	menu = new BMenu( "Message");
-	menu->AddItem( CreateMenuItem( "New Message", BMM_NEW_MAIL));
+	menu->AddItem( CreateMenuItem( "New Message...", BMM_NEW_MAIL));
 	menubar->AddItem( menu);
 
 	// temporary deactivations:

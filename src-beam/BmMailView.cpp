@@ -564,7 +564,7 @@ bool BmMailView::CanEndLine( int32 offset) {
 void BmMailView::InsertText( const char *text, int32 length, int32 offset,
 									  const text_run_array *runs)
 {
-	if (mOutbound && mRulerView) {
+	if (mOutbound && mRulerView && mFont.IsFixed()) {
 		int32 lineStart = OffsetAt( LineAt( offset));
 		BString line( Text()+lineStart, offset-lineStart);
 		int32 currLinePos = line.CountChars();

@@ -67,11 +67,10 @@ int BmApplication::InstanceCount = 0;
 
 BmApplication* bmApp = NULL;
 
-const char* BM_DeskbarItemName="Beam_NewMail";
-
-const char* BM_APP_SIG = "application/x-vnd.zooey-Beam";
-
 static const char* BM_BEEP_EVENT = "New E-mail";
+
+const char* BM_APP_SIG = "application/x-vnd.zooey-beam";
+const char* const BM_DeskbarItemName = "Beam_DeskbarItem";
 
 /*------------------------------------------------------------------------------*\
 	BmApplication()
@@ -84,7 +83,6 @@ BmApplication::BmApplication( const char* sig)
 	,	mMailWin( NULL)
 	,	mPrintSetup( NULL)
 	,	mPrintJob( "Mail")
-	,	mDeskbarShouldIndicateNewMail( false)
 {
 	if (InstanceCount > 0)
 		throw BM_runtime_error("Trying to initialize more than one instance of class Beam");
@@ -160,7 +158,7 @@ BmApplication::BmApplication( const char* sig)
 		-	standard destructor
 \*------------------------------------------------------------------------------*/
 BmApplication::~BmApplication() {
-	RemoveDeskbarView();
+	RemoveDeskbarItem();
 	TheMailFolderList = NULL;
 	ThePopAccountList = NULL;
 	TheSmtpAccountList = NULL;
@@ -189,8 +187,6 @@ void BmApplication::ReadyToRun() {
 		TheMainWindow->SendBehind( mMailWin);
 		mMailWin = NULL;
 	}
-	if (ThePrefs->GetBool( "UseDeskbar"))
-		InstallDeskbarView();
 }
 
 /*------------------------------------------------------------------------------*\
@@ -203,6 +199,8 @@ thread_id BmApplication::Run() {
 	}
 	thread_id tid = 0;
 	try {
+		if (ThePrefs->GetBool( "UseDeskbar"))
+			InstallDeskbarItem();
 		TheSmtpAccountList->StartJobInThisThread();
 		TheMainWindow->Show();
 		tid = inherited::Run();
@@ -228,13 +226,16 @@ thread_id BmApplication::Run() {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmApplication::InstallDeskbarView() {
-	if (!mDeskbar.HasItem( DbViewName)) {
-		BRoster roster;
-		entry_ref ref;
-		roster.FindApp( BM_APP_SIG , &ref);
-		int32 id;
-		mDeskbar.AddItem( &ref, &id);
+void BmApplication::InstallDeskbarItem() {
+	if (!mDeskbar.HasItem( BM_DeskbarItemName)) {
+		status_t res;
+		app_info appInfo;
+		if ((res = bmApp->GetAppInfo( &appInfo)) == B_OK) {
+			int32 id;
+			appInfo.ref.set_name( BM_DeskbarItemName);
+			if ((res = mDeskbar.AddItem( &appInfo.ref, &id)) != B_OK)
+				BM_SHOWERR( BString("Unable to install Beam_DeskbarItem.\nError: \n\t") << strerror( res))
+		}
 	}
 }
 
@@ -242,9 +243,9 @@ void BmApplication::InstallDeskbarView() {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmApplication::RemoveDeskbarView() {
-	if (mDeskbar.HasItem( DbViewName))
-		mDeskbar.RemoveItem( DbViewName);
+void BmApplication::RemoveDeskbarItem() {
+	if (mDeskbar.HasItem( BM_DeskbarItemName))
+		mDeskbar.RemoveItem( BM_DeskbarItemName);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -254,12 +255,29 @@ void BmApplication::RemoveDeskbarView() {
 bool BmApplication::QuitRequested() {
 	mIsQuitting = true;
 	TheMailMonitor->LockLooper();
-	bool shouldQuit = inherited::QuitRequested();
+	bool shouldQuit = true;
+	// ask all windows if they are ready to quit, in which case we actually do quit 
+	// (only if *ALL* windows indicate that they are prepared to quit!):
+	int32 count = CountWindows();
+	for( int32 i=count-1; shouldQuit && i>=0; --i) {
+		BWindow* win = bmApp->WindowAt( i);
+		if (win && !win->QuitRequested())
+			shouldQuit = false;
+	}
+
 	if (!shouldQuit) {
-		mIsQuitting = false;
 		TheMailMonitor->UnlockLooper();
-	} else
+		mIsQuitting = false;
+	} else {
 		TheMailMonitor->Quit();
+		for( int32 i=count-1; i>=0; --i) {
+			BWindow* win = bmApp->WindowAt( i);
+			if (win) {
+				win->LockLooper();
+				win->Quit();
+			}
+		}
+	}
 	return shouldQuit;
 }
 
@@ -514,26 +532,6 @@ void BmApplication::MessageReceived( BMessage* msg) {
 				}
 				MoveToTrash( refs, index);
 				delete [] refs;
-				break;
-			}
-			case BMM_SHOW_NEWMAIL_ICON: {
-				BM_LOG2( BM_LogAll, "App: asked to show new-mail icon in deskbar");
-				mDeskbarShouldIndicateNewMail = true;
-				break;
-			}
-			case BMM_HIDE_NEWMAIL_ICON: {
-				BM_LOG2( BM_LogAll, "App: asked to hide new-mail icon from deskbar");
-				mDeskbarShouldIndicateNewMail = false;
-				break;
-			}
-			case BM_CHECK_STATE: {
-				BM_LOG2( BM_LogAll, "App: deskbar-view is checking state");
-				BMessage reply( BM_CHECK_STATE);
-				reply.AddString( "iconName", 
-									  mDeskbarShouldIndicateNewMail
-									  	? "DeskbarIcon"
-									  	: "Priority_3");
-				msg->SendReply( &reply, (BHandler*)NULL, 1000000);
 				break;
 			}
 			case B_SILENT_RELAUNCH: {
@@ -889,77 +887,31 @@ Heike Herfart
 	and many, many suggestions. 
 
 
-...and (in alphabetical order)...
+...and (in alphabetical order):
 
 Adam McNutt
-	for reporting bugs
-
 Atillâ Öztürk
-	for reporting problems with ISO-8859-9 and helping me 
-	find the 'Mime:' - bug
-
 Bernd Korz
-	for reporting many bugs and suggestions
-	for beta-testing 0.913
-
 Cedric Vincent
-	for pointing out that the 'network buffer size'-
-	prefs-field was disfunctional
-	
 Charlie Clark
-	for reporting many bugs
-	and beta-testing Beam 0.91
-	for helping me fix bugs in offline-mode
-	for helping me find the 'Mime:' - bug
-
+Eberhard Hafermalz
+Eugenia Loli-Queru
 Helmar Rudolph
-	for advanced ideas
-
 Jace Cavacini
-	for many suggestions on usability issues
-	for bug-reports
-
 Kevin Musick
-	for suggestions
-
 Lars Müller (of SuSE)
-	for bug-reports in early testing-stages
-	and helping me fix a bug with header-encodings
-
 Linus Almstrom
-	for many bug-reports and suggestions
-	and helping me solve problems with node-monitoring
-	for beta-testing Beam 0.91
-
 Mathias Reitinger
-	for suggestions and pointing out usability issues
-
 Max Hartmann
-	for bug-reports and suggestions
-	for beta-testing 0.912
-	for beta-testing 0.913
-
 MDR-team (MailDaemonReplacement)
-	for base64-routines that do not crash
-
-Nathan Whitehorn
-	for suggesting to integrate Beam with the MDR
-
 qwilk
-	for suggesting to use <none> in menu-fields instead of ''
-
+Rainer Riedl
 Rob Lund
-	for suggesting to make the header-view info selectable
-
+Shard
 Stephen Butters
-	for suggestions
-	
 Tyler Dauwalder
-	for bug-reports and suggestions
-
 Zach 
-	for bug-reports and suggestions 
-	and beta-testing Beam 0.91
+
 \n\n\n\n
 ...and thanks to everyone I forgot, too!
 

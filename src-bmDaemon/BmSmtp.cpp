@@ -380,6 +380,10 @@ void BmSmtp::Auth() {
 void BmSmtp::SendMails() {
 	for( uint32 i=0; i<mSmtpAccount->mMailVect.size(); ++i) {
 		BmMail* mail = mSmtpAccount->mMailVect[i].Get();
+		if (!mail) {
+			BM_LOGERR( BString("SendMails(): mail no. ") << i << " is NULL, skipping it.");
+			continue;
+		}
 		Mail( mail);
 		Rcpt( mail);
 		if (ThePrefs->GetBool("SpecialHeaderForEachBcc", true)) {

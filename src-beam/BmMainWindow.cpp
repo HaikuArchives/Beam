@@ -311,7 +311,7 @@ MMenuBar* BmMainWindow::CreateMenu() {
 
 	// Message
 	menu = new BMenu( "Message");
-	menu->AddItem( CreateMenuItem( "New Message", BMM_NEW_MAIL));
+	menu->AddItem( CreateMenuItem( "New Message...", BMM_NEW_MAIL));
 	menu->AddSeparatorItem();
 	mMailRefView->AddMailRefMenu( menu);
 	menu->AddSeparatorItem();
@@ -507,20 +507,6 @@ void BmMainWindow::MessageReceived( BMessage* msg) {
 bool BmMainWindow::QuitRequested() {
 	BM_LOG2( BM_LogMainWindow, BString("MainWindow has been asked to quit"));
 	if (bmApp->IsQuitting()) {
-		// ask all other windows if they are ready to quit, in which case we
-		// quit ourselves (only if ALL other windows will quit, too):
-		int32 count = bmApp->CountWindows();
-		for( int32 i=count-1; i>=0; --i) {
-			BWindow* win = bmApp->WindowAt( i);
-			if (win && win != this) {
-				if (win->QuitRequested()) {
-					win->LockLooper();
-					win->Quit();
-				} else {
-					return false;
-				}
-			}
-		}
 		Hide();			// to hide a possible delay in WriteStateInfo() from the user
 		return true;
 	} else {

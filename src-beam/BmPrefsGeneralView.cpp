@@ -122,7 +122,7 @@ BmPrefsGeneralView::BmPrefsGeneralView()
 																						 	  new BMessage(BM_INOUT_AT_TOP_CHANGED), 
 																						 	  this, ThePrefs->GetBool("InOutAlwaysAtTop", false)),
 							new Space( minimax(0,10,0,10)),
-							mUseDeskbarControl = new BmCheckControl( "Use Deskbar Icon to indicate new mail", 
+							mUseDeskbarControl = new BmCheckControl( "Show Deskbar Icon", 
 																				  new BMessage(BM_USE_DESKBAR_CHANGED), 
 																				  this, ThePrefs->GetBool("UseDeskbar", true)),
 							mBeepNewMailControl = new BmCheckControl( "Beep when new mail has arrived", 
@@ -241,7 +241,7 @@ void BmPrefsGeneralView::Initialize() {
 	TheBubbleHelper.SetHelp( mWorkspaceControl, "In this menu you can select the workspace that Beam should live in.");
 	TheBubbleHelper.SetHelp( mRestoreFolderStatesControl, "Checking this makes Beam remember the state of the mailfolder-view \n(which of the folders are expanded/collapsed).\nIf unchecked, Beam will always start with a collapsed mailfolder-view.");
 	TheBubbleHelper.SetHelp( mInOutAtTopControl, "Determines whether the in- and out-folder will be shown \nat the top of the mailfolder-list or if they \nwill be sorted in alphabetically.");
-	TheBubbleHelper.SetHelp( mUseDeskbarControl, "Checking this makes Beam show an icon in \nthe Deskbar when new mail has arrived.");
+	TheBubbleHelper.SetHelp( mUseDeskbarControl, "Checking this makes Beam show an icon \nin the Deskbar.");
 	TheBubbleHelper.SetHelp( mBeepNewMailControl, "Checking this makes Beam play the 'New E-mail' beep-event\nwhen new mail has arrived.\nYou can change the corresponding sound in the BeOS Sound-preferences.");
 	TheBubbleHelper.SetHelp( mShowTooltipsControl, "Checking this makes Beam show a small \ninfo-window (just like this one) when the \nmouse-pointer lingers over a GUI-item.");
 	TheBubbleHelper.SetHelp( mCacheRefsOnDiskControl, "Checking this will cause Beam to cache \nmail-folder contents on disk.\n\nDoing this speeds up the display \nof a mail-folder's contents quite a lot.");
@@ -296,6 +296,11 @@ void BmPrefsGeneralView::SaveData() {
 	if (mLayoutView->Archive( &layoutMsg, false) == B_OK)
 		ThePrefs->SetMsg("MailRefLayout", &layoutMsg);
 	ThePrefs->Store();
+	bool deskbar = mUseDeskbarControl->Value();
+	if (deskbar)
+		bmApp->InstallDeskbarItem();
+	else
+		bmApp->RemoveDeskbarItem();
 }
 
 /*------------------------------------------------------------------------------*\
@@ -370,8 +375,6 @@ void BmPrefsGeneralView::MessageReceived( BMessage* msg) {
 			case BM_USE_DESKBAR_CHANGED: {
 				bool val = mUseDeskbarControl->Value();
 				ThePrefs->SetBool("UseDeskbar", val);
-				if (!val)
-					be_app->PostMessage( BMM_HIDE_NEWMAIL_ICON);
 				break;
 			}
 			case BM_BEEP_NEW_MAIL_CHANGED: {

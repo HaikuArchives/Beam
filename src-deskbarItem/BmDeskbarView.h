@@ -30,21 +30,18 @@
 #ifndef _BmDeskbarView_h
 #define _BmDeskbarView_h
 
-/*************************************************************************/
-/*                                                                       */
-/* This source has been derived (ripped?) from Scooby!                   */
-/*                                                                       */
-/*************************************************************************/
 
 #include <Message.h>
+#include <Query.h>
+#include <String.h>
 #include <View.h>
 
-extern const char* const DbViewName;
+extern const char* BM_APP_SIG;
+extern const char* BM_DESKBAR_APP_SIG;
 
-// message types for communication between deskbar-view and Beam:
-enum{
-	BM_CHECK_STATE = 	'bmDa'
-};
+extern const char* const BM_DeskbarItemName;
+extern const char* const BM_DeskbarNormal;
+extern const char* const BM_DeskbarNew;
 
 // menu-messages for deskbar-view:
 enum{
@@ -58,24 +55,33 @@ public:
 	BmDeskbarView( BRect frame);
 	BmDeskbarView( BMessage *data);
 	~BmDeskbarView();
+	void Init();
 	
+	static BmDeskbarView *Instantiate( BMessage *data);
+
+protected:	
 	// native methods:
 	void ChangeIcon( const char* iconName);
+	void ShowMenu( BPoint point);
+	void IncNewMailCount();
+	void DecNewMailCount();
+	void SendToBeam( BMessage *msg);
+	void InstallDeskbarMonitor();
+	void HandleQueryUpdateMsg( BMessage* msg);
 	
-protected:	
 	// overrides of BView base:
 	void Draw( BRect updateRect);
 	status_t Archive(BMessage *data, bool deep = true) const;
 	void MouseDown(BPoint);
 	void MessageReceived(BMessage *message);
-	void Pulse();
-
-	static BmDeskbarView *Instantiate(BMessage *data);
-
+	void Pulse( void);
+	void AttachedToWindow();
+	
 private:
+	BQuery mNewMailQuery;
+	int32 mNewMailCount;
 	BString mCurrIconName;
 	BBitmap *mCurrIcon;
-	BString mResetLabel;
 };
 
 #endif

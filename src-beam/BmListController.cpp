@@ -236,6 +236,7 @@ void BmListViewController::MouseMoved( BPoint point, uint32 transit, const BMess
 						if (expandCollapseDelay>0) {
 							BMessage* msg = new BMessage( BM_EXPAND_OR_COLLAPSE);
 							msg->AddPointer( MSG_HIGHITEM, (void*)mCurrHighlightItem);
+							msg->AddBool( MSG_EXPAND, !mCurrHighlightItem->IsExpanded());
 							BMessenger msgr( this);
 							mExpandCollapseRunner 
 								= new BMessageRunner( msgr, msg, expandCollapseDelay*1000, 1);
@@ -354,7 +355,8 @@ void BmListViewController::MessageReceived( BMessage* msg) {
 				BmListViewItem* item = NULL;
 				msg->FindPointer( MSG_HIGHITEM, (void**)&item); 
 				if (item == mCurrHighlightItem) {
-					if (!mCurrHighlightItem->IsExpanded()) {
+					bool expand = msg->FindBool( MSG_EXPAND);
+					if (expand) {
 						// expand superitem (so that user can 
 						// navigate through the subitems that were previously hidden):
 						Expand( mCurrHighlightItem);

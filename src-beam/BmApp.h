@@ -43,11 +43,8 @@ class BmWindow;
 
 extern const char* BM_APP_SIG;
 
-#define BMM_SHOW_NEWMAIL_ICON			'bMxa'
-#define BMM_HIDE_NEWMAIL_ICON			'bMxb'
-
-#define BMM_SET_BUSY						'bMxc'
-#define BMM_UNSET_BUSY					'bMxd'
+#define BMM_SET_BUSY						'bMxa'
+#define BMM_UNSET_BUSY					'bMxb'
 
 class BmApplication : public BApplication
 {
@@ -67,6 +64,9 @@ public:
 	void ReplyToMails( BMessage* msg, bool join);
 	void PageSetup();
 	void PrintMails( BMessage* msg);
+
+	void InstallDeskbarItem();
+	void RemoveDeskbarItem();
 
 	// beos-stuff
 	void MessageReceived( BMessage* msg);
@@ -92,17 +92,12 @@ public:
 	static const char* const MSG_SELECTED_TEXT = 	"bm:seltext";
 	static const char* const MSG_SENDING_REFVIEW = 	"bm:srefv";
 
-protected:
-	void InstallDeskbarView();
-	void RemoveDeskbarView();
-
 private:
 	status_t mInitCheck;
 	BmWindow* mMailWin;
 	bool mIsQuitting;
 
 	BDeskbar mDeskbar;
-	bool mDeskbarShouldIndicateNewMail;
 
 	BMessage* mPrintSetup;
 	BPrintJob mPrintJob;

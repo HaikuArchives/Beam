@@ -11,8 +11,8 @@
 make changes to pcre.in. */
 
 #define PCRE_MAJOR          3
-#define PCRE_MINOR          7
-#define PCRE_DATE           29-Oct-2001
+#define PCRE_MINOR          9
+#define PCRE_DATE           02-Jan-2002
 
 /* Win32 uses DLL by default */
 

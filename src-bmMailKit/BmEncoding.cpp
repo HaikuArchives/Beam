@@ -201,9 +201,17 @@ void BmEncoding::Encode( BString encodingStyle, const BString& src, BString& des
 								 bool isEncodedWord) {
 	int32 srcLen = src.Length();
 	dest.Truncate(0);
-	const char* safeChars = ThePrefs->GetBool( "MakeQPSafeForEBCDIC", false)
-									? "%&/()?+*,.;:<>-_"
-									: "%&/()?+*,.;:<>-_!\"#$@[]\\^'{|}~";
+	const char* safeChars = 
+		isEncodedWord 
+			? (ThePrefs->GetBool( "MakeQPSafeForEBCDIC", false)
+					? "%&/()?+*,.;:<>-"
+					: "%&/()?+*,.;:<>-!\"#$@[]\\^'{|}~")
+							// in encoded words, underscore has to be encoded, since it
+							// is used for spaces!
+			: (ThePrefs->GetBool( "MakeQPSafeForEBCDIC", false)
+					? "%&/()?+*,.;:<>-_"
+					: "%&/()?+*,.;:<>-_!\"#$@[]\\^'{|}~");
+							// in bodies, the underscore is safe, i.e. it need not be encoded.
 	if (encodingStyle.ICompare("q")==0 || encodingStyle.ICompare("quoted-printable")==0) {
 		// quoted printable:
 		BM_LOG( BM_LogMailParse, BString("starting to encode quoted-printable of ") << srcLen << " bytes");

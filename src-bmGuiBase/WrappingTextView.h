@@ -89,7 +89,7 @@ class WrappingTextView : public BTextView
 		};
 		typedef vector< UndoInfo> TUndoVect;
 
-		static const char* const n_long_line = "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW";
+		static const char* const n_long_line = "0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
 	public:
 		WrappingTextView(BRect a_frame,const char* a_name,int32 a_resize_mode,int32 a_flags);
 		virtual ~WrappingTextView();

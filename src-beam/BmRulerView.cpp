@@ -34,6 +34,8 @@
 #include "BmMailView.h"
 #include "BmPrefs.h"
 
+static const char* const MEDIUM_WIDTH_CHAR = "0";
+
 /*------------------------------------------------------------------------------*\
 	()
 		-	
@@ -44,7 +46,7 @@ BmRulerView::BmRulerView( const BFont& font)
 	,	mMailViewFont( font)
 	,	mIndicatorPos( ThePrefs->GetInt( "MaxLineLen"))
 	,	mIndicatorGrabbed( false)
-	,	mSingleCharWidth( mMailViewFont.StringWidth( "W"))
+	,	mSingleCharWidth( mMailViewFont.StringWidth( MEDIUM_WIDTH_CHAR))
 {
 	SetViewColor( BeInactiveControlGrey);
 	BFont font( be_plain_font);
@@ -65,7 +67,7 @@ BmRulerView::~BmRulerView() {
 \*------------------------------------------------------------------------------*/
 void BmRulerView::SetMailViewFont( const BFont& font) {
 	mMailViewFont = font;
-	mSingleCharWidth = mMailViewFont.StringWidth( "W");
+	mSingleCharWidth = mMailViewFont.StringWidth( MEDIUM_WIDTH_CHAR);
 	Invalidate();
 }
 
@@ -83,30 +85,34 @@ void BmRulerView::Draw( BRect bounds) {
 							: r.Width();							// draw all the way
 	float step = mSingleCharWidth;
 	
-	// draw ruler lines:
-	for( float x=0; x<width; x+=step) {
-		if (static_cast<int>(x)%10 == 0)
-			StrokeLine( BPoint(nXOffset+x, r.bottom-10), BPoint(nXOffset+x, r.bottom));
-		else if (static_cast<int>(x)%5 == 0)
-			StrokeLine( BPoint(nXOffset+x, r.bottom-7), BPoint(nXOffset+x, r.bottom));
-		else
-			StrokeLine( BPoint(nXOffset+x, r.bottom-5), BPoint(nXOffset+x, r.bottom));
-	}
-	
-	SetLowColor( ViewColor());
-	// draw ruler numbers:
-	int num=0;
-	for( float x=0; x<width; x+=step*10) {
-		BString numStr = BString("") << num;
-		num += 10;
-		float w = StringWidth( numStr.String());
-		DrawString( numStr.String(), BPoint( nXOffset+1+x-w/2, 8));
-	}
-	if (maxLineLen < 100) {
-		// draw number over right margin;
-		BString numStr = BString("") << maxLineLen;
-		float w = StringWidth( numStr.String());
-		DrawString( numStr.String(), BPoint( nXOffset+width-w/2, 8));
+	// We only draw ruler lines if we have a fixed-width font, otherwise it just
+	// does not make sense.
+	if (mMailViewFont.IsFixed()) {
+		// draw ruler lines:
+		for( float x=0; x<width; x+=step) {
+			if (static_cast<int>(x)%10 == 0)
+				StrokeLine( BPoint(nXOffset+x, r.bottom-10), BPoint(nXOffset+x, r.bottom));
+			else if (static_cast<int>(x)%5 == 0)
+				StrokeLine( BPoint(nXOffset+x, r.bottom-7), BPoint(nXOffset+x, r.bottom));
+			else
+				StrokeLine( BPoint(nXOffset+x, r.bottom-5), BPoint(nXOffset+x, r.bottom));
+		}
+		
+		SetLowColor( ViewColor());
+		// draw ruler numbers:
+		int num=0;
+		for( float x=0; x<width; x+=step*10) {
+			BString numStr = BString("") << num;
+			num += 10;
+			float w = StringWidth( numStr.String());
+			DrawString( numStr.String(), BPoint( nXOffset+1+x-w/2, 8));
+		}
+		if (maxLineLen < 100) {
+			// draw number over right margin;
+			BString numStr = BString("") << maxLineLen;
+			float w = StringWidth( numStr.String());
+			DrawString( numStr.String(), BPoint( nXOffset+width-w/2, 8));
+		}
 	}
 
 	// draw right-margin indicator:

@@ -211,12 +211,12 @@ byte-mode, and more complicated ones for UTF-8 characters. */
   if (md->utf8 && (c & 0xc0) == 0xc0) \
     { \
     int a = utf8_table4[c & 0x3f];  /* Number of additional bytes */ \
-    int s = 6 - a;                  /* Amount to shift next byte */  \
-    c &= utf8_table3[a];            /* Low order bits from first byte */ \
+    int s = 6*a; \
+    c = (c & utf8_table3[a]) << s; \
     while (a-- > 0) \
       { \
+      s -= 6; \
       c |= (*eptr++ & 0x3f) << s; \
-      s += 6; \
       } \
     }
 
@@ -229,12 +229,12 @@ byte-mode, and more complicated ones for UTF-8 characters. */
     { \
     int i; \
     int a = utf8_table4[c & 0x3f];  /* Number of additional bytes */ \
-    int s = 6 - a;                  /* Amount to shift next byte */  \
-    c &= utf8_table3[a];            /* Low order bits from first byte */ \
+    int s = 6*a; \
+    c = (c & utf8_table3[a]) << s; \
     for (i = 1; i <= a; i++) \
       { \
+      s -= 6; \
       c |= (eptr[i] & 0x3f) << s; \
-      s += 6; \
       } \
     len += a; \
     }
@@ -309,13 +309,13 @@ ord2utf8(int cvalue, uschar *buffer)
 register int i, j;
 for (i = 0; i < sizeof(utf8_table1)/sizeof(int); i++)
   if (cvalue <= utf8_table1[i]) break;
-*buffer++ = utf8_table2[i] | (cvalue & utf8_table3[i]);
-cvalue >>= 6 - i;
-for (j = 0; j < i; j++)
-  {
-  *buffer++ = 0x80 | (cvalue & 0x3f);
-  cvalue >>= 6;
-  }
+buffer += i;
+for (j = i; j > 0; j--)
+ {
+ *buffer-- = 0x80 | (cvalue & 0x3f);
+ cvalue >>= 6;
+ }
+*buffer = utf8_table2[i] | cvalue;
 return i + 1;
 }
 #endif

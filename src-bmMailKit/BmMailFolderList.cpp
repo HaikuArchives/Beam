@@ -272,33 +272,33 @@ void BmMailMonitor::HandleMailMonitorMsg( BMessage* msg) {
 void BmMailMonitor::HandleQueryUpdateMsg( BMessage* msg) {
 	int32 opcode = msg->FindInt32( "opcode");
 	status_t err;
-	entry_ref eref;
+	node_ref nref;
 	ino_t node;
-	const char* name;
 	BM_LOG2( BM_LogMailTracking, BString("QueryUpdateMessage nr.") << ++counter << " received.");
 	try {
 		switch( opcode) {
 			case B_ENTRY_CREATED: {
-				(err = msg->FindInt64( "directory", &eref.directory)) == B_OK
+				(err = msg->FindInt64( "directory", &nref.node)) == B_OK
 													|| BM_THROW_RUNTIME( "Field 'directory' not found in msg !?!");
-				(err = msg->FindInt32( "device", &eref.device)) == B_OK
+				(err = msg->FindInt32( "device", &nref.device)) == B_OK
 													|| BM_THROW_RUNTIME( "Field 'device' not found in msg !?!");
-				(err = msg->FindString( "name", &name)) == B_OK
-													|| BM_THROW_RUNTIME( "Field 'name' not found in msg !?!");
-				eref.set_name( name);
-				if (LivesInTrash( &eref))
+				if (LivesInTrash( &nref))
 					break;
 				(err = msg->FindInt64( "node", &node)) == B_OK
 													|| BM_THROW_RUNTIME( BString("Field 'node' not found in msg !?!"));
-				TheMailFolderList->AddNewFlag( eref.directory, node);
+				TheMailFolderList->AddNewFlag( nref.node, node);
 				break;
 			}
 			case B_ENTRY_REMOVED: {
-				(err = msg->FindInt64( "directory", &eref.directory)) == B_OK
+				(err = msg->FindInt64( "directory", &nref.node)) == B_OK
 													|| BM_THROW_RUNTIME( "Field 'directory' not found in msg !?!");
+				(err = msg->FindInt32( "device", &nref.device)) == B_OK
+													|| BM_THROW_RUNTIME( "Field 'device' not found in msg !?!");
 				(err = msg->FindInt64( "node", &node)) == B_OK
 													|| BM_THROW_RUNTIME( BString("Field 'node' not found in msg !?!"));
-				TheMailFolderList->RemoveNewFlag( eref.directory, node);
+				if (LivesInTrash( &nref))
+					break;
+				TheMailFolderList->RemoveNewFlag( nref.node, node);
 				break;
 			}
 		}
@@ -567,7 +567,7 @@ void BmMailFolderList::QueryForNewMails() {
 	int32 count, newCount=0;
 	status_t err;
 	dirent* dent;
-	entry_ref eref;
+	node_ref nref;
 	char buf[4096];
 
 	BmAutolock lock( mModelLocker);
@@ -586,10 +586,9 @@ void BmMailFolderList::QueryForNewMails() {
 		dent = (dirent* )buf;
 		while (count-- > 0) {
 			newCount++;
-			eref.device = dent->d_pdev;
-			eref.directory = dent->d_pino;
-			eref.set_name( dent->d_name);
-			if (!LivesInTrash( &eref))
+			nref.device = dent->d_pdev;
+			nref.node = dent->d_pino;
+			if (!LivesInTrash( &nref))
 				AddNewFlag( dent->d_pino, dent->d_ino);
 			// Bump the dirent-pointer by length of the dirent just handled:
 			dent = (dirent* )((char* )dent + dent->d_reclen);

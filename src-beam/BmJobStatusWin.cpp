@@ -721,8 +721,6 @@ void BmJobStatusWin::Quit() {
 void BmJobStatusWin::MessageReceived(BMessage* msg) {
 	try {
 		switch( msg->what) {
-			case B_QUIT_REQUESTED:
-				break;
 			case BM_JOBWIN_SMTP:
 			case BM_JOBWIN_POP:
 			case BM_JOBWIN_MOVEMAILS: {

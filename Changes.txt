@@ -1,6 +1,276 @@
 change-history of Beam:
 		$Id$
 
+[Beam v0.913, 2002-11-14]:
+	all:
+		-	added a +1 to many BString::LockBuffer() calls in order to have enough
+			room for the trailing '\0'. The BeBook isn't too clear about this, so we 
+			play safe.
+			
+	BmApp:
+		-	replaced old, overly simple deskbar-item with new implementation
+		-	in QuitRequested() we now find out if there is any window that does 
+			not want to quit yet. Only if there's no veto, we go on and really quit
+			all windows and the app.
+	
+	BmBodyPartList:
+		-	added functionality to automatically determine the correct mimetype
+			of any attachment during open/save, if that mimetype has no or an
+			incorrect mimetype set.
+		-	now Beam no longer complains about empty multipart bodies, where the
+			boundary appears only once (with appended '--')
+	
+	BmBodyPartView:
+		-	now verifies advertised mimetype before opening an attachment
+	
+	BmDataModel:
+		-	added HandleError(), which knows when to log and/or show errors
+	
+	BmDeskbarView:
+		-	added implementation of a real deskbar-view that does not seem to crash
+			the original R5-deskbar anymore
+	
+	BmEncoding:
+		-	fixed bug introduced in 0.913rc2 that would incorrectly handle softbreaks
+			that were followed by only a single character. This resulted in newlines being 
+			removed were they shouldn't and the mail-layout being somewhat garbled.
+			N.B.: This bug affected only the displaying of mails, not the actual mail
+			generation.
+		-	fixed bug with quoted-printable encoding that would let an underscore-char
+			pass through unencoded (which would lead to erraneous results in the 
+			decoding stage, in turn messing up iso-2022-jp encodings, which in turn
+			would cut off messages!).
+	
+	BmJobStatusWin:
+		-	changed filter-hack to start immediately after all popper-jobs have finished,
+			not after they have been removed from the status-win.
+	
+	BmListController:
+		-	enhanced "spring-loaded"-opening of folders in such a way that the 
+			timer-triggered expand/collapse would not occur when the user has
+			expanded/collapsed the current item manually (by moving the mouse 
+			over the expander).
+	
+	BmLogHandler:
+		-	now we are logging proper timestamps (with msecs)
+		-	BM_LOGERR now always logs into current logfile, too
+		
+	BmMail:
+		-	a race-condition that occurs when multiple mails are being deleted through
+			the trash would sometimes lead to the strange effect that the mail-ref would
+			select and try to display a message that has just been deleted. In this case
+			an error message was shown that complained about the deleted message
+			not being there >:o/ Now we simply do not display such a message but
+			ignore a missing message quietly.
+		-	when creating a reply, the algorithm by which we determine the receiving
+			address (the new from) has been improved to handle gracefully the case
+			where the account that has received the mail could not be found anymore
+			(for instance because it has been renamed).
+		-	corrected handling of multiple originators when generating reply-/forward-intro.
+		-	set default from-account when redirecting mails
+	
+	BmMailFolder:
+		-	fixed bug in AddMailRef() & RemoveMailRef() where the methods would
+			return without handling the needed new-mail status-changes.
+	
+	BmMailView:
+		-	added missing conversion to local linebreaks for mimeparts that
+			make use of the 'binary' content-transfer-encoding.
+		-	added support for copying URLs to clipboard
+	
+	BmPopper:
+		-	from now on, errors are shown only when ShouldContinue() yields true
+	
+	BmPrefs...View:
+		-	changed minimum sizes to cooperate with 800*600 screens
+		
+	BmResources:
+		-	added sanity-check to FetchOwnFQDN() that removes any newlines 
+			from hostname/domain.
+			
+	BmSmtp:
+		-	from now on, errors are shown only when ShouldContinue() yields true
+	
+	BmUtil:
+		-	fixed buffer-overflow in ConvertTabsToSpaces() that caused many crashes.
+		-	now WordWrap() works correctly even if the to-be-wrapped text doesn't
+			end with a newline
+		-	removed call to LockBuffer( 0) that doesn't work under Dano
+	
+	ColumnListView:
+		-	added a workaround for the problem with the BListView not correctly
+			scrolling down with the selection when the user uses Shift-CursorDown
+			to extend the selection beyond the visible items.
+		-	pressing escape now deselects all items. This way it is possible to get
+			out of the all-items-are-selected trap (cursor would not move anymore).
+	
+	PCRE:
+		-	updated to pcre v3.9
+
+
+[Beam v0.913rc2, 2002-06-14]:
+	BmBodyPartList:
+		-	fixed crashing bug when saving non-text attachments
+		-	now transfer-encodings like '8bits' are handled correctly (as '8bit')
+	
+	BmEncoding
+		-	qp-lines ending with an *encoded* '=' were incorrectly joined with
+			the following line (only plain [non-encoded] '=' indicate a soft-wrap).
+		
+	BmJobStatusWin:
+		-	a PopperView now only beeps once when new mail has arrived
+		-	when a complete Popper-run is done, Beam looks for an executable
+			named 'filter' in the app's home folder, which is then executed. 
+			This way, external mail filtering can be done.
+	
+	BmListViewController:
+		-	added support for delayed auto-expand/-collapse during drag
+		-	fixed leaking of all items in destructor...this additionally closes
+			the reference leaks that showed when closing prefs-window
+	
+	BmMailEditWin:
+		-	fixed bug that caused unmodified mails to not be hard-wrapped
+			before send
+		-	if there's only one smtp-account, it is selected automatically
+	
+	BmMailFolderView
+		-	pressing the right control-key while moving the mouse-wheel or using the 
+			cursor-keys will scroll the mail-view (only left key was working before)
+	
+	BmMailRefView:
+		-	fixed ref-leak when handling a drop
+		-	pressing the right control-key while moving the mouse-wheel or using the 
+			cursor-keys will scroll the mail-view (only left key was working before)
+		
+	BmMailView:
+		-	when pasting text, now the font of the mailview is forced upon the
+			pasted text
+		-	signatures with special characters are now displayed correctly 
+			(superfluous conversion to UTF8 removed).
+		-	when the user has selected a new signature, the cursor is now positioned
+			immediately *before* the new sig-text (not at the end of the sig, as before).
+		-	pressing the right control-key while moving the mouse-wheel or using the 
+			cursor-keys will scroll the mailref-view (only left key was working before)
+	
+	BmMainWindow:
+		-	removed ref-leak in BmMainMenuBar, which occurred whenever any 
+			pop-account was added/removed/changed.
+		-	fixed problem with BmMainMenuBar not showing any Pop-Accounts at all.
+			
+	WrappingTextView:
+		-	fixed bug when undoing a deletion (now the deleted text is saved
+			*before* it is being deleted from textview, err...)
+
+[Beam v0.913rc1, 2002-05-09]:
+
+	base64:
+		-	added (code comes straight from MDR). This code replaces the one
+			supplied by BeOS that crashes upon encountering incorrect data.
+
+	Beam_release.proj:
+		-	added -no-fpic -fomit-frame-pointer parameters for better code
+	
+	Beam...bone.proj
+		-	added separate project-files for bone-/dano-version.
+	
+	BmApp:
+		-	joined replies/forwards now correctly generate subjects through 
+			BmMail::CreateXXXSubjectFor()-methods.
+			Additionally, now the first subject gets copied into the joined mail
+			plus a ' (and more...)', indicating that there's more than one subject.
+		-	added support for subjects and URL-encodings in mailto: URLs
+		-	when marking mails as read that are not new (replied, forwarded, etc.)
+			Beam now asks the user whether to just mark new mails or really
+			mark all.
+		-	fixed reference-leak when printing mails
+		-	fixed crash in RefsReceived when a non-mail reference has been received
+		
+	BmBodyPartList:
+		-	Erraneous MIME-headers with missing semicolon between field-value and 
+			attributes no longer cause an exception (they are now silently accepted).
+	
+	BmBodyPartView:
+		-	fixed bug with icons being cut off down the tree hierarchy
+	
+	BmDataModel:
+		-	BmListModel now sets and updates a mNeedsStore-flag as needed (this
+			flag indicates that the list has changed and should be stored)
+		
+	BmEncoding:
+		-	replaced BeOS-native base64-routines by the ones from MDR (which do not
+			seem to crash).
+	
+	BmJobStatusWin:
+		-	removed Window()->UpdateIfNeeded()-call in BmPopperView::AskUserForPwd(),
+			since that's potentially unsafe and is not needed anyway.
+		-	improved look'n'feel of password-acquisitors
+		-	added support for beep-event when new mail arrived.
+		-	fixed problem with auto-checks removing job-window when they
+			should not.
+	
+	BmMail:
+		-	fixed bug in AddPartsFromMail which always added forward-intro, even
+			if current mail was a reply.
+		-	filename-creation now respects B_FILE_NAME_LENGTH
+		-	when creating reply-/forward-intro, %s now expands to subject and
+			\n to newline.
+		-	quoting now handles non-trivial encodings better (like iso-2022-jp), now
+			the character-count is used instead of the byte-count.
+		-	saving a message does not re-read it from disk anymore, since this does
+			not make sense anymore (not that it used to make much sense before...)
+		
+	BmMailEditWin:
+		-	hardwrapping is only executed directly before a mail is sent (not when
+			it is saved as draft).
+		-	now the mail-date is bumped whenever the mail is saved (per default)
+		
+	BmMailFolderView:
+		-	now allows scrolling of refview by SHIFT-modifier and scrolling of mailview
+			by CONTROL-modifier
+	
+	BmMailRefList:
+		-	now the mailref-cache is only stored when neccessary
+		-	changed structure of mail-cache for better performance when reading/
+			writing the cache.
+	
+	BmMailView:
+		-	mouse-cursor changes if hovering over URL
+		-	fixed BTextView-issue when typing spaces at end of line, now only
+			one space is accepted.
+		-	the TextRect is now recalculated when the font changes
+		-	added multi-level undo (limited only by available memory)
+			
+	BmPopAccount:
+		-	when re-reading POP-account-settings within prefs, the state of downloaded
+			messages must be kept as is (not re-read), since otherwise Beam may
+			download messages again that already were downloaded before.
+		
+	BmPrefs:
+		-	now all public calls are secured by a locker, since when resetting prefs to
+			saved state, we might be causing crashes without the lock.
+	
+	BmPrefsGeneralView:
+		-	checkbox added for new-mail beep-event (on/off)
+	
+	BmPrefsMailReadView:
+		-	fixed non-working AutoCheckOnlyIfPPPRunning-checkbox
+		-	fixed non-working MarkAsReadDelay-control.
+		
+	BmPrefsRecvMailView:
+		-	added sanity-check
+	
+	BmPrefsSendMailView:
+		-	fixed state-handling (enabling/disabling) properly
+		-	added sanity-check
+	
+	BmSignature:
+		-	dynamic signatures are now interpreted as a shell-script, not as one
+			single command
+	
+	WrappingTextView:
+		-	when removing characters (e.g. by pressing Delete), a modification-msg
+			now indicates the state change
+
 v0.912, 2002-04-14
 	-	better support for forwarding & replying to multiple messages at once,
 		now you can choose whether or not to join the messages.

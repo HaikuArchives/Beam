@@ -39,7 +39,7 @@ class entry_ref;
 
 bool MoveToTrash( const entry_ref* refs, int32 count);
 
-bool LivesInTrash( const entry_ref* eref);
+bool LivesInTrash( const node_ref* nref);
 
 bool CheckMimeType( const entry_ref* eref, const char* type);
 

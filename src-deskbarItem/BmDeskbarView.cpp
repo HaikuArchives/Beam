@@ -27,30 +27,34 @@
 /*                                                                       */
 /*************************************************************************/
 
+/*************************************************************************/
+/*                                                                       */
+/* Parts of this source-file have been derived (ripped?) from Scooby!    */
+/*                                                                       */
+/*************************************************************************/
 
-/*************************************************************************/
-/*                                                                       */
-/* This source has been derived (ripped?) from Scooby!                   */
-/*                                                                       */
-/*************************************************************************/
+#include <stdio.h>
 
 #include <Autolock.h>
 #include <Bitmap.h>
 #include <Deskbar.h>
+#include <FindDirectory.h>
+#include <Directory.h>
 #include <Entry.h>
+#include <File.h>
 #include <MenuItem.h>
 #include <Messenger.h>
 #include <NodeInfo.h>
+#include <NodeMonitor.h>
 #include <Path.h>
 #include <PopUpMenu.h>
 #include <Resources.h>
 #include <Roster.h>
 #include <String.h>
-#include <stdio.h>
+#include <Volume.h>
 
 #include "BmDeskbarView.h"
-
-extern const char* BM_APP_SIG;
+#include "BmMsgTypes.h"
 
 /***********************************************************
  * This is the exported function that will be used by Deskbar
@@ -58,7 +62,12 @@ extern const char* BM_APP_SIG;
  ***********************************************************/
 extern "C" _EXPORT BView* instantiate_deskbar_item();
 
-const char* const DbViewName = "Beam";
+const char* BM_DESKBAR_APP_SIG = "application/x-vnd.zooey-beam_deskbar";
+const char* BM_APP_SIG = "application/x-vnd.zooey-beam";
+
+const char* const BM_DeskbarItemName = "Beam_DeskbarItem";
+const char* const BM_DeskbarNormal = "DeskbarIconNormal";
+const char* const BM_DeskbarNew = "DeskbarIconNew";
 
 /***********************************************************
  * Deskbar item installing function
@@ -67,14 +76,34 @@ BView* instantiate_deskbar_item(void) {
 	return new BmDeskbarView(BRect(0, 0, 15, 15));
 }
 
+/*------------------------------------------------------------------------------*\
+	LivesInTrash( nref)
+		-	return whether or not the given node_ref lives inside the trash
+\*------------------------------------------------------------------------------*/
+bool LivesInTrash( const node_ref* nref) {
+	BDirectory dir( nref);
+	if (dir.InitCheck() != B_OK)
+		return false;
+	BEntry entry;
+	if (dir.GetEntry( &entry) != B_OK)
+		return false;
+	BPath path;
+	if (entry.GetPath( &path) != B_OK)
+		return false;
+	BString pathStr = path.Path();
+	pathStr << "/";
+	return pathStr.ICompare( "/boot/home/Desktop/Trash/", 25) == 0;
+} 
+
 /***********************************************************
  * Constructor.
  ***********************************************************/
 BmDeskbarView::BmDeskbarView(BRect frame)
-	:	BView( frame, DbViewName, B_FOLLOW_NONE, B_WILL_DRAW|B_PULSE_NEEDED)
+	:	BView( frame, BM_DeskbarItemName, B_FOLLOW_NONE, 
+				 B_WILL_DRAW|B_PULSE_NEEDED)
 	,	mCurrIcon( NULL)
+	,	mNewMailCount( 0)
 {
-	mResetLabel = strdup( "Reset Icon");
 }
 
 /***********************************************************
@@ -83,8 +112,8 @@ BmDeskbarView::BmDeskbarView(BRect frame)
 BmDeskbarView::BmDeskbarView(BMessage *message)
 	:	BView( message)
 	,	mCurrIcon( NULL)
+	,	mNewMailCount( 0)
 {
-	mResetLabel = strdup( "Reset Icon");
 }
 
 /***********************************************************
@@ -109,8 +138,13 @@ BmDeskbarView* BmDeskbarView::Instantiate(BMessage *data) {
 status_t BmDeskbarView::Archive( BMessage *data,
 										   bool deep) const {
 	BView::Archive(data, deep);
-	return data->AddString( "add_on", BM_APP_SIG);
+	return data->AddString( "add_on", BM_DESKBAR_APP_SIG);
 }
+
+void BmDeskbarView::AttachedToWindow() {
+	InstallDeskbarMonitor();
+}
+
 
 /***********************************************************
  * Draw
@@ -130,12 +164,38 @@ void BmDeskbarView::Draw(BRect /*updateRect*/) {
 /***********************************************************
  * MessageReceived
  ***********************************************************/
-void BmDeskbarView::MessageReceived(BMessage *message) {
-	switch(message->what)
-	{
-	default:
-		BView::MessageReceived(message);
+void BmDeskbarView::MessageReceived(BMessage *msg) {
+	switch( msg->what) {
+		case BMM_RESET_ICON: {
+			ChangeIcon( BM_DeskbarNormal); 
+			break;
+		}
+		case B_QUERY_UPDATE: {
+			HandleQueryUpdateMsg( msg);
+			break;
+		}
+		default: {
+			BView::MessageReceived( msg);
+		}
 	}
+}
+
+/***********************************************************
+ * IncNewMailCount
+ ***********************************************************/
+void BmDeskbarView::IncNewMailCount()	{ 
+	if (mNewMailCount++ == 0 || mCurrIconName != BM_DeskbarNew)
+		ChangeIcon( BM_DeskbarNew); 
+}
+
+/***********************************************************
+ * DecNewMailCount()
+ ***********************************************************/
+void BmDeskbarView::DecNewMailCount() {
+	if (--mNewMailCount < 0)
+		mNewMailCount = 0;
+	if (!mNewMailCount) 
+		ChangeIcon( BM_DeskbarNormal); 
 }
 
 /***********************************************************
@@ -146,11 +206,12 @@ void BmDeskbarView::ChangeIcon( const char* iconName) {
 		return;
 		
 	BBitmap* newIcon = NULL;
-	entry_ref ref;
-	if (be_roster->FindApp( BM_APP_SIG, &ref) == B_OK)
-	{
-		// Load icon from Beam's resources
-		BFile file( &ref, B_READ_ONLY);
+	team_id beamTeam = be_roster->TeamFor( BM_APP_SIG);
+	app_info appInfo;
+	if (be_roster->GetRunningAppInfo( beamTeam, &appInfo) == B_OK) {
+		appInfo.ref.set_name( BM_DeskbarItemName);
+		// Load icon from the deskbaritem's resources
+		BFile file( &appInfo.ref, B_READ_ONLY);
 		if (file.InitCheck() == B_OK) {
 			BResources rsrc( &file);
 			size_t len;
@@ -167,7 +228,61 @@ void BmDeskbarView::ChangeIcon( const char* iconName) {
 	delete mCurrIcon;
 	mCurrIcon = newIcon;
 	mCurrIconName = newIcon ? iconName : "";
+	LockLooper();
 	Invalidate();
+	UnlockLooper();
+}
+
+/*------------------------------------------------------------------------------*\
+	QueryForNewMails()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmDeskbarView::InstallDeskbarMonitor() {
+	int32 count;
+	dirent* dent;
+	node_ref nref;
+	char buf[4096];
+
+	BPath path;
+	entry_ref eref;
+	
+	BMessenger thisAsTarget( this);
+
+	// determine the volume of our home-directory:
+	if (find_directory( B_USER_DIRECTORY, &path) == B_OK
+	&& get_ref_for_path( path.Path(), &eref) == B_OK) {
+		BVolume mboxVolume = eref.device;
+		if (mNewMailQuery.SetVolume( &mboxVolume) == B_OK
+		&& mNewMailQuery.SetPredicate( "MAIL:status == 'New'") == B_OK
+		&& mNewMailQuery.SetTarget( thisAsTarget) == B_OK
+		&& mNewMailQuery.Fetch() == B_OK) {
+			while ((count = mNewMailQuery.GetNextDirents((dirent* )buf, 4096)) > 0) {
+				dent = (dirent* )buf;
+				while (count-- > 0) {
+					nref.device = dent->d_pdev;
+					nref.node = dent->d_pino;
+					if (!LivesInTrash( &nref))
+						mNewMailCount++;
+					// Bump the dirent-pointer by length of the dirent just handled:
+					dent = (dirent* )((char* )dent + dent->d_reclen);
+				}
+			}
+		}
+	}
+	ChangeIcon( mNewMailCount ? BM_DeskbarNew : BM_DeskbarNormal);
+}
+
+/***********************************************************
+ * SendToBeam
+ ***********************************************************/
+void BmDeskbarView::SendToBeam( BMessage* msg) {
+	BMessenger beam( BM_APP_SIG);
+	if (beam.IsValid()) {
+		if (beam.SendMessage( msg, (BHandler*)NULL, 1000000) == B_OK)
+			return;
+	}
+	// Beam has probably crashed, we quit, too:
+	BDeskbar().RemoveItem( BM_DeskbarItemName);
 }
 
 /***********************************************************
@@ -175,80 +290,89 @@ void BmDeskbarView::ChangeIcon( const char* iconName) {
  ***********************************************************/
 void BmDeskbarView::Pulse() {
 	BMessenger beam( BM_APP_SIG);
-	if (beam.IsValid())
-	{
-		BMessage reply;
-		BMessage msg( BM_CHECK_STATE);
-		if (beam.SendMessage( &msg, &reply, 1000000, 1000000) == B_OK
-		&& reply.what != B_NO_REPLY) {
-			const char* iconName;
-			if (reply.FindString( "iconName", &iconName) == B_OK)
-				ChangeIcon( iconName);
-			return;
-		}
+	if (!beam.IsValid()) {
+		// Beam has probably crashed, we quit, too:
+		BDeskbar().RemoveItem( BM_DeskbarItemName);
 	}
-	// Beam has probably crashed, we quit, too:
-	BDeskbar().RemoveItem( DbViewName);
 }
 
 /***********************************************************
  * MouseDown
  ***********************************************************/
 void BmDeskbarView::MouseDown(BPoint pos) {
-/*
-	entry_ref app;
-	BMessage msg(M_SHOW_MSG);
-	int32 buttons = 0;
-	Window()->CurrentMessage()->FindInt32("buttons", &buttons); 
-
-	if(buttons == B_SECONDARY_MOUSE_BUTTON)
-	{
-  		BPopUpMenu *theMenu = new BPopUpMenu("RIGHT_CLICK",false,false);
-  		BFont font(be_plain_font);
-  		font.SetSize(10);
-  		theMenu->SetFont(&font);
-  	
-  		MenuUtils utils;
-  		utils.AddMenuItem(theMenu,fLabels[3],M_LAUNCH_SCOOBY,NULL,NULL,0,0);
-  		utils.AddMenuItem(theMenu,fLabels[0],M_NEW_MESSAGE,NULL,NULL,0,0);
-  		
-  		theMenu->AddSeparatorItem();
-  		utils.AddMenuItem(theMenu,fLabels[1],M_CHECK_NOW,NULL,NULL,0,0);
-  		theMenu->AddSeparatorItem();
-		utils.AddMenuItem(theMenu,fLabels[2],B_QUIT_REQUESTED,NULL,NULL,0,0);
-  
-		BRect r ;
-   		ConvertToScreen(&pos);
-   		r.top = pos.y - 5;
-   		r.bottom = pos.y + 5;
-   		r.left = pos.x -5;
-	   	r.right = pos.x +5;
-         
-		BMenuItem *bItem = theMenu->Go(pos, false,true,r);  
-    	if(bItem)
-    	{
-    		BMessage*	aMessage = bItem->Message();
-			if(aMessage)
-			{
-				if(be_roster->IsRunning(APP_SIG))
-				{
-					team_id id = be_roster->TeamFor(APP_SIG);
-					BMessenger messenger(APP_SIG,id);
-					messenger.SendMessage(aMessage,(BHandler*)NULL,1000000);
-				}
-			}
-		}
-		delete theMenu;
-	}else{
-		BMessage sndMsg(M_RESET_ICON);
-		if(be_roster->IsRunning(APP_SIG))
-		{
-			team_id id = be_roster->TeamFor(APP_SIG);
-			BMessenger messenger(APP_SIG,id);
-			messenger.SendMessage(&sndMsg,(BHandler*)NULL,1000000);
-		}
-		ChangeIcon(DESKBAR_NORMAL_ICON);
-	}
-*/
 	inherited::MouseDown(pos);
+	int32 buttons;
+	BMessage* msg = Looper()->CurrentMessage();
+	if (msg && msg->FindInt32( "buttons", &buttons)==B_OK) {
+		if (buttons == B_PRIMARY_MOUSE_BUTTON) {
+			team_id beamTeam = be_roster->TeamFor( BM_APP_SIG);
+			if (beamTeam)
+				be_roster->ActivateApp( beamTeam);
+		} else if (buttons == B_SECONDARY_MOUSE_BUTTON)
+			ShowMenu( pos);
+	}
+}
+
+/*------------------------------------------------------------------------------*\
+	( )
+		-	
+\*------------------------------------------------------------------------------*/
+void BmDeskbarView::ShowMenu( BPoint point) {
+	BMenuItem* item;
+	BPopUpMenu* theMenu = new BPopUpMenu( BM_DeskbarItemName, false, false);
+
+	item = new BMenuItem( "Check Mail", new BMessage( BMM_CHECK_MAIL));
+	item->SetTarget( BMessenger( BM_APP_SIG));
+	theMenu->AddItem( item);
+
+	theMenu->AddSeparatorItem();
+	item = new BMenuItem( "New Message...", new BMessage( BMM_NEW_MAIL));
+	item->SetTarget( BMessenger( BM_APP_SIG));
+	theMenu->AddItem( item);
+
+	theMenu->AddSeparatorItem();
+	item = new BMenuItem( "Reset Icon", new BMessage( BMM_RESET_ICON));
+	item->SetTarget( this);
+	theMenu->AddItem( item);
+
+	theMenu->AddSeparatorItem();
+	item = new BMenuItem( "Quit Beam", new BMessage( B_QUIT_REQUESTED));
+	item->SetTarget( BMessenger( BM_APP_SIG));
+	theMenu->AddItem( item);
+
+   ConvertToScreen(&point);
+	BRect openRect;
+	openRect.top = point.y - 5;
+	openRect.bottom = point.y + 5;
+	openRect.left = point.x - 5;
+	openRect.right = point.x + 5;
+  	theMenu->Go( point, true, false, openRect);
+  	delete theMenu;
+}
+
+/*------------------------------------------------------------------------------*\
+	HandleQueryUpdateMsg()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmDeskbarView::HandleQueryUpdateMsg( BMessage* msg) {
+	int32 opcode = msg->FindInt32( "opcode");
+	node_ref nref;
+	switch( opcode) {
+		case B_ENTRY_CREATED: {
+			if (msg->FindInt64( "directory", &nref.node) == B_OK
+			&& msg->FindInt32( "device", &nref.device) == B_OK
+			&& !LivesInTrash( &nref)) {
+				IncNewMailCount();
+			}
+			break;
+		}
+		case B_ENTRY_REMOVED: {
+			if (msg->FindInt64( "directory", &nref.node) == B_OK
+			&& msg->FindInt32( "device", &nref.device) == B_OK
+			&& !LivesInTrash( &nref)) {
+				DecNewMailCount();
+			}
+			break;
+		}
+	}
 }

@@ -203,17 +203,12 @@ bool BmMailFolder::CheckIfModifiedSince( time_t when, time_t* storeNewModTime) {
 \*------------------------------------------------------------------------------*/
 void BmMailFolder::BumpNewMailCount( int32 offset) {
 	mNewMailCount += offset;
+	if (mNewMailCount < 0)
+		mNewMailCount = 0;
 	TheMailFolderList->TellModelItemUpdated( this, UPD_NEW_STATUS);
 	BmMailFolder* parent( dynamic_cast< BmMailFolder*>( Parent()));
 	if (parent)
 		parent->BumpNewMailCountForSubfolders( offset);
-	else {
-		// root folder, we check if we need to tell app about a new-mail status change:
-		if (offset>0 && mNewMailCount==offset && mNewMailCountForSubfolders==0)
-			bmApp->PostMessage( BMM_SHOW_NEWMAIL_ICON);
-		if (offset<0 && mNewMailCount==0 && mNewMailCountForSubfolders==0)
-			bmApp->PostMessage( BMM_HIDE_NEWMAIL_ICON);
-	}
 }
 
 /*------------------------------------------------------------------------------*\
@@ -223,17 +218,12 @@ void BmMailFolder::BumpNewMailCount( int32 offset) {
 \*------------------------------------------------------------------------------*/
 void BmMailFolder::BumpNewMailCountForSubfolders( int32 offset) {
 	mNewMailCountForSubfolders += offset;
+	if (mNewMailCount < 0)
+		mNewMailCount = 0;
 	TheMailFolderList->TellModelItemUpdated( this, UPD_NEW_STATUS);
 	BmMailFolder* parent( dynamic_cast< BmMailFolder*>( Parent()));
 	if (parent)
 		parent->BumpNewMailCountForSubfolders( offset);
-	else {
-		// root folder, we check if we need to tell app about a new-mail status change:
-		if (offset>0 && mNewMailCount==0 && mNewMailCountForSubfolders==offset)
-			bmApp->PostMessage( BMM_SHOW_NEWMAIL_ICON);
-		if (offset<0 && mNewMailCount==0 && mNewMailCountForSubfolders==0)
-			bmApp->PostMessage( BMM_HIDE_NEWMAIL_ICON);
-	}
 }
 
 /*------------------------------------------------------------------------------*\

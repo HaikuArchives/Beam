@@ -214,24 +214,12 @@ BmBodyPart::BmBodyPart( BmBodyPartList* model, const entry_ref* ref, BmListModel
 		BNodeInfo nodeInfo;
 		off_t size;
 		char mt[B_MIME_TYPE_LENGTH+1];
+		*mt = 0;
 		(err=file.SetTo( ref, B_READ_ONLY)) == B_OK		
 														|| BM_THROW_RUNTIME( BString("Couldn't create file for <") << ref->name << "> \n\nError:" << strerror(err));
 		(err=file.GetSize( &size)) == B_OK
 														|| BM_THROW_RUNTIME( BString("Couldn't get file-size for <") << ref->name << "> \n\nError:" << strerror(err));
-		(err=nodeInfo.SetTo( &file)) == B_OK
-														|| BM_THROW_RUNTIME( BString("Couldn't create node-info for <") << ref->name << "> \n\nError:" << strerror(err));
-		if (nodeInfo.GetType( mt)!=B_OK) {
-			// no mimetype info yet, we ask BeOS to determine mimetype and then try again:
-			BEntry entry( ref);
-			BPath path;
-			entry.GetPath( &path);
-			status_t res=entry.InitCheck();
-			if (res==B_OK && path.InitCheck()==B_OK && path.Path()) {
-				update_mime_info( path.Path(), false, true, false);
-				nodeInfo.GetType( mt);
-			}
-		}
-		BString mimetype( mt);
+		BString mimetype = DetermineMimeType( ref);
 		if (mimetype.ICompare("text/x-email")==0) {
 			// convert beos-own mail-mimetype into correct message/rfc822:
 			mimetype = "message/rfc822";

@@ -31,6 +31,7 @@
 #include <stdio.h> 
 #include <string.h> 
 
+#include <Directory.h> 
 #include <Messenger.h> 
 #include <Message.h> 
 #include <File.h>
@@ -70,20 +71,23 @@ bool MoveToTrash( const entry_ref* refs, int32 count) {
 } 
 
 /*------------------------------------------------------------------------------*\
-	LivesInTrash( eref)
-		-	return whether or not the given entry_ref lives inside the trash
+	LivesInTrash( nref)
+		-	return whether or not the given node_ref lives inside the trash
 \*------------------------------------------------------------------------------*/
-bool LivesInTrash( const entry_ref* eref) {
-	BEntry entry( eref);
-	if (entry.InitCheck() != B_OK)
+bool LivesInTrash( const node_ref* nref) {
+	BDirectory dir( nref);
+	if (dir.InitCheck() != B_OK)
+		return false;
+	BEntry entry;
+	if (dir.GetEntry( &entry) != B_OK)
 		return false;
 	BPath path;
 	if (entry.GetPath( &path) != B_OK)
 		return false;
 	BString pathStr = path.Path();
+	pathStr << "/";
 	return pathStr.ICompare( "/boot/home/Desktop/Trash/", 25) == 0;
 } 
-
 
 /*------------------------------------------------------------------------------*\
 	CheckMimeType( eref, type)
@@ -104,6 +108,7 @@ BString DetermineMimeType( const entry_ref* eref) {
 		BNodeInfo nodeInfo( &node);
 		if (nodeInfo.InitCheck() == B_OK) {
 			char mimetype[B_MIME_TYPE_LENGTH+1];
+			*mimetype = 0;
 			if (nodeInfo.GetType( mimetype)!=B_OK) {
 				// no mimetype info yet, we ask BeOS to determine mimetype and then try again:
 				BEntry entry( eref);
@@ -113,11 +118,11 @@ BString DetermineMimeType( const entry_ref* eref) {
 				if (res==B_OK && path.InitCheck()==B_OK && path.Path())
 					update_mime_info( path.Path(), false, true, false);
 			}
-			nodeInfo.GetType( mimetype);
-			return mimetype;
+			if (nodeInfo.GetType( mimetype) == B_OK)
+				return mimetype;
 		}
 	}
-	return "<unknown>";
+	return "application/octet-stream";	// basically means "unknown"
 }
 
 /*------------------------------------------------------------------------------*\

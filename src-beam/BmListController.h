@@ -231,6 +231,7 @@ protected:
 	bool mSittingOnExpander;
 
 	static const char* const MSG_HIGHITEM = "hitem";
+	static const char* const MSG_EXPAND = "expnd";
 
 private:
 	BmListViewItem* doAddModelItem( BmListViewItem* parent, BmListModelItem* item);
