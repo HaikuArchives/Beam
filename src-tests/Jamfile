@@ -43,7 +43,7 @@ Application TestBeam
 	: 	
 		beamInParts.a bmMailKit.so bmDaemon.so 
 		bmGuiBase.so bmRegexx.so bmBase.so 
-		layout tracker cppunit $(STDC++LIB) netapi translation be
+		layout tracker cppunit $(STDC++LIB) translation be
 	;
 XRes TestBeam 
 	: 
