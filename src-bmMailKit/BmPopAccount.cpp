@@ -497,7 +497,7 @@ BmRef<BmPopAccount> BmPopAccountList::FindAccountForAddress( const BmString addr
 			return acc;
 		}
 	}
-	// may we have a bit-bucket account (fallback for failed delivery):
+	// may we have a bit-bucket account (catch-all for failed delivery):
 	for( iter = begin(); iter != end(); ++iter) {
 		BmPopAccount* acc = dynamic_cast< BmPopAccount*>( iter->second.Get());
 		if (acc->MarkedAsBitBucket()) {

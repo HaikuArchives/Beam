@@ -179,7 +179,7 @@ private:
 	BmString mAuthMethod;				// authentication method
 	bool mMarkedAsDefault;			// is this the default account?
 	bool mPwdStoredOnDisk;			// store Passwords unsafely on disk?
-	bool mMarkedAsBitBucket;		// is this account the fallback-account for failed delivery?
+	bool mMarkedAsBitBucket;		// is this account a catch-all-account for failed delivery?
 	int16 mCheckInterval;			// check mail every ... minutes
 	BmString mCheckIntervalString;	// check-interval as String
 
