@@ -1,0 +1,6 @@
+TestBeam
+logs*
+\(*
+*.d
+*.dbg
+
