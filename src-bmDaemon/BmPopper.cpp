@@ -216,7 +216,7 @@ bool BmPopper::StartJob() {
 		// a problem occurred, we tell the user:
 		BmString errstr = err.what();
 		int e;
-		if ((e = Connection()->Error())!=B_OK)
+		if (mConnection && (e = mConnection->Error())!=B_OK)
 			errstr << "\nerror: " << e << ", " << mConnection->ErrorStr();
 		UpdatePOPStatus( 0.0, NULL, true);
 		BmString text = Name() << ":\n\n" << errstr;
@@ -375,8 +375,8 @@ void BmPopper::StateLogin() {
 			// most probably a wrong password...
 			BmString errstr = err.what();
 			int e;
-			if ((e = Connection()->Error())!=B_OK)
-				errstr << "\nerror: " << e << ", " << Connection()->ErrorStr();
+			if (mConnection && (e = mConnection->Error())!=B_OK)
+				errstr << "\nerror: " << e << ", " << mConnection->ErrorStr();
 			BmString text = Name() << ":\n\n" << errstr;
 			HandleError( text);
 		}
