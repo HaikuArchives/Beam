@@ -844,6 +844,8 @@ void BmMailRefView::AddMailRefMenu( BMenu* menu, BHandler* target,
 		replyMenu->SetFont( &font);
 	AddItemToMenu( menu, replyMenuItem, target);
 	AddItemToMenu( replyMenu, 
+						CreateMenuItem( "Reply (Auto)", BMM_REPLY, "Reply"), target);
+	AddItemToMenu( replyMenu, 
 						CreateMenuItem( "Reply To List", BMM_REPLY_LIST), target);
 	AddItemToMenu( replyMenu, 
 						CreateMenuItem( "Reply To Person", BMM_REPLY_ORIGINATOR), 
@@ -856,6 +858,11 @@ void BmMailRefView::AddMailRefMenu( BMenu* menu, BHandler* target,
 	if (isContextMenu)
 		fwdMenu->SetFont( &font);
 	AddItemToMenu( menu, fwdMenuItem, target);
+	AddItemToMenu( fwdMenu, 
+						CreateMenuItem( "Forward Inline", 
+											 BMM_FORWARD_INLINE,
+											 "Forward"), 
+						target);
 	AddItemToMenu( fwdMenu, 
 						CreateMenuItem( "Forward As Attachment", 
 											 BMM_FORWARD_ATTACHED), 
