@@ -352,7 +352,6 @@ float BmResources::FontLineHeight( const BFont* font) {
 \*------------------------------------------------------------------------------*/
 BPicture* BmResources::CreatePictureFor( BBitmap* image, 
 													  float width, float height,
-													  rgb_color background,
 													  bool transparentBack) {
 	BPicture* picture = new BPicture();
 	BRect rect(0,0,width-1,height-1);
@@ -361,9 +360,9 @@ BPicture* BmResources::CreatePictureFor( BBitmap* image,
 	drawImage->AddChild( view);
 	drawImage->Lock();
 	view->BeginPicture( picture);
-	view->SetViewColor( background);
+	view->SetViewColor( ui_color( B_UI_PANEL_BACKGROUND_COLOR));
 	if (!transparentBack) {
-		view->SetLowColor( background);
+		view->SetLowColor( ui_color( B_UI_PANEL_BACKGROUND_COLOR));
 		view->FillRect( rect, B_SOLID_LOW);
 	}
 	if (image) {
