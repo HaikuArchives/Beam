@@ -136,6 +136,20 @@ void BmResources::FetchIcons() {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
+float BmResources::FontBaselineOffset( const BFont* font) { 
+	font_height fh;
+	if (!font)
+		fh = BePlainFontHeight;
+	else
+		font->GetHeight( &fh);
+
+	return fh.ascent - 1; 
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
 float BmResources::FontHeight( const BFont* font) { 
 	font_height fh;
 	if (!font)

@@ -92,7 +92,7 @@ public:
 	// native methods:
 
 	//	overrides of listmodel base:
-	void StartJob();
+	bool StartJob();
 
 	// getters:
 	status_t InitCheck()						{ return mInitCheck; }

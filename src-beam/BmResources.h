@@ -43,6 +43,7 @@ public:
 	BPath	SettingsPath;
 	//
 	font_height BePlainFontHeight;
+	float FontBaselineOffset( const BFont* font=NULL);
 	float FontHeight( const BFont* font=NULL);
 	float FontLineHeight( const BFont* font=NULL);
 	//

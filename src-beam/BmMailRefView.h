@@ -51,6 +51,7 @@ public:
 
 	// overrides of listview base:
 	void KeyDown(const char *bytes, int32 numBytes);
+	bool InitiateDrag( BPoint point, int32 index, bool wasSelected);
 	void MessageReceived( BMessage* msg);
 	void SelectionChanged( void);
 

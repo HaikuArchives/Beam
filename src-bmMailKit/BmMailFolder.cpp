@@ -172,3 +172,25 @@ void BmMailFolder::RemoveMailRefList() {
 		mMailRefList = NULL;
 	}
 }
+
+/*------------------------------------------------------------------------------*\
+	RemoveMailRefList()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailFolder::MoveMailsHere( BList& refs) {
+	static uint32 counter = 1;
+	BDirectory thisDir( &mEntryRef);
+	int32 count = refs.CountItems();
+	// move each mailref into this folder:
+	for( int32 i=0; i<count; ++i) {
+		entry_ref* ref = static_cast<entry_ref*>( refs.ItemAt(i));
+		BEntry entry( ref);
+		if (entry.InitCheck() == B_OK) {
+			if (entry.MoveTo( &thisDir) == B_FILE_EXISTS) {
+				// increment counter until we have found a unique name:
+				while ( entry.MoveTo( &thisDir, (BString(ref->name)<<"_"<<counter++).String()) == B_FILE_EXISTS)
+					;
+			}
+		}
+	}
+}

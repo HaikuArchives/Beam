@@ -13,6 +13,7 @@
 #include "BmMsgTypes.h"
 #include "BmPrefs.h"
 #include "BmResources.h"
+#include "BmStorageUtil.h"
 #include "BmUtil.h"
 
 const int16 BmMailRefItem::nFirstTextCol = 3;
@@ -204,6 +205,35 @@ BmListViewItem* BmMailRefView::CreateListViewItem( BmListModelItem* item,
 void BmMailRefView::MessageReceived( BMessage* msg) {
 	try {
 		switch( msg->what) {
+			case B_COPY_TARGET: {
+				// [zooey]: this actually never happens. I am clueless to why Tracker 
+				//				does the copy on it's own, without ever telling us!
+				//				(is this a bug?)
+				if (msg->IsReply()) {
+					BMessage dataMsg( B_MIME_DATA);
+					dataMsg.AddString( "text/email", "sdjkfhksjdhfkh\nfjshdkfksdj\n");
+					msg->SendReply( &dataMsg);
+				}
+				break;
+			}
+			case B_MOVE_TARGET: {
+				if (msg->IsReply()) {
+					BMessage dataMsg( B_MIME_DATA);
+					dataMsg.AddString( "text/email", "sdjkfhksjdhfkh\nfjshdkfksdj\n");
+					msg->SendReply( &dataMsg);
+				}
+				break;
+			}
+			case B_TRASH_TARGET: {
+				if (msg->IsReply()) {
+					entry_ref eref;
+					const BMessage* origMsg = msg->Previous();
+					for( int i=0; origMsg->FindRef( "refs", i, &eref) == B_OK; ++i) {
+						MoveToTrash( eref);
+					}
+				}
+				break;
+			}
 			default:
 				inherited::MessageReceived( msg);
 		}
@@ -228,7 +258,8 @@ void BmMailRefView::KeyDown(const char *bytes, int32 numBytes) {
 			case B_LEFT_ARROW:
 			case B_RIGHT_ARROW: {
 				int32 mods = Window()->CurrentMessage()->FindInt32("modifiers");
-				if (mods & (B_CONTROL_KEY | B_SHIFT_KEY)) {
+//				if (mods & (B_CONTROL_KEY | B_SHIFT_KEY)) {
+				if (mods & (B_CONTROL_KEY)) {
 					// remove modifiers so we don't ping-pong endlessly:
 					Window()->CurrentMessage()->ReplaceInt32("modifiers", 0);
 					if (mPartnerMailView)
@@ -242,6 +273,69 @@ void BmMailRefView::KeyDown(const char *bytes, int32 numBytes) {
 				break;
 		}
 	}
+}
+
+/*------------------------------------------------------------------------------*\
+	InitiateDrag()
+		-	
+\*------------------------------------------------------------------------------*/
+bool BmMailRefView::InitiateDrag( BPoint where, int32 index, bool wasSelected) {
+	if (!wasSelected)
+		return false;
+	BMessage dragMsg( BM_MAIL_DRAG);
+	dragMsg.AddString( "be:types", "text/x-email");
+//	dragMsg.AddString( "be:filetypes", "text/x-email");
+	dragMsg.AddString( "be:type_descriptions", "E-mail");
+	dragMsg.AddInt32( "be:actions", B_COPY_TARGET);
+	dragMsg.AddInt32( "be:actions", B_MOVE_TARGET);
+	dragMsg.AddInt32( "be:actions", B_TRASH_TARGET);
+	BmMailRefItem* refItem = dynamic_cast<BmMailRefItem*>(ItemAt( index));
+	BmMailRef* ref = dynamic_cast<BmMailRef*>(refItem->ModelItem());
+	dragMsg.AddString( "be:clip_name", ref->TrackerName());
+	dragMsg.AddString( "be:originator", "Beam");
+	int32 currIdx;
+	// we count the number of selected items:
+	int32 selCount;
+	for( selCount=0; (currIdx=CurrentSelection( selCount))>=0; ++selCount)
+		;
+	BFont font;
+	GetFont( &font);
+	float lineHeight = MAX(TheResources->FontLineHeight( &font),20.0);
+	float baselineOffset = TheResources->FontBaselineOffset( &font);
+	BRect dragRect( 0, 0, 200-1, MIN(selCount,4.0)*lineHeight-1);
+	BView* dummyView = new BView( dragRect, NULL, B_FOLLOW_NONE, 0);
+	BBitmap* dragImage = new BBitmap( dragRect, B_RGBA32, true);
+	dragImage->AddChild( dummyView);
+	dragImage->Lock();
+	dummyView->SetHighColor( B_TRANSPARENT_COLOR);
+	dummyView->FillRect( dragRect);
+	dummyView->SetDrawingMode( B_OP_ALPHA);
+	dummyView->SetHighColor( 0, 0, 0, 128);
+	dummyView->SetBlendingMode( B_CONSTANT_ALPHA, B_ALPHA_COMPOSITE);
+	for( int32 i=0; (currIdx=CurrentSelection( i))>=0; ++i) {
+		// now we add all selected items to drag-image and to drag-msg:
+		refItem = dynamic_cast<BmMailRefItem*>(ItemAt( currIdx));
+		ref = dynamic_cast<BmMailRef*>(refItem->ModelItem());
+		dragMsg.AddRef( "refs", ref->EntryRefPtr());
+		dragMsg.AddPointer( "refPtrs", ref->EntryRefPtr());
+		if (i<3) {
+			// add only the first three selections to drag-image:
+			const BBitmap* icon = refItem->GetColumnContentBitmap( 0);
+			if (icon) {
+				dummyView->DrawBitmapAsync( icon, BPoint(0,i*lineHeight));
+			}
+			dummyView->DrawString( ref->Subject().String(), 
+										  BPoint( 20.0, i*lineHeight+baselineOffset));
+		} else if (i==3) {
+			// add an indicator that more items are being dragged than shown:
+			BString indicator = BString("(...and ") << selCount-3 << " more items)";
+			dummyView->DrawString( indicator.String(), 
+										  BPoint( 20.0, i*lineHeight+baselineOffset));
+		}
+	}
+	dragImage->Unlock();
+	DragMessage( &dragMsg, dragImage, B_OP_ALPHA, BPoint( 10.0, 10.0));
+	return true;
 }
 
 /*------------------------------------------------------------------------------*\

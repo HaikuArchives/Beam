@@ -94,7 +94,7 @@ public:
 
 protected:
 	// native methods:
-	virtual void StartJob() 				{}
+	virtual bool StartJob() 				= 0;
 	virtual bool ShouldContinue();
 	virtual void TellJobIsDone( bool completed=true);
 

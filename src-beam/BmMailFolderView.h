@@ -59,6 +59,8 @@ public:
 	BmListViewItem* CreateListViewItem( BmListModelItem* item, BMessage* archive=NULL);
 	
 	// overrides of controller base:
+	bool AcceptsDropOf( const BMessage* msg);
+	void HandleDrop( const BMessage* msg);
 	BString StateInfoBasename()			{ return "MailFolderView"; }
 	void Update( BmUpdFlags flags);
 
@@ -67,6 +69,8 @@ public:
 	void SelectionChanged( void);
 
 	static BmMailFolderView* theInstance;
+
+private:
 };
 
 #define TheMailFolderView BmMailFolderView::theInstance;

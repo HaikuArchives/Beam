@@ -55,5 +55,11 @@
 #define BM_BODYPARTVIEW_SHOWALL		'bmga'
 #define BM_BODYPARTVIEW_SHOWINLINE	'bmgb'
 
+/*------------------------------------------------------------------------------*\
+	DRAG-message:
+\*------------------------------------------------------------------------------*/
+#define BM_MAIL_DRAG						'bmha'
+#define BM_FOLDER_DRAG					'bmhb'
+#define BM_ATTACHMENT_DRAG				'bmhc'
 
 #endif

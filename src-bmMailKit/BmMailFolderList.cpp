@@ -52,15 +52,16 @@ BmMailFolderList::~BmMailFolderList() {
 	StartJob()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmMailFolderList::StartJob() {
+bool BmMailFolderList::StartJob() {
 	// try to open folder-cache file...
 	status_t err;
 	BFile cacheFile;
 
+	if (InitCheck() == B_OK) {
+		return true;
+	}
+
 	try {
-		if (InitCheck() == B_OK) {
-			return;
-		}
 	
 		BString filename = BString(TheResources->SettingsPath.Path()) 
 									<< "/" << ARCHIVE_FILENAME;
@@ -81,6 +82,7 @@ void BmMailFolderList::StartJob() {
 	} catch (exception &e) {
 		BM_SHOWERR( e.what());
 	}
+	return InitCheck() == B_OK;
 }
 
 /*------------------------------------------------------------------------------*\

@@ -243,8 +243,6 @@ void BmMailView::JobIsDone( bool completed) {
 		}
 		BM_LOG2( BM_LogMailParse, BString("remove <CR>s from mailtext"));
 		RemoveSetFromString( displayText, "\r");
-		BM_LOG2( BM_LogMailParse, BString("converting mailtext to UTF8"));
-		displayText = ConvertToUTF8( B_ISO1_CONVERSION, displayText.String());
 		BM_LOG2( BM_LogMailParse, BString("setting mailtext into textview"));
 		SetText( displayText.String());
 		BM_LOG2( BM_LogMailParse, BString("done, mail is visible"));
@@ -261,7 +259,7 @@ void BmMailView::JobIsDone( bool completed) {
 	DisplayBodyPart( displayText, bodypart)
 		-	
 \*------------------------------------------------------------------------------*/
-void BmMailView::DisplayBodyPart( BString& displayText, const BmBodyPart* bodyPart) {
+void BmMailView::DisplayBodyPart( BString& displayText, BmBodyPart* bodyPart) {
 	if (!bodyPart->mIsMultiPart) {
 		if (bodyPart->ShouldBeShownInline()) {
 			// MIME-block should be shown inline, so we add it to our textview:
@@ -269,10 +267,8 @@ void BmMailView::DisplayBodyPart( BString& displayText, const BmBodyPart* bodyPa
 				// we show a separator between two inline bodyparts
 				displayText<<"- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -";
 			}
-			displayText.Append( bodyPart->DecodedData());
-		} else {
-			// MIME-block should be shown as an attachment:
-//			displayText << "<< "<<type.mValue<<" name="<<type.mParams["name"]<<" >>\r\n";
+			uint32 encoding = CharsetToEncoding( bodyPart->mContentType.mParams["charset"]);
+			displayText.Append( ConvertToUTF8( encoding, bodyPart->DecodedData().String()));
 		}
 	} else {
 		BmModelItemMap::const_iterator iter;

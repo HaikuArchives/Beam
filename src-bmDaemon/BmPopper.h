@@ -61,7 +61,7 @@ public:
 
 	BString Name() const						{ return ModelName(); }
 
-	void StartJob();
+	bool StartJob();
 
 private:
 	static int32 mId;							// unique message ID, this is used if a 

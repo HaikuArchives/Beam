@@ -143,6 +143,7 @@ BmListViewController::BmListViewController( minimax minmax, BRect rect,
 	,	mShowCaption( showCaption)
 	,	mShowBusyView( showBusyView)
 	,	mUseStateCache( true)
+	,	mCurrHighlightItem( NULL)
 {
 }
 
@@ -177,6 +178,57 @@ CLVContainerView* BmListViewController::CreateContainer( bool horizontal, bool v
 void BmListViewController::MouseDown(BPoint point) { 
 	inherited::MouseDown( point); 
 	MakeFocus( true);
+}
+
+/*------------------------------------------------------------------------------*\
+	MouseMoved()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmListViewController::MouseMoved( BPoint point, uint32 transit, const BMessage *msg) {
+	if (msg && AcceptsDropOf( msg)) {
+		if (transit == B_INSIDE_VIEW) {
+			int32 index = IndexOf( point);
+			if (IndexOf( mCurrHighlightItem) != index) {
+				if (mCurrHighlightItem) {
+					// remove old highlight:
+					mCurrHighlightItem->Highlight( false);
+					InvalidateItem( IndexOf( mCurrHighlightItem));
+				}
+				if (index >= 0) {
+					// highlight current destination:
+					mCurrHighlightItem = dynamic_cast<BmListViewItem*>( ItemAt( index));
+					mCurrHighlightItem->Highlight( true);
+					InvalidateItem( index);
+				}
+			}
+			if (Hierarchical() && !mCurrHighlightItem->IsExpanded()
+			&& mCurrHighlightItem->ExpanderRectContains( point)) {
+				// expand superitem if mouse is over expander (so that user can 
+				// navigate through the subitems that were previously hidden):
+				Expand( mCurrHighlightItem);
+			}
+		} else if (transit == B_EXITED_VIEW || transit == B_OUTSIDE_VIEW) {
+			if (mCurrHighlightItem) {
+				mCurrHighlightItem->Highlight( false);
+				InvalidateItem( IndexOf( mCurrHighlightItem));
+				mCurrHighlightItem = NULL;
+			}
+		}
+	}
+	inherited::MouseMoved( point, transit, msg);
+}
+
+/*------------------------------------------------------------------------------*\
+	HandleDrop( msg)
+		-	
+\*------------------------------------------------------------------------------*/
+void BmListViewController::HandleDrop( const BMessage* msg) {
+	// remove the drag-highlight, if neccessary:
+	if (mCurrHighlightItem) {
+		mCurrHighlightItem->Highlight( false);
+		InvalidateItem( IndexOf( mCurrHighlightItem));
+		mCurrHighlightItem = NULL;
+	}
 }
 
 /*------------------------------------------------------------------------------*\
@@ -217,6 +269,8 @@ void BmListViewController::MessageReceived( BMessage* msg) {
 				break;
 			}
 			default:
+				if (msg->WasDropped())
+					HandleDrop( msg);
 				inherited::MessageReceived( msg);
 		}
 	}
@@ -601,7 +655,6 @@ BmCLVContainerView::BmCLVContainerView( minimax minmax, ColumnListView* target,
 	,	mBusyView( NULL)
 {
 	SetViewColor( ui_color( B_PANEL_BACKGROUND_COLOR));
-//	SetViewColor( B_TRANSPARENT_COLOR);
 	BRect hsFrame;
 	BPoint hsLT;
 	BScrollBar* hScroller = ScrollBar( B_HORIZONTAL);

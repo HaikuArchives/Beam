@@ -42,7 +42,7 @@ public:
 
 	// native methods:
 	void ShowMail( BmMailRef* ref);
-	void DisplayBodyPart( BString& displayText, const BmBodyPart* bodyPart);
+	void DisplayBodyPart( BString& displayText, BmBodyPart* bodyPart);
 	status_t Archive( BMessage* archive, bool deep=true) const;
 	status_t Unarchive( BMessage* archive, bool deep=true);
 	bool Store();

@@ -39,6 +39,7 @@ CLVEasyItem::CLVEasyItem(uint32 level, bool superitem, bool expanded, float minh
 : CLVListItem(level,superitem,expanded,minheight)
 {
 	text_offset = 0.0;
+	highlight = false;
 }
 
 
@@ -217,6 +218,11 @@ void CLVEasyItem::DrawItemColumn(BView *owner, BRect item_column_rect, int32 col
 	else {
 		color = ((ColumnListView*)owner)->LightColumnCol();
 		tinted_color = ((ColumnListView*)owner)->DarkColumnCol();
+	}
+	if (highlight) {
+		const float highlight_tint = 1.15F;
+		color = tint_color( color, highlight_tint);
+		tinted_color = tint_color( tinted_color, highlight_tint);
 	}
 	owner->SetDrawingMode(B_OP_COPY);
 

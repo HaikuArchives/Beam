@@ -66,6 +66,8 @@ public:
 	bool StripedListView() const 			{ return mStripedListView; }
 	BMessage* MailRefLayout() const		{ return mMailRefLayout; }
 	bool RestoreFolderStates() const 	{ return mRestoreFolderStates; }
+	// stubs for later use:
+	bool ShowDecodedLength() const 		{ return true; }
 
 	// setters:
 	void CheckMail( TConnWinMode m) 		{ mDynamicConnectionWin = m; }

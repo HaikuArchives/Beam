@@ -18,6 +18,9 @@ using namespace regexx;
 #include "BmResources.h"
 #include "BmUtil.h"
 
+#undef BM_LOGNAME
+#define BM_LOGNAME "MailParser"
+
 /********************************************************************************\
 	BmContentField
 \********************************************************************************/
@@ -53,7 +56,7 @@ void BmContentField::SetTo( const BString cfString) {
 		BString params;
 		if (rx.match[0].atom.size() > 1)
 			cfString.CopyInto( params, rx.match[0].atom[1].start(), rx.match[0].atom[1].Length());
-		if (rx.exec( params, ";\\s*(\\w+)\\s*=\\s*((?:\\\"[^\"]+\\\")|(?:[\\S]+))", Regexx::global)) {
+		if (rx.exec( params, ";\\s*(\\w+)\\s*=\\s*((?:\\\"[^\"]+\\\"\?)|(?:[\\S]+))", Regexx::global)) {
 			for( uint32 i=0; i<rx.match.size(); ++i) {
 				BString key;
 				BString val;
@@ -62,7 +65,9 @@ void BmContentField::SetTo( const BString cfString) {
 					if (rx.match[0].atom.size() > 1) {
 						if (params[rx.match[i].atom[1].start()] == '"') {
 							// skip quotes during extraction:
-							params.CopyInto( val, rx.match[i].atom[1].start()+1, rx.match[i].atom[1].Length()-2);
+							int skip = params[rx.match[i].atom[1].start()+rx.match[i].atom[1].Length()-1] == '"'
+											? 2 : 1;
+							params.CopyInto( val, rx.match[i].atom[1].start()+1, rx.match[i].atom[1].Length()-skip);
 						} else {
 							params.CopyInto( val, rx.match[i].atom[1].start(), rx.match[i].atom[1].Length());
 						}
@@ -168,7 +173,7 @@ void BmBodyPart::SetTo( const BString& msgtext, int32 start, int32 length,
 	if (!mIsMultiPart) {
 		// unneccessary for multiparts, since they are never handled on their own 
 		// (they are split into their subparts instead)
-		if (mContentTransferEncoding.Length())
+		if (ThePrefs->ShowDecodedLength() && mContentTransferEncoding.Length())
 			mDecodedLength = BmEncoding::DecodedLength( mContentTransferEncoding, 
 																	  mPosInRawText, mLength);
 	}
@@ -294,13 +299,14 @@ BmBodyPartList::~BmBodyPartList() {
 	StartJob()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmBodyPartList::StartJob() {
+bool BmBodyPartList::StartJob() {
 	// try to parse bodypart-structure of mail...
 	
+	if (InitCheck() == B_OK) {
+		return true;
+	}
+
 	try {
-		if (InitCheck() == B_OK) {
-			return;
-		}
 		if (mMail) {
 			const BString& msgText = mMail->RawText();
 			BmBodyPart* bodyPart = new BmBodyPart( msgText, mMail->HeaderLength()+2, 
@@ -313,5 +319,6 @@ void BmBodyPartList::StartJob() {
 	} catch (exception &e) {
 		BM_SHOWERR( e.what());
 	}
+	return InitCheck() == B_OK;
 }
 

@@ -8,6 +8,9 @@
 
 #include <NodeInfo.h>
 
+#include <regexx/regexx.hh>
+using namespace regexx;
+
 #include "BmBodyPartList.h"
 #include "BmLogHandler.h"
 #include "BmMail.h"
@@ -90,6 +93,9 @@ BmMail::~BmMail() {
 		-	account is the name of the POP/IMAP-account this message was received from
 \*------------------------------------------------------------------------------*/
 void BmMail::SetTo( BString &msgText, const BString &account) {
+	Regexx rx;
+	
+	// find end of header (and start of body):
 	int32 headerLen = msgText.FindFirst( "\r\n\r\n");
 							// STD11: empty-line seperates header from body
 	if (headerLen == B_ERROR) {
@@ -208,22 +214,22 @@ BString BmMail::CreateBasicFilename() {
 	StartJob()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmMail::StartJob() {
+bool BmMail::StartJob() {
 	// try to open corresponding mail file, then read and parse mail contents...
 	status_t err;
 	BFile mailFile;
 	
-	try {
-		if (!mMailRef || InitCheck() == B_OK) {
-			// mail is illdefined or has already been initialized -> there's nothing left to do
-			return;
-		}
+	if (!mMailRef || InitCheck() == B_OK) {
+		// mail is illdefined or has already been initialized -> there's nothing left to do
+		return true;
+	}
 
+	try {
 		// we take a little nap (giving the user time to navigate onwards),
 		// after which we check if we should really read the mail:
 		snooze( 50*1000);
 		if (!ShouldContinue())
-			return;
+			return false;
 
 		entry_ref eref = mMailRef->EntryRef();
 		BM_LOG2( BM_LogMailParse, BString("opening mail-file <") << eref.name << ">");
@@ -251,7 +257,7 @@ void BmMail::StartJob() {
 			offs += read;
 		}
 		if (!ShouldContinue())
-			return;
+			return false;
 		BM_LOG2( BM_LogMailParse, BString("...real size is ") << realSize << " bytes");
 		buf[realSize] = '\0';
 		mailText.UnlockBuffer( realSize);
@@ -263,5 +269,6 @@ void BmMail::StartJob() {
 	} catch (exception &e) {
 		BM_SHOWERR( e.what());
 	}
+	return InitCheck() == B_OK;
 }
 

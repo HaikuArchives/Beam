@@ -71,7 +71,7 @@ BmPopper::~BmPopper() {
 	StartJob()
 		-	the mainloop, steps through all POP3-stages and calls the corresponding handlers
 \*------------------------------------------------------------------------------*/
-void BmPopper::StartJob() {
+bool BmPopper::StartJob() {
 
 	const float delta = (100.0 / POP_DONE);
 	const bool failed=true;
@@ -94,7 +94,9 @@ void BmPopper::StartJob() {
 		UpdatePOPStatus( 0.0, NULL, failed);
 		BString text = Name() << "\n\n" << errstr;
 		BM_SHOWERR( BString("BmPopper: ") << text);
+		return false;
 	}
+	return true;
 }
 
 /*------------------------------------------------------------------------------*\

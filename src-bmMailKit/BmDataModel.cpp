@@ -247,8 +247,8 @@ void BmJobModel::doStartJob() {
 		lCount++; 
 	}
 	try {
-		StartJob();
-		TellJobIsDone( mJobState != JOB_STOPPED);
+		bool result = StartJob();
+		TellJobIsDone( result && mJobState != JOB_STOPPED);
 	} catch( exception& e) {
 		BM_SHOWERR( e.what());
 	}

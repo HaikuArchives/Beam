@@ -135,6 +135,8 @@ public:
 	void UpdateModelState( BMessage* msg);
 	void UpdateItem( BmListViewItem* item, BmUpdFlags flags);
 	void UpdateCaption( const char* text=NULL);
+	virtual bool AcceptsDropOf( const BMessage* msg)	{ return false; }
+	virtual void HandleDrop( const BMessage* msg);
 	void ShowOrHideColumn( BMessage* msg);
 	//
 	virtual BmListViewItem* CreateListViewItem( BmListModelItem* item, 
@@ -157,6 +159,7 @@ public:
 	void ShowLabelViewMenu( BPoint pos);
 	void MessageReceived( BMessage* msg);
 	void MouseDown(BPoint point);
+	void MouseMoved( BPoint point, uint32 transit, const BMessage *msg);
 	BmCLVContainerView* ScrollView() 	{ return dynamic_cast<BmCLVContainerView*>(fScrollView); }
 
 	// getters:
@@ -180,7 +183,7 @@ protected:
 	bool mShowCaption;
 	bool mShowBusyView;
 	bool mUseStateCache;
-
+	BmListViewItem* mCurrHighlightItem;
 };
 
 

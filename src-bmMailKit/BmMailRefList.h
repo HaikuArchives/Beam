@@ -40,7 +40,7 @@ public:
 	virtual status_t Archive( BMessage* archive, bool deep = true) const;
 
 	//	overrides of datamodel base:
-	void StartJob();
+	bool StartJob();
 	void RemoveController( BmController* controller);
 
 	// getters:

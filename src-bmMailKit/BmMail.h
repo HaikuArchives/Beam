@@ -37,7 +37,7 @@ public:
 	void StoreAttributes( BFile& mailFile);
 	
 	// overrides of jobmodel base:
-	void StartJob();
+	bool StartJob();
 
 	// getters:
 	const BString& AccountName()			{ return mAccountName; }

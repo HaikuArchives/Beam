@@ -83,16 +83,16 @@ status_t BmMailRefList::Archive( BMessage* archive, bool deep) const {
 	StartJob()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmMailRefList::StartJob() {
+bool BmMailRefList::StartJob() {
 	// try to open folder-cache file...
 	status_t err;
 	BFile cacheFile;
 	
+	if (InitCheck() == B_OK) {
+		return true;
+	}
+
 	try {
-		if (InitCheck() == B_OK) {
-			return;
-		}
-	
 		BString filename = CacheFileName();
 	
 		bool cacheFileUpToDate = false;
@@ -118,6 +118,7 @@ void BmMailRefList::StartJob() {
 	} catch (exception &e) {
 		BM_SHOWERR( e.what());
 	}
+	return InitCheck() == B_OK;
 }
 
 /*------------------------------------------------------------------------------*\

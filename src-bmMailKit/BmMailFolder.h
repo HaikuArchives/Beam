@@ -40,6 +40,7 @@ public:
 	bool CheckIfModifiedSince( time_t when, time_t* storeNewModTime=NULL);
 	void CreateMailRefList();
 	void RemoveMailRefList();
+	void MoveMailsHere( BList& refs);
 
 	// overrides of archivable base:
 	static BArchivable* Instantiate( BMessage* archive);

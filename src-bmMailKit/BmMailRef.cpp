@@ -54,15 +54,15 @@ BmMailRef::BmMailRef( entry_ref &eref, ino_t node, struct stat& st)
 		node.ReadAttr( "BEOS:TYPE", 		B_STRING_TYPE, 0, buf, bufsize);		filetype = buf; 	*buf=0;
 		if (!filetype.ICompare("text/x-email")) {
 			// file is indeed a mail, we fetch its attributes:
-			node.ReadAttr( "MAIL:name", 		B_STRING_TYPE, 0, buf, bufsize);		mName = buf; 		*buf=0;
-			node.ReadAttr( "MAIL:account", 	B_STRING_TYPE, 0, buf, bufsize);		mAccount = buf;	*buf=0;
-			node.ReadAttr( "MAIL:cc", 			B_STRING_TYPE, 0, buf, bufsize);		mCc = buf;			*buf=0;
-			node.ReadAttr( "MAIL:from", 		B_STRING_TYPE, 0, buf, bufsize);		mFrom = buf;		*buf=0;
-			node.ReadAttr( "MAIL:priority", 	B_STRING_TYPE, 0, buf, bufsize);		mPriority = buf;	*buf=0;
-			node.ReadAttr( "MAIL:reply", 		B_STRING_TYPE, 0, buf, bufsize);		mReplyTo = buf;	*buf=0;
-			node.ReadAttr( "MAIL:status", 	B_STRING_TYPE, 0, buf, bufsize);		mStatus = buf;		*buf=0;
-			node.ReadAttr( "MAIL:subject", 	B_STRING_TYPE, 0, buf, bufsize);		mSubject = buf;	*buf=0;
-			node.ReadAttr( "MAIL:to", 			B_STRING_TYPE, 0, buf, bufsize);		mTo = buf;			*buf=0;
+			node.ReadAttrString( "MAIL:name", 		&mName);
+			node.ReadAttrString( "MAIL:account", 	&mAccount);
+			node.ReadAttrString( "MAIL:cc", 			&mCc);
+			node.ReadAttrString( "MAIL:from", 		&mFrom);
+			node.ReadAttrString( "MAIL:priority", 	&mPriority);
+			node.ReadAttrString( "MAIL:reply", 		&mReplyTo);
+			node.ReadAttrString( "MAIL:status", 	&mStatus);
+			node.ReadAttrString( "MAIL:subject", 	&mSubject);
+			node.ReadAttrString( "MAIL:to", 			&mTo);
 	
 			mWhen = 0;
 			node.ReadAttr( "MAIL:when", 		B_TIME_TYPE, 0, &mWhen, sizeof(time_t));

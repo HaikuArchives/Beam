@@ -21,7 +21,7 @@ using namespace regexx;
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-int32 BmEncoding::CharsetToEncoding( const BString& charset) {
+uint32 BmEncoding::CharsetToEncoding( const BString& charset) {
 	BString set( charset);
 	set.ToUpper();
 	if (set == "ISO-8859-1") 		return( B_ISO1_CONVERSION);
@@ -50,6 +50,8 @@ int32 BmEncoding::CharsetToEncoding( const BString& charset) {
 	if (set == "ISO-8859-14") 		return( B_ISO14_CONVERSION);
 	if (set == "ISO-8859-15") 		return( B_ISO15_CONVERSION);
 
+	if (set == "UTF8") 				return( BM_UTF8_CONVERSION);
+
 	return B_ISO1_CONVERSION;		// just anything that is compatible with us-ascii (which is the fallback)
 }
 
@@ -57,7 +59,7 @@ int32 BmEncoding::CharsetToEncoding( const BString& charset) {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BString BmEncoding::EncodingToCharset( const int32 encoding) {
+BString BmEncoding::EncodingToCharset( const uint32 encoding) {
 	if (encoding == B_ISO1_CONVERSION) 		return( "ISO-8859-1");
 	if (encoding == B_ISO2_CONVERSION) 		return( "ISO-8859-2");
 	if (encoding == B_ISO3_CONVERSION) 		return( "ISO-8859-3");
@@ -84,6 +86,8 @@ BString BmEncoding::EncodingToCharset( const int32 encoding) {
 	if (encoding == B_ISO14_CONVERSION) 	return( "ISO-8859-14");
 	if (encoding == B_ISO15_CONVERSION) 	return( "ISO-8859-15");
 
+	if (encoding == BM_UTF8_CONVERSION) 		return( "UTF8");
+
 	return "US-ASCII";		// to indicate us-ascii (which is the fallback)
 }
 
@@ -100,6 +104,8 @@ BString BmEncoding::ConvertToUTF8( uint32 srcEncoding, const char* srcBuf) {
 	status_t st;
 	if (!srcbuflen)
 		return "";
+	if (srcEncoding == BM_UTF8_CONVERSION)
+		return srcBuf;							// source already is UTF8, we do nothing
 
 	try {
 		for( bool finished=false; !finished; ) {

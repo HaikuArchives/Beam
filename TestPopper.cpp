@@ -97,8 +97,8 @@ void GenericApp::MessageReceived(BMessage* msg) {
 			if (count % 3 == 1) {
 				sprintf(buf, "mailtest@kiwi:110");
 				acc.Name( buf);
-				acc.Username( "mailtest2");
-				acc.Password( "mailtest2");
+				acc.Username( "mailtest");
+				acc.Password( "mailtest");
 				acc.POPServer( "kiwi");
 				acc.PortNr( 110);
 				acc.SMTPPortNr( 25);

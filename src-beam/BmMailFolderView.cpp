@@ -10,6 +10,7 @@
 #include "BmMailFolderList.h"
 #include "BmMailFolderView.h"
 #include "BmMailRefView.h"
+#include "BmMsgTypes.h"
 #include "BmPrefs.h"
 #include "BmResources.h"
 #include "BmUtil.h"
@@ -137,6 +138,31 @@ void BmMailFolderView::MessageReceived( BMessage* msg) {
 		// a problem occurred, we tell the user:
 		BM_SHOWERR( BString("MailFolderView: ") << err.what());
 	}
+}
+
+/*------------------------------------------------------------------------------*\
+	AcceptsDropOf( msg)
+		-	
+\*------------------------------------------------------------------------------*/
+bool BmMailFolderView::AcceptsDropOf( const BMessage* msg) {
+	return (msg && msg->what == BM_MAIL_DRAG);
+}
+
+/*------------------------------------------------------------------------------*\
+	HandleDrop( msg)
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailFolderView::HandleDrop( const BMessage* msg) {
+	if (msg && msg->what == BM_MAIL_DRAG && mCurrHighlightItem) {
+		BList refList;
+		void* ref;
+		for( int i=0; msg->FindPointer( "refPtrs", i, &ref)==B_OK; ++i) {
+			refList.AddItem( ref);
+		}
+		BmMailFolder* folder = dynamic_cast<BmMailFolder*>( mCurrHighlightItem->ModelItem());
+		folder->MoveMailsHere( refList);
+	}
+	inherited::HandleDrop( msg);
 }
 
 /*------------------------------------------------------------------------------*\
