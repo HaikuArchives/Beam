@@ -62,9 +62,7 @@ BmLogWindow* BmLogWindow::CreateAndStartInstanceFor( const char* logfileName) {
 BmLogWindow::BmLogWindow( const BRect& frame, const BmString& title, 
 								  const char* logfileName)
 	:	inherited( frame, title.String(), 
-					  ThePrefs->GetBool( "UseDocumentResizer", true)
-					  		? B_DOCUMENT_WINDOW_LOOK 
-					  		: B_TITLED_WINDOW_LOOK, 
+					  B_TITLED_WINDOW_LOOK, 
 					  B_NORMAL_WINDOW_FEEL, B_ASYNCHRONOUS_CONTROLS)
 	,	mLogfileName( logfileName)
 {
