@@ -36,6 +36,31 @@
 
 #include "BmWindow.h"
 
+/*------------------------------------------------------------------------------*\
+	types of messages handled by a BmMailEditWin:
+\*------------------------------------------------------------------------------*/
+enum {
+	BM_TO_CLEAR 			= 'bMYa',
+	BM_TO_ADDED				= 'bMYb',
+	BM_CC_CLEAR 			= 'bMYc',
+	BM_CC_ADDED				= 'bMYd',
+	BM_BCC_CLEAR 			= 'bMYe',
+	BM_BCC_ADDED			= 'bMYf',
+	BM_CHARSET_SELECTED	= 'bMYg',
+	BM_FROM_SET	 			= 'bMYi',
+	BM_SMTP_SELECTED		= 'bMYj',
+	BM_EDIT_HEADER_DONE	= 'bMYk',
+	BM_SHOWDETAILS1		= 'bMYl',
+	BM_SHOWDETAILS2		= 'bMYm',
+	BM_SHOWDETAILS3		= 'bMYn',
+	BM_SIGNATURE_SELECTED= 'bMYo',
+	BM_TO_REMOVE			= 'bMYp',
+	BM_CC_REMOVE			= 'bMYq',
+	BM_BCC_REMOVE			= 'bMYr',
+	BM_FILEINTO_SELECTED	= 'bMYs'
+};
+
+
 class MMenuBar;
 
 class BmCheckControl;
@@ -48,7 +73,6 @@ class BmMenuController;
 class BmMenuControllerBase;
 class BmTextControl;
 class BmToolbarButton;
-class CLVContainerView;
 class HGroup;
 class MPictureButton;
 class Space;
@@ -63,9 +87,9 @@ class BFilePanel;
 class BmMailEditWin : public BmWindow
 {
 	typedef BmWindow inherited;
-	typedef map< BmString, BmMailEditWin*> BmEditWinMap;
 
 	friend class BmPeopleDropMsgFilter;
+	friend class BmRoster;
 
 	// state-archival members:
 	static const char* const MSG_DETAIL1;
@@ -113,6 +137,9 @@ private:
 	bool SaveMail( bool hardWrapIfNeeded=true);
 	void SetFieldsFromMail( BmMail* mail);
 
+	void SendMail( bool sendNow);
+	void SendMailAfterEditHeader(const char* headerStr);
+
 	static void RebuildPeopleMenu( BmMenuControllerBase* peopleMenu);
 
 	BmMailView* mMailView;
@@ -156,13 +183,12 @@ private:
 	Space* mSeparator;
 	bool mModified;
 	bool mHasNeverBeenSaved;
+	bool mHasBeenSent;
 
 	BFilePanel* mAttachPanel;
 
 	static float nNextXPos;
 	static float nNextYPos;
-
-	static BmEditWinMap nEditWinMap;
 
 	// Hide copy-constructor and assignment:
 	BmMailEditWin( const BmMailEditWin&);
