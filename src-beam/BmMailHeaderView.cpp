@@ -207,7 +207,6 @@ void BmMailHeaderFieldView::ShowMenu( BPoint point) {
 	theMenu->AddSeparatorItem();
 	item = new BMenuItem( "Copy Header to Clipboard", new BMessage( BM_HEADERVIEW_COPY_HEADER));
 	item->SetTarget( headerView);
-	item->SetMarked( headerView->mShowRedirectFields);
 	theMenu->AddItem( item);
 	theMenu->AddSeparatorItem();
 	TheResources->AddFontSubmenuTo( theMenu, headerView, &headerView->mFont);
