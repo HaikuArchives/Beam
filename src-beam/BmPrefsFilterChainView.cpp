@@ -371,31 +371,25 @@ void BmChainedFilterView::MessageReceived( BMessage* msg) {
 		-	
 \*------------------------------------------------------------------------------*/
 BmPrefsFilterChainView::BmPrefsFilterChainView() 
-	:	inherited( "Filter-Chains ")
+	:	inherited( "Filter-Chains")
 {
 	MBorder* borderl = NULL;
 	MBorder* borderr = NULL;
 	MView* view = 
 		new UserResizeSplitView(
 			new HGroup(
-				CreateFilterChainListView( minimax(200,150,1E5,1E5), 200, 200),
+				minimax(400,100,1E5,1E5),
+				CreateFilterChainListView( minimax(200,100,1E5,1E5), 200, 150),
 				new Space( minimax(5,0,5,1E5)),
 				new VGroup(
-					new HGroup(
-						mAddButton = new MButton( "Add Chain", new BMessage(BM_ADD_CHAIN), 
-													  this, minimax(-1,-1,-1,-1)),
-						new Space(),
-						0
-					),
-					new HGroup(
-						mRemoveButton = new MButton( "Remove Chain", new BMessage( BM_REMOVE_CHAIN), 
-														  this, minimax(-1,-1,-1,-1)),
-						new Space(),
-						0
-					),
+					mAddButton = new MButton( "Add Chain", new BMessage(BM_ADD_CHAIN), 
+													  this),
+					mRemoveButton = new MButton( "Remove Chain", new BMessage( BM_REMOVE_CHAIN), 
+														  this),
 					new Space(),
 					0
 				),
+				new Space(),
 				0
 			),
 			new HGroup(
@@ -436,7 +430,9 @@ BmPrefsFilterChainView::BmPrefsFilterChainView()
 			"hsplitter", 150, B_HORIZONTAL, true, true, false, B_FOLLOW_NONE
 		);
 
-	mAddButton->ct_mpm = mRemoveButton->ct_mpm;
+	float buttonWidth = StringWidth( "Remove Chain")+20;
+	mAddButton->ct_mpm.mini.x = mAddButton->ct_mpm.maxi.x
+		= mRemoveButton->ct_mpm.mini.x = mRemoveButton->ct_mpm.maxi.x = buttonWidth;
 
 	borderl->ct_mpm = minimax(150,150);
 	borderr->ct_mpm = minimax(150,200);
