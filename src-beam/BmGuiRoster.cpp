@@ -317,6 +317,7 @@ using namespace BmPrivate;
 \*------------------------------------------------------------------------------*/
 void BmGuiRoster::RebuildFilterMenu( BmMenuControllerBase* menu)
 {
+/*
 	struct ItemFilter : public ListMenuBuilder::ItemFilter {
 		bool operator() ( const BmListModelItem* item)
 		{
@@ -328,8 +329,10 @@ void BmGuiRoster::RebuildFilterMenu( BmMenuControllerBase* menu)
 	ClearMenu( menu);	
 	ListMenuBuilder builder(TheFilterList.Get(), menu, menu->MsgTemplate(), 
 									menu->MsgTarget(), menu->Shortcuts());
-//	builder.ItemFilter(&itemFilter);
+	builder.ItemFilter(&itemFilter);
 	builder.Go();
+*/
+	RebuildList( menu, TheFilterList.Get());
 }
 
 /*------------------------------------------------------------------------------*\
