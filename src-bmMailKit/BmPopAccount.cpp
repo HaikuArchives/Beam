@@ -67,7 +67,8 @@ const char* const BmPopAccount::MSG_STORE_PWD = 	"bm:storepwd";
 const char* const BmPopAccount::MSG_MAIL_ALIASES = "bm:mailaliases";
 const char* const BmPopAccount::MSG_MARK_BUCKET = 	"bm:markbucket";
 const char* const BmPopAccount::MSG_CHECK_INTERVAL = "bm:checkinterval";
-const int16 BmPopAccount::nArchiveVersion = 2;
+const char* const BmPopAccount::MSG_FILTER_NAME = 	"bm:filter";
+const int16 BmPopAccount::nArchiveVersion = 3;
 
 const char* const BmPopAccount::AUTH_POP3 = "POP3";
 const char* const BmPopAccount::AUTH_APOP = "APOP";
@@ -89,6 +90,7 @@ BmPopAccount::BmPopAccount( const char* name, BmPopAccountList* model)
 	,	mCheckInterval( 0)
 	,	mCheckIntervalString( "")
 	,	mIntervalRunner( NULL)
+	,	mFilterName( BM_DefaultItemLabel)
 {
 	SetupIntervalRunner();
 }
@@ -133,6 +135,11 @@ BmPopAccount::BmPopAccount( BMessage* archive, BmPopAccountList* model)
 	} else {
 		mCheckInterval = 0;
 	}
+	if (version > 2) {
+		mFilterName = FindMsgString( archive, MSG_FILTER_NAME);
+	} else {
+		mFilterName = BM_DefaultItemLabel;
+	}
 	SetupIntervalRunner();
 }
 
@@ -150,7 +157,7 @@ BmPopAccount::~BmPopAccount() {
 		-	parameter deep makes no difference...
 \*------------------------------------------------------------------------------*/
 status_t BmPopAccount::Archive( BMessage* archive, bool deep) const {
-	status_t ret = (inherited::Archive( archive, deep)
+	status_t ret = inherited::Archive( archive, deep)
 		||	archive->AddString( MSG_NAME, Key().String())
 		||	archive->AddString( MSG_USERNAME, mUsername.String())
 		||	archive->AddString( MSG_PASSWORD, mPassword.String())
@@ -167,7 +174,8 @@ status_t BmPopAccount::Archive( BMessage* archive, bool deep) const {
 		||	archive->AddBool( MSG_MARK_DEFAULT, mMarkedAsDefault)
 		||	archive->AddBool( MSG_STORE_PWD, mPwdStoredOnDisk)
 		||	archive->AddBool( MSG_MARK_BUCKET, mMarkedAsBitBucket)
-		||	archive->AddInt16( MSG_CHECK_INTERVAL, mCheckInterval));
+		||	archive->AddInt16( MSG_CHECK_INTERVAL, mCheckInterval)
+		||	archive->AddString( MSG_FILTER_NAME, mFilterName.String());
 	int32 count = mUIDs.size();
 	for( int i=0; ret==B_OK && i<count; ++i) {
 		ret = archive->AddString( MSG_UID, mUIDs[i].String());

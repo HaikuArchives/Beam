@@ -51,7 +51,8 @@ const char* const BmSmtpAccount::MSG_AUTH_METHOD = "bm:authmethod";
 const char* const BmSmtpAccount::MSG_PORT_NR = 		"bm:portnr";
 const char* const BmSmtpAccount::MSG_ACC_FOR_SAP = "bm:accForSmtpAfterPop";
 const char* const BmSmtpAccount::MSG_STORE_PWD = 	"bm:storepwd";
-const int16 BmSmtpAccount::nArchiveVersion = 2;
+const char* const BmSmtpAccount::MSG_FILTER_NAME = "bm:filter";
+const int16 BmSmtpAccount::nArchiveVersion = 3;
 
 const char* const BmSmtpAccount::AUTH_SMTP_AFTER_POP= "SMTP-AFTER-POP";
 const char* const BmSmtpAccount::AUTH_PLAIN = 			"PLAIN";
@@ -66,6 +67,7 @@ BmSmtpAccount::BmSmtpAccount( const char* name, BmSmtpAccountList* model)
 	,	mPortNr( 25)
 	,	mPortNrString( "25")
 	,	mPwdStoredOnDisk( false)
+	,	mFilterName( BM_DefaultItemLabel)
 {
 }
 
@@ -87,8 +89,13 @@ BmSmtpAccount::BmSmtpAccount( BMessage* archive, BmSmtpAccountList* model)
 	mPortNr = FindMsgInt16( archive, MSG_PORT_NR);
 	mPortNrString << mPortNr;
 	mPwdStoredOnDisk = FindMsgBool( archive, MSG_STORE_PWD);
-	if (version >= 2) {
+	if (version > 1) {
 		mAccForSmtpAfterPop = FindMsgString( archive, MSG_ACC_FOR_SAP);
+	}
+	if (version > 2) {
+		mFilterName = FindMsgString( archive, MSG_FILTER_NAME);
+	} else {
+		mFilterName = BM_DefaultItemLabel;
 	}
 }
 
@@ -105,7 +112,7 @@ BmSmtpAccount::~BmSmtpAccount() {
 		-	parameter deep makes no difference...
 \*------------------------------------------------------------------------------*/
 status_t BmSmtpAccount::Archive( BMessage* archive, bool deep) const {
-	status_t ret = (inherited::Archive( archive, deep)
+	status_t ret = inherited::Archive( archive, deep)
 		||	archive->AddString( MSG_NAME, Key().String())
 		||	archive->AddString( MSG_USERNAME, mUsername.String())
 		||	archive->AddString( MSG_PASSWORD, mPassword.String())
@@ -114,7 +121,8 @@ status_t BmSmtpAccount::Archive( BMessage* archive, bool deep) const {
 		||	archive->AddString( MSG_AUTH_METHOD, mAuthMethod.String())
 		||	archive->AddInt16( MSG_PORT_NR, mPortNr)
 		||	archive->AddBool( MSG_STORE_PWD, mPwdStoredOnDisk)
-		||	archive->AddString( MSG_ACC_FOR_SAP, mAccForSmtpAfterPop.String()));
+		||	archive->AddString( MSG_ACC_FOR_SAP, mAccForSmtpAfterPop.String())
+		||	archive->AddString( MSG_FILTER_NAME, mFilterName.String());
 	return ret;
 }
 
