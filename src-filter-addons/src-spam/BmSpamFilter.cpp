@@ -46,55 +46,6 @@
 #include "BmSpamFilter.h"
 
 
-//     strnhash - generate the hash of a string of length N
-//     goals - fast, works well with short vars includng 
-//     letter pairs and palindromes, not crypto strong, generates
-//     hashes that tend toward relative primality against common
-//     hash table lengths (so taking the output of this function
-//     modulo the hash table length gives a relatively uniform distribution
-//
-//     In timing tests, this hash function can hash over 10 megabytes
-//     per second (using as text the full 2.4.9 linux kernel source)
-//     hashing individual whitespace-delimited tokens, on a Transmeta
-//     666 MHz.
-unsigned long strnhash (char *str, long len)
-{
-  long i;
-  // unsigned long hval;
-  long hval;
-  unsigned long tmp;
-
-  // initialize hval
-  hval= len;
-
-  //  for each character in the incoming text:
-  for ( i = 0; i < len; i++)
-    {
-      //    xor in the current byte against each byte of hval
-      //    (which alone gaurantees that every bit of input will have
-      //    an effect on the output)
-
-      tmp = str[i];
-      tmp = tmp | (tmp << 8) | (tmp << 16) | (tmp << 24);
-      hval ^= tmp;
-
-      //    add some bits out of the middle as low order bits.
-      hval = hval + (( hval >> 12) & 0x0000ffff) ;
-
-      //     swap most and min significative bytes 
-      tmp = (hval << 24) | ((hval >> 24) & 0xff);
-      hval &= 0x00ffff00;           // zero most and min significative bytes
-      hval |= tmp;                  // OR with swapped bytes
-
-      //    rotate hval 3 bits to the left (thereby making the
-      //    3rd msb of the above mess the hsb of the output hash)
-      hval = (hval << 3) + (hval >> 29);
-    }
-  return (hval);
-}
-
-
-
 // standard logfile-name for this file:
 #undef BM_LOGNAME
 #define BM_LOGNAME "Filter"
@@ -120,6 +71,225 @@ const char* FilterKinds[] = {
 extern "C" __declspec(dllexport) 
 const char* DefaultFilterName = "<<< SPAM-filter >>>";
 
+
+
+//     strnhash - generate the hash of a string of length N
+//     goals - fast, works well with short vars includng 
+//     letter pairs and palindromes, not crypto strong, generates
+//     hashes that tend toward relative primality against common
+//     hash table lengths (so taking the output of this function
+//     modulo the hash table length gives a relatively uniform distribution
+//
+//     In timing tests, this hash function can hash over 10 megabytes
+//     per second (using as text the full 2.4.9 linux kernel source)
+//     hashing individual whitespace-delimited tokens, on a Transmeta
+//     666 MHz.
+unsigned long strnhash (char *str, long len)
+{
+  long i;
+  // unsigned long hval;
+  long hval;
+  unsigned long tmp;
+
+  // initialize hval
+  hval= len;
+
+  //  for each character in the incoming text:
+  for ( i = 0; i < len; i++)
+    {
+      //    xor in the current byte against each byte of hval
+      //    (which alone guarantees that every bit of input will have
+      //    an effect on the output)
+
+      tmp = str[i];
+      tmp = tmp | (tmp << 8) | (tmp << 16) | (tmp << 24);
+      hval ^= tmp;
+
+      //    add some bits out of the middle as low order bits.
+      hval = hval + (( hval >> 12) & 0x0000ffff) ;
+
+      //     swap most and min significative bytes 
+      tmp = (hval << 24) | ((hval >> 24) & 0xff);
+      hval &= 0x00ffff00;           // zero most and min significative bytes
+      hval |= tmp;                  // OR with swapped bytes
+
+      //    rotate hval 3 bits to the left (thereby making the
+      //    3rd msb of the above mess the hsb of the output hash)
+      hval = (hval << 3) + (hval >> 29);
+    }
+  return (hval);
+}
+
+
+
+/********************************************************************************\
+	BmSpamFilter::OsbfClassifier::SpamRelevantMailtextSelector
+\********************************************************************************/
+// #pragma mark --- SpamRelevantMailtextSelector ---
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+BmSpamFilter::OsbfClassifier::SpamRelevantMailtextSelector::HtmlRemover
+::HtmlRemover( BmMemIBuf* input, uint32 blockSize)
+	:	inherited( input, blockSize)
+	,	mInTag(false)
+	,	mInQuot(false)
+	,	mKeepATags(false)
+	,	mKeepThisTagsContent(false)
+{
+	if (mJobSpecs)
+		mJobSpecs->FindBool("KeepATags", &mKeepATags);
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmSpamFilter::OsbfClassifier::SpamRelevantMailtextSelector::HtmlRemover
+::Filter( const char* srcBuf, uint32& srcLen, char* destBuf, uint32& destLen)
+{
+	BM_LOG3( BM_LogMailParse, 
+				BmString("starting to remove html of ") << srcLen << " bytes");
+
+	const char* src = srcBuf;
+	const char* srcEnd = srcBuf+srcLen;
+	char* dest = destBuf;
+	char* destEnd = destBuf+destLen;
+		
+	char c;
+	for( ; src<srcEnd && dest<=destEnd; ++src) {
+		c = *src;
+		if (mInQuot) {
+			if (c == '"') {
+				mInQuot = false;
+				if (mKeepThisTagsContent)
+					*dest++ = ' ';		// separate from other words
+			} else if (mKeepThisTagsContent)
+				*dest++ = c;
+			continue;
+		}
+		if (mInTag) {
+			if (c == '>')
+				mInTag = false;
+			else if (c == '"') {
+				mInQuot = true;
+				if (mKeepThisTagsContent)
+					*dest++ = ' ';		// separate from other words
+			}
+			continue;
+		} else if (c == '<') {
+			mInTag = true;
+			if (mKeepATags)
+				mKeepThisTagsContent = (*(src+1) == 'a' || *(src+1) == 'A');
+			continue;
+		} else
+			*dest++ = c;
+	}
+	srcLen = src-srcBuf;
+	destLen = dest-destBuf;
+
+	BM_LOG3( BM_LogMailParse, "html-remover: done");
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+BmSpamFilter::OsbfClassifier::SpamRelevantMailtextSelector
+::SpamRelevantMailtextSelector(const BmMail* mail)
+	:	mMail(mail)
+	,	mDeHtmlBuf(4096)
+{
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmSpamFilter::OsbfClassifier::SpamRelevantMailtextSelector
+::operator() (BmStringIBuf& inBuf)
+{
+	// add complete header:
+	inBuf.AddBuffer(mMail->Header()->HeaderString());
+	// now add appropriate bodyparts:
+	AddSpamRelevantBodyParts(inBuf);
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmSpamFilter::OsbfClassifier::SpamRelevantMailtextSelector
+::AddSpamRelevantBodyParts(BmStringIBuf& inBuf)
+{
+	if (mMail->Body()->empty())
+		return;
+	BAutolock lock(mMail->Body()->ModelLocker());
+	BmRef<BmBodyPart> body
+		= dynamic_cast<BmBodyPart*>(mMail->Body()->begin()->second.Get());
+	if (mMail->Body()->IsMultiPart())
+		body = FindBodyPartWithHighestSpamRelevance(body.Get());
+	if (body && body->IsText()) {
+		bool deHtml = mJobSpecs ? mJobSpecs->FindBool("DeHtml") : false;
+		if (deHtml && !body->MimeType().ICompare("text/html")) {
+			BmStringIBuf htmlIn(body->DecodedData());
+			HtmlRemover htmlRemover(&htmlIn);
+			mDeHtmlBuf.Write(&htmlRemover);
+			inBuf.AddBuffer(mDeHtmlBuf.TheString());
+		} else
+			inBuf.AddBuffer(body->DecodedData());
+	}
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+BmBodyPart* BmSpamFilter::OsbfClassifier::SpamRelevantMailtextSelector
+::FindBodyPartWithHighestSpamRelevance(BmBodyPart* parent)
+{
+	BmBodyPart* bestPart = NULL;
+	BmBodyPart* htmlPart = NULL;
+	BmBodyPart* plainTextPart = NULL;
+	BmBodyPart* otherTextPart = NULL;
+	BmModelItemMap::const_iterator iter;
+	for( iter = parent->begin(); iter != parent->end(); ++iter) {
+		BmBodyPart* bodyPart = dynamic_cast< BmBodyPart*>( iter->second.Get());
+		if (!bodyPart->MimeType().ICompare("text/html")) {
+			if (!htmlPart)
+				htmlPart = bodyPart;
+		} else if (bodyPart->IsPlainText()) {
+			if (!plainTextPart)
+				plainTextPart = bodyPart;
+		} else if (bodyPart->IsText()) {
+			if (!otherTextPart)
+				otherTextPart = bodyPart;
+		}
+	}
+	// if a mail contains a html-part, we prefer it to the plaintext parts,
+	// since spammers try to confuse statistal filters (like ours) by "polluting"
+	// the mail with a textpart that contains a set of valid, but nonsense words.
+	// The real meat (no, wait...SPAM!) is in the html-part.
+	bestPart = htmlPart;
+	if (!bestPart)
+		bestPart = plainTextPart;
+	if (!bestPart)
+		bestPart = otherTextPart;
+	if (!bestPart) {
+		// still nothing, maybe there's something further down the hierarchy:
+		for( iter = parent->begin(); !bestPart && iter != parent->end(); ++iter) {
+			BmBodyPart* bodyPart = dynamic_cast< BmBodyPart*>( iter->second.Get());
+			if (bodyPart->IsMultiPart())
+				bestPart = FindBodyPartWithHighestSpamRelevance(bodyPart);
+		}
+	}
+	return bestPart;
+}
+
+
+
 /********************************************************************************\
 	BmSpamFilter::OsbfClassifier::FeatureFilter
 \********************************************************************************/
@@ -131,7 +301,7 @@ const char* DefaultFilterName = "<<< SPAM-filter >>>";
 \*------------------------------------------------------------------------------*/
 BmSpamFilter::OsbfClassifier
 ::FeatureFilter::FeatureFilter( BmMemIBuf* input, uint32 blockSize)
-	:	inherited( input, blockSize, nTagImmediatePassOn)
+	:	inherited(input, blockSize, nTagImmediatePassOn)
 {
 }
 
@@ -152,12 +322,18 @@ void BmSpamFilter::OsbfClassifier
 	char* destEnd = destBuf+destLen;
 
 	bool haveFeature = false;
-	char c;
+	char lastChar = '\0';
+	unsigned char c;
+	const char* delimiterChars = "!\"'<>()[];,=\0xa0";	// 0xa0 => shifted space
+		// should not contain: .@?&%:/ in order to leave intact URLs
 	for( ; src<srcEnd && dest<destEnd; ++src) {
 		c = *src;
-		if (isalnum(c)) {
+		if (c>' ' && !strchr(delimiterChars, c)) {
+			if (c == lastChar)
+				continue;	// skip duplicate characters (viaggrrraaaa => viagra)
 			*dest++ = c;
 			haveFeature = true;
+			lastChar = c;
 		} else {
 			if (haveFeature)
 				break;
@@ -186,13 +362,11 @@ BmSpamFilter::OsbfClassifier
 	:	mHash( hash)
 	,	mHeader( header)
 	,	mRevert( revert)
-	,	mSeenFeatures( new char [header->buckets])
 	,	mStatus( B_OK)
 {
    //  init the hashpipe with 0xDEADBEEF 
    for (uint32 h = 0; h < WindowLen; h++)
       mHashpipe.push_back( 0xDEADBEEF);
-   memset( mSeenFeatures, 0, header->buckets);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -202,7 +376,6 @@ BmSpamFilter::OsbfClassifier
 BmSpamFilter::OsbfClassifier
 ::FeatureLearner::~FeatureLearner()
 {
-	delete [] mSeenFeatures;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -217,13 +390,11 @@ status_t BmSpamFilter::OsbfClassifier
 		return mStatus;
 	}
 
-#if 0
-	printf("<%*.*s>\n", (int)bufLen, (int)bufLen, buf);
-#endif
+	BM_LOG2( BM_LogFilter, BmString("learning feature: ") << BmString( buf, bufLen));
 
    // Shift hash value of feature into pipe
-   mHashpipe.pop_front();
-   mHashpipe.push_back( strnhash( buf, bufLen));
+   mHashpipe.push_front( strnhash( buf, bufLen));
+   mHashpipe.pop_back();
 
 	int sense = mRevert ? -1 : 1;
 
@@ -248,8 +419,7 @@ status_t BmSpamFilter::OsbfClassifier
 		//  the right bucket or if we need to look further
 		//
 		incrs = 0;
-		while (mHash[hindex].value != 0 
-				&& (mHash[hindex].hash != h1 || mHash[hindex].key != h2)) 
+		while (mHash[hindex].InChain() && !mHash[hindex].HashCompare(h1, h2))
 		{
 			incrs++;
 			// 
@@ -272,6 +442,7 @@ status_t BmSpamFilter::OsbfClassifier
 				// microgroom, restart our search
 				hindex = h1 % mHeader->buckets;
 				incrs = 0;
+				continue;
 			};
 
 			//       check to see if we've incremented ourself all the
@@ -293,7 +464,7 @@ status_t BmSpamFilter::OsbfClassifier
 			   hindex = 0;
 		};
 
-      if (mHash[hindex].value == 0)
+      if (mHash[hindex].GetValue() == 0)
 			BM_LOG3( BM_LogFilter, 
 						BmString("New feature at ") << hindex);
 		else
@@ -303,21 +474,21 @@ status_t BmSpamFilter::OsbfClassifier
 		//    always rewrite hash and key, as they may be incorrect
 		//    (on a reused bucket) or zero (on a fresh one)
 		//
-		mHash[hindex].hash = h1;
-		mHash[hindex].key = h2;
+		mHash[hindex].SetHash(h1);
+		mHash[hindex].SetKey(h2);
 		
 		//       watch out - sense may be both + or -, so check before 
 		//       adding it...
 		//
-		if (mSeenFeatures[hindex] == 0) {
+		if (!mHash[hindex].IsLocked()) {
 		   if (sense > 0 
-		   && mHash[hindex].value + sense >=	FeatureBucketValueMax - 1)
-		      mHash[hindex].value = FeatureBucketValueMax - 1;
-		   else if (sense < 0 && mHash[hindex].value <= (uint32)-sense)
-		      mHash[hindex].value = 0;
+		   && mHash[hindex].GetValue() + sense >=	FeatureBucketValueMax - 1)
+		      mHash[hindex].SetValue( FeatureBucketValueMax - 1);
+		   else if (sense < 0 && mHash[hindex].GetValue() <= (uint32)-sense)
+		      mHash[hindex].SetValue(0);
 		   else
-		      mHash[hindex].value += sense;
-			mSeenFeatures[hindex] = 1;
+		      mHash[hindex].SetValue(mHash[hindex].GetValue() + sense);
+		   mHash[hindex].Lock();	// avoid learning this feature more than once
 		}
 	}
 	return B_OK;
@@ -330,22 +501,27 @@ status_t BmSpamFilter::OsbfClassifier
 void BmSpamFilter::OsbfClassifier
 ::FeatureLearner::Finalize()
 {
-   // update the number of learnings
-	int sense = mRevert ? -1 : 1;
-	if (sense > 0) {
-		mHeader->learnings += sense;
+   // unlock features locked during learning
+   for (uint32 i=0; i<mHeader->buckets; i++)
+     mHash[i].Unlock();
+
+	if (mRevert) {
+		// we had to unlearn a feature, meaning that we did make a mistake:
+		mHeader->mistakes++;
+	} else {
+	   // update the number of learnings
+		mHeader->learnings++;
 		if (mHeader->learnings >= FeatureBucketValueMax-1) {
 			mHeader->learnings >>= 1;
 			for (uint32 i = 0; i < mHeader->buckets; i++)
-				mHash[i].value >>= 1;
+				mHash[i].SetValue(mHash[i].GetRawValue() >> 1);
 			BM_LOG( BM_LogFilter, 
 						"You have managed to LEARN so many documents that"
 						" you have forced rescaling of the entire database."
 						" If you are the first person to do this, Fidelis "
 						" owes you a bottle of good singlemalt scotch");
 		}
-   } else if (mHeader->learnings + sense > 0)
-	   mHeader->learnings += sense;
+	}
 }
 
 
@@ -354,6 +530,9 @@ void BmSpamFilter::OsbfClassifier
 	BmSpamFilter::OsbfClassifier::FeatureClassifier
 \********************************************************************************/
 // #pragma mark --- FeatureClassifier ---
+
+static const bool Asymmetric = false;
+static const bool ApplyVoodoo = true;
 
 /*------------------------------------------------------------------------------*\
 	()
@@ -365,15 +544,13 @@ BmSpamFilter::OsbfClassifier
 													 FeatureBucket* tofuHash, 
 													 Header* tofuHeader)
 	:	mStatus( B_OK)
-	,	mClassifiedAsSpam( false)
-	,	mClassifiedAsTofu( false)
 	,	mTotalLearnings( 0)
 	,	mTotalFeatures( 0)
 {
-	mHash[0] = spamHash;
-	mHash[1] = tofuHash;
-	mHeader[0] = spamHeader;
-	mHeader[1] = tofuHeader;
+	mHash[0] = tofuHash;
+	mHash[1] = spamHash;
+	mHeader[0] = tofuHeader;
+	mHeader[1] = spamHeader;
 
    //  init the hashpipe with 0xDEADBEEF 
    for (uint32 h = 0; h < WindowLen; h++)
@@ -393,8 +570,9 @@ BmSpamFilter::OsbfClassifier
 		//  set this hashlens to the length in features instead
 		//  of the length in bytes.
 		mHashLen[i] = mHeader[i]->buckets;
-		mHashName[i] = (i == 0 ? "Spam" : "Tofu");
+		mHashName[i] = (i == 0 ? "Tofu" : "Spam");
 	}
+
 
 	// init all data arrays
 	for (uint32 i = 0; i < MaxHash; i++) {
@@ -406,7 +584,7 @@ BmSpamFilter::OsbfClassifier
       mMissedFeatures[i] = 0;	// missed features per class
       mPtc[i] = (double) mLearnings[i] / mTotalLearnings;	
       									// a priori probability
-      // mPtc[i] = 0.5;          // (another) a priori probability
+//      mPtc[i] = 0.5;          // (another) a priori probability
       mPltc[i] = 0.5;		// local probability
     }
       
@@ -435,13 +613,11 @@ status_t BmSpamFilter::OsbfClassifier
 		return mStatus;
 	}
 
-#if 0
-	printf("<%*.*s>\n", (int)bufLen, (int)bufLen, buf);
-#endif
+	BM_LOG2( BM_LogFilter, BmString("classifying feature: ") << BmString( buf, bufLen));
 
    // Shift hash value of feature into pipe
-   mHashpipe.pop_front();
-   mHashpipe.push_back( strnhash( buf, bufLen));
+   mHashpipe.push_front( strnhash( buf, bufLen));
+   mHashpipe.pop_back();
 
 	uint32 j, k;
 	unsigned long hindex;
@@ -477,17 +653,17 @@ status_t BmSpamFilter::OsbfClassifier
 		min_local_p = 1.0;
 		max_local_p = 0;
 		i_min_p = i_max_p = 0;
+		bool already_seen = false;
 		for (k = 0; k < MaxHash; k++) {
 			uint32 lh, lh0;
-			float p_feat = 0;
+			double p_feat = 0;
 			
 			lh = hindex % mHashLen[k];
 			lh0 = lh;
 			mHits[k] = 0;
 			
 			// look for feature hashes h1 and h2
-			while (mHash[k][lh].value != 0
-					&& (mHash[k][lh].hash != h1 || mHash[k][lh].key != h2))
+			while (mHash[k][lh].InChain() && !mHash[k][lh].HashCompare(h1,h2))
 			{
 				lh++;
 				if (lh >= mHashLen[k])
@@ -503,11 +679,11 @@ status_t BmSpamFilter::OsbfClassifier
 			if (mSeenFeatures[k][lh] == 0) {
 				// only not previously seen features are considered
 				mUniqueFeatures[k] += 1;	// count unique features used
-				if (mHash[k][lh].value != 0) {
-					mHits[k] = mHash[k][lh].value;
+				if (mHash[k][lh].GetValue() != 0) {
+					mHits[k] = mHash[k][lh].GetValue();
 					mTotalHits[k] += mHits[k];	// remember totalhits
 					htf += mHits[k];	// and hits-this-feature
-					p_feat = mHits[k] / mLearnings[k];
+					p_feat = (double)mHits[k] / (double)mLearnings[k];
 					// find class with minimum P(F)
 					if (p_feat <= min_local_p) {
 					    i_min_p = k;
@@ -539,7 +715,9 @@ status_t BmSpamFilter::OsbfClassifier
 			} else {
 				// ignore already seen features
 				min_local_p = max_local_p = 0;
-				break;
+				already_seen = true;
+				if (Asymmetric)
+					break;
 			}
 		}
 	
@@ -645,7 +823,7 @@ status_t BmSpamFilter::OsbfClassifier
 		//=========================================================
 		
 		// ignore less significant features (confidence factor = 0)
-		if ((max_local_p - min_local_p) < 0.02)
+		if (already_seen || (max_local_p - min_local_p) < 0.02)
 			continue;
 		// testing speed-up...
 		if (min_local_p > 0 && max_local_p / min_local_p < MinPmaxPminRatio)
@@ -654,20 +832,18 @@ status_t BmSpamFilter::OsbfClassifier
 		// code under testing....
 		// calculate confidence_factor
 		//
-		// hmmm, unsigned long gives better precision than float...
-		//float hits_max_p, hits_min_p, sum_hits, diff_hits;
-		unsigned long hits_max_p, hits_min_p, sum_hits, diff_hits;
-		float K1, K2, K3;
-		float confidence_factor;
+		double hits_max_p, hits_min_p, sum_hits, diff_hits;
+		double K1, K2, K3;
+		double confidence_factor;
 		
 		hits_min_p = mHits[i_min_p];
 		hits_max_p = mHits[i_max_p];
 		
 		// normalize hits to max learnings
 		if (mLearnings[i_min_p] < mLearnings[i_max_p])
-			hits_min_p *= mLearnings[i_max_p] / mLearnings[i_min_p];
+			hits_min_p *= (double)mLearnings[i_max_p] / (double)mLearnings[i_min_p];
 		else
-			hits_max_p *= mLearnings[i_min_p] / mLearnings[i_max_p];
+			hits_max_p *= (double)mLearnings[i_min_p] / (double)mLearnings[i_max_p];
 		
 		sum_hits = hits_max_p + hits_min_p;
 		diff_hits = hits_max_p - hits_min_p;
@@ -681,7 +857,7 @@ status_t BmSpamFilter::OsbfClassifier
 		K3 = 8;
 		
 		// calculate confidence factor (CF)
-		if (min_local_p > 0)
+		if (!ApplyVoodoo)
 			confidence_factor = 1;
 		else
 			confidence_factor =
@@ -706,10 +882,13 @@ status_t BmSpamFilter::OsbfClassifier
 			// accuracy, reduces the reinforcement threshold to around 10
 			// and reduces the number of reinforcements required to get
 			// final accuracy.
+			// [zooey]: the above is correct for the SA-corpus, but
+			//          with my own corpus, the exact opposite is true >:o/
+			//				As I care less about the SA-corpus, the ratio is deactivated:
 			mPltc[k] = (double) mLearnings[k] / mTotalLearnings *
 									(0.5 + confidence_factor *
-								   ((double) mUniqueFeatures[k] / mTotalFeatures) *
-									(mHits[k] / mLearnings[k] - 0.5));
+//								   ((double) mUniqueFeatures[k] / (double)mTotalFeatures) *
+									((double)mHits[k] / (double)mLearnings[k] - 0.5));
 			
 			BM_LOG3( BM_LogFilter, 
 						BmString("CF:") << confidence_factor 
@@ -725,6 +904,7 @@ status_t BmSpamFilter::OsbfClassifier
 	   double renorm = 0.0;
 		// divide by Bayes' denominator
 		for (k = 0; k < MaxHash; k++) {
+
 			//   now calculate the updated per class probabilities
 			mPtc[k] = mPtc[k] * mPltc[k] / bayes_denominator;
 			
@@ -769,18 +949,13 @@ void BmSpamFilter::OsbfClassifier
    for (k = 0; k < MaxHash; k++)
 		if (mPtc[k] > mPtc[bestseen])
 			bestseen = k;
-	double remainder = 10 * DBL_MIN;
-   for (k = 0; k < MaxHash; k++)
-		if (bestseen != k)
-			remainder = remainder + mPtc[k];
-	
-	mClassifiedAsSpam = bestseen == 0;
-	mClassifiedAsTofu = bestseen == 1;
+
+	mOverallPr = log10(mPtc[0]) - log10(mPtc[1]);
 
 	BM_LOG2( BM_LogFilter,
 				BmString("Best match to file ") << mHashName[bestseen]
 					<< " prob:" << mPtc[bestseen] 
-					<< " pR:" << (log10 (mPtc[bestseen]) - log10 (remainder)));
+					<< " pR:" << mOverallPr);
 }
 
 
@@ -849,16 +1024,23 @@ const unsigned long BmSpamFilter::OsbfClassifier
 const unsigned long BmSpamFilter::OsbfClassifier
 ::MinPmaxPminRatio = 9;
 	
+const uint32 BmSpamFilter::OsbfClassifier::FeatureBucket
+::ValueMask = 0x0000FFFFLU;
+const uint32 BmSpamFilter::OsbfClassifier::FeatureBucket
+::LockedMask = 0x80000000LU;
+
+const BMessage* BmSpamFilter::OsbfClassifier::mJobSpecs = NULL;
+
 /*------------------------------------------------------------------------------*\
 	OsbfClassifier()
 		-	
 \*------------------------------------------------------------------------------*/
 BmSpamFilter::OsbfClassifier::OsbfClassifier()
-	:	mSpamHash( NULL)
-	,	mTofuHash( NULL)
-	,	mNeedToStoreSpam( false)
-	,	mNeedToStoreTofu( false)
-	,	mLock( "SpamClassifierLock", true)
+	:	mSpamHash(NULL)
+	,	mTofuHash(NULL)
+	,	mNeedToStoreSpam(false)
+	,	mNeedToStoreTofu(false)
+	,	mLock("SpamClassifierLock", true)
 {
 }
 
@@ -869,7 +1051,6 @@ BmSpamFilter::OsbfClassifier::OsbfClassifier()
 BmSpamFilter::OsbfClassifier::~OsbfClassifier()
 {
 	Store();
-	// ToDo: need to store the datafiles here!
 	delete [] mTofuHash;
 	delete [] mSpamHash;
 }
@@ -914,9 +1095,10 @@ void BmSpamFilter::OsbfClassifier::Store()
 	LearnAsSpam()
 		-	
 \*------------------------------------------------------------------------------*/
-bool 
-BmSpamFilter::OsbfClassifier::LearnAsSpam( BmMsgContext* msgContext)
+bool BmSpamFilter::OsbfClassifier::LearnAsSpam(BmMsgContext* msgContext)
 {
+	if (msgContext->mail->IsMarkedAsSpam())
+		return false;							// learning once is enough
 	if (msgContext->mail->IsMarkedAsTofu()) {
 		// unlearn this mail as tofu, since it's not:
 		if (!Learn(msgContext, false, true))
@@ -932,6 +1114,8 @@ BmSpamFilter::OsbfClassifier::LearnAsSpam( BmMsgContext* msgContext)
 \*------------------------------------------------------------------------------*/
 bool BmSpamFilter::OsbfClassifier::LearnAsTofu( BmMsgContext* msgContext)
 {
+	if (msgContext->mail->IsMarkedAsTofu())
+		return false;							// learning once is enough
 	if (msgContext->mail->IsMarkedAsSpam()) {
 		// unlearn this mail as spam, since it's not:
 		if (!Learn(msgContext, true, true))
@@ -962,20 +1146,22 @@ bool BmSpamFilter::OsbfClassifier::Learn( BmMsgContext* msgContext,
 	else
 		mNeedToStoreTofu = true;
 
-	BmStringIBuf text(msgContext->mail->RawText());
+	BmStringIBuf text;
+	SpamRelevantMailtextSelector selector(msgContext->mail);
+	selector(text);
 	FeatureFilter filter( &text);
 	BmMemBufConsumer consumer( 4096);
 	FeatureLearner learner( hash, header, revert);
 	consumer.Consume(&filter, &learner);
 
-	if (learner.mStatus == B_OK)
+	if (learner.mStatus == B_OK) {
 		learner.Finalize();
-	
+	}
 	return learner.mStatus == B_OK;
 }
 
 /*------------------------------------------------------------------------------*\
-	Learn()
+	Classify()
 		-	
 \*------------------------------------------------------------------------------*/
 bool BmSpamFilter::OsbfClassifier::Classify( BmMsgContext* msgContext)
@@ -992,17 +1178,188 @@ bool BmSpamFilter::OsbfClassifier::Classify( BmMsgContext* msgContext)
 		return false;
 	}
 	
-	BmStringIBuf text(msgContext->mail->RawText());
+	double overallPr;
+	bool status = DoClassify(msgContext, overallPr);
+	if (status) {
+		int32 ThresholdForSpam = 0;
+		int32 ThresholdForTofu = 0;
+		int32 UnsureForSpam = 0;
+		int32 UnsureForTofu = 0;
+		if (mJobSpecs) {
+			mJobSpecs->FindInt32("ThresholdForSpam", &ThresholdForSpam);
+			mJobSpecs->FindInt32("ThresholdForTofu", &ThresholdForTofu);
+			mJobSpecs->FindInt32("UnsureForSpam", &UnsureForSpam);
+			mJobSpecs->FindInt32("UnsureForTofu", &UnsureForTofu);
+		}
+		bool isSpam = (overallPr < 0);
+		msgContext->data.RemoveName("IsReinforced");
+		if (fabs(overallPr) < (isSpam ? ThresholdForSpam : ThresholdForTofu)) {
+			// the classifier isn't sure, so we we either reinforce or leave unsure:
+			if (fabs(overallPr) > (isSpam ? UnsureForSpam : UnsureForTofu)) {
+				// reinforce by explicitly learning it:
+				Learn(msgContext, isSpam, false);
+				msgContext->data.AddBool("IsReinforced", true);
+			}
+		}
+		msgContext->data.RemoveName("IsTofu");
+		msgContext->data.RemoveName("IsSpam");
+		msgContext->data.AddBool("IsTofu", overallPr > UnsureForTofu);
+		msgContext->data.AddBool("IsSpam", overallPr < -1*UnsureForTofu);
+		if (overallPr >= UnsureForTofu)
+			mTofuHeader.classifications++;
+		if (overallPr < -1*UnsureForTofu)
+			mSpamHeader.classifications++;
+		msgContext->data.RemoveName("OverallPr");
+		msgContext->data.AddDouble("OverallPr", overallPr);
+	}
+	
+	return status;
+}
+
+/*------------------------------------------------------------------------------*\
+	Classify()
+		-	
+\*------------------------------------------------------------------------------*/
+bool BmSpamFilter::OsbfClassifier::DoClassify( BmMsgContext* msgContext,
+															  double& overallPr)
+{
+	BmStringIBuf text;
+	SpamRelevantMailtextSelector selector(msgContext->mail);
+	selector(text);
 	FeatureFilter filter( &text);
 	BmMemBufConsumer consumer( 4096);
 	FeatureClassifier classifier( mSpamHash, &mSpamHeader, 
 											mTofuHash, &mTofuHeader);
 	consumer.Consume(&filter, &classifier);
-
+	
 	if (classifier.mStatus == B_OK)
 		classifier.Finalize();
-	
+	overallPr = classifier.mOverallPr;
+
 	return classifier.mStatus == B_OK;
+}
+
+/*------------------------------------------------------------------------------*\
+	Reset()
+		-	
+\*------------------------------------------------------------------------------*/
+bool BmSpamFilter::OsbfClassifier::Reset( BmMsgContext* msgContext)
+{
+	BM_LOG( BM_LogFilter, "Spam-Addon: resetting datafiles");
+	// set lock to serialize OSBF-calls:
+	BAutolock lock( &mLock);
+	if (!lock.IsLocked()) {
+		mLastErr = "Unable to get SPAM-lock";
+		return false;
+	}
+	delete [] mTofuHash;
+	mTofuHash = NULL;
+	delete [] mSpamHash;
+	mSpamHash = NULL;
+
+	BEntry entry;
+	BmString spamFilename 
+		= BmString( BeamRoster->SettingsPath()) << "/Spam.data";
+	entry.SetTo( spamFilename.String());
+	entry.Remove();
+	BmString tofuFilename 
+		= BmString( BeamRoster->SettingsPath()) << "/Tofu.data";
+	entry.SetTo( tofuFilename.String());
+	entry.Remove();
+
+	Initialize();
+
+	return true;
+}
+
+/*------------------------------------------------------------------------------*\
+	GetStatistics()
+		-	
+\*------------------------------------------------------------------------------*/
+bool BmSpamFilter::OsbfClassifier::GetStatistics( BmMsgContext* msgContext)
+{
+	BM_LOG( BM_LogFilter, "Spam-Addon: getting statistics");
+	// set lock to serialize OSBF-calls:
+	BAutolock lock( &mLock);
+	if (!lock.IsLocked()) {
+		mLastErr = "Unable to get SPAM-lock";
+		return false;
+	}
+	
+	msgContext->data.MakeEmpty();
+	uint32 maxChain = 0;
+	uint32 curChain = 0;
+	uint32 totChain = 0;
+	uint32 usedBuckets = 0;
+	uint32 numChains = 0;
+	uint32 sum = 0;
+	uint32 maxValue = 0;
+	for (uint32 i = 0; i < mSpamHeader.buckets; i++) {
+		sum += mSpamHash[i].GetValue();
+		if (mSpamHash[i].GetValue() != 0) {
+			if (mSpamHash[i].GetValue() > maxValue)
+				maxValue = mSpamHash[i].GetValue();
+			usedBuckets++;
+			curChain++;
+      } else {
+			if (curChain > 0) {
+				totChain += curChain;
+				numChains++;
+				if (curChain > maxChain)
+					maxChain = curChain;
+				curChain = 0;
+			}
+		}
+	}
+	msgContext->data.AddInt32("SpamBuckets", mSpamHeader.buckets);
+	msgContext->data.AddInt32("SpamBucketsUsed", usedBuckets);
+	msgContext->data.AddInt32("SpamLearnings", mSpamHeader.learnings);
+	msgContext->data.AddInt32("SpamClassifications", mSpamHeader.classifications);
+	msgContext->data.AddInt32("SpamMistakes", mSpamHeader.mistakes);
+	msgContext->data.AddInt32("SpamChains", numChains);
+	msgContext->data.AddInt32("SpamChainsMaxLength", maxChain);
+	msgContext->data.AddInt32("SpamChainsAverageLength", 
+									 numChains > 0 ? totChain/numChains : 0);
+	msgContext->data.AddInt32("SpamMaxValue", maxValue);
+	msgContext->data.AddInt32("SpamAverageValue", usedBuckets ? sum / usedBuckets : 0);
+
+	maxChain = 0;
+	curChain = 0;
+	totChain = 0;
+	usedBuckets = 0;
+	numChains = 0;
+	sum = 0;
+	maxValue = 0;
+	for (uint32 i = 0; i < mTofuHeader.buckets; i++) {
+		sum += mTofuHash[i].GetValue();
+		if (mTofuHash[i].GetValue() != 0) {
+			if (mTofuHash[i].GetValue() > maxValue)
+				maxValue = mTofuHash[i].GetValue();
+			usedBuckets++;
+			curChain++;
+      } else {
+			if (curChain > 0) {
+				totChain += curChain;
+				numChains++;
+				if (curChain > maxChain)
+					maxChain = curChain;
+				curChain = 0;
+			}
+		}
+	}
+	msgContext->data.AddInt32("TofuBuckets", mTofuHeader.buckets);
+	msgContext->data.AddInt32("TofuBucketsUsed", usedBuckets);
+	msgContext->data.AddInt32("TofuLearnings", mTofuHeader.learnings);
+	msgContext->data.AddInt32("TofuClassifications", mTofuHeader.classifications);
+	msgContext->data.AddInt32("TofuMistakes", mTofuHeader.mistakes);
+	msgContext->data.AddInt32("TofuChains", numChains);
+	msgContext->data.AddInt32("TofuChainsMaxLength", maxChain);
+	msgContext->data.AddInt32("TofuChainsAverageLength", 
+									 numChains > 0 ? totChain/numChains : 0);
+	msgContext->data.AddInt32("TofuMaxValue", maxValue);
+	msgContext->data.AddInt32("TofuAverageValue", usedBuckets ? sum / usedBuckets : 0);
+
+	return true;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -1030,9 +1387,11 @@ void BmSpamFilter::OsbfClassifier::Microgroom ( FeatureBucket* hash,
 {
 	uint32 i, j, k;
 	uint32 packstart;
-	uint32 packlen;
-	uint32 zeroed_countdown;
-	uint32 min_value, distance, max_distance;
+	int32 packlen;
+	int32 zeroed_countdown, max_zeroed_buckets;
+	int32 distance, max_distance;
+	uint32 min_value, min_value_any;
+	bool groom_any = false;
 	
 	zeroed_countdown = MicrogroomStopAfter;
 	k = 0;
@@ -1040,10 +1399,13 @@ void BmSpamFilter::OsbfClassifier::Microgroom ( FeatureBucket* hash,
 	//   micropack - start at initial chain start, move to back of 
 	//   chain that overflowed, then scale just that chain.
 	i = j = hindex % header->buckets;
-	min_value = hash[i].value;
-	while (hash[i].value != 0) {
-		if (hash[i].value < min_value)
-			min_value = hash[i].value;
+	min_value = FeatureBucketValueMax;
+	min_value_any = hash[i].GetValue();
+	while (hash[i].InChain()) {
+		if (hash[i].GetValue() < min_value && !hash[i].IsLocked())
+			min_value = hash[i].GetValue();
+		if (hash[i].GetValue() < min_value_any)
+			min_value_any = hash[i].GetValue();
 		if (i == 0)
 			i = header->buckets - 1;
 		else
@@ -1052,6 +1414,12 @@ void BmSpamFilter::OsbfClassifier::Microgroom ( FeatureBucket* hash,
 			break;			// don't hang if we have a 100% full .css file
 	}
 	
+	if (min_value == FeatureBucketValueMax)
+	{	/* no unlocked bucket avaiable so groom any */
+		groom_any = true;
+	   min_value = min_value_any;
+	}
+
 	//	  now, move our index to the first bucket in this chain.
 	i++;
 	if (i >= header->buckets)
@@ -1059,7 +1427,7 @@ void BmSpamFilter::OsbfClassifier::Microgroom ( FeatureBucket* hash,
 	packstart = i;
 
 	i = j = hindex % header->buckets;
-	while (hash[i].value != 0) {
+	while (hash[i].InChain()) {
 		i++;
 	   if (i == header->buckets)
 			i = 0;
@@ -1092,19 +1460,26 @@ void BmSpamFilter::OsbfClassifier::Microgroom ( FeatureBucket* hash,
 	
 	// try features in their right place first
 	max_distance = 1;
+
+	/* zero up to 50% of packlen */
+	/* max_zeroed_buckets = (long) (0.5 * packlen + 0.5); */
+	max_zeroed_buckets =  MicrogroomStopAfter;
+	zeroed_countdown = max_zeroed_buckets;
+
 	// while no bucket is zeroed...
-	while (zeroed_countdown == MicrogroomStopAfter) {
+	while (zeroed_countdown == max_zeroed_buckets) {
 		// printf("Start: %ld, stop_after: %ld, max_distance: %ld\n", packstart, microgroom_stop_after, max_distance);
 		i = packstart;
-		while (hash[i].value != 0 && zeroed_countdown > 0) {
+		while (hash[i].InChain() && zeroed_countdown > 0) {
 			// check if it's a candidate
-			if (hash[i].value == min_value) {
+			if (hash[i].GetValue() == min_value	
+			&& (!hash[i].IsLocked() || groom_any)) {
 				// if it is, check the distance
-				distance = i - hash[i].hash % header->buckets;
+				distance = i - hash[i].GetHash() % header->buckets;
 				if (distance < 0)
 					distance += header->buckets;
 				if (distance < max_distance) {
-					hash[i].value = 0;
+					hash[i].SetValue(0);
 					zeroed_countdown--;
 				}
 			}
@@ -1113,15 +1488,15 @@ void BmSpamFilter::OsbfClassifier::Microgroom ( FeatureBucket* hash,
 				i = 0;
 		}
 		//  if none was zeroed, increase the allowed distance between the
-		//  candidade's position and its right place.
-		if (zeroed_countdown == MicrogroomStopAfter)
+		//  candidate's position and its right place.
+		if (zeroed_countdown == max_zeroed_buckets)
 			max_distance++;
 	}
 	
 	BM_LOG3( BM_LogFilter, 
 				BmString("Leaving microgroom: ") 
 				<< MicrogroomStopAfter - zeroed_countdown
-				<< " buckets with value " << hash[i].value
+				<< " buckets with value " << hash[i].GetValue()
 				<< " zeroed at distance " << max_distance - 1);
 	
 	//   now we pack the buckets
@@ -1165,7 +1540,7 @@ void BmSpamFilter::OsbfClassifier::PackDataSeg( Header* header,
 																unsigned long packlen)
 {
 	unsigned long ifrom, ito;
-	unsigned long thash, tkey, tvalue;
+	unsigned long thash, tkey;
 
 	// Our slot values are now somewhat in disorder because empty
 	// buckets may now have been inserted into a chain where there used
@@ -1174,14 +1549,12 @@ void BmSpamFilter::OsbfClassifier::PackDataSeg( Header* header,
 	
 	for (ifrom = packstart; ifrom < packstart + packlen; ifrom++) {
 		//    Now find the next bucket to place somewhere 
-		thash = hash[ifrom].hash;
-		tkey = hash[ifrom].key;
-		tvalue = hash[ifrom].value;
+		thash = hash[ifrom].GetHash();
+		tkey = hash[ifrom].GetKey();
 	
-		if (tvalue != 0) {
+		if (hash[ifrom].GetValue() == 0) {
 			ito = thash % header->buckets;
-			while (!((hash[ito].value == 0)
-		   		|| (hash[ito].hash == thash && hash[ito].key == tkey))) 
+			while (hash[ito].InChain() && !hash[ito].HashCompare(thash, tkey))
 		   {
 				ito++;
 				if (ito >= header->buckets)
@@ -1191,13 +1564,13 @@ void BmSpamFilter::OsbfClassifier::PackDataSeg( Header* header,
 			//   found an empty slot, put this value there, and zero the
 			//   original one.  Sometimes this is a noop.  We don't care.
 			if (ito != ifrom) {
-				hash[ifrom].hash = 0;
-				hash[ifrom].key = 0;
-				hash[ifrom].value = 0;
+				hash[ifrom].SetHash(0);
+				hash[ifrom].SetKey(0);
+				hash[ifrom].SetValue(0);
 				
-				hash[ito].hash = thash;
-				hash[ito].key = tkey;
-				hash[ito].value = tvalue;
+				hash[ito].SetHash(thash);
+				hash[ito].SetKey(tkey);
+				hash[ito].SetValue(hash[ifrom].GetRawValue());
 			}
 		}
 	}
@@ -1228,26 +1601,26 @@ status_t BmSpamFilter::OsbfClassifier::CreateDataFile( const BmString& filename)
 		unsigned long bucketCount = DefaultFileLength;
 		h.version = FileVersion;
 		h.learnings = 0;
+		h.classifications = 0;
+		h.mistakes = 0;
 		h.buckets = bucketCount;
 		// Write header
 		if ((err=file.Write(&h, sizeof (h))) != sizeof(h))
      		return err < 0 ? err : B_IO_ERROR;
 
 		//  Initialize hashes - zero all buckets
-		FeatureBucket feature = { 0, 0, 0 };
-		for (unsigned long i = 0; i < bucketCount; i++)
-		{
-      	// Write buckets
-      	if ((err=file.Write(&feature, sizeof(feature))) != sizeof(feature))
-      		return err < 0 ? err : B_IO_ERROR;
-		}
+		void *feature = calloc(bucketCount, sizeof(FeatureBucket));
+		int32 sz = sizeof(FeatureBucket)*bucketCount;
+     	if ((err=file.Write(feature, sz)) != sz)
+     		return err < 0 ? err : B_IO_ERROR;
+     	free(feature);
 		BM_LOG( BM_LogFilter, 
 				  BmString("Spam-Addon: ok, done creating datafile ") << filename);
 	}
 	if (err < B_OK)
 		BM_LOGERR( BmString("Couldn't create spam/tofu datafile ")
 						<< filename << " -> " << strerror(err));
-	return err;
+	return err < B_OK ? err : B_OK;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -1375,21 +1748,31 @@ BmSpamFilter::Archive( BMessage* archive, bool) const
 		-	
 \*------------------------------------------------------------------------------*/
 bool 
-BmSpamFilter::Execute( BmMsgContext* msgContext, const BmString& jobSpecifier) 
+BmSpamFilter::Execute( BmMsgContext* msgContext, const BMessage* jobSpecs) 
 {
 	BmString mailId;
-	if (msgContext)
+	if (msgContext && msgContext->mail)
 		mailId = msgContext->mail->Name();
 	BM_LOG2( BM_LogFilter, BmString("Spam-Addon: asked to execute filter <") 
 									<< Name() 
 									<< "> on mail with Id <" << mailId << ">");
+	BmString jobSpecifier = "Classify";
+	if (jobSpecs)
+		jobSpecifier = jobSpecs->FindString("jobSpecifier");
+	nClassifier.JobSpecs(jobSpecs);
 	if (!jobSpecifier.ICompare("LearnAsSpam")) {
 		BM_LOG2( BM_LogFilter, "Spam-Addon: starting LearnAsSpam job...");
 		nClassifier.LearnAsSpam( msgContext);
 	} else if (!jobSpecifier.ICompare("LearnAsTofu")) {
 		BM_LOG2( BM_LogFilter, "Spam-Addon: starting LearnAsTofu job...");
 		nClassifier.LearnAsTofu( msgContext);
-	} else {
+	} else if (!jobSpecifier.ICompare("Reset")) {
+		BM_LOG2( BM_LogFilter, "Spam-Addon: starting Reset job...");
+		nClassifier.Reset( msgContext);
+	} else if (!jobSpecifier.ICompare("GetStatistics")) {
+		BM_LOG2( BM_LogFilter, "Spam-Addon: starting GetStatistics job...");
+		nClassifier.GetStatistics( msgContext);
+	} else {	// Classify
 		BM_LOG2( BM_LogFilter, "Spam-Addon: starting Classify job...");
 		nClassifier.Classify( msgContext);
 	}

@@ -72,21 +72,47 @@ class BmSpamFilter : public BmFilterAddon {
 		bool LearnAsSpam( BmMsgContext* msgContext);
 		bool LearnAsTofu( BmMsgContext* msgContext);
 		bool Classify( BmMsgContext* msgContext);
-		
+		bool Reset( BmMsgContext* msgContext);
+		bool GetStatistics( BmMsgContext* msgContext);
+		void JobSpecs( const BMessage* jobSpecs)
+													{ mJobSpecs = jobSpecs; }
+													
 	private:
+		
+		static const BMessage* mJobSpecs;
 
 		typedef struct
 		{
-		  unsigned long hash;
-		  unsigned long key;
-		  unsigned long value;
+			uint32 GetRawValue() const		{ return value; }
+			uint32 GetValue() const			{ return value & ValueMask; }
+			uint32 GetHash() const			{ return hash; }
+			uint32 GetKey() const			{ return key; }
+			void SetValue( uint32 val)		{ value = val; }
+			void SetHash( uint32 val)		{ hash = val; }
+			void SetKey( uint32 val)		{ key = val; }
+			bool IsLocked() const			{ return value & LockedMask; }
+			void Lock()							{ value |= LockedMask; }
+			void Unlock()						{ value &= ~LockedMask; }
+			bool InChain() const				{ return (value & ValueMask) != 0; }
+			bool HashCompare( uint32 h, uint32 k) const
+													{ return hash==h && key==k; }
+		private:
+			static const uint32 ValueMask;
+			static const uint32 LockedMask;
+
+			uint32 hash;
+			uint32 key;
+			uint32 value;
+
 		} FeatureBucket;
 		
 		typedef struct
 		{
 			unsigned char version[4];
-			unsigned long buckets;	/* number of buckets in the file */
+			unsigned long buckets;		/* number of buckets in the file */
 			unsigned long learnings;	/* number of trainings executed */
+			unsigned long classifications;		/* number of classifications */
+			unsigned long mistakes;		/* number of wrong classifications */
 		} Header;
 		
 		////////////////////////////////////////////////////////////////////
@@ -129,6 +155,42 @@ class BmSpamFilter : public BmFilterAddon {
 										 unsigned long packstart, unsigned long packlen);
 
 		/*------------------------------------------------------------------------------*\
+			SpamRelevantMailtextSelector
+				-	selects the mail-parts that (seemingly) are of most
+					relevance to spam-filtering
+		\*------------------------------------------------------------------------------*/
+		class SpamRelevantMailtextSelector
+		{
+			class HtmlRemover : public BmMemFilter {
+				typedef BmMemFilter inherited;
+			
+			public:
+				HtmlRemover( BmMemIBuf* input, uint32 blockSize=nBlockSize);
+			
+			protected:
+				// overrides of BmMailFilter base:
+				void Filter( const char* srcBuf, uint32& srcLen, 
+								 char* destBuf, uint32& destLen);
+		
+			private:	
+				bool mInTag;
+				bool mInQuot;
+				bool mKeepATags;
+				bool mKeepThisTagsContent;
+			};
+			
+		public:
+			SpamRelevantMailtextSelector(const BmMail* mail);
+			void operator() (BmStringIBuf& inBuf);
+		
+		private:
+			void AddSpamRelevantBodyParts(BmStringIBuf& inBuf);
+			BmBodyPart* FindBodyPartWithHighestSpamRelevance(BmBodyPart* parent);
+			const BmMail* mMail;
+			BmStringOBuf mDeHtmlBuf;
+		};
+		
+		/*------------------------------------------------------------------------------*\
 			FeatureFilter
 				-	filters the mailtext for "features" (words)
 		\*------------------------------------------------------------------------------*/
@@ -162,7 +224,6 @@ class BmSpamFilter : public BmFilterAddon {
 			Header* mHeader;
 			bool mRevert;
 			deque<unsigned long> mHashpipe;
-			char *mSeenFeatures;
 			status_t mStatus;
 		};
 
@@ -188,13 +249,11 @@ class BmSpamFilter : public BmFilterAddon {
 			FeatureBucket* mHash[MaxHash];
 			Header* mHeader[MaxHash];
 
+			char *mSeenFeatures[MaxHash];
+
 			deque<unsigned long> mHashpipe;
 			status_t mStatus;
 			
-			bool mClassifiedAsSpam;
-			bool mClassifiedAsTofu;
-
-			char *mSeenFeatures[MaxHash];
 			unsigned long mHits[MaxHash];
 				// actual hits per feature per classifier
 			unsigned long mTotalHits[MaxHash];
@@ -210,8 +269,9 @@ class BmSpamFilter : public BmFilterAddon {
 				//  missed features per class
 			double mPtc[MaxHash];	
 				// current running probability of this class
-			double mPltc[MaxHash];	
+			double mPltc[MaxHash];
 				// current local probability of this class
+			double mOverallPr;
 			unsigned long mHashLen[MaxHash];
 			const char *mHashName[MaxHash];
 		};
@@ -219,6 +279,7 @@ class BmSpamFilter : public BmFilterAddon {
 
 
 		bool Learn( BmMsgContext* msgContext, bool learnAsSpam, bool revert);
+		bool DoClassify( BmMsgContext* msgContext, double& overallPr);
 		void Store();
 		status_t CreateDataFile( const BmString& filename);
 		status_t ReadDataFile( const BmString& filename, Header& header,
@@ -242,7 +303,7 @@ public:
 	
 	// implementations for abstract BmFilterAddon-methods:
 	bool Execute( BmMsgContext* msgContext, 
-					  const BmString& jobSpecifier = BM_DEFAULT_STRING);
+					  const BMessage* jobSpecs = NULL);
 	bool SanityCheck( BmString& complaint, BmString& fieldName);
 	status_t Archive( BMessage* archive, bool deep = true) const;
 	BmString ErrorString() const;
