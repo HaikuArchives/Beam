@@ -81,7 +81,7 @@ public:
 	virtual ~BmFilter();
 	
 	// native methods:
-	bool SanityCheck( BmString& complaint, BmString& fieldName);
+	bool SanityCheck( BmString& complaint, BmString& fieldName) const;
 
 	// stuff needed for Archival:
 	status_t Archive( BMessage* archive, bool deep = true) const;

@@ -145,9 +145,10 @@ status_t BmFilter::Archive( BMessage* archive, bool deep) const {
 		-	returns true if values are ok, false (and error-info) if not
 		-	double-dispatches check to addon
 \*------------------------------------------------------------------------------*/
-bool BmFilter::SanityCheck( BmString& complaint, BmString& fieldName) {
-	if (Addon())
-		return Addon()->SanityCheck( complaint, fieldName);
+bool BmFilter::SanityCheck( BmString& complaint, BmString& fieldName) const
+{
+	if (mAddon)
+		return mAddon->SanityCheck( complaint, fieldName);
 	return true;
 }
 
