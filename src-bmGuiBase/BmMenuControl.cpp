@@ -84,7 +84,9 @@ void BmMenuControl::MarkItem( const char* label, bool recurse) {
 		for( uint32 i=0; currMenu && i<itemVect.size(); ++i) {
 			BmString str = itemVect[i];
 			item = currMenu->FindItem( str.String());
-			currMenu = item->Submenu();
+			currMenu = item 
+							? item->Submenu()
+							: NULL;
 		}
 	} else
 		item = Menu()->FindItem( label);
