@@ -576,7 +576,7 @@ void BmPopper::StateRetrieve() {
 		mail->ApplyInboundFilters();
 		// ...and store mail on disk:
 		BM_LOG3( BM_LogPop, "...storing mail...");
-		if (!mail->Store())
+		if (!mail->Store(false))
 			goto CLEAN_UP;
 		BM_LOG3( BM_LogPop, "...done");
 		mPopAccount->MarkUIDAsDownloaded( mMsgUIDs[i]);

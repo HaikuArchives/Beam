@@ -1355,7 +1355,7 @@ bool BmMailEditWin::SaveMail( bool saveForSend) {
 				mail->SetDestFoldername( BM_MAIL_FOLDER_DRAFT);
 		}
 			
-		if (mail->Store()) {
+		if (mail->Store(false)) {
 			mHasNeverBeenSaved = false;
 			mModified = false;
 			if (LockLooper()) {

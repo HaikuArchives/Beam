@@ -279,7 +279,7 @@ void BmMailFilter::Execute( BmMail* mail) {
 	if (needToStore && !mExecuteInMem) {
 		BM_LOG3( BM_LogFilter, 
 					"Filtering has changed something, so mail will be stored now.");
-		mail->Store();
+		mail->Store(true);
 	}
 }
 
