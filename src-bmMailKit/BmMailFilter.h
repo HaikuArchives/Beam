@@ -84,6 +84,8 @@ public:
 	static int sieve_get_size( void* message_context, int* size);
 	static int sieve_get_header( void* message_context, const char* header,
 			  							  const char*** contents);
+	// SIEVE-helpers:
+	static void SetMailFlags( sieve_imapflags_t* flags, BmMail* mail);
 
 	static int sieve_execute_error( const char* msg, void* interp_context,
 											  void* script_context, void* message_context);

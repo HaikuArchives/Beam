@@ -91,12 +91,31 @@ int BmMailFilter::sieve_redirect( void* action_context, void* interp_context,
 }
 
 /*------------------------------------------------------------------------------*\
+	SetMailFlags()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailFilter::SetMailFlags( sieve_imapflags_t* flags, BmMail* mail) {
+	if (mail && flags) {
+		for( int i=0; i<flags->nflags; ++i) {
+			BmString flag( flags->flag[i]);
+			if (!flag.ICompare( "\\Seen"))
+				mail->MarkAs( BM_MAIL_STATUS_READ);
+		}
+	}
+}
+
+/*------------------------------------------------------------------------------*\
 	sieve_keep()
 		-	
 \*------------------------------------------------------------------------------*/
 int BmMailFilter::sieve_keep( void* action_context, void* interp_context, 
 			   				  		void* script_context, void* message_context, 
 			   				  		const char** errmsg) {
+	MsgContext* msgContext = static_cast< MsgContext*>( message_context);
+	sieve_keep_context* keepContext 
+		= static_cast< sieve_keep_context*>( action_context);
+	if (msgContext && msgContext->mail && keepContext)
+		SetMailFlags( keepContext->imapflags, msgContext->mail);
 	return SIEVE_OK;
 }
 
@@ -111,6 +130,7 @@ int BmMailFilter::sieve_fileinto( void* action_context, void* interp_context,
 	sieve_fileinto_context* fileintoContext 
 		= static_cast< sieve_fileinto_context*>( action_context);
 	if (msgContext && msgContext->mail && fileintoContext) {
+		SetMailFlags( fileintoContext->imapflags, msgContext->mail);
 		msgContext->mail->DestFoldername( fileintoContext->mailbox);
 	}
 	return SIEVE_OK;
