@@ -377,8 +377,10 @@ void BmBodyPart::SetTo( const BmString& msgtext, int32 start, int32 length,
 		// set content-type to default if is empty or contains "text"
 		// (which is illegal but used by some broken mail-clients, it seems...)
 		if (ThePrefs->GetBool( "StrictCharsetHandling", false))
+			// strict mode: no charset means: us-ascii:
 			type = "text/plain; charset=us-ascii";
 		else
+			// more relaxed, no charset means: default charset
 			type = BmString("text/plain; charset=")<<mSuggestedCharset;
 	}
 	mContentType.SetTo( type);
