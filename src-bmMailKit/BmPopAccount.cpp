@@ -49,7 +49,6 @@ using namespace regexx;
 #include "BmMail.h"
 #include "BmMsgTypes.h"
 #include "BmPopAccount.h"
-#include "BmPopper.h"
 #include "BmResources.h"
 #include "BmUtil.h"
 
