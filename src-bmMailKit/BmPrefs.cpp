@@ -129,6 +129,7 @@ BmPrefs::BmPrefs( BMessage* archive)
 	mPrefsMsg.AddInt32("Loglevels", loglevels);
 	SetLoglevels();
 	
+	status_t scStatus = mPrefsMsg.FindMessage( "Shortcuts", &mShortcutsMsg);
 	if (version < 1) {
 		// changes introduced with version 1:
 		//
@@ -144,26 +145,33 @@ BmPrefs::BmPrefs( BMessage* archive)
 		//
 		// nothing to do...
 	}
-
-	if (mPrefsMsg.FindMessage( "Shortcuts", &mShortcutsMsg) == B_OK) {
-		if (version < 3) {
-			BMessage scMsg( mShortcutsMsg);
-			// changes introduced with version 3:
-			//
-			// remove trailing dots from shortcuts, if present:
-			char* name;
-			uint32 type;
-			int32 pos=-1;
-			for( int32 i=0; scMsg.GetInfo( B_STRING_TYPE, i, &name, &type)==B_OK; ++i) {
-				BString scName( name);
-				if ((pos=scName.FindFirst( "...")) != B_ERROR) {
-					BString val = mShortcutsMsg.FindString( scName.String());
-					mShortcutsMsg.RemoveName( scName.String());
-					scName.Truncate( pos);
-					mShortcutsMsg.AddString( scName.String(), val);
-				}
+	if (version < 3 && scStatus==B_OK) {
+		// changes introduced with version 3:
+		//
+		// remove trailing dots from shortcuts, if present:
+		BMessage scMsg( mShortcutsMsg);
+		char* name;
+		uint32 type;
+		int32 pos=-1;
+		for( int32 i=0; scMsg.GetInfo( B_STRING_TYPE, i, &name, &type)==B_OK; ++i) {
+			BString scName( name);
+			if ((pos=scName.FindFirst( "...")) != B_ERROR) {
+				BString val = mShortcutsMsg.FindString( scName.String());
+				mShortcutsMsg.RemoveName( scName.String());
+				scName.Truncate( pos);
+				mShortcutsMsg.AddString( scName.String(), val);
 			}
 		}
+	}
+	if (version < 4) {
+		// changes introduced with version 4:
+		//
+		// replace int-field "" with corresponding string-field:
+		mPrefsMsg.RemoveName("DefaultForwardType");
+		mPrefsMsg.AddString( "DefaultForwardType", 
+									mDefaultsMsg.FindString( "DefaultForwardType"));
+	}
+	if (scStatus == B_OK) {
 		// add any missing (new) shortcuts:
 		GetShortcutDefaults( &mShortcutsMsg);
 	} else {
@@ -206,8 +214,6 @@ void BmPrefs::ResetToSaved() {
 void BmPrefs::InitDefaults() {
 	mDefaultsMsg.MakeEmpty();
 	mDefaultsMsg.AddInt16( MSG_VERSION, nPrefsVersion);
-	mDefaultsMsg.AddBool( "DynamicStatusWin", true);
-	mDefaultsMsg.AddInt32( "ReceiveTimeout", 60);
 	int32 loglevels = BM_LOGLVL2(BM_LogPop)
 							+ BM_LOGLVL2(BM_LogJobWin) 
 							+ BM_LOGLVL2(BM_LogMailParse) 
@@ -220,6 +226,24 @@ void BmPrefs::InitDefaults() {
 							+ BM_LOGLVL0(BM_LogMailEditWin)
 							+ BM_LOGLVL2(BM_LogSmtp)
 							+ BM_LOGLVL2(BM_LogPrefsWin);
+
+	mDefaultsMsg.AddBool( "AutoCheckOnlyIfPPPRunning", true);
+	mDefaultsMsg.AddBool( "Allow8BitMime", false);
+	mDefaultsMsg.AddBool( "BeepWhenNewMailArrived", true);
+	mDefaultsMsg.AddBool( "CacheRefsInMem", false);
+	mDefaultsMsg.AddBool( "CacheRefsOnDisk", true);
+	mDefaultsMsg.AddInt32( "DefaultEncoding", B_ISO1_CONVERSION);
+	mDefaultsMsg.AddString( "DefaultForwardType", "Inline");
+	mDefaultsMsg.AddBool( "DoNotAttachVCardsToForward", true);
+	mDefaultsMsg.AddBool( "DynamicStatusWin", true);
+	mDefaultsMsg.AddString( "ForwardIntroStr", "On %D at %T, %F wrote:");
+	mDefaultsMsg.AddString( "ForwardSubjectRX", "^\\s*\\[?\\s*Fwd(\\[\\d+\\])?:");
+	mDefaultsMsg.AddString( "ForwardSubjectStr", "Fwd: %s");
+	mDefaultsMsg.AddBool( "GenerateOwnMessageIDs", true);
+	mDefaultsMsg.AddBool( "HardWrapMailText", true);
+	mDefaultsMsg.AddString( "HeaderListLarge", "Subject,From,Date,To,Cc,User-Agent/X-Mailer");
+	mDefaultsMsg.AddString( "HeaderListSmall", "Subject,From,Date");
+	mDefaultsMsg.AddBool( "InOutAlwaysAtTop", true);
 	mDefaultsMsg.AddInt32( "Loglevels", loglevels);
 	mDefaultsMsg.AddInt16( "Loglevel_Pop", BM_LOGLVL_FOR(loglevels,BM_LogPop));
 	mDefaultsMsg.AddInt16( "Loglevel_JobWin", BM_LOGLVL_FOR(loglevels,BM_LogJobWin));
@@ -233,47 +257,38 @@ void BmPrefs::InitDefaults() {
 	mDefaultsMsg.AddInt16( "Loglevel_MailEditWin", BM_LOGLVL_FOR(loglevels,BM_LogMailEditWin));
 	mDefaultsMsg.AddInt16( "Loglevel_Smtp", BM_LOGLVL_FOR(loglevels,BM_LogSmtp));
 	mDefaultsMsg.AddInt16( "Loglevel_PrefsWin", BM_LOGLVL_FOR(loglevels,BM_LogPrefsWin));
-	mDefaultsMsg.AddString( "MailboxPath", "/boot/home/mail");
-	mDefaultsMsg.AddBool( "CacheRefsInMem", false);
-	mDefaultsMsg.AddBool( "CacheRefsOnDisk", true);
-	mDefaultsMsg.AddInt32( "DefaultEncoding", B_ISO1_CONVERSION);
-	mDefaultsMsg.AddBool( "StripedListView", true);
 	mDefaultsMsg.AddMessage( "MailRefLayout", new BMessage);
-	mDefaultsMsg.AddBool( "RestoreFolderStates", true);
-	mDefaultsMsg.AddBool( "ShowDecodedLength", true);
-	mDefaultsMsg.AddBool( "GenerateOwnMessageIDs", true);
-	mDefaultsMsg.AddString( "HeaderListLarge", "Subject,From,Date,To,Cc,User-Agent/X-Mailer");
-	mDefaultsMsg.AddString( "HeaderListSmall", "Subject,From,Date");
+	mDefaultsMsg.AddString( "MailboxPath", "/boot/home/mail");
+	mDefaultsMsg.AddBool( "MakeQPSafeForEBCDIC", false);
+	mDefaultsMsg.AddInt32( "MarkAsReadDelay", 500);
+	mDefaultsMsg.AddInt32( "MaxLineLen", 76);
+	mDefaultsMsg.AddInt32( "MaxLineLenForHardWrap", 998);
+	mDefaultsMsg.AddString( "MimeTypeTrustInfo", "<application/pdf:T><application/zip:T><application:W><:T>");
 	mDefaultsMsg.AddInt32( "MSecsBeforeMailMoverShows", 500*1000);
 	mDefaultsMsg.AddInt32( "MSecsBeforePopperRemove", 5000*1000);
 	mDefaultsMsg.AddInt32( "MSecsBeforeSmtpRemove", 0*1000);
-	mDefaultsMsg.AddString( "QuotingString", "> ");
-	mDefaultsMsg.AddInt32( "MaxLineLen", 76);
 	mDefaultsMsg.AddInt32( "NetSendBufferSize", 10*1500);
-	mDefaultsMsg.AddBool( "MakeQPSafeForEBCDIC", false);
-	mDefaultsMsg.AddBool("SpecialHeaderForEachBcc", true);
-	mDefaultsMsg.AddBool( "PreferUserAgentOverX-Mailer", true);
-	mDefaultsMsg.AddInt32( "DefaultForwardType", BMM_FORWARD_INLINE);
-	mDefaultsMsg.AddString( "ForwardIntroStr", "On %D at %T, %F wrote:");
-	mDefaultsMsg.AddString( "ForwardSubjectRX", "^\\s*\\[?\\s*Fwd(\\[\\d+\\])?:");
-	mDefaultsMsg.AddString( "ForwardSubjectStr", "Fwd: %s");
-	mDefaultsMsg.AddBool( "DoNotAttachVCardsToForward", true);
-	mDefaultsMsg.AddString( "ReplyIntroStr", "On %D at %T, you wrote:");
-	mDefaultsMsg.AddString( "ReplySubjectRX", "^\\s*(Re|Aw)(\\[\\d+\\])?:");
-	mDefaultsMsg.AddString( "ReplySubjectStr", "Re: %s");
-	mDefaultsMsg.AddString( "SignatureRX", "^---?\\s*\\n");
-	mDefaultsMsg.AddString( "MimeTypeTrustInfo", "<application/pdf:T><application/zip:T><application:W><:T>");
-	mDefaultsMsg.AddBool( "InOutAlwaysAtTop", false);
-	mDefaultsMsg.AddMessage( "Shortcuts", GetShortcutDefaults());
 	mDefaultsMsg.AddString( "QuoteFormatting", "Push Margin");
 	mDefaultsMsg.AddString( "QuotingLevelRX", "^((?:\\w?\\w?\\w?[>|]|[ \\t]*)*)(.*?)$");
-	mDefaultsMsg.AddBool( "AutoCheckOnlyIfPPPRunning", true);
-	mDefaultsMsg.AddBool( "Allow8BitMime", false);
+	mDefaultsMsg.AddString( "QuotingString", "> ");
+	mDefaultsMsg.AddBool( "PreferUserAgentOverX-Mailer", true);
+	mDefaultsMsg.AddInt32( "ReceiveTimeout", 60);
+	mDefaultsMsg.AddString( "ReplyIntroStr", "On %D at %T, you wrote:");
+	mDefaultsMsg.AddString( "ReplyListIntroStr", "On %D at %T, %F wrote:");
+	mDefaultsMsg.AddString( "ReplySubjectRX", "^\\s*(Re|Aw)(\\[\\d+\\])?:");
+	mDefaultsMsg.AddString( "ReplySubjectStr", "Re: %s");
+	mDefaultsMsg.AddBool( "RestoreFolderStates", true);
+	mDefaultsMsg.AddMessage( "Shortcuts", GetShortcutDefaults());
+	mDefaultsMsg.AddBool( "ShowDecodedLength", true);
+	mDefaultsMsg.AddBool( "ShowToolbarBorder", false);
+	mDefaultsMsg.AddBool( "ShowToolbarIcons", true);
+	mDefaultsMsg.AddString( "ShowToolbarLabel", "Right");
+	mDefaultsMsg.AddString( "SignatureRX", "^---?\\s*\\n");
+	mDefaultsMsg.AddBool("SpecialHeaderForEachBcc", true);
+	mDefaultsMsg.AddBool( "StripedListView", true);
 	mDefaultsMsg.AddBool( "UseDeskbar", true);
-	mDefaultsMsg.AddInt32( "MarkAsReadDelay", 500);
-	mDefaultsMsg.AddBool( "HardWrapMailText", true);
-	mDefaultsMsg.AddBool( "BeepWhenNewMailArrived", true);
 	mDefaultsMsg.AddBool( "UseDocumentResizer", true);
+	mDefaultsMsg.AddString( "Workspace", "Current");
 }
 
 /*------------------------------------------------------------------------------*\
@@ -353,6 +368,8 @@ BMessage* BmPrefs::GetShortcutDefaults( BMessage* shortcutsMsg) {
 	SetShortcutIfNew( shortcutsMsg, "Redo", "<SHIFT>Z");
 	SetShortcutIfNew( shortcutsMsg, "Rename Folder", "");
 	SetShortcutIfNew( shortcutsMsg, "Reply", "R");
+	SetShortcutIfNew( shortcutsMsg, "Reply To List", "");
+	SetShortcutIfNew( shortcutsMsg, "Reply To Originator", "");
 	SetShortcutIfNew( shortcutsMsg, "Reply To All", "<SHIFT>R");
 	SetShortcutIfNew( shortcutsMsg, "SaveMail", "S");
 	SetShortcutIfNew( shortcutsMsg, "Select All", "A");
