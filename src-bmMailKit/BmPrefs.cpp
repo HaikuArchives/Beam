@@ -393,13 +393,13 @@ BMessage* BmPrefs::GetShortcutDefaults( BMessage* shortcutsMsg) {
 	if (!shortcutsMsg)
 		shortcutsMsg = new BMessage;
 	SetShortcutIfNew( shortcutsMsg, "About Beam", "");
-	SetShortcutIfNew( shortcutsMsg, "Apply Filter", "");
 	SetShortcutIfNew( shortcutsMsg, "Check Mail", "M");
 	SetShortcutIfNew( shortcutsMsg, "Check All Accounts", "<SHIFT>M");
 	SetShortcutIfNew( shortcutsMsg, "Close", "W");
 	SetShortcutIfNew( shortcutsMsg, "Copy", "C");
 	SetShortcutIfNew( shortcutsMsg, "Cut", "X");
 	SetShortcutIfNew( shortcutsMsg, "Delete Folder", "");
+	SetShortcutIfNew( shortcutsMsg, "Filter", "");
 	SetShortcutIfNew( shortcutsMsg, "Find", "F");
 	SetShortcutIfNew( shortcutsMsg, "Find Messages", "<SHIFT>F");
 	SetShortcutIfNew( shortcutsMsg, "Find Next", "G");
@@ -420,7 +420,7 @@ BMessage* BmPrefs::GetShortcutDefaults( BMessage* shortcutsMsg) {
 	SetShortcutIfNew( shortcutsMsg, "Page Setup", "");
 	SetShortcutIfNew( shortcutsMsg, "Paste", "V");
 	SetShortcutIfNew( shortcutsMsg, "Preferences", "<SHIFT>P");
-	SetShortcutIfNew( shortcutsMsg, "Print Message", "");
+	SetShortcutIfNew( shortcutsMsg, "Print Message", "P");
 	SetShortcutIfNew( shortcutsMsg, "Quit Beam", "Q");
 	SetShortcutIfNew( shortcutsMsg, "Recache Folder", "");
 	SetShortcutIfNew( shortcutsMsg, "Redirect", "B");
