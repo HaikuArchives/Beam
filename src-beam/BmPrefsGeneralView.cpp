@@ -61,7 +61,7 @@ BmPrefsGeneralView::BmPrefsGeneralView()
 				new VGroup(
 					CreateMailRefLayoutView( minimax(500,80,1E5,80), 500, 80),
 					new Space( minimax(0,4,0,4)),
-					mStripedListViewControl = new BmCheckControl( "Use Striped Version of Listview (needs Restart)", 
+					mStripedListViewControl = new BmCheckControl( "Use striped version of listview (needs restart)", 
 																				 new BMessage(BM_STRIPED_LISTVIEW_CHANGED), 
 																				 this, ThePrefs->GetBool("StripedListView")),
 					new Space( minimax(0,4,0,4)),
@@ -73,13 +73,13 @@ BmPrefsGeneralView::BmPrefsGeneralView()
 				new MBorder( M_LABELED_BORDER, 10, (char*)"Status Window",
 					new HGroup( 
 						new VGroup(
-							mDynamicStatusWinControl = new BmCheckControl( "Only Show Active Jobs", 
+							mDynamicStatusWinControl = new BmCheckControl( "Only show active jobs", 
 																						  new BMessage(BM_DYNAMIC_STATUS_WIN_CHANGED), 
 																						  this, ThePrefs->GetBool("DynamicStatusWin")),
 							new Space( minimax(0,4,0,4)),
-							mMailMoverShowControl = new BmTextControl( "Time before MailMover-Job will be Shown (ms):", false, 5),
-							mPopperRemoveControl = new BmTextControl( "Time before Mail-Receiving-Job will be Removed (ms):", false, 5),
-							mSmtpRemoveControl = new BmTextControl( "Time before Mail-Sending-Job will be Removed (ms):", false, 5),
+							mMailMoverShowControl = new BmTextControl( "Time before mail-moving-job will be shown (ms):", false, 5),
+							mPopperRemoveControl = new BmTextControl( "Time before mail-receiving-job will be removed (ms):", false, 5),
+							mSmtpRemoveControl = new BmTextControl( "Time before mail-sending-job will be removed (ms):", false, 5),
 							new Space( minimax(0,4,0,4)),
 							0
 						),
@@ -90,7 +90,7 @@ BmPrefsGeneralView::BmPrefsGeneralView()
 				new MBorder( M_LABELED_BORDER, 10, (char*)"Mailfolder-View",
 					new HGroup( 
 					new VGroup(
-						mRestoreFolderStatesControl = new BmCheckControl( "Restore State on Startup", 
+						mRestoreFolderStatesControl = new BmCheckControl( "Restore state on startup", 
 																					 	  new BMessage(BM_RESTORE_FOLDER_STATES_CHANGED), 
 																					 	  this, ThePrefs->GetBool("RestoreFolderStates")),
 						new Space(),
@@ -102,24 +102,23 @@ BmPrefsGeneralView::BmPrefsGeneralView()
 				0
 			),
 			new Space( minimax(0,10,0,10)),
-			new MBorder( M_LABELED_BORDER, 10, (char*)"Performance & Timing Options",
-				new HGroup( 
+			new HGroup( 
+				new MBorder( M_LABELED_BORDER, 10, (char*)"Performance & Timing Options",
 					new VGroup(
-						mCacheRefsOnDiskControl = new BmCheckControl( "Cache Mailfolders (on Disk)", 
+						mCacheRefsOnDiskControl = new BmCheckControl( "Cache mailfolders (on disk)", 
 																			 		new BMessage(BM_CACHE_REFS_DISK_CHANGED), 
 																			 		this, ThePrefs->GetBool("CacheRefsOnDisk")),
-						mCacheRefsInMemControl = new BmCheckControl( "Keep Mailfolders in Memory once loaded", 
+						mCacheRefsInMemControl = new BmCheckControl( "Keep mailfolders in memory once loaded", 
 																			 		new BMessage(BM_CACHE_REFS_MEM_CHANGED), 
 																			 		this, ThePrefs->GetBool("CacheRefsInMem")),
-						mNetBufSizeSendControl = new BmTextControl( "Network-Buffer size when sending mail (bytes):", false, 5),
+						mNetBufSizeSendControl = new BmTextControl( "Network buffer size when sending mail (bytes):", false, 5),
 						mNetRecvTimeoutControl = new BmTextControl( "Timeout for network-connections (seconds):", false, 5),
 						0
-					),
-					new Space(),
-					0
-				)
+					)
+				),
+				new Space(),
+				0
 			),
-			new Space( minimax(0,10,0,10)),
 			new Space(),
 			0
 		);
@@ -138,7 +137,7 @@ BmPrefsGeneralView::BmPrefsGeneralView()
 	mNetRecvTimeoutControl->SetDivider( divider);
 	
 	BString val;
-	val << ThePrefs->GetInt("MSecsBeforeMailMoverShows");
+	val << ThePrefs->GetInt("MSecsBeforeMailMoverShows")/1000;
 	mMailMoverShowControl->SetText( val.String());
 	val = BString("") << ThePrefs->GetInt("MSecsBeforePopperRemove")/1000;
 	mPopperRemoveControl->SetText( val.String());

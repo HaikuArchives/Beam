@@ -431,7 +431,11 @@ void BmMailFolderList::InitializeItems() {
 		mTopFolder = AddMailFolder( eref, nref.node, NULL, mtime);
 
 		// now we process all subfolders of the top-folder recursively:
+#ifdef BM_LOGGING
 		int numDirs = 1 + doInitializeMailFolders( mTopFolder.Get(), 1);
+#else
+		doInitializeMailFolders( mTopFolder.Get(), 1);
+#endif
 		BM_LOG2( BM_LogMailTracking, BString("End of initFolders (") << numDirs << " folders found)");
 		mInitCheck = B_OK;
 	}

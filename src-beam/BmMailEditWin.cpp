@@ -47,6 +47,7 @@
 #include "BmCheckControl.h"
 #include "BmEncoding.h"
 	using namespace BmEncoding;
+#include "BmGuiUtil.h"
 #include "BmLogHandler.h"
 #include "BmMailHeader.h"
 #include "BmMailRef.h"
@@ -342,7 +343,9 @@ MMenuBar* BmMailEditWin::CreateMenu() {
 	menu = new BMenu( "File");
 	menu->AddItem( new BMenuItem( "Save", new BMessage( BMM_SAVE), 'S'));
 	menu->AddSeparatorItem();
-	menu->AddItem( new BMenuItem( "Quit Beam", new BMessage( B_QUIT_REQUESTED), 'Q'));
+	menu->AddItem( new BMenuItem( "Close", new BMessage( B_QUIT_REQUESTED), 'W'));
+	menu->AddSeparatorItem();
+	AddItemToMenu( menu, new BMenuItem( "Quit Beam", new BMessage( B_QUIT_REQUESTED), 'Q'), bmApp);
 	menubar->AddItem( menu);
 
 	// Edit
@@ -369,6 +372,10 @@ MMenuBar* BmMailEditWin::CreateMenu() {
 	menu = new BMenu( "Message");
 	menu->AddItem( new BMenuItem( "New Message", new BMessage( BMM_NEW_MAIL), 'N'));
 	menubar->AddItem( menu);
+
+	// temporary deactivations:
+	menubar->FindItem( BMM_FIND)->SetEnabled( false);
+	menubar->FindItem( BMM_FIND_NEXT)->SetEnabled( false);
 
 	return menubar;
 }
@@ -462,11 +469,11 @@ void BmMailEditWin::MessageReceived( BMessage* msg) {
 							smtpAcc->mMailVect.push_back( mail);
 							BM_LOG2( BM_LogMailEditWin, "...passing mail to smtp-account");
 							TheSmtpAccountList->SendQueuedMailFor( smtpAcc->Name());
-							PostMessage( B_QUIT_REQUESTED);
 						}
 					}
 				} else 
 					mail->MarkAs( BM_MAIL_STATUS_PENDING);
+				PostMessage( B_QUIT_REQUESTED);
 				break;
 			}
 			case BM_EDIT_HEADER_DONE: {

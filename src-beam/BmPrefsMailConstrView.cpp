@@ -65,20 +65,20 @@ BmPrefsMailConstrView::BmPrefsMailConstrView()
 			new HGroup( 
 				new MBorder( M_LABELED_BORDER, 10, (char*)"Mail-Construction",
 					new VGroup(
-						mMaxLineLenControl = new BmTextControl( "Wrap Lines At (chars):"),
-						mQuotingStringControl = new BmTextControl( "Quoting String:"),
-						mDefaultEncodingControl = new BmMenuControl( "Default-Encoding:", new BPopUpMenu("")),
+						mMaxLineLenControl = new BmTextControl( "Wrap lines at (chars):"),
+						mQuotingStringControl = new BmTextControl( "Quoting string:"),
+						mDefaultEncodingControl = new BmMenuControl( "Default-encoding:", new BPopUpMenu("")),
 						new Space( minimax(0,4,0,4)),
-						mSpecialForEachBccControl = new BmCheckControl( "Generate Header for each BCC-Recipient", 
+						mSpecialForEachBccControl = new BmCheckControl( "Generate header for each Bcc-recipient", 
 																					   new BMessage(BM_EACH_BCC_CHANGED), 
 																					   this, ThePrefs->GetBool("SpecialHeaderForEachBcc")),
-						mPreferUserAgentControl = new BmCheckControl( "Prefer 'UserAgent'-Header over 'X-Mailer'", 
+						mPreferUserAgentControl = new BmCheckControl( "Prefer 'UserAgent'-header over 'X-Mailer'", 
 																					 new BMessage(BM_PREFER_USER_AGENT_CHANGED), 
 																					 this, ThePrefs->GetBool("PreferUserAgentOverX-Mailer")),
-						mGenerateIDsControl = new BmCheckControl( "Generate Own Message IDs (recommended)", 
+						mGenerateIDsControl = new BmCheckControl( "Generate own message-IDs", 
 																				new BMessage(BM_GENERATE_MSGIDS_CHANGED), 
 																				this, ThePrefs->GetBool("GenerateOwnMessageIDs")),
-						mMakeQpSafeControl = new BmCheckControl( "Make Quoted-Printable safe for EBCDIC", 
+						mMakeQpSafeControl = new BmCheckControl( "Make quoted-printable safe for non-ASCII gateways (EBCDIC)", 
 																			  new BMessage(BM_QP_SAFE_CHANGED), 
 																			  this, ThePrefs->GetBool("MakeQPSafeForEBCDIC")),
 						0
@@ -92,14 +92,14 @@ BmPrefsMailConstrView::BmPrefsMailConstrView()
 				new VGroup(
 					mForwardIntroStrControl = new BmTextControl( "Intro:"),
 					mForwardSubjectStrControl = new BmTextControl( "Subject:"),
-					mForwardSubjectRxControl = new BmTextControl( "Regex that checks if Forward:"),
+					mForwardSubjectRxControl = new BmTextControl( "Regex that checks if forward:"),
 					new HGroup( 
-						mDefaultForwardTypeControl = new BmMenuControl( "Default Forward-Type:", new BPopUpMenu("")),
+						mDefaultForwardTypeControl = new BmMenuControl( "Default forward-type:", new BPopUpMenu("")),
 						new Space(),
 						0
 					),
 					new Space( minimax(0,4,0,4)),
-					mDontAttachVCardsControl = new BmCheckControl( "Do not Attach V-Cards in Forward", 
+					mDontAttachVCardsControl = new BmCheckControl( "Do not attach v-cards in forward", 
 																				  new BMessage(BM_ATTACH_VCARDS_CHANGED), 
 																				  this, ThePrefs->GetBool("DoNotAttachVCardsToForward")),
 					0
@@ -110,7 +110,7 @@ BmPrefsMailConstrView::BmPrefsMailConstrView()
 				new VGroup(
 					mReplyIntroStrControl = new BmTextControl( "Intro:"),
 					mReplySubjectStrControl = new BmTextControl( "Subject:"),
-					mReplySubjectRxControl = new BmTextControl( "Regex that checks if Reply:"),
+					mReplySubjectRxControl = new BmTextControl( "Regex that checks if reply:"),
 					new Space(),
 					0
 				)

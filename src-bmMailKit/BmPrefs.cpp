@@ -75,6 +75,7 @@ BmPrefs* BmPrefs::CreateInstance() {
 		// ...no settings file yet, we start with defaultVal settings...
 		prefs = new BmPrefs;
 		// ...and create a new and shiny settings file:
+		create_directory( TheResources->SettingsPath.Path(), 0755);
 		prefs->Store();
 	}
 
@@ -187,7 +188,7 @@ void BmPrefs::InitDefaults() {
 	mDefaultsMsg.AddInt32( "DefaultForwardType", BMM_FORWARD_INLINE);
 	mDefaultsMsg.AddString( "ForwardIntroStr", "On %D at %T, %F wrote:");
 	mDefaultsMsg.AddString( "ForwardSubjectRX", "^\\s*\\[?\\s*Fwd(\\[\\d+\\])?:");
-	mDefaultsMsg.AddString( "ForwardSubjectStr", "[Fwd: %s]");
+	mDefaultsMsg.AddString( "ForwardSubjectStr", "Fwd: %s");
 	mDefaultsMsg.AddBool( "DoNotAttachVCardsToForward", true);
 	mDefaultsMsg.AddString( "ReplyIntroStr", "On %D at %T, %F wrote:");
 	mDefaultsMsg.AddString( "ReplySubjectRX", "^\\s*(Re|Aw)(\\[\\d+\\])?:");

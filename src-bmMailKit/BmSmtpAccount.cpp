@@ -49,6 +49,7 @@
 BmSmtpAccount::BmSmtpAccount( const char* name, BmSmtpAccountList* model) 
 	:	inherited( name, model, (BmListModelItem*)NULL)
 	,	mPortNr( 25)
+	,	mPortNrString( "25")
 	,	mPwdStoredOnDisk( false)
 {
 }

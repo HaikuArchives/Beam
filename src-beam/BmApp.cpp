@@ -50,6 +50,7 @@
 #include "BmPrefs.h"
 #include "BmResources.h"
 #include "BmSmtpAccount.h"
+#include "BmStorageUtil.h"
 #include "BmUtil.h"
 
 int BmApplication::InstanceCount = 0;
@@ -344,6 +345,19 @@ void BmApplication::MessageReceived( BMessage* msg) {
 					LaunchURL( url);
 				}
 				break;
+			}
+			case BMM_TRASH: {
+				BmMailRef* mailRef = NULL;
+				int index=0;
+				while( msg->FindPointer( MSG_MAILREF, index++, (void**)&mailRef) == B_OK);
+				entry_ref* refs = new entry_ref [index];
+				index=0;
+				for( index=0; msg->FindPointer( MSG_MAILREF, index, (void**)&mailRef) == B_OK; ++index) {
+					refs[index] = mailRef->EntryRef();
+					mailRef->RemoveRef();	// msg is no more refering to mailRef
+				}
+				MoveToTrash( refs, index);
+				delete [] refs;
 			}
 			case B_SILENT_RELAUNCH: {
 				BM_LOG2( BM_LogAll, "App: silently relaunched");

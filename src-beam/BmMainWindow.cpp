@@ -358,6 +358,7 @@ void BmMainWindow::BeginLife() {
 		mMainMenuBar->FindItem( BMM_PAGE_SETUP)->SetEnabled( false);
 		mMainMenuBar->FindItem( BMM_PRINT)->SetEnabled( false);
 		mMainMenuBar->FindItem( BMM_FIND_MESSAGES)->SetEnabled( false);
+		mMainMenuBar->FindItem( BMM_SEND_PENDING)->SetEnabled( false);
 
 		mMailFolderView->StartWatching( this, BM_NTFY_MAILFOLDER_SELECTION);
 		mMailRefView->StartWatching( this, BM_NTFY_MAILREF_SELECTION);
@@ -430,6 +431,7 @@ void BmMainWindow::MessageReceived( BMessage* msg) {
 				break;
 			}
 			case BMM_MARK_AS:
+			case BMM_TRASH:
 			case BMM_REPLY:
 			case BMM_REPLY_ALL:
 			case BMM_FORWARD_ATTACHED:
@@ -551,7 +553,7 @@ void BmMainWindow::MailRefSelectionChanged( int32 numSelected) {
 	mMainMenuBar->FindItem( BMM_FORWARD_INLINE)->SetEnabled( numSelected > 0);
 	mMainMenuBar->FindItem( BMM_FORWARD_INLINE_ATTACH)->SetEnabled( numSelected > 0);
 	mMainMenuBar->FindItem( BMM_REDIRECT)->SetEnabled( 0 * numSelected > 0);
-	mMainMenuBar->FindItem( "Mark Message As")->SetEnabled( 0 * numSelected > 0);
+	mMainMenuBar->FindItem( "Mark Message As")->SetEnabled( numSelected > 0);
 	mMainMenuBar->FindItem( BMM_FILTER)->SetEnabled( 0 * numSelected > 0);
 	mMainMenuBar->FindItem( BMM_TRASH)->SetEnabled( numSelected > 0);
 }
@@ -562,6 +564,6 @@ void BmMainWindow::MailRefSelectionChanged( int32 numSelected) {
 \*------------------------------------------------------------------------------*/
 void BmMainWindow::MailViewChanged( bool hasMail) {
 	// adjust menu:
-	mMainMenuBar->FindItem( BMM_FIND)->SetEnabled( hasMail);
-	mMainMenuBar->FindItem( BMM_FIND_NEXT)->SetEnabled( hasMail);
+	mMainMenuBar->FindItem( BMM_FIND)->SetEnabled( false && hasMail);
+	mMainMenuBar->FindItem( BMM_FIND_NEXT)->SetEnabled( false && hasMail);
 }

@@ -44,6 +44,7 @@
 #include "BmBasics.h"
 #include "BmEncoding.h"
 	using namespace BmEncoding;
+#include "BmGuiUtil.h"
 #include "BmLogHandler.h"
 #include "BmMailRef.h"
 #include "BmMailView.h"
@@ -149,11 +150,11 @@ void BmMailViewWin::CreateGUI() {
 					mPrintButton = new BmToolbarButton( "Print", 
 																	TheResources->IconByName("Button_Print"), 
 																	new BMessage(BMM_PRINT), this, 
-																	"Print selected messages(s)"),
+																	"Print this messages"),
 					mTrashButton = new BmToolbarButton( "Delete", 
 																	TheResources->IconByName("Button_Trash"), 
 																	new BMessage(BMM_TRASH), this, 
-																	"Move selected messages to Trash"),
+																	"Move this message to Trash"),
 					new Space(),
 					0
 				)
@@ -189,7 +190,9 @@ MMenuBar* BmMailViewWin::CreateMenu() {
 	menu->AddItem( new BMenuItem( "Page Setup...", new BMessage( BMM_PAGE_SETUP)));
 	menu->AddItem( new BMenuItem( "Print Message...", new BMessage( BMM_PRINT)));
 	menu->AddSeparatorItem();
-	menu->AddItem( new BMenuItem( "Quit Beam", new BMessage( B_QUIT_REQUESTED), 'Q'));
+	menu->AddItem( new BMenuItem( "Close", new BMessage( B_QUIT_REQUESTED), 'W'));
+	menu->AddSeparatorItem();
+	AddItemToMenu( menu, new BMenuItem( "Quit Beam", new BMessage( B_QUIT_REQUESTED), 'Q'), bmApp);
 	menubar->AddItem( menu);
 
 	// Edit
@@ -224,6 +227,11 @@ MMenuBar* BmMailViewWin::CreateMenu() {
 	menu->AddItem( new BMenuItem( "Move To Trash", new BMessage( BMM_TRASH), 'T'));
 	menubar->AddItem( menu);
 
+	// temporary deactivations:
+	menubar->FindItem( BMM_FIND)->SetEnabled( false);
+	menubar->FindItem( BMM_FIND_NEXT)->SetEnabled( false);
+	menubar->FindItem( BMM_FILTER)->SetEnabled( false);
+
 	return menubar;
 }
 
@@ -249,6 +257,7 @@ void BmMailViewWin::MessageReceived( BMessage* msg) {
 			}
 			case BMM_REPLY:
 			case BMM_REPLY_ALL:
+			case BMM_TRASH:
 			case BMM_FORWARD_ATTACHED:
 			case BMM_FORWARD_INLINE:
 			case BMM_FORWARD_INLINE_ATTACH: {
@@ -261,6 +270,8 @@ void BmMailViewWin::MessageReceived( BMessage* msg) {
 						mailRef->AddRef();	// the message now refers to the mailRef, too
 						be_app_messenger.SendMessage( &msg2, &msg2);
 					}
+					if (msg->what == BMM_TRASH)
+						PostMessage( B_QUIT_REQUESTED);
 				}
 				break;
 			}

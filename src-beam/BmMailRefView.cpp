@@ -312,16 +312,6 @@ void BmMailRefView::MessageReceived( BMessage* msg) {
 				inherited::MessageReceived( msg);
 				break;
 			}
-			case BMM_MARK_AS:
-			case BMM_REPLY:
-			case BMM_REPLY_ALL:
-			case BMM_FORWARD_ATTACHED:
-			case BMM_FORWARD_INLINE:
-			case BMM_FORWARD_INLINE_ATTACH: {
-				AddSelectedRefsToMsg( msg, BmApplication::MSG_MAILREF);
-				be_app_messenger.SendMessage( msg);
-				break;
-			}
 			default:
 				inherited::MessageReceived( msg);
 		}
@@ -357,20 +347,15 @@ void BmMailRefView::KeyDown(const char *bytes, int32 numBytes) {
 				break;
 			}
 			case B_DELETE: {
-				int32 selCount;
-				for( selCount=0; CurrentSelection( selCount)>=0; ++selCount)
-					;
-				if (!selCount)
-					break;
-				entry_ref* refs = new entry_ref [selCount];
+				BMessage msg(BMM_TRASH);
 				int32 currIdx;
-				for( int32 i=0; i<selCount && (currIdx=CurrentSelection( i))>=0; ++i) {
-					BmMailRefItem* refItem = dynamic_cast<BmMailRefItem*>(ItemAt( currIdx));
-					refs[i] = dynamic_cast<BmMailRef*>(refItem->ModelItem())->EntryRef();
-				}
-				MoveToTrash( refs, selCount);
-				delete [] refs;
-				Select( currIdx+1);			// select next item that remains in list
+				int32 lastIdx=-1;
+				for( int32 i=0; (currIdx=CurrentSelection( i))>=0; ++i)
+					lastIdx=currIdx;
+				AddSelectedRefsToMsg( &msg, BmApplication::MSG_MAILREF);
+				Select( lastIdx+1);			// select next item that remains in list
+				be_app_messenger.SendMessage( &msg);
+				break;
 			}
 			default:
 				inherited::KeyDown( bytes, numBytes);
@@ -645,6 +630,9 @@ void BmMailRefView::AddMailRefMenu( BMenu* menu, BHandler* target) {
 	AddItemToMenu( menu, new BMenuItem( "Apply Filter", new BMessage( BMM_FILTER)), target);
 	menu->AddSeparatorItem();
 	AddItemToMenu( menu, new BMenuItem( "Move To Trash", new BMessage( BMM_TRASH), 'T'), target);
+
+	// temporary deactivations:
+	menu->FindItem( BMM_FILTER)->SetEnabled( false);
 }
 
 /*------------------------------------------------------------------------------*\

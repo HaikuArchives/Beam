@@ -238,23 +238,23 @@ BmPrefsSendMailView::BmPrefsSendMailView()
 			new HGroup(
 				new MBorder( M_LABELED_BORDER, 10, (char*)"Account Info",
 					new VGroup(
-						mAccountControl = new BmTextControl( "Account Name:", false, 0, 35),
+						mAccountControl = new BmTextControl( "Account name:", false, 0, 35),
 						new Space( minimax(0,5,0,5)),
-						mServerControl = new BmTextControl( "Servername:"),
+						mServerControl = new BmTextControl( "Server:"),
 						mPortControl = new BmTextControl( "Port:"),
 						new Space( minimax(0,5,0,5)),
-						mAuthControl = new BmMenuControl( "Auth-Method:", new BPopUpMenu("")),
+						mAuthControl = new BmMenuControl( "Auth-method:", new BPopUpMenu("")),
 						mLoginControl = new BmTextControl( "Login:"),
 						mPwdControl = new BmTextControl( "Password:"),
 						new Space( minimax(0,5,0,5)),
-						mDomainControl = new BmTextControl( "Domain to Announce:"),
+						mDomainControl = new BmTextControl( "Domain to announce:"),
 						0
 					)
 				),
 				new VGroup(
 					new MBorder( M_LABELED_BORDER, 10, (char*)"Options",
 						new VGroup(
-							mStorePwdControl = new BmCheckControl( "Store Password on Disk (UNSAFE!)", 
+							mStorePwdControl = new BmCheckControl( "Store password on disk (UNSAFE!)", 
 																				new BMessage(BM_PWD_STORED_CHANGED), 
 																				this),
 							0

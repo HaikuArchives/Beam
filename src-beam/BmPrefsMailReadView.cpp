@@ -56,22 +56,22 @@ BmPrefsMailReadView::BmPrefsMailReadView()
 			new Space( minimax(0,10,0,10)),
 			new MBorder( M_LABELED_BORDER, 10, (char*)"Mail-Header Display",
 				new VGroup(
-					mHeaderListSmallControl = new BmTextControl( "Fields in 'Small'-Mode:"),
-					mHeaderListLargeControl = new BmTextControl( "Fields in 'Large'-Mode:"),
+					mHeaderListSmallControl = new BmTextControl( "Fields in 'small'-mode:"),
+					mHeaderListLargeControl = new BmTextControl( "Fields in 'large'-mode:"),
 					0
 				)
 			),
 			new Space( minimax(0,10,0,10)),
 			new MBorder( M_LABELED_BORDER, 10, (char*)"Signature Display",
 				new VGroup(
-					mSignatureRxControl = new BmTextControl( "Regex that finds Signature-Start:"),
+					mSignatureRxControl = new BmTextControl( "Regex that finds start of signature:"),
 					0
 				)
 			),
 			new Space( minimax(0,10,0,10)),
-			new MBorder( M_LABELED_BORDER, 10, (char*)"Trusted Mimetypes (When Opening Attachments)",
+			new MBorder( M_LABELED_BORDER, 10, (char*)"Trusted Mimetypes (when opening attachments)",
 				new VGroup(
-					mMimeTypeTrustInfoControl = new BmTextControl( "Mimetype Trust Info:"),
+					mMimeTypeTrustInfoControl = new BmTextControl( "Mimetype trust info:"),
 					0
 				)
 			),
