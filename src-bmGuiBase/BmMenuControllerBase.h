@@ -46,6 +46,10 @@ enum {
 	BM_MC_RADIO_MODE			= 1<<4
 };
 
+enum {
+	BM_MENUITEM_SELECTED = 'bMis'
+};
+
 class BMenuItem;
 
 class IMPEXPSANTAPARTSFORBEAM BmMenuControllerBase : public BPopUpMenu
@@ -75,10 +79,11 @@ public:
 	BPoint ScreenLocation();
 
 	// getters:
-	BHandler* MsgTarget() const 			{ return mMsgTarget; }
+	BHandler* MsgTarget() const;
 	BMessage* MsgTemplate() 		 		{ return mMsgTemplate; }
 
 	// setters:
+	void MsgTarget( BHandler* t)  		{ mMsgTarget = t; }
 	void Shortcuts( const BmString s) 	{ mShortcuts = s; }
 
 protected:

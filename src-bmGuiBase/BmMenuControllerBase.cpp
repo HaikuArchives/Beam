@@ -28,10 +28,10 @@
 /*************************************************************************/
 
 
-#include <MenuItem.h>
+#include <vector>
 
-#include "split.hh"
-using namespace regexx;
+#include <MenuItem.h>
+#include <Window.h>
 
 #ifdef __POWERPC__
 #define BM_BUILDING_SANTAPARTSFORBEAM 1
@@ -117,12 +117,22 @@ BMenuItem* BmMenuControllerBase::MarkItemInMenu( BMenu* menu,
 	if (!menu || !label)
 		return NULL;
 	BMenuItem* item = NULL;
+	// split path into it's parts:
 	vector<BmString> itemVect;
-	split( "/", label, itemVect);
+	int32 startPos = 0;
+	int32 endPos;
+	BmString labelStr( label);
+	BmString str;
+	while( (endPos = labelStr.FindFirst( "/", startPos)) >= B_OK) {
+		labelStr.CopyInto( str, startPos, endPos);
+		itemVect.push_back( str);
+		startPos = endPos + 1;
+	}
+	itemVect.push_back( labelStr.String()+startPos);
+	// mark menu according to path-parts:
 	BMenu* currMenu = menu;
 	for( uint32 i=0; currMenu && i<itemVect.size(); ++i) {
-		BmString str = itemVect[i];
-		item = currMenu->FindItem( str.String());
+		item = currMenu->FindItem( itemVect[i].String());
 		currMenu = item 
 						? item->Submenu()
 						: NULL;
@@ -176,4 +186,19 @@ BPoint BmMenuControllerBase::ScreenLocation() {
 			pt.x += item->Frame().Width()+2;
 	}
 	return pt;
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+BHandler* BmMenuControllerBase::MsgTarget() const
+{ 
+	if (!mMsgTarget) {
+		// no target specified, return Window of controlling item as target:
+		BMenuItem* item = Superitem();
+		if (item && item->Menu())
+			return item->Menu()->Window();
+	}
+	return mMsgTarget; 
 }
