@@ -31,7 +31,7 @@
 #ifndef _BmListController_h
 #define _BmListController_h
 
-#include <vector>
+#include <map>
 
 #include "CLVEasyItem.h"
 #include "ColumnListView.h"

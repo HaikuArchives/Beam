@@ -31,8 +31,6 @@
 #ifndef _BmBodyPartView_h
 #define _BmBodyPartView_h
 
-#include <map>
-
 #include "BmListController.h"
 
 /*------------------------------------------------------------------------------*\
