@@ -21,6 +21,9 @@ public:
 	void Draw( BRect bounds);
 
 private:
+	// Hide copy-constructor and assignment:
+	BmCaption( const BmCaption&);
+	BmCaption operator=( const BmCaption&);
 
 };
 

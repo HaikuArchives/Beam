@@ -49,6 +49,7 @@ public:
 protected:
 	//
 	virtual bool IsMsgFromCurrentModel( BMessage* msg);
+	virtual bool MsgNeedsAck( BMessage* msg);
 
 private:
 	BmRef< BmDataModel> mDataModel;
@@ -57,6 +58,9 @@ private:
 	// setters
 	void DataModel( BmDataModel* model);
 
+	// Hide copy-constructor and assignment:
+	BmController( const BmController&);
+	BmController operator=( const BmController&);
 };
 
 
@@ -86,6 +90,9 @@ public:
 protected:
 	virtual BmJobModel* DataModel()		{ 	return dynamic_cast<BmJobModel*>(inherited::DataModel()); }
 
+	// Hide copy-constructor and assignment:
+	BmJobController( const BmJobController&);
+	BmJobController operator=( const BmJobController&);
 };
 
 

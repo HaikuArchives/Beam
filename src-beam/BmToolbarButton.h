@@ -28,6 +28,10 @@ public:
 
 private:
 	bool mHighlighted;
+
+	// Hide copy-constructor and assignment:
+	BmToolbarButton( const BmToolbarButton&);
+	BmToolbarButton operator=( const BmToolbarButton&);
 };
 
 

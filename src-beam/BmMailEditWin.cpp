@@ -208,7 +208,7 @@ void BmMailEditWin::CreateGUI() {
 		mSmtpControl->Menu()->AddItem( new BMenuItem( acc->Key().String(), new BMessage( BM_SMTP_SELECTED)));
 	}
 	// mark default smtp-account:
-	BString defaultSmtp = ThePrefs->GetString( "DefaultSmtpAccount", "");
+	BString defaultSmtp = ThePrefs->GetString( "DefaultSmtpAccount");
 	BMenuItem* item = NULL;
 	if (defaultSmtp.Length())
 		item = mSmtpControl->Menu()->FindItem( defaultSmtp.String());
@@ -328,7 +328,7 @@ void BmMailEditWin::MessageReceived( BMessage* msg) {
 				if (!SaveAndReloadMail())
 					break;
 				BmRef<BmMail> mail = mMailView->CurrMail();
-				if (!mail || !mail->Store())
+				if (!mail)
 					break;
 				mail->MarkAs( BM_MAIL_STATUS_PENDING);
 				if (msg->what == BMM_SEND_NOW) {
@@ -409,18 +409,37 @@ void BmMailEditWin::MessageReceived( BMessage* msg) {
 \*------------------------------------------------------------------------------*/
 void BmMailEditWin::EditMail( BmMailRef* ref) {
 	mMailView->ShowMail( ref, false);
+							// false=>synchronize (i.e. wait till mail is being displayed)
 	BmRef<BmMail> mail = mMailView->CurrMail();
-	if (ref && mail) {
+	SetFieldsFromMail( mail.Get());
+}
+
+/*------------------------------------------------------------------------------*\
+	EditMail()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailEditWin::EditMail( BmMail* mail) {
+	mMailView->ShowMail( mail, false);
+							// false=>synchronize (i.e. wait till mail is being displayed)
+	SetFieldsFromMail( mail);
+}
+
+/*------------------------------------------------------------------------------*\
+	SetFieldFromMail()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailEditWin::SetFieldsFromMail( BmMail* mail) {
+	if (mail) {
 		mBccControl->SetText( mail->GetFieldVal( BM_FIELD_BCC).String());
-		mCcControl->SetText( ref->Cc().String());
-		mFromControl->SetText( ref->From().String());
+		mCcControl->SetText( mail->GetFieldVal( BM_FIELD_CC).String());
+		mFromControl->SetText( mail->GetFieldVal( BM_FIELD_FROM).String());
 		mSenderControl->SetText( mail->GetFieldVal( BM_FIELD_SENDER).String());
-		mSubjectControl->SetText( ref->Subject().String());
-		mToControl->SetText( ref->To().String());
-		mReplyToControl->SetText( ref->ReplyTo().String());
+		mSubjectControl->SetText( mail->GetFieldVal( BM_FIELD_SUBJECT).String());
+		mToControl->SetText( mail->GetFieldVal( BM_FIELD_TO).String());
+		mReplyToControl->SetText( mail->GetFieldVal( BM_FIELD_REPLY_TO).String());
 		// mark corresponding SMTP-account (if any):
 		BMenuItem* item = NULL;
-		BString smtpAccount = ref->Account();
+		BString smtpAccount = mail->AccountName();
 		if (smtpAccount.Length())
 			item = mSmtpControl->Menu()->FindItem( smtpAccount.String());
 		else 
@@ -445,8 +464,14 @@ bool BmMailEditWin::CreateMailFromFields() {
 		BMenuItem* smtpItem = mSmtpControl->Menu()->FindMarked();
 		BString smtpAccount = smtpItem ? smtpItem->Label() : "";
 		if (mRawMode) {
+			BMenuItem* charsetItem = mCharsetControl->Menu()->FindMarked();
+			int32 encoding = charsetItem 
+									? CharsetToEncoding( charsetItem->Label())
+							 		: ThePrefs->GetInt("DefaultEncoding");
+			BString convertedText;
+			ConvertFromUTF8( encoding, editedText, convertedText);
 			BString encodedText;
-			Encode( "7bit", editedText, encodedText, false);
+			Encode( "7bit", convertedText, encodedText, false);
 							// convert local newlines to network-newlines
 			mail->SetTo( encodedText, smtpAccount);
 			return mail->InitCheck() == B_OK;
@@ -458,6 +483,7 @@ bool BmMailEditWin::CreateMailFromFields() {
 			mail->SetFieldVal( BM_FIELD_SUBJECT, mSubjectControl->Text());
 			mail->SetFieldVal( BM_FIELD_TO, mToControl->Text());
 			mail->SetFieldVal( BM_FIELD_REPLY_TO, mReplyToControl->Text());
+			mail->SetFieldVal( BM_FIELD_DATE, TimeToString( time( NULL), "%a, %d %m %Y %H:%M:%S %z"));
 			BMenuItem* charsetItem = mCharsetControl->Menu()->FindMarked();
 			int32 encoding = charsetItem ? CharsetToEncoding( charsetItem->Label()) 
 												  : ThePrefs->GetInt( "DefaultEncoding");
@@ -474,7 +500,6 @@ bool BmMailEditWin::CreateMailFromFields() {
 void BmMailEditWin::SetEditMode( int32 mode) {
 	mRawMode = (mode == BM_MAILVIEW_SHOWRAW);
 	bool enabled = (mRawMode == false);
-//	mShowDetailsButton->SetEnabled( enabled);
 	mAttachButton->SetEnabled( enabled);
 	mPeopleButton->SetEnabled( enabled);
 	mPrintButton->SetEnabled( enabled);
@@ -485,8 +510,6 @@ void BmMailEditWin::SetEditMode( int32 mode) {
 	mSenderControl->SetEnabled( enabled);
 	mSubjectControl->SetEnabled( enabled);
 	mToControl->SetEnabled( enabled);
-	mCharsetControl->SetEnabled( enabled);
-	mSmtpControl->SetEnabled( enabled);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -498,7 +521,7 @@ bool BmMailEditWin::SaveAndReloadMail() {
 		return false;
 	BmRef<BmMail> mail = mMailView->CurrMail();
 	if (mail && mail->Store()) {
-		mMailView->ShowMail( mail.Get());
+		EditMail( mail.Get());
 		return true;
 	}
 	return false;

@@ -53,6 +53,10 @@ public:
 	BStopWatch StopWatch;
 
 private:
+	// Hide copy-constructor and assignment:
+	BmLogHandler( const BmLogHandler&);
+	BmLogHandler operator=( const BmLogHandler&);
+
 	//	message component definitions for status-msgs:
 	static const char* const MSG_MESSAGE = 		"bm:msg";
 
@@ -74,6 +78,10 @@ private:
 	private:
 		FILE* logfile;
 		BString filename;
+
+		// Hide copy-constructor and assignment:
+		BmLogfile( const BmLogfile&);
+		BmLogfile operator=( const BmLogfile&);
 	};
 
 	typedef map<const BString, BmLogfile*> LogfileMap;

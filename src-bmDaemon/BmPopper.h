@@ -106,6 +106,10 @@ private:
 	};
 	static PopState PopStates[POP_FINAL];
 
+	// Hide copy-constructor and assignment:
+	BmPopper( const BmPopper&);
+	BmPopper operator=( const BmPopper&);
+
 };
 
 #endif

@@ -3,7 +3,12 @@
 		$Id$
 */
 
+#include <Alert.h>
+#include <MenuItem.h>
+#include <PopUpMenu.h>
 #include <String.h>
+
+#include "TextEntryAlert.h"
 
 #include "BmBasics.h"
 #include "BmJobStatusWin.h"
@@ -161,6 +166,108 @@ void BmMailFolderView::HandleDrop( const BMessage* msg) {
 }
 
 /*------------------------------------------------------------------------------*\
+	MouseDown( point)
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailFolderView::MouseDown( BPoint point) {
+	inherited::MouseDown( point); 
+	BPoint mousePos;
+	uint32 buttons;
+	GetMouse( &mousePos, &buttons);
+	if (buttons == B_SECONDARY_MOUSE_BUTTON) {
+		ShowMenu( point);
+	}
+}
+
+/*------------------------------------------------------------------------------*\
+	MessageReceived( msg)
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailFolderView::MessageReceived( BMessage* msg) {
+	try {
+		BmRef<BmMailFolder> folder;
+		int32 buttonPressed;
+		switch( msg->what) {
+			case BM_FOLDERVIEW_NEW: {
+				folder = CurrentFolder();
+				if (!folder)
+					return;
+				if (msg->FindInt32( "which", &buttonPressed) != B_OK) {
+					// first step, ask user about it:
+					TextEntryAlert* alert = new TextEntryAlert( "New Mail-Folder", 
+																		  	  "Enter name of new folder:",
+												 							  "", "Cancel", "OK");
+					alert->SetShortcut( 0, B_ESCAPE);
+					alert->Go( new BInvoker( new BMessage(BM_FOLDERVIEW_NEW), BMessenger( this)));
+				} else {
+					// second step, do it if user said ok:
+					if (buttonPressed == 1) {
+						BString newName = msg->FindString( "entry_text");
+						if (newName.Length()>0)
+							folder->CreateSubFolder( newName.String());
+					}
+				}
+				break;
+			}
+			case BM_FOLDERVIEW_RENAME: {
+				folder = CurrentFolder();
+				if (!folder)
+					return;
+				if (msg->FindInt32( "which", &buttonPressed) != B_OK) {
+					// first step, ask user about it:
+					TextEntryAlert* alert = new TextEntryAlert( "Rename Mail-Folder", 
+																			  "Enter new name for folder:",
+												 							  folder->Name().String(), "Cancel", "OK");
+					alert->SetShortcut( 0, B_ESCAPE);
+					alert->Go( new BInvoker( new BMessage(BM_FOLDERVIEW_RENAME), BMessenger( this)));
+				} else {
+					// second step, do it if user said ok:
+					if (buttonPressed == 1) {
+						BString newName = msg->FindString( "entry_text");
+						if (newName.Length()>0)
+							folder->Rename( newName.String());
+					}
+				}
+				break;
+			}
+			case BM_FOLDERVIEW_DELETE: {
+				folder = CurrentFolder();
+				if (!folder)
+					return;
+				if (msg->FindInt32( "which", &buttonPressed) != B_OK) {
+					// first step, ask user about it:
+					BAlert* alert = new BAlert( "Trash Mail-Folder", 
+														 (BString("Are you sure about trashing folder <") << folder->Name() << ">?").String(),
+													 	 "Move to Trash", "Cancel", NULL, B_WIDTH_AS_USUAL,
+													 	 B_WARNING_ALERT);
+					alert->SetShortcut( 1, B_ESCAPE);
+					alert->Go( new BInvoker( new BMessage(BM_FOLDERVIEW_DELETE), BMessenger( this)));
+				} else {
+					// second step, do it if user said ok:
+					if (buttonPressed == 0)
+						folder->MoveToTrash();
+				}
+				break;
+			}
+			case BM_FOLDERVIEW_RECACHE: {
+				folder = CurrentFolder();
+				if (!folder)
+					return;
+				folder->MarkCacheAsDirty();
+				if (TheMailRefView)
+					TheMailRefView->ShowFolder( folder.Get());
+				break;
+			}
+			default:
+				inherited::MessageReceived( msg);
+		}
+	} catch( exception &err) {
+		// a problem occurred, we tell the user:
+		BM_SHOWERR( BString("MailFolderView:\n\t") << err.what());
+	}
+}
+
+/*------------------------------------------------------------------------------*\
 	UpdateModelItem( msg)
 		-	Hook function that is called whenever an item needs to be updated 
 \*------------------------------------------------------------------------------*/
@@ -173,16 +280,73 @@ void BmMailFolderView::UpdateModelItem( BMessage* msg) {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmMailFolderView::SelectionChanged( void) {
+	if (!TheMailRefView)
+		return;
+	BmRef<BmMailFolder> folder = CurrentFolder();
+	if (folder)
+		TheMailRefView->ShowFolder( folder.Get());
+	else
+		TheMailRefView->ShowFolder( NULL);
+}
+
+/*------------------------------------------------------------------------------*\
+	CurrentFolder()
+		-	
+\*------------------------------------------------------------------------------*/
+BmRef<BmMailFolder> BmMailFolderView::CurrentFolder( void) const {
 	int32 selection = CurrentSelection();
 	if (selection >= 0) {
 		BmMailFolderItem* folderItem;
 		folderItem = dynamic_cast<BmMailFolderItem*>(ItemAt( selection));
 		if (folderItem) {
 			BmMailFolder* folder = dynamic_cast<BmMailFolder*>(folderItem->ModelItem());
-			if (folder)
-				TheMailRefView->ShowFolder( folder);
+			return folder;
 		}
-	} else
-		if (TheMailRefView)
-			TheMailRefView->ShowFolder( NULL);
+	}
+	return NULL;
 }
+
+/*------------------------------------------------------------------------------*\
+	( )
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailFolderView::ShowMenu( BPoint point) {
+	BmRef<BmMailFolder> folder = CurrentFolder();
+
+	BPopUpMenu* theMenu = new BPopUpMenu( "MailFolderViewMenu", false, false);
+
+	BMenuItem* item;
+	if (folder) {
+		item = new BMenuItem( "New Folder...", 
+									 new BMessage( BM_FOLDERVIEW_NEW));
+		item->SetTarget( this);
+		theMenu->AddItem( item);
+	
+		item = new BMenuItem( "Rename Folder...", 
+									 new BMessage( BM_FOLDERVIEW_RENAME));
+		item->SetTarget( this);
+		theMenu->AddItem( item);
+	
+		item = new BMenuItem( "Delete Folder...", 
+									 new BMessage( BM_FOLDERVIEW_DELETE));
+		item->SetTarget( this);
+		theMenu->AddItem( item);
+	
+		theMenu->AddSeparatorItem();
+	
+		item = new BMenuItem( "Recreate Cache", 
+									 new BMessage( BM_FOLDERVIEW_RECACHE));
+		item->SetTarget( this);
+		theMenu->AddItem( item);
+	}
+
+   ConvertToScreen(&point);
+	BRect openRect;
+	openRect.top = point.y - 5;
+	openRect.bottom = point.y + 5;
+	openRect.left = point.x - 5;
+	openRect.right = point.x + 5;
+  	theMenu->Go( point, true, false, openRect);
+  	delete theMenu;
+}
+

@@ -19,8 +19,8 @@
 		-	unarchive c'tor
 \*------------------------------------------------------------------------------*/
 BmMailRef* BmMailRef::CreateInstance( BmMailRefList* model, entry_ref &eref, 
-												  ino_t node, struct stat& st) {
-	BmMailRef* ref = new BmMailRef( model, eref, node, st);
+												  struct stat& st) {
+	BmMailRef* ref = new BmMailRef( model, eref, st);
 	status_t ret;
 	if ((ret = ref->InitCheck()) != B_OK) {
 		// item is not of mimetype email, we skip it:
@@ -35,10 +35,10 @@ BmMailRef* BmMailRef::CreateInstance( BmMailRefList* model, entry_ref &eref,
 	BmMailRef( eref, parent, modified)
 		-	standard c'tor
 \*------------------------------------------------------------------------------*/
-BmMailRef::BmMailRef( BmMailRefList* model, entry_ref &eref, ino_t node, struct stat& st)
-	:	inherited( BString() << node, model, (BmListModelItem*)NULL)
+BmMailRef::BmMailRef( BmMailRefList* model, entry_ref &eref, struct stat& st)
+	:	inherited( BString() << st.st_ino, model, (BmListModelItem*)NULL)
 	,	mEntryRef( eref)
-	,	mInode( node)
+	,	mInode( st.st_ino)
 	,	mInitCheck( B_NO_INIT)
 {
 	status_t err;
@@ -62,7 +62,8 @@ BmMailRef::BmMailRef( BmMailRefList* model, entry_ref &eref, ino_t node, struct 
 			throw BM_runtime_error(BString("Could not get node for mail-file <") << eref.name << "> \n\nError:" << strerror(err));
 
 		node.ReadAttr( "BEOS:TYPE", 		B_STRING_TYPE, 0, buf, bufsize);		filetype = buf; 	*buf=0;
-		if (!filetype.ICompare("text/x-email")) {
+		if (!filetype.ICompare("text/x-email") 
+		|| !filetype.ICompare("message/rfc822") ) {
 			// file is indeed a mail, we fetch its attributes:
 			node.ReadAttrString( BM_MAIL_ATTR_NAME, 		&mName);
 			node.ReadAttrString( BM_MAIL_ATTR_ACCOUNT, 	&mAccount);
@@ -166,6 +167,34 @@ BmMailRef::BmMailRef( BMessage* archive, BmMailRefList* model)
 }
 
 /*------------------------------------------------------------------------------*\
+	BmMailRef( mailref)
+		-	copy c'tor
+\*------------------------------------------------------------------------------*/
+BmMailRef::BmMailRef( const BmMailRef& mailRef)
+	:	inherited( mailRef)
+	,	mEntryRef( mailRef.EntryRef())
+	,	mInode( mailRef.Inode())
+	,	mAccount( mailRef.Account())
+	,	mCc( mailRef.Cc())
+	,	mFrom( mailRef.From())
+	,	mName( mailRef.Name())
+	,	mPriority( mailRef.Priority())
+	,	mReplyTo( mailRef.ReplyTo())
+	,	mStatus( mailRef.Status())
+	,	mSubject( mailRef.Subject())
+	,	mTo( mailRef.To())
+	,	mWhen( mailRef.When())
+	,	mWhenString( mailRef.WhenString())
+	,	mCreated( mailRef.Created())
+	,	mCreatedString( mailRef.CreatedString())
+	,	mSize( mailRef.Size())
+	,	mSizeString( mailRef.SizeString())
+	,	mHasAttachments( mailRef.HasAttachments())
+	,	mInitCheck( mailRef.InitCheck())
+{
+}
+
+/*------------------------------------------------------------------------------*\
 	~BmMailRef()
 		-	d'tor
 \*------------------------------------------------------------------------------*/
@@ -195,6 +224,14 @@ status_t BmMailRef::Archive( BMessage* archive, bool deep) const {
 		|| archive->AddString( MSG_TO, mTo)
 		|| archive->AddInt32( MSG_WHEN, mWhen);
 	return ret;
+}
+
+/*------------------------------------------------------------------------------*\
+	DetachedDuplicate()
+		-	
+\*------------------------------------------------------------------------------*/
+BmRef<BmMailRef> BmMailRef::DetachedDuplicate() const {
+	return new BmMailRef( *this);
 }
 
 /*------------------------------------------------------------------------------*\

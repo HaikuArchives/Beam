@@ -44,7 +44,9 @@ BmMail::BmMail( bool outbound)
 	,	mInitCheck( B_NO_INIT)
 	,	mOutbound( outbound)
 {
-	BString emptyMsg( "Mime: 1.0\r\n\r\n");
+	BString emptyMsg( "Mime: 1.0\r\n");
+	emptyMsg << "Date: " << TimeToString( time( NULL), "%a, %d %m %Y %H:%M:%S %z");
+	emptyMsg << "\r\n\r\n";
 	SetTo( emptyMsg, "");
 }
 
@@ -94,15 +96,16 @@ BmMail::~BmMail() {
 		-	the mail-header is extracted from msgText and is parsed
 		-	account is the name of the POP/IMAP-account this message was received from
 \*------------------------------------------------------------------------------*/
-void BmMail::SetTo( BString &msgText, const BString account) {
-	Regexx rx;
-	
+void BmMail::SetTo( const BString &text, const BString account) {
+	BString msgText;
+	ConvertLinebreaksToCRLF( text, msgText);
+
 	// find end of header (and start of body):
 	int32 headerLen = msgText.FindFirst( "\r\n\r\n");
 							// STD11: empty-line seperates header from body
-	if (headerLen == B_ERROR) {
+	if (headerLen == B_ERROR)
 		throw BM_mail_format_error("BmMail: Could not determine borderline between header and text of message");
-	}
+
 	headerLen += 2;							// don't include separator-line in header-string
 	mHeaderLength = headerLen;
 
@@ -255,6 +258,7 @@ bool BmMail::Store() {
 	BEntry tmpEntry;
 
 	try {
+		// find out where mail shall be living:
 		if (mMailRef && mMailRef->InitCheck() == B_OK) {
 			// mail has been read from disk, we recycle the old name:
 			basicFilename = mMailRef->TrackerName();

@@ -137,7 +137,7 @@ void BmNodeMonitor::HandleNodeMonitorMsg( BMessage* msg) {
 						} else {
 							// a new mail has been created, we add it to the parent folder:
 							BM_LOG2( BM_LogMailTracking, BString("New mail <") << eref.name << "," << node << "> detected.");
-							parent->AddMailRef( eref, node, st);
+							parent->AddMailRef( eref, st);
 						}
 					} else if (opcode == B_ENTRY_REMOVED) {
 						// we have no entry that could tell us what kind of item was removed,
@@ -215,7 +215,7 @@ void BmNodeMonitor::HandleNodeMonitorMsg( BMessage* msg) {
 							if (oldParent)
 								oldParent->RemoveMailRef( node);
 							if (parent)
-								parent->AddMailRef( eref, node, st);
+								parent->AddMailRef( eref, st);
 						}
 					}
 				}

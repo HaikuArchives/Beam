@@ -179,7 +179,7 @@ BmMailMoverView::BmMailMoverView( const char* name)
 	,	mStatBar( NULL)
 	,	mBottomLabel( NULL)
 {
-	mMSecsBeforeShow = ThePrefs->GetInt( "MSecsBeforeMailMoverShows", 250*1000);
+	mMSecsBeforeShow = ThePrefs->GetInt( "MSecsBeforeMailMoverShows");
 	BString labelText = BString("To: ") << ControllerName();
 	MView* view = new VGroup(
 		new MBViewWrapper(
@@ -268,7 +268,7 @@ BmPopperView::BmPopperView( const char* name)
 	,	mStatBar( NULL)
 	,	mMailBar( NULL)
 {
-	mMSecsBeforeRemove = ThePrefs->GetInt( "MSecsBeforePopperRemove", 5000*1000);
+	mMSecsBeforeRemove = ThePrefs->GetInt( "MSecsBeforePopperRemove");
 	MView* view = new VGroup(
 		new MBViewWrapper(
 			mStatBar = new BStatusBar( BRect(), name, name, ""), true, false, false
@@ -365,7 +365,7 @@ BmSmtpView::BmSmtpView( const char* name)
 	,	mStatBar( NULL)
 	,	mMailBar( NULL)
 {
-	mMSecsBeforeRemove = ThePrefs->GetInt( "MSecsBeforeSmtpRemove", 0*1000);
+	mMSecsBeforeRemove = ThePrefs->GetInt( "MSecsBeforeSmtpRemove");
 	MView* view = new VGroup(
 		new MBViewWrapper(
 			mStatBar = new BStatusBar( BRect(), name, name, ""), true, false, false

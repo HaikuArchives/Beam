@@ -12,6 +12,7 @@
 
 class MMenuBar;
 
+class BmMail;
 class BmMailView;
 class BmMailRef;
 class BmMailViewContainer;
@@ -21,10 +22,10 @@ class BmTextControl;
 class CLVContainerView;
 class MPictureButton;
 
-
 class BmMailEditWin : public BmWindow
 {
 	typedef BmWindow inherited;
+	friend class BmMailViewFilter;
 
 public:
 	// creator-func, c'tors and d'tor:
@@ -33,9 +34,8 @@ public:
 	~BmMailEditWin();
 
 	// native methods:
-	bool CreateMailFromFields();
 	void EditMail( BmMailRef* ref);
-	bool SaveAndReloadMail();
+	void EditMail( BmMail* mail);
 	void SetEditMode( int32 mode);
 
 	// overrides of BWindow base:
@@ -50,6 +50,10 @@ private:
 	BmMailViewContainer* CreateMailView( minimax minmax, BRect frame);
 	void CreateGUI();
 	MMenuBar* CreateMenu();
+
+	bool CreateMailFromFields();
+	bool SaveAndReloadMail();
+	void SetFieldsFromMail( BmMail* mail);
 
 	BmMailView* mMailView;
 	
@@ -76,6 +80,10 @@ private:
 	bool mShowDetails;
 	bool mRawMode;
 	MView* mOuterGroup;
+
+	// Hide copy-constructor and assignment:
+	BmMailEditWin( const BmMailEditWin&);
+	BmMailEditWin operator=( const BmMailEditWin&);
 };
 
 
@@ -91,6 +99,10 @@ public:
 
 private:
 	BmMailEditWin* mEditWin;
+
+	// Hide copy-constructor and assignment:
+	BmMailViewFilter( const BmMailViewFilter&);
+	BmMailViewFilter operator=( const BmMailViewFilter&);
 };
 
 

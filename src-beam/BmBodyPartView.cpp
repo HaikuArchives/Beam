@@ -8,6 +8,7 @@
 #include <Roster.h>
 #include <Window.h>
 
+#include "BmApp.h"
 #include "BmBasics.h"
 #include "BmLogHandler.h"
 #include "BmBodyPartList.h"
@@ -107,9 +108,9 @@ BmBodyPartView::BmBodyPartView( minimax minmax, int32 width, int32 height,
 
 	AddColumn( new CLVColumn( NULL, 10.0, 
 									  CLV_EXPANDER | CLV_LOCK_AT_BEGINNING | CLV_NOT_MOVABLE, 10.0));
-	AddColumn( new CLVColumn( "Icon", 18.0, 0, 18.0));
-	AddColumn( new CLVColumn( "Name", nColWidths[2], 0, 20.0));
-	AddColumn( new CLVColumn( "Mimetype", nColWidths[1], 0, 20.0));
+	AddColumn( new CLVColumn( "Icon", nColWidths[0], 0, 18.0));
+	AddColumn( new CLVColumn( "Name", nColWidths[1], 0, 20.0));
+	AddColumn( new CLVColumn( "Mimetype", nColWidths[2], 0, 20.0));
 	AddColumn( new CLVColumn( "Size", nColWidths[3], CLV_RIGHT_JUSTIFIED, 20.0));
 	AddColumn( new CLVColumn( "Language", nColWidths[4], 0, 20.0));
 	AddColumn( new CLVColumn( "Description", nColWidths[5], 0, 20.0));
@@ -347,7 +348,7 @@ void BmBodyPartView::MessageReceived( BMessage* msg) {
 		}
 	} catch( exception &err) {
 		// a problem occurred, we tell the user:
-		BM_SHOWERR( BString("MailHeaderView:\n\t") << err.what());
+		BM_SHOWERR( BString("BodyPartView:\n\t") << err.what());
 	}
 }
 
@@ -365,9 +366,15 @@ void BmBodyPartView::ItemInvoked( int32 index) {
 		InvalidateItem( index);
 		Window()->UpdateIfNeeded();
 		entry_ref eref = bodyPart->WriteToTempFile();
-		status_t res = be_roster->Launch( &eref);
-		if (res != B_OK && res != B_ALREADY_RUNNING) {
-			ShowAlert( "Sorry, could not launch application for this attachment (unknown mimetype perhaps?)");
+		if (bmApp->HandlesMimetype( bodyPart->MimeType())) {
+			BMessage msg( B_REFS_RECEIVED);
+			msg.AddRef( "refs", &eref);
+			bmApp->RefsReceived( &msg);
+		} else {
+			status_t res = be_roster->Launch( &eref);
+			if (res != B_OK && res != B_ALREADY_RUNNING) {
+				ShowAlert( BString("Sorry, could not launch application for this attachment (unknown mimetype perhaps?)\n\nError: ") << strerror(res));
+			}
 		}
 		bodyPartItem->Highlight( false);
 		InvalidateItem( index);

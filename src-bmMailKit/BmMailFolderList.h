@@ -45,6 +45,9 @@ private:
 	BmListModelItemRef lastOldParentRef;
 	int32 counter;
 
+	// Hide copy-constructor and assignment:
+	BmNodeMonitor( const BmNodeMonitor&);
+	BmNodeMonitor operator=( const BmNodeMonitor&);
 };
 
 /*------------------------------------------------------------------------------*\*\
@@ -97,6 +100,10 @@ private:
 	// the following members will NOT be archived at all:
 	BQuery mNewMailQuery;
 	BmNewNodeMap mNewMailNodeMap;
+
+	// Hide copy-constructor and assignment:
+	BmMailFolderList( const BmMailFolderList&);
+	BmMailFolderList operator=( const BmMailFolderList&);
 };
 
 #define TheMailFolderList BmMailFolderList::theInstance

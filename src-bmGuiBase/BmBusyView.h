@@ -33,6 +33,10 @@ private:
 	BMessageRunner* mMsgRunner;
 	int16 mBusyCount;
 	int32 mCurrState;
+
+	// Hide copy-constructor and assignment:
+	BmBusyView( const BmBusyView&);
+	BmBusyView operator=( const BmBusyView&);
 };
 
 

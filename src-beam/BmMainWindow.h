@@ -39,6 +39,10 @@ public:
 	
 private:
 	BMenu* mAccountMenu;
+
+	// Hide copy-constructor and assignment:
+	BmMainMenuBar( const BmMainMenuBar&);
+	BmMainMenuBar operator=( const BmMainMenuBar&);
 };
 
 
@@ -99,6 +103,10 @@ private:
 	BmMainMenuBar* mMainMenuBar;
 
 	static bool nIsAlive;
+
+	// Hide copy-constructor and assignment:
+	BmMainWindow( const BmMainWindow&);
+	BmMainWindow operator=( const BmMainWindow&);
 };
 
 #define TheMainWindow BmMainWindow::theInstance

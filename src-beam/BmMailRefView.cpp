@@ -538,17 +538,18 @@ void BmMailRefView::ItemInvoked( int32 index) {
 	if (refItem) {
 		BmMailRef* ref = dynamic_cast<BmMailRef*>(refItem->ModelItem());
 		if (ref) {
+			BmRef<BmMailRef> detachedRef = ref->DetachedDuplicate();
 			if (ref->Status() == BM_MAIL_STATUS_DRAFT
 			|| ref->Status() == BM_MAIL_STATUS_PENDING) {
 				BmMailEditWin* editWin = BmMailEditWin::CreateInstance();
 				if (editWin) {
-					editWin->EditMail( ref);
+					editWin->EditMail( detachedRef.Get());
 					editWin->Show();
 				}
 			} else {
 				BmMailViewWin* viewWin = BmMailViewWin::CreateInstance();
 				if (viewWin) {
-					viewWin->ShowMail( ref);
+					viewWin->ShowMail( detachedRef.Get());
 					viewWin->Show();
 				}
 			}

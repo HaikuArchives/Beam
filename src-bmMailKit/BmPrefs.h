@@ -54,7 +54,13 @@ private:
 
 	map<BString, BMessage*> mMsgCache;
 
+	// Hide copy-constructor and assignment:
+	BmPrefs( const BmPrefs&);
+	BmPrefs operator=( const BmPrefs&);
+
 	// TODO: make these configurable by user (i.e. write a GUI):
+
+
 /*
 	bool DynamicStatusWin;	
 							// show jobs in job-window only when
@@ -120,7 +126,6 @@ private:
 							// determines if the length of attachments should be computed
 							// for the decoded state (slower) or as is (less useful...)
 */
-
 
 };
 

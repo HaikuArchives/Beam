@@ -29,7 +29,8 @@ public:
 	virtual ~BmMailRefList();
 
 	// native methods:
-	BmMailRef* AddMailRef( entry_ref& eref, int64 node, struct stat& st);
+	BmMailRef* AddMailRef( entry_ref& eref, struct stat& st);
+	void MarkCacheAsDirty()					{ mNeedsCacheUpdate = true; }
 
 	// overrides of list-model base:
 	bool StartJob();
@@ -46,6 +47,9 @@ private:
 	BmRef<BmMailFolder> mFolder;
 	bool mNeedsCacheUpdate;
 
+	// Hide copy-constructor and assignment:
+	BmMailRefList( const BmMailRefList&);
+	BmMailRefList operator=( const BmMailRefList&);
 };
 
 

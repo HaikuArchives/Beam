@@ -30,9 +30,16 @@ public:
 
 	// overrides of BWindow-base:
 	void Quit();
+	
+	static float nNextXPos;
+	static float nNextYPos;
 
 protected:
 	BString mStatefileName;
+
+	// Hide copy-constructor and assignment:
+	BmWindow( const BmWindow&);
+	BmWindow operator=( const BmWindow&);
 };
 
 

@@ -16,6 +16,13 @@
 #include "BmLogHandler.h"
 
 
+#ifdef BM_REF_DEBUGGING
+#include <set>
+class BmRefObj;
+extern set<BmRefObj*> BM_REF_LIST;
+void BM_PrintRefsLeft();
+#endif
+
 /*------------------------------------------------------------------------------*\
 	BmRefObj
 		-	an object that can be reference-managed
@@ -24,6 +31,7 @@ class BmRefObj {
 
 public:
 	BmRefObj() : mRefCount(0) 				{}
+	BmRefObj( const BmRefObj&) : mRefCount( 0) {}
 	virtual ~BmRefObj() 						{}
 
 	virtual const BString& RefName() const = 0;
@@ -33,8 +41,11 @@ public:
 	void RemoveRef();
 	BString RefPrintHex();
 
-private:
 	int32 mRefCount;
+
+private:
+	// Hide assignment:
+	BmRefObj operator=( const BmRefObj&);
 };
 
 /*------------------------------------------------------------------------------*\

@@ -42,6 +42,9 @@ public:
 	const int32 GetNumValueForColumn( int32 column_index) const;
 	const time_t GetDateValueForColumn( int32 column_index) const;
 
+	// Hide copy-constructor and assignment:
+	BmMailRefItem( const BmMailRefItem&);
+	BmMailRefItem operator=( const BmMailRefItem&);
 };
 
 class BmMailView;
@@ -92,6 +95,9 @@ private:
 	BmMailView* mPartnerMailView;
 	bool mMouseIsDown;
 
+	// Hide copy-constructor and assignment:
+	BmMailRefView( const BmMailRefView&);
+	BmMailRefView operator=( const BmMailRefView&);
 };
 
 #define TheMailRefView BmMailRefView::theInstance

@@ -57,5 +57,10 @@ BString operator+(const BString& s1, const char* s2);
 	(needed since performance of BString::RemoveAll() is so pathetic...)
 \*------------------------------------------------------------------------------*/
 BString& RemoveSetFromString( BString& str, const char* chars);
+/*------------------------------------------------------------------------------*\*\
+	utility functions to convert between different linebreak-styles:
+\*------------------------------------------------------------------------------*/
+void ConvertLinebreaksToLF( const BString& in, BString& out);
+void ConvertLinebreaksToCRLF( const BString& in, BString& out);
 
 #endif

@@ -44,6 +44,10 @@ private:
 	
 	BList* mRefList;
 	BmMailFolder* mDestFolder;
+
+	// Hide copy-constructor and assignment:
+	BmMailMover( const BmMailMover&);
+	BmMailMover operator=( const BmMailMover&);
 };
 
 #endif

@@ -132,7 +132,7 @@ BmMainWindow* BmMainWindow::CreateInstance()
 \*------------------------------------------------------------------------------*/
 BmMainWindow::BmMainWindow()
 	:	inherited( "MainWindow", BRect(50,50,800,600), 
-					  (BString(BmAppName)<<" "<<BmAppVersion).String(),
+					  bmApp->BmAppNameWithVersion.String(),
 					  B_TITLED_WINDOW_LOOK, B_NORMAL_WINDOW_FEEL, 
 					  B_ASYNCHRONOUS_CONTROLS | B_QUIT_ON_WINDOW_CLOSE)
 	,	mMailFolderView( NULL)

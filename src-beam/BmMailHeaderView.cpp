@@ -8,6 +8,9 @@
 
 #include "Colors.h"
 
+#include "regexx.hh"
+using namespace regexx;
+
 #include "BmLogHandler.h"
 #include "BmMailHeader.h"
 #include "BmMailHeaderView.h"
@@ -63,12 +66,14 @@ status_t BmMailHeaderView::Unarchive( BMessage* archive, bool deep=true) {
 void BmMailHeaderView::ShowHeader( BmMailHeader* header, bool invalidate) {
 	mMailHeader = header;
 	float height = 0;
+	Regexx rx;
 	if (header) {
 		int numLines = 0;
 		switch (mDisplayMode) {
 			case SMALL_HEADERS: {
-				// small mode, 3 fields are displayed:
-				numLines = 3;
+				// small mode, 3 fields are displayed (by default):
+				BString fieldList = ThePrefs->GetString( "HeaderListSmall");
+				numLines = rx.exec( fieldList, "[\\w\\-/]+", Regexx::global);
 				break;
 			}
 			case FULL_HEADERS: {
@@ -77,8 +82,9 @@ void BmMailHeaderView::ShowHeader( BmMailHeader* header, bool invalidate) {
 				break;
 			}
 			default: {
-				// large mode, 5 fields are displayed:
-				numLines = 5;
+				// large mode, 5 fields are displayed (by default):
+				BString fieldList = ThePrefs->GetString( "HeaderListLarge");
+				numLines = rx.exec( fieldList, "[\\w\\-/]+", Regexx::global);
 				break;
 			}
 		};
@@ -110,14 +116,26 @@ void BmMailHeaderView::Draw( BRect bounds) {
 	float fh = TheResources->FontHeight( mFont);
 	float lh = TheResources->FontLineHeight( mFont)+3;
 
-	const char* titles[] = {
-		"Subject:",
-		"From:",
-		"Date:",
-		"To:",
-		"Cc:",
-		NULL
-	};
+	vector<BString> titles;
+	vector<BString> fields;
+	BString fieldList;
+	Regexx rx;
+
+	if (mDisplayMode != FULL_HEADERS) {
+		if (mDisplayMode == SMALL_HEADERS)
+			fieldList = ThePrefs->GetString( "HeaderListSmall");
+		else
+			fieldList = ThePrefs->GetString( "HeaderListLarge");
+		int numShown = rx.exec( fieldList, "[\\w\\-/]+", Regexx::global);
+		for( int i=0; i<numShown; ++i) {
+			BString field = rx.match[i];
+			fields.push_back( field);
+			int32 pos = field.FindFirst("/");
+			if (pos != B_ERROR)
+				field.Truncate( pos);
+			titles.push_back( field);
+		}
+	}
 
 	mFont->SetFace( B_BOLD_FACE);
 	SetFont( mFont);
@@ -143,8 +161,8 @@ void BmMailHeaderView::Draw( BRect bounds) {
 			start = end+1;
 		}
 	} else {
-		for( int i=0; titles[i]; ++i) {
-			float w = StringWidth( titles[i]) + 20;
+		for( uint32 i=0; i<titles.size(); ++i) {
+			float w = StringWidth( titles[i].String()) + 20;
 			if (w > titleWidth)
 				titleWidth = w;
 		}
@@ -162,32 +180,22 @@ void BmMailHeaderView::Draw( BRect bounds) {
 	float x_off = 5.0;
 	float y_off = 2.0;
 	if (mDisplayMode != FULL_HEADERS) {
-		// small or large mode, display 3 or 5 fields:
+		// small or large mode, display just a small or a medium number of fields:
 		SetHighColor( Black);
 		SetLowColor( BeListSelectGrey);
-		int numShown = mDisplayMode == 0 ? 3 : 5;
-		for( int32 l=0; l<numShown; ++l) {
-			DrawString( titles[l], BPoint( titleWidth-StringWidth(titles[l])-x_off, y_off+l*lh+fh) );
+		for( uint32 l=0; l<titles.size(); ++l) {
+			DrawString( (titles[l]+":").String(), BPoint( titleWidth-StringWidth(titles[l].String())-x_off, y_off+l*lh+fh) );
 		}
 		mFont->SetFace( B_REGULAR_FACE);
 		SetFont( mFont);
 		SetLowColor( BeLightShadow);
-		DrawString( mMailHeader->GetFieldVal( BM_FIELD_SUBJECT).String(), BPoint( titleWidth+x_off, y_off+0*lh+fh) );
-		if (ThePrefs->GetBool( "ShowStrippedFieldsInHeaderView", true)) {
-			DrawString( mMailHeader->GetStrippedFieldVal( BM_FIELD_FROM).String(), BPoint( titleWidth+x_off, y_off+1*lh+fh) );
-			DrawString( mMailHeader->GetStrippedFieldVal( BM_FIELD_DATE).String(), BPoint( titleWidth+x_off, y_off+2*lh+fh) );
-		} else {
-			DrawString( mMailHeader->GetFieldVal( BM_FIELD_FROM).String(), BPoint( titleWidth+x_off, y_off+1*lh+fh) );
-			DrawString( mMailHeader->GetFieldVal( BM_FIELD_DATE).String(), BPoint( titleWidth+x_off, y_off+2*lh+fh) );
-		}
-		if (mDisplayMode == LARGE_HEADERS) {
-			if (ThePrefs->GetBool( "ShowStrippedFieldsInHeaderView", true)) {
-				DrawString( mMailHeader->GetStrippedFieldVal( BM_FIELD_TO).String(), BPoint( titleWidth+x_off, y_off+3*lh+fh) );
-				DrawString( mMailHeader->GetStrippedFieldVal( BM_FIELD_CC).String(), BPoint( titleWidth+x_off, y_off+4*lh+fh) );
-			} else {
-				DrawString( mMailHeader->GetFieldVal( BM_FIELD_TO).String(), BPoint( titleWidth+x_off, y_off+3*lh+fh) );
-				DrawString( mMailHeader->GetFieldVal( BM_FIELD_CC).String(), BPoint( titleWidth+x_off, y_off+4*lh+fh) );
+		for( uint32 l=0; l<fields.size(); ++l) {
+			BString fieldVal;
+			int count = rx.exec( fields[l], "[\\w\\-]+", Regexx::global);
+			for( int i=0; i<count && !fieldVal.Length(); ++i) {
+				fieldVal = mMailHeader->GetFieldVal( rx.match[i]);
 			}
+			DrawString( fieldVal.String(), BPoint( titleWidth+x_off, y_off+l*lh+fh) );
 		}
 	} else {
 		// full mode, display complete header:

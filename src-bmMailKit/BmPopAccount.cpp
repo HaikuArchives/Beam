@@ -47,6 +47,7 @@ BmPopAccount::BmPopAccount( BMessage* archive, BmPopAccountList* model)
 	mCheckMail = FindMsgBool( archive, MSG_CHECK_MAIL);
 	mDeleteMailFromServer = FindMsgBool( archive, MSG_DELETE_MAIL);
 	mPortNr = FindMsgInt16( archive, MSG_PORT_NR);
+	mAuthMethod = FindMsgString( archive, MSG_AUTH_METHOD);
 	const char* uid;
 	for( int32 i=0; archive->FindString( MSG_UID, i, &uid) == B_OK; ++i) {
 		mUIDs.push_back( uid);
@@ -70,7 +71,8 @@ status_t BmPopAccount::Archive( BMessage* archive, bool deep) const {
 		||	archive->AddString( MSG_SIGNATURE_NAME, mSignatureName.String())
 		||	archive->AddBool( MSG_CHECK_MAIL, mCheckMail)
 		||	archive->AddBool( MSG_DELETE_MAIL, mDeleteMailFromServer)
-		||	archive->AddInt16( MSG_PORT_NR, mPortNr));
+		||	archive->AddInt16( MSG_PORT_NR, mPortNr)
+		||	archive->AddString( MSG_AUTH_METHOD, mAuthMethod.String()));
 	int32 count = mUIDs.size();
 	for( int i=0; ret==B_OK && i<count; ++i) {
 		ret = archive->AddString( MSG_UID, mUIDs[i].String());

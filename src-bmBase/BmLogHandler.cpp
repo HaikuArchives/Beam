@@ -222,7 +222,8 @@ void BmLogHandler::BmLogfile::Write( const char* const msg) {
 	s.ReplaceAll( "\r", "<CR>");
 	s.ReplaceAll( "\n\n", "\n");
 	s.ReplaceAll( "\n", "\n                       ");
-	fprintf( logfile, "<%6ld|%012Ld>: %s\n", find_thread(NULL), TheLogHandler->StopWatch.ElapsedTime(), s.String())>=0
-													|| BM_THROW_RUNTIME( BString("Unable to write to logfile ") << filename);
+	int result = fprintf( logfile, "<%6ld|%012Ld>: %s\n", find_thread(NULL), TheLogHandler->StopWatch.ElapsedTime(), s.String());
+	if (result < 0)
+		throw BM_runtime_error( BString("Unable to write to logfile ") << filename);
 	fflush( logfile);
 }

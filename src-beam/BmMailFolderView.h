@@ -10,6 +10,13 @@
 
 #include "BmListController.h"
 
+/*------------------------------------------------------------------------------*\
+	types of messages handled by a BmMailFolderView:
+\*------------------------------------------------------------------------------*/
+#define BM_FOLDERVIEW_NEW				'bmga'
+#define BM_FOLDERVIEW_RENAME			'bmgb'
+#define BM_FOLDERVIEW_RECACHE			'bmgc'
+#define BM_FOLDERVIEW_DELETE			'bmgd'
 
 /*------------------------------------------------------------------------------*\
 	BmMailFolderItem
@@ -28,6 +35,11 @@ public:
 	// overrides of listitem base:
 	void UpdateView( BmUpdFlags flags);
 	BmMailFolder* ModelItem() const 		{ return dynamic_cast< BmMailFolder*>( mModelItem.Get()); }
+
+private:
+	// Hide copy-constructor and assignment:
+	BmMailFolderItem( const BmMailFolderItem&);
+	BmMailFolderItem operator=( const BmMailFolderItem&);
 };
 
 
@@ -47,6 +59,7 @@ public:
 
 	// native methods:
 	BmListViewItem* CreateListViewItem( BmListModelItem* item, BMessage* archive=NULL);
+	void ShowMenu( BPoint point);
 	
 	// overrides of controller base:
 	bool AcceptsDropOf( const BMessage* msg);
@@ -56,11 +69,19 @@ public:
 	const char* ItemNameForCaption()		{ return "folder"; }
 
 	// overrides of listview base:
+	void MessageReceived( BMessage* msg);
+	void MouseDown( BPoint point);
 	void SelectionChanged( void);
 
 	static BmMailFolderView* theInstance;
 
 private:
+
+	BmRef<BmMailFolder> CurrentFolder( void) const;
+
+	// Hide copy-constructor and assignment:
+	BmMailFolderView( const BmMailFolderView&);
+	BmMailFolderView operator=( const BmMailFolderView&);
 };
 
 #define TheMailFolderView BmMailFolderView::theInstance;

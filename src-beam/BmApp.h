@@ -8,9 +8,7 @@
 
 #include <Application.h>
 #include <Rect.h>
-
-extern const char* BmAppVersion;
-extern const char* BmAppName;
+#include <String.h>
 
 class BmApplication : public BApplication
 {
@@ -23,6 +21,7 @@ public:
 
 	// native methods:
 	BRect ScreenFrame();
+	bool HandlesMimetype( const BString mimetype);
 
 	// beos-stuff
 	void MessageReceived( BMessage* msg);
@@ -30,6 +29,10 @@ public:
 
 	// getters
 	bool IsQuitting()							{ return mIsQuitting; }
+
+	BString BmAppVersion;
+	BString BmAppName;
+	BString BmAppNameWithVersion;
 
 private:
 	bool mIsQuitting;

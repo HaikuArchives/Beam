@@ -53,6 +53,7 @@ public:
 
 	// native methods:
 	virtual void AddController( BmController* controller);
+	virtual void ControllerAck( BmController* controller);
 	virtual void RemoveController( BmController* controller);
 
 	// getters:
@@ -65,22 +66,30 @@ public:
 
 	//	message component definitions for status-msgs:
 	static const char* const MSG_MODEL = 			"bm:model";
+	static const char* const MSG_NEEDS_ACK = 		"bm:ack";
 
 protected:
 	// native methods:
 	virtual bool HasControllers();
+	virtual void InitOutstanding();
 	virtual bool ShouldContinue();
-	virtual void TellControllers( BMessage* msg);
-	virtual void WaitForAllControllers();
+	virtual void TellControllers( BMessage* msg, bool waitForAck=false);
+	virtual void WaitForAllToAck();
+	virtual void WaitForAllToDetach();
 	inline void Freeze() 					{ mFrozenCount++; }
 	inline void Thaw()						{ mFrozenCount--; }
 	inline bool Frozen() 					{ return mFrozenCount > 0; }
 
 	BLocker mModelLocker;
 	BmControllerSet mControllerSet;
+	BmControllerSet mOutstandingSet;
 	int8 mFrozenCount;
 
 private:
+	// Hide copy-constructor and assignment:
+	BmDataModel( const BmDataModel&);
+	BmDataModel operator=( const BmDataModel&);
+
 	BString mModelName;
 };
 
@@ -132,6 +141,10 @@ protected:
 	BmJobState JobState() const 			{ return mJobState; }
 
 private:
+	// Hide copy-constructor and assignment:
+	BmJobModel( const BmJobModel&);
+	BmJobModel operator=( const BmJobModel&);
+
 	virtual void doStartJob();
 
 	thread_id mThreadID;
@@ -156,6 +169,7 @@ class BmListModelItem : public BmRefObj, public BArchivable {
 public:
 	// c'tors & d'tor:
 	BmListModelItem( BString key, BmListModel* model, BmListModelItem* parent);
+	BmListModelItem( const BmListModelItem&);
 	virtual ~BmListModelItem();
 
 	// native methods:
@@ -192,6 +206,9 @@ protected:
 	BmListModel* mListModel;
 
 private:
+	// Hide assignment:
+	BmListModelItem operator=( const BmListModelItem&);
+	
 	BString mKey;
 	BmModelItemMap mSubItemMap;
 
@@ -259,6 +276,10 @@ protected:
 	status_t mInitCheck;
 
 private:
+	// Hide copy-constructor and assignment:
+	BmListModel( const BmListModel&);
+	BmListModel operator=( const BmListModel&);
+
 	BmModelItemMap mModelItemMap;
 };
 

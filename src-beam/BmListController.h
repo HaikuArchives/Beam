@@ -67,6 +67,10 @@ public:
 protected:
 	BString mKey;
 	BmRef<BmListModelItem> mModelItem;
+
+	// Hide copy-constructor and assignment:
+	BmListViewItem( const BmListViewItem&);
+	BmListViewItem operator=( const BmListViewItem&);
 };
 
 /*------------------------------------------------------------------------------*\
@@ -101,6 +105,9 @@ private:
 	float mCaptionWidth;
 	BmBusyView* mBusyView;
 
+	// Hide copy-constructor and assignment:
+	BmCLVContainerView( const BmCLVContainerView&);
+	BmCLVContainerView operator=( const BmCLVContainerView&);
 };
 
 /*------------------------------------------------------------------------------*\
@@ -192,6 +199,10 @@ protected:
 	BMessageRunner* mUpdatePulseRunner;
 	BList mCachedMessages;
 	bool mSittingOnExpander;
+
+	// Hide copy-constructor and assignment:
+	BmListViewController( const BmListViewController&);
+	BmListViewController operator=( const BmListViewController&);
 };
 
 

@@ -3,6 +3,8 @@
 		$Id$
 */
 
+#include <AppFileInfo.h>
+#include <Roster.h>
 #include <Screen.h>
 
 #include "BmApp.h"
@@ -33,6 +35,20 @@ BmApplication::BmApplication( const char* sig)
 	bmApp = this;
 
 	try {
+		BmAppName = bmApp->Name();
+		// set version info:
+		app_info appInfo;
+		BFile appFile;
+		version_info vInfo;
+		BAppFileInfo appFileInfo;
+		bmApp->GetAppInfo( &appInfo); 
+		appFile.SetTo( &appInfo.ref, B_READ_ONLY);
+		appFileInfo.SetTo( &appFile);
+		if (appFileInfo.GetVersionInfo( &vInfo, B_APP_VERSION_KIND) == B_OK) {
+			BmAppVersion = vInfo.short_info;
+		}
+		BmAppNameWithVersion = BmAppName + " " + BmAppVersion;
+
 		// create the log-handler:
 		BmLogHandler::CreateInstance( 1);
 
@@ -63,6 +79,7 @@ BmApplication::BmApplication( const char* sig)
 \*------------------------------------------------------------------------------*/
 BmApplication::~BmApplication()
 {
+	BM_PrintRefsLeft();
 	delete ThePrefs;
 	delete TheResources;
 	delete TheLogHandler;
@@ -99,7 +116,7 @@ void BmApplication::MessageReceived( BMessage* msg) {
 	}
 	catch( exception &err) {
 		// a problem occurred, we tell the user:
-		BM_SHOWERR( BString("BusyView: ") << err.what());
+		BM_SHOWERR( BString("BmApp: ") << err.what());
 	}
 }
 
@@ -112,4 +129,13 @@ BRect BmApplication::ScreenFrame() {
 	if (!screen.IsValid())
 		BM_SHOWERR( BString("Could not initialize BScreen object !?!"));
 	return screen.Frame();
+}
+
+/*------------------------------------------------------------------------------*\
+	HandlesMimetype( )
+		-	
+\*------------------------------------------------------------------------------*/
+bool BmApplication::HandlesMimetype( const BString mimetype) {
+	return mimetype.ICompare( "text/x-email")==0 
+			 || mimetype.ICompare( "message/rfc822")==0;
 }

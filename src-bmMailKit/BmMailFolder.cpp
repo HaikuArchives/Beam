@@ -14,7 +14,7 @@
 #include "BmMailFolderList.h"
 #include "BmMailRef.h"
 #include "BmMailRefList.h"
-//#include "BmMainWindow.h"
+#include "BmStorageUtil.h"
 #include "BmUtil.h"
 
 /*------------------------------------------------------------------------------*\
@@ -175,7 +175,8 @@ void BmMailFolder::BumpNewMailCountForSubfolders( int32 offset) {
 		-	
 \*------------------------------------------------------------------------------*/
 BmMailRefList* BmMailFolder::MailRefList() {
-	if (!mMailRefList || mNeedsCacheUpdate) {
+//	if (!mMailRefList || mNeedsCacheUpdate) {
+	if (!mMailRefList) {
 		CreateMailRefList();
 	}
 	return mMailRefList.Get();
@@ -189,9 +190,8 @@ void BmMailFolder::CreateMailRefList() {
 	if (mMailRefList) {
 		RemoveMailRefList();
 	}
-	BmMailRefList* temp = new BmMailRefList( this, mNeedsCacheUpdate);
+	mMailRefList = new BmMailRefList( this, mNeedsCacheUpdate);
 	mNeedsCacheUpdate = false;
-	mMailRefList = temp;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -203,19 +203,30 @@ void BmMailFolder::RemoveMailRefList() {
 }
 
 /*------------------------------------------------------------------------------*\
+	ReCreateMailRefList()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailFolder::MarkCacheAsDirty() {
+	if (mMailRefList)
+		mMailRefList->MarkCacheAsDirty();
+	else
+		mNeedsCacheUpdate = true;
+}
+
+/*------------------------------------------------------------------------------*\
 	AddMailRef()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmMailFolder::AddMailRef( entry_ref& eref, ino_t node, struct stat& st) {
+void BmMailFolder::AddMailRef( entry_ref& eref, struct stat& st) {
 	if (mMailRefList) {
-		if (!mMailRefList->AddMailRef( eref, node, st))
+		if (!mMailRefList->AddMailRef( eref, st))
 			return;								// mail-ref already exists, we quit
 	} else
 		mNeedsCacheUpdate = true;
 	// if mail-ref is flagged new, we have to tell the mailfolderlist that we own
 	// this new-mail and increment our new-mail-counter (causing an update):
-	if (TheMailFolderList->NodeIsFlaggedNew( node))
-		TheMailFolderList->SetFolderForNodeFlaggedNew( node, this);
+	if (TheMailFolderList->NodeIsFlaggedNew( st.st_ino))
+		TheMailFolderList->SetFolderForNodeFlaggedNew( st.st_ino, this);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -245,3 +256,34 @@ void BmMailFolder::RemoveMailRef( ino_t node) {
 		TheMailFolderList->SetFolderForNodeFlaggedNew( node, NULL);
 }
 
+/*------------------------------------------------------------------------------*\
+	CreateSubFolder( )
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailFolder::CreateSubFolder( BString name) {
+	BDirectory thisDir( &mEntryRef);
+	if (thisDir.InitCheck() == B_OK) {
+		thisDir.CreateDirectory( name.String(), NULL);
+	}
+}
+
+/*------------------------------------------------------------------------------*\
+	Rename( )
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailFolder::Rename( BString newName) {
+	BEntry entry( EntryRefPtr());
+	if (entry.InitCheck()==B_OK) {
+		status_t err;
+		(err = entry.Rename( newName.String())) == B_OK
+													|| BM_THROW_RUNTIME(BString("Could not rename mail-folder\n\nError:") << strerror(err));
+	}
+}
+
+/*------------------------------------------------------------------------------*\
+	MoveToTrash( )
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailFolder::MoveToTrash() {
+	::MoveToTrash( EntryRefPtr(), 1);
+}

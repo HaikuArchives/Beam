@@ -8,6 +8,8 @@
 
 #include "BmApp.h"
 
+class BmWindow;
+
 class BeamApp : public BmApplication
 {
 	typedef BmApplication inherited;
@@ -15,12 +17,16 @@ class BeamApp : public BmApplication
 public:
 	BeamApp();
 	~BeamApp();
-	virtual thread_id Run();
-	virtual void MessageReceived(BMessage*);
-	virtual void ReadyToRun();
+
+	// overrides of BmApplication
+	thread_id Run();
+	void MessageReceived(BMessage*);
+	void ReadyToRun();
+	void RefsReceived( BMessage* msg);
 
 private:
 	status_t mInitCheck;
+	BmWindow* mMailWin;
 
 	inline status_t InitCheck() 			{ return mInitCheck; }
 };

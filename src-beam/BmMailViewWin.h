@@ -48,6 +48,10 @@ private:
 	BmToolbarButton* mTrashButton;
 	
 	MView* mOuterGroup;
+
+	// Hide copy-constructor and assignment:
+	BmMailViewWin( const BmMailViewWin&);
+	BmMailViewWin operator=( const BmMailViewWin&);
 };
 
 

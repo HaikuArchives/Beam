@@ -93,6 +93,10 @@ private:
 	int16 mFontSize;
 	bool mShowRaw;
 	bool mShowInlinesSeparately;
+
+	// Hide copy-constructor and assignment:
+	BmMailView( const BmMailView&);
+	BmMailView operator=( const BmMailView&);
 };
 
 class BmBusyView;
@@ -123,6 +127,10 @@ public:
 
 private:
 	BmBusyView* mBusyView;
+
+	// Hide copy-constructor and assignment:
+	BmMailViewContainer( const BmMailViewContainer&);
+	BmMailViewContainer operator=( const BmMailViewContainer&);
 };
 
 #endif

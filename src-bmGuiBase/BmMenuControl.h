@@ -31,6 +31,10 @@ private:
 	
 	HGroup* mParent;
 	BMenu* mMenu;
+
+	// Hide copy-constructor and assignment:
+	BmMenuControl( const BmMenuControl&);
+	BmMenuControl operator=( const BmMenuControl&);
 };
 
 

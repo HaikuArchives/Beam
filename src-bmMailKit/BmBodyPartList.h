@@ -43,6 +43,10 @@ private:
 	BmParamMap mParams;
 
 	status_t mInitCheck;
+
+	// Hide copy-constructor and assignment:
+	BmContentField( const BmContentField&);
+	BmContentField operator=( const BmContentField&);
 };
 
 
@@ -114,6 +118,9 @@ private:
 
 	static int32 nObjectID;
 
+	// Hide copy-constructor and assignment:
+	BmBodyPart( const BmBodyPart&);
+	BmBodyPart operator=( const BmBodyPart&);
 };
 
 
@@ -154,6 +161,9 @@ private:
 	BmBodyPart* mEditableTextBody;
 	status_t mInitCheck;
 
+	// Hide copy-constructor and assignment:
+	BmBodyPartList( const BmBodyPartList&);
+	BmBodyPartList operator=( const BmBodyPartList&);
 };
 
 

@@ -19,7 +19,7 @@ BmTempFileList TheTempFileList;
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-bool MoveToTrash( entry_ref* refs, int32 count) {
+bool MoveToTrash( const entry_ref* refs, int32 count) {
 	// this is basically code I got from Tim Vernum's Website. thx!
 	BMessenger tracker("application/x-vnd.Be-TRAK" );
 	if (refs && tracker.IsValid()) {
@@ -45,7 +45,7 @@ bool MoveToTrash( entry_ref* refs, int32 count) {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-bool CheckMimeType( entry_ref* eref, const char* type) {
+bool CheckMimeType( const entry_ref* eref, const char* type) {
 	BNode node( eref);
 	if (node.InitCheck() == B_OK) {
 		BNodeInfo nodeInfo( &node);

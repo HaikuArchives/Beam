@@ -27,6 +27,10 @@ class BmBodyPartItem : public BmListViewItem
 public:
 	BmBodyPartItem( BString key, BmListModelItem* item);
 	~BmBodyPartItem();
+
+	// Hide copy-constructor and assignment:
+	BmBodyPartItem( const BmBodyPartItem&);
+	BmBodyPartItem operator=( const BmBodyPartItem&);
 };
 
 class BmBodyPartList;
@@ -83,6 +87,10 @@ private:
 	float mColWidths[10];
 	bool mShowAllParts;
 	bool mEditable;
+
+	// Hide copy-constructor and assignment:
+	BmBodyPartView( const BmBodyPartView&);
+	BmBodyPartView operator=( const BmBodyPartView&);
 };
 
 #endif

@@ -167,7 +167,7 @@ void BmEncoding::Encode( BString encodingStyle, const BString& src, BString& des
 		for( const char* p=src.String(); *p; ++p) {
 			BString addChars;
 			unsigned char c = *p;
-			if (isalnum(c)) {
+			if (isalnum(c) || ispunct(c)) {
 				addChars += c;
 			} else if (c == ' ' || c == '\t') {
 				// in encoded-words, we always replace SPACE by underline:
@@ -229,10 +229,7 @@ void BmEncoding::Encode( BString encodingStyle, const BString& src, BString& des
 		dest.UnlockBuffer( destLen);
 	} else if (encodingStyle == "7BIT" || encodingStyle == "8BIT") {
 		// replace local newline (LF) by network newline (CRLF):
-		Regexx rx;
-		dest = rx.replace( src, "\\r\\n", "\n", Regexx::newline | Regexx::global);
-							// just in case there already are <CRLF>s in src...
-		dest = rx.replace( dest, "\\n", "\r\n", Regexx::newline | Regexx::global);
+		ConvertLinebreaksToCRLF( src, dest);
 	} else {
 		if (encodingStyle != "BINARY") {
 			// oops, we don't know this one:
@@ -255,11 +252,11 @@ void BmEncoding::Decode( BString encodingStyle, const BString& src, BString& des
 	if (encodingStyle == "Q" || encodingStyle == "QUOTED-PRINTABLE") {
 		// quoted printable:
 		// remove trailing whitespace from all lines (may have been added during mail-transport):
-		BString text = rx.replace( src, "[\\t ]+(?=\\r\\n)", "", Regexx::newline | Regexx::global);
+		BString netText = rx.replace( src, "[\\t ]+(?=\\r\\n)", "", Regexx::newline | Regexx::global);
 		// join together lines that end with a softbreak:
-		text = rx.replace( text, "=\\r\\n", "", Regexx::newline | Regexx::global);
-		// replace network newline (CRLF) by local newline (LF):
-		text = rx.replace( text, "\\r\\n", "\n", Regexx::newline | Regexx::global);
+		netText = rx.replace( netText, "=\\r\\n", "", Regexx::newline | Regexx::global);
+		BString text;
+		ConvertLinebreaksToLF( netText, text);
 		if (isEncodedWord) {
 			// in encoded-words, underlines are really spaces (a real underline is encoded):
 			text = rx.replace( text, "_", " ", Regexx::newline | Regexx::global);
@@ -307,7 +304,7 @@ void BmEncoding::Decode( BString encodingStyle, const BString& src, BString& des
 		dest.UnlockBuffer( destSize);
 	} else if (encodingStyle == "7BIT" || encodingStyle == "8BIT") {
 		// we copy the buffer and replace network newline (CRLF) by local newline (LF):
-		dest = rx.replace( src, "\\r\\n", "\n", Regexx::newline | Regexx::global);
+		ConvertLinebreaksToLF( src, dest);
 	} else {
 		if (encodingStyle != "BINARY") {
 			// oops, we don't know this one:

@@ -50,6 +50,7 @@ class BmMailHeader;
 #define BM_FIELD_MESSAGE_ID				"Message-Id"
 #define BM_FIELD_MIME 						"Mime-Version"
 #define BM_FIELD_PRIORITY					"Priority"
+#define BM_FIELD_REFERENCES				"References"
 #define BM_FIELD_REPLY_TO					"Reply-To"
 #define BM_FIELD_RESENT_BCC				"Resent-Bcc"
 #define BM_FIELD_RESENT_CC					"Resent-Cc"
@@ -60,6 +61,7 @@ class BmMailHeader;
 #define BM_FIELD_SENDER 					"Sender"
 #define BM_FIELD_SUBJECT 					"Subject"
 #define BM_FIELD_TO 							"To"
+#define BM_FIELD_USER_AGENT				"User-Agent"
 #define BM_FIELD_X_MAILER					"X-Mailer"
 #define BM_FIELD_X_PRIORITY				"X-Priority"
 
@@ -92,7 +94,7 @@ public:
 	// native methods:
 	bool ConstructRawText( const BString& editableText, int32 encoding,
 								  BString smtpAccount);
-	void SetTo( BString &msgText, const BString account);
+	void SetTo( const BString &text, const BString account);
 	bool Store();
 	//
 	const BString& GetFieldVal( const BString fieldName);
@@ -139,6 +141,10 @@ private:
 	BEntry mEntry;								// filesystem-entry for this mail 
 
 	bool mOutbound;							// true if mail is for sending (as opposed to reveived)
+
+	// Hide copy-constructor and assignment:
+	BmMail( const BmMail&);
+	BmMail operator=( const BmMail&);
 };
 
 

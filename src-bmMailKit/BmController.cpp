@@ -84,6 +84,18 @@ bool BmController::IsMsgFromCurrentModel( BMessage* msg) {
 }
 
 /*------------------------------------------------------------------------------*\
+	MsgNeedsAck( msg)
+		-	
+\*------------------------------------------------------------------------------*/
+bool BmController::MsgNeedsAck( BMessage* msg) {
+	bool needsAck;
+	if (!msg || msg->FindBool( BmDataModel::MSG_NEEDS_ACK, &needsAck) != B_OK)
+		return false;
+	else
+		return needsAck;
+}
+
+/*------------------------------------------------------------------------------*\
 	DataModel( model)
 		-	
 \*------------------------------------------------------------------------------*/

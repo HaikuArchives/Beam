@@ -45,13 +45,14 @@ class BmMailRef : public BmListModelItem {
 public:
 	// creator-func, c'tors and d'tor:
 	static BmMailRef* CreateInstance( BmMailRefList* model, entry_ref &eref, 
-												 ino_t node, struct stat& st);
-	BmMailRef( BmMailRefList* model, entry_ref &eref, ino_t node, struct stat& st);
+												 struct stat& st);
+	BmMailRef( BmMailRefList* model, entry_ref &eref, struct stat& st);
 	BmMailRef( BMessage* archive, BmMailRefList* model);
 	virtual ~BmMailRef();
 
 	// native methods:
 	void Status( const char* s);
+	BmRef<BmMailRef> DetachedDuplicate() const;
 
 	// overrides of archivable base:
 	static BArchivable* Instantiate( BMessage* archive);
@@ -62,7 +63,7 @@ public:
 	const entry_ref* EntryRefPtr() const	{ return &mEntryRef; }
 	const char* TrackerName() const			{ return mEntryRef.name; }
 	const ino_t& Inode() const					{ return mInode; }
-	status_t InitCheck()							{ return mInitCheck; }
+	status_t InitCheck()	const					{ return mInitCheck; }
 	const BString& Account() const 			{ return mAccount; }
 	const BString& Cc() const 					{ return mCc; }
 	const BString& From() const 				{ return mFrom; }
@@ -110,6 +111,10 @@ private:
 
 	// the following members will not be archived at all:
 	status_t mInitCheck;
+
+	// Hide copy-constructor and assignment:
+	BmMailRef( const BmMailRef&);
+	BmMailRef operator=( const BmMailRef&);
 };
 
 #endif

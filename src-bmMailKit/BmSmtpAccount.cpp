@@ -41,6 +41,7 @@ BmSmtpAccount::BmSmtpAccount( BMessage* archive, BmSmtpAccountList* model)
 	mDomainToAnnounce = FindMsgString( archive, MSG_DOMAIN);
 	mAuthMethod = FindMsgString( archive, MSG_AUTH_METHOD);
 	mPortNr = FindMsgInt16( archive, MSG_PORT_NR);
+	mAccForSmtpAfterPop = FindMsgString( archive, MSG_ACC_FOR_SAP);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -56,7 +57,8 @@ status_t BmSmtpAccount::Archive( BMessage* archive, bool deep) const {
 		||	archive->AddString( MSG_SMTP_SERVER, mSMTPServer.String())
 		||	archive->AddString( MSG_DOMAIN, mDomainToAnnounce.String())
 		||	archive->AddString( MSG_AUTH_METHOD, mAuthMethod.String())
-		||	archive->AddInt16( MSG_PORT_NR, mPortNr));
+		||	archive->AddInt16( MSG_PORT_NR, mPortNr)
+		||	archive->AddString( MSG_ACC_FOR_SAP, mAccForSmtpAfterPop.String()));
 	return ret;
 }
 

@@ -12,9 +12,9 @@
 
 class entry_ref;
 
-bool MoveToTrash( entry_ref* refs, int32 count);
+bool MoveToTrash( const entry_ref* refs, int32 count);
 
-bool CheckMimeType( entry_ref* eref, const char* type);
+bool CheckMimeType( const entry_ref* eref, const char* type);
 
 /*------------------------------------------------------------------------------*\
 	BmTempFileList
@@ -30,6 +30,9 @@ public:
 private:
 	BmFileVect mFiles;
 	int32 mCount;
+	// Hide copy-constructor and assignment:
+	BmTempFileList( const BmTempFileList&);
+	BmTempFileList operator=( const BmTempFileList&);
 };
 
 extern BmTempFileList TheTempFileList;

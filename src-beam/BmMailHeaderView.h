@@ -52,6 +52,10 @@ private:
 	BmMailHeader* mMailHeader;
 	int16 mDisplayMode;							// 0=small, 2=large, anyother=medium
 	BFont* mFont;								// font to be used for header-fields
+
+	// Hide copy-constructor and assignment:
+	BmMailHeaderView( const BmMailHeaderView&);
+	BmMailHeaderView operator=( const BmMailHeaderView&);
 };
 
 #endif

@@ -121,6 +121,13 @@ void BmPrefs::InitDefaults() {
 	mDefaultsMsg.AddMessage( "MailRefLayout", new BMessage);
 	mDefaultsMsg.AddBool( "RestoreFolderStates", true);
 	mDefaultsMsg.AddBool( "ShowDecodedLength", true);
+	mDefaultsMsg.AddBool( "GenerateOwnMessageIDs", true);
+	mDefaultsMsg.AddString( "HeaderListLarge", "Subject,From,Date,To,Cc,User-Agent/X-Mailer");
+	mDefaultsMsg.AddString( "HeaderListSmall", "Subject,From,Date");
+	mDefaultsMsg.AddInt32( "MSecsBeforeMailMoverShows", 500*1000);
+	mDefaultsMsg.AddInt32( "MSecsBeforePopperRemove", 5000*1000);
+	mDefaultsMsg.AddInt32( "MSecsBeforeSmtpRemove", 0*1000);
+	mDefaultsMsg.AddString( "DefaultSmtpAccount", "");
 }
 
 /*------------------------------------------------------------------------------*\

@@ -43,6 +43,10 @@ private:
 	BTextView* mTextView;
 	BMenuField* mMenuField;
 	HGroup* mParent;
+
+	// Hide copy-constructor and assignment:
+	BmTextControl( const BmTextControl&);
+	BmTextControl operator=( const BmTextControl&);
 };
 
 

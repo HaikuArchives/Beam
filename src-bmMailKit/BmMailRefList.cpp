@@ -42,9 +42,15 @@ BmMailRefList::~BmMailRefList() {
 		-	
 \*------------------------------------------------------------------------------*/
 const BString BmMailRefList::SettingsFileName() {
-	return BString( TheResources->SettingsPath.Path()) 
-				<< "/MailCache/" 
-				<< "folder_" 
+	BDirectory* mailCacheDir = TheResources->MailCacheFolder();
+	BEntry entry;
+	if (!mailCacheDir || mailCacheDir->GetEntry( &entry)!=B_OK)
+		return BString("");
+	BPath path;
+	if (entry.GetPath( &path) != B_OK)
+		return BString("");
+	return BString( path.Path()) 
+				<< "/folder_" 
 				<< mFolder->Key()
 				<< " ("
 				<< mFolder->Name()
@@ -60,7 +66,7 @@ bool BmMailRefList::StartJob() {
 	status_t err;
 	BFile cacheFile;
 	
-	if (InitCheck() == B_OK) {
+	if (InitCheck() == B_OK && !mNeedsCacheUpdate) {
 		return true;
 	}
 
@@ -84,7 +90,7 @@ bool BmMailRefList::StartJob() {
 														|| BM_THROW_RUNTIME( BString("Could not fetch mail-cache from file\n\t<") << filename << ">\n\n Result: " << strerror(err));
 			InstantiateItems( &archive);
 		} else {
-			// ...caching disabled or no cache file found or update required, 
+			// ...caching disabled or no cache file found or update required/requested, 
 			// we fetch the existing mails from disk...
 			InitializeItems();
 		}
@@ -99,8 +105,8 @@ bool BmMailRefList::StartJob() {
 	AddMailRef()
 		-	
 \*------------------------------------------------------------------------------*/
-BmMailRef* BmMailRefList::AddMailRef( entry_ref& eref, int64 node, struct stat& st) {
-	BmMailRef* newMailRef = BmMailRef::CreateInstance( this, eref, node, st);
+BmMailRef* BmMailRefList::AddMailRef( entry_ref& eref, struct stat& st) {
+	BmMailRef* newMailRef = BmMailRef::CreateInstance( this, eref, st);
 	if (AddItemToList( newMailRef))
 		return newMailRef;
 	else
@@ -134,14 +140,14 @@ void BmMailRefList::InitializeItems() {
 				continue;						// ignore . and .. dirs
 
 			mailDir.GetStatFor( dent->d_name, &st) == B_OK
-													|| BM_THROW_RUNTIME(BString("Could not get stat-info for \nmail-dir <") << dent->d_name << "> \n\nError:" << strerror(err));
+													|| BM_THROW_RUNTIME(BString("Could not get stat-info for \nmail-file <") << dent->d_name << "> \n\nError:" << strerror(err));
 			if (S_ISREG( st.st_mode)) {
 				// we have found a new mail, so we add it to our list:
 				BM_LOG3( BM_LogMailTracking, BString("Mail <") << dent->d_name << "," << dent->d_ino << "> found ");
 				eref.device = dent->d_pdev;
 				eref.directory = dent->d_pino;
 				eref.set_name( dent->d_name);
-				if (AddMailRef( eref, dent->d_ino, st))
+				if (AddMailRef( eref, st))
 					refCount++;
 			}
 			// Bump the dirent-pointer by length of the dirent just handled:

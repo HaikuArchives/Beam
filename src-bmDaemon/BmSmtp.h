@@ -100,6 +100,10 @@ private:
 
 	bool mServerMayHaveSizeLimit;
 	bool mServerSupportsDSN;
+
+	// Hide copy-constructor and assignment:
+	BmSmtp( const BmSmtp&);
+	BmSmtp operator=( const BmSmtp&);
 };
 
 #endif

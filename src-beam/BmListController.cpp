@@ -230,6 +230,7 @@ void BmListViewController::HandleDrop( const BMessage* msg) {
 \*------------------------------------------------------------------------------*/
 void BmListViewController::MessageReceived( BMessage* msg) {
 	try {
+		BmDataModel* dataModel = DataModel();
 		switch( msg->what) {
 			case BM_LISTMODEL_ADD: {
 				if (!IsMsgFromCurrentModel( msg)) break;
@@ -282,6 +283,8 @@ void BmListViewController::MessageReceived( BMessage* msg) {
 				else
 					inherited::MessageReceived( msg);
 		}
+		if (MsgNeedsAck( msg) && dataModel)
+			dataModel->ControllerAck( this);
 	}
 	catch( exception &err) {
 		// a problem occurred, we tell the user:
@@ -370,8 +373,8 @@ void BmListViewController::AddModelItem( BmListModelItem* item) {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmListViewController::doAddModelItem( BmListViewItem* parent, BmListModelItem* item) {
-	BMessage* archive = Hierarchical() ? GetArchiveForItemKey( item->Key()) : NULL;
-	BmListViewItem* newItem = CreateListViewItem( item, archive);
+	auto_ptr<BMessage> archive( Hierarchical() ? GetArchiveForItemKey( item->Key()) : NULL);
+	BmListViewItem* newItem = CreateListViewItem( item, archive.get());
 	if (newItem) {
 		if (Hierarchical() && !item->empty())
 			newItem->SetSuperItem( true);
@@ -685,6 +688,7 @@ void BmListViewController::ReadStateInfo() {
 											 stateInfoFilename.String(), B_READ_ONLY)) == B_OK) {
 		// ...ok, file found, we fetch our state(s) from it:
 		try {
+			delete mInitialStateInfo;
 			mInitialStateInfo = new BMessage;
 			(err = mInitialStateInfo->Unflatten( &stateInfoFile)) == B_OK
 													|| BM_THROW_RUNTIME( BString("Could not fetch state-info from file\n\t<") << stateInfoFilename << ">\n\n Result: " << strerror(err));

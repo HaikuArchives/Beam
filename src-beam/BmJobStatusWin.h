@@ -66,6 +66,9 @@ private:
 	BMessageRunner* mShowMsgRunner;
 	BMessageRunner* mRemoveMsgRunner;
 	
+	// Hide copy-constructor and assignment:
+	BmJobStatusView( const BmJobStatusView&);
+	BmJobStatusView operator=( const BmJobStatusView&);
 };
 
 class MStringView;
@@ -98,6 +101,10 @@ public:
 private:
 	BStatusBar* mStatBar;					// shows number of mails moved during this operation
 	MStringView* mBottomLabel;
+
+	// Hide copy-constructor and assignment:
+	BmMailMoverView( const BmMailMoverView&);
+	BmMailMoverView operator=( const BmMailMoverView&);
 };
 
 /*------------------------------------------------------------------------------*\
@@ -124,6 +131,9 @@ private:
 	BStatusBar* mStatBar;				// shows current status of this connection
 	BStatusBar* mMailBar;				// shows number of mails handled by this connection
 
+	// Hide copy-constructor and assignment:
+	BmPopperView( const BmPopperView&);
+	BmPopperView operator=( const BmPopperView&);
 };
 
 /*------------------------------------------------------------------------------*\
@@ -150,6 +160,9 @@ private:
 	BStatusBar* mStatBar;				// shows current status of this connection
 	BStatusBar* mMailBar;				// shows number of mails handled by this connection
 
+	// Hide copy-constructor and assignment:
+	BmSmtpView( const BmSmtpView&);
+	BmSmtpView operator=( const BmSmtpView&);
 };
 
 /*------------------------------------------------------------------------------*\
@@ -206,6 +219,9 @@ private:
 	VGroup* mOuterGroup;						// the outmost view that the connection-interfaces live in
 	BLooper* mInvokingLooper;				// the looper we will tell that we are finished
 
+	// Hide copy-constructor and assignment:
+	BmJobStatusWin( const BmJobStatusWin&);
+	BmJobStatusWin operator=( const BmJobStatusWin&);
 };
 
 #define TheJobStatusWin BmJobStatusWin::theInstance

@@ -42,9 +42,13 @@ public:
 	bool CheckIfModifiedSince( time_t when, time_t* storeNewModTime=NULL);
 	void CreateMailRefList();
 	void RemoveMailRefList();
-	void AddMailRef( entry_ref& eref, ino_t node, struct stat& st);
+	void MarkCacheAsDirty();
+	void AddMailRef( entry_ref& eref, struct stat& st);
 	bool HasMailRef( BString key);
 	void RemoveMailRef( ino_t node);
+	void CreateSubFolder( BString name);
+	void Rename( BString newName);
+	void MoveToTrash();
 
 	// overrides of archivable base:
 	static BArchivable* Instantiate( BMessage* archive);
@@ -94,6 +98,9 @@ private:
 	int mNewMailCountForSubfolders;
 	BString mName;
 
+	// Hide copy-constructor and assignment:
+	BmMailFolder( const BmMailFolder&);
+	BmMailFolder operator=( const BmMailFolder&);
 };
 
 #endif

@@ -374,12 +374,20 @@ bool BmMailHeader::IsAddressField( const BString fieldName) {
 }
 
 /*------------------------------------------------------------------------------*\
-	IsAddressField()
+	IsEncodingOkForField()
 	-	
 \*------------------------------------------------------------------------------*/
 bool BmMailHeader::IsEncodingOkForField( const BString fieldName) {
 	BString fname = BString("<") << fieldName << ">";
 	return BmNoEncodingFieldNames.IFindFirst( fname) == B_ERROR;
+}
+
+/*------------------------------------------------------------------------------*\
+	IsFieldEmpty()
+	-	
+\*------------------------------------------------------------------------------*/
+bool BmMailHeader::IsFieldEmpty( const BString fieldName) {
+	return GetFieldVal( fieldName).Length() == 0;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -716,10 +724,14 @@ bool BmMailHeader::ConstructRawText( BString& header, int32 encoding) {
 	mDefaultEncoding = encoding;
 
 	// identify ourselves as creator of this mail message (so people know who to blame >:o)
-	BString ourID = BString(BmAppName) << " " << BmAppVersion;
-	SetFieldVal( BM_FIELD_X_MAILER, ourID.String());
+	BString agentField = ThePrefs->GetBool( "PreferUserAgentOverX-Mailer", true)
+								? BM_FIELD_USER_AGENT : BM_FIELD_X_MAILER;
+	if (IsFieldEmpty( agentField)) {
+		BString ourID = bmApp->BmAppNameWithVersion;
+		SetFieldVal( agentField, ourID.String());
+	}
 
-	if (ThePrefs->GetBool( "GenerateOwnMessageIDs", true)) {
+	if (ThePrefs->GetBool( "GenerateOwnMessageIDs") && IsFieldEmpty( BM_FIELD_MESSAGE_ID)) {
 		// generate our own message-id:
 		BString domain;
 		BString accName = mMail->AccountName();

@@ -52,6 +52,7 @@ private:
 	bool mInitOK;
 	BString mPhrase;
 	BString mAddrSpec;
+
 };
 
 typedef vector< BString> BmStringList;
@@ -87,13 +88,14 @@ public:
 	bool IsGroup() const						{ return mIsGroup; }
 	int32 AddrCount() const					{ return mAddrList.size(); }
 	BString GroupName() const				{ return mGroupName; }
-	BmAddress FirstAddress() const		{ return mAddrList.size() > 0 ? mAddrList[0] : BmAddress(""); }
+	BmAddress FirstAddress() const		{ return mAddrList.size() > 0 ? mAddrList[0] : ""; }
 
 private:
 	bool mInitOK;
 	bool mIsGroup;
 	BString mGroupName;
 	BmAddrList mAddrList;
+
 };
 
 /*------------------------------------------------------------------------------*\
@@ -138,6 +140,7 @@ public:
 
 	BString DetermineSender();
 	const BmAddressList GetAddressList( const BString fieldName);
+	bool IsFieldEmpty( const BString fieldName);
 
 	// getters:
 	const BString& GetFieldVal( const BString fieldName);
@@ -194,6 +197,10 @@ private:
 
 	static int32 nCounter;
 							// counter for message-id
+
+	// Hide copy-constructor and assignment:
+	BmMailHeader( const BmMailHeader&);
+	BmMailHeader operator=( const BmMailHeader&);
 };
 
 #endif

@@ -167,6 +167,11 @@ ColumnListView::~ColumnListView()
 		if(Item)
 			delete Item;
 	}
+	// remove label view if that is not being displayed 
+	// (and thus not being destroyed as part of view hierarchy):
+	if (!fShowLabelView)
+		delete fColumnLabelView;
+
 	//Remove and delete the container view if necessary
 	if(!fScrollView->IsBeingDestroyed)
 	{

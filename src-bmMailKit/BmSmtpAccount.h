@@ -45,6 +45,7 @@ class BmSmtpAccount : public BmListModelItem {
 	static const char* const MSG_DOMAIN = 			"bm:domain";
 	static const char* const MSG_AUTH_METHOD = 	"bm:authmethod";
 	static const char* const MSG_PORT_NR = 		"bm:portnr";
+	static const char* const MSG_ACC_FOR_SAP = 	"bm:accForSmtpAfterPop";
 
 public:
 	BmSmtpAccount( const char* name, BmSmtpAccountList* model);
@@ -67,6 +68,7 @@ public:
 	const BString &DomainToAnnounce() const 	{ return mDomainToAnnounce; }
 	const BString &AuthMethod() const 	{ return mAuthMethod; }
 	int16 PortNr() const 					{ return mPortNr; }
+	const BString &AccForSmtpAfterPop() const 	{ return mAccForSmtpAfterPop; }
 
 	// setters:
 	void Username( const BString &s) 	{ mUsername = s; }
@@ -75,6 +77,7 @@ public:
 	void DomainToAnnounce( const BString &s) 	{ mDomainToAnnounce = s; }
 	void AuthMethod( const BString &s) 	{ mAuthMethod = s; }
 	void PortNr( int16 i) 					{ mPortNr = i; }
+	void AccForSmtpAfterPop( const BString &s) 	{ mAccForSmtpAfterPop = s; }
 
 	bool GetSMTPAddress( BNetAddress* addr) const;
 
@@ -82,6 +85,9 @@ public:
 
 private:
 	BmSmtpAccount();					// hide default constructor
+	// Hide copy-constructor and assignment:
+	BmSmtpAccount( const BmSmtpAccount&);
+	BmSmtpAccount operator=( const BmSmtpAccount&);
 
 	//BString mName;					// name is stored in key (base-class)
 	BString mUsername;
@@ -91,6 +97,7 @@ private:
 											// ourselves to the server (HELO/EHLO)
 	BString mAuthMethod;				// authentication method to use
 	int16 mPortNr;						// usually 25
+	BString mAccForSmtpAfterPop;	// POP-account to use for SmtpAfterPop
 
 };
 
@@ -117,6 +124,10 @@ public:
 	static BmRef<BmSmtpAccountList> theInstance;
 
 private:
+	// Hide copy-constructor and assignment:
+	BmSmtpAccountList( const BmSmtpAccountList&);
+	BmSmtpAccountList operator=( const BmSmtpAccountList&);
+
 };
 
 #define TheSmtpAccountList BmSmtpAccountList::theInstance

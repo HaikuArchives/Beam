@@ -47,6 +47,7 @@ class BmPopAccount : public BmListModelItem {
 	static const char* const MSG_DELETE_MAIL = 	"bm:deletemail";
 	static const char* const MSG_PORT_NR = 		"bm:portnr";
 	static const char* const MSG_UID = 				"bm:uid";
+	static const char* const MSG_AUTH_METHOD = 	"bm:authmethod";
 public:
 	BmPopAccount( const char* name, BmPopAccountList* model);
 	BmPopAccount( BMessage* archive, BmPopAccountList* model);
@@ -62,34 +63,39 @@ public:
 	virtual status_t Archive( BMessage* archive, bool deep = true) const;
 
 	// getters:
+	const BString &AuthMethod() const	{ return mAuthMethod; }
+	bool CheckMail() const 					{ return mCheckMail; }
+	bool DeleteMailFromServer() const	{ return mDeleteMailFromServer; }
 	const BString &Name() const 			{ return Key(); }
-	const BString &Username() const 		{ return mUsername; }
 	const BString &Password() const 		{ return mPassword; }
 	const BString &POPServer() const		{ return mPOPServer; }
-	const BString &SMTPAccount() const	{ return mSMTPAccount; }
+	int16 PortNr() const 					{ return mPortNr; }
 	const BString &RealName() const 		{ return mRealName; }
 	const BString &ReplyTo() const 		{ return mReplyTo; }
 	const BString &SignatureName() const	 { return mSignatureName; }
-	bool CheckMail() const 					{ return mCheckMail; }
-	bool DeleteMailFromServer() const	{ return mDeleteMailFromServer; }
-	int16 PortNr() const 					{ return mPortNr; }
+	const BString &SMTPAccount() const	{ return mSMTPAccount; }
+	const BString &Username() const 		{ return mUsername; }
 
 	// setters:
-	void Username( const BString &s) 	{ mUsername = s; }
+	void AuthMethod( const BString &s) 	{ mAuthMethod = s; }
+	void CheckMail( bool b) 				{ mCheckMail = b; }
+	void DeleteMailFromServer( bool b)	{ mDeleteMailFromServer = b; }
 	void Password( const BString &s) 	{ mPassword = s; }
 	void POPServer( const BString &s)	{ mPOPServer = s; }
-	void SMTPAccount( const BString &s)	{ mSMTPAccount = s; }
+	void PortNr( int16 i) 					{ mPortNr = i; }
 	void RealName( const BString &s) 	{ mRealName = s; }
 	void ReplyTo( const BString &s) 		{ mReplyTo = s; }
 	void SignatureName( const BString &s)	 { mSignatureName = s; }
-	void CheckMail( bool b) 				{ mCheckMail = b; }
-	void DeleteMailFromServer( bool b)	{ mDeleteMailFromServer = b; }
-	void PortNr( int16 i) 					{ mPortNr = i; }
+	void SMTPAccount( const BString &s)	{ mSMTPAccount = s; }
+	void Username( const BString &s) 	{ mUsername = s; }
 
 	bool GetPOPAddress( BNetAddress* addr) const;
 
 private:
 	BmPopAccount();					// hide default constructor
+	// Hide copy-constructor and assignment:
+	BmPopAccount( const BmPopAccount&);
+	BmPopAccount operator=( const BmPopAccount&);
 
 	//BString mName;					// name is stored in key (base-class)
 	BString mUsername;
@@ -100,11 +106,13 @@ private:
 	BString mRealName;
 	BString mReplyTo;
 	BString mSignatureName;			// name&path of signature file
+	int16 mPortNr;						// usually 110
 	bool mCheckMail;					// include this account in global mail-check?
 	bool mDeleteMailFromServer;	// delete mails upon receive?
-	int16 mPortNr;						// usually 110
+	BString mAuthMethod;				// authentication method
 
 	vector<BString> mUIDs;			// list of UIDs seen in this account
+
 };
 
 
@@ -132,6 +140,10 @@ public:
 	static BmRef<BmPopAccountList> theInstance;
 
 private:
+	// Hide copy-constructor and assignment:
+	BmPopAccountList( const BmPopAccountList&);
+	BmPopAccountList operator=( const BmPopAccountList&);
+
 };
 
 #define ThePopAccountList BmPopAccountList::theInstance

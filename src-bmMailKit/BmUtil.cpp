@@ -242,3 +242,52 @@ BString& RemoveSetFromString( BString& str, const char* charsToRemove) {
 	}
 	return str;
 }
+
+/*------------------------------------------------------------------------------*\
+	ConvertLinebreaksToLF( string)
+		-	
+\*------------------------------------------------------------------------------*/
+void ConvertLinebreaksToLF( const BString& in, BString& out) {
+	int32 outSize = in.Length();
+	char* buf = out.LockBuffer( outSize);
+	const char* pos = in.String();
+	char* newPos = buf;
+	while( *pos) {
+		if (*pos == '\r' && *(pos+1) == '\n')
+			pos++;
+		else {
+			if (pos != newPos)
+				*newPos++ = *pos++;
+			else {
+				newPos++;
+				pos++;
+			}
+		}
+	}
+	*newPos = 0;
+	out.UnlockBuffer( newPos-buf);
+}
+
+/*------------------------------------------------------------------------------*\
+	ConvertLinebreaksToCRLF( string)
+		-	
+\*------------------------------------------------------------------------------*/
+void ConvertLinebreaksToCRLF( const BString& in, BString& out) {
+	int32 outSize = in.Length()*2;
+	char* buf = out.LockBuffer( outSize);
+	const char* pos = in.String();
+	char* newPos = buf;
+	while( *pos) {
+		if (*pos=='\n' && (pos==in.String() || *(pos-1)!='\r'))
+			*newPos++ = '\r';
+		if (pos != newPos)
+			*newPos++ = *pos++;
+		else {
+			newPos++;
+			pos++;
+		}
+	}
+	*newPos = 0;
+	out.UnlockBuffer( newPos-buf);
+	out.Truncate( newPos-buf, false);
+}

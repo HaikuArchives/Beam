@@ -37,7 +37,7 @@ BmDataModel::~BmDataModel() {
 	BmAutolock lock( mModelLocker);
 	lock.IsLocked()	 						|| BM_THROW_RUNTIME( ModelName() << "-destructor: Unable to get lock on controller-set");
 	if ( HasControllers()) {
-		WaitForAllControllers();
+		WaitForAllToDetach();
 	}
 	BM_LOG2( BM_LogModelController, BString("DataModel <") << ModelName() << "> is dead now");
 }
@@ -67,6 +67,20 @@ void BmDataModel::RemoveController( BmController* controller) {
 	lock.IsLocked()	 						|| BM_THROW_RUNTIME( mModelName << ":RemoveController(): Unable to get lock on controller-set");
 	BM_LOG2( BM_LogModelController, BString("Model <") << ModelName() << "> is removing controller " << controller->ControllerName());
 	mControllerSet.erase( controller);
+	mOutstandingSet.erase( controller);
+}
+
+/*------------------------------------------------------------------------------*\
+	ControllerAck( controller)
+		-	notes the acknowledgement of a controller (that it has reveived the
+			last message that required an ack)
+\*------------------------------------------------------------------------------*/
+void BmDataModel::ControllerAck( BmController* controller) {
+	BmAutolock lock( mModelLocker);
+	lock.IsLocked()	 						|| BM_THROW_RUNTIME( mModelName << ":ControllerAck(): Unable to get lock on controller-set");
+	BM_LOG2( BM_LogModelController, BString("Model <") << ModelName() << "> has received ack from controller " << controller->ControllerName());
+	// add controller to set of connected controllers:
+	mOutstandingSet.erase( controller);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -75,14 +89,19 @@ void BmDataModel::RemoveController( BmController* controller) {
 		-	if no interested controller exists, this does nothing
 		-	if this dataModel is frozen, nothing happens
 \*------------------------------------------------------------------------------*/
-void BmDataModel::TellControllers( BMessage* msg) {
+void BmDataModel::TellControllers( BMessage* msg, bool waitForAck) {
 	BmAutolock lock( mModelLocker);
 	lock.IsLocked()	 						|| BM_THROW_RUNTIME( mModelName << ":TellControllers(): Unable to get lock on controller-set");
 	BHandler* controller;
 	status_t err;
-	msg->AddString( MSG_MODEL, ModelName().String());
 	if (Frozen()) {
 		BM_LOG3( BM_LogModelController, BString("Model <") << ModelName() << "> is frozen, so this msg is being dropped.");
+		return;
+	}
+	msg->AddString( MSG_MODEL, ModelName().String());
+	if (waitForAck) {
+		InitOutstanding();
+		msg->AddBool( MSG_NEEDS_ACK, true);
 	}
 	BmControllerSet::iterator iter;
 	iter = mControllerSet.begin();
@@ -97,6 +116,8 @@ void BmDataModel::TellControllers( BMessage* msg) {
 		(err=msgr.SendMessage( msg)) == B_OK
 													|| BM_THROW_RUNTIME( mModelName << ":TellControllers(): SendMessage() failed!\n\n Result: " << strerror(err));
 	}
+	if (waitForAck)
+		WaitForAllToAck();
 }
 
 /*------------------------------------------------------------------------------*\
@@ -112,7 +133,7 @@ bool BmDataModel::HasControllers() {
 
 /*------------------------------------------------------------------------------*\
 	ShouldContinue()
-		-	checks whether this datamodell is still required to do its work
+		-	checks whether this datamodel is still required to do its work
 		-	this implementation returns true as long as there is at least one controller
 			interested
 \*------------------------------------------------------------------------------*/
@@ -121,12 +142,45 @@ bool BmDataModel::ShouldContinue() {
 }
 
 /*------------------------------------------------------------------------------*\
-	WaitForAllControllers()
+	InitOutstanding()
+		-	create list of all controllers 
+\*------------------------------------------------------------------------------*/
+void BmDataModel::InitOutstanding() {
+	mOutstandingSet = mControllerSet;
+}
+
+/*------------------------------------------------------------------------------*\
+	WaitForAllToAck()
+		-	waits until all this model's controllers have acknowledged a message
+			that required so (for instance the removal of an item from a list)
+\*------------------------------------------------------------------------------*/
+void BmDataModel::WaitForAllToAck() {
+	BM_LOG2( BM_LogModelController, BString("Model <") << ModelName() << "> waits for controllers to ack");
+	while( ShouldContinue() && mOutstandingSet.size()) {
+		int lCount=0;
+		while (mModelLocker.IsLocked()) {
+			mModelLocker.Unlock();
+			lCount++; 
+		}
+		snooze(50*1000);
+		BM_LOG3( BM_LogModelController, BString("Model <") << ModelName() << "> is still waiting for some controllers to ack:");
+		BmControllerSet::iterator iter;
+		for( iter = mOutstandingSet.begin(); iter != mOutstandingSet.end(); ++iter) {
+			BM_LOG3( BM_LogModelController, BString("... <") << (*iter)->ControllerName() << "> has still not ack'd!");
+		}
+		while(lCount--) {
+			mModelLocker.Lock();
+		}
+	}
+	BM_LOG2( BM_LogModelController, BString("All controllers of model <") << ModelName() << "> have ack'd");
+}
+
+/*------------------------------------------------------------------------------*\
+	WaitForAllToDetach()
 		-	waits until all this model's controllers have detached
 \*------------------------------------------------------------------------------*/
-void BmDataModel::WaitForAllControllers() {
-	// wait for all controllers to detach:
-	BM_LOG2( BM_LogModelController, BString("Job <") << ModelName() << "> waits for controllers to detach");
+void BmDataModel::WaitForAllToDetach() {
+	BM_LOG2( BM_LogModelController, BString("Model <") << ModelName() << "> waits for controllers to detach");
 	while( HasControllers()) {
 		int lCount=0;
 		while (mModelLocker.IsLocked()) {
@@ -134,7 +188,7 @@ void BmDataModel::WaitForAllControllers() {
 			lCount++; 
 		}
 		snooze(200*1000);
-		BM_LOG3( BM_LogModelController, BString("Job <") << ModelName() << "> is still waiting for some controllers to detach:");
+		BM_LOG3( BM_LogModelController, BString("Model <") << ModelName() << "> is still waiting for some controllers to detach:");
 		BmControllerSet::iterator iter;
 		for( iter = mControllerSet.begin(); iter != mControllerSet.end(); ++iter) {
 			BM_LOG3( BM_LogModelController, BString("... <") << (*iter)->ControllerName() << "> is still attached!");
@@ -143,9 +197,8 @@ void BmDataModel::WaitForAllControllers() {
 			mModelLocker.Lock();
 		}
 	}
-	BM_LOG2( BM_LogModelController, BString("Job <") << ModelName() << "> has no more controllers");
+	BM_LOG2( BM_LogModelController, BString("Model <") << ModelName() << "> has no more controllers");
 }
-
 
 /********************************************************************************\
 	BmJobModel
@@ -340,6 +393,17 @@ BmListModelItem::BmListModelItem( BString key, BmListModel* model, BmListModelIt
 	:	mKey( key)
 	,	mListModel( model)
 	,	mParent( parent)
+{
+}
+
+/*------------------------------------------------------------------------------*\
+	ListModelItem( item)
+		-	copy c'tor
+\*------------------------------------------------------------------------------*/
+BmListModelItem::BmListModelItem( const BmListModelItem& item)
+	:	mKey( item.Key())
+	,	mListModel( NULL)
+	,	mParent( NULL)
 {
 }
 
@@ -546,7 +610,7 @@ void BmListModel::TellModelItemRemoved( BmListModelItem* item) {
 		BMessage msg( BM_LISTMODEL_REMOVE);
 		msg.AddPointer( MSG_MODELITEM, static_cast<void*>(item));
 		BM_LOG2( BM_LogModelController, BString("ListModel <") << ModelName() << "> tells about removed item " << item->Key());
-		TellControllers( &msg);
+		TellControllers( &msg, true);
 	}
 }
 
