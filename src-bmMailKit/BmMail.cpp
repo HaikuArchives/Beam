@@ -84,7 +84,6 @@ BmMail::BmMail( bool outbound)
 	:	inherited("MailModel_dummy")
 	,	mMailRef( NULL)
 	,	mHeader( NULL)
-	,	mHeaderLength( 0)
 	,	mBody( NULL)
 	,	mInitCheck( B_NO_INIT)
 	,	mOutbound( outbound)
@@ -117,7 +116,6 @@ BmMail::BmMail( bool outbound)
 BmMail::BmMail( BString &msgText, const BString account) 
 	:	inherited( "MailModel_dummy")
 	,	mHeader( NULL)
-	,	mHeaderLength( 0)
 	,	mBody( NULL)
 	,	mMailRef( NULL)
 	,	mInitCheck( B_NO_INIT)
@@ -134,7 +132,6 @@ BmMail::BmMail( BString &msgText, const BString account)
 BmMail::BmMail( BmMailRef* ref) 
 	:	inherited( BM_REFKEY( ref))
 	,	mHeader( NULL)
-	,	mHeaderLength( 0)
 	,	mBody( NULL)
 	,	mMailRef( ref)
 	,	mInitCheck( B_NO_INIT)
@@ -167,7 +164,6 @@ void BmMail::SetTo( const BString &text, const BString account) {
 		throw BM_mail_format_error("BmMail: Could not determine borderline between header and text of message");
 
 	headerLen += 2;							// don't include separator-line in header-string
-	mHeaderLength = headerLen;
 
 	mText.Adopt( msgText);					// take over the msg-string
 	mAccountName = account;
@@ -192,8 +188,8 @@ void BmMail::SetNewHeader( const BString& headerStr) {
 	int32 len = newMsgText.Length();
 	if (newMsgText[len-1] != '\n')
 		newMsgText << "\r\n";
-	newMsgText << mText.String()+mHeaderLength;
-	SetTo( newMsgText, mAccountName);
+	newMsgText << mText.String()+HeaderLength();
+	mText.Adopt( newMsgText);
 	Store();
 	StartJobInThisThread();
 }
@@ -662,7 +658,6 @@ void BmMail::AddPartsFromMail( BmRef<BmMail> mail, bool withAttachments,
 bool BmMail::ConstructRawText( const BString& editedText, int32 encoding,
 										 const BString smtpAccount) {
 	BString msgText;
-	mText.Truncate( 0);
 	mAccountName = smtpAccount;
 	if (!mHeader->ConstructRawText( msgText, encoding))
 		return false;
@@ -670,7 +665,7 @@ bool BmMail::ConstructRawText( const BString& editedText, int32 encoding,
 	if (!mBody->ConstructBodyForSending( msgText))
 		return false;
 	BM_LOG3( BM_LogMailParse, BString("CONSTRUCTED MSG: \n-----START--------\n") << msgText << "\n-----END----------");
-	SetTo( msgText, smtpAccount);
+	mText.Adopt( msgText);
 	return mInitCheck == B_OK;
 }
 
@@ -818,15 +813,9 @@ void BmMail::StoreAttributes( BFile& mailFile) {
 	mailFile.WriteAttr( BM_MAIL_ATTR_STATUS, B_STRING_TYPE, 0, st.String(), st.Length()+1);
 	mailFile.WriteAttr( BM_MAIL_ATTR_ACCOUNT, B_STRING_TYPE, 0, mAccountName.String(), mAccountName.Length()+1);
 	//
-	int32 headerLength, contentLength;
-	if ((headerLength = mText.FindFirst("\r\n\r\n")) != B_ERROR) {
-		headerLength+=2;
-		contentLength = mText.Length()-headerLength;
-	} else {
-		headerLength = mText.Length();
-		contentLength = 0;
-	}
-	mHeaderLength = headerLength;
+	int32 headerLength = HeaderLength();
+	int32 contentLength = MAX( 0, mText.Length()-headerLength);
+	
 	mailFile.WriteAttr( BM_MAIL_ATTR_HEADER, B_INT32_TYPE, 0, &headerLength, sizeof(int32));
 	mailFile.WriteAttr( BM_MAIL_ATTR_CONTENT, B_INT32_TYPE, 0, &contentLength, sizeof(int32));
 	//

@@ -178,7 +178,7 @@ public:
 	inline const BString& AccountName()			{ return mAccountName; }
 	inline BmBodyPartList* Body() const			{ return mBody.Get(); }
 	inline BmRef<BmMailHeader> Header() const	{ return mHeader; }
-	inline int32 HeaderLength() const			{ return mHeaderLength; }
+	inline int32 HeaderLength() const			{ return mHeader ? mHeader->HeaderLength() : 0; }
 	inline int32 RightMargin() const				{ return mRightMargin; }
 	inline const BString& RawText() const		{ return mText; }
 	inline const bool Outbound() const			{ return mOutbound; }
@@ -228,13 +228,12 @@ private:
 	const BString DefaultStatus() const;
 
 	BmRef<BmMailHeader> mHeader;			// contains header-information
-	int32 mHeaderLength;
 
 	BmRef<BmBodyPartList> mBody;			// contains body-information (split into subparts)
 
 	BString mText;								// text of complete message
 
-	BString mAccountName;					// name of account this message came from
+	BString mAccountName;					// name of account this message came from/is sent through
 
 	BEntry mEntry;								// filesystem-entry for this mail 
 
