@@ -1,5 +1,5 @@
 /*
-	BmApp.h
+	BmDeskbarView.h
 		$Id$
 */
 /*************************************************************************/
@@ -27,90 +27,55 @@
 /*                                                                       */
 /*************************************************************************/
 
+#ifndef _BmDeskbarView_h
+#define _BmDeskbarView_h
 
-#ifndef _BmApp_h
-#define _BmApp_h
+/*************************************************************************/
+/*                                                                       */
+/* This source has been derived (ripped?) from Scooby!                   */
+/*                                                                       */
+/*************************************************************************/
 
-#include <Application.h>
-#include <Deskbar.h>
-#include <PrintJob.h>
-#include <Rect.h>
-#include <String.h>
+#include <Message.h>
+#include <View.h>
 
-class BDeskbar;
-class BView;
-class BmWindow;
+extern const char* const DbViewName;
 
-extern const char* BM_APP_SIG;
-
-#define BMM_SHOW_NEWMAIL_ICON			'bMxa'
-#define BMM_HIDE_NEWMAIL_ICON			'bMxb'
-
-#define BMM_SET_BUSY						'bMxc'
-#define BMM_UNSET_BUSY					'bMxd'
-
-class BmApplication : public BApplication
-{
-	typedef BApplication inherited;
-
-public:
-	//
-	BmApplication( const char *sig);
-	~BmApplication();
-
-	// native methods:
-	bool HandlesMimetype( const BString mimetype);
-	BRect ScreenFrame();
-	void SetNewWorkspace( uint32 newWorkspace);
-	void LaunchURL( const BString url);
-	void ForwardMails( BMessage* msg, bool join);
-	void ReplyToMails( BMessage* msg, bool join);
-	void PageSetup();
-	void PrintMails( BMessage* msg);
-
-	// beos-stuff
-	void MessageReceived( BMessage* msg);
-	bool QuitRequested();
-	void AboutRequested();
-	void ReadyToRun();
-	void ArgvReceived( int32 argc, char** argv);
-	void RefsReceived( BMessage* msg);
-	thread_id Run();
-
-	// getters
-	inline bool IsQuitting()				{ return mIsQuitting; }
-
-	BString BmAppVersion;
-	BString BmAppName;
-	BString BmAppNameWithVersion;
-
-	// message-fields:
-	static const char* const MSG_MAILREF = 	"bm:mref";
-	static const char* const MSG_STATUS = 		"bm:status";
-	static const char* const MSG_WHO_TO = 		"bm:to";
-	static const char* const MSG_SUBJECT = 	"bm:subj";
-	static const char* const MSG_SELECTED_TEXT = 	"bm:seltext";
-	static const char* const MSG_SENDING_REFVIEW = 	"bm:srefv";
-
-protected:
-	void InstallDeskbarView();
-	void RemoveDeskbarView();
-
-private:
-	status_t mInitCheck;
-	BmWindow* mMailWin;
-	bool mIsQuitting;
-
-	BDeskbar mDeskbar;
-	bool mDeskbarShouldIndicateNewMail;
-
-	BMessage* mPrintSetup;
-	BPrintJob mPrintJob;
-	
-	static int InstanceCount;
-
+// message types for communication between deskbar-view and Beam:
+enum{
+	BM_CHECK_STATE = 	'bmDa'
 };
 
-extern BmApplication* bmApp;
+// menu-messages for deskbar-view:
+enum{
+	BMM_RESET_ICON = 	'bMDa'
+};
+
+class BmDeskbarView: public BView {
+	typedef BView inherited;
+public:
+	// c'tors and d'tor:
+	BmDeskbarView( BRect frame);
+	BmDeskbarView( BMessage *data);
+	~BmDeskbarView();
+	
+	// native methods:
+	void ChangeIcon( const char* iconName);
+	
+protected:	
+	// overrides of BView base:
+	void Draw( BRect updateRect);
+	status_t Archive(BMessage *data, bool deep = true) const;
+	void MouseDown(BPoint);
+	void MessageReceived(BMessage *message);
+	void Pulse();
+
+	static BmDeskbarView *Instantiate(BMessage *data);
+
+private:
+	BString mCurrIconName;
+	BBitmap *mCurrIcon;
+	BString mResetLabel;
+};
 
 #endif

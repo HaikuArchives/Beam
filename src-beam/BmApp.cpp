@@ -44,6 +44,7 @@
 #include "BmBasics.h"
 #include "BmBodyPartView.h"
 #include "BmDataModel.h"
+#include "BmDeskbarView.h"
 #include "BmJobStatusWin.h"
 #include "BmLogHandler.h"
 #include "BmMailEditWin.h"
@@ -83,6 +84,7 @@ BmApplication::BmApplication( const char* sig)
 	,	mMailWin( NULL)
 	,	mPrintSetup( NULL)
 	,	mPrintJob( "Mail")
+	,	mDeskbarShouldIndicateNewMail( false)
 {
 	if (InstanceCount > 0)
 		throw BM_runtime_error("Trying to initialize more than one instance of class Beam");
@@ -134,11 +136,6 @@ BmApplication::BmApplication( const char* sig)
 		BmSmtpAccountList::CreateInstance( TheJobStatusWin);
 		BmPopAccountList::CreateInstance( TheJobStatusWin);
 
-		BBitmap* deskbarIcon = TheResources->IconByName( "DeskbarIcon");
-		BPicture* deskbarPic = TheResources->CreatePictureFor( deskbarIcon, 16, 16,  B_TRANSPARENT_COLOR, true);
-		mDeskbarView = new BPictureButton( BRect(0,0,15,15), BM_DeskbarItemName, 
-													  deskbarPic, deskbarPic, new BMessage('xxxx'));
-		mDeskbarView->SetViewColor( B_TRANSPARENT_COLOR);
 		add_system_beep_event( BM_BEEP_EVENT);
 
 		BmMainWindow::CreateInstance();
@@ -163,7 +160,7 @@ BmApplication::BmApplication( const char* sig)
 		-	standard destructor
 \*------------------------------------------------------------------------------*/
 BmApplication::~BmApplication() {
-	mDeskbar.RemoveItem( BM_DeskbarItemName);
+	RemoveDeskbarView();
 	TheMailFolderList = NULL;
 	ThePopAccountList = NULL;
 	TheSmtpAccountList = NULL;
@@ -192,6 +189,8 @@ void BmApplication::ReadyToRun() {
 		TheMainWindow->SendBehind( mMailWin);
 		mMailWin = NULL;
 	}
+	if (ThePrefs->GetBool( "UseDeskbar"))
+		InstallDeskbarView();
 }
 
 /*------------------------------------------------------------------------------*\
@@ -223,6 +222,29 @@ thread_id BmApplication::Run() {
 		exit(10);
 	}
 	return tid;
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmApplication::InstallDeskbarView() {
+	if (!mDeskbar.HasItem( DbViewName)) {
+		BRoster roster;
+		entry_ref ref;
+		roster.FindApp( BM_APP_SIG , &ref);
+		int32 id;
+		mDeskbar.AddItem( &ref, &id);
+	}
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmApplication::RemoveDeskbarView() {
+	if (mDeskbar.HasItem( DbViewName))
+		mDeskbar.RemoveItem( DbViewName);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -496,16 +518,22 @@ void BmApplication::MessageReceived( BMessage* msg) {
 			}
 			case BMM_SHOW_NEWMAIL_ICON: {
 				BM_LOG2( BM_LogAll, "App: asked to show new-mail icon in deskbar");
-				if (ThePrefs->GetBool( "UseDeskbar") 
-				&& !mDeskbar.HasItem( BM_DeskbarItemName)) {
-					mDeskbar.AddItem( mDeskbarView);
-				}
+				mDeskbarShouldIndicateNewMail = true;
 				break;
 			}
 			case BMM_HIDE_NEWMAIL_ICON: {
 				BM_LOG2( BM_LogAll, "App: asked to hide new-mail icon from deskbar");
-				if (mDeskbar.HasItem( BM_DeskbarItemName))
-					mDeskbar.RemoveItem( BM_DeskbarItemName);
+				mDeskbarShouldIndicateNewMail = false;
+				break;
+			}
+			case BM_CHECK_STATE: {
+				BM_LOG2( BM_LogAll, "App: deskbar-view is checking state");
+				BMessage reply( BM_CHECK_STATE);
+				reply.AddString( "iconName", 
+									  mDeskbarShouldIndicateNewMail
+									  	? "DeskbarIcon"
+									  	: "Priority_3");
+				msg->SendReply( &reply, (BHandler*)NULL, 1000000);
 				break;
 			}
 			case B_SILENT_RELAUNCH: {
