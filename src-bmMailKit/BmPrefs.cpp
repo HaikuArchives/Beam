@@ -53,7 +53,7 @@ const char* const BmPrefs::LOG_LVL_1 = "Log";
 const char* const BmPrefs::LOG_LVL_2 = "Log More";
 const char* const BmPrefs::LOG_LVL_3 = "Log Everything";
 
-const int16 BmPrefs::nPrefsVersion = 7;
+const int16 BmPrefs::nPrefsVersion = 8;
 
 /*------------------------------------------------------------------------------*\
 	CreateInstance()
@@ -227,6 +227,14 @@ BmPrefs::BmPrefs( BMessage* archive)
 		mPrefsMsg.RemoveName( "DefaultCharset");
 		mPrefsMsg.AddString( "DefaultCharset", defCharset.String());
 	}
+	if (version < 8) {
+		// changes introduced with version 8:
+		//
+		// replace field "MaxLineLenForHardWrap" by "NeverExceed78Chars":
+		int32 mlen = mPrefsMsg.FindInt32( "MaxLineLenForHardWrap");
+		mPrefsMsg.RemoveName( "MaxLineLenForHardWrap");
+		mPrefsMsg.AddBool( "NeverExceed78Chars", mlen < 100);
+	}
 
 	SetLoglevels();
 
@@ -352,7 +360,7 @@ void BmPrefs::InitDefaults() {
 	mDefaultsMsg.AddBool( "MakeQPSafeForEBCDIC", false);
 	mDefaultsMsg.AddInt32( "MarkAsReadDelay", 500);
 	mDefaultsMsg.AddInt32( "MaxLineLen", 76);
-	mDefaultsMsg.AddInt32( "MaxLineLenForHardWrap", 998);
+	mDefaultsMsg.AddBool( "NeverExceed78Chars", false);
 	mDefaultsMsg.AddString( 
 		"MimeTypeTrustInfo", 
 		"<application/pdf:T><application/zip:T><application:W><:T>"

@@ -83,10 +83,15 @@ void BmRulerView::Draw( BRect bounds) {
 	inherited::Draw( bounds);
 	
 	BRect r = Bounds();
-	int32 maxLineLen = ThePrefs->GetInt( "MaxLineLenForHardWrap", 998);
-	float width = maxLineLen<100 
-							? 1+maxLineLen*mSingleCharWidth	// stop at hard-wrap border
-							: r.Width();							// draw all the way
+	int32 maxLineLen = ThePrefs->GetBool( "NeverExceed78Chars", false)
+								? 78
+								: 0;
+	float width 
+		= maxLineLen
+			? 1+maxLineLen*mSingleCharWidth
+							// stop at hard-wrap border
+			: r.Width();						
+							// draw all the way
 	float step = mSingleCharWidth;
 	
 	// We only draw ruler lines if we have a fixed-width font, otherwise it just
@@ -95,11 +100,14 @@ void BmRulerView::Draw( BRect bounds) {
 		// draw ruler lines:
 		for( float x=0; x<width; x+=step) {
 			if (static_cast<int>(x)%10 == 0)
-				StrokeLine( BPoint(nXOffset+x, r.bottom-10), BPoint(nXOffset+x, r.bottom));
+				StrokeLine( BPoint(nXOffset+x, r.bottom-10), 
+								BPoint(nXOffset+x, r.bottom));
 			else if (static_cast<int>(x)%5 == 0)
-				StrokeLine( BPoint(nXOffset+x, r.bottom-7), BPoint(nXOffset+x, r.bottom));
+				StrokeLine( BPoint(nXOffset+x, r.bottom-7), 
+								BPoint(nXOffset+x, r.bottom));
 			else
-				StrokeLine( BPoint(nXOffset+x, r.bottom-5), BPoint(nXOffset+x, r.bottom));
+				StrokeLine( BPoint(nXOffset+x, r.bottom-5), 
+								BPoint(nXOffset+x, r.bottom));
 		}
 		
 		SetLowColor( ViewColor());
@@ -111,7 +119,7 @@ void BmRulerView::Draw( BRect bounds) {
 			float w = StringWidth( numStr.String());
 			DrawString( numStr.String(), BPoint( nXOffset+1+x-w/2, 8));
 		}
-		if (maxLineLen < 100) {
+		if (maxLineLen) {
 			// draw number over right margin;
 			BmString numStr = BmString("") << maxLineLen;
 			float w = StringWidth( numStr.String());
@@ -147,7 +155,8 @@ void BmRulerView::MouseDown( BPoint point) {
 		Parent()->MakeFocus( true);
 	int32 maxLineLen = ThePrefs->GetInt( "MaxLineLenForHardWrap", 998);
 	if (maxLineLen < 100) {
-		BmString s = BmString("The right margin is currently fixed\nto a maximum of ") 
+		BmString s = BmString("The right margin is currently fixed\n"
+									 "to a maximum of ") 
 							<< maxLineLen 
 							<< " characters.\n\nPlease check Preferences.";
 		TheBubbleHelper->SetHelp( this, s.String());
@@ -169,7 +178,8 @@ void BmRulerView::MouseDown( BPoint point) {
 	MouseMoved( point, transit, msg)
 		-	
 \*------------------------------------------------------------------------------*/
-void BmRulerView::MouseMoved( BPoint point, uint32 transit, const BMessage *msg) {
+void BmRulerView::MouseMoved( BPoint point, uint32 transit, 
+										const BMessage *msg) {
 	inherited::MouseMoved( point, transit, msg);
 //	if (transit == B_INSIDE_VIEW || transit == B_ENTERED_VIEW) {
 		if (mIndicatorGrabbed)
@@ -196,7 +206,9 @@ void BmRulerView::MouseUp( BPoint point) {
 \*------------------------------------------------------------------------------*/
 void BmRulerView::SetIndicatorPixelPos( float pixelPos) {
 	pixelPos -= nXOffset;
-	int32 newPos = static_cast<int32>( (pixelPos+mSingleCharWidth/2) / mSingleCharWidth);
+	int32 newPos = static_cast<int32>( 
+		(pixelPos+mSingleCharWidth/2) / mSingleCharWidth
+	);
 	SetIndicatorPos( newPos);
 }
 
@@ -205,8 +217,8 @@ void BmRulerView::SetIndicatorPixelPos( float pixelPos) {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmRulerView::SetIndicatorPos( int32 newPos) {
-	int32 maxPos = ThePrefs->GetInt( "MaxLineLenForHardWrap", 998);
-	newPos = MAX( 1, MIN( newPos, maxPos));
+	if (newPos > 78 && ThePrefs->GetBool( "NeverExceed78Chars", false))
+		newPos = 78;
 	if (newPos != mIndicatorPos) {
 		mIndicatorPos = newPos;
 		Invalidate();
