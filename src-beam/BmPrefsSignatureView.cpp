@@ -250,7 +250,11 @@ BmPrefsSignatureView::BmPrefsSignatureView()
 						mTestButton = new MButton( "Test this signature", new BMessage( BM_TEST_SIGNATURE), this, minimax(-1,-1,-1,-1)),
 						0
 					),
-					mCharsetControl = new BmMenuControl( "Charset:", new BPopUpMenu("")),
+					new HGroup( 
+						mCharsetControl = new BmMenuControl( "Charset:", new BPopUpMenu("")),
+						new Space(),
+						0
+					),
 					0
 				)
 			),
@@ -321,10 +325,9 @@ dynamic:\n\
 	AddCharsetMenu( mCharsetControl->Menu(), this, BM_CHARSET_SELECTED);
 
 	// mark default charset:
-	BMenuItem* item;
-	item = mCharsetControl->Menu()->FindItem( ThePrefs->GetString( "DefaultCharset").String());
-	if (item)
-		item->SetMarked( true);
+	BmString charset( ThePrefs->GetString( "DefaultCharset"));
+	mCharsetControl->MarkItem( charset.String());
+	mCharsetControl->MenuItem()->SetLabel( charset.String());
 
 	mSigListView->SetSelectionMessage( new BMessage( BM_SELECTION_CHANGED));
 	mSigListView->SetTarget( this);
@@ -412,9 +415,14 @@ void BmPrefsSignatureView::MessageReceived( BMessage* msg) {
 			}
 			case BM_CHARSET_SELECTED: {
 				if (mCurrSig) {
-					BMenuItem* item = mCharsetControl->Menu()->FindMarked();
-					if (item)
+					BMenuItem* item = NULL;
+					msg->FindPointer( "source", (void**)&item);
+					if (item) {
+						mCharsetControl->ClearMark();
+						mCharsetControl->MenuItem()->SetLabel( item->Label());
 						mCurrSig->Charset( item->Label());
+						item->SetMarked( true);
+					}
 					else
 						mCurrSig->Charset( ThePrefs->GetString( "DefaultCharset"));
 					NoticeChange();
@@ -491,8 +499,10 @@ void BmPrefsSignatureView::ShowSignature( int32 selection) {
 		mSignatureControl->SetTextSilently( "");
 		mContentControl->SetTextSilently( "");
 		mDynamicControl->SetValue( 0);
-		mCharsetControl->SetEnabled( false);
-		mCharsetControl->MarkItem( ThePrefs->GetString( "DefaultCharset").String());
+		BmString charset( ThePrefs->GetString( "DefaultCharset"));
+		mCharsetControl->ClearMark();
+		mCharsetControl->MarkItem( charset.String());
+		mCharsetControl->MenuItem()->SetLabel( charset.String());
 		mTestButton->SetEnabled( false);
 	} else {
 		BmSignatureItem* sigItem = dynamic_cast<BmSignatureItem*>(mSigListView->ItemAt( selection));
@@ -502,7 +512,10 @@ void BmPrefsSignatureView::ShowSignature( int32 selection) {
 				mSignatureControl->SetTextSilently( mCurrSig->Name().String());
 				mContentControl->SetTextSilently( mCurrSig->Content().String());
 				mDynamicControl->SetValue( mCurrSig->Dynamic());
-				mCharsetControl->MarkItem( mCurrSig->Charset().String());
+				BmString charset( mCurrSig->Charset());
+				mCharsetControl->ClearMark();
+				mCharsetControl->MarkItem( charset.String());
+				mCharsetControl->MenuItem()->SetLabel( charset.String());
 				mCharsetControl->SetEnabled( mCurrSig->Dynamic());
 				mTestButton->SetEnabled( mCurrSig->Dynamic());
 			}

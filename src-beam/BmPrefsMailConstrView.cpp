@@ -331,7 +331,10 @@ void BmPrefsMailConstrView::Update() {
 	mHardWrapAt78Control->SetValueSilently( ThePrefs->GetInt("MaxLineLenForHardWrap",998)<100);
 	mQuoteFormattingControl->MarkItem( ThePrefs->GetString("QuoteFormatting", BmMail::BM_QUOTE_AUTO_WRAP).String());
 	mDefaultForwardTypeControl->MarkItem( ThePrefs->GetString( "DefaultForwardType").String());
-	mDefaultCharsetControl->MarkItem( ThePrefs->GetString( "DefaultCharset").String());
+	mDefaultCharsetControl->ClearMark();
+	BmString charset( ThePrefs->GetString( "DefaultCharset"));
+	mDefaultCharsetControl->MarkItem( charset.String());
+	mDefaultCharsetControl->MenuItem()->SetLabel( charset.String());
 	mAllow8BitControl->SetValueSilently( ThePrefs->GetBool("Allow8BitMime"));
 	mSpecialForEachBccControl->SetValueSilently( ThePrefs->GetBool("SpecialHeaderForEachBcc"));
 	mPreferUserAgentControl->SetValueSilently( ThePrefs->GetBool("PreferUserAgentOverX-Mailer"));
@@ -441,10 +444,14 @@ void BmPrefsMailConstrView::MessageReceived( BMessage* msg) {
 				break;
 			}
 			case BM_CHARSET_SELECTED: {
-				BMenuItem* item = mDefaultCharsetControl->Menu()->FindMarked();
-				if (item)
-					ThePrefs->SetString("DefaultCharset", item->Label());
-				NoticeChange();
+				BMenuItem* item = NULL;
+				msg->FindPointer( "source", (void**)&item);
+				if (item) {
+					mDefaultCharsetControl->ClearMark();
+					mDefaultCharsetControl->MenuItem()->SetLabel( item->Label());
+					item->SetMarked( true);
+					NoticeChange();
+				}
 				break;
 			}
 			case BM_QUOTE_FORMATTING_SELECTED: {
