@@ -52,6 +52,7 @@ using namespace regexx;
 #include "BmResources.h"
 #include "BmSignature.h"
 #include "BmSmtpAccount.h"
+#include "BmStorageUtil.h"
 
 #undef BM_LOGNAME
 #define BM_LOGNAME "MailParser"
@@ -793,6 +794,7 @@ bool BmMail::Store() {
 	ssize_t res;
 	char basicFilename[B_FILE_NAME_LENGTH];
 	BPath newHomePath;
+	bool moveToTrash = false;
 
 	try {
 		// Find out where mail shall be living.
@@ -845,7 +847,10 @@ bool BmMail::Store() {
 
 		// now check whether mail-filtering has decided that the mail shall live
 		// in a specific folder:
-		if (newHomePath != mDestFolderpath) {
+		if (mDestFolderpath == BM_MAIL_FOLDER_TRASH) {
+			// mail shall be moved to trash:
+			moveToTrash = true;
+		} else if (newHomePath != mDestFolderpath) {
 			// try to file mail into a different destination-folder:
 			if ((err = homeDir.SetTo( mDestFolderpath.Path())) != B_OK) {
 				BmLogHandler::Log( "Filter", BM_LogAll, 
@@ -893,12 +898,16 @@ bool BmMail::Store() {
 			}
 		}
 		mailFile.Sync();
-		// now move mail to it's real home:
-		(err = mEntry.MoveTo( &homeDir)) == B_OK
-													|| BM_THROW_RUNTIME( BmString("Could not move mail <")<<basicFilename<<"> to home-folder\n\n Result: " << strerror(err));
+		if (!moveToTrash) {
+			// now move mail to it's real home:
+			(err = mEntry.MoveTo( &homeDir)) == B_OK
+														|| BM_THROW_RUNTIME( BmString("Could not move mail <")<<basicFilename<<"> to home-folder\n\n Result: " << strerror(err));
+		}
 		entry_ref eref;
 		(err = mEntry.GetRef( &eref)) == B_OK
 													|| BM_THROW_RUNTIME( BmString("Could not get entry-ref for mail <")<<basicFilename<<">.\n\n Result: " << strerror(err));
+		if (moveToTrash)
+			MoveToTrash( &eref, 1);
 		if (!mMailRef) {
 			// mail has been freshly created, we add a mail-ref for it:
 			struct stat st;

@@ -116,6 +116,8 @@ class BmMailRef;
 #define BM_MAIL_FOLDER_IN			"in"
 #define BM_MAIL_FOLDER_OUT			"out"
 
+#define BM_MAIL_FOLDER_TRASH	 	"<trash>"
+
 class BmFilter;
 /*------------------------------------------------------------------------------*\
 	BmMail 
