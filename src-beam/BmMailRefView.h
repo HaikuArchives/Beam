@@ -88,6 +88,7 @@ public:
 
 	static const char* const MENU_MARK_AS;
 	static const char* const MENU_FILTER;
+	static const char* const MENU_MOVE;
 
 	// creator-func, c'tors and d'tor:
 	static BmMailRefView* CreateInstance( minimax minmax, int32 width, int32 height);
@@ -100,9 +101,7 @@ public:
 	void AddSelectedRefsToMsg( BMessage* msg, BmString fieldName);
 	void ShowMenu( BPoint point);
 	static void AddMailRefMenu( BMenu* menu, BHandler* target,
-										 BHandler* menuControllerHandler,
-										 bool isContextMenu,
-										 BmMenuController** filterMenuPtr=NULL);
+										 bool isContextMenu);
 	void SendNoticesIfNeeded( bool haveSelectedRef);
 
 	// overrides of listview base:

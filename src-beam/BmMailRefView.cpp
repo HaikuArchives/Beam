@@ -40,6 +40,7 @@
 #include "BmLogHandler.h"
 #include "BmMailEditWin.h"
 #include "BmMailFolder.h"
+#include "BmMailFolderList.h"
 #include "BmMailMover.h"
 #include "BmMailRef.h"
 #include "BmMailRefList.h"
@@ -258,7 +259,8 @@ const char* BmMailRefItem::GetUserText(int32 colIdx, float colWidth) const {
 
 const char* const BmMailRefView::MSG_MAILS_SELECTED = 	"bm:msel";
 const char* const BmMailRefView::MENU_MARK_AS =				"Mark Message As";
-const char* const BmMailRefView::MENU_FILTER = 	"Apply Specific Filter";
+const char* const BmMailRefView::MENU_FILTER = 				"Apply Specific Filter";
+const char* const BmMailRefView::MENU_MOVE =					"Move Message To";
 
 /*------------------------------------------------------------------------------*\
 	()
@@ -728,9 +730,7 @@ void BmMailRefView::ItemInvoked( int32 index) {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmMailRefView::AddMailRefMenu( BMenu* menu, BHandler* target, 
-												BHandler* menuControllerHandler, 
-												bool isContextMenu,
-												BmMenuController** filterMenuPtr) {
+												bool isContextMenu) {
 	if (!menu)
 		return;
 	AddItemToMenu( menu, CreateMenuItem( "Reply", BMM_REPLY), target);
@@ -760,20 +760,22 @@ void BmMailRefView::AddMailRefMenu( BMenu* menu, BHandler* target,
 	menu->AddItem( statusMenu);
 	menu->AddSeparatorItem();
 
+	BMessage moveMsgTempl( BMM_MOVE);
+	BmMenuController* moveMenu
+		= new BmMenuController( MENU_MOVE, target, moveMsgTempl, TheMailFolderList.Get(), true);
+	if (isContextMenu)
+		moveMenu->SetFont( &font);
+	menu->AddItem( moveMenu);
+	menu->AddSeparatorItem();
+
 	AddItemToMenu( menu, CreateMenuItem( "Filter (Applies Associated Chain)", new BMessage( BMM_FILTER), "Filter"), target);
 
-	BMessage msgTempl( BMM_FILTER);
+	BMessage filterMsgTempl( BMM_FILTER);
 	BmMenuController* filterMenu
-		= new BmMenuController( MENU_FILTER, "FilterController",
-										msgTempl, menuControllerHandler);
+		= new BmMenuController( MENU_FILTER, target,	filterMsgTempl, TheFilterList.Get());
 	if (isContextMenu)
 		filterMenu->SetFont( &font);
 	menu->AddItem( filterMenu);
-	if (filterMenuPtr)
-		*filterMenuPtr = filterMenu;
-	filterMenu->StartJob( TheFilterList.Get(), false);
-	if (!filterMenuPtr)
-		filterMenu->JobIsDone( true);
 	menu->AddSeparatorItem();
 
 	if (isContextMenu) {
@@ -794,7 +796,7 @@ void BmMailRefView::ShowMenu( BPoint point) {
 	font.SetSize( 10);
 	theMenu->SetFont( &font);
 
-	AddMailRefMenu( theMenu, Window(), Window(), true);
+	AddMailRefMenu( theMenu, Window(), true);
 
    ConvertToScreen(&point);
 	BRect openRect;
