@@ -263,7 +263,8 @@ void CLVEasyItem::DrawItemColumn(BRect item_column_rect, int32 column_index)
 			}
 			item_column_rect.top += ceil(((item_column_rect.bottom-item_column_rect.top)-(bounds.bottom-bounds.top))/2.0);
 			item_column_rect.bottom = item_column_rect.top + (bounds.bottom-bounds.top);
-			fOwner->SetDrawingMode(B_OP_OVER);
+			fOwner->SetDrawingMode( B_OP_ALPHA);
+			fOwner->SetBlendingMode( B_PIXEL_ALPHA, B_ALPHA_OVERLAY);
 			fOwner->DrawBitmap(bitmap,item_column_rect);
 			fOwner->SetDrawingMode(B_OP_COPY);
 		}

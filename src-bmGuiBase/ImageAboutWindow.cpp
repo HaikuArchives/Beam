@@ -64,10 +64,6 @@ ImageAboutWindow::ImageAboutWindow(const char* window_title, const char* app_tit
 
 	//Extract title bitmap
 	m_bitmap = (BBitmap*)bmap;
-/*
-	if(icon_resource_name)
-		m_bitmap = BTranslationUtils::GetBitmap('bits',icon_resource_name);
-*/
 	m_title = Strdup_new(app_title);
 
 	//Extract version resource
@@ -130,12 +126,9 @@ ImageAboutWindow::ImageAboutWindow(const char* window_title, const char* app_tit
 	m_web = web ? Strdup_new( web) : NULL;
 
 	//Figure out size, etc
-	m_logo_rect.Set(-1,-1,-1,-1);
-	m_above_logo.Set(-1,-1,-1,-1);;
-	m_left_of_logo.Set(-1,-1,-1,-1);;
-	m_below_logo.Set(0,0,29,29);
-
 	float logo_right = 29;
+	m_logo_rect.Set(-1,-1,-1,-1);
+	m_left_of_logo.Set(0,0,29,-1);
 	if(m_bitmap)
 	{
 		m_logo_rect = m_bitmap->Bounds().OffsetToCopy(15,6);
@@ -147,9 +140,7 @@ ImageAboutWindow::ImageAboutWindow(const char* window_title, const char* app_tit
 			line_edge = 29;
 		}
 	
-		m_above_logo.Set(0,0,line_edge,m_logo_rect.top-1);
-		m_left_of_logo.Set(0,m_logo_rect.top,m_logo_rect.left-1,m_logo_rect.bottom);
-		m_below_logo.Set(0,m_logo_rect.bottom+1,line_edge,m_logo_rect.bottom+6);
+		m_left_of_logo.Set(0,0,line_edge,-1);
 	}
 
 	//Get font size information
@@ -284,7 +275,7 @@ ImageAboutWindow::ImageAboutWindow(const char* window_title, const char* app_tit
 	//curr_pos is now at the bottom of the last line of text, or the bitmap, whichever is lower
 	//Resize and move the window
 	BRect bounds(0,0,logo_right+10+string_widths+10,curr_pos+6);
-	m_below_logo.bottom = bounds.bottom;
+	m_left_of_logo.bottom = bounds.bottom;
 	ResizeTo(bounds.right,bounds.bottom);
 	BView* content_view = new AboutView(bounds,this);
 	AddChild(content_view);
@@ -298,8 +289,6 @@ ImageAboutWindow::ImageAboutWindow(const char* window_title, const char* app_tit
 
 ImageAboutWindow::~ImageAboutWindow()
 {
-//	if(m_bitmap)
-//		delete m_bitmap;
 	delete[] m_title;
 	delete[] m_version;
 	while(m_num_lines > 0)
@@ -352,16 +341,14 @@ void ImageAboutWindow::ScrollCredits() {
 void ImageAboutWindow::DrawContent(BView* view, BRect update_rect)
 {
 	view->SetHighColor( BmWeakenColor( B_UI_PANEL_BACKGROUND_COLOR, 2));
-	if(update_rect.Intersects(m_above_logo))
-		view->FillRect(m_above_logo);
 	if(update_rect.Intersects(m_left_of_logo))
 		view->FillRect(m_left_of_logo);
-	if(update_rect.Intersects(m_below_logo))
-		view->FillRect(m_below_logo);
 	if(update_rect.Intersects(m_logo_rect)) {
-		view->SetDrawingMode(B_OP_OVER);
+		view->SetDrawingMode(B_OP_ALPHA);
+		view->SetBlendingMode(B_PIXEL_ALPHA, B_ALPHA_OVERLAY);
 		view->DrawBitmap(m_bitmap,m_logo_rect.LeftTop());
-		view->SetDrawingMode(B_OP_COPY);
+		view->SetBlendingMode(B_CONSTANT_ALPHA, B_ALPHA_OVERLAY);
+		view->SetDrawingMode(B_OP_OVER);
 	}
 	view->SetHighColor(ui_color( B_UI_PANEL_TEXT_COLOR));
 	if(update_rect.Intersects(m_title_rect))

@@ -98,9 +98,7 @@ class IMPEXPSANTAPARTSFORBEAM ImageAboutWindow : public BWindow
 		BRect* m_text_rects;
 
 		BRect m_logo_rect;
-		BRect m_above_logo;
 		BRect m_left_of_logo;
-		BRect m_below_logo;
 
 		BStringView* m_credits_label;
 		BTextView* m_credits_view;
