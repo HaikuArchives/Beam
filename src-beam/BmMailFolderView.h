@@ -59,6 +59,9 @@ public:
 	void UpdateView( BmUpdFlags flags);
 	BmMailFolder* ModelItem() const 		{ return dynamic_cast< BmMailFolder*>( mModelItem.Get()); }
 
+	static int CompareItems( const CLVListItem *a_Item1, const CLVListItem *a_Item2,
+									 int32 KeyColumn, int32 col_flags);
+
 private:
 	// Hide copy-constructor and assignment:
 	BmMailFolderItem( const BmMailFolderItem&);

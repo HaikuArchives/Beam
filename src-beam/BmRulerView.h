@@ -52,7 +52,7 @@ public:
 	~BmRulerView();
 
 	// native methods:
-	void SetIndicatorPos( float pixelPos);
+	void SetIndicatorPos( int32 pos);
 
 	// overrides of BView base:
 	void Draw( BRect bounds);
@@ -64,6 +64,9 @@ public:
 	static const char* const MSG_NEW_POS = "bm:newpos";
 
 private:
+	// native methods:
+	void SetIndicatorPixelPos( float pixelPos);
+
 	BFont mMailViewFont;
 	int32 mIndicatorPos;
 	bool mIndicatorGrabbed;

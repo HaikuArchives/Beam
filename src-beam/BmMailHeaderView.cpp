@@ -40,6 +40,7 @@ using namespace regexx;
 #include "BmMailHeader.h"
 #include "BmMailHeaderView.h"
 #include "BmMailView.h"
+#include "BmMsgTypes.h"
 #include "BmPrefs.h"
 #include "BmResources.h"
 
@@ -53,6 +54,7 @@ BmMailHeaderView::BmMailHeaderView( BmMailHeader* header)
 	,	mMailHeader( NULL)
 	,	mDisplayMode( LARGE_HEADERS)
 	,	mFont( new BFont( be_bold_font))
+	,	mShowRedirectFields( true)
 {
 	SetViewColor( B_TRANSPARENT_COLOR);
 	ShowHeader( header);
@@ -71,7 +73,9 @@ BmMailHeaderView::~BmMailHeaderView() {
 		-	
 \*------------------------------------------------------------------------------*/
 status_t BmMailHeaderView::Archive( BMessage* archive, bool deep=true) const {
-	status_t ret = archive->AddInt16( MSG_MODE, mDisplayMode);
+	status_t ret = archive->AddInt16( MSG_VERSION, nArchiveVersion)
+					|| archive->AddInt16( MSG_MODE, mDisplayMode)
+					|| archive->AddBool( MSG_REDIRECT_MODE, mShowRedirectFields);
 	return ret;
 }
 
@@ -80,7 +84,12 @@ status_t BmMailHeaderView::Archive( BMessage* archive, bool deep=true) const {
 		-	
 \*------------------------------------------------------------------------------*/
 status_t BmMailHeaderView::Unarchive( BMessage* archive, bool deep=true) {
+	int16 version;
+	if (archive->FindInt16( MSG_VERSION, &version) != B_OK)
+		version = 1;
 	status_t ret = archive->FindInt16( MSG_MODE, &mDisplayMode);
+	if (ret==B_OK && version >= 2)
+		ret = archive->FindBool( MSG_REDIRECT_MODE, &mShowRedirectFields);
 	return ret;
 }
 
@@ -223,7 +232,26 @@ void BmMailHeaderView::Draw( BRect bounds) {
 			BString fieldVal;
 			int count = rx.exec( fields[l], "[\\w\\-]+", Regexx::global);
 			for( int i=0; i<count && !fieldVal.Length(); ++i) {
-				fieldVal = mMailHeader->GetFieldVal( rx.match[i]);
+				BString fieldName = rx.match[i];
+				if (mMailHeader->IsRedirect()) {
+					if (mShowRedirectFields && fieldName == BM_FIELD_FROM)
+						fieldVal = mMailHeader->GetFieldVal( BM_FIELD_RESENT_FROM);
+					else if (mShowRedirectFields && fieldName == BM_FIELD_TO)
+						fieldVal = mMailHeader->GetFieldVal( BM_FIELD_RESENT_TO);
+					else if (mShowRedirectFields && fieldName == BM_FIELD_SENDER)
+						fieldVal = mMailHeader->GetFieldVal( BM_FIELD_RESENT_SENDER);
+					else if (mShowRedirectFields && fieldName == BM_FIELD_CC)
+						fieldVal = mMailHeader->GetFieldVal( BM_FIELD_RESENT_CC);
+					else if (mShowRedirectFields && fieldName == BM_FIELD_BCC)
+						fieldVal = mMailHeader->GetFieldVal( BM_FIELD_RESENT_BCC);
+					else if (mShowRedirectFields && fieldName == BM_FIELD_DATE)
+						fieldVal = mMailHeader->GetFieldVal( BM_FIELD_RESENT_DATE);
+					else if (mShowRedirectFields && fieldName == BM_FIELD_MESSAGE_ID)
+						fieldVal = mMailHeader->GetFieldVal( BM_FIELD_RESENT_MESSAGE_ID);
+					else
+						fieldVal = mMailHeader->GetFieldVal( fieldName);
+				} else 
+					fieldVal = mMailHeader->GetFieldVal( fieldName);
 			}
 			DrawString( fieldVal.String(), BPoint( titleWidth+x_off, y_off+l*lh+fh) );
 		}
@@ -288,6 +316,13 @@ void BmMailHeaderView::MouseDown( BPoint point) {
 void BmMailHeaderView::MessageReceived( BMessage* msg) {
 	try {
 		switch( msg->what) {
+			case BMM_SWITCH_HEADER: {
+				mDisplayMode++;
+				if (mDisplayMode>2)
+					mDisplayMode=0;
+				ShowHeader( mMailHeader.Get());
+				break;
+			}
 			case BM_HEADERVIEW_SMALL: {
 				mDisplayMode = 0;
 				ShowHeader( mMailHeader.Get());
@@ -301,6 +336,11 @@ void BmMailHeaderView::MessageReceived( BMessage* msg) {
 			case BM_HEADERVIEW_FULL: {
 				mDisplayMode = 2;
 				ShowHeader( mMailHeader.Get());
+				break;
+			}
+			case BM_HEADERVIEW_SWITCH_RESENT: {
+				mShowRedirectFields = !mShowRedirectFields;
+				Invalidate();
 				break;
 			}
 			default:
@@ -331,6 +371,10 @@ void BmMailHeaderView::ShowMenu( BPoint point) {
 	item = new BMenuItem( "Full Header (raw)", new BMessage( BM_HEADERVIEW_FULL));
 	item->SetTarget( this);
 	item->SetMarked( mDisplayMode == FULL_HEADERS);
+	theMenu->AddItem( item);
+	item = new BMenuItem( "Show info from Resent-fields if present", new BMessage( BM_HEADERVIEW_SWITCH_RESENT));
+	item->SetTarget( this);
+	item->SetMarked( mShowRedirectFields);
 	theMenu->AddItem( item);
 
    ConvertToScreen(&point);

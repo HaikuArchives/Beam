@@ -61,6 +61,8 @@
 #define BMM_FILTER						'bMdh'
 #define BMM_TRASH							'bMdi'
 #define BMM_MARK_AS						'bMdj'
+#define BMM_SWITCH_RAW					'bMdk'
+#define BMM_SWITCH_HEADER				'bMdl'
 
 // mail edit window
 #define BMM_ATTACH						'bMea'

@@ -161,7 +161,6 @@ thread_id BmApplication::Run() {
 	thread_id tid = 0;
 	try {
 		TheSmtpAccountList->StartJobInThisThread();
-		TheMainWindow->BeginLife();
 		TheMainWindow->Show();
 		tid = inherited::Run();
 		ThePopAccountList->Store();
@@ -268,11 +267,36 @@ void BmApplication::MessageReceived( BMessage* msg) {
 			case BMM_NEW_MAIL: {
 				BmRef<BmMail> mail = new BmMail( true);
 				const char* to = NULL;
-				if ((to = msg->FindString( MSG_WHO_TO)))
-					mail->SetFieldVal( BM_FIELD_TO, to);
-				BmMailEditWin* editWin = BmMailEditWin::CreateInstance( mail.Get(), true);
+				if ((to = msg->FindString( MSG_WHO_TO))) {
+					BString toAddr( to);
+					if (toAddr.ICompare( "mailto:",7) == 0)
+						toAddr.Remove( 0,7);
+					mail->SetFieldVal( BM_FIELD_TO, toAddr);
+				}
+				BmMailEditWin* editWin = BmMailEditWin::CreateInstance( mail.Get());
 				if (editWin)
 					editWin->Show();
+				break;
+			}
+			case BMM_REDIRECT: {
+				BmMailRef* mailRef = NULL;
+				int index=0;
+				while( msg->FindPointer( MSG_MAILREF, index++, (void**)&mailRef) == B_OK) {
+					BmRef<BmMail> mail = BmMail::CreateInstance( mailRef);
+					if (mail) {
+						mail->StartJobInThisThread( BmMail::BM_READ_MAIL_JOB);
+						if (mail->InitCheck() != B_OK)
+							continue;
+						BmRef<BmMail> newMail;
+						newMail = mail->CreateRedirect();
+						if (newMail) {
+							BmMailEditWin* editWin = BmMailEditWin::CreateInstance( newMail.Get());
+							if (editWin)
+								editWin->Show();
+						}
+					}
+					mailRef->RemoveRef();	// msg is no more refering to mailRef
+				}
 				break;
 			}
 			case BMM_REPLY:
@@ -307,6 +331,8 @@ void BmApplication::MessageReceived( BMessage* msg) {
 			case BMM_FORWARD_INLINE_ATTACH: {
 				BmMailRef* mailRef = NULL;
 				BmRef<BmMail> newMail;
+				const char* selectedText = NULL;
+				msg->FindString( MSG_SELECTED_TEXT, &selectedText);
 				for(  int index=0; 
 						msg->FindPointer( MSG_MAILREF, index, (void**)&mailRef) == B_OK;
 						++index) {
@@ -322,12 +348,12 @@ void BmApplication::MessageReceived( BMessage* msg) {
 								newMail->AddAttachmentFromRef( mailRef->EntryRefPtr());
 						} else if (msg->what == BMM_FORWARD_INLINE) {
 							if (index == 0) 
-								newMail = mail->CreateInlineForward( false);
+								newMail = mail->CreateInlineForward( false, selectedText);
 							else
 								newMail->AddPartsFromMail( mail, false);
 						} else if (msg->what == BMM_FORWARD_INLINE_ATTACH) {
 							if (index == 0) 
-								newMail = mail->CreateInlineForward( true);
+								newMail = mail->CreateInlineForward( true, selectedText);
 							else
 								newMail->AddPartsFromMail( mail, true);
 						}

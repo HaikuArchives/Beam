@@ -42,6 +42,7 @@
 #define BM_HEADERVIEW_SMALL			'bmfa'
 #define BM_HEADERVIEW_LARGE			'bmfb'
 #define BM_HEADERVIEW_FULL				'bmfc'
+#define BM_HEADERVIEW_SWITCH_RESENT	'bmfd'
 
 /*------------------------------------------------------------------------------*\
 	BmMailHeaderView
@@ -54,8 +55,12 @@ class BmMailHeaderView : public BView {
 	static const int LARGE_HEADERS = 1;
 	static const int FULL_HEADERS = 2;
 
+	static const int16 nArchiveVersion = 2;
+
 	// archival-fieldnames:
-	static const char* const MSG_MODE = 		"bm:mode";
+	static const char* const MSG_VERSION = 		"bm:version";
+	static const char* const MSG_MODE = 			"bm:mode";
+	static const char* const MSG_REDIRECT_MODE =	"bm:rmode";
 
 public:
 	// c'tors and d'tor:
@@ -76,8 +81,9 @@ public:
 
 private:
 	BmRef<BmMailHeader> mMailHeader;
-	int16 mDisplayMode;							// 0=small, 2=large, anyother=medium
+	int16 mDisplayMode;						// 0=small, 2=large, anyother=medium
 	BFont* mFont;								// font to be used for header-fields
+	bool mShowRedirectFields;				// true=>show redirect-fields false=>show original fields
 
 	// Hide copy-constructor and assignment:
 	BmMailHeaderView( const BmMailHeaderView&);

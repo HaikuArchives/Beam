@@ -249,6 +249,17 @@ void BmMailFolder::RemoveMailRefList() {
 }
 
 /*------------------------------------------------------------------------------*\
+	CleanupForMailRefList( refList)
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailFolder::CleanupForMailRefList( BmMailRefList* refList) {
+	BmAutolock lock( mRefListLocker);
+	lock.IsLocked() 							|| BM_THROW_RUNTIME( Name() + ":CleanupForMailRefList(): Unable to get lock");
+	if (mMailRefList == refList)
+		RemoveMailRefList();
+}
+
+/*------------------------------------------------------------------------------*\
 	ReCreateMailRefList()
 		-	
 \*------------------------------------------------------------------------------*/

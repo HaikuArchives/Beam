@@ -20,6 +20,7 @@ BmWindow::BmWindow( const char* statefileName, BRect frame, const char* title,
 						  window_look look, window_feel feel, uint32 flags)
 	:	MWindow( frame, title, look, feel, flags)
 	,	mStatefileName( statefileName)
+	,	mLifeHasBegun( false)
 { 
 }
 
@@ -99,6 +100,18 @@ bool BmWindow::WriteStateInfo() {
 		return false;
 	}
 	return true;
+}
+
+/*------------------------------------------------------------------------------*\
+	Show()
+		-	we begin life of window, if not done yet:
+\*------------------------------------------------------------------------------*/
+void BmWindow::Show() {
+	if (!mLifeHasBegun) {
+		BeginLife();
+		mLifeHasBegun = true;
+	}
+	inherited::Show();
 }
 
 /*------------------------------------------------------------------------------*\

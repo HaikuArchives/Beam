@@ -73,8 +73,8 @@ BmAddress::BmAddress( BString fullText)
 	Regexx rx;
 	BString addrText, phraseText;
 
-	// first we check whether the addresstext contains a leading phrase:
-	if (rx.exec( fullText, "^\\s*(.+?)\\s*<\\s*(?:.+:)?([^:]+)\\s*>\\s*$")) {
+	// first we check whether the addresstext is separated into phrase and addrspec:
+	if (rx.exec( fullText, "^\\s*(.*?)\\s*<\\s*(?:.+:)?([^:]+)\\s*>\\s*$")) {
 		// it's a phrase followed by an address (which possibly contains a source-route).
 		fullText.CopyInto( phraseText, rx.match[0].atom[0].start(), rx.match[0].atom[0].Length());
 		fullText.CopyInto( addrText, rx.match[0].atom[1].start(), rx.match[0].atom[1].Length());
@@ -85,7 +85,7 @@ BmAddress::BmAddress( BString fullText)
 			mPhrase = phraseText;
 		}
 	} else {
-		// it's just a simple address (without textual phrase).
+		// it's just a simple address (no <>).
 		addrText = fullText;
 	}
 	if (!addrText.Length()) {
@@ -215,11 +215,10 @@ bool BmAddressList::Add( BString strippedFieldVal) {
 	size_t num = addrList.size();
 	for( size_t i=0; i<num; ++i) {
 		BmAddress addr( addrList[i]);
-		if (addr.InitOK()) {
+		if (addr.InitOK())
 			mAddrList.push_back( addr);
-		} else {
+		else
 			res = false;
-		}
 	}
 	if (!mInitOK) 
 		mInitOK = res;
@@ -424,6 +423,7 @@ BmMailHeader::BmMailHeader( const BString &headerText, BmMail* mail)
 	:	mHeaderString( headerText)
 	,	mMail( mail)
 	,	mKey( RefPrintHex())					// generate dummy identifier from our address
+	,	mIsRedirect( false)
 {
 	ParseHeader( headerText);
 }
@@ -524,9 +524,7 @@ void BmMailHeader::AddFieldVal( const BString fieldName, const BString value) {
 void BmMailHeader::RemoveField( const BString fieldName) {
 	mHeaders.Remove( fieldName);
 	mStrippedHeaders.Remove( fieldName);
-	BmAddrMap::iterator iter = mAddrMap.find( fieldName);
-	if (iter != mAddrMap.end())
-		mAddrMap.erase( iter);
+	mAddrMap.erase( fieldName);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -543,17 +541,29 @@ void BmMailHeader::RemoveAddrFieldVal( const BString fieldName, const BString va
 		-	
 \*------------------------------------------------------------------------------*/
 BString BmMailHeader::DetermineSender() {
-	BString sender = GetStrippedFieldVal( BM_FIELD_SENDER);
-	if (!sender.Length()) {
-		BmAddressList fromAddrList = mAddrMap[BM_FIELD_FROM];
-		if (fromAddrList.IsGroup()) {
-			sender = fromAddrList.GroupName();
-		} else {
-			BmAddress fromAddr = fromAddrList.FirstAddress();
-			sender = fromAddr.AddrSpec();
+	BmAddressList addrList;
+	if (ThePrefs->GetBool( "UseResentFieldsInReply", false)) {
+		addrList = mAddrMap[BM_FIELD_RESENT_SENDER];
+		if (!addrList.InitOK()) {
+			addrList = mAddrMap[BM_FIELD_RESENT_FROM];
+			if (!addrList.InitOK()) {
+				BM_SHOWERR("Unable to determine sender of mail!");
+				return "";
+			}
+		}
+	} else {
+		addrList = mAddrMap[BM_FIELD_SENDER];
+		if (!addrList.InitOK()) {
+			addrList = mAddrMap[BM_FIELD_FROM];
+			if (!addrList.InitOK()) {
+				BM_SHOWERR("Unable to determine sender of mail!");
+				return "";
+			}
 		}
 	}
-	return sender;
+	if (addrList.IsGroup())
+		return addrList.GroupName();
+	return addrList.FirstAddress().AddrSpec();
 }
 
 /*------------------------------------------------------------------------------*\
@@ -561,8 +571,16 @@ BString BmMailHeader::DetermineSender() {
 		-	
 \*------------------------------------------------------------------------------*/
 BString BmMailHeader::DetermineReceivingAddrFor( BmPopAccount* acc) {
-	BString addr = mAddrMap[BM_FIELD_RESENT_TO].FindAddressMatchingAccount( acc);
-	if (!addr.Length()) {
+	BString addr;
+	if (ThePrefs->GetBool( "UseResentFieldsInReply", false)) {
+		addr = mAddrMap[BM_FIELD_RESENT_TO].FindAddressMatchingAccount( acc);
+		if (!addr.Length()) {
+			addr = mAddrMap[BM_FIELD_RESENT_CC].FindAddressMatchingAccount( acc);
+			if (!addr.Length()) {
+				addr = mAddrMap[BM_FIELD_RESENT_BCC].FindAddressMatchingAccount( acc);
+			}
+		}
+	} else {
 		addr = mAddrMap[BM_FIELD_TO].FindAddressMatchingAccount( acc);
 		if (!addr.Length()) {
 			addr = mAddrMap[BM_FIELD_CC].FindAddressMatchingAccount( acc);
@@ -643,6 +661,9 @@ void BmMailHeader::ParseHeader( const BString &header) {
 
 		BM_LOG2( BM_LogMailParse, fieldName << ": " << fieldBody);
 	}
+
+	if (mAddrMap[BM_FIELD_RESENT_FROM].InitOK() || mAddrMap[BM_FIELD_RESENT_SENDER].InitOK())
+		IsRedirect( true);
 
 	if (mMail) {
 		// we construct the 'name' for this mail (will go into attribute MAIL:name)...
@@ -766,15 +787,21 @@ void BmMailHeader::StoreAttributes( BFile& mailFile) {
 	mailFile.WriteAttr( BM_MAIL_ATTR_NAME, B_STRING_TYPE, 0, s.String(), s.Length()+1);
 	s = mAddrMap[BM_FIELD_REPLY_TO];
 	mailFile.WriteAttr( BM_MAIL_ATTR_REPLY, B_STRING_TYPE, 0, s.String(), s.Length()+1);
-	s = mAddrMap[BM_FIELD_FROM];
+	s = mAddrMap[BM_FIELD_RESENT_FROM];
+	if (!s.Length())
+		s = mAddrMap[BM_FIELD_FROM];
 	mailFile.WriteAttr( BM_MAIL_ATTR_FROM, B_STRING_TYPE, 0, s.String(), s.Length()+1);
 	mailFile.WriteAttr( BM_MAIL_ATTR_SUBJECT, B_STRING_TYPE, 0, 
 							  mHeaders[BM_FIELD_SUBJECT].String(), mHeaders[BM_FIELD_SUBJECT].Length()+1);
 	mailFile.WriteAttr( BM_MAIL_ATTR_MIME, B_STRING_TYPE, 0, 
 							  mHeaders[BM_FIELD_MIME].String(), mHeaders[BM_FIELD_MIME].Length()+1);
-	s = mAddrMap[BM_FIELD_TO];
+	s = mAddrMap[BM_FIELD_RESENT_TO];
+	if (!s.Length())
+		s = mAddrMap[BM_FIELD_TO];
 	mailFile.WriteAttr( BM_MAIL_ATTR_TO, B_STRING_TYPE, 0, s.String(), s.Length()+1);
-	s = mAddrMap[BM_FIELD_CC];
+	s = mAddrMap[BM_FIELD_RESENT_CC];
+	if (!s.Length())
+		s = mAddrMap[BM_FIELD_CC];
 	mailFile.WriteAttr( BM_MAIL_ATTR_CC, B_STRING_TYPE, 0, s.String(), s.Length()+1);
 	// we determine the mail's priority, first we look at X-Priority...
 	BString priority = mHeaders[BM_FIELD_X_PRIORITY];
@@ -846,17 +873,47 @@ bool BmMailHeader::ConstructRawText( BString& header, int32 encoding) {
 			if (!domain.Length())
 				return false;						// no FQHN, we should not continue
 		}
-		SetFieldVal( BM_FIELD_MESSAGE_ID, 
+		SetFieldVal( mMail->IsRedirect() ? BM_FIELD_RESENT_MESSAGE_ID : BM_FIELD_MESSAGE_ID, 
 						 BString("<") << TimeToString( time( NULL), "%Y%m%d%H%M%S.")
 						 				  << find_thread(NULL) << "." << ++nCounter << "@" 
 						 				  << domain << ">");
 	}
 
 	BmHeaderMap::const_iterator iter;
+	if (mMail->IsRedirect()) {
+		// add Resent-fields first (as suggested by [Johnson, section 2.4.2]):
+		for( iter = mStrippedHeaders.begin(); iter != mStrippedHeaders.end(); ++iter) {
+			const BString fieldName = iter->first;
+			if (fieldName.ICompare("Resent-",7) != 0) {
+				// just interested in Resent-fields:
+				continue;
+			}
+			if (IsAddressField( fieldName)) {
+				header << fieldName << ": ";
+				mAddrMap[fieldName].ConstructRawText( header, encoding, fieldName.Length());
+				header << "\r\n";
+			} else {
+				const BmValueList& valueList = iter->second;
+				int count = valueList.size();
+				bool encodeIfNeeded = IsEncodingOkForField( fieldName);
+				for( int i=0; i<count; ++i) {
+					header << fieldName << ": " 
+							 << ConvertUTF8ToHeaderPart( valueList[i], encoding, encodeIfNeeded, 
+																  true, fieldName.Length())
+							 << "\r\n";
+				}
+			}
+		}
+	}
+	// add all other fields:
 	for( iter = mStrippedHeaders.begin(); iter != mStrippedHeaders.end(); ++iter) {
 		const BString fieldName = iter->first;
-		if (fieldName.Compare("Content-",8) == 0) {
+		if (fieldName.ICompare("Content-",8) == 0) {
 			// do not include MIME-header, since that will be added by body-part:
+			continue;
+		}
+		if (fieldName.ICompare("Resent-",7) == 0) {
+			// do not include Resent-headers again:
 			continue;
 		}
 		if (IsAddressField( fieldName)) {

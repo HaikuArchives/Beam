@@ -31,6 +31,7 @@
 #include <MenuItem.h>
 
 #include "BmGuiUtil.h"
+#include "BmPrefs.h"
 
 /*------------------------------------------------------------------------------*\
 	AddItemToMenu( menu, item, target)
@@ -40,4 +41,31 @@ void AddItemToMenu( BMenu* menu, BMenuItem* item, BHandler* target) {
 	if (target)
 		item->SetTarget( target);
 	menu->AddItem( item);
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+BMenuItem* CreateMenuItem( const char* label, int32 msgWhat, const char* idForShortcut) {
+	return CreateMenuItem( label, new BMessage(msgWhat), idForShortcut);
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+BMenuItem* CreateMenuItem( const char* label, BMessage* msg, const char* idForShortcut) {
+	BString shortcut = ThePrefs->GetShortcutFor( idForShortcut ? idForShortcut : label);
+	shortcut.RemoveSet( " \t");
+	int32 modifiers = 0;
+	int32 pos;
+	if ((pos=shortcut.IFindFirst("<SHIFT>")) != B_ERROR) {
+		modifiers |= B_SHIFT_KEY;
+		shortcut.Remove( pos, 7);
+	}
+	if (shortcut.Length())
+		return new BMenuItem( label, msg, shortcut[0], modifiers);
+	else
+		return new BMenuItem( label, msg);
 }

@@ -82,6 +82,8 @@ class BmMailRef;
 #define BM_FIELD_RESENT_CC					"Resent-Cc"
 #define BM_FIELD_RESENT_DATE				"Resent-Date"
 #define BM_FIELD_RESENT_FROM				"Resent-From"
+#define BM_FIELD_RESENT_MESSAGE_ID		"Resent-Message-Id"
+#define BM_FIELD_RESENT_REPLY_TO			"Resent-Reply-To"
 #define BM_FIELD_RESENT_SENDER 			"Resent-Sender"
 #define BM_FIELD_RESENT_TO					"Resent-To"
 #define BM_FIELD_SENDER 					"Sender"
@@ -137,7 +139,7 @@ public:
 	BmRef<BmMail> CreateInlineForward( bool withAttachments, 
 										  		  const BString selectedText="");
 	BmRef<BmMail> CreateReply( bool replyToAll, const BString selectedText="");
-	BmRef<BmMail> CreateResend();
+	BmRef<BmMail> CreateRedirect();
 	//
 	void AddAttachmentFromRef( const entry_ref* ref);
 	void AddPartsFromMail( BmRef<BmMail> mail, bool withAttachments,
@@ -152,14 +154,21 @@ public:
 	inline BmBodyPartList* Body() const			{ return mBody.Get(); }
 	inline BmRef<BmMailHeader> Header() const	{ return mHeader; }
 	inline int32 HeaderLength() const			{ return mHeaderLength; }
+	inline int32 ModifiedMaxLineLen() const	{ return mModifiedMaxLineLen; }
 	inline const BString& RawText() const		{ return mText; }
 	inline const bool Outbound() const			{ return mOutbound; }
+	inline const bool IsRedirect() const		{ return mHeader ? mHeader->IsRedirect() : false; }
 	inline BmMailRef* MailRef() const			{ return mMailRef.Get(); }
 	uint32 DefaultEncoding()	const;
 
+	// setters:
+	inline void ModifiedMaxLineLen( int32 i)	{ mModifiedMaxLineLen = MAX(i,mModifiedMaxLineLen); }
+	inline void IsRedirect( bool b)				{ if (mHeader) mHeader->IsRedirect( b); }
+
 	// static function that tries to reformat & quote a given multiline text
-	// in a way that avoids the usual (ugly) quoting-mishaps:
-	void QuoteText( const BString& in, BString& out, BString quote, int maxLen);
+	// in a way that avoids the usual (ugly) quoting-mishaps.
+	// the resulting int is the line-length needed to leave the formatting intact..
+	static int32 QuoteText( const BString& in, BString& out, BString quote, int maxLen);
 
 	static const int32 BM_READ_MAIL_JOB = 1;
 
@@ -194,6 +203,8 @@ private:
 	BEntry mEntry;								// filesystem-entry for this mail 
 
 	bool mOutbound;							// true if mail is for sending (as opposed to reveived)
+
+	int32 mModifiedMaxLineLen;				// special maxlinelen for this mail (used during reply, forward)
 
 	BmRef<BmMailRef> mBaseMailRef;		// the mailref that created us (via forward/reply)
 	BString mNewBaseStatus;					// new status of base mail (forwarded/replied)

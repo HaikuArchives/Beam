@@ -52,8 +52,10 @@ BmRef<BmMailRef> BmMailRef::CreateInstance( BmMailRefList* model, entry_ref &ere
 		BAutolock lock( &proxy->Locker);
 		BString key( BM_REFKEY( st));
 		BmRef<BmMailRef> mailRef( dynamic_cast<BmMailRef*>( proxy->FetchObject( key)));
-		if (mailRef)
+		if (mailRef) {
+			mailRef->mListModel = model;
 			return mailRef;
+		}
 	}
 	BmMailRef* mailRef = new BmMailRef( model, eref, st);
 	status_t ret;

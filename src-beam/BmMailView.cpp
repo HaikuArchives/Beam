@@ -46,7 +46,6 @@ using namespace regexx;
 #include "BmLogHandler.h"
 #include "BmMail.h"
 #include "BmMailHeader.h"
-#include "BmMailHeaderView.h"
 #include "BmMailRef.h"
 #include "BmMailRefView.h"
 #include "BmMailView.h"
@@ -193,6 +192,11 @@ void BmMailView::MessageReceived( BMessage* msg) {
 				if (!IsMsgFromCurrentModel( msg)) return;
 				BM_LOG2( BM_LogModelController, BString("Model <")<<FindMsgString( msg, BmDataModel::MSG_MODEL)<<"> has told it is done.");
 				JobIsDone( FindMsgBool( msg, BmJobModel::MSG_COMPLETED));
+				break;
+			}
+			case BMM_SWITCH_RAW: {
+				ShowRaw( !ShowRaw());
+				JobIsDone( true);				// trigger re-display:
 				break;
 			}
 			case BM_MAILVIEW_SHOWRAW: {
@@ -373,7 +377,7 @@ bool BmMailView::AcceptsDrop( const BMessage* msg) {
 \*------------------------------------------------------------------------------*/
 void BmMailView::GetWrappedText( BString& out) {
 	BString editedText = Text();
-	WordWrap( editedText, out, FixedWidth(), "\n");
+	WordWrap( editedText, out, ThePrefs->GetInt( "MaxLineLenForHardWrap", 1000), "\n");
 }
 
 /*------------------------------------------------------------------------------*\
@@ -441,6 +445,8 @@ void BmMailView::JobIsDone( bool completed) {
 		mTextRunMap[0] = BmTextRunInfo( Black);
 		BmBodyPartList* body = mCurrMail->Body();
 		mClickedTextRun = 0;
+		if (mCurrMail->ModifiedMaxLineLen() > 0)
+			mRulerView->SetIndicatorPos( mCurrMail->ModifiedMaxLineLen());
 		if (body) {
 			mBodyPartView->ShowBody( body);
 			if (mShowRaw) {

@@ -325,4 +325,3 @@ void WordWrap( const BString& in, BString& out, int32 maxLineLen, BString nl) {
 	if (lastPos < in.Length())
 		out.Append( in.String()+lastPos, in.Length()-lastPos);
 }
-

@@ -230,13 +230,13 @@ void BmPrefsMailConstrView::MessageReceived( BMessage* msg) {
 				else if ( source == mQuotingStringControl)
 					ThePrefs->SetString("QuotingString", mQuotingStringControl->Text());
 				else if ( source == mForwardIntroStrControl)
-					ThePrefs->SetString("ForwardIntoStr", mForwardIntroStrControl->Text());
+					ThePrefs->SetString("ForwardIntroStr", mForwardIntroStrControl->Text());
 				else if ( source == mForwardSubjectStrControl)
 					ThePrefs->SetString("ForwardSubjectStr", mForwardSubjectStrControl->Text());
 				else if ( source == mForwardSubjectRxControl)
 					ThePrefs->SetString("ForwardSubjectRX", mForwardSubjectRxControl->Text());
 				else if ( source == mReplyIntroStrControl)
-					ThePrefs->SetString("ReplyIntoStr", mReplyIntroStrControl->Text());
+					ThePrefs->SetString("ReplyIntroStr", mReplyIntroStrControl->Text());
 				else if ( source == mReplySubjectStrControl)
 					ThePrefs->SetString("ReplySubjectStr", mReplySubjectStrControl->Text());
 				else if ( source == mReplySubjectRxControl)

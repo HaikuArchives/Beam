@@ -87,6 +87,7 @@ BmMail::BmMail( bool outbound)
 	,	mBody( NULL)
 	,	mInitCheck( B_NO_INIT)
 	,	mOutbound( outbound)
+	,	mModifiedMaxLineLen( 0)
 {
 	BString emptyMsg( "Mime: 1.0\r\n");
 	emptyMsg << BM_FIELD_DATE << ": " << TimeToString( time( NULL), 
@@ -114,6 +115,7 @@ BmMail::BmMail( BString &msgText, const BString account)
 	,	mMailRef( NULL)
 	,	mInitCheck( B_NO_INIT)
 	,	mOutbound( false)
+	,	mModifiedMaxLineLen( 0)
 {
 	SetTo( msgText, account);
 }
@@ -130,6 +132,7 @@ BmMail::BmMail( BmMailRef* ref)
 	,	mMailRef( ref)
 	,	mInitCheck( B_NO_INIT)
 	,	mOutbound( false)
+	,	mModifiedMaxLineLen( 0)
 {
 }
 
@@ -298,7 +301,7 @@ BmRef<BmMail> BmMail::CreateInlineForward( bool withAttachments, const BString s
 	BString subject = GetFieldVal( BM_FIELD_SUBJECT);
 	newMail->SetFieldVal( BM_FIELD_SUBJECT, CreateForwardSubjectFor( subject));
 	newMail->AddPartsFromMail( this, withAttachments, selectedText);
-	newMail->SetBaseMailInfo( MailRef(), "Forwarded");
+	newMail->SetBaseMailInfo( MailRef(), BM_MAIL_STATUS_FORWARDED);
 	return newMail;
 }
 
@@ -313,7 +316,7 @@ BmRef<BmMail> BmMail::CreateAttachedForward() {
 	// massage subject, if neccessary:
 	BString subject = GetFieldVal( BM_FIELD_SUBJECT);
 	newMail->SetFieldVal( BM_FIELD_SUBJECT, CreateForwardSubjectFor( subject));
-	newMail->SetBaseMailInfo( MailRef(), "Forwarded");
+	newMail->SetBaseMailInfo( MailRef(), BM_MAIL_STATUS_FORWARDED);
 	return newMail;
 }
 
@@ -328,13 +331,20 @@ BmRef<BmMail> BmMail::CreateReply( bool replyToAll, const BString selectedText) 
 	newMail->SetFieldVal( BM_FIELD_IN_REPLY_TO, messageID);
 	newMail->SetFieldVal( BM_FIELD_REFERENCES, GetFieldVal( BM_FIELD_REFERENCES) + " " + messageID);
 	// fill address information:
-	BString newTo = GetFieldVal( BM_FIELD_RESENT_FROM);
-	if (!newTo.Length())
+	BString newTo;
+	if (ThePrefs->GetBool( "UseResentFieldsInReply", false)) {
+		newTo = GetFieldVal( BM_FIELD_RESENT_REPLY_TO);
+		if (!newTo.Length())
+			newTo = GetFieldVal( BM_FIELD_RESENT_FROM);
+		if (!newTo.Length())
+			newTo = GetFieldVal( BM_FIELD_RESENT_SENDER);
+	} else {
 		newTo = GetFieldVal( BM_FIELD_REPLY_TO);
-	if (!newTo.Length())
-		newTo = GetFieldVal( BM_FIELD_FROM);
-	if (!newTo.Length())
-		newTo = GetFieldVal( BM_FIELD_SENDER);
+		if (!newTo.Length())
+			newTo = GetFieldVal( BM_FIELD_FROM);
+		if (!newTo.Length())
+			newTo = GetFieldVal( BM_FIELD_SENDER);
+	}
 	newMail->SetFieldVal( BM_FIELD_TO, newTo);
 	// Since we are replying, we generate the new mail's from-address 
 	// from the received mail's to-info:
@@ -349,15 +359,19 @@ BmRef<BmMail> BmMail::CreateReply( bool replyToAll, const BString selectedText) 
 	}
 	// if we are replying to all, we may need to include more addresses:
 	if (replyToAll) {
-		BString newCc = GetFieldVal( BM_FIELD_RESENT_CC);
-		if (!newCc.Length())
+		BString newCc;
+		if (ThePrefs->GetBool( "UseResentFieldsInReply", false))
+			newCc = GetFieldVal( BM_FIELD_RESENT_CC);
+		else
 			newCc = GetFieldVal( BM_FIELD_CC);
 		newMail->SetFieldVal( BM_FIELD_CC, newCc);
 		newMail->Header()->RemoveAddrFieldVal( BM_FIELD_CC, receivingAddr);
-		BString additionalTo = GetFieldVal( BM_FIELD_RESENT_CC);
-		if (!additionalTo.Length())
+		BString additionalTo;
+		if (ThePrefs->GetBool( "UseResentFieldsInReply", false))
+			additionalTo = GetFieldVal( BM_FIELD_RESENT_TO);
+		else
 			additionalTo = GetFieldVal( BM_FIELD_TO);
-		newMail->SetFieldVal( BM_FIELD_TO, additionalTo);
+		newMail->Header()->AddFieldVal( BM_FIELD_TO, additionalTo);
 		newMail->Header()->RemoveAddrFieldVal( BM_FIELD_TO, receivingAddr);
 	}
 	// massage subject, if neccessary:
@@ -372,12 +386,14 @@ BmRef<BmMail> BmMail::CreateReply( bool replyToAll, const BString selectedText) 
 	else
 		text << textBody->DecodedData();
 	BString quotedText;
-	QuoteText( text, quotedText,
-				  ThePrefs->GetString( "QuotingString"),
-				  ThePrefs->GetInt( "MaxLineLen"));
+	int32 newMaxLineLen = QuoteText( text, quotedText,
+				 								ThePrefs->GetString( "QuotingString"),
+												ThePrefs->GetInt( "MaxLineLen"));
 	newMail->Body()->SetEditableText( CreateReplyIntro() << "\n" << quotedText, 
 												 CharsetToEncoding( charset));
-	newMail->SetBaseMailInfo( MailRef(), "Replied");
+	if (newMaxLineLen != ThePrefs->GetInt( "MaxLineLen"))
+		newMail->ModifiedMaxLineLen( newMaxLineLen);
+	newMail->SetBaseMailInfo( MailRef(), BM_MAIL_STATUS_REPLIED);
 	return newMail;
 }
 
@@ -385,8 +401,26 @@ BmRef<BmMail> BmMail::CreateReply( bool replyToAll, const BString selectedText) 
 	CreateResend()
 	-	
 \*------------------------------------------------------------------------------*/
-BmRef<BmMail> BmMail::CreateResend() {
+BmRef<BmMail> BmMail::CreateRedirect() {
 	BmRef<BmMail> newMail = new BmMail( true);
+	BString msgText( mText);
+	newMail->SetTo( msgText, "");
+	if (newMail->IsRedirect()) {
+		// oops, mail already has been redirected, we clobber the existing Resent-fields,
+		// since STD11 says multiple Resent-fields result in undefined behaviour:
+		newMail->RemoveField( BM_FIELD_RESENT_BCC);
+		newMail->RemoveField( BM_FIELD_RESENT_CC);
+		newMail->RemoveField( BM_FIELD_RESENT_DATE);
+		newMail->RemoveField( BM_FIELD_RESENT_FROM);
+		newMail->RemoveField( BM_FIELD_RESENT_MESSAGE_ID);
+		newMail->RemoveField( BM_FIELD_RESENT_REPLY_TO);
+		newMail->RemoveField( BM_FIELD_RESENT_SENDER);
+		newMail->RemoveField( BM_FIELD_RESENT_TO);
+	}
+	newMail->IsRedirect( true);
+	newMail->SetFieldVal( BM_FIELD_RESENT_DATE, 
+								 TimeToString( time( NULL), "%a, %d %b %Y %H:%M:%S %z"));
+	newMail->SetBaseMailInfo( MailRef(), BM_MAIL_STATUS_REDIRECTED);
 	return newMail;
 }
 
@@ -430,7 +464,7 @@ BString BmMail::CreateReplyIntro() {
 	BString intro = ThePrefs->GetString( "ReplyIntroStr", "On %D at %T, %F wrote:");
 	intro = rx.replace( intro, "%D", TimeToString( mMailRef->When(), "%Y-%m-%d"), 
 							  Regexx::nocase|Regexx::global|Regexx::noatom);
-	intro = rx.replace( intro, "%T", TimeToString( mMailRef->When(), "%X"), 
+	intro = rx.replace( intro, "%T", TimeToString( mMailRef->When(), "%X [%z]"), 
 							  Regexx::nocase|Regexx::global|Regexx::noatom);
 	intro = rx.replace( intro, "%F", mMailRef->From(), 
 							  Regexx::nocase|Regexx::global|Regexx::noatom);
@@ -446,7 +480,7 @@ BString BmMail::CreateForwardIntro() {
 	BString intro = ThePrefs->GetString( "ForwardIntroStr", "On %D at %T, %F wrote:");
 	intro = rx.replace( intro, "%D", TimeToString( mMailRef->When(), "%Y-%m-%d"), 
 							  Regexx::nocase|Regexx::global|Regexx::noatom);
-	intro = rx.replace( intro, "%T", TimeToString( mMailRef->When(), "%X"), 
+	intro = rx.replace( intro, "%T", TimeToString( mMailRef->When(), "%X [%z]"), 
 							  Regexx::nocase|Regexx::global|Regexx::noatom);
 	intro = rx.replace( intro, "%F", mMailRef->From(), 
 							  Regexx::nocase|Regexx::global|Regexx::noatom);
@@ -485,9 +519,10 @@ void BmMail::AddPartsFromMail( BmRef<BmMail> mail, bool withAttachments,
 	} else
 		newText = selectedText;
 	BString quotedText;
-	QuoteText( newText, quotedText,
-				  ThePrefs->GetString( "QuotingString"),
-				  ThePrefs->GetInt( "MaxLineLen"));
+	int32 newLineLen = QuoteText( newText, quotedText,
+											ThePrefs->GetString( "QuotingString"),
+											ThePrefs->GetInt( "MaxLineLen"));
+	ModifiedMaxLineLen( newLineLen);
 	BString intro( mail->CreateForwardIntro() << "\n");
 	mBody->SetEditableText( oldText + "\n" + intro + quotedText, CharsetToEncoding( charset));
 	if (withAttachments && mail->Body()->HasAttachments()) {
@@ -636,9 +671,15 @@ bool BmMail::Store() {
 		mailFile.Sync();
 		(err = mEntry.MoveTo( &homeDir)) == B_OK
 													|| BM_THROW_RUNTIME( BString("Could not move mail <")<<basicFilename<<"> to home-folder\n\n Result: " << strerror(err));
-		if (mMailRef) {
+		if (!mMailRef) {
+			// mail has been freshly created, we add a mail-ref for it:
+			entry_ref eref;
+			struct stat st;
+			mEntry.GetRef( &eref);
+			mEntry.GetStat( &st);
+			mMailRef = BmMailRef::CreateInstance( NULL, eref, st);
+		} else
 			mMailRef->ResyncFromDisk();
-		}
 		if (mBaseMailRef) {
 			mBaseMailRef->MarkAs( mNewBaseStatus.String());
 			mBaseMailRef = NULL;
@@ -780,22 +821,31 @@ void BmMail::ResyncFromDisk() {
 	QuoteText()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmMail::QuoteText( const BString& in, BString& out, BString quoteString, 
-								int maxLen) {
+int32 BmMail::QuoteText( const BString& in, BString& out, BString quoteString, 
+								 int maxLen) {
 	out = "";
 	if (!in.Length())
-		return;
+		return maxLen;
 	Regexx rx;
 	BString quote;
 	BString text;
 	BString tmp;
 	rx.str( in);
-	rx.expr( "^((?:\\w?\\w?\\w?>[ \\t]*)*)(.*?)$");
+	rx.expr( ThePrefs->GetString( "QuotedLineRX", "^((?:\\w?\\w?\\w?[>|][ \\t]*)*)(.*?)$"));
+	int modifiedMaxLen = maxLen;
 	int32 count = rx.exec( Regexx::study | Regexx::global | Regexx::newline);
 	for( int32 i=0; i<count; ++i) {
 		quote = rx.match[i].atom[0];
 		text = rx.match[i].atom[1];
-		int32 maxTextLen = MAX(0,maxLen-quoteString.Length()-quote.Length());
+		int32 maxTextLen;
+		if (ThePrefs->GetBool( "BePedanticAboutMaxLineLen", false)) {
+			// always respect maxlinelen, resulting in comb-effect when mails are hard-wrapped:
+			maxTextLen = MAX(1,maxLen-quoteString.Length()-quote.Length());
+		} else {
+			// adjust maxlinelen to allow for quote-string, in effect leaving the
+			// mail-formatting intact:
+			maxTextLen = MAX(1,maxLen-quote.Length());
+		}
 		while( text.Length() > maxTextLen) {
 			int32 spcPos = text.FindLast( " ", maxTextLen-1);
 			if (spcPos == B_ERROR)
@@ -803,10 +853,15 @@ void BmMail::QuoteText( const BString& in, BString& out, BString quoteString,
 			else
 				spcPos++;
 			text.MoveInto( tmp, 0, spcPos);
-			out << quoteString << quote << tmp << "\n";
+			tmp = quoteString + quote + tmp;
+			modifiedMaxLen = MAX( tmp.Length(), modifiedMaxLen);
+			out << tmp << "\n";
 		}
-		out << quoteString << quote << text << "\n";
+		tmp = quoteString + quote + text;
+		modifiedMaxLen = MAX( tmp.Length(), modifiedMaxLen);
+		out << tmp << "\n";
 	}
-	BString emptyLinesAtEnd = BString("(?:") << quoteString << quote << text << "\n)+\\z";
+	BString emptyLinesAtEnd = BString("(?:") << quoteString << quote << "\n)+\\z";
 	out = rx.replace( out, emptyLinesAtEnd, "", Regexx::newline|Regexx::global);
+	return modifiedMaxLen;
 }

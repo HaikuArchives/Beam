@@ -73,6 +73,7 @@ public:
 	void AddMailRef( entry_ref& eref, struct stat& st);
 	bool HasMailRef( BString key);
 	void RemoveMailRef( ino_t node);
+	void CleanupForMailRefList( BmMailRefList* refList);
 	void CreateSubFolder( BString name);
 	void Rename( BString newName);
 	void MoveToTrash();

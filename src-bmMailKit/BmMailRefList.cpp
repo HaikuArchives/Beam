@@ -241,6 +241,6 @@ void BmMailRefList::RemoveController( BmController* controller) {
 		Store();
 	inherited::RemoveController( controller);
 	if (!(ThePrefs->GetBool("CacheRefsInMem") || HasControllers())) {
-		mFolder->RemoveMailRefList();
+		mFolder->CleanupForMailRefList( this);
 	}
 }

@@ -73,6 +73,8 @@ public:
 	void SetMsg( const char* name, const BMessage* val);
 	void SetString( const char* name, const BString val);
 
+	BString GetShortcutFor( const char* shortcutID);
+
 	// getters:
 	BMessage* PrefsMsg()						{ return &mPrefsMsg; }
 	BMessage* DefaultsMsg()					{ return &mDefaultsMsg; }
@@ -81,8 +83,12 @@ public:
 
 private:
 
+	BMessage* GetShortcutDefaults( BMessage* msg=NULL);
+	void SetShortcutIfNew( BMessage* msg, const char* name, const BString val);
+
 	BMessage mPrefsMsg;
 	BMessage mDefaultsMsg;
+	BMessage mShortcutsMsg;
 
 	map<BString, BMessage*> mMsgCache;
 

@@ -42,6 +42,8 @@
 #define BM_CACHE_REFS_DISK_CHANGED	 		'bmCD'
 #define BM_CACHE_REFS_MEM_CHANGED 			'bmCM'
 #define BM_BEMAIL_STYLE_CHANGED 				'bmBM'
+#define BM_INOUT_AT_TOP_CHANGED 				'bmIO'
+#define BM_MAKE_BEAM_STD_APP	 				'bmBS'
 
 class BmTextControl;
 class BmCheckControl;
@@ -73,6 +75,7 @@ private:
 	BmTextControl* mMailMoverShowControl;
 	BmTextControl* mPopperRemoveControl;
 	BmTextControl* mSmtpRemoveControl;
+	BmTextControl* mRemoveFailedControl;
 	BmTextControl* mNetBufSizeSendControl;
 	BmTextControl* mNetRecvTimeoutControl;
 	BmCheckControl* mRestoreFolderStatesControl;
@@ -81,6 +84,7 @@ private:
 	BmCheckControl* mCacheRefsInMemControl;
 	BmCheckControl* mCacheRefsOnDiskControl;
 	BmCheckControl* mBeMailStyleControl;
+	BmCheckControl* mInOutAtTopControl;
 
 	BmRef<BmMailFolder> mFolder;
 	BmRef<BmMailRefList> mRefList;

@@ -75,7 +75,7 @@ class BmSmtpAccount : public BmListModelItem {
 	static const char* const MSG_PORT_NR = 		"bm:portnr";
 	static const char* const MSG_ACC_FOR_SAP = 	"bm:accForSmtpAfterPop";
 	static const char* const MSG_STORE_PWD = 		"bm:storepwd";
-	static const int16 nArchiveVersion = 1;
+	static const int16 nArchiveVersion = 2;
 
 public:
 	BmSmtpAccount( const char* name, BmSmtpAccountList* model);
@@ -99,6 +99,7 @@ public:
 	inline const BString &AuthMethod() const 	{ return mAuthMethod; }
 	inline int16 PortNr() const 					{ return mPortNr; }
 	inline const BString &PortNrString() const{ return mPortNrString; }
+	inline const BString &AccForSmtpAfterPop() const{ return mAccForSmtpAfterPop; }
 
 	// setters:
 	inline void Username( const BString &s) 	{ mUsername = s;   TellModelItemUpdated( UPD_ALL); }
@@ -108,6 +109,7 @@ public:
 	inline void DomainToAnnounce( const BString &s) 	{ mDomainToAnnounce = s;   TellModelItemUpdated( UPD_ALL); }
 	inline void AuthMethod( const BString &s) { mAuthMethod = s;   TellModelItemUpdated( UPD_ALL); }
 	inline void PortNr( int16 i) 					{ mPortNr = i; mPortNrString = BString()<<i;  TellModelItemUpdated( UPD_ALL); }
+	inline void AccForSmtpAfterPop( const BString &s)	{ mAccForSmtpAfterPop = s;   TellModelItemUpdated( UPD_ALL); }
 
 	bool GetSMTPAddress( BNetAddress* addr) const;
 
@@ -133,6 +135,7 @@ private:
 	int16 mPortNr;						// usually 25
 	BString mPortNrString;			// Port-Nr as String
 	bool mPwdStoredOnDisk;			// store Passwords unsafely on disk?
+	BString mAccForSmtpAfterPop;	// pop-account to use for authentication
 
 };
 

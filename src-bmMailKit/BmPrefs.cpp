@@ -93,6 +93,8 @@ BmPrefs::BmPrefs( void)
 	InitDefaults();
 	mPrefsMsg = mDefaultsMsg;
 	SetLoglevels();
+	if (mPrefsMsg.FindMessage( "Shortcuts", &mShortcutsMsg) != B_OK)
+		BM_SHOWERR("Prefs: Could not access shortcut info!")
 }
 
 
@@ -120,8 +122,15 @@ BmPrefs::BmPrefs( BMessage* archive)
 							+ BM_LOGLVL_VAL(archive->FindInt16("Loglevel_PrefsWin"),BM_LogPrefsWin);
 	mPrefsMsg.RemoveName("Loglevels");
 	mPrefsMsg.AddInt32("Loglevels", loglevels);
-	
 	SetLoglevels();
+	
+	if (mPrefsMsg.FindMessage( "Shortcuts", &mShortcutsMsg) != B_OK) {
+		// add any missing (new) shortcuts:
+		GetShortcutDefaults( &mShortcutsMsg);
+	} else {
+		// no shortcuts info yet, we add default settings:
+		mPrefsMsg.AddMessage( "Shortcuts", GetShortcutDefaults( &mShortcutsMsg));
+	} 
 }
 
 /*------------------------------------------------------------------------------*\
@@ -196,6 +205,80 @@ void BmPrefs::InitDefaults() {
 	mDefaultsMsg.AddString( "SignatureRX", "\\A---?\\s*\\n");
 	mDefaultsMsg.AddString( "MimeTypeTrustInfo", "<application/pdf:T><application:W><:T>");
 	mDefaultsMsg.AddBool( "BeMailStyle", false);
+	mDefaultsMsg.AddMessage( "Shortcuts", GetShortcutDefaults());
+}
+
+/*------------------------------------------------------------------------------*\
+	GetShortcutFor( shortcutID)
+		-	returns the shortcut for a given id (label):
+\*------------------------------------------------------------------------------*/
+BString BmPrefs::GetShortcutFor( const char* shortcutID) {
+	const char* sc = mShortcutsMsg.FindString( shortcutID);
+	return sc;
+}
+
+/*------------------------------------------------------------------------------*\
+	SetShortcutIfNew()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmPrefs::SetShortcutIfNew( BMessage* msg, const char* name, const BString val) {
+	type_code tc;
+	if (msg->GetInfo( name, &tc) != B_OK)
+		msg->AddString( name, val);
+}
+
+/*------------------------------------------------------------------------------*\
+	AddShortcutDefaults( msg)
+		-	constructs a BMessage containing all shortcuts and adds that message to
+			the given message:
+\*------------------------------------------------------------------------------*/
+BMessage* BmPrefs::GetShortcutDefaults( BMessage* shortcutsMsg) {
+	if (!shortcutsMsg)
+		shortcutsMsg = new BMessage;
+	SetShortcutIfNew( shortcutsMsg, "About Beam...", "");
+	SetShortcutIfNew( shortcutsMsg, "Apply Filter", "");
+	SetShortcutIfNew( shortcutsMsg, "Check Mail", "M");
+	SetShortcutIfNew( shortcutsMsg, "Check All Accounts", "<SHIFT>M");
+	SetShortcutIfNew( shortcutsMsg, "Close", "W");
+	SetShortcutIfNew( shortcutsMsg, "Copy", "C");
+	SetShortcutIfNew( shortcutsMsg, "Cut", "X");
+	SetShortcutIfNew( shortcutsMsg, "Delete Folder", "");
+	SetShortcutIfNew( shortcutsMsg, "Find...", "F");
+	SetShortcutIfNew( shortcutsMsg, "Find Messages...", "<SHIFT>F");
+	SetShortcutIfNew( shortcutsMsg, "Find Next", "G");
+	SetShortcutIfNew( shortcutsMsg, "Forward As Attachment", "<SHIFT>J");
+	SetShortcutIfNew( shortcutsMsg, "Forward Inline", "J");
+	SetShortcutIfNew( shortcutsMsg, "Forward Inline (With Attachments)", "");
+	SetShortcutIfNew( shortcutsMsg, "MarkAsDraft", "");
+	SetShortcutIfNew( shortcutsMsg, "MarkAsForwarded", "");
+	SetShortcutIfNew( shortcutsMsg, "MarkAsNew", "");
+	SetShortcutIfNew( shortcutsMsg, "MarkAsPending", "");
+	SetShortcutIfNew( shortcutsMsg, "MarkAsRead", "");
+	SetShortcutIfNew( shortcutsMsg, "MarkAsRedirected", "");
+	SetShortcutIfNew( shortcutsMsg, "MarkAsReplied", "");
+	SetShortcutIfNew( shortcutsMsg, "MarkAsSent", "");
+	SetShortcutIfNew( shortcutsMsg, "Move To Trash", "T");
+	SetShortcutIfNew( shortcutsMsg, "New Folder", "");
+	SetShortcutIfNew( shortcutsMsg, "New Message", "N");
+	SetShortcutIfNew( shortcutsMsg, "Page Setup", "");
+	SetShortcutIfNew( shortcutsMsg, "Paste", "V");
+	SetShortcutIfNew( shortcutsMsg, "Preferences...", "");
+	SetShortcutIfNew( shortcutsMsg, "Print Message...", "");
+	SetShortcutIfNew( shortcutsMsg, "Quit Beam", "Q");
+	SetShortcutIfNew( shortcutsMsg, "Recache Folder", "");
+	SetShortcutIfNew( shortcutsMsg, "Redirect", "B");
+	SetShortcutIfNew( shortcutsMsg, "Rename Folder", "");
+	SetShortcutIfNew( shortcutsMsg, "Reply", "R");
+	SetShortcutIfNew( shortcutsMsg, "Reply To All", "<SHIFT>R");
+	SetShortcutIfNew( shortcutsMsg, "SaveMail", "S");
+	SetShortcutIfNew( shortcutsMsg, "Select All", "A");
+	SetShortcutIfNew( shortcutsMsg, "Send Mail Now", "M");
+	SetShortcutIfNew( shortcutsMsg, "Send Mail Later", "<SHIFT>M");
+	SetShortcutIfNew( shortcutsMsg, "Send Pending Messages...", "");
+	SetShortcutIfNew( shortcutsMsg, "Show Raw Message", "<SHIFT>H");
+	SetShortcutIfNew( shortcutsMsg, "Toggle Header Mode", "H");
+	SetShortcutIfNew( shortcutsMsg, "Undo", "Z");
+	return shortcutsMsg;
 }
 
 /*------------------------------------------------------------------------------*\

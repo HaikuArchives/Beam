@@ -52,7 +52,8 @@ public:
 	// native methods:
 	void ShowMail( BmMailRef* mailRef);
 
-	// overrides of BWindow base:
+	// overrides of BmWindow base:
+	void BeginLife();
 	void MessageReceived( BMessage*);
 	bool QuitRequested();
 	void Quit();

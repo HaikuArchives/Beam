@@ -83,6 +83,7 @@ BmSmtp::BmSmtp( const BString& name, BmSmtpAccount* account)
 	,	mServerMayHaveSizeLimit( false)
 	,	mServerSupportsDSN( false)
 	,	mPwdAcquisitorFunc( NULL)
+	,	mPopAccAcquisitorFunc( NULL)
 {
 }
 
@@ -237,7 +238,27 @@ void BmSmtp::AuthViaPopServer() {
 	BmMail* mail = mSmtpAccount->mMailVect[0].Get();
 	if (mail) {
 		BString sender = mail->Header()->DetermineSender();
-		BmRef<BmPopAccount> sendingAcc = ThePopAccountList->FindAccountForAddress( sender);
+		BString accName = mSmtpAccount->AccForSmtpAfterPop();
+		BmRef<BmPopAccount> sendingAcc 
+			= dynamic_cast<BmPopAccount*>( ThePopAccountList->FindItemByKey( accName).Get());;
+		if (!sendingAcc) {
+			// no default pop-account set, we try to find out by looking at the
+			// sender address:
+			sendingAcc = ThePopAccountList->FindAccountForAddress( sender);
+		}
+		if (!sendingAcc) {
+			// still no pop-account found, we ask user, if possible:
+			if (mPopAccAcquisitorFunc) {
+				if (!mPopAccAcquisitorFunc( Name(), accName)) {
+					Disconnect();
+					StopJob();
+					return;
+				}
+				sendingAcc = dynamic_cast<BmPopAccount*>( ThePopAccountList->FindItemByKey( accName).Get());
+			}
+		}
+		if (!sendingAcc)
+			BM_THROW_RUNTIME( BString("Sorry, could not determine pop-account for address '")<<sender<<"'\n\n Smtp-after-Pop authentication failed, giving up.");
 		BMessage msg(BM_JOBWIN_POP);
 		msg.AddString( BmJobModel::MSG_JOB_NAME, sendingAcc->Name().String());
 		msg.AddInt32( BmJobModel::MSG_JOB_SPEC, BmPopper::BM_AUTH_ONLY_JOB);
@@ -362,13 +383,17 @@ void BmSmtp::Mail( BmMail* mail) {
 \*------------------------------------------------------------------------------*/
 void BmSmtp::Rcpt( BmMail* mail) {
 	BmAddrList::const_iterator iter;
-	const BmAddressList toList = mail->Header()->GetAddressList( BM_FIELD_TO);
+	const BmAddressList toList = mail->IsRedirect() 
+											? mail->Header()->GetAddressList( BM_FIELD_RESENT_TO)
+											: mail->Header()->GetAddressList( BM_FIELD_TO);
 	for( iter=toList.begin(); iter != toList.end(); ++iter) {
 		BString cmd = BString("RCPT to:<") << iter->AddrSpec() <<">";
 		SendCommand( cmd);
 		CheckForPositiveAnswer();
 	}
-	const BmAddressList ccList = mail->Header()->GetAddressList( BM_FIELD_CC);
+	const BmAddressList ccList = mail->IsRedirect() 
+											? mail->Header()->GetAddressList( BM_FIELD_RESENT_CC)
+											: mail->Header()->GetAddressList( BM_FIELD_CC);
 	for( iter=ccList.begin(); iter != ccList.end(); ++iter) {
 		BString cmd = BString("RCPT to:<") << iter->AddrSpec() <<">";
 		SendCommand( cmd);
@@ -382,7 +407,9 @@ void BmSmtp::Rcpt( BmMail* mail) {
 \*------------------------------------------------------------------------------*/
 void BmSmtp::BccRcpt( BmMail* mail, bool sendDataForEachBcc) {
 	BmAddrList::const_iterator iter;
-	const BmAddressList bccList = mail->Header()->GetAddressList( BM_FIELD_BCC);
+	const BmAddressList bccList = mail->IsRedirect() 
+											? mail->Header()->GetAddressList( BM_FIELD_RESENT_BCC)
+											: mail->Header()->GetAddressList( BM_FIELD_BCC);
 	for( iter=bccList.begin(); iter != bccList.end(); ++iter) {
 		if (sendDataForEachBcc)
 			Mail( mail);
@@ -404,14 +431,27 @@ void BmSmtp::Data( BmMail* mail, BString forBcc) {
 	CheckForPositiveAnswer();
 	Regexx rx;
 	cmd = mail->RawText();
-	if (mail->Header()->GetStrippedFieldVal(BM_FIELD_BCC).Length()) {
-		// remove BCC-header from mailtext...
-		cmd = rx.replace( cmd, "^Bcc:\\s+.+?\\r\\n(\\s+.*?\\r\\n)*", "", Regexx::newline);
-		if (forBcc.Length()) {
-			// include BCC for current recipient within header so he/she/it can see
-			// how this mail got sent to him/her/it:
-			cmd = rx.replace( cmd, "^Mime:\\s+1.0", 
-									BString("Mime: 1.0\r\nBcc: ")<<forBcc, Regexx::newline);
+	if (mail->IsRedirect()) {
+		if (mail->Header()->GetStrippedFieldVal(BM_FIELD_RESENT_BCC).Length()) {
+			// remove BCC-header from mailtext...
+			cmd = rx.replace( cmd, "^Resent-Bcc:\\s+.+?\\r\\n(\\s+.*?\\r\\n)*", "", Regexx::newline);
+			if (forBcc.Length()) {
+				// include BCC for current recipient within header so he/she/it can see
+				// how this mail got sent to him/her/it:
+				cmd = rx.replace( cmd, "^Mime:\\s+1.0", 
+										BString("Mime: 1.0\r\nResent-Bcc: ")<<forBcc, Regexx::newline);
+			}
+		}
+	} else {
+		if (mail->Header()->GetStrippedFieldVal(BM_FIELD_BCC).Length()) {
+			// remove BCC-header from mailtext...
+			cmd = rx.replace( cmd, "^Bcc:\\s+.+?\\r\\n(\\s+.*?\\r\\n)*", "", Regexx::newline);
+			if (forBcc.Length()) {
+				// include BCC for current recipient within header so he/she/it can see
+				// how this mail got sent to him/her/it:
+				cmd = rx.replace( cmd, "^Mime:\\s+1.0", 
+										BString("Mime: 1.0\r\nBcc: ")<<forBcc, Regexx::newline);
+			}
 		}
 	}
 	// finally we dotstuff the mailtext...

@@ -31,9 +31,14 @@
 #ifndef _BmGuiUtil_h
 #define _BmGuiUtil_h
 
+class BMessage;
 /*------------------------------------------------------------------------------*\*\
-	utility function that make menu-creation easier:
+	utility functions that make menu-creation easier:
 \*------------------------------------------------------------------------------*/
 void AddItemToMenu( BMenu* menu, BMenuItem* item, BHandler* target=NULL);
+BMenuItem* CreateMenuItem( const char* label, int32 msgWhat, 
+									const char* idForShortcut=NULL);
+BMenuItem* CreateMenuItem( const char* label, BMessage* msg, 
+									const char* idForShortcut=NULL);
 
 #endif

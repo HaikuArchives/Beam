@@ -27,13 +27,18 @@
 /*                                                                       */
 /*************************************************************************/
 
+#include <Alert.h>
+#include <Roster.h>
+
 #include <layout-all.h>
 
 #include "Colors.h"
 
+#include "BmApp.h"
 #include "BmCheckControl.h"
 #include "BmLogHandler.h"
 #include "BmMailFolder.h"
+#include "BmMailFolderView.h"
 #include "BmMailRef.h"
 #include "BmMailRefList.h"
 #include "BmPrefs.h"
@@ -80,6 +85,7 @@ BmPrefsGeneralView::BmPrefsGeneralView()
 							mMailMoverShowControl = new BmTextControl( "Time before mail-moving-job will be shown (ms):", false, 5),
 							mPopperRemoveControl = new BmTextControl( "Time before mail-receiving-job will be removed (ms):", false, 5),
 							mSmtpRemoveControl = new BmTextControl( "Time before mail-sending-job will be removed (ms):", false, 5),
+							mRemoveFailedControl = new BmTextControl( "Time before a failed job will be removed (ms):", false, 5),
 							new Space( minimax(0,4,0,4)),
 							0
 						),
@@ -93,6 +99,9 @@ BmPrefsGeneralView::BmPrefsGeneralView()
 						mRestoreFolderStatesControl = new BmCheckControl( "Restore mailfolder-view state on startup", 
 																					 	  new BMessage(BM_RESTORE_FOLDER_STATES_CHANGED), 
 																					 	  this, ThePrefs->GetBool("RestoreFolderStates")),
+						mInOutAtTopControl = new BmCheckControl( "Show in & out - folders at top of mailfolder-view", 
+																					 	  new BMessage(BM_INOUT_AT_TOP_CHANGED), 
+																					 	  this, ThePrefs->GetBool("InOutAlwaysAtTop", false)),
 						mBeMailStyleControl = new BmCheckControl( "Use BeMail-compatible shortcuts", 
 																					 	  new BMessage(BM_BEMAIL_STYLE_CHANGED), 
 																					 	  this, ThePrefs->GetBool("BeMailStyle", false)),
@@ -122,6 +131,11 @@ BmPrefsGeneralView::BmPrefsGeneralView()
 				new Space(),
 				0
 			),
+			new HGroup( 
+				new MButton( "Make Beam preferred-app for email...", new BMessage( BM_MAKE_BEAM_STD_APP), this, minimax(-1,-1,-1,-1)),
+				new Space(),
+				0
+			),
 			new Space(),
 			0
 		);
@@ -132,9 +146,11 @@ BmPrefsGeneralView::BmPrefsGeneralView()
 	float divider = mMailMoverShowControl->Divider();
 	divider = MAX( divider, mPopperRemoveControl->Divider());
 	divider = MAX( divider, mSmtpRemoveControl->Divider());
+	divider = MAX( divider, mRemoveFailedControl->Divider());
 	mMailMoverShowControl->SetDivider( divider);
 	mPopperRemoveControl->SetDivider( divider);
 	mSmtpRemoveControl->SetDivider( divider);
+	mRemoveFailedControl->SetDivider( divider);
 
 	divider = mNetBufSizeSendControl->Divider();
 	divider = MAX( divider, mNetRecvTimeoutControl->Divider());
@@ -148,6 +164,8 @@ BmPrefsGeneralView::BmPrefsGeneralView()
 	mPopperRemoveControl->SetText( val.String());
 	val = BString("") << ThePrefs->GetInt("MSecsBeforeSmtpRemove")/1000;
 	mSmtpRemoveControl->SetText( val.String());
+	val = BString("") << ThePrefs->GetInt("MSecsBeforeRemoveFailed", 5000*1000)/1000;
+	mRemoveFailedControl->SetText( val.String());
 	val = BString("") << ThePrefs->GetInt("NetSendBufferSize");
 	mNetBufSizeSendControl->SetText( val.String());
 	val = BString("") << ThePrefs->GetInt("ReceiveTimeout");
@@ -179,6 +197,7 @@ void BmPrefsGeneralView::Initialize() {
 	mMailMoverShowControl->SetTarget( this);
 	mPopperRemoveControl->SetTarget( this);
 	mSmtpRemoveControl->SetTarget( this);
+	mRemoveFailedControl->SetTarget( this);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -186,11 +205,7 @@ void BmPrefsGeneralView::Initialize() {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmPrefsGeneralView::WriteStateInfo() {
-	BMessage* prefsMsg = ThePrefs->PrefsMsg();
-	BMessage layoutMsg;
-	if (mLayoutView->Archive( &layoutMsg, false) == B_OK)
-		prefsMsg->ReplaceMessage("MailRefLayout", &layoutMsg);
-	mLayoutView->WriteStateInfo();
+//	mLayoutView->WriteStateInfo();
 }
 
 /*------------------------------------------------------------------------------*\
@@ -198,6 +213,10 @@ void BmPrefsGeneralView::WriteStateInfo() {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmPrefsGeneralView::SaveData() {
+	BMessage* prefsMsg = ThePrefs->PrefsMsg();
+	BMessage layoutMsg;
+	if (mLayoutView->Archive( &layoutMsg, false) == B_OK)
+		prefsMsg->ReplaceMessage("MailRefLayout", &layoutMsg);
 	ThePrefs->Store();
 }
 
@@ -208,6 +227,10 @@ void BmPrefsGeneralView::SaveData() {
 void BmPrefsGeneralView::UndoChanges() {
 	ThePrefs = NULL;
 	BmPrefs::CreateInstance();
+	mLayoutView->Unarchive( ThePrefs->GetMsg( "MailRefLayout"));
+	TheMailFolderView->LockLooper();
+	TheMailFolderView->SortItems();
+	TheMailFolderView->UnlockLooper();
 }
 
 /*------------------------------------------------------------------------------*\
@@ -227,6 +250,8 @@ void BmPrefsGeneralView::MessageReceived( BMessage* msg) {
 					ThePrefs->SetInt("MSecsBeforePopperRemove", 1000*atoi(mPopperRemoveControl->Text()));
 				else if ( source == mSmtpRemoveControl)
 					ThePrefs->SetInt("MSecsBeforeSmtpRemove", 1000*atoi(mSmtpRemoveControl->Text()));
+				else if ( source == mRemoveFailedControl)
+					ThePrefs->SetInt("MSecsBeforeRemoveFailed", 1000*atoi(mRemoveFailedControl->Text()));
 				else if ( source == mNetBufSizeSendControl)
 					ThePrefs->SetInt("NetSendBufferSize", atoi(mNetBufSizeSendControl->Text()));
 				else if ( source == mNetRecvTimeoutControl)
@@ -256,6 +281,43 @@ void BmPrefsGeneralView::MessageReceived( BMessage* msg) {
 			case BM_BEMAIL_STYLE_CHANGED: {
 				ThePrefs->SetBool("BeMailStyle", mBeMailStyleControl->Value());
 				break;
+			}
+			case BM_INOUT_AT_TOP_CHANGED: {
+				ThePrefs->SetBool("InOutAlwaysAtTop", mInOutAtTopControl->Value());
+				TheMailFolderView->LockLooper();
+				TheMailFolderView->SortItems();
+				TheMailFolderView->UnlockLooper();
+				break;
+			}
+			case BM_MAKE_BEAM_STD_APP: {
+				int32 buttonPressed;
+				if (msg->FindInt32( "which", &buttonPressed) != B_OK) {
+					// first step, ask user about it:
+					BAlert* alert = new BAlert( "Set Beam As Preferred App", 
+														 "This will make Beam the preferred Application for the following mimetypes:\n\n\tEmail (text/x-email)\n\tInternet-messages (message/rfc822).",
+													 	 "Ok, do it", "Cancel", NULL, B_WIDTH_AS_USUAL,
+													 	 B_WARNING_ALERT);
+					alert->SetShortcut( 1, B_ESCAPE);
+					alert->Go( new BInvoker( new BMessage(BM_MAKE_BEAM_STD_APP), BMessenger( this)));
+				} else {
+					// second step, do it if user said ok:
+					if (buttonPressed == 0) {
+						app_info appInfo;
+						if (be_app->GetAppInfo( &appInfo) != B_OK)
+							break;
+						BMimeType mt("text/x-email");
+						if (mt.InitCheck() == B_OK)
+							mt.SetPreferredApp( appInfo.signature);
+						mt.SetTo("message/rfc822");
+						if (mt.InitCheck() == B_OK)
+							mt.SetPreferredApp( appInfo.signature);
+						BAlert* alert = new BAlert( "Set Beam As Preferred App", 
+															 "Done, Beam is now the preferred Application for email.",
+														 	 "Good", NULL, NULL, B_WIDTH_AS_USUAL,
+														 	 B_INFO_ALERT);
+						alert->Go();
+					}
+				}
 			}
 			default:
 				inherited::MessageReceived( msg);

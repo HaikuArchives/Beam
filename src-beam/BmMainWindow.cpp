@@ -43,6 +43,7 @@
 
 #include "BmApp.h"
 #include "BmBasics.h"
+#include "BmGuiUtil.h"
 #include "BmLogHandler.h"
 #include "BmMailFolderList.h"
 #include "BmMailFolderView.h"
@@ -264,48 +265,51 @@ MMenuBar* BmMainWindow::CreateMenu() {
 	BMenu* menu = NULL;
 	// File
 	menu = new BMenu( "File");
-	menu->AddItem( new BMenuItem( "New Folder", new BMessage( BMM_NEW_MAILFOLDER)));
-	menu->AddItem( new BMenuItem( "Rename Folder", new BMessage( BMM_RENAME_MAILFOLDER)));
-	menu->AddItem( new BMenuItem( "Delete Folder", new BMessage( BMM_DELETE_MAILFOLDER)));
-	menu->AddItem( new BMenuItem( "Recache Folder", new BMessage( BMM_RECACHE_MAILFOLDER)));
+	menu->AddItem( CreateMenuItem( "New Folder", BMM_NEW_MAILFOLDER));
+	menu->AddItem( CreateMenuItem( "Rename Folder", BMM_RENAME_MAILFOLDER));
+	menu->AddItem( CreateMenuItem( "Delete Folder", BMM_DELETE_MAILFOLDER));
+	menu->AddItem( CreateMenuItem( "Recache Folder", BMM_RECACHE_MAILFOLDER));
 	menu->AddSeparatorItem();
-	menu->AddItem( new BMenuItem( "Page Setup...", new BMessage( BMM_PAGE_SETUP)));
-	menu->AddItem( new BMenuItem( "Print Message(s)...", new BMessage( BMM_PRINT)));
+	menu->AddItem( CreateMenuItem( "Page Setup...", BMM_PAGE_SETUP));
+	menu->AddItem( CreateMenuItem( "Print Message(s)...", BMM_PRINT, "Print Message..."));
 	menu->AddSeparatorItem();
-	menu->AddItem( new BMenuItem( "Preferences...", new BMessage( BMM_PREFERENCES)));
+	menu->AddItem( CreateMenuItem( "Preferences...", BMM_PREFERENCES));
 	menu->AddSeparatorItem();
-	menu->AddItem( new BMenuItem( "About Beam...", new BMessage( B_ABOUT_REQUESTED)));
+	menu->AddItem( CreateMenuItem( "About Beam...", B_ABOUT_REQUESTED));
 	menu->AddSeparatorItem();
-	menu->AddItem( new BMenuItem( "Quit Beam", new BMessage( B_QUIT_REQUESTED), 'Q'));
+	menu->AddItem( CreateMenuItem( "Quit Beam", B_QUIT_REQUESTED));
 	mMainMenuBar->AddItem( menu);
 
 	// Edit
 	menu = new BMenu( "Edit");
-	menu->AddItem( new BMenuItem( "Cut", new BMessage( B_CUT), 'X'));
-	menu->AddItem( new BMenuItem( "Copy", new BMessage( B_COPY), 'C'));
-	menu->AddItem( new BMenuItem( "Select All", new BMessage( B_SELECT_ALL), 'A'));
+	menu->AddItem( CreateMenuItem( "Cut", B_CUT));
+	menu->AddItem( CreateMenuItem( "Copy", B_COPY));
+	menu->AddItem( CreateMenuItem( "Select All", B_SELECT_ALL));
 	menu->AddSeparatorItem();
-	menu->AddItem( new BMenuItem( "Find...", new BMessage( BMM_FIND), 'F'));
-	menu->AddItem( new BMenuItem( "Find Messages...", new BMessage( BMM_FIND_MESSAGES), 'F', B_SHIFT_KEY));
-	menu->AddItem( new BMenuItem( "Find Next", new BMessage( BMM_FIND_NEXT), 'G'));
+	menu->AddItem( CreateMenuItem( "Find...", BMM_FIND));
+	menu->AddItem( CreateMenuItem( "Find Messages...", BMM_FIND_MESSAGES));
+	menu->AddItem( CreateMenuItem( "Find Next", BMM_FIND_NEXT));
 	mMainMenuBar->AddItem( menu);
 
 	// Network
 	BMenu* accMenu = new BMenu( "Check Mail For");
 	mMainMenuBar->SetAccountMenu( accMenu);
 	menu = new BMenu( "Network");
-	menu->AddItem( new BMenuItem( "Check Mail", new BMessage( BMM_CHECK_MAIL), 'M'));
+	menu->AddItem( CreateMenuItem( "Check Mail", BMM_CHECK_MAIL));
 	menu->AddItem( accMenu);
-	menu->AddItem( new BMenuItem( "Check All Accounts", new BMessage( BMM_CHECK_ALL), 'M', B_SHIFT_KEY));
+	menu->AddItem( CreateMenuItem( "Check All Accounts", BMM_CHECK_ALL));
 	menu->AddSeparatorItem();
-	menu->AddItem( new BMenuItem( "Send Pending Messages", new BMessage( BMM_SEND_PENDING)));
+	menu->AddItem( CreateMenuItem( "Send Pending Messages...", BMM_SEND_PENDING));
 	mMainMenuBar->AddItem( menu);
 
 	// Message
 	menu = new BMenu( "Message");
-	menu->AddItem( new BMenuItem( "New Message", new BMessage( BMM_NEW_MAIL), 'N'));
+	menu->AddItem( CreateMenuItem( "New Message", BMM_NEW_MAIL));
 	menu->AddSeparatorItem();
 	mMailRefView->AddMailRefMenu( menu);
+	menu->AddSeparatorItem();
+	menu->AddItem( CreateMenuItem( "Toggle Header Mode", BMM_SWITCH_HEADER));
+	menu->AddItem( CreateMenuItem( "Show Raw Message", BMM_SWITCH_RAW));
 	mMainMenuBar->AddItem( menu);
 
 	// Help
@@ -354,6 +358,9 @@ void BmMainWindow::BeginLife() {
 		mMainMenuBar->FindItem( BMM_RENAME_MAILFOLDER)->SetTarget( mMailFolderView);
 		mMainMenuBar->FindItem( BMM_DELETE_MAILFOLDER)->SetTarget( mMailFolderView);
 		mMainMenuBar->FindItem( BMM_RECACHE_MAILFOLDER)->SetTarget( mMailFolderView);
+		mMainMenuBar->FindItem( BMM_SWITCH_RAW)->SetTarget( mMailView);
+		mMainMenuBar->FindItem( BMM_SWITCH_RAW)->SetMarked( mMailView->ShowRaw());
+		mMainMenuBar->FindItem( BMM_SWITCH_HEADER)->SetTarget( mMailView->HeaderView());
 		// temporary deactivation:
 		mMainMenuBar->FindItem( BMM_PAGE_SETUP)->SetEnabled( false);
 		mMainMenuBar->FindItem( BMM_PRINT)->SetEnabled( false);
@@ -432,6 +439,7 @@ void BmMainWindow::MessageReceived( BMessage* msg) {
 			}
 			case BMM_MARK_AS:
 			case BMM_TRASH:
+			case BMM_REDIRECT:
 			case BMM_REPLY:
 			case BMM_REPLY_ALL:
 			case BMM_FORWARD_ATTACHED:
@@ -550,7 +558,7 @@ void BmMainWindow::MailRefSelectionChanged( int32 numSelected) {
 	mReplyButton->SetEnabled( numSelected > 0);
 	mReplyAllButton->SetEnabled( numSelected > 0);
 	mForwardButton->SetEnabled( numSelected > 0);
-	mRedirectButton->SetEnabled( 0 * numSelected > 0);
+	mRedirectButton->SetEnabled( numSelected > 0);
 	mPrintButton->SetEnabled( 0 * numSelected > 0);
 	mTrashButton->SetEnabled( numSelected > 0);
 	// adjust menu:
@@ -559,7 +567,7 @@ void BmMainWindow::MailRefSelectionChanged( int32 numSelected) {
 	mMainMenuBar->FindItem( BMM_FORWARD_ATTACHED)->SetEnabled( numSelected > 0);
 	mMainMenuBar->FindItem( BMM_FORWARD_INLINE)->SetEnabled( numSelected > 0);
 	mMainMenuBar->FindItem( BMM_FORWARD_INLINE_ATTACH)->SetEnabled( numSelected > 0);
-	mMainMenuBar->FindItem( BMM_REDIRECT)->SetEnabled( 0 * numSelected > 0);
+	mMainMenuBar->FindItem( BMM_REDIRECT)->SetEnabled( numSelected > 0);
 	mMainMenuBar->FindItem( "Mark Message As")->SetEnabled( numSelected > 0);
 	mMainMenuBar->FindItem( BMM_FILTER)->SetEnabled( 0 * numSelected > 0);
 	mMainMenuBar->FindItem( BMM_TRASH)->SetEnabled( numSelected > 0);
@@ -573,4 +581,9 @@ void BmMainWindow::MailViewChanged( bool hasMail) {
 	// adjust menu:
 	mMainMenuBar->FindItem( BMM_FIND)->SetEnabled( false && hasMail);
 	mMainMenuBar->FindItem( BMM_FIND_NEXT)->SetEnabled( false && hasMail);
+	BMenuItem* item = mMainMenuBar->FindItem( BMM_SWITCH_RAW);
+	item->SetEnabled( hasMail);
+	item->SetMarked( mMailView->ShowRaw());
+	item = mMainMenuBar->FindItem( BMM_SWITCH_HEADER);
+	item->SetEnabled( hasMail);
 }

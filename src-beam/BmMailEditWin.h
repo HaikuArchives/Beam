@@ -59,8 +59,8 @@ class BmMailEditWin : public BmWindow
 public:
 	// creator-funcs, c'tors and d'tor:
 	static BmMailEditWin* CreateInstance( BmMailRef* mailRef=NULL);
-	static BmMailEditWin* CreateInstance( BmMail* mail=NULL, bool isNew=false);
-	BmMailEditWin( BmMailRef* mailRef=NULL, BmMail* mail=NULL, bool isNew=false);
+	static BmMailEditWin* CreateInstance( BmMail* mail=NULL);
+	BmMailEditWin( BmMailRef* mailRef=NULL, BmMail* mail=NULL);
 	~BmMailEditWin();
 
 	// native methods:
@@ -121,6 +121,7 @@ private:
 	VGroup* mOuterGroup;
 	Space* mSeparator;
 	bool mModified;
+	bool mHasNeverBeenSaved;
 
 	static float nNextXPos;
 	static float nNextYPos;

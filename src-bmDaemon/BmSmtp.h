@@ -73,6 +73,11 @@ public:
 	inline void SetPwdAcquisitorFunc( BmPwdAcquisitorFunc* func)
 													{ mPwdAcquisitorFunc = func; }
 
+	typedef bool BmPopAccAcquisitorFunc( const BString, BString&);
+	inline void SetPopAccAcquisitorFunc( BmPopAccAcquisitorFunc* func)
+													{ mPopAccAcquisitorFunc = func; }
+
+
 	inline BString Name() const			{ return ModelName(); }
 
 	bool StartJob();
@@ -105,6 +110,9 @@ private:
 
 	// function that asks user for a password:
 	BmPwdAcquisitorFunc* mPwdAcquisitorFunc;
+
+	// function that asks user for a pop-account (needed for SmtpAfterPop)
+	BmPopAccAcquisitorFunc* mPopAccAcquisitorFunc;
 
 	// stuff needed for internal SMTP-state-loop:
 	typedef void (BmSmtp::*TStateMethod)();

@@ -39,12 +39,12 @@
 
 #include "BmController.h"
 #include "BmMail.h"
+#include "BmMailHeaderView.h"
 
 class BmBodyPart;
 class BmBodyPartView;
 class BmMailRef;
 class BmMailViewContainer;
-class BmMailHeaderView;
 class BmMailRefView;
 class BmRulerView;
 
@@ -120,6 +120,7 @@ public:
 	inline bool ShowRaw()							{ return mShowRaw; }
 	inline bool ShowInlinesSeparately()			{ return mShowInlinesSeparately; }
 	inline BmBodyPartView* BodyPartView()		{ return mBodyPartView; }
+	inline BmMailHeaderView* HeaderView()		{ return mHeaderView; }
 
 	// setters:
 	inline void TeamUpWith( BmMailRefView* v)	{ mPartnerMailRefView = v; }

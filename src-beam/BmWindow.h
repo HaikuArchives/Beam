@@ -52,12 +52,15 @@ public:
 	virtual status_t UnarchiveState( BMessage* archive);
 	virtual bool ReadStateInfo();
 	virtual bool WriteStateInfo();
+	virtual void BeginLife()				{}
 
 	// overrides of BWindow-base:
 	void Quit();
+	void Show();
 	
 protected:
 	BString mStatefileName;
+	bool mLifeHasBegun;
 
 	// Hide copy-constructor and assignment:
 	BmWindow( const BmWindow&);

@@ -94,7 +94,7 @@ public:
 	inline void TeamUpWith( BmMailView* mv) 	{ mPartnerMailView = mv; }
 	void AddSelectedRefsToMsg( BMessage* msg, BString fieldName);
 	void ShowMenu( BPoint point);
-	void AddMailRefMenu( BMenu* menu, BHandler* target=NULL);
+	static void AddMailRefMenu( BMenu* menu, BHandler* target=NULL);
 
 	// overrides of listview base:
 	void KeyDown(const char *bytes, int32 numBytes);

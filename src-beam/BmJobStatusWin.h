@@ -173,6 +173,7 @@ public:
 
 	// class-functions:
 	static bool AskUserForPwd( const BString accName, BString& pwd);
+	static bool AskUserForPopAcc( const BString accName, BString& popAccName);
 
 private:
 	BStatusBar* mStatBar;				// shows current status of this connection

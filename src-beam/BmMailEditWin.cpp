@@ -101,8 +101,8 @@ BmMailEditWin* BmMailEditWin::CreateInstance( BmMailRef* mailRef) {
 		-	creates a new mail-edit window
 		-	initialiazes the window's dimensions by reading its archive-file (if any)
 \*------------------------------------------------------------------------------*/
-BmMailEditWin* BmMailEditWin::CreateInstance( BmMail* mail, bool isNew) {
-	BmMailEditWin* win = new BmMailEditWin( NULL, mail, isNew);
+BmMailEditWin* BmMailEditWin::CreateInstance( BmMail* mail) {
+	BmMailEditWin* win = new BmMailEditWin( NULL, mail);
 	win->ReadStateInfo();
 	return win;
 }
@@ -111,13 +111,14 @@ BmMailEditWin* BmMailEditWin::CreateInstance( BmMail* mail, bool isNew) {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmMailEditWin::BmMailEditWin( BmMailRef* mailRef, BmMail* mail, bool isNew)
+BmMailEditWin::BmMailEditWin( BmMailRef* mailRef, BmMail* mail)
 	:	inherited( "MailEditWin", BRect(50,50,800,600), "Edit Mail", B_TITLED_WINDOW_LOOK, 
 					  B_NORMAL_WINDOW_FEEL, B_ASYNCHRONOUS_CONTROLS)
 	,	mShowDetails1( false)
 	,	mShowDetails2( false)
 	,	mShowDetails3( false)
-	,	mModified( isNew)
+	,	mModified( false)
+	,	mHasNeverBeenSaved( mail ? mail->MailRef() == NULL : false)
 {
 	CreateGUI();
 	if (mail)
@@ -337,41 +338,40 @@ status_t BmMailEditWin::UnarchiveState( BMessage* archive) {
 		-	
 \*------------------------------------------------------------------------------*/
 MMenuBar* BmMailEditWin::CreateMenu() {
-	bool beMailStyle = ThePrefs->GetBool("BeMailStyle");
 	MMenuBar* menubar = new MMenuBar();
 	BMenu* menu = NULL;
 	// File
 	menu = new BMenu( "File");
-	menu->AddItem( new BMenuItem( "Save", new BMessage( BMM_SAVE), 'S'));
+	menu->AddItem( CreateMenuItem( "Save", BMM_SAVE, "SaveMail"));
 	menu->AddSeparatorItem();
-	menu->AddItem( new BMenuItem( "Close", new BMessage( B_QUIT_REQUESTED), 'W'));
+	menu->AddItem( CreateMenuItem( "Close", B_QUIT_REQUESTED));
 	menu->AddSeparatorItem();
-	AddItemToMenu( menu, new BMenuItem( "Quit Beam", new BMessage( B_QUIT_REQUESTED), 'Q'), bmApp);
+	AddItemToMenu( menu, CreateMenuItem( "Quit Beam", B_QUIT_REQUESTED), bmApp);
 	menubar->AddItem( menu);
 
 	// Edit
 	menu = new BMenu( "Edit");
-	menu->AddItem( new BMenuItem( "Undo", new BMessage( B_UNDO), 'Z'));
+	menu->AddItem( CreateMenuItem( "Undo", B_UNDO));
 	menu->AddSeparatorItem();
-	menu->AddItem( new BMenuItem( "Cut", new BMessage( B_CUT), 'X'));
-	menu->AddItem( new BMenuItem( "Copy", new BMessage( B_COPY), 'C'));
-	menu->AddItem( new BMenuItem( "Paste", new BMessage( B_PASTE), 'V'));
-	menu->AddItem( new BMenuItem( "Select All", new BMessage( B_SELECT_ALL), 'A'));
+	menu->AddItem( CreateMenuItem( "Cut", B_CUT));
+	menu->AddItem( CreateMenuItem( "Copy", B_COPY));
+	menu->AddItem( CreateMenuItem( "Paste", B_PASTE));
+	menu->AddItem( CreateMenuItem( "Select All", B_SELECT_ALL));
 	menu->AddSeparatorItem();
-	menu->AddItem( new BMenuItem( "Find...", new BMessage( BMM_FIND), 'F'));
-	menu->AddItem( new BMenuItem( "Find Next", new BMessage( BMM_FIND_NEXT), 'G'));
+	menu->AddItem( CreateMenuItem( "Find...", BMM_FIND));
+	menu->AddItem( CreateMenuItem( "Find Next", BMM_FIND_NEXT));
 	menubar->AddItem( menu);
 
 	// Network
 	menu = new BMenu( "Network");
-	menu->AddItem( new BMenuItem( "Send Mail Now", new BMessage( BMM_SEND_NOW), beMailStyle ? 'M' : 'E'));
-	menu->AddItem( new BMenuItem( "Send Mail Later", new BMessage( BMM_SEND_LATER), beMailStyle ? 'M' : 'E', B_SHIFT_KEY));
+	menu->AddItem( CreateMenuItem( "Send Mail Now", BMM_SEND_NOW));
+	menu->AddItem( CreateMenuItem( "Send Mail Later", BMM_SEND_LATER));
 	menu->AddSeparatorItem();
 	menubar->AddItem( menu);
 
 	// Message
 	menu = new BMenu( "Message");
-	menu->AddItem( new BMenuItem( "New Message", new BMessage( BMM_NEW_MAIL), 'N'));
+	menu->AddItem( CreateMenuItem( "New Message", BMM_NEW_MAIL));
 	menubar->AddItem( menu);
 
 	// temporary deactivations:
@@ -605,13 +605,21 @@ BmRef<BmMail> BmMailEditWin::CurrMail() const {
 \*------------------------------------------------------------------------------*/
 void BmMailEditWin::SetFieldsFromMail( BmMail* mail) {
 	if (mail) {
-		mBccControl->SetTextSilently( mail->GetStrippedFieldVal( BM_FIELD_BCC).String());
-		mCcControl->SetTextSilently( mail->GetStrippedFieldVal( BM_FIELD_CC).String());
-		mFromControl->SetTextSilently( mail->GetStrippedFieldVal( BM_FIELD_FROM).String());
-		mSenderControl->SetTextSilently( mail->GetStrippedFieldVal( BM_FIELD_SENDER).String());
+		if (mail->IsRedirect()) {
+			mBccControl->SetTextSilently( mail->GetStrippedFieldVal( BM_FIELD_RESENT_BCC).String());
+			mCcControl->SetTextSilently( mail->GetStrippedFieldVal( BM_FIELD_RESENT_CC).String());
+			mFromControl->SetTextSilently( mail->GetStrippedFieldVal( BM_FIELD_RESENT_FROM).String());
+			mSenderControl->SetTextSilently( mail->GetStrippedFieldVal( BM_FIELD_RESENT_SENDER).String());
+			mToControl->SetTextSilently( mail->GetStrippedFieldVal( BM_FIELD_RESENT_TO).String());
+		} else {
+			mBccControl->SetTextSilently( mail->GetStrippedFieldVal( BM_FIELD_BCC).String());
+			mCcControl->SetTextSilently( mail->GetStrippedFieldVal( BM_FIELD_CC).String());
+			mFromControl->SetTextSilently( mail->GetStrippedFieldVal( BM_FIELD_FROM).String());
+			mSenderControl->SetTextSilently( mail->GetStrippedFieldVal( BM_FIELD_SENDER).String());
+			mToControl->SetTextSilently( mail->GetStrippedFieldVal( BM_FIELD_TO).String());
+			mReplyToControl->SetTextSilently( mail->GetStrippedFieldVal( BM_FIELD_REPLY_TO).String());
+		}
 		mSubjectControl->SetTextSilently( mail->GetFieldVal( BM_FIELD_SUBJECT).String());
-		mToControl->SetTextSilently( mail->GetStrippedFieldVal( BM_FIELD_TO).String());
-		mReplyToControl->SetTextSilently( mail->GetStrippedFieldVal( BM_FIELD_REPLY_TO).String());
 		// mark corresponding SMTP-account (if any):
 		BMenuItem* item = NULL;
 		BString smtpAccount = mail->AccountName();
@@ -645,13 +653,21 @@ bool BmMailEditWin::CreateMailFromFields() {
 		ConvertFromUTF8( encoding, editedText, convertedText);
 		BMenuItem* smtpItem = mSmtpControl->Menu()->FindMarked();
 		BString smtpAccount = smtpItem ? smtpItem->Label() : "";
-		mail->SetFieldVal( BM_FIELD_BCC, mBccControl->Text());
-		mail->SetFieldVal( BM_FIELD_CC, mCcControl->Text());
-		mail->SetFieldVal( BM_FIELD_FROM, mFromControl->Text());
-		mail->SetFieldVal( BM_FIELD_SENDER, mSenderControl->Text());
+		if (mail->IsRedirect()) {
+			mail->SetFieldVal( BM_FIELD_RESENT_BCC, mBccControl->Text());
+			mail->SetFieldVal( BM_FIELD_RESENT_CC, mCcControl->Text());
+			mail->SetFieldVal( BM_FIELD_RESENT_FROM, mFromControl->Text());
+			mail->SetFieldVal( BM_FIELD_RESENT_SENDER, mSenderControl->Text());
+			mail->SetFieldVal( BM_FIELD_RESENT_TO, mToControl->Text());
+		} else {
+			mail->SetFieldVal( BM_FIELD_BCC, mBccControl->Text());
+			mail->SetFieldVal( BM_FIELD_CC, mCcControl->Text());
+			mail->SetFieldVal( BM_FIELD_FROM, mFromControl->Text());
+			mail->SetFieldVal( BM_FIELD_SENDER, mSenderControl->Text());
+			mail->SetFieldVal( BM_FIELD_TO, mToControl->Text());
+			mail->SetFieldVal( BM_FIELD_REPLY_TO, mReplyToControl->Text());
+		}
 		mail->SetFieldVal( BM_FIELD_SUBJECT, mSubjectControl->Text());
-		mail->SetFieldVal( BM_FIELD_TO, mToControl->Text());
-		mail->SetFieldVal( BM_FIELD_REPLY_TO, mReplyToControl->Text());
 /* use the following line if mail-date should be bumped whenever the mail
 	has been edited:
 		mail->SetFieldVal( BM_FIELD_DATE, TimeToString( time( NULL), 
@@ -667,12 +683,13 @@ bool BmMailEditWin::CreateMailFromFields() {
 		-	
 \*------------------------------------------------------------------------------*/
 bool BmMailEditWin::SaveMail() {
-	if (!mModified)
+	if (!mModified && !mHasNeverBeenSaved)
 		return true;
 	if (!CreateMailFromFields())
 		return false;
 	BmRef<BmMail> mail = mMailView->CurrMail();
 	if (mail && mail->Store()) {
+		mHasNeverBeenSaved = false;
 		mModified = false;
 		mSaveButton->SetEnabled( false);
 		return true;

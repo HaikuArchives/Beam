@@ -103,6 +103,38 @@ void BmMailFolderItem::UpdateView( BmUpdFlags flags) {
 	}
 }
 
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+int BmMailFolderItem::CompareItems( const CLVListItem *a_Item1, 
+												const CLVListItem *a_Item2, 
+											   int32 KeyColumn, int32 col_flags) {
+	if (ThePrefs->GetBool("InOutAlwaysAtTop", false)) {
+		// handle special case for in & out-folders to be fixed at top:
+		const BmMailFolderItem* item1 = dynamic_cast<const BmMailFolderItem*>(a_Item1);
+		const BmMailFolderItem* item2 = dynamic_cast<const BmMailFolderItem*>(a_Item2);
+		if (item1 == NULL || item2 == NULL)
+			return 0;
+		BmMailFolder* folder1 = item1->ModelItem();
+		BmMailFolder* folder2 = item2->ModelItem();
+		if (folder1 == NULL || folder2 == NULL)
+			return 0;
+			
+		CLVSortMode sortmode = TheMailFolderView->ColumnAt( KeyColumn)->SortMode();
+		int32 rev = sortmode == Ascending ? 1 : -1;
+	
+		if (folder1->Name().ICompare("in")==0 || folder1->Name().ICompare("in ",3)==0)
+			return -1 * rev;
+		if (folder2->Name().ICompare("in")==0 || folder2->Name().ICompare("in ",3)==0)
+			return 1 * rev;
+		if (folder1->Name().ICompare("out")==0 || folder1->Name().ICompare("out ",4)==0)
+			return -1 * rev;
+		if (folder2->Name().ICompare("out")==0 || folder2->Name().ICompare("out ",4)==0)
+			return 1 * rev;
+	}
+	return CLVEasyItem::CompareItems( a_Item1, a_Item2, KeyColumn, col_flags);
+}
 
 
 /********************************************************************************\
@@ -139,7 +171,7 @@ BmMailFolderView::BmMailFolderView( minimax minmax, int32 width, int32 height)
 	AddColumn( new CLVColumn( NULL, 18.0, CLV_LOCK_AT_BEGINNING | CLV_NOT_MOVABLE 
 									  | CLV_NOT_RESIZABLE | CLV_PUSH_PASS | CLV_MERGE_WITH_RIGHT, 18.0));
 	AddColumn( new CLVColumn( "Folders", 300.0, CLV_SORT_KEYABLE | CLV_NOT_RESIZABLE | CLV_NOT_MOVABLE, 300.0));
-	SetSortFunction( CLVEasyItem::CompareItems);
+	SetSortFunction( BmMailFolderItem::CompareItems);
 	SetSortKey( COL_NAME);
 }
 

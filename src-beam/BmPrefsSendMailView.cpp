@@ -246,6 +246,7 @@ BmPrefsSendMailView::BmPrefsSendMailView()
 						mAuthControl = new BmMenuControl( "Auth-method:", new BPopUpMenu("")),
 						mLoginControl = new BmTextControl( "Login:"),
 						mPwdControl = new BmTextControl( "Password:"),
+						mPopControl = new BmMenuControl( "Pop-account:", new BPopUpMenu("")),
 						new Space( minimax(0,5,0,5)),
 						mDomainControl = new BmTextControl( "Domain to announce:"),
 						0
@@ -279,6 +280,7 @@ BmPrefsSendMailView::BmPrefsSendMailView()
 	divider = MAX( divider, mPwdControl->Divider());
 	divider = MAX( divider, mServerControl->Divider());
 	divider = MAX( divider, mAuthControl->Divider());
+	divider = MAX( divider, mPopControl->Divider());
 	mAccountControl->SetDivider( divider);
 	mDomainControl->SetDivider( divider);
 	mLoginControl->SetDivider( divider);
@@ -286,6 +288,7 @@ BmPrefsSendMailView::BmPrefsSendMailView()
 	mPwdControl->SetDivider( divider);
 	mServerControl->SetDivider( divider);
 	mAuthControl->SetDivider( divider);
+	mPopControl->SetDivider( divider);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -334,6 +337,20 @@ void BmPrefsSendMailView::Initialize() {
 \*------------------------------------------------------------------------------*/
 void BmPrefsSendMailView::Activated() {
 	inherited::Activated();
+
+	// update all entries of POP-account-menu:
+	BMenuItem* item;
+	while( (item = mPopControl->Menu()->RemoveItem( (int32)0)))
+		delete item;
+	AddItemToMenu( mPopControl->Menu(), 
+					   new BMenuItem( "", new BMessage( BM_POP_SELECTED)), this);
+	BmModelItemMap::const_iterator iter;
+	for( iter = ThePopAccountList->begin(); iter != ThePopAccountList->end(); ++iter) {
+		BmPopAccount* acc = dynamic_cast< BmPopAccount*>( iter->second.Get());
+		AddItemToMenu( mPopControl->Menu(), 
+							new BMenuItem( acc->Key().String(), new BMessage( BM_POP_SELECTED)), 
+							this);
+	}
 }
 
 /*------------------------------------------------------------------------------*\
@@ -415,6 +432,14 @@ void BmPrefsSendMailView::MessageReceived( BMessage* msg) {
 					mCurrAcc->AuthMethod( "");
 				break;
 			}
+			case BM_POP_SELECTED: {
+				BMenuItem* item = mPopControl->Menu()->FindMarked();
+				if (item)
+					mCurrAcc->AccForSmtpAfterPop( item->Label());
+				else
+					mCurrAcc->AccForSmtpAfterPop( "");
+				break;
+			}
 			case BM_ADD_ACCOUNT: {
 				BString key( "new account");
 				for( int32 i=1; TheSmtpAccountList->FindItemByKey( key); ++i) {
@@ -460,7 +485,6 @@ void BmPrefsSendMailView::ShowAccount( int32 selection) {
 	bool enabled = (selection != -1);
 	mAccountControl->SetEnabled( enabled);
 	mDomainControl->SetEnabled( enabled);
-	mLoginControl->SetEnabled( enabled);
 	mPortControl->SetEnabled( enabled);
 	mServerControl->SetEnabled( enabled);
 	mAuthControl->SetEnabled( enabled);
@@ -476,6 +500,9 @@ void BmPrefsSendMailView::ShowAccount( int32 selection) {
 		mPwdControl->SetTextSilently( "");
 		mServerControl->SetTextSilently( "");
 		mAuthControl->ClearMark();
+		mPopControl->ClearMark();
+		mPopControl->SetEnabled( false);
+		mLoginControl->SetEnabled( false);
 		mStorePwdControl->SetValue( 0);
 		mPwdControl->SetEnabled( false);
 	} else {
@@ -490,8 +517,11 @@ void BmPrefsSendMailView::ShowAccount( int32 selection) {
 				mPwdControl->SetTextSilently( mCurrAcc->Password().String());
 				mServerControl->SetTextSilently( mCurrAcc->SMTPServer().String());
 				mAuthControl->MarkItem( mCurrAcc->AuthMethod().String());
+				mPopControl->MarkItem( mCurrAcc->AccForSmtpAfterPop().String());
 				mStorePwdControl->SetValue( mCurrAcc->PwdStoredOnDisk());
-				mPwdControl->SetEnabled( mCurrAcc->PwdStoredOnDisk());
+				mPopControl->SetEnabled( mCurrAcc->NeedsAuthViaPopServer());
+				mLoginControl->SetEnabled( !mCurrAcc->NeedsAuthViaPopServer());
+				mPwdControl->SetEnabled( mCurrAcc->PwdStoredOnDisk() && !mCurrAcc->NeedsAuthViaPopServer());
 			}
 		} else
 			mCurrAcc = NULL;

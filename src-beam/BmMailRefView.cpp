@@ -614,19 +614,13 @@ void BmMailRefView::ItemInvoked( int32 index) {
 void BmMailRefView::AddMailRefMenu( BMenu* menu, BHandler* target) {
 	if (!menu)
 		return;
-	AddItemToMenu( menu, new BMenuItem( "Reply", new BMessage( BMM_REPLY), 'R'), target);
+	AddItemToMenu( menu, CreateMenuItem( "Reply", BMM_REPLY), target);
 
-	AddItemToMenu( menu, new BMenuItem( "Reply To All", new BMessage( BMM_REPLY_ALL), 'R', B_SHIFT_KEY), target);
-	if (ThePrefs->GetInt( "DefaultForwardType", BMM_FORWARD_INLINE) == BMM_FORWARD_INLINE) {
-		AddItemToMenu( menu, new BMenuItem( "Forward As Attachment", new BMessage( BMM_FORWARD_ATTACHED), 'J', B_SHIFT_KEY), target);
-		AddItemToMenu( menu, new BMenuItem( "Forward Inline", new BMessage( BMM_FORWARD_INLINE), 'J'), target);
-		AddItemToMenu( menu, new BMenuItem( "Forward Inline (With Attachments)", new BMessage( BMM_FORWARD_INLINE_ATTACH)), target);
-	} else {
-		AddItemToMenu( menu, new BMenuItem( "Forward As Attachment", new BMessage( BMM_FORWARD_ATTACHED), 'J'), target);
-		AddItemToMenu( menu, new BMenuItem( "Forward Inline", new BMessage( BMM_FORWARD_INLINE), 'J', B_SHIFT_KEY), target);
-		AddItemToMenu( menu, new BMenuItem( "Forward Inline (With Attachments)", new BMessage( BMM_FORWARD_INLINE_ATTACH)), target);
-	}
-	AddItemToMenu( menu, new BMenuItem( "Redirect", new BMessage( BMM_REDIRECT), 'B'), target);
+	AddItemToMenu( menu, CreateMenuItem( "Reply To All", BMM_REPLY_ALL), target);
+	AddItemToMenu( menu, CreateMenuItem( "Forward As Attachment", BMM_FORWARD_ATTACHED), target);
+	AddItemToMenu( menu, CreateMenuItem( "Forward Inline", BMM_FORWARD_INLINE), target);
+	AddItemToMenu( menu, CreateMenuItem( "Forward Inline (With Attachments)", BMM_FORWARD_INLINE_ATTACH), target);
+	AddItemToMenu( menu, CreateMenuItem( "Redirect", BMM_REDIRECT), target);
 	menu->AddSeparatorItem();
 
 	BMenu* statusMenu = new BMenu( "Mark Message As");
@@ -637,13 +631,13 @@ void BmMailRefView::AddMailRefMenu( BMenu* menu, BHandler* target) {
 	for( int i=0; stats[i]; ++i) {
 		BMessage* msg = new BMessage( BMM_MARK_AS);
 		msg->AddString( BmApplication::MSG_STATUS, stats[i]);
-		AddItemToMenu( statusMenu, new BMenuItem( stats[i], msg), target);
+		AddItemToMenu( statusMenu, CreateMenuItem( stats[i], msg, (BString("MarkAs")+stats[i]).String()), target);
 	}
 	menu->AddItem( statusMenu);
 	menu->AddSeparatorItem();
-	AddItemToMenu( menu, new BMenuItem( "Apply Filter", new BMessage( BMM_FILTER)), target);
+	AddItemToMenu( menu, CreateMenuItem( "Apply Filter", BMM_FILTER), target);
 	menu->AddSeparatorItem();
-	AddItemToMenu( menu, new BMenuItem( "Move To Trash", new BMessage( BMM_TRASH), 'T'), target);
+	AddItemToMenu( menu, CreateMenuItem( "Move To Trash", BMM_TRASH), target);
 
 	// temporary deactivations:
 	menu->FindItem( BMM_FILTER)->SetEnabled( false);

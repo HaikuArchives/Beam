@@ -116,7 +116,7 @@ void BmRulerView::MouseDown( BPoint point) {
 	if (buttons == B_PRIMARY_MOUSE_BUTTON) {
 		if (!mIndicatorGrabbed) {
 			mIndicatorGrabbed = true;
-			SetIndicatorPos( point.x);
+			SetIndicatorPixelPos( point.x);
 			SetMouseEventMask( B_POINTER_EVENTS, B_NO_POINTER_HISTORY);
 		}
 	}
@@ -130,7 +130,7 @@ void BmRulerView::MouseMoved( BPoint point, uint32 transit, const BMessage *msg)
 	inherited::MouseMoved( point, transit, msg);
 //	if (transit == B_INSIDE_VIEW || transit == B_ENTERED_VIEW) {
 		if (mIndicatorGrabbed)
-			SetIndicatorPos( point.x);
+			SetIndicatorPixelPos( point.x);
 //	}
 }
 
@@ -148,12 +148,20 @@ void BmRulerView::MouseUp( BPoint point) {
 }
 
 /*------------------------------------------------------------------------------*\
+	SetIndicatorPixelPos( pixelPos)
+		-	
+\*------------------------------------------------------------------------------*/
+void BmRulerView::SetIndicatorPixelPos( float pixelPos) {
+	pixelPos -= nXOffset;
+	int32 newPos = static_cast<int32>( (pixelPos+mSingleCharWidth/2) / mSingleCharWidth);
+	SetIndicatorPos( newPos);
+}
+
+/*------------------------------------------------------------------------------*\
 	SetIndicatorPos( pixelPos)
 		-	
 \*------------------------------------------------------------------------------*/
-void BmRulerView::SetIndicatorPos( float pixelPos) {
-	pixelPos -= nXOffset;
-	int32 newPos = static_cast<int32>( (pixelPos+mSingleCharWidth/2) / mSingleCharWidth);
+void BmRulerView::SetIndicatorPos( int32 newPos) {
 	if (newPos != mIndicatorPos) {
 		mIndicatorPos = newPos;
 		Invalidate();

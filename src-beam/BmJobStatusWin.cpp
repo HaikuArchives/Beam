@@ -47,6 +47,7 @@
 #include <Space.h>
 
 #include "TextEntryAlert.h"
+#include "ListSelectionAlert.h"
 
 #include "BmApp.h"
 #include "BmBasics.h"
@@ -182,7 +183,9 @@ void BmJobStatusView::StartJob( BmJobModel* model, bool startInNewThread,
 void BmJobStatusView::JobIsDone( bool completed) {
 	BM_LOG2( BM_LogModelController, BString("Controller <") << ControllerName() << "> has been told that job " << ModelName() << " is done");
 	if (ThePrefs->GetBool("DynamicStatusWin") || AlwaysRemoveWhenDone()) {
-		int32 timeToWait = TheJobStatusWin->IsHidden() ? 1 : MSecsBeforeRemove();
+		int32 timeToWait = completed 
+									? (TheJobStatusWin->IsHidden() ? 1 : MSecsBeforeRemove())
+									: (TheJobStatusWin->IsHidden() ? 1 : ThePrefs->GetInt("MSecsBeforeRemoveFailed", 5000*1000));
 		delete mRemoveMsgRunner;
 		mRemoveMsgRunner = NULL;
 		BMessage* timerMsg = new BMessage( BM_TIME_TO_REMOVE);
@@ -467,6 +470,7 @@ BmJobModel* BmSmtpView::CreateJobModel( BMessage* msg) {
 													|| BM_THROW_INVALID( BString("Could not find BmSmtpAccount ") << accName);
 	BmSmtp* smtp = new BmSmtp( account->Name(), account);
 	smtp->SetPwdAcquisitorFunc( AskUserForPwd);
+	smtp->SetPopAccAcquisitorFunc( AskUserForPopAcc);
 	return smtp;
 }
 
@@ -514,7 +518,7 @@ void BmSmtpView::UpdateModelView( BMessage* msg) {
 \*------------------------------------------------------------------------------*/
 bool BmSmtpView::AskUserForPwd( const BString accName, BString& pwd) {
 	// ask user about password:
-   BString text = BString( "Please enter password for SMTP-Account <")
+   BString text = BString( "Please enter password for SMTP-account <")
    				   << accName << ">:";
 	TextEntryAlert* alert = new TextEntryAlert( "Info needed", text.String(),
 									 						  "", "Cancel", "OK");
@@ -529,6 +533,33 @@ bool BmSmtpView::AskUserForPwd( const BString accName, BString& pwd) {
 	} else
 		return false;
 }
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+bool BmSmtpView::AskUserForPopAcc( const BString accName, BString& popAccName) {
+	// ask user about password:
+   BString text = BString( "Please select the POP3-account\nto be used in authentication\nfor SMTP-account <")
+   				   << accName << ">:";
+	BList list;
+	BmModelItemMap::const_iterator iter;
+	for (iter = ThePopAccountList->begin(); iter != ThePopAccountList->end(); ++iter) {
+		BmPopAccount* acc = dynamic_cast<BmPopAccount*>( iter->second.Get());
+		list.AddItem( (void*)acc->Name().String());
+	}
+	ListSelectionAlert* alert 
+		= new ListSelectionAlert( "Pop-Account", text.String(), list, "", "Cancel", "OK");
+	alert->SetShortcut( 0, B_ESCAPE);
+	char buf[128];
+	int32 result = alert->Go( buf, 128);
+	if (result == 1) {
+		popAccName = buf;
+		return true;
+	} else
+		return false;
+}
+
 
 
 /********************************************************************************\

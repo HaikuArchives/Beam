@@ -189,6 +189,10 @@ public:
 	inline const BString& HeaderString() const	{ return mHeaderString; }
 	inline const BString& Name() const			{ return mName; }
 	inline uint32 DefaultEncoding()	const		{ return mDefaultEncoding; }
+	inline const bool IsRedirect() const		{ return mIsRedirect; }
+
+	// setters:
+	inline void IsRedirect( bool b)				{ mIsRedirect = b; }
 
 	// class-functions:
 	static bool IsAddressField( const BString fieldName);
@@ -236,6 +240,9 @@ private:
 							// charset-encoding to be used by this mail (if not specified otherwise)
 	int32 mNumLines;
 							// number of lines in this header
+
+	bool mIsRedirect;	
+							// true if header contains redirect-fields (or will do in near future)
 
 	static int32 nCounter;
 							// counter for message-id
