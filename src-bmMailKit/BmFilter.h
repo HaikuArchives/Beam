@@ -96,7 +96,6 @@ public:
 	inline void Content( const BmString &s){ mContent = s; TellModelItemUpdated( UPD_ALL); }
 	inline void MarkedAsDefault( bool b)	{ mMarkedAsDefault = b;  TellModelItemUpdated( UPD_ALL); }
 
-	static const char* const MSG_FILTER;
 	static const char* const MSG_OUTBOUND;
 	static const char* const MSG_MAILREF;
 

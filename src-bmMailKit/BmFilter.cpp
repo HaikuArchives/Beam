@@ -48,7 +48,6 @@ const char* const BmFilter::MSG_CONTENT = 		"bm:content";
 const char* const BmFilter::MSG_MARK_DEFAULT = 	"bm:markdefault";
 const int16 BmFilter::nArchiveVersion = 2;
 
-const char* const BmFilter::MSG_FILTER = 		"bm:filter";
 const char* const BmFilter::MSG_OUTBOUND = 	"bm:outb";
 const char* const BmFilter::MSG_MAILREF = 	"bm:ref";
 
