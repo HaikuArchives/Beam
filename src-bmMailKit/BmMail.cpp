@@ -62,6 +62,7 @@ using namespace regexx;
 		-	constructs a mail from file
 \*------------------------------------------------------------------------------*/
 BmRef<BmMail> BmMail::CreateInstance( BmMailRef* ref) {
+/*
 	BmProxy* proxy = BmRefObj::GetProxy( typeid(BmMail).name());
 	if (proxy) {
 		BAutolock lock( &proxy->Locker);
@@ -70,6 +71,7 @@ BmRef<BmMail> BmMail::CreateInstance( BmMailRef* ref) {
 		if (mail)
 			return mail;
 	}
+*/
 	return new BmMail( ref);
 }
 
@@ -85,9 +87,9 @@ BmMail::BmMail( bool outbound)
 	,	mBody( NULL)
 	,	mInitCheck( B_NO_INIT)
 	,	mOutbound( outbound)
-	,	mModifiedMaxLineLen( 0)
+	,	mRightMargin( ThePrefs->GetInt( "MaxLineLen"))
 {
-	BString emptyMsg( "Mime: 1.0\r\n");
+	BString emptyMsg = BString(BM_FIELD_MIME)+": 1.0\r\n";
 	emptyMsg << "Content-Type: text/plain; charset=\"" 
 				<< EncodingToCharset( ThePrefs->GetInt( "DefaultEncoding"))
 				<<	"\"\r\n";
@@ -96,11 +98,12 @@ BmMail::BmMail( bool outbound)
 	emptyMsg << "\r\n\r\n";
 	SetTo( emptyMsg, "");
 	if (outbound) {
-		// stuff from-address into mail, if it makes sense:
+		// if outbound, stuff basic info (from-address, smtp-account, sig) into mail:
 		BmRef<BmPopAccount> accRef = ThePopAccountList->DefaultAccount();
 		if (accRef) {
 			SetFieldVal( BM_FIELD_FROM, accRef->GetFromAddress());
-			SetSignatureByName( accRef->SignatureName());
+			mAccountName = accRef->SMTPAccount();
+			SetSignatureByName( accRef->SignatureName(), DefaultEncoding());
 		}
 	}
 }
@@ -118,7 +121,7 @@ BmMail::BmMail( BString &msgText, const BString account)
 	,	mMailRef( NULL)
 	,	mInitCheck( B_NO_INIT)
 	,	mOutbound( false)
-	,	mModifiedMaxLineLen( 0)
+	,	mRightMargin( ThePrefs->GetInt( "MaxLineLen"))
 {
 	SetTo( msgText, account);
 }
@@ -135,7 +138,7 @@ BmMail::BmMail( BmMailRef* ref)
 	,	mMailRef( ref)
 	,	mInitCheck( B_NO_INIT)
 	,	mOutbound( false)
-	,	mModifiedMaxLineLen( 0)
+	,	mRightMargin( ThePrefs->GetInt( "MaxLineLen"))
 {
 }
 
@@ -195,14 +198,17 @@ void BmMail::SetNewHeader( const BString& headerStr) {
 }
 
 /*------------------------------------------------------------------------------*\
-	SetSignatureByName( sigName)
+	SetSignatureByName( sigName, encoding)
 	-	
 \*------------------------------------------------------------------------------*/
-void BmMail::SetSignatureByName( const BString sigName) {
+void BmMail::SetSignatureByName( const BString sigName, int32 encoding) {
 	if (!mBody || mSignatureName==sigName)
 		return;
 	mSignatureName = sigName;
-	mBody->Signature( TheSignatureList->GetSignatureStringFor( sigName));
+	BString encodedSig;
+	ConvertFromUTF8( encoding, 
+						  TheSignatureList->GetSignatureStringFor( sigName), encodedSig);
+	mBody->Signature( encodedSig);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -345,21 +351,10 @@ BmRef<BmMail> BmMail::CreateReply( bool replyToAll, const BString selectedText) 
 	newMail->SetFieldVal( BM_FIELD_IN_REPLY_TO, messageID);
 	newMail->SetFieldVal( BM_FIELD_REFERENCES, GetFieldVal( BM_FIELD_REFERENCES) + " " + messageID);
 	// fill address information:
-	BString newTo;
-	if (ThePrefs->GetBool( "UseResentFieldsInReply", false)) {
-		newTo = GetFieldVal( BM_FIELD_RESENT_REPLY_TO);
-		if (!newTo.Length())
-			newTo = GetFieldVal( BM_FIELD_RESENT_FROM);
-		if (!newTo.Length())
-			newTo = GetFieldVal( BM_FIELD_RESENT_SENDER);
-	} else {
-		newTo = GetFieldVal( BM_FIELD_REPLY_TO);
-		if (!newTo.Length())
-			newTo = GetFieldVal( BM_FIELD_FROM);
-		if (!newTo.Length())
-			newTo = GetFieldVal( BM_FIELD_SENDER);
-	}
+	BString newTo = Header()->DetermineOriginator();
 	newMail->SetFieldVal( BM_FIELD_TO, newTo);
+	// fetch info about encoding from old mail:
+	int32 encoding = DefaultEncoding();
 	// Since we are replying, we generate the new mail's from-address 
 	// from the received mail's to-info:
 	BmRef<BmListModelItem> accRef = ThePopAccountList->FindItemByKey( AccountName());
@@ -370,7 +365,8 @@ BmRef<BmMail> BmMail::CreateReply( bool replyToAll, const BString selectedText) 
 		if (!receivingAddr.Length())
 			receivingAddr = acc->GetFromAddress();
 		newMail->SetFieldVal( BM_FIELD_FROM, receivingAddr);
-		newMail->SetSignatureByName( acc->SignatureName());
+		newMail->SetSignatureByName( acc->SignatureName(), encoding);
+		newMail->AccountName( acc->SMTPAccount());
 	}
 	// if we are replying to all, we may need to include more addresses:
 	if (replyToAll) {
@@ -392,25 +388,20 @@ BmRef<BmMail> BmMail::CreateReply( bool replyToAll, const BString selectedText) 
 	// massage subject, if neccessary:
 	BString subject = GetFieldVal( BM_FIELD_SUBJECT);
 	newMail->SetFieldVal( BM_FIELD_SUBJECT, CreateReplySubjectFor( subject));
-	// copy info about encoding from old into new mail:
-	int32 encoding = DefaultEncoding();
-	newMail->Header()->DefaultEncoding( encoding);
 	// copy and quote text-body:
 	BmRef<BmBodyPart> textBody( mBody->EditableTextBody());
-	BString charset = textBody->Charset();
 	BString text;
 	if (selectedText.Length())
 		ConvertFromUTF8( encoding, selectedText, text);
 	else
-		text = textBody->DecodedData();
+		text = textBody ? textBody->DecodedData() : "";
 	BString quotedText;
 	int32 newMaxLineLen = QuoteText( text, quotedText,
 				 								ThePrefs->GetString( "QuotingString"),
 												ThePrefs->GetInt( "MaxLineLen"));
 	newMail->Body()->SetEditableText( CreateReplyIntro() << "\n" << quotedText, 
-												 CharsetToEncoding( charset));
-	if (newMaxLineLen != ThePrefs->GetInt( "MaxLineLen"))
-		newMail->ModifiedMaxLineLen( newMaxLineLen);
+												 encoding);
+	newMail->BumpRightMargin( newMaxLineLen);
 	newMail->SetBaseMailInfo( MailRef(), BM_MAIL_STATUS_REPLIED);
 	return newMail;
 }
@@ -485,7 +476,7 @@ BString BmMail::CreateReplyIntro() {
 							  Regexx::nocase|Regexx::global|Regexx::noatom);
 	intro = rx.replace( intro, "%T", TimeToString( mMailRef->When(), "%X [%z]"), 
 							  Regexx::nocase|Regexx::global|Regexx::noatom);
-	BmAddress fromAddr = Header()->GetAddressList( BM_FIELD_FROM).FirstAddress();
+	BmAddress fromAddr = Header()->DetermineOriginator();
 	intro = rx.replace( intro, "%F", 
 							  fromAddr.HasPhrase() ? fromAddr.Phrase() : fromAddr.AddrSpec(), 
 							  Regexx::nocase|Regexx::global|Regexx::noatom);
@@ -505,7 +496,7 @@ BString BmMail::CreateForwardIntro() {
 							  Regexx::nocase|Regexx::global|Regexx::noatom);
 	intro = rx.replace( intro, "%T", TimeToString( mMailRef->When(), "%X [%z]"), 
 							  Regexx::nocase|Regexx::global|Regexx::noatom);
-	BmAddress fromAddr = Header()->GetAddressList( BM_FIELD_FROM).FirstAddress();
+	BmAddress fromAddr = Header()->DetermineOriginator();
 	intro = rx.replace( intro, "%F", 
 							  fromAddr.HasPhrase() ? fromAddr.Phrase() : fromAddr.AddrSpec(), 
 							  Regexx::nocase|Regexx::global|Regexx::noatom);
@@ -537,7 +528,6 @@ void BmMail::AddPartsFromMail( BmRef<BmMail> mail, bool withAttachments,
 	BmRef<BmBodyPart> textBody( mail->Body()->EditableTextBody());
 	// copy info about encoding from old into new mail:
 	int32 encoding = mail->DefaultEncoding();
-	Header()->DefaultEncoding( encoding);
 	BString charset = EncodingToCharset( encoding);
 	BString newText;
 	if (textBody) {
@@ -552,7 +542,7 @@ void BmMail::AddPartsFromMail( BmRef<BmMail> mail, bool withAttachments,
 	int32 newLineLen = QuoteText( newText, quotedText,
 											ThePrefs->GetString( "QuotingString"),
 											ThePrefs->GetInt( "MaxLineLen"));
-	ModifiedMaxLineLen( newLineLen);
+	BumpRightMargin( newLineLen);
 	BString intro( mail->CreateForwardIntro() << "\n");
 	mBody->SetEditableText( oldText + "\n" + intro + quotedText, CharsetToEncoding( charset));
 	if (withAttachments && mail->Body()->HasAttachments()) {
@@ -576,6 +566,7 @@ void BmMail::AddPartsFromMail( BmRef<BmMail> mail, bool withAttachments,
 			}
 		}
 	}
+	AddBaseMailRef( mail->MailRef());
 }
 
 /*------------------------------------------------------------------------------*\
@@ -605,16 +596,24 @@ uint32 BmMail::DefaultEncoding() const {
 	uint32 defEncoding;
 	if (mBody && (defEncoding = mBody->DefaultEncoding())!=BM_UNKNOWN_ENCODING)
 		return defEncoding;
-	return mHeader ? mHeader->DefaultEncoding() : B_ISO1_CONVERSION;
+	return B_ISO1_CONVERSION;
 }
 
 /*------------------------------------------------------------------------------*\
-	SetBaseMailInfo()
+	SetBaseMailInfo( ref, newStatus)
 		-	
 \*------------------------------------------------------------------------------*/
 void BmMail::SetBaseMailInfo( BmMailRef* ref, const BString newStatus) {
-	mBaseMailRef = ref;
+	mBaseRefVect.push_back( ref);
 	mNewBaseStatus = newStatus;
+}
+
+/*------------------------------------------------------------------------------*\
+	AddBaseMailRef( ref)
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMail::AddBaseMailRef( BmMailRef* ref) {
+	mBaseRefVect.push_back( ref);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -634,7 +633,7 @@ bool BmMail::Store() {
 	try {
 		// Find out where mail shall be living.
 		// N.B.: Since we have a node-monitor watching our actions within the mail-folders,
-		//			we create all new mails in a temp-folder (outside the mail-hierarchy, so that
+		//			we create all mails in a temp-folder (outside the mail-hierarchy, so that
 		//			the node-monitor doesn't notice), write out the mail-file completely, and
 		//			then move the complete mail-file into the mail-folder hierarchy.
 		//			This way we can ensure that the node-monitor does not trigger on a
@@ -647,20 +646,25 @@ bool BmMail::Store() {
 		(err = tmpDir.SetTo( tmpPath.Path())) == B_OK
 													|| BM_THROW_RUNTIME( BString("Could not find tmp-directory on this system") << "\n\n Result: " << strerror(err));
 
-		bool createdInTemp = false;
 		if (mEntry.InitCheck() == B_OK) {
 			// mail has just been written to disk, we recycle the current entry, but move 
 			// it to the temp-folder:
 			mEntry.GetName( basicFilename);
+			(err = mEntry.GetParent( &homeDir)) == B_OK
+													|| BM_THROW_RUNTIME( BString("Could not get parent for mail <")<<basicFilename<<">\n\n Result: " << strerror(err));
+			(err = mEntry.MoveTo( &tmpDir)) == B_OK
+													|| BM_THROW_RUNTIME( BString("Could not move mail <")<<basicFilename<<"> to tmp-folder\n\n Result: " << strerror(err));
 		} else if (mMailRef && mMailRef->InitCheck() == B_OK) {
-			// mail has been read from disk, we recycle the old name:
+			// mail has been read from disk, we recycle the old name, but move 
+			// it to the temp-folder:
 			(err = mEntry.SetTo( mMailRef->EntryRefPtr())) == B_OK
 													|| BM_THROW_RUNTIME( BString("Could not create entry from mail-ref <") << mMailRef->Key() << ">\n\n Result: " << strerror(err));
 			(err = mEntry.GetParent( &homeDir)) == B_OK
 													|| BM_THROW_RUNTIME( BString("Could not get parent for mail <") << mMailRef->Key() << ">\n\n Result: " << strerror(err));
+			(err = mEntry.MoveTo( &tmpDir)) == B_OK
+													|| BM_THROW_RUNTIME( BString("Could not move mail <") << mMailRef->Key() << "> to tmp-folder\n\n Result: " << strerror(err));
 			mEntry.GetName( basicFilename);
 		} else {
-			createdInTemp = true;
 			// mail is new, we create a new filename for it, and create the entry 
 			// in the temp-folder::
 			BString homePath  = ThePrefs->GetString("MailboxPath") 
@@ -694,10 +698,9 @@ bool BmMail::Store() {
 			}
 		}
 		mailFile.Sync();
-		if (createdInTemp) {
-			(err = mEntry.MoveTo( &homeDir)) == B_OK
+		// now move mail to it's real home:
+		(err = mEntry.MoveTo( &homeDir)) == B_OK
 													|| BM_THROW_RUNTIME( BString("Could not move mail <")<<basicFilename<<"> to home-folder\n\n Result: " << strerror(err));
-		}
 		if (!mMailRef) {
 			// mail has been freshly created, we add a mail-ref for it:
 			entry_ref eref;
@@ -707,10 +710,10 @@ bool BmMail::Store() {
 			mMailRef = BmMailRef::CreateInstance( NULL, eref, st);
 		} else
 			mMailRef->ResyncFromDisk();
-		if (mBaseMailRef) {
-			mBaseMailRef->MarkAs( mNewBaseStatus.String());
-			mBaseMailRef = NULL;
+		for( uint32 i=0; i<mBaseRefVect.size(); ++i) {
+			mBaseRefVect[i]->MarkAs( mNewBaseStatus.String());
 		}
+		mBaseRefVect.clear();
 		StartJobInThisThread();
 	} catch( exception &e) {
 		BM_SHOWERR(e.what());
@@ -744,6 +747,8 @@ void BmMail::StoreAttributes( BFile& mailFile) {
 	//
 	int32 hasAttachments = HasAttachments();
 	mailFile.WriteAttr( BM_MAIL_ATTR_ATTACHMENTS, B_INT32_TYPE, 0, &hasAttachments, sizeof(hasAttachments));
+	//
+	mailFile.WriteAttr( BM_MAIL_ATTR_MARGIN, B_INT32_TYPE, 0, &mRightMargin, sizeof(int32));
 }
 
 /*------------------------------------------------------------------------------*\
@@ -801,6 +806,9 @@ bool BmMail::StartJob() {
 		
 		// ...ok, mail-file found, we fetch the mail from it:
 		BString mailText;
+		// read special attributes for mail-state...
+		mailFile.ReadAttr( BM_MAIL_ATTR_MARGIN, B_INT32_TYPE, 0, &mRightMargin, sizeof(int32));
+		// ...and read file contents:
 		off_t mailSize;
 		(err = mailFile.GetSize( &mailSize)) == B_OK
 													|| BM_THROW_RUNTIME(BString("Could not get size of mail-file <") << eref.name << "> \n\nError:" << strerror(err));

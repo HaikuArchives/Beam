@@ -44,8 +44,9 @@
 BmTempFileList TheTempFileList;
 
 /*------------------------------------------------------------------------------*\
-	()
-		-	
+	MoveToTrash( refs, count)
+		-	moves the files specified by the given refs-array into the trash
+		-	param count indicates number of files contained in array refs
 \*------------------------------------------------------------------------------*/
 bool MoveToTrash( const entry_ref* refs, int32 count) {
 	// this is basically code I got from Tim Vernum's Website. thx!
@@ -68,10 +69,25 @@ bool MoveToTrash( const entry_ref* refs, int32 count) {
 		return false;
 } 
 
+/*------------------------------------------------------------------------------*\
+	LivesInTrash( eref)
+		-	return whether or not the given entry_ref lives inside the trash
+\*------------------------------------------------------------------------------*/
+bool LivesInTrash( const entry_ref* eref) {
+	BEntry entry( eref);
+	if (entry.InitCheck() != B_OK)
+		return false;
+	BPath path;
+	if (entry.GetPath( &path) != B_OK)
+		return false;
+	BString pathStr = path.Path();
+	return pathStr.ICompare( "/boot/home/Desktop/Trash/", 25) == 0;
+} 
+
 
 /*------------------------------------------------------------------------------*\
-	()
-		-	
+	CheckMimeType( eref, type)
+		-	checks if the file specified by eref is of the given mimetype
 \*------------------------------------------------------------------------------*/
 bool CheckMimeType( const entry_ref* eref, const char* type) {
 	BNode node( eref);
@@ -87,8 +103,9 @@ bool CheckMimeType( const entry_ref* eref, const char* type) {
 }
 
 /*------------------------------------------------------------------------------*\
-	()
-		-	
+	FetchFile( filename, contents)
+		-	reads the file specified by filename (complete path)
+		-	stores the file's data into given string contents
 \*------------------------------------------------------------------------------*/
 bool FetchFile( BString fileName, BString& contents) {
 	BFile file( fileName.String(), B_READ_ONLY);
@@ -106,7 +123,7 @@ bool FetchFile( BString fileName, BString& contents) {
 
 /*------------------------------------------------------------------------------*\
 	~BmTempFileList()
-		-	
+		-	d'tor, removes all temporary files used during this session
 \*------------------------------------------------------------------------------*/
 BmTempFileList::~BmTempFileList() {
 	BmFileSet::const_iterator iter;
@@ -116,16 +133,17 @@ BmTempFileList::~BmTempFileList() {
 }
 
 /*------------------------------------------------------------------------------*\
-	AddFile()
-		-	
+	AddFile( fileWithPath)
+		-	adds given filename to the list of temporary files
 \*------------------------------------------------------------------------------*/
 void BmTempFileList::AddFile( BString fileWithPath) {
 	mFiles.insert( fileWithPath);
 }
 
 /*------------------------------------------------------------------------------*\
-	RemoveFile()
-		-	
+	RemoveFile( fileWithPath)
+		-	removes file specified by fileWithPath from list of
+			temporary files and from disk
 \*------------------------------------------------------------------------------*/
 void BmTempFileList::RemoveFile( BString fileWithPath) {
 	BEntry tmpFile( fileWithPath.String());
@@ -135,7 +153,7 @@ void BmTempFileList::RemoveFile( BString fileWithPath) {
 
 /*------------------------------------------------------------------------------*\
 	NextTempFileNameWithPath()
-		-	
+		-	returns the name to use for a new temporary file
 \*------------------------------------------------------------------------------*/
 BString BmTempFileList::NextTempFilenameWithPath() {
 	BPath tempPath;

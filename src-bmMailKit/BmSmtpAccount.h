@@ -80,7 +80,7 @@ class BmSmtpAccount : public BmListModelItem {
 public:
 	BmSmtpAccount( const char* name, BmSmtpAccountList* model);
 	BmSmtpAccount( BMessage* archive, BmSmtpAccountList* model);
-	virtual ~BmSmtpAccount() 				{}
+	virtual ~BmSmtpAccount();
 	
 	// native methods:
 	bool NeedsAuthViaPopServer();

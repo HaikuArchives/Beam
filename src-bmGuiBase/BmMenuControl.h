@@ -43,7 +43,8 @@ class BmMenuControl : public MView, public BMenuField
 
 public:
 	// creator-func, c'tors and d'tor:
-	BmMenuControl( const char* label, BMenu* menu, float weight=1.0);
+	BmMenuControl( const char* label, BMenu* menu, float weight=1.0, 
+						float maxWidth=1E5);
 	~BmMenuControl();
 	
 	// native methods:

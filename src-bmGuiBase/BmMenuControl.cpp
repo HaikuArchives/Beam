@@ -41,7 +41,8 @@
 	( )
 		-	
 \*------------------------------------------------------------------------------*/
-BmMenuControl::BmMenuControl( const char* label, BMenu* menu, float weight) 
+BmMenuControl::BmMenuControl( const char* label, BMenu* menu, float weight, 
+										float maxWidth) 
 	:	inherited( BRect(0,0,400,20), NULL, label, menu, true, B_FOLLOW_NONE)
 	,	mMenu( static_cast<BMenu*>( ChildAt( 0)))
 {
@@ -49,7 +50,7 @@ BmMenuControl::BmMenuControl( const char* label, BMenu* menu, float weight)
 	BRect b = Bounds();
 	float labelWidth = StringWidth( label);
 	ct_mpm = minimax( StringWidth("12345678901234567890123456789012345"), b.Height()+4, 
-							1E5, b.Height()+4, weight);
+							maxWidth, b.Height()+4, weight);
 	SetDivider( label ? labelWidth+27 : 0);
 }
 

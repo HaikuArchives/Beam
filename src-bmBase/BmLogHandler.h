@@ -174,14 +174,18 @@ extern const uint32 BM_LogAll;
 		ShowAlert( msg);	}
 
 #else
-
+	// error-only logging:
 #define BM_LOG(flag,msg)
 #define BM_LOG2(flag,msg)
 #define BM_LOG3(flag,msg)
-#define BM_LOGERR(msg)
-#define BM_LOG_FINISH(name)
-#define BM_LOGNAME
-#define BM_SHOWERR(msg) 			ShowAlert( msg)
+#define BM_LOG_FINISH(name) BmLogHandler::FinishLog( name)
+#define BM_LOGNAME "Beam"
+#define BM_LOGERR(msg) \
+	BmLogHandler::Log( "Errors", BM_LogAll, msg, 0)
+#define BM_SHOWERR(msg) \
+	{	BmLogHandler::Log( BM_LOGNAME, BM_LogAll, msg, 0); \
+		BM_LOGERR(msg); \
+		ShowAlert( msg);	}
 
 #endif
 

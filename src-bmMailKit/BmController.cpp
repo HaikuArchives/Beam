@@ -68,6 +68,7 @@ BmController::~BmController() {
 		-	if the "model"-argument is specified, it will become the new model
 			of interest.
 		-	safe to call with a NULL-model
+		-	if called with current model, nothing will happen
 \*------------------------------------------------------------------------------*/
 void BmController::AttachModel( BmDataModel* model) {
 	if (mDataModel.Get() == model)
@@ -98,7 +99,7 @@ void BmController::DetachModel() {
 
 /*------------------------------------------------------------------------------*\
 	IsMsgFromCurrentModel( msg)
-		-	
+		-	determines if the given message came from our current model
 \*------------------------------------------------------------------------------*/
 bool BmController::IsMsgFromCurrentModel( BMessage* msg) {
 	BString msgModelName = FindMsgString( msg, BmDataModel::MSG_MODEL);
@@ -111,7 +112,8 @@ bool BmController::IsMsgFromCurrentModel( BMessage* msg) {
 
 /*------------------------------------------------------------------------------*\
 	MsgNeedsAck( msg)
-		-	
+		-	checks whether given message needs to be acknowledged
+		-	ACKs are necessary for item-removal-messages (for instance)
 \*------------------------------------------------------------------------------*/
 bool BmController::MsgNeedsAck( BMessage* msg) {
 	bool needsAck;
@@ -123,7 +125,7 @@ bool BmController::MsgNeedsAck( BMessage* msg) {
 
 /*------------------------------------------------------------------------------*\
 	DataModel( model)
-		-	
+		-	sets the current model
 \*------------------------------------------------------------------------------*/
 void BmController::DataModel( BmDataModel* model) {
 	mDataModel = model;
@@ -153,8 +155,12 @@ BmJobController::~BmJobController() {
 }
 
 /*------------------------------------------------------------------------------*\
-	StartJob()
-		-	
+	StartJob( model, startInNewThread, jobSpecifier)
+		-	starts the given jobmodel (or the current, if model==NULL)
+		-	param startInNewThread decides whether or not to spawn a new thread for
+			this job
+		-	jobSpecifier can specify special tasks for the model (some models
+			may support more than one kind of job). This defaults to BM_DEFAULT_JOB
 \*------------------------------------------------------------------------------*/
 void BmJobController::StartJob( BmJobModel* model, bool startInNewThread,
 										  int32 jobSpecifier) {
@@ -209,7 +215,7 @@ void BmJobController::StopJob() {
 
 /*------------------------------------------------------------------------------*\
 	IsJobRunning()
-		-	
+		-	check whether or not the current job is still running
 \*------------------------------------------------------------------------------*/
 bool BmJobController::IsJobRunning() {
 	BmJobModel* model = DataModel();
@@ -222,7 +228,7 @@ bool BmJobController::IsJobRunning() {
 
 /*------------------------------------------------------------------------------*\
 	CurrentJobSpecifier()
-		-	
+		-	returns the exact kind of the current job (usually BM_DEFAULT_JOB)
 \*------------------------------------------------------------------------------*/
 int32 BmJobController::CurrentJobSpecifier() {
 	BmJobModel* model = DataModel();

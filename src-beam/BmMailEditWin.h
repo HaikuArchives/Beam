@@ -31,6 +31,8 @@
 #ifndef _BmMailEditWin_h
 #define _BmMailEditWin_h
 
+#include <map>
+
 #include <MessageFilter.h>
 
 #include "BmWindow.h"
@@ -55,30 +57,44 @@ class BFilePanel;
 class BmMailEditWin : public BmWindow
 {
 	typedef BmWindow inherited;
-	friend class BmMailViewFilter;
+	typedef map< const entry_ref, BmMailEditWin*> BmEditWinMap;
+
+	class BmMsgFilter : public BMessageFilter {
+	public:
+		BmMsgFilter( BControl* stControl, uint32 cmd)
+			: 	BMessageFilter( B_ANY_DELIVERY, B_ANY_SOURCE, cmd) 
+			,	mShiftTabToControl( stControl)
+		{
+		}
+		filter_result Filter( BMessage* msg, BHandler** handler);
+	private:
+		BControl* mShiftTabToControl;
+	};
 
 public:
 	// creator-funcs, c'tors and d'tor:
 	static BmMailEditWin* CreateInstance( BmMailRef* mailRef=NULL);
 	static BmMailEditWin* CreateInstance( BmMail* mail=NULL);
-	BmMailEditWin( BmMailRef* mailRef=NULL, BmMail* mail=NULL);
 	~BmMailEditWin();
-
-	// native methods:
-	void EditMail( BmMailRef* ref);
-	void EditMail( BmMail* mail);
 
 	// overrides of BmWindow base:
 	void BeginLife();
 	void MessageReceived( BMessage*);
 	bool QuitRequested();
 	void Quit();
+	void Show();
 	status_t UnarchiveState( BMessage* archive);
 	
 	// getters:
 	BmRef<BmMail> CurrMail() const;
 
 private:
+	// hide constructors:
+	BmMailEditWin();
+	BmMailEditWin( BmMailRef* mailRef=NULL, BmMail* mail=NULL);
+
+	void EditMail( BmMailRef* ref);
+	void EditMail( BmMail* mail);
 	BmMailViewContainer* CreateMailView( minimax minmax, BRect frame);
 	void CreateGUI();
 	MMenuBar* CreateMenu();
@@ -86,6 +102,8 @@ private:
 	bool CreateMailFromFields();
 	bool SaveMail();
 	void SetFieldsFromMail( BmMail* mail);
+	
+	static BmEditWinMap nEditWinMap;
 
 	BmMailView* mMailView;
 	

@@ -61,6 +61,8 @@ using namespace regexx;
 	BmMailView
 \********************************************************************************/
 
+#define BM_MARK_AS_READ 'BmMR'
+
 /*------------------------------------------------------------------------------*\
 	()
 		-	
@@ -100,6 +102,7 @@ BmMailView::BmMailView( minimax minmax, BRect frame, bool outbound)
 	,	mShowRaw( false)
 	,	mShowInlinesSeparately( true)
 	,	mFontSize( 12)
+	,	mReadRunner( NULL)
 {
 	mHeaderView = new BmMailHeaderView( NULL);
 	if (outbound)
@@ -136,6 +139,7 @@ BmMailView::BmMailView( minimax minmax, BRect frame, bool outbound)
 BmMailView::~BmMailView() {
 	if (mOutbound)
 		delete mHeaderView;
+	delete mReadRunner;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -247,22 +251,18 @@ void BmMailView::MessageReceived( BMessage* msg) {
 				BString style = msg->FindString( BmResources::BM_MSG_FONT_STYLE);
 				mFont.SetFamilyAndStyle( family.String(), style.String());
 				mFontName = family + "," + style;
-				SetFont( &mFont);
-				SetFontAndColor( &mFont);
 				if (mOutbound && mRulerView)
 					mRulerView->SetMailViewFont( mFont);
-				JobIsDone( true);
+				UpdateFont( mFont);
 				WriteStateInfo();
 				break;
 			}
 			case BM_FONTSIZE_SELECTED: {
 				mFontSize = msg->FindInt16( BmResources::BM_MSG_FONT_SIZE);
 				mFont.SetSize( mFontSize);
-				SetFont( &mFont);
-				SetFontAndColor( &mFont);
 				if (mOutbound && mRulerView)
 					mRulerView->SetMailViewFont( mFont);
-				JobIsDone( true);
+				UpdateFont( mFont);
 				WriteStateInfo();
 				break;
 			}
@@ -270,8 +270,15 @@ void BmMailView::MessageReceived( BMessage* msg) {
 				mBodyPartView->AddAttachment( msg);
 				break;
 			}
+			case BM_MARK_AS_READ: {
+				BmMail* mail=NULL;
+				msg->FindPointer( MSG_MAIL, (void**)&mail);
+				if (mCurrMail == mail)
+					mCurrMail->MarkAs( BM_MAIL_STATUS_READ);
+				break;
+			}
 			case B_MOUSE_WHEEL_CHANGED: {
-				if (modifiers() & B_SHIFT_KEY) {
+				if (modifiers() & (B_SHIFT_KEY | B_CONTROL_KEY)) {
 					bool passedOn = false;
 					if (mPartnerMailRefView && !(passedOn = msg->FindBool("bm:passed_on"))) {
 						msg->AddBool("bm:passed_on", true);
@@ -382,7 +389,6 @@ void BmMailView::FrameResized( float newWidth, float newHeight) {
 	float textWidth = TextRect().Width()+4;
 	float widenedBy = newWidth-textWidth;
 	if (mBodyPartView) {
-//		float widenedBy = newWidth-mBodyPartView->Frame().Width();
 		float height = mBodyPartView->Frame().Height();
 		if (mOutbound)
 			mBodyPartView->ResizeTo( MAX(textWidth,newWidth), height);
@@ -392,14 +398,12 @@ void BmMailView::FrameResized( float newWidth, float newHeight) {
 			mBodyPartView->Invalidate( BRect( newWidth-widenedBy, 0, newWidth, height));
 	}
 	if (mHeaderView && !mOutbound) {
-//		float widenedBy = newWidth-mHeaderView->Frame().Width();
 		float height = mHeaderView->Frame().Height();
 		mHeaderView->ResizeTo( mHeaderView->FixedWidth(), height);
 		if (widenedBy > 0)
 			mHeaderView->Invalidate( BRect( newWidth-widenedBy, 0, newWidth, height));
 	}
 	if (mRulerView) {
-//		float widenedBy = newWidth-mRulerView->Frame().Width();
 		float height = mRulerView->Frame().Height();
 		mRulerView->ResizeTo( MAX(textWidth,newWidth), height);
 		if (widenedBy > 0)
@@ -439,6 +443,22 @@ void BmMailView::SetSignatureByName( const BString sigName) {
 }
 
 /*------------------------------------------------------------------------------*\
+	UpdateFont()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailView::UpdateFont( const BFont& font) {
+	SetFont( &font);
+	SetFontAndColor( &font);
+	text_run_array* textRunArray = RunArray( 0, 1000000);
+	if (!textRunArray)
+		return;
+	for( int i=0; i<textRunArray->count; ++i)
+		textRunArray->runs[i].font = font;
+	SetRunArray( 0, 1000000, textRunArray);
+	free( textRunArray);
+}
+
+/*------------------------------------------------------------------------------*\
 	AcceptsDrop()
 		-	
 \*------------------------------------------------------------------------------*/
@@ -452,7 +472,19 @@ bool BmMailView::AcceptsDrop( const BMessage* msg) {
 \*------------------------------------------------------------------------------*/
 void BmMailView::GetWrappedText( BString& out) {
 	BString editedText = Text();
-	WordWrap( editedText, out, ThePrefs->GetInt( "MaxLineLenForHardWrap", 998), "\n");
+	int32 lineLen;
+	if (ThePrefs->GetBool( "HardWrapMailText")) {
+		// we are in hard-wrap mode, so we use the right margin from the rulerview
+		// as right border:
+		lineLen = mRulerView->IndicatorPos();
+	} else {
+		// we are in softwrap mode, but there might still be a 78 chars limit
+		// set by prefs (if not, we use the maximum line length of 998 chars):
+		lineLen = ThePrefs->GetInt( "MaxLineLenForHardWrap", 998);
+	}
+	WordWrap( editedText, out, lineLen, "\n");
+	// update mail's right margin according to rulerview:
+	mCurrMail->RightMargin( mRulerView->IndicatorPos());
 }
 
 /*------------------------------------------------------------------------------*\
@@ -466,6 +498,7 @@ void BmMailView::ShowMail( BmMailRef* ref, bool async) {
 			if (DataModel())
 				DetachModel();
 			mHeaderView->ShowHeader( NULL);
+			mBodyPartView->ShowBody( NULL);
 			mCurrMail = NULL;
 			BMessage msg(BM_NTFY_MAIL_VIEW);
 			msg.AddBool( MSG_HAS_MAIL, false);
@@ -495,6 +528,7 @@ void BmMailView::ShowMail( BmMail* mail, bool async) {
 				DetachModel();
 			mCurrMail = NULL;
 			mHeaderView->ShowHeader( NULL);
+			mBodyPartView->ShowBody( NULL);
 			BMessage msg(BM_NTFY_MAIL_VIEW);
 			msg.AddBool( MSG_HAS_MAIL, false);
 			SendNotices( BM_NTFY_MAIL_VIEW, &msg);
@@ -522,8 +556,8 @@ void BmMailView::JobIsDone( bool completed) {
 		mTextRunMap[0] = BmTextRunInfo( Black);
 		BmBodyPartList* body = mCurrMail->Body();
 		mClickedTextRun = 0;
-		if (mCurrMail->ModifiedMaxLineLen() > 0)
-			mRulerView->SetIndicatorPos( mCurrMail->ModifiedMaxLineLen());
+		if (mRulerView)
+			mRulerView->SetIndicatorPos( mCurrMail->RightMargin());
 		if (body) {
 			mBodyPartView->ShowBody( body);
 			if (mShowRaw) {
@@ -587,8 +621,19 @@ void BmMailView::JobIsDone( bool completed) {
 		mHeaderView->ShowHeader( mCurrMail->Header().Get());
 		ContainerView()->UnsetBusy();
 		ScrollTo( 0,0);
-		if (mCurrMail->Status() == BM_MAIL_STATUS_NEW)
-			mCurrMail->MarkAs( BM_MAIL_STATUS_READ);
+		if (mCurrMail->Status() == BM_MAIL_STATUS_NEW) {
+			if (mReadRunner) {
+				delete mReadRunner;
+				mReadRunner = NULL;
+			}
+			int32 readDelay = ThePrefs->GetInt( "MarkAsReadDelay", 2000);
+			if (readDelay>0) {
+				BMessage* msg = new BMessage( BM_MARK_AS_READ);
+				msg->AddPointer( MSG_MAIL, (void*)mCurrMail.Get());
+				BMessenger msgr( this);
+				mReadRunner = new BMessageRunner( msgr, msg, readDelay*1000, 1);
+			}
+		}
 		BMessage msg(BM_NTFY_MAIL_VIEW);
 		msg.AddBool( MSG_HAS_MAIL, true);
 		SendNotices( BM_NTFY_MAIL_VIEW, &msg);
@@ -655,9 +700,12 @@ BmMailView::BmTextRunIter BmMailView::TextRunInfoAt( int32 pos) const {
 void BmMailView::DetachModel() {
 	mBodyPartView->DetachModel();
 	inheritedController::DetachModel();
-	ContainerView()->UnsetBusy();
-	SetText( "");
-	mHeaderView->ShowHeader( NULL, false);
+	if (LockLooper()) {
+		ContainerView()->UnsetBusy();
+		SetText( "");
+		mHeaderView->ShowHeader( NULL, false);
+		UnlockLooper();
+	}
 }
 
 /*------------------------------------------------------------------------------*\

@@ -103,51 +103,61 @@ BmSmtp::~BmSmtp() {
 }
 
 /*------------------------------------------------------------------------------*\
+	ShouldContinue()
+		-	determines whether or not the Smtp-job should continue to run
+		-	in addition to the inherited behaviour, the Smtp-job will continue
+			when it executes special jobs (not BM_DEFAULT_JOB), since in that
+			case there are no controllers present.
+\*------------------------------------------------------------------------------*/
+bool BmSmtp::ShouldContinue() {
+	return inherited::ShouldContinue() 
+			 || CurrentJobSpecifier() == BM_CHECK_CAPABILITIES_JOB;
+}
+
+/*------------------------------------------------------------------------------*\
 	StartJob()
 		-	the mainloop, steps through all SMTP-stages and calls the corresponding
 			handlers
 \*------------------------------------------------------------------------------*/
 bool BmSmtp::StartJob() {
-
-	switch( CurrentJobSpecifier()) {
-		case BM_CHECK_CAPABILITIES_JOB: {
-			return true;
-		}
-		default: {
-			int32 startState = mSmtpAccount->NeedsAuthViaPopServer() 
-											? SMTP_AUTH_VIA_POP 
-											: SMTP_CONNECT;
-			const float delta = 100.0 / (SMTP_DONE-startState);
-			const bool failed=true;
+	int32 startState = mSmtpAccount->NeedsAuthViaPopServer() 
+								? SMTP_AUTH_VIA_POP 
+								: SMTP_CONNECT;
+	const float delta = 100.0 / (SMTP_DONE-startState);
+	const bool failed=true;
 		
-			mSmtpServer.InitCheck() == B_OK
-													||	BM_THROW_RUNTIME("BmSmtp: could not create NetEndpoint");
-			try {
-				for( 	mState = startState; ShouldContinue() && mState<SMTP_DONE; ++mState) {
-					if (mState == SMTP_AUTH && mSmtpAccount->NeedsAuthViaPopServer())
-						continue;
-					TStateMethod stateFunc = SmtpStates[mState].func;
-					UpdateSMTPStatus( (mState==startState ? 0.0 : delta), NULL);
-					(this->*stateFunc)();
-				}
-				UpdateSMTPStatus( delta, NULL);
-				mSmtpAccount->mMailVect.clear();
+	mSmtpServer.InitCheck() == B_OK		||	BM_THROW_RUNTIME("BmSmtp: could not create NetEndpoint");
+	try {
+		for( 	mState = startState; ShouldContinue() && mState<SMTP_DONE; ++mState) {
+			if (mState == SMTP_AUTH && mSmtpAccount->NeedsAuthViaPopServer())
+				continue;
+			TStateMethod stateFunc = SmtpStates[mState].func;
+			UpdateSMTPStatus( (mState==startState ? 0.0 : delta), NULL);
+			(this->*stateFunc)();
+			if (CurrentJobSpecifier() == BM_CHECK_CAPABILITIES_JOB && mState==SMTP_HELO) {
+				UpdateSMTPStatus( delta*(SMTP_DONE-mState), NULL);
+				return true;
 			}
-			catch( BM_runtime_error &err) {
-				// a problem occurred, we tell the user:
-				BString errstr = err.what();
-				int e;
-				if ((e = mSmtpServer.Error()))
-					errstr << "\nerror: " << e << ", " << mSmtpServer.ErrorStr();
-				UpdateSMTPStatus( 0.0, NULL, failed);
-				BString text = Name() << "\n\n" << errstr;
-				BM_SHOWERR( BString("BmSmtp: ") << text);
-				mSmtpAccount->mMailVect.clear();
-				return false;
-			}
-			return true;
 		}
+		if (!ShouldContinue())
+			UpdateSMTPStatus( 0.0, NULL, false, true);
+		else
+			UpdateSMTPStatus( delta, NULL);
+		mSmtpAccount->mMailVect.clear();
 	}
+	catch( BM_runtime_error &err) {
+		// a problem occurred, we tell the user:
+		BString errstr = err.what();
+		int e;
+		if ((e = mSmtpServer.Error()))
+			errstr << "\nerror: " << e << ", " << mSmtpServer.ErrorStr();
+		UpdateSMTPStatus( 0.0, NULL, failed);
+		BString text = Name() << "\n\n" << errstr;
+		BM_SHOWERR( BString("BmSmtp: ") << text);
+		mSmtpAccount->mMailVect.clear();
+		return false;
+	}
+	return true;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -157,13 +167,15 @@ bool BmSmtp::StartJob() {
 			current stage (the BString "FAILED!" will be shown)
 \*------------------------------------------------------------------------------*/
 void BmSmtp::UpdateSMTPStatus( const float delta, const char* detailText, 
-										  bool failed) {
+										  bool failed, bool stopped) {
 	auto_ptr<BMessage> msg( new BMessage( BM_JOB_UPDATE_STATE));
 	msg->AddString( MSG_SMTP, Name().String());
 	msg->AddString( BmJobModel::MSG_DOMAIN, "statbar");
 	msg->AddFloat( MSG_DELTA, delta);
 	if (failed)
 		msg->AddString( MSG_TRAILING, BString(SmtpStates[mState].text) << " FAILED!");
+	else if (stopped)
+		msg->AddString( MSG_TRAILING, BString(SmtpStates[mState].text) << " Stopped!");
 	else
 		msg->AddString( MSG_TRAILING, SmtpStates[mState].text);
 	if (detailText)
@@ -207,6 +219,8 @@ void BmSmtp::Connect() {
 		-	Sends greeting to server and checks result
 		-	EHLO is tried first, aiming to find out more about server capabilities;
 			if that fails, HELO is used
+		-	if EHLO succeeds, info about the server-capabilities are extracted from
+			the answer
 \*------------------------------------------------------------------------------*/
 void BmSmtp::Helo() {
 	BString domain = mSmtpAccount->DomainToAnnounce();
@@ -223,11 +237,28 @@ void BmSmtp::Helo() {
 		if (rx.exec( mAnswer, "^\\d\\d\\d.DSN\\b", Regexx::newline)) {
 			mServerSupportsDSN = true;
 		}
+		if (rx.exec( mAnswer, "^\\d\\d\\d.AUTH\\b(.*?)$", Regexx::newline)) {
+			mSupportedAuthTypes = rx.match[0].atom[0];
+		}
 	} catch(...) {
 		cmd = BString("HELO ") << domain;
 		SendCommand( cmd);
 		CheckForPositiveAnswer();
 	}
+}
+
+/*------------------------------------------------------------------------------*\
+	SuggestAuthType()
+		-	looks at the auth-types supported by the server and selects the most secure
+			of those that is supported by Beam.
+\*------------------------------------------------------------------------------*/
+BString BmSmtp::SuggestAuthType() const {
+	if (mSupportedAuthTypes.IFindFirst( BmSmtpAccount::AUTH_LOGIN) != B_ERROR)
+		return BmSmtpAccount::AUTH_LOGIN;
+	else if (mSupportedAuthTypes.IFindFirst( BmSmtpAccount::AUTH_PLAIN) != B_ERROR)
+		return BmSmtpAccount::AUTH_PLAIN;
+	else
+		return "";
 }
 
 /*------------------------------------------------------------------------------*\
@@ -259,17 +290,16 @@ void BmSmtp::AuthViaPopServer() {
 		}
 		if (!sendingAcc)
 			BM_THROW_RUNTIME( BString("Sorry, could not determine pop-account for address '")<<sender<<"'\n\n Smtp-after-Pop authentication failed, giving up.");
-		BMessage msg(BM_JOBWIN_POP);
-		msg.AddString( BmJobModel::MSG_JOB_NAME, sendingAcc->Name().String());
-		msg.AddInt32( BmJobModel::MSG_JOB_SPEC, BmPopper::BM_AUTH_ONLY_JOB);
-		msg.AddBool( BmJobModel::MSG_JOB_THREAD, false);
-		TheJobStatusWin->AddJob( &msg);
+		BmRef<BmPopper> popper( new BmPopper( sendingAcc->Name(), sendingAcc.Get()));
+		popper->SetPwdAcquisitorFunc( BmPopperView::AskUserForPwd);
+		popper->StartJobInThisThread( BmPopper::BM_AUTH_ONLY_JOB);
 	}
 }
 
 /*------------------------------------------------------------------------------*\
 	Auth()
 		-	Sends user/passwd combination and checks result
+		-	currently supports PLAIN- and LOGIN-authentication
 \*------------------------------------------------------------------------------*/
 void BmSmtp::Auth() {
 	BString pwd;
@@ -309,7 +339,7 @@ void BmSmtp::Auth() {
 				Encode( "base64", cmd, base64);
 				SendCommand( "", base64);
 			}
-		} else if (authMethod == BmSmtpAccount::AUTH_PLAIN) {
+		} else if (authMethod == BmSmtpAccount::AUTH_LOGIN) {
 			// LOGIN-method: send base64-encoded username, then send base64-encoded password:
 			BString cmd = BString("AUTH LOGIN");
 			SendCommand( cmd);
@@ -338,7 +368,11 @@ void BmSmtp::Auth() {
 
 /*------------------------------------------------------------------------------*\
 	SendMails()
-		-	
+		-	sends the queued mails to the server (invokes MAIL, RCPT and DATA-commands)
+		-	depending on the handling of Bcc-recipients, each mail is only sent to
+			the server once (SpecialHeaderForEachBcc=false) or each mail is being
+			sent once for the standard recipients (To, Cc) plus a personalized version
+			for each Bcc-recipient (SpecialHeaderForEachBcc=true)
 \*------------------------------------------------------------------------------*/
 void BmSmtp::SendMails() {
 	for( uint32 i=0; i<mSmtpAccount->mMailVect.size(); ++i) {
@@ -358,8 +392,8 @@ void BmSmtp::SendMails() {
 }
 
 /*------------------------------------------------------------------------------*\
-	Mail()
-		-	
+	Mail( mail)
+		-	announces the given mail to the server
 \*------------------------------------------------------------------------------*/
 void BmSmtp::Mail( BmMail* mail) {
 	BString sender = mail->Header()->DetermineSender();
@@ -381,8 +415,8 @@ void BmSmtp::Mail( BmMail* mail) {
 }
 
 /*------------------------------------------------------------------------------*\
-	Rcpt()
-		-	
+	Rcpt( mail)
+		-	announces all recipients of the given mail to the server
 \*------------------------------------------------------------------------------*/
 void BmSmtp::Rcpt( BmMail* mail) {
 	BmAddrList::const_iterator iter;
@@ -405,8 +439,10 @@ void BmSmtp::Rcpt( BmMail* mail) {
 }
 
 /*------------------------------------------------------------------------------*\
-	BccRcpt()
-		-	
+	BccRcpt( mail, sendDataForEachBcc)
+		-	announces all Bcc-recipients of given mail to the server
+		-	if param sendDataForEachBcc is set, a new mail will be created for each 
+			Bcc-recipient, containing only it inside the Bcc-header
 \*------------------------------------------------------------------------------*/
 void BmSmtp::BccRcpt( BmMail* mail, bool sendDataForEachBcc) {
 	BmAddrList::const_iterator iter;
@@ -425,14 +461,17 @@ void BmSmtp::BccRcpt( BmMail* mail, bool sendDataForEachBcc) {
 }
 
 /*------------------------------------------------------------------------------*\
-	Data()
-		-	
+	Data( mail, forBcc)
+		-	sends the given mail (the mailtext) to the server
+		-	if param forBcc is set, the contained address is set as the mail's
+			Bcc-header (only this address)
 \*------------------------------------------------------------------------------*/
 void BmSmtp::Data( BmMail* mail, BString forBcc) {
 	BString cmd = BString("DATA");
 	SendCommand( cmd);
 	CheckForPositiveAnswer();
 	Regexx rx;
+	BString mimeRX = BString("^")+BM_FIELD_MIME+":\\s+1.0";
 	cmd = mail->RawText();
 	if (mail->IsRedirect()) {
 		if (mail->Header()->GetStrippedFieldVal(BM_FIELD_RESENT_BCC).Length()) {
@@ -441,8 +480,8 @@ void BmSmtp::Data( BmMail* mail, BString forBcc) {
 			if (forBcc.Length()) {
 				// include BCC for current recipient within header so he/she/it can see
 				// how this mail got sent to him/her/it:
-				cmd = rx.replace( cmd, "^Mime:\\s+1.0", 
-										BString("Mime: 1.0\r\nResent-Bcc: ")<<forBcc, Regexx::newline);
+				cmd = rx.replace( cmd, mimeRX, 
+										BString(BM_FIELD_MIME)+": 1.0\r\nResent-Bcc: "+forBcc, Regexx::newline);
 			}
 		}
 	} else {
@@ -452,8 +491,8 @@ void BmSmtp::Data( BmMail* mail, BString forBcc) {
 			if (forBcc.Length()) {
 				// include BCC for current recipient within header so he/she/it can see
 				// how this mail got sent to him/her/it:
-				cmd = rx.replace( cmd, "^Mime:\\s+1.0", 
-										BString("Mime: 1.0\r\nBcc: ")<<forBcc, Regexx::newline);
+				cmd = rx.replace( cmd, mimeRX, 
+										BString(BM_FIELD_MIME)+": 1.0\r\nBcc: "+forBcc, Regexx::newline);
 			}
 		}
 	}

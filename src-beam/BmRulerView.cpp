@@ -27,6 +27,7 @@
 /*                                                                       */
 /*************************************************************************/
 
+#include "BubbleHelper.h"
 #include "Colors.h"
 
 #include "BmRulerView.h"
@@ -76,8 +77,10 @@ void BmRulerView::Draw( BRect bounds) {
 	inherited::Draw( bounds);
 	
 	BRect r = Bounds();
-	
-	float width = r.Width();
+	int32 maxLineLen = ThePrefs->GetInt( "MaxLineLenForHardWrap", 998);
+	float width = maxLineLen<100 
+							? 1+maxLineLen*mSingleCharWidth	// stop at hard-wrap border
+							: r.Width();							// draw all the way
 	float step = mSingleCharWidth;
 	
 	// draw ruler lines:
@@ -99,6 +102,12 @@ void BmRulerView::Draw( BRect bounds) {
 		float w = StringWidth( numStr.String());
 		DrawString( numStr.String(), BPoint( nXOffset+1+x-w/2, 8));
 	}
+	if (maxLineLen < 100) {
+		// draw number over right margin;
+		BString numStr = BString("") << maxLineLen;
+		float w = StringWidth( numStr.String());
+		DrawString( numStr.String(), BPoint( nXOffset+width-w/2, 8));
+	}
 
 	// draw right-margin indicator:
 	float xPos = nXOffset+mIndicatorPos*mSingleCharWidth;
@@ -107,9 +116,15 @@ void BmRulerView::Draw( BRect bounds) {
 		SetHighColor( LightMetallicBlue);
 	else
 		SetHighColor( MedMetallicBlue);
-	FillTriangle( BPoint( xPos-5, yPos),
-					  BPoint( xPos+5, yPos),
-					  BPoint( xPos, yPos+10));
+	if (ThePrefs->GetBool( "HardWrapMailText")) {
+		FillTriangle( BPoint( xPos-5, yPos),
+						  BPoint( xPos+5, yPos),
+						  BPoint( xPos, yPos+10));
+	} else {
+		StrokeTriangle( BPoint( xPos-5, yPos),
+						    BPoint( xPos+5, yPos),
+						    BPoint( xPos, yPos+10));
+	}
 }
 
 /*------------------------------------------------------------------------------*\
@@ -120,6 +135,14 @@ void BmRulerView::MouseDown( BPoint point) {
 	inherited::MouseDown( point); 
 	if (Parent())
 		Parent()->MakeFocus( true);
+	int32 maxLineLen = ThePrefs->GetInt( "MaxLineLenForHardWrap", 998);
+	if (maxLineLen < 100) {
+		BString s = BString("The right margin is currently fixed\nto a maximum of ") 
+							<< maxLineLen 
+							<< " characters.\n\nPlease check Preferences.";
+		TheBubbleHelper.SetHelp( this, s.String());
+	} else
+		TheBubbleHelper.SetHelp( this, NULL);
 	BMessage* msg = Looper()->CurrentMessage();
 	int32 buttons;
 	if (msg->FindInt32( "buttons", &buttons) == B_OK 
@@ -172,6 +195,8 @@ void BmRulerView::SetIndicatorPixelPos( float pixelPos) {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmRulerView::SetIndicatorPos( int32 newPos) {
+	int32 maxPos = ThePrefs->GetInt( "MaxLineLenForHardWrap", 998);
+	newPos = MAX( 1, MIN( newPos, maxPos));
 	if (newPos != mIndicatorPos) {
 		mIndicatorPos = newPos;
 		Invalidate();

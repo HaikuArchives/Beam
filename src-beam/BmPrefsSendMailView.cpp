@@ -45,6 +45,7 @@
 #include "BmPopAccount.h"
 #include "BmPrefs.h"
 #include "BmPrefsSendMailView.h"
+#include "BmSmtp.h"
 #include "BmTextControl.h"
 #include "BmUtil.h"
 
@@ -246,7 +247,11 @@ BmPrefsSendMailView::BmPrefsSendMailView()
 						mServerControl = new BmTextControl( "SMTP-Server:"),
 						mPortControl = new BmTextControl( "Port:"),
 						new Space( minimax(0,5,0,5)),
-						mAuthControl = new BmMenuControl( "Auth-method:", new BPopUpMenu("")),
+						new HGroup(
+							mAuthControl = new BmMenuControl( "Auth-method:", new BPopUpMenu("")),
+							mCheckAndSuggestButton = new MButton("Check and Suggest", new BMessage(BM_CHECK_AND_SUGGEST), this, minimax(-1,-1,-1,-1)),
+							0
+						),
 						mLoginControl = new BmTextControl( "Username:"),
 						mPwdControl = new BmTextControl( "Password:"),
 						mPopControl = new BmMenuControl( "Pop-account:", new BPopUpMenu("")),
@@ -257,10 +262,14 @@ BmPrefsSendMailView::BmPrefsSendMailView()
 				),
 				new VGroup(
 					new MBorder( M_LABELED_BORDER, 10, (char*)"Options",
-						new VGroup(
-							mStorePwdControl = new BmCheckControl( "Store password on disk (UNSAFE!)", 
-																				new BMessage(BM_PWD_STORED_CHANGED), 
-																				this),
+						new HGroup(
+							new VGroup(
+								mStorePwdControl = new BmCheckControl( "Store password on disk (UNSAFE!)", 
+																					new BMessage(BM_PWD_STORED_CHANGED), 
+																					this),
+								0
+							),
+							new Space( minimax(50,0,50,0)),
 							0
 						)
 					),
@@ -332,6 +341,9 @@ LOGIN  -  is another simple auth-mode that sends passwords in cleartext\n\
 SMTP-AFTER-POP  -  does SMTP-authentication via the use of a POP3-server.");
 	TheBubbleHelper.SetHelp( mPopControl, "Here you can select the POP3-account that shall be used\n\
 when authenticating via SMTP-AFTER-POP.");
+	TheBubbleHelper.SetHelp( mCheckAndSuggestButton, "When you click here, Beam will connect to the SMTP-server,\n\
+check which authentication types it supports and select\n\
+the most secure.");
 
 	mAccountControl->SetTarget( this);
 	mDomainControl->SetTarget( this);
@@ -447,6 +459,18 @@ void BmPrefsSendMailView::MessageReceived( BMessage* msg) {
 					mCurrAcc->PwdStoredOnDisk( val);
 				break;
 			}
+			case BM_CHECK_AND_SUGGEST: {
+				if (mCurrAcc) {
+					BmRef<BmSmtp> smtp( new BmSmtp( mCurrAcc->Key(), mCurrAcc.Get()));
+					smtp->StartJobInThisThread( BmSmtp::BM_CHECK_CAPABILITIES_JOB);
+					BString suggestedAuthType = smtp->SuggestAuthType();
+					if (suggestedAuthType.Length())
+						mAuthControl->MarkItem( suggestedAuthType.String());
+					else
+						mAuthControl->MarkItem( nEmptyItemLabel.String());
+				}
+				// yes, no break here, we want to proceed with updating the auth-menu...
+			}
 			case BM_AUTH_SELECTED: {
 				BMenuItem* item = mAuthControl->Menu()->FindMarked();
 				if (item && nEmptyItemLabel != item->Label())
@@ -513,6 +537,7 @@ void BmPrefsSendMailView::ShowAccount( int32 selection) {
 	mPortControl->SetEnabled( enabled);
 	mServerControl->SetEnabled( enabled);
 	mAuthControl->SetEnabled( enabled);
+	mCheckAndSuggestButton->SetEnabled( enabled);
 	mRemoveButton->SetEnabled( enabled);
 	mStorePwdControl->SetEnabled( enabled);
 	

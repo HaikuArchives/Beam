@@ -51,7 +51,7 @@ using namespace regexx;
 
 /*------------------------------------------------------------------------------*\
 	BmPopAccount()
-		-	
+		-	c'tor
 \*------------------------------------------------------------------------------*/
 BmPopAccount::BmPopAccount( const char* name, BmPopAccountList* model) 
 	:	inherited( name, model, (BmListModelItem*)NULL)
@@ -72,6 +72,7 @@ BmPopAccount::BmPopAccount( const char* name, BmPopAccountList* model)
 
 /*------------------------------------------------------------------------------*\
 	BmPopAccount( archive)
+		-	c'tor
 		-	constructs a BmPopAccount from a BMessage
 \*------------------------------------------------------------------------------*/
 BmPopAccount::BmPopAccount( BMessage* archive, BmPopAccountList* model) 
@@ -114,7 +115,7 @@ BmPopAccount::BmPopAccount( BMessage* archive, BmPopAccountList* model)
 
 /*------------------------------------------------------------------------------*\
 	~BmPopAccount()
-		-	
+		-	d'tor
 \*------------------------------------------------------------------------------*/
 BmPopAccount::~BmPopAccount() {
 	delete mIntervalRunner;
@@ -218,8 +219,9 @@ bool BmPopAccount::HandlesAddress( BString addr, bool needExactMatch) const {
 }
 
 /*------------------------------------------------------------------------------*\
-	IsUIDDownloaded()
-		-	
+	IsUIDDownloaded( uid)
+		-	checks if a mail with the given uid (unique-ID) has already been 
+			downloaded
 \*------------------------------------------------------------------------------*/
 bool BmPopAccount::IsUIDDownloaded( BString uid) {
 	uid << " ";									// append a space to avoid matching only in parts
@@ -233,8 +235,10 @@ bool BmPopAccount::IsUIDDownloaded( BString uid) {
 }
 
 /*------------------------------------------------------------------------------*\
-	MarkUIDAsDownloaded()
-		-	
+	MarkUIDAsDownloaded( uid)
+		-	marks the given uid as downloaded
+		-	this method should be called directly after a message has succesfully
+			been stored locally
 \*------------------------------------------------------------------------------*/
 void BmPopAccount::MarkUIDAsDownloaded( BString uid) {
 	mUIDs.push_back( uid << " " << system_time());
@@ -242,7 +246,8 @@ void BmPopAccount::MarkUIDAsDownloaded( BString uid) {
 
 /*------------------------------------------------------------------------------*\
 	CheckInterval( interval)
-		-	
+		-	sets the regular check interval to the given interval (in minutes)
+		-	initializes the interval-runner accordingly
 \*------------------------------------------------------------------------------*/
 void BmPopAccount::CheckInterval( int16 i) { 
 	mCheckInterval = i; 
@@ -253,7 +258,8 @@ void BmPopAccount::CheckInterval( int16 i) {
 
 /*------------------------------------------------------------------------------*\
 	SetupIntervalRunner()
-		-	
+		-	sets up a BMessageRunner in such a way that it triggers when this
+			account should be checked next time (indefinitely)
 \*------------------------------------------------------------------------------*/
 void BmPopAccount::SetupIntervalRunner() {
 	delete mIntervalRunner;
@@ -272,7 +278,6 @@ void BmPopAccount::SetupIntervalRunner() {
 /********************************************************************************\
 	BmPopAccountList
 \********************************************************************************/
-
 
 BmRef< BmPopAccountList> BmPopAccountList::theInstance( NULL);
 
@@ -307,15 +312,15 @@ BmPopAccountList::~BmPopAccountList() {
 
 /*------------------------------------------------------------------------------*\
 	SettingsFileName()
-		-	
+		-	returns the name of the settins-file for the POP3-accounts-list
 \*------------------------------------------------------------------------------*/
 const BString BmPopAccountList::SettingsFileName() {
 	return BString( TheResources->SettingsPath.Path()) << "/" << "Pop Accounts";
 }
 
 /*------------------------------------------------------------------------------*\
-	InstantiateMailRefs( archive)
-		-	
+	InstantiateItems( archive)
+		-	initializes the POP3-accounts info from the given message
 \*------------------------------------------------------------------------------*/
 void BmPopAccountList::InstantiateItems( BMessage* archive) {
 	BM_LOG2( BM_LogMailTracking, BString("Start of InstantiateItems() for PopAccountList"));
@@ -335,7 +340,9 @@ void BmPopAccountList::InstantiateItems( BMessage* archive) {
 
 /*------------------------------------------------------------------------------*\
 	DefaultAccount()
-		-	
+		-	returns the POP3-account that has been marked as default account
+		-	if no account has been marked as default, the first account is returned
+		-	if no POP3-account has been defined yet, NULL is returned
 \*------------------------------------------------------------------------------*/
 BmRef<BmPopAccount> BmPopAccountList::DefaultAccount() {
 	BmModelItemMap::const_iterator iter;
@@ -352,8 +359,9 @@ BmRef<BmPopAccount> BmPopAccountList::DefaultAccount() {
 }
 
 /*------------------------------------------------------------------------------*\
-	DefaultAccount()
-		-	
+	SetDefaultAccount( accName)
+		-	marks the account with the given name as the default account
+		-	any prior default-account is being reset
 \*------------------------------------------------------------------------------*/
 void BmPopAccountList::SetDefaultAccount( BString accName) {
 	BmModelItemMap::const_iterator iter;
@@ -368,12 +376,13 @@ void BmPopAccountList::SetDefaultAccount( BString accName) {
 }
 
 /*------------------------------------------------------------------------------*\
-	FindAccountForAddress()
-		-	
+	FindAccountForAddress( addr)
+		-	determines to which account the given address belongs (if any)
 \*------------------------------------------------------------------------------*/
 BmRef<BmPopAccount> BmPopAccountList::FindAccountForAddress( const BString addr) {
 	BmModelItemMap::const_iterator iter;
-	// we first check whether any account handles the given address as alias:
+	// we first check whether any account handles the given address (as primary
+	// address or as alias):
 	for( iter = begin(); iter != end(); ++iter) {
 		BmPopAccount* acc = dynamic_cast< BmPopAccount*>( iter->second.Get());
 		if (acc->HandlesAddress( addr, true)) {
@@ -384,6 +393,7 @@ BmRef<BmPopAccount> BmPopAccountList::FindAccountForAddress( const BString addr)
 	for( iter = begin(); iter != end(); ++iter) {
 		BmPopAccount* acc = dynamic_cast< BmPopAccount*>( iter->second.Get());
 		if (acc->MarkedAsBitBucket()) {
+			// check if the bit-bucket is for the given address's domain
 			BString regex = acc->GetDomainName()<<"$";
 			Regexx rx;
 			if (rx.exec( addr, regex))
@@ -396,8 +406,10 @@ BmRef<BmPopAccount> BmPopAccountList::FindAccountForAddress( const BString addr)
 
 
 /*------------------------------------------------------------------------------*\
-	CheckMail()
-		-	
+	CheckMail( allAccounts)
+		-	checks mail for the accounts that have been marked to be part of the
+			primary account-set
+		-	if param allAccounts is set, all accounts will be checked
 \*------------------------------------------------------------------------------*/
 void BmPopAccountList::CheckMail( bool allAccounts) {
 	BmModelItemMap::const_iterator iter;
@@ -410,23 +422,15 @@ void BmPopAccountList::CheckMail( bool allAccounts) {
 }
 
 /*------------------------------------------------------------------------------*\
-	CheckMailFor()
-		-	
+	CheckMailFor( accName, isAutoCheck)
+		-	checks mail for the given account
+		-	param isAutoCheck indicates whether or not this check has been triggered
+			by regular interval checking (in that case we do not want to show a GUI
+			for the check).
 \*------------------------------------------------------------------------------*/
 void BmPopAccountList::CheckMailFor( BString accName, bool isAutoCheck) {
 	BMessage archive(BM_JOBWIN_POP);
 	archive.AddString( BmJobModel::MSG_JOB_NAME, accName.String());
 	archive.AddBool( MSG_AUTOCHECK, isAutoCheck);
 	mJobMetaController->PostMessage( &archive);
-}
-
-/*------------------------------------------------------------------------------*\
-	AuthOnlyFor()
-		-	
-\*------------------------------------------------------------------------------*/
-void BmPopAccountList::AuthOnlyFor( BString accName) {
-	BMessage msg(BM_JOBWIN_POP);
-	msg.AddString( BmJobModel::MSG_JOB_NAME, accName.String());
-	msg.AddInt32( BmJobModel::MSG_JOB_SPEC, BmPopper::BM_AUTH_ONLY_JOB);
-	mJobMetaController->PostMessage( &msg);
 }

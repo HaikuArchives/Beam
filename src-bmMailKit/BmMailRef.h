@@ -111,7 +111,7 @@ public:
 	inline void EntryRef( entry_ref &e) 			{ mEntryRef = e; }
 
 	// flags indicating which parts are to be updated:
-	static const BmUpdFlags UPD_STATUS	= 1<<1;
+	static const BmUpdFlags UPD_STATUS	= 1<<2;
 
 protected:
 	BmMailRef( BmMailRefList* model, entry_ref &eref, struct stat& st);

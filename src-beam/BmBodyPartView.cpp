@@ -102,8 +102,9 @@ BmBodyPartItem::~BmBodyPartItem() {
 /********************************************************************************\
 	BmBodyPartView
 \********************************************************************************/
+#define BACKGROUND_COL BeBackgroundGrey
 
-const int16 BmBodyPartView::nFirstTextCol = 1;
+const int16 BmBodyPartView::nFirstTextCol = 2;
 float BmBodyPartView::nColWidths[10] = {20,100,100,70,70,200,0,0,0,0};
 
 /*------------------------------------------------------------------------------*\
@@ -118,11 +119,11 @@ BmBodyPartView::BmBodyPartView( minimax minmax, int32 width, int32 height,
 	,	mEditable( editable)
 	,	mSavePanel( NULL)
 {
-	SetViewColor( BeBackgroundGrey);
-	fLightColumnCol = 						BeBackgroundGrey;
+	SetViewColor( BACKGROUND_COL);
+	fLightColumnCol = BACKGROUND_COL;
 	if (!editable) {	
 		fSelectedItemColorWindowActive = 
-		fSelectedItemColorWindowInactive = BeBackgroundGrey;
+		fSelectedItemColorWindowInactive = BACKGROUND_COL;
 	} else {
 		fSelectedItemColorWindowActive = 
 		fSelectedItemColorWindowInactive = BeShadow;
@@ -209,8 +210,14 @@ CLVContainerView* BmBodyPartView::CreateContainer( bool horizontal, bool vertica
 void BmBodyPartView::ShowBody( BmBodyPartList* body) {
 	try {
 		StopJob();
-		StartJob( body);
-//		StartJob( body, false);
+		if (!body) {
+			ResizeTo( Bounds().Width(), 0);
+			MoveTo( 0, 0);
+			SetViewColor( White);
+		} else {
+			SetViewColor( BACKGROUND_COL);
+			StartJob( body, false);
+		}
 	}
 	catch( exception &err) {
 		// a problem occurred, we tell the user:
@@ -492,7 +499,7 @@ bool BmBodyPartView::InitiateDrag( BPoint where, int32 index, bool wasSelected) 
 	BMessage dragMsg( B_SIMPLE_DATA);
 	BmBodyPartItem* bodyPartItem = dynamic_cast<BmBodyPartItem*>(ItemAt( index));
 	BmBodyPart* bodyPart = dynamic_cast<BmBodyPart*>(bodyPartItem->ModelItem());
-	const char* filename = bodyPartItem->GetColumnContentText( 1);
+	const char* filename = bodyPartItem->GetColumnContentText( COL_NAME);
 	entry_ref eref = bodyPart->WriteToTempFile( filename);
 	dragMsg.AddInt32( "be:actions", B_MOVE_TARGET);
 	dragMsg.AddString( "be:clip_name", filename);

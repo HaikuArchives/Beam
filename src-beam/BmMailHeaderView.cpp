@@ -39,6 +39,8 @@
 #include "regexx.hh"
 using namespace regexx;
 
+#include "BmEncoding.h"
+using namespace BmEncoding;
 #include "BmLogHandler.h"
 #include "BmMailHeader.h"
 #include "BmMailHeaderView.h"
@@ -103,7 +105,7 @@ BmMailHeaderFieldView::~BmMailHeaderFieldView() {
 }
 
 /*------------------------------------------------------------------------------*\
-	FilterHook()
+	Filter()
 		-	
 \*------------------------------------------------------------------------------*/
 filter_result BmMailHeaderFieldView::BmMsgFilter::Filter( BMessage* msg, 
@@ -415,8 +417,10 @@ float BmMailHeaderView::AddFieldViews() {
 				;
 			BString line( start, end-start-1);
 			start = end+1;
+			BString utf8Line;
+			ConvertToUTF8( B_ISO1_CONVERSION, line, utf8Line);
 			BmMailHeaderFieldView* fv 
-				= new BmMailHeaderFieldView( field, line, &mFont, FixedWidth());
+				= new BmMailHeaderFieldView( field, utf8Line, &mFont, FixedWidth());
 			mFieldViews.push_back( fv);
 			fv->MoveTo( 0, yPos);
 			AddChild( fv);

@@ -239,8 +239,18 @@ BmBodyPart::BmBodyPart( BmBodyPartList* model, const entry_ref* ref, BmListModel
 		mFileName = ref->name;
 		mContentType.SetTo( mimetype<<"; name=\"" << ref->name << '"');
 		mContentDisposition.SetTo( BString( "attachment; filename=\"")<<ref->name<<'"');
-		if (mimetype.ICompare( "text/", 5) == 0 || mimetype.ICompare( "message/", 8) == 0)
-			mContentTransferEncoding = "quoted-printable";
+		if (mimetype.ICompare( "text/", 5) == 0)
+			mContentTransferEncoding = NeedsEncoding( mDecodedData) 
+													? ThePrefs->GetBool( "Allow8BitMime", false) 
+														? "8bit"
+														: "quoted-printable"
+													: "7bit";
+		else if (mimetype.ICompare( "message/", 8) == 0)
+			mContentTransferEncoding = NeedsEncoding( mDecodedData) 
+													? ThePrefs->GetBool( "Allow8BitMime", false) 
+														? "8bit"
+														: "7bit"
+													: "7bit";
 		else
 			mContentTransferEncoding = "base64";
 		mInitCheck = B_OK;
@@ -340,6 +350,9 @@ void BmBodyPart::SetTo( const BString& msgtext, int32 start, int32 length,
 	transferEncoding = header->GetFieldVal( BM_FIELD_CONTENT_TRANSFER_ENCODING);
 	transferEncoding.RemoveSet( TheResources->WHITESPACE);
 							// some broken (webmail)-clients produce stuff like "7 bit"...
+	transferEncoding.IReplaceAll( "7-bit", "7bit");
+	transferEncoding.IReplaceAll( "8-bit", "8bit");
+							// other broken (webmail)-clients produce stuff like "7-bit" (argh)
 	if (!transferEncoding.Length())
 		transferEncoding = "7bit";
 	mContentTransferEncoding = transferEncoding;
@@ -401,25 +414,61 @@ void BmBodyPart::SetTo( const BString& msgtext, int32 start, int32 length,
 			BM_SHOWERR( "No boundary specified within multipart-message!");
 			return;
 		}
-		int32 startPos = int32(strstr( posInRawText, boundary.String())-msgtext.String());
-		if (startPos == B_ERROR) {
+		char* startPos = strstr( posInRawText, boundary.String());
+		if (!startPos) {
 			BM_SHOWERR( BString("Boundary <")<<boundary<<"> not found within message.");
 			return;
 		}
-		char* nPos;
-		int32 count = 0;
-		for( ; (nPos = strstr( msgtext.String()+startPos+boundary.Length(), boundary.String())); ++count) {
-			int32 nextPos = nPos - msgtext.String();
-//			int32 sPos = startPos+boundary.Length()+2;
-			int32 sPos = startPos+boundary.Length();
-			BM_LOG2( BM_LogMailParse, "Subpart of multipart found will be added to array");
-			BmBodyPart *subPart = new BmBodyPart( (BmBodyPartList*)ListModel().Get(), msgtext, sPos, nextPos-sPos, NULL, this);
-			AddSubItem( subPart);
-			startPos = nextPos;
-		}
-		if (!count) {
-			BM_SHOWERR( BString("Boundary <")<<boundary<<"> not found within message.");
-			return;
+		char* nPos = startPos;
+		BString checkStr;
+		BString foundBoundary;
+		bool isLastBoundary = false;
+		Regexx rx;
+		while( !isLastBoundary) {
+			while( 1) {
+				// in this loop we determine the next occurence of the current boundary,
+				// being careful not to accept boundaries that do not start at the beginning
+				// of a line or which are followed by nonspace-characters.
+				nPos = strstr( nPos+boundary.Length(), boundary.String());
+				if (!nPos)
+					break;
+				if (*(nPos-1)=='\n') {
+					char* endOfLine = strchr( nPos, '\r');
+					if (endOfLine)
+						checkStr.SetTo( nPos, endOfLine-nPos);
+					else
+						checkStr.SetTo( nPos);
+					if (rx.exec( checkStr, BString("^")<<boundary<<"--\\s*$", Regexx::newline)) {
+						isLastBoundary = true;
+						break;
+					}
+					if (rx.exec( checkStr, BString("^")<<boundary<<"\\s*$", Regexx::newline))
+						break;
+				}
+			}
+			if (nPos) {
+				int32 startOffs = startPos-msgtext.String()+boundary.Length();
+				BM_LOG2( BM_LogMailParse, "Subpart of multipart found will be added to array");
+				BmBodyPart *subPart = new BmBodyPart( (BmBodyPartList*)ListModel().Get(), 
+																  msgtext, startOffs, 
+																  nPos-msgtext.String()-startOffs,
+																  NULL, this);
+				AddSubItem( subPart);
+				startPos = nPos;
+			} else {
+				int32 startOffs = startPos-msgtext.String()+boundary.Length();
+				if (start+length > startOffs) {
+					// the final boundary is missing, we include the remaining part as a 
+					// sub-bodypart anyway:
+					BM_LOG2( BM_LogMailParse, "Subpart of multipart found will be added to array");
+					BmBodyPart *subPart = new BmBodyPart( (BmBodyPartList*)ListModel().Get(), 
+																	  msgtext, startOffs, 
+																	  start+length-startOffs, 
+																	  NULL, this);
+					AddSubItem( subPart);
+				}
+				break;
+			}
 		}
 	}
 	mInitCheck = B_OK;
@@ -523,7 +572,11 @@ void BmBodyPart::SaveAs( const entry_ref& destDirRef, BString filename) {
 void BmBodyPart::SetBodyText( const BString& text, uint32 encoding) {
 	text.CopyInto( mDecodedData, 0, text.Length());
 	mContentType.SetParam( "charset", EncodingToCharset( encoding));
-	mContentTransferEncoding = NeedsEncoding( text) ? "quoted-printable" : "7bit";
+	mContentTransferEncoding = NeedsEncoding( text) 
+											? (ThePrefs->GetBool( "Allow8BitMime", false)
+												? "8bit"
+												: "quoted-printable")
+											: "7bit";
 }
 
 /*------------------------------------------------------------------------------*\
@@ -541,7 +594,7 @@ BString BmBodyPart::GenerateBoundary() {
 void BmBodyPart::PropagateHigherEncoding() {
 	if (!IsMultiPart())
 		return;
-	BString newTransferEncoding = "7-bit";
+	BString newTransferEncoding = "7bit";
 	BmModelItemMap::const_iterator iter;
 	for( iter = begin(); iter != end(); ++iter) {
 		BmBodyPart* subPart = dynamic_cast< BmBodyPart*>( iter->second.Get());
@@ -576,6 +629,8 @@ void BmBodyPart::ConstructBodyForSending( BString &msgText) {
 	if (mContentLanguage.Length())
 		msgText << BM_FIELD_CONTENT_LANGUAGE << ": " << mContentLanguage << "\r\n";
 	msgText << "\r\n";
+	if (IsMultiPart())
+		msgText << "This is a multi-part message in MIME format.\r\n\r\n";
 	BString encodedData;
 	BmEncoding::Encode( mContentTransferEncoding, mDecodedData, encodedData);
 	msgText << encodedData;

@@ -62,6 +62,7 @@ private:
 	BmTextControl* mHeaderListSmallControl;
 	BmTextControl* mHeaderListLargeControl;
 	BmTextControl* mMimeTypeTrustInfoControl;
+	BmTextControl* mMarkAsReadDelayControl;
 	BmCheckControl* mAutoCheckIfPppUpControl;
 
 	// Hide copy-constructor and assignment:

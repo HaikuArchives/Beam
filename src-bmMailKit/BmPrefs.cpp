@@ -91,7 +91,7 @@ BmPrefs::BmPrefs( void)
 	:	BArchivable() 
 {
 	InitDefaults();
-	mPrefsMsg = mDefaultsMsg;
+	mSavedPrefsMsg = mPrefsMsg = mDefaultsMsg;
 	SetLoglevels();
 	if (mPrefsMsg.FindMessage( "Shortcuts", &mShortcutsMsg) != B_OK)
 		BM_SHOWERR("Prefs: Could not access shortcut info!");
@@ -107,7 +107,7 @@ BmPrefs::BmPrefs( BMessage* archive)
 	: BArchivable( archive)
 {
 	InitDefaults();
-	mPrefsMsg = *archive;
+	mSavedPrefsMsg = mPrefsMsg = *archive;
 	int16 version = 0;
 	archive->FindInt16( MSG_VERSION, &version);
 	int32 loglevels = BM_LOGLVL_VAL(archive->FindInt16("Loglevel_Pop"),BM_LogPop)
@@ -148,10 +148,30 @@ BmPrefs::BmPrefs( BMessage* archive)
 
 /*------------------------------------------------------------------------------*\
 	~BmPrefs()
-		-	standard destructor
+		-	d'tor
+		-	removes singleton
+		-	deletes all BMessages contained in msg-cache
 \*------------------------------------------------------------------------------*/
 BmPrefs::~BmPrefs() {
+	map<BString, BMessage*>::const_iterator iter;
+	for( iter = mMsgCache.begin(); iter != mMsgCache.end(); ++iter) {
+		delete iter->second;
+	}
+	mMsgCache.clear();
 	theInstance = NULL;
+}
+
+/*------------------------------------------------------------------------------*\
+	ResetToSaved()
+		-	resets preferences to last saved state
+\*------------------------------------------------------------------------------*/
+void BmPrefs::ResetToSaved() {
+	map<BString, BMessage*>::const_iterator iter;
+	for( iter = mMsgCache.begin(); iter != mMsgCache.end(); ++iter) {
+		delete iter->second;
+	}
+	mMsgCache.clear();
+	mPrefsMsg = mSavedPrefsMsg;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -213,7 +233,7 @@ void BmPrefs::InitDefaults() {
 	mDefaultsMsg.AddString( "ForwardSubjectRX", "^\\s*\\[?\\s*Fwd(\\[\\d+\\])?:");
 	mDefaultsMsg.AddString( "ForwardSubjectStr", "Fwd: %s");
 	mDefaultsMsg.AddBool( "DoNotAttachVCardsToForward", true);
-	mDefaultsMsg.AddString( "ReplyIntroStr", "On %D at %T, %F wrote:");
+	mDefaultsMsg.AddString( "ReplyIntroStr", "On %D at %T, you wrote:");
 	mDefaultsMsg.AddString( "ReplySubjectRX", "^\\s*(Re|Aw)(\\[\\d+\\])?:");
 	mDefaultsMsg.AddString( "ReplySubjectStr", "Re: %s");
 	mDefaultsMsg.AddString( "SignatureRX", "^---?\\s*\\n");
@@ -223,6 +243,10 @@ void BmPrefs::InitDefaults() {
 	mDefaultsMsg.AddString( "QuoteFormatting", "Push Margin");
 	mDefaultsMsg.AddString( "QuotingLevelRX", "^((?:\\w?\\w?\\w?[>|]|[ \\t]*)*)(.*?)$");
 	mDefaultsMsg.AddBool( "AutoCheckOnlyIfPPPRunning", true);
+	mDefaultsMsg.AddBool( "Allow8BitMime", false);
+	mDefaultsMsg.AddBool( "UseDeskbar", true);
+	mDefaultsMsg.AddInt32( "MarkAsReadDelay", 500);
+	mDefaultsMsg.AddBool( "HardWrapMailText", true);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -236,7 +260,9 @@ BString BmPrefs::GetShortcutFor( const char* shortcutID) {
 
 /*------------------------------------------------------------------------------*\
 	SetShortcutIfNew()
-		-	
+		-	adds a shortcut to the given message if that does not yet have it
+		-	this method is used to copy new shortcuts over from the defaults-msg
+			to the current prefs-message
 \*------------------------------------------------------------------------------*/
 void BmPrefs::SetShortcutIfNew( BMessage* msg, const char* name, const BString val) {
 	type_code tc;
@@ -279,7 +305,7 @@ BMessage* BmPrefs::GetShortcutDefaults( BMessage* shortcutsMsg) {
 	SetShortcutIfNew( shortcutsMsg, "New Message", "N");
 	SetShortcutIfNew( shortcutsMsg, "Page Setup", "");
 	SetShortcutIfNew( shortcutsMsg, "Paste", "V");
-	SetShortcutIfNew( shortcutsMsg, "Preferences...", "");
+	SetShortcutIfNew( shortcutsMsg, "Preferences...", "<SHIFT>P");
 	SetShortcutIfNew( shortcutsMsg, "Print Message...", "");
 	SetShortcutIfNew( shortcutsMsg, "Quit Beam", "Q");
 	SetShortcutIfNew( shortcutsMsg, "Recache Folder", "");
@@ -343,6 +369,8 @@ bool BmPrefs::Store() {
 													|| BM_THROW_RUNTIME( BString("Could not store settings into file\n\t<") << prefsFilename << ">\n\n Result: " << strerror(err));
 		// put loglevels back in:
 		mPrefsMsg.AddInt32( "Loglevels", loglevels);
+		// update saved state to current:
+		mSavedPrefsMsg = mPrefsMsg;
 	} catch( exception &e) {
 		BM_SHOWERR( e.what());
 		return false;
@@ -351,8 +379,12 @@ bool BmPrefs::Store() {
 }
 
 /*------------------------------------------------------------------------------*\
-	GetString()
-		-	
+	GetString( name)
+		-	returns the prefs-value (a string) for the given name
+		-	if the current prefs do not contain such a value, the value is copied
+			over from the defaults-msg
+		-	if neither the current prefs nor the defaults-msg contain the specified
+			value, an error message is shown
 \*------------------------------------------------------------------------------*/
 BString BmPrefs::GetString( const char* name) {
 	const char* val;
@@ -370,8 +402,12 @@ BString BmPrefs::GetString( const char* name) {
 }
 
 /*------------------------------------------------------------------------------*\
-	GetString()
-		-	
+	GetString( name, defaultVal)
+		-	returns the prefs-value (a string) for the given name
+		-	if the current prefs do not contain such a value, the value is copied
+			over from the defaults-msg
+		-	if neither the current prefs nor the defaults-msg contain the specified
+			value, the given default-value is returned
 \*------------------------------------------------------------------------------*/
 BString BmPrefs::GetString( const char* name, const BString defaultVal) {
 	const char* val;
@@ -387,8 +423,12 @@ BString BmPrefs::GetString( const char* name, const BString defaultVal) {
 }
 
 /*------------------------------------------------------------------------------*\
-	GetBool()
-		-	
+	GetBool( name)
+		-	returns the prefs-value (a boolean) for the given name
+		-	if the current prefs do not contain such a value, the value is copied
+			over from the defaults-msg
+		-	if neither the current prefs nor the defaults-msg contain the specified
+			value, an error message is shown
 \*------------------------------------------------------------------------------*/
 bool BmPrefs::GetBool( const char* name) {
 	bool val;
@@ -406,8 +446,12 @@ bool BmPrefs::GetBool( const char* name) {
 }
 
 /*------------------------------------------------------------------------------*\
-	GetBool()
-		-	
+	GetBool( name, defaultVal)
+		-	returns the prefs-value (a boolean) for the given name
+		-	if the current prefs do not contain such a value, the value is copied
+			over from the defaults-msg
+		-	if neither the current prefs nor the defaults-msg contain the specified
+			value, the given default-value is returned
 \*------------------------------------------------------------------------------*/
 bool BmPrefs::GetBool( const char* name, const bool defaultVal) {
 	bool val;
@@ -423,8 +467,12 @@ bool BmPrefs::GetBool( const char* name, const bool defaultVal) {
 }
 
 /*------------------------------------------------------------------------------*\
-	Get()
-		-	
+	GetInt( name)
+		-	returns the prefs-value (an integer) for the given name
+		-	if the current prefs do not contain such a value, the value is copied
+			over from the defaults-msg
+		-	if neither the current prefs nor the defaults-msg contain the specified
+			value, an error message is shown
 \*------------------------------------------------------------------------------*/
 int32 BmPrefs::GetInt( const char* name) {
 	int32 val;
@@ -442,8 +490,12 @@ int32 BmPrefs::GetInt( const char* name) {
 }
 
 /*------------------------------------------------------------------------------*\
-	Get()
-		-	
+	GetInt( name, defaultVal)
+		-	returns the prefs-value (an integer) for the given name
+		-	if the current prefs do not contain such a value, the value is copied
+			over from the defaults-msg
+		-	if neither the current prefs nor the defaults-msg contain the specified
+			value, the given default-value is returned
 \*------------------------------------------------------------------------------*/
 int32 BmPrefs::GetInt( const char* name, const int32 defaultVal) {
 	int32 val;
@@ -459,8 +511,13 @@ int32 BmPrefs::GetInt( const char* name, const int32 defaultVal) {
 }
 
 /*------------------------------------------------------------------------------*\
-	GetMsg()
-		-	
+	GetMsg( name)
+		-	returns the prefs-value (a BMessage*) for the given name
+		-	if the current prefs do not contain such a value, the value is copied
+			over from the defaults-msg
+		-	if neither the current prefs nor the defaults-msg contain the specified
+			value, an error message is shown
+		-	N.B.: The BMessage belongs to the prefs-object, don't delete it
 \*------------------------------------------------------------------------------*/
 const BMessage* BmPrefs::GetMsg( const char* name) {
 	BMessage* msg = mMsgCache[name];
@@ -482,9 +539,20 @@ const BMessage* BmPrefs::GetMsg( const char* name) {
 }
 
 /*------------------------------------------------------------------------------*\
-	GetMsg()
-		-	
+	GetMsg( name, defaultValue)
+		-	returns the prefs-value (a BMessage*) for the given name
+		-	if the current prefs do not contain such a value, the value is copied
+			over from the defaults-msg
+		-	if neither the current prefs nor the defaults-msg contain the specified
+			value, the given default-value is returned
+		-	N.B.: The BMessage belongs to the prefs-object, don't delete it (unless
+			the returned value is
 \*------------------------------------------------------------------------------*/
+/*
+	[zooey]:
+		method deactivated because the ownership of the returned message is not
+		clear (who owns the default-value ?)
+	
 const BMessage* BmPrefs::GetMsg( const char* name, const BMessage* defaultVal) {
 	BMessage* msg = mMsgCache[name];
 	if (msg)
@@ -501,10 +569,13 @@ const BMessage* BmPrefs::GetMsg( const char* name, const BMessage* defaultVal) {
 			return defaultVal;
 	}
 }
+*/
 
 /*------------------------------------------------------------------------------*\
-	SetBool()
-		-	
+	SetBool( name, val)
+		-	sets the prefs-val (a boolean) specified by name to the given val
+		-	if a value for the given name exists already, it is replaced by the 
+			new value
 \*------------------------------------------------------------------------------*/
 void BmPrefs::SetBool( const char* name, const bool val) {
 	mPrefsMsg.RemoveName( name);
@@ -513,7 +584,9 @@ void BmPrefs::SetBool( const char* name, const bool val) {
 
 /*------------------------------------------------------------------------------*\
 	SetInt()
-		-	
+		-	sets the prefs-val (an integer) specified by name to the given val
+		-	if a value for the given name exists already, it is replaced by the 
+			new value
 \*------------------------------------------------------------------------------*/
 void BmPrefs::SetInt( const char* name, const int32 val) {
 	mPrefsMsg.RemoveName( name);
@@ -522,16 +595,22 @@ void BmPrefs::SetInt( const char* name, const int32 val) {
 
 /*------------------------------------------------------------------------------*\
 	SetMsg()
-		-	
+		-	sets the prefs-val (a BMessage*) specified by name to the given val
+		-	if a value for the given name exists already, it is replaced by the 
+			new value
+		-	the prefs-object copies the given message, so the caller can delete it
 \*------------------------------------------------------------------------------*/
 void BmPrefs::SetMsg( const char* name, const BMessage* val) {
 	mPrefsMsg.RemoveName( name);
 	mPrefsMsg.AddMessage( name, val);
+	mMsgCache[name] = NULL;
 }
 
 /*------------------------------------------------------------------------------*\
 	SetString()
-		-	
+		-	sets the prefs-val (a BString) specified by name to the given val
+		-	if a value for the given name exists already, it is replaced by the 
+			new value
 \*------------------------------------------------------------------------------*/
 void BmPrefs::SetString( const char* name, const BString val) {
 	mPrefsMsg.RemoveName( name);

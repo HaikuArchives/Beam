@@ -42,12 +42,14 @@
 
 #include "BmApp.h"
 #include "BmBasics.h"
+#include "BmBodyPartView.h"
 #include "BmDataModel.h"
 #include "BmJobStatusWin.h"
 #include "BmLogHandler.h"
 #include "BmMailEditWin.h"
 #include "BmMailFolderList.h"
 #include "BmMailRef.h"
+#include "BmMailView.h"
 #include "BmMailViewWin.h"
 #include "BmMainWindow.h"
 #include "BmMsgTypes.h"
@@ -79,6 +81,8 @@ BmApplication::BmApplication( const char* sig)
 	,	mIsQuitting( false)
 	,	mInitCheck( B_NO_INIT)
 	,	mMailWin( NULL)
+	,	mPrintSetup( NULL)
+	,	mPrintJob( "Mail")
 {
 	if (InstanceCount > 0)
 		throw BM_runtime_error("Trying to initialize more than one instance of class Beam");
@@ -162,6 +166,7 @@ BmApplication::~BmApplication() {
 #ifdef BM_REF_DEBUGGING
 	BmRefObj::PrintRefsLeft();
 #endif
+	delete mPrintSetup;
 	delete ThePrefs;
 	delete TheResources;
 	delete TheLogHandler;
@@ -170,7 +175,9 @@ BmApplication::~BmApplication() {
 
 /*------------------------------------------------------------------------------*\
 	ReadyToRun()
-		-	
+		-	ensures that main-window is visible
+		-	if Beam has been instructed to show a specific mail on startup, the
+			mail-window is shown on top of the main-window
 \*------------------------------------------------------------------------------*/
 void BmApplication::ReadyToRun() {
 	if (TheMainWindow->IsMinimized())
@@ -183,7 +190,7 @@ void BmApplication::ReadyToRun() {
 
 /*------------------------------------------------------------------------------*\
 	Run()
-		-	
+		-	starts Beam
 \*------------------------------------------------------------------------------*/
 thread_id BmApplication::Run() {
 	if (InitCheck() != B_OK) {
@@ -229,8 +236,9 @@ bool BmApplication::QuitRequested() {
 }
 
 /*------------------------------------------------------------------------------*\
-	ArgvReceived( )
-		-	
+	ArgvReceived( argc, argv)
+		-	first argument is interpreted to be a destination mail-address, so a 
+			new mail is generated for if an argument has been provided
 \*------------------------------------------------------------------------------*/
 void BmApplication::ArgvReceived( int32 argc, char** argv) {
 	if (argc>1) {
@@ -241,8 +249,9 @@ void BmApplication::ArgvReceived( int32 argc, char** argv) {
 }
 
 /*------------------------------------------------------------------------------*\
-	RefsReceived( )
-		-	
+	RefsReceived( msg)
+		-	every given reference is opened, draft and pending messages are shown
+			in the mail-edit-window, while other mails are opened view-only.
 \*------------------------------------------------------------------------------*/
 void BmApplication::RefsReceived( BMessage* msg) {
 	if (!msg)
@@ -276,8 +285,9 @@ void BmApplication::RefsReceived( BMessage* msg) {
 }
 
 /*------------------------------------------------------------------------------*\
-	MessageReceived( )
-		-	
+	MessageReceived( msg)
+		-	handles all actions on mailrefs, like replying, forwarding, and creating
+			new mails
 \*------------------------------------------------------------------------------*/
 void BmApplication::MessageReceived( BMessage* msg) {
 	try {
@@ -335,72 +345,48 @@ void BmApplication::MessageReceived( BMessage* msg) {
 			}
 			case BMM_REPLY:
 			case BMM_REPLY_ALL: {
-				BmMailRef* mailRef = NULL;
-				int index=0;
-				const char* selectedText = NULL;
-				msg->FindString( MSG_SELECTED_TEXT, &selectedText);
-				while( msg->FindPointer( MSG_MAILREF, index++, (void**)&mailRef) == B_OK) {
-					BmRef<BmMail> mail = BmMail::CreateInstance( mailRef);
-					if (mail) {
-						mail->StartJobInThisThread( BmMail::BM_READ_MAIL_JOB);
-						if (mail->InitCheck() != B_OK)
-							continue;
-						BmRef<BmMail> newMail;
-						if (msg->what == BMM_REPLY)
-							newMail = mail->CreateReply( false, selectedText);
-						else if (msg->what == BMM_REPLY_ALL)
-							newMail = mail->CreateReply( true, selectedText);
-						if (newMail) {
-							BmMailEditWin* editWin = BmMailEditWin::CreateInstance( newMail.Get());
-							if (editWin)
-								editWin->Show();
-						}
-					}
-					mailRef->RemoveRef();	// msg is no more refering to mailRef
+				int32 buttonPressed=1;
+				type_code tc;
+				int32 msgCount;
+				status_t result = msg->GetInfo( MSG_MAILREF, &tc, &msgCount);
+				if (result != B_OK)
+					break;
+				if (msgCount>1 && msg->FindInt32( "which", &buttonPressed) != B_OK) {
+					// first step, ask user about how to forward multiple messages:
+					BString s("You have selected more than one message.\n\nShall Beam join the message-bodies into one single mail and reply to that or would you prefer to keep the messages separate?");
+					BAlert* alert = new BAlert( "Forwarding Multiple Mails", 
+														 s.String(),
+													 	 "Cancel", "Keep Separate", "Join", B_WIDTH_AS_USUAL,
+													 	 B_OFFSET_SPACING, B_IDEA_ALERT);
+					alert->SetShortcut( 0, B_ESCAPE);
+					alert->Go( new BInvoker( new BMessage(*msg), BMessenger( this)));
+				} else {
+					if (buttonPressed > 0)
+						ReplyToMails( msg, buttonPressed==2);
 				}
 				break;
 			}
 			case BMM_FORWARD_ATTACHED:
 			case BMM_FORWARD_INLINE:
 			case BMM_FORWARD_INLINE_ATTACH: {
-				BmMailRef* mailRef = NULL;
-				BmRef<BmMail> newMail;
-				const char* selectedText = NULL;
-				msg->FindString( MSG_SELECTED_TEXT, &selectedText);
-				for(  int index=0; 
-						msg->FindPointer( MSG_MAILREF, index, (void**)&mailRef) == B_OK;
-						++index) {
-					BmRef<BmMail> mail = BmMail::CreateInstance( mailRef);
-					if (mail) {
-						mail->StartJobInThisThread( BmMail::BM_READ_MAIL_JOB);
-						if (mail->InitCheck() != B_OK)
-							continue;
-						if (msg->what == BMM_FORWARD_ATTACHED) {
-							if (index == 0) 
-								newMail = mail->CreateAttachedForward();
-							else
-								newMail->AddAttachmentFromRef( mailRef->EntryRefPtr());
-						} else if (msg->what == BMM_FORWARD_INLINE) {
-							if (index == 0) 
-								newMail = mail->CreateInlineForward( false, selectedText);
-							else
-								newMail->AddPartsFromMail( mail, false);
-						} else if (msg->what == BMM_FORWARD_INLINE_ATTACH) {
-							if (index == 0) 
-								newMail = mail->CreateInlineForward( true, selectedText);
-							else
-								newMail->AddPartsFromMail( mail, true);
-						}
-						if (index == 1)
-							// set simple subject for multiple forwards:
-							newMail->SetFieldVal( BM_FIELD_SUBJECT, "Fwd: (multiple messages)");
-					}
-					mailRef->RemoveRef();	// msg is no more refering to mailRef
-				}
-				if (newMail) {
-					BmMailEditWin* editWin = BmMailEditWin::CreateInstance( newMail.Get());
-					if (editWin)
-						editWin->Show();
+				int32 buttonPressed=1;
+				type_code tc;
+				int32 msgCount;
+				status_t result = msg->GetInfo( MSG_MAILREF, &tc, &msgCount);
+				if (result != B_OK)
+					break;
+				if (msgCount>1 && msg->FindInt32( "which", &buttonPressed) != B_OK) {
+					// first step, ask user about how to forward multiple messages:
+					BString s("You have selected more than one message.\n\nShall Beam join the message-bodies into one single mail and forward that or would you prefer to keep the messages separate?");
+					BAlert* alert = new BAlert( "Forwarding Multiple Mails", 
+														 s.String(),
+													 	 "Cancel", "Keep Separate", "Join", B_WIDTH_AS_USUAL,
+													 	 B_OFFSET_SPACING, B_IDEA_ALERT);
+					alert->SetShortcut( 0, B_ESCAPE);
+					alert->Go( new BInvoker( new BMessage(*msg), BMessenger( this)));
+				} else {
+					if (buttonPressed > 0)
+						ForwardMails( msg, buttonPressed==2);
 				}
 				break;
 			}
@@ -420,6 +406,17 @@ void BmApplication::MessageReceived( BMessage* msg) {
 				}
 				break;
 			}
+			case BMM_PAGE_SETUP: {
+				PageSetup();
+				break;
+			}
+			case BMM_PRINT: {
+				if (!mPrintSetup)
+					PageSetup();
+				if (mPrintSetup)
+					PrintMails( msg);
+				break;
+			}
 			case BMM_TRASH: {
 				BmMailRef* mailRef = NULL;
 				int index=0;
@@ -436,7 +433,8 @@ void BmApplication::MessageReceived( BMessage* msg) {
 			}
 			case BMM_SHOW_NEWMAIL_ICON: {
 				BM_LOG2( BM_LogAll, "App: asked to show new-mail icon in deskbar");
-				if (!mDeskbar.HasItem( BM_DeskbarItemName)) {
+				if (ThePrefs->GetBool( "UseDeskbar", true) 
+				&& !mDeskbar.HasItem( BM_DeskbarItemName)) {
 					mDeskbar.AddItem( mDeskbarView);
 					system_beep( BM_BEEP_EVENT);
 				}
@@ -444,7 +442,8 @@ void BmApplication::MessageReceived( BMessage* msg) {
 			}
 			case BMM_HIDE_NEWMAIL_ICON: {
 				BM_LOG2( BM_LogAll, "App: asked to hide new-mail icon from deskbar");
-				mDeskbar.RemoveItem( BM_DeskbarItemName);
+				if (mDeskbar.HasItem( BM_DeskbarItemName))
+					mDeskbar.RemoveItem( BM_DeskbarItemName);
 				break;
 			}
 			case B_SILENT_RELAUNCH: {
@@ -468,8 +467,277 @@ void BmApplication::MessageReceived( BMessage* msg) {
 }
 
 /*------------------------------------------------------------------------------*\
-	LaunchURL()
-		-	
+	ForwardMails( msg, join)
+		-	forwards all mailref's contained in the given message.
+		-	depending on the param join, multiple mails are joined into one single 
+			forward or one forward is generated for each mail.
+\*------------------------------------------------------------------------------*/
+void BmApplication::ForwardMails( BMessage* msg, bool join) {
+	if (!msg)
+		return;
+	// tell sending ref-view that we are doing work:
+	BMessenger sendingRefView;
+	msg->FindMessenger( MSG_SENDING_REFVIEW, &sendingRefView);
+	if (sendingRefView.IsValid())
+		sendingRefView.SendMessage( BMM_SET_BUSY);
+
+	BmMailRef* mailRef = NULL;
+	BmRef<BmMail> newMail;
+	const char* selectedText = NULL;
+	msg->FindString( MSG_SELECTED_TEXT, &selectedText);
+	if (join) {
+		for(  int index=0; 
+				msg->FindPointer( MSG_MAILREF, index, (void**)&mailRef) == B_OK;
+				++index) {
+			BmRef<BmMail> mail = BmMail::CreateInstance( mailRef);
+			if (mail) {
+				mail->StartJobInThisThread( BmMail::BM_READ_MAIL_JOB);
+				if (mail->InitCheck() != B_OK)
+					continue;
+				if (msg->what == BMM_FORWARD_ATTACHED) {
+					if (index == 0) 
+						newMail = mail->CreateAttachedForward();
+					else
+						newMail->AddAttachmentFromRef( mailRef->EntryRefPtr());
+				} else if (msg->what == BMM_FORWARD_INLINE) {
+					if (index == 0) 
+						newMail = mail->CreateInlineForward( false, selectedText);
+					else
+						newMail->AddPartsFromMail( mail, false);
+				} else if (msg->what == BMM_FORWARD_INLINE_ATTACH) {
+					if (index == 0) 
+						newMail = mail->CreateInlineForward( true, selectedText);
+					else
+						newMail->AddPartsFromMail( mail, true);
+				}
+				if (index == 1)
+					// set simple subject for multiple forwards:
+					newMail->SetFieldVal( BM_FIELD_SUBJECT, "Fwd: (multiple messages)");
+			}
+			mailRef->RemoveRef();	// msg is no more refering to mailRef
+		}
+		if (newMail) {
+			BmMailEditWin* editWin = BmMailEditWin::CreateInstance( newMail.Get());
+			if (editWin)
+				editWin->Show();
+		}
+	} else {
+		// create one forward per mail:
+		for(  int index=0; 
+				msg->FindPointer( MSG_MAILREF, index, (void**)&mailRef) == B_OK;
+				++index) {
+			BmRef<BmMail> mail = BmMail::CreateInstance( mailRef);
+			if (mail) {
+				mail->StartJobInThisThread( BmMail::BM_READ_MAIL_JOB);
+				if (mail->InitCheck() != B_OK)
+					continue;
+				if (msg->what == BMM_FORWARD_ATTACHED) {
+					newMail = mail->CreateAttachedForward();
+				} else if (msg->what == BMM_FORWARD_INLINE) {
+					newMail = mail->CreateInlineForward( false, index==0 ? selectedText : NULL);
+				} else if (msg->what == BMM_FORWARD_INLINE_ATTACH) {
+					newMail = mail->CreateInlineForward( true, index==0 ? selectedText : NULL);
+				}
+				if (newMail) {
+					BmMailEditWin* editWin = BmMailEditWin::CreateInstance( newMail.Get());
+					if (editWin)
+						editWin->Show();
+				}
+			}
+			mailRef->RemoveRef();		// msg is no more refering to mailRef
+		}
+	}
+	// now tell sending ref-view that we are finished:
+	if (sendingRefView.IsValid())
+		sendingRefView.SendMessage( BMM_UNSET_BUSY);
+}
+
+/*------------------------------------------------------------------------------*\
+	ReplyToMails( msg, join)
+		-	replies to all mailref's contained in the given message.
+		-	depending on the param join, multiple mails are joined into one single 
+			reply (one per originator) or one reply is generated for each mail.
+\*------------------------------------------------------------------------------*/
+void BmApplication::ReplyToMails( BMessage* msg, bool join) {
+	if (!msg)
+		return;
+	// tell sending ref-view that we are doing work:
+	BMessenger sendingRefView;
+	msg->FindMessenger( MSG_SENDING_REFVIEW, &sendingRefView);
+	if (sendingRefView.IsValid())
+		sendingRefView.SendMessage( BMM_SET_BUSY);
+
+	BmMailRef* mailRef = NULL;
+	const char* selectedText = NULL;
+	msg->FindString( MSG_SELECTED_TEXT, &selectedText);
+	if (join) {
+		typedef map< BString, BmRef<BmMail> >BmNewMailMap;
+		BmNewMailMap newMailMap;
+		// we collect new mails in the map defined above...
+		for(  int index=0; 
+				msg->FindPointer( MSG_MAILREF, index, (void**)&mailRef) == B_OK;
+				++index) {
+			BmRef<BmMail> mail = BmMail::CreateInstance( mailRef);
+			if (mail) {
+				mail->StartJobInThisThread( BmMail::BM_READ_MAIL_JOB);
+				if (mail->InitCheck() != B_OK)
+					continue;
+				BString originator = mail->Header()->DetermineOriginator();
+				BmRef<BmMail>& newMail = newMailMap[originator];
+				if (msg->what == BMM_REPLY) {
+					if (!newMail) 
+						newMail = mail->CreateReply( false, selectedText);
+					else
+						newMail->AddPartsFromMail( mail, false);
+				} else if (msg->what == BMM_REPLY_ALL) {
+					if (!newMail) 
+						newMail = mail->CreateReply( true, selectedText);
+					else
+						newMail->AddPartsFromMail( mail, false);
+				}
+				if (index == 1)
+					// set simple subject for multiple forwards:
+					newMail->SetFieldVal( BM_FIELD_SUBJECT, "Fwd: (multiple messages)");
+			}
+			mailRef->RemoveRef();	// msg is no more refering to mailRef
+		}
+		// ...and now show all the freshly generated mails:
+		BmNewMailMap::const_iterator iter;
+		for( iter=newMailMap.begin(); iter!=newMailMap.end(); ++iter) {
+			BmMailEditWin* editWin = BmMailEditWin::CreateInstance( iter->second.Get());
+			if (editWin)
+				editWin->Show();
+		}
+	} else {
+		// create one forward per mail:
+		BmRef<BmMail> newMail;
+		for(  int index=0; 
+				msg->FindPointer( MSG_MAILREF, index, (void**)&mailRef) == B_OK;
+				++index) {
+			BmRef<BmMail> mail = BmMail::CreateInstance( mailRef);
+			if (mail) {
+				mail->StartJobInThisThread( BmMail::BM_READ_MAIL_JOB);
+				if (mail->InitCheck() != B_OK)
+					continue;
+				if (msg->what == BMM_REPLY) {
+					newMail = mail->CreateReply( false, index==0 ? selectedText : NULL);
+				} else if (msg->what == BMM_REPLY_ALL) {
+					newMail = mail->CreateReply( true, index==0 ? selectedText : NULL);
+				}
+				if (newMail) {
+					BmMailEditWin* editWin = BmMailEditWin::CreateInstance( newMail.Get());
+					if (editWin)
+						editWin->Show();
+				}
+			}
+			mailRef->RemoveRef();		// msg is no more refering to mailRef
+		}
+	}
+	// now tell sending ref-view that we are finished:
+	if (sendingRefView.IsValid())
+		sendingRefView.SendMessage( BMM_UNSET_BUSY);
+}
+
+/*------------------------------------------------------------------------------*\
+	PrintMails( msg)
+		-	prints all mailref's contained in the given message.
+\*------------------------------------------------------------------------------*/
+void BmApplication::PrintMails( BMessage* msg) {
+	if (!mPrintSetup)
+		PageSetup();
+	if (!mPrintSetup)
+		return;
+
+	// tell sending ref-view that we are doing work:
+	BMessenger sendingRefView;
+	msg->FindMessenger( MSG_SENDING_REFVIEW, &sendingRefView);
+	if (sendingRefView.IsValid())
+		sendingRefView.SendMessage( BMM_SET_BUSY);
+
+	mPrintJob.SetSettings( new BMessage( *mPrintSetup));
+	status_t result = mPrintJob.ConfigJob();
+	if (result == B_OK) {
+		delete mPrintSetup;
+		mPrintSetup = mPrintJob.Settings();
+		int32 firstPage = mPrintJob.FirstPage();
+		int32 lastPage = mPrintJob.LastPage();
+		if (lastPage-firstPage+1 <= 0)
+			return;
+		BmMailRef* mailRef = NULL;
+		// we create a hidden mail-view-window which is being used for printing:
+		BmMailViewWin* mailWin = BmMailViewWin::CreateInstance();
+		mailWin->Hide();
+		mailWin->Show();
+		BmMailView* mailView = mailWin->MailView();
+		// now get printable rect...
+		BRect printableRect = mPrintJob.PrintableRect();
+		// ...and adjust mailview accordingly (to use the available space effectively):
+		mailView->LockLooper();
+		mailWin->ResizeTo( printableRect.Width()+8, 600);
+		mailView->UnlockLooper();
+		// now we start printing...
+		mPrintJob.BeginJob();
+		int32 page = 1;
+		for(  int mailIdx=0; 
+				msg->FindPointer( MSG_MAILREF, mailIdx, (void**)&mailRef) == B_OK
+				&& page<=lastPage;
+				++mailIdx) {
+			mailView->ShowMail( mailRef, false);
+			mailView->LockLooper();
+			mailView->JobIsDone( true);
+			mailView->BodyPartView()->SetViewColor( White);
+			mailView->BodyPartView()->JobIsDone( true);
+			mailView->UnlockLooper();
+			BRect currFrame = printableRect.OffsetToCopy( 0, 0);
+			BRect textRect = mailView->TextRect();
+			float totalHeight = textRect.top+mailView->TextHeight(0,100000);
+			float height = currFrame.Height();
+			BPoint topOfLine = mailView->PointAt( mailView->OffsetAt( BPoint( 5, currFrame.bottom)));
+			currFrame.bottom = topOfLine.y-1;
+			while( page<=lastPage) {
+				if (page >= firstPage) {
+					mPrintJob.DrawView( mailView, currFrame, BPoint(0,0));
+					mPrintJob.SpoolPage();
+				}
+				currFrame.top = currFrame.bottom+1;
+				currFrame.bottom = currFrame.top + height-1;
+				mailView->LockLooper();
+				topOfLine = mailView->PointAt( mailView->OffsetAt( BPoint( 5, currFrame.bottom)));
+				mailView->UnlockLooper();
+				currFrame.bottom = topOfLine.y-1;
+				page++;
+				if (currFrame.top >= totalHeight || currFrame.Height() <= 1)
+					// end of current mail reached
+					break;
+			}
+		}
+		mPrintJob.CommitJob();
+		mailWin->PostMessage( B_QUIT_REQUESTED);
+	}
+	// now tell sending ref-view that we are finished:
+	if (sendingRefView.IsValid())
+		sendingRefView.SendMessage( BMM_UNSET_BUSY);
+}
+
+/*------------------------------------------------------------------------------*\
+	PageSetup()
+		-	sets up the basic printing environment
+\*------------------------------------------------------------------------------*/
+void BmApplication::PageSetup() {
+	if (mPrintSetup)
+		mPrintJob.SetSettings( new BMessage( *mPrintSetup));
+		
+	status_t result = mPrintJob.ConfigPage();
+	if (result == B_OK) {
+		delete mPrintSetup;
+		mPrintSetup = mPrintJob.Settings();
+	}
+}
+
+/*------------------------------------------------------------------------------*\
+	LaunchURL( url)
+		-	launches the corresponding program for the given URL (usually Netpositive)
+		-	mailto: - URLs are handled internally
 \*------------------------------------------------------------------------------*/
 void BmApplication::LaunchURL( const BString url) {
 	char* urlStr = const_cast<char*>( url.String());
@@ -519,16 +787,30 @@ Heike Herfart
 
 ...and (in alphabetical order)...
 
+Adam McNutt
+	for reporting bugs
+
+Atillâ Öztürk
+	for reporting problems with ISO-8859-9 and helping me find the 'Mime:' - bug
+
+Cedric Vincent
+	for pointing out that the 'network buffer size'-prefs-field was disfunctional
+	
 Charlie Clark
 	for reporting many bugs
 	and beta-testing Beam 0.91
 	for helping me fix bugs in offline-mode
+	for helping me find the 'Mime:' - bug
 
 Helmar Rudolph
 	for advanced ideas
 
 Jace Cavacini
 	for many suggestions on usability issues
+	for bug-reports
+
+Kevin Musick
+	for suggestions
 
 Lars Müller (of SuSE)
 	for bug-reports in early testing-stages
@@ -542,6 +824,10 @@ Linus Almstrom
 Mathias Reitinger
 	for suggestions and pointing out usability issues
 
+Max Hartmann
+	for bug-reports and suggestions
+	for beta-testing 0.912
+
 Nathan Whitehorn
 	for suggesting to integrate Beam with the MDR
 
@@ -553,6 +839,9 @@ Rob Lund
 
 Stephen Butters
 	for suggestions
+	
+Tyler Dauwalder
+	for bug-reports and suggestions
 
 Zach 
 	for bug-reports and suggestions 
@@ -566,8 +855,8 @@ Zach
 }
 
 /*------------------------------------------------------------------------------*\
-	MessageReceived( )
-		-	
+	ScreenFrame()
+		-	returns the the current screen's frame
 \*------------------------------------------------------------------------------*/
 BRect BmApplication::ScreenFrame() {
 	BScreen screen;
@@ -577,8 +866,9 @@ BRect BmApplication::ScreenFrame() {
 }
 
 /*------------------------------------------------------------------------------*\
-	()
-		-	
+	SetNewWorkspace( newWorkspace)
+		-	ensures that main-window and job-status-window are always shown inside
+			the same workspace
 \*------------------------------------------------------------------------------*/
 void BmApplication::SetNewWorkspace( uint32 newWorkspace) {
 	if (TheMainWindow->Workspaces() != newWorkspace)
@@ -588,8 +878,9 @@ void BmApplication::SetNewWorkspace( uint32 newWorkspace) {
 }
 
 /*------------------------------------------------------------------------------*\
-	HandlesMimetype( )
-		-	
+	HandlesMimetype( mimetype)
+		-	determines whether or not Beam handles the given mimetype
+		-	returns true for text/x-email and message/rfc822, false otherwise
 \*------------------------------------------------------------------------------*/
 bool BmApplication::HandlesMimetype( const BString mimetype) {
 	return mimetype.ICompare( "text/x-email")==0 

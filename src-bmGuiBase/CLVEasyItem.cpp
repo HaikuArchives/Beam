@@ -215,8 +215,7 @@ void CLVEasyItem::DrawItemColumn(BView *owner, BRect item_column_rect, int32 col
 	if(selected) {
 		color = ((ColumnListView*)owner)->ItemSelectColor();
 		tinted_color = ((ColumnListView*)owner)->ItemSelectColorTinted();
-	}
-	else {
+	} else {
 		color = ((ColumnListView*)owner)->LightColumnCol();
 		tinted_color = ((ColumnListView*)owner)->DarkColumnCol();
 	}
@@ -231,11 +230,13 @@ void CLVEasyItem::DrawItemColumn(BView *owner, BRect item_column_rect, int32 col
 	if (column_index < 0)
 		index = abs(column_index);
 	if (striped && index % 2) {
+		owner->SetHighColor( tinted_color);
 		owner->SetLowColor( tinted_color);
 	} else {
+		owner->SetHighColor( color);
 		owner->SetLowColor( color);
 	}
-	owner->FillRect( item_column_rect, B_SOLID_LOW);
+	owner->FillRect( item_column_rect);
 	
 	if(column_index < 0)
 		return;

@@ -214,12 +214,12 @@ void BmResources::FetchOwnFQDN() {
 				&& rx.match[0].atom[0].Length())
 					mOwnFQDN << "." << rx.match[0].atom[0];
 				else
-					mOwnFQDN << ".fake-" << time( NULL) << ".local";
+					mOwnFQDN << "." << time( NULL) << ".fake";
 			}
 		}
 	}
 	if (!mOwnFQDN.Length())
-		mOwnFQDN << "bepc.fake-" << time( NULL) << ".local";
+		mOwnFQDN << "bepc." << time( NULL) << ".fake";
 }
 
 /*------------------------------------------------------------------------------*\
@@ -323,8 +323,10 @@ void BmResources::AddFontSubmenuTo( BMenu* menu, BHandler* target,
 }
 
 /*------------------------------------------------------------------------------*\
-	()
-		-	
+	FontBaselineOffset( font)
+		-	returns the baseline offset for the given font
+		-	the baselne offset is the distance of the baseline (measured in pixels)
+			from the top of the (virtual) font-rectangle
 \*------------------------------------------------------------------------------*/
 float BmResources::FontBaselineOffset( const BFont* font) { 
 	font_height fh;
@@ -337,8 +339,8 @@ float BmResources::FontBaselineOffset( const BFont* font) {
 }
 
 /*------------------------------------------------------------------------------*\
-	()
-		-	
+	FontHeight( font)
+		-	returns the height (ascent+descent) for the given font in pixels
 \*------------------------------------------------------------------------------*/
 float BmResources::FontHeight( const BFont* font) { 
 	font_height fh;
@@ -351,8 +353,9 @@ float BmResources::FontHeight( const BFont* font) {
 }
 
 /*------------------------------------------------------------------------------*\
-	()
-		-	
+	FontLineHeight( font)
+		-	returns the line-height (ascent+descent+leading) for the given font 
+			in pixels
 \*------------------------------------------------------------------------------*/
 float BmResources::FontLineHeight( const BFont* font) {
 	font_height fh;
@@ -367,24 +370,29 @@ float BmResources::FontLineHeight( const BFont* font) {
 }
 
 /*------------------------------------------------------------------------------*\
-	()
-		-	
+	MailCacheFolder()
+		-	returns a Directory* that is set to the folder where Beam's mail-cache
+			lives (normally .../settings/Beam/MailCache/)
 \*------------------------------------------------------------------------------*/
 BDirectory* BmResources::MailCacheFolder() {
 	return GetFolder( BString( SettingsPath.Path()) << "/MailCache/", mMailCacheFolder);
 }
 
 /*------------------------------------------------------------------------------*\
-	()
-		-	
+	StateInfoFolder()
+		-	returns a Directory* that is set to the folder where Beam's state-info
+			lives (normally .../settings/Beam/StateInfo/)
 \*------------------------------------------------------------------------------*/
 BDirectory* BmResources::StateInfoFolder() {
 	return GetFolder( BString( SettingsPath.Path()) << "/StateInfo/", mStateInfoFolder);
 }
 
 /*------------------------------------------------------------------------------*\
-	()
-		-	
+	GetFolder( name, dir)
+		-	initializes the given BDirectory dir to the given path name
+		-	if the directory does not yet exist, it is created
+		-	a pointer to the initialized directory is returned, so you probably
+			don't want to delete that
 \*------------------------------------------------------------------------------*/
 BDirectory* BmResources::GetFolder( const BString& name, BDirectory& dir) {
 	if (dir.InitCheck() != B_OK) {
@@ -398,8 +406,11 @@ BDirectory* BmResources::GetFolder( const BString& name, BDirectory& dir) {
 }
 
 /*------------------------------------------------------------------------------*\
-	( )
-		-	
+	CreatePictureFor( image, width, height, background, transparentBack)
+		-	creates and returns a BPicture for the given image
+		-	param transparentBack decides whether or not the background shall be
+			transparent
+		-	the caller takes ownership of the returned BPicture
 \*------------------------------------------------------------------------------*/
 BPicture* BmResources::CreatePictureFor( BBitmap* image, float width, float height,
 													  rgb_color background,

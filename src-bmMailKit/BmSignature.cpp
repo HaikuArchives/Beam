@@ -49,7 +49,7 @@ using namespace regexx;
 
 /*------------------------------------------------------------------------------*\
 	BmSignature()
-		-	
+		-	c'tor
 \*------------------------------------------------------------------------------*/
 BmSignature::BmSignature( const char* name, BmSignatureList* model) 
 	:	inherited( name, model, (BmListModelItem*)NULL)
@@ -60,6 +60,7 @@ BmSignature::BmSignature( const char* name, BmSignatureList* model)
 
 /*------------------------------------------------------------------------------*\
 	BmSignature( archive)
+		-	c'tor
 		-	constructs a BmSignature from a BMessage
 \*------------------------------------------------------------------------------*/
 BmSignature::BmSignature( BMessage* archive, BmSignatureList* model) 
@@ -71,6 +72,13 @@ BmSignature::BmSignature( BMessage* archive, BmSignatureList* model)
 	mContent = FindMsgString( archive, MSG_CONTENT);
 	mDynamic = FindMsgBool( archive, MSG_DYNAMIC);
 	mEncoding = FindMsgInt16( archive, MSG_ENCODING);
+}
+
+/*------------------------------------------------------------------------------*\
+	~BmSignature()
+		-	standard d'tor
+\*------------------------------------------------------------------------------*/
+BmSignature::~BmSignature() {
 }
 
 /*------------------------------------------------------------------------------*\
@@ -89,7 +97,11 @@ status_t BmSignature::Archive( BMessage* archive, bool deep) const {
 
 /*------------------------------------------------------------------------------*\
 	GetSignatureString()
-		-	always returns UTF8
+		-	returns the contents of this signature
+		-	if this sig is dynamic (and thus takes its contents from the output of a 
+			shell-command), the external command is executed, the results are fetched
+			and returned
+		-	always returns UTF8-encoded string
 \*------------------------------------------------------------------------------*/
 BString BmSignature::GetSignatureString() {
 	if (!mContent.Length())
@@ -126,7 +138,6 @@ BString BmSignature::GetSignatureString() {
 	BmSignatureList
 \********************************************************************************/
 
-
 BmRef< BmSignatureList> BmSignatureList::theInstance( NULL);
 
 /*------------------------------------------------------------------------------*\
@@ -158,7 +169,7 @@ BmSignatureList::~BmSignatureList() {
 
 /*------------------------------------------------------------------------------*\
 	SettingsFileName()
-		-	
+		-	returns the name of the settings-file for the signature-list
 \*------------------------------------------------------------------------------*/
 const BString BmSignatureList::SettingsFileName() {
 	return BString( TheResources->SettingsPath.Path()) << "/" << "Signatures";
@@ -166,7 +177,8 @@ const BString BmSignatureList::SettingsFileName() {
 
 /*------------------------------------------------------------------------------*\
 	GetSignatureStringFor( sigName)
-		-	
+		-	returns the signature-string for the signature of the given name
+		-	if no signature with given name exists, an empty string is returned
 \*------------------------------------------------------------------------------*/
 BString BmSignatureList::GetSignatureStringFor( const BString sigName) {
 	BmRef<BmListModelItem> sigRef = FindItemByKey( sigName);
@@ -177,8 +189,8 @@ BString BmSignatureList::GetSignatureStringFor( const BString sigName) {
 }
 
 /*------------------------------------------------------------------------------*\
-	InstantiateMailRefs( archive)
-		-	
+	InstantiateItems( archive)
+		-	initializes the signature-list from the given archive
 \*------------------------------------------------------------------------------*/
 void BmSignatureList::InstantiateItems( BMessage* archive) {
 	BM_LOG2( BM_LogUtil, BString("Start of InstantiateItems() for SignatureList"));

@@ -71,6 +71,7 @@
 
 float BmMailEditWin::nNextXPos = 300;
 float BmMailEditWin::nNextYPos = 100;
+BmMailEditWin::BmEditWinMap BmMailEditWin::nEditWinMap;
 
 /*------------------------------------------------------------------------------*\
 	types of messages handled by a BmMailEditWin:
@@ -94,8 +95,12 @@ float BmMailEditWin::nNextYPos = 100;
 		-	initialiazes the window's dimensions by reading its archive-file (if any)
 \*------------------------------------------------------------------------------*/
 BmMailEditWin* BmMailEditWin::CreateInstance( BmMailRef* mailRef) {
+	BmEditWinMap::iterator pos = nEditWinMap.find( mailRef->EntryRef());
+	if (pos != nEditWinMap.end())
+		return pos->second;
 	BmMailEditWin* win = new BmMailEditWin( mailRef, NULL);
 	win->ReadStateInfo();
+	nEditWinMap[mailRef->EntryRef()] = win;
 	return win;
 }
 
@@ -105,8 +110,16 @@ BmMailEditWin* BmMailEditWin::CreateInstance( BmMailRef* mailRef) {
 		-	initialiazes the window's dimensions by reading its archive-file (if any)
 \*------------------------------------------------------------------------------*/
 BmMailEditWin* BmMailEditWin::CreateInstance( BmMail* mail) {
+	BmMailRef* mailRef = mail->MailRef();
+	if (mailRef) {
+		BmEditWinMap::iterator pos = nEditWinMap.find( mailRef->EntryRef());
+		if (pos != nEditWinMap.end())
+			return pos->second;
+	}
 	BmMailEditWin* win = new BmMailEditWin( NULL, mail);
 	win->ReadStateInfo();
+	if (mailRef)
+		nEditWinMap[mailRef->EntryRef()] = win;
 	return win;
 }
 
@@ -128,6 +141,7 @@ BmMailEditWin::BmMailEditWin( BmMailRef* mailRef, BmMail* mail)
 	,	mAttachPanel( NULL)
 {
 	CreateGUI();
+	mMailView->AddFilter( new BmMsgFilter( mSubjectControl, B_KEY_DOWN));
 	if (mail)
 		EditMail( mail);
 	else
@@ -140,6 +154,28 @@ BmMailEditWin::BmMailEditWin( BmMailRef* mailRef, BmMail* mail)
 \*------------------------------------------------------------------------------*/
 BmMailEditWin::~BmMailEditWin() {
 	delete mAttachPanel;
+	BmRef<BmMail> mail = mMailView->CurrMail();
+	if (mail) {
+		BmMailRef* mailRef = mail->MailRef();
+		if (mailRef)
+			nEditWinMap.erase(mailRef->EntryRef());
+	}
+}
+
+/*------------------------------------------------------------------------------*\
+	Filter()
+		-	
+\*------------------------------------------------------------------------------*/
+filter_result BmMailEditWin::BmMsgFilter::Filter( BMessage* msg, BHandler** handler) {
+	if (msg->what == B_KEY_DOWN) {
+		BString bytes = msg->FindString( "bytes");
+		int32 modifiers = msg->FindInt32( "modifiers");
+		if (bytes.Length() && bytes[0]==B_TAB && modifiers & B_SHIFT_KEY) {
+			mShiftTabToControl->MakeFocus( true);
+			return B_SKIP_MESSAGE;
+		}
+	}
+	return B_DISPATCH_MESSAGE;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -298,11 +334,6 @@ void BmMailEditWin::CreateGUI() {
 	for( int i=0; BM_Encodings[i].charset; ++i) {
 		mCharsetControl->Menu()->AddItem( new BMenuItem( BM_Encodings[i].charset, new BMessage(BM_CHARSET_SELECTED)));
 	}
-	// mark default charset:
-	BMenuItem* item;
-	item = mCharsetControl->Menu()->FindItem( EncodingToCharset( ThePrefs->GetInt( "DefaultEncoding")).String());
-	if (item)
-		item->SetMarked( true);
 	// add all signatures to signature menu:
 	mSignatureControl->Menu()->AddItem( new BMenuItem( "<none>", new BMessage( BM_SIGNATURE_SELECTED)));
 	for( iter = TheSignatureList->begin(); iter != TheSignatureList->end(); ++iter) {
@@ -316,7 +347,6 @@ void BmMailEditWin::CreateGUI() {
 
 	// temporarily disabled:
 	mPeopleButton->SetEnabled( false);
-	mPrintButton->SetEnabled( false);
 
 	AddChild( dynamic_cast<BView*>(mOuterGroup));
 }
@@ -494,6 +524,7 @@ void BmMailEditWin::MessageReceived( BMessage* msg) {
 							alert->TextEntryView()->DisallowChar( 27);
 							alert->TextEntryView()->SetFontAndColor( be_fixed_font);
 							alert->Go( new BInvoker( new BMessage( BM_EDIT_HEADER_DONE), BMessenger( this)));
+							break;
 						} else {
 							BM_LOG2( BM_LogMailEditWin, "...marking mail as pending");
 							mail->MarkAs( BM_MAIL_STATUS_PENDING);
@@ -501,6 +532,10 @@ void BmMailEditWin::MessageReceived( BMessage* msg) {
 							BM_LOG2( BM_LogMailEditWin, "...passing mail to smtp-account");
 							TheSmtpAccountList->SendQueuedMailFor( smtpAcc->Name());
 						}
+					} else {
+						ShowAlertWithType( "Before you can send this mail, you have to select the SMTP-Account to use for sending it.",
+												 B_INFO_ALERT);
+						break;
 					}
 				} else 
 					mail->MarkAs( BM_MAIL_STATUS_PENDING);
@@ -552,12 +587,14 @@ void BmMailEditWin::MessageReceived( BMessage* msg) {
 					}
 					if (msg->what == BM_FROM_SET) {
 						// select corresponding smtp-account, if any:
-						BMenuItem* item = mSmtpControl->Menu()->FindItem( acc->SMTPAccount().String());
-						if (item)
-							item->SetMarked( true);
+						mSmtpControl->MarkItem( acc->SMTPAccount().String());
 						// update signature:
-						mMailView->SetSignatureByName( acc->SignatureName());
-						mSignatureControl->MarkItem( acc->SignatureName().String());
+						BString sigName = acc->SignatureName();
+						mMailView->SetSignatureByName( sigName);
+						if (sigName.Length())
+							mSignatureControl->MarkItem( sigName.String());
+						else
+							mSignatureControl->MarkItem( "<none>");
 					}
 				}
 				break;
@@ -635,10 +672,23 @@ void BmMailEditWin::MessageReceived( BMessage* msg) {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmMailEditWin::BeginLife() {
-	// mark signature of current mail as selected:
-	BmRef<BmMail> mail = mMailView->CurrMail();
-	if (mail)
-		mSignatureControl->MarkItem( mail->SignatureName().String());
+}
+
+/*------------------------------------------------------------------------------*\
+	Show()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailEditWin::Show() {
+	if (!Looper()->IsLocked()) {
+		// showing living window, we bring it to front:
+		LockLooper();
+		if (IsMinimized())
+			Minimize( false);
+		inherited::Hide();
+		inherited::Show();
+		UnlockLooper();
+	} else
+		inherited::Show();
 }
 
 /*------------------------------------------------------------------------------*\
@@ -692,18 +742,16 @@ void BmMailEditWin::SetFieldsFromMail( BmMail* mail) {
 		}
 		mSubjectControl->SetTextSilently( mail->GetStrippedFieldVal( BM_FIELD_SUBJECT).String());
 		// mark corresponding SMTP-account (if any):
-		BMenuItem* item = NULL;
 		BString smtpAccount = mail->AccountName();
-		if (smtpAccount.Length())
-			item = mSmtpControl->Menu()->FindItem( smtpAccount.String());
-		else 
-			item = mSmtpControl->Menu()->ItemAt( 0);
-		if (item)
-		item->SetMarked( true);
+		mSmtpControl->MarkItem( smtpAccount.String());
+		// mark signature of current mail as selected:
+		BString sigName = mail->SignatureName();
+		if (sigName.Length())
+			mSignatureControl->MarkItem( sigName.String());
+		else
+			mSignatureControl->MarkItem( "<none>");
 		// mark corresponding charset:
-		item = mCharsetControl->Menu()->FindItem( EncodingToCharset( mail->DefaultEncoding()).String());
-		if (item)
-			item->SetMarked( true);
+		mCharsetControl->MarkItem( EncodingToCharset( mail->DefaultEncoding()).String());
 		// try to set convenient focus:
 		if (!mFromControl->TextView()->TextLength())
 			mFromControl->MakeFocus( true);
@@ -742,6 +790,7 @@ bool BmMailEditWin::CreateMailFromFields() {
 		ConvertFromUTF8( encoding, editedText, convertedText);
 		BMenuItem* smtpItem = mSmtpControl->Menu()->FindMarked();
 		BString smtpAccount = smtpItem ? smtpItem->Label() : "";
+		mail->AccountName( smtpAccount);
 		if (mail->IsRedirect()) {
 			mail->SetFieldVal( BM_FIELD_RESENT_BCC, mBccControl->Text());
 			mail->SetFieldVal( BM_FIELD_RESENT_CC, mCcControl->Text());

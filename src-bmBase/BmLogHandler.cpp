@@ -60,7 +60,7 @@ BmLogHandler* BmLogHandler::theInstance = NULL;
 
 /*------------------------------------------------------------------------------*\
 	static logging-function
-		- logs only if a loghandler is actually present
+		-	logs only if a loghandler is actually present
 \*------------------------------------------------------------------------------*/
 void BmLogHandler::Log( const BString logname, uint32 flag, const BString& msg, int8 minlevel=1) { 
 	if (theInstance)
@@ -69,7 +69,7 @@ void BmLogHandler::Log( const BString logname, uint32 flag, const BString& msg, 
 
 /*------------------------------------------------------------------------------*\
 	static logging-function
-		- logs only if a loghandler is actually present
+		-	logs only if a loghandler is actually present
 \*------------------------------------------------------------------------------*/
 void BmLogHandler::Log( const char* const logname, uint32 flag, const char* const msg, int8 minlevel=1) { 
 	if (theInstance)
@@ -78,7 +78,7 @@ void BmLogHandler::Log( const char* const logname, uint32 flag, const char* cons
 
 /*------------------------------------------------------------------------------*\
 	static logging-function
-		- logs only if a loghandler is actually present
+		-	logs only if a loghandler is actually present
 \*------------------------------------------------------------------------------*/
 void BmLogHandler::FinishLog( const BString& logname) { 
 	if (theInstance)
@@ -87,7 +87,7 @@ void BmLogHandler::FinishLog( const BString& logname) {
 
 /*------------------------------------------------------------------------------*\
 	static creator-function
-		-
+		-	singleton creator
 \*------------------------------------------------------------------------------*/
 BmLogHandler* BmLogHandler::CreateInstance( uint32 logLevels, node_ref* appFolder) {
 	if (theInstance)
@@ -125,8 +125,9 @@ BmLogHandler::~BmLogHandler() {
 }
 
 /*------------------------------------------------------------------------------*\
-	FindLogfile()
-		-	
+	FindLogfile( logname)
+		-	tries to find the logfile of the given name in the logfile-map
+		-	if logfile does not exist yet, it is created and added to map
 \*------------------------------------------------------------------------------*/
 BmLogHandler::BmLogfile* BmLogHandler::FindLogfile( const BString &logname) {
 	BmAutolock lock( mLocker);
@@ -155,8 +156,7 @@ BmLogHandler::BmLogfile* BmLogHandler::FindLogfile( const BString &logname) {
 
 /*------------------------------------------------------------------------------*\
 	LogToFile( logname, msg)
-		-	writes msg into the logfile that is named logname
-		-	if no logfile of given name exists, it is created
+		-	writes msg into the logfile specified by logname
 \*------------------------------------------------------------------------------*/
 void BmLogHandler::LogToFile( const BString& logname, uint32 flag,
 										const BString& msg, int8 minlevel) {
@@ -183,7 +183,7 @@ void BmLogHandler::LogToFile( const char* const logname, uint32 flag, const char
 
 /*------------------------------------------------------------------------------*\
 	CloseLog( logname)
-		-	closes the logfile with the specified by name
+		-	closes the logfile with the specified logname
 \*------------------------------------------------------------------------------*/
 void BmLogHandler::CloseLog( const BString &logname) {
 	BmAutolock lock( mLocker);
@@ -200,8 +200,9 @@ void BmLogHandler::CloseLog( const BString &logname) {
 }
 
 /*------------------------------------------------------------------------------*\
-	constructor
-		- standard
+	BmLogfile()
+		-	c'tor
+		-	starts Looper's message-loop
 \*------------------------------------------------------------------------------*/
 BmLogHandler::BmLogfile::BmLogfile( BFile* file, const char* fn)
 	:	BLooper( (BString("log_")<<fn).String(), B_DISPLAY_PRIORITY, 500)
@@ -212,8 +213,8 @@ BmLogHandler::BmLogfile::BmLogfile( BFile* file, const char* fn)
 }
 
 /*------------------------------------------------------------------------------*\
-	destructor
-		- standard
+	~BmLogfile()
+		-	standard d'tor
 \*------------------------------------------------------------------------------*/
 BmLogHandler::BmLogfile::~BmLogfile() {
 	delete mLogFile;
@@ -221,7 +222,7 @@ BmLogHandler::BmLogfile::~BmLogfile() {
 
 /*------------------------------------------------------------------------------*\
 	MessageReceived( msg)
-		-	
+		-	handles log-requests to this logfile
 \*------------------------------------------------------------------------------*/
 void BmLogHandler::BmLogfile::MessageReceived( BMessage* msg) {
 	switch( msg->what) {

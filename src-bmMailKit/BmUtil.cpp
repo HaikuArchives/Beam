@@ -193,9 +193,19 @@ void ShowAlert( const BString &text) {
 	alert->Go();
 }
 
+/*------------------------------------------------------------------------------*\*\
+	ShowAlertWithType( text, type)
+		-	pops up an Alert of given type, showing the passed text
+\*------------------------------------------------------------------------------*/
+void ShowAlertWithType( const BString &text, alert_type type) {
+	BAlert* alert = new BAlert( NULL, text.String(), "OK", NULL, NULL, 
+										 B_WIDTH_AS_USUAL, type);
+	alert->Go();
+}
+
 /*------------------------------------------------------------------------------*\
 	BString::operator+
-		-	
+		-	utility operators for easier concatenation
 \*------------------------------------------------------------------------------*/
 BString operator+(const BString& s1, const BString& s2) 
 {
@@ -203,14 +213,12 @@ BString operator+(const BString& s1, const BString& s2)
 	result += s2;
 	return result;
 }
-
 BString operator+(const char* s1, const BString& s2) 
 {
 	BString result(s1);
 	result += s2;
 	return result;
 }
-
 BString operator+(const BString& s1, const char* s2) 
 {
 	BString result(s1);
@@ -220,7 +228,8 @@ BString operator+(const BString& s1, const char* s2)
 
 /*------------------------------------------------------------------------------*\
 	RemoveSetFromString( string, charsToRemove)
-		-	
+		-	removes the given chars form the given string
+		-	this function performs *much* better than BString::RemoveSet()
 \*------------------------------------------------------------------------------*/
 BString& RemoveSetFromString( BString& str, const char* charsToRemove) {
 	if (!charsToRemove) return str;
@@ -247,8 +256,9 @@ BString& RemoveSetFromString( BString& str, const char* charsToRemove) {
 }
 
 /*------------------------------------------------------------------------------*\
-	ConvertLinebreaksToLF( string)
-		-	
+	ConvertLinebreaksToLF( in, out)
+		-	converts linebreaks of given in-string from CRLF to LF
+		-	result is stored in out
 \*------------------------------------------------------------------------------*/
 void ConvertLinebreaksToLF( const BString& in, BString& out) {
 	int32 outSize = in.Length();
@@ -271,7 +281,8 @@ void ConvertLinebreaksToLF( const BString& in, BString& out) {
 
 /*------------------------------------------------------------------------------*\
 	ConvertLinebreaksToCRLF( string)
-		-	
+		-	converts linebreaks of given in-string from LF to CRLF
+		-	result is stored in out
 \*------------------------------------------------------------------------------*/
 void ConvertLinebreaksToCRLF( const BString& in, BString& out) {
 	int32 outSize = in.Length()*2;
@@ -294,7 +305,8 @@ void ConvertLinebreaksToCRLF( const BString& in, BString& out) {
 
 /*------------------------------------------------------------------------------*\
 	ConvertTabsToSpaces( in, out)
-		-	
+		-	converts all tabs of given in-string into three spaces
+		-	result is stored in out
 \*------------------------------------------------------------------------------*/
 void ConvertTabsToSpaces( const BString& in, BString& out) {
 	int32 outSize = in.Length()*2;
@@ -321,7 +333,10 @@ void ConvertTabsToSpaces( const BString& in, BString& out) {
 
 /*------------------------------------------------------------------------------*\
 	WordWrap( in, out, maxLineLen)
-		-	
+		-	wraps given in-string along word-boundary
+		-	param maxLineLen indicates right border for wrap
+		-	resulting text is stored in param out
+		-	the string in has to be UTF8-encoded for this function to work correctly!
 \*------------------------------------------------------------------------------*/
 void WordWrap( const BString& in, BString& out, int32 maxLineLen, BString nl) {
 	if (!in.Length()) {
@@ -329,10 +344,18 @@ void WordWrap( const BString& in, BString& out, int32 maxLineLen, BString nl) {
 		return;
 	}
 	int32 lastPos = 0;
+	const char *s = in.String();
 	for(	int32 pos = 0; 
 			(pos = in.FindFirst( nl, pos)) != B_ERROR; 
 			pos += nl.Length(), lastPos = pos) {
-		while (pos-lastPos > maxLineLen) {
+		// determine length of line in UTF8-characters (not bytes):
+		int32 lineLen = 0;
+		for( int i=lastPos; i<pos; ++i) {
+			while( i<pos && s[i]&0x80)
+				i++;
+			lineLen++;
+		}
+		while (lineLen > maxLineLen) {
 			int32 lastSpcPos = in.FindLast( " ", lastPos+maxLineLen);
 			if (lastSpcPos==B_ERROR || lastSpcPos<lastPos) {
 				// line doesn't contain any space character, we simply break it
@@ -345,6 +368,12 @@ void WordWrap( const BString& in, BString& out, int32 maxLineLen, BString nl) {
 				out.Append( in.String()+lastPos, 1+lastSpcPos-lastPos);
 				out.Append( nl);
 				lastPos = lastSpcPos+1;
+			}
+			lineLen = 0;
+			for( int i=lastPos; i<pos; ++i) {
+				while( i<pos && s[i]&0x80)
+					i++;
+				lineLen++;
 			}
 		}
 		out.Append( in.String()+lastPos, nl.Length()+pos-lastPos);

@@ -61,6 +61,9 @@ public:
 	void MouseMoved( BPoint point, uint32 transit, const BMessage *msg);
 	void MouseUp(BPoint point);
 
+	// getters:
+	int32 IndicatorPos() const				{ return mIndicatorPos; }
+
 	//	message component definitions:
 	static const char* const MSG_NEW_POS = "bm:newpos";
 

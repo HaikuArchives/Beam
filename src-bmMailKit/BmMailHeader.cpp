@@ -59,6 +59,9 @@ static BString BmAddressFieldNames =
 static BString BmNoEncodingFieldNames = 
 	"<Received><Message-ID><Resent-Message-ID><Date><Resent-Date>";
 
+static BString BmNoStrippingFieldNames = 
+	"<Received><Subject><UserAgent>";
+
 /********************************************************************************\
 	BmAddress
 \********************************************************************************/
@@ -473,6 +476,17 @@ bool BmMailHeader::IsEncodingOkForField( const BString fieldName) {
 }
 
 /*------------------------------------------------------------------------------*\
+	IsStrippingOkForField()
+	-	
+\*------------------------------------------------------------------------------*/
+bool BmMailHeader::IsStrippingOkForField( const BString fieldName) {
+	if (fieldName.ICompare( "X-", 2) == 0)
+		return false;							// no stripping for unknown fields
+	BString fname = BString("<") << fieldName << ">";
+	return BmNoStrippingFieldNames.IFindFirst( fname) == B_ERROR;
+}
+
+/*------------------------------------------------------------------------------*\
 	IsFieldEmpty()
 	-	
 \*------------------------------------------------------------------------------*/
@@ -514,7 +528,9 @@ const BmAddressList BmMailHeader::GetAddressList( const BString fieldName) {
 \*------------------------------------------------------------------------------*/
 void BmMailHeader::SetFieldVal( const BString fieldName, const BString value) {
 	mHeaders.Set( fieldName, value);
-	BString strippedVal = StripField( value);
+	BString strippedVal = IsStrippingOkForField( fieldName)
+									? StripField( value)
+									: value;
 	mStrippedHeaders.Set( fieldName, strippedVal);
 	if (IsAddressField( fieldName)) {
 		// field contains an address-spec, we parse the address as well:
@@ -528,7 +544,9 @@ void BmMailHeader::SetFieldVal( const BString fieldName, const BString value) {
 \*------------------------------------------------------------------------------*/
 void BmMailHeader::AddFieldVal( const BString fieldName, const BString value) {
 	mHeaders.Add( fieldName, value);
-	BString strippedVal = StripField( value);
+	BString strippedVal = IsStrippingOkForField( fieldName)
+									? StripField( value)
+									: value;
 	mStrippedHeaders.Add( fieldName, strippedVal);
 	if (IsAddressField( fieldName)) {
 		// field contains an address-spec, we parse the address as well:
@@ -553,6 +571,37 @@ void BmMailHeader::RemoveField( const BString fieldName) {
 void BmMailHeader::RemoveAddrFieldVal( const BString fieldName, const BString value) {
 	if (IsAddressField( fieldName))
 		mAddrMap[fieldName].Remove( value);
+}
+
+/*------------------------------------------------------------------------------*\
+	DetermineOriginator()
+	-	
+\*------------------------------------------------------------------------------*/
+BString BmMailHeader::DetermineOriginator() {
+	BString originator;
+	BmAddressList addrList;
+	if (ThePrefs->GetBool( "UseResentFieldsInReply", false)) {
+		addrList = mAddrMap[BM_FIELD_RESENT_REPLY_TO];
+		if (!addrList.InitOK()) {
+			addrList = mAddrMap[BM_FIELD_RESENT_FROM];
+			if (!addrList.InitOK()) {
+				addrList = mAddrMap[BM_FIELD_RESENT_SENDER];
+			}
+		}
+	} else {
+		addrList = mAddrMap[BM_FIELD_REPLY_TO];
+		if (!addrList.InitOK()) {
+			addrList = mAddrMap[BM_FIELD_FROM];
+			if (!addrList.InitOK()) {
+				addrList = mAddrMap[BM_FIELD_SENDER];
+			}
+		}
+	}
+	if (!addrList.InitOK())
+		return "";
+	if (addrList.IsGroup())
+		return addrList.GroupName();
+	return addrList.FirstAddress();
 }
 
 /*------------------------------------------------------------------------------*\
@@ -586,7 +635,7 @@ BString BmMailHeader::DetermineSender() {
 }
 
 /*------------------------------------------------------------------------------*\
-	DetermineSender()
+	DetermineReceivingAddrFor()
 		-	
 \*------------------------------------------------------------------------------*/
 BString BmMailHeader::DetermineReceivingAddrFor( BmPopAccount* acc) {
@@ -627,18 +676,6 @@ void BmMailHeader::ParseHeader( const BString &header) {
 	Regexx rxHeaderFields, rxUnfold, rx;
 	int32 nm;
 
-	// set default encoding
-	mDefaultEncoding = ThePrefs->GetInt("DefaultEncoding");
-	// we look for a default charset for this mail:
-	rx.expr( "^Content-Type:\\s*.+?;charset\\s*=[\\s\"]*([^\\s\"]+)");
-	rx.str( header.String());
-	if (rx.exec( Regexx::nocase | Regexx::newline)) {
-		// extract encoding from the charset found:
-		BString charset;
-		header.CopyInto( charset, rx.match[0].atom[0].start(), rx.match[0].atom[0].Length());
-		mDefaultEncoding = CharsetToEncoding( charset);
-	}
-
 	// count number of lines in header
 	mNumLines = rx.exec( header, "\\n", Regexx::newline | Regexx::global);
 
@@ -658,7 +695,7 @@ void BmMailHeader::ParseHeader( const BString &header) {
 
 		// split each headerfield into field-name and field-body:
 		BString headerField, fieldName, fieldBody;
-		header.CopyInto( headerField, i->start(), i->Length());
+		headerField = *i;
 		int32 pos = headerField.FindFirst( ':');
 		if (pos == B_ERROR) { 
 			BM_SHOWERR(BString("Could not determine field-name of mail-header-part:\n") << headerField << "\n\nThis header-field will be ignored."); 
@@ -676,7 +713,7 @@ void BmMailHeader::ParseHeader( const BString &header) {
 		fieldBody = rxUnfold.replace( fieldBody, "\\s+$", "", Regexx::global);
 
 		// insert pair into header-map:
-		AddFieldVal( fieldName, ConvertHeaderPartToUTF8( fieldBody, mDefaultEncoding));
+		AddFieldVal( fieldName, ConvertHeaderPartToUTF8( fieldBody, B_ISO1_CONVERSION));
 
 		BM_LOG2( BM_LogMailParse, fieldName << ": " << fieldBody);
 	}
@@ -859,8 +896,6 @@ bool BmMailHeader::ConstructRawText( BString& header, int32 encoding) {
 			SetFieldVal( BM_FIELD_TO, "Undisclosed-Recipients:;");
 		}
 	}
-
-	mDefaultEncoding = encoding;
 
 	// identify ourselves as creator of this mail message (so people know who to blame >:o)
 	BString agentField = ThePrefs->GetBool( "PreferUserAgentOverX-Mailer", true)

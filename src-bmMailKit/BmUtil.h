@@ -33,6 +33,7 @@
 
 #include <ctime>
 
+#include <Alert.h>
 #include <Message.h>
 #include <String.h>
 
@@ -40,12 +41,16 @@ extern BString BM_SPACES;
 extern BString BM_DEFAULT_STRING;
 
 /*------------------------------------------------------------------------------*\
-	ShowAlert( text, logtext)
+	ShowAlert( text)
 		-	pops up an Alert showing the passed text
-		-	logs text unless logtext is specified, in which case that is 
-			written to the logfile
 \*------------------------------------------------------------------------------*/
 void ShowAlert( const BString &text);
+
+/*------------------------------------------------------------------------------*\
+	ShowAlertWithType( text, type)
+		-	pops up an Alert of given type, showing the passed text
+\*------------------------------------------------------------------------------*/
+void ShowAlertWithType( const BString &text, alert_type type);
 
 /*------------------------------------------------------------------------------*\
 	FindMsgXXX( archive, name)

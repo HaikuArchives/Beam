@@ -36,7 +36,9 @@ BmWindow::~BmWindow() {
 		-	
 \*------------------------------------------------------------------------------*/
 status_t BmWindow::ArchiveState( BMessage* archive) const {
-	status_t ret = archive->AddRect( MSG_FRAME, Frame());
+	BRect frame = Frame();
+BM_LOG2( BM_LogUtil, BString("Window ") << Name() << " stored with left:" << frame.left << " top: " << frame.top << "\nwidth:" << frame.Width() << " height: " << frame.Height());
+	status_t ret = archive->AddRect( MSG_FRAME, frame);
 	return ret;
 }
 
@@ -48,6 +50,7 @@ status_t BmWindow::UnarchiveState( BMessage* archive) {
 	BRect frame;
 	status_t ret = archive->FindRect( MSG_FRAME, &frame);
 	if (ret == B_OK) {
+BM_LOG2( BM_LogUtil, BString("Window ") << Name() << " opened at left:" << frame.left << " top: " << frame.top << "\nwidth:" << frame.Width() << " height: " << frame.Height());
 		MoveTo( frame.LeftTop());
 		ResizeTo( frame.Width(), frame.Height());
 	}

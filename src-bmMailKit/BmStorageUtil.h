@@ -39,6 +39,8 @@ class entry_ref;
 
 bool MoveToTrash( const entry_ref* refs, int32 count);
 
+bool LivesInTrash( const entry_ref* eref);
+
 bool CheckMimeType( const entry_ref* eref, const char* type);
 
 bool FetchFile( BString fileName, BString& contents);

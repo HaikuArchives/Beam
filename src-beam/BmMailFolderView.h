@@ -97,8 +97,9 @@ public:
 	// overrides of controller base:
 	bool AcceptsDropOf( const BMessage* msg);
 	void HandleDrop( const BMessage* msg);
+	void ItemInvoked( int32 index);
 	BString StateInfoBasename()			{ return "MailFolderView"; }
-	void UpdateModelItem( BMessage* msg);
+	BmListViewItem* UpdateModelItem( BmListModelItem* item, BmUpdFlags updFlags);
 	const char* ItemNameForCaption()		{ return "folder"; }
 	void JobIsDone( bool completed);
 	//

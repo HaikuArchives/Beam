@@ -49,8 +49,7 @@ public:
 	BmMailViewWin( BmMailRef* mailRef=NULL);
 	~BmMailViewWin();
 
-	// native methods:
-	void ShowMail( BmMailRef* mailRef);
+	void ShowMail( BmMailRef* mailRef, bool async=true);
 
 	// overrides of BmWindow base:
 	void BeginLife();
@@ -58,7 +57,10 @@ public:
 	bool QuitRequested();
 	void Quit();
 	status_t UnarchiveState( BMessage* archive);
-
+	
+	// getters:
+	BmMailView* MailView() const			{ return mMailView; }
+	
 private:
 	BmMailViewContainer* CreateMailView( minimax minmax, BRect frame);
 	void CreateGUI();

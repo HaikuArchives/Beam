@@ -250,6 +250,8 @@ void BmPrefsGeneralView::Initialize() {
 	mPopperRemoveControl->SetTarget( this);
 	mSmtpRemoveControl->SetTarget( this);
 	mRemoveFailedControl->SetTarget( this);
+	mNetBufSizeSendControl->SetTarget( this);
+	mNetRecvTimeoutControl->SetTarget( this);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -276,12 +278,12 @@ void BmPrefsGeneralView::SaveData() {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmPrefsGeneralView::UndoChanges() {
-	ThePrefs = NULL;
-	BmPrefs::CreateInstance();
+	ThePrefs->ResetToSaved();
 	mLayoutView->Unarchive( ThePrefs->GetMsg( "MailRefLayout"));
-	TheMailFolderView->LockLooper();
-	TheMailFolderView->SortItems();
-	TheMailFolderView->UnlockLooper();
+	if (TheMailFolderView->LockLooper()) {
+		TheMailFolderView->SortItems();
+		TheMailFolderView->UnlockLooper();
+	}
 }
 
 /*------------------------------------------------------------------------------*\
@@ -337,7 +339,10 @@ void BmPrefsGeneralView::MessageReceived( BMessage* msg) {
 				break;
 			}
 			case BM_USE_DESKBAR_CHANGED: {
-				ThePrefs->SetBool("UseDeskbar", mUseDeskbarControl->Value());
+				bool val = mUseDeskbarControl->Value();
+				ThePrefs->SetBool("UseDeskbar", val);
+				if (!val)
+					be_app->PostMessage( BMM_HIDE_NEWMAIL_ICON);
 				break;
 			}
 			case BM_SHOW_TOOLTIPS_CHANGED: {

@@ -182,6 +182,7 @@ private:
 // flags indicating which parts are to be updated:
 typedef uint32 BmUpdFlags;
 const BmUpdFlags UPD_EXPANDER 	= 1<<0;
+const BmUpdFlags UPD_KEY		 	= 1<<1;
 const BmUpdFlags UPD_ALL 			= 0xFFFFFFFF;
 
 class BmListModelItem;

@@ -103,46 +103,55 @@ BmPopper::~BmPopper() {
 }
 
 /*------------------------------------------------------------------------------*\
+	ShouldContinue()
+		-	determines whether or not the Popper should continue to run
+		-	in addition to the inherited behaviour, the Popper should continue
+			when it executes special jobs (not BM_DEFAULT_JOB), since in that
+			case there are no controllers present.
+\*------------------------------------------------------------------------------*/
+bool BmPopper::ShouldContinue() {
+	return inherited::ShouldContinue() 
+			 || CurrentJobSpecifier() == BM_AUTH_ONLY_JOB
+			 || CurrentJobSpecifier() == BM_CHECK_AUTH_TYPES_JOB;
+}
+
+/*------------------------------------------------------------------------------*\
 	StartJob()
-		-	the mainloop, steps through all POP3-stages and calls the corresponding handlers
+		-	the mainloop, steps through all POP3-stages and calls the corresponding 
+			handlers
+		-	returns whether or not the Popper has completed it's job
 \*------------------------------------------------------------------------------*/
 bool BmPopper::StartJob() {
-
-	switch( CurrentJobSpecifier()) {
-		case BM_AUTH_ONLY_JOB: {
-			return true;
-		}
-		default: {
-			const float delta = (100.0 / POP_DONE);
-			mPopServer.InitCheck() == B_OK					
+	const float delta = (100.0 / POP_DONE);
+	mPopServer.InitCheck() == B_OK					
 													||	BM_THROW_RUNTIME("BmPopper: could not create NetEndpoint");
-			try {
-				for( mState=POP_CONNECT; mState<POP_DONE; ++mState) {
-					TStateMethod stateFunc = PopStates[mState].func;
-					UpdatePOPStatus( (mState==POP_CONNECT ? 0.0 : delta), NULL);
-					(this->*stateFunc)();
-					if (!ShouldContinue())
-						break;
-				}
-				if (!ShouldContinue())
-					UpdatePOPStatus( 0.0, NULL, false, true);
-				else
-					UpdatePOPStatus( delta, NULL);
-			}
-			catch( BM_runtime_error &err) {
-				// a problem occurred, we tell the user:
-				BString errstr = err.what();
-				int e;
-				if ((e = mPopServer.Error()))
-					errstr << "\nerror: " << e << ", " << mPopServer.ErrorStr();
-				UpdatePOPStatus( 0.0, NULL, true);
-				BString text = Name() << "\n\n" << errstr;
-				BM_SHOWERR( BString("BmPopper: ") << text);
-				return false;
-			}
-			return true;
+	try {
+		for( mState=POP_CONNECT; ShouldContinue() && mState<POP_DONE; ++mState) {
+			TStateMethod stateFunc = PopStates[mState].func;
+			UpdatePOPStatus( (mState==POP_CONNECT ? 0.0 : delta), NULL);
+			(this->*stateFunc)();
+			if (CurrentJobSpecifier() == BM_AUTH_ONLY_JOB && mState==POP_LOGIN)
+				return true;
+			if (CurrentJobSpecifier() == BM_CHECK_AUTH_TYPES_JOB && mState==POP_CONNECT)
+				return true;
 		}
+		if (!ShouldContinue())
+			UpdatePOPStatus( 0.0, NULL, false, true);
+		else
+			UpdatePOPStatus( delta, NULL);
 	}
+	catch( BM_runtime_error &err) {
+		// a problem occurred, we tell the user:
+		BString errstr = err.what();
+		int e;
+		if ((e = mPopServer.Error()))
+			errstr << "\nerror: " << e << ", " << mPopServer.ErrorStr();
+		UpdatePOPStatus( 0.0, NULL, true);
+		BString text = Name() << "\n\n" << errstr;
+		BM_SHOWERR( BString("BmPopper: ") << text);
+		return false;
+	}
+	return true;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -214,8 +223,21 @@ void BmPopper::Connect() {
 }
 
 /*------------------------------------------------------------------------------*\
+	SuggestAuthType()
+		-	looks at the auth-types supported by the server and selects the most secure
+			of those that is supported by Beam.
+\*------------------------------------------------------------------------------*/
+BString BmPopper::SuggestAuthType() const {
+	if (mServerTimestamp.Length())
+		return BmPopAccount::AUTH_APOP;
+	else
+		return BmPopAccount::AUTH_POP3;
+}
+
+/*------------------------------------------------------------------------------*\
 	Login()
 		-	Sends user/passwd combination and checks result
+		-	currently supports POP3- & APOP-authentication
 \*------------------------------------------------------------------------------*/
 void BmPopper::Login() {
 	BString pwd;
@@ -226,12 +248,15 @@ void BmPopper::Login() {
 	while(!pwdOK) {
 		bool pwdGiven = false;
 		if (first && mPopAccount->PwdStoredOnDisk()) {
+			// use stored password:
 			pwd = mPopAccount->Password();
 			pwdGiven = true;
 		} else if (mPwdAcquisitorFunc) {
+			// ask user about password:
 			pwdGiven = mPwdAcquisitorFunc( Name(), pwd);
 		}
 		if (!pwdGiven) {
+			// user has cancelled, we stop
 			Disconnect();
 			StopJob();
 			return;
@@ -350,7 +375,7 @@ void BmPopper::Check() {
 
 /*------------------------------------------------------------------------------*\
 	Retrieve()
-		-	retrieves all mails from server
+		-	retrieves all new mails from server
 \*------------------------------------------------------------------------------*/
 void BmPopper::Retrieve() {
 	int32 newMailIndex = 0;

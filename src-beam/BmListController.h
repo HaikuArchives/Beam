@@ -165,7 +165,7 @@ public:
 	virtual void AddAllModelItems();
 	virtual BmListViewItem* AddModelItem( BmListModelItem* item);
 	virtual void RemoveModelItem( BmListModelItem* item);
-	virtual void UpdateModelItem( BmListModelItem* item, BmUpdFlags updFlags);
+	virtual BmListViewItem* UpdateModelItem( BmListModelItem* item, BmUpdFlags updFlags);
 	virtual void UpdateModelState( BMessage* msg);
 	virtual void UpdateItem( BmListViewItem* item, BmUpdFlags flags);
 	virtual void UpdateCaption( const char* text=NULL);

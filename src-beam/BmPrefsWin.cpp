@@ -40,6 +40,7 @@
 	class BPopUpMenu;
 	class BRect;
 #endif
+
 #include <layout-all.h>
 
 #include "ColumnListView.h"

@@ -399,13 +399,14 @@ void BmPopperView::UpdateModelView( BMessage* msg) {
 \*------------------------------------------------------------------------------*/
 bool BmPopperView::AskUserForPwd( const BString accName, BString& pwd) {
 	// ask user about password:
-   BString text = BString( "Please enter password for POP-Account <")
-   				   << accName << ">:";
+	BString text = BString( "Please enter password for POP-Account <")
+					   << accName << ">:";
 	TextEntryAlert* alert = new TextEntryAlert( "Info needed", text.String(),
 									 						  "", "Cancel", "OK");
 	alert->TextEntryView()->HideTyping( true);
 	alert->SetShortcut( 0, B_ESCAPE);
 	char buf[128];
+	TheJobStatusWin->UpdateIfNeeded();
 	int32 result = alert->Go( buf, 128);
 	if (result == 1) {
 		pwd = buf;
@@ -558,7 +559,7 @@ bool BmSmtpView::AskUserForPopAcc( const BString accName, BString& popAccName) {
 	int32 result = alert->Go( buf, 128);
 	if (result == 1) {
 		popAccName = buf;
-		return true;
+		return popAccName.Length() > 0;
 	} else
 		return false;
 }

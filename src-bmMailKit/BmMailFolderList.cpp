@@ -40,6 +40,7 @@
 #include "BmMailFolderList.h"
 #include "BmPrefs.h"
 #include "BmResources.h"
+#include "BmStorageUtil.h"
 #include "BmUtil.h"
 
 /********************************************************************************\
@@ -215,7 +216,7 @@ void BmMailMonitor::HandleMailMonitorMsg( BMessage* msg) {
 								// rename only, we take the short path:
 								BM_LOG2( BM_LogMailTracking, BString("Rename of mail-folder <") << eref.name << "," << node << "> detected.");
 								folder->EntryRef( eref);
-								TheMailFolderList->TellModelItemUpdated( folder, BmMailFolder::UPD_NAME);
+								TheMailFolderList->TellModelItemUpdated( folder, UPD_KEY);
 							} else {
 								// the folder has really changed position within filesystem-tree:
 								if (oldParent && folder && folder->Parent() != oldParent)
@@ -268,25 +269,33 @@ void BmMailMonitor::HandleMailMonitorMsg( BMessage* msg) {
 void BmMailMonitor::HandleQueryUpdateMsg( BMessage* msg) {
 	int32 opcode = msg->FindInt32( "opcode");
 	status_t err;
+	entry_ref eref;
 	ino_t node;
-	ino_t pnode;
+	const char* name;
 	BM_LOG2( BM_LogMailTracking, BString("QueryUpdateMessage nr.") << ++counter << " received.");
 	try {
 		switch( opcode) {
 			case B_ENTRY_CREATED: {
+				(err = msg->FindInt64( "directory", &eref.directory)) == B_OK
+													|| BM_THROW_RUNTIME( "Field 'directory' not found in msg !?!");
+				(err = msg->FindInt32( "device", &eref.device)) == B_OK
+													|| BM_THROW_RUNTIME( "Field 'device' not found in msg !?!");
+				(err = msg->FindString( "name", &name)) == B_OK
+													|| BM_THROW_RUNTIME( "Field 'name' not found in msg !?!");
+				eref.set_name( name);
+				if (LivesInTrash( &eref))
+					break;
 				(err = msg->FindInt64( "node", &node)) == B_OK
 													|| BM_THROW_RUNTIME( BString("Field 'node' not found in msg !?!"));
-				(err = msg->FindInt64( "directory", &pnode)) == B_OK
-													|| BM_THROW_RUNTIME( BString("Field 'directory' not found in msg !?!"));
-				TheMailFolderList->AddNewFlag( pnode, node);
+				TheMailFolderList->AddNewFlag( eref.directory, node);
 				break;
 			}
 			case B_ENTRY_REMOVED: {
+				(err = msg->FindInt64( "directory", &eref.directory)) == B_OK
+													|| BM_THROW_RUNTIME( "Field 'directory' not found in msg !?!");
 				(err = msg->FindInt64( "node", &node)) == B_OK
 													|| BM_THROW_RUNTIME( BString("Field 'node' not found in msg !?!"));
-				(err = msg->FindInt64( "directory", &pnode)) == B_OK
-													|| BM_THROW_RUNTIME( BString("Field 'directory' not found in msg !?!"));
-				TheMailFolderList->RemoveNewFlag( pnode, node);
+				TheMailFolderList->RemoveNewFlag( eref.directory, node);
 				break;
 			}
 		}
@@ -557,6 +566,7 @@ void BmMailFolderList::QueryForNewMails() {
 	int32 count, newCount=0;
 	status_t err;
 	dirent* dent;
+	entry_ref eref;
 	char buf[4096];
 
 	BmAutolock lock( mModelLocker);
@@ -575,7 +585,11 @@ void BmMailFolderList::QueryForNewMails() {
 		dent = (dirent* )buf;
 		while (count-- > 0) {
 			newCount++;
-			AddNewFlag( dent->d_pino, dent->d_ino);
+			eref.device = dent->d_pdev;
+			eref.directory = dent->d_pino;
+			eref.set_name( dent->d_name);
+			if (!LivesInTrash( &eref))
+				AddNewFlag( dent->d_pino, dent->d_ino);
 			// Bump the dirent-pointer by length of the dirent just handled:
 			dent = (dirent* )((char* )dent + dent->d_reclen);
 		}

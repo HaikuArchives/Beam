@@ -112,6 +112,7 @@ private:
 #define BM_IS_DEFAULT_CHANGED 	'bmDC'
 #define BM_IS_BUCKET_CHANGED	 	'bmFC'
 #define BM_PWD_STORED_CHANGED 	'bmPC'
+#define BM_CHECK_AND_SUGGEST		'bmCS'
 #define BM_ADD_ACCOUNT 				'bmAA'
 #define BM_REMOVE_ACCOUNT 			'bmRA'
 
@@ -172,6 +173,7 @@ private:
 	BmCheckControl* mRemoveMailControl;
 	BmCheckControl* mStorePwdControl;
 	BmCheckControl* mCheckEveryControl;
+	MButton* mCheckAndSuggestButton;
 	MButton* mAddButton;
 	MButton* mRemoveButton;
 	MStringView* mMinutesLabel;

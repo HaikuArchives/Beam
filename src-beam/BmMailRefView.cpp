@@ -302,7 +302,7 @@ void BmMailRefView::MessageReceived( BMessage* msg) {
 				break;
 			}
 			case B_MOUSE_WHEEL_CHANGED: {
-				if (modifiers() & B_SHIFT_KEY) {
+				if (modifiers() & (B_SHIFT_KEY | B_CONTROL_KEY)) {
 					bool passedOn = false;
 					if (mPartnerMailView && !(passedOn = msg->FindBool("bm:passed_on"))) {
 						msg->AddBool("bm:passed_on", true);
@@ -473,17 +473,15 @@ bool BmMailRefView::AcceptsDropOf( const BMessage* msg) {
 \*------------------------------------------------------------------------------*/
 void BmMailRefView::HandleDrop( const BMessage* msg) {
 	if (mCurrFolder && msg && msg->what == B_SIMPLE_DATA) {
-		if (mCurrFolder) {
-			BMessage tmpMsg( BM_JOBWIN_MOVEMAILS);
-			entry_ref eref;
-			for( int i=0; msg->FindRef( BmMailMover::MSG_REFS, i, &eref)==B_OK; ++i) {
-				tmpMsg.AddRef( BmMailMover::MSG_REFS, &eref);
-			}
-			tmpMsg.AddString( BmJobModel::MSG_JOB_NAME, mCurrFolder->Name());
-			tmpMsg.AddString( BmJobModel::MSG_MODEL, mCurrFolder->Key());
-			mCurrFolder->AddRef();	// the message now refers to the folder, too
-			TheJobStatusWin->PostMessage( &tmpMsg);
+		BMessage tmpMsg( BM_JOBWIN_MOVEMAILS);
+		entry_ref eref;
+		for( int i=0; msg->FindRef( BmMailMover::MSG_REFS, i, &eref)==B_OK; ++i) {
+			tmpMsg.AddRef( BmMailMover::MSG_REFS, &eref);
 		}
+		tmpMsg.AddString( BmJobModel::MSG_JOB_NAME, mCurrFolder->Name());
+		tmpMsg.AddString( BmJobModel::MSG_MODEL, mCurrFolder->Key());
+		mCurrFolder->AddRef();	// the message now refers to the folder, too
+		TheJobStatusWin->PostMessage( &tmpMsg);
 	}
 	inherited::HandleDrop( msg);
 }
@@ -500,6 +498,8 @@ void BmMailRefView::ShowFolder( BmMailFolder* folder) {
 			mPartnerMailView->ShowMail( static_cast< BmMailRef*>( NULL));
 		if (refList)
 			StartJob( refList.Get());
+		else
+			MakeEmpty();
 		mCurrFolder = folder;
 		SelectionChanged();
 	}
@@ -539,6 +539,7 @@ void BmMailRefView::AddSelectedRefsToMsg( BMessage* msg, BString fieldName) {
 	}
 	int32 selected = -1;
 	int32 numSelected = 0;
+	BMessenger msngr( this);
 	while( (selected = CurrentSelection(numSelected)) >= 0) {
 		BmMailRefItem* refItem;
 		refItem = dynamic_cast<BmMailRefItem*>(ItemAt( selected));
@@ -548,6 +549,7 @@ void BmMailRefView::AddSelectedRefsToMsg( BMessage* msg, BString fieldName) {
 			ref->AddRef();						// the message now refers to the mailRef, too
 			if (selectedText.Length())
 				msg->AddString( BmApplication::MSG_SELECTED_TEXT, selectedText.String());
+			msg->AddMessenger( BmApplication::MSG_SENDING_REFVIEW, msngr);
 		}
 		numSelected++;
 	}
@@ -621,7 +623,6 @@ void BmMailRefView::AddMailRefMenu( BMenu* menu, BHandler* target) {
 	if (!menu)
 		return;
 	AddItemToMenu( menu, CreateMenuItem( "Reply", BMM_REPLY), target);
-
 	AddItemToMenu( menu, CreateMenuItem( "Reply To All", BMM_REPLY_ALL), target);
 	AddItemToMenu( menu, CreateMenuItem( "Forward As Attachment", BMM_FORWARD_ATTACHED), target);
 	AddItemToMenu( menu, CreateMenuItem( "Forward Inline", BMM_FORWARD_INLINE), target);
@@ -642,6 +643,8 @@ void BmMailRefView::AddMailRefMenu( BMenu* menu, BHandler* target) {
 	menu->AddItem( statusMenu);
 	menu->AddSeparatorItem();
 	AddItemToMenu( menu, CreateMenuItem( "Apply Filter", BMM_FILTER), target);
+	menu->AddSeparatorItem();
+	AddItemToMenu( menu, CreateMenuItem( "Print Message(s)...", BMM_PRINT, "Print Message..."), target);
 	menu->AddSeparatorItem();
 	AddItemToMenu( menu, CreateMenuItem( "Move To Trash", BMM_TRASH), target);
 

@@ -69,13 +69,15 @@ public:
 	int32 GetInt( const char* name);
 	int32 GetInt( const char* name, const int32 defaultVal);
 	const BMessage* GetMsg( const char* name);
-	const BMessage* GetMsg( const char* name, const BMessage* defaultVal);
+//	const BMessage* GetMsg( const char* name, const BMessage* defaultVal);
 	BString GetString( const char* name);
 	BString GetString( const char* name, const BString defaultVal);
 	void SetBool( const char* name, const bool val);
 	void SetInt( const char* name, const int32 val);
 	void SetMsg( const char* name, const BMessage* val);
 	void SetString( const char* name, const BString val);
+	//
+	void ResetToSaved();
 
 	BString GetShortcutFor( const char* shortcutID);
 
@@ -94,6 +96,7 @@ private:
 	BMessage mPrefsMsg;
 	BMessage mDefaultsMsg;
 	BMessage mShortcutsMsg;
+	BMessage mSavedPrefsMsg;
 
 	map<BString, BMessage*> mMsgCache;
 

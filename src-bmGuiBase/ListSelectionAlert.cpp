@@ -174,20 +174,7 @@ ListSelectionAlert::ListSelectionAlert(const char* title, const char* info_text,
 			m_list_view->Select( i);
 	}
 
-
 	//Position the buttons
-	if(m_buttons[0] != NULL && m_buttons[1] != NULL)
-	{
-		float button_left;
-		button_left = sel_list_rect.left;
-		m_buttons[0]->MoveTo(button_left,sel_list_rect.bottom+c_item_spacing+B_H_SCROLL_BAR_HEIGHT);
-		if(width_style == B_WIDTH_AS_USUAL)
-			m_buttons[0]->ResizeTo(c_usual_button_width,buttons_height);
-		else if(width_style == B_WIDTH_FROM_LABEL)
-			m_buttons[0]->ResizeTo(button_0_width,buttons_height);
-		else //if(width_style == B_WIDTH_FROM_WIDEST)
-			m_buttons[0]->ResizeTo(max_buttons_width,buttons_height);
-	}
 	BButton* right_button = NULL;
 	if(m_buttons[1] != NULL)
 		right_button = m_buttons[1];
@@ -202,9 +189,21 @@ ListSelectionAlert::ListSelectionAlert(const char* title, const char* info_text,
 				buttons_height);
 		else //(width_style == B_WIDTH_FROM_WIDEST)
 			right_button->ResizeTo(max_buttons_width,buttons_height);
-		right_button->MoveTo(sel_list_rect.right-right_button->Frame().Width()+1,
-			sel_list_rect.bottom+c_item_spacing+B_H_SCROLL_BAR_HEIGHT);
+		right_button->MoveTo(sel_list_rect.right+B_V_SCROLL_BAR_WIDTH-right_button->Frame().Width()+1,
+			sel_list_rect.bottom+B_H_SCROLL_BAR_HEIGHT+c_item_spacing);
 		right_button->MakeDefault(true);
+	}
+	if(m_buttons[0] != NULL && m_buttons[1] != NULL)
+	{
+		float button_left;
+		if(width_style == B_WIDTH_AS_USUAL)
+			m_buttons[0]->ResizeTo(c_usual_button_width,buttons_height);
+		else if(width_style == B_WIDTH_FROM_LABEL)
+			m_buttons[0]->ResizeTo(button_0_width,buttons_height);
+		else //if(width_style == B_WIDTH_FROM_WIDEST)
+			m_buttons[0]->ResizeTo(max_buttons_width,buttons_height);
+		button_left = right_button->Frame().left-m_buttons[0]->Frame().Width()-10;
+		m_buttons[0]->MoveTo(button_left,sel_list_rect.bottom+B_H_SCROLL_BAR_HEIGHT+c_item_spacing);
 	}
 
 	//Resize the window

@@ -64,18 +64,25 @@ public:
 	// message component definitions for additional info:
 	static const char* const MSG_PWD = 	"bm:pwd";
 
-	// job-specifier for authentication only (needed for SMTP-after-POP):
+	// alternate job-specifiers:
 	static const int32 BM_AUTH_ONLY_JOB = 1;
+							// for authentication only (needed for SMTP-after-POP)
+	static const int32 BM_CHECK_AUTH_TYPES_JOB = 2;
+							// to find out about supported authentication types
 
 	BmPopper( const BString& name, BmPopAccount* account);
 	virtual ~BmPopper();
 
+	BString SuggestAuthType() const;
 	typedef bool BmPwdAcquisitorFunc( const BString, BString&);
 	inline void SetPwdAcquisitorFunc( BmPwdAcquisitorFunc* func)
 													{ mPwdAcquisitorFunc = func; }
 	inline static int32 NextID() 			{ return ++mId; }
 	inline BString Name() const			{ return ModelName(); }
+
+	// overrides of job-model base:
 	bool StartJob();
+	bool ShouldContinue();
 
 private:
 	// internal functions:

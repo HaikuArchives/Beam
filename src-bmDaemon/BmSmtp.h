@@ -77,10 +77,13 @@ public:
 	inline void SetPopAccAcquisitorFunc( BmPopAccAcquisitorFunc* func)
 													{ mPopAccAcquisitorFunc = func; }
 
+	BString SuggestAuthType() const;
 
 	inline BString Name() const			{ return ModelName(); }
 
+	// overrides of job-model base:
 	bool StartJob();
+	bool ShouldContinue();
 
 private:
 	static int32 FeedbackTimeout;			// the time a BmSmtp will allow to pass
@@ -135,7 +138,7 @@ private:
 	void Rcpt( BmMail *mail);
 	void BccRcpt( BmMail *mail, bool sendDataForEachBcc);
 	void Data( BmMail *mail, BString forBcc="");
-	void UpdateSMTPStatus( const float, const char*, bool failed=false);
+	void UpdateSMTPStatus( const float, const char*, bool failed=false, bool stopped=false);
 	void UpdateMailStatus( const float, const char*, int32);
 	void StoreAnswer( char* );
 	bool CheckForPositiveAnswer();
@@ -145,6 +148,7 @@ private:
 
 	bool mServerMayHaveSizeLimit;
 	bool mServerSupportsDSN;
+	BString mSupportedAuthTypes;
 
 	// Hide copy-constructor and assignment:
 	BmSmtp( const BmSmtp&);

@@ -87,7 +87,8 @@ BmMailViewWin::BmMailViewWin( BmMailRef* mailRef)
 					  B_NORMAL_WINDOW_FEEL, B_ASYNCHRONOUS_CONTROLS)
 {
 	CreateGUI();
-	ShowMail( mailRef);
+	if (mailRef)
+		ShowMail( mailRef);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -251,6 +252,7 @@ void BmMailViewWin::BeginLife() {
 	}
 	// temporarily disabled:
 	mPrintButton->SetEnabled( false);
+	mMailView->MakeFocus( true);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -264,10 +266,12 @@ void BmMailViewWin::MessageReceived( BMessage* msg) {
 				be_app_messenger.SendMessage( msg);
 				break;
 			}
+			case BMM_MARK_AS:
 			case BMM_REDIRECT:
 			case BMM_REPLY:
 			case BMM_REPLY_ALL:
 			case BMM_TRASH:
+			case BMM_PRINT:
 			case BMM_FORWARD_ATTACHED:
 			case BMM_FORWARD_INLINE:
 			case BMM_FORWARD_INLINE_ATTACH: {
@@ -333,8 +337,8 @@ void BmMailViewWin::MessageReceived( BMessage* msg) {
 	ShowMail()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmMailViewWin::ShowMail( BmMailRef* mailRef) {
-	mMailView->ShowMail( mailRef);
+void BmMailViewWin::ShowMail( BmMailRef* mailRef, bool async) {
+	mMailView->ShowMail( mailRef, async);
 }
 
 /*------------------------------------------------------------------------------*\

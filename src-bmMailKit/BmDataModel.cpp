@@ -55,7 +55,9 @@ BmDataModel::BmDataModel( const BString& name)
 
 /*------------------------------------------------------------------------------*\
 	~BmDataModel()
-		-	
+		-	destructor
+		-	waits for all controllers to detach, so that they don't access a stale
+			pointer
 \*------------------------------------------------------------------------------*/
 BmDataModel::~BmDataModel() {
 	BM_LOG2( BM_LogModelController, BString("DataModel <") << ModelName() << "> is being deleted");
@@ -230,8 +232,9 @@ void BmDataModel::WaitForAllToDetach() {
 \********************************************************************************/
 
 /*------------------------------------------------------------------------------*\
-	StartJobThread()
-		-	
+	StartJobThread( data)
+		-	thread-entry function for every job-model that runs in its own thread
+		-	data is a pointer to a BmJobModel that contains further info
 \*------------------------------------------------------------------------------*/
 int32 BmJobModel::ThreadStartFunc( void* data) {
 	BmJobModel* job = static_cast<BmJobModel*>( data);
@@ -274,7 +277,7 @@ BmJobModel::~BmJobModel() {
 
 /*------------------------------------------------------------------------------*\
 	StartJobInNewThread()
-		-	
+		-	spawns a new thread for this job and runs the job in that thread
 \*------------------------------------------------------------------------------*/
 void BmJobModel::StartJobInNewThread( int32 jobSpecifier) {
 	BmAutolock lock( mModelLocker);
@@ -308,7 +311,9 @@ void BmJobModel::StartJobInNewThread( int32 jobSpecifier) {
 
 /*------------------------------------------------------------------------------*\
 	StartJobInThisThread()
-		-	
+		-	starts this job in the current thread
+		-	if the job is still running, this method synchronizes to it, i.e.
+			it blocks until the job has finished (or was stopped).
 \*------------------------------------------------------------------------------*/
 void BmJobModel::StartJobInThisThread( int32 jobSpecifier) {
 	bool isRunning;
@@ -336,7 +341,8 @@ void BmJobModel::StartJobInThisThread( int32 jobSpecifier) {
 
 /*------------------------------------------------------------------------------*\
 	doStartJob()
-		-	
+		-	executes the real job by calling the job's StartJob()-method
+		-	ensures that the job-lock is free during execution of the actual job
 \*------------------------------------------------------------------------------*/
 void BmJobModel::doStartJob() {
 	BM_LOG2( BM_LogModelController, BString("Job <") << ModelName() << "> has started");
@@ -359,7 +365,8 @@ void BmJobModel::doStartJob() {
 
 /*------------------------------------------------------------------------------*\
 	PauseJob()
-		-	
+		-	pauses this job, causing it to wait indefinitely, until it is
+			explicitly stopped or continued
 \*------------------------------------------------------------------------------*/
 void BmJobModel::PauseJob() {
 	mJobState = JOB_PAUSED;
@@ -367,7 +374,7 @@ void BmJobModel::PauseJob() {
 
 /*------------------------------------------------------------------------------*\
 	ContinueJob()
-		-	
+		-	continues this job
 \*------------------------------------------------------------------------------*/
 void BmJobModel::ContinueJob() {
 	mJobState = JOB_RUNNING;
@@ -375,7 +382,7 @@ void BmJobModel::ContinueJob() {
 
 /*------------------------------------------------------------------------------*\
 	StopJob()
-		-	
+		-	stops the current job
 \*------------------------------------------------------------------------------*/
 void BmJobModel::StopJob() {
 	if (IsJobRunning()) {
@@ -385,7 +392,7 @@ void BmJobModel::StopJob() {
 
 /*------------------------------------------------------------------------------*\
 	IsJobRunning()
-		-	
+		-	checks if this job is currently running (or paused)
 \*------------------------------------------------------------------------------*/
 bool BmJobModel::IsJobRunning() const {
 	return (mJobState == JOB_RUNNING || mJobState == JOB_PAUSED);
@@ -393,7 +400,9 @@ bool BmJobModel::IsJobRunning() const {
 
 /*------------------------------------------------------------------------------*\
 	ShouldContinue()
-		-	
+		-	determines whether this job should continue
+		-	this implementation requires a job to have interested controllers
+			in order to let it continue
 \*------------------------------------------------------------------------------*/
 bool BmJobModel::ShouldContinue() {
 	// check if we are in pause mode, if so we wait till we snap out of it:
@@ -407,7 +416,9 @@ bool BmJobModel::ShouldContinue() {
 
 /*------------------------------------------------------------------------------*\
 	TellJobIsDone()
-		-	
+		-	tells all controllers about that the job has finished
+		-	param completed indicates if the job has finished normally (=true)
+			or was stopped (=false)
 \*------------------------------------------------------------------------------*/
 void BmJobModel::TellJobIsDone( bool completed) {
 	BmAutolock lock( mModelLocker);
@@ -470,8 +481,8 @@ status_t BmListModelItem::Archive( BMessage* archive, bool deep) const {
 }
 
 /*------------------------------------------------------------------------------*\
-	AddSubItem()
-		-	
+	AddSubItem( subItem)
+		-	adds the given item to this listmodel-item
 \*------------------------------------------------------------------------------*/
 bool BmListModelItem::AddSubItem( BmListModelItem* subItem) {
 	BmModelItemMap::iterator iter = mSubItemMap.find( subItem->Key());
@@ -484,16 +495,20 @@ bool BmListModelItem::AddSubItem( BmListModelItem* subItem) {
 }
 
 /*------------------------------------------------------------------------------*\
-	AddSubItem()
-		-	
+	RemoveSubItem( subItem)
+		-	removes the given subItem from this listmodel-item
 \*------------------------------------------------------------------------------*/
 void BmListModelItem::RemoveSubItem( BmListModelItem* subItem) {
 	mSubItemMap.erase( subItem->Key());
 }
 
 /*------------------------------------------------------------------------------*\
-	TellModelItemUpdated()
-		-	
+	TellModelItemUpdated( updFlags)
+		-	tells all controllers of this item's listmodel that this item has
+			changed
+		-	if listmodel is not known (usually because this item has not yet been
+			added to a listmodel) nothing happens
+		-	param updFlags indicates which part of item has been updated
 \*------------------------------------------------------------------------------*/
 void BmListModelItem::TellModelItemUpdated( BmUpdFlags flags=UPD_ALL) {
 	BmRef<BmListModel> listModel( ListModel());
@@ -502,7 +517,9 @@ void BmListModelItem::TellModelItemUpdated( BmUpdFlags flags=UPD_ALL) {
 }
 
 /*------------------------------------------------------------------------------*\
-	FindItemByKey()
+	FindItemByKey( key)
+		-	finds the item with the given key within the sub-hierarchy of this
+			listmodel-item
 		-	N.B.: The ListModel this item lives in must be locked when calling
 			this method, otherwise "bad things"(TM) happen!
 \*------------------------------------------------------------------------------*/
@@ -521,7 +538,7 @@ BmListModelItem* BmListModelItem::FindItemByKey( const BString& key) {
 
 /*------------------------------------------------------------------------------*\
 	ListModel()
-		-	
+		-	dereferences the weak-reference to the listmodel (may be NULL)
 \*------------------------------------------------------------------------------*/
 BmRef<BmListModel> BmListModelItem::ListModel() const	{ 
 	return mListModel.Get(); 
@@ -562,8 +579,9 @@ void BmListModel::Cleanup() {
 }
 
 /*------------------------------------------------------------------------------*\
-	AddItemToList()
-		-	
+	AddItemToList( item, parent)
+		-	adds given item to given parent-item
+		-	if parent==NULL the item is added to the listmodel itself
 \*------------------------------------------------------------------------------*/
 bool BmListModel::AddItemToList( BmListModelItem* item, BmListModelItem* parent) {
 	if (item) {
@@ -593,8 +611,9 @@ bool BmListModel::AddItemToList( BmListModelItem* item, BmListModelItem* parent)
 }
 
 /*------------------------------------------------------------------------------*\
-	RemoveItemFromList()
-		-	
+	RemoveItemFromList( item)
+		-	removes the given item from this listmodel
+		-	save to call with empty item
 \*------------------------------------------------------------------------------*/
 void BmListModel::RemoveItemFromList( BmListModelItem* item) {
 	if (item) {
@@ -615,8 +634,8 @@ void BmListModel::RemoveItemFromList( BmListModelItem* item) {
 }
 
 /*------------------------------------------------------------------------------*\
-	RemoveItemFromList()
-		-	
+	RemoveItemFromList( key)
+		-	removes item with given key from this listmodel's item-hierarchy
 \*------------------------------------------------------------------------------*/
 BmRef<BmListModelItem> BmListModel::RemoveItemFromList( const BString& key) {
 	BmAutolock lock( mModelLocker);
@@ -627,8 +646,10 @@ BmRef<BmListModelItem> BmListModel::RemoveItemFromList( const BString& key) {
 }
 
 /*------------------------------------------------------------------------------*\
-	RemoveItemFromList()
-		-	
+	RenameItem( oldKey, suggestedNewKey)
+		-	renames the item that has the given key oldKey into suggestedNewKey
+		-	if suggestedNewKey is not unique, a unique new key is generated
+		-	the real new key of the item is returned
 \*------------------------------------------------------------------------------*/
 BString BmListModel::RenameItem( const BString oldKey, const BString suggestedNewKey) {
 	BmAutolock lock( mModelLocker);
@@ -653,8 +674,8 @@ BString BmListModel::RenameItem( const BString oldKey, const BString suggestedNe
 }
 
 /*------------------------------------------------------------------------------*\
-	FindItemByKey()
-		-	
+	FindItemByKey( key)
+		-	finds and returns the item that has the given key
 \*------------------------------------------------------------------------------*/
 BmRef<BmListModelItem> BmListModel::FindItemByKey( const BString& key) {
 	BmListModelItem* found = NULL;
@@ -672,8 +693,8 @@ BmRef<BmListModelItem> BmListModel::FindItemByKey( const BString& key) {
 }
 
 /*------------------------------------------------------------------------------*\
-	()
-		-	
+	TellModelItemAdded( item)
+		-	tells all controllers that the given item has been added to hierarchy
 \*------------------------------------------------------------------------------*/
 void BmListModel::TellModelItemAdded( BmListModelItem* item) {
 	if (Frozen())
@@ -693,8 +714,10 @@ void BmListModel::TellModelItemAdded( BmListModelItem* item) {
 }
 
 /*------------------------------------------------------------------------------*\
-	()
-		-	
+	TellModelItemRemoved( item)
+		-	tells all controllers that the given item has been removed from hierarchy
+		-	the controllers are requested to acknowledge the removal, so that
+			they won't access the removed item (stale pointer)
 \*------------------------------------------------------------------------------*/
 void BmListModel::TellModelItemRemoved( BmListModelItem* item) {
 	if (Frozen())
@@ -714,8 +737,10 @@ void BmListModel::TellModelItemRemoved( BmListModelItem* item) {
 }
 
 /*------------------------------------------------------------------------------*\
-	()
-		-	
+	TellModelItemUpdated( item, updFlags, oldKey)
+		-	tells all controllers that the given item has been updated
+		-	param updFlags indicates which part of the item has been changed
+		-	param oldKey contains the old key of the item if the item was renamed
 \*------------------------------------------------------------------------------*/
 void BmListModel::TellModelItemUpdated( BmListModelItem* item, BmUpdFlags flags,
 													 const BString oldKey) {
@@ -741,7 +766,7 @@ void BmListModel::TellModelItemUpdated( BmListModelItem* item, BmUpdFlags flags,
 
 /*------------------------------------------------------------------------------*\
 	Archive( archive)
-		-	
+		-	archives the listmodel with all items into the given message
 \*------------------------------------------------------------------------------*/
 status_t BmListModel::Archive( BMessage* archive, bool deep) const {
 	status_t ret = BArchivable::Archive( archive, deep);
@@ -763,7 +788,7 @@ status_t BmListModel::Archive( BMessage* archive, bool deep) const {
 
 /*------------------------------------------------------------------------------*\
 	Store()
-		-	stores List inside Settings-dir:
+		-	stores List inside Settings-dir
 \*------------------------------------------------------------------------------*/
 bool BmListModel::Store() {
 	BMessage archive;
@@ -790,7 +815,7 @@ bool BmListModel::Store() {
 
 /*------------------------------------------------------------------------------*\
 	Restore()
-		-	restores List from Settings-file (if it exists):
+		-	restores List from Settings-file (if it exists)
 \*------------------------------------------------------------------------------*/
 BMessage* BmListModel::Restore( const BString filename) {
 	status_t err;
@@ -815,7 +840,11 @@ BMessage* BmListModel::Restore( const BString filename) {
 
 /*------------------------------------------------------------------------------*\
 	StartJob()
-		-	
+		-	executes the default job for a listmodel
+		-	tries to read the listmodel-hierarchy from a cache-file 
+			via InstantiateItems()
+		-	if no cache-file exists, list-model is initialized afresh via
+			InitializeItems()
 \*------------------------------------------------------------------------------*/
 bool BmListModel::StartJob() {
 	// try to open cache-file (if any) or else initialize the long way

@@ -110,7 +110,7 @@ BmMailFolder::~BmMailFolder() {
 
 /*------------------------------------------------------------------------------*\
 	StartNodeMonitor()
-		-	
+		-	instructs the node-monitor to watch this folder
 \*------------------------------------------------------------------------------*/
 void BmMailFolder::StartNodeMonitor() {
 	node_ref nref;
@@ -120,8 +120,8 @@ void BmMailFolder::StartNodeMonitor() {
 }
 
 /*------------------------------------------------------------------------------*\
-	StartNodeMonitor()
-		-	
+	StopNodeMonitor()
+		-	instructs the node-monitor to stop watching this folder
 \*------------------------------------------------------------------------------*/
 void BmMailFolder::StopNodeMonitor() {
 	node_ref nref;
@@ -132,7 +132,7 @@ void BmMailFolder::StopNodeMonitor() {
 
 /*------------------------------------------------------------------------------*\
 	Archive( archive)
-		-	
+		-	archives this folder into the given message-archive
 \*------------------------------------------------------------------------------*/
 status_t BmMailFolder::Archive( BMessage* archive, bool deep) const {
 	status_t ret = inherited::Archive( archive, deep)
@@ -157,15 +157,18 @@ status_t BmMailFolder::Archive( BMessage* archive, bool deep) const {
 
 /*------------------------------------------------------------------------------*\
 	CheckIfModifiedSinceLastTime()
-		-	
+		-	determines if this mail-folder has been written to since the last time
+			Beam ran.
 \*------------------------------------------------------------------------------*/
 bool BmMailFolder::CheckIfModifiedSinceLastTime() {
 	return CheckIfModifiedSince( mLastModified, &mLastModified);
 }
 
 /*------------------------------------------------------------------------------*\
-	CheckIfModifiedSince()
-		-	
+	CheckIfModifiedSince( when, storeNewModTime)
+		-	determines if this mail-folder has been written to after the time given
+		-	if param storeNewModTime is provided it is filled with the actual
+			modification time of this folder
 \*------------------------------------------------------------------------------*/
 bool BmMailFolder::CheckIfModifiedSince( time_t when, time_t* storeNewModTime) {
 	status_t err;
@@ -195,12 +198,12 @@ bool BmMailFolder::CheckIfModifiedSince( time_t when, time_t* storeNewModTime) {
 }
 
 /*------------------------------------------------------------------------------*\
-	BumpNewMailCount()
-		-	
+	BumpNewMailCount( offset)
+		-	increases this folder's new-mail counter by the given offset
 \*------------------------------------------------------------------------------*/
 void BmMailFolder::BumpNewMailCount( int32 offset) {
 	mNewMailCount += offset;
-	TheMailFolderList->TellModelItemUpdated( this, UPD_NAME);
+	TheMailFolderList->TellModelItemUpdated( this, UPD_NEW_STATUS);
 	BmMailFolder* parent( dynamic_cast< BmMailFolder*>( Parent()));
 	if (parent)
 		parent->BumpNewMailCountForSubfolders( offset);
@@ -208,11 +211,12 @@ void BmMailFolder::BumpNewMailCount( int32 offset) {
 
 /*------------------------------------------------------------------------------*\
 	BumpNewMailCountForSubfolders()
-		-	
+		-	increases this folder's new-mail-in-subfolders counter by the given 
+			offset
 \*------------------------------------------------------------------------------*/
 void BmMailFolder::BumpNewMailCountForSubfolders( int32 offset) {
 	mNewMailCountForSubfolders += offset;
-	TheMailFolderList->TellModelItemUpdated( this, UPD_NAME);
+	TheMailFolderList->TellModelItemUpdated( this, UPD_NEW_STATUS);
 	BmMailFolder* parent( dynamic_cast< BmMailFolder*>( Parent()));
 	if (parent)
 		parent->BumpNewMailCountForSubfolders( offset);
@@ -220,7 +224,8 @@ void BmMailFolder::BumpNewMailCountForSubfolders( int32 offset) {
 
 /*------------------------------------------------------------------------------*\
 	MailRefList()
-		-	
+		-	returns the mailref-list for this folder
+		-	if the mailref-list does not exist yet, it is created
 \*------------------------------------------------------------------------------*/
 BmRef<BmMailRefList> BmMailFolder::MailRefList() {
 	BmAutolock lock( mRefListLocker);
@@ -232,7 +237,7 @@ BmRef<BmMailRefList> BmMailFolder::MailRefList() {
 
 /*------------------------------------------------------------------------------*\
 	CreateMailRefList()
-		-	
+		-	creates the mailref-list for this folder
 \*------------------------------------------------------------------------------*/
 void BmMailFolder::CreateMailRefList() {
 	mMailRefList = new BmMailRefList( this);
@@ -240,7 +245,7 @@ void BmMailFolder::CreateMailRefList() {
 
 /*------------------------------------------------------------------------------*\
 	RemoveMailRefList()
-		-	
+		-	destroys this folder's mailref-list, freeing some memory
 \*------------------------------------------------------------------------------*/
 void BmMailFolder::RemoveMailRefList() {
 	BmAutolock lock( mRefListLocker);
@@ -250,7 +255,8 @@ void BmMailFolder::RemoveMailRefList() {
 
 /*------------------------------------------------------------------------------*\
 	CleanupForMailRefList( refList)
-		-	
+		-	cleans the given refList from this folder if it still is the current
+			mailref-list (otherwise nothing happens)
 \*------------------------------------------------------------------------------*/
 void BmMailFolder::CleanupForMailRefList( BmMailRefList* refList) {
 	BmAutolock lock( mRefListLocker);
@@ -261,7 +267,8 @@ void BmMailFolder::CleanupForMailRefList( BmMailRefList* refList) {
 
 /*------------------------------------------------------------------------------*\
 	ReCreateMailRefList()
-		-	
+		-	marks this folder's mailref-list as dirty, causing the reflist's cache
+			to be recreated
 \*------------------------------------------------------------------------------*/
 void BmMailFolder::RecreateCache() {
 	BmAutolock lock( mRefListLocker);
@@ -272,8 +279,10 @@ void BmMailFolder::RecreateCache() {
 }
 
 /*------------------------------------------------------------------------------*\
-	AddMailRef()
-		-	
+	AddMailRef( eref, st)
+		-	adds the mail-ref specified by the given entry_ref to this folder's mailref-
+			list
+		-	the param st contains the mail-ref's stat-info
 \*------------------------------------------------------------------------------*/
 void BmMailFolder::AddMailRef( entry_ref& eref, struct stat& st) {
 	BmAutolock lock( mRefListLocker);
@@ -292,8 +301,9 @@ void BmMailFolder::AddMailRef( entry_ref& eref, struct stat& st) {
 }
 
 /*------------------------------------------------------------------------------*\
-	HasMailRef()
-		-	
+	HasMailRef( key)
+		-	determines if the mail-ref specified by the given key exists within
+			this folders mailref-list
 \*------------------------------------------------------------------------------*/
 bool BmMailFolder::HasMailRef( BString key) {
 	BmAutolock lock( mRefListLocker);
@@ -305,8 +315,9 @@ bool BmMailFolder::HasMailRef( BString key) {
 }
 
 /*------------------------------------------------------------------------------*\
-	RemoveMailRef()
-		-	
+	RemoveMailRef( node)
+		-	removes the mail-ref specified by the given node from this folder's
+			mailref-list
 \*------------------------------------------------------------------------------*/
 void BmMailFolder::RemoveMailRef( ino_t node) {
 	BmAutolock lock( mRefListLocker);
@@ -325,8 +336,8 @@ void BmMailFolder::RemoveMailRef( ino_t node) {
 }
 
 /*------------------------------------------------------------------------------*\
-	CreateSubFolder( )
-		-	
+	CreateSubFolder( name)
+		-	creates a new sub-folder of the given name in this mail-folder
 \*------------------------------------------------------------------------------*/
 void BmMailFolder::CreateSubFolder( BString name) {
 	BDirectory thisDir( &mEntryRef);
@@ -336,8 +347,8 @@ void BmMailFolder::CreateSubFolder( BString name) {
 }
 
 /*------------------------------------------------------------------------------*\
-	Rename( )
-		-	
+	Rename( newName)
+		-	rename this folder to the given name
 \*------------------------------------------------------------------------------*/
 void BmMailFolder::Rename( BString newName) {
 	BEntry entry( EntryRefPtr());
@@ -349,8 +360,8 @@ void BmMailFolder::Rename( BString newName) {
 }
 
 /*------------------------------------------------------------------------------*\
-	MoveToTrash( )
-		-	
+	MoveToTrash()
+		-	moves this folder to the trash
 \*------------------------------------------------------------------------------*/
 void BmMailFolder::MoveToTrash() {
 	::MoveToTrash( EntryRefPtr(), 1);

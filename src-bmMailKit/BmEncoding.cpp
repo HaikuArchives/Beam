@@ -200,12 +200,11 @@ void BmEncoding::ConvertFromUTF8( uint32 destEncoding, const BString& src,
 void BmEncoding::Encode( BString encodingStyle, const BString& src, BString& dest, 
 								 bool isEncodedWord) {
 	int32 srcLen = src.Length();
-	encodingStyle.ToUpper();
 	dest.Truncate(0);
 	const char* safeChars = ThePrefs->GetBool( "MakeQPSafeForEBCDIC", false)
 									? "%&/()?+*,.;:<>-_"
 									: "%&/()?+*,.;:<>-_!\"#$@[]\\^'{|}~";
-	if (encodingStyle == "Q" || encodingStyle == "QUOTED-PRINTABLE") {
+	if (encodingStyle.ICompare("q")==0 || encodingStyle.ICompare("quoted-printable")==0) {
 		// quoted printable:
 		BM_LOG( BM_LogMailParse, BString("starting to encode quoted-printable of ") << srcLen << " bytes");
 		int32 destLen = srcLen*3;
@@ -275,7 +274,7 @@ void BmEncoding::Encode( BString encodingStyle, const BString& src, BString& des
 		buf[destCount] = '\0';
 		dest.UnlockBuffer( destCount);
 		BM_LOG( BM_LogMailParse, "qp-encode: done");
-	} else if (encodingStyle == "B" || encodingStyle == "BASE64") {
+	} else if (encodingStyle.ICompare("b")==0 || encodingStyle.ICompare("base64")==0) {
 		// base64:
 		BM_LOG( BM_LogMailParse, BString("starting to encode base64 of ") << srcLen << " bytes");
 		int32 destLen = srcLen*5/3;		// just to be sure... (need to be a little over 4/3)
@@ -285,13 +284,13 @@ void BmEncoding::Encode( BString encodingStyle, const BString& src, BString& des
 		buf[destLen] = '\0';
 		dest.UnlockBuffer( destLen);
 		BM_LOG( BM_LogMailParse, "base64-encode: done");
-	} else if (encodingStyle == "7BIT" || encodingStyle == "8BIT") {
+	} else if (encodingStyle.ICompare("7bit")==0 || encodingStyle.ICompare("8bit")==0) {
 		// replace local newline (LF) by network newline (CRLF):
 		BM_LOG2( BM_LogMailParse, "7bit/8bit-encode: converting linebreaks");
 		ConvertLinebreaksToCRLF( src, dest);
 		BM_LOG( BM_LogMailParse, "7bit/8bit-encode: done");
 	} else {
-		if (encodingStyle != "BINARY") {
+		if (encodingStyle.ICompare("binary")!=0) {
 			// oops, we don't know this one:
 			ShowAlert( BString("Encode(): Unrecognized encoding-style <")<<encodingStyle<<"> found.\nText will be passed through (not encoded).");
 		}
@@ -306,10 +305,9 @@ void BmEncoding::Encode( BString encodingStyle, const BString& src, BString& des
 \*------------------------------------------------------------------------------*/
 void BmEncoding::Decode( BString encodingStyle, const BString& src, BString& dest, 
 								 bool isEncodedWord, bool isText) {
-	encodingStyle.ToUpper();
 	dest.Truncate(0);
 	Regexx rx;
-	if (encodingStyle == "Q" || encodingStyle == "QUOTED-PRINTABLE") {
+	if (encodingStyle.ICompare("q")==0 || encodingStyle.ICompare("quoted-printable")==0) {
 		// quoted printable:
 		BM_LOG( BM_LogMailParse, BString("starting to decode quoted-printable of ") << src.Length() << " bytes");
 		int32 destSize = src.Length();
@@ -347,7 +345,7 @@ void BmEncoding::Decode( BString encodingStyle, const BString& src, BString& des
 		*newPos = 0;
 		dest.UnlockBuffer( newPos-buf);
 		BM_LOG( BM_LogMailParse, "qp-decode: done");
-	} else if (encodingStyle == "B" || encodingStyle == "BASE64") {
+	} else if (encodingStyle.ICompare("b")==0 || encodingStyle.ICompare("base64")==0) {
 		// base64:
 		BM_LOG( BM_LogMailParse, BString("starting to decode base64 of ") << src.Length() << " bytes");
 		bool convertCRs = isText;
@@ -359,13 +357,13 @@ void BmEncoding::Decode( BString encodingStyle, const BString& src, BString& des
 		destBuf[destSize] = '\0';
 		dest.UnlockBuffer( destSize);
 		BM_LOG( BM_LogMailParse, "base64-decode: done");
-	} else if (encodingStyle == "7BIT" || encodingStyle == "8BIT") {
+	} else if (encodingStyle.ICompare("7bit")==0 || encodingStyle.ICompare("8bit")==0) {
 		// we copy the buffer and replace network newline (CRLF) by local newline (LF):
 		BM_LOG2( BM_LogMailParse, "7bit/8bit-decode: converting linebreaks");
 		ConvertLinebreaksToLF( src, dest);
 		BM_LOG( BM_LogMailParse, "7bit/8bit-decode: done");
 	} else {
-		if (encodingStyle != "BINARY") {
+		if (encodingStyle.ICompare("binary")!=0) {
 			// oops, we don't know this one:
 			BM_SHOWERR( BString("Decode(): Unrecognized encoding-style <")<<encodingStyle<<"> found.\nNo decoding will take place.");
 		}
@@ -473,9 +471,14 @@ BString BmEncoding::ConvertUTF8ToHeaderPart( const BString& utf8text, uint32 enc
 															bool fold, int32 fieldLen) {
 	bool needsQuotedPrintable = false;
 	BString charsetString;
+	BString transferEncoding = "7bit";
 	ConvertFromUTF8( encoding, utf8text, charsetString);
 	if (useQuotedPrintableIfNeeded)
 		needsQuotedPrintable = NeedsEncoding( charsetString);
+	if (ThePrefs->GetBool( "Allow8BitMimeInHeader", false) && needsQuotedPrintable) {
+		transferEncoding = "8bit";
+		needsQuotedPrintable = false;
+	}
 	BString charset = EncodingToCharset( encoding);
 	BString encodedString;
 	if (needsQuotedPrintable) {
@@ -508,7 +511,7 @@ BString BmEncoding::ConvertUTF8ToHeaderPart( const BString& utf8text, uint32 enc
 			return BString("=?") + charset + "?q?" + encodedString + "?=";
 	} else {
 		// simpler case, no encoded-words neccessary:
-		Encode( "7BIT", charsetString, encodedString, true);
+		Encode( transferEncoding, charsetString, encodedString, true);
 		int32 maxChars = BM_MAX_LINE_LEN		// 76 chars maximum
 							- (fieldLen + 2);		// space used by "fieldname: "
 		if (fold && encodedString.Length() > maxChars) {

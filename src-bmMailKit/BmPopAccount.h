@@ -200,7 +200,6 @@ public:
 	// native methods:
 	void CheckMail( bool allAccounts=false);
 	void CheckMailFor( BString accName, bool isAutoCheck=false);
-	void AuthOnlyFor( BString accName);
 	BmRef<BmPopAccount> DefaultAccount();
 	BmRef<BmPopAccount> FindAccountForAddress( const BString addr);
 	void SetDefaultAccount( BString accName);

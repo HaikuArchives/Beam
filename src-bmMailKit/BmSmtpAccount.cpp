@@ -44,7 +44,7 @@
 
 /*------------------------------------------------------------------------------*\
 	BmSmtpAccount()
-		-	
+		-	c'tor
 \*------------------------------------------------------------------------------*/
 BmSmtpAccount::BmSmtpAccount( const char* name, BmSmtpAccountList* model) 
 	:	inherited( name, model, (BmListModelItem*)NULL)
@@ -56,6 +56,7 @@ BmSmtpAccount::BmSmtpAccount( const char* name, BmSmtpAccountList* model)
 
 /*------------------------------------------------------------------------------*\
 	BmSmtpAccount( archive)
+		-	c'tor
 		-	constructs a BmSmtpAccount from a BMessage
 \*------------------------------------------------------------------------------*/
 BmSmtpAccount::BmSmtpAccount( BMessage* archive, BmSmtpAccountList* model) 
@@ -74,6 +75,13 @@ BmSmtpAccount::BmSmtpAccount( BMessage* archive, BmSmtpAccountList* model)
 	if (version >= 2) {
 		mAccForSmtpAfterPop = FindMsgString( archive, MSG_ACC_FOR_SAP);
 	}
+}
+
+/*------------------------------------------------------------------------------*\
+	~BmSmtpAccount()
+		-	standard d'tor
+\*------------------------------------------------------------------------------*/
+BmSmtpAccount::~BmSmtpAccount() {
 }
 
 /*------------------------------------------------------------------------------*\
@@ -105,7 +113,8 @@ bool BmSmtpAccount::GetSMTPAddress( BNetAddress* addr) const {
 
 /*------------------------------------------------------------------------------*\
 	NeedsAuthViaPopServer()
-		-	
+		-	determines if this SMTP-account requires authentication through a
+			corresponding POP-server
 \*------------------------------------------------------------------------------*/
 bool BmSmtpAccount::NeedsAuthViaPopServer() {
 	return mAuthMethod.ICompare(AUTH_SMTP_AFTER_POP) == 0;
@@ -115,7 +124,6 @@ bool BmSmtpAccount::NeedsAuthViaPopServer() {
 /********************************************************************************\
 	BmSmtpAccountList
 \********************************************************************************/
-
 
 BmRef< BmSmtpAccountList> BmSmtpAccountList::theInstance( NULL);
 
@@ -150,15 +158,15 @@ BmSmtpAccountList::~BmSmtpAccountList() {
 
 /*------------------------------------------------------------------------------*\
 	SettingsFileName()
-		-	
+		-	returns name of settings-file for list of SMTP-accounts
 \*------------------------------------------------------------------------------*/
 const BString BmSmtpAccountList::SettingsFileName() {
 	return BString( TheResources->SettingsPath.Path()) << "/" << "Smtp Accounts";
 }
 
 /*------------------------------------------------------------------------------*\
-	InstantiateMailRefs( archive)
-		-	
+	InstantiateItems( archive)
+		-	fetches SMTP-accounts from given message-archive
 \*------------------------------------------------------------------------------*/
 void BmSmtpAccountList::InstantiateItems( BMessage* archive) {
 	BM_LOG2( BM_LogMailTracking, BString("Start of InstantiateItems() for SmtpAccountList"));
@@ -177,12 +185,11 @@ void BmSmtpAccountList::InstantiateItems( BMessage* archive) {
 }
 
 /*------------------------------------------------------------------------------*\
-	SendQueuedMail()
-		-	
+	SendQueuedMailFor( accName)
+		-	sends all queued mails for the account specified by accName
 \*------------------------------------------------------------------------------*/
 void BmSmtpAccountList::SendQueuedMailFor( const BString accName) {
 	BMessage archive(BM_JOBWIN_SMTP);
 	archive.AddString( BmJobModel::MSG_JOB_NAME, accName.String());
 	mJobMetaController->PostMessage( &archive);
 }
-

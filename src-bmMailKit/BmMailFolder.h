@@ -104,7 +104,7 @@ public:
 	static const char* const MSG_NAME = 			"bm:fname";
 
 	// flags indicating which parts are to be updated:
-	static const BmUpdFlags UPD_NAME	= 1<<1;
+	static const BmUpdFlags UPD_NEW_STATUS	= 1<<2;
 
 private:
 	void StartNodeMonitor();

@@ -1758,6 +1758,13 @@ void ColumnListView::SetSortFunction(CLVCompareFuncPtr compare)
 void ColumnListView::SortItems()
 {
 	AssertWindowLocked();
+	
+	BListItem* selectedItem = NULL;
+	if (ListType() == B_SINGLE_SELECTION_LIST) {
+		int32 selPos = CurrentSelection( 0);
+		if (selPos>=0)
+			selectedItem = ItemAt( selPos);
+	}
 
 	int32 NumberOfItems;
 	if(!fHierarchical)
@@ -1788,6 +1795,8 @@ void ColumnListView::SortItems()
 		//Do the actual sort
 		BListView::SortItems((int (*)(const void*, const void*))ColumnListView::HierarchicalBListSortFunc);
 	}
+	if (selectedItem)
+		Select( IndexOf( selectedItem));
 }
 
 
@@ -1976,9 +1985,9 @@ void ColumnListView::Draw( BRect updateRect) {
 			SetLowColor( fLightColumnCol);
 		FillRect( ThisColumnRect, B_SOLID_LOW);
 	} else {
-		SetViewColor( White);
-		SetLowColor( White);
-		FillRect( updateRect, B_SOLID_LOW);
+		SetHighColor( ViewColor());
+		SetLowColor( ViewColor());
+		FillRect( updateRect);
 	}
 	inherited::Draw( updateRect);
 }

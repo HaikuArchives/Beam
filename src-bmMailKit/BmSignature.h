@@ -59,7 +59,7 @@ class BmSignature : public BmListModelItem {
 public:
 	BmSignature( const char* name, BmSignatureList* model);
 	BmSignature( BMessage* archive, BmSignatureList* model);
-	virtual ~BmSignature() 				{}
+	virtual ~BmSignature();
 	
 	// native methods:
 	BString GetSignatureString();

@@ -42,6 +42,7 @@
 #include "BmGuiUtil.h"
 #include "BmLogHandler.h"
 #include "BmMenuControl.h"
+#include "BmPopper.h"
 #include "BmPrefs.h"
 #include "BmPrefsRecvMailView.h"
 #include "BmSignature.h"
@@ -276,7 +277,11 @@ BmPrefsRecvMailView::BmPrefsRecvMailView()
 						new Space( minimax(0,5,0,5)),
 						mServerControl = new BmTextControl( "POP-Server:"),
 						mPortControl = new BmTextControl( "Port:"),
-						mAuthControl = new BmMenuControl( "Auth-method:", new BPopUpMenu("")),
+						new HGroup( 
+							mAuthControl = new BmMenuControl( "Auth-method:", new BPopUpMenu("")),
+							mCheckAndSuggestButton = new MButton("Check and Suggest", new BMessage(BM_CHECK_AND_SUGGEST), this, minimax(-1,-1,-1,-1)),
+							0
+						),
 						mLoginControl = new BmTextControl( "Username:"),
 						mPwdControl = new BmTextControl( "Password:"),
 						new Space( minimax(0,5,0,5)),
@@ -401,6 +406,9 @@ APOP  -  is a somewhat safer mode, passwords are encrypted.");
 for every mail sent from this account.");
 	TheBubbleHelper.SetHelp( mSmtpControl, "Here you can select the SMTP-account that shall be used\n\
 to send mails from this account.");
+	TheBubbleHelper.SetHelp( mCheckAndSuggestButton, "When you click here, Beam will connect to the POP-server,\n\
+check which authentication types it supports and select\n\
+the most secure.");
 
 	mAccountControl->SetTarget( this);
 	mAliasesControl->SetTarget( this);
@@ -574,6 +582,15 @@ void BmPrefsRecvMailView::MessageReceived( BMessage* msg) {
 					mCurrAcc->PwdStoredOnDisk( val);
 				break;
 			}
+			case BM_CHECK_AND_SUGGEST: {
+				if (mCurrAcc) {
+					BmRef<BmPopper> popper( new BmPopper( mCurrAcc->Key(), mCurrAcc.Get()));
+					popper->StartJobInThisThread( BmPopper::BM_CHECK_AUTH_TYPES_JOB);
+					BString suggestedAuthType = popper->SuggestAuthType();
+					mAuthControl->MarkItem( suggestedAuthType.String());
+				}
+				// yes, no break here, we want to proceed with updating the auth-menu...
+			}
 			case BM_AUTH_SELECTED: {
 				BMenuItem* item = mAuthControl->Menu()->FindMarked();
 				if (item)
@@ -656,6 +673,7 @@ void BmPrefsRecvMailView::ShowAccount( int32 selection) {
 	mRemoveButton->SetEnabled( enabled);
 	mCheckAccountControl->SetEnabled( enabled);
 	mCheckEveryControl->SetEnabled( enabled);
+	mCheckAndSuggestButton->SetEnabled( enabled);
 	mRemoveMailControl->SetEnabled( enabled);
 	mIsDefaultControl->SetEnabled( enabled);
 	mIsBucketControl->SetEnabled( enabled);

@@ -176,6 +176,7 @@ public:
 
 	BString DetermineSender();
 	BString DetermineReceivingAddrFor( BmPopAccount* acc);
+	BString DetermineOriginator();
 	const BmAddressList GetAddressList( const BString fieldName);
 	bool IsFieldEmpty( const BString fieldName);
 
@@ -188,16 +189,15 @@ public:
 	inline int32 NumLines() const 				{ return mNumLines; }
 	inline const BString& HeaderString() const	{ return mHeaderString; }
 	inline const BString& Name() const			{ return mName; }
-	inline uint32 DefaultEncoding()	const		{ return mDefaultEncoding; }
 	inline const bool IsRedirect() const		{ return mIsRedirect; }
 
 	// setters:
 	inline void IsRedirect( bool b)				{ mIsRedirect = b; }
-	inline void DefaultEncoding( uint32 i)		{ mDefaultEncoding = i; }
 
 	// class-functions:
 	static bool IsAddressField( const BString fieldName);
 	static bool IsEncodingOkForField( const BString fieldName);
+	static bool IsStrippingOkForField( const BString fieldName);
 
 protected:
 	void ParseHeader( const BString &header);
@@ -237,8 +237,6 @@ private:
 							// The "name" of the sender of this mail (MAIL:name attribute)
 	BString mKey;
 							// Since headers have no real key, we generate one from the this-value
-	uint32 mDefaultEncoding;
-							// charset-encoding to be used by this mail (if not specified otherwise)
 	int32 mNumLines;
 							// number of lines in this header
 

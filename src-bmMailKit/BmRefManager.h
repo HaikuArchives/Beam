@@ -100,7 +100,7 @@ private:
 typedef multimap<BString,BmRefObj*> BmObjectMap;
 /*------------------------------------------------------------------------------*\
 	BmProxy
-		-	
+		-	an object that manages all instances of a specific class
 \*------------------------------------------------------------------------------*/
 class BmProxy {
 

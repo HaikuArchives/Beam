@@ -33,6 +33,7 @@
 
 #include <Application.h>
 #include <Deskbar.h>
+#include <PrintJob.h>
 #include <Rect.h>
 #include <String.h>
 
@@ -44,6 +45,9 @@ extern const char* BM_APP_SIG;
 
 #define BMM_SHOW_NEWMAIL_ICON			'bMxa'
 #define BMM_HIDE_NEWMAIL_ICON			'bMxb'
+
+#define BMM_SET_BUSY						'bMxc'
+#define BMM_UNSET_BUSY					'bMxd'
 
 class BmApplication : public BApplication
 {
@@ -59,6 +63,10 @@ public:
 	BRect ScreenFrame();
 	void SetNewWorkspace( uint32 newWorkspace);
 	void LaunchURL( const BString url);
+	void ForwardMails( BMessage* msg, bool join);
+	void ReplyToMails( BMessage* msg, bool join);
+	void PageSetup();
+	void PrintMails( BMessage* msg);
 
 	// beos-stuff
 	void MessageReceived( BMessage* msg);
@@ -78,11 +86,13 @@ public:
 	BString BmAppNameWithVersion;
 
 	// message-fields:
-	static const char* const MSG_MAILREF = "bm:mref";
-	static const char* const MSG_STATUS = 	"bm:status";
-	static const char* const MSG_WHO_TO = 	"bm:to";
+	static const char* const MSG_MAILREF = 	"bm:mref";
+	static const char* const MSG_STATUS = 		"bm:status";
+	static const char* const MSG_WHO_TO = 		"bm:to";
 	static const char* const MSG_SELECTED_TEXT = 	"bm:seltext";
+	static const char* const MSG_SENDING_REFVIEW = 	"bm:srefv";
 
+private:
 	status_t mInitCheck;
 	BmWindow* mMailWin;
 	bool mIsQuitting;
@@ -90,6 +100,9 @@ public:
 	BDeskbar mDeskbar;
 	BView* mDeskbarView;
 
+	BMessage* mPrintSetup;
+	BPrintJob mPrintJob;
+	
 	static int InstanceCount;
 
 };

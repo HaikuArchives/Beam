@@ -40,6 +40,7 @@
 #include "BmController.h"
 #include "BmMail.h"
 
+class BMessageRunner;
 class BmBodyPart;
 class BmBodyPartView;
 class BmMailRef;
@@ -81,6 +82,8 @@ class BmMailView : public WrappingTextView, public BmJobController {
 	static const char* const MSG_RAW = 			"bm:raw";
 	static const char* const MSG_FONTNAME = 	"bm:fnt";
 	static const char* const MSG_FONTSIZE =	"bm:fntsz";
+	//
+	static const char* const MSG_MAIL =			"bm:mail";
 
 	static const int16 nArchiveVersion = 3;
 
@@ -101,6 +104,7 @@ public:
 	bool WriteStateInfo();
 	void GetWrappedText( BString& out);
 	void SetSignatureByName( const BString sigName);
+	void UpdateFont( const BFont& font);
 
 	// overrides of BTextView base:
 	bool AcceptsDrop( const BMessage* msg);
@@ -144,6 +148,7 @@ private:
 	BmMailRefView* mPartnerMailRefView;
 	BmTextRunMap mTextRunMap;
 	BmTextRunIter mClickedTextRun;
+	BMessageRunner* mReadRunner;
 	
 	// will be archived:
 	BString mFontName;

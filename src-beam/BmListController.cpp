@@ -38,6 +38,7 @@
 
 #include "CLVColumnLabelView.h"
 
+#include "BmApp.h"
 #include "BmBasics.h"
 #include "BmBusyView.h"
 #include "BmCaption.h"
@@ -312,6 +313,14 @@ void BmListViewController::MessageReceived( BMessage* msg) {
 				JobIsDone( FindMsgBool( msg, BmJobModel::MSG_COMPLETED));
 				break;
 			}
+			case BMM_SET_BUSY: {
+				ScrollView()->SetBusy();
+				break;
+			}
+			case BMM_UNSET_BUSY: {
+				ScrollView()->UnsetBusy();
+				break;
+			}
 			case B_CONTROL_INVOKED: {
 				// an item has been double-clicked:
 				ItemInvoked( FindMsgInt32( msg, "index"));
@@ -466,7 +475,8 @@ void BmListViewController::RemoveModelItem( BmListModelItem* item) {
 		-	Hook function that is called whenever an item needs to be updated 
 		-	default implementation does nothing
 \*------------------------------------------------------------------------------*/
-void BmListViewController::UpdateModelItem( BmListModelItem* item, BmUpdFlags updFlags) {
+BmListViewItem* BmListViewController::UpdateModelItem( BmListModelItem* item, 
+																		 BmUpdFlags updFlags) {
 	BmListViewItem* viewItem = FindViewItemFor( item);
 	if (viewItem) {
 		viewItem->UpdateView( updFlags);
@@ -475,6 +485,7 @@ void BmListViewController::UpdateModelItem( BmListModelItem* item, BmUpdFlags up
 			InvalidateItem( idx);
 	} else
 		BM_LOG2( BM_LogModelController, BString(ControllerName())<<": requested to update an unknown item <"<<item->Key()<<">");
+	return viewItem;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -583,10 +594,11 @@ void BmListViewController::ExpansionChanged( CLVListItem* _item, bool expanded) 
 void BmListViewController::UpdateItem( BmListViewItem* item, BmUpdFlags flags) {
 	if (!item)
 		return;
-	LockLooper();
-	item->UpdateView( flags);
-	InvalidateItem( IndexOf( item));
-	UnlockLooper();
+	if (LockLooper()) {
+		item->UpdateView( flags);
+		InvalidateItem( IndexOf( item));
+		UnlockLooper();
+	}
 }
 
 /*------------------------------------------------------------------------------*\
@@ -617,13 +629,17 @@ void BmListViewController::DetachModel() {
 \*------------------------------------------------------------------------------*/
 void BmListViewController::MakeEmpty() {
 	BList tempList;
-	int32 count = FullListCountItems();
-	for( int i=0; i<count; ++i)
-		tempList.AddItem( FullListItemAt( i));
-	inherited::MakeEmpty();					// clear display
-	while( !tempList.IsEmpty()) {
-		BmListViewItem* subItem = static_cast<BmListViewItem*>(tempList.RemoveItem( (int32)0));
-		delete subItem;
+	if (LockLooper()) {
+		int32 count = FullListCountItems();
+		for( int i=0; i<count; ++i)
+			tempList.AddItem( FullListItemAt( i));
+		inherited::MakeEmpty();					// clear display
+		while( !tempList.IsEmpty()) {
+			BmListViewItem* subItem = static_cast<BmListViewItem*>(tempList.RemoveItem( (int32)0));
+			delete subItem;
+		}
+		UpdateCaption();
+		UnlockLooper();
 	}
 }
 

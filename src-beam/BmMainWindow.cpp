@@ -215,7 +215,7 @@ BmMainWindow::BmMainWindow()
 																	 "Redirect message to somewhere else (preserves original sender)"),
 					mPrintButton = new BmToolbarButton( "Print", 
 																	TheResources->IconByName("Button_Print"), 
-																	new BMessage(BMM_PRINT), this, 
+																	new BMessage(BMM_PRINT), this,
 																	"Print selected messages(s)"),
 					mTrashButton = new BmToolbarButton( "Delete", 
 																	TheResources->IconByName("Button_Trash"), 
@@ -361,12 +361,11 @@ void BmMainWindow::BeginLife() {
 		mMainMenuBar->FindItem( BMM_RENAME_MAILFOLDER)->SetTarget( mMailFolderView);
 		mMainMenuBar->FindItem( BMM_DELETE_MAILFOLDER)->SetTarget( mMailFolderView);
 		mMainMenuBar->FindItem( BMM_RECACHE_MAILFOLDER)->SetTarget( mMailFolderView);
+		mMainMenuBar->FindItem( BMM_PAGE_SETUP)->SetTarget( bmApp);
 		mMainMenuBar->FindItem( BMM_SWITCH_RAW)->SetTarget( mMailView);
 		mMainMenuBar->FindItem( BMM_SWITCH_RAW)->SetMarked( mMailView->ShowRaw());
 		mMainMenuBar->FindItem( BMM_SWITCH_HEADER)->SetTarget( (BHandler*)mMailView->HeaderView());
 		// temporary deactivation:
-		mMainMenuBar->FindItem( BMM_PAGE_SETUP)->SetEnabled( false);
-		mMainMenuBar->FindItem( BMM_PRINT)->SetEnabled( false);
 		mMainMenuBar->FindItem( BMM_FIND_MESSAGES)->SetEnabled( false);
 		mMainMenuBar->FindItem( BMM_SEND_PENDING)->SetEnabled( false);
 
@@ -442,6 +441,7 @@ void BmMainWindow::MessageReceived( BMessage* msg) {
 			}
 			case BMM_MARK_AS:
 			case BMM_TRASH:
+			case BMM_PRINT:
 			case BMM_REDIRECT:
 			case BMM_REPLY:
 			case BMM_REPLY_ALL:
@@ -478,10 +478,11 @@ void BmMainWindow::MessageReceived( BMessage* msg) {
 					BmPrefsWin::CreateInstance();
 					ThePrefsWin->Show();
 				} else  {
-					ThePrefsWin->LockLooper();
-					ThePrefsWin->Hide();
-					ThePrefsWin->Show();
-					ThePrefsWin->UnlockLooper();
+					if (ThePrefsWin->LockLooper()) {
+						ThePrefsWin->Hide();
+						ThePrefsWin->Show();
+						ThePrefsWin->UnlockLooper();
+					}
 				}
 				break;
 			}
@@ -562,8 +563,8 @@ void BmMainWindow::MailRefSelectionChanged( int32 numSelected) {
 	mReplyAllButton->SetEnabled( numSelected > 0);
 	mForwardButton->SetEnabled( numSelected > 0);
 	mRedirectButton->SetEnabled( numSelected > 0);
-	mPrintButton->SetEnabled( 0 * numSelected > 0);
 	mTrashButton->SetEnabled( numSelected > 0);
+	mPrintButton->SetEnabled( numSelected > 0);
 	// adjust menu:
 	mMainMenuBar->FindItem( BMM_REPLY)->SetEnabled( numSelected > 0);
 	mMainMenuBar->FindItem( BMM_REPLY_ALL)->SetEnabled( numSelected > 0);
@@ -573,6 +574,7 @@ void BmMainWindow::MailRefSelectionChanged( int32 numSelected) {
 	mMainMenuBar->FindItem( BMM_REDIRECT)->SetEnabled( numSelected > 0);
 	mMainMenuBar->FindItem( "Mark Message As")->SetEnabled( numSelected > 0);
 	mMainMenuBar->FindItem( BMM_FILTER)->SetEnabled( 0 * numSelected > 0);
+	mMainMenuBar->FindItem( BMM_PRINT)->SetEnabled( numSelected > 0);
 	mMainMenuBar->FindItem( BMM_TRASH)->SetEnabled( numSelected > 0);
 }
 

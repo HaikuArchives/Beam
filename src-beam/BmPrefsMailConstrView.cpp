@@ -65,14 +65,29 @@ BmPrefsMailConstrView::BmPrefsMailConstrView()
 		new VGroup(
 			new Space( minimax(0,10,0,10)),
 			new HGroup( 
-				new MBorder( M_LABELED_BORDER, 10, (char*)"Mail-Construction",
+				new MBorder( M_LABELED_BORDER, 10, (char*)"Mail-Formatting",
 					new VGroup(
-						mMaxLineLenControl = new BmTextControl( "Wrap lines at (chars):"),
+						mMaxLineLenControl = new BmTextControl( "Set right margin to (chars):"),
+						mHardWrapControl = new BmCheckControl( "Hard-wrap mailtext at right margin", 
+																			  new BMessage(BM_HARD_WRAP_CHANGED), 
+																			  this, ThePrefs->GetBool("HardWrapMailText")),
+						mHardWrapAt78Control = new BmCheckControl( "Always respect maximum line-length of 78 characters", 
+																			  new BMessage(BM_HARD_WRAP_AT_78_CHANGED), 
+																			  this, ThePrefs->GetInt("MaxLineLenForHardWrap",998)<100),
+						new Space( minimax(0,10,0,10)),
 						mQuotingStringControl = new BmTextControl( "Quoting string:"),
 						mQuoteFormattingControl = new BmMenuControl( "Quote-formatting:", new BPopUpMenu("")),
-						new Space( minimax(0,4,0,4)),
+						new Space( minimax(0,10,0,10)),
 						mDefaultEncodingControl = new BmMenuControl( "Default-encoding:", new BPopUpMenu("")),
-						new Space( minimax(0,4,0,4)),
+						new Space(),
+						0
+					)
+				),
+				new MBorder( M_LABELED_BORDER, 10, (char*)"Mail-Construction Options",
+					new VGroup(
+						mAllow8BitControl = new BmCheckControl( "Use 8-bit-MIME ", 
+																			  new BMessage(BM_ALLOW_8_BIT_CHANGED), 
+																			  this, ThePrefs->GetBool("Allow8BitMime")),
 						mSpecialForEachBccControl = new BmCheckControl( "Generate header for each Bcc-recipient", 
 																					   new BMessage(BM_EACH_BCC_CHANGED), 
 																					   this, ThePrefs->GetBool("SpecialHeaderForEachBcc")),
@@ -85,10 +100,10 @@ BmPrefsMailConstrView::BmPrefsMailConstrView()
 						mMakeQpSafeControl = new BmCheckControl( "Make quoted-printable safe for non-ASCII gateways (EBCDIC)", 
 																			  new BMessage(BM_QP_SAFE_CHANGED), 
 																			  this, ThePrefs->GetBool("MakeQPSafeForEBCDIC")),
+						new Space(),
 						0
 					)
 				),
-				new Space(),
 				0
 			),
 			new Space( minimax(0,10,0,10)),
@@ -128,23 +143,21 @@ BmPrefsMailConstrView::BmPrefsMailConstrView()
 	divider = MAX( divider, mQuotingStringControl->Divider());
 	divider = MAX( divider, mQuoteFormattingControl->Divider());
 	divider = MAX( divider, mDefaultEncodingControl->Divider());
+	divider = MAX( divider, mForwardIntroStrControl->Divider());
+	divider = MAX( divider, mForwardSubjectStrControl->Divider());
+	divider = MAX( divider, mForwardSubjectRxControl->Divider());
+	divider = MAX( divider, mDefaultForwardTypeControl->Divider());
+	divider = MAX( divider, mReplyIntroStrControl->Divider());
+	divider = MAX( divider, mReplySubjectStrControl->Divider());
+	divider = MAX( divider, mReplySubjectRxControl->Divider());
 	mMaxLineLenControl->SetDivider( divider);
 	mQuotingStringControl->SetDivider( divider);
 	mQuoteFormattingControl->SetDivider( divider);
 	mDefaultEncodingControl->SetDivider( divider);
-
-	divider = mForwardIntroStrControl->Divider();
-	divider = MAX( divider, mForwardSubjectStrControl->Divider());
-	divider = MAX( divider, mForwardSubjectRxControl->Divider());
-	divider = MAX( divider, mDefaultForwardTypeControl->Divider());
 	mForwardIntroStrControl->SetDivider( divider);
 	mForwardSubjectStrControl->SetDivider( divider);
 	mForwardSubjectRxControl->SetDivider( divider);
 	mDefaultForwardTypeControl->SetDivider( divider);
-	
-	divider = mReplyIntroStrControl->Divider();
-	divider = MAX( divider, mReplySubjectStrControl->Divider());
-	divider = MAX( divider, mReplySubjectRxControl->Divider());
 	mReplyIntroStrControl->SetDivider( divider);
 	mReplySubjectStrControl->SetDivider( divider);
 	mReplySubjectRxControl->SetDivider( divider);
@@ -243,6 +256,23 @@ currently not implemented this doesn't apply for now).");
 	TheBubbleHelper.SetHelp( mMakeQpSafeControl, "This makes Beam generate quoted-printables that are safe for EBCDIC-gateways\n (if you don't know what EBCDIC is, don't worry and leave this as is).");
 	TheBubbleHelper.SetHelp( mDefaultForwardTypeControl, "Here you can select the forwarding-type Beam should use when you press the 'Forward'-button.");
 	TheBubbleHelper.SetHelp( mDontAttachVCardsControl, "Checking this causes Beam to NOT include \nvcard-attachments (appended address-info) in a forwarded mail.");
+	TheBubbleHelper.SetHelp( mHardWrapControl, "Checking this causes Beam to hard-wrap the mailtext at the given right margin.\n\
+This means that the mail will be sent exactly as you see it on screen,\n\
+so that every other mail-program will be able to correctly display this mail.\n\
+Uncheck this if you want soft-wrapped paragraphs, that will be layouted by\n\
+to the receiving mail-client.\n\
+Please note that this only concerns the mailtext entered by yourself, \n\
+quoted text will *always* be hard-wrapped.\n\n\
+Hint: Use soft-wrap only if you know that the receiving mail-program\n\
+is able to handle long lines nicely (most modern mailers do, but some\n\
+mailing-list software does not).");
+	TheBubbleHelper.SetHelp( mHardWrapAt78Control, "Checking this causes Beam to ensure that no single line of a mail\n\
+exceeds the length of 78 characters (as suggested by RFC2822).\n\
+This will fix the right margin to at most 78 chars.");
+	TheBubbleHelper.SetHelp( mAllow8BitControl, "Checking this causes Beam to allow 8-bit characters\ninside a mail-body without encoding them.\n\
+This avoids the use of quoted-printables and is usually ok with \n\
+modern mail-servers, but it *may* cause problems during transport,\n\
+so if you get complaints about strange/missing characters, try unchecking this.");
 
 	// add all encodings to menu:
 	for( int i=0; BM_Encodings[i].charset; ++i) {
@@ -274,6 +304,7 @@ currently not implemented this doesn't apply for now).");
 								? "Inline"
 								: "Attached";
 	mDefaultForwardTypeControl->MarkItem( markItem.String());
+	mHardWrapAt78Control->SetEnabled( mHardWrapControl->Value());
 }
 
 /*------------------------------------------------------------------------------*\
@@ -339,6 +370,22 @@ void BmPrefsMailConstrView::MessageReceived( BMessage* msg) {
 			}
 			case BM_ATTACH_VCARDS_CHANGED: {
 				ThePrefs->SetBool("DoNotAttachVCardsToForward", mDontAttachVCardsControl->Value());
+				break;
+			}
+			case BM_ALLOW_8_BIT_CHANGED: {
+				ThePrefs->SetBool("Allow8BitMime", mAllow8BitControl->Value());
+				break;
+			}
+			case BM_HARD_WRAP_AT_78_CHANGED: {
+				ThePrefs->SetInt("MaxLineLenForHardWrap", mHardWrapAt78Control->Value() ? 78 : 998);
+				break;
+			}
+			case BM_HARD_WRAP_CHANGED: {
+				bool val = mHardWrapControl->Value();
+				ThePrefs->SetBool("HardWrapMailText", val);
+				mHardWrapAt78Control->SetEnabled( val);
+				if (!val)
+					mHardWrapAt78Control->SetValue( false);
 				break;
 			}
 			case BM_ENCODING_SELECTED: {

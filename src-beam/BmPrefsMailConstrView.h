@@ -41,6 +41,9 @@
 #define BM_ENCODING_SELECTED		 		'bmES'
 #define BM_FORWARD_TYPE_SELECTED		 	'bmFS'
 #define BM_QUOTE_FORMATTING_SELECTED	'bmQS'
+#define BM_ALLOW_8_BIT_CHANGED			'bm8C'
+#define BM_HARD_WRAP_AT_78_CHANGED		'bmHW'
+#define BM_HARD_WRAP_CHANGED				'bmHC'
 
 class BmCheckControl;
 class BmMenuControl;
@@ -71,6 +74,9 @@ private:
 	BmCheckControl* mMakeQpSafeControl;
 	BmCheckControl* mSpecialForEachBccControl;
 	BmCheckControl* mPreferUserAgentControl;
+	BmCheckControl* mAllow8BitControl;
+	BmCheckControl* mHardWrapAt78Control;
+	BmCheckControl* mHardWrapControl;
 	BmTextControl* mMaxLineLenControl;
 	BmMenuControl* mDefaultEncodingControl;
 	BmTextControl* mQuotingStringControl;

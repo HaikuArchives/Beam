@@ -1,6 +1,29 @@
 change-history of Beam:
 		$Id$
 
+v0.912, 2002-04-14
+	-	better support for forwarding & replying to multiple messages at once,
+		now you can choose whether or not to join the messages.
+	-	added support for printing one or more messages.
+	-	corrected some MIME-problems, increasing robustness and eliminating 
+		the compatibility-problems Beam had with other mail-programs 
+		(like Mail-It or Eudora). These programs now accept Beam-generated 
+		MIME-messages, including quoted-printables and attachments.
+	-	doubleclicking a folder now opens the corresponding Tracker-window.
+	-	deactivating the Desktop-icon does work now.
+	-	added configurable delay before a shown mail is being marked as read.
+	-	added option for using 8-bit-mime when constructing mails.
+	-	added an option to switch between soft/hard-wrapping of the mailtext 
+		(Beam always used soft-wrapping before).
+	-	when requested, Beam can now contact a POP3/SMTP-server and suggest 
+		the best (most "secure") authentication type.
+	-	and other (minor) bugfixes, usability and GUI-enhancements.
+
+v0.911, 2002-03-24
+	-	fixed stupid bug that caused Beam to crash if no FolderView-state
+		exists (like after first install)
+	-	forwarding attachments works correctly now
+
 v0.91, 2002-03-24
 	-	header-view contents are now selectable and draggable.
 	-	added support for redirecting mails.

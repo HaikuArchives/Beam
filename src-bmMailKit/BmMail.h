@@ -61,6 +61,8 @@ class BmMailRef;
 #define BM_MAIL_ATTR_CONTENT		B_MAIL_ATTR_CONTENT
 #define BM_MAIL_ATTR_ATTACHMENTS "MAIL:has_attachment"
 #define BM_MAIL_ATTR_ACCOUNT	 	"MAIL:account"
+//
+#define BM_MAIL_ATTR_MARGIN	 	"MAIL:margin"
 
 #define BM_FIELD_BCC 						"Bcc"
 #define BM_FIELD_CC 							"Cc"
@@ -114,6 +116,7 @@ class BmMail : public BmJobModel {
 	typedef BmJobModel inherited;
 
 	typedef map<int32,BString> BmQuoteLevelMap;
+	typedef vector< BmRef< BmMailRef> > BmMailRefVect;
 
 public:
 	static BmRef<BmMail> CreateInstance( BmMailRef* ref);
@@ -126,7 +129,7 @@ public:
 								  BString smtpAccount);
 	void SetTo( const BString &text, const BString account);
 	void SetNewHeader( const BString& headerStr);
-	void SetSignatureByName( const BString sigName);
+	void SetSignatureByName( const BString sigName, int32 encoding);
 	bool Store();
 	void ResyncFromDisk();
 	//
@@ -162,7 +165,7 @@ public:
 	inline BmBodyPartList* Body() const			{ return mBody.Get(); }
 	inline BmRef<BmMailHeader> Header() const	{ return mHeader; }
 	inline int32 HeaderLength() const			{ return mHeaderLength; }
-	inline int32 ModifiedMaxLineLen() const	{ return mModifiedMaxLineLen; }
+	inline int32 RightMargin() const				{ return mRightMargin; }
 	inline const BString& RawText() const		{ return mText; }
 	inline const bool Outbound() const			{ return mOutbound; }
 	inline const bool IsRedirect() const		{ return mHeader ? mHeader->IsRedirect() : false; }
@@ -171,8 +174,10 @@ public:
 	inline BString SignatureName() const		{ return mSignatureName; }
 
 	// setters:
-	inline void ModifiedMaxLineLen( int32 i)	{ mModifiedMaxLineLen = MAX(i,mModifiedMaxLineLen); }
+	inline void BumpRightMargin( int32 i)		{ mRightMargin = MAX(i,mRightMargin); }
+	inline void RightMargin( int32 i)			{ mRightMargin = i; }
 	inline void IsRedirect( bool b)				{ if (mHeader) mHeader->IsRedirect( b); }
+	inline void AccountName( const BString& s){ mAccountName = s; }
 
 	// static functions that try to reformat & quote a given multiline text
 	// in a way that avoids the usual (ugly) quoting-mishaps.
@@ -195,6 +200,7 @@ protected:
 	BString CreateReplyIntro();
 	BString CreateForwardIntro();
 	void SetBaseMailInfo( BmMailRef* ref, const BString newStatus);
+	void AddBaseMailRef( BmMailRef* ref);
 
 	// static functions used for quote-formatting:
 	static int32 QuoteTextWithReWrap( const BString& in, BString& out, 
@@ -224,9 +230,9 @@ private:
 
 	bool mOutbound;							// true if mail is for sending (as opposed to reveived)
 
-	int32 mModifiedMaxLineLen;				// special maxlinelen for this mail (used during reply, forward)
+	int32 mRightMargin;						// the current right-margin for this mail
 
-	BmRef<BmMailRef> mBaseMailRef;		// the mailref that created us (via forward/reply)
+	BmMailRefVect mBaseRefVect;			// the mailref(s) that created us (via forward/reply)
 	BString mNewBaseStatus;					// new status of base mail (forwarded/replied)
 
 	BString mSignatureName;					// name of signature to use in this mail

@@ -83,7 +83,7 @@ BmMailFolderItem::~BmMailFolderItem() {
 void BmMailFolderItem::UpdateView( BmUpdFlags flags) {
 	inherited::UpdateView( flags);
 	BmMailFolder* folder = ModelItem();
-	if (flags & (UPD_EXPANDER | BmMailFolder::UPD_NAME)) {
+	if (flags & (UPD_EXPANDER  | UPD_KEY | BmMailFolder::UPD_NEW_STATUS)) {
 		Bold( folder->NewMailCount());
 		BString displayName = folder->Name();
 		if (folder->HasNewMail()) {
@@ -373,9 +373,20 @@ void BmMailFolderView::MessageReceived( BMessage* msg) {
 
 /*------------------------------------------------------------------------------*\
 	UpdateModelItem( msg)
-		-	Hook function that is called whenever an item needs to be updated 
+		-	Hook function that is called whenever an item needs to be updated
+		-	In case the key has been updated, we sort the list (so that after
+			a folder has been renamed, it will be moved into its new position).
 \*------------------------------------------------------------------------------*/
-void BmMailFolderView::UpdateModelItem( BMessage* msg) {
+BmListViewItem* BmMailFolderView::UpdateModelItem( BmListModelItem* item, 
+																	BmUpdFlags updFlags) {
+	BmListViewItem* viewItem = inherited::UpdateModelItem( item, updFlags);
+	if (viewItem && updFlags==UPD_KEY) {
+		if (LockLooper()) {
+			SortItems();
+			UnlockLooper();
+		}
+	}
+	return viewItem;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -394,6 +405,25 @@ void BmMailFolderView::SelectionChanged( void) {
 	BMessage msg(BM_NTFY_MAILFOLDER_SELECTION);
 	msg.AddInt32( MSG_FOLDERS_SELECTED, folder ? 1 : 0);
 	SendNotices( BM_NTFY_MAILFOLDER_SELECTION, &msg);
+}
+
+/*------------------------------------------------------------------------------*\
+	ItemInvoked( index)
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailFolderView::ItemInvoked( int32 index) {
+	BmMailFolderItem* folderItem;
+	folderItem = dynamic_cast<BmMailFolderItem*>(ItemAt( index));
+	if (folderItem) {
+		BmRef<BmMailFolder> folder( dynamic_cast<BmMailFolder*>(folderItem->ModelItem()));
+		if (folder) {
+			// open current mail-folder in tracker:
+			BMessenger tracker("application/x-vnd.Be-TRAK" );
+			BMessage msg( B_REFS_RECEIVED);
+			msg.AddRef( "refs", folder->EntryRefPtr());
+			tracker.SendMessage( &msg);
+		}
+	}
 }
 
 /*------------------------------------------------------------------------------*\

@@ -170,21 +170,6 @@ TextEntryAlert::TextEntryAlert(const char* title, const char* info_text, const c
 		m_text_entry_view->SetText(initial_entry_text);
 
 	//Position the buttons
-	if(m_buttons[0] != NULL && m_buttons[1] != NULL)
-	{
-		float button_left;
-		if(inline_label)
-			button_left = info_text_box.left;
-		else
-			button_left = entry_text_rect.left;
-		m_buttons[0]->MoveTo(button_left,entry_text_rect.bottom+c_item_spacing);
-		if(width_style == B_WIDTH_AS_USUAL)
-			m_buttons[0]->ResizeTo(c_usual_button_width,buttons_height);
-		else if(width_style == B_WIDTH_FROM_LABEL)
-			m_buttons[0]->ResizeTo(button_0_width,buttons_height);
-		else //if(width_style == B_WIDTH_FROM_WIDEST)
-			m_buttons[0]->ResizeTo(max_buttons_width,buttons_height);
-	}
 	BButton* right_button = NULL;
 	if(m_buttons[1] != NULL)
 		right_button = m_buttons[1];
@@ -203,6 +188,21 @@ TextEntryAlert::TextEntryAlert(const char* title, const char* info_text, const c
 			entry_text_rect.bottom+c_item_spacing);
 		if(!multi_line)
 			right_button->MakeDefault(true);
+	}
+	if(m_buttons[0] != NULL && m_buttons[1] != NULL)
+	{
+		float button_left;
+		if(width_style == B_WIDTH_AS_USUAL)
+			m_buttons[0]->ResizeTo(c_usual_button_width,buttons_height);
+		else if(width_style == B_WIDTH_FROM_LABEL)
+			m_buttons[0]->ResizeTo(button_0_width,buttons_height);
+		else //if(width_style == B_WIDTH_FROM_WIDEST)
+			m_buttons[0]->ResizeTo(max_buttons_width,buttons_height);
+		if(inline_label)
+			button_left = info_text_box.left;
+		else
+			button_left = right_button->Frame().left-m_buttons[0]->Frame().Width()-10;
+		m_buttons[0]->MoveTo(button_left,entry_text_rect.bottom+c_item_spacing);
 	}
 
 	//Resize the window
