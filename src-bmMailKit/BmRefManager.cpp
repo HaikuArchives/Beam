@@ -226,7 +226,7 @@ BmString BmRefObj::RefPrintHex( const void* ptr) {
 	FetchObject()
 		-	
 \*------------------------------------------------------------------------------*/
-BmRefObj* BmProxy::FetchObject( const BmString& key, void* ptr) {
+BmRefObj* BmProxy::FetchObject( const BmString& key, BmRefObj* ptr) {
 	if (BmRefObj::GlobalLocker()->IsLocked()) {
 		for(  BmObjectMap::const_iterator pos = ObjectMap.find( key);
 				pos!=ObjectMap.end(); ++pos) {

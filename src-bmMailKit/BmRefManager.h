@@ -99,7 +99,7 @@ class BmProxy {
 public:
 	inline BmProxy( BmString name) {}
 	BmObjectMap ObjectMap;
-	BmRefObj* FetchObject( const BmString& key, void* ptr=NULL);
+	BmRefObj* FetchObject( const BmString& key, BmRefObj* ptr=NULL);
 };
 
 
@@ -214,7 +214,7 @@ public:
 		BAutolock lock( BmRefObj::GlobalLocker());
 		BmProxy* proxy = BmRefObj::GetProxy( mProxyName);
 		if (proxy) {
-			return static_cast<T*>(proxy->FetchObject( mName, mPtr));
+			return dynamic_cast<T*>(proxy->FetchObject( mName, mPtr));
 		} else 
 			return NULL;
 	}
