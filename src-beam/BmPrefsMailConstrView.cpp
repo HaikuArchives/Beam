@@ -39,6 +39,9 @@
 #include <Space.h>
 #include <VGroup.h>
 
+#include "split.hh"
+using namespace regexx;
+
 #include "BubbleHelper.h"
 #include "Colors.h"
 
@@ -445,7 +448,9 @@ void BmPrefsMailConstrView::SetupUsedCharsetsMenu() {
 	item->SetLabel("<please select...>");
 	menu->SetLabelFromMarked( false);
 	// add all charsets and check the ones that are selected:
-	BmString stdSets = ThePrefs->GetString( "StandardCharsets");
+	BmString stdSetStr = ThePrefs->GetString( "StandardCharsets");
+	vector<BmString> stdSets;
+	split( BmPrefs::nListSeparator, stdSetStr, stdSets);
 	BmCharsetMap::const_iterator iter;
 	for( iter = TheCharsetMap.begin(); iter != TheCharsetMap.end(); ++iter) {
 		if (iter->second) {
@@ -454,8 +459,12 @@ void BmPrefsMailConstrView::SetupUsedCharsetsMenu() {
 			BMessage* msg = new BMessage( BM_USED_CHARSET_SELECTED);
 			item = CreateMenuItem( charset.String(), msg);
 			AddItemToMenu( menu, item, this);
-			if (stdSets.IFindFirst( BmString("<")<<charset<<">") != B_ERROR)
-				item->SetMarked( true);
+			for( uint32 i=0; i<stdSets.size(); ++i) {
+				if (stdSets[i].ICompare(charset) == 0) {
+					item->SetMarked( true);
+					break;
+				}
+			}
 		}
 	}
 }
@@ -473,8 +482,11 @@ void BmPrefsMailConstrView::SetupUsedCharsetsPrefs() {
 	int32 count = menu->CountItems();
 	for( int32 i=0; i < count; ++i) {
 		item = menu->ItemAt( i);
-		if (item->IsMarked())
-			stdSets << "<" << item->Label() << ">";
+		if (item->IsMarked()) {
+			if (stdSets.Length())
+				stdSets << BmPrefs::nListSeparator;
+			stdSets << item->Label();
+		}
 	}
 	ThePrefs->SetString( "StandardCharsets", stdSets);
 }
