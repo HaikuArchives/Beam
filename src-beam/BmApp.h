@@ -42,6 +42,7 @@ class BView;
 class BmWindow;
 
 extern const char* BM_APP_SIG;
+extern const char* BM_TEST_APP_SIG;
 
 enum {
 	BMM_SET_BUSY					= 'bMxa',
@@ -61,6 +62,7 @@ public:
 	bool HandlesMimetype( const BmString mimetype);
 	BRect ScreenFrame();
 	void SetNewWorkspace( uint32 newWorkspace);
+	uint32 CurrWorkspace();
 	void LaunchURL( const BmString url);
 	void ForwardMails( BMessage* msg, bool join);
 	void ReplyToMails( BMessage* msg, bool join, bool joinIntoOne);
@@ -82,6 +84,7 @@ public:
 
 	// getters
 	inline bool IsQuitting()				{ return mIsQuitting; }
+	inline bool IsRunning()					{ return mIsRunning; }
 	inline const BmString& AppPath()		{ return mAppPath; }
 
 	BmString BmAppVersion;
@@ -107,6 +110,8 @@ private:
 
 	BMessage* mPrintSetup;
 	BPrintJob mPrintJob;
+
+	bool mIsRunning;
 	
 	BmString mAppPath;
 	

@@ -37,6 +37,9 @@
 
 #define BM_ASSERT(E)		(!(E) ? _debuggerAssert(__FILE__,__LINE__, (char*)#E) : (int)0)
 
+extern IMPEXPBMBASE bool BeamInTestMode;		
+							// indicates if Beam is running in test-mode
+
 /*------------------------------------------------------------------------------*\
 	BM_error
 		-	base-class for any Beam-exception
