@@ -285,28 +285,17 @@ BmPrefsSignatureView::BmPrefsSignatureView()
 					0
 				)
 			),
-			new Space( minimax(0,10,0,10)),
-			new MBorder( M_LABELED_BORDER, 10, (char*)"Signature Display",
-				new VGroup(
-					mSignatureRxControl = new BmTextControl( 
-						"Regex that finds start of signature:"
-					),
-					0
-				)
-			),
 			new Space(minimax(0,0,1E5,1E5,0.1)),
 			0
 		);
 	mGroupView->AddChild( dynamic_cast<BView*>(view));
 
-	float divider = mSignatureControl->Divider();
-	divider = MAX( divider, mContentControl->Divider());
-	divider = MAX( divider, mCharsetControl->Divider());
-	mSignatureControl->SetDivider( divider);
-	mContentControl->SetDivider( divider);
-	mCharsetControl->SetDivider( divider);
-
-	mSignatureRxControl->SetText( ThePrefs->GetString("SignatureRX").String());
+	BmDividable::DivideSame(
+		mSignatureControl,
+		mContentControl,
+		mCharsetControl,
+		NULL
+	);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -319,7 +308,6 @@ BmPrefsSignatureView::~BmPrefsSignatureView() {
 	TheBubbleHelper->SetHelp( mContentControl, NULL);
 	TheBubbleHelper->SetHelp( mDynamicControl, NULL);
 	TheBubbleHelper->SetHelp( mCharsetControl, NULL);
-	TheBubbleHelper->SetHelp( mSignatureRxControl, NULL);
 	TheBubbleHelper->SetHelp( mTestButton, NULL);
 }
 
@@ -362,11 +350,6 @@ void BmPrefsSignatureView::Initialize() {
 		"If in doubt, just leave the default."
 	);
 	TheBubbleHelper->SetHelp( 
-		mSignatureRxControl, 
-		"This is the regular expression (perl-style) used by Beam\n"
-		"to split off the signature when viewing mails."
-	);
-	TheBubbleHelper->SetHelp( 
 		mTestButton, 
 		"Here you can testrun a dynamic signature."
 	);
@@ -374,7 +357,6 @@ void BmPrefsSignatureView::Initialize() {
 	mSignatureControl->SetTarget( this);
 	mContentControl->SetTarget( this);
 	mDynamicControl->SetTarget( this);
-	mSignatureRxControl->SetTarget( this);
 
 	// add all encodings to menu:
 	AddCharsetMenu( mCharsetControl->Menu(), this, BM_CHARSET_SELECTED);
@@ -467,8 +449,7 @@ void BmPrefsSignatureView::MessageReceived( BMessage* msg) {
 						if (ident && ident->SignatureName()==oldName)
 							ident->SignatureName( newName);
 					}
-				} else if ( source == mSignatureRxControl)
-					ThePrefs->SetString("SignatureRX", mSignatureRxControl->Text());
+				}
 				NoticeChange();
 				break;
 			}
@@ -581,6 +562,7 @@ void BmPrefsSignatureView::ShowSignature( int32 selection) {
 		mCharsetControl->ClearMark();
 		mCharsetControl->MarkItem( charset.String());
 		mCharsetControl->MenuItem()->SetLabel( charset.String());
+		mCharsetControl->SetEnabled( false);
 		mTestButton->SetEnabled( false);
 	} else {
 		BmSignatureItem* sigItem 

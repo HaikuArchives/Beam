@@ -127,7 +127,7 @@ BmPrefsMailReadView::BmPrefsMailReadView()
 		);
 	mGroupView->AddChild( dynamic_cast<BView*>(view));
 	
-	DivideSame( 
+	BmDividable::DivideSame(
 		mHeaderListSmallControl,
 		mHeaderListLargeControl,
 		mMarkAsReadDelayControl,

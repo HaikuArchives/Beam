@@ -321,20 +321,16 @@ BmPrefsIdentityView::BmPrefsIdentityView()
 		);
 	mGroupView->AddChild( dynamic_cast<BView*>(view));
 	
-	float divider = mIdentityControl->Divider();
-	divider = MAX( divider, mMailAddrControl->Divider());
-	divider = MAX( divider, mAliasesControl->Divider());
-	divider = MAX( divider, mRealNameControl->Divider());
-	divider = MAX( divider, mSignatureControl->Divider());
-	divider = MAX( divider, mPopControl->Divider());
-	divider = MAX( divider, mSmtpControl->Divider());
-	mIdentityControl->SetDivider( divider);
-	mMailAddrControl->SetDivider( divider);
-	mAliasesControl->SetDivider( divider);
-	mRealNameControl->SetDivider( divider);
-	mSignatureControl->SetDivider( divider);
-	mSmtpControl->SetDivider( divider);
-	mPopControl->SetDivider( divider);
+	BmDividable::DivideSame(
+		mIdentityControl,
+		mMailAddrControl,
+		mAliasesControl,
+		mRealNameControl,
+		mSignatureControl,
+		mSmtpControl,
+		mPopControl,
+		NULL
+	);
 }
 
 /*------------------------------------------------------------------------------*\

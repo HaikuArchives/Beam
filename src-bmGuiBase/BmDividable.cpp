@@ -1,5 +1,5 @@
 /*
-	BmMultiLineTextControl.h
+	BmDividable.cpp
 		$Id$
 */
 /*************************************************************************/
@@ -28,59 +28,44 @@
 /*************************************************************************/
 
 
-#ifndef _BmMultiLineTextControl_h
-#define _BmMultiLineTextControl_h
+#ifdef __POWERPC__
+#define BM_BUILDING_SANTAPARTSFORBEAM 1
+#endif
 
-#include <MenuField.h>
+#include <cstdarg>
 
 #include <layout.h>
 
-#include "SantaPartsForBeam.h"
-#include "MultiLineTextControl.h"
 #include "BmDividable.h"
 
-class HGroup;
 
-#define BM_MULTILINE_TEXTFIELD_MODIFIED 'bmfn'
-
-class IMPEXPSANTAPARTSFORBEAM BmMultiLineTextControl 
-	: public MView,
-	  public MultiLineTextControl,
-	  public BmDividable
+/*------------------------------------------------------------------------------*\
+	( )
+		-	
+\*------------------------------------------------------------------------------*/
+void BmDividable::DivideSame( MView* div1, ...)
 {
-	typedef MultiLineTextControl inherited;
-
-public:
-	// creator-func, c'tors and d'tor:
-	BmMultiLineTextControl( const char* label, bool labelIsMenu=false,
-									int32 lineCount = 4, int32 minTextLen=0, 
-									bool fixedHeight=false);
-	~BmMultiLineTextControl();
-	
-	// native methods:
-	void SetTextSilently( const char* text);
-
-	// overrides of MultiLineMultiLineTextControl:
-	void FrameResized( float new_width, float new_height);
-	void SetDivider( float divider);
-	float Divider() const;
-	void SetEnabled( bool enabled);
-	void SetText( const char* text);
-	minimax layoutprefs();
-	BRect layout(BRect frame);
-
-	// getters:
-	inline BMenuField* MenuField() const	{ return mMenuField; }
-	inline BMenu* Menu() const 			{ return mMenuField ? mMenuField->Menu() : NULL; }
-
-private:
-	bool mLabelIsMenu;
-	BMenuField* mMenuField;
-
-	// Hide copy-constructor and assignment:
-	BmMultiLineTextControl( const BmMultiLineTextControl&);
-	BmMultiLineTextControl operator=( const BmMultiLineTextControl&);
-};
-
-
-#endif
+	BmDividable* div = dynamic_cast< BmDividable*>( div1);
+	if (!div)
+		return;
+	float maxWidth = div->Divider();
+	float w;
+	MView* v;
+	va_list va;
+	va_start( va, div1);
+	while( (v = va_arg( va, MView*)) != 0) {
+		if ((div = dynamic_cast< BmDividable*>( v)) != 0) {
+			w = div->Divider();
+			if (w > maxWidth)
+				maxWidth = w;
+		}
+	}
+	va_end( va);
+	va_start( va, div1);
+	div = dynamic_cast< BmDividable*>( div1);
+	div->SetDivider( maxWidth);
+	while( (v = va_arg( va, MView*)) != 0)
+		if ((div = dynamic_cast< BmDividable*>( v)) != 0)
+			div->SetDivider( maxWidth);
+	va_end( va);
+}

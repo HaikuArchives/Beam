@@ -377,19 +377,16 @@ BmPrefsRecvMailView::BmPrefsRecvMailView()
 	
 	mPwdControl->TextView()->HideTyping( true);
 	
-	float divider = mAccountControl->Divider();
-	divider = MAX( divider, mLoginControl->Divider());
-	divider = MAX( divider, mServerControl->Divider());
-	divider = MAX( divider, mAuthControl->Divider());
-	divider = MAX( divider, mHomeFolderControl->Divider());
-	divider = MAX( divider, mFilterChainControl->Divider());
-	mAccountControl->SetDivider( divider);
-	mLoginControl->SetDivider( divider);
-	mServerControl->SetDivider( divider);
-	mAuthControl->SetDivider( divider);
-	mHomeFolderControl->SetDivider( divider);
-	mFilterChainControl->SetDivider( divider);
-
+	BmDividable::DivideSame(
+		mAccountControl,
+		mLoginControl,
+		mServerControl,
+		mAuthControl,
+		mHomeFolderControl,
+		mFilterChainControl,
+		NULL
+	);
+	
 	mPortControl->SetDivider( 15);
 	mPortControl->ct_mpm.weight = 0.4;
 	mPwdControl->SetDivider( 15);

@@ -141,32 +141,29 @@ BmPrefsLoggingView::BmPrefsLoggingView()
 		);
 	mGroupView->AddChild( dynamic_cast<BView*>(view));
 	
-	float divider = mLogPopControl->Divider();
-	divider = MAX( divider, mLogSmtpControl->Divider());
-	divider = MAX( divider, mLogAppControl->Divider());
-	divider = MAX( divider, mLogFilterControl->Divider());
-	mLogPopControl->SetDivider( divider);
-	mLogSmtpControl->SetDivider( divider);
-	mLogAppControl->SetDivider( divider);
-	mLogFilterControl->SetDivider( divider);
+	BmDividable::DivideSame(
+		mLogPopControl,
+		mLogSmtpControl,
+		mLogAppControl,
+		mLogFilterControl,
+		NULL
+	);
 
-	divider = mLogMailParseControl->Divider();
-	divider = MAX( divider, mLogMailTrackingControl->Divider());
-	divider = MAX( divider, mLogRefCountControl->Divider());
-	divider = MAX( divider, mLogJobWinControl->Divider());
-	divider = MAX( divider, mLogGuiControl->Divider());
-	divider = MAX( divider, mLogModelControllerControl->Divider());
-	mLogMailParseControl->SetDivider( divider);
-	mLogMailTrackingControl->SetDivider( divider);
-	mLogRefCountControl->SetDivider( divider);
-	mLogJobWinControl->SetDivider( divider);
-	mLogGuiControl->SetDivider( divider);
-	mLogModelControllerControl->SetDivider( divider);
+	BmDividable::DivideSame(
+		mLogMailParseControl,
+		mLogMailTrackingControl,
+		mLogRefCountControl,
+		mLogJobWinControl,
+		mLogGuiControl,
+		mLogModelControllerControl,
+		NULL
+	);
 
-	divider = mMaxLogfileSizeControl->Divider();
-	divider = MAX( divider, mMinLogfileSizeControl->Divider());
-	mMaxLogfileSizeControl->SetDivider( divider);
-	mMinLogfileSizeControl->SetDivider( divider);
+	BmDividable::DivideSame(
+		mMaxLogfileSizeControl,
+		mMinLogfileSizeControl,
+		NULL
+	);
 }
 
 /*------------------------------------------------------------------------------*\

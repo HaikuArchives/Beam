@@ -95,73 +95,77 @@ BmPrefsMailConstrView::BmPrefsMailConstrView()
 						mUndoModeControl 
 							= new BmMenuControl( "Undo-Granularity:", 
 														new BPopUpMenu("")),
-						0
-					)
-				),
-				new Space(),
-				0
-			),
-			new Space( minimax(0,5,0,5)),
-			new HGroup(
-				new MBorder( M_LABELED_BORDER, 10, (char*)"People Options",
-					new VGroup(
-						mLookInPeopleFolderControl = new BmCheckControl( 
-							"Look only in people-folder", 
-				         new BMessage(BM_LOOK_IN_PEOPLE_CHANGED), 
-				         this, 
-				         ThePrefs->GetBool( "LookForPeopleOnlyInPeopleFolder", 
-				         						 true)
-				      ),
-						new Space( minimax(0,5,0,5)),
-						mAddNameToPeopleControl = new BmCheckControl( 
-							"Add People's Names to Mail-Address", 
-				         new BMessage(BM_ADD_PEOPLE_NAME_CHANGED), 
-					      this, ThePrefs->GetBool("AddPeopleNameToMailAddr",true)
-					   ),
-						new Space( minimax(0,5,0,5)),
-						mPeopleFolderButton = new MButton( 
-							PeopleFolderButtonLabel().String(), 
-							new BMessage( BM_SELECT_PEOPLE_FOLDER), 
-							this,minimax(-1,-1,-1,-1)
-						),
-						0
-					)
-				),
-				new MBorder( M_LABELED_BORDER, 10, (char*)"Character-Sets",
-					new VGroup(
-						mDefaultCharsetControl = new BmMenuControl( 
-							"Default-charset:", 
-							new BmMenuController( "", this, 
-														 new BMessage( BM_CHARSET_SELECTED), 
-														 BmRebuildCharsetMenu,
-														 BM_MC_LABEL_FROM_MARKED
-							)
-						),
-						mUsedCharsetsControl = new BmMenuControl( 
-							"Frequently used charsets:", 
-							new BPopUpMenu("")),
-						0
-					)
-				),
-				0
-			),
-			new Space( minimax(0,5,0,5)),
-			new HGroup(
-				new MBorder( M_LABELED_BORDER, 10, (char*)"Forwarding",
-					new VGroup(
-						mForwardIntroStrControl 
-							= new BmTextControl( "Intro:", false, 0, 23),
-						mForwardSubjectStrControl = new BmTextControl( "Subject:"),
 						new Space(),
 						0
 					)
 				),
+				new VGroup(
+					new MBorder( M_LABELED_BORDER, 10, (char*)"Character-Sets",
+						new VGroup(
+							mDefaultCharsetControl = new BmMenuControl( 
+								"Default-charset:", 
+								new BmMenuController( "", this, 
+															 new BMessage( BM_CHARSET_SELECTED), 
+															 BmRebuildCharsetMenu,
+															 BM_MC_LABEL_FROM_MARKED
+								)
+							),
+							mUsedCharsetsControl = new BmMenuControl( 
+								"Frequently used charsets:", 
+								new BPopUpMenu("")),
+							new Space(),
+							0
+						)
+					),
+					new MBorder( M_LABELED_BORDER, 10, (char*)"People Options",
+						new VGroup(
+							mLookInPeopleFolderControl = new BmCheckControl( 
+								"Look only in people-folder", 
+					         new BMessage(BM_LOOK_IN_PEOPLE_CHANGED), 
+					         this, 
+					         ThePrefs->GetBool( "LookForPeopleOnlyInPeopleFolder", 
+					         						 true)
+					      ),
+							new Space( minimax(0,5,0,5)),
+							mAddNameToPeopleControl = new BmCheckControl( 
+								"Add People's Names to Mail-Address", 
+					         new BMessage(BM_ADD_PEOPLE_NAME_CHANGED), 
+						      this, ThePrefs->GetBool("AddPeopleNameToMailAddr",true)
+						   ),
+							new Space( minimax(0,5,0,5)),
+							new HGroup(
+								mPeopleFolderButton = new MButton( 
+									PeopleFolderButtonLabel().String(), 
+									new BMessage( BM_SELECT_PEOPLE_FOLDER), 
+									this,minimax(-1,-1,-1,-1)
+								),
+								new Space(),
+								0
+							),
+							0
+						)
+					),
+					0
+				),
+				0
+			),
+			new Space( minimax(0,5,0,5)),
+			new HGroup(
 				new MBorder( M_LABELED_BORDER, 10, (char*)"Replying",
 					new VGroup(
 						mReplyIntroStrControl = new BmTextControl( "Intro:"),
 						mReplySubjectStrControl = new BmTextControl( "Subject:"),
 						mReplyIntroStrPrivateControl 
 							= new BmTextControl( "Personal Phrase:"),
+						0
+					)
+				),
+				new MBorder( M_LABELED_BORDER, 10, (char*)"Forwarding",
+					new VGroup(
+						mForwardIntroStrControl 
+							= new BmTextControl( "Intro:", false, 0, 23),
+						mForwardSubjectStrControl = new BmTextControl( "Subject:"),
+						new Space(),
 						0
 					)
 				),
@@ -173,7 +177,7 @@ BmPrefsMailConstrView::BmPrefsMailConstrView()
 		);
 	mGroupView->AddChild( dynamic_cast<BView*>(view));
 	
-	DivideSame(
+	BmDividable::DivideSame(
 		mMaxLineLenControl,
 		mQuotingStringControl, 
 		mQuoteFormattingControl,

@@ -37,6 +37,7 @@
 #include <layout.h>
 
 #include "SantaPartsForBeam.h"
+#include "BmDividable.h"
 
 class HGroup;
 
@@ -45,7 +46,8 @@ class HGroup;
 class BmMenuControllerBase;
 
 class IMPEXPSANTAPARTSFORBEAM BmTextControl : public MView, 
-															 public BTextControl
+															 public BTextControl,
+															 public BmDividable
 {
 	typedef BTextControl inherited;
 
@@ -65,6 +67,7 @@ public:
 	// overrides of BTextControl:
 	void FrameResized( float new_width, float new_height);
 	void SetDivider( float divider);
+	float Divider() const;
 	void SetEnabled( bool enabled);
 	void SetText( const char* text);
 

@@ -149,10 +149,11 @@ BmPrefsShortcutsView::BmPrefsShortcutsView()
 		);
 	mGroupView->AddChild( dynamic_cast<BView*>(view));
 
-	float divider = mShortcutControl->Divider();
-	divider = MAX( divider, mNameControl->Divider());
-	mShortcutControl->SetDivider( divider);
-	mNameControl->SetDivider( divider);
+	BmDividable::DivideSame(
+		mShortcutControl,
+		mNameControl,
+		NULL
+	);
 	mNameControl->SetEnabled( false);
 }
 

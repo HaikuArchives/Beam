@@ -132,6 +132,14 @@ void BmTextControl::SetDivider( float divider) {
 	( )
 		-	
 \*------------------------------------------------------------------------------*/
+float BmTextControl::Divider() const {
+	return inherited::Divider();
+}
+
+/*------------------------------------------------------------------------------*\
+	( )
+		-	
+\*------------------------------------------------------------------------------*/
 void BmTextControl::SetEnabled( bool enabled) {
 	inherited::SetEnabled( enabled);
 	if (enabled)

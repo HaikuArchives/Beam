@@ -149,7 +149,6 @@ private:
 
 	BmListViewController* mSigListView;
 	BmTextControl* mSignatureControl;
-	BmTextControl* mSignatureRxControl;
 	BmMultiLineTextControl* mContentControl;
 	BmMenuControl* mCharsetControl;
 	BmCheckControl* mDynamicControl;

@@ -102,6 +102,14 @@ void BmMultiLineTextControl::SetDivider( float divider) {
 	( )
 		-	
 \*------------------------------------------------------------------------------*/
+float BmMultiLineTextControl::Divider() const {
+	return inherited::Divider();
+}
+
+/*------------------------------------------------------------------------------*\
+	( )
+		-	
+\*------------------------------------------------------------------------------*/
 void BmMultiLineTextControl::SetEnabled( bool enabled) {
 	inherited::SetEnabled( enabled);
 	if (mLabelIsMenu)

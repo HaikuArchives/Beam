@@ -323,18 +323,15 @@ BmPrefsSendMailView::BmPrefsSendMailView()
 	
 	mPwdControl->TextView()->HideTyping( true);
 
-	float divider = mAccountControl->Divider();
-	divider = MAX( divider, mDomainControl->Divider());
-	divider = MAX( divider, mLoginControl->Divider());
-	divider = MAX( divider, mServerControl->Divider());
-	divider = MAX( divider, mAuthControl->Divider());
-	divider = MAX( divider, mPopControl->Divider());
-	mAccountControl->SetDivider( divider);
-	mDomainControl->SetDivider( divider);
-	mLoginControl->SetDivider( divider);
-	mServerControl->SetDivider( divider);
-	mAuthControl->SetDivider( divider);
-	mPopControl->SetDivider( divider);
+	BmDividable::DivideSame(
+		mAccountControl,
+		mDomainControl,
+		mLoginControl,
+		mServerControl,
+		mAuthControl,
+		mPopControl,
+		NULL
+	);
 
 	mPortControl->SetDivider( 15);
 	mPortControl->ct_mpm.weight = 0.4;
