@@ -293,12 +293,8 @@ void BmMailFolder::RemoveMailRefList() {
 			mailref-list (otherwise nothing happens)
 \*------------------------------------------------------------------------------*/
 void BmMailFolder::CleanupForMailRefList( BmMailRefList* refList) {
-	BmAutolockCheckGlobal lock( nRefListLocker);
-	if (!lock.IsLocked())
-		BM_THROW_RUNTIME( 
-			Name() + ":CleanupForMailRefList(): Unable to get lock"
-		);
-	if (mMailRefList == refList)
+	BmRef<BmMailRefList> currRefList = MailRefList();
+	if (currRefList == refList)
 		RemoveMailRefList();
 }
 
@@ -348,12 +344,9 @@ void BmMailFolder::UpdateName( const entry_ref& eref) {
 			to be recreated
 \*------------------------------------------------------------------------------*/
 void BmMailFolder::RecreateCache() {
-	BmAutolockCheckGlobal lock( nRefListLocker);
-	if (!lock.IsLocked())
-		BM_THROW_RUNTIME( Name() + ":RecreateCache(): Unable to get lock");
-	CreateMailRefList();
-	if (mMailRefList)
-		mMailRefList->MarkCacheAsDirty();
+	BmRef<BmMailRefList> refList = MailRefList();
+	if (refList)
+		refList->MarkCacheAsDirty();
 }
 
 /*------------------------------------------------------------------------------*\
@@ -363,16 +356,14 @@ void BmMailFolder::RecreateCache() {
 		-	the param st contains the mail-ref's stat-info
 \*------------------------------------------------------------------------------*/
 void BmMailFolder::AddMailRef( entry_ref& eref, struct stat& st) {
-	BmAutolockCheckGlobal lock( nRefListLocker);
-	if (!lock.IsLocked())
-		BM_THROW_RUNTIME( Name() + ":AddMailRef(): Unable to get lock");
 	node_ref nref;
 	nref.node = st.st_ino;
 	nref.device = st.st_dev;
 	BmString key( BM_REFKEY( nref));
 	BM_LOG2( BM_LogMailTracking, Name()+" adding mail-ref " << key);
-	if (MailRefList()) {
-		if (!mMailRefList->AddMailRef( eref, st)) {
+	BmRef<BmMailRefList> refList = MailRefList();
+	if (refList) {
+		if (!refList->AddMailRef( eref, st)) {
 			BM_LOG2( BM_LogMailTracking, Name()+" mail-ref already exists.");
 		}
 	} else
@@ -390,12 +381,10 @@ void BmMailFolder::AddMailRef( entry_ref& eref, struct stat& st) {
 \*------------------------------------------------------------------------------*/
 BmRef<BmListModelItem> BmMailFolder::FindMailRefByKey( const BmString& key) {
 	BmRef<BmListModelItem> foundRef;
-	{	// scope for lock
-		BmAutolockCheckGlobal lock( nRefListLocker);
-		if (!lock.IsLocked())
-			BM_THROW_RUNTIME( Name() + ":FindMailRefByKey(): Unable to get lock");
-		if (mMailRefList)
-			foundRef = mMailRefList->FindItemByKey( key);
+	{ // scope for ref:
+		BmRef<BmMailRefList> refList = mMailRefList;
+		if (refList)
+			foundRef = refList->FindItemByKey( key);
 	}
 	if (!foundRef) {
 		BmModelItemMap::const_iterator iter;
@@ -416,15 +405,12 @@ BmRef<BmListModelItem> BmMailFolder::FindMailRefByKey( const BmString& key) {
 			mailref-list
 \*------------------------------------------------------------------------------*/
 void BmMailFolder::RemoveMailRef( const node_ref& nref) {
-	BmAutolockCheckGlobal lock( nRefListLocker);
-	if (!lock.IsLocked())
-		BM_THROW_RUNTIME( Name() + ":RemoveMailRef(): Unable to get lock");
  	BmString key( BM_REFKEY( nref));
  	BM_LOG2( BM_LogMailTracking, Name()+" removing mail-ref " << key);
-	if (MailRefList()) {
-		if (!mMailRefList->RemoveMailRef( key)) {
+	BmRef<BmMailRefList> refList = MailRefList();
+	if (refList) {
+		if (!refList->RemoveMailRef( key))
 			BM_LOG2( BM_LogMailTracking, Name()+" mail-ref doesn't exist.");
-		}
 	} else
 		// ref-list couldn't be created (?!?) we mark the mail-count as unknown:
 		MailCount( -1);
@@ -441,13 +427,11 @@ void BmMailFolder::RemoveMailRef( const node_ref& nref) {
 			mailref-list
 \*------------------------------------------------------------------------------*/
 void BmMailFolder::UpdateMailRef( const node_ref& nref) {
-	BmAutolockCheckGlobal lock( nRefListLocker);
-	if (!lock.IsLocked())
-		BM_THROW_RUNTIME( Name() + ":UpdateMailRef(): Unable to get lock");
  	BmString key( BM_REFKEY( nref));
  	BM_LOG2( BM_LogMailTracking, Name()+" updating mail-ref " << key);
-	if (MailRefList())
-		mMailRefList->UpdateMailRef( key);
+	BmRef<BmMailRefList> refList = MailRefList();
+	if (refList)
+		refList->UpdateMailRef( key);
 }
 
 /*------------------------------------------------------------------------------*\
