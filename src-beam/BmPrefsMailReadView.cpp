@@ -96,6 +96,12 @@ BmPrefsMailReadView::BmPrefsMailReadView()
 						0
 					),
 					new Space( minimax(0,5,0,5)),
+					mSelectNextOnDeleteControl = new BmCheckControl( 
+						"Select next mail after deleting the current", 
+						new BMessage(BM_SELECT_NEXT_ON_DELETE_CHANGED), 
+						this, 
+						ThePrefs->GetBool("SelectNextMailAfterDelete",true)
+					),
 					mUseSwatchTimeInRefViewControl = new BmCheckControl( 
 						"Use Swatch Time in mail-listview", 
 						new BMessage(BM_USE_SWATCHTIME_CHANGED), 
@@ -145,6 +151,7 @@ BmPrefsMailReadView::~BmPrefsMailReadView() {
 	TheBubbleHelper->SetHelp( mMimeTypeTrustInfoControl, NULL);
 	TheBubbleHelper->SetHelp( mMarkAsReadDelayControl, NULL);
 	TheBubbleHelper->SetHelp( mUseSwatchTimeInRefViewControl, NULL);
+	TheBubbleHelper->SetHelp( mSelectNextOnDeleteControl, NULL);
 	TheBubbleHelper->SetHelp( mTimeModeInHeaderViewControl, NULL);
 	TheBubbleHelper->SetHelp( mShowDecodedLengthControl, NULL);
 }
@@ -193,7 +200,14 @@ void BmPrefsMailReadView::Initialize() {
 		mMarkAsReadDelayControl, 
 		"When you select a new mail and it is displayed in the mail-view\n"
 		"it will be marked as 'read', after a certain delay.\n"
-		"You can enter this delay into this field."
+		"You can enter the delay into this field."
+	);
+	TheBubbleHelper->SetHelp( 
+		mSelectNextOnDeleteControl, 
+		"If you check this, Beam will automatically select the next mail\n"
+		"when you delete (trash) a mail.\n"
+		"If you leave this unchecked, no mail will be selected when you\n"
+		"delete the current mail."
 	);
 	TheBubbleHelper->SetHelp( 
 		mUseSwatchTimeInRefViewControl, 
@@ -257,6 +271,9 @@ void BmPrefsMailReadView::Initialize() {
 void BmPrefsMailReadView::Update() {
 	mUseSwatchTimeInRefViewControl->SetValueSilently( 
 		ThePrefs->GetBool("UseSwatchTimeInRefView",false)
+	);
+	mSelectNextOnDeleteControl->SetValueSilently( 
+		ThePrefs->GetBool("SelectNextMailAfterDelete",true)
 	);
 	mShowDecodedLengthControl->SetValueSilently( 
 		ThePrefs->GetBool("ShowDecodedLength",true)
@@ -332,6 +349,14 @@ void BmPrefsMailReadView::MessageReceived( BMessage* msg) {
 				ThePrefs->SetBool(
 					"UseSwatchTimeInRefView", 
 					mUseSwatchTimeInRefViewControl->Value()
+				);
+				NoticeChange();
+				break;
+			}
+			case BM_SELECT_NEXT_ON_DELETE_CHANGED: {
+				ThePrefs->SetBool(
+					"SelectNextMailAfterDelete", 
+					mSelectNextOnDeleteControl->Value()
 				);
 				NoticeChange();
 				break;

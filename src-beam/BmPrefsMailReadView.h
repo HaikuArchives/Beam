@@ -46,7 +46,8 @@ class BmPrefsMailReadView : public BmPrefsView {
 	enum {
 		BM_USE_SWATCHTIME_CHANGED				= 'bmST',
 		BM_TIMEMODE_IN_HEADERVIEW_SELECTED 	= 'bmTM',
-		BM_SHOW_DECODED_LENGTH_CHANGED		= 'bmSD'
+		BM_SHOW_DECODED_LENGTH_CHANGED		= 'bmSD',
+		BM_SELECT_NEXT_ON_DELETE_CHANGED		= 'bmSN'
 	};
 	
 public:
@@ -71,6 +72,7 @@ private:
 	BmCheckControl* mShowDecodedLengthControl;
 	BmMenuControl* mTimeModeInHeaderViewControl;
 	BmCheckControl* mUseSwatchTimeInRefViewControl;
+	BmCheckControl* mSelectNextOnDeleteControl;
 
 	BmTextControl* mMimeTypeTrustInfoControl;
 
