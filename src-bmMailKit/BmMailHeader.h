@@ -115,7 +115,6 @@ public:
 								  int32 fieldNameLength) const;
 	const BmString& FindAddressMatchingAccount( BmIdentity* ident, bool needExactMatch=false) const;
 	bool ContainsAddrSpec( BmString addrSpec) const;
-	BmString AddrSpecsAsString() const;
 	const BmString& AddrString() const;
 	//
 	inline BmAddrList::const_iterator begin() const { return mAddrList.begin(); }
