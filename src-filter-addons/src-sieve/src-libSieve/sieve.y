@@ -477,6 +477,9 @@ commandlist_t *sieve_parse(sieve_script_t *script, FILE *f)
 
     sievein = f;
     parse_script = script;
+    
+    reset_sieve_lexer( f);
+    
     if (sieveparse()) {
 	t = NULL;
     } else {

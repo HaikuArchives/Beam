@@ -35,10 +35,11 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "sieve.h"
 
 static int tonum(char *c);
-static char *chkstr(char *);
-static char *mlbuf;
-static size_t mlbufsz, mlcur;
+static char *chkBuf();
+static char *mlbuf = NULL;
+static size_t mlbufsz, mlcur = 0;
 extern int sieveerror(char *);
+void reset_sieve_lexer();
 %}
 
 %option prefix="sieve"
@@ -56,7 +57,7 @@ CRLF		(\r\n|\r|\n)
 %%
 <MULTILINE>^\.{CRLF}	{ BEGIN INITIAL; 
                           if (mlbuf) mlbuf[mlcur] = '\0';
-                          sievelval.sval = chkstr(mlbuf); return STRING; }
+                          sievelval.sval = chkBuf(); return STRING; }
 <MULTILINE>^\.\.  { /* dot stuffing! we want one . */ yyless(1); }
 <MULTILINE>(.|\n) { if (mlcur == mlbufsz) 
 			mlbuf = xrealloc(mlbuf, 1 + (mlbufsz+=1024));
@@ -65,7 +66,7 @@ CRLF		(\r\n|\r|\n)
 		     yyterminate(); }
 <QSTRING>\"        { BEGIN INITIAL;
                      if (mlbuf) mlbuf[mlcur] = '\0';
-		     sievelval.sval = chkstr(mlbuf); return STRING; }
+		     sievelval.sval = chkBuf(); return STRING; }
 <QSTRING>\\.      { if (mlcur == mlbufsz) 
 			mlbuf = xrealloc(mlbuf, 1 + (mlbufsz+=1024));
 		    mlbuf[mlcur++] = yytext[1]; }
@@ -147,8 +148,22 @@ static int tonum(char *c)
 }
 
 /* convert NULL strings to "" */
-static char *chkstr(char *str)
+static char *chkBuf()
 {
-    if (!str) return xstrdup("");
-    else return str;
+    char* ret = mlbuf ? mlbuf : xstrdup("");
+    mlbuf = NULL;
+    return ret;
+}
+
+void reset_sieve_lexer( FILE* sievein) {
+    if (mlbuf) {
+    	free( mlbuf);
+        mlbuf = NULL;
+    }
+    mlcur = mlbufsz = 0;
+
+    sieverestart( sievein);
+
+    yy_init = 1;		/* cause flex-code to reinitialize */
+    yy_start = 0;		/* reset start state number */
 }
