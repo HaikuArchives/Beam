@@ -36,6 +36,7 @@
 #include "BmController.h"
 #include "BmDataModel.h"
 #include "BmLogHandler.h"
+#include "BmMenuController.h"
 #include "BmPrefs.h"
 #include "BmUtil.h"
 
@@ -959,6 +960,7 @@ void BmListModel::TellModelItemAdded( BmListModelItem* item) {
 						<< "> tells about added item " << item->Key());
 		TellControllers( &msg);
 	}
+	UpdateMenuControllers();
 }
 
 /*------------------------------------------------------------------------------*\
@@ -987,6 +989,7 @@ void BmListModel::TellModelItemRemoved( BmListModelItem* item) {
 						<< "> tells about removed item " << item->Key());
 		TellControllers( &msg, true);
 	}
+	UpdateMenuControllers();
 }
 
 /*------------------------------------------------------------------------------*\
@@ -1020,6 +1023,63 @@ void BmListModel::TellModelItemUpdated( BmListModelItem* item, BmUpdFlags flags,
 						<< "> tells about updated item " << item->Key());
 		TellControllers( &msg);
 	}
+	UpdateMenuControllers();
+}
+
+/*------------------------------------------------------------------------------*\
+	TellJobIsDone()
+		-	extends job-model method with updating of menu-controllers
+\*------------------------------------------------------------------------------*/
+void BmListModel::TellJobIsDone( bool completed) {
+	inherited::TellJobIsDone( completed);
+	UpdateMenuControllers();
+}
+
+/*------------------------------------------------------------------------------*\
+	UpdateMenuControllers()
+		-	updates all menu-controllers that have subscribed to this job
+\*------------------------------------------------------------------------------*/
+void BmListModel::UpdateMenuControllers() {
+	BmAutolockCheckGlobal lock( mModelLocker);
+	if (!lock.IsLocked())
+		BM_THROW_RUNTIME( 
+			ModelNameNC() << ":UpdateMenuControllers(): Unable to get lock"
+		);
+	int32 count=mInterestedMenuControllers.CountItems();
+	for( int32 i=0; i<count; ++i) {
+		BmMenuController* mc = static_cast< BmMenuController*>( 
+			mInterestedMenuControllers.ItemAt( i)
+		);
+		if (mc)
+			mc->UpdateItemList();
+	}
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmListModel::AddMenuController( BmMenuController* mc) {
+	BmAutolockCheckGlobal lock( mModelLocker);
+	if (!lock.IsLocked())
+		BM_THROW_RUNTIME( 
+			ModelNameNC() << ":AddMenuController(): Unable to get lock"
+		);
+	if (!mInterestedMenuControllers.HasItem( mc))
+		mInterestedMenuControllers.AddItem( mc);
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmListModel::RemoveMenuController( BmMenuController* mc) {
+	BmAutolockCheckGlobal lock( mModelLocker);
+	if (!lock.IsLocked())
+		BM_THROW_RUNTIME( 
+			ModelNameNC() << ":RemoveMenuController(): Unable to get lock"
+		);
+	mInterestedMenuControllers.RemoveItem( mc);
 }
 
 /*------------------------------------------------------------------------------*\

@@ -128,6 +128,7 @@ private:
 	BmString mModelName;
 };
 
+class BmMenuController;
 /*------------------------------------------------------------------------------*\
 	BmJobModel
 		-	an interface that extends a datamodel with the ability to execute a 
@@ -322,6 +323,9 @@ public:
 											  const BmString& /*newVal*/)	
 											  		{ }
 	//
+	void AddMenuController( BmMenuController* mc);
+	void RemoveMenuController( BmMenuController* mc);
+	//
 	virtual bool Store();
 	virtual const BmString SettingsFileName() = 0;
 	virtual void InitializeItems()		{	mInitCheck = B_OK; }
@@ -362,13 +366,19 @@ protected:
 	virtual void TellModelItemUpdated( BmListModelItem* item, 
 												  BmUpdFlags flags=UPD_ALL,
 												  const BmString oldKey="");
+	virtual void UpdateMenuControllers();
 
 	// overrides of job-model base:
+	void TellJobIsDone( bool completed=true);
 	bool StartJob();
 
 	status_t mInitCheck;
 	bool mNeedsStore;
 	BmForeignKeyVect mForeignKeyVect;
+
+	BList mInterestedMenuControllers;
+							// list of BMenuControllers viewing this list for changes
+
 
 private:
 	// Hide copy-constructor and assignment:
