@@ -816,7 +816,7 @@ void BmPrefsRecvMailView::MessageReceived( BMessage* msg) {
 						"Cancel",
 						 B_WIDTH_AS_USUAL, B_WARNING_ALERT
 					);
-					alert->SetShortcut( 1, B_ESCAPE);
+					alert->SetShortcut( 2, B_ESCAPE);
 					alert->Go( new BInvoker( new BMessage(BM_REMOVE_ACCOUNT), 
 													 BMessenger( this)));
 				} else {
