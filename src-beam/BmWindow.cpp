@@ -174,7 +174,8 @@ void BmWindow::MessageReceived( BMessage* msg) {
 		case B_PASTE: 
 		case B_UNDO: 
 		case 'REDO': 
-		case B_SELECT_ALL: {
+		case B_SELECT_ALL:
+		case B_MODIFIERS_CHANGED: {
 			bool seenThis;
 			if (msg->FindBool( "seenThis", &seenThis) != B_OK) {
 				msg->AddBool( "seenThis", true);

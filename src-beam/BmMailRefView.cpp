@@ -85,6 +85,8 @@ enum Columns {
 	COL_ATTACHMENTS,
 	COL_PRIORITY,
 	COL_IDENTITY,
+	COL_CLASSIFICATION,
+	COL_RATIO_SPAM,
 	COL_END
 };
 
@@ -168,6 +170,10 @@ void BmMailRefItem::UpdateView( BmUpdFlags flags, bool redraw,
 		updColBitmap |= (1UL << COL_IDENTITY);
 	if (flags & BmMailRef::UPD_TRACKERNAME)
 		updColBitmap |= (1UL << COL_TRACKER_NAME);
+	if (flags & BmMailRef::UPD_CLASSIFICATION)
+		updColBitmap |= (1UL << COL_CLASSIFICATION);
+	if (flags & BmMailRef::UPD_RATIO_SPAM)
+		updColBitmap |= (1UL << COL_RATIO_SPAM);
 	inherited::UpdateView( flags, redraw, updColBitmap);
 }
 
@@ -281,6 +287,12 @@ const char* BmMailRefItem::GetUserText(int32 colIdx, float /*colWidth*/) const {
 		break;
 	case COL_IDENTITY:
 		text = ref->Identity().String();
+		break;
+	case COL_CLASSIFICATION:
+		text = ref->Classification().String();
+		break;
+	case COL_RATIO_SPAM:
+		text = ref->RatioSpamString().String();
 		break;
 	default:
 		return "";
@@ -456,6 +468,12 @@ void BmMailRefView::MessageReceived( BMessage* msg) {
 					}
 				}
 				inherited::MessageReceived( msg);
+				break;
+			}
+			case B_MODIFIERS_CHANGED: {
+				if (modifiers() & B_MENU_KEY) {
+					ShowMenu( BPoint(100,50));
+				}
 				break;
 			}
 			default:
@@ -938,6 +956,12 @@ void BmMailRefView::ShowMenu( BPoint point) {
 
 	AddMailRefMenu( theMenu, Window(), true);
 
+   BRect assumedMenuRect( point.x, point.y, point.x+250, point.y+250);
+   BPoint mousePoint;
+   uint32 buttons;
+	GetMouse( &mousePoint, &buttons);
+	if (assumedMenuRect.Contains( mousePoint))
+		point = mousePoint + BPoint(1,1);
    ConvertToScreen(&point);
 	BRect openRect;
 	openRect.top = point.y - 5;
@@ -945,5 +969,5 @@ void BmMailRefView::ShowMenu( BPoint point) {
 	openRect.left = point.x - 5;
 	openRect.right = point.x + 5;
 	theMenu->SetAsyncAutoDestruct( true);
-  	theMenu->Go( point, true, false, openRect, true);
+  	theMenu->Go( point, true, true, openRect, true);
 }
