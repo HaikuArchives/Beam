@@ -66,7 +66,7 @@ const int16 BmMailRef::nArchiveVersion = 2;
 	CreateInstance( )
 		-	static creator-func
 		-	N.B.: In here, we lock the GlobalLocker manually (*not* using BAutlock),
-			because otherwise we may risk deadlocks, since 
+			because otherwise we may risk deadlocks
 \*------------------------------------------------------------------------------*/
 BmRef<BmMailRef> BmMailRef::CreateInstance( BmMailRefList* model, entry_ref &eref, 
 												  		  struct stat& st) {
