@@ -376,7 +376,10 @@ void BmBodyPart::SetTo( const BmString& msgtext, int32 start, int32 length,
 	if (!type.Length() || type.ICompare("text")==0) {
 		// set content-type to default if is empty or contains "text"
 		// (which is illegal but used by some broken mail-clients, it seems...)
-		type = "text/plain; charset=us-ascii";
+		if (ThePrefs->GetBool( "StrictCharsetHandling", false))
+			type = "text/plain; charset=us-ascii";
+		else
+			type = BmString("text/plain; charset=")<<mSuggestedCharset;
 	}
 	mContentType.SetTo( type);
 	if (type.ICompare("multipart", 9) == 0) {
@@ -959,10 +962,13 @@ bool BmBodyPartList::HasAttachments() const {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmBodyPartList::AddAttachmentFromRef( const entry_ref* ref) {
+	BmAutolockCheckGlobal lock( ModelLocker());
+	lock.IsLocked() 						|| BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
 	BmRef<BmBodyPart> editableTextBody( EditableTextBody());
-	BmBodyPart* parent = dynamic_cast< BmBodyPart*>( editableTextBody 
-																		? editableTextBody->Parent()
-																		: (BmBodyPart*)NULL);
+	BmRef<BmListModelItem> parentRef;
+	if (editableTextBody)
+		parentRef = editableTextBody->Parent();
+	BmBodyPart* parent = dynamic_cast< BmBodyPart*>( parentRef.Get());
 	bool alreadyPresent = false;
 	if (parent)
 		alreadyPresent = parent->ContainsRef( *ref);
@@ -989,6 +995,8 @@ void BmBodyPartList::AddAttachmentFromRef( const entry_ref* ref) {
 			at its minimal optimum
 \*------------------------------------------------------------------------------*/
 void BmBodyPartList::RemoveItemFromList( BmListModelItem* item) {
+	BmAutolockCheckGlobal lock( ModelLocker());
+	lock.IsLocked() 						|| BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
 	Freeze();
 	inherited::RemoveItemFromList( item);
 	PruneUnneededMultiParts();
@@ -1022,6 +1030,8 @@ const BmString& BmBodyPartList::DefaultCharset() const {
 		-	
 \*------------------------------------------------------------------------------*/
 bool BmBodyPartList::IsMultiPart() const {
+	BmAutolockCheckGlobal lock( ModelLocker());
+	lock.IsLocked() 						|| BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
 	if (size()==1) {
 		BmBodyPart* firstBody = dynamic_cast<BmBodyPart*>( begin()->second.Get());
 		if (firstBody)
@@ -1035,7 +1045,7 @@ bool BmBodyPartList::IsMultiPart() const {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmBodyPartList::PruneUnneededMultiParts() {
-	BmAutolock lock( mModelLocker);
+	BmAutolockCheckGlobal lock( mModelLocker);
 	lock.IsLocked()	 						|| BM_THROW_RUNTIME( ModelNameNC() << ":PruneUnnededMultiParts(): Unable to get lock");
 	BmModelItemMap::const_iterator iter;
 	for( iter = begin(); iter != end(); ) {
@@ -1076,7 +1086,7 @@ int32 BmBodyPartList::EstimateEncodedSize() {
 		-	
 \*------------------------------------------------------------------------------*/
 bool BmBodyPartList::ConstructBodyForSending( BmStringOBuf& msgText) {
-	BmAutolock lock( mModelLocker);
+	BmAutolockCheckGlobal lock( mModelLocker);
 	lock.IsLocked()	 						|| BM_THROW_RUNTIME( ModelNameNC() << ":ConstructBodyForSending(): Unable to get lock");
 	BmRef<BmBodyPart> editableTextBody( EditableTextBody());
 	bool hasMultiPartTop = editableTextBody && editableTextBody->Parent();
