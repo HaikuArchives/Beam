@@ -296,9 +296,7 @@ void BmMailFolderView::KeyDown(const char *bytes, int32 numBytes) {
 			case B_PAGE_UP:
 			case B_PAGE_DOWN:
 			case B_UP_ARROW:
-			case B_DOWN_ARROW:
-			case B_LEFT_ARROW:
-			case B_RIGHT_ARROW: {
+			case B_DOWN_ARROW: {
 				int32 mods = Window()->CurrentMessage()->FindInt32("modifiers");
 				if (mods & (B_LEFT_CONTROL_KEY | B_RIGHT_OPTION_KEY)) {
 					// leave in modifiers to address mailview:
