@@ -220,7 +220,7 @@ void BmMailFilter::ExecuteFilter( BmMail* mail) {
 									  BmString("Filter ") << filter->Name() 
 									  		<< ": setting identity to " 
 									  		<< msgContext.identity);
-						if (msgContext.status.Length())
+						if (mail->Status() != msgContext.status)
 							BM_LOG( BM_LogFilter, 
 									  BmString("Filter ") << filter->Name() 
 									  		<< ": setting status to " 
@@ -258,7 +258,7 @@ void BmMailFilter::ExecuteFilter( BmMail* mail) {
 				BM_LOG( BM_LogFilter, 
 						  BmString("Filter ") << mFilter->Name() 
 						  		<< ": setting identity to " << msgContext.identity);
-			if (msgContext.status.Length())
+			if (mail->Status() != msgContext.status)
 				BM_LOG( BM_LogFilter, 
 						  BmString("Filter ") << mFilter->Name() 
 						  		<< ": setting status to " << msgContext.status);
@@ -273,7 +273,7 @@ void BmMailFilter::ExecuteFilter( BmMail* mail) {
 		mail->IdentityName( msgContext.identity);
 		needToStore = true;
 	}
-	if (msgContext.status.Length() && mail->Status() != msgContext.status) {
+	if (mail->Status() != msgContext.status) {
 		mail->MarkAs( msgContext.status.String());
 		needToStore = true;
 	}
