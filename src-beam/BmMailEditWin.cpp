@@ -183,6 +183,14 @@ filter_result BmMailEditWin::BmMsgFilter::Filter( BMessage* msg, BHandler** hand
 		-	
 \*------------------------------------------------------------------------------*/
 void BmMailEditWin::CreateGUI() {
+	// Get maximum button size
+	float width=0, height=0;
+	BmToolbarButton::CalcMaxSize(width, height, "Send",		TheResources->IconByName("Button_Send"));
+	BmToolbarButton::CalcMaxSize(width, height, "Save",		TheResources->IconByName("Button_Save"));
+	BmToolbarButton::CalcMaxSize(width, height, "New",			TheResources->IconByName("Button_New"));
+	BmToolbarButton::CalcMaxSize(width, height, "Attach",		TheResources->IconByName("Attachment"));
+	BmToolbarButton::CalcMaxSize(width, height, "People",		TheResources->IconByName("Person"));
+	BmToolbarButton::CalcMaxSize(width, height, "Print",		TheResources->IconByName("Button_Print"));
 	mOuterGroup = 
 		new VGroup(
 			minimax( 200, 300, 1E5, 1E5),
@@ -192,26 +200,32 @@ void BmMailEditWin::CreateGUI() {
 					minimax( -1, -1, 1E5, -1),
 					mSendButton = new BmToolbarButton( "Send", 
 																  TheResources->IconByName("Button_Send"), 
+																  width, height,
 																  new BMessage(BMM_SEND_NOW), this, 
-																  "Send mail now"),
+																  "Send mail now", true),
 					mSaveButton = new BmToolbarButton( "Save", 
 																	TheResources->IconByName("Button_Save"), 
+																	width, height,
 																	new BMessage(BMM_SAVE), this, 
 																	"Save mail as draft (for later use)"),
 					mNewButton = new BmToolbarButton( "New", 
 																 TheResources->IconByName("Button_New"), 
+																 width, height,
 																 new BMessage(BMM_NEW_MAIL), this, 
 																 "Compose a new mail message"),
 					mAttachButton = new BmToolbarButton( "Attach", 
 																	 TheResources->IconByName("Attachment"), 
+																	 width, height,
 																	 new BMessage(BMM_ATTACH), this, 
 																	 "Attach a file to this mail"),
 					mPeopleButton = new BmToolbarButton( "People", 
 																	 TheResources->IconByName("Person"), 
+																	 width, height,
 																	 new BMessage(BMM_SHOW_PEOPLE), this, 
 																	 "Show people information (addresses)"),
 					mPrintButton = new BmToolbarButton( "Print", 
 																	TheResources->IconByName("Button_Print"), 
+																	width, height,
 																	new BMessage(BMM_PRINT), this, 
 																	"Print selected messages(s)"),
 					new Space(),
@@ -278,6 +292,9 @@ void BmMailEditWin::CreateGUI() {
 			CreateMailView( minimax(200,200,1E5,1E5), BRect(0,0,400,200)),
 			0
 		);
+
+	mSendButton->AddActionVariation( "Send Now", new BMessage(BMM_SEND_NOW));
+	mSendButton->AddActionVariation( "Send Later", new BMessage(BMM_SEND_LATER));
 
 	float divider = mToControl->Divider();
 	divider = MAX( divider, mSubjectControl->Divider());

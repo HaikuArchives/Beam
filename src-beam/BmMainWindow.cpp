@@ -186,6 +186,21 @@ BmMainWindow::BmMainWindow()
 	CreateMailRefView( minimax(200,100,1E5,1E5), 400, 200);
 	CreateMailView( minimax(200,200,1E5,1E5), BRect(0,0,400,200));
 
+	// Get maximum button size
+	float width=0, height=0;
+	BmToolbarButton::CalcMaxSize(width, height, "Check",		TheResources->IconByName("Button_Check"));
+	BmToolbarButton::CalcMaxSize(width, height, "New",			TheResources->IconByName("Button_New"));
+	BmToolbarButton::CalcMaxSize(width, height, "Reply",		TheResources->IconByName("Button_Reply"), true);
+	BmToolbarButton::CalcMaxSize(width, height, "Forward",	TheResources->IconByName("Button_Forward"), true);
+	BmToolbarButton::CalcMaxSize(width, height, "Redirect",	TheResources->IconByName("Button_Redirect"));
+	BmToolbarButton::CalcMaxSize(width, height, "Print",		TheResources->IconByName("Button_Print"));
+	BmToolbarButton::CalcMaxSize(width, height, "Delete",		TheResources->IconByName("Button_Trash"));
+
+	int32 defaultFwdMsgType = 
+		ThePrefs->GetString( "DefaultForwardType")=="Inline"
+			? BMM_FORWARD_INLINE
+			: BMM_FORWARD_ATTACHED;
+
 	MView* mOuterGroup = 
 		new VGroup(
 			minimax( 600, 200, 1E5, 1E5),
@@ -195,34 +210,37 @@ BmMainWindow::BmMainWindow()
 					minimax( -1, -1, 1E5, -1),
 					mCheckButton = new BmToolbarButton( "Check", 
 																	TheResources->IconByName("Button_Check"), 
+																	width, height,
 																	new BMessage(BMM_CHECK_MAIL), this, 
 																	"Check for new mail"),
 					mNewButton = new BmToolbarButton( "New", 
 																 TheResources->IconByName("Button_New"), 
+																 width, height,
 																 new BMessage(BMM_NEW_MAIL), this, 
 																 "Compose a new mail message"),
 					mReplyButton = new BmToolbarButton( "Reply", 
 																	TheResources->IconByName("Button_Reply"), 
+																	width, height,
 																	new BMessage(BMM_REPLY), this, 
-																	"Reply to sender only"),
-					mReplyAllButton = new BmToolbarButton( "Reply All", 
-																		TheResources->IconByName("Button_ReplyAll"), 
-																		new BMessage(BMM_REPLY_ALL), this, 
-																		"Reply to sender and all recipients"),
+																	"Reply to person or list", true),
 					mForwardButton = new BmToolbarButton( "Forward", 
 																	  TheResources->IconByName("Button_Forward"), 
-																	  new BMessage(ThePrefs->GetInt( "DefaultForwardType", BMM_FORWARD_INLINE)), this, 
-																	  "Forward mail to somewhere else"),
+																	  width, height,
+																	  new BMessage( defaultFwdMsgType), this, 
+																	  "Forward mail to somewhere else", true),
 					mRedirectButton = new BmToolbarButton( "Redirect", 
 																	 TheResources->IconByName("Button_Redirect"), 
+																	 width, height,
 																	 new BMessage(BMM_REDIRECT), this, 
 																	 "Redirect message to somewhere else (preserves original sender)"),
 					mPrintButton = new BmToolbarButton( "Print", 
 																	TheResources->IconByName("Button_Print"), 
+																	width, height,
 																	new BMessage(BMM_PRINT), this,
 																	"Print selected messages(s)"),
 					mTrashButton = new BmToolbarButton( "Delete", 
 																	TheResources->IconByName("Button_Trash"), 
+																	width, height,
 																	new BMessage(BMM_TRASH), this, 
 																	"Move selected messages to Trash"),
 					new Space(),
@@ -244,6 +262,14 @@ BmMainWindow::BmMainWindow()
 			),
 			0
 		);
+
+	mReplyButton->AddActionVariation( "Reply", new BMessage(BMM_REPLY));
+	mReplyButton->AddActionVariation( "Reply To List", new BMessage(BMM_REPLY_LIST));
+	mReplyButton->AddActionVariation( "Reply To Originator", new BMessage(BMM_REPLY_ORIGINATOR));
+	mReplyButton->AddActionVariation( "Reply To All", new BMessage(BMM_REPLY_ALL));
+	mForwardButton->AddActionVariation( "Forward As Attachment", new BMessage(BMM_FORWARD_ATTACHED));
+	mForwardButton->AddActionVariation( "Forward Inline", new BMessage(BMM_FORWARD_INLINE));
+	mForwardButton->AddActionVariation( "Forward Inline (With Attachments)", new BMessage(BMM_FORWARD_INLINE_ATTACH));
 
 	mMailFolderView->TeamUpWith( mMailRefView);
 	mMailRefView->TeamUpWith( mMailView);
@@ -448,6 +474,8 @@ void BmMainWindow::MessageReceived( BMessage* msg) {
 			case BMM_PRINT:
 			case BMM_REDIRECT:
 			case BMM_REPLY:
+			case BMM_REPLY_LIST:
+			case BMM_REPLY_ORIGINATOR:
 			case BMM_REPLY_ALL:
 			case BMM_FORWARD_ATTACHED:
 			case BMM_FORWARD_INLINE:
@@ -550,14 +578,12 @@ void BmMainWindow::MailFolderSelectionChanged( int32 numSelected) {
 void BmMainWindow::MailRefSelectionChanged( int32 numSelected) {
 	// adjust buttons:
 	mReplyButton->SetEnabled( numSelected > 0);
-	mReplyAllButton->SetEnabled( numSelected > 0);
 	mForwardButton->SetEnabled( numSelected > 0);
 	mRedirectButton->SetEnabled( numSelected > 0);
 	mTrashButton->SetEnabled( numSelected > 0);
 	mPrintButton->SetEnabled( numSelected > 0);
 	// adjust menu:
 	mMainMenuBar->FindItem( BMM_REPLY)->SetEnabled( numSelected > 0);
-	mMainMenuBar->FindItem( BMM_REPLY_ALL)->SetEnabled( numSelected > 0);
 	mMainMenuBar->FindItem( BMM_FORWARD_ATTACHED)->SetEnabled( numSelected > 0);
 	mMainMenuBar->FindItem( BMM_FORWARD_INLINE)->SetEnabled( numSelected > 0);
 	mMainMenuBar->FindItem( BMM_FORWARD_INLINE_ATTACH)->SetEnabled( numSelected > 0);
