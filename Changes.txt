@@ -2,6 +2,88 @@ change-history of Beam:
 		$Id$
 
 *******************************************************************************
+[Beam 1.0-rc6]
+*******************************************************************************
+
+< 2003-11-10: commit>
+
+BmApp:
+	-	fixed handling of 'mailto:'-URLs.
+	-	added missing foreign-key from filters to identity-list.
+	-	fixed possible crash during printing of mails.
+	-	before quitting, we now check if there are still jobs active
+
+BmBodyPartList:
+	-	fixed bug that would not accept an empty first line within
+		a mimepart as representing an empty mimepart-header.
+
+BmDataModel, BmMenuController:
+	-	added support to list-models for automatically telling interested
+		menu-controllers about any occuring changes. This fixes the
+		problem of the network-menu-items' shortcuts not working unless
+		the menu was being shown on-screen.
+
+BmJobStatusWin:
+	-	added HasActiveJobs()
+
+BmListController, BmController, BmMailFolderView:
+	-	changed several methods from public to protected.
+
+mLogWindow:
+	-	we now avoid automatic workspace-activation if shown.
+
+BmMail:
+	-	added field 'X-List' to the list-indicators.
+	-	fixed bug in quoting-code that caused Beam to freeze if a '|'
+		was part of the quoting-phrase.
+
+BmMailEditWin:
+	-	we now update the identity, too, if the mail is being saved.
+
+BmMailHeader:
+	-	we no longer write Resent-fields into the mail-attributes, since
+		that seems just confusing.
+	-	in DetermineListAddress() we now look into Resent-fields for the
+		list-address, this way Beam is able to correctly reply to the
+		list if the mail has been redirected to the list.
+
+BmMailRefView:
+	-	made automatic selection of next mail after a delete optional.
+
+BmMailView:
+	-	disallowed the chars '&' and '=' to end a line since they are
+		common in URLs which we do not want to word-wrap.
+	-	added IsDisplayComplete() - method to facilitate printing of mails.
+
+BmMenuController:
+	-	added automatic adding/removing to/from listmodel's set of parties
+		interested in changes.
+
+BmPrefsMailReadView:
+	-	added option for automatic selection of next mail after a delete.
+
+BmPrefsReccvMailView:
+	-	corrected ESC-shortcut of remove-account alert.
+
+BmRulerView:
+	-	we now avoid setting the position to anything less than one.
+
+BmSmtp:
+	-	fixed bug with missing "\r\n" when generating bcc-header.
+	-	fixed problem with logging of msg-header not working properly.
+
+BmString:
+	-	added checks for memory-allocation failure
+	-	fixed MoveInto() to handle oversized requests more gracefully
+	    (more DWIM).
+	    
+StringTest:
+	-	added tests for low-memory situations.
+
+web/
+	-	updated info to Beam 1.0
+
+*******************************************************************************
 [Beam 1.0-rc5]
 *******************************************************************************
 
