@@ -91,7 +91,7 @@ BmFilterItem::~BmFilterItem() {
 \*------------------------------------------------------------------------------*/
 void BmFilterItem::UpdateView( BmUpdFlags flags) {
 	inherited::UpdateView( flags);
-	BmFilter* filter = ModelItem();
+	BmFilter* filter( dynamic_cast<BmFilter*>( ModelItem()));
 	if (flags & UPD_ALL) {
 		BmString beautifiedContent( filter->Content());
 		beautifiedContent.ReplaceAll( "\n", "\\n");
@@ -535,7 +535,7 @@ void BmPrefsFilterView::ShowFilter( int32 selection) {
 	} else {
 		BmFilterItem* filterItem = dynamic_cast<BmFilterItem*>(mFilterListView->ItemAt( selection));
 		if (filterItem) {
-			mCurrFilter = filterItem->ModelItem();
+			mCurrFilter = dynamic_cast<BmFilter*>( filterItem->ModelItem());
 			if (mCurrFilter) {
 				mFilterControl->SetTextSilently( mCurrFilter->Name().String());
 				mContentControl->SetTextSilently( mCurrFilter->Content().String());

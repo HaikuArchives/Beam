@@ -165,12 +165,13 @@ BmJobController::~BmJobController() {
 void BmJobController::StartJob( BmJobModel* model, bool startInNewThread,
 										  int32 jobSpecifier) {
 	AttachModel( model);
-	if (DataModel()) {
+	BmJobModel* jobModel = dynamic_cast<BmJobModel*>( DataModel().Get());
+	if (jobModel) {
 		BM_LOG2( BM_LogModelController, BmString("Controller <") << ControllerName() << "> starts job " << ModelName());
 		if (startInNewThread)
-			DataModel()->StartJobInNewThread( jobSpecifier);
+			jobModel->StartJobInNewThread( jobSpecifier);
 		else
-			DataModel()->StartJobInThisThread( jobSpecifier);
+			jobModel->StartJobInThisThread( jobSpecifier);
 	}
 }
 
@@ -181,9 +182,10 @@ void BmJobController::StartJob( BmJobModel* model, bool startInNewThread,
 		-	this default implementation simply tells its model to pause
 \*------------------------------------------------------------------------------*/
 void BmJobController::PauseJob( BMessage*) {
-	if (DataModel()) {
+	BmJobModel* jobModel = dynamic_cast<BmJobModel*>( DataModel().Get());
+	if (jobModel) {
 		BM_LOG2( BM_LogModelController, BmString("Controller <") << ControllerName() << "> pauses job " << ModelName());
-		DataModel()->PauseJob();
+		jobModel->PauseJob();
 	}
 }
 
@@ -194,9 +196,10 @@ void BmJobController::PauseJob( BMessage*) {
 		-	this default implementation simply tells its model to continue
 \*------------------------------------------------------------------------------*/
 void BmJobController::ContinueJob( BMessage*) {
-	if (DataModel()) {
+	BmJobModel* jobModel = dynamic_cast<BmJobModel*>( DataModel().Get());
+	if (jobModel) {
 		BM_LOG2( BM_LogModelController, BmString("Controller <") << ControllerName() << "> continues job " << ModelName());
-		DataModel()->ContinueJob();
+		jobModel->ContinueJob();
 	}
 }
 
@@ -206,10 +209,10 @@ void BmJobController::ContinueJob( BMessage*) {
 		-	this default implementation simply detaches from its model
 \*------------------------------------------------------------------------------*/
 void BmJobController::StopJob() {
-	BmJobModel* job = DataModel();
-	if (job && !job->IsJobCompleted()) {
+	BmJobModel* jobModel = dynamic_cast<BmJobModel*>( DataModel().Get());
+	if (jobModel && !jobModel->IsJobCompleted()) {
 		BM_LOG2( BM_LogModelController, BmString("Controller <") << ControllerName() << "> stops job " << ModelName());
-		job->StopJob();
+		jobModel->StopJob();
 	}
 }
 
@@ -218,12 +221,11 @@ void BmJobController::StopJob() {
 		-	check whether or not the current job is still running
 \*------------------------------------------------------------------------------*/
 bool BmJobController::IsJobRunning() {
-	BmJobModel* model = DataModel();
-	if (model) {
-		return model->IsJobRunning();
-	} else {
+	BmJobModel* jobModel = dynamic_cast<BmJobModel*>( DataModel().Get());
+	if (jobModel)
+		return jobModel->IsJobRunning();
+	else
 		return false;
-	}
 }
 
 /*------------------------------------------------------------------------------*\
@@ -231,9 +233,9 @@ bool BmJobController::IsJobRunning() {
 		-	returns the exact kind of the current job (usually BM_DEFAULT_JOB)
 \*------------------------------------------------------------------------------*/
 int32 BmJobController::CurrentJobSpecifier() {
-	BmJobModel* model = DataModel();
-	if (model)
-		return model->CurrentJobSpecifier();
+	BmJobModel* jobModel = dynamic_cast<BmJobModel*>( DataModel().Get());
+	if (jobModel)
+		return jobModel->CurrentJobSpecifier();
 	else
 		return BmJobModel::BM_DEFAULT_JOB;
 }

@@ -133,7 +133,7 @@ void BmJobStatusView::MessageReceived( BMessage* msg) {
 			}
 			case BM_TIME_TO_SHOW: {
 				BM_LOG2( BM_LogModelController, BmString("Controller <") << ControllerName() << "> has been told to show its view");
-				BmAutolock lock( TheJobStatusWin);
+				BmAutolockCheckGlobal lock( TheJobStatusWin);
 				lock.IsLocked()				|| BM_THROW_RUNTIME( "JobStatusView(): could not lock window");
 				if (!mIsAutoJob) {
 					TheJobStatusWin->Minimize( false);
@@ -145,7 +145,7 @@ void BmJobStatusView::MessageReceived( BMessage* msg) {
 			}
 			case BM_TIME_TO_REMOVE: {
 				BM_LOG2( BM_LogModelController, BmString("Controller <") << ControllerName() << "> has been told to remove its view");
-				BmAutolock lock( TheJobStatusWin);
+				BmAutolockCheckGlobal lock( TheJobStatusWin);
 				lock.IsLocked()				|| BM_THROW_RUNTIME( "JobStatusView(): could not lock window");
 				DetachModel();
 				if (!IsHidden()) {
@@ -297,7 +297,7 @@ void BmMailMoverView::UpdateModelView( BMessage* msg) {
 
 	BM_LOG3( BM_LogJobWin, BmString("Updating interface for ") << name);
 
-	BmAutolock lock( BmJobStatusWin::theInstance);
+	BmAutolockCheckGlobal lock( BmJobStatusWin::theInstance);
 	if (lock.IsLocked()) {
 		mStatBar->Update( delta, leading, trailing);
 	} else
@@ -397,7 +397,7 @@ void BmMailFilterView::UpdateModelView( BMessage* msg) {
 
 	BM_LOG3( BM_LogJobWin, BmString("Updating interface for ") << name);
 
-	BmAutolock lock( BmJobStatusWin::theInstance);
+	BmAutolockCheckGlobal lock( BmJobStatusWin::theInstance);
 	if (lock.IsLocked()) {
 		mStatBar->Update( delta, leading, trailing);
 	} else
@@ -494,7 +494,7 @@ void BmPopperView::UpdateModelView( BMessage* msg) {
 
 	BM_LOG3( BM_LogJobWin, BmString("Updating interface for ") << name);
 
-	BmAutolock lock( BmJobStatusWin::theInstance);
+	BmAutolockCheckGlobal lock( BmJobStatusWin::theInstance);
 	if (lock.IsLocked()) {
 		if (domain == "mailbar") {
 			mMailBar->Update( delta, leading, trailing);
@@ -662,7 +662,7 @@ void BmSmtpView::UpdateModelView( BMessage* msg) {
 
 	BM_LOG3( BM_LogJobWin, BmString("Updating interface for ") << name);
 
-	BmAutolock lock( BmJobStatusWin::theInstance);
+	BmAutolockCheckGlobal lock( BmJobStatusWin::theInstance);
 	if (lock.IsLocked()) {
 		if (domain == "mailbar") {
 			mMailBar->Update( delta, leading, trailing);
@@ -793,7 +793,7 @@ BmJobStatusWin::~BmJobStatusWin() {
 		-	standard BeOS-behaviour, we allow a quit
 \*------------------------------------------------------------------------------*/
 bool BmJobStatusWin::QuitRequested() {
-	BmAutolock lock( this);
+	BmAutolockCheckGlobal lock( this);
 	lock.IsLocked()						|| BM_THROW_RUNTIME( "QuitRequested(): could not lock window");
 	while( !IsHidden())
 		Hide();
@@ -854,7 +854,7 @@ void BmJobStatusWin::MessageReceived(BMessage* msg) {
 		-	if job is already active, it is left alone (nothing happens)
 \*------------------------------------------------------------------------------*/
 void BmJobStatusWin::AddJob( BMessage* msg) {
-	BM_assert( msg);
+	BM_ASSERT( msg);
 
 	BmString name = FindMsgString( msg, BmJobModel::MSG_JOB_NAME);
 	int32 jobSpecifier;
@@ -867,7 +867,7 @@ void BmJobStatusWin::AddJob( BMessage* msg) {
 
 	BM_LOG( BM_LogJobWin, BmString("Adding job ") << name);
 
-	BmAutolock lock( this);
+	BmAutolockCheckGlobal lock( this);
 	lock.IsLocked()						|| BM_THROW_RUNTIME( "AddJob(): could not lock window");
 
 	JobMap::iterator interfaceIter = mActiveJobs.find( name);
@@ -903,7 +903,7 @@ void BmJobStatusWin::AddJob( BMessage* msg) {
 				break;
 		}
 
-		BmAutolock lock( this);
+		BmAutolockCheckGlobal lock( this);
 		lock.IsLocked()						|| BM_THROW_RUNTIME("AddJob(): could not lock window");
 
 		// add the new interface to our view:
@@ -939,11 +939,11 @@ void BmJobStatusWin::AddJob( BMessage* msg) {
 			*	STATIC:			never remove interface
 \*------------------------------------------------------------------------------*/
 void BmJobStatusWin::RemoveJob( const char* name) {
-	BM_assert( name);
+	BM_ASSERT( name);
 
 	BM_LOG( BM_LogJobWin, BmString("Removing job ") << name);
 
-	BmAutolock lock( this);
+	BmAutolockCheckGlobal lock( this);
 	lock.IsLocked()						|| BM_THROW_RUNTIME( "RemoveJob(): could not lock window");
 
 	JobMap::iterator interfaceIter = mActiveJobs.find( name);

@@ -72,7 +72,7 @@ public:
 	static const char* const MSG_REFS;
 
 	// alternate job-specifiers:
-	static const int32 BM_EXECUTE_FILTER;
+	static const int32 BM_EXECUTE_FILTER_IN_MEM;
 							// for filter-execution without any controllers being present
 
 	BmMailFilter( const BmString& name, BmFilter* filter);

@@ -232,9 +232,6 @@ protected:
 										 const BmString& quote, const BmString& quoteString,
 								 		 int maxTextLen);
 
-	BmRef<BmMailRef> mMailRef;
-	status_t mInitCheck;
-	
 private:
 	BmMail();
 	
@@ -250,6 +247,9 @@ private:
 							// name of account this message came from/is sent through
 	BEntry mEntry;
 							// filesystem-entry for this mail 
+	BmRef<BmMailRef> mMailRef;
+							// the mail-ref that corresponds to this mail. 
+							// This exists if (and only if) a mail lives on disk
 	bool mOutbound;
 							// true if mail is for sending (as opposed to received)
 	int32 mRightMargin;
@@ -266,6 +266,7 @@ private:
 	mutable BmString mDefaultStatus;
 							// default status of this mail, only relevant
 							// before mail lives on disk
+	status_t mInitCheck;
 
 	// Hide copy-constructor and assignment:
 	BmMail( const BmMail&);

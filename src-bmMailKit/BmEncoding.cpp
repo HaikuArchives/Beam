@@ -28,7 +28,6 @@
 /*************************************************************************/
 
 
-#include <assert.h>
 #include <cstring>
 
 #include "regexx.hh"
@@ -903,7 +902,7 @@ void BmBase64Decoder::Finalize( char* destBuf, uint32& destLen) {
 	char* destEnd = destBuf+destLen;
 	if (mIndex) {
 		// output remaining characters:
-		assert( dest<=destEnd-3);
+		BM_ASSERT( dest<=destEnd-3);
 							// must be the case for mIndex!=0
 		*dest++ = (mConcat & 0x00ff0000) >> 16;
 		if (mIndex>2)

@@ -33,9 +33,11 @@
 #include <stdexcept>
 #include <string>
 
+#include <Debug.h>
+
 #include "BmString.h"
 
-#define BM_assert(expr) if (!expr) { throw BM_invalid_argument(BmString("BM_assert says no at ")<<__FILE__<<":"<<__LINE__); }
+#define BM_ASSERT(E)		(!(E) ? _debuggerAssert(__FILE__,__LINE__, (char*)#E) : (int)0)
 
 void ShowAlert( const BmString &text);	// forward declaration
 
@@ -112,21 +114,5 @@ inline bool BM_Throw_Network( const BmString &s, int line, const char* file) {
 \*------------------------------------------------------------------------------*/
 #define BmPtr const auto_ptr
 #define BmNcPtr auto_ptr
-
-/*------------------------------------------------------------------------------*\*\
-	wrapper around BAutolock that enhances profiling output
-\*------------------------------------------------------------------------------*/
-// during profiling we use this:
-/*
-#include <Autolock.h>
-class BmAutolock : public BAutolock {
-public:
-	BmAutolock( BLooper* l) : BAutolock( l) {};
-	BmAutolock( BLocker* l) : BAutolock( l) {};
-	BmAutolock( BLocker& l) : BAutolock( l) {};
-};
-*/
-//otherwise, we use this:
-#define BmAutolock BAutolock
 
 #endif

@@ -53,7 +53,7 @@ const char* const BmMailFilter::MSG_LEADING = 	"bm:leading";
 const char* const BmMailFilter::MSG_REFS = 		"refs";
 
 // alternate job-specifiers:
-const int32 BmMailFilter::BM_EXECUTE_FILTER = 	1;
+const int32 BmMailFilter::BM_EXECUTE_FILTER_IN_MEM = 	1;
 
 /*------------------------------------------------------------------------------*\
 	BmMailFilter()
@@ -209,7 +209,7 @@ int BmMailFilter::sieve_execute_error( const char* msg, void* interp_context,
 \*------------------------------------------------------------------------------*/
 bool BmMailFilter::ShouldContinue() {
 	return inherited::ShouldContinue() 
-			 || CurrentJobSpecifier() == BM_EXECUTE_FILTER;
+			 || CurrentJobSpecifier() == BM_EXECUTE_FILTER_IN_MEM;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -267,7 +267,7 @@ void BmMailFilter::ExecuteFilter( MsgContext& msgContext) {
 														: TheInboundFilterList;
 		BmOrderedFilterMap orderedFilterMap;
 		{
-			BmAutolock lock( filterList->ModelLocker());
+			BmAutolockCheckGlobal lock( filterList->ModelLocker());
 			lock.IsLocked() 							|| BM_THROW_RUNTIME( filterList->ModelNameNC() << ": Unable to get lock");
 			BmModelItemMap::const_iterator iter;
 			for( iter = filterList->begin(); iter != filterList->end(); ++iter) {
@@ -282,11 +282,13 @@ void BmMailFilter::ExecuteFilter( MsgContext& msgContext) {
 			needToStore |= (ordIter->second->Execute( &msgContext) 
 								&& msgContext.changed);
 		}
-		if (needToStore)
+		if (needToStore && CurrentJobSpecifier()!=BM_EXECUTE_FILTER_IN_MEM)
 			msgContext.mail->Store();
 	} else {
-		if (mFilter->Execute( &msgContext) && msgContext.changed)
+		if (mFilter->Execute( &msgContext) && msgContext.changed
+		&& CurrentJobSpecifier()!=BM_EXECUTE_FILTER_IN_MEM) {
 			msgContext.mail->Store();
+		}
 	}
 }
 

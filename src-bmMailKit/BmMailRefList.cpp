@@ -112,7 +112,7 @@ bool BmMailRefList::Store() {
 
 	if (mInitCheck != B_OK) return true;
 	try {
-		BmAutolock lock( ModelLocker());
+		BmAutolockCheckGlobal lock( ModelLocker());
 		lock.IsLocked() 						|| BM_THROW_RUNTIME( ModelNameNC() << ":Store(): Unable to get lock");
 		BmString filename = SettingsFileName();
 		(ret = cacheFile.SetTo( filename.String(), B_WRITE_ONLY | B_CREATE_FILE | B_ERASE_FILE)) == B_OK

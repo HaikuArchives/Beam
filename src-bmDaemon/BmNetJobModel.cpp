@@ -28,8 +28,6 @@
 /*                                                                       */
 /*************************************************************************/
 
-#include <assert.h>
-
 #include "BmNetJobModel.h"
 #include "BmPrefs.h"
 
@@ -153,7 +151,7 @@ bool BmNetJobModel::ShouldContinue() {
 bool BmNetJobModel::CheckForPositiveAnswer( uint32 expectedSize, 
 														  bool dotstuffDecoding,
 														  bool update) {
-	assert( mStatusFilter);
+	BM_ASSERT( mStatusFilter);
 	GetAnswer( expectedSize, dotstuffDecoding, update);
 	return mStatusFilter->CheckForPositiveAnswer() && ShouldContinue();
 }

@@ -178,7 +178,7 @@ public:
 	virtual void UpdateModelState( BMessage* msg);
 	virtual void UpdateItem( BmListViewItem* item, BmUpdFlags flags);
 	virtual void UpdateCaption( const char* text=NULL);
-	BmListViewItem* FindViewItemFor( BmListModelItem* modelItem);
+	BmListViewItem* FindViewItemFor( BmListModelItem* modelItem) const;
 	virtual void ItemInvoked( int32 index);
 	virtual bool AcceptsDropOf( const BMessage*)	{ return false; }
 	virtual void HandleDrop( const BMessage* msg);
@@ -225,10 +225,12 @@ public:
 	void UseStateCache( bool b) 			{ mUseStateCache = b; }
 
 protected:
-	virtual BmListModel* DataModel()		{ return dynamic_cast<BmListModel*>(BmController::DataModel()); }
 	// archival of the controller's state-info:
 	virtual BmString StateInfoBasename()				= 0;
 	virtual BMessage* DefaultLayout()	{ return NULL; }
+
+	BmListViewItem* doAddModelItem( BmListViewItem* parent, BmListModelItem* item);
+	void doRemoveModelItem( BmListModelItem* item);
 
 	typedef map< BmListModelItem*, BmListViewItem*> BmViewModelMap;
 
@@ -248,8 +250,6 @@ protected:
 	static const char* const MSG_SCROLL_STEP;
 
 private:
-	BmListViewItem* doAddModelItem( BmListViewItem* parent, BmListModelItem* item);
-	void doRemoveModelItem( BmListModelItem* item);
 
 	// Hide copy-constructor and assignment:
 	BmListViewController( const BmListViewController&);

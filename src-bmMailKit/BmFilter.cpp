@@ -125,7 +125,7 @@ bool BmFilter::Execute( void* msgContext) {
 		mLastErr = "Unable to get filter-list";
 		return false;
 	}
-	BmAutolock lock( filterList->ModelLocker());
+	BmAutolockCheckGlobal lock( filterList->ModelLocker());
 	if (!lock.IsLocked()) {
 		mLastErr = "Unable to lock filter-list";
 		return false;
@@ -167,7 +167,7 @@ bool BmFilter::CompileScript() {
 		mLastErr = "Unable to get filter-list";
 		return false;
 	}
-	BmAutolock lock( filterList->ModelLocker());
+	BmAutolockCheckGlobal lock( filterList->ModelLocker());
 	if (!lock.IsLocked()) {
 		mLastErr = "Unable to lock filter-list";
 		return false;
@@ -345,7 +345,7 @@ const BmString BmFilterList::SettingsFileName() {
 void BmFilterList::MoveUp( int32 oldPos) {
 	if (oldPos <= 0)
 		return;
-	BmAutolock lock( ModelLocker());
+	BmAutolockCheckGlobal lock( ModelLocker());
 	lock.IsLocked() 							|| BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
 	BmModelItemMap::const_iterator iter;
 	for( iter = begin(); iter != end(); ++iter) {
@@ -365,7 +365,7 @@ void BmFilterList::MoveUp( int32 oldPos) {
 void BmFilterList::MoveDown( int32 oldPos) {
 	if (oldPos >= ((int32)size())-1)
 		return;
-	BmAutolock lock( ModelLocker());
+	BmAutolockCheckGlobal lock( ModelLocker());
 	lock.IsLocked() 							|| BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
 	BmModelItemMap::const_iterator iter;
 	for( iter = begin(); iter != end(); ++iter) {
@@ -383,7 +383,7 @@ void BmFilterList::MoveDown( int32 oldPos) {
 		-	
 \*------------------------------------------------------------------------------*/
 int32 BmFilterList::NextPosition() {
-	BmAutolock lock( ModelLocker());
+	BmAutolockCheckGlobal lock( ModelLocker());
 	lock.IsLocked() 							|| BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
 	BmModelItemMap::const_iterator iter;
 	int32 nextPos = -1;

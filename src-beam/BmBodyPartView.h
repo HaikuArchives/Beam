@@ -33,6 +33,7 @@
 
 #include <map>
 
+#include "BmBodyPartList.h"
 #include "BmListController.h"
 
 /*------------------------------------------------------------------------------*\
@@ -53,6 +54,8 @@ class BmBodyPartItem : public BmListViewItem
 public:
 	BmBodyPartItem( const BmString& key, BmListModelItem* item);
 	~BmBodyPartItem();
+
+	BmBodyPart* ModelItem() const	{ return dynamic_cast<BmBodyPart*>(mModelItem.Get()); }
 
 	// Hide copy-constructor and assignment:
 	BmBodyPartItem( const BmBodyPartItem&);

@@ -82,7 +82,7 @@ BmMailFolderItem::~BmMailFolderItem() {
 \*------------------------------------------------------------------------------*/
 void BmMailFolderItem::UpdateView( BmUpdFlags flags) {
 	inherited::UpdateView( flags);
-	BmMailFolder* folder = ModelItem();
+	BmMailFolder* folder( ModelItem());
 	if (!folder)
 		return;
 	if (flags & (UPD_EXPANDER  | UPD_KEY | BmMailFolder::UPD_NEW_STATUS)) {
@@ -118,8 +118,8 @@ int BmMailFolderItem::CompareItems( const CLVListItem *a_Item1,
 		const BmMailFolderItem* item2 = dynamic_cast<const BmMailFolderItem*>(a_Item2);
 		if (item1 == NULL || item2 == NULL)
 			return 0;
-		BmMailFolder* folder1 = item1->ModelItem();
-		BmMailFolder* folder2 = item2->ModelItem();
+		BmMailFolder* folder1( item1->ModelItem());
+		BmMailFolder* folder2( item2->ModelItem());
 		if (folder1 == NULL || folder2 == NULL)
 			return 0;
 			
@@ -240,7 +240,7 @@ void BmMailFolderView::HandleDrop( const BMessage* msg) {
 	static int jobNum = 1;
 	if (msg && mCurrHighlightItem
 	&& (msg->what == B_SIMPLE_DATA)) {
-		BmMailFolder* folder = dynamic_cast<BmMailFolder*>( mCurrHighlightItem->ModelItem());
+		BmMailFolder* folder( dynamic_cast<BmMailFolder*>( mCurrHighlightItem->ModelItem()));
 		if (folder) {
 			BMessage tmpMsg( BM_JOBWIN_MOVEMAILS);
 			entry_ref eref;
@@ -285,7 +285,9 @@ void BmMailFolderView::MouseDown( BPoint point) {
 void BmMailFolderView::JobIsDone( bool completed) {
 	inherited::JobIsDone( completed);
 	if (mLastActiveKey.Length()) {
-		BmRef<BmListModelItem> item = DataModel()->FindItemByKey( mLastActiveKey);
+		BmRef<BmDataModel> modelRef( DataModel());
+		BmListModel* listModel = dynamic_cast<BmListModel*>( modelRef.Get());
+		BmRef<BmListModelItem> item = listModel->FindItemByKey( mLastActiveKey);
 		BmListViewItem* viewItem = FindViewItemFor( item.Get());
 		if (viewItem)
 			Select( IndexOf( viewItem));
@@ -469,7 +471,7 @@ void BmMailFolderView::ItemInvoked( int32 index) {
 	BmMailFolderItem* folderItem;
 	folderItem = dynamic_cast<BmMailFolderItem*>(ItemAt( index));
 	if (folderItem) {
-		BmRef<BmMailFolder> folder( dynamic_cast<BmMailFolder*>(folderItem->ModelItem()));
+		BmMailFolder* folder( folderItem->ModelItem());
 		if (folder) {
 			// open current mail-folder in tracker:
 			BMessenger tracker("application/x-vnd.Be-TRAK" );
@@ -489,10 +491,8 @@ BmRef<BmMailFolder> BmMailFolderView::CurrentFolder( void) const {
 	if (selection >= 0) {
 		BmMailFolderItem* folderItem;
 		folderItem = dynamic_cast<BmMailFolderItem*>(ItemAt( selection));
-		if (folderItem) {
-			BmMailFolder* folder = dynamic_cast<BmMailFolder*>(folderItem->ModelItem());
-			return folder;
-		}
+		if (folderItem)
+			return folderItem->ModelItem();
 	}
 	return NULL;
 }

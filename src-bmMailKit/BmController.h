@@ -69,7 +69,7 @@ public:
 	inline const char* ControllerName() const	{ return mControllerName.String(); }
 	inline const BmString& ModelName() const	{ return mDataModel.Get() ? mDataModel->ModelName() : BM_DEFAULT_STRING; }
 	inline BmString ModelNameNC() const { return ModelName(); }
-	virtual BmDataModel* DataModel()		{ return mDataModel.Get(); }
+	virtual const BmRef<BmDataModel>& DataModel()		{ return mDataModel; }
 
 protected:
 	//
@@ -114,7 +114,6 @@ public:
 	virtual void JobIsDone( bool completed) = 0;
 
 protected:
-	virtual BmJobModel* DataModel()		{ 	return dynamic_cast<BmJobModel*>(inherited::DataModel()); }
 
 	// Hide copy-constructor and assignment:
 	BmJobController( const BmJobController&);

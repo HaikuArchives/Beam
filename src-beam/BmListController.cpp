@@ -355,7 +355,7 @@ void BmListViewController::HandleDrop( const BMessage*) {
 \*------------------------------------------------------------------------------*/
 void BmListViewController::MessageReceived( BMessage* msg) {
 	try {
-		BmDataModel* dataModel = DataModel();
+		BmRef<BmDataModel> dataModel( DataModel());
 		switch( msg->what) {
 			case BM_LISTMODEL_ADD: {
 				if (!IsMsgFromCurrentModel( msg)) break;
@@ -480,8 +480,12 @@ void BmListViewController::MessageReceived( BMessage* msg) {
 	FindViewItemFor( modelItem)
 		-	
 \*------------------------------------------------------------------------------*/
-BmListViewItem* BmListViewController::FindViewItemFor( BmListModelItem* modelItem) {
-	return mViewModelMap[ modelItem];
+BmListViewItem* BmListViewController::FindViewItemFor( BmListModelItem* modelItem) const {
+	BmViewModelMap::const_iterator iter = mViewModelMap.find( modelItem);
+	if (iter == mViewModelMap.end())
+		return NULL;
+	else
+		return iter->second;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -490,10 +494,11 @@ BmListViewItem* BmListViewController::FindViewItemFor( BmListModelItem* modelIte
 \*------------------------------------------------------------------------------*/
 void BmListViewController::AddAllModelItems() {
 	BM_LOG2( BM_LogModelController, BmString(ControllerName())<<": adding items to listview");
-	BmAutolock lock( DataModel()->ModelLocker());
+	BmAutolockCheckGlobal lock( DataModel()->ModelLocker());
 	lock.IsLocked()	 						|| BM_THROW_RUNTIME( BmString() << ControllerName() << ":AddAllModelItems(): Unable to lock model");
 	MakeEmpty();
-	BmListModel *model = DataModel();
+	BmListModel *model = dynamic_cast<BmListModel*>(DataModel().Get());
+	BM_ASSERT( model);
 	BList* tempList = NULL;
 	if (!Hierarchical())
 		tempList = new BList( model->size());
@@ -509,10 +514,10 @@ void BmListViewController::AddAllModelItems() {
 			doAddModelItem( NULL, modelItem);
 		} else {
 			viewItem = CreateListViewItem( modelItem);
-			if (viewItem) {
+			if (viewItem)
 				tempList->AddItem( viewItem);
-				mViewModelMap[modelItem] = viewItem;
-			}
+			mViewModelMap[modelItem] = viewItem;
+			BM_LOG2( BM_LogMailTracking, BmString("ListView <") << ModelName() << "> added view-item " << viewItem->Key());
 		}
 		if (count%100==0) {
 			ScrollView()->PulseBusyView();
@@ -553,7 +558,8 @@ BmListViewItem* BmListViewController::AddModelItem( BmListModelItem* item) {
 	if (!Hierarchical()) {
 		newItem = doAddModelItem( NULL, item);
 	} else {
-		BmListViewItem* parentItem = FindViewItemFor( item->Parent());
+		BmRef<BmListModelItem> parent( item->Parent());
+		BmListViewItem* parentItem = FindViewItemFor( parent.Get());
 		newItem = doAddModelItem( parentItem, item);
 	}
 	BMessage msg( BM_NTFY_LISTCONTROLLER_MODIFIED);
@@ -576,6 +582,7 @@ BmListViewItem* BmListViewController::doAddModelItem( BmListViewItem* parent, Bm
 		else
 			AddItem( newItem);
 		mViewModelMap[item] = newItem;
+		BM_LOG2( BM_LogMailTracking, BmString("ListView <") << ModelName() << "> added view-item " << newItem->Key());
 	}
 	
 	// add all sub-items of current item to the view as well:
@@ -607,11 +614,16 @@ void BmListViewController::RemoveModelItem( BmListModelItem* item) {
 		-
 \*------------------------------------------------------------------------------*/
 void BmListViewController::doRemoveModelItem( BmListModelItem* item) {
+	BmListViewItem* viewItem = NULL;
 	if (item) {
-		BmListViewItem* viewItem = FindViewItemFor( item);
+		BmViewModelMap::iterator pos = mViewModelMap.find( item);
+		if (pos != mViewModelMap.end()) {
+			viewItem = pos->second;
+			mViewModelMap.erase( pos);
+		}
 		if (viewItem) {
 			RemoveItem( viewItem);
-			mViewModelMap.erase( item);
+			BM_LOG2( BM_LogMailTracking, BmString("ListView <") << ModelName() << "> removed view-item " << viewItem->Key());
 			// remove all sub-items of current item from the view as well:
 			BmModelItemMap::const_iterator iter;
 			for( iter = item->begin(); iter != item->end(); ++iter) {
@@ -792,8 +804,11 @@ void BmListViewController::MakeEmpty() {
 		for( int i=0; i<count; ++i)
 			tempList.AddItem( FullListItemAt( i));
 		inherited::MakeEmpty();					// clear display
+		int c;
 		while( !tempList.IsEmpty()) {
 			BmListViewItem* subItem = static_cast<BmListViewItem*>(tempList.RemoveItem( (int32)0));
+			c = mViewModelMap.erase( subItem->ModelItem());
+			BM_ASSERT( c==1);
 			delete subItem;
 		}
 		UpdateCaption();

@@ -83,7 +83,7 @@ public:
 	inline const BmString& Name() const	{ return mModelName; }
 	inline const BmString& ModelName() const	{ return mModelName; }
 	inline BmString ModelNameNC() const	{ return mModelName; }
-	inline BLocker& ModelLocker() 		{ return mModelLocker; }
+	inline BLocker& ModelLocker() const	{ return mModelLocker; }
 
 	// overrides of BmRefObj
 	const BmString& RefName() const		{ return mModelName; }
@@ -105,7 +105,7 @@ protected:
 	inline void Thaw()						{ mFrozenCount--; }
 	inline bool Frozen() 					{ return mFrozenCount > 0; }
 
-	BLocker mModelLocker;
+	mutable BLocker mModelLocker;
 	BmControllerSet mControllerSet;
 	BmControllerSet mOutstandingSet;
 	int8 mFrozenCount;
@@ -224,7 +224,7 @@ public:
 	inline size_t size() const						{ return mSubItemMap.size(); }
 	inline bool empty() const						{ return mSubItemMap.empty(); }
 	inline const BmString& Key() const			{ return mKey; }
-	inline BmListModelItem* Parent() const		{ return mParent; }
+	inline BmRef<BmListModelItem> Parent() const		{ return mParent; }
 	BmRef<BmListModel> ListModel() const;
 
 	// setters:

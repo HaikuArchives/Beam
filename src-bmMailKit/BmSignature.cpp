@@ -119,7 +119,7 @@ status_t BmSignature::Archive( BMessage* archive, bool deep) const {
 		-	always returns UTF8-encoded string
 \*------------------------------------------------------------------------------*/
 BmString BmSignature::GetSignatureString() {
-	BmAutolock lock( mAccessLock);
+	BmAutolockCheckGlobal lock( mAccessLock);
 	lock.IsLocked()	 						|| BM_THROW_RUNTIME( BmString(Key()) << "-destructor: Unable to get access-lock");
 	if (!mContent.Length())
 		return "";

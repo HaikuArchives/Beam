@@ -51,12 +51,13 @@ BmMenuController::BmMenuController( const char* label, const char* name,
 \*------------------------------------------------------------------------------*/
 void BmMenuController::JobIsDone( bool completed) {
 	if (completed) {
-		BmAutolock lock( DataModel()->ModelLocker());
+		BmAutolockCheckGlobal lock( DataModel()->ModelLocker());
 		lock.IsLocked()	 						|| BM_THROW_RUNTIME( BmString() << ControllerName() << ":AddAllModelItems(): Unable to lock model");
 		BMenuItem* old;
 		while( (old = RemoveItem( (int32)0))!=NULL)
 			delete old;
-		BmListModel *model = dynamic_cast<BmListModel*>( DataModel());
+		BmRef<BmDataModel> modelRef( DataModel());
+		BmListModel *model = dynamic_cast<BmListModel*>( modelRef.Get());
 		BmModelItemMap::const_iterator iter;
 		int i=0;
 		for( iter = model->begin();  iter != model->end();  ++iter, ++i) {

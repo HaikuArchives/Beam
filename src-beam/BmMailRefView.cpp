@@ -119,7 +119,7 @@ BmMailRefItem::~BmMailRefItem() {
 \*------------------------------------------------------------------------------*/
 void BmMailRefItem::UpdateView( BmUpdFlags flags) {
 	inherited::UpdateView( flags);
-	BmMailRef* ref = ModelItem();
+	BmMailRef* ref( ModelItem());
 	if (!ref)
 		return;
 	BBitmap* icon = NULL;
@@ -149,7 +149,7 @@ void BmMailRefItem::UpdateView( BmUpdFlags flags) {
 		-	
 \*------------------------------------------------------------------------------*/
 const int32 BmMailRefItem::GetNumValueForColumn( int32 column_index) const {
-	BmMailRef* ref = ModelItem();
+	BmMailRef* ref( ModelItem());
 	if (column_index == 0 || column_index == 14) {
 		// status
 		BmString st = ref->Status();
@@ -180,7 +180,7 @@ const int32 BmMailRefItem::GetNumValueForColumn( int32 column_index) const {
 		-	
 \*------------------------------------------------------------------------------*/
 const time_t BmMailRefItem::GetDateValueForColumn( int32 column_index) const {
-	const BmMailRef* ref = ModelItem();
+	BmMailRef* ref( ModelItem());
 	if (column_index == COL_DATE)
 		return ref->When();
 	else if (column_index == COL_CREATED)
@@ -194,7 +194,7 @@ const time_t BmMailRefItem::GetDateValueForColumn( int32 column_index) const {
 		-	
 \*------------------------------------------------------------------------------*/
 const char* BmMailRefItem::GetUserText(int32 colIdx, float colWidth) const {
-	BmMailRef* ref = ModelItem();
+	BmMailRef* ref( ModelItem());
 	if (!ref)
 		return "";
 	const char* text;
@@ -442,15 +442,16 @@ void BmMailRefView::KeyDown(const char *bytes, int32 numBytes) {
 					DeselectAll();
 				// remove view-items immediately because that looks better and it 
 				// avoids double deletions (which cause Tracker to complain):
-				SetDisconnectScrollView( true);
 				for( int32 i=indexVect.size()-1; i>=0; --i) {
 					RemoveItems( indexVect[i].start, 1+indexVect[i].end-indexVect[i].start);
 				}
-				SetDisconnectScrollView( false);
 				UpdateCaption();
-				for( uint32 i=0; i<itemVect.size(); ++i) {
-					mViewModelMap.erase( ((BmListViewItem*)itemVect[i])->ModelItem());
-					delete itemVect[i];
+				{	// scope for lock
+					BmAutolockCheckGlobal lock( DataModel()->ModelLocker());
+					lock.IsLocked()			|| BM_THROW_RUNTIME( BmString() << ControllerName() << "KeyDown(): Unable to lock model");
+					for( uint32 i=0; i<itemVect.size(); ++i) {
+						doRemoveModelItem( ((BmListViewItem*)itemVect[i])->ModelItem());
+					}
 				}
 				// finally we instruct our app to remove the mail
 				be_app_messenger.SendMessage( &msg);
@@ -497,7 +498,7 @@ bool BmMailRefView::InitiateDrag( BPoint, int32 index, bool wasSelected) {
 	dragMsg.AddInt32( "be:actions", B_MOVE_TARGET);
 	dragMsg.AddInt32( "be:actions", B_TRASH_TARGET);
 	BmMailRefItem* refItem = dynamic_cast<BmMailRefItem*>(ItemAt( index));
-	BmMailRef* ref = dynamic_cast<BmMailRef*>(refItem->ModelItem());
+	BmMailRef* ref( refItem->ModelItem());
 	dragMsg.AddString( "be:clip_name", ref->TrackerName());
 	dragMsg.AddString( "be:originator", "Beam");
 	int32 currIdx;
@@ -523,7 +524,7 @@ bool BmMailRefView::InitiateDrag( BPoint, int32 index, bool wasSelected) {
 	for( int32 i=0; (currIdx=CurrentSelection( i))>=0; ++i) {
 		// now we add all selected items to drag-image and to drag-msg:
 		refItem = dynamic_cast<BmMailRefItem*>(ItemAt( currIdx));
-		ref = dynamic_cast<BmMailRef*>(refItem->ModelItem());
+		BmMailRef* ref( refItem->ModelItem());
 		dragMsg.AddRef( "refs", ref->EntryRefPtr());
 		if (i<3) {
 			// add only the first three selections to drag-image:
@@ -641,8 +642,8 @@ void BmMailRefView::AddSelectedRefsToMsg( BMessage* msg, BmString fieldName) {
 		BmMailRefItem* refItem;
 		refItem = dynamic_cast<BmMailRefItem*>(ItemAt( selected));
 		if (refItem) {
-			BmRef<BmMailRef> ref = dynamic_cast<BmMailRef*>( refItem->ModelItem());
-			msg->AddPointer( fieldName.String(), static_cast< void*>( ref.Get()));
+			BmMailRef* ref( refItem->ModelItem());
+			msg->AddPointer( fieldName.String(), static_cast< void*>( ref));
 			ref->AddRef();						// the message now refers to the mailRef, too
 			if (selectedText.Length())
 				msg->AddString( BmApplication::MSG_SELECTED_TEXT, selectedText.String());
@@ -674,9 +675,9 @@ void BmMailRefView::SelectionChanged( void) {
 			BmMailRefItem* refItem;
 			refItem = dynamic_cast<BmMailRefItem*>(ItemAt( selection));
 			if (refItem) {
-				BmRef<BmMailRef> ref = dynamic_cast<BmMailRef*>(refItem->ModelItem());
+				BmMailRef* ref( refItem->ModelItem());
 				if (ref)
-					mPartnerMailView->ShowMail( ref.Get());
+					mPartnerMailView->ShowMail( ref);
 			}
 		} else
 			mPartnerMailView->ShowMail( static_cast< BmMailRef*>( NULL));
@@ -707,15 +708,15 @@ void BmMailRefView::ItemInvoked( int32 index) {
 	BmMailRefItem* refItem;
 	refItem = dynamic_cast<BmMailRefItem*>(ItemAt( index));
 	if (refItem && !mAvoidInvoke) {
-		BmRef<BmMailRef> ref( dynamic_cast<BmMailRef*>(refItem->ModelItem()));
+		BmMailRef* ref( refItem->ModelItem());
 		if (ref) {
 			if (ref->Status() == BM_MAIL_STATUS_DRAFT
 			|| ref->Status() == BM_MAIL_STATUS_PENDING) {
-				BmMailEditWin* editWin = BmMailEditWin::CreateInstance( ref.Get());
+				BmMailEditWin* editWin = BmMailEditWin::CreateInstance( ref);
 				if (editWin)
 					editWin->Show();
 			} else {
-				BmMailViewWin* viewWin = BmMailViewWin::CreateInstance( ref.Get());
+				BmMailViewWin* viewWin = BmMailViewWin::CreateInstance( ref);
 				if (viewWin)
 					viewWin->Show();
 			}

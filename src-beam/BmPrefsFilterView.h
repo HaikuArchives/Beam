@@ -50,7 +50,6 @@ public:
 
 	// overrides of listitem base:
 	void UpdateView( BmUpdFlags flags);
-	BmFilter* ModelItem() const 			{ return dynamic_cast< BmFilter*>( mModelItem.Get()); }
 
 private:
 	// Hide copy-constructor and assignment:

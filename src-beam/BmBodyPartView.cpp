@@ -245,7 +245,8 @@ void BmBodyPartView::AddAttachment( BMessage* msg) {
 	if (!mEditable)
 		return;
 	entry_ref ref;
-	BmBodyPartList* bodyPartList = dynamic_cast<BmBodyPartList*>( DataModel());
+	BmRef<BmDataModel> modelRef( DataModel());
+	BmBodyPartList* bodyPartList = dynamic_cast<BmBodyPartList*>( modelRef.Get());
 	if (!bodyPartList)
 		return;
 	for( int i=0; msg->FindRef( "refs", i, &ref) == B_OK; ++i) {
@@ -319,7 +320,8 @@ void BmBodyPartView::AddAllModelItems() {
 void BmBodyPartView::RemoveModelItem( BmListModelItem* item) {
 	BM_LOG2( BM_LogModelController, BmString(ControllerName())<<": removing one item from listview");
 	inherited::RemoveModelItem( item);
-	BmBodyPartList* bodyPartList = dynamic_cast<BmBodyPartList*>( DataModel());
+	BmRef<BmDataModel> modelRef( DataModel());
+	BmBodyPartList* bodyPartList = dynamic_cast<BmBodyPartList*>( modelRef.Get());
 	ShowBody( bodyPartList);
 }
 
@@ -341,9 +343,10 @@ void BmBodyPartView::KeyDown(const char *bytes, int32 numBytes) {
 			case B_DELETE: {
 				int32 idx = CurrentSelection(0);
 				if (idx >= 0) {
-					BmBodyPartList* body = dynamic_cast<BmBodyPartList*>( DataModel());
+					BmRef<BmDataModel> modelRef( DataModel());
+					BmBodyPartList* body = dynamic_cast<BmBodyPartList*>( modelRef.Get());
 					BmBodyPartItem* bodyItem = dynamic_cast<BmBodyPartItem*>(ItemAt( idx));
-					body->RemoveItemFromList( dynamic_cast<BmBodyPart*>( bodyItem->ModelItem()));
+					body->RemoveItemFromList( bodyItem->ModelItem());
 				}				
 			}
 			default:
@@ -384,12 +387,14 @@ void BmBodyPartView::MessageReceived( BMessage* msg) {
 		switch( msg->what) {
 			case BM_BODYPARTVIEW_SHOWALL: {
 				mShowAllParts = true;
-				ShowBody( dynamic_cast<BmBodyPartList*>( DataModel()));
+				BmRef<BmDataModel> modelRef( DataModel());
+				ShowBody( dynamic_cast<BmBodyPartList*>( modelRef.Get()));
 				break;
 			}
 			case BM_BODYPARTVIEW_SHOWATTACHMENTS: {
 				mShowAllParts = false;
-				ShowBody( dynamic_cast<BmBodyPartList*>( DataModel()));
+				BmRef<BmDataModel> modelRef( DataModel());
+				ShowBody( dynamic_cast<BmBodyPartList*>( modelRef.Get()));
 				break;
 			}
 			case BM_BODYPARTVIEW_SAVE_ATTACHMENT: {
@@ -399,7 +404,7 @@ void BmBodyPartView::MessageReceived( BMessage* msg) {
 				BmBodyPartItem* bodyPartItem = dynamic_cast<BmBodyPartItem*>( FullListItemAt( index));
 				if (!bodyPartItem)
 					break;
-				BmBodyPart* bodyPart = dynamic_cast<BmBodyPart*>( bodyPartItem->ModelItem());
+				BmBodyPart* bodyPart( bodyPartItem->ModelItem());
 				if (!bodyPart)
 					break;
 				// first step, let user select filename to save under:
@@ -429,7 +434,8 @@ void BmBodyPartView::MessageReceived( BMessage* msg) {
 				BmBodyPartItem* bodyPartItem = dynamic_cast<BmBodyPartItem*>( FullListItemAt( index));
 				if (!bodyPartItem)
 					break;
-				BmBodyPart* bodyPart = dynamic_cast<BmBodyPart*>( bodyPartItem->ModelItem());
+				BmRef<BmListModelItem> modelItemRef( );
+				BmBodyPart* bodyPart( bodyPartItem->ModelItem());
 				if (!bodyPart)
 					break;
 				entry_ref destDirRef;
@@ -459,7 +465,7 @@ void BmBodyPartView::MessageReceived( BMessage* msg) {
 void BmBodyPartView::ItemInvoked( int32 index) {
 	BmBodyPartItem* bodyPartItem = dynamic_cast<BmBodyPartItem*>( FullListItemAt( index));
 	if (bodyPartItem) {
-		BmBodyPart* bodyPart = dynamic_cast<BmBodyPart*>( bodyPartItem->ModelItem());
+		BmBodyPart* bodyPart( bodyPartItem->ModelItem());
 		if (!bodyPart)
 			return;
 		bodyPartItem->Highlight( true);
@@ -551,7 +557,7 @@ bool BmBodyPartView::InitiateDrag( BPoint, int32 index, bool wasSelected) {
 		return false;
 	BMessage dragMsg( B_SIMPLE_DATA);
 	BmBodyPartItem* bodyPartItem = dynamic_cast<BmBodyPartItem*>(ItemAt( index));
-	BmBodyPart* bodyPart = dynamic_cast<BmBodyPart*>(bodyPartItem->ModelItem());
+	BmBodyPart* bodyPart( bodyPartItem->ModelItem());
 	const char* filename = bodyPartItem->GetColumnContentText( COL_NAME);
 	entry_ref eref = bodyPart->WriteToTempFile( filename);
 	dragMsg.AddInt32( "be:actions", B_MOVE_TARGET);

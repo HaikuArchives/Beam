@@ -187,7 +187,7 @@ void BmPrefsShortcutsView::Initialize() {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmPrefsShortcutsView::Update() {
-	BmAutolock lock( ThePrefs->Locker());
+	BAutolock lock( ThePrefs->Locker());
 	lock.IsLocked()							|| BM_THROW_RUNTIME( "Unable to get lock on Prefs!");
 	BMessage* scMsg = ThePrefs->ShortcutsMsg();
 	if (scMsg) {

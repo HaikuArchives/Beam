@@ -435,7 +435,7 @@ BmRef<BmMail> BmMail::CreateReply( int32 replyMode, const BmString selectedText)
 	if (!receivingAddr.Length()) {
 		// the receiving account could not be determined, so we iterate through all
 		// accounts and try to find one that (may) have received this mail.
-		BmAutolock lock( ThePopAccountList->ModelLocker());
+		BmAutolockCheckGlobal lock( ThePopAccountList->ModelLocker());
 		lock.IsLocked() 						|| BM_THROW_RUNTIME( "CreateReply(): Unable to get lock on PopAccountList");
 		BmModelItemMap::const_iterator iter;
 		for( iter = ThePopAccountList->begin(); 
@@ -770,7 +770,7 @@ bool BmMail::SetDestFoldername( const BmString& inFoldername) {
 void BmMail::ApplyFilter( BmRef<BmFilter> filter) {
 	BmRef<BmMailFilter> filterJob = new BmMailFilter( Name(), filter.Get());
 	filterJob->AddMail( this);
-	filterJob->StartJobInThisThread( BmMailFilter::BM_EXECUTE_FILTER);
+	filterJob->StartJobInThisThread( BmMailFilter::BM_EXECUTE_FILTER_IN_MEM);
 }
 
 /*------------------------------------------------------------------------------*\

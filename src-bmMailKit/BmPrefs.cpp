@@ -214,7 +214,7 @@ BmPrefs::~BmPrefs() {
 		-	resets preferences to last saved state
 \*------------------------------------------------------------------------------*/
 void BmPrefs::ResetToSaved() {
-	BmAutolock lock( mLocker);
+	BAutolock lock( mLocker);
 	lock.IsLocked()	 						|| BM_THROW_RUNTIME( "Prefs: Unable to get lock!");
 	mPrefsMsg = mSavedPrefsMsg;
 	if (mPrefsMsg.FindMessage( "Shortcuts", &mShortcutsMsg) == B_OK) {
@@ -231,7 +231,7 @@ void BmPrefs::ResetToSaved() {
 		-	resets preferences to default state
 \*------------------------------------------------------------------------------*/
 void BmPrefs::ResetToDefault() {
-	BmAutolock lock( mLocker);
+	BAutolock lock( mLocker);
 	lock.IsLocked()	 						|| BM_THROW_RUNTIME( "Prefs: Unable to get lock!");
 	mPrefsMsg = mDefaultsMsg;
 	mShortcutsMsg.MakeEmpty();
@@ -355,7 +355,7 @@ void BmPrefs::InitDefaults() {
 		-	returns the shortcut for a given id (label):
 \*------------------------------------------------------------------------------*/
 BmString BmPrefs::GetShortcutFor( const char* shortcutID) {
-	BmAutolock lock( mLocker);
+	BAutolock lock( mLocker);
 	lock.IsLocked()	 						|| BM_THROW_RUNTIME( "Prefs: Unable to get lock!");
 	const char* sc = mShortcutsMsg.FindString( shortcutID);
 	return sc;
@@ -378,7 +378,7 @@ void BmPrefs::SetShortcutIfNew( BMessage* msg, const char* name, const BmString 
 		-	updates a shortcut to the given value
 \*------------------------------------------------------------------------------*/
 void BmPrefs::SetShortcutFor( const char* name, const BmString val) {
-	BmAutolock lock( mLocker);
+	BAutolock lock( mLocker);
 	lock.IsLocked()	 						|| BM_THROW_RUNTIME( "Prefs: Unable to get lock!");
 	mShortcutsMsg.RemoveName( name);
 	mShortcutsMsg.AddString( name, val.String());
@@ -469,7 +469,7 @@ void BmPrefs::SetLoglevels() {
 bool BmPrefs::Store() {
 	BFile prefsFile;
 	status_t err;
-	BmAutolock lock( mLocker);
+	BAutolock lock( mLocker);
 	lock.IsLocked()	 						|| BM_THROW_RUNTIME( "Prefs: Unable to get lock!");
 
 	try {
@@ -506,7 +506,7 @@ bool BmPrefs::Store() {
 			value, an error message is shown
 \*------------------------------------------------------------------------------*/
 BmString BmPrefs::GetString( const char* name) {
-	BmAutolock lock( mLocker);
+	BAutolock lock( mLocker);
 	lock.IsLocked()	 						|| BM_THROW_RUNTIME( "Prefs: Unable to get lock!");
 	const char* val;
 	if (mPrefsMsg.FindString( name, &val) == B_OK)
@@ -531,7 +531,7 @@ BmString BmPrefs::GetString( const char* name) {
 			value, the given default-value is returned
 \*------------------------------------------------------------------------------*/
 BmString BmPrefs::GetString( const char* name, const BmString defaultVal) {
-	BmAutolock lock( mLocker);
+	BAutolock lock( mLocker);
 	lock.IsLocked()	 						|| BM_THROW_RUNTIME( "Prefs: Unable to get lock!");
 	const char* val;
 	if (mPrefsMsg.FindString( name, &val) == B_OK)
@@ -554,7 +554,7 @@ BmString BmPrefs::GetString( const char* name, const BmString defaultVal) {
 			value, an error message is shown
 \*------------------------------------------------------------------------------*/
 bool BmPrefs::GetBool( const char* name) {
-	BmAutolock lock( mLocker);
+	BAutolock lock( mLocker);
 	lock.IsLocked()	 						|| BM_THROW_RUNTIME( "Prefs: Unable to get lock!");
 	bool val;
 	if (mPrefsMsg.FindBool( name, &val) == B_OK)
@@ -579,7 +579,7 @@ bool BmPrefs::GetBool( const char* name) {
 			value, the given default-value is returned
 \*------------------------------------------------------------------------------*/
 bool BmPrefs::GetBool( const char* name, const bool defaultVal) {
-	BmAutolock lock( mLocker);
+	BAutolock lock( mLocker);
 	lock.IsLocked()	 						|| BM_THROW_RUNTIME( "Prefs: Unable to get lock!");
 	bool val;
 	if (mPrefsMsg.FindBool( name, &val) == B_OK)
@@ -602,7 +602,7 @@ bool BmPrefs::GetBool( const char* name, const bool defaultVal) {
 			value, an error message is shown
 \*------------------------------------------------------------------------------*/
 int32 BmPrefs::GetInt( const char* name) {
-	BmAutolock lock( mLocker);
+	BAutolock lock( mLocker);
 	lock.IsLocked()	 						|| BM_THROW_RUNTIME( "Prefs: Unable to get lock!");
 	int32 val;
 	if (mPrefsMsg.FindInt32( name, &val) == B_OK)
@@ -627,7 +627,7 @@ int32 BmPrefs::GetInt( const char* name) {
 			value, the given default-value is returned
 \*------------------------------------------------------------------------------*/
 int32 BmPrefs::GetInt( const char* name, const int32 defaultVal) {
-	BmAutolock lock( mLocker);
+	BAutolock lock( mLocker);
 	lock.IsLocked()	 						|| BM_THROW_RUNTIME( "Prefs: Unable to get lock!");
 	int32 val;
 	if (mPrefsMsg.FindInt32( name, &val) == B_OK)
@@ -651,7 +651,7 @@ int32 BmPrefs::GetInt( const char* name, const int32 defaultVal) {
 		-	N.B.: The BMessage belongs to the caller, so delete it if you are finished
 \*------------------------------------------------------------------------------*/
 BMessage* BmPrefs::GetMsg( const char* name) {
-	BmAutolock lock( mLocker);
+	BAutolock lock( mLocker);
 	lock.IsLocked()	 						|| BM_THROW_RUNTIME( "Prefs: Unable to get lock!");
 	BMessage* msg = new BMessage();
 	if (mPrefsMsg.FindMessage( name, msg) == B_OK) {
@@ -675,7 +675,7 @@ BMessage* BmPrefs::GetMsg( const char* name) {
 			new value
 \*------------------------------------------------------------------------------*/
 void BmPrefs::SetBool( const char* name, const bool val) {
-	BmAutolock lock( mLocker);
+	BAutolock lock( mLocker);
 	lock.IsLocked()	 						|| BM_THROW_RUNTIME( "Prefs: Unable to get lock!");
 	mPrefsMsg.RemoveName( name);
 	mPrefsMsg.AddBool( name, val);
@@ -688,7 +688,7 @@ void BmPrefs::SetBool( const char* name, const bool val) {
 			new value
 \*------------------------------------------------------------------------------*/
 void BmPrefs::SetInt( const char* name, const int32 val) {
-	BmAutolock lock( mLocker);
+	BAutolock lock( mLocker);
 	lock.IsLocked()	 						|| BM_THROW_RUNTIME( "Prefs: Unable to get lock!");
 	mPrefsMsg.RemoveName( name);
 	mPrefsMsg.AddInt32( name, val);
@@ -702,7 +702,7 @@ void BmPrefs::SetInt( const char* name, const int32 val) {
 		-	the prefs-object copies the given message, so the caller can delete it
 \*------------------------------------------------------------------------------*/
 void BmPrefs::SetMsg( const char* name, const BMessage* val) {
-	BmAutolock lock( mLocker);
+	BAutolock lock( mLocker);
 	lock.IsLocked()	 						|| BM_THROW_RUNTIME( "Prefs: Unable to get lock!");
 	mPrefsMsg.RemoveName( name);
 	mPrefsMsg.AddMessage( name, val);
@@ -715,7 +715,7 @@ void BmPrefs::SetMsg( const char* name, const BMessage* val) {
 			new value
 \*------------------------------------------------------------------------------*/
 void BmPrefs::SetString( const char* name, const BmString val) {
-	BmAutolock lock( mLocker);
+	BAutolock lock( mLocker);
 	lock.IsLocked()	 						|| BM_THROW_RUNTIME( "Prefs: Unable to get lock!");
 	mPrefsMsg.RemoveName( name);
 	mPrefsMsg.AddString( name, val.String());

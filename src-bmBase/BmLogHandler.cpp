@@ -134,7 +134,7 @@ BmLogHandler::~BmLogHandler() {
 		-	if logfile does not exist yet, it is created and added to map
 \*------------------------------------------------------------------------------*/
 BmLogHandler::BmLogfile* BmLogHandler::FindLogfile( const BmString &logname) {
-	BmAutolock lock( mLocker);
+	BAutolock lock( mLocker);
 	if (!lock.IsLocked())
 		throw BM_runtime_error("LogToFile(): Unable to get lock on loghandler");
 	BmString name = logname.Length() ? logname : BmString("Beam");
@@ -205,7 +205,7 @@ void BmLogHandler::LogToFile( const char* const logname, uint32 flag, const char
 		-	closes the logfile with the specified logname
 \*------------------------------------------------------------------------------*/
 void BmLogHandler::CloseLog( const BmString &logname) {
-	BmAutolock lock( mLocker);
+	BAutolock lock( mLocker);
 	if (lock.IsLocked()) {
 		LogfileMap::iterator logIter = mActiveLogs.find( logname);
 		BmLogfile* log;

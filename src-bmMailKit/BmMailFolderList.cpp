@@ -146,8 +146,8 @@ void BmMailMonitor::HandleMailMonitorMsg( BMessage* msg) {
 													|| BM_THROW_RUNTIME( BmString("Couldn't get stats for node --- parent-node <")<<eref.directory<<"> and name <"<<eref.name << "> \n\nError:" << strerror(err));
 				}
 				{	// new scope for lock:
-//					BmAutolock lock( TheMailFolderList->mModelLocker);
-//					lock.IsLocked() 			|| BM_THROW_RUNTIME( "HandleMailMonitorMsg(): Unable to get lock");
+					BmAutolockCheckGlobal lock( TheMailFolderList->mModelLocker);
+					lock.IsLocked() 			|| BM_THROW_RUNTIME( "HandleMailMonitorMsg(): Unable to get lock");
 
 					parent = dynamic_cast<BmMailFolder*>( 
 												TheMailFolderList->FindItemByKey( BM_REFKEY( pnref)).Get());
@@ -282,6 +282,8 @@ void BmMailMonitor::HandleQueryUpdateMsg( BMessage* msg) {
 				(err = msg->FindInt64( "node", &nref.node)) == B_OK
 													|| BM_THROW_RUNTIME( BmString("Field 'node' not found in msg !?!"));
 				pnref.device = nref.device;
+				BmAutolockCheckGlobal lock( TheMailFolderList->mModelLocker);
+				lock.IsLocked() 			|| BM_THROW_RUNTIME( "HandleMailMonitorMsg(): Unable to get lock");
 				TheMailFolderList->AddNewFlag( pnref, nref);
 				break;
 			}
@@ -359,6 +361,9 @@ bool BmMailFolderList::StartJob() {
 		-	
 \*------------------------------------------------------------------------------*/
 BmMailFolder* BmMailFolderList::AddNewFlag( const node_ref& pnref, const node_ref& nref) {
+#ifdef BM_REF_DEBUGGING
+	BM_ASSERT( ModelLocker().IsLocked());
+#endif
 	BmRef<BmListModelItem> parentRef = FindItemByKey( BM_REFKEY( pnref));
 	BmMailFolder* parent = dynamic_cast< BmMailFolder*>( parentRef.Get());
 	mNewMailNodeMap[BM_REFKEY( nref)] = parent;
@@ -372,6 +377,8 @@ BmMailFolder* BmMailFolderList::AddNewFlag( const node_ref& pnref, const node_re
 		-	
 \*------------------------------------------------------------------------------*/
 void BmMailFolderList::RemoveNewFlag( const node_ref& pnref, const node_ref& nref) {
+	BmAutolockCheckGlobal lock( mModelLocker);
+	lock.IsLocked() 							|| BM_THROW_RUNTIME( ModelNameNC() << ":RemoveNewFlag(): Unable to get lock");
 	BmRef<BmListModelItem> parentRef = FindItemByKey( BM_REFKEY( pnref));
 	mNewMailNodeMap.erase( BM_REFKEY( nref));
 	BmMailFolder* parent = dynamic_cast< BmMailFolder*>( parentRef.Get());
@@ -384,6 +391,8 @@ void BmMailFolderList::RemoveNewFlag( const node_ref& pnref, const node_ref& nre
 		-	
 \*------------------------------------------------------------------------------*/
 void BmMailFolderList::SetFolderForNodeFlaggedNew( const node_ref& nref, BmMailFolder* folder) {
+	BmAutolockCheckGlobal lock( mModelLocker);
+	lock.IsLocked() 							|| BM_THROW_RUNTIME( ModelNameNC() << ":SetFolderForNodeFlaggedNew(): Unable to get lock");
 	BmString refKey( BM_REFKEY( nref));
 	BmMailFolder* oldFolder = mNewMailNodeMap[refKey];
 	if (oldFolder != folder) {
@@ -400,6 +409,8 @@ void BmMailFolderList::SetFolderForNodeFlaggedNew( const node_ref& nref, BmMailF
 		-	
 \*------------------------------------------------------------------------------*/
 BmMailFolder* BmMailFolderList::GetFolderForNodeFlaggedNew( const node_ref& nref) {
+	BmAutolockCheckGlobal lock( mModelLocker);
+	lock.IsLocked() 							|| BM_THROW_RUNTIME( ModelNameNC() << ":GetFolderForNodeFlaggedNew(): Unable to get lock");
 	return mNewMailNodeMap[ BM_REFKEY( nref)];
 }
 
@@ -408,6 +419,8 @@ BmMailFolder* BmMailFolderList::GetFolderForNodeFlaggedNew( const node_ref& nref
 		-	
 \*------------------------------------------------------------------------------*/
 bool BmMailFolderList::NodeIsFlaggedNew( const node_ref& nref) {
+	BmAutolockCheckGlobal lock( mModelLocker);
+	lock.IsLocked() 							|| BM_THROW_RUNTIME( ModelNameNC() << ":NodeIsFlaggedNew(): Unable to get lock");
 	return mNewMailNodeMap.find( BM_REFKEY( nref)) != mNewMailNodeMap.end();
 }
 
@@ -447,7 +460,7 @@ void BmMailFolderList::InitializeItems() {
 													|| BM_THROW_RUNTIME(BmString("Could not get node-ref \nfor mailbox-dir <") << mailDirName << "> \n\nError:" << strerror(err));
 
 	{	
-		BmAutolock lock( mModelLocker);
+		BmAutolockCheckGlobal lock( mModelLocker);
 		lock.IsLocked() 						|| BM_THROW_RUNTIME( ModelNameNC() << ":InitializeMailFolders(): Unable to get lock");
 		BM_LOG3( BM_LogMailTracking, BmString("Top-folder <") << eref.name << "," << nref.node << "> found");
 		mTopFolder = AddMailFolder( eref, nref.node, NULL, mtime);
@@ -521,7 +534,7 @@ void BmMailFolderList::InstantiateItems( BMessage* archive) {
 	(err = archive->FindMessage( BmListModelItem::MSG_CHILDREN, &msg)) == B_OK
 												|| BM_THROW_RUNTIME(BmString("BmMailFolderList: Could not find msg-field <") << BmListModelItem::MSG_CHILDREN << "> \n\nError:" << strerror(err));
 	{
-		BmAutolock lock( mModelLocker);
+		BmAutolockCheckGlobal lock( mModelLocker);
 		lock.IsLocked() 						|| BM_THROW_RUNTIME( ModelNameNC() << ":InstantiateMailFolders(): Unable to get lock");
 		mTopFolder = new BmMailFolder( &msg, this, NULL);
 		AddItemToList( mTopFolder.Get());
@@ -574,7 +587,7 @@ void BmMailFolderList::QueryForNewMails() {
 	typedef set<BmMailFolder*> BmFolderSet;
 	BmFolderSet foldersWithNewMail;
 
-	BmAutolock lock( mModelLocker);
+	BmAutolockCheckGlobal lock( mModelLocker);
 	lock.IsLocked() 							|| BM_THROW_RUNTIME( ModelNameNC() << ":QueryForNewMails(): Unable to get lock");
 
 	BM_LOG2( BM_LogMailTracking, "Start of newMail-query");

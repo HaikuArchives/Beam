@@ -60,7 +60,7 @@ public:
 	~BmMailRefItem();
 	
 	// overrides of ListViewItem:
-	BmMailRef* ModelItem() const			{ return dynamic_cast< BmMailRef*>( mModelItem.Get()); }
+	BmMailRef* ModelItem() const	{ return dynamic_cast<BmMailRef*>(mModelItem.Get()); }
 	void UpdateView( BmUpdFlags flags);
 	
 	// overrides of CLVEasyItem base:

@@ -64,10 +64,16 @@ const int16 BmMailRef::nArchiveVersion = 1;
 /*------------------------------------------------------------------------------*\
 	CreateInstance( )
 		-	static creator-func
+		-	N.B.: In here, we lock the GlobalLocker manually (*not* using BAutlock),
+			because otherwise we may risk deadlocks, since 
 \*------------------------------------------------------------------------------*/
 BmRef<BmMailRef> BmMailRef::CreateInstance( BmMailRefList* model, entry_ref &eref, 
 												  		  struct stat& st) {
 	GlobalLocker()->Lock();
+	if (!GlobalLocker()->IsLocked()) {
+		BM_SHOWERR("BmMailRef::CreateInstance(): Could not acquire global lock!");
+		return NULL;
+	}
 	BmProxy* proxy = BmRefObj::GetProxy( typeid(BmMailRef).name());
 	if (proxy) {
 		BmString key( BM_REFKEYSTAT( st));
@@ -95,7 +101,7 @@ BmRef<BmMailRef> BmMailRef::CreateInstance( BmMailRefList* model, entry_ref &ere
 		}
 	}
 	GlobalLocker()->Unlock();
-	BM_THROW_RUNTIME( BmString("Could not get proxy for ") << typeid(BmMailRef).name());
+	BM_SHOWERR( BmString("Could not get proxy for ") << typeid(BmMailRef).name());
 	return NULL;
 }
 

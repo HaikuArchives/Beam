@@ -89,7 +89,7 @@ BmSignatureItem::~BmSignatureItem() {
 \*------------------------------------------------------------------------------*/
 void BmSignatureItem::UpdateView( BmUpdFlags flags) {
 	inherited::UpdateView( flags);
-	BmSignature* sig = ModelItem();
+	BmSignature* sig = dynamic_cast<BmSignature*>( ModelItem());
 	if (flags & UPD_ALL) {
 		BmString beautifiedContent( sig->Content());
 		beautifiedContent.ReplaceAll( "\n", "\\n");
@@ -507,7 +507,7 @@ void BmPrefsSignatureView::ShowSignature( int32 selection) {
 	} else {
 		BmSignatureItem* sigItem = dynamic_cast<BmSignatureItem*>(mSigListView->ItemAt( selection));
 		if (sigItem) {
-			mCurrSig = sigItem->ModelItem();
+			mCurrSig = dynamic_cast<BmSignature*>( sigItem->ModelItem());
 			if (mCurrSig) {
 				mSignatureControl->SetTextSilently( mCurrSig->Name().String());
 				mContentControl->SetTextSilently( mCurrSig->Content().String());

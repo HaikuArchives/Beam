@@ -108,6 +108,7 @@ BmString::~BmString()
 {
 	if (_privateData)
 		free(_privateData - sizeof(int32));
+	_privateData = (char*)-1;
 }
 
 

@@ -51,40 +51,31 @@ class BmProxy;
 \*------------------------------------------------------------------------------*/
 class BmRefObj {
 	typedef map<BmString,BmProxy*> BmProxyMap;
-
+	
 public:
 	BmRefObj() : mRefCount(0) 				{}
 	virtual ~BmRefObj() 						{}
 
-	virtual const BmString& RefName() const = 0;
-	inline const char* ProxyName() const	{ return typeid(*this).name(); }
 
 	// native methods:
-#ifdef BM_REF_DEBUGGING
-	virtual void AddRef();
-	virtual void RenameRef( const char* newName);
-	virtual void RemoveRef();
-#else
 	void AddRef();
 	void RenameRef( const char* newName);
 	void RemoveRef();
-#endif // BM_REF_DEBUGGING
-
+	//
+	const char* ProxyName() const;
 	BmString RefPrintHex() const;
-	static BmString RefPrintHex( const void* ptr);
-	
-	// getters:
-	inline int32 RefCount() const			{ return mRefCount; }
 
-	static inline BLocker* GlobalLocker();
-	
 	// statics:
+	static inline BLocker* GlobalLocker();
+	static BmString RefPrintHex( const void* ptr);
 	static BmProxy* GetProxy( const char* const proxyName);
 #ifdef BM_REF_DEBUGGING
 	static void PrintRefsLeft();
 #endif
 
 private:
+	virtual const BmString& RefName() const = 0;
+
 	int32 mRefCount;
 	static BmProxyMap nProxyMap;
 	static BLocker* nGlobalLocker;
