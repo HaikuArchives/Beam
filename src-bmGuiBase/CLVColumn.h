@@ -41,15 +41,11 @@ enum
 {
 	CLVColNone =				0x00000000,
 	CLVColStaticText = 			0x00000001,
-	CLVColTruncateText =		0x00000002,
 	CLVColBitmap = 				0x00000003,
 	CLVColUserText = 			0x00000004,
-	CLVColTruncateUserText =	0x00000005,
 
 	CLVColTypesMask =			0x00000007,
 
-	CLVColFlagBitmapIsCopy =	0x00000008,
-	CLVColFlagNeedsTruncation =	0x00000010,
 	CLVColFlagRightJustify =	0x00000020
 };
 
