@@ -39,6 +39,8 @@
 		-	connections will be executed inside a seperate thread.
 \*------------------------------------------------------------------------------*/
 class BmConnectionWin : public MWindow {
+	typedef MWindow inherited;
+	
 	static const uint32 MyWinFlags = B_ASYNCHRONOUS_CONTROLS
 												|	B_NOT_ZOOMABLE
 												|	B_NOT_RESIZABLE;
@@ -75,12 +77,14 @@ public:
 
 	// standard BeOS-stuff:
 	bool QuitRequested();
+	void Quit();
 	virtual void MessageReceived(BMessage *message);
 
 private:
 	ConnectionMap mActiveConnections;	// list of known connections (some may be inactive)
 	VGroup *mOuterGroup;						// the outmost view that the connection-interfaces live in
 	BLooper *mInvokingLooper;				// the looper we will tell that we are finished
+	uint8 mActiveConnCount;					// number of currently active connections
 
 	void AddPopper( BmPopAccount* popAccount);
 	MView *AddPopperInterface( const char* name, BStatusBar*&, BStatusBar*&);

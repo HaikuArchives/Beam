@@ -32,12 +32,10 @@ public:
 	GenericApp();
 	~GenericApp();
 	void MessageReceived(BMessage*);
-	bool QuitRequested();
 };
 
 int main()
 {
-	BmPrefs::InitPrefs();
 	GenericApp *testApp = new GenericApp;
 	try {
 		be_app->Run();
@@ -73,6 +71,8 @@ bool GenericWin::QuitRequested() {
 GenericApp::GenericApp()
 : BApplication("application/x-vnd.OT-Generic"), win(0), count(0)
 {
+	if (!BmPrefs::InitPrefs())
+		exit(10);
 	Beam::LogHandler = new BmLogHandler();
 	win = new BmConnectionWin( "ConnectionWin", this);
 	win->Hide();
@@ -84,10 +84,6 @@ GenericApp::GenericApp()
 GenericApp::~GenericApp()
 {
 	delete Beam::LogHandler;
-}
-
-bool GenericApp::QuitRequested() {
-	return true;
 }
 
 void GenericApp::MessageReceived(BMessage* msg) {
@@ -151,7 +147,7 @@ void GenericApp::MessageReceived(BMessage* msg) {
 
 			break;
 		case BM_POPWIN_DONE: 
-			PostMessage( B_QUIT_REQUESTED);
+//			PostMessage( B_QUIT_REQUESTED);
 			break;
 		default:
 			BApplication::MessageReceived( msg);

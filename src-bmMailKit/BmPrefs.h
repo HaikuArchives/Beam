@@ -22,10 +22,16 @@
 			written to a file
 \*------------------------------------------------------------------------------*/
 class BmPrefs : public BArchivable {
+	typedef BArchivable inherited;
 	// archivable components:
 	static char* const MSG_DYNAMIC_CONN_WIN = "bm:dynconnwin";
 	static char* const MSG_RECEIVE_TIMEOUT = 	"bm:recvtimeout";
 	static char* const MSG_LOGLEVELS = 			"bm:loglevels";
+
+	static char* const PREFS_FILENAME = 		"General Settings";
+
+	static BString PrefsFilePath;
+
 public:
 	BmPrefs( void)
 			;
@@ -33,6 +39,9 @@ public:
 			;
 	virtual ~BmPrefs() 
 			{}
+
+	bool BmPrefs::Store()
+			;
 
 	// stuff needed for BArchivable:
 	static BArchivable *Instantiate( BMessage *archive)

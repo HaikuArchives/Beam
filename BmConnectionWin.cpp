@@ -5,7 +5,6 @@
 
 #include <stdio.h>
 
-#include <Alert.h>
 #include <Application.h>
 #include <Autolock.h>
 #include <ClassInfo.h>
@@ -45,6 +44,7 @@ BmConnectionWin::BmConnectionWin( const char* title, BLooper *invoker)
 					B_FLOATING_WINDOW_LOOK, B_NORMAL_WINDOW_FEEL, 
 					MyWinFlags)
 	, mInvokingLooper( invoker)
+	, mActiveConnCount( 0)
 { 
 	mOuterGroup = 
 		new VGroup(
@@ -70,11 +70,21 @@ BmConnectionWin::~BmConnectionWin() {
 		-	standard BeOS-behaviour, we allow a quit
 \*------------------------------------------------------------------------------*/
 bool BmConnectionWin::QuitRequested() {
-	BmConnectionWin::ConnectionWinAlive = false;
-	BM_LOG3( BM_LogConnWin, BString("ConnectionWin has been closed"));
-	if (mInvokingLooper) 
+	if (BmConnectionWin::ConnectionWinAlive && mInvokingLooper)
 		mInvokingLooper->PostMessage( BM_POPWIN_DONE);
+	BmConnectionWin::ConnectionWinAlive = false;
+	BM_LOG3( BM_LogConnWin, BString("ConnectionWin has been asked to quit"));
+	return (mActiveConnCount == 0);
 	return true;
+}
+
+/*------------------------------------------------------------------------------*\
+	Quit()
+		-	standard BeOS-behaviour, we quit
+\*------------------------------------------------------------------------------*/
+void BmConnectionWin::Quit() {
+	BM_LOG3( BM_LogConnWin, BString("ConnectionWin has quit"));
+	inherited::Quit();
 }
 
 /*------------------------------------------------------------------------------*\
@@ -116,16 +126,12 @@ void BmConnectionWin::MessageReceived(BMessage *msg) {
 				break;
 			}
 			default:
-				BWindow::MessageReceived( msg);
+				inherited::MessageReceived( msg);
 		}
 	}
 	catch( exception &err) {
 		// a problem occurred, we tell the user:
-		BM_LOGERR( BString("ConnectionWin: ") << err.what());
-		BString errText = BString("ConnectionWindow: ") << err.what();
-		BAlert *alert = new BAlert( NULL, errText.String(), "OK", NULL, NULL, 
-											 B_WIDTH_AS_USUAL, B_STOP_ALERT);
-		alert->Go();
+		ShowAlert( BString("ConnectionWindow: ") << err.what());
 	}
 }
 
@@ -188,6 +194,7 @@ void BmConnectionWin::AddPopper( BmPopAccount *account) {
 	// finally, we activate the Popper:
 	BM_LOG2( BM_LogConnWin, BString("Starting popper thread ") << t_id);
 	resume_thread( t_id);
+	mActiveConnCount++;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -286,6 +293,7 @@ void BmConnectionWin::RemovePopper( const char* name) {
 							// ...and remove the info about this popper from our map
 		delete interfaceInfo;
 	}
+	mActiveConnCount--;
 }
 
 /*------------------------------------------------------------------------------*\

@@ -39,6 +39,14 @@ int16 FindMsgInt16( BMessage* archive, char* name);
 float FindMsgFloat( BMessage* archive, char* name);
 
 /*------------------------------------------------------------------------------*\*\
+	ShowAlert( text, logtext)
+		-	pops up an Alert showing the passed text
+		-	logs text unless logtext is specified, in which case that is 
+			written to the logfile
+\*------------------------------------------------------------------------------*/
+void ShowAlert( BString &text, BString logtext="");
+
+/*------------------------------------------------------------------------------*\*\
 	BmLogHandler
 		-	implements the global log-handler that received all logging requests and
 			executes them
@@ -134,7 +142,7 @@ extern const int16 BM_LogAll;
 #endif
 
 /*------------------------------------------------------------------------------*\*\
-	
+	utility function to format a number of bytes into a string
 \*------------------------------------------------------------------------------*/
 BString BytesToString( int32 bytes);
 

@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <memory.h>
 
-#include <Alert.h>
+#include <Application.h>
 
 #include "BmPopper.h"
 #include "BmMail.h"
@@ -33,11 +33,8 @@ int32 BmPopper::NewPopper( void* data) {
 			throw runtime_error("NewPopper(): No valid BmPopperInfo* given!");
 		return 0;
 	} catch( exception &e) {
-		BString text = BString(pInfo->name) << "\n\n" << e.what();
-		BM_LOGERR( BString("BmPopper (") << pInfo->name << "): " << e.what());
-		BAlert *alert = new BAlert( NULL, text.String(), "OK", NULL, NULL, 
-											 B_WIDTH_AS_USUAL, B_STOP_ALERT);
-		alert->Go();
+		ShowAlert( BString(pInfo->name) << "\n\n" << e.what(),
+					  BString("BmPopper (") << pInfo->name << "): " << e.what());
 		BM_LOG_FINISH(pInfo->name);
 		return 10;
 	}
@@ -125,10 +122,7 @@ void BmPopper::Start() {
 			errstr << "\nerror: " << e << ", " << mPopServer.ErrorStr();
 		UpdatePOPStatus( 0.0, NULL, failed);
 		BString text = BString(mPopperInfo->name) << "\n\n" << errstr;
-		BM_LOGERR( BString("BmPopper: ") << text);
-		BAlert *alert = new BAlert( NULL, text.String(), "OK", NULL, NULL, 
-											 B_WIDTH_AS_USUAL, B_STOP_ALERT);
-		alert->Go();
+		ShowAlert( text, BString("BmPopper: ") << text);
 	}
 }
 

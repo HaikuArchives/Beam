@@ -3,6 +3,8 @@
 		$Id$
 */
 
+#include <Alert.h>
+
 #include "BmUtil.h"
 
 /*------------------------------------------------------------------------------*\
@@ -234,4 +236,21 @@ BString BytesToString( int32 bytes) {
 		sprintf( buf, "%ld bytes", bytes);
 	}
 	return BString(buf);
+}
+
+/*------------------------------------------------------------------------------*\*\
+	ShowAlert( text, logtext)
+		-	pops up an Alert showing the passed text
+		-	logs text unless logtext is specified, in which case that is 
+			written to the logfile
+\*------------------------------------------------------------------------------*/
+void ShowAlert( BString &text, BString logtext) {
+	if (!logtext.Length()) {
+		BM_LOGERR( text);
+	} else {
+		BM_LOGERR( logtext);
+	}
+	BAlert *alert = new BAlert( NULL, text.String(), "OK", NULL, NULL, 
+										 B_WIDTH_AS_USUAL, B_STOP_ALERT);
+	alert->Go();
 }
