@@ -969,7 +969,7 @@ SieveTest::HeaderTestTest(void)
 		-	
 \*------------------------------------------------------------------------------*/
 void 
-SieveTest::RelationalTestsTest(void)
+SieveTest::RelationalValueTestsTest(void)
 {
 	// relational match-types (COUNT and VALUE) need to be required
 	NextSubTest();
@@ -1001,6 +1001,26 @@ SieveTest::RelationalTestsTest(void)
 	CPPUNIT_ASSERT( filter.CompileScript());
 	CPPUNIT_ASSERT( filter.Execute(msgContext));
 	CPPUNIT_ASSERT( Result() == RES_TRASH);
+	// 
+	NextSubTest();
+	filter.mContent = "\
+		require \"relational\"; \
+		if header \
+			:value \"eq\" \"X-Nonexistant\" \"\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_TRASH);
+	// 
+	NextSubTest();
+	filter.mContent = "\
+		require \"relational\"; \
+		if header \
+			:value \"eq\" \"X-Empty\" \"\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_KEEP);
 
 	// value ne
 	NextSubTest();
@@ -1043,5 +1063,467 @@ SieveTest::RelationalTestsTest(void)
 	CPPUNIT_ASSERT( filter.CompileScript());
 	CPPUNIT_ASSERT( filter.Execute(msgContext));
 	CPPUNIT_ASSERT( Result() == RES_TRASH);
+	// 
+	NextSubTest();
+	filter.mContent = "\
+		require \"relational\"; \
+		if header \
+			:value \"gt\" \"From\" \"thex\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_TRASH);
 
+	// value ge
+	NextSubTest();
+	filter.mContent = "\
+		require \"relational\"; \
+		if header \
+			:value \"ge\" \"From\" \"tham\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_KEEP);
+	// 
+	NextSubTest();
+	filter.mContent = "\
+		require \"relational\"; \
+		if header \
+			:value \"ge\" \"From\" \"them\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_KEEP);
+	// 
+	NextSubTest();
+	filter.mContent = "\
+		require \"relational\"; \
+		if header \
+			:value \"ge\" \"From\" \"thex\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_TRASH);
+
+	// value lt
+	NextSubTest();
+	filter.mContent = "\
+		require \"relational\"; \
+		if header \
+			:value \"lt\" \"From\" \"tham\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_TRASH);
+	// 
+	NextSubTest();
+	filter.mContent = "\
+		require \"relational\"; \
+		if header \
+			:value \"lt\" \"From\" \"them\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_TRASH);
+	// 
+	NextSubTest();
+	filter.mContent = "\
+		require \"relational\"; \
+		if header \
+			:value \"lt\" \"From\" \"thex\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_KEEP);
+
+	// value le
+	NextSubTest();
+	filter.mContent = "\
+		require \"relational\"; \
+		if header \
+			:value \"le\" \"From\" \"tham\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_TRASH);
+	// 
+	NextSubTest();
+	filter.mContent = "\
+		require \"relational\"; \
+		if header \
+			:value \"le\" \"From\" \"them\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_KEEP);
+	// 
+	NextSubTest();
+	filter.mContent = "\
+		require \"relational\"; \
+		if header \
+			:value \"le\" \"From\" \"thex\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_KEEP);
+
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void 
+SieveTest::NumericRelationalValueTestsTest(void)
+{
+	// numerical comparator needs to be required
+	NextSubTest();
+	filter.mContent = "\
+		require \"relational\"; \
+		if header \
+			:value \"eq\" :comparator \"i;ascii-numeric\" \
+			\"X-Priority\" \"3\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( !filter.CompileScript() 
+						 && filter.ErrorString()
+						 		.FindFirst("i;ascii-numeric not required") != B_ERROR);
+	// value eq
+	NextSubTest();
+	filter.mContent = "\
+		require \"relational\"; \
+		require \"comparator-i;ascii-numeric\"; \
+		if header \
+			:value \"eq\" :comparator \"i;ascii-numeric\" \
+			\"X-Priority\" \"3\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_KEEP);
+	// 
+	NextSubTest();
+	filter.mContent = "\
+		require \"relational\"; \
+		require \"comparator-i;ascii-numeric\"; \
+		if header \
+			:value \"eq\" :comparator \"i;ascii-numeric\" \
+			\"X-Priority\" \"2\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_TRASH);
+	// 
+	NextSubTest();
+	filter.mContent = "\
+		require \"relational\"; \
+		require \"comparator-i;ascii-numeric\"; \
+		if header \
+			:value \"eq\" :comparator \"i;ascii-numeric\" \
+			\"X-Priority\" \"000003\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_KEEP);
+
+	// value ne
+	NextSubTest();
+	filter.mContent = "\
+		require \"relational\"; \
+		require \"comparator-i;ascii-numeric\"; \
+		if header \
+			:value \"ne\" :comparator \"i;ascii-numeric\" \
+			\"X-Priority\" \"3\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_TRASH);
+	// 
+	NextSubTest();
+	filter.mContent = "\
+		require \"relational\"; \
+		require \"comparator-i;ascii-numeric\"; \
+		if header \
+			:value \"ne\" :comparator \"i;ascii-numeric\" \
+			\"X-Priority\" \"33\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_KEEP);
+
+	// value gt
+	NextSubTest();
+	filter.mContent = "\
+		require \"relational\"; \
+		require \"comparator-i;ascii-numeric\"; \
+		if header \
+			:value \"gt\" :comparator \"i;ascii-numeric\" \
+			\"X-Priority\" \"2\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_KEEP);
+	// 
+	NextSubTest();
+	filter.mContent = "\
+		require \"relational\"; \
+		require \"comparator-i;ascii-numeric\"; \
+		if header \
+			:value \"gt\" :comparator \"i;ascii-numeric\" \
+			\"X-Priority\" \"3\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_TRASH);
+	// 
+	NextSubTest();
+	filter.mContent = "\
+		require \"relational\"; \
+		require \"comparator-i;ascii-numeric\"; \
+		if header \
+			:value \"gt\" :comparator \"i;ascii-numeric\" \
+			\"X-Priority\" \"12\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_TRASH);
+
+	// value ge
+	NextSubTest();
+	filter.mContent = "\
+		require \"relational\"; \
+		require \"comparator-i;ascii-numeric\"; \
+		if header \
+			:value \"ge\" :comparator \"i;ascii-numeric\" \
+			\"X-Priority\" \"2\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_KEEP);
+	// 
+	NextSubTest();
+	filter.mContent = "\
+		require \"relational\"; \
+		require \"comparator-i;ascii-numeric\"; \
+		if header \
+			:value \"ge\" :comparator \"i;ascii-numeric\" \
+			\"X-Priority\" \"3\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_KEEP);
+	// 
+	NextSubTest();
+	filter.mContent = "\
+		require \"relational\"; \
+		require \"comparator-i;ascii-numeric\"; \
+		if header \
+			:value \"ge\" :comparator \"i;ascii-numeric\" \
+			\"X-Priority\" \"12\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_TRASH);
+
+	// value lt
+	NextSubTest();
+	filter.mContent = "\
+		require \"relational\"; \
+		require \"comparator-i;ascii-numeric\"; \
+		if header \
+			:value \"lt\" :comparator \"i;ascii-numeric\" \
+			\"X-Priority\" \"2\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_TRASH);
+	// 
+	NextSubTest();
+	filter.mContent = "\
+		require \"relational\"; \
+		require \"comparator-i;ascii-numeric\"; \
+		if header \
+			:value \"lt\" :comparator \"i;ascii-numeric\" \
+			\"X-Priority\" \"3\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_TRASH);
+	// 
+	NextSubTest();
+	filter.mContent = "\
+		require \"relational\"; \
+		require \"comparator-i;ascii-numeric\"; \
+		if header \
+			:value \"lt\" :comparator \"i;ascii-numeric\" \
+			\"X-Priority\" \"00010\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_KEEP);
+
+	// value le
+	NextSubTest();
+	filter.mContent = "\
+		require \"relational\"; \
+		require \"comparator-i;ascii-numeric\"; \
+		if header \
+			:value \"le\" :comparator \"i;ascii-numeric\" \
+			\"X-Priority\" \"2\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_TRASH);
+	// 
+	NextSubTest();
+	filter.mContent = "\
+		require \"relational\"; \
+		require \"comparator-i;ascii-numeric\"; \
+		if header \
+			:value \"le\" :comparator \"i;ascii-numeric\" \
+			\"X-Priority\" \"3\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_KEEP);
+	// 
+	NextSubTest();
+	filter.mContent = "\
+		require \"relational\"; \
+		require \"comparator-i;ascii-numeric\"; \
+		if header \
+			:value \"le\" :comparator \"i;ascii-numeric\" \
+			\"X-Priority\" \"4\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_KEEP);
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void 
+SieveTest::NumericRelationalCountTestsTest(void)
+{
+	// counts on header
+	NextSubTest();
+	filter.mContent = "\
+		require \"relational\"; \
+		require \"comparator-i;ascii-numeric\"; \
+		if header \
+			:count \"eq\" :comparator \"i;ascii-numeric\" \
+			\"From\" \"1\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_KEEP);
+	// 
+	NextSubTest();
+	filter.mContent = "\
+		require \"relational\"; \
+		require \"comparator-i;ascii-numeric\"; \
+		if header \
+			:count \"eq\" :comparator \"i;ascii-numeric\" \
+			\"Received\" \"3\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_KEEP);
+	// 
+	NextSubTest();
+	filter.mContent = "\
+		require \"relational\"; \
+		require \"comparator-i;ascii-numeric\"; \
+		if header \
+			:count \"eq\" :comparator \"i;ascii-numeric\" \
+			\"X-Nonexistant\" \"0\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_KEEP);
+	// 
+	NextSubTest();
+	filter.mContent = "\
+		require \"relational\"; \
+		require \"comparator-i;ascii-numeric\"; \
+		if header \
+			:count \"ge\" :comparator \"i;ascii-numeric\" \
+			[\"To\",\"Cc\"] \"4\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_KEEP);
+	// 
+	NextSubTest();
+	filter.mContent = "\
+		require \"relational\"; \
+		require \"comparator-i;ascii-numeric\"; \
+		if header \
+			:count \"eq\" :comparator \"i;ascii-numeric\" \
+			[\"X-Nonexistant\",\"Cc\",\"Received\"] [\"1\",\"2\",\"3\",\"4\",\"5\"] \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_KEEP);
+
+	// counts on address
+	NextSubTest();
+	filter.mContent = "\
+		require \"relational\"; \
+		require \"comparator-i;ascii-numeric\"; \
+		if address \
+			:count \"eq\" :comparator \"i;ascii-numeric\" \
+			\"From\" \"1\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_KEEP);
+	// 
+	NextSubTest();
+	filter.mContent = "\
+		require \"relational\"; \
+		require \"comparator-i;ascii-numeric\"; \
+		if address \
+			:count \"eq\" :comparator \"i;ascii-numeric\" \
+			\"Cc\" \"3\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_KEEP);
+	// 
+	NextSubTest();
+	filter.mContent = "\
+		require \"relational\"; \
+		require \"comparator-i;ascii-numeric\"; \
+		if address \
+			:count \"eq\" :comparator \"i;ascii-numeric\" \
+			\"To\" \"2\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_KEEP);
+	// 
+	NextSubTest();
+	filter.mContent = "\
+		require \"relational\"; \
+		require \"comparator-i;ascii-numeric\"; \
+		if address \
+			:count \"eq\" :comparator \"i;ascii-numeric\" \
+			[\"To\",\"Cc\"] \"5\" \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_KEEP);
+	// 
+	NextSubTest();
+	filter.mContent = "\
+		require \"relational\"; \
+		require \"comparator-i;ascii-numeric\"; \
+		if address \
+			:count \"eq\" :comparator \"i;ascii-numeric\" \
+			[\"X-Nonexistant\",\"Cc\"] [\"1\",\"2\",\"3\"] \
+		{ keep; } else { discard; }";
+	CPPUNIT_ASSERT( filter.CompileScript());
+	CPPUNIT_ASSERT( filter.Execute(msgContext));
+	CPPUNIT_ASSERT( Result() == RES_KEEP);
 }
