@@ -52,12 +52,12 @@ class BmMailRef : public BmListModelItem {
 	static const char* const MSG_ACCOUNT;
 	static const char* const MSG_ATTACHMENTS;
 	static const char* const MSG_CC;
-	static const char* const MSG_CREATED;
 	static const char* const MSG_ENTRYREF;
 	static const char* const MSG_FROM;
 	static const char* const MSG_INODE;
 	static const char* const MSG_NAME;
 	static const char* const MSG_PRIORITY;
+	static const char* const MSG_WHEN_CREATED;
 	static const char* const MSG_REPLYTO;
 	static const char* const MSG_SIZE;
 	static const char* const MSG_STATUS;
@@ -78,10 +78,6 @@ public:
 	void MarkAs( const char* s);
 	bool ReadAttributes( const struct stat* statInfo = NULL);
 	void ResyncFromDisk( entry_ref* newRef=NULL);
-
-#ifdef BM_LOGGING
-	int32 ObjectSize( bool addSizeofThis=true) const;
-#endif
 
 	// overrides of archivable base:
 	status_t Archive( BMessage* archive, bool deep = true) const;
@@ -104,8 +100,8 @@ public:
 	inline const BmString& To() const 				{ return mTo; }
 	inline const time_t& When() const 				{ return mWhen; }
 	inline const BmString& WhenString() const 	{ return mWhenString; }
-	inline const time_t& Created() const 			{ return mCreated; }
-	inline const BmString& CreatedString() const { return mCreatedString; }
+	inline const bigtime_t& WhenCreated() const	{ return mWhenCreated; }
+	inline const BmString& WhenCreatedString() const { return mWhenCreatedString; }
 	inline const off_t& Size() const 				{ return mSize; }
 	inline const BmString& SizeString() const 	{ return mSizeString; }
 	inline const bool& HasAttachments() const 	{ return mHasAttachments; }
@@ -114,6 +110,7 @@ public:
 
 	// setters:
 	inline void EntryRef( entry_ref &e) 			{ mEntryRef = e; }
+	inline void WhenCreated( const bigtime_t& t)	{ mWhenCreated = t; }
 
 	// flags indicating which parts are to be updated:
 	static const BmUpdFlags UPD_STATUS	= 1<<2;
@@ -136,8 +133,9 @@ private:
 	BmString mTo;
 	time_t mWhen;
 	BmString mWhenString;
-	time_t mCreated;
-	BmString mCreatedString;
+	bigtime_t mWhenCreated;
+							// time (in microseconds) when mail has been received
+	BmString mWhenCreatedString;
 	off_t mSize;
 	BmString mSizeString;
 	bool mHasAttachments;

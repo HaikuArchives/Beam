@@ -47,12 +47,12 @@
 const char* const BmMailRef::MSG_ACCOUNT = 	"bm:ac";
 const char* const BmMailRef::MSG_ATTACHMENTS= "bm:at";
 const char* const BmMailRef::MSG_CC = 			"bm:cc";
-const char* const BmMailRef::MSG_CREATED = 	"bm:cr";
 const char* const BmMailRef::MSG_ENTRYREF = 	"bm:er";
 const char* const BmMailRef::MSG_FROM = 		"bm:fr";
 const char* const BmMailRef::MSG_INODE = 		"bm:in";
 const char* const BmMailRef::MSG_NAME = 		"bm:nm";
 const char* const BmMailRef::MSG_PRIORITY = 	"bm:pr";
+const char* const BmMailRef::MSG_WHEN_CREATED = "bm:cr";
 const char* const BmMailRef::MSG_REPLYTO = 	"bm:rp";
 const char* const BmMailRef::MSG_SIZE = 		"bm:sz";
 const char* const BmMailRef::MSG_STATUS = 	"bm:st";
@@ -60,7 +60,7 @@ const char* const BmMailRef::MSG_SUBJECT = 	"bm:su";
 const char* const BmMailRef::MSG_TO = 			"bm:to";
 const char* const BmMailRef::MSG_WHEN = 		"bm:wh";
 const char* const BmMailRef::MSG_IDENTITY = 	"bm:id";
-const int16 BmMailRef::nArchiveVersion = 2;
+const int16 BmMailRef::nArchiveVersion = 3;
 
 /*------------------------------------------------------------------------------*\
 	CreateInstance( )
@@ -144,7 +144,6 @@ BmMailRef::BmMailRef( BMessage* archive, BmMailRefList* model)
 		mAccount = FindMsgString( archive, MSG_ACCOUNT);
 		mHasAttachments = FindMsgBool( archive, MSG_ATTACHMENTS);
 		mCc = FindMsgString( archive, MSG_CC);
-		mCreated = FindMsgInt32( archive, MSG_CREATED);
 		mFrom = FindMsgString( archive, MSG_FROM);
 		mName = FindMsgString( archive, MSG_NAME);
 		mPriority = FindMsgString( archive, MSG_PRIORITY);
@@ -158,10 +157,17 @@ BmMailRef::BmMailRef( BMessage* archive, BmMailRefList* model)
 		if (version > 1)
 			mIdentity = FindMsgString( archive, MSG_IDENTITY);
 
+		if (version < 3)
+			mWhenCreated = static_cast<int64>(
+				FindMsgInt32( archive, MSG_WHEN_CREATED)
+			)*(1000*1000);
+		else
+			mWhenCreated = FindMsgInt64( archive, MSG_WHEN_CREATED);
+
 		mSizeString = BytesToString( mSize,true);
-		mCreatedString = ThePrefs->GetBool( "UseSwatchTimeInRefView", false)
-								? TimeToSwatchString( mCreated)
-								: TimeToString( mCreated);
+		mWhenCreatedString = ThePrefs->GetBool( "UseSwatchTimeInRefView", false)
+								? TimeToSwatchString( mWhenCreated/(1000*1000))
+								: TimeToString( mWhenCreated/(1000*1000));
 		mWhenString = 	ThePrefs->GetBool( "UseSwatchTimeInRefView", false)
 								? TimeToSwatchString( mWhen)
 								: TimeToString( mWhen);
@@ -171,36 +177,6 @@ BmMailRef::BmMailRef( BMessage* archive, BmMailRefList* model)
 		BM_SHOWERR( e.what());
 	}
 }
-
-/*------------------------------------------------------------------------------*\
-	BmMailRef( mailref)
-		-	copy c'tor
-\*------------------------------------------------------------------------------*/
-/*
-BmMailRef::BmMailRef( const BmMailRef& mailRef)
-	:	inherited( mailRef)
-	,	mEntryRef( mailRef.EntryRef())
-	,	mInode( mailRef.Inode())
-	,	mAccount( mailRef.Account())
-	,	mCc( mailRef.Cc())
-	,	mFrom( mailRef.From())
-	,	mName( mailRef.Name())
-	,	mPriority( mailRef.Priority())
-	,	mReplyTo( mailRef.ReplyTo())
-	,	mStatus( mailRef.Status())
-	,	mSubject( mailRef.Subject())
-	,	mTo( mailRef.To())
-	,	mWhen( mailRef.When())
-	,	mWhenString( mailRef.WhenString())
-	,	mCreated( mailRef.Created())
-	,	mCreatedString( mailRef.CreatedString())
-	,	mSize( mailRef.Size())
-	,	mSizeString( mailRef.SizeString())
-	,	mHasAttachments( mailRef.HasAttachments())
-	,	mInitCheck( mailRef.InitCheck())
-{
-}
-*/
 
 /*------------------------------------------------------------------------------*\
 	~BmMailRef()
@@ -220,12 +196,12 @@ status_t BmMailRef::Archive( BMessage* archive, bool) const {
 		|| archive->AddString( MSG_ACCOUNT, mAccount.String())
 		|| archive->AddBool( MSG_ATTACHMENTS, mHasAttachments)
 		|| archive->AddString( MSG_CC, mCc.String())
-		|| archive->AddInt32( MSG_CREATED, mCreated)
 		|| archive->AddRef( MSG_ENTRYREF, &mEntryRef)
 		|| archive->AddString( MSG_FROM, mFrom.String())
 		|| archive->AddInt64( MSG_INODE, mNodeRef.node)
 		|| archive->AddString( MSG_NAME, mName.String())
 		|| archive->AddString( MSG_PRIORITY, mPriority.String())
+		|| archive->AddInt64( MSG_WHEN_CREATED, mWhenCreated)
 		|| archive->AddString( MSG_REPLYTO, mReplyTo.String())
 		|| archive->AddInt64( MSG_SIZE, mSize)
 		|| archive->AddString( MSG_STATUS, mStatus.String())
@@ -290,17 +266,26 @@ bool BmMailRef::ReadAttributes( const struct stat* statInfo) {
 			bool att2 = false;				// Scooby kind
 			node.ReadAttr( "MAIL:attachment", B_BOOL_TYPE, 0, &att2, sizeof(att2));
 			mHasAttachments = att1>0 || att2;
-													// please notice that we ignore Mail-It, since
-													// it does not give any proper indication 
-													// (other than its internal status-attribute,
-													// which we really do not want to look at...)
+							// please notice that we ignore Mail-It, since
+							// it does not give any proper indication 
+							// (other than its internal status-attribute,
+							// which we really do not want to look at...)
 	
 			mSize = st.st_size;
 			mSizeString = BytesToString( mSize,true);
-			mCreated = st.st_crtime;		// yes, crtime contains the creation-time, trust me!
-			mCreatedString = ThePrefs->GetBool( "UseSwatchTimeInRefView", false)
-									? TimeToSwatchString( mCreated)
-									: TimeToString( mCreated);
+
+			err = node.ReadAttr( BM_MAIL_ATTR_WHEN_CREATED, B_UINT64_TYPE, 0, 
+										&mWhenCreated, sizeof(bigtime_t));
+			if (err < 0) {
+				// corresponding attribute doesn't exist, we fetch it from the
+				// file's creation time (which is just time_t instead of bigtime_t):
+				mWhenCreated = static_cast<int64>(	st.st_crtime)*(1000*1000);
+							// yes, crtime contains the creation-time, trust me!
+			}
+			mWhenCreatedString 
+				= ThePrefs->GetBool( "UseSwatchTimeInRefView", false)
+					? TimeToSwatchString( mWhenCreated/(1000*1000))
+					: TimeToString( mWhenCreated/(1000*1000));
 
 			// simplify priority:
 			if (!mPriority.Length()) {
@@ -369,27 +354,3 @@ void BmMailRef::MarkAs( const char* status) {
 		BM_SHOWERR(e.what());
 	}
 }
-
-#ifdef BM_LOGGING
-/*------------------------------------------------------------------------------*\
-	ObjectSize()
-		-	
-\*------------------------------------------------------------------------------*/
-int32 BmMailRef::ObjectSize( bool addSizeofThis) const {
-	return 	inherited::ObjectSize(false)
-		+		(addSizeofThis ? sizeof( *this) : 0)
-		+		mAccount.Length()+1
-		+		mCc.Length()+1
-		+		mFrom.Length()+1
-		+		mName.Length()+1
-		+		mPriority.Length()+1
-		+		mReplyTo.Length()+1
-		+		mStatus.Length()+1
-		+		mSubject.Length()+1
-		+		mTo.Length()+1
-		+		mWhenString.Length()+1
-		+		mCreatedString.Length()+1
-		+		mIdentity.Length()+1
-		+		mSizeString.Length()+1;
-}
-#endif
