@@ -7,12 +7,8 @@
 Beam 0.92:
 ***********
 
--	contribute our BString-related work to OpenBeOS
-
 -	add support for mail-filtering
 	(include SpamAssassin and Razor)
-
--	support draft-folder
 
 -	implement RFC2231 to facilitate correct handling of attachment
 	filenames that exceed us-ascii encoding
@@ -24,10 +20,6 @@ Beam 0.92:
 	created and Beam accesses them before they are written out
 	completely
 
--	before saving a mail, check if the mailtext could be converted
-	into the selected encoding correctly. If not, warn the user and
-	possibly mark up the offending chars.
-	
 -	show total number of messages and number of new messages for each folder.
 
 -	add navigation through mails in mailview-win (next,prev)
@@ -36,8 +28,6 @@ Beam 0.92:
 	+	fetch addresses from MDR-settings
 	+	add a mode to Beam that uses MDR for transport
 
--	add support for stopping/pausing all jobs
-
 -	color-coded reply levels
 
 -	support hiding/showing preview-pane
@@ -45,7 +35,7 @@ Beam 0.92:
 -	make non-menu keys and the corresponding actions configurable (esp. the
 	delete key).
 
--	define add-on protocol and implement the add/remove-quote demo add-on.
+-	define add-on protocol for mailview and implement the add/remove-quote demo add-on.
 
 -	add log-windows, where selected log-events will be shown.
 
