@@ -13,6 +13,9 @@ Software required by / used within Beam:
    - Regexx, a C++-Regular-Expression library, by Gustavo Niemeyer, 
      ported to BString and hacked up a bit for use in Beam.
 
+	- Libiconv, a library that does conversion between different
+	  characterset-encodings.
+
 If you have questions, suggestions, complaints or a nice set of icons, 
 you can reach the author at: <beam@hirschkaefer.de>.
 
