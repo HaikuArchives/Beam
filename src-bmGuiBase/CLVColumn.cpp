@@ -214,7 +214,7 @@ void CLVColumn::SetWidth(float width)
 			fParent->fColumnLabelView->Invalidate(DestArea);
 			
 			//Update the column sizes, positions and group positions
-			fParent->UpdateColumnSizesDataRectSizeScrollBars(false);
+			fParent->UpdateDataRect(false);
 			fParent->fColumnLabelView->UpdateDragGroups();
 		}
 		if(fParent)
@@ -314,7 +314,7 @@ void CLVColumn::SetShown(bool Shown)
 		if(fParent)
 		{
 			float UpdateLeft = fColumnBegin;
-			fParent->UpdateColumnSizesDataRectSizeScrollBars();
+			fParent->UpdateDataRect();
 			fParent->fColumnLabelView->UpdateDragGroups();
 			if(Shown)
 				UpdateLeft = fColumnBegin;
@@ -394,9 +394,9 @@ void CLVColumn::DrawColumnHeader(BView* view, BRect header_rect, bool sort_key, 
 	{
 		const float offs = 4.0;
 		if(focus)
-			view->SetHighColor(BeFocusBlue);
+			BmSetHighUIColor( view, B_UI_NAVIGATION_BASE_COLOR);
 		else
-			view->SetHighColor(Black);
+			BmSetHighUIColor( view, B_UI_PANEL_TEXT_COLOR);
 	
 		//Draw the label
 		view->SetDrawingMode(B_OP_OVER);
@@ -408,7 +408,7 @@ void CLVColumn::DrawColumnHeader(BView* view, BRect header_rect, bool sort_key, 
 			BFont label_font;
 			view->GetFont(&label_font);
 			float string_width = label_font.StringWidth(label);
-			text_point.Set(header_rect.right-offs-string_width,header_rect.top+1.0+font_ascent);			
+			text_point.Set(header_rect.right-offs-string_width,header_rect.top+1.0+font_ascent);
 		}
 		view->DrawString(label,text_point);
 		view->SetDrawingMode(B_OP_COPY);
@@ -417,12 +417,14 @@ void CLVColumn::DrawColumnHeader(BView* view, BRect header_rect, bool sort_key, 
 		{
 		// Draw a lash indicating the current sorting-order:
 			float Width = view->StringWidth(label);
+			rgb_color lashCol;
 			if (sortPrio == 0)
-				view->SetHighColor( Black);
+				lashCol = ui_color( B_UI_PANEL_TEXT_COLOR);
 			else if (sortPrio == 1)
-				view->SetHighColor( BeDarkShadow);
+				lashCol = BmWeakenColor( B_UI_PANEL_TEXT_COLOR, 1);
 			else
-				view->SetHighColor( BeShadow);
+				lashCol = BmWeakenColor( B_UI_PANEL_TEXT_COLOR, 2);
+			view->SetHighColor( lashCol);
 			float x_offs, y_offs;
 			if (header_rect.right-header_rect.left-Width > 18) {
 				y_offs = font_ascent-5;
@@ -440,7 +442,7 @@ void CLVColumn::DrawColumnHeader(BView* view, BRect header_rect, bool sort_key, 
 											  BPoint( x_offs + 5, header_rect.top+y_offs));
 				}
 			} else {
-				y_offs = font_ascent+3;
+				y_offs = font_ascent+2;
 				if (!(fFlags&CLV_RIGHT_JUSTIFIED))
 					x_offs = header_rect.right - 5 - 3;
 				else 

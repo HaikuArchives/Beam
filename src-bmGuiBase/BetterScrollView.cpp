@@ -93,6 +93,22 @@ void BetterScrollView::AttachedToWindow()
 }
 
 
+void BetterScrollView::WindowActivated(bool active)
+{
+	if (m_scroll_view_corner) {
+		bool scEnabled = (
+			m_h_scrollbar && m_h_scrollbar->Proportion() < 1.0 
+			|| m_v_scrollbar && m_v_scrollbar->Proportion() < 1.0
+		);
+		m_scroll_view_corner->SetEnabled( scEnabled && active);
+		m_scroll_view_corner->Draw(
+			BRect(0.0, 0.0, B_V_SCROLL_BAR_WIDTH, B_H_SCROLL_BAR_HEIGHT)
+		);
+	}
+	BScrollView::WindowActivated(active);
+}
+
+
 void BetterScrollView::UpdateScrollBars(bool scrolling_allowed)
 {
 	//Figure out the bounds and scroll if necessary
@@ -199,20 +215,15 @@ void BetterScrollView::UpdateScrollBars(bool scrolling_allowed)
 		}
 		m_v_scrollbar->SetProportion(height_prop);
 	}
-	if(m_scroll_view_corner)
-	{
-		rgb_color cur_color = m_scroll_view_corner->ViewColor();
-		rgb_color new_color;
-		if(active_scroller)
-			new_color = BeBackgroundGrey;
-		else
-			new_color = BeInactiveControlGrey;
-		if(new_color.red != cur_color.red || new_color.green != cur_color.green ||
-			new_color.blue != cur_color.blue || new_color.alpha != cur_color.alpha)
-		{
-			m_scroll_view_corner->SetViewColor(new_color);
-			m_scroll_view_corner->Invalidate();
-		}
+	if (m_scroll_view_corner) {
+		bool scEnabled = (
+			m_h_scrollbar && m_h_scrollbar->Proportion() < 1.0 
+			|| m_v_scrollbar && m_v_scrollbar->Proportion() < 1.0
+		);
+		m_scroll_view_corner->SetEnabled( scEnabled);
+		m_scroll_view_corner->Draw(
+			BRect(0.0, 0.0, B_V_SCROLL_BAR_WIDTH, B_H_SCROLL_BAR_HEIGHT)
+		);
 	}
 }
 

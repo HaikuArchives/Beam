@@ -31,13 +31,13 @@
 #include <MenuItem.h>
 #include <PopUpMenu.h>
 
-#include <liblayout/HGroup.h>
-#include <liblayout/LayeredGroup.h>
-#include <liblayout/MButton.h>
-#include <liblayout/MPopup.h>
-#include <liblayout/MStringView.h>
-#include <liblayout/Space.h>
-#include <liblayout/VGroup.h>
+#include <HGroup.h>
+#include <LayeredGroup.h>
+#include <MButton.h>
+#include <MPopup.h>
+#include <MStringView.h>
+#include <Space.h>
+#include <VGroup.h>
 
 #include "BubbleHelper.h"
 #include "Colors.h"
@@ -694,7 +694,12 @@ void BmPrefsRecvMailView::MessageReceived( BMessage* msg) {
 					if (mCurrAcc)
 						mCurrAcc->CheckInterval( 0);
 				}
-				mMinutesLabel->SetHighColor( val ? Black : BeInactiveGrey);
+				mMinutesLabel->SetHighColor( 
+					tint_color( 
+						ui_color( B_UI_PANEL_TEXT_COLOR), 
+						val ? B_NO_TINT: B_DISABLED_MARK_TINT
+					)
+				);
 				mMinutesLabel->Invalidate();
 				NoticeChange();
 				break;
@@ -709,7 +714,12 @@ void BmPrefsRecvMailView::MessageReceived( BMessage* msg) {
 						if (mCurrAcc)
 							mCurrAcc->DeleteMailDelay( 0);
 					}
-					mDaysLabel->SetHighColor( val ? Black : BeInactiveGrey);
+					mDaysLabel->SetHighColor(
+						tint_color( 
+							ui_color( B_UI_PANEL_TEXT_COLOR), 
+							val ? B_NO_TINT: B_DISABLED_MARK_TINT
+						)
+					);
 					mDaysLabel->Invalidate();
 					NoticeChange();
 				}
@@ -929,8 +939,12 @@ void BmPrefsRecvMailView::ShowAccount( int32 selection) {
 		mPwdControl->SetEnabled( false);
 		mCheckIntervalControl->SetEnabled( false);
 		mDeleteMailDelayControl->SetEnabled( false);
-		mMinutesLabel->SetHighColor( BeInactiveGrey);
-		mDaysLabel->SetHighColor( BeInactiveGrey);
+		mMinutesLabel->SetHighColor( 
+			tint_color( ui_color( B_UI_PANEL_TEXT_COLOR), B_DISABLED_MARK_TINT)
+		);
+		mDaysLabel->SetHighColor(
+			tint_color( ui_color( B_UI_PANEL_TEXT_COLOR), B_DISABLED_MARK_TINT)
+		);
 	} else {
 		BmRecvAccItem* accItem 
 			= dynamic_cast<BmRecvAccItem*>(mAccListView->ItemAt( selection));
@@ -954,30 +968,52 @@ void BmPrefsRecvMailView::ShowAccount( int32 selection) {
 					mFilterChainControl->MarkItem( 
 						mCurrAcc->FilterChain().Length() 
 							? mCurrAcc->FilterChain().String()
-							: BM_NoItemLabel.String());
+							: BM_NoItemLabel.String()
+					);
 					mCheckAccountControl->SetValue( mCurrAcc->CheckMail());
 					mAutoCheckIfPppUpControl->SetValueSilently( 
-						ThePrefs->GetBool("AutoCheckOnlyIfPPPRunning"));
+						ThePrefs->GetBool("AutoCheckOnlyIfPPPRunning")
+					);
 					mCheckEveryControl->SetValue( 
-						mCurrAcc->CheckInterval()>0 ? 1 : 0);
+						mCurrAcc->CheckInterval()>0 ? 1 : 0
+					);
 					mCheckIntervalControl->SetTextSilently( 
-						mCurrAcc->CheckIntervalString().String());
+						mCurrAcc->CheckIntervalString().String()
+					);
 					mRemoveMailControl->SetValue( 
-						mCurrAcc->DeleteMailFromServer());
+						mCurrAcc->DeleteMailFromServer()
+					);
 					mDeleteMailDelayControl->SetTextSilently( 
-						mCurrAcc->DeleteMailDelayString().String());
+						mCurrAcc->DeleteMailDelayString().String()
+					);
 					mStorePwdControl->SetValue( 
-						mCurrAcc->PwdStoredOnDisk());
+						mCurrAcc->PwdStoredOnDisk()
+					);
 					mPwdControl->SetEnabled( 
-						mCurrAcc->PwdStoredOnDisk());
+						mCurrAcc->PwdStoredOnDisk()
+					);
 					mCheckIntervalControl->SetEnabled( 
-						mCurrAcc->CheckInterval()>0);
+						mCurrAcc->CheckInterval()>0
+					);
 					mMinutesLabel->SetHighColor( 
-						mCurrAcc->CheckInterval()>0 ? Black : BeInactiveGrey);
+						tint_color( 
+							ui_color( B_UI_PANEL_TEXT_COLOR),
+							mCurrAcc->CheckInterval()>0 
+								? B_NO_TINT 
+								: B_DISABLED_MARK_TINT
+						)
+					);
 					mDeleteMailDelayControl->SetEnabled( 
-						mCurrAcc->DeleteMailFromServer());
+						mCurrAcc->DeleteMailFromServer()
+					);
 					mDaysLabel->SetHighColor( 
-						mCurrAcc->DeleteMailFromServer() ? Black : BeInactiveGrey);
+						tint_color( 
+							ui_color( B_UI_PANEL_TEXT_COLOR),
+							mCurrAcc->DeleteMailFromServer()
+								? B_NO_TINT 
+								: B_DISABLED_MARK_TINT
+						)
+					);
 				}
 			}
 		} else

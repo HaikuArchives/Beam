@@ -33,15 +33,15 @@
 
 
 //#include <liblayout/LayeredGroup.h>
-#include <liblayout/HGroup.h>
-#include <liblayout/LayeredGroup.h>
-#include <liblayout/MButton.h>
-#include <liblayout/MPlayBW.h>
-#include <liblayout/MPlayFW.h>
-#include <liblayout/MFFWD.h>
-#include <liblayout/MStringView.h>
-#include <liblayout/Space.h>
-#include <liblayout/VGroup.h>
+#include <HGroup.h>
+#include <LayeredGroup.h>
+#include <MButton.h>
+#include <MPlayBW.h>
+#include <MPlayFW.h>
+#include <MFFWD.h>
+#include <MStringView.h>
+#include <Space.h>
+#include <VGroup.h>
 
 #include "BubbleHelper.h"
 #include "UserResizeSplitView.h"

@@ -102,7 +102,6 @@ class IMPEXPSANTAPARTSFORBEAM UserResizeSplitView : public MGroup, public BView
 		virtual void MouseMoved(BPoint where, uint32 code, const BMessage *message);
 		virtual void MouseUp(BPoint where);
 
-		virtual void SetViewColor(rgb_color color);
 		virtual void FrameResized(float new_width, float new_height);
 
 		// adapted for liblayout

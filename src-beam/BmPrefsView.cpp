@@ -35,10 +35,10 @@
 	class BRect;
 #endif
 
-#include <liblayout/LayeredGroup.h>
-#include <liblayout/MStringView.h>
-#include <liblayout/Space.h>
-#include <liblayout/VGroup.h>
+#include <LayeredGroup.h>
+#include <MStringView.h>
+#include <Space.h>
+#include <VGroup.h>
 
 #include "Colors.h"
 
@@ -109,9 +109,9 @@ void BmPrefsView::Initialize() {
 		BFont font = *be_bold_font;
 		font.SetSize(12);
 		mLabelView->SetFont( &font);
-		mLabelView->SetViewColor( MedMetallicBlue);
-		mLabelView->SetLowColor( MedMetallicBlue);
-		mLabelView->SetHighColor( White);
+		BmSetViewUIColor( mLabelView, B_UI_CONTROL_HIGHLIGHT_COLOR);
+		BmSetLowUIColor( mLabelView, B_UI_CONTROL_HIGHLIGHT_COLOR);
+		BmSetHighUIColor( mLabelView, B_UI_CONTROL_BACKGROUND_COLOR);
 	}
 	layoutprefs();
 	layout( Bounds());

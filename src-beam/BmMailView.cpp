@@ -282,6 +282,10 @@ BmMailView::BmMailView( minimax minmax, BRect frame, bool outbound)
 	CalculateVerticalOffset();
 	mScrollView = new BmMailViewContainer( minmax, this, B_FOLLOW_NONE, 
 														B_WILL_DRAW | B_FRAME_EVENTS);
+
+	SetViewUIColor(B_UI_DOCUMENT_BACKGROUND_COLOR);
+	SetLowUIColor(B_UI_DOCUMENT_BACKGROUND_COLOR);
+	SetHighUIColor(B_UI_DOCUMENT_TEXT_COLOR);														
 }
 
 /*------------------------------------------------------------------------------*\
@@ -669,10 +673,10 @@ void BmMailView::SetSignatureByName( const BmString sigName) {
 	textRunArray->count = 2;
 	textRunArray->runs[0].offset = 0;
 	textRunArray->runs[0].font = mFont;
-	textRunArray->runs[0].color = Black;
+	textRunArray->runs[0].color = ui_color(B_UI_DOCUMENT_TEXT_COLOR);
 	textRunArray->runs[1].offset = text.Length();
 	textRunArray->runs[1].font = mFont;
-	textRunArray->runs[1].color = BeShadow;
+	textRunArray->runs[1].color = BmWeakenColor(B_UI_DOCUMENT_TEXT_COLOR,2);
 	BmString sig = TheSignatureList->GetSignatureStringFor( sigName);
 	int32 lastTextPos = max( (long)0, text.Length()-1);
 	if (sig.Length())
@@ -836,7 +840,7 @@ void BmMailView::JobIsDone( bool completed) {
 											? mCurrMail->RawText().Length()
 											: 65536);
 		mTextRunMap.clear();
-		mTextRunMap[0] = BmTextRunInfo( Black);
+		mTextRunMap[0] = BmTextRunInfo( ui_color(B_UI_DOCUMENT_TEXT_COLOR));
 		BmBodyPartList* body = mCurrMail->Body();
 		mClickedTextRun = mTextRunMap.end();
 		if (mRulerView)
@@ -866,7 +870,8 @@ void BmMailView::JobIsDone( bool completed) {
 					uint32 len = displayBuf.CurrPos();
 					if (!len || displayBuf.ByteAt(len-1) != '\n')
 						displayBuf << "\n";
-					mTextRunMap[displayBuf.CurrPos()] = BmTextRunInfo( BeShadow);
+					mTextRunMap[displayBuf.CurrPos()] 
+						= BmTextRunInfo( BmWeakenColor(B_UI_DOCUMENT_TEXT_COLOR,2));
 					// signature within body is already in UTF8-encoding, so we
 					// just add it to out display-text:
 					displayBuf << "-- \n" << body->Signature();
@@ -887,7 +892,9 @@ void BmMailView::JobIsDone( bool completed) {
 						int32 end = start+rx.match[i].Length();
 						BmTextRunIter iter = TextRunInfoAt( start);
 						BmTextRunInfo runInfo = iter->second;
-						mTextRunMap[start] = BmTextRunInfo( MedMetallicBlue, true);
+						mTextRunMap[start] = BmTextRunInfo( 
+							ui_color( B_UI_CONTROL_HIGHLIGHT_COLOR), true
+						);
 						mTextRunMap[end] = runInfo;
 					}
 				}

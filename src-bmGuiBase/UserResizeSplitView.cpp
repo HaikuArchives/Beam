@@ -168,19 +168,6 @@ void UserResizeSplitView::ResizeRightOrBottomChildTo(float width_or_height)
 		m_right_or_bottom->layout(BRect(bounds.right-width_or_height,0,bounds.right,bounds.bottom));
 }
 
-
-void UserResizeSplitView::SetViewColor(rgb_color color)
-{
-	BView::SetViewColor(color);
-	if(color.red != B_TRANSPARENT_COLOR.red || color.green != B_TRANSPARENT_COLOR.green ||
-		color.blue != B_TRANSPARENT_COLOR.blue || color.alpha != B_TRANSPARENT_COLOR.alpha)
-	{
-		m_background_color = color;
-		m_dark_1_color = tint_color(m_background_color,B_DARKEN_1_TINT);
-		m_dark_2_color = tint_color(m_background_color,B_DARKEN_2_TINT);
-	}
-}
-
 void UserResizeSplitView::AttachedToWindow() {
 	BView::AttachedToWindow();
 }

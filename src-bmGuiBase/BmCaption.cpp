@@ -43,6 +43,7 @@
 BmCaption::BmCaption( BRect frame, const char* text) 
 	:	inherited( frame, NULL, text)
 {
+	SetViewUIColor( B_UI_PANEL_BACKGROUND_COLOR);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -56,16 +57,15 @@ BmCaption::~BmCaption() {
 	( )
 		-	
 \*------------------------------------------------------------------------------*/
-void BmCaption::Draw( BRect) {
+void BmCaption::Draw( BRect updateRect) {
 	BRect rect = Bounds();
-	SetHighColor( tint_color(BeBackgroundGrey, 1.072F));
-	FillRect( rect);
-	SetHighColor( White);
+	SetLowColor( ui_color( B_UI_PANEL_BACKGROUND_COLOR));
+	FillRect( BRect(2.0,2.0,rect.right-1,rect.bottom-1), B_SOLID_LOW);
+	SetHighColor( ui_color( B_UI_SHINE_COLOR));
 	StrokeRect( BRect(1.0,1.0,rect.right,rect.bottom));
-	SetHighColor( BeShadow);
+	SetHighColor( ui_color( B_UI_SHADOW_COLOR));
 	StrokeRect( rect);
-	SetLowColor( BeLightShadow);
-	SetHighColor( Black);
+	SetHighColor( ui_color( B_UI_PANEL_TEXT_COLOR));
 	font_height fInfo;
 	be_plain_font->GetHeight( &fInfo);
 	float offset = (1+rect.Height()-(fInfo.ascent+fInfo.descent))/2.0;

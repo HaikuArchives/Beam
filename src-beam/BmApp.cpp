@@ -1211,7 +1211,9 @@ void BmApplication::PrintMails( BMessage* msg) {
 				++mailIdx) {
 			mailRef = (*refVect)[mailIdx].Get();
 			mailView->LockLooper();
-			mailView->BodyPartView()->SetViewColor( White);
+			mailView->BodyPartView()->SetViewColor( 
+				ui_color( B_UI_DOCUMENT_BACKGROUND_COLOR)
+			);
 			mailView->UnlockLooper();
 			mailView->ShowMail( mailRef, false);
 			while( !mailView->IsDisplayComplete())

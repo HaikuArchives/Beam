@@ -54,11 +54,10 @@ class IMPEXPSANTAPARTSFORBEAM DeepBevelView : public BView
 		virtual void Draw(BRect update_rect);
 		virtual void FrameResized(float width, float height);
 
-	private:
+	protected:
 		BRect m_cached_bounds;
 		rgb_color m_background_color;
 		rgb_color m_dark_1_color;
-		rgb_color m_dark_2_color;
 };
 
 

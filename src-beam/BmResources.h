@@ -85,7 +85,7 @@ public:
 	float FontLineHeight( const BFont* font=NULL);
 	//
 	BPicture* CreatePictureFor( BBitmap* image, float width, float height,
-										 rgb_color background = BeBackgroundGrey,
+										 rgb_color background = BeBackgroundColor,
 										 bool transparentBack = false);
 	//
 	void CheckMimeTypeFile( BmString sig, time_t appModTime);

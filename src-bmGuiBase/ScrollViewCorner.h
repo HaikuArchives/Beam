@@ -42,6 +42,9 @@ class IMPEXPSANTAPARTSFORBEAM ScrollViewCorner : public BView
 		ScrollViewCorner(float Left,float Top);
 		~ScrollViewCorner();
 		void Draw(BRect Update);
+		void SetEnabled( bool enabled);
+	private:
+		bool m_enabled;
 };
 
 

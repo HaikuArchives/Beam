@@ -45,9 +45,9 @@ CLVColumnLabelView::CLVColumnLabelView(BRect Bounds,ColumnListView* parent,const
 fDragGroups(10)
 {
 	SetFont(Font);
-	SetViewColor(BeBackgroundGrey);
-	SetLowColor(BeBackgroundGrey);
-	SetHighColor(Black);
+	SetViewUIColor(B_UI_PANEL_BACKGROUND_COLOR);
+	SetLowUIColor(B_UI_PANEL_BACKGROUND_COLOR);
+	SetHighUIColor(B_UI_PANEL_TEXT_COLOR);
 	fParent = parent;
 	fDisplayList = &fParent->fColumnDisplayList;
 	fColumnClicked = NULL;
@@ -117,11 +117,12 @@ void CLVColumnLabelView::Draw(BRect update_rect)
 				Stop.Set(ColumnEnd-1.0,ViewBounds.top);
 				if(MergeWithRight && !(ThisColumn == fColumnClicked && fColumnResizing))
 					Stop.x = ColumnEnd;
-				AddLine(Start,Stop,BeHighlight);
+				AddLine(Start,Stop, ui_color( B_UI_SHINE_COLOR));
 				//Left line
 				if(!MergeWithLeft)
 					AddLine(BPoint(ColumnBegin,ViewBounds.top+1.0),
-						BPoint(ColumnBegin,ViewBounds.bottom),BeHighlight);
+						BPoint(ColumnBegin,ViewBounds.bottom),
+						ui_color(B_UI_SHINE_COLOR));
 				//Bottom line
 				Start.Set(ColumnBegin+1.0,ViewBounds.bottom);
 				if(MergeWithLeft)
@@ -129,19 +130,19 @@ void CLVColumnLabelView::Draw(BRect update_rect)
 				Stop.Set(ColumnEnd-1.0,ViewBounds.bottom);
 				if(MergeWithRight && !(ThisColumn == fColumnClicked && fColumnResizing))
 					Stop.x = ColumnEnd;
-				AddLine(Start,Stop,BeShadow);
+				AddLine(Start,Stop, ui_color(B_UI_SHADOW_COLOR));
 				//Right line
 				if(ThisColumn == fColumnClicked && fColumnResizing)
 					AddLine(BPoint(ColumnEnd,ViewBounds.top),BPoint(ColumnEnd,ViewBounds.bottom),
-						BeFocusBlue);
+						ui_color( B_UI_NAVIGATION_BASE_COLOR));
 				else if(!MergeWithRight)
 					AddLine(BPoint(ColumnEnd,ViewBounds.top),BPoint(ColumnEnd,ViewBounds.bottom),
-						BeShadow);
+						ui_color(B_UI_SHADOW_COLOR));
 				EndLineArray();
 
 				//Add the label
 				//Limit the clipping region to the interior of the box
-				BRect TextRect(ColumnBegin+1.0,ViewBounds.top+1.0,ColumnEnd-1.0,
+				BRect TextRect(ColumnBegin+1.0,ViewBounds.top,ColumnEnd-1.0,
 					ViewBounds.bottom-1.0);
 				BRegion TextRegion;
 				TextRegion.Include(TextRect);
@@ -181,16 +182,16 @@ void CLVColumnLabelView::Draw(BRect update_rect)
 			BeginLineArray(3);
 			//Top line
 			AddLine(BPoint(ColumnBegin,ViewBounds.top),BPoint(ViewBounds.right,ViewBounds.top),
-				BeHighlight);
+				ui_color(B_UI_SHINE_COLOR));
 			//Left line
 			AddLine(BPoint(ColumnBegin,ViewBounds.top+1.0),BPoint(ColumnBegin,ViewBounds.bottom),
-				BeHighlight);
+				ui_color(B_UI_SHINE_COLOR));
 			//Bottom line
 			Start.Set(ColumnBegin+1.0,ViewBounds.bottom);
 			if(MergeWithLeft)
 				Start.x = ColumnBegin;
 			Stop.Set(ViewBounds.right,ViewBounds.bottom);
-			AddLine(Start,Stop,BeShadow);
+			AddLine(Start,Stop,ui_color(B_UI_SHADOW_COLOR));
 			EndLineArray();
 		}
 	}
@@ -207,13 +208,13 @@ void CLVColumnLabelView::Draw(BRect update_rect)
 		float DragOutlineRight = DragOutlineLeft + fDragBoxWidth;
 		BeginLineArray(4);
 		AddLine(BPoint(DragOutlineLeft,ViewBounds.top),BPoint(DragOutlineRight,
-			ViewBounds.top),BeFocusBlue);
+			ViewBounds.top), ui_color( B_UI_NAVIGATION_BASE_COLOR));
 		AddLine(BPoint(DragOutlineLeft,ViewBounds.bottom),BPoint(DragOutlineRight,
-			ViewBounds.bottom),BeFocusBlue);
+			ViewBounds.bottom), ui_color( B_UI_NAVIGATION_BASE_COLOR));
 		AddLine(BPoint(DragOutlineLeft,ViewBounds.top+1.0),BPoint(DragOutlineLeft,
-			ViewBounds.bottom-1.0),BeFocusBlue);
+			ViewBounds.bottom-1.0), ui_color( B_UI_NAVIGATION_BASE_COLOR));
 		AddLine(BPoint(DragOutlineRight,ViewBounds.top+1.0),BPoint(DragOutlineRight,
-			ViewBounds.bottom-1.0),BeFocusBlue);
+			ViewBounds.bottom-1.0), ui_color( B_UI_NAVIGATION_BASE_COLOR));
 		EndLineArray();
 		fPrevDragOutlineLeft = DragOutlineLeft;
 		fPrevDragOutlineRight = DragOutlineRight;
@@ -618,7 +619,7 @@ void CLVColumnLabelView::ShiftDragGroup(int32 NewPos)
 	*fDisplayList = NewDisplayList;
 
 	//Update columns and drag groups
-	fParent->UpdateColumnSizesDataRectSizeScrollBars();
+	fParent->UpdateDataRect();
 	UpdateDragGroups();
 	SetSnapMinMax();
 
@@ -798,15 +799,5 @@ void CLVColumnLabelView::SetSnapMinMax()
 }
 
 void CLVColumnLabelView::MessageReceived(BMessage* msg) {
-	if (msg->what == 'PSTE') {
-		struct rgb_color *col;
-		ssize_t siz;
-		const void *data;
-		msg->FindData( "RGBColor", B_RGB_COLOR_TYPE, &data, &siz);
-		col = (rgb_color*)data;
-		SetViewColor(*col);
-		SetLowColor(*col);
-		Invalidate();
-	}
 	inherited::MessageReceived( msg);
 }

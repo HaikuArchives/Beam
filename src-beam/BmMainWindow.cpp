@@ -208,7 +208,6 @@ BmMainWindow::BmMainWindow()
 					0
 				)
 			),
-			new Space(minimax(-1,2,-1,2)),
 			new HGroup(
 				mVertSplitter = new UserResizeSplitView( 
 					mMailFolderView->ContainerView(),

@@ -51,7 +51,7 @@ BmRulerView::BmRulerView( const BFont& font)
 	,	mIndicatorGrabbed( false)
 	,	mSingleCharWidth( font.StringWidth( MEDIUM_WIDTH_CHAR))
 {
-	SetViewColor( BeInactiveControlGrey);
+	SetViewColor( BmWeakenColor( B_UI_DOCUMENT_BACKGROUND_COLOR, 2));
 	BFont fnt( be_plain_font);
 	fnt.SetSize( 8);
 	SetFont( &fnt);
@@ -130,10 +130,9 @@ void BmRulerView::Draw( BRect bounds) {
 	// draw right-margin indicator:
 	float xPos = nXOffset+mIndicatorPos*mSingleCharWidth;
 	float yPos = r.bottom-10;
-	if (!mIndicatorGrabbed)
-		SetHighColor( LightMetallicBlue);
-	else
-		SetHighColor( MedMetallicBlue);
+	SetHighColor( 
+		BmWeakenColor( B_UI_CONTROL_HIGHLIGHT_COLOR, mIndicatorGrabbed ? 0 : 2)
+	);
 	if (ThePrefs->GetBool( "HardWrapMailText")) {
 		FillTriangle( BPoint( xPos-5, yPos),
 						  BPoint( xPos+5, yPos),

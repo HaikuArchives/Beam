@@ -25,10 +25,10 @@
 
 ScrollViewCorner::ScrollViewCorner(float Left,float Top)
 : BView(BRect(Left,Top,Left+B_V_SCROLL_BAR_WIDTH,Top+B_H_SCROLL_BAR_HEIGHT),NULL,B_FOLLOW_RIGHT |
-	B_FOLLOW_BOTTOM,B_WILL_DRAW)
+	B_FOLLOW_BOTTOM,B_WILL_DRAW),
+	m_enabled( false)
 {
-	SetHighColor(BeShadow);
-	SetViewColor(BeInactiveGrey);
+	SetViewColor( B_TRANSPARENT_COLOR);
 }
 
 
@@ -38,6 +38,14 @@ ScrollViewCorner::~ScrollViewCorner()
 
 void ScrollViewCorner::Draw(BRect Update)
 {
+	SetHighColor(
+		tint_color( 
+			ui_color( B_UI_PANEL_BACKGROUND_COLOR), 
+			m_enabled ? B_NO_TINT : B_DISABLED_MARK_TINT
+		)
+	);
+	FillRect(BRect(1.0, 1.0, B_V_SCROLL_BAR_WIDTH-1, B_H_SCROLL_BAR_HEIGHT-1));
+	SetHighColor( ui_color( B_UI_SHADOW_COLOR));
 	if(Update.bottom >= B_H_SCROLL_BAR_HEIGHT)
 		StrokeLine(BPoint(0.0,B_H_SCROLL_BAR_HEIGHT),BPoint(B_V_SCROLL_BAR_WIDTH,B_H_SCROLL_BAR_HEIGHT));
 	if(Update.right >= B_V_SCROLL_BAR_WIDTH)
@@ -45,4 +53,8 @@ void ScrollViewCorner::Draw(BRect Update)
 			BPoint(B_V_SCROLL_BAR_WIDTH,B_H_SCROLL_BAR_HEIGHT-1.0));
 }
 
-
+void ScrollViewCorner::SetEnabled(bool enabled)
+{
+	if (m_enabled != enabled)
+		m_enabled = enabled;
+}

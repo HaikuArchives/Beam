@@ -154,7 +154,7 @@ void CLVEasyItem::DrawItemColumn(BRect item_column_rect, int32 column_index)
 		tinted_color = fOwner->DarkColumnCol();
 	}
 	if (Highlight()) {
-		const float highlight_tint = 1.15F;
+		const float highlight_tint = B_DARKEN_1_TINT;
 		color = tint_color( color, highlight_tint);
 		tinted_color = tint_color( tinted_color, highlight_tint);
 	}
@@ -190,7 +190,7 @@ void CLVEasyItem::DrawItemColumn(BRect item_column_rect, int32 column_index)
 	if (HighlightTop()) {
 		BRect highlightRect( item_column_rect.left, 0,
 									item_column_rect.right, 1);
-		fOwner->SetHighColor( BeListSelectGrey);
+		fOwner->SetHighColor( ui_color( B_UI_CONTROL_HIGHLIGHT_COLOR));
 		fOwner->FillRect( highlightRect);
 	}
 
@@ -199,7 +199,7 @@ void CLVEasyItem::DrawItemColumn(BRect item_column_rect, int32 column_index)
 									item_column_rect.bottom-1,
 									item_column_rect.right, 
 									item_column_rect.bottom);
-		fOwner->SetHighColor( BeListSelectGrey);
+		fOwner->SetHighColor( ui_color( B_UI_CONTROL_HIGHLIGHT_COLOR));
 		fOwner->FillRect( highlightRect);
 	}
 
@@ -213,7 +213,7 @@ void CLVEasyItem::DrawItemColumn(BRect item_column_rect, int32 column_index)
 			fOwner->SetFont( be_bold_font);
 		}
 	
-		fOwner->SetHighColor( Black);
+		fOwner->SetHighColor( ui_color( B_UI_PANEL_TEXT_COLOR));
 		if(type == CLV_COLTYPE_STATICTEXT)
 			text = (const char*)m_column_content.ItemAt(column_index);
 		else if(type == CLV_COLTYPE_USERTEXT)

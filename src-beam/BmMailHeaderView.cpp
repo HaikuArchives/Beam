@@ -66,7 +66,7 @@ BmMailHeaderFieldView::BmMailHeaderFieldView( BmString fieldName,
 	:	inherited( BRect( 0, 0, 0, 0),
 					  "MailHeaderFieldView", B_FOLLOW_NONE, B_WILL_DRAW)
 {
-	SetViewColor( BeListSelectGrey);
+	SetViewColor( BmWeakenColor( B_UI_PANEL_BACKGROUND_COLOR, 2));
 	const float leftOffs = 15;
 	const float textInset = 1;
 	font->SetFace( B_BOLD_FACE);
@@ -76,20 +76,21 @@ BmMailHeaderFieldView::BmMailHeaderFieldView( BmString fieldName,
 	BRect titleRect( leftOffs, textInset, 5+leftOffs+titleWidth, textInset+fhl-1);
 	mTitleView = new BStringView( titleRect, "titleView", fieldName.String());
 	mTitleView->SetFont( font);
-	mTitleView->SetViewColor( BeListSelectGrey);
-	mTitleView->SetLowColor( BeListSelectGrey);
+	mTitleView->SetViewColor( BmWeakenColor( B_UI_PANEL_BACKGROUND_COLOR, 2));
+	mTitleView->SetLowColor( BmWeakenColor( B_UI_PANEL_BACKGROUND_COLOR, 2));
 	mTitleView->SetAlignment( B_ALIGN_RIGHT);
 	AddChild( mTitleView);
 	BRect contentRect( titleRect.left+titleRect.Width()+5, 0, fixedWidth, 10);
 	BRect textRect = contentRect.InsetByCopy( textInset, textInset);
-	textRect.OffsetTo( 4+textInset, textInset);
+	textRect.OffsetTo( 4+textInset, textInset+1);
 	font->SetFace( B_REGULAR_FACE);
+	rgb_color col = ui_color( B_UI_PANEL_TEXT_COLOR);
 	mContentView = new BTextView( contentRect, "contentView", textRect,
-											font, &Black, B_FOLLOW_NONE, B_WILL_DRAW);
+											font, &col, B_FOLLOW_NONE, B_WILL_DRAW);
 	mContentView->MakeEditable( false);
 	mContentView->MakeSelectable( true);
 	mContentView->SetStylable( false);
-	mContentView->SetViewColor( BeLightShadow);
+	mContentView->SetViewColor( BmWeakenColor( B_UI_PANEL_BACKGROUND_COLOR, 1));
 	AddChild( mContentView);
 	mContentView->SetText( value.String());
 	float neededHeight 
@@ -281,7 +282,7 @@ BmMailHeaderView::BmMailHeaderView( BmMailHeader* header)
 	,	mFont( be_bold_font)
 	,	mShowRedirectFields( true)
 {
-	SetViewColor( White);
+	SetViewColor( B_TRANSPARENT_COLOR);
 	ShowHeader( header);
 }
 
@@ -609,16 +610,3 @@ void BmMailHeaderView::MessageReceived( BMessage* msg) {
 		BM_SHOWERR( BmString("MailHeaderView:\n\t") << err.what());
 	}
 }
-
-/*------------------------------------------------------------------------------*\
-	()
-		-	
-\*------------------------------------------------------------------------------*/
-void BmMailHeaderView::Draw( BRect bounds) {
-	inherited::Draw( bounds);
-	// ugly hack, force ScrollView to redraw its scrollbar:
-	BmMailView* mv = dynamic_cast<BmMailView*>( Parent());
-	if (mv)
-		mv->ContainerView()->RedrawScrollbars();
-}
-

@@ -435,12 +435,12 @@ void TextEntryAlertBackgroundView::Draw(BRect update_rect)
 			BPoint(m_entry_text_rect.right,m_entry_text_rect.top));
 		StrokeLine(BPoint(m_entry_text_rect.left,m_entry_text_rect.top+1),
 			BPoint(m_entry_text_rect.left,m_entry_text_rect.bottom));
-		SetHighColor(White);
+		SetHighColor( ui_color(B_UI_SHINE_COLOR));
 		StrokeLine(BPoint(m_entry_text_rect.right,m_entry_text_rect.top+1),
 			BPoint(m_entry_text_rect.right,m_entry_text_rect.bottom-1));
 		StrokeLine(BPoint(m_entry_text_rect.left+1,m_entry_text_rect.bottom),
 			BPoint(m_entry_text_rect.right,m_entry_text_rect.bottom));
-		SetHighColor(m_dark_2_color);
+		SetHighColor( ui_color( B_UI_SHADOW_COLOR));
 		StrokeLine(BPoint(m_entry_text_rect.left+1,m_entry_text_rect.top+1),
 			BPoint(m_entry_text_rect.right-1,m_entry_text_rect.top+1));
 		StrokeLine(BPoint(m_entry_text_rect.left+1,m_entry_text_rect.top+2),
@@ -490,7 +490,7 @@ TextEntryAlertTextEntryView::TextEntryAlertTextEntryView(BRect frame, bool multi
 {
 	m_tab_allowed = false;
 	m_multi_line = multi_line;
-	SetViewColor(White);
+	SetViewColor( ui_color( B_UI_DOCUMENT_BACKGROUND_COLOR));
 	SetWordWrap(true);
 }
 

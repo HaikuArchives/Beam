@@ -39,6 +39,7 @@
 #include "SantaPartsForBeam.h"
 #include "ColumnListView.h"
 #include "CLVEasyItem.h"
+#include "DeepBevelView.h"
 
 //******************************************************************************************************
 //**** ListSelectionAlert
@@ -102,18 +103,14 @@ class IMPEXPSANTAPARTSFORBEAM ListSelectionAlert : public BWindow
 //******************************************************************************************************
 //**** ListSelectionAlertBackgroundView
 //******************************************************************************************************
-class ListSelectionAlertBackgroundView : public BView
+class ListSelectionAlertBackgroundView : public DeepBevelView
 {
 	public:
 		ListSelectionAlertBackgroundView(BRect frame, BRect list_rect);
-		virtual void Draw(BRect update_rect);
 		virtual void FrameResized(float width, float heigh);
 
 	private:
 		BRect m_list_rect;
-		BRect m_cached_bounds;
-		rgb_color m_dark_1_color;
-		rgb_color m_dark_2_color;
 };
 
 

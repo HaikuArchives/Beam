@@ -473,6 +473,7 @@ void BmJobModel::doStartJob() {
 	} catch( BM_error& e) {
 		BM_SHOWERR( e.what());
 	}
+	
 	while(lCount--) {
 		mModelLocker.Lock();
 	}
@@ -1317,6 +1318,7 @@ bool BmListModel::StartJob() {
 	} catch (BM_error &e) {
 		BM_SHOWERR( e.what());
 	}
+
 	Thaw();
 	return InitCheck() == B_OK;
 }

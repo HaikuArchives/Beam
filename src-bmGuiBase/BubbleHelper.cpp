@@ -40,6 +40,7 @@
 #endif
 
 #include "BubbleHelper.h"
+#include "Colors.h"
 
 long BubbleHelper::runcount=0;
 BubbleHelper* TheBubbleHelper = NULL;
@@ -191,9 +192,9 @@ void BubbleHelper::Helper()
     textview->MakeEditable(false);
     textview->MakeSelectable(false);
     textview->SetWordWrap(false);
-    textview->SetLowColor(240,240,100);
-    textview->SetViewColor(240,240,100);
-    textview->SetHighColor(0,0,0);
+    BmSetLowUIColor( textview, B_UI_TOOLTIP_BACKGROUND_COLOR);
+    BmSetViewUIColor( textview, B_UI_TOOLTIP_BACKGROUND_COLOR);
+    BmSetHighUIColor( textview, B_UI_TOOLTIP_TEXT_COLOR);
     textwin->AddChild(textview);
     textwin->Run();
     textwin->Lock();

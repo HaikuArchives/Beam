@@ -167,19 +167,19 @@ BPicture* BmToolbarButton::CreatePicture( int32 mode, const char* label,
 	drawImage->Lock();
 	BPicture* picture = new BPicture();
 	view->BeginPicture( picture);
-	view->SetViewColor( BeBackgroundGrey);
-	view->SetLowColor( BeBackgroundGrey);
+	view->SetViewColor( BeBackgroundColor);
+	view->SetLowColor( BeBackgroundColor);
 	view->FillRect( rect, B_SOLID_LOW);
 
 	// Draw Border
 	if (ThePrefs->GetBool( "ShowToolbarBorder", true)) {
 		rect.InsetBy( 1, 1);
-		view->SetLowColor( BeHighlight);
+		view->SetLowColor( ui_color( B_UI_SHINE_COLOR));
 		view->StrokeLine( BPoint( rect.left+2,  rect.top+1),    BPoint( rect.right-1, rect.top+1),    B_SOLID_LOW);	// top
 		view->StrokeLine( BPoint( rect.right,   rect.top+2),    BPoint( rect.right,   rect.bottom-1), B_SOLID_LOW);	// right
 		view->StrokeLine( BPoint( rect.right-1, rect.bottom),   BPoint( rect.left+2,  rect.bottom),   B_SOLID_LOW);	// bottom
 		view->StrokeLine( BPoint( rect.left+1,  rect.bottom-1), BPoint( rect.left+1,  rect.top+2),    B_SOLID_LOW);	// left
-		view->SetLowColor( BeShadow);
+		view->SetLowColor( ui_color( B_UI_SHADOW_COLOR));
 		view->StrokeLine( BPoint( rect.left+1,  rect.top),      BPoint( rect.right-2, rect.top),      B_SOLID_LOW);	// top
 		view->StrokeLine( BPoint( rect.right-1, rect.top+1),    BPoint( rect.right-1, rect.bottom-2), B_SOLID_LOW);	// right
 		view->StrokeLine( BPoint( rect.right-2, rect.bottom-1), BPoint( rect.left+1,  rect.bottom-1), B_SOLID_LOW);	// bottom
@@ -198,11 +198,11 @@ BPicture* BmToolbarButton::CreatePicture( int32 mode, const char* label,
 			view->SetDrawingMode(B_OP_COPY);
 		} else {
 			if (mode == STATE_OFF) {
-				view->SetLowColor( BeShadow);
+				view->SetLowColor( ui_color( B_UI_SHADOW_COLOR));
 				view->SetDrawingMode(B_OP_ERASE);
 				view->DrawBitmap( image, posIcon+BPoint( 1,1));
 				view->DrawBitmap( image, posIcon+BPoint( 0,0));
-				view->SetLowColor( BeBackgroundGrey);
+				view->SetLowColor( ui_color( B_UI_PANEL_BACKGROUND_COLOR));
 			}
 			view->SetDrawingMode(B_OP_OVER);
 			view->DrawBitmap( image, posIcon);
@@ -220,24 +220,31 @@ BPicture* BmToolbarButton::CreatePicture( int32 mode, const char* label,
 		be_plain_font->GetHeight( &fh);
 		view->SetFont( &font);
 		view->SetDrawingMode(B_OP_OVER);
-		if (mode == STATE_DISABLED)  view->SetHighColor( BeShadow);
+		if (mode == STATE_DISABLED)
+			view->SetHighColor( 
+				tint_color( 
+					ui_color( B_UI_PANEL_TEXT_COLOR), B_DISABLED_MARK_TINT
+				)
+			);
 		view->DrawString( label, posLabel+BPoint(0,fh.ascent+1));
-		if (mode == STATE_DISABLED)  view->SetHighColor( Black);
+		if (mode == STATE_DISABLED)
+			view->SetHighColor( ui_color( B_UI_PANEL_TEXT_COLOR));
 
+#ifdef DEBUG
 		if (ThePrefs->GetBool( "DebugToolbar", false)) {
 			view->SetLowColor(0,255,0);
 			view->StrokeRect( BRect(posLabel, posLabel+BPoint(labelWidth, labelHeight)), B_SOLID_LOW);
 			view->SetLowColor(0,255,0);
 			view->StrokeRect( BRect(posLabel+BPoint(0,0), posLabel+BPoint(labelWidth, labelHeight)),    B_SOLID_LOW);
 		}
+#endif
 	}
 
 	// draw latch
 	if (needsLatch) {
-		if (mode == STATE_DISABLED)
-			view->SetHighColor( BeShadow);
-		else
-			view->SetHighColor( Black);
+		view->SetHighColor( 
+			BmWeakenColor( B_UI_PANEL_TEXT_COLOR, mode == STATE_DISABLED ? 2 : 0)
+		);
 		float x_offs = mLatchRect.left;
 		float y_offs = mLatchRect.top+1;
 		view->FillTriangle( BPoint( x_offs, y_offs), 

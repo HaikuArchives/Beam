@@ -32,6 +32,11 @@
 #include <FilePanel.h>
 #include <InterfaceKit.h>
 #include <Message.h>
+
+#ifdef BEOS_VERSION_6 	// Zeta	
+	#include <interface/EMailCompleter.h>
+#endif
+
 #include "BmString.h"
 
 #include <layout-all.h>
@@ -557,6 +562,12 @@ void BmMailEditWin::CreateGUI() {
 
 	// temporarily disabled:
 	mPeopleButton->SetEnabled( false);
+
+#ifdef BEOS_VERSION_6 	// Zeta	
+	mToControl->TextView()->AddFilter(new BEMailCompleter);
+	mCcControl->TextView()->AddFilter(new BEMailCompleter);
+	mBccControl->TextView()->AddFilter(new BEMailCompleter);
+#endif
 
 	AddChild( dynamic_cast<BView*>(mOuterGroup));
 }

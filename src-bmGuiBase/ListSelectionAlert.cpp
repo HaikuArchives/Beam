@@ -379,38 +379,10 @@ void ListSelectionAlert::Quit()
 //**** ListSelectionAlertBackgroundView
 //******************************************************************************************************
 ListSelectionAlertBackgroundView::ListSelectionAlertBackgroundView(BRect frame, BRect entry_text_rect)
-: BView(frame,NULL,B_FOLLOW_ALL_SIDES,B_WILL_DRAW|B_FRAME_EVENTS)
+: DeepBevelView(frame,NULL,B_FOLLOW_ALL_SIDES,B_WILL_DRAW|B_FRAME_EVENTS)
 {
 	m_list_rect = entry_text_rect;
-	m_cached_bounds = Bounds();
-	rgb_color background_color = ui_color(B_PANEL_BACKGROUND_COLOR);
-	m_dark_1_color = tint_color(background_color,B_DARKEN_1_TINT);
-	m_dark_2_color = tint_color(background_color,B_DARKEN_4_TINT);
-	SetViewColor(background_color);
 	SetDrawingMode(B_OP_COPY);
-}
-
-
-void ListSelectionAlertBackgroundView::Draw(BRect update_rect)
-{
-	if(update_rect.Intersects(m_list_rect))
-	{
-		SetHighColor(m_dark_1_color);
-		StrokeLine(BPoint(m_list_rect.left,m_list_rect.top),
-			BPoint(m_list_rect.right,m_list_rect.top));
-		StrokeLine(BPoint(m_list_rect.left,m_list_rect.top+1),
-			BPoint(m_list_rect.left,m_list_rect.bottom));
-		SetHighColor(White);
-		StrokeLine(BPoint(m_list_rect.right,m_list_rect.top+1),
-			BPoint(m_list_rect.right,m_list_rect.bottom-1));
-		StrokeLine(BPoint(m_list_rect.left+1,m_list_rect.bottom),
-			BPoint(m_list_rect.right,m_list_rect.bottom));
-		SetHighColor(m_dark_2_color);
-		StrokeLine(BPoint(m_list_rect.left+1,m_list_rect.top+1),
-			BPoint(m_list_rect.right-1,m_list_rect.top+1));
-		StrokeLine(BPoint(m_list_rect.left+1,m_list_rect.top+2),
-			BPoint(m_list_rect.left+1,m_list_rect.bottom-1));
-	}
 }
 
 

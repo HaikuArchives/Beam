@@ -36,13 +36,13 @@
 	class BPopUpMenu;
 	class BRect;
 #endif
-#include <liblayout/HGroup.h>
-#include <liblayout/LayeredGroup.h>
-#include <liblayout/MButton.h>
-#include <liblayout/MPopup.h>
-#include <liblayout/MStringView.h>
-#include <liblayout/Space.h>
-#include <liblayout/VGroup.h>
+#include <HGroup.h>
+#include <LayeredGroup.h>
+#include <MButton.h>
+#include <MPopup.h>
+#include <MStringView.h>
+#include <Space.h>
+#include <VGroup.h>
 
 #include "BubbleHelper.h"
 #include "Colors.h"

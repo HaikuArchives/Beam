@@ -54,7 +54,8 @@ BmBusyView::BmBusyView( BRect frame)
 	,	mBusyCount( 0)
 	,	mCurrState( 0)
 {
-	SetViewColor( tint_color(BeBackgroundGrey, 1.072F));
+	SetViewUIColor( B_UI_PANEL_BACKGROUND_COLOR);
+	SetLowUIColor( B_UI_PANEL_BACKGROUND_COLOR);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -130,11 +131,9 @@ void BmBusyView::Pulse() {
 \*------------------------------------------------------------------------------*/
 void BmBusyView::Draw( BRect) {
 	BRect r = mCachedBounds;
-	SetHighColor( tint_color(BeBackgroundGrey, 1.072F));
-	FillRect( r);
-	SetHighColor( White);
+	SetHighColor( ui_color( B_UI_SHINE_COLOR));
 	StrokeRect( BRect(1.0,1.0,r.right,r.bottom));
-	SetHighColor( BeShadow);
+	SetHighColor( ui_color( B_UI_SHADOW_COLOR));
 	StrokeRect( r);
 	if (mBusyCount <= 0) {
 		return;
@@ -142,13 +141,19 @@ void BmBusyView::Draw( BRect) {
 	r.InsetBy( 1.0, 1.0);
 	r.left++;
 	r.top++;
-	SetHighColor( White);
-	FillEllipse( r);
+	SetHighColor( ui_color( B_UI_CONTROL_BACKGROUND_COLOR));
+	StrokeEllipse( r);
 	r.InsetBy( 1.0, 1.0);
 	float start = 0;
 	float end = (mCurrState % 360);
-	SetHighColor( (mCurrState / 360) % 2 ? MedMetallicBlue : White);
+	SetHighColor( (mCurrState / 360) % 2 
+		? ui_color( B_UI_CONTROL_HIGHLIGHT_COLOR)
+		: ui_color( B_UI_CONTROL_BACKGROUND_COLOR)
+	);
 	FillArc( r, end, 359.0);
-	SetHighColor( (mCurrState / 360) % 2 ? White : MedMetallicBlue);
+	SetHighColor( (mCurrState / 360) % 2 
+		? ui_color( B_UI_CONTROL_BACKGROUND_COLOR)
+		: ui_color( B_UI_CONTROL_HIGHLIGHT_COLOR)
+	);
 	FillArc( r, start, end);
 }

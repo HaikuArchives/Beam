@@ -230,7 +230,7 @@ class IMPEXPSANTAPARTSFORBEAM ColumnListView : public BListView
 
 	protected:
 		void SetDisconnectScrollView( bool disconnect);
-		void UpdateColumnSizesDataRectSizeScrollBars(bool scrolling_allowed = true);
+		void UpdateDataRect(bool scrolling_allowed = true);
 		void ColumnsChanged();
 		virtual void ShowLabelViewMenu( BPoint)	{ }
 		int CompareItems(const CLVListItem *item1, const CLVListItem *item2);

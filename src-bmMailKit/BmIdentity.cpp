@@ -171,6 +171,9 @@ bool BmIdentity::HandlesAddrSpec( BmString addrSpec, bool needExactMatch) const 
 	}
 	if (!needExactMatch && mMarkedAsBitBucket)
 		return true;
+		
+	// escape \ chars for the regexx engine
+	addrSpec.ReplaceAll("\\", "\\\\");	
 	BmString regex = BmString("\\b") + addrSpec + "\\b";
 	return rx.exec( mMailAliases, regex) > 0;
 }

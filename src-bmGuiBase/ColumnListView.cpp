@@ -79,8 +79,6 @@ uint8 CLVDownArrowData[132] =
 };
 
 
-const float darken_tint = 1.072F;
-const float lighten_tint = 0.980F;
 
 //******************************************************************************************************
 //**** ColumnListView CLASS DEFINITION
@@ -113,8 +111,6 @@ BRect CLVContainerView::layout(BRect rect)
 }
 // (end of adaptation)
 
-const rgb_color sand =		{255,248,200,	255};
-
 const char* const ColumnListView::MSG_DISPLAYORDER = 	"bm:dsplord";
 const char* const ColumnListView::MSG_NUMSORTKEYS = 	"bm:nsort";
 const char* const ColumnListView::MSG_SORTKEY = 		"bm:sortk";
@@ -141,12 +137,12 @@ fDownArrow(BRect(0.0,0.0,10.0,10.0),B_COLOR_8_BIT,CLVDownArrowData,false,false),
 fExpanderColumn( -1),
 fCompare( NULL),
 fWatchingForDrag( false),
-fSelectedItemColorWindowActive( tint_color(LightMetallicBlue, lighten_tint)),
-fSelectedItemColorWindowInactive( tint_color(BeListSelectGrey, lighten_tint)),
-fSelectedItemColorTintedWindowActive( tint_color(fSelectedItemColorWindowActive, darken_tint)),
-fSelectedItemColorTintedWindowInactive( tint_color(fSelectedItemColorWindowInactive, darken_tint)),
-fDarkColumnCol( tint_color( White, darken_tint)),
-fLightColumnCol( White),
+fSelectedItemColorWindowActive( ui_color( B_UI_MENU_SELECTED_BACKGROUND_COLOR)),
+fSelectedItemColorWindowInactive( ui_color( B_UI_MENU_SELECTED_BACKGROUND_COLOR)),
+fSelectedItemColorTintedWindowActive( BmWeakenColor( B_UI_MENU_SELECTED_BACKGROUND_COLOR, 1)),
+fSelectedItemColorTintedWindowInactive( BmWeakenColor( B_UI_MENU_SELECTED_BACKGROUND_COLOR, 1)),
+fDarkColumnCol( BmWeakenColor( B_UI_DOCUMENT_BACKGROUND_COLOR, 1)),
+fLightColumnCol( ui_color( B_UI_DOCUMENT_BACKGROUND_COLOR)),
 fWindowActive( false),
 fDeactivatedVerticalBar( NULL),
 fStripedBackground( false),
@@ -166,7 +162,7 @@ CLVContainerView* ColumnListView::Initialize( BRect Frame, uint32 flags, uint32 
 	font_height FontAttributes;
 	LabelFont->GetHeight(&FontAttributes);
 	float LabelFontHeight = ceil(FontAttributes.ascent) + ceil(FontAttributes.descent);
-	float ColumnLabelViewBottom = Frame.top+1.0+LabelFontHeight+3.0;
+	float ColumnLabelViewBottom = Frame.top+LabelFontHeight+2.0;
 	fColumnLabelView = new CLVColumnLabelView( BRect(Frame.left,Frame.top,Frame.right,
 											   ColumnLabelViewBottom),this,LabelFont);
 
@@ -174,7 +170,7 @@ CLVContainerView* ColumnListView::Initialize( BRect Frame, uint32 flags, uint32 
 	EmbedInContainer(horizontal,vertical,scroll_view_corner,border,ResizingMode,flags);
 
 	//Complete the setup
-	UpdateColumnSizesDataRectSizeScrollBars();
+	UpdateDataRect();
 	fColumnLabelView->UpdateDragGroups();
 
 	SetViewColor( B_TRANSPARENT_COLOR);
@@ -238,7 +234,7 @@ void ColumnListView::EmbedInContainer(bool horizontal, bool vertical, bool scrol
 }
 
 
-void ColumnListView::UpdateColumnSizesDataRectSizeScrollBars(bool scrolling_allowed)
+void ColumnListView::UpdateDataRect(bool scrolling_allowed)
 {
 	//Figure out the width
 	float ColumnBegin;
@@ -290,7 +286,7 @@ void ColumnListView::ColumnsChanged()
 		fColumnLabelView->fColumnClicked = NULL;
 
 	//Update the internal sizes and grouping of the columns and sizes of drag groups
-	UpdateColumnSizesDataRectSizeScrollBars();
+	UpdateDataRect();
 	fColumnLabelView->UpdateDragGroups();
 	fColumnLabelView->Invalidate();
 	Invalidate();
@@ -932,7 +928,7 @@ void ColumnListView::SortingChanged()
 
 void ColumnListView::FrameResized(float width, float height)
 {
-	UpdateColumnSizesDataRectSizeScrollBars();
+	UpdateDataRect();
 	BListView::FrameResized(width,height);
 }
 
@@ -1137,7 +1133,9 @@ bool ColumnListView::AddUnder(BListItem* a_item, BListItem* a_superitem)
 			Temp = (CLVListItem*)fFullItemList.ItemAt(++ItemPos);
 		}
 	}
-	return AddItemPrivate(item,ItemPos);
+	bool result = AddItemPrivate(item,ItemPos);
+	UpdateDataRect();
+	return result;
 }
 
 
@@ -1209,7 +1207,9 @@ bool ColumnListView::AddItem(BListItem* a_item, int32 fullListIndex)
 	CLVListItem* item = cast_as(a_item,CLVListItem);
 	if(item == NULL)
 		return false;
-	return AddItemPrivate(item,fullListIndex);
+	bool result = AddItemPrivate(item,fullListIndex);
+	UpdateDataRect();
+	return result;
 }
 
 
@@ -1219,14 +1219,17 @@ bool ColumnListView::AddItem(BListItem* a_item)
 	CLVListItem* item = cast_as(a_item,CLVListItem);
 	if(item == NULL)
 		return false;
+	bool result;
 	if(fHierarchical) {
-		return AddItemPrivate(item,fFullItemList.CountItems());
+		result = AddItemPrivate(item,fFullItemList.CountItems());
 	} else {
 		if (fInsertAtSortedPos)
-			return AddItemPrivate(item, DetermineSortedPos( item));
+			result = AddItemPrivate(item, DetermineSortedPos( item));
 		else 
-			return AddItemPrivate(item, CountItems());
+			result = AddItemPrivate(item, CountItems());
 	}
+	UpdateDataRect();
+	return result;
 }
 
 
@@ -1407,30 +1410,37 @@ bool ColumnListView::AddItemPrivate(CLVListItem* item, int32 fullListIndex)
 					Result = BListView::AddItem((BListItem*)item,IndexOf(PreviousItem)+1);
 				else
 					Result = BListView::AddItem((BListItem*)item,0);
-				if(Result == false)
+				if(Result == false) {
 					fFullItemList.RemoveItem(item);
-				return Result;
+					return false;
+				}
 			}
 			return true;
 		}
 	}
-	else
+	else {
 		return BListView::AddItem(item,fullListIndex);
+	}
 }
 
 
 bool ColumnListView::AddList(BList* newItems)
 {
+	bool result;
 	if(fHierarchical)
-		return AddListPrivate(newItems,fFullItemList.CountItems());
+		result = AddListPrivate(newItems,fFullItemList.CountItems());
 	else
-		return AddListPrivate(newItems,CountItems());
+		result = AddListPrivate(newItems,CountItems());
+	UpdateDataRect();
+	return result;
 }
 
 
 bool ColumnListView::AddList(BList* newItems, int32 fullListIndex)
 {
-	return AddListPrivate(newItems,fullListIndex);
+	bool result = AddListPrivate(newItems,fullListIndex);
+	UpdateDataRect();
+	return result;
 }
 
 
@@ -1458,6 +1468,7 @@ bool ColumnListView::RemoveItem(BListItem* a_item)
 {
 	AssertWindowLocked();
 
+	bool result;
 	//Get the CLVListItems
 	CLVListItem* item = cast_as(a_item,CLVListItem);
 	if(item == NULL)
@@ -1467,32 +1478,34 @@ bool ColumnListView::RemoveItem(BListItem* a_item)
 		if(!fFullItemList.HasItem(item))
 			return false;
 		int32 ItemsToRemove = 1 + FullListNumberOfSubitems(item);
-		return RemoveItems(fFullItemList.IndexOf(item),ItemsToRemove);
+		result = RemoveItems(fFullItemList.IndexOf(item),ItemsToRemove);
 	}
 	else
-		return BListView::RemoveItem((BListItem*)item);
+		result = BListView::RemoveItem((BListItem*)item);
+	UpdateDataRect();
+	return result;
 }
 
 
 BListItem* ColumnListView::RemoveItem(int32 fullListIndex)
 {
 	AssertWindowLocked();
+	BListItem* item = NULL;
 	if(fHierarchical)
 	{
 		CLVListItem* TheItem = (CLVListItem*)fFullItemList.ItemAt(fullListIndex);
 		if(TheItem)
 		{
 			int32 ItemsToRemove = 1 + FullListNumberOfSubitems(TheItem);
-			if(RemoveItems(fullListIndex,ItemsToRemove))
-				return TheItem;
-			else
-				return NULL;
+			if (RemoveItems(fullListIndex,ItemsToRemove) && !item)
+				item = TheItem;
 		}
-		else
-			return NULL;
 	}
-	else
-		return BListView::RemoveItem(fullListIndex);
+	else {
+		item = BListView::RemoveItem(fullListIndex);
+		UpdateDataRect();
+	}
+	return item;
 }
 
 
@@ -1500,6 +1513,7 @@ bool ColumnListView::RemoveItems(int32 fullListIndex, int32 count)
 {
 	AssertWindowLocked();
 	CLVListItem* TheItem;
+	bool result;
 	if(fHierarchical)
 	{
 		uint32 LastSuperItemLevel = ULONG_MAX;
@@ -1537,14 +1551,15 @@ bool ColumnListView::RemoveItems(int32 fullListIndex, int32 count)
 		}
 		while(DisplayItemsToRemove > 0)
 		{
-			if(BListView::RemoveItem(FirstDisplayItemToRemove) == NULL)
-				return false;
+			BListView::RemoveItem(FirstDisplayItemToRemove);
 			DisplayItemsToRemove--;
 		}
-		return fFullItemList.RemoveItems(fullListIndex,count);
+		result = fFullItemList.RemoveItems(fullListIndex,count);
 	}
 	else
-		return BListView::RemoveItems(fullListIndex,count);
+		result = BListView::RemoveItems(fullListIndex,count);
+	UpdateDataRect();
+	return result;
 }
 
 
@@ -1628,6 +1643,7 @@ void ColumnListView::MakeEmpty()
 	AssertWindowLocked();
 	fFullItemList.MakeEmpty();
 	BListView::MakeEmpty();
+	UpdateDataRect();
 }
 
 
@@ -1795,6 +1811,7 @@ void ColumnListView::Expand(CLVListItem* item)
 				break;
 		}
 	}
+	UpdateDataRect();
 	ExpansionChanged( item, true);
 							// [zooey]: give subclasses a chance to act upon change
 }
@@ -1837,6 +1854,7 @@ void ColumnListView::Collapse(CLVListItem* item)
 				break;
 		}
 	}
+	UpdateDataRect();
 	ExpansionChanged( item, false);
 							// [zooey]: give subclasses a chance to act upon change
 }
@@ -2115,7 +2133,7 @@ void ColumnListView::Draw( BRect updateRect) {
 			SetLowColor( fLightColumnCol);
 		FillRect( ThisColumnRect, B_SOLID_LOW);
 	} else {
-		SetLowColor( White);
+		SetLowColor( fLightColumnCol);
 		FillRect( updateRect, B_SOLID_LOW);
 	}
 }

@@ -608,7 +608,7 @@ void BmListViewController::AddAllModelItems() {
 	SortItems();
 	SetInsertAtSortedPos( true);
 	SetDisconnectScrollView( false);
-	UpdateColumnSizesDataRectSizeScrollBars( true);
+	UpdateDataRect( true);
 	UpdateCaption();
 	BM_LOG2( BM_LogModelController, 
 				BmString(ControllerName())
@@ -1197,7 +1197,7 @@ BRect BmCLVContainerView::layout( BRect rect) {
 		BScrollBar* hScroller = ScrollBar( B_HORIZONTAL);
 		if (!mCaptionWidth && (!hScroller || hScroller->IsHidden())) {
 			if (ScrollBar( B_VERTICAL))
-				fullCaptionWidth -= B_V_SCROLL_BAR_WIDTH + 1;
+				fullCaptionWidth -= B_V_SCROLL_BAR_WIDTH;
 			mCaption->ResizeTo( fullCaptionWidth, cpFrame.Height());
 			mCaption->Invalidate();
 		}

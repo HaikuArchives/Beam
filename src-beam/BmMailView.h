@@ -79,7 +79,7 @@ class BmMailView : public WrappingTextView, public BmJobController {
 	typedef WrappingTextView inherited;
 	typedef BmJobController inheritedController;
 	struct BmTextRunInfo {
-		BmTextRunInfo( rgb_color c=Black, bool url=false) { 
+		BmTextRunInfo( rgb_color c= ui_color(B_UI_DOCUMENT_TEXT_COLOR), bool url=false) { 
 			color = c; isURL = url;
 		}
 		rgb_color color;

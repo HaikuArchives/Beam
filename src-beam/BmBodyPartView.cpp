@@ -118,8 +118,6 @@ BmBodyPartItem::~BmBodyPartItem() {
 /********************************************************************************\
 	BmBodyPartView
 \********************************************************************************/
-#define BACKGROUND_COL BeBackgroundGrey
-
 const int16 BmBodyPartView::nFirstTextCol = 2;
 float BmBodyPartView::nColWidths[10] = {10,20,20,20,20,20,20,20,20,0};
 
@@ -138,10 +136,10 @@ BmBodyPartView::BmBodyPartView( minimax minmax, int32 width, int32 height,
 	,	mSavePanel( NULL)
 	,	mIsUsedForPrinting( false)
 {
-	SetViewColor( BACKGROUND_COL);
-	fLightColumnCol = BACKGROUND_COL;
+	SetViewColor( ui_color( B_UI_PANEL_BACKGROUND_COLOR));
+	fLightColumnCol = ui_color( B_UI_PANEL_BACKGROUND_COLOR);
 	fSelectedItemColorWindowActive = 
-	fSelectedItemColorWindowInactive = BeShadow;
+	fSelectedItemColorWindowInactive = BmWeakenColor( B_UI_SHADOW_COLOR, 2);
 
 	Initialize( BRect(0,0,800,40), B_WILL_DRAW | B_FRAME_EVENTS,
 					B_FOLLOW_NONE, false, false, false, B_FANCY_BORDER);
@@ -232,9 +230,9 @@ void BmBodyPartView::ShowBody( BmBodyPartList* body) {
 		if (!body) {
 			ResizeTo( Bounds().Width(), 0);
 			MoveTo( 0, 0);
-			SetViewColor( White);
+			SetViewColor( ui_color( B_UI_DOCUMENT_BACKGROUND_COLOR));
 		} else {
-			SetViewColor( BACKGROUND_COL);
+			SetViewColor( ui_color( B_UI_PANEL_BACKGROUND_COLOR));
 			StartJob( body, !mIsUsedForPrinting);
 		}
 	}

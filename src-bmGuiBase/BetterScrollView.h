@@ -65,6 +65,7 @@ class IMPEXPSANTAPARTSFORBEAM BetterScrollView : public BScrollView
 		inline BRect DataRect() {return m_data_rect;}
 		virtual	void FrameResized(float new_width, float new_height);
 		virtual void AttachedToWindow();
+		void WindowActivated(bool active);
 
 	protected:
 		void UpdateScrollBars(bool scrolling_allowed);
