@@ -144,7 +144,7 @@ BmMailEditWin::BmMailEditWin( BmMailRef* mailRef, BmMail* mail)
 	,	mAttachPanel( NULL)
 {
 	CreateGUI();
-	mMailView->AddFilter( new BmMsgFilter( mSubjectControl, B_KEY_DOWN));
+	mMailView->AddFilter( new BmShiftTabMsgFilter( mSubjectControl, B_KEY_DOWN));
 	if (mail)
 		EditMail( mail);
 	else
@@ -169,7 +169,7 @@ BmMailEditWin::~BmMailEditWin() {
 	Filter()
 		-	
 \*------------------------------------------------------------------------------*/
-filter_result BmMailEditWin::BmMsgFilter::Filter( BMessage* msg, BHandler**) {
+filter_result BmMailEditWin::BmShiftTabMsgFilter::Filter( BMessage* msg, BHandler**) {
 	if (msg->what == B_KEY_DOWN) {
 		BmString bytes = msg->FindString( "bytes");
 		int32 modifiers = msg->FindInt32( "modifiers");
@@ -365,10 +365,9 @@ void BmMailEditWin::CreateGUI() {
 			mSmtpControl->MarkItem( acc->Key().String());
 	}
 	
-	// add all encodings to menu:
-	for( int i=0; BM_Encodings[i].charset; ++i) {
-		mCharsetControl->Menu()->AddItem( new BMenuItem( BM_Encodings[i].charset, new BMessage(BM_CHARSET_SELECTED)));
-	}
+	// add all charsets to menu:
+	AddCharsetMenu( mCharsetControl->Menu(), this, BM_CHARSET_SELECTED);
+
 	// add all signatures to signature menu:
 	mSignatureControl->Menu()->AddItem( new BMenuItem( "<none>", new BMessage( BM_SIGNATURE_SELECTED)));
 	for( iter = TheSignatureList->begin(); iter != TheSignatureList->end(); ++iter) {
@@ -378,6 +377,8 @@ void BmMailEditWin::CreateGUI() {
 
 	mSaveButton->SetEnabled( mModified);
 	mMailView->SetModificationMessage( new BMessage( BM_TEXTFIELD_MODIFIED));
+
+	// watch changes to bodypartview in order to be set the changed-flag accordingly:	
 	mMailView->BodyPartView()->StartWatching( this, BM_NTFY_LISTCONTROLLER_MODIFIED);
 
 	// temporarily disabled:
@@ -429,6 +430,8 @@ MMenuBar* BmMailEditWin::CreateMenu() {
 	// File
 	menu = new BMenu( "File");
 	menu->AddItem( CreateMenuItem( "Save", BMM_SAVE, "SaveMail"));
+	menu->AddSeparatorItem();
+	AddItemToMenu( menu, CreateMenuItem( "Preferences...", BMM_PREFERENCES), bmApp);
 	menu->AddSeparatorItem();
 	menu->AddItem( CreateMenuItem( "Close", B_QUIT_REQUESTED));
 	menu->AddSeparatorItem();
@@ -696,9 +699,22 @@ void BmMailEditWin::MessageReceived( BMessage* msg) {
 				&& source==mSubjectControl) {
 					SetTitle( (BmString("Edit Mail: ") + mSubjectControl->Text()).String());
 				}
-				// right, no break here!
+				mModified = true;
+				mSaveButton->SetEnabled( true);
+				break;
 			}
-			case BM_CHARSET_SELECTED:
+			case BM_CHARSET_SELECTED: {
+				BMenuItem* item = NULL;
+				msg->FindPointer( "source", (void**)&item);
+				if (item) {
+					mCharsetControl->ClearMark();
+					mCharsetControl->MenuItem()->SetLabel( item->Label());
+					item->SetMarked( true);
+					mModified = true;
+					mSaveButton->SetEnabled( true);
+				}
+				break;
+			}
 			case BM_SMTP_SELECTED:
 			case B_OBSERVER_NOTICE_CHANGE: {
 				mModified = true;
@@ -804,7 +820,8 @@ void BmMailEditWin::SetFieldsFromMail( BmMail* mail) {
 		else
 			mSignatureControl->MarkItem( "<none>");
 		// mark corresponding charset:
-		mCharsetControl->MarkItem( EncodingToCharset( mail->DefaultEncoding()).String());
+		mCharsetControl->MenuItem()->SetLabel( mail->DefaultCharset().String());
+		mCharsetControl->MarkItem( mail->DefaultCharset().String());
 		// try to set convenient focus:
 		if (!mFromControl->TextView()->TextLength())
 			mFromControl->MakeFocus( true);
@@ -837,10 +854,9 @@ bool BmMailEditWin::CreateMailFromFields( bool hardWrapIfNeeded) {
 	if (mail) {
 		BmString editedText;
 		mMailView->GetWrappedText( editedText, hardWrapIfNeeded);
-		BMenuItem* charsetItem = mCharsetControl->Menu()->FindMarked();
-		int32 encoding = charsetItem 
-								? CharsetToEncoding( charsetItem->Label())
-						 		: ThePrefs->GetInt("DefaultEncoding");
+		BmString charset = mCharsetControl->MenuItem()->Label();
+		if (!charset.Length())
+			charset = ThePrefs->GetString( "DefaultCharset");
 		BMenuItem* smtpItem = mSmtpControl->Menu()->FindMarked();
 		BmString smtpAccount = smtpItem ? smtpItem->Label() : "";
 		mail->AccountName( smtpAccount);
@@ -865,7 +881,7 @@ bool BmMailEditWin::CreateMailFromFields( bool hardWrapIfNeeded) {
 																			"%a, %d %b %Y %H:%M:%S %z"));
 		}
 		try {
-			bool res = mail->ConstructRawText( editedText, encoding, smtpAccount);
+			bool res = mail->ConstructRawText( editedText, charset, smtpAccount);
 			return res;
 		} catch( BM_text_error& textErr) {
 			if (textErr.posInText >= 0) {

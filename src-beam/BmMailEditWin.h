@@ -60,9 +60,9 @@ class BmMailEditWin : public BmWindow
 	typedef BmWindow inherited;
 	typedef map< const entry_ref, BmMailEditWin*> BmEditWinMap;
 
-	class BmMsgFilter : public BMessageFilter {
+	class BmShiftTabMsgFilter : public BMessageFilter {
 	public:
-		BmMsgFilter( BControl* stControl, uint32 cmd)
+		BmShiftTabMsgFilter( BControl* stControl, uint32 cmd)
 			: 	BMessageFilter( B_ANY_DELIVERY, B_ANY_SOURCE, cmd) 
 			,	mShiftTabToControl( stControl)
 		{
