@@ -148,10 +148,10 @@ BmAddress::operator BmString() const {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-bool BmAddress::IsHandledByAccount( BmPopAccount* acc) const {
+bool BmAddress::IsHandledByAccount( BmPopAccount* acc, bool needExactMatch) const {
 	if (!acc)
 		return false;
-	return acc->HandlesAddress( mAddrSpec);
+	return acc->HandlesAddress( mAddrSpec, needExactMatch);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -160,7 +160,7 @@ bool BmAddress::IsHandledByAccount( BmPopAccount* acc) const {
 \*------------------------------------------------------------------------------*/
 void BmAddress::ConstructRawText( BmString& header, int32 encoding, int32 fieldNameLength) const {
 	BmString convertedAddrSpec = ConvertUTF8ToHeaderPart( mAddrSpec, encoding, false, 
-																		  true, fieldNameLength);
+																			true, fieldNameLength);
 	if (mPhrase.Length()) {
 		// quote the phrase if it contains "dangerous" characters:
 		BmString phrase;
@@ -174,9 +174,7 @@ void BmAddress::ConstructRawText( BmString& header, int32 encoding, int32 fieldN
 		BmString convertedPhrase = ConvertUTF8ToHeaderPart( phrase, encoding, true, 
 																			true, fieldNameLength);
 		if (convertedPhrase.Length()+convertedAddrSpec.Length()+3 > ThePrefs->GetInt( "MaxLineLen")) {
-			header << convertedPhrase << "\r\n";
-			header.Append( BM_SPACES.String(), fieldNameLength+2);
-			header << "<" << convertedAddrSpec << ">";
+			header << convertedPhrase << "\r\n <" << convertedAddrSpec << ">";
 		} else
 			header << convertedPhrase << " <" << convertedAddrSpec << ">";
 	} else
@@ -276,10 +274,11 @@ void BmAddressList::Remove( BmString singleAddress) {
 	SplitIntoAddresses()
 		-	
 \*------------------------------------------------------------------------------*/
-BmString BmAddressList::FindAddressMatchingAccount( BmPopAccount* acc) const {
+BmString BmAddressList::FindAddressMatchingAccount( BmPopAccount* acc, 
+																	 bool needExactMatch) const {
 	int32 count = mAddrList.size();
 	for( int i=0; i<count; ++i) {
-		if (mAddrList[i].IsHandledByAccount( acc))
+		if (mAddrList[i].IsHandledByAccount( acc, needExactMatch))
 			return mAddrList[i];
 	}
 	return "";
@@ -427,16 +426,15 @@ void BmAddressList::ConstructRawText( BmStringOBuf& header, int32 encoding,
 		BmString converted;
 		pos->ConstructRawText( converted, encoding, fieldNameLength);
 		if (pos != mAddrList.begin()) {
-			fieldString += ", ";
+			fieldString << ", ";
 			if (fieldString.Length() + converted.Length() > ThePrefs->GetInt( "MaxLineLen")) {
-				fieldString += "\r\n";
-				fieldString.Append( BM_SPACES, fieldNameLength+2);
+				fieldString << "\r\n ";
 			}
 		}
-		fieldString += converted;
+		fieldString << converted;
 	}
 	if (mIsGroup)
-		fieldString += ";";
+		fieldString << ";";
 	header << fieldString;
 }
 
@@ -741,12 +739,19 @@ BmString BmMailHeader::DetermineListAddress( bool bypassSanityTest) {
 \*------------------------------------------------------------------------------*/
 BmString BmMailHeader::DetermineReceivingAddrFor( BmPopAccount* acc) {
 	BmString addr;
-	addr = mAddrMap[BM_FIELD_TO].FindAddressMatchingAccount( acc);
-	if (!addr.Length()) {
-		addr = mAddrMap[BM_FIELD_CC].FindAddressMatchingAccount( acc);
-		if (!addr.Length()) {
-			addr = mAddrMap[BM_FIELD_BCC].FindAddressMatchingAccount( acc);
-		}
+	bool needExactMatch = true;
+	// in the first loop-run, we check whether any of the addresses matches
+	// the given account exactly, in the second loop-run, we accept matches
+	// by catch-all-accounts, too:
+	for( int i=0;  !addr.Length() && i<2;  ++i) {
+		addr = mAddrMap[BM_FIELD_TO].FindAddressMatchingAccount( acc, needExactMatch);
+		if (addr.Length())
+			break;
+		addr = mAddrMap[BM_FIELD_CC].FindAddressMatchingAccount( acc, needExactMatch);
+		if (addr.Length())
+			break;
+		addr = mAddrMap[BM_FIELD_BCC].FindAddressMatchingAccount( acc, needExactMatch);
+		needExactMatch = false;
 	}
 	return addr;
 }

@@ -72,7 +72,7 @@ public:
 	// native methods:
 	bool SetTo( const BmString& addrText);
 	void ConstructRawText( BmString& header, int32 encoding, int32 fieldNameLength) const;
-	bool IsHandledByAccount( BmPopAccount* acc) const;
+	bool IsHandledByAccount( BmPopAccount* acc, bool needExactMatch=false) const;
 
 	// operators:
 	operator BmString() const;
@@ -112,7 +112,7 @@ public:
 	void Remove( BmString singleAddress);
 	BmStringList SplitIntoAddresses( BmString addrList);
 	void ConstructRawText( BmStringOBuf& header, int32 encoding, int32 fieldNameLength) const;
-	BmString FindAddressMatchingAccount( BmPopAccount* acc) const;
+	BmString FindAddressMatchingAccount( BmPopAccount* acc, bool needExactMatch=false) const;
 	bool ContainsAddrSpec( BmString addrSpec) const;
 	BmString AddrSpecsAsString() const;
 	//
