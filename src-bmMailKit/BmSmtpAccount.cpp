@@ -69,9 +69,6 @@ BmSmtpAccount::BmSmtpAccount( const char* name, BmSmtpAccountList* model)
 	,	mPortNrString( "25")
 	,	mPwdStoredOnDisk( false)
 {
-	TheLogHandler->FindLogfile( BmString("SMTP_")<<Key());
-							// create logfile in advance so it can
-							// be shown in log-menu
 }
 
 /*------------------------------------------------------------------------------*\
@@ -96,9 +93,6 @@ BmSmtpAccount::BmSmtpAccount( BMessage* archive, BmSmtpAccountList* model)
 	if (version > 1) {
 		mAccForSmtpAfterPop = FindMsgString( archive, MSG_ACC_FOR_SAP);
 	}
-	TheLogHandler->FindLogfile( BmString("SMTP_")<<Key());
-							// create logfile in advance so it can
-							// be shown in log-menu
 }
 
 /*------------------------------------------------------------------------------*\

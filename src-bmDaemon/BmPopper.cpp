@@ -171,8 +171,7 @@ BmPopper::BmPopper( const BmString& name, BmPopAccount* account)
 		-	destructor
 \*------------------------------------------------------------------------------*/
 BmPopper::~BmPopper() { 
-	// taken out to make it easier to acquire list of logs:
-//	BM_LOG_FINISH( BM_LOGNAME);
+	BM_LOG_FINISH( BM_LOGNAME);
 }
 
 /*------------------------------------------------------------------------------*\

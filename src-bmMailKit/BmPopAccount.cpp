@@ -100,9 +100,6 @@ BmPopAccount::BmPopAccount( const char* name, BmPopAccountList* model)
 	,	mHomeFolder( "in")
 {
 	SetupIntervalRunner();
-	TheLogHandler->FindLogfile( BmString("POP_")<<Key());
-							// create logfile in advance so it can
-							// be shown in log-menu
 }
 
 /*------------------------------------------------------------------------------*\
@@ -197,9 +194,6 @@ BmPopAccount::BmPopAccount( BMessage* archive, BmPopAccountList* model)
 		mDeleteMailDelayString << mDeleteMailDelay;
 	}
 	SetupIntervalRunner();
-	TheLogHandler->FindLogfile( BmString("POP_")<<Key());
-							// create logfile in advance so it can
-							// be shown in log-menu
 }
 
 /*------------------------------------------------------------------------------*\
