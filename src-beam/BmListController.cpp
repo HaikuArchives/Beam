@@ -856,19 +856,21 @@ void BmListViewController::DetachModel() {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmListViewController::MakeEmpty() {
-	BList tempList;
 	if (LockLooper()) {
 		int32 count = FullListCountItems();
+		BList tempList(count);
 		for( int i=0; i<count; ++i)
 			tempList.AddItem( FullListItemAt( i));
 		inherited::MakeEmpty();					// clear display
 		int c;
-		while( !tempList.IsEmpty()) {
+		count = tempList.CountItems();
+		for( int i=0; i<count; ++i) {
 			BmListViewItem* subItem 
-				= static_cast<BmListViewItem*>(tempList.RemoveItem( (int32)0));
+				= static_cast<BmListViewItem*>(tempList.ItemAt( i));
 			if ((c = mViewModelMap.erase( subItem->ModelItem())) != 1)
-				BM_LOGERR( BmString("unable to erase subItem ") << subItem->Key() 
-									<< "from ViewModelMap.\nResult of erase() is: "<<c);
+				BM_LOG( BM_LogModelController, 
+						  BmString("unable to erase subItem ") << subItem->Key() 
+								<< " from ViewModelMap.\nResult of erase() is: "<<c);
 			delete subItem;
 		}
 		UpdateCaption();
