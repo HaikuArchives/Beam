@@ -126,7 +126,10 @@ void BmBusyView::SetErrorText(const BmString& txt)
 \*------------------------------------------------------------------------------*/
 void BmBusyView::UpdateErrorStatus() 
 {
-	TheBubbleHelper->SetHelp( this, mErrorText.String());
+	if (mErrorText.Length() > 0)
+		TheBubbleHelper->SetHelp( this, mErrorText.String());
+	else
+		TheBubbleHelper->SetHelp( this, NULL);
 	Invalidate();
 }
 
