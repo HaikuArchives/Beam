@@ -7,6 +7,9 @@
 Beam 0.92:
 ***********
 
+
+-	rework BmPopper to use BmMemFilters
+
 -	add support for mail-filtering
 
 -	implement RFC2231 to facilitate correct handling of attachment
