@@ -2,6 +2,161 @@ change-history of Beam:
 		$Id$
 
 *******************************************************************************
+[Beam 1.0-rc5]
+*******************************************************************************
+
+< 2003-10-21: commit>
+
+BmApp:
+	-	simplified handling of BMM_TRASH.
+
+BmMailRefView, BmMainWindow:
+	-	unified handling of different trash-shortcuts (DEL, CTRL-T,
+		menu and toolbar) such that Beam now does the same no matter
+		which shortcut you use.
+
+BmMemIO:
+	-	removed unneeded #includes
+
+< 2003-10-20: commit>
+
+BmApp, BmDataModel, BmMainWindow:
+	-	removed awkward special-casing of job-done messages being
+		routed through the app just to inform the main-window when
+		the popaccount-list has been read. Must have been a bad
+		day at the time...
+
+BmBodyPartList, BmEncoding:
+	-	extended NeedsEncoding() to support different line-lengths
+		when determining overlong lines (for header and body).
+
+BmMail:
+	-	changed AddQuotedText() to be more efficient for very long
+		paragraphs.
+
+libregexx:
+	- fixed compilation issue if using C-mode.
+
+< 2003-10-16: commit>
+
+BmPrefsRecvMailView:
+	-	fixed bug that caused DeleteMailFromServer-setting to not work
+		anymore (and nobody noticed for weeks, tsk!).
+
+makefiles:
+	-	patched makesystem to work on PPC, too.
+
+many files:
+	-	fixed compilation issues on PPC
+
+< 2003-10-13: commit>
+
+BmBodyPartList:
+	-	changed check for discarded characters when converting to/from
+		UTF-8.
+
+BmEncoding:
+	-	we now consistently discard chars that are illegal for a specific
+		encoding and keep track of the first discarded position.
+	-	in NeedsEncoding() we no demand encoding if the text contains
+		lines that exceed the length of 998 octets (see RFC2822).
+
+BmLogWindow:
+	-	we no longer show error-window if in testmode.
+
+BmMailView:
+	-	instead of requiring hard-breaks of lines exceeding 998 octets,
+		we now demand qp-encoding of the mail-text instead. This avoids
+		the insertion of unwanted newlines into very long paragraphs.
+
+BmPrefsView, BmPrefs...View, BmPrefsWin:
+	-	when activating a specific prefs-view automatically, we now take 
+		care to select the activated view in the prefs-listview, too.
+
+BmPrefs, BmRulerView:
+	-	changed from prefs-setting 'MaxLineLenForHardWrap' to 
+		'NeverExceed78Chars'.
+
+src-tests:
+	-	updated tests to current state of BmEncoding
+	-	added remaining tests so that encoding/decoding is now complete.
+
+WrappingTextView:
+	-	we now ignore B_COPY-messges if the selection is empty. This way
+		we no longer clobber an existing selection when the user presses
+		CTRL-C instead of CTRL-V.
+
+< 2003-10-10: commit>
+
+BmBodyPartList, BmEncoding:
+	-	added support for automatic replacement of charset 'unknown-8bit'
+		(added by some servers during conversion) with default-charset.
+
+BmDataModel:
+	-	ThreadStartFunc() no longer throws, thus avoiding terminate().
+
+BmMail:
+	-	fixed bug with personal-reply-phrase ("you") not working.
+
+BmMailHeader:
+	-	file now follows the 80-chars-per-line rule.
+
+BmNetUtil:
+	-	fixed bug in IsPPPRunning() under BONE which would cause Beam to
+		run out of file-descriptors. No good!
+
+< 2003-10-09: commit>
+
+BmApp:
+	-	added log-entries when a pop-account wants to check mail (such 
+		that it is clear whether the check is being executed or not).
+
+BmBasics:
+	-	added global flag BeamOnDano that indicates whether or not Beam
+		is currently running an Dano (or later).
+
+BmFilter:
+	-	fixed crash when taking along older filter-settings (only vague
+		chance this ever happens in the outside world, but it did for me).
+
+BmLogHandler:
+	-	made mActiveLogs private
+
+BmLogWindow
+	-	positions of log-windows are now persistent.
+	-	made error-window cling to bottom of main-window.
+
+BmMainWindow:
+	-	made error-window cling to bottom of main-window.
+	-	now we correctly add all entries to log-menu.
+
+BmMenuControl:
+	-	changed Dano-compatibility from a compile-time-switch to
+		a run-time switch. This way the bone-release should look alright
+		under Dano, too.
+
+BmPrefsRecvMailView:
+	-	added minor fix to redrawing of days-label.
+
+< 2003-10-07: commit>
+
+BmBodyPartList:
+	-	fixed crashing bug with empty bodyparts not being handled 
+		correctly. When looking for the end of a bodypart's header, 
+		we now make sure to not accept any separator-lines that are not 
+		part of the current bodypart.
+
+ColumnListView:
+	-	fixed bug with items not being added to the end of the superitem's
+		children list if the listview is hierarchical and does not have
+		any sorting order. 
+		This caused the bodypart-view to be upside-down (last item first).
+
+many files:
+	-	changed usage of BM_THROW...-macros to comply with the 
+		80-chars-per-line rule.
+
+*******************************************************************************
 [Beam 1.0-rc4]
 *******************************************************************************
 
