@@ -169,20 +169,25 @@ public:
 	BmStringOBuf( uint32 startLen, float growFactor=1.5);
 	~BmStringOBuf();
 
+	// native methods:
+	BmString& TheString();
+	inline const char* Buffer() const	{ return mBuf; }
+	inline bool HasData() const			{ return mBuf!=NULL; }
+	inline char ByteAt( uint32 pos) const
+													{ return (!mBuf||pos<0||pos>=mCurrPos) 
+																	? 0 
+																	: mBuf[pos];
+													}
+	virtual void Reset();
+
 	// overrides/overloads of BmMemOBuf base:
 	uint32 Write( const char* data, uint32 len);
 	uint32 Write( BmMemIBuf* input, uint32 blockSize=BmMemFilter::nBlockSize);
-	uint32 Write( const BmString& data)	{ return Write( data.String(), data.Length()); }
+	uint32 Write( const BmString& data)	{ return Write( data.String(), 
+																		 data.Length()); }
 	
-	// native methods:
-	BmString& TheString();
-	const char* Buffer() const;
-	bool HasData() const;
-	char ByteAt( uint32 pos) const;
-	void Reset();
-
 	// getters:
-	uint32 CurrPos() const;
+	inline uint32 CurrPos() const			{ return mCurrPos; }
 
 	BmStringOBuf 		&operator<<(const char *);
 	BmStringOBuf 		&operator<<(const BmString &);
@@ -199,6 +204,42 @@ private:
 	// Hide copy-constructor and assignment:
 	BmStringOBuf( const BmStringOBuf&);
 	BmStringOBuf operator=( const BmStringOBuf&);
+};
+
+/*------------------------------------------------------------------------------*\
+	class BmRingBuf
+		-	
+\*------------------------------------------------------------------------------*/
+class IMPEXPBMBASE BmRingBuf {
+	friend class MemIoTest;
+
+public:
+	BmRingBuf( uint32 startLen, float growFactor=1.5);
+	~BmRingBuf();
+
+	// native methods:
+	void Put( const char* data, uint32 len);
+	char BmRingBuf::Get();
+	char BmRingBuf::PeekFront() const;
+	char BmRingBuf::PeekTail() const;
+	int32 Length() const;
+	void Reset();
+	
+	BmRingBuf 		&operator<<(const char);
+	BmRingBuf 		&operator<<(const char *);
+	BmRingBuf 		&operator<<(const BmString &);
+
+private:
+
+	uint32 mBufLen;
+	char* mBuf;
+	float mGrowFactor;
+	uint32 mCurrFront;
+	uint32 mCurrTail;
+
+	// Hide copy-constructor and assignment:
+	BmRingBuf( const BmRingBuf&);
+	BmRingBuf operator=( const BmRingBuf&);
 };
 
 #endif

@@ -29,6 +29,7 @@
 /*************************************************************************/
 
 #include <assert.h>
+#include <stdexcept>
 
 #include <SupportDefs.h>
 
@@ -362,38 +363,6 @@ uint32 BmStringOBuf::Write( BmMemIBuf* input, uint32 blockSize) {
 }
 
 /*------------------------------------------------------------------------------*\
-	()
-		-	
-\*------------------------------------------------------------------------------*/
-const char* BmStringOBuf::Buffer() const {
-	return mBuf; 
-}
-
-/*------------------------------------------------------------------------------*\
-	()
-		-	
-\*------------------------------------------------------------------------------*/
-bool BmStringOBuf::HasData() const { 
-	return mBuf!=NULL; 
-}
-
-/*------------------------------------------------------------------------------*\
-	()
-		-	
-\*------------------------------------------------------------------------------*/
-char BmStringOBuf::ByteAt( uint32 pos) const {
-	return (!mBuf||pos<0||pos>=mCurrPos) ? 0 : mBuf[pos];
-}
-
-/*------------------------------------------------------------------------------*\
-	()
-		-	
-\*------------------------------------------------------------------------------*/
-uint32 BmStringOBuf::CurrPos() const {
-	return mCurrPos;
-}
-
-/*------------------------------------------------------------------------------*\
 	TheString()
 		-	returns the string
 \*------------------------------------------------------------------------------*/
@@ -425,3 +394,140 @@ BmStringOBuf::operator<<(const BmString &string)
 	return *this;
 }
 
+
+
+/********************************************************************************\
+	BmRingBuf
+\********************************************************************************/
+
+/*------------------------------------------------------------------------------*\
+	BmRingBuf()
+		-	constructor
+\*------------------------------------------------------------------------------*/
+BmRingBuf::BmRingBuf( uint32 startLen, float growFactor)
+	:	mBufLen( startLen)
+	,	mBuf( NULL)
+	,	mGrowFactor( max_c((float)2.0, growFactor))
+	,	mCurrFront( 0)
+	,	mCurrTail( 0)
+{
+	mBuf = (char*)malloc( mBufLen);
+}
+
+/*------------------------------------------------------------------------------*\
+	~BmRingBuf()
+		-	destructor
+\*------------------------------------------------------------------------------*/
+BmRingBuf::~BmRingBuf() {
+	if (mBuf)
+		free( mBuf);
+}
+
+/*------------------------------------------------------------------------------*\
+	Reset()
+		-	reset to empty state
+\*------------------------------------------------------------------------------*/
+void BmRingBuf::Reset() {
+	mCurrFront = 0;
+	mCurrTail = 0;
+}
+
+/*------------------------------------------------------------------------------*\
+	Length()
+		-	returns number of bytes in buffer
+\*------------------------------------------------------------------------------*/
+int32 BmRingBuf::Length() const {
+	if (mCurrFront <= mCurrTail)
+		return mCurrTail - mCurrFront;
+	else
+		return mBufLen + mCurrTail - mCurrFront;
+}
+
+/*------------------------------------------------------------------------------*\
+	Put()
+		-	adds given data to end buffer
+\*------------------------------------------------------------------------------*/
+void BmRingBuf::Put( const char* data, uint32 len) {
+	if (!mBuf || mBufLen <= Length()+len) {
+		// need more space:
+		int32 oldLen = mBufLen;
+		mBufLen = (uint32)max_c( mGrowFactor*mBufLen, mGrowFactor*(Length()+len));
+		mBuf = (char*)realloc( mBuf, mBufLen);
+		if (mCurrTail < mCurrFront && mCurrTail) {
+			// re-join wrapped part of buffer with its front:
+			memcpy( mBuf+oldLen, mBuf, mCurrTail);
+			mCurrTail += oldLen;
+		}
+		if (!mBuf)
+			throw bad_alloc();
+	}
+	for( uint32 i=0; i<len; ++i) {
+		if (mCurrTail == mBufLen)
+			mCurrTail = 0;						// wrap
+		mBuf[mCurrTail++] = *data++;
+	}
+}
+
+/*------------------------------------------------------------------------------*\
+	Get()
+		-	fetches data from front of buffer (and removes it)
+\*------------------------------------------------------------------------------*/
+char BmRingBuf::Get() {
+	if (mCurrFront == mCurrTail)			// buffer is empty
+		return '\0';
+	if (mCurrFront == mBufLen)
+		mCurrFront = 0;						// wrap
+	return mBuf[mCurrFront++];
+}
+
+/*------------------------------------------------------------------------------*\
+	PeekFront()
+		-	return data from front of buffer (but does not remove it)
+\*------------------------------------------------------------------------------*/
+char BmRingBuf::PeekFront() const {
+	if (mCurrFront == mCurrTail)			// buffer is empty
+		return '\0';
+	if (mCurrFront == mBufLen)
+		return mBuf[0];
+	else
+		return mBuf[mCurrFront];
+}
+
+/*------------------------------------------------------------------------------*\
+	PeekTail()
+		-	returns the last character in buffer (but does not remove it)
+\*------------------------------------------------------------------------------*/
+char BmRingBuf::PeekTail() const {
+	if (mCurrFront == mCurrTail)
+		return '\0';
+	if (mCurrTail == 0)
+		return mBuf[mBufLen-1];
+	else
+		return mBuf[mCurrTail-1];
+}
+
+/*------------------------------------------------------------------------------*\
+	<< operators:
+\*------------------------------------------------------------------------------*/
+BmRingBuf&
+BmRingBuf::operator<<(const char c)
+{
+	Put( &c, 1);
+	return *this;	
+}
+
+BmRingBuf&
+BmRingBuf::operator<<(const char *str)
+{
+	if (str)
+		Put( str, strlen(str));
+	return *this;	
+}
+
+
+BmRingBuf&
+BmRingBuf::operator<<(const BmString &string)
+{
+	Put( string.String(), string.Length());
+	return *this;
+}
