@@ -827,14 +827,12 @@ void BmPrefsFilterChainView::UpdateState() {
 	mChainControl->SetEnabled( 
 		haveChain
 		&& mCurrFilterChain->Key()!=BM_DefaultItemLabel
-		&& mCurrFilterChain->Key()!=BM_OutboundPreEditLabel
-		&& mCurrFilterChain->Key()!=BM_OutboundPreSendLabel
+		&& mCurrFilterChain->Key()!=BM_OutboundLabel
 	);
 	mRemoveButton->SetEnabled( 
 		haveChain 
 		&& mCurrFilterChain->Key()!=BM_DefaultItemLabel
-		&& mCurrFilterChain->Key()!=BM_OutboundPreEditLabel
-		&& mCurrFilterChain->Key()!=BM_OutboundPreSendLabel
+		&& mCurrFilterChain->Key()!=BM_OutboundLabel
 	);
 	bool alreadyIn = false;
 	if (haveAvailable && haveChain) {
