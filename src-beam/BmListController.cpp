@@ -234,11 +234,12 @@ void BmListViewController::MouseMoved( BPoint point, uint32 transit, const BMess
 	inherited::MouseMoved( point, transit, msg);
 	if (msg && AcceptsDropOf( msg)) {
 		if (transit == B_INSIDE_VIEW || transit == B_ENTERED_VIEW) {
+			const int32 scrollZone = 12;
 			int32 scrollStep = 0;
 			BRect b( Bounds());
-			if (point.y > b.bottom-5)
+			if (point.y > b.bottom-scrollZone)
 				scrollStep = 1;
-			else if (point.y < b.top+5)
+			else if (point.y < b.top+scrollZone)
 				scrollStep = -1;
 			if (scrollStep != mPulsedScrollStep) {
 				if (mPulsedScrollRunner) {
@@ -257,36 +258,7 @@ void BmListViewController::MouseMoved( BPoint point, uint32 transit, const BMess
 					}
 				}
 			}
-			int32 index = IndexOf( point);
-			if (IndexOf( mCurrHighlightItem) != index) {
-				if (mCurrHighlightItem) {
-					// remove old highlight:
-					mCurrHighlightItem->Highlight( false);
-					InvalidateItem( IndexOf( mCurrHighlightItem));
-				}
-				if (index >= 0) {
-					// highlight current destination:
-					mCurrHighlightItem = dynamic_cast<BmListViewItem*>( ItemAt( index));
-					mCurrHighlightItem->Highlight( true);
-					InvalidateItem( index);
-					if (Hierarchical() && mCurrHighlightItem->IsSuperItem()) {
-						if (mExpandCollapseRunner) {
-							delete mExpandCollapseRunner;
-							mExpandCollapseRunner = NULL;
-						}
-						int32 expandCollapseDelay = ThePrefs->GetInt( "ExpandCollapseDelay", 1000);
-						if (expandCollapseDelay>0) {
-							BMessage* msg = new BMessage( BM_EXPAND_OR_COLLAPSE);
-							msg->AddPointer( MSG_HIGHITEM, (void*)mCurrHighlightItem);
-							msg->AddBool( MSG_EXPAND, !mCurrHighlightItem->IsExpanded());
-							BMessenger msgr( this);
-							mExpandCollapseRunner 
-								= new BMessageRunner( msgr, msg, expandCollapseDelay*1000, 1);
-						}
-					}
-				} else
-					mCurrHighlightItem = NULL;
-			}
+			HighlightItemAt( point);
 			if (Hierarchical() && mCurrHighlightItem 
 			&& mCurrHighlightItem->ExpanderRectContains( point)) {
 				if (!mSittingOnExpander) {
@@ -309,12 +281,53 @@ void BmListViewController::MouseMoved( BPoint point, uint32 transit, const BMess
 				InvalidateItem( IndexOf( mCurrHighlightItem));
 				mCurrHighlightItem = NULL;
 			}
+			if (mPulsedScrollRunner) {
+				delete mPulsedScrollRunner;
+				mPulsedScrollRunner = NULL;
+			}
 		}
 	} else {
 		if (mPulsedScrollRunner) {
 			delete mPulsedScrollRunner;
 			mPulsedScrollRunner = NULL;
 		}
+	}
+}
+
+/*------------------------------------------------------------------------------*\
+	HighligtItemAt( point)
+		-	
+\*------------------------------------------------------------------------------*/
+void BmListViewController::HighlightItemAt( const BPoint& point) {
+	int32 index = IndexOf( point);
+	if (IndexOf( mCurrHighlightItem) != index) {
+		if (mCurrHighlightItem) {
+			// remove old highlight:
+			mCurrHighlightItem->Highlight( false);
+			InvalidateItem( IndexOf( mCurrHighlightItem));
+		}
+		if (index >= 0) {
+			// highlight current destination:
+			mCurrHighlightItem = dynamic_cast<BmListViewItem*>( ItemAt( index));
+			mCurrHighlightItem->Highlight( true);
+			InvalidateItem( index);
+			if (Hierarchical() && mCurrHighlightItem->IsSuperItem()) {
+				if (mExpandCollapseRunner) {
+					delete mExpandCollapseRunner;
+					mExpandCollapseRunner = NULL;
+				}
+				int32 expandCollapseDelay = ThePrefs->GetInt( "ExpandCollapseDelay", 1000);
+				if (expandCollapseDelay>0) {
+					BMessage* msg = new BMessage( BM_EXPAND_OR_COLLAPSE);
+					msg->AddPointer( MSG_HIGHITEM, (void*)mCurrHighlightItem);
+					msg->AddBool( MSG_EXPAND, !mCurrHighlightItem->IsExpanded());
+					BMessenger msgr( this);
+					mExpandCollapseRunner 
+						= new BMessageRunner( msgr, msg, expandCollapseDelay*1000, 1);
+				}
+			}
+		} else
+			mCurrHighlightItem = NULL;
 	}
 }
 
@@ -436,6 +449,10 @@ void BmListViewController::MessageReceived( BMessage* msg) {
 							ScrollTo( BPoint( 0, MAX( 0, newYPos)));
 						}
 					}
+					BPoint point;
+					uint32 buttons;
+					GetMouse( &point, &buttons);
+					HighlightItemAt( point);
 				}
 				break;
 			}

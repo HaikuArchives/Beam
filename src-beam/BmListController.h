@@ -181,6 +181,7 @@ public:
 	virtual void ItemInvoked( int32 index);
 	virtual bool AcceptsDropOf( const BMessage*)	{ return false; }
 	virtual void HandleDrop( const BMessage* msg);
+	void HighlightItemAt( const BPoint& point);
 	void ShowOrHideColumn( BMessage* msg);
 	//
 	virtual BmListViewItem* CreateListViewItem( BmListModelItem* item, 
