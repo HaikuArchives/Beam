@@ -513,7 +513,7 @@ void BmMailView::SetSignatureByName( const BmString sigName) {
 	textRunArray->runs[1].font = mFont;
 	textRunArray->runs[1].color = BeShadow;
 	BmString sig = TheSignatureList->GetSignatureStringFor( sigName);
-	int32 lastTextPos = text.Length();
+	int32 lastTextPos = max( (long)0, text.Length()-1);
 	if (sig.Length())
 		text << "-- \n" << sig;
 	SetText( text.String(), text.Length(), textRunArray);
@@ -692,9 +692,9 @@ void BmMailView::JobIsDone( bool completed) {
 				BM_LOG2( BM_LogMailParse, BmString("displaying raw message"));
 				uint32 encoding = mCurrMail->DefaultEncoding();
 				BmStringIBuf text( mCurrMail->RawText());
-				BmLinebreakDecoder decoder( text);
-				BmUtf8Encoder textConverter( decoder, encoding);
-				displayBuf.Write( textConverter);
+				BmLinebreakDecoder decoder( &text);
+				BmUtf8Encoder textConverter( &decoder, encoding);
+				displayBuf.Write( &textConverter);
 				displayText.Adopt( displayBuf.TheString());
 			} else {
 				BM_LOG2( BM_LogMailParse, BmString("extracting parts to be displayed from body-structure"));
