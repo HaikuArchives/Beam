@@ -118,11 +118,11 @@ bool BmMailFilter::StartJob() {
 	try {
 		int32 count = mMails.size();
 		int32 c=0;
-		const float delta =  100.0 / (count / GRAIN);
 		if (mMailRefs)
 			count += mMailRefs->size();
 		BM_LOG2( BM_LogFilter, 
 					BmString("Starting filter-job for ") << count << " mails.");
+		const float delta =  100.0 / (count / GRAIN);
 		if (mMailRefs) {
 			BmRef<BmMail> mail;
 			for( uint32 i=0; ShouldContinue() && i<mMailRefs->size(); ++i) {
@@ -246,6 +246,21 @@ void BmMailFilter::Execute( BmMail* mail) {
 			} else
 				needToStore = true;
 		}
+	}
+	float ratioSpam;
+	if (msgContext.data.FindFloat("RatioSpam", &ratioSpam) == B_OK) {
+		mail->RatioSpam(ratioSpam);
+		needToStore = true;
+	}
+	bool isSpam = msgContext.data.FindBool("IsSpam");
+	if (isSpam) {
+		mail->MarkAsSpam();
+		needToStore = true;
+	}
+	bool isTofu = msgContext.data.FindBool("IsTofu");
+	if (isTofu) {
+		mail->MarkAsTofu();
+		needToStore = true;
 	}
 	if (needToStore && !mExecuteInMem) {
 		BM_LOG3( BM_LogFilter, 
