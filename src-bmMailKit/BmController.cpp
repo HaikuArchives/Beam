@@ -153,9 +153,9 @@ void BmJobController::ContinueJob( BMessage* msg) {
 		-	this default implementation simply detaches from its model
 \*------------------------------------------------------------------------------*/
 void BmJobController::StopJob() {
-	BM_LOG2( BM_LogModelController, BString("Controller <") << ControllerName() << "> stops job " << ModelName());
 	BmJobModel* job = DataModel();
 	if (job) {
+		BM_LOG2( BM_LogModelController, BString("Controller <") << ControllerName() << "> stops job " << ModelName());
 		job->StopJob();
 		DetachModel();
 	}

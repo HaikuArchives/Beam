@@ -17,19 +17,6 @@
 
 class BmController;
 
-// message constants for BmDataModel (and subclasses), all msgs are sent to 
-// the handler specified via each Controllers GetControllerHandler()-method
-#define BM_JOB_DONE				'bmda'
-							// the job has finished or was stopped
-#define BM_JOB_UPDATE_STATE	'bmdb'
-							// the job wants to update (one of) its state(s)
-#define BM_LISTMODEL_ADD		'bmdc'
-							// the listmodel has added a new item
-#define BM_LISTMODEL_REMOVE	'bmdd'
-							// the listmodel has removed an item
-#define BM_LISTMODEL_UPDATE	'bmde'
-							// the listmodel indicates a state-change of on of its items
-
 /*------------------------------------------------------------------------------*\
 	BmDataModel
 		-	an interface for informing other objects (e.g. MVC-like 
@@ -41,11 +28,11 @@ class BmDataModel {
 	typedef map< BmController*, uint32> BmControllerMap;
 
 public:
-	//
+	// c'tors & d'tor:
 	BmDataModel( const BString& name);
 	virtual ~BmDataModel();
 
-	//
+	// native methods:
 	virtual void AddController( BmController* controller);
 	virtual void RemoveController( BmController* controller);
 
@@ -57,7 +44,7 @@ public:
 	static const char* const MSG_MODEL = 			"bm:model";
 
 protected:
-	//
+	// native methods:
 	virtual bool HasControllers();
 	virtual bool ShouldContinue();
 	virtual void TellControllers( BMessage* msg, bool bumpStateVal=true);
@@ -81,21 +68,17 @@ class BmJobModel : public BmDataModel {
 	typedef BmDataModel inherited;
 
 public:
-	//
+	// c'tors & d'tor:
 	BmJobModel( const BString& name);
 	virtual ~BmJobModel();
 
-	//
+	// native methods:
 	static int32 ThreadStartFunc(  void*);
 	virtual void StartJobInNewThread( bool deleteWhenDone);
 	virtual void StartJobInThisThread();
-	
-	//
 	virtual void PauseJob();
 	virtual void ContinueJob();
 	virtual void StopJob();
-
-	//
 	thread_id JobThreadID() const 		{ return mThreadID; }
 	bool DeleteWhenDone() const			{ return mDeleteWhenDone; }
 	bool IsJobRunning() const;
@@ -106,6 +89,7 @@ public:
 	static const char* const MSG_DOMAIN = 			"bm:domain";
 
 protected:
+	// native methods:
 	virtual void StartJob() 				{}
 	virtual bool ShouldContinue();
 	virtual void TellJobIsDone( bool completed=true);
@@ -136,28 +120,25 @@ typedef map< BString, BmListModelItem*> BmModelItemMap;
 class BmListModelItem : public BArchivable {
 
 public:
-
+	// c'tors & d'tor:
 	BmListModelItem( BString key, BmListModelItem* parent=NULL);
 	virtual ~BmListModelItem();
 
-	//
-	inline BmModelItemMap::const_iterator begin()	const { return mSubItemMap.begin(); }
-	inline BmModelItemMap::const_iterator end()		const { return mSubItemMap.end(); }
-	inline size_t size()			 							const	{ return mSubItemMap.size(); }
-	inline bool empty()										const	{ return mSubItemMap.empty(); }
+	// native methods:
+	virtual void AddSubItem( BmListModelItem* subItem);
+	virtual BmListModelItem* FindItemByKey( BString& key);
 
 	// getters:
+	BmModelItemMap::const_iterator begin() const	{ return mSubItemMap.begin(); }
+	BmModelItemMap::const_iterator end() const	{ return mSubItemMap.end(); }
+	size_t size() const						{ return mSubItemMap.size(); }
+	bool empty() const						{ return mSubItemMap.empty(); }
 	BString Key() const						{ return mKey; }
 	BString ParentKey() const				{ return mParent ? mParent->Key() : BString("Empty"); }
 	BmListModelItem* Parent() const		{ return mParent; }
 
 	// setters:
 	void Parent( BmListModelItem* parent)	{ mParent = parent; }
-
-	//
-	virtual void AddSubItem( BmListModelItem* subItem);
-	//
-	virtual BmListModelItem* FindItemByKey( BString& key);
 
 protected:
 	BString mKey;
@@ -180,16 +161,11 @@ class BmListModel : public BmJobModel {
 	typedef set< BmController*> BmOpenReplySet;
 
 public:
-	//
+	// c'tors & d'tor:
 	BmListModel( const BString& name);
 	virtual ~BmListModel();
 
-	//
-	inline BmModelItemMap::const_iterator begin()	const { return mModelItemMap.begin(); }
-	inline BmModelItemMap::const_iterator end()		const { return mModelItemMap.end(); }
-	inline size_t size()			 							const	{ return mModelItemMap.size(); }
-	inline bool empty()										const	{ return mModelItemMap.empty(); }
-	//
+	// native methods:
 	virtual void RemovalNoticed( BmController* controller);
 
 	//	message component definitions for status-msgs:
@@ -199,8 +175,14 @@ public:
 	static const char* const MSG_NUM_CHILDREN = 		"bm:count";
 	static const char* const MSG_CHILDREN 		= 		"bm:children";
 
+	// getters:
+	BmModelItemMap::const_iterator begin() const { return mModelItemMap.begin(); }
+	BmModelItemMap::const_iterator end() const	{ return mModelItemMap.end(); }
+	size_t size() const						{ return mModelItemMap.size(); }
+	bool empty() const						{ return mModelItemMap.empty(); }
+
 protected:
-	//
+	// native methods:
 	virtual void TellModelItemAdded( BmListModelItem* item);
 	virtual void TellModelItemRemoved( BmListModelItem* item);
 	virtual void TellModelItemUpdated( BmListModelItem* item);

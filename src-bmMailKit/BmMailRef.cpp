@@ -74,7 +74,7 @@ BmMailRef::BmMailRef( entry_ref &eref, ino_t node, struct stat& st)
 			mHasAttachments = att1 || att2 || att3>0;
 	
 			mSize = st.st_size;
-			mSizeString = BytesToString(mSize,true);
+			mSizeString = BytesToString( mSize,true);
 			mCreated = st.st_ctime;
 			mCreatedString = TimeToString( mCreated);
 
@@ -103,6 +103,25 @@ BmMailRef::BmMailRef( BMessage* archive)
 													|| BM_THROW_RUNTIME( BString("BmMailRef: Could not find msg-field ") << MSG_ENTRYREF << "\n\nError:" << strerror(err));
 		mInode = FindMsgInt64( archive, MSG_INODE);
 		mKey = BString() << mInode;
+
+		mAccount = FindMsgString( archive, MSG_ACCOUNT);
+		mHasAttachments = FindMsgBool( archive, MSG_ATTACHMENTS);
+		mCc = FindMsgString( archive, MSG_CC);
+		mCreated = FindMsgInt32( archive, MSG_CREATED);
+		mFrom = FindMsgString( archive, MSG_FROM);
+		mName = FindMsgString( archive, MSG_NAME);
+		mPriority = FindMsgString( archive, MSG_PRIORITY);
+		mReplyTo = FindMsgString( archive, MSG_REPLYTO);
+		mSize = FindMsgInt64( archive, MSG_SIZE);
+		mStatus = FindMsgString( archive, MSG_STATUS);
+		mSubject = FindMsgString( archive, MSG_SUBJECT);
+		mTo = FindMsgString( archive, MSG_TO);
+		mWhen = FindMsgInt32( archive, MSG_WHEN);
+
+		mCreatedString = TimeToString( mCreated);
+		mSizeString = BytesToString( mSize,true);
+		mWhenString = TimeToString( mWhen);
+
 		mInitCheck = B_OK;
 	} catch (exception &e) {
 		BM_SHOWERR( e.what());
@@ -122,8 +141,21 @@ BmMailRef::~BmMailRef() {
 \*------------------------------------------------------------------------------*/
 status_t BmMailRef::Archive( BMessage* archive, bool deep) const {
 	status_t ret = inherited::Archive( archive, deep)
+		|| archive->AddString( MSG_ACCOUNT, mAccount)
+		|| archive->AddBool( MSG_ATTACHMENTS, mHasAttachments)
+		|| archive->AddString( MSG_CC, mCc)
+		|| archive->AddInt32( MSG_CREATED, mCreated)
 		|| archive->AddRef( MSG_ENTRYREF, &mEntryRef)
-		|| archive->AddInt64( MSG_INODE, mInode);
+		|| archive->AddString( MSG_FROM, mFrom)
+		|| archive->AddInt64( MSG_INODE, mInode)
+		|| archive->AddString( MSG_NAME, mName)
+		|| archive->AddString( MSG_PRIORITY, mPriority)
+		|| archive->AddString( MSG_REPLYTO, mReplyTo)
+		|| archive->AddInt64( MSG_SIZE, mSize)
+		|| archive->AddString( MSG_STATUS, mStatus)
+		|| archive->AddString( MSG_SUBJECT, mSubject)
+		|| archive->AddString( MSG_TO, mTo)
+		|| archive->AddInt32( MSG_WHEN, mWhen);
 	return ret;
 }
 

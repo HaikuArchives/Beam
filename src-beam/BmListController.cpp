@@ -6,11 +6,14 @@
 #include <memory.h>
 
 #include <Autolock.h>
+#include <MenuItem.h>
+#include <PopUpMenu.h>
 
 #include "BmApp.h"
 #include "BmListController.h"
 #include "BmDataModel.h"
 #include "BmLogHandler.h"
+#include "BmMsgTypes.h"
 #include "BmPrefs.h"
 #include "BmUtil.h"
 
@@ -176,6 +179,11 @@ void BmListViewController::MessageReceived( BMessage* msg) {
 				UpdateModelItem( msg);
 				break;
 			}
+			case BM_LISTVIEW_SHOW_COLUMN:
+			case BM_LISTVIEW_HIDE_COLUMN: {
+				ShowOrHideColumn( msg);
+				break;
+			}
 			case BM_JOB_UPDATE_STATE: {
 				if (!IsMsgFromCurrentModel( msg)) break;
 				UpdateModelState( msg);
@@ -302,6 +310,60 @@ void BmListViewController::UpdateModelState( BMessage* msg) {
 }
 
 /*------------------------------------------------------------------------------*\
+	ShowOrHideColumn( msg)
+		-	Hook function that is called whenever the user asked to show or hide a
+			specific listview-column
+\*------------------------------------------------------------------------------*/
+void BmListViewController::ShowOrHideColumn( BMessage* msg) {
+	if (msg->what == BM_LISTVIEW_SHOW_COLUMN) {
+		ShowColumn( msg->FindInt32( MSG_COLUMN_NO));
+	} else {
+		HideColumn( msg->FindInt32( MSG_COLUMN_NO));
+	}
+}
+
+/*------------------------------------------------------------------------------*\
+	( )
+		-	
+\*------------------------------------------------------------------------------*/
+void BmListViewController::ShowLabelViewMenu( BPoint point) {
+	BPopUpMenu* theMenu = new BPopUpMenu( "LabelViewMenu", false, false);
+
+/*
+	BFont font(be_plain_font);
+	font.SetSize(10);
+	theMenu->SetFont(&font);
+*/
+	
+	int32 numCols = fColumnList.CountItems();
+	int32 numVisibleCols = fColumnDisplayList.CountItems();
+	for( int32 i=0; i<numCols; ++i) {
+		CLVColumn* column = (CLVColumn*)fColumnList.ItemAt( i);
+		bool shown = fColumnDisplayList.HasItem( column);
+		BMessage* msg = new BMessage( shown ? BM_LISTVIEW_HIDE_COLUMN : BM_LISTVIEW_SHOW_COLUMN);
+		msg->AddInt32( MSG_COLUMN_NO, i);
+		BMenuItem* item = new BMenuItem( column->GetLabelName(), msg);
+		item->SetMarked( shown);
+		if (shown && numVisibleCols == 1) {
+			// don't allow user to remove last visible column:
+			item->SetEnabled( false);
+		}
+		item->SetTarget( this);
+		theMenu->AddItem( item);
+	}
+
+   ConvertToScreen(&point);
+	BRect openRect;
+	openRect.top = point.y - 5;
+	openRect.bottom = point.y + 5;
+	openRect.left = point.x - 5;
+	openRect.right = point.x + 5;
+//  	theMenu->Go( point, true, false, openRect);
+  	theMenu->Go( point, true, false);
+  	delete theMenu;
+}
+
+/*------------------------------------------------------------------------------*\
 	()
 		-	
 \*------------------------------------------------------------------------------*/
@@ -377,11 +439,10 @@ void BmListViewController::WriteStateInfo() {
 		return;
 
 	try {
-		stateInfoFilename = BString(bmApp->SettingsPath.Path()) << "/StateInfo/" 
-								  << StateInfoBasename() << "_" << ModelName();
+		stateInfoFilename = StateInfoBasename() << "_" << ModelName();
 		this->Archive( archive.get(), Hierarchical()) == B_OK
 													|| BM_THROW_RUNTIME( BString("Unable to archive State-Info for ")<<Name());
-		(err = stateInfoFile.SetTo( stateInfoFilename.String(), 
+		(err = stateInfoFile.SetTo( bmApp->StateInfoFolder(), stateInfoFilename.String(), 
 											 B_WRITE_ONLY | B_CREATE_FILE | B_ERASE_FILE)) == B_OK
 													|| BM_THROW_RUNTIME( BString("Could not create state-info file\n\t<") << stateInfoFilename << ">\n\n Result: " << strerror(err));
 		(err = archive->Flatten( &stateInfoFile)) == B_OK
@@ -405,7 +466,7 @@ status_t BmListViewController::Archive(BMessage* archive, bool deep) const {
 		}
 	}
 	if (ret != B_OK) {
-		ShowAlert( BString("Could not archive State-Info for ") << ModelName() << " errortext: "<< strerror( ret));
+		ShowAlert( BString("Could not archive State-Info for ") << ModelName() << "\n\tError: "<< strerror( ret));
 	}
 	return ret;
 }
@@ -438,20 +499,19 @@ void BmListViewController::ReadStateInfo() {
 	BFile stateInfoFile;
 
 	// try to open state-info-file...
-	stateInfoFilename = BString(bmApp->SettingsPath.Path()) << "/StateInfo/" 
-							  << StateInfoBasename() << "_" << ModelName();
-	if ((err = stateInfoFile.SetTo( stateInfoFilename.String(), B_READ_ONLY)) == B_OK) {
+	stateInfoFilename = StateInfoBasename() << "_" << ModelName();
+	if ((err = stateInfoFile.SetTo( bmApp->StateInfoFolder(), stateInfoFilename.String(), B_READ_ONLY)) == B_OK) {
 		// ...ok, file found, we fetch our state(s) from it:
 		try {
 			mInitialStateInfo = new BMessage;
 			(err = mInitialStateInfo->Unflatten( &stateInfoFile)) == B_OK
 													|| BM_THROW_RUNTIME( BString("Could not fetch state-info from file\n\t<") << stateInfoFilename << ">\n\n Result: " << strerror(err));
-			inherited::UnArchive( mInitialStateInfo);
+			inherited::Unarchive( mInitialStateInfo);
 		} catch (exception &e) {
 			delete mInitialStateInfo;
 			mInitialStateInfo = NULL;
 			BM_SHOWERR( e.what());
 		}
 	} else 
-		inherited::UnArchive( bmApp->Prefs->MailRefLayout());
+		inherited::Unarchive( DefaultLayout());
 }

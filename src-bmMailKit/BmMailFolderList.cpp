@@ -112,15 +112,19 @@ void BmMailFolderList::InitializeMailFolders() {
 	node_ref nref;
 	(err = mailDir.GetNodeRef( &nref)) == B_OK
 													|| BM_THROW_RUNTIME(BString("Could not get node-ref \nfor mailbox-dir <") << mailDirName << "> \n\nError:" << strerror(err));
-	
-	BM_LOG2( BM_LogMailFolders, BString("Top-folder <") << eref.name << "," << nref.node << "> found");
-	mTopFolder = new BmMailFolder( eref, nref.node, NULL, mtime);
-	mModelItemMap[mTopFolder->Key()] = mTopFolder;
 
-	// now we process all subfolders of the top-folder recursively:
-	int numDirs = 1 + doInitializeMailFolders( mTopFolder, 1);
-	BM_LOG2( BM_LogMailFolders, BString("End of initFolders (") << numDirs << " folders found)");
-	mInitCheck = B_OK;
+	{	
+		BAutolock lock( mModelLocker);
+		lock.IsLocked() 						|| BM_THROW_RUNTIME( ModelName() << ":InitializeMailFolders(): Unable to get lock");
+		BM_LOG2( BM_LogMailFolders, BString("Top-folder <") << eref.name << "," << nref.node << "> found");
+		mTopFolder = new BmMailFolder( eref, nref.node, NULL, mtime);
+		mModelItemMap[mTopFolder->Key()] = mTopFolder;
+
+		// now we process all subfolders of the top-folder recursively:
+		int numDirs = 1 + doInitializeMailFolders( mTopFolder, 1);
+		BM_LOG2( BM_LogMailFolders, BString("End of initFolders (") << numDirs << " folders found)");
+		mInitCheck = B_OK;
+	}
 }
 
 /*------------------------------------------------------------------------------*\
@@ -181,16 +185,20 @@ void BmMailFolderList::InstantiateMailFolders( BMessage* archive) {
 	BMessage msg;
 	(err = archive->FindMessage( MSG_TOPFOLDER, &msg)) == B_OK
 												|| BM_THROW_RUNTIME(BString("BmMailFolderList: Could not find msg-field <") << MSG_TOPFOLDER << "> \n\nError:" << strerror(err));
-	mTopFolder = new BmMailFolder( &msg, NULL);
-	mModelItemMap[mTopFolder->Key()] = mTopFolder;
-	BM_LOG2( BM_LogMailFolders, BString("Top-folder <") << mTopFolder->EntryRef().name << "," << mTopFolder->Key() << "> read");
-	if (mTopFolder->CheckIfModifiedSince()) {
-		doInitializeMailFolders( mTopFolder, 1);
-	} else {
-		doInstantiateMailFolders( mTopFolder, &msg, 1);
+	{
+		BAutolock lock( mModelLocker);
+		lock.IsLocked() 						|| BM_THROW_RUNTIME( ModelName() << ":InstantiateMailFolders(): Unable to get lock");
+		mTopFolder = new BmMailFolder( &msg, NULL);
+		mModelItemMap[mTopFolder->Key()] = mTopFolder;
+		BM_LOG2( BM_LogMailFolders, BString("Top-folder <") << mTopFolder->EntryRef().name << "," << mTopFolder->Key() << "> read");
+		if (mTopFolder->CheckIfModifiedSince()) {
+			doInitializeMailFolders( mTopFolder, 1);
+		} else {
+			doInstantiateMailFolders( mTopFolder, &msg, 1);
+		}
+		BM_LOG2( BM_LogMailFolders, BString("End of reading folder-cache (") << mModelItemMap.size() << " folders found)");
+		mInitCheck = B_OK;
 	}
-	BM_LOG2( BM_LogMailFolders, BString("End of reading folder-cache (") << mModelItemMap.size() << " folders found)");
-	mInitCheck = B_OK;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -239,6 +247,7 @@ void BmMailFolderList::QueryForNewMails() {
 			newCount++;
 			BmListModelItem *parent;
 			if (!mTopFolder || !(parent=mTopFolder->FindItemByKey( BString()<<dent->d_pino))) {
+				// we don't know the parent folder of this one, maybe it lives some other place (like trash):
 				entry_ref eref;
 				BEntry entry;
 				BPath path;
@@ -255,11 +264,15 @@ void BmMailFolderList::QueryForNewMails() {
 				BString mboxPath = bmApp->Prefs->MailboxPath();
 				mboxPath << "/";
 				if (dirPath.FindFirst( mboxPath) != 0) {
+					// mail lives somewhere else (not under /boot/home/mail), we ignore it:
 					BM_LOG2( BM_LogMailFolders, BString("Mail ") << dent->d_name << " ignored because it doesn't live under our mailbox-folder");
 				} else {
+					// oops, we should really be knowing the parent folder, but we don't. Bark:
 					throw BM_runtime_error( BString("QueryForNewMails(): Parent node ") << dent->d_pino << " not found for unread mail\n<" << dent->d_name << ">");
 				}
 			} else {
+				BAutolock lock( mModelLocker);
+				lock.IsLocked() 						|| BM_THROW_RUNTIME( ModelName() << ":QueryForNewMails(): Unable to get lock");
 				BmMailFolder* folder = dynamic_cast<BmMailFolder*>( parent);
 				folder->BumpNewMailCount();
 			}
@@ -271,6 +284,15 @@ void BmMailFolderList::QueryForNewMails() {
 }
 
 /*------------------------------------------------------------------------------*\
+	RemoveController()
+		-	stores the current state inside cache-file
+\*------------------------------------------------------------------------------*/
+void BmMailFolderList::RemoveController( BmController* controller) {
+	inheritedModel::RemoveController( controller);
+	Store();
+}
+
+/*------------------------------------------------------------------------------*\
 	Store()
 		-	stores FolderList inside Settings-dir:
 \*------------------------------------------------------------------------------*/
@@ -279,6 +301,7 @@ bool BmMailFolderList::Store() {
 	BFile cacheFile;
 	status_t err;
 
+	if (mInitCheck != B_OK) return true;
 	try {
 		BAutolock lock( mModelLocker);
 		lock.IsLocked() 						|| BM_THROW_RUNTIME( ModelName() << ":Store(): Unable to get lock");

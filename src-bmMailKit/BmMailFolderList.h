@@ -33,17 +33,16 @@ public:
 	BmMailFolderList();
 	virtual ~BmMailFolderList();
 	
-	// archival stuff:
-	virtual status_t Archive( BMessage* archive, bool deep = true) const;
+	//	native methods:
+	bool Store();
 
-	//	
+	// overrides of datamodel base:
+	status_t Archive( BMessage* archive, bool deep = true) const;
 	void StartJob();
+	void RemoveController( BmController* controller);
 
 	// getters:
 	status_t InitCheck()						{ return mInitCheck; }
-
-	//
-	bool Store();
 
 private:
 	// the following members will be archived as part of BmFolderList:

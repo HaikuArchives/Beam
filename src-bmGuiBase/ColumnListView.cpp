@@ -538,12 +538,17 @@ bool ColumnListView::SetDisplayOrder(const int32* ColumnOrder)
 	int32 ColumnsToSet = fColumnList.CountItems();
 	for(int32 Counter = 0; Counter < ColumnsToSet; Counter++)
 	{
-		if(ColumnOrder[Counter] >= ColumnsToSet)
+		int32 pos = ColumnOrder[Counter];
+		if (pos == -1)
+			continue;
+		if(pos >= ColumnsToSet)
 			return false;
 		for(int32 Counter2 = 0; Counter2 < Counter; Counter2++)
-			if(ColumnOrder[Counter] == ColumnOrder[Counter2])
+			if(pos == ColumnOrder[Counter2])
 				return false;
-		fColumnDisplayList.AddItem(fColumnList.ItemAt(ColumnOrder[Counter]));
+		CLVColumn* column = (CLVColumn*)fColumnList.ItemAt( pos);
+		if (column)
+			fColumnDisplayList.AddItem( column);
 	}
 
 	//Update everything about the columns
@@ -710,7 +715,6 @@ void ColumnListView::GetDisplayOrder(int32* order) const
 	for(int32 Counter = 0; Counter < ColumnsInList; Counter++)
 		order[Counter] = int32(fColumnList.IndexOf(fColumnDisplayList.ItemAt(Counter)));
 }
-
 
 void ColumnListView::SetSortKey(int32 ColumnIndex)
 {
@@ -1867,8 +1871,30 @@ void ColumnListView::KeyDown(const char *bytes, int32 numBytes)
 	BListView::KeyDown( bytes, numBytes);
 }
 
+void ColumnListView::ShowColumn( int32 col_index) {
+	AssertWindowLocked();
+	CLVColumn* column = (CLVColumn*)fColumnList.ItemAt( col_index);
+	if (column && !fColumnDisplayList.HasItem( column)) {
+		fColumnDisplayList.AddItem( column);
+		ColumnsChanged();
+	}
+}
+
+void ColumnListView::HideColumn( int32 col_index) {
+	AssertWindowLocked();
+	if (fColumnDisplayList.CountItems() > 1) {
+		// only remove column if there is another left...
+		CLVColumn* column = (CLVColumn*)fColumnList.ItemAt( col_index);
+		if (column && fColumnDisplayList.HasItem( column)) {
+			fColumnDisplayList.RemoveItem( column);
+			ColumnsChanged();
+		}
+	}
+}
+
 void ColumnListView::MessageReceived(BMessage* msg) {
 	if (msg->what == 'PSTE') {
+		// handle color-drops:
 		struct rgb_color *col;
 		ssize_t siz;
 		const void *data;
@@ -1927,7 +1953,7 @@ status_t ColumnListView::Archive(BMessage* archive, bool deep) const {
 	return ret;
 }
 
-status_t ColumnListView::UnArchive(BMessage* archive, bool deep) {
+status_t ColumnListView::Unarchive(BMessage* archive, bool deep) {
 	AssertWindowLocked();
 	status_t ret = B_OK;
 	int i;
@@ -1941,8 +1967,6 @@ status_t ColumnListView::UnArchive(BMessage* archive, bool deep) {
 		ret = archive->FindInt32( MSG_DISPLAYORDER, i, &displayCols[i]);
 	}
 	if (ret == B_OK) {
-		SetDisplayOrder( displayCols);
-	
 		// sortkeys and -modes:
 		int32 numSortKeys = 0;
 		ret = archive->FindInt32( MSG_NUMSORTKEYS, &numSortKeys);
@@ -1963,7 +1987,9 @@ status_t ColumnListView::UnArchive(BMessage* archive, bool deep) {
 					((CLVColumn*)fColumnList.ItemAt(i))->SetWidth( width);
 			}
 		}
+		SetDisplayOrder( displayCols);
 	}
+	
 	
 	return ret;
 }

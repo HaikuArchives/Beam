@@ -15,6 +15,14 @@
 #define BM_assert(expr) if (!expr) { throw BM_invalid_argument(BString("BM_assert says no at ")<<__FILE__<<":"<<__LINE__); }
 
 /*------------------------------------------------------------------------------*\*\
+	ShowAlert( text, logtext)
+		-	pops up an Alert showing the passed text
+		-	logs text unless logtext is specified, in which case that is 
+			written to the logfile
+\*------------------------------------------------------------------------------*/
+void ShowAlert( const BString &text);
+
+/*------------------------------------------------------------------------------*\*\
 	BMruntime_error
 		-	exception to indicate a general runtime error
 \*------------------------------------------------------------------------------*/
@@ -54,6 +62,7 @@ public:
 inline bool BM_THROW_RUNTIME( const BString &s) { throw BM_runtime_error(s); }
 inline bool BM_THROW_INVALID( const BString &s) { throw BM_invalid_argument(s); }
 inline bool BM_THROW_NETWORK( const BString &s) { throw BM_network_error(s); }
+inline bool BM_DIE( const BString &s) { ShowAlert(s); exit(10); }
 
 /*------------------------------------------------------------------------------*\*\
 	FindMsgXXX( archive, name)
@@ -68,14 +77,6 @@ int16 FindMsgInt16( BMessage* archive, const char* name, int32 index=0);
 float FindMsgFloat( BMessage* archive, const char* name, int32 index=0);
 BMessage* FindMsgMsg( BMessage* archive, const char* name, BMessage* msg=NULL, int32 index=0);
 void* FindMsgPointer( BMessage* archive, const char* name, int32 index=0);
-
-/*------------------------------------------------------------------------------*\*\
-	ShowAlert( text, logtext)
-		-	pops up an Alert showing the passed text
-		-	logs text unless logtext is specified, in which case that is 
-			written to the logfile
-\*------------------------------------------------------------------------------*/
-void ShowAlert( const BString &text);
 
 /*------------------------------------------------------------------------------*\*\
 	utility function to format a number of bytes into a string

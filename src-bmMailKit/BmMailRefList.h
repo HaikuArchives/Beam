@@ -24,7 +24,8 @@ class BmMailRefList : public BArchivable, public BmListModel {
 	typedef BmListModel inheritedModel;
 
 	// archival-fieldnames:
-	static const char* const MSG_MAILCOUNT		= 	"bm:mailcount";
+	static const char* const MSG_NUMCHILDREN = 	"bm:nChl";
+	static const char* const MSG_CHILDREN = 		"bm:chld";
 
 public:
 
@@ -32,31 +33,26 @@ public:
 	BmMailRefList( BmMailFolder* folder, bool updateCache);
 	virtual ~BmMailRefList();
 
-	void RemoveController( BmController* controller);
+	// native methods:
+	bool Store();
 
-	//	
-	void StartJob();
-
-	// archival stuff:
+	// overrides of archivable base:
 	virtual status_t Archive( BMessage* archive, bool deep = true) const;
 
-	//	
-	int32 ItemCount() 						{ return mMailCount; }
+	//	overrides of datamodel base:
+	void StartJob();
+	void RemoveController( BmController* controller);
 
 	// getters:
 	status_t InitCheck()						{ return mInitCheck; }
 
-	//
-	bool Store();
-
 private:
-	// the following members will be archived as part of BmFolderList:
-	int32 mMailCount;
 
 	// the following members will NOT be archived at all:
 	BmMailFolder* mFolder;
 	status_t mInitCheck;
 	bool mUpdateCache;
+	bool mStoreCache;
 
 	//
 	void InitializeMailRefs();

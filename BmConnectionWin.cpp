@@ -19,6 +19,7 @@
 #include "BmApp.h"
 #include "BmConnectionWin.h"
 #include "BmLogHandler.h"
+#include "BmMsgTypes.h"
 #include "BmPopAccount.h"
 #include "BmPopper.h"
 #include "BmPrefs.h"
@@ -245,7 +246,7 @@ bool BmConnectionWin::QuitRequested() {
 	}
 	BM_LOG2( BM_LogConnWin, BString("ConnectionWin has stopped all connections"));
 	if (mInvokingLooper)
-		mInvokingLooper->PostMessage( BM_CONNWIN_DONE);
+		mInvokingLooper->PostMessage( BM_APP_CONNWIN_DONE);
 	Hide();
 	return bmApp->IsQuitting();
 }

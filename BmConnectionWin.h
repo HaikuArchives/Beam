@@ -19,14 +19,6 @@ class BmPopAccount;
 class BmPopper;
 
 /*------------------------------------------------------------------------------*\
-	types of message sent to/from a BmConnectionWin
-\*------------------------------------------------------------------------------*/
-#define BM_CONNWIN_FETCHPOP		'bmca'
-						// sent from App BmConnectionWin in order to start pop-connection
-#define BM_CONNWIN_DONE				'bmcb'
-						// sent from BmConnectionWin to app when a connection has finished
-
-/*------------------------------------------------------------------------------*\
 	BmConnectionView
 		-	controls a specific connection
 \*------------------------------------------------------------------------------*/
@@ -34,21 +26,22 @@ class BmConnectionView : public MBorder, public BmJobController {
 
 public:
 
-	//
+	// c'tors and d'tor:
 	BmConnectionView( const char* name);
 	virtual ~BmConnectionView();
 
-	virtual BmJobModel* CreateJobModel( BMessage* msg) = 0;
-
-	BHandler* GetControllerHandler() 	{ return this; }
-
+	// native methods:
 	virtual bool WantsToStayVisible()	{ return false; }
 	virtual void ResetController()		{ }
 	virtual void UpdateModelView( BMessage* msg) = 0;
+	virtual BmJobModel* CreateJobModel( BMessage* msg) = 0;
 
-	virtual void MessageReceived( BMessage* msg);
+	// overrides of controller base:
+	BHandler* GetControllerHandler() 	{ return this; }
 	virtual void JobIsDone( bool completed);
 
+	// overrides of view base:
+	virtual void MessageReceived( BMessage* msg);
 };
 
 /*------------------------------------------------------------------------------*\
@@ -58,20 +51,21 @@ public:
 class BmPopperView : public BmConnectionView {
 
 public:
-	//
+	// creator-func, c'tors and d'tor:
 	static BmPopperView* CreateInstance( const char* name);
-
-	//
 	BmPopperView( const char* name);
 	~BmPopperView();
 
+	// native methods:
 	BmJobModel* CreateJobModel( BMessage* msg);
 
-	BHandler* GetControllerHandler() 	{ return this; }
+	// overrides of connectionview base:
 	bool WantsToStayVisible();
 	void ResetController();
-
 	void UpdateModelView( BMessage* msg);
+
+	// overrides of controller base:
+	BHandler* GetControllerHandler() 	{ return this; }
 
 private:
 	BStatusBar* mStatBar;				// shows current status of this connection
@@ -108,11 +102,11 @@ class BmConnectionWin : public MWindow {
 	typedef map<BString, BmConnectionView*> ConnectionMap;
 
 public:
-
+	// c'tors and d'tor:
 	BmConnectionWin( const char* title, BLooper* invoker=NULL);
 	virtual ~BmConnectionWin();
 
-	// standard BeOS-stuff:
+	// overrides of BWindow base:
 	bool QuitRequested();
 	void Quit();
 	virtual void MessageReceived( BMessage* msg);
@@ -128,7 +122,6 @@ public:
 	static const char* const MSG_CONN_INFO = 		"bm:conninfo";
 
 private:
-	//
 	void AddConnection( BMessage* msg);
 	void RemoveConnection( const char* name);
 

@@ -30,11 +30,12 @@ protected:
 	static const BmUpdFlags UPD_NAME	= 2<<0;
 
 public:
+	// c'tors and d'tor:
 	BmMailFolderItem( BString key, BmListModelItem* item, bool superitem, 
 							BMessage* archive);
 	~BmMailFolderItem();
 
-	// overrides of listitem-baseclass:
+	// overrides of listitem base:
 	void UpdateView( BmUpdFlags flags);
 	BmMailFolder* ModelItem() 	{ return dynamic_cast< BmMailFolder*>( mModelItem); }
 };
@@ -49,21 +50,19 @@ class BmMailFolderView : public BmListViewController
 	typedef BmListViewController inherited;
 	
 public:
-	//
+	// creator-func, c'tors and d'tor:
 	static BmMailFolderView* CreateInstance(  minimax minmax, int32 width, int32 height);
-	
-	//Constructor and destructor
 	BmMailFolderView(  minimax minmax, int32 width, int32 height);
 	~BmMailFolderView();
 
 	// native methods:
 	BmListViewItem* CreateListViewItem( BmListModelItem* item, BMessage* archive=NULL);
 	
-	// overrides of controller-baseclass:
+	// overrides of controller base:
 	BString StateInfoBasename()			{ return "MailFolderView"; }
 	void Update( BmUpdFlags flags);
 
-	// overrides of listview-baseclass:
+	// overrides of listview base:
 	void MessageReceived( BMessage* msg);
 	void SelectionChanged( void);
 

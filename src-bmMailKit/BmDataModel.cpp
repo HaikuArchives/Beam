@@ -7,6 +7,7 @@
 #include "BmController.h"
 #include "BmDataModel.h"
 #include "BmLogHandler.h"
+#include "BmMsgTypes.h"
 #include "BmUtil.h"
 
 /********************************************************************************\
@@ -219,12 +220,20 @@ void BmJobModel::StartJobInThisThread() {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmJobModel::doStartJob() {
-	BAutolock lock( mModelLocker);
-	lock.IsLocked()	 					|| BM_THROW_RUNTIME( ModelName() << ":TellModelItemRemoved(): Unable to get lock");
+//	BAutolock lock( mModelLocker);
+//	lock.IsLocked()	 					|| BM_THROW_RUNTIME( ModelName() << ":TellModelItemRemoved(): Unable to get lock");
 	BM_LOG2( BM_LogModelController, BString("Job thread <") << ModelName() << "> has started");
 	mJobState = JOB_RUNNING;
+	int lCount=0;
+	while (mModelLocker.IsLocked()) {
+		mModelLocker.Unlock();
+		lCount++; 
+	}
 	StartJob();
 	TellJobIsDone();
+	while(lCount--) {
+		mModelLocker.Lock();
+	}
 }
 
 /*------------------------------------------------------------------------------*\

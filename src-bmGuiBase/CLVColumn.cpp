@@ -32,11 +32,12 @@
 //******************************************************************************************************
 //**** CLVColumn CLASS DEFINITION
 //******************************************************************************************************
-CLVColumn::CLVColumn(const char* label,float width,uint32 flags,float min_width)
+CLVColumn::CLVColumn(const char* label,float width,uint32 flags,float min_width, const char* labelname)
 {
 	if(flags & CLV_EXPANDER)
 	{
 		label = NULL;
+		labelname = "Latch";
 		width = EXPANDER_SHIFT;
 		min_width = EXPANDER_SHIFT;
 		flags &= CLV_NOT_MOVABLE | CLV_LOCK_AT_BEGINNING | CLV_HIDDEN | CLV_LOCK_WITH_RIGHT;
@@ -50,6 +51,10 @@ CLVColumn::CLVColumn(const char* label,float width,uint32 flags,float min_width)
 	{
 		fLabel = new char[strlen(label)+1];
 		strcpy((char*)fLabel,label);
+		if (labelname)
+			fLabelName = labelname;
+		else 
+			fLabelName = label;
 		if(CLV_HEADER_TRUNCATE)
 		{
 			int32 truncated_text_length = strlen(label)+3;
@@ -63,6 +68,7 @@ CLVColumn::CLVColumn(const char* label,float width,uint32 flags,float min_width)
 	else
 	{
 		fLabel = NULL;
+		fLabelName = NULL;
 		fTruncatedText = NULL;
 	}
 	fWidth = width;

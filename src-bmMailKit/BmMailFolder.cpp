@@ -110,6 +110,7 @@ bool BmMailFolder::CheckIfModifiedSince() {
 	if (mtime != mLastModified) {
 		BM_LOG2( BM_LogMailFolders, BString("Mtime of folder has changed!"));
 		mLastModified = mtime;
+		mNeedsCacheUpdate = true;
 		hasChanged = true;
 	}
 	BM_LOG3( BM_LogMailFolders, "BmMailFolder::CheckIfModifiedSince() - end");
@@ -152,8 +153,9 @@ BmMailRefList* BmMailFolder::MailRefList() {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmMailFolder::CreateMailRefList() {
-	if (!mMailRefList) {
+	if (!mMailRefList || mNeedsCacheUpdate) {
 		mMailRefList = new BmMailRefList( this, mNeedsCacheUpdate);
+		mNeedsCacheUpdate = false;
 	}
 }
 

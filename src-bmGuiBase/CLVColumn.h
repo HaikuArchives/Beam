@@ -122,7 +122,8 @@ class CLVColumn
 		CLVColumn(	const char* label,
 					float width = 20.0,
 					uint32 flags = 0,
-					float min_width = 20.0);
+					float min_width = 20.0,
+					const char* label_name = NULL);
 		virtual ~CLVColumn();
 
 		//Archival stuff
@@ -148,6 +149,7 @@ class CLVColumn
 		CLVSortMode SortMode() const;
 		virtual void SetSortMode(CLVSortMode mode);
 		const char* GetLabel() const;
+		const char* GetLabelName() const { return fLabelName; }
 		ColumnListView* GetParent() const ;
 		BView* GetHeaderView() const;
 		virtual void DrawColumnHeader(BView* view, BRect header_rect, bool sort_key, bool focus,
@@ -174,6 +176,7 @@ class CLVColumn
 
 		char *fLabel;
 		char* fTruncatedText;
+		const char *fLabelName;
 		BRect fCachedRect;
 		float fWidth;
 		float fMinWidth;

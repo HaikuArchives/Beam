@@ -14,12 +14,6 @@
 #include "BmController.h"
 #include "BmDataModel.h"
 
-class BHandler;
-
-#define BM_VIEW_ITEM_SELECTED				'bmCa'
-#define BM_VIEW_ITEM_INVOKED				'bmCb'
-
-
 class BmListViewController;
 
 typedef uint32 BmUpdFlags;
@@ -82,6 +76,10 @@ class BmListViewController : public ColumnListView, public BmJobController
 	typedef ColumnListView inherited;
 	typedef BmJobController inheritedController;
 
+	//	message component definitions:
+	static const char* const MSG_COLUMN_NO = "bm:colno";
+	static const char* const MSG_COLUMN_POS = "bm:colps";
+
 public:
 	//
 	BmListViewController( minimax minmax,BRect rect,
@@ -98,20 +96,22 @@ public:
 	void UpdateModelItem( BMessage* msg);
 	void UpdateModelState( BMessage* msg);
 	void UpdateItem( BmListViewItem* item, BmUpdFlags flags);
+	void ShowOrHideColumn( BMessage* msg);
 	//
 	virtual BmListViewItem* CreateListViewItem( BmListModelItem* item, 
 															  BMessage* archive=NULL) 			= 0;
 	//
 	BMessage* GetArchiveForItemKey( BString);
 
-	// overrides of controller-baseclass:
+	// overrides of controller base:
 	void AttachModel( BmDataModel* model=NULL);
 	void DetachModel();
 	BHandler* GetControllerHandler() 	{ return this; }
 	void JobIsDone( bool completed);
 
-	// overrides of listview-baseclass:
+	// overrides of listview base:
 	void ExpansionChanged( CLVListItem* item, bool expanded);
+	void ShowLabelViewMenu( BPoint pos);
 	void MessageReceived( BMessage* msg);
 	void MouseDown(BPoint point);
 
@@ -126,6 +126,7 @@ protected:
 	virtual BString StateInfoBasename()				= 0;
 	virtual void WriteStateInfo();
 	virtual void ReadStateInfo();
+	virtual BMessage* DefaultLayout()	{ return NULL; }
 
 	BList* mItemList;
 	BMessage* mInitialStateInfo;

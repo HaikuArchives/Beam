@@ -18,7 +18,7 @@ BeamApp::BeamApp()
 {
 	try {
 		beamApp = this;
-		MainWindow = new BmMainWindow();
+		MainWindow = BmMainWindow::CreateInstance();
 		mInitCheck = B_OK;
 	}
 	catch( exception &e) {

@@ -95,10 +95,7 @@ BmApplication::~BmApplication()
 bool BmApplication::QuitRequested() {
 	mIsQuitting = true;
 	bool shouldQuit = inherited::QuitRequested();
-	if (shouldQuit) {
-		if (MailFolderList)
-			MailFolderList->Store();
-	} else {
+	if (!shouldQuit) {
 		mIsQuitting = false;
 	}
 	return shouldQuit;
@@ -148,3 +145,35 @@ float BmApplication::FontLineHeight() {
 			+ BePlainFontHeight.descent 
 			+ BePlainFontHeight.leading; 
 }
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+BDirectory* BmApplication::MailCacheFolder() {
+	return GetFolder( BString( SettingsPath.Path()) << "/MailCache/", mMailCacheFolder);
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+BDirectory* BmApplication::StateInfoFolder() {
+	return GetFolder( BString( SettingsPath.Path()) << "/StateInfo/", mStateInfoFolder);
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+BDirectory* BmApplication::GetFolder( const BString& name, BDirectory& dir) {
+	if (dir.InitCheck() != B_OK) {
+		status_t res = dir.SetTo( name.String());
+		if (res != B_OK) {
+			(res = create_directory( name.String(), 0755) || dir.SetTo( name.String())) == B_OK
+													|| BM_DIE( BString("Sorry, could not create folder ")<<name<<".\n\t Going down!");
+		}
+	}
+	return &dir;
+}
+

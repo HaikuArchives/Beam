@@ -10,6 +10,7 @@
 
 #include <Application.h>
 #include <Bitmap.h>
+#include <Directory.h>
 #include <Font.h>
 #include <Path.h>
 #include <String.h>
@@ -34,6 +35,11 @@ public:
 	bool QuitRequested();
 	//
 	bool IsQuitting()							{ return mIsQuitting; }
+
+	// native methods:
+	BDirectory* MailCacheFolder();
+	BDirectory* StateInfoFolder();
+	BDirectory* GetFolder( const BString& name, BDirectory& dir);
 
 	//
 	typedef map< BString, BBitmap*> BmIconMap;
@@ -61,8 +67,13 @@ public:
 private:
 	void FetchIcons();
 
-	static int InstanceCount;
 	bool mIsQuitting;
+
+	static int InstanceCount;
+
+	// folders living under settings/Beam/:
+	BDirectory mMailCacheFolder;
+	BDirectory mStateInfoFolder;
 
 };
 

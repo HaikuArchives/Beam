@@ -15,9 +15,6 @@
 
 class BHandler;
 
-#define BM_VIEW_ITEM_SELECTED				'bmCa'
-#define BM_VIEW_ITEM_INVOKED				'bmCb'
-
 /*------------------------------------------------------------------------------*\
 	BmController
 		-	
@@ -29,21 +26,22 @@ public:
 	BmController( BString name);
 	virtual ~BmController();
 
-	//
+	// native methods:
 	virtual BHandler* GetControllerHandler() = 0;
+	virtual void AttachModel( BmDataModel* model=NULL);
+	virtual void DetachModel();
+	virtual void ResetController()		{ }
 
-	// setters
-	void DataModel( BmDataModel* model)	{ mDataModel = model; }
 	// getters
 	const char* ControllerName() const	{ return mControllerName.String(); }
 	const BString ModelName() const		{ return mDataModel ? mDataModel->ModelName() : "***NULL***"; }
-
-	virtual void AttachModel( BmDataModel* model=NULL);
-	virtual void DetachModel();
 	virtual BmDataModel* DataModel()		{ return mDataModel; }
-	virtual void ResetController()		{ }
+
+	// setters
+	void DataModel( BmDataModel* model)	{ mDataModel = model; }
 
 protected:
+	//
 	virtual bool IsMsgFromCurrentModel( BMessage* msg);
 
 private:
@@ -65,6 +63,7 @@ public:
 	BmJobController( BString name);
 	virtual ~BmJobController();
 
+	// native methods:
 	virtual void StartJob( BmJobModel* model = NULL, bool startInNewThread=true, bool deleteWhenDone=true);
 	virtual void PauseJob( BMessage* msg);
 	virtual void ContinueJob( BMessage* msg);

@@ -86,7 +86,7 @@ class ColumnListView : public BListView
 		static ColumnListView* Instantiate(BMessage* data);
 			***/
 		virtual status_t Archive(BMessage* data, bool deep = true) const;
-		virtual status_t UnArchive(BMessage* archive, bool deep = true);
+		virtual status_t Unarchive(BMessage* archive, bool deep = true);
 
 		//Column setup functions
 		virtual bool AddColumn(CLVColumn* Column);			//Note that a column may only be added to
@@ -113,6 +113,8 @@ class ColumnListView : public BListView
 			//Fills a caller-provided array with the display order of the columns in the same format
 			//as used in calling SetDisplayOrder.  The order pointer should point to an array 
 			//int32 order[n] where n is the number of columns in the ColumnListView.
+		void ShowColumn( int32 col_index);
+		void HideColumn( int32 col_index);
 		virtual void ColumnWidthChanged(int32 ColumnIndex, float NewWidth);
 		virtual void DisplayOrderChanged(const int32* order);
 			//Override this if you want to find out when the display order changed.
@@ -214,6 +216,7 @@ class ColumnListView : public BListView
 		void SetDisconnectScrollView( bool disconnect);
 		void UpdateColumnSizesDataRectSizeScrollBars(bool scrolling_allowed = true);
 		void ColumnsChanged();
+		virtual void ShowLabelViewMenu( BPoint pos)	{ }
 
 	protected:
 		friend class CLVMainView;

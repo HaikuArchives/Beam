@@ -33,9 +33,17 @@ public:
 	BmMailFolder( BMessage* archive, BmMailFolder* parent);
 	virtual ~BmMailFolder();
 	
-	// archival stuff:
+	// native methods:
+	void BumpNewMailCount();
+	void BumpNewMailCountForSubfolders();
+	bool HasNewMail() const					{ return mNewMailCount>0 || mNewMailCountForSubfolders>0; }
+	bool CheckIfModifiedSince();
+	void CreateMailRefList();
+	void RemoveMailRefList();
+
+	// overrides of archivable base:
 	static BArchivable* Instantiate( BMessage* archive);
-	virtual status_t Archive( BMessage* archive, bool deep = true) const;
+	status_t Archive( BMessage* archive, bool deep = true) const;
 
 	// getters:
 	const entry_ref& EntryRef() const 	{ return mEntryRef; }
@@ -45,22 +53,10 @@ public:
 	const int NewMailCountForSubfolders() const		{ return mNewMailCountForSubfolders; }
 	BmMailFolder* Parent() 					{ return dynamic_cast<BmMailFolder*>( mParent); }
 	BmMailRefList* MailRefList();
-	//
 	const BString& Name() const			{ return mName; }
 
 	// setters:
 	void EntryRef( entry_ref &e) 			{ mEntryRef = e; }
-
-	// 
-	void BumpNewMailCount();
-	void BumpNewMailCountForSubfolders();
-	bool HasNewMail() const					{ return mNewMailCount>0 || mNewMailCountForSubfolders>0; }
-
-	bool CheckIfModifiedSince();
-
-	//
-	void CreateMailRefList();
-	void RemoveMailRefList();
 
 	// archival-fieldnames:
 	static const char* const MSG_ENTRYREF = 		"bm:eref";

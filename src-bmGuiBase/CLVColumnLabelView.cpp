@@ -305,6 +305,9 @@ void CLVColumnLabelView::MouseDown(BPoint Point)
 			}
 		}
 	}
+	if (Buttons == B_SECONDARY_MOUSE_BUTTON) {
+		fParent->ShowLabelViewMenu( Point);
+	}
 	if(WatchMouse)
 		SetMouseEventMask(B_POINTER_EVENTS,B_NO_POINTER_HISTORY);
 	fPreviousMousePos = MousePos;
