@@ -48,17 +48,19 @@ class BmController;
 	the handler specified via each Controllers GetControllerHandler()-method,
 	so these messages are sent from a datamodel to all its controllers:
 \*------------------------------------------------------------------------------*/
-#define BM_JOB_DONE						'bmda'
+enum {
+	BM_JOB_DONE					=	'bmda',
 							// the job has finished or was stopped
-#define BM_JOB_UPDATE_STATE			'bmdb'
+	BM_JOB_UPDATE_STATE		=	'bmdb',
 							// the job wants to update (one of) its state(s)
-#define BM_LISTMODEL_ADD				'bmdc'
+	BM_LISTMODEL_ADD			=	'bmdc',
 							// the listmodel has added a new item
-#define BM_LISTMODEL_REMOVE			'bmdd'
+	BM_LISTMODEL_REMOVE		=	'bmdd',
 							// the listmodel has removed an item
-#define BM_LISTMODEL_UPDATE			'bmde'
-							// the listmodel indicates a state-change of on of its items
-
+	BM_LISTMODEL_UPDATE		=	'bmde'
+							// the listmodel indicates a state-change of one of 
+							// its items
+};
 
 /*------------------------------------------------------------------------------*\
 	BmDataModel
@@ -98,16 +100,19 @@ protected:
 	virtual bool HasControllers();
 	virtual void InitOutstanding();
 	virtual bool ShouldContinue();
-	virtual void TellControllers( BMessage* msg, bool waitForAck=false);
+	virtual void TellControllers( BMessage* msg, bool waitForAck=false,
+											bool tellApp=false);
 	virtual void WaitForAllToAck();
 	virtual void WaitForAllToDetach();
 	virtual void HandleError( const BmString& errString);
 	inline void Freeze() 					{ mFrozenCount++; }
 	inline void Thaw()						{ mFrozenCount--; }
 	inline bool Frozen() 					{ return mFrozenCount > 0; }
-	inline bool NeedControllersToContinue()	{ return mNeedControllersToContinue; }
+	inline bool NeedControllersToContinue()	
+													{ return mNeedControllersToContinue; }
 
-	inline void NeedControllersToContinue( bool b)	{ mNeedControllersToContinue = b; }
+	inline void NeedControllersToContinue( bool b)	
+													{ mNeedControllersToContinue = b; }
 
 	mutable BLocker mModelLocker;
 	BmControllerSet mControllerSet;
@@ -146,10 +151,12 @@ public:
 	virtual void PauseJob();
 	virtual void ContinueJob();
 	virtual void StopJob();
-	inline thread_id JobThreadID() const		{ return mThreadID; }
+	inline thread_id JobThreadID() const
+													{ return mThreadID; }
 	bool IsJobRunning() const;
-	inline bool IsJobCompleted() const			{ return mJobState == JOB_COMPLETED; }
-	inline int32 CurrentJobSpecifier() const	{ return mJobSpecifier; }
+	inline bool IsJobCompleted() const	{ return mJobState == JOB_COMPLETED; }
+	inline int32 CurrentJobSpecifier() const	
+													{ return mJobSpecifier; }
 
 	//	message component definitions for status-msgs:
 	static const char* const MSG_COMPLETED;
@@ -192,8 +199,8 @@ private:
 typedef uint32 BmUpdFlags;
 const BmUpdFlags UPD_EXPANDER 	= 1<<0;
 const BmUpdFlags UPD_KEY		 	= 1<<1;
-const BmUpdFlags UPD_ALL 			= 0x7FFFFFFF;
-const BmUpdFlags UPD_SORT			= 1<<31;
+const BmUpdFlags UPD_ALL 			= 0x7FFFFFFFUL;
+const BmUpdFlags UPD_SORT			= 1UL<<31;
 
 class BmListModelItem;
 typedef map< BmString, BmRef<BmListModelItem> > BmModelItemMap;
@@ -211,31 +218,38 @@ protected:
 
 public:
 	// c'tors & d'tor:
-	BmListModelItem( const BmString& key, BmListModel* model, BmListModelItem* parent);
+	BmListModelItem( const BmString& key, BmListModel* model, 
+						  BmListModelItem* parent);
 	BmListModelItem( const BmListModelItem&);
 	virtual ~BmListModelItem();
 
 	// native methods:
 	BmListModelItem* FindItemByKey( const BmString& key);
 	virtual int16 ArchiveVersion() const = 0;
+	virtual void IntegrateAppendedArchive( BMessage* archive);
 
 #ifdef BM_LOGGING
 	virtual int32 ObjectSize( bool addSizeofThis=true) const;
 #endif
 
 	// getters:
-	inline BmModelItemMap::const_iterator begin() const	{ return mSubItemMap.begin(); }
-	inline BmModelItemMap::const_iterator end() const	{ return mSubItemMap.end(); }
-	inline size_t size() const						{ return mSubItemMap.size(); }
-	inline bool empty() const						{ return mSubItemMap.empty(); }
-	inline const BmString& Key() const			{ return mKey; }
-	virtual const BmString& DisplayKey() const	{ return mKey; }
-	inline BmRef<BmListModelItem> Parent() const		{ return mParent; }
+	inline BmModelItemMap::const_iterator begin() const	
+													{ return mSubItemMap.begin(); }
+	inline BmModelItemMap::const_iterator end() const	
+													{ return mSubItemMap.end(); }
+	inline size_t size() const				{ return mSubItemMap.size(); }
+	inline bool empty() const				{ return mSubItemMap.empty(); }
+	inline const BmString& Key() const	{ return mKey; }
+	virtual const BmString& DisplayKey() const		
+													{ return mKey; }
+	inline BmRef<BmListModelItem> Parent() const		
+													{ return mParent; }
 	BmRef<BmListModel> ListModel() const;
 
 	// setters:
-	inline void Parent( BmListModelItem* parent)	{ mParent = parent; }
-	inline void Key( const BmString k)				{ mKey = k; }
+	inline void Parent( BmListModelItem* parent)	
+													{ mParent = parent; }
+	inline void Key( const BmString k)	{ mKey = k; }
 
 	// overrides of BmRefObj
 	const BmString& RefName() const		{ return mKey; }
@@ -295,11 +309,12 @@ public:
 
 	// native methods:
 	BmRef<BmListModelItem> FindItemByKey( const BmString& key);
-	virtual bool AddItemToList( BmListModelItem* item, BmListModelItem* parent=NULL);
+	virtual bool AddItemToList( BmListModelItem* item, 
+										 BmListModelItem* parent=NULL);
 	virtual void RemoveItemFromList( BmListModelItem* item);
-	virtual BmRef<BmListModelItem> RemoveItemByName( const BmString& key);
+	virtual BmRef<BmListModelItem> RemoveItemByKey( const BmString& key);
 	//
-	virtual BmString RenameItem( const BmString& oldKey, const BmString& newKey);
+	virtual BmString RenameItem( const BmString oldKey, const BmString& newKey);
 	virtual void AddForeignKey( const char* key, BmListModel* model);
 	void AdjustForeignKeys( const BmString& oldVal, const BmString& newVal);
 	virtual void ForeignKeyChanged( const BmString& key, 
@@ -308,12 +323,16 @@ public:
 	//
 	virtual bool Store();
 	virtual const BmString SettingsFileName() = 0;
-	virtual void InitializeItems()								{	mInitCheck = B_OK; }
-	virtual void InstantiateItems( BMessage*)					{ mInitCheck = B_OK; }
+	virtual void InitializeItems()		{	mInitCheck = B_OK; }
+	virtual void InstantiateItems( BMessage*)
+													{ mInitCheck = B_OK; }
 	virtual void Cleanup();
 	virtual int16 ArchiveVersion() const = 0;
 
-	static BMessage* Restore( const BmString settingsFile);
+	static BMessage* Restore( const BmString settingsFile, 
+									  BList& appendedArchives);
+	virtual bool AppendArchive( BMessage* archive);
+	virtual void IntegrateAppendedArchives( BList& appendedArchives);
 
 	// overrides of Archivable base:
 	status_t Archive( BMessage* archive, bool deep) const;
@@ -327,19 +346,20 @@ public:
 
 	// getters:
 	inline BmModelItemMap::const_iterator begin() const 	
-															{ return mModelItemMap.begin(); }
+													{ return mModelItemMap.begin(); }
 	inline BmModelItemMap::const_iterator end() const		
-															{ return mModelItemMap.end(); }
-	inline size_t size() const						{ return mModelItemMap.size(); }
-	inline bool empty() const						{ return mModelItemMap.empty(); }
-	inline status_t InitCheck() const			{ return mInitCheck; }
+													{ return mModelItemMap.end(); }
+	inline size_t size() const				{ return mModelItemMap.size(); }
+	inline bool empty() const				{ return mModelItemMap.empty(); }
+	inline status_t InitCheck() const	{ return mInitCheck; }
 
 protected:
 
 	// native methods:
 	virtual void TellModelItemAdded( BmListModelItem* item);
 	virtual void TellModelItemRemoved( BmListModelItem* item);
-	virtual void TellModelItemUpdated( BmListModelItem* item, BmUpdFlags flags=UPD_ALL,
+	virtual void TellModelItemUpdated( BmListModelItem* item, 
+												  BmUpdFlags flags=UPD_ALL,
 												  const BmString oldKey="");
 
 	// overrides of job-model base:
