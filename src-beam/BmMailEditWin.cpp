@@ -343,29 +343,16 @@ void BmMailEditWin::CreateGUI() {
 	mFromControl->Menu()->AddItem( subMenu);
 
 	// add all adresses to To/Cc/Bcc menu and a menu-entry for clearing the field:
-	BMessage* msg;
 	BmTextControl*	ctrl[] = {mToControl, mCcControl, mBccControl, NULL};
-	ThePeopleList->ModelLocker().Lock();
-	for( iter = ThePeopleList->begin(); iter != ThePeopleList->end(); ++iter) {
-		BmPerson* person = dynamic_cast< BmPerson*>( iter->second.Get());
-		if (!person)
-			continue;
-		for( int n=0; ctrl[n]!=NULL; ++n) {
-			msg = new BMessage( BM_TO_CC_BCC_ADDED);
-			msg->AddPointer( MSG_CONTROL, ctrl[n]);
-			msg->AddString( MSG_ADDRESS, person->Email());
-			ctrl[n]->Menu()->AddItem( new BMenuItem( person->DisplayName().String(), msg));
-		}
-	}
 	for( int n=0; ctrl[n]!=NULL; ++n) {
-		msg = new BMessage( BM_TO_CC_BCC_CLEAR);
-		msg->AddPointer( MSG_CONTROL, ctrl[n]);
+		BMessage templateMsg( BM_TO_CC_BCC_ADDED);
+		templateMsg.AddPointer( MSG_CONTROL, ctrl[n]);
+		ThePeopleList->AddPeopleToMenu( ctrl[n]->Menu(), templateMsg, MSG_ADDRESS);
+		BMessage* clearMsg = new BMessage( BM_TO_CC_BCC_CLEAR);
+		clearMsg->AddPointer( MSG_CONTROL, ctrl[n]);
 		ctrl[n]->Menu()->AddSeparatorItem();
-		ctrl[n]->Menu()->AddItem( new BMenuItem( "Clear", msg));
-		ctrl[n]->Menu()->SetLabelFromMarked( false);
-		ctrl[n]->Menu()->SetRadioMode( false);
+		ctrl[n]->Menu()->AddItem( new BMenuItem( "<Clear Field>", clearMsg));
 	}
-	ThePeopleList->ModelLocker().Unlock();
 
 	// add all smtp-accounts to smtp menu:
 	for( iter = TheSmtpAccountList->begin(); iter != TheSmtpAccountList->end(); ++iter) {
