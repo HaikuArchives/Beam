@@ -66,47 +66,48 @@ _EXPORT ssize_t	encode64(char *out, const char *in, register off_t length) {
 
 _EXPORT  ssize_t	decode64(char *out, const char *in, register off_t length) {
 		
-		register unsigned long concat, value;
-		register int i,j;
-		register int k = 0;
+	unsigned int concat = 0;
+	unsigned int mIndex = 0;
+	int value;
+	
+	static int base64_alphabet[256] = { //----Fast lookup table
+		 -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+		 -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+		 -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 62, -1, -1, -1, 63,
+		 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, -1, -1, -1,  0, -1, -1,
+		 -1,  0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14,
+		 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, -1, -1, -1, -1, -1,
+		 -1, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40,
+		 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, -1, -1, -1, -1, -1,
+		 -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+		 -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+		 -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+		 -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+		 -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+		 -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+		 -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+		 -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1
+	};
+
+	const char* src = in;
+	const char* srcEnd = in+length;
+	char* dest = out;
+	char* destEnd = out+length*5/3;
 		
-		for (i = 0; i < length; i += 4) {
-			concat = 0;
+	while( src+(3-mIndex)<srcEnd && dest<=destEnd-3) {
+		if ((value = base64_alphabet[(unsigned char)*src++])==-1)
+			continue;
 			
-			for (j = 0; (j < 4) && ((i + j) < length); j++) {
-				value = in[i+j];
-				
-				if (( value >= 'A' ) && ( value <= 'Z'))
-					value -= 'A';
-				else if (( value >= 'a' ) && ( value <= 'z'))
-					value = value - 'a' + 26;
-				else if (( value >= '0' ) && ( value <= '9'))
-					value = value - '0' + 52;
-				else if ( value == '+' )
-					value = 62;
-				else if ( value == '/' )
-					value = 63;
-				else if ( value == '=' )
-					break;
-				else {
-					i += 2;
-					j--;
-					continue;
-				}
-				
-				value = value << ((3-j)*6);
-				
-				concat |= value;
-			}
-			
-			if (j > 1)
-				out[k++] = (concat & 0x00ff0000) >> 16;
-			if (j > 2)
-				out[k++] = (concat & 0x0000ff00) >> 8;
-			if (j > 3)
-				out[k++] = (concat & 0x000000ff);
+		concat |= (((unsigned int)value) << ((3-mIndex)*6));
+		
+		if (++mIndex == 4) {
+			*dest++ = (concat & 0x00ff0000) >> 16;
+			*dest++ = (concat & 0x0000ff00) >> 8;
+			*dest++ = (concat & 0x000000ff);
+			concat = mIndex = 0;
 		}
-		
-		return k;
+	}
+	
+	return dest-out;
 }
 
