@@ -778,14 +778,18 @@ BmString BmMailHeader::DetermineListAddress( bool bypassSanityTest) {
 		}
 	}
 	if (!listAddr.InitOK()) {
-		// ...we have a look at Mail-Followup-To:
-		if (!IsFieldEmpty( BM_FIELD_MAIL_FOLLOWUP_TO))
-			listAddr = mAddrMap[BM_FIELD_MAIL_FOLLOWUP_TO].FirstAddress();
-	}
-	if (!listAddr.InitOK()) {
-		// ...still nothing (?!?): getting desparate, we have a look at ReplyTo:
-		if (!IsFieldEmpty( BM_FIELD_REPLY_TO))
-			listAddr = mAddrMap[BM_FIELD_REPLY_TO].FirstAddress();
+		// ...we have a look at some other fields (defined by prefs):
+		vector<BmString> listFields;
+		BmString lfs = ThePrefs->GetString( "ListFields");
+		split( BmPrefs::nListSeparator, lfs, listFields);
+		int32 numFields = listFields.size();
+		for( int i=0; i<numFields; ++i) {
+			if (!IsFieldEmpty( listFields[i])) {
+				listAddr = mAddrMap[listFields[i]].FirstAddress();
+				if (listAddr.InitOK())
+					break;
+			}
+		}
 	}
 	if (!bypassSanityTest) {
 		// Sanity-check: the list-address *has* to be found somewhere within
