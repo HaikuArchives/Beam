@@ -536,6 +536,8 @@ void BmBodyPart::SetTo( const BmString& msgtext, int32 start, int32 length,
 																  msgtext, startOffs, 
 																  nPos-msgtext.String()-startOffs,
 																  NULL, this);
+				BmAutolockCheckGlobal lock( ListModel()->ModelLocker());
+				lock.IsLocked()	 			|| BM_THROW_RUNTIME( "BmBodyPart::SetTo(): Unable to get lock");
 				AddSubItem( subPart);
 				startPos = nPos;
 			} else {
@@ -550,6 +552,8 @@ void BmBodyPart::SetTo( const BmString& msgtext, int32 start, int32 length,
 																		  msgtext, startOffs, 
 																		  start+length-startOffs, 
 																		  NULL, this);
+						BmAutolockCheckGlobal lock( ListModel()->ModelLocker());
+						lock.IsLocked()	 	|| BM_THROW_RUNTIME( "BmBodyPart::SetTo(): Unable to get lock");
 						AddSubItem( subPart);
 					}
 				}
