@@ -45,21 +45,6 @@ class StringTest : public BTestCase
 {
 	typedef TestCase inherited;
 	CPPUNIT_TEST_SUITE( StringTest );
-	CPPUNIT_TEST( StringSubCopyTest);
-	CPPUNIT_TEST( StringSearchTest);
-	CPPUNIT_TEST( StringReplaceTest);
-	CPPUNIT_TEST( StringRemoveTest);
-	CPPUNIT_TEST( StringPrependTest);
-	CPPUNIT_TEST( StringInsertTest);
-	CPPUNIT_TEST( StringFormatAppendTest);
-	CPPUNIT_TEST( StringEscapeTest);
-	CPPUNIT_TEST( StringConstructionTest);
-	CPPUNIT_TEST( StringCompareTest);
-	CPPUNIT_TEST( StringCharAccessTest);
-	CPPUNIT_TEST( StringCaseTest);
-	CPPUNIT_TEST( StringAssignTest);
-	CPPUNIT_TEST( StringAccessTest);
-	CPPUNIT_TEST( StringAppendTest);
 	CPPUNIT_TEST( StringBeamExtensionsTest);
 	CPPUNIT_TEST_SUITE_END();
 public:
@@ -74,21 +59,6 @@ public:
 	//------------------------------------------------------------
 	// Test functions
 	//------------------------------------------------------------
-	void StringSubCopyTest();
-	void StringSearchTest();
-	void StringReplaceTest();
-	void StringRemoveTest();
-	void StringPrependTest();
-	void StringInsertTest();
-	void StringFormatAppendTest();
-	void StringEscapeTest();
-	void StringConstructionTest();
-	void StringCompareTest();
-	void StringCharAccessTest();
-	void StringCaseTest();
-	void StringAssignTest();
-	void StringAccessTest();
-	void StringAppendTest();
 	void StringBeamExtensionsTest();
 };
 

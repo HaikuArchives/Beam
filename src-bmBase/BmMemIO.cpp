@@ -29,6 +29,7 @@
 /*************************************************************************/
 
 #include <assert.h>
+#include <cstring>
 #include <stdlib.h>
 #include <new>
 

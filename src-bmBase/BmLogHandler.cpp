@@ -27,6 +27,8 @@
 /*                                                                       */
 /*************************************************************************/
 
+#include <cstring>
+
 #include <Autolock.h>
 #include <Directory.h>
 #include <File.h>
