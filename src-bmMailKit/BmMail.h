@@ -83,6 +83,9 @@ class BmMailRef;
 #define BM_FIELD_LIST_POST					"List-Post"
 #define BM_FIELD_LIST_SUBSCRIBE			"List-Subscribe"
 #define BM_FIELD_LIST_UNSUBSCRIBE		"List-Unsubscribe"
+#define BM_FIELD_MAIL_FOLLOWUP_TO		"Mail-Followup-To"
+#define BM_FIELD_MAIL_REPLY_TO			"Mail-Reply-To"
+#define BM_FIELD_MAILING_LIST				"Mailing-List"
 #define BM_FIELD_MESSAGE_ID				"Message-Id"
 #define BM_FIELD_MIME 						"Mime-Version"
 #define BM_FIELD_PRIORITY					"Priority"
@@ -163,21 +166,23 @@ public:
 	}
 	const BmString Status() const;
 	//
-	BmString DetermineReplyAddress( int32 replyMode, bool canonicalize);
+	BmString DetermineReplyAddress( int32 replyMode, bool canonicalize,
+											  bool& replyGoesToPersonOnly);
 	//
 	BmRef<BmMail> CreateAttachedForward();
 	BmRef<BmMail> CreateInlineForward( bool withAttachments, 
 										  		  const BmString selectedText="");
-	BmRef<BmMail> CreateReply( int32 replyMode, const BmString selectedText="");
+	BmRef<BmMail> CreateReply( int32 replyMode, bool& replyGoesToPersonOnly,
+										const BmString selectedText="");
 	BmRef<BmMail> CreateRedirect();
 	BmString CreateReplySubjectFor( const BmString subject);
 	BmString CreateForwardSubjectFor( const BmString subject);
-	BmString CreateReplyIntro();
+	BmString CreateReplyIntro( bool mailIsToPersonOnly);
 	BmString CreateForwardIntro();
 	//
 	void AddAttachmentFromRef( const entry_ref* ref);
 	void AddPartsFromMail( BmRef<BmMail> mail, bool withAttachments,
-								  bool isForward,
+								  bool isForward, bool mailIsToPersonOnly,
 								  const BmString selectedText="");
 	//
 	bool SetDestFoldername( const BmString& destFoldername);

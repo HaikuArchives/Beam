@@ -331,7 +331,9 @@ void BmMail::RemoveField( const BmString fieldName) {
 	-	
 \*------------------------------------------------------------------------------*/
 bool BmMail::HasComeFromList() const {
-	return mHeader && !mHeader->IsFieldEmpty( BM_FIELD_LIST_ID);
+	return mHeader 
+			 && (!mHeader->IsFieldEmpty( BM_FIELD_LIST_ID)
+			 	  || !mHeader->IsFieldEmpty( BM_FIELD_MAILING_LIST));
 }
 
 /*------------------------------------------------------------------------------*\
@@ -343,7 +345,7 @@ BmRef<BmMail> BmMail::CreateInlineForward( bool withAttachments, const BmString 
 	// massage subject, if neccessary:
 	BmString subject = GetFieldVal( BM_FIELD_SUBJECT);
 	newMail->SetFieldVal( BM_FIELD_SUBJECT, CreateForwardSubjectFor( subject));
-	newMail->AddPartsFromMail( this, withAttachments, BM_IS_FORWARD, selectedText);
+	newMail->AddPartsFromMail( this, withAttachments, BM_IS_FORWARD, false, selectedText);
 	newMail->SetBaseMailInfo( MailRef(), BM_MAIL_STATUS_FORWARDED);
 	return newMail;
 }
@@ -367,7 +369,8 @@ BmRef<BmMail> BmMail::CreateAttachedForward() {
 	DetermineReplyAddress()
 	-	
 \*------------------------------------------------------------------------------*/
-BmString BmMail::DetermineReplyAddress( int32 replyMode, bool canonicalize) {
+BmString BmMail::DetermineReplyAddress( int32 replyMode, bool canonicalize,
+													 bool& replyGoesToPersonOnly) {
 	// fill address information, depending on reply-mode:
 	BmString replyAddr;
 	if (!Header())
@@ -379,6 +382,7 @@ BmString BmMail::DetermineReplyAddress( int32 replyMode, bool canonicalize) {
 			replyAddr = ThePrefs->GetBool( "PreferReplyToList", true)
 							? Header()->DetermineListAddress()
 							: Header()->DetermineOriginator();
+			replyGoesToPersonOnly = (replyAddr.Length()==0);
 		}
 		if (!replyAddr.Length())
 			replyAddr = Header()->DetermineOriginator();
@@ -386,15 +390,18 @@ BmString BmMail::DetermineReplyAddress( int32 replyMode, bool canonicalize) {
 		// blindly use list-address for reply (this might mean that we send
 		// a reply to the list although the messages has not come from the list):
 		replyAddr = Header()->DetermineListAddress( true);
+		replyGoesToPersonOnly = false;
 	} else if (replyMode == BMM_REPLY_ORIGINATOR) {
 		// bypass the reply-to, this way one can send mail to the 
 		// original author of a mail which has been 'reply-to'-munged 
 		// by a mailing-list processor:
 		replyAddr = Header()->DetermineOriginator( true);
+		replyGoesToPersonOnly = true;
 	} else if (replyMode == BMM_REPLY_ALL) {
 		// since we are replying to all recipients of this message,
 		// we now include the Originator (plain and standard way):
 		replyAddr = Header()->DetermineOriginator();
+		replyGoesToPersonOnly = false;
 	}
 	if (canonicalize)
 		return BmAddressList( replyAddr).AddrSpecsAsString();
@@ -406,7 +413,8 @@ BmString BmMail::DetermineReplyAddress( int32 replyMode, bool canonicalize) {
 	CreateReply()
 	-	
 \*------------------------------------------------------------------------------*/
-BmRef<BmMail> BmMail::CreateReply( int32 replyMode, const BmString selectedText) {
+BmRef<BmMail> BmMail::CreateReply( int32 replyMode, bool& replyGoesToPersonOnly,
+											  const BmString selectedText) {
 	BmRef<BmMail> newMail = new BmMail( true);
 	// copy old message ID into in-reply-to and references fields:
 	BmString messageID = GetFieldVal( BM_FIELD_MESSAGE_ID);
@@ -416,7 +424,7 @@ BmRef<BmMail> BmMail::CreateReply( int32 replyMode, const BmString selectedText)
 		newMail->SetFieldVal( BM_FIELD_REFERENCES, oldRefs + " " + messageID);
 	else
 		newMail->SetFieldVal( BM_FIELD_REFERENCES, messageID);
-	BmString newTo = DetermineReplyAddress( replyMode, false);
+	BmString newTo = DetermineReplyAddress( replyMode, false, replyGoesToPersonOnly);
 	newMail->SetFieldVal( BM_FIELD_TO, newTo);
 	// Since we are replying, we generate the new mail's from-address 
 	// from the received mail's to-/cc-/bcc-info in several steps.
@@ -476,7 +484,8 @@ BmRef<BmMail> BmMail::CreateReply( int32 replyMode, const BmString selectedText)
 	// massage subject, if neccessary:
 	BmString subject = GetFieldVal( BM_FIELD_SUBJECT);
 	newMail->SetFieldVal( BM_FIELD_SUBJECT, CreateReplySubjectFor( subject));
-	newMail->AddPartsFromMail( this, false, BM_IS_REPLY, selectedText);
+	newMail->AddPartsFromMail( this, false, BM_IS_REPLY, replyGoesToPersonOnly, 
+										selectedText);
 	newMail->SetBaseMailInfo( MailRef(), BM_MAIL_STATUS_REPLIED);
 	return newMail;
 }
@@ -551,7 +560,7 @@ BmString BmMail::CreateForwardSubjectFor( const BmString subject) {
 		-	creates an appropriate intro-line for a reply-message
 		-	the returned string is the intro in UTF8
 \*------------------------------------------------------------------------------*/
-BmString BmMail::CreateReplyIntro() {
+BmString BmMail::CreateReplyIntro( bool mailIsToPersonOnly) {
 	Regexx rx;
 	BmString intro = ThePrefs->GetString( "ReplyIntroStr");
 	intro = rx.replace( intro, "%D", TimeToString( mMailRef->When(), "%Y-%m-%d"), 
@@ -562,9 +571,11 @@ BmString BmMail::CreateReplyIntro() {
 							  Regexx::nocase|Regexx::global|Regexx::noatom);
 	intro = rx.replace( intro, "%S", mMailRef->Subject(), 
 							  Regexx::nocase|Regexx::global|Regexx::noatom);
-	BmAddressList fromAddr = Header()->DetermineOriginator( true);
 	BmString fromNicks;
-	if (HasComeFromList()) {
+	if (!mailIsToPersonOnly) {
+		// the more formal approach, we replace %F by the originator(s) 
+		// nickname or address:
+		BmAddressList fromAddr = Header()->DetermineOriginator( true);
 		BmAddrList::const_iterator pos;
 		for( pos=fromAddr.begin(); pos!=fromAddr.end(); ++pos) {
 			if (pos != fromAddr.begin())
@@ -572,6 +583,8 @@ BmString BmMail::CreateReplyIntro() {
 			fromNicks << (pos->HasPhrase() ? pos->Phrase() : pos->AddrSpec());
 		}
 	} else
+		// less formal way, replace %F by ReplyIntroDefaultNick in order
+		// to say something like "On xxx, you wrote":
 		fromNicks = ThePrefs->GetString( "ReplyIntroDefaultNick", "you");
 	intro = rx.replace( intro, "%F", fromNicks, 
 							  Regexx::nocase|Regexx::global|Regexx::noatom);
@@ -621,7 +634,7 @@ void BmMail::AddAttachmentFromRef( const entry_ref* ref) {
 	-	
 \*------------------------------------------------------------------------------*/
 void BmMail::AddPartsFromMail( BmRef<BmMail> mail, bool withAttachments, 
-										 bool isForward,
+										 bool isForward, bool mailIsToPersonOnly,
 										 const BmString selectedText) {
 	if (!mail || !mail->Body() || !mBody)
 		return;
@@ -639,7 +652,7 @@ void BmMail::AddPartsFromMail( BmRef<BmMail> mail, bool withAttachments,
 											ThePrefs->GetInt( "MaxLineLen"));
 	BmString intro( isForward 
 							? mail->CreateForwardIntro() << "\n"
-							: mail->CreateReplyIntro() << "\n");
+							: mail->CreateReplyIntro( mailIsToPersonOnly) << "\n");
 	if (newTextBody)
 		mBody->SetEditableText( newTextBody->DecodedData() + "\n" + intro + quotedText, 
 										charset);
