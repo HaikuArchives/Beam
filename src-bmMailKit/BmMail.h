@@ -184,7 +184,8 @@ public:
 	BmString CreateReplyIntro( bool mailIsToPersonOnly);
 	BmString CreateForwardIntro();
 	//
-	void AddAttachmentFromRef( const entry_ref* ref);
+	void AddAttachmentFromRef( const entry_ref* ref,
+										const BmString& defaultCharset);
 	void AddPartsFromMail( BmRef<BmMail> mail, bool withAttachments,
 								  bool isForward, bool mailIsToPersonOnly,
 								  const BmString selectedText="");

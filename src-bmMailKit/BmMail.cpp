@@ -449,7 +449,8 @@ BmRef<BmMail> BmMail::CreateInlineForward( bool withAttachments,
 BmRef<BmMail> BmMail::CreateAttachedForward() {
 	BmRef<BmMail> newMail = new BmMail( true);
 	if (mMailRef->InitCheck() == B_OK)
-		newMail->Body()->AddAttachmentFromRef( mMailRef->EntryRefPtr());
+		newMail->Body()->AddAttachmentFromRef( mMailRef->EntryRefPtr(), 
+															DefaultCharset());
 	// massage subject, if neccessary:
 	BmString subject = GetFieldVal( BM_FIELD_SUBJECT);
 	newMail->SetFieldVal( BM_FIELD_SUBJECT, CreateForwardSubjectFor( subject));
@@ -776,9 +777,10 @@ BmString BmMail::CreateForwardIntro() {
 	AddAttachmenstFromRef()
 	-	
 \*------------------------------------------------------------------------------*/
-void BmMail::AddAttachmentFromRef( const entry_ref* ref) {
+void BmMail::AddAttachmentFromRef( const entry_ref* ref,
+											  const BmString& charset) {
 	if (mBody)
-		mBody->AddAttachmentFromRef( ref);
+		mBody->AddAttachmentFromRef( ref, charset);
 }
 
 /*------------------------------------------------------------------------------*\
