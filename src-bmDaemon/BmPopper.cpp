@@ -551,19 +551,34 @@ void BmPopper::StateRetrieve() {
 		}
 		cmd = BmString("RETR ") << i+1;
 		SendCommand( cmd);
+		time_t before = time(NULL);
 		if (!CheckForPositiveAnswer( mNewMsgSizes[mCurrMailNr-1], true, true))
 			goto CLEAN_UP;
+		if (mAnswerText.Length() > ThePrefs->GetInt("LogSpeedThreshold", 
+																  100*1024)) {
+			time_t after = time(NULL);
+			time_t duration = after-before > 0 ? after-before : 1;
+			// log speed for mails that exceed a certain size:
+			BM_LOG( BM_LogPop, 
+					  BmString("Received mail of size ")<<mAnswerText.Length()
+							<< " bytes in " << duration << " seconds => " 
+							<< mAnswerText.Length()/duration/1024.0 << "KB/s");
+		}
 		// now create a mail from the received data...
+		BM_LOG3( BM_LogPop, "Creating mail...");
 		BmRef<BmMail> mail = new BmMail( mAnswerText, mPopAccount->Name());
 		if (mail->InitCheck() != B_OK)
 			goto CLEAN_UP;
 		// ...set default folder according to pop-account settings...
 		mail->SetDestFoldername( mPopAccount->HomeFolder());
 		// ...execute mail-filters for this mail...
+		BM_LOG3( BM_LogPop, "...applying filters (in memory)...");
 		mail->ApplyInboundFilters();
 		// ...and store mail on disk:
+		BM_LOG3( BM_LogPop, "...storing mail...");
 		if (!mail->Store())
 			goto CLEAN_UP;
+		BM_LOG3( BM_LogPop, "...done");
 		mPopAccount->MarkUIDAsDownloaded( mMsgUIDs[i]);
 		//	delete the retrieved message if required:
 		if (mPopAccount->DeleteMailFromServer()) {

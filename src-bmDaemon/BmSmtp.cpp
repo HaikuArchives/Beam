@@ -710,7 +710,18 @@ void BmSmtp::Data( BmMail* mail, const BmString& headerText, BmString forBcc) {
 		completeHeader = headerText;
 	BmStringIBuf sendBuf( completeHeader);
 	sendBuf.AddBuffer( mail->RawText().String()+mail->HeaderLength());
+	time_t before = time(NULL);
 	SendCommand( sendBuf, "", true, true);
+	int32 len = mail->RawText().Length();
+	if (len > ThePrefs->GetInt("LogSpeedThreshold", 100*1024)) {
+		time_t after = time(NULL);
+		time_t duration = after-before > 0 ? after-before : 1;
+		// log speed for mails that exceed a certain size:
+		BM_LOG( BM_LogSmtp, 
+				  BmString("Sent mail of size ") << len
+						<< " bytes in " << duration << " seconds => " 
+						<< len/duration/1024.0 << "KB/s");
+	}
 	CheckForPositiveAnswer();
 }
 
