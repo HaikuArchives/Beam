@@ -33,8 +33,17 @@
 #include <File.h>
 #include <Message.h>
 
+#include <MBorder.h>
 #include <MButton.h>
+#include <MSlider.h>
+#include <MStringView.h>
+#include <MBViewWrapper.h>
+#include <StatusBar.h>
 #include <Space.h>
+#include <HGroup.h>
+#include "BmCheckControl.h"
+#include "BmMultiLineTextControl.h"
+#include "TextEntryAlert.h"
 
 #include <cctype>
 
@@ -1105,7 +1114,16 @@ bool BmSpamFilter::OsbfClassifier::LearnAsSpam(BmMsgContext* msgContext)
 			return false;
 	}
 	// learn this mail as spam:
-	return Learn(msgContext, true, false);
+	bool ok = Learn(msgContext, true, false);
+	if (ok) {
+		msgContext->data.RemoveName("IsSpam");
+		msgContext->data.RemoveName("IsTofu");
+		msgContext->data.RemoveName("RatioSpam");
+		msgContext->data.AddBool("IsSpam", true);
+		msgContext->data.AddBool("IsTofu", false);
+		msgContext->data.AddFloat("RatioSpam", 1.0);
+	}
+	return ok;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -1122,7 +1140,16 @@ bool BmSpamFilter::OsbfClassifier::LearnAsTofu( BmMsgContext* msgContext)
 			return false;
 	}
 	// learn this mail as tofu:
-	return Learn(msgContext, false, false);
+	bool ok = Learn(msgContext, false, false);
+	if (ok) {
+		msgContext->data.RemoveName("IsSpam");
+		msgContext->data.RemoveName("IsTofu");
+		msgContext->data.RemoveName("RatioSpam");
+		msgContext->data.AddBool("IsSpam", false);
+		msgContext->data.AddBool("IsTofu", true);
+		msgContext->data.AddFloat("RatioSpam", 0.0);
+	}
+	return ok;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -1145,7 +1172,7 @@ bool BmSpamFilter::OsbfClassifier::Learn( BmMsgContext* msgContext,
 		mNeedToStoreSpam = true;
 	else
 		mNeedToStoreTofu = true;
-
+	
 	BmStringIBuf text;
 	SpamRelevantMailtextSelector selector(msgContext->mail);
 	selector(text);
@@ -1203,14 +1230,33 @@ bool BmSpamFilter::OsbfClassifier::Classify( BmMsgContext* msgContext)
 		}
 		msgContext->data.RemoveName("IsTofu");
 		msgContext->data.RemoveName("IsSpam");
-		msgContext->data.AddBool("IsTofu", overallPr > UnsureForTofu);
+		msgContext->data.AddBool("IsTofu", overallPr >= UnsureForTofu);
 		msgContext->data.AddBool("IsSpam", overallPr < -1*UnsureForTofu);
-		if (overallPr >= UnsureForTofu)
+		if (overallPr >= UnsureForTofu) {
 			mTofuHeader.classifications++;
-		if (overallPr < -1*UnsureForTofu)
+			mNeedToStoreTofu = true;
+		}
+		if (overallPr < -1*UnsureForTofu) {
 			mSpamHeader.classifications++;
+			mNeedToStoreSpam = true;
+		}
 		msgContext->data.RemoveName("OverallPr");
 		msgContext->data.AddDouble("OverallPr", overallPr);
+		// overallPr is an open range (spam)[-min..+max](tofu), but the 
+		// "RatioSpam"-attribute from MDR is (tofu)[0..1](spam), 
+		// so we need to convert:
+		float clampMin = -1*(15.0+ThresholdForSpam);
+		float clampMax = (15.0+ThresholdForTofu);
+		if (overallPr < clampMin)
+			overallPr = clampMin;
+		if (overallPr > clampMax)
+			overallPr = clampMax;
+		float ratioSpam = 0.5;
+		if (isSpam)
+			ratioSpam -= overallPr / (clampMin/0.5);
+		else
+			ratioSpam += overallPr / (clampMax/0.5);
+		msgContext->data.AddFloat("RatioSpam", ratioSpam);
 	}
 	
 	return status;
@@ -1273,6 +1319,32 @@ bool BmSpamFilter::OsbfClassifier::Reset( BmMsgContext* msgContext)
 }
 
 /*------------------------------------------------------------------------------*\
+	Reset()
+		-	
+\*------------------------------------------------------------------------------*/
+bool BmSpamFilter::OsbfClassifier::ResetStatistics( BmMsgContext* msgContext)
+{
+	BM_LOG( BM_LogFilter, "Spam-Addon: resetting statistics");
+	// set lock to serialize OSBF-calls:
+	BAutolock lock( &mLock);
+	if (!lock.IsLocked()) {
+		mLastErr = "Unable to get SPAM-lock";
+		return false;
+	}
+
+	mSpamHeader.learnings = 0;
+	mSpamHeader.classifications = 0;
+	mSpamHeader.mistakes = 0;
+	mNeedToStoreSpam = true;
+	mTofuHeader.learnings = 0;
+	mTofuHeader.classifications = 0;
+	mTofuHeader.mistakes = 0;
+	mNeedToStoreTofu = true;
+	
+	return true;
+}
+
+/*------------------------------------------------------------------------------*\
 	GetStatistics()
 		-	
 \*------------------------------------------------------------------------------*/
@@ -1283,6 +1355,11 @@ bool BmSpamFilter::OsbfClassifier::GetStatistics( BmMsgContext* msgContext)
 	BAutolock lock( &mLock);
 	if (!lock.IsLocked()) {
 		mLastErr = "Unable to get SPAM-lock";
+		return false;
+	}
+	
+	if (!msgContext) {
+		mLastErr = "Illegal msg-context!";
 		return false;
 	}
 	
@@ -1708,8 +1785,14 @@ status_t BmSpamFilter::OsbfClassifier::WriteDataFile( const BmString& filename,
 \********************************************************************************/
 // #pragma mark --- BmSpamFilter ---
 
-const char* const BmSpamFilter::MSG_VERSION = 		"bm:version";
-const int16 BmSpamFilter::nArchiveVersion = 1;
+const char* const BmSpamFilter::MSG_VERSION = 				"bm:version";
+const char* const BmSpamFilter::MSG_FILE_SPAM = 			"bm:fs";
+const char* const BmSpamFilter::MSG_MARK_SPAM_AS_READ =	"bm:msr";
+const char* const BmSpamFilter::MSG_FILE_LEARNED_SPAM = 	"bm:fls";
+const char* const BmSpamFilter::MSG_FILE_LEARNED_TOFU =	"bm:flt";
+const char* const BmSpamFilter::MSG_SPAM_THRESHOLD	=		"bm:sthr";
+const char* const BmSpamFilter::MSG_TOFU_THRESHOLD	=		"bm:tthr";
+const int16 BmSpamFilter::nArchiveVersion = 4;
 
 /*------------------------------------------------------------------------------*\
 	BmSpamFilter( archive)
@@ -1718,10 +1801,28 @@ const int16 BmSpamFilter::nArchiveVersion = 1;
 \*------------------------------------------------------------------------------*/
 BmSpamFilter::BmSpamFilter( const BmString& name, const BMessage* archive) 
 	:	mName( name)
+	,	mActionFileSpam( true)
+	,	mActionMarkSpamAsRead( false)
+	,	mActionFileLearnedSpam( true)
+	,	mActionFileLearnedTofu( true)
+	,	mSpamThreshold(5)
+	,	mTofuThreshold(22)
 {
 	int16 version;
 	if (archive->FindInt16( MSG_VERSION, &version) != B_OK)
 		version = 0;
+	if (version >= 2) {
+		archive->FindBool( MSG_FILE_SPAM, &mActionFileSpam);
+		archive->FindBool( MSG_FILE_LEARNED_SPAM, &mActionFileLearnedSpam);
+		archive->FindBool( MSG_FILE_LEARNED_TOFU, &mActionFileLearnedTofu);
+	}
+	if (version >= 3) {
+		archive->FindInt8( MSG_SPAM_THRESHOLD, &mSpamThreshold);
+		archive->FindInt8( MSG_TOFU_THRESHOLD, &mTofuThreshold);
+	}
+	if (version >= 4) {
+		archive->FindBool( MSG_MARK_SPAM_AS_READ, &mActionMarkSpamAsRead);
+	}
 }
 
 /*------------------------------------------------------------------------------*\
@@ -1739,7 +1840,14 @@ BmSpamFilter::~BmSpamFilter() {
 status_t 
 BmSpamFilter::Archive( BMessage* archive, bool) const 
 {
-	status_t ret = (archive->AddInt16( MSG_VERSION, nArchiveVersion));
+	status_t ret 
+		= (archive->AddInt16( MSG_VERSION, nArchiveVersion)
+		| archive->AddBool( MSG_FILE_SPAM, mActionFileSpam)
+		| archive->AddBool( MSG_MARK_SPAM_AS_READ, mActionMarkSpamAsRead)
+		| archive->AddBool( MSG_FILE_LEARNED_SPAM, mActionFileLearnedSpam)
+		| archive->AddBool( MSG_FILE_LEARNED_TOFU, mActionFileLearnedTofu)
+		| archive->AddInt8( MSG_SPAM_THRESHOLD, mSpamThreshold)
+		| archive->AddInt8( MSG_TOFU_THRESHOLD, mTofuThreshold));
 	return ret;
 }
 
@@ -1748,36 +1856,73 @@ BmSpamFilter::Archive( BMessage* archive, bool) const
 		-	
 \*------------------------------------------------------------------------------*/
 bool 
-BmSpamFilter::Execute( BmMsgContext* msgContext, const BMessage* jobSpecs) 
+BmSpamFilter::Execute( BmMsgContext* msgContext, const BMessage* _jobSpecs)
 {
+	bool result;
 	BmString mailId;
 	if (msgContext && msgContext->mail)
 		mailId = msgContext->mail->Name();
 	BM_LOG2( BM_LogFilter, BmString("Spam-Addon: asked to execute filter <") 
 									<< Name() 
 									<< "> on mail with Id <" << mailId << ">");
+	BMessage jobSpecs;
 	BmString jobSpecifier = "Classify";
-	if (jobSpecs)
-		jobSpecifier = jobSpecs->FindString("jobSpecifier");
-	nClassifier.JobSpecs(jobSpecs);
+	if (_jobSpecs) {
+		jobSpecs = *_jobSpecs;
+		jobSpecifier = jobSpecs.FindString("jobSpecifier");
+	}
+	nClassifier.JobSpecs(&jobSpecs);
 	if (!jobSpecifier.ICompare("LearnAsSpam")) {
 		BM_LOG2( BM_LogFilter, "Spam-Addon: starting LearnAsSpam job...");
-		nClassifier.LearnAsSpam( msgContext);
+		result = nClassifier.LearnAsSpam( msgContext);
+		if (result) {
+			if (mActionFileLearnedSpam) {
+				msgContext->data.RemoveName("FolderName");
+				msgContext->data.AddString("FolderName", "spam");
+			}
+			msgContext->data.RemoveName("Status");
+			msgContext->data.AddString("Status", BM_MAIL_STATUS_READ);
+		}
 	} else if (!jobSpecifier.ICompare("LearnAsTofu")) {
 		BM_LOG2( BM_LogFilter, "Spam-Addon: starting LearnAsTofu job...");
-		nClassifier.LearnAsTofu( msgContext);
+		result = nClassifier.LearnAsTofu( msgContext);
+		if (result && mActionFileLearnedTofu) {
+			msgContext->data.RemoveName("FolderName");
+			msgContext->data.AddString("FolderName", "in");
+		}
 	} else if (!jobSpecifier.ICompare("Reset")) {
 		BM_LOG2( BM_LogFilter, "Spam-Addon: starting Reset job...");
-		nClassifier.Reset( msgContext);
+		result = nClassifier.Reset( msgContext);
 	} else if (!jobSpecifier.ICompare("GetStatistics")) {
 		BM_LOG2( BM_LogFilter, "Spam-Addon: starting GetStatistics job...");
-		nClassifier.GetStatistics( msgContext);
+		result = nClassifier.GetStatistics( msgContext);
+	} else if (!jobSpecifier.ICompare("ResetStatistics")) {
+		BM_LOG2( BM_LogFilter, "Spam-Addon: starting ResetStatistics job...");
+		result = nClassifier.ResetStatistics( msgContext);
 	} else {	// Classify
 		BM_LOG2( BM_LogFilter, "Spam-Addon: starting Classify job...");
-		nClassifier.Classify( msgContext);
+		int32 dummy;
+		if (jobSpecs.FindInt32("SpamThreshold", &dummy) != B_OK)
+			jobSpecs.AddInt32("SpamThreshold", mSpamThreshold);
+		if (jobSpecs.FindInt32("TofuThreshold", &dummy) != B_OK)
+			jobSpecs.AddInt32("TofuThreshold", mTofuThreshold);
+		result = nClassifier.Classify( msgContext);
+		if (result) {
+			bool isSpam = msgContext->data.FindBool("IsSpam");
+			if (isSpam) {
+				if (mActionFileSpam) {
+					msgContext->data.RemoveName("FolderName");
+					msgContext->data.AddString("FolderName", "spam");
+				}
+				if (mActionMarkSpamAsRead) {
+					msgContext->data.RemoveName("Status");
+					msgContext->data.AddString("Status", BM_MAIL_STATUS_READ);
+				}
+			}
+		}
 	}
 	BM_LOG2( BM_LogFilter, "Spam-Addon: done.");
-	return true;
+	return result;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -1829,18 +1974,99 @@ BmSpamFilterPrefs::BmSpamFilterPrefs( minimax minmax)
 	:	inherited( minmax.mini.x, minmax.mini.y, minmax.maxi.x, minmax.maxi.y)
 	,	mCurrFilterAddon( NULL)
 {
-	VGroup* vgroup = 
-		new VGroup( 
-			mStatisticsButton = new MButton( 
-				"Show Statistics...", 
-				new BMessage( BM_SHOW_STATISTICS),
-				this, minimax(-1,-1,-1,-1)
+	HGroup* hgroup = 
+		new HGroup(
+			new VGroup(
+				new MBorder( M_LABELED_BORDER, 5, (char*)"Settings",
+					new VGroup( 
+						mThresholdControl = new MSlider( 
+							"Auto-Learning Threshold:", 0, 40, 1,
+							new BMessage(BM_THRESHOLD_CHANGED),
+							this
+						),
+						new Space(minimax(0, 5, 1e5, 5)),
+						mProtectMyTofuControl = new MSlider( 
+							"Tofu (Genuine Mail) Protection:", 0, 25, 1,
+							new BMessage(BM_PROTECTMYTOFU_CHANGED),
+							this
+						),
+						new Space(minimax(0, 10, 1e5, 10)),
+						new MBViewWrapper(
+							mSpamThresholdBar = new BStatusBar( 
+								BRect(), "SpamBar", "Resulting Spam Threshold: ", ""
+							), 
+							true, false, false
+						),
+						new MBViewWrapper(
+							mTofuThresholdBar = new BStatusBar( 
+								BRect(), "TofuBar", "Resulting Tofu Threshold: ", ""
+							), 
+							true, false, false
+						),
+						0
+					)
+				),
+				new HGroup(
+					mShowStatisticsButton = new MButton(
+						"Show Statistics" B_UTF8_ELLIPSIS,
+						new BMessage( BM_SHOW_STATISTICS), 
+						this, minimax(-1,-1,-1,-1)
+					),
+					mResetStatisticsButton = new MButton(
+						"Reset Statistics" B_UTF8_ELLIPSIS,
+						new BMessage( BM_RESET_STATISTICS),
+						this, minimax(-1,-1,-1,-1)
+					),
+					new Space(minimax(0, 0, 1e5, 1e5)),
+					0
+				),
+				new Space(minimax(0, 0, 1e5, 1e5)),
+				0
 			),
-			new Space(minimax(0,0,1E5,1E5)),
+			new VGroup(
+				new MBorder( M_LABELED_BORDER, 5, (char*)"Filter Actions",
+					new VGroup( 
+						mFileSpamControl = new BmCheckControl( 
+							"Move mails classified as Spam into spam-folder", 
+							new BMessage(BM_FILESPAM_CHANGED), 
+							this
+						),
+						new Space( minimax( 5,0,5,1e5)),
+						mMarkSpamAsReadControl = new BmCheckControl( 
+							"Set status of mails classified as Spam to 'Read'",
+							new BMessage(BM_MARKSPAM_CHANGED),
+							this
+						),
+						new Space( minimax( 5,0,5,1e5)),
+						mFileLearnedSpamControl = new BmCheckControl( 
+							"Move mails learned as Spam into spam-folder", 
+							new BMessage(BM_FILELEARNEDSPAM_CHANGED), 
+							this
+						),
+						new Space( minimax( 5,0,5,1e5)),
+						mFileLearnedTofuControl = new BmCheckControl( 
+							"Move mails learned as Tofu into in-folder", 
+							new BMessage(BM_FILELEARNEDTOFU_CHANGED), 
+							this
+						),
+						0
+					)
+				),
+				new Space( minimax( 0,0,1e5,1e5)),
+				0
+			),
 			0
 		);
 	
-	AddChild( dynamic_cast<BView*>( vgroup));
+	mThresholdControl->SetLimitLabels( "0", "40");
+	mThresholdControl->SetHashMarks( B_HASH_MARKS_TOP);
+	mThresholdControl->SetHashMarkCount( 9);
+
+	mProtectMyTofuControl->SetLimitLabels( "0", "25");
+	mProtectMyTofuControl->SetHashMarks( B_HASH_MARKS_TOP);
+	mProtectMyTofuControl->SetHashMarkCount( 6);
+
+	AddChild( dynamic_cast<BView*>( hgroup));
 }
 
 /*------------------------------------------------------------------------------*\
@@ -1848,7 +2074,16 @@ BmSpamFilterPrefs::BmSpamFilterPrefs( minimax minmax)
 		-	
 \*------------------------------------------------------------------------------*/
 BmSpamFilterPrefs::~BmSpamFilterPrefs() {
-	TheBubbleHelper->SetHelp( mStatisticsButton, NULL);
+	TheBubbleHelper->SetHelp( mThresholdControl, NULL);
+	TheBubbleHelper->SetHelp( mProtectMyTofuControl, NULL);
+	TheBubbleHelper->SetHelp( mFileSpamControl, NULL);
+	TheBubbleHelper->SetHelp( mMarkSpamAsReadControl, NULL);
+	TheBubbleHelper->SetHelp( mFileLearnedSpamControl, NULL);
+	TheBubbleHelper->SetHelp( mFileLearnedTofuControl, NULL);
+	TheBubbleHelper->SetHelp( mSpamThresholdBar, NULL);
+	TheBubbleHelper->SetHelp( mTofuThresholdBar, NULL);
+	TheBubbleHelper->SetHelp( mShowStatisticsButton, NULL);
+	TheBubbleHelper->SetHelp( mResetStatisticsButton, NULL);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -1857,8 +2092,64 @@ BmSpamFilterPrefs::~BmSpamFilterPrefs() {
 \*------------------------------------------------------------------------------*/
 void BmSpamFilterPrefs::Initialize() {
 	TheBubbleHelper->SetHelp( 
-		mStatisticsButton, 
-		""
+		mThresholdControl,
+		"If the SPAM-filter isn't really sure about whether or not\n"
+		"a mail is SPAM, it is helpful to let it auto-learn these mails,\n"
+		"improving overall correctness.\n"
+		"The value selected here determines how much auto-learning takes place,\n"
+		"(increasing the value means more auto-learning)\n"
+		"[Hint: the suggested default value is 13]"
+	);
+	TheBubbleHelper->SetHelp( 
+		mProtectMyTofuControl, 
+		"In order to protect TOFU (good mails) from being classified as SPAM,\n"
+		"it is advisable to cause the SPAM-filter to auto-learn more TOFU\n"
+		"than SPAM.\n"
+		"Selecting a larger value here will cause more TOFU and less SPAM\n"
+		"to be auto-learned.\n"
+		"[Hint: the suggested default value is 17]"
+	);
+	TheBubbleHelper->SetHelp( 
+		mFileSpamControl, 
+		"Checking this will cause Beam to automatically file mails\n"
+		"that have been classified as SPAM into the 'spam'-folder."
+	);
+	TheBubbleHelper->SetHelp( 
+		mMarkSpamAsReadControl, 
+		"Checking this will cause Beam to automatically\n"
+		"mark SPAM-mails as read."
+	);
+	TheBubbleHelper->SetHelp( 
+		mFileLearnedSpamControl, 
+		"Checking this will cause Beam to automatically file mails\n"
+		"that have been learned as SPAM into the 'spam'-folder."
+	);
+	TheBubbleHelper->SetHelp( 
+		mFileLearnedTofuControl, 
+		"Checking this will cause Beam to automatically file mails\n"
+		"that have been learned as TOFU into the 'in'-folder."
+	);
+	TheBubbleHelper->SetHelp( 
+		mSpamThresholdBar,
+		"This bar indicates the level of auto-learning\n"
+		"that will take place for SPAM-mails.\n"
+		"[Hint: the suggested default value is 5]"
+	);
+	TheBubbleHelper->SetHelp( 
+		mTofuThresholdBar,
+		"This bar indicates the level of auto-learning\n"
+		"that will take place for TOFU-mails.\n"
+		"[Hint: the suggested default value is 22]"
+	);
+	TheBubbleHelper->SetHelp( 
+		mShowStatisticsButton, 
+		"This will bring up a window about the state\n"
+		"and performance of the SPAM-filter."
+	);
+	TheBubbleHelper->SetHelp( 
+		mResetStatisticsButton, 
+		"Pressing this will reset the performance statistics of the SPAM-filter.\n"
+		"This is useful if you want to restart performance measurement."
 	);
 }
 
@@ -1884,6 +2175,147 @@ const char* BmSpamFilterPrefs::Kind() const {
 void BmSpamFilterPrefs::MessageReceived( BMessage* msg) {
 	switch( msg->what) {
 		case BM_SHOW_STATISTICS: {
+			// fetch statistics:
+			BMessage getStatSpecs;
+			getStatSpecs.AddString("jobSpecifier", "GetStatistics");
+			BmMsgContext result;
+			mCurrFilterAddon->Execute( &result, &getStatSpecs);
+			int32	spamBuckets = result.data.FindInt32("SpamBuckets");
+			int32	spamBucketsUsed = result.data.FindInt32("SpamBucketsUsed");
+			int32	spamLearnings = result.data.FindInt32("SpamLearnings");
+			int32	spamClassifications 
+				= result.data.FindInt32("SpamClassifications");
+			int32	spamMistakes = result.data.FindInt32("SpamMistakes");
+			int32	spamAverageValue = result.data.FindInt32("SpamAverageValue");
+			int32	spamChainsAverageLength 
+				= result.data.FindInt32("SpamChainsAverageLength");
+			int32	tofuBuckets = result.data.FindInt32("TofuBuckets");
+			int32	tofuBucketsUsed = result.data.FindInt32("TofuBucketsUsed");
+			int32	tofuLearnings = result.data.FindInt32("TofuLearnings");
+			int32	tofuClassifications 
+				= result.data.FindInt32("TofuClassifications");
+			int32	tofuMistakes = result.data.FindInt32("TofuMistakes");
+			int32	tofuAverageValue = result.data.FindInt32("TofuAverageValue");
+			int32	tofuChainsAverageLength 
+				= result.data.FindInt32("TofuChainsAverageLength");
+			double errorsFP = spamClassifications 
+										? 100.0*spamMistakes/(float)spamClassifications
+										: 0;
+			double errorsAll 
+				= (spamClassifications+tofuClassifications)
+						? 100.0*(tofuMistakes+spamMistakes)
+							/(double)(tofuClassifications+spamClassifications)
+						: 0;
+			char buf[128];
+			BmString stats;
+			sprintf(buf,"          SPAM-datafile       |          TOFU-datafile\n");
+			stats << buf;
+			sprintf(buf, 
+					  " features: %6ld (%3ld%% used) | features: %6ld (%3ld%% used)\n",
+					  spamBuckets, 100*spamBucketsUsed/spamBuckets, 
+					  tofuBuckets, 100*tofuBucketsUsed/tofuBuckets);
+			stats << buf;
+			sprintf(buf, 
+					  " average value:       %6ld  | average value:        %6ld\n",
+					  spamAverageValue, tofuAverageValue);
+			stats << buf;
+			sprintf(buf, 
+					  " average chain-length: %5ld  | average chain-length:  %5ld\n",
+					  spamChainsAverageLength, tofuChainsAverageLength);
+			stats << buf;
+			sprintf(buf, 
+					  " learnings:           %6ld  | learnings:            %6ld\n",
+					  spamLearnings, tofuLearnings);
+			stats << buf;
+			sprintf(buf, 
+					  " classifications:     %6ld  | classifications:      %6ld\n",
+					  spamClassifications, tofuClassifications);
+			stats << buf;
+			sprintf(buf, 
+					  " mistakes:            %6ld  | mistakes:             %6ld\n",
+					  spamMistakes, tofuMistakes);
+			stats << buf;
+			if (spamClassifications || tofuClassifications) {
+				sprintf(buf, 
+						  " correctness(FP):     %6.2f  | correctness (all):    %6.2f\n",
+						  100.0-errorsFP, 100.0-errorsAll);
+				stats << buf;
+			}
+			TextEntryAlert* alert = new TextEntryAlert( 
+				"", "SPAM-Filter Statistics:", "", 
+				"I See", NULL, false, 500.0, 12, B_WIDTH_AS_USUAL, true
+			);
+			alert->SetShortcut( 0, B_ESCAPE);
+			alert->TextEntryView()->MakeEditable(false);
+			alert->TextEntryView()->SetFontAndColor(be_fixed_font);
+			alert->TextEntryView()->SetText(stats.String());
+			BmString dummy;
+			alert->Go(dummy);
+			break;
+		}
+		case BM_RESET_STATISTICS: {
+			int32 buttonPressed;
+			if (msg->FindInt32( "which", &buttonPressed) != B_OK) {
+				// first step, ask user about it:
+				BmString s("This will reset all statistical information (how many\n"
+							  "mails have been learned/classified) from the datafiles\n"
+							  "(the SPAM-/TOFU-data itself is not changed at all).\n\n"
+							  "Would you like to proceed?");
+				BAlert* alert = new BAlert( 
+					"Reset Statistics", s.String(), "Yes, Proceed", "Cancel", NULL, 
+					B_WIDTH_AS_USUAL, B_WARNING_ALERT
+				);
+				alert->SetShortcut( 1, B_ESCAPE);
+				alert->Go( new BInvoker( 
+					new BMessage(BM_RESET_STATISTICS),
+					BMessenger( this)
+				));
+			} else {
+				// second step, do it if user said ok:
+				if (buttonPressed == 0) {
+					BMessage specs;
+					specs.AddString("jobSpecifier", "ResetStatistics");
+					mCurrFilterAddon->Execute( NULL, &specs);
+				}
+			}
+			break;
+		}
+		case BM_FILESPAM_CHANGED: {
+			if (mCurrFilterAddon) {
+				bool newVal = mFileSpamControl->Value();
+				mCurrFilterAddon->mActionFileSpam = newVal;
+				PropagateChange();
+			}
+			break;
+		}
+		case BM_MARKSPAM_CHANGED: {
+			if (mCurrFilterAddon) {
+				bool newVal = mMarkSpamAsReadControl->Value();
+				mCurrFilterAddon->mActionMarkSpamAsRead = newVal;
+				PropagateChange();
+			}
+			break;
+		}
+		case BM_FILELEARNEDSPAM_CHANGED: {
+			if (mCurrFilterAddon) {
+				bool newVal = mFileLearnedSpamControl->Value();
+				mCurrFilterAddon->mActionFileLearnedSpam = newVal;
+				PropagateChange();
+			}
+			break;
+		}
+		case BM_FILELEARNEDTOFU_CHANGED: {
+			if (mCurrFilterAddon) {
+				bool newVal = mFileLearnedTofuControl->Value();
+				mCurrFilterAddon->mActionFileLearnedTofu = newVal;
+				PropagateChange();
+			}
+			break;
+		}
+		case BM_THRESHOLD_CHANGED:
+		case BM_PROTECTMYTOFU_CHANGED: {
+			if (UpdateState(false))
+				PropagateChange();
 			break;
 		}
 		default:
@@ -1896,6 +2328,62 @@ void BmSpamFilterPrefs::MessageReceived( BMessage* msg) {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmSpamFilterPrefs::ShowFilter( BmFilterAddon* addon) {
+	mCurrFilterAddon = dynamic_cast< BmSpamFilter*>( addon);
+	if (mCurrFilterAddon) {
+		mFileSpamControl->SetValueSilently( mCurrFilterAddon->mActionFileSpam);
+		mMarkSpamAsReadControl->SetValueSilently( 
+			mCurrFilterAddon->mActionMarkSpamAsRead
+		);
+		mFileLearnedSpamControl->SetValueSilently( 
+			mCurrFilterAddon->mActionFileLearnedSpam
+		);
+		mFileLearnedTofuControl->SetValueSilently( 
+			mCurrFilterAddon->mActionFileLearnedTofu
+		);
+		uint8 spamThreshold = mCurrFilterAddon->mSpamThreshold;
+		uint8 tofuThreshold = mCurrFilterAddon->mTofuThreshold;
+		uint8 thresholdVal = (spamThreshold+tofuThreshold)/2;
+		uint8 protectMyTofuVal = tofuThreshold-spamThreshold;
+		mThresholdControl->SetValue(thresholdVal);
+		mProtectMyTofuControl->SetValue(protectMyTofuVal);
+		UpdateState(true);
+
+/*
+		stats << buf;
+*/
+	}
+}
+
+/*------------------------------------------------------------------------------*\
+	UpdateState()
+		-	
+\*------------------------------------------------------------------------------*/
+bool BmSpamFilterPrefs::UpdateState(bool force) {
+	if (mCurrFilterAddon) {
+		int32 thresholdVal = mThresholdControl->Value();
+		int32 protectMyTofuVal = mProtectMyTofuControl->Value();
+		int32 tofuThr 
+			= thresholdVal+protectMyTofuVal/2+protectMyTofuVal%2;
+		int32 spamThr = thresholdVal-protectMyTofuVal/2;
+		if (spamThr < 0)
+			spamThr = 0;
+		if (force || spamThr != mCurrFilterAddon->mSpamThreshold 
+		|| tofuThr != mCurrFilterAddon->mTofuThreshold) {
+			mCurrFilterAddon->mSpamThreshold = spamThr;
+			mCurrFilterAddon->mTofuThreshold = tofuThr;
+			char buf[10];
+			mSpamThresholdBar->Reset("Resulting Spam Threshold: ");
+			mSpamThresholdBar->SetMaxValue(50);
+			sprintf(buf, "%lu", spamThr);
+			mSpamThresholdBar->Update(spamThr, buf);
+			mTofuThresholdBar->Reset("Resulting Tofu Threshold: ");
+			mTofuThresholdBar->SetMaxValue(50);
+			sprintf(buf, "%lu", tofuThr);
+			mTofuThresholdBar->Update(tofuThr, buf);
+			return true;
+		}
+	}
+	return false;
 }
 
 

@@ -73,6 +73,7 @@ class BmSpamFilter : public BmFilterAddon {
 		bool LearnAsTofu( BmMsgContext* msgContext);
 		bool Classify( BmMsgContext* msgContext);
 		bool Reset( BmMsgContext* msgContext);
+		bool ResetStatistics( BmMsgContext* msgContext);
 		bool GetStatistics( BmMsgContext* msgContext);
 		void JobSpecs( const BMessage* jobSpecs)
 													{ mJobSpecs = jobSpecs; }
@@ -316,12 +317,24 @@ public:
 
 	// archivable components:
 	static const char* const MSG_VERSION;
+	static const char* const MSG_FILE_SPAM;
+	static const char* const MSG_FILE_LEARNED_SPAM;
+	static const char* const MSG_FILE_LEARNED_TOFU;
+	static const char* const MSG_MARK_SPAM_AS_READ;
+	static const char* const MSG_SPAM_THRESHOLD;
+	static const char* const MSG_TOFU_THRESHOLD;
 	static const int16 nArchiveVersion;
+
+	bool mActionFileSpam;
+	bool mActionFileLearnedSpam;
+	bool mActionMarkSpamAsRead;
+	bool mActionFileLearnedTofu;
+	int8 mSpamThreshold;
+	int8 mTofuThreshold;
 
 protected:
 	BmString mName;
 							// the name of this filter-implementation
-
 	static OsbfClassifier nClassifier;
 	
 private:
@@ -339,10 +352,20 @@ private:
 		-	
 \*------------------------------------------------------------------------------*/
 
+class BmCheckControl;
 class MButton;
+class MSlider;
+class BStatusBar;
 
 enum {
-	BM_SHOW_STATISTICS		= 'bmTa',
+	BM_SHOW_STATISTICS			= 'bmTa',
+	BM_FILESPAM_CHANGED			= 'bmTb',
+	BM_FILELEARNEDSPAM_CHANGED	= 'bmTc',
+	BM_FILELEARNEDTOFU_CHANGED	= 'bmTd',
+	BM_THRESHOLD_CHANGED			= 'bmTe',
+	BM_PROTECTMYTOFU_CHANGED	= 'bmTf',
+	BM_RESET_STATISTICS			= 'bmTg',
+	BM_MARKSPAM_CHANGED			= 'bmTh'
 };
 
 
@@ -366,7 +389,18 @@ public:
 
 private:
 
-	MButton* mStatisticsButton;
+	bool UpdateState( bool force);
+
+	MButton* mShowStatisticsButton;
+	MButton* mResetStatisticsButton;
+	MSlider* mThresholdControl;
+	MSlider* mProtectMyTofuControl;
+	BStatusBar* mSpamThresholdBar;
+	BStatusBar* mTofuThresholdBar;
+	BmCheckControl* mFileSpamControl;
+	BmCheckControl* mMarkSpamAsReadControl;
+	BmCheckControl* mFileLearnedSpamControl;
+	BmCheckControl* mFileLearnedTofuControl;
 
 	BmSpamFilter* mCurrFilterAddon;
 
