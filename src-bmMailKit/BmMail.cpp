@@ -543,7 +543,7 @@ BString BmMail::CreateReplyIntro() {
 							  Regexx::nocase|Regexx::global|Regexx::noatom);
 	intro = rx.replace( intro, "%S", mMailRef->Subject(), 
 							  Regexx::nocase|Regexx::global|Regexx::noatom);
-	BmAddressList fromAddr = Header()->DetermineOriginator();
+	BmAddressList fromAddr = Header()->DetermineOriginator( true);
 	BString fromNicks;
 	BmAddrList::const_iterator pos;
 	for( pos=fromAddr.begin(); pos!=fromAddr.end(); ++pos) {
