@@ -103,6 +103,7 @@ extern const char* BM_FIELD_SENDER;
 extern const char* BM_FIELD_SUBJECT;
 extern const char* BM_FIELD_TO;
 extern const char* BM_FIELD_USER_AGENT;
+extern const char* BM_FIELD_X_LIST;
 extern const char* BM_FIELD_X_MAILER;
 extern const char* BM_FIELD_X_PRIORITY;
 

@@ -114,6 +114,7 @@ const char* BM_FIELD_SENDER 				= "Sender";
 const char* BM_FIELD_SUBJECT 				= "Subject";
 const char* BM_FIELD_TO 					= "To";
 const char* BM_FIELD_USER_AGENT			= "User-Agent";
+const char* BM_FIELD_X_LIST				= "X-List";
 const char* BM_FIELD_X_MAILER				= "X-Mailer";
 const char* BM_FIELD_X_PRIORITY			= "X-Priority";
 
@@ -428,7 +429,8 @@ void BmMail::RemoveField( const BmString fieldName) {
 bool BmMail::HasComeFromList() const {
 	return mHeader 
 			 && (!mHeader->IsFieldEmpty( BM_FIELD_LIST_ID)
-			 	  || !mHeader->IsFieldEmpty( BM_FIELD_MAILING_LIST));
+			 	  || !mHeader->IsFieldEmpty( BM_FIELD_MAILING_LIST)
+			 	  || !mHeader->IsFieldEmpty( BM_FIELD_X_LIST));
 }
 
 /*------------------------------------------------------------------------------*\
@@ -476,15 +478,15 @@ BmString BmMail::DetermineReplyAddress( int32 replyMode, bool canonicalize,
 	if (replyMode == BMM_REPLY) {
 		// smart (*cough*) mode: If the mail has come from a list, we react
 		// according to user prefs (reply-to-list or reply-to-originator).
-		if (HasComeFromList()) {
+		bool hasComeFromList = HasComeFromList();
+		replyGoesToPersonOnly = !hasComeFromList;
+		if (hasComeFromList) {
 			replyAddr = ThePrefs->GetBool( "PreferReplyToList", true)
 							? Header()->DetermineListAddress()
 							: Header()->DetermineOriginator();
-			replyGoesToPersonOnly = false;
 		}
 		if (!replyAddr.Length()) {
 			replyAddr = Header()->DetermineOriginator();
-			replyGoesToPersonOnly = true;
 		}
 	} else if (replyMode == BMM_REPLY_LIST) {
 		// blindly use list-address for reply (this might mean that we send
@@ -1415,8 +1417,11 @@ int32 BmMail::QuoteText( const BmString& in, BmString& out,
 		int32 newLen = AddQuotedText( text, out, quote, quoteString, maxTextLen);
 		modifiedMaxLen = MAX( newLen, modifiedMaxLen);
 	}
+	// now remove trailing empty lines:
 	BmString emptyLinesAtEndRX 
-		= BmString("(?:") << quoteString << "(" << quote << ")?[ \\t]*\\n)+\\z";
+		= BmString("(?:") << "\\Q" << quoteString << "\\E" 
+								<< "(" << "\\Q" << quote << "\\E" 
+								<< ")?[ \\t]*\\n)+\\z";
 	out = rx.replace( out, emptyLinesAtEndRX, "", 
 							Regexx::newline|Regexx::global|Regexx::noatom);
 	return modifiedMaxLen;
@@ -1489,8 +1494,10 @@ int32 BmMail::QuoteTextWithReWrap( const BmString& in, BmString& out,
 							maxLineLen - currQuote.CountChars() 
 								- quoteString.CountChars());
 	AddQuotedText( text, out, currQuote, quoteString, maxTextLen);
+	// now remove trailing empty lines:
 	BmString emptyLinesAtEndRX 
-		= BmString("(?:") << quoteString << "(" << currQuote 
+		= BmString("(?:") << "\\Q" << quoteString << "\\E" 
+								<< "(" << "\\Q" << currQuote << "\\E" 
 								<< ")?[ \\t]*\\n)+\\z";
 	out = rx.replace( out, emptyLinesAtEndRX, "", 
 							Regexx::newline|Regexx::global|Regexx::noatom);
