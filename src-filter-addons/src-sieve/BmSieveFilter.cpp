@@ -105,6 +105,7 @@ extern "C" __declspec(dllexport) const char* FilterKinds[] = {
 static const BmString BmNotifySetIdentity = "BeamSetIdentity";
 static const BmString BmNotifySetStatus = "BeamSetStatus";
 static const BmString BmNotifyStopProcessing = "BeamStopProcessing";
+static const BmString BmNotifySetSpamTofu = "BeamSetSpamTofu";
 
 /*------------------------------------------------------------------------------*\
 	BmSieveFilter( archive)
@@ -513,6 +514,16 @@ int BmSieveFilter::sieve_notify( void* action_context, void*,
 			// we stop processing since this filter has matched:
 			msgContext->data.RemoveName("StopProcessing");
 			msgContext->data.AddBool("StopProcessing", true);
+		} else if (!BmNotifySetSpamTofu.ICompare( notifyContext->method)) {
+			// set spam/tofu-state for mail according to notify-options:
+			msgContext->data.RemoveName("LearnAsSpam");
+			msgContext->data.RemoveName("LearnAsTofu");
+			BmString spam("Spam");
+			BmString tofu("Tofu");
+			if (!spam.ICompare(notifyContext->options[0]))
+				msgContext->data.AddBool("LearnAsSpam", true);
+			else if (!tofu.ICompare(notifyContext->options[0]))
+				msgContext->data.AddBool("LearnAsTofu", true);
 		}
 	}
 	return SIEVE_OK;
@@ -691,6 +702,8 @@ const char* const BmGraphicalSieveFilter::MSG_SET_STATUS_VALUE = 	"bm:sstv";
 const char* const BmGraphicalSieveFilter::MSG_SET_IDENTITY =		"bm:sid";
 const char* const BmGraphicalSieveFilter::MSG_SET_IDENTITY_VALUE ="bm:sidv";
 const char* const BmGraphicalSieveFilter::MSG_STOP_PROCESSING =	"bm:stop";
+const char* const BmGraphicalSieveFilter::MSG_SET_SPAM_TOFU = 		"bm:ssp";
+const char* const BmGraphicalSieveFilter::MSG_SET_SPAM_TOFU_VALUE = 	"bm:sspv";
 
 /*------------------------------------------------------------------------------*\
 	BmGraphicalSieveFilter( name, archive)
@@ -707,6 +720,7 @@ BmGraphicalSieveFilter::BmGraphicalSieveFilter( const BmString& name,
 	,	mActionDiscard( false)
 	,	mActionSetStatus( false)
 	,	mActionSetIdentity( false)
+	,	mActionSetSpamTofu( false)
 	,	mStopProcessing( false)
 {
 	if (archive) {
@@ -725,6 +739,8 @@ BmGraphicalSieveFilter::BmGraphicalSieveFilter( const BmString& name,
 		mActionSetIdentity = archive->FindBool( MSG_SET_IDENTITY);
 		mActionSetIdentityValue = archive->FindString( MSG_SET_IDENTITY_VALUE);
 		archive->FindBool( MSG_STOP_PROCESSING, &mStopProcessing);
+		archive->FindBool( MSG_SET_SPAM_TOFU, &mActionSetSpamTofu);
+		mActionSetSpamTofuValue = archive->FindString( MSG_SET_SPAM_TOFU_VALUE);
 
 		for( int i=0; i<mMatchCount; ++i) {
 			mMatchMailPart[i] = archive->FindString( MSG_MATCH_MAILPART, i);
@@ -760,6 +776,9 @@ status_t BmGraphicalSieveFilter::Archive( BMessage* archive, bool) const {
 		|| archive->AddBool( MSG_SET_IDENTITY, mActionSetIdentity)
 		||	archive->AddString( MSG_SET_IDENTITY_VALUE, 
 									  mActionSetIdentityValue.String())
+		|| archive->AddBool( MSG_SET_SPAM_TOFU, mActionSetSpamTofu)
+		||	archive->AddString( MSG_SET_SPAM_TOFU_VALUE, 
+									  mActionSetSpamTofuValue.String())
 		|| archive->AddBool( MSG_STOP_PROCESSING, mStopProcessing));
 	for( int i=0; ret==B_OK && i<mMatchCount; ++i) {
 		ret = (archive->AddString( MSG_MATCH_MAILPART, 
@@ -835,6 +854,11 @@ bool BmGraphicalSieveFilter::SanityCheck( BmString& complaint,
 						"be associated with";
 		fieldName = "setIdentityValue";
 		return false;
+	} else if (mActionSetSpamTofu && !mActionSetSpamTofuValue.Length()) {
+		complaint 
+			= "Please select what matching mails should be learned as (SPAM or TOFU)";
+		fieldName = "setSpamTofuValue";
+		return false;
 	}
 	int validMatchCount=mMatchCount;
 	for( int i=0; i<mMatchCount; ++i) {
@@ -887,7 +911,8 @@ bool BmGraphicalSieveFilter::BuildScriptFromStrings() {
 	}
 	if (mActionFileInto)
 		script << "require \"fileinto\";\n";
-	if (mActionSetIdentity || mActionSetStatus || mStopProcessing)
+	if (mActionSetIdentity || mActionSetStatus || mActionSetSpamTofu 
+	|| mStopProcessing)
 		script << "require \"notify\";\n";
 	if (needRegex)
 		script << "require \"regex\";\n";
@@ -961,6 +986,9 @@ bool BmGraphicalSieveFilter::BuildScriptFromStrings() {
 	if (mActionSetStatus)
 		script << "   notify :method \"" << BmNotifySetStatus 
 				 << "\" :options \"" << mActionSetStatusValue << "\";\n";
+	if (mActionSetSpamTofu)
+		script << "   notify :method \"" << BmNotifySetSpamTofu 
+				 << "\" :options \"" << mActionSetSpamTofuValue << "\";\n";
 	if (mStopProcessing)
 		script << "   notify :method \"" << BmNotifyStopProcessing << "\";\n";
 	if (mActionDiscard)
@@ -1123,6 +1151,8 @@ BmSieveFilterPrefs::BmSieveFilterPrefs( minimax minmax)
 {
 	mFilterGroup = new BmFilterGroup();
 
+	BmMenuControllerBase* spamTofuMenu;
+
 	BView* bv = dynamic_cast<BView*>( mFilterGroup);
 	if (bv) {
 		bv->SetResizingMode( B_FOLLOW_ALL);
@@ -1223,6 +1253,22 @@ BmSieveFilterPrefs::BmSieveFilterPrefs( minimax minmax)
 						new VGroup(
 							minimax(-1,-1,1e5,1e5,0.7),
 							new HGroup(
+								mSetSpamTofuControl = new BmCheckControl( 
+									"Learn as", 
+									new BMessage(BM_SET_SPAM_TOFU_CHANGED), 
+									this
+								),
+								mSetSpamTofuValueControl = new BmMenuControl( 
+									NULL, 
+									spamTofuMenu = new BmMenuControllerBase( 
+										"", this, 
+										new BMessage( BM_SET_SPAM_TOFU_SELECTED), 
+										NULL, BM_MC_LABEL_FROM_MARKED
+									)
+								),
+								0
+							),
+							new HGroup(
 								mDiscardControl = new BmCheckControl( 
 									"Move to trash", 
 									new BMessage(BM_DISCARD_CHANGED), 
@@ -1240,7 +1286,6 @@ BmSieveFilterPrefs::BmSieveFilterPrefs( minimax minmax)
 								new Space(),
 								0
 							),
-							new Space(),
 							0
 						),
 						0
@@ -1317,6 +1362,14 @@ BmSieveFilterPrefs::BmSieveFilterPrefs( minimax minmax)
 	mFilterGroup->AddChild( mSpaceAtBottom = new Space());
 	mVisibleLines = BM_MAX_MATCH_COUNT;
 
+	BMenuItem* item 
+		= new BMenuItem( "SPAM", new BMessage(BM_SET_SPAM_TOFU_SELECTED));
+	item->SetTarget(this);
+	spamTofuMenu->AddItem( item);
+	item = new BMenuItem( "TOFU", new BMessage( BM_SET_SPAM_TOFU_SELECTED));
+	item->SetTarget(this);
+	spamTofuMenu->AddItem( item);
+
 	AddChild( dynamic_cast<BView*>( vgroup));
 }
 
@@ -1342,6 +1395,8 @@ BmSieveFilterPrefs::~BmSieveFilterPrefs() {
 	TheBubbleHelper->SetHelp( mSetIdentityControl, NULL);
 	TheBubbleHelper->SetHelp( mDiscardControl, NULL);
 	TheBubbleHelper->SetHelp( mStopProcessingControl, NULL);
+	TheBubbleHelper->SetHelp( mSetSpamTofuControl, NULL);
+	TheBubbleHelper->SetHelp( mSetSpamTofuValueControl, NULL);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -1422,6 +1477,14 @@ void BmSieveFilterPrefs::Initialize() {
 	TheBubbleHelper->SetHelp( 
 		mSetIdentityControl, 
 		"Please select the associated identity here."
+	);
+	TheBubbleHelper->SetHelp( 
+		mSetSpamTofuControl, 
+		"Check this to learn matching mails as SPAM or TOFU."
+	);
+	TheBubbleHelper->SetHelp( 
+		mSetSpamTofuValueControl, 
+		"Please select the new classification here."
 	);
 	TheBubbleHelper->SetHelp( 
 		mDiscardControl, 
@@ -1823,6 +1886,31 @@ void BmSieveFilterPrefs::MessageReceived( BMessage* msg) {
 			}
 			break;
 		}
+		case BM_SET_SPAM_TOFU_CHANGED: {
+			if (mCurrFilterAddon) {
+				bool newVal = mSetSpamTofuControl->Value();
+				mCurrFilterAddon->mActionSetSpamTofu = newVal;
+				if (!newVal)
+					mCurrFilterAddon->mActionSetSpamTofuValue = "";
+				UpdateState();
+				PropagateChange();
+			}
+			break;
+		}
+		case BM_SET_SPAM_TOFU_SELECTED: {
+			if (mCurrFilterAddon) {
+				BView* srcView = NULL;
+				msg->FindPointer( "source", (void**)&srcView);
+				BMenuItem* item = dynamic_cast<BMenuItem*>( srcView);
+				if (item)
+					mCurrFilterAddon->mActionSetSpamTofuValue = item->Label();
+				else
+					mCurrFilterAddon->mActionSetSpamTofuValue = "";
+				UpdateState();
+				PropagateChange();
+			}
+			break;
+		}
 		case BM_STOP_PROCESSING_CHANGED: {
 			if (mCurrFilterAddon) {
 				bool newVal = mStopProcessingControl->Value();
@@ -1888,6 +1976,10 @@ void BmSieveFilterPrefs::ShowFilter( BmFilterAddon* addon) {
 			mCurrFilterAddon->mActionSetIdentity);
 		mSetIdentityValueControl->MarkItem( 
 			mCurrFilterAddon->mActionSetIdentityValue.String());
+		mSetSpamTofuControl->SetValueSilently( 
+			mCurrFilterAddon->mActionSetSpamTofu);
+		mSetSpamTofuValueControl->MarkItem( 
+			mCurrFilterAddon->mActionSetSpamTofuValue.String());
 		mStopProcessingControl->SetValueSilently( 
 			mCurrFilterAddon->mStopProcessing);
 	}
@@ -1921,6 +2013,9 @@ void BmSieveFilterPrefs::UpdateState() {
 		mSetIdentityValueControl->SetEnabled( mSetIdentityControl->Value());
 		if (!mSetIdentityControl->Value())
 			mSetIdentityValueControl->ClearMark();
+		mSetSpamTofuValueControl->SetEnabled( mSetSpamTofuControl->Value());
+		if (!mSetSpamTofuControl->Value())
+			mSetSpamTofuValueControl->ClearMark();
 	}
 }
 

@@ -174,6 +174,8 @@ class BmGraphicalSieveFilter : public BmSieveFilter {
 	static const char* const MSG_SET_STATUS_VALUE;
 	static const char* const MSG_SET_IDENTITY;
 	static const char* const MSG_SET_IDENTITY_VALUE;
+	static const char* const MSG_SET_SPAM_TOFU;
+	static const char* const MSG_SET_SPAM_TOFU_VALUE;
 	static const char* const MSG_STOP_PROCESSING;
 
 public:
@@ -212,6 +214,8 @@ private:
 	BmString mActionSetStatusValue;
 	bool mActionSetIdentity;
 	BmString mActionSetIdentityValue;
+	bool mActionSetSpamTofu;
+	BmString mActionSetSpamTofuValue;
 	bool mStopProcessing;
 
 	BmGraphicalSieveFilter();				// hide default constructor
@@ -257,9 +261,11 @@ enum {
 	BM_SET_IDENTITY_CHANGED		= 'bmTn',
 	BM_SET_IDENTITY_SELECTED	= 'bmTo',
 	BM_STOP_PROCESSING_CHANGED	= 'bmTp',
+	BM_SET_SPAM_TOFU_CHANGED	= 'bmTq',
+	BM_SET_SPAM_TOFU_SELECTED	= 'bmTr',
 
-	BM_ADDRPART_SELECTED			= 'bmTq',
-	BM_FILEINTO_ASK_CHANGED		= 'bmTr'
+	BM_ADDRPART_SELECTED			= 'bmTs',
+	BM_FILEINTO_ASK_CHANGED		= 'bmTt'
 };
 
 
@@ -317,6 +323,8 @@ private:
 	BmMenuControl* mSetStatusValueControl;
 	BmCheckControl* mSetIdentityControl;
 	BmMenuControl* mSetIdentityValueControl;
+	BmCheckControl* mSetSpamTofuControl;
+	BmMenuControl* mSetSpamTofuValueControl;
 	BmCheckControl* mStopProcessingControl;
 
 	BmGraphicalSieveFilter* mCurrFilterAddon;

@@ -262,6 +262,20 @@ void BmMailFilter::Execute( BmMail* mail) {
 		mail->MarkAsTofu();
 		needToStore = true;
 	}
+	bool learnAsSpam = msgContext.data.FindBool("LearnAsSpam");
+	if (learnAsSpam) {
+		BmRef<BmFilter> learnAsSpamFilter = TheFilterList->LearnAsSpamFilter();
+		if (learnAsSpamFilter)
+			learnAsSpamFilter->Execute( NULL);
+		needToStore = true;
+	}
+	bool learnAsTofu = msgContext.data.FindBool("LearnAsTofu");
+	if (learnAsTofu) {
+		BmRef<BmFilter> learnAsTofuFilter = TheFilterList->LearnAsTofuFilter();
+		if (learnAsTofuFilter)
+			learnAsTofuFilter->Execute( NULL);
+		needToStore = true;
+	}
 	if (needToStore && !mExecuteInMem) {
 		BM_LOG3( BM_LogFilter, 
 					"Filtering has changed something, so mail will be stored now.");
