@@ -342,12 +342,8 @@ void BmPrefs::InitDefaults() {
 								  BM_LOGLVL_FOR(loglevels,BM_LogRefCount));
 	mDefaultsMsg.AddBool( "LookForPeopleOnlyInPeopleFolder", true);
 	mDefaultsMsg.AddMessage( "MailRefLayout", new BMessage);
-	if (BeamInTestMode)
-		// use a different mailbox if in test-mode:
-		mDefaultsMsg.AddString( "MailboxPath", "/boot/home/mail_test");
-	else
-		// standard mail-box:
-		mDefaultsMsg.AddString( "MailboxPath", "/boot/home/mail");
+	// standard mail-box:
+	mDefaultsMsg.AddString( "MailboxPath", "/boot/home/mail");
 	mDefaultsMsg.AddBool( "MakeQPSafeForEBCDIC", false);
 	mDefaultsMsg.AddInt32( "MarkAsReadDelay", 500);
 	mDefaultsMsg.AddInt32( "MaxLineLen", 76);
