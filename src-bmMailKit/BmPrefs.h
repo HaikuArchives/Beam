@@ -99,6 +99,7 @@ public:
 	static const char* const LOG_LVL_3;
 
 	static const BmString nListSeparator;
+	static const BmString nDefaultIconset;
 
 private:
 

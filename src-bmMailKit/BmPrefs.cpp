@@ -55,7 +55,8 @@ const char* const BmPrefs::LOG_LVL_3 = "Log Everything";
 
 const BmString BmPrefs::nListSeparator = ",";
 
-const int16 BmPrefs::nPrefsVersion = 9;
+const BmString BmPrefs::nDefaultIconset = "/Icons/iconset 22 nuvola be-red";
+const int16 BmPrefs::nPrefsVersion = 10;
 
 /*------------------------------------------------------------------------------*\
 	CreateInstance()
@@ -252,6 +253,12 @@ BmPrefs::BmPrefs( BMessage* archive)
 			mPrefsMsg.ReplaceString( *f, s.String());
 		}
 	}
+	if (version < 10) {
+		// changes introduced with version 10:
+		//
+		// add list-fields:
+		mPrefsMsg.AddString( "ListFields", "Mail-Followup-To,Reply-To");
+	}
 
 	SetLoglevels();
 	SetupMailboxVolume();
@@ -349,6 +356,7 @@ void BmPrefs::InitDefaults() {
 	mDefaultsMsg.AddString( "HeaderListSmall", "Subject,From,Date");
 	mDefaultsMsg.AddBool( "InOutAlwaysAtTop", true);
 	mDefaultsMsg.AddBool( "ImportExportTextAsUtf8", true);
+	mDefaultsMsg.AddString( "ListFields", "Mail-Followup-To,Reply-To");
 	mDefaultsMsg.AddBool( "ListviewLikeTracker", false);
 	mDefaultsMsg.AddInt32( "Loglevels", loglevels);
 	mDefaultsMsg.AddInt32( "Loglevel_Pop", 
