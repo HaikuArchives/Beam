@@ -1048,7 +1048,7 @@ static void RebuildFolderMenu( BmMenuControllerBase* menu) {
 		delete old;
 	
 	// add all folders to menu:
-	BeamRoster->FillMenuFromList( BM_ROSTER_FOLDERLIST, 
+	BeamRoster->FillMenuFromList( BmRosterBase::BM_ROSTER_FOLDERLIST, 
 											menu, 
 											menu->MsgTarget(),
 											menu->MsgTemplate());
@@ -1064,7 +1064,7 @@ static void RebuildIdentityMenu( BmMenuControllerBase* menu) {
 		delete old;
 	
 	// add all identities to menu:
-	BeamRoster->FillMenuFromList( BM_ROSTER_IDENTITYLIST, 
+	BeamRoster->FillMenuFromList( BmRosterBase::BM_ROSTER_IDENTITYLIST, 
 											menu, 
 											menu->MsgTarget(),
 											menu->MsgTemplate());
@@ -1436,7 +1436,7 @@ void BmSieveFilterPrefs::Activate() {
 	while( (item = mSetStatusValueControl->Menu()->RemoveItem( (int32)0))!=NULL)
 		delete item;
 
-	BeamRoster->FillMenuFromList( BM_ROSTER_STATUSLIST, 
+	BeamRoster->FillMenuFromList( BmRosterBase::BM_ROSTER_STATUSLIST, 
 											mSetStatusValueControl->Menu(),
 											dynamic_cast<BHandler*>(this),
 											&statusTempl);
