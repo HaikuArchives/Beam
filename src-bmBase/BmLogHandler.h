@@ -190,24 +190,37 @@ IMPEXPBMBASE void ShowAlertWithType( const BmString &text, alert_type type);
 #ifdef BM_LOGGING
 
 #define BM_LOG(flag,msg) \
-	if (TheLogHandler && TheLogHandler->CheckLogLevel( flag, 1)) \
-		BmLogHandler::Log( BM_LOGNAME, msg)
+	do {	\
+		if (TheLogHandler && TheLogHandler->CheckLogLevel( flag, 1)) \
+			BmLogHandler::Log( BM_LOGNAME, msg); \
+	} while(0)
 #define BM_LOG2(flag,msg) \
-	if (TheLogHandler && TheLogHandler->CheckLogLevel( flag, 2)) \
-		BmLogHandler::Log( BM_LOGNAME, msg)
+	do {	\
+		if (TheLogHandler && TheLogHandler->CheckLogLevel( flag, 2)) \
+			BmLogHandler::Log( BM_LOGNAME, msg); \
+	} while(0)
 #define BM_LOG3(flag,msg) \
-	if (TheLogHandler && TheLogHandler->CheckLogLevel( flag, 3)) \
-		BmLogHandler::Log( BM_LOGNAME, msg)
+	do {	\
+		if (TheLogHandler && TheLogHandler->CheckLogLevel( flag, 3)) \
+			BmLogHandler::Log( BM_LOGNAME, msg); \
+	} while(0)
 #define BM_LOGERR(msg) \
-	if (TheLogHandler) { \
-	  BmLogHandler::Log( BM_LOGNAME, msg); \
-	  BmLogHandler::Log( "Errors", msg); \
-	}
+	do {	\
+		if (TheLogHandler) { \
+		  BmLogHandler::Log( BM_LOGNAME, msg); \
+		  BmLogHandler::Log( "Errors", msg); \
+		} \
+	} while(0)
 #define BM_LOG_FINISH(name) BmLogHandler::FinishLog( name)
 #define BM_LOGNAME "Beam"
 #define BM_SHOWERR(msg) \
-	{	BM_LOGERR(msg); \
-		ShowAlert( msg);	}
+	do {	\
+		if (TheLogHandler) { \
+			BmLogHandler::Log( BM_LOGNAME, msg); \
+		 	BmLogHandler::Log( "Errors", msg); \
+		} \
+		ShowAlert( msg);	\
+	} while(0)
 
 #else
 	// error-only logging:
@@ -217,13 +230,20 @@ IMPEXPBMBASE void ShowAlertWithType( const BmString &text, alert_type type);
 #define BM_LOG_FINISH(name) BmLogHandler::FinishLog( name)
 #define BM_LOGNAME "Beam"
 #define BM_LOGERR(msg) \
-	if (TheLogHandler) { \
-	  BmLogHandler::Log( BM_LOGNAME, msg); \
-	  BmLogHandler::Log( "Errors", msg); \
-	}
+	do {	\
+		if (TheLogHandler) { \
+			BmLogHandler::Log( BM_LOGNAME, msg); \
+		 	BmLogHandler::Log( "Errors", msg); \
+		} \
+	} while(0)
 #define BM_SHOWERR(msg) \
-	{	BM_LOGERR(msg); \
-		ShowAlert( msg);	}
+	do {	\
+		if (TheLogHandler) { \
+			BmLogHandler::Log( BM_LOGNAME, msg); \
+		 	BmLogHandler::Log( "Errors", msg); \
+		} \
+		ShowAlert( msg); \
+	} while(0)
 
 #endif
 
