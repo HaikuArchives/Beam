@@ -37,7 +37,11 @@ namespace regexx {
 
   std::vector<BString> split(const BString& _where, const BString& _str);
 
+  void split(const BString& _where, const BString& _str, std::vector<BString>& v);
+
   std::vector<BString> splitex(const BString& _exp, const BString& _str);
+
+  void splitex(const BString& _regex, const BString& _str, std::vector<BString>& v);
 
 }
 

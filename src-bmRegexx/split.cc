@@ -31,8 +31,17 @@
 std::vector<BString>
 regexx::split(const BString& _where, const BString& _str)
 {
-  BString temp;
   std::vector<BString> v;
+  split( _where, _str, v);
+  return v;
+}
+
+void
+regexx::split(const BString& _where, const BString& _str,
+				  std::vector<BString>& v)
+{
+  BString temp;
+  v.clear();
   int32 lastpos = 0;
   int32 pos = _str.FindFirst(_where);
   while(pos != B_ERROR) {
@@ -40,18 +49,27 @@ regexx::split(const BString& _where, const BString& _str)
     lastpos = pos+_where.Length();
     pos = _str.FindFirst(_where,lastpos);
   }
-  v.push_back(_str.CopyInto(temp,lastpos,_str.Length()));
-  return v;
+  if (lastpos<_str.Length())
+    v.push_back(_str.CopyInto(temp,lastpos,_str.Length()-lastpos));
 }
 
 std::vector<BString>
 regexx::splitex(const BString& _regex, const BString& _str)
 {
-  BString temp;
   std::vector<BString> v;
+  splitex( _regex, _str, v);
+  return v;
+}
+
+void
+regexx::splitex(const BString& _regex, const BString& _str,
+					 std::vector<BString>& v)
+{
+  BString temp;
   Regexx rxx;
   rxx.expr(_regex);
   rxx.str(_str);
+  v.clear();
   v.reserve(rxx.exec());
   std::vector<RegexxMatch>::const_iterator i;
   int32 lastpos = 0;
@@ -59,6 +77,6 @@ regexx::splitex(const BString& _regex, const BString& _str)
     v.push_back(_str.CopyInto(temp,lastpos,i->start()-lastpos));
     lastpos = i->start()+i->Length();
   }
-  v.push_back(_str.CopyInto(temp,lastpos,i->start()));
-  return v;
+  if (lastpos<_str.Length())
+    v.push_back(_str.CopyInto(temp,lastpos,_str.Length()-lastpos));
 }
