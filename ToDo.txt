@@ -37,8 +37,6 @@ Beam 0.92:
 
 -	define add-on protocol for mailview and implement the add/remove-quote demo add-on.
 
--	add log-windows, where selected log-events will be shown.
-
 -	make rulerview static (avoid scrolling it away).
 
 -	add Received-attribute and show it inside mailref-view (use topmost/latest
@@ -60,9 +58,6 @@ Beam 0.93:
 ***********
 Beam 0.94:
 ***********
-
--	When quoting the sender in mailing lists use the real sender, not the 
-	reply-to address. (Eberhard)
 
 
 
