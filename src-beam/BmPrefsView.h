@@ -114,7 +114,7 @@ public:
 	bool ApplyChanges();
 	void RevertChanges();
 	void SetDefaults();
-	BmPrefsView* ShowPrefsByName( const BmString name);
+	BmPrefsView* ShowPrefsByName( const BmString name, int32& indexOut);
 
 private:
 	LayeredGroup* mLayeredGroup;

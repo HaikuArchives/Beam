@@ -53,6 +53,7 @@
 #include "BmPopAccount.h"
 #include "BmPrefs.h"
 #include "BmPrefsSendMailView.h"
+#include "BmPrefsWin.h"
 #include "BmSmtp.h"
 #include "BmTextControl.h"
 #include "BmUtil.h"
@@ -488,7 +489,7 @@ bool BmPrefsSendMailView::SanityCheck() {
 			msg.AddString( MSG_COMPLAINT, complaint.String());
 			if (fieldName.Length())
 				msg.AddString( MSG_FIELD_NAME, fieldName.String());
-			Looper()->PostMessage( &msg, this);
+			ThePrefsWin->SendMsgToSubView( Name(), &msg);
 			return false;
 		}
 	}

@@ -56,6 +56,7 @@
 #include "BmPopper.h"
 #include "BmPrefs.h"
 #include "BmPrefsRecvMailView.h"
+#include "BmPrefsWin.h"
 #include "BmSignature.h"
 #include "BmSmtpAccount.h"
 #include "BmTextControl.h"
@@ -573,17 +574,17 @@ bool BmPrefsRecvMailView::SanityCheck() {
 	if (!InitDone())
 		return true;
 	BmString complaint, fieldName;
-	BMessage msg( BM_COMPLAIN_ABOUT_FIELD);
 	BmModelItemMap::const_iterator iter;
 	for(  iter = ThePopAccountList->begin(); 
 			iter != ThePopAccountList->end(); ++iter) {
 		BmPopAccount* acc = dynamic_cast<BmPopAccount*>( iter->second.Get());
 		if (acc && !acc->SanityCheck( complaint, fieldName)) {
+			BMessage msg( BM_COMPLAIN_ABOUT_FIELD);
 			msg.AddPointer( MSG_ITEM, (void*)acc);
 			msg.AddString( MSG_COMPLAINT, complaint.String());
 			if (fieldName.Length())
 				msg.AddString( MSG_FIELD_NAME, fieldName.String());
-			Looper()->PostMessage( &msg, this);
+			ThePrefsWin->SendMsgToSubView( Name(), &msg);
 			return false;
 		}
 	}

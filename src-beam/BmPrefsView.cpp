@@ -174,7 +174,8 @@ BmPrefsViewContainer::BmPrefsViewContainer( LayeredGroup* group)
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmPrefsView* BmPrefsViewContainer::ShowPrefsByName( const BmString name) {
+BmPrefsView* BmPrefsViewContainer::ShowPrefsByName( const BmString name,
+																	 int32& indexOut) {
 	if (!mLayeredGroup)
 		return NULL;
 	int32 count = mLayeredGroup->CountChildren();
@@ -184,6 +185,7 @@ BmPrefsView* BmPrefsViewContainer::ShowPrefsByName( const BmString name) {
 			BmString pvName = pv->Name();
 			if (!name.ICompare( pvName)) {
 				ShowPrefs( i);
+				indexOut = i-1;
 				return pv;
 			}
 		}

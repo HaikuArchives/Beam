@@ -57,6 +57,7 @@
 #include "BmMultiLineTextControl.h"
 #include "BmPrefs.h"
 #include "BmPrefsFilterView.h"
+#include "BmPrefsWin.h"
 #include "BmTextControl.h"
 #include "BmUtil.h"
 
@@ -404,7 +405,7 @@ bool BmPrefsFilterView::SanityCheck() {
 			msg.AddString( MSG_COMPLAINT, complaint.String());
 			if (fieldName.Length())
 				msg.AddString( MSG_FIELD_NAME, fieldName.String());
-			Looper()->PostMessage( &msg, this);
+			ThePrefsWin->SendMsgToSubView( Name(), &msg);
 			return false;
 		}
 	}

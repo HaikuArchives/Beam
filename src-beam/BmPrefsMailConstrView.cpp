@@ -90,7 +90,7 @@ BmPrefsMailConstrView::BmPrefsMailConstrView()
 								"Always respect maximum line-length of 78 characters", 
 							   new BMessage(BM_HARD_WRAP_AT_78_CHANGED), 
 							   this, 
-							   ThePrefs->GetInt("MaxLineLenForHardWrap",998) < 100
+							   ThePrefs->GetBool( "NeverExceed78Chars", false)
 							),
 						new Space( minimax(0,10,0,10)),
 						mQuotingStringControl 
@@ -667,54 +667,74 @@ void BmPrefsMailConstrView::Update() {
 	mHardWrapControl->SetValueSilently( ThePrefs->GetBool("HardWrapMailText"));
 	mHardWrapAt78Control->SetEnabled( mHardWrapControl->Value());
 	mHardWrapAt78Control->SetValueSilently( 
-		ThePrefs->GetInt("MaxLineLenForHardWrap",998)<100);
+		ThePrefs->GetBool( "NeverExceed78Chars", false)
+	);
 	mQuoteFormattingControl->MarkItem( 
 		ThePrefs->GetString( "QuoteFormatting", 
-									BmMail::BM_QUOTE_AUTO_WRAP).String());
+									BmMail::BM_QUOTE_AUTO_WRAP).String()
+	);
 	mDefaultForwardTypeControl->MarkItem( 
-		ThePrefs->GetString( "DefaultForwardType").String());
+		ThePrefs->GetString( "DefaultForwardType").String()
+	);
 	mDefaultCharsetControl->ClearMark();
 	mUndoModeControl->MarkItem( 
-		ThePrefs->GetString("UndoMode", "Words").String());
+		ThePrefs->GetString("UndoMode", "Words").String()
+	);
 	BmString charset( ThePrefs->GetString( "DefaultCharset"));
 	mDefaultCharsetControl->MarkItem( charset.String());
 	mDefaultCharsetControl->MenuItem()->SetLabel( charset.String());
 	mAllow8BitControl->SetValueSilently( ThePrefs->GetBool("Allow8BitMime"));
 	mImportExportUtf8Control->SetValueSilently( 
-		ThePrefs->GetBool("ImportExportTextAsUtf8", true));
+		ThePrefs->GetBool("ImportExportTextAsUtf8", true)
+	);
 	mSpecialForEachBccControl->SetValueSilently( 
-		ThePrefs->GetBool("SpecialHeaderForEachBcc"));
+		ThePrefs->GetBool("SpecialHeaderForEachBcc")
+	);
 	mPreferUserAgentControl->SetValueSilently( 
-		ThePrefs->GetBool("PreferUserAgentOverX-Mailer"));
+		ThePrefs->GetBool("PreferUserAgentOverX-Mailer")
+	);
 	mGenerateIDsControl->SetValueSilently( 
-		ThePrefs->GetBool("GenerateOwnMessageIDs"));
+		ThePrefs->GetBool("GenerateOwnMessageIDs")
+	);
 	mMakeQpSafeControl->SetValueSilently( 
-		ThePrefs->GetBool("MakeQPSafeForEBCDIC"));
+		ThePrefs->GetBool("MakeQPSafeForEBCDIC")
+	);
 	mDontAttachVCardsControl->SetValueSilently(
-		ThePrefs->GetBool("DoNotAttachVCardsToForward"));
+		ThePrefs->GetBool("DoNotAttachVCardsToForward")
+	);
 	mAddNameToPeopleControl->SetValueSilently( 
-		ThePrefs->GetBool("AddPeopleNameToMailAddr", true));
+		ThePrefs->GetBool("AddPeopleNameToMailAddr", true)
+	);
 	mLookInPeopleFolderControl->SetValueSilently( 
-		ThePrefs->GetBool("LookForPeopleOnlyInPeopleFolder", true));
+		ThePrefs->GetBool("LookForPeopleOnlyInPeopleFolder", true)
+	);
 	BmString val;
 	val << ThePrefs->GetInt("MaxLineLen");
 	mMaxLineLenControl->SetTextSilently( val.String());
 	mQuotingStringControl->SetTextSilently( 
-		ThePrefs->GetString("QuotingString").String());
+		ThePrefs->GetString("QuotingString").String()
+	);
 	mForwardIntroStrControl->SetTextSilently( 
-		ThePrefs->GetString("ForwardIntroStr").String());
+		ThePrefs->GetString("ForwardIntroStr").String()
+	);
 	mForwardSubjectStrControl->SetTextSilently( 
-		ThePrefs->GetString("ForwardSubjectStr").String());
+		ThePrefs->GetString("ForwardSubjectStr").String()
+	);
 	mForwardSubjectRxControl->SetTextSilently( 
-		ThePrefs->GetString("ForwardSubjectRX").String());
+		ThePrefs->GetString("ForwardSubjectRX").String()
+	);
 	mReplyIntroStrControl->SetTextSilently( 
-		ThePrefs->GetString("ReplyIntroStr").String());
+		ThePrefs->GetString("ReplyIntroStr").String()
+	);
 	mReplyIntroStrPrivateControl->SetTextSilently( 
-		ThePrefs->GetString("ReplyIntroDefaultNick", "you").String());
+		ThePrefs->GetString("ReplyIntroDefaultNick", "you").String()
+	);
 	mReplySubjectStrControl->SetTextSilently( 
-		ThePrefs->GetString("ReplySubjectStr").String());
+		ThePrefs->GetString("ReplySubjectStr").String()
+	);
 	mReplySubjectRxControl->SetTextSilently( 
-		ThePrefs->GetString("ReplySubjectRX").String());
+		ThePrefs->GetString("ReplySubjectRX").String()
+	);
 	SetupUsedCharsetsMenu();
 }
 
@@ -817,8 +837,8 @@ void BmPrefsMailConstrView::MessageReceived( BMessage* msg) {
 				break;
 			}
 			case BM_HARD_WRAP_AT_78_CHANGED: {
-				ThePrefs->SetInt( "MaxLineLenForHardWrap", 
-										mHardWrapAt78Control->Value() ? 78 : 998);
+				ThePrefs->SetBool( "NeverExceed78Chars", 
+										 mHardWrapAt78Control->Value());
 				NoticeChange();
 				break;
 			}

@@ -286,8 +286,10 @@ CLVContainerView* BmPrefsWin::CreatePrefsListView( minimax minmax, int32 width, 
 		-	
 \*------------------------------------------------------------------------------*/
 void BmPrefsWin::SendMsgToSubView( const BmString& subViewName, BMessage* msg) {
-	BmPrefsView* pv = mPrefsViewContainer->ShowPrefsByName( subViewName);
+	int32 index = 0;
+	BmPrefsView* pv = mPrefsViewContainer->ShowPrefsByName( subViewName, index);
 	if (pv) {
+		mPrefsListView->Select( index);
 		PostMessage( msg, pv);
 	}
 }
