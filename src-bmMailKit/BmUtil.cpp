@@ -208,9 +208,15 @@ bool ParseDateTime( const BmString& str, time_t& dateTime) {
 	Regexx rx;
 	// remove superfluous timezone information, i.e. convert something
 	// like '12:11:10 +0200 CEST' to '12:11:10 +0200':
-	const BmString s = rx.replace( str, "([+\\-]\\d+)[\\D]+$", "$1");
+	BmString s = rx.replace( str, "([+\\-]\\d+)[\\D]+$", "$1");
 	// convert datetime-string into time_t:
 	dateTime = parsedate( s.String(), -1);
+	if (dateTime == -1) {
+		// direct parsing wasn't successful, so we remove any textual timezone
+		// and try again:
+		s = rx.replace( str, "^(.+?)[a-zA-Z ]+$", "$1");
+		dateTime = parsedate( s.String(), -1);
+	}
 	return dateTime != -1;
 }
 
