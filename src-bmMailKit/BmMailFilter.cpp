@@ -191,8 +191,12 @@ void BmMailFilter::ExecuteFilter( BmMail* mail) {
 					} else {
 						BM_LOG2( BM_LogFilter, BmString("Executing Filter ") << filter->Name() << " (type=" << filter->Kind() << ")...");
 						filter->Addon()->Execute( &msgContext);
-						if (msgContext.stopProcessing)
-							break;
+						if (msgContext.identity.Length())
+							BM_LOG( BM_LogFilter, BmString("Filter ") << filter->Name() << ": setting identity to " << msgContext.identity);
+						if (msgContext.status.Length())
+							BM_LOG( BM_LogFilter, BmString("Filter ") << filter->Name() << ": setting status to " << msgContext.status);
+						if (msgContext.moveToTrash)
+							BM_LOG( BM_LogFilter, BmString("Filter ") << filter->Name() << ": moving mail to trash.");
 					}
 				}
 			}
@@ -207,31 +211,33 @@ void BmMailFilter::ExecuteFilter( BmMail* mail) {
 		} else {
 			BM_LOG2( BM_LogFilter, BmString("Executing Filter ") << mFilter->Name() << " (type=" << mFilter->Kind() << ")...");
 			mFilter->Addon()->Execute( &msgContext);
+			if (msgContext.identity.Length())
+				BM_LOG( BM_LogFilter, BmString("Filter ") << mFilter->Name() << ": setting identity to " << msgContext.identity);
+			if (msgContext.status.Length())
+				BM_LOG( BM_LogFilter, BmString("Filter ") << mFilter->Name() << ": setting status to " << msgContext.status);
+			if (msgContext.moveToTrash)
+				BM_LOG( BM_LogFilter, BmString("Filter ") << mFilter->Name() << ": moving mail to trash.");
 		}
 	}
 	bool needToStore = false;
 	if (msgContext.folderName.Length()) {
-		BM_LOG( BM_LogFilter, BmString("Filter ") << mFilter->Name() << ": moving mail to folder " << msgContext.folderName);
 		if (mail->SetDestFoldername( msgContext.folderName))
 			needToStore = true;
 	}
 	if (msgContext.identity.Length()) {
-		BM_LOG( BM_LogFilter, BmString("Filter ") << mFilter->Name() << ": setting identity to " << msgContext.identity);
 		mail->IdentityName( msgContext.identity);
 		needToStore = true;
 	}
 	if (msgContext.status.Length() && mail->Status() != msgContext.status) {
-		BM_LOG( BM_LogFilter, BmString("Filter ") << mFilter->Name() << ": setting status to " << msgContext.status);
 		mail->MarkAs( msgContext.status.String());
 		needToStore = true;
 	}
 	if (msgContext.moveToTrash) {
-		BM_LOG( BM_LogFilter, BmString("Filter ") << mFilter->Name() << ": moving mail to trash.");
 		if (mail->SetDestFoldername( BM_MAIL_FOLDER_TRASH))
 			needToStore = true;
 	}
 	if (needToStore && CurrentJobSpecifier()!=BM_EXECUTE_FILTER_IN_MEM) {
-		BM_LOG3( BM_LogFilter, BmString("Filter ") << mFilter->Name() << " has changed something, so mail will be stored now.");
+		BM_LOG3( BM_LogFilter, "Filtering has changed something, so mail will be stored now.");
 		mail->Store();
 	}
 }
