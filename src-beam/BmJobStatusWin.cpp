@@ -19,6 +19,8 @@
 #include <MStringView.h>
 #include <Space.h>
 
+#include "TextEntryAlert.h"
+
 #include "BmApp.h"
 #include "BmBasics.h"
 #include "BmJobStatusWin.h"
@@ -113,7 +115,7 @@ void BmJobStatusView::MessageReceived( BMessage* msg) {
 				break;
 			}
 			default:
-				MBorder::MessageReceived( msg);
+				inheritedView::MessageReceived( msg);
 		}
 	}
 	catch( exception &err) {
@@ -301,7 +303,9 @@ BmJobModel* BmPopperView::CreateJobModel( BMessage* msg) {
 	BmPopAccount* account;
 	(account = dynamic_cast<BmPopAccount*>( item.Get()))
 													|| BM_THROW_INVALID( BString("Could not find BmPopAccount ") << accName);
-	return new BmPopper( account->Name(), account);
+	BmPopper* popper = new BmPopper( account->Name(), account);
+	popper->SetPwdAcquisitorFunc( AskUserForPwd);
+	return popper;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -340,6 +344,28 @@ void BmPopperView::UpdateModelView( BMessage* msg) {
 		}
 	} else
 		throw BM_runtime_error("BmPopperView::UpdateModelView(): could not lock window");
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+bool BmPopperView::AskUserForPwd( const BString accName, BString& pwd) {
+	// ask user about password:
+   BString text = BString( "Please enter password for POP-Account <")
+   				   << accName << ">:";
+	TextEntryAlert* alert = new TextEntryAlert( "Info needed", text.String(),
+									 						  "", "Cancel", "OK");
+	alert->TextEntryView()->HideTyping( true);
+	alert->SetShortcut( 0, B_ESCAPE);
+	char buf[128];
+	int32 result = alert->Go( buf, 128);
+	if (result == 1) {
+		pwd = buf;
+		memset( buf, '*', 128);
+		return true;
+	} else
+		return false;
 }
 
 

@@ -415,6 +415,17 @@ BmListModelItem::~BmListModelItem() {
 }
 
 /*------------------------------------------------------------------------------*\
+	Archive( archive, deep)
+		-	writes version of item-format into archive
+		-	parameter deep makes no difference...
+\*------------------------------------------------------------------------------*/
+status_t BmListModelItem::Archive( BMessage* archive, bool deep) const {
+	status_t ret = (inheritedArchivable::Archive( archive, deep)
+		||	archive->AddInt16( MSG_VERSION, ArchiveVersion()));
+	return ret;
+}
+
+/*------------------------------------------------------------------------------*\
 	AddSubItem()
 		-	
 \*------------------------------------------------------------------------------*/

@@ -24,6 +24,7 @@
 #include "BmMainWindow.h"
 #include "BmMsgTypes.h"
 #include "BmPopAccount.h"
+#include "BmPrefs.h"
 #include "BmResources.h"
 #include "BmSmtpAccount.h"
 #include "BmToolbarButton.h"
@@ -144,6 +145,10 @@ BmMainWindow::BmMainWindow()
 	TheSmtpAccountList->StartJob();
 	ThePopAccountList = BmPopAccountList::CreateInstance();
 
+	CreateMailFolderView( minimax(0,100,300,1E5), 120, 100);
+	CreateMailRefView( minimax(200,100,1E5,1E5), 400, 200);
+	CreateMailView( minimax(200,200,1E5,1E5), BRect(0,0,400,200));
+
 	MView* mOuterGroup = 
 		new VGroup(
 			minimax( 600, 200, 1E5, 1E5),
@@ -169,7 +174,7 @@ BmMainWindow::BmMainWindow()
 																		"Reply to sender and all recipients"),
 					mForwardButton = new BmToolbarButton( "Forward", 
 																	  TheResources->IconByName("Button_Forward"), 
-																	  new BMessage(BMM_FORWARD), this, 
+																	  new BMessage(ThePrefs->GetInt( "DefaultForwardType", BMM_FORWARD_INLINE)), this, 
 																	  "Forward mail to somewhere else"),
 					mRedirectButton = new BmToolbarButton( "Redirect", 
 																	 TheResources->IconByName("Button_Redirect"), 
@@ -194,10 +199,10 @@ BmMainWindow::BmMainWindow()
 			new Space(minimax(-1,2,-1,2)),
 			new HGroup(
 				mVertSplitter = new UserResizeSplitView( 
-					CreateMailFolderView( minimax(0,100,300,1E5), 120, 100),
+					mMailFolderView->ContainerView(),
 					mHorzSplitter = new UserResizeSplitView( 
-						CreateMailRefView( minimax(200,100,1E5,1E5), 400, 200),
-						CreateMailView( minimax(200,200,1E5,1E5), BRect(0,0,400,200)),
+						mMailRefView->ContainerView(),
+						mMailView->ContainerView(),
 						"hsplitter", 150, B_HORIZONTAL, true, true, false, B_FOLLOW_NONE
 					),
 					"vsplitter", 120, B_VERTICAL, true, true, false, B_FOLLOW_NONE
@@ -209,7 +214,9 @@ BmMainWindow::BmMainWindow()
 
 	mMailRefView->TeamUpWith( mMailView);
 	mMailView->TeamUpWith( mMailRefView);
+	MailFolderSelectionChanged( 0);
 	MailRefSelectionChanged( 0);
+	MailViewChanged( false);
 
 	AddChild( dynamic_cast<BView*>(mOuterGroup));
 }
@@ -235,6 +242,9 @@ MMenuBar* BmMainWindow::CreateMenu() {
 	// File
 	menu = new BMenu( "File");
 	menu->AddItem( new BMenuItem( "New Folder", new BMessage( BMM_NEW_MAILFOLDER)));
+	menu->AddItem( new BMenuItem( "Rename Folder", new BMessage( BMM_RENAME_MAILFOLDER)));
+	menu->AddItem( new BMenuItem( "Delete Folder", new BMessage( BMM_DELETE_MAILFOLDER)));
+	menu->AddItem( new BMenuItem( "Recache Folder", new BMessage( BMM_RECACHE_MAILFOLDER)));
 	menu->AddSeparatorItem();
 	menu->AddItem( new BMenuItem( "Page Setup...", new BMessage( BMM_PAGE_SETUP)));
 	menu->AddItem( new BMenuItem( "Print Message(s)...", new BMessage( BMM_PRINT)));
@@ -248,11 +258,8 @@ MMenuBar* BmMainWindow::CreateMenu() {
 
 	// Edit
 	menu = new BMenu( "Edit");
-	menu->AddItem( new BMenuItem( "Undo", new BMessage( B_UNDO), 'Z'));
-	menu->AddSeparatorItem();
 	menu->AddItem( new BMenuItem( "Cut", new BMessage( B_CUT), 'X'));
 	menu->AddItem( new BMenuItem( "Copy", new BMessage( B_COPY), 'C'));
-	menu->AddItem( new BMenuItem( "Paste", new BMessage( B_PASTE), 'V'));
 	menu->AddItem( new BMenuItem( "Select All", new BMessage( B_SELECT_ALL), 'A'));
 	menu->AddSeparatorItem();
 	menu->AddItem( new BMenuItem( "Find...", new BMessage( BMM_FIND), 'F'));
@@ -277,9 +284,15 @@ MMenuBar* BmMainWindow::CreateMenu() {
 	menu->AddSeparatorItem();
 	menu->AddItem( new BMenuItem( "Reply", new BMessage( BMM_REPLY), 'R'));
 	menu->AddItem( new BMenuItem( "Reply To All", new BMessage( BMM_REPLY_ALL), 'R', B_SHIFT_KEY));
-	menu->AddItem( new BMenuItem( "Forward", new BMessage( BMM_FORWARD), 'J'));
-	menu->AddItem( new BMenuItem( "Forward inline", new BMessage( BMM_FORWARD_INLINE)));
-	menu->AddItem( new BMenuItem( "Forward With Attachments", new BMessage( BMM_FORWARD_ATTACHMENTS), 'J', B_SHIFT_KEY));
+	if (ThePrefs->GetInt( "DefaultForwardType", BMM_FORWARD_INLINE) == BMM_FORWARD_INLINE) {
+		menu->AddItem( new BMenuItem( "Forward As Attachment", new BMessage( BMM_FORWARD_ATTACHED), 'J', B_SHIFT_KEY));
+		menu->AddItem( new BMenuItem( "Forward Inline", new BMessage( BMM_FORWARD_INLINE), 'J'));
+		menu->AddItem( new BMenuItem( "Forward Inline (With Attachments)", new BMessage( BMM_FORWARD_INLINE_ATTACH)));
+	} else {
+		menu->AddItem( new BMenuItem( "Forward As Attachment", new BMessage( BMM_FORWARD_ATTACHED), 'J'));
+		menu->AddItem( new BMenuItem( "Forward Inline", new BMessage( BMM_FORWARD_INLINE), 'J', B_SHIFT_KEY));
+		menu->AddItem( new BMenuItem( "Forward Inline (With Attachments)", new BMessage( BMM_FORWARD_INLINE_ATTACH)));
+	}
 	menu->AddItem( new BMenuItem( "Redirect", new BMessage( BMM_REDIRECT), 'B'));
 	menu->AddSeparatorItem();
 	menu->AddItem( new BMenuItem( "Apply Filter", new BMessage( BMM_FILTER)));
@@ -328,7 +341,20 @@ status_t BmMainWindow::UnarchiveState( BMessage* archive) {
 void BmMainWindow::BeginLife() {
 	nIsAlive = true;
 	try {
+		// set target for foreign handlers:
+		mMainMenuBar->FindItem( B_QUIT_REQUESTED)->SetTarget( bmApp);
+		mMainMenuBar->FindItem( BMM_NEW_MAILFOLDER)->SetTarget( mMailFolderView);
+		mMainMenuBar->FindItem( BMM_RENAME_MAILFOLDER)->SetTarget( mMailFolderView);
+		mMainMenuBar->FindItem( BMM_DELETE_MAILFOLDER)->SetTarget( mMailFolderView);
+		mMainMenuBar->FindItem( BMM_RECACHE_MAILFOLDER)->SetTarget( mMailFolderView);
+		// temporary deactivation:
+		mMainMenuBar->FindItem( BMM_PAGE_SETUP)->SetEnabled( false);
+		mMainMenuBar->FindItem( BMM_PRINT)->SetEnabled( false);
+		mMainMenuBar->FindItem( BMM_FIND_MESSAGES)->SetEnabled( false);
+
+		mMailFolderView->StartWatching( this, BM_NTFY_MAILFOLDER_SELECTION);
 		mMailRefView->StartWatching( this, BM_NTFY_MAILREF_SELECTION);
+		mMailView->StartWatching( this, BM_NTFY_MAIL_VIEW);
 		BM_LOG2( BM_LogMainWindow, BString("MainWindow begins life"));
 		mMailFolderView->StartJob( TheMailFolderList.Get());
 		mMainMenuBar->StartJob( ThePopAccountList.Get());
@@ -372,10 +398,6 @@ BmMailViewContainer* BmMainWindow::CreateMailView( minimax minmax, BRect frame) 
 void BmMainWindow::MessageReceived( BMessage* msg) {
 	try {
 		switch( msg->what) {
-			case B_QUIT_REQUESTED: {
-				beamApp->PostMessage( B_QUIT_REQUESTED);
-				break;
-			}
 			case B_COPY:
 			case B_CUT: 
 			case B_PASTE: 
@@ -397,6 +419,14 @@ void BmMainWindow::MessageReceived( BMessage* msg) {
 			}
 			case BMM_NEW_MAIL: {
 				BmMailEditWin* editWin = BmMailEditWin::CreateInstance();
+				const char* to=NULL;
+				if ((to = msg->FindString( "to"))) {
+					BmRef<BmMail> mail = editWin->CurrMail();
+					if (mail) {
+						mail->SetFieldVal( BM_FIELD_TO, to);
+						editWin->EditMail( mail.Get());
+					}
+				}
 				if (editWin)
 					editWin->Show();
 				break;
@@ -416,10 +446,48 @@ void BmMainWindow::MessageReceived( BMessage* msg) {
 				}
 				break;
 			}
+			case BMM_FORWARD_ATTACHED: {
+				BmRef<BmMail> mail = mMailView->CurrMail();
+				if (mail) {
+					BmRef<BmMail> forward = mail->CreateAttachedForward();
+					if (forward) {
+						BmMailEditWin* editWin = BmMailEditWin::CreateInstance();
+						if (editWin) {
+							editWin->EditMail( forward.Get());
+							editWin->Show();
+						}
+					}
+				}
+				break;
+			}
+			case BMM_FORWARD_INLINE:
+			case BMM_FORWARD_INLINE_ATTACH: {
+				BmRef<BmMail> mail = mMailView->CurrMail();
+				if (mail) {
+					BmRef<BmMail> forward = mail->CreateInlineForward( msg->what == BMM_FORWARD_INLINE_ATTACH);
+					if (forward) {
+						BmMailEditWin* editWin = BmMailEditWin::CreateInstance();
+						if (editWin) {
+							editWin->EditMail( forward.Get());
+							editWin->Show();
+						}
+					}
+				}
+				break;
+			}
 			case B_OBSERVER_NOTICE_CHANGE: {
 				switch( msg->FindInt32( B_OBSERVE_WHAT_CHANGE)) {
+					case BM_NTFY_MAILFOLDER_SELECTION: {
+						MailRefSelectionChanged( msg->FindInt32( BmMailFolderView::MSG_FOLDERS_SELECTED));
+						break;
+					}
 					case BM_NTFY_MAILREF_SELECTION: {
 						MailRefSelectionChanged( msg->FindInt32( BmMailRefView::MSG_MAILS_SELECTED));
+						break;
+					}
+					case BM_NTFY_MAIL_VIEW: {
+						MailViewChanged( msg->FindBool( BmMailView::MSG_HAS_MAIL));
+						break;
 					}
 				}
 				break;
@@ -449,6 +517,7 @@ bool BmMainWindow::QuitRequested() {
 \*------------------------------------------------------------------------------*/
 void BmMainWindow::Quit() {
 	ThePopAccountList->Store();
+	TheSmtpAccountList->Store();
 	mMailView->WriteStateInfo();
 	mMailView->DetachModel();
 	mMailRefView->DetachModel();
@@ -458,15 +527,46 @@ void BmMainWindow::Quit() {
 }
 
 /*------------------------------------------------------------------------------*\
+	MailFolderSelectionChanged()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMainWindow::MailFolderSelectionChanged( int32 numSelected) {
+	// adjust menu:
+	mMainMenuBar->FindItem( BMM_NEW_MAILFOLDER)->SetEnabled( numSelected > 0);
+	mMainMenuBar->FindItem( BMM_RENAME_MAILFOLDER)->SetEnabled( numSelected > 0);
+	mMainMenuBar->FindItem( BMM_DELETE_MAILFOLDER)->SetEnabled( numSelected > 0);
+	mMainMenuBar->FindItem( BMM_RECACHE_MAILFOLDER)->SetEnabled( numSelected > 0);
+}
+
+/*------------------------------------------------------------------------------*\
 	MailRefSelectionChanged()
 		-	
 \*------------------------------------------------------------------------------*/
 void BmMainWindow::MailRefSelectionChanged( int32 numSelected) {
+	// adjust buttons:
 	mReplyButton->SetEnabled( numSelected > 0);
 	mReplyAllButton->SetEnabled( numSelected > 0);
 	mForwardButton->SetEnabled( numSelected > 0);
 	mRedirectButton->SetEnabled( numSelected > 0);
-	mPrintButton->SetEnabled( numSelected * 0 > 0);
+	mPrintButton->SetEnabled( 0 * numSelected > 0);
 	mTrashButton->SetEnabled( numSelected > 0);
+	// adjust menu:
+	mMainMenuBar->FindItem( BMM_REPLY)->SetEnabled( numSelected > 0);
+	mMainMenuBar->FindItem( BMM_REPLY_ALL)->SetEnabled( numSelected > 0);
+	mMainMenuBar->FindItem( BMM_FORWARD_ATTACHED)->SetEnabled( numSelected > 0);
+	mMainMenuBar->FindItem( BMM_FORWARD_INLINE)->SetEnabled( numSelected > 0);
+	mMainMenuBar->FindItem( BMM_FORWARD_INLINE_ATTACH)->SetEnabled( numSelected > 0);
+	mMainMenuBar->FindItem( BMM_REDIRECT)->SetEnabled( 0 * numSelected > 0);
+	mMainMenuBar->FindItem( BMM_FILTER)->SetEnabled( 0 * numSelected > 0);
+	mMainMenuBar->FindItem( BMM_TRASH)->SetEnabled( numSelected > 0);
 }
 
+/*------------------------------------------------------------------------------*\
+	MailViewChanged()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMainWindow::MailViewChanged( bool hasMail) {
+	// adjust menu:
+	mMainMenuBar->FindItem( BMM_FIND)->SetEnabled( hasMail);
+	mMainMenuBar->FindItem( BMM_FIND_NEXT)->SetEnabled( hasMail);
+}

@@ -3,8 +3,10 @@
 		$Id$
 */
 
+#include <Alert.h>
 #include <MenuItem.h>
 #include <PopUpMenu.h>
+#include <Roster.h>
 #include <UTF8.h>
 #include <Window.h>
 
@@ -24,6 +26,8 @@ using namespace regexx;
 #include "BmMailRef.h"
 #include "BmMailRefView.h"
 #include "BmMailView.h"
+#include "BmMainWindow.h"
+#include "BmMsgTypes.h"
 #include "BmPrefs.h"
 #include "BmResources.h"
 #include "BmRulerView.h"
@@ -93,6 +97,7 @@ BmMailView::BmMailView( minimax minmax, BRect frame, bool outbound)
 	}
 	CalculateVerticalOffset();
 	MakeEditable( outbound);
+	SetDoesUndo( outbound);
 	SetStylable( !outbound);
 	SetWordWrap( true);
 	mScrollView = new BmMailViewContainer( minmax, this, B_FOLLOW_NONE, 
@@ -158,7 +163,6 @@ void BmMailView::MessageReceived( BMessage* msg) {
 		switch( msg->what) {
 			case BM_JOB_UPDATE_STATE: {
 				if (!IsMsgFromCurrentModel( msg)) return;
-//				UpdateModelState( msg);
 				break;
 			}
 			case BM_JOB_DONE: {
@@ -244,11 +248,34 @@ void BmMailView::MouseDown( BPoint point) {
 	BPoint mousePos;
 	uint32 buttons;
 	GetMouse( &mousePos, &buttons);
-	if (buttons == B_SECONDARY_MOUSE_BUTTON) {
+	if (buttons == B_PRIMARY_MOUSE_BUTTON) {
+		int32 offset =  OffsetAt( point);
+		mClickedTextRun = TextRunInfoAt( offset);
+	} else if (buttons == B_SECONDARY_MOUSE_BUTTON) {
 		ShowMenu( point);
 		return;
 	}
 	inherited::MouseDown( point);
+}
+
+/*------------------------------------------------------------------------------*\
+	MouseUp( point)
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailView::MouseUp( BPoint point) {
+	inherited::MouseUp( point);
+	int32 offset =  OffsetAt( point);
+	if (mClickedTextRun == TextRunInfoAt( offset)) {
+		BmTextRunInfo runInfo = mClickedTextRun->second;
+		if (runInfo.isURL) {
+			BmTextRunIter next = mClickedTextRun;
+			next++;
+			Select( mClickedTextRun->first, next->first);
+			BString url( Text()+mClickedTextRun->first, next->first-mClickedTextRun->first);
+			LaunchURL( url);
+		}
+	}
+	mClickedTextRun = 0;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -313,6 +340,35 @@ void BmMailView::GetWrappedText( BString& out) {
 }
 
 /*------------------------------------------------------------------------------*\
+	LaunchURL()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailView::LaunchURL( BString url) {
+	char* urlStr = const_cast<char*>( url.String());
+	status_t result;
+	if (url.ICompare( "https:", 6) == 0)
+		result = be_roster->Launch( "application/x-vnd.Be.URL.https", 1, &urlStr);
+	else if (url.ICompare( "http:", 5) == 0)
+		result = be_roster->Launch( "application/x-vnd.Be.URL.http", 1, &urlStr);
+	else if (url.ICompare( "ftp:", 4) == 0)
+		result = be_roster->Launch( "application/x-vnd.Be.URL.ftp", 1, &urlStr);
+	else if (url.ICompare( "file:", 5) == 0)
+		result = be_roster->Launch( "application/x-vnd.Be.URL.file", 1, &urlStr);
+	else if (url.ICompare( "mailto:", 7) == 0) {
+		BMessage msg(BMM_NEW_MAIL);
+		msg.AddString( "to", urlStr+7);
+		TheMainWindow->PostMessage( &msg);
+		return;
+	}
+	else result = B_ERROR;
+	if (!(result == B_OK || result == B_ALREADY_RUNNING)) {
+		(new BAlert( "", (BString("Could not launch application for url\n\t") 
+								<< url << "\n\nError:\n\t" << strerror(result)).String(),
+					   "OK"))->Go();
+	}
+}
+
+/*------------------------------------------------------------------------------*\
 	ShowMail()
 		-	
 \*------------------------------------------------------------------------------*/
@@ -322,6 +378,9 @@ void BmMailView::ShowMail( BmMailRef* ref, bool async) {
 		if (!ref) {
 			DetachModel();
 			mHeaderView->ShowHeader( NULL);
+			BMessage msg(BM_NTFY_MAIL_VIEW);
+			msg.AddBool( MSG_HAS_MAIL, false);
+			SendNotices( BM_NTFY_MAIL_VIEW, &msg);
 			return;
 		}
 		ContainerView()->SetBusy();
@@ -345,6 +404,9 @@ void BmMailView::ShowMail( BmMail* mail, bool async) {
 			if (DataModel())
 				DetachModel();
 			mHeaderView->ShowHeader( NULL);
+			BMessage msg(BM_NTFY_MAIL_VIEW);
+			msg.AddBool( MSG_HAS_MAIL, false);
+			SendNotices( BM_NTFY_MAIL_VIEW, &msg);
 			return;
 		}
 		ContainerView()->SetBusy();
@@ -365,8 +427,9 @@ void BmMailView::JobIsDone( bool completed) {
 	if (completed && mCurrMail && mCurrMail->Header()) {
 		BString displayText;
 		mTextRunMap.clear();
-		mTextRunMap[0] = Black;
+		mTextRunMap[0] = BmTextRunInfo( Black);
 		BmBodyPartList* body = mCurrMail->Body();
+		mClickedTextRun = 0;
 		if (body) {
 			mBodyPartView->ShowBody( body);
 			if (mShowRaw) {
@@ -382,19 +445,21 @@ void BmMailView::JobIsDone( bool completed) {
 				}
 				// add signature, if any:
 				if (body->Signature().Length()) {
-					mTextRunMap[displayText.Length()] = BeShadow;
+					mTextRunMap[displayText.Length()] = BmTextRunInfo( BeShadow);
 					displayText << "-- \n" << body->Signature();
 				}
 				// highlight URLs:
 				Regexx rx;
 				int32 count;
-				if ((count = rx.exec( displayText, "http://\\S+", 
-					                  Regexx::global|Regexx::newline|Regexx::noatom)) > 0) {
+				if ((count = rx.exec( displayText, "(https://|ftp://|nntp://|file://|mailto:)\\S+", 
+					                   Regexx::nocase|Regexx::global|Regexx::newline)) > 0) {
 					for( int i=0; i<count; ++i) {
 						int32 start = rx.match[i].start();
 						int32 end = start+rx.match[i].Length();
-						mTextRunMap[start] = MedMetallicBlue;
-						mTextRunMap[end] = Black;
+						BmTextRunIter iter = TextRunInfoAt( start);
+						BmTextRunInfo runInfo = iter->second;
+						mTextRunMap[start] = BmTextRunInfo( MedMetallicBlue, true);
+						mTextRunMap[end] = runInfo;
 					}
 				}
 			}
@@ -408,12 +473,12 @@ void BmMailView::JobIsDone( bool completed) {
 		if (!textRunArray)
 			return;
 		textRunArray->count = mTextRunMap.size();
-		BmTextRunMap::const_iterator iter;
 		int i=0;
+		BmTextRunIter iter;
 		for( iter = mTextRunMap.begin(); iter != mTextRunMap.end(); ++iter, ++i) {
 			textRunArray->runs[i].offset = iter->first;
-			textRunArray->runs[i].font = *be_fixed_font;
-			textRunArray->runs[i].color = iter->second;
+			textRunArray->runs[i].font = iter->second.font;
+			textRunArray->runs[i].color = iter->second.color;
 		}
 		SetText( displayText.String(), displayText.Length(), textRunArray);
 		free( textRunArray);
@@ -423,10 +488,16 @@ void BmMailView::JobIsDone( bool completed) {
 		ScrollTo( 0,0);
 		if (mCurrMail->Status() == BM_MAIL_STATUS_NEW)
 			mCurrMail->MarkAs( BM_MAIL_STATUS_READ);
+		BMessage msg(BM_NTFY_MAIL_VIEW);
+		msg.AddBool( MSG_HAS_MAIL, true);
+		SendNotices( BM_NTFY_MAIL_VIEW, &msg);
 	} else {
 		mHeaderView->ShowHeader( NULL);
 		SetText( "");
 		ContainerView()->UnsetBusy();
+		BMessage msg(BM_NTFY_MAIL_VIEW);
+		msg.AddBool( MSG_HAS_MAIL, false);
+		SendNotices( BM_NTFY_MAIL_VIEW, &msg);
 	}
 }
 
@@ -458,6 +529,21 @@ void BmMailView::DisplayBodyPart( BString& displayText, BmBodyPart* bodyPart) {
 			DisplayBodyPart( displayText, subPart);
 		}
 	}
+}
+
+/*------------------------------------------------------------------------------*\
+	TextRunInfoAt()
+		-	
+\*------------------------------------------------------------------------------*/
+BmMailView::BmTextRunIter BmMailView::TextRunInfoAt( int32 pos) const {
+	BmTextRunIter theIter;
+	BmTextRunIter iter;
+	for( iter = mTextRunMap.begin(); iter != mTextRunMap.end(); ++iter) {
+		if (iter->first > pos)
+			break;
+		theIter = iter;
+	}
+	return theIter;
 }
 
 /*------------------------------------------------------------------------------*\

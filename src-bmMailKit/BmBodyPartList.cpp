@@ -168,7 +168,7 @@ BmBodyPart::BmBodyPart( BmBodyPartList* model, const BString& msgtext, int32 sta
 	BmBodyPart()
 	-	c'tor
 \*------------------------------------------------------------------------------*/
-BmBodyPart::BmBodyPart( BmBodyPartList* model, entry_ref* ref, BmListModelItem* parent)
+BmBodyPart::BmBodyPart( BmBodyPartList* model, const entry_ref* ref, BmListModelItem* parent)
 	:	inherited( BString("")<<NextObjectID(), model, parent)
 	,	mIsMultiPart( false)
 	,	mInitCheck( B_NO_INIT)
@@ -452,9 +452,31 @@ BString BmBodyPart::GenerateBoundary() {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
+void BmBodyPart::PropagateHigherEncoding() {
+	if (!IsMultiPart())
+		return;
+	BString newTransferEncoding = "7-bit";
+	BmModelItemMap::const_iterator iter;
+	for( iter = begin(); iter != end(); ++iter) {
+		BmBodyPart* subPart = dynamic_cast< BmBodyPart*>( iter->second.Get());
+		subPart->PropagateHigherEncoding();
+		if ( subPart->IsBinary()) {
+			mContentTransferEncoding = "binary";
+			return;
+		}
+		if ( subPart->Is8Bit())
+			mContentTransferEncoding = "8bit";
+	}
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
 void BmBodyPart::ConstructBodyForSending( BString &msgText) {
 	BString boundary;
 	if (IsMultiPart()) {
+		PropagateHigherEncoding();
 		boundary = GenerateBoundary();
 		mContentType.SetParam( "boundary", boundary);
 	}
@@ -562,7 +584,7 @@ bool BmBodyPartList::HasAttachments() const {
 	AddAttachmentFromRef()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmBodyPartList::AddAttachmentFromRef( entry_ref* ref) {
+void BmBodyPartList::AddAttachmentFromRef( const entry_ref* ref) {
 	BmBodyPart* parent = dynamic_cast< BmBodyPart*>( mEditableTextBody 
 																		? mEditableTextBody->Parent() 
 																		: NULL);

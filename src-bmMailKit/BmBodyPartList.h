@@ -59,11 +59,13 @@ class BmBodyPartList;
 class BmBodyPart : public BmListModelItem {
 	typedef BmListModelItem inherited;
 
+	static const int16 nArchiveVersion = 1;
+
 public:
 	// c'tors and d'tor:
 	BmBodyPart( BmBodyPartList* model, const BString& msgtext, int32 s, int32 l, 
 					BmMailHeader* mHeader=NULL, BmListModelItem* parent=NULL);
-	BmBodyPart( BmBodyPartList* model, entry_ref* ref, BmListModelItem* parent=NULL);
+	BmBodyPart( BmBodyPartList* model, const entry_ref* ref, BmListModelItem* parent=NULL);
 	~BmBodyPart();
 
 	// class methods:
@@ -77,9 +79,13 @@ public:
 	bool ShouldBeShownInline()	const;
 	bool ContainsRef( const entry_ref& ref) const;
 	entry_ref WriteToTempFile( BString filename="");
+	void PropagateHigherEncoding();
 	void ConstructBodyForSending( BString &msgText);
 
 	static BString GenerateBoundary();
+
+	// overrides of listmodelitem base:
+	int16 ArchiveVersion() const			{ return nArchiveVersion; }
 
 	// getters:
 	bool IsMultiPart() const				{ return mIsMultiPart; }
@@ -99,6 +105,10 @@ public:
 	const BString& DispositionParam( BString key) const	{ return mContentDisposition.Param( key); }
 
 	const entry_ref& EntryRef() const	{ return mEntryRef; }
+
+	const bool Is7Bit() const				{ return mContentTransferEncoding.ICompare( "7bit") == 0; }
+	const bool Is8Bit() const				{ return mContentTransferEncoding.ICompare( "8bit") == 0; }
+	const bool IsBinary() const			{ return mContentTransferEncoding.ICompare( "binary") == 0; }
 
 	static int32 nBoundaryCounter;
 
@@ -133,6 +143,8 @@ struct entry_ref;
 class BmBodyPartList : public BmListModel {
 	typedef BmListModel inherited;
 
+	static const int16 nArchiveVersion = 1;
+
 public:
 	// c'tors and d'tor
 	BmBodyPartList( BmMail* mail);
@@ -141,7 +153,7 @@ public:
 	// native methods:
 	void ParseMail();
 	bool HasAttachments() const;
-	void AddAttachmentFromRef( entry_ref* ref);
+	void AddAttachmentFromRef( const entry_ref* ref);
 	bool ConstructBodyForSending( BString& msgText);
 	void SetEditableText( const BString& text, uint32 encoding);
 	uint32 DefaultEncoding()	const;
@@ -149,6 +161,7 @@ public:
 	//	overrides of listmodel base:
 	bool StartJob();
 	const BString SettingsFileName()		{ return NULL; }
+	int16 ArchiveVersion() const			{ return nArchiveVersion; }
 
 	// getters:
 	status_t InitCheck()						{ return mInitCheck; }

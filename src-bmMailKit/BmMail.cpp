@@ -46,9 +46,16 @@ BmMail::BmMail( bool outbound)
 	,	mOutbound( outbound)
 {
 	BString emptyMsg( "Mime: 1.0\r\n");
-	emptyMsg << "Date: " << TimeToString( time( NULL), "%a, %d %m %Y %H:%M:%S %z");
+	emptyMsg << BM_FIELD_DATE << ": " << TimeToString( time( NULL), 
+																		"%a, %d %b %Y %H:%M:%S %z");
 	emptyMsg << "\r\n\r\n";
 	SetTo( emptyMsg, "");
+	if (outbound) {
+		// stuff from-address into mail, if it makes sense:
+		BmRef<BmPopAccount> accRef = ThePopAccountList->DefaultAccount();
+		if (accRef)
+			SetFieldVal( BM_FIELD_FROM, accRef->GetFromAddress());
+	}
 }
 
 /*------------------------------------------------------------------------------*\
@@ -181,12 +188,23 @@ bool BmMail::HasAttachments() const {
 }
 
 /*------------------------------------------------------------------------------*\
-	SetFieldVal()
+	GetFieldVal()
 	-	
 \*------------------------------------------------------------------------------*/
 const BString& BmMail::GetFieldVal( const BString fieldName) {
 	if (mHeader)
 		return mHeader->GetFieldVal( fieldName);
+	else
+		return BM_DEFAULT_STRING;
+}
+
+/*------------------------------------------------------------------------------*\
+	GetStrippedFieldVal()
+	-	
+\*------------------------------------------------------------------------------*/
+BString BmMail::GetStrippedFieldVal( const BString fieldName) {
+	if (mHeader)
+		return mHeader->GetStrippedFieldVal( fieldName);
 	else
 		return BM_DEFAULT_STRING;
 }
@@ -215,12 +233,42 @@ void BmMail::RemoveField( const BString fieldName) {
 }
 
 /*------------------------------------------------------------------------------*\
-	CreateForward()
+	CreateInlineForward()
 	-	
 \*------------------------------------------------------------------------------*/
-BmRef<BmMail> BmMail::CreateForward( bool withAttachments) {
+BmRef<BmMail> BmMail::CreateInlineForward( bool withAttachments, const BString selectedText) {
 	BmRef<BmMail> newMail = new BmMail( true);
-//	newMail->
+	// massage subject, if neccessary:
+	BString subject = GetFieldVal( BM_FIELD_SUBJECT);
+	newMail->SetFieldVal( BM_FIELD_SUBJECT, CreateForwardSubjectFor( subject));
+	// copy and quote text-body:
+	BmBodyPart* textBody = mBody->EditableTextBody();
+	BString charset = textBody->Charset();
+	BString text;
+	if (selectedText.Length())
+		text = selectedText;
+	else
+		text = textBody->DecodedData();
+	BString quotedText;
+	QuoteText( text, quotedText,
+				  ThePrefs->GetString( "QuotingString"),
+				  ThePrefs->GetInt( "MaxLineLen"));
+	newMail->Body()->SetEditableText( CreateForwardIntro() << "\n" << quotedText, 
+												 CharsetToEncoding( charset));
+	return newMail;
+}
+
+/*------------------------------------------------------------------------------*\
+	CreateAttachedForward()
+	-	
+\*------------------------------------------------------------------------------*/
+BmRef<BmMail> BmMail::CreateAttachedForward() {
+	BmRef<BmMail> newMail = new BmMail( true);
+	if (mMailRef->InitCheck() == B_OK)
+		newMail->Body()->AddAttachmentFromRef( mMailRef->EntryRefPtr());
+	// massage subject, if neccessary:
+	BString subject = GetFieldVal( BM_FIELD_SUBJECT);
+	newMail->SetFieldVal( BM_FIELD_SUBJECT, CreateForwardSubjectFor( subject));
 	return newMail;
 }
 
@@ -228,11 +276,12 @@ BmRef<BmMail> BmMail::CreateForward( bool withAttachments) {
 	CreateReply()
 	-	
 \*------------------------------------------------------------------------------*/
-BmRef<BmMail> BmMail::CreateReply( bool replyToAll) {
+BmRef<BmMail> BmMail::CreateReply( bool replyToAll, const BString selectedText) {
 	BmRef<BmMail> newMail = new BmMail( true);
 	// copy old message ID into in-reply-to and references fields:
 	BString messageID = GetFieldVal( BM_FIELD_MESSAGE_ID);
 	newMail->SetFieldVal( BM_FIELD_IN_REPLY_TO, messageID);
+	newMail->SetFieldVal( BM_FIELD_REFERENCES, GetFieldVal( BM_FIELD_REFERENCES));
 	newMail->Header()->AddFieldVal( BM_FIELD_REFERENCES, messageID);
 	// fill address information:
 	BString newTo = GetFieldVal( BM_FIELD_RESENT_FROM);
@@ -249,29 +298,29 @@ BmRef<BmMail> BmMail::CreateReply( bool replyToAll) {
 			newCc = GetFieldVal( BM_FIELD_CC);
 		newMail->SetFieldVal( BM_FIELD_CC, newCc);
 	}
-	// fetch from-address via pop-account info:
+	// Since we are replying, we generate the new mail's from-address 
+	// from the received mail's pop-account info:
 	BmRef<BmListModelItem> accRef = ThePopAccountList->FindItemByKey( AccountName());
 	BmPopAccount* acc = dynamic_cast< BmPopAccount*>( accRef.Get());
 	if (acc)
 		newMail->SetFieldVal( BM_FIELD_FROM, acc->GetFromAddress());
 	// massage subject, if neccessary:
 	BString subject = GetFieldVal( BM_FIELD_SUBJECT);
-	BString replySubj = ThePrefs->GetString( "ReplyPrefixRX", "^\\s*(Re|Aw):");
-	Regexx rx;
-	if (!rx.exec( subject, replySubj, Regexx::nocase))
-		subject = ThePrefs->GetString( "ReplyPrefix", "Re: ") + subject;
-	newMail->SetFieldVal( BM_FIELD_SUBJECT, subject);
+	newMail->SetFieldVal( BM_FIELD_SUBJECT, CreateReplySubjectFor( subject));
 	// copy and quote text-body:
 	BmBodyPart* textBody = mBody->EditableTextBody();
-	if (textBody) {
-		BString text = textBody->DecodedData();
-		BString quotedText;
-		QuoteText( text, quotedText,
-					  ThePrefs->GetString( "QuotingString"),
-					  ThePrefs->GetInt( "MaxLineLen"));
-		newMail->Body()->SetEditableText( quotedText,
-													 CharsetToEncoding( textBody->Charset()));
-	}
+	BString charset = textBody->Charset();
+	BString text;
+	if (selectedText.Length())
+		text << selectedText;
+	else
+		text << textBody->DecodedData();
+	BString quotedText;
+	QuoteText( text, quotedText,
+				  ThePrefs->GetString( "QuotingString"),
+				  ThePrefs->GetInt( "MaxLineLen"));
+	newMail->Body()->SetEditableText( CreateReplyIntro() << "\n" << quotedText, 
+												 CharsetToEncoding( charset));
 	return newMail;
 }
 
@@ -282,6 +331,69 @@ BmRef<BmMail> BmMail::CreateReply( bool replyToAll) {
 BmRef<BmMail> BmMail::CreateResend() {
 	BmRef<BmMail> newMail = new BmMail( true);
 	return newMail;
+}
+
+/*------------------------------------------------------------------------------*\
+	CreateReplySubjectFor()
+	-	
+\*------------------------------------------------------------------------------*/
+BString BmMail::CreateReplySubjectFor( const BString subject) {
+	BString isReplyRX = ThePrefs->GetString( "ReplySubjectRX", "^\\s*(Re|Aw):");
+	Regexx rx;
+	if (!rx.exec( subject, isReplyRX, Regexx::nocase|Regexx::nomatch)) {
+		BString subjectStr = ThePrefs->GetString( "ReplySubjectStr", "Re: %s");
+		return rx.replace( subjectStr, "%s", subject, 
+								 Regexx::nocase|Regexx::global|Regexx::noatom);
+	}
+	return subject;
+}
+
+/*------------------------------------------------------------------------------*\
+	CreateForwardSubjectFor()
+	-	
+\*------------------------------------------------------------------------------*/
+BString BmMail::CreateForwardSubjectFor( const BString subject) {
+	BString isForwardRX = ThePrefs->GetString( "ForwardSubjectRX", "^\\s*(Fwd):");
+	Regexx rx;
+	if (!rx.exec( subject, isForwardRX, Regexx::nocase|Regexx::nomatch)) {
+		BString newSubject = ThePrefs->GetString( "ForwardSubjectStr", "[Fwd: %s]");
+		newSubject = rx.replace( newSubject, "%s", subject, 
+										 Regexx::nocase|Regexx::global|Regexx::noatom);
+		return newSubject;
+	}
+	return subject;
+}
+
+/*------------------------------------------------------------------------------*\
+	CreateReplyIntro()
+	-	
+\*------------------------------------------------------------------------------*/
+BString BmMail::CreateReplyIntro() {
+	Regexx rx;
+	BString intro = ThePrefs->GetString( "ReplyIntroStr", "On %D at %T, %F wrote:");
+	intro = rx.replace( intro, "%D", TimeToString( mMailRef->When(), "%Y-%m-%d"), 
+							  Regexx::nocase|Regexx::global|Regexx::noatom);
+	intro = rx.replace( intro, "%T", TimeToString( mMailRef->When(), "%X"), 
+							  Regexx::nocase|Regexx::global|Regexx::noatom);
+	intro = rx.replace( intro, "%F", mMailRef->From(), 
+							  Regexx::nocase|Regexx::global|Regexx::noatom);
+	return intro;
+}
+
+/*------------------------------------------------------------------------------*\
+	CreateForwardIntro()
+	-	
+\*------------------------------------------------------------------------------*/
+BString BmMail::CreateForwardIntro() {
+	Regexx rx;
+	BString intro = ThePrefs->GetString( "ForwardIntroStr", "On %D at %T, %F wrote:");
+	intro = rx.replace( intro, "%D", TimeToString( mMailRef->When(), "%Y-%m-%d"), 
+							  Regexx::nocase|Regexx::global|Regexx::noatom);
+	intro = rx.replace( intro, "%T", TimeToString( mMailRef->When(), "%X"), 
+							  Regexx::nocase|Regexx::global|Regexx::noatom);
+	intro = rx.replace( intro, "%F", mMailRef->From(), 
+							  Regexx::nocase|Regexx::global|Regexx::noatom);
+	return intro;
 }
 
 /*------------------------------------------------------------------------------*\

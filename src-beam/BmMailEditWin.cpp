@@ -70,6 +70,7 @@ BmMailEditWin::BmMailEditWin()
 					  B_NORMAL_WINDOW_FEEL, B_ASYNCHRONOUS_CONTROLS)
 	,	mShowDetails( false)
 	,	mRawMode( false)
+	,	mModified( false)
 {
 	CreateGUI();
 	mMailView->ShowMail( new BmMail( true));
@@ -244,13 +245,7 @@ MMenuBar* BmMailEditWin::CreateMenu() {
 	BMenu* menu = NULL;
 	// File
 	menu = new BMenu( "File");
-	menu->AddItem( new BMenuItem( "Open...", new BMessage( BMM_OPEN), 'O'));
-	menu->AddItem( new BMenuItem( "Save...", new BMessage( BMM_SAVE), 'S'));
-	menu->AddSeparatorItem();
-	menu->AddItem( new BMenuItem( "Page Setup...", new BMessage( BMM_PAGE_SETUP)));
-	menu->AddItem( new BMenuItem( "Print Message(s)...", new BMessage( BMM_PRINT)));
-	menu->AddSeparatorItem();
-	menu->AddItem( new BMenuItem( "Preferences...", new BMessage( BMM_PREFERENCES)));
+	menu->AddItem( new BMenuItem( "Save", new BMessage( BMM_SAVE), 'S'));
 	menu->AddSeparatorItem();
 	menu->AddItem( new BMenuItem( "Quit Beam", new BMessage( B_QUIT_REQUESTED), 'Q'));
 	menubar->AddItem( menu);
@@ -377,6 +372,10 @@ void BmMailEditWin::MessageReceived( BMessage* msg) {
 			case BM_TO_ADDED: {
 				break;
 			}
+			case BM_FIELD_MODIFIED: {
+				mModified = true;
+				break;
+			}
 			case B_COPY:
 			case B_CUT: 
 			case B_PASTE: 
@@ -419,18 +418,26 @@ void BmMailEditWin::EditMail( BmMail* mail) {
 }
 
 /*------------------------------------------------------------------------------*\
+	CurrMail()
+		-	
+\*------------------------------------------------------------------------------*/
+BmMail* BmMailEditWin::CurrMail() const { 
+	return mMailView ? mMailView->CurrMail().Get() : NULL; 
+}
+
+/*------------------------------------------------------------------------------*\
 	SetFieldFromMail()
 		-	
 \*------------------------------------------------------------------------------*/
 void BmMailEditWin::SetFieldsFromMail( BmMail* mail) {
 	if (mail) {
-		mBccControl->SetText( mail->GetFieldVal( BM_FIELD_BCC).String());
-		mCcControl->SetText( mail->GetFieldVal( BM_FIELD_CC).String());
-		mFromControl->SetText( mail->GetFieldVal( BM_FIELD_FROM).String());
-		mSenderControl->SetText( mail->GetFieldVal( BM_FIELD_SENDER).String());
+		mBccControl->SetText( mail->GetStrippedFieldVal( BM_FIELD_BCC).String());
+		mCcControl->SetText( mail->GetStrippedFieldVal( BM_FIELD_CC).String());
+		mFromControl->SetText( mail->GetStrippedFieldVal( BM_FIELD_FROM).String());
+		mSenderControl->SetText( mail->GetStrippedFieldVal( BM_FIELD_SENDER).String());
 		mSubjectControl->SetText( mail->GetFieldVal( BM_FIELD_SUBJECT).String());
-		mToControl->SetText( mail->GetFieldVal( BM_FIELD_TO).String());
-		mReplyToControl->SetText( mail->GetFieldVal( BM_FIELD_REPLY_TO).String());
+		mToControl->SetText( mail->GetStrippedFieldVal( BM_FIELD_TO).String());
+		mReplyToControl->SetText( mail->GetStrippedFieldVal( BM_FIELD_REPLY_TO).String());
 		// mark corresponding SMTP-account (if any):
 		BMenuItem* item = NULL;
 		BString smtpAccount = mail->AccountName();
@@ -444,6 +451,7 @@ void BmMailEditWin::SetFieldsFromMail( BmMail* mail) {
 		item = mCharsetControl->Menu()->FindItem( EncodingToCharset( mail->DefaultEncoding()).String());
 		if (item)
 			item->SetMarked( true);
+		mModified = false;
 	}
 }
 
@@ -486,7 +494,11 @@ bool BmMailEditWin::CreateMailFromFields() {
 			mail->SetFieldVal( BM_FIELD_SUBJECT, mSubjectControl->Text());
 			mail->SetFieldVal( BM_FIELD_TO, mToControl->Text());
 			mail->SetFieldVal( BM_FIELD_REPLY_TO, mReplyToControl->Text());
-			mail->SetFieldVal( BM_FIELD_DATE, TimeToString( time( NULL), "%a, %d %m %Y %H:%M:%S %z"));
+/* use the following line if mail-date should be bumped whenever the mail
+	has been edited:
+			mail->SetFieldVal( BM_FIELD_DATE, TimeToString( time( NULL), 
+																			"%a, %d %b %Y %H:%M:%S %z"));
+*/
 			return mail->ConstructRawText( convertedText, encoding, smtpAccount);
 		}
 	} else
@@ -533,6 +545,17 @@ bool BmMailEditWin::SaveAndReloadMail() {
 \*------------------------------------------------------------------------------*/
 bool BmMailEditWin::QuitRequested() {
 	BM_LOG2( BM_LogMailEditWin, BString("MailEditWin has been asked to quit"));
+	if (mModified) {
+		BAlert* alert = new BAlert( "title", "Save mail as draft before closing?",
+											 "Cancel", "Don't Save", "Save",
+											 B_WIDTH_AS_USUAL, B_OFFSET_SPACING, B_WARNING_ALERT);
+		alert->SetShortcut( 0, B_ESCAPE);
+		int32 result = alert->Go();
+		if (result == 0)
+			return false;
+		if (result == 2)
+			return SaveAndReloadMail();
+	}
 	return true;
 }
 

@@ -12,6 +12,8 @@
 
 class HGroup;
 
+#define BM_FIELD_MODIFIED 'bmfm'
+
 class BmTextControl : public MView, public BTextControl
 {
 	typedef BTextControl inherited;

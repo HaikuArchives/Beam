@@ -33,6 +33,7 @@ class BmPopper;
 		-	controls a specific connection
 \*------------------------------------------------------------------------------*/
 class BmJobStatusView : public MBorder, public BmJobController {
+	typedef MBorder inheritedView;
 	typedef BmJobController inherited;
 	
 public:
@@ -77,6 +78,7 @@ class MStringView;
 		-	controls a specific mail-moving operation
 \*------------------------------------------------------------------------------*/
 class BmMailMoverView : public BmJobStatusView {
+	typedef BmJobStatusView inherited;
 
 public:
 	// creator-func, c'tors and d'tor:
@@ -112,6 +114,7 @@ private:
 		-	controls a specific POP3-connection
 \*------------------------------------------------------------------------------*/
 class BmPopperView : public BmJobStatusView {
+	typedef BmJobStatusView inherited;
 
 public:
 	// creator-func, c'tors and d'tor:
@@ -127,6 +130,9 @@ public:
 	// overrides of controller base:
 	BHandler* GetControllerHandler() 	{ return this; }
 
+	// class-functions:
+	static bool AskUserForPwd( const BString accName, BString& pwd);
+
 private:
 	BStatusBar* mStatBar;				// shows current status of this connection
 	BStatusBar* mMailBar;				// shows number of mails handled by this connection
@@ -141,6 +147,7 @@ private:
 		-	controls a specific SMTP-connection
 \*------------------------------------------------------------------------------*/
 class BmSmtpView : public BmJobStatusView {
+	typedef BmJobStatusView inherited;
 
 public:
 	// creator-func, c'tors and d'tor:

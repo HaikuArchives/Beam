@@ -364,7 +364,7 @@ void BmBodyPartView::ItemInvoked( int32 index) {
 			return;
 		bodyPartItem->Highlight( true);
 		InvalidateItem( index);
-		Window()->UpdateIfNeeded();
+		Window()->UpdateIfNeeded();		// for immediate highlight
 		entry_ref eref = bodyPart->WriteToTempFile();
 		if (bmApp->HandlesMimetype( bodyPart->MimeType())) {
 			BMessage msg( B_REFS_RECEIVED);

@@ -45,6 +45,7 @@ public:
 	
 	// getters:
 	bool IsInRawMode() const				{ return mRawMode; }
+	BmMail* CurrMail() const;
 
 private:
 	BmMailViewContainer* CreateMailView( minimax minmax, BRect frame);
@@ -80,6 +81,7 @@ private:
 	bool mShowDetails;
 	bool mRawMode;
 	MView* mOuterGroup;
+	bool mModified;
 
 	// Hide copy-constructor and assignment:
 	BmMailEditWin( const BmMailEditWin&);

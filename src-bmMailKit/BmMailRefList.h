@@ -22,6 +22,8 @@ class BmMailRef;
 class BmMailRefList : public BmListModel {
 	typedef BmListModel inherited;
 
+	static const int16 nArchiveVersion = 1;
+
 public:
 
 	// c'tors and d'tor
@@ -36,6 +38,7 @@ public:
 	bool StartJob();
 	void RemoveController( BmController* controller);
 	const BString SettingsFileName();
+	int16 ArchiveVersion() const			{ return nArchiveVersion; }
 	
 	// getters:
 	bool NeedsCacheUpdate() const 		{ return mNeedsCacheUpdate; }

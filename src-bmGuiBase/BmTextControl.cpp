@@ -35,6 +35,7 @@ BmTextControl::BmTextControl( const char* label, bool labelIsMenu)
 		mMenuField->SetDivider( 0);
 		AddChild( mMenuField);
 	}
+	SetModificationMessage( new BMessage(BM_FIELD_MODIFIED));
 }
 
 /*------------------------------------------------------------------------------*\

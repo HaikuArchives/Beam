@@ -16,6 +16,9 @@
 #include "BmUtil.h"
 
 class BmSmtpAccount;
+
+#define BM_SMTP_NEEDS_PWD						'bmSp'
+
 /*------------------------------------------------------------------------------*\
 	BmSmtp
 		-	implements the SMTP-client
@@ -32,6 +35,9 @@ public:
 	static const char* const MSG_DELTA = 		"bm:delta";
 	static const char* const MSG_TRAILING = 	"bm:trailing";
 	static const char* const MSG_LEADING = 	"bm:leading";
+
+	// message component definitions for additional info:
+	static const char* const MSG_PWD = 	"bm:pwd";
 
 	// job-specifier for checking server capabilities:
 	static const int32 BM_CHECK_CAPABILITIES_JOB = 1;

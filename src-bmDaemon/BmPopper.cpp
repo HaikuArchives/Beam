@@ -49,6 +49,7 @@ BmPopper::BmPopper( const BString& name, BmPopAccount* account)
 	,	mMsgSizes( NULL)
 	,	mMsgTotalSize( 1)
 	,	mState( 0)
+	,	mPwdAcquisitorFunc( NULL)
 {
 }
 
@@ -83,16 +84,20 @@ bool BmPopper::StartJob() {
 		}
 		default: {
 			const float delta = (100.0 / POP_DONE);
-			const bool failed=true;
 			mPopServer.InitCheck() == B_OK					
 													||	BM_THROW_RUNTIME("BmPopper: could not create NetEndpoint");
 			try {
-				for( mState=POP_CONNECT; ShouldContinue() && mState<POP_DONE; ++mState) {
+				for( mState=POP_CONNECT; mState<POP_DONE; ++mState) {
 					TStateMethod stateFunc = PopStates[mState].func;
 					UpdatePOPStatus( (mState==POP_CONNECT ? 0.0 : delta), NULL);
 					(this->*stateFunc)();
+					if (!ShouldContinue())
+						break;
 				}
-				UpdatePOPStatus( delta, NULL);
+				if (!ShouldContinue())
+					UpdatePOPStatus( 0.0, NULL, false, true);
+				else
+					UpdatePOPStatus( delta, NULL);
 			}
 			catch( BM_runtime_error &err) {
 				// a problem occurred, we tell the user:
@@ -100,7 +105,7 @@ bool BmPopper::StartJob() {
 				int e;
 				if ((e = mPopServer.Error()))
 					errstr << "\nerror: " << e << ", " << mPopServer.ErrorStr();
-				UpdatePOPStatus( 0.0, NULL, failed);
+				UpdatePOPStatus( 0.0, NULL, true);
 				BString text = Name() << "\n\n" << errstr;
 				BM_SHOWERR( BString("BmPopper: ") << text);
 				return false;
@@ -117,13 +122,15 @@ bool BmPopper::StartJob() {
 			current stage (the BString "FAILED!" will be shown)
 \*------------------------------------------------------------------------------*/
 void BmPopper::UpdatePOPStatus( const float delta, const char* detailText, 
-										  bool failed) {
+										  bool failed, bool stopped) {
 	auto_ptr<BMessage> msg( new BMessage( BM_JOB_UPDATE_STATE));
 	msg->AddString( MSG_POPPER, Name().String());
 	msg->AddString( BmJobModel::MSG_DOMAIN, "statbar");
 	msg->AddFloat( MSG_DELTA, delta);
 	if (failed)
 		msg->AddString( MSG_TRAILING, BString(PopStates[mState].text) << " FAILED!");
+	else if (stopped)
+		msg->AddString( MSG_TRAILING, BString(PopStates[mState].text) << " Stopped!");
 	else
 		msg->AddString( MSG_TRAILING, PopStates[mState].text);
 	if (detailText)
@@ -172,11 +179,21 @@ void BmPopper::Connect() {
 		-	Sends user/passwd combination and checks result
 \*------------------------------------------------------------------------------*/
 void BmPopper::Login() {
+	BString pwd;
+	if (mPopAccount->PwdStoredOnDisk())
+		pwd = mPopAccount->Password();
+	else if (mPwdAcquisitorFunc) {
+		bool ok = mPwdAcquisitorFunc( Name(), pwd);
+		if (!ok) {
+			Disconnect();
+			StopJob();
+			return;
+		}
+	}
 	BString cmd = BString("USER ") << mPopAccount->Username();
 	SendCommand( cmd);
 	if (CheckForPositiveAnswer( SINGLE_LINE)) {
-		cmd = BString("PASS ") << mPopAccount->Password();
-		SendCommand( cmd);
+		SendCommand( "PASS ", pwd);
 		CheckForPositiveAnswer( SINGLE_LINE);
 	}
 }
@@ -462,16 +479,20 @@ int32 BmPopper::ReceiveBlock( char* buffer, int32 max) {
 	SendCommand( cmd)
 		-	sends the specified POP3-command to the server.
 \*------------------------------------------------------------------------------*/
-void BmPopper::SendCommand( BString cmd) {
-	cmd << "\r\n";
-	int32 size = cmd.Length(), sentSize;
-	if (cmd.IFindFirst("PASS") != B_ERROR) {
-		BM_LOG( BM_LogPop, "-->\nPASS password_omitted_here");
-													// we do not want to log the password...
+void BmPopper::SendCommand( BString cmd, BString secret) {
+	BString command;
+	if (secret.Length()) {
+		command = cmd + secret;
+		BM_LOG( BM_LogPop, BString("-->\n") << cmd << " secret_data_omitted_here");
+													// we do not want to log any passwords...
 	} else {
+		command = cmd;
 		BM_LOG( BM_LogPop, BString("-->\n") << cmd);
 	}
-	if ((sentSize = mPopServer.Send( cmd.String(), size)) != size) {
+	if (command[command.Length()-1] != '\n')
+		command << "\r\n";
+	int32 size = command.Length(), sentSize;
+	if ((sentSize = mPopServer.Send( command.String(), size)) != size) {
 		throw BM_network_error( BString("error during send, sent only ") << sentSize << " bytes instead of " << size);
 	}
 }

@@ -48,6 +48,10 @@ class BmPopAccount : public BmListModelItem {
 	static const char* const MSG_PORT_NR = 		"bm:portnr";
 	static const char* const MSG_UID = 				"bm:uid";
 	static const char* const MSG_AUTH_METHOD = 	"bm:authmethod";
+	static const char* const MSG_MARK_DEFAULT = 	"bm:markdefault";
+	static const char* const MSG_STORE_PWD = 		"bm:storepwd";
+	static const int16 nArchiveVersion = 1;
+
 public:
 	BmPopAccount( const char* name, BmPopAccountList* model);
 	BmPopAccount( BMessage* archive, BmPopAccountList* model);
@@ -58,19 +62,21 @@ public:
 	void MarkUIDAsDownloaded( BString uid);
 	BString GetFromAddress() const;
 
-	// stuff needed for BArchivable:
-	static BArchivable* Instantiate( BMessage* archive);
-	virtual status_t Archive( BMessage* archive, bool deep = true) const;
+	// stuff needed for Archival:
+	status_t Archive( BMessage* archive, bool deep = true) const;
+	int16 ArchiveVersion() const			{ return nArchiveVersion; }
 
 	// getters:
 	const BString &AuthMethod() const	{ return mAuthMethod; }
 	bool CheckMail() const 					{ return mCheckMail; }
 	bool DeleteMailFromServer() const	{ return mDeleteMailFromServer; }
 	const BString &MailAddr() const 		{ return mMailAddr; }
+	bool MarkedAsDefault() const			{ return mMarkedAsDefault; }
 	const BString &Name() const 			{ return Key(); }
 	const BString &Password() const 		{ return mPassword; }
 	const BString &POPServer() const		{ return mPOPServer; }
 	int16 PortNr() const 					{ return mPortNr; }
+	bool PwdStoredOnDisk() const			{ return mPwdStoredOnDisk; }
 	const BString &RealName() const 		{ return mRealName; }
 	const BString &SignatureName() const	 { return mSignatureName; }
 	const BString &SMTPAccount() const	{ return mSMTPAccount; }
@@ -81,9 +87,11 @@ public:
 	void CheckMail( bool b) 				{ mCheckMail = b; }
 	void DeleteMailFromServer( bool b)	{ mDeleteMailFromServer = b; }
 	void MailAddr( const BString &s) 	{ mMailAddr = s; }
+	void MarkedAsDefault( bool b)			{ mMarkedAsDefault = b; }
 	void Password( const BString &s) 	{ mPassword = s; }
 	void POPServer( const BString &s)	{ mPOPServer = s; }
 	void PortNr( int16 i) 					{ mPortNr = i; }
+	void PwdStoredOnDisk( bool b)			{ mPwdStoredOnDisk = b; }
 	void RealName( const BString &s) 	{ mRealName = s; }
 	void SignatureName( const BString &s)	 { mSignatureName = s; }
 	void SMTPAccount( const BString &s)	{ mSMTPAccount = s; }
@@ -110,6 +118,8 @@ private:
 	bool mCheckMail;					// include this account in global mail-check?
 	bool mDeleteMailFromServer;	// delete mails upon receive?
 	BString mAuthMethod;				// authentication method
+	bool mMarkedAsDefault;			// is this the default account?
+	bool mPwdStoredOnDisk;			// store Passwords unsafely on disk?
 
 	vector<BString> mUIDs;			// list of UIDs seen in this account
 
@@ -123,6 +133,9 @@ private:
 \*------------------------------------------------------------------------------*/
 class BmPopAccountList : public BmListModel {
 	typedef BmListModel inherited;
+
+	static const int16 nArchiveVersion = 1;
+
 public:
 	// creator-func, c'tors and d'tor:
 	static BmPopAccountList* CreateInstance();
@@ -132,10 +145,12 @@ public:
 	// native methods:
 	void CheckMail();
 	void CheckMailFor( BString accName);
+	BmRef<BmPopAccount> DefaultAccount();
 	
 	// overrides of listmodel base:
 	const BString SettingsFileName();
 	void InstantiateItems( BMessage* archive);
+	int16 ArchiveVersion() const			{ return nArchiveVersion; }
 
 	static BmRef<BmPopAccountList> theInstance;
 

@@ -424,10 +424,11 @@ const BmAddressList BmMailHeader::GetAddressList( const BString fieldName) {
 \*------------------------------------------------------------------------------*/
 void BmMailHeader::SetFieldVal( const BString fieldName, const BString value) {
 	mHeaders.Set( fieldName, value);
-	mStrippedHeaders.Set( fieldName, StripField( value));
+	BString strippedVal = StripField( value);
+	mStrippedHeaders.Set( fieldName, strippedVal);
 	if (IsAddressField( fieldName)) {
 		// field contains an address-spec, we parse the address as well:
-		mAddrMap[fieldName] = BmAddressList( mStrippedHeaders[fieldName]);
+		mAddrMap[fieldName] = BmAddressList( strippedVal);
 	}
 }
 
@@ -437,10 +438,11 @@ void BmMailHeader::SetFieldVal( const BString fieldName, const BString value) {
 \*------------------------------------------------------------------------------*/
 void BmMailHeader::AddFieldVal( const BString fieldName, const BString value) {
 	mHeaders.Add( fieldName, value);
-	mStrippedHeaders.Add( fieldName, StripField( value));
+	BString strippedVal = StripField( value);
+	mStrippedHeaders.Set( fieldName, strippedVal);
 	if (IsAddressField( fieldName)) {
 		// field contains an address-spec, we parse the address as well:
-		mAddrMap[fieldName] = BmAddressList( mStrippedHeaders[fieldName]);
+		mAddrMap[fieldName] = BmAddressList( strippedVal);
 	}
 }
 

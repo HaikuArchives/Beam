@@ -81,7 +81,7 @@ void BmMailViewWin::CreateGUI() {
 																		"Reply to sender and all recipients"),
 					mForwardButton = new BmToolbarButton( "Forward", 
 																	  TheResources->IconByName("Button_Forward"), 
-																	  new BMessage(BMM_FORWARD), this, 
+																	  new BMessage(ThePrefs->GetInt( "DefaultForwardType", BMM_FORWARD_INLINE)), this, 
 																	  "Forward mail to somewhere else"),
 					mRedirectButton = new BmToolbarButton( "Redirect", 
 																	 TheResources->IconByName("Button_Redirect"), 
@@ -123,28 +123,19 @@ MMenuBar* BmMailViewWin::CreateMenu() {
 	BMenu* menu = NULL;
 	// File
 	menu = new BMenu( "File");
-	menu->AddItem( new BMenuItem( "Open...", new BMessage( BMM_OPEN), 'O'));
-	menu->AddItem( new BMenuItem( "Save...", new BMessage( BMM_SAVE), 'S'));
-	menu->AddSeparatorItem();
 	menu->AddItem( new BMenuItem( "Page Setup...", new BMessage( BMM_PAGE_SETUP)));
-	menu->AddItem( new BMenuItem( "Print Message(s)...", new BMessage( BMM_PRINT)));
-	menu->AddSeparatorItem();
-	menu->AddItem( new BMenuItem( "Preferences...", new BMessage( BMM_PREFERENCES)));
+	menu->AddItem( new BMenuItem( "Print Message...", new BMessage( BMM_PRINT)));
 	menu->AddSeparatorItem();
 	menu->AddItem( new BMenuItem( "Quit Beam", new BMessage( B_QUIT_REQUESTED), 'Q'));
 	menubar->AddItem( menu);
 
 	// Edit
 	menu = new BMenu( "Edit");
-	menu->AddItem( new BMenuItem( "Undo", new BMessage( B_UNDO), 'Z'));
-	menu->AddSeparatorItem();
 	menu->AddItem( new BMenuItem( "Cut", new BMessage( B_CUT), 'X'));
 	menu->AddItem( new BMenuItem( "Copy", new BMessage( B_COPY), 'C'));
-	menu->AddItem( new BMenuItem( "Paste", new BMessage( B_PASTE), 'V'));
 	menu->AddItem( new BMenuItem( "Select All", new BMessage( B_SELECT_ALL), 'A'));
 	menu->AddSeparatorItem();
 	menu->AddItem( new BMenuItem( "Find...", new BMessage( BMM_FIND), 'F'));
-	menu->AddItem( new BMenuItem( "Find Messages...", new BMessage( BMM_FIND_MESSAGES), 'F', B_SHIFT_KEY));
 	menu->AddItem( new BMenuItem( "Find Next", new BMessage( BMM_FIND_NEXT), 'G'));
 	menubar->AddItem( menu);
 
@@ -154,9 +145,15 @@ MMenuBar* BmMailViewWin::CreateMenu() {
 	menu->AddSeparatorItem();
 	menu->AddItem( new BMenuItem( "Reply", new BMessage( BMM_REPLY), 'R'));
 	menu->AddItem( new BMenuItem( "Reply To All", new BMessage( BMM_REPLY_ALL), 'R', B_SHIFT_KEY));
-	menu->AddItem( new BMenuItem( "Forward", new BMessage( BMM_FORWARD), 'J'));
-	menu->AddItem( new BMenuItem( "Forward inline", new BMessage( BMM_FORWARD_INLINE)));
-	menu->AddItem( new BMenuItem( "Forward With Attachments", new BMessage( BMM_FORWARD_ATTACHMENTS), 'J', B_SHIFT_KEY));
+	if (ThePrefs->GetInt( "DefaultForwardType", BMM_FORWARD_INLINE) == BMM_FORWARD_INLINE) {
+		menu->AddItem( new BMenuItem( "Forward As Attachment", new BMessage( BMM_FORWARD_ATTACHED), 'J', B_SHIFT_KEY));
+		menu->AddItem( new BMenuItem( "Forward Inline", new BMessage( BMM_FORWARD_INLINE), 'J'));
+		menu->AddItem( new BMenuItem( "Forward Inline (With Attachments)", new BMessage( BMM_FORWARD_INLINE_ATTACH)));
+	} else {
+		menu->AddItem( new BMenuItem( "Forward As Attachment", new BMessage( BMM_FORWARD_ATTACHED), 'J'));
+		menu->AddItem( new BMenuItem( "Forward Inline", new BMessage( BMM_FORWARD_INLINE), 'J', B_SHIFT_KEY));
+		menu->AddItem( new BMenuItem( "Forward Inline (With Attachments)", new BMessage( BMM_FORWARD_INLINE_ATTACH)));
+	}
 	menu->AddItem( new BMenuItem( "Redirect", new BMessage( BMM_REDIRECT), 'B'));
 	menu->AddSeparatorItem();
 	menu->AddItem( new BMenuItem( "Apply Filter", new BMessage( BMM_FILTER)));

@@ -164,7 +164,7 @@ regexx::Regexx::replace(const BString& _repstr, int _flags)
 	    	offset -= 2;
       }
     }
-    if (destLen+tmprep.Length() >= destSize) {
+    while (destLen+tmprep.Length() >= destSize) {
       m_replaced.UnlockBuffer( destLen);
       destSize *= 2;
       destBuf = m_replaced.LockBuffer( destSize);

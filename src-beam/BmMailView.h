@@ -9,6 +9,7 @@
 #include <layout.h>
 
 #include "BetterScrollView.h"
+#include "Colors.h"
 #include "WrappingTextView.h"
 
 #include "BmController.h"
@@ -22,6 +23,12 @@ class BmMailHeaderView;
 class BmMailRefView;
 class BmRulerView;
 
+/*------------------------------------------------------------------------------*\
+	types of messages sent via the observe/notify system:
+\*------------------------------------------------------------------------------*/
+#define BM_NTFY_MAIL_VIEW	'bmbc'
+						// sent from BmMailView to observers whenever selection changes
+
 #define BM_MAILVIEW_SHOWRAW						'bmMa'
 #define BM_MAILVIEW_SHOWCOOKED					'bmMb'
 #define BM_MAILVIEW_SHOWINLINES_SEPARATELY	'bmMc'
@@ -34,14 +41,25 @@ class BmRulerView;
 class BmMailView : public WrappingTextView, public BmJobController {
 	typedef WrappingTextView inherited;
 	typedef BmJobController inheritedController;
-	typedef map<int32,rgb_color> BmTextRunMap;
-
+	struct BmTextRunInfo {
+		BmTextRunInfo( rgb_color c=Black, bool url=false, BFont f=*be_fixed_font) { 
+			color = c; isURL = url; font = f;
+		}
+		rgb_color color;
+		bool isURL;
+		BFont font;
+	};
+	typedef map<int32,BmTextRunInfo> BmTextRunMap;
+	typedef BmTextRunMap::const_iterator BmTextRunIter;
+	
 	// archival-fieldnames:
 	static const char* const MSG_RAW = 			"bm:raw";
 	static const char* const MSG_FONTNAME = 	"bm:fnt";
 	static const char* const MSG_FONTSIZE =	"bm:fntsz";
 
 public:
+	static const char* const MSG_HAS_MAIL = 		"bm:hmail";
+
 	// creator-func, c'tors and d'tor:
 	static BmMailView* CreateInstance(  minimax minmax, BRect frame, bool outbound);
 	BmMailView( minimax minmax, BRect frame, bool outbound);
@@ -55,6 +73,7 @@ public:
 	status_t Unarchive( BMessage* archive, bool deep=true);
 	bool WriteStateInfo();
 	void GetWrappedText( BString& out);
+	void LaunchURL( BString url);
 
 	// overrides of BTextView base:
 	bool AcceptsDrop( const BMessage* msg);
@@ -64,6 +83,7 @@ public:
 	void MakeFocus(bool focused);
 	void MessageReceived( BMessage* msg);
 	void MouseDown( BPoint point);
+	void MouseUp( BPoint point);
 
 	// overrides of BmController base:
 	BHandler* GetControllerHandler()		{ return this; }
@@ -84,6 +104,7 @@ public:
 
 private:
 	void ShowMenu( BPoint point);
+	BmTextRunIter TextRunInfoAt( int32 pos) const;
 
 	// will not be archived:
 	bool mOutbound;
@@ -94,6 +115,7 @@ private:
 	BmRulerView* mRulerView;
 	BmMailRefView* mPartnerMailRefView;
 	BmTextRunMap mTextRunMap;
+	BmTextRunIter mClickedTextRun;
 	
 	// will be archived:
 	BString mFontName;

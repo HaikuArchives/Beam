@@ -25,8 +25,9 @@
 BmPopAccount::BmPopAccount( const char* name, BmPopAccountList* model) 
 	:	inherited( name, model, (BmListModelItem*)NULL)
 	,	mCheckMail( false)
-	,	mDeleteMailFromServer( false)	
+	,	mDeleteMailFromServer( false)
 	,	mPortNr( 110)
+	,	mPwdStoredOnDisk( false)
 {
 }
 
@@ -37,6 +38,9 @@ BmPopAccount::BmPopAccount( const char* name, BmPopAccountList* model)
 BmPopAccount::BmPopAccount( BMessage* archive, BmPopAccountList* model) 
 	:	inherited( FindMsgString( archive, MSG_NAME), model, (BmListModelItem*)NULL)
 {
+	int16 version;
+	if (archive->FindInt16( MSG_VERSION, &version) != B_OK)
+		version = 0;
 	mUsername = FindMsgString( archive, MSG_USERNAME);
 	mPassword = FindMsgString( archive, MSG_PASSWORD);
 	mPOPServer = FindMsgString( archive, MSG_POP_SERVER);
@@ -48,6 +52,8 @@ BmPopAccount::BmPopAccount( BMessage* archive, BmPopAccountList* model)
 	mDeleteMailFromServer = FindMsgBool( archive, MSG_DELETE_MAIL);
 	mPortNr = FindMsgInt16( archive, MSG_PORT_NR);
 	mAuthMethod = FindMsgString( archive, MSG_AUTH_METHOD);
+	mMarkedAsDefault = FindMsgBool( archive, MSG_MARK_DEFAULT);
+	mPwdStoredOnDisk = FindMsgBool( archive, MSG_STORE_PWD);
 	const char* uid;
 	for( int32 i=0; archive->FindString( MSG_UID, i, &uid) == B_OK; ++i) {
 		mUIDs.push_back( uid);
@@ -72,7 +78,9 @@ status_t BmPopAccount::Archive( BMessage* archive, bool deep) const {
 		||	archive->AddBool( MSG_CHECK_MAIL, mCheckMail)
 		||	archive->AddBool( MSG_DELETE_MAIL, mDeleteMailFromServer)
 		||	archive->AddInt16( MSG_PORT_NR, mPortNr)
-		||	archive->AddString( MSG_AUTH_METHOD, mAuthMethod.String()));
+		||	archive->AddString( MSG_AUTH_METHOD, mAuthMethod.String())
+		||	archive->AddBool( MSG_MARK_DEFAULT, mMarkedAsDefault)
+		||	archive->AddBool( MSG_STORE_PWD, mPwdStoredOnDisk));
 	int32 count = mUIDs.size();
 	for( int i=0; ret==B_OK && i<count; ++i) {
 		ret = archive->AddString( MSG_UID, mUIDs[i].String());
@@ -196,6 +204,24 @@ void BmPopAccountList::InstantiateItems( BMessage* archive) {
 	}
 	BM_LOG2( BM_LogMailTracking, BString("End of InstantiateMailRefs() for PopAccountList"));
 	mInitCheck = B_OK;
+}
+
+/*------------------------------------------------------------------------------*\
+	DefaultAccount()
+		-	
+\*------------------------------------------------------------------------------*/
+BmRef<BmPopAccount> BmPopAccountList::DefaultAccount() {
+	BmModelItemMap::const_iterator iter;
+	for( iter = begin(); iter != end(); ++iter) {
+		BmPopAccount* acc = dynamic_cast< BmPopAccount*>( iter->second.Get());
+		if (acc->MarkedAsDefault()) {
+			return acc;
+		}
+	}
+	if (size() == 1)
+		return dynamic_cast< BmPopAccount*>( begin()->second.Get());
+	else
+		return NULL;
 }
 
 /*------------------------------------------------------------------------------*\

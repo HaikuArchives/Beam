@@ -164,7 +164,12 @@ typedef BmRef< BmListModelItem> BmListModelItemRef;
 		-	base class for the items that will be part of a BmListModel
 \*------------------------------------------------------------------------------*/
 class BmListModelItem : public BmRefObj, public BArchivable {
+	typedef BmRefObj inherited;
+	typedef BArchivable inheritedArchivable;
 	friend class BmListModel;
+
+protected:
+	static const char* const MSG_VERSION = 		"bm:version";
 
 public:
 	// c'tors & d'tor:
@@ -174,6 +179,7 @@ public:
 
 	// native methods:
 	BmListModelItem* FindItemByKey( const BString& key);
+	virtual int16 ArchiveVersion() const = 0;
 
 	// getters:
 	BmModelItemMap::const_iterator begin() const	{ return mSubItemMap.begin(); }
@@ -191,6 +197,9 @@ public:
 
 	// overrides of BmRefObj
 	const BString& RefName() const		{ return mKey; }
+
+	// overrides of BArchivable
+	status_t Archive( BMessage* archive, bool deep = true) const;
 
 	//	message component definitions for status-msgs:
 	static const char* const MSG_NUMCHILDREN  = 		"bm:count";
@@ -226,9 +235,11 @@ private:
 \*------------------------------------------------------------------------------*/
 class BmListModel : public BmJobModel, public BArchivable {
 	typedef BmJobModel inherited;
-
 	friend BmListModelItem;
 	
+protected:
+	static const char* const MSG_VERSION = 		"bm:version";
+
 public:
 	// c'tors & d'tor:
 	BmListModel( const BString& name);
@@ -245,6 +256,7 @@ public:
 	virtual void InitializeItems()		{	mInitCheck = B_OK; }
 	virtual void InstantiateItems( BMessage* archive)		{ mInitCheck = B_OK; }
 	virtual void Cleanup();
+	virtual int16 ArchiveVersion() const = 0;
 
 	// overrides of job-model base:
 	bool StartJob();

@@ -46,6 +46,8 @@ class BmSmtpAccount : public BmListModelItem {
 	static const char* const MSG_AUTH_METHOD = 	"bm:authmethod";
 	static const char* const MSG_PORT_NR = 		"bm:portnr";
 	static const char* const MSG_ACC_FOR_SAP = 	"bm:accForSmtpAfterPop";
+	static const char* const MSG_STORE_PWD = 		"bm:storepwd";
+	static const int16 nArchiveVersion = 1;
 
 public:
 	BmSmtpAccount( const char* name, BmSmtpAccountList* model);
@@ -56,14 +58,15 @@ public:
 	bool NeedsAuthViaPopServer();
 	void SendQueuedMail();
 
-	// stuff needed for BArchivable:
-	static BArchivable* Instantiate( BMessage* archive);
-	virtual status_t Archive( BMessage* archive, bool deep = true) const;
+	// stuff needed for Archival:
+	status_t Archive( BMessage* archive, bool deep = true) const;
+	int16 ArchiveVersion() const			{ return nArchiveVersion; }
 
 	// getters:
 	const BString &Name() const 			{ return Key(); }
 	const BString &Username() const 		{ return mUsername; }
 	const BString &Password() const 		{ return mPassword; }
+	bool PwdStoredOnDisk() const			{ return mPwdStoredOnDisk; }
 	const BString &SMTPServer() const	{ return mSMTPServer; }
 	const BString &DomainToAnnounce() const 	{ return mDomainToAnnounce; }
 	const BString &AuthMethod() const 	{ return mAuthMethod; }
@@ -73,6 +76,7 @@ public:
 	// setters:
 	void Username( const BString &s) 	{ mUsername = s; }
 	void Password( const BString &s) 	{ mPassword = s; }
+	void PwdStoredOnDisk( bool b)			{ mPwdStoredOnDisk = b; }
 	void SMTPServer( const BString &s)	{ mSMTPServer = s; }
 	void DomainToAnnounce( const BString &s) 	{ mDomainToAnnounce = s; }
 	void AuthMethod( const BString &s) 	{ mAuthMethod = s; }
@@ -98,6 +102,7 @@ private:
 	BString mAuthMethod;				// authentication method to use
 	int16 mPortNr;						// usually 25
 	BString mAccForSmtpAfterPop;	// POP-account to use for SmtpAfterPop
+	bool mPwdStoredOnDisk;			// store Passwords unsafely on disk?
 
 };
 
@@ -109,6 +114,9 @@ private:
 \*------------------------------------------------------------------------------*/
 class BmSmtpAccountList : public BmListModel {
 	typedef BmListModel inherited;
+
+	static const int16 nArchiveVersion = 1;
+
 public:
 	// creator-func, c'tors and d'tor:
 	static BmSmtpAccountList* CreateInstance();
@@ -120,6 +128,7 @@ public:
 	// overrides of listmodel base:
 	const BString SettingsFileName();
 	void InstantiateItems( BMessage* archive);
+	int16 ArchiveVersion() const			{ return nArchiveVersion; }
 
 	static BmRef<BmSmtpAccountList> theInstance;
 

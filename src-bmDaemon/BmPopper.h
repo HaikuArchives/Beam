@@ -18,6 +18,8 @@
 
 class BmPopAccount;
 
+#define BM_POPPER_NEEDS_PWD						'bmPp'
+
 /*------------------------------------------------------------------------------*\
 	BmPopper
 		-	implements the POP-client
@@ -35,12 +37,19 @@ public:
 	static const char* const MSG_TRAILING = 	"bm:trailing";
 	static const char* const MSG_LEADING = 	"bm:leading";
 
+	// message component definitions for additional info:
+	static const char* const MSG_PWD = 	"bm:pwd";
+
 	// job-specifier for authentication only (needed for SMTP-after-POP):
 	static const int32 BM_AUTH_ONLY_JOB = 1;
 
 	BmPopper( const BString& name, BmPopAccount* account);
 	virtual ~BmPopper();
 
+	typedef bool BmPwdAcquisitorFunc( const BString, BString&);
+	void SetPwdAcquisitorFunc( BmPwdAcquisitorFunc* func)
+													{ mPwdAcquisitorFunc = func; }
+	
 	static int32 NextID() 					{ return ++mId; }
 
 	BString Name() const						{ return ModelName(); }
@@ -55,13 +64,13 @@ private:
 	void Retrieve();
 	void Disconnect();
 	void Quit( bool WaitForAnswer=false);
-	void UpdatePOPStatus( const float, const char*, bool failed=false);
+	void UpdatePOPStatus( const float, const char*, bool failed=false, bool stopped=false);
 	void UpdateMailStatus( const float, const char*, int32);
 	void StoreAnswer( char* );
 	bool CheckForPositiveAnswer( bool SingleLineMode, int32 mailNr=0);
 	bool GetAnswer( bool SingleLineMode, int32 mailNr = 0);
 	int32 ReceiveBlock( char* buffer, int32 max);
-	void SendCommand( BString cmd);
+	void SendCommand( BString cmd, BString secret="");
 
 	static int32 mId;							// unique message ID, this is used if a 
 													// received message has no UID.
@@ -96,6 +105,9 @@ private:
 		POP_DONE,
 		POP_FINAL
 	};
+
+	// function that asks user for a password:
+	BmPwdAcquisitorFunc* mPwdAcquisitorFunc;
 
 	// stuff needed for internal POP3-state-loop:
 	typedef void (BmPopper::*TStateMethod)();

@@ -29,6 +29,8 @@ typedef map<BString, BmMailFolder*> BmFolderMap;
 class BmMailFolder : public BmListModelItem {
 	typedef BmListModelItem inherited;
 
+	static const int16 nArchiveVersion = 1;
+
 public:
 	BmMailFolder( BmMailFolderList* model, entry_ref &eref, ino_t node,
 					  BmMailFolder* parent, time_t &modified);
@@ -52,8 +54,8 @@ public:
 	void MoveToTrash();
 
 	// overrides of archivable base:
-	static BArchivable* Instantiate( BMessage* archive);
 	status_t Archive( BMessage* archive, bool deep = true) const;
+	int16 ArchiveVersion() const			{ return nArchiveVersion; }
 
 	// getters:
 	const entry_ref& EntryRef() const 	{ return mEntryRef; }

@@ -99,14 +99,17 @@ public:
 	bool Store();
 	//
 	const BString& GetFieldVal( const BString fieldName);
+	BString GetStrippedFieldVal( const BString fieldName);
 	bool HasAttachments() const;
 	void MarkAs( const char* status);
 	void RemoveField( const BString fieldName);
 	void SetFieldVal( const BString fieldName, const BString value);
 	const BString Status() const;
 	//
-	BmRef<BmMail> CreateForward( bool withAttachments);
-	BmRef<BmMail> CreateReply( bool replyToAll);
+	BmRef<BmMail> CreateAttachedForward();
+	BmRef<BmMail> CreateInlineForward( bool withAttachments, 
+										  		  const BString selectedText="");
+	BmRef<BmMail> CreateReply( bool replyToAll, const BString selectedText="");
 	BmRef<BmMail> CreateResend();
 	
 	// overrides of jobmodel base:
@@ -129,6 +132,10 @@ public:
 protected:
 	BString CreateBasicFilename();
 	void StoreAttributes( BFile& mailFile);
+	BString CreateReplySubjectFor( const BString subject);
+	BString CreateForwardSubjectFor( const BString subject);
+	BString CreateReplyIntro();
+	BString CreateForwardIntro();
 
 	BmRef<BmMailRef> mMailRef;
 	status_t mInitCheck;

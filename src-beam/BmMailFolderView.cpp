@@ -17,6 +17,7 @@
 #include "BmMailFolderList.h"
 #include "BmMailFolderView.h"
 #include "BmMailRefView.h"
+#include "BmMsgTypes.h"
 #include "BmPrefs.h"
 #include "BmResources.h"
 #include "BmUtil.h"
@@ -188,7 +189,7 @@ void BmMailFolderView::MessageReceived( BMessage* msg) {
 		BmRef<BmMailFolder> folder;
 		int32 buttonPressed;
 		switch( msg->what) {
-			case BM_FOLDERVIEW_NEW: {
+			case BMM_NEW_MAILFOLDER: {
 				folder = CurrentFolder();
 				if (!folder)
 					return;
@@ -198,7 +199,7 @@ void BmMailFolderView::MessageReceived( BMessage* msg) {
 																		  	  "Enter name of new folder:",
 												 							  "", "Cancel", "OK");
 					alert->SetShortcut( 0, B_ESCAPE);
-					alert->Go( new BInvoker( new BMessage(BM_FOLDERVIEW_NEW), BMessenger( this)));
+					alert->Go( new BInvoker( new BMessage(BMM_NEW_MAILFOLDER), BMessenger( this)));
 				} else {
 					// second step, do it if user said ok:
 					if (buttonPressed == 1) {
@@ -209,7 +210,7 @@ void BmMailFolderView::MessageReceived( BMessage* msg) {
 				}
 				break;
 			}
-			case BM_FOLDERVIEW_RENAME: {
+			case BMM_RENAME_MAILFOLDER: {
 				folder = CurrentFolder();
 				if (!folder)
 					return;
@@ -219,7 +220,7 @@ void BmMailFolderView::MessageReceived( BMessage* msg) {
 																			  "Enter new name for folder:",
 												 							  folder->Name().String(), "Cancel", "OK");
 					alert->SetShortcut( 0, B_ESCAPE);
-					alert->Go( new BInvoker( new BMessage(BM_FOLDERVIEW_RENAME), BMessenger( this)));
+					alert->Go( new BInvoker( new BMessage(BMM_RENAME_MAILFOLDER), BMessenger( this)));
 				} else {
 					// second step, do it if user said ok:
 					if (buttonPressed == 1) {
@@ -230,7 +231,7 @@ void BmMailFolderView::MessageReceived( BMessage* msg) {
 				}
 				break;
 			}
-			case BM_FOLDERVIEW_DELETE: {
+			case BMM_DELETE_MAILFOLDER: {
 				folder = CurrentFolder();
 				if (!folder)
 					return;
@@ -241,7 +242,7 @@ void BmMailFolderView::MessageReceived( BMessage* msg) {
 													 	 "Move to Trash", "Cancel", NULL, B_WIDTH_AS_USUAL,
 													 	 B_WARNING_ALERT);
 					alert->SetShortcut( 1, B_ESCAPE);
-					alert->Go( new BInvoker( new BMessage(BM_FOLDERVIEW_DELETE), BMessenger( this)));
+					alert->Go( new BInvoker( new BMessage(BMM_DELETE_MAILFOLDER), BMessenger( this)));
 				} else {
 					// second step, do it if user said ok:
 					if (buttonPressed == 0)
@@ -249,7 +250,7 @@ void BmMailFolderView::MessageReceived( BMessage* msg) {
 				}
 				break;
 			}
-			case BM_FOLDERVIEW_RECACHE: {
+			case BMM_RECACHE_MAILFOLDER: {
 				folder = CurrentFolder();
 				if (!folder)
 					return;
@@ -287,6 +288,10 @@ void BmMailFolderView::SelectionChanged( void) {
 		TheMailRefView->ShowFolder( folder.Get());
 	else
 		TheMailRefView->ShowFolder( NULL);
+
+	BMessage msg(BM_NTFY_MAILFOLDER_SELECTION);
+	msg.AddInt32( MSG_FOLDERS_SELECTED, folder ? 1 : 0);
+	SendNotices( BM_NTFY_MAILFOLDER_SELECTION, &msg);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -318,24 +323,24 @@ void BmMailFolderView::ShowMenu( BPoint point) {
 	BMenuItem* item;
 	if (folder) {
 		item = new BMenuItem( "New Folder...", 
-									 new BMessage( BM_FOLDERVIEW_NEW));
+									 new BMessage( BMM_NEW_MAILFOLDER));
 		item->SetTarget( this);
 		theMenu->AddItem( item);
 	
 		item = new BMenuItem( "Rename Folder...", 
-									 new BMessage( BM_FOLDERVIEW_RENAME));
+									 new BMessage( BMM_RENAME_MAILFOLDER));
 		item->SetTarget( this);
 		theMenu->AddItem( item);
 	
 		item = new BMenuItem( "Delete Folder...", 
-									 new BMessage( BM_FOLDERVIEW_DELETE));
+									 new BMessage( BMM_DELETE_MAILFOLDER));
 		item->SetTarget( this);
 		theMenu->AddItem( item);
 	
 		theMenu->AddSeparatorItem();
 	
 		item = new BMenuItem( "Recreate Cache", 
-									 new BMessage( BM_FOLDERVIEW_RECACHE));
+									 new BMessage( BMM_RECACHE_MAILFOLDER));
 		item->SetTarget( this);
 		theMenu->AddItem( item);
 	}

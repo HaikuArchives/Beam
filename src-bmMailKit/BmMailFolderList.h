@@ -63,6 +63,7 @@ class BmMailFolderList : public BmListModel {
 
 	// archival-fieldnames:
 	static const char* const MSG_MAILBOXMTIME = 	"bm:mboxmtime";
+	static const int16 nArchiveVersion = 1;
 
 public:
 	// creator-func, c'tors and d'tor:
@@ -93,6 +94,9 @@ private:
 	void InstantiateItems( BMessage* archive);
 	void doInstantiateMailFolders( BmMailFolder* folder, BMessage* archive, int level);
 	void QueryForNewMails();
+
+	// overrides of listmodel base:
+	int16 ArchiveVersion() const			{ return nArchiveVersion; }
 
 	// the following members will be archived as part of BmFolderList:
 	BmRef<BmMailFolder> mTopFolder;

@@ -41,6 +41,7 @@ class BmMailRef : public BmListModelItem {
 	static const char* const MSG_SUBJECT = 	"bm:su";
 	static const char* const MSG_TO = 			"bm:to";
 	static const char* const MSG_WHEN = 		"bm:wh";
+	static const int16 nArchiveVersion = 1;
 
 public:
 	// creator-func, c'tors and d'tor:
@@ -55,8 +56,8 @@ public:
 	BmRef<BmMailRef> DetachedDuplicate() const;
 
 	// overrides of archivable base:
-	static BArchivable* Instantiate( BMessage* archive);
-	virtual status_t Archive( BMessage* archive, bool deep = true) const;
+	status_t Archive( BMessage* archive, bool deep = true) const;
+	int16 ArchiveVersion() const			{ return nArchiveVersion; }
 
 	// getters:
 	const entry_ref& EntryRef() const 		{ return mEntryRef; }

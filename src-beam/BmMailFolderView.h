@@ -11,12 +11,10 @@
 #include "BmListController.h"
 
 /*------------------------------------------------------------------------------*\
-	types of messages handled by a BmMailFolderView:
+	types of messages sent via the observe/notify system:
 \*------------------------------------------------------------------------------*/
-#define BM_FOLDERVIEW_NEW				'bmga'
-#define BM_FOLDERVIEW_RENAME			'bmgb'
-#define BM_FOLDERVIEW_RECACHE			'bmgc'
-#define BM_FOLDERVIEW_DELETE			'bmgd'
+#define BM_NTFY_MAILFOLDER_SELECTION	'bmbb'
+						// sent from BmMailFolderView to observers whenever selection changes
 
 /*------------------------------------------------------------------------------*\
 	BmMailFolderItem
@@ -52,6 +50,8 @@ class BmMailFolderView : public BmListViewController
 	typedef BmListViewController inherited;
 	
 public:
+	static const char* const MSG_FOLDERS_SELECTED = 		"bm:fsel";
+
 	// creator-func, c'tors and d'tor:
 	static BmMailFolderView* CreateInstance(  minimax minmax, int32 width, int32 height);
 	BmMailFolderView(  minimax minmax, int32 width, int32 height);

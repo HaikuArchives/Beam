@@ -25,6 +25,7 @@
 BmSmtpAccount::BmSmtpAccount( const char* name, BmSmtpAccountList* model) 
 	:	inherited( name, model, (BmListModelItem*)NULL)
 	,	mPortNr( 25)
+	,	mPwdStoredOnDisk( false)
 {
 }
 
@@ -42,6 +43,7 @@ BmSmtpAccount::BmSmtpAccount( BMessage* archive, BmSmtpAccountList* model)
 	mAuthMethod = FindMsgString( archive, MSG_AUTH_METHOD);
 	mPortNr = FindMsgInt16( archive, MSG_PORT_NR);
 	mAccForSmtpAfterPop = FindMsgString( archive, MSG_ACC_FOR_SAP);
+	mPwdStoredOnDisk = FindMsgBool( archive, MSG_STORE_PWD);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -58,7 +60,8 @@ status_t BmSmtpAccount::Archive( BMessage* archive, bool deep) const {
 		||	archive->AddString( MSG_DOMAIN, mDomainToAnnounce.String())
 		||	archive->AddString( MSG_AUTH_METHOD, mAuthMethod.String())
 		||	archive->AddInt16( MSG_PORT_NR, mPortNr)
-		||	archive->AddString( MSG_ACC_FOR_SAP, mAccForSmtpAfterPop.String()));
+		||	archive->AddString( MSG_ACC_FOR_SAP, mAccForSmtpAfterPop.String())
+		||	archive->AddBool( MSG_STORE_PWD, mPwdStoredOnDisk));
 	return ret;
 }
 

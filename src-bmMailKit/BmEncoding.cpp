@@ -16,6 +16,9 @@ using namespace regexx;
 #include "BmPrefs.h"
 #include "BmUtil.h"
 
+#define BM_MAX_LINE_LEN_QP 76
+							// as stated in [K. Johnson, p. 149f]
+
 #define HEXDIGIT2CHAR(d) (((d)>='0'&&(d)<='9') ? (d)-'0' : ((d)>='A'&&(d)<='F') ? (d)-'A'+10 : ((d)>='a'&&(d)<='f') ? (d)-'a'+10 : 0)
 
 #define CHAR2HIGHNIBBLE(c) (((c) > 0x9F ? 'A'-10 : '0')+((c)>>4))
@@ -165,19 +168,21 @@ void BmEncoding::Encode( BString encodingStyle, const BString& src, BString& des
 	int32 srcLen = src.Length();
 	encodingStyle.ToUpper();
 	dest.Truncate(0,false);
+	const char* safeChars = ThePrefs->GetBool( "MakeQPSafeForEBCDIC", false)
+									? "%&/()?+*,.;:<>-_"
+									: "%&/()?+*,.;:<>-_!\"#$@[]\\^'{|}~";
 	if (encodingStyle == "Q" || encodingStyle == "QUOTED-PRINTABLE") {
 		// quoted printable:
 		int32 destLen = srcLen*3;
 		char* buf = dest.LockBuffer( destLen+1);
 		int32 destCount = 0;
 		int32 lineLength = 0;
-		int32 maxLineLen = ThePrefs->GetInt( "MaxLineLenQP", 76);
 		for( const char* p=src.String(); *p; ++p) {
 			BString addChars;
 			unsigned char c = *p;
-			if (isalnum(c) || ispunct(c)) {
+			if (isalnum(c) || strchr( safeChars, c)) {
 				addChars += c;
-			} else if (c == ' ' || c == '\t') {
+			} else if (c == ' ') {
 				// in encoded-words, we always replace SPACE by underline:
 				if (c == ' ' && isEncodedWord)
 					addChars += '_';
@@ -215,7 +220,7 @@ void BmEncoding::Encode( BString encodingStyle, const BString& src, BString& des
 				addChars << '=' << (char)CHAR2HIGHNIBBLE(c) << (char)CHAR2LOWNIBBLE(c);
 			}
 			int32 addLen = addChars.Length();
-			if (!isEncodedWord && lineLength + addLen > maxLineLen) {
+			if (!isEncodedWord && lineLength + addLen >= BM_MAX_LINE_LEN_QP) {
 				// insert soft linebreak:
 				buf[destCount++] = '=';
 				buf[destCount++] = '\r';

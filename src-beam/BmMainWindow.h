@@ -83,7 +83,9 @@ private:
 	CLVContainerView* CreateMailRefView( minimax minmax, int32 width, int32 height);
 	BmMailViewContainer* CreateMailView( minimax minmax, BRect frame);
 	MMenuBar* CreateMenu();
+	void MailFolderSelectionChanged( int32 numSelected);
 	void MailRefSelectionChanged( int32 numSelected);
+	void MailViewChanged( bool hasMail);
 
 	BmMailFolderView* mMailFolderView;
 	BmMailRefView* mMailRefView;

@@ -189,6 +189,7 @@ BmMailRefView::BmMailRefView( minimax minmax, int32 width, int32 height)
 					  false, true, true, true)
 	,	mCurrFolder( NULL)
 	,	mMouseIsDown( false)
+	,	mCurrMailRef( NULL)
 {
 	int32 flags = 0;
 	SetViewColor( B_TRANSPARENT_COLOR);
@@ -515,13 +516,15 @@ void BmMailRefView::SelectionChanged( void) {
 		BmMailRefItem* refItem;
 		refItem = dynamic_cast<BmMailRefItem*>(ItemAt( selection));
 		if (refItem) {
-			BmMailRef* ref = dynamic_cast<BmMailRef*>(refItem->ModelItem());
-			if (ref && mPartnerMailView)
-				mPartnerMailView->ShowMail( ref);
+			mCurrMailRef = dynamic_cast<BmMailRef*>(refItem->ModelItem());
+			if (mCurrMailRef && mPartnerMailView)
+				mPartnerMailView->ShowMail( mCurrMailRef.Get());
 		}
-	} else
+	} else {
+		mCurrMailRef = NULL;
 		if (mPartnerMailView)
-			mPartnerMailView->ShowMail( static_cast< BmMailRef*>( NULL));
+			mPartnerMailView->ShowMail( mCurrMailRef.Get());
+	}
 	
 	BMessage msg(BM_NTFY_MAILREF_SELECTION);
 	msg.AddInt32( MSG_MAILS_SELECTED, numSelected);

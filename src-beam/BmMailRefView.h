@@ -88,12 +88,16 @@ public:
 	BmListViewItem* CreateListViewItem( BmListModelItem* item, BMessage* archive=NULL);
 	const char* ItemNameForCaption()		{ return "message"; }
 
+	// getters:
+	BmRef<BmMailRef> CurrMailRef()		{ return mCurrMailRef; }
+
 	static BmMailRefView* theInstance;
 	
 private:
 	BmRef<BmMailFolder> mCurrFolder;
 	BmMailView* mPartnerMailView;
 	bool mMouseIsDown;
+	BmRef<BmMailRef> mCurrMailRef;
 
 	// Hide copy-constructor and assignment:
 	BmMailRefView( const BmMailRefView&);
