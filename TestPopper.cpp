@@ -7,10 +7,13 @@
 #include <Application.h>
 #include <MButton.h>
 #include <MWindow.h>
+
 #include "BmConnectionWin.h"
 
-static int32 count=0;
 static char buf[30];
+
+// for testing:
+#define BM_MSG_NOCH_EINER 'bmt1'
 
 class GenericWin : public MWindow
 {
@@ -33,12 +36,13 @@ public:
 
 int main()
 {
+	BmPrefs::InitPrefs();
 	new GenericApp;
 	try {
 		be_app->Run();
 	} 
 	catch( exception &e) {
-		fprintf( stderr, "Oops: %s\n", e.what());
+		BmLOG( BString("Oops: %s") << e.what());
 	}
 	delete be_app;
 }
@@ -86,18 +90,30 @@ void GenericApp::MessageReceived(BMessage* msg) {
 	BmPopAccount acc;
 	switch( msg->what) {
 		case BM_MSG_NOCH_EINER: 
-			archive = new BMessage(BM_POP_FETCHMSGS);
-			sprintf(buf, "Popper_%ld", ++count);
+			archive = new BMessage(BM_POPWIN_FETCHMSGS);
+			sprintf(buf, "mailtest@kiwi");
 			acc.Name( buf);
-			acc.Username( "zooey");
-			acc.Password( "leeds#42");
-//			acc.POPServer( "127.0.0.1");
+			acc.Username( "mailtest");
+			acc.Password( "mailtest");
 			acc.POPServer( "kiwi");
-//			acc.POPServer( "mail.kdt.de");
 			acc.PortNr( 110);
+			acc.SMTPPortNr( 25);
 			acc.Archive( archive, false);
 			win->PostMessage( archive);
 			delete archive;
+
+			archive = new BMessage(BM_POPWIN_FETCHMSGS);
+			sprintf(buf, "zooey@kiwi");
+			acc.Name( buf);
+			acc.Username( "zooey");
+			acc.Password( "leeds#42");
+			acc.POPServer( "kiwi");
+			acc.PortNr( 110);
+			acc.SMTPPortNr( 25);
+			acc.Archive( archive, false);
+			win->PostMessage( archive);
+			delete archive;
+
 			break;
 		case BM_POPWIN_DONE: 
 			PostMessage( B_QUIT_REQUESTED);

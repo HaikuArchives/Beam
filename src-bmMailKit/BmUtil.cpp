@@ -4,7 +4,13 @@
 */
 
 #include <stdio.h>
+
 #include "BmUtil.h"
+
+//---------------------------------------------------
+namespace Beam {
+	BmLogHandler LogHandler;
+};
 
 //---------------------------------------------------
 const char *FindMsgString( BMessage* archive, char* name) {
@@ -71,11 +77,38 @@ float FindMsgFloat( BMessage* archive, char* name) {
 	}
 }
 
+//---------------------------------------------------
+BmLogHandler::~BmLogHandler() {
+	for(  LogfileMap::iterator logIter = mActiveLogs.begin();
+			logIter != mActiveLogs.end();
+			++logIter) {
+		delete (*logIter).second;
+	}
+}
 
 //---------------------------------------------------
-BString BmLogfile::LogPath = "/boot/home/Sources/beam/logs/";
+void BmLogHandler::LogToFile( const char* const logname, const char* const msg) {
+	LogfileMap::iterator logIter = mActiveLogs.find( logname);
+	BmLogfile *log;
+	if (logIter == mActiveLogs.end()) {
+		status_t res;
+		while( (res = mBenaph.Lock()) != B_NO_ERROR) {
+			BmLOG( BString("locking result: %ld") << res);
+		}
+		log = new BmLogfile( logname);
+		mActiveLogs[logname] = log;
+		mBenaph.Unlock();
+	} else {
+		log = (*logIter).second;
+	}
+	log->Write( msg);
+}
 
-void BmLogfile::Write( const char* const msg) {
+//---------------------------------------------------
+BString BmLogHandler::BmLogfile::LogPath = "/boot/home/Sources/beam/logs/";
+
+//---------------------------------------------------
+void BmLogHandler::BmLogfile::Write( const char* const msg) {
 	if (logfile == NULL) {
 		BString fn = BString(LogPath) << filename;
 		if (fn.FindFirst(".log") == B_ERROR) {
@@ -92,3 +125,4 @@ void BmLogfile::Write( const char* const msg) {
 	s.ReplaceAll("\n","\n                ");
 	fprintf( logfile, "<%012Ld>: %s\n", watch.ElapsedTime(), s.String());
 }
+

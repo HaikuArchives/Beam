@@ -5,6 +5,7 @@
 
 #include <stdio.h>
 
+#include <Alert.h>
 #include <Application.h>
 #include <Autolock.h>
 #include <ClassInfo.h>
@@ -19,12 +20,11 @@
 
 #include "BmConnectionWin.h"
 
-rgb_color BM_COL_STATUSBAR = {128,128,128};
-
-bool BmConnectionWin::BMPREF_DYNAMIC_INTERFACES = true;
+static rgb_color BM_COL_STATUSBAR = {128,128,128};
 
 //---------------------------------------
 bool BmConnectionWin::IsConnectionWinAlive = false;
+
 static bool IsConnectionWinAlive() {
 	return BmConnectionWin::IsConnectionWinAlive;
 }
@@ -61,7 +61,7 @@ bool BmConnectionWin::QuitRequested() {
 //---------------------------------------
 void BmConnectionWin::MessageReceived(BMessage *msg) {
 	switch( msg->what) {
-		case BM_POP_FETCHMSGS: {
+		case BM_POPWIN_FETCHMSGS: {
 			BArchivable *obj;
 			BmPopAccount *account;
 			obj = instantiate_object( msg);
@@ -70,15 +70,15 @@ void BmConnectionWin::MessageReceived(BMessage *msg) {
 				if (IsHidden())
 					Show();
 			} else {
-				// Illegal message data !?!
 				throw invalid_argument( "Could not create BmPopAccount-instance from message of type MSG_FETCHMSGS");
+													// Illegal message data !?!
 			}
 			break;
 		}
 		case BM_POP_DONE: {
 			RemovePopper( FindMsgString( msg, BmPopper::MSG_POPPER));
 			if (mActiveConnections.empty()) {
-				Hide();
+//				Hide();
 			}
 			break;
 		}
@@ -99,24 +99,29 @@ void BmConnectionWin::AddPopper( BmPopAccount *account) {
 	const char* name = account->Name().String();
 	BStatusBar* statBar;
 	BStatusBar* mailBar;
-
-	ConnectionMap::iterator popperIter = mActiveConnections.find( account->Name());
-	if (popperIter != mActiveConnections.end())
-		return;		// account is already active, we won't disturb...
-
-	// account is inactive, so we create a new interface for it...
-	sprintf( tname, "BmPopper%ld", BmPopper::NextID());
-	MView* interface = AddPopperInterface( name, statBar, mailBar);
+	MView* interface;
 
 	// ...create a new thread for the Popper...
 	BmPopperInfo* popperInfo = new BmPopperInfo( account, account->Name(), this, &::IsConnectionWinAlive);
+	sprintf( tname, "BmPopper%ld", BmPopper::NextID());
 	thread_id t_id = spawn_thread( &BmPopper::NewPopper, tname, 
 											 B_NORMAL_PRIORITY, popperInfo);
 	if (t_id < 0)
-		return;
+		throw runtime_error("AddPopper(): Could not create new popper-thread");
 
-	// ...note the thread's id and corresponding view inside the map...
-	mActiveConnections[account->Name()] = new BmConnectionWinInfo(t_id, interface, statBar, mailBar);
+	ConnectionMap::iterator popperIter = mActiveConnections.find( account->Name());
+	if (popperIter == mActiveConnections.end())
+	{	// account is inactive, so we create a new interface for it...
+		interface = AddPopperInterface( name, statBar, mailBar);
+		// ...note the thread's id and corresponding view inside the map...
+		mActiveConnections[account->Name()] = new BmConnectionWinInfo(t_id, interface, statBar, mailBar);
+	} else {
+		// store new thread id:
+		BmConnectionWinInfo *popperInfo = ((*popperIter).second);
+		popperInfo->thread = t_id;
+		popperInfo->statBar->Reset( "State: ", name);
+		popperInfo->mailBar->Reset( "Messages: ", NULL);
+	}
 
 	// ...and activate the Popper:
 	resume_thread( t_id);
@@ -135,7 +140,7 @@ MView *BmConnectionWin::AddPopperInterface( const char* name, BStatusBar* &statB
 					statBar = new BStatusBar( BRect(), name, "State: ", name), true, false, false
 				),
 				new MBViewWrapper(
-					mailBar = new BStatusBar( BRect(), name, "Messages: ", name), true, false, false
+					mailBar = new BStatusBar( BRect(), name, "Messages: ", ""), true, false, false
 				),
 				0
 			)
@@ -181,16 +186,16 @@ void BmConnectionWin::RemovePopper( const char* name) {
 
 	ConnectionMap::iterator popperIter = mActiveConnections.find( name);
 	if (popperIter == mActiveConnections.end())
-		return;		// account is not active, nothing to do...
-	BmConnectionWinInfo *popperInfo = (*popperIter).second;
+		return;					// account is not active, nothing to do...
 	
-	// account is active, so we remove its interface...
-	if (BMPREF_DYNAMIC_INTERFACES)
+	if (Beam::Prefs->DynamicConnectionWin()) {
+		BmConnectionWinInfo *popperInfo = (*popperIter).second;
 		RemovePopperInterface( popperInfo);
-
-	// ...and remove the info about this popper from our map:
-	mActiveConnections.erase( popperIter);
-	delete popperInfo;
+									// account is found, so we remove its interface...
+		mActiveConnections.erase( popperIter);
+									// ...and remove the info about this popper from our map
+		delete popperInfo;
+	}
 }
 
 //---------------------------------------

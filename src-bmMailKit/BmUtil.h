@@ -6,6 +6,7 @@
 #ifndef _BmUtil_h
 #define _BmUtil_h
 
+#include <map>
 #include <stdio.h>
 #include <stdexcept>
 #include <string>
@@ -13,6 +14,8 @@
 #include <Message.h>
 #include <StopWatch.h>
 #include <String.h>
+
+#include <libbenaphore/benaphore.h>
 
 //---------------------------------------------------
 class network_error : public runtime_error {
@@ -30,46 +33,55 @@ int16 FindMsgInt16( BMessage* archive, char* name);
 float FindMsgFloat( BMessage* archive, char* name);
 
 //---------------------------------------------------
-class BmLogfile {
+class BmLogHandler {
+	class BmLogfile {
+	public:
+		BmLogfile( const char* const fn)
+			: logfile( NULL)
+			, filename(fn)
+			, watch("BmLOG", true) 
+			{}
+		~BmLogfile() { if (logfile) fclose(logfile); }
+		void Write( const char* const msg);
+	
+		static BString LogPath;
+	
+	private:
+		FILE* logfile;
+		BString filename;
+		BStopWatch watch;
+	};
+
+	typedef map<const char* const, BmLogfile*> LogfileMap;
+	LogfileMap mActiveLogs;
+	Benaphore mBenaph;
+
 public:
-	BmLogfile( )
-		: filename()
-		, watch("BmLOG", true) 
-		{}
-	BmLogfile( const char* const fn)
-		: filename(fn)
-		, watch("BmLOG", true) 
-		{}
-	BmLogfile( const BString &fn)
-		: filename(fn.String())
-		, watch("BmLOG", true) 
-		{}
-	BmLogfile( const string &fn)
-		: filename(fn.c_str())
-		, watch("BmLOG", true) 
-		{}
-	~BmLogfile() { if (logfile) fclose(logfile); }
-	void SetFilename( const char*  const fn) { filename = fn; }
-	void SetFilename( const BString &fn) { filename = fn; }
-	void SetFilename( const string &fn) { filename = fn.c_str(); }
-	void Log( const char* const msg) { Write(msg); }
-	void Log( const BString &msg) { Write(msg.String()); }
-	void Log( const string &msg) { Write(msg.c_str()); }
+	void LogToFile( const char* const logname, const char* const msg);
+	void LogToFile( const char* const logname, const BString &msg) 
+							{ LogToFile( logname, msg.String()); }
+	void LogToFile( const char* const logname, const string &msg) 
+							{ LogToFile( logname, msg.c_str()); }
+	void LogToFile( BString &logname, const char* const msg)
+							{ LogToFile( logname.String(), msg); }
+	void LogToFile( BString &logname, const BString &msg) 
+							{ LogToFile( logname.String(), msg.String()); }
+	void LogToFile( BString &logname, const string &msg) 
+							{ LogToFile( logname.String(), msg.c_str()); }
 
-	static BString LogPath;
+	BmLogHandler() : mBenaph("beam_loghandler") { }
+	~BmLogHandler();
+};
 
-private:
-	void Write( const char* const msg);
-	FILE* logfile;
-	BString filename;
-	BStopWatch watch;
+namespace Beam {
+	extern BmLogHandler LogHandler;
 };
 
 #ifdef LOGGING
-#define BmLOG(msg) log.Log(msg)
+#define BmLOG(msg) Beam::LogHandler.LogToFile( LOGNAME, msg)
 #else
 #define BmLOG(msg)
 #endif
-
+#define LOGNAME "beam"
 
 #endif

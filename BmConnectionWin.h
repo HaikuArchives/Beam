@@ -1,5 +1,6 @@
 /*
 	BmConnectionWin.h
+	
 		$Id$
 */
 
@@ -7,23 +8,22 @@
 #define _BmPopperWin_h
 
 #include <map>
+
 #include <liblayout/MWindow.h>
 #include <liblayout/VGroup.h>
+
 #include "BmPopper.h"
 
-#define BM_POPWIN_DONE	'bmca'
-
-// for testing:
-#define BM_MSG_NOCH_EINER 'bmt1'
-
+#define BM_POPWIN_FETCHMSGS		'bmca'
+						// sent from App BmConnectionWin in order to start connection
+#define BM_POPWIN_DONE				'bmcb'
+						// sent from BmConnectionWin to app when a connection has finished
 
 // -----------------------------------------------
 class BmConnectionWin : public MWindow {
 	static const uint32 MyWinFlags = B_ASYNCHRONOUS_CONTROLS
 												|	B_NOT_ZOOMABLE
 												|	B_NOT_RESIZABLE;
-
-	static bool BMPREF_DYNAMIC_INTERFACES;
 
 	struct BmConnectionWinInfo {
 		MView* interface;
