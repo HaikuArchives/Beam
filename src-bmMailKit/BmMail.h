@@ -260,7 +260,8 @@ protected:
 	BmMail( BmMailRef* ref);
 
 	BmString CreateBasicFilename();
-	void StoreAttributes( BFile& mailFile);
+	void StoreAttributes( BFile& mailFile, const BmString& status, 
+								 bigtime_t whenCreated);
 	void SetBaseMailInfo( BmMailRef* ref, const BmString newStatus);
 	void AddBaseMailRef( BmMailRef* ref);
 
@@ -306,8 +307,6 @@ private:
 							// new status of base mail (forwarded/replied)
 	BmString mSignatureName;
 							// name of signature to use in this mail
-	bigtime_t mWhenCreated;
-							// time (in microseconds) when this mail was created
 	bool mMoveToTrash;
 							// indicates that this mail should be trashed (after being
 							// stored)
