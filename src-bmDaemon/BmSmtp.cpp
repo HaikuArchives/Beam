@@ -530,23 +530,34 @@ void BmSmtp::StateSendMails() {
 			);
 		}
 
-		BmRcptVect rcptVect;
-		if (ThePrefs->GetBool("SpecialHeaderForEachBcc", true)) {
-			if (HasStdRcpts( mail.Get(), rcptVect)) {
+		try {
+			BmRcptVect rcptVect;
+			if (ThePrefs->GetBool("SpecialHeaderForEachBcc")) {
+				if (HasStdRcpts( mail.Get(), rcptVect)) {
+					Mail( mail.Get());
+					Rcpt( rcptVect);
+					Data( mail.Get(), headerText);
+				}
+				BccRcpt( mail.Get(), true, headerText);
+			} else {
 				Mail( mail.Get());
-				Rcpt( rcptVect);
+				if (HasStdRcpts( mail.Get(), rcptVect))
+					Rcpt( rcptVect);
+				BccRcpt( mail.Get(), false, headerText);
 				Data( mail.Get(), headerText);
 			}
-			BccRcpt( mail.Get(), true, headerText);
-		} else {
-			Mail( mail.Get());
-			if (HasStdRcpts( mail.Get(), rcptVect))
-				Rcpt( rcptVect);
-			BccRcpt( mail.Get(), false, headerText);
-			Data( mail.Get(), headerText);
+			if (ShouldContinue()) {
+				mail->MarkAs( BM_MAIL_STATUS_SENT);
+			}
 		}
-		if (ShouldContinue()) {
-			mail->MarkAs( BM_MAIL_STATUS_SENT);
+		catch( BM_runtime_error &err) {
+			// a problem occurred, we tell the user:
+			BM_LOGERR( BmString("SendMails(): mail no. ") << i 
+								<< " couldn't be send.\n\nError:\n" << err.what());
+			mail->MarkAs( BM_MAIL_STATUS_ERROR);
+				// mark mail as ERROR since it couldn't be send
+			SendCommand("RSET");
+				// reset SMTP-state in order to start afresh with next mail
 		}
 	}
 	mCurrMailSize = 0;
