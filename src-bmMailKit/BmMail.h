@@ -121,82 +121,83 @@ class BmMailRef;
 class BmMail : public BmJobModel {
 	typedef BmJobModel inherited;
 
-	typedef map<int32,BString> BmQuoteLevelMap;
+	typedef map<int32,BmString> BmQuoteLevelMap;
 	typedef vector< BmRef< BmMailRef> > BmMailRefVect;
 
 public:
 	static BmRef<BmMail> CreateInstance( BmMailRef* ref);
 	BmMail( bool outbound);
-	BmMail( BString &msgText, const BString account=BString());
+	BmMail( BmString &msgText, const BmString account=BmString());
 	virtual ~BmMail();
 
 	// native methods:
-	bool ConstructRawText( const BString& editableText, int32 encoding,
-								  BString smtpAccount);
-	void SetTo( const BString &text, const BString account);
-	void SetNewHeader( const BString& headerStr);
-	void SetSignatureByName( const BString sigName, int32 encoding);
+	bool ConstructRawText( const BmString& editableText, int32 encoding,
+								  BmString smtpAccount);
+	void SetTo( BmString &text, const BmString account);
+	void SetNewHeader( const BmString& headerStr);
+	void SetSignatureByName( const BmString sigName, int32 encoding);
 	bool Store();
 	void ResyncFromDisk();
 	//
-	const BString& GetFieldVal( const BString fieldName);
-	BString GetStrippedFieldVal( const BString fieldName);
+	const BmString& GetFieldVal( const BmString fieldName);
+	BmString GetStrippedFieldVal( const BmString fieldName);
 	bool HasAttachments() const;
 	bool HasComeFromList() const;
 	void MarkAs( const char* status);
-	void RemoveField( const BString fieldName);
-	void SetFieldVal( const BString fieldName, const BString value);
-	inline bool IsFieldEmpty( const BString fieldName) { 
+	void RemoveField( const BmString fieldName);
+	void SetFieldVal( const BmString fieldName, const BmString value);
+	inline bool IsFieldEmpty( const BmString fieldName) { 
 													return mHeader 
 														? mHeader->IsFieldEmpty( fieldName) 
 														: true; 
 	}
-	const BString Status() const;
+	const BmString Status() const;
 	//
-	BString DetermineReplyAddress( int32 replyMode, bool canonicalize);
+	BmString DetermineReplyAddress( int32 replyMode, bool canonicalize);
 	//
 	BmRef<BmMail> CreateAttachedForward();
 	BmRef<BmMail> CreateInlineForward( bool withAttachments, 
-										  		  const BString selectedText="");
-	BmRef<BmMail> CreateReply( int32 replyMode, const BString selectedText="");
+										  		  const BmString selectedText="");
+	BmRef<BmMail> CreateReply( int32 replyMode, const BmString selectedText="");
 	BmRef<BmMail> CreateRedirect();
-	BString CreateReplySubjectFor( const BString subject);
-	BString CreateForwardSubjectFor( const BString subject);
-	BString CreateReplyIntro();
-	BString CreateForwardIntro();
+	BmString CreateReplySubjectFor( const BmString subject);
+	BmString CreateForwardSubjectFor( const BmString subject);
+	BmString CreateReplyIntro();
+	BmString CreateForwardIntro();
 	//
 	void AddAttachmentFromRef( const entry_ref* ref);
 	void AddPartsFromMail( BmRef<BmMail> mail, bool withAttachments,
 								  bool isForward,
-								  const BString selectedText="");
+								  const BmString selectedText="");
 	
 	// overrides of jobmodel base:
 	bool StartJob();
 
 	// getters:
 	inline const status_t InitCheck() const	{ return mInitCheck; }
-	inline const BString& AccountName()			{ return mAccountName; }
+	inline const BmString& AccountName()			{ return mAccountName; }
 	inline BmBodyPartList* Body() const			{ return mBody.Get(); }
 	inline BmRef<BmMailHeader> Header() const	{ return mHeader; }
 	inline int32 HeaderLength() const			{ return mHeader ? mHeader->HeaderLength() : 0; }
 	inline int32 RightMargin() const				{ return mRightMargin; }
-	inline const BString& RawText() const		{ return mText; }
+	inline const BmString& RawText() const		{ return mText; }
+	inline const BmString& HeaderText() const	{ return mHeader ? mHeader->HeaderString() : BM_DEFAULT_STRING; }
 	inline const bool Outbound() const			{ return mOutbound; }
 	inline const bool IsRedirect() const		{ return mHeader ? mHeader->IsRedirect() : false; }
 	inline BmMailRef* MailRef() const			{ return mMailRef.Get(); }
 	uint32 DefaultEncoding()	const;
-	inline BString SignatureName() const		{ return mSignatureName; }
+	inline BmString SignatureName() const		{ return mSignatureName; }
 
 	// setters:
 	inline void BumpRightMargin( int32 i)		{ mRightMargin = MAX(i,mRightMargin); }
 	inline void RightMargin( int32 i)			{ mRightMargin = i; }
 	inline void IsRedirect( bool b)				{ if (mHeader) mHeader->IsRedirect( b); }
-	inline void AccountName( const BString& s){ mAccountName = s; }
+	inline void AccountName( const BmString& s){ mAccountName = s; }
 
 	// static functions that try to reformat & quote a given multiline text
 	// in a way that avoids the usual (ugly) quoting-mishaps.
 	// the resulting int is the line-length needed to leave the formatting intact.
-	static int32 QuoteText( const BString& in, BString& out, BString quote, int maxLen);
+	static int32 QuoteText( const BmString& in, BmString& out, const BmString quote, int maxLen);
 
 	static const int32 BM_READ_MAIL_JOB = 1;
 
@@ -207,16 +208,16 @@ public:
 protected:
 	BmMail( BmMailRef* ref);
 
-	BString CreateBasicFilename();
+	BmString CreateBasicFilename();
 	void StoreAttributes( BFile& mailFile);
-	void SetBaseMailInfo( BmMailRef* ref, const BString newStatus);
+	void SetBaseMailInfo( BmMailRef* ref, const BmString newStatus);
 	void AddBaseMailRef( BmMailRef* ref);
 
 	// static functions used for quote-formatting:
-	static int32 QuoteTextWithReWrap( const BString& in, BString& out, 
-											    BString quoteString, int maxLineLen);
-	static int32 AddQuotedText( const BString& text, BString& out, 
-										 const BString& quote, const BString& quoteString,
+	static int32 QuoteTextWithReWrap( const BmString& in, BmString& out, 
+											    BmString quoteString, int maxLineLen);
+	static int32 AddQuotedText( const BmString& text, BmString& out, 
+										 const BmString& quote, const BmString& quoteString,
 								 		 int maxTextLen);
 
 	BmRef<BmMailRef> mMailRef;
@@ -225,15 +226,15 @@ protected:
 private:
 	BmMail();
 	
-	const BString DefaultStatus() const;
+	const BmString DefaultStatus() const;
 
 	BmRef<BmMailHeader> mHeader;			// contains header-information
 
 	BmRef<BmBodyPartList> mBody;			// contains body-information (split into subparts)
 
-	BString mText;								// text of complete message
+	BmString mText;								// text of complete message
 
-	BString mAccountName;					// name of account this message came from/is sent through
+	BmString mAccountName;					// name of account this message came from/is sent through
 
 	BEntry mEntry;								// filesystem-entry for this mail 
 
@@ -242,9 +243,9 @@ private:
 	int32 mRightMargin;						// the current right-margin for this mail
 
 	BmMailRefVect mBaseRefVect;			// the mailref(s) that created us (via forward/reply)
-	BString mNewBaseStatus;					// new status of base mail (forwarded/replied)
+	BmString mNewBaseStatus;					// new status of base mail (forwarded/replied)
 
-	BString mSignatureName;					// name of signature to use in this mail
+	BmString mSignatureName;					// name of signature to use in this mail
 
 	// Hide copy-constructor and assignment:
 	BmMail( const BmMail&);
