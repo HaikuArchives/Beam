@@ -884,12 +884,12 @@ bool BmMailEditWin::SaveMail( bool saveForSend) {
 		mail->Outbound( true);				// just to make sure... >:o)
 		if (saveForSend) {
 			// set 'out'-folder as default and then start filter-job:
-			mail->DestFoldername( BM_MAIL_FOLDER_OUT);
+			mail->SetDestFoldername( BM_MAIL_FOLDER_OUT);
 			mail->Filter();
 		} else {
 			// drop draft mails into 'draft'-folder:
 			if (mail->Status() == BM_MAIL_STATUS_DRAFT)
-				mail->DestFoldername( BM_MAIL_FOLDER_DRAFT);
+				mail->SetDestFoldername( BM_MAIL_FOLDER_DRAFT);
 		}
 			
 		if (mail->Store()) {
