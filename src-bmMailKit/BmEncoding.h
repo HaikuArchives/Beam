@@ -158,10 +158,11 @@ protected:
 	// overrides of BmMailFilter base:
 	void Filter( const char* srcBuf, uint32& srcLen, 
 					 char* destBuf, uint32& destLen);
+	void Finalize( char* destBuf, uint32& destLen);
 
 	bool mIsEncodedWord;
-	bool mLastWasLinebreak;
 	int mSpacesThatMayNeedRemoval;
+	bool mSoftbreakPending;
 };
 
 /*------------------------------------------------------------------------------*\

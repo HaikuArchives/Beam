@@ -172,8 +172,8 @@ void BmEncoding::ConvertFromUTF8( const BmString& destCharset, const BmString& s
 	BmStringIBuf srcBuf( src);
 	const uint32 blockSize = max( (int32)128, src.Length());
 	BmStringOBuf destBuf( blockSize);
-	BmUtf8Decoder encoder( &srcBuf, destCharset, blockSize);
-	destBuf.Write( &encoder, blockSize);
+	BmUtf8Decoder decoder( &srcBuf, destCharset, blockSize);
+	destBuf.Write( &decoder, blockSize);
 	dest.Adopt( destBuf.TheString());
 }
 
@@ -425,8 +425,9 @@ void BmUtf8Decoder::InitConverter() {
 	else if (mDiscard)
 		flag = "//IGNORE";
 	BmString toSet = mDestCharset	+ flag;
-	if ((mIconvDescr = iconv_open( toSet.String(), "utf-8")) == ICONV_ERR) {
-		BM_LOGERR( BmString("libiconv: unable to convert from utf-8 to ") << toSet);
+	if (!mDestCharset.Length()
+	|| (mIconvDescr = iconv_open( toSet.String(), "utf-8")) == ICONV_ERR) {
+		BM_SHOWERR( BmString("libiconv: unable to convert from utf-8 to ") << toSet);
 		mHadError = true;
 		return;
 	}
@@ -478,7 +479,7 @@ void BmUtf8Decoder::Filter( const char* srcBuf, uint32& srcLen,
 			BM_LOG( BM_LogMailParse, "Result in utf8-decode: invalid multibyte char found");
 			mHadError = true;
 		} else {
-			BM_LOGERR( BmString("Unknown error-result in utf8-decode: ") << errno);
+			BM_SHOWERR( BmString("Unknown error-result in utf8-decode: ") << errno);
 			mHadError = true;
 		}
 	}
@@ -549,8 +550,9 @@ void BmUtf8Encoder::InitConverter() {
 	else if (mDiscard)
 		flag = "//IGNORE";
 	BmString toSet = BmString("utf-8") + flag;
-	if ((mIconvDescr = iconv_open( toSet.String(), mSrcCharset.String())) == ICONV_ERR) {
-		BM_LOGERR( BmString("libiconv: unable to convert from ") << mSrcCharset << " to " << toSet);
+	if (!mSrcCharset.Length()
+	|| (mIconvDescr = iconv_open( toSet.String(), mSrcCharset.String())) == ICONV_ERR) {
+		BM_SHOWERR( BmString("libiconv: unable to convert from ") << mSrcCharset << " to " << toSet);
 		mHadError = true;
 		return;
 	}
@@ -604,7 +606,7 @@ void BmUtf8Encoder::Filter( const char* srcBuf, uint32& srcLen,
 			int on = 1;
 			iconvctl( mIconvDescr, ICONV_SET_DISCARD_ILSEQ, &on);
 		} else {
-			BM_LOGERR( BmString("Unknown error-result in utf8-encode: ") << errno);
+			BM_SHOWERR( BmString("Unknown error-result in utf8-encode: ") << errno);
 			mHadError = true;
 		}
 	}
@@ -631,8 +633,8 @@ BmQuotedPrintableDecoder::BmQuotedPrintableDecoder( BmMemIBuf* input,
 																	 uint32 blockSize)
 	:	inherited( input, blockSize)
 	,	mIsEncodedWord( isEncodedWord)
-	,	mLastWasLinebreak( false)
 	,	mSpacesThatMayNeedRemoval( 0)
+	,	mSoftbreakPending( false)
 {
 }
 
@@ -652,68 +654,89 @@ void BmQuotedPrintableDecoder::Filter( const char* srcBuf, uint32& srcLen,
 	const BmString qpChars("abcdef0123456789ABCDEF");
 	for( ; src<srcEnd && dest<destEnd; ++src) {
 		c = *src;
-		if (mSpacesThatMayNeedRemoval && c!=' ') {
-			if (c=='\r' || c=='\n') {
+		if (c == '\r') {
+			// skip over carriage-returns:
+			continue;
+		}
+		if (mSoftbreakPending) {
+			if (c == '\n') {
+				// softbreak, skip over "\n" in order to join the line:
+				mSoftbreakPending = false;
+				mSpacesThatMayNeedRemoval = 0;
+				continue;
+			} else if (c != ' ') {
+				// some broken encoding, we insert the equal-sign...
+				*dest++ = '=';
+				// ...unset softbreak-mode...
+				mSoftbreakPending = false;
+				// ...and re-process the current char:
+				--src;
+				continue;
+			}
+		}
+		if (mSpacesThatMayNeedRemoval && c != ' ') {
+			if (c=='\n') {
 				// this group of spaces lives immediately before a newline,
 				// which means that it needs to be removed:
 				mSpacesThatMayNeedRemoval = 0;
 			} else {
 				// this group of spaces does not require removal, so it will
 				// be added as all other chars:
-				++mSpacesThatMayNeedRemoval;
-				while( dest<destEnd && --mSpacesThatMayNeedRemoval)
+				while( dest<destEnd && mSpacesThatMayNeedRemoval--)
 					*dest++ = ' ';
 			}
 			if (dest>=destEnd)
 				break;
 		}
-		if (c == '\n') {
-			mLastWasLinebreak = true;
-			*dest++ = c;
-		} else if (mLastWasLinebreak && c == ' ') {
+		if (c == ' ')
 			mSpacesThatMayNeedRemoval++;
-		} else if (mIsEncodedWord && c == '_') {
-			// in encoded-words, underlines are really spaces (a real underline is encoded):
-			*dest++ = ' ';
-			mLastWasLinebreak = false;
-		} else if (c == '=') {
-			if (src>srcEnd-3 && !mInput->IsAtEnd())
-				break;							// want two more characters in buffer
-			if (src<=srcEnd-3 && (c1=*(src+1))!=0 && (c2=*(src+2))!=0) {
-				if (qpChars.FindFirst(c1)!=B_ERROR && qpChars.FindFirst(c2)!=B_ERROR) {
-					// decode a single character:
-					*dest++ = HEXDIGIT2CHAR(c1)*16 + HEXDIGIT2CHAR(c2);
-					src += 2;
-					mLastWasLinebreak = false;
-				} else {
-					// it's either a softbreak or broken encoding, check:
-					if (c1=='\r' && c2=='\n') {
-						// softbreak encountered, we keep note of it's position
-						mLastWasLinebreak = true;
+		else {
+			mSoftbreakPending = false;
+			mSpacesThatMayNeedRemoval = 0;
+			if (c == '=') {
+				if (src>srcEnd-3 && !mInput->IsAtEnd())
+					break;							// want two more characters in buffer
+				if (src<=srcEnd-3 && (c1=*(src+1))!=0 && (c2=*(src+2))!=0) {
+					if (qpChars.FindFirst(c1)!=B_ERROR && qpChars.FindFirst(c2)!=B_ERROR) {
+						// decode a single character:
+						*dest++ = HEXDIGIT2CHAR(c1)*16 + HEXDIGIT2CHAR(c2);
 						src += 2;
-							// skip over "\r\n" in order to join the line
 					} else {
-						// broken encoding, we just copy:
-						*dest++ = c;
-						mLastWasLinebreak = false;
+						// it's either a softbreak or broken encoding, we'll see:
+						mSoftbreakPending = true;
 					}
+				} else {
+					// characters missing at end (broken encoding), we just copy:
+					*dest++ = c;
 				}
+			} else if (mIsEncodedWord && c == '_') {
+				// in encoded-words, underlines are really spaces (a real underline is encoded):
+				*dest++ = ' ';
 			} else {
-				// characters missing at end (broken encoding), we just copy:
+				// anything else is just copied:
 				*dest++ = c;
-				mLastWasLinebreak = false;
 			}
-		} else if (c == '\r') {
-			// skip over carriage-returns
-			continue;
-		} else {
-			*dest++ = c;
-			mLastWasLinebreak = false;
 		}
 	}
 	srcLen = src-srcBuf;
 	destLen = dest-destBuf;
 	BM_LOG3( BM_LogMailParse, "qp-decode: done");
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmQuotedPrintableDecoder::Finalize( char* destBuf, uint32& destLen) {
+	char* dest = destBuf;
+	char* destEnd = destBuf+destLen;
+	if (mSoftbreakPending && dest < destEnd) {
+		// broken encoding, we need to insert the equal-sign...
+		*dest++ = '=';
+		mSoftbreakPending = false;
+	}
+	destLen = dest-destBuf;
+	mIsFinalized = !mSoftbreakPending;
 }
 
 
