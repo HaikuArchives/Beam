@@ -43,10 +43,16 @@
 
 #include "BmBasics.h"
 #include "BmLogHandler.h"
-#include "BmResources.h"
+#include "BmMailFolderList.h"
+#include "BmPrefs.h"
 #include "BmStorageUtil.h"
 
 BmTempFileList TheTempFileList;
+
+// -----------------------------------------------------------------------------
+BmString BM_REFKEY( const node_ref& nref) {
+	return BmString() << nref.node;
+}
 
 /*------------------------------------------------------------------------------*\
 	MoveToTrash( refs, count)
@@ -153,13 +159,14 @@ BmString DetermineMimeType( const entry_ref* inref, bool doublecheck) {
 
 /*------------------------------------------------------------------------------*\
 	EnsureIndexExists( attrName)
-		-	create an index for the given attribute-name
+		-	create an index for the given attribute-name 
+			(the index is created on the mailbox-volume).
 \*------------------------------------------------------------------------------*/
 void EnsureIndexExists( const char* attrName) {
 	struct index_info idxInfo;
-	if (fs_stat_index( TheResources->MailboxVolume.Device(), attrName, 
+	if (fs_stat_index( ThePrefs->MailboxVolume.Device(), attrName, 
 							 &idxInfo) != 0) {
-		status_t res = fs_create_index( TheResources->MailboxVolume.Device(), 
+		status_t res = fs_create_index( ThePrefs->MailboxVolume.Device(), 
 												  attrName,
 												  B_STRING_TYPE, 0);
 		if (res == -1)

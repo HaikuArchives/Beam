@@ -38,6 +38,8 @@
 #include "BmMailFolderList.h"
 #include "BmMailRef.h"
 #include "BmMailRefList.h"
+#include "BmPrefs.h"
+#include "BmResources.h"
 #include "BmStorageUtil.h"
 #include "BmUtil.h"
 
@@ -59,7 +61,7 @@ const BmUpdFlags BmMailFolder::UPD_NEW_STATUS = 	1<<2;
 \*------------------------------------------------------------------------------*/
 BmMailFolder::BmMailFolder( BmMailFolderList* model, entry_ref &eref, ino_t node, 
 									 BmMailFolder* parent, time_t &modified)
-	:	inherited( BmString() << node << "_" << eref.device, model, parent)
+	:	inherited( BmString() << node, model, parent)
 	,	mEntryRef( eref)
 	,	mLastModified( modified)
 	,	mMailRefList( NULL)
@@ -88,6 +90,12 @@ BmMailFolder::BmMailFolder( BMessage* archive, BmMailFolderList* model, BmMailFo
 			BM_THROW_RUNTIME( BmString("BmMailFolder: Could not find msg-field ") 
 										<< MSG_ENTRYREF << "\n\nError:" << strerror(err));
 		mNodeRef.node = FindMsgInt64( archive, MSG_INODE);
+		if (ThePrefs->MailboxVolume.Device() != mEntryRef.device)
+			// mailbox-volume has changed since last session, we update!
+			// (in case you wonder, this can happen if the volume of the mailbox
+			// has been unmounted and then remounted later, resulting in a 
+			// [possibly] new device-number).
+			mEntryRef.device = ThePrefs->MailboxVolume.Device();
 		mNodeRef.device = mEntryRef.device;
 		mLastModified = FindMsgInt32( archive, MSG_LASTMODIFIED);
 		Key( BM_REFKEY( mNodeRef));

@@ -82,7 +82,7 @@ void BmPersonInfo::AddEmails( const BmString& name, const BmStringVect& mails) {
 BmPerson::BmPerson( BmPeopleList* model, const node_ref& nref, const BmString& name,
 						  const BmString& nick, const BmString& email, const BmString& groups,
 						  bool foreign) 
-	:	inherited( (BmString()<<nref.node<<"_"<<nref.device).String(), model, (BmListModelItem*)NULL)
+	:	inherited( (BmString()<<nref.node).String(), model, (BmListModelItem*)NULL)
 	,	mName( name)
 	,	mNick( nick)
 	,	mNodeRef( nref)
@@ -386,7 +386,8 @@ void BmPeopleList::AddPerson( const node_ref& nref, const entry_ref& eref) {
 	BmString email;
 	BmString groups;
 	if (!FindPersonByNodeRef( nref) && node.SetTo( &eref) == B_OK) {
-		BmString peopleFolder = ThePrefs->GetString( "PeopleFolder", TheResources->HomePath + "/People");
+		BmString peopleFolder = ThePrefs->GetString( "PeopleFolder", 
+																	"/boot/home/people");
 		peopleFolder << "/";
 		BEntry entry( &eref);
 		BPath path;
@@ -439,7 +440,18 @@ void BmPeopleList::InitializeItems() {
 	node_ref nref;
 	entry_ref eref;
 	char buf[4096];
+	BVolume peopleVolume;
+	BEntry entry;
 	
+	// determine the volume of the People-folder:
+	BmString peopleFolder = ThePrefs->GetString( "PeopleFolder", 
+																"/boot/home/people");
+	if ((err = entry.SetTo( peopleFolder.String(), true)) != B_OK)
+		BM_THROW_RUNTIME( "Sorry, could not get entry for people-folder !?!");
+	if (entry.GetNodeRef( &nref) != B_OK)
+		BM_THROW_RUNTIME( "Sorry, could not determine people-folder-volume !?!");
+	peopleVolume = nref.device;
+
 	BmAutolockCheckGlobal lock( mModelLocker);
 	if (!lock.IsLocked())
 		BM_THROW_RUNTIME( 
@@ -447,7 +459,7 @@ void BmPeopleList::InitializeItems() {
 		);
 
 	BM_LOG2( BM_LogApp, "Start of people-query");
-	if ((err = mPeopleQuery.SetVolume( &TheResources->MailboxVolume)) != B_OK)
+	if ((err = mPeopleQuery.SetVolume( &peopleVolume)) != B_OK)
 		BM_THROW_RUNTIME( BmString("SetVolume(): ") << strerror(err));
 	if ((err = mPeopleQuery.SetPredicate( "META:email == '**'")) != B_OK)
 		BM_THROW_RUNTIME( BmString("SetPredicate(): ") << strerror(err));

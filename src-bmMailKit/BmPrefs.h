@@ -35,6 +35,7 @@
 #include <Archivable.h>
 #include <Locker.h>
 #include <Message.h>
+#include <Volume.h>
 #include "BmString.h"
 
 /*------------------------------------------------------------------------------*\
@@ -88,6 +89,8 @@ public:
 
 	static BmPrefs* theInstance;
 
+	BVolume MailboxVolume;
+
 	// log-levels as string (for prefs):
 	static const char* const LOG_LVL_0;
 	static const char* const LOG_LVL_1;
@@ -98,6 +101,7 @@ private:
 
 	void InitDefaults();
 	void SetLoglevels();
+	void SetupMailboxVolume();
 	BMessage* GetShortcutDefaults( BMessage* msg=NULL);
 	void SetShortcutIfNew( BMessage* msg, const char* name, const BmString val);
 

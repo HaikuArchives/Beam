@@ -38,10 +38,13 @@
 #include "BmMailRef.h"
 #include "BmMailRefList.h"
 #include "BmPrefs.h"
+#include "BmResources.h"
 #include "BmStorageUtil.h"
 #include "BmUtil.h"
 
-#define BM_REFKEYSTAT(x) (BmString() << x.st_ino << "_" << x.st_dev)
+static BmString BM_REFKEYSTAT( const struct stat& x) {
+	return BmString() << x.st_ino;
+}
 
 	// archival-fieldnames:
 const char* const BmMailRef::MSG_ACCOUNT = 	"bm:ac";
@@ -135,6 +138,12 @@ BmMailRef::BmMailRef( BMessage* archive, BmMailRefList* model)
 			BM_THROW_RUNTIME( BmString("BmMailRef: Could not find msg-field ") 
 										<< MSG_ENTRYREF << "\n\nError:" << strerror(err));
 		mNodeRef.node = FindMsgInt64( archive, MSG_INODE);
+		if (ThePrefs->MailboxVolume.Device() != mEntryRef.device)
+			// mailbox-volume has changed since last session, we update!
+			// (in case you wonder, this can happen if the volume of the mailbox
+			// has been unmounted and then remounted later, resulting in a 
+			// [possibly] new device-number).
+			mEntryRef.device = ThePrefs->MailboxVolume.Device();
 		mNodeRef.device = mEntryRef.device;
 		Key( BM_REFKEY( mNodeRef));
 

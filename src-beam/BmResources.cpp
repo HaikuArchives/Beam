@@ -41,7 +41,6 @@ using namespace regexx;
 
 #include "BmBasics.h"
 #include "BmLogHandler.h"
-#include "BmPrefs.h"
 #include "BmResources.h"
 #include "BmStorageUtil.h"
 #include "BmUtil.h"
@@ -97,25 +96,18 @@ BmResources::BmResources()
 {
 	BMimeType mt;
 	BPath path;
-	entry_ref eref;
 
-	// determine the path to our home-directory:
-	if (find_directory( B_USER_DIRECTORY, &path) != B_OK)
-		BM_THROW_RUNTIME( "Sorry, could not determine user's settings-dir !?!");
-	HomePath = path.Path();
-	
-	// and determine the volume of our mailbox:
-	if (get_ref_for_path( HomePath.String(), &eref) != B_OK)
-		BM_THROW_RUNTIME( "Sorry, could not determine mailbox-volume !?!");
-	MailboxVolume = eref.device;
-		
 	// determine the path to the user-settings-directory:
 	if (find_directory( B_USER_SETTINGS_DIRECTORY, &path) != B_OK)
 		BM_THROW_RUNTIME( "Sorry, could not determine user's settings-dir !?!");
 	if (BeamInTestMode)
 		// in order to avoid clobbering precious settings,
-		// we use a different settings-folder  in tesmode:
+		// we use a different settings-folder  in testmode:
 		SettingsPath.SetTo( path.Path(), "Beam_Test");
+	else if (BeamInDevelMode)
+		// in order to avoid clobbering precious settings,
+		// we use a different settings-folder  in devel-mode:
+		SettingsPath.SetTo( path.Path(), "Beam_Devel");
 	else
 		// standard settings folder:
 		SettingsPath.SetTo( path.Path(), "Beam");

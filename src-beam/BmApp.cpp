@@ -144,6 +144,10 @@ BmApplication::BmApplication( const char* sig)
 			BmAppVersion = vInfo.short_info;
 		}
 		BmAppNameWithVersion = BmAppName + " " + BmAppVersion;
+		// note if we are running a devel-version:
+		if (BmAppVersion.IFindFirst( "devel") >= 0)
+			BeamInDevelMode = true;
+		// store app-path for later use:
 		node_ref nref;
 		nref.device = appInfo.ref.device;
 		nref.node = appInfo.ref.directory;

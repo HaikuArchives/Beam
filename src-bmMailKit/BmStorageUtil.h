@@ -49,7 +49,7 @@ bool FetchFile( BmString fileName, BmString& contents);
 
 void BmReadStringAttr( const BNode* node, const char* attrName, BmString& out);
 
-#define BM_REFKEY(nref) (BmString() << nref.node << "_" << nref.device)
+BmString BM_REFKEY( const node_ref& nref);
 
 /*------------------------------------------------------------------------------*\
 	BmTempFileList

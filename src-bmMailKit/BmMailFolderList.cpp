@@ -134,6 +134,8 @@ void BmMailMonitor::HandleMailMonitorMsg( BMessage* msg) {
 				if ((err = msg->FindInt32( "device", &eref.device)) != B_OK)
 					BM_THROW_RUNTIME( "Field 'device' not found in msg !?!");
 				pnref.device = nref.device = eref.device;
+							// here we assume that the mailbox *DOES NOT* spread
+							// across devices!
 				pnref.node = eref.directory;
 				if ((err = msg->FindInt64( "node", &nref.node)) != B_OK)
 					BM_THROW_RUNTIME( "Field 'node' not found in msg !?!");
@@ -411,7 +413,7 @@ void BmMailMonitor::HandleQueryUpdateMsg( BMessage* msg) {
 BmRef< BmMailFolderList> BmMailFolderList::theInstance( NULL);
 
 const char* const BmMailFolderList::MSG_MAILBOXMTIME = "bm:mboxmtime";
-const int16 BmMailFolderList::nArchiveVersion = 1;
+const int16 BmMailFolderList::nArchiveVersion = 2;
 
 /*------------------------------------------------------------------------------*\
 	CreateInstance()
@@ -557,7 +559,9 @@ bool BmMailFolderList::StartJob() {
 \*------------------------------------------------------------------------------*/
 void BmMailFolderList::InitializeItems() {
 	BDirectory mailDir;
+	BEntry entry;
 	entry_ref eref;
+	node_ref nref;
 	status_t err;
 	BmString mailDirName( ThePrefs->GetString("MailboxPath"));
 	time_t mtime;
@@ -568,12 +572,12 @@ void BmMailFolderList::InitializeItems() {
 	if ((err = mailDir.GetModificationTime( &mtime)) != B_OK)
 		BM_THROW_RUNTIME( BmString("Could not get mtime \nfor mailbox-dir <") 
 									<< mailDirName << "> \n\nError:" << strerror(err));
-	BEntry entry;
 	if ((err = mailDir.GetEntry( &entry)) != B_OK)
+		BM_THROW_RUNTIME( BmString("Could not get entry \nfor mailbox-dir <") 
+									<< mailDirName << "> \n\nError:" << strerror(err));
+	if ((err = entry.GetRef( &eref)) != B_OK)
 		BM_THROW_RUNTIME( BmString("Could not get entry-ref \nfor mailbox-dir <") 
 									<< mailDirName << "> \n\nError:" << strerror(err));
-	entry.GetRef( &eref);
-	node_ref nref;
 	if ((err = mailDir.GetNodeRef( &nref)) != B_OK)
 		BM_THROW_RUNTIME( BmString("Could not get node-ref \nfor mailbox-dir <") 
 									<< mailDirName << "> \n\nError:" << strerror(err));
@@ -752,7 +756,7 @@ void BmMailFolderList::QueryForNewMails() {
 		);
 
 	BM_LOG( BM_LogMailTracking, "Start of newMail-query");
-	if ((err = mNewMailQuery.SetVolume( &TheResources->MailboxVolume)) != B_OK)
+	if ((err = mNewMailQuery.SetVolume( &ThePrefs->MailboxVolume)) != B_OK)
 		BM_THROW_RUNTIME( BmString("SetVolume(): ") << strerror(err));
 	if ((err = mNewMailQuery.SetPredicate( "MAIL:status == 'New'")) != B_OK)
 		BM_THROW_RUNTIME( BmString("SetPredicate(): ") << strerror(err));

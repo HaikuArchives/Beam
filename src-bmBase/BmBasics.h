@@ -41,6 +41,9 @@
 extern IMPEXPBMBASE bool BeamInTestMode;		
 							// indicates if Beam is running in test-mode
 
+extern IMPEXPBMBASE bool BeamInDevelMode;		
+							// indicates if this is a devel-version of Beam
+
 extern IMPEXPBMBASE bool BeamOnDano;
 							// indicates if Beam is running on Dano or later
 

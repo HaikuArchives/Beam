@@ -62,6 +62,17 @@ void
 StringTest::StringBeamExtensionsTest(void)
 {
 	NextSubTest();
+	BmString int64test;
+	int64 ll = static_cast<int64>(4)*1000*1000*1000*1000*1000;
+	int64test << ll;
+	CPPUNIT_ASSERT( 
+		strcmp( 
+			int64test.String(), 
+		 	"4000000000000000"
+		) == 0
+	);
+
+	NextSubTest();
 	BmString crlf( "this\r\n is a small\r test \nof linebreak-conversion\r\n");
 	crlf.ConvertLinebreaksToLF();
 	CPPUNIT_ASSERT( 

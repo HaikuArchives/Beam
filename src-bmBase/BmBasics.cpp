@@ -35,6 +35,7 @@
 #include "BmBasics.h"
 
 bool BeamInTestMode = false;
+bool BeamInDevelMode = false;
 bool BeamOnDano = false;
 
 /********************************************************************************\

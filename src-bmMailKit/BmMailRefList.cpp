@@ -51,7 +51,8 @@ using namespace regexx;
 		-	standard c'tor
 \*------------------------------------------------------------------------------*/
 BmMailRefList::BmMailRefList( BmMailFolder* folder)
-	:	BmListModel( BmString("MailRefList_") << folder->Key() << " (" << folder->Name()<<")")
+	:	BmListModel( BmString("MailRefList_") << folder->Key() 
+							<< " (" << folder->Name()<<")")
 	,	mFolder( folder)
 	,	mNeedsCacheUpdate( false)
 {
@@ -108,7 +109,8 @@ bool BmMailRefList::Store() {
 	status_t ret;
 	BMallocIO memIO;
 	memIO.SetBlockSize( 1200*(size()>1?size():1));
-							// acquiring enough mem for complete archive, avoids realloc()
+							// acquiring enough mem for complete archive, 
+							// avoids realloc()
 
 	if (mInitCheck != B_OK) return true;
 	try {
@@ -128,7 +130,9 @@ bool BmMailRefList::Store() {
 				| archive.AddInt32( BmListModelItem::MSG_NUMCHILDREN, size())
 				| archive.Flatten( &memIO);
 		if (ret == B_OK) {
-			BM_LOG( BM_LogModelController, BmString("ListModel <") << ModelName() << "> begins to archive");
+			BM_LOG( BM_LogModelController, 
+					  BmString("ListModel <") << ModelName() 
+					  		<< "> begins to archive");
 			BmModelItemMap::const_iterator iter;
 			for( iter = begin(); iter != end() && ret == B_OK; ++iter) {
 				BMessage msg;
@@ -137,7 +141,9 @@ bool BmMailRefList::Store() {
 					ret = msg.Flatten( &memIO);
 			}
 			cacheFile.Write( memIO.Buffer(), memIO.BufferLength());
-			BM_LOG( BM_LogModelController, BmString("ListModel <") << ModelName() << "> finished with archive");
+			BM_LOG( BM_LogModelController, 
+					  BmString("ListModel <") << ModelName() 
+					  		<< "> finished with archive");
 		}
 	} catch( BM_error &e) {
 		BM_SHOWERR( e.what());
@@ -156,7 +162,8 @@ bool BmMailRefList::StartJob() {
 	BFile cacheFile;
 	
 	BmRef<BmMailFolder> folder( mFolder.Get());	
-							// hold a ref on the corresponding folder while we do the job
+							// hold a ref on the corresponding folder while 
+							// we do the job
 	if (!folder)
 		return false;
 		
@@ -172,15 +179,19 @@ bool BmMailRefList::StartJob() {
 		bool cacheFileUpToDate = false;
 		if (ThePrefs->GetBool("CacheRefsOnDisk")
 		&& (err = cacheFile.SetTo( filename.String(), B_READ_ONLY)) != B_OK) {
-			// cache-file not found, but we have changed names of cache-files in Feb 2003,
-			// so we check if a cache-file according to the old name exists (and rename
-			// it to match our new regulations):
-			Regexx rx( filename, "^(.+?_\\d+)_\\d+(.+?)$", "$1$2");
-			BmString oldFilename = rx;
-			BEntry entry( oldFilename.String());
+			// cache-file not found, but we have changed names of cache-files
+			// in Nov 2003 (again!), so we check if a cache-file according to 
+			// the old name exists (and rename it to match our new regulations):
+			BmString oldFilename = BmString("folder_")
+											<< folder->Key()
+											<< "_" << ThePrefs->MailboxVolume.Device()
+											<< " (" << folder->Name() << ")";
+			BEntry entry( TheResources->MailCacheFolder(), oldFilename.String());
 			time_t mtime;
-			err = (entry.InitCheck() || entry.GetModificationTime( &mtime) 
-					|| entry.Rename( filename.String()) || entry.SetModificationTime( mtime));
+			err = (entry.InitCheck() 
+					|| entry.GetModificationTime( &mtime) 
+					|| entry.Rename( filename.String()) 
+					|| entry.SetModificationTime( mtime));
 		}
 		if (ThePrefs->GetBool("CacheRefsOnDisk")
 		&& (err = cacheFile.SetTo( filename.String(), B_READ_ONLY)) == B_OK) {
@@ -194,7 +205,8 @@ bool BmMailRefList::StartJob() {
 				// archive up-to-date, but is it the correct format-version?
 				msg.Unflatten( &cacheFile);
 				int16 version;
-				if (msg.FindInt16( MSG_VERSION, &version)==B_OK && version==nArchiveVersion)
+				if (msg.FindInt16( MSG_VERSION, &version) == B_OK 
+				&& version == nArchiveVersion)
 					cacheFileUpToDate = true;
 			}
 		}

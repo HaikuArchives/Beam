@@ -77,8 +77,6 @@ public:
 
 	BBitmap* IconByName( const BmString name);
 	//
-	BmString HomePath;
-	BVolume MailboxVolume;
 	BPath	SettingsPath;
 	//
 	font_height BePlainFontHeight;

@@ -137,7 +137,7 @@ const char* BM_MAIL_FOLDER_OUT			= "out";
 \********************************************************************************/
 
 #define BM_MAILKEY(ref) \
-	(BmString("Mail_") << ref->NodeRef().node << "_" << ref->NodeRef().device)
+	(BmString("Mail_") << ref->NodeRef().node)
 
 const char* const BmMail::BM_QUOTE_AUTO_WRAP = 		"Auto Wrap";
 const char* const BmMail::BM_QUOTE_SIMPLE = 			"Simple";

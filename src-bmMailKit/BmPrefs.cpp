@@ -110,6 +110,7 @@ BmPrefs::BmPrefs( void)
 	InitDefaults();
 	mSavedPrefsMsg = mPrefsMsg = mDefaultsMsg;
 	SetLoglevels();
+	SetupMailboxVolume();
 	if (mPrefsMsg.FindMessage( "Shortcuts", &mShortcutsMsg) != B_OK)
 		BM_SHOWERR("Prefs: Could not access shortcut info!");
 }
@@ -237,6 +238,7 @@ BmPrefs::BmPrefs( BMessage* archive)
 	}
 
 	SetLoglevels();
+	SetupMailboxVolume();
 
 	if (scStatus == B_OK) {
 		// add any missing (new) shortcuts:
@@ -634,6 +636,21 @@ void BmPrefs::SetLoglevels() {
 #endif
 }
 
+/*------------------------------------------------------------------------------*\
+	SetupMailboxVolume( )
+		-	
+\*------------------------------------------------------------------------------*/
+void BmPrefs::SetupMailboxVolume() {
+	// determine the volume of our mailbox:
+	BmString mailboxPath = GetString( "MailboxPath", "/boot/home/mail");
+	BEntry entry;
+	if (entry.SetTo( mailboxPath.String(), true) != B_OK)
+		BM_THROW_RUNTIME( "Sorry, could not get entry for mailbox !?!");
+	node_ref nref;
+	if (entry.GetNodeRef( &nref) != B_OK)
+		BM_THROW_RUNTIME( "Sorry, could not determine mailbox-volume !?!");
+	MailboxVolume = nref.device;
+}
 
 /*------------------------------------------------------------------------------*\
 	Store()
