@@ -100,8 +100,9 @@ private:
 
 
 
-#define BM_ADD_FILTER			'bmAF'
-#define BM_REMOVE_FILTER		'bmRF'
+#define BM_ADD_FILTER			   'bmAF'
+#define BM_REMOVE_FILTER		   'bmRF'
+#define BM_ADD_TO_CHAIN_CHANGED	'bmAC'
 
 
 class MButton;
@@ -109,7 +110,10 @@ class MPopup;
 class MStringView;
 class VGroup;
 class LayeredGroup;
+class BmCheckControl;
 class BmTextControl;
+class BmMenuControl;
+
 /*------------------------------------------------------------------------------*\
 	BmPrefsFilterView
 		-	
@@ -146,6 +150,7 @@ private:
 	BmListViewController* mFilterListView;
 	MPopup* mAddPopup;
 	MButton* mRemoveButton;
+	BmCheckControl* mAddToChainControl;
 
 	MStringView* mInfoLabel;
 
