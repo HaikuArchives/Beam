@@ -701,10 +701,10 @@ void BmBodyPart::SaveAs( const entry_ref& destDirRef, BmString filename) {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmBodyPart::SetBodyText( const BmString& text, uint32 encoding) {
-	ConvertToUTF8( encoding, text, mDecodedData);
+void BmBodyPart::SetBodyText( const BmString& utf8Text, uint32 encoding) {
+	mDecodedData = utf8Text;
 	mContentType.SetParam( "charset", EncodingToCharset( encoding));
-	mContentTransferEncoding = NeedsEncoding( text) 
+	mContentTransferEncoding = NeedsEncoding( utf8Text) 
 											? (ThePrefs->GetBool( "Allow8BitMime", false)
 												? "8bit"
 												: "quoted-printable")
@@ -833,14 +833,15 @@ void BmBodyPart::ConstructBodyForSending( BmStringOBuf &msgText) {
 		} else {
 			// encode buffer (and convert if neccessary):
 			BmStringIBuf text( DecodedData());
-			BmMemFilterRef encoder = FindEncoderFor( text, mContentTransferEncoding);
 			if (IsText()) {
 				BM_LOG2( BM_LogMailParse, BmString( "encoding/converting bodytext of ") << DecodedLength() << " bytes...");
 				BM_LOG2( BM_LogMailParse, "to native encoding...");
-				BmUtf8Decoder textConverter( *encoder, CharsetToEncoding( Charset()));
-				mBodyLength = msgText.Write( textConverter);
+				BmUtf8Decoder textConverter( text, CharsetToEncoding( Charset()));
+				BmMemFilterRef encoder = FindEncoderFor( textConverter, mContentTransferEncoding);
+				mBodyLength = msgText.Write( *encoder);
 			} else {
 				BM_LOG2( BM_LogMailParse, BmString( "encoding bodytext of ") << DecodedLength() << " bytes...");
+				BmMemFilterRef encoder = FindEncoderFor( text, mContentTransferEncoding);
 				mBodyLength = msgText.Write( *encoder);
 			}
 			BM_LOG2( BM_LogMailParse, "...done (bodytext)");
@@ -982,10 +983,10 @@ void BmBodyPartList::RemoveItemFromList( BmListModelItem* item) {
 	SetEditableText()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmBodyPartList::SetEditableText( const BmString& text, uint32 encoding) {
+void BmBodyPartList::SetEditableText( const BmString& utf8Text, uint32 encoding) {
 	BmRef<BmBodyPart> editableTextBody( EditableTextBody());
 	if (editableTextBody)
-		editableTextBody->SetBodyText( text, encoding);
+		editableTextBody->SetBodyText( utf8Text, encoding);
 }
 
 /*------------------------------------------------------------------------------*\

@@ -99,7 +99,7 @@ public:
 
 	// native methods:
 	void SetTo( const BmString& msgtext, int32 s, int32 l, BmRef<BmMailHeader> mHeader=NULL);
-	void SetBodyText( const BmString& text, uint32 encoding);
+	void SetBodyText( const BmString& utf8Text, uint32 encoding);
 	bool IsText() const;
 	bool IsPlainText() const;
 	bool ShouldBeShownInline()	const;
@@ -199,7 +199,7 @@ public:
 	void PruneUnneededMultiParts();
 	int32 EstimateEncodedSize();
 	bool ConstructBodyForSending( BmStringOBuf& msgText);
-	void SetEditableText( const BmString& text, uint32 encoding);
+	void SetEditableText( const BmString& utf8Text, uint32 encoding);
 	uint32 DefaultEncoding()	const;
 
 	//	overrides of listmodel base:
