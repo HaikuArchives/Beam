@@ -39,6 +39,7 @@
 
 #include "Colors.h"
 
+#include "BmMenuControllerBase.h"
 #include "BmTextControl.h"
 
 /*------------------------------------------------------------------------------*\
@@ -59,7 +60,7 @@ BmTextControl::BmTextControl( const char* label, bool labelIsMenu,
 	( )
 		-	
 \*------------------------------------------------------------------------------*/
-BmTextControl::BmTextControl( const char* label, BPopUpMenu* menu, 
+BmTextControl::BmTextControl( const char* label, BmMenuControllerBase* menu, 
 										int32 fixedTextLen, int32 minTextLen)
 	:	inherited( BRect(0,0,0,0), NULL, "", NULL, NULL, B_FOLLOW_NONE)
 	,	mLabelIsMenu( true)
@@ -80,7 +81,7 @@ BmTextControl::~BmTextControl() {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmTextControl::InitSize( const char* label, int32 fixedTextLen, 
-										int32 minTextLen, BPopUpMenu* popup) {
+										int32 minTextLen, BmMenuControllerBase* popup) {
 	ResizeToPreferred();
 	BRect b = Bounds();
 	float divPos = label ? StringWidth( label)+27 : 0;
@@ -102,8 +103,8 @@ void BmTextControl::InitSize( const char* label, int32 fixedTextLen,
 	if (mLabelIsMenu) {
 		float width, height;
 		GetPreferredSize( &width, &height);
-		if (!popup)
-			popup = new BPopUpMenu( label, true, false);
+//		if (!popup)
+//			popup = new BmMenuControllerBase( label, true, false);
 		mMenuField = new BMenuField( BRect( 2,0,Divider(),height), NULL, label,
 											  popup, true, B_FOLLOW_NONE, B_WILL_DRAW);
 		mMenuField->SetDivider( 0);
@@ -164,6 +165,16 @@ void BmTextControl::FrameResized( float new_width, float new_height) {
 	Invalidate( BRect( Divider(), 0, new_width-1, curr.Height()));
 	inherited::FrameResized( new_width, new_height);
 	TextView()->ScrollToSelection();
+}
+
+/*------------------------------------------------------------------------------*\
+	( )
+		-	
+\*------------------------------------------------------------------------------*/
+BmMenuControllerBase* BmTextControl::Menu() const { 
+	return mMenuField 
+				? dynamic_cast< BmMenuControllerBase*>( mMenuField->Menu())
+				: NULL; 
 }
 
 /*------------------------------------------------------------------------------*\
