@@ -298,8 +298,10 @@ void BmMailFolder::CleanupForMailRefList( BmMailRefList* refList) {
 		-	tells that model has been updated
 \*------------------------------------------------------------------------------*/
 void BmMailFolder::MailCount( int32 i) {
-	mMailCount = i; 
-	TellModelItemUpdated( UPD_ALL);
+	if (mMailCount != i) {
+		mMailCount = i;
+		TellModelItemUpdated( UPD_ALL);
+	}
 }
 
 /*------------------------------------------------------------------------------*\
@@ -363,7 +365,9 @@ void BmMailFolder::AddMailRef( entry_ref& eref, struct stat& st) {
 		if (!mMailRefList->AddMailRef( eref, st)) {
 			BM_LOG2( BM_LogMailTracking, Name()+" mail-ref already exists.");
 		}
-	}
+	} else
+		// mail-ref isn't loaded, we just mark the mail-count as unknown:
+		MailCount( -1);
 	// if mail-ref is flagged new, we have to tell the mailfolderlist that we own
 	// this new-mail and increment our new-mail-counter (causing an update):
 	if (TheMailFolderList->NodeIsFlaggedNew( nref))
@@ -411,7 +415,9 @@ void BmMailFolder::RemoveMailRef( const node_ref& nref) {
 		if (!mMailRefList->RemoveItemByKey( key)) {
 			BM_LOG2( BM_LogMailTracking, Name()+" mail-ref doesn't exist.");
 		}
-	}
+	} else
+		// mail-ref isn't loaded, we just mark the mail-count as unknown:
+		MailCount( -1);
 	// if mail-ref is flagged new, we have to tell the mailfolderlist that we no 
 	// longer own this new-mail and decrement our new-mail-counter 
 	// (causing an update):
