@@ -37,6 +37,7 @@
 #include "BmBase.h"
 #include "BmString.h"
 
+class BDirectory;
 class BHandler;
 class BLooper;
 class BMenu;
