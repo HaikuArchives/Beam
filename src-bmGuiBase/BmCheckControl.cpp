@@ -89,3 +89,14 @@ void BmCheckControl::AdjustToMaxLabelWidth( float maxWidth) {
 	ct_mpm.maxi.x = ct_mpm.mini.x = mpm.maxi.x = mpm.mini.x = maxWidth;
 }
 
+/*------------------------------------------------------------------------------*\
+	( )
+		-	
+\*------------------------------------------------------------------------------*/
+void BmCheckControl::SetValueSilently( bool val) {
+	BMessenger msnger = Messenger();
+	SetTarget( NULL);
+	SetValue( val);
+	SetTarget( msnger);
+}
+

@@ -48,6 +48,7 @@ public:
 	// native methods:
 	float LabelWidth();
 	void AdjustToMaxLabelWidth( float maxWidth);
+	void SetValueSilently( bool val);
 
 private:
 	// Hide copy-constructor and assignment:
