@@ -834,11 +834,18 @@ void BmBodyPart::ConstructBodyForSending( BmStringOBuf &msgText) {
 			// encode buffer (and convert if neccessary):
 			BmStringIBuf text( DecodedData());
 			if (IsText()) {
-				BM_LOG2( BM_LogMailParse, BmString( "encoding/converting bodytext of ") << DecodedLength() << " bytes...");
-				BM_LOG2( BM_LogMailParse, "to native encoding...");
+				BM_LOG2( BM_LogMailParse, BmString( "encoding/converting bodytext of ") 
+												  << DecodedLength() << " bytes to " << Charset());
 				BmUtf8Decoder textConverter( &text, CharsetToEncoding( Charset()));
 				BmMemFilterRef encoder = FindEncoderFor( &textConverter, mContentTransferEncoding);
 				mBodyLength = msgText.Write( encoder.get());
+				if (textConverter.HadError()) {
+					BmString errText = BmString("The mailtext contains characters that ")
+												<< "could not be converted to the selected charset ("
+												<< Charset() << ").\n\n"
+												<< "Please select the correct charset or remove the offending characters.";
+					throw BM_text_error( errText, textConverter.SrcCount());
+				}
 			} else {
 				BM_LOG2( BM_LogMailParse, BmString( "encoding bodytext of ") << DecodedLength() << " bytes...");
 				BmMemFilterRef encoder = FindEncoderFor( &text, mContentTransferEncoding);

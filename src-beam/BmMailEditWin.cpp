@@ -864,8 +864,20 @@ bool BmMailEditWin::CreateMailFromFields( bool hardWrapIfNeeded) {
 			mail->SetFieldVal( BM_FIELD_DATE, TimeToString( time( NULL), 
 																			"%a, %d %b %Y %H:%M:%S %z"));
 		}
-		bool res = mail->ConstructRawText( editedText, encoding, smtpAccount);
-		return res;
+		try {
+			bool res = mail->ConstructRawText( editedText, encoding, smtpAccount);
+			return res;
+		} catch( BM_text_error& textErr) {
+			if (textErr.posInText >= 0) {
+				int32 end = 1+textErr.posInText;
+				while( IS_WITHIN_UTF8_MULTICHAR( mMailView->ByteAt( end)))
+					end++;
+				mMailView->Select( textErr.posInText, end);
+				mMailView->ScrollToSelection();
+			}
+			ShowAlertWithType( textErr.what(), B_WARNING_ALERT);
+			return false;
+		}
 	} else
 		return false;
 }
