@@ -124,17 +124,25 @@ void BmMail::SetTo( BString &msgText, const BString account) {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmMail::MarkAs( const char* status) {
-	if (!mMailRef || InitCheck() != B_OK)
+	if (InitCheck() != B_OK)
 		return;
 	try {
 		BNode mailNode;
 		status_t err;
+		entry_ref eref;
 		// we write the new status...
-		(err = mailNode.SetTo( mMailRef->EntryRefPtr())) == B_OK
+		if (mMailRef)
+			eref = mMailRef->EntryRef();
+		else if (mEntry.InitCheck() == B_OK)
+			mEntry.GetRef( &eref);
+		else
+			return;
+		(err = mailNode.SetTo( &eref)) == B_OK
 													|| BM_THROW_RUNTIME( BString("Could not create node for current mail-file.\n\n Result: ") << strerror(err));
 		mailNode.WriteAttr( BM_MAIL_ATTR_STATUS, B_STRING_TYPE, 0, status, strlen( status)+1);
-		// ...and tell the mail-ref:
-		mMailRef->Status( status);
+		// ...and tell the mail-ref, if neccessary:
+		if (mMailRef)
+			mMailRef->Status( status);
 	} catch( exception &e) {
 		BM_SHOWERR(e.what());
 	}
@@ -238,32 +246,37 @@ uint32 BmMail::DefaultEncoding() const {
 bool BmMail::Store() {
 	BFile mailFile;
 	BNodeInfo mailInfo;
-	BPath path;
 	BPath tmpPath;
 	status_t err;
 	ssize_t res;
 	BString basicFilename;
-	BString inoutboxPath;
 	BDirectory homeDir;
 	BEntry tmpEntry;
-	BEntry parentEntry;
 
 	try {
-		(inoutboxPath = ThePrefs->GetString("MailboxPath")) << (mOutbound ? "/out" : "/in");
-		(err = parentEntry.SetTo( inoutboxPath.String(), true)) == B_OK
-													|| BM_THROW_RUNTIME( BString("Could not create entry for mail-folder <") << inoutboxPath << ">\n\n Result: " << strerror(err));
-
 		if (mMailRef && mMailRef->InitCheck() == B_OK) {
 			// mail has been read from disk, we recycle the old name:
 			basicFilename = mMailRef->TrackerName();
+			(err = mEntry.SetTo( mMailRef->EntryRefPtr())) == B_OK
+													|| BM_THROW_RUNTIME( BString("Could not create entry from mail-file <") << basicFilename << ">\n\n Result: " << strerror(err));
+			
+			(err = mEntry.GetParent( &homeDir)) == B_OK
+													|| BM_THROW_RUNTIME( BString("Could not create parent-dir from mail-file <") << basicFilename << ">\n\n Result: " << strerror(err));
 		} else if (mEntry.InitCheck() == B_OK) {
 			// mail has just been written to disk, we recycle the old name:
 			char* buf = basicFilename.LockBuffer( B_FILE_NAME_LENGTH);
 			mEntry.GetName( buf);
 			basicFilename.UnlockBuffer();
+			(err = mEntry.GetParent( &homeDir)) == B_OK
+													|| BM_THROW_RUNTIME( BString("Could not create parent-dir from mail-file <") << basicFilename << ">\n\n Result: " << strerror(err));
 		} else {
 			// mail is new, we create a new filename for it:
 			basicFilename = CreateBasicFilename();
+			BString inoutboxPath;
+			(inoutboxPath = ThePrefs->GetString("MailboxPath")) << (mOutbound ? "/out" : "/in");
+			(err = homeDir.SetTo( inoutboxPath.String())) == B_OK
+													|| BM_THROW_RUNTIME( BString("Could not create directory from mail-folder-path <") << inoutboxPath << ">\n\n Result: " << strerror(err));
+
 		}
 			
 		// determine tmp-folder where the mail is being created:
@@ -300,12 +313,9 @@ bool BmMail::Store() {
 		mailFile.Unlock();
 
 		// finally we move the mail-file to its new home:
-		parentEntry.GetPath( &path);
-		(err = homeDir.SetTo( &parentEntry)) == B_OK
-													|| BM_THROW_RUNTIME( BString("Could not get directory for \n\t<") << path.Path() << ">\n\n Result: " << strerror(err));
 		bool clobber = (mEntry.InitCheck() == B_OK);
 		(err = tmpEntry.MoveTo( &homeDir, NULL, clobber)) == B_OK
-													|| BM_THROW_RUNTIME( BString("Could not move mail from tmp-folder to \n\t<") << path.Path() << "/" << basicFilename << ">\n\n Result: " << strerror(err));
+													|| BM_THROW_RUNTIME( BString("Could not move mail \n\t<") << basicFilename << ">\nto new home\n\nResult: " << strerror(err));
 		mEntry = tmpEntry;
 	} catch( exception &e) {
 		BM_SHOWERR(e.what());
@@ -321,7 +331,7 @@ bool BmMail::Store() {
 \*------------------------------------------------------------------------------*/
 void BmMail::StoreAttributes( BFile& mailFile) {
 	//
-	BString st = DefaultStatus();
+	BString st = Status();
 	mailFile.WriteAttr( BM_MAIL_ATTR_STATUS, B_STRING_TYPE, 0, st.String(), st.Length()+1);
 	mailFile.WriteAttr( BM_MAIL_ATTR_ACCOUNT, B_STRING_TYPE, 0, mAccountName.String(), mAccountName.Length()+1);
 	//

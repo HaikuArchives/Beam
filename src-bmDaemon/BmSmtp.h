@@ -10,7 +10,6 @@
 #include <memory>
 
 #include <Message.h>
-#include <NetAddress.h>
 #include <NetEndpoint.h>
 
 #include "BmDataModel.h"
@@ -57,12 +56,11 @@ private:
 
 	int32 mState;								// current SMTP-state (refer enum below)
 	enum States {
-		SMTP_CONNECT = 0,
+		SMTP_AUTH_VIA_POP = 0,
+		SMTP_CONNECT,
 		SMTP_HELO,
 		SMTP_AUTH,
-		SMTP_MAIL,
-		SMTP_RCPT,
-		SMTP_DATA,
+		SMTP_SEND,
 		SMTP_QUIT,
 		SMTP_DONE,
 		SMTP_FINAL
@@ -80,19 +78,25 @@ private:
 	// private functions:
 	void Connect();
 	void Helo();
+	void AuthViaPopServer();
 	void Auth();
-	void Mail();
-	void Rcpt();
-	void Data();
+	void SendMails();
 	void Disconnect();
 	void Quit( bool WaitForAnswer=false);
+	void Mail( BmMail *mail);
+	void Rcpt( BmMail *mail);
+	void BccRcpt( BmMail *mail, bool sendDataForEachBcc);
+	void Data( BmMail *mail, BString forBcc="");
 	void UpdateSMTPStatus( const float, const char*, bool failed=false);
 	void UpdateMailStatus( const float, const char*, int32);
 	void StoreAnswer( char* );
 	bool CheckForPositiveAnswer();
 	bool GetAnswer();
 	int32 ReceiveBlock( char* buffer, int32 max);
-	void SendCommand( BString cmd);
+	void SendCommand( BString cmd, BString secret="");
+
+	bool mServerMayHaveSizeLimit;
+	bool mServerSupportsDSN;
 };
 
 #endif

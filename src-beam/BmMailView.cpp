@@ -258,7 +258,8 @@ void BmMailView::ShowMail( BmMail* mail, bool async) {
 	try {
 		StopJob();
 		if (!mail || mail->InitCheck() != B_OK) {
-			DetachModel();
+			if (DataModel())
+				DetachModel();
 			mHeaderView->ShowHeader( NULL);
 			return;
 		}

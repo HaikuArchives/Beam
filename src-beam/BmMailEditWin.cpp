@@ -329,6 +329,13 @@ void BmMailEditWin::MessageReceived( BMessage* msg) {
 					break;
 				mail->MarkAs( BM_MAIL_STATUS_PENDING);
 				if (msg->what == BMM_SEND_NOW) {
+					BmListModelItemRef smtpRef	= TheSmtpAccountList->FindItemByKey( mail->AccountName());
+					BmSmtpAccount* smtpAcc = dynamic_cast< BmSmtpAccount*>( smtpRef.Get());
+					if (smtpAcc) {
+						smtpAcc->mMailVect.push_back( mail);
+						smtpAcc->SendQueuedMail();
+						Quit();
+					}
 				}
 				break;
 			}
@@ -404,6 +411,7 @@ void BmMailEditWin::EditMail( BmMailRef* ref) {
 		mBccControl->SetText( mail->GetFieldVal( BM_FIELD_BCC).String());
 		mCcControl->SetText( ref->Cc().String());
 		mFromControl->SetText( ref->From().String());
+		mSenderControl->SetText( mail->GetFieldVal( BM_FIELD_SENDER).String());
 		mSubjectControl->SetText( ref->Subject().String());
 		mToControl->SetText( ref->To().String());
 		mToControl->TextView()->ScrollToOffset( 0);
@@ -444,6 +452,7 @@ bool BmMailEditWin::CreateMailFromFields() {
 			mail->SetFieldVal( BM_FIELD_BCC, mBccControl->Text());
 			mail->SetFieldVal( BM_FIELD_CC, mCcControl->Text());
 			mail->SetFieldVal( BM_FIELD_FROM, mFromControl->Text());
+			mail->SetFieldVal( BM_FIELD_SENDER, mSenderControl->Text());
 			mail->SetFieldVal( BM_FIELD_SUBJECT, mSubjectControl->Text());
 			mail->SetFieldVal( BM_FIELD_TO, mToControl->Text());
 			mail->SetFieldVal( BM_FIELD_REPLY_TO, mReplyToControl->Text());

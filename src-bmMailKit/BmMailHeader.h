@@ -55,13 +55,13 @@ private:
 };
 
 typedef vector< BString> BmStringList;
+typedef vector< BmAddress> BmAddrList;
 /*------------------------------------------------------------------------------*\
 	BmAddressList
 		-	represents an adress-group or (one or more) mail-addresses 
 		-	each address is parsed and split into its components
 \*------------------------------------------------------------------------------*/
 class BmAddressList {
-	typedef vector< BmAddress> BmAddrList;
 
 public:
 	// c'tors and d'tor:
@@ -73,6 +73,11 @@ public:
 	bool Set( BString strippedFieldVal);
 	BmStringList SplitIntoAddresses( BString addrList);
 	void ConstructRawText( BString& header, int32 encoding, int32 fieldNameLength) const;
+	//
+	BmAddrList::const_iterator begin() const { return mAddrList.begin(); }
+	BmAddrList::const_iterator end() const	{ return mAddrList.end(); }
+	size_t size() const						{ return mAddrList.size(); }
+	bool empty() const						{ return mAddrList.empty(); }
 
 	// operators:
 	operator BString() const;
@@ -130,6 +135,9 @@ public:
 	void RemoveField( const BString fieldName);
 							// the next always produces US-ASCII (7-bit):
 	bool ConstructRawText( BString& header, int32 encoding);
+
+	BString DetermineSender();
+	const BmAddressList GetAddressList( const BString fieldName);
 
 	// getters:
 	const BString& GetFieldVal( const BString fieldName);

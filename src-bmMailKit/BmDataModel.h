@@ -66,8 +66,6 @@ public:
 	//	message component definitions for status-msgs:
 	static const char* const MSG_MODEL = 			"bm:model";
 
-	static BmRefManager<BmDataModel> RefManager;
-
 protected:
 	// native methods:
 	virtual bool HasControllers();
@@ -179,8 +177,6 @@ public:
 	//	message component definitions for status-msgs:
 	static const char* const MSG_NUMCHILDREN  = 		"bm:count";
 	static const char* const MSG_CHILDREN 		= 		"bm:chld";
-
-	static BmRefManager<BmListModelItem> RefManager;
 
 protected:
 	// native methods:

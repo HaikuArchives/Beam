@@ -1,0 +1,18 @@
+Regexx README
+
+This is the Regexx 0.97 release.
+
+Regexx has been developed as a wrapper to the GNU regex functions
+to avoid reinventing the wheel. When I was developing it, I had in
+mind a good implementation that would allow me to do almost everything
+I could in softwares like perl but keep it easy to use. We're getting
+there, I think. :-)
+
+Check the TODO file to see future plans for Regexx.
+
+Please, send bug reports to <bug-regexx@nn.com.br>.
+
+Copyright (C) 2000 Gustavo Niemeyer <gustavo@nn.com.br>
+
+$Revision$
+$Date$

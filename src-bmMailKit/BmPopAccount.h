@@ -13,6 +13,14 @@
 #include <Archivable.h>
 #include <List.h>
 #include <String.h>
+
+// <needed to compile under BONE>
+#include <socket.h>
+#ifdef BONE_VERSION
+#include <netinet/in.h>
+#endif
+// </needed to compile under BONE>
+
 #include <NetAddress.h>
 
 #include "BmDataModel.h"

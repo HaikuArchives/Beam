@@ -28,6 +28,8 @@
 #include "BmPopAccount.h"
 #include "BmPopper.h"
 #include "BmPrefs.h"
+#include "BmSmtpAccount.h"
+#include "BmSmtp.h"
 
 
 #define BM_MINSIZE 200
@@ -249,7 +251,6 @@ void BmMailMoverView::UpdateModelView( BMessage* msg) {
 	BmPopperView
 \********************************************************************************/
 
-
 /*------------------------------------------------------------------------------*\
 	CreateInstance( name)
 		-	creates and returns a new popper-view
@@ -344,9 +345,105 @@ void BmPopperView::UpdateModelView( BMessage* msg) {
 
 
 /********************************************************************************\
-	BmJobStatusWin
+	BmSmtpView
 \********************************************************************************/
 
+/*------------------------------------------------------------------------------*\
+	CreateInstance( name)
+		-	creates and returns a new smtp-view
+\*------------------------------------------------------------------------------*/
+BmSmtpView* BmSmtpView::CreateInstance( const char* name) {
+	return new BmSmtpView( name);
+}
+
+/*------------------------------------------------------------------------------*\
+	BmSmtpView()
+		-	standard constructor
+\*------------------------------------------------------------------------------*/
+BmSmtpView::BmSmtpView( const char* name)
+	:	BmJobStatusView( name)
+	,	mStatBar( NULL)
+	,	mMailBar( NULL)
+{
+	mMSecsBeforeRemove = ThePrefs->GetInt( "MSecsBeforeSmtpRemove", 0*1000);
+	MView* view = new VGroup(
+		new MBViewWrapper(
+			mStatBar = new BStatusBar( BRect(), name, name, ""), true, false, false
+		),
+		new MBViewWrapper(
+			mMailBar = new BStatusBar( BRect(), name, "Mails: ", ""), true, false, false
+		),
+		0
+	);
+	AddChild( dynamic_cast<BView*>(view));
+	mStatBar->SetBarHeight( 8.0);
+	mStatBar->SetBarColor( BmJobStatusWin::BM_COL_STATUSBAR);
+	mMailBar->SetBarHeight( 8.0);
+}
+
+/*------------------------------------------------------------------------------*\
+	~BmSmtpView()
+		-	standard destructor
+\*------------------------------------------------------------------------------*/
+BmSmtpView::~BmSmtpView() {
+}
+
+/*------------------------------------------------------------------------------*\
+	CreateJobModel( data)
+		-	creates and returns a new job-model, data may contain constructor args
+\*------------------------------------------------------------------------------*/
+BmJobModel* BmSmtpView::CreateJobModel( BMessage* msg) {
+	BString accName = FindMsgString( msg, BmJobStatusWin::MSG_JOB_NAME);
+	BmListModelItemRef item = TheSmtpAccountList->FindItemByKey( accName);
+	BmSmtpAccount* account;
+	(account = dynamic_cast<BmSmtpAccount*>( item.Get()))
+													|| BM_THROW_INVALID( BString("Could not find BmSmtpAccount ") << accName);
+	return new BmSmtp( account->Name(), account);
+}
+
+/*------------------------------------------------------------------------------*\
+	ResetController()
+		-	reinitializes the view in order to start another job
+\*------------------------------------------------------------------------------*/
+void BmSmtpView::ResetController() {
+	mStatBar->Reset( ControllerName(), "");
+	mStatBar->SetTrailingText( "idle");
+	mMailBar->Reset( "Mails: ", NULL);
+}
+
+/*------------------------------------------------------------------------------*\
+	UpdateModelView()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmSmtpView::UpdateModelView( BMessage* msg) {
+	BString name = FindMsgString( msg, BmSmtp::MSG_SMTP);
+	BString domain = FindMsgString( msg, BmJobModel::MSG_DOMAIN);
+
+	float delta = FindMsgFloat( msg, BmSmtp::MSG_DELTA);
+	const char* leading = NULL;
+	msg->FindString( BmSmtp::MSG_LEADING, &leading);
+	const char* trailing = NULL;
+	msg->FindString( BmSmtp::MSG_TRAILING, &trailing);
+
+	BM_LOG3( BM_LogJobWin, BString("Updating interface for ") << name);
+
+	BmAutolock lock( BmJobStatusWin::Instance);
+	if (lock.IsLocked()) {
+		if (domain == "mailbar") {
+			mMailBar->Update( delta, leading, trailing);
+		} else { 
+			// domain == "statbar"
+			mStatBar->Update( delta, leading, trailing);
+		}
+	} else
+		throw BM_runtime_error("BmSmtpView::UpdateModelView(): could not lock window");
+}
+
+
+
+/********************************************************************************\
+	BmJobStatusWin
+\********************************************************************************/
 
 /*------------------------------------------------------------------------------*\
 	static members of BmJobStatusWin:
@@ -441,6 +538,7 @@ void BmJobStatusWin::MessageReceived(BMessage* msg) {
 		switch( msg->what) {
 			case B_QUIT_REQUESTED:
 				break;
+			case BM_JOBWIN_SMTP:
 			case BM_JOBWIN_FETCHPOP:
 			case BM_JOBWIN_MOVEMAILS: {
 				// request to start a new job
@@ -492,6 +590,9 @@ void BmJobStatusWin::AddJob( BMessage* msg) {
 		switch( msg->what) {
 			case BM_JOBWIN_FETCHPOP:
 				controller = new BmPopperView( name.String());
+				break;
+			case BM_JOBWIN_SMTP:
+				controller = new BmSmtpView( name.String());
 				break;
 			case BM_JOBWIN_MOVEMAILS:
 				controller = new BmMailMoverView( name.String());

@@ -44,6 +44,8 @@ BmController::~BmController() {
 		-	safe to call with a NULL-model
 \*------------------------------------------------------------------------------*/
 void BmController::AttachModel( BmDataModel* model) {
+	if (mDataModel.Get() == model)
+		return;
 	if (mDataModel) {
 		// detach current model, since we shall control a new one:
 		DetachModel();

@@ -65,8 +65,6 @@ BmApplication::~BmApplication()
 {
 	delete ThePrefs;
 	delete TheResources;
-	BmDataModel::RefManager.PrintStatistics();
-	BmListModelItem::RefManager.PrintStatistics();
 	delete TheLogHandler;
 	InstanceCount--;
 }

@@ -20,7 +20,9 @@
 \*------------------------------------------------------------------------------*/
 #define BM_JOBWIN_FETCHPOP				'bmea'
 						// sent to BmJobStatusWin in order to start pop-connection
-#define BM_JOBWIN_MOVEMAILS			'bmeb'
+#define BM_JOBWIN_SMTP					'bmeb'
+						// sent to BmJobStatusWin in order to start smtp-connection
+#define BM_JOBWIN_MOVEMAILS			'bmec'
 						// sent to BmJobStatusWin in order to move mails
 
 class BmPopAccount;
@@ -109,6 +111,32 @@ public:
 	static BmPopperView* CreateInstance( const char* name);
 	BmPopperView( const char* name);
 	~BmPopperView();
+
+	// overrides of jobstatusview base:
+	void ResetController();
+	void UpdateModelView( BMessage* msg);
+	BmJobModel* CreateJobModel( BMessage* msg);
+
+	// overrides of controller base:
+	BHandler* GetControllerHandler() 	{ return this; }
+
+private:
+	BStatusBar* mStatBar;				// shows current status of this connection
+	BStatusBar* mMailBar;				// shows number of mails handled by this connection
+
+};
+
+/*------------------------------------------------------------------------------*\
+	BmSmtpView
+		-	controls a specific SMTP-connection
+\*------------------------------------------------------------------------------*/
+class BmSmtpView : public BmJobStatusView {
+
+public:
+	// creator-func, c'tors and d'tor:
+	static BmSmtpView* CreateInstance( const char* name);
+	BmSmtpView( const char* name);
+	~BmSmtpView();
 
 	// overrides of jobstatusview base:
 	void ResetController();

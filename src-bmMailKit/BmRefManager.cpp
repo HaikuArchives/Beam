@@ -1,75 +1,41 @@
 /*
 	BmRefManager.cpp
+
 		$Id$
 */
 
-#include "BmLogHandler.h"
-#include "BmUtil.h"
-
-
-BmRefManager* BmRefManager::theInstance = NULL;
-
-/********************************************************************************\
-	BmRefManager
-\********************************************************************************/
+#include "BmRefManager.h"
 
 /*------------------------------------------------------------------------------*\
-	CreateInstance()
-		-	creator-func
+	RefPrintHex()
+		-	helper-func that prints this-pointer as hex-number
 \*------------------------------------------------------------------------------*/
-BmRefManager* BmRefManager::CreateInstance() {
-	if (theInstance)
-		return theInstance;
-	else
-		return theInstance = new BmRefManager();
+BString BmRefObj::RefPrintHex() { 
+	char buf[20]; sprintf( buf, "%p", this);	return buf;	
 }
 
 /*------------------------------------------------------------------------------*\
-	BmRefManager()
-		-	c'tor
+	AddRef()
+		-	add one reference to object
 \*------------------------------------------------------------------------------*/
-BmRefManager::BmRefManager()
-	:	mLocker( "RefManager", false)
-{
+void BmRefObj::AddRef() {
+	++mRefCount;
+	BM_LOG3( BM_LogUtil, BString("RefManager: reference to <") << RefName() << ":"<<RefPrintHex()<<"> added, ref-count is "<<mRefCount);
 }
 
 /*------------------------------------------------------------------------------*\
-	~BmRefManager()
-		-	d'tor
+	RemoveRef()
+		-	removes one reference from object and deletes the object
+			if the new reference count is zero
 \*------------------------------------------------------------------------------*/
-BmRefManager::~BmRefManager() {
-}
-
-
-/*------------------------------------------------------------------------------*\
-	AddRef( model)
-		-	adds a reference to the given model
-\*------------------------------------------------------------------------------*/
-void BmRefManager::AddRef( BmRefManager* model) {
-	assert( model);
-	BmAutolock lock( mLocker);
-	lock.IsLocked()	 					|| BM_THROW_RUNTIME( "AddRef(): Unable to get lock");
-	int32 numRefs = ++mRefMap[model];
-	BM_LOG2( BM_LogUtil, BString("ModelManager: reference to <") << model->ModelName() << "> added, ref-count is "<<numRefs);
-}
-
-/*------------------------------------------------------------------------------*\
-	AddRef( model)
-		-	adds a reference to the given model
-\*------------------------------------------------------------------------------*/
-void BmRefManager::RemoveRef( BmRefManager* model) {
-	assert( model);
-	BmAutolock lock( mLocker);
-	lock.IsLocked()	 					|| BM_THROW_RUNTIME( "RemoveRef(): Unable to get lock");
-	int32 numRefs = --mRefMap[model];
-	BM_LOG2( BM_LogUtil, BString("ModelManager: reference to <") << model->ModelName() << "> removed, ref-count is " <<numRefs);
-	if (numRefs == 0) {
-		// removed last reference, so we delete the model:
-		mRefMap.erase( model);
-		BM_LOG2( BM_LogUtil, BString("ModelManager: ... model will be deleted"));
-		delete model;
-	} else if (numRefs < 0) {
-		// was not referenced at all, we remove ref-item:
-		mRefMap.erase( model);
+void BmRefObj::RemoveRef() {
+	int32 currRefCount = --mRefCount;
+	BM_LOG3( BM_LogUtil, BString("RefManager: reference to <") << RefName() << ":"<<RefPrintHex()<<"> removed, ref-count is "<<currRefCount);
+	if (currRefCount == 0) {
+		// removed last reference, so we delete the object:
+		BM_LOG3( BM_LogUtil, BString("RefManager: ... object will be deleted"));
+		delete this;
 	}
 }
+
+

@@ -17,8 +17,6 @@
 	BmDataModel
 \********************************************************************************/
 
-BmRefManager<BmDataModel> BmDataModel::RefManager("DataModel_RefMan");
-
 /*------------------------------------------------------------------------------*\
 	BmDataModel( name)
 		-	standard contructor
@@ -168,7 +166,7 @@ int32 BmJobModel::ThreadStartFunc( void* data) {
 			BM_LOG2( BM_LogModelController, BString("Job <") << job->ModelName() << "> has finished");
 			job->mThreadID = 0;
 		}
-		RefManager.RemoveRef( job);
+		job->RemoveRef();
 							// indicate that this thread has no more interest in jobmodel
 		return 0;
 	} else {
@@ -215,7 +213,7 @@ void BmJobModel::StartJobInNewThread() {
 
 		// we add another ref to ourselves (which belongs to the thread that
 		// we spawned above:
-		RefManager.AddRef( this);
+		AddRef();
 
 		// finally, we activate the job:
 		BM_LOG2( BM_LogModelController, BString("Starting job thread ") << t_id);
@@ -328,8 +326,6 @@ void BmJobModel::TellJobIsDone( bool completed) {
 /********************************************************************************\
 	BmListModelItem
 \********************************************************************************/
-
-BmRefManager<BmListModelItem> BmListModelItem::RefManager("ListModelItem_RefMan");
 
 const BString BmListModelItem::nEmptyParentKey = "empty";
 

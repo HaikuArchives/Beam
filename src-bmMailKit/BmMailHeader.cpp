@@ -9,6 +9,7 @@
 #include <List.h>
 #include <NodeInfo.h>
 #include <netdb.h>
+#include <unistd.h>
 
 #include "regexx.hh"
 using namespace regexx;
@@ -402,6 +403,15 @@ const BString BmMailHeader::GetStrippedFieldVal( const BString fieldName) {
 }
 
 /*------------------------------------------------------------------------------*\
+	GetAddressList()
+		-	
+\*------------------------------------------------------------------------------*/
+const BmAddressList BmMailHeader::GetAddressList( const BString fieldName) {
+	IsAddressField( fieldName)				|| BM_THROW_RUNTIME( BString("BmMailHeader.GetAddressList(): Field is not an address-field."));
+	return mAddrMap[fieldName];
+}
+
+/*------------------------------------------------------------------------------*\
 	SetFieldVal()
 	-	
 \*------------------------------------------------------------------------------*/
@@ -437,6 +447,24 @@ void BmMailHeader::RemoveField( const BString fieldName) {
 	BmAddrMap::iterator iter = mAddrMap.find( fieldName);
 	if (iter != mAddrMap.end())
 		mAddrMap.erase( iter);
+}
+
+/*------------------------------------------------------------------------------*\
+	DetermineSender()
+		-	
+\*------------------------------------------------------------------------------*/
+BString BmMailHeader::DetermineSender() {
+	BString sender = GetStrippedFieldVal( BM_FIELD_SENDER);
+	if (!sender.Length()) {
+		BmAddressList fromAddrList = mAddrMap[BM_FIELD_FROM];
+		if (fromAddrList.IsGroup()) {
+			sender = fromAddrList.GroupName();
+		} else {
+			BmAddress fromAddr = fromAddrList.FirstAddress();
+			sender = fromAddr.AddrSpec();
+		}
+	}
+	return sender;
 }
 
 /*------------------------------------------------------------------------------*\

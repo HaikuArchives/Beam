@@ -25,7 +25,6 @@
 BmSmtpAccount::BmSmtpAccount( const char* name, BmSmtpAccountList* model) 
 	:	inherited( name, model, (BmListModelItem*)NULL)
 	,	mPortNr( 25)
-	,	mAuthMethod( 0)
 {
 }
 
@@ -40,8 +39,8 @@ BmSmtpAccount::BmSmtpAccount( BMessage* archive, BmSmtpAccountList* model)
 	mPassword = FindMsgString( archive, MSG_PASSWORD);
 	mSMTPServer = FindMsgString( archive, MSG_SMTP_SERVER);
 	mDomainToAnnounce = FindMsgString( archive, MSG_DOMAIN);
+	mAuthMethod = FindMsgString( archive, MSG_AUTH_METHOD);
 	mPortNr = FindMsgInt16( archive, MSG_PORT_NR);
-	mAuthMethod = FindMsgInt16( archive, MSG_AUTH_METHOD);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -56,8 +55,8 @@ status_t BmSmtpAccount::Archive( BMessage* archive, bool deep) const {
 		||	archive->AddString( MSG_PASSWORD, mPassword.String())
 		||	archive->AddString( MSG_SMTP_SERVER, mSMTPServer.String())
 		||	archive->AddString( MSG_DOMAIN, mDomainToAnnounce.String())
-		||	archive->AddInt16( MSG_PORT_NR, mPortNr)
-		||	archive->AddInt16( MSG_AUTH_METHOD, mAuthMethod));
+		||	archive->AddString( MSG_AUTH_METHOD, mAuthMethod.String())
+		||	archive->AddInt16( MSG_PORT_NR, mPortNr));
 	return ret;
 }
 
@@ -74,9 +73,18 @@ bool BmSmtpAccount::GetSMTPAddress( BNetAddress* addr) const {
 		-	
 \*------------------------------------------------------------------------------*/
 bool BmSmtpAccount::NeedsAuthViaPopServer() {
-	return mAuthMethod == BM_SMTP_AFTER_POP;
+	return mAuthMethod.ICompare("SMTPAFTERPOP") == 0;
 }
 
+/*------------------------------------------------------------------------------*\
+	SendQueuedMail()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmSmtpAccount::SendQueuedMail() {
+	BMessage archive(BM_JOBWIN_SMTP);
+	archive.AddString( BmJobStatusWin::MSG_JOB_NAME, Name().String());
+	TheJobStatusWin->PostMessage( &archive);
+}
 
 
 /********************************************************************************\

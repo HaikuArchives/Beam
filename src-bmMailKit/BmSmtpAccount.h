@@ -8,13 +8,23 @@
 #define _BmSmtpAccount_h
 
 #include <stdexcept>
+#include <vector>
 
 #include <Archivable.h>
 #include <List.h>
 #include <String.h>
+
+// <needed to compile under BONE>
+#include <socket.h>
+#ifdef BONE_VERSION
+#include <netinet/in.h>
+#endif
+// </needed to compile under BONE>
+
 #include <NetAddress.h>
 
 #include "BmDataModel.h"
+#include "BmMail.h"
 
 class BmSmtpAccountList;
 /*------------------------------------------------------------------------------*\
@@ -25,6 +35,8 @@ class BmSmtpAccountList;
 \*------------------------------------------------------------------------------*/
 class BmSmtpAccount : public BmListModelItem {
 	typedef BmListModelItem inherited;
+	typedef vector< BmRef< BmMail> > BmMailVect;
+
 	// archivable components:
 	static const char* const MSG_NAME = 			"bm:name";
 	static const char* const MSG_USERNAME = 		"bm:username";
@@ -34,10 +46,6 @@ class BmSmtpAccount : public BmListModelItem {
 	static const char* const MSG_AUTH_METHOD = 	"bm:authmethod";
 	static const char* const MSG_PORT_NR = 		"bm:portnr";
 
-	static const int BM_SMTP_NO_AUTH = 0;
-	static const int BM_SMTP_AFTER_POP = 1;
-	static const int BM_SMTP_AUTH = 2;
-
 public:
 	BmSmtpAccount( const char* name, BmSmtpAccountList* model);
 	BmSmtpAccount( BMessage* archive, BmSmtpAccountList* model);
@@ -45,6 +53,7 @@ public:
 	
 	// native methods:
 	bool NeedsAuthViaPopServer();
+	void SendQueuedMail();
 
 	// stuff needed for BArchivable:
 	static BArchivable* Instantiate( BMessage* archive);
@@ -56,18 +65,20 @@ public:
 	const BString &Password() const 		{ return mPassword; }
 	const BString &SMTPServer() const	{ return mSMTPServer; }
 	const BString &DomainToAnnounce() const 	{ return mDomainToAnnounce; }
+	const BString &AuthMethod() const 	{ return mAuthMethod; }
 	int16 PortNr() const 					{ return mPortNr; }
-	int16 AuthMethod() const 				{ return mAuthMethod; }
 
 	// setters:
 	void Username( const BString &s) 	{ mUsername = s; }
 	void Password( const BString &s) 	{ mPassword = s; }
 	void SMTPServer( const BString &s)	{ mSMTPServer = s; }
 	void DomainToAnnounce( const BString &s) 	{ mDomainToAnnounce = s; }
+	void AuthMethod( const BString &s) 	{ mAuthMethod = s; }
 	void PortNr( int16 i) 					{ mPortNr = i; }
-	void AuthMethod( int16 i) 				{ mAuthMethod = i; }
 
 	bool GetSMTPAddress( BNetAddress* addr) const;
+
+	BmMailVect mMailVect;			// vector with mails that shall be sent
 
 private:
 	BmSmtpAccount();					// hide default constructor
@@ -78,10 +89,9 @@ private:
 	BString mSMTPServer;				// 
 	BString mDomainToAnnounce;		// domain-name that will be used when we announce
 											// ourselves to the server (HELO/EHLO)
+	BString mAuthMethod;				// authentication method to use
 	int16 mPortNr;						// usually 25
-	int16 mAuthMethod;				// 0 = none,
-											// 1 = SMTPafterPOP,
-											// 2 = AUTH-command
+
 };
 
 

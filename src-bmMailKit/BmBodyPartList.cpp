@@ -45,7 +45,7 @@ BmContentField::BmContentField( const BString cfString) {
 void BmContentField::SetTo( const BString cfString) {
 	Regexx rx;
 
-	if (rx.exec( cfString, "^\\s*([^\\s;]+)\\s*(;.+)?\\s*$")) {
+	if (rx.exec( cfString, "^\\s*([^\\s;]+)\\s*(;.*)?\\s*$")) {
 		// extract value:
 		if (rx.match[0].atom.size() > 0) {
 			if (cfString[rx.match[0].atom[0].start()] == '"') {
@@ -458,15 +458,15 @@ void BmBodyPart::ConstructBodyForSending( BString &msgText) {
 	msgText << encodedData;
 	if (msgText[msgText.Length()-1] != '\n')
 		msgText << "\r\n";
-	if (IsMultiPart())
-		msgText << "--"<<boundary<<"\r\n";
 	BmModelItemMap::const_iterator iter;
 	for( iter = begin(); iter != end(); ++iter) {
-		BmBodyPart* subPart = dynamic_cast< BmBodyPart*>( iter->second.Get());
-		subPart->ConstructBodyForSending( msgText);
 		if (IsMultiPart())
 			msgText << "--"<<boundary<<"\r\n";
+		BmBodyPart* subPart = dynamic_cast< BmBodyPart*>( iter->second.Get());
+		subPart->ConstructBodyForSending( msgText);
 	}
+	if (IsMultiPart())
+		msgText << "--"<<boundary<<"--\r\n";
 }
 
 
@@ -623,8 +623,14 @@ bool BmBodyPartList::ConstructBodyForSending( BString& msgText) {
 		for( iter = begin(); iter != end(); ++iter) {
 			BmBodyPart* bodyPart = dynamic_cast< BmBodyPart*>( iter->second.Get());
 			bodyPart->ConstructBodyForSending( msgText);
-			if (isMultiPart && !hasMultiPartTop)
-				msgText << "--"<<boundary<<"\r\n";
+			if (isMultiPart && !hasMultiPartTop) {
+				BmModelItemMap::const_iterator next = iter;
+				next++;
+				if (next == end())
+					msgText << "--"<<boundary<<"--\r\n";
+				else
+					msgText << "--"<<boundary<<"\r\n";
+			}
 		}
 	}
 	return true;

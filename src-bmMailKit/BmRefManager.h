@@ -8,8 +8,7 @@
 
 #include <stdio.h>
 
-#include <map>
-#include <typeinfo>
+//#include <typeinfo>
 
 #include <String.h>
 
@@ -22,85 +21,21 @@
 		-	an object that can be reference-managed
 \*------------------------------------------------------------------------------*/
 class BmRefObj {
+
 public:
+	BmRefObj() : mRefCount(0) 				{}
+	virtual ~BmRefObj() 						{}
+
 	virtual const BString& RefName() const = 0;
-};
-
-/*------------------------------------------------------------------------------*\
-	BmRefManager
-		-	manages all instances of objects (esp. their deletion)
-\*------------------------------------------------------------------------------*/
-template <class T> class BmRefManager {
-	typedef map< T*, int32> BmRefMap;
-
-public:
-	// c'tors & d'tor:
-	BmRefManager( const char* id)
-		:	mLocker( id, false)
-		,	mID( id)								{ }
-	
-	// helper that prints a pointer as hex-number
-	BString Hex( T* ptr) { char buf[20]; sprintf( buf, "%p", ptr);	return buf;	}
 
 	// native methods:
-	void AddRef( T* ptr) {
-		assert( ptr);
-		BmAutolock lock( mLocker);
-		lock.IsLocked()	 					|| BM_THROW_RUNTIME( "AddRef(): Unable to get lock");
-#ifdef BM_LOGGING
-		int32 numRefs = ++mRefMap[ptr];
-		BM_LOG3( BM_LogUtil, BString("RefManager: reference to <") << ptr->RefName() << ":"<<Hex(ptr)<<"> added, ref-count is "<<numRefs);
-#else
-		++mRefMap[ptr];
-#endif
-	}
-
-	void RemoveRef( T* ptr) {
-		assert( ptr);
-		BmAutolock lock( mLocker);
-		lock.IsLocked()	 					|| BM_THROW_RUNTIME( "RemoveRef(): Unable to get lock");
-		int32 numRefs = --mRefMap[ptr];
-#ifdef BM_LOGGING
-		BM_LOG3( BM_LogUtil, BString("RefManager: reference to <") << ptr->RefName() << ":"<<Hex(ptr)<<"> removed, ref-count is "<<numRefs);
-#endif
-		if (numRefs == 0) {
-			// removed last reference, so we delete the object:
-			mRefMap.erase( ptr);
-#ifdef BM_LOGGING
-			BM_LOG3( BM_LogUtil, BString("RefManager: ... object will be deleted"));
-#endif
-			delete ptr;
-		} else if (numRefs < 0) {
-			// was not referenced at all, we remove ref-item:
-			mRefMap.erase( ptr);
-			// M.B.: we refrain from deleting the object, possibly leaking memory, but
-			//			this seems a safer bet then to do a delete on an object which is
-			//			not referenced at all.
-		}
-	}
-	
-	void PrintStatistics() {
-#ifdef BM_LOGGING
-		BmAutolock lock( mLocker);
-		lock.IsLocked()	 					|| BM_THROW_RUNTIME( "RemoveRef(): Unable to get lock");
-		BmRefMap::const_iterator iter;
-		BString s = BString(mID) << " statistics:\n";
-		for( iter = mRefMap.begin(); iter != mRefMap.end(); ++iter) {
-			T* ptr = iter->first;
-			int32 numRefs = iter->second;
-			s << "RefManager: reference to <" << ptr->RefName() << ":"<<Hex(ptr)<<"> ref-count is "<<numRefs<<"\n";
-		}
-		BM_LOG( BM_LogUtil, s);
-#endif
-	}
+	void AddRef();
+	void RemoveRef();
+	BString RefPrintHex();
 
 private:
-	BmRefMap mRefMap;
-	BLocker mLocker;
-	BString mID;
+	int32 mRefCount;
 };
-
-
 
 /*------------------------------------------------------------------------------*\
 	BmRef
@@ -161,8 +96,8 @@ public:
 	T* Get() const 							{ return mPtr; }
 	operator bool() const 					{ return mPtr!=NULL; }
 private:
-	void AddRef(T* p) const   				{ if (p)	T::RefManager.AddRef( p); }
-	void RemoveRef(T* p) const 			{ if (p)	T::RefManager.RemoveRef( p); }
+	void AddRef(T* p) const   				{ if (p)	p->AddRef(); }
+	void RemoveRef(T* p) const 			{ if (p)	p->RemoveRef(); }
 
 };
 

@@ -584,6 +584,7 @@ void BmListViewController::MakeEmpty() {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmListViewController::StartJob( BmJobModel* model, bool startInNewThread) {
+	AttachModel( model);
 	ScrollView()->SetBusy();
 	UpdateCaption( "tracking...");
 	inheritedController::StartJob( model, startInNewThread);
