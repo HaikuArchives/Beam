@@ -172,6 +172,8 @@ BmApplication::BmApplication( const char* sig)
 
 		// load the preferences set by user (if any):
 		BmPrefs::CreateInstance();
+		// ...and finish part of resources-initialization that depends on prefs:
+		TheResources->InitializeWithPrefs();
 		BM_LOG( BM_LogApp, BmString("App-initialization started..."));
 
 		ColumnListView::SetExtendedSelectionPolicy( 
