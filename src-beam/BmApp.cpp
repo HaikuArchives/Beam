@@ -132,12 +132,12 @@ BmApplication::BmApplication( const char* sig)
 		appFile.GetModificationTime( &appModTime);
 		TheResources->CheckMimeTypeFile( sig, appModTime);
 
+		// load the preferences set by user (if any):
+		BmPrefs::CreateInstance();
+
 		// init charset-tables:
 		BmEncoding::InitCharsetMap();
 
-		// load the preferences set by user (if any):
-		BmPrefs::CreateInstance();
-		
 		// create the node-monitor looper:
 		BmMailMonitor::CreateInstance();
 
