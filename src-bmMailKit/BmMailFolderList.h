@@ -62,13 +62,7 @@ public:
 	static BmMailMonitor* theInstance;
 	
 private:
-	BmMailFolder* parent;
-	node_ref lastParentNodeRef;
-	BmRef<BmListModelItem> lastParentRef;
-	BmMailFolder* oldParent;
-	node_ref lastOldParentNodeRef;
-	BmRef<BmListModelItem> lastOldParentRef;
-	int32 counter;
+	int32 mCounter;
 
 	// Hide copy-constructor and assignment:
 	BmMailMonitor( const BmMailMonitor&);
