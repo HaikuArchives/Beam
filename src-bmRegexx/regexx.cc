@@ -26,8 +26,6 @@
 // $Revision$
 // $Date$
 
-#define BM_BUILDING_BMREGEXX 1
-
 #include "regexx.hh"
 #include "pcre.h"
 

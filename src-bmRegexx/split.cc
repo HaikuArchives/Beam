@@ -26,8 +26,6 @@
 // $Revision$
 // $Date$
 
-#define BM_BUILDING_BMREGEXX 1
-
 #include "split.hh"
 
 vector<BmString>

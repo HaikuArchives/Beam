@@ -246,7 +246,7 @@ void BmResources::AddFontSubmenuTo( BMenu* menu, BHandler* target,
 												BFont* selectedFont) {
 	if (!menu)
 		return;
-	BMenu* fontMenu = new BMenu( "Select Font...");
+	BMenu* fontMenu = new BMenu( "Select Font");
 	BFont font( *be_plain_font);
 	font.SetSize( 10);
 	fontMenu->SetFont( &font);
@@ -278,7 +278,7 @@ void BmResources::AddFontSubmenuTo( BMenu* menu, BHandler* target,
 				familyItem->SetMarked( true);
 		}
 	}
-	BMenu* sizeMenu = new BMenu( "Select Fontsize...");
+	BMenu* sizeMenu = new BMenu( "Select Fontsize");
 	sizeMenu->SetFont( &font);
 	const char* sizes[] 
 		= { "8","9","10","11","12","13","14","15","16","18","20","24",NULL };

@@ -50,19 +50,19 @@ class BmToolbarButton;
 
 typedef void (BmUpdateVariationsFunc)( BmToolbarButton* button);
 
+struct BmVariation {
+	BmString label;
+	BMessage* msg;
+	BmVariation() 							{ msg=NULL; }
+	BmVariation( const BmString l, BMessage* m) 
+												{ label=l; msg=m; }
+};
+typedef vector<BmVariation> BmVariationVect;
+
 class BmToolbarButton : public MPictureButton
 {
 	typedef MPictureButton inherited;
 	
-	struct BmVariation {
-		BmString label;
-		BMessage* msg;
-#ifdef __POWERPC__
-		BmVariation() 							{ msg=NULL; }
-#endif
-		BmVariation( const BmString l, BMessage* m) { label=l; msg=m; }
-	};
-	typedef vector<BmVariation> BmVariationVect;
 
 public:
 	// creator-func, c'tors and d'tor:
