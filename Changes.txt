@@ -1,7 +1,7 @@
 change-history of Beam:
 		$Id$
 
-[Beam v0.913, 2002-11-14]:
+[Beam v0.913, 2002-11-15]:
 	all:
 		-	added a +1 to many BString::LockBuffer() calls in order to have enough
 			room for the trailing '\0'. The BeBook isn't too clear about this, so we 
