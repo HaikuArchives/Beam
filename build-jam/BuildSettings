@@ -53,7 +53,7 @@ MKDIR = mkdir -p ;
 STRIP_APPS ?= 0 ;
 BUILD_TESTS ?= 0 ;
 # For consistency, we evaluate BUILD_DEBUG, too:
-DEBUG ?= $BUILD_DEBUG ;
+DEBUG ?= $(BUILD_DEBUG) ;
 
 rule SetUpSubDirBuildSettings {
 	# SetUpSubDirBuildSettings <dir> ;
