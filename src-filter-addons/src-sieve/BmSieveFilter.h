@@ -78,6 +78,9 @@ public:
 	static int sieve_keep( void* action_context, void* interp_context, 
 			   				  void* script_context, void* message_context, 
 			   				  const char** errmsg);
+	static int sieve_discard( void* action_context, void* interp_context, 
+			   				     void* script_context, void* message_context, 
+			   				     const char** errmsg);
 	static int sieve_fileinto( void* action_context, void* interp_context, 
 			   				  		void* script_context, void* message_context, 
 			   				  		const char** errmsg);
@@ -156,6 +159,7 @@ class BmGraphicalSieveFilter : public BmSieveFilter {
 	static const char* const MSG_SET_STATUS_VALUE;
 	static const char* const MSG_SET_IDENTITY;
 	static const char* const MSG_SET_IDENTITY_VALUE;
+	static const char* const MSG_STOP_PROCESSING;
 
 public:
 	BmGraphicalSieveFilter( const BmString& name, const BMessage* archive);
@@ -170,19 +174,20 @@ public:
 private:
 
 	// stuff used by graphical editor:
-	int16 MatchCount;
-	BmString MatchAnyAll;
-	BmString MatchMailPart[BM_MAX_MATCH_COUNT];
-	BmString MatchFieldName[BM_MAX_MATCH_COUNT];
-	BmString MatchOperator[BM_MAX_MATCH_COUNT];
-	BmString MatchValue[BM_MAX_MATCH_COUNT];
-	bool ActionFileInto;
-	BmString ActionFileIntoValue;
-	bool ActionDiscard;
-	bool ActionSetStatus;
-	BmString ActionSetStatusValue;
-	bool ActionSetIdentity;
-	BmString ActionSetIdentityValue;
+	int16 mMatchCount;
+	BmString mMatchAnyAll;
+	BmString mMatchMailPart[BM_MAX_MATCH_COUNT];
+	BmString mMatchFieldName[BM_MAX_MATCH_COUNT];
+	BmString mMatchOperator[BM_MAX_MATCH_COUNT];
+	BmString mMatchValue[BM_MAX_MATCH_COUNT];
+	bool mActionFileInto;
+	BmString mActionFileIntoValue;
+	bool mActionDiscard;
+	bool mActionSetStatus;
+	BmString mActionSetStatusValue;
+	bool mActionSetIdentity;
+	BmString mActionSetIdentityValue;
+	bool mStopProcessing;
 
 	BmGraphicalSieveFilter();									// hide default constructor
 	// Hide copy-constructor and assignment:
@@ -218,6 +223,7 @@ class BmTextControl;
 #define BM_SET_STATUS_SELECTED		'bmTm'
 #define BM_SET_IDENTITY_CHANGED		'bmTn'
 #define BM_SET_IDENTITY_SELECTED		'bmTo'
+#define BM_STOP_PROCESSING_CHANGED	'bmTp'
 
 class BmSieveFilterPrefs : public BmFilterAddonPrefsView {
 	typedef BmFilterAddonPrefsView inherited;
@@ -265,6 +271,7 @@ private:
 	BmMenuControl* mSetStatusValueControl;
 	BmCheckControl* mSetIdentityControl;
 	BmMenuControl* mSetIdentityValueControl;
+	BmCheckControl* mStopProcessingControl;
 
 	BmGraphicalSieveFilter* mCurrFilterAddon;
 

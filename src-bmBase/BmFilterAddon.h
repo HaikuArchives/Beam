@@ -98,6 +98,8 @@ struct IMPEXPBMBASE BmMsgContext {
 	BmString folderName;
 	BmString status;
 	BmString identity;
+	bool moveToTrash;
+	bool stopProcessing;
 };
 
 #endif

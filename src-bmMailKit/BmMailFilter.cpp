@@ -180,6 +180,8 @@ void BmMailFilter::ExecuteFilter( BmMail* mail) {
 				BmFilter* filter = dynamic_cast< BmFilter*>( filterItem.Get());
 				if (filter && filter->Addon())
 					filter->Addon()->Execute( &msgContext);
+				if (msgContext.stopProcessing)
+					break;
 			}
 		}
 	} else {
@@ -199,6 +201,10 @@ void BmMailFilter::ExecuteFilter( BmMail* mail) {
 		mail->MarkAs( msgContext.status.String());
 		needToStore = true;
 	}
+	if (msgContext.moveToTrash) {
+		if (mail->SetDestFoldername( BM_MAIL_FOLDER_TRASH))
+			needToStore = true;
+	}		
 	if (needToStore && CurrentJobSpecifier()!=BM_EXECUTE_FILTER_IN_MEM)
 		mail->Store();
 }

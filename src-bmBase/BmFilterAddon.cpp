@@ -68,6 +68,8 @@ BmMsgContext::BmMsgContext( const BmString& mtxt, const BmString& mid)
 	:	rawMsgText( mtxt)
 	,	mailId( mid)
 	,	headerInfos( NULL)
+	,	moveToTrash( false)
+	,	stopProcessing( false)
 {
 }
 
