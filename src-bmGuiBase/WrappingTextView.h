@@ -36,6 +36,8 @@
 
 class WrappingTextView : public BTextView
 {
+	typedef BTextView inherited;
+	
 		struct UndoInfo {
 			bool isInsertion;
 			BString text;
@@ -131,6 +133,7 @@ class WrappingTextView : public BTextView
 		uint32 m_max_undo_index;
 		bool m_in_undo_redo;
 		void* m_undo_context;
+		int32 m_selection_start;
 };
 
 #endif

@@ -17,6 +17,7 @@
 #include <Message.h>
 #include <ScrollBar.h>
 #include <StringView.h>
+#include <Window.h>
 
 #include "WrappingTextView.h"
 
@@ -272,9 +273,89 @@ void WrappingTextView::CalculateVerticalOffset() {
 
 void WrappingTextView::KeyDown(const char *bytes, int32 numBytes) 
 { 
-	if (IsEditable()) {
-		// in editable mode, we simply forward anything:
-		BTextView::KeyDown( bytes, numBytes);
+	if (IsEditable() && numBytes==1) {
+		switch( bytes[0]) {
+			case B_RIGHT_ARROW: {
+				int32 mods = Window()->CurrentMessage()->FindInt32("modifiers");
+				if (mods & (B_LEFT_CONTROL_KEY | B_RIGHT_OPTION_KEY)) {
+					int32 len=TextLength();
+					int32 startPos, endPos;
+					GetSelection( &startPos, &endPos);
+					if (endPos==len)
+						break;
+					if (startPos==endPos && (mods & B_SHIFT_KEY))
+						m_selection_start=B_RIGHT_ARROW;
+					int32 wordStart, wordEnd;
+					if (mods & B_SHIFT_KEY && m_selection_start==B_LEFT_ARROW) {
+						do {
+							FindWord( startPos, &wordStart, &wordEnd);
+							if (wordEnd > wordStart+1)
+								break;
+							if (wordEnd == wordStart+1 && ByteAt( wordStart)!=' ')
+								break;
+						} while( ++startPos < len);
+						Select( MIN(endPos, wordEnd), endPos);
+					} else {
+						do {
+							FindWord( endPos, &wordStart, &wordEnd);
+							if (wordEnd > wordStart+1)
+								break;
+							if (wordEnd == wordStart+1 && ByteAt( wordStart)!=' ')
+								break;
+						} while( ++endPos < len);
+						if (mods & B_SHIFT_KEY) {
+							Select( startPos, wordEnd);
+						} else
+							Select( wordEnd, wordEnd);
+					}
+					ScrollToSelection();
+				} else
+					inherited::KeyDown( bytes, numBytes);
+				break;
+			}
+			case B_LEFT_ARROW: {
+				int32 mods = Window()->CurrentMessage()->FindInt32("modifiers");
+				if (mods & (B_LEFT_CONTROL_KEY | B_RIGHT_OPTION_KEY)) {
+					int32 startPos, endPos;
+					GetSelection( &startPos, &endPos);
+					if (!startPos)
+						break;
+					if (startPos==endPos && (mods & B_SHIFT_KEY))
+						m_selection_start=B_LEFT_ARROW;
+					int32 wordStart, wordEnd;
+					if (mods & B_SHIFT_KEY && m_selection_start==B_RIGHT_ARROW) {
+						--endPos;
+						do {
+							FindWord( endPos, &wordStart, &wordEnd);
+							if (wordEnd > wordStart+1)
+								break;
+							if (wordEnd == wordStart+1 && ByteAt( wordStart)!=' ')
+								break;
+						} while( --endPos > 0);
+						Select( startPos, MAX( startPos, wordStart));
+					} else {
+						--startPos;
+						do {
+							FindWord( startPos, &wordStart, &wordEnd);
+							if (wordEnd > wordStart+1)
+								break;
+							if (wordEnd == wordStart+1 && ByteAt( wordStart)!=' ')
+								break;
+						} while( --startPos > 0);
+						if (mods & B_SHIFT_KEY)
+							Select( wordStart, endPos);
+						else
+							Select( wordStart, wordStart);
+					}
+					ScrollToSelection();
+				} else
+					inherited::KeyDown( bytes, numBytes);
+				break;
+			}
+			default:
+				inherited::KeyDown( bytes, numBytes);
+				break;
+		}
 	} else if ( numBytes == 1 ) {
 		// in read-only mode, we use cursor-keys to move scrollbar:
 		switch( bytes[0]) {
@@ -305,7 +386,8 @@ void WrappingTextView::KeyDown(const char *bytes, int32 numBytes)
 				BTextView::KeyDown( bytes, numBytes);
 				break;
 		}
-	}
+	} else
+		inherited::KeyDown( bytes, numBytes);
 }
 
 void WrappingTextView::SetFixedWidth( int32 i) { 
