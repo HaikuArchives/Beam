@@ -1,5 +1,5 @@
 /*
-	QuotedPrintableDecoderTest.h
+	MemIoTest.h
 		$Id$
 */
 /*************************************************************************/
@@ -33,21 +33,21 @@
  */
 
 
-#ifndef _QuotedPrintableDecoderTest_h
-#define _QuotedPrintableDecoderTest_h
+#ifndef _MemIoTest_h
+#define _MemIoTest_h
 
 #include <cppunit/TestCaller.h>
 #include <cppunit/TestSuite.h>
 #include <cppunit/extensions/HelperMacros.h>
 #include <TestCase.h>
 
-class QuotedPrintableDecoderTest : public BTestCase
+class MemIoTest : public BTestCase
 {
 	typedef TestCase inherited;
-	CPPUNIT_TEST_SUITE( QuotedPrintableDecoderTest );
-	CPPUNIT_TEST( SimpleTest);
-	CPPUNIT_TEST( MultiLineTest);
-	CPPUNIT_TEST( LargeDataTest);
+	CPPUNIT_TEST_SUITE( MemIoTest );
+	CPPUNIT_TEST( StringIBufTest);
+	CPPUNIT_TEST( StringOBufTest);
+	CPPUNIT_TEST( RingBufTest);
 	CPPUNIT_TEST_SUITE_END();
 public:
 //	static CppUnit::Test* Suite();
@@ -61,9 +61,9 @@ public:
 	//------------------------------------------------------------
 	// Test functions
 	//------------------------------------------------------------
-	void SimpleTest();
-	void MultiLineTest();
-	void LargeDataTest();
+	void StringIBufTest();
+	void StringOBufTest();
+	void RingBufTest();
 };
 
 

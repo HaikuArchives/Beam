@@ -1,5 +1,5 @@
 /*
-	QuotedPrintableDecoderTest.h
+	Base64DecoderTest.h
 		$Id$
 */
 /*************************************************************************/
@@ -33,18 +33,18 @@
  */
 
 
-#ifndef _QuotedPrintableDecoderTest_h
-#define _QuotedPrintableDecoderTest_h
+#ifndef _Base64DecoderTest_h
+#define _Base64DecoderTest_h
 
 #include <cppunit/TestCaller.h>
 #include <cppunit/TestSuite.h>
 #include <cppunit/extensions/HelperMacros.h>
 #include <TestCase.h>
 
-class QuotedPrintableDecoderTest : public BTestCase
+class Base64DecoderTest : public BTestCase
 {
 	typedef TestCase inherited;
-	CPPUNIT_TEST_SUITE( QuotedPrintableDecoderTest );
+	CPPUNIT_TEST_SUITE( Base64DecoderTest );
 	CPPUNIT_TEST( SimpleTest);
 	CPPUNIT_TEST( MultiLineTest);
 	CPPUNIT_TEST( LargeDataTest);

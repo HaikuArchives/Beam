@@ -1,5 +1,5 @@
 /*
-	QuotedPrintableDecoderTest.h
+	StringTest.h
 		$Id$
 */
 /*************************************************************************/
@@ -33,21 +33,34 @@
  */
 
 
-#ifndef _QuotedPrintableDecoderTest_h
-#define _QuotedPrintableDecoderTest_h
+#ifndef _StringTest_h
+#define _StringTest_h
 
 #include <cppunit/TestCaller.h>
 #include <cppunit/TestSuite.h>
 #include <cppunit/extensions/HelperMacros.h>
 #include <TestCase.h>
 
-class QuotedPrintableDecoderTest : public BTestCase
+class StringTest : public BTestCase
 {
 	typedef TestCase inherited;
-	CPPUNIT_TEST_SUITE( QuotedPrintableDecoderTest );
-	CPPUNIT_TEST( SimpleTest);
-	CPPUNIT_TEST( MultiLineTest);
-	CPPUNIT_TEST( LargeDataTest);
+	CPPUNIT_TEST_SUITE( StringTest );
+	CPPUNIT_TEST( StringSubCopyTest);
+	CPPUNIT_TEST( StringSearchTest);
+	CPPUNIT_TEST( StringReplaceTest);
+	CPPUNIT_TEST( StringRemoveTest);
+	CPPUNIT_TEST( StringPrependTest);
+	CPPUNIT_TEST( StringInsertTest);
+	CPPUNIT_TEST( StringFormatAppendTest);
+	CPPUNIT_TEST( StringEscapeTest);
+	CPPUNIT_TEST( StringConstructionTest);
+	CPPUNIT_TEST( StringCompareTest);
+	CPPUNIT_TEST( StringCharAccessTest);
+	CPPUNIT_TEST( StringCaseTest);
+	CPPUNIT_TEST( StringAssignTest);
+	CPPUNIT_TEST( StringAccessTest);
+	CPPUNIT_TEST( StringAppendTest);
+	CPPUNIT_TEST( StringBeamExtensionsTest);
 	CPPUNIT_TEST_SUITE_END();
 public:
 //	static CppUnit::Test* Suite();
@@ -61,9 +74,22 @@ public:
 	//------------------------------------------------------------
 	// Test functions
 	//------------------------------------------------------------
-	void SimpleTest();
-	void MultiLineTest();
-	void LargeDataTest();
+	void StringSubCopyTest();
+	void StringSearchTest();
+	void StringReplaceTest();
+	void StringRemoveTest();
+	void StringPrependTest();
+	void StringInsertTest();
+	void StringFormatAppendTest();
+	void StringEscapeTest();
+	void StringConstructionTest();
+	void StringCompareTest();
+	void StringCharAccessTest();
+	void StringCaseTest();
+	void StringAssignTest();
+	void StringAccessTest();
+	void StringAppendTest();
+	void StringBeamExtensionsTest();
 };
 
 

@@ -48,6 +48,8 @@ class QuotedPrintableEncoderTest : public BTestCase
 	CPPUNIT_TEST( SimpleTest);
 	CPPUNIT_TEST( EncodedWordTest);
 	CPPUNIT_TEST( MultiLineTest);
+	CPPUNIT_TEST( MultiLineEncodedWordTest);
+	CPPUNIT_TEST( LargeDataTest);
 	CPPUNIT_TEST_SUITE_END();
 public:
 //	static CppUnit::Test* Suite();
@@ -64,6 +66,8 @@ public:
 	void SimpleTest();
 	void EncodedWordTest();
 	void MultiLineTest();
+	void MultiLineEncodedWordTest();
+	void LargeDataTest();
 };
 
 

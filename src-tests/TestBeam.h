@@ -1,5 +1,5 @@
 /*
-	QuotedPrintableDecoderTest.h
+	TestBeam.h
 		$Id$
 */
 /*************************************************************************/
@@ -33,38 +33,23 @@
  */
 
 
-#ifndef _QuotedPrintableDecoderTest_h
-#define _QuotedPrintableDecoderTest_h
+#ifndef _TestBeam_h
+#define _TestBeam_h
 
-#include <cppunit/TestCaller.h>
-#include <cppunit/TestSuite.h>
-#include <cppunit/extensions/HelperMacros.h>
-#include <TestCase.h>
+#include "BmString.h"
 
-class QuotedPrintableDecoderTest : public BTestCase
-{
-	typedef TestCase inherited;
-	CPPUNIT_TEST_SUITE( QuotedPrintableDecoderTest );
-	CPPUNIT_TEST( SimpleTest);
-	CPPUNIT_TEST( MultiLineTest);
-	CPPUNIT_TEST( LargeDataTest);
-	CPPUNIT_TEST_SUITE_END();
-public:
-//	static CppUnit::Test* Suite();
-	
-	// This function called before *each* test added in Suite()
-	void setUp();
-	
-	// This function called after *each* test added in Suite()
-	void tearDown();
+void SlurpFile( const char* filename, BmString& str);
 
-	//------------------------------------------------------------
-	// Test functions
-	//------------------------------------------------------------
-	void SimpleTest();
-	void MultiLineTest();
-	void LargeDataTest();
+void DumpResult( const BmString& str);
+
+extern BmString AsciiAlphabet[16];
+extern bool HaveTestdata;
+extern bool LargeDataMode;
+
+struct Activator {
+	Activator( bool& f) : flag( f) 		{ flag = true; }
+	~Activator()								{ flag = false; }
+	bool& flag;
 };
-
 
 #endif
