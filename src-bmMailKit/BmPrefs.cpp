@@ -32,6 +32,8 @@
 #include <Autolock.h>
 #include <Directory.h>
 #include <File.h>
+#include <FindDirectory.h>
+#include <Path.h>
 #include <UTF8.h>
 
 #include "BmBasics.h"
@@ -357,6 +359,8 @@ void BmPrefs::InitDefaults() {
 	mDefaultsMsg.AddString( "HeaderListLarge", 
 									"Subject,From,Date,To,Cc,User-Agent/X-Mailer");
 	mDefaultsMsg.AddString( "HeaderListSmall", "Subject,From,Date");
+	BmString defaultIconPath = BeamRoster->AppPath() + nDefaultIconset;
+	mDefaultsMsg.AddString( "IconPath", defaultIconPath.String());
 	mDefaultsMsg.AddBool( "InOutAlwaysAtTop", true);
 	mDefaultsMsg.AddBool( "ImportExportTextAsUtf8", true);
 	mDefaultsMsg.AddString( "ListFields", "Mail-Followup-To,Reply-To");
@@ -660,14 +664,11 @@ void BmPrefs::SetupMailboxVolume() {
 		BM_THROW_RUNTIME( "Sorry, could not determine mailbox-volume !?!");
 	MailboxVolume = nref.device;
 	
-	// now find out about Trash-NodeRef on this volume:
-	BDirectory mboxRoot;
-	MailboxVolume.GetRootDirectory( &mboxRoot);
-	if (mboxRoot.InitCheck() == B_OK) {
-		// fetch node-ref of Trash (a kludge, should be able to handle more than one):
-		BDirectory trash( &mboxRoot, "home/Desktop/Trash");
-		trash.GetNodeRef( &TrashNodeRef);
-	}
+	// now find out about Trash-path on this volume:
+	BPath path;
+	if (find_directory(B_TRASH_DIRECTORY, &path, false, &MailboxVolume) != B_OK)
+		BM_THROW_RUNTIME( "Sorry, could not determine trash-directory !?!");
+	TrashPath = path.Path();
 }
 
 /*------------------------------------------------------------------------------*\

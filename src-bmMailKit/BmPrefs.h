@@ -94,7 +94,7 @@ public:
 
 	void SetupMailboxVolume();
 	BVolume MailboxVolume;
-	node_ref TrashNodeRef;
+	BmString TrashPath;
 
 	// log-levels as string (for prefs):
 	static const char* const LOG_LVL_0;
