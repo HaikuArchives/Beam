@@ -262,7 +262,7 @@ bool BmMailRefList::StartJob() {
 		-	
 \*------------------------------------------------------------------------------*/
 BmRef<BmMailRef> BmMailRefList::AddMailRef( entry_ref& eref, struct stat& st) {
-	BmRef<BmMailRef> newMailRef( BmMailRef::CreateInstance( eref, st));
+	BmRef<BmMailRef> newMailRef( BmMailRef::CreateInstance( eref, &st));
 	if (mInitCheck == B_OK || mJobState == JOB_RUNNING) {
 		// ref-list has been read from disk (or is currently being read), 
 		// so we can add to it:

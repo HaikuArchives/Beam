@@ -72,7 +72,7 @@ class IMPEXPBMMAILKIT BmMailRef : public BmListModelItem {
 public:
 	// creator-funcs, c'tors and d'tor:
 	static BmRef<BmMailRef> CreateInstance( entry_ref &eref, 
-												 		 struct stat& st);
+												 		 struct stat* st = NULL);
 	static BmRef<BmMailRef> CreateInstance( BMessage* archive);
 	virtual ~BmMailRef();
 
@@ -155,6 +155,7 @@ public:
 
 protected:
 	BmMailRef( entry_ref &eref, struct stat& st);
+	BmMailRef( entry_ref &eref, const node_ref& nref);
 	BmMailRef( BMessage* archive, node_ref& nref);
 	void Initialize();
 

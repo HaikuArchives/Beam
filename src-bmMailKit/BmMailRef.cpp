@@ -78,8 +78,17 @@ const char* const BmMailRef::MSG_OPCODE = 	"bm:op";
 			because otherwise we may risk deadlocks
 \*------------------------------------------------------------------------------*/
 BmRef<BmMailRef> BmMailRef::CreateInstance( entry_ref &eref, 
-												  		  struct stat& st) {
-	BmString key( BM_REFKEYSTAT( st));
+												  		  struct stat* st) {
+	BmString key;
+	node_ref nref;
+	if (st)
+		key = BM_REFKEYSTAT( *st);
+	else {
+		BEntry entry(&eref);
+		if (entry.GetNodeRef(&nref) != B_OK)
+			return NULL;
+		key = BM_REFKEY(nref);
+	}
 	GlobalLocker()->Lock();
 	if (!GlobalLocker()->IsLocked()) {
 		BM_SHOWERR("BmMailRef::CreateInstance(): Could not acquire global lock!");
@@ -92,10 +101,13 @@ BmRef<BmMailRef> BmMailRef::CreateInstance( entry_ref &eref,
 	);
 	GlobalLocker()->Unlock();
 	if (mailRef) {
-		mailRef->ResyncFromDisk( &eref, &st);
+		mailRef->ResyncFromDisk( &eref, st);
 		return mailRef;
 	} else {
-		mailRef = new BmMailRef( eref, st);
+		if (st)
+			mailRef = new BmMailRef( eref, *st);
+		else
+			mailRef = new BmMailRef( eref, nref);
 		mailRef->Initialize();
 		return mailRef;
 	}
@@ -138,7 +150,23 @@ BmRef<BmMailRef> BmMailRef::CreateInstance( BMessage* archive) {
 }
 
 /*------------------------------------------------------------------------------*\
-	BmMailRef( eref, parent, modified)
+	BmMailRef( eref, nref)
+		-	standard c'tor
+\*------------------------------------------------------------------------------*/
+BmMailRef::BmMailRef( entry_ref &eref, const node_ref& nref)
+	:	inherited( BM_REFKEY(nref), NULL, (BmListModelItem*)NULL)
+	,	mEntryRef( eref)
+	,	mWhen( 0)
+	,	mWhenCreated( 0)
+	,	mSize( 0)
+	,	mHasAttachments( false)
+	,	mInitCheck( B_NO_INIT)
+{
+	mNodeRef = nref;
+}
+
+/*------------------------------------------------------------------------------*\
+	BmMailRef( eref, st)
 		-	standard c'tor
 \*------------------------------------------------------------------------------*/
 BmMailRef::BmMailRef( entry_ref &eref, struct stat& st)
