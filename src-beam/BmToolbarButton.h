@@ -42,6 +42,9 @@ class BmToolbarButton : public MPictureButton
 	struct BmVariation {
 		BmString label;
 		BMessage* msg;
+#ifdef __POWERPC__
+		BmVariation() 							{ msg=NULL; }
+#endif
 		BmVariation( const BmString l, BMessage* m) { label=l; msg=m; }
 	};
 	typedef vector<BmVariation> BmVariationVect;

@@ -147,6 +147,17 @@ bool BmSmtpStatusFilter::CheckForPositiveAnswer() {
 #undef BM_LOGNAME
 #define BM_LOGNAME Name()
 
+const char* const BmSmtp::MSG_SMTP = 		"bm:smtp";
+const char* const BmSmtp::MSG_DELTA = 		"bm:delta";
+const char* const BmSmtp::MSG_TRAILING = 	"bm:trailing";
+const char* const BmSmtp::MSG_LEADING = 	"bm:leading";
+
+// message component definitions for additional info:
+const char* const BmSmtp::MSG_PWD = 	"bm:pwd";
+
+// job-specifier for checking server capabilities:
+const int32 BmSmtp::BM_CHECK_CAPABILITIES_JOB = 1;
+
 /*------------------------------------------------------------------------------*\
 	SmtpStates[]
 		-	array of SMTP-states, each with title and corresponding handler-method
@@ -232,7 +243,7 @@ bool BmSmtp::StartJob() {
 		// a problem occurred, we tell the user:
 		BmString errstr = err.what();
 		int e;
-		if ((e = Connection()->Error()))
+		if ((e = Connection()->Error())!=B_OK)
 			errstr << "\nerror: " << e << ", " << Connection()->ErrorStr();
 		UpdateSMTPStatus( 0.0, NULL, failed);
 		BmString text = Name() << ":\n\n" << errstr;
@@ -442,7 +453,7 @@ void BmSmtp::StateAuth() {
 			// most probably a wrong password...
 			BmString errstr = err.what();
 			int e;
-			if ((e = Connection()->Error()))
+			if ((e = Connection()->Error())!=B_OK)
 				errstr << "\nerror: " << e << ", " << Connection()->ErrorStr();
 			BmString text = Name() << ":\n\n" << errstr;
 			HandleError( text);

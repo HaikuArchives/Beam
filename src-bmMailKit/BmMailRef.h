@@ -49,22 +49,22 @@ class BmMailRef : public BmListModelItem {
 	typedef BmListModelItem inherited;
 
 	// archival-fieldnames:
-	static const char* const MSG_ACCOUNT = 	"bm:ac";
-	static const char* const MSG_ATTACHMENTS= "bm:at";
-	static const char* const MSG_CC = 			"bm:cc";
-	static const char* const MSG_CREATED = 	"bm:cr";
-	static const char* const MSG_ENTRYREF = 	"bm:er";
-	static const char* const MSG_FROM = 		"bm:fr";
-	static const char* const MSG_INODE = 		"bm:in";
-	static const char* const MSG_NAME = 		"bm:nm";
-	static const char* const MSG_PRIORITY = 	"bm:pr";
-	static const char* const MSG_REPLYTO = 	"bm:rp";
-	static const char* const MSG_SIZE = 		"bm:sz";
-	static const char* const MSG_STATUS = 		"bm:st";
-	static const char* const MSG_SUBJECT = 	"bm:su";
-	static const char* const MSG_TO = 			"bm:to";
-	static const char* const MSG_WHEN = 		"bm:wh";
-	static const int16 nArchiveVersion = 1;
+	static const char* const MSG_ACCOUNT;
+	static const char* const MSG_ATTACHMENTS;
+	static const char* const MSG_CC;
+	static const char* const MSG_CREATED;
+	static const char* const MSG_ENTRYREF;
+	static const char* const MSG_FROM;
+	static const char* const MSG_INODE;
+	static const char* const MSG_NAME;
+	static const char* const MSG_PRIORITY;
+	static const char* const MSG_REPLYTO;
+	static const char* const MSG_SIZE;
+	static const char* const MSG_STATUS;
+	static const char* const MSG_SUBJECT;
+	static const char* const MSG_TO;
+	static const char* const MSG_WHEN;
+	static const int16 nArchiveVersion;
 
 public:
 	// creator-funcs, c'tors and d'tor:

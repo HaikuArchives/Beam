@@ -205,7 +205,7 @@ const BBitmap* CLVEasyItem::GetColumnContentBitmap(int column_index)
 }
 
 
-void CLVEasyItem::DrawItemColumn(BView *owner, BRect item_column_rect, int32 column_index, bool complete)
+void CLVEasyItem::DrawItemColumn(BView *owner, BRect item_column_rect, int32 column_index, bool)
 {
 	rgb_color color, tinted_color;
 	bool selected = IsSelected();
@@ -545,7 +545,7 @@ void CLVEasyItem::FrameChanged(int32 column_index, BRect new_frame, ColumnListVi
 }
 
 
-const char* CLVEasyItem::GetUserText(int32 column_index, float column_width) const
+const char* CLVEasyItem::GetUserText(int32, float) const
 {
 	return NULL;
 }

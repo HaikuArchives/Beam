@@ -49,6 +49,29 @@ using namespace regexx;
 	BmPopAccount
 \********************************************************************************/
 
+const char* const BmPopAccount::MSG_NAME = 			"bm:name";
+const char* const BmPopAccount::MSG_USERNAME = 		"bm:username";
+const char* const BmPopAccount::MSG_PASSWORD = 		"bm:password";
+const char* const BmPopAccount::MSG_POP_SERVER = 	"bm:popserver";
+const char* const BmPopAccount::MSG_SMTP_ACCOUNT = "bm:smtpacc";
+const char* const BmPopAccount::MSG_REAL_NAME = 	"bm:realname";
+const char* const BmPopAccount::MSG_MAIL_ADDR = 	"bm:mailaddr";
+const char* const BmPopAccount::MSG_SIGNATURE_NAME = "bm:signaturename";
+const char* const BmPopAccount::MSG_CHECK_MAIL = 	"bm:checkmail";
+const char* const BmPopAccount::MSG_DELETE_MAIL = 	"bm:deletemail";
+const char* const BmPopAccount::MSG_PORT_NR = 		"bm:portnr";
+const char* const BmPopAccount::MSG_UID = 			"bm:uid";
+const char* const BmPopAccount::MSG_AUTH_METHOD = 	"bm:authmethod";
+const char* const BmPopAccount::MSG_MARK_DEFAULT = "bm:markdefault";
+const char* const BmPopAccount::MSG_STORE_PWD = 	"bm:storepwd";
+const char* const BmPopAccount::MSG_MAIL_ALIASES = "bm:mailaliases";
+const char* const BmPopAccount::MSG_MARK_BUCKET = 	"bm:markbucket";
+const char* const BmPopAccount::MSG_CHECK_INTERVAL = "bm:checkinterval";
+const int16 BmPopAccount::nArchiveVersion = 2;
+
+const char* const BmPopAccount::AUTH_POP3 = "POP3";
+const char* const BmPopAccount::AUTH_APOP = "APOP";
+
 /*------------------------------------------------------------------------------*\
 	BmPopAccount()
 		-	c'tor
@@ -254,7 +277,7 @@ void BmPopAccount::MarkUIDAsDownloaded( BmString uid) {
 \*------------------------------------------------------------------------------*/
 void BmPopAccount::CheckInterval( int16 i) { 
 	mCheckInterval = i; 
-	mCheckIntervalString = i ? BmString()<<i : "";
+	mCheckIntervalString = i ? BmString()<<i : BM_DEFAULT_STRING;
 	TellModelItemUpdated( UPD_ALL);
 	SetupIntervalRunner();
 }
@@ -327,6 +350,9 @@ bool BmPopAccount::SanityCheck( BmString& complaint, BmString& fieldName) const 
 
 BmRef< BmPopAccountList> BmPopAccountList::theInstance( NULL);
 
+const char* const BmPopAccountList::MSG_AUTOCHECK = "bm:auto";
+const int16 BmPopAccountList::nArchiveVersion = 1;
+
 /*------------------------------------------------------------------------------*\
 	CreateInstance()
 		-	initialiazes object by reading info from settings file (if any)
@@ -393,7 +419,7 @@ void BmPopAccountList::InstantiateItems( BMessage* archive) {
 void BmPopAccountList::ResetToSaved() {
 	BM_LOG2( BM_LogMailTracking, BmString("Start of ResetToSaved() for PopAccountList"));
 	BmAutolock lock( ModelLocker());
-	lock.IsLocked() 							|| BM_THROW_RUNTIME( ModelName() << ": Unable to get lock");
+	lock.IsLocked() 							|| BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
 	// first we copy all uid-lists into a temp map...
 	map<BmString, vector<BmString> > uidListMap;
 	BmModelItemMap::const_iterator iter;
@@ -422,7 +448,7 @@ void BmPopAccountList::ResetToSaved() {
 \*------------------------------------------------------------------------------*/
 BmRef<BmPopAccount> BmPopAccountList::DefaultAccount() {
 	BmAutolock lock( ModelLocker());
-	lock.IsLocked() 							|| BM_THROW_RUNTIME( ModelName() << ": Unable to get lock");
+	lock.IsLocked() 							|| BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
 	BmModelItemMap::const_iterator iter;
 	for( iter = begin(); iter != end(); ++iter) {
 		BmPopAccount* acc = dynamic_cast< BmPopAccount*>( iter->second.Get());
@@ -443,7 +469,7 @@ BmRef<BmPopAccount> BmPopAccountList::DefaultAccount() {
 \*------------------------------------------------------------------------------*/
 void BmPopAccountList::SetDefaultAccount( BmString accName) {
 	BmAutolock lock( ModelLocker());
-	lock.IsLocked() 							|| BM_THROW_RUNTIME( ModelName() << ": Unable to get lock");
+	lock.IsLocked() 							|| BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
 	BmModelItemMap::const_iterator iter;
 	for( iter = begin(); iter != end(); ++iter) {
 		BmPopAccount* acc = dynamic_cast< BmPopAccount*>( iter->second.Get());
@@ -461,7 +487,7 @@ void BmPopAccountList::SetDefaultAccount( BmString accName) {
 \*------------------------------------------------------------------------------*/
 BmRef<BmPopAccount> BmPopAccountList::FindAccountForAddress( const BmString addr) {
 	BmAutolock lock( ModelLocker());
-	lock.IsLocked() 							|| BM_THROW_RUNTIME( ModelName() << ": Unable to get lock");
+	lock.IsLocked() 							|| BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
 	BmModelItemMap::const_iterator iter;
 	// we first check whether any account handles the given address (as primary
 	// address or as alias):
@@ -494,7 +520,7 @@ BmRef<BmPopAccount> BmPopAccountList::FindAccountForAddress( const BmString addr
 \*------------------------------------------------------------------------------*/
 void BmPopAccountList::CheckMail( bool allAccounts) {
 	BmAutolock lock( ModelLocker());
-	lock.IsLocked() 							|| BM_THROW_RUNTIME( ModelName() << ": Unable to get lock");
+	lock.IsLocked() 							|| BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
 	BmModelItemMap::const_iterator iter;
 	for( iter = begin(); iter != end(); ++iter) {
 		BmPopAccount* acc = dynamic_cast< BmPopAccount*>( iter->second.Get());

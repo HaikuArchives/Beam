@@ -180,7 +180,7 @@ void BmJobController::StartJob( BmJobModel* model, bool startInNewThread,
 		-	parameter msg may contain any further attributes needed for update
 		-	this default implementation simply tells its model to pause
 \*------------------------------------------------------------------------------*/
-void BmJobController::PauseJob( BMessage* msg) {
+void BmJobController::PauseJob( BMessage*) {
 	if (DataModel()) {
 		BM_LOG2( BM_LogModelController, BmString("Controller <") << ControllerName() << "> pauses job " << ModelName());
 		DataModel()->PauseJob();
@@ -193,7 +193,7 @@ void BmJobController::PauseJob( BMessage* msg) {
 		-	parameter msg may contain any further attributes
 		-	this default implementation simply tells its model to continue
 \*------------------------------------------------------------------------------*/
-void BmJobController::ContinueJob( BMessage* msg) {
+void BmJobController::ContinueJob( BMessage*) {
 	if (DataModel()) {
 		BM_LOG2( BM_LogModelController, BmString("Controller <") << ControllerName() << "> continues job " << ModelName());
 		DataModel()->ContinueJob();

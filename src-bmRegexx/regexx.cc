@@ -29,6 +29,8 @@
 #include "regexx.hh"
 #include "pcre.h"
 
+BmString BM_REGEXX_DEFAULT_STRING;
+
 const unsigned int&
 regexx::Regexx::exec(int _flags)
   throw(CompileException)
@@ -120,14 +122,14 @@ regexx::Regexx::replace(const BmString& _repstr, int _flags)
   throw(CompileException)
 {
   exec(_flags&~nomatch);
-  std::vector< std::pair<unsigned int,int32> > v;
+  vector< pair<unsigned int,int32> > v;
   v.reserve(m_capturecount);
   int32 pos = _repstr.FindFirst("$");
   while(pos != B_ERROR) {
     if((pos==0 || _repstr[pos-1] != '\\')
        && _repstr[pos+1] >= '1'
        && _repstr[pos+1] <= '9') {
-      v.push_back(std::pair<unsigned int,int32>(_repstr[pos+1]-'1',pos));
+      v.push_back(pair<unsigned int,int32>(_repstr[pos+1]-'1',pos));
     }
     pos = _repstr.FindFirst("$",pos+1);
   }
@@ -137,8 +139,8 @@ regexx::Regexx::replace(const BmString& _repstr, int _flags)
   char* destBuf = m_replaced.LockBuffer( destSize);
   int32 destLen = 0;
   int32 lastPos = 0;
-  std::vector<RegexxMatch>::const_iterator m;
-  std::vector< std::pair<unsigned int,int32> >::const_iterator i;
+  vector<RegexxMatch>::const_iterator m;
+  vector< pair<unsigned int,int32> >::const_iterator i;
   for(m = match.begin(); m != match.end(); m++) {
     if (lastPos < m->start()) {
     	// copy chars between last and current match:

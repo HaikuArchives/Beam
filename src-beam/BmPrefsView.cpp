@@ -48,6 +48,10 @@
 	BmPrefsView
 \********************************************************************************/
 
+const char* const BmPrefsView::MSG_ACCOUNT = 	"bm:acc";
+const char* const BmPrefsView::MSG_FIELD_NAME = "bm:fname";
+const char* const BmPrefsView::MSG_COMPLAINT = 	"bm:compl";
+
 /*------------------------------------------------------------------------------*\
 	()
 		-	

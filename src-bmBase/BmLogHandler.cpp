@@ -62,7 +62,7 @@ BmLogHandler* BmLogHandler::theInstance = NULL;
 	static logging-function
 		-	logs only if a loghandler is actually present
 \*------------------------------------------------------------------------------*/
-void BmLogHandler::Log( const BmString logname, uint32 flag, const BmString& msg, int8 minlevel=1) { 
+void BmLogHandler::Log( const BmString logname, uint32 flag, const BmString& msg, int8 minlevel) { 
 	if (theInstance)
 		theInstance->LogToFile( logname, flag, msg, minlevel);
 }
@@ -71,7 +71,7 @@ void BmLogHandler::Log( const BmString logname, uint32 flag, const BmString& msg
 	static logging-function
 		-	logs only if a loghandler is actually present
 \*------------------------------------------------------------------------------*/
-void BmLogHandler::Log( const char* const logname, uint32 flag, const char* const msg, int8 minlevel=1) { 
+void BmLogHandler::Log( const char* const logname, uint32 flag, const char* const msg, int8 minlevel) { 
 	BmString theLogname(logname);
 	BmString theMsg(msg);
 	if (theInstance)
@@ -133,27 +133,26 @@ BmLogHandler::~BmLogHandler() {
 \*------------------------------------------------------------------------------*/
 BmLogHandler::BmLogfile* BmLogHandler::FindLogfile( const BmString &logname) {
 	BmAutolock lock( mLocker);
-	if (lock.IsLocked()) {
-		BmString name = logname.Length() ? logname : "Beam";
-		name = BmString("logs/") + name + ".log";
-		LogfileMap::iterator logIter = mActiveLogs.find( name);
-		BmLogfile* log;
-		if (logIter == mActiveLogs.end()) {
-			// logfile doesn't exists, so we create it:
-			mAppFolder->CreateDirectory( "logs", NULL);
-							// ensure that the logs-folder exists
-			BFile* logfile = new BFile( mAppFolder, name.String(),
-												 B_WRITE_ONLY|B_CREATE_FILE|B_OPEN_AT_END);
-			if (logfile->InitCheck() != B_OK)
-				throw BM_runtime_error( BmString("Unable to open logfile ") << name);
-			log = new BmLogfile( logfile, name.String());
-			mActiveLogs[name] = log;
-		} else {
-			log = (*logIter).second;
-		}
-		return log;
-	} else
+	if (!lock.IsLocked())
 		throw BM_runtime_error("LogToFile(): Unable to get lock on loghandler");
+	BmString name = logname.Length() ? logname : BmString("Beam");
+	name = BmString("logs/") + name + ".log";
+	LogfileMap::iterator logIter = mActiveLogs.find( name);
+	BmLogfile* log;
+	if (logIter == mActiveLogs.end()) {
+		// logfile doesn't exists, so we create it:
+		mAppFolder->CreateDirectory( "logs", NULL);
+						// ensure that the logs-folder exists
+		BFile* logfile = new BFile( mAppFolder, name.String(),
+											 B_WRITE_ONLY|B_CREATE_FILE|B_OPEN_AT_END);
+		if (logfile->InitCheck() != B_OK)
+			throw BM_runtime_error( BmString("Unable to open logfile ") << name);
+		log = new BmLogfile( logfile, name.String());
+		mActiveLogs[name] = log;
+	} else {
+		log = (*logIter).second;
+	}
+	return log;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -168,8 +167,8 @@ void BmLogHandler::LogToFile( const BmString& logname, uint32 flag,
 		if (loglevel < minlevel)
 			return;								// loglevel indicates to ignore this message
 		BMessage mess( BM_LOG_MSG);
-		mess.AddString( MSG_MESSAGE, msg.String());
-		mess.AddInt32( MSG_THREAD_ID, find_thread(NULL));
+		mess.AddString( BmLogfile::MSG_MESSAGE, msg.String());
+		mess.AddInt32( BmLogfile::MSG_THREAD_ID, find_thread(NULL));
 		log->PostMessage( &mess);
 	}
 }
@@ -179,7 +178,7 @@ void BmLogHandler::LogToFile( const BmString& logname, uint32 flag,
 		-	writes msg into the logfile that is named logname
 		-	if no logfile of given name exists, it is created
 \*------------------------------------------------------------------------------*/
-void BmLogHandler::LogToFile( const char* const logname, uint32 flag, const char* const msg, int8 minlevel=1) { 
+void BmLogHandler::LogToFile( const char* const logname, uint32 flag, const char* const msg, int8 minlevel) { 
 	LogToFile( BmString(logname), flag, BmString(msg), minlevel);
 }
 
@@ -200,6 +199,9 @@ void BmLogHandler::CloseLog( const BmString &logname) {
 		}
 	}
 }
+
+const char* const BmLogHandler::BmLogfile::MSG_MESSAGE = 	"bm:msg";
+const char* const BmLogHandler::BmLogfile::MSG_THREAD_ID =	"bm:tid";
 
 /*------------------------------------------------------------------------------*\
 	BmLogfile()

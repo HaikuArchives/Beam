@@ -82,7 +82,7 @@ class BmMailRefView : public BmListViewController
 	typedef BmListViewController inherited;
 	
 public:
-	static const char* const MSG_MAILS_SELECTED = 		"bm:msel";
+	static const char* const MSG_MAILS_SELECTED;
 
 	// creator-func, c'tors and d'tor:
 	static BmMailRefView* CreateInstance( minimax minmax, int32 width, int32 height);

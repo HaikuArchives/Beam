@@ -117,7 +117,7 @@ void BmMainMenuBar::JobIsDone( bool completed) {
 		BmAutolock lock( DataModel()->ModelLocker());
 		lock.IsLocked()	 						|| BM_THROW_RUNTIME( BmString() << ControllerName() << ":AddAllModelItems(): Unable to lock model");
 		BMenuItem* old;
-		while( (old = mAccountMenu->RemoveItem( (int32)0)))
+		while( (old = mAccountMenu->RemoveItem( (int32)0))!=NULL)
 			delete old;
 		BmListModel *model = dynamic_cast<BmListModel*>( DataModel());
 		BmModelItemMap::const_iterator iter;
@@ -143,6 +143,9 @@ void BmMainMenuBar::JobIsDone( bool completed) {
 \********************************************************************************/
 
 BmMainWindow* BmMainWindow::theInstance = NULL;
+
+const char* const BmMainWindow::MSG_VSPLITTER = "bm:vspl";
+const char* const BmMainWindow::MSG_HSPLITTER = "bm:hspl";
 
 /*------------------------------------------------------------------------------*\
 	flag and access-function that indicate a user's request-to-stop:
@@ -415,7 +418,7 @@ void BmMainWindow::BeginLife() {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmMainWindow::WorkspacesChanged( uint32 oldWorkspaces, uint32 newWorkspaces) {
+void BmMainWindow::WorkspacesChanged( uint32, uint32 newWorkspaces) {
 	bmApp->SetNewWorkspace( newWorkspaces);
 }
 

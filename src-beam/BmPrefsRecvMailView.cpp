@@ -194,7 +194,7 @@ BmRecvAccView::~BmRecvAccView() {
 		-	
 \*------------------------------------------------------------------------------*/
 BmListViewItem* BmRecvAccView::CreateListViewItem( BmListModelItem* item,
-																		BMessage* archive) {
+																	BMessage*) {
 	return new BmRecvAccItem( item->Key(), item);
 }
 
@@ -448,7 +448,7 @@ void BmPrefsRecvMailView::Activated() {
 
 	// update all entries of SMTP-account-menu:
 	BMenuItem* item;
-	while( (item = mSmtpControl->Menu()->RemoveItem( (int32)0)))
+	while( (item = mSmtpControl->Menu()->RemoveItem( (int32)0))!=NULL)
 		delete item;
 	AddItemToMenu( mSmtpControl->Menu(), 
 					   new BMenuItem( nEmptyItemLabel.String(), new BMessage( BM_SMTP_SELECTED)), this);
@@ -461,7 +461,7 @@ void BmPrefsRecvMailView::Activated() {
 	}
 
 	// update all entries of signature-menu:
-	while( (item = mSignatureControl->Menu()->RemoveItem( (int32)0)))
+	while( (item = mSignatureControl->Menu()->RemoveItem( (int32)0))!=NULL)
 		delete item;
 	AddItemToMenu( mSignatureControl->Menu(), 
 					   new BMenuItem( nEmptyItemLabel.String(), new BMessage( BM_SIGNATURE_SELECTED)), this);

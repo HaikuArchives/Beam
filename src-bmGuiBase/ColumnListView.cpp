@@ -111,6 +111,12 @@ BRect CLVContainerView::layout(BRect rect)
 
 const rgb_color sand =		{255,248,200,	255};
 
+const char* const ColumnListView::MSG_DISPLAYORDER = 	"bm:dsplord";
+const char* const ColumnListView::MSG_NUMSORTKEYS = 	"bm:nsort";
+const char* const ColumnListView::MSG_SORTKEY = 		"bm:sortk";
+const char* const ColumnListView::MSG_SORTMODE = 		"bm:sortm";
+const char* const ColumnListView::MSG_COLWIDTH = 		"bm:colw";
+
 //******************************************************************************************************
 //**** ColumnListView CLASS DEFINITION
 //******************************************************************************************************
@@ -1033,7 +1039,7 @@ void ColumnListView::MouseUp(BPoint where)
 }
 
 
-void ColumnListView::MouseMoved(BPoint where, uint32 code, const BMessage *message)
+void ColumnListView::MouseMoved(BPoint where, uint32, const BMessage *)
 {
 	if(fWatchingForDrag && (where.x<fLastMouseDown.x-4 || where.x>fLastMouseDown.x+4 ||
 		where.y<fLastMouseDown.y-4 || where.y>fLastMouseDown.y+4))
@@ -2158,14 +2164,18 @@ void ColumnListView::MessageReceived(BMessage* msg) {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-status_t ColumnListView::Archive(BMessage* archive, bool deep) const {
+status_t ColumnListView::Archive(BMessage* archive, bool) const {
 	AssertWindowLocked();
 	status_t ret = B_OK;
 	int i;
 
 	// display order of columns:
 	const int32 numCols = CountColumns();
+#ifdef __POWERPC__
+	int32 displayCols[100];
+#else
 	int32 displayCols[numCols];
+#endif
 	GetDisplayOrder( displayCols);
 	for( i=0; i<numCols && ret==B_OK; ++i) { 
 		ret = archive->AddInt32( MSG_DISPLAYORDER, displayCols[i]);
@@ -2197,7 +2207,7 @@ status_t ColumnListView::Archive(BMessage* archive, bool deep) const {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-status_t ColumnListView::Unarchive(const BMessage* archive, bool deep) {
+status_t ColumnListView::Unarchive(const BMessage* archive, bool) {
 	AssertWindowLocked();
 	status_t ret = B_OK;
 	int i;
@@ -2206,7 +2216,11 @@ status_t ColumnListView::Unarchive(const BMessage* archive, bool deep) {
 	
 	// display order of columns:
 	const int32 numCols = CountColumns();
+#ifdef __POWERPC__
+	int32 displayCols[100];
+#else
 	int32 displayCols[numCols];
+#endif
 	for( i=0; i<numCols && ret==B_OK; ++i) { 
 		ret = archive->FindInt32( MSG_DISPLAYORDER, i, &displayCols[i]);
 	}
@@ -2214,8 +2228,13 @@ status_t ColumnListView::Unarchive(const BMessage* archive, bool deep) {
 		// sortkeys and -modes:
 		int32 numSortKeys = 0;
 		ret = archive->FindInt32( MSG_NUMSORTKEYS, &numSortKeys);
+#ifdef __POWERPC__
+		int32 sortKeys[100];
+		CLVSortMode sortModes[100];
+#else
 		int32 sortKeys[numSortKeys];
 		CLVSortMode sortModes[numSortKeys];
+#endif
 		for( i = 0; i<numSortKeys && ret==B_OK; ++i) {
 			ret = archive->FindInt32( MSG_SORTKEY, i, &sortKeys[i])
 				||	archive->FindInt32( MSG_SORTMODE, i, (int32*)&sortModes[i]);

@@ -76,6 +76,15 @@ static const char* BM_BEEP_EVENT = "New E-mail";
 const char* BM_APP_SIG = "application/x-vnd.zooey-beam";
 const char* const BM_DeskbarItemName = "Beam_DeskbarItem";
 
+const char* const BmApplication::MSG_MAILREF = 		"bm:mref";
+const char* const BmApplication::MSG_STATUS = 		"bm:status";
+const char* const BmApplication::MSG_WHO_TO = 		"bm:to";
+const char* const BmApplication::MSG_OPT_FIELD = 	"bm:optf";
+const char* const BmApplication::MSG_OPT_VALUE = 	"bm:optv";
+const char* const BmApplication::MSG_SUBJECT = 		"bm:subj";
+const char* const BmApplication::MSG_SELECTED_TEXT = 	"bm:seltext";
+const char* const BmApplication::MSG_SENDING_REFVIEW = 	"bm:srefv";
+
 /*------------------------------------------------------------------------------*\
 	BmApplication()
 		-	constructor
@@ -387,7 +396,7 @@ void BmApplication::MessageReceived( BMessage* msg) {
 			case BMM_NEW_MAIL: {
 				BmRef<BmMail> mail = new BmMail( true);
 				const char* to = NULL;
-				if ((to = msg->FindString( MSG_WHO_TO)))
+				if ((to = msg->FindString( MSG_WHO_TO))!=NULL)
 					mail->SetFieldVal( BM_FIELD_TO, to);
 				const char* optField = NULL;
 				int32 i=0;
@@ -541,7 +550,8 @@ void BmApplication::MessageReceived( BMessage* msg) {
 			case BMM_TRASH: {
 				BmMailRef* mailRef = NULL;
 				int index=0;
-				while( msg->FindPointer( MSG_MAILREF, index++, (void**)&mailRef) == B_OK);
+				while( msg->FindPointer( MSG_MAILREF, index++, (void**)&mailRef) == B_OK)
+					;
 				entry_ref* refs = new entry_ref [index];
 				index=0;
 				for( index=0; msg->FindPointer( MSG_MAILREF, index, (void**)&mailRef) == B_OK; ++index) {
@@ -890,43 +900,43 @@ void BmApplication::AboutRequested() {
 		"BEware, Another Mailer\n(c) Oliver Tappe, Berlin, Germany",
 		"mailto:beam@hirschkaefer.de",
 		"http://www.hirschkaefer.de/beam",
-		"\n\n\n\n\n\n\nThanks to:
-
-Heike Herfart 
-	for understanding the geek, 
-	the testing sessions 
-	and many, many suggestions. 
-
-
-...and (in alphabetical order):
-
-Adam McNutt
-Atillâ Öztürk
-Bernd Korz
-Cedric Vincent
-Charlie Clark
-Eberhard Hafermalz
-Eugenia Loli-Queru
-Helmar Rudolph
-Jace Cavacini
-Kevin Musick
-Lars Müller (of SuSE)
-Linus Almstrom
-Mathias Reitinger
-Max Hartmann
-MDR-team (MailDaemonReplacement)
-qwilk
-Rainer Riedl
-Rob Lund
-Shard
-Stephan Buelling
-Stephen Butters
-Tyler Dauwalder
-Zach 
-
-\n\n\n\n
-...and thanks to everyone I forgot, too!
-
+		"\n\n\n\n\n\n\nThanks to:\
+\
+Heike Herfart \
+	for understanding the geek, \
+	the testing sessions \
+	and many, many suggestions. \
+\
+\
+...and (in alphabetical order):\
+\
+Adam McNutt\
+Atillâ Öztürk\
+Bernd Korz\
+Cedric Vincent\
+Charlie Clark\
+Eberhard Hafermalz\
+Eugenia Loli-Queru\
+Helmar Rudolph\
+Jace Cavacini\
+Kevin Musick\
+Lars Müller (of SuSE)\
+Linus Almstrom\
+Mathias Reitinger\
+Max Hartmann\
+MDR-team (MailDaemonReplacement)\
+qwilk\
+Rainer Riedl\
+Rob Lund\
+Shard\
+Stephan Buelling\
+Stephen Butters\
+Tyler Dauwalder\
+Zach \
+\
+\n\n\n\n\
+...and thanks to everyone I forgot, too!\
+\
 \n\n\n\n\n\n"
 	);
 	aboutWin->Show();

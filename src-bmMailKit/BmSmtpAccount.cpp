@@ -42,6 +42,21 @@
 	BmSmtpAccount
 \********************************************************************************/
 
+const char* const BmSmtpAccount::MSG_NAME = 			"bm:name";
+const char* const BmSmtpAccount::MSG_USERNAME = 	"bm:username";
+const char* const BmSmtpAccount::MSG_PASSWORD = 	"bm:password";
+const char* const BmSmtpAccount::MSG_SMTP_SERVER = "bm:smtpserver";
+const char* const BmSmtpAccount::MSG_DOMAIN = 		"bm:domain";
+const char* const BmSmtpAccount::MSG_AUTH_METHOD = "bm:authmethod";
+const char* const BmSmtpAccount::MSG_PORT_NR = 		"bm:portnr";
+const char* const BmSmtpAccount::MSG_ACC_FOR_SAP = "bm:accForSmtpAfterPop";
+const char* const BmSmtpAccount::MSG_STORE_PWD = 	"bm:storepwd";
+const int16 BmSmtpAccount::nArchiveVersion = 2;
+
+const char* const BmSmtpAccount::AUTH_SMTP_AFTER_POP= "SMTP-AFTER-POP";
+const char* const BmSmtpAccount::AUTH_PLAIN = 			"PLAIN";
+const char* const BmSmtpAccount::AUTH_LOGIN = 			"LOGIN";
+
 /*------------------------------------------------------------------------------*\
 	BmSmtpAccount()
 		-	c'tor
@@ -155,6 +170,8 @@ bool BmSmtpAccount::SanityCheck( BmString& complaint, BmString& fieldName) const
 \********************************************************************************/
 
 BmRef< BmSmtpAccountList> BmSmtpAccountList::theInstance( NULL);
+
+const int16 BmSmtpAccountList::nArchiveVersion = 1;
 
 /*------------------------------------------------------------------------------*\
 	CreateInstance()

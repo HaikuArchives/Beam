@@ -21,6 +21,8 @@
 
 #include "WrappingTextView.h"
 
+const char* const WrappingTextView::n_long_line = "0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
+
 WrappingTextView::WrappingTextView(BRect a_frame,const char* a_name,int32 a_resize_mode,int32 a_flags)
 : BTextView(a_frame, a_name, BRect(4.0,4.0,a_frame.right-a_frame.left-4.0,a_frame.bottom-a_frame.top-4.0),
 	a_resize_mode,a_flags)

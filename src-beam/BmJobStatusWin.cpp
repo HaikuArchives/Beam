@@ -110,7 +110,7 @@ BmJobStatusView::~BmJobStatusView() {
 		-	parameter msg may contain any further attributes needed for update
 		-	this default implementation simply does nothing
 \*------------------------------------------------------------------------------*/
-void BmJobStatusView::UpdateModelView( BMessage* msg) {
+void BmJobStatusView::UpdateModelView( BMessage*) {
 }
 
 /*------------------------------------------------------------------------------*\
@@ -262,7 +262,7 @@ BmJobModel* BmMailMoverView::CreateJobModel( BMessage* msg) {
 	BmString key = FindMsgString( msg, BmJobModel::MSG_MODEL);
 	BmRef<BmListModelItem> item = TheMailFolderList->FindItemByKey( key);
 	BmMailFolder* folder;
-	(folder = dynamic_cast<BmMailFolder*>( item.Get()))
+	(folder = dynamic_cast<BmMailFolder*>( item.Get()))!=NULL
 													|| BM_THROW_INVALID( BmString("Could not find BmMailFolder ") << key);
 	BList* refList = new BList;
 	entry_ref eref;
@@ -359,7 +359,7 @@ BmJobModel* BmPopperView::CreateJobModel( BMessage* msg) {
 	BmString accName = FindMsgString( msg, BmJobModel::MSG_JOB_NAME);
 	BmRef<BmListModelItem> item = ThePopAccountList->FindItemByKey( accName);
 	BmPopAccount* account;
-	(account = dynamic_cast<BmPopAccount*>( item.Get()))
+	(account = dynamic_cast<BmPopAccount*>( item.Get()))!=NULL
 													|| BM_THROW_INVALID( BmString("Could not find BmPopAccount ") << accName);
 	BmPopper* popper = new BmPopper( account->Name(), account);
 	popper->SetPwdAcquisitorFunc( AskUserForPwd);
@@ -527,7 +527,7 @@ BmJobModel* BmSmtpView::CreateJobModel( BMessage* msg) {
 	BmString accName = FindMsgString( msg, BmJobModel::MSG_JOB_NAME);
 	BmRef<BmListModelItem> item = TheSmtpAccountList->FindItemByKey( accName);
 	BmSmtpAccount* account;
-	(account = dynamic_cast<BmSmtpAccount*>( item.Get()))
+	(account = dynamic_cast<BmSmtpAccount*>( item.Get()))!=NULL
 													|| BM_THROW_INVALID( BmString("Could not find BmSmtpAccount ") << accName);
 	BmSmtp* smtp = new BmSmtp( account->Name(), account);
 	smtp->SetPwdAcquisitorFunc( AskUserForPwd);

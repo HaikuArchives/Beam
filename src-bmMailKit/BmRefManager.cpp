@@ -48,7 +48,7 @@ void BmRefObj::AddRef() {
 			BAutolock lock( &proxy->Locker);
 			if (!lock.IsLocked())
 				throw BM_runtime_error(BmString("AddRef(): Proxy ")<<ProxyName()<<" could not be locked");
-			proxy->ObjectMap.insert( make_pair( RefName(), this));
+			proxy->ObjectMap.insert( pair<const BmString, BmRefObj*>( RefName(), this));
 		} else
 			BM_SHOWERR(BmString("AddRef(): Proxy ")<<ProxyName()<<" could not be created");
 	}
@@ -85,7 +85,7 @@ void BmRefObj::RenameRef( const char* newName) {
 		if (pos != proxy->ObjectMap.end())
 			proxy->ObjectMap.erase( pos);
 		// ...and insert under new name:
-		proxy->ObjectMap.insert( make_pair( newName, this));
+		proxy->ObjectMap.insert( pair< const BmString, BmRefObj*>( newName, this));
 	} else
 		BM_SHOWERR(BmString("RemoveRef(): Proxy ")<<ProxyName()<<" not found");
 }

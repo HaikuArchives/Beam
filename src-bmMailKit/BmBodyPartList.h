@@ -95,7 +95,7 @@ public:
 	~BmBodyPart();
 
 	// class methods:
-	static BmString BmBodyPart::NextObjectID();
+	static BmString NextObjectID();
 
 	// native methods:
 	void SetTo( const BmString& msgtext, int32 s, int32 l, BmRef<BmMailHeader> mHeader=NULL);

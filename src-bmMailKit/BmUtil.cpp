@@ -54,11 +54,9 @@ BmString BM_DEFAULT_STRING;
 const char* FindMsgString( BMessage* archive, const char* name, int32 index) {
 	const char* str;
 	BM_assert(archive && name);
-	if (archive->FindString( name, index, &str) == B_OK) {
-		return str;
-	} else {
+	if (archive->FindString( name, index, &str) != B_OK)
 		throw BM_invalid_argument( BmString( "unknown message-field: ") << name);
-	}
+	return str;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -70,11 +68,9 @@ const char* FindMsgString( BMessage* archive, const char* name, int32 index) {
 bool FindMsgBool( BMessage* archive, const char* name, int32 index) {
 	bool b;
 	BM_assert(archive && name);
-	if (archive->FindBool( name, index, &b) == B_OK) {
-		return b;
-	} else {
+	if (archive->FindBool( name, index, &b) != B_OK)
 		throw BM_invalid_argument( BmString( "unknown message-field: ") << name);
-	}
+	return b;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -86,11 +82,9 @@ bool FindMsgBool( BMessage* archive, const char* name, int32 index) {
 int64 FindMsgInt64( BMessage* archive, const char* name, int32 index) {
 	int64 i;
 	BM_assert(archive && name);
-	if (archive->FindInt64( name, index, &i) == B_OK) {
-		return i;
-	} else {
+	if (archive->FindInt64( name, index, &i) != B_OK)
 		throw BM_invalid_argument( BmString( "unknown message-field: ") << name);
-	}
+	return i;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -102,11 +96,9 @@ int64 FindMsgInt64( BMessage* archive, const char* name, int32 index) {
 int32 FindMsgInt32( BMessage* archive, const char* name, int32 index) {
 	int32 i;
 	BM_assert(archive && name);
-	if (archive->FindInt32( name, index, &i) == B_OK) {
-		return i;
-	} else {
+	if (archive->FindInt32( name, index, &i) != B_OK)
 		throw BM_invalid_argument( BmString( "unknown message-field: ") << name);
-	}
+	return i;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -118,11 +110,9 @@ int32 FindMsgInt32( BMessage* archive, const char* name, int32 index) {
 int16 FindMsgInt16( BMessage* archive, const char* name, int32 index) {
 	int16 i;
 	BM_assert(archive && name);
-	if (archive->FindInt16( name, index, &i) == B_OK) {
-		return i;
-	} else {
+	if (archive->FindInt16( name, index, &i) != B_OK)
 		throw BM_invalid_argument( BmString( "unknown message-field: ") << name);
-	}
+	return i;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -135,11 +125,9 @@ BMessage* FindMsgMsg( BMessage* archive, const char* name, BMessage* msg, int32 
 	BM_assert(archive && name);
 	if (!msg)
 		msg = new BMessage;
-	if (archive->FindMessage( name, index, msg) == B_OK) {
-		return msg;
-	} else {
+	if (archive->FindMessage( name, index, msg) != B_OK)
 		throw BM_invalid_argument( BmString( "unknown message-field: ") << name);
-	}
+	return msg;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -151,13 +139,12 @@ BMessage* FindMsgMsg( BMessage* archive, const char* name, BMessage* msg, int32 
 float FindMsgFloat( BMessage* archive, const char* name, int32 index) {
 	float f;
 	BM_assert(archive && name);
-	if (archive->FindFloat( name, index, &f) == B_OK) {
-		return f;
-	} else {
+	if (archive->FindFloat( name, index, &f) != B_OK) {
 		BmString s( "unknown message-field: ");
 		s += name;
 		throw BM_invalid_argument( s.String());
 	}
+	return f;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -169,11 +156,9 @@ float FindMsgFloat( BMessage* archive, const char* name, int32 index) {
 void* FindMsgPointer( BMessage* archive, const char* name, int32 index) {
 	void* ptr;
 	BM_assert(archive && name);
-	if (archive->FindPointer( name, index, &ptr) == B_OK) {
-		return ptr;
-	} else {
+	if (archive->FindPointer( name, index, &ptr) != B_OK)
 		throw BM_invalid_argument( BmString( "unknown message-field: ") << name);
-	}
+	return ptr;
 }
 
 /*------------------------------------------------------------------------------*\

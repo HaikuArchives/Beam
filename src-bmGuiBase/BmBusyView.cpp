@@ -134,7 +134,7 @@ void BmBusyView::Pulse() {
 	( )
 		-	
 \*------------------------------------------------------------------------------*/
-void BmBusyView::Draw( BRect bounds) {
+void BmBusyView::Draw( BRect) {
 	BRect r = mCachedBounds;
 	SetHighColor( tint_color(BeBackgroundGrey, 1.072F));
 	FillRect( r);

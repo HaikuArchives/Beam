@@ -77,8 +77,8 @@ class BmMainWindow : public BmWindow
 	typedef BmWindow inherited;
 
 	// archival-fieldnames:
-	static const char* const MSG_VSPLITTER = 	"bm:vspl";
-	static const char* const MSG_HSPLITTER = 	"bm:hspl";
+	static const char* const MSG_VSPLITTER;
+	static const char* const MSG_HSPLITTER;
 
 public:
 	// creator-func, c'tors and d'tor:

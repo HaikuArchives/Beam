@@ -229,6 +229,12 @@ void BmMailHeaderFieldView::ShowMenu( BPoint point) {
 	BmMailHeaderView
 \********************************************************************************/
 
+const char* const BmMailHeaderView::MSG_VERSION = 		"bm:version";
+const char* const BmMailHeaderView::MSG_MODE = 			"bm:mode";
+const char* const BmMailHeaderView::MSG_REDIRECT_MODE =	"bm:rmode";
+const char* const BmMailHeaderView::MSG_FONTNAME = 	"bm:hfnt";
+const char* const BmMailHeaderView::MSG_FONTSIZE =		"bm:hfntsz";
+
 /*------------------------------------------------------------------------------*\
 	()
 		-	
@@ -256,7 +262,7 @@ BmMailHeaderView::~BmMailHeaderView() {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-status_t BmMailHeaderView::Archive( BMessage* archive, bool deep=true) const {
+status_t BmMailHeaderView::Archive( BMessage* archive, bool) const {
 	status_t ret = archive->AddInt16( MSG_MODE, mDisplayMode)
 					|| archive->AddBool( MSG_REDIRECT_MODE, mShowRedirectFields);
 	if (ret==B_OK) {
@@ -274,7 +280,7 @@ status_t BmMailHeaderView::Archive( BMessage* archive, bool deep=true) const {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-status_t BmMailHeaderView::Unarchive( BMessage* archive, bool deep=true) {
+status_t BmMailHeaderView::Unarchive( BMessage* archive, bool) {
 	int16 version;
 	if (archive->FindInt16( MSG_VERSION, &version) != B_OK)
 		version = 1;
@@ -496,7 +502,7 @@ void BmMailHeaderView::MessageReceived( BMessage* msg) {
 				BMessage* clipMsg;
 				if (be_clipboard->Lock()) {
 					be_clipboard->Clear();
-					if ((clipMsg = be_clipboard->Data())) {
+					if ((clipMsg = be_clipboard->Data())!=NULL) {
 						clipMsg->AddData( "text/plain", B_MIME_TYPE, hdrStr.String(), hdrStr.Length());
 						be_clipboard->Commit();
 					}

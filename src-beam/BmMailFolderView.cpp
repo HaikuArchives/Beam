@@ -63,7 +63,7 @@ enum Columns {
 		-	
 \*------------------------------------------------------------------------------*/
 BmMailFolderItem::BmMailFolderItem( BmString key, BmListModelItem* _item, 
-												bool superitem, BMessage* archive)
+												bool, BMessage* archive)
 	:	inherited( key, _item, true, archive)
 {
 	UpdateView( UPD_ALL);
@@ -143,6 +143,9 @@ int BmMailFolderItem::CompareItems( const CLVListItem *a_Item1,
 	BmMailFolderView
 \********************************************************************************/
 
+
+const char* const BmMailFolderView::MSG_CURR_FOLDER = "bm:currfolder";
+const char* const BmMailFolderView::MSG_FOLDERS_SELECTED = "bm:fsel";
 
 BmMailFolderView* BmMailFolderView::theInstance = NULL;
 

@@ -33,6 +33,8 @@
 #include <SupportDefs.h>
 #include <string.h>
 
+char * strcasestr(const char *s, const char *find);
+
 class BmString {
 public:
 						BmString();

@@ -44,6 +44,9 @@
 
 BmPrefs* BmPrefs::theInstance = NULL;
 
+const char* const BmPrefs::PREFS_FILENAME = 	"General Settings";
+const char* const BmPrefs::MSG_VERSION	 = 	"bm:version";
+
 /*------------------------------------------------------------------------------*\
 	CreateInstance()
 		-	initialiazes preferences by reading them from a file

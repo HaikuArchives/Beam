@@ -102,9 +102,9 @@ public:
 
 	static BmResources* theInstance;
 	
-	static const char* const BM_MSG_FONT_FAMILY = "fontfamily";
-	static const char* const BM_MSG_FONT_STYLE = "fontstyle";
-	static const char* const BM_MSG_FONT_SIZE = "fontsize";
+	static const char* const BM_MSG_FONT_FAMILY;
+	static const char* const BM_MSG_FONT_STYLE;
+	static const char* const BM_MSG_FONT_SIZE;
 	
 private:
 	void FetchIcons();

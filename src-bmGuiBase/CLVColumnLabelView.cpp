@@ -317,7 +317,7 @@ void CLVColumnLabelView::MouseDown(BPoint Point)
 }
 
 
-void CLVColumnLabelView::MouseMoved(BPoint where, uint32 code, const BMessage *message)
+void CLVColumnLabelView::MouseMoved(BPoint where, uint32 code, const BMessage *)
 {
 	bool should_show_modified_cursor = false;
 	if(fColumnClicked == NULL)
@@ -502,7 +502,7 @@ void CLVColumnLabelView::MouseMoved(BPoint where, uint32 code, const BMessage *m
 }
 
 
-void CLVColumnLabelView::MouseUp(BPoint where)
+void CLVColumnLabelView::MouseUp(BPoint)
 {
 	if(fColumnClicked == NULL)
 		return;

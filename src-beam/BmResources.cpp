@@ -65,6 +65,10 @@ static const uint8 url_cursor[] = { 16, 1, 1, 2,
 	0x0f, 0xff,	0x03, 0xfe,	0x01, 0xf8,	0x00, 0x00,
 };
 
+const char* const BmResources::BM_MSG_FONT_FAMILY = "fontfamily";
+const char* const BmResources::BM_MSG_FONT_STYLE = "fontstyle";
+const char* const BmResources::BM_MSG_FONT_SIZE = "fontsize";
+
 /*------------------------------------------------------------------------------*\
 	CreateInstance()
 		-	initialiazes preferences by reading them from a file
@@ -421,8 +425,10 @@ BDirectory* BmResources::GetFolder( const BmString& name, BDirectory& dir) {
 	if (dir.InitCheck() != B_OK) {
 		status_t res = dir.SetTo( name.String());
 		if (res != B_OK) {
-			(res = create_directory( name.String(), 0755) || dir.SetTo( name.String())) == B_OK
-													|| BM_DIE( BmString("Sorry, could not create folder ")<<name<<".\n\t Going down!");
+			if ((res = create_directory( name.String(), 0755) || dir.SetTo( name.String())) != B_OK) {
+				ShowAlert( BmString("Sorry, could not create folder ")<<name<<".\n\t Going down!");
+				exit( 10);
+			}
 		}
 	}
 	return &dir;

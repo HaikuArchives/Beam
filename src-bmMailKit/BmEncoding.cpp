@@ -28,7 +28,8 @@
 /*************************************************************************/
 
 
-#include <string.h>
+#include <assert.h>
+#include <cstring>
 
 #include <UTF8.h>
 
@@ -185,7 +186,7 @@ BmString BmEncoding::ConvertHeaderPartToUTF8( const BmString& headerPart,
 	const uint32 blockSize = max( (int32)128, headerPart.Length());
 	BmStringOBuf utf8( blockSize, 2.0);
 	
-	if ((nm = rx.exec( Regexx::global))) {
+	if ((nm = rx.exec( Regexx::global))!=0) {
 		int32 len=headerPart.Length();
 		int32 curr=0;
 		vector<RegexxMatch>::const_iterator i;
@@ -515,8 +516,8 @@ void BmQuotedPrintableDecoder::Filter( const char* srcBuf, uint32& srcLen,
 			if (src>srcEnd-3 && !mInput->IsAtEnd())
 				break;							// need two more characters in buffer
 			if (src<=srcEnd-3 
-			&& (c1=*(src+1)) && qpChars.FindFirst(c1)!=B_ERROR 
-			&& (c2=*(src+2)) && qpChars.FindFirst(c2)!=B_ERROR) {
+			&& (c1=*(src+1))!=0 && qpChars.FindFirst(c1)!=B_ERROR 
+			&& (c2=*(src+2))!=0 && qpChars.FindFirst(c2)!=B_ERROR) {
 				// decode a single character:
 				*dest++ = HEXDIGIT2CHAR(c1)*16 + HEXDIGIT2CHAR(c2);
 				src += 2;

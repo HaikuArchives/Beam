@@ -33,6 +33,7 @@
 
 #include <map>
 
+#include <Entry.h>
 #include <MessageFilter.h>
 
 #include "BmWindow.h"
@@ -89,8 +90,8 @@ public:
 	BmRef<BmMail> CurrMail() const;
 
 	// msg-members:
-	static const char* const MSG_CONTROL = 	"ctrl";
-	static const char* const MSG_ADDRESS = 	"addr";
+	static const char* const MSG_CONTROL;
+	static const char* const MSG_ADDRESS;
 
 private:
 	// hide constructors:

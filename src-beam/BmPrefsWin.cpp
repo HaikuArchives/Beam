@@ -73,6 +73,8 @@
 
 BmPrefsWin* BmPrefsWin::theInstance = NULL;
 
+const char* const BmPrefsWin::MSG_VSPLITTER = 	"bm:vspl";
+
 /*------------------------------------------------------------------------------*\
 	CreateInstance()
 		-	creates the app's main window
@@ -302,6 +304,6 @@ void BmPrefsWin::Quit() {
 	PrefsListSelectionChanged()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmPrefsWin::PrefsListSelectionChanged( int32 numSelected) {
+void BmPrefsWin::PrefsListSelectionChanged( int32) {
 }
 

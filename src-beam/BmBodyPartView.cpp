@@ -81,7 +81,7 @@ BmBodyPartItem::BmBodyPartItem( BmString key, BmListModelItem* _item)
 	SetColumnContent( COL_ICON, icon, 2.0, false);
 
 	BmString sizeString = bodyPart->IsMultiPart() 
-								? "" 
+								? BM_DEFAULT_STRING 
 								: ThePrefs->GetBool( "ShowDecodedLength", true) 
 									? BytesToString( bodyPart->DecodedLength(), true)
 									: BytesToString( bodyPart->BodyLength(), true);
@@ -115,6 +115,8 @@ BmBodyPartItem::~BmBodyPartItem() {
 
 const int16 BmBodyPartView::nFirstTextCol = 2;
 float BmBodyPartView::nColWidths[10] = {10,20,20,20,20,20,20,20,0,0};
+
+const char* const BmBodyPartView::MSG_SHOWALL = "bm:showall";
 
 /*------------------------------------------------------------------------------*\
 	()
@@ -171,7 +173,7 @@ BmBodyPartView::~BmBodyPartView() {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-status_t BmBodyPartView::Archive( BMessage* archive, bool deep=true) const {
+status_t BmBodyPartView::Archive( BMessage* archive, bool) const {
 	status_t ret = archive->AddBool( MSG_SHOWALL, mShowAllParts);
 	return ret;
 }
@@ -180,7 +182,7 @@ status_t BmBodyPartView::Archive( BMessage* archive, bool deep=true) const {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-status_t BmBodyPartView::Unarchive( BMessage* archive, bool deep=true) {
+status_t BmBodyPartView::Unarchive( const BMessage* archive, bool) {
 	status_t ret = archive->FindBool( MSG_SHOWALL, &mShowAllParts);
 	return ret;
 }
@@ -190,7 +192,7 @@ status_t BmBodyPartView::Unarchive( BMessage* archive, bool deep=true) {
 		-	
 \*------------------------------------------------------------------------------*/
 BmListViewItem* BmBodyPartView::CreateListViewItem( BmListModelItem* item, 
-																	BMessage* archive) {
+																	 BMessage*) {
 	BmBodyPart* modelItem = dynamic_cast<BmBodyPart*>( item);
 	if (mShowAllParts || !modelItem->IsMultiPart() && !modelItem->ShouldBeShownInline()) {
 		return new BmBodyPartItem( item->Key(), item);
@@ -203,8 +205,8 @@ BmListViewItem* BmBodyPartView::CreateListViewItem( BmListModelItem* item,
 	CreateContainer()
 		-	
 \*------------------------------------------------------------------------------*/
-CLVContainerView* BmBodyPartView::CreateContainer( bool horizontal, bool vertical, 
-												  					bool scroll_view_corner, 
+CLVContainerView* BmBodyPartView::CreateContainer( bool, bool, 
+												  					bool, 
 												  					border_style border, 
 																	uint32 ResizingMode, 
 																	uint32 flags) 
@@ -544,7 +546,7 @@ void BmBodyPartView::ItemInvoked( int32 index) {
 	InitiateDrag()
 		-	
 \*------------------------------------------------------------------------------*/
-bool BmBodyPartView::InitiateDrag( BPoint where, int32 index, bool wasSelected) {
+bool BmBodyPartView::InitiateDrag( BPoint, int32 index, bool wasSelected) {
 	if (!wasSelected)
 		return false;
 	BMessage dragMsg( B_SIMPLE_DATA);

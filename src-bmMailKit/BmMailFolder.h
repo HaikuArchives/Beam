@@ -96,15 +96,15 @@ public:
 	inline void EntryRef( entry_ref &e) 			{ mEntryRef = e; mName = e.name; }
 
 	// archival-fieldnames:
-	static const char* const MSG_ENTRYREF = 		"bm:eref";
-	static const char* const MSG_INODE = 			"bm:inod";
-	static const char* const MSG_LASTMODIFIED = 	"bm:lmod";
+	static const char* const MSG_ENTRYREF;
+	static const char* const MSG_INODE;
+	static const char* const MSG_LASTMODIFIED;
 
 	//	message component definitions for status-msgs:
-	static const char* const MSG_NAME = 			"bm:fname";
+	static const char* const MSG_NAME;
 
 	// flags indicating which parts are to be updated:
-	static const BmUpdFlags UPD_NEW_STATUS	= 1<<2;
+	static const BmUpdFlags UPD_NEW_STATUS;
 
 private:
 	void StartNodeMonitor();

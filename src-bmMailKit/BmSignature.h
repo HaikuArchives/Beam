@@ -50,11 +50,11 @@ class BmSignatureList;
 class BmSignature : public BmListModelItem {
 	typedef BmListModelItem inherited;
 	// archivable components:
-	static const char* const MSG_NAME = 		"bm:name";
-	static const char* const MSG_DYNAMIC = 	"bm:dynamic";
-	static const char* const MSG_CONTENT = 	"bm:content";
-	static const char* const MSG_ENCODING = 	"bm:encoding";
-	static const int16 nArchiveVersion = 1;
+	static const char* const MSG_NAME;
+	static const char* const MSG_DYNAMIC;
+	static const char* const MSG_CONTENT;
+	static const char* const MSG_ENCODING;
+	static const int16 nArchiveVersion;
 
 public:
 	BmSignature( const char* name, BmSignatureList* model);
@@ -98,7 +98,7 @@ private:
 class BmSignatureList : public BmListModel {
 	typedef BmListModel inherited;
 
-	static const int16 nArchiveVersion = 1;
+	static const int16 nArchiveVersion;
 
 public:
 	// creator-func, c'tors and d'tor:

@@ -74,7 +74,7 @@ BmShortcutControl::BmShortcutControl( const char* label)
 		-	
 \*------------------------------------------------------------------------------*/
 filter_result BmShortcutControl::FilterHook( BMessage* msg, BHandler** handler,
-															BMessageFilter* filter) {
+															BMessageFilter*) {
 	if (msg->what == B_KEY_DOWN)
 		*handler = BmShortcutControl::nTheInstance;
 	return B_DISPATCH_MESSAGE;

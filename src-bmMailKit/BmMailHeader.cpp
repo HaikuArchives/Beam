@@ -499,6 +499,9 @@ int32 BmMailHeader::nCounter = 0;
 struct subpart {
 	int32 pos;
 	int32 len;
+#ifdef __POWERPC__
+	inline subpart() : pos(0), len(0) {}
+#endif
 	inline subpart( int32 p, int32 l) : pos(p), len(l) {}
 };
 
@@ -663,7 +666,7 @@ void BmMailHeader::RemoveAddrFieldVal(  BmString fieldName, const BmString value
 	DetermineOriginator()
 	-	
 \*------------------------------------------------------------------------------*/
-BmString BmMailHeader::DetermineOriginator( bool bypassReplyTo=false) {
+BmString BmMailHeader::DetermineOriginator( bool bypassReplyTo) {
 	BmAddressList addrList = mAddrMap[BM_FIELD_REPLY_TO];
 	if (bypassReplyTo || !addrList.InitOK()) {
 		addrList = mAddrMap[BM_FIELD_FROM];

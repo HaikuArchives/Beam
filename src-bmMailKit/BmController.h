@@ -34,6 +34,7 @@
 #include <vector>
 
 #include "BmDataModel.h"
+#include "BmUtil.h"
 
 class BHandler;
 
@@ -65,7 +66,8 @@ public:
 
 	// getters
 	inline const char* ControllerName() const	{ return mControllerName.String(); }
-	inline const BmString ModelName() const		{ return mDataModel.Get() ? mDataModel->ModelName() : "***NULL***"; }
+	inline const BmString& ModelName() const	{ return mDataModel.Get() ? mDataModel->ModelName() : BM_DEFAULT_STRING; }
+	inline BmString ModelNameNC() const { return ModelName(); }
 	virtual BmDataModel* DataModel()		{ return mDataModel.Get(); }
 
 protected:
@@ -82,7 +84,9 @@ private:
 
 	// Hide copy-constructor and assignment:
 	BmController( const BmController&);
+#ifndef __POWERPC__
 	BmController operator=( const BmController&);
+#endif
 };
 
 
@@ -114,7 +118,9 @@ protected:
 
 	// Hide copy-constructor and assignment:
 	BmJobController( const BmJobController&);
+#ifndef __POWERPC__
 	BmJobController operator=( const BmJobController&);
+#endif
 };
 
 

@@ -202,7 +202,7 @@ void UserResizeSplitView::FrameResized(float new_width, float new_height)
 }
 
 
-void UserResizeSplitView::Draw(BRect updateRect)
+void UserResizeSplitView::Draw(BRect)
 {
 }
 

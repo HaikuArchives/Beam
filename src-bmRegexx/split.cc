@@ -28,17 +28,17 @@
 
 #include "split.hh"
 
-std::vector<BmString>
+vector<BmString>
 regexx::split(const BmString& _where, const BmString& _str)
 {
-  std::vector<BmString> v;
+  vector<BmString> v;
   split( _where, _str, v);
   return v;
 }
 
 void
 regexx::split(const BmString& _where, const BmString& _str,
-				  std::vector<BmString>& v)
+				  vector<BmString>& v)
 {
   BmString temp;
   v.clear();
@@ -53,17 +53,17 @@ regexx::split(const BmString& _where, const BmString& _str,
     v.push_back(_str.CopyInto(temp,lastpos,_str.Length()-lastpos));
 }
 
-std::vector<BmString>
+vector<BmString>
 regexx::splitex(const BmString& _regex, const BmString& _str)
 {
-  std::vector<BmString> v;
+  vector<BmString> v;
   splitex( _regex, _str, v);
   return v;
 }
 
 void
 regexx::splitex(const BmString& _regex, const BmString& _str,
-					 std::vector<BmString>& v)
+					 vector<BmString>& v)
 {
   BmString temp;
   Regexx rxx;
@@ -71,7 +71,7 @@ regexx::splitex(const BmString& _regex, const BmString& _str,
   rxx.str(_str);
   v.clear();
   v.reserve(rxx.exec());
-  std::vector<RegexxMatch>::const_iterator i;
+  vector<RegexxMatch>::const_iterator i;
   int32 lastpos = 0;
   for(i = rxx.match.begin(); i != rxx.match.end(); i++) {
     v.push_back(_str.CopyInto(temp,lastpos,i->start()-lastpos));

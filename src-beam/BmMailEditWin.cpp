@@ -74,6 +74,9 @@ float BmMailEditWin::nNextXPos = 300;
 float BmMailEditWin::nNextYPos = 100;
 BmMailEditWin::BmEditWinMap BmMailEditWin::nEditWinMap;
 
+const char* const BmMailEditWin::MSG_CONTROL = 	"ctrl";
+const char* const BmMailEditWin::MSG_ADDRESS = 	"addr";
+
 /*------------------------------------------------------------------------------*\
 	types of messages handled by a BmMailEditWin:
 \*------------------------------------------------------------------------------*/
@@ -166,7 +169,7 @@ BmMailEditWin::~BmMailEditWin() {
 	Filter()
 		-	
 \*------------------------------------------------------------------------------*/
-filter_result BmMailEditWin::BmMsgFilter::Filter( BMessage* msg, BHandler** handler) {
+filter_result BmMailEditWin::BmMsgFilter::Filter( BMessage* msg, BHandler**) {
 	if (msg->what == B_KEY_DOWN) {
 		BmString bytes = msg->FindString( "bytes");
 		int32 modifiers = msg->FindInt32( "modifiers");

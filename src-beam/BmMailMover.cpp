@@ -48,6 +48,12 @@
 
 static const float GRAIN = 1.0;
 
+const char* const BmMailMover::MSG_MOVER = 		"bm:mover";
+const char* const BmMailMover::MSG_DELTA = 		"bm:delta";
+const char* const BmMailMover::MSG_TRAILING = 	"bm:trailing";
+const char* const BmMailMover::MSG_LEADING = 	"bm:leading";
+const char* const BmMailMover::MSG_REFS = 		"refs";
+
 /*------------------------------------------------------------------------------*\
 	BmMailMover()
 		-	contructor
@@ -66,7 +72,7 @@ BmMailMover::BmMailMover( const BmString& name, BList* refList, BmMailFolder* de
 BmMailMover::~BmMailMover() { 
 	if (mRefList) {
 		entry_ref* ref;
-		while( (ref = static_cast<entry_ref*>( mRefList->RemoveItem( (int32)0))))
+		while( (ref = static_cast<entry_ref*>( mRefList->RemoveItem( (int32)0)))!=NULL)
 			delete ref;
 		delete mRefList;
 	}

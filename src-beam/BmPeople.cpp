@@ -257,7 +257,7 @@ void BmPeopleList::AddPeopleToMenu( BMenu* menu, const BMessage& templateMsg,
 	BmPersonMap noGroupMap;
 	BmGroupMap groupMap;
 	BmAutolock lock( ModelLocker());
-	lock.IsLocked() 							|| BM_THROW_RUNTIME( ModelName() << ": Unable to get lock");
+	lock.IsLocked() 							|| BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
 	BmModelItemMap::const_iterator iter;
 	for( iter = begin(); iter != end(); ++iter) {
 		BmPerson* person = dynamic_cast< BmPerson*>( iter->second.Get());
@@ -363,7 +363,7 @@ void BmPeopleList::InitializeItems() {
 	BmString peopleFolder = TheResources->HomePath + "/People";
 
 	BmAutolock lock( mModelLocker);
-	lock.IsLocked() 							|| BM_THROW_RUNTIME( ModelName() << ":InitializeItems(): Unable to get lock");
+	lock.IsLocked() 							|| BM_THROW_RUNTIME( ModelNameNC() << ":InitializeItems(): Unable to get lock");
 
 	BM_LOG2( BM_LogUtil, "Start of people-query");
 	(err = mPeopleQuery.SetVolume( &TheResources->MailboxVolume)) == B_OK

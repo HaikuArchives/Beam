@@ -110,7 +110,7 @@ bool BmMailRefList::Store() {
 	if (mInitCheck != B_OK) return true;
 	try {
 		BmAutolock lock( ModelLocker());
-		lock.IsLocked() 						|| BM_THROW_RUNTIME( ModelName() << ":Store(): Unable to get lock");
+		lock.IsLocked() 						|| BM_THROW_RUNTIME( ModelNameNC() << ":Store(): Unable to get lock");
 		BmString filename = SettingsFileName();
 		(ret = cacheFile.SetTo( filename.String(), B_WRITE_ONLY | B_CREATE_FILE | B_ERASE_FILE)) == B_OK
 													|| BM_THROW_RUNTIME( BmString("Could not create settings-file\n\t<") << filename << ">\n\n Result: " << strerror(ret));
@@ -229,7 +229,7 @@ void BmMailRefList::InitializeItems() {
 			if (!strcmp(dent->d_name, ".") || !strcmp(dent->d_name, ".."))
 				continue;						// ignore . and .. dirs
 
-			mailDir.GetStatFor( dent->d_name, &st) == B_OK
+			(err=mailDir.GetStatFor( dent->d_name, &st)) == B_OK
 													|| BM_THROW_RUNTIME(BmString("Could not get stat-info for \nmail-file <") << dent->d_name << "> \n\nError:" << strerror(err));
 			if (S_ISREG( st.st_mode)) {
 				// we have found a new mail, so we add it to our list:

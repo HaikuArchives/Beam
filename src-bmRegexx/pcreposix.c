@@ -208,7 +208,7 @@ preg->re_erroffset = erroffset;
 
 if (preg->re_pcre == NULL) return pcre_posix_error_code(errorptr);
 
-preg->re_nsub = pcre_info(preg->re_pcre, NULL, NULL);
+preg->re_nsub = pcre_info((real_pcre*)preg->re_pcre, NULL, NULL);
 return 0;
 }
 
@@ -243,7 +243,7 @@ if (nmatch > 0)
   if (ovector == NULL) return REG_ESPACE;
   }
 
-rc = pcre_exec(preg->re_pcre, NULL, string, (int)strlen(string), 0, options,
+rc = pcre_exec((real_pcre*)preg->re_pcre, NULL, string, (int)strlen(string), 0, options,
   ovector, nmatch * 3);
 
 if (rc == 0) rc = nmatch;    /* All captured slots were filled in */

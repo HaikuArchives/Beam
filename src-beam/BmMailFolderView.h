@@ -79,10 +79,10 @@ class BmMailFolderView : public BmListViewController
 	typedef BmListViewController inherited;
 	
 	//	message component definitions for archive:
-	static const char* const MSG_CURR_FOLDER = "bm:currfolder";
+	static const char* const MSG_CURR_FOLDER;
 
 public:
-	static const char* const MSG_FOLDERS_SELECTED = 		"bm:fsel";
+	static const char* const MSG_FOLDERS_SELECTED;
 
 	// creator-func, c'tors and d'tor:
 	static BmMailFolderView* CreateInstance(  minimax minmax, int32 width, int32 height);

@@ -307,7 +307,7 @@ char TextEntryAlert::Shortcut(int32 index) const
 }
 
 
-filter_result TextEntryAlert::KeyDownFilterStatic(BMessage* message, BHandler** target,
+filter_result TextEntryAlert::KeyDownFilterStatic(BMessage* message, BHandler**,
 	BMessageFilter* filter)
 {
 	return ((TextEntryAlert*)filter->Looper())->KeyDownFilter(message);
@@ -445,7 +445,7 @@ void TextEntryAlertBackgroundView::Draw(BRect update_rect)
 }
 
 
-void TextEntryAlertBackgroundView::FrameResized(float width, float heigh)
+void TextEntryAlertBackgroundView::FrameResized(float, float)
 {
 	BRect new_bounds = Bounds();
 	float width_delta = new_bounds.right - m_cached_bounds.right;

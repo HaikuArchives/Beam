@@ -583,7 +583,7 @@ const BmString& BmBodyPart::DecodedData() const {
 		if (listModel) {
 			BmBodyPartList* bodyPartList = dynamic_cast< BmBodyPartList*>( listModel.Get());
 			const BmMail* mail;
-			if (bodyPartList && (mail=bodyPartList->Mail())) {
+			if (bodyPartList && (mail=bodyPartList->Mail())!=NULL) {
 				BmStringIBuf text( mail->RawText().String()+mStartInRawText, mBodyLength);
 				BmMemFilterRef decoder = FindDecoderFor( &text, mContentTransferEncoding);
 				BmStringOBuf tempIO( mBodyLength, 1.2);
@@ -1019,7 +1019,7 @@ bool BmBodyPartList::IsMultiPart() const {
 \*------------------------------------------------------------------------------*/
 void BmBodyPartList::PruneUnneededMultiParts() {
 	BmAutolock lock( mModelLocker);
-	lock.IsLocked()	 						|| BM_THROW_RUNTIME( ModelName() << ":PruneUnnededMultiParts(): Unable to get lock");
+	lock.IsLocked()	 						|| BM_THROW_RUNTIME( ModelNameNC() << ":PruneUnnededMultiParts(): Unable to get lock");
 	BmModelItemMap::const_iterator iter;
 	for( iter = begin(); iter != end(); ) {
 		BmBodyPart* bodyPart = dynamic_cast< BmBodyPart*>( iter++->second.Get());
@@ -1060,7 +1060,7 @@ int32 BmBodyPartList::EstimateEncodedSize() {
 \*------------------------------------------------------------------------------*/
 bool BmBodyPartList::ConstructBodyForSending( BmStringOBuf& msgText) {
 	BmAutolock lock( mModelLocker);
-	lock.IsLocked()	 						|| BM_THROW_RUNTIME( ModelName() << ":ConstructBodyForSending(): Unable to get lock");
+	lock.IsLocked()	 						|| BM_THROW_RUNTIME( ModelNameNC() << ":ConstructBodyForSending(): Unable to get lock");
 	BmRef<BmBodyPart> editableTextBody( EditableTextBody());
 	bool hasMultiPartTop = editableTextBody && editableTextBody->Parent();
 	bool isMultiPart = hasMultiPartTop

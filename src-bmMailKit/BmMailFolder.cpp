@@ -43,6 +43,16 @@
 
 BLocker BmMailFolder::nRefListLocker( "RefListLocker");
 
+const char* const BmMailFolder::MSG_ENTRYREF = 		"bm:eref";
+const char* const BmMailFolder::MSG_INODE = 			"bm:inod";
+const char* const BmMailFolder::MSG_LASTMODIFIED = "bm:lmod";
+
+//	message component definitions for status-msgs:
+const char* const BmMailFolder::MSG_NAME = 			"bm:fname";
+
+// flags indicating which parts are to be updated:
+const BmUpdFlags BmMailFolder::UPD_NEW_STATUS = 	1<<2;
+
 /*------------------------------------------------------------------------------*\
 	CreateDummyInstance()
 		-	static creator-func, creates dummy mail-folder (used in prefs)

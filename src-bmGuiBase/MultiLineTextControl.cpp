@@ -197,7 +197,7 @@ void MultiLineTextControl::Draw(BRect update_rect)
 	}
 }
 
-void MultiLineTextControl::FrameResized(float width, float heigh)
+void MultiLineTextControl::FrameResized(float, float)
 {
 	BRect new_entry_text_rect = m_text_view->Frame().InsetByCopy(-2,-2);
 

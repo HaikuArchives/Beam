@@ -81,18 +81,18 @@ class BmMailView : public WrappingTextView, public BmJobController {
 	typedef BmTextRunMap::const_iterator BmTextRunIter;
 	
 	// archival-fieldnames:
-	static const char* const MSG_VERSION =		"bm:version";
-	static const char* const MSG_RAW = 			"bm:raw";
-	static const char* const MSG_FONTNAME = 	"bm:fnt";
-	static const char* const MSG_FONTSIZE =	"bm:fntsz";
+	static const char* const MSG_VERSION;
+	static const char* const MSG_RAW;
+	static const char* const MSG_FONTNAME;
+	static const char* const MSG_FONTSIZE;
 	//
-	static const char* const MSG_MAIL =			"bm:mail";
-	static const char* const MSG_ENCODING =	"bm:encod";
+	static const char* const MSG_MAIL;
+	static const char* const MSG_ENCODING;
 
-	static const int16 nArchiveVersion = 3;
+	static const int16 nArchiveVersion;
 
 public:
-	static const char* const MSG_HAS_MAIL = 		"bm:hmail";
+	static const char* const MSG_HAS_MAIL;
 
 	// creator-func, c'tors and d'tor:
 	static BmMailView* CreateInstance(  minimax minmax, BRect frame, bool outbound);

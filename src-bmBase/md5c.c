@@ -24,7 +24,9 @@ These notices must be retained in any copies of any part of this
 documentation and/or software.
  */
 
-//#include "config.h"
+#include <cstdio>
+#include <cstring>
+
 #include "md5global.h"
 #include "md5.h"
 

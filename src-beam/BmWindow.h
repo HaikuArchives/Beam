@@ -42,7 +42,7 @@ class BmWindow : public MWindow
 {
 	typedef MWindow inherited;
 
-	static const char* const MSG_FRAME = 		"bm:frm";
+	static const char* const MSG_FRAME;
 
 public:
 	// creator-func, c'tors and d'tor:

@@ -55,11 +55,11 @@ class ColumnListView : public BListView
 		typedef BListView inherited;
 
 		// archival-fieldnames:
-		static const char* const MSG_DISPLAYORDER = 		"bm:dsplord";
-		static const char* const MSG_NUMSORTKEYS = 		"bm:nsort";
-		static const char* const MSG_SORTKEY = 			"bm:sortk";
-		static const char* const MSG_SORTMODE = 			"bm:sortm";
-		static const char* const MSG_COLWIDTH = 			"bm:colw";
+		static const char* const MSG_DISPLAYORDER;
+		static const char* const MSG_NUMSORTKEYS;
+		static const char* const MSG_SORTKEY;
+		static const char* const MSG_SORTMODE;
+		static const char* const MSG_COLWIDTH;
 
 	public:
 		//Constructor and destructor
@@ -197,7 +197,7 @@ class ColumnListView : public BListView
 		virtual void Expand(CLVListItem* item);
 		virtual void Collapse(CLVListItem* item);
 		bool IsExpanded(int32 fullListIndex) const;
-		virtual void ExpansionChanged(CLVListItem* item, bool expanded) {}
+		virtual void ExpansionChanged(CLVListItem*, bool) {}
 		void SetSortFunction(CLVCompareFuncPtr compare);
 		void SortItems();
 		virtual CLVContainerView* CreateContainer(bool horizontal, bool vertical, bool scroll_view_corner,
@@ -222,7 +222,7 @@ class ColumnListView : public BListView
 		void SetDisconnectScrollView( bool disconnect);
 		void UpdateColumnSizesDataRectSizeScrollBars(bool scrolling_allowed = true);
 		void ColumnsChanged();
-		virtual void ShowLabelViewMenu( BPoint pos)	{ }
+		virtual void ShowLabelViewMenu( BPoint)	{ }
 
 	protected:
 		friend class CLVMainView;

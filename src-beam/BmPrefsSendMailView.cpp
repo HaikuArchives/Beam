@@ -166,7 +166,7 @@ BmSendAccView::~BmSendAccView() {
 		-	
 \*------------------------------------------------------------------------------*/
 BmListViewItem* BmSendAccView::CreateListViewItem( BmListModelItem* item,
-																		BMessage* archive) {
+																	BMessage*) {
 	return new BmSendAccItem( item->Key(), item);
 }
 
@@ -377,7 +377,7 @@ void BmPrefsSendMailView::Activated() {
 
 	// update all entries of POP-account-menu:
 	BMenuItem* item;
-	while( (item = mPopControl->Menu()->RemoveItem( (int32)0)))
+	while( (item = mPopControl->Menu()->RemoveItem( (int32)0))!=NULL)
 		delete item;
 	AddItemToMenu( mPopControl->Menu(), 
 					   new BMenuItem( nEmptyItemLabel.String(), new BMessage( BM_POP_SELECTED)), this);

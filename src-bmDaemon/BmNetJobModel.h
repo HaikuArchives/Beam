@@ -143,7 +143,9 @@ protected:
 
 	// Hide copy-constructor and assignment:
 	BmNetJobModel( const BmNetJobModel&);
+#ifndef __POWERPC__
 	BmNetJobModel operator=( const BmNetJobModel&);
+#endif
 };
 
 

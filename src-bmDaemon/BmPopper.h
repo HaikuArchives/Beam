@@ -84,18 +84,18 @@ class BmPopper : public BmNetJobModel {
 	
 public:
 	//	message component definitions for status-msgs:
-	static const char* const MSG_POPPER = 		"bm:popper";
-	static const char* const MSG_DELTA = 		"bm:delta";
-	static const char* const MSG_TRAILING = 	"bm:trailing";
-	static const char* const MSG_LEADING = 	"bm:leading";
+	static const char* const MSG_POPPER;
+	static const char* const MSG_DELTA;
+	static const char* const MSG_TRAILING;
+	static const char* const MSG_LEADING;
 
 	// message component definitions for additional info:
-	static const char* const MSG_PWD = 	"bm:pwd";
+	static const char* const MSG_PWD;
 
 	// alternate job-specifiers:
-	static const int32 BM_AUTH_ONLY_JOB = 1;
+	static const int32 BM_AUTH_ONLY_JOB;
 							// for authentication only (needed for SMTP-after-POP)
-	static const int32 BM_CHECK_AUTH_TYPES_JOB = 2;
+	static const int32 BM_CHECK_AUTH_TYPES_JOB;
 							// to find out about supported authentication types
 
 	BmPopper( const BmString& name, BmPopAccount* account);

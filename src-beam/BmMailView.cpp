@@ -67,6 +67,18 @@ using namespace regexx;
 
 #define BM_MARK_AS_READ 'BmMR'
 
+const char* const BmMailView::MSG_VERSION =	"bm:version";
+const char* const BmMailView::MSG_RAW = 		"bm:raw";
+const char* const BmMailView::MSG_FONTNAME = "bm:fnt";
+const char* const BmMailView::MSG_FONTSIZE =	"bm:fntsz";
+
+const char* const BmMailView::MSG_MAIL =		"bm:mail";
+const char* const BmMailView::MSG_ENCODING =	"bm:encod";
+
+const int16 BmMailView::nArchiveVersion = 3;
+
+const char* const BmMailView::MSG_HAS_MAIL = "bm:hmail";
+
 /*------------------------------------------------------------------------------*\
 	()
 		-	
@@ -150,7 +162,7 @@ BmMailView::~BmMailView() {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-status_t BmMailView::Archive( BMessage* archive, bool deep=true) const {
+status_t BmMailView::Archive( BMessage* archive, bool deep) const {
 	status_t ret = archive->AddInt16( MSG_VERSION, nArchiveVersion)
 						|| archive->AddBool( MSG_RAW, mOutbound ? false : mShowRaw)
 						|| archive->AddString( MSG_FONTNAME, mFontName.String())
@@ -166,7 +178,7 @@ status_t BmMailView::Archive( BMessage* archive, bool deep=true) const {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-status_t BmMailView::Unarchive( BMessage* archive, bool deep=true) {
+status_t BmMailView::Unarchive( BMessage* archive, bool deep) {
 	int16 version;
 	if (archive->FindInt16( MSG_VERSION, &version) != B_OK)
 		version = 1;
@@ -281,7 +293,7 @@ void BmMailView::MessageReceived( BMessage* msg) {
 				BMessage* clipMsg;
 				if (be_clipboard->Lock()) {
 					be_clipboard->Clear();
-					if ((clipMsg = be_clipboard->Data())) {
+					if ((clipMsg = be_clipboard->Data())!=NULL) {
 						clipMsg->AddData( "text/plain", B_MIME_TYPE, urlStr.String(), urlStr.Length());
 						be_clipboard->Commit();
 					}
@@ -398,7 +410,7 @@ void BmMailView::MouseUp( BPoint point) {
 			bmApp->LaunchURL( url);
 		}
 	}
-	mClickedTextRun = 0;
+	mClickedTextRun = mTextRunMap.end();
 }
 
 /*------------------------------------------------------------------------------*\
@@ -547,7 +559,7 @@ void BmMailView::UpdateFont( const BFont& font) {
 	AcceptsDrop()
 		-	
 \*------------------------------------------------------------------------------*/
-bool BmMailView::AcceptsDrop( const BMessage* msg) {
+bool BmMailView::AcceptsDrop( const BMessage*) {
 	return IsEditable();
 }
 
@@ -683,7 +695,7 @@ void BmMailView::JobIsDone( bool completed) {
 		mTextRunMap.clear();
 		mTextRunMap[0] = BmTextRunInfo( Black);
 		BmBodyPartList* body = mCurrMail->Body();
-		mClickedTextRun = 0;
+		mClickedTextRun = mTextRunMap.end();
 		if (mRulerView)
 			mRulerView->SetIndicatorPos( mCurrMail->RightMargin());
 		if (body) {

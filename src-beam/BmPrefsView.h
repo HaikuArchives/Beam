@@ -70,9 +70,9 @@ public:
 	bool InitDone() const					{ return mInitDone; }
 
 	// message-fields:
-	static const char* const MSG_ACCOUNT = 		"bm:acc";
-	static const char* const MSG_FIELD_NAME = 	"bm:fname";
-	static const char* const MSG_COMPLAINT = 		"bm:compl";
+	static const char* const MSG_ACCOUNT;
+	static const char* const MSG_FIELD_NAME;
+	static const char* const MSG_COMPLAINT;
 
 protected:
 

@@ -65,7 +65,7 @@ public:
 	int32 IndicatorPos() const				{ return mIndicatorPos; }
 
 	//	message component definitions:
-	static const char* const MSG_NEW_POS = "bm:newpos";
+	static const char* const MSG_NEW_POS;
 
 private:
 	// native methods:
@@ -75,7 +75,7 @@ private:
 	int32 mIndicatorPos;
 	bool mIndicatorGrabbed;
 	float mSingleCharWidth;
-	static const float nXOffset = 4.0;
+	static const float nXOffset;
 
 	// Hide copy-constructor and assignment:
 	BmRulerView( const BmRulerView&);

@@ -67,25 +67,25 @@ class BmPopAccount : public BmListModelItem {
 	friend BmPopAccountList;
 
 	// archivable components:
-	static const char* const MSG_NAME = 			"bm:name";
-	static const char* const MSG_USERNAME = 		"bm:username";
-	static const char* const MSG_PASSWORD = 		"bm:password";
-	static const char* const MSG_POP_SERVER = 	"bm:popserver";
-	static const char* const MSG_SMTP_ACCOUNT = 	"bm:smtpacc";
-	static const char* const MSG_REAL_NAME = 		"bm:realname";
-	static const char* const MSG_MAIL_ADDR = 		"bm:mailaddr";
-	static const char* const MSG_SIGNATURE_NAME = "bm:signaturename";
-	static const char* const MSG_CHECK_MAIL = 	"bm:checkmail";
-	static const char* const MSG_DELETE_MAIL = 	"bm:deletemail";
-	static const char* const MSG_PORT_NR = 		"bm:portnr";
-	static const char* const MSG_UID = 				"bm:uid";
-	static const char* const MSG_AUTH_METHOD = 	"bm:authmethod";
-	static const char* const MSG_MARK_DEFAULT = 	"bm:markdefault";
-	static const char* const MSG_STORE_PWD = 		"bm:storepwd";
-	static const char* const MSG_MAIL_ALIASES = 	"bm:mailaliases";
-	static const char* const MSG_MARK_BUCKET = 	"bm:markbucket";
-	static const char* const MSG_CHECK_INTERVAL = "bm:checkinterval";
-	static const int16 nArchiveVersion = 2;
+	static const char* const MSG_NAME;
+	static const char* const MSG_USERNAME;
+	static const char* const MSG_PASSWORD;
+	static const char* const MSG_POP_SERVER;
+	static const char* const MSG_SMTP_ACCOUNT;
+	static const char* const MSG_REAL_NAME;
+	static const char* const MSG_MAIL_ADDR;
+	static const char* const MSG_SIGNATURE_NAME;
+	static const char* const MSG_CHECK_MAIL;
+	static const char* const MSG_DELETE_MAIL;
+	static const char* const MSG_PORT_NR;
+	static const char* const MSG_UID;
+	static const char* const MSG_AUTH_METHOD;
+	static const char* const MSG_MARK_DEFAULT;
+	static const char* const MSG_STORE_PWD;
+	static const char* const MSG_MAIL_ALIASES;
+	static const char* const MSG_MARK_BUCKET;
+	static const char* const MSG_CHECK_INTERVAL;
+	static const int16 nArchiveVersion;
 
 public:
 	BmPopAccount( const char* name, BmPopAccountList* model);
@@ -151,8 +151,8 @@ public:
 
 	bool GetPOPAddress( BNetAddress* addr) const;
 
-	static const char* const AUTH_POP3 = "POP3";
-	static const char* const AUTH_APOP = "APOP";
+	static const char* const AUTH_POP3;
+	static const char* const AUTH_APOP;
 
 private:
 	BmPopAccount();					// hide default constructor
@@ -196,7 +196,7 @@ private:
 class BmPopAccountList : public BmListModel {
 	typedef BmListModel inherited;
 
-	static const int16 nArchiveVersion = 1;
+	static const int16 nArchiveVersion;
 
 public:
 	// creator-func, c'tors and d'tor:
@@ -220,7 +220,7 @@ public:
 
 	static BmRef<BmPopAccountList> theInstance;
 
-	static const char* const MSG_AUTOCHECK 	=	"bm:auto";
+	static const char* const MSG_AUTOCHECK;
 
 private:
 	// Hide copy-constructor and assignment:

@@ -120,7 +120,7 @@ void BmMailRefItem::UpdateView( BmUpdFlags flags) {
 			SetColumnContent( COL_ATTACHMENTS_I, icon, 2.0, false);
 		}
 		BmString priority = BmString("Priority_") << ref->Priority();
-		if ((icon = TheResources->IconByName(priority))) {
+		if ((icon = TheResources->IconByName(priority))!=NULL) {
 			SetColumnContent( COL_PRIORITY_I, icon, 2.0, false);
 		}
 		BmListColumn cols[] = {
@@ -195,6 +195,8 @@ const time_t BmMailRefItem::GetDateValueForColumn( int32 column_index) const {
 	BmMailRefView
 \********************************************************************************/
 
+
+const char* const BmMailRefView::MSG_MAILS_SELECTED = "bm:msel";
 
 /*------------------------------------------------------------------------------*\
 	()
@@ -275,7 +277,7 @@ CLVContainerView* BmMailRefView::CreateContainer( bool horizontal, bool vertical
 		-	
 \*------------------------------------------------------------------------------*/
 BmListViewItem* BmMailRefView::CreateListViewItem( BmListModelItem* item, 
-																	BMessage* archive) {
+																	BMessage*) {
 	return new BmMailRefItem( item->Key(), item);
 }
 
@@ -392,7 +394,7 @@ void BmMailRefView::MouseDown(BPoint point) {
 	InitiateDrag()
 		-	
 \*------------------------------------------------------------------------------*/
-bool BmMailRefView::InitiateDrag( BPoint where, int32 index, bool wasSelected) {
+bool BmMailRefView::InitiateDrag( BPoint, int32 index, bool wasSelected) {
 	if (!wasSelected)
 		return false;
 	BM_LOG2( BM_LogRefView, "InitiateDrag() - enter");

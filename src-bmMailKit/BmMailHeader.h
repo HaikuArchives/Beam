@@ -129,7 +129,7 @@ public:
 	inline bool IsGroup() const			{ return mIsGroup; }
 	inline int32 AddrCount() const		{ return mAddrList.size(); }
 	inline const BmString& GroupName() const	{ return mGroupName; }
-	inline BmAddress FirstAddress() const		{ return mAddrList.size() > 0 ? mAddrList[0] : ""; }
+	inline BmAddress FirstAddress() const		{ return mAddrList.size() > 0 ? mAddrList[0] : BmAddress(); }
 
 private:
 	bool mInitOK;

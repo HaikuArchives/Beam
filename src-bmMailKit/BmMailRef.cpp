@@ -43,6 +43,24 @@
 
 #define BM_REFKEY(x) (BmString() << x.st_ino)
 
+	// archival-fieldnames:
+const char* const BmMailRef::MSG_ACCOUNT = 	"bm:ac";
+const char* const BmMailRef::MSG_ATTACHMENTS= "bm:at";
+const char* const BmMailRef::MSG_CC = 			"bm:cc";
+const char* const BmMailRef::MSG_CREATED = 	"bm:cr";
+const char* const BmMailRef::MSG_ENTRYREF = 	"bm:er";
+const char* const BmMailRef::MSG_FROM = 		"bm:fr";
+const char* const BmMailRef::MSG_INODE = 		"bm:in";
+const char* const BmMailRef::MSG_NAME = 		"bm:nm";
+const char* const BmMailRef::MSG_PRIORITY = 	"bm:pr";
+const char* const BmMailRef::MSG_REPLYTO = 	"bm:rp";
+const char* const BmMailRef::MSG_SIZE = 		"bm:sz";
+const char* const BmMailRef::MSG_STATUS = 	"bm:st";
+const char* const BmMailRef::MSG_SUBJECT = 	"bm:su";
+const char* const BmMailRef::MSG_TO = 			"bm:to";
+const char* const BmMailRef::MSG_WHEN = 		"bm:wh";
+const int16 BmMailRef::nArchiveVersion = 1;
+
 /*------------------------------------------------------------------------------*\
 	CreateInstance( )
 		-	static creator-func
@@ -226,7 +244,7 @@ BmMailRef::~BmMailRef() {
 	Archive( archive)
 		-	
 \*------------------------------------------------------------------------------*/
-status_t BmMailRef::Archive( BMessage* archive, bool deep) const {
+status_t BmMailRef::Archive( BMessage* archive, bool) const {
 	status_t ret 
 		=  archive->AddString( MSG_ACCOUNT, mAccount.String())
 		|| archive->AddBool( MSG_ATTACHMENTS, mHasAttachments)

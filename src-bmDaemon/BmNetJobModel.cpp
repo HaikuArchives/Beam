@@ -28,6 +28,8 @@
 /*                                                                       */
 /*************************************************************************/
 
+#include <assert.h>
+
 #include "BmNetJobModel.h"
 #include "BmPrefs.h"
 
@@ -425,7 +427,7 @@ BmNetOBuf::BmNetOBuf( BmNetJobModel* job)
 		-	sends given data to the server
 \*------------------------------------------------------------------------------*/
 uint32 BmNetOBuf::Write( const char* data, uint32 len) {
-	uint32 sentSize;
+	uint32 sentSize=0;
 	uint32 blockSize = ThePrefs->GetInt("NetSendBufferSize", 10*1500);
 	for( uint32 offs=0; offs<len; ) {
 		int32 sz = MIN( len-offs, blockSize);

@@ -62,8 +62,8 @@ class CLVEasyItem : public CLVListItem
 		inline float GetTextOffset() {return text_offset;}
 		virtual const char* GetUserText(int32 column_index, float column_width) const;
 
-		virtual const int32 GetNumValueForColumn( int32 column_index) const 		{ return 0; }
-		virtual const time_t GetDateValueForColumn( int32 column_index) const 	{ return 0; }
+		virtual const int32 GetNumValueForColumn( int32) const 		{ return 0; }
+		virtual const time_t GetDateValueForColumn( int32) const 	{ return 0; }
 
 		void Highlight( bool b);
 		bool Highlight( );

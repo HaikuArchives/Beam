@@ -54,12 +54,16 @@
 \********************************************************************************/
 
 
+const char* const BmListViewItem::MSG_EXPANDED = 	"bm:expnd";
+const char* const BmListViewItem::MSG_CHILDNAMES = "bm:chldnm";
+const char* const BmListViewItem::MSG_CHILDREN = 	"bm:chldrn";
+
 /*------------------------------------------------------------------------------*\
 	()
 		-	
 \*------------------------------------------------------------------------------*/
 BmListViewItem::BmListViewItem( BmString& key, BmListModelItem* modelItem,
-										  bool hierarchical, BMessage* archive)
+										  bool, BMessage* archive)
 	:	inherited( 0, !modelItem->empty(), false, MAX( TheResources->FontLineHeight(), 18))
 	,	mKey( key)
 	,	mModelItem( modelItem)
@@ -78,7 +82,7 @@ BmListViewItem::~BmListViewItem() {
 	Archive( archive)
 		-	
 \*------------------------------------------------------------------------------*/
-status_t BmListViewItem::Archive( BMessage* archive, bool deep) const {
+status_t BmListViewItem::Archive( BMessage* archive, bool) const {
 	// first we archive the item's attributes into a separate message...
 	BMessage msg;
 	msg.AddBool( MSG_EXPANDED, IsExpanded());
@@ -118,6 +122,13 @@ void BmListViewItem::SetTextCols( int16 firstTextCol, BmListColumn* columnVec,
 	BmListViewController
 \********************************************************************************/
 
+
+const char* const BmListViewController::MSG_COLUMN_NO = 	"bm:colno";
+const char* const BmListViewController::MSG_COLUMN_POS = "bm:colps";
+
+const char* const BmListViewController::MSG_HIGHITEM = 	"hitem";
+const char* const BmListViewController::MSG_EXPAND = 		"expnd";
+const char* const BmListViewController::MSG_SCROLL_STEP= "step";
 
 /*------------------------------------------------------------------------------*\
 	BmListViewController()
@@ -301,7 +312,7 @@ void BmListViewController::MouseMoved( BPoint point, uint32 transit, const BMess
 	HandleDrop( msg)
 		-	
 \*------------------------------------------------------------------------------*/
-void BmListViewController::HandleDrop( const BMessage* msg) {
+void BmListViewController::HandleDrop( const BMessage*) {
 	// remove the drag-highlight, if neccessary:
 	if (mCurrHighlightItem) {
 		mCurrHighlightItem->Highlight( false);
@@ -586,7 +597,7 @@ BmListViewItem* BmListViewController::UpdateModelItem( BmListModelItem* item,
 			has changed state
 		-	default implementation does nothing
 \*------------------------------------------------------------------------------*/
-void BmListViewController::UpdateModelState( BMessage* msg) {
+void BmListViewController::UpdateModelState( BMessage*) {
 }
 
 /*------------------------------------------------------------------------------*\
@@ -614,7 +625,7 @@ void BmListViewController::UpdateCaption( const char* text) {
 	ItemInvoked( index)
 		-	
 \*------------------------------------------------------------------------------*/
-void BmListViewController::ItemInvoked( int32 index) {
+void BmListViewController::ItemInvoked( int32) {
 }
 
 /*------------------------------------------------------------------------------*\
@@ -674,7 +685,7 @@ void BmListViewController::ShowLabelViewMenu( BPoint point) {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmListViewController::ExpansionChanged( CLVListItem* _item, bool expanded) {
+void BmListViewController::ExpansionChanged( CLVListItem* _item, bool) {
 	BmListViewItem* item = dynamic_cast< BmListViewItem*>( _item);
 	UpdateItem( item, UPD_EXPANDER);
 }
@@ -739,11 +750,12 @@ void BmListViewController::MakeEmpty() {
 	WriteStateInfo( )
 		-	
 \*------------------------------------------------------------------------------*/
-void BmListViewController::StartJob( BmJobModel* model, bool startInNewThread) {
+void BmListViewController::StartJob( BmJobModel* model, bool startInNewThread,
+											    int32 jobSpecifier) {
 	AttachModel( model);
 	ScrollView()->SetBusy();
 	UpdateCaption( "tracking...");
-	inheritedController::StartJob( model, startInNewThread);
+	inheritedController::StartJob( model, startInNewThread, jobSpecifier);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -811,7 +823,7 @@ status_t BmListViewController::Archive(BMessage* archive, bool deep) const {
 	GetArchiveForItemKey( )
 		-	
 \*------------------------------------------------------------------------------*/
-BMessage* BmListViewController::GetArchiveForItemKey( BmString key, BMessage* msg=NULL) {
+BMessage* BmListViewController::GetArchiveForItemKey( BmString key, BMessage* msg) {
 	if (mInitialStateInfo) {
 		status_t ret = B_OK;
 		for( int i=0; ret==B_OK; ++i) {

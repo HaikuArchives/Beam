@@ -107,11 +107,11 @@ class BmMailHeaderView : public BView {
 	static const int FULL_HEADERS = 2;
 
 	// archival-fieldnames:
-	static const char* const MSG_VERSION = 		"bm:version";
-	static const char* const MSG_MODE = 			"bm:mode";
-	static const char* const MSG_REDIRECT_MODE =	"bm:rmode";
-	static const char* const MSG_FONTNAME = 		"bm:hfnt";
-	static const char* const MSG_FONTSIZE =		"bm:hfntsz";
+	static const char* const MSG_VERSION;
+	static const char* const MSG_MODE;
+	static const char* const MSG_REDIRECT_MODE;
+	static const char* const MSG_FONTNAME;
+	static const char* const MSG_FONTSIZE;
 
 public:
 	// c'tors and d'tor:

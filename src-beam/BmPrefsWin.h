@@ -44,7 +44,7 @@ class BmPrefsWin : public BmWindow
 	typedef BmWindow inherited;
 
 	// archival-fieldnames:
-	static const char* const MSG_VSPLITTER = 	"bm:vspl";
+	static const char* const MSG_VSPLITTER;
 
 public:
 	// creator-func, c'tors and d'tor:

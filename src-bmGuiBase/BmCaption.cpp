@@ -52,7 +52,7 @@ BmCaption::~BmCaption() {
 	( )
 		-	
 \*------------------------------------------------------------------------------*/
-void BmCaption::Draw( BRect bounds) {
+void BmCaption::Draw( BRect) {
 	BRect rect = Bounds();
 	SetHighColor( tint_color(BeBackgroundGrey, 1.072F));
 	FillRect( rect);

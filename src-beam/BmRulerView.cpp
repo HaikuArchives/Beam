@@ -36,6 +36,9 @@
 
 static const char* const MEDIUM_WIDTH_CHAR = "0";
 
+const char* const BmRulerView::MSG_NEW_POS = "bm:newpos";
+const float BmRulerView::nXOffset = 4.0;
+
 /*------------------------------------------------------------------------------*\
 	()
 		-	
@@ -49,9 +52,9 @@ BmRulerView::BmRulerView( const BFont& font)
 	,	mSingleCharWidth( font.StringWidth( MEDIUM_WIDTH_CHAR))
 {
 	SetViewColor( BeInactiveControlGrey);
-	BFont font( be_plain_font);
-	font.SetSize( 8);
-	SetFont( &font);
+	BFont fnt( be_plain_font);
+	fnt.SetSize( 8);
+	SetFont( &fnt);
 }
 
 /*------------------------------------------------------------------------------*\

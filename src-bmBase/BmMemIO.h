@@ -80,7 +80,7 @@ protected:
 	// native methods:
 	virtual void Filter( const char* srcBuf, uint32& srcLen, 
 								char* destBuf, uint32& destLen) = 0;
-	virtual void Finalize( char* destBuf, uint32& destLen) 
+	virtual void Finalize( char* , uint32& destLen) 
 													{ destLen=0; mIsFinalized = true; }
 	
 	BmMemIBuf* mInput;
@@ -138,6 +138,8 @@ private:
 		const char* buf;
 		uint32 currPos;
 		uint32 size;
+		BufInfo()
+			: buf( 0), currPos( 0), size( 0)		{}
 		BufInfo( const char* b, uint32 s)
 			: buf( b), currPos( 0), size( s)		{}
 	};

@@ -47,6 +47,12 @@ using namespace regexx;
 	BmSignature
 \********************************************************************************/
 
+const char* const BmSignature::MSG_NAME = 		"bm:name";
+const char* const BmSignature::MSG_DYNAMIC = 	"bm:dynamic";
+const char* const BmSignature::MSG_CONTENT = 	"bm:content";
+const char* const BmSignature::MSG_ENCODING = 	"bm:encoding";
+const int16 BmSignature::nArchiveVersion = 1;
+
 /*------------------------------------------------------------------------------*\
 	BmSignature()
 		-	c'tor
@@ -150,6 +156,8 @@ BmString BmSignature::GetSignatureString() {
 \********************************************************************************/
 
 BmRef< BmSignatureList> BmSignatureList::theInstance( NULL);
+
+const int16 BmSignatureList::nArchiveVersion = 1;
 
 /*------------------------------------------------------------------------------*\
 	CreateInstance()

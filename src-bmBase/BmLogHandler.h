@@ -31,12 +31,14 @@
 #ifndef _BmLogHandler_h
 #define _BmLogHandler_h
 
-#include <map>
+#include <map.h>
 #include <stdio.h>
 
 #include <Locker.h>
 #include <Looper.h>
 #include <StopWatch.h>
+
+#include "BmBasics.h"
 #include "BmString.h"
 
 /*------------------------------------------------------------------------------*\
@@ -54,6 +56,7 @@ struct node_ref;
 		-	different logfiles are identified by their name and will be created on demand
 \*------------------------------------------------------------------------------*/
 class BmLogHandler {
+
 	class BmLogfile;
 
 public:
@@ -87,10 +90,6 @@ private:
 	BmLogHandler( const BmLogHandler&);
 	BmLogHandler operator=( const BmLogHandler&);
 	
-	//	message component definitions for status-msgs:
-	static const char* const MSG_MESSAGE = 		"bm:msg";
-	static const char* const MSG_THREAD_ID = 		"bm:tid";
-
 	/*------------------------------------------------------------------------------*\*\
 		BmLogfile
 			-	implements a single logfile
@@ -104,6 +103,10 @@ private:
 		void Write( const char* const msg, const int32 threadId);
 		void MessageReceived( BMessage* msg);
 	
+		//	message component definitions for status-msgs:
+		static const char* const MSG_MESSAGE;
+		static const char* const MSG_THREAD_ID;
+
 	private:
 		BFile* mLogFile;
 		BmString filename;

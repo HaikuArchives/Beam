@@ -119,6 +119,20 @@ bool BmPopStatusFilter::CheckForPositiveAnswer() {
 	BmPopper
 \********************************************************************************/
 
+const char* const BmPopper::MSG_POPPER = 		"bm:popper";
+const char* const BmPopper::MSG_DELTA = 		"bm:delta";
+const char* const BmPopper::MSG_TRAILING = 	"bm:trailing";
+const char* const BmPopper::MSG_LEADING = 	"bm:leading";
+
+// message component definitions for additional info:
+const char* const BmPopper::MSG_PWD = 	"bm:pwd";
+
+// alternate job-specifiers:
+const int32 BmPopper::BM_AUTH_ONLY_JOB = 			1;
+					// for authentication only (needed for SMTP-after-POP)
+const int32 BmPopper::BM_CHECK_AUTH_TYPES_JOB = 2;
+					// to find out about supported authentication types
+
 /*------------------------------------------------------------------------------*\
 	PopStates[]
 		-	array of POP3-states, each with title and corresponding handler-method
@@ -202,7 +216,7 @@ bool BmPopper::StartJob() {
 		// a problem occurred, we tell the user:
 		BmString errstr = err.what();
 		int e;
-		if ((e = Connection()->Error()))
+		if ((e = Connection()->Error())!=B_OK)
 			errstr << "\nerror: " << e << ", " << mConnection->ErrorStr();
 		UpdatePOPStatus( 0.0, NULL, true);
 		BmString text = Name() << ":\n\n" << errstr;
@@ -361,7 +375,7 @@ void BmPopper::StateLogin() {
 			// most probably a wrong password...
 			BmString errstr = err.what();
 			int e;
-			if ((e = Connection()->Error()))
+			if ((e = Connection()->Error())!=B_OK)
 				errstr << "\nerror: " << e << ", " << Connection()->ErrorStr();
 			BmString text = Name() << ":\n\n" << errstr;
 			HandleError( text);

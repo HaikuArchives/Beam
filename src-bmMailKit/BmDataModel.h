@@ -80,16 +80,17 @@ public:
 	virtual void RemoveController( BmController* controller);
 
 	// getters:
-	inline BmString Name() const			{ return mModelName; }
-	inline BmString ModelName() const		{ return mModelName; }
+	inline const BmString& Name() const	{ return mModelName; }
+	inline const BmString& ModelName() const	{ return mModelName; }
+	inline BmString ModelNameNC() const	{ return mModelName; }
 	inline BLocker& ModelLocker() 		{ return mModelLocker; }
 
 	// overrides of BmRefObj
 	const BmString& RefName() const		{ return mModelName; }
 
 	//	message component definitions for status-msgs:
-	static const char* const MSG_MODEL = 			"bm:model";
-	static const char* const MSG_NEEDS_ACK = 		"bm:ack";
+	static const char* const MSG_MODEL;
+	static const char* const MSG_NEEDS_ACK;
 
 protected:
 	// native methods:
@@ -131,6 +132,8 @@ public:
 	BmJobModel( const BmString& name);
 	virtual ~BmJobModel();
 
+	static const int32 BM_DEFAULT_JOB;
+
 	// native methods:
 	static int32 ThreadStartFunc(  void*);
 	virtual void StartJobInNewThread( int32 jobSpecifier=BM_DEFAULT_JOB);
@@ -144,13 +147,12 @@ public:
 	inline int32 CurrentJobSpecifier() const	{ return mJobSpecifier; }
 
 	//	message component definitions for status-msgs:
-	static const char* const MSG_COMPLETED = 		"bm:completed";
-	static const char* const MSG_DOMAIN = 			"bm:domain";
-	static const char* const MSG_JOB_NAME = 		"bm:jobname";
+	static const char* const MSG_COMPLETED;
+	static const char* const MSG_DOMAIN;
+	static const char* const MSG_JOB_NAME;
 
-	static const int32 BM_DEFAULT_JOB = 0;
-	static const char* const MSG_JOB_SPEC = 		"bm:jobspec";
-	static const char* const MSG_JOB_THREAD = 	"bm:jobthread";
+	static const char* const MSG_JOB_SPEC;
+	static const char* const MSG_JOB_THREAD;
 
 protected:
 	// native methods:
@@ -172,7 +174,9 @@ protected:
 private:
 	// Hide copy-constructor and assignment:
 	BmJobModel( const BmJobModel&);
+#ifndef __POWERPC__
 	BmJobModel operator=( const BmJobModel&);
+#endif
 
 	virtual void doStartJob();
 
@@ -197,7 +201,7 @@ class BmListModelItem : public BmRefObj, public BArchivable {
 	friend class BmListModel;
 
 protected:
-	static const char* const MSG_VERSION = 		"bm:version";
+	static const char* const MSG_VERSION;
 
 public:
 	// c'tors & d'tor:
@@ -230,8 +234,8 @@ public:
 	status_t Archive( BMessage* archive, bool deep = true) const;
 
 	//	message component definitions for status-msgs:
-	static const char* const MSG_NUMCHILDREN  = 		"bm:count";
-	static const char* const MSG_CHILDREN 		= 		"bm:chld";
+	static const char* const MSG_NUMCHILDREN;
+	static const char* const MSG_CHILDREN;
 
 protected:
 	// native methods:
@@ -244,7 +248,9 @@ protected:
 
 private:
 	// Hide assignment:
+#ifndef __POWERPC__
 	BmListModelItem operator=( const BmListModelItem&);
+#endif
 	
 	BmString mKey;
 	BmModelItemMap mSubItemMap;
@@ -266,7 +272,7 @@ class BmListModel : public BmJobModel, public BArchivable {
 	friend BmListModelItem;
 	
 protected:
-	static const char* const MSG_VERSION = 		"bm:version";
+	static const char* const MSG_VERSION;
 
 public:
 	// c'tors & d'tor:
@@ -283,7 +289,7 @@ public:
 	virtual const BmString SettingsFileName() = 0;
 	static BMessage* Restore( const BmString settingsFile);
 	virtual void InitializeItems()								{	mInitCheck = B_OK; }
-	virtual void InstantiateItems( BMessage* archive)		{ mInitCheck = B_OK; }
+	virtual void InstantiateItems( BMessage*)					{ mInitCheck = B_OK; }
 	virtual void Cleanup();
 	virtual int16 ArchiveVersion() const = 0;
 
@@ -291,11 +297,11 @@ public:
 	status_t Archive( BMessage* archive, bool deep) const;
 
 	//	message component definitions for status-msgs:
-	static const char* const MSG_ITEMKEY 		=		"bm:ikey";
-	static const char* const MSG_PARENTKEY 	= 		"bm:pkey";
-	static const char* const MSG_MODELITEM 	= 		"bm:item";
-	static const char* const MSG_UPD_FLAGS		= 		"bm:updflags";
-	static const char* const MSG_OLD_KEY		= 		"bm:oldkey";
+	static const char* const MSG_ITEMKEY;
+	static const char* const MSG_PARENTKEY;
+	static const char* const MSG_MODELITEM;
+	static const char* const MSG_UPD_FLAGS;
+	static const char* const MSG_OLD_KEY;
 
 	// getters:
 	inline BmModelItemMap::const_iterator begin() const 	
@@ -323,7 +329,9 @@ protected:
 private:
 	// Hide copy-constructor and assignment:
 	BmListModel( const BmListModel&);
+#ifndef __POWERPC__
 	BmListModel operator=( const BmListModel&);
+#endif
 
 	BmModelItemMap mModelItemMap;
 };

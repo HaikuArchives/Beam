@@ -92,7 +92,9 @@ private:
 
 	// Hide copy-constructor and assignment:
 	BmRefObj( const BmRefObj&);
+#ifndef __POWERPC__
 	BmRefObj operator=( const BmRefObj&);
+#endif
 };
 
 
@@ -199,14 +201,14 @@ template <class T> class BmWeakRef {
 
 public:
 	inline BmWeakRef(T* p = 0) 
-	:	mName( p ? p->RefName() : "") 
+	:	mName( p ? p->RefName() : BM_DEFAULT_STRING) 
 	,	mPtr( p)
 	,	mProxyName( p ? p->ProxyName() : "") 
 	{
 		BM_LOG2( BM_LogUtil, BmString("RefManager: weak-reference to <") << mName << ":" << BmRefObj::RefPrintHex(mPtr) << "> created");
 	}
 	inline BmWeakRef<T>& operator= ( T* p) {
-		mName = p ? p->RefName() : NULL;
+		mName = p ? p->RefName() : BM_DEFAULT_STRING;
 		mPtr = p;
 		mProxyName = p ? p->ProxyName() : "";
 		return *this;

@@ -57,7 +57,7 @@ struct BmPersonInfo {
 	BmStringVect emails;
 	BmPersonInfo()								{}
 	BmPersonInfo( const BmString& nm, const BmString& nk, const BmString& em)
-		: name( nm) 							{	emails.push_back( em); }
+		: name( nm), nick( nk)				{	emails.push_back( em); }
 	void AddEmails( const BmStringVect& mails);
 };
 typedef map< BmString, BmPersonInfo> BmPersonMap;

@@ -70,7 +70,7 @@ class BmBodyPartView : public BmListViewController
 	typedef BmListViewController inherited;
 	
 	// archival-fieldnames:
-	static const char* const MSG_SHOWALL = 	"bm:showall";
+	static const char* const MSG_SHOWALL;
 
 public:
 	// c'tors and d'tor:
@@ -91,7 +91,7 @@ public:
 	void MessageReceived( BMessage* msg);
 	void MouseDown( BPoint point);
 	status_t Archive( BMessage* archive, bool deep=true) const;
-	status_t Unarchive( BMessage* archive, bool deep=true);
+	status_t Unarchive( const BMessage* archive, bool deep=true);
 
 	// overrides of controller base:
 	void AddAllModelItems();

@@ -311,6 +311,9 @@ void BmMailMonitor::HandleQueryUpdateMsg( BMessage* msg) {
 
 BmRef< BmMailFolderList> BmMailFolderList::theInstance( NULL);
 
+const char* const BmMailFolderList::MSG_MAILBOXMTIME = "bm:mboxmtime";
+const int16 BmMailFolderList::nArchiveVersion = 1;
+
 /*------------------------------------------------------------------------------*\
 	CreateInstance()
 		-	creator-func
@@ -445,7 +448,7 @@ void BmMailFolderList::InitializeItems() {
 
 	{	
 		BmAutolock lock( mModelLocker);
-		lock.IsLocked() 						|| BM_THROW_RUNTIME( ModelName() << ":InitializeMailFolders(): Unable to get lock");
+		lock.IsLocked() 						|| BM_THROW_RUNTIME( ModelNameNC() << ":InitializeMailFolders(): Unable to get lock");
 		BM_LOG3( BM_LogMailTracking, BmString("Top-folder <") << eref.name << "," << nref.node << "> found");
 		mTopFolder = AddMailFolder( eref, nref.node, NULL, mtime);
 
@@ -519,7 +522,7 @@ void BmMailFolderList::InstantiateItems( BMessage* archive) {
 												|| BM_THROW_RUNTIME(BmString("BmMailFolderList: Could not find msg-field <") << BmListModelItem::MSG_CHILDREN << "> \n\nError:" << strerror(err));
 	{
 		BmAutolock lock( mModelLocker);
-		lock.IsLocked() 						|| BM_THROW_RUNTIME( ModelName() << ":InstantiateMailFolders(): Unable to get lock");
+		lock.IsLocked() 						|| BM_THROW_RUNTIME( ModelNameNC() << ":InstantiateMailFolders(): Unable to get lock");
 		mTopFolder = new BmMailFolder( &msg, this, NULL);
 		AddItemToList( mTopFolder.Get());
 		BM_LOG3( BM_LogMailTracking, BmString("Top-folder <") << mTopFolder->EntryRef().name << "," << mTopFolder->Key() << "> read");
@@ -571,7 +574,7 @@ void BmMailFolderList::QueryForNewMails() {
 	BmFolderSet foldersWithNewMail;
 
 	BmAutolock lock( mModelLocker);
-	lock.IsLocked() 							|| BM_THROW_RUNTIME( ModelName() << ":QueryForNewMails(): Unable to get lock");
+	lock.IsLocked() 							|| BM_THROW_RUNTIME( ModelNameNC() << ":QueryForNewMails(): Unable to get lock");
 
 	BM_LOG2( BM_LogMailTracking, "Start of newMail-query");
 	(err = mNewMailQuery.SetVolume( &TheResources->MailboxVolume)) == B_OK

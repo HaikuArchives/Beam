@@ -47,7 +47,7 @@ DeepBevelView::DeepBevelView(BRect frame, const char* name, uint32 resize_mask, 
 }
 
 
-void DeepBevelView::Draw(BRect update_rect)
+void DeepBevelView::Draw(BRect)
 {
 	SetHighColor(m_dark_1_color);
 	StrokeLine(BPoint(m_cached_bounds.left,m_cached_bounds.top),BPoint(m_cached_bounds.right,
@@ -72,7 +72,7 @@ void DeepBevelView::Draw(BRect update_rect)
 }
 
 
-void DeepBevelView::FrameResized(float width, float height)
+void DeepBevelView::FrameResized(float, float)
 {
 	BRect new_bounds = Bounds();
 	float min_x = new_bounds.right;

@@ -31,6 +31,7 @@
 #define _BmBasics_h
 
 #include <stdexcept>
+#include <string>
 
 #include "BmString.h"
 
@@ -46,7 +47,7 @@ class BM_runtime_error : public runtime_error {
 	typedef runtime_error inherited;
 public:
 	BM_runtime_error (const BmString& what_arg): inherited (what_arg.String()) { }
-	BM_runtime_error (const char* const what_arg): inherited (what_arg) { }
+	BM_runtime_error (const char* const what_arg): inherited (string(what_arg)) { }
 };
 
 /*------------------------------------------------------------------------------*\*\
@@ -87,7 +88,6 @@ inline bool BM_Throw_Invalid( const BmString &s, int line, const char* file) {
 inline bool BM_Throw_Network( const BmString &s, int line, const char* file) { 
 	throw BM_network_error(BmString("*** Exception at ")<<file<<":"<<line<<" ***\n"<<s); 
 }
-inline bool BM_DIE( const BmString &s) { ShowAlert(s); exit(10); }
 
 /*------------------------------------------------------------------------------*\*\
 	utility defines to shorten the use of auto_ptrs

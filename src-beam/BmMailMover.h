@@ -55,11 +55,11 @@ class BmMailMover : public BmJobModel {
 	
 public:
 	//	message component definitions for status-msgs:
-	static const char* const MSG_MOVER = 		"bm:mover";
-	static const char* const MSG_DELTA = 		"bm:delta";
-	static const char* const MSG_TRAILING = 	"bm:trailing";
-	static const char* const MSG_LEADING = 	"bm:leading";
-	static const char* const MSG_REFS = 		"refs";
+	static const char* const MSG_MOVER;
+	static const char* const MSG_DELTA;
+	static const char* const MSG_TRAILING;
+	static const char* const MSG_LEADING;
+	static const char* const MSG_REFS;
 
 	BmMailMover( const BmString& name, BList* refList, BmMailFolder* destFolder);
 	virtual ~BmMailMover();

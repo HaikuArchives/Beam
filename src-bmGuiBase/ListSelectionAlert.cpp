@@ -408,7 +408,7 @@ void ListSelectionAlertBackgroundView::Draw(BRect update_rect)
 }
 
 
-void ListSelectionAlertBackgroundView::FrameResized(float width, float heigh)
+void ListSelectionAlertBackgroundView::FrameResized(float, float)
 {
 	BRect new_bounds = Bounds();
 	float width_delta = new_bounds.right - m_cached_bounds.right;

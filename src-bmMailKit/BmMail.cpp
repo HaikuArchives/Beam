@@ -58,6 +58,10 @@ using namespace regexx;
 
 #define BM_REFKEY(x) (BmString("MailModel_") << x->Inode())
 
+const char* const BmMail::BM_QUOTE_AUTO_WRAP = 		"Auto Wrap";
+const char* const BmMail::BM_QUOTE_SIMPLE = 			"Simple";
+const char* const BmMail::BM_QUOTE_PUSH_MARGIN = 	"Push Margin";
+
 /*------------------------------------------------------------------------------*\
 	CreateInstance( mailref)
 		-	constructs a mail from file
@@ -101,7 +105,7 @@ BmMail::BmMail( bool outbound)
 		if (accRef) {
 			SetFieldVal( BM_FIELD_FROM, accRef->GetFromAddress());
 			mAccountName = accRef->SMTPAccount();
-			SetSignatureByName( accRef->SignatureName(), DefaultEncoding());
+			SetSignatureByName( accRef->SignatureName());
 		}
 	}
 }
@@ -204,16 +208,10 @@ void BmMail::SetNewHeader( const BmString& headerStr) {
 	SetSignatureByName( sigName, encoding)
 	-	
 \*------------------------------------------------------------------------------*/
-void BmMail::SetSignatureByName( const BmString sigName, int32 encoding) {
+void BmMail::SetSignatureByName( const BmString sigName) {
 	if (!mBody || mSignatureName==sigName)
 		return;
 	mSignatureName = sigName;
-/*
-	BmString encodedSig;
-	ConvertFromUTF8( encoding, 
-						  TheSignatureList->GetSignatureStringFor( sigName), encodedSig);
-	mBody->Signature( encodedSig);
-*/
 	mBody->Signature( TheSignatureList->GetSignatureStringFor( sigName));
 }
 
@@ -405,8 +403,6 @@ BmRef<BmMail> BmMail::CreateReply( int32 replyMode, const BmString selectedText)
 	newMail->SetFieldVal( BM_FIELD_REFERENCES, GetFieldVal( BM_FIELD_REFERENCES) + " " + messageID);
 	BmString newTo = DetermineReplyAddress( replyMode, false);
 	newMail->SetFieldVal( BM_FIELD_TO, newTo);
-	// fetch info about encoding from old mail:
-	int32 encoding = DefaultEncoding();
 	// Since we are replying, we generate the new mail's from-address 
 	// from the received mail's to-/cc-/bcc-info in several steps.
 	// First, we check if the account through which the mail has been received
@@ -439,7 +435,7 @@ BmRef<BmMail> BmMail::CreateReply( int32 replyMode, const BmString selectedText)
 	}
 	if (acc && receivingAddr.Length()) {
 		newMail->SetFieldVal( BM_FIELD_FROM, receivingAddr);
-		newMail->SetSignatureByName( acc->SignatureName(), encoding);
+		newMail->SetSignatureByName( acc->SignatureName());
 		newMail->AccountName( acc->SMTPAccount());
 	}
 	// if we are replying to all, we may need to include more addresses:
@@ -492,7 +488,7 @@ BmRef<BmMail> BmMail::CreateRedirect() {
 	if (accRef) {
 		newMail->SetFieldVal( BM_FIELD_RESENT_FROM, accRef->GetFromAddress());
 		newMail->AccountName( accRef->SMTPAccount());
-		newMail->SetSignatureByName( accRef->SignatureName(), DefaultEncoding());
+		newMail->SetSignatureByName( accRef->SignatureName());
 	}
 	newMail->SetBaseMailInfo( MailRef(), BM_MAIL_STATUS_REDIRECTED);
 	return newMail;

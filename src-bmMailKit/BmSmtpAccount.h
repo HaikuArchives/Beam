@@ -64,16 +64,16 @@ class BmSmtpAccount : public BmListModelItem {
 	typedef vector< BmRef< BmMail> > BmMailVect;
 
 	// archivable components:
-	static const char* const MSG_NAME = 			"bm:name";
-	static const char* const MSG_USERNAME = 		"bm:username";
-	static const char* const MSG_PASSWORD = 		"bm:password";
-	static const char* const MSG_SMTP_SERVER = 	"bm:smtpserver";
-	static const char* const MSG_DOMAIN = 			"bm:domain";
-	static const char* const MSG_AUTH_METHOD = 	"bm:authmethod";
-	static const char* const MSG_PORT_NR = 		"bm:portnr";
-	static const char* const MSG_ACC_FOR_SAP = 	"bm:accForSmtpAfterPop";
-	static const char* const MSG_STORE_PWD = 		"bm:storepwd";
-	static const int16 nArchiveVersion = 2;
+	static const char* const MSG_NAME;
+	static const char* const MSG_USERNAME;
+	static const char* const MSG_PASSWORD;
+	static const char* const MSG_SMTP_SERVER;
+	static const char* const MSG_DOMAIN;
+	static const char* const MSG_AUTH_METHOD;
+	static const char* const MSG_PORT_NR;
+	static const char* const MSG_ACC_FOR_SAP;
+	static const char* const MSG_STORE_PWD;
+	static const int16 nArchiveVersion;
 
 public:
 	BmSmtpAccount( const char* name, BmSmtpAccountList* model);
@@ -114,9 +114,9 @@ public:
 
 	BmMailVect mMailVect;			// vector with mails that shall be sent
 
-	static const char* const AUTH_SMTP_AFTER_POP = 	"SMTP-AFTER-POP";
-	static const char* const AUTH_PLAIN = 				"PLAIN";
-	static const char* const AUTH_LOGIN = 				"LOGIN";
+	static const char* const AUTH_SMTP_AFTER_POP;
+	static const char* const AUTH_PLAIN;
+	static const char* const AUTH_LOGIN;
 
 private:
 	BmSmtpAccount();					// hide default constructor
@@ -147,7 +147,7 @@ private:
 class BmSmtpAccountList : public BmListModel {
 	typedef BmListModel inherited;
 
-	static const int16 nArchiveVersion = 1;
+	static const int16 nArchiveVersion;
 
 public:
 	// creator-func, c'tors and d'tor:

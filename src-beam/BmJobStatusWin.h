@@ -90,7 +90,9 @@ private:
 	
 	// Hide copy-constructor and assignment:
 	BmJobStatusView( const BmJobStatusView&);
+#ifndef __POWERPC__
 	BmJobStatusView operator=( const BmJobStatusView&);
+#endif
 };
 
 class MStringView;

@@ -12,6 +12,8 @@
 #include "BmUtil.h"
 #include "BmWindow.h"
 
+const char* const BmWindow::MSG_FRAME = 	"bm:frm";
+
 /*------------------------------------------------------------------------------*\
 	BmWindow()
 		-	constructor, creates window, reading frame and position from

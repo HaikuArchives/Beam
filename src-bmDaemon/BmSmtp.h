@@ -80,16 +80,16 @@ class BmSmtp : public BmNetJobModel {
 	
 public:
 	//	message component definitions for status-msgs:
-	static const char* const MSG_SMTP = 		"bm:smtp";
-	static const char* const MSG_DELTA = 		"bm:delta";
-	static const char* const MSG_TRAILING = 	"bm:trailing";
-	static const char* const MSG_LEADING = 	"bm:leading";
+	static const char* const MSG_SMTP;
+	static const char* const MSG_DELTA;
+	static const char* const MSG_TRAILING;
+	static const char* const MSG_LEADING;
 
 	// message component definitions for additional info:
-	static const char* const MSG_PWD = 	"bm:pwd";
+	static const char* const MSG_PWD;
 
 	// job-specifier for checking server capabilities:
-	static const int32 BM_CHECK_CAPABILITIES_JOB = 1;
+	static const int32 BM_CHECK_CAPABILITIES_JOB;
 
 	BmSmtp( const BmString& name, BmSmtpAccount* account);
 	virtual ~BmSmtp();

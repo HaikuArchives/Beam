@@ -87,8 +87,8 @@ class BmMailFolderList : public BmListModel {
 	friend BmMailMonitor;
 
 	// archival-fieldnames:
-	static const char* const MSG_MAILBOXMTIME = 	"bm:mboxmtime";
-	static const int16 nArchiveVersion = 1;
+	static const char* const MSG_MAILBOXMTIME;
+	static const int16 nArchiveVersion;
 
 public:
 	// creator-func, c'tors and d'tor:

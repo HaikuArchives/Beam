@@ -35,13 +35,13 @@
 
 namespace regexx {
 
-  std::vector<BmString> split(const BmString& _where, const BmString& _str);
+  vector<BmString> split(const BmString& _where, const BmString& _str);
 
-  void split(const BmString& _where, const BmString& _str, std::vector<BmString>& v);
+  void split(const BmString& _where, const BmString& _str, vector<BmString>& v);
 
-  std::vector<BmString> splitex(const BmString& _exp, const BmString& _str);
+  vector<BmString> splitex(const BmString& _exp, const BmString& _str);
 
-  void splitex(const BmString& _regex, const BmString& _str, std::vector<BmString>& v);
+  void splitex(const BmString& _regex, const BmString& _str, vector<BmString>& v);
 
 }
 

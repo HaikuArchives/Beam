@@ -85,14 +85,14 @@ public:
 	BmString BmAppNameWithVersion;
 
 	// message-fields:
-	static const char* const MSG_MAILREF = 	"bm:mref";
-	static const char* const MSG_STATUS = 		"bm:status";
-	static const char* const MSG_WHO_TO = 		"bm:to";
-	static const char* const MSG_OPT_FIELD = 	"bm:optf";
-	static const char* const MSG_OPT_VALUE = 	"bm:optv";
-	static const char* const MSG_SUBJECT = 	"bm:subj";
-	static const char* const MSG_SELECTED_TEXT = 	"bm:seltext";
-	static const char* const MSG_SENDING_REFVIEW = 	"bm:srefv";
+	static const char* const MSG_MAILREF;
+	static const char* const MSG_STATUS;
+	static const char* const MSG_WHO_TO;
+	static const char* const MSG_OPT_FIELD;
+	static const char* const MSG_OPT_VALUE;
+	static const char* const MSG_SUBJECT;
+	static const char* const MSG_SELECTED_TEXT;
+	static const char* const MSG_SENDING_REFVIEW;
 
 private:
 	status_t mInitCheck;

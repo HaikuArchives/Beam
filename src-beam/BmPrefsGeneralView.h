@@ -75,7 +75,7 @@ public:
 	// overrides of BView base:
 	void MessageReceived( BMessage* msg);
 	
-	static const char* const MSG_WORKSPACE = "wspace";
+	static const char* const MSG_WORKSPACE;
 
 private:
 	CLVContainerView* CreateMailRefLayoutView( minimax minmax, int32 width, int32 height);

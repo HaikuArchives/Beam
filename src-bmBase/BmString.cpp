@@ -35,6 +35,7 @@
 #include <stdlib.h>
 
 // System Includes -------------------------------------------------------------
+
 #include <Debug.h>
 #include <UTF8.h>
 
@@ -119,7 +120,7 @@ BmString::CountChars() const
 		count++;
 
 		// Jump to next UTF8 character
-		 for (; (*ptr & 0xc0) == 0x80; ptr++);
+		 for ( ; (*ptr & 0xc0) == 0x80; ptr++);
 	}
 
 	return count;
@@ -436,7 +437,7 @@ BmString::Insert(char c, int32 count, int32 pos)
 
 /*---- Removing -----------------------------------------------------------*/
 BmString&
-BmString::Truncate(int32 newLength, bool lazy = true)
+BmString::Truncate(int32 newLength, bool lazy)
 {
 	if (newLength < 0)
 		return *this;
@@ -1368,8 +1369,11 @@ BmString&
 BmString::operator<<(uint64 i)
 {
 	char num[64];
+#ifdef __POWERPC__
+	sprintf(num, "%Lu", i);
+#else
 	sprintf(num, "%llu", i);
-	
+#endif
 	return *this << num;
 }
 
@@ -1378,7 +1382,11 @@ BmString&
 BmString::operator<<(int64 i)
 {
 	char num[64];
+#ifdef __POWERPC__
+	sprintf(num, "%Ld", i);
+#else
 	sprintf(num, "%lld", i);
+#endif
 	
 	return *this << num;
 }
@@ -1513,7 +1521,7 @@ BmString::_DoPrepend(const char *str, int32 count)
 
 
 int32
-BmString::_FindAfter(const char *str, int32 offset, int32 strlen) const
+BmString::_FindAfter(const char *str, int32 offset, int32) const
 {	
 	ASSERT(str != NULL);
 	
@@ -1530,7 +1538,7 @@ BmString::_FindAfter(const char *str, int32 offset, int32 strlen) const
 
 
 int32
-BmString::_IFindAfter(const char *str, int32 offset, int32 strlen) const
+BmString::_IFindAfter(const char *str, int32 offset, int32) const
 {
 	ASSERT(str != NULL);
 
@@ -1547,7 +1555,7 @@ BmString::_IFindAfter(const char *str, int32 offset, int32 strlen) const
 
 
 int32
-BmString::_ShortFindAfter(const char *str, int32 strlen) const
+BmString::_ShortFindAfter(const char *str, int32) const
 {
 	ASSERT(str != NULL);
 	
@@ -1628,7 +1636,7 @@ BmString::_DoReplace(const char *findThis, const char *replaceWith, int32 maxRep
 	}
 	if (tempIO.HasData()) {
 		// only copy remainder if we have actually changed anything
-		if ((len = Length()-lastSrcPos)) {
+		if ((len = Length()-lastSrcPos)!=0) {
 			if (fromOffset && !tempIO.HasData())
 				tempIO.Write( String(), fromOffset);
 			tempIO.Write( String()+lastSrcPos, len);
@@ -1731,7 +1739,7 @@ BmString& BmString::ConvertLinebreaksToLF( const BmString* srcData) {
 	}
 	if (tempIO.HasData()) {
 		// only copy remainder if we have actually changed anything
-		if ((len = src->Length()-lastSrcPos))
+		if ((len = src->Length()-lastSrcPos)!=0)
 			tempIO.Write( src->String()+lastSrcPos, len);
 		Adopt( tempIO.TheString());
 	} else if (srcData)
@@ -1764,7 +1772,7 @@ BmString& BmString::ConvertLinebreaksToCRLF( const BmString* srcData) {
 	}
 	if (tempIO.HasData()) {
 		// only copy remainder if we have actually changed anything
-		if ((len = src->Length()-lastSrcPos))
+		if ((len = src->Length()-lastSrcPos)!=0)
 			tempIO.Write( src->String()+lastSrcPos, len);
 		Adopt( tempIO.TheString());
 	} else if (srcData)
@@ -1798,7 +1806,7 @@ BmString::ConvertTabsToSpaces( int32 numSpaces, const BmString* srcData) {
 	}
 	if (tempIO.HasData()) {
 		// only copy remainder if we have actually changed anything
-		if ((len = src->Length()-lastSrcPos))
+		if ((len = src->Length()-lastSrcPos)!=0)
 			tempIO.Write( src->String()+lastSrcPos, len);
 		Adopt( tempIO.TheString());
 	} else if (srcData)
@@ -1818,9 +1826,9 @@ BmString::DeUrlify() {
 	int32 len;
 	char c1, c2;
 	for( int32 srcPos=0; (srcPos=_FindAfter( "%", srcPos, 1)) != B_ERROR; srcPos++) {
-		if ((c1=toupper(ByteAt(srcPos+1))) 
+		if ((c1=toupper(ByteAt(srcPos+1)))!=0
 		&& (c1>='A' && c1<='F' || c1>='0' && c1<='9')
-		&& (c2=toupper(ByteAt(srcPos+2)))
+		&& (c2=toupper(ByteAt(srcPos+2)))!=0
 		&& (c2>='A' && c2<='F' || c2>='0' && c2<='9')) {
 			len = srcPos-lastSrcPos;
 			tempIO.Write( String()+lastSrcPos, len);
@@ -1832,7 +1840,7 @@ BmString::DeUrlify() {
 	}
 	if (tempIO.HasData()) {
 		// only copy remainder if we have actually changed anything
-		if ((len = Length()-lastSrcPos))
+		if ((len = Length()-lastSrcPos)!=0)
 			tempIO.Write( String()+lastSrcPos, len);
 		Adopt( tempIO.TheString());
 	}

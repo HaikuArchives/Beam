@@ -155,7 +155,7 @@ BmSignatureView::~BmSignatureView() {
 		-	
 \*------------------------------------------------------------------------------*/
 BmListViewItem* BmSignatureView::CreateListViewItem( BmListModelItem* item,
-																		BMessage* archive) {
+																	  BMessage*) {
 	return new BmSignatureItem( item->Key(), item);
 }
 

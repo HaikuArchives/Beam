@@ -74,9 +74,9 @@ class BmListViewItem : public CLVEasyItem
 
 protected: 
 	// archival-fieldnames:
-	static const char* const MSG_EXPANDED = 	"bm:expnd";
-	static const char* const MSG_CHILDNAMES = "bm:chldnm";
-	static const char* const MSG_CHILDREN = 	"bm:chldrn";
+	static const char* const MSG_EXPANDED;
+	static const char* const MSG_CHILDNAMES;
+	static const char* const MSG_CHILDREN;
 
 public:
 	//
@@ -151,8 +151,8 @@ class BmListViewController : public ColumnListView, public BmJobController
 	typedef BmJobController inheritedController;
 
 	//	message component definitions:
-	static const char* const MSG_COLUMN_NO = "bm:colno";
-	static const char* const MSG_COLUMN_POS = "bm:colps";
+	static const char* const MSG_COLUMN_NO;
+	static const char* const MSG_COLUMN_POS;
 
 public:
 	//c'tors and d'tor:
@@ -175,7 +175,7 @@ public:
 	virtual void UpdateCaption( const char* text=NULL);
 	BmListViewItem* FindViewItemFor( BmListModelItem* modelItem);
 	virtual void ItemInvoked( int32 index);
-	virtual bool AcceptsDropOf( const BMessage* msg)	{ return false; }
+	virtual bool AcceptsDropOf( const BMessage*)	{ return false; }
 	virtual void HandleDrop( const BMessage* msg);
 	void ShowOrHideColumn( BMessage* msg);
 	//
@@ -191,7 +191,8 @@ public:
 	void AttachModel( BmDataModel* model=NULL);
 	void DetachModel();
 	BHandler* GetControllerHandler() 	{ return this; }
-	void StartJob( BmJobModel* model = NULL, bool startInNewThread=true);
+	void StartJob( BmJobModel* model = NULL, bool startInNewThread=true,
+						int32 jobSpecifier=BmJobModel::BM_DEFAULT_JOB);
 	void JobIsDone( bool completed);
 	status_t Archive(BMessage* archive, bool deep=true) const;
 
@@ -233,16 +234,18 @@ protected:
 	BMessageRunner* mPulsedScrollRunner;
 	int32 mPulsedScrollStep;
 
-	static const char* const MSG_HIGHITEM = "hitem";
-	static const char* const MSG_EXPAND = "expnd";
-	static const char* const MSG_SCROLL_STEP = "step";
+	static const char* const MSG_HIGHITEM;
+	static const char* const MSG_EXPAND;
+	static const char* const MSG_SCROLL_STEP;
 
 private:
 	BmListViewItem* doAddModelItem( BmListViewItem* parent, BmListModelItem* item);
 
 	// Hide copy-constructor and assignment:
 	BmListViewController( const BmListViewController&);
+#ifndef __POWERPC__
 	BmListViewController operator=( const BmListViewController&);
+#endif
 };
 
 
