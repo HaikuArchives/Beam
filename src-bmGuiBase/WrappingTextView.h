@@ -34,8 +34,12 @@
 
 #include "BmString.h"
 
+#ifndef B_BEOS_VERSION_DANO
 // fake system-message for redo:
-const int32 B_REDO = 'REDO';
+enum {
+	B_REDO = 'REDO'
+};
+#endif
 
 class IMPEXPSANTAPARTSFORBEAM WrappingTextView : public BTextView
 {
