@@ -404,7 +404,7 @@ BmString BmMail::DetermineReplyAddress( int32 replyMode, bool canonicalize,
 		replyGoesToPersonOnly = false;
 	}
 	if (canonicalize)
-		return BmAddressList( replyAddr).AddrSpecsAsString();
+		return BmAddressList( replyAddr).AddrString();
 	else
 		return replyAddr;
 }
@@ -950,6 +950,17 @@ void BmMail::StoreAttributes( BFile& mailFile) {
 	mailFile.WriteAttr( BM_MAIL_ATTR_STATUS, B_STRING_TYPE, 0, st.String(), st.Length()+1);
 	mailFile.WriteAttr( BM_MAIL_ATTR_ACCOUNT, B_STRING_TYPE, 0, mAccountName.String(), mAccountName.Length()+1);
 	mailFile.WriteAttr( BM_MAIL_ATTR_IDENTITY, B_STRING_TYPE, 0, mIdentityName.String(), mIdentityName.Length()+1);
+	//
+	if (mOutbound) {
+		// write MAIL:flags in order to cooperate nicely with MDR:
+		BmString status = Status();
+		int32 flags = 0;
+		if (status==BM_MAIL_STATUS_PENDING)
+			flags = B_MAIL_PENDING | B_MAIL_SAVE;
+		else if (status==BM_MAIL_STATUS_SENT)
+			flags = B_MAIL_SENT;
+		mailFile.WriteAttr( BM_MAIL_ATTR_FLAGS, B_INT32_TYPE, 0, &flags, sizeof(int32));
+	}
 	//
 	int32 headerLength = HeaderLength();
 	int32 contentLength = MAX( 0, mText.Length()-headerLength);

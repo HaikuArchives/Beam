@@ -62,9 +62,9 @@ class BmMailRef;
 #define BM_MAIL_ATTR_CONTENT		B_MAIL_ATTR_CONTENT
 #define BM_MAIL_ATTR_ATTACHMENTS "MAIL:has_attachment"
 #define BM_MAIL_ATTR_ACCOUNT	 	"MAIL:account"
-#define BM_MAIL_ATTR_IDENTITY	 	"MAIL:identity"
+#define BM_MAIL_ATTR_IDENTITY	 	"MAIL:beam/identity"
 //
-#define BM_MAIL_ATTR_MARGIN	 	"MAIL:margin"
+#define BM_MAIL_ATTR_MARGIN	 	"MAIL:beam/margin"
 
 #define BM_FIELD_BCC 						"Bcc"
 #define BM_FIELD_CC 							"Cc"
