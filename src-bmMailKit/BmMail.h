@@ -46,80 +46,80 @@ class BmBodyPartList;
 class BmMailRef;
 
 // mail-attribute types:
-#define BM_MAIL_ATTR_NAME 			B_MAIL_ATTR_NAME
-#define BM_MAIL_ATTR_STATUS		B_MAIL_ATTR_STATUS
-#define BM_MAIL_ATTR_PRIORITY		B_MAIL_ATTR_PRIORITY
-#define BM_MAIL_ATTR_TO				B_MAIL_ATTR_TO
-#define BM_MAIL_ATTR_CC				B_MAIL_ATTR_CC
-#define BM_MAIL_ATTR_FROM			B_MAIL_ATTR_FROM
-#define BM_MAIL_ATTR_SUBJECT		B_MAIL_ATTR_SUBJECT
-#define BM_MAIL_ATTR_REPLY			B_MAIL_ATTR_REPLY
-#define BM_MAIL_ATTR_WHEN			B_MAIL_ATTR_WHEN
-#define BM_MAIL_ATTR_FLAGS			B_MAIL_ATTR_FLAGS
-#define BM_MAIL_ATTR_RECIPIENTS	B_MAIL_ATTR_RECIPIENTS
-#define BM_MAIL_ATTR_MIME			B_MAIL_ATTR_MIME
-#define BM_MAIL_ATTR_HEADER		B_MAIL_ATTR_HEADER
-#define BM_MAIL_ATTR_CONTENT		B_MAIL_ATTR_CONTENT
-#define BM_MAIL_ATTR_ATTACHMENTS "MAIL:has_attachment"
-#define BM_MAIL_ATTR_ACCOUNT	 	"MAIL:account"
-#define BM_MAIL_ATTR_IDENTITY	 	"MAIL:beam/identity"
+extern const char* BM_MAIL_ATTR_NAME;
+extern const char* BM_MAIL_ATTR_STATUS;
+extern const char* BM_MAIL_ATTR_PRIORITY;
+extern const char* BM_MAIL_ATTR_TO;
+extern const char* BM_MAIL_ATTR_CC;
+extern const char* BM_MAIL_ATTR_FROM;
+extern const char* BM_MAIL_ATTR_SUBJECT;
+extern const char* BM_MAIL_ATTR_REPLY;
+extern const char* BM_MAIL_ATTR_WHEN;
+extern const char* BM_MAIL_ATTR_FLAGS;
+extern const char* BM_MAIL_ATTR_RECIPIENTS;
+extern const char* BM_MAIL_ATTR_MIME;
+extern const char* BM_MAIL_ATTR_HEADER;
+extern const char* BM_MAIL_ATTR_CONTENT;
+extern const char* BM_MAIL_ATTR_ATTACHMENTS;
+extern const char* BM_MAIL_ATTR_ACCOUNT;
+extern const char* BM_MAIL_ATTR_IDENTITY;
 //
-#define BM_MAIL_ATTR_MARGIN	 	"MAIL:beam/margin"
+extern const char* BM_MAIL_ATTR_MARGIN;
 
-#define BM_FIELD_BCC 						"Bcc"
-#define BM_FIELD_CC 							"Cc"
-#define BM_FIELD_CONTENT_TYPE 			"Content-Type"
-#define BM_FIELD_CONTENT_DISPOSITION 	"Content-Disposition"
-#define BM_FIELD_CONTENT_DESCRIPTION 	"Content-Description"
-#define BM_FIELD_CONTENT_LANGUAGE 		"Content-Language"
-#define BM_FIELD_CONTENT_TRANSFER_ENCODING 	"Content-Transfer-Encoding"
-#define BM_FIELD_CONTENT_ID 				"Content-Id"
-#define BM_FIELD_DATE 						"Date"
-#define BM_FIELD_FROM 						"From"
-#define BM_FIELD_IN_REPLY_TO				"In-Reply-To"
-#define BM_FIELD_LIST_ARCHIVE				"List-Archive"
-#define BM_FIELD_LIST_HELP					"List-Help"
-#define BM_FIELD_LIST_ID					"List-Id"
-#define BM_FIELD_LIST_POST					"List-Post"
-#define BM_FIELD_LIST_SUBSCRIBE			"List-Subscribe"
-#define BM_FIELD_LIST_UNSUBSCRIBE		"List-Unsubscribe"
-#define BM_FIELD_MAIL_FOLLOWUP_TO		"Mail-Followup-To"
-#define BM_FIELD_MAIL_REPLY_TO			"Mail-Reply-To"
-#define BM_FIELD_MAILING_LIST				"Mailing-List"
-#define BM_FIELD_MESSAGE_ID				"Message-Id"
-#define BM_FIELD_MIME 						"Mime-Version"
-#define BM_FIELD_PRIORITY					"Priority"
-#define BM_FIELD_REFERENCES				"References"
-#define BM_FIELD_REPLY_TO					"Reply-To"
-#define BM_FIELD_RESENT_BCC				"Resent-Bcc"
-#define BM_FIELD_RESENT_CC					"Resent-Cc"
-#define BM_FIELD_RESENT_DATE				"Resent-Date"
-#define BM_FIELD_RESENT_FROM				"Resent-From"
-#define BM_FIELD_RESENT_MESSAGE_ID		"Resent-Message-Id"
-#define BM_FIELD_RESENT_REPLY_TO			"Resent-Reply-To"
-#define BM_FIELD_RESENT_SENDER 			"Resent-Sender"
-#define BM_FIELD_RESENT_TO					"Resent-To"
-#define BM_FIELD_SENDER 					"Sender"
-#define BM_FIELD_SUBJECT 					"Subject"
-#define BM_FIELD_TO 							"To"
-#define BM_FIELD_USER_AGENT				"User-Agent"
-#define BM_FIELD_X_MAILER					"X-Mailer"
-#define BM_FIELD_X_PRIORITY				"X-Priority"
+extern const char* BM_FIELD_BCC;
+extern const char* BM_FIELD_CC;
+extern const char* BM_FIELD_CONTENT_TYPE;
+extern const char* BM_FIELD_CONTENT_DISPOSITION;
+extern const char* BM_FIELD_CONTENT_DESCRIPTION;
+extern const char* BM_FIELD_CONTENT_LANGUAGE;
+extern const char* BM_FIELD_CONTENT_TRANSFER_ENCODING;
+extern const char* BM_FIELD_CONTENT_ID;
+extern const char* BM_FIELD_DATE;
+extern const char* BM_FIELD_FROM;
+extern const char* BM_FIELD_IN_REPLY_TO;
+extern const char* BM_FIELD_LIST_ARCHIVE;
+extern const char* BM_FIELD_LIST_HELP;
+extern const char* BM_FIELD_LIST_ID;
+extern const char* BM_FIELD_LIST_POST;
+extern const char* BM_FIELD_LIST_SUBSCRIBE;
+extern const char* BM_FIELD_LIST_UNSUBSCRIBE;
+extern const char* BM_FIELD_MAIL_FOLLOWUP_TO;
+extern const char* BM_FIELD_MAIL_REPLY_TO;
+extern const char* BM_FIELD_MAILING_LIST;
+extern const char* BM_FIELD_MESSAGE_ID;
+extern const char* BM_FIELD_MIME;
+extern const char* BM_FIELD_PRIORITY;
+extern const char* BM_FIELD_REFERENCES;
+extern const char* BM_FIELD_REPLY_TO;
+extern const char* BM_FIELD_RESENT_BCC;
+extern const char* BM_FIELD_RESENT_CC;
+extern const char* BM_FIELD_RESENT_DATE;
+extern const char* BM_FIELD_RESENT_FROM;
+extern const char* BM_FIELD_RESENT_MESSAGE_ID;
+extern const char* BM_FIELD_RESENT_REPLY_TO;
+extern const char* BM_FIELD_RESENT_SENDER;
+extern const char* BM_FIELD_RESENT_TO;
+extern const char* BM_FIELD_SENDER;
+extern const char* BM_FIELD_SUBJECT;
+extern const char* BM_FIELD_TO;
+extern const char* BM_FIELD_USER_AGENT;
+extern const char* BM_FIELD_X_MAILER;
+extern const char* BM_FIELD_X_PRIORITY;
 
-#define BM_MAIL_STATUS_DRAFT			"Draft"
-#define BM_MAIL_STATUS_FORWARDED		"Forwarded"
-#define BM_MAIL_STATUS_NEW				"New"
-#define BM_MAIL_STATUS_PENDING		"Pending"
-#define BM_MAIL_STATUS_READ			"Read"
-#define BM_MAIL_STATUS_REDIRECTED	"Redirected"
-#define BM_MAIL_STATUS_REPLIED		"Replied"
-#define BM_MAIL_STATUS_SENT			"Sent"
+extern const char* BM_MAIL_STATUS_DRAFT;
+extern const char* BM_MAIL_STATUS_FORWARDED;
+extern const char* BM_MAIL_STATUS_NEW;
+extern const char* BM_MAIL_STATUS_PENDING;
+extern const char* BM_MAIL_STATUS_READ;
+extern const char* BM_MAIL_STATUS_REDIRECTED;
+extern const char* BM_MAIL_STATUS_REPLIED;
+extern const char* BM_MAIL_STATUS_SENT;
 
-#define BM_MAIL_FOLDER_DRAFT		"draft"
-#define BM_MAIL_FOLDER_IN			"in"
-#define BM_MAIL_FOLDER_OUT			"out"
+extern const char* BM_MAIL_FOLDER_DRAFT;
+extern const char* BM_MAIL_FOLDER_IN;
+extern const char* BM_MAIL_FOLDER_OUT;
 
-#define BM_MAIL_FOLDER_TRASH	 	"<trash>"
+extern const char* BM_MAIL_FOLDER_TRASH;
 
 class BmFilter;
 /*------------------------------------------------------------------------------*\
@@ -143,6 +143,7 @@ public:
 	virtual ~BmMail();
 
 	// native methods:
+	void ConstructAndStore();
 	bool ConstructRawText( const BmString& editableUtf8Text, 
 								  const BmString& charset,
 								  BmString smtpAccount);
@@ -172,7 +173,10 @@ public:
 	BmRef<BmMail> CreateAttachedForward();
 	BmRef<BmMail> CreateInlineForward( bool withAttachments, 
 										  		  const BmString selectedText="");
-	BmRef<BmMail> CreateReply( int32 replyMode, bool& replyGoesToPersonOnly,
+	BmRef<BmMail> CreateReply( int32 replyMode,
+										const BmString selectedText="");
+	BmRef<BmMail> CreateReply( int32 replyMode, 
+										bool& replyGoesToPersonOnly,
 										const BmString selectedText="");
 	BmRef<BmMail> CreateRedirect();
 	BmString CreateReplySubjectFor( const BmString subject);
@@ -244,6 +248,10 @@ protected:
 private:
 	BmMail();
 	
+	BmRef<BmMail> doCreateReply( int32 replyMode, bool& replyGoesToPersonOnly,
+										const BmString selectedText="",
+										bool avoidReplyGoesToPersonOnly=false);
+
 	const BmString DefaultStatus() const;
 
 	BmRef<BmMailHeader> mHeader;
@@ -284,8 +292,8 @@ private:
 	BmMail operator=( const BmMail&);
 };
 
-// convenience-defines for AddPartsFromMail()-param isForward:
-#define BM_IS_FORWARD true
-#define BM_IS_REPLY  false
+// convenience-consts for AddPartsFromMail()-param isForward:
+const bool BM_IS_FORWARD = true;
+const bool BM_IS_REPLY = false;
 
 #endif

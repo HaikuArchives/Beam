@@ -57,6 +57,81 @@ using namespace regexx;
 #undef BM_LOGNAME
 #define BM_LOGNAME "MailParser"
 
+const char* BM_MAIL_ATTR_NAME 			= B_MAIL_ATTR_NAME;
+const char* BM_MAIL_ATTR_STATUS			= B_MAIL_ATTR_STATUS;
+const char* BM_MAIL_ATTR_PRIORITY		= B_MAIL_ATTR_PRIORITY;
+const char* BM_MAIL_ATTR_TO				= B_MAIL_ATTR_TO;
+const char* BM_MAIL_ATTR_CC				= B_MAIL_ATTR_CC;
+const char* BM_MAIL_ATTR_FROM				= B_MAIL_ATTR_FROM;
+const char* BM_MAIL_ATTR_SUBJECT			= B_MAIL_ATTR_SUBJECT;
+const char* BM_MAIL_ATTR_REPLY			= B_MAIL_ATTR_REPLY;
+const char* BM_MAIL_ATTR_WHEN				= B_MAIL_ATTR_WHEN;
+const char* BM_MAIL_ATTR_FLAGS			= B_MAIL_ATTR_FLAGS;
+const char* BM_MAIL_ATTR_RECIPIENTS 	= B_MAIL_ATTR_RECIPIENTS;
+const char* BM_MAIL_ATTR_MIME				= B_MAIL_ATTR_MIME;
+const char* BM_MAIL_ATTR_HEADER			= B_MAIL_ATTR_HEADER;
+const char* BM_MAIL_ATTR_CONTENT			= B_MAIL_ATTR_CONTENT;
+const char* BM_MAIL_ATTR_ATTACHMENTS 	= "MAIL:has_attachment";
+const char* BM_MAIL_ATTR_ACCOUNT			= "MAIL:account";
+const char* BM_MAIL_ATTR_IDENTITY		= "MAIL:beam/identity";
+//
+const char* BM_MAIL_ATTR_MARGIN	 		= "MAIL:beam/margin";
+
+const char* BM_FIELD_BCC 					= "Bcc";
+const char* BM_FIELD_CC 					= "Cc";
+const char* BM_FIELD_CONTENT_TYPE 		= "Content-Type";
+const char* BM_FIELD_CONTENT_DISPOSITION = "Content-Disposition";
+const char* BM_FIELD_CONTENT_DESCRIPTION = "Content-Description";
+const char* BM_FIELD_CONTENT_LANGUAGE 	= "Content-Language";
+const char* BM_FIELD_CONTENT_TRANSFER_ENCODING = "Content-Transfer-Encoding";
+const char* BM_FIELD_CONTENT_ID 			= "Content-Id";
+const char* BM_FIELD_DATE 					= "Date";
+const char* BM_FIELD_FROM 					= "From";
+const char* BM_FIELD_IN_REPLY_TO			= "In-Reply-To";
+const char* BM_FIELD_LIST_ARCHIVE		= "List-Archive";
+const char* BM_FIELD_LIST_HELP			= "List-Help";
+const char* BM_FIELD_LIST_ID				= "List-Id";
+const char* BM_FIELD_LIST_POST			= "List-Post";
+const char* BM_FIELD_LIST_SUBSCRIBE		= "List-Subscribe";
+const char* BM_FIELD_LIST_UNSUBSCRIBE	= "List-Unsubscribe";
+const char* BM_FIELD_MAIL_FOLLOWUP_TO	= "Mail-Followup-To";
+const char* BM_FIELD_MAIL_REPLY_TO		= "Mail-Reply-To";
+const char* BM_FIELD_MAILING_LIST		= "Mailing-List";
+const char* BM_FIELD_MESSAGE_ID			= "Message-Id";
+const char* BM_FIELD_MIME 					= "Mime-Version";
+const char* BM_FIELD_PRIORITY				= "Priority";
+const char* BM_FIELD_REFERENCES			= "References";
+const char* BM_FIELD_REPLY_TO				= "Reply-To";
+const char* BM_FIELD_RESENT_BCC			= "Resent-Bcc";
+const char* BM_FIELD_RESENT_CC			= "Resent-Cc";
+const char* BM_FIELD_RESENT_DATE			= "Resent-Date";
+const char* BM_FIELD_RESENT_FROM			= "Resent-From";
+const char* BM_FIELD_RESENT_MESSAGE_ID	= "Resent-Message-Id";
+const char* BM_FIELD_RESENT_REPLY_TO	= "Resent-Reply-To";
+const char* BM_FIELD_RESENT_SENDER 		= "Resent-Sender";
+const char* BM_FIELD_RESENT_TO			= "Resent-To";
+const char* BM_FIELD_SENDER 				= "Sender";
+const char* BM_FIELD_SUBJECT 				= "Subject";
+const char* BM_FIELD_TO 					= "To";
+const char* BM_FIELD_USER_AGENT			= "User-Agent";
+const char* BM_FIELD_X_MAILER				= "X-Mailer";
+const char* BM_FIELD_X_PRIORITY			= "X-Priority";
+
+const char* BM_MAIL_STATUS_DRAFT			= "Draft";
+const char* BM_MAIL_STATUS_FORWARDED	= "Forwarded";
+const char* BM_MAIL_STATUS_NEW			= "New";
+const char* BM_MAIL_STATUS_PENDING		= "Pending";
+const char* BM_MAIL_STATUS_READ			= "Read";
+const char* BM_MAIL_STATUS_REDIRECTED	= "Redirected";
+const char* BM_MAIL_STATUS_REPLIED		= "Replied";
+const char* BM_MAIL_STATUS_SENT			= "Sent";
+
+const char* BM_MAIL_FOLDER_DRAFT			= "draft";
+const char* BM_MAIL_FOLDER_IN				= "in";
+const char* BM_MAIL_FOLDER_OUT			= "out";
+
+const char* BM_MAIL_FOLDER_TRASH	 		= "<trash>";
+
 /********************************************************************************\
 	BmMail
 \********************************************************************************/
@@ -382,10 +457,12 @@ BmString BmMail::DetermineReplyAddress( int32 replyMode, bool canonicalize,
 			replyAddr = ThePrefs->GetBool( "PreferReplyToList", true)
 							? Header()->DetermineListAddress()
 							: Header()->DetermineOriginator();
-			replyGoesToPersonOnly = (replyAddr.Length()==0);
+			replyGoesToPersonOnly = false;
 		}
-		if (!replyAddr.Length())
+		if (!replyAddr.Length()) {
 			replyAddr = Header()->DetermineOriginator();
+			replyGoesToPersonOnly = true;
+		}
 	} else if (replyMode == BMM_REPLY_LIST) {
 		// blindly use list-address for reply (this might mean that we send
 		// a reply to the list although the messages has not come from the list):
@@ -413,8 +490,28 @@ BmString BmMail::DetermineReplyAddress( int32 replyMode, bool canonicalize,
 	CreateReply()
 	-	
 \*------------------------------------------------------------------------------*/
+BmRef<BmMail> BmMail::CreateReply( int32 replyMode, 
+											  const BmString selectedText) {
+	bool dummy;
+	return doCreateReply( replyMode, dummy, selectedText, true);
+}
+
+/*------------------------------------------------------------------------------*\
+	CreateReply()
+	-	
+\*------------------------------------------------------------------------------*/
 BmRef<BmMail> BmMail::CreateReply( int32 replyMode, bool& replyGoesToPersonOnly,
 											  const BmString selectedText) {
+	return doCreateReply( replyMode, replyGoesToPersonOnly, selectedText, true);
+}
+
+/*------------------------------------------------------------------------------*\
+	CreateReply()
+	-	
+\*------------------------------------------------------------------------------*/
+BmRef<BmMail> BmMail::doCreateReply( int32 replyMode, bool& replyGoesToPersonOnly,
+											 	 const BmString selectedText,
+											 	 bool ignoreReplyGoesToPersonOnly) {
 	BmRef<BmMail> newMail = new BmMail( true);
 	// copy old message ID into in-reply-to and references fields:
 	BmString messageID = GetFieldVal( BM_FIELD_MESSAGE_ID);
@@ -484,7 +581,10 @@ BmRef<BmMail> BmMail::CreateReply( int32 replyMode, bool& replyGoesToPersonOnly,
 	// massage subject, if neccessary:
 	BmString subject = GetFieldVal( BM_FIELD_SUBJECT);
 	newMail->SetFieldVal( BM_FIELD_SUBJECT, CreateReplySubjectFor( subject));
-	newMail->AddPartsFromMail( this, false, BM_IS_REPLY, replyGoesToPersonOnly, 
+	newMail->AddPartsFromMail( this, false, BM_IS_REPLY, 
+										ignoreReplyGoesToPersonOnly 
+											? false
+											: replyGoesToPersonOnly, 
 										selectedText);
 	newMail->SetBaseMailInfo( MailRef(), BM_MAIL_STATUS_REPLIED);
 	return newMail;
@@ -681,6 +781,19 @@ void BmMail::AddPartsFromMail( BmRef<BmMail> mail, bool withAttachments,
 		}
 	}
 	AddBaseMailRef( mail->MailRef());
+}
+
+/*------------------------------------------------------------------------------*\
+	ConstructAndStore()
+	-	
+\*------------------------------------------------------------------------------*/
+void BmMail::ConstructAndStore() {
+	BmRef< BmBodyPart> bodyPart( mBody->EditableTextBody());
+	if (bodyPart && ConstructRawText( bodyPart->DecodedData(),
+												 DefaultCharset(), 
+												 mAccountName)) {
+		Store();
+	}
 }
 
 /*------------------------------------------------------------------------------*\
