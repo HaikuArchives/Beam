@@ -98,7 +98,7 @@ public:
 	BmPopper( const BmString& name, BmPopAccount* account);
 	virtual ~BmPopper();
 
-	BmString SuggestAuthType() const;
+	BmString SuggestAuthType();
 	inline static int32 NextID() 			{ return ++mId; }
 	inline BmString Name() const			{ return ModelName(); }
 
@@ -110,6 +110,9 @@ public:
 	bool ShouldContinue();
 
 private:
+	// overrides of netjob-model base:
+	void ExtractBase64(const BmString& text, BmString& base64);
+
 	// internal functions:
 	void StateConnect();
 	void StateLogin();

@@ -54,7 +54,7 @@ public:
 	virtual void Stop()						{ mHadError = true; }
 
 	// overrides of BmMemFilter-base:
-	void Reset( BmMemIBuf* input);
+	void Reset( BmMemIBuf* input=NULL);
 
 	// getters:
 	inline const BmString& StatusText() const
@@ -88,23 +88,6 @@ public:
 	~BmNetJobModel();
 
 	// native methods:
-	virtual bool Connect( const BNetAddress* addr);
-	virtual void Disconnect();
-	virtual bool CheckForPositiveAnswer( uint32 expectedSize=4096, 
-													 bool dotstuffDecoding=false,
-													 bool update=false);
-	virtual void GetAnswer( uint32 expectedSize=4096, 
-									bool dotstuffDecoding=false,
-									bool update=false);
-	virtual void SendCommand( const BmString& cmd, 
-									  const BmString& secret=BM_DEFAULT_STRING,
-									  bool dotstuffEncoding=false,
-									  bool update=false);
-	virtual void SendCommand( BmStringIBuf& cmd, 
-									  const BmString& secret=BM_DEFAULT_STRING, 
-									  bool dotstuffEncoding=false,
-									  bool update=false);
-
 	virtual void UpdateProgress( uint32 numBytes) = 0;
 
 	// overrides of BmJobModel base:
@@ -122,6 +105,30 @@ public:
 	// setters:
 
 protected:
+	// native methods:
+	virtual bool Connect( const BNetAddress* addr);
+	virtual void Disconnect();
+	virtual bool CheckForPositiveAnswer( uint32 expectedSize=4096, 
+													 bool dotstuffDecoding=false,
+													 bool update=false);
+	virtual void GetAnswer( uint32 expectedSize=4096, 
+									bool dotstuffDecoding=false,
+									bool update=false);
+	virtual void SendCommand( const BmString& cmd, 
+									  const BmString& secret=BM_DEFAULT_STRING,
+									  bool dotstuffEncoding=false,
+									  bool update=false);
+	virtual void SendCommand( BmStringIBuf& cmd, 
+									  const BmString& secret=BM_DEFAULT_STRING, 
+									  bool dotstuffEncoding=false,
+									  bool update=false);
+
+	virtual void ExtractBase64(const BmString& text, BmString& base64) = 0;
+
+	void AuthDigestMD5( const BmString& username, const BmString& password,
+							  const BmString& serviceUri);
+	void AuthCramMD5( const BmString& username, const BmString& password);
+
 	BNetEndpoint* mConnection;
 	bool mConnected;
 	BmStatusFilter* mStatusFilter;

@@ -35,10 +35,16 @@
 
 #include <NetEndpoint.h>
 
+#include <ctype.h>
+
+#include "md5.h"
+
+#include "BmBasics.h"
+#include "BmEncoding.h"
+	using namespace BmEncoding;
 #include "BmLogHandler.h"
 #include "BmNetJobModel.h"
 #include "BmPrefs.h"
-
 
 /********************************************************************************\
 	BmStatusFilter
@@ -49,7 +55,7 @@
 		-	
 \*------------------------------------------------------------------------------*/
 BmStatusFilter::BmStatusFilter( BmMemIBuf* input, uint32 blockSize)
-	:	inherited( input, blockSize, true)
+	:	inherited( input, blockSize, nTagImmediatePassOn)
 	,	mUpdate( false)
 	,	mHaveStatus( false)
 	,	mNeedData( false)
@@ -229,6 +235,155 @@ void BmNetJobModel::SendCommand( BmStringIBuf& cmd, const BmString& secret,
 	}
 }
 
+/*------------------------------------------------------------------------------*\
+	AuthDigestMD5()
+		-	
+\*------------------------------------------------------------------------------*/
+// splits a challenge-string into the given map (see RFC-2831):
+static bool
+splitIntoMap(BmString str,
+				 map<BmString,BmString>& m)
+{
+	m.clear();
+	const char* key;
+	const char* val;
+	char* s = (char*)str.String();
+	while(*s != 0) {
+		while(isspace(*s))
+			s++;
+		key = s;
+		while(isalpha(*s))
+			s++;
+		if (*s != '=')
+			return false;
+		*s++ = '\0';
+		while(isspace(*s))
+			s++;
+		if (*s=='"') {
+			val = ++s;
+			while(*s!='"') {
+				if (*s == 0)
+					return false;
+				s++;
+			}			
+			*s++ = '\0';
+		} else {
+			val = s;
+			while(*s!=0 && *s!=',' && !isspace(*s))
+				s++;
+			if (*s != 0)
+				*s++ = '\0';
+		}
+		m[key] = val;
+		while(isspace(*s))
+			s++;
+		if (*s != ',')
+			return false;
+		s++;
+	}
+	return true;
+}
+
+void BmNetJobModel::AuthDigestMD5( const BmString& username,
+											  const BmString& password,
+											  const BmString& serviceUri)
+{ 
+	// DIGEST-MD5-method: receive digest-challenge, then send
+	// digest-response (that includes several hashings, one of which
+	// contains the password):
+	BmString cmd = BmString("AUTH DIGEST-MD5");
+	SendCommand( cmd);
+	if (CheckForPositiveAnswer()) {
+		BmString base64, rawChallenge;
+		ExtractBase64(StatusText(), base64);
+		Decode( "base64", base64, rawChallenge);
+		map<BmString,BmString> challengeMap;
+		BM_LOG2( mLogType, BmString("challenge:\n") << rawChallenge);
+		splitIntoMap(rawChallenge, challengeMap);
+		BmString rawResponse = BmString("username=") << '"' << username << '"';
+		rawResponse << ",realm=" << '"' << challengeMap["realm"] << '"';
+		rawResponse << ",nonce=" << '"' << challengeMap["nonce"] << '"';
+		rawResponse	<< ",nc=00000001";
+		char temp[33];
+		for( int i=0; i<32; ++i)
+			temp[i] = 1+(rand()%254);
+		temp[33] = '\0';
+		BmString rawCnonce(temp);
+		BmString cnonce;
+		Encode("base64", rawCnonce, cnonce);
+		rawResponse	<< ",cnonce=" << '"' << cnonce << '"';
+		rawResponse	<< ",qop=auth";
+		rawResponse	<< ",digest-uri=" << '"' << serviceUri << '"';
+		char sum0[17], hd1[33], hd2[33], hd3[33];
+		BmString a1,a2,kd;
+		BmString t1 = username + ":" + challengeMap["realm"] + ":" + password;
+		MD5Sum((unsigned char*)t1.String(), sum0);
+		a1 << sum0 << ":" << challengeMap["nonce"] << ":" << cnonce;
+		MD5Digest((unsigned char*)a1.String(), hd1);
+		a2 << "AUTHENTICATE:" << serviceUri;
+		MD5Digest((unsigned char*)a2.String(), hd2);
+		kd << hd1 << ':' << challengeMap["nonce"] << ":" << "00000001"
+			<< ':' << cnonce << ':' << "auth" << ':' << hd2;
+		MD5Digest((unsigned char*)kd.String(), hd3);
+		rawResponse	<< ",response=" << hd3;
+		rawResponse	<< ",charset=utf-8";
+		rawResponse	<< ",maxbuf=65535";
+		BM_LOG2( mLogType, BmString("response:\n") << rawResponse);
+		BmString tags = BmBase64Encoder::nTagOnSingleLine;
+		Encode( "base64", rawResponse, base64, tags);
+		SendCommand( base64);
+		if (CheckForPositiveAnswer()) {
+			// now compute expected answer from server and compare it with
+			// real server response:
+			BmString a2s, serverAuthResp, clientAuthResp;
+			ExtractBase64(StatusText(), base64);
+			Decode( "base64", base64, serverAuthResp);
+			a2s << ":" << serviceUri;
+			MD5Digest((unsigned char*)a2s.String(), hd2);
+			kd = "";
+			kd << hd1 << ':' << challengeMap["nonce"] << ":" << "00000001"
+				<< ':' << cnonce << ':' << "auth" << ':' << hd2;
+			MD5Digest((unsigned char*)kd.String(), hd3);
+			clientAuthResp << "rspauth=" << hd3;
+			BM_LOG2( mLogType, BmString("expected <") << clientAuthResp.String()
+										<< ">\ngot <" << serverAuthResp.String() << ">");
+			if (serverAuthResp != clientAuthResp)
+				throw BM_network_error(
+					"ATTENTION: Auth-Response from Server is incorrect!\n"
+					"This server probably isn't the right one, we better stop."
+				);
+			SendCommand( "");
+		}
+	}
+}
+
+/*------------------------------------------------------------------------------*\
+	AuthCramMD5()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmNetJobModel::AuthCramMD5( const BmString& username, 
+											const BmString& pwd)
+{ 
+	// CRAM-MD5-method: receive timestamp, then send
+	// md5-hash of this timestamp (with password used as key):
+	BmString cmd = BmString("AUTH CRAM-MD5");
+	SendCommand( cmd);
+	if (CheckForPositiveAnswer()) {
+		BmString base64, timestamp;
+		ExtractBase64(StatusText(), base64);
+		Decode( "base64", base64, timestamp);
+		BM_LOG2( mLogType, BmString("timestamp:\n") << timestamp);
+		char digest[33];
+		MD5_HMAC( (unsigned char*)timestamp.String(), timestamp.Length(),
+					 (unsigned char*)pwd.String(), pwd.Length(), 
+					 (unsigned char*)digest);
+		BmString raw = username + " " + digest;
+		BM_LOG2( mLogType, BmString("response:\n") << raw);
+		Encode( "base64", raw, base64);
+		SendCommand( base64);
+	}
+}
+
 
 
 /********************************************************************************\
@@ -244,7 +399,7 @@ void BmNetJobModel::SendCommand( BmStringIBuf& cmd, const BmString& secret,
 \*------------------------------------------------------------------------------*/
 BmDotstuffDecoder::BmDotstuffDecoder( BmMemIBuf* input, BmNetJobModel* job,
 												  uint32 blockSize)
-	:	inherited( input, blockSize, true)
+	:	inherited( input, blockSize, nTagImmediatePassOn)
 	,	mAtStartOfLine( true)
 	,	mHaveDotAtStartOfLine( false)
 	,	mJob( job)
@@ -301,7 +456,7 @@ void BmDotstuffDecoder::Filter( const char* srcBuf, uint32& srcLen,
 \*------------------------------------------------------------------------------*/
 BmDotstuffEncoder::BmDotstuffEncoder( BmMemIBuf* input, BmNetJobModel* job,
 												  uint32 blockSize)
-	:	inherited( input, blockSize, true)
+	:	inherited( input, blockSize, nTagImmediatePassOn)
 	,	mAtStartOfLine( true)
 	,	mJob( job)
 {

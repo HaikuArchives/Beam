@@ -63,6 +63,10 @@ using namespace regexx;
 #include "BmSmtp.h"
 #include "BmUtil.h"
 
+
+
+
+
 /********************************************************************************\
 	BmSmtpStatusFilter
 \********************************************************************************/
@@ -217,8 +221,8 @@ BmSmtp::~BmSmtp() {
 			case there are no controllers present.
 \*------------------------------------------------------------------------------*/
 bool BmSmtp::ShouldContinue() {
-	return inherited::ShouldContinue() 
-			 || CurrentJobSpecifier() == BM_CHECK_CAPABILITIES_JOB;
+	return CurrentJobSpecifier() == BM_CHECK_CAPABILITIES_JOB
+			 || inherited::ShouldContinue() ;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -361,8 +365,7 @@ void BmSmtp::StateHelo() {
 	BmString cmd = BmString("EHLO ") << domain;
 	SendCommand( cmd);
 	try {
-		CheckForPositiveAnswer( true);
-							// we expect a multiline string as answer
+		CheckForPositiveAnswer();
 		Regexx rx;
 		if (rx.exec( StatusText(), "^\\d\\d\\d.SIZE\\b", Regexx::newline)) {
 			mServerMayHaveSizeLimit = true;
@@ -397,6 +400,15 @@ void BmSmtp::StateAuthViaPopServer() {
 										"giving up.");
 	BmRef<BmPopper> popper = new BmPopper(sendingAcc->Name(), sendingAcc.Get());
 	popper->StartJobInThisThread( BmPopper::BM_AUTH_ONLY_JOB);
+}
+
+/*------------------------------------------------------------------------------*\
+	ExtractBase64()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmSmtp::ExtractBase64(const BmString& text, BmString& base64)
+{
+	text.CopyInto(base64, 4, text.Length());
 }
 
 /*------------------------------------------------------------------------------*\
@@ -458,6 +470,12 @@ void BmSmtp::StateAuth() {
 				Encode( "base64", mSmtpAccount->Password(), base64);
 				SendCommand( "", base64);
 			}
+		} else if (authMethod == BmSmtpAccount::AUTH_CRAM_MD5) {
+			AuthCramMD5(mSmtpAccount->Username(), mSmtpAccount->Password());
+		} else if (authMethod == BmSmtpAccount::AUTH_DIGEST_MD5) {
+			BmString serviceUri = BmString("smtp/") << mSmtpAccount->SMTPServer();
+			AuthDigestMD5(mSmtpAccount->Username(), mSmtpAccount->Password(),
+							  serviceUri);
 		}
 		try {
 			pwdOK = CheckForPositiveAnswer();
@@ -551,13 +569,12 @@ void BmSmtp::StateSendMails() {
 			if (ShouldContinue()) {
 				mail->MarkAs( BM_MAIL_STATUS_SENT);
 			}
-		}
-		catch( BM_runtime_error &err) {
+		} catch( BM_runtime_error &err) {
 			// a problem occurred, we tell the user:
 			BM_LOGERR( BmString("SendMails(): mail no. ") << i+1
-								<< " couldn't be send.\n\nError:\n" << err.what());
+								<< " couldn't be sent.\n\nError:\n" << err.what());
 			mail->MarkAs( BM_MAIL_STATUS_ERROR);
-				// mark mail as ERROR since it couldn't be send
+				// mark mail as ERROR since it couldn't be sent
 			SendCommand("RSET");
 				// reset SMTP-state in order to start afresh with next mail
 		}
@@ -729,7 +746,11 @@ void BmSmtp::QueueMail( entry_ref eref)
 			secure of those that is supported by Beam.
 \*------------------------------------------------------------------------------*/
 BmString BmSmtp::SuggestAuthType() const {
-	if (mSupportedAuthTypes.IFindFirst( BmSmtpAccount::AUTH_LOGIN) != B_ERROR)
+	if (mSupportedAuthTypes.IFindFirst( BmSmtpAccount::AUTH_DIGEST_MD5) >= 0)
+		return BmSmtpAccount::AUTH_DIGEST_MD5;
+	else if (mSupportedAuthTypes.IFindFirst( BmSmtpAccount::AUTH_CRAM_MD5) >= 0)
+		return BmSmtpAccount::AUTH_CRAM_MD5;
+	else if (mSupportedAuthTypes.IFindFirst( BmSmtpAccount::AUTH_LOGIN) >= 0)
 		return BmSmtpAccount::AUTH_LOGIN;
 	else if (mSupportedAuthTypes.IFindFirst( 
 		BmSmtpAccount::AUTH_PLAIN

@@ -142,6 +142,8 @@ const int32 BmPopper::BM_AUTH_ONLY_JOB = 			1;
 const int32 BmPopper::BM_CHECK_AUTH_TYPES_JOB = 2;
 					// to find out about supported authentication types
 
+int32 BmPopper::mId = 0;
+
 /*------------------------------------------------------------------------------*\
 	PopStates[]
 		-	array of POP3-states, each with title and corresponding handler-method
@@ -187,9 +189,9 @@ BmPopper::~BmPopper() {
 			case there are no controllers present.
 \*------------------------------------------------------------------------------*/
 bool BmPopper::ShouldContinue() {
-	return inherited::ShouldContinue() 
-			 || CurrentJobSpecifier() == BM_AUTH_ONLY_JOB
-			 || CurrentJobSpecifier() == BM_CHECK_AUTH_TYPES_JOB;
+	return CurrentJobSpecifier() == BM_AUTH_ONLY_JOB
+			 || CurrentJobSpecifier() == BM_CHECK_AUTH_TYPES_JOB
+			 || inherited::ShouldContinue();
 }
 
 /*------------------------------------------------------------------------------*\
@@ -317,15 +319,12 @@ void BmPopper::StateConnect() {
 }
 
 /*------------------------------------------------------------------------------*\
-	SuggestAuthType()
-		-	looks at the auth-types supported by the server and selects 
-			the most secure of those that is supported by Beam.
+	ExtractBase64()
+		-	
 \*------------------------------------------------------------------------------*/
-BmString BmPopper::SuggestAuthType() const {
-	if (mServerTimestamp.Length())
-		return BmPopAccount::AUTH_APOP;
-	else
-		return BmPopAccount::AUTH_POP3;
+void BmPopper::ExtractBase64(const BmString& text, BmString& base64)
+{
+	text.CopyInto(base64, 2, text.Length());
 }
 
 /*------------------------------------------------------------------------------*\
@@ -371,6 +370,12 @@ void BmPopper::StateLogin() {
 			} else
 				BM_THROW_RUNTIME( "Server did not supply a timestamp, "
 										"so APOP doesn't work.");
+		} else if (authMethod == BmPopAccount::AUTH_CRAM_MD5) {
+			AuthCramMD5(mPopAccount->Username(), mPopAccount->Password());
+		} else if (authMethod == BmPopAccount::AUTH_DIGEST_MD5) {
+			BmString serviceUri = BmString("pop/") << mPopAccount->POPServer();
+			AuthDigestMD5(mPopAccount->Username(), mPopAccount->Password(),
+							  serviceUri);
 		} else {
 			// authMethod == AUTH_POP3: send username and password as plain text:
 			BmString cmd = BmString("USER ") << mPopAccount->Username();
@@ -547,7 +552,7 @@ void BmPopper::StateRetrieve() {
 		SendCommand( cmd);
 		if (!CheckForPositiveAnswer( mNewMsgSizes[mCurrMailNr-1], true, true))
 			goto CLEAN_UP;
-		// now cteate a mail from the received data...
+		// now create a mail from the received data...
 		BmRef<BmMail> mail = new BmMail( mAnswerText, mPopAccount->Name());
 		if (mail->InitCheck() != B_OK)
 			goto CLEAN_UP;
@@ -601,6 +606,35 @@ void BmPopper::Quit( bool WaitForAnswer) {
 }
 
 /*------------------------------------------------------------------------------*\
-	Initialize statics:
+	SuggestAuthType()
+		-	looks at the auth-types supported by the server and selects 
+			the most secure of those that is supported by Beam.
 \*------------------------------------------------------------------------------*/
-int32 BmPopper::mId = 0;
+BmString BmPopper::SuggestAuthType() {
+	BmString supportedAuthTypes;
+	BmString cmd("CAPA");
+	SendCommand( cmd);
+	try {
+		CheckForPositiveAnswer( 16384, true);
+							// we expect a multiline string as answer
+		Regexx rx;
+		if (rx.exec( 
+			mAnswerText, "^\\s*SASL\\s+(.*?)$", Regexx::newline
+		)) {
+			supportedAuthTypes = rx.match[0].atom[0];
+		} else if (rx.exec( 
+			mAnswerText, "^\\s*AUTH\\s+(.*?)$", Regexx::newline
+		)) {
+			supportedAuthTypes = rx.match[0].atom[0];
+		}
+	} catch(...) {
+	}
+	if (supportedAuthTypes.IFindFirst( BmPopAccount::AUTH_DIGEST_MD5) >= 0)
+		return BmPopAccount::AUTH_DIGEST_MD5;
+	else if (supportedAuthTypes.IFindFirst( BmPopAccount::AUTH_CRAM_MD5) >= 0)
+		return BmPopAccount::AUTH_CRAM_MD5;
+	else if (mServerTimestamp.Length())
+		return BmPopAccount::AUTH_APOP;
+	else
+		return BmPopAccount::AUTH_POP3;
+}

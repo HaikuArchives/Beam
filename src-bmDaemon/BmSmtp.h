@@ -114,6 +114,10 @@ public:
 	bool StartJob();
 	bool ShouldContinue();
 
+protected:
+	// overrides of netjob-model base:
+	void ExtractBase64(const BmString& text, BmString& base64);
+
 private:
 	BmRef<BmSmtpAccount> mSmtpAccount;	// Info about our smtp-account
 

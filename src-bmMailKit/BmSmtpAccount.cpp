@@ -58,6 +58,8 @@ const int16 BmSmtpAccount::nArchiveVersion = 4;
 const char* const BmSmtpAccount::AUTH_SMTP_AFTER_POP= "SMTP-AFTER-POP";
 const char* const BmSmtpAccount::AUTH_PLAIN = 			"PLAIN";
 const char* const BmSmtpAccount::AUTH_LOGIN = 			"LOGIN";
+const char* const BmSmtpAccount::AUTH_CRAM_MD5 = 		"CRAM-MD5";
+const char* const BmSmtpAccount::AUTH_DIGEST_MD5 = 	"DIGEST-MD5";
 
 const char* const BmSmtpAccount::MSG_REF = "ref";
 /*------------------------------------------------------------------------------*\

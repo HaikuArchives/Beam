@@ -161,6 +161,8 @@ public:
 
 	static const char* const AUTH_POP3;
 	static const char* const AUTH_APOP;
+	static const char* const AUTH_CRAM_MD5;
+	static const char* const AUTH_DIGEST_MD5;
 
 	// archivable components:
 	static const char* const MSG_NAME;

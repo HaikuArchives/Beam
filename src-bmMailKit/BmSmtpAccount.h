@@ -122,6 +122,8 @@ public:
 	static const char* const AUTH_SMTP_AFTER_POP;
 	static const char* const AUTH_PLAIN;
 	static const char* const AUTH_LOGIN;
+	static const char* const AUTH_CRAM_MD5;
+	static const char* const AUTH_DIGEST_MD5;
 
 	// archivable components:
 	static const char* const MSG_NAME;

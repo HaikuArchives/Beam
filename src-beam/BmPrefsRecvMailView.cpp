@@ -543,6 +543,14 @@ void BmPrefsRecvMailView::Initialize() {
 						new BMenuItem( BmPopAccount::AUTH_APOP, 
 											new BMessage(BM_AUTH_SELECTED)), 
 						this);
+	AddItemToMenu( mAuthControl->Menu(), 
+						new BMenuItem( BmPopAccount::AUTH_CRAM_MD5, 
+											new BMessage(BM_AUTH_SELECTED)), 
+						this);
+	AddItemToMenu( mAuthControl->Menu(), 
+						new BMenuItem( BmPopAccount::AUTH_DIGEST_MD5, 
+											new BMessage(BM_AUTH_SELECTED)), 
+						this);
 
 	mAccListView->SetSelectionMessage( new BMessage( BM_SELECTION_CHANGED));
 	mAccListView->SetTarget( this);

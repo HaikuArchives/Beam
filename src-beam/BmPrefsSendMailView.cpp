@@ -456,6 +456,14 @@ void BmPrefsSendMailView::Initialize() {
 						new BMenuItem( BmSmtpAccount::AUTH_LOGIN, 
 											new BMessage(BM_AUTH_SELECTED)), 
 						this);
+	AddItemToMenu( mAuthControl->Menu(), 
+						new BMenuItem( BmSmtpAccount::AUTH_CRAM_MD5, 
+											new BMessage(BM_AUTH_SELECTED)), 
+						this);
+	AddItemToMenu( mAuthControl->Menu(), 
+						new BMenuItem( BmSmtpAccount::AUTH_DIGEST_MD5, 
+											new BMessage(BM_AUTH_SELECTED)), 
+						this);
 
 	mAccListView->SetSelectionMessage( new BMessage( BM_SELECTION_CHANGED));
 	mAccListView->SetTarget( this);

@@ -68,8 +68,10 @@ const char* const BmPopAccount::MSG_FILTER_CHAIN = "bm:filterch";
 const char* const BmPopAccount::MSG_HOME_FOLDER =  "bm:homefold";
 const int16 BmPopAccount::nArchiveVersion = 7;
 
-const char* const BmPopAccount::AUTH_POP3 = "POP3";
-const char* const BmPopAccount::AUTH_APOP = "APOP";
+const char* const BmPopAccount::AUTH_POP3 = 			"POP3";
+const char* const BmPopAccount::AUTH_APOP = 			"APOP";
+const char* const BmPopAccount::AUTH_CRAM_MD5 = 	"CRAM-MD5";
+const char* const BmPopAccount::AUTH_DIGEST_MD5 = 	"DIGEST-MD5";
 
 enum {
 	BM_APPENDED_UID	= 'bmez'
