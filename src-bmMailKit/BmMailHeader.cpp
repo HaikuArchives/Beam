@@ -751,7 +751,7 @@ BmString BmMailHeader::DetermineListAddress( bool bypassSanityTest) {
 		// the (From, To, Cc, Bcc)-Headers. 
 		// If not, this mail is related to the list, but has not actually been
 		// delivered through this list. This probably means that this mail is
-		// and list-administrative mail (confirmation-requests and the like).
+		// a list-administrative mail (confirmation-requests and the like).
 		if (!(AddressFieldContainsAddrSpec( BM_FIELD_TO, listAddr.AddrSpec())
 		|| AddressFieldContainsAddrSpec( BM_FIELD_CC, listAddr.AddrSpec())
 		|| AddressFieldContainsAddrSpec( BM_FIELD_BCC, listAddr.AddrSpec())
