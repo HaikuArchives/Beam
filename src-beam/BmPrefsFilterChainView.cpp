@@ -424,6 +424,11 @@ void BmChainedFilterView::HandleDrop( const BMessage* msg) {
 		BmChainedFilterList* chainedFilters
 			= dynamic_cast<BmChainedFilterList*>( DataModel().Get());
 		if (chainedFilters) {
+			BmAutolockCheckGlobal lock( chainedFilters->ModelLocker());
+			if (!lock.IsLocked())
+				BM_THROW_RUNTIME( 
+					chainedFilters->ModelNameNC() << ": Unable to get lock"
+				);
 			BmModelItemMap::const_iterator iter;
 			for( iter = chainedFilters->begin(); 
 				  iter != chainedFilters->end(); ++iter) {
@@ -751,6 +756,11 @@ void BmPrefsFilterChainView::MessageReceived( BMessage* msg) {
 				BmListModel* chain 
 					= dynamic_cast< BmListModel*>( mCurrFilterChain.Get());
 				if (chain) {
+					BmAutolockCheckGlobal lock( chain->ModelLocker());
+					if (!lock.IsLocked())
+						BM_THROW_RUNTIME( 
+							chain->ModelNameNC() << ": Unable to get lock"
+						);
 					BmModelItemMap::const_iterator iter;
 					while( (iter = chain->begin()) != chain->end())
 						chain->RemoveItemFromList( iter->second.Get());

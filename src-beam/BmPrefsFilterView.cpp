@@ -417,23 +417,7 @@ void BmPrefsFilterView::WriteStateInfo() {
 		-	
 \*------------------------------------------------------------------------------*/
 bool BmPrefsFilterView::SanityCheck() {
-	if (!InitDone())
-		return true;
-	BmString complaint, fieldName;
-	BMessage msg( BM_COMPLAIN_ABOUT_FIELD);
-	BmModelItemMap::const_iterator iter;
-	for( iter = TheFilterList->begin(); iter != TheFilterList->end(); ++iter) {
-		BmFilter* filter = dynamic_cast<BmFilter*>( iter->second.Get());
-		if (filter && !filter->SanityCheck( complaint, fieldName)) {
-			msg.AddPointer( MSG_ITEM, (void*)filter);
-			msg.AddString( MSG_COMPLAINT, complaint.String());
-			if (fieldName.Length())
-				msg.AddString( MSG_FIELD_NAME, fieldName.String());
-			ThePrefsWin->SendMsgToSubView( Name(), &msg);
-			return false;
-		}
-	}
-	return true;
+	return DoSanityCheck( TheFilterList.Get(), Name());
 }
 
 /*------------------------------------------------------------------------------*\

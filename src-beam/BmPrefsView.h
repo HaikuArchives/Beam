@@ -45,6 +45,7 @@ enum {
 };
 
 class MStringView;
+class BmListModel;
 /*------------------------------------------------------------------------------*\
 	BmPrefsView
 		-	
@@ -83,6 +84,8 @@ public:
 	static const char* const MSG_COMPLAINT;
 
 protected:
+	bool DoSanityCheck( BmListModel* list, const BmString& viewName);
+
 	BView* mGroupView;
 	bool mChanged;
 

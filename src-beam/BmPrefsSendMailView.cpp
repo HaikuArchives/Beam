@@ -476,24 +476,7 @@ void BmPrefsSendMailView::Activated() {
 		-	
 \*------------------------------------------------------------------------------*/
 bool BmPrefsSendMailView::SanityCheck() {
-	if (!InitDone())
-		return true;
-	BmString complaint, fieldName;
-	BMessage msg( BM_COMPLAIN_ABOUT_FIELD);
-	BmModelItemMap::const_iterator iter;
-	for(	iter = TheSmtpAccountList->begin(); 
-			iter != TheSmtpAccountList->end(); ++iter) {
-		BmSmtpAccount* acc = dynamic_cast<BmSmtpAccount*>( iter->second.Get());
-		if (acc && !acc->SanityCheck( complaint, fieldName)) {
-			msg.AddPointer( MSG_ITEM, (void*)acc);
-			msg.AddString( MSG_COMPLAINT, complaint.String());
-			if (fieldName.Length())
-				msg.AddString( MSG_FIELD_NAME, fieldName.String());
-			ThePrefsWin->SendMsgToSubView( Name(), &msg);
-			return false;
-		}
-	}
-	return true;
+	return DoSanityCheck( TheSmtpAccountList.Get(), Name());
 }
 
 /*------------------------------------------------------------------------------*\

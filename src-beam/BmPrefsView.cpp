@@ -43,9 +43,11 @@
 #include "Colors.h"
 
 #include "BmBasics.h"
+#include "BmDataModel.h"
 #include "BmLogHandler.h"
 #include "BmPrefs.h"
 #include "BmPrefsView.h"
+#include "BmPrefsWin.h"
 #include "BmUtil.h"
 
 /********************************************************************************\
@@ -152,6 +154,36 @@ void BmPrefsView::NoticeChange() {
 		Window()->PostMessage( BM_PREFS_CHANGED);
 		mChanged = true;
 	}
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+bool BmPrefsView::DoSanityCheck( BmListModel* list, const BmString& viewName) 
+{
+	if (!InitDone())
+		return true;
+	BmString complaint, fieldName;
+	BMessage msg( BM_COMPLAIN_ABOUT_FIELD);
+	BmAutolockCheckGlobal lock( list->ModelLocker());
+	if (!lock.IsLocked())
+		BM_THROW_RUNTIME( 
+			list->ModelNameNC() << ": Unable to get lock"
+		);
+	BmModelItemMap::const_iterator iter;
+	for( iter = list->begin(); iter != list->end(); ++iter) {
+		BmListModelItem* item = iter->second.Get();
+		if (!item->SanityCheck( complaint, fieldName)) {
+			msg.AddPointer( MSG_ITEM, (void*)item);
+			msg.AddString( MSG_COMPLAINT, complaint.String());
+			if (fieldName.Length())
+				msg.AddString( MSG_FIELD_NAME, fieldName.String());
+			ThePrefsWin->SendMsgToSubView( viewName, &msg);
+			return false;
+		}
+	}
+	return true;
 }
 
 
