@@ -654,6 +654,8 @@ void BmPrefsSendMailView::MessageReceived( BMessage* msg) {
 						mLoginControl->MakeFocus( true);
 					else if (fieldName.ICompare( "smtpserver")==0)
 						mServerControl->MakeFocus( true);
+					else if (fieldName.ICompare( "pop-account")==0)
+						mPopControl->MakeFocus( true);
 					else if (fieldName.ICompare( "portnr")==0)
 						mPortControl->MakeFocus( true);
 				}
