@@ -236,7 +236,7 @@ void BmFilterList::LoadAddons() {
 	BmString addonPath = bmApp->AppPath() + "/add-ons/Filters";
 	TheResources->GetFolder( addonPath, addonDir);
 
-	// ...and scan through all its entries for other mail-folders:
+	// ...and scan through all its entries for filter-add-ons:
 	while ( addonDir.GetNextEntry( &entry, true) == B_OK) {
 		if (entry.IsFile()) {
 			char nameBuf[B_FILE_NAME_LENGTH];
