@@ -74,8 +74,7 @@ const int16 BmMailRef::nArchiveVersion = 4;
 		-	N.B.: In here, we lock the GlobalLocker manually (*not* BmAutolock),
 			because otherwise we may risk deadlocks
 \*------------------------------------------------------------------------------*/
-BmRef<BmMailRef> BmMailRef::CreateInstance( BmMailRefList* model, 
-														  entry_ref &eref, 
+BmRef<BmMailRef> BmMailRef::CreateInstance( entry_ref &eref, 
 												  		  struct stat& st) {
 	GlobalLocker()->Lock();
 	if (!GlobalLocker()->IsLocked()) {
@@ -90,17 +89,11 @@ BmRef<BmMailRef> BmMailRef::CreateInstance( BmMailRefList* model,
 		);
 		GlobalLocker()->Unlock();
 		if (mailRef) {
-			// update mailref with new info:
-			if (model) {
-				// only update list if we really have one (don't clobber existing
-				// list with NULL value):
-				mailRef->mListModel = model;
-			}
 			mailRef->EntryRef( eref);
 			mailRef->ResyncFromDisk();
 			return mailRef;
 		}
-		mailRef = new BmMailRef( model, eref, st);
+		mailRef = new BmMailRef( eref, st);
 		mailRef->Initialize();
 		return mailRef;
 	}
@@ -116,8 +109,7 @@ BmRef<BmMailRef> BmMailRef::CreateInstance( BmMailRefList* model,
 		-	N.B.: In here, we lock the GlobalLocker manually (*not* BmAutolock),
 			because otherwise we may risk deadlocks
 \*------------------------------------------------------------------------------*/
-BmRef<BmMailRef> BmMailRef::CreateInstance( BMessage* archive, 
-														  BmMailRefList* model) {
+BmRef<BmMailRef> BmMailRef::CreateInstance( BMessage* archive) {
 	GlobalLocker()->Lock();
 	if (!GlobalLocker()->IsLocked()) {
 		BM_SHOWERR("BmMailRef::CreateInstance(): Could not acquire global lock!");
@@ -138,16 +130,9 @@ BmRef<BmMailRef> BmMailRef::CreateInstance( BMessage* archive,
 			dynamic_cast<BmMailRef*>( proxy->FetchObject( key))
 		);
 		GlobalLocker()->Unlock();
-		if (mailRef) {
-			// update mailref with new info:
-			if (model) {
-				// only update list if we really have one (don't clobber existing
-				// list with NULL value):
-				mailRef->mListModel = model;
-			}
+		if (mailRef)
 			return mailRef;
-		}
-		mailRef = new BmMailRef( archive, nref, model);
+		mailRef = new BmMailRef( archive, nref);
 		mailRef->Initialize();
 		return mailRef;
 	}
@@ -161,8 +146,8 @@ BmRef<BmMailRef> BmMailRef::CreateInstance( BMessage* archive,
 	BmMailRef( eref, parent, modified)
 		-	standard c'tor
 \*------------------------------------------------------------------------------*/
-BmMailRef::BmMailRef( BmMailRefList* model, entry_ref &eref, struct stat& st)
-	:	inherited( BM_REFKEYSTAT(st), model, (BmListModelItem*)NULL)
+BmMailRef::BmMailRef( entry_ref &eref, struct stat& st)
+	:	inherited( BM_REFKEYSTAT(st), NULL, (BmListModelItem*)NULL)
 	,	mEntryRef( eref)
 	,	mInitCheck( B_NO_INIT)
 {
@@ -174,8 +159,8 @@ BmMailRef::BmMailRef( BmMailRefList* model, entry_ref &eref, struct stat& st)
 	BmMailRef( archive)
 		-	unarchive c'tor
 \*------------------------------------------------------------------------------*/
-BmMailRef::BmMailRef( BMessage* archive, node_ref& nref, BmMailRefList* model)
-	:	inherited( "", model, (BmListModelItem*)NULL)
+BmMailRef::BmMailRef( BMessage* archive, node_ref& nref)
+	:	inherited( "", NULL, (BmListModelItem*)NULL)
 	,	mInitCheck( B_NO_INIT)
 	,	mNodeRef( nref)
 {

@@ -63,8 +63,10 @@ public:
 	void RemoveController( BmController* controller);
 	const BmString SettingsFileName();
 	int16 ArchiveVersion() const			{ return nArchiveVersion; }
-	void TellModelItemAdded( BmListModelItem* item);
-	void TellModelItemRemoved( BmListModelItem* item);
+	bool AddItemToList( BmListModelItem* item, 
+							  BmListModelItem* parent=NULL);
+	void RemoveItemFromList( BmListModelItem* item);
+	void SetItemValidity(  BmListModelItem* item, bool isValid);
 	
 	// getters:
 	inline bool NeedsCacheUpdate() const

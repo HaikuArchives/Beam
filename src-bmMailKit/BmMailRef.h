@@ -70,11 +70,9 @@ class BmMailRef : public BmListModelItem {
 
 public:
 	// creator-funcs, c'tors and d'tor:
-	static BmRef<BmMailRef> CreateInstance( BmMailRefList* model, 
-														 entry_ref &eref, 
+	static BmRef<BmMailRef> CreateInstance( entry_ref &eref, 
 												 		 struct stat& st);
-	static BmRef<BmMailRef> CreateInstance( BMessage* archive, 
-														 BmMailRefList* model);
+	static BmRef<BmMailRef> CreateInstance( BMessage* archive);
 	virtual ~BmMailRef();
 
 	// native methods:
@@ -135,8 +133,8 @@ public:
 	static const BmUpdFlags UPD_STATUS	= 1<<2;
 
 protected:
-	BmMailRef( BmMailRefList* model, entry_ref &eref, struct stat& st);
-	BmMailRef( BMessage* archive, node_ref& nref, BmMailRefList* model);
+	BmMailRef( entry_ref &eref, struct stat& st);
+	BmMailRef( BMessage* archive, node_ref& nref);
 	void Initialize();
 
 private:

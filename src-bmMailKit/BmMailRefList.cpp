@@ -238,7 +238,7 @@ bool BmMailRefList::StartJob() {
 		-	
 \*------------------------------------------------------------------------------*/
 BmRef<BmMailRef> BmMailRefList::AddMailRef( entry_ref& eref, struct stat& st) {
-	BmRef<BmMailRef> newMailRef( BmMailRef::CreateInstance( this, eref, st));
+	BmRef<BmMailRef> newMailRef( BmMailRef::CreateInstance( eref, st));
 	if (AddItemToList( newMailRef.Get())) {
 		mNeedsStore = true;
 		return newMailRef;
@@ -310,7 +310,7 @@ void BmMailRefList::InitializeItems() {
 	if (stopped) {
 		Cleanup();
 	} else {
-		folder->MailCount( size());
+		folder->MailCount( ValidCount());
 		mNeedsCacheUpdate = false;
 		mNeedsStore = true;
 		mInitCheck = B_OK;
@@ -335,7 +335,7 @@ void BmMailRefList::MyInstantiateItems( BDataIO* dataIO, int32 numChildren) {
 							"Please recreate cache.");
 			break;
 		}
-		BmRef<BmMailRef> newRef( BmMailRef::CreateInstance( &msg, this));
+		BmRef<BmMailRef> newRef( BmMailRef::CreateInstance( &msg));
 		BM_LOG3( BM_LogMailTracking, 
 					BmString("MailRef <") << newRef->TrackerName() << "," 
 						<< newRef->Key() << "> read");
@@ -354,7 +354,7 @@ void BmMailRefList::MyInstantiateItems( BDataIO* dataIO, int32 numChildren) {
 	if (stopped) {
 		Cleanup();
 	} else {
-		folder->MailCount( size());
+		folder->MailCount( ValidCount());
 		mNeedsCacheUpdate = false;
 		mNeedsStore = false;
 							// overrule changes caused from reading the cache
@@ -363,31 +363,51 @@ void BmMailRefList::MyInstantiateItems( BDataIO* dataIO, int32 numChildren) {
 }
 
 /*------------------------------------------------------------------------------*\
-	TellModelItemAdded( item)
-		-	
+	AddItemToList( item, parent)
+		-	extends base-method with automatic updating of the corresponding 
+			folder's mail-count 
 \*------------------------------------------------------------------------------*/
-void BmMailRefList::TellModelItemAdded( BmListModelItem* item) {
-	if (Frozen() || !item->ItemIsValid())
-		return;
-	inherited::TellModelItemAdded( item);
-	BmRef<BmMailFolder> folder( mFolder.Get());	
+bool BmMailRefList::AddItemToList( BmListModelItem* item, 
+											  BmListModelItem* parent) {
+	bool res = inherited::AddItemToList( item, parent);
+
+	if (!Frozen()) {
+		BmRef<BmMailFolder> folder( mFolder.Get());
 							// hold a ref on the corresponding folder while we use it
-	if (folder)
-		folder->MailCount( size());
+		if (folder)
+			folder->MailCount( ValidCount());
+	}
+
+	return res;
 }
 
 /*------------------------------------------------------------------------------*\
-	TellModelItemRemoved( item)
+	RemoveItemFromList( item)
+		-	extends base-method with automatic updating of the corresponding 
+			folder's mail-count 
+\*------------------------------------------------------------------------------*/
+void BmMailRefList::RemoveItemFromList( BmListModelItem* item) {
+	inherited::RemoveItemFromList( item);
+	if (!Frozen()) {
+		BmRef<BmMailFolder> folder( mFolder.Get());
+							// hold a ref on the corresponding folder while we use it
+		if (folder)
+			folder->MailCount( ValidCount());
+	}
+}
+
+/*------------------------------------------------------------------------------*\
+	SetItemValidity( item, b)
 		-	
 \*------------------------------------------------------------------------------*/
-void BmMailRefList::TellModelItemRemoved( BmListModelItem* item) {
-	if (Frozen() || !item->ItemIsValid())
-		return;
-	inherited::TellModelItemRemoved( item);
-	BmRef<BmMailFolder> folder( mFolder.Get());	
+void BmMailRefList::SetItemValidity( BmListModelItem* item, bool isValid) {
+	inherited::SetItemValidity( item, isValid);
+	if (!Frozen()) {
+		BmRef<BmMailFolder> folder( mFolder.Get());
 							// hold a ref on the corresponding folder while we use it
-	if (folder)
-		folder->MailCount( size());
+		if (folder)
+			folder->MailCount( ValidCount());
+	}
 }
 
 /*------------------------------------------------------------------------------*\
