@@ -854,12 +854,26 @@ void BmMailView::ShowMail( BmMail* mail, bool async) {
 }
 
 /*------------------------------------------------------------------------------*\
+	AddParsingError()
+	-	
+\*------------------------------------------------------------------------------*/
+void BmMailView::AddParsingError( const BmString& errStr)
+{
+	if (errStr.Length()) {
+		if (mParsingErrors.Length())
+			mParsingErrors << "\n\n";
+		mParsingErrors << errStr;
+		ContainerView()->SetErrorText(mParsingErrors);
+	}
+}
+
+/*------------------------------------------------------------------------------*\
 	JobIsDone( completed)
 		-	
 \*------------------------------------------------------------------------------*/
 void BmMailView::JobIsDone( bool completed) {
 	if (completed && mCurrMail && mCurrMail->Header()) {
-		mConversionError.Truncate( 0);
+		mParsingErrors.Truncate( 0);
 		BmString displayText;
 		BmStringOBuf displayBuf( mShowRaw 
 											? mCurrMail->RawText().Length()
@@ -971,8 +985,6 @@ void BmMailView::JobIsDone( bool completed) {
 			}
 		}
 		SendNoticesIfNeeded( true);
-		if (mConversionError.Length())
-			BM_SHOWERR( mConversionError);
 	} else {
 		BM_LOG2( BM_LogMailParse, BmString("setting empty mail into textview"));
 		mHeaderView->ShowHeader( NULL);
@@ -1035,17 +1047,17 @@ void BmMailView::DisplayBodyPart( BmStringOBuf& displayBuf,
 				// standard stuff, bodypart has already been converted to local 
 				// newlines
 				displayBuf << bodyPart->DecodedData();
-				if (bodyPart->HadErrorDuringConversion() 
-				&& bodyPart == mCurrMail->Body()->EditableTextBody().Get()) {
-					mConversionError 
-						= BmString("The mailtext contains characters that ")
-							<< "could not be converted from the\n"
-							<< "proposed charset (" 
-							<< bodyPart->SuggestedCharset() 
-							<< ") into UTF-8.\n\nSome parts of the mailtext "
-							<< "may be missing or\nmay be displayed incorrectly.\n\n"
-							<< "Please try another charset.";
-				}
+				if (bodyPart->HadErrorDuringConversion())
+					AddParsingError(
+						BmString("The mailtext contains characters that could not")
+							<< "be converted from the proposed charset\n"
+							<< "   " << bodyPart->SuggestedCharset() << "\n"
+							<< "into UTF-8.\n"
+							<< "Some parts of the mailtext may be missing or may be "
+							<< "displayed incorrectly. Please try another charset."
+					);
+				if (bodyPart->HadParsingErrors())
+					AddParsingError(bodyPart->ParsingErrors());
 			}
 		}
 	} else {
@@ -1332,7 +1344,8 @@ BRect BmMailViewContainer::layout(BRect rect)
 		-	
 \*------------------------------------------------------------------------------*/
 void BmMailViewContainer::SetBusy() {
-	if (mBusyView) mBusyView->SetBusy();
+	if (mBusyView)
+		mBusyView->SetBusy();
 }
 
 /*------------------------------------------------------------------------------*\
@@ -1340,7 +1353,17 @@ void BmMailViewContainer::SetBusy() {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmMailViewContainer::UnsetBusy() {
-	if (mBusyView) mBusyView->UnsetBusy();
+	if (mBusyView) 
+		mBusyView->UnsetBusy();
+}
+
+/*------------------------------------------------------------------------------*\
+	( )
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailViewContainer::SetErrorText(const BmString& text) {
+	if (mBusyView) 
+		mBusyView->SetErrorText( text);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -1348,7 +1371,8 @@ void BmMailViewContainer::UnsetBusy() {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmMailViewContainer::PulseBusyView() {
-	if (mBusyView) mBusyView->Pulse();
+	if (mBusyView)
+		mBusyView->Pulse();
 }
 
 /*------------------------------------------------------------------------------*\

@@ -123,7 +123,7 @@ void BmContentField::SetTo( const BmString cfString) {
 			}
 		}
 	} else {
-		BM_SHOWERR( BmString("field-value <")<<cfString
+		BM_LOG(BM_LogMailParse, BmString("field-value <")<<cfString
 							<<"> has unknown structure!");
 		return;
 	}
@@ -383,6 +383,7 @@ void BmBodyPart::SetTo( const BmString& msgtext, int32 start, int32 length,
  	BmBodyPartList* body = dynamic_cast< BmBodyPartList*>( bodyRef.Get());
  	
  	mHadErrorDuringConversion = false;
+ 	mParsingErrors.Truncate(0);
 
 	if (!header) {
 		// this is not the main body, so we have to split the MIME-headers from
@@ -404,10 +405,11 @@ void BmBodyPart::SetTo( const BmString& msgtext, int32 start, int32 length,
 				if (pos == B_ERROR || pos >= end) {
 					BmString str;
 					msgtext.CopyInto( str, start, min( length, (int32)256));
-					BM_SHOWERR( 
-						BmString("Couldn't determine borderline between "
-									"MIME-header and body in string <")<<str<<">."
-					);
+					BmString s 
+						= BmString("Couldn't determine borderline between "
+									  "MIME-header and body in string <")<<str<<">.";
+					BM_LOG( BM_LogMailParse, s);
+				 	AddParsingError(s);
 					return;
 				}
 				mStartInRawText = pos+4;
@@ -546,14 +548,18 @@ void BmBodyPart::SetTo( const BmString& msgtext, int32 start, int32 length,
 	if (mIsMultiPart) {
 		BmString boundary = BmString("--")+mContentType.Param("boundary");
 		if (boundary.Length()==2) {
-			BM_SHOWERR( "No boundary specified within multipart-message!");
+			BmString errStr("No boundary specified within multipart-message!");
+			BM_LOG( BM_LogMailParse, errStr);
+			AddParsingError( errStr);
 			return;
 		}
 		char* startPos 
 			= strstr( msgtext.String()+mStartInRawText, boundary.String());
 		if (!startPos) {
-			BM_SHOWERR( BmString("Boundary <")<<boundary
-								<<"> not found within message.");
+			BmString errStr 
+				= BmString("Boundary <")<<boundary<<"> not found within message.";
+			BM_LOG( BM_LogMailParse, errStr);
+			AddParsingError( errStr);
 			return;
 		}
 		BmString checkStr;
@@ -668,6 +674,19 @@ void BmBodyPart::SetTo( const BmString& msgtext, int32 start, int32 length,
 		}
 	}
 	mInitCheck = B_OK;
+}
+
+/*------------------------------------------------------------------------------*\
+	AddParsingError()
+	-	
+\*------------------------------------------------------------------------------*/
+void BmBodyPart::AddParsingError( const BmString& errStr)
+{
+	if (errStr.Length()) {
+		if (mParsingErrors.Length())
+			mParsingErrors << "\n\n";
+		mParsingErrors << errStr;
+	}
 }
 
 /*------------------------------------------------------------------------------*\

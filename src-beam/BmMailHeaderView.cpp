@@ -358,6 +358,13 @@ void BmMailHeaderView::ShowHeader( BmMailHeader* header, bool invalidate) {
 			mailView->ScrollTo( 0,0);
 			ResizeTo( FixedWidth(), height);
 			mailView->CalculateVerticalOffset();
+			if (hasErrors) {
+				BmString errStr( mMailHeader->ParsingErrors());
+				errStr << "\nThe mail-header could not be parsed completely. "
+					 	 << "Some information may be displayed incorrectly.";
+				mailView->AddParsingError(errStr);
+				BM_LOG( BM_LogMailParse, errStr);
+			}
 		}
 	} else {
 		RemoveFieldViews();
@@ -365,9 +372,6 @@ void BmMailHeaderView::ShowHeader( BmMailHeader* header, bool invalidate) {
 	}
 	if (invalidate)
 		Invalidate();
-	if (hasErrors)
-		BM_SHOWERR( "The mail-header could not be parsed completely. "
-						"Some information may be displayed incorrectly.");
 }
 
 /*------------------------------------------------------------------------------*\

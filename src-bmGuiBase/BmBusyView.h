@@ -49,17 +49,26 @@ public:
 	// native methods:
 	void SetBusy();
 	void UnsetBusy();
+	void SetErrorText(const BmString& txt);
+	void UnsetErrorText();
 	void Pulse();
+
+	static void SetErrorIcon( BBitmap* icon)
+													{ nErrorIcon = icon; }
 
 	// overrides of BStringView base:
 	void Draw( BRect bounds);
 	void MessageReceived( BMessage* msg);
-
+	
 private:
+	void UpdateErrorStatus();
+
 	BRect mCachedBounds;
 	BMessageRunner* mMsgRunner;
 	int16 mBusyCount;
 	int32 mCurrState;
+	BmString mErrorText;
+	static BBitmap* nErrorIcon;
 
 	// Hide copy-constructor and assignment:
 	BmBusyView( const BmBusyView&);

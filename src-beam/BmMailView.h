@@ -163,6 +163,7 @@ public:
 	inline void ShowRaw( bool b) 			{ mShowRaw = b; }
 	inline void ShowInlinesSeparately( bool b)	
 													{ mShowInlinesSeparately = b; }
+	void AddParsingError( const BmString& errStr);
 
 protected:
 	void JobIsDone( bool completed);
@@ -184,7 +185,7 @@ private:
 	BMessageRunner* mReadRunner;
 	bool mShowingUrlCursor;
 	bool mHaveMail;
-	BmString mConversionError;
+	BmString mParsingErrors;
 	
 	// will be archived:
 	BmString mFontName;
@@ -216,6 +217,7 @@ public:
 	// native methods:
 	void SetBusy();
 	void UnsetBusy();
+	void SetErrorText( const BmString& text);
 	void PulseBusyView();
 	void RedrawScrollbars();
 

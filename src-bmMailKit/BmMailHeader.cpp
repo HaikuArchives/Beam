@@ -558,7 +558,6 @@ BmMailHeader::BmMailHeader( const BmString &headerText, BmMail* mail)
 	,	mKey( RefPrintHex())
 							// generate dummy identifier from our address
 	,	mIsRedirect( false)
-	,	mHasParsingErrors( false)
 {
 	ParseHeader( headerText);
 }
@@ -774,7 +773,7 @@ BmString BmMailHeader::DetermineSender() {
 	if (!addrList.InitOK()) {
 		addrList = mAddrMap[BM_FIELD_FROM];
 		if (!addrList.InitOK()) {
-			BM_SHOWERR("Unable to determine sender of mail!");
+			BM_LOG( BM_LogMailParse, "Unable to determine sender of mail!");
 			return "";
 		}
 	}
@@ -910,6 +909,19 @@ void BmMailHeader::UnplugDefaultHeader( const BmMailHeader* defaultHeader)
 }
 
 /*------------------------------------------------------------------------------*\
+	AddParsingError()
+	-	
+\*------------------------------------------------------------------------------*/
+void BmMailHeader::AddParsingError( const BmString& errStr)
+{
+	if (errStr.Length()) {
+		if (mParsingErrors.Length())
+			mParsingErrors << "\n";
+		mParsingErrors << errStr;
+	}
+}
+
+/*------------------------------------------------------------------------------*\
 	ParseHeader( header)
 		-	parses mail-header and splits it into fieldname/fieldbody - pairs
 		-	we try to determine the mails' charset by finding a charset-string 
@@ -926,6 +938,7 @@ void BmMailHeader::UnplugDefaultHeader( const BmMailHeader* defaultHeader)
 void BmMailHeader::ParseHeader( const BmString &header) {
 	Regexx rxUnfold, rx;
 
+	mParsingErrors.Truncate(0);
 	typedef vector< subpart> BmSubpartVect;
 	BmSubpartVect subparts;
 	int32 pos=-1;
@@ -957,11 +970,12 @@ void BmMailHeader::ParseHeader( const BmString &header) {
 		BmString headerField( header.String()+i->pos, i->len);
 		int32 pos = headerField.FindFirst( ':');
 		if (pos == B_ERROR) { 
-			mHasParsingErrors = true;
-			BM_LOGERR( BmString("Could not determine field-name of "
-									  "mail-header-part:\n") 
-							<< headerField 
-							<< "\n\nThis header-field will be ignored."); 
+			BmString errStr 
+				= BmString("Could not determine field-name of "
+							  "mail-header-part:\n   ") << headerField 
+						<< "\nThis header-field will be ignored.";
+			AddParsingError( errStr);
+			BM_LOG( BM_LogMailParse, errStr);
 			continue;
 		}
 		fieldName.SetTo( headerField, pos);
@@ -1181,8 +1195,9 @@ void BmMailHeader::StoreAttributes( BFile& mailFile) {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-bool BmMailHeader::ConstructRawText( BmStringOBuf& msgText, 
+bool BmMailHeader::ConstructRawText( BmStringOBuf& msgText,
 												 const BmString& charset) {
+	mParsingErrors.Truncate(0);
 	BmStringOBuf headerIO( 1024, 2.0);
 	if (!mAddrMap[BM_FIELD_TO].InitOK() && !mAddrMap[BM_FIELD_CC].InitOK()) {
 		if (mAddrMap[BM_FIELD_BCC].InitOK()) {
@@ -1294,7 +1309,6 @@ bool BmMailHeader::ConstructRawText( BmStringOBuf& msgText,
 		}
 		mHeaderString.Adopt( headerIO.TheString());
 		msgText << mHeaderString;
-		mHasParsingErrors = false;
 		return true;
 	} catch( BM_text_error& textErr) {
 		BmString errText = BmString("The ") << fieldName << "-field "

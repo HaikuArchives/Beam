@@ -46,6 +46,7 @@ using namespace regexx;
 #include "BmApp.h"
 #include "BmBasics.h"
 #include "BmBodyPartView.h"
+#include "BmBusyView.h"
 #include "BmDataModel.h"
 #include "BmDeskbarView.h"
 #include "BmEncoding.h"
@@ -733,6 +734,7 @@ BmApplication::BmApplication( const char* sig)
 
 		// create the log-handler:
 		BmLogHandler::CreateInstance( 1, &nref);
+		BM_LOG( BM_LogApp, BmString("App-initialization started..."));
 
 		// create the info-roster (used by add-ons):
 		BeamRoster = new BmRoster();
@@ -750,7 +752,7 @@ BmApplication::BmApplication( const char* sig)
 		BmPrefs::CreateInstance();
 		// ...and finish part of resources-initialization that depends on prefs:
 		TheResources->InitializeWithPrefs();
-		BM_LOG( BM_LogApp, BmString("App-initialization started..."));
+		BmBusyView::SetErrorIcon( TheResources->IconByName("Error"));
 
 		ColumnListView::SetExtendedSelectionPolicy( 
 									ThePrefs->GetBool( "ListviewLikeTracker", false));

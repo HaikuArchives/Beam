@@ -726,7 +726,8 @@ void BmUtf8Encoder::InitConverter() {
 	if (!mSrcCharset.Length()
 	|| (mIconvDescr = iconv_open( toSet.String(), 
 											mSrcCharset.String())) == ICONV_ERR) {
-		BM_SHOWERR( BmString("libiconv: unable to convert from ") 
+		BM_LOG( BM_LogMailParse,
+				  BmString("libiconv: unable to convert from ") 
 							<< mSrcCharset << " to " << toSet);
 		mHadError = true;
 		return;
@@ -804,7 +805,8 @@ void BmUtf8Encoder::Filter( const char* srcBuf, uint32& srcLen,
 				mHadToDiscardChars = true;
 			}
 		} else {
-			BM_SHOWERR( BmString("Unknown error-result in utf8-encode: ") 
+			BM_LOG( BM_LogMailParse,
+					  BmString("Unknown error-result in utf8-encode: ") 
 								<< errno);
 			mHadError = true;
 		}

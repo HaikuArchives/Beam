@@ -30,6 +30,7 @@
 
 #include <cstring>
 
+#include "BubbleHelper.h"
 #include "Colors.h"
 
 #include "BmBasics.h"
@@ -38,6 +39,8 @@
 
 #define BM_PULSE 'bmPL'
 static BMessage pulseMsg(BM_PULSE);
+
+BBitmap* BmBusyView::nErrorIcon = NULL;
 
 /*------------------------------------------------------------------------------*\
 	( )
@@ -67,6 +70,8 @@ BmBusyView::~BmBusyView() {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmBusyView::SetBusy() {
+	if (!mBusyCount)
+		UnsetErrorText();
 	mBusyCount++;
 	if (!mMsgRunner) {
 		BMessenger ourselvesAsTarget( this);
@@ -93,6 +98,36 @@ void BmBusyView::UnsetBusy() {
 			Invalidate();
 		}
 	}
+}
+
+/*------------------------------------------------------------------------------*\
+	( )
+		-	
+\*------------------------------------------------------------------------------*/
+void BmBusyView::UnsetErrorText() 
+{
+	mErrorText.Truncate(0);
+	UpdateErrorStatus();
+}
+
+/*------------------------------------------------------------------------------*\
+	( )
+		-	
+\*------------------------------------------------------------------------------*/
+void BmBusyView::SetErrorText(const BmString& txt) 
+{
+	mErrorText = txt;
+	UpdateErrorStatus();
+}
+
+/*------------------------------------------------------------------------------*\
+	( )
+		-	
+\*------------------------------------------------------------------------------*/
+void BmBusyView::UpdateErrorStatus() 
+{
+	TheBubbleHelper->SetHelp( this, mErrorText.String());
+	Invalidate();
 }
 
 /*------------------------------------------------------------------------------*\
@@ -135,6 +170,11 @@ void BmBusyView::Draw( BRect) {
 	StrokeLine( r.RightTop(), r.RightBottom());
 	StrokeLine( r.LeftBottom(), r.RightBottom());
 	if (mBusyCount <= 0) {
+		if (mErrorText.Length() > 0 && nErrorIcon) {
+			SetDrawingMode( B_OP_ALPHA);
+			SetBlendingMode( B_PIXEL_ALPHA, B_ALPHA_OVERLAY);
+			DrawBitmap( nErrorIcon, BPoint(0,1));
+		}
 		return;
 	}
 	r.InsetBy( 1.0, 1.0);

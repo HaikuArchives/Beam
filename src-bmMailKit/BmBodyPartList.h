@@ -161,6 +161,10 @@ public:
 													{ return mCurrentCharset; }
 	inline bool HadErrorDuringConversion() const			
 													{ return mHadErrorDuringConversion; }
+	inline bool HadParsingErrors() const
+													{ return mParsingErrors.Length() > 0; }
+	inline const BmString& ParsingErrors() const		
+													{ return mParsingErrors; }
 
 	inline const entry_ref& EntryRef() const	
 													{ return mEntryRef; }
@@ -180,6 +184,7 @@ private:
 	int32 PruneUnneededMultiParts();
 	int32 EstimateEncodedSize();
 	void ConstructBodyForSending( BmStringOBuf &msgText);
+	void AddParsingError( const BmString& errStr);
 
 	bool mIsMultiPart;
 	BmContentField mContentType;
@@ -198,6 +203,7 @@ private:
 	mutable BmString mCurrentCharset;
 	BmString mSuggestedCharset;
 	mutable bool mHadErrorDuringConversion;
+	mutable BmString mParsingErrors;
 	
 	entry_ref mEntryRef;
 

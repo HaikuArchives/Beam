@@ -232,7 +232,9 @@ public:
 	inline const bool IsRedirect() const
 													{ return mIsRedirect; }
 	inline const bool HasParsingErrors() const	
-													{ return mHasParsingErrors; }
+													{ return mParsingErrors.Length()>0; }
+	inline const BmString& ParsingErrors() const	
+													{ return mParsingErrors; }
 
 	// setters:
 	inline void IsRedirect( bool b)		{ mIsRedirect = b; }
@@ -248,6 +250,8 @@ protected:
 	BmString StripField( BmString fieldValue, BmString* commentBuffer=NULL);
 
 private:
+	void AddParsingError( const BmString& errStr);
+
 	BmString mHeaderString;
 							// the complete original mail-header
 	BmHeaderList mHeaders;
@@ -282,8 +286,8 @@ private:
 	bool mIsRedirect;	
 							// true if header contains redirect-fields 
 							// (or will do in near future)
-	bool mHasParsingErrors;	
-							// true if header contains parsing-errors
+	BmString mParsingErrors;
+							// parsing-errors found in header
 	static int32 nCounter;
 							// counter for message-id
 
