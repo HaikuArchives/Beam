@@ -28,6 +28,12 @@
 /*************************************************************************/
 
 
+#include <BeBuild.h>
+#ifdef B_BEOS_VERSION_DANO
+	class BFont;
+	class BPopUpMenu;
+#endif
+
 #include <Message.h>
 
 #include <MScrollView.h>

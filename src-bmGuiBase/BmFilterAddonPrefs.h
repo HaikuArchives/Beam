@@ -32,6 +32,11 @@
 #ifndef _BmFilterAddonPrefs_h
 #define _BmFilterAddonPrefs_h
 
+#include <BeBuild.h>
+#ifdef B_BEOS_VERSION_DANO
+	class BFont;
+#endif
+
 #include <Message.h>
 
 #include <VGroup.h>
