@@ -52,11 +52,9 @@ UserResizeSplitView::UserResizeSplitView(MView* top_or_left, MView* right_or_bot
 	orientation posture, bool should_resize_left_or_top, bool should_resize_right_or_bottom,
 	bool move_slider_on_frame_resize, uint32 resize_mask, uint32 flags)
 : BView(BRect(0,0,0,0),name,resize_mask,flags)
-, mSetupDone( false)
 {
-	m_divider_left_or_top = 0;
+	m_divider_left_or_top = divider_left_or_top;
 	m_cached_width_or_height = 0;
-	m_preferred_divider_left_or_top = divider_left_or_top;
 	m_posture = posture;
 	m_should_resize_left_or_top = should_resize_left_or_top;
 	m_should_resize_right_or_bottom = should_resize_right_or_bottom;
@@ -67,22 +65,13 @@ UserResizeSplitView::UserResizeSplitView(MView* top_or_left, MView* right_or_bot
 	m_dark_1_color = tint_color(m_background_color,B_DARKEN_1_TINT);
 	m_dark_2_color = tint_color(m_background_color,B_DARKEN_2_TINT);
 	SetViewColor(m_background_color);
-	m_left_or_top = (MBView*)top_or_left;
-	m_right_or_bottom = (MBView*)right_or_bottom;
-	AddChild(dynamic_cast<BView*>(m_left_or_top));
-	AddChild(dynamic_cast<BView*>(m_right_or_bottom));
-}
-
-/*
-
-void UserResizeSplitView::AddChildren(MView* top_or_left, MView* right_or_bottom)
-{
 	m_left_or_top = top_or_left;
 	m_right_or_bottom = right_or_bottom;
-	AddChild(m_left_or_top);
-	AddChild(m_right_or_bottom);
+	m_left_or_top_BV = dynamic_cast<BView*>(top_or_left);
+	m_right_or_bottom_BV = dynamic_cast<BView*>(right_or_bottom);
+	AddChild( m_left_or_top_BV);
+	AddChild( m_right_or_bottom_BV);
 }
-*/
 
 
 float UserResizeSplitView::LeftOrTopMinSize() {
@@ -103,16 +92,12 @@ float UserResizeSplitView::RightOrBottomMaxSize() {
 
 void UserResizeSplitView::SetPreferredDividerLeftOrTop(float divider_left_or_top)
 {
-	m_preferred_divider_left_or_top = divider_left_or_top;
-	SetDividerLeftOrTop( divider_left_or_top);
+	m_divider_left_or_top = divider_left_or_top;
 }
 
 void UserResizeSplitView::SetDividerLeftOrTop(float divider_left_or_top)
 {
 	BRect bounds = Bounds();
-	if (!mSetupDone) {
-		return;
-	}
 
 	divider_left_or_top = MIN( MAX(LeftOrTopMinSize(), divider_left_or_top), LeftOrTopMaxSize());
 	if(m_posture == B_HORIZONTAL)
@@ -131,7 +116,7 @@ void UserResizeSplitView::SetDividerLeftOrTop(float divider_left_or_top)
 			ResizeLeftOrTopChildTo( divider_left_or_top);
 		if(m_right_or_bottom)
 		{
-			m_right_or_bottom->MoveTo(bounds.left,divider_left_or_top+Thickness);
+			m_right_or_bottom_BV->MoveTo(bounds.left,divider_left_or_top+Thickness);
 			if(m_should_resize_right_or_bottom)
 				ResizeRightOrBottomChildTo(bounds.Height() - divider_left_or_top - Thickness);
 		}
@@ -144,7 +129,7 @@ void UserResizeSplitView::SetDividerLeftOrTop(float divider_left_or_top)
 			ResizeLeftOrTopChildTo( divider_left_or_top);
 		if(m_right_or_bottom)
 		{
-			m_right_or_bottom->MoveTo(divider_left_or_top+Thickness,bounds.top);
+			m_right_or_bottom_BV->MoveTo(divider_left_or_top+Thickness,bounds.top);
 			if(m_should_resize_right_or_bottom)
 				ResizeRightOrBottomChildTo( bounds.Width() - divider_left_or_top - Thickness);
 		}
@@ -163,23 +148,11 @@ void UserResizeSplitView::ResizeLeftOrTopChildTo(float width_or_height)
 		m_left_or_top->layout(BRect(0,0,bounds.right,width_or_height));
 	else
 		m_left_or_top->layout(BRect(0,0,width_or_height,bounds.bottom));
-/*
-	if(m_posture == B_HORIZONTAL)
-		m_left_or_top->ResizeTo(m_left_or_top->Frame().Width(),width_or_height);
-	else
-		m_left_or_top->ResizeTo(width_or_height,m_left_or_top->Frame().Height());
-*/
 }
 
 
 void UserResizeSplitView::ResizeRightOrBottomChildTo(float width_or_height)
 {
-/*
-	if(m_posture == B_HORIZONTAL)
-		m_right_or_bottom->ResizeTo(m_right_or_bottom->Frame().Width(),width_or_height);
-	else
-		m_right_or_bottom->ResizeTo(width_or_height,m_right_or_bottom->Frame().Height());
-*/
 	BRect bounds = Bounds();
 	if(m_posture == B_HORIZONTAL)
 		m_right_or_bottom->layout(BRect(0,bounds.bottom-width_or_height,bounds.right,bounds.bottom));
@@ -200,6 +173,9 @@ void UserResizeSplitView::SetViewColor(rgb_color color)
 	}
 }
 
+void UserResizeSplitView::AttachedToWindow() {
+	BView::AttachedToWindow();
+}
 
 void UserResizeSplitView::FrameResized(float new_width, float new_height)
 {
@@ -233,6 +209,7 @@ void UserResizeSplitView::Draw(BRect updateRect)
 
 void UserResizeSplitView::MouseDown(BPoint where)
 {
+	BView::MouseDown( where);
 	float mouse_position = 0;
 	if(m_posture == B_HORIZONTAL)
 		mouse_position = where.y;
@@ -261,11 +238,13 @@ void UserResizeSplitView::MouseUp(BPoint where)
 		be_app->SetCursor(B_HAND_CURSOR);
 		m_modified_cursor = false;
 	}
+	BView::MouseUp( where);
 }
 
 
 void UserResizeSplitView::MouseMoved(BPoint where, uint32 code, const BMessage* message)
 {
+	BView::MouseMoved( where, code, message);
 	bool should_show_modified_cursor = false;
 	if(m_dragging)
 		should_show_modified_cursor = true;
@@ -292,19 +271,36 @@ void UserResizeSplitView::MouseMoved(BPoint where, uint32 code, const BMessage* 
 	}
 }
 
-// adapted for liblayout
+// additions for liblayout
 minimax UserResizeSplitView::layoutprefs()
 {
-	return mpm=ct_mpm;
+	minimax mmLeft;
+	minimax mmRight;
+	if (m_left_or_top)
+		mmLeft = m_left_or_top->layoutprefs();
+	if (m_right_or_bottom)
+		mmRight = m_right_or_bottom->layoutprefs();
+	if (m_posture == B_VERTICAL) {
+		mpm.mini.x = MAX( mmLeft.mini.x+mmRight.mini.x+Thickness, ct_mpm.mini.x);
+		mpm.mini.y = MAX( MAX(mmLeft.mini.y,mmRight.mini.y), ct_mpm.mini.y);
+		mpm.maxi.x = MIN( mmLeft.maxi.x+mmRight.maxi.x+Thickness, ct_mpm.maxi.x);
+		mpm.maxi.y = MIN( MAX(mmLeft.maxi.y,mmRight.maxi.y), ct_mpm.maxi.y);
+	} else {
+		mpm.mini.y = MAX( mmLeft.mini.y+mmRight.mini.y+Thickness, ct_mpm.mini.y);
+		mpm.mini.x = MAX( MAX(mmLeft.mini.x,mmRight.mini.x), ct_mpm.mini.x);
+		mpm.maxi.y = MIN( mmLeft.maxi.y+mmRight.maxi.y+Thickness, ct_mpm.maxi.y);
+		mpm.maxi.x = MIN( MAX(mmLeft.maxi.x,mmRight.maxi.x), ct_mpm.maxi.x);
+	}
+	return mpm;
 }
 
 BRect UserResizeSplitView::layout(BRect frame)
 {
-	BRect rect = ConvertFromParent( frame);
 	if (frame == Frame())
 		return frame;
 	MoveTo(frame.LeftTop());
 	ResizeTo(frame.Width(),frame.Height());
+	BRect rect = ConvertFromParent( frame);
 	if (m_posture == B_HORIZONTAL) {
 		m_cached_width_or_height = rect.Height();
 		if (m_left_or_top)
@@ -318,10 +314,5 @@ BRect UserResizeSplitView::layout(BRect frame)
 		if (m_right_or_bottom)
 			m_right_or_bottom->layout( BRect(m_divider_left_or_top+Thickness,rect.top,rect.right,rect.bottom));
 	}
-	if (!mSetupDone) {
-		mSetupDone = true;
-		SetDividerLeftOrTop( m_preferred_divider_left_or_top);
-	}
 	return frame;
 }
-// (end of adaptation)

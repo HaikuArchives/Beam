@@ -48,6 +48,7 @@ class AboutView;
 //******************************************************************************************************
 const uint32 c_about_window_to_front = 'AbTF';
 const uint32 c_about_window_closed = 'AbCl';
+const uint32 c_about_window_url_invoked = 'AbUr';
 
 
 //******************************************************************************************************
@@ -57,8 +58,9 @@ class ImageAboutWindow : public BWindow
 {
 	public:
 		//Constructor and destructor
-		ImageAboutWindow(const char* window_title, const char* app_title, const BBitmap* bmap,\
-			float icon_sidebar_offset, const char* body_text);
+		ImageAboutWindow(const char* window_title, const char* app_title, const BBitmap* bmap,
+			float icon_sidebar_offset, const char* body_text, const char* email=NULL, 
+			const char* web=NULL);
 			//icon_resource_name specifies the name of a 'bits' resource holding a logo image file for
 			//loading by BTranslationUtils.   The image should have dark grey (R184,G184,B184) on the
 			//left hand side, and light grey (R216,G216,B216) on the right hand side of the center of
@@ -66,6 +68,7 @@ class ImageAboutWindow : public BWindow
 			//column of the lighter color.  The short version string from the application version
 			//resource is loaded and displayed in the about window.
  		virtual ~ImageAboutWindow();
+		void MouseDown(BPoint point);
 
 		//BWindow overrides
 		virtual void MessageReceived(BMessage *message);
@@ -78,11 +81,15 @@ class ImageAboutWindow : public BWindow
 		BBitmap* m_bitmap;
 		char* m_title;
 		char* m_version;
+		char* m_email;
+		char* m_web;
 		int32 m_num_lines;
 		char** m_lines;
 
 		BRect m_title_rect;
 		BRect m_version_rect;
+		BRect m_email_rect;
+		BRect m_web_rect;
 		BRect* m_text_rects;
 
 		BRect m_logo_rect;
@@ -109,6 +116,7 @@ class AboutView : public BView
 	public:
 		//BView override
 		void Draw(BRect update_rect);
+		void MouseDown(BPoint point);
 };
 
 

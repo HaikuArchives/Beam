@@ -2,6 +2,31 @@
 	BmMailHeader.cpp
 		$Id$
 */
+/*************************************************************************/
+/*                                                                       */
+/*  Beam - BEware Another Mailer                                         */
+/*                                                                       */
+/*  http://www.hirschkaefer.de/beam                                      */
+/*                                                                       */
+/*  Copyright (C) 2002 Oliver Tappe <beam@hirschkaefer.de>               */
+/*                                                                       */
+/*  This program is free software; you can redistribute it and/or        */
+/*  modify it under the terms of the GNU General Public License          */
+/*  as published by the Free Software Foundation; either version 2       */
+/*  of the License, or (at your option) any later version.               */
+/*                                                                       */
+/*  This program is distributed in the hope that it will be useful,      */
+/*  but WITHOUT ANY WARRANTY; without even the implied warranty of       */
+/*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU    */
+/*  General Public License for more details.                             */
+/*                                                                       */
+/*  You should have received a copy of the GNU General Public            */
+/*  License along with this program; if not, write to the                */
+/*  Free Software Foundation, Inc., 59 Temple Place - Suite 330,         */
+/*  Boston, MA  02111-1307, USA.                                         */
+/*                                                                       */
+/*************************************************************************/
+
 
 #include <algorithm>
 #include <ctime>
@@ -20,6 +45,7 @@ using namespace regexx;
 #include "BmMail.h"
 #include "BmMailHeader.h"
 #include "BmNetUtil.h"
+#include "BmPopAccount.h"
 #include "BmPrefs.h"
 #include "BmResources.h"
 #include "BmSmtpAccount.h"
@@ -87,6 +113,16 @@ BmAddress::~BmAddress() {
 \*------------------------------------------------------------------------------*/
 BmAddress::operator BString() const {
 	return mPhrase.Length() ? (mPhrase + " <" + mAddrSpec + ">") : mAddrSpec;
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+bool BmAddress::IsHandledByAccount( BmPopAccount* acc) const {
+	if (!acc)
+		return false;
+	return acc->HandlesAddress( mAddrSpec);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -201,6 +237,19 @@ void BmAddressList::Remove( BString singleAddress) {
 		mAddrList.erase( pos);
 }
 	
+/*------------------------------------------------------------------------------*\
+	SplitIntoAddresses()
+		-	
+\*------------------------------------------------------------------------------*/
+BString BmAddressList::FindAddressMatchingAccount( BmPopAccount* acc) const {
+	int32 count = mAddrList.size();
+	for( int i=0; i<count; ++i) {
+		if (mAddrList[i].IsHandledByAccount( acc))
+			return mAddrList[i];
+	}
+	return "";
+}
+
 /*------------------------------------------------------------------------------*\
 	SplitIntoAddresses()
 		-	
@@ -505,6 +554,24 @@ BString BmMailHeader::DetermineSender() {
 		}
 	}
 	return sender;
+}
+
+/*------------------------------------------------------------------------------*\
+	DetermineSender()
+		-	
+\*------------------------------------------------------------------------------*/
+BString BmMailHeader::DetermineReceivingAddrFor( BmPopAccount* acc) {
+	BString addr = mAddrMap[BM_FIELD_RESENT_TO].FindAddressMatchingAccount( acc);
+	if (!addr.Length()) {
+		addr = mAddrMap[BM_FIELD_TO].FindAddressMatchingAccount( acc);
+		if (!addr.Length()) {
+			addr = mAddrMap[BM_FIELD_CC].FindAddressMatchingAccount( acc);
+			if (!addr.Length()) {
+				addr = mAddrMap[BM_FIELD_BCC].FindAddressMatchingAccount( acc);
+			}
+		}
+	}
+	return addr;
 }
 
 /*------------------------------------------------------------------------------*\

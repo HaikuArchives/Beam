@@ -2,6 +2,31 @@
 	BmMailHeader.h
 		$Id$
 */
+/*************************************************************************/
+/*                                                                       */
+/*  Beam - BEware Another Mailer                                         */
+/*                                                                       */
+/*  http://www.hirschkaefer.de/beam                                      */
+/*                                                                       */
+/*  Copyright (C) 2002 Oliver Tappe <beam@hirschkaefer.de>               */
+/*                                                                       */
+/*  This program is free software; you can redistribute it and/or        */
+/*  modify it under the terms of the GNU General Public License          */
+/*  as published by the Free Software Foundation; either version 2       */
+/*  of the License, or (at your option) any later version.               */
+/*                                                                       */
+/*  This program is distributed in the hope that it will be useful,      */
+/*  but WITHOUT ANY WARRANTY; without even the implied warranty of       */
+/*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU    */
+/*  General Public License for more details.                             */
+/*                                                                       */
+/*  You should have received a copy of the GNU General Public            */
+/*  License along with this program; if not, write to the                */
+/*  Free Software Foundation, Inc., 59 Temple Place - Suite 330,         */
+/*  Boston, MA  02111-1307, USA.                                         */
+/*                                                                       */
+/*************************************************************************/
+
 
 #ifndef _BmMailHeader_h
 #define _BmMailHeader_h
@@ -14,6 +39,7 @@
 #include "BmUtil.h"
 
 class BmMail;
+class BmPopAccount;
 
 /*------------------------------------------------------------------------------*\
 	mail_format_error
@@ -43,6 +69,7 @@ public:
 
 	// native methods:
 	void ConstructRawText( BString& header, int32 encoding, int32 fieldNameLength) const;
+	bool IsHandledByAccount( BmPopAccount* acc) const;
 
 	// operators:
 	operator BString() const;
@@ -81,6 +108,7 @@ public:
 	void Remove( BString singleAddress);
 	BmStringList SplitIntoAddresses( BString addrList);
 	void ConstructRawText( BString& header, int32 encoding, int32 fieldNameLength) const;
+	BString FindAddressMatchingAccount( BmPopAccount* acc) const;
 	//
 	inline BmAddrList::const_iterator begin() const { return mAddrList.begin(); }
 	inline BmAddrList::const_iterator end() const	{ return mAddrList.end(); }
@@ -147,6 +175,7 @@ public:
 	bool ConstructRawText( BString& header, int32 encoding);
 
 	BString DetermineSender();
+	BString DetermineReceivingAddrFor( BmPopAccount* acc);
 	const BmAddressList GetAddressList( const BString fieldName);
 	bool IsFieldEmpty( const BString fieldName);
 

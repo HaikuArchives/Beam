@@ -2,6 +2,31 @@
 	BmBodyPartList.cpp
 		$Id$
 */
+/*************************************************************************/
+/*                                                                       */
+/*  Beam - BEware Another Mailer                                         */
+/*                                                                       */
+/*  http://www.hirschkaefer.de/beam                                      */
+/*                                                                       */
+/*  Copyright (C) 2002 Oliver Tappe <beam@hirschkaefer.de>               */
+/*                                                                       */
+/*  This program is free software; you can redistribute it and/or        */
+/*  modify it under the terms of the GNU General Public License          */
+/*  as published by the Free Software Foundation; either version 2       */
+/*  of the License, or (at your option) any later version.               */
+/*                                                                       */
+/*  This program is distributed in the hope that it will be useful,      */
+/*  but WITHOUT ANY WARRANTY; without even the implied warranty of       */
+/*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU    */
+/*  General Public License for more details.                             */
+/*                                                                       */
+/*  You should have received a copy of the GNU General Public            */
+/*  License along with this program; if not, write to the                */
+/*  Free Software Foundation, Inc., 59 Temple Place - Suite 330,         */
+/*  Boston, MA  02111-1307, USA.                                         */
+/*                                                                       */
+/*************************************************************************/
+
 
 #include <Autolock.h>
 #include <File.h>
@@ -179,7 +204,7 @@ BmBodyPart::BmBodyPart( BmBodyPartList* model, const entry_ref* ref, BmListModel
 		BFile file;
 		BNodeInfo nodeInfo;
 		off_t size;
-		char mimetype[B_MIME_TYPE_LENGTH+1];
+		char mt[B_MIME_TYPE_LENGTH+1];
 		(err=file.SetTo( ref, B_READ_ONLY)) == B_OK		
 														|| BM_THROW_RUNTIME( BString("Couldn't create file for <") << ref->name << "> \n\nError:" << strerror(err));
 		(err=file.GetSize( &size)) == B_OK
@@ -191,11 +216,19 @@ BmBodyPart::BmBodyPart( BmBodyPartList* model, const entry_ref* ref, BmListModel
 		
 		(err=nodeInfo.SetTo( &file)) == B_OK
 														|| BM_THROW_RUNTIME( BString("Couldn't create node-info for <") << ref->name << "> \n\nError:" << strerror(err));
-		nodeInfo.GetType( mimetype);
+		nodeInfo.GetType( mt);
+		BString mimetype( mt);
+		if (mimetype.ICompare("text/x-email")==0) {
+			// convert beos-own mail-mimetype into correct message/rfc822:
+			mimetype = "message/rfc822";
+		}
 		mFileName = ref->name;
-		mContentType.SetTo( BString(mimetype)<<"; name=\"" << ref->name << '"');
+		mContentType.SetTo( mimetype<<"; name=\"" << ref->name << '"');
 		mContentDisposition.SetTo( BString( "attachment; filename=\"")<<ref->name<<'"');
-		mContentTransferEncoding = BString(mimetype).ICompare( "text", 4) ? "base64" : "quoted-printable";
+		if (mimetype.ICompare( "text/", 5) == 0 || mimetype.ICompare( "message/", 8) == 0)
+			mContentTransferEncoding = "quoted-printable";
+		else
+			mContentTransferEncoding = "base64";
 		mInitCheck = B_OK;
 	} catch( exception &err) {
 		// a problem occurred, we tell the user:
@@ -571,6 +604,8 @@ bool BmBodyPartList::StartJob() {
 bool BmBodyPartList::HasAttachments() const {
 	if (empty())
 		return false;
+	if (!mEditableTextBody)
+		return true;
 	BmBodyPart* bodyPart = dynamic_cast< BmBodyPart*>( begin()->second.Get());
 	return bodyPart ? bodyPart->IsMultiPart() : false;
 }

@@ -2,6 +2,31 @@
 	BmJobStatusWin.cpp
 		$Id$
 */
+/*************************************************************************/
+/*                                                                       */
+/*  Beam - BEware Another Mailer                                         */
+/*                                                                       */
+/*  http://www.hirschkaefer.de/beam                                      */
+/*                                                                       */
+/*  Copyright (C) 2002 Oliver Tappe <beam@hirschkaefer.de>               */
+/*                                                                       */
+/*  This program is free software; you can redistribute it and/or        */
+/*  modify it under the terms of the GNU General Public License          */
+/*  as published by the Free Software Foundation; either version 2       */
+/*  of the License, or (at your option) any later version.               */
+/*                                                                       */
+/*  This program is distributed in the hope that it will be useful,      */
+/*  but WITHOUT ANY WARRANTY; without even the implied warranty of       */
+/*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU    */
+/*  General Public License for more details.                             */
+/*                                                                       */
+/*  You should have received a copy of the GNU General Public            */
+/*  License along with this program; if not, write to the                */
+/*  Free Software Foundation, Inc., 59 Temple Place - Suite 330,         */
+/*  Boston, MA  02111-1307, USA.                                         */
+/*                                                                       */
+/*************************************************************************/
+
 
 #include <stdio.h>
 
@@ -13,9 +38,11 @@
 #include <StatusBar.h>
 
 #include <layout.h>
+#include <HGroup.h>
 #include <MBorder.h>
 #include <MButton.h>
 #include <MBViewWrapper.h>
+#include <MStop.h>
 #include <MStringView.h>
 #include <Space.h>
 
@@ -26,6 +53,7 @@
 #include "BmJobStatusWin.h"
 #include "BmLogHandler.h"
 #include "BmMailFolder.h"
+#include "BmMailFolderList.h"
 #include "BmMailMover.h"
 #include "BmPopAccount.h"
 #include "BmPopper.h"
@@ -114,6 +142,11 @@ void BmJobStatusView::MessageReceived( BMessage* msg) {
 				delete this;
 				break;
 			}
+			case M_STOP_SELECTED: {
+				// user asks us to stop, so we do it:
+				StopJob();
+				break;
+			}
 			default:
 				inheritedView::MessageReceived( msg);
 		}
@@ -182,12 +215,16 @@ BmMailMoverView::BmMailMoverView( const char* name)
 	,	mBottomLabel( NULL)
 {
 	mMSecsBeforeShow = MAX(10,ThePrefs->GetInt( "MSecsBeforeMailMoverShows"));
-	BString labelText = BString("To: ") << ControllerName();
+	BString labelText = BString("To: ") << name;
 	MView* view = new VGroup(
 		new MBViewWrapper(
 			mStatBar = new BStatusBar( BRect(), name, "Moving: ", ""), true, false, false
 		),
-		mBottomLabel = new MStringView( labelText.String()),
+		new HGroup(
+			mBottomLabel = new MStringView( labelText.String()),
+			new MStop( this),
+			0
+		),
 		0
 	);
 	AddChild( dynamic_cast<BView*>(view));
@@ -206,11 +243,14 @@ BmMailMoverView::~BmMailMoverView() {
 		-	creates and returns a new job-model, data may contain constructor args
 \*------------------------------------------------------------------------------*/
 BmJobModel* BmMailMoverView::CreateJobModel( BMessage* msg) {
-	BList* refList = new BList;
+	BString key = FindMsgString( msg, BmJobModel::MSG_MODEL);
+	BmRef<BmListModelItem> item = TheMailFolderList->FindItemByKey( key);
 	BmMailFolder* folder;
-	msg->FindPointer( MSG_FOLDER, (void**)&folder);
+	(folder = dynamic_cast<BmMailFolder*>( item.Get()))
+													|| BM_THROW_INVALID( BString("Could not find BmMailFolder ") << key);
+	BList* refList = new BList;
 	entry_ref eref;
-	for( int i=0; msg->FindRef( MSG_REFS, i, &eref)==B_OK; ++i) {
+	for( int i=0; msg->FindRef( BmMailMover::MSG_REFS, i, &eref)==B_OK; ++i) {
 		refList->AddItem( new entry_ref( eref));
 	}
 	return new BmMailMover( ControllerName(), refList, folder);
@@ -240,7 +280,7 @@ void BmMailMoverView::UpdateModelView( BMessage* msg) {
 
 	BM_LOG3( BM_LogJobWin, BString("Updating interface for ") << name);
 
-	BmAutolock lock( BmJobStatusWin::Instance);
+	BmAutolock lock( BmJobStatusWin::theInstance);
 	if (lock.IsLocked()) {
 		mStatBar->Update( delta, leading, trailing);
 	} else
@@ -298,7 +338,7 @@ BmPopperView::~BmPopperView() {
 		-	creates and returns a new job-model, data may contain constructor args
 \*------------------------------------------------------------------------------*/
 BmJobModel* BmPopperView::CreateJobModel( BMessage* msg) {
-	BString accName = FindMsgString( msg, BmJobStatusWin::MSG_JOB_NAME);
+	BString accName = FindMsgString( msg, BmJobModel::MSG_JOB_NAME);
 	BmRef<BmListModelItem> item = ThePopAccountList->FindItemByKey( accName);
 	BmPopAccount* account;
 	(account = dynamic_cast<BmPopAccount*>( item.Get()))
@@ -334,7 +374,7 @@ void BmPopperView::UpdateModelView( BMessage* msg) {
 
 	BM_LOG3( BM_LogJobWin, BString("Updating interface for ") << name);
 
-	BmAutolock lock( BmJobStatusWin::Instance);
+	BmAutolock lock( BmJobStatusWin::theInstance);
 	if (lock.IsLocked()) {
 		if (domain == "mailbar") {
 			mMailBar->Update( delta, leading, trailing);
@@ -419,12 +459,14 @@ BmSmtpView::~BmSmtpView() {
 		-	creates and returns a new job-model, data may contain constructor args
 \*------------------------------------------------------------------------------*/
 BmJobModel* BmSmtpView::CreateJobModel( BMessage* msg) {
-	BString accName = FindMsgString( msg, BmJobStatusWin::MSG_JOB_NAME);
+	BString accName = FindMsgString( msg, BmJobModel::MSG_JOB_NAME);
 	BmRef<BmListModelItem> item = TheSmtpAccountList->FindItemByKey( accName);
 	BmSmtpAccount* account;
 	(account = dynamic_cast<BmSmtpAccount*>( item.Get()))
 													|| BM_THROW_INVALID( BString("Could not find BmSmtpAccount ") << accName);
-	return new BmSmtp( account->Name(), account);
+	BmSmtp* smtp = new BmSmtp( account->Name(), account);
+	smtp->SetPwdAcquisitorFunc( AskUserForPwd);
+	return smtp;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -453,7 +495,7 @@ void BmSmtpView::UpdateModelView( BMessage* msg) {
 
 	BM_LOG3( BM_LogJobWin, BString("Updating interface for ") << name);
 
-	BmAutolock lock( BmJobStatusWin::Instance);
+	BmAutolock lock( BmJobStatusWin::theInstance);
 	if (lock.IsLocked()) {
 		if (domain == "mailbar") {
 			mMailBar->Update( delta, leading, trailing);
@@ -465,6 +507,27 @@ void BmSmtpView::UpdateModelView( BMessage* msg) {
 		throw BM_runtime_error("BmSmtpView::UpdateModelView(): could not lock window");
 }
 
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+bool BmSmtpView::AskUserForPwd( const BString accName, BString& pwd) {
+	// ask user about password:
+   BString text = BString( "Please enter password for SMTP-Account <")
+   				   << accName << ">:";
+	TextEntryAlert* alert = new TextEntryAlert( "Info needed", text.String(),
+									 						  "", "Cancel", "OK");
+	alert->TextEntryView()->HideTyping( true);
+	alert->SetShortcut( 0, B_ESCAPE);
+	char buf[128];
+	int32 result = alert->Go( buf, 128);
+	if (result == 1) {
+		pwd = buf;
+		memset( buf, '*', 128);
+		return true;
+	} else
+		return false;
+}
 
 
 /********************************************************************************\
@@ -477,8 +540,6 @@ void BmSmtpView::UpdateModelView( BMessage* msg) {
 		- pointer to the single instance
 \*------------------------------------------------------------------------------*/
 const rgb_color BmJobStatusWin::BM_COL_STATUSBAR = {160,160,160};
-BmJobStatusWin* BmJobStatusWin::Instance = NULL;
-
 BmJobStatusWin* BmJobStatusWin::theInstance = NULL;
 
 /*------------------------------------------------------------------------------*\
@@ -511,7 +572,7 @@ BmJobStatusWin::BmJobStatusWin()
 		);
 	AddChild( dynamic_cast<BView*>(mOuterGroup));
 
-	Instance = this;
+	theInstance = this;
 	BM_LOG2( BM_LogJobWin, "JobStatusWin has started");
 }
 
@@ -521,7 +582,7 @@ BmJobStatusWin::BmJobStatusWin()
 		-	FIXME: needs to free memory if necessary!
 \*------------------------------------------------------------------------------*/
 BmJobStatusWin::~BmJobStatusWin() {
-	Instance = NULL;
+	theInstance = NULL;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -565,7 +626,7 @@ void BmJobStatusWin::MessageReceived(BMessage* msg) {
 			case B_QUIT_REQUESTED:
 				break;
 			case BM_JOBWIN_SMTP:
-			case BM_JOBWIN_FETCHPOP:
+			case BM_JOBWIN_POP:
 			case BM_JOBWIN_MOVEMAILS: {
 				// request to start a new job
 				AddJob( msg);
@@ -591,7 +652,7 @@ void BmJobStatusWin::MessageReceived(BMessage* msg) {
 void BmJobStatusWin::AddJob( BMessage* msg) {
 	BM_assert( msg);
 
-	BString name = FindMsgString( msg, MSG_JOB_NAME);
+	BString name = FindMsgString( msg, BmJobModel::MSG_JOB_NAME);
 	BmJobStatusView* controller = NULL;
 
 	BM_LOG( BM_LogJobWin, BString("Adding job ") << name);
@@ -614,7 +675,7 @@ void BmJobStatusWin::AddJob( BMessage* msg) {
 	{	// job is inactive, so we create a new controller for it:
 		BM_LOG2( BM_LogJobWin, BString("Creating new view for ") << name);
 		switch( msg->what) {
-			case BM_JOBWIN_FETCHPOP:
+			case BM_JOBWIN_POP:
 				controller = new BmPopperView( name.String());
 				break;
 			case BM_JOBWIN_SMTP:

@@ -35,19 +35,13 @@
 //**** System header files
 //******************************************************************************************************
 #include <assert.h>
-#include <View.h>
-
 #include <layout.h>
-
-class MBView : public MView, public BView {
-	MBView( BRect frame, const char *name, uint32 resizeMask, uint32 flags) 
-	:	BView( frame, name, resizeMask, flags) {}
-};
+#include <MGroup.h>
 
 //******************************************************************************************************
 //**** UserResizeSplitView
 //******************************************************************************************************
-class UserResizeSplitView : public MView, public BView
+class UserResizeSplitView : public MGroup, public BView
 {
 	public:
 		UserResizeSplitView( MView* top_or_left_child, MView* right_or_bottom_child, 
@@ -92,6 +86,7 @@ class UserResizeSplitView : public MView, public BView
 		virtual void ResizeRightOrBottomChildTo(float width_or_height);
 
 		//BView overrides
+		virtual void AttachedToWindow();
 		virtual void Draw(BRect updateRect);
 		virtual void MouseDown(BPoint where);
 		virtual void MouseMoved(BPoint where, uint32 code, const BMessage *message);
@@ -112,21 +107,21 @@ class UserResizeSplitView : public MView, public BView
 
 	private:
 		float m_divider_left_or_top;
-		float m_preferred_divider_left_or_top;
 		orientation m_posture;
 		bool m_should_resize_left_or_top;
 		bool m_should_resize_right_or_bottom;
 		bool m_move_slider_on_frame_resize;
 		bool m_modified_cursor;
 		bool m_dragging;
-		MBView* m_left_or_top;
-		MBView* m_right_or_bottom;
+		MView* m_left_or_top;
+		MView* m_right_or_bottom;
+		BView* m_left_or_top_BV;
+		BView* m_right_or_bottom_BV;
 		rgb_color m_background_color;
 		rgb_color m_dark_1_color;
 		rgb_color m_dark_2_color;
 		float m_cached_width_or_height;
 		float m_drag_mouse_offset;
-		bool mSetupDone;
 };
 
 

@@ -2,8 +2,35 @@
 	BmUtil.cpp
 		$Id$
 */
+/*************************************************************************/
+/*                                                                       */
+/*  Beam - BEware Another Mailer                                         */
+/*                                                                       */
+/*  http://www.hirschkaefer.de/beam                                      */
+/*                                                                       */
+/*  Copyright (C) 2002 Oliver Tappe <beam@hirschkaefer.de>               */
+/*                                                                       */
+/*  This program is free software; you can redistribute it and/or        */
+/*  modify it under the terms of the GNU General Public License          */
+/*  as published by the Free Software Foundation; either version 2       */
+/*  of the License, or (at your option) any later version.               */
+/*                                                                       */
+/*  This program is distributed in the hope that it will be useful,      */
+/*  but WITHOUT ANY WARRANTY; without even the implied warranty of       */
+/*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU    */
+/*  General Public License for more details.                             */
+/*                                                                       */
+/*  You should have received a copy of the GNU General Public            */
+/*  License along with this program; if not, write to the                */
+/*  Free Software Foundation, Inc., 59 Temple Place - Suite 330,         */
+/*  Boston, MA  02111-1307, USA.                                         */
+/*                                                                       */
+/*************************************************************************/
+
 
 #include <Autolock.h>
+#include <Directory.h>
+#include <File.h>
 
 #include "BmBasics.h"
 #include "BmLogHandler.h"
@@ -24,6 +51,7 @@ const uint32 BM_LogMainWindow			= 1UL<<7;
 const uint32 BM_LogModelController	= 1UL<<8;
 const uint32 BM_LogMailEditWin		= 1UL<<9;
 const uint32 BM_LogSmtp					= 1UL<<10;
+const uint32 BM_LogPrefsWin			= 1UL<<11;
 // dummy constant meaning to log everything:
 const uint32 BM_LogAll  				= 0xffffffff;
 
@@ -61,21 +89,22 @@ void BmLogHandler::FinishLog( const BString& logname) {
 	static creator-function
 		-
 \*------------------------------------------------------------------------------*/
-BmLogHandler* BmLogHandler::CreateInstance( uint32 logLevels) {
+BmLogHandler* BmLogHandler::CreateInstance( uint32 logLevels, node_ref* appFolder) {
 	if (theInstance)
 		return theInstance;
 	else
-		return theInstance = new BmLogHandler( logLevels);
+		return theInstance = new BmLogHandler( logLevels, appFolder);
 }
 
 /*------------------------------------------------------------------------------*\
 	constructor
 		-	initializes StopWatch()
 \*------------------------------------------------------------------------------*/
-BmLogHandler::BmLogHandler( uint32 logLevels)
+BmLogHandler::BmLogHandler( uint32 logLevels, node_ref* appFolder)
 	:	mLocker("beam_loghandler")
 	,	StopWatch( "Beam_watch", true)
 	,	mLoglevels( logLevels)
+	,	mAppFolder( new BDirectory( appFolder))
 {
 }
 
@@ -91,6 +120,7 @@ BmLogHandler::~BmLogHandler() {
 		looper->LockLooper();
 		looper->Quit();
 	}
+	delete mAppFolder;
 	theInstance = NULL;
 }
 
@@ -100,13 +130,20 @@ BmLogHandler::~BmLogHandler() {
 \*------------------------------------------------------------------------------*/
 BmLogHandler::BmLogfile* BmLogHandler::FindLogfile( const BString &logname) {
 	BmAutolock lock( mLocker);
-	BString name = logname.Length() ? logname : "Beam";
 	if (lock.IsLocked()) {
+		BString name = logname.Length() ? logname : "Beam";
+		name = BString("logs/") + name + ".log";
 		LogfileMap::iterator logIter = mActiveLogs.find( name);
 		BmLogfile* log;
 		if (logIter == mActiveLogs.end()) {
 			// logfile doesn't exists, so we create it:
-			log = new BmLogfile( name);
+			mAppFolder->CreateDirectory( "logs", NULL);
+							// ensure that the logs-folder exists
+			BFile* logfile = new BFile( mAppFolder, name.String(),
+												 B_WRITE_ONLY|B_CREATE_FILE|B_OPEN_AT_END);
+			if (logfile->InitCheck() != B_OK)
+				throw BM_runtime_error( BString("Unable to open logfile ") << name);
+			log = new BmLogfile( logfile, name.String());
 			mActiveLogs[name] = log;
 		} else {
 			log = (*logIter).second;
@@ -164,20 +201,13 @@ void BmLogHandler::CloseLog( const BString &logname) {
 }
 
 /*------------------------------------------------------------------------------*\
-	LogPath
-		-	standard-path to logfiles
-		-	TODO: make this part of BmPrefs
-\*------------------------------------------------------------------------------*/
-BString BmLogHandler::BmLogfile::LogPath = "/boot/home/Sources/beam/logs/";
-
-/*------------------------------------------------------------------------------*\
 	constructor
 		- standard
 \*------------------------------------------------------------------------------*/
-BmLogHandler::BmLogfile::BmLogfile( const BString &fn)
+BmLogHandler::BmLogfile::BmLogfile( BFile* file, const char* fn)
 	:	BLooper( (BString("log_")<<fn).String(), B_DISPLAY_PRIORITY, 500)
-	,	logfile( NULL)
-	,	filename(fn)
+	,	mLogFile( file)
+	,	filename( fn)
 {
 	Run();
 }
@@ -187,7 +217,7 @@ BmLogHandler::BmLogfile::BmLogfile( const BString &fn)
 		- standard
 \*------------------------------------------------------------------------------*/
 BmLogHandler::BmLogfile::~BmLogfile() {
-	if (logfile) fclose(logfile);
+	delete mLogFile;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -211,20 +241,17 @@ void BmLogHandler::BmLogfile::MessageReceived( BMessage* msg) {
 		-	log is flushed after each write
 \*------------------------------------------------------------------------------*/
 void BmLogHandler::BmLogfile::Write( const char* const msg, int32 threadId) {
-	if (logfile == NULL) {
-		BString fn = BString(LogPath) << filename;
-		if (fn.FindFirst(".log") == B_ERROR) {
-			fn << ".log";
-		}
-		(logfile = fopen( fn.String(), "a"))
-													|| BM_THROW_RUNTIME( BString("Unable to open logfile ") << fn);
-	}
 	BString s(msg);
 	s.ReplaceAll( "\r", "<CR>");
 	s.ReplaceAll( "\n\n", "\n");
 	s.ReplaceAll( "\n", "\n                       ");
-	int result = fprintf( logfile, "<%6ld|%012Ld>: %s\n", threadId, TheLogHandler->StopWatch.ElapsedTime(), s.String());
-	if (result < 0)
+	s << "\n";
+	static char buf[40];
+	sprintf( buf, "<%6ld|%012Ld>: ", threadId, TheLogHandler->StopWatch.ElapsedTime());
+	ssize_t result;
+	if ((result = mLogFile->Write( buf, strlen( buf))) < 0)
 		throw BM_runtime_error( BString("Unable to write to logfile ") << filename);
-//	fflush( logfile);
+	if ((result = mLogFile->Write( s.String(), s.Length())) < 0)
+		throw BM_runtime_error( BString("Unable to write to logfile ") << filename);
+	mLogFile->Sync();
 }

@@ -36,7 +36,6 @@
 #include <Screen.h>
 #include <Bitmap.h>
 
-
 //******************************************************************************************************
 //**** Project header files
 //******************************************************************************************************
@@ -49,7 +48,8 @@
 //**** ImageAboutWindow
 //******************************************************************************************************
 ImageAboutWindow::ImageAboutWindow(const char* window_title, const char* app_title,
-	const BBitmap* bmap, float icon_sidebar_offset, const char* body_text)
+	const BBitmap* bmap, float icon_sidebar_offset, const char* body_text,
+	const char* email, const char* web)
 : BWindow(BRect(-1,-1,-1,-1),"",B_TITLED_WINDOW,B_NOT_RESIZABLE)
 {
 	SetTitle(window_title);
@@ -117,6 +117,10 @@ ImageAboutWindow::ImageAboutWindow(const char* window_title, const char* app_tit
 		}
 	}
 
+	// extract email and web, if defined:
+	m_email = email ? Strdup_new( email) : NULL;
+	m_web = web ? Strdup_new( web) : NULL;
+
 	//Figure out size, etc
 	m_logo_rect.Set(-1,-1,-1,-1);
 	m_above_logo.Set(-1,-1,-1,-1);;
@@ -154,10 +158,20 @@ ImageAboutWindow::ImageAboutWindow(const char* window_title, const char* app_tit
 	float title_width = be_bold_font->StringWidth(m_title);
 	float string_widths = title_width;
 	float version_width = 0;
+	float email_width = 0;
+	float web_width = 0;
 	if(m_version)
 		version_width = be_plain_font->StringWidth(m_version);
 	if(string_widths < version_width)
 		string_widths = version_width;
+	if(m_email)
+		email_width = be_plain_font->StringWidth(m_email);
+	if(string_widths < email_width)
+		string_widths = email_width;
+	if(m_web)
+		web_width = be_plain_font->StringWidth(m_web);
+	if(string_widths < web_width)
+		string_widths = web_width;
 	for(line=0; line<m_num_lines; line++)
 		if(m_lines[line] == NULL)
 			m_lines[line] = (char*)"";
@@ -191,11 +205,10 @@ ImageAboutWindow::ImageAboutWindow(const char* window_title, const char* app_tit
 		m_version_rect.top = curr_pos;
 		m_version_rect.right = m_version_rect.left + version_width;
 		m_version_rect.bottom = m_version_rect.top + plain_height;
-		if(m_num_lines > 0)
-			curr_pos = m_version_rect.bottom + ceil(bold_height*1.4);
-		else
-			curr_pos = m_version_rect.bottom;
+		curr_pos += plain_spacing;
 	}
+	if(m_num_lines > 0)
+		curr_pos += ceil(bold_height*1.4);
 
 	for(int i=0; i<m_num_lines; i++)
 	{
@@ -213,6 +226,22 @@ ImageAboutWindow::ImageAboutWindow(const char* window_title, const char* app_tit
 	}
 	if(body_lengths)
 		delete[] body_lengths;
+
+	if (m_email) {
+		m_email_rect.left = logo_right + 10 + floor((string_widths-email_width)/2);
+		m_email_rect.top = curr_pos;
+		m_email_rect.right = m_email_rect.left + email_width;
+		m_email_rect.bottom = m_email_rect.top + plain_height;
+		curr_pos += plain_spacing;
+	}
+
+	if (m_web) {
+		m_web_rect.left = logo_right + 10 + floor((string_widths-web_width)/2);
+		m_web_rect.top = curr_pos;
+		m_web_rect.right = m_web_rect.left + web_width;
+		m_web_rect.bottom = m_web_rect.top + plain_height;
+		curr_pos += plain_spacing;
+	}
 
 	if(m_bitmap && curr_pos < m_logo_rect.bottom)
 		curr_pos = m_logo_rect.bottom;
@@ -246,6 +275,8 @@ ImageAboutWindow::~ImageAboutWindow()
 		delete[] m_lines;
 	if(m_text_rects)
 		delete[] m_text_rects;
+	delete[] m_web;
+	delete[] m_email;
 	be_app->PostMessage(c_about_window_closed);
 }
 
@@ -258,6 +289,20 @@ void ImageAboutWindow::MessageReceived(BMessage *message)
 		Activate(true);
 	}
 }
+
+void ImageAboutWindow::MouseDown(BPoint point) { 
+	if (m_email && m_email_rect.Contains( point)) {
+		BMessage msg(c_about_window_url_invoked);
+		msg.AddString("url", m_email);
+		be_app->PostMessage(&msg);
+	}
+	if (m_web && m_web_rect.Contains( point)) {
+		BMessage msg(c_about_window_url_invoked);
+		msg.AddString("url", m_web);
+		be_app->PostMessage(&msg);
+	}
+}
+
 
 
 void ImageAboutWindow::DrawContent(BView* view, BRect update_rect)
@@ -285,6 +330,20 @@ void ImageAboutWindow::DrawContent(BView* view, BRect update_rect)
 	if(m_version && update_rect.Intersects(m_version_rect))
 		view->DrawString(m_version,BPoint(m_version_rect.left,m_version_rect.top+
 			m_plain_font_ascent));
+	if(m_email && update_rect.Intersects(m_email_rect)) {
+		view->SetHighColor( MedMetallicBlue);
+		view->DrawString(m_email,BPoint(m_email_rect.left,m_email_rect.top+m_plain_font_ascent));
+		view->StrokeLine(BPoint(m_email_rect.left,m_email_rect.top+m_plain_font_ascent+2), 
+							  BPoint(m_email_rect.right,m_email_rect.top+m_plain_font_ascent+2));
+		view->SetHighColor( Black);
+	}
+	if(m_web && update_rect.Intersects(m_web_rect)) {
+		view->SetHighColor( MedMetallicBlue);
+		view->DrawString(m_web,BPoint(m_web_rect.left,m_web_rect.top+m_plain_font_ascent));
+		view->StrokeLine(BPoint(m_web_rect.left,m_web_rect.top+m_plain_font_ascent+2), 
+							  BPoint(m_web_rect.right,m_web_rect.top+m_plain_font_ascent+2));
+		view->SetHighColor( Black);
+	}
 	for(int i=0; i<m_num_lines; i++)
 		if(m_lines[i] && update_rect.Intersects(m_text_rects[i]))
 			view->DrawString(m_lines[i],BPoint(m_text_rects[i].left,m_text_rects[i].top+
@@ -308,4 +367,9 @@ AboutView::AboutView(BRect rect, ImageAboutWindow* parent)
 void AboutView::Draw(BRect update_rect)
 {
 	m_parent->DrawContent(this,update_rect);
+}
+
+void AboutView::MouseDown(BPoint point) { 
+	BView::MouseDown( point);
+	m_parent->MouseDown( point);
 }

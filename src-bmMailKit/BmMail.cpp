@@ -2,6 +2,31 @@
 	BmMail.cpp
 		$Id$
 */
+/*************************************************************************/
+/*                                                                       */
+/*  Beam - BEware Another Mailer                                         */
+/*                                                                       */
+/*  http://www.hirschkaefer.de/beam                                      */
+/*                                                                       */
+/*  Copyright (C) 2002 Oliver Tappe <beam@hirschkaefer.de>               */
+/*                                                                       */
+/*  This program is free software; you can redistribute it and/or        */
+/*  modify it under the terms of the GNU General Public License          */
+/*  as published by the Free Software Foundation; either version 2       */
+/*  of the License, or (at your option) any later version.               */
+/*                                                                       */
+/*  This program is distributed in the hope that it will be useful,      */
+/*  but WITHOUT ANY WARRANTY; without even the implied warranty of       */
+/*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU    */
+/*  General Public License for more details.                             */
+/*                                                                       */
+/*  You should have received a copy of the GNU General Public            */
+/*  License along with this program; if not, write to the                */
+/*  Free Software Foundation, Inc., 59 Temple Place - Suite 330,         */
+/*  Boston, MA  02111-1307, USA.                                         */
+/*                                                                       */
+/*************************************************************************/
+
 
 //#include <ctime>
 //#include <memory>
@@ -171,22 +196,21 @@ void BmMail::MarkAs( const char* status) {
 	if (InitCheck() != B_OK)
 		return;
 	try {
-		BNode mailNode;
-		status_t err;
-		entry_ref eref;
-		// we write the new status...
 		if (mMailRef)
-			eref = mMailRef->EntryRef();
-		else if (mEntry.InitCheck() == B_OK)
-			mEntry.GetRef( &eref);
-		else
-			return;
-		(err = mailNode.SetTo( &eref)) == B_OK
+			mMailRef->MarkAs( status);
+		else {
+			BNode mailNode;
+			status_t err;
+			entry_ref eref;
+			// we write the new status...
+			if (mEntry.InitCheck() == B_OK)
+				mEntry.GetRef( &eref);
+			else
+				return;
+			(err = mailNode.SetTo( &eref)) == B_OK
 													|| BM_THROW_RUNTIME( BString("Could not create node for current mail-file.\n\n Result: ") << strerror(err));
-		mailNode.WriteAttr( BM_MAIL_ATTR_STATUS, B_STRING_TYPE, 0, status, strlen( status)+1);
-		// ...and tell the mail-ref, if neccessary:
-		if (mMailRef)
-			mMailRef->Status( status);
+			mailNode.WriteAttr( BM_MAIL_ATTR_STATUS, B_STRING_TYPE, 0, status, strlen( status)+1);
+		}
 	} catch( exception &e) {
 		BM_SHOWERR(e.what());
 	}
@@ -273,37 +297,7 @@ BmRef<BmMail> BmMail::CreateInlineForward( bool withAttachments, const BString s
 	// massage subject, if neccessary:
 	BString subject = GetFieldVal( BM_FIELD_SUBJECT);
 	newMail->SetFieldVal( BM_FIELD_SUBJECT, CreateForwardSubjectFor( subject));
-	// copy and quote text-body:
-	BmRef<BmBodyPart> textBody( mBody->EditableTextBody());
-	BString charset = textBody->Charset();
-	BString text;
-	if (selectedText.Length())
-		text = selectedText;
-	else
-		text = textBody->DecodedData();
-	BString quotedText;
-	QuoteText( text, quotedText,
-				  ThePrefs->GetString( "QuotingString"),
-				  ThePrefs->GetInt( "MaxLineLen"));
-	newMail->Body()->SetEditableText( CreateForwardIntro() << "\n" << quotedText, 
-												 CharsetToEncoding( charset));
-	if (withAttachments && mBody->IsMultiPart()) {
-		BmBodyPart* body = dynamic_cast< BmBodyPart*>( mBody->begin()->second.Get());
-		if (body) {
-			// copy all attachments (maybe except v-cards):
-			bool doNotAttachVCards = ThePrefs->GetBool( "DoNotAttachVCardsToForward", true);
-			BmModelItemMap::const_iterator iter;
-			for( iter = body->begin(); iter != body->end(); iter++) {
-				BmBodyPart* bodyPart = dynamic_cast< BmBodyPart*>( iter->second.Get());
-				if (textBody != bodyPart) {
-					if (doNotAttachVCards && bodyPart->MimeType().ICompare( "text/x-vcard") == 0)
-						continue;
-					BmBodyPart* copiedBody = new BmBodyPart( *bodyPart);
-					newMail->Body()->AddItemToList( copiedBody);
-				}
-			}
-		}
-	}
+	newMail->AddPartsFromMail( this, withAttachments, selectedText);
 	newMail->SetBaseMailInfo( MailRef(), "Forwarded");
 	return newMail;
 }
@@ -343,13 +337,15 @@ BmRef<BmMail> BmMail::CreateReply( bool replyToAll, const BString selectedText) 
 		newTo = GetFieldVal( BM_FIELD_SENDER);
 	newMail->SetFieldVal( BM_FIELD_TO, newTo);
 	// Since we are replying, we generate the new mail's from-address 
-	// from the received mail's pop-account info:
+	// from the received mail's to-info:
 	BmRef<BmListModelItem> accRef = ThePopAccountList->FindItemByKey( AccountName());
 	BmPopAccount* acc = dynamic_cast< BmPopAccount*>( accRef.Get());
-	BString fromAddr;
+	BString receivingAddr;
 	if (acc) {
-		fromAddr = acc->GetFromAddress();
-		newMail->SetFieldVal( BM_FIELD_FROM, fromAddr);
+		receivingAddr = Header()->DetermineReceivingAddrFor( acc);
+		if (!receivingAddr.Length())
+			receivingAddr = acc->GetFromAddress();
+		newMail->SetFieldVal( BM_FIELD_FROM, receivingAddr);
 	}
 	// if we are replying to all, we may need to include more addresses:
 	if (replyToAll) {
@@ -357,12 +353,12 @@ BmRef<BmMail> BmMail::CreateReply( bool replyToAll, const BString selectedText) 
 		if (!newCc.Length())
 			newCc = GetFieldVal( BM_FIELD_CC);
 		newMail->SetFieldVal( BM_FIELD_CC, newCc);
-		newMail->Header()->RemoveAddrFieldVal( BM_FIELD_CC, fromAddr);
+		newMail->Header()->RemoveAddrFieldVal( BM_FIELD_CC, receivingAddr);
 		BString additionalTo = GetFieldVal( BM_FIELD_RESENT_CC);
 		if (!additionalTo.Length())
 			additionalTo = GetFieldVal( BM_FIELD_TO);
 		newMail->SetFieldVal( BM_FIELD_TO, additionalTo);
-		newMail->Header()->RemoveAddrFieldVal( BM_FIELD_TO, fromAddr);
+		newMail->Header()->RemoveAddrFieldVal( BM_FIELD_TO, receivingAddr);
 	}
 	// massage subject, if neccessary:
 	BString subject = GetFieldVal( BM_FIELD_SUBJECT);
@@ -455,6 +451,66 @@ BString BmMail::CreateForwardIntro() {
 	intro = rx.replace( intro, "%F", mMailRef->From(), 
 							  Regexx::nocase|Regexx::global|Regexx::noatom);
 	return intro;
+}
+
+/*------------------------------------------------------------------------------*\
+	AddAttachmenstFromRef()
+	-	
+\*------------------------------------------------------------------------------*/
+void BmMail::AddAttachmentFromRef( const entry_ref* ref) {
+	if (mBody)
+		mBody->AddAttachmentFromRef( ref);
+}
+
+/*------------------------------------------------------------------------------*\
+	AddPartsFromMail()
+	-	
+\*------------------------------------------------------------------------------*/
+void BmMail::AddPartsFromMail( BmRef<BmMail> mail, bool withAttachments, 
+										 const BString selectedText) {
+	if (!mail || !mail->Body() || !mBody)
+		return;
+	// copy and quote text-body:
+	BmRef<BmBodyPart> newTextBody( mBody->EditableTextBody());
+	BString oldText = newTextBody ? newTextBody->DecodedData() : "";
+	BmRef<BmBodyPart> textBody( mail->Body()->EditableTextBody());
+	BString charset = EncodingToCharset( ThePrefs->GetInt( "DefaultEncoding"));
+	BString newText;
+	if (textBody) {
+		charset = textBody->Charset();
+		if (selectedText.Length())
+			newText = selectedText;
+		else
+			newText = textBody->DecodedData();
+	} else
+		newText = selectedText;
+	BString quotedText;
+	QuoteText( newText, quotedText,
+				  ThePrefs->GetString( "QuotingString"),
+				  ThePrefs->GetInt( "MaxLineLen"));
+	BString intro( mail->CreateForwardIntro() << "\n");
+	mBody->SetEditableText( oldText + "\n" + intro + quotedText, CharsetToEncoding( charset));
+	if (withAttachments && mail->Body()->HasAttachments()) {
+		BmModelItemMap::const_iterator iter, end;
+		if (mail->Body()->IsMultiPart()) {
+			iter = mail->Body()->begin()->second->begin();
+			end = mail->Body()->begin()->second->end();
+		} else {
+			iter = mail->Body()->begin();
+			end = mail->Body()->end();
+		}
+		// copy all attachments (maybe except v-cards):
+		bool doNotAttachVCards = ThePrefs->GetBool( "DoNotAttachVCardsToForward", true);
+		for( ; iter != end; iter++) {
+			BmBodyPart* bodyPart = dynamic_cast< BmBodyPart*>( iter->second.Get());
+			if (textBody != bodyPart) {
+				if (doNotAttachVCards && bodyPart->MimeType().ICompare( "text/x-vcard") == 0)
+					continue;
+				BmBodyPart* copiedBody = new BmBodyPart( *bodyPart);
+				mBody->AddItemToList( copiedBody);
+			}
+		}
+	}
 }
 
 /*------------------------------------------------------------------------------*\
@@ -583,7 +639,7 @@ bool BmMail::Store() {
 			mMailRef->ResyncFromDisk();
 		}
 		if (mBaseMailRef) {
-			mBaseMailRef->Status( mNewBaseStatus.String());
+			mBaseMailRef->MarkAs( mNewBaseStatus.String());
 			mBaseMailRef = NULL;
 		}
 		StartJobInThisThread();
@@ -708,6 +764,15 @@ bool BmMail::StartJob() {
 		BM_SHOWERR( e.what());
 	}
 	return InitCheck() == B_OK;
+}
+
+/*------------------------------------------------------------------------------*\
+	ResyncFromDisk()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMail::ResyncFromDisk() {
+	mInitCheck = B_NO_INIT;
+	StartJobInThisThread();
 }
 
 /*------------------------------------------------------------------------------*\

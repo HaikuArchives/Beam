@@ -2,6 +2,31 @@
 	BmMailFolderList.h
 		$Id$
 */
+/*************************************************************************/
+/*                                                                       */
+/*  Beam - BEware Another Mailer                                         */
+/*                                                                       */
+/*  http://www.hirschkaefer.de/beam                                      */
+/*                                                                       */
+/*  Copyright (C) 2002 Oliver Tappe <beam@hirschkaefer.de>               */
+/*                                                                       */
+/*  This program is free software; you can redistribute it and/or        */
+/*  modify it under the terms of the GNU General Public License          */
+/*  as published by the Free Software Foundation; either version 2       */
+/*  of the License, or (at your option) any later version.               */
+/*                                                                       */
+/*  This program is distributed in the hope that it will be useful,      */
+/*  but WITHOUT ANY WARRANTY; without even the implied warranty of       */
+/*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU    */
+/*  General Public License for more details.                             */
+/*                                                                       */
+/*  You should have received a copy of the GNU General Public            */
+/*  License along with this program; if not, write to the                */
+/*  Free Software Foundation, Inc., 59 Temple Place - Suite 330,         */
+/*  Boston, MA  02111-1307, USA.                                         */
+/*                                                                       */
+/*************************************************************************/
+
 
 #ifndef _BmMailFolderList_h
 #define _BmMailFolderList_h
@@ -77,6 +102,7 @@ public:
 	void SetFolderForNodeFlaggedNew( ino_t node, BmMailFolder* folder);
 	BmMailFolder* GetFolderForNodeFlaggedNew( ino_t node);
 	bool NodeIsFlaggedNew( ino_t node);
+	void QueryForNewMails();
 	
 	// overrides of list-model base:
 	bool StartJob();
@@ -93,7 +119,6 @@ private:
 	int doInitializeMailFolders( BmMailFolder* folder, int level);
 	void InstantiateItems( BMessage* archive);
 	void doInstantiateMailFolders( BmMailFolder* folder, BMessage* archive, int level);
-	void QueryForNewMails();
 
 	// overrides of listmodel base:
 	int16 ArchiveVersion() const			{ return nArchiveVersion; }

@@ -3,6 +3,31 @@
 
 		$Id$
 */
+/*************************************************************************/
+/*                                                                       */
+/*  Beam - BEware Another Mailer                                         */
+/*                                                                       */
+/*  http://www.hirschkaefer.de/beam                                      */
+/*                                                                       */
+/*  Copyright (C) 2002 Oliver Tappe <beam@hirschkaefer.de>               */
+/*                                                                       */
+/*  This program is free software; you can redistribute it and/or        */
+/*  modify it under the terms of the GNU General Public License          */
+/*  as published by the Free Software Foundation; either version 2       */
+/*  of the License, or (at your option) any later version.               */
+/*                                                                       */
+/*  This program is distributed in the hope that it will be useful,      */
+/*  but WITHOUT ANY WARRANTY; without even the implied warranty of       */
+/*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU    */
+/*  General Public License for more details.                             */
+/*                                                                       */
+/*  You should have received a copy of the GNU General Public            */
+/*  License along with this program; if not, write to the                */
+/*  Free Software Foundation, Inc., 59 Temple Place - Suite 330,         */
+/*  Boston, MA  02111-1307, USA.                                         */
+/*                                                                       */
+/*************************************************************************/
+
 
 #ifndef _BmPopAccount_h
 #define _BmPopAccount_h
@@ -25,7 +50,13 @@
 
 #include "BmDataModel.h"
 
+class BHandler;
 class BmPopAccountList;
+
+
+#define BM_JOBWIN_POP					'bmea'
+						// sent to JobMetaController in order to start pop-connection
+
 /*------------------------------------------------------------------------------*\
 	BmPopAccount 
 		-	holds information about one specific POP3-account
@@ -50,6 +81,8 @@ class BmPopAccount : public BmListModelItem {
 	static const char* const MSG_AUTH_METHOD = 	"bm:authmethod";
 	static const char* const MSG_MARK_DEFAULT = 	"bm:markdefault";
 	static const char* const MSG_STORE_PWD = 		"bm:storepwd";
+	static const char* const MSG_MAIL_ALIASES = 	"bm:mailaliases";
+	static const char* const MSG_MARK_BUCKET = 	"bm:markbucket";
 	static const int16 nArchiveVersion = 1;
 
 public:
@@ -61,6 +94,8 @@ public:
 	bool IsUIDDownloaded( BString uid);
 	void MarkUIDAsDownloaded( BString uid);
 	BString GetFromAddress() const;
+	BString GetDomainName() const;
+	bool HandlesAddress( BString addr, bool needExactMatch=false) const;
 
 	// stuff needed for Archival:
 	status_t Archive( BMessage* archive, bool deep = true) const;
@@ -71,11 +106,14 @@ public:
 	inline bool CheckMail() const 				{ return mCheckMail; }
 	inline bool DeleteMailFromServer() const	{ return mDeleteMailFromServer; }
 	inline const BString &MailAddr() const 	{ return mMailAddr; }
+	inline const BString &MailAliases() const { return mMailAliases; }
 	inline bool MarkedAsDefault() const			{ return mMarkedAsDefault; }
+	inline bool MarkedAsBitBucket() const		{ return mMarkedAsBitBucket; }
 	inline const BString &Name() const 			{ return Key(); }
 	inline const BString &Password() const 	{ return mPassword; }
 	inline const BString &POPServer() const	{ return mPOPServer; }
 	inline int16 PortNr() const 					{ return mPortNr; }
+	inline const BString &PortNrString() const{ return mPortNrString; }
 	inline bool PwdStoredOnDisk() const			{ return mPwdStoredOnDisk; }
 	inline const BString &RealName() const 	{ return mRealName; }
 	inline const BString &SignatureName() const	 { return mSignatureName; }
@@ -87,10 +125,12 @@ public:
 	inline void CheckMail( bool b) 				{ mCheckMail = b; }
 	inline void DeleteMailFromServer( bool b)	{ mDeleteMailFromServer = b; }
 	inline void MailAddr( const BString &s) 	{ mMailAddr = s; }
+	inline void MailAliases( const BString &s){ mMailAliases = s; }
 	inline void MarkedAsDefault( bool b)		{ mMarkedAsDefault = b; }
+	inline void MarkedAsBitBucket( bool b)		{ mMarkedAsBitBucket = b; }
 	inline void Password( const BString &s) 	{ mPassword = s; }
 	inline void POPServer( const BString &s)	{ mPOPServer = s; }
-	inline void PortNr( int16 i) 					{ mPortNr = i; }
+	inline void PortNr( int16 i) 					{ mPortNr = i; mPortNrString = BString()<<i; }
 	inline void PwdStoredOnDisk( bool b)		{ mPwdStoredOnDisk = b; }
 	inline void RealName( const BString &s) 	{ mRealName = s; }
 	inline void SignatureName( const BString &s)	 { mSignatureName = s; }
@@ -113,13 +153,16 @@ private:
 											// mail "from" this POP-account
 	BString mRealName;
 	BString mMailAddr;				// address to use (instead of composed address)
+	BString mMailAliases;			// addresses that belong to this POP-Account, too
 	BString mSignatureName;			// name&path of signature file
 	int16 mPortNr;						// usually 110
+	BString mPortNrString;			// mPortNr as String
 	bool mCheckMail;					// include this account in global mail-check?
 	bool mDeleteMailFromServer;	// delete mails upon receive?
 	BString mAuthMethod;				// authentication method
 	bool mMarkedAsDefault;			// is this the default account?
 	bool mPwdStoredOnDisk;			// store Passwords unsafely on disk?
+	bool mMarkedAsBitBucket;		// is this account the fallback-account for failed delivery?
 
 	vector<BString> mUIDs;			// list of UIDs seen in this account
 
@@ -138,14 +181,16 @@ class BmPopAccountList : public BmListModel {
 
 public:
 	// creator-func, c'tors and d'tor:
-	static BmPopAccountList* CreateInstance();
-	BmPopAccountList();
+	static BmPopAccountList* CreateInstance( BLooper* jobMetaController);
+	BmPopAccountList( BLooper* jobMetaController);
 	~BmPopAccountList();
 	
 	// native methods:
-	void CheckMail();
+	void CheckMail( bool allAccounts=false);
 	void CheckMailFor( BString accName);
+	void AuthOnlyFor( BString accName);
 	BmRef<BmPopAccount> DefaultAccount();
+	BmRef<BmPopAccount> FindAccountForAddress( const BString addr);
 	
 	// overrides of listmodel base:
 	const BString SettingsFileName();
@@ -158,6 +203,8 @@ private:
 	// Hide copy-constructor and assignment:
 	BmPopAccountList( const BmPopAccountList&);
 	BmPopAccountList operator=( const BmPopAccountList&);
+	
+	BLooper* mJobMetaController;
 
 };
 

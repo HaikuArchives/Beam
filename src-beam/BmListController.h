@@ -2,6 +2,31 @@
 	BmListController.h
 		$Id$
 */
+/*************************************************************************/
+/*                                                                       */
+/*  Beam - BEware Another Mailer                                         */
+/*                                                                       */
+/*  http://www.hirschkaefer.de/beam                                      */
+/*                                                                       */
+/*  Copyright (C) 2002 Oliver Tappe <beam@hirschkaefer.de>               */
+/*                                                                       */
+/*  This program is free software; you can redistribute it and/or        */
+/*  modify it under the terms of the GNU General Public License          */
+/*  as published by the Free Software Foundation; either version 2       */
+/*  of the License, or (at your option) any later version.               */
+/*                                                                       */
+/*  This program is distributed in the hope that it will be useful,      */
+/*  but WITHOUT ANY WARRANTY; without even the implied warranty of       */
+/*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU    */
+/*  General Public License for more details.                             */
+/*                                                                       */
+/*  You should have received a copy of the GNU General Public            */
+/*  License along with this program; if not, write to the                */
+/*  Free Software Foundation, Inc., 59 Temple Place - Suite 330,         */
+/*  Boston, MA  02111-1307, USA.                                         */
+/*                                                                       */
+/*************************************************************************/
+
 
 #ifndef _BmListController_h
 #define _BmListController_h
@@ -25,6 +50,8 @@ class BmListViewController;
 							// the user has chosen to show a column
 #define BM_LISTVIEW_HIDE_COLUMN		'bmcb'
 							// the user has chosen to hide a column
+#define BM_NTFY_LISTCONTROLLER_MODIFIED 'bmcc'
+							// item has been added/removed
 
 /*------------------------------------------------------------------------------*\
 	BmListViewItem
@@ -153,6 +180,9 @@ public:
 															  BMessage* archive=NULL) 			= 0;
 	//
 	BMessage* GetArchiveForItemKey( BString, BMessage* msg=NULL);
+	//
+	virtual void WriteStateInfo();
+	virtual void ReadStateInfo();
 
 	// overrides of controller base:
 	void AttachModel( BmDataModel* model=NULL);
@@ -188,8 +218,6 @@ protected:
 	// archival of the controller's state-info:
 	virtual status_t Archive(BMessage* archive, bool deep=true) const;
 	virtual BString StateInfoBasename()				= 0;
-	virtual void WriteStateInfo();
-	virtual void ReadStateInfo();
 	virtual const BMessage* DefaultLayout()	{ return NULL; }
 
 	BMessage* mInitialStateInfo;

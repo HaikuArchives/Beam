@@ -2,6 +2,31 @@
 	BmLogHandler.h
 		$Id$
 */
+/*************************************************************************/
+/*                                                                       */
+/*  Beam - BEware Another Mailer                                         */
+/*                                                                       */
+/*  http://www.hirschkaefer.de/beam                                      */
+/*                                                                       */
+/*  Copyright (C) 2002 Oliver Tappe <beam@hirschkaefer.de>               */
+/*                                                                       */
+/*  This program is free software; you can redistribute it and/or        */
+/*  modify it under the terms of the GNU General Public License          */
+/*  as published by the Free Software Foundation; either version 2       */
+/*  of the License, or (at your option) any later version.               */
+/*                                                                       */
+/*  This program is distributed in the hope that it will be useful,      */
+/*  but WITHOUT ANY WARRANTY; without even the implied warranty of       */
+/*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU    */
+/*  General Public License for more details.                             */
+/*                                                                       */
+/*  You should have received a copy of the GNU General Public            */
+/*  License along with this program; if not, write to the                */
+/*  Free Software Foundation, Inc., 59 Temple Place - Suite 330,         */
+/*  Boston, MA  02111-1307, USA.                                         */
+/*                                                                       */
+/*************************************************************************/
+
 
 #ifndef _BmLogHandler_h
 #define _BmLogHandler_h
@@ -19,6 +44,9 @@
 \*------------------------------------------------------------------------------*/
 #define BM_LOG_MSG						'bmia'
 
+class BDirectory;
+class BFile;
+struct node_ref;
 /*------------------------------------------------------------------------------*\*\
 	BmLogHandler
 		-	implements the global log-handler that received all logging requests and
@@ -35,8 +63,8 @@ public:
 	static void FinishLog( const BString& logname);
 
 	// creator-func, c'tors and d'tor
-	static BmLogHandler* CreateInstance( uint32 logLevels);
-	BmLogHandler( uint32 logLevels);
+	static BmLogHandler* CreateInstance( uint32 logLevels, node_ref* appFolder);
+	BmLogHandler( uint32 logLevels, node_ref* appFolder);
 	~BmLogHandler();
 
 	// native methods:
@@ -69,15 +97,13 @@ private:
 	class BmLogfile : public BLooper{
 		typedef BLooper inherited;
 	public:
-		BmLogfile( const BString &fn);
+		BmLogfile( BFile* file, const char* fn);
 		~BmLogfile();
 		void Write( const char* const msg, const int32 threadId);
 		void MessageReceived( BMessage* msg);
 	
-		static BString LogPath;
-	
 	private:
-		FILE* logfile;
+		BFile* mLogFile;
 		BString filename;
 
 		// Hide copy-constructor and assignment:
@@ -89,6 +115,7 @@ private:
 	LogfileMap mActiveLogs;					// map of names to logfiles
 	BLocker mLocker;							// benaphore used to lock write-access to map
 	uint32 mLoglevels;
+	BDirectory* mAppFolder;
 };
 
 /*------------------------------------------------------------------------------*\*\
@@ -108,6 +135,7 @@ extern const uint32 BM_LogMainWindow;
 extern const uint32 BM_LogModelController;
 extern const uint32 BM_LogMailEditWin;
 extern const uint32 BM_LogSmtp;
+extern const uint32 BM_LogPrefsWin;
 extern const uint32 BM_LogAll;
 
 // macros to convert the loglevel for a specific flag 

@@ -3,14 +3,42 @@
 
 		$Id$
 */
+/*************************************************************************/
+/*                                                                       */
+/*  Beam - BEware Another Mailer                                         */
+/*                                                                       */
+/*  http://www.hirschkaefer.de/beam                                      */
+/*                                                                       */
+/*  Copyright (C) 2002 Oliver Tappe <beam@hirschkaefer.de>               */
+/*                                                                       */
+/*  This program is free software; you can redistribute it and/or        */
+/*  modify it under the terms of the GNU General Public License          */
+/*  as published by the Free Software Foundation; either version 2       */
+/*  of the License, or (at your option) any later version.               */
+/*                                                                       */
+/*  This program is distributed in the hope that it will be useful,      */
+/*  but WITHOUT ANY WARRANTY; without even the implied warranty of       */
+/*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU    */
+/*  General Public License for more details.                             */
+/*                                                                       */
+/*  You should have received a copy of the GNU General Public            */
+/*  License along with this program; if not, write to the                */
+/*  Free Software Foundation, Inc., 59 Temple Place - Suite 330,         */
+/*  Boston, MA  02111-1307, USA.                                         */
+/*                                                                       */
+/*************************************************************************/
+
 
 #include <ByteOrder.h>
 #include <File.h>
 #include <Message.h>
 
+#include "regexx.hh"
+using namespace regexx;
+
 #include "BmBasics.h"
-#include "BmJobStatusWin.h"
 #include "BmPopAccount.h"
+#include "BmPopper.h"
 #include "BmResources.h"
 #include "BmUtil.h"
 
@@ -47,13 +75,16 @@ BmPopAccount::BmPopAccount( BMessage* archive, BmPopAccountList* model)
 	mSMTPAccount = FindMsgString( archive, MSG_SMTP_ACCOUNT);
 	mRealName = FindMsgString( archive, MSG_REAL_NAME);
 	mMailAddr = FindMsgString( archive, MSG_MAIL_ADDR);
+	mMailAliases = FindMsgString( archive, MSG_MAIL_ALIASES);
 	mSignatureName = FindMsgString( archive, MSG_SIGNATURE_NAME);
 	mCheckMail = FindMsgBool( archive, MSG_CHECK_MAIL);
 	mDeleteMailFromServer = FindMsgBool( archive, MSG_DELETE_MAIL);
 	mPortNr = FindMsgInt16( archive, MSG_PORT_NR);
+	mPortNrString << mPortNr;
 	mAuthMethod = FindMsgString( archive, MSG_AUTH_METHOD);
 	mMarkedAsDefault = FindMsgBool( archive, MSG_MARK_DEFAULT);
 	mPwdStoredOnDisk = FindMsgBool( archive, MSG_STORE_PWD);
+	mMarkedAsBitBucket = FindMsgBool( archive, MSG_MARK_BUCKET);
 	const char* uid;
 	for( int32 i=0; archive->FindString( MSG_UID, i, &uid) == B_OK; ++i) {
 		mUIDs.push_back( uid);
@@ -74,13 +105,15 @@ status_t BmPopAccount::Archive( BMessage* archive, bool deep) const {
 		||	archive->AddString( MSG_SMTP_ACCOUNT, mSMTPAccount.String())
 		||	archive->AddString( MSG_REAL_NAME, mRealName.String())
 		||	archive->AddString( MSG_MAIL_ADDR, mMailAddr.String())
+		||	archive->AddString( MSG_MAIL_ALIASES, mMailAliases.String())
 		||	archive->AddString( MSG_SIGNATURE_NAME, mSignatureName.String())
 		||	archive->AddBool( MSG_CHECK_MAIL, mCheckMail)
 		||	archive->AddBool( MSG_DELETE_MAIL, mDeleteMailFromServer)
 		||	archive->AddInt16( MSG_PORT_NR, mPortNr)
 		||	archive->AddString( MSG_AUTH_METHOD, mAuthMethod.String())
 		||	archive->AddBool( MSG_MARK_DEFAULT, mMarkedAsDefault)
-		||	archive->AddBool( MSG_STORE_PWD, mPwdStoredOnDisk));
+		||	archive->AddBool( MSG_STORE_PWD, mPwdStoredOnDisk)
+		||	archive->AddBool( MSG_MARK_BUCKET, mMarkedAsBitBucket));
 	int32 count = mUIDs.size();
 	for( int i=0; ret==B_OK && i<count; ++i) {
 		ret = archive->AddString( MSG_UID, mUIDs[i].String());
@@ -97,23 +130,59 @@ bool BmPopAccount::GetPOPAddress( BNetAddress* addr) const {
 }
 
 /*------------------------------------------------------------------------------*\
+	GetDomainName()
+		-	returns the domain of this POP-Account
+\*------------------------------------------------------------------------------*/
+BString BmPopAccount::GetDomainName() const {
+	int32 dotPos = mPOPServer.FindFirst(".");
+	if (dotPos != B_ERROR)
+		return mPOPServer.String()+dotPos+1;
+	else
+		return "";
+}
+
+/*------------------------------------------------------------------------------*\
 	GetFromAddress()
 		-	returns the constructed from - address for this account
 \*------------------------------------------------------------------------------*/
 BString BmPopAccount::GetFromAddress() const {
 	BString addr( mRealName);
+	BString domainPart = GetDomainName();
+	if (domainPart.Length())
+		domainPart.Prepend( "@");
 	if (addr.Length()) {
 		if (mMailAddr.Length())
 			addr << " <" << mMailAddr << ">";
 		else
-			addr << " <" << mUsername << "@" << mPOPServer << ">";
+			addr << " <" << mUsername << domainPart << ">";
 	} else {
 		if (mMailAddr.Length())
 			addr << mMailAddr;
 		else
-			addr << mUsername << "@" << mPOPServer;
+			addr << mUsername << domainPart;
 	}
 	return addr;
+}
+
+/*------------------------------------------------------------------------------*\
+	HandlesAddress()
+		-	determines if the given address belongs to this POP-account
+\*------------------------------------------------------------------------------*/
+bool BmPopAccount::HandlesAddress( BString addr, bool needExactMatch) const {
+	Regexx rx;
+	if (addr == GetFromAddress())
+		return true;
+	int32 atPos = addr.FindFirst("@");
+	if (atPos != B_ERROR) {
+		BString addrDomain( addr.String()+atPos+1);
+		if (addrDomain != GetDomainName())
+			return false;						// address is from different domain
+		addr.Truncate( atPos);
+	}
+	if (!needExactMatch && mMarkedAsBitBucket)
+		return true;
+	BString regex = BString("\\b") + addr + "\\b";
+	return rx.exec( mMailAliases, regex) > 0;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -152,9 +221,9 @@ BmRef< BmPopAccountList> BmPopAccountList::theInstance( NULL);
 	CreateInstance()
 		-	initialiazes object by reading info from settings file (if any)
 \*------------------------------------------------------------------------------*/
-BmPopAccountList* BmPopAccountList::CreateInstance() {
+BmPopAccountList* BmPopAccountList::CreateInstance( BLooper* jobMetaController) {
 	if (!theInstance) {
-		theInstance = new BmPopAccountList;
+		theInstance = new BmPopAccountList( jobMetaController);
 	}
 	return theInstance.Get();
 }
@@ -163,8 +232,9 @@ BmPopAccountList* BmPopAccountList::CreateInstance() {
 	BmPopAccountList()
 		-	default constructor, creates empty list
 \*------------------------------------------------------------------------------*/
-BmPopAccountList::BmPopAccountList()
+BmPopAccountList::BmPopAccountList( BLooper* jobMetaController)
 	:	inherited( "PopAccountList") 
+	,	mJobMetaController( jobMetaController)
 {
 }
 
@@ -216,21 +286,49 @@ BmRef<BmPopAccount> BmPopAccountList::DefaultAccount() {
 			return acc;
 		}
 	}
-	if (size() == 1)
+	if (size() >= 1)
 		return dynamic_cast< BmPopAccount*>( begin()->second.Get());
 	else
 		return NULL;
 }
 
 /*------------------------------------------------------------------------------*\
+	FindAccountForAddress()
+		-	
+\*------------------------------------------------------------------------------*/
+BmRef<BmPopAccount> BmPopAccountList::FindAccountForAddress( const BString addr) {
+	BmModelItemMap::const_iterator iter;
+	// we first check whether any account handles the given address as alias:
+	for( iter = begin(); iter != end(); ++iter) {
+		BmPopAccount* acc = dynamic_cast< BmPopAccount*>( iter->second.Get());
+		if (acc->HandlesAddress( addr, true)) {
+			return acc;
+		}
+	}
+	// may we have a bit-bucket account (fallback for failed delivery):
+	for( iter = begin(); iter != end(); ++iter) {
+		BmPopAccount* acc = dynamic_cast< BmPopAccount*>( iter->second.Get());
+		if (acc->MarkedAsBitBucket()) {
+			BString regex = acc->GetDomainName()<<"$";
+			Regexx rx;
+			if (rx.exec( addr, regex))
+				return acc;
+		}
+	}
+	// nothing found !?!
+	return NULL;
+}
+
+
+/*------------------------------------------------------------------------------*\
 	CheckMail()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmPopAccountList::CheckMail() {
+void BmPopAccountList::CheckMail( bool allAccounts) {
 	BmModelItemMap::const_iterator iter;
 	for( iter = begin(); iter != end(); ++iter) {
 		BmPopAccount* acc = dynamic_cast< BmPopAccount*>( iter->second.Get());
-		if (acc->CheckMail()) {
+		if (allAccounts || acc->CheckMail()) {
 			CheckMailFor( acc->Name());
 		}
 	}
@@ -241,7 +339,18 @@ void BmPopAccountList::CheckMail() {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmPopAccountList::CheckMailFor( BString accName) {
-	BMessage archive(BM_JOBWIN_FETCHPOP);
-	archive.AddString( BmJobStatusWin::MSG_JOB_NAME, accName.String());
-	TheJobStatusWin->PostMessage( &archive);
+	BMessage archive(BM_JOBWIN_POP);
+	archive.AddString( BmJobModel::MSG_JOB_NAME, accName.String());
+	mJobMetaController->PostMessage( &archive);
+}
+
+/*------------------------------------------------------------------------------*\
+	AuthOnlyFor()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmPopAccountList::AuthOnlyFor( BString accName) {
+	BMessage msg(BM_JOBWIN_POP);
+	msg.AddString( BmJobModel::MSG_JOB_NAME, accName.String());
+	msg.AddInt32( BmJobModel::MSG_JOB_SPEC, BmPopper::BM_AUTH_ONLY_JOB);
+	mJobMetaController->PostMessage( &msg);
 }

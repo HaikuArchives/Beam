@@ -2,7 +2,33 @@
 	BmApp.cpp
 		$Id$
 */
+/*************************************************************************/
+/*                                                                       */
+/*  Beam - BEware Another Mailer                                         */
+/*                                                                       */
+/*  http://www.hirschkaefer.de/beam                                      */
+/*                                                                       */
+/*  Copyright (C) 2002 Oliver Tappe <beam@hirschkaefer.de>               */
+/*                                                                       */
+/*  This program is free software; you can redistribute it and/or        */
+/*  modify it under the terms of the GNU General Public License          */
+/*  as published by the Free Software Foundation; either version 2       */
+/*  of the License, or (at your option) any later version.               */
+/*                                                                       */
+/*  This program is distributed in the hope that it will be useful,      */
+/*  but WITHOUT ANY WARRANTY; without even the implied warranty of       */
+/*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU    */
+/*  General Public License for more details.                             */
+/*                                                                       */
+/*  You should have received a copy of the GNU General Public            */
+/*  License along with this program; if not, write to the                */
+/*  Free Software Foundation, Inc., 59 Temple Place - Suite 330,         */
+/*  Boston, MA  02111-1307, USA.                                         */
+/*                                                                       */
+/*************************************************************************/
 
+
+#include <Alert.h>
 #include <AppFileInfo.h>
 #include <Roster.h>
 #include <Screen.h>
@@ -60,7 +86,10 @@ BmApplication::BmApplication( const char* sig)
 		BmAppNameWithVersion = BmAppName + " " + BmAppVersion;
 
 		// create the log-handler:
-		BmLogHandler::CreateInstance( 1);
+		node_ref nref;
+		nref.device = appInfo.ref.device;
+		nref.node = appInfo.ref.directory;
+		BmLogHandler::CreateInstance( 1, &nref);
 
 		// load/determine all needed resources:
 		BmResources::CreateInstance();
@@ -77,8 +106,8 @@ BmApplication::BmApplication( const char* sig)
 		TheJobStatusWin->Show();
 
 		TheMailFolderList = BmMailFolderList::CreateInstance();
-		TheSmtpAccountList = BmSmtpAccountList::CreateInstance();
-		ThePopAccountList = BmPopAccountList::CreateInstance();
+		TheSmtpAccountList = BmSmtpAccountList::CreateInstance( TheJobStatusWin);
+		ThePopAccountList = BmPopAccountList::CreateInstance( TheJobStatusWin);
 
 		TheMainWindow = BmMainWindow::CreateInstance();
 
@@ -201,6 +230,10 @@ void BmApplication::RefsReceived( BMessage* msg) {
 void BmApplication::MessageReceived( BMessage* msg) {
 	try {
 		switch( msg->what) {
+			case BMM_CHECK_ALL: {
+				ThePopAccountList->CheckMail( true);
+				break;
+			}
 			case BMM_CHECK_MAIL: {
 				const char* key = NULL;
 				msg->FindString( BmPopAccountList::MSG_ITEMKEY, &key);
@@ -221,10 +254,7 @@ void BmApplication::MessageReceived( BMessage* msg) {
 				break;
 			}
 			case BMM_REPLY:
-			case BMM_REPLY_ALL:
-			case BMM_FORWARD_ATTACHED:
-			case BMM_FORWARD_INLINE:
-			case BMM_FORWARD_INLINE_ATTACH: {
+			case BMM_REPLY_ALL: {
 				BmMailRef* mailRef = NULL;
 				int index=0;
 				while( msg->FindPointer( MSG_MAILREF, index++, (void**)&mailRef) == B_OK) {
@@ -232,15 +262,9 @@ void BmApplication::MessageReceived( BMessage* msg) {
 					if (mail) {
 						mail->StartJobInThisThread( BmMail::BM_READ_MAIL_JOB);
 						if (mail->InitCheck() != B_OK)
-							return;
+							continue;
 						BmRef<BmMail> newMail;
-						if (msg->what == BMM_FORWARD_ATTACHED)
-							newMail = mail->CreateAttachedForward();
-						else if (msg->what == BMM_FORWARD_INLINE)
-							newMail = mail->CreateInlineForward( false);
-						else if (msg->what == BMM_FORWARD_INLINE_ATTACH)
-							newMail = mail->CreateInlineForward( true);
-						else if (msg->what == BMM_REPLY)
+						if (msg->what == BMM_REPLY)
 							newMail = mail->CreateReply( false);
 						else if (msg->what == BMM_REPLY_ALL)
 							newMail = mail->CreateReply( true);
@@ -254,12 +278,61 @@ void BmApplication::MessageReceived( BMessage* msg) {
 				}
 				break;
 			}
+			case BMM_FORWARD_ATTACHED:
+			case BMM_FORWARD_INLINE:
+			case BMM_FORWARD_INLINE_ATTACH: {
+				BmMailRef* mailRef = NULL;
+				BmRef<BmMail> newMail;
+				for(  int index=0; 
+						msg->FindPointer( MSG_MAILREF, index, (void**)&mailRef) == B_OK;
+						++index) {
+					BmRef<BmMail> mail = BmMail::CreateInstance( mailRef);
+					if (mail) {
+						mail->StartJobInThisThread( BmMail::BM_READ_MAIL_JOB);
+						if (mail->InitCheck() != B_OK)
+							continue;
+						if (msg->what == BMM_FORWARD_ATTACHED) {
+							if (index == 0) 
+								newMail = mail->CreateAttachedForward();
+							else
+								newMail->AddAttachmentFromRef( mailRef->EntryRefPtr());
+						} else if (msg->what == BMM_FORWARD_INLINE) {
+							if (index == 0) 
+								newMail = mail->CreateInlineForward( false);
+							else
+								newMail->AddPartsFromMail( mail, false);
+						} else if (msg->what == BMM_FORWARD_INLINE_ATTACH) {
+							if (index == 0) 
+								newMail = mail->CreateInlineForward( true);
+							else
+								newMail->AddPartsFromMail( mail, true);
+						}
+						if (index == 1)
+							// set simple subject for multiple forwards:
+							newMail->SetFieldVal( BM_FIELD_SUBJECT, "Fwd: (multiple messages)");
+					}
+					mailRef->RemoveRef();	// msg is no more refering to mailRef
+				}
+				if (newMail) {
+					BmMailEditWin* editWin = BmMailEditWin::CreateInstance( newMail.Get());
+					if (editWin)
+						editWin->Show();
+				}
+				break;
+			}
 			case BMM_MARK_AS: {
 				BmMailRef* mailRef = NULL;
 				int index=0;
 				while( msg->FindPointer( MSG_MAILREF, index++, (void**)&mailRef) == B_OK) {
-					mailRef->Status( msg->FindString( MSG_STATUS));
+					mailRef->MarkAs( msg->FindString( MSG_STATUS));
 					mailRef->RemoveRef();	// msg is no more refering to mailRef
+				}
+				break;
+			}
+			case c_about_window_url_invoked: {
+				const char* url;
+				if (msg->FindString( "url", &url) == B_OK) {
+					LaunchURL( url);
 				}
 				break;
 			}
@@ -284,6 +357,35 @@ void BmApplication::MessageReceived( BMessage* msg) {
 }
 
 /*------------------------------------------------------------------------------*\
+	LaunchURL()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmApplication::LaunchURL( const BString url) {
+	char* urlStr = const_cast<char*>( url.String());
+	status_t result;
+	if (url.ICompare( "https:", 6) == 0)
+		result = be_roster->Launch( "application/x-vnd.Be.URL.https", 1, &urlStr);
+	else if (url.ICompare( "http:", 5) == 0)
+		result = be_roster->Launch( "application/x-vnd.Be.URL.http", 1, &urlStr);
+	else if (url.ICompare( "ftp:", 4) == 0)
+		result = be_roster->Launch( "application/x-vnd.Be.URL.ftp", 1, &urlStr);
+	else if (url.ICompare( "file:", 5) == 0)
+		result = be_roster->Launch( "application/x-vnd.Be.URL.file", 1, &urlStr);
+	else if (url.ICompare( "mailto:", 7) == 0) {
+		BMessage msg(BMM_NEW_MAIL);
+		msg.AddString( BmApplication::MSG_WHO_TO, urlStr+7);
+		bmApp->PostMessage( &msg);
+		return;
+	}
+	else result = B_ERROR;
+	if (!(result == B_OK || result == B_ALREADY_RUNNING)) {
+		(new BAlert( "", (BString("Could not launch application for url\n\t") 
+								<< url << "\n\nError:\n\t" << strerror(result)).String(),
+					   "OK"))->Go();
+	}
+}
+
+/*------------------------------------------------------------------------------*\
 	AboutRequested()
 		-	standard BeOS-behaviour, we show about-window
 \*------------------------------------------------------------------------------*/
@@ -292,7 +394,10 @@ void BmApplication::AboutRequested() {
 		"About Beam",
 		"Beam",
 		TheResources->IconByName("AboutIcon"),
-		15, "here is more info"
+		15, 
+		"BEware, Another Mailer\n(c) Oliver Tappe, Berlin, Germany",
+		"mailto:beam@hirschkaefer.de",
+		"http://www.hirschkaefer.de/beam"
 	);
 	aboutWin->Show();
 }

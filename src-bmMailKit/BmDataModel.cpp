@@ -2,14 +2,39 @@
 	BmDataModel.cpp
 		$Id$
 */
+/*************************************************************************/
+/*                                                                       */
+/*  Beam - BEware Another Mailer                                         */
+/*                                                                       */
+/*  http://www.hirschkaefer.de/beam                                      */
+/*                                                                       */
+/*  Copyright (C) 2002 Oliver Tappe <beam@hirschkaefer.de>               */
+/*                                                                       */
+/*  This program is free software; you can redistribute it and/or        */
+/*  modify it under the terms of the GNU General Public License          */
+/*  as published by the Free Software Foundation; either version 2       */
+/*  of the License, or (at your option) any later version.               */
+/*                                                                       */
+/*  This program is distributed in the hope that it will be useful,      */
+/*  but WITHOUT ANY WARRANTY; without even the implied warranty of       */
+/*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU    */
+/*  General Public License for more details.                             */
+/*                                                                       */
+/*  You should have received a copy of the GNU General Public            */
+/*  License along with this program; if not, write to the                */
+/*  Free Software Foundation, Inc., 59 Temple Place - Suite 330,         */
+/*  Boston, MA  02111-1307, USA.                                         */
+/*                                                                       */
+/*************************************************************************/
 
+
+#include <Messenger.h>
 #include <File.h>
 
 #include "BmBasics.h"
 #include "BmController.h"
 #include "BmDataModel.h"
 #include "BmLogHandler.h"
-#include "BmResources.h"
 #include "BmUtil.h"
 
 
@@ -333,8 +358,6 @@ void BmJobModel::ContinueJob() {
 \*------------------------------------------------------------------------------*/
 void BmJobModel::StopJob() {
 	if (IsJobRunning()) {
-		BmAutolock lock( mModelLocker);
-		lock.IsLocked()	 					|| BM_THROW_RUNTIME( ModelName() << ":StopJob(): Unable to get lock");
 		mJobState = JOB_STOPPED;
 	}
 }
@@ -613,6 +636,7 @@ void BmListModel::TellModelItemAdded( BmListModelItem* item) {
 	if (HasControllers()) {
 		BMessage msg( BM_LISTMODEL_ADD);
 		msg.AddPointer( MSG_MODELITEM, static_cast<void*>(item));
+		item->AddRef();						// the message now refers to the item, too
 		BM_LOG2( BM_LogModelController, BString("ListModel <") << ModelName() << "> tells about added item " << item->Key());
 		TellControllers( &msg);
 	}
@@ -630,6 +654,7 @@ void BmListModel::TellModelItemRemoved( BmListModelItem* item) {
 	if (HasControllers()) {
 		BMessage msg( BM_LISTMODEL_REMOVE);
 		msg.AddPointer( MSG_MODELITEM, static_cast<void*>(item));
+		item->AddRef();						// the message now refers to the item, too
 		BM_LOG2( BM_LogModelController, BString("ListModel <") << ModelName() << "> tells about removed item " << item->Key());
 		TellControllers( &msg, true);
 	}
@@ -647,6 +672,7 @@ void BmListModel::TellModelItemUpdated( BmListModelItem* item, BmUpdFlags flags)
 	if (HasControllers()) {
 		BMessage msg( BM_LISTMODEL_UPDATE);
 		msg.AddPointer( MSG_MODELITEM, static_cast<void*>(item));
+		item->AddRef();						// the message now refers to the item, too
 		msg.AddInt32( MSG_UPD_FLAGS, flags);
 		BM_LOG2( BM_LogModelController, BString("ListModel <") << ModelName() << "> tells about updated item " << item->Key());
 		TellControllers( &msg);
@@ -663,12 +689,14 @@ status_t BmListModel::Archive( BMessage* archive, bool deep) const {
 		ret = archive->AddInt32( BmListModelItem::MSG_NUMCHILDREN, size());
 	}
 	if (deep && ret == B_OK) {
+		BM_LOG2( BM_LogModelController, BString("ListModel <") << ModelName() << "> begins to archive");
 		BmModelItemMap::const_iterator iter;
 		for( iter = begin(); iter != end() && ret == B_OK; ++iter) {
 			BMessage msg;
 			ret = iter->second->Archive( &msg, deep)
 					|| archive->AddMessage( BmListModelItem::MSG_CHILDREN, &msg);
 		}
+		BM_LOG2( BM_LogModelController, BString("ListModel <") << ModelName() << "> finished with archive");
 	}
 	return ret;
 }

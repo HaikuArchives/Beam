@@ -2,19 +2,50 @@
 	BmMailRefView.cpp
 		$Id$
 */
+/*************************************************************************/
+/*                                                                       */
+/*  Beam - BEware Another Mailer                                         */
+/*                                                                       */
+/*  http://www.hirschkaefer.de/beam                                      */
+/*                                                                       */
+/*  Copyright (C) 2002 Oliver Tappe <beam@hirschkaefer.de>               */
+/*                                                                       */
+/*  This program is free software; you can redistribute it and/or        */
+/*  modify it under the terms of the GNU General Public License          */
+/*  as published by the Free Software Foundation; either version 2       */
+/*  of the License, or (at your option) any later version.               */
+/*                                                                       */
+/*  This program is distributed in the hope that it will be useful,      */
+/*  but WITHOUT ANY WARRANTY; without even the implied warranty of       */
+/*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU    */
+/*  General Public License for more details.                             */
+/*                                                                       */
+/*  You should have received a copy of the GNU General Public            */
+/*  License along with this program; if not, write to the                */
+/*  Free Software Foundation, Inc., 59 Temple Place - Suite 330,         */
+/*  Boston, MA  02111-1307, USA.                                         */
+/*                                                                       */
+/*************************************************************************/
 
+
+#include <MenuItem.h>
+#include <PopUpMenu.h>
 #include <Window.h>
 
+#include "BmApp.h"
 #include "BmBasics.h"
+#include "BmGuiUtil.h"
 #include "BmJobStatusWin.h"
 #include "BmLogHandler.h"
 #include "BmMailEditWin.h"
 #include "BmMailFolder.h"
+#include "BmMailMover.h"
 #include "BmMailRef.h"
 #include "BmMailRefList.h"
 #include "BmMailRefView.h"
 #include "BmMailView.h"
 #include "BmMailViewWin.h"
+#include "BmMsgTypes.h"
 #include "BmPrefs.h"
 #include "BmResources.h"
 #include "BmStorageUtil.h"
@@ -287,6 +318,16 @@ void BmMailRefView::MessageReceived( BMessage* msg) {
 				inherited::MessageReceived( msg);
 				break;
 			}
+			case BMM_MARK_AS:
+			case BMM_REPLY:
+			case BMM_REPLY_ALL:
+			case BMM_FORWARD_ATTACHED:
+			case BMM_FORWARD_INLINE:
+			case BMM_FORWARD_INLINE_ATTACH: {
+				AddSelectedRefsToMsg( msg, BmApplication::MSG_MAILREF);
+				be_app_messenger.SendMessage( msg);
+				break;
+			}
 			default:
 				inherited::MessageReceived( msg);
 		}
@@ -349,7 +390,13 @@ void BmMailRefView::KeyDown(const char *bytes, int32 numBytes) {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmMailRefView::MouseDown(BPoint point) {
-	inherited::MouseDown( point); 
+	inherited::MouseDown( point);
+	BPoint mousePos;
+	uint32 buttons;
+	GetMouse( &mousePos, &buttons);
+	if (buttons == B_SECONDARY_MOUSE_BUTTON) {
+		ShowMenu( point);
+	}
 }
 
 /*------------------------------------------------------------------------------*\
@@ -442,11 +489,12 @@ void BmMailRefView::HandleDrop( const BMessage* msg) {
 		if (mCurrFolder) {
 			BMessage tmpMsg( BM_JOBWIN_MOVEMAILS);
 			entry_ref eref;
-			for( int i=0; msg->FindRef( BmMailMoverView::MSG_REFS, i, &eref)==B_OK; ++i) {
-				tmpMsg.AddRef( BmMailMoverView::MSG_REFS, &eref);
+			for( int i=0; msg->FindRef( BmMailMover::MSG_REFS, i, &eref)==B_OK; ++i) {
+				tmpMsg.AddRef( BmMailMover::MSG_REFS, &eref);
 			}
-			tmpMsg.AddString( BmJobStatusWin::MSG_JOB_NAME, mCurrFolder->Name());
-			tmpMsg.AddPointer( BmMailMoverView::MSG_FOLDER, mCurrFolder.Get());
+			tmpMsg.AddString( BmJobModel::MSG_JOB_NAME, mCurrFolder->Name());
+			tmpMsg.AddString( BmJobModel::MSG_MODEL, mCurrFolder->Key());
+			mCurrFolder->AddRef();	// the message now refers to the folder, too
 			TheJobStatusWin->PostMessage( &tmpMsg);
 		}
 	}
@@ -563,4 +611,65 @@ void BmMailRefView::ItemInvoked( int32 index) {
 			}
 		}
 	}
+}
+
+/*------------------------------------------------------------------------------*\
+	( )
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailRefView::AddMailRefMenu( BMenu* menu, BHandler* target) {
+	if (!menu)
+		return;
+	AddItemToMenu( menu, new BMenuItem( "Reply", new BMessage( BMM_REPLY), 'R'), target);
+
+	AddItemToMenu( menu, new BMenuItem( "Reply To All", new BMessage( BMM_REPLY_ALL), 'R', B_SHIFT_KEY), target);
+	if (ThePrefs->GetInt( "DefaultForwardType", BMM_FORWARD_INLINE) == BMM_FORWARD_INLINE) {
+		AddItemToMenu( menu, new BMenuItem( "Forward As Attachment", new BMessage( BMM_FORWARD_ATTACHED), 'J', B_SHIFT_KEY), target);
+		AddItemToMenu( menu, new BMenuItem( "Forward Inline", new BMessage( BMM_FORWARD_INLINE), 'J'), target);
+		AddItemToMenu( menu, new BMenuItem( "Forward Inline (With Attachments)", new BMessage( BMM_FORWARD_INLINE_ATTACH)), target);
+	} else {
+		AddItemToMenu( menu, new BMenuItem( "Forward As Attachment", new BMessage( BMM_FORWARD_ATTACHED), 'J'), target);
+		AddItemToMenu( menu, new BMenuItem( "Forward Inline", new BMessage( BMM_FORWARD_INLINE), 'J', B_SHIFT_KEY), target);
+		AddItemToMenu( menu, new BMenuItem( "Forward Inline (With Attachments)", new BMessage( BMM_FORWARD_INLINE_ATTACH)), target);
+	}
+	AddItemToMenu( menu, new BMenuItem( "Redirect", new BMessage( BMM_REDIRECT), 'B'), target);
+	menu->AddSeparatorItem();
+
+	BMenu* statusMenu = new BMenu( "Mark Message As");
+	const char* stats[] = {
+		"Draft",		"Forwarded",		"New",		"Pending",		"Read",		"Redirected",
+		"Replied",	"Sent",		NULL
+	};
+	for( int i=0; stats[i]; ++i) {
+		BMessage* msg = new BMessage( BMM_MARK_AS);
+		msg->AddString( BmApplication::MSG_STATUS, stats[i]);
+		AddItemToMenu( statusMenu, new BMenuItem( stats[i], msg), target);
+	}
+	menu->AddItem( statusMenu);
+	menu->AddSeparatorItem();
+	AddItemToMenu( menu, new BMenuItem( "Apply Filter", new BMessage( BMM_FILTER)), target);
+	menu->AddSeparatorItem();
+	AddItemToMenu( menu, new BMenuItem( "Move To Trash", new BMessage( BMM_TRASH), 'T'), target);
+}
+
+/*------------------------------------------------------------------------------*\
+	( )
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailRefView::ShowMenu( BPoint point) {
+	if (CurrentSelection(0) == -1)
+		return; 
+
+	BPopUpMenu* theMenu = new BPopUpMenu( "MailFolderViewMenu", false, false);
+
+	AddMailRefMenu( theMenu, Window());
+
+   ConvertToScreen(&point);
+	BRect openRect;
+	openRect.top = point.y - 5;
+	openRect.bottom = point.y + 5;
+	openRect.left = point.x - 5;
+	openRect.right = point.x + 5;
+  	theMenu->Go( point, true, false, openRect);
+  	delete theMenu;
 }

@@ -2,11 +2,34 @@
 	BmMailView.cpp
 		$Id$
 */
+/*************************************************************************/
+/*                                                                       */
+/*  Beam - BEware Another Mailer                                         */
+/*                                                                       */
+/*  http://www.hirschkaefer.de/beam                                      */
+/*                                                                       */
+/*  Copyright (C) 2002 Oliver Tappe <beam@hirschkaefer.de>               */
+/*                                                                       */
+/*  This program is free software; you can redistribute it and/or        */
+/*  modify it under the terms of the GNU General Public License          */
+/*  as published by the Free Software Foundation; either version 2       */
+/*  of the License, or (at your option) any later version.               */
+/*                                                                       */
+/*  This program is distributed in the hope that it will be useful,      */
+/*  but WITHOUT ANY WARRANTY; without even the implied warranty of       */
+/*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU    */
+/*  General Public License for more details.                             */
+/*                                                                       */
+/*  You should have received a copy of the GNU General Public            */
+/*  License along with this program; if not, write to the                */
+/*  Free Software Foundation, Inc., 59 Temple Place - Suite 330,         */
+/*  Boston, MA  02111-1307, USA.                                         */
+/*                                                                       */
+/*************************************************************************/
 
-#include <Alert.h>
+
 #include <MenuItem.h>
 #include <PopUpMenu.h>
-#include <Roster.h>
 #include <UTF8.h>
 #include <Window.h>
 
@@ -285,7 +308,7 @@ void BmMailView::MouseUp( BPoint point) {
 			next++;
 			Select( mClickedTextRun->first, next->first);
 			BString url( Text()+mClickedTextRun->first, next->first-mClickedTextRun->first);
-			LaunchURL( url);
+			bmApp->LaunchURL( url);
 		}
 	}
 	mClickedTextRun = 0;
@@ -350,35 +373,6 @@ bool BmMailView::AcceptsDrop( const BMessage* msg) {
 void BmMailView::GetWrappedText( BString& out) {
 	BString editedText = Text();
 	WordWrap( editedText, out, FixedWidth(), "\n");
-}
-
-/*------------------------------------------------------------------------------*\
-	LaunchURL()
-		-	
-\*------------------------------------------------------------------------------*/
-void BmMailView::LaunchURL( BString url) {
-	char* urlStr = const_cast<char*>( url.String());
-	status_t result;
-	if (url.ICompare( "https:", 6) == 0)
-		result = be_roster->Launch( "application/x-vnd.Be.URL.https", 1, &urlStr);
-	else if (url.ICompare( "http:", 5) == 0)
-		result = be_roster->Launch( "application/x-vnd.Be.URL.http", 1, &urlStr);
-	else if (url.ICompare( "ftp:", 4) == 0)
-		result = be_roster->Launch( "application/x-vnd.Be.URL.ftp", 1, &urlStr);
-	else if (url.ICompare( "file:", 5) == 0)
-		result = be_roster->Launch( "application/x-vnd.Be.URL.file", 1, &urlStr);
-	else if (url.ICompare( "mailto:", 7) == 0) {
-		BMessage msg(BMM_NEW_MAIL);
-		msg.AddString( BmApplication::MSG_WHO_TO, urlStr+7);
-		bmApp->PostMessage( &msg);
-		return;
-	}
-	else result = B_ERROR;
-	if (!(result == B_OK || result == B_ALREADY_RUNNING)) {
-		(new BAlert( "", (BString("Could not launch application for url\n\t") 
-								<< url << "\n\nError:\n\t" << strerror(result)).String(),
-					   "OK"))->Go();
-	}
 }
 
 /*------------------------------------------------------------------------------*\

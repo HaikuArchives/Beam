@@ -2,6 +2,31 @@
 	BmMailEditWin.cpp
 		$Id$
 */
+/*************************************************************************/
+/*                                                                       */
+/*  Beam - BEware Another Mailer                                         */
+/*                                                                       */
+/*  http://www.hirschkaefer.de/beam                                      */
+/*                                                                       */
+/*  Copyright (C) 2002 Oliver Tappe <beam@hirschkaefer.de>               */
+/*                                                                       */
+/*  This program is free software; you can redistribute it and/or        */
+/*  modify it under the terms of the GNU General Public License          */
+/*  as published by the Free Software Foundation; either version 2       */
+/*  of the License, or (at your option) any later version.               */
+/*                                                                       */
+/*  This program is distributed in the hope that it will be useful,      */
+/*  but WITHOUT ANY WARRANTY; without even the implied warranty of       */
+/*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU    */
+/*  General Public License for more details.                             */
+/*                                                                       */
+/*  You should have received a copy of the GNU General Public            */
+/*  License along with this program; if not, write to the                */
+/*  Free Software Foundation, Inc., 59 Temple Place - Suite 330,         */
+/*  Boston, MA  02111-1307, USA.                                         */
+/*                                                                       */
+/*************************************************************************/
+
 
 #include <File.h>
 #include <InterfaceKit.h>
@@ -39,6 +64,9 @@
 /********************************************************************************\
 	BmMailEditWin
 \********************************************************************************/
+
+float BmMailEditWin::nNextXPos = 300;
+float BmMailEditWin::nNextYPos = 100;
 
 /*------------------------------------------------------------------------------*\
 	types of messages handled by a BmMailEditWin:
@@ -84,7 +112,6 @@ BmMailEditWin::BmMailEditWin( BmMailRef* mailRef, BmMail* mail)
 					  B_NORMAL_WINDOW_FEEL, B_ASYNCHRONOUS_CONTROLS)
 	,	mShowDetails( false)
 	,	mModified( false)
-	,	mModificationID( 0)
 {
 	CreateGUI();
 	if (mail)
@@ -177,7 +204,7 @@ void BmMailEditWin::CreateGUI() {
 			CreateMailView( minimax(200,200,1E5,1E5), BRect(0,0,400,200)),
 			0
 		);
-		
+
 	float divider = mToControl->Divider();
 	divider = MAX( divider, mSubjectControl->Divider());
 	divider = MAX( divider, mFromControl->Divider());
@@ -201,6 +228,7 @@ void BmMailEditWin::CreateGUI() {
 	// initially, the detail-parts are hidden:
 	mCcControl->DetachFromParent();
 	mBccControl->DetachFromParent();
+	mEditHeaderControl->RemoveSelf();
 	mReplyToControl->DetachFromParent();
 	mSenderControl->DetachFromParent();
 
@@ -239,8 +267,9 @@ void BmMailEditWin::CreateGUI() {
 	if (item)
 		item->SetMarked( true);
 
-	mMailView->SetModificationMessage( new BMessage( BM_TEXTFIELD_MODIFIED));
 	mSaveButton->SetEnabled( false);
+	mMailView->SetModificationMessage( new BMessage( BM_TEXTFIELD_MODIFIED));
+	mMailView->BodyPartView()->StartWatching( this, BM_NTFY_LISTCONTROLLER_MODIFIED);
 
 	// temporarily disabled:
 	mAttachButton->SetEnabled( false);
@@ -255,6 +284,36 @@ void BmMailEditWin::CreateGUI() {
 		-	
 \*------------------------------------------------------------------------------*/
 BmMailEditWin::~BmMailEditWin() {
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+status_t BmMailEditWin::UnarchiveState( BMessage* archive) {
+	status_t ret = inherited::UnarchiveState( archive);
+	if (ret == B_OK) {
+		BRect frame = Frame();
+		if (nNextXPos != frame.left || nNextYPos != frame.top) {
+			nNextXPos = frame.left;
+			nNextYPos = frame.top;
+		} else {
+			nNextXPos += 10;
+			nNextYPos += 16;
+			if (nNextYPos > 300) {
+				nNextXPos = 300;
+				nNextYPos = 100;
+			}
+		}
+		MoveTo( BPoint( nNextXPos, nNextYPos));
+		ResizeTo( frame.Width(), frame.Height());
+		WriteStateInfo();
+	} else {
+		MoveTo( BPoint( nNextXPos, nNextYPos));
+		ResizeTo( 400, 400);
+		WriteStateInfo();
+	}
+	return ret;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -322,11 +381,13 @@ void BmMailEditWin::MessageReceived( BMessage* msg) {
 				if (mShowDetails) {
 					mCcControl->ReattachToParent();
 					mBccControl->ReattachToParent();
+					mBccControl->Parent()->AddChild( mEditHeaderControl);
 					mReplyToControl->ReattachToParent();
 					mSenderControl->ReattachToParent();
 				} else {
 					mCcControl->DetachFromParent();
 					mBccControl->DetachFromParent();
+					mEditHeaderControl->RemoveSelf();
 					mReplyToControl->DetachFromParent();
 					mSenderControl->DetachFromParent();
 				}
@@ -368,7 +429,7 @@ void BmMailEditWin::MessageReceived( BMessage* msg) {
 						} else {
 							mail->MarkAs( BM_MAIL_STATUS_PENDING);
 							smtpAcc->mMailVect.push_back( mail);
-							smtpAcc->SendQueuedMail();
+							TheSmtpAccountList->SendQueuedMailFor( smtpAcc->Name());
 							PostMessage( B_QUIT_REQUESTED);
 						}
 					}
@@ -391,7 +452,7 @@ void BmMailEditWin::MessageReceived( BMessage* msg) {
 					mail->SetNewHeader( headerStr);
 					mail->MarkAs( BM_MAIL_STATUS_PENDING);
 					smtpAcc->mMailVect.push_back( mail);
-					smtpAcc->SendQueuedMail();
+					TheSmtpAccountList->SendQueuedMailFor( smtpAcc->Name());
 					PostMessage( B_QUIT_REQUESTED);
 				}
 				break;
@@ -439,6 +500,7 @@ void BmMailEditWin::MessageReceived( BMessage* msg) {
 			}
 			case BM_CHARSET_SELECTED:
 			case BM_SMTP_SELECTED:
+			case B_OBSERVER_NOTICE_CHANGE:
 			case BM_TEXTFIELD_MODIFIED: {
 				mModified = true;
 				mSaveButton->SetEnabled( true);
@@ -592,10 +654,20 @@ bool BmMailEditWin::QuitRequested() {
 											 B_WIDTH_AS_USUAL, B_OFFSET_SPACING, B_WARNING_ALERT);
 		alert->SetShortcut( 0, B_ESCAPE);
 		int32 result = alert->Go();
-		if (result == 0)
-			return false;
-		if (result == 2)
-			return SaveAndReloadMail();
+		switch( result) {
+			case 0:
+				return false;
+			case 1: {
+				BmRef<BmMail> mail = mMailView->CurrMail();
+				if (mail) {
+					// reset mail to original values:
+					mail->ResyncFromDisk();
+				}
+				break;
+			}
+			case 2:
+				return SaveAndReloadMail();
+		}
 	}
 	return true;
 }

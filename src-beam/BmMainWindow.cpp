@@ -2,6 +2,31 @@
 	BmMainWindow.cpp
 		$Id$
 */
+/*************************************************************************/
+/*                                                                       */
+/*  Beam - BEware Another Mailer                                         */
+/*                                                                       */
+/*  http://www.hirschkaefer.de/beam                                      */
+/*                                                                       */
+/*  Copyright (C) 2002 Oliver Tappe <beam@hirschkaefer.de>               */
+/*                                                                       */
+/*  This program is free software; you can redistribute it and/or        */
+/*  modify it under the terms of the GNU General Public License          */
+/*  as published by the Free Software Foundation; either version 2       */
+/*  of the License, or (at your option) any later version.               */
+/*                                                                       */
+/*  This program is distributed in the hope that it will be useful,      */
+/*  but WITHOUT ANY WARRANTY; without even the implied warranty of       */
+/*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU    */
+/*  General Public License for more details.                             */
+/*                                                                       */
+/*  You should have received a copy of the GNU General Public            */
+/*  License along with this program; if not, write to the                */
+/*  Free Software Foundation, Inc., 59 Temple Place - Suite 330,         */
+/*  Boston, MA  02111-1307, USA.                                         */
+/*                                                                       */
+/*************************************************************************/
+
 
 #include <Autolock.h>
 #include <File.h>
@@ -24,6 +49,7 @@
 #include "BmMsgTypes.h"
 #include "BmPopAccount.h"
 #include "BmPrefs.h"
+#include "BmPrefsWin.h"
 #include "BmResources.h"
 #include "BmToolbarButton.h"
 #include "BmUtil.h"
@@ -183,10 +209,6 @@ BmMainWindow::BmMainWindow()
 																	new BMessage(BMM_TRASH), this, 
 																	"Move selected messages to Trash"),
 					new Space(),
-					new BmToolbarButton( "Lass' gut sein", 
-												TheResources->IconByName("Person"), 
-												new BMessage(B_QUIT_REQUESTED), this),
-					new Space(minimax(20,-1,20,-1)),
 					0
 				)
 			),
@@ -273,34 +295,7 @@ MMenuBar* BmMainWindow::CreateMenu() {
 	menu = new BMenu( "Message");
 	menu->AddItem( new BMenuItem( "New Message", new BMessage( BMM_NEW_MAIL), 'N'));
 	menu->AddSeparatorItem();
-	menu->AddItem( new BMenuItem( "Reply", new BMessage( BMM_REPLY), 'R'));
-	menu->AddItem( new BMenuItem( "Reply To All", new BMessage( BMM_REPLY_ALL), 'R', B_SHIFT_KEY));
-	if (ThePrefs->GetInt( "DefaultForwardType", BMM_FORWARD_INLINE) == BMM_FORWARD_INLINE) {
-		menu->AddItem( new BMenuItem( "Forward As Attachment", new BMessage( BMM_FORWARD_ATTACHED), 'J', B_SHIFT_KEY));
-		menu->AddItem( new BMenuItem( "Forward Inline", new BMessage( BMM_FORWARD_INLINE), 'J'));
-		menu->AddItem( new BMenuItem( "Forward Inline (With Attachments)", new BMessage( BMM_FORWARD_INLINE_ATTACH)));
-	} else {
-		menu->AddItem( new BMenuItem( "Forward As Attachment", new BMessage( BMM_FORWARD_ATTACHED), 'J'));
-		menu->AddItem( new BMenuItem( "Forward Inline", new BMessage( BMM_FORWARD_INLINE), 'J', B_SHIFT_KEY));
-		menu->AddItem( new BMenuItem( "Forward Inline (With Attachments)", new BMessage( BMM_FORWARD_INLINE_ATTACH)));
-	}
-	menu->AddItem( new BMenuItem( "Redirect", new BMessage( BMM_REDIRECT), 'B'));
-	menu->AddSeparatorItem();
-	BMenu* statusMenu = new BMenu( "Mark Message As");
-	menu->AddItem( statusMenu);
-	const char* stats[] = {
-		"Draft",		"Forwarded",		"New",		"Pending",		"Read",		"Redirected",
-		"Replied",	"Sent",		NULL
-	};
-	for( int i=0; stats[i]; ++i) {
-		BMessage* msg = new BMessage( BMM_MARK_AS);
-		msg->AddString( BmApplication::MSG_STATUS, stats[i]);
-		statusMenu->AddItem( new BMenuItem( stats[i], msg));
-	}
-	menu->AddSeparatorItem();
-	menu->AddItem( new BMenuItem( "Apply Filter", new BMessage( BMM_FILTER)));
-	menu->AddSeparatorItem();
-	menu->AddItem( new BMenuItem( "Move To Trash", new BMessage( BMM_TRASH), 'T'));
+	mMailRefView->AddMailRefMenu( menu);
 	mMainMenuBar->AddItem( menu);
 
 	// Help
@@ -370,15 +365,6 @@ void BmMainWindow::BeginLife() {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmMainWindow::Show() {
-	inherited::Show();
-	WriteStateInfo();
-}
-
-/*------------------------------------------------------------------------------*\
-	()
-		-	
-\*------------------------------------------------------------------------------*/
 void BmMainWindow::WorkspacesChanged( uint32 oldWorkspaces, uint32 newWorkspaces) {
 	bmApp->SetNewWorkspace( newWorkspaces);
 }
@@ -428,7 +414,8 @@ void BmMainWindow::MessageReceived( BMessage* msg) {
 				break;
 			}
 			case BMM_NEW_MAIL: 
-			case BMM_CHECK_MAIL: {
+			case BMM_CHECK_MAIL:
+			case BMM_CHECK_ALL: {
 				be_app_messenger.SendMessage( msg);
 				break;
 			}
@@ -461,6 +448,11 @@ void BmMainWindow::MessageReceived( BMessage* msg) {
 			}
 			case B_ABOUT_REQUESTED: {
 				be_app_messenger.SendMessage( msg);
+				break;
+			}
+			case BMM_PREFERENCES: {
+				BmPrefsWin::CreateInstance();
+				ThePrefsWin->Show();
 				break;
 			}
 			default:
@@ -546,6 +538,7 @@ void BmMainWindow::MailRefSelectionChanged( int32 numSelected) {
 	mMainMenuBar->FindItem( BMM_FORWARD_INLINE)->SetEnabled( numSelected > 0);
 	mMainMenuBar->FindItem( BMM_FORWARD_INLINE_ATTACH)->SetEnabled( numSelected > 0);
 	mMainMenuBar->FindItem( BMM_REDIRECT)->SetEnabled( 0 * numSelected > 0);
+	mMainMenuBar->FindItem( "Mark Message As")->SetEnabled( 0 * numSelected > 0);
 	mMainMenuBar->FindItem( BMM_FILTER)->SetEnabled( 0 * numSelected > 0);
 	mMainMenuBar->FindItem( BMM_TRASH)->SetEnabled( numSelected > 0);
 }

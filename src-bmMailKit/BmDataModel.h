@@ -2,6 +2,31 @@
 	BmDataModel.h
 		$Id$
 */
+/*************************************************************************/
+/*                                                                       */
+/*  Beam - BEware Another Mailer                                         */
+/*                                                                       */
+/*  http://www.hirschkaefer.de/beam                                      */
+/*                                                                       */
+/*  Copyright (C) 2002 Oliver Tappe <beam@hirschkaefer.de>               */
+/*                                                                       */
+/*  This program is free software; you can redistribute it and/or        */
+/*  modify it under the terms of the GNU General Public License          */
+/*  as published by the Free Software Foundation; either version 2       */
+/*  of the License, or (at your option) any later version.               */
+/*                                                                       */
+/*  This program is distributed in the hope that it will be useful,      */
+/*  but WITHOUT ANY WARRANTY; without even the implied warranty of       */
+/*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU    */
+/*  General Public License for more details.                             */
+/*                                                                       */
+/*  You should have received a copy of the GNU General Public            */
+/*  License along with this program; if not, write to the                */
+/*  Free Software Foundation, Inc., 59 Temple Place - Suite 330,         */
+/*  Boston, MA  02111-1307, USA.                                         */
+/*                                                                       */
+/*************************************************************************/
+
 
 #ifndef _BmDataModel_h
 #define _BmDataModel_h
@@ -10,9 +35,7 @@
 #include <memory>
 #include <set>
 
-#include <Autolock.h>
 #include <Locker.h>
-#include <Looper.h>
 #include <String.h>
 
 #include "BmRefManager.h"
@@ -122,8 +145,10 @@ public:
 	//	message component definitions for status-msgs:
 	static const char* const MSG_COMPLETED = 		"bm:completed";
 	static const char* const MSG_DOMAIN = 			"bm:domain";
-	
+	static const char* const MSG_JOB_NAME = 		"bm:jobname";
+
 	static const int32 BM_DEFAULT_JOB = 0;
+	static const char* const MSG_JOB_SPEC = 		"bm:jobspec";
 
 protected:
 	// native methods:

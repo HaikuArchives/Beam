@@ -2,6 +2,31 @@
 	BmMail.h
 		$Id$
 */
+/*************************************************************************/
+/*                                                                       */
+/*  Beam - BEware Another Mailer                                         */
+/*                                                                       */
+/*  http://www.hirschkaefer.de/beam                                      */
+/*                                                                       */
+/*  Copyright (C) 2002 Oliver Tappe <beam@hirschkaefer.de>               */
+/*                                                                       */
+/*  This program is free software; you can redistribute it and/or        */
+/*  modify it under the terms of the GNU General Public License          */
+/*  as published by the Free Software Foundation; either version 2       */
+/*  of the License, or (at your option) any later version.               */
+/*                                                                       */
+/*  This program is distributed in the hope that it will be useful,      */
+/*  but WITHOUT ANY WARRANTY; without even the implied warranty of       */
+/*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU    */
+/*  General Public License for more details.                             */
+/*                                                                       */
+/*  You should have received a copy of the GNU General Public            */
+/*  License along with this program; if not, write to the                */
+/*  Free Software Foundation, Inc., 59 Temple Place - Suite 330,         */
+/*  Boston, MA  02111-1307, USA.                                         */
+/*                                                                       */
+/*************************************************************************/
+
 
 #ifndef _BmMail_h
 #define _BmMail_h
@@ -98,6 +123,7 @@ public:
 	void SetTo( const BString &text, const BString account);
 	void SetNewHeader( const BString& headerStr);
 	bool Store();
+	void ResyncFromDisk();
 	//
 	const BString& GetFieldVal( const BString fieldName);
 	BString GetStrippedFieldVal( const BString fieldName);
@@ -112,6 +138,10 @@ public:
 										  		  const BString selectedText="");
 	BmRef<BmMail> CreateReply( bool replyToAll, const BString selectedText="");
 	BmRef<BmMail> CreateResend();
+	//
+	void AddAttachmentFromRef( const entry_ref* ref);
+	void AddPartsFromMail( BmRef<BmMail> mail, bool withAttachments,
+								  const BString selectedText="");
 	
 	// overrides of jobmodel base:
 	bool StartJob();

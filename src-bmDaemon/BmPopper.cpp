@@ -4,10 +4,40 @@
 
 		$Id$
 */
+/*************************************************************************/
+/*                                                                       */
+/*  Beam - BEware Another Mailer                                         */
+/*                                                                       */
+/*  http://www.hirschkaefer.de/beam                                      */
+/*                                                                       */
+/*  Copyright (C) 2002 Oliver Tappe <beam@hirschkaefer.de>               */
+/*                                                                       */
+/*  This program is free software; you can redistribute it and/or        */
+/*  modify it under the terms of the GNU General Public License          */
+/*  as published by the Free Software Foundation; either version 2       */
+/*  of the License, or (at your option) any later version.               */
+/*                                                                       */
+/*  This program is distributed in the hope that it will be useful,      */
+/*  but WITHOUT ANY WARRANTY; without even the implied warranty of       */
+/*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU    */
+/*  General Public License for more details.                             */
+/*                                                                       */
+/*  You should have received a copy of the GNU General Public            */
+/*  License along with this program; if not, write to the                */
+/*  Free Software Foundation, Inc., 59 Temple Place - Suite 330,         */
+/*  Boston, MA  02111-1307, USA.                                         */
+/*                                                                       */
+/*************************************************************************/
+
 
 #include <memory.h>
 #include <memory>
 #include <stdio.h>
+
+#include "md5.h"
+
+#include "regexx.hh"
+using namespace regexx;
 
 #include "BmBasics.h"
 #include "BmLogHandler.h"
@@ -172,6 +202,10 @@ void BmPopper::Connect() {
 	}
 	mConnected = true;
 	CheckForPositiveAnswer( SINGLE_LINE);
+	Regexx rx;
+	if (rx.exec( mReplyLine, "(<.+?>)\\s*$", Regexx::newline)) {
+		mServerTimestamp = rx.match[0];
+	}
 }
 
 /*------------------------------------------------------------------------------*\
@@ -180,21 +214,55 @@ void BmPopper::Connect() {
 \*------------------------------------------------------------------------------*/
 void BmPopper::Login() {
 	BString pwd;
-	if (mPopAccount->PwdStoredOnDisk())
-		pwd = mPopAccount->Password();
-	else if (mPwdAcquisitorFunc) {
-		bool ok = mPwdAcquisitorFunc( Name(), pwd);
-		if (!ok) {
+	bool pwdOK = false;
+	bool first = true;
+	BString authMethod = mPopAccount->AuthMethod();
+	authMethod.ToUpper();
+	while(!pwdOK) {
+		bool pwdGiven = false;
+		if (first && mPopAccount->PwdStoredOnDisk()) {
+			pwd = mPopAccount->Password();
+			pwdGiven = true;
+		} else if (mPwdAcquisitorFunc) {
+			pwdGiven = mPwdAcquisitorFunc( Name(), pwd);
+		}
+		if (!pwdGiven) {
 			Disconnect();
 			StopJob();
 			return;
 		}
-	}
-	BString cmd = BString("USER ") << mPopAccount->Username();
-	SendCommand( cmd);
-	if (CheckForPositiveAnswer( SINGLE_LINE)) {
-		SendCommand( "PASS ", pwd);
-		CheckForPositiveAnswer( SINGLE_LINE);
+		first = false;
+		if (authMethod == "APOP") {
+			// APOP-method: 
+			if (mServerTimestamp.Length()) {
+				BString secret( mServerTimestamp + pwd);
+				BString Digest;
+				char* buf = Digest.LockBuffer(33);
+				MD5Digest( (unsigned char*) secret.String(), buf);
+				Digest.UnlockBuffer();
+				BString cmd = BString("APOP ") << mPopAccount->Username() << " ";
+				SendCommand( cmd+Digest);
+			} else
+				BM_THROW_RUNTIME( "Server did not supply a timestamp, so APOP doesn't work.");
+		} else {
+			// standard POP-method: send username and password as plain text:
+			BString cmd = BString("USER ") << mPopAccount->Username();
+			SendCommand( cmd);
+			if (CheckForPositiveAnswer( SINGLE_LINE)) {
+				SendCommand( "PASS ", pwd);
+			}
+		}
+		try {
+			pwdOK = CheckForPositiveAnswer( SINGLE_LINE);
+		} catch( BM_network_error &err) {
+			// most probably a wrong password...
+			BString errstr = err.what();
+			int e;
+			if ((e = mPopServer.Error()))
+				errstr << "\nerror: " << e << ", " << mPopServer.ErrorStr();
+			BString text = Name() << "\n\n" << errstr;
+			BM_SHOWERR( BString("BmPopper: ") << text);
+		}
 	}
 }
 

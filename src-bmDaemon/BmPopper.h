@@ -3,6 +3,31 @@
 
 		$Id$
 */
+/*************************************************************************/
+/*                                                                       */
+/*  Beam - BEware Another Mailer                                         */
+/*                                                                       */
+/*  http://www.hirschkaefer.de/beam                                      */
+/*                                                                       */
+/*  Copyright (C) 2002 Oliver Tappe <beam@hirschkaefer.de>               */
+/*                                                                       */
+/*  This program is free software; you can redistribute it and/or        */
+/*  modify it under the terms of the GNU General Public License          */
+/*  as published by the Free Software Foundation; either version 2       */
+/*  of the License, or (at your option) any later version.               */
+/*                                                                       */
+/*  This program is distributed in the hope that it will be useful,      */
+/*  but WITHOUT ANY WARRANTY; without even the implied warranty of       */
+/*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU    */
+/*  General Public License for more details.                             */
+/*                                                                       */
+/*  You should have received a copy of the GNU General Public            */
+/*  License along with this program; if not, write to the                */
+/*  Free Software Foundation, Inc., 59 Temple Place - Suite 330,         */
+/*  Boston, MA  02111-1307, USA.                                         */
+/*                                                                       */
+/*************************************************************************/
+
 
 #ifndef _BmPopper_h
 #define _BmPopper_h
@@ -14,7 +39,6 @@
 #include <NetEndpoint.h>
 
 #include "BmDataModel.h"
-#include "BmUtil.h"
 
 class BmPopAccount;
 
@@ -91,6 +115,7 @@ private:
 	int32 mMsgTotalSize;						// total-size of msgs to be received
 	BString mAnswer;							// holds last answer of POP-server
 	BString mReplyLine;						// holds last server-reply (the answer's first line)
+	BString mServerTimestamp;				// optional timestamp from Server (needed for APOP)
 
 	int32 mState;								// current POP3-state (refer enum below)
 	enum States {

@@ -2,6 +2,31 @@
 	BmMailFolderView.cpp
 		$Id$
 */
+/*************************************************************************/
+/*                                                                       */
+/*  Beam - BEware Another Mailer                                         */
+/*                                                                       */
+/*  http://www.hirschkaefer.de/beam                                      */
+/*                                                                       */
+/*  Copyright (C) 2002 Oliver Tappe <beam@hirschkaefer.de>               */
+/*                                                                       */
+/*  This program is free software; you can redistribute it and/or        */
+/*  modify it under the terms of the GNU General Public License          */
+/*  as published by the Free Software Foundation; either version 2       */
+/*  of the License, or (at your option) any later version.               */
+/*                                                                       */
+/*  This program is distributed in the hope that it will be useful,      */
+/*  but WITHOUT ANY WARRANTY; without even the implied warranty of       */
+/*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU    */
+/*  General Public License for more details.                             */
+/*                                                                       */
+/*  You should have received a copy of the GNU General Public            */
+/*  License along with this program; if not, write to the                */
+/*  Free Software Foundation, Inc., 59 Temple Place - Suite 330,         */
+/*  Boston, MA  02111-1307, USA.                                         */
+/*                                                                       */
+/*************************************************************************/
+
 
 #include <Alert.h>
 #include <MenuItem.h>
@@ -16,6 +41,7 @@
 #include "BmMailFolder.h"
 #include "BmMailFolderList.h"
 #include "BmMailFolderView.h"
+#include "BmMailMover.h"
 #include "BmMailRefView.h"
 #include "BmMsgTypes.h"
 #include "BmPrefs.h"
@@ -155,11 +181,11 @@ void BmMailFolderView::HandleDrop( const BMessage* msg) {
 		if (folder) {
 			BMessage tmpMsg( BM_JOBWIN_MOVEMAILS);
 			entry_ref eref;
-			for( int i=0; msg->FindRef( BmMailMoverView::MSG_REFS, i, &eref)==B_OK; ++i) {
-				tmpMsg.AddRef( BmMailMoverView::MSG_REFS, &eref);
+			for( int i=0; msg->FindRef( BmMailMover::MSG_REFS, i, &eref)==B_OK; ++i) {
+				tmpMsg.AddRef( BmMailMover::MSG_REFS, &eref);
 			}
-			tmpMsg.AddString( BmJobStatusWin::MSG_JOB_NAME, folder->Name());
-			tmpMsg.AddPointer( BmMailMoverView::MSG_FOLDER, folder);
+			tmpMsg.AddString( BmJobModel::MSG_JOB_NAME, folder->Name());
+			tmpMsg.AddString( BmJobModel::MSG_MODEL, folder->Key());
 			TheJobStatusWin->PostMessage( &tmpMsg);
 		}
 	}

@@ -11,9 +11,6 @@
 #include "BmUtil.h"
 #include "BmWindow.h"
 
-float BmWindow::nNextXPos = 300;
-float BmWindow::nNextYPos = 100;
-
 /*------------------------------------------------------------------------------*\
 	BmWindow()
 		-	constructor, creates window, reading frame and position from
@@ -50,24 +47,9 @@ status_t BmWindow::UnarchiveState( BMessage* archive) {
 	BRect frame;
 	status_t ret = archive->FindRect( MSG_FRAME, &frame);
 	if (ret == B_OK) {
-		if (nNextXPos != frame.left || nNextYPos != frame.top) {
-			nNextXPos = frame.left;
-			nNextYPos = frame.top;
-		} else {
-			nNextXPos += 10;
-			nNextYPos += 10;
-			if (nNextYPos > 400) {
-				nNextXPos = 300;
-				nNextYPos = 100;
-			}
-		}
-		MoveTo( BPoint( nNextXPos, nNextYPos));
+		MoveTo( frame.LeftTop());
 		ResizeTo( frame.Width(), frame.Height());
-	} else {
-		MoveTo( BPoint( nNextXPos, nNextYPos));
-		ResizeTo( 400, 400);
 	}
-	WriteStateInfo();
 	return ret;
 }
 

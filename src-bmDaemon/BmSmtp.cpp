@@ -4,6 +4,31 @@
 
 		$Id$
 */
+/*************************************************************************/
+/*                                                                       */
+/*  Beam - BEware Another Mailer                                         */
+/*                                                                       */
+/*  http://www.hirschkaefer.de/beam                                      */
+/*                                                                       */
+/*  Copyright (C) 2002 Oliver Tappe <beam@hirschkaefer.de>               */
+/*                                                                       */
+/*  This program is free software; you can redistribute it and/or        */
+/*  modify it under the terms of the GNU General Public License          */
+/*  as published by the Free Software Foundation; either version 2       */
+/*  of the License, or (at your option) any later version.               */
+/*                                                                       */
+/*  This program is distributed in the hope that it will be useful,      */
+/*  but WITHOUT ANY WARRANTY; without even the implied warranty of       */
+/*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU    */
+/*  General Public License for more details.                             */
+/*                                                                       */
+/*  You should have received a copy of the GNU General Public            */
+/*  License along with this program; if not, write to the                */
+/*  Free Software Foundation, Inc., 59 Temple Place - Suite 330,         */
+/*  Boston, MA  02111-1307, USA.                                         */
+/*                                                                       */
+/*************************************************************************/
+
 
 #include <memory.h>
 #include <memory>
@@ -19,6 +44,7 @@ using namespace regexx;
 #include "BmMail.h"
 #include "BmMailHeader.h"
 #include "BmNetUtil.h"
+#include "BmPopAccount.h"
 #include "BmSmtpAccount.h"
 #include "BmSmtp.h"
 #include "BmPrefs.h"
@@ -54,6 +80,7 @@ BmSmtp::BmSmtp( const BString& name, BmSmtpAccount* account)
 	,	mState( 0)
 	,	mServerMayHaveSizeLimit( false)
 	,	mServerSupportsDSN( false)
+	,	mPwdAcquisitorFunc( NULL)
 {
 }
 
@@ -203,6 +230,7 @@ void BmSmtp::Helo() {
 		-	authenticates through pop-server (SMTP_AFTER_POP)
 \*------------------------------------------------------------------------------*/
 void BmSmtp::AuthViaPopServer() {
+	ThePopAccountList->AuthOnlyFor( mSmtpAccount->AccForSmtpAfterPop());
 }
 
 /*------------------------------------------------------------------------------*\
@@ -210,35 +238,61 @@ void BmSmtp::AuthViaPopServer() {
 		-	Sends user/passwd combination and checks result
 \*------------------------------------------------------------------------------*/
 void BmSmtp::Auth() {
+	BString pwd;
+	bool pwdOK = false;
+	bool first = true;
 	BString authMethod = mSmtpAccount->AuthMethod();
 	authMethod.ToUpper();
-	if (authMethod == "PLAIN") {
-		// PLAIN-method: send single base64-encoded string that is composed like this:
-		// authenticateID + \0 + username + \0 + password
-		// (where authenticateID is currently always empty)
-		BString cmd = BString("AUTH PLAIN");
-		SendCommand( cmd);
-		if (CheckForPositiveAnswer()) {
-			BString base64;
-			cmd = BString("_") << mSmtpAccount->Username() << "_" << mSmtpAccount->Password();
-			cmd[0] = '\0';
-			cmd[mSmtpAccount->Username().Length()+1] = '\0';
-			Encode( "base64", cmd, base64);
-			SendCommand( "", base64);
-			CheckForPositiveAnswer();
+	while(!pwdOK) {
+		if (first && mSmtpAccount->PwdStoredOnDisk()) {
+			pwd = mSmtpAccount->Password();
+		} else if (mPwdAcquisitorFunc) {
+			if (!mPwdAcquisitorFunc( Name(), pwd)) {
+				Disconnect();
+				StopJob();
+				return;
+			}
+		} else
+			BM_THROW_RUNTIME( "Unable to acquire password !?!");
+
+		first = false;
+		if (authMethod == "PLAIN") {
+			// PLAIN-method: send single base64-encoded string that is composed like this:
+			// authenticateID + \0 + username + \0 + password
+			// (where authenticateID is currently always empty)
+			BString cmd = BString("AUTH PLAIN");
+			SendCommand( cmd);
+			if (CheckForPositiveAnswer()) {
+				BString base64;
+				cmd = BString("_") << mSmtpAccount->Username() << "_" << mSmtpAccount->Password();
+				cmd[0] = '\0';
+				cmd[mSmtpAccount->Username().Length()+1] = '\0';
+				Encode( "base64", cmd, base64);
+				SendCommand( "", base64);
+			}
+		} else if (authMethod == "LOGIN") {
+			// LOGIN-method: send base64-encoded username, then send base64-encoded password:
+			BString cmd = BString("AUTH LOGIN");
+			SendCommand( cmd);
+			if (CheckForPositiveAnswer()) {
+				BString base64;
+				Encode( "base64", mSmtpAccount->Username(), base64);
+				SendCommand( base64);
+				CheckForPositiveAnswer();
+				Encode( "base64", mSmtpAccount->Password(), base64);
+				SendCommand( "", base64);
+			}
 		}
-	} else if (authMethod == "LOGIN") {
-		// LOGIN-method: send base64-encoded username, then send base64-encoded password:
-		BString cmd = BString("AUTH LOGIN");
-		SendCommand( cmd);
-		if (CheckForPositiveAnswer()) {
-			BString base64;
-			Encode( "base64", mSmtpAccount->Username(), base64);
-			SendCommand( base64);
-			CheckForPositiveAnswer();
-			Encode( "base64", mSmtpAccount->Password(), base64);
-			SendCommand( "", base64);
-			CheckForPositiveAnswer();
+		try {
+			pwdOK = CheckForPositiveAnswer();
+		} catch( BM_network_error &err) {
+			// most probably a wrong password...
+			BString errstr = err.what();
+			int e;
+			if ((e = mSmtpServer.Error()))
+				errstr << "\nerror: " << e << ", " << mSmtpServer.ErrorStr();
+			BString text = Name() << "\n\n" << errstr;
+			BM_SHOWERR( BString("BmSmtp: ") << text);
 		}
 	}
 }

@@ -3,13 +3,37 @@
 
 		$Id$
 */
+/*************************************************************************/
+/*                                                                       */
+/*  Beam - BEware Another Mailer                                         */
+/*                                                                       */
+/*  http://www.hirschkaefer.de/beam                                      */
+/*                                                                       */
+/*  Copyright (C) 2002 Oliver Tappe <beam@hirschkaefer.de>               */
+/*                                                                       */
+/*  This program is free software; you can redistribute it and/or        */
+/*  modify it under the terms of the GNU General Public License          */
+/*  as published by the Free Software Foundation; either version 2       */
+/*  of the License, or (at your option) any later version.               */
+/*                                                                       */
+/*  This program is distributed in the hope that it will be useful,      */
+/*  but WITHOUT ANY WARRANTY; without even the implied warranty of       */
+/*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU    */
+/*  General Public License for more details.                             */
+/*                                                                       */
+/*  You should have received a copy of the GNU General Public            */
+/*  License along with this program; if not, write to the                */
+/*  Free Software Foundation, Inc., 59 Temple Place - Suite 330,         */
+/*  Boston, MA  02111-1307, USA.                                         */
+/*                                                                       */
+/*************************************************************************/
+
 
 #include <ByteOrder.h>
 #include <File.h>
 #include <Message.h>
 
 #include "BmBasics.h"
-#include "BmJobStatusWin.h"
 #include "BmSmtpAccount.h"
 #include "BmResources.h"
 #include "BmUtil.h"
@@ -81,16 +105,6 @@ bool BmSmtpAccount::NeedsAuthViaPopServer() {
 	return mAuthMethod.ICompare("SMTPAFTERPOP") == 0;
 }
 
-/*------------------------------------------------------------------------------*\
-	SendQueuedMail()
-		-	
-\*------------------------------------------------------------------------------*/
-void BmSmtpAccount::SendQueuedMail() {
-	BMessage archive(BM_JOBWIN_SMTP);
-	archive.AddString( BmJobStatusWin::MSG_JOB_NAME, Name().String());
-	TheJobStatusWin->PostMessage( &archive);
-}
-
 
 /********************************************************************************\
 	BmSmtpAccountList
@@ -103,9 +117,9 @@ BmRef< BmSmtpAccountList> BmSmtpAccountList::theInstance( NULL);
 	CreateInstance()
 		-	initialiazes object by reading info from settings file (if any)
 \*------------------------------------------------------------------------------*/
-BmSmtpAccountList* BmSmtpAccountList::CreateInstance() {
+BmSmtpAccountList* BmSmtpAccountList::CreateInstance( BLooper* jobMetaController) {
 	if (!theInstance) {
-		theInstance = new BmSmtpAccountList;
+		theInstance = new BmSmtpAccountList( jobMetaController);
 	}
 	return theInstance.Get();
 }
@@ -114,8 +128,9 @@ BmSmtpAccountList* BmSmtpAccountList::CreateInstance() {
 	BmSmtpAccountList()
 		-	default constructor, creates empty list
 \*------------------------------------------------------------------------------*/
-BmSmtpAccountList::BmSmtpAccountList()
+BmSmtpAccountList::BmSmtpAccountList( BLooper* jobMetaController)
 	:	inherited( "SmtpAccountList")
+	,	mJobMetaController( jobMetaController)
 {
 }
 
@@ -154,3 +169,14 @@ void BmSmtpAccountList::InstantiateItems( BMessage* archive) {
 	BM_LOG2( BM_LogMailTracking, BString("End of InstantiateMailRefs() for SmtpAccountList"));
 	mInitCheck = B_OK;
 }
+
+/*------------------------------------------------------------------------------*\
+	SendQueuedMail()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmSmtpAccountList::SendQueuedMailFor( const BString accName) {
+	BMessage archive(BM_JOBWIN_SMTP);
+	archive.AddString( BmJobModel::MSG_JOB_NAME, accName.String());
+	mJobMetaController->PostMessage( &archive);
+}
+

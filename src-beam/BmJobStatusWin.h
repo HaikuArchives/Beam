@@ -3,6 +3,31 @@
 	
 		$Id$
 */
+/*************************************************************************/
+/*                                                                       */
+/*  Beam - BEware Another Mailer                                         */
+/*                                                                       */
+/*  http://www.hirschkaefer.de/beam                                      */
+/*                                                                       */
+/*  Copyright (C) 2002 Oliver Tappe <beam@hirschkaefer.de>               */
+/*                                                                       */
+/*  This program is free software; you can redistribute it and/or        */
+/*  modify it under the terms of the GNU General Public License          */
+/*  as published by the Free Software Foundation; either version 2       */
+/*  of the License, or (at your option) any later version.               */
+/*                                                                       */
+/*  This program is distributed in the hope that it will be useful,      */
+/*  but WITHOUT ANY WARRANTY; without even the implied warranty of       */
+/*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU    */
+/*  General Public License for more details.                             */
+/*                                                                       */
+/*  You should have received a copy of the GNU General Public            */
+/*  License along with this program; if not, write to the                */
+/*  Free Software Foundation, Inc., 59 Temple Place - Suite 330,         */
+/*  Boston, MA  02111-1307, USA.                                         */
+/*                                                                       */
+/*************************************************************************/
+
 
 #ifndef _BmJobStatusWin_h
 #define _BmJobStatusWin_h
@@ -14,19 +39,6 @@
 
 #include "BmController.h"
 #include "BmWindow.h"
-
-/*------------------------------------------------------------------------------*\
-	types of messages handled by a BmJobStatusWin:
-\*------------------------------------------------------------------------------*/
-#define BM_JOBWIN_FETCHPOP				'bmea'
-						// sent to BmJobStatusWin in order to start pop-connection
-#define BM_JOBWIN_SMTP					'bmeb'
-						// sent to BmJobStatusWin in order to start smtp-connection
-#define BM_JOBWIN_MOVEMAILS			'bmec'
-						// sent to BmJobStatusWin in order to move mails
-
-class BmPopAccount;
-class BmPopper;
 
 /*------------------------------------------------------------------------------*\
 	BmJobStatusView
@@ -95,11 +107,6 @@ public:
 	// overrides of controller base:
 	BHandler* GetControllerHandler() 	{ return this; }
 
-	//	message component definitions:
-	static const char* const MSG_REFS = 		"refs";
-	static const char* const MSG_NAME = 		"refs";
-	static const char* const MSG_FOLDER = 		"bm:folder";
-
 private:
 	BStatusBar* mStatBar;					// shows number of mails moved during this operation
 	MStringView* mBottomLabel;
@@ -163,6 +170,9 @@ public:
 	// overrides of controller base:
 	BHandler* GetControllerHandler() 	{ return this; }
 
+	// class-functions:
+	static bool AskUserForPwd( const BString accName, BString& pwd);
+
 private:
 	BStatusBar* mStatBar;				// shows current status of this connection
 	BStatusBar* mMailBar;				// shows number of mails handled by this connection
@@ -209,12 +219,6 @@ public:
 
 	//
 	static const rgb_color BM_COL_STATUSBAR;
-
-	//	
-	static BmJobStatusWin* Instance;
-
-	//	message component definitions:
-	static const char* const MSG_JOB_NAME = 		"bm:jobname";
 
 	static BmJobStatusWin* theInstance;
 

@@ -2,6 +2,31 @@
 	BmMailViewWin.cpp
 		$Id$
 */
+/*************************************************************************/
+/*                                                                       */
+/*  Beam - BEware Another Mailer                                         */
+/*                                                                       */
+/*  http://www.hirschkaefer.de/beam                                      */
+/*                                                                       */
+/*  Copyright (C) 2002 Oliver Tappe <beam@hirschkaefer.de>               */
+/*                                                                       */
+/*  This program is free software; you can redistribute it and/or        */
+/*  modify it under the terms of the GNU General Public License          */
+/*  as published by the Free Software Foundation; either version 2       */
+/*  of the License, or (at your option) any later version.               */
+/*                                                                       */
+/*  This program is distributed in the hope that it will be useful,      */
+/*  but WITHOUT ANY WARRANTY; without even the implied warranty of       */
+/*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU    */
+/*  General Public License for more details.                             */
+/*                                                                       */
+/*  You should have received a copy of the GNU General Public            */
+/*  License along with this program; if not, write to the                */
+/*  Free Software Foundation, Inc., 59 Temple Place - Suite 330,         */
+/*  Boston, MA  02111-1307, USA.                                         */
+/*                                                                       */
+/*************************************************************************/
+
 
 #include <File.h>
 #include <InterfaceKit.h>
@@ -33,6 +58,9 @@
 	BmMailViewWin
 \********************************************************************************/
 
+float BmMailViewWin::nNextXPos = 300;
+float BmMailViewWin::nNextYPos = 100;
+
 /*------------------------------------------------------------------------------*\
 	CreateInstance()
 		-	creates a new mail-view window
@@ -54,6 +82,36 @@ BmMailViewWin::BmMailViewWin( BmMailRef* mailRef)
 {
 	CreateGUI();
 	ShowMail( mailRef);
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+status_t BmMailViewWin::UnarchiveState( BMessage* archive) {
+	status_t ret = inherited::UnarchiveState( archive);
+	if (ret == B_OK) {
+		BRect frame = Frame();
+		if (nNextXPos != frame.left || nNextYPos != frame.top) {
+			nNextXPos = frame.left;
+			nNextYPos = frame.top;
+		} else {
+			nNextXPos += 10;
+			nNextYPos += 16;
+			if (nNextYPos > 300) {
+				nNextXPos = 300;
+				nNextYPos = 100;
+			}
+		}
+		MoveTo( BPoint( nNextXPos, nNextYPos));
+		ResizeTo( frame.Width(), frame.Height());
+		WriteStateInfo();
+	} else {
+		MoveTo( BPoint( nNextXPos, nNextYPos));
+		ResizeTo( 400, 400);
+		WriteStateInfo();
+	}
+	return ret;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -200,6 +258,7 @@ void BmMailViewWin::MessageReceived( BMessage* msg) {
 					if (mailRef) {
 						BMessage msg2( msg->what);
 						msg2.AddPointer( BmApplication::MSG_MAILREF, static_cast< void*>( mailRef.Get()));
+						mailRef->AddRef();	// the message now refers to the mailRef, too
 						be_app_messenger.SendMessage( &msg2, &msg2);
 					}
 				}
