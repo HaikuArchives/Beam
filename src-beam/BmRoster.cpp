@@ -249,7 +249,7 @@ public:
 	};
 	
 	ListMenuBuilder( BmListModel* list, BMenu* menu, BMessage* msgTemplate,
-						  BHandler* msgTarget);
+						  BHandler* msgTarget, const BmString& shortcuts);
 	~ListMenuBuilder();
 	status_t Go();
 	
@@ -275,7 +275,8 @@ private:
 };
 
 ListMenuBuilder::ListMenuBuilder( BmListModel* list, BMenu* menu, 
-											 BMessage* msgTemplate, BHandler* msgTarget)
+											 BMessage* msgTemplate, BHandler* msgTarget,
+											 const BmString& shortcuts)
 	:	mList(list)
 	,	mMenu(menu)
 	,	mMsgTemplate(msgTemplate)
@@ -283,6 +284,7 @@ ListMenuBuilder::ListMenuBuilder( BmListModel* list, BMenu* menu,
 	,	mSkipFirstLevel(false)
 	,	mAddNoneItem(false)
 	,	mItemFilter(NULL)
+	,	mShortcuts(shortcuts)
 {
 	menu->GetFont( &mFont);
 }
@@ -385,7 +387,8 @@ static void RebuildList( BmMenuControllerBase* menu, BmListModel* list,
 								 bool skipFirstLevel)
 {
 	ClearMenu( menu);	
-	ListMenuBuilder builder(list, menu, menu->MsgTemplate(), menu->MsgTarget());
+	ListMenuBuilder builder(list, menu, menu->MsgTemplate(), menu->MsgTarget(),
+									menu->Shortcuts());
 	builder.SkipFirstLevel(skipFirstLevel);
 	builder.Go();
 }
@@ -410,7 +413,7 @@ void BmRoster::RebuildFilterMenu( BmMenuControllerBase* menu)
 	ItemFilter itemFilter;
 	ClearMenu( menu);	
 	ListMenuBuilder builder(TheFilterList.Get(), menu, menu->MsgTemplate(), 
-									menu->MsgTarget());
+									menu->MsgTarget(), menu->Shortcuts());
 //	builder.ItemFilter(&itemFilter);
 	builder.Go();
 }
