@@ -137,7 +137,7 @@ BmMainWindow::BmMainWindow()
 	BmToolbarButton::CalcMaxSize(width, height, "Reply", true);
 	BmToolbarButton::CalcMaxSize(width, height, "Forward", true);
 	BmToolbarButton::CalcMaxSize(width, height, "Print");
-	BmToolbarButton::CalcMaxSize(width, height, "Delete");
+	BmToolbarButton::CalcMaxSize(width, height, "Trash");
 
 	int32 defaultFwdMsgType = 
 		ThePrefs->GetString( "DefaultForwardType")=="Inline"
@@ -188,7 +188,7 @@ BmMainWindow::BmMainWindow()
 						),
 					mTrashButton 
 						= new BmToolbarButton( 
-							"Delete", 
+							"Trash", 
 							width, height,
 							new BMessage(BMM_TRASH), this, 
 							"Move selected messages to Trash"

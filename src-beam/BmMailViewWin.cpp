@@ -136,7 +136,7 @@ void BmMailViewWin::CreateGUI() {
 	BmToolbarButton::CalcMaxSize(width, height, "Reply All");
 	BmToolbarButton::CalcMaxSize(width, height, "Forward");
 	BmToolbarButton::CalcMaxSize(width, height, "Print");
-	BmToolbarButton::CalcMaxSize(width, height, "Delete");
+	BmToolbarButton::CalcMaxSize(width, height, "Trash");
 
 	int32 defaultFwdMsgType = 
 		ThePrefs->GetString( "DefaultForwardType")=="Inline"
@@ -165,7 +165,7 @@ void BmMailViewWin::CreateGUI() {
 																   width, height,
 																	new BMessage(BMM_PRINT), this, 
 																	"Print this messages"),
-					mTrashButton = new BmToolbarButton( "Delete", 
+					mTrashButton = new BmToolbarButton( "Trash", 
 																   width, height,
 																	new BMessage(BMM_TRASH), this, 
 																	"Move this message to Trash"),
