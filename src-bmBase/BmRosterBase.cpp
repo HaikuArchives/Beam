@@ -32,9 +32,9 @@
 
 #include "BmRosterBase.h"
 
-const char* BM_ROSTER_FOLDERLIST		= "FolderList";
-const char* BM_ROSTER_STATUSLIST		= "StatusList";
-const char* BM_ROSTER_IDENTITYLIST	= "IdentityList";
+const char* BmRosterBase::BM_ROSTER_FOLDERLIST		= "FolderList";
+const char* BmRosterBase::BM_ROSTER_STATUSLIST		= "StatusList";
+const char* BmRosterBase::BM_ROSTER_IDENTITYLIST	= "IdentityList";
 
 BmRosterBase* BeamRoster = 0;
 

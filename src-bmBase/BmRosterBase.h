@@ -32,13 +32,11 @@
 #ifndef _BmRosterBase_h
 #define _BmRosterBase_h
 
+#include "BmBase.h"
+
 class BHandler;
 class BMenu;
 class BMessage;
-
-extern IMPEXPBMBASE const char* BM_ROSTER_FOLDERLIST;
-extern IMPEXPBMBASE const char* BM_ROSTER_STATUSLIST;
-extern IMPEXPBMBASE const char* BM_ROSTER_IDENTITYLIST;
 
 /*------------------------------------------------------------------------------*\
 	BmRosterBase
@@ -49,12 +47,17 @@ extern IMPEXPBMBASE const char* BM_ROSTER_IDENTITYLIST;
 class IMPEXPBMBASE BmRosterBase {
 
 public:
+	BmRosterBase() 							{}
 	virtual ~BmRosterBase() 				{}
 	
 	// native methods:
 	virtual void FillMenuFromList( const char* listName, BMenu* menu, 
 											 BHandler* menuTarget, 
-											 BMessage* msgTemplate) = 0;
+											 BMessage* msgTemplate) {}
+
+	static IMPEXPBMBASE const char* BM_ROSTER_FOLDERLIST;
+	static IMPEXPBMBASE const char* BM_ROSTER_STATUSLIST;
+	static IMPEXPBMBASE const char* BM_ROSTER_IDENTITYLIST;
 };
 
 extern IMPEXPBMBASE BmRosterBase* BeamRoster;
