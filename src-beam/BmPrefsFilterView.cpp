@@ -473,8 +473,9 @@ void BmPrefsFilterView::MessageReceived( BMessage* msg) {
 						BmFilterChain* chain = dynamic_cast< BmFilterChain*>( chainItem.Get());
 						if (chain) {
 							BmChainedFilter* chainedFilter 
-								= new BmChainedFilter( newFilter->Key().String(), chain);
-							chain->AddItemToList( chainedFilter);
+								= new BmChainedFilter( newFilter->Key().String(), 
+															  chain->ChainedFilters());
+							chain->ChainedFilters()->AddItemToList( chainedFilter);
 						}
 					}
 					NoticeChange();
@@ -505,8 +506,9 @@ void BmPrefsFilterView::MessageReceived( BMessage* msg) {
 						BmFilterChain* chain = dynamic_cast< BmFilterChain*>( chainItem.Get());
 						if (chain) {
 							BmChainedFilter* chainedFilter 
-								= new BmChainedFilter( newFilter->Key().String(), chain);
-							chain->AddItemToList( chainedFilter);
+								= new BmChainedFilter( newFilter->Key().String(), 
+															  chain->ChainedFilters());
+							chain->ChainedFilters()->AddItemToList( chainedFilter);
 						}
 					}
 					NoticeChange();

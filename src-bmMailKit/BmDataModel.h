@@ -69,7 +69,7 @@ enum {
 			object.
 		-	contains functionality to add/remove controllers
 \*------------------------------------------------------------------------------*/
-class BmDataModel : public virtual BmRefObj {
+class BmDataModel : public BmRefObj {
 	typedef set< BmController*> BmControllerSet;
 	
 	friend class MailMonitorTest;
@@ -211,7 +211,7 @@ typedef map< BmString, BmRef<BmListModelItem> > BmModelItemMap;
 	BmListModelItem
 		-	base class for the items that will be part of a BmListModel
 \*------------------------------------------------------------------------------*/
-class BmListModelItem : public virtual BmRefObj, public BArchivable {
+class BmListModelItem : public BmRefObj, public BArchivable {
 	typedef BmRefObj inherited;
 	typedef BArchivable inheritedArchivable;
 	friend class BmListModel;

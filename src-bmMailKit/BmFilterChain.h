@@ -42,6 +42,7 @@
 extern BmString BM_DefaultOutItemLabel;
 
 class BmFilterChainList;
+class BmChainedFilterList;
 class BmFilterChain;
 /*------------------------------------------------------------------------------*\
 	BmChainedFilter 
@@ -51,8 +52,8 @@ class BmChainedFilter : public BmListModelItem {
 	typedef BmListModelItem inherited;
 
 public:
-	BmChainedFilter( const char* filterName, BmFilterChain* model);
-	BmChainedFilter( BMessage* archive, BmFilterChain* model);
+	BmChainedFilter( const char* filterName, BmChainedFilterList* model);
+	BmChainedFilter( BMessage* archive, BmChainedFilterList* model);
 	virtual ~BmChainedFilter();
 	
 	// native methods:
@@ -66,7 +67,8 @@ public:
 
 	// setters:
 	inline void Position( int32 p)		{ mPosition = p;  
-													  TellModelItemUpdated( UPD_ALL | UPD_SORT); }
+													  TellModelItemUpdated( UPD_ALL 
+													  								| UPD_SORT); }
 
 	// archivable components:
 	static const char* const MSG_POSITION;
@@ -91,40 +93,33 @@ private:
 typedef multimap< int32, BmChainedFilter*> BmFilterPosMap;
 
 /*------------------------------------------------------------------------------*\
-	BmFilterChain
-		-	represents a ordered list of filter-references (BmChainedFilters)
-		- 	additionally represents an item within the filter-chain-list 
-			(so an object of this class is an item as well as a list!).
+	BmChainedFilterList
+		- 	represents a list of chained filters.
 \*------------------------------------------------------------------------------*/
-class BmFilterChain : virtual public BmListModelItem, virtual public BmListModel {
-	typedef BmListModelItem inheritedItem;
-	typedef BmListModel inheritedList;
+class BmChainedFilterList : public BmListModel {
+	typedef BmListModel inherited;
 
 	// archivable components:
 	static const char* const MSG_NAME;
-	static const int16 nListArchiveVersion;
-	static const int16 nItemArchiveVersion;
+	static const int16 nArchiveVersion;
 
 public:
-	BmFilterChain( const char* name, BmFilterChainList* model);
-	BmFilterChain( BMessage* archive, BmFilterChainList* model);
-	virtual ~BmFilterChain();
+	BmChainedFilterList( const char* name);
+	BmChainedFilterList( BMessage* archive);
+	virtual ~BmChainedFilterList();
 	
 	// native methods:
 	void RenumberPos();
 	//
-	inline BmFilterPosMap::const_iterator posBegin() const { return mPosMap.begin(); }
-	inline BmFilterPosMap::const_iterator posEnd() const { return mPosMap.end(); }
-
-	// overrides of item base:
-	status_t Archive( BMessage* archive, bool deep = true) const;
-	int16 ArchiveVersion() const			{ return nItemArchiveVersion; }
-	const BmString& RefName() const		{ return Key(); }
+	inline BmFilterPosMap::const_iterator posBegin() const 
+													{ return mPosMap.begin(); }
+	inline BmFilterPosMap::const_iterator posEnd() const 
+													{ return mPosMap.end(); }
 
 	// overrides of listmodel base:
+	int16 ArchiveVersion() const			{ return nArchiveVersion; }
 	const BmString SettingsFileName();
 	void InstantiateItems( BMessage* archive);
-	int16 ListArchiveVersion() const		{ return nListArchiveVersion; }
 	bool AddItemToList( BmListModelItem* item, BmListModelItem* parent=NULL);
 	void RemoveItemFromList( BmListModelItem* item);
 	bool StartJob();
@@ -132,10 +127,54 @@ public:
 									const BmString& oldVal, 
 									const BmString& newVal);
 
+private:
+	BmChainedFilterList();					// hide default constructor
+	// Hide copy-constructor and assignment:
+	BmChainedFilterList( const BmChainedFilterList&);
+	BmChainedFilterList operator=( const BmChainedFilterList&);
+	
+	BmFilterPosMap mPosMap;
+
+};
+
+
+/*------------------------------------------------------------------------------*\
+	BmFilterChain
+		- 	represents an item within the filter-chain-list.
+		-	additionally, each of these items contains a ordered list of chained
+			filters, so each item represents (contains) a list-model, too
+\*------------------------------------------------------------------------------*/
+class BmFilterChain : public BmListModelItem {
+	typedef BmListModelItem inherited;
+
+	// archivable components:
+	static const char* const MSG_NAME;
+	static const int16 nArchiveVersion;
+
+public:
+	BmFilterChain( const char* name, BmFilterChainList* model);
+	BmFilterChain( BMessage* archive, BmFilterChainList* model);
+	virtual ~BmFilterChain();
+	
+	// native methods:
+
+	// overrides of item base:
+	status_t Archive( BMessage* archive, bool deep = true) const;
+	int16 ArchiveVersion() const			{ return nArchiveVersion; }
+	const BmString& RefName() const		{ return Key(); }
+
+	// double-dispatches for convenience:
+	inline BmString ModelNameNC() const	{ return mChainedFilters->ModelName(); }
+	inline BLocker& ModelLocker() const	{ return mChainedFilters->ModelLocker(); }
+	inline BmFilterPosMap::const_iterator posBegin() const 
+													{ return mChainedFilters->posBegin(); }
+	inline BmFilterPosMap::const_iterator posEnd() const 
+													{ return mChainedFilters->posEnd(); }
+
 	// getters:
 	inline const BmString &Name() const	{ return Key(); }
-
-	// setters:
+	inline BmChainedFilterList* ChainedFilters()
+													{ return mChainedFilters.Get(); }
 
 private:
 	BmFilterChain();							// hide default constructor
@@ -143,7 +182,7 @@ private:
 	BmFilterChain( const BmFilterChain&);
 	BmFilterChain operator=( const BmFilterChain&);
 	
-	BmFilterPosMap mPosMap;
+	BmRef<BmChainedFilterList> mChainedFilters;
 
 };
 
