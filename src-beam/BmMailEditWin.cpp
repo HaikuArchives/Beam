@@ -436,11 +436,11 @@ void BmMailEditWin::CreateGUI() {
 	mCharsetControl->ct_mpm = mSmtpControl->ct_mpm;
 
 	mShowDetails1Button->SetFlags( mShowDetails1Button->Flags() 
-												& (0xFFFFFFFF^B_NAVIGABLE));
+												& ~B_NAVIGABLE);
 	mShowDetails2Button->SetFlags( mShowDetails2Button->Flags() 
-												& (0xFFFFFFFF^B_NAVIGABLE));
+												& ~B_NAVIGABLE);
 	mShowDetails3Button->SetFlags( mShowDetails3Button->Flags()
-												& (0xFFFFFFFF^B_NAVIGABLE));
+												& ~B_NAVIGABLE);
 
 	// initially, the detail-parts are hidden:
 	mDetails2Group->RemoveSelf();
