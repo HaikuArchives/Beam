@@ -7,8 +7,7 @@
 Beam 0.92:
 ***********
 
-
--	rework BmPopper to use BmMemFilters
+-	contribute our BString-related work to OpenBeOS
 
 -	add support for mail-filtering
 
