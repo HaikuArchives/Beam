@@ -161,6 +161,7 @@ private:
 	BMessageRunner* mReadRunner;
 	bool mShowingUrlCursor;
 	bool mHaveMail;
+	BmString mConversionError;
 	
 	// will be archived:
 	BmString mFontName;

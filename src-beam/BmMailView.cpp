@@ -141,6 +141,7 @@ BmMailView::BmMailView( minimax minmax, BRect frame, bool outbound)
 		mRulerView = new BmRulerView( &mFont);
 		AddChild( mRulerView);
 		mRulerView->MoveTo( mBodyPartView->Frame().LeftBottom());
+		m_separator_chars = ThePrefs->GetString( "SeparatorCharsForUndo", " \n\t,.");
 	}
 	CalculateVerticalOffset();
 	mScrollView = new BmMailViewContainer( minmax, this, B_FOLLOW_NONE, 
@@ -683,6 +684,7 @@ void BmMailView::ShowMail( BmMail* mail, bool async) {
 \*------------------------------------------------------------------------------*/
 void BmMailView::JobIsDone( bool completed) {
 	if (completed && mCurrMail && mCurrMail->Header()) {
+		mConversionError.Truncate( 0);
 		BmString displayText;
 		BmStringOBuf displayBuf( mShowRaw 
 											? mCurrMail->RawText().Length()
@@ -775,6 +777,8 @@ void BmMailView::JobIsDone( bool completed) {
 			}
 		}
 		SendNoticesIfNeeded( true);
+		if (mConversionError.Length())
+			BM_SHOWERR( mConversionError);
 	} else {
 		BM_LOG2( BM_LogMailParse, BmString("setting empty mail into textview"));
 		mHeaderView->ShowHeader( NULL);
@@ -825,11 +829,11 @@ void BmMailView::DisplayBodyPart( BmStringOBuf& displayBuf, BmBodyPart* bodyPart
 				displayBuf << bodyPart->DecodedData();
 				if (bodyPart->HadErrorDuringConversion() 
 				&& bodyPart == mCurrMail->Body()->EditableTextBody().Get()) {
-					BmString errText = BmString("The mailtext contains characters that ")
-												<< "could not be converted from the selected charset ("
+					mConversionError = BmString("The mailtext contains characters that ")
+												<< "could not be converted from the proposed charset ("
 												<< bodyPart->SuggestedCharset() << ")\ninto UTF-8.\n\n"
+												<< "Some parts of the mailtext may be missing or\nmay be displayed incorrectly.\n\n"
 												<< "Please try another charset.";
-					BM_SHOWERR( errText);
 				}
 			}
 		}
