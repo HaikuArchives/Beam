@@ -471,11 +471,11 @@ void BmBodyPartView::ItemInvoked( int32 index) {
 		// by the attachment-info:
 		BmString realMT = DetermineMimeType( &eref, true);
 		if (realMT.ICompare( bodyPart->MimeType())!=0) {
-			int32 choice = 1;
+			int32 choice = 0;
 			// we only complain if real mimetype is not text/plain because
 			// otherwise we would issue too many unneccessary complaints
 			// ('message/rfc822' being 'text/plain' and the like):
-			if (realMT.ICompare( "text/plain") != 0) {
+			if (realMT.ICompare( "text/",5) != 0) {
 				BmString s("ATTENTION!\n\nThe attachment has been declared to be of type \n\n\t");
 				s << bodyPart->MimeType()
 				  << "\n\nbut BeOS thinks it is in fact of type\n\n\t" << realMT
