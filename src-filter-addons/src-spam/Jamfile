@@ -2,6 +2,7 @@ SubDir TOP src-filter-addons src-spam ;
 
 SubDirHdrs $(TOP) src-bmBase ;
 SubDirHdrs $(TOP) src-bmRegexx ;
+SubDirHdrs $(TOP) src-bmMailKit ;
 SubDirHdrs $(TOP) src-bmGuiBase ;
 
 SubDirSysHdrs /boot/home/config/include/cppunit ;
@@ -14,7 +15,7 @@ AddOn Spam
 	:  
 		BmSpamFilter.cpp
 	: 	
-		bmGuiBase.so bmRegexx.so bmBase.so 
+		bmGuiBase.so bmMailKit.so bmRegexx.so bmBase.so 
 		layout pcreposix be
 	;
 
