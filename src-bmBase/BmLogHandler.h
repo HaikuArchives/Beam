@@ -141,6 +141,7 @@ extern const uint32 BM_LogModelController;
 extern const uint32 BM_LogMailEditWin;
 extern const uint32 BM_LogSmtp;
 extern const uint32 BM_LogPrefsWin;
+extern const uint32 BM_LogFilter;
 extern const uint32 BM_LogAll;
 
 // macros to convert the loglevel for a specific flag 

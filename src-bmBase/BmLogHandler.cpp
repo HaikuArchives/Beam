@@ -52,6 +52,7 @@ const uint32 BM_LogModelController	= 1UL<<8;
 const uint32 BM_LogMailEditWin		= 1UL<<9;
 const uint32 BM_LogSmtp					= 1UL<<10;
 const uint32 BM_LogPrefsWin			= 1UL<<11;
+const uint32 BM_LogFilter				= 1UL<<12;
 // dummy constant meaning to log everything:
 const uint32 BM_LogAll  				= 0xffffffff;
 
