@@ -160,6 +160,7 @@ BmApplication::BmApplication( const char* sig)
 		TheJobStatusWin->Hide();
 		TheJobStatusWin->Show();
 
+		// create and initialize most of our list-models:
 		BmSignatureList::CreateInstance();
 		TheSignatureList->StartJobInNewThread();
 
@@ -182,6 +183,26 @@ BmApplication::BmApplication( const char* sig)
 
 		BmSmtpAccountList::CreateInstance( TheJobStatusWin);
 		TheSmtpAccountList->StartJobInThisThread();
+
+		// now setup all foreign-key connections between these list-models:
+		ThePopAccountList->AddForeignKey( BmIdentity::MSG_POP_ACCOUNT, 
+													 TheIdentityList.Get());
+		TheSmtpAccountList->AddForeignKey( BmIdentity::MSG_SMTP_ACCOUNT, 
+													  TheIdentityList.Get());
+		TheSignatureList->AddForeignKey( BmIdentity::MSG_SIGNATURE_NAME,
+													TheIdentityList.Get());
+		TheFilterList->AddForeignKey( BmChainedFilter::MSG_FILTERNAME,
+													TheFilterChainList.Get());
+		TheFilterChainList->AddForeignKey( BmPopAccount::MSG_FILTER_CHAIN,
+													  ThePopAccountList.Get());
+		ThePopAccountList->AddForeignKey( BmSmtpAccount::MSG_ACC_FOR_SAP,
+													  TheSmtpAccountList.Get());
+		TheMailFolderList->AddForeignKey( BmPopAccount::MSG_HOME_FOLDER,
+													 ThePopAccountList.Get());
+		TheMailFolderList->AddForeignKey( BmFilterAddon::FK_FOLDER,
+													 TheFilterList.Get());
+		TheMailFolderList->AddForeignKey( BmFilterAddon::FK_IDENTITY,
+													 TheFilterList.Get());
 
 		add_system_beep_event( BM_BEEP_EVENT);
 
