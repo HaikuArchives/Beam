@@ -446,7 +446,7 @@ BmString&
 BmString::Truncate(int32 newLength, bool lazy)
 {
 	if (newLength < 0)
-		return *this;
+		newLength = 0;
 		
 	if (newLength < Length()) {
 		if (lazy)
@@ -1099,6 +1099,7 @@ BmString::ReplaceSet(const char *setOfChars, char with)
 			break;
 
 		_privateData[offset] = with;
+		offset++;
 	}
 
 	return *this;
@@ -1461,11 +1462,8 @@ BmString::_GrowBy(int32 size)
 		_privateData -= sizeof(int32);
 	}
 		
-	if (_privateData)
-		_privateData = (char*)realloc(_privateData, 
-												curLen + size + sizeof(int32) + 1);
-	else
-		_privateData = (char*)malloc(curLen + size + sizeof(int32) + 1);
+	_privateData = (char*)realloc(_privateData, 
+											curLen + size + sizeof(int32) + 1);
 		
 	assert( _privateData);
 
@@ -1849,8 +1847,13 @@ BmString::DeUrlify() {
 			char native[2] = {HEXDIGIT2CHAR(c1)*16+HEXDIGIT2CHAR(c2), '\0'};
 			tempIO.Write( native, 1);
 			lastSrcPos = srcPos+3;
-		} else if (c1 == '%')
+		} else if (c1 == '%') {
+			len = srcPos-lastSrcPos;
+			tempIO.Write( String()+lastSrcPos, len);
+			tempIO.Write( &c1, 1);
+			lastSrcPos = srcPos+2;
 			srcPos++;							// avoid to handle second % of '%%'-sequence
+		}
 	}
 	if (tempIO.HasData()) {
 		// only copy remainder if we have actually changed anything
