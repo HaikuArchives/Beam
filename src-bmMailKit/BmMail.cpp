@@ -413,7 +413,11 @@ BmRef<BmMail> BmMail::CreateReply( int32 replyMode, const BmString selectedText)
 	// copy old message ID into in-reply-to and references fields:
 	BmString messageID = GetFieldVal( BM_FIELD_MESSAGE_ID);
 	newMail->SetFieldVal( BM_FIELD_IN_REPLY_TO, messageID);
-	newMail->SetFieldVal( BM_FIELD_REFERENCES, GetFieldVal( BM_FIELD_REFERENCES) + " " + messageID);
+	BmString oldRefs = GetFieldVal( BM_FIELD_REFERENCES);
+	if (oldRefs.Length())
+		newMail->SetFieldVal( BM_FIELD_REFERENCES, oldRefs + " " + messageID);
+	else
+		newMail->SetFieldVal( BM_FIELD_REFERENCES, messageID);
 	BmString newTo = DetermineReplyAddress( replyMode, false);
 	newMail->SetFieldVal( BM_FIELD_TO, newTo);
 	// Since we are replying, we generate the new mail's from-address 
