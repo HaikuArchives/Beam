@@ -4,15 +4,9 @@
 if ! [ -d ./lib ]; then 
 	mkdir ./lib
 fi
-if ! [ -h ./lib/bmBase.so ]; then 
-	ln -s $PWD/bmBase.so lib/
-fi
-if ! [ -h ./lib/libregexx.so ]; then 
-	ln -s $PWD/libregexx.so lib/
-fi
-if ! [ -h ./lib/SantaPartsForBeam.so ]; then 
-	ln -s $PWD/SantaPartsForBeam.so lib/
-fi
+ln -sf $PWD/bmBase.so lib/
+ln -sf $PWD/libregexx.so lib/
+ln -sf $PWD/SantaPartsForBeam.so lib/
 
 # make sure that the add-ons are installed automatically:
 if ! [ -d /boot/home/config/add-ons/Beam ]; then 
