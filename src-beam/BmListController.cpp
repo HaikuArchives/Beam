@@ -1090,20 +1090,18 @@ BmCLVContainerView::BmCLVContainerView( minimax minmax, ColumnListView* target,
 	,	mCaptionWidth( captionWidth)
 	,	mBusyView( NULL)
 {
-	SetViewColor( B_TRANSPARENT_COLOR);
+	SetViewColor( BmWeakenColor( B_UI_SHADOW_COLOR, BeShadowMod));
 	BRect frame;
 	BPoint LT;
 	BScrollBar* hScroller = horizontal ? ScrollBar( B_HORIZONTAL) : NULL;
 	if (hScroller) {
 		frame = hScroller->Frame();
-		if (showCaption && !mCaptionWidth) {
-//			mCaptionWidth = frame.Width();
+		if (showCaption && !mCaptionWidth)
 			hScroller->Hide();
-		}
 	} else {
 		frame = Bounds();
-		frame.left += 2;
-		frame.right -= 2;
+		frame.left += 1;
+		frame.right -= 1;
 		frame.top = frame.bottom - 1 - B_H_SCROLL_BAR_HEIGHT;
 	}
 	if (showBusyView) {
@@ -1115,7 +1113,7 @@ BmCLVContainerView::BmCLVContainerView( minimax minmax, ColumnListView* target,
 			hScroller->ResizeBy( -bvSize, 0.0);
 			hScroller->MoveBy( bvSize, 0.0);
 		}
-		mBusyView = new BmBusyView( BRect( LT.x, LT.y, LT.x+bvSize, LT.y+bvSize));
+		mBusyView = new BmBusyView( BRect( LT.x, LT.y, LT.x+bvSize-1, LT.y+bvSize));
 		AddChild( mBusyView);
 		frame.left += bvSize;
 	}
@@ -1197,7 +1195,7 @@ BRect BmCLVContainerView::layout( BRect rect) {
 		BScrollBar* hScroller = ScrollBar( B_HORIZONTAL);
 		if (!mCaptionWidth && (!hScroller || hScroller->IsHidden())) {
 			if (ScrollBar( B_VERTICAL))
-				fullCaptionWidth -= B_V_SCROLL_BAR_WIDTH;
+				fullCaptionWidth -= B_V_SCROLL_BAR_WIDTH + 3;
 			mCaption->ResizeTo( fullCaptionWidth, cpFrame.Height());
 			mCaption->Invalidate();
 		}

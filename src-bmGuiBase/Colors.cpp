@@ -18,13 +18,16 @@
 //Be standard UI colors
 const rgb_color BeBackgroundColor = ui_color( B_UI_PANEL_BACKGROUND_COLOR);
 
+// standard shadow-modification:
+const int BeShadowMod = 3;
+
 // color settings for R5:
 static const rgb_color BeControlBackground = { 245, 245, 245, 255};
 static const rgb_color Black =					{   0,   0,   0, 255};
 static const rgb_color White =					{ 255, 255, 255, 255};
 static const rgb_color BeControlHighlight =  {  75,  96, 175, 255};
 static const rgb_color BeTooltipBackground = { 240, 240, 100, 255};
-static const rgb_color BeShadow	=				{ 152, 152, 152, 255};
+static const rgb_color BeShadow =				{   0,   0,   0, 255};
 static const rgb_color BeShine = 				{ 255, 255, 255, 255};
 static const rgb_color BeSuccess	=				{   0, 255,   0, 255};
 static const rgb_color BeFailure = 				{ 255,   0,   0, 255};
@@ -34,7 +37,7 @@ static const rgb_color BeMenuSelectedBackground =	{ 178, 178, 178, 255};
 	Functions for retrieving UI-colors, independent from whether or not the
 	current BeOS supports it or not (on R5 they just return the fixed values):
 \*------------------------------------------------------------------------------*/
-#ifdef BEOS_VERSION_DANO
+#ifdef B_BEOS_VERSION_DANO
 
 status_t BmSetViewUIColor( BView* view, const char* uiColName) {
 	if (!view)
@@ -151,7 +154,7 @@ const char *B_UI_MENU_SELECTED_BORDER_COLOR = "be:c:MenSBr";
 const char *B_UI_SUCCESS_COLOR = "be:c:Success";
 const char *B_UI_FAILURE_COLOR = "be:c:Failure";
 
-#endif 	// BEOS_VERSION_DANO
+#endif 	// B_BEOS_VERSION_DANO
 
 rgb_color BmFixupColor( const char* uiColName, int level, bool weaken) {
 	if (level > 0) {

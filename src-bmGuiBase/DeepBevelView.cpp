@@ -62,7 +62,7 @@ void DeepBevelView::Draw(BRect)
 		m_cached_bounds.bottom-1));
 	StrokeLine(BPoint(m_cached_bounds.left+1,m_cached_bounds.bottom),BPoint(m_cached_bounds.right,
 		m_cached_bounds.bottom));
-	SetHighColor( ui_color( B_UI_SHADOW_COLOR));
+	SetHighColor( BmWeakenColor(B_UI_SHADOW_COLOR, BeShadowMod));
 	StrokeLine(BPoint(m_cached_bounds.left+1,m_cached_bounds.top+1),BPoint(m_cached_bounds.right-1,
 		m_cached_bounds.top+1));
 	StrokeLine(BPoint(m_cached_bounds.left+1,m_cached_bounds.top+2),BPoint(m_cached_bounds.left+1,

@@ -130,14 +130,14 @@ void CLVColumnLabelView::Draw(BRect update_rect)
 				Stop.Set(ColumnEnd-1.0,ViewBounds.bottom);
 				if(MergeWithRight && !(ThisColumn == fColumnClicked && fColumnResizing))
 					Stop.x = ColumnEnd;
-				AddLine(Start,Stop, ui_color(B_UI_SHADOW_COLOR));
+				AddLine(Start,Stop, BmWeakenColor(B_UI_SHADOW_COLOR, BeShadowMod));
 				//Right line
 				if(ThisColumn == fColumnClicked && fColumnResizing)
 					AddLine(BPoint(ColumnEnd,ViewBounds.top),BPoint(ColumnEnd,ViewBounds.bottom),
 						ui_color( B_UI_NAVIGATION_BASE_COLOR));
 				else if(!MergeWithRight)
 					AddLine(BPoint(ColumnEnd,ViewBounds.top),BPoint(ColumnEnd,ViewBounds.bottom),
-						ui_color(B_UI_SHADOW_COLOR));
+						BmWeakenColor(B_UI_SHADOW_COLOR, BeShadowMod));
 				EndLineArray();
 
 				//Add the label
@@ -191,7 +191,7 @@ void CLVColumnLabelView::Draw(BRect update_rect)
 			if(MergeWithLeft)
 				Start.x = ColumnBegin;
 			Stop.Set(ViewBounds.right,ViewBounds.bottom);
-			AddLine(Start,Stop,ui_color(B_UI_SHADOW_COLOR));
+			AddLine(Start,Stop,BmWeakenColor(B_UI_SHADOW_COLOR, BeShadowMod));
 			EndLineArray();
 		}
 	}

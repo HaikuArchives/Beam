@@ -44,6 +44,7 @@ BmCaption::BmCaption( BRect frame, const char* text)
 	:	inherited( frame, NULL, text)
 {
 	SetViewUIColor( B_UI_PANEL_BACKGROUND_COLOR);
+	SetLowUIColor( B_UI_PANEL_BACKGROUND_COLOR);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -58,18 +59,21 @@ BmCaption::~BmCaption() {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmCaption::Draw( BRect updateRect) {
-	BRect rect = Bounds();
+	BRect r = Bounds();
 	SetLowColor( ui_color( B_UI_PANEL_BACKGROUND_COLOR));
-	FillRect( BRect(2.0,2.0,rect.right-1,rect.bottom-1), B_SOLID_LOW);
+	FillRect( BRect(1.0,1.0,r.right-1,r.bottom-1), B_SOLID_LOW);
 	SetHighColor( ui_color( B_UI_SHINE_COLOR));
-	StrokeRect( BRect(1.0,1.0,rect.right,rect.bottom));
-	SetHighColor( ui_color( B_UI_SHADOW_COLOR));
-	StrokeRect( rect);
+	StrokeLine( BPoint(0.0,1.0), BPoint(r.right-1,1.0));
+	StrokeLine( BPoint(0.0,1.0), r.LeftBottom());
+	SetHighColor( BmWeakenColor( B_UI_SHADOW_COLOR, BeShadowMod));
+	StrokeLine( r.LeftTop(), r.RightTop());
+	StrokeLine( r.RightTop(), r.RightBottom());
+	StrokeLine( r.LeftBottom(), r.RightBottom());
 	SetHighColor( ui_color( B_UI_PANEL_TEXT_COLOR));
 	font_height fInfo;
 	be_plain_font->GetHeight( &fInfo);
-	float offset = (1+rect.Height()-(fInfo.ascent+fInfo.descent))/2.0;
+	float offset = (1+r.Height()-(fInfo.ascent+fInfo.descent))/2.0;
 	float width = be_plain_font->StringWidth( Text());
-	BPoint pos( rect.Width()-width-2.0, fInfo.ascent+offset);
+	BPoint pos( r.Width()-width-2.0, fInfo.ascent+offset);
 	DrawString( Text(), pos);
 }

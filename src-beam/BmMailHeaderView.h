@@ -129,6 +129,7 @@ public:
 	inline float FixedWidth() 				{ return 5000; }
 
 	// overrides of BView base:
+	void Draw( BRect bounds);
 	void MessageReceived( BMessage* msg);
 
 private:

@@ -1179,7 +1179,7 @@ BmMailViewContainer::BmMailViewContainer( minimax minmax, BmMailView* target,
 	:	inherited( NULL, target, resizingMode, flags, true, true, false, 
 					  B_FANCY_BORDER)
 {
-	SetViewColor( B_TRANSPARENT_COLOR);
+	SetViewUIColor( B_UI_PANEL_BACKGROUND_COLOR);
 	ct_mpm = minmax;
 	target->TargetedByScrollView( this);
 	BRect hsFrame;
@@ -1225,22 +1225,28 @@ void BmMailViewContainer::Draw( BRect bounds) {
 		BPoint lt( bounds.right-B_V_SCROLL_BAR_WIDTH, 
 					  bounds.bottom-B_H_SCROLL_BAR_HEIGHT);
 		BPoint rt( bounds.right, bounds.bottom-B_H_SCROLL_BAR_HEIGHT);
+/*
 		if (IsFocus() || m_target->IsFocus()) {
 			SetHighColor( keyboard_navigation_color());
-			StrokeRect( bounds);
+			StrokeLine( bounds.LeftBottom(), lb);
+			StrokeLine( bounds.RightTop(), rt);
+			StrokeLine( bounds.LeftTop(), bounds.RightTop());
+			StrokeLine( bounds.LeftTop(), bounds.LeftBottom());
 			StrokeLine( lb, lt);
 			StrokeLine( lt, rt);
 		} else {
-			const rgb_color BeDarkBorderPart = {184,184,184,255};
-			const rgb_color BeLightBorderPart = {255,255,255,255};
-			SetHighColor( BeLightBorderPart);
-			StrokeRect( bounds);
+			SetHighColor( ui_color( B_UI_SHINE_COLOR));
+			StrokeLine( bounds.LeftBottom(), lb);
+			StrokeLine( bounds.RightTop(), rt);
 			StrokeLine( lb, lt);
 			StrokeLine( lt, rt);
-			SetHighColor( BeDarkBorderPart);
+			SetHighColor( tint_color( 
+				ui_color( B_UI_PANEL_BACKGROUND_COLOR), B_DARKEN_1_TINT
+			));
 			StrokeLine( bounds.LeftTop(), bounds.RightTop());
 			StrokeLine( bounds.LeftTop(), bounds.LeftBottom());
 		}
+*/
 	}
 }
 

@@ -59,7 +59,7 @@ BetterScrollView::BetterScrollView(const char *name, BView *target, uint32 resiz
 	m_v_scrollbar = ScrollBar(B_VERTICAL);
 	if(scroll_view_corner && horizontal && vertical)
 	{
-		m_scroll_view_corner = new ScrollViewCorner(m_v_scrollbar->Frame().left,
+		m_scroll_view_corner = new ScrollViewCorner(m_v_scrollbar->Frame().left+1,
 			m_h_scrollbar->Frame().top);
 		AddChild(m_scroll_view_corner);
 	}

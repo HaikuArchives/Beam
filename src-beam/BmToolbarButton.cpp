@@ -167,8 +167,8 @@ BPicture* BmToolbarButton::CreatePicture( int32 mode, const char* label,
 	drawImage->Lock();
 	BPicture* picture = new BPicture();
 	view->BeginPicture( picture);
-	view->SetViewColor( BeBackgroundColor);
-	view->SetLowColor( BeBackgroundColor);
+	view->SetViewColor( ui_color( B_UI_PANEL_BACKGROUND_COLOR));
+	view->SetLowColor( ui_color( B_UI_PANEL_BACKGROUND_COLOR));
 	view->FillRect( rect, B_SOLID_LOW);
 
 	// Draw Border
@@ -179,7 +179,7 @@ BPicture* BmToolbarButton::CreatePicture( int32 mode, const char* label,
 		view->StrokeLine( BPoint( rect.right,   rect.top+2),    BPoint( rect.right,   rect.bottom-1), B_SOLID_LOW);	// right
 		view->StrokeLine( BPoint( rect.right-1, rect.bottom),   BPoint( rect.left+2,  rect.bottom),   B_SOLID_LOW);	// bottom
 		view->StrokeLine( BPoint( rect.left+1,  rect.bottom-1), BPoint( rect.left+1,  rect.top+2),    B_SOLID_LOW);	// left
-		view->SetLowColor( ui_color( B_UI_SHADOW_COLOR));
+		view->SetLowColor( BmWeakenColor(B_UI_SHADOW_COLOR, BeShadowMod));
 		view->StrokeLine( BPoint( rect.left+1,  rect.top),      BPoint( rect.right-2, rect.top),      B_SOLID_LOW);	// top
 		view->StrokeLine( BPoint( rect.right-1, rect.top+1),    BPoint( rect.right-1, rect.bottom-2), B_SOLID_LOW);	// right
 		view->StrokeLine( BPoint( rect.right-2, rect.bottom-1), BPoint( rect.left+1,  rect.bottom-1), B_SOLID_LOW);	// bottom
@@ -198,7 +198,7 @@ BPicture* BmToolbarButton::CreatePicture( int32 mode, const char* label,
 			view->SetDrawingMode(B_OP_COPY);
 		} else {
 			if (mode == STATE_OFF) {
-				view->SetLowColor( ui_color( B_UI_SHADOW_COLOR));
+				view->SetLowColor( BmWeakenColor(B_UI_SHADOW_COLOR, BeShadowMod));
 				view->SetDrawingMode(B_OP_ERASE);
 				view->DrawBitmap( image, posIcon+BPoint( 1,1));
 				view->DrawBitmap( image, posIcon+BPoint( 0,0));

@@ -132,14 +132,16 @@ void BmBusyView::Pulse() {
 void BmBusyView::Draw( BRect) {
 	BRect r = mCachedBounds;
 	SetHighColor( ui_color( B_UI_SHINE_COLOR));
-	StrokeRect( BRect(1.0,1.0,r.right,r.bottom));
-	SetHighColor( ui_color( B_UI_SHADOW_COLOR));
-	StrokeRect( r);
+	StrokeLine( BPoint(0.0,1.0), BPoint(r.right-1,1.0));
+	StrokeLine( BPoint(0.0,1.0), r.LeftBottom());
+	SetHighColor( BmWeakenColor( B_UI_SHADOW_COLOR, BeShadowMod));
+	StrokeLine( r.LeftTop(), r.RightTop());
+	StrokeLine( r.RightTop(), r.RightBottom());
+	StrokeLine( r.LeftBottom(), r.RightBottom());
 	if (mBusyCount <= 0) {
 		return;
 	}
 	r.InsetBy( 1.0, 1.0);
-	r.left++;
 	r.top++;
 	SetHighColor( ui_color( B_UI_CONTROL_BACKGROUND_COLOR));
 	StrokeEllipse( r);

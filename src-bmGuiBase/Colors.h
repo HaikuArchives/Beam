@@ -10,7 +10,6 @@
 //******************************************************************************************************
 //**** SYSTEM HEADER FILES
 //******************************************************************************************************
-#include <GraphicsDefs.h>
 #include <InterfaceDefs.h>
 
 #include "SantaPartsForBeam.h"
@@ -20,7 +19,9 @@
 //******************************************************************************************************
 //Be standard UI colors
 extern IMPEXPSANTAPARTSFORBEAM const rgb_color BeBackgroundColor;
+extern IMPEXPSANTAPARTSFORBEAM const int BeShadowMod;
 
+class BView;
 /*------------------------------------------------------------------------------*\
 	Functions for retrieving UI-colors, independent from whether or not the
 	current BeOS supports it or not (on R5 they just return the fixed values):
@@ -39,7 +40,7 @@ inline rgb_color BmStrengthenColor( const char* uiColName, int level) {
 	return BmFixupColor( uiColName, level, false);
 }
 
-#ifndef BEOS_VERSION_DANO
+#ifndef B_BEOS_VERSION_DANO
 
 // backport of UI-colors to R5:
 extern IMPEXPSANTAPARTSFORBEAM const char *B_UI_PANEL_BACKGROUND_COLOR;
@@ -71,6 +72,7 @@ rgb_color ui_color( const char* uiColName);
 #define SetViewUIColor(col) BmSetViewUIColor(this,(col))
 #define SetHighUIColor(col) BmSetHighUIColor(this,(col))
 #define SetLowUIColor(col) BmSetLowUIColor(this,(col))
+
 #endif
 
 #endif

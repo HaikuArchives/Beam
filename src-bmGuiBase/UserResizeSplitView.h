@@ -125,9 +125,6 @@ class IMPEXPSANTAPARTSFORBEAM UserResizeSplitView : public MGroup, public BView
 		MView* m_right_or_bottom;
 		BView* m_left_or_top_BV;
 		BView* m_right_or_bottom_BV;
-		rgb_color m_background_color;
-		rgb_color m_dark_1_color;
-		rgb_color m_dark_2_color;
 		float m_cached_width_or_height;
 		float m_drag_mouse_offset;
 };

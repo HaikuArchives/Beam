@@ -166,7 +166,7 @@ void MultiLineTextControl::Draw(BRect update_rect)
 			}
 			else
 			{
-				SetHighColor( ui_color( B_UI_SHADOW_COLOR));
+				SetHighColor( BmWeakenColor(B_UI_SHADOW_COLOR, BeShadowMod));
 				StrokeLine(BPoint(m_entry_text_rect.left+1,m_entry_text_rect.top+1),
 					BPoint(m_entry_text_rect.right-1,m_entry_text_rect.top+1));
 				StrokeLine(BPoint(m_entry_text_rect.left+1,m_entry_text_rect.top+2),
@@ -197,7 +197,7 @@ void MultiLineTextControl::Draw(BRect update_rect)
 			StrokeLine(BPoint(m_entry_text_rect.left+1,m_entry_text_rect.bottom),
 				BPoint(m_entry_text_rect.right,m_entry_text_rect.bottom));
 
-			SetHighColor(ui_color( B_UI_SHADOW_COLOR));
+			SetHighColor(BmWeakenColor(B_UI_SHADOW_COLOR, BeShadowMod));
 			StrokeLine(BPoint(m_entry_text_rect.left+1,m_entry_text_rect.top+1),
 				BPoint(m_entry_text_rect.right-1,m_entry_text_rect.top+1));
 			StrokeLine(BPoint(m_entry_text_rect.left+1,m_entry_text_rect.top+2),

@@ -64,10 +64,7 @@ UserResizeSplitView::UserResizeSplitView(MView* top_or_left, MView* right_or_bot
 	m_should_resize_right_or_bottom = should_resize_right_or_bottom;
 	m_move_slider_on_frame_resize = move_slider_on_frame_resize;
 	m_dragging = false;
-	m_background_color = ui_color(B_PANEL_BACKGROUND_COLOR);
-	m_dark_1_color = tint_color(m_background_color,B_DARKEN_1_TINT);
-	m_dark_2_color = tint_color(m_background_color,B_DARKEN_2_TINT);
-	SetViewColor(m_background_color);
+	SetViewUIColor(B_UI_PANEL_BACKGROUND_COLOR);
 	m_left_or_top = top_or_left;
 	m_right_or_bottom = right_or_bottom;
 	m_left_or_top_BV = dynamic_cast<BView*>(top_or_left);

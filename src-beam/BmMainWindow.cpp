@@ -117,6 +117,8 @@ BmMainWindow::BmMainWindow()
 	CreateMailRefView( minimax(200,100,1E5,1E5), 400, 200);
 	CreateMailView( minimax(200,200,1E5,1E5), BRect(0,0,400,200));
 
+	HGroup* toolbar = NULL;
+	Space* toolbarSpace = NULL;
 	// Get maximum button size
 	float width=0, height=0;
 	BmToolbarButton::CalcMaxSize(width, height, "Check",		
@@ -145,7 +147,7 @@ BmMainWindow::BmMainWindow()
 			minimax( 600, 200, 1E5, 1E5),
 			CreateMenu(),
 			new MBorder( M_RAISED_BORDER, 3, NULL,
-				new HGroup(
+				toolbar = new HGroup(
 					minimax( -1, -1, 1E5, -1),
 					mCheckButton 
 						= new BmToolbarButton( 
@@ -204,7 +206,7 @@ BmMainWindow::BmMainWindow()
 							new BMessage(BMM_TRASH), this, 
 							"Move selected messages to Trash"
 						),
-					new Space(),
+					toolbarSpace = new Space(),
 					0
 				)
 			),
@@ -244,6 +246,11 @@ BmMainWindow::BmMainWindow()
 	MailFolderSelectionChanged( 0);
 	MailRefSelectionChanged( 0);
 	MailViewChanged( false);
+	
+	toolbar->SetViewUIColor( B_UI_PANEL_BACKGROUND_COLOR);
+	toolbar->SetLowUIColor( B_UI_PANEL_BACKGROUND_COLOR);
+	toolbarSpace->SetViewUIColor( B_UI_PANEL_BACKGROUND_COLOR);
+	toolbarSpace->SetLowUIColor( B_UI_PANEL_BACKGROUND_COLOR);
 
 	AddChild( dynamic_cast<BView*>(mOuterGroup));
 }

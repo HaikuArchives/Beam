@@ -610,3 +610,16 @@ void BmMailHeaderView::MessageReceived( BMessage* msg) {
 		BM_SHOWERR( BmString("MailHeaderView:\n\t") << err.what());
 	}
 }
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailHeaderView::Draw( BRect bounds) {
+	inherited::Draw( bounds);
+	// ugly hack, force ScrollView to redraw its scrollbar:
+	BmMailView* mv = dynamic_cast<BmMailView*>( Parent());
+	if (mv)
+		mv->ContainerView()->RedrawScrollbars();
+}
+
