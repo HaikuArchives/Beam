@@ -871,23 +871,36 @@ bool BmMailEditWin::CreateMailFromFields( bool hardWrapIfNeeded) {
 }
 
 /*------------------------------------------------------------------------------*\
-	SaveMail( hardWrapIfNeeded)
+	SaveMail( saveForSend)
 		-	
 \*------------------------------------------------------------------------------*/
-bool BmMailEditWin::SaveMail( bool hardWrapIfNeeded) {
-	if (!hardWrapIfNeeded && !mModified && !mHasNeverBeenSaved)
+bool BmMailEditWin::SaveMail( bool saveForSend) {
+	if (!saveForSend && !mModified && !mHasNeverBeenSaved)
 		return true;
-	if (!CreateMailFromFields( hardWrapIfNeeded))
+	if (!CreateMailFromFields( saveForSend))
 		return false;
 	BmRef<BmMail> mail = mMailView->CurrMail();
-	if (mail && mail->Store()) {
-		mHasNeverBeenSaved = false;
-		mModified = false;
-		if (LockLooper()) {
-			mSaveButton->SetEnabled( false);
-			UnlockLooper();
+	if (mail) {
+		mail->Outbound( true);				// just to make sure... >:o)
+		if (saveForSend) {
+			// set 'out'-folder as default and then start filter-job:
+			mail->DestFoldername( BM_MAIL_FOLDER_OUT);
+			mail->Filter();
+		} else {
+			// drop draft mails into 'draft'-folder:
+			if (mail->Status() == BM_MAIL_STATUS_DRAFT)
+				mail->DestFoldername( BM_MAIL_FOLDER_DRAFT);
 		}
-		return true;
+			
+		if (mail->Store()) {
+			mHasNeverBeenSaved = false;
+			mModified = false;
+			if (LockLooper()) {
+				mSaveButton->SetEnabled( false);
+				UnlockLooper();
+			}
+			return true;
+		}
 	}
 	return false;
 }
