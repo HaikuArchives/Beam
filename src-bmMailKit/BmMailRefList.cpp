@@ -197,7 +197,7 @@ bool BmMailRefList::StartJob() {
 			InitializeItems();
 		}
 
-#ifdef BM_LOGGING
+#ifdef BM_LOGGING_MEM
 		int32 objSize = 0;
 		BmModelItemMap::const_iterator iter;
 		for( iter = begin(); iter != end(); ++iter) {

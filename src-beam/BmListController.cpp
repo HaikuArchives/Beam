@@ -531,7 +531,7 @@ void BmListViewController::AddAllModelItems() {
 	}
 	if (!Hierarchical()) {
 		// add complete item-list for efficiency:
-#ifdef BM_LOGGING
+#ifdef BM_LOGGING_MEM
 		int32 objSize = 0;
 		for( int32 i=0; i<tempList->CountItems(); ++i) {
 			BmListViewItem* item = (BmListViewItem*)tempList->ItemAt(i);
