@@ -50,7 +50,7 @@ public:
 	~BmMenuControl();
 	
 	// native methods:
-	void MarkItem( const char* label, bool recurse=false);
+	void MarkItem( const char* label);
 	void ClearMark();
 
 	// overrides:

@@ -88,18 +88,20 @@ BmMenuControl::~BmMenuControl() {
 	( )
 		-	
 \*------------------------------------------------------------------------------*/
-void BmMenuControl::MarkItem( const char* label, bool recurse) {
-	BMenuItem* item = NULL;
-	if (recurse) {
-		BmMenuControllerBase::ClearMarkInMenu( Menu());
-		MenuItem()->SetLabel( label);
-		item = BmMenuControllerBase::MarkItemInMenu( Menu(), label);
-	} else
-		item = Menu()->FindItem( label);
-	if (item)
-		item->SetMarked( true);
-	else
-		ClearMark();
+void BmMenuControl::MarkItem( const char* label) {
+	BmMenuControllerBase* menuContr 
+		= dynamic_cast< BmMenuControllerBase*>( Menu());
+	MenuItem()->SetLabel( label);
+	if (menuContr) {
+		menuContr->MarkItem( label);
+		BmMenuControllerBase::MarkItemInMenu( menuContr, label);
+	} else {
+		BMenuItem* item = Menu()->FindItem( label);
+		if (item)
+			item->SetMarked( true);
+		else
+			ClearMark();
+	}
 }
 
 /*------------------------------------------------------------------------------*\
@@ -148,7 +150,11 @@ BRect BmMenuControl::layout(BRect frame) {
 		return frame;
 	MoveTo(frame.LeftTop());
 	ResizeTo(frame.Width(),frame.Height());
+#ifdef B_BEOS_VERSION_DANO
 	float occupiedSpace = Divider()+1+nDividerAdjustment;
+#else
+	float occupiedSpace = Divider()-12;
+#endif
 	if (occupiedSpace < 3)
 		occupiedSpace = 3;					// leave room for focus-rectangle
 	mMenu->MoveTo( occupiedSpace, mMenu->Frame().top);

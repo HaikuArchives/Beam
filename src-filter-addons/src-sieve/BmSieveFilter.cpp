@@ -1099,8 +1099,7 @@ BmSieveFilterPrefs::BmSieveFilterPrefs( minimax minmax)
 									new BmMenuControllerBase( 
 										"", this, 
 										new BMessage( BM_FILEINTO_SELECTED), 
-										RebuildFolderMenu, 
-										BM_MC_LABEL_FROM_MARKED
+										RebuildFolderMenu
 									)
 								),
 								0
@@ -1192,7 +1191,9 @@ BmSieveFilterPrefs::BmSieveFilterPrefs( minimax minmax)
 					0, 0, BM_MAILPART_OTHER
 				),
 				new VGroup(
+#ifdef B_BEOS_VERSION_DANO
 					new Space( minimax( 0,4,1e5,4)),
+#endif
 					mFieldSpecLayer[i] = new LayeredGroup(
 						new Space(),
 						mAddrPartControl[i] = new BmMenuControl( 
@@ -1734,7 +1735,7 @@ void BmSieveFilterPrefs::ShowFilter( BmFilterAddon* addon) {
 
 		mFileIntoControl->SetValueSilently( mCurrFilterAddon->mActionFileInto);
 		mFileIntoValueControl->MarkItem( 
-			mCurrFilterAddon->mActionFileIntoValue.String(), true);
+			mCurrFilterAddon->mActionFileIntoValue.String());
 		mDiscardControl->SetValueSilently( mCurrFilterAddon->mActionDiscard);
 		mSetStatusControl->SetValueSilently( mCurrFilterAddon->mActionSetStatus);
 		mSetStatusValueControl->MarkItem( 
