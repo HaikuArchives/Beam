@@ -2,7 +2,7 @@ change-history of Beam:
 		$Id$
 
 *******************************************************************************
-[Beam test-03-07-14]
+[Beam test-03-07-15]
 
 	summary:
 		-	Mail-filters are now implemented as add-ons.
@@ -23,6 +23,10 @@ Changes.txt, ToDo.txt:
 updateLibFolder.sh:
 	-	now we recreate every link by use of -f flag.
 
+BmFilter:
+	-	we now expect our add-ons in add-on folder relative to
+		Beam's path.
+
 BmFilterAddon, BmMailFilter, BmSieveFilter:
 	-	finished implementing SetStatus- and Discard-functionalities-
 
@@ -32,6 +36,9 @@ BmIdentity:
 
 BmMail:
 	-	implemented storing of mails into Trash.
+
+BmPrefsFilterChainView:
+	-	removed glitch with chainview not always appearing.
 
 < 2003-07-13: commit >
 

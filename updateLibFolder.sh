@@ -1,18 +1,18 @@
 #! /bin/sh
 
 # create links to shared-libs in a subfolder name 'libs':
-if ! [ -d ./lib ]; then 
-	mkdir ./lib
+if ! [ -d $PWD/lib ]; then 
+	mkdir $PWD/lib
 fi
 ln -sf $PWD/bmBase.so lib/
 ln -sf $PWD/libregexx.so lib/
 ln -sf $PWD/SantaPartsForBeam.so lib/
 
-# make sure that the add-ons are installed automatically:
-if ! [ -d /boot/home/config/add-ons/Beam ]; then 
-	mkdir /boot/home/config/add-ons/Beam
+# create links to add-ons in a subfolder named 'add-ons':
+if ! [ -d $PWD/add-ons ]; then 
+	mkdir $PWD/add-ons
 fi
-if ! [ -d /boot/home/config/add-ons/Beam/Filters ]; then 
-	mkdir /boot/home/config/add-ons/Beam/Filters
+if ! [ -d $PWD/add-ons/Filters ]; then 
+	mkdir $PWD/add-ons/Filters
 fi
-ln -sf $PWD/filter-addons/Sieve /boot/home/config/add-ons/Beam/Filters/
+ln -sf $PWD/filter-addons/Sieve $PWD/add-ons/Filters/
