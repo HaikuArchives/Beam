@@ -71,25 +71,54 @@ public:
 	int16 ArchiveVersion() const			{ return nArchiveVersion; }
 
 	// getters:
-	inline const BmString &MailAddr() const 	{ return mMailAddr; }
-	inline bool MarkedAsBitBucket() const		{ return mMarkedAsBitBucket; }
-	inline const BmString &Name() const 		{ return Key(); }
-	inline const BmString &POPAccount() const	{ return mPOPAccount; }
-	inline const BmString &RealName() const 	{ return mRealName; }
-	inline const BmString &ReplyTo() const 	{ return mReplyTo; }
-	inline const BmString &SignatureName() const	 { return mSignatureName; }
-	inline const BmString &SMTPAccount() const	{ return mSMTPAccount; }
-	inline const BmString &MailAliases() const { return mMailAliases; }
+	inline const BmString &MailAddr() const 	
+													{ return mMailAddr; }
+	inline bool MarkedAsBitBucket() const
+													{ return mMarkedAsBitBucket; }
+	inline const BmString &Name() const { return Key(); }
+	inline const BmString &POPAccount() const	
+													{ return mPOPAccount; }
+	inline const BmString &RealName() const 	
+													{ return mRealName; }
+	inline const BmString &ReplyTo() const 	
+													{ return mReplyTo; }
+	inline const BmString &SignatureName() const	 
+													{ return mSignatureName; }
+	inline const BmString &SMTPAccount() const	
+													{ return mSMTPAccount; }
+	inline const BmString &SpecialHeaders() const 	
+													{ return mSpecialHeaders; }
+	inline const BmString &MailAliases() const 
+													{ return mMailAliases; }
 
 	// setters:
-	inline void MailAddr( const BmString &s) 	{ mMailAddr = s;  TellModelItemUpdated( UPD_ALL); }
-	inline void MarkedAsBitBucket( bool b)		{ mMarkedAsBitBucket = b;  TellModelItemUpdated( UPD_ALL); }
-	inline void POPAccount( const BmString &s){ mPOPAccount = s; TellModelItemUpdated( UPD_ALL); }
-	inline void RealName( const BmString &s) 	{ mRealName = s;  TellModelItemUpdated( UPD_ALL); }
-	inline void ReplyTo( const BmString &s) 	{ mReplyTo = s;  TellModelItemUpdated( UPD_ALL); }
-	inline void SignatureName( const BmString &s)	 { mSignatureName = s;  TellModelItemUpdated( UPD_ALL); }
-	inline void SMTPAccount( const BmString &s){ mSMTPAccount = s;  TellModelItemUpdated( UPD_ALL); }
-	inline void MailAliases( const BmString &s){ mMailAliases = s;  TellModelItemUpdated( UPD_ALL); }
+	inline void MailAddr( const BmString &s) 	
+													{ mMailAddr = s;  
+													  TellModelItemUpdated( UPD_ALL); }
+	inline void MarkedAsBitBucket( bool b)		
+													{ mMarkedAsBitBucket = b;  
+													  TellModelItemUpdated( UPD_ALL); }
+	inline void POPAccount( const BmString &s)
+													{ mPOPAccount = s; 
+													  TellModelItemUpdated( UPD_ALL); }
+	inline void RealName( const BmString &s) 	
+													{ mRealName = s; 
+													  TellModelItemUpdated( UPD_ALL); }
+	inline void ReplyTo( const BmString &s) 	
+													{ mReplyTo = s;
+													  TellModelItemUpdated( UPD_ALL); }
+	inline void SignatureName( const BmString &s)
+													{ mSignatureName = s;
+													  TellModelItemUpdated( UPD_ALL); }
+	inline void SMTPAccount( const BmString &s)
+													{ mSMTPAccount = s;
+													  TellModelItemUpdated( UPD_ALL); }
+	inline void SpecialHeaders( const BmString &s)
+													{ mSpecialHeaders = s;
+													  TellModelItemUpdated( UPD_ALL); }
+	inline void MailAliases( const BmString &s)
+													{ mMailAliases = s;
+													  TellModelItemUpdated( UPD_ALL); }
 
 	// archivable components:
 	static const char* const MSG_NAME;
@@ -101,6 +130,7 @@ public:
 	static const char* const MSG_MARK_BUCKET;
 	static const char* const MSG_MAIL_ALIASES;
 	static const char* const MSG_REPLY_TO;
+	static const char* const MSG_SPECIAL_HEADERS;
 	static const int16 nArchiveVersion;
 
 private:
@@ -120,6 +150,7 @@ private:
 	bool mMarkedAsBitBucket;		// is this account a catch-all-account for failed delivery?
 	BmString mMailAliases;			// addresses that belong to this identity, too
 	BmString mReplyTo;
+	BmString mSpecialHeaders;
 };
 
 

@@ -480,6 +480,22 @@ void BmMailHeader::BmHeaderList::Remove( const BmString& fieldName) {
 }
 
 /*------------------------------------------------------------------------------*\
+	RemoveFieldVal( fieldName, val)
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailHeader::BmHeaderList::RemoveFieldVal( const BmString& fieldName,
+																 const BmString& val) {
+	BmHeaderMap::iterator pos = mHeaders.find(fieldName);
+	if (pos != mHeaders.end()) {
+		BmValueList& valueList = pos->second;
+		BmValueList::iterator valPos 
+			= find(valueList.begin(),valueList.end(),val);
+		if (valPos != valueList.end())
+			valueList.erase(valPos);
+	}
+}
+
+/*------------------------------------------------------------------------------*\
 	()
 		-	returns all values found for given fieldName
 \*------------------------------------------------------------------------------*/
@@ -690,6 +706,23 @@ void BmMailHeader::AddFieldVal( BmString fieldName, const BmString value) {
 }
 
 /*------------------------------------------------------------------------------*\
+	RemoveFieldVal()
+	-	
+\*------------------------------------------------------------------------------*/
+void BmMailHeader::RemoveFieldVal( BmString fieldName, const BmString& value)
+{
+	fieldName.CapitalizeEachWord();
+	BmString strippedVal = IsStrippingOkForField( fieldName)
+									? StripField( value)
+									: value;
+	mHeaders.RemoveFieldVal( fieldName, strippedVal);
+	if (IsAddressField( fieldName)) {
+		// field contains an address-spec, we remove the address as well:
+		mAddrMap[fieldName].Remove( strippedVal);
+	}
+}
+
+/*------------------------------------------------------------------------------*\
 	RemoveField()
 	-	
 \*------------------------------------------------------------------------------*/
@@ -840,6 +873,40 @@ BmString BmMailHeader::DetermineReceivingAddrFor( BmIdentity* ident) {
 		needExactMatch = false;
 	}
 	return addr;
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailHeader::PlugDefaultHeader( const BmMailHeader* defaultHeader)
+{
+	if (!defaultHeader)
+		return;
+	BmHeaderMap::const_iterator iter;
+	for(	iter = defaultHeader->mHeaders.begin(); 
+			iter != defaultHeader->mHeaders.end(); ++iter) {
+		uint32 valCount = iter->second.size();
+		for( uint32 v=0; v<valCount; ++v) 
+			AddFieldVal( iter->first, (iter->second)[v]);
+	}
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailHeader::UnplugDefaultHeader( const BmMailHeader* defaultHeader)
+{
+	if (!defaultHeader)
+		return;
+	BmHeaderMap::const_iterator iter;
+	for(	iter = defaultHeader->mHeaders.begin(); 
+			iter != defaultHeader->mHeaders.end(); ++iter) {
+		uint32 valCount = iter->second.size();
+		for( uint32 v=0; v<valCount; ++v) 
+			RemoveFieldVal( iter->first, (iter->second)[v]);
+	}
 }
 
 /*------------------------------------------------------------------------------*\

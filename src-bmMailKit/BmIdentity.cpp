@@ -57,7 +57,8 @@ const char* const BmIdentity::MSG_SIGNATURE_NAME = "bm:signaturename";
 const char* const BmIdentity::MSG_MARK_BUCKET = 	"bm:markbucket";
 const char* const BmIdentity::MSG_MAIL_ALIASES = "bm:mailaliases";
 const char* const BmIdentity::MSG_REPLY_TO = 		"bm:replyto";
-const int16 BmIdentity::nArchiveVersion = 2;
+const char* const BmIdentity::MSG_SPECIAL_HEADERS = "bm:spechead";
+const int16 BmIdentity::nArchiveVersion = 3;
 
 /*------------------------------------------------------------------------------*\
 	BmIdentity()
@@ -89,6 +90,9 @@ BmIdentity::BmIdentity( BMessage* archive, BmIdentityList* model)
 	mMailAliases = FindMsgString( archive, MSG_MAIL_ALIASES);
 	if (version >= 2) {
 		mReplyTo = FindMsgString( archive, MSG_REPLY_TO);
+	}
+	if (version >= 3) {
+		mSpecialHeaders = FindMsgString( archive, MSG_SPECIAL_HEADERS);
 	}
 }
 
@@ -123,6 +127,7 @@ status_t BmIdentity::Archive( BMessage* archive, bool deep) const {
 		||	archive->AddString( MSG_SIGNATURE_NAME, mSignatureName.String())
 		||	archive->AddBool( MSG_MARK_BUCKET, mMarkedAsBitBucket)
 		||	archive->AddString( MSG_REPLY_TO, mReplyTo.String())
+		||	archive->AddString( MSG_SPECIAL_HEADERS, mSpecialHeaders.String())
 		||	archive->AddString( MSG_MAIL_ALIASES, mMailAliases.String());
 	return ret;
 }

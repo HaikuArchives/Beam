@@ -173,6 +173,7 @@ private:
 		void Set( const BmString& fieldName, const BmString content);
 		void Add( const BmString& fieldName, const BmString content);
 		void Remove( const BmString& fieldName);
+		void RemoveFieldVal( const BmString& fieldName, const BmString& val);
 		BmHeaderMap::const_iterator begin() const 
 													{ return mHeaders.begin(); }
 		BmHeaderMap::const_iterator end() const	
@@ -197,6 +198,8 @@ public:
 	void SetFieldVal( BmString fieldName, const BmString value);
 	void AddFieldVal( BmString fieldName, const BmString value);
 	void RemoveField( BmString fieldName);
+	void RemoveFieldVal( const BmString fieldName,
+								const BmString& val);
 	void RemoveAddrFieldVal( BmString fieldName, const BmString address);
 	const BmAddressList& GetAddressList( BmString fieldName);
 	bool IsFieldEmpty( BmString fieldName);
@@ -209,6 +212,9 @@ public:
 	BmString DetermineReceivingAddrFor( BmIdentity* ident);
 	BmString DetermineOriginator( bool bypassReplyTo=false);
 	BmString DetermineListAddress( bool bypassSanityTest=false);
+	//
+	void PlugDefaultHeader( const BmMailHeader* defaultHeader);
+	void UnplugDefaultHeader( const BmMailHeader* defaultHeader);
 	//
 	bool ConstructRawText( BmStringOBuf& header, const BmString& charset);
 
