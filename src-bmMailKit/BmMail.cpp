@@ -10,8 +10,8 @@ using namespace regexx;
 #include "BmUtil.h"
 #include "BmMail.h"
 
-#undef LOGNAME
-#define LOGNAME mAccount
+#undef BM_LOGNAME
+#define BM_LOGNAME mAccountName
 
 /*------------------------------------------------------------------------------*\
 	default constructor
@@ -48,12 +48,12 @@ void BmMail::Set( BString &msgText, const BString &msgUID, const BString &accoun
 	headerLen += 2;							// include cr/nl in header-string
 
 	mText.Adopt( msgText);					// take over the msg-string
+	AccountName( account);
+	UID( msgUID);
 
 	BString header;
 	header.SetTo( mText, headerLen);
-	mAccount = account;
 	ParseHeader( header);
-	mUID = msgUID;
 }
 	
 /*------------------------------------------------------------------------------*\
@@ -61,17 +61,42 @@ void BmMail::Set( BString &msgText, const BString &msgUID, const BString &accoun
 		-	parses mail-header and splits it into fieldname/fieldbody - pairs
 \*------------------------------------------------------------------------------*/
 void BmMail::ParseHeader( const BString &header) {
-	Regexx rxx;
-	rxx.expr( "^(\\S.+?\\r\\n(?:\\s.+?\\r\\n)*)(?=(\\Z|\\S))");
-	rxx.str( header.String());
-	int nm=rxx.exec( Regexx::global | Regexx::newline);
-	vector<RegexxMatch>::const_iterator i;
-	BString str;
-	str << nm << " headerfields found\n";
-	for( i = rxx.match.begin(); i != rxx.match.end(); ++i) {
-		BString s;
-		mText.CopyInto( s, i->start(), i->length());
-		str << s << "\n------------------\n";
+	Regexx rxHeaderFields, rxUnfold;
+	int32 nm;
+
+	// split header into separate header-fields:
+	rxHeaderFields.expr( "^(\\S.+?\\r\\n(?:\\s.+?\\r\\n)*)(?=(\\Z|\\S))");
+	rxHeaderFields.str( header.String());
+	if (!(nm=rxHeaderFields.exec( Regexx::global | Regexx::newline))) {
+		throw mail_format_error( BString("Could not find any header-fields in this header: \n") << header);
 	}
-	BmLOG( str);
+	vector<RegexxMatch>::const_iterator i;
+
+	BM_LOG( BM_LogMailParse, "The mail-header");
+	BM_LOG3( BM_LogMailParse, BString(header) << "\n------------------");
+	BM_LOG( BM_LogMailParse, BString("contains ") << nm << " headerfields\n");
+
+	for( i = rxHeaderFields.match.begin(); i != rxHeaderFields.match.end(); ++i) {
+
+		// split each headerfield into field-name and field-body:
+		BString headerField, fieldName, fieldBody;
+		header.CopyInto( headerField, i->start(), i->Length());
+		int32 pos = headerField.FindFirst( ':');
+		if (pos == B_ERROR) { throw mail_format_error(""); }
+		fieldName.SetTo( headerField, pos);
+		fieldName.RemoveSet( Beam::WHITESPACE);
+		fieldName.CapitalizeEachWord();	
+							// capitalized fieldnames seem to be popular...
+		headerField.CopyInto( fieldBody, pos+1, headerField.Length());
+
+		// unfold the field-body and remove leading and trailing whitespace:
+		fieldBody = rxUnfold.replace( fieldBody, "\\r\\n\\s*", " ", Regexx::newline | Regexx::global);
+		fieldBody = rxUnfold.replace( fieldBody, "^\\s+", "", Regexx::global);
+		fieldBody = rxUnfold.replace( fieldBody, "\\s+$", "", Regexx::global);
+
+		// insert pair into header-map:
+		mHeaders[fieldName] = fieldBody;
+
+		BM_LOG2( BM_LogMailParse, fieldName << ": " << fieldBody << "\n------------------");
+	}
 }

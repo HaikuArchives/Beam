@@ -3,9 +3,6 @@
 		$Id$
 */
 
-#include <iomanip>
-#include <strstream>
-
 #include "BmUtil.h"
 
 /*------------------------------------------------------------------------------*\
@@ -14,7 +11,20 @@
 \*------------------------------------------------------------------------------*/
 namespace Beam {
 	BmLogHandler* LogHandler = NULL;
+	int8 BM_LOGLEVEL = 1;
+	char *WHITESPACE = "\n\r\t ";
 };
+
+/*------------------------------------------------------------------------------*\
+	the different "terrains" we will be logging, each of them
+	has its own loglevel:
+\*------------------------------------------------------------------------------*/
+const int16 BM_LogPop  			= 1<<0;
+const int16 BM_LogConnWin 		= 1<<1;
+const int16 BM_LogMailParse 	= 1<<2;
+const int16 BM_LogUtil		 	= 1<<3;
+// dummy constant meaning to log everything:
+const int16 BM_LogAll  			= 0xffff;
 
 /*------------------------------------------------------------------------------*\
 	FindMsgString( archive, name)
@@ -116,21 +126,33 @@ BmLogHandler::~BmLogHandler() {
 			++logIter) {
 		delete (*logIter).second;
 	}
+	BM_LOG3( BM_LogUtil, "locking result: %ld");
 }
+
+/*------------------------------------------------------------------------------*\
+	constructor
+		- standard
+\*------------------------------------------------------------------------------*/
+BmLogHandler::BmLogfile::BmLogfile( const BString &fn)
+	: logfile( NULL)
+	, filename(fn)
+	, loglevels( Beam::Prefs->Loglevels())
+{}
 
 /*------------------------------------------------------------------------------*\
 	LogToFile( logname, msg)
 		-	writes msg into the logfile that is named logname
 		-	if no logfile of given name exists, it is created
 \*------------------------------------------------------------------------------*/
-void BmLogHandler::LogToFile( const char* const logname, const char* const msg) {
+void BmLogHandler::LogToFile( const BString &logname, uint32 flag,
+										const BString &msg, int8 minlevel) {
 	LogfileMap::iterator logIter = mActiveLogs.find( logname);
 	BmLogfile *log;
 	if (logIter == mActiveLogs.end()) {
 		// logfile doesn't exists, so we create it:
 		status_t res;
 		while( (res = mBenaph.Lock()) != B_NO_ERROR) {
-			BmLOG( BString("locking result: %ld") << res);
+			BM_LOGERR( BString("locking result: ") << res);
 		}
 		log = new BmLogfile( logname);
 		mActiveLogs[logname] = log;
@@ -138,20 +160,20 @@ void BmLogHandler::LogToFile( const char* const logname, const char* const msg) 
 	} else {
 		log = (*logIter).second;
 	}
-	log->Write( msg);
+	log->Write( msg.String(), flag, minlevel);
 }
 
 /*------------------------------------------------------------------------------*\
 	CloseLog( logname)
 		-	closes the logfile with the specified by name
 \*------------------------------------------------------------------------------*/
-void BmLogHandler::CloseLog( const char* const logname) {
+void BmLogHandler::CloseLog( const BString &logname) {
 	LogfileMap::iterator logIter = mActiveLogs.find( logname);
 	BmLogfile *log;
 	if (logIter != mActiveLogs.end()) {
 		status_t res;
 		while( (res = mBenaph.Lock()) != B_NO_ERROR) {
-			BmLOG( BString("locking result: %ld") << res);
+			BM_LOGERR( BString("locking result: ") << res);
 		}
 		log = (*logIter).second;
 		mActiveLogs.erase( logname);
@@ -172,7 +194,11 @@ BString BmLogHandler::BmLogfile::LogPath = "/boot/home/Sources/beam/logs/";
 		-	writes given msg into log, including current timestamp
 		-	log is flushed after each write
 \*------------------------------------------------------------------------------*/
-void BmLogHandler::BmLogfile::Write( const char* const msg) {
+void BmLogHandler::BmLogfile::Write( const char* const msg, uint32 flag, int8 minlevel) {
+	int8 loglevel = ((loglevels && flag) ? 1 : 0)
+					  + ((loglevels && flag<<16) ? 2 : 0);
+	if (loglevel < minlevel)
+		return;
 	if (logfile == NULL) {
 		BString fn = BString(LogPath) << filename;
 		if (fn.FindFirst(".log") == B_ERROR) {
@@ -182,12 +208,12 @@ void BmLogHandler::BmLogfile::Write( const char* const msg) {
 			BString s = BString("Unable to open logfile ") << fn;
 			throw runtime_error( s.String());
 		}
-		fprintf( logfile, "<%012Ld>: %s\n", watch.ElapsedTime(), "Session Started");
+		fprintf( logfile, "<%012Ld>: %s\n", Beam::Prefs->StopWatch.ElapsedTime(), "Session Started");
 	}
 	BString s(msg);
 	s.ReplaceAll( "\r", "<CR>");
 	s.ReplaceAll( "\n", "\n                ");
-	fprintf( logfile, "<%012Ld>: %s\n", watch.ElapsedTime(), s.String());
+	fprintf( logfile, "<%012Ld>: %s\n", Beam::Prefs->StopWatch.ElapsedTime(), s.String());
 	fflush( logfile);
 }
 
@@ -199,23 +225,13 @@ void BmLogHandler::BmLogfile::Write( const char* const msg) {
 			* 1024000 < bytes 			-> "X.xx MB"
 \*------------------------------------------------------------------------------*/
 BString BytesToString( int32 bytes) {
-	ostrstream ostr; 
-	ostr << setiosflags( std::ios::fixed );
+	char buf[100];
 	if (bytes >= 1024000) {
-		ostr 	<< setprecision(2) 
-				<< bytes/(1024000.0) 
-				<< " MB";
+		sprintf( buf, "%6.2f MB", bytes/1024000.0);
 	} else if (bytes >= 1024) {
-		ostr	<< setiosflags( std::ios::fixed )
-				<< setprecision(2)
-				<< bytes/1024.0
-				<< " KB";
+		sprintf( buf, "%6.2f KB", bytes/1024.0);
 	} else {
-		ostr	<< setiosflags( std::ios::fixed )
-				<< setprecision(0) 
-				<< bytes 
-				<< " bytes";
+		sprintf( buf, "%ld bytes", bytes);
 	}
-	ostr << '\0';								// terminate BString!
-	return ostr.str();
+	return BString(buf);
 }

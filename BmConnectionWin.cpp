@@ -20,6 +20,9 @@
 
 #include "BmConnectionWin.h"
 
+#undef BM_LOGNAME
+#define BM_LOGNAME "ConnWin"
+
 /*------------------------------------------------------------------------------*\
 	the color used for status-bar's gauge:
 \*------------------------------------------------------------------------------*/
@@ -51,6 +54,7 @@ BmConnectionWin::BmConnectionWin( const char* title, BLooper *invoker)
 	AddChild( dynamic_cast<BView*>(mOuterGroup));
 
 	BmConnectionWin::ConnectionWinAlive = true;
+	BM_LOG3( BM_LogConnWin, "ConnectionWin has started");
 }
 
 /*------------------------------------------------------------------------------*\
@@ -59,9 +63,6 @@ BmConnectionWin::BmConnectionWin( const char* title, BLooper *invoker)
 		-	tells interested party that we are finished
 \*------------------------------------------------------------------------------*/
 BmConnectionWin::~BmConnectionWin() {
-	if (mInvokingLooper) 
-		mInvokingLooper->PostMessage( BM_POPWIN_DONE);
-	BmConnectionWin::ConnectionWinAlive = false;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -70,6 +71,9 @@ BmConnectionWin::~BmConnectionWin() {
 \*------------------------------------------------------------------------------*/
 bool BmConnectionWin::QuitRequested() {
 	BmConnectionWin::ConnectionWinAlive = false;
+	BM_LOG3( BM_LogConnWin, BString("ConnectionWin has been closed"));
+	if (mInvokingLooper) 
+		mInvokingLooper->PostMessage( BM_POPWIN_DONE);
 	return true;
 }
 
@@ -80,38 +84,48 @@ bool BmConnectionWin::QuitRequested() {
 			finished-triggers)
 \*------------------------------------------------------------------------------*/
 void BmConnectionWin::MessageReceived(BMessage *msg) {
-	switch( msg->what) {
-		case BM_POPWIN_FETCHMSGS: {
-			// request to start a new POP3-connection
-			BArchivable *obj;
-			BmPopAccount *account;
-			obj = instantiate_object( msg);
-			if (obj && (account = cast_as( obj, BmPopAccount))) {
-				AddPopper( account);
-				if (IsHidden())
-					Show();
-			} else {
-				throw invalid_argument( "Could not create BmPopAccount-instance from message of type MSG_FETCHMSGS");
-							// Illegal message data !?!
+	try {
+		switch( msg->what) {
+			case BM_POPWIN_FETCHMSGS: {
+				// request to start a new POP3-connection
+				BArchivable *obj;
+				BmPopAccount *account;
+				obj = instantiate_object( msg);
+				if (obj && (account = cast_as( obj, BmPopAccount))) {
+					AddPopper( account);
+					if (IsHidden())
+						Show();
+				} else {
+					throw invalid_argument( "Could not create BmPopAccount-instance from message of type MSG_FETCHMSGS");
+								// Illegal message data !?!
+				}
+				break;
 			}
-			break;
-		}
-		case BM_POP_DONE: {
-			// a POP3-connection tells us that it has finished its job
-			RemovePopper( FindMsgString( msg, BmPopper::MSG_POPPER));
-			if (mActiveConnections.empty()) {
-				Hide();
+			case BM_POP_DONE: {
+				// a POP3-connection tells us that it has finished its job
+				RemovePopper( FindMsgString( msg, BmPopper::MSG_POPPER));
+				if (mActiveConnections.empty()) {
+					Hide();
+				}
+				break;
 			}
-			break;
+			case BM_POP_UPDATE_STATE:
+			case BM_POP_UPDATE_MAILS: {
+				// a POP3-connection wants to update its interface
+				UpdatePopperInterface( msg);
+				break;
+			}
+			default:
+				BWindow::MessageReceived( msg);
 		}
-		case BM_POP_UPDATE_STATE:
-		case BM_POP_UPDATE_MAILS: {
-			// a POP3-connection wants to update its interface
-			UpdatePopperInterface( msg);
-			break;
-		}
-		default:
-			BWindow::MessageReceived( msg);
+	}
+	catch( exception &err) {
+		// a problem occurred, we tell the user:
+		BM_LOGERR( BString("ConnectionWin: ") << err.what());
+		BString errText = BString("ConnectionWindow: ") << err.what();
+		BAlert *alert = new BAlert( NULL, errText.String(), "OK", NULL, NULL, 
+											 B_WIDTH_AS_USUAL, B_STOP_ALERT);
+		alert->Go();
 	}
 }
 
@@ -129,6 +143,8 @@ void BmConnectionWin::AddPopper( BmPopAccount *account) {
 	BStatusBar* statBar;
 	BStatusBar* mailBar;
 	MView* interface;
+
+	BM_LOG( BM_LogConnWin, BString("Adding Popper ") << account->Name());
 
 	ConnectionMap::iterator interfaceIter = mActiveConnections.find( account->Name());
 	if (interfaceIter != mActiveConnections.end()) {
@@ -153,6 +169,7 @@ void BmConnectionWin::AddPopper( BmPopAccount *account) {
 
 	if (interfaceIter == mActiveConnections.end())
 	{	// account is inactive, so we create a new interface for it...
+		BM_LOG2( BM_LogConnWin, BString("Creating new interface for ") << name);
 		interface = AddPopperInterface( name, statBar, mailBar);
 		// ...note the thread's id and corresponding view inside the map...
 		mActiveConnections[account->Name()] = new BmConnectionWinInfo(t_id, interface, statBar, mailBar);
@@ -160,6 +177,7 @@ void BmConnectionWin::AddPopper( BmPopAccount *account) {
 		// we are in STATIC-mode, where inactive connections are shown. We just
 		// have to reactivate the interface.
 		// thus, we just store the new thread id...
+		BM_LOG2( BM_LogConnWin, BString("Reactivating interface of ") << name);
 		BmConnectionWinInfo *interfaceInfo = ((*interfaceIter).second);
 		interfaceInfo->thread = t_id;
 		// ...and reinitialize the BStatusBars:
@@ -168,6 +186,7 @@ void BmConnectionWin::AddPopper( BmPopAccount *account) {
 	}
 
 	// finally, we activate the Popper:
+	BM_LOG2( BM_LogConnWin, BString("Starting popper thread ") << t_id);
 	resume_thread( t_id);
 }
 
@@ -216,6 +235,8 @@ void BmConnectionWin::UpdatePopperInterface( BMessage* msg) {
 	const char* trailing = NULL;
 	msg->FindString( BmPopper::MSG_TRAILING, &trailing);
 
+	BM_LOG2( BM_LogConnWin, BString("Updating interface for ") << name);
+
 	ConnectionMap::iterator interfaceIter = mActiveConnections.find( name);
 	if (interfaceIter == mActiveConnections.end())
 		return;		// account is not active, nothing to do...
@@ -244,6 +265,8 @@ void BmConnectionWin::UpdatePopperInterface( BMessage* msg) {
 void BmConnectionWin::RemovePopper( const char* name) {
 	assert( name);
 
+	BM_LOG( BM_LogConnWin, BString("Removing popper ") << name);
+
 	ConnectionMap::iterator interfaceIter = mActiveConnections.find( name);
 	if (interfaceIter == mActiveConnections.end())
 		return;									// account is not active, nothing to do...
@@ -256,6 +279,7 @@ void BmConnectionWin::RemovePopper( const char* name) {
 	if (Beam::Prefs->DynamicConnectionWin() == BmPrefs::CONN_WIN_DYNAMIC 
 	|| (Beam::Prefs->DynamicConnectionWin() == BmPrefs::CONN_WIN_DYNAMIC_EMPTY
 		&& interfaceInfo->mailBar->CurrentValue()==0)) {
+		BM_LOG2( BM_LogConnWin, BString("Removing interface of Popper ") << name);
 		RemovePopperInterface( interfaceInfo);
 							// account is found, so we remove its interface...
 		mActiveConnections.erase( interfaceIter);

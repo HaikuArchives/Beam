@@ -10,6 +10,7 @@
 #include <stdexcept>
 
 #include <Archivable.h>
+#include <StopWatch.h>
 #include <String.h>
 
 #include "BmUtil.h"
@@ -24,6 +25,7 @@ class BmPrefs : public BArchivable {
 	// archivable components:
 	static char* const MSG_DYNAMIC_CONN_WIN = "bm:dynconnwin";
 	static char* const MSG_RECEIVE_TIMEOUT = 	"bm:recvtimeout";
+	static char* const MSG_LOGLEVELS = 			"bm:loglevels";
 public:
 	BmPrefs( void)
 			;
@@ -48,13 +50,17 @@ public:
 	// getters:
 	TConnWinMode DynamicConnectionWin() const	{ return mDynamicConnectionWin; }
 	int16 ReceiveTimeout() const 			{ return mReceiveTimeout; }
+	int32 Loglevels() const 				{ return mLoglevels; }
 
 	// setters:
 	void CheckMail( TConnWinMode m) 		{ mDynamicConnectionWin = m; }
 	void ReceiveTimeout( int16 i) 		{ mReceiveTimeout = i; }
+	void Loglevels( int32 i) 				{ mLoglevels = i; }
 
 	bool static InitPrefs();
 
+	BStopWatch StopWatch;
+	
 private:
 	// TODO: make these configurable by user (i.e. write a GUI):
 	TConnWinMode mDynamicConnectionWin;	// show connections in connection-window only when
@@ -62,6 +68,9 @@ private:
 													// show the ones with new mail
 													// or display them all the time?
 	int16 mReceiveTimeout;					// network-timeout for answer of servers
+	int32 mLoglevels;							// default loglevels, for each logflag
+													// 2 bits are used (allowing levels from 
+													// 0 [off] to 3 [full])
 };
 
 // global pointer to preferences:

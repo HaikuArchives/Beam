@@ -13,8 +13,8 @@
 #include "BmPopper.h"
 #include "BmMail.h"
 
-#undef LOGNAME
-#define LOGNAME mPopperInfo->name
+#undef BM_LOGNAME
+#define BM_LOGNAME mPopperInfo->name
 
 /*------------------------------------------------------------------------------*\
 	NewPopper( data)
@@ -28,16 +28,17 @@ int32 BmPopper::NewPopper( void* data) {
 		if (pInfo) {
 			BmPopper popper( pInfo);
 			popper.Start();
-			BmLOG_FINISH(pInfo->name);
+			BM_LOG_FINISH(pInfo->name);
 		} else
 			throw runtime_error("NewPopper(): No valid BmPopperInfo* given!");
 		return 0;
 	} catch( exception &e) {
 		BString text = BString(pInfo->name) << "\n\n" << e.what();
+		BM_LOGERR( BString("BmPopper (") << pInfo->name << "): " << e.what());
 		BAlert *alert = new BAlert( NULL, text.String(), "OK", NULL, NULL, 
 											 B_WIDTH_AS_USUAL, B_STOP_ALERT);
 		alert->Go();
-		BmLOG_FINISH(pInfo->name);
+		BM_LOG_FINISH(pInfo->name);
 		return 10;
 	}
 }
@@ -122,9 +123,9 @@ void BmPopper::Start() {
 		int e;
 		if ((e = mPopServer.Error()))
 			errstr << "\nerror: " << e << ", " << mPopServer.ErrorStr();
-		BmLOG( BString("Error: ") << errstr);
 		UpdatePOPStatus( 0.0, NULL, failed);
 		BString text = BString(mPopperInfo->name) << "\n\n" << errstr;
+		BM_LOGERR( BString("BmPopper: ") << text);
 		BAlert *alert = new BAlert( NULL, text.String(), "OK", NULL, NULL, 
 											 B_WIDTH_AS_USUAL, B_STOP_ALERT);
 		alert->Go();
@@ -277,7 +278,6 @@ void BmPopper::Retrieve() {
 // snooze( 200*1000);
 	}
 	UpdateMailStatus( 0, "done", mMsgCount);
-	mAnswer.Truncate( BmPopper::NetBufSize, false);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -293,6 +293,13 @@ void BmPopper::Update() {
 // snooze( 200*1000);
 		}
 	}
+/*
+	for( int32 x=0; x<100; x++) {
+		char *p = new char[1000*x];
+fprintf(stderr, "%ld -> %ld...\n", x, x*1000);
+		snooze( 200*1000);
+	}
+*/
 }
 
 /*------------------------------------------------------------------------------*\
@@ -343,18 +350,23 @@ void BmPopper::CheckForPositiveAnswer( bool SingleLineMode, int32 mailNr) {
 	GetAnswer( SingleLineMode, mailNr)
 		-	waits for an answer from server and stores it in mAnswer
 		-	mailNr > 0 if answer is a mail-message, mailNr==0 otherwise
+		-	first line of answer (server-reply-line) is saved into mReplyLine.
+			Because of this, the reply-line does not appear in mAnswer.
 \*------------------------------------------------------------------------------*/
 void BmPopper::GetAnswer( bool SingleLineMode, int32 mailNr) {
 	int32 offset = 0;
 	int32 SMALL = 512;
 	int32 bufSize = (mailNr>0 && mMsgSize > BmPopper::NetBufSize) 
-							? mMsgSize+SMALL+2
+							? mMsgSize+SMALL*4
 							: BmPopper::NetBufSize;
 	char *buffer;
 	bool done = false;
 	bool firstBlock = true;
 	bool replyLineExtracted = false;
-	BmLOG(BString("bufSize:") << bufSize);
+
+	if (mailNr)
+		BM_LOG3( BM_LogPop, BString("announced msg-size:") << mMsgSize);
+	BM_LOG3( BM_LogPop, BString("bufSize:") << bufSize);
 	mAnswer.SetTo( '\0', bufSize);		// preallocate the bufsize we need
 	buffer = mAnswer.LockBuffer( 0);
 	try {
@@ -366,25 +378,26 @@ void BmPopper::GetAnswer( bool SingleLineMode, int32 mailNr) {
 				mAnswer.UnlockBuffer( offset);
 				buffer = mAnswer.LockBuffer( bufSize);
 				bufFree = bufSize - offset;
-				BmLOG(BString("bufSize enlarged to:") << bufSize);
+				BM_LOG2( BM_LogPop, BString("bufSize enlarged to:") << bufSize);
 			}
 			if (bufFree > BmPopper::NetBufSize)
 				bufFree = BmPopper::NetBufSize;
 			int32 numBytes = ReceiveBlock( buffer+offset, bufFree);
-// BmLOG( BString("NumBytes:") << numBytes << BString(" Offset:") << offset << "\nbuffer:\n" << buffer);
 			if (!replyLineExtracted) {
+				// we may have to extract the reply-line from the buffer:
 				char* eol;
 				if ((eol=strstr( buffer, "\r\n")) != NULL) {
+					// reply-line is complete, we extract it from buffer:
+					*eol = 0;
 					eol += 2;
-					mReplyLine.SetTo( buffer);
-					int32 len = strlen(buffer);
-// BmLOG( buffer);
+					mReplyLine = buffer;
+					int32 len = mReplyLine.Length();
 					strcpy( buffer, eol);
-// BmLOG( buffer);
-					offset -= len;
+					offset -= (len+2);
 					replyLineExtracted = true;
-					BmLOG( BString("<--\n") << mReplyLine);
+					BM_LOG( BM_LogPop, BString("<--\n") << mReplyLine);
 					if (SingleLineMode || firstBlock && mReplyLine[0]=='-') {
+						// if all we expect is the reply-line, or if answer is negative, we are done:
 						done = true;
 					}
 				};
@@ -393,8 +406,9 @@ void BmPopper::GetAnswer( bool SingleLineMode, int32 mailNr) {
 				// MULTI_LINE mode
 				int32 searchOffset = (offset > 3 ? offset-4 : 0);
 				if (strstr( buffer+searchOffset, "\r\n.\r\n")) {
+					// end of multiline-answer is indicated by line consisting only of a dot
 					if (!mailNr) {
-						BmLOG( BString("<--\n") << buffer);
+						BM_LOG2( BM_LogPop, BString("<--\n") << buffer);
 					}
 					done = true;
 				}
@@ -408,6 +422,7 @@ void BmPopper::GetAnswer( bool SingleLineMode, int32 mailNr) {
 			}
 		} while( !done);
 		mAnswer.UnlockBuffer( -1);
+		mAnswer.ReplaceAll( "\n..", "\n.");	// remove padding of "termination octet" (dot) inside message
 	} catch (...) {
 		mAnswer.UnlockBuffer( -1);
 		throw;
@@ -452,10 +467,10 @@ void BmPopper::SendCommand( BString cmd) {
 	cmd << "\r\n";
 	int32 size = cmd.Length(), sentSize;
 	if (cmd.IFindFirst("PASS") != B_ERROR) {
-		BmLOG( "-->\nPASS password_omitted_here");
+		BM_LOG( BM_LogPop, "-->\nPASS password_omitted_here");
 													// we do not want to log the password...
 	} else {
-		BmLOG( BString("-->\n") << cmd);
+		BM_LOG( BM_LogPop, BString("-->\n") << cmd);
 	}
 	if ((sentSize = mPopServer.Send( cmd.String(), size)) != size) {
 		throw network_error( BString("error during send, sent only ") << sentSize << " bytes instead of " << size);

@@ -27,6 +27,7 @@ class GenericApp : public BApplication
 {
 	BmConnectionWin *win;
 	GenericWin *gw;
+	int32 count;
 public:
 	GenericApp();
 	~GenericApp();
@@ -37,14 +38,15 @@ public:
 int main()
 {
 	BmPrefs::InitPrefs();
-	new GenericApp;
+	GenericApp *testApp = new GenericApp;
 	try {
 		be_app->Run();
 	} 
 	catch( exception &e) {
-		BmLOG( BString("Oops: %s") << e.what());
+		BM_LOGERR( BString("Oops: %s") << e.what());
 	}
-	delete be_app;
+	delete testApp;
+	delete Beam::Prefs;
 }
 
 GenericWin::GenericWin()
@@ -69,7 +71,7 @@ bool GenericWin::QuitRequested() {
 }
 
 GenericApp::GenericApp()
-: BApplication("application/x-vnd.OT-Generic"), win(0)
+: BApplication("application/x-vnd.OT-Generic"), win(0), count(0)
 {
 	Beam::LogHandler = new BmLogHandler();
 	win = new BmConnectionWin( "ConnectionWin", this);
@@ -94,41 +96,44 @@ void GenericApp::MessageReceived(BMessage* msg) {
 	switch( msg->what) {
 		case BM_MSG_NOCH_EINER: 
 
-			archive = new BMessage(BM_POPWIN_FETCHMSGS);
-			sprintf(buf, "mailtest@kiwi:110");
-			acc.Name( buf);
-			acc.Username( "mailtest");
-			acc.Password( "mailtest");
-			acc.POPServer( "kiwi");
-			acc.PortNr( 110);
-			acc.SMTPPortNr( 25);
-			acc.Archive( archive, false);
-			win->PostMessage( archive);
-			delete archive;
-
-			archive = new BMessage(BM_POPWIN_FETCHMSGS);
-			sprintf(buf, "zooey@kiwi:110");
-			acc.Name( buf);
-			acc.Username( "zooey");
-			acc.Password( "leeds#42");
-			acc.POPServer( "kiwi");
-			acc.PortNr( 110);
-			acc.SMTPPortNr( 25);
-			acc.Archive( archive, false);
-			win->PostMessage( archive);
-			delete archive;
-
-			archive = new BMessage(BM_POPWIN_FETCHMSGS);
-			sprintf(buf, "mailtest2@kiwi:114");
-			acc.Name( buf);
-			acc.Username( "mailtest2");
-			acc.Password( "mailtest2");
-			acc.POPServer( "kiwi");
-			acc.PortNr( 114);
-			acc.SMTPPortNr( 25);
-			acc.Archive( archive, false);
-			win->PostMessage( archive);
-			delete archive;
+			count++;
+			if (count % 3 == 2) {
+				archive = new BMessage(BM_POPWIN_FETCHMSGS);
+				sprintf(buf, "mailtest@kiwi:110");
+				acc.Name( buf);
+				acc.Username( "mailtest");
+				acc.Password( "mailtest");
+				acc.POPServer( "kiwi");
+				acc.PortNr( 110);
+				acc.SMTPPortNr( 25);
+				acc.Archive( archive, false);
+				win->PostMessage( archive);
+				delete archive;
+			} else if (count % 3 == 0) {
+				archive = new BMessage(BM_POPWIN_FETCHMSGS);
+				sprintf(buf, "zooey@kiwi:110");
+				acc.Name( buf);
+				acc.Username( "zooey");
+				acc.Password( "leeds#42");
+				acc.POPServer( "kiwi");
+				acc.PortNr( 110);
+				acc.SMTPPortNr( 25);
+				acc.Archive( archive, false);
+				win->PostMessage( archive);
+				delete archive;
+			} else if (count % 3 == 1) {
+				archive = new BMessage(BM_POPWIN_FETCHMSGS);
+				sprintf(buf, "mailtest2@kiwi:114");
+				acc.Name( buf);
+				acc.Username( "mailtest2");
+				acc.Password( "mailtest2");
+				acc.POPServer( "kiwi");
+				acc.PortNr( 114);
+				acc.SMTPPortNr( 25);
+				acc.Archive( archive, false);
+				win->PostMessage( archive);
+				delete archive;
+			}
 
 /*
 			archive = new BMessage(BM_POPWIN_FETCHMSGS);

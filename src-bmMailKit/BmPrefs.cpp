@@ -32,8 +32,14 @@ bool BmPrefs::InitPrefs()
 \*------------------------------------------------------------------------------*/
 BmPrefs::BmPrefs( void)
 	: BArchivable() 
-	, mDynamicConnectionWin( CONN_WIN_DYNAMIC_EMPTY)
+	, mDynamicConnectionWin( CONN_WIN_DYNAMIC)
 	, mReceiveTimeout( 60 )
+	, mLoglevels( BM_LOGLVL2(BM_LogPop) 
+					| BM_LOGLVL3(BM_LogConnWin) 
+					| BM_LOGLVL3(BM_LogMailParse) 
+					| BM_LOGLVL3(BM_LogUtil) 
+					)
+	, StopWatch( "Beam", true)
 {
 }
 
@@ -44,6 +50,7 @@ BmPrefs::BmPrefs( void)
 \*------------------------------------------------------------------------------*/
 BmPrefs::BmPrefs( BMessage *archive) 
 	: BArchivable( archive)
+	, StopWatch( "Beam", true)
 {
 	mDynamicConnectionWin = static_cast<TConnWinMode>(FindMsgInt16( archive, MSG_DYNAMIC_CONN_WIN));
 	mReceiveTimeout = ntohs(FindMsgInt16( archive, MSG_RECEIVE_TIMEOUT));
