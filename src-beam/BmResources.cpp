@@ -193,9 +193,7 @@ void BmResources::FetchIcons() {
 	const char* name;
 	size_t length;
 	char *data;
-	BmString defaultIconPath = BeamRoster->AppPath() + ThePrefs->nDefaultIconset;
-	BmString iconPath 
-		= ThePrefs->GetString( "IconPath", defaultIconPath.String());
+	BmString iconPath = ThePrefs->GetString("IconPath");
 	for( 	int32 i=0; 
 			res->GetResourceInfo( iconType, i, &id, &name, &length); i++) {
 		BmString picFile = iconPath + "/" + name;
