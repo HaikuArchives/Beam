@@ -315,8 +315,15 @@ void WrappingTextView::MessageReceived( BMessage* msg)
 			RedoChange();
 			break;
 		}
+		case B_COPY: {
+			int32 from, to;
+			GetSelection( &from, &to);
+			if (from != to)
+				inherited::MessageReceived( msg);
+			break;
+		}
 		default:
-			BTextView::MessageReceived( msg);
+			inherited::MessageReceived( msg);
 	}
 }
 
