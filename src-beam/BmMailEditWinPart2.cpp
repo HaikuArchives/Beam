@@ -275,6 +275,47 @@ void BmMailEditWin::RebuildPeopleMenu( BmMenuControllerBase* peopleMenu) {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
+bool BmMailEditWin::EditHeaders( )
+{
+	BmRef<BmMail> mail = mMailView->CurrMail();
+	if (!mail)
+		return false;
+	// allow user to edit mail-header before we send it:
+	BRect screen( bmApp->ScreenFrame());
+	float w=600, h=400;
+	BRect alertFrame( (screen.Width()-w)/2,
+							(screen.Height()-h)/2,
+							(screen.Width()+w)/2,
+							(screen.Height()+h)/2);
+	BmString headerStr;
+	headerStr.ConvertLinebreaksToLF( 
+		&mail->Header()->HeaderString()
+	);
+	TextEntryAlert* alert = 
+		new TextEntryAlert( 
+			"Edit Headers", 
+			"Please edit the mail-headers below:",
+			headerStr.String(),
+			"Cancel",
+			"OK, Send Message",
+			false, 80, 20, B_WIDTH_FROM_LABEL, true,
+			&alertFrame
+		);
+	alert->SetShortcut( B_ESCAPE, 0);
+	alert->TextEntryView()->DisallowChar( 27);
+	alert->TextEntryView()->SetFontAndColor( be_fixed_font);
+	int32 choice = alert->Go( headerStr);
+	if (choice == 1) {
+		mail->SetNewHeader( headerStr);
+		return true;
+	} else
+		return false;
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
 void BmMailEditWin::SendMail( bool sendNow)
 {
 	if (mHasBeenSent)
@@ -307,87 +348,50 @@ void BmMailEditWin::SendMail( bool sendNow)
 					  "mail, thank you.");
 		return;
 	}
-	if (sendNow) {
-		BmRef<BmListModelItem> smtpRef 
-			= TheSmtpAccountList->FindItemByKey( mail->AccountName());
-		BmSmtpAccount* smtpAcc 
-			= dynamic_cast< BmSmtpAccount*>( smtpRef.Get());
-		if (smtpAcc) {
-			if (mEditHeaderControl->Value()) {
-				// allow user to edit mail-header before we send it:
-				BRect screen( bmApp->ScreenFrame());
-				float w=600, h=400;
-				BRect alertFrame( (screen.Width()-w)/2,
-										(screen.Height()-h)/2,
-										(screen.Width()+w)/2,
-										(screen.Height()+h)/2);
-				BmString headerStr;
-				headerStr.ConvertLinebreaksToLF( 
-												&mail->Header()->HeaderString());
-				TextEntryAlert* alert = 
-					new TextEntryAlert( 
-						"Edit Headers", 
-						"Please edit the mail-headers below:",
-						headerStr.String(),
-						"Cancel",
-						"OK, Send Message",
-						false, 80, 20, B_WIDTH_FROM_LABEL, true,
-						&alertFrame
-					);
-				alert->SetShortcut( B_ESCAPE, 0);
-				alert->TextEntryView()->DisallowChar( 27);
-				alert->TextEntryView()->SetFontAndColor( be_fixed_font);
-				alert->Go( 
-					new BInvoker( new BMessage( BM_EDIT_HEADER_DONE), 
-									  BMessenger( this))
-				);
-				return;
-			} else {
-				BM_LOG2( BM_LogGui, 
-							"MailEditWin: ...marking mail as pending");
-				mail->MarkAs( BM_MAIL_STATUS_PENDING);
-				mail->ApplyFilter( true);
-				BM_LOG2( BM_LogGui, 
-							"MailEditWin: ...passing mail to smtp-account");
-				smtpAcc->QueueMail( mail.Get());
-				TheSmtpAccountList->SendQueuedMailFor( smtpAcc->Name());
-			}
-		} else {
-			ShowAlertWithType( "Before you can send this mail, "
-									 "you have to select the SMTP-Account "
-									 "to use for sending it.",
-									 B_INFO_ALERT);
-			return;
-		}
-	} else 
-		mail->MarkAs( BM_MAIL_STATUS_PENDING);
+	BmRef<BmListModelItem> smtpRef 
+		= TheSmtpAccountList->FindItemByKey( mail->AccountName());
+	BmSmtpAccount* smtpAcc 
+		= dynamic_cast< BmSmtpAccount*>( smtpRef.Get());
+	if (!smtpAcc) {
+		ShowAlertWithType( "Before you can send this mail, "
+								 "you have to select the SMTP-Account "
+								 "to use for sending it.",
+								 B_INFO_ALERT);
+		return;
+	}
+	mail->Send( sendNow);
 	mHasBeenSent = true;
 	PostMessage( B_QUIT_REQUESTED);
 }
 
 /*------------------------------------------------------------------------------*\
-	SendMailAfterEditHeader()
+	()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmMailEditWin::SendMailAfterEditHeader(const char* headerStr)
-{
-	// Reconstruct the mail with the new header and then send it:
-	BmRef<BmMail> mail = mMailView->CurrMail();
-	if (!mail)
+void BmMailEditWin::HandleFromSet( const BmString& from) {
+	BmRef<BmListModelItem> identRef 
+		= TheIdentityList->FindItemByKey( from);
+	BmIdentity* ident 
+		= dynamic_cast< BmIdentity*>( identRef.Get()); 
+	if (!ident)
 		return;
-	BmRef<BmListModelItem> smtpRef 
-		= TheSmtpAccountList->FindItemByKey( mail->AccountName());
-	BmSmtpAccount* smtpAcc 
-		= dynamic_cast< BmSmtpAccount*>( smtpRef.Get());
-	if (smtpAcc) {
-		mail->SetNewHeader( headerStr);
-		mail->MarkAs( BM_MAIL_STATUS_PENDING);
-		mail->ApplyFilter( true);
-		smtpAcc->QueueMail( mail.Get());
-		TheSmtpAccountList->SendQueuedMailFor( smtpAcc->Name());
-		mHasBeenSent = true;
-		PostMessage( B_QUIT_REQUESTED);
-	}
+	TheIdentityList->CurrIdentity( ident);
+	BmString fromString = ident->GetFromAddress();
+	mFromControl->SetText( fromString.String());
+	mFromControl->TextView()->Select( fromString.Length(), 
+												 fromString.Length());
+	mFromControl->TextView()->ScrollToSelection();
+	// mark selected identity:
+	mFromControl->Menu()->MarkItem( ident->Key().String());
+	// select corresponding smtp-account, if any:
+	mSmtpControl->MarkItem( ident->SMTPAccount().String());
+	// update signature:
+	BmString sigName = ident->SignatureName();
+	mMailView->SetSignatureByName( sigName);
+	if (sigName.Length())
+		mSignatureControl->MarkItem( sigName.String());
+	else
+		mSignatureControl->MarkItem( BM_NoItemLabel.String());
 }
 
 /*------------------------------------------------------------------------------*\
@@ -576,6 +580,58 @@ bool BmMailEditWin::CreateMailFromFields( bool hardWrapIfNeeded) {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
+MMenuBar* BmMailEditWin::CreateMenu() {
+	MMenuBar* menubar = new MMenuBar();
+	BMenu* menu = NULL;
+	// File
+	menu = new BMenu( "File");
+	menu->AddItem( CreateMenuItem( "Save", BMM_SAVE, "SaveMail"));
+	menu->AddSeparatorItem();
+	AddItemToMenu( menu, CreateMenuItem( "Preferences...", 
+						BMM_PREFERENCES), bmApp);
+	menu->AddSeparatorItem();
+	menu->AddItem( CreateMenuItem( "Close", B_QUIT_REQUESTED));
+	menu->AddSeparatorItem();
+	AddItemToMenu( menu, CreateMenuItem( "Quit Beam", B_QUIT_REQUESTED), bmApp);
+	menubar->AddItem( menu);
+
+	// Edit
+	menu = new BMenu( "Edit");
+	menu->AddItem( CreateMenuItem( "Undo", B_UNDO));
+	menu->AddItem( CreateMenuItem( "Redo", B_REDO));
+	menu->AddSeparatorItem();
+	menu->AddItem( CreateMenuItem( "Cut", B_CUT));
+	menu->AddItem( CreateMenuItem( "Copy", B_COPY));
+	menu->AddItem( CreateMenuItem( "Paste", B_PASTE));
+	menu->AddItem( CreateMenuItem( "Select All", B_SELECT_ALL));
+	menu->AddSeparatorItem();
+	menu->AddItem( CreateMenuItem( "Find...", BMM_FIND));
+	menu->AddItem( CreateMenuItem( "Find Next", BMM_FIND_NEXT));
+	menubar->AddItem( menu);
+
+	// Network
+	menu = new BMenu( "Network");
+	menu->AddItem( CreateMenuItem( "Send Mail Now", BMM_SEND_NOW));
+	menu->AddItem( CreateMenuItem( "Send Mail Later", BMM_SEND_LATER));
+	menu->AddSeparatorItem();
+	menubar->AddItem( menu);
+
+	// Message
+	menu = new BMenu( "Message");
+	menu->AddItem( CreateMenuItem( "New Message", BMM_NEW_MAIL));
+	menubar->AddItem( menu);
+
+	// temporary deactivations:
+	menubar->FindItem( BMM_FIND)->SetEnabled( false);
+	menubar->FindItem( BMM_FIND_NEXT)->SetEnabled( false);
+
+	return menubar;
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
 void BmMailEditWin::SetDetailsButton( int32 nr, int32 newVal) {
 	switch( nr) {
 		case 1: {
@@ -613,5 +669,99 @@ void BmMailEditWin::SetDetailsButton( int32 nr, int32 newVal) {
 		}
 	}
 	RecalcSize();
+}
+
+/*------------------------------------------------------------------------------*\
+	SaveMail( saveForSend)
+		-	
+\*------------------------------------------------------------------------------*/
+bool BmMailEditWin::SaveMail( bool saveForSend) {
+	if (!saveForSend && !mModified && !mHasNeverBeenSaved)
+		return true;
+	if (!CreateMailFromFields( saveForSend))
+		return false;
+	BmRef<BmMail> mail = mMailView->CurrMail();
+	if (mail) {
+		mail->Outbound( true);				// just to make sure... >:o)
+		if (saveForSend) {
+			// set selected folder as default and then start filter-job:
+			BMenuItem* labelItem = mFileIntoControl->MenuItem();
+			BmString destFolderName 
+				= labelItem ? labelItem->Label() : BM_MAIL_FOLDER_OUT;
+			mail->SetDestFoldername( destFolderName);
+		} else {
+			// drop draft mails into 'draft'-folder:
+			if (mail->Status() == BM_MAIL_STATUS_DRAFT)
+				mail->SetDestFoldername( BM_MAIL_FOLDER_DRAFT);
+		}
+			
+		if (mail->Store()) {
+			mHasNeverBeenSaved = false;
+			mModified = false;
+			if (LockLooper()) {
+				mSaveButton->SetEnabled( false);
+				UnlockLooper();
+			}
+			return true;
+		}
+	}
+	return false;
+}
+
+/*------------------------------------------------------------------------------*\
+	QuitRequested()
+		-	standard BeOS-behaviour, we allow a quit
+\*------------------------------------------------------------------------------*/
+bool BmMailEditWin::QuitRequested() {
+	BM_LOG2( BM_LogGui, BmString("MailEditWin has been asked to quit"));
+	if (mModified) {
+		if (IsMinimized())
+			Minimize( false);
+		Activate();
+		BAlert* alert = new BAlert( "title", 
+											 "Save mail as draft before closing?",
+											 "Cancel", "Don't Save", "Save",
+											 B_WIDTH_AS_USUAL, B_OFFSET_SPACING, 
+											 B_WARNING_ALERT);
+		alert->SetShortcut( 0, B_ESCAPE);
+		int32 result = alert->Go();
+		switch( result) {
+			case 0:
+				return false;
+			case 1: {
+				BmRef<BmMail> mail = mMailView->CurrMail();
+				if (mail) {
+					// reset mail to original values:
+					mail->ResyncFromDisk();
+				}
+				break;
+			}
+			case 2:
+				return SaveMail( false);
+		}
+	}
+	return true;
+}
+
+/*------------------------------------------------------------------------------*\
+	Quit()
+		-	standard BeOS-behaviour, we quit
+\*------------------------------------------------------------------------------*/
+void BmMailEditWin::Quit() {
+	mMailView->WriteStateInfo();
+	mMailView->DetachModel();
+	BM_LOG2( BM_LogGui, BmString("MailEditWin has quit"));
+	inherited::Quit();
+}
+
+/*------------------------------------------------------------------------------*\
+	CurrMail()
+		-	
+\*------------------------------------------------------------------------------*/
+BmRef<BmMail> BmMailEditWin::CurrMail() const { 
+	if (mMailView)
+		return mMailView->CurrMail();
+	else
+		return NULL;
 }
 

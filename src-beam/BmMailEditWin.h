@@ -138,7 +138,8 @@ private:
 	void SetFieldsFromMail( BmMail* mail);
 
 	void SendMail( bool sendNow);
-	void SendMailAfterEditHeader(const char* headerStr);
+	bool EditHeaders();
+	void HandleFromSet( const BmString& from);
 
 	static void RebuildPeopleMenu( BmMenuControllerBase* peopleMenu);
 
