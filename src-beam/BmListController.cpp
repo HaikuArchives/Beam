@@ -918,7 +918,7 @@ status_t BmListViewController::Archive(BMessage* archive, bool deep) const {
 		}
 	}
 	if (ret != B_OK) {
-		ShowAlert( BmString("Could not archive State-Info for ") << ModelName() << "\n\tError: "<< strerror( ret));
+		BM_SHOWERR( BmString("Could not archive State-Info for ") << ModelName() << "\n\tError: "<< strerror( ret));
 	}
 	return ret;
 }

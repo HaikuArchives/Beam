@@ -256,7 +256,7 @@ void BmMailMonitor::HandleMailMonitorMsg( BMessage* msg) {
 			}
 		}
 	} catch( BM_error &e) {
-		BM_LOGERR( e.what());
+		BM_SHOWERR( e.what());
 	}
 }
 
@@ -298,7 +298,7 @@ void BmMailMonitor::HandleQueryUpdateMsg( BMessage* msg) {
 			}
 		}
 	} catch( BM_error &e) {
-		BM_LOGERR( e.what());
+		BM_SHOWERR( e.what());
 	}
 }
 

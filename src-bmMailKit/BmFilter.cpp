@@ -243,22 +243,22 @@ void BmFilterList::LoadAddons() {
 			ao.name.CapitalizeEachWord();
 			entry.GetPath( &path);
 			if ((ao.image = load_add_on( path.Path())) < 0) {
-				BM_LOGERR( BmString("Unable to load filter-addon\n\t")<<ao.name<<"\n\nError:\n\t"<<strerror( ao.image));
+				BM_SHOWERR( BmString("Unable to load filter-addon\n\t")<<ao.name<<"\n\nError:\n\t"<<strerror( ao.image));
 				continue;
 			}
 			if ((err = get_image_symbol( ao.image, "InstantiateFilter", 
 												  B_SYMBOL_TYPE_ANY, (void**)&ao.instantiateFilterFunc)) != B_OK) {
-				BM_LOGERR( BmString("Unable to load filter-addon\n\t")<<ao.name<<"\n\nMissing symbol 'InstantiateFilter'");
+				BM_SHOWERR( BmString("Unable to load filter-addon\n\t")<<ao.name<<"\n\nMissing symbol 'InstantiateFilter'");
 				continue;
 			}
 			if ((err = get_image_symbol( ao.image, "InstantiateFilterPrefs", 
 												  B_SYMBOL_TYPE_ANY, (void**)&ao.instantiateFilterPrefsFunc)) != B_OK) {
-				BM_LOGERR( BmString("Unable to load filter-addon\n\t")<<ao.name<<"\n\nMissing symbol 'InstantiateFilterPrefs'");
+				BM_SHOWERR( BmString("Unable to load filter-addon\n\t")<<ao.name<<"\n\nMissing symbol 'InstantiateFilterPrefs'");
 				continue;
 			}
 			if ((err = get_image_symbol( ao.image, "FilterKinds", 
 												  B_SYMBOL_TYPE_ANY, (void**)&filterKinds)) != B_OK) {
-				BM_LOGERR( BmString("Unable to load filter-addon\n\t")<<ao.name<<"\n\nMissing symbol 'FilterKinds'");
+				BM_SHOWERR( BmString("Unable to load filter-addon\n\t")<<ao.name<<"\n\nMissing symbol 'FilterKinds'");
 				continue;
 			}
 			// we try to set TheBubbleHelper and TheLogHandler globals inside the addon to our current

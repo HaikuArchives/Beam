@@ -428,6 +428,10 @@ void BmMainWindow::BeginLife() {
 		mMainMenuBar->FindItem( BMM_FIND_MESSAGES)->SetEnabled( false);
 //		mMainMenuBar->FindItem( BMM_SEND_PENDING)->SetEnabled( false);
 
+		// create and hide error-log
+		if (!ThePrefs->GetBool( "ShowAlertForErrors", false))
+			BmLogWindow::CreateAndStartInstanceFor( "Errors", true);
+
 		mMailFolderView->StartWatching( this, BM_NTFY_MAILFOLDER_SELECTION);
 		mMailRefView->StartWatching( this, BM_NTFY_MAILREF_SELECTION);
 		mMailView->StartWatching( this, BM_NTFY_MAIL_VIEW);

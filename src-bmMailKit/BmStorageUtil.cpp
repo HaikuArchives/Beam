@@ -61,7 +61,7 @@ bool MoveToTrash( const entry_ref* refs, int32 count) {
 		status_t err;
 		BPath desktopPath;
 		if ((err=find_directory( B_DESKTOP_DIRECTORY, &desktopPath, true)) != B_OK) {
-			BM_LOGERR( BmString("Could not find desktop-folder!\n\nError: ")<<strerror( err));
+			BM_SHOWERR( BmString("Could not find desktop-folder!\n\nError: ")<<strerror( err));
 			desktopWin = "/boot/home/Desktop";
 		} else
 			desktopWin = desktopPath.Path();
@@ -154,7 +154,7 @@ void EnsureIndexExists( const char* attrName) {
 		status_t res = fs_create_index( TheResources->MailboxVolume.Device(), attrName,
 												  B_STRING_TYPE, 0);
 		if (res == -1)
-			BM_LOGERR( BmString("Could not create index for attribute ")<<attrName<<".\n\nError: "<<strerror( errno));
+			BM_SHOWERR( BmString("Could not create index for attribute ")<<attrName<<".\n\nError: "<<strerror( errno));
 	}
 }
 

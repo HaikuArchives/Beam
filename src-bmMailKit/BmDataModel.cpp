@@ -380,7 +380,8 @@ void BmJobModel::StartJobInNewThread( int32 jobSpecifier) {
 		mJobState = JOB_RUNNING;
 		resume_thread( t_id);
 	} else {
-		BM_LOGERR( BmString("Trying to start a job that is already running"));
+		BM_LOG2( BM_LogModelController, 
+					BmString("Trying to start a job that is already running"));
 	}
 }
 
