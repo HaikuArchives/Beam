@@ -449,6 +449,14 @@ QuotedPrintableEncoderTest::MultiLineEncodedWordTest() {
 		"9012?=\r\n"
 		" =?utf-8?q?=C3=A445678?="
 	);
+	// the following is a japanese-textphrase which had exposed a hanging-error
+	// in QpEncodedWordEncoder:
+	NextSubTest(); 
+	EncodeQpAndCheck( "Re: ありがとうございます。 (and more...)",
+							"=?utf-8?q?Re:_=E3=81=82=E3=82=8A=E3=81=8C=E3=81=A8=E3"
+								"=81=86=E3=81=94=E3=81?=\r\n"
+							" =?utf-8?q?=96=E3=81=84=E3=81=BE=E3=81=99=E3=80=82"
+								"_(and_more...)?=");
 }
 
 /*------------------------------------------------------------------------------*\
