@@ -34,6 +34,15 @@
 #include <vector>
 
 #include <MPictureButton.h>
+#include <Space.h>
+
+class ToolbarSpace :  public Space
+{
+	public:
+		void Draw( BRect updateRect);
+};
+
+
 
 class BmToolbarButton : public MPictureButton
 {

@@ -28,6 +28,18 @@ const float DIVLATCHW  = 10.0;
 const float DIVLATCHH  = 8.0;
 const float LATCHSZ  = 4.0;
 
+static BPicture BmDummyPicture;
+
+/*------------------------------------------------------------------------------*\
+	( )
+		-	
+\*------------------------------------------------------------------------------*/
+void ToolbarSpace::Draw( BRect updateRect) {
+	Space::Draw( updateRect);
+	BBitmap* toolbarBackground = TheResources->IconByName("Toolbar_Background");
+	DrawBitmap( toolbarBackground, Bounds());
+}
+
 /*------------------------------------------------------------------------------*\
 	( )
 		-	
@@ -37,15 +49,23 @@ BmToolbarButton::BmToolbarButton( const char *label, BBitmap* image,
 											 BMessage *message, BHandler *handler, 
 											 const char* tipText, bool needsLatch)
 	:	inherited( minimax( width, height, -1 ,-1), 
-					  CreatePicture( STATE_OFF, label, image, width, height, needsLatch), 
-					  CreatePicture( STATE_ON, label, image, width, height, needsLatch),
-					  message, handler)
+					  &BmDummyPicture, &BmDummyPicture, message, handler)
 	,	mHighlighted( false)
 {
 	TheBubbleHelper->SetHelp( this, tipText);
-	BPicture* picture = CreatePicture( STATE_DISABLED, label, image, 
-												  width, height, needsLatch);
-	SetDisabledOff( picture);
+	SetViewColor( B_TRANSPARENT_COLOR);
+	BPicture* off_pic = 
+		CreatePicture( STATE_OFF, label, image, width, height, needsLatch);
+	BPicture* on_pic = 
+		CreatePicture( STATE_ON, label, image, width, height, needsLatch);
+	BPicture* dis_pic 
+		= CreatePicture( STATE_DISABLED, label, image, width, height, needsLatch);
+	SetEnabledOff( off_pic);
+	SetEnabledOn( on_pic);
+	SetDisabledOff( dis_pic);
+	delete off_pic;
+	delete on_pic;
+	delete dis_pic;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -162,14 +182,16 @@ BPicture* BmToolbarButton::CreatePicture( int32 mode, const char* label,
 	// Draw
 	BRect rect(0,0,width-1,height-1);
 	BView* view = new BView( rect, NULL, B_FOLLOW_NONE, 0);
-	BBitmap* drawImage = new BBitmap( rect, mode == STATE_DISABLED ? B_GRAY8 : B_RGBA32, true);
+	BBitmap* drawImage = new BBitmap( rect, B_RGBA32, true);
 	drawImage->AddChild( view);
 	drawImage->Lock();
 	BPicture* picture = new BPicture();
 	view->BeginPicture( picture);
-	view->SetViewColor( ui_color( B_UI_PANEL_BACKGROUND_COLOR));
+	view->SetHighColor( ui_color( B_UI_PANEL_TEXT_COLOR));
+	view->SetViewColor( B_TRANSPARENT_COLOR);
 	view->SetLowColor( ui_color( B_UI_PANEL_BACKGROUND_COLOR));
-	view->FillRect( rect, B_SOLID_LOW);
+	BBitmap* toolbarBackground = TheResources->IconByName("Toolbar_Background");
+	view->DrawBitmap( toolbarBackground, view->Bounds());
 
 	// Draw Border
 	if (ThePrefs->GetBool( "ShowToolbarBorder", true)) {
@@ -192,26 +214,20 @@ BPicture* BmToolbarButton::CreatePicture( int32 mode, const char* label,
 
 	// Draw Icon
 	if (showIcons && image) {
-		if (mode == STATE_DISABLED) {
-			view->SetDrawingMode(B_OP_ADD);
-			view->DrawBitmap( image, posIcon);
-			view->SetDrawingMode(B_OP_COPY);
-		} else {
-			if (mode == STATE_OFF) {
-				view->SetLowColor( BmWeakenColor(B_UI_SHADOW_COLOR, BeShadowMod));
-				view->SetDrawingMode(B_OP_ERASE);
-				view->DrawBitmap( image, posIcon+BPoint( 1,1));
-				view->DrawBitmap( image, posIcon+BPoint( 0,0));
-				view->SetLowColor( ui_color( B_UI_PANEL_BACKGROUND_COLOR));
-			}
-			view->SetDrawingMode(B_OP_OVER);
-			view->DrawBitmap( image, posIcon);
-			view->SetDrawingMode(B_OP_COPY);
+		view->SetDrawingMode( B_OP_ALPHA);
+		view->SetBlendingMode( B_PIXEL_ALPHA, B_ALPHA_OVERLAY);
+		if (mode == STATE_OFF) {
+			view->DrawBitmap( image, posIcon+BPoint( 1,1));
+			view->SetLowColor( ui_color( B_UI_PANEL_BACKGROUND_COLOR));
 		}
+		view->DrawBitmap( image, posIcon);
+		view->SetDrawingMode(B_OP_COPY);
+#ifdef DEBUG
 		if (ThePrefs->GetBool( "DebugToolbar", false)) {
 			view->SetLowColor(0,0,255);
 			view->StrokeRect( BRect(posIcon, posIcon+BPoint(iconWidth, iconHeight)), B_SOLID_LOW);
 		}
+#endif
 	}
 
 	// Draw Label
@@ -220,15 +236,7 @@ BPicture* BmToolbarButton::CreatePicture( int32 mode, const char* label,
 		be_plain_font->GetHeight( &fh);
 		view->SetFont( &font);
 		view->SetDrawingMode(B_OP_OVER);
-		if (mode == STATE_DISABLED)
-			view->SetHighColor( 
-				tint_color( 
-					ui_color( B_UI_PANEL_TEXT_COLOR), B_DISABLED_MARK_TINT
-				)
-			);
 		view->DrawString( label, posLabel+BPoint(0,fh.ascent+1));
-		if (mode == STATE_DISABLED)
-			view->SetHighColor( ui_color( B_UI_PANEL_TEXT_COLOR));
 
 #ifdef DEBUG
 		if (ThePrefs->GetBool( "DebugToolbar", false)) {
@@ -242,14 +250,18 @@ BPicture* BmToolbarButton::CreatePicture( int32 mode, const char* label,
 
 	// draw latch
 	if (needsLatch) {
-		view->SetHighColor( 
-			BmWeakenColor( B_UI_PANEL_TEXT_COLOR, mode == STATE_DISABLED ? 2 : 0)
-		);
 		float x_offs = mLatchRect.left;
 		float y_offs = mLatchRect.top+1;
 		view->FillTriangle( BPoint( x_offs, y_offs), 
 								  BPoint( x_offs+LATCHSZ*2, y_offs),
 								  BPoint( x_offs+LATCHSZ, y_offs+LATCHSZ));
+	}
+
+	if (mode == STATE_DISABLED) {
+		// blend complete picture into background:
+		view->SetDrawingMode( B_OP_BLEND);
+		view->DrawBitmap( toolbarBackground, view->Bounds());
+		view->DrawBitmap( toolbarBackground, view->Bounds());
 	}
 
 	view->EndPicture();
@@ -263,7 +275,7 @@ BPicture* BmToolbarButton::CreatePicture( int32 mode, const char* label,
 		-	
 \*------------------------------------------------------------------------------*/
 void BmToolbarButton::MouseDown( BPoint point) {
-	if (mLatchRect.Contains( point))
+	if (IsEnabled() && mLatchRect.Contains( point))
 		ShowMenu( BPoint( 0.0, mLatchRect.top+3+LATCHSZ));
 	else
 		inherited::MouseDown( point); 
