@@ -96,16 +96,11 @@ enum Columns {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmMailRefItem::BmMailRefItem( const BmString& key, BmListModelItem* _item)
-	:	inherited( key, _item)
+BmMailRefItem::BmMailRefItem( ColumnListView* lv, 
+										const BmString& key, 
+										BmListModelItem* _item)
+	:	inherited( lv, key, _item)
 {
-	UpdateView( UPD_ALL);
-	for( int col=nFirstTextCol; col<COL_END; ++col) {
-		if (col==COL_SIZE)
-			SetColumnUserTextContent( col, true);
-		else
-			SetColumnUserTextContent( col, false);
-	}
 }
 
 /*------------------------------------------------------------------------------*\
@@ -113,6 +108,20 @@ BmMailRefItem::BmMailRefItem( const BmString& key, BmListModelItem* _item)
 		-	
 \*------------------------------------------------------------------------------*/
 BmMailRefItem::~BmMailRefItem() { 
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailRefItem::AddedToListview() {
+	inherited::AddedToListview();
+	for( int col=nFirstTextCol; col<COL_END; ++col) {
+		if (col==COL_SIZE)
+			SetColumnUserTextContent( col, true);
+		else
+			SetColumnUserTextContent( col, false);
+	}
 }
 
 /*------------------------------------------------------------------------------*\
@@ -144,6 +153,7 @@ void BmMailRefItem::UpdateView( BmUpdFlags flags) {
 			SetColumnContent( COL_PRIORITY_I, icon);
 		}
 	}
+	InvalidateColumn( -1);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -373,7 +383,7 @@ CLVContainerView* BmMailRefView::CreateContainer( bool horizontal,
 \*------------------------------------------------------------------------------*/
 BmListViewItem* BmMailRefView::CreateListViewItem( BmListModelItem* item, 
 																	BMessage*) {
-	return new BmMailRefItem( item->Key(), item);
+	return new BmMailRefItem( this, item->Key(), item);
 }
 
 /*------------------------------------------------------------------------------*\

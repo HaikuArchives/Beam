@@ -220,6 +220,7 @@ class IMPEXPSANTAPARTSFORBEAM ColumnListView : public BListView
 		inline bool InsertAtSortedPos( )	{ return fInsertAtSortedPos; }
 		inline void ClickSetsFocus( bool b)		{ fClickSetsFocus = b; }
 		inline bool ClickSetsFocus( )	{ return fClickSetsFocus; }
+		inline void SetMinItemHeight( float mh)		{ fMinItemHeight = mh; }
 
 		virtual void MessageReceived( BMessage* msg);
 
@@ -236,6 +237,7 @@ class IMPEXPSANTAPARTSFORBEAM ColumnListView : public BListView
 		friend class CLVColumn;
 		friend class CLVColumnLabelView;
 		friend class CLVListItem;
+		friend class CLVEasyItem;
 
 		void EmbedInContainer(bool horizontal, bool vertical, bool scroll_view_corner, border_style border,
 			uint32 ResizingMode, uint32 flags);
@@ -259,6 +261,7 @@ class IMPEXPSANTAPARTSFORBEAM ColumnListView : public BListView
 		BList fColumnDisplayList;
 		BList fSortKeyList;		//List contains CLVColumn pointers
 		BList fFullItemList;
+		BList m_column_types;	//List of int32's converted from CLVColumnTypes
 		PrefilledBitmap fRightArrow;
 		PrefilledBitmap fDownArrow;
 		int32 fExpanderColumn;
@@ -280,6 +283,7 @@ class IMPEXPSANTAPARTSFORBEAM ColumnListView : public BListView
 		static int32 fExtendSelMask;
 		static int32 fToggleSelMask;
 		bool fExtendingDownwards;
+		float fMinItemHeight;
 
 		minimax fMinMax;		
 };

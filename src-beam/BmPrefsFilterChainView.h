@@ -45,7 +45,8 @@ class BmFilterChainItem : public BmListViewItem
 
 public:
 	// c'tors and d'tor:
-	BmFilterChainItem( const BmString& key, BmListModelItem* item);
+	BmFilterChainItem( ColumnListView* lv, const BmString& key, 
+							 BmListModelItem* item);
 	~BmFilterChainItem();
 
 	// overrides of listitem base:
@@ -115,7 +116,8 @@ class BmChainedFilterItem : public BmListViewItem
 
 public:
 	// c'tors and d'tor:
-	BmChainedFilterItem( const BmString& key, BmListModelItem* item);
+	BmChainedFilterItem( ColumnListView* lv, const BmString& key, 
+								BmListModelItem* item);
 	~BmChainedFilterItem();
 
 	// overrides of listitem base:

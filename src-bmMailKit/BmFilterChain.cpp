@@ -51,6 +51,9 @@ const int16 BmChainedFilter::nArchiveVersion = 2;
 
 BmString BM_DefaultOutItemLabel("<outbound>");
 
+// flags indicating which parts are to be updated:
+const BmUpdFlags BmChainedFilter::UPD_POS  = 1<<2;
+
 // standard logfile-name for this class:
 #undef BM_LOGNAME
 #define BM_LOGNAME "Filter"

@@ -162,6 +162,8 @@ ListSelectionAlert::ListSelectionAlert(const char* title, const char* info_text,
 	m_list_view = new ColumnListView( minimax(0,0,1E5,1E5), sel_list_rect, NULL, B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE,
 												 B_SINGLE_SELECTION_LIST, true, true);
 
+	m_list_view->SetMinItemHeight( 18);
+
 	CLVContainerView* container 
 		= m_list_view->Initialize( sel_list_rect, B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE,
 											B_FOLLOW_TOP_BOTTOM, true, true, true, B_FANCY_BORDER);
@@ -171,7 +173,7 @@ ListSelectionAlert::ListSelectionAlert(const char* title, const char* info_text,
 	CLVEasyItem* item;
 	int32 count=items.CountItems();
 	for( int32 i=0; i<count; ++i) {
-		item = new CLVEasyItem( 0, false, false, 18.0);
+		item = new CLVEasyItem( 0, false, false, m_list_view);
 		item->SetColumnContent( 0, (char*)items.ItemAt(i));
 		m_list_view->AddItem( item);
 		if (initial_selection && strcmp(initial_selection,(char*)items.ItemAt(i))==0)

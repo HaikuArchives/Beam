@@ -46,7 +46,8 @@ class BmRecvIdentItem : public BmListViewItem
 
 public:
 	// c'tors and d'tor:
-	BmRecvIdentItem( const BmString& key, BmListModelItem* item);
+	BmRecvIdentItem( ColumnListView* lv, const BmString& key, 
+						  BmListModelItem* item);
 	~BmRecvIdentItem();
 
 	// overrides of listitem base:

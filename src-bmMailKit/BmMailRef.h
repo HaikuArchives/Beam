@@ -130,7 +130,21 @@ public:
 													{ mWhenCreated = t; }
 
 	// flags indicating which parts are to be updated:
-	static const BmUpdFlags UPD_STATUS	= 1<<2;
+	static const BmUpdFlags UPD_ACCOUNT			= 1<<2;
+	static const BmUpdFlags UPD_ATTACHMENTS	= 1<<3;
+	static const BmUpdFlags UPD_CC				= 1<<4;
+	static const BmUpdFlags UPD_FROM				= 1<<5;
+	static const BmUpdFlags UPD_NAME				= 1<<6;
+	static const BmUpdFlags UPD_PRIORITY		= 1<<7;
+	static const BmUpdFlags UPD_WHEN_CREATED	= 1<<8;
+	static const BmUpdFlags UPD_REPLYTO			= 1<<9;
+	static const BmUpdFlags UPD_SIZE				= 1<<10;
+	static const BmUpdFlags UPD_STATUS			= 1<<11;
+	static const BmUpdFlags UPD_SUBJECT			= 1<<12;
+	static const BmUpdFlags UPD_TO				= 1<<13;
+	static const BmUpdFlags UPD_WHEN				= 1<<14;
+	static const BmUpdFlags UPD_IDENTITY		= 1<<15;
+	static const BmUpdFlags UPD_TRACKERNAME	= 1<<16;
 
 protected:
 	BmMailRef( entry_ref &eref, struct stat& st);

@@ -125,7 +125,9 @@ public:
 	static const char* const MSG_NAME;
 
 	// flags indicating which parts are to be updated:
-	static const BmUpdFlags UPD_NEW_STATUS;
+	static const BmUpdFlags UPD_NEW_COUNT;
+	static const BmUpdFlags UPD_TOTAL_COUNT;
+	static const BmUpdFlags UPD_HAVE_NEW_STATUS;
 
 private:
 	void StartNodeMonitor();

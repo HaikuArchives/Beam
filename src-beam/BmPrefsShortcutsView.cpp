@@ -54,6 +54,7 @@
 #include "BmLogHandler.h"
 #include "BmPrefs.h"
 #include "BmPrefsShortcutsView.h"
+#include "BmResources.h"
 #include "BmTextControl.h"
 #include "BmUtil.h"
 
@@ -201,7 +202,7 @@ void BmPrefsShortcutsView::Update() {
 #endif
 		mListView->MakeEmpty();
 		for( int32 i=0; scMsg->GetInfo( B_STRING_TYPE, i, &name, &type)==B_OK; ++i) {
-			item = new CLVEasyItem( 0, false, false, 18.0);
+			item = new CLVEasyItem( 0, false, false, mListView);
 			item->SetColumnContent( 0, name);
 			item->SetColumnContent( 1, scMsg->FindString( name));
 			mListView->AddItem( item);
@@ -300,6 +301,11 @@ CLVContainerView* BmPrefsShortcutsView::CreateListView( minimax minmax, int32 wi
 	mListView->SetSelectionMessage( new BMessage( BM_SELECTION_CHANGED));
 	mListView->SetTarget( this);
 	mListView->ClickSetsFocus( true);
+
+	mListView->SetMinItemHeight( 
+		MAX( TheResources->FontLineHeight(),
+			  ThePrefs->GetInt( "MinHeightListItems", 16))
+	);
 
 	int32 flags = 0;
 	if (ThePrefs->GetBool("StripedListView"))

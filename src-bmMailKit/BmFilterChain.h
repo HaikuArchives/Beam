@@ -67,13 +67,15 @@ public:
 
 	// setters:
 	inline void Position( int32 p)		{ mPosition = p;  
-													  TellModelItemUpdated( UPD_ALL 
-													  								| UPD_SORT); }
+													  TellModelItemUpdated( UPD_POS); }
 
 	// archivable components:
 	static const char* const MSG_POSITION;
 	static const char* const MSG_FILTERNAME;
 	static const int16 nArchiveVersion;
+
+	// flags indicating which parts are to be updated:
+	static const BmUpdFlags UPD_POS;
 
 private:
 	BmChainedFilter();						// hide default constructor

@@ -82,20 +82,23 @@ protected:
 
 public:
 	//
-	BmListViewItem( const BmString& key, BmListModelItem* item, bool hierarchical=false, 
+	BmListViewItem( ColumnListView* lv, const BmString& key, 
+						 BmListModelItem* item, bool hierarchical=false, 
 						 BMessage* archive=NULL);
 	virtual ~BmListViewItem();
 	
 	// native methods:
 	void SetTextCols( int16 firstTextCol, BmListColumn* columnVec);
 	virtual void UpdateView( BmUpdFlags flags);
+	virtual void AddedToListview()		{	UpdateView( UPD_ALL); }
 
 	//	overrides from listitem-baseclass:
 	status_t Archive( BMessage* archive, bool deep = true) const;
 
 	// getters:
-	inline const BmString& Key() const		{ return mKey; }
-	virtual BmListModelItem* ModelItem() const	{ return mModelItem.Get(); }
+	inline const BmString& Key() const	{ return mKey; }
+	virtual BmListModelItem* ModelItem() const	
+													{ return mModelItem.Get(); }
 	
 protected:
 	BmString mKey;

@@ -46,7 +46,8 @@ class BmSendAccItem : public BmListViewItem
 
 public:
 	// c'tors and d'tor:
-	BmSendAccItem( const BmString& key, BmListModelItem* item);
+	BmSendAccItem( ColumnListView* lv, const BmString& key, 
+						BmListModelItem* item);
 	~BmSendAccItem();
 
 	// overrides of listitem base:

@@ -64,10 +64,10 @@ const char* const BmListViewItem::MSG_CHILDREN = 	"bm:chldrn";
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmListViewItem::BmListViewItem( const BmString& key, BmListModelItem* modelItem,
+BmListViewItem::BmListViewItem( ColumnListView* lv, const BmString& key, 
+										  BmListModelItem* modelItem,
 										  bool, BMessage* archive)
-	:	inherited( 0, !modelItem->empty(), false, 
-					  MAX( TheResources->FontLineHeight(), 18))
+	:	inherited( modelItem->OutlineLevel(), !modelItem->empty(), false, lv)
 	,	mKey( key)
 	,	mModelItem( modelItem)
 {
@@ -155,6 +155,11 @@ BmListViewController::BmListViewController( minimax minmax, BRect rect,
 	,	mPulsedScrollStep( 0)
 	,	mDragBetweenItems( false)
 {
+	float minHeight 
+		= hierarchical
+			? ThePrefs->GetInt( "MinHeightHierarchicalListItems", 16)
+			: ThePrefs->GetInt( "MinHeightListItems", 16);
+	SetMinItemHeight( MAX( TheResources->FontLineHeight(), minHeight));
 }
 
 /*------------------------------------------------------------------------------*\
@@ -569,6 +574,9 @@ void BmListViewController::AddAllModelItems() {
 	if (!Hierarchical()) {
 		// add complete item-list for efficiency:
 		AddList( tempList);
+		int32 numItems = tempList->CountItems();
+		for( int32 i=0; i<numItems; ++i)
+			((BmListViewItem*)tempList->ItemAt( i))->AddedToListview();
 		delete tempList;
 	}
 
@@ -622,6 +630,7 @@ BmListViewItem* BmListViewController::doAddModelItem( BmListViewItem* parent,
 			AddUnder( newItem, parent);
 		else
 			AddItem( newItem);
+		newItem->AddedToListview();
 		mViewModelMap[item] = newItem;
 		BM_LOG2( BM_LogMailTracking, 
 					BmString("ListView <") << ModelName() << "> added view-item " 
@@ -693,19 +702,11 @@ BmListViewItem* BmListViewController::UpdateModelItem( BmListModelItem* item,
 	BmListViewItem* viewItem = FindViewItemFor( item);
 	if (viewItem) {
 		viewItem->UpdateView( updFlags);
-		int32 idx = IndexOf(viewItem);
-		if (idx >= 0)
-			InvalidateItem( idx);
 	} else
 		BM_LOG2( BM_LogModelController, 
 					BmString(ControllerName())
 						<< ": requested to update an unknown item <"
 						<< item->Key()<<">");
-	if (updFlags & UPD_SORT) {
-		SetDisconnectScrollView( true);
-		SortItems();
-		SetDisconnectScrollView( false);
-	}
 	return viewItem;
 }
 
@@ -1066,7 +1067,7 @@ BmCLVContainerView::BmCLVContainerView( minimax minmax, ColumnListView* target,
 	,	mCaptionWidth( captionWidth)
 	,	mBusyView( NULL)
 {
-	SetViewColor( ui_color( B_PANEL_BACKGROUND_COLOR));
+	SetViewColor( B_TRANSPARENT_COLOR);
 	BRect frame;
 	BPoint LT;
 	BScrollBar* hScroller = horizontal ? ScrollBar( B_HORIZONTAL) : NULL;

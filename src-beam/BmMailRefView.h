@@ -58,12 +58,14 @@ class BmMailRefItem : public BmListViewItem
 	static const int16 nFirstTextCol;
 
 public:
-	BmMailRefItem( const BmString& key, BmListModelItem* item);
+	BmMailRefItem( ColumnListView* lv, const BmString& key, 
+						BmListModelItem* item);
 	~BmMailRefItem();
 	
 	// overrides of ListViewItem:
 	BmMailRef* ModelItem() const	{ return dynamic_cast<BmMailRef*>(mModelItem.Get()); }
 	void UpdateView( BmUpdFlags flags);
+	void AddedToListview();
 	
 	// overrides of CLVEasyItem base:
 	const int32 GetNumValueForColumn( int32 column_index) const;

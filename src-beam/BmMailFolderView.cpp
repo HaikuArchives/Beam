@@ -64,12 +64,12 @@ enum Columns {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmMailFolderItem::BmMailFolderItem( const BmString& key, 
+BmMailFolderItem::BmMailFolderItem( ColumnListView* lv, 
+												const BmString& key, 
 												BmListModelItem* _item, 
 												bool, BMessage* archive)
-	:	inherited( key, _item, true, archive)
+	:	inherited( lv, key, _item, true, archive)
 {
-	UpdateView( UPD_ALL);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -88,18 +88,23 @@ void BmMailFolderItem::UpdateView( BmUpdFlags flags) {
 	BmMailFolder* folder( ModelItem());
 	if (!folder)
 		return;
-	if (flags & (UPD_EXPANDER  | UPD_KEY | BmMailFolder::UPD_NEW_STATUS)) {
+	if (flags & (UPD_EXPANDER | UPD_KEY | BmMailFolder::UPD_HAVE_NEW_STATUS)) {
 		Bold( IsExpanded() 
 					? folder->NewMailCount()
 					: folder->HasNewMail());
-		BmString displayName = folder->Name();
-		if (folder->HasNewMail()
-		&&	folder->NewMailCountForSubfolders() && !IsExpanded()) {
- 			int32 count = folder->NewMailCountForSubfolders();
-	 		if (count)
-				displayName << " - (" << count << ")";
-		}
-		SetColumnContent( COL_NAME, displayName.String(), false);
+		SetColumnContent( COL_NAME, folder->Name().String(), false);
+		InvalidateColumn( -1);
+	}
+	if (flags & BmMailFolder::UPD_HAVE_NEW_STATUS) {
+		BBitmap* icon;
+		if (folder->NewMailCount())
+			icon = TheResources->IconByName("Folder_WithNew");
+		else
+			icon = TheResources->IconByName("Folder");
+		SetColumnContent( COL_ICON, icon, 2.0, false);
+		InvalidateColumn( COL_ICON);
+	}
+	if (flags & BmMailFolder::UPD_NEW_COUNT) {
 		BmString newCountStr;
 		int32 newCount = folder->NewMailCount();
 		if (newCount == 0)
@@ -108,6 +113,10 @@ void BmMailFolderItem::UpdateView( BmUpdFlags flags) {
 			newCountStr = "?";
 		else
 			newCountStr << newCount;
+		SetColumnContent( COL_NEW_COUNT, newCountStr.String(), true);
+		InvalidateColumn( COL_NEW_COUNT);
+	}
+	if (flags & BmMailFolder::UPD_TOTAL_COUNT) {
 		BmString totalCountStr;
 		int32 totalCount = folder->MailCount();
 		if (totalCount == 0)
@@ -116,14 +125,8 @@ void BmMailFolderItem::UpdateView( BmUpdFlags flags) {
 			totalCountStr = "?";
 		else
 			totalCountStr << totalCount;
-		SetColumnContent( COL_NEW_COUNT, newCountStr.String(), true);
 		SetColumnContent( COL_TOTAL_COUNT, totalCountStr.String(), true);
-		BBitmap* icon;
-		if (folder->NewMailCount())
-			icon = TheResources->IconByName("Folder_WithNew");
-		else
-			icon = TheResources->IconByName("Folder");
-		SetColumnContent( COL_ICON, icon, 2.0, false);
+		InvalidateColumn( COL_TOTAL_COUNT);
 	}
 }
 
@@ -264,9 +267,9 @@ status_t BmMailFolderView::Unarchive(const BMessage* archive, bool deep) {
 BmListViewItem* BmMailFolderView::CreateListViewItem( BmListModelItem* item,
 																		BMessage* archive) {
 	if (ThePrefs->GetBool("RestoreFolderStates"))
-		return new BmMailFolderItem( item->Key(), item, true, archive);
+		return new BmMailFolderItem( this, item->Key(), item, true, archive);
 	else
-		return new BmMailFolderItem( item->Key(), item, true, NULL);
+		return new BmMailFolderItem( this, item->Key(), item, true, NULL);
 }
 
 /*------------------------------------------------------------------------------*\

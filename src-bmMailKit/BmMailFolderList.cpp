@@ -848,7 +848,11 @@ void BmMailFolderList::QueryForNewMails() {
 	for(	iter=foldersWithNewMail.begin(); 
 			iter!=foldersWithNewMail.end(); ++iter) {
 		if (*iter)
-			TellModelItemUpdated( *iter, BmMailFolder::UPD_NEW_STATUS);
+			TellModelItemUpdated( 
+				*iter, 
+				BmMailFolder::UPD_NEW_COUNT 
+				| BmMailFolder::UPD_HAVE_NEW_STATUS
+			);
 	}
 	BM_LOG( BM_LogMailTracking, 
 			  BmString("End of newMail-query (") << newCount 

@@ -71,11 +71,11 @@ enum Columns {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmFilterChainItem::BmFilterChainItem( const BmString& key, 
+BmFilterChainItem::BmFilterChainItem( ColumnListView* lv, 
+												  const BmString& key, 
 												  BmListModelItem* _item)
-	:	inherited( key, _item, false)
+	:	inherited( lv, key, _item, false)
 {
-	UpdateView( UPD_ALL);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -154,7 +154,7 @@ BmFilterChainView::~BmFilterChainView() {
 \*------------------------------------------------------------------------------*/
 BmListViewItem* BmFilterChainView::CreateListViewItem( BmListModelItem* item,
 																		 BMessage*) {
-	return new BmFilterChainItem( item->Key(), item);
+	return new BmFilterChainItem( this, item->Key(), item);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -219,11 +219,11 @@ enum Columns2 {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmChainedFilterItem::BmChainedFilterItem( const BmString& key, 
+BmChainedFilterItem::BmChainedFilterItem( ColumnListView* lv, 
+														const BmString& key, 
 														BmListModelItem* _item)
-	:	inherited( key, _item, false)
+	:	inherited( lv, key, _item, false)
 {
-	UpdateView( UPD_ALL);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -329,7 +329,7 @@ BmChainedFilterView::~BmChainedFilterView() {
 \*------------------------------------------------------------------------------*/
 BmListViewItem* BmChainedFilterView::CreateListViewItem( BmListModelItem* item,
 																			BMessage*) {
-	return new BmChainedFilterItem( item->Key(), item);
+	return new BmChainedFilterItem( this, item->Key(), item);
 }
 
 /*------------------------------------------------------------------------------*\

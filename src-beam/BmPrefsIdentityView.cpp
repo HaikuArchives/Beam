@@ -75,10 +75,11 @@ enum Columns {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmRecvIdentItem::BmRecvIdentItem( const BmString& key, BmListModelItem* _item)
-	:	inherited( key, _item, false)
+BmRecvIdentItem::BmRecvIdentItem( ColumnListView* lv, 
+											 const BmString& key, 
+											 BmListModelItem* _item)
+	:	inherited( lv, key, _item, false)
 {
-	UpdateView( UPD_ALL);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -177,8 +178,8 @@ BmRecvIdentView::~BmRecvIdentView() {
 		-	
 \*------------------------------------------------------------------------------*/
 BmListViewItem* BmRecvIdentView::CreateListViewItem( BmListModelItem* item,
-																	BMessage*) {
-	return new BmRecvIdentItem( item->Key(), item);
+																	  BMessage*) {
+	return new BmRecvIdentItem( this, item->Key(), item);
 }
 
 /*------------------------------------------------------------------------------*\

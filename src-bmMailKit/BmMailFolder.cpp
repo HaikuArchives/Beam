@@ -55,7 +55,9 @@ const char* const BmMailFolder::MSG_SELECTED_KEY =	"bm:selk";
 const char* const BmMailFolder::MSG_NAME = 			"bm:fname";
 
 // flags indicating which parts are to be updated:
-const BmUpdFlags BmMailFolder::UPD_NEW_STATUS = 	1<<2;
+const BmUpdFlags BmMailFolder::UPD_NEW_COUNT 		= 	1<<2;
+const BmUpdFlags BmMailFolder::UPD_TOTAL_COUNT 		= 	1<<3;
+const BmUpdFlags BmMailFolder::UPD_HAVE_NEW_STATUS	= 	1<<4;
 
 /*------------------------------------------------------------------------------*\
 	BmMailFolder( eref, parent, modified)
@@ -220,10 +222,15 @@ bool BmMailFolder::CheckIfModifiedSince( time_t when, time_t* storeNewModTime) {
 		-	increases this folder's new-mail counter by the given offset
 \*------------------------------------------------------------------------------*/
 void BmMailFolder::BumpNewMailCount( int32 offset) {
+	int32 oldCount = 	mNewMailCount;
 	mNewMailCount += offset;
 	if (mNewMailCount < 0)
 		mNewMailCount = 0;
-	TheMailFolderList->TellModelItemUpdated( this, UPD_NEW_STATUS);
+	BmUpdFlags upd = UPD_NEW_COUNT;
+	if (oldCount*mNewMailCount==0 && offset)
+		// new mail status has changed (either was 0 before or is 0 now)
+		upd |= UPD_HAVE_NEW_STATUS;
+	TheMailFolderList->TellModelItemUpdated( this, upd);
 	BmRef<BmMailFolder> parent( dynamic_cast< BmMailFolder*>( Parent().Get()));
 	if (parent)
 		parent->BumpNewMailCountForSubfolders( offset);
@@ -235,10 +242,15 @@ void BmMailFolder::BumpNewMailCount( int32 offset) {
 			offset
 \*------------------------------------------------------------------------------*/
 void BmMailFolder::BumpNewMailCountForSubfolders( int32 offset) {
+	int32 oldCount = 	mNewMailCountForSubfolders;
 	mNewMailCountForSubfolders += offset;
-	if (mNewMailCount < 0)
-		mNewMailCount = 0;
-	TheMailFolderList->TellModelItemUpdated( this, UPD_NEW_STATUS);
+	if (mNewMailCountForSubfolders < 0)
+		mNewMailCountForSubfolders = 0;
+	BmUpdFlags upd = UPD_NEW_COUNT;
+	if (oldCount*mNewMailCount==0 && offset)
+		// new mail status has changed (either was 0 before or is 0 now)
+		upd |= UPD_HAVE_NEW_STATUS;
+	TheMailFolderList->TellModelItemUpdated( this, upd);
 	BmRef<BmMailFolder> parent( dynamic_cast< BmMailFolder*>( Parent().Get()));
 	if (parent)
 		parent->BumpNewMailCountForSubfolders( offset);
@@ -300,13 +312,13 @@ void BmMailFolder::CleanupForMailRefList( BmMailRefList* refList) {
 void BmMailFolder::MailCount( int32 i) {
 	if (mMailCount != i) {
 		mMailCount = i;
-		TellModelItemUpdated( UPD_ALL);
+		TellModelItemUpdated( UPD_TOTAL_COUNT);
 	}
 }
 
 /*------------------------------------------------------------------------------*\
 	UpdateName( eref)
-		-	sets a new name for this folder (is called by node-monitor
+		-	sets a new name for this folder (is called by node-monitor)
 		-	adjusts foreign-keys accordingly
 		-	tells that model has been updated
 \*------------------------------------------------------------------------------*/
@@ -324,7 +336,7 @@ void BmMailFolder::UpdateName( const entry_ref& eref) {
 	// set new entry-ref:
 	BmString oldName = mName;
 	EntryRef( eref);
-	TheMailFolderList->TellModelItemUpdated( this, UPD_KEY|UPD_SORT);
+	TheMailFolderList->TellModelItemUpdated( this, UPD_KEY);
 	// adjust foreign keys:
 	TheMailFolderList->AdjustForeignKeys( 
 		path.Length() ? path + "/" + oldName : oldName,

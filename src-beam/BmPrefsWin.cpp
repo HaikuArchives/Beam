@@ -56,6 +56,7 @@
 #include "BmBasics.h"
 #include "BmLogHandler.h"
 #include "BmMsgTypes.h"
+#include "BmPrefs.h"
 #include "BmPrefsView.h"
 #include "BmPrefsFilterView.h"
 #include "BmPrefsFilterChainView.h"
@@ -68,6 +69,7 @@
 #include "BmPrefsSendMailView.h"
 #include "BmPrefsShortcutsView.h"
 #include "BmPrefsSignatureView.h"
+#include "BmResources.h"
 #include "BmPrefsWin.h"
 #include "BmUtil.h"
 
@@ -216,6 +218,10 @@ CLVContainerView* BmPrefsWin::CreatePrefsListView( minimax minmax, int32 width, 
 	mPrefsListView->SetSelectionMessage( new BMessage( BM_SELECTION_CHANGED));
 	mPrefsListView->SetTarget( this);
 	mPrefsListView->ClickSetsFocus( true);
+	mPrefsListView->SetMinItemHeight( 
+		MAX( TheResources->FontLineHeight(), 
+			  ThePrefs->GetInt( "MinHeightHierarchicalListItems", 18))
+	);
 	CLVContainerView* container 
 		= mPrefsListView->Initialize( BRect( 0,0,width-1,height-1), 
 												B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE,
@@ -229,52 +235,52 @@ CLVContainerView* BmPrefsWin::CreatePrefsListView( minimax minmax, int32 width, 
 							CLV_NOT_MOVABLE|CLV_NOT_RESIZABLE|CLV_TELL_ITEMS_WIDTH, 300.0));
 
 	CLVEasyItem* item;	
-	item = new CLVEasyItem( 0, false, false, 18.0);
+	item = new CLVEasyItem( 0, false, false, mPrefsListView);
 	item->SetColumnContent( 1, "General");
+	item->SetExpanded( true);
 	mPrefsListView->AddItem( item);
-	mPrefsListView->Expand( item);
 
-	item = new CLVEasyItem( 1, false, false, 18.0);
+	item = new CLVEasyItem( 1, false, false, mPrefsListView);
 	item->SetColumnContent( 1, "Shortcuts");
 	mPrefsListView->AddItem( item);
 
-	item = new CLVEasyItem( 1, false, false, 18.0);
+	item = new CLVEasyItem( 1, false, false, mPrefsListView);
 	item->SetColumnContent( 1, "Logging");
 	mPrefsListView->AddItem( item);
 
-	item = new CLVEasyItem( 0, true, false, 18.0);
+	item = new CLVEasyItem( 0, true, false, mPrefsListView);
 	item->SetColumnContent( 1, "Sending Mail");
+	item->SetExpanded( true);
 	mPrefsListView->AddItem( item);
-	mPrefsListView->Expand( item);
 
-	item = new CLVEasyItem( 1, false, false, 18.0);
+	item = new CLVEasyItem( 1, false, false, mPrefsListView);
 	item->SetColumnContent( 1, "Accounts");
 	mPrefsListView->AddItem( item);
 
-	item = new CLVEasyItem( 0, true, false, 18.0);
+	item = new CLVEasyItem( 0, true, false, mPrefsListView);
 	item->SetColumnContent( 1, "Receiving Mail");
+	item->SetExpanded( true);
 	mPrefsListView->AddItem( item);
-	mPrefsListView->Expand( item);
 
-	item = new CLVEasyItem( 1, false, false, 18.0);
+	item = new CLVEasyItem( 1, false, false, mPrefsListView);
 	item->SetColumnContent( 1, "Accounts");
 	mPrefsListView->AddItem( item);
 
-	item = new CLVEasyItem( 0, true, false, 18.0);
+	item = new CLVEasyItem( 0, true, false, mPrefsListView);
 	item->SetColumnContent( 1, "Identities");
+	item->SetExpanded( true);
 	mPrefsListView->AddItem( item);
-	mPrefsListView->Expand( item);
 
-	item = new CLVEasyItem( 1, false, false, 18.0);
+	item = new CLVEasyItem( 1, false, false, mPrefsListView);
 	item->SetColumnContent( 1, "Signatures");
 	mPrefsListView->AddItem( item);
 
-	item = new CLVEasyItem( 0, true, false, 18.0);
+	item = new CLVEasyItem( 0, true, false, mPrefsListView);
 	item->SetColumnContent( 1, "Filtering Mail");
+	item->SetExpanded( true);
 	mPrefsListView->AddItem( item);
-	mPrefsListView->Expand( item);
 
-	item = new CLVEasyItem( 1, false, false, 18.0);
+	item = new CLVEasyItem( 1, false, false, mPrefsListView);
 	item->SetColumnContent( 1, "Chains");
 	mPrefsListView->AddItem( item);
 

@@ -74,10 +74,10 @@ enum Columns {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmFilterItem::BmFilterItem( const BmString& key, BmListModelItem* _item)
-	:	inherited( key, _item, false)
+BmFilterItem::BmFilterItem( ColumnListView* lv, const BmString& key, 
+									 BmListModelItem* _item)
+	:	inherited( lv, key, _item, false)
 {
-	UpdateView( UPD_ALL);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -159,7 +159,7 @@ BmFilterView::~BmFilterView() {
 \*------------------------------------------------------------------------------*/
 BmListViewItem* BmFilterView::CreateListViewItem( BmListModelItem* item,
 																  BMessage*) {
-	return new BmFilterItem( item->Key(), item);
+	return new BmFilterItem( this, item->Key(), item);
 }
 
 /*------------------------------------------------------------------------------*\
