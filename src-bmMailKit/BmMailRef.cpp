@@ -290,7 +290,9 @@ bool BmMailRef::ReadAttributes( const struct stat* statInfo) {
 	
 			mWhen = 0;
 			node.ReadAttr( BM_MAIL_ATTR_WHEN, 		B_TIME_TYPE, 0, &mWhen, sizeof(time_t));
-			mWhenString = TimeToString( mWhen);
+			mWhenString = 	ThePrefs->GetBool( "UseSwatchTimeInRefView", false)
+									? TimeToSwatchString( mWhen)
+									: TimeToString( mWhen);
 	
 			int32 att1 = 0;					// standard BeOS kind (BMail, Postmaster, Beam)
 			node.ReadAttr( BM_MAIL_ATTR_ATTACHMENTS, B_INT32_TYPE, 0, &att1, sizeof(att1));
@@ -305,7 +307,9 @@ bool BmMailRef::ReadAttributes( const struct stat* statInfo) {
 			mSize = st.st_size;
 			mSizeString = BytesToString( mSize,true);
 			mCreated = st.st_ctime;
-			mCreatedString = TimeToString( mCreated);
+			mCreatedString = ThePrefs->GetBool( "UseSwatchTimeInRefView", false)
+									? TimeToSwatchString( mCreated)
+									: TimeToString( mCreated);
 
 			// simplify priority:
 			if (!mPriority.Length()) {
