@@ -141,7 +141,7 @@ void MultiLineTextControl::Draw(BRect update_rect)
 	if (m_entry_text_rect.Height()==0 || m_entry_text_rect.Width()==0)
 		return;
 	if (m_enabled) {
-		if(update_rect.Intersects(m_label_text_rect)) {
+		if(update_rect.Intersects(m_label_text_rect) && Label()) {
 			SetHighColor( Black);
 			DrawString(Label(),BPoint(m_label_text_rect.left,m_label_text_rect.top+m_label_font_ascent));
 		}
@@ -174,7 +174,7 @@ void MultiLineTextControl::Draw(BRect update_rect)
 			SetHighColor(original_color);
 		}
 	} else {
-		if(update_rect.Intersects(m_label_text_rect)) {
+		if(update_rect.Intersects(m_label_text_rect) && Label()) {
 			SetHighColor( BeInactiveGrey);
 			DrawString(Label(),BPoint(m_label_text_rect.left,m_label_text_rect.top+m_label_font_ascent));
 		}
