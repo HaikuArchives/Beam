@@ -279,6 +279,7 @@ void BmMailRefList::InitializeItems() {
 		Cleanup();
 	} else {
 		mNeedsCacheUpdate = false;
+		mNeedsStore = true;
 		mInitCheck = B_OK;
 	}
 }
