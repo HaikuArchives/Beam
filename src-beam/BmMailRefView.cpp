@@ -625,6 +625,8 @@ void BmMailRefView::AddMailRefMenu( BMenu* menu, BHandler* target) {
 	if (!menu)
 		return;
 	AddItemToMenu( menu, CreateMenuItem( "Reply", BMM_REPLY), target);
+	AddItemToMenu( menu, CreateMenuItem( "Reply To List", BMM_REPLY_LIST), target);
+	AddItemToMenu( menu, CreateMenuItem( "Reply To Originator", BMM_REPLY_ORIGINATOR), target);
 	AddItemToMenu( menu, CreateMenuItem( "Reply To All", BMM_REPLY_ALL), target);
 	AddItemToMenu( menu, CreateMenuItem( "Forward As Attachment", BMM_FORWARD_ATTACHED), target);
 	AddItemToMenu( menu, CreateMenuItem( "Forward Inline", BMM_FORWARD_INLINE), target);
