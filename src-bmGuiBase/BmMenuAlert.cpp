@@ -82,12 +82,6 @@ BmMenuAlert::BmMenuAlert(float width, float height, const char* title, const cha
 	BRect screenFrame = screen.Frame();
 	MoveTo( (screenFrame.Width()-width)/2.0, (screenFrame.Height()-height)/2.0);
 
-/*
-	BmMenuControllerBase* mc = dynamic_cast<BmMenuControllerBase*>( menu->Menu());
-	if (mc)
-		mc->MsgTarget( this);
-*/
-
 	//Complete the setup
 	m_invoker = NULL;
 	m_done_mutex = B_ERROR;

@@ -207,8 +207,6 @@ IMPEXPBMBASE void ShowAlert( const BmString &text);
 IMPEXPBMBASE void ShowAlertWithType( const BmString &text, alert_type type);
 
 // the macros used for logging:
-#ifdef BM_LOGGING
-
 #define BM_LOG(terrain,msg) \
 	do {	\
 		if (TheLogHandler && TheLogHandler->CheckLogLevel( terrain, 1)) \
@@ -242,32 +240,6 @@ IMPEXPBMBASE void ShowAlertWithType( const BmString &text, alert_type type);
 				ShowAlert( msg);	\
 		} \
 	} while(0)
-
-#else
-	// error-only logging:
-#define BM_LOG(terrain,msg)
-#define BM_LOG2(terrain,msg)
-#define BM_LOG3(terrain,msg)
-#define BM_LOG_FINISH(name) BmLogHandler::FinishLog( name)
-#define BM_LOGNAME "Beam"
-#define BM_LOGERR(msg) \
-	do {	\
-		if (TheLogHandler) { \
-			BmLogHandler::Log( BM_LOGNAME, msg); \
-		 	BmLogHandler::Log( "Errors", msg); \
-		} \
-	} while(0)
-#define BM_SHOWERR(msg) \
-	do {	\
-		if (TheLogHandler) { \
-			BmLogHandler::Log( BM_LOGNAME, msg); \
-		 	BmLogHandler::Log( "Errors", msg); \
-		 	if (TheLogHandler->ShowErrorsOnScreen()) \
-				ShowAlert( msg);	\
-		} \
-	} while(0)
-
-#endif
 
 extern "C" IMPEXPBMBASE BmLogHandler* TheLogHandler;
 
