@@ -473,8 +473,11 @@ void BmPopper::StateRetrieve() {
 		SendCommand( cmd);
 		if (!CheckForPositiveAnswer( mNewMsgSizes[mCurrMailNr-1], true, true))
 			goto CLEAN_UP;
-		BmMail mail( mAnswerText, Name());
-		if (mail.InitCheck() != B_OK || !mail.Store())
+		BmRef<BmMail> mail = new BmMail( mAnswerText, mPopAccount->Name());
+		if (mail->InitCheck() != B_OK)
+			goto CLEAN_UP;
+		mail->Filter();
+		if (!mail->Store())
 			goto CLEAN_UP;
 		mPopAccount->MarkUIDAsDownloaded( mMsgUIDs[i]);
 		//	delete the retrieved message if required:
