@@ -292,7 +292,11 @@ const char* BmMailRefItem::GetUserText(int32 colIdx, float /*colWidth*/) const {
 		text = ref->Identity().String();
 		break;
 	case COL_CLASSIFICATION:
-		text = ref->Classification().String();
+		if (ThePrefs->GetBool("MapClassificationGenuineToTofu", true)
+		&& ref->Classification() == BM_MAIL_CLASS_TOFU)
+			text = "Tofu";
+		else
+			text = ref->Classification().String();
 		break;
 	case COL_RATIO_SPAM:
 		text = ref->RatioSpamString().String();
@@ -394,9 +398,9 @@ BmMailRefView::BmMailRefView( minimax minmax, int32 width, int32 height)
 									  18.0, "(P)riority [Text]"));
 	AddColumn( new CLVColumn( "Identity", 100.0, flags | CLV_COLTYPE_USERTEXT, 
 									  40.0));
-	AddColumn( new CLVColumn( "Classification", 100.0, flags | CLV_COLTYPE_USERTEXT, 
+	AddColumn( new CLVColumn( "Classification", 150.0, flags | CLV_COLTYPE_USERTEXT, 
 									  40.0));
-	AddColumn( new CLVColumn( "RatioSpam", 50.0, flags | CLV_COLDATA_NUMBER 
+	AddColumn( new CLVColumn( "RatioSpam", 100.0, flags | CLV_COLDATA_NUMBER 
 										| CLV_RIGHT_JUSTIFIED| CLV_COLTYPE_USERTEXT, 
 									  40.0));
 	SetSortFunction( CLVEasyItem::CompareItems);
