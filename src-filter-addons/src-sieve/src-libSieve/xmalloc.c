@@ -100,6 +100,7 @@ char *xstrconcat (const char *str, ...)
 	    buf = xrealloc(buf, size);
 	}
 	memcpy(buf+pos, str, len);
+	pos += len;
 
 	str = va_arg(va, const char *);
     } while (str != NULL);
