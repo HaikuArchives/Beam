@@ -60,6 +60,7 @@ struct IMPEXPBMBASE BmMsgContext {
 	BmString status;
 	BmString identity;
 	BmString rejectMsg;
+	uint8 spamValue;
 	bool moveToTrash;
 	bool stopProcessing;
 };
@@ -77,7 +78,8 @@ public:
 	virtual ~BmFilterAddon();
 	
 	// native methods:
-	virtual bool Execute( BmMsgContext* msgContext) = 0;
+	virtual bool Execute( BmMsgContext* msgContext, 
+								 const BmString& jobSpecifier = BM_DEFAULT_STRING) = 0;
 	virtual void Initialize()				{}
 	virtual bool SanityCheck( BmString& complaint, BmString& fieldName) = 0;
 	virtual status_t Archive( BMessage* archive, bool deep = true) const = 0;
