@@ -66,7 +66,7 @@ class BmController;
 			object.
 		-	contains functionality to add/remove controllers
 \*------------------------------------------------------------------------------*/
-class BmDataModel : public BmRefObj {
+class BmDataModel : public virtual BmRefObj {
 	typedef set< BmController*> BmControllerSet;
 
 public:
@@ -196,7 +196,7 @@ typedef map< BmString, BmRef<BmListModelItem> > BmModelItemMap;
 	BmListModelItem
 		-	base class for the items that will be part of a BmListModel
 \*------------------------------------------------------------------------------*/
-class BmListModelItem : public BmRefObj, public BArchivable {
+class BmListModelItem : public virtual BmRefObj, public BArchivable {
 	typedef BmRefObj inherited;
 	typedef BArchivable inheritedArchivable;
 	friend class BmListModel;

@@ -747,7 +747,7 @@ BmString BmListModel::RenameItem( const BmString oldKey, const BmString suggeste
 	item->RenameRef( newKey.String());
 	item->Key( newKey);
 	mModelItemMap[newKey] = item.Get();
-	TellModelItemUpdated( item.Get(), UPD_ALL, oldKey);
+	TellModelItemUpdated( item.Get(), UPD_ALL | UPD_SORT, oldKey);
 	return newKey;
 }
 
