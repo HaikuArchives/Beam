@@ -24,9 +24,6 @@ public:
 							bool superitem, bool expanded);
 	~BmMailFolderItem();
 
-	//
-	const BString& GetSortKey( const BString& col);
-	
 };
 
 
@@ -40,10 +37,10 @@ class BmMailFolderView : public BmListViewController
 	
 public:
 	//
-	static BmMailFolderView* CreateInstance( BRect rect);
+	static BmMailFolderView* CreateInstance(  minimax minmax, int32 width, int32 height);
 	
 	//Constructor and destructor
-	BmMailFolderView(	BRect rect);
+	BmMailFolderView(  minimax minmax, int32 width, int32 height);
 	~BmMailFolderView();
 
 	//

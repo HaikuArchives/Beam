@@ -34,6 +34,26 @@ class CLVListItem;
 
 
 //******************************************************************************************************
+//**** TYPE DEFINITIONS AND CONSTANTS
+//******************************************************************************************************
+enum
+{
+	CLVColNone =				0x00000000,
+	CLVColStaticText = 			0x00000001,
+	CLVColTruncateText =		0x00000002,
+	CLVColBitmap = 				0x00000003,
+	CLVColUserText = 			0x00000004,
+	CLVColTruncateUserText =	0x00000005,
+
+	CLVColTypesMask =			0x00000007,
+
+	CLVColFlagBitmapIsCopy =	0x00000008,
+	CLVColFlagNeedsTruncation =	0x00000010,
+	CLVColFlagRightJustify =	0x00000020
+};
+
+
+//******************************************************************************************************
 //**** CONSTANTS
 //******************************************************************************************************
 //Flags
@@ -66,10 +86,15 @@ enum
 												//if the column header is narrower than the text it contains.
 	CLV_TELL_ITEMS_WIDTH =		0x00000800,		//Causes items in this column to be informed when the column
 												//width is changed.  This is necessary for CLVEasyItems.
-	CLV_RIGHT_JUSTIFIED =		0x00001000		//Causes the column, when resized, to shift its content,
+	CLV_RIGHT_JUSTIFIED =		0x00001000,		//Causes the column, when resized, to shift its content,
 												//not just the content of subsequent columns.  This does not
 												//affect the rendering of content in items in the column,
 												//just the area that gets scrolled.
+	// added by zooey:
+	CLV_COLDATAMASK =			0x00006000,		//bitmap used by column-datatypes
+	CLV_COLDATA_STRING =		0x00000000,		//Column is a string, used in sorting. N.B.: this is the default
+	CLV_COLDATA_NUMBER =		0x00002000,		//Column is a number, used in sorting
+	CLV_COLDATA_DATE =		0x00004000		//Column is a date, used in sorting
 };
 
 enum CLVSortMode
@@ -117,6 +142,8 @@ class CLVColumn
 												//column widths
 		uint32 Flags() const;
 		bool IsShown() const;
+		float ColumnBegin() const { return fColumnBegin; }
+		float ColumnEnd() const { return fColumnEnd; }
 		virtual void SetShown(bool shown);
 		CLVSortMode SortMode() const;
 		virtual void SetSortMode(CLVSortMode mode);
@@ -124,7 +151,7 @@ class CLVColumn
 		ColumnListView* GetParent() const ;
 		BView* GetHeaderView() const;
 		virtual void DrawColumnHeader(BView* view, BRect header_rect, bool sort_key, bool focus,
-			float font_ascent);
+			float font_ascent, CLVSortMode sortMode, int32 sortPrio=-1);
 			//Can be overridden to implement your own column header drawing, for example if you want to do
 			//string truncation.
 			//- The background will already be filled with and LowColor set to BeBackgroundGrey

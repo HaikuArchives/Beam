@@ -25,6 +25,7 @@ BmApplication::BmApplication( const char* sig)
 	,	LogHandler( NULL)
 	,	Prefs( NULL)
 	,	FolderIcon( NULL)
+	,	MailIcon( NULL)
 	,	WHITESPACE( " \t\n\r\f")
 	,	MailFolderList( NULL)
 	,	MailFolderView( NULL)
@@ -65,11 +66,22 @@ BmApplication::BmApplication( const char* sig)
 		Prefs = BmPrefs::CreateInstance();
 		
 		// now we fetch the neccessary icons:
+		// the folder-icon...
 		FolderIcon = new BBitmap( BRect(0,0,15,15), B_CMAP8);
 		(err = mt.SetTo("application/x-vnd.Be-Directory")) == B_OK
 														|| BM_THROW_RUNTIME( BString("Beam: Could not initialize mimetype application/folder") << "\n\nError:" << strerror(err));
 		(err = mt.GetIcon( FolderIcon, B_MINI_ICON)) == B_OK
 														|| BM_THROW_RUNTIME( BString("Beam: Could not find icon for mimetype application/folder") << "\n\nError:" << strerror(err));
+		// the mail-icon...
+		MailIcon = new BBitmap( BRect(0,0,15,15), B_CMAP8);
+		(err = mt.SetTo("text/x-email")) == B_OK
+														|| BM_THROW_RUNTIME( BString("Beam: Could not initialize mimetype text/x-email") << "\n\nError:" << strerror(err));
+		if ((err = mt.GetIcon( MailIcon, B_MINI_ICON)) != B_OK) {
+			(err = mt.SetTo("text")) == B_OK
+															|| BM_THROW_RUNTIME( BString("Beam: Could not initialize mimetype text") << "\n\nError:" << strerror(err));
+			(err = mt.GetIcon( MailIcon, B_MINI_ICON)) == B_OK
+														|| BM_THROW_RUNTIME( BString("Beam: Could not find icon for mimetype text/x-email") << "\n\nError:" << strerror(err));
+		}
 	
 		// we fill necessary info about the standard font-height:
 		be_plain_font->GetHeight( &BePlainFontHeight);

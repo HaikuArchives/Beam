@@ -155,24 +155,27 @@ void CLVColumn::SetWidth(float width)
 			{
 				if(!(fFlags&CLV_RIGHT_JUSTIFIED))
 				{
-					DestArea.left = fColumnEnd+1.0;
-					DestArea.right = fColumnEnd+Delta;
+					DestArea.left = fColumnBegin;
+					SourceArea.left = fColumnEnd+1.0;
+					SourceArea.right = DestArea.right = fColumnEnd+Delta;
 				}
 				else
 				{
-					DestArea.left = fColumnBegin;
-					DestArea.right = fColumnBegin+Delta;
+					SourceArea.left = DestArea.left = fColumnBegin;
+					SourceArea.right = fColumnBegin+Delta;
+					DestArea.right = fColumnEnd+Delta+1.0;
 				}				
 			}
 			else
 			{
-				DestArea.left = ColumnViewBounds.right+Delta+1.0;
-				DestArea.right = ColumnViewBounds.right;
+				DestArea.left = fColumnBegin;
+				DestArea.right = fColumnEnd+Delta;
+				fParent->fColumnLabelView->Invalidate(DestArea);
+				SourceArea.left = DestArea.left = ColumnViewBounds.right+Delta+1.0;
+				SourceArea.right = DestArea.right = ColumnViewBounds.right;
 			}
 			fParent->fColumnLabelView->Invalidate(DestArea);
-			DestArea.top = MainViewBounds.top;
-			DestArea.bottom = MainViewBounds.bottom;
-			fParent->Invalidate(DestArea);
+			fParent->Invalidate(SourceArea);
 
 			if(fFlags & CLV_HEADER_TRUNCATE)
 			{
@@ -360,7 +363,7 @@ BView* CLVColumn::GetHeaderView() const
 
 
 void CLVColumn::DrawColumnHeader(BView* view, BRect header_rect, bool sort_key, bool focus,
-	float font_ascent)
+	float font_ascent, CLVSortMode sortMode, int32 sortPrio)
 {
 	char* label;
 	if(fFlags & CLV_HEADER_TRUNCATE)
@@ -377,6 +380,7 @@ void CLVColumn::DrawColumnHeader(BView* view, BRect header_rect, bool sort_key, 
 
 	if(label)
 	{
+		const float offs = 4.0;
 		if(focus)
 			view->SetHighColor(BeFocusBlue);
 		else
@@ -386,13 +390,13 @@ void CLVColumn::DrawColumnHeader(BView* view, BRect header_rect, bool sort_key, 
 		view->SetDrawingMode(B_OP_OVER);
 		BPoint text_point;
 		if(!(fFlags&CLV_RIGHT_JUSTIFIED))
-			text_point.Set(header_rect.left+8.0,header_rect.top+1.0+font_ascent);
+			text_point.Set(header_rect.left+offs,header_rect.top+1.0+font_ascent);
 		else
 		{
 			BFont label_font;
 			view->GetFont(&label_font);
 			float string_width = label_font.StringWidth(label);
-			text_point.Set(header_rect.right-8.0-string_width,header_rect.top+1.0+font_ascent);			
+			text_point.Set(header_rect.right-offs-string_width,header_rect.top+1.0+font_ascent);			
 		}
 		view->DrawString(label,text_point);
 		view->SetDrawingMode(B_OP_COPY);
@@ -401,8 +405,28 @@ void CLVColumn::DrawColumnHeader(BView* view, BRect header_rect, bool sort_key, 
 		if(sort_key)
 		{
 			float Width = view->StringWidth(label);
-			view->StrokeLine(BPoint(text_point.x-1,text_point.y+2.0),
-				BPoint(text_point.x-1+Width,text_point.y+2.0));
+			if (header_rect.right-header_rect.left-Width > 18) {
+				if (sortPrio == 0)
+					view->SetHighColor( Black);
+				else if (sortPrio == 1)
+					view->SetHighColor( BeDarkShadow);
+				else
+					view->SetHighColor( BeShadow);
+				float x_offs;
+				if (!(fFlags&CLV_RIGHT_JUSTIFIED))
+					x_offs = header_rect.left + Width + 8;
+				else 
+					x_offs = header_rect.right - Width - 8 - 10;
+				if (sortMode == Ascending) {
+					view->FillTriangle( BPoint( x_offs, header_rect.top+6), 
+											  BPoint( x_offs + 10, header_rect.top+6),
+											  BPoint( x_offs + 5, header_rect.top+6+5));
+				} else if (sortMode == Descending) {
+					view->FillTriangle( BPoint( x_offs, header_rect.top+6+5), 
+											  BPoint( x_offs + 10, header_rect.top+6+5),
+											  BPoint( x_offs + 5, header_rect.top+6));
+				}
+			}
 		}
 		fCachedRect = header_rect;
 	}

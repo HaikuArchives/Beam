@@ -64,7 +64,7 @@ class BetterScrollView : public BScrollView
 		virtual	void FrameResized(float new_width, float new_height);
 		virtual void AttachedToWindow();
 
-	private:
+	protected:
 		void UpdateScrollBars(bool scrolling_allowed);
 
 		BRect m_data_rect;

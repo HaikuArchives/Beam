@@ -47,28 +47,37 @@ BmMailRef::BmMailRef( entry_ref &eref, ino_t node, struct stat& st)
 
 		buffer.SetTo( '\0', bufsize);		// preallocate the bufsize we need
 		buf = buffer.LockBuffer( 0);
-		node.ReadAttr( "MAIL:name", 		B_STRING_TYPE, 0, buf, bufsize);		mName = buf;
-		node.ReadAttr( "MAIL:account", 	B_STRING_TYPE, 0, buf, bufsize);		mAccount = buf;
-		node.ReadAttr( "MAIL:cc", 			B_STRING_TYPE, 0, buf, bufsize);		mCc = buf;
-		node.ReadAttr( "MAIL:from", 		B_STRING_TYPE, 0, buf, bufsize);		mFrom = buf;
-		node.ReadAttr( "MAIL:reply", 		B_STRING_TYPE, 0, buf, bufsize);		mReplyTo = buf;
-		node.ReadAttr( "MAIL:status", 	B_STRING_TYPE, 0, buf, bufsize);		mStatus = buf;
-		node.ReadAttr( "MAIL:subject", 	B_STRING_TYPE, 0, buf, bufsize);		mSubject = buf;
-		node.ReadAttr( "MAIL:to", 			B_STRING_TYPE, 0, buf, bufsize);		mTo = buf;
+		node.ReadAttr( "MAIL:name", 		B_STRING_TYPE, 0, buf, bufsize);		mName = buf; 		*buf=0;
+		node.ReadAttr( "MAIL:account", 	B_STRING_TYPE, 0, buf, bufsize);		mAccount = buf;	*buf=0;
+		node.ReadAttr( "MAIL:cc", 			B_STRING_TYPE, 0, buf, bufsize);		mCc = buf;			*buf=0;
+		node.ReadAttr( "MAIL:from", 		B_STRING_TYPE, 0, buf, bufsize);		mFrom = buf;		*buf=0;
+		node.ReadAttr( "MAIL:reply", 		B_STRING_TYPE, 0, buf, bufsize);		mReplyTo = buf;	*buf=0;
+		node.ReadAttr( "MAIL:status", 	B_STRING_TYPE, 0, buf, bufsize);		mStatus = buf;		*buf=0;
+		node.ReadAttr( "MAIL:subject", 	B_STRING_TYPE, 0, buf, bufsize);		mSubject = buf;	*buf=0;
+		node.ReadAttr( "MAIL:to", 			B_STRING_TYPE, 0, buf, bufsize);		mTo = buf;			*buf=0;
 
+		mWhen = 0;
 		node.ReadAttr( "MAIL:when", 		B_TIME_TYPE, 0, &mWhen, sizeof(time_t));
 		mWhenString = TimeToString( mWhen);
-		node.ReadAttr( "MAIL:attachments", B_BOOL_TYPE, 0, &mHasAttachments, sizeof(mHasAttachments));
+
+		bool att1 = false;
+		node.ReadAttr( "MAIL:attachment", B_BOOL_TYPE, 0, &att1, sizeof(att1));
+		bool att2 = false;
+		node.ReadAttr( "MAIL:attachments", B_BOOL_TYPE, 0, &att2, sizeof(att2));
+		int32 att3 = 0;
+		node.ReadAttr( "MAIL:has_attachment", B_INT32_TYPE, 0, &att3, sizeof(att3));
+		mHasAttachments = att1 || att2 || att3>0;
 
 		mSize = st.st_size;
+		mSizeString = BytesToString(mSize,true);
 		mCreated = st.st_ctime;
 		mCreatedString = TimeToString( mCreated);
 
 		buffer.UnlockBuffer( -1);
 	} catch( exception &e) {
+		buffer.UnlockBuffer( -1);
 		BM_SHOWERR( e.what());
 		return;
-		buffer.UnlockBuffer( -1);
 	}
 
 	/* TODO: check for mimetype mail and fetch attributes here */

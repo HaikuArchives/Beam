@@ -15,24 +15,33 @@
 		-	
 \*------------------------------------------------------------------------------*/
 BmMailRefItem::BmMailRefItem( BString key, BmListModelItem* _item)
-	:	inherited( key, _item, bmApp->FolderIcon, false)
+	:	inherited( key, _item, bmApp->MailIcon, false)
 {
 	BmMailRef* ref = dynamic_cast<BmMailRef*>( _item);
-	const char* textCols[] = {
-		ref->HasAttachments() ? "*" : " ",
-		ref->Priority().String(),
-		ref->From().String(),
-		ref->Subject().String(),
-		ref->WhenString().String(),
-		ref->Cc().String(),
-		ref->Account().String(),
-		ref->To().String(),
-		ref->ReplyTo().String(),
-		ref->Name().String(),
-		ref->CreatedString().String(),
-		NULL
+
+	BString st = ref->Status();
+	BString status = 
+		st == "Read"		? "R" :
+		st == "New" 		? "N" :
+		st == "Sent" 		? "S" : "?";
+	
+	BmListColumn cols[] = {
+		{ status.String(), 							false },
+		{ ref->HasAttachments() ? "*" : " ",	false },
+		{ ref->Priority().String(),				false },
+		{ ref->From().String(),						false },
+		{ ref->Subject().String(),					false },
+		{ ref->WhenString().String(),				false },
+		{ ref->SizeString().String(),				true  },
+		{ ref->Cc().String(),						false },
+		{ ref->Account().String(),					false },
+		{ ref->To().String(),						false },
+		{ ref->ReplyTo().String(),					false },
+		{ ref->Name().String(),						false },
+		{ ref->CreatedString().String(),			false },
+		{ NULL, false }
 	};
-	SetTextCols( textCols);
+	SetTextCols( cols);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -46,9 +55,26 @@ BmMailRefItem::~BmMailRefItem() {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-const BString& BmMailRefItem::GetSortKey( const BString& col) {
+const int32 BmMailRefItem::GetNumValueForColumn( int32 column_index) const {
 	BmMailRef* ref = dynamic_cast<BmMailRef*>( mModelItem);
-	return ref->From();
+	if (column_index == 7)
+		return ref->Size();
+	else
+		return 0;
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+const time_t BmMailRefItem::GetDateValueForColumn( int32 column_index) const {
+	BmMailRef* ref = dynamic_cast<BmMailRef*>( mModelItem);
+	if (column_index == 6)
+		return ref->When();
+	else if (column_index == 13)
+		return ref->When();
+	else
+		return 0;
 }
 
 
@@ -57,8 +83,8 @@ const BString& BmMailRefItem::GetSortKey( const BString& col) {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmMailRefView* BmMailRefView::CreateInstance( BRect rect) {
-	BmMailRefView* mailRefView = new BmMailRefView( rect);
+BmMailRefView* BmMailRefView::CreateInstance( minimax minmax, int32 width, int32 height) {
+	BmMailRefView* mailRefView = new BmMailRefView( minmax, width, height);
 	return mailRefView;
 }
 
@@ -66,30 +92,35 @@ BmMailRefView* BmMailRefView::CreateInstance( BRect rect) {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmMailRefView::BmMailRefView( BRect rect)
-	:	inherited( rect, "Beam_MailRefView", B_MULTIPLE_SELECTION_LIST, 
+BmMailRefView::BmMailRefView( minimax minmax, int32 width, int32 height)
+	:	inherited( minmax, BRect(0,0,width,height), "Beam_MailRefView", B_MULTIPLE_SELECTION_LIST, 
 					  false, true)
 	,	mCurrFolder( NULL)
 {
-	mContainerView = Initialize( rect, 
+	SetViewColor( B_TRANSPARENT_COLOR);
+	SetStripedBackground( true);
+	mContainerView = Initialize( BRect(0,0,width,height),
 										  B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE,
-										  B_FOLLOW_NONE,
+										  B_FOLLOW_ALL,
 										  true, true, true, B_FANCY_BORDER);
 
 	AddColumn( new CLVColumn( NULL, 18.0, CLV_LOCK_AT_BEGINNING | CLV_NOT_MOVABLE 
 									  | CLV_NOT_RESIZABLE, 18.0));
-	AddColumn( new CLVColumn( "A", 20.0, CLV_NOT_RESIZABLE | CLV_SORT_KEYABLE, 20.0));
-	AddColumn( new CLVColumn( "P", 20.0, CLV_NOT_RESIZABLE | CLV_SORT_KEYABLE, 20.0));
-	AddColumn( new CLVColumn( "From", 100.0, CLV_SORT_KEYABLE | CLV_TELL_ITEMS_WIDTH, 20.0));
-	AddColumn( new CLVColumn( "Subject", 100.0, CLV_SORT_KEYABLE | CLV_TELL_ITEMS_WIDTH, 20.0));
-	AddColumn( new CLVColumn( "When", 50.0, CLV_SORT_KEYABLE | CLV_TELL_ITEMS_WIDTH, 20.0));
-	AddColumn( new CLVColumn( "Cc", 100.0, CLV_SORT_KEYABLE | CLV_TELL_ITEMS_WIDTH, 20.0));
-	AddColumn( new CLVColumn( "Account", 50.0, CLV_SORT_KEYABLE | CLV_TELL_ITEMS_WIDTH, 20.0));
-	AddColumn( new CLVColumn( "To", 100.0, CLV_SORT_KEYABLE | CLV_TELL_ITEMS_WIDTH, 20.0));
-	AddColumn( new CLVColumn( "Reply-To", 100.0, CLV_SORT_KEYABLE | CLV_TELL_ITEMS_WIDTH, 20.0));
-	AddColumn( new CLVColumn( "Tracker-Name", 100.0, CLV_SORT_KEYABLE | CLV_TELL_ITEMS_WIDTH, 20.0));
-	AddColumn( new CLVColumn( "Created", 50.0, CLV_SORT_KEYABLE | CLV_TELL_ITEMS_WIDTH, 20.0));
+	AddColumn( new CLVColumn( "S", 16.0, CLV_SORT_KEYABLE, 16.0));
+	AddColumn( new CLVColumn( "A", 16.0, CLV_SORT_KEYABLE, 16.0));
+	AddColumn( new CLVColumn( "P", 16.0, CLV_SORT_KEYABLE, 16.0));
+	AddColumn( new CLVColumn( "From", 200.0, CLV_SORT_KEYABLE, 20.0));
+	AddColumn( new CLVColumn( "Subject", 200.0, CLV_SORT_KEYABLE, 20.0));
+	AddColumn( new CLVColumn( "Date", 100.0, CLV_SORT_KEYABLE | CLV_COLDATA_DATE, 20.0));
+	AddColumn( new CLVColumn( "Size", 50.0, CLV_SORT_KEYABLE | CLV_COLDATA_NUMBER | CLV_RIGHT_JUSTIFIED, 20.0));
+	AddColumn( new CLVColumn( "Cc", 100.0, CLV_SORT_KEYABLE, 20.0));
+	AddColumn( new CLVColumn( "Account", 100.0, CLV_SORT_KEYABLE, 20.0));
+	AddColumn( new CLVColumn( "To", 100.0, CLV_SORT_KEYABLE, 20.0));
+	AddColumn( new CLVColumn( "Reply-To", 150.0, CLV_SORT_KEYABLE, 20.0));
+	AddColumn( new CLVColumn( "Tracker-Name", 150.0, CLV_SORT_KEYABLE, 20.0));
+	AddColumn( new CLVColumn( "Created", 100.0, CLV_SORT_KEYABLE | CLV_COLDATA_DATE, 20.0));
 	SetSortFunction( CLVEasyItem::CompareItems);
+	SetSortKey( 3);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -135,15 +166,3 @@ void BmMailRefView::ShowFolder( BmMailFolder* folder) {
 	mCurrFolder = folder;
 }
 
-/*------------------------------------------------------------------------------*\
-	MakeEmpty()
-		-	
-\*------------------------------------------------------------------------------*/
-void BmMailRefView::MakeEmpty( void) {
-	inherited::MakeEmpty();
-	BmItemMap::iterator iter;
-	for( iter=mItemMap.begin(); iter != mItemMap.end(); ++iter) {
-		delete iter->second;
-	}
-	mItemMap.clear();
-}

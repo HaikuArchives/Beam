@@ -24,8 +24,8 @@ public:
 	BmMailRefItem( BString key, BmListModelItem* item);
 	~BmMailRefItem();
 	
-	//
-	const BString& GetSortKey( const BString& col);
+	const int32 GetNumValueForColumn( int32 column_index) const;
+	const time_t GetDateValueForColumn( int32 column_index) const;
 
 };
 
@@ -39,10 +39,10 @@ class BmMailRefView : public BmListViewController
 	
 public:
 	//
-	static BmMailRefView* CreateInstance( BRect rect);
+	static BmMailRefView* CreateInstance( minimax minmax, int32 width, int32 height);
 	
 	//Constructor and destructor
-	BmMailRefView(	BRect rect);
+	BmMailRefView( minimax minmax, int32 width, int32 height);
 	~BmMailRefView();
 
 	//
@@ -52,9 +52,6 @@ public:
 	//
 	BmListViewItem* CreateListViewItem( BmListModelItem* item, uint32 level=0);
 	
-	//
-	void MakeEmpty( void);
-
 private:
 	BmMailFolder* mCurrFolder;
 

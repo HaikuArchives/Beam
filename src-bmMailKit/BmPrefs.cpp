@@ -73,7 +73,8 @@ BmPrefs::BmPrefs( void)
 						+ BM_LOGLVL3(BM_LogMainWindow)
 						+ BM_LOGLVL2(BM_LogModelController)
 						)
-	,	mMailboxPath("/boot/home/mail_beam")			// TODO: change default to .../mail
+	,	mMailboxPath("/boot/home/mail")			// TODO: change default to .../mail
+	,	mRefCaching( false)
 {
 #ifdef BM_LOGGING
 	BString s;
@@ -101,6 +102,7 @@ BmPrefs::BmPrefs( BMessage* archive)
 	mReceiveTimeout = ntohs(FindMsgInt16( archive, MSG_RECEIVE_TIMEOUT));
 	mLoglevels = ntohl(FindMsgInt32( archive, MSG_LOGLEVELS));
 	mMailboxPath = FindMsgString( archive, MSG_MAILBOXPATH);
+	mRefCaching = FindMsgBool( archive, MSG_REF_CACHING);
 	bmApp->LogHandler->LogLevels( mLoglevels);
 }
 
@@ -115,7 +117,8 @@ status_t BmPrefs::Archive( BMessage* archive, bool deep) const {
 		||	archive->AddInt16( MSG_DYNAMIC_CONN_WIN, mDynamicConnectionWin)
 		||	archive->AddInt16( MSG_RECEIVE_TIMEOUT, htons(mReceiveTimeout))
 		||	archive->AddInt32( MSG_LOGLEVELS, htonl(mLoglevels))
-		||	archive->AddString( MSG_MAILBOXPATH, mMailboxPath.String()));
+		||	archive->AddString( MSG_MAILBOXPATH, mMailboxPath.String())
+		||	archive->AddBool( MSG_REF_CACHING, mRefCaching));
 	return ret;
 }
 

@@ -53,6 +53,7 @@ public:
 	const time_t& Created() const 			{ return mCreated; }
 	const BString& CreatedString() const 	{ return mCreatedString; }
 	const off_t& Size() const 					{ return mSize; }
+	const BString& SizeString() const 		{ return mSizeString; }
 	const bool& HasAttachments() const 		{ return mHasAttachments; }
 
 	// setters:
@@ -61,21 +62,6 @@ public:
 	// archival-fieldnames:
 	static const char* const MSG_ENTRYREF = 	"bm:eref";
 	static const char* const MSG_INODE = 		"bm:inod";
-
-	//	message component definitions for status-msgs:
-	static const char* const MSG_ACCOUNT = 	"bm:acc";
-	static const char* const MSG_CC = 			"bm:cc";
-	static const char* const MSG_CREATED = 	"bm:creat";
-	static const char* const MSG_FROM = 		"bm:from";
-	static const char* const MSG_HASATTACHMENTS = 	"bm:att";
-	static const char* const MSG_NAME = 		"bm:name";
-	static const char* const MSG_PRIORITY = 	"bm:prior";
-	static const char* const MSG_REPLYTO = 	"bm:reply";
-	static const char* const MSG_SIZE = 		"bm:size";
-	static const char* const MSG_STATUS = 		"bm:status";
-	static const char* const MSG_SUBJECT = 	"bm:subject";
-	static const char* const MSG_TO = 			"bm:to";
-	static const char* const MSG_WHEN = 		"bm:when";
 
 private:
 	// the following members will be archived as part of BmFolderList:
@@ -96,6 +82,7 @@ private:
 	time_t mCreated;
 	BString mCreatedString;
 	off_t mSize;
+	BString mSizeString;
 	bool mHasAttachments;
 
 	// the following members will not be archived at all:

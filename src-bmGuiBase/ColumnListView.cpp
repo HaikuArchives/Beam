@@ -17,9 +17,13 @@
 //******************************************************************************************************
 //**** SYSTEM HEADER FILES
 //******************************************************************************************************
-#include <Window.h>
 #include <ClassInfo.h>
+#include <Region.h>
+#include <Window.h>
 
+
+// adapted for liblayout
+#include "layout.h"
 
 //******************************************************************************************************
 //**** PROJECT HEADER FILES
@@ -63,13 +67,17 @@ uint8 CLVDownArrowData[132] =
 };
 
 
+const float darken_tint = 1.072F;
+const float lighten_tint = 0.980F;
+
 //******************************************************************************************************
 //**** ColumnListView CLASS DEFINITION
 //******************************************************************************************************
-CLVContainerView::CLVContainerView(ColumnListView* target, uint32 resizingMode, uint32 flags,
+CLVContainerView::CLVContainerView( minimax minmax, ColumnListView* target, uint32 resizingMode, uint32 flags,
 	bool horizontal, bool vertical, bool scroll_view_corner, border_style border) :
 BetterScrollView(NULL,target,resizingMode,flags,horizontal,vertical,scroll_view_corner,border)
 {
+	ct_mpm = minmax;
 	IsBeingDestroyed = false;
 };
 
@@ -79,10 +87,26 @@ CLVContainerView::~CLVContainerView()
 	IsBeingDestroyed = true;
 }
 
+// adapted for liblayout
+minimax CLVContainerView::layoutprefs()
+{
+	return mpm=ct_mpm;
+}
+
+BRect CLVContainerView::layout(BRect rect)
+{
+	MoveTo(rect.LeftTop());
+	ResizeTo(rect.Width(),rect.Height());
+	return rect;
+}
+// (end of adaptation)
+
+const rgb_color sand =		{255,248,200,	255};
+
 //******************************************************************************************************
 //**** ColumnListView CLASS DEFINITION
 //******************************************************************************************************
-ColumnListView::ColumnListView(BRect Frame, const char *Name,
+ColumnListView::ColumnListView(minimax minmax, BRect Frame, const char *Name,
 	uint32 flags, list_view_type Type, bool hierarchical, bool showLabelView)
 : BListView(Frame,Name,Type,B_FOLLOW_ALL_SIDES,flags),
 fHierarchical( hierarchical),
@@ -96,9 +120,16 @@ fDownArrow(BRect(0.0,0.0,10.0,10.0),B_COLOR_8_BIT,CLVDownArrowData,false,false),
 fExpanderColumn( -1),
 fCompare( NULL),
 fWatchingForDrag( false),
-fSelectedItemColorWindowActive( BeListSelectGrey),
-fSelectedItemColorWindowInactive( BeListSelectGrey),
-fWindowActive( false)
+fSelectedItemColorWindowActive( tint_color(LightMetallicBlue, lighten_tint)),
+fSelectedItemColorWindowInactive( tint_color(BeListSelectGrey, lighten_tint)),
+fSelectedItemColorTintedWindowActive( tint_color(fSelectedItemColorWindowActive, darken_tint)),
+fSelectedItemColorTintedWindowInactive( tint_color(fSelectedItemColorWindowInactive, darken_tint)),
+fTintedWhite( tint_color( sand, lighten_tint)),
+// fTintedWhite( tint_color( White, darken_tint)),
+fWindowActive( false),
+fDeactivatedVerticalBar( NULL),
+fStripedBackground( false),
+fMinMax( minmax)
 {
 }
 
@@ -146,7 +177,7 @@ ColumnListView::~ColumnListView()
 CLVContainerView* ColumnListView::CreateContainer(bool horizontal, bool vertical, bool scroll_view_corner, 
 	border_style border, uint32 ResizingMode, uint32 flags)
 {
-	return new CLVContainerView(this,ResizingMode,flags,horizontal,vertical,scroll_view_corner,border);
+	return new CLVContainerView(fMinMax,this,ResizingMode,flags,horizontal,vertical,scroll_view_corner,border);
 }
 
 
@@ -162,8 +193,8 @@ void ColumnListView::EmbedInContainer(bool horizontal, bool vertical, bool scrol
 
 	if (fShowLabelView) {
 		//Resize the main view to make room for the CLVColumnLabelView
-		ResizeTo(ViewFrame.right-ViewFrame.left,ViewFrame.bottom-LabelsFrame.bottom-1.0);
-		MoveTo(NewFrame.left,NewFrame.top+(LabelsFrame.bottom-LabelsFrame.top+1.0));
+		ResizeTo(ViewFrame.Width(),ViewFrame.Height()-(LabelsFrame.Height()+1));
+		MoveTo(NewFrame.left,NewFrame.top+LabelsFrame.Height()+1);
 		fColumnLabelView->MoveTo(NewFrame.left,NewFrame.top);
 		//Add the ColumnLabelView
 		fScrollView->AddChild(fColumnLabelView);
@@ -742,7 +773,7 @@ void ColumnListView::AddSortKey(int32 ColumnIndex)
 		if(Column->fSortMode == NoSort)
 			SetSortMode(ColumnIndex,Ascending, false);
 		SortItems();
-		//Need to draw new underline
+		//Need to update sorting-order
 		fColumnLabelView->Invalidate(BRect(Column->fColumnBegin,LabelBounds.top,Column->fColumnEnd,
 			LabelBounds.bottom));
 	}
@@ -764,15 +795,18 @@ void ColumnListView::SetSortMode(int32 ColumnIndex,CLVSortMode Mode, bool doSort
 		return;
 	if(Column->fSortMode != Mode)
 	{
-		BRect LabelBounds = fColumnLabelView->Bounds();
+		BRect invalidRect = fColumnLabelView->Bounds();
 		Column->fSortMode = Mode;
 		if(Mode == NoSort && fSortKeyList.HasItem(Column))
 			fSortKeyList.RemoveItem(Column);
+		else {
+			invalidRect.left = Column->fColumnBegin;
+			invalidRect.right = Column->fColumnEnd;
+		}
 		if (doSort) 
 			SortItems();
-		//Need to draw or erase underline
-		fColumnLabelView->Invalidate(BRect(Column->fColumnBegin,LabelBounds.top,Column->fColumnEnd,
-			LabelBounds.bottom));
+		//Need to update sorting-order
+		fColumnLabelView->Invalidate( invalidRect);
 	}
 
 	SortingChanged();
@@ -914,7 +948,7 @@ void ColumnListView::MouseDown(BPoint where)
 						Select(min_selection,max_selection,false);
 					}
 				}
-				else if((modifier_keys & B_OPTION_KEY) && type != B_SINGLE_SELECTION_LIST)
+				else if((modifier_keys & (B_OPTION_KEY | B_CONTROL_KEY )) && type != B_SINGLE_SELECTION_LIST)
 					//If option held down, expand the selection to include just it.
 					Select(item_index,true);
 				else
@@ -929,7 +963,7 @@ void ColumnListView::MouseDown(BPoint where)
 			else
 			{
 				//Clicked an already selected item...
-				if(modifier_keys & B_OPTION_KEY)
+				if(modifier_keys & (B_OPTION_KEY | B_CONTROL_KEY ))
 					//if option held down, remove it.
 					Deselect(item_index);
 				else if(modifier_keys & B_SHIFT_KEY)
@@ -960,7 +994,7 @@ void ColumnListView::MouseDown(BPoint where)
 	else
 	{
 		//Clicked outside of any items.  If no shift or option key, deselect all.
-		if((!(modifier_keys & B_SHIFT_KEY)) && (!(modifier_keys & B_OPTION_KEY)))
+		if(!(modifier_keys & (B_SHIFT_KEY | B_OPTION_KEY | B_CONTROL_KEY )))
 			DeselectAll();
 	}
 }
@@ -1166,10 +1200,15 @@ bool ColumnListView::AddList(BList* newItems, int32 fullListIndex)
 bool ColumnListView::AddListPrivate(BList* newItems, int32 fullListIndex)
 {
 	AssertWindowLocked();
-	int32 NumberOfItems = newItems->CountItems();
-	for(int32 count = 0; count < NumberOfItems; count++)
-		if(!AddItemPrivate((CLVListItem*)newItems->ItemAt(count),fullListIndex+count))
+	if (fHierarchical) {
+		int32 NumberOfItems = newItems->CountItems();
+		for(int32 count = 0; count < NumberOfItems; count++)
+			if(!AddItemPrivate((CLVListItem*)newItems->ItemAt(count),fullListIndex+count))
+				return false;
+	} else {
+		if (!BListView::AddList( newItems, fullListIndex))
 			return false;
+	}
 	return true;
 }
 
@@ -1596,7 +1635,7 @@ int ColumnListView::PlainBListSortFunc(BListItem** a_item1, BListItem** a_item2)
 		for(int32 SortIteration = 0; SortIteration < SortDepth && CompareResult == 0; SortIteration++)
 		{
 			CLVColumn* Column = (CLVColumn*)SortingContext->fSortKeyList.ItemAt(SortIteration);
-			CompareResult = SortingContext->fCompare(item1,item2,SortingContext->fColumnList.IndexOf(Column));
+			CompareResult = SortingContext->fCompare(item1,item2,SortingContext->fColumnList.IndexOf(Column),Column->Flags());
 			if(Column->fSortMode == Descending)
 				CompareResult = 0-CompareResult;
 		}
@@ -1690,7 +1729,7 @@ void ColumnListView::SortListArray(CLVListItem** SortArray, int32 NumberOfItems)
 			for(int32 SortIteration = 0; SortIteration < SortDepth && CompareResult == 0; SortIteration++)
 			{
 				CLVColumn* Column = (CLVColumn*)fSortKeyList.ItemAt(SortIteration);
-				CompareResult = fCompare(SortArray[Counter1],SortArray[Counter2],fColumnList.IndexOf(Column));
+				CompareResult = fCompare(SortArray[Counter1],SortArray[Counter2],fColumnList.IndexOf(Column),Column->Flags());
 				if(CompareResult > 0)
 					CompareResult = 1;
 				else if(CompareResult < 0)
@@ -1712,29 +1751,112 @@ void ColumnListView::SetDisconnectScrollView( bool disconnect) {
 	// temporarily disconnects vertical scrollbar from listview in
 	// order to speed up addition of a large group of items:
 	// (this is "stolen" from Scooby... >:o)
-	BScrollBar *bar = ScrollBar( B_VERTICAL);
-	if (!bar)
+	if (disconnect)
+		fDeactivatedVerticalBar = ScrollBar( B_VERTICAL);
+	if (!fDeactivatedVerticalBar)
 		return;
 	if (disconnect) {
-		bar->SetTarget( (BView*)NULL);
+		fDeactivatedVerticalBar->SetTarget( (BView*)NULL);
 	} else {
-		bar->SetTarget( this);
+		fDeactivatedVerticalBar->SetTarget( this);
+		fDeactivatedVerticalBar = NULL;
 	}
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void ColumnListView::DrawColumn( BRect updateRect, int32 column_index) {
+	int32 index = GetDisplayIndexForColumn( column_index);
+	if (index % 2) {
+		SetLowColor( fTintedWhite);
+	} else {
+		SetLowColor( White);
+	}
+	FillRect( updateRect, B_SOLID_LOW);
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void ColumnListView::Draw( BRect updateRect) {
+	if (fStripedBackground) {
+		BList* DisplayList = &fColumnDisplayList;
+		int32 NumberOfColumns = DisplayList->CountItems();
+		CLVColumn* ThisColumn;
+		BRect ThisColumnRect = updateRect;
+		BRegion ClippingRegion;
+		ClippingRegion.Set(updateRect);
+	
+		//Draw the columns
+		for(int32 Counter = 0; Counter < NumberOfColumns; Counter++)
+		{
+			ThisColumn = (CLVColumn*)DisplayList->ItemAt(Counter);
+			if(!ThisColumn->IsShown())
+				continue;
+			ThisColumnRect.left = ThisColumn->ColumnBegin();
+			ThisColumnRect.right = ThisColumn->ColumnEnd();
+			if(ClippingRegion.Intersects(ThisColumnRect))
+			{
+				DrawColumn( ThisColumnRect, fColumnList.IndexOf(ThisColumn));
+			}
+		}
+	}
+	inherited::Draw( updateRect);
 }
 
 void ColumnListView::KeyDown(const char *bytes, int32 numBytes) 
 { 
-	if ( numBytes == 1 && (bytes[0] == B_LEFT_ARROW || bytes[0] == B_RIGHT_ARROW)) {
-		int32 currIdx = CurrentSelection();
-		if (currIdx < 0)
-			return;			// no item selected
-		CLVListItem *currItem = cast_as( ItemAt( currIdx), CLVListItem);
-		if (!currItem || !currItem->fSuperItem)
-			return;
-		if (bytes[0] == B_LEFT_ARROW)
-			Collapse( currItem);
-		else if (bytes[0] == B_RIGHT_ARROW)
-			Expand( currItem);
+	if ( numBytes == 1 ) {
+		switch( bytes[0]) {
+			case B_LEFT_ARROW:
+			case B_RIGHT_ARROW: {
+					int32 mods = Window()->CurrentMessage()->FindInt32("modifiers");
+					if (mods & (B_CONTROL_KEY | B_SHIFT_KEY)) {
+						// expand / collapse the superitem
+						int32 currIdx = CurrentSelection();
+						if (currIdx < 0)
+							return;			// no item selected
+						CLVListItem *currItem = cast_as( ItemAt( currIdx), CLVListItem);
+						if (!currItem || !currItem->fSuperItem)
+							return;
+						if (bytes[0] == B_LEFT_ARROW)
+							Collapse( currItem);
+						else if (bytes[0] == B_RIGHT_ARROW)
+							Expand( currItem);
+					} else {
+						// move horizontal scrollbar:
+						float min, max, smallStep, bigStep, value;
+						BScrollBar* bar = ScrollBar( B_HORIZONTAL);
+						if (!bar) 	return;
+						bar->GetRange( &min, &max);
+						bar->GetSteps( &smallStep, &bigStep);
+						value = bar->Value();
+						if (bytes[0] == B_LEFT_ARROW) {
+							value = MAX( value-smallStep, min);
+						} else if (bytes[0] == B_RIGHT_ARROW) {
+							value = MIN( value+smallStep, max);
+						}
+						bar->SetValue( value);
+					}
+				}
+				break;
+			case B_PAGE_DOWN: {
+					BScrollBar* vscroller = ScrollBar( B_VERTICAL);
+					if (vscroller) {
+						float min, max;
+						vscroller->GetRange( &min, &max);
+						if (max == vscroller->Value())
+							return;
+						
+					}
+				}
+				break;
+			default:
+				break;
+		}
 	}
 	BListView::KeyDown( bytes, numBytes);
 }

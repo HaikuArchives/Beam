@@ -37,6 +37,7 @@ public:
 	BmLogHandler* LogHandler;
 	BmPrefs* Prefs;
 	BBitmap* FolderIcon;
+	BBitmap* MailIcon;
 	BString HomePath;
 	BVolume MailboxVolume;
 	BPath	SettingsPath;

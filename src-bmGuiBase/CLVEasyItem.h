@@ -49,7 +49,7 @@ class CLVEasyItem : public CLVListItem
 		const BBitmap* GetColumnContentBitmap(int column_index);
 		virtual void DrawItemColumn(BView* owner, BRect item_column_rect, int32 column_index, bool complete);
 		virtual void Update(BView *owner, const BFont *font);
-		static int CompareItems(const CLVListItem* a_Item1, const CLVListItem* a_Item2, int32 KeyColumn);
+		static int CompareItems(const CLVListItem* a_Item1, const CLVListItem* a_Item2, int32 KeyColumn, int32 col_flags);
 		BRect TruncateText(int32 column_index, float column_width, BFont* font);
 			//Returns the area that needs to be redrawn, or BRect(-1,-1,-1,-1) if nothing
 		virtual void ColumnWidthChanged(int32 column_index, float column_width, ColumnListView* the_view);
@@ -57,7 +57,10 @@ class CLVEasyItem : public CLVListItem
 		inline float GetTextOffset() {return text_offset;}
 		virtual const char* GetUserText(int32 column_index, float column_width) const;
 
-	private:
+		virtual const int32 GetNumValueForColumn( int32 column_index) const 		{ return 0; }
+		virtual const time_t GetDateValueForColumn( int32 column_index) const 	{ return 0; }
+
+	protected:
 		void PrepListsForSet(int column_index);
 		
 		BList m_column_types;	//List of int32's converted from CLVColumnTypes

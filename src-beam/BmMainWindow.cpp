@@ -9,6 +9,8 @@
 
 #include <layout-all.h>
 
+#include "UserResizeSplitView.h"
+
 #include "Beam.h"
 #include "BmLogHandler.h"
 #include "BmMailFolderList.h"
@@ -32,10 +34,34 @@ BmMainWindow::BmMainWindow()
 	,	mMailFolderView( NULL)
 	,	mMailRefView( NULL)
 {
-	BView* v1 = CreateMailFolderView( BRect( 0, 0, 120, 300));
-	BView* v2 = CreateMailRefView( BRect( 150, 0, 400, 300));
-	AddChild( v1);
-	AddChild( v2);
+	UserResizeSplitView* spl;
+
+	MView* mOuterGroup = 
+		new VGroup(
+			minimax( 600, 200, 1E5, 1E5),
+			new HGroup(
+				minimax( -1, -1, 1E5, -1),
+				new MButton( "Lass gut sein...", new BMessage(B_QUIT_REQUESTED), be_app, minimax(-1,-1,-1,-1)),
+				new Space(),
+				0
+			),
+			new HGroup(
+/*
+				CreateMailFolderView( minimax(0,100,300,1E5), 120, 400),
+				CreateMailRefView( minimax(200,100,1E5,1E5), 400, 400),
+*/
+				spl = new UserResizeSplitView( 
+					CreateMailFolderView( minimax(0,100,300,1E5), 120, 100),
+					CreateMailRefView( minimax(200,100,1E5,1E5), 400, 100),
+					BRect(0, 0, 800, 500), 
+					"splitter1", 140, B_VERTICAL, true, true, false, B_FOLLOW_NONE
+				),
+				0
+			),
+			0
+		);
+
+	AddChild( dynamic_cast<BView*>(mOuterGroup));
 }
 
 BmMainWindow::~BmMainWindow() {
@@ -52,14 +78,14 @@ void BmMainWindow::BeginLife() {
 	}
 }
 
-CLVContainerView* BmMainWindow::CreateMailFolderView( BRect rect) {
-	mMailFolderView = BmMailFolderView::CreateInstance( rect);
+CLVContainerView* BmMainWindow::CreateMailFolderView( minimax minmax, int32 width, int32 height) {
+	mMailFolderView = BmMailFolderView::CreateInstance( minmax, width, height);
 	bmApp->MailFolderView = mMailFolderView;
 	return mMailFolderView->ContainerView();
 }
 
-CLVContainerView* BmMainWindow::CreateMailRefView( BRect rect) {
-	mMailRefView = BmMailRefView::CreateInstance( rect);
+CLVContainerView* BmMainWindow::CreateMailRefView( minimax minmax, int32 width, int32 height) {
+	mMailRefView = BmMailRefView::CreateInstance( minmax, width, height);
 	bmApp->MailRefView = mMailRefView;
 	return mMailRefView->ContainerView();
 }

@@ -23,6 +23,7 @@ class BmPrefs : public BArchivable {
 	static const char* const MSG_RECEIVE_TIMEOUT = 	"bm:recvtimeout";
 	static const char* const MSG_LOGLEVELS = 			"bm:loglevels";
 	static const char* const MSG_MAILBOXPATH = 		"bm:mailboxpath";
+	static const char* const MSG_REF_CACHING = 		"bm:refcaching";
 
 	static const char* const PREFS_FILENAME = 		"General Settings";
 
@@ -54,12 +55,14 @@ public:
 	int16 ReceiveTimeout() const 			{ return mReceiveTimeout; }
 	uint32 Loglevels() const 				{ return mLoglevels; }
 	const BString& MailboxPath() const 	{ return mMailboxPath; }
+	bool RefCaching() const 				{ return mRefCaching; }
 
 	// setters:
 	void CheckMail( TConnWinMode m) 		{ mDynamicConnectionWin = m; }
 	void ReceiveTimeout( int16 i) 		{ mReceiveTimeout = i; }
 	void Loglevels( int32 i) 				{ mLoglevels = i; }
 	void MailboxPath( BString& s) 		{ mMailboxPath = s; }
+	void RefCaching( bool b) 				{ mRefCaching = b; }
 
 private:
 	// TODO: make these configurable by user (i.e. write a GUI):
@@ -72,6 +75,7 @@ private:
 													// 2 bits are used (allowing levels from 
 													// 0 [off] to 3 [full])
 	BString mMailboxPath;					// Path of mailbox-dir (usually '/boot/home/mail')
+	bool mRefCaching;							// switches mailref-caching on or off
 };
 
 #endif

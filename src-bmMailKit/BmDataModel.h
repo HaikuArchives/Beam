@@ -145,6 +145,8 @@ public:
 	//
 	inline BmModelItemMap::const_iterator begin()	const { return mSubItemMap.begin(); }
 	inline BmModelItemMap::const_iterator end()		const { return mSubItemMap.end(); }
+	inline size_t size()			 							const	{ return mSubItemMap.size(); }
+	inline bool empty()										const	{ return mSubItemMap.empty(); }
 
 	// getters:
 	BString Key() const						{ return mKey; }
@@ -187,8 +189,10 @@ public:
 	//
 	inline BmModelItemMap::const_iterator begin()	const { return mModelItemMap.begin(); }
 	inline BmModelItemMap::const_iterator end()		const { return mModelItemMap.end(); }
-
-	void RemovalNoticed( BmController* controller);
+	inline size_t size()			 							const	{ return mModelItemMap.size(); }
+	inline bool empty()										const	{ return mModelItemMap.empty(); }
+	//
+	virtual void RemovalNoticed( BmController* controller);
 
 	//	message component definitions for status-msgs:
 	static const char* const MSG_ITEMKEY 		=		"bm:ikey";

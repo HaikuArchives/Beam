@@ -40,6 +40,9 @@ public:
 	// archival stuff:
 	virtual status_t Archive( BMessage* archive, bool deep = true) const;
 
+	//	
+	int32 ItemCount() 						{ return mMailCount; }
+
 	// getters:
 	status_t InitCheck()						{ return mInitCheck; }
 

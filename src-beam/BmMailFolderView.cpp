@@ -22,11 +22,11 @@ BmMailFolderItem::BmMailFolderItem( BString key, BmListModelItem* _item, uint32 
 	:	inherited( key, _item, bmApp->FolderIcon, true, level, superitem, expanded)
 {
 	BmMailFolder* folder = dynamic_cast<BmMailFolder*>( _item);
-	const char* textCols[] = {
-		folder->Name().String(),
-		NULL
+	BmListColumn cols[] = {
+		{ folder->Name().String(), false },
+		{ NULL, false }
 	};
-	SetTextCols( textCols);
+	SetTextCols( cols);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -36,23 +36,15 @@ BmMailFolderItem::BmMailFolderItem( BString key, BmListModelItem* _item, uint32 
 BmMailFolderItem::~BmMailFolderItem() { 
 }
 
-/*------------------------------------------------------------------------------*\
-	()
-		-	
-\*------------------------------------------------------------------------------*/
-const BString& BmMailFolderItem::GetSortKey( const BString& col) {
-	BmMailFolder* folder = dynamic_cast<BmMailFolder*>( mModelItem); 
-	return folder->Name();
-}
 
-	
+
 
 /*------------------------------------------------------------------------------*\
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmMailFolderView* BmMailFolderView::CreateInstance( BRect rect) {
-	BmMailFolderView* mailFolderView = new BmMailFolderView( rect);
+BmMailFolderView* BmMailFolderView::CreateInstance(  minimax minmax, int32 width, int32 height) {
+	BmMailFolderView* mailFolderView = new BmMailFolderView( minmax, width, height);
 	return mailFolderView;
 }
 
@@ -60,19 +52,21 @@ BmMailFolderView* BmMailFolderView::CreateInstance( BRect rect) {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmMailFolderView::BmMailFolderView( BRect rect)
-	:	inherited( rect, "Beam_FolderView", B_SINGLE_SELECTION_LIST, 
-					  true, false)
+BmMailFolderView::BmMailFolderView( minimax minmax, int32 width, int32 height)
+	:	inherited( minmax, BRect(0,0,width,height), "Beam_FolderView", B_SINGLE_SELECTION_LIST, 
+					  true, true)
 {
-	mContainerView = Initialize( rect,
+	mContainerView = Initialize( BRect( 0,0,width,height),
 										  B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE,
-										  B_FOLLOW_NONE,
+										  B_FOLLOW_TOP_BOTTOM,
 										  false, true, false, B_FANCY_BORDER);
 	AddColumn( new CLVColumn( NULL, 10.0, 
 									  CLV_EXPANDER | CLV_LOCK_AT_BEGINNING | CLV_NOT_MOVABLE, 10.0));
 	AddColumn( new CLVColumn( NULL, 18.0, CLV_LOCK_AT_BEGINNING | CLV_NOT_MOVABLE 
 									  | CLV_NOT_RESIZABLE | CLV_PUSH_PASS | CLV_MERGE_WITH_RIGHT, 18.0));
-	AddColumn( new CLVColumn( NULL, 300.0, CLV_NOT_RESIZABLE | CLV_NOT_MOVABLE, 50.0));
+	AddColumn( new CLVColumn( "Folders", 300.0, CLV_SORT_KEYABLE | CLV_NOT_RESIZABLE | CLV_NOT_MOVABLE, 300.0));
+	SetSortFunction( CLVEasyItem::CompareItems);
+	SetSortKey( 2);
 }
 
 /*------------------------------------------------------------------------------*\

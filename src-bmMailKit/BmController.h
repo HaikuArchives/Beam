@@ -77,19 +77,20 @@ protected:
 };
 
 
-class BmListViewItem;
 class BmListViewController;
-typedef map<const BString, BmListViewItem*> BmItemMap;
 
 /*------------------------------------------------------------------------------*\
 	BmListViewItem
 		-	
 \*------------------------------------------------------------------------------*/
-typedef const char** BmTextVec;
-
 class BmListViewItem : public CLVEasyItem
 {
 	typedef CLVEasyItem inherited;
+
+	struct BmListColumn {
+		const char* text;
+		bool rightJustified;
+	};
 
 public:
 	//
@@ -99,26 +100,20 @@ public:
 	~BmListViewItem();
 	
 	//
-	void SetTextCols( BmTextVec textVec);
+	void SetTextCols( BmListColumn* columnVec);
 	
 	// getters:
 	BString Key()								{ return mKey; }
 	BmListModelItem* ModelItem()			{ return mModelItem; }
 	
 	//
-	virtual const BString& GetSortKey( const BString& col)	= 0;
-	
-	//
-	virtual void AddSubItemsToMap( BmListViewController *view);
-	virtual void SortSubItemMap();
-	virtual void ShowSortedSubItemMap( BmListViewController *view);
+	virtual void AddSubItemsToList( BmListViewController *view);
 
 protected:
 	BString mKey;
 	BmListModelItem* mModelItem;
 	uint32 mOffs;
-	BmItemMap mSubItemMap;
-	BmItemMap mSortedMap;
+	BList* mSubItemList;
 };
 
 /*------------------------------------------------------------------------------*\
@@ -133,7 +128,7 @@ class BmListViewController : public ColumnListView, public BmJobController
 public:
 	
 	//Constructor and destructor
-	BmListViewController( BRect rect,
+	BmListViewController( minimax minmax,BRect rect,
 								 const char* Name = NULL,
 								 list_view_type Type = B_SINGLE_SELECTION_LIST,
 								 bool hierarchical = false,
@@ -159,9 +154,7 @@ public:
 															  uint32 level=0) 			= 0;
 	virtual BmListViewItem* TopHierarchyItem()	{ return NULL; }
 	//
-	virtual void AddModelItemsToMap();
-	virtual void SortItemMap();
-	virtual void ShowSortedItemMap();
+	virtual void AddModelItemsToList();
 	
 	virtual void MouseDown(BPoint point);
 
@@ -169,8 +162,7 @@ protected:
 	virtual BmListModel* DataModel()		{ 	return dynamic_cast<BmListModel*>(BmController::DataModel()); }
 
 	CLVContainerView* mContainerView;
-	BmItemMap mItemMap;
-	BmItemMap mSortedMap;
+	BList* mItemList;
 };
 
 

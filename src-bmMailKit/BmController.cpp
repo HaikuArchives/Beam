@@ -192,8 +192,9 @@ BmListViewItem::BmListViewItem( BString& key, BmListModelItem* modelItem, BBitma
 	,	mModelItem( modelItem)
 	,	mOffs( hierarchical ? 1 : 0)
 							// skip expander if listview is hierarchical
+	,	mSubItemList( NULL)
 {
-	SetColumnContent( mOffs++, icon, 0.0, false);
+	SetColumnContent( mOffs++, icon, 2.0, false);
 							// no offset and no copy of our icon
 }
 
@@ -202,21 +203,23 @@ BmListViewItem::BmListViewItem( BString& key, BmListModelItem* modelItem, BBitma
 		-	
 \*------------------------------------------------------------------------------*/
 BmListViewItem::~BmListViewItem() {
-	BmItemMap::iterator iter;
-	for( iter = mSubItemMap.begin(); iter != mSubItemMap.end(); ++iter) {
-		BmListViewItem* subItem = iter->second;
-		delete subItem;
+	if (mSubItemList) {
+		while( !mSubItemList->IsEmpty()) {
+			BmListViewItem* subItem = static_cast<BmListViewItem*>(mSubItemList->RemoveItem( (int32)0));
+			delete subItem;
+		}
+		delete mSubItemList;
+		mSubItemList = NULL;
 	}
-	mSubItemMap.clear();
 }
 
 /*------------------------------------------------------------------------------*\
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmListViewItem::SetTextCols( BmTextVec textVec) {
-	for( const char **p = textVec; *p; ++p) {
-		SetColumnContent( mOffs++, *p);
+void BmListViewItem::SetTextCols( BmListColumn* columnVec) {
+	for( const BmListColumn* p = columnVec; p->text != NULL; ++p) {
+		SetColumnContent( mOffs++, p->text, false, p->rightJustified);
 	}
 }
 
@@ -224,50 +227,22 @@ void BmListViewItem::SetTextCols( BmTextVec textVec) {
 	AddSubItemsToMap()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmListViewItem::AddSubItemsToMap( BmListViewController* view) {
+void BmListViewItem::AddSubItemsToList( BmListViewController* view) {
 	BmModelItemMap::const_iterator iter;
-	if (mModelItem->begin() != mModelItem->end()) {
+	if (!mModelItem->empty()) {
+		mSubItemList = new BList( mModelItem->size());
 		SetSuperItem( true);
 		SetExpanded( true);
 		for( iter = mModelItem->begin(); iter != mModelItem->end(); ++iter) {
 			BmListModelItem* subItem = iter->second;
 			BmListViewItem* viewItem = view->CreateListViewItem( subItem);
-			mSubItemMap[subItem->Key()] = viewItem;
+			mSubItemList->AddItem( viewItem);
 			view->AddUnder( viewItem, this);
-			viewItem->AddSubItemsToMap( view);
+			viewItem->AddSubItemsToList( view);
 		}
 	}
 }
 
-/*------------------------------------------------------------------------------*\
-	SortSubItemMap()
-		-	
-\*------------------------------------------------------------------------------*/
-void BmListViewItem::SortSubItemMap() {
-	BmItemMap::const_iterator iter;
-	for( iter = mSubItemMap.begin(); iter != mSubItemMap.end(); ++iter) {
-		BmListViewItem* subItem = iter->second;
-		mSortedMap[subItem->GetSortKey( "key")] = subItem;
-		subItem->SortSubItemMap();
-	}
-}
-
-/*------------------------------------------------------------------------------*\
-	ShowSortedSubItemMap()
-		-	
-\*------------------------------------------------------------------------------*/
-void BmListViewItem::ShowSortedSubItemMap( BmListViewController* view) {
-	BmItemMap::const_iterator iter;
-	if (!mSortedMap.empty()) {
-		SetSuperItem( true);
-		SetExpanded( true);
-		for( iter = mSortedMap.begin(); iter != mSortedMap.end(); ++iter) {
-			BmListViewItem* subItem = iter->second;
-			view->AddUnder( subItem, this);
-			subItem->ShowSortedSubItemMap( view);
-		}
-	}
-}
 
 
 /********************************************************************************\
@@ -279,12 +254,13 @@ void BmListViewItem::ShowSortedSubItemMap( BmListViewController* view) {
 	BmListViewController()
 		-	standard contructor
 \*------------------------------------------------------------------------------*/
-BmListViewController::BmListViewController( BRect rect,
+BmListViewController::BmListViewController( minimax minmax, BRect rect,
 								 const char* Name, list_view_type Type, bool hierarchical, 
 								 bool showLabelView)
-	:	inherited( rect, Name, B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE, 
+	:	inherited( minmax, rect, Name, B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE, 
 					  Type, hierarchical, showLabelView)
 	,	inheritedController( Name)
+	,	mItemList( NULL)
 {
 }
 
@@ -301,14 +277,15 @@ BmListViewController::~BmListViewController() {
 \*------------------------------------------------------------------------------*/
 void BmListViewController::DetachModel() {
 	inheritedController::DetachModel();
-	MakeEmpty();
-	mSortedMap.clear();
-	BmItemMap::iterator iter;
-	for( iter = mItemMap.begin(); iter != mItemMap.end(); ++iter) {
-		BmListViewItem* item = iter->second;
-		delete item;
+	MakeEmpty();		// clear display
+	if (mItemList) {
+		while( !mItemList->IsEmpty()) {
+			BmListViewItem* subItem = static_cast<BmListViewItem*>(mItemList->RemoveItem( (int32)0));
+			delete subItem;
+		}		
+		delete mItemList;
+		mItemList = NULL;
 	}
-	mItemMap.clear();
 }
 
 /*------------------------------------------------------------------------------*\
@@ -429,7 +406,7 @@ void BmListViewController::UpdateModelState( BMessage* msg) {
 \*------------------------------------------------------------------------------*/
 void BmListViewController::JobIsDone( bool completed) {
 	if (completed) {
-		AddModelItemsToMap();
+		AddModelItemsToList();
 	}
 }
 
@@ -437,53 +414,30 @@ void BmListViewController::JobIsDone( bool completed) {
 	AddAllModelItemsToMap()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmListViewController::AddModelItemsToMap() {
+void BmListViewController::AddModelItemsToList() {
 	BAutolock lock( DataModel()->ModelLocker());
 	lock.IsLocked()	 						|| BM_THROW_RUNTIME( BString() << ControllerName() << ":AddModelItemsToMap(): Unable to lock model");
 	BmListModel *model = DataModel();
-	mItemMap.clear();
+	mItemList = new BList( model->size());
 	SetDisconnectScrollView( true);
 	BmModelItemMap::const_iterator iter;
 	for( iter = model->begin(); iter != model->end(); ++iter) {
 		BmListModelItem* modelItem = iter->second;
 		BmListViewItem* viewItem = CreateListViewItem( modelItem);
-		mItemMap[modelItem->Key()] = viewItem;
-		AddItem( viewItem);
-		viewItem->AddSubItemsToMap( this);
+		mItemList->AddItem( viewItem);
+		if (Hierarchical()) {
+			// immediately add item and its subitems:
+			AddItem( viewItem);
+			viewItem->AddSubItemsToList( this);
+		}
 	}
+	if (!Hierarchical()) {
+		// add complete item-list for efficiency:
+		AddList( mItemList);
+	}
+	SortItems();
 	SetDisconnectScrollView( false);
-}
-
-/*------------------------------------------------------------------------------*\
-	SortItemMap()
-		-	
-\*------------------------------------------------------------------------------*/
-void BmListViewController::SortItemMap() {
-	BAutolock lock( DataModel()->ModelLocker());
-	lock.IsLocked()	 						|| BM_THROW_RUNTIME( BString() << ControllerName() << ":SortItemMap(): Unable to lock model");
-	mSortedMap.clear();
-	BmItemMap::const_iterator iter;
-	for( iter = mItemMap.begin(); iter != mItemMap.end(); ++iter) {
-		BmListViewItem* item = iter->second;
-		mSortedMap[item->GetSortKey( "key")] = item;
-		item->SortSubItemMap();
-	}
-	ShowSortedItemMap();
-}
-
-/*------------------------------------------------------------------------------*\
-	ShowSortedItemMap()
-		-	
-\*------------------------------------------------------------------------------*/
-void BmListViewController::ShowSortedItemMap() {
-	BAutolock lock( DataModel()->ModelLocker());
-	lock.IsLocked()	 						|| BM_THROW_RUNTIME( BString() << ControllerName() << ":ShortSortedMap(): Unable to lock model");
-	BmItemMap::const_iterator iter;
-	for( iter = mSortedMap.begin(); iter != mSortedMap.end(); ++iter) {
-		BmListViewItem* item = iter->second;
-		AddItem( item);
-		item->ShowSortedSubItemMap( this);
-	}
+	UpdateColumnSizesDataRectSizeScrollBars( true);
 }
 
 /*------------------------------------------------------------------------------*\

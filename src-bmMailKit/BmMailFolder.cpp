@@ -106,6 +106,10 @@ bool BmMailFolder::CheckIfModifiedSince() {
 	(err = mailDir.GetModificationTime( &mtime)) == B_OK
 													|| BM_THROW_RUNTIME(BString("Could not get mtime \nfor mail-folder <") << Name() << "> \n\nError:" << strerror(err));
 	BM_LOG3( BM_LogMailFolders, BString("Mtimes of folder ") << Name() << ": (" << mtime << "<->" << mLastModified << ")");
+	if (mtime != mLastModified) {
+		BM_LOG3( BM_LogMailFolders, BString("Mtime of folder has changed!"));
+		mLastModified = mtime;
+	}
 	BM_LOG3( BM_LogMailFolders, "BmMailFolder::CheckIfModifiedSince() - end");
 	return mtime != mLastModified;
 }

@@ -80,7 +80,7 @@ void ShowAlert( const BString &text);
 /*------------------------------------------------------------------------------*\*\
 	utility function to format a number of bytes into a string
 \*------------------------------------------------------------------------------*/
-BString BytesToString( int32 bytes);
+BString BytesToString( int32 bytes, bool mini=false);
 
 /*------------------------------------------------------------------------------*\*\
 	utility function to format a time into a string

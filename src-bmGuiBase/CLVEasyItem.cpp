@@ -33,26 +33,6 @@
 
 
 //******************************************************************************************************
-//**** TYPE DEFINITIONS AND CONSTANTS
-//******************************************************************************************************
-enum
-{
-	CLVColNone =				0x00000000,
-	CLVColStaticText = 			0x00000001,
-	CLVColTruncateText =		0x00000002,
-	CLVColBitmap = 				0x00000003,
-	CLVColUserText = 			0x00000004,
-	CLVColTruncateUserText =	0x00000005,
-
-	CLVColTypesMask =			0x00000007,
-
-	CLVColFlagBitmapIsCopy =	0x00000008,
-	CLVColFlagNeedsTruncation =	0x00000010,
-	CLVColFlagRightJustify =	0x00000020
-};
-
-
-//******************************************************************************************************
 //**** CLVEasyItem CLASS DEFINITION
 //******************************************************************************************************
 CLVEasyItem::CLVEasyItem(uint32 level, bool superitem, bool expanded, float minheight)
@@ -224,19 +204,29 @@ const BBitmap* CLVEasyItem::GetColumnContentBitmap(int column_index)
 
 void CLVEasyItem::DrawItemColumn(BView *owner, BRect item_column_rect, int32 column_index, bool complete)
 {
-	rgb_color color;
+	rgb_color color, tinted_color;
 	bool selected = IsSelected();
-	if(selected)
+	bool striped = ((ColumnListView*)owner)->StripedBackground();
+	float offs = striped ? 5.0 : 0.0;
+
+	if(selected) {
 		color = ((ColumnListView*)owner)->ItemSelectColor();
-	else
-		color = White;
-	owner->SetLowColor(color);
-	owner->SetDrawingMode(B_OP_COPY);
-	if(selected || complete)
-	{
-		owner->SetHighColor(color);
-		owner->FillRect(item_column_rect);
+		tinted_color = ((ColumnListView*)owner)->ItemSelectColorTinted();
 	}
+	else {
+		color = White;
+		tinted_color = ((ColumnListView*)owner)->TintedWhite();
+	}
+	owner->SetDrawingMode(B_OP_COPY);
+
+	int32 index = ((ColumnListView*)owner)->GetDisplayIndexForColumn( column_index);
+	if (striped && index % 2) {
+		owner->SetLowColor( tinted_color);
+	} else {
+		owner->SetLowColor( color);
+	}
+	owner->FillRect( item_column_rect, B_SOLID_LOW);
+	
 	if(column_index == -1)
 		return;
 
@@ -271,7 +261,7 @@ void CLVEasyItem::DrawItemColumn(BView *owner, BRect item_column_rect, int32 col
 			{
 				BFont owner_font;
 				owner->GetFont(&owner_font);
-				TruncateText(column_index,item_column_rect.right-item_column_rect.left,&owner_font);
+				TruncateText(column_index,item_column_rect.right-item_column_rect.left-offs,&owner_font);
 				((int32*)m_column_types.Items())[column_index] &= (CLVColFlagNeedsTruncation^0xFFFFFFFF);
 			}
 			text = (const char*)m_aux_content.ItemAt(column_index);
@@ -279,7 +269,7 @@ void CLVEasyItem::DrawItemColumn(BView *owner, BRect item_column_rect, int32 col
 		else if(type == CLVColStaticText)
 			text = (const char*)m_column_content.ItemAt(column_index);
 		else if(type == CLVColTruncateUserText)
-			text = GetUserText(column_index,item_column_rect.right-item_column_rect.left);
+			text = GetUserText(column_index,item_column_rect.right-item_column_rect.left-offs);
 		else if(type == CLVColUserText)
 			text = GetUserText(column_index,-1);
 
@@ -287,13 +277,13 @@ void CLVEasyItem::DrawItemColumn(BView *owner, BRect item_column_rect, int32 col
 		{
 			BPoint draw_point;
 			if(!right_justify)
-				draw_point.Set(item_column_rect.left+2.0,item_column_rect.top+text_offset);
+				draw_point.Set(item_column_rect.left+(offs?offs:2.0),item_column_rect.top+text_offset);
 			else
 			{
 				BFont font;
 				owner->GetFont(&font);
 				float string_width = font.StringWidth(text);
-				draw_point.Set(item_column_rect.right-2.0-string_width,item_column_rect.top+text_offset);
+				draw_point.Set(item_column_rect.right-(offs?offs:2.0)-string_width,item_column_rect.top+text_offset);
 			}				
 			owner->DrawString(text,draw_point);
 		}
@@ -335,7 +325,8 @@ void CLVEasyItem::Update(BView *owner, const BFont *font)
 }
 
 
-int CLVEasyItem::CompareItems(const CLVListItem *a_Item1, const CLVListItem *a_Item2, int32 KeyColumn)
+int CLVEasyItem::CompareItems(const CLVListItem *a_Item1, const CLVListItem *a_Item2, int32 KeyColumn,
+										int32 col_flags)
 {
 	const CLVEasyItem* Item1 = cast_as(a_Item1,const CLVEasyItem);
 	const CLVEasyItem* Item2 = cast_as(a_Item2,const CLVEasyItem);
@@ -351,20 +342,34 @@ int CLVEasyItem::CompareItems(const CLVListItem *a_Item1, const CLVListItem *a_I
 		type2 == CLVColTruncateUserText || type2 == CLVColUserText)))
 		return 0;
 
-	const char* text1 = NULL;
-	const char* text2 = NULL;
-
-	if(type1 == CLVColStaticText || type1 == CLVColTruncateText)
-		text1 = (const char*)Item1->m_column_content.ItemAt(KeyColumn);
-	else if(type1 == CLVColTruncateUserText || type1 == CLVColUserText)
-		text1 = Item1->GetUserText(KeyColumn,-1);
-
-	if(type2 == CLVColStaticText || type2 == CLVColTruncateText)
-		text2 = (const char*)Item2->m_column_content.ItemAt(KeyColumn);
-	else if(type2 == CLVColTruncateUserText || type2 == CLVColUserText)
-		text2 = Item2->GetUserText(KeyColumn,-1);
+	uint32 datatype = col_flags & CLV_COLDATAMASK;
 	
-	return strcasecmp(text1,text2);
+	if (datatype == CLV_COLDATA_NUMBER) {
+		int32 num1 = Item1->GetNumValueForColumn( KeyColumn);
+		int32 num2 = Item2->GetNumValueForColumn( KeyColumn);
+
+		return num1<num2 ? -1 : (num1>num2 ? 1 : 0);
+	} else if (datatype == CLV_COLDATA_DATE) {
+		time_t date1 = Item1->GetDateValueForColumn( KeyColumn);
+		time_t date2 = Item2->GetDateValueForColumn( KeyColumn);
+
+		return date1<date2 ? -1 : (date1>date2 ? 1 : 0);
+	} else {
+		const char* text1 = NULL;
+		const char* text2 = NULL;
+
+		if(type1 == CLVColStaticText || type1 == CLVColTruncateText)
+			text1 = (const char*)Item1->m_column_content.ItemAt(KeyColumn);
+		else if(type1 == CLVColTruncateUserText || type1 == CLVColUserText)
+			text1 = Item1->GetUserText(KeyColumn,-1);
+
+		if(type2 == CLVColStaticText || type2 == CLVColTruncateText)
+			text2 = (const char*)Item2->m_column_content.ItemAt(KeyColumn);
+		else if(type2 == CLVColTruncateUserText || type2 == CLVColUserText)
+			text2 = Item2->GetUserText(KeyColumn,-1);
+
+		return strcasecmp(text1,text2);
+	}
 }
 
 

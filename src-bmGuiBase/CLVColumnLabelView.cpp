@@ -141,16 +141,19 @@ void CLVColumnLabelView::Draw(BRect update_rect)
 
 				bool focus;
 				bool sort_key;
+				int32 sortPrio;
 				if(ThisColumn == fColumnClicked && !fColumnResizing)
 					focus = true;
 				else
 					focus = false;
-				if(fParent->fSortKeyList.HasItem(ThisColumn) && ThisColumn->fSortMode != NoSort)
+				if(fParent->fSortKeyList.HasItem(ThisColumn) && ThisColumn->fSortMode != NoSort) {
 					sort_key = true;
-				else
+					sortPrio = fParent->fSortKeyList.IndexOf(ThisColumn);
+				} else
 					sort_key = false;
 
-				ThisColumn->DrawColumnHeader(this,TextRect,sort_key,focus,fFontAscent);
+				ThisColumn->DrawColumnHeader( this, TextRect, sort_key, focus, fFontAscent, 
+														ThisColumn->fSortMode, sortPrio);
 
 				//Restore the clipping region
 				ConstrainClippingRegion(NULL);

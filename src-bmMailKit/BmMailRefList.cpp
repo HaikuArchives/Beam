@@ -58,10 +58,7 @@ void BmMailRefList::Cleanup() {
 \*------------------------------------------------------------------------------*/
 void BmMailRefList::RemoveController( BmController* controller) {
 	inheritedModel::RemoveController( controller);
-	if (IsJobCompleted() && !HasControllers() && 0) {
-// 0 -> activate mailreflist-caching
-// 1 -> deactivate mailreflist-caching
-// TODO: integrate List-caching into prefs
+	if (bmApp->Prefs->RefCaching() && !HasControllers()) {
 		mFolder->RemoveMailRefList();
 	}
 }
