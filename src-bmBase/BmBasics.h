@@ -40,7 +40,7 @@
 void ShowAlert( const BmString &text);	// forward declaration
 
 /*------------------------------------------------------------------------------*\*\
-	BMruntime_error
+	BM_runtime_error
 		-	exception to indicate a general runtime error
 \*------------------------------------------------------------------------------*/
 class BM_runtime_error : public runtime_error {
@@ -51,7 +51,7 @@ public:
 };
 
 /*------------------------------------------------------------------------------*\*\
-	BMinvalid_argument
+	BM_invalid_argument
 		-	exception to indicate an invalid-argument error
 \*------------------------------------------------------------------------------*/
 class BM_invalid_argument : public invalid_argument {
@@ -62,7 +62,7 @@ public:
 };
 
 /*------------------------------------------------------------------------------*\*\
-	BMnetwork_error
+	BM_network_error
 		-	exception to indicate an error during network communication
 \*------------------------------------------------------------------------------*/
 class BM_network_error : public BM_runtime_error {
@@ -70,6 +70,24 @@ class BM_network_error : public BM_runtime_error {
 public:
 	BM_network_error (const BmString& what_arg): inherited (what_arg.String()) { }
 	BM_network_error (const char* const what_arg): inherited (what_arg) { }
+};
+
+/*------------------------------------------------------------------------------*\*\
+	BM_text_error
+		-	exception to indicate a problem with a given text
+		-	additionally, a character position may be given that indicates
+			the position of the problem within the text
+\*------------------------------------------------------------------------------*/
+class BM_text_error : public runtime_error {
+	typedef runtime_error inherited;
+public:
+	BM_text_error (const BmString& what_arg, int32 pos=-1)
+		: inherited (what_arg.String())
+		, posInText( pos)						{ }
+	BM_text_error (const char* const what_arg, int32 pos=-1)
+		: inherited (string(what_arg)) 
+		, posInText( pos)						{ }
+	int32 posInText;
 };
 
 /*------------------------------------------------------------------------------*\*\
