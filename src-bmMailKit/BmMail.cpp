@@ -186,10 +186,8 @@ BmMail::BmMail( bool outbound)
 		// into mail:
 		BmRef<BmIdentity> identRef = TheIdentityList->CurrIdentity();
 		if (identRef) {
-			SetFieldVal( BM_FIELD_FROM, identRef->GetFromAddress());
-			mAccountName = identRef->SMTPAccount();
-			SetSignatureByName( identRef->SignatureName());
-			mIdentityName = identRef->Key();
+			SetupFromIdentityAndRecvAddr( identRef.Get(), 
+													identRef->GetFromAddress());
 		}
 	}
 }
@@ -254,6 +252,23 @@ BmMail::BmMail( BmMailRef* ref)
 	-	standard d'tor
 \*------------------------------------------------------------------------------*/
 BmMail::~BmMail() {
+}
+
+/*------------------------------------------------------------------------------*\
+	SetupFromIdentityAndRecvAddr()
+	-	
+\*------------------------------------------------------------------------------*/
+void BmMail::SetupFromIdentityAndRecvAddr( BmIdentity* ident, 
+														 const BmString& recvAddr) 
+{
+	if (ident && recvAddr.Length()) {
+		SetFieldVal( BM_FIELD_FROM, recvAddr);
+		if (ident->ReplyTo().Length())
+			SetFieldVal( BM_FIELD_REPLY_TO, ident->ReplyTo());
+		SetSignatureByName( ident->SignatureName());
+		AccountName( ident->SMTPAccount());
+		IdentityName( ident->Key());
+	}
 }
 
 /*------------------------------------------------------------------------------*\

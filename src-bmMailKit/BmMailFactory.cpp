@@ -110,6 +110,11 @@ void BmMailFactory::CopyMailParts( BmRef<BmMail>& newMail,
 
 	newMail->BumpRightMargin( newLineLen);
 	if (withAttachments && oldBody->HasAttachments()) {
+		BmAutolockCheckGlobal lock( oldBody->ModelLocker());
+		if (!lock.IsLocked())
+			BM_THROW_RUNTIME( 
+				oldBody->ModelNameNC() << ": Unable to get lock"
+			);
 		BmModelItemMap::const_iterator iter, end;
 		if (oldBody->IsMultiPart()) {
 			iter = oldBody->begin()->second->begin();
@@ -663,12 +668,7 @@ BmRef<BmMail> BmReplyFactory::CreateReplyTo( BmRef<BmMail>& oldMail,
 	BmString receivingAddr;
 	BmRef<BmIdentity> ident;
 	oldMail->DetermineRecvAddrAndIdentity( receivingAddr, ident);
-	if (ident && receivingAddr.Length()) {
-		newMail->SetFieldVal( BM_FIELD_FROM, receivingAddr);
-		newMail->SetSignatureByName( ident->SignatureName());
-		newMail->AccountName( ident->SMTPAccount());
-		newMail->IdentityName( ident->Key());
-	}
+	newMail->SetupFromIdentityAndRecvAddr( ident.Get(), receivingAddr);
 
 	// if we are replying to all, we may need to include more addresses:
 	if (mReplyMode == BM_REPLY_MODE_ALL) {
@@ -694,7 +694,9 @@ BmRef<BmMail> BmReplyFactory::CreateReplyTo( BmRef<BmMail>& oldMail,
 										: IsReplyToPersonOnly( oldMail);
 	BmString intro = CreateReplyIntro( oldMail, usePersonalPhrase);
 	CopyMailParts( newMail, oldMail, false, BM_IS_REPLY, intro, selectedText);
+
 	newMail->SetBaseMailInfo( oldMail->MailRef(), BM_MAIL_STATUS_REPLIED);
+
 	return newMail;
 }
 
@@ -837,17 +839,13 @@ BmRef<BmMail> BmForwardFactory::CreateInlineForward(
 	BmString intro = CreateForwardIntro( mail);
 	CopyMailParts( newMail, mail, withAttachments, BM_IS_FORWARD, intro, 
 						selectedText);
-	newMail->SetBaseMailInfo( mail->MailRef(), BM_MAIL_STATUS_FORWARDED);
 
 	BmString receivingAddr;
 	BmRef<BmIdentity> ident;
 	mail->DetermineRecvAddrAndIdentity( receivingAddr, ident);
-	if (ident && receivingAddr.Length()) {
-		newMail->SetFieldVal( BM_FIELD_FROM, receivingAddr);
-		newMail->SetSignatureByName( ident->SignatureName());
-		newMail->AccountName( ident->SMTPAccount());
-		newMail->IdentityName( ident->Key());
-	}
+	newMail->SetupFromIdentityAndRecvAddr( ident.Get(), receivingAddr);
+
+	newMail->SetBaseMailInfo( mail->MailRef(), BM_MAIL_STATUS_FORWARDED);
 
 	return newMail;
 }
@@ -869,12 +867,7 @@ BmRef<BmMail> BmForwardFactory::CreateAttachedForward( BmRef<BmMail>& mail)
 	BmString receivingAddr;
 	BmRef<BmIdentity> ident;
 	mail->DetermineRecvAddrAndIdentity( receivingAddr, ident);
-	if (ident && receivingAddr.Length()) {
-		newMail->SetFieldVal( BM_FIELD_FROM, receivingAddr);
-		newMail->SetSignatureByName( ident->SignatureName());
-		newMail->AccountName( ident->SMTPAccount());
-		newMail->IdentityName( ident->Key());
-	}
+	newMail->SetupFromIdentityAndRecvAddr( ident.Get(), receivingAddr);
 
 	newMail->SetBaseMailInfo( mail->MailRef(), BM_MAIL_STATUS_FORWARDED);
 
