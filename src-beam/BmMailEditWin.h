@@ -150,8 +150,8 @@ private:
 	BmToolbarButton* mSaveButton;
 	BmToolbarButton* mNewButton;
 	BmToolbarButton* mAttachButton;
-	BmToolbarButton* mPeopleButton;
-	BmToolbarButton* mPrintButton;
+//	BmToolbarButton* mPeopleButton;
+//	BmToolbarButton* mPrintButton;
 	
 	BmTextControl* mBccControl;
 	BmTextControl* mCcControl;

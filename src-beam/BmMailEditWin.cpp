@@ -246,10 +246,20 @@ filter_result BmMailEditWin::BmPeopleDropMsgFilter::Filter( BMessage* msg,
 				BNode personNode( &eref);
 				if (personNode.InitCheck() != B_OK)
 					continue;
+				BmString name;
+				BmReadStringAttr( &personNode, "META:name", name);
+				BmString addrSpec;
+				BmReadStringAttr( &personNode, "META:email", addrSpec);
 				BmString addr;
-				BmReadStringAttr( &personNode, "META:email", addr);
-				win->AddAddressToTextControl( dynamic_cast< BmTextControl*>( cntrl), 
-														addr);
+				if (name.Length()
+				&& ThePrefs->GetBool( "AddPeopleNameToMailAddr", true))
+					addr << '"' << name << '"' << " <" << addrSpec << ">";
+				else
+					addr = addrSpec;
+				if (addr.Length())
+					win->AddAddressToTextControl( 
+						dynamic_cast< BmTextControl*>( cntrl), addr
+					);
 				res = B_SKIP_MESSAGE;
 			}
 		}
@@ -334,17 +344,19 @@ void BmMailEditWin::CreateGUI() {
 	BmToolbarButton::CalcMaxSize( width, height, "New",			
 											TheResources->IconByName("Button_New"));
 	BmToolbarButton::CalcMaxSize( width, height, "Attach",
-											TheResources->IconByName("Attachment"));
+											TheResources->IconByName("Button_Attachment"));
+/*
 	BmToolbarButton::CalcMaxSize( width, height, "People",
-											TheResources->IconByName("Person"));
+											TheResources->IconByName("Button_Person"));
 	BmToolbarButton::CalcMaxSize( width, height, "Print",
 											TheResources->IconByName("Button_Print"));
+*/
 
 	mOuterGroup = 
 		new VGroup(
 			minimax( 200, 300, 1E5, 1E5),
 			CreateMenu(),
-			new MBorder( M_RAISED_BORDER, 3, NULL,
+			new MBorder( M_RAISED_BORDER, 1, NULL,
 				new HGroup(
 					minimax( -1, -1, 1E5, -1),
 					mSendButton 
@@ -374,15 +386,16 @@ void BmMailEditWin::CreateGUI() {
 					mAttachButton 
 						= new BmToolbarButton( 
 									"Attach", 
-									TheResources->IconByName("Attachment"), 
+									TheResources->IconByName("Button_Attachment"), 
 									width, height,
 									new BMessage(BMM_ATTACH), this, 
 									"Attach a file to this mail"
 								),
+/*
 					mPeopleButton 
 						= new BmToolbarButton( 
 									"People", 
-									TheResources->IconByName("Person"), 
+									TheResources->IconByName("Button_Person"), 
 									width, height,
 									new BMessage(BMM_SHOW_PEOPLE), this, 
 									"Show people information (addresses)"
@@ -395,7 +408,8 @@ void BmMailEditWin::CreateGUI() {
 									new BMessage(BMM_PRINT), this, 
 									"Print selected messages(s)"
 								),
-					new Space(),
+*/
+					new ToolbarSpace(),
 					0
 				)
 			),
@@ -561,7 +575,7 @@ void BmMailEditWin::CreateGUI() {
 															BM_NTFY_LISTCONTROLLER_MODIFIED);
 
 	// temporarily disabled:
-	mPeopleButton->SetEnabled( false);
+//	mPeopleButton->SetEnabled( false);
 
 #ifdef BEOS_VERSION_6 	// Zeta	
 	mToControl->TextView()->AddFilter(new BEMailCompleter);
