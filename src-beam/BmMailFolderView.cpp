@@ -56,9 +56,9 @@ void BmMailFolderItem::UpdateView( BmUpdFlags flags) {
 		SetColumnContent( COL_NAME, displayName.String(), false);
 		BBitmap* icon;
 		if (folder->NewMailCount())
-			icon = TheResources->IconMap["Folder_WithNew"];
+			icon = TheResources->IconByName("Folder_WithNew");
 		else
-			icon = TheResources->IconMap["Folder"];
+			icon = TheResources->IconByName("Folder");
 		SetColumnContent( COL_ICON, icon, 2.0, false);
 	}
 }

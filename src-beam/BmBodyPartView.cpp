@@ -8,7 +8,6 @@
 #include <Window.h>
 
 #include "BmLogHandler.h"
-#include "BmMailFolder.h"
 #include "BmBodyPartList.h"
 #include "BmBodyPartView.h"
 #include "BmMailView.h"
@@ -32,8 +31,7 @@ BmBodyPartItem::BmBodyPartItem( BString key, BmListModelItem* _item)
 {
 	BmBodyPart* bodyPart = dynamic_cast<BmBodyPart*>( _item);
 
-	BBitmap* icon = NULL;
-	BMimeType( bodyPart->mContentType.mValue.String());
+	BBitmap* icon = TheResources->IconByName( bodyPart->mContentType.mValue);
 	SetColumnContent( 0, icon, 2.0, false);
 
 	BString sizeString = BytesToString( bodyPart->mDecodedLength, true);
@@ -90,6 +88,8 @@ BmBodyPartView::BmBodyPartView( minimax minmax, int32 width, int32 height)
 	int32 flags = Flags();
 	flags &= (B_NAVIGABLE^0xFFFFFFFF);
 	SetFlags( flags);
+
+	UseStateCache( false);
 
 	AddColumn( new CLVColumn( "Icon", 18.0, 0, 18.0));
 	AddColumn( new CLVColumn( "Name", nColWidths[2], 0, 20.0));

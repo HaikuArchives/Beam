@@ -3,6 +3,8 @@
 		$Id$
 */
 
+#include <ctype.h>
+
 #include <File.h>
 
 #include "BmLogHandler.h"
@@ -79,6 +81,26 @@ BmMailRef::BmMailRef( entry_ref &eref, ino_t node, struct stat& st)
 			mCreated = st.st_ctime;
 			mCreatedString = TimeToString( mCreated);
 
+			// simplify priority:
+			if (!mPriority.Length()) {
+				mPriority = "3";				// normal priority
+			} else {
+				if (isdigit(mPriority[0]))
+					mPriority.Truncate(1);
+				else {
+					if (mPriority.FindFirst("Highest") != B_ERROR)
+						mPriority = "1";
+					else if (mPriority.FindFirst("High") != B_ERROR)
+						mPriority = "2";
+					else if (mPriority.FindFirst("Lowest") != B_ERROR)
+						mPriority = "5";
+					else if (mPriority.FindFirst("Low") != B_ERROR)
+						mPriority = "4";
+					else
+						mPriority = "3";
+				}
+			}
+
 			mInitCheck = B_OK;
 		}
 		buffer.UnlockBuffer( -1);
@@ -134,7 +156,7 @@ BmMailRef::BmMailRef( BMessage* archive)
 		-	d'tor
 \*------------------------------------------------------------------------------*/
 BmMailRef::~BmMailRef() {
-	BM_LOG3( BM_LogMailFolders, BString("destructor of MailRef ") << Key() << " called");
+	BM_LOG3( BM_LogMailTracking, BString("destructor of MailRef ") << Key() << " called");
 }
 
 /*------------------------------------------------------------------------------*\

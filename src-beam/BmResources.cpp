@@ -79,6 +79,33 @@ BmResources::~BmResources()
 }
 
 /*------------------------------------------------------------------------------*\
+	IconByName()
+		-	returns the icon corresponding to the given string-id (which can be an
+			identifier from the resource-file (Beam) or a mimetype.
+\*------------------------------------------------------------------------------*/
+BBitmap* BmResources::IconByName( const BString name) {
+	BBitmap*& icon = IconMap[name];
+	if (!icon) {
+		BMimeType mt( name.String());
+		if (mt.InitCheck() == B_OK) {
+			icon = new BBitmap( BRect( 0, 0, 15, 15), B_CMAP8);
+			if (mt.GetIcon( icon, B_MINI_ICON) != B_OK) {
+				// the given mimetype has no icon defined, we take the icon of a generic file:
+				mt.SetTo("application/octet-stream");
+				if (mt.InitCheck() == B_OK) {
+					if (mt.GetIcon( icon, B_MINI_ICON) != B_OK) {
+						// no icon for generic file ?!? we give up...
+						delete icon;
+						icon = NULL;
+					}
+				}
+			}
+		}
+	}
+	return icon;
+}
+
+/*------------------------------------------------------------------------------*\
 	FetchIcons()
 		-	reads all icons into the public map IconMap (indexed by name), from where 
 			they can be easily accessed.

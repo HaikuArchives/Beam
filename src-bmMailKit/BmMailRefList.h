@@ -45,6 +45,7 @@ public:
 
 	// getters:
 	status_t InitCheck()						{ return mInitCheck; }
+	BString CacheFileName();
 
 private:
 
@@ -52,7 +53,6 @@ private:
 	BmMailFolder* mFolder;
 	status_t mInitCheck;
 	bool mUpdateCache;
-	bool mStoreCache;
 
 	//
 	void InitializeMailRefs();

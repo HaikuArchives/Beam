@@ -79,7 +79,7 @@ extern const uint32 BM_LogPop;
 extern const uint32 BM_LogConnWin;
 extern const uint32 BM_LogMailParse;
 extern const uint32 BM_LogUtil;
-extern const uint32 BM_LogMailFolders;
+extern const uint32 BM_LogMailTracking;
 extern const uint32 BM_LogFolderView;
 extern const uint32 BM_LogRefView;
 extern const uint32 BM_LogMainWindow;

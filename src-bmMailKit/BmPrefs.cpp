@@ -70,14 +70,15 @@ BmPrefs::BmPrefs( void)
 						+ BM_LOGLVL2(BM_LogConnWin) 
 						+ BM_LOGLVL2(BM_LogMailParse) 
 						+ BM_LOGLVL2(BM_LogUtil) 
-						+ BM_LOGLVL2(BM_LogMailFolders)
+						+ BM_LOGLVL2(BM_LogMailTracking)
 						+ BM_LOGLVL2(BM_LogFolderView)
 						+ BM_LOGLVL2(BM_LogRefView)
 						+ BM_LOGLVL2(BM_LogMainWindow)
 						+ BM_LOGLVL3(BM_LogModelController)
 						)
 	,	mMailboxPath("/boot/home/mail")			// TODO: change default to .../mail
-	,	mRefCaching( true)
+	,	mRefCacheInMem( false)
+	,	mRefCacheOnDisk( true)
 	,	mDefaultEncoding( B_ISO1_CONVERSION)
 	,	mStripedListView( true)
 	,	mMailRefLayout( new BMessage)
@@ -109,7 +110,8 @@ BmPrefs::BmPrefs( BMessage* archive)
 	mReceiveTimeout = ntohs(FindMsgInt16( archive, MSG_RECEIVE_TIMEOUT));
 	mLoglevels = ntohl(FindMsgInt32( archive, MSG_LOGLEVELS));
 	mMailboxPath = FindMsgString( archive, MSG_MAILBOXPATH);
-	mRefCaching = FindMsgBool( archive, MSG_REF_CACHING);
+	mRefCacheInMem = FindMsgBool( archive, MSG_REF_CACHE_MEM);
+	mRefCacheOnDisk = FindMsgBool( archive, MSG_REF_CACHE_DISK);
 	mDefaultEncoding = FindMsgInt32( archive, MSG_DEFAULT_ENCODING);
 	mStripedListView = FindMsgBool( archive, MSG_STRIPED_LISTVIEW);
 	mMailRefLayout = FindMsgMsg( archive, MSG_MAILREF_LAYOUT);
@@ -138,7 +140,8 @@ status_t BmPrefs::Archive( BMessage* archive, bool deep) const {
 		||	archive->AddInt16( MSG_RECEIVE_TIMEOUT, htons(mReceiveTimeout))
 		||	archive->AddInt32( MSG_LOGLEVELS, htonl(mLoglevels))
 		||	archive->AddString( MSG_MAILBOXPATH, mMailboxPath.String())
-		||	archive->AddBool( MSG_REF_CACHING, mRefCaching)
+		||	archive->AddBool( MSG_REF_CACHE_MEM, mRefCacheInMem)
+		||	archive->AddBool( MSG_REF_CACHE_DISK, mRefCacheOnDisk)
 		||	archive->AddInt32( MSG_DEFAULT_ENCODING, htonl(mDefaultEncoding))
 		||	archive->AddBool( MSG_STRIPED_LISTVIEW, mStripedListView)
 		||	archive->AddMessage( MSG_MAILREF_LAYOUT, mMailRefLayout)

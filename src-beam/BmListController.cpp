@@ -142,6 +142,7 @@ BmListViewController::BmListViewController( minimax minmax, BRect rect,
 	,	mInitialStateInfo( NULL)
 	,	mShowCaption( showCaption)
 	,	mShowBusyView( showBusyView)
+	,	mUseStateCache( true)
 {
 }
 
@@ -494,7 +495,7 @@ void BmListViewController::WriteStateInfo() {
 	BFile stateInfoFile;
 	auto_ptr< BMessage> archive( new BMessage);
 	
-	if (!DataModel())
+	if (!DataModel() || !mUseStateCache)
 		return;
 
 	try {
@@ -559,7 +560,9 @@ void BmListViewController::ReadStateInfo() {
 
 	// try to open state-info-file...
 	stateInfoFilename = StateInfoBasename() << "_" << ModelName();
-	if ((err = stateInfoFile.SetTo( TheResources->StateInfoFolder(), stateInfoFilename.String(), B_READ_ONLY)) == B_OK) {
+	if (mUseStateCache 
+	&& (err = stateInfoFile.SetTo( TheResources->StateInfoFolder(), 
+											 stateInfoFilename.String(), B_READ_ONLY)) == B_OK) {
 		// ...ok, file found, we fetch our state(s) from it:
 		try {
 			mInitialStateInfo = new BMessage;

@@ -211,7 +211,6 @@ int32 BmEncoding::DecodedLength( const BString& encodingStyle, const char* text,
 											int32 length) {
 	if (encodingStyle.ICompare( "Q")==0 || encodingStyle.ICompare("Quoted-Printable")==0) {
 		// quoted printable:
-//		Regexx rx;
 		int32 skipCount=0, encodedCount=0;
 		int32 pos=0;
 		for( const char* s=text; pos<length; s++, pos++) {
@@ -226,15 +225,6 @@ int32 BmEncoding::DecodedLength( const BString& encodingStyle, const char* text,
 					encodedCount++;
 			}
 		}
-/*
-		BString textStr( text, length);
-		// skip trailing whitespace (was added during mail-transport):
-		skipCount = rx.exec( textStr, "\\s+(?=\\r\\n)", Regexx::newline | Regexx::global);
-		// determine number of QP-encodings, each of which will shorten length by 2 bytes
-		// during decoding stage:
-		encodedCount = rx.exec( textStr, "=([0-9A-F][0-9A-F])", Regexx::newline | Regexx::global);
-		// compute total size :
-*/
 		return length-encodedCount*2-skipCount;
 	} else if (encodingStyle.ICompare( "B") == 0 || encodingStyle.ICompare("Base64")==0) {
 		// base64:
@@ -242,9 +232,10 @@ int32 BmEncoding::DecodedLength( const BString& encodingStyle, const char* text,
 		int32 padding=0;
 		int32 pos=0;
 		for( const char* s=text; pos<length; s++, pos++) {
-			if (!isspace(*s))
+			char c = *s;
+			if (!isspace(c))
 				count++;
-			if (*s=='=')
+			if (c=='=')
 				padding++;
 		}
 		return count/4*3-padding;

@@ -32,12 +32,13 @@ BmDataModel::BmDataModel( const BString& name)
 		-	
 \*------------------------------------------------------------------------------*/
 BmDataModel::~BmDataModel() {
+	BM_LOG2( BM_LogModelController, BString("DataModel <") << ModelName() << "> is being deleted");
 	BAutolock lock( mModelLocker);
 	lock.IsLocked()	 						|| BM_THROW_RUNTIME( ModelName() << "-destructor: Unable to get lock on controller-set");
 	if ( HasControllers()) {
 		WaitForAllControllers();
 	}
-	BM_LOG2( BM_LogModelController, BString("Job <") << ModelName() << "> is dead now");
+	BM_LOG2( BM_LogModelController, BString("DataModel <") << ModelName() << "> is dead now");
 }
 
 /*------------------------------------------------------------------------------*\
@@ -192,7 +193,6 @@ BmJobModel::BmJobModel( const BString& name)
 		-	destructor
 \*------------------------------------------------------------------------------*/
 BmJobModel::~BmJobModel() {
-	BM_LOG2( BM_LogModelController, BString("Job <") << ModelName() << "> is being deleted");
 }
 
 /*------------------------------------------------------------------------------*\

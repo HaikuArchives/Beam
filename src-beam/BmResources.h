@@ -23,6 +23,7 @@ class BBitmap;
 		- 	additionally holds the paths used within Beam
 \*------------------------------------------------------------------------------*/
 class BmResources {
+	typedef map< BString, BBitmap*> BmIconMap;
 
 public:
 	// creator-func, c'tors and d'tor:
@@ -35,10 +36,7 @@ public:
 	BDirectory* StateInfoFolder();
 	BDirectory* GetFolder( const BString& name, BDirectory& dir);
 
-	//
-	typedef map< BString, BBitmap*> BmIconMap;
-	BmIconMap IconMap;
-
+	BBitmap* IconByName( const BString name);
 	//
 	BString HomePath;
 	BVolume MailboxVolume;
@@ -54,6 +52,9 @@ public:
 
 private:
 	void FetchIcons();
+
+	//
+	BmIconMap IconMap;
 
 	// folders living under settings/Beam/:
 	BDirectory mMailCacheFolder;

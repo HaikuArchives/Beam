@@ -32,16 +32,16 @@ BmMailRefItem::BmMailRefItem( BString key, BmListModelItem* _item)
 	BmMailRef* ref = dynamic_cast<BmMailRef*>( _item);
 
 	BString st = BString("Mail_") << ref->Status();
-	BBitmap* icon = TheResources->IconMap[st];
+	BBitmap* icon = TheResources->IconByName(st);
 	SetColumnContent( 0, icon, 2.0, false);
 
 	if (ref->HasAttachments()) {
-		icon = TheResources->IconMap["Attachment"];
+		icon = TheResources->IconByName("Attachment");
 		SetColumnContent( 1, icon, 2.0, false);
 	}
 	
 	BString priority = BString("Priority_") << ref->Priority();
-	if ((icon = TheResources->IconMap[priority])) {
+	if ((icon = TheResources->IconByName(priority))) {
 		SetColumnContent( 2, icon, 2.0, false);
 	}
 
@@ -57,6 +57,9 @@ BmMailRefItem::BmMailRefItem( BString key, BmListModelItem* _item)
 		{ ref->Name().String(),						false },
 		{ ref->CreatedString().String(),			false },
 		{ ref->TrackerName(),						false },
+		{ ref->Status().String(),					false },
+		{ ref->HasAttachments() ? "*" : "",		false },
+		{ ref->Priority().String(),				false },
 		{ NULL, false }
 	};
 	SetTextCols( nFirstTextCol, cols, !ThePrefs->StripedListView());
@@ -75,7 +78,7 @@ BmMailRefItem::~BmMailRefItem() {
 \*------------------------------------------------------------------------------*/
 const int32 BmMailRefItem::GetNumValueForColumn( int32 column_index) const {
 	BmMailRef* ref = dynamic_cast<BmMailRef*>( mModelItem);
-	if (column_index == 0) {
+	if (column_index == 0 || column_index == 14) {
 		// status
 		BString st = ref->Status();
 		return st == "New" 			? 0 :
@@ -84,11 +87,11 @@ const int32 BmMailRefItem::GetNumValueForColumn( int32 column_index) const {
 				 st == "Replied" 		? 3 :
 				 st == "Pending" 		? 4 :
 				 st == "Sent" 			? 5 : 99;
-	} else if (column_index == 1) {
+	} else if (column_index == 1 || column_index == 15) {
 		// attachment
 		return ref->HasAttachments() ? 0 : 1;	
 							// show mails with attachment at top (with sortmode 'ascending')
-	} else if (column_index == 2) {
+	} else if (column_index == 2 || column_index == 16) {
 		// priority
 		int16 prio = atol( ref->Priority().String());
 		return (prio>=1 && prio<=5) ? prio : 3;
@@ -170,6 +173,9 @@ BmMailRefView::BmMailRefView( minimax minmax, int32 width, int32 height)
 	AddColumn( new CLVColumn( "Name", 150.0, CLV_SORT_KEYABLE | flags, 20.0));
 	AddColumn( new CLVColumn( "Created", 100.0, CLV_SORT_KEYABLE | CLV_COLDATA_DATE | flags, 20.0));
 	AddColumn( new CLVColumn( "Tracker-Name", 150.0, CLV_SORT_KEYABLE | flags, 20.0));
+	AddColumn( new CLVColumn( "S", 100.0, CLV_SORT_KEYABLE, 40.0, "(S)tatus [Text]"));
+	AddColumn( new CLVColumn( "A", 100.0, CLV_SORT_KEYABLE | CLV_COLDATA_NUMBER, 18.0, "(A)ttachments [Text]"));
+	AddColumn( new CLVColumn( "P", 100.0, CLV_SORT_KEYABLE | CLV_COLDATA_NUMBER, 18.0, "(P)riority [Text]"));
 	SetSortFunction( CLVEasyItem::CompareItems);
 	SetSortKey( 3);
 }

@@ -62,7 +62,8 @@ void BmMailFolderList::StartJob() {
 			return;
 		}
 	
-		BString filename = BString(TheResources->SettingsPath.Path()) << "/" << ARCHIVE_FILENAME;
+		BString filename = BString(TheResources->SettingsPath.Path()) 
+									<< "/" << ARCHIVE_FILENAME;
 	
 		if ((err = cacheFile.SetTo( filename.String(), B_READ_ONLY)) == B_OK) {
 			// ...ok, folder-cache found, we fetch our data from it:
@@ -71,7 +72,7 @@ void BmMailFolderList::StartJob() {
 														|| BM_THROW_RUNTIME( BString("Could not fetch folder-cache from file\n\t<") << filename << ">\n\n Result: " << strerror(err));
 			InstantiateMailFolders( &archive);
 		} else {
-			// ...no cache file, we fetch the existing mail-folders by hand...
+			// ...no cache file found, we fetch the existing mail-folders by hand...
 			InitializeMailFolders();
 		}
 		QueryForNewMails();
@@ -114,7 +115,7 @@ void BmMailFolderList::InitializeMailFolders() {
 	BString mailDirName( ThePrefs->MailboxPath());
 	time_t mtime;
 
-	BM_LOG2( BM_LogMailFolders, "Start of initFolders");
+	BM_LOG2( BM_LogMailTracking, "Start of initFolders");
 
 	mailDir.SetTo( mailDirName.String());
 	(err = mailDir.GetModificationTime( &mtime)) == B_OK
@@ -130,13 +131,13 @@ void BmMailFolderList::InitializeMailFolders() {
 	{	
 		BAutolock lock( mModelLocker);
 		lock.IsLocked() 						|| BM_THROW_RUNTIME( ModelName() << ":InitializeMailFolders(): Unable to get lock");
-		BM_LOG2( BM_LogMailFolders, BString("Top-folder <") << eref.name << "," << nref.node << "> found");
+		BM_LOG3( BM_LogMailTracking, BString("Top-folder <") << eref.name << "," << nref.node << "> found");
 		mTopFolder = new BmMailFolder( eref, nref.node, NULL, mtime);
 		mModelItemMap[mTopFolder->Key()] = mTopFolder;
 
 		// now we process all subfolders of the top-folder recursively:
 		int numDirs = 1 + doInitializeMailFolders( mTopFolder, 1);
-		BM_LOG2( BM_LogMailFolders, BString("End of initFolders (") << numDirs << " folders found)");
+		BM_LOG2( BM_LogMailTracking, BString("End of initFolders (") << numDirs << " folders found)");
 		mInitCheck = B_OK;
 	}
 }
@@ -174,7 +175,7 @@ int BmMailFolderList::doInitializeMailFolders( BmMailFolder* folder, int level) 
 													|| BM_THROW_RUNTIME(BString("Could not get stat-info for \nmail-dir <") << dent->d_name << "> \n\nError:" << strerror(err));
 			if (S_ISDIR( st.st_mode)) {
 				// we have found a new mail-folder, so we add it as a child of the current folder:
-				BM_LOG2( BM_LogMailFolders, BString("Mail-folder <") << dent->d_name << "," << dent->d_ino << "> found at level " << level);
+				BM_LOG3( BM_LogMailTracking, BString("Mail-folder <") << dent->d_name << "," << dent->d_ino << "> found at level " << level);
 				BmMailFolder* nextFolder = new BmMailFolder( eref, dent->d_ino, folder, st.st_mtime);
 				dirCount++;
 				// now we process the new sub-folder first:
@@ -194,7 +195,7 @@ int BmMailFolderList::doInitializeMailFolders( BmMailFolder* folder, int level) 
 \*------------------------------------------------------------------------------*/
 void BmMailFolderList::InstantiateMailFolders( BMessage* archive) {
 	status_t err;
-	BM_LOG2( BM_LogMailFolders, BString("Starting to read folder-cache"));
+	BM_LOG2( BM_LogMailTracking, BString("Starting to read folder-cache"));
 	BString currFolder = FindMsgString( archive, MSG_CURRFOLDER);
 	BMessage msg;
 	(err = archive->FindMessage( MSG_TOPFOLDER, &msg)) == B_OK
@@ -204,13 +205,13 @@ void BmMailFolderList::InstantiateMailFolders( BMessage* archive) {
 		lock.IsLocked() 						|| BM_THROW_RUNTIME( ModelName() << ":InstantiateMailFolders(): Unable to get lock");
 		mTopFolder = new BmMailFolder( &msg, NULL);
 		mModelItemMap[mTopFolder->Key()] = mTopFolder;
-		BM_LOG2( BM_LogMailFolders, BString("Top-folder <") << mTopFolder->EntryRef().name << "," << mTopFolder->Key() << "> read");
-		if (mTopFolder->CheckIfModifiedSince()) {
+		BM_LOG3( BM_LogMailTracking, BString("Top-folder <") << mTopFolder->EntryRef().name << "," << mTopFolder->Key() << "> read");
+		if (mTopFolder->NeedsCacheUpdate()) {
 			doInitializeMailFolders( mTopFolder, 1);
 		} else {
 			doInstantiateMailFolders( mTopFolder, &msg, 1);
 		}
-		BM_LOG2( BM_LogMailFolders, BString("End of reading folder-cache (") << mModelItemMap.size() << " folders found)");
+		BM_LOG2( BM_LogMailTracking, BString("End of reading folder-cache (") << mModelItemMap.size() << " folders found)");
 		mInitCheck = B_OK;
 	}
 }
@@ -228,8 +229,8 @@ void BmMailFolderList::doInstantiateMailFolders( BmMailFolder* folder, BMessage*
 		(err = archive->FindMessage( BmMailFolder::MSG_CHILDREN, i, &msg)) == B_OK
 													|| BM_THROW_RUNTIME(BString("Could not find mailfolder-child nr. ") << i+1 << " \n\nError:" << strerror(err));
 		BmMailFolder* newFolder = new BmMailFolder( &msg, folder);
-		BM_LOG2( BM_LogMailFolders, BString("Mail-folder <") << newFolder->EntryRef().name << "," << newFolder->Key() << "> read");
-		if (newFolder->CheckIfModifiedSince()) {
+		BM_LOG3( BM_LogMailTracking, BString("Mail-folder <") << newFolder->EntryRef().name << "," << newFolder->Key() << "> read");
+		if (newFolder->NeedsCacheUpdate()) {
 			doInitializeMailFolders( newFolder, level+1);
 		} else {
 			doInstantiateMailFolders( newFolder, &msg, level+1);
@@ -248,7 +249,7 @@ void BmMailFolderList::QueryForNewMails() {
 	dirent* dent;
 	char buf[4096];
 
-	BM_LOG2( BM_LogMailFolders, "Start of newMail-query");
+	BM_LOG2( BM_LogMailTracking, "Start of newMail-query");
 	(err = query.SetVolume( &TheResources->MailboxVolume)) == B_OK
 													|| BM_THROW_RUNTIME( BString("SetVolume(): ") << strerror(err));
 	(err = query.SetPredicate( "MAIL:status == 'New'")) == B_OK
@@ -279,7 +280,7 @@ void BmMailFolderList::QueryForNewMails() {
 				mboxPath << "/";
 				if (dirPath.FindFirst( mboxPath) != 0) {
 					// mail lives somewhere else (not under /boot/home/mail), we ignore it:
-					BM_LOG2( BM_LogMailFolders, BString("Mail ") << dent->d_name << " ignored because it doesn't live under our mailbox-folder");
+					BM_LOG2( BM_LogMailTracking, BString("Mail ") << dent->d_name << " ignored because it doesn't live under our mailbox-folder");
 				} else {
 					// oops, we should really be knowing the parent folder, but we don't. Bark:
 					throw BM_runtime_error( BString("QueryForNewMails(): Parent node ") << dent->d_pino << " not found for unread mail\n<" << dent->d_name << ">");
@@ -294,7 +295,7 @@ void BmMailFolderList::QueryForNewMails() {
 			dent = (dirent* )((char* )dent + dent->d_reclen);
 		}
 	}
-	BM_LOG2( BM_LogMailFolders, BString("End of newMail-query (") << newCount << " new mails found)");
+	BM_LOG2( BM_LogMailTracking, BString("End of newMail-query (") << newCount << " new mails found)");
 }
 
 /*------------------------------------------------------------------------------*\

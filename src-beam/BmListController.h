@@ -163,6 +163,9 @@ public:
 	CLVContainerView* ContainerView()	{ return inherited::fScrollView; }
 	BMessage* InitialStateInfo()			{ return mInitialStateInfo; }
 
+	// setters:
+	void UseStateCache( bool b) 			{ mUseStateCache = b; }
+
 protected:
 	virtual BmListModel* DataModel()		{ return dynamic_cast<BmListModel*>(BmController::DataModel()); }
 	// archival of the controller's state-info:
@@ -176,6 +179,7 @@ protected:
 	BMessage* mInitialStateInfo;
 	bool mShowCaption;
 	bool mShowBusyView;
+	bool mUseStateCache;
 
 };
 

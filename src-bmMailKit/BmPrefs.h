@@ -24,7 +24,8 @@ class BmPrefs : public BArchivable {
 	static const char* const MSG_RECEIVE_TIMEOUT = 		"bm:rcvtmo";
 	static const char* const MSG_LOGLEVELS = 				"bm:lglev";
 	static const char* const MSG_MAILBOXPATH = 			"bm:mbpath";
-	static const char* const MSG_REF_CACHING = 			"bm:rfcache";
+	static const char* const MSG_REF_CACHE_MEM = 		"bm:rfcachem";
+	static const char* const MSG_REF_CACHE_DISK = 		"bm:rfcached";
 	static const char* const MSG_DEFAULT_ENCODING = 	"bm:defenc";
 	static const char* const MSG_STRIPED_LISTVIEW = 	"bm:strpdlv";
 	static const char* const MSG_MAILREF_LAYOUT = 		"bm:mreflayout";
@@ -59,7 +60,8 @@ public:
 	int16 ReceiveTimeout() const 			{ return mReceiveTimeout; }
 	uint32 Loglevels() const 				{ return mLoglevels; }
 	const BString& MailboxPath() const 	{ return mMailboxPath; }
-	bool RefCaching() const 				{ return mRefCaching; }
+	bool RefCacheInMem() const 			{ return mRefCacheInMem; }
+	bool RefCacheOnDisk() const			{ return mRefCacheOnDisk; }
 	int32 DefaultEncoding() const 		{ return mDefaultEncoding; }
 	bool StripedListView() const 			{ return mStripedListView; }
 	BMessage* MailRefLayout() const		{ return mMailRefLayout; }
@@ -70,7 +72,8 @@ public:
 	void ReceiveTimeout( int16 i) 		{ mReceiveTimeout = i; }
 	void Loglevels( int32 i) 				{ mLoglevels = i; }
 	void MailboxPath( BString& s) 		{ mMailboxPath = s; }
-	void RefCaching( bool b) 				{ mRefCaching = b; }
+	void RefCacheInMem( bool b) 			{ mRefCacheInMem = b; }
+	void RefCacheOnDisk( bool b) 			{ mRefCacheOnDisk = b; }
 	void DefaultEncoding( int32 i) 		{ mDefaultEncoding = i; }
 	void StripedListView( bool b) 		{ mStripedListView = b; }
 	void MailRefLayout( BMessage* m) 	{ mMailRefLayout = m; }
@@ -97,8 +100,32 @@ private:
 	BString mMailboxPath;
 							// Path of mailbox-dir (usually '/boot/home/mail')
 
-	bool mRefCaching;
-							// toggles mailref-caching
+	bool mRefCacheInMem;
+							// toggles caching of mailref-lists in memory.
+							// true ->	current mailreflist stays in memory when another
+							//				folder ist selected and is reused when current folder
+							//				gets reselected later (this is faster).
+							// false -> current mailreflist is deleted when another folder is
+							//				selected and is reconstructed from disk when current folder
+							//				gets reselected later (this uses less memory).
+
+	bool mRefCacheOnDisk;
+							// toggles caching of mailref-lists on disk.
+							// true ->	for each folder a list of mails contained inside it is
+							//				created on disk (a mailref-cache). Whenever a folder is
+							//				selected, the mailref-cache is read in order to display
+							//				the mails that the folder contains.
+							//				N.B.: The cache is automatically updated whenever a change
+							//						in the mail-folder is detected (modification-time of
+							//						folder is newer than modification-time of cache-file).
+							// false -> No caches are maintained, i.e. the mails are collected from
+							//				disk every time a folder is selected (unless mRefCacheInMem
+							//				is set)
+	// A general note:
+	// 	at least on my system (2xPII,233MHz, older IDE disk), the disk cache has a much
+	//		greater impact on the performance than the memory cache. This should generally be
+	//		the case, since seeking on the disk (while searching for mails) is really slow.
+	//		Therefore, my suggestion is: enable disk-cache, disable memory-cache.
 
 	int32 mDefaultEncoding;
 							// The default encoding for messages.

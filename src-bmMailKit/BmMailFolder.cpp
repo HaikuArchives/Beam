@@ -26,6 +26,8 @@ BmMailFolder::BmMailFolder( entry_ref &eref, ino_t node, BmMailFolder* parent,
 	,	mNewMailCountForSubfolders( 0)
 	,	mName( eref.name)
 {
+	if (CheckIfModifiedSince( mLastModified, &mLastModified))
+		mNeedsCacheUpdate = true;
 	if (parent)
 		parent->AddSubItem( this);
 }
@@ -50,6 +52,8 @@ BmMailFolder::BmMailFolder( BMessage* archive, BmMailFolder* parent)
 		mLastModified = FindMsgInt32( archive, MSG_LASTMODIFIED);
 		mKey = BString() << mInode;
 		mName = mEntryRef.name;
+		if (CheckIfModifiedSince( mLastModified, &mLastModified))
+			mNeedsCacheUpdate = true;
 		if (parent)
 			parent->AddSubItem( this);
 	} catch (exception &e) {
@@ -92,27 +96,27 @@ status_t BmMailFolder::Archive( BMessage* archive, bool deep) const {
 	CheckIfModifiedSince()
 		-	
 \*------------------------------------------------------------------------------*/
-bool BmMailFolder::CheckIfModifiedSince() {
+bool BmMailFolder::CheckIfModifiedSince( time_t when, time_t* storeNewModTime) {
 	status_t err;
 	BDirectory mailDir;
 	bool hasChanged = false;
 
-	BM_LOG3( BM_LogMailFolders, "BmMailFolder::CheckIfModifiedSince() - start");
+	BM_LOG3( BM_LogMailTracking, "BmMailFolder::CheckIfModifiedSince() - start");
 	mailDir.SetTo( this->EntryRefPtr());
 	(err = mailDir.InitCheck()) == B_OK
 													|| BM_THROW_RUNTIME(BString("Could not access \nmail-folder <") << Name() << "> \n\nError:" << strerror(err));
 	time_t mtime;
-	BM_LOG3( BM_LogMailFolders, "BmMailFolder::CheckIfModifiedSince() - getting modification time");
+	BM_LOG3( BM_LogMailTracking, "BmMailFolder::CheckIfModifiedSince() - getting modification time");
 	(err = mailDir.GetModificationTime( &mtime)) == B_OK
 													|| BM_THROW_RUNTIME(BString("Could not get mtime \nfor mail-folder <") << Name() << "> \n\nError:" << strerror(err));
-	BM_LOG3( BM_LogMailFolders, BString("checking if ") << Name() << ": (" << mtime << " > " << mLastModified << ")");
-	if (mtime != mLastModified) {
-		BM_LOG2( BM_LogMailFolders, BString("Mtime of folder has changed!"));
-		mLastModified = mtime;
-		mNeedsCacheUpdate = true;
+	BM_LOG3( BM_LogMailTracking, BString("checking if ") << Name() << ": (" << mtime << " > " << when << ")");
+	if (mtime > when) {
+		BM_LOG2( BM_LogMailTracking, BString("Mtime of folder has changed!"));
+		if (storeNewModTime)
+			*storeNewModTime = mtime;
 		hasChanged = true;
 	}
-	BM_LOG3( BM_LogMailFolders, "BmMailFolder::CheckIfModifiedSince() - end");
+	BM_LOG3( BM_LogMailTracking, "BmMailFolder::CheckIfModifiedSince() - end");
 	return hasChanged;
 }
 
@@ -155,7 +159,7 @@ void BmMailFolder::CreateMailRefList() {
 	if (mMailRefList) {
 		RemoveMailRefList();
 	}
-	mMailRefList = new BmMailRefList( this, mLastModified);
+	mMailRefList = new BmMailRefList( this, mNeedsCacheUpdate);
 	mNeedsCacheUpdate = false;
 }
 
