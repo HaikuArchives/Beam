@@ -635,7 +635,7 @@ void BmMail::AddPartsFromMail( BmRef<BmMail> mail, bool withAttachments,
 		}
 		// copy all attachments (maybe except v-cards):
 		bool doNotAttachVCards = ThePrefs->GetBool( "DoNotAttachVCardsToForward", true);
-		for( ; iter != end; iter++) {
+		for( ; iter != end; ++iter) {
 			BmBodyPart* bodyPart = dynamic_cast< BmBodyPart*>( iter->second.Get());
 			if (textBody != bodyPart) {
 				if (doNotAttachVCards && bodyPart->MimeType().ICompare( "text/x-vcard") == 0)
