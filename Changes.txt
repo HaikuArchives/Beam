@@ -1,6 +1,265 @@
 change-history of Beam:
 		$Id$
 
+< 2004-11-14: commit, moved tag 'current-devel' >
+
+BmMailEditWinPart2:
+	-	removed, since gcc-2.95.3 compiles BmMailEditWin.cpp just fine.
+	
+src-tests/Jamfile:
+	-	removed TestBeamMini and TestBeamMicro, since libstdc++.r4.so works
+		fine now (std::string has a threadsafe allocator).
+
+MailMonitorTest:
+	-	robustified moving of mails in order to cope with mailbox and /var/tmp
+		living on different volumes.
+
+BmApp, BmBodyPartView, BmMailEditWin, BmMailFolderView, BmMailRefView,
+BmMailViewWin, BmMainWindow, BmPrefsGeneralView, BmResources, 
+BmToolbarButton, BmBusyView, CLVEasyItem:
+	-	added support for switching toolbar-layout and -icons on the fly.
+	   We currently leak all loaded bitmaps, but I chose to ignore this,
+	   as switching icons shouldn't be *that* frequent.
+
+BmJobStatusWin:
+	-	avoid getting the focus if in click-to-focus mode, such that we
+		do not get in the user's way.
+
+src-bmBase/Jamfile:
+	-	libstdc++ is no longer neccessary, so do not link against it.
+
+< 2004-09-13: commit >
+
+BmMultiLocker:
+	-	simplified Spinlock by making use of atomic_or.
+
+regexx.cc:
+	-	fixed namespace issue with definition of BM_REGEXX_DEFAULT_STRING.
+
+< 2004-07-19: commit >
+
+BmMailFilter:
+	-	fixed problem with status always being set, even if no change occurred.
+
+BmMultiLocker, Jamfile(s), MultiLockerTest:
+	-	added own implementation of a multiple reader, single writer lock.
+	-	this improves upon BMultiLocker to such an extent that:
+		+	a thread which already has a read-lock and tries to become the 
+			writer doesn't deadlock, but becomes the writer once all (other)
+			read-locks have been freed.
+		+	a writer can ask for read-locks without causing deadlock.
+		+	proper read-lock nesting is supported and IsReadLocked() works
+			(instead of always returning true).
+
+MemIoTest:
+	cosmetics
+
+< 2004-07-10: commit, moved tag 'current-devel' >
+
+BmApp:
+	-	removed an unneeded spinlock.
+	-	start reading of pop-account list before showing the main-window,
+		such that the main-window can wait on the pop-account list.
+
+BmMailRefList:
+	-	fixed a bug that caused rebuilding the cache to not work at all.
+
+BmMainWindow:
+	-	wait for the pop-account list in order to make the shortcuts work
+		first time.
+
+BmMenuControllerBase:
+	-	now we update the list whenever the shortcuts change, too.
+
+BmRoster:
+	-	added missing support for shortcuts in RebuildList().
+
+BuildSettings:
+	-	fixed use of $BUILD_DEBUG instead of $(BUILD_DEBUG)
+
+< 2004-07-09: commit, moved tag 'current-devel' >
+
+BmMailEditWin:
+	-	more juggling around the internal compiler error...
+
+BmMailFolderView:
+	-	fixed problem with New/Mails-columns being shown too far right
+		(outside the visible area).
+
+BmMailQuery, BmStorageUtil:
+	-	we no longer use the Trash's node-ref but we use the path in order
+		to determine whether or not a mail lives inside the trash.
+
+BmMainWindow:
+	-	title no longer includes version string, as Alan correctly pointed
+		out that most apps just use their name (not the version).
+
+BmPrefs, 
+	-	simplified determination of (default) icon-path
+	-	replaced TrashNodeRef by TrashPath.
+
+BmPrefsGeneralView:
+	-	simplified determination of (default) icon-path
+	-	fixed error when selecting the icon-path for the first time.
+
+BmResources:
+	-	simplified determination of (default) icon-path
+
+BmSmtp:
+	-	cosmetical changes
+
+< 2004-07-08: commit, moved tag 'current-devel' >
+
+BmLogWindow:
+	-	avoid-focus is now only applied if mouse_mode is click-to-focus.
+
+< 2004-07-07: commit >
+
+BmMail:
+	-	added mail-status 'Error'.
+
+BmSmtp:
+	-	when an error occurs during send, we now log the error and skip the
+		mail, marking it as erraneous. So any further mails will be send (if
+		possible).
+
+BmIcons.rsrc:
+	-	fixed a few glitches with respect to drawing the icons over different 
+		background colors.
+
+BmSieveFilter:
+	-	added some more log info.
+
+< 2004-07-06: commit >
+
+BmBodyPartList, BmEncoding, BmMailHeader:
+	-	added (very simplistic) automatic charset detection in case of 
+		conversion errors (both inbound and outbound).
+		For inbound detection, a proper detection algorithm would yield
+		much better results, but we stick with our try-some approach (for now).
+
+BmMailEditWin:
+	-	if automatic charset detection succeeds during save/send, we
+		select the charset-menu accordingly, such that the user knows what's
+		been going on.
+
+BmMailHeaderView:
+	-	dropped superfluous error-msg.
+	
+BmMailView:
+	-	in JobIsDone() we now reset mParsingErrors, such that we do not show
+		errors that were actually found during last try...
+
+BmPrefs:
+	-	added two new (list-)fields, 'AutoCharsetsInbound' and 
+		'AutoCharsetsOutbound', which define the charsets to be used during
+		auto-matching.
+
+BmPrefsMailConstrView:
+	-	corrected handling of preferred charsets (no longer use <>-quotes).
+
+< 2004-07-04: commit >
+
+BmBusyView:
+	-	unset tooltip for empty error-string more reliably.
+
+BmMailView:
+	-	clear error-icon if empty.
+
+< 2004-07-04: commit >
+
+BmBodyPart, BmBusyView, BmEncoding, BmMail, BmMailHeader, BmMailHeaderView, 
+BmMailView:
+	-	mail-parsing errors no longer trigger the error-window as this is
+		too tedious (spam often deliberately announces wrong encoding).
+		We now indicate any problems with an error-icon inside the busy-view.
+		Hovering over this icons shows the error-message as tool-tip.
+
+BmLogWindow:
+	-	now avoids keyboard focus in order to be less of a nuisance in
+		click-to-focus mode.
+
+BmPrefsSendMailView:
+	-	added missing <none>-item to pop-acc-menu.
+
+< 2004-06-29: commit, moved tag 'current-devel' >
+
+BmIdentity, BmMailHeader, BmPrefsIdentityView:
+	-	added support for default-headers, which make it possible to setup
+		an identity such that every mail from that identity has (e.g.) a
+		specific Bcc-header.
+
+BmMail:
+	-	we now replace any binary nulls in the mailtext by a space.
+
+BmMailEditWin:
+	-	we no longer send all pending mails for the SMTP-account, but we
+		just send this single mail.
+	-	added support for default-headers (and changing these as the user
+		selects another identity).
+
+BmMailFilter, BmFilterChain, BmPrefsFilterChainView:
+	-	dropped support for two outgoing filter-chains, as it doesn't make
+		any sense to me any more (let's see if that changes again...).
+
+BmMailQuery:
+	-	we no longer deal with mails living in Trash...
+	-	instead of collecting fullblown mails we collect entry-refs instead,
+		which is faster and uses less memory...
+
+BmMailRef, BmMailRefList:
+	-	pulled fetching of stat-info inside BmMailRef-construction, unless
+		it is present anyway.
+
+BmMainWindow:
+	-	activated "Send All Pending Mails"-menu (i.e. no more 'World Peace').
+	-	added send-pending sub-menu (with one entry for each smtp-account).
+
+BmPrefs:
+	-	added public member TrashNodeRef, which is the node-ref of the
+		Trash-directory on the mailbox-volume.
+
+BmPrefsSendMailView:
+	-	for smtp-after-pop we now require the pop-account to be set in the
+		prefs.
+
+BmSieveFilter:
+	-	changed layout (hopefully to be cleaner now).
+
+BmSmtpAccount, BmSmtp, BmJobStatusWin:
+	-	restructured handling of pending mails: Instead of holding the
+		pending mails inside the account, we now pass them on to the
+		job-window, which in turn stuffs them inside the smtp-job.
+	-	added support for sending a single, specified mail.
+
+TextEntryAlert:
+	-	fixed bug that always caused an empty result string.
+
+< 2004-06-28: commit, moved tag 'current-devel' >
+
+BmApp:
+	-	we only start slaves for tasks beyond a certain size (mail-count).
+
+BmMailEditWin, BuildSettings:
+	-	applied Alan's patches for ZETA.
+
+< 2004-06-25: commit, moved tag 'current-devel' >
+
+BmDividable:
+	-	fixed compilation issue under Dano.
+
+BuildSettings, Jamfile, UserBuildConfig.sample:
+	-	added support for switching on/off building of tests.
+
+< 2004-06-25: commit, moved tag 'current-devel' >
+
+BmFilterChain, BmPrefFilterChainView:
+	-	fixed bug with dragging chained filters to new position in list 
+		not working.
+
+BmMailFolder:
+	-	reduced usage of RefListLocker to the minimum.
+
 < 2004-06-25: commit, moved tag 'current-devel' >
 
 BmBodyPartList:
