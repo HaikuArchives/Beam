@@ -59,9 +59,6 @@ using namespace regexx;
 #include "BmStorageUtil.h"
 #include "BmUtil.h"
 
-static void RebuildList( BmMenuControllerBase* menu, BmListModel* list, 
-								 bool skipFirstLevel=false);
-
 /*------------------------------------------------------------------------------*\
 	()
 		-	
@@ -236,6 +233,152 @@ static void ClearMenu( BmMenuControllerBase* menu)
 	}
 }
 
+
+
+namespace BmPrivate {
+
+/*------------------------------------------------------------------------------*\
+	ListMenuBuilder()
+		-	helper class that builds a menu from a given listmodel.
+\*------------------------------------------------------------------------------*/
+class ListMenuBuilder {
+
+	typedef map< BmString, BmListModelItem* > BmSortedItemMap;
+public:
+
+	struct ItemFilter {
+		virtual bool operator() (const BmListModelItem* item) = 0;
+	};
+	
+	ListMenuBuilder( BmListModel* list, BMenu* menu, BMessage* msgTemplate,
+						  BHandler* msgTarget);
+	~ListMenuBuilder();
+	status_t Go();
+	
+	void SkipFirstLevel( bool b)			{ mSkipFirstLevel = b; }
+	void AddNoneItem( bool b)				{ mAddNoneItem = b; }
+	void ItemFilter( ItemFilter* f)		{ mItemFilter = f; }
+
+private:
+	void AddListItemToMenu( BmListModelItem* item, 
+									BMenu* menu,
+									bool skipThisButAddChildren=false,
+									char shortcut=0);
+
+	BmListModel* mList;
+	BMenu* mMenu;
+	BMessage* mMsgTemplate;
+	BHandler* mMsgTarget;
+	bool mSkipFirstLevel;
+	bool mAddNoneItem;
+	BFont mFont;
+	struct ItemFilter* mItemFilter;
+	BmString mShortcuts;
+};
+
+ListMenuBuilder::ListMenuBuilder( BmListModel* list, BMenu* menu, 
+											 BMessage* msgTemplate, BHandler* msgTarget)
+	:	mList(list)
+	,	mMenu(menu)
+	,	mMsgTemplate(msgTemplate)
+	,	mMsgTarget(msgTarget)
+	,	mSkipFirstLevel(false)
+	,	mAddNoneItem(false)
+	,	mItemFilter(NULL)
+{
+	menu->GetFont( &mFont);
+}
+
+ListMenuBuilder::~ListMenuBuilder()
+{
+}
+
+status_t ListMenuBuilder::Go()
+{
+	BmSortedItemMap sortedMap;
+	if (mList) {
+		BmAutolockCheckGlobal lock( mList->ModelLocker());
+		if (!lock.IsLocked())
+			BM_THROW_RUNTIME( 
+				mList->ModelNameNC() << ": Unable to get lock"
+			);
+		BmModelItemMap::const_iterator iter;
+		for( iter = mList->begin();  iter != mList->end();  ++iter) {
+			if (mItemFilter && !(*mItemFilter)(iter->second.Get()))
+				continue;
+			BmString sortKey = iter->second->DisplayKey();
+			sortedMap[sortKey.ToLower()] = iter->second.Get();
+		}
+		if (mAddNoneItem && mMenu) {
+			BMenuItem* noneItem = new BMenuItem( BM_NoItemLabel.String(),
+															 new BMessage( *mMsgTemplate));
+			noneItem->SetTarget( mMsgTarget);
+			mMenu->AddItem( noneItem);
+		}
+		int s=0;
+		BmSortedItemMap::const_iterator siter;
+		for( siter = sortedMap.begin(); siter != sortedMap.end(); ++siter, ++s) {
+			if (s<mShortcuts.Length())
+				AddListItemToMenu( siter->second, mMenu, mSkipFirstLevel, 
+										 mShortcuts[s]);
+			else
+				AddListItemToMenu( siter->second, mMenu, mSkipFirstLevel);
+		}
+	}
+	return B_OK;
+}
+
+void ListMenuBuilder::AddListItemToMenu( BmListModelItem* item, 
+													  BMenu* menu,
+													  bool skipThisButAddChildren,
+													  char shortcut) 
+{
+	if (menu) {
+		BmSortedItemMap sortedMap;
+		if (skipThisButAddChildren) {
+			if (!item->empty()) {
+				BmModelItemMap::const_iterator iter;
+				for( iter = item->begin();  iter != item->end();  ++iter) {
+					if (mItemFilter && !(*mItemFilter)(iter->second.Get()))
+						continue;
+					BmString sortKey = iter->second->DisplayKey();
+					sortedMap[sortKey.ToLower()] = iter->second.Get();
+				}
+				BmSortedItemMap::const_iterator siter;
+				for( siter = sortedMap.begin(); siter != sortedMap.end(); ++siter)
+					AddListItemToMenu( siter->second, menu);
+			}
+		} else {
+			BMessage* msg = new BMessage( *mMsgTemplate);
+			msg->AddString( BmListModel::MSG_ITEMKEY, item->Key().String());
+			BMenuItem* menuItem;
+			if (!item->empty()) {
+				BMenu* subMenu = new BMenu( item->DisplayKey().String());
+				subMenu->SetFont( &mFont);
+				BmModelItemMap::const_iterator iter;
+				for( iter = item->begin();  iter != item->end();  ++iter) {
+					if (mItemFilter && !(*mItemFilter)(iter->second.Get()))
+						continue;
+					BmString sortKey = iter->second->DisplayKey();
+					sortedMap[sortKey.ToLower()] = iter->second.Get();
+				}
+				BmSortedItemMap::const_iterator siter;
+				for( siter = sortedMap.begin(); siter != sortedMap.end(); ++siter)
+					AddListItemToMenu( siter->second, subMenu);
+				menuItem = new BMenuItem( subMenu, msg);
+			} else {
+				menuItem = new BMenuItem( item->DisplayKey().String(), msg);
+			}
+			if (shortcut)
+				menuItem->SetShortcut( shortcut, 0);
+			menuItem->SetTarget( mMsgTarget);
+			menu->AddItem( menuItem);
+		}
+	}
+}
+
+static void RebuildList( BmMenuControllerBase* menu, BmListModel* list, 
+								 bool skipFirstLevel=false);
 /*------------------------------------------------------------------------------*\
 	RebuildList()
 		-	
@@ -244,11 +387,14 @@ static void RebuildList( BmMenuControllerBase* menu, BmListModel* list,
 								 bool skipFirstLevel)
 {
 	ClearMenu( menu);	
-	BFont font;
-	menu->GetFont( &font);
-	AddListToMenu( list, menu, menu->MsgTemplate(), menu->MsgTarget(), 
-						&font, skipFirstLevel, false, menu->Shortcuts());
+	ListMenuBuilder builder(list, menu, menu->MsgTemplate(), menu->MsgTarget());
+	builder.SkipFirstLevel(skipFirstLevel);
+	builder.Go();
 }
+
+};		// namespace BmPrivate
+
+using namespace BmPrivate;
 
 /*------------------------------------------------------------------------------*\
 	()
@@ -256,7 +402,19 @@ static void RebuildList( BmMenuControllerBase* menu, BmListModel* list,
 \*------------------------------------------------------------------------------*/
 void BmRoster::RebuildFilterMenu( BmMenuControllerBase* menu)
 {
-	RebuildList( menu, TheFilterList.Get());
+	struct ItemFilter : public ListMenuBuilder::ItemFilter {
+		bool operator() ( const BmListModelItem* item)
+		{
+			const BmFilter* filter = dynamic_cast<const BmFilter*>(item);
+			return filter && filter->Kind().ICompare("Spam") != 0;
+		}
+	};
+	ItemFilter itemFilter;
+	ClearMenu( menu);	
+	ListMenuBuilder builder(TheFilterList.Get(), menu, menu->MsgTemplate(), 
+									menu->MsgTarget());
+	builder.ItemFilter(&itemFilter);
+	builder.Go();
 }
 
 /*------------------------------------------------------------------------------*\

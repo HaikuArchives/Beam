@@ -33,13 +33,10 @@
 
 #include "BmString.h"
 
-class BFont;
 class BHandler;
 class BMenu;
 class BMenuItem;
 class BMessage;
-class BmListModel;
-class BmListModelItem;
 /*------------------------------------------------------------------------------*\
 	utility functions that make menu-creation easier:
 \*------------------------------------------------------------------------------*/
@@ -52,10 +49,5 @@ BMenuItem* CreateSubMenuItem( const char* label, int32 msgWhat,
 										const char* idForShortcut=NULL);
 BMenuItem* CreateSubMenuItem( const char* label, BMessage* msg, 
 										const char* idForShortcut);
-
-void AddListToMenu( BmListModel* list, BMenu* menu, BMessage* msgTemplate,
-						  BHandler* msgTarget, BFont* font, 
-						  bool skipFirstLevel=false,
-						  bool addNoneItem=false, const BmString shortcuts="");
 
 #endif
