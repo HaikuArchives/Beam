@@ -29,11 +29,8 @@
 /*************************************************************************/
 
 #include <assert.h>
-#include <malloc.h>
+#include <stdlib.h>
 #include <new>
-#include <stdexcept>
-
-#include <SupportDefs.h>
 
 #ifdef __POWERPC__
 #define BM_BUILDING_BMBASE 1
