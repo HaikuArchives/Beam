@@ -58,6 +58,9 @@ using namespace regexx;
 #include "BmRulerView.h"
 #include "BmSignature.h"
 
+#undef BM_LOGNAME
+#define BM_LOGNAME "MailParser"
+
 /********************************************************************************\
 	BmMailView
 \********************************************************************************/
