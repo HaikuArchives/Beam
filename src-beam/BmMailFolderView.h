@@ -101,7 +101,6 @@ public:
 	void ItemInvoked( int32 index);
 	void KeyDown(const char *bytes, int32 numBytes);
 	BmString StateInfoBasename()			{ return "MailFolderView"; }
-	BmListViewItem* UpdateModelItem( BmListModelItem* item, BmUpdFlags updFlags);
 	const char* ItemNameForCaption()		{ return "folder"; }
 	void JobIsDone( bool completed);
 	//

@@ -433,24 +433,6 @@ void BmMailFolderView::MessageReceived( BMessage* msg) {
 }
 
 /*------------------------------------------------------------------------------*\
-	UpdateModelItem( msg)
-		-	Hook function that is called whenever an item needs to be updated
-		-	In case the key has been updated, we sort the list (so that after
-			a folder has been renamed, it will be moved into its new position).
-\*------------------------------------------------------------------------------*/
-BmListViewItem* BmMailFolderView::UpdateModelItem( BmListModelItem* item, 
-																	BmUpdFlags updFlags) {
-	BmListViewItem* viewItem = inherited::UpdateModelItem( item, updFlags);
-	if (viewItem && updFlags==UPD_KEY) {
-		if (LockLooper()) {
-			SortItems();
-			UnlockLooper();
-		}
-	}
-	return viewItem;
-}
-
-/*------------------------------------------------------------------------------*\
 	SelectionChanged()
 		-	
 \*------------------------------------------------------------------------------*/
