@@ -86,6 +86,7 @@ class BmMailFolderView : public BmListViewController
 	
 	//	message component definitions for archive:
 	static const char* const MSG_CURR_FOLDER;
+	static const char* const MSG_VERSION;
 
 public:
 	static const char* const MSG_HAVE_SELECTED_FOLDER;
@@ -104,6 +105,12 @@ public:
 	void SendNoticesIfNeeded( bool haveSelectedFolder);
 	
 	// overrides of controller base:
+	CLVContainerView* CreateContainer( bool horizontal, 
+												  bool vertical, 
+							  					  bool scroll_view_corner, 
+							  					  border_style border, 
+												  uint32 ResizingMode, 
+												  uint32 flags);
 	bool AcceptsDropOf( const BMessage* msg);
 	void HandleDrop( const BMessage* msg);
 	void ItemInvoked( int32 index);
@@ -125,6 +132,7 @@ protected:
 	void JobIsDone( bool completed);
 
 private:
+	static int16 nArchiveVersion;
 
 	BmRef<BmMailFolder> CurrentFolder( void) const;
 	

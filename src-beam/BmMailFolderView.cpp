@@ -190,7 +190,11 @@ int BmMailFolderItem::CompareItems( const CLVListItem *a_Item1,
 
 
 const char* const BmMailFolderView::MSG_CURR_FOLDER = "bm:currfolder";
+const char* const BmMailFolderView::MSG_VERSION = "bm:ver";
+
 const char* const BmMailFolderView::MSG_HAVE_SELECTED_FOLDER = "bm:fsel";
+
+int16 BmMailFolderView::nArchiveVersion = 1;
 
 BmMailFolderView* BmMailFolderView::theInstance = NULL;
 
@@ -232,8 +236,8 @@ BmMailFolderView::BmMailFolderView( minimax minmax, int32 width, int32 height)
 									  CLV_SORT_KEYABLE | CLV_LOCK_AT_BEGINNING 
 									  | CLV_NOT_MOVABLE, 
 									  50.0));
-	AddColumn( new CLVColumn( "New", 30.0, CLV_RIGHT_JUSTIFIED, 20.0));
-	AddColumn( new CLVColumn( "Mails", 30.0, CLV_RIGHT_JUSTIFIED, 20.0));
+	AddColumn( new CLVColumn( "New", 35.0, CLV_RIGHT_JUSTIFIED, 20.0));
+	AddColumn( new CLVColumn( "Mails", 35.0, CLV_RIGHT_JUSTIFIED, 20.0));
 	SetSortFunction( BmMailFolderItem::CompareItems);
 	SetSortKey( COL_NAME);
 }
@@ -247,12 +251,32 @@ BmMailFolderView::~BmMailFolderView() {
 }
 
 /*------------------------------------------------------------------------------*\
+	CreateContainer()
+		-	
+\*------------------------------------------------------------------------------*/
+CLVContainerView* BmMailFolderView::CreateContainer( bool horizontal, 
+																	  bool vertical, 
+												  					  bool scroll_view_corner, 
+												  					  border_style border, 
+																	  uint32 ResizingMode, 
+																	  uint32 flags) 
+{
+	return 
+		new BmCLVContainerView( 
+			fMinMax, this, ResizingMode, flags, horizontal, vertical, 
+			scroll_view_corner, border, mShowCaption, mShowBusyView, 
+			be_plain_font->StringWidth(" 999 folders ")
+		);
+}
+
+/*------------------------------------------------------------------------------*\
 	Archive()
 		-	
 \*------------------------------------------------------------------------------*/
 status_t BmMailFolderView::Archive(BMessage* archive, bool deep) const {
 	status_t ret = inherited::Archive( archive, deep);
 	if (ret == B_OK) {
+		archive->AddInt16( MSG_VERSION, nArchiveVersion);
 		BmRef<BmMailFolder> currFolder = CurrentFolder();
 		if (currFolder)
 			archive->AddString( MSG_CURR_FOLDER, currFolder->Key().String());
@@ -265,8 +289,21 @@ status_t BmMailFolderView::Archive(BMessage* archive, bool deep) const {
 		-	
 \*------------------------------------------------------------------------------*/
 status_t BmMailFolderView::Unarchive(const BMessage* archive, bool deep) {
-	mLastActiveKey = archive->FindString( MSG_CURR_FOLDER);
-	return inherited::Unarchive( archive, deep);
+	status_t err = inherited::Unarchive( archive, deep);
+	if (err == B_OK) {
+		int16 version = 0;
+		archive->FindInt16( MSG_VERSION, &version);
+		if (version < 1) {
+			// make room for (and show) 'New'- and 'Mails'-columns:
+			ColumnAt(2)->SetWidth( 100);
+			ColumnAt(3)->SetWidth( 30);
+			ColumnAt(4)->SetWidth( 30);
+			ShowColumn( 3);
+			ShowColumn( 4);
+		}
+		mLastActiveKey = archive->FindString( MSG_CURR_FOLDER);
+	}
+	return err;
 }
 
 /*------------------------------------------------------------------------------*\
