@@ -195,6 +195,7 @@ void BmFilter::RegisterCallbacks( sieve_interp_t* interp) {
 	sieve_register_redirect( interp, BmMailFilter::sieve_redirect);
 	sieve_register_keep( interp, BmMailFilter::sieve_keep);
 	sieve_register_fileinto( interp, BmMailFilter::sieve_fileinto);
+	sieve_register_imapflags( interp, NULL);
 
 	sieve_register_size( interp, BmMailFilter::sieve_get_size);
 	sieve_register_header( interp, BmMailFilter::sieve_get_header);
@@ -216,6 +217,31 @@ int BmFilter::sieve_parse_error( int lineno, const char* msg,
 			filter->mLastSieveErr = BmString("Line ")<<lineno<<": "<<msg;
 	}
 	return SIEVE_OK;
+}
+
+/*------------------------------------------------------------------------------*\
+	sieve_parse_error()
+		-	
+\*------------------------------------------------------------------------------*/
+BmString BmFilter::ErrorString() const {
+	return LastErr() + "\n\n" 
+				<< "Error: " << sieve_strerror(LastErrVal()) << "\n\n"
+				<< LastSieveErr();
+}
+
+/*------------------------------------------------------------------------------*\
+	SanityCheck()
+		-	checks if the current values make sense and returns error-info through
+			given out-params
+		-	returns true if values are ok, false (and error-info) if not
+\*------------------------------------------------------------------------------*/
+bool BmFilter::SanityCheck( BmString& complaint, BmString& fieldName) {
+	if (!CompileScript()) {
+		complaint = ErrorString();
+		fieldName = "content";
+		return false;
+	}
+	return true;
 }
 
 

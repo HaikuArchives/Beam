@@ -70,6 +70,8 @@ public:
 	bool CompileScript();
 	bool Execute( void* msgContext);
 	void RegisterCallbacks( sieve_interp_t* interp);
+	bool SanityCheck( BmString& complaint, BmString& fieldName);
+	BmString ErrorString() const;
 
 	// SIEVE-callbacks:
 	static int sieve_parse_error( int lineno, const char *msg, 
