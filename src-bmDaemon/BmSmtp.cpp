@@ -408,7 +408,7 @@ void BmSmtp::StateAuth() {
 		if (first && mSmtpAccount->PwdStoredOnDisk()) {
 			pwd = mSmtpAccount->Password();
 		} else if (mPwdAcquisitorFunc) {
-			if (!mPwdAcquisitorFunc( Name(), pwd)) {
+			if (!ShouldContinue() || !mPwdAcquisitorFunc( Name(), pwd)) {
 				Disconnect();
 				StopJob();
 				return;

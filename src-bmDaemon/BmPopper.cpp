@@ -332,11 +332,11 @@ void BmPopper::StateLogin() {
 			// use stored password:
 			pwd = mPopAccount->Password();
 			pwdGiven = true;
-		} else if (mPwdAcquisitorFunc) {
+		} else if (mPwdAcquisitorFunc && ShouldContinue()) {
 			// ask user about password:
 			pwdGiven = mPwdAcquisitorFunc( Name(), pwd);
 		}
-		if (!pwdGiven) {
+		if (!pwdGiven || !ShouldContinue()) {
 			// user has cancelled, we stop
 			Disconnect();
 			StopJob();
