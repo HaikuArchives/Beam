@@ -300,10 +300,12 @@ void BmPeopleList::AddPeopleToMenu( BMenu* menu, const BMessage& templateMsg,
 													 "(Not in any Group)", &font);
 	menu->AddItem( subMenu);
 	menu->AddSeparatorItem();
-	subMenu = CreateSubmenuForPersonMap( foreignMap, templateMsg, addrField,
-													 "(Not in ~/People)", &font);
-	menu->AddItem( subMenu);
-	menu->AddSeparatorItem();
+	if (foreignMap.size() > 0) {
+		subMenu = CreateSubmenuForPersonMap( foreignMap, templateMsg, addrField,
+														 "(Not in ~/People)", &font);
+		menu->AddItem( subMenu);
+		menu->AddSeparatorItem();
+	}
 	subMenu = CreateSubmenuForPersonMap( allPeopleMap, templateMsg, addrField,
 													 "All People", &font);
 	menu->AddItem( subMenu);
@@ -448,6 +450,9 @@ void BmPeopleList::InitializeItems() {
 																"/boot/home/people");
 	if ((err = entry.SetTo( peopleFolder.String(), true)) != B_OK)
 		BM_THROW_RUNTIME( "Sorry, could not get entry for people-folder !?!");
+	if (!entry.Exists())
+		return;			// people-folder doesn't exist, we stop right here!
+
 	if (entry.GetNodeRef( &nref) != B_OK)
 		BM_THROW_RUNTIME( "Sorry, could not determine people-folder-volume !?!");
 	peopleVolume = nref.device;
