@@ -36,6 +36,9 @@
 #include <StringView.h>
 #include <Window.h>
 
+#include "regexx.hh"
+using namespace regexx;
+
 #include "CLVColumnLabelView.h"
 
 #include "BmApp.h"
@@ -624,6 +627,11 @@ BmListViewItem* BmListViewController::UpdateModelItem( BmListModelItem* item,
 			InvalidateItem( idx);
 	} else
 		BM_LOG2( BM_LogModelController, BmString(ControllerName())<<": requested to update an unknown item <"<<item->Key()<<">");
+	if (updFlags & UPD_SORT) {
+		SetDisconnectScrollView( true);
+		SortItems();
+		SetDisconnectScrollView( false);
+	}
 	return viewItem;
 }
 
@@ -859,7 +867,7 @@ status_t BmListViewController::Archive(BMessage* archive, bool deep) const {
 	GetArchiveForItemKey( )
 		-	
 \*------------------------------------------------------------------------------*/
-BMessage* BmListViewController::GetArchiveForItemKey( BmString key, BMessage* msg) {
+BMessage* BmListViewController::GetArchiveForItemKey( const BmString& key, BMessage* msg) {
 	if (mInitialStateInfo) {
 		status_t ret = B_OK;
 		for( int i=0; ret==B_OK; ++i) {
@@ -884,7 +892,18 @@ void BmListViewController::ReadStateInfo() {
 
 	// try to open state-info-file...
 	stateInfoFilename = StateInfoBasename() << "_" << ModelName();
-	if (mUseStateCache 
+	if (mUseStateCache
+	&& (err = stateInfoFile.SetTo( TheResources->StateInfoFolder(), 
+											 stateInfoFilename.String(), B_READ_ONLY)) != B_OK) {
+		// state-file not found, but we have changed names of statefiles in Feb 2003,
+		// so we check if a state-file according to the old name exists (and rename
+		// it to match our new regulations):
+		Regexx rx( stateInfoFilename, "^(.+?_.+?_\\d+)_\\d+(.+?)$", "$1$2");
+		BmString oldStateInfoFilename = rx;
+		BEntry entry( TheResources->StateInfoFolder(), oldStateInfoFilename.String());
+		err = (entry.InitCheck() || entry.Rename( stateInfoFilename.String()));
+	}
+	if (mUseStateCache
 	&& (err = stateInfoFile.SetTo( TheResources->StateInfoFolder(), 
 											 stateInfoFilename.String(), B_READ_ONLY)) == B_OK) {
 		// ...ok, file found, we fetch our state(s) from it:
@@ -900,12 +919,12 @@ void BmListViewController::ReadStateInfo() {
 			mInitialStateInfo = NULL;
 			BM_SHOWERR( e.what());
 		}
-	} else {
-		delete mInitialStateInfo;
-		mInitialStateInfo = DefaultLayout();
-		if (mInitialStateInfo)
-			Unarchive( mInitialStateInfo);
+		return;
 	}
+	delete mInitialStateInfo;
+	mInitialStateInfo = DefaultLayout();
+	if (mInitialStateInfo)
+		Unarchive( mInitialStateInfo);
 }
 
 

@@ -96,7 +96,7 @@ public:
 	status_t Archive( BMessage* archive, bool deep = true) const;
 
 	// getters:
-	inline const BmString Key() const		{ return mKey; }
+	inline const BmString& Key() const		{ return mKey; }
 	virtual BmListModelItem* ModelItem() const	{ return mModelItem.Get(); }
 	
 protected:
@@ -188,7 +188,7 @@ public:
 	virtual BmListViewItem* CreateListViewItem( BmListModelItem* item, 
 															  BMessage* archive=NULL) 			= 0;
 	//
-	BMessage* GetArchiveForItemKey( BmString, BMessage* msg=NULL);
+	BMessage* GetArchiveForItemKey( const BmString&, BMessage* msg=NULL);
 	//
 	virtual void WriteStateInfo();
 	virtual void ReadStateInfo();
