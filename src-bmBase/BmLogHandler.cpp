@@ -1,5 +1,5 @@
 /*
-	BmUtil.cpp
+	BmLogHandler.cpp
 		$Id$
 */
 /*************************************************************************/
@@ -255,12 +255,12 @@ BmLogHandler::BmLogfile* BmLogHandler::FindLogfile( const BmString &ln) {
 }
 
 /*------------------------------------------------------------------------------*\
-	CheckLogLevel( flag)
-		-	returns whether or not the loglevel for the given flag is at least 
+	CheckLogLevel( terrain)
+		-	returns whether or not the loglevel for the given terrain is at least 
 		   minlevel
 \*------------------------------------------------------------------------------*/
-bool BmLogHandler::CheckLogLevel( uint32 flag, int8 minlevel) const {
-	int8 loglevel = BM_LOGLVL_FOR(mLoglevels, flag);
+bool BmLogHandler::CheckLogLevel( uint32 terrain, int8 minlevel) const {
+	int8 loglevel = BM_LOGLVL_FOR(mLoglevels, terrain);
 	return loglevel >= minlevel;
 }
 

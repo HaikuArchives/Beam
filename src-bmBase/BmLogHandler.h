@@ -78,7 +78,7 @@ public:
 	void LogToFile( const BmString& logname, const BmString &msg);
 	void LogToFile( const BmString& logname, const char* msg);
 	//
-	bool CheckLogLevel( uint32 flag, int8 minlevel) const;
+	bool CheckLogLevel( uint32 terrain, int8 minlevel) const;
 
 	void StartWatchingLogfile( BHandler* looper, const char* logfileName);
 	void StopWatchingLogfile( BHandler* looper, const char* logfileName);
@@ -152,22 +152,22 @@ extern IMPEXPBMBASE const uint32 BM_LogFilter;
 extern IMPEXPBMBASE const uint32 BM_LogRefCount;
 extern IMPEXPBMBASE const uint32 BM_LogAll;
 
-// macros to convert the loglevel for a specific flag 
+// macros to convert the loglevel for a specific terrain 
 // into it's internal bit-representation:
-#define BM_LOGLVL0(flag) (0)
-#define BM_LOGLVL1(flag) (flag)
-#define BM_LOGLVL2(flag) (flag<<16)
-#define BM_LOGLVL3(flag) (flag+(flag<<16))
+#define BM_LOGLVL0(terrain) (0)
+#define BM_LOGLVL1(terrain) (terrain)
+#define BM_LOGLVL2(terrain) (terrain<<16)
+#define BM_LOGLVL3(terrain) (terrain+(terrain<<16))
 
-// macro to obtain the loglevel for a specific flag 
+// macro to obtain the loglevel for a specific terrain 
 // from it's internal bit-representation:
-#define BM_LOGLVL_FOR(loglevels,flag) \
-(((loglevels & flag) ? 1 : 0) + ((loglevels & flag<<16) ? 2 : 0))
+#define BM_LOGLVL_FOR(loglevels,terrain) \
+(((loglevels & terrain) ? 1 : 0) + ((loglevels & terrain<<16) ? 2 : 0))
 
 // macro to bit-encode a single loglevel for the
-// given flag:
-#define BM_LOGLVL_VAL(loglevel,flag) \
-(((loglevel & 1) ? flag : 0) + ((loglevel & 2) ? flag<<16 : 0))
+// given terrain:
+#define BM_LOGLVL_VAL(loglevel,terrain) \
+(((loglevel & 1) ? terrain : 0) + ((loglevel & 2) ? terrain<<16 : 0))
 
 /*------------------------------------------------------------------------------*\
 	time-related utility functions
@@ -189,19 +189,19 @@ IMPEXPBMBASE void ShowAlertWithType( const BmString &text, alert_type type);
 // the macros used for logging:
 #ifdef BM_LOGGING
 
-#define BM_LOG(flag,msg) \
+#define BM_LOG(terrain,msg) \
 	do {	\
-		if (TheLogHandler && TheLogHandler->CheckLogLevel( flag, 1)) \
+		if (TheLogHandler && TheLogHandler->CheckLogLevel( terrain, 1)) \
 			BmLogHandler::Log( BM_LOGNAME, msg); \
 	} while(0)
-#define BM_LOG2(flag,msg) \
+#define BM_LOG2(terrain,msg) \
 	do {	\
-		if (TheLogHandler && TheLogHandler->CheckLogLevel( flag, 2)) \
+		if (TheLogHandler && TheLogHandler->CheckLogLevel( terrain, 2)) \
 			BmLogHandler::Log( BM_LOGNAME, msg); \
 	} while(0)
-#define BM_LOG3(flag,msg) \
+#define BM_LOG3(terrain,msg) \
 	do {	\
-		if (TheLogHandler && TheLogHandler->CheckLogLevel( flag, 3)) \
+		if (TheLogHandler && TheLogHandler->CheckLogLevel( terrain, 3)) \
 			BmLogHandler::Log( BM_LOGNAME, msg); \
 	} while(0)
 #define BM_LOGERR(msg) \
@@ -224,9 +224,9 @@ IMPEXPBMBASE void ShowAlertWithType( const BmString &text, alert_type type);
 
 #else
 	// error-only logging:
-#define BM_LOG(flag,msg)
-#define BM_LOG2(flag,msg)
-#define BM_LOG3(flag,msg)
+#define BM_LOG(terrain,msg)
+#define BM_LOG2(terrain,msg)
+#define BM_LOG3(terrain,msg)
 #define BM_LOG_FINISH(name) BmLogHandler::FinishLog( name)
 #define BM_LOGNAME "Beam"
 #define BM_LOGERR(msg) \
