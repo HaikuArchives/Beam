@@ -453,6 +453,17 @@ BmRef<BmMail> BmMail::CreateInlineForward( bool withAttachments,
 	newMail->AddPartsFromMail( this, withAttachments, BM_IS_FORWARD, false, 
 										selectedText);
 	newMail->SetBaseMailInfo( MailRef(), BM_MAIL_STATUS_FORWARDED);
+
+	BmString receivingAddr;
+	BmRef<BmIdentity> ident;
+	DetermineRecvAddrAndIdentity( receivingAddr, ident);
+	if (ident && receivingAddr.Length()) {
+		newMail->SetFieldVal( BM_FIELD_FROM, receivingAddr);
+		newMail->SetSignatureByName( ident->SignatureName());
+		newMail->AccountName( ident->SMTPAccount());
+		newMail->IdentityName( ident->Key());
+	}
+
 	return newMail;
 }
 
@@ -469,6 +480,17 @@ BmRef<BmMail> BmMail::CreateAttachedForward() {
 	BmString subject = GetFieldVal( BM_FIELD_SUBJECT);
 	newMail->SetFieldVal( BM_FIELD_SUBJECT, CreateForwardSubjectFor( subject));
 	newMail->SetBaseMailInfo( MailRef(), BM_MAIL_STATUS_FORWARDED);
+
+	BmString receivingAddr;
+	BmRef<BmIdentity> ident;
+	DetermineRecvAddrAndIdentity( receivingAddr, ident);
+	if (ident && receivingAddr.Length()) {
+		newMail->SetFieldVal( BM_FIELD_FROM, receivingAddr);
+		newMail->SetSignatureByName( ident->SignatureName());
+		newMail->AccountName( ident->SMTPAccount());
+		newMail->IdentityName( ident->Key());
+	}
+
 	return newMail;
 }
 
@@ -563,52 +585,17 @@ BmRef<BmMail> BmMail::doCreateReply( int32 replyMode,
 	BmString newTo 
 		= DetermineReplyAddress( replyMode, false, replyGoesToPersonOnly);
 	newMail->SetFieldVal( BM_FIELD_TO, newTo);
-	// Since we are replying, we generate the new mail's from-address 
-	// from the received mail's to-/cc-/bcc-info in several steps.
-	// First, we check if this mail has an identity assigned to it:
+
 	BmString receivingAddr;
-	BmRef<BmListModelItem> identRef 
-		= TheIdentityList->FindItemByKey( mIdentityName);
-	BmIdentity* ident = dynamic_cast< BmIdentity*>( identRef.Get());
-	if (!ident) {
-		// second, we check if the account through which the mail has been 
-		// received can be identified (not always possible, since the account 
-		// may have been renamed or deleted by now):
-		BmRef<BmIdentity> identRef 
-			= TheIdentityList->FindIdentityForPopAccount( mAccountName);
-		ident = dynamic_cast< BmIdentity*>( identRef.Get());
-	}
-	if (ident) {
-		// receiving identity is known, we let it find the receiving address
-		receivingAddr = Header()->DetermineReceivingAddrFor( ident);
-		// if the identity doesn't handle any receiving address of this mail,
-		// we simply use the identity's default address:
-		if (!receivingAddr.Length())
-			receivingAddr = ident->GetFromAddress();
-	}
-	if (!receivingAddr.Length()) {
-		// the receiving address could not be determined, so we iterate through 
-		// all identities and try to find one that (may) have received this mail.
-		BmAutolockCheckGlobal lock( ThePopAccountList->ModelLocker());
-		if (!lock.IsLocked())
-			BM_THROW_RUNTIME( 
-				"CreateReply(): Unable to get lock on PopAccountList"
-			);
-		BmModelItemMap::const_iterator iter;
-		for( iter = TheIdentityList->begin(); 
-			  iter != TheIdentityList->end() && !receivingAddr.Length(); 
-			  ++iter) {
-			ident = dynamic_cast< BmIdentity*>( iter->second.Get());
-			if (ident)
-				receivingAddr = Header()->DetermineReceivingAddrFor( ident);
-		}
-	}
+	BmRef<BmIdentity> ident;
+	DetermineRecvAddrAndIdentity( receivingAddr, ident);
 	if (ident && receivingAddr.Length()) {
 		newMail->SetFieldVal( BM_FIELD_FROM, receivingAddr);
 		newMail->SetSignatureByName( ident->SignatureName());
 		newMail->AccountName( ident->SMTPAccount());
 		newMail->IdentityName( ident->Key());
 	}
+
 	// if we are replying to all, we may need to include more addresses:
 	if (replyMode == BMM_REPLY_ALL) {
 		BmString newCc = GetFieldVal( BM_FIELD_CC);
@@ -637,6 +624,53 @@ BmRef<BmMail> BmMail::doCreateReply( int32 replyMode,
 }
 
 /*------------------------------------------------------------------------------*\
+	DetermineRecvAddrAndIdentity()
+	-	
+\*------------------------------------------------------------------------------*/
+void BmMail::DetermineRecvAddrAndIdentity( BmString& receivingAddr,
+														 BmRef<BmIdentity>& ident) {
+	// Since we are replying, we generate the new mail's from-address 
+	// from the received mail's to-/cc-/bcc-info in several steps.
+	// First, we check if this mail has an identity assigned to it:
+	ident = dynamic_cast< BmIdentity*>( 
+		TheIdentityList->FindItemByKey( mIdentityName).Get()
+	);
+	if (!ident) {
+		// second, we check if the account through which the mail has been 
+		// received can be identified (not always possible, since the account 
+		// may have been renamed or deleted by now):
+		ident = dynamic_cast< BmIdentity*>( 
+			TheIdentityList->FindIdentityForPopAccount( mAccountName).Get()
+		);
+	}
+	if (ident) {
+		// receiving identity is known, we let it find the receiving address
+		receivingAddr = Header()->DetermineReceivingAddrFor( ident.Get());
+		// if the identity doesn't handle any receiving address of this mail,
+		// we simply use the identity's default address:
+		if (!receivingAddr.Length())
+			receivingAddr = ident->GetFromAddress();
+	}
+	if (!receivingAddr.Length()) {
+		// the receiving address could not be determined, so we iterate through 
+		// all identities and try to find one that (may) have received this mail.
+		BmAutolockCheckGlobal lock( ThePopAccountList->ModelLocker());
+		if (!lock.IsLocked())
+			BM_THROW_RUNTIME( 
+				"CreateReply(): Unable to get lock on PopAccountList"
+			);
+		BmModelItemMap::const_iterator iter;
+		for( iter = TheIdentityList->begin(); 
+			  iter != TheIdentityList->end() && !receivingAddr.Length(); 
+			  ++iter) {
+			ident = dynamic_cast< BmIdentity*>( iter->second.Get());
+			if (ident)
+				receivingAddr = Header()->DetermineReceivingAddrFor( ident.Get());
+		}
+	}
+}
+
+/*------------------------------------------------------------------------------*\
 	CreateRedirect()
 	-	
 \*------------------------------------------------------------------------------*/
@@ -661,12 +695,17 @@ BmRef<BmMail> BmMail::CreateRedirect() {
 	newMail->SetFieldVal( BM_FIELD_RESENT_DATE, 
 								 TimeToString( time( NULL), 
 								 					"%a, %d %b %Y %H:%M:%S %z"));
-	BmRef<BmIdentity> identRef = TheIdentityList->CurrIdentity();
-	if (identRef) {
-		newMail->SetFieldVal( BM_FIELD_RESENT_FROM, identRef->GetFromAddress());
-		newMail->AccountName( identRef->SMTPAccount());
-		newMail->SetSignatureByName( identRef->SignatureName());
+
+	BmString receivingAddr;
+	BmRef<BmIdentity> ident;
+	DetermineRecvAddrAndIdentity( receivingAddr, ident);
+	if (ident && receivingAddr.Length()) {
+		newMail->SetFieldVal( BM_FIELD_RESENT_FROM, receivingAddr);
+		newMail->SetSignatureByName( ident->SignatureName());
+		newMail->AccountName( ident->SMTPAccount());
+		newMail->IdentityName( ident->Key());
 	}
+
 	newMail->SetBaseMailInfo( MailRef(), BM_MAIL_STATUS_REDIRECTED);
 	return newMail;
 }

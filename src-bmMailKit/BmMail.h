@@ -284,6 +284,9 @@ private:
 										  const BmString selectedText="",
 										  bool avoidReplyGoesToPersonOnly=false);
 
+	void DetermineRecvAddrAndIdentity( BmString& receivingAddr,
+												  BmRef<BmIdentity>& ident);
+
 	const BmString DefaultStatus() const;
 
 	BmRef<BmMailHeader> mHeader;
