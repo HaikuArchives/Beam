@@ -117,17 +117,6 @@ void BmListViewItem::SetTextCols( int16 firstTextCol, BmListColumn* columnVec) {
 	}
 }
 
-#ifdef BM_LOGGING
-/*------------------------------------------------------------------------------*\
-	ObjectSize()
-		-	
-\*------------------------------------------------------------------------------*/
-int32 BmListViewItem::ObjectSize( bool addSizeofThis) const {
-	return 	(addSizeofThis ? sizeof( *this) : 0)
-		+		mKey.Length()+1;
-}
-#endif
-
 
 
 /********************************************************************************\
@@ -555,14 +544,6 @@ void BmListViewController::AddAllModelItems() {
 	}
 	if (!Hierarchical()) {
 		// add complete item-list for efficiency:
-#ifdef BM_LOGGING_MEM
-		int32 objSize = 0;
-		for( int32 i=0; i<tempList->CountItems(); ++i) {
-			BmListViewItem* item = (BmListViewItem*)tempList->ItemAt(i);
-			objSize += item->ObjectSize() + sizeof( BmString) + item->Key().Length();
-		}
-		BM_LOG( BM_LogMailTracking, BmString("ListView <") << ModelName() << "> has (estimated) size of " << objSize << " bytes");
-#endif
 		AddList( tempList);
 		delete tempList;
 	}

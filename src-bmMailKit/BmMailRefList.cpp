@@ -207,15 +207,6 @@ bool BmMailRefList::StartJob() {
 			InitializeItems();
 		}
 
-#ifdef BM_LOGGING_MEM
-		int32 objSize = 0;
-		BmModelItemMap::const_iterator iter;
-		for( iter = begin(); iter != end(); ++iter) {
-			objSize += iter->second->ObjectSize() + sizeof( BmString) + iter->first.Length();
-		}
-		BM_LOG( BM_LogMailTracking, BmString("RefList <") << ModelName() << "> has (estimated) size of " << objSize << " bytes");
-#endif
-
 	} catch (BM_error &e) {
 		BM_SHOWERR( e.what());
 	}

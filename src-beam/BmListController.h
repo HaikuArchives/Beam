@@ -90,10 +90,6 @@ public:
 	void SetTextCols( int16 firstTextCol, BmListColumn* columnVec);
 	virtual void UpdateView( BmUpdFlags flags);
 
-#ifdef BM_LOGGING
-	int32 ObjectSize( bool addSizeofThis=true) const;
-#endif
-
 	//	overrides from listitem-baseclass:
 	status_t Archive( BMessage* archive, bool deep = true) const;
 
