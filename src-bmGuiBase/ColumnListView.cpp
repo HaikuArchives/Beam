@@ -299,9 +299,11 @@ void ColumnListView::ColumnsChanged()
 
 void ColumnListView::AssertWindowLocked() const
 {
+#ifdef DEBUG
 	BWindow* ParentWindow = Window();
 	if(ParentWindow && !ParentWindow->IsLocked())
 		_debuggerAssert(__FILE__,__LINE__,(char*)"The looper must be locked.");
+#endif
 }
 
 
