@@ -269,7 +269,7 @@ BmPrefsFilterView::BmPrefsFilterView()
 				0
 			),
 			new VGroup(
-				minimax(400,300),
+				minimax(400,250),
 				mFilterControl = new BmTextControl( "Filter name:"),
 				new Space( minimax(0,5,0,5)),
 				mLayeredAddonGroup = new LayeredGroup(
@@ -297,7 +297,7 @@ BmPrefsFilterView::BmPrefsFilterView()
 				),
 				0
 			),
-			"hsplitter", 120, B_HORIZONTAL, true, true, false, B_FOLLOW_NONE
+			"hsplitter", 180, B_HORIZONTAL, true, true, false, B_FOLLOW_NONE
 		);
 
 	mFilterControl->SetDivider( 80);
