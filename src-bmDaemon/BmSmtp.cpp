@@ -522,20 +522,19 @@ void BmSmtp::StateSendMails() {
 		mCurrMailSize = mail->RawText().Length();
 
 		BmString headerText = mail->HeaderText();
-		if (mail->IsRedirect() 
-		&& !mail->Header()->IsFieldEmpty(BM_FIELD_RESENT_BCC)) {
+		if (!mail->Header()->IsFieldEmpty(BM_FIELD_RESENT_BCC)) {
 			// remove RESENT-BCC-header from mailtext...
 			headerText = rx.replace( 
 				headerText, 
-				"^Resent-Bcc:\\s+.+?\\r\\n(\\s+.*?\\r\\n)*", 
+				"^Resent-Bcc:\\s*.+?\\r\\n(\\s+.*?\\r\\n)*", 
 				"", Regexx::newline
 			);
-		} else if (!mail->IsRedirect() 
-		&& !mail->Header()->IsFieldEmpty(BM_FIELD_BCC)) {
+		}
+		if (!mail->Header()->IsFieldEmpty(BM_FIELD_BCC)) {
 			// remove BCC-header from mailtext...
 			headerText = rx.replace( 
 				headerText, 
-				"^Bcc:\\s+.+?\\r\\n(\\s+.*?\\r\\n)*", 
+				"^Bcc:\\s*.+?\\r\\n(\\s+.*?\\r\\n)*", 
 				"", Regexx::newline
 			);
 		}
@@ -673,22 +672,21 @@ void BmSmtp::Data( BmMail* mail, const BmString& headerText, BmString forBcc) {
 	BmString cmd( "DATA");
 	SendCommand( cmd);
 	CheckForPositiveAnswer();
-	BmString bcc;
-	if (mail->IsRedirect()) {
-		if (forBcc.Length()) {
+	BmString completeHeader;
+	if (forBcc.Length()) {
+		if (mail->IsRedirect()) {
 			// include BCC for current recipient within header so he/she/it can
 			// see how this mail got sent to him/her/it:
-			bcc = BmString("Resent-Bcc: ") << forBcc;
-		}
-	} else {
-		if (forBcc.Length()) {
+			completeHeader = BmString("Resent-Bcc: ") << forBcc << "\r\n" 
+										<< headerText;
+		} else {
 			// include BCC for current recipient within header so he/she/it can
 			// see how this mail got sent to him/her/it:
-			bcc = BmString("Bcc: ") << forBcc;
+			completeHeader = BmString("Bcc: ") << forBcc << "\r\n" << headerText;
 		}
-	}
-	BmStringIBuf sendBuf( bcc);
-	sendBuf.AddBuffer( headerText);
+	} else
+		completeHeader = headerText;
+	BmStringIBuf sendBuf( completeHeader);
 	sendBuf.AddBuffer( mail->RawText().String()+mail->HeaderLength());
 	SendCommand( sendBuf, "", true, true);
 	CheckForPositiveAnswer();
