@@ -69,9 +69,6 @@ CRLF		(\r\n|\r|\n)
 <QSTRING>\"        { BEGIN INITIAL;
                      if (mlbuf) mlbuf[mlcur] = '\0';
 		     sievelval.sval = chkBuf(); return STRING; }
-<QSTRING>\\.      { if (mlcur == mlbufsz) 
-			mlbuf = xrealloc(mlbuf, 1 + (mlbufsz+=1024));
-		    mlbuf[mlcur++] = yytext[1]; }
 <QSTRING>(.|\n)   { if (mlcur == mlbufsz) 
 			mlbuf = xrealloc(mlbuf, 1 + (mlbufsz+=1024));
 		    mlbuf[mlcur++] = yytext[0]; }
