@@ -33,7 +33,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "addr.h"
 #include "xmalloc.h"
 
-static int addrerror(char *msg);
+extern int addrerror(char *msg);
 extern int addrlex(void);
 
 #define YYERROR_VERBOSE /* i want better error messages! */
@@ -44,6 +44,30 @@ extern int addrlex(void);
 %start sieve_address
 
 %%
+address: mailbox			/* one addressee */
+	| group				/* named list */
+	;
+
+group: phrase ':' ';'
+	| phrase ':' mailboxes ';'
+	;
+
+mailboxes: mailbox
+	| mailbox ',' mailboxes
+	;
+
+mailbox: addrspec			/* simple address */
+	| phrase routeaddr		/* name & addr-spec */
+	;
+
+routeaddr: '<' addrspec '>'
+	| '<' route ':' addrspec '>'
+	;
+
+route: '@' domain			/* path-relative */
+	| '@' domain ',' route
+	;
+
 sieve_address: addrspec			/* simple address */
 	| phrase '<' addrspec '>'	/* name & addr-spec */
 	;
@@ -83,7 +107,7 @@ qstring: '"' QTEXT '"'
 %%
 
 /* copy address error message into buffer provided by sieve parser */
-static int addrerror(char *s)
+int addrerror(char *s)
 {
     extern char *addrerr;
 

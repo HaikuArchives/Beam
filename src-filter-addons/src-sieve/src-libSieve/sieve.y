@@ -114,7 +114,7 @@ static patternlist_t *verify_regexs(stringlist_t *sl, char *comp);
 #endif
 static int ok_header(char *s);
 
-static int sieveerror(char *msg);
+extern int sieveerror(char *msg);
 extern int sievelex(void);
 
 #define YYERROR_VERBOSE /* i want better error messages! */
@@ -473,9 +473,9 @@ tests: test                      { $$ = new_testlist($1, NULL); }
 commandlist_t *sieve_parse(sieve_script_t *script, FILE *f)
 {
     commandlist_t *t;
-    extern FILE *yyin;
+    extern FILE *sievein;
 
-    yyin = f;
+    sievein = f;
     parse_script = script;
     if (sieveparse()) {
 	t = NULL;
@@ -486,14 +486,14 @@ commandlist_t *sieve_parse(sieve_script_t *script, FILE *f)
     return t;
 }
 
-static int sieveerror(char *msg)
+int sieveerror(char *msg)
 {
-    extern int yylineno;
+    extern int sievelineno;
     int ret;
 
     parse_script->err++;
     if (parse_script->interp.err) {
-	ret = parse_script->interp.err(yylineno, msg, 
+	ret = parse_script->interp.err(sievelineno, msg, 
 				       parse_script->interp.interp_context,
 				       parse_script->script_context);
     }

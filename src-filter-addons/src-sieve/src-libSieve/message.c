@@ -31,10 +31,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include <stdlib.h>
 #include <unistd.h>
-#ifndef __BEOS__
-#include <sys/mman.h>
-#endif
-#include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>

@@ -38,9 +38,10 @@ static int tonum(char *c);
 static char *chkstr(char *);
 static char *mlbuf;
 static size_t mlbufsz, mlcur;
-extern int yyerror(char *);
+extern int sieveerror(char *);
 %}
 
+%option prefix="sieve"
 %option yylineno
 %option noyywrap
 %option nounput
@@ -60,7 +61,7 @@ CRLF		(\r\n|\r|\n)
 <MULTILINE>(.|\n) { if (mlcur == mlbufsz) 
 			mlbuf = xrealloc(mlbuf, 1 + (mlbufsz+=1024));
 		    mlbuf[mlcur++] = yytext[0]; }
-<MULTILINE><<EOF>> { yyerror("unexpected end of file in string"); 
+<MULTILINE><<EOF>> { sieveerror("unexpected end of file in string"); 
 		     yyterminate(); }
 <QSTRING>\"        { BEGIN INITIAL;
                      if (mlbuf) mlbuf[mlcur] = '\0';

@@ -42,7 +42,7 @@
  * $Id$
  */
 #ifdef HAVE_CONFIG_H
-#include "config.h"
+#include <config.h>
 #endif
 #include <stdio.h>
 #include <stdlib.h>
@@ -107,4 +107,10 @@ char *xstrconcat (const char *str, ...)
 
     va_end(va);
     return buf;
+}
+
+void *fatal(const char *message, int rc)
+{
+    fprintf(stderr, "fatal error: %s\n", message);
+    exit(rc);
 }
