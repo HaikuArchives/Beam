@@ -21,7 +21,6 @@ StaticLibrary beamInParts.a
 		BmListController.cpp
 		BmLogWindow.cpp
 		BmMailEditWin.cpp
-		BmMailEditWinPart2.cpp
 		BmMailFolderView.cpp
 		BmMailHeaderView.cpp
 		BmMailMover.cpp
