@@ -37,6 +37,9 @@
 
 #include <PictureButton.h>
 
+#include "regexx.hh"
+using namespace regexx;
+
 #include "BubbleHelper.h"
 #include "ImageAboutWindow.h"
 
@@ -295,12 +298,18 @@ void BmApplication::ArgvReceived( int32 argc, char** argv) {
 		BString to( argv[1]);
 		if (to.ICompare("mailto:",7)==0) {
 			to.Remove( 0, 7);
-			int32 subjPos = to.IFindFirst("?subject=");
-			if (subjPos != B_ERROR) {
-				BString sub;
-				DeUrlify( to.String()+subjPos+9, sub);
-				msg.AddString( MSG_SUBJECT, sub.String());
-				to.Truncate( subjPos);
+			int32 optPos = to.IFindFirst("?");
+			if (optPos != B_ERROR) {
+				BString opts;
+				to.MoveInto( opts, optPos, to.Length());
+				Regexx rx;
+				int32 optCount = rx.exec( opts, "[?&]([^&=]+)=([^&]+)", Regexx::global);
+				for( int i=0; i<optCount; ++i) {
+					BString rawVal;
+					DeUrlify( rx.match[i].atom[1], rawVal);
+					msg.AddString( MSG_OPT_FIELD, rx.match[i].atom[0]);
+					msg.AddString( MSG_OPT_VALUE, rawVal);
+				}
 			}
 		}
 		msg.AddString( MSG_WHO_TO, to.String());
@@ -377,10 +386,12 @@ void BmApplication::MessageReceived( BMessage* msg) {
 				const char* to = NULL;
 				if ((to = msg->FindString( MSG_WHO_TO)))
 					mail->SetFieldVal( BM_FIELD_TO, to);
-				const char* subject = NULL;
-				if ((subject = msg->FindString( MSG_SUBJECT)))
-					mail->SetFieldVal( BM_FIELD_SUBJECT, subject);
-				BM_LOG( BM_LogMainWindow, BString("Asked to create new mail with subject <") << subject << ">");
+				const char* optField = NULL;
+				int32 i=0;
+				for( ; msg->FindString( MSG_OPT_FIELD, i, &optField)==B_OK; ++i) {
+					mail->SetFieldVal( optField, msg->FindString( MSG_OPT_VALUE, i));
+				}
+				BM_LOG( BM_LogMainWindow, BString("Asked to create new mail with ") << i << " options");
 				BmMailEditWin* editWin = BmMailEditWin::CreateInstance( mail.Get());
 				if (editWin)
 					editWin->Show();
