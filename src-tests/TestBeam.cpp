@@ -36,6 +36,10 @@
 #include <stdio.h>
 #include <unistd.h>
 
+#ifdef B_BEOS_VERSION_DANO
+class BPath;
+#endif
+
 #include <SemaphoreSyncObject.h>
 #include <TestShell.h>
 
