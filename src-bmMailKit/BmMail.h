@@ -179,6 +179,8 @@ public:
 	bool IsFieldEmpty( const BmString fieldName);
 	const BmString Status() const;
 	//
+	void MarkAsSpam();
+	void MarkAsTofu();
 	bool IsMarkedAsSpam() const;
 	bool IsMarkedAsTofu() const;
 	//

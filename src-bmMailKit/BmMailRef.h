@@ -84,6 +84,8 @@ public:
 								BmUpdFlags* updFlagsOut = NULL);
 	void ResyncFromDisk( entry_ref* newRef = NULL,
 								const struct stat* statInfo = NULL);
+	void MarkAsSpam();
+	void MarkAsTofu();
 
 	// overrides of archivable base:
 	status_t Archive( BMessage* archive, bool deep = true) const;
@@ -131,11 +133,15 @@ public:
 	inline const BmString& Classification() const
 											 		{ return mClassification; }
 	inline float RatioSpam() const		{ return mRatioSpam; }
+	inline const BmString& RatioSpamString() const 
+													{ return mRatioSpamString; }
 
 	// setters:
 	inline void EntryRef( entry_ref &e) { mEntryRef = e; }
 	inline void WhenCreated( const bigtime_t& t)
 													{ mWhenCreated = t; }
+	inline void Classification( const BmString& c)
+													{ mClassification = c; }
 
 	// flags indicating which parts are to be updated:
 	static const BmUpdFlags UPD_ACCOUNT			= 1<<2;
@@ -167,6 +173,8 @@ protected:
 	void Initialize();
 
 private:
+	void MarkAsSpamOrTofu(bool asSpam);
+
 	// the following members will be archived as part of BmFolderList:
 	entry_ref mEntryRef;
 	node_ref mNodeRef;

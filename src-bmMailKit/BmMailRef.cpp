@@ -1,4 +1,4 @@
-/*
+	/*
 	BmMailRef.cpp
 		$Id$
 */
@@ -371,7 +371,7 @@ bool BmMailRef::ReadAttributes( const struct stat* statInfo,
 			updFlags |= UPD_TO;
 		if (BmReadStringAttr( &node, BM_MAIL_ATTR_IDENTITY, mIdentity))
 			updFlags |= UPD_IDENTITY;
-		if (BmReadStringAttr( &node, BM_MAIL_ATTR_CLASSIFICATION, mIdentity))
+		if (BmReadStringAttr( &node, BM_MAIL_ATTR_CLASSIFICATION, mClassification))
 			updFlags |= UPD_CLASSIFICATION;
 		BmString priority;
 		BmReadStringAttr( &node, BM_MAIL_ATTR_PRIORITY, priority);
@@ -546,6 +546,62 @@ void BmMailRef::MarkAs( const char* status) {
 		mailNode.WriteAttr( BM_MAIL_ATTR_STATUS, B_STRING_TYPE, 0, 
 								  status, strlen( status)+1);
 		TellModelItemUpdated( UPD_STATUS);
+		BmRef<BmListModel> listModel( ListModel());
+		BmMailRefList* refList = dynamic_cast< BmMailRefList*>( listModel.Get());
+		if (refList)
+			refList->MarkAsChanged();
+	} catch( BM_error &e) {
+		BM_SHOWERR(e.what());
+	}
+}
+
+/*------------------------------------------------------------------------------*\
+	MarkAsSpam()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailRef::MarkAsSpam() {
+	MarkAsSpamOrTofu(true);
+}
+
+/*------------------------------------------------------------------------------*\
+	MarkAsSpam()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailRef::MarkAsTofu() {
+	MarkAsSpamOrTofu(false);
+}
+
+/*------------------------------------------------------------------------------*\
+	MarkAsSpamOrTofu()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailRef::MarkAsSpamOrTofu( bool asSpam) {
+	if (InitCheck() != B_OK)
+		return;
+	try {
+		BNode mailNode;
+		status_t err;
+		mClassification = asSpam ? "Spam" : "Genuine";
+		if ((err = mailNode.SetTo( &mEntryRef)) != B_OK)
+			BM_THROW_RUNTIME( 
+				BmString( "Could not create node for current mail-file.\n\n"
+							 " Result: ") 
+					<< strerror(err)
+			);
+		// in order to allow proper handling of B_ATTR_CHANGED events, we
+		// tell the MailMonitor, which folder this mail-ref lives in:
+		node_ref folderNodeRef;
+		folderNodeRef.node = mEntryRef.directory;
+		folderNodeRef.device = mEntryRef.device;
+		BmString folderKey( BM_REFKEY( folderNodeRef));
+		TheMailMonitor->CacheRefToFolder( mNodeRef, folderKey);
+		// As there seems to be a problem with multiple attributes
+		// (perhaps a bug in BFS?) we try to remove the attribute before we
+		// write it. Let's see if that helps...
+		mailNode.RemoveAttr( BM_MAIL_ATTR_CLASSIFICATION);
+		mailNode.WriteAttr( BM_MAIL_ATTR_CLASSIFICATION, B_STRING_TYPE, 0, 
+								  mClassification.String(), mClassification.Length()+1);
+		TellModelItemUpdated( UPD_CLASSIFICATION);
 		BmRef<BmListModel> listModel( ListModel());
 		BmMailRefList* refList = dynamic_cast< BmMailRefList*>( listModel.Get());
 		if (refList)

@@ -606,6 +606,40 @@ void BmMail::AddBaseMailRef( BmMailRef* ref) {
 }
 
 /*------------------------------------------------------------------------------*\
+	MarkAsSpam()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMail::MarkAsSpam() {
+	if (mMailRef)
+		mMailRef->MarkAsSpam();
+}
+
+/*------------------------------------------------------------------------------*\
+	MarkAsTofu()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMail::MarkAsTofu() {
+	if (mMailRef)
+		mMailRef->MarkAsTofu();
+}
+
+/*------------------------------------------------------------------------------*\
+	IsMarkedAsSpam()
+		-	
+\*------------------------------------------------------------------------------*/
+bool BmMail::IsMarkedAsSpam() const {
+	return mMailRef ? mMailRef->Classification() == "Spam" : false;
+}
+
+/*------------------------------------------------------------------------------*\
+	IsMarkedAsSpam()
+		-	
+\*------------------------------------------------------------------------------*/
+bool BmMail::IsMarkedAsTofu() const {
+	return mMailRef ? mMailRef->Classification() == "Genuine" : false;
+}
+
+/*------------------------------------------------------------------------------*\
 	()
 		-	
 \*------------------------------------------------------------------------------*/
@@ -896,10 +930,13 @@ void BmMail::StoreIntoFile( const BmString& filename, const BmString& status,
 				<< filename << ">\n\n Result: " << strerror(err)
 		);
 	// ...store all other attributes...
+	BM_LOG2( BM_LogMailParse, "storing mail-attributes...");
 	StoreAttributes( mailFile.File(), status, whenCreated);
+	BM_LOG2( BM_LogMailParse, "storing header-attributes...");
 	mHeader->StoreAttributes( mailFile.File());
 
 	// ...and finally write the raw mail into the file:
+	BM_LOG2( BM_LogMailParse, "storing mail-data...");
 	int32 len = mText.Length();
 	if ((res = mailFile.Write( mText.String(), len)) < len) {
 		if (res < 0) {
@@ -912,6 +949,7 @@ void BmMail::StoreIntoFile( const BmString& filename, const BmString& status,
 										<< res << " bytes instead of " << len);
 		}
 	}
+	BM_LOG2( BM_LogMailParse, "done with storing");
 }
 
 /*------------------------------------------------------------------------------*\
@@ -1101,24 +1139,6 @@ bool BmMail::IsFieldEmpty( const BmString fieldName)
 	return mHeader 
 				? mHeader->IsFieldEmpty(fieldName)
 				: true; 
-}
-
-/*------------------------------------------------------------------------------*\
-	()
-		-	
-\*------------------------------------------------------------------------------*/
-bool BmMail::IsMarkedAsSpam() const
-{ 
-	return false; 
-}
-
-/*------------------------------------------------------------------------------*\
-	()
-		-	
-\*------------------------------------------------------------------------------*/
-bool BmMail::IsMarkedAsTofu() const
-{ 
-	return false; 
 }
 
 /*------------------------------------------------------------------------------*\
