@@ -103,15 +103,15 @@ void BmPrefs::InitDefaults() {
 	mDefaultsMsg.AddInt32( "ReceiveTimeout", 60);
 	mDefaultsMsg.AddInt32( "Loglevels", BM_LOGLVL2(BM_LogPop) 
 										+ BM_LOGLVL2(BM_LogJobWin) 
-										+ BM_LOGLVL3(BM_LogMailParse) 
+										+ BM_LOGLVL2(BM_LogMailParse) 
 										+ BM_LOGLVL2(BM_LogUtil) 
 										+ BM_LOGLVL2(BM_LogMailTracking)
 										+ BM_LOGLVL2(BM_LogFolderView)
 										+ BM_LOGLVL2(BM_LogRefView)
 										+ BM_LOGLVL2(BM_LogMainWindow)
-										+ BM_LOGLVL3(BM_LogModelController)
+										+ BM_LOGLVL2(BM_LogModelController)
 										+ BM_LOGLVL2(BM_LogMailEditWin)
-										+ BM_LOGLVL3(BM_LogSmtp)
+										+ BM_LOGLVL2(BM_LogSmtp)
 										);
 	mDefaultsMsg.AddString( "MailboxPath", "/boot/home/mail");
 	mDefaultsMsg.AddBool( "CacheRefsInMem", false);
@@ -128,6 +128,8 @@ void BmPrefs::InitDefaults() {
 	mDefaultsMsg.AddInt32( "MSecsBeforePopperRemove", 5000*1000);
 	mDefaultsMsg.AddInt32( "MSecsBeforeSmtpRemove", 0*1000);
 	mDefaultsMsg.AddString( "DefaultSmtpAccount", "");
+	mDefaultsMsg.AddString( "QuotingString", "> ");
+	mDefaultsMsg.AddInt32( "MaxLineLen", 76);
 }
 
 /*------------------------------------------------------------------------------*\

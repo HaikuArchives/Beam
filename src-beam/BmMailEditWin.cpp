@@ -82,7 +82,7 @@ BmMailEditWin::BmMailEditWin()
 void BmMailEditWin::CreateGUI() {
 	mOuterGroup = 
 		new VGroup(
-			minimax( 500, 400, 1E5, 1E5),
+			minimax( 200, 300, 1E5, 1E5),
 			CreateMenu(),
 			new MBorder( M_RAISED_BORDER, 3, NULL,
 				new HGroup(
@@ -154,12 +154,6 @@ void BmMailEditWin::CreateGUI() {
 				mSenderControl = new BmTextControl( "Sender:", false),
 				0
 			),
-/*
-			new HGroup(
-				new Space(minimax(20,-1,20,-1)),
-				0
-			),
-*/
 			new Space(minimax(-1,4,-1,4)),
 			CreateMailView( minimax(200,200,1E5,1E5), BRect(0,0,400,200)),
 			0
@@ -460,20 +454,29 @@ void BmMailEditWin::SetFieldsFromMail( BmMail* mail) {
 bool BmMailEditWin::CreateMailFromFields() {
 	BmRef<BmMail> mail = mMailView->CurrMail();
 	if (mail) {
-		BString editedText = mMailView->Text();
+		BString editedText;
+		BString convertedText;
+		mMailView->GetWrappedText( editedText);
+		BMenuItem* charsetItem = mCharsetControl->Menu()->FindMarked();
+		int32 encoding = charsetItem 
+								? CharsetToEncoding( charsetItem->Label())
+						 		: ThePrefs->GetInt("DefaultEncoding");
+		ConvertFromUTF8( encoding, editedText, convertedText);
 		BMenuItem* smtpItem = mSmtpControl->Menu()->FindMarked();
 		BString smtpAccount = smtpItem ? smtpItem->Label() : "";
 		if (mRawMode) {
-			BMenuItem* charsetItem = mCharsetControl->Menu()->FindMarked();
-			int32 encoding = charsetItem 
-									? CharsetToEncoding( charsetItem->Label())
-							 		: ThePrefs->GetInt("DefaultEncoding");
-			BString convertedText;
-			ConvertFromUTF8( encoding, editedText, convertedText);
-			BString encodedText;
-			Encode( "7bit", convertedText, encodedText, false);
-							// convert local newlines to network-newlines
-			mail->SetTo( encodedText, smtpAccount);
+			// N.B.: In raw mode the user is editing the raw message
+			// 		text which may contain characters from different 
+			//			character-encodings. Since we have just converted the
+			//			raw message text from UTF8 to the single selected encoding,
+			//			we may have lost some characters on the way.
+			// 		This does not apply to quoted-printable- or base64-encoded
+			//			MIME-parts, but it will cause problems when using 8-bit-mime.
+			//			So we should probably forbid combining 8-bit-mime and 
+			//			raw-message-editing. 
+			//			Currently, Beam does not use 8-bit-mime, but we have to be
+			//			careful here, should we add support for it later...
+			mail->SetTo( convertedText, smtpAccount);
 			return mail->InitCheck() == B_OK;
 		} else {
 			mail->SetFieldVal( BM_FIELD_BCC, mBccControl->Text());
@@ -484,10 +487,7 @@ bool BmMailEditWin::CreateMailFromFields() {
 			mail->SetFieldVal( BM_FIELD_TO, mToControl->Text());
 			mail->SetFieldVal( BM_FIELD_REPLY_TO, mReplyToControl->Text());
 			mail->SetFieldVal( BM_FIELD_DATE, TimeToString( time( NULL), "%a, %d %m %Y %H:%M:%S %z"));
-			BMenuItem* charsetItem = mCharsetControl->Menu()->FindMarked();
-			int32 encoding = charsetItem ? CharsetToEncoding( charsetItem->Label()) 
-												  : ThePrefs->GetInt( "DefaultEncoding");
-			return mail->ConstructRawText( editedText, encoding, smtpAccount);
+			return mail->ConstructRawText( convertedText, encoding, smtpAccount);
 		}
 	} else
 		return false;

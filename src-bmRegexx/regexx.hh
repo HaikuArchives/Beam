@@ -32,6 +32,7 @@
 #include <String.h>
 #include <vector>
 #include "split.hh"
+#include "pcre.h"
 
 namespace regexx {
 
@@ -502,8 +503,8 @@ namespace regexx {
     unsigned int m_matches;
     BString m_replaced;
 
-    void* m_preg;
-    void* m_extra;
+    pcre* m_preg;
+    pcre_extra* m_extra;
 
   };
 

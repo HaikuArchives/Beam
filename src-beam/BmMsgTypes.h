@@ -25,9 +25,10 @@
 #define BMM_REPLY_ALL					'bMfm'
 #define BMM_FORWARD						'bMfn'
 #define BMM_FORWARD_ATTACHMENTS		'bMfo'
-#define BMM_BOUNCE						'bMfp'
-#define BMM_FILTER						'bMfq'
-#define BMM_TRASH							'bMfr'
+#define BMM_FORWARD_INLINE				'bMfp'
+#define BMM_REDIRECT						'bMfq'
+#define BMM_FILTER						'bMfr'
+#define BMM_TRASH							'bMfs'
 // mail edit window
 #define BMM_ATTACH						'bMga'
 #define BMM_OPEN							'bMgb'

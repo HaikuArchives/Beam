@@ -253,7 +253,7 @@ void BmMailFolderView::MessageReceived( BMessage* msg) {
 				folder = CurrentFolder();
 				if (!folder)
 					return;
-				folder->MarkCacheAsDirty();
+				folder->RecreateCache();
 				if (TheMailRefView)
 					TheMailRefView->ShowFolder( folder.Get());
 				break;

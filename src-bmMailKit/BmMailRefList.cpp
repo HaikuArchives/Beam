@@ -22,10 +22,10 @@
 	BmMailRefList()
 		-	standard c'tor
 \*------------------------------------------------------------------------------*/
-BmMailRefList::BmMailRefList( BmMailFolder* folder, bool updateCache)
+BmMailRefList::BmMailRefList( BmMailFolder* folder)
 	:	BmListModel( BString("MailRefList_") << folder->Key() << " (" << folder->Name()<<")")
 	,	mFolder( folder)
-	,	mNeedsCacheUpdate( updateCache)
+	,	mNeedsCacheUpdate( false)
 {
 }
 

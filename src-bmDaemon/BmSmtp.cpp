@@ -505,6 +505,7 @@ void BmSmtp::SendCommand( BString cmd, BString secret) {
 	BString command;
 	if (secret.Length()) {
 		command = cmd + secret;
+//		if (ThePrefs->LogLevel
 		BM_LOG( BM_LogSmtp, BString("-->\n") << cmd << " secret_data_omitted_here");
 													// we do not want to log any passwords...
 	} else {

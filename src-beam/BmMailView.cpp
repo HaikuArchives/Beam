@@ -8,6 +8,9 @@
 #include <UTF8.h>
 #include <Window.h>
 
+#include "regexx.hh"
+using namespace regexx;
+
 #include "BmBasics.h"
 #include "BmBodyPartList.h"
 #include "BmBodyPartView.h"
@@ -21,7 +24,9 @@
 #include "BmMailRef.h"
 #include "BmMailRefView.h"
 #include "BmMailView.h"
+#include "BmPrefs.h"
 #include "BmResources.h"
+#include "BmRulerView.h"
 
 /********************************************************************************\
 	BmMailView
@@ -62,6 +67,7 @@ BmMailView::BmMailView( minimax minmax, BRect frame, bool outbound)
 	,	mOutbound( outbound)
 	,	mCurrMail( NULL)
 	,	mPartnerMailRefView( NULL)
+	,	mRulerView( NULL)
 	,	mShowRaw( false)
 	,	mShowInlinesSeparately( true)
 	,	mFontSize( 12)
@@ -71,16 +77,24 @@ BmMailView::BmMailView( minimax minmax, BRect frame, bool outbound)
 		mHeaderView->ResizeTo( 0,0);
 	else
 		AddChild( mHeaderView);
-	mBodyPartView = new BmBodyPartView( minimax( 0, 0, 1E5, 1E5), 800, 0, outbound);
+	mBodyPartView = new BmBodyPartView( minimax( 0, 0, 1E5, 1E5), 0, 0, outbound);
 	mBodyPartView->RemoveSelf();
 	AddChild( mBodyPartView);
 	mBodyPartView->MoveTo( mHeaderView->Frame().LeftBottom());
-	mBodyPartView->ResizeTo( 800,0);
+	mBodyPartView->ResizeTo( 0,0);
+	BFont font( be_fixed_font);
+	font.SetSize( mFontSize);
+	SetFont( &font);
+	SetFontAndColor( &font);
+	if (outbound) {
+		mRulerView = new BmRulerView( be_fixed_font);
+		AddChild( mRulerView);
+		mRulerView->MoveTo( mBodyPartView->Frame().LeftBottom());
+	}
 	CalculateVerticalOffset();
 	MakeEditable( outbound);
 	SetStylable( !outbound);
 	SetWordWrap( true);
-	SetFontAndColor( be_fixed_font);
 	mScrollView = new BmMailViewContainer( minmax, this, B_FOLLOW_NONE, 
 														B_WILL_DRAW | B_FRAME_EVENTS);
 }
@@ -90,6 +104,8 @@ BmMailView::BmMailView( minimax minmax, BRect frame, bool outbound)
 		-	
 \*------------------------------------------------------------------------------*/
 BmMailView::~BmMailView() {
+	if (mOutbound)
+		delete mHeaderView;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -120,6 +136,17 @@ status_t BmMailView::Unarchive( BMessage* archive, bool deep=true) {
 	if (ret == B_OK && deep && mBodyPartView)
 		ret = mBodyPartView->Unarchive( archive, deep);
 	return ret;
+}
+
+/*------------------------------------------------------------------------------*\
+	AttachedToWindow()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailView::AttachedToWindow() {
+	inherited::AttachedToWindow();
+	if (mOutbound) {
+		SetFixedWidth( ThePrefs->GetInt( "MaxLineLen"));
+	}
 }
 
 /*------------------------------------------------------------------------------*\
@@ -158,6 +185,10 @@ void BmMailView::MessageReceived( BMessage* msg) {
 			case BM_MAILVIEW_SHOWINLINES_CONCATENATED: {
 				ShowInlinesSeparately( false);
 				JobIsDone( true);				// trigger re-display:
+				break;
+			}
+			case BM_RULERVIEW_NEW_POS: {
+				SetFixedWidth( msg->FindInt32( BmRulerView::MSG_NEW_POS));
 				break;
 			}
 			case B_SIMPLE_DATA: {
@@ -221,11 +252,64 @@ void BmMailView::MouseDown( BPoint point) {
 }
 
 /*------------------------------------------------------------------------------*\
-	ShowMail()
+	MakeFocus( focused)
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailView::MakeFocus(bool focused) {
+	inherited::MakeFocus(focused);
+	if (mScrollView) {
+		mScrollView->Invalidate();
+	}
+}
+
+/*------------------------------------------------------------------------------*\
+	FrameResized()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailView::FrameResized( float newWidth, float newHeight) {
+	inherited::FrameResized( newWidth, newHeight);
+	float textWidth = TextRect().Width()+4;
+	if (mBodyPartView) {
+		float widenedBy = newWidth-mBodyPartView->Frame().Width();
+		float height = mBodyPartView->Frame().Height();
+		if (mOutbound)
+			mBodyPartView->ResizeTo( MAX(textWidth,newWidth), height);
+		else
+			mBodyPartView->ResizeTo( mBodyPartView->FixedWidth(), height);
+		if (widenedBy > 0)
+			mBodyPartView->Invalidate( BRect( newWidth-widenedBy, 0, newWidth, height));
+	}
+	if (mHeaderView && !mOutbound) {
+		float widenedBy = newWidth-mHeaderView->Frame().Width();
+		float height = mHeaderView->Frame().Height();
+		mHeaderView->ResizeTo( mHeaderView->FixedWidth(), height);
+		if (widenedBy > 0)
+			mHeaderView->Invalidate( BRect( newWidth-widenedBy, 0, newWidth, height));
+	}
+	if (mRulerView) {
+		float widenedBy = newWidth-mRulerView->Frame().Width();
+		float height = mRulerView->Frame().Height();
+		mRulerView->ResizeTo( MAX(textWidth,newWidth), height);
+		if (widenedBy > 0)
+			mRulerView->Invalidate( BRect( newWidth-widenedBy, 0, newWidth, height));
+	}
+}
+
+/*------------------------------------------------------------------------------*\
+	AcceptsDrop()
 		-	
 \*------------------------------------------------------------------------------*/
 bool BmMailView::AcceptsDrop( const BMessage* msg) {
 	return IsEditable();
+}
+
+/*------------------------------------------------------------------------------*\
+	WrappedText()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailView::GetWrappedText( BString& out) {
+	BString editedText = Text();
+	WordWrap( editedText, out, FixedWidth(), "\n");
 }
 
 /*------------------------------------------------------------------------------*\
@@ -274,45 +358,14 @@ void BmMailView::ShowMail( BmMail* mail, bool async) {
 }
 
 /*------------------------------------------------------------------------------*\
-	MakeFocus( focused)
-		-	
-\*------------------------------------------------------------------------------*/
-void BmMailView::MakeFocus(bool focused) {
-	inherited::MakeFocus(focused);
-	if (mScrollView) {
-		mScrollView->Invalidate();
-	}
-}
-
-/*------------------------------------------------------------------------------*\
-	FrameResized()
-		-	
-\*------------------------------------------------------------------------------*/
-void BmMailView::FrameResized( float newWidth, float newHeight) {
-	inherited::FrameResized( newWidth, newHeight);
-	if (mBodyPartView) {
-		float widenedBy = newWidth-mBodyPartView->Frame().Width();
-		float height = mBodyPartView->Frame().Height();
-		mBodyPartView->ResizeTo( mBodyPartView->FixedWidth(), height);
-		if (widenedBy > 0)
-			mBodyPartView->Invalidate( BRect( newWidth-widenedBy, 0, newWidth, height));
-	}
-	if (mHeaderView) {
-		float widenedBy = newWidth-mHeaderView->Frame().Width();
-		float height = mHeaderView->Frame().Height();
-		mHeaderView->ResizeTo( mHeaderView->FixedWidth(), height);
-		if (widenedBy > 0)
-			mHeaderView->Invalidate( BRect( newWidth-widenedBy, 0, newWidth, height));
-	}
-}
-
-/*------------------------------------------------------------------------------*\
 	JobIsDone( completed)
 		-	
 \*------------------------------------------------------------------------------*/
 void BmMailView::JobIsDone( bool completed) {
 	if (completed && mCurrMail && mCurrMail->Header()) {
 		BString displayText;
+		mTextRunMap.clear();
+		mTextRunMap[0] = Black;
 		BmBodyPartList* body = mCurrMail->Body();
 		if (body) {
 			mBodyPartView->ShowBody( body);
@@ -327,12 +380,43 @@ void BmMailView::JobIsDone( bool completed) {
 					BmBodyPart* bodyPart = dynamic_cast<BmBodyPart*>( iter->second.Get());
 					DisplayBodyPart( displayText, bodyPart);
 				}
+				// add signature, if any:
+				if (body->Signature().Length()) {
+					mTextRunMap[displayText.Length()] = BeShadow;
+					displayText << "-- \n" << body->Signature();
+				}
+				// highlight URLs:
+				Regexx rx;
+				int32 count;
+				if ((count = rx.exec( displayText, "http://\\S+", 
+					                  Regexx::global|Regexx::newline|Regexx::noatom)) > 0) {
+					for( int i=0; i<count; ++i) {
+						int32 start = rx.match[i].start();
+						int32 end = start+rx.match[i].Length();
+						mTextRunMap[start] = MedMetallicBlue;
+						mTextRunMap[end] = Black;
+					}
+				}
 			}
 		}
 		BM_LOG2( BM_LogMailParse, BString("remove <CR>s from mailtext"));
 		RemoveSetFromString( displayText, "\r");
 		BM_LOG2( BM_LogMailParse, BString("setting mailtext into textview"));
-		SetText( displayText.String());
+		// set up textrun-array
+		int32 trsiz = sizeof( struct text_run);
+		text_run_array* textRunArray = (text_run_array*)malloc( sizeof(int32)+trsiz*mTextRunMap.size());
+		if (!textRunArray)
+			return;
+		textRunArray->count = mTextRunMap.size();
+		BmTextRunMap::const_iterator iter;
+		int i=0;
+		for( iter = mTextRunMap.begin(); iter != mTextRunMap.end(); ++iter, ++i) {
+			textRunArray->runs[i].offset = iter->first;
+			textRunArray->runs[i].font = *be_fixed_font;
+			textRunArray->runs[i].color = iter->second;
+		}
+		SetText( displayText.String(), displayText.Length(), textRunArray);
+		free( textRunArray);
 		BM_LOG2( BM_LogMailParse, BString("done, mail is visible"));
 		mHeaderView->ShowHeader( mCurrMail->Header());
 		ContainerView()->UnsetBusy();

@@ -169,7 +169,7 @@ void BmListViewController::MouseDown(BPoint point) {
 \*------------------------------------------------------------------------------*/
 void BmListViewController::MouseMoved( BPoint point, uint32 transit, const BMessage *msg) {
 	if (msg && AcceptsDropOf( msg)) {
-		if (transit == B_INSIDE_VIEW) {
+		if (transit == B_INSIDE_VIEW || transit == B_ENTERED_VIEW) {
 			int32 index = IndexOf( point);
 			if (IndexOf( mCurrHighlightItem) != index) {
 				if (mCurrHighlightItem) {
@@ -182,7 +182,8 @@ void BmListViewController::MouseMoved( BPoint point, uint32 transit, const BMess
 					mCurrHighlightItem = dynamic_cast<BmListViewItem*>( ItemAt( index));
 					mCurrHighlightItem->Highlight( true);
 					InvalidateItem( index);
-				}
+				} else
+					mCurrHighlightItem = NULL;
 			}
 			if (Hierarchical() && mCurrHighlightItem 
 			&& mCurrHighlightItem->ExpanderRectContains( point)) {

@@ -83,10 +83,10 @@ void BmMailViewWin::CreateGUI() {
 																	  TheResources->IconByName("Button_Forward"), 
 																	  new BMessage(BMM_FORWARD), this, 
 																	  "Forward mail to somewhere else"),
-					mBounceButton = new BmToolbarButton( "Bounce", 
-																	 TheResources->IconByName("Button_Bounce"), 
-																	 new BMessage(BMM_BOUNCE), this, 
-																	 "Redirect message to somewhere else (preserves original sender)"),
+					mRedirectButton = new BmToolbarButton( "Redirect", 
+																	 TheResources->IconByName("Button_Redirect"), 
+																	 new BMessage(BMM_REDIRECT), this, 
+																	 "Redirect message to somewhere else (preserves original message)"),
 					mPrintButton = new BmToolbarButton( "Print", 
 																	TheResources->IconByName("Button_Print"), 
 																	new BMessage(BMM_PRINT), this, 
@@ -155,8 +155,9 @@ MMenuBar* BmMailViewWin::CreateMenu() {
 	menu->AddItem( new BMenuItem( "Reply", new BMessage( BMM_REPLY), 'R'));
 	menu->AddItem( new BMenuItem( "Reply To All", new BMessage( BMM_REPLY_ALL), 'R', B_SHIFT_KEY));
 	menu->AddItem( new BMenuItem( "Forward", new BMessage( BMM_FORWARD), 'J'));
-//	menu->AddItem( new BMenuItem( "Forward With Attachments", new BMessage( BMM_FORWARD_ATTACHMENTS), 'J', B_SHIFT_KEY));
-	menu->AddItem( new BMenuItem( "Bounce (Redirect)", new BMessage( BMM_BOUNCE), 'B'));
+	menu->AddItem( new BMenuItem( "Forward inline", new BMessage( BMM_FORWARD_INLINE)));
+	menu->AddItem( new BMenuItem( "Forward With Attachments", new BMessage( BMM_FORWARD_ATTACHMENTS), 'J', B_SHIFT_KEY));
+	menu->AddItem( new BMenuItem( "Redirect", new BMessage( BMM_REDIRECT), 'B'));
 	menu->AddSeparatorItem();
 	menu->AddItem( new BMenuItem( "Apply Filter", new BMessage( BMM_FILTER)));
 	menu->AddSeparatorItem();

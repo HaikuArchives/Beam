@@ -171,9 +171,9 @@ BmMainWindow::BmMainWindow()
 																	  TheResources->IconByName("Button_Forward"), 
 																	  new BMessage(BMM_FORWARD), this, 
 																	  "Forward mail to somewhere else"),
-					mBounceButton = new BmToolbarButton( "Bounce", 
-																	 TheResources->IconByName("Button_Bounce"), 
-																	 new BMessage(BMM_BOUNCE), this, 
+					mRedirectButton = new BmToolbarButton( "Redirect", 
+																	 TheResources->IconByName("Button_Redirect"), 
+																	 new BMessage(BMM_REDIRECT), this, 
 																	 "Redirect message to somewhere else (preserves original sender)"),
 					mPrintButton = new BmToolbarButton( "Print", 
 																	TheResources->IconByName("Button_Print"), 
@@ -278,8 +278,9 @@ MMenuBar* BmMainWindow::CreateMenu() {
 	menu->AddItem( new BMenuItem( "Reply", new BMessage( BMM_REPLY), 'R'));
 	menu->AddItem( new BMenuItem( "Reply To All", new BMessage( BMM_REPLY_ALL), 'R', B_SHIFT_KEY));
 	menu->AddItem( new BMenuItem( "Forward", new BMessage( BMM_FORWARD), 'J'));
-//	menu->AddItem( new BMenuItem( "Forward With Attachments", new BMessage( BMM_FORWARD_ATTACHMENTS), 'J', B_SHIFT_KEY));
-	menu->AddItem( new BMenuItem( "Bounce (Redirect)", new BMessage( BMM_BOUNCE), 'B'));
+	menu->AddItem( new BMenuItem( "Forward inline", new BMessage( BMM_FORWARD_INLINE)));
+	menu->AddItem( new BMenuItem( "Forward With Attachments", new BMessage( BMM_FORWARD_ATTACHMENTS), 'J', B_SHIFT_KEY));
+	menu->AddItem( new BMenuItem( "Redirect", new BMessage( BMM_REDIRECT), 'B'));
 	menu->AddSeparatorItem();
 	menu->AddItem( new BMenuItem( "Apply Filter", new BMessage( BMM_FILTER)));
 	menu->AddSeparatorItem();
@@ -400,6 +401,21 @@ void BmMainWindow::MessageReceived( BMessage* msg) {
 					editWin->Show();
 				break;
 			}
+			case BMM_REPLY:
+			case BMM_REPLY_ALL: {
+				BmRef<BmMail> mail = mMailView->CurrMail();
+				if (mail) {
+					BmRef<BmMail> reply = mail->CreateReply( msg->what == BMM_REPLY_ALL);
+					if (reply) {
+						BmMailEditWin* editWin = BmMailEditWin::CreateInstance();
+						if (editWin) {
+							editWin->EditMail( reply.Get());
+							editWin->Show();
+						}
+					}
+				}
+				break;
+			}
 			case B_OBSERVER_NOTICE_CHANGE: {
 				switch( msg->FindInt32( B_OBSERVE_WHAT_CHANGE)) {
 					case BM_NTFY_MAILREF_SELECTION: {
@@ -449,7 +465,7 @@ void BmMainWindow::MailRefSelectionChanged( int32 numSelected) {
 	mReplyButton->SetEnabled( numSelected > 0);
 	mReplyAllButton->SetEnabled( numSelected > 0);
 	mForwardButton->SetEnabled( numSelected > 0);
-	mBounceButton->SetEnabled( numSelected > 0);
+	mRedirectButton->SetEnabled( numSelected > 0);
 	mPrintButton->SetEnabled( numSelected * 0 > 0);
 	mTrashButton->SetEnabled( numSelected > 0);
 }

@@ -25,6 +25,7 @@ WrappingTextView::WrappingTextView(BRect a_frame,const char* a_name,int32 a_resi
 	m_vertical_offset = 0;
 	m_modified = false;
 	m_modified_disabled = false;
+	m_fixed_width = 0;
 	ResetTextRect();
 }	
 
@@ -108,10 +109,14 @@ void WrappingTextView::StoreChange()
 
 void WrappingTextView::ResetTextRect()
 {
-	BRect textRect = Bounds();
+	BRect bounds = Bounds();
+	BRect textRect = bounds;
 	textRect.left = 4.0;
 	textRect.top = m_vertical_offset + 4.0;
-	textRect.right -= 4.0;
+	if (m_fixed_width)
+		textRect.right = 8.0+StringWidth( n_long_line, m_fixed_width);
+	else
+		textRect.right -= 4.0;
 	textRect.bottom -= 4.0;
 	SetTextRect(textRect);
 	// we have to readjust the scrollbar-proportion, since
@@ -129,16 +134,16 @@ void WrappingTextView::ResetTextRect()
 
 	bar = ScrollBar( B_HORIZONTAL);
 	if (!bar) 	return;
-	int numChildren = CountChildren();
-	float width = textRect.Width();
-	float maxWidth = width;
+	float width = bounds.Width();
+	float maxWidth = MAX( width, textRect.right);
+	int numChildren = IsEditable() ? 0 : CountChildren();
 	for( int i=0; i<numChildren; ++i) {
 		float w = ChildAt( i)->Frame().Width();
 		if (w > maxWidth)
 			maxWidth = w;
 	}
 	bar->SetSteps( width/10, width);
-	bar->SetRange( 0, MAX(0, maxWidth-width-20));
+	bar->SetRange( 0, MAX(0, maxWidth-width));
 	bar->SetProportion( MIN( 1.0, width/maxWidth));
 }
 
@@ -199,3 +204,7 @@ void WrappingTextView::KeyDown(const char *bytes, int32 numBytes)
 	}
 }
 
+void WrappingTextView::SetFixedWidth( int32 i) { 
+	m_fixed_width = i; 
+	ResetTextRect();
+}

@@ -42,7 +42,7 @@ BmPopAccount::BmPopAccount( BMessage* archive, BmPopAccountList* model)
 	mPOPServer = FindMsgString( archive, MSG_POP_SERVER);
 	mSMTPAccount = FindMsgString( archive, MSG_SMTP_ACCOUNT);
 	mRealName = FindMsgString( archive, MSG_REAL_NAME);
-	mReplyTo = FindMsgString( archive, MSG_REPLY_TO);
+	mMailAddr = FindMsgString( archive, MSG_MAIL_ADDR);
 	mSignatureName = FindMsgString( archive, MSG_SIGNATURE_NAME);
 	mCheckMail = FindMsgBool( archive, MSG_CHECK_MAIL);
 	mDeleteMailFromServer = FindMsgBool( archive, MSG_DELETE_MAIL);
@@ -67,7 +67,7 @@ status_t BmPopAccount::Archive( BMessage* archive, bool deep) const {
 		||	archive->AddString( MSG_POP_SERVER, mPOPServer.String())
 		||	archive->AddString( MSG_SMTP_ACCOUNT, mSMTPAccount.String())
 		||	archive->AddString( MSG_REAL_NAME, mRealName.String())
-		||	archive->AddString( MSG_REPLY_TO, mReplyTo.String())
+		||	archive->AddString( MSG_MAIL_ADDR, mMailAddr.String())
 		||	archive->AddString( MSG_SIGNATURE_NAME, mSignatureName.String())
 		||	archive->AddBool( MSG_CHECK_MAIL, mCheckMail)
 		||	archive->AddBool( MSG_DELETE_MAIL, mDeleteMailFromServer)
@@ -95,13 +95,13 @@ bool BmPopAccount::GetPOPAddress( BNetAddress* addr) const {
 BString BmPopAccount::GetFromAddress() const {
 	BString addr( mRealName);
 	if (addr.Length()) {
-		if (mReplyTo.Length())
-			addr << " <" << mReplyTo << ">";
+		if (mMailAddr.Length())
+			addr << " <" << mMailAddr << ">";
 		else
 			addr << " <" << mUsername << "@" << mPOPServer << ">";
 	} else {
-		if (mReplyTo.Length())
-			addr << mReplyTo;
+		if (mMailAddr.Length())
+			addr << mMailAddr;
 		else
 			addr << mUsername << "@" << mPOPServer;
 	}

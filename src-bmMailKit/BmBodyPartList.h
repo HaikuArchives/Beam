@@ -87,6 +87,7 @@ public:
 	int32 DecodedLength() const			{ return mDecodedData.Length(); }
 	status_t InitCheck() const				{ return mInitCheck; }
 
+	const BString& Charset() const		{ return mContentType.Param( "charset"); }
 	const BString& MimeType() const		{ return mContentType.Value(); }
 	const BString& Disposition() const	{ return mContentDisposition.Value(); }
 	const BString& FileName() const		{ return mFileName; }
@@ -152,14 +153,17 @@ public:
 	// getters:
 	status_t InitCheck()						{ return mInitCheck; }
 	BmBodyPart* EditableTextBody() 		{ return mEditableTextBody; }
+	const BString& Signature() const		{ return mSignature; }
 
 	// setters:
 	void EditableTextBody( BmBodyPart* b) { mEditableTextBody = b; }
+	void Signature( const BString& s)	{ mSignature = s; }
 
 private:
 	BmMail* mMail;
 	BmBodyPart* mEditableTextBody;
 	status_t mInitCheck;
+	BString mSignature;						// signature (as found in mail-text)
 
 	// Hide copy-constructor and assignment:
 	BmBodyPartList( const BmBodyPartList&);

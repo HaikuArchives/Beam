@@ -47,6 +47,7 @@ class BmMailHeader;
 #define BM_FIELD_CONTENT_ID 				"Content-Id"
 #define BM_FIELD_DATE 						"Date"
 #define BM_FIELD_FROM 						"From"
+#define BM_FIELD_IN_REPLY_TO				"In-Reply-To"
 #define BM_FIELD_MESSAGE_ID				"Message-Id"
 #define BM_FIELD_MIME 						"Mime-Version"
 #define BM_FIELD_PRIORITY					"Priority"
@@ -103,6 +104,10 @@ public:
 	void RemoveField( const BString fieldName);
 	void SetFieldVal( const BString fieldName, const BString value);
 	const BString Status() const;
+	//
+	BmRef<BmMail> CreateForward( bool withAttachments);
+	BmRef<BmMail> CreateReply( bool replyToAll);
+	BmRef<BmMail> CreateResend();
 	
 	// overrides of jobmodel base:
 	bool StartJob();
@@ -116,6 +121,10 @@ public:
 	const BString& RawText() const		{ return mText; }
 	const bool Outbound() const			{ return mOutbound; }
 	uint32 DefaultEncoding()	const;
+
+	// static function that tries to reformat & quote a given multiline text
+	// in a way that avoids the usual (ugly) quoting-mishaps:
+	void QuoteText( const BString& in, BString& out, BString quote, int maxLen);
 
 protected:
 	BString CreateBasicFilename();

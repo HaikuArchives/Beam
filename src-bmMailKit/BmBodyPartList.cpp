@@ -52,7 +52,7 @@ void BmContentField::SetTo( const BString cfString) {
 				// skip quotes during extraction:
 				cfString.CopyInto( mValue, rx.match[0].atom[0].start()+1, rx.match[0].atom[0].Length()-2);
 			} else {
-				cfString.CopyInto( mValue, rx.match[0].atom[0].start(), rx.match[0].atom[0].Length());
+				mValue = rx.match[0].atom[0];
 			}
 		}
 		mValue.ToLower();
@@ -60,13 +60,13 @@ void BmContentField::SetTo( const BString cfString) {
 		// parse and extract parameters:
 		BString params;
 		if (rx.match[0].atom.size() > 1)
-			cfString.CopyInto( params, rx.match[0].atom[1].start(), rx.match[0].atom[1].Length());
+			params = rx.match[0].atom[1];
 		if (rx.exec( params, ";\\s*(\\w+)\\s*=\\s*((?:\\\"[^\"]+\\\"?)|(?:[^;\\s]+))", Regexx::global)) {
 			for( uint32 i=0; i<rx.match.size(); ++i) {
 				BString key;
 				BString val;
 				if (rx.match[0].atom.size() > 0) {
-					params.CopyInto( key, rx.match[i].atom[0].start(), rx.match[i].atom[0].Length());
+					key = rx.match[i].atom[0];
 					if (rx.match[0].atom.size() > 1) {
 						if (params[rx.match[i].atom[1].start()] == '"') {
 							// skip quotes during extraction:
@@ -74,7 +74,7 @@ void BmContentField::SetTo( const BString cfString) {
 											? 2 : 1;
 							params.CopyInto( val, rx.match[i].atom[1].start()+1, rx.match[i].atom[1].Length()-skip);
 						} else {
-							params.CopyInto( val, rx.match[i].atom[1].start(), rx.match[i].atom[1].Length());
+							val = rx.match[i].atom[1];
 						}
 					}
 					mParams[key.ToLower()] = val;
@@ -282,6 +282,23 @@ void BmBodyPart::SetTo( const BString& msgtext, int32 start, int32 length,
 		// decode body:
 		BString bodyString( posInRawText, bodyLength);
 		Decode( mContentTransferEncoding, bodyString, mDecodedData, false, IsText());
+		if (body->EditableTextBody() == this) {
+			// split off signature, if any:
+			Regexx rx;
+			for( int32 sigPos=0; 
+				  (sigPos = mDecodedData.FindFirst( "\n--", sigPos)) != B_ERROR; 
+				  ++sigPos) {
+				sigPos++;
+				BString sigStr( mDecodedData.String()+sigPos);
+				BString sigRX = ThePrefs->GetString( "SignatureRX", "\\A---?\\s*\\n");
+				if (rx.exec( sigStr, sigRX, Regexx::newline)) {
+					sigStr.Remove( 0, rx.match[0].Length());
+					body->Signature( sigStr);
+					mDecodedData.Truncate( sigPos);
+					break;
+				}
+			}
+		}
 	}
 	// id
 	BM_LOG2( BM_LogMailParse, "parsing Content-Id");
@@ -451,10 +468,8 @@ void BmBodyPart::ConstructBodyForSending( BString &msgText) {
 	if (mContentLanguage.Length())
 		msgText << BM_FIELD_CONTENT_LANGUAGE << ": " << mContentLanguage << "\r\n";
 	msgText << "\r\n";
-	BString convertedData;
-	ConvertFromUTF8( CharsetToEncoding(TypeParam( "charset")), mDecodedData, convertedData);
 	BString encodedData;
-	BmEncoding::Encode( mContentTransferEncoding, convertedData, encodedData);
+	BmEncoding::Encode( mContentTransferEncoding, mDecodedData, encodedData);
 	msgText << encodedData;
 	if (msgText[msgText.Length()-1] != '\n')
 		msgText << "\r\n";
@@ -635,4 +650,3 @@ bool BmBodyPartList::ConstructBodyForSending( BString& msgText) {
 	}
 	return true;
 }
-

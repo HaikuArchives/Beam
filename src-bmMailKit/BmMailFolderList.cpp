@@ -475,7 +475,7 @@ void BmMailFolderList::InstantiateItems( BMessage* archive) {
 		mTopFolder = new BmMailFolder( &msg, this, NULL);
 		AddItemToList( mTopFolder.Get());
 		BM_LOG3( BM_LogMailTracking, BString("Top-folder <") << mTopFolder->EntryRef().name << "," << mTopFolder->Key() << "> read");
-		if (mTopFolder->NeedsCacheUpdate()) {
+		if (mTopFolder->CheckIfModifiedSinceLastTime()) {
 			doInitializeMailFolders( mTopFolder.Get(), 1);
 		} else {
 			doInstantiateMailFolders( mTopFolder.Get(), &msg, 1);
@@ -500,7 +500,7 @@ void BmMailFolderList::doInstantiateMailFolders( BmMailFolder* folder, BMessage*
 		BmMailFolder* newFolder = new BmMailFolder( &msg, this, folder);
 		AddItemToList( newFolder, folder);
 		BM_LOG3( BM_LogMailTracking, BString("Mail-folder <") << newFolder->EntryRef().name << "," << newFolder->Key() << "> read");
-		if (newFolder->NeedsCacheUpdate()) {
+		if (newFolder->CheckIfModifiedSinceLastTime()) {
 			doInitializeMailFolders( newFolder, level+1);
 		} else {
 			doInstantiateMailFolders( newFolder, &msg, level+1);

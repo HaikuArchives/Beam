@@ -7,11 +7,14 @@
 
 #include <Alert.h>
 
+#include "regexx.hh"
+using namespace regexx;
+
 #include "BmBasics.h"
 #include "BmLogHandler.h"
 #include "BmUtil.h"
 
-BString BM_SPACES("                                                                                ");
+BString BM_SPACES("                                                                                                                                                                                    ");
 BString BM_DEFAULT_STRING;
 
 /*------------------------------------------------------------------------------*\
@@ -249,6 +252,10 @@ BString& RemoveSetFromString( BString& str, const char* charsToRemove) {
 \*------------------------------------------------------------------------------*/
 void ConvertLinebreaksToLF( const BString& in, BString& out) {
 	int32 outSize = in.Length();
+	if (!outSize) {
+		out = "";
+		return;
+	}
 	char* buf = out.LockBuffer( outSize);
 	const char* pos = in.String();
 	char* newPos = buf;
@@ -274,6 +281,10 @@ void ConvertLinebreaksToLF( const BString& in, BString& out) {
 \*------------------------------------------------------------------------------*/
 void ConvertLinebreaksToCRLF( const BString& in, BString& out) {
 	int32 outSize = in.Length()*2;
+	if (!outSize) {
+		out = "";
+		return;
+	}
 	char* buf = out.LockBuffer( outSize);
 	const char* pos = in.String();
 	char* newPos = buf;
@@ -291,3 +302,38 @@ void ConvertLinebreaksToCRLF( const BString& in, BString& out) {
 	out.UnlockBuffer( newPos-buf);
 	out.Truncate( newPos-buf, false);
 }
+
+/*------------------------------------------------------------------------------*\
+	WordWrap( in, out, maxLineLen)
+		-	
+\*------------------------------------------------------------------------------*/
+void WordWrap( const BString& in, BString& out, int32 maxLineLen, BString nl) {
+	if (!in.Length()) {
+		out = "";
+		return;
+	}
+	int32 lastPos = 0;
+	for(	int32 pos = 0; 
+			(pos = in.FindFirst( nl, pos)) != B_ERROR; 
+			pos += nl.Length(), lastPos = pos) {
+		while (pos-lastPos > maxLineLen) {
+			int32 lastSpcPos = in.FindLast( " ", lastPos+maxLineLen);
+			if (lastSpcPos==B_ERROR || lastSpcPos<lastPos) {
+				// line doesn't contain any space character, we simply break it
+				// at right margin:
+				out.Append( in.String()+lastPos, maxLineLen);
+				out.Append( nl);
+				lastPos += maxLineLen;
+			} else {
+				// wrap line after last space:
+				out.Append( in.String()+lastPos, 1+lastSpcPos-lastPos);
+				out.Append( nl);
+				lastPos = lastSpcPos+1;
+			}
+		}
+		out.Append( in.String()+lastPos, nl.Length()+pos-lastPos);
+	}
+	if (lastPos < in.Length())
+		out.Append( in.String()+lastPos, in.Length()-lastPos);
+}
+

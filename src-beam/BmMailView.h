@@ -20,6 +20,7 @@ class BmMailRef;
 class BmMailViewContainer;
 class BmMailHeaderView;
 class BmMailRefView;
+class BmRulerView;
 
 #define BM_MAILVIEW_SHOWRAW						'bmMa'
 #define BM_MAILVIEW_SHOWCOOKED					'bmMb'
@@ -33,6 +34,7 @@ class BmMailRefView;
 class BmMailView : public WrappingTextView, public BmJobController {
 	typedef WrappingTextView inherited;
 	typedef BmJobController inheritedController;
+	typedef map<int32,rgb_color> BmTextRunMap;
 
 	// archival-fieldnames:
 	static const char* const MSG_RAW = 			"bm:raw";
@@ -52,9 +54,11 @@ public:
 	status_t Archive( BMessage* archive, bool deep=true) const;
 	status_t Unarchive( BMessage* archive, bool deep=true);
 	bool WriteStateInfo();
+	void GetWrappedText( BString& out);
 
 	// overrides of BTextView base:
 	bool AcceptsDrop( const BMessage* msg);
+	void AttachedToWindow();
 	void FrameResized( float newWidth, float newHeight);
 	void KeyDown(const char *bytes, int32 numBytes);
 	void MakeFocus(bool focused);
@@ -87,7 +91,10 @@ private:
 	BmMailViewContainer* mScrollView;
 	BmMailHeaderView* mHeaderView;
 	BmBodyPartView* mBodyPartView;
+	BmRulerView* mRulerView;
 	BmMailRefView* mPartnerMailRefView;
+	BmTextRunMap mTextRunMap;
+	
 	// will be archived:
 	BString mFontName;
 	int16 mFontSize;

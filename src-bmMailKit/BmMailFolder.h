@@ -39,10 +39,11 @@ public:
 	void BumpNewMailCount( int32 offset=1);
 	void BumpNewMailCountForSubfolders( int32 offset=1);
 	bool HasNewMail() const					{ return mNewMailCount>0 || mNewMailCountForSubfolders>0; }
+	bool CheckIfModifiedSinceLastTime();
 	bool CheckIfModifiedSince( time_t when, time_t* storeNewModTime=NULL);
 	void CreateMailRefList();
 	void RemoveMailRefList();
-	void MarkCacheAsDirty();
+	void RecreateCache();
 	void AddMailRef( entry_ref& eref, struct stat& st);
 	bool HasMailRef( BString key);
 	void RemoveMailRef( ino_t node);
@@ -61,7 +62,6 @@ public:
 	const int NewMailCount() const		{ return mNewMailCount; }
 	const int NewMailCountForSubfolders() const		{ return mNewMailCountForSubfolders; }
 	const time_t LastModified() const	{ return mLastModified; }
-	const bool NeedsCacheUpdate() const	{ return mNeedsCacheUpdate; }
 	BmMailFolder* Parent() 					{ return dynamic_cast<BmMailFolder*>( mParent); }
 	BmMailRefList* MailRefList();
 	const BString& Name() const			{ return mName; }
@@ -93,7 +93,6 @@ private:
 	BmRef< BmMailRefList> mMailRefList;
 
 	// the following members will NOT be archived at all:
-	bool mNeedsCacheUpdate;
 	int mNewMailCount;
 	int mNewMailCountForSubfolders;
 	BString mName;

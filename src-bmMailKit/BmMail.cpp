@@ -21,6 +21,7 @@ using namespace regexx;
 #include "BmMail.h"
 #include "BmMailHeader.h"
 #include "BmMailRef.h"
+#include "BmPopAccount.h"
 #include "BmPrefs.h"
 #include "BmResources.h"
 
@@ -206,6 +207,84 @@ void BmMail::SetFieldVal( const BString fieldName, const BString value) {
 }
 
 /*------------------------------------------------------------------------------*\
+	RemoveFieldVal()
+	-	
+\*------------------------------------------------------------------------------*/
+void BmMail::RemoveField( const BString fieldName) {
+	mHeader->RemoveField( fieldName);
+}
+
+/*------------------------------------------------------------------------------*\
+	CreateForward()
+	-	
+\*------------------------------------------------------------------------------*/
+BmRef<BmMail> BmMail::CreateForward( bool withAttachments) {
+	BmRef<BmMail> newMail = new BmMail( true);
+//	newMail->
+	return newMail;
+}
+
+/*------------------------------------------------------------------------------*\
+	CreateReply()
+	-	
+\*------------------------------------------------------------------------------*/
+BmRef<BmMail> BmMail::CreateReply( bool replyToAll) {
+	BmRef<BmMail> newMail = new BmMail( true);
+	// copy old message ID into in-reply-to and references fields:
+	BString messageID = GetFieldVal( BM_FIELD_MESSAGE_ID);
+	newMail->SetFieldVal( BM_FIELD_IN_REPLY_TO, messageID);
+	newMail->Header()->AddFieldVal( BM_FIELD_REFERENCES, messageID);
+	// fill address information:
+	BString newTo = GetFieldVal( BM_FIELD_RESENT_FROM);
+	if (!newTo.Length())
+		newTo = GetFieldVal( BM_FIELD_REPLY_TO);
+	if (!newTo.Length())
+		newTo = GetFieldVal( BM_FIELD_FROM);
+	if (!newTo.Length())
+		newTo = GetFieldVal( BM_FIELD_SENDER);
+	newMail->SetFieldVal( BM_FIELD_TO, newTo);
+	if (replyToAll) {
+		BString newCc = GetFieldVal( BM_FIELD_RESENT_CC);
+		if (!newCc.Length())
+			newCc = GetFieldVal( BM_FIELD_CC);
+		newMail->SetFieldVal( BM_FIELD_CC, newCc);
+	}
+	// fetch from-address via pop-account info:
+	BmRef<BmListModelItem> accRef = ThePopAccountList->FindItemByKey( AccountName());
+	BmPopAccount* acc = dynamic_cast< BmPopAccount*>( accRef.Get());
+	if (acc)
+		newMail->SetFieldVal( BM_FIELD_FROM, acc->GetFromAddress());
+	// massage subject, if neccessary:
+	BString subject = GetFieldVal( BM_FIELD_SUBJECT);
+	BString replySubj = ThePrefs->GetString( "ReplyPrefixRX", "^\\s*(Re|Aw):");
+	Regexx rx;
+	if (!rx.exec( subject, replySubj, Regexx::nocase))
+		subject = ThePrefs->GetString( "ReplyPrefix", "Re: ") + subject;
+	newMail->SetFieldVal( BM_FIELD_SUBJECT, subject);
+	// copy and quote text-body:
+	BmBodyPart* textBody = mBody->EditableTextBody();
+	if (textBody) {
+		BString text = textBody->DecodedData();
+		BString quotedText;
+		QuoteText( text, quotedText,
+					  ThePrefs->GetString( "QuotingString"),
+					  ThePrefs->GetInt( "MaxLineLen"));
+		newMail->Body()->SetEditableText( quotedText,
+													 CharsetToEncoding( textBody->Charset()));
+	}
+	return newMail;
+}
+
+/*------------------------------------------------------------------------------*\
+	CreateResend()
+	-	
+\*------------------------------------------------------------------------------*/
+BmRef<BmMail> BmMail::CreateResend() {
+	BmRef<BmMail> newMail = new BmMail( true);
+	return newMail;
+}
+
+/*------------------------------------------------------------------------------*\
 	ConstructRawText()
 	-	
 \*------------------------------------------------------------------------------*/
@@ -222,14 +301,6 @@ bool BmMail::ConstructRawText( const BString& editedText, int32 encoding,
 	BM_LOG3( BM_LogMailParse, BString("CONSTRUCTED MSG: \n-----START--------\n") << msgText << "\n-----END----------");
 	SetTo( msgText, smtpAccount);
 	return mInitCheck == B_OK;
-}
-
-/*------------------------------------------------------------------------------*\
-	RemoveFieldVal()
-	-	
-\*------------------------------------------------------------------------------*/
-void BmMail::RemoveField( const BString fieldName) {
-	mHeader->RemoveField( fieldName);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -355,6 +426,7 @@ void BmMail::StoreAttributes( BFile& mailFile) {
 	int32 hasAttachments = HasAttachments();
 	mailFile.WriteAttr( BM_MAIL_ATTR_ATTACHMENTS, B_INT32_TYPE, 0, &hasAttachments, sizeof(hasAttachments));
 }
+
 /*------------------------------------------------------------------------------*\
 	CreateBasicFilename()
 		-	
@@ -439,3 +511,37 @@ bool BmMail::StartJob() {
 	return InitCheck() == B_OK;
 }
 
+/*------------------------------------------------------------------------------*\
+	QuoteText()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMail::QuoteText( const BString& in, BString& out, BString quoteString, 
+								int maxLen) {
+	out = "";
+	if (!in.Length())
+		return;
+	Regexx rx;
+	BString quote;
+	BString text;
+	BString tmp;
+	rx.str( in);
+	rx.expr( "^((?:\\w?\\w?\\w?>[ \\t]*)*)(.*?)$");
+	int32 count = rx.exec( Regexx::study | Regexx::global | Regexx::newline);
+	for( int32 i=0; i<count; ++i) {
+		quote = rx.match[i].atom[0];
+		text = rx.match[i].atom[1];
+		int32 maxTextLen = MAX(0,maxLen-quoteString.Length()-quote.Length());
+		while( text.Length() > maxTextLen) {
+			int32 spcPos = text.FindLast( " ", maxTextLen-1);
+			if (spcPos == B_ERROR)
+				spcPos = maxTextLen;
+			else
+				spcPos++;
+			text.MoveInto( tmp, 0, spcPos);
+			out << quoteString << quote << tmp << "\n";
+		}
+		out << quoteString << quote << text << "\n";
+	}
+	BString emptyLinesAtEnd = BString("(?:") << quoteString << quote << text << "\n)+\\z";
+	out = rx.replace( out, emptyLinesAtEnd, "", Regexx::newline|Regexx::global);
+}

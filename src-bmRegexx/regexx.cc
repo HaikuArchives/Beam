@@ -67,29 +67,23 @@ regexx::Regexx::exec(int _flags)
   bool ret = (ssc > 0);
 
   if(_flags&global) {
-    if(_flags&nomatch)
       while(ret) {
 	m_matches++;
-	ret = (pcre_exec(m_preg,m_extra,m_str.String(),m_str.Length(),ssv[1],eflags,ssv,33) > 0);
-      }
-    else if(_flags&noatom)
-      while(ret) {
-	m_matches++;
-	match.push_back(RegexxMatch(m_str,ssv[0],ssv[1]-ssv[0]));
-	ret = (pcre_exec(m_preg,m_extra,m_str.String(),m_str.Length(),ssv[1],eflags,ssv,33) > 0);
-      }
-    else
-      while(ret) {
-	m_matches++;
-	match.push_back(RegexxMatch(m_str,ssv[0],ssv[1]-ssv[0]));
-	match.back().atom.reserve(m_capturecount);
-	for(int i = 1; i < ssc; i++) {
-	  if (ssv[i*2] != -1)
-	    match.back().atom.push_back(RegexxMatchAtom(m_str,ssv[i*2],ssv[(i*2)+1]-ssv[i*2]));
-	  else
-	    match.back().atom.push_back(RegexxMatchAtom(m_str,0,0));
-        }
-	ret = (pcre_exec(m_preg,m_extra,m_str.String(),m_str.Length(),ssv[1],eflags,ssv,33) > 0);
+	int matchLen = ssv[1]-ssv[0];
+	if(!(_flags&nomatch)) {
+	  match.push_back(RegexxMatch(m_str,ssv[0],matchLen));
+	  if(!(_flags&noatom)) {
+	    match.back().atom.reserve(m_capturecount);
+	    for(int i = 1; i < ssc; i++) {
+	      if (ssv[i*2] != -1)
+	        match.back().atom.push_back(RegexxMatchAtom(m_str,ssv[i*2],ssv[(i*2)+1]-ssv[i*2]));
+	      else
+	        match.back().atom.push_back(RegexxMatchAtom(m_str,0,0));
+	    }
+	  }
+	}
+	int lastPos = matchLen ? ssv[1] : ssv[1]+1;
+	ret = (pcre_exec(m_preg,m_extra,m_str.String(),m_str.Length(),lastPos,eflags,ssv,33) > 0);
       }
   }
   else {
@@ -114,7 +108,7 @@ regexx::Regexx::exec(int _flags)
 	  else
 	    match.back().atom.push_back(RegexxMatchAtom(m_str,0,0));
 	}
-	ret = (pcre_exec(m_preg,m_extra,m_str.String(),m_str.Length(),ssv[1],eflags,ssv,33) > 0);
+//	ret = (pcre_exec(m_preg,m_extra,m_str.String(),m_str.Length(),ssv[1],eflags,ssv,33) > 0);
       }
     }
   }

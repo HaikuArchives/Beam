@@ -31,6 +31,7 @@
 
 class WrappingTextView : public BTextView
 {
+		static const char* const n_long_line = "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW";
 	public:
 		WrappingTextView(BRect a_frame,const char* a_name,int32 a_resize_mode,int32 a_flags);
 		virtual ~WrappingTextView();
@@ -48,6 +49,8 @@ class WrappingTextView : public BTextView
 		void ResetTextRect();
 		void CalculateVerticalOffset();
 		void KeyDown(const char *bytes, int32 numBytes);
+		void SetFixedWidth( int32 i);
+		int32 FixedWidth() const			{ return m_fixed_width; }
 
 	protected:
 		virtual void InsertText(const char *a_text, int32 a_length, int32 a_offset, const text_run_array *a_runs);
@@ -56,7 +59,7 @@ class WrappingTextView : public BTextView
 		bool m_modified;
 		bool m_modified_disabled;
 		float m_vertical_offset;
+		int32 m_fixed_width;
 };
-
 
 #endif

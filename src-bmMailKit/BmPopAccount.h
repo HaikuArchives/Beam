@@ -41,7 +41,7 @@ class BmPopAccount : public BmListModelItem {
 	static const char* const MSG_POP_SERVER = 	"bm:popserver";
 	static const char* const MSG_SMTP_ACCOUNT = 	"bm:smtpacc";
 	static const char* const MSG_REAL_NAME = 		"bm:realname";
-	static const char* const MSG_REPLY_TO = 		"bm:replyto";
+	static const char* const MSG_MAIL_ADDR = 		"bm:mailaddr";
 	static const char* const MSG_SIGNATURE_NAME = "bm:signaturename";
 	static const char* const MSG_CHECK_MAIL = 	"bm:checkmail";
 	static const char* const MSG_DELETE_MAIL = 	"bm:deletemail";
@@ -66,12 +66,12 @@ public:
 	const BString &AuthMethod() const	{ return mAuthMethod; }
 	bool CheckMail() const 					{ return mCheckMail; }
 	bool DeleteMailFromServer() const	{ return mDeleteMailFromServer; }
+	const BString &MailAddr() const 		{ return mMailAddr; }
 	const BString &Name() const 			{ return Key(); }
 	const BString &Password() const 		{ return mPassword; }
 	const BString &POPServer() const		{ return mPOPServer; }
 	int16 PortNr() const 					{ return mPortNr; }
 	const BString &RealName() const 		{ return mRealName; }
-	const BString &ReplyTo() const 		{ return mReplyTo; }
 	const BString &SignatureName() const	 { return mSignatureName; }
 	const BString &SMTPAccount() const	{ return mSMTPAccount; }
 	const BString &Username() const 		{ return mUsername; }
@@ -80,11 +80,11 @@ public:
 	void AuthMethod( const BString &s) 	{ mAuthMethod = s; }
 	void CheckMail( bool b) 				{ mCheckMail = b; }
 	void DeleteMailFromServer( bool b)	{ mDeleteMailFromServer = b; }
+	void MailAddr( const BString &s) 	{ mMailAddr = s; }
 	void Password( const BString &s) 	{ mPassword = s; }
 	void POPServer( const BString &s)	{ mPOPServer = s; }
 	void PortNr( int16 i) 					{ mPortNr = i; }
 	void RealName( const BString &s) 	{ mRealName = s; }
-	void ReplyTo( const BString &s) 		{ mReplyTo = s; }
 	void SignatureName( const BString &s)	 { mSignatureName = s; }
 	void SMTPAccount( const BString &s)	{ mSMTPAccount = s; }
 	void Username( const BString &s) 	{ mUsername = s; }
@@ -104,7 +104,7 @@ private:
 	BString mSMTPAccount;			// name of BmSmtpAccount to use when sending 
 											// mail "from" this POP-account
 	BString mRealName;
-	BString mReplyTo;
+	BString mMailAddr;				// address to use (instead of composed address)
 	BString mSignatureName;			// name&path of signature file
 	int16 mPortNr;						// usually 110
 	bool mCheckMail;					// include this account in global mail-check?

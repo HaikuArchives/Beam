@@ -25,7 +25,7 @@ class BmMailRefList : public BmListModel {
 public:
 
 	// c'tors and d'tor
-	BmMailRefList( BmMailFolder* folder, bool updateCache);
+	BmMailRefList( BmMailFolder* folder);
 	virtual ~BmMailRefList();
 
 	// native methods:
@@ -36,6 +36,9 @@ public:
 	bool StartJob();
 	void RemoveController( BmController* controller);
 	const BString SettingsFileName();
+	
+	// getters:
+	bool NeedsCacheUpdate() const 		{ return mNeedsCacheUpdate; }
 
 private:
 

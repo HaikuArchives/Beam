@@ -13,6 +13,7 @@ using namespace regexx;
 #include "BmBasics.h"
 #include "BmEncoding.h"
 #include "BmLogHandler.h"
+#include "BmPrefs.h"
 #include "BmUtil.h"
 
 #define HEXDIGIT2CHAR(d) (((d)>='0'&&(d)<='9') ? (d)-'0' : ((d)>='A'&&(d)<='F') ? (d)-'A'+10 : ((d)>='a'&&(d)<='f') ? (d)-'a'+10 : 0)
@@ -78,9 +79,12 @@ BString BmEncoding::EncodingToCharset( const uint32 encoding) {
 \*------------------------------------------------------------------------------*/
 void BmEncoding::ConvertToUTF8( uint32 srcEncoding, const BString& src,
 										  BString& dest) {
+	if (srcEncoding == BM_UTF8_CONVERSION) {
+		// source already is UTF8...
+		dest = src;
+		return;
+	}
 	dest.Truncate(0);
-	if (srcEncoding == BM_UTF8_CONVERSION)
-		return;									// source already is UTF8, we do nothing
 	int32 srcbuflen = src.Length();
 	if (!srcbuflen)
 		return;
@@ -117,9 +121,12 @@ void BmEncoding::ConvertToUTF8( uint32 srcEncoding, const BString& src,
 \*------------------------------------------------------------------------------*/
 void BmEncoding::ConvertFromUTF8( uint32 destEncoding, const BString& src, 
 											 BString& dest) {
+	if (destEncoding == BM_UTF8_CONVERSION) {
+		// source already is UTF8...
+		dest = src;
+		return;
+	}
 	dest.Truncate( 0);
-	if (destEncoding == BM_UTF8_CONVERSION)
-		return;									// nothing to do!
 	char* destBuf = NULL;
 	int32 srcbuflen = src.Length();
 	if (!srcbuflen)
@@ -164,6 +171,7 @@ void BmEncoding::Encode( BString encodingStyle, const BString& src, BString& des
 		char* buf = dest.LockBuffer( destLen+1);
 		int32 destCount = 0;
 		int32 lineLength = 0;
+		int32 maxLineLen = ThePrefs->GetInt( "MaxLineLenQP", 76);
 		for( const char* p=src.String(); *p; ++p) {
 			BString addChars;
 			unsigned char c = *p;
@@ -174,6 +182,7 @@ void BmEncoding::Encode( BString encodingStyle, const BString& src, BString& des
 				if (c == ' ' && isEncodedWord)
 					addChars += '_';
 				else {
+					// check if whitespace is at end of line (thus needs encoding):
 					bool needsEncoding = true;
 					for( const char* p2=p+1; *p2; ++p2) {
 						if (*p2 == '\r' && *(p2+1)=='\n')
@@ -206,7 +215,7 @@ void BmEncoding::Encode( BString encodingStyle, const BString& src, BString& des
 				addChars << '=' << (char)CHAR2HIGHNIBBLE(c) << (char)CHAR2LOWNIBBLE(c);
 			}
 			int32 addLen = addChars.Length();
-			if (!isEncodedWord && lineLength + addLen > 76) {
+			if (!isEncodedWord && lineLength + addLen > maxLineLen) {
 				// insert soft linebreak:
 				buf[destCount++] = '=';
 				buf[destCount++] = '\r';
@@ -235,7 +244,7 @@ void BmEncoding::Encode( BString encodingStyle, const BString& src, BString& des
 			// oops, we don't know this one:
 			ShowAlert( BString("Encode(): Unrecognized encoding-style <")<<encodingStyle<<"> found.\nText will be passed through (not encoded).");
 		}
-		// no encoding needed (binary or unknown):
+		// no encoding needed/possible (binary or unknown):
 		dest = src;
 	}
 }
