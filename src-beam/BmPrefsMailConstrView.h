@@ -44,10 +44,17 @@
 #define BM_ALLOW_8_BIT_CHANGED			'bm8C'
 #define BM_HARD_WRAP_AT_78_CHANGED		'bmHW'
 #define BM_HARD_WRAP_CHANGED				'bmHC'
+#define BM_USED_CHARSET_SELECTED		 	'bmUS'
+#define BM_LOOK_IN_PEOPLE_CHANGED		'bmLP'
+#define BM_ADD_PEOPLE_NAME_CHANGED		'bmPN'
+#define BM_SELECT_PEOPLE_FOLDER			'bmSP'
+#define BM_UNDO_MODE_SELECTED		 		'bmUM'
 
+class BFilePanel;
 class BmCheckControl;
 class BmMenuControl;
 class BmTextControl;
+class MButton;
 /*------------------------------------------------------------------------------*\
 	BmPrefsMailConstrView
 		-	
@@ -60,6 +67,11 @@ public:
 	BmPrefsMailConstrView();
 	virtual ~BmPrefsMailConstrView();
 	
+	// native methods:
+	void SetupDefaultCharsetMenu();
+	void SetupUsedCharsetsMenu();
+	void SetupUsedCharsetsPrefs();
+
 	// overrides of BmPrefsView base:
 	void Initialize();
 	void Update();
@@ -71,6 +83,8 @@ public:
 
 private:
 
+	BmString PeopleFolderButtonLabel();
+
 	BmCheckControl* mGenerateIDsControl;
 	BmCheckControl* mMakeQpSafeControl;
 	BmCheckControl* mSpecialForEachBccControl;
@@ -79,9 +93,12 @@ private:
 	BmCheckControl* mHardWrapAt78Control;
 	BmCheckControl* mHardWrapControl;
 	BmTextControl* mMaxLineLenControl;
-	BmMenuControl* mDefaultCharsetControl;
 	BmTextControl* mQuotingStringControl;
 	BmMenuControl* mQuoteFormattingControl;
+	BmMenuControl* mUndoModeControl;
+
+	BmMenuControl* mDefaultCharsetControl;
+	BmMenuControl* mUsedCharsetsControl;
 
 	BmMenuControl* mDefaultForwardTypeControl;
 	BmTextControl* mForwardIntroStrControl;
@@ -90,8 +107,14 @@ private:
 	BmCheckControl* mDontAttachVCardsControl;
 
 	BmTextControl* mReplyIntroStrControl;
+	BmTextControl* mReplyIntroStrPrivateControl;
 	BmTextControl* mReplySubjectStrControl;
 	BmTextControl* mReplySubjectRxControl;
+
+	BmCheckControl* mAddNameToPeopleControl;
+	BmCheckControl* mLookInPeopleFolderControl;
+	MButton* mPeopleFolderButton;
+	BFilePanel* mPeoplePanel;
 
 	// Hide copy-constructor and assignment:
 	BmPrefsMailConstrView( const BmPrefsMailConstrView&);

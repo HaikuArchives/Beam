@@ -27,6 +27,7 @@
 /*                                                                       */
 /*************************************************************************/
 
+#include <FilePanel.h>
 #include <MenuItem.h>
 #include <PopUpMenu.h>
 
@@ -42,6 +43,8 @@
 #include "Colors.h"
 
 #include "BmCheckControl.h"
+#include "BmEncoding.h"
+using namespace BmEncoding;
 #include "BmGuiUtil.h"
 #include "BmLogHandler.h"
 #include "BmMail.h"
@@ -69,7 +72,7 @@ BmPrefsMailConstrView::BmPrefsMailConstrView()
 		new VGroup(
 			new Space( minimax(0,10,0,10)),
 			new HGroup( 
-				new MBorder( M_LABELED_BORDER, 10, (char*)"Mail-Formatting",
+				new MBorder( M_LABELED_BORDER, 10, (char*)"Mail-Editing",
 					new VGroup(
 						mMaxLineLenControl = new BmTextControl( "Set right margin to (chars):"),
 						mHardWrapControl = new BmCheckControl( "Hard-wrap mailtext at right margin", 
@@ -82,8 +85,7 @@ BmPrefsMailConstrView::BmPrefsMailConstrView()
 						mQuotingStringControl = new BmTextControl( "Quoting string:"),
 						mQuoteFormattingControl = new BmMenuControl( "Quote-formatting:", new BPopUpMenu("")),
 						new Space( minimax(0,10,0,10)),
-						mDefaultCharsetControl = new BmMenuControl( "Default-charset:", new BPopUpMenu("")),
-						new Space(),
+						mUndoModeControl = new BmMenuControl( "Undo-Granularity:", new BPopUpMenu("")),
 						0
 					)
 				),
@@ -104,67 +106,108 @@ BmPrefsMailConstrView::BmPrefsMailConstrView()
 						mMakeQpSafeControl = new BmCheckControl( "Make quoted-printable safe for non-ASCII gateways (EBCDIC)", 
 																			  new BMessage(BM_QP_SAFE_CHANGED), 
 																			  this, ThePrefs->GetBool("MakeQPSafeForEBCDIC")),
+						0
+					)
+				),
+				0
+			),
+			new Space( minimax(0,5,0,5)),
+			new HGroup(
+				new MBorder( M_LABELED_BORDER, 10, (char*)"People Options",
+					new VGroup(
+						mLookInPeopleFolderControl = new BmCheckControl( "Look only in people-folder", 
+																			          new BMessage(BM_LOOK_IN_PEOPLE_CHANGED), 
+																			          this, ThePrefs->GetBool("LookForPeopleOnlyInPeopleFolder",true)),
+						new Space( minimax(0,5,0,5)),
+						mAddNameToPeopleControl = new BmCheckControl( "Add People's Names to Mail-Address", 
+																		          new BMessage(BM_ADD_PEOPLE_NAME_CHANGED), 
+																			       this, ThePrefs->GetBool("AddPeopleNameToMailAddr",true)),
+						new Space( minimax(0,5,0,5)),
+						mPeopleFolderButton = new MButton( PeopleFolderButtonLabel().String(), 
+																	  new BMessage( BM_SELECT_PEOPLE_FOLDER), 
+																	  this,minimax(-1,-1,-1,-1)),
+						0
+					)
+				),
+				new MBorder( M_LABELED_BORDER, 10, (char*)"Character-Sets",
+					new VGroup(
+						mDefaultCharsetControl = new BmMenuControl( "Default-charset:", 
+																				  new BPopUpMenu("")),
+						mUsedCharsetsControl = new BmMenuControl( "Frequently used charsets:", 
+																				new BPopUpMenu("")),
+						0
+					)
+				),
+				0
+			),
+			new Space( minimax(0,5,0,5)),
+			new HGroup(
+				new MBorder( M_LABELED_BORDER, 10, (char*)"Forwarding",
+					new VGroup(
+						mForwardIntroStrControl = new BmTextControl( "Intro:", false, 0, 23),
+						mForwardSubjectStrControl = new BmTextControl( "Subject:"),
+						mForwardSubjectRxControl = new BmTextControl( "Is-Forward-Regex:"),
+						new HGroup( 
+							mDefaultForwardTypeControl = new BmMenuControl( "Default forward-type:", new BPopUpMenu("")),
+							new Space(),
+							0
+						),
+						new Space( minimax(0,4,0,4)),
+						mDontAttachVCardsControl = new BmCheckControl( "Do not attach v-cards in forward", 
+																					  new BMessage(BM_ATTACH_VCARDS_CHANGED), 
+																					  this, ThePrefs->GetBool("DoNotAttachVCardsToForward")),
+						0
+					)
+				),
+				new MBorder( M_LABELED_BORDER, 10, (char*)"Replying",
+					new VGroup(
+						mReplyIntroStrControl = new BmTextControl( "Intro:"),
+						mReplySubjectStrControl = new BmTextControl( "Subject:"),
+						mReplySubjectRxControl = new BmTextControl( "Is-Reply-Regex:"),
+						mReplyIntroStrPrivateControl = new BmTextControl( "Personal Phrase:"),
 						new Space(),
 						0
 					)
 				),
 				0
 			),
-			new Space( minimax(0,10,0,10)),
-			new MBorder( M_LABELED_BORDER, 10, (char*)"Forwarding",
-				new VGroup(
-					mForwardIntroStrControl = new BmTextControl( "Intro:"),
-					mForwardSubjectStrControl = new BmTextControl( "Subject:"),
-					mForwardSubjectRxControl = new BmTextControl( "Regex that checks if forward:"),
-					new HGroup( 
-						mDefaultForwardTypeControl = new BmMenuControl( "Default forward-type:", new BPopUpMenu("")),
-						new Space(),
-						0
-					),
-					new Space( minimax(0,4,0,4)),
-					mDontAttachVCardsControl = new BmCheckControl( "Do not attach v-cards in forward", 
-																				  new BMessage(BM_ATTACH_VCARDS_CHANGED), 
-																				  this, ThePrefs->GetBool("DoNotAttachVCardsToForward")),
-					0
-				)
-			),
-			new Space( minimax(0,10,0,10)),
-			new MBorder( M_LABELED_BORDER, 10, (char*)"Replying",
-				new VGroup(
-					mReplyIntroStrControl = new BmTextControl( "Intro:"),
-					mReplySubjectStrControl = new BmTextControl( "Subject:"),
-					mReplySubjectRxControl = new BmTextControl( "Regex that checks if reply:"),
-					new Space(),
-					0
-				)
-			),
+			new Space( minimax(0,5,0,5)),
 			new Space(),
 			0
 		);
 	mGroupView->AddChild( dynamic_cast<BView*>(view));
 	
+//	border1->ct_mpm.mini.x = border2->ct_mpm.mini.x = border3->ct_mpm.mini.x = 250;
+//	border1->ct_mpm.maxi.x = border2->ct_mpm.maxi.x = border3->ct_mpm.maxi.x = 250;
+	
 	float divider = mMaxLineLenControl->Divider();
 	divider = MAX( divider, mQuotingStringControl->Divider());
 	divider = MAX( divider, mQuoteFormattingControl->Divider());
 	divider = MAX( divider, mDefaultCharsetControl->Divider());
+	divider = MAX( divider, mUsedCharsetsControl->Divider());
 	divider = MAX( divider, mForwardIntroStrControl->Divider());
 	divider = MAX( divider, mForwardSubjectStrControl->Divider());
 	divider = MAX( divider, mForwardSubjectRxControl->Divider());
 	divider = MAX( divider, mDefaultForwardTypeControl->Divider());
 	divider = MAX( divider, mReplyIntroStrControl->Divider());
+	divider = MAX( divider, mReplyIntroStrPrivateControl->Divider());
 	divider = MAX( divider, mReplySubjectStrControl->Divider());
 	divider = MAX( divider, mReplySubjectRxControl->Divider());
+	divider = MAX( divider, mUndoModeControl->Divider());
 	mMaxLineLenControl->SetDivider( divider);
 	mQuotingStringControl->SetDivider( divider);
 	mQuoteFormattingControl->SetDivider( divider);
 	mDefaultCharsetControl->SetDivider( divider);
+	mUsedCharsetsControl->SetDivider( divider);
 	mForwardIntroStrControl->SetDivider( divider);
 	mForwardSubjectStrControl->SetDivider( divider);
 	mForwardSubjectRxControl->SetDivider( divider);
 	mDefaultForwardTypeControl->SetDivider( divider);
 	mReplyIntroStrControl->SetDivider( divider);
+	mReplyIntroStrPrivateControl->SetDivider( divider);
 	mReplySubjectStrControl->SetDivider( divider);
 	mReplySubjectRxControl->SetDivider( divider);
+	mUndoModeControl->SetDivider( divider);
 
 	BmString val;
 	val << ThePrefs->GetInt("MaxLineLen");
@@ -174,6 +217,7 @@ BmPrefsMailConstrView::BmPrefsMailConstrView()
 	mForwardSubjectStrControl->SetText( ThePrefs->GetString("ForwardSubjectStr").String());
 	mForwardSubjectRxControl->SetText( ThePrefs->GetString("ForwardSubjectRX").String());
 	mReplyIntroStrControl->SetText( ThePrefs->GetString("ReplyIntroStr").String());
+	mReplyIntroStrPrivateControl->SetText( ThePrefs->GetString("ReplyIntroDefaultNick", "you").String());
 	mReplySubjectStrControl->SetText( ThePrefs->GetString("ReplySubjectStr").String());
 	mReplySubjectRxControl->SetText( ThePrefs->GetString("ReplySubjectRX").String());
 }
@@ -183,6 +227,7 @@ BmPrefsMailConstrView::BmPrefsMailConstrView()
 		-	
 \*------------------------------------------------------------------------------*/
 BmPrefsMailConstrView::~BmPrefsMailConstrView() {
+	delete mPeoplePanel;
 	TheBubbleHelper->SetHelp( mMaxLineLenControl, NULL);
 	TheBubbleHelper->SetHelp( mQuotingStringControl, NULL);
 	TheBubbleHelper->SetHelp( mQuoteFormattingControl, NULL);
@@ -190,9 +235,11 @@ BmPrefsMailConstrView::~BmPrefsMailConstrView() {
 	TheBubbleHelper->SetHelp( mForwardSubjectStrControl, NULL);
 	TheBubbleHelper->SetHelp( mForwardSubjectRxControl, NULL);
 	TheBubbleHelper->SetHelp( mReplyIntroStrControl, NULL);
+	TheBubbleHelper->SetHelp( mReplyIntroStrPrivateControl, NULL);
 	TheBubbleHelper->SetHelp( mReplySubjectStrControl, NULL);
 	TheBubbleHelper->SetHelp( mReplySubjectRxControl, NULL);
 	TheBubbleHelper->SetHelp( mDefaultCharsetControl, NULL);
+	TheBubbleHelper->SetHelp( mUsedCharsetsControl, NULL);
 	TheBubbleHelper->SetHelp( mSpecialForEachBccControl, NULL);
 	TheBubbleHelper->SetHelp( mPreferUserAgentControl, NULL);
 	TheBubbleHelper->SetHelp( mGenerateIDsControl, NULL);
@@ -202,6 +249,20 @@ BmPrefsMailConstrView::~BmPrefsMailConstrView() {
 	TheBubbleHelper->SetHelp( mHardWrapControl, NULL);
 	TheBubbleHelper->SetHelp( mHardWrapAt78Control, NULL);
 	TheBubbleHelper->SetHelp( mAllow8BitControl, NULL);
+	TheBubbleHelper->SetHelp( mLookInPeopleFolderControl, NULL);
+	TheBubbleHelper->SetHelp( mAddNameToPeopleControl, NULL);
+	TheBubbleHelper->SetHelp( mPeopleFolderButton, NULL);
+	TheBubbleHelper->SetHelp( mUndoModeControl, NULL);
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+BmString BmPrefsMailConstrView::PeopleFolderButtonLabel() {
+	BmString label( "   Set People Folder (currently '");
+	label << ThePrefs->GetString( "PeopleFolder", "/boot/home/people") << "')...   ";
+	return label;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -242,8 +303,9 @@ can lead to unwanted wrapping of structured text (e.g. code), Beam uses \n\
 	TheBubbleHelper->SetHelp( mForwardIntroStrControl, "Here you can enter a string that will \nappear at the top of every forwarded mail.\n\
 The following macros are supported:\n\
 	%D  -  expands to the original mail's date.\n\
-	%T  -  expands to the original mail's time.\n\
-	%F  -  expands to the sender of the original mail.");
+	%F  -  expands to the sender of the original mail.\n\
+	%S  -  expands to the original mail's subject.\n\
+	%T  -  expands to the original mail's time.");
 	TheBubbleHelper->SetHelp( mForwardSubjectStrControl, "Here you can influence the subject-string \nBeam generates for a forwarded mail.\n\
 The following macros are supported:\n\
 	%S  -  expands to the original mail's subject.");
@@ -251,13 +313,21 @@ The following macros are supported:\n\
 	TheBubbleHelper->SetHelp( mReplyIntroStrControl, "Here you can enter a string that will \nappear at the top of every reply.\n\
 The following macros are supported:\n\
 	%D  -  expands to the original mail's date.\n\
-	%T  -  expands to the original mail's time.\n\
-	%F  -  expands to the sender of the original mail.");
+	%F  -  expands to the sender of the original mail.\n\
+	%S  -  expands to the original mail's subject.\n\
+	%T  -  expands to the original mail's time.");
+	TheBubbleHelper->SetHelp( mReplyIntroStrPrivateControl, "When replying to a person only, it seems inappropriate\n\
+to have: 'On ... Steve Miller wrote:' in the intro text.\n\
+In this field you can enter a text that will be used\n\
+instead of the name when expanding %F in order to\n\
+achieve something like: 'On ... you wrote'.");
 	TheBubbleHelper->SetHelp( mReplySubjectStrControl, "Here you can influence the subject-string \nBeam generates for a reply.\n\
 The following macros are supported:\n\
 	%S  -  expands to the original mail's subject.");
 	TheBubbleHelper->SetHelp( mReplySubjectRxControl, "This string is the regular-expression (perl-style) Beam uses\nto determine whether a given subject indicates\nthat the mail already is a reply.\nThis way subjects like \n\t'Re: Re: Re: your offer'\ncan be avoided.");
 	TheBubbleHelper->SetHelp( mDefaultCharsetControl, "Here you can select the charset-encoding Beam should use by default.");
+	TheBubbleHelper->SetHelp( mUsedCharsetsControl, "Here you can select the charsets you are frequently using.\n\
+These will then be shown in the first level of every charset-menu.");
 	TheBubbleHelper->SetHelp( mSpecialForEachBccControl, "Here you can select the way Beam sends mails with Bcc recipients\n\
 	\n\
 Checked:\n\
@@ -296,9 +366,26 @@ This will fix the right margin to at most 78 chars.");
 This avoids the use of quoted-printables and is usually ok with \n\
 modern mail-servers, but it *may* cause problems during transport,\n\
 so if you get complaints about strange/missing characters, try unchecking this.");
+	TheBubbleHelper->SetHelp( mLookInPeopleFolderControl, "If checked, Beam will only deal with people-files that\n\
+live in the people-folder.\n\
+If unchecked, Beam will accept people-files outside of this folder, too.");
+	TheBubbleHelper->SetHelp( mAddNameToPeopleControl, "If checked, Beam will not only use people's mail-addresses\n\
+when sending a mail to them, but the people's names will be added, too.\n\
+Assuming name 'Polly Jean Harvey' with address 'pjharvey@test.org', you get:\n\
+	Polly Jean Harvey <pjharvey@test.org>, if checked\n\
+	pjharvey@test.org, if unchecked.");
+	TheBubbleHelper->SetHelp( mPeopleFolderButton, "Click this button in order to\nselect a different people-folder.");
+	TheBubbleHelper->SetHelp( mUndoModeControl, "Here you can select the granularity of the\n\
+undo- & redo-operations in the mail-editor:\n\
+	 'Words' - means that single words will be undone/redone.\n\
+	 'Paragraphs' - means that whole paragraphs will be undone/redone.\n\
+	 'None' - means that different kinds of editing operations will be undone/redone (BeOS-standard).");
 
 	// add all charsets to menu:
-	AddCharsetMenu( mDefaultCharsetControl->Menu(), this, BM_CHARSET_SELECTED);
+	SetupDefaultCharsetMenu();
+
+	// setup menu for frequently used charsets:
+	SetupUsedCharsetsMenu();
 
 	// add quote-formattings:
 	AddItemToMenu( mQuoteFormattingControl->Menu(), 
@@ -318,7 +405,90 @@ so if you get complaints about strange/missing characters, try unchecking this."
 	AddItemToMenu( mDefaultForwardTypeControl->Menu(), 
 						new BMenuItem( "Inline", new BMessage(BM_FORWARD_TYPE_SELECTED)), 
 						this);
+
+	// add undo-modes:
+	AddItemToMenu( mUndoModeControl->Menu(), 
+						new BMenuItem( "Words", new BMessage(BM_UNDO_MODE_SELECTED)), 
+						this);
+	AddItemToMenu( mUndoModeControl->Menu(), 
+						new BMenuItem( "Paragraphs", new BMessage(BM_UNDO_MODE_SELECTED)), 
+						this);
+	AddItemToMenu( mUndoModeControl->Menu(), 
+						new BMenuItem( "None", new BMessage(BM_UNDO_MODE_SELECTED)), 
+						this);
+
 	Update();
+}
+
+/*------------------------------------------------------------------------------*\
+	( )
+		-	
+\*------------------------------------------------------------------------------*/
+void BmPrefsMailConstrView::SetupDefaultCharsetMenu() {
+	BmString charset;
+	BMenu* menu = mDefaultCharsetControl->Menu();
+	if (!menu)
+		return;
+	BMenuItem* item;
+	while( (item = menu->RemoveItem( (int32)0))!=NULL)
+		delete item;
+	AddCharsetMenu( menu, this, BM_CHARSET_SELECTED);
+}
+
+/*------------------------------------------------------------------------------*\
+	( )
+		-	
+\*------------------------------------------------------------------------------*/
+void BmPrefsMailConstrView::SetupUsedCharsetsMenu() {
+	BmString charset;
+	BMenu* menu = mUsedCharsetsControl->Menu();
+	if (!menu)
+		return;
+	BMenuItem* item;
+	while( (item = menu->RemoveItem( (int32)0))!=NULL)
+		delete item;
+	menu->SetRadioMode( false);
+	item = mUsedCharsetsControl->MenuItem();
+	if (!item)
+		return;
+	item->SetLabel("<please select...>");
+	menu->SetLabelFromMarked( false);
+	// add all charsets and check the ones that are selected:
+	BmString stdSets = ThePrefs->GetString( "StandardCharsets");
+	BmCharsetMap::const_iterator iter;
+	for( iter = TheCharsetMap.begin(); iter != TheCharsetMap.end(); ++iter) {
+		if (iter->second) {
+			charset = iter->first;
+			charset.ToLower();
+			BMessage* msg = new BMessage( BM_USED_CHARSET_SELECTED);
+			msg->AddString( MSG_CHARSET, charset.String());
+			item = CreateMenuItem( charset.String(), msg);
+			AddItemToMenu( menu, item, this);
+			if (stdSets.IFindFirst( BmString("<")<<charset<<">") != B_ERROR)
+				item->SetMarked( true);
+		}
+	}
+}
+
+/*------------------------------------------------------------------------------*\
+	( )
+		-	
+\*------------------------------------------------------------------------------*/
+void BmPrefsMailConstrView::SetupUsedCharsetsPrefs() {
+	BmString stdSets;
+	BMenuItem* item;
+	BMenu* menu = mUsedCharsetsControl->Menu();
+	if (!menu)
+		return;
+	int32 count = menu->CountItems();
+	for( int32 i=0; i < count; ++i) {
+		item = menu->ItemAt( i);
+		if (item->IsMarked())
+			stdSets << "<" << item->Label() << ">";
+	}
+	ThePrefs->SetString( "StandardCharsets", stdSets);
+	// update default-charset menu:
+	SetupDefaultCharsetMenu();
 }
 
 /*------------------------------------------------------------------------------*\
@@ -332,6 +502,7 @@ void BmPrefsMailConstrView::Update() {
 	mQuoteFormattingControl->MarkItem( ThePrefs->GetString("QuoteFormatting", BmMail::BM_QUOTE_AUTO_WRAP).String());
 	mDefaultForwardTypeControl->MarkItem( ThePrefs->GetString( "DefaultForwardType").String());
 	mDefaultCharsetControl->ClearMark();
+	mUndoModeControl->MarkItem( ThePrefs->GetString("UndoMode", "Undo Words").String());
 	BmString charset( ThePrefs->GetString( "DefaultCharset"));
 	mDefaultCharsetControl->MarkItem( charset.String());
 	mDefaultCharsetControl->MenuItem()->SetLabel( charset.String());
@@ -341,6 +512,8 @@ void BmPrefsMailConstrView::Update() {
 	mGenerateIDsControl->SetValueSilently( ThePrefs->GetBool("GenerateOwnMessageIDs"));
 	mMakeQpSafeControl->SetValueSilently( ThePrefs->GetBool("MakeQPSafeForEBCDIC"));
 	mDontAttachVCardsControl->SetValueSilently( ThePrefs->GetBool("DoNotAttachVCardsToForward"));
+	mAddNameToPeopleControl->SetValueSilently( ThePrefs->GetBool("AddPeopleNameToMailAddr", true));
+	mLookInPeopleFolderControl->SetValueSilently( ThePrefs->GetBool("LookForPeopleOnlyInPeopleFolder", true));
 	BmString val;
 	val << ThePrefs->GetInt("MaxLineLen");
 	mMaxLineLenControl->SetTextSilently( val.String());
@@ -349,8 +522,11 @@ void BmPrefsMailConstrView::Update() {
 	mForwardSubjectStrControl->SetTextSilently( ThePrefs->GetString("ForwardSubjectStr").String());
 	mForwardSubjectRxControl->SetTextSilently( ThePrefs->GetString("ForwardSubjectRX").String());
 	mReplyIntroStrControl->SetTextSilently( ThePrefs->GetString("ReplyIntroStr").String());
+	mReplyIntroStrPrivateControl->SetTextSilently( ThePrefs->GetString("ReplyIntroDefaultNick", "you").String());
 	mReplySubjectStrControl->SetTextSilently( ThePrefs->GetString("ReplySubjectStr").String());
 	mReplySubjectRxControl->SetTextSilently( ThePrefs->GetString("ReplySubjectRX").String());
+	SetupUsedCharsetsMenu();
+	SetupDefaultCharsetMenu();
 }
 
 /*------------------------------------------------------------------------------*\
@@ -392,6 +568,8 @@ void BmPrefsMailConstrView::MessageReceived( BMessage* msg) {
 					ThePrefs->SetString("ForwardSubjectRX", mForwardSubjectRxControl->Text());
 				else if ( source == mReplyIntroStrControl)
 					ThePrefs->SetString("ReplyIntroStr", mReplyIntroStrControl->Text());
+				else if ( source == mReplyIntroStrPrivateControl)
+					ThePrefs->SetString("ReplyIntroDefaultNick", mReplyIntroStrPrivateControl->Text());
 				else if ( source == mReplySubjectStrControl)
 					ThePrefs->SetString("ReplySubjectStr", mReplySubjectStrControl->Text());
 				else if ( source == mReplySubjectRxControl)
@@ -434,6 +612,16 @@ void BmPrefsMailConstrView::MessageReceived( BMessage* msg) {
 				NoticeChange();
 				break;
 			}
+			case BM_LOOK_IN_PEOPLE_CHANGED: {
+				ThePrefs->SetInt("LookForPeopleOnlyInPeopleFolder", mLookInPeopleFolderControl->Value());
+				NoticeChange();
+				break;
+			}
+			case BM_ADD_PEOPLE_NAME_CHANGED: {
+				ThePrefs->SetInt("AddPeopleNameToMailAddr", mAddNameToPeopleControl->Value());
+				NoticeChange();
+				break;
+			}
 			case BM_HARD_WRAP_CHANGED: {
 				bool val = mHardWrapControl->Value();
 				ThePrefs->SetBool("HardWrapMailText", val);
@@ -454,6 +642,25 @@ void BmPrefsMailConstrView::MessageReceived( BMessage* msg) {
 				}
 				break;
 			}
+			case BM_USED_CHARSET_SELECTED: {
+				BMenuItem* item = NULL;
+				msg->FindPointer( "source", (void**)&item);
+				if (item) {
+					item->SetMarked( !item->IsMarked());
+					SetupUsedCharsetsPrefs();
+					NoticeChange();
+				}
+				break;
+			}
+			case BM_UNDO_MODE_SELECTED: {
+				BMenuItem* item = NULL;
+				msg->FindPointer( "source", (void**)&item);
+				if (item) {
+					ThePrefs->SetString( "UndoMode", item->Label());
+					NoticeChange();
+				}
+				break;
+			}
 			case BM_QUOTE_FORMATTING_SELECTED: {
 				BMenuItem* item = mQuoteFormattingControl->Menu()->FindMarked();
 				if (item)
@@ -466,6 +673,32 @@ void BmPrefsMailConstrView::MessageReceived( BMessage* msg) {
 				if (item)
 					ThePrefs->SetString( "DefaultForwardType", item->Label());
 				NoticeChange();
+				break;
+			}
+			case BM_SELECT_PEOPLE_FOLDER: {
+				entry_ref folderRef;
+				if (msg->FindRef( "refs", 0, &folderRef) != B_OK) {
+					// first step, let user select new folder:
+					if (!mPeoplePanel) {
+						mPeoplePanel = new BFilePanel( B_OPEN_PANEL, new BMessenger(this), NULL,
+																 B_DIRECTORY_NODE, false, msg);
+					}
+					mPeoplePanel->Show();
+				} else {
+					// second step, set people-folder accordingly:
+					BEntry entry( &folderRef);
+					BPath path;
+					if (entry.GetPath( &path) == B_OK) {
+						ThePrefs->SetString( "PeopleFolder", path.Path());
+						mPeopleFolderButton->SetLabel( PeopleFolderButtonLabel().String());
+						NoticeChange();
+						BAlert* alert = new BAlert( "People Folder", 
+															 "Done, Beam will use the new people-folder after a restart",
+														 	 "Ok", NULL, NULL, B_WIDTH_AS_USUAL,
+														 	 B_INFO_ALERT);
+						alert->Go();
+					}
+				}
 				break;
 			}
 			default:
