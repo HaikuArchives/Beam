@@ -39,6 +39,9 @@
 	BmFilterAddon
 \********************************************************************************/
 
+const char* const BmFilterAddon::FK_FOLDER =   "bm:folder";
+const char* const BmFilterAddon::FK_IDENTITY = "bm:identity";
+
 /*------------------------------------------------------------------------------*\
 	BmFilterAddon()
 		-	c'tor

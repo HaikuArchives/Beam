@@ -64,6 +64,14 @@ public:
 	virtual status_t Archive( BMessage* archive, bool deep = true) const = 0;
 	virtual BmString ErrorString() const = 0;
 
+	virtual void ForeignKeyChanged( const BmString& key, 
+											  const BmString& oldVal, 
+											  const BmString& newVal) {}
+
+	// foreign-key identifiers:
+	static const char* const FK_FOLDER;
+	static const char* const FK_IDENTITY;
+
 private:
 
 	// Hide copy-constructor:
