@@ -246,7 +246,7 @@ void BmLogHandler::BmLogfile::Write( const char* const msg, int32 threadId) {
 	BmString s(msg);
 	s.ReplaceAll( "\r", "<CR>");
 	s.ReplaceAll( "\n\n", "\n");
-	s.ReplaceAll( "\n", "\n                                   ");
+	s.ReplaceAll( "\n", "\n                                  ");
 	s << "\n";
 	bigtime_t rtNow = real_time_clock_usecs();
 	time_t now = rtNow/1000000;
