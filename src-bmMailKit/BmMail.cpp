@@ -6,6 +6,8 @@
 //#include <ctime>
 //#include <memory>
 
+#include <Directory.h>
+#include <FindDirectory.h>
 #include <NodeInfo.h>
 
 #include <regexx/regexx.hh>
@@ -146,10 +148,12 @@ bool BmMail::Store() {
 	BFile mailFile;
 	BNodeInfo mailInfo;
 	BPath path;
+	BPath tmpPath;
 	status_t err;
 	ssize_t res;
 	BString basicFilename;
 	BString inboxPath;
+	BDirectory homeDir;
 
 	try {
 		if (mParentEntry.InitCheck() == B_NO_INIT) {
@@ -158,11 +162,18 @@ bool BmMail::Store() {
 			(err = mParentEntry.SetTo( inboxPath.String(), true)) == B_OK
 													|| BM_THROW_RUNTIME( BString("Could not create entry for mail-folder <") << inboxPath << ">\n\n Result: " << strerror(err));
 		}
+
 		basicFilename = CreateBasicFilename();
+
+		find_directory( B_COMMON_TEMP_DIRECTORY, &tmpPath, true) == B_OK
+													|| BM_THROW_RUNTIME( BString("Could not find tmp-directory on this system") << "\n\n Result: " << strerror(err));
+		// determine real home of new mail:		
 		mParentEntry.GetPath( &path);
 		BString filename( BString(path.Path()) << "/" << basicFilename);
-		(err = mMailEntry.SetTo( filename.String())) == B_OK
-											|| BM_THROW_RUNTIME( BString("Could not create entry for new mail-file <") << filename << ">\n\n Result: " << strerror(err));
+		// determing tmp-folder where the mail is being created:
+		BString tmpFilename( BString(tmpPath.Path()) << "/" << basicFilename);
+		(err = mMailEntry.SetTo( tmpFilename.String())) == B_OK
+											|| BM_THROW_RUNTIME( BString("Could not create entry for new mail-file <") << tmpFilename << ">\n\n Result: " << strerror(err));
 		if (mMailEntry.Exists()) {
 			BM_THROW_RUNTIME( BString("Unable to create a unique filename for mail <") << basicFilename << ">.\n\n Result: " << strerror(err));
 		}
@@ -189,6 +200,11 @@ bool BmMail::Store() {
 		}
 		mailFile.Sync();
 		mailFile.Unlock();
+		// finally we move the mail-file to its new home:
+		(err = homeDir.SetTo( &mParentEntry)) == B_OK
+													|| BM_THROW_RUNTIME( BString("Could not get directory for \n\t<") << path.Path() << ">\n\n Result: " << strerror(err));
+		(err = mMailEntry.MoveTo( &homeDir)) == B_OK
+													|| BM_THROW_RUNTIME( BString("Could not move mail from tmp-folder to \n\t<") << filename << ">\n\n Result: " << strerror(err));
 	} catch( exception &e) {
 		BM_SHOWERR(e.what());
 		return false;
@@ -259,8 +275,14 @@ bool BmMail::StartJob() {
 
 		entry_ref eref = mMailRef->EntryRef();
 		BM_LOG2( BM_LogMailParse, BString("opening mail-file <") << eref.name << ">");
-		(err = mailFile.SetTo( &eref, B_READ_ONLY)) == B_OK
-													|| BM_THROW_RUNTIME(BString("Could not open mail-file <") << eref.name << "> \n\nError:" << strerror(err));
+		for( int i=0; (err = mailFile.SetTo( &eref, B_READ_ONLY)) == B_BUSY; ++i) {
+			if (i==100)
+				throw BM_runtime_error( BString("Node is locked too long for mail-file <") << eref.name << "> \n\nError:" << strerror(err));
+			BM_LOG2( BM_LogMailTracking, BString("Node is locked for mail-file <") << eref.name << ">. We take a nap and try again...");
+			snooze( 200*1000);
+		}
+		if (err != B_OK)
+			throw BM_runtime_error(BString("Could not open mail-file <") << eref.name << "> \n\nError:" << strerror(err));
 		
 		// ...ok, mail-file found, we fetch the mail from it:
 		BString mailText;

@@ -257,11 +257,11 @@ BmPopperView::~BmPopperView() {
 		-	creates and returns a new job-model, data may contain constructor args
 \*------------------------------------------------------------------------------*/
 BmJobModel* BmPopperView::CreateJobModel( BMessage* msg) {
-	BArchivable* obj;
+	BString accName = FindMsgString( msg, BmJobStatusWin::MSG_JOB_NAME);
+	BmListModelItemRef item = ThePopAccountList->FindItemByKey( accName);
 	BmPopAccount* account;
-	obj = instantiate_object( msg);
-	(obj && (account = dynamic_cast<BmPopAccount*>( obj)))
-													|| BM_THROW_INVALID( "Could not create BmPopAccount-instance from message");
+	(account = dynamic_cast<BmPopAccount*>( item.Get()))
+													|| BM_THROW_INVALID( BString("Could not find BmPopAccount ") << accName);
 	return new BmPopper( account->Name(), account);
 }
 
@@ -280,7 +280,7 @@ void BmPopperView::ResetController() {
 		-	
 \*------------------------------------------------------------------------------*/
 bool BmPopperView::WantsToStayVisible() {
-	return mMailBar->CurrentValue() == 0; 
+	return mMailBar->CurrentValue() != 0;
 }
 				
 /*------------------------------------------------------------------------------*\
@@ -374,8 +374,10 @@ BmJobStatusWin::~BmJobStatusWin() {
 		-	standard BeOS-behaviour, we allow a quit
 \*------------------------------------------------------------------------------*/
 bool BmJobStatusWin::QuitRequested() {
-	if (!bmApp->IsQuitting())
+	if (!bmApp->IsQuitting()) {
+		Hide();
 		return false;
+	}
 	BM_LOG2( BM_LogJobWin, BString("JobStatusWin has been asked to quit; stopping all connections"));
 	JobMap::iterator iter;
 	for( iter = mActiveJobs.begin(); iter != mActiveJobs.end(); ++iter) {
@@ -486,7 +488,7 @@ void BmJobStatusWin::AddJob( BMessage* msg) {
 	controller->StartJob( job);
 
 	mActiveJobCount++;
-	if (IsHidden())
+	while (IsHidden())
 		Show();
 }
 

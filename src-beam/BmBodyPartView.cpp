@@ -271,15 +271,12 @@ void BmBodyPartView::ItemInvoked( int32 index) {
 bool BmBodyPartView::InitiateDrag( BPoint where, int32 index, bool wasSelected) {
 	if (!wasSelected)
 		return false;
-	BMessage dragMsg( BM_ATTACHMENT_DRAG);
+	BMessage dragMsg( B_SIMPLE_DATA);
 	BmBodyPartItem* bodyPartItem = dynamic_cast<BmBodyPartItem*>(ItemAt( index));
 	BmBodyPart* bodyPart = dynamic_cast<BmBodyPart*>(bodyPartItem->ModelItem());
 	const char* filename = bodyPartItem->GetColumnContentText( 1);
 	entry_ref eref = bodyPart->WriteToTempFile( filename);
-	dragMsg.AddString( "be:types", bodyPart->MimeType());
-	dragMsg.AddString( "be:type_descriptions", "E-mail attachment");
 	dragMsg.AddInt32( "be:actions", B_MOVE_TARGET);
-	dragMsg.AddString( "be:originator", "Beam");
 	dragMsg.AddString( "be:clip_name", filename);
 	dragMsg.AddRef( "refs", &eref);
 	BFont font;

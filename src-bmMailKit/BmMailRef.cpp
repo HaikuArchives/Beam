@@ -51,9 +51,14 @@ BmMailRef::BmMailRef( BmMailRefList* model, entry_ref &eref, ino_t node, struct 
 	buf = buffer.LockBuffer( 0);
 
 	try {
-		node.SetTo( &eref);
-		(err = node.InitCheck()) == B_OK
-													|| BM_THROW_RUNTIME(BString("Could not get node for mail-file <") << eref.name << "> \n\nError:" << strerror(err));
+		for( int i=0; (err = node.SetTo( &eref)) == B_BUSY; ++i) {
+			if (i==100)
+				throw BM_runtime_error( BString("Node is locked too long for mail-file <") << eref.name << "> \n\nError:" << strerror(err));
+			BM_LOG2( BM_LogMailTracking, BString("Node is locked for mail-file <") << eref.name << ">. We take a nap and try again...");
+			snooze( 200*1000);
+		}
+		if (err != B_OK)
+			throw BM_runtime_error(BString("Could not get node for mail-file <") << eref.name << "> \n\nError:" << strerror(err));
 
 		node.ReadAttr( "BEOS:TYPE", 		B_STRING_TYPE, 0, buf, bufsize);		filetype = buf; 	*buf=0;
 		if (!filetype.ICompare("text/x-email")) {

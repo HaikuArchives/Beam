@@ -3,6 +3,7 @@
 		$Id$
 */
 
+#include <Autolock.h>
 #include <File.h>
 #include <InterfaceKit.h>
 #include <Message.h>
@@ -22,10 +23,78 @@
 #include "BmMailView.h"
 #include "BmMainWindow.h"
 #include "BmMsgTypes.h"
+#include "BmPopAccount.h"
 #include "BmResources.h"
 #include "BmToolbarButton.h"
 #include "BmUtil.h"
 
+
+/********************************************************************************\
+	BmMainMenuBar
+\********************************************************************************/
+
+/*------------------------------------------------------------------------------*\
+	BmMainMenuBar()
+		-	
+\*------------------------------------------------------------------------------*/
+BmMainMenuBar::BmMainMenuBar()
+	:	inherited()
+	,	inheritedController( "PopAccountListController")
+	,	mAccountMenu( NULL)
+{
+}
+
+/*------------------------------------------------------------------------------*\
+	MessageReceived( msg)
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMainMenuBar::MessageReceived( BMessage* msg) {
+	try {
+		switch( msg->what) {
+			case BM_LISTMODEL_ADD:
+			case BM_LISTMODEL_REMOVE: {
+				if (!IsMsgFromCurrentModel( msg)) break;
+				JobIsDone( true);
+				break;
+			}
+			default:
+				inherited::MessageReceived( msg);
+		}
+	}
+	catch( exception &err) {
+		// a problem occurred, we tell the user:
+		BM_SHOWERR( BString(ControllerName()) << ":\n\t" << err.what());
+	}
+}
+
+/*------------------------------------------------------------------------------*\
+	MessageReceived( msg)
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMainMenuBar::JobIsDone( bool completed) {
+	if (completed && mAccountMenu) {
+		BmAutolock lock( DataModel()->ModelLocker());
+		lock.IsLocked()	 						|| BM_THROW_RUNTIME( BString() << ControllerName() << ":AddAllModelItems(): Unable to lock model");
+		BMenuItem* old;
+		while( (old = mAccountMenu->RemoveItem( (int32)0)))
+			delete old;
+		BmListModel *model = dynamic_cast<BmListModel*>( DataModel());
+		BmModelItemMap::const_iterator iter;
+		for( iter = model->begin(); iter != model->end(); ++iter) {
+			BmListModelItem* item = iter->second.Get();
+			BMessage* msg = new BMessage( BMM_CHECK_MAIL);
+			msg->AddString( BmPopAccountList::MSG_ITEMKEY, item->Key());
+			if (item)
+				mAccountMenu->AddItem( new BMenuItem( item->Key().String(), msg));
+		}
+	}
+}
+
+
+
+/********************************************************************************\
+	BmMainWindow
+\********************************************************************************/
 
 BmMainWindow* BmMainWindow::theInstance = NULL;
 
@@ -83,12 +152,12 @@ BmMainWindow::BmMainWindow()
 	,	mVertSplitter( NULL)
 {
 	TheMailFolderList = BmMailFolderList::CreateInstance();
+	ThePopAccountList = BmPopAccountList::CreateInstance();
 
 	MView* mOuterGroup = 
 		new VGroup(
 			minimax( 600, 200, 1E5, 1E5),
 			CreateMenu(),
-//			new Space(minimax(-1,4,-1,4)),
 			new MBorder( M_RAISED_BORDER, 3, NULL,
 				new HGroup(
 					minimax( -1, -1, 1E5, -1),
@@ -132,7 +201,7 @@ BmMainWindow::BmMainWindow()
 					0
 				)
 			),
-//			new Space(minimax(-1,2,-1,2)),
+			new Space(minimax(-1,2,-1,2)),
 			new HGroup(
 				mVertSplitter = new UserResizeSplitView( 
 					CreateMailFolderView( minimax(0,100,300,1E5), 120, 100),
@@ -161,6 +230,7 @@ BmMainWindow::BmMainWindow()
 \*------------------------------------------------------------------------------*/
 BmMainWindow::~BmMainWindow() {
 	TheMailFolderList = NULL;
+	ThePopAccountList = NULL;
 	theInstance = NULL;
 }
 
@@ -169,7 +239,7 @@ BmMainWindow::~BmMainWindow() {
 		-	
 \*------------------------------------------------------------------------------*/
 MMenuBar* BmMainWindow::CreateMenu() {
-	MMenuBar* menubar = new MMenuBar();
+	mMainMenuBar = new BmMainMenuBar();
 	BMenu* menu = NULL;
 	// File
 	menu = new BMenu( "File");
@@ -183,7 +253,7 @@ MMenuBar* BmMainWindow::CreateMenu() {
 	menu->AddItem( new BMenuItem( "About Beam...", new BMessage( B_ABOUT_REQUESTED)));
 	menu->AddSeparatorItem();
 	menu->AddItem( new BMenuItem( "Quit Beam", new BMessage( B_QUIT_REQUESTED), 'Q'));
-	menubar->AddItem( menu);
+	mMainMenuBar->AddItem( menu);
 
 	// Edit
 	menu = new BMenu( "Edit");
@@ -197,16 +267,18 @@ MMenuBar* BmMainWindow::CreateMenu() {
 	menu->AddItem( new BMenuItem( "Find...", new BMessage( BMM_FIND), 'F'));
 	menu->AddItem( new BMenuItem( "Find Messages...", new BMessage( BMM_FIND_MESSAGES), 'F', B_SHIFT_KEY));
 	menu->AddItem( new BMenuItem( "Find Next", new BMessage( BMM_FIND_NEXT), 'G'));
-	menubar->AddItem( menu);
+	mMainMenuBar->AddItem( menu);
 
 	// Network
+	BMenu* accMenu = new BMenu( "Check Mail For");
+	mMainMenuBar->SetAccountMenu( accMenu);
 	menu = new BMenu( "Network");
 	menu->AddItem( new BMenuItem( "Check Mail", new BMessage( BMM_CHECK_MAIL), 'M'));
+	menu->AddItem( accMenu);
 	menu->AddItem( new BMenuItem( "Check All Accounts", new BMessage( BMM_CHECK_ALL), 'M', B_SHIFT_KEY));
 	menu->AddSeparatorItem();
-	menu->AddSeparatorItem();
 	menu->AddItem( new BMenuItem( "Send Pending Messages", new BMessage( BMM_SEND_PENDING)));
-	menubar->AddItem( menu);
+	mMainMenuBar->AddItem( menu);
 
 	// Message
 	menu = new BMenu( "Message");
@@ -221,13 +293,13 @@ MMenuBar* BmMainWindow::CreateMenu() {
 	menu->AddItem( new BMenuItem( "Apply Filter", new BMessage( BMM_FILTER)));
 	menu->AddSeparatorItem();
 	menu->AddItem( new BMenuItem( "Move To Trash", new BMessage( BMM_TRASH), 'T'));
-	menubar->AddItem( menu);
+	mMainMenuBar->AddItem( menu);
 
 	// Help
 	menu = new BMenu( "Help");
-	menubar->AddItem( menu);
+	mMainMenuBar->AddItem( menu);
 
-	return menubar;
+	return mMainMenuBar;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -269,7 +341,8 @@ void BmMainWindow::BeginLife() {
 	try {
 		mMailRefView->StartWatching( this, BM_NTFY_MAILREF_SELECTION);
 		BM_LOG2( BM_LogMainWindow, BString("MainWindow begins life"));
-		mMailFolderView->StartJob( TheMailFolderList.Get(), true);
+		mMailFolderView->StartJob( TheMailFolderList.Get());
+		mMainMenuBar->StartJob( ThePopAccountList.Get());
 	} catch(...) {
 		nIsAlive = false;
 		throw;
@@ -322,6 +395,15 @@ void BmMainWindow::MessageReceived( BMessage* msg) {
 				BView* focusView = CurrentFocus();
 				if (focusView)
 					PostMessage( msg, focusView);
+				break;
+			}
+			case BMM_CHECK_MAIL: {
+				const char* key = NULL;
+				msg->FindString( BmPopAccountList::MSG_ITEMKEY, &key);
+				if (key)
+					ThePopAccountList->CheckMailFor( key);
+				else
+					ThePopAccountList->CheckMail();
 				break;
 			}
 			case BMM_NEW_MAIL: {

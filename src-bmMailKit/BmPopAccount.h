@@ -8,6 +8,7 @@
 #define _BmPopAccount_h
 
 #include <stdexcept>
+#include <vector>
 
 #include <Archivable.h>
 #include <List.h>
@@ -38,17 +39,22 @@ class BmPopAccount : public BmListModelItem {
 	static const char* const MSG_DELETE_MAIL = 	"bm:deletemail";
 	static const char* const MSG_PORT_NR = 		"bm:portnr";
 	static const char* const MSG_SMTP_PORT_NR = 	"bm:smtpportnr";
+	static const char* const MSG_UID = 				"bm:uid";
 public:
 	BmPopAccount( const char* name, BmPopAccountList* model);
 	BmPopAccount( BMessage* archive, BmPopAccountList* model);
 	virtual ~BmPopAccount() 				{}
+	
+	// native methods:
+	bool IsUIDDownloaded( BString uid);
+	void MarkUIDAsDownloaded( BString uid);
 
 	// stuff needed for BArchivable:
 	static BArchivable* Instantiate( BMessage* archive);
 	virtual status_t Archive( BMessage* archive, bool deep = true) const;
 
 	// getters:
-	const BString &Name() const 			{ return mName; }
+	const BString &Name() const 			{ return Key(); }
 	const BString &Username() const 		{ return mUsername; }
 	const BString &Password() const 		{ return mPassword; }
 	const BString &POPServer() const		{ return mPOPServer; }
@@ -62,7 +68,6 @@ public:
 	int16 SMTPPortNr() const 				{ return mSMTPPortNr; }
 
 	// setters:
-	void Name( const BString &s) 			{ mName = s; }
 	void Username( const BString &s) 	{ mUsername = s; }
 	void Password( const BString &s) 	{ mPassword = s; }
 	void POPServer( const BString &s)	{ mPOPServer = s; }
@@ -80,7 +85,7 @@ public:
 private:
 	BmPopAccount();					// hide default constructor
 
-	BString mName;						// name of this POP-account
+	//BString mName;					// name is stored in key (base-class)
 	BString mUsername;
 	BString mPassword;
 	BString mPOPServer;
@@ -93,6 +98,8 @@ private:
 	bool mDeleteMailFromServer;	// delete mails upon receive?
 	int16 mPortNr;						// usually 110
 	int16 mSMTPPortNr;				// usually 25
+
+	vector<BString> mUIDs;			// list of UIDs seen in this account
 };
 
 
@@ -109,8 +116,13 @@ public:
 	BmPopAccountList();
 	~BmPopAccountList();
 	
+	// native methods:
+	void CheckMail();
+	void CheckMailFor( BString accName);
+	
 	// overrides of listmodel base:
 	const BString SettingsFileName();
+	void InstantiateItems( BMessage* archive);
 
 	static BmRef<BmPopAccountList> theInstance;
 

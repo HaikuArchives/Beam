@@ -6,9 +6,12 @@
 #ifndef _BmMainWindow_h
 #define _BmMainWindow_h
 
+#include <MMenuBar.h>
 #include <MWindow.h>
 
-class MMenuBar;
+#include "BmController.h"
+
+class BMenu;
 
 class BmMailFolderView;
 class BmMailRefView;
@@ -17,6 +20,28 @@ class BmMailViewContainer;
 class BmToolbarButton;
 class CLVContainerView;
 class UserResizeSplitView;
+
+class BmMainMenuBar : public MMenuBar, public BmJobController
+{
+	typedef MMenuBar inherited;
+	typedef BmJobController inheritedController;
+
+public:
+
+	BmMainMenuBar();
+
+	void MessageReceived( BMessage* msg);
+
+	BHandler* GetControllerHandler() 	{ return this; }
+	void JobIsDone( bool completed);
+
+	void SetAccountMenu( BMenu* m)		{ mAccountMenu = m; }
+	
+private:
+	BMenu* mAccountMenu;
+};
+
+
 
 class BmMainWindow : public MWindow
 {
@@ -70,6 +95,8 @@ private:
 	BmToolbarButton* mBounceButton;
 	BmToolbarButton* mPrintButton;
 	BmToolbarButton* mTrashButton;
+	
+	BmMainMenuBar* mMainMenuBar;
 
 	static bool nIsAlive;
 };

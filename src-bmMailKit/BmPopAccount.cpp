@@ -9,6 +9,8 @@
 #include <Message.h>
 
 #include "BmBasics.h"
+#include "BmJobStatusWin.h"
+#include "BmMsgTypes.h"
 #include "BmPopAccount.h"
 #include "BmResources.h"
 #include "BmUtil.h"
@@ -36,7 +38,6 @@ BmPopAccount::BmPopAccount( const char* name, BmPopAccountList* model)
 BmPopAccount::BmPopAccount( BMessage* archive, BmPopAccountList* model) 
 	:	inherited( FindMsgString( archive, MSG_NAME), model, (BmListModelItem*)NULL)
 {
-	mName = FindMsgString( archive, MSG_NAME);
 	mUsername = FindMsgString( archive, MSG_USERNAME);
 	mPassword = FindMsgString( archive, MSG_PASSWORD);
 	mPOPServer = FindMsgString( archive, MSG_POP_SERVER);
@@ -48,6 +49,10 @@ BmPopAccount::BmPopAccount( BMessage* archive, BmPopAccountList* model)
 	mDeleteMailFromServer = FindMsgBool( archive, MSG_DELETE_MAIL);
 	mPortNr = FindMsgInt16( archive, MSG_PORT_NR);
 	mSMTPPortNr = FindMsgInt16( archive, MSG_SMTP_PORT_NR);
+	const char* uid;
+	for( int32 i=0; archive->FindString( MSG_UID, i, &uid) == B_OK; ++i) {
+		mUIDs.push_back( uid);
+	}
 }
 
 /*------------------------------------------------------------------------------*\
@@ -57,7 +62,7 @@ BmPopAccount::BmPopAccount( BMessage* archive, BmPopAccountList* model)
 \*------------------------------------------------------------------------------*/
 status_t BmPopAccount::Archive( BMessage* archive, bool deep) const {
 	status_t ret = (inherited::Archive( archive, deep)
-		||	archive->AddString( MSG_NAME, mName.String())
+		||	archive->AddString( MSG_NAME, Key().String())
 		||	archive->AddString( MSG_USERNAME, mUsername.String())
 		||	archive->AddString( MSG_PASSWORD, mPassword.String())
 		||	archive->AddString( MSG_POP_SERVER, mPOPServer.String())
@@ -69,6 +74,10 @@ status_t BmPopAccount::Archive( BMessage* archive, bool deep) const {
 		||	archive->AddBool( MSG_DELETE_MAIL, mDeleteMailFromServer)
 		||	archive->AddInt16( MSG_PORT_NR, mPortNr)
 		||	archive->AddInt16( MSG_SMTP_PORT_NR, mSMTPPortNr));
+	int32 count = mUIDs.size();
+	for( int i=0; ret==B_OK && i<count; ++i) {
+		ret = archive->AddString( MSG_UID, mUIDs[i].String());
+	}
 	return ret;
 }
 
@@ -94,6 +103,29 @@ BNetAddress BmPopAccount::SMTPAddress() const {
 		return addr;
 	else
 		throw BM_runtime_error("BmSMTPAccount: Could not create SMTPAddress");
+}
+
+/*------------------------------------------------------------------------------*\
+	IsUIDDownloaded()
+		-	
+\*------------------------------------------------------------------------------*/
+bool BmPopAccount::IsUIDDownloaded( BString uid) {
+	uid << " ";									// append a space to avoid matching only in parts
+	int32 uidLen = uid.Length();
+	int32 count = mUIDs.size();
+	for( int32 i=count-1; i>=0; --i) {
+		if (!mUIDs[i].Compare( uid, uidLen))
+			return true;
+	}
+	return false;
+}
+
+/*------------------------------------------------------------------------------*\
+	MarkUIDAsDownloaded()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmPopAccount::MarkUIDAsDownloaded( BString uid) {
+	mUIDs.push_back( uid << " " << system_time());
 }
 
 
@@ -123,17 +155,8 @@ BmPopAccountList* BmPopAccountList::CreateInstance() {
 BmPopAccountList::BmPopAccountList()
 	:	inherited( "PopAccountList")
 {
-	StartJob();
-	BmPopAccount* acc = new BmPopAccount( "testaccount", this);
-		acc->Name( "mailtest@kiwi:110");
-		acc->Username( "mailtest");
-		acc->Password( "mailtest");
-		acc->POPServer( "kiwi");
-		acc->PortNr( 110);
-		acc->SMTPPortNr( 25);
-	AddItemToList( acc, NULL);
-	Store();
-
+	// ugly HACK to ensure that add-messages are being sent during Job:
+	mFrozenCount = -100;						
 }
 
 /*------------------------------------------------------------------------------*\
@@ -150,4 +173,48 @@ BmPopAccountList::~BmPopAccountList() {
 \*------------------------------------------------------------------------------*/
 const BString BmPopAccountList::SettingsFileName() {
 	return BString( TheResources->SettingsPath.Path()) << "/" << "Pop Accounts";
+}
+
+/*------------------------------------------------------------------------------*\
+	InstantiateMailRefs( archive)
+		-	
+\*------------------------------------------------------------------------------*/
+void BmPopAccountList::InstantiateItems( BMessage* archive) {
+	BM_LOG2( BM_LogMailTracking, BString("Start of InstantiateItems() for PopAccountList"));
+	status_t err;
+	int32 numChildren = FindMsgInt32( archive, BmListModelItem::MSG_NUMCHILDREN);
+	for( int i=0; i<numChildren; ++i) {
+		BMessage msg;
+		(err = archive->FindMessage( BmListModelItem::MSG_CHILDREN, i, &msg)) == B_OK
+													|| BM_THROW_RUNTIME(BString("Could not find pop-account nr. ") << i+1 << " \n\nError:" << strerror(err));
+		BmPopAccount* newAcc = new BmPopAccount( &msg, this);
+		BM_LOG3( BM_LogMailTracking, BString("PopAccount <") << newAcc->Name() << "," << newAcc->Key() << "> read");
+		AddItemToList( newAcc);
+	}
+	BM_LOG2( BM_LogMailTracking, BString("End of InstantiateMailRefs() for PopAccountList"));
+	mInitCheck = B_OK;
+}
+
+/*------------------------------------------------------------------------------*\
+	CheckMail()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmPopAccountList::CheckMail() {
+	BmModelItemMap::const_iterator iter;
+	for( iter = begin(); iter != end(); ++iter) {
+		BmPopAccount* acc = dynamic_cast< BmPopAccount*>( iter->second.Get());
+		if (acc->CheckMail()) {
+			CheckMailFor( acc->Name());
+		}
+	}
+}
+
+/*------------------------------------------------------------------------------*\
+	CheckMailFor()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmPopAccountList::CheckMailFor( BString accName) {
+	BMessage archive(BM_JOBWIN_FETCHPOP);
+	archive.AddString( BmJobStatusWin::MSG_JOB_NAME, accName.String());
+	TheJobStatusWin->PostMessage( &archive);
 }

@@ -59,11 +59,11 @@ protected:
 	virtual void WaitForAllControllers();
 	inline void Freeze() 					{ mFrozenCount++; }
 	inline void Thaw()						{ mFrozenCount--; }
-	inline bool Frozen() 					{ return mFrozenCount!=0; }
+	inline bool Frozen() 					{ return mFrozenCount > 0; }
 
 	BLocker mModelLocker;
 	BmControllerSet mControllerSet;
-	uint8 mFrozenCount;
+	int8 mFrozenCount;
 
 private:
 	BString mModelName;

@@ -236,7 +236,7 @@ void BmPopper::Retrieve() {
 		mail.Store();
 	}
 	if (mMsgCount)
-		UpdateMailStatus( 0, "done", mMsgCount);
+		UpdateMailStatus( 100.0, "done", mMsgCount);
 	//	delete the retrieved messages if required:
 	if (mPopAccount->DeleteMailFromServer()) {
 		for( int32 i=0; i<mMsgCount; i++) {

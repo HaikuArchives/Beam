@@ -13,7 +13,6 @@
 
 #include "BmBasics.h"
 #include "BmLogHandler.h"
-#include "BmPopAccount.h"
 #include "BmPrefs.h"
 #include "BmResources.h"
 #include "BmUtil.h"
@@ -57,7 +56,6 @@ BmPrefs* BmPrefs::CreateInstance() {
 	}
 
 	theInstance = prefs;
-	ThePopAccountList = BmPopAccountList::CreateInstance();
 	return prefs;
 }
 
@@ -132,7 +130,6 @@ BmPrefs::BmPrefs( BMessage* archive)
 BmPrefs::~BmPrefs() {
 	delete mMailRefLayout;
 	theInstance = NULL;
-	ThePopAccountList = NULL;
 }
 
 /*------------------------------------------------------------------------------*\

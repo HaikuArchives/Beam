@@ -315,11 +315,10 @@ bool BmMailFolderList::StartJob() {
 \*------------------------------------------------------------------------------*/
 void BmMailFolderList::AddNewFlag( ino_t pnode, ino_t node) {
 	BmListModelItemRef parentRef = FindItemByKey( BString()<<pnode);
-	if (!parentRef)
-		return;
 	BmMailFolder* parent = dynamic_cast< BmMailFolder*>( parentRef.Get());
 	mNewMailNodeMap[ node] = parent;
-	parent->BumpNewMailCount();
+	if (parent)
+		parent->BumpNewMailCount();
 }
 
 /*------------------------------------------------------------------------------*\
@@ -328,11 +327,10 @@ void BmMailFolderList::AddNewFlag( ino_t pnode, ino_t node) {
 \*------------------------------------------------------------------------------*/
 void BmMailFolderList::RemoveNewFlag( ino_t pnode, ino_t node) {
 	BmListModelItemRef parentRef = FindItemByKey( BString()<<pnode);
-	if (!parentRef)
-		return;
 	mNewMailNodeMap.erase( node);
 	BmMailFolder* parent = dynamic_cast< BmMailFolder*>( parentRef.Get());
-	parent->BumpNewMailCount( -1);
+	if (parent)
+		parent->BumpNewMailCount( -1);
 }
 
 /*------------------------------------------------------------------------------*\
