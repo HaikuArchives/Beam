@@ -489,7 +489,6 @@ BmMailFolderList* BmMailFolderList::CreateInstance() {
 \*------------------------------------------------------------------------------*/
 BmMailFolderList::BmMailFolderList()
 	:	BmListModel( "MailFolderList")
-	,	mTopFolder( NULL)
 	,	mMailboxPathHasChanged( false)
 {
 }
