@@ -670,7 +670,7 @@ const char* const BeamApplication::MSG_SENDING_REFVIEW = 	"bm:srefv";
 		-	constructor
 \*------------------------------------------------------------------------------*/
 BeamApplication::BeamApplication( const char* sig)
-	:	inherited( sig)
+	:	inherited( sig, false)
 	,	mInitCheck( B_NO_INIT)
 	,	mMailWin( NULL)
 	,	mPrintSetup( NULL)
