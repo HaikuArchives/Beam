@@ -145,6 +145,7 @@ private:
 	BmCLVContainerView operator=( const BmCLVContainerView&);
 };
 
+class BMessageRunner;
 /*------------------------------------------------------------------------------*\
 	BmListViewController
 		-	
@@ -229,6 +230,9 @@ protected:
 	virtual BmString StateInfoBasename()				= 0;
 	virtual BMessage* DefaultLayout()	{ return NULL; }
 
+	typedef map< BmListModelItem*, BmListViewItem*> BmViewModelMap;
+
+	BmViewModelMap mViewModelMap;
 	BMessage* mInitialStateInfo;
 	bool mShowCaption;
 	bool mShowBusyView;

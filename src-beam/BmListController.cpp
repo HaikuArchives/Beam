@@ -478,13 +478,7 @@ void BmListViewController::MessageReceived( BMessage* msg) {
 		-	
 \*------------------------------------------------------------------------------*/
 BmListViewItem* BmListViewController::FindViewItemFor( BmListModelItem* modelItem) {
-	int32 count = FullListCountItems();
-	for( int32 i=0; i<count; ++i) {
-		BmListViewItem* viewItem = static_cast<BmListViewItem*>( FullListItemAt(i));
-		if (viewItem->ModelItem() == modelItem)
-			return viewItem;
-	}
-	return NULL;
+	return mViewModelMap[ modelItem];
 }
 
 /*------------------------------------------------------------------------------*\
@@ -512,8 +506,10 @@ void BmListViewController::AddAllModelItems() {
 			doAddModelItem( NULL, modelItem);
 		} else {
 			viewItem = CreateListViewItem( modelItem);
-			if (viewItem)
+			if (viewItem) {
 				tempList->AddItem( viewItem);
+				mViewModelMap[modelItem] = viewItem;
+			}
 		}
 		if (count%100==0) {
 			ScrollView()->PulseBusyView();
@@ -576,6 +572,7 @@ BmListViewItem* BmListViewController::doAddModelItem( BmListViewItem* parent, Bm
 			AddUnder( newItem, parent);
 		else
 			AddItem( newItem);
+		mViewModelMap[item] = newItem;
 	}
 	
 	// add all sub-items of current item to the view as well:
@@ -603,6 +600,7 @@ void BmListViewController::RemoveModelItem( BmListModelItem* item) {
 		BmListViewItem* viewItem = FindViewItemFor( item);
 		if (viewItem) {
 			RemoveItem( viewItem);
+			mViewModelMap.erase( item);
 			delete viewItem;
 		}
 		UpdateCaption();
