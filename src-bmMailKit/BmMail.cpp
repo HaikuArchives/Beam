@@ -681,7 +681,7 @@ bool BmMail::ConstructRawText( const BmString& editedUtf8Text, int32 encoding,
 		msgText << "\r\n";
 	mText.Adopt( msgText.TheString());
 	BM_LOG3( BM_LogMailParse, BmString("CONSTRUCTED MSG: \n-----START--------\n") << mText << "\n-----END----------");
-	return mInitCheck == B_OK;
+	return true;
 }
 
 /*------------------------------------------------------------------------------*\
