@@ -28,6 +28,7 @@
 /*************************************************************************/
 
 #include <Alert.h>
+#include <Application.h>
 #include <Entry.h>
 #include <FilePanel.h>
 #include <MenuItem.h>
@@ -53,7 +54,6 @@
 #include "BubbleHelper.h"
 #include "Colors.h"
 
-#include "BmApp.h"
 #include "BmCheckControl.h"
 #include "BmGuiUtil.h"
 #include "BmLogHandler.h"
@@ -189,9 +189,7 @@ BmString BmPrefsGeneralView::MailboxButtonLabel() {
 \*------------------------------------------------------------------------------*/
 BmString BmPrefsGeneralView::IconboxButtonLabel() {
 	BmString label( "Select Icon Folder (currently '");
-	BmString defaultIconPath = bmApp->AppPath() + ThePrefs->nDefaultIconset;
-	BmString iconPath 
-		= ThePrefs->GetString( "IconPath",	defaultIconPath.String());
+	BmString iconPath = ThePrefs->GetString("IconPath");
 	int32 pos = iconPath.FindLast("/");
 	if (pos >= B_OK)
 		iconPath.Remove(0,pos+1);
