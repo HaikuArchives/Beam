@@ -33,7 +33,6 @@
 
 #include <map>
 
-#include "BmBodyPartList.h"
 #include "BmListController.h"
 
 /*------------------------------------------------------------------------------*\
@@ -44,25 +43,6 @@ enum {
 	BM_BODYPARTVIEW_SHOWATTACHMENTS	 = 'bmgb',
 	BM_BODYPARTVIEW_SAVE_ATTACHMENT	 = 'bmgc',
 	BM_BODYPARTVIEW_DELETE_ATTACHMENT = 'bmgd'
-};
-
-/*------------------------------------------------------------------------------*\
-	BmBodyPartItem
-		-	
-\*------------------------------------------------------------------------------*/
-class BmBodyPartItem : public BmListViewItem
-{
-	typedef BmListViewItem inherited;
-
-public:
-	BmBodyPartItem( ColumnListView* lv, BmListModelItem* item);
-	~BmBodyPartItem();
-
-	BmBodyPart* ModelItem() const	{ return dynamic_cast<BmBodyPart*>(mModelItem.Get()); }
-
-	// Hide copy-constructor and assignment:
-	BmBodyPartItem( const BmBodyPartItem&);
-	BmBodyPartItem operator=( const BmBodyPartItem&);
 };
 
 class BFilePanel;
