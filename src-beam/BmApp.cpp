@@ -106,6 +106,7 @@ BmApplication::BmApplication( const char* sig)
 	,	mPrintSetup( NULL)
 	,	mPrintJob( "Mail")
 	,	mStartupLocker( new BLocker( "StartupLocker", false))
+	,	mDeskbarItemIsOurs( false)
 {
 	if (InstanceCount > 0)
 		throw BM_runtime_error( "Trying to initialize more than one instance "
@@ -374,10 +375,12 @@ void BmApplication::InstallDeskbarItem() {
 		if ((res = bmApp->GetAppInfo( &appInfo)) == B_OK) {
 			int32 id;
 			appInfo.ref.set_name( BM_DeskbarItemName);
-			if ((res = mDeskbar.AddItem( &appInfo.ref, &id)) != B_OK)
+			if ((res = mDeskbar.AddItem( &appInfo.ref, &id)) != B_OK) {
 				BM_SHOWERR( BmString("Unable to install Beam_DeskbarItem (")
 								<< BM_DeskbarItemName<<").\nError: \n\t" 
 								<< strerror( res));
+			} else
+				mDeskbarItemIsOurs = true;
 		}
 	}
 }
@@ -387,7 +390,7 @@ void BmApplication::InstallDeskbarItem() {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmApplication::RemoveDeskbarItem() {
-	if (mDeskbar.HasItem( BM_DeskbarItemName))
+	if (mDeskbarItemIsOurs && mDeskbar.HasItem( BM_DeskbarItemName))
 		mDeskbar.RemoveItem( BM_DeskbarItemName);
 }
 

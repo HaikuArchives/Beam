@@ -114,6 +114,8 @@ private:
 
 	BLocker* mStartupLocker;
 	
+	bool mDeskbarItemIsOurs;
+
 	BmString mAppPath;
 	
 	static int InstanceCount;
