@@ -820,7 +820,7 @@ void BmUtf8Encoder::Filter( const char* srcBuf, uint32& srcLen,
 	BmQuotedPrintableDecoder
 \********************************************************************************/
 
-inline unsigned char HEXDIGIT2CHAR( unsigned int d) {
+inline unsigned char HEXDIGIT2CHAR( unsigned char d) {
 	return (((d)>='0'&&(d)<='9') 
 					? (d)-'0' 
 					: ((d)>='A'&&(d)<='F') 
