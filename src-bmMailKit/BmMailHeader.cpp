@@ -690,9 +690,12 @@ void BmMailHeader::RemoveAddrFieldVal(  BmString fieldName, const BmString value
 BmString BmMailHeader::DetermineOriginator( bool bypassReplyTo) {
 	BmAddressList addrList = mAddrMap[BM_FIELD_REPLY_TO];
 	if (bypassReplyTo || !addrList.InitOK()) {
-		addrList = mAddrMap[BM_FIELD_FROM];
+		addrList = mAddrMap[BM_FIELD_MAIL_REPLY_TO];
 		if (!addrList.InitOK()) {
-			addrList = mAddrMap[BM_FIELD_SENDER];
+			addrList = mAddrMap[BM_FIELD_FROM];
+			if (!addrList.InitOK()) {
+				addrList = mAddrMap[BM_FIELD_SENDER];
+			}
 		}
 	}
 	if (!addrList.InitOK())
@@ -733,10 +736,22 @@ BmString BmMailHeader::DetermineListAddress( bool bypassSanityTest) {
 		listAddr.SetTo( rx.match[0].atom[0]);
 	}
 	if (!listAddr.InitOK()) {
-		// now we try to munge List-Id into a valid address:
+		// ...we try to munge List-Id into a valid address:
 		BmString listId = mAddrMap[BM_FIELD_LIST_ID].FirstAddress().AddrSpec();
 		listId.ReplaceFirst( ".", "@");
 		listAddr.SetTo( listId);
+	}
+	if (!listAddr.InitOK()) {
+		// ...we look in field Mailing-List for the list-address:
+		if (rx.exec( mHeaders[BM_FIELD_MAILING_LIST], "^\\s*list\\s*([^;\\s]+)", 
+						 Regexx::nocase | Regexx::newline)) {
+			listAddr.SetTo( rx.match[0].atom[0]);
+		}
+	}
+	if (!listAddr.InitOK()) {
+		// ...we have a look at Mail-Followup-To:
+		if (!IsFieldEmpty( BM_FIELD_MAIL_FOLLOWUP_TO))
+			listAddr = mAddrMap[BM_FIELD_LIST_ID].FirstAddress();
 	}
 	if (!bypassSanityTest) {
 		// Sanity-check: the list-address *has* to be found somewhere within
