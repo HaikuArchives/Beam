@@ -64,6 +64,9 @@ enum Columns {
 	COL_LANGUAGE
 };
 
+#undef BM_LOGNAME
+#define BM_LOGNAME "MailParser"
+
 /*------------------------------------------------------------------------------*\
 	()
 		-	
