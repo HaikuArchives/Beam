@@ -208,7 +208,8 @@ void BmReadStringAttr( const BNode* node, const char* attrName, BmString& outStr
 		outStr.Truncate( 0);
 		return;
 	}
-	char* buf = outStr.LockBuffer( attrInfo.size);
-	node->ReadAttr( attrName, B_STRING_TYPE, 0, buf, attrInfo.size);
-	outStr.UnlockBuffer( attrInfo.size);
+	long long size = max( (long long)0, attrInfo.size-1);
+	char* buf = outStr.LockBuffer( size);
+	node->ReadAttr( attrName, B_STRING_TYPE, 0, buf, size);
+	outStr.UnlockBuffer( size);
 }
