@@ -102,17 +102,15 @@ void BmRefObj::RemoveRef() {
 	BmProxy* proxy = GetProxy( ProxyName());
 	if (proxy) {
 
-#ifdef BM_REF_DEBUGGING
-		BM_LOG2( BM_LogUtil, BmString("RefManager: reference to <") << typeid(*this).name() << ":" << RefName() << ":"<<RefPrintHex()<<"> removed from current ref-count "<<mRefCount);
-#else
-		BM_LOG2( BM_LogUtil, BmString("RefManager: reference to <") << RefName() << ":"<<RefPrintHex()<<"> removed from current ref-count "<<mRefCount);
-#endif
-
 		int32 lastCount = atomic_add( &mRefCount, -1);
 
 #ifdef BM_REF_DEBUGGING
 		assert( lastCount > 0);
+		BM_LOG2( BM_LogUtil, BmString("RefManager: reference to <") << typeid(*this).name() << ":" << RefName() << ":"<<RefPrintHex()<<"> removed, new ref-count is "<<mRefCount);
+#else
+		BM_LOG2( BM_LogUtil, BmString("RefManager: reference to <") << RefName() << ":"<<RefPrintHex()<<"> removed, new ref-count is "<<mRefCount);
 #endif
+
 		if (lastCount == 1) {
 			// removed last reference, so we delete the object:
 			BmObjectMap::iterator pos;
