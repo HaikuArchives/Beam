@@ -51,7 +51,7 @@ class BmBodyPartItem : public BmListViewItem
 	typedef BmListViewItem inherited;
 
 public:
-	BmBodyPartItem( BString key, BmListModelItem* item);
+	BmBodyPartItem( BmString key, BmListModelItem* item);
 	~BmBodyPartItem();
 
 	// Hide copy-constructor and assignment:
@@ -99,7 +99,7 @@ public:
 	void ExpansionChanged( CLVListItem* item, bool expanded);
 	void ItemInvoked( int32 index);
 	void RemoveModelItem( BmListModelItem* item);
-	BString StateInfoBasename();
+	BmString StateInfoBasename();
 
 	// getters:
 	inline float FixedWidth() 				{ return 5000; }

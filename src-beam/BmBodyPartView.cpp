@@ -72,7 +72,7 @@ enum Columns {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmBodyPartItem::BmBodyPartItem( BString key, BmListModelItem* _item)
+BmBodyPartItem::BmBodyPartItem( BmString key, BmListModelItem* _item)
 	:	inherited( key, _item)
 {
 	BmBodyPart* bodyPart = dynamic_cast<BmBodyPart*>( _item);
@@ -80,9 +80,11 @@ BmBodyPartItem::BmBodyPartItem( BString key, BmListModelItem* _item)
 	BBitmap* icon = TheResources->IconByName( bodyPart->MimeType());
 	SetColumnContent( COL_ICON, icon, 2.0, false);
 
-	BString sizeString = bodyPart->IsMultiPart() 
+	BmString sizeString = bodyPart->IsMultiPart() 
 								? "" 
-								: BytesToString( bodyPart->DecodedLength(), true);
+								: ThePrefs->GetBool( "ShowDecodedLength", true) 
+									? BytesToString( bodyPart->DecodedLength(), true)
+									: BytesToString( bodyPart->BodyLength(), true);
 
 	// set column-values:
 	BmListColumn cols[] = {
@@ -229,7 +231,7 @@ void BmBodyPartView::ShowBody( BmBodyPartList* body) {
 	}
 	catch( exception &err) {
 		// a problem occurred, we tell the user:
-		BM_SHOWERR( BString("BodyPartView: ") << err.what());
+		BM_SHOWERR( BmString("BodyPartView: ") << err.what());
 	}
 }
 
@@ -313,7 +315,7 @@ void BmBodyPartView::AddAllModelItems() {
 		-	we 
 \*------------------------------------------------------------------------------*/
 void BmBodyPartView::RemoveModelItem( BmListModelItem* item) {
-	BM_LOG2( BM_LogModelController, BString(ControllerName())<<": removing one item from listview");
+	BM_LOG2( BM_LogModelController, BmString(ControllerName())<<": removing one item from listview");
 	inherited::RemoveModelItem( item);
 	BmBodyPartList* bodyPartList = dynamic_cast<BmBodyPartList*>( DataModel());
 	ShowBody( bodyPartList);
@@ -323,7 +325,7 @@ void BmBodyPartView::RemoveModelItem( BmListModelItem* item) {
 	( )
 		-	
 \*------------------------------------------------------------------------------*/
-BString BmBodyPartView::StateInfoBasename()	{ 
+BmString BmBodyPartView::StateInfoBasename()	{ 
 	return "BodyPartView";
 }
 
@@ -430,7 +432,7 @@ void BmBodyPartView::MessageReceived( BMessage* msg) {
 					break;
 				entry_ref destDirRef;
 				if (msg->FindRef( "directory", 0, &destDirRef) == B_OK) {
-					BString name = msg->FindString( "name");
+					BmString name = msg->FindString( "name");
 					bodyPart->SaveAs( destDirRef, name);
 				}
 				break;
@@ -444,7 +446,7 @@ void BmBodyPartView::MessageReceived( BMessage* msg) {
 		}
 	} catch( exception &err) {
 		// a problem occurred, we tell the user:
-		BM_SHOWERR( BString("BodyPartView:\n\t") << err.what());
+		BM_SHOWERR( BmString("BodyPartView:\n\t") << err.what());
 	}
 }
 
@@ -465,19 +467,19 @@ void BmBodyPartView::ItemInvoked( int32 index) {
 		entry_ref eref = bodyPart->WriteToTempFile();
 		// ...and verify that the real mimetype corresponds to the one indicated
 		// by the attachment-info:
-		BString realMT = DetermineMimeType( &eref, true);
+		BmString realMT = DetermineMimeType( &eref, true);
 		if (realMT.ICompare( bodyPart->MimeType())!=0) {
 			int32 choice = 1;
 			// we only complain if real mimetype is not text/plain because
 			// otherwise we would issue too many unneccessary complaints
 			// ('message/rfc822' being 'text/plain' and the like):
 			if (realMT.ICompare( "text/plain") != 0) {
-				BString s("ATTENTION!\n\nThe attachment has been declared to be of type \n\n\t");
+				BmString s("ATTENTION!\n\nThe attachment has been declared to be of type \n\n\t");
 				s << bodyPart->MimeType()
 				  << "\n\nbut BeOS thinks it is in fact of type\n\n\t" << realMT
 				  << "\n\nWhat would you like Beam to do?";
-				BString openReal = BString("Open as ")<<realMT;
-				BString openDeclared = BString("Open as ")<<bodyPart->MimeType();
+				BmString openReal = BmString("Open as ")<<realMT;
+				BmString openDeclared = BmString("Open as ")<<bodyPart->MimeType();
 				BAlert* alert = new BAlert( "", s.String(), openReal.String(), 
 													 openDeclared.String(), "Cancel");
 				alert->SetShortcut( 2, B_ESCAPE);
@@ -500,17 +502,17 @@ void BmBodyPartView::ItemInvoked( int32 index) {
 			msg.AddRef( "refs", &eref);
 			bmApp->RefsReceived( &msg);
 		} else {
-			BString mtTrustInfo = ThePrefs->GetString( "MimeTypeTrustInfo", 
+			BmString mtTrustInfo = ThePrefs->GetString( "MimeTypeTrustInfo", 
 																	 "<application/pdf:T><application/zip:T><application:W><:T>");
 			bool doIt = true;
 			Regexx rx;
 			int count = rx.exec( mtTrustInfo, "<(.*?):(\\w)>", Regexx::global);
 			for( int i=0; i<count; ++i) {
-				BString match = rx.match[i].atom[0];
+				BmString match = rx.match[i].atom[0];
 				if ( realMT.ICompare( match, match.Length()) == 0) {
-					BString trustLevel = rx.match[i].atom[1];
+					BmString trustLevel = rx.match[i].atom[1];
 					if (trustLevel.ICompare( "T") != 0) {
-						BString s("The attachment may contain harmful content, are you sure to open it?");
+						BmString s("The attachment may contain harmful content, are you sure to open it?");
 						BAlert* alert = new BAlert( "", s.String(), "Yes", "No");
 						alert->SetShortcut( 1, B_ESCAPE);
 						doIt = (alert->Go() == 0);
@@ -527,10 +529,10 @@ void BmBodyPartView::ItemInvoked( int32 index) {
 					update_mime_info( path.Path(), false, true, false);
 					res = be_roster->Launch( &eref);
 					if (res != B_OK && res != B_ALREADY_RUNNING) {
-						ShowAlert( BString("Sorry, could not launch application for this attachment (unknown mimetype perhaps?)\n\nError: ") << strerror(res));
+						ShowAlert( BmString("Sorry, could not launch application for this attachment (unknown mimetype perhaps?)\n\nError: ") << strerror(res));
 					}
 				} else
-					ShowAlert( BString("Sorry, could not open this attachment.\n\nError: ") << strerror(res));
+					ShowAlert( BmString("Sorry, could not open this attachment.\n\nError: ") << strerror(res));
 			}
 		}
 		bodyPartItem->Highlight( false);
