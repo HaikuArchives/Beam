@@ -75,7 +75,7 @@ MultiLineTextControl::MultiLineTextControl(BRect frame, const char* name, const 
 	m_text_view = new MultiLineTextControlTextView(m_entry_text_rect.InsetByCopy(2,2),flags, resizing_mode);
 	if(text)
 		m_text_view->SetText(text);
-	m_text_margin = 4;
+	m_text_margin = 3;
 	ResetTextRect();
 	AddChild(m_text_view);
 	m_focus_color = ui_color(B_KEYBOARD_NAVIGATION_COLOR);
