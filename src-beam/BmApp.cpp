@@ -148,18 +148,24 @@ BmApplication::BmApplication( const char* sig)
 		TheJobStatusWin->Show();
 
 		BmSignatureList::CreateInstance();
-		TheSignatureList->StartJobInThisThread();
+		TheSignatureList->StartJobInNewThread();
 
 		BmFilterList::CreateInstance();
-		TheFilterList->StartJobInThisThread();
+		TheFilterList->StartJobInNewThread();
 
 		BmFilterChainList::CreateInstance();
-		TheFilterChainList->StartJobInThisThread();
+		TheFilterChainList->StartJobInNewThread();
 
+		BmPeopleMonitor::CreateInstance();
 		BmPeopleList::CreateInstance();
+
 		BmMailFolderList::CreateInstance();
+
 		BmSmtpAccountList::CreateInstance( TheJobStatusWin);
+		TheSmtpAccountList->StartJobInNewThread();
+
 		BmPopAccountList::CreateInstance( TheJobStatusWin);
+		ThePopAccountList->StartJobInNewThread();
 
 		add_system_beep_event( BM_BEEP_EVENT);
 
@@ -431,7 +437,8 @@ void BmApplication::MessageReceived( BMessage* msg) {
 					BmRef<BmMail> mail = BmMail::CreateInstance( mailRef);
 					if (mail) {
 						BM_LOG( BM_LogMainWindow, BmString("Asked to redirect mail <") << mailRef->TrackerName() << ">");
-						mail->StartJobInThisThread( BmMail::BM_READ_MAIL_JOB);
+						if (mail->InitCheck() != B_OK)
+							mail->StartJobInThisThread( BmMail::BM_READ_MAIL_JOB);
 						if (mail->InitCheck() != B_OK)
 							continue;
 						BmRef<BmMail> newMail;
@@ -651,7 +658,8 @@ void BmApplication::ForwardMails( BMessage* msg, bool join) {
 			mailRef = iter->second;
 			BmRef<BmMail> mail = BmMail::CreateInstance( mailRef);
 			if (mail) {
-				mail->StartJobInThisThread( BmMail::BM_READ_MAIL_JOB);
+				if (mail->InitCheck() != B_OK)
+					mail->StartJobInThisThread( BmMail::BM_READ_MAIL_JOB);
 				if (mail->InitCheck() != B_OK)
 					continue;
 				if (msg->what == BMM_FORWARD_ATTACHED) {
@@ -691,7 +699,8 @@ void BmApplication::ForwardMails( BMessage* msg, bool join) {
 				++index) {
 			BmRef<BmMail> mail = BmMail::CreateInstance( mailRef);
 			if (mail) {
-				mail->StartJobInThisThread( BmMail::BM_READ_MAIL_JOB);
+				if (mail->InitCheck() != B_OK)
+					mail->StartJobInThisThread( BmMail::BM_READ_MAIL_JOB);
 				if (mail->InitCheck() != B_OK)
 					continue;
 				if (msg->what == BMM_FORWARD_ATTACHED) {
@@ -753,7 +762,8 @@ void BmApplication::ReplyToMails( BMessage* msg, bool join) {
 			mailRef = iter->second;
 			BmRef<BmMail> mail = BmMail::CreateInstance( mailRef);
 			if (mail) {
-				mail->StartJobInThisThread( BmMail::BM_READ_MAIL_JOB);
+				if (mail->InitCheck() != B_OK)
+					mail->StartJobInThisThread( BmMail::BM_READ_MAIL_JOB);
 				if (mail->InitCheck() != B_OK)
 					continue;
 				BmString replyAddr = mail->DetermineReplyAddress( msg->what, true);
@@ -787,7 +797,8 @@ void BmApplication::ReplyToMails( BMessage* msg, bool join) {
 				++index) {
 			BmRef<BmMail> mail = BmMail::CreateInstance( mailRef);
 			if (mail) {
-				mail->StartJobInThisThread( BmMail::BM_READ_MAIL_JOB);
+				if (mail->InitCheck() != B_OK)
+					mail->StartJobInThisThread( BmMail::BM_READ_MAIL_JOB);
 				if (mail->InitCheck() != B_OK)
 					continue;
 				newMail = mail->CreateReply( msg->what, index==0 ? selectedText : NULL);
