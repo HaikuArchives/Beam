@@ -138,7 +138,9 @@ private:
 	struct SmtpState {
 		const char* text;
 		TStateMethod func;
-		SmtpState( const char* t, TStateMethod f) : text(t), func(f) { }
+		SmtpState( const char* t, TStateMethod f) 
+			: text(t)
+			, func(f) 							{ }
 	};
 	static SmtpState SmtpStates[SMTP_FINAL];
 
@@ -154,9 +156,11 @@ private:
 	void Mail( BmMail *mail);
 	bool HasStdRcpts( BmMail *mail, BmRcptVect& rcptVect);
 	void Rcpt( const BmRcptVect& rcptVect);
-	void BccRcpt( BmMail *mail, bool sendDataForEachBcc, const BmString& headerText);
+	void BccRcpt( BmMail *mail, bool sendDataForEachBcc, 
+					  const BmString& headerText);
 	void Data( BmMail *mail, const BmString& headerText, BmString forBcc="");
-	void UpdateSMTPStatus( const float, const char*, bool failed=false, bool stopped=false);
+	void UpdateSMTPStatus( const float, const char*, bool failed=false, 
+								  bool stopped=false);
 	void UpdateMailStatus( const float, const char*, int32);
 
 	bool mServerMayHaveSizeLimit;
