@@ -453,7 +453,7 @@ void BmMailMonitor::CacheRefToFolder( node_ref& nref, const BmString& fKey) {
 		pos->second.usedCount++;
 	else {
 		FolderInfo fInfo( fKey);
-		mCachedRefToFolderMap.insert( pair<BmString, FolderInfo>( key, fInfo));
+		mCachedRefToFolderMap.insert( pair<const BmString, FolderInfo>( key, fInfo));
 	}
 }
 

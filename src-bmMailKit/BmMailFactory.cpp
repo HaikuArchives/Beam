@@ -810,7 +810,9 @@ void BmForwardFactory::Produce()
 				} else {
 					newMail = CreateInlineForward( 
 						mail, mForwardMode == BMM_FORWARD_INLINE_ATTACH, 
-						iter == mBaseRefVect.begin() ? mSelectedText : NULL
+						iter == mBaseRefVect.begin() 
+									? mSelectedText 
+									: BM_DEFAULT_STRING
 					);
 				}
 				if (newMail)

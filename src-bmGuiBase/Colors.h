@@ -26,11 +26,11 @@ class BView;
 	Functions for retrieving UI-colors, independent from whether or not the
 	current BeOS supports it or not (on R5 they just return the fixed values):
 \*------------------------------------------------------------------------------*/
-status_t BmSetViewUIColor( BView* view, const char* uiColName);
-status_t BmSetHighUIColor( BView* view, const char* uiColName);
-status_t BmSetLowUIColor( BView* view, const char* uiColName);
+status_t IMPEXPSANTAPARTSFORBEAM BmSetViewUIColor( BView* view, const char* uiColName);
+status_t IMPEXPSANTAPARTSFORBEAM BmSetHighUIColor( BView* view, const char* uiColName);
+status_t IMPEXPSANTAPARTSFORBEAM BmSetLowUIColor( BView* view, const char* uiColName);
 
-rgb_color BmFixupColor( const char* uiColName, int level, bool weaken);
+rgb_color IMPEXPSANTAPARTSFORBEAM BmFixupColor( const char* uiColName, int level, bool weaken);
 
 inline rgb_color BmWeakenColor( const char* uiColName, int level) {
 	return BmFixupColor( uiColName, level, true);
@@ -65,7 +65,7 @@ extern IMPEXPSANTAPARTSFORBEAM const char *B_UI_MENU_SELECTED_BORDER_COLOR;
 extern IMPEXPSANTAPARTSFORBEAM const char *B_UI_SUCCESS_COLOR;
 extern IMPEXPSANTAPARTSFORBEAM const char *B_UI_FAILURE_COLOR;
 
-rgb_color ui_color( const char* uiColName);
+rgb_color IMPEXPSANTAPARTSFORBEAM ui_color( const char* uiColName);
 
 // [HACK-HACK-HACK]:
 // 	map calls to SetXXXUIColor to use BmSetXXXUIColor automagically:

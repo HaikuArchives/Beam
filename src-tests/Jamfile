@@ -11,6 +11,10 @@ SubDirSysHdrs /boot/home/config/include/liblayout ;
 
 LINKFLAGS += -L/boot/home/config/lib ;
 
+if $(OSPLAT) = PPC {
+	LINKFLAGS += -noinit -noterm ;
+}
+
 Application TestBeam
 	:  
 		Base64DecoderTest.cpp
@@ -37,7 +41,7 @@ Application TestBeam
 XRes TestBeam 
 	: 
 		[ FDirName $(TOP) resources BmIcons.rsrc ]  
-		[ FDirName $(TOP) resources BmAppResources.rsrc ] 
+		[ FDirName $(TOP) resources BmTestAppResources.rsrc ] 
 	;
 
 MimeSet TestBeam ;

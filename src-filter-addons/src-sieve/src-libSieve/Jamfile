@@ -6,7 +6,7 @@ CCFLAGS += -DENABLE_REGEX ;
 if $(OSPLAT) = X86 {
 	CCFLAGS += -Wno-conversion -Wno-unused -Wno-sign-compare -Wno-uninitialized ;
 } else {
-	CCFLAGS += -w nounwanted -w nounused ;
+	CCFLAGS += -proto lax -w nounwanted -w nounused ;
 }
 
 SubDirSysHdrs /boot/home/config/include ;

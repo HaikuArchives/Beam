@@ -784,7 +784,7 @@ void BmMailRefView::SelectionChanged( void) {
 	if (mPartnerMailView)
 		mPartnerMailView->ShowMail( ref.Get());
 	if (mCurrFolder && mCurrFolder->MailRefList()->InitCheck() == B_OK)
-		mCurrFolder->SelectedRefKey( ref ? ref->Key() : "");
+		mCurrFolder->SelectedRefKey( ref ? ref->Key() : BM_DEFAULT_STRING);
 	
 	SendNoticesIfNeeded( numSelected > 0);
 	BM_LOG2( BM_LogGui, "MailRefView::SelectionChanged() - exit");
