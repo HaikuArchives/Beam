@@ -146,6 +146,14 @@ void BmMenuControl::SetDivider( float divider) {
 	( )
 		-	
 \*------------------------------------------------------------------------------*/
+float BmMenuControl::Divider() const {
+	return inherited::Divider();
+}
+
+/*------------------------------------------------------------------------------*\
+	( )
+		-	
+\*------------------------------------------------------------------------------*/
 BRect BmMenuControl::layout(BRect frame) {
 	if (frame == Frame())
 		return frame;
@@ -158,5 +166,6 @@ BRect BmMenuControl::layout(BRect frame) {
 		occupiedSpace = 3;					// leave room for focus-rectangle
 	mMenu->MoveTo( occupiedSpace, mMenu->Frame().top);
 	mMenu->ResizeTo( frame.Width()-occupiedSpace-6, mMenu->Frame().Height());
+	mMenu->Invalidate();
 	return frame;
 }

@@ -36,10 +36,13 @@
 #include <layout.h>
 
 #include "SantaPartsForBeam.h"
+#include "BmDividable.h"
 
 class HGroup;
 
-class IMPEXPSANTAPARTSFORBEAM BmMenuControl : public MView, public BMenuField
+class IMPEXPSANTAPARTSFORBEAM BmMenuControl : public MView, 
+															 public BMenuField,
+															 public BmDividable
 {
 	typedef BMenuField inherited;
 
@@ -56,6 +59,7 @@ public:
 	// overrides:
 	void SetEnabled( bool enabled);
 	void SetDivider( float divider);
+	float Divider() const;
 
 private:
 
