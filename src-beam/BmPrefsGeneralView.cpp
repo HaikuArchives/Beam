@@ -95,7 +95,7 @@ BmPrefsGeneralView::BmPrefsGeneralView()
 																					 	  this, ThePrefs->GetBool("RestoreFolderStates")),
 						mBeMailStyleControl = new BmCheckControl( "Use BeMail-compatible shortcuts", 
 																					 	  new BMessage(BM_BEMAIL_STYLE_CHANGED), 
-																					 	  this, ThePrefs->GetBool("BeMailStyle")),
+																					 	  this, ThePrefs->GetBool("BeMailStyle", false)),
 						new Space(),
 						0
 						),

@@ -1,6 +1,9 @@
 change-history of Beam:
 		$Id$
 
+v0.903, 2002-02-22
+	-	Beam no longer complains about unknown prefs-field 'BeMailStyle'.
+
 v0.902, 2002-02-22
 	-	removed crashing bug when wildly moving through mailfolder-view.
 	-	disabled selecting and invoking for	the dummy-mailrefview used in prefs.
