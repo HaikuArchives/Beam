@@ -554,7 +554,7 @@ void BmPopper::StateRetrieve() {
 		// ...set default folder according to pop-account settings...
 		mail->SetDestFoldername( mPopAccount->HomeFolder());
 		// ...execute mail-filters for this mail...
-		mail->ApplyFilter();
+		mail->ApplyInboundFilters();
 		// ...and store mail on disk:
 		if (!mail->Store())
 			goto CLEAN_UP;
