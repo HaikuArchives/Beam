@@ -31,28 +31,48 @@
 #ifndef _BmToolbarButton_h
 #define _BmToolbarButton_h
 
+#include <vector>
+
 #include <MPictureButton.h>
 
 class BmToolbarButton : public MPictureButton
 {
 	typedef MPictureButton inherited;
+	
+	struct BmVariation {
+		BString label;
+		BMessage* msg;
+		BmVariation( const BString l, BMessage* m) { label=l; msg=m; }
+	};
+	typedef vector<BmVariation> BmVariationVect;
 
 public:
 	// creator-func, c'tors and d'tor:
 	BmToolbarButton( const char *label, BBitmap* image, 
+						  float width, float height, 
 						  BMessage *message, BHandler *handler, 
-						  const char* tipText=NULL);
+						  const char* tipText=NULL, bool needsLatch=false);
 	~BmToolbarButton();
-
+	
 	// native methods:
-	BPicture* CreateOnPictureFor( const char* label, BBitmap* image);
-	BPicture* CreateOffPictureFor( const char* label, BBitmap* image);
+	static void CalcMaxSize( float& width, float& height, const char* label, 
+									 BBitmap* image, bool needsLatch=false);
+	void AddActionVariation( const BString label, BMessage* msg);
+	void ShowMenu( BPoint point);
 
 	// overrides of Button base:
-	void Draw( BRect bounds);
+	void MouseDown( BPoint point);
 
 private:
 	bool mHighlighted;
+							// intended for mouse-over highlighting, but currently not used
+	BmVariationVect mVariations;
+							// the different actions that can be started through this button
+	BRect mLatchRect;
+	BPoint mMenuPoint;
+
+	BPicture* CreatePicture( int32 mode, const char* label, BBitmap* image, 
+									 float width, float height, bool needsLatch);
 
 	// Hide copy-constructor and assignment:
 	BmToolbarButton( const BmToolbarButton&);
