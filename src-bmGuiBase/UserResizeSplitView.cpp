@@ -37,6 +37,7 @@
 //**** Project header files
 //******************************************************************************************************
 #include "UserResizeSplitView.h"
+#include "BubbleHelper.h"
 #include "Cursors.h"
 #include "Colors.h"
 #include "ColumnListView.h"
@@ -59,7 +60,6 @@ UserResizeSplitView::UserResizeSplitView(MView* top_or_left, MView* right_or_bot
 	m_should_resize_left_or_top = should_resize_left_or_top;
 	m_should_resize_right_or_bottom = should_resize_right_or_bottom;
 	m_move_slider_on_frame_resize = move_slider_on_frame_resize;
-	m_modified_cursor = false;
 	m_dragging = false;
 	m_background_color = ui_color(B_PANEL_BACKGROUND_COLOR);
 	m_dark_1_color = tint_color(m_background_color,B_DARKEN_1_TINT);
@@ -71,6 +71,10 @@ UserResizeSplitView::UserResizeSplitView(MView* top_or_left, MView* right_or_bot
 	m_right_or_bottom_BV = dynamic_cast<BView*>(right_or_bottom);
 	AddChild( m_left_or_top_BV);
 	AddChild( m_right_or_bottom_BV);
+	if (m_posture==B_VERTICAL)
+		TheBubbleHelper.SetCursor( this, c_v_resize_cursor());
+	else
+		TheBubbleHelper.SetCursor( this, c_h_resize_cursor());
 }
 
 
@@ -221,23 +225,24 @@ void UserResizeSplitView::MouseDown(BPoint where)
 		m_drag_mouse_offset = mouse_position-m_divider_left_or_top;
 		SetMouseEventMask(B_POINTER_EVENTS,B_NO_POINTER_HISTORY | B_LOCK_WINDOW_FOCUS);
 	}
+	TheBubbleHelper.EnableHelp( false);
+	if (m_posture==B_VERTICAL)
+		be_app->SetCursor( c_v_resize_cursor());
+	else
+		be_app->SetCursor( c_h_resize_cursor());
 }
 
 
 void UserResizeSplitView::MouseUp(BPoint where)
 {
+	be_app->SetCursor( B_CURSOR_SYSTEM_DEFAULT);
+	TheBubbleHelper.EnableHelp( true);
 	m_dragging = false;
 	float mouse_position = 0;
 	if(m_posture == B_HORIZONTAL)
 		mouse_position = where.y;
 	else
 		mouse_position = where.x;
-	if(1 || !(mouse_position > m_divider_left_or_top && mouse_position < m_divider_left_or_top+Thickness &&
-		Bounds().Contains(where)))
-	{
-		be_app->SetCursor(B_HAND_CURSOR);
-		m_modified_cursor = false;
-	}
 	BView::MouseUp( where);
 }
 
@@ -245,23 +250,6 @@ void UserResizeSplitView::MouseUp(BPoint where)
 void UserResizeSplitView::MouseMoved(BPoint where, uint32 code, const BMessage* message)
 {
 	BView::MouseMoved( where, code, message);
-	bool should_show_modified_cursor = false;
-	if(m_dragging)
-		should_show_modified_cursor = true;
-	else if(code != B_EXITED_VIEW && code != B_OUTSIDE_VIEW) {
-		float mouse_position = 0;
-		if(m_posture == B_HORIZONTAL)
-			mouse_position = where.y;
-		else
-			mouse_position = where.x;
-		if(mouse_position >= m_divider_left_or_top && mouse_position < m_divider_left_or_top+Thickness)
-			should_show_modified_cursor = true;
-	}
-	if(!should_show_modified_cursor)
-		be_app->SetCursor(B_HAND_CURSOR);
-	if(should_show_modified_cursor && !m_modified_cursor)
-		be_app->SetCursor((m_posture == B_HORIZONTAL)?c_h_resize_cursor:c_v_resize_cursor);
-	m_modified_cursor = should_show_modified_cursor;
 	if(m_dragging)
 	{
 		if(m_posture == B_HORIZONTAL)

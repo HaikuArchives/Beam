@@ -119,7 +119,6 @@ class UserResizeSplitView : public MGroup, public BView
 		bool m_should_resize_left_or_top;
 		bool m_should_resize_right_or_bottom;
 		bool m_move_slider_on_frame_resize;
-		bool m_modified_cursor;
 		bool m_dragging;
 		MView* m_left_or_top;
 		MView* m_right_or_bottom;
