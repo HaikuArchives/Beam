@@ -520,31 +520,39 @@ void WrappingTextView::KeyDown(const char *bytes, int32 numBytes)
 				break;
 		}
 	} else if ( numBytes == 1 ) {
-		// in read-only mode, we use cursor-keys to move scrollbar:
+		// in read-only mode, we use cursor-keys to move scrollbar, and
+		// we remap HOME / END to the vertical scrollbar (not the horizontal,
+		// which is default).
 		switch( bytes[0]) {
 			case B_PAGE_UP:
 			case B_PAGE_DOWN:
 			case B_UP_ARROW:
-			case B_DOWN_ARROW: {
-					// move vertical scrollbar:
-					float min, max, smallStep, bigStep, value;
-					BScrollBar* bar = ScrollBar( B_VERTICAL);
-					if (!bar) 	return;
-					bar->GetRange( &min, &max);
-					bar->GetSteps( &smallStep, &bigStep);
-					value = bar->Value();
-					if (bytes[0] == B_UP_ARROW) {
-						value = MAX( value-smallStep, min);
-					} else if (bytes[0] == B_DOWN_ARROW) {
-						value = MIN( value+smallStep, max);
-					} else if (bytes[0] == B_PAGE_UP) {
-						value = MAX( value-bigStep, min);
-					} else if (bytes[0] == B_PAGE_DOWN) {
-						value = MIN( value+bigStep, max);
-					}
-					bar->SetValue( value);
+			case B_DOWN_ARROW:
+			case B_HOME: 
+			case B_END: {
+				// move vertical scrollbar:
+				float min, max, smallStep, bigStep, value;
+				BScrollBar* bar = ScrollBar( B_VERTICAL);
+				if (!bar) 	return;
+				bar->GetRange( &min, &max);
+				bar->GetSteps( &smallStep, &bigStep);
+				value = bar->Value();
+				if (bytes[0] == B_UP_ARROW) {
+					value = MAX( value-smallStep, min);
+				} else if (bytes[0] == B_DOWN_ARROW) {
+					value = MIN( value+smallStep, max);
+				} else if (bytes[0] == B_PAGE_UP) {
+					value = MAX( value-bigStep, min);
+				} else if (bytes[0] == B_PAGE_DOWN) {
+					value = MIN( value+bigStep, max);
+				} else if (bytes[0] == B_HOME) {
+					value = min;
+				} else if (bytes[0] == B_END) {
+					value = max;
 				}
+				bar->SetValue( value);
 				break;
+			}
 			default:
 				BTextView::KeyDown( bytes, numBytes);
 				break;
