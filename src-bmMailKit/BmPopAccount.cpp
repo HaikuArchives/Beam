@@ -198,10 +198,17 @@ bool BmPopAccount::GetPOPAddress( BNetAddress* addr) const {
 		-	returns the domain of this POP-Account
 \*------------------------------------------------------------------------------*/
 BmString BmPopAccount::GetDomainName() const {
-	int32 dotPos = mPOPServer.FindFirst(".");
-	if (dotPos != B_ERROR)
-		return mPOPServer.String()+dotPos+1;
-	else
+	int32 dotPos = mPOPServer.FindFirst( ".");
+	if (dotPos != B_ERROR) {
+		int32 secondDotPos = mPOPServer.FindFirst( ".", dotPos+1);
+		if (secondDotPos == B_ERROR)
+			return mPOPServer.String();
+							// address is just a domain name (no host part), we 
+							// return the complete address as domain-part
+		else
+			return mPOPServer.String()+dotPos+1;
+							// return the address without the leading domain part
+	} else
 		return "";
 }
 
@@ -384,6 +391,7 @@ BmPopAccountList::BmPopAccountList( BLooper* jobMetaController)
 	:	inherited( "PopAccountList") 
 	,	mJobMetaController( jobMetaController)
 {
+	NeedControllersToContinue( false);
 }
 
 /*------------------------------------------------------------------------------*\
