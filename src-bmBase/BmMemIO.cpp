@@ -392,6 +392,46 @@ BmStringOBuf::operator<<(const BmString &string)
 
 
 /********************************************************************************\
+	BmMemBufConsumer
+\********************************************************************************/
+
+/*------------------------------------------------------------------------------*\
+	BmMemBufConsumer()
+		-	constructor
+\*------------------------------------------------------------------------------*/
+BmMemBufConsumer::BmMemBufConsumer( uint32 bufSize)
+	:	mBuf( new char [bufSize])
+	,	mBufSize( bufSize)
+{
+}
+
+/*------------------------------------------------------------------------------*\
+	~BmMemBufConsumer()
+		-	destructor
+\*------------------------------------------------------------------------------*/
+BmMemBufConsumer::~BmMemBufConsumer() {
+	delete [] mBuf;
+}
+
+/*------------------------------------------------------------------------------*\
+	Consume( input)
+		-	reads adds all data from given BmMemIBuf and (potentially) passes
+			it through the given functor
+\*------------------------------------------------------------------------------*/
+void BmMemBufConsumer::Consume( BmMemIBuf* input, Functor* functor) {
+	uint32 len;
+	while( input && !input->IsAtEnd()) {
+		len = input->Read( mBuf, mBufSize);
+		if (len>0 && functor)
+			if ((*functor)( mBuf, len) != B_OK)
+				break;
+	}
+}
+
+
+
+
+/********************************************************************************\
 	BmRingBuf
 \********************************************************************************/
 

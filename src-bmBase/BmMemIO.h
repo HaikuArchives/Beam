@@ -38,7 +38,8 @@
 
 /*------------------------------------------------------------------------------*\
 	class BmMemIBuf
-		-	
+		-	an interface representing a memory input buffer, i.e. a stream that 
+			can be read from.
 \*------------------------------------------------------------------------------*/
 class IMPEXPBMBASE BmMemIBuf {
 public:
@@ -48,18 +49,11 @@ public:
 };
 
 /*------------------------------------------------------------------------------*\
-	class BmMemOBuf
-		-	
-\*------------------------------------------------------------------------------*/
-class IMPEXPBMBASE BmMemOBuf {
-public:
-	virtual ~BmMemOBuf()						{}
-	virtual uint32 Write( const char* data, uint32 dataLen) = 0;
-};
-
-/*------------------------------------------------------------------------------*\
 	class BmMemFilter
-		-	
+		-	an interface representing a memory filter, i.e. a class that reads
+			from a memory stream, filters the data and then allows other classes
+			to read the filtered data.
+			BmMemFilters and BmMemIBufs can be connected to form filter chains.
 \*------------------------------------------------------------------------------*/
 class IMPEXPBMBASE BmMemFilter : public BmMemIBuf {
 	typedef BmMemIBuf inherited;
@@ -116,7 +110,8 @@ protected:
 
 /*------------------------------------------------------------------------------*\
 	class BmStringIBuf
-		-	
+		-	an implementation of BmMemIBuf which allows the use of one or more
+			strings (char* or BmString) as a single input-stream.
 \*------------------------------------------------------------------------------*/
 class IMPEXPBMBASE BmStringIBuf : public BmMemIBuf {
 	typedef BmMemIBuf inherited;
@@ -162,10 +157,10 @@ private:
 
 /*------------------------------------------------------------------------------*\
 	class BmStringOBuf
-		-	
+		-	a class which represents a dynamic string-buffer, i.e. the buffer
+			grows (in a more or less efficient manner) as data is written to it.
 \*------------------------------------------------------------------------------*/
-class IMPEXPBMBASE BmStringOBuf : public BmMemOBuf {
-	typedef BmMemOBuf inherited;
+class IMPEXPBMBASE BmStringOBuf {
 
 public:
 	BmStringOBuf( uint32 startLen, float growFactor=1.5);
@@ -180,9 +175,8 @@ public:
 																	? 0 
 																	: mBuf[pos];
 													}
-	virtual void Reset();
+	void Reset();
 
-	// overrides/overloads of BmMemOBuf base:
 	uint32 Write( const char* data, uint32 len);
 	uint32 Write( BmMemIBuf* input, uint32 blockSize=BmMemFilter::nBlockSize);
 	uint32 Write( const BmString& data)	{ return Write( data.String(), 
@@ -209,8 +203,36 @@ private:
 };
 
 /*------------------------------------------------------------------------------*\
+	class BmMemBufConsumer
+		-	a class that "consumes" a memory-stream, i.e. it empties the stream,
+			potentially feeding the data through a consuming functor.
+\*------------------------------------------------------------------------------*/
+class IMPEXPBMBASE BmMemBufConsumer {
+	
+public:
+	BmMemBufConsumer( uint32 bufSize);
+	~BmMemBufConsumer();
+
+	// Functor which is called for each buffer that is to be consumed
+	struct Functor {
+		virtual ~Functor() 					{}
+		virtual status_t operator() (char* buf, uint32 bufLen) = 0;
+	};
+
+	void Consume( BmMemIBuf* input, Functor* functor=NULL);
+	
+private:
+	char* mBuf;
+	uint32 mBufSize;
+
+	// Hide copy-constructor and assignment:
+	BmMemBufConsumer( const BmMemBufConsumer&);
+	BmMemBufConsumer operator=( const BmMemBufConsumer&);
+};
+
+/*------------------------------------------------------------------------------*\
 	class BmRingBuf
-		-	
+		-	a simple ring buffer
 \*------------------------------------------------------------------------------*/
 class IMPEXPBMBASE BmRingBuf {
 	friend class MemIoTest;
