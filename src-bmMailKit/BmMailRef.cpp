@@ -485,8 +485,15 @@ void BmMailRef::MarkAs( const char* status) {
 							 " Result: ") 
 					<< strerror(err)
 			);
+		// in order to allow proper handling of B_ATTR_CHANGED events, we
+		// tell the MailMonitor, which folder this mail-ref lives in:
+		node_ref folderNodeRef;
+		folderNodeRef.node = mEntryRef.directory;
+		folderNodeRef.device = mEntryRef.device;
+		BmString folderKey( BM_REFKEY( folderNodeRef));
+		TheMailMonitor->CacheRefToFolder( mNodeRef, folderKey);
 		// As there seems to be a problem with multiple Status-attributes
-		// (perhaps a bug in BeFS?) we try to remove the attribute before we
+		// (perhaps a bug in BFS?) we try to remove the attribute before we
 		// write it. Let's see if that helps...
 		mailNode.RemoveAttr( BM_MAIL_ATTR_STATUS);
 		mailNode.WriteAttr( BM_MAIL_ATTR_STATUS, B_STRING_TYPE, 0, 

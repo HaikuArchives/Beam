@@ -263,8 +263,8 @@ bool BmMailRefList::StartJob() {
 \*------------------------------------------------------------------------------*/
 BmRef<BmMailRef> BmMailRefList::AddMailRef( entry_ref& eref, struct stat& st) {
 	BmRef<BmMailRef> newMailRef( BmMailRef::CreateInstance( eref, st));
-	if (mInitCheck == B_OK || JobState() == JOB_RUNNING) {
-		// ref-list has been read from disk (or read is currently in progress), 
+	if (mInitCheck == B_OK || mJobState == JOB_RUNNING) {
+		// ref-list has been read from disk (or is currently being read), 
 		// so we can add to it:
 		if (AddItemToList( newMailRef.Get()))
 			return newMailRef;
@@ -291,9 +291,8 @@ BmRef<BmMailRef> BmMailRefList::AddMailRef( entry_ref& eref, struct stat& st) {
 \*------------------------------------------------------------------------------*/
 BmRef<BmListModelItem> BmMailRefList::RemoveMailRef( const BmString& key) {
 	BmRef<BmListModelItem> removedRef;
-	if (mInitCheck == B_OK || JobState() == JOB_RUNNING) {
-		// ref-list has been read from disk (or read is currently in progress), 
-		// so we can remove from it:
+	if (mInitCheck == B_OK) {
+		// ref-list has been read from disk, so we can remove from it:
 		removedRef = RemoveItemByKey( key);
 	} else {
 		// ref-list has not been read yet, we append info about the removed
@@ -309,6 +308,27 @@ BmRef<BmListModelItem> BmMailRefList::RemoveMailRef( const BmString& key) {
 		}
 	}
 	return removedRef;
+}
+
+/*------------------------------------------------------------------------------*\
+	UpdateMailRef()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailRefList::UpdateMailRef( const BmString& key) {
+	if (mInitCheck == B_OK) {
+		// ref-list has been read from disk, so we can update (an item of) it:
+		BmRef<BmListModelItem> item = FindItemByKey( key);
+		BmMailRef* ref = dynamic_cast< BmMailRef*>( item.Get());
+		if (ref)
+			ref->ResyncFromDisk();
+	} else {
+		// ref-list has not been read yet, we append info about the changed
+		// item to the cache:
+		BMessage archive;
+		archive.AddInt32( BmMailRef::MSG_OPCODE, B_ATTR_CHANGED);
+		archive.AddString( MSG_ITEMKEY, key.String());
+		AppendArchive( &archive);
+	}
 }
 
 /*------------------------------------------------------------------------------*\
@@ -526,6 +546,15 @@ void BmMailRefList::IntegrateAppendedArchives( BList& appendedArchives) {
 						   BmString("IntegrateAppendedArchives(): "
 						   	"Removing MailRef with key") << key);
 				RemoveItemByKey( key);
+			} else if (op == B_ATTR_CHANGED) {
+				BmString key = archive->FindString( MSG_ITEMKEY);
+				BM_LOG2( BM_LogMailTracking, 
+						   BmString("IntegrateAppendedArchives(): "
+						   	"Updating MailRef with key") << key);
+				BmRef<BmListModelItem> item( FindItemByKey( key));
+				BmMailRef* ref = dynamic_cast< BmMailRef*>( item.Get());
+				if (ref)
+					ref->ResyncFromDisk();
 			}
 			delete archive;
 		}

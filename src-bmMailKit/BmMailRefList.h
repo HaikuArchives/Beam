@@ -55,7 +55,8 @@ public:
 
 	// native methods:
 	BmRef<BmMailRef> AddMailRef( entry_ref& eref, struct stat& st);
-	BmRef<BmListModelItem> BmMailRefList::RemoveMailRef( const BmString& key);
+	BmRef<BmListModelItem> RemoveMailRef( const BmString& key);
+	void UpdateMailRef( const BmString& key);
 	void MarkCacheAsDirty();
 
 	// overrides of list-model base:

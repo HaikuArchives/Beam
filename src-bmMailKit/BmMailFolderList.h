@@ -33,6 +33,8 @@
 
 #include <sys/stat.h>
 
+#include <map>
+
 #include <Locker.h>
 #include <Looper.h>
 #include <Query.h>
@@ -55,6 +57,8 @@ public:
 	//	native methods:
 	void HandleMailMonitorMsg( BMessage* msg);
 	void HandleQueryUpdateMsg( BMessage* msg);
+	//
+	void CacheRefToFolder( node_ref& nref, const BmString& fKey);
 
 	// overrides of looper base:
 	void MessageReceived( BMessage* msg);
@@ -69,6 +73,19 @@ private:
 						  entry_ref& eref, struct stat& st,
 						  BmMailFolder* oldParent, entry_ref& erefFrom);
 	void EntryChanged( node_ref& nref);
+
+	// When trying to handle B_ATTR_CHANGED events for a mail-ref whose
+	// ref-list isn't loaded, the given info isn't enough to find out the 
+	// folder this mail-ref lives in. In order to remedy this, we cache
+	// mail-ref -> folder entries when we update an attribute ourselves
+	// (currently only MAIL:status):
+	struct FolderInfo {
+		FolderInfo( BmString fk) : folderKey(fk), usedCount(1) {}
+		BmString folderKey;
+		int usedCount;
+	};
+	typedef map<BmString, FolderInfo> CachedRefToFolderMap;
+	CachedRefToFolderMap mCachedRefToFolderMap;
 
 	int32 mCounter;
 

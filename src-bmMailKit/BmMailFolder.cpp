@@ -438,6 +438,21 @@ void BmMailFolder::RemoveMailRef( const node_ref& nref) {
 }
 
 /*------------------------------------------------------------------------------*\
+	RemoveMailRef( node)
+		-	removes the mail-ref specified by the given node from this folder's
+			mailref-list
+\*------------------------------------------------------------------------------*/
+void BmMailFolder::UpdateMailRef( const node_ref& nref) {
+	BmAutolockCheckGlobal lock( nRefListLocker);
+	if (!lock.IsLocked())
+		BM_THROW_RUNTIME( Name() + ":UpdateMailRef(): Unable to get lock");
+ 	BmString key( BM_REFKEY( nref));
+ 	BM_LOG2( BM_LogMailTracking, Name()+" updating mail-ref " << key);
+	if (MailRefList())
+		mMailRefList->UpdateMailRef( key);
+}
+
+/*------------------------------------------------------------------------------*\
 	CreateSubFolder( name)
 		-	creates a new sub-folder of the given name in this mail-folder
 \*------------------------------------------------------------------------------*/

@@ -411,14 +411,49 @@ void BmMailMonitor::EntryChanged( node_ref& nref) {
 	BM_LOG2( BM_LogMailTracking, 
 				BmString("Change of item with node <") 
 					<< nref.node << "> detected...");
-	BmRef<BmMailRef> ref = TheMailFolderList->FindMailRefByKey( nref);
-	if (ref) {
-		BM_LOG2( BM_LogMailTracking, 
-					"...corresponding ref was found in loaded ref-lists.");
-		ref->ResyncFromDisk();
+	BmString key( BM_REFKEY( nref));
+	CachedRefToFolderMap::iterator pos = mCachedRefToFolderMap.find( key);
+	if (pos != mCachedRefToFolderMap.end()) {
+		// mail-ref has a cached entry, we use the specified folder:
+		BmRef<BmListModelItem> folderItem 
+			= TheMailFolderList->FindItemByKey( pos->second.folderKey);
+		BmRef<BmMailFolder> folder 
+			= dynamic_cast< BmMailFolder*>( folderItem.Get());
+		if (folder)
+			folder->UpdateMailRef( nref);
+		if (pos->second.usedCount > 1)
+			pos->second.usedCount--;
+		else
+			mCachedRefToFolderMap.erase( pos);
 	} else {
-		BM_LOG2( BM_LogMailTracking, 
-					"...corresponding ref wasn't found in loaded ref-lists.");
+		// need to search complete folder-hierarchy for mail-ref:
+		BmRef<BmMailRef> ref = TheMailFolderList->FindMailRefByKey( nref);
+		if (ref) {
+			BM_LOG2( BM_LogMailTracking, 
+						"...corresponding ref was found in loaded ref-lists.");
+			ref->ResyncFromDisk();
+		} else {
+			BM_LOG2( BM_LogMailTracking, 
+						"...corresponding ref wasn't found in loaded ref-lists.");
+		}
+	}
+}
+
+/*------------------------------------------------------------------------------*\
+	CacheRefToFolder()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailMonitor::CacheRefToFolder( node_ref& nref, const BmString& fKey) {
+	BmAutolockCheckGlobal lock( this);
+	if (!lock.IsLocked())
+		BM_THROW_RUNTIME( "MailMonitor::CacheRefToFolder(): Unable to get lock");
+	BmString key( BM_REFKEY( nref));
+	CachedRefToFolderMap::iterator pos = mCachedRefToFolderMap.find( key);
+	if (pos != mCachedRefToFolderMap.end())
+		pos->second.usedCount++;
+	else {
+		FolderInfo fInfo( fKey);
+		mCachedRefToFolderMap.insert( pair<BmString, FolderInfo>( key, fInfo));
 	}
 }
 

@@ -74,6 +74,7 @@ public:
 	void AddMailRef( entry_ref& eref, struct stat& st);
 	BmRef<BmListModelItem> FindMailRefByKey( const BmString& key);
 	void RemoveMailRef( const node_ref& nref);
+	void UpdateMailRef( const node_ref& nref);
 	void CleanupForMailRefList( BmMailRefList* refList);
 	void UpdateName( const entry_ref &eref);
 	void CreateSubFolder( BmString name);
