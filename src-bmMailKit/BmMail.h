@@ -110,6 +110,11 @@ class BmMailRef;
 #define BM_MAIL_STATUS_REPLIED		"Replied"
 #define BM_MAIL_STATUS_SENT			"Sent"
 
+#define BM_MAIL_FOLDER_DRAFT		"draft"
+#define BM_MAIL_FOLDER_IN			"in"
+#define BM_MAIL_FOLDER_OUT			"out"
+
+class BmFilter;
 /*------------------------------------------------------------------------------*\
 	BmMail 
 		-	represents a single mail-message in Beam
@@ -136,6 +141,7 @@ public:
 	void SetTo( BmString &text, const BmString account);
 	void SetNewHeader( const BmString& headerStr);
 	void SetSignatureByName( const BmString sigName);
+	void Filter( BmFilter* inFilter = NULL);
 	bool Store();
 	void ResyncFromDisk();
 	//
@@ -177,7 +183,7 @@ public:
 
 	// getters:
 	inline const status_t InitCheck() const	{ return mInitCheck; }
-	inline const BmString& AccountName()			{ return mAccountName; }
+	inline const BmString& AccountName()		{ return mAccountName; }
 	inline BmBodyPartList* Body() const			{ return mBody.Get(); }
 	inline BmRef<BmMailHeader> Header() const	{ return mHeader; }
 	inline int32 HeaderLength() const			{ return mHeader ? mHeader->HeaderLength() : 0; }
@@ -194,6 +200,7 @@ public:
 	inline void BumpRightMargin( int32 i)		{ mRightMargin = MAX(i,mRightMargin); }
 	inline void RightMargin( int32 i)			{ mRightMargin = i; }
 	inline void IsRedirect( bool b)				{ if (mHeader) mHeader->IsRedirect( b); }
+	inline void Outbound( bool b)					{ mOutbound = b; }
 	inline void AccountName( const BmString& s){ mAccountName = s; }
 
 	// static functions that try to reformat & quote a given multiline text

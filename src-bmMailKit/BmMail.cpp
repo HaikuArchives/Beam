@@ -39,8 +39,10 @@ using namespace regexx;
 #include "BmBodyPartList.h"
 #include "BmEncoding.h"
 	using namespace BmEncoding;
+#include "BmFilter.h"
 #include "BmLogHandler.h"
 #include "BmMail.h"
+#include "BmMailFilter.h"
 #include "BmMailHeader.h"
 #include "BmMailRef.h"
 #include "BmMsgTypes.h"
@@ -48,6 +50,7 @@ using namespace regexx;
 #include "BmPrefs.h"
 #include "BmResources.h"
 #include "BmSignature.h"
+#include "BmSmtpAccount.h"
 
 #undef BM_LOGNAME
 #define BM_LOGNAME "MailParser"
@@ -140,6 +143,10 @@ BmMail::BmMail( BmMailRef* ref)
 	,	mOutbound( false)
 	,	mRightMargin( ThePrefs->GetInt( "MaxLineLen"))
 {
+	mOutbound = 
+		Status() == BM_MAIL_STATUS_DRAFT
+		||	Status() == BM_MAIL_STATUS_PENDING
+		||	Status() == BM_MAIL_STATUS_SENT;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -710,6 +717,59 @@ void BmMail::DestFoldername( const BmString& destFoldername) {
 }
 
 /*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMail::Filter( BmFilter* inFilter) {
+	BmRef<BmFilter> filter( inFilter);
+	BmString filterName;
+	if (!filter) {
+		// no filter specified, we fetch the corresponding account's filter:
+		if (mOutbound) {
+			// outbound mail, so we check SMTP-accounts:
+			BmRef<BmListModelItem> accRef = TheSmtpAccountList->FindItemByKey( AccountName());
+			BmSmtpAccount* acc = dynamic_cast< BmSmtpAccount*>( accRef.Get());
+			if (!acc)
+				return;
+			filterName = acc->FilterName();
+			if (filterName == BM_DefaultItemLabel) {
+				// account is set to use default filter, we have to fetch that:
+				filter = TheOutboundFilterList->DefaultFilter();
+				if (!filter)
+					return;
+			}
+		} else {
+			// inbound mail, so we check POP3-accounts:
+			BmRef<BmListModelItem> accRef = ThePopAccountList->FindItemByKey( AccountName());
+			BmPopAccount* acc = dynamic_cast< BmPopAccount*>( accRef.Get());
+			if (!acc)
+				return;
+			filterName = acc->FilterName();
+			if (filterName == BM_DefaultItemLabel) {
+				// account is set to use default filter, we have to fetch that:
+				filter = TheInboundFilterList->DefaultFilter();
+				if (!filter)
+					return;
+			}
+		}
+	}
+	if (!filter) {
+		// find filter by name:
+		if (!filterName.Length())
+			return;
+		BmRef<BmListModelItem> filterRef = mOutbound
+							? TheOutboundFilterList->FindItemByKey( filterName)
+							: TheInboundFilterList->FindItemByKey( filterName);
+		filter = dynamic_cast< BmFilter*>( filterRef.Get());
+		if (!filter)
+			return;
+	}
+	BmRef<BmMailFilter> filterJob = new BmMailFilter( Name(), filter.Get());
+	filterJob->AddMail( this);
+	filterJob->StartJobInThisThread();
+}
+
+/*------------------------------------------------------------------------------*\
 	Store()
 		-	stores mail-data and attributes inside a file
 \*------------------------------------------------------------------------------*/
@@ -722,6 +782,7 @@ bool BmMail::Store() {
 	status_t err;
 	ssize_t res;
 	char basicFilename[B_FILE_NAME_LENGTH];
+	BPath newHomePath;
 
 	try {
 		// Find out where mail shall be living.
@@ -739,49 +800,67 @@ bool BmMail::Store() {
 		(err = tmpDir.SetTo( tmpPath.Path())) == B_OK
 													|| BM_THROW_RUNTIME( BmString("Could not find tmp-directory on this system") << "\n\n Result: " << strerror(err));
 
-		if (mEntry.InitCheck() == B_OK) {
-			// mail has just been written to disk, we recycle the current entry, but move 
-			// it to the temp-folder:
-			mEntry.GetName( basicFilename);
+		if (mEntry.InitCheck() == B_OK 
+		|| mMailRef && mMailRef->InitCheck() == B_OK) {
+			if (mEntry.InitCheck() == B_OK) {
+				// mail has just been written to disk, we recycle the current entry, but move 
+				// it to the temp-folder (see below)
+			} else {
+				// mail has been read from disk, we recycle the old name, but move 
+				// it to the temp-folder (see below)
+				(err = mEntry.SetTo( mMailRef->EntryRefPtr())) == B_OK
+													|| BM_THROW_RUNTIME( BmString("Could not create entry from mail-ref <") << mMailRef->Key() << ">\n\n Result: " << strerror(err));
+				mEntry.GetName( basicFilename);
+			}
 			(err = mEntry.GetParent( &homeDir)) == B_OK
 													|| BM_THROW_RUNTIME( BmString("Could not get parent for mail <")<<basicFilename<<">\n\n Result: " << strerror(err));
+			(err = newHomePath.SetTo( &homeDir, NULL)) == B_OK
+													|| BM_THROW_RUNTIME( BmString("Could not get path for homeDir of mail <")<<basicFilename<<">\n\n Result: " << strerror(err));
 			(err = mEntry.MoveTo( &tmpDir)) == B_OK
 													|| BM_THROW_RUNTIME( BmString("Could not move mail <")<<basicFilename<<"> to tmp-folder\n\n Result: " << strerror(err));
-		} else if (mMailRef && mMailRef->InitCheck() == B_OK) {
-			// mail has been read from disk, we recycle the old name, but move 
-			// it to the temp-folder:
-			(err = mEntry.SetTo( mMailRef->EntryRefPtr())) == B_OK
-													|| BM_THROW_RUNTIME( BmString("Could not create entry from mail-ref <") << mMailRef->Key() << ">\n\n Result: " << strerror(err));
-			(err = mEntry.GetParent( &homeDir)) == B_OK
-													|| BM_THROW_RUNTIME( BmString("Could not get parent for mail <") << mMailRef->Key() << ">\n\n Result: " << strerror(err));
-			(err = mEntry.MoveTo( &tmpDir)) == B_OK
-													|| BM_THROW_RUNTIME( BmString("Could not move mail <") << mMailRef->Key() << "> to tmp-folder\n\n Result: " << strerror(err));
-			mEntry.GetName( basicFilename);
 		} else {
 			// this mail is new, so first we find it's new home (a mail-folder)...
-			BmString homePath;
-			if (mDestFoldername.Length()) {
-				// try to file mail into given destination-folder:
-				homePath = ThePrefs->GetString("MailboxPath") + "/" << mDestFoldername;
-				if ((err = homeDir.SetTo( homePath.String())) != B_OK) {
-					BM_LOG( BM_LogFilter, BmString("Could not file message into mail-folder ") << homePath 
-													<< "\nError: " << strerror(res)
-													<< "\n\nMessage will now be filed into the " 
-													<< (mOutbound ? "out" : "in")	<< "-folder");
-				}
-			}
-			if (homeDir.InitCheck() != B_OK) {
-				homePath = ThePrefs->GetString("MailboxPath") + (mOutbound ? "/out" : "/in");
-				if (homeDir.SetTo( homePath.String()) != B_OK)
-					create_directory( homePath.String(), 0755);
-				(err = homeDir.SetTo( homePath.String())) == B_OK
-													|| BM_THROW_RUNTIME( BmString("Could not set directory to <") << homePath << ">\n\n Result: " << strerror(err));
-			}
+			BmString p( ThePrefs->GetString("MailboxPath") + "/" 
+							+ (mOutbound ? BM_MAIL_FOLDER_OUT : BM_MAIL_FOLDER_IN));
+			newHomePath.SetTo( p.String());
+
 			// we create a new filename for it, and create the entry in the temp-folder:
 			BmString newName  = BmString(tmpPath.Path()) + "/" + CreateBasicFilename();
 			(err = mEntry.SetTo( newName.String())) == B_OK
 													|| BM_THROW_RUNTIME( BmString("Could not create entry for mail-file <") << newName << ">\n\n Result: " << strerror(err));
 			mEntry.GetName( basicFilename);
+		}
+
+		// now check whether mail-filtering has decided that the mail shall live
+		// in a specific folder:
+		if (mDestFoldername.Length()) {
+			// try to file mail into given destination-folder:
+			BmString p( ThePrefs->GetString("MailboxPath") + "/" << mDestFoldername);
+			BPath tryPath( p.String());
+			if ((err = homeDir.SetTo( tryPath.Path())) != B_OK) {
+				BmLogHandler::Log( "Filter", BM_LogAll, 
+										 BmString("Could not file message into mail-folder\n") << tryPath.Path()
+											<< "\nError: " << strerror(err)
+											<< "\n\nMessage will now be filed into the folder\n" 
+											<< newHomePath.Path(), 0);
+			} else
+				newHomePath = tryPath;
+		}
+		// finally we set homeDir to the (possibly new) folder that the mail
+		// shall live in:
+		if ((err = homeDir.SetTo( newHomePath.Path())) != B_OK) {
+			// folder does not exists, we check if its a system folder
+			BmString mbox( ThePrefs->GetString("MailboxPath") + "/");
+			BmString newBox( newHomePath.Path());
+			if (newBox ==  mbox + BM_MAIL_FOLDER_IN
+			|| newBox == mbox + BM_MAIL_FOLDER_OUT
+			|| newBox == mbox + BM_MAIL_FOLDER_DRAFT) {
+				// yep, its a system folder, so we silently (re-)create it:
+				create_directory( newHomePath.Path(), 0755);
+				(err = homeDir.SetTo( newHomePath.Path())) == B_OK
+													|| BM_THROW_RUNTIME( BmString("Could not set directory to <") << newHomePath.Path() << ">\n\n Result: " << strerror(err));
+			} else
+				throw BM_runtime_error( BmString("Could not set directory to <") << newHomePath.Path() << ">\n\n Result: " << strerror(err));
 		}
 			
 		// we create the new mailfile...
