@@ -284,12 +284,14 @@ void BmListViewController::MouseMoved( BPoint point, uint32 transit, const BMess
 			if (mPulsedScrollRunner) {
 				delete mPulsedScrollRunner;
 				mPulsedScrollRunner = NULL;
+				mPulsedScrollStep = 0;
 			}
 		}
 	} else {
 		if (mPulsedScrollRunner) {
 			delete mPulsedScrollRunner;
 			mPulsedScrollRunner = NULL;
+			mPulsedScrollStep = 0;
 		}
 	}
 }
