@@ -296,14 +296,14 @@ BmBodyPart::BmBodyPart( BmBodyPartList* model, const entry_ref* ref,
 		mContentType.SetTo( mimetype<<"; name=\"" << ref->name << '"');
 		if (mimetype.ICompare( "text/", 5) == 0)
 			mContentTransferEncoding 
-				= NeedsEncoding( mDecodedData) 
+				= NeedsEncoding( mDecodedData, BM_MAX_BODY_LINE_LEN) 
 					? ThePrefs->GetBool( "Allow8BitMime", false) 
 						? "8bit"
 						: "quoted-printable"
 					: "7bit";
 		else if (mimetype.ICompare( "message/", 8) == 0)
 			mContentTransferEncoding 
-				= NeedsEncoding( mDecodedData) 
+				= NeedsEncoding( mDecodedData, BM_MAX_BODY_LINE_LEN) 
 					? ThePrefs->GetBool( "Allow8BitMime", false) 
 						? "8bit"
 						: "7bit"
@@ -822,7 +822,7 @@ void BmBodyPart::SetBodyText( const BmString& utf8Text,
 										const BmString& charset) {
 	mDecodedData = utf8Text;
 	mSuggestedCharset = mCurrentCharset = charset;
-	mContentTransferEncoding = NeedsEncoding( utf8Text) 
+	mContentTransferEncoding = NeedsEncoding( utf8Text, BM_MAX_BODY_LINE_LEN) 
 											? (ThePrefs->GetBool( "Allow8BitMime", false)
 												? "8bit"
 												: "quoted-printable")

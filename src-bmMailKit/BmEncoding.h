@@ -44,6 +44,9 @@
 \*------------------------------------------------------------------------------*/
 namespace BmEncoding {
 	
+	extern const int16 BM_MAX_HEADER_LINE_LEN;
+	extern const int16 BM_MAX_BODY_LINE_LEN;
+
 	typedef map< BmString, bool> BmCharsetMap;
 	extern BmCharsetMap TheCharsetMap;
 
@@ -68,7 +71,7 @@ namespace BmEncoding {
 												 bool useQuotedPrintableIfNeeded, 
 												 int32 fieldLen);
 	
-	bool NeedsEncoding( const BmString& utf8String);
+	bool NeedsEncoding( const BmString& utf8String, int16 maxLineLen);
 	bool IsCompatibleWithText( const BmString& s);
 
 	typedef auto_ptr<BmMemFilter> BmMemFilterRef;

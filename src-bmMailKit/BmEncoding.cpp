@@ -43,8 +43,10 @@ using namespace BmEncoding;
 #undef BM_LOGNAME
 #define BM_LOGNAME "MailParser"
 
-const int BM_MAX_LINE_LEN = 76;
+const int16 BmEncoding::BM_MAX_HEADER_LINE_LEN = 76;
 							// as stated in [K. Johnson, p. 149f]
+const int16 BmEncoding::BM_MAX_BODY_LINE_LEN = 998;
+							// RFC 2822
 
 BmCharsetMap BmEncoding::TheCharsetMap;
 
@@ -346,7 +348,8 @@ BmString BmEncoding::ConvertUTF8ToHeaderPart( const BmString& utf8Text,
 	bool needsQuotedPrintable = false;
 	BmString transferEncoding = "7bit";
 	if (useQuotedPrintableIfNeeded)
-		needsQuotedPrintable = NeedsEncoding( utf8Text);
+		needsQuotedPrintable = NeedsEncoding( utf8Text, 
+														  BM_MAX_HEADER_LINE_LEN);
 	if (ThePrefs->GetBool( "Allow8BitMimeInHeader", false) 
 	&& needsQuotedPrintable) {
 		transferEncoding = "8bit";
@@ -365,7 +368,7 @@ BmString BmEncoding::ConvertUTF8ToHeaderPart( const BmString& utf8Text,
 			throw BM_text_error( "", "", qpEncoder.FirstDiscardedPos());
 	} else {
 		BmUtf8Decoder textConverter( &srcBuf, charset);
-		BmFoldedLineEncoder foldEncoder( &textConverter, BM_MAX_LINE_LEN, 
+		BmFoldedLineEncoder foldEncoder( &textConverter, BM_MAX_HEADER_LINE_LEN, 
 													blockSize, fieldLen+2);
 		tempIO.Write( &foldEncoder);
 		if (textConverter.HadToDiscardChars())
@@ -380,7 +383,7 @@ BmString BmEncoding::ConvertUTF8ToHeaderPart( const BmString& utf8Text,
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-bool BmEncoding::NeedsEncoding( const BmString& utf8String) {
+bool BmEncoding::NeedsEncoding( const BmString& utf8String, int16 maxLineLen) {
 	// check if string needs quoted-printable/base64 encoding;
 	// encoding is needed: 
 	// 	- if the string contains non-ASCII chars
@@ -389,7 +392,7 @@ bool BmEncoding::NeedsEncoding( const BmString& utf8String) {
 	for( const char* p = utf8String.String(); *p; ++p) {
 		signed char c = *p;
 		if (c=='\n') {
-			if (p - lastNlPos > 998)
+			if (p - lastNlPos > maxLineLen)
 				// line is too long and needs to be encoded:
 				return true;
 			lastNlPos = p;
@@ -397,7 +400,7 @@ bool BmEncoding::NeedsEncoding( const BmString& utf8String) {
 			// N.B.: This is a signed char, so c<32 means [0-31] and [128-255]
 			return true;
 	}
-	return false;
+	return (utf8String.String()+utf8String.Length() - lastNlPos > maxLineLen);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -953,10 +956,10 @@ void BmQuotedPrintableEncoder::Queue( const char* chars, uint32 len) {
 \*------------------------------------------------------------------------------*/
 bool BmQuotedPrintableEncoder::OutputLineIfNeeded( char* &dest, 
 																	const char* destEnd) {
-	if (!mNeedFlush && mQueuedChars.Length() > BM_MAX_LINE_LEN) {
+	if (!mNeedFlush && mQueuedChars.Length() > BM_MAX_HEADER_LINE_LEN) {
 		// line is too long and needs soft break:
 		mKeepLen 
-			= (mQueuedChars.Length() - mCurrAddedLen < BM_MAX_LINE_LEN)
+			= (mQueuedChars.Length() - mCurrAddedLen < BM_MAX_HEADER_LINE_LEN)
 				? mCurrAddedLen
 						// last char-group fits on line, so we include it.
 				: mLastAddedLen + mCurrAddedLen;
@@ -1179,11 +1182,11 @@ void BmQpEncodedWordEncoder::Queue( const char* chars, uint32 len) {
 bool BmQpEncodedWordEncoder::OutputLineIfNeeded( char* &dest, 
 																 const char* destEnd) {
 	if (!mNeedFlush 
-	&& mStartAtOffset+mQueuedChars.Length()+2 > BM_MAX_LINE_LEN) {
+	&& mStartAtOffset+mQueuedChars.Length()+2 > BM_MAX_HEADER_LINE_LEN) {
 		// line is too long and needs soft break:
 		mKeepLen 
 			= (mStartAtOffset + mQueuedChars.Length() 
-				- mCurrAddedLen < BM_MAX_LINE_LEN)
+				- mCurrAddedLen < BM_MAX_HEADER_LINE_LEN)
 				? mCurrAddedLen
 						// last char-group fits on line, so we include it.
 				: mLastAddedLen + mCurrAddedLen;
@@ -1191,6 +1194,7 @@ bool BmQpEncodedWordEncoder::OutputLineIfNeeded( char* &dest,
 						// before it.
 		if (mCharacterLen > mKeepLen)
 			mKeepLen = mCharacterLen;
+							// keep at least the last character (may be multiple bytes)
 		mNeedFlush = true;
 	}
 	if (mNeedFlush) {
@@ -1213,7 +1217,8 @@ bool BmQpEncodedWordEncoder::OutputLineIfNeeded( char* &dest,
 		for( int i=0; i<mEncodedWord.Length(); ++i)
 			*dest++ = mEncodedWord[i];
 		mNeedFlush = false;
-		mStartAtOffset = 0;
+		// note number of chars already added to line:
+		mStartAtOffset = mEncodedWord.Length()+1;
 	}
 	return true;
 }
@@ -1375,7 +1380,7 @@ BmFoldedLineEncoder::BmFoldedLineEncoder( BmMemIBuf* input, int lineLen,
 \*------------------------------------------------------------------------------*/
 bool BmFoldedLineEncoder::OutputLineIfNeeded( char* &dest, 
 															 const char* destEnd) {
-	if (!mNeedFlush && mStartAtOffset+mQueuedChars.Length() > BM_MAX_LINE_LEN) {
+	if (!mNeedFlush && mStartAtOffset+mQueuedChars.Length() > BM_MAX_HEADER_LINE_LEN) {
 		// line is too long and needs soft break:
 		mNeedFlush = true;
 	}
@@ -1583,7 +1588,7 @@ void BmBase64Encoder::Filter( const char* srcBuf, uint32& srcLen,
 			*dest++ = nBase64Alphabet[mConcat & 63];
 			mConcat = mIndex = 0;
 			mCurrLineLen += 4;
-			if (mCurrLineLen >= BM_MAX_LINE_LEN) {
+			if (mCurrLineLen >= BM_MAX_HEADER_LINE_LEN) {
 				*dest++ = '\r';
 				*dest++ = '\n';
 				mCurrLineLen = 0;
