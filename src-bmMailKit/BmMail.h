@@ -160,11 +160,12 @@ public:
 	void MarkAs( const char* status);
 	void RemoveField( const BmString fieldName);
 	void SetFieldVal( const BmString fieldName, const BmString value);
-	inline bool IsFieldEmpty( const BmString fieldName) { 
-													return mHeader 
-														? mHeader->IsFieldEmpty( fieldName) 
-														: true; 
-	}
+	inline bool IsFieldEmpty( const BmString fieldName)
+													{ 
+														return mHeader 
+															? mHeader->IsFieldEmpty(fieldName)
+															: true; 
+													}
 	const BmString Status() const;
 	//
 	BmString DetermineReplyAddress( int32 replyMode, bool canonicalize,
@@ -179,6 +180,7 @@ public:
 										bool& replyGoesToPersonOnly,
 										const BmString selectedText="");
 	BmRef<BmMail> CreateRedirect();
+	BmRef<BmMail> CreateAsNew();
 	BmString CreateReplySubjectFor( const BmString subject);
 	BmString CreateForwardSubjectFor( const BmString subject);
 	BmString CreateReplyIntro( bool mailIsToPersonOnly);
@@ -196,33 +198,55 @@ public:
 	bool StartJob();
 
 	// getters:
-	inline const status_t InitCheck() const	{ return mInitCheck; }
-	inline const BmString& AccountName()		{ return mAccountName; }
-	inline BmBodyPartList* Body() const			{ return mBody.Get(); }
-	inline BmRef<BmMailHeader> Header() const	{ return mHeader; }
-	inline int32 HeaderLength() const			{ return mHeader ? mHeader->HeaderLength() : 0; }
-	inline int32 RightMargin() const				{ return mRightMargin; }
-	inline const BmString& RawText() const		{ return mText; }
-	inline const BmString& HeaderText() const	{ return mHeader ? mHeader->HeaderString() : BM_DEFAULT_STRING; }
-	inline const bool Outbound() const			{ return mOutbound; }
-	inline const bool IsRedirect() const		{ return mHeader ? mHeader->IsRedirect() : false; }
-	inline BmMailRef* MailRef() const			{ return mMailRef.Get(); }
+	inline const status_t InitCheck() const	
+													{ return mInitCheck; }
+	inline const BmString& AccountName(){ return mAccountName; }
+	inline BmBodyPartList* Body() const	{ return mBody.Get(); }
+	inline BmRef<BmMailHeader> Header() const	
+													{ return mHeader; }
+	inline int32 HeaderLength() const	{ return mHeader 
+																	? mHeader->HeaderLength() 
+																	: 0; 
+													}
+	inline int32 RightMargin() const		{ return mRightMargin; }
+	inline const BmString& RawText() const		
+													{ return mText; }
+	inline const BmString& HeaderText() const	
+													{ return mHeader 
+																	? mHeader->HeaderString() 
+																	: BM_DEFAULT_STRING; 
+													}
+	inline const bool Outbound() const	{ return mOutbound; }
+	inline const bool IsRedirect() const{ return mHeader 
+																	? mHeader->IsRedirect() 
+																	: false; 
+													}
+	inline BmMailRef* MailRef() const	{ return mMailRef.Get(); }
 	const BmString& DefaultCharset()	const;
-	inline BmString SignatureName() const		{ return mSignatureName; }
-	inline const BmString& IdentityName() const	{ return mIdentityName; }
+	inline BmString SignatureName() const		
+													{ return mSignatureName; }
+	inline const BmString& IdentityName() const	
+													{ return mIdentityName; }
 
 	// setters:
-	inline void BumpRightMargin( int32 i)		{ mRightMargin = MAX(i,mRightMargin); }
-	inline void RightMargin( int32 i)			{ mRightMargin = i; }
-	inline void IsRedirect( bool b)				{ if (mHeader) mHeader->IsRedirect( b); }
-	inline void Outbound( bool b)					{ mOutbound = b; }
-	inline void AccountName( const BmString& s){ mAccountName = s; }
-	inline void IdentityName( const BmString& s){ mIdentityName = s; }
+	inline void BumpRightMargin( int32 i)		
+													{ mRightMargin = MAX(i,mRightMargin); }
+	inline void RightMargin( int32 i)	{ mRightMargin = i; }
+	inline void IsRedirect( bool b)		{ if (mHeader) 
+															mHeader->IsRedirect( b); 
+													}
+	inline void Outbound( bool b)			{ mOutbound = b; }
+	inline void AccountName( const BmString& s)
+													{ mAccountName = s; }
+	inline void IdentityName( const BmString& s)
+													{ mIdentityName = s; }
 
-	// static functions that try to reformat & quote a given multiline text
+	// Static functions that try to reformat & quote a given multiline text
 	// in a way that avoids the usual (ugly) quoting-mishaps.
-	// the resulting int is the line-length needed to leave the formatting intact.
-	static int32 QuoteText( const BmString& in, BmString& out, const BmString quote, int maxLen);
+	// The resulting int is the line-length needed to leave 
+	// the formatting intact.
+	static int32 QuoteText( const BmString& in, BmString& out, 
+									const BmString quote, int maxLen);
 
 	static const int32 BM_READ_MAIL_JOB = 1;
 
@@ -242,15 +266,16 @@ protected:
 	static int32 QuoteTextWithReWrap( const BmString& in, BmString& out, 
 											    BmString quoteString, int maxLineLen);
 	static int32 AddQuotedText( const BmString& text, BmString& out, 
-										 const BmString& quote, const BmString& quoteString,
+										 const BmString& quote, 
+										 const BmString& quoteString,
 								 		 int maxTextLen);
 
 private:
 	BmMail();
 	
 	BmRef<BmMail> doCreateReply( int32 replyMode, bool& replyGoesToPersonOnly,
-										const BmString selectedText="",
-										bool avoidReplyGoesToPersonOnly=false);
+										  const BmString selectedText="",
+										  bool avoidReplyGoesToPersonOnly=false);
 
 	const BmString DefaultStatus() const;
 

@@ -176,12 +176,13 @@ BmMail::BmMail( bool outbound)
 	emptyMsg << "Content-Type: text/plain; charset=\"" 
 				<< ThePrefs->GetString( "DefaultCharset")
 				<<	"\"\r\n";
-	emptyMsg << BM_FIELD_DATE << ": " << TimeToString( time( NULL), 
-																		"%a, %d %b %Y %H:%M:%S %z");
+	emptyMsg << BM_FIELD_DATE << ": " 
+				<< TimeToString( time( NULL), "%a, %d %b %Y %H:%M:%S %z");
 	emptyMsg << "\r\n\r\n";
 	SetTo( emptyMsg, "");
 	if (outbound) {
-		// if outbound, stuff basic info (from-address, smtp-account, sig) into mail:
+		// if outbound, stuff basic info (from-address, smtp-account, sig)
+		// into mail:
 		BmRef<BmIdentity> identRef = TheIdentityList->CurrIdentity();
 		if (identRef) {
 			SetFieldVal( BM_FIELD_FROM, identRef->GetFromAddress());
@@ -206,13 +207,22 @@ BmMail::BmMail( BmString &msgText, const BmString account)
 	,	mOutbound( false)
 	,	mRightMargin( ThePrefs->GetInt( "MaxLineLen"))
 {
-	// set default-identity according to given account:
-	BmRef<BmIdentity> identRef = TheIdentityList->FindIdentityForPopAccount( account);
+	SetTo( msgText, account);
+
+	// get default-identity corresponding to given account:
+	BmRef<BmIdentity> identRef 
+		= TheIdentityList->FindIdentityForPopAccount( account);
 	BmIdentity* ident = dynamic_cast< BmIdentity*>( identRef.Get());
+	if (ident) {
+		// now try to find a better match through recipient-addresses:
+		BmAddress recvAddr( mHeader->DetermineReceivingAddrFor( ident));
+		identRef	
+			= TheIdentityList->FindIdentityForAddrSpec( recvAddr.AddrSpec());
+		if (identRef)
+			ident = dynamic_cast< BmIdentity*>( identRef.Get());
+	}
 	if (ident)
 		mIdentityName = ident->Key();
-
-	SetTo( msgText, account);
 }
 	
 /*------------------------------------------------------------------------------*\
@@ -245,7 +255,8 @@ BmMail::~BmMail() {
 	SetTo( msgText, msgUID)
 		-	initializes mail-object with given data
 		-	the mail-header is extracted from msgText and is parsed
-		-	account is the name of the POP/IMAP-account this message was received from
+		-	account is the name of the POP/IMAP-account this message was 
+			received from
 \*------------------------------------------------------------------------------*/
 void BmMail::SetTo( BmString &text, const BmString account) {
 	BM_LOG2( BM_LogMailParse, "Converting Linebreaks to CRLF...");
@@ -256,9 +267,11 @@ void BmMail::SetTo( BmString &text, const BmString account) {
 	int32 headerLen = text.FindFirst( "\r\n\r\n");
 							// STD11: empty-line seperates header from body
 	if (headerLen == B_ERROR)
-		throw BM_mail_format_error("BmMail: Could not determine borderline between header and text of message");
+		throw BM_mail_format_error("BmMail: Could not determine borderline "
+											"between header and text of message");
 
-	headerLen += 2;							// don't include separator-line in header-string
+	headerLen += 2;
+							// don't include separator-line in header-string
 
 	BM_LOG2( BM_LogMailParse, "Adopting mailtext...");
 	mText.Adopt( text);						// take over the msg-string
@@ -329,7 +342,8 @@ void BmMail::MarkAs( const char* status) {
 			mEntry.GetRef( &eref);
 			(err = mailNode.SetTo( &eref)) == B_OK
 													|| BM_THROW_RUNTIME( BmString("Could not create node for current mail-file.\n\n Result: ") << strerror(err));
-			mailNode.WriteAttr( BM_MAIL_ATTR_STATUS, B_STRING_TYPE, 0, status, strlen( status)+1);
+			mailNode.WriteAttr( BM_MAIL_ATTR_STATUS, B_STRING_TYPE, 0, status, 
+									  strlen( status)+1);
 		}
 	} catch( BM_error &e) {
 		BM_SHOWERR(e.what());
@@ -415,12 +429,14 @@ bool BmMail::HasComeFromList() const {
 	CreateInlineForward()
 	-	
 \*------------------------------------------------------------------------------*/
-BmRef<BmMail> BmMail::CreateInlineForward( bool withAttachments, const BmString selectedText) {
+BmRef<BmMail> BmMail::CreateInlineForward( bool withAttachments, 
+														 const BmString selectedText) {
 	BmRef<BmMail> newMail = new BmMail( true);
 	// massage subject, if neccessary:
 	BmString subject = GetFieldVal( BM_FIELD_SUBJECT);
 	newMail->SetFieldVal( BM_FIELD_SUBJECT, CreateForwardSubjectFor( subject));
-	newMail->AddPartsFromMail( this, withAttachments, BM_IS_FORWARD, false, selectedText);
+	newMail->AddPartsFromMail( this, withAttachments, BM_IS_FORWARD, false, 
+										selectedText);
 	newMail->SetBaseMailInfo( MailRef(), BM_MAIL_STATUS_FORWARDED);
 	return newMail;
 }
@@ -500,7 +516,8 @@ BmRef<BmMail> BmMail::CreateReply( int32 replyMode,
 	CreateReply()
 	-	
 \*------------------------------------------------------------------------------*/
-BmRef<BmMail> BmMail::CreateReply( int32 replyMode, bool& replyGoesToPersonOnly,
+BmRef<BmMail> BmMail::CreateReply( int32 replyMode, 
+											  bool& replyGoesToPersonOnly,
 											  const BmString selectedText) {
 	return doCreateReply( replyMode, replyGoesToPersonOnly, selectedText, true);
 }
@@ -509,7 +526,8 @@ BmRef<BmMail> BmMail::CreateReply( int32 replyMode, bool& replyGoesToPersonOnly,
 	CreateReply()
 	-	
 \*------------------------------------------------------------------------------*/
-BmRef<BmMail> BmMail::doCreateReply( int32 replyMode, bool& replyGoesToPersonOnly,
+BmRef<BmMail> BmMail::doCreateReply( int32 replyMode, 
+												 bool& replyGoesToPersonOnly,
 											 	 const BmString selectedText,
 											 	 bool ignoreReplyGoesToPersonOnly) {
 	BmRef<BmMail> newMail = new BmMail( true);
@@ -521,19 +539,22 @@ BmRef<BmMail> BmMail::doCreateReply( int32 replyMode, bool& replyGoesToPersonOnl
 		newMail->SetFieldVal( BM_FIELD_REFERENCES, oldRefs + " " + messageID);
 	else
 		newMail->SetFieldVal( BM_FIELD_REFERENCES, messageID);
-	BmString newTo = DetermineReplyAddress( replyMode, false, replyGoesToPersonOnly);
+	BmString newTo 
+		= DetermineReplyAddress( replyMode, false, replyGoesToPersonOnly);
 	newMail->SetFieldVal( BM_FIELD_TO, newTo);
 	// Since we are replying, we generate the new mail's from-address 
 	// from the received mail's to-/cc-/bcc-info in several steps.
 	// First, we check if this mail has an identity assigned to it:
 	BmString receivingAddr;
-	BmRef<BmListModelItem> identRef = TheIdentityList->FindItemByKey( mIdentityName);
+	BmRef<BmListModelItem> identRef 
+		= TheIdentityList->FindItemByKey( mIdentityName);
 	BmIdentity* ident = dynamic_cast< BmIdentity*>( identRef.Get());
 	if (!ident) {
-		// second, we check if the account through which the mail has been received
-		// can be identified (not always possible, since the account may have been
-		// renamed or deleted by now):
-		BmRef<BmIdentity> identRef = TheIdentityList->FindIdentityForPopAccount( mAccountName);
+		// second, we check if the account through which the mail has been 
+		// received can be identified (not always possible, since the account 
+		// may have been renamed or deleted by now):
+		BmRef<BmIdentity> identRef 
+			= TheIdentityList->FindIdentityForPopAccount( mAccountName);
 		ident = dynamic_cast< BmIdentity*>( identRef.Get());
 	}
 	if (ident) {
@@ -545,8 +566,8 @@ BmRef<BmMail> BmMail::doCreateReply( int32 replyMode, bool& replyGoesToPersonOnl
 			receivingAddr = ident->GetFromAddress();
 	}
 	if (!receivingAddr.Length()) {
-		// the receiving address could not be determined, so we iterate through all
-		// identities and try to find one that (may) have received this mail.
+		// the receiving address could not be determined, so we iterate through 
+		// all identities and try to find one that (may) have received this mail.
 		BmAutolockCheckGlobal lock( ThePopAccountList->ModelLocker());
 		lock.IsLocked() 						|| BM_THROW_RUNTIME( "CreateReply(): Unable to get lock on PopAccountList");
 		BmModelItemMap::const_iterator iter;
@@ -562,6 +583,7 @@ BmRef<BmMail> BmMail::doCreateReply( int32 replyMode, bool& replyGoesToPersonOnl
 		newMail->SetFieldVal( BM_FIELD_FROM, receivingAddr);
 		newMail->SetSignatureByName( ident->SignatureName());
 		newMail->AccountName( ident->SMTPAccount());
+		newMail->IdentityName( ident->Key());
 	}
 	// if we are replying to all, we may need to include more addresses:
 	if (replyMode == BMM_REPLY_ALL) {
@@ -599,8 +621,9 @@ BmRef<BmMail> BmMail::CreateRedirect() {
 	BmString msgText( mText);
 	newMail->SetTo( msgText, "");
 	if (newMail->IsRedirect()) {
-		// oops, mail already had been redirected, we clobber the existing Resent-fields,
-		// since STD11 says multiple Resent-fields result in undefined behaviour:
+		// oops, mail already had been redirected, we clobber the existing
+		// Resent-fields, since STD11 says multiple Resent-fields result in 
+		// undefined behaviour:
 		newMail->RemoveField( BM_FIELD_RESENT_BCC);
 		newMail->RemoveField( BM_FIELD_RESENT_CC);
 		newMail->RemoveField( BM_FIELD_RESENT_DATE);
@@ -612,7 +635,8 @@ BmRef<BmMail> BmMail::CreateRedirect() {
 	}
 	newMail->IsRedirect( true);
 	newMail->SetFieldVal( BM_FIELD_RESENT_DATE, 
-								 TimeToString( time( NULL), "%a, %d %b %Y %H:%M:%S %z"));
+								 TimeToString( time( NULL), 
+								 					"%a, %d %b %Y %H:%M:%S %z"));
 	BmRef<BmIdentity> identRef = TheIdentityList->CurrIdentity();
 	if (identRef) {
 		newMail->SetFieldVal( BM_FIELD_RESENT_FROM, identRef->GetFromAddress());
@@ -624,11 +648,31 @@ BmRef<BmMail> BmMail::CreateRedirect() {
 }
 
 /*------------------------------------------------------------------------------*\
+	CreateAsNew()
+	-	
+\*------------------------------------------------------------------------------*/
+BmRef<BmMail> BmMail::CreateAsNew() {
+	BmRef<BmMail> newMail = new BmMail( true);
+	BmString msgText( mText);
+	newMail->SetTo( msgText, "");
+	BmRef<BmListModelItem> identRef 
+		= TheIdentityList->FindItemByKey( mIdentityName);
+	BmIdentity* ident = dynamic_cast<BmIdentity*>( identRef.Get());
+	if (ident) {
+		newMail->AccountName( ident->SMTPAccount());
+		newMail->SetSignatureByName( ident->SignatureName());
+		newMail->IdentityName( ident->Key());
+	}
+	return newMail;
+}
+
+/*------------------------------------------------------------------------------*\
 	CreateReplySubjectFor()
 	-	
 \*------------------------------------------------------------------------------*/
 BmString BmMail::CreateReplySubjectFor( const BmString subject) {
-	BmString isReplyRX = ThePrefs->GetString( "ReplySubjectRX", "^\\s*(Re|Aw)(\\[\\d+\\])?:");
+	BmString isReplyRX 
+		= ThePrefs->GetString( "ReplySubjectRX", "^\\s*(Re|Aw)(\\[\\d+\\])?:");
 	Regexx rx;
 	if (!rx.exec( subject, isReplyRX, Regexx::nocase|Regexx::nomatch)) {
 		BmString subjectStr = ThePrefs->GetString( "ReplySubjectStr", "Re: %s");
@@ -644,10 +688,13 @@ BmString BmMail::CreateReplySubjectFor( const BmString subject) {
 	-	
 \*------------------------------------------------------------------------------*/
 BmString BmMail::CreateForwardSubjectFor( const BmString subject) {
-	BmString isForwardRX = ThePrefs->GetString( "ForwardSubjectRX", "^\\s*\\[?\\s*Fwd(\\[\\d+\\])?:");
+	BmString isForwardRX 
+		= ThePrefs->GetString( "ForwardSubjectRX", 
+									  "^\\s*\\[?\\s*Fwd(\\[\\d+\\])?:");
 	Regexx rx;
 	if (!rx.exec( subject, isForwardRX, Regexx::nocase|Regexx::nomatch)) {
-		BmString subjectStr = ThePrefs->GetString( "ForwardSubjectStr", "[Fwd: %s]");
+		BmString subjectStr 
+			= ThePrefs->GetString( "ForwardSubjectStr", "[Fwd: %s]");
 		subjectStr = rx.replace( subjectStr, "%s", subject, 
 										 Regexx::nocase|Regexx::global|Regexx::noatom);
 		return subjectStr;
@@ -663,9 +710,11 @@ BmString BmMail::CreateForwardSubjectFor( const BmString subject) {
 BmString BmMail::CreateReplyIntro( bool mailIsToPersonOnly) {
 	Regexx rx;
 	BmString intro = ThePrefs->GetString( "ReplyIntroStr");
-	intro = rx.replace( intro, "%D", TimeToString( mMailRef->When(), "%Y-%m-%d"), 
+	intro = rx.replace( intro, "%D", 
+							  TimeToString( mMailRef->When(), "%Y-%m-%d"),
 							  Regexx::nocase|Regexx::global|Regexx::noatom);
-	intro = rx.replace( intro, "%T", TimeToString( mMailRef->When(), "%X [%z]"), 
+	intro = rx.replace( intro, "%T", 
+							  TimeToString( mMailRef->When(), "%X [%z]"), 
 							  Regexx::nocase|Regexx::global|Regexx::noatom);
 	intro = rx.replace( intro, "\\n", "\n", 
 							  Regexx::nocase|Regexx::global|Regexx::noatom);
@@ -699,9 +748,11 @@ BmString BmMail::CreateReplyIntro( bool mailIsToPersonOnly) {
 BmString BmMail::CreateForwardIntro() {
 	Regexx rx;
 	BmString intro = ThePrefs->GetString( "ForwardIntroStr");
-	intro = rx.replace( intro, "%D", TimeToString( mMailRef->When(), "%Y-%m-%d"), 
+	intro = rx.replace( intro, "%D", 
+							  TimeToString( mMailRef->When(), "%Y-%m-%d"), 
 							  Regexx::nocase|Regexx::global|Regexx::noatom);
-	intro = rx.replace( intro, "%T", TimeToString( mMailRef->When(), "%X [%z]"), 
+	intro = rx.replace( intro, "%T", 
+							  TimeToString( mMailRef->When(), "%X [%z]"), 
 							  Regexx::nocase|Regexx::global|Regexx::noatom);
 	intro = rx.replace( intro, "\\n", "\n", 
 							  Regexx::nocase|Regexx::global|Regexx::noatom);
@@ -754,7 +805,8 @@ void BmMail::AddPartsFromMail( BmRef<BmMail> mail, bool withAttachments,
 							? mail->CreateForwardIntro() << "\n"
 							: mail->CreateReplyIntro( mailIsToPersonOnly) << "\n");
 	if (newTextBody)
-		mBody->SetEditableText( newTextBody->DecodedData() + "\n" + intro + quotedText, 
+		mBody->SetEditableText( newTextBody->DecodedData() + "\n" + intro 
+											+ quotedText, 
 										charset);
 	else
 		mBody->SetEditableText( intro + quotedText, charset);
@@ -769,11 +821,14 @@ void BmMail::AddPartsFromMail( BmRef<BmMail> mail, bool withAttachments,
 			end = mail->Body()->end();
 		}
 		// copy all attachments (maybe except v-cards):
-		bool doNotAttachVCards = ThePrefs->GetBool( "DoNotAttachVCardsToForward", true);
+		bool doNotAttachVCards 
+			= ThePrefs->GetBool( "DoNotAttachVCardsToForward", true);
 		for( ; iter != end; ++iter) {
-			BmBodyPart* bodyPart = dynamic_cast< BmBodyPart*>( iter->second.Get());
+			BmBodyPart* bodyPart 
+				= dynamic_cast< BmBodyPart*>( iter->second.Get());
 			if (textBody != bodyPart) {
-				if (doNotAttachVCards && bodyPart->MimeType().ICompare( "text/x-vcard") == 0)
+				if (doNotAttachVCards 
+				&& bodyPart->MimeType().ICompare( "text/x-vcard") == 0)
 					continue;
 				BmBodyPart* copiedBody = new BmBodyPart( *bodyPart);
 				mBody->AddItemToList( copiedBody);
@@ -817,7 +872,9 @@ bool BmMail::ConstructRawText( const BmString& editedUtf8Text,
 	if (len && msgText.ByteAt( len-1) != '\n')
 		msgText << "\r\n";
 	mText.Adopt( msgText.TheString());
-	BM_LOG3( BM_LogMailParse, BmString("CONSTRUCTED MSG: \n-----START--------\n") << mText << "\n-----END----------");
+	BM_LOG3( BM_LogMailParse, 
+				BmString("CONSTRUCTED MSG: \n-----START--------\n") << mText 
+					<< "\n-----END----------");
 	return true;
 }
 
@@ -854,7 +911,8 @@ void BmMail::AddBaseMailRef( BmMailRef* ref) {
 \*------------------------------------------------------------------------------*/
 const BPath& BmMail::DestFolderpath() const {
 	if (mDestFolderpath.InitCheck() != B_OK) {
-		if (mEntry.InitCheck() == B_OK || mMailRef && mMailRef->InitCheck() == B_OK) {
+		if (mEntry.InitCheck() == B_OK 
+		|| mMailRef && mMailRef->InitCheck() == B_OK) {
 			status_t err;
 			BDirectory homeDir;
 			BEntry entry;
@@ -924,16 +982,18 @@ bool BmMail::Store() {
 
 	try {
 		// Find out where mail shall be living.
-		// N.B.: Since we have a node-monitor watching our actions within the mail-folders,
-		//			we create all mails in a temp-folder (outside the mail-hierarchy, so that
-		//			the node-monitor doesn't notice), write out the mail-file completely, and
-		//			then move the complete mail-file into the mail-folder hierarchy.
-		//			This way we can ensure that the node-monitor does not trigger on a
-		//			mail-file before it is complete (which may result in files appearing to
-		//			have zero-length or similar peculiarities).
+		// N.B.: Since we have a node-monitor watching our actions within the 
+		//			mail-folders, we create all mails in a temp-folder (outside 
+		//			the mail-hierarchy, so that the node-monitor doesn't notice), 
+		//			write out the mail-file completely, and then move the complete 
+		//			mail-file into the mail-folder hierarchy.
+		//			This way we can ensure that the node-monitor does not trigger
+		//			on a mail-file before it is complete (which may result in 
+		//			files appearing to have zero-length or similar peculiarities).
 		//
 		// So: first, we determine the tmp-folder where the mail is being created:
-		(err = find_directory( B_COMMON_TEMP_DIRECTORY, &tmpPath, true)) == B_OK
+		(err = find_directory( B_COMMON_TEMP_DIRECTORY, 
+									  &tmpPath, true)) == B_OK
 													|| BM_THROW_RUNTIME( BmString("Could not find tmp-directory on this system") << "\n\n Result: " << strerror(err));
 		(err = tmpDir.SetTo( tmpPath.Path())) == B_OK
 													|| BM_THROW_RUNTIME( BmString("Could not find tmp-directory on this system") << "\n\n Result: " << strerror(err));
@@ -943,8 +1003,8 @@ bool BmMail::Store() {
 		if (mEntry.InitCheck() == B_OK 
 		|| mMailRef && mMailRef->InitCheck() == B_OK) {
 			if (mEntry.InitCheck() == B_OK) {
-				// mail has just been written to disk, we recycle the current entry, but move 
-				// it to the temp-folder (see below)
+				// mail has just been written to disk, we recycle the current 
+				// entry, but move it to the temp-folder (see below)
 			} else {
 				// mail has been read from disk, we recycle the old name, but move 
 				// it to the temp-folder (see below)
@@ -964,8 +1024,10 @@ bool BmMail::Store() {
 							+ (mOutbound ? BM_MAIL_FOLDER_OUT : BM_MAIL_FOLDER_IN));
 			newHomePath.SetTo( p.String());
 
-			// we create a new filename for it, and create the entry in the temp-folder:
-			BmString newName  = BmString(tmpPath.Path()) + "/" + CreateBasicFilename();
+			// we create a new filename for it, and create the entry in 
+			// the temp-folder:
+			BmString newName  
+				= BmString(tmpPath.Path()) + "/" + CreateBasicFilename();
 			(err = mEntry.SetTo( newName.String())) == B_OK
 													|| BM_THROW_RUNTIME( BmString("Could not create entry for mail-file <") << newName << ">\n\n Result: " << strerror(err));
 			mEntry.GetName( basicFilename);
@@ -980,9 +1042,12 @@ bool BmMail::Store() {
 			// try to file mail into a different destination-folder:
 			if ((err = homeDir.SetTo( mDestFolderpath.Path())) != B_OK) {
 				BmLogHandler::Log( "Filter", 
-										 BmString("Could not file message into mail-folder\n") << mDestFolderpath.Path()
+										 BmString("Could not file message into "
+										 			 "mail-folder\n") 
+										 	<< mDestFolderpath.Path()
 											<< "\nError: " << strerror(err)
-											<< "\n\nMessage will now be filed into the folder\n" 
+											<< "\n\nMessage will now be filed "
+											<<	"into the folder\n" 
 											<< newHomePath.Path());
 			} else
 				newHomePath = mDestFolderpath;
@@ -1001,11 +1066,17 @@ bool BmMail::Store() {
 				(err = homeDir.SetTo( newHomePath.Path())) == B_OK
 													|| BM_THROW_RUNTIME( BmString("Could not set directory to <") << newHomePath.Path() << ">\n\n Result: " << strerror(err));
 			} else
-				throw BM_runtime_error( BmString("Could not set directory to <") << newHomePath.Path() << ">\n\n Result: " << strerror(err));
+				throw BM_runtime_error( BmString("Could not set directory to <") 
+													<< newHomePath.Path() 
+													<< ">\n\n Result: " 
+													<< strerror(err));
 		}
 			
 		// we create/open the new mailfile...
-		(err = mailFile.SetTo( &mEntry, B_WRITE_ONLY | B_ERASE_FILE | B_CREATE_FILE)) == B_OK
+		(err = mailFile.SetTo( &mEntry, 
+									  B_WRITE_ONLY 
+									  | B_ERASE_FILE 
+									  | B_CREATE_FILE)) == B_OK
 													|| BM_THROW_RUNTIME( BmString("Could not create mail-file\n\t<") << basicFilename << ">\n\n Result: " << strerror(err));
 		// ...set the correct mime-type...
 		(err = mailInfo.SetTo( &mailFile)) == B_OK
@@ -1018,16 +1089,20 @@ bool BmMail::Store() {
 		int32 len = mText.Length();
 		if ((res = mailFile.Write( mText.String(), len)) < len) {
 			if (res < 0) {
-				BM_THROW_RUNTIME( BmString("Unable to write to mailfile <") << basicFilename << ">\n\n Result: " << strerror(err));
+				BM_THROW_RUNTIME( BmString("Unable to write to mailfile <") 
+											<< basicFilename << ">\n\n Result: " 
+											<< strerror(err));
 			} else {
-				BM_THROW_RUNTIME( BmString("Could not write complete mail to file.\nWrote ") << res << " bytes instead of " << len);
+				BM_THROW_RUNTIME( BmString("Could not write complete mail to "
+													"file.\nWrote ") 
+											<< res << " bytes instead of " << len);
 			}
 		}
 		mailFile.Sync();
 		if (!moveToTrash) {
 			// now move mail to it's real home:
 			(err = mEntry.MoveTo( &homeDir)) == B_OK
-														|| BM_THROW_RUNTIME( BmString("Could not move mail <")<<basicFilename<<"> to home-folder\n\n Result: " << strerror(err));
+													|| BM_THROW_RUNTIME( BmString("Could not move mail <")<<basicFilename<<"> to home-folder\n\n Result: " << strerror(err));
 		}
 		entry_ref eref;
 		(err = mEntry.GetRef( &eref)) == B_OK
@@ -1060,9 +1135,12 @@ bool BmMail::Store() {
 void BmMail::StoreAttributes( BFile& mailFile) {
 	//
 	BmString st = Status();
-	mailFile.WriteAttr( BM_MAIL_ATTR_STATUS, B_STRING_TYPE, 0, st.String(), st.Length()+1);
-	mailFile.WriteAttr( BM_MAIL_ATTR_ACCOUNT, B_STRING_TYPE, 0, mAccountName.String(), mAccountName.Length()+1);
-	mailFile.WriteAttr( BM_MAIL_ATTR_IDENTITY, B_STRING_TYPE, 0, mIdentityName.String(), mIdentityName.Length()+1);
+	mailFile.WriteAttr( BM_MAIL_ATTR_STATUS, B_STRING_TYPE, 0, 
+							  st.String(), st.Length()+1);
+	mailFile.WriteAttr( BM_MAIL_ATTR_ACCOUNT, B_STRING_TYPE, 0, 
+							  mAccountName.String(), mAccountName.Length()+1);
+	mailFile.WriteAttr( BM_MAIL_ATTR_IDENTITY, B_STRING_TYPE, 0, 
+							  mIdentityName.String(), mIdentityName.Length()+1);
 	//
 	if (mOutbound) {
 		// write MAIL:flags in order to cooperate nicely with MDR:
@@ -1072,19 +1150,24 @@ void BmMail::StoreAttributes( BFile& mailFile) {
 			flags = B_MAIL_PENDING | B_MAIL_SAVE;
 		else if (status==BM_MAIL_STATUS_SENT)
 			flags = B_MAIL_SENT;
-		mailFile.WriteAttr( BM_MAIL_ATTR_FLAGS, B_INT32_TYPE, 0, &flags, sizeof(int32));
+		mailFile.WriteAttr( BM_MAIL_ATTR_FLAGS, B_INT32_TYPE, 0, 
+								  &flags, sizeof(int32));
 	}
 	//
 	int32 headerLength = HeaderLength();
 	int32 contentLength = MAX( 0, mText.Length()-headerLength);
 	
-	mailFile.WriteAttr( BM_MAIL_ATTR_HEADER, B_INT32_TYPE, 0, &headerLength, sizeof(int32));
-	mailFile.WriteAttr( BM_MAIL_ATTR_CONTENT, B_INT32_TYPE, 0, &contentLength, sizeof(int32));
+	mailFile.WriteAttr( BM_MAIL_ATTR_HEADER, B_INT32_TYPE, 0, 
+							  &headerLength, sizeof(int32));
+	mailFile.WriteAttr( BM_MAIL_ATTR_CONTENT, B_INT32_TYPE, 0, 
+							  &contentLength, sizeof(int32));
 	//
 	int32 hasAttachments = HasAttachments();
-	mailFile.WriteAttr( BM_MAIL_ATTR_ATTACHMENTS, B_INT32_TYPE, 0, &hasAttachments, sizeof(hasAttachments));
+	mailFile.WriteAttr( BM_MAIL_ATTR_ATTACHMENTS, B_INT32_TYPE, 0, 
+							  &hasAttachments, sizeof(hasAttachments));
 	//
-	mailFile.WriteAttr( BM_MAIL_ATTR_MARGIN, B_INT32_TYPE, 0, &mRightMargin, sizeof(int32));
+	mailFile.WriteAttr( BM_MAIL_ATTR_MARGIN, B_INT32_TYPE, 0, 
+							  &mRightMargin, sizeof(int32));
 }
 
 /*------------------------------------------------------------------------------*\
@@ -1126,7 +1209,8 @@ bool BmMail::StartJob() {
 	BFile mailFile;
 	
 	if (!mMailRef || InitCheck() == B_OK) {
-		// mail is illdefined or has already been initialized -> there's nothing left to do
+		// mail is illdefined or has already been initialized 
+		// -> there's nothing left to do
 		return true;
 	}
 
@@ -1143,38 +1227,57 @@ bool BmMail::StartJob() {
 		}
 
 		entry_ref eref = mMailRef->EntryRef();
-		BM_LOG2( BM_LogMailParse, BmString("opening mail-file <") << eref.name << ">");
-		for( int i=0; (err = mailFile.SetTo( &eref, B_READ_ONLY)) == B_BUSY; ++i) {
+		BM_LOG2( BM_LogMailParse, 
+					BmString("opening mail-file <") << eref.name << ">");
+		for(  int i=0; 
+				(err = mailFile.SetTo( &eref, B_READ_ONLY)) == B_BUSY; ++i) {
 			if (i==100)
-				throw BM_runtime_error( BmString("Node is locked too long for mail-file <") << eref.name << "> \n\nError:" << strerror(err));
-			BM_LOG2( BM_LogMailTracking, BmString("Node is locked for mail-file <") << eref.name << ">. We take a nap and try again...");
+				throw BM_runtime_error( BmString("Node is locked too long for "
+															"mail-file <") 
+													<< eref.name << "> \n\nError:" 
+													<< strerror(err));
+			BM_LOG2( BM_LogMailTracking, 
+						BmString("Node is locked for mail-file <") << eref.name 
+							<< ">. We take a nap and try again...");
 			snooze( 200*1000);
 		}
 		if (err != B_OK) {
-			// mail-file doesn't exist anymore, most probably because the user has deleted it
-			// (in a multi-delete operation), we now no longer throw, but return quietly
+			// mail-file doesn't exist anymore, most probably because 
+			// the user has deleted it (in a multi-delete operation), 
+			// we no longer throw, but return quietly
 			return false;
-//			throw BM_runtime_error(BmString("Could not open mail-file <") << eref.name << "> \n\nError:" << strerror(err));
 		}
 		
 		// ...ok, mail-file found, we fetch the mail from it:
 		BmString mailText;
 		// read special attributes for mail-state...
-		mailFile.ReadAttr( BM_MAIL_ATTR_MARGIN, B_INT32_TYPE, 0, &mRightMargin, sizeof(int32));
+		mailFile.ReadAttr( BM_MAIL_ATTR_MARGIN, B_INT32_TYPE, 0, 
+								 &mRightMargin, sizeof(int32));
 		// ...and read file contents:
 		off_t mailSize;
 		(err = mailFile.GetSize( &mailSize)) == B_OK
 													|| BM_THROW_RUNTIME(BmString("Could not get size of mail-file <") << eref.name << "> \n\nError:" << strerror(err));
-		BM_LOG2( BM_LogMailParse, BmString("...should be reading ") << mailSize << " bytes");
+		BM_LOG2( BM_LogMailParse, 
+					BmString("...should be reading ") << mailSize << " bytes");
 		char* buf = mailText.LockBuffer( mailSize);
 		off_t realSize = 0;
 		const size_t blocksize = 65536;
-		for( int32 offs=0; (skipChecks || ShouldContinue()) && offs < mailSize; ) {
+		for(  int32 offs=0; 
+				(skipChecks || ShouldContinue()) && offs < mailSize; ) {
 			char* pos = buf+offs;
-			ssize_t read = mailFile.Read( pos, mailSize-offs < blocksize ? mailSize-offs : blocksize);
-			BM_LOG3( BM_LogMailParse, BmString("...read a block of ") << read << " bytes");
+			ssize_t read = mailFile.Read( 
+				pos, 
+				mailSize-offs < blocksize 
+					? mailSize-offs 
+					: blocksize
+			);
+			BM_LOG3( BM_LogMailParse, 
+						BmString("...read a block of ") << read << " bytes");
 			if (read < 0)
-				throw BM_runtime_error( BmString("Could not fetch mail from file\n\t<") << eref.name << ">\n\n Result: " << strerror(read));
+				throw BM_runtime_error( BmString("Could not fetch mail from "
+															"file\n\t<") 
+													<< eref.name << ">\n\n Result: " 
+													<< strerror(read));
 			if (!read)
 				break;
 			realSize += read;
@@ -1182,7 +1285,8 @@ bool BmMail::StartJob() {
 		}
 		if (!skipChecks && !ShouldContinue())
 			return false;
-		BM_LOG2( BM_LogMailParse, BmString("...real size is ") << realSize << " bytes");
+		BM_LOG2( BM_LogMailParse, 
+					BmString("...real size is ") << realSize << " bytes");
 		buf[realSize] = '\0';
 		mailText.UnlockBuffer( realSize);
 		// we initialize the BmMail-internals from the plain text:
@@ -1215,7 +1319,8 @@ int32 BmMail::QuoteText( const BmString& in, BmString& out,
 	if (!in.Length())
 		return maxLineLen;
 	BmString quoteString;
-	quoteString.ConvertTabsToSpaces( ThePrefs->GetInt( "SpacesPerTab", 4), &inQuoteString);
+	quoteString.ConvertTabsToSpaces( ThePrefs->GetInt( "SpacesPerTab", 4), 
+												&inQuoteString);
 	BmString qStyle = ThePrefs->GetString( "QuoteFormatting");
 	if (qStyle == BM_QUOTE_AUTO_WRAP)
 		return QuoteTextWithReWrap( in, out, quoteString, maxLineLen);
@@ -1234,12 +1339,14 @@ int32 BmMail::QuoteText( const BmString& in, BmString& out,
 			// always respect maxLineLen, wrap when lines exceed right margin.
 			// This results in a combing-effect when long lines are wrapped
 			// around, producing a very short next line.
-			maxTextLen = MAX( 0, maxLineLen - quote.CountChars() - quoteString.CountChars());
+			maxTextLen 
+				= MAX( 0, 
+						 maxLineLen - quote.CountChars() - quoteString.CountChars());
 		} else {
 			// qStyle == BM_QUOTE_PUSH_MARGIN
-			// push right margin for new quote-string, if needed, in effect leaving 
-			// the mail-formatting intact more often (but possibly exceeding 80 chars 
-			// per line):
+			// push right margin for new quote-string, if needed, in effect 
+			// leaving the mail-formatting intact more often (but possibly
+			// exceeding 80 chars per line):
 			maxTextLen = MAX( 0, maxLineLen - quote.CountChars());
 		}
 		text = rx.match[i].atom[1];
@@ -1251,8 +1358,10 @@ int32 BmMail::QuoteText( const BmString& in, BmString& out,
 		int32 newLen = AddQuotedText( text, out, quote, quoteString, maxTextLen);
 		modifiedMaxLen = MAX( newLen, modifiedMaxLen);
 	}
-	BmString emptyLinesAtEndRX = BmString("(?:") << quoteString << "(" << quote << ")?[ \\t]*\\n)+\\z";
-	out = rx.replace( out, emptyLinesAtEndRX, "", Regexx::newline|Regexx::global|Regexx::noatom);
+	BmString emptyLinesAtEndRX 
+		= BmString("(?:") << quoteString << "(" << quote << ")?[ \\t]*\\n)+\\z";
+	out = rx.replace( out, emptyLinesAtEndRX, "", 
+							Regexx::newline|Regexx::global|Regexx::noatom);
 	return modifiedMaxLen;
 }
 
@@ -1283,17 +1392,24 @@ int32 BmMail::QuoteTextWithReWrap( const BmString& in, BmString& out,
 		quote.ConvertTabsToSpaces( ThePrefs->GetInt( "SpacesPerTab", 4), &q);
 		line = rx.match[i].atom[1];
 		if ((line.CountChars() < minLenForWrappedLine && lastWasSpecialLine)
-		|| rxl.exec( line, ThePrefs->GetString( "QuotingLevelEmptyLineRX", "^[ \\t]*$"))
-		|| rxl.exec( line, ThePrefs->GetString( "QuotingLevelListLineRX", "^[*+\\-\\d]+.*?$"))) {
+		|| rxl.exec( line, ThePrefs->GetString( "QuotingLevelEmptyLineRX", 
+															 "^[ \\t]*$"))
+		|| rxl.exec( line, ThePrefs->GetString( "QuotingLevelListLineRX", 
+															 "^[*+\\-\\d]+.*?$"))) {
 			if (i != 0) {
-				maxTextLen = MAX( 0, maxLineLen - currQuote.CountChars() - quoteString.CountChars());
+				maxTextLen = MAX( 0, 
+							 			maxLineLen - currQuote.CountChars() 
+							 				- quoteString.CountChars());
 				AddQuotedText( text, out, currQuote, quoteString, maxTextLen);
 				text.Truncate(0);
 			}
 			lastWasSpecialLine = true;
-		} else if (lastWasSpecialLine || currQuote != quote || lastLineLen < minLenForWrappedLine) {
+		} else if (lastWasSpecialLine || currQuote != quote 
+		|| lastLineLen < minLenForWrappedLine) {
 			if (i != 0) {
-				maxTextLen = MAX( 0, maxLineLen - currQuote.CountChars() - quoteString.CountChars());
+				maxTextLen = MAX( 0, 
+										maxLineLen - currQuote.CountChars() 
+											- quoteString.CountChars());
 				AddQuotedText( text, out, currQuote, quoteString, maxTextLen);
 				text.Truncate(0);
 			}
@@ -1312,10 +1428,15 @@ int32 BmMail::QuoteTextWithReWrap( const BmString& in, BmString& out,
 			text << " " << line;
 		}
 	}
-	maxTextLen = MAX( 0, maxLineLen - currQuote.CountChars() - quoteString.CountChars());
+	maxTextLen = MAX( 0, 
+							maxLineLen - currQuote.CountChars() 
+								- quoteString.CountChars());
 	AddQuotedText( text, out, currQuote, quoteString, maxTextLen);
-	BmString emptyLinesAtEndRX = BmString("(?:") << quoteString << "(" << currQuote << ")?[ \\t]*\\n)+\\z";
-	out = rx.replace( out, emptyLinesAtEndRX, "", Regexx::newline|Regexx::global|Regexx::noatom);
+	BmString emptyLinesAtEndRX 
+		= BmString("(?:") << quoteString << "(" << currQuote 
+								<< ")?[ \\t]*\\n)+\\z";
+	out = rx.replace( out, emptyLinesAtEndRX, "", 
+							Regexx::newline|Regexx::global|Regexx::noatom);
 	return maxLineLen;
 }
 
