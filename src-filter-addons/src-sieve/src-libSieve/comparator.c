@@ -224,11 +224,12 @@ static int ascii_numeric_cmp(const char *text, const char *pat)
     if (isdigit((int)(unsigned char)*pat)) {
 	if (isdigit((int)(unsigned char)*text)) {
 	    return (atoi(text) - atoi(pat));
-	} else {
-	    return 0;
-	}
-    } else if (isdigit((int)(unsigned char)*text)) return -1;
-    else return 0; /* both not digits */
+	} else
+	    return -1;
+    } else if (isdigit((int)(unsigned char)*text)) 
+    	return 1;
+    else 
+    	return 0; /* both not digits */
 }
 
 /* these are relational wrappers for ascii-numeric comparisons */
