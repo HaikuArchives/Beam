@@ -34,6 +34,10 @@
 #include <File.h>
 #include <Message.h>
 #include <MessageRunner.h>
+
+#ifdef BEAM_FOR_BONE
+# include <netinet/in.h>
+#endif
 #include <NetAddress.h>
 
 #include "regexx.hh"

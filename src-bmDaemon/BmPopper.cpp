@@ -34,6 +34,9 @@
 #include <memory>
 #include <stdio.h>
 
+#ifdef BEAM_FOR_BONE
+# include <netinet/in.h>
+#endif
 #include <NetAddress.h>
 #include <NetEndpoint.h>
 
