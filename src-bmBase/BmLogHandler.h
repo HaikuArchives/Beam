@@ -72,6 +72,7 @@ public:
 	// static functions
 	static void Log( const BmString logname, const BmString& msg);
 	static void Log( const char* const logname, const char* msg);
+	static void Shutdown( bool sync=true);
 	static void FinishLog( const BmString& logname);
 
 	// creator-func, c'tors and d'tor
@@ -81,6 +82,7 @@ public:
 
 	// native methods:
 	BmLogfile* FindLogfile( const BmString &logname);
+	void CloseAllLogs();
 	void CloseLog( const BmString &logname);
 	void LogToFile( const BmString& logname, const BmString &msg);
 	void LogToFile( const BmString& logname, const char* msg);

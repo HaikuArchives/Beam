@@ -115,8 +115,17 @@ void BmLogHandler::Log( const char* const logname, const char* msg) {
 }
 
 /*------------------------------------------------------------------------------*\
-	static logging-function
-		-	logs only if a loghandler is actually present
+	
+		-	
+\*------------------------------------------------------------------------------*/
+void BmLogHandler::Shutdown( bool sync) { 
+	if (TheLogHandler)
+		TheLogHandler->CloseAllLogs();
+}
+
+/*------------------------------------------------------------------------------*\
+	
+		-	
 \*------------------------------------------------------------------------------*/
 void BmLogHandler::FinishLog( const BmString& logname) { 
 	if (TheLogHandler)
@@ -326,6 +335,21 @@ void BmLogHandler::LogToFile( const BmString& logname, const char* msg) {
 }
 
 /*------------------------------------------------------------------------------*\
+	CloseAllLogs()
+		-	closes all logfiles
+\*------------------------------------------------------------------------------*/
+void BmLogHandler::CloseAllLogs() {
+	BAutolock lock( mLocker);
+	if (lock.IsLocked()) {
+		while(mActiveLogs.CountItems()>0) {
+			BmLogfile* log = static_cast< BmLogfile*>( mActiveLogs.ItemAt(0));
+			if (log)
+				CloseLog( log->logname);
+		}
+	}
+}
+
+/*------------------------------------------------------------------------------*\
 	CloseLog( logname)
 		-	closes the logfile with the specified logname
 \*------------------------------------------------------------------------------*/
@@ -426,5 +450,5 @@ void BmLogHandler::BmLogfile::Write( const char* const msg, int32 threadId) {
 			watcher.SendMessage( &msg);
 		}
 	}
-	mLogFile->Sync();
+//	mLogFile->Sync();
 }
