@@ -1,5 +1,5 @@
 /*
-	BmTextControl.cpp
+	BmMultiLineTextControl.cpp
 		$Id$
 */
 /*************************************************************************/
@@ -35,33 +35,26 @@
 
 #include "Colors.h"
 
-#include "BmTextControl.h"
+#include "BmMultiLineTextControl.h"
 
 /*------------------------------------------------------------------------------*\
 	( )
 		-	
 \*------------------------------------------------------------------------------*/
-BmTextControl::BmTextControl( const char* label, bool labelIsMenu, int32 fixedTextLen,
-										int32 minTextLen)
-	:	inherited( BRect(0,0,0,0), NULL, labelIsMenu ? "" : label, NULL, NULL, B_FOLLOW_NONE)
+BmMultiLineTextControl::BmMultiLineTextControl( const char* label, bool labelIsMenu, 
+															   int32 lineCount, int32 minTextLen)
+	:	inherited( BRect(0,0,0,0), NULL, label, true, NULL, NULL, B_FOLLOW_NONE)
 	,	mLabelIsMenu( labelIsMenu)
-	,	mTextView( static_cast<BTextView*>( ChildAt( 0)))
 {
 	ResizeToPreferred();
-	BRect b = Bounds();
 	float divPos = label ? StringWidth( label)+27 : 0;
 	BFont font;
-	mTextView->GetFont( &font);
-	if (fixedTextLen) {
-		mTextView->SetMaxBytes( fixedTextLen);
-		float width = divPos + font.StringWidth("W")*fixedTextLen;
-		ct_mpm = minimax( width, b.Height()+4, width, b.Height()+4);
-	} else {
-		if (minTextLen)
-			ct_mpm = minimax( divPos + font.StringWidth("W")*minTextLen, b.Height()+4, 1E5, b.Height()+4);
-		else
-			ct_mpm = minimax( divPos + font.StringWidth("W")*10, b.Height()+4, 1E5, b.Height()+4);
-	}
+	m_text_view->GetFont( &font);
+	float height = m_text_view->LineHeight()*lineCount+12;
+	if (minTextLen)
+		ct_mpm = minimax( divPos + font.StringWidth("W")*minTextLen, height+4, 1E5, height+4);
+	else
+		ct_mpm = minimax( divPos + font.StringWidth("W")*10, height+6, 1E5, height+6);
 	SetDivider( divPos);
 	if (labelIsMenu) {
 		float width, height;
@@ -72,21 +65,21 @@ BmTextControl::BmTextControl( const char* label, bool labelIsMenu, int32 fixedTe
 		mMenuField->SetDivider( 0);
 		AddChild( mMenuField);
 	}
-	SetModificationMessage( new BMessage(BM_TEXTFIELD_MODIFIED));
+	SetModificationMessage( new BMessage(BM_MULTILINE_TEXTFIELD_MODIFIED));
 }
 
 /*------------------------------------------------------------------------------*\
 	( )
 		-	
 \*------------------------------------------------------------------------------*/
-BmTextControl::~BmTextControl() {
+BmMultiLineTextControl::~BmMultiLineTextControl() {
 }
 
 /*------------------------------------------------------------------------------*\
 	( )
 		-	
 \*------------------------------------------------------------------------------*/
-void BmTextControl::SetDivider( float divider) {
+void BmMultiLineTextControl::SetDivider( float divider) {
 	float diff = divider-Divider();
 	ct_mpm.maxi.x += diff;
 	inherited::SetDivider( divider);
@@ -96,12 +89,8 @@ void BmTextControl::SetDivider( float divider) {
 	( )
 		-	
 \*------------------------------------------------------------------------------*/
-void BmTextControl::SetEnabled( bool enabled) {
+void BmMultiLineTextControl::SetEnabled( bool enabled) {
 	inherited::SetEnabled( enabled);
-	if (enabled)
-		mTextView->SetFlags( mTextView->Flags() | B_NAVIGABLE);
-	else
-		mTextView->SetFlags( mTextView->Flags() & (0xFFFFFFFF^B_NAVIGABLE));
 	if (mLabelIsMenu)
 		mMenuField->SetEnabled( enabled);
 }
@@ -110,37 +99,37 @@ void BmTextControl::SetEnabled( bool enabled) {
 	( )
 		-	
 \*------------------------------------------------------------------------------*/
-void BmTextControl::SetText( const char* text) {
+void BmMultiLineTextControl::SetText( const char* text) {
 	inherited::SetText( text);
-	TextView()->ScrollToSelection();
+	m_text_view->ScrollToSelection();
 }
 
 /*------------------------------------------------------------------------------*\
 	( )
 		-	
 \*------------------------------------------------------------------------------*/
-void BmTextControl::SetTextSilently( const char* text) {
+void BmMultiLineTextControl::SetTextSilently( const char* text) {
 	SetModificationMessage( NULL);
 	SetText( text);
-	SetModificationMessage( new BMessage(BM_TEXTFIELD_MODIFIED));
+	SetModificationMessage( new BMessage(BM_MULTILINE_TEXTFIELD_MODIFIED));
 }
 
 /*------------------------------------------------------------------------------*\
 	( )
 		-	
 \*------------------------------------------------------------------------------*/
-void BmTextControl::FrameResized( float new_width, float new_height) {
+void BmMultiLineTextControl::FrameResized( float new_width, float new_height) {
 	BRect curr = Bounds();
 	Invalidate( BRect( Divider(), 0, new_width-1, curr.Height()));
 	inherited::FrameResized( new_width, new_height);
-	TextView()->ScrollToSelection();
+	m_text_view->ScrollToSelection();
 }
 
 /*------------------------------------------------------------------------------*\
 	( )
 		-	
 \*------------------------------------------------------------------------------*/
-minimax BmTextControl::layoutprefs() {
+minimax BmMultiLineTextControl::layoutprefs() {
 	return mpm=ct_mpm;
 }
 
@@ -148,13 +137,13 @@ minimax BmTextControl::layoutprefs() {
 	( )
 		-	
 \*------------------------------------------------------------------------------*/
-BRect BmTextControl::layout(BRect frame) {
+BRect BmMultiLineTextControl::layout(BRect frame) {
 	if (frame == Frame())
 		return frame;
 	MoveTo(frame.LeftTop());
 	ResizeTo(frame.Width(),frame.Height());
-	float occupiedSpace = Divider()-10;
-	mTextView->MoveTo( occupiedSpace, 5);
-	mTextView->ResizeTo( frame.Width()-occupiedSpace-6, mTextView->Frame().Height());
+	float occupiedSpace = Divider()-11;
+	m_text_view->MoveTo( occupiedSpace, 5);
+	m_text_view->ResizeTo( frame.Width()-occupiedSpace-5, frame.Height()-m_text_view->Frame().top-2);
 	return frame;
 }

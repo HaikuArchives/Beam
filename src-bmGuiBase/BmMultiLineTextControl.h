@@ -1,5 +1,5 @@
 /*
-	BmApp.h
+	BmMultiLineTextControl.h
 		$Id$
 */
 /*************************************************************************/
@@ -28,34 +28,53 @@
 /*************************************************************************/
 
 
-#ifndef _Beam_h
-#define _Beam_h
+#ifndef _BmMultiLineTextControl_h
+#define _BmMultiLineTextControl_h
 
-#include "BmApp.h"
+#include <layout.h>
 
-class BmWindow;
+#include "MultiLineTextControl.h"
 
-class BeamApp : public BmApplication
+class HGroup;
+
+#define BM_MULTILINE_TEXTFIELD_MODIFIED 'bmfn'
+
+class BmMultiLineTextControl : public MView, public MultiLineTextControl
 {
-	typedef BmApplication inherited;
+	typedef MultiLineTextControl inherited;
 
 public:
-	BeamApp();
-	~BeamApp();
+	// creator-func, c'tors and d'tor:
+	BmMultiLineTextControl( const char* label, bool labelIsMenu=false,
+									int32 lineCount = 4, int32 minTextLen=0);
+	~BmMultiLineTextControl();
+	
+	// native methods:
+	void SetTextSilently( const char* text);
 
-	// overrides of BmApplication
-	thread_id Run();
-	void MessageReceived(BMessage*);
-	void ReadyToRun();
-	void RefsReceived( BMessage* msg);
+	// overrides of MultiLineMultiLineTextControl:
+	void FrameResized( float new_width, float new_height);
+	void SetDivider( float divider);
+	void SetEnabled( bool enabled);
+	void SetText( const char* text);
+
+	// getters:
+	inline BTextView* TextView() const 	{ return mTextView; }
+	inline BMenuField* MenuField() const	{ return mMenuField; }
+	inline BMenu* Menu() const 			{ return mMenuField ? mMenuField->Menu() : NULL; }
 
 private:
-	status_t mInitCheck;
-	BmWindow* mMailWin;
+	minimax layoutprefs();
+	BRect layout(BRect frame);
 
-	inline status_t InitCheck() 			{ return mInitCheck; }
+	bool mLabelIsMenu;
+	BTextView* mTextView;
+	BMenuField* mMenuField;
+
+	// Hide copy-constructor and assignment:
+	BmMultiLineTextControl( const BmMultiLineTextControl&);
+	BmMultiLineTextControl operator=( const BmMultiLineTextControl&);
 };
 
-extern BeamApp* beamApp;
 
 #endif

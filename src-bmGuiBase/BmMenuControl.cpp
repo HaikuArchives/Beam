@@ -85,6 +85,18 @@ void BmMenuControl::ClearMark() {
 	( )
 		-	
 \*------------------------------------------------------------------------------*/
+void BmMenuControl::SetEnabled( bool enabled) {
+	inherited::SetEnabled( enabled);
+	if (enabled)
+		SetFlags( Flags() | B_NAVIGABLE);
+	else
+		SetFlags( Flags() & (0xFFFFFFFF^B_NAVIGABLE));
+}
+
+/*------------------------------------------------------------------------------*\
+	( )
+		-	
+\*------------------------------------------------------------------------------*/
 minimax BmMenuControl::layoutprefs() {
 	return mpm = ct_mpm;
 }

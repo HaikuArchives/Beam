@@ -49,6 +49,8 @@
 #include "BmPrefsMailReadView.h"
 #include "BmPrefsRecvMailView.h"
 #include "BmPrefsSendMailView.h"
+#include "BmPrefsShortcutsView.h"
+#include "BmPrefsSignatureView.h"
 #include "BmPrefsWin.h"
 #include "BmUtil.h"
 
@@ -106,8 +108,10 @@ BmPrefsWin::BmPrefsWin()
 							new LayeredGroup( 
 								new BmPrefsView( NULL),
 								new BmPrefsGeneralView(),
+								new BmPrefsShortcutsView(),
 								new BmPrefsMailConstrView(),
 								new BmPrefsSendMailView(),
+								new BmPrefsSignatureView(),
 								new BmPrefsMailReadView(),
 								new BmPrefsRecvMailView(),
 								0
@@ -194,6 +198,11 @@ CLVContainerView* BmPrefsWin::CreatePrefsListView( minimax minmax, int32 width, 
 	item = new CLVEasyItem( 0, false, false, 18.0);
 	item->SetColumnContent( 1, "General");
 	mPrefsListView->AddItem( item);
+	mPrefsListView->Expand( item);
+
+	item = new CLVEasyItem( 1, false, false, 18.0);
+	item->SetColumnContent( 1, "Shortcuts");
+	mPrefsListView->AddItem( item);
 
 	item = new CLVEasyItem( 0, true, false, 18.0);
 	item->SetColumnContent( 1, "Sending Mail");
@@ -202,6 +211,10 @@ CLVContainerView* BmPrefsWin::CreatePrefsListView( minimax minmax, int32 width, 
 
 	item = new CLVEasyItem( 1, false, false, 18.0);
 	item->SetColumnContent( 1, "Accounts");
+	mPrefsListView->AddItem( item);
+
+	item = new CLVEasyItem( 1, false, false, 18.0);
+	item->SetColumnContent( 1, "Signatures");
 	mPrefsListView->AddItem( item);
 
 	item = new CLVEasyItem( 0, true, false, 18.0);

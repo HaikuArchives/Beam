@@ -161,6 +161,8 @@ private:
 
 	BmRef<BmSmtpAccount> mCurrAcc;
 	
+	static const BString nEmptyItemLabel;
+
 	// Hide copy-constructor and assignment:
 	BmPrefsSendMailView( const BmPrefsSendMailView&);
 	BmPrefsSendMailView operator=( const BmPrefsSendMailView&);

@@ -219,6 +219,8 @@ void BmSendAccView::MessageReceived( BMessage* msg) {
 	BmPrefsSendMailView
 \********************************************************************************/
 
+const BString BmPrefsSendMailView::nEmptyItemLabel("<none>");
+
 /*------------------------------------------------------------------------------*\
 	()
 		-	
@@ -314,7 +316,7 @@ void BmPrefsSendMailView::Initialize() {
 	mStorePwdControl->SetTarget( this);
 
 	AddItemToMenu( mAuthControl->Menu(), 
-						new BMenuItem( "", new BMessage(BM_AUTH_SELECTED)), this);
+						new BMenuItem( nEmptyItemLabel.String(), new BMessage(BM_AUTH_SELECTED)), this);
 	AddItemToMenu( mAuthControl->Menu(), 
 						new BMenuItem( BmSmtpAccount::AUTH_SMTP_AFTER_POP, new BMessage(BM_AUTH_SELECTED)), 
 						this);
@@ -343,7 +345,7 @@ void BmPrefsSendMailView::Activated() {
 	while( (item = mPopControl->Menu()->RemoveItem( (int32)0)))
 		delete item;
 	AddItemToMenu( mPopControl->Menu(), 
-					   new BMenuItem( "", new BMessage( BM_POP_SELECTED)), this);
+					   new BMenuItem( nEmptyItemLabel.String(), new BMessage( BM_POP_SELECTED)), this);
 	BmModelItemMap::const_iterator iter;
 	for( iter = ThePopAccountList->begin(); iter != ThePopAccountList->end(); ++iter) {
 		BmPopAccount* acc = dynamic_cast< BmPopAccount*>( iter->second.Get());
@@ -396,12 +398,7 @@ void BmPrefsSendMailView::MessageReceived( BMessage* msg) {
 					msg->FindPointer( "source", (void**)&srcView);
 					BmTextControl* source = dynamic_cast<BmTextControl*>( srcView);
 					if ( source == mAccountControl) {
-						if (!TheSmtpAccountList->RenameItem( mCurrAcc->Name(), mAccountControl->Text())) {
-							for( int32 i = 1;
-								  !TheSmtpAccountList->RenameItem( mCurrAcc->Name(), BString(mAccountControl->Text())<<"_"<<i);
-								  ++i) {
-							}
-						}
+						TheSmtpAccountList->RenameItem( mCurrAcc->Name(), mAccountControl->Text());
 					} else if ( source == mDomainControl)
 						mCurrAcc->DomainToAnnounce( mDomainControl->Text());
 					else if ( source == mLoginControl)
@@ -426,7 +423,7 @@ void BmPrefsSendMailView::MessageReceived( BMessage* msg) {
 			}
 			case BM_AUTH_SELECTED: {
 				BMenuItem* item = mAuthControl->Menu()->FindMarked();
-				if (item)
+				if (item && nEmptyItemLabel != item->Label())
 					mCurrAcc->AuthMethod( item->Label());
 				else
 					mCurrAcc->AuthMethod( "");
@@ -434,7 +431,7 @@ void BmPrefsSendMailView::MessageReceived( BMessage* msg) {
 			}
 			case BM_POP_SELECTED: {
 				BMenuItem* item = mPopControl->Menu()->FindMarked();
-				if (item)
+				if (item && nEmptyItemLabel != item->Label())
 					mCurrAcc->AccForSmtpAfterPop( item->Label());
 				else
 					mCurrAcc->AccForSmtpAfterPop( "");
@@ -446,6 +443,8 @@ void BmPrefsSendMailView::MessageReceived( BMessage* msg) {
 					key = BString("new account_")<<i;
 				}
 				TheSmtpAccountList->AddItemToList( new BmSmtpAccount( key.String(), TheSmtpAccountList.Get()));
+				mAccountControl->MakeFocus( true);
+				mAccountControl->TextView()->SelectAll();
 				break;
 			}
 			case BM_REMOVE_ACCOUNT: {
@@ -516,8 +515,12 @@ void BmPrefsSendMailView::ShowAccount( int32 selection) {
 				mPortControl->SetTextSilently( mCurrAcc->PortNrString().String());
 				mPwdControl->SetTextSilently( mCurrAcc->Password().String());
 				mServerControl->SetTextSilently( mCurrAcc->SMTPServer().String());
-				mAuthControl->MarkItem( mCurrAcc->AuthMethod().String());
-				mPopControl->MarkItem( mCurrAcc->AccForSmtpAfterPop().String());
+				mAuthControl->MarkItem( mCurrAcc->AuthMethod().Length() 
+													? mCurrAcc->AuthMethod().String()
+													: nEmptyItemLabel.String());
+				mPopControl->MarkItem( mCurrAcc->AccForSmtpAfterPop().Length()
+													? mCurrAcc->AccForSmtpAfterPop().String()
+													: nEmptyItemLabel.String());
 				mStorePwdControl->SetValue( mCurrAcc->PwdStoredOnDisk());
 				mPopControl->SetEnabled( mCurrAcc->NeedsAuthViaPopServer());
 				mLoginControl->SetEnabled( !mCurrAcc->NeedsAuthViaPopServer());

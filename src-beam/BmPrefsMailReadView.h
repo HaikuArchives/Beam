@@ -68,7 +68,6 @@ private:
 
 	BmTextControl* mHeaderListSmallControl;
 	BmTextControl* mHeaderListLargeControl;
-	BmTextControl* mSignatureRxControl;
 	BmTextControl* mMimeTypeTrustInfoControl;
 
 	// Hide copy-constructor and assignment:

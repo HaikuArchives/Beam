@@ -92,7 +92,7 @@ BmResources::BmResources()
 
 	// Determine our own FQDN from network settings file, if possible:
 	FetchOwnFQDN();
-
+	
 	// we fill necessary info about the standard font-height:
 	be_plain_font->GetHeight( &BePlainFontHeight);
 }
@@ -205,6 +205,31 @@ void BmResources::FetchOwnFQDN() {
 				mOwnFQDN = rx.match[0].atom[0];
 				if (rx.exec( buffer, "DNS_DOMAIN\\s*=\\s*(\\S+)", Regexx::nocase))
 					mOwnFQDN << "." << rx.match[0].atom[0];
+			}
+		}
+	}
+}
+
+/*------------------------------------------------------------------------------*\
+	CheckMimeTypeFile( sig, appModTime)
+		-	checks age of our own mimetype-file 
+			(.../settings/beos_mime/application/x-vnd.zooey-beam)
+			and removes the file if it's older than the application file.
+\*------------------------------------------------------------------------------*/
+void BmResources::CheckMimeTypeFile( BString sig, time_t appModTime) {
+	BPath path;
+	if (find_directory( B_COMMON_SETTINGS_DIRECTORY, &path) == B_OK) {
+		sig.ToLower();
+		BEntry mtEntry( (BString(path.Path())<<"/beos_mime/"<<sig).String());
+		if (mtEntry.InitCheck() == B_OK) {
+			time_t modTime;
+			if (mtEntry.GetModificationTime( &modTime) == B_OK) {
+				if (appModTime > modTime) {
+					// application is newer than mimetype-file, we simply remove
+					// that and let BeOS recreate it when needed. The new version
+					// will then contain all current icons, etc.
+					mtEntry.Remove();
+				}
 			}
 		}
 	}

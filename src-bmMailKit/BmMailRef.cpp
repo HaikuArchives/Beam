@@ -53,7 +53,9 @@ BmRef<BmMailRef> BmMailRef::CreateInstance( BmMailRefList* model, entry_ref &ere
 		BString key( BM_REFKEY( st));
 		BmRef<BmMailRef> mailRef( dynamic_cast<BmMailRef*>( proxy->FetchObject( key)));
 		if (mailRef) {
+			// update mailref with new info:
 			mailRef->mListModel = model;
+			mailRef->EntryRef( eref);
 			return mailRef;
 		}
 	}

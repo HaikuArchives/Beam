@@ -58,6 +58,7 @@
 #include "BmPopAccount.h"
 #include "BmPrefs.h"
 #include "BmResources.h"
+#include "BmSignature.h"
 #include "BmSmtpAccount.h"
 #include "BmTextControl.h"
 #include "BmToolbarButton.h"
@@ -84,6 +85,7 @@ float BmMailEditWin::nNextYPos = 100;
 #define BM_EDIT_HEADER_DONE	'bMYi'
 #define BM_SHOWDETAILS2			'bMYj'
 #define BM_SHOWDETAILS3			'bMYk'
+#define BM_SIGNATURE_SELECTED	'bMYl'
 
 /*------------------------------------------------------------------------------*\
 	CreateInstance()
@@ -217,7 +219,10 @@ void BmMailEditWin::CreateGUI() {
 			),
 			mDetails3Group = new HGroup(
 				new Space(minimax(20,-1,20,-1)),
+				mSignatureControl = new BmMenuControl( "Signature:", new BPopUpMenu( "")),
+				new Space(minimax(20,-1,20,-1)),
 				mEditHeaderControl = new BmCheckControl( "Edit Headers Before Send", 1, false),
+				new Space(),
 				0
 			),
 			mSeparator = new Space(minimax(-1,4,-1,4)),
@@ -232,6 +237,7 @@ void BmMailEditWin::CreateGUI() {
 	divider = MAX( divider, mBccControl->Divider());
 	divider = MAX( divider, mReplyToControl->Divider());
 	divider = MAX( divider, mSenderControl->Divider());
+	divider = MAX( divider, mSignatureControl->Divider());
 	mToControl->SetDivider( divider);
 	mSubjectControl->SetDivider( divider);
 	mFromControl->SetDivider( divider);
@@ -239,11 +245,12 @@ void BmMailEditWin::CreateGUI() {
 	mBccControl->SetDivider( divider);
 	mReplyToControl->SetDivider( divider);
 	mSenderControl->SetDivider( divider);
+	mSignatureControl->SetDivider( divider);
 
 	divider = MAX( 0, mSmtpControl->Divider());
 	divider = MAX( divider, mCharsetControl->Divider());
-	mSmtpControl->SetDivider( divider-5);
-	mCharsetControl->SetDivider( divider-5);
+	mSmtpControl->SetDivider( divider);
+	mCharsetControl->SetDivider( divider);
 	mEditHeaderControl->ct_mpm = mSmtpControl->ct_mpm;
 
 	mShowDetails1Button->SetFlags( mShowDetails1Button->Flags() & (0xFFFFFFFF^B_NAVIGABLE));
@@ -283,6 +290,12 @@ void BmMailEditWin::CreateGUI() {
 	item = mCharsetControl->Menu()->FindItem( EncodingToCharset( ThePrefs->GetInt( "DefaultEncoding")).String());
 	if (item)
 		item->SetMarked( true);
+	// add all signatures to signature menu:
+	mSignatureControl->Menu()->AddItem( new BMenuItem( "", new BMessage( BM_SIGNATURE_SELECTED)));
+	for( iter = TheSignatureList->begin(); iter != TheSignatureList->end(); ++iter) {
+		BmSignature* sig = dynamic_cast< BmSignature*>( iter->second.Get());
+		mSignatureControl->Menu()->AddItem( new BMenuItem( sig->Key().String(), new BMessage( BM_SIGNATURE_SELECTED)));
+	}
 
 	mSaveButton->SetEnabled( mModified);
 	mMailView->SetModificationMessage( new BMessage( BM_TEXTFIELD_MODIFIED));
@@ -439,6 +452,15 @@ void BmMailEditWin::MessageReceived( BMessage* msg) {
 				BmRef<BmMail> mail = mMailView->CurrMail();
 				if (!mail)
 					break;
+				if (mail->IsFieldEmpty(BM_FIELD_FROM)) {
+					BM_SHOWERR("Please enter at least one address into the <FROM> field before sending this mail, thank you.");
+					break;
+				}
+				if (mail->IsFieldEmpty(BM_FIELD_TO) && mail->IsFieldEmpty(BM_FIELD_CC)
+				&& mail->IsFieldEmpty(BM_FIELD_BCC)) {
+					BM_SHOWERR("Please enter at least one address into the\n\t<TO>,<CC> or <BCC>\nfield before sending this mail, thank you.");
+					break;
+				}
 				if (msg->what == BMM_SEND_NOW) {
 					BmRef<BmListModelItem> smtpRef = TheSmtpAccountList->FindItemByKey( mail->AccountName());
 					BmSmtpAccount* smtpAcc = dynamic_cast< BmSmtpAccount*>( smtpRef.Get());
@@ -525,6 +547,9 @@ void BmMailEditWin::MessageReceived( BMessage* msg) {
 						BMenuItem* item = mSmtpControl->Menu()->FindItem( acc->SMTPAccount().String());
 						if (item)
 							item->SetMarked( true);
+						// update signature:
+						mMailView->SetSignatureByName( acc->SignatureName());
+						mSignatureControl->MarkItem( acc->SignatureName().String());
 					}
 				}
 				break;
@@ -537,6 +562,13 @@ void BmMailEditWin::MessageReceived( BMessage* msg) {
 			}
 			case BM_TO_ADDED: {
 				break;
+			}
+			case BM_SIGNATURE_SELECTED: {
+				// exactly, no break here...
+				BMenuItem* item = NULL;
+				msg->FindPointer( "source", (void**)&item);
+				if (item)
+					mMailView->SetSignatureByName( item->Label());
 			}
 			case BM_CHARSET_SELECTED:
 			case BM_SMTP_SELECTED:
@@ -568,6 +600,17 @@ void BmMailEditWin::MessageReceived( BMessage* msg) {
 		// a problem occurred, we tell the user:
 		BM_SHOWERR( BString("MailEditWin: ") << err.what());
 	}
+}
+
+/*------------------------------------------------------------------------------*\
+	BeginLife()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailEditWin::BeginLife() {
+	// mark signature of current mail as selected:
+	BmRef<BmMail> mail = mMailView->CurrMail();
+	if (mail)
+		mSignatureControl->MarkItem( mail->SignatureName().String());
 }
 
 /*------------------------------------------------------------------------------*\
@@ -633,6 +676,24 @@ void BmMailEditWin::SetFieldsFromMail( BmMail* mail) {
 		item = mCharsetControl->Menu()->FindItem( EncodingToCharset( mail->DefaultEncoding()).String());
 		if (item)
 			item->SetMarked( true);
+		// try to set convenient focus:
+		if (!mFromControl->TextView()->TextLength())
+			mFromControl->MakeFocus( true);
+		else if (!mToControl->TextView()->TextLength())
+			mToControl->MakeFocus( true);
+		else if (!mSubjectControl->TextView()->TextLength())
+			mSubjectControl->MakeFocus( true);
+		else
+			mMailView->MakeFocus( true);
+		// now make certain fields visible if they contain values:
+		if (BString(mCcControl->Text()).Length()) {
+			mShowDetails1Button->SetValue( 1);
+			mShowDetails1Button->Invoke();
+		}
+		if (BString(mBccControl->Text()).Length()) {
+			mShowDetails2Button->SetValue( 1);
+			mShowDetails2Button->Invoke();
+		}
 	}
 }
 
@@ -668,7 +729,8 @@ bool BmMailEditWin::CreateMailFromFields() {
 			mail->SetFieldVal( BM_FIELD_REPLY_TO, mReplyToControl->Text());
 		}
 		mail->SetFieldVal( BM_FIELD_SUBJECT, mSubjectControl->Text());
-/* use the following line if mail-date should be bumped whenever the mail
+/* 
+	use the following line if mail-date should be bumped whenever the mail
 	has been edited:
 		mail->SetFieldVal( BM_FIELD_DATE, TimeToString( time( NULL), 
 																		"%a, %d %b %Y %H:%M:%S %z"));

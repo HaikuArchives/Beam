@@ -124,6 +124,7 @@ public:
 								  BString smtpAccount);
 	void SetTo( const BString &text, const BString account);
 	void SetNewHeader( const BString& headerStr);
+	void SetSignatureByName( const BString sigName);
 	bool Store();
 	void ResyncFromDisk();
 	//
@@ -133,6 +134,11 @@ public:
 	void MarkAs( const char* status);
 	void RemoveField( const BString fieldName);
 	void SetFieldVal( const BString fieldName, const BString value);
+	inline bool IsFieldEmpty( const BString fieldName) { 
+													return mHeader 
+														? mHeader->IsFieldEmpty( fieldName) 
+														: true; 
+	}
 	const BString Status() const;
 	//
 	BmRef<BmMail> CreateAttachedForward();
@@ -160,6 +166,7 @@ public:
 	inline const bool IsRedirect() const		{ return mHeader ? mHeader->IsRedirect() : false; }
 	inline BmMailRef* MailRef() const			{ return mMailRef.Get(); }
 	uint32 DefaultEncoding()	const;
+	inline BString SignatureName() const		{ return mSignatureName; }
 
 	// setters:
 	inline void ModifiedMaxLineLen( int32 i)	{ mModifiedMaxLineLen = MAX(i,mModifiedMaxLineLen); }
@@ -208,6 +215,8 @@ private:
 
 	BmRef<BmMailRef> mBaseMailRef;		// the mailref that created us (via forward/reply)
 	BString mNewBaseStatus;					// new status of base mail (forwarded/replied)
+
+	BString mSignatureName;					// name of signature to use in this mail
 
 	// Hide copy-constructor and assignment:
 	BmMail( const BmMail&);

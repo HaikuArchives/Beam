@@ -1,5 +1,5 @@
 /*
-	BmPrefsRecvMailView.h
+	BmPrefsSignatureView.h
 		$Id$
 */
 /*************************************************************************/
@@ -28,61 +28,60 @@
 /*************************************************************************/
 
 
-#ifndef _BmPrefsRecvMailView_h
-#define _BmPrefsRecvMailView_h
+#ifndef _BmPrefsSignatureView_h
+#define _BmPrefsSignatureView_h
 
 #include "BmListController.h"
-#include "BmPopAccount.h"
-#define BmRecvAcc BmPopAccount
+#include "BmSignature.h"
 #include "BmPrefsView.h"
 
 /*------------------------------------------------------------------------------*\
-	BmRecvAccItem
+	BmSignatureItem
 		-	
 \*------------------------------------------------------------------------------*/
-class BmRecvAccItem : public BmListViewItem
+class BmSignatureItem : public BmListViewItem
 {
 	typedef BmListViewItem inherited;
 
 public:
 	// c'tors and d'tor:
-	BmRecvAccItem( BString key, BmListModelItem* item);
-	~BmRecvAccItem();
+	BmSignatureItem( BString key, BmListModelItem* item);
+	~BmSignatureItem();
 
 	// overrides of listitem base:
 	void UpdateView( BmUpdFlags flags);
-	BmRecvAcc* ModelItem() const 			{ return dynamic_cast< BmRecvAcc*>( mModelItem.Get()); }
+	BmSignature* ModelItem() const 			{ return dynamic_cast< BmSignature*>( mModelItem.Get()); }
 
 private:
 	// Hide copy-constructor and assignment:
-	BmRecvAccItem( const BmRecvAccItem&);
-	BmRecvAccItem operator=( const BmRecvAccItem&);
+	BmSignatureItem( const BmSignatureItem&);
+	BmSignatureItem operator=( const BmSignatureItem&);
 };
 
 
 
 /*------------------------------------------------------------------------------*\
-	BmRecvAccView
+	BmSignatureView
 		-	
 \*------------------------------------------------------------------------------*/
-class BmRecvAccView : public BmListViewController
+class BmSignatureView : public BmListViewController
 {
 	typedef BmListViewController inherited;
 	
 public:
 	// creator-func, c'tors and d'tor:
-	static BmRecvAccView* CreateInstance(  minimax minmax, int32 width, int32 height);
-	BmRecvAccView(  minimax minmax, int32 width, int32 height);
-	~BmRecvAccView();
+	static BmSignatureView* CreateInstance(  minimax minmax, int32 width, int32 height);
+	BmSignatureView(  minimax minmax, int32 width, int32 height);
+	~BmSignatureView();
 
 	// native methods:
 	BmListViewItem* CreateListViewItem( BmListModelItem* item, BMessage* archive=NULL);
 	
 	// overrides of controller base:
-	BString StateInfoBasename()			{ return "RecvAccView"; }
+	BString StateInfoBasename()			{ return "SignatureView"; }
 	void UpdateModelItem( BMessage* msg);
 	BmListViewItem* AddModelItem( BmListModelItem* item);
-	const char* ItemNameForCaption()		{ return "account"; }
+	const char* ItemNameForCaption()		{ return "signature"; }
 	CLVContainerView* CreateContainer( bool horizontal, bool vertical, 
 												  bool scroll_view_corner, 
 												  border_style border, 
@@ -92,47 +91,43 @@ public:
 	// overrides of listview base:
 	void MessageReceived( BMessage* msg);
 
-	static BmRecvAccView* theInstance;
+	static BmSignatureView* theInstance;
 
 private:
 
 	// Hide copy-constructor and assignment:
-	BmRecvAccView( const BmRecvAccView&);
-	BmRecvAccView operator=( const BmRecvAccView&);
+	BmSignatureView( const BmSignatureView&);
+	BmSignatureView operator=( const BmSignatureView&);
 };
 
 
 
-#define BM_AUTH_SELECTED 			'bmAS'
-#define BM_SIGNATURE_SELECTED 	'bmGS'
-#define BM_SMTP_SELECTED 			'bmSS'
-#define BM_CHECK_MAIL_CHANGED 	'bmCC'
-#define BM_REMOVE_MAIL_CHANGED 	'bmRC'
-#define BM_IS_DEFAULT_CHANGED 	'bmDC'
-#define BM_IS_BUCKET_CHANGED	 	'bmFC'
-#define BM_PWD_STORED_CHANGED 	'bmPC'
-#define BM_ADD_ACCOUNT 				'bmAA'
-#define BM_REMOVE_ACCOUNT 			'bmRA'
+#define BM_DYNAMIC_CHANGED 		'bmDC'
+#define BM_CHARSET_SELECTED 		'bmCS'
+#define BM_ADD_SIGNATURE			'bmAS'
+#define BM_REMOVE_SIGNATURE		'bmRS'
+#define BM_TEST_SIGNATURE			'bmTS'
 
 
+class BmMultiLineTextControl;
 class BmTextControl;
-class BmMenuControl;
 class BmCheckControl;
+class BmMenuControl;
 class MButton;
 /*------------------------------------------------------------------------------*\
-	BmPrefsRecvMailView
+	BmPrefsSignatureView
 		-	
 \*------------------------------------------------------------------------------*/
-class BmPrefsRecvMailView : public BmPrefsView {
+class BmPrefsSignatureView : public BmPrefsView {
 	typedef BmPrefsView inherited;
 
 public:
 	// c'tors and d'tor:
-	BmPrefsRecvMailView();
-	virtual ~BmPrefsRecvMailView();
+	BmPrefsSignatureView();
+	virtual ~BmPrefsSignatureView();
 	
 	// native methods:
-	void ShowAccount( int32 selection);
+	void ShowSignature( int32 selection);
 
 	// overrides of BmPrefsView base:
 	void Initialize();
@@ -149,35 +144,23 @@ public:
 	// setters:
 
 private:
-	CLVContainerView* CreateAccListView( minimax minmax, int32 width, int32 height);
+	CLVContainerView* CreateSigListView( minimax minmax, int32 width, int32 height);
 
-	BmListViewController* mAccListView;
-	BmTextControl* mAccountControl;
-	BmTextControl* mAliasesControl;
-	BmTextControl* mLoginControl;
-	BmTextControl* mMailAddrControl;
-	BmTextControl* mPortControl;
-	BmTextControl* mPwdControl;
-	BmTextControl* mRealNameControl;
-	BmTextControl* mServerControl;
-	BmMenuControl* mAuthControl;
-	BmMenuControl* mSignatureControl;
-	BmMenuControl* mSmtpControl;
-	BmCheckControl* mCheckAccountControl;
-	BmCheckControl* mIsBucketControl;
-	BmCheckControl* mIsDefaultControl;
-	BmCheckControl* mRemoveMailControl;
-	BmCheckControl* mStorePwdControl;
+	BmListViewController* mSigListView;
+	BmTextControl* mSignatureControl;
+	BmTextControl* mSignatureRxControl;
+	BmMultiLineTextControl* mContentControl;
+	BmMenuControl* mCharsetControl;
+	BmCheckControl* mDynamicControl;
 	MButton* mAddButton;
 	MButton* mRemoveButton;
+	MButton* mTestButton;
 
-	BmRef<BmPopAccount> mCurrAcc;
+	BmRef<BmSignature> mCurrSig;
 	
-	static const BString nEmptyItemLabel;
-
 	// Hide copy-constructor and assignment:
-	BmPrefsRecvMailView( const BmPrefsRecvMailView&);
-	BmPrefsRecvMailView operator=( const BmPrefsRecvMailView&);
+	BmPrefsSignatureView( const BmPrefsSignatureView&);
+	BmPrefsSignatureView operator=( const BmPrefsSignatureView&);
 };
 
 #endif

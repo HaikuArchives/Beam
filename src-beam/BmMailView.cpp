@@ -54,6 +54,7 @@ using namespace regexx;
 #include "BmPrefs.h"
 #include "BmResources.h"
 #include "BmRulerView.h"
+#include "BmSignature.h"
 
 /********************************************************************************\
 	BmMailView
@@ -121,7 +122,7 @@ BmMailView::BmMailView( minimax minmax, BRect frame, bool outbound)
 	CalculateVerticalOffset();
 	MakeEditable( outbound);
 	SetDoesUndo( outbound);
-	SetStylable( !outbound);
+	SetStylable( true);
 	SetWordWrap( true);
 	mScrollView = new BmMailViewContainer( minmax, this, B_FOLLOW_NONE, 
 														B_WILL_DRAW | B_FRAME_EVENTS);
@@ -364,6 +365,37 @@ void BmMailView::FrameResized( float newWidth, float newHeight) {
 }
 
 /*------------------------------------------------------------------------------*\
+	SetSignatureByName()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailView::SetSignatureByName( const BString sigName) {
+	if (!mOutbound)
+		return;
+	BString text = Text();
+	Regexx rx;
+	BString sigRX = ThePrefs->GetString( "SignatureRX");
+	if (rx.exec( text, sigRX, Regexx::newline))
+		text.Truncate( rx.match[0].start());	// cut off old signature
+	if (text.ByteAt(text.Length()-1) != '\n')
+		text << '\n';
+	int32 trsiz = sizeof( struct text_run);
+	text_run_array* textRunArray = (text_run_array*)malloc( sizeof(int32)+trsiz*2);
+	if (!textRunArray)
+		return;
+	textRunArray->count = 2;
+	textRunArray->runs[0].offset = 0;
+	textRunArray->runs[0].font = *be_fixed_font;
+	textRunArray->runs[0].color = Black;
+	textRunArray->runs[1].offset = text.Length();
+	textRunArray->runs[1].font = *be_fixed_font;
+	textRunArray->runs[1].color = BeShadow;
+	BString sig = TheSignatureList->GetSignatureStringFor( sigName);
+	if (sig.Length())
+		text << "-- \n" << sig;
+	SetText( text.String(), text.Length(), textRunArray);
+}
+
+/*------------------------------------------------------------------------------*\
 	AcceptsDrop()
 		-	
 \*------------------------------------------------------------------------------*/
@@ -399,7 +431,8 @@ void BmMailView::ShowMail( BmMailRef* ref, bool async) {
 		}
 		mCurrMail = BmMail::CreateInstance( ref);
 		StartJob( mCurrMail.Get(), async);
-		ContainerView()->SetBusy();
+		if (async)
+			ContainerView()->SetBusy();
 	}
 	catch( exception &err) {
 		// a problem occurred, we tell the user:
@@ -426,7 +459,8 @@ void BmMailView::ShowMail( BmMail* mail, bool async) {
 		}
 		mCurrMail = mail;
 		StartJob( mCurrMail.Get(), async);
-		ContainerView()->SetBusy();
+		if (async)
+			ContainerView()->SetBusy();
 	}
 	catch( exception &err) {
 		// a problem occurred, we tell the user:
@@ -462,21 +496,25 @@ void BmMailView::JobIsDone( bool completed) {
 				}
 				// add signature, if any:
 				if (body->Signature().Length()) {
+					if (displayText.ByteAt(displayText.Length()-1) != '\n')
+						displayText << '\n';
 					mTextRunMap[displayText.Length()] = BmTextRunInfo( BeShadow);
 					displayText << "-- \n" << body->Signature();
 				}
-				// highlight URLs:
-				Regexx rx;
-				int32 count;
-				if ((count = rx.exec( displayText, "(https?://|ftp://|nntp://|file://|mailto:)[^][<>(){}\\~|\"\\s]+", 
-					                   Regexx::nocase|Regexx::global|Regexx::newline)) > 0) {
-					for( int i=0; i<count; ++i) {
-						int32 start = rx.match[i].start();
-						int32 end = start+rx.match[i].Length();
-						BmTextRunIter iter = TextRunInfoAt( start);
-						BmTextRunInfo runInfo = iter->second;
-						mTextRunMap[start] = BmTextRunInfo( MedMetallicBlue, true);
-						mTextRunMap[end] = runInfo;
+				if (!mOutbound) {
+					// highlight URLs:
+					Regexx rx;
+					int32 count;
+					if ((count = rx.exec( displayText, "(https?://|ftp://|nntp://|file://|mailto:)[^][<>(){}\\~|\"\\s]+", 
+						                   Regexx::nocase|Regexx::global|Regexx::newline)) > 0) {
+						for( int i=0; i<count; ++i) {
+							int32 start = rx.match[i].start();
+							int32 end = start+rx.match[i].Length();
+							BmTextRunIter iter = TextRunInfoAt( start);
+							BmTextRunInfo runInfo = iter->second;
+							mTextRunMap[start] = BmTextRunInfo( MedMetallicBlue, true);
+							mTextRunMap[end] = runInfo;
+						}
 					}
 				}
 			}

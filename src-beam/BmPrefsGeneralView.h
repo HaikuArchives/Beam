@@ -41,7 +41,6 @@
 #define BM_DYNAMIC_STATUS_WIN_CHANGED 		'bmDS'
 #define BM_CACHE_REFS_DISK_CHANGED	 		'bmCD'
 #define BM_CACHE_REFS_MEM_CHANGED 			'bmCM'
-#define BM_BEMAIL_STYLE_CHANGED 				'bmBM'
 #define BM_INOUT_AT_TOP_CHANGED 				'bmIO'
 #define BM_MAKE_BEAM_STD_APP	 				'bmBS'
 
@@ -83,7 +82,6 @@ private:
 	BmCheckControl* mDynamicStatusWinControl;
 	BmCheckControl* mCacheRefsInMemControl;
 	BmCheckControl* mCacheRefsOnDiskControl;
-	BmCheckControl* mBeMailStyleControl;
 	BmCheckControl* mInOutAtTopControl;
 
 	BmRef<BmMailFolder> mFolder;

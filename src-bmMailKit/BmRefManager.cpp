@@ -56,6 +56,33 @@ void BmRefObj::AddRef() {
 }
 
 /*------------------------------------------------------------------------------*\
+	RenameRef( newName)
+		-	changes the name of the ref-obj (actually removing the item from the map
+			and then reinsert it under different name:
+\*------------------------------------------------------------------------------*/
+void BmRefObj::RenameRef( const char* newName) {
+	BM_LOG2( BM_LogUtil, BString("RefManager: reference to <") << RefName() << ":"<<RefPrintHex()<<"> renamed to "<<newName);
+	BmProxy* proxy = GetProxy( ProxyName());
+	if (proxy) {
+		BAutolock lock( &proxy->Locker);
+		if (!lock.IsLocked())
+			throw BM_runtime_error(BString("RenameRef(): Proxy ")<<ProxyName()<<" could not be locked");
+		BmObjectMap::iterator pos;
+		// find object...
+		for( pos = proxy->ObjectMap.find( RefName()); pos != proxy->ObjectMap.end(); ++pos) {
+			if (pos->second == this)
+				break;
+		}
+		// ...remove old entry...
+		if (pos != proxy->ObjectMap.end())
+			proxy->ObjectMap.erase( pos);
+		// ...and insert under new name:
+		proxy->ObjectMap.insert( make_pair( newName, this));
+	} else
+		BM_SHOWERR(BString("RemoveRef(): Proxy ")<<ProxyName()<<" not found");
+}
+
+/*------------------------------------------------------------------------------*\
 	RemoveRef()
 		-	removes one reference from object and deletes the object
 			if the new reference count is zero
@@ -68,6 +95,8 @@ void BmRefObj::RemoveRef() {
 		BmProxy* proxy = GetProxy( ProxyName());
 		if (proxy) {
 			BAutolock lock( &proxy->Locker);
+			if (!lock.IsLocked())
+				throw BM_runtime_error(BString("RemoveRef(): Proxy ")<<ProxyName()<<" could not be locked");
 			BmObjectMap::iterator pos;
 			for( pos = proxy->ObjectMap.find( RefName()); pos != proxy->ObjectMap.end(); ++pos) {
 				if (pos->second == this)
@@ -75,7 +104,6 @@ void BmRefObj::RemoveRef() {
 			}
 			if (pos != proxy->ObjectMap.end())
 				proxy->ObjectMap.erase( pos);
-//			proxy->ObjectMap.erase( RefName());
 #ifdef BM_REF_DEBUGGING
 			BM_LOG( BM_LogUtil, BString("RefManager: ... object <") << typeid(*this).name() << ":" << RefName() << ":"<<RefPrintHex()<<"> will be deleted");
 #else
@@ -124,6 +152,8 @@ void BmRefObj::PrintRefsLeft() {
 	for( iter = nProxyMap.begin(); iter != nProxyMap.end(); ++iter) {
 		BmProxy* proxy = iter->second;
 		BAutolock lock( &proxy->Locker);
+		if (!lock.IsLocked())
+			throw BM_runtime_error(BString("PrintRefsLeft(): Proxy ")<<iter->first<<" could not be locked");
 		BmObjectMap::const_iterator iter2;
 		for( iter2=proxy->ObjectMap.begin(); iter2 != proxy->ObjectMap.end(); ++iter2) {
 			BmRefObj* ref = iter2->second;

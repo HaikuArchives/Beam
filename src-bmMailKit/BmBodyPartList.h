@@ -159,6 +159,7 @@ private:
 
 
 struct entry_ref;
+typedef map<int32,BString> BmQuoteLevelMap;
 /*------------------------------------------------------------------------------*\
 	BmBodyPartList
 		-	class 
@@ -190,6 +191,7 @@ public:
 	inline status_t InitCheck()					{ return mInitCheck; }
 	inline BmRef<BmBodyPart> EditableTextBody() const { return mEditableTextBody.Get(); }
 	inline const BString& Signature() const	{ return mSignature; }
+	inline const BmQuoteLevelMap& QuoteLevelMap() const	{ return mQuoteLevelMap; }
 	bool IsMultiPart() const;
 
 	// setters:
@@ -197,10 +199,13 @@ public:
 	inline void Signature( const BString& s)		{ mSignature = s; }
 
 private:
+	void AnalyseEditableTextBody();
+
 	BmMail* mMail;
-	BmWeakRef<BmBodyPart> mEditableTextBody;
+	BmRef<BmBodyPart> mEditableTextBody;
 	status_t mInitCheck;
 	BString mSignature;						// signature (as found in mail-text)
+	BmQuoteLevelMap mQuoteLevelMap;
 
 	// Hide copy-constructor and assignment:
 	BmBodyPartList( const BmBodyPartList&);

@@ -50,6 +50,9 @@ public:
 	void MarkItem( const char* label);
 	void ClearMark();
 
+	// overrides:
+	void SetEnabled( bool enabled);
+
 private:
 	minimax layoutprefs();
 	BRect layout(BRect frame);

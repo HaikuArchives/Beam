@@ -43,6 +43,7 @@
 #include "BmMenuControl.h"
 #include "BmPrefs.h"
 #include "BmPrefsRecvMailView.h"
+#include "BmSignature.h"
 #include "BmSmtpAccount.h"
 #include "BmTextControl.h"
 #include "BmUtil.h"
@@ -243,6 +244,8 @@ void BmRecvAccView::MessageReceived( BMessage* msg) {
 	BmPrefsRecvMailView
 \********************************************************************************/
 
+const BString BmPrefsRecvMailView::nEmptyItemLabel("<none>");
+
 /*------------------------------------------------------------------------------*\
 	()
 		-	
@@ -390,7 +393,7 @@ void BmPrefsRecvMailView::Activated() {
 	while( (item = mSmtpControl->Menu()->RemoveItem( (int32)0)))
 		delete item;
 	AddItemToMenu( mSmtpControl->Menu(), 
-					   new BMenuItem( "", new BMessage( BM_SMTP_SELECTED)), this);
+					   new BMenuItem( nEmptyItemLabel.String(), new BMessage( BM_SMTP_SELECTED)), this);
 	BmModelItemMap::const_iterator iter;
 	for( iter = TheSmtpAccountList->begin(); iter != TheSmtpAccountList->end(); ++iter) {
 		BmSmtpAccount* acc = dynamic_cast< BmSmtpAccount*>( iter->second.Get());
@@ -403,7 +406,13 @@ void BmPrefsRecvMailView::Activated() {
 	while( (item = mSignatureControl->Menu()->RemoveItem( (int32)0)))
 		delete item;
 	AddItemToMenu( mSignatureControl->Menu(), 
-						new BMenuItem( "", new BMessage(BM_SIGNATURE_SELECTED)), this);
+					   new BMenuItem( nEmptyItemLabel.String(), new BMessage( BM_SIGNATURE_SELECTED)), this);
+	for( iter = TheSignatureList->begin(); iter != TheSignatureList->end(); ++iter) {
+		BmSignature* sig = dynamic_cast< BmSignature*>( iter->second.Get());
+		AddItemToMenu( mSignatureControl->Menu(), 
+							new BMenuItem( sig->Key().String(), new BMessage( BM_SIGNATURE_SELECTED)), 
+							this);
+	}
 }
 
 /*------------------------------------------------------------------------------*\
@@ -449,12 +458,7 @@ void BmPrefsRecvMailView::MessageReceived( BMessage* msg) {
 					msg->FindPointer( "source", (void**)&srcView);
 					BmTextControl* source = dynamic_cast<BmTextControl*>( srcView);
 					if ( source == mAccountControl) {
-						if (!ThePopAccountList->RenameItem( mCurrAcc->Name(), mAccountControl->Text())) {
-							for( int32 i = 1;
-								  !ThePopAccountList->RenameItem( mCurrAcc->Name(), BString(mAccountControl->Text())<<"_"<<i);
-								  ++i) {
-							}
-						}
+						ThePopAccountList->RenameItem( mCurrAcc->Name(), mAccountControl->Text());
 					} else if ( source == mAliasesControl)
 						mCurrAcc->MailAliases( mAliasesControl->Text());
 					else if ( source == mLoginControl)
@@ -516,7 +520,7 @@ void BmPrefsRecvMailView::MessageReceived( BMessage* msg) {
 			}
 			case BM_SMTP_SELECTED: {
 				BMenuItem* item = mSmtpControl->Menu()->FindMarked();
-				if (item)
+				if (item && nEmptyItemLabel != item->Label())
 					mCurrAcc->SMTPAccount( item->Label());
 				else
 					mCurrAcc->SMTPAccount( "");
@@ -524,7 +528,7 @@ void BmPrefsRecvMailView::MessageReceived( BMessage* msg) {
 			}
 			case BM_SIGNATURE_SELECTED: {
 				BMenuItem* item = mSignatureControl->Menu()->FindMarked();
-				if (item)
+				if (item && nEmptyItemLabel != item->Label())
 					mCurrAcc->SignatureName( item->Label());
 				else
 					mCurrAcc->SignatureName( "");
@@ -536,6 +540,8 @@ void BmPrefsRecvMailView::MessageReceived( BMessage* msg) {
 					key = BString("new account_")<<i;
 				}
 				ThePopAccountList->AddItemToList( new BmPopAccount( key.String(), ThePopAccountList.Get()));
+				mAccountControl->MakeFocus( true);
+				mAccountControl->TextView()->SelectAll();
 				break;
 			}
 			case BM_REMOVE_ACCOUNT: {
@@ -623,8 +629,12 @@ void BmPrefsRecvMailView::ShowAccount( int32 selection) {
 				mRealNameControl->SetTextSilently( mCurrAcc->RealName().String());
 				mServerControl->SetTextSilently( mCurrAcc->POPServer().String());
 				mAuthControl->MarkItem( mCurrAcc->AuthMethod().String());
-				mSignatureControl->MarkItem( mCurrAcc->SignatureName().String());
-				mSmtpControl->MarkItem( mCurrAcc->SMTPAccount().String());
+				mSignatureControl->MarkItem( mCurrAcc->SignatureName().Length() 
+															? mCurrAcc->SignatureName().String()
+															: nEmptyItemLabel.String());
+				mSmtpControl->MarkItem( mCurrAcc->SMTPAccount().Length() 
+													? mCurrAcc->SMTPAccount().String()
+													: nEmptyItemLabel.String());
 				mCheckAccountControl->SetValue( mCurrAcc->CheckMail());
 				mRemoveMailControl->SetValue( mCurrAcc->DeleteMailFromServer());
 				mIsDefaultControl->SetValue( mCurrAcc->MarkedAsDefault());

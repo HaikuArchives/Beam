@@ -98,6 +98,7 @@ public:
 	status_t Unarchive( BMessage* archive, bool deep=true);
 	bool WriteStateInfo();
 	void GetWrappedText( BString& out);
+	void SetSignatureByName( const BString sigName);
 
 	// overrides of BTextView base:
 	bool AcceptsDrop( const BMessage* msg);

@@ -28,6 +28,10 @@
 /*************************************************************************/
 
 
+#include <Alert.h>
+#include <Application.h>
+#include <Invoker.h>
+
 #include <Autolock.h>
 #include <File.h>
 #include <FindDirectory.h>
@@ -316,18 +320,11 @@ void BmBodyPart::SetTo( const BString& msgtext, int32 start, int32 length,
 		if (body->EditableTextBody() == this) {
 			// split off signature, if any:
 			Regexx rx;
-			for( int32 sigPos=0; 
-				  (sigPos = mDecodedData.FindFirst( "\n--", sigPos)) != B_ERROR; 
-				  ++sigPos) {
-				sigPos++;
-				BString sigStr( mDecodedData.String()+sigPos);
-				BString sigRX = ThePrefs->GetString( "SignatureRX", "\\A---?\\s*\\n");
-				if (rx.exec( sigStr, sigRX, Regexx::newline)) {
-					sigStr.Remove( 0, rx.match[0].Length());
-					body->Signature( sigStr);
-					mDecodedData.Truncate( sigPos);
-					break;
-				}
+			BString sigRX = ThePrefs->GetString( "SignatureRX");
+			if (rx.exec( mDecodedData, sigRX, Regexx::newline)) {
+				BString sigStr( mDecodedData.String()+rx.match[0].start()+rx.match[0].Length());
+				mDecodedData.Truncate( rx.match[0].start());
+				body->Signature( sigStr);
 			}
 		}
 	}
@@ -572,8 +569,39 @@ void BmBodyPartList::ParseMail() {
 															msgText.Length()-mMail->HeaderLength()-2, 
 															mMail->Header());
 		AddItemToList( bodyPart);
+		AnalyseEditableTextBody();
 	}
 	mInitCheck = B_OK;
+}
+
+/*------------------------------------------------------------------------------*\
+	AnalyseEditableTextBody()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmBodyPartList::AnalyseEditableTextBody() {
+	if (!mEditableTextBody)
+		return;
+	Regexx rx;
+	Regexx rxl;
+	rx.str( mEditableTextBody->DecodedData());
+	rx.expr( ThePrefs->GetString( "QuotingLevelRX", "^((?:[>|]?[ \\t]*)*)(.*?)$"));
+	int32 count = rx.exec( Regexx::study | Regexx::global | Regexx::newline);
+	BString currQuote;
+	bool lastWasSpecialLine = true;
+	for( int32 i=0; i<count; ++i) {
+		BString quote( rx.match[i].atom[0]);
+		BString line( rx.match[i].atom[1]);
+		if (rxl.exec( line, ThePrefs->GetString( "QuotingLevelEmptyLineRX", "^[ \\t]*$"))
+		|| rxl.exec( line, ThePrefs->GetString( "QuotingLevelListLineRX", "^[*+\\-\\d]+.*?$"))) {
+			mQuoteLevelMap.insert( make_pair( rx.match[i].atom[1].start(), quote));
+			currQuote = quote;
+			lastWasSpecialLine = true;
+		} else if (lastWasSpecialLine || currQuote != quote) {
+			mQuoteLevelMap.insert( make_pair( rx.match[i].atom[1].start(), quote));
+			currQuote = quote;
+			lastWasSpecialLine = false;
+		}
+	}
 }
 
 /*------------------------------------------------------------------------------*\

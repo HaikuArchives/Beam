@@ -630,20 +630,26 @@ BmRef<BmListModelItem> BmListModel::RemoveItemFromList( const BString& key) {
 	RemoveItemFromList()
 		-	
 \*------------------------------------------------------------------------------*/
-bool BmListModel::RenameItem( const BString oldKey, const BString newKey) {
+BString BmListModel::RenameItem( const BString oldKey, const BString suggestedNewKey) {
 	BmAutolock lock( mModelLocker);
-	lock.IsLocked()	 						|| BM_THROW_RUNTIME( ModelName() << ":RemoveItemFromList(): Unable to get lock");
-	BmRef<BmListModelItem> doubleItem( FindItemByKey( newKey));
-	if (doubleItem)
-		return false;							// item with given (new) key already exists
+	lock.IsLocked()	 						|| BM_THROW_RUNTIME( ModelName() << ":RenameItem(): Unable to get lock");
+	// find unique key for item:
+	BString newKey=suggestedNewKey;
+	BmRef<BmListModelItem> doubleItem;
+	for( int32 i = 1; (doubleItem=FindItemByKey( newKey)); ++i) {
+		newKey = suggestedNewKey+"("<<i<<")";
+	}
+	// now find item under old key...
 	BmRef<BmListModelItem> item( FindItemByKey( oldKey));
 	if (!item)
-		return false;
+		return oldKey;
+	// ...and rename it:
 	mModelItemMap.erase( oldKey);
+	item->RenameRef( newKey.String());
 	item->Key( newKey);
 	mModelItemMap[newKey] = item.Get();
 	TellModelItemUpdated( item.Get(), UPD_ALL, oldKey);
-	return true;
+	return newKey;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -655,7 +661,7 @@ BmRef<BmListModelItem> BmListModel::FindItemByKey( const BString& key) {
 	BmAutolock lock( mModelLocker);
 	lock.IsLocked()	 						|| BM_THROW_RUNTIME( ModelName() << ":FindItemByKey(): Unable to get lock");
 	BmModelItemMap::const_iterator iter;
-	for( iter = begin(); !found && iter != end(); iter++) {
+	for( iter = begin(); !found && iter != end(); ++iter) {
 		BmListModelItem* item = iter->second.Get();
 		if (item->Key() == key)
 			return BmRef<BmListModelItem>( item);

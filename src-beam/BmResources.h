@@ -78,6 +78,8 @@ public:
 	BPicture* CreatePictureFor( BBitmap* image, float width, float height,
 										 rgb_color background = BeBackgroundGrey);
 	//
+	void CheckMimeTypeFile( BString sig, time_t appModTime);
+	//
 	const char* WHITESPACE;
 	PrefilledBitmap mRightArrow;
 	PrefilledBitmap mDownArrow;

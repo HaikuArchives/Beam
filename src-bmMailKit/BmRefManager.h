@@ -63,9 +63,11 @@ public:
 	// native methods:
 #ifdef BM_REF_DEBUGGING
 	virtual void AddRef();
+	virtual void RenameRef( const char* newName);
 	virtual void RemoveRef();
 #else
 	void AddRef();
+	void RenameRef( const char* newName);
 	void RemoveRef();
 #endif // BM_REF_DEBUGGING
 

@@ -175,13 +175,15 @@ BString BmPopAccount::GetFromAddress() const {
 \*------------------------------------------------------------------------------*/
 bool BmPopAccount::HandlesAddress( BString addr, bool needExactMatch) const {
 	Regexx rx;
-	if (addr == GetFromAddress())
+	if (addr==GetFromAddress() || addr==mMailAddr || addr==mUsername)
 		return true;
 	int32 atPos = addr.FindFirst("@");
 	if (atPos != B_ERROR) {
 		BString addrDomain( addr.String()+atPos+1);
 		if (addrDomain != GetDomainName())
 			return false;						// address is from different domain
+		if (addr == mUsername+"@"+addrDomain)
+			return true;
 		addr.Truncate( atPos);
 	}
 	if (!needExactMatch && mMarkedAsBitBucket)
@@ -275,7 +277,7 @@ void BmPopAccountList::InstantiateItems( BMessage* archive) {
 		BM_LOG3( BM_LogMailTracking, BString("PopAccount <") << newAcc->Name() << "," << newAcc->Key() << "> read");
 		AddItemToList( newAcc);
 	}
-	BM_LOG2( BM_LogMailTracking, BString("End of InstantiateMailRefs() for PopAccountList"));
+	BM_LOG2( BM_LogMailTracking, BString("End of InstantiateItems() for PopAccountList"));
 	mInitCheck = B_OK;
 }
 

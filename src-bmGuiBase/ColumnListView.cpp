@@ -998,8 +998,10 @@ void ColumnListView::MouseDown(BPoint where)
 					}
 				}
 			}
-			if(fWatchingForDrag)
-				SetMouseEventMask(B_POINTER_EVENTS,B_NO_POINTER_HISTORY);
+//	[zooey]: it seems we don't need this and it sometimes causes problems
+//			   with popups (like Alerts).
+//			if(fWatchingForDrag)
+//				SetMouseEventMask(B_POINTER_EVENTS,B_NO_POINTER_HISTORY);
 		}
 	}
 	else

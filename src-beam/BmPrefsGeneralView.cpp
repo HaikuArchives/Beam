@@ -102,9 +102,6 @@ BmPrefsGeneralView::BmPrefsGeneralView()
 						mInOutAtTopControl = new BmCheckControl( "Show in & out - folders at top of mailfolder-view", 
 																					 	  new BMessage(BM_INOUT_AT_TOP_CHANGED), 
 																					 	  this, ThePrefs->GetBool("InOutAlwaysAtTop", false)),
-						mBeMailStyleControl = new BmCheckControl( "Use BeMail-compatible shortcuts", 
-																					 	  new BMessage(BM_BEMAIL_STYLE_CHANGED), 
-																					 	  this, ThePrefs->GetBool("BeMailStyle", false)),
 						new Space(),
 						0
 						),
@@ -276,10 +273,6 @@ void BmPrefsGeneralView::MessageReceived( BMessage* msg) {
 			}
 			case BM_CACHE_REFS_MEM_CHANGED: {
 				ThePrefs->SetBool("CacheRefsInMem", mCacheRefsInMemControl->Value());
-				break;
-			}
-			case BM_BEMAIL_STYLE_CHANGED: {
-				ThePrefs->SetBool("BeMailStyle", mBeMailStyleControl->Value());
 				break;
 			}
 			case BM_INOUT_AT_TOP_CHANGED: {

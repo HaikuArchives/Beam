@@ -49,6 +49,7 @@
 #include "BmPopAccount.h"
 #include "BmPrefs.h"
 #include "BmResources.h"
+#include "BmSignature.h"
 #include "BmSmtpAccount.h"
 #include "BmStorageUtil.h"
 #include "BmUtil.h"
@@ -94,6 +95,9 @@ BmApplication::BmApplication( const char* sig)
 
 		// load/determine all needed resources:
 		BmResources::CreateInstance();
+		time_t appModTime;
+		appFile.GetModificationTime( &appModTime);
+		TheResources->CheckMimeTypeFile( sig, appModTime);
 
 		// load the preferences set by user (if any):
 		BmPrefs::CreateInstance();
@@ -106,11 +110,14 @@ BmApplication::BmApplication( const char* sig)
 		TheJobStatusWin->Hide();
 		TheJobStatusWin->Show();
 
-		TheMailFolderList = BmMailFolderList::CreateInstance();
-		TheSmtpAccountList = BmSmtpAccountList::CreateInstance( TheJobStatusWin);
-		ThePopAccountList = BmPopAccountList::CreateInstance( TheJobStatusWin);
+		BmSignatureList::CreateInstance();
+		TheSignatureList->StartJobInThisThread();
 
-		TheMainWindow = BmMainWindow::CreateInstance();
+		BmMailFolderList::CreateInstance();
+		BmSmtpAccountList::CreateInstance( TheJobStatusWin);
+		BmPopAccountList::CreateInstance( TheJobStatusWin);
+
+		BmMainWindow::CreateInstance();
 
 		mInitCheck = B_OK;
 		InstanceCount++;
@@ -128,6 +135,7 @@ BmApplication::~BmApplication() {
 	TheMailFolderList = NULL;
 	ThePopAccountList = NULL;
 	TheSmtpAccountList = NULL;
+	TheSignatureList = NULL;
 #ifdef BM_REF_DEBUGGING
 	BmRefObj::PrintRefsLeft();
 #endif

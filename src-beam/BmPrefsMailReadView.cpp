@@ -62,13 +62,6 @@ BmPrefsMailReadView::BmPrefsMailReadView()
 				)
 			),
 			new Space( minimax(0,10,0,10)),
-			new MBorder( M_LABELED_BORDER, 10, (char*)"Signature Display",
-				new VGroup(
-					mSignatureRxControl = new BmTextControl( "Regex that finds start of signature:"),
-					0
-				)
-			),
-			new Space( minimax(0,10,0,10)),
 			new MBorder( M_LABELED_BORDER, 10, (char*)"Trusted Mimetypes (when opening attachments)",
 				new VGroup(
 					mMimeTypeTrustInfoControl = new BmTextControl( "Mimetype trust info:"),
@@ -87,7 +80,6 @@ BmPrefsMailReadView::BmPrefsMailReadView()
 
 	mHeaderListLargeControl->SetText( ThePrefs->GetString("HeaderListLarge").String());
 	mHeaderListSmallControl->SetText( ThePrefs->GetString("HeaderListSmall").String());
-	mSignatureRxControl->SetText( ThePrefs->GetString("SignatureRX").String());
 	mMimeTypeTrustInfoControl->SetText( ThePrefs->GetString("MimeTypeTrustInfo").String());
 }
 
@@ -107,7 +99,6 @@ void BmPrefsMailReadView::Initialize() {
 
 	mHeaderListSmallControl->SetTarget( this);
 	mHeaderListLargeControl->SetTarget( this);
-	mSignatureRxControl->SetTarget( this);
 	mMimeTypeTrustInfoControl->SetTarget( this);
 }
 
@@ -116,7 +107,7 @@ void BmPrefsMailReadView::Initialize() {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmPrefsMailReadView::SaveData() {
-//	ThePrefs->Store();
+	// prefs are already stored by General View
 }
 
 /*------------------------------------------------------------------------------*\
@@ -124,8 +115,7 @@ void BmPrefsMailReadView::SaveData() {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmPrefsMailReadView::UndoChanges() {
-//	ThePrefs = NULL;
-//	BmPrefs::CreateInstance();
+	// prefs are already undone by General View
 }
 
 /*------------------------------------------------------------------------------*\
@@ -143,8 +133,6 @@ void BmPrefsMailReadView::MessageReceived( BMessage* msg) {
 					ThePrefs->SetString("HeaderListSmall", mHeaderListSmallControl->Text());
 				else if ( source == mHeaderListLargeControl)
 					ThePrefs->SetString("HeaderListLarge", mHeaderListLargeControl->Text());
-				else if ( source == mSignatureRxControl)
-					ThePrefs->SetString("SignatureRX", mSignatureRxControl->Text());
 				else if ( source == mMimeTypeTrustInfoControl)
 					ThePrefs->SetString("MimeTypeTrustInfo", mMimeTypeTrustInfoControl->Text());
 				break;

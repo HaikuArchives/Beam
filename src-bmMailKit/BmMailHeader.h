@@ -193,6 +193,7 @@ public:
 
 	// setters:
 	inline void IsRedirect( bool b)				{ mIsRedirect = b; }
+	inline void DefaultEncoding( uint32 i)		{ mDefaultEncoding = i; }
 
 	// class-functions:
 	static bool IsAddressField( const BString fieldName);

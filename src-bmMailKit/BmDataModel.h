@@ -276,7 +276,7 @@ public:
 	BmRef<BmListModelItem> FindItemByKey( const BString& key);
 	bool AddItemToList( BmListModelItem* item, BmListModelItem* parent=NULL);
 	void RemoveItemFromList( BmListModelItem* item);
-	bool RenameItem( const BString oldKey, const BString newKey);
+	BString RenameItem( const BString oldKey, const BString newKey);
 	BmRef<BmListModelItem> RemoveItemFromList( const BString& key);
 	virtual bool Store();
 	virtual const BString SettingsFileName() = 0;

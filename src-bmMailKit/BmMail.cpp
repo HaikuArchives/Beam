@@ -49,6 +49,7 @@ using namespace regexx;
 #include "BmPopAccount.h"
 #include "BmPrefs.h"
 #include "BmResources.h"
+#include "BmSignature.h"
 
 #undef BM_LOGNAME
 #define BM_LOGNAME "MailParser"
@@ -90,6 +91,9 @@ BmMail::BmMail( bool outbound)
 	,	mModifiedMaxLineLen( 0)
 {
 	BString emptyMsg( "Mime: 1.0\r\n");
+	emptyMsg << "Content-Type: text/plain; charset=\"" 
+				<< EncodingToCharset( ThePrefs->GetInt( "DefaultEncoding"))
+				<<	"\"\r\n";
 	emptyMsg << BM_FIELD_DATE << ": " << TimeToString( time( NULL), 
 																		"%a, %d %b %Y %H:%M:%S %z");
 	emptyMsg << "\r\n\r\n";
@@ -97,8 +101,10 @@ BmMail::BmMail( bool outbound)
 	if (outbound) {
 		// stuff from-address into mail, if it makes sense:
 		BmRef<BmPopAccount> accRef = ThePopAccountList->DefaultAccount();
-		if (accRef)
+		if (accRef) {
 			SetFieldVal( BM_FIELD_FROM, accRef->GetFromAddress());
+			SetSignatureByName( accRef->SignatureName());
+		}
 	}
 }
 
@@ -189,6 +195,17 @@ void BmMail::SetNewHeader( const BString& headerStr) {
 	SetTo( newMsgText, mAccountName);
 	Store();
 	StartJobInThisThread();
+}
+
+/*------------------------------------------------------------------------------*\
+	SetSignatureByName( sigName)
+	-	
+\*------------------------------------------------------------------------------*/
+void BmMail::SetSignatureByName( const BString sigName) {
+	if (!mBody || mSignatureName==sigName)
+		return;
+	mSignatureName = sigName;
+	mBody->Signature( TheSignatureList->GetSignatureStringFor( sigName));
 }
 
 /*------------------------------------------------------------------------------*\
@@ -356,6 +373,7 @@ BmRef<BmMail> BmMail::CreateReply( bool replyToAll, const BString selectedText) 
 		if (!receivingAddr.Length())
 			receivingAddr = acc->GetFromAddress();
 		newMail->SetFieldVal( BM_FIELD_FROM, receivingAddr);
+		newMail->SetSignatureByName( acc->SignatureName());
 	}
 	// if we are replying to all, we may need to include more addresses:
 	if (replyToAll) {
@@ -366,25 +384,28 @@ BmRef<BmMail> BmMail::CreateReply( bool replyToAll, const BString selectedText) 
 			newCc = GetFieldVal( BM_FIELD_CC);
 		newMail->SetFieldVal( BM_FIELD_CC, newCc);
 		newMail->Header()->RemoveAddrFieldVal( BM_FIELD_CC, receivingAddr);
-		BString additionalTo;
+		BString additionalCc;
 		if (ThePrefs->GetBool( "UseResentFieldsInReply", false))
-			additionalTo = GetFieldVal( BM_FIELD_RESENT_TO);
+			additionalCc = GetFieldVal( BM_FIELD_RESENT_TO);
 		else
-			additionalTo = GetFieldVal( BM_FIELD_TO);
-		newMail->Header()->AddFieldVal( BM_FIELD_TO, additionalTo);
-		newMail->Header()->RemoveAddrFieldVal( BM_FIELD_TO, receivingAddr);
+			additionalCc = GetFieldVal( BM_FIELD_TO);
+		newMail->Header()->AddFieldVal( BM_FIELD_CC, additionalCc);
+		newMail->Header()->RemoveAddrFieldVal( BM_FIELD_CC, receivingAddr);
 	}
 	// massage subject, if neccessary:
 	BString subject = GetFieldVal( BM_FIELD_SUBJECT);
 	newMail->SetFieldVal( BM_FIELD_SUBJECT, CreateReplySubjectFor( subject));
+	// copy info about encoding from old into new mail:
+	int32 encoding = DefaultEncoding();
+	newMail->Header()->DefaultEncoding( encoding);
 	// copy and quote text-body:
 	BmRef<BmBodyPart> textBody( mBody->EditableTextBody());
 	BString charset = textBody->Charset();
 	BString text;
 	if (selectedText.Length())
-		text << selectedText;
+		ConvertFromUTF8( encoding, selectedText, text);
 	else
-		text << textBody->DecodedData();
+		text = textBody->DecodedData();
 	BString quotedText;
 	int32 newMaxLineLen = QuoteText( text, quotedText,
 				 								ThePrefs->GetString( "QuotingString"),
@@ -508,12 +529,15 @@ void BmMail::AddPartsFromMail( BmRef<BmMail> mail, bool withAttachments,
 	BmRef<BmBodyPart> newTextBody( mBody->EditableTextBody());
 	BString oldText = newTextBody ? newTextBody->DecodedData() : "";
 	BmRef<BmBodyPart> textBody( mail->Body()->EditableTextBody());
-	BString charset = EncodingToCharset( ThePrefs->GetInt( "DefaultEncoding"));
+	// copy info about encoding from old into new mail:
+	int32 encoding = mail->DefaultEncoding();
+	Header()->DefaultEncoding( encoding);
+	BString charset = EncodingToCharset( encoding);
 	BString newText;
 	if (textBody) {
 		charset = textBody->Charset();
 		if (selectedText.Length())
-			newText = selectedText;
+			ConvertFromUTF8( encoding, selectedText, newText);
 		else
 			newText = textBody->DecodedData();
 	} else

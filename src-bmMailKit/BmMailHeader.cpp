@@ -834,15 +834,8 @@ void BmMailHeader::StoreAttributes( BFile& mailFile) {
 		-	
 \*------------------------------------------------------------------------------*/
 bool BmMailHeader::ConstructRawText( BString& header, int32 encoding) {
-	if (!mAddrMap[BM_FIELD_FROM].InitOK()) {
-		BM_SHOWERR("Please enter at least one address into the <FROM> field, thank you.");
-		return false;
-	}
 	if (!mAddrMap[BM_FIELD_TO].InitOK() && !mAddrMap[BM_FIELD_CC].InitOK()) {
-		if (!mAddrMap[BM_FIELD_BCC].InitOK()) {
-			BM_SHOWERR("Please enter at least one address into the\n\t<TO>,<CC> or <BCC>\nfield, thank you.");
-			return false;
-		} else {
+		if (mAddrMap[BM_FIELD_BCC].InitOK()) {
 			// only hidden recipients via use of bcc, we set a dummy-<TO> value:
 			SetFieldVal( BM_FIELD_TO, "Undisclosed-Recipients:;");
 		}

@@ -67,7 +67,8 @@ public:
 	void EditMail( BmMailRef* ref);
 	void EditMail( BmMail* mail);
 
-	// overrides of BWindow base:
+	// overrides of BmWindow base:
+	void BeginLife();
 	void MessageReceived( BMessage*);
 	bool QuitRequested();
 	void Quit();
@@ -108,6 +109,7 @@ private:
 	
 	BmMenuControl* mCharsetControl;
 	BmMenuControl* mSmtpControl;
+	BmMenuControl* mSignatureControl;
 	
 	BmCheckControl* mEditHeaderControl;
 

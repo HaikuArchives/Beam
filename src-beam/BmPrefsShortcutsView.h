@@ -1,6 +1,5 @@
 /*
-	BmPrefs.h
-
+	BmPrefsShortcutsView.h
 		$Id$
 */
 /*************************************************************************/
@@ -29,80 +28,83 @@
 /*************************************************************************/
 
 
-#ifndef _BmPrefs_h
-#define _BmPrefs_h
+#ifndef _BmPrefsShortcutsView_h
+#define _BmPrefsShortcutsView_h
 
-#include <map>
+#include <MessageFilter.h>
 
-#include <Archivable.h>
-#include <Message.h>
-#include <String.h>
+#include "BmListController.h"
+#include "BmPrefsView.h"
+#include "BmTextControl.h"
 
 /*------------------------------------------------------------------------------*\
-	BmPrefs 
-		-	holds preference information for Beam
-		- 	derived from BArchivable, so it can be read from and
-			written to a file
+	BmShortcutControl
+		-	
 \*------------------------------------------------------------------------------*/
-class BmPrefs : public BArchivable {
-	typedef BArchivable inherited;
+class BmShortcutControl : public BmTextControl
+{
+	typedef BmTextControl inherited;
 
-	static const char* const PREFS_FILENAME = 			"General Settings";
-
-	static const char* const MSG_VERSION = 	"bm:version";
-
-	static const int16 nPrefsVersion = 1;
-	
 public:
 	// creator-func, c'tors and d'tor:
-	static BmPrefs* CreateInstance();
-	BmPrefs( void);
-	BmPrefs( BMessage* archive);
-	virtual ~BmPrefs();
+	BmShortcutControl( const char* label);
+	~BmShortcutControl()						{ }
+	
+	// overrides of BmTextControl:
+	void KeyDown(const char *bytes, int32 numBytes);
 
-	// native methods:
-	void InitDefaults();
-	void SetLoglevels();
-	bool Store();
-	bool GetBool( const char* name);
-	bool GetBool( const char* name, const bool defaultVal);
-	int32 GetInt( const char* name);
-	int32 GetInt( const char* name, const int32 defaultVal);
-	const BMessage* GetMsg( const char* name);
-	const BMessage* GetMsg( const char* name, const BMessage* defaultVal);
-	BString GetString( const char* name);
-	BString GetString( const char* name, const BString defaultVal);
-	void SetBool( const char* name, const bool val);
-	void SetInt( const char* name, const int32 val);
-	void SetMsg( const char* name, const BMessage* val);
-	void SetString( const char* name, const BString val);
-
-	BString GetShortcutFor( const char* shortcutID);
-
-	// getters:
-	BMessage* PrefsMsg()						{ return &mPrefsMsg; }
-	BMessage* DefaultsMsg()					{ return &mDefaultsMsg; }
-	BMessage* ShortcutsMsg()				{ return &mShortcutsMsg; }
-
-	static BmPrefs* theInstance;
+	static filter_result FilterHook( BMessage* msg, BHandler** handler,
+												BMessageFilter* filter);
 
 private:
-
-	BMessage* GetShortcutDefaults( BMessage* msg=NULL);
-	void SetShortcutIfNew( BMessage* msg, const char* name, const BString val);
-
-	BMessage mPrefsMsg;
-	BMessage mDefaultsMsg;
-	BMessage mShortcutsMsg;
-
-	map<BString, BMessage*> mMsgCache;
+	static BmShortcutControl* nTheInstance;
 
 	// Hide copy-constructor and assignment:
-	BmPrefs( const BmPrefs&);
-	BmPrefs operator=( const BmPrefs&);
-
+	BmShortcutControl( const BmShortcutControl&);
+	BmShortcutControl operator=( const BmShortcutControl&);
 };
 
-#define ThePrefs BmPrefs::theInstance
+
+
+
+/*------------------------------------------------------------------------------*\
+	BmPrefsShortcutsView
+		-	
+\*------------------------------------------------------------------------------*/
+class BmPrefsShortcutsView : public BmPrefsView {
+	typedef BmPrefsView inherited;
+
+public:
+	// c'tors and d'tor:
+	BmPrefsShortcutsView();
+	virtual ~BmPrefsShortcutsView();
+	
+	// native methods:
+	void ShowShortcut( int32 selection);
+
+	// overrides of BmPrefsView base:
+	void Initialize();
+	void Activated();
+	void SaveData();
+	void UndoChanges();
+
+	// overrides of BView base:
+	void MessageReceived( BMessage* msg);
+
+	// getters:
+
+	// setters:
+
+private:
+	CLVContainerView* CreateListView( minimax minmax, int32 width, int32 height);
+
+	ColumnListView* mListView;
+	BmTextControl* mNameControl;
+	BmShortcutControl* mShortcutControl;
+
+	// Hide copy-constructor and assignment:
+	BmPrefsShortcutsView( const BmPrefsShortcutsView&);
+	BmPrefsShortcutsView operator=( const BmPrefsShortcutsView&);
+};
 
 #endif

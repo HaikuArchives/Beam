@@ -202,7 +202,7 @@ void BmPrefsMailConstrView::Initialize() {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmPrefsMailConstrView::SaveData() {
-//	ThePrefs->Store();
+	// prefs are already stored by General View
 }
 
 /*------------------------------------------------------------------------------*\
@@ -210,8 +210,7 @@ void BmPrefsMailConstrView::SaveData() {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmPrefsMailConstrView::UndoChanges() {
-//	ThePrefs = NULL;
-//	BmPrefs::CreateInstance();
+	// prefs are already undone by General View
 }
 
 /*------------------------------------------------------------------------------*\

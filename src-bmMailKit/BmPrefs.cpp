@@ -94,7 +94,7 @@ BmPrefs::BmPrefs( void)
 	mPrefsMsg = mDefaultsMsg;
 	SetLoglevels();
 	if (mPrefsMsg.FindMessage( "Shortcuts", &mShortcutsMsg) != B_OK)
-		BM_SHOWERR("Prefs: Could not access shortcut info!")
+		BM_SHOWERR("Prefs: Could not access shortcut info!");
 }
 
 
@@ -108,6 +108,8 @@ BmPrefs::BmPrefs( BMessage* archive)
 {
 	InitDefaults();
 	mPrefsMsg = *archive;
+	int16 version = 0;
+	archive->FindInt16( MSG_VERSION, &version);
 	int32 loglevels = BM_LOGLVL_VAL(archive->FindInt16("Loglevel_Pop"),BM_LogPop)
 							+ BM_LOGLVL_VAL(archive->FindInt16("Loglevel_JobWin"),BM_LogJobWin) 
 							+ BM_LOGLVL_VAL(archive->FindInt16("Loglevel_MailParse"),BM_LogMailParse) 
@@ -124,7 +126,18 @@ BmPrefs::BmPrefs( BMessage* archive)
 	mPrefsMsg.AddInt32("Loglevels", loglevels);
 	SetLoglevels();
 	
-	if (mPrefsMsg.FindMessage( "Shortcuts", &mShortcutsMsg) != B_OK) {
+	if (version < 1) {
+		// changes introduced with version 1:
+		//
+		// change default value of SignatureRX:
+		mPrefsMsg.RemoveName("SignatureRX");
+		mPrefsMsg.AddString( "SignatureRX", "^---?\\s*\\n");
+		mPrefsMsg.AddInt16( MSG_VERSION, nPrefsVersion);
+		// remove BeMailStyle-flag, since we now have configurable shortcuts:
+		mPrefsMsg.RemoveName("BeMailStyle");
+	}
+	
+	if (mPrefsMsg.FindMessage( "Shortcuts", &mShortcutsMsg) == B_OK) {
 		// add any missing (new) shortcuts:
 		GetShortcutDefaults( &mShortcutsMsg);
 	} else {
@@ -147,6 +160,7 @@ BmPrefs::~BmPrefs() {
 \*------------------------------------------------------------------------------*/
 void BmPrefs::InitDefaults() {
 	mDefaultsMsg.MakeEmpty();
+	mDefaultsMsg.AddInt16( MSG_VERSION, nPrefsVersion);
 	mDefaultsMsg.AddBool( "DynamicStatusWin", true);
 	mDefaultsMsg.AddInt32( "ReceiveTimeout", 60);
 	int32 loglevels = BM_LOGLVL2(BM_LogPop)
@@ -202,9 +216,9 @@ void BmPrefs::InitDefaults() {
 	mDefaultsMsg.AddString( "ReplyIntroStr", "On %D at %T, %F wrote:");
 	mDefaultsMsg.AddString( "ReplySubjectRX", "^\\s*(Re|Aw)(\\[\\d+\\])?:");
 	mDefaultsMsg.AddString( "ReplySubjectStr", "Re: %s");
-	mDefaultsMsg.AddString( "SignatureRX", "\\A---?\\s*\\n");
+	mDefaultsMsg.AddString( "SignatureRX", "^---?\\s*\\n");
 	mDefaultsMsg.AddString( "MimeTypeTrustInfo", "<application/pdf:T><application:W><:T>");
-	mDefaultsMsg.AddBool( "BeMailStyle", false);
+	mDefaultsMsg.AddBool( "InOutAlwaysAtTop", false);
 	mDefaultsMsg.AddMessage( "Shortcuts", GetShortcutDefaults());
 }
 
@@ -315,10 +329,16 @@ bool BmPrefs::Store() {
 		(err = prefsFile.SetTo( prefsFilename.String(), 
 										B_WRITE_ONLY | B_CREATE_FILE | B_ERASE_FILE)) == B_OK
 													|| BM_THROW_RUNTIME( BString("Could not create settings file\n\t<") << prefsFilename << ">\n\n Result: " << strerror(err));
+		// in order to avoid storing loglevels as plain value, we take it out temporarily:
 		int32 loglevels = mPrefsMsg.FindInt32("Loglevels");
 		mPrefsMsg.RemoveName("Loglevels");
+		// update shortcuts:
+		mPrefsMsg.RemoveName("Shortcuts");
+		mPrefsMsg.AddMessage("Shortcuts", &mShortcutsMsg);
+		// store prefs-data inside file:		
 		(err = mPrefsMsg.Flatten( &prefsFile)) == B_OK
 													|| BM_THROW_RUNTIME( BString("Could not store settings into file\n\t<") << prefsFilename << ">\n\n Result: " << strerror(err));
+		// put loglevels back in:
 		mPrefsMsg.AddInt32( "Loglevels", loglevels);
 	} catch( exception &e) {
 		BM_SHOWERR( e.what());

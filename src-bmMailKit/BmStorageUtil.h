@@ -31,7 +31,7 @@
 #ifndef _BmStorageUtil_h
 #define _BmStorageUtil_h
 
-#include <vector>
+#include <set>
 
 #include <String.h>
 
@@ -41,19 +41,23 @@ bool MoveToTrash( const entry_ref* refs, int32 count);
 
 bool CheckMimeType( const entry_ref* eref, const char* type);
 
+bool FetchFile( BString fileName, BString& contents);
+
 /*------------------------------------------------------------------------------*\
 	BmTempFileList
 		-	
 \*------------------------------------------------------------------------------*/
 class BmTempFileList {
-	typedef vector<BString> BmFileVect;
+	typedef set<BString> BmFileSet;
 public:
 	BmTempFileList() : mCount(0) 			{}
 	~BmTempFileList();
 	void AddFile( BString fileWithPath);
+	void RemoveFile( BString fileWithPath);
 	BString NextTempFilename()				{ return BString("bm_") << ++mCount; }
+	BString NextTempFilenameWithPath();
 private:
-	BmFileVect mFiles;
+	BmFileSet mFiles;
 	int32 mCount;
 	// Hide copy-constructor and assignment:
 	BmTempFileList( const BmTempFileList&);

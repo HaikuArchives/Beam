@@ -33,9 +33,12 @@
 
 #include <Messenger.h> 
 #include <Message.h> 
-#include <Entry.h> 
+#include <File.h>
+#include <FindDirectory.h>
 #include <NodeInfo.h> 
+#include <Path.h> 
 
+#include "BmBasics.h"
 #include "BmStorageUtil.h"
 
 BmTempFileList TheTempFileList;
@@ -84,14 +87,31 @@ bool CheckMimeType( const entry_ref* eref, const char* type) {
 }
 
 /*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+bool FetchFile( BString fileName, BString& contents) {
+	BFile file( fileName.String(), B_READ_ONLY);
+	if (file.InitCheck() == B_OK) {
+		off_t size;
+		file.GetSize( &size);
+		char* buf = contents.LockBuffer( size+1);
+		ssize_t read = file.Read( buf, size);
+		buf[read] = '\0';
+		contents.UnlockBuffer( read);
+		return true;
+	}
+	return false;
+}
+
+/*------------------------------------------------------------------------------*\
 	~BmTempFileList()
 		-	
 \*------------------------------------------------------------------------------*/
 BmTempFileList::~BmTempFileList() {
-	int count = mFiles.size();
-	for( int i=0; i<count; ++i) {
-		BEntry tmpFile( mFiles[i].String());
-		tmpFile.Remove();
+	BmFileSet::const_iterator iter;
+	while( (iter=mFiles.begin()) != mFiles.end()) {
+		RemoveFile( *iter);
 	}
 }
 
@@ -100,5 +120,27 @@ BmTempFileList::~BmTempFileList() {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmTempFileList::AddFile( BString fileWithPath) {
-	mFiles.push_back( fileWithPath);
+	mFiles.insert( fileWithPath);
+}
+
+/*------------------------------------------------------------------------------*\
+	RemoveFile()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmTempFileList::RemoveFile( BString fileWithPath) {
+	BEntry tmpFile( fileWithPath.String());
+	tmpFile.Remove();
+	mFiles.erase( fileWithPath);
+}
+
+/*------------------------------------------------------------------------------*\
+	NextTempFileNameWithPath()
+		-	
+\*------------------------------------------------------------------------------*/
+BString BmTempFileList::NextTempFilenameWithPath() {
+	BPath tempPath;
+	status_t err;
+	(err=find_directory( B_COMMON_TEMP_DIRECTORY, &tempPath, true)) == B_OK
+													||	BM_THROW_RUNTIME(BString("Could not find tmp-folder!\n\nError: ")<<strerror( err));
+	return BString(tempPath.Path()) << "bm_" << ++mCount;
 }
