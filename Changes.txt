@@ -2,6 +2,155 @@ change-history of Beam:
 		$Id$
 
 *******************************************************************************
+[Beam 1.0-rc3]
+*******************************************************************************
+
+< 2003-09-23: commit>
+
+BmApp:
+	-	some minor changes to support testing.
+	-	corrected homepage-url to point to sourceforge.
+	-	in QuitRequested(), we now lock each window before calling
+		its QuitRequested(), avoiding calls to the debugger.
+
+BmEncoding:
+	-	minor fixes in BmBase64Decoder, BmQuotedPrintableEncoder and
+		BmFoldedLineEncoder. All these should strictly follow RFCs, now!
+
+BmFilterChain:
+	-	sorted map of filters inside a chain is now updated when an
+		item is added, not only when one is removed.
+
+BmIdentity:
+	-	In HandlesAddrSpec(), we no longer return true if given an
+		empty addrSpec. When replying to mailing-lists, this could 
+		result in the From:-header being randomly chosen from the
+		mail being replied too (ieek!).
+
+BmMail:
+	-	A small change increasing robustness towards incomplete setups.
+
+BmPrefsRecvMailView:
+	-	delete-mail-delay-textview is now enabled/disabled as needed.
+
+BmMemIO:
+	-	added new class BmRingBuf, which implements a ring-buffer
+		(no more need to use BmString for that purpose).
+
+BmString:
+	-	fixed a hanging-bug in ReplaceSet().
+	-	fixed incorrect handling of %%-sequence in DeUrlify().
+	-	added tests (openbeos and own) for automated testing.
+
+src-tests:
+	-	added tests for BmBase (BmString and BmMemIO-classes).
+	-	added tests for base64-encoding & -decoding as well as tests
+		for FoldedLineEncoder.
+
+several files:
+	-	more cleanups concerning the 80-chars-per-line rule.
+
+< 2003-09-15: commit>
+
+BmApp, BmBasics:
+	-	added support for testmode
+
+BmBodyPartList:
+	-	finished support for handling text-attachments as utf-8 or
+		as being of the charset currently selected in edit-window.
+	-	fixed minor problem with pending \r\n being included in the
+		bodypart, when in fact it shouldn't (since it is just there
+		to separate the bodypart from the boundary).
+
+BmBodyPartView:
+	-	finished support for handling text-attachments as utf-8 or
+		as being of the charset currently selected in edit-window.
+	-	added missing support for dragging from one bodypartview to
+		another one.
+
+BmEncoding:
+	-	corrected a couple of bugs in BmQuotedPrintableDecoder.
+		Hey, automated testing pays off already!
+
+BmLogHandler, BmLogWindow:
+	-	added support for automatically bringing up the error-window
+		if an error occurs (and no alerts should be shown).
+	-	made the relation between log-files and log-windows a bit
+		more flexible.
+
+BmMail:
+	-	finished support for handling text-attachments as utf-8 or
+		as being of the charset currently selected in edit-window.
+
+BmMailEditWin:
+	-	finished support for handling text-attachments as utf-8 or
+		as being of the charset currently selected in edit-window.
+
+BmPopAccount, BmSmtpAccount, BmPopper:
+	-	logfiles are no longer created statically one for each account.
+		Instead they are created when needed.
+
+BmPrefs, BmPrefsGeneralView:
+	-	changed default for 'ShowAlertForErrors'-setting from true 
+		to false.
+
+BmPrefsMailConstrView:
+	-	added control for "ImportExportTextAsUtf8"-setting.
+
+BmResources:
+	-	added support for testmode
+
+several files:
+	-	changed many occurrences of BM_LOGERR to BM_SHOWERR, since
+		this now will only pop-up the error-window instead of showing
+		an alert.
+
+makefiles:
+	-	finally cleaned up things so that Beam compiles on "normal"
+		BeOS-pcs. It compiles under R5 x86, BONE and Dano, 
+		but not PPC yet.
+
+src-tests:
+	-	added TestBeam to CVS currently with tests for 
+		BmQuotedPrintableDecoder only, but there's more to come.
+
+< 2003-09-13: commit>
+
+BmFilterChain, BmIdentity, BmPopAccount, BmSmtpAccount:
+	-	fixed race-condition/crash in ForeignKeyChanged().
+
+BmNetJobModel, BmPopper, BmSmtp:
+	-	cleanup of net-related include-files.
+
+< 2003-09-12: commit>
+
+BmEncoding:
+	-	fixed problem with encoded-words being over-ambitious in digesting
+		whitespace. Now only whitespace between encoded-words is dumped
+		(whitespace between encoded-word and normal header-text stays
+		intact).
+
+BmMail, BmMailFilter:
+	-	rewrote move-to-tash functionality.
+
+BmPopAccount, BmSmtpAccount:
+	-	fixed signedness-related warning.
+
+BmPrefsLoggingView:
+	-	corrected minimum width of menus on the left to actually fit
+		'Log Everything'.
+
+pcre:
+	-	upgraded to version 4.4
+
+libSieve:
+	-	fixed a load of warnings.
+
+makefiles:
+	-	readjusted so that Beam compiles cleanly (no warnings) while
+		sacrificing as few warnings as possible.
+
+*******************************************************************************
 [Beam 1.0-rc2]
 *******************************************************************************
 

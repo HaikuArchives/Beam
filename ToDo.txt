@@ -4,7 +4,7 @@
 */
 
 ***********
-Beam 0.92:
+Beam 1.1:
 ***********
 
 -	add support for spam-filtering
@@ -21,6 +21,8 @@ Beam 0.92:
 	completely
 
 -	show total number of messages and number of new messages for each folder.
+
+-	allow reading of mails by pressing space in mailref-view
 
 -	add navigation through mails in mailview-win (next,prev)
 
@@ -44,23 +46,18 @@ Beam 0.92:
 
 
 ***********
-Beam 0.93:
+Beam 1.2:
 ***********
 
 -	add support for tagging messages
 
--	advanced POP-dialog: keep mail on server for x days / until deleted locally
+-	advanced POP-dialog: view mails directly on server, allow to delete them
 
 -	implement 'send all pending messages'
 
 
 
 ***********
-Beam 0.94:
+Beam 1.3:
 ***********
 
-
-
-***********
-Beam 0.95:
-***********
