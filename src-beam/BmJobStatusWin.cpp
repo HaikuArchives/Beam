@@ -702,7 +702,8 @@ BmJobStatusWin::BmJobStatusWin()
 					"Jobs",
 					B_FLOATING_WINDOW_LOOK, B_NORMAL_WINDOW_FEEL,
 					B_ASYNCHRONOUS_CONTROLS	|	B_NOT_ZOOMABLE	|	B_NOT_V_RESIZABLE
-					| B_NO_WORKSPACE_ACTIVATION)
+					| B_NO_WORKSPACE_ACTIVATION 
+					| (mouse_mode()==B_NORMAL_MOUSE ? B_AVOID_FOCUS : 0))
 { 
 	mOuterGroup = 
 		new VGroup(
