@@ -140,8 +140,8 @@ private:
 	bool HasStdRcpts( BmMail *mail, BmRcptVect& rcptVect);
 	void Rcpt( const BmRcptVect& rcptVect);
 	void BccRcpt( BmMail *mail, bool sendDataForEachBcc, 
-					  const BmString& headerText, const BmString& bodyText);
-	void Data( BmMail *mail, const BmString& headerText, const BmString& bodyText,
+					  const BmString& headerText, BmStringIBuf& bodyText);
+	void Data( BmMail *mail, const BmString& headerText, BmStringIBuf& bodyText,
 				  BmString forBcc="");
 	void UpdateSMTPStatus( const float, const char*, bool failed=false, bool stopped=false);
 	void UpdateMailStatus( const float, const char*, int32);

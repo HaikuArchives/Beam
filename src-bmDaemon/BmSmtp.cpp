@@ -44,6 +44,7 @@ using namespace regexx;
 #include "BmLogHandler.h"
 #include "BmMail.h"
 #include "BmMailHeader.h"
+#include "BmMemIO.h"
 #include "BmNetUtil.h"
 #include "BmPopAccount.h"
 #include "BmPopper.h"
@@ -397,12 +398,7 @@ void BmSmtp::SendMails() {
 											 "", Regexx::newline);
 		}
 
-		BmString bodyText = mail->RawText().String()+mail->HeaderLength();
-		// dotstuff the bodytext...
-		bodyText.ReplaceAll( "\n.", "\n..");
-		// ... and make sure it ends with a newline:
-		if (bodyText[bodyText.Length()-1] != '\n')
-			bodyText << "\r\n";
+		BmStringIBuf bodyText( mail->RawText().String()+mail->HeaderLength());
 
 		BmRcptVect rcptVect;
 		if (ThePrefs->GetBool("SpecialHeaderForEachBcc", true)) {
@@ -497,7 +493,7 @@ void BmSmtp::Rcpt( const BmRcptVect& rcptVect) {
 			Bcc-recipient, containing only it inside the Bcc-header
 \*------------------------------------------------------------------------------*/
 void BmSmtp::BccRcpt( BmMail* mail, bool sendDataForEachBcc,
-							 const BmString& headerText, const BmString& bodyText) {
+							 const BmString& headerText, BmStringIBuf& bodyText) {
 	BmAddrList::const_iterator iter;
 	const BmAddressList bccList = mail->IsRedirect() 
 											? mail->Header()->GetAddressList( BM_FIELD_RESENT_BCC)
@@ -519,9 +515,9 @@ void BmSmtp::BccRcpt( BmMail* mail, bool sendDataForEachBcc,
 		-	if param forBcc is set, the contained address is set as the mail's
 			Bcc-header (only this address)
 \*------------------------------------------------------------------------------*/
-void BmSmtp::Data( BmMail* mail, const BmString& headerText, const BmString& bodyText,
+void BmSmtp::Data( BmMail* mail, const BmString& headerText, BmStringIBuf& bodyText,
 						 BmString forBcc) {
-	BmString cmd = BmString("DATA");
+	BmString cmd( "DATA");
 	SendCommand( cmd);
 	CheckForPositiveAnswer();
 	BmString bcc;
@@ -538,7 +534,13 @@ void BmSmtp::Data( BmMail* mail, const BmString& headerText, const BmString& bod
 			bcc = BmString("Bcc: ") << forBcc;
 		}
 	}
-	cmd = bcc << headerText << bodyText << ".\r\n";
+	BmStringOBuf cmdBuf( bcc.Length()+headerText.Length()+bodyText.Size()+4096);
+	cmdBuf.Write( bcc);
+	cmdBuf.Write( headerText);
+	BmDotstuffEncoder dotStuffed( bodyText);
+	cmdBuf.Write( dotStuffed);
+	cmdBuf.Write( ".\r\n");
+	cmd.Adopt( cmdBuf.TheString());
 	SendCommand( cmd, false, true);
 	CheckForPositiveAnswer();
 }
@@ -693,7 +695,7 @@ void BmSmtp::SendCommand( BmString& command, bool isSecret, bool isMailData) {
 		else
 			BM_LOG( BM_LogSmtp, BmString("-->\n") << command);
 	}
-	if (!command.Length() || command[command.Length()-1] != '\n')
+	if (!command.Length() || (!isMailData && command[command.Length()-1] != '\n'))
 		command << "\r\n";
 	int32 size = command.Length();
 	int32 sentSize;
