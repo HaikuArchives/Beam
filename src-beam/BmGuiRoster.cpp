@@ -1,5 +1,5 @@
 /*
-	BmRoster.cpp
+	BmGuiRoster.cpp
 		$Id$
 */
 /*************************************************************************/
@@ -32,13 +32,13 @@
 #include <MenuItem.h>
 #include <Path.h>
 
-#include "regexx.hh"
+#include "split.hh"
 using namespace regexx;
 
 #include "TextEntryAlert.h"
 #include "ListSelectionAlert.h"
 
-#include "BmApp.h"
+#include "BeamApp.h"
 #include "BmBasics.h"
 #include "BmEncoding.h"
 	using namespace BmEncoding;
@@ -46,121 +46,35 @@ using namespace regexx;
 #include "BmFilterChain.h"
 #include "BmGuiUtil.h"
 #include "BmIdentity.h"
+#include "BmJobStatusWin.h"
 #include "BmLogHandler.h"
 #include "BmMail.h"
 #include "BmMailEditWin.h"
 #include "BmMailFolderList.h"
 #include "BmMenuControllerBase.h"
+#include "BmMsgTypes.h"
 #include "BmPopAccount.h"
 #include "BmPrefs.h"
-#include "BmRoster.h"
+#include "BmGuiRoster.h"
 #include "BmSmtpAccount.h"
 #include "BmSignature.h"
 #include "BmStorageUtil.h"
 #include "BmUtil.h"
 
+
 /*------------------------------------------------------------------------------*\
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmRoster::BmRoster()
+BmGuiRoster::BmGuiRoster()
 {
-	BPath path;
-	// determine the path to the user-settings-directory:
-	if (find_directory( B_USER_SETTINGS_DIRECTORY, &path) != B_OK)
-		BM_THROW_RUNTIME( "Sorry, could not determine user's settings-dir !?!");
-
-	mSettingsPath.SetTo( path.Path());
-	if (BeamInTestMode)
-		// in order to avoid clobbering precious settings,
-		// we use a different settings-folder  in testmode:
-		mSettingsPath << "/Beam_Test";
-	else if (BeamInDevelMode)
-		// in order to avoid clobbering precious settings,
-		// we use a different settings-folder  in devel-mode:
-		mSettingsPath << "/Beam_Devel";
-	else
-		// standard settings folder:
-		mSettingsPath << "/Beam";
-
-	SetupFolder( mSettingsPath + "/MailCache/", &mMailCacheFolder);
-	SetupFolder( mSettingsPath + "/StateInfo/", &mStateInfoFolder);
-
-	// Determine our own FQDN from network settings file, if possible:
-	FetchOwnFQDN();
-}
-
-/*------------------------------------------------------------------------------*\
-	UpdateMimeTypeFile( sig, appModTime)
-		-	checks age of our own mimetype-file 
-			(.../settings/beos_mime/application/x-vnd.zooey-beam)
-			and removes the file if it's older than the application file.
-\*------------------------------------------------------------------------------*/
-void BmRoster::UpdateMimeTypeFile( const char* s, time_t appModTime) {
-	BmString sig(s);
-	BPath path;
-	if (find_directory( B_COMMON_SETTINGS_DIRECTORY, &path) == B_OK) {
-		sig.ToLower();
-		BEntry mtEntry( (BmString(path.Path())<<"/beos_mime/"<<sig).String());
-		if (mtEntry.InitCheck() == B_OK) {
-			time_t modTime;
-			if (mtEntry.GetModificationTime( &modTime) == B_OK) {
-				if (appModTime > modTime) {
-					// application is newer than mimetype-file, we simply remove
-					// that and let BeOS recreate it when needed. The new version
-					// will then contain all current icons, etc.
-					mtEntry.Remove();
-				}
-			}
-		}
-	}
-}
-
-/*------------------------------------------------------------------------------*\
-	FetchOwnFQDN()
-		-	fetches hostname and domainname from network settings and build FQDN 
-			from that.
-\*------------------------------------------------------------------------------*/
-void BmRoster::FetchOwnFQDN() {
-	BmString buffer;
-	Regexx rx;
-#ifdef BEAM_FOR_BONE
-	FetchFile( "/etc/hostname", mOwnFQDN);
-	mOwnFQDN.RemoveSet( " \n\r\t");
-	if (!mOwnFQDN.Length())
-		mOwnFQDN = "bepc";
-	FetchFile( "/etc/resolv.conf", buffer);
-	if (rx.exec( buffer, "DOMAIN\\s*(\\S*)", Regexx::nocase)
-	&& rx.match[0].atom[0].Length())
-		mOwnFQDN << "." << rx.match[0].atom[0];
-	else
-		mOwnFQDN << "." << time( NULL) << ".fake";
-#else
-	BPath path;
-	if (find_directory( B_COMMON_SETTINGS_DIRECTORY, &path) == B_OK) {
-		FetchFile( BmString(path.Path())<<"/network", buffer);
-		if (rx.exec( buffer, "HOSTNAME\\s*=[ \\t]*(\\S*)", Regexx::nocase)) {
-			mOwnFQDN = rx.match[0].atom[0];
-			if (!mOwnFQDN.Length())
-				mOwnFQDN = "bepc";
-			if (rx.exec( buffer, "DNS_DOMAIN\\s*=[ \\t]*(\\S*)", Regexx::nocase)
-			&& rx.match[0].atom[0].Length())
-				mOwnFQDN << "." << rx.match[0].atom[0];
-			else
-				mOwnFQDN << "." << time( NULL) << ".fake";
-		}
-	}
-#endif
-	if (!mOwnFQDN.Length())
-		mOwnFQDN << "bepc." << time( NULL) << ".fake";
-	mOwnFQDN.RemoveSet( "\r\n");
 }
 
 /*------------------------------------------------------------------------------*\
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-bool BmRoster::AskUserForPwd( const BmString& text, BmString& pwd) 
+bool BmGuiRoster::AskUserForPwd( const BmString& text, BmString& pwd) 
 {
 	// ask user about password:
 	TextEntryAlert* alert = new TextEntryAlert( "Info needed", text.String(),
@@ -184,7 +98,7 @@ bool BmRoster::AskUserForPwd( const BmString& text, BmString& pwd)
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-bool BmRoster::AskUserForPopAcc( const BmString& accName, BmString& popAccName)
+bool BmGuiRoster::AskUserForPopAcc( const BmString& accName, BmString& popAccName)
 {
 	// ask user about password:
    BmString text = BmString( "Please select the POP3-account\nto be used "
@@ -401,7 +315,7 @@ using namespace BmPrivate;
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmRoster::RebuildFilterMenu( BmMenuControllerBase* menu)
+void BmGuiRoster::RebuildFilterMenu( BmMenuControllerBase* menu)
 {
 	struct ItemFilter : public ListMenuBuilder::ItemFilter {
 		bool operator() ( const BmListModelItem* item)
@@ -422,7 +336,7 @@ void BmRoster::RebuildFilterMenu( BmMenuControllerBase* menu)
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmRoster::RebuildFilterChainMenu( BmMenuControllerBase* menu)
+void BmGuiRoster::RebuildFilterChainMenu( BmMenuControllerBase* menu)
 {
 	RebuildList( menu, TheFilterChainList.Get());
 }
@@ -431,7 +345,7 @@ void BmRoster::RebuildFilterChainMenu( BmMenuControllerBase* menu)
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmRoster::RebuildFolderMenu( BmMenuControllerBase* menu)
+void BmGuiRoster::RebuildFolderMenu( BmMenuControllerBase* menu)
 {
 	RebuildList( menu, TheMailFolderList.Get(), true);
 }
@@ -440,7 +354,7 @@ void BmRoster::RebuildFolderMenu( BmMenuControllerBase* menu)
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmRoster::RebuildIdentityMenu( BmMenuControllerBase* menu)
+void BmGuiRoster::RebuildIdentityMenu( BmMenuControllerBase* menu)
 {
 	RebuildList( menu, TheIdentityList.Get());
 }
@@ -449,7 +363,7 @@ void BmRoster::RebuildIdentityMenu( BmMenuControllerBase* menu)
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmRoster::RebuildPeopleMenu( BmMenuControllerBase* menu)
+void BmGuiRoster::RebuildPeopleMenu( BmMenuControllerBase* menu)
 {
 	ClearMenu( menu);	
 	// Delegate task (back) to MailEditWin:
@@ -460,7 +374,7 @@ void BmRoster::RebuildPeopleMenu( BmMenuControllerBase* menu)
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmRoster::RebuildPopAccountMenu( BmMenuControllerBase* menu)
+void BmGuiRoster::RebuildPopAccountMenu( BmMenuControllerBase* menu)
 {
 	RebuildList( menu, ThePopAccountList.Get());
 }
@@ -469,7 +383,7 @@ void BmRoster::RebuildPopAccountMenu( BmMenuControllerBase* menu)
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmRoster::RebuildSignatureMenu( BmMenuControllerBase* menu)
+void BmGuiRoster::RebuildSignatureMenu( BmMenuControllerBase* menu)
 {
 	RebuildList( menu, TheSignatureList.Get());
 }
@@ -478,7 +392,7 @@ void BmRoster::RebuildSignatureMenu( BmMenuControllerBase* menu)
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmRoster::RebuildSmtpAccountMenu( BmMenuControllerBase* menu)
+void BmGuiRoster::RebuildSmtpAccountMenu( BmMenuControllerBase* menu)
 {
 	RebuildList( menu, TheSmtpAccountList.Get());
 }
@@ -487,7 +401,7 @@ void BmRoster::RebuildSmtpAccountMenu( BmMenuControllerBase* menu)
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmRoster::RebuildStatusMenu( BmMenuControllerBase* menu)
+void BmGuiRoster::RebuildStatusMenu( BmMenuControllerBase* menu)
 {
 	ClearMenu( menu);	
 	const char* stats[] = {
@@ -499,7 +413,7 @@ void BmRoster::RebuildStatusMenu( BmMenuControllerBase* menu)
 	};
 	for( int i=0; stats[i]; ++i) {
 		BMessage* msg = new BMessage(*(menu->MsgTemplate()));
-		msg->AddString(BmApplication::MSG_STATUS, stats[i]);
+		msg->AddString(BeamApplication::MSG_STATUS, stats[i]);
 		BMenuItem* item 
 			= new BMenuItem( stats[i], msg);
 		item->SetTarget( menu->MsgTarget());
@@ -511,7 +425,7 @@ void BmRoster::RebuildStatusMenu( BmMenuControllerBase* menu)
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmRoster::RebuildCharsetMenu( BmMenuControllerBase* menu)
+void BmGuiRoster::RebuildCharsetMenu( BmMenuControllerBase* menu)
 {
 	ClearMenu( menu);	
 	AddCharsetMenu(menu, menu->MsgTarget(), menu->MsgTemplate()->what);
@@ -521,7 +435,7 @@ void BmRoster::RebuildCharsetMenu( BmMenuControllerBase* menu)
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmRoster::AddCharsetMenu( BMenu* menu, BHandler* target, int32 msgType)
+void BmGuiRoster::AddCharsetMenu( BMenu* menu, BHandler* target, int32 msgType)
 {
 	menu->SetLabelFromMarked( false);
 	// add standard entries:
@@ -561,7 +475,7 @@ void BmRoster::AddCharsetMenu( BMenu* menu, BHandler* target, int32 msgType)
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmRoster::RebuildLogMenu( BmMenuControllerBase* logMenu) {
+void BmGuiRoster::RebuildLogMenu( BmMenuControllerBase* logMenu) {
 	const char* logNames[] = {
 		"Beam",
 		"Filter",

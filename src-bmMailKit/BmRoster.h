@@ -32,16 +32,16 @@
 #define _BmRoster_h
 
 #include <Directory.h>
+
 #include "BmString.h"
 
-#include "BmJobStatusWin.h"
-#include "BmMsgTypes.h"
+#include "BmApp.h"
 #include "BmRosterBase.h"
 
 /*------------------------------------------------------------------------------*\
 	BmRoster
-		-	a class that can be used by add-ons to retrieve info about
-			Beam's state.
+		-	a class that can be used by other classes and add-ons to 
+			retrieve info about bmMailKit's state.
 \*------------------------------------------------------------------------------*/
 class BmRoster : public BmRosterBase {
 
@@ -50,7 +50,6 @@ public:
 	virtual ~BmRoster()						{}
 	
 	// overrides of base class:
-	BLooper* JobMetaController()			{ return TheJobStatusWin; }
 	bool IsQuitting()							{ return bmApp->IsQuitting(); }
 
 	const char* AppNameWithVersion()		{ return bmApp->BmAppNameWithVersion.String(); }
@@ -62,25 +61,6 @@ public:
 	BDirectory* StateInfoFolder()			{ return &mStateInfoFolder; }
 
 	const char* OwnFQDN()					{ return mOwnFQDN.String(); }
-
-	void UpdateMimeTypeFile( const char* sig, time_t appModTime);
-
-	int32 MessageTypeForCheckMail() 		{ return BMM_CHECK_MAIL; }
-	bool AskUserForPwd( const BmString& text, BmString& pwd);
-	bool AskUserForPopAcc( const BmString& accName, BmString& popAccName);
-
-	void RebuildCharsetMenu( BmMenuControllerBase* menu);
-	void AddCharsetMenu( BMenu* menu, BHandler* target, int32 msgType);
-	void RebuildFilterMenu( BmMenuControllerBase* menu);
-	void RebuildFilterChainMenu( BmMenuControllerBase* menu);
-	void RebuildFolderMenu( BmMenuControllerBase* menu);
-	void RebuildIdentityMenu( BmMenuControllerBase* menu);
-	void RebuildLogMenu( BmMenuControllerBase* menu);
-	void RebuildPeopleMenu( BmMenuControllerBase* menu);
-	void RebuildPopAccountMenu( BmMenuControllerBase* menu);
-	void RebuildSignatureMenu( BmMenuControllerBase* menu);
-	void RebuildSmtpAccountMenu( BmMenuControllerBase* menu);
-	void RebuildStatusMenu( BmMenuControllerBase* menu);
 
 private:
 	void FetchOwnFQDN();

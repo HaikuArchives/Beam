@@ -1,5 +1,5 @@
 /*
-	BmApp.cpp
+	BeamApp.cpp
 		$Id$
 */
 /*************************************************************************/
@@ -31,7 +31,6 @@
 #include <algorithm>
 
 #include <Alert.h>
-#include <AppFileInfo.h>
 #include <Beep.h>
 #include <Deskbar.h>
 #include <Roster.h>
@@ -43,7 +42,7 @@ using namespace regexx;
 #include "BubbleHelper.h"
 #include "ImageAboutWindow.h"
 
-#include "BmApp.h"
+#include "BeamApp.h"
 #include "BmBasics.h"
 #include "BmBodyPartView.h"
 #include "BmBusyView.h"
@@ -52,6 +51,7 @@ using namespace regexx;
 #include "BmEncoding.h"
 #include "BmFilter.h"
 #include "BmFilterChain.h"
+#include "BmGuiRoster.h"
 #include "BmIdentity.h"
 #include "BmJobStatusWin.h"
 #include "BmLogHandler.h"
@@ -70,7 +70,6 @@ using namespace regexx;
 #include "BmPrefs.h"
 #include "BmPrefsWin.h"
 #include "BmResources.h"
-#include "BmRoster.h"
 #include "BmSignature.h"
 #include "BmSmtpAccount.h"
 #include "BmStorageUtil.h"
@@ -104,7 +103,7 @@ void BmSlaveHandler::Run( const char* name, thread_func func,
 								  BMessage* msg, uint16 minCountForThread)
 {
 	BmMailRefVect* refVect = NULL;
-	msg->FindPointer( BmApplication::MSG_MAILREF_VECT, (void**)&refVect);
+	msg->FindPointer( BeamApplication::MSG_MAILREF_VECT, (void**)&refVect);
 	if (!refVect || refVect->size() <= minCountForThread) {
 		// execute task in app-thread:
 		func(msg);
@@ -137,9 +136,9 @@ static int32 MarkMailsAs( void* data)
 		return B_OK;
 	int32 buttonPressed = 1;
 		// mark all messages by default
-	BmString newStatus = msg->FindString( BmApplication::MSG_STATUS);
+	BmString newStatus = msg->FindString( BeamApplication::MSG_STATUS);
 	BmMailRefVect* refVect = NULL;
-	msg->FindPointer( BmApplication::MSG_MAILREF_VECT, (void**)&refVect);
+	msg->FindPointer( BeamApplication::MSG_MAILREF_VECT, (void**)&refVect);
 	if (!refVect)
 		return B_OK;
 	int32 msgCount = refVect->size();
@@ -179,7 +178,7 @@ static int32 MarkMailsAs( void* data)
 	if (buttonPressed != 0) {
 		// tell sending ref-view that we are doing work:
 		BMessenger sendingRefView;
-		msg->FindMessenger( BmApplication::MSG_SENDING_REFVIEW, &sendingRefView);
+		msg->FindMessenger( BeamApplication::MSG_SENDING_REFVIEW, &sendingRefView);
 		if (sendingRefView.IsValid())
 			sendingRefView.SendMessage( BMM_SET_BUSY);
 
@@ -187,7 +186,7 @@ static int32 MarkMailsAs( void* data)
 		int i=0;
 		BmMailRefVect::iterator iter;
 		for( iter = refVect->begin(); 
-			  !bmApp->IsQuitting() && iter != refVect->end(); ++iter) {
+			  !beamApp->IsQuitting() && iter != refVect->end(); ++iter) {
 			mailRef = iter->Get();
 			if (buttonPressed==1 || mailRef->Status() == BM_MAIL_STATUS_NEW) {
 				BM_LOG( BM_LogApp, 
@@ -220,14 +219,14 @@ static int32 MoveMails( void* data)
 		return B_OK;
 	static int jobNum = 1;
 	BmMailRefVect* refVect = NULL;
-	msg->FindPointer( BmApplication::MSG_MAILREF_VECT, (void**)&refVect);
+	msg->FindPointer( BeamApplication::MSG_MAILREF_VECT, (void**)&refVect);
 	if (!refVect)
 		return B_OK;
 	int32 countFound = refVect->size();
 	if (countFound > 0) {
 		// tell sending ref-view that we are doing work:
 		BMessenger sendingRefView;
-		msg->FindMessenger( BmApplication::MSG_SENDING_REFVIEW, &sendingRefView);
+		msg->FindMessenger( BeamApplication::MSG_SENDING_REFVIEW, &sendingRefView);
 		if (sendingRefView.IsValid())
 			sendingRefView.SendMessage( BMM_SET_BUSY);
 
@@ -248,7 +247,7 @@ static int32 MoveMails( void* data)
 		BmMailRefVect::iterator iter;
 		int32 index=0;
 		for( iter = refVect->begin(); 
-			  !bmApp->IsQuitting() && iter != refVect->end(); ++iter) {
+			  !beamApp->IsQuitting() && iter != refVect->end(); ++iter) {
 			mailRef = iter->Get();
 			BM_LOG( 
 				BM_LogApp, 
@@ -282,7 +281,7 @@ static int32 TrashMails( void* data)
 	if (!msg)
 		return B_OK;
 	BmMailRefVect* refVect = NULL;
-	msg->FindPointer( BmApplication::MSG_MAILREF_VECT, (void**)&refVect);
+	msg->FindPointer( BeamApplication::MSG_MAILREF_VECT, (void**)&refVect);
 	if (!refVect)
 		return B_OK;
 	int32 countFound = refVect->size();
@@ -291,7 +290,7 @@ static int32 TrashMails( void* data)
 
 		// tell sending ref-view that we are doing work:
 		BMessenger sendingRefView;
-		msg->FindMessenger( BmApplication::MSG_SENDING_REFVIEW, &sendingRefView);
+		msg->FindMessenger( BeamApplication::MSG_SENDING_REFVIEW, &sendingRefView);
 		if (sendingRefView.IsValid())
 			sendingRefView.SendMessage( BMM_SET_BUSY);
 
@@ -299,7 +298,7 @@ static int32 TrashMails( void* data)
 		BmMailRefVect::iterator iter;
 		int32 index=0;
 		for( iter = refVect->begin(); 
-			  !bmApp->IsQuitting() && iter != refVect->end(); ++iter) {
+			  !beamApp->IsQuitting() && iter != refVect->end(); ++iter) {
 			mailRef = iter->Get();
 			BM_LOG( BM_LogApp, 
 					  BmString("Asked to trash mail <") 
@@ -329,7 +328,7 @@ static int32 TrashMails( void* data)
 struct OpenForEdit {
 	void operator() ( const BmRef<BmMail>& mail) 
 	{
-		if (!bmApp->IsQuitting()) {
+		if (!beamApp->IsQuitting()) {
 			BmMailEditWin* editWin 
 				= BmMailEditWin::CreateInstance( mail.Get());
 			if (editWin)
@@ -350,7 +349,7 @@ static void CreateMailsWithFactory( BMessage* msg, BmMailRefVect* refVect,
 
 	// tell sending ref-view that we are doing work:
 	BMessenger sendingRefView;
-	msg->FindMessenger( BmApplication::MSG_SENDING_REFVIEW, &sendingRefView);
+	msg->FindMessenger( BeamApplication::MSG_SENDING_REFVIEW, &sendingRefView);
 	if (sendingRefView.IsValid())
 		sendingRefView.SendMessage( BMM_SET_BUSY);
 
@@ -380,7 +379,7 @@ static int32 EditMailsAsNew( void* data)
 	if (!msg)
 		return B_OK;
 	BmMailRefVect* refVect = NULL;
-	msg->FindPointer( BmApplication::MSG_MAILREF_VECT, (void**)&refVect);
+	msg->FindPointer( BeamApplication::MSG_MAILREF_VECT, (void**)&refVect);
 	if (!refVect)
 		return B_OK;
 
@@ -406,7 +405,7 @@ static int32 RedirectMails( void* data)
 	if (!msg)
 		return B_OK;
 	BmMailRefVect* refVect = NULL;
-	msg->FindPointer( BmApplication::MSG_MAILREF_VECT, (void**)&refVect);
+	msg->FindPointer( BeamApplication::MSG_MAILREF_VECT, (void**)&refVect);
 	if (!refVect)
 		return B_OK;
 
@@ -434,7 +433,7 @@ static int32 ForwardMails( void* data) {
 
 	int32 buttonPressed = 1;
 	BmMailRefVect* refVect = NULL;
-	msg->FindPointer( BmApplication::MSG_MAILREF_VECT, (void**)&refVect);
+	msg->FindPointer( BeamApplication::MSG_MAILREF_VECT, (void**)&refVect);
 	if (!refVect)
 		return B_OK;
 
@@ -459,7 +458,7 @@ static int32 ForwardMails( void* data) {
 	
 		bool join = (buttonPressed == 2);
 		BmString selectedText 
-			= msg->FindString( BmApplication::MSG_SELECTED_TEXT);
+			= msg->FindString( BeamApplication::MSG_SELECTED_TEXT);
 
 		BmForwardMode forwardMode;
 		switch(msg->what) {
@@ -492,7 +491,7 @@ static int32 ReplyToMails( void* data) {
 
 	int32 buttonPressed = 0;
 	BmMailRefVect* refVect = NULL;
-	msg->FindPointer( BmApplication::MSG_MAILREF_VECT, (void**)&refVect);
+	msg->FindPointer( BeamApplication::MSG_MAILREF_VECT, (void**)&refVect);
 	if (!refVect)
 		return B_OK;
 
@@ -517,7 +516,7 @@ static int32 ReplyToMails( void* data) {
 		bool join = (buttonPressed > 0);
 		bool joinIntoOne = (buttonPressed == 2);
 		BmString selectedText 
-			= msg->FindString( BmApplication::MSG_SELECTED_TEXT);
+			= msg->FindString( BeamApplication::MSG_SELECTED_TEXT);
 	
 		BmReplyMode replyMode;
 		switch(msg->what) {
@@ -550,29 +549,29 @@ int32 PrintMails( void* data) {
 	BMessage* msg = static_cast< BMessage*>( data);
 	if (!msg)
 		return B_OK;
-	if (!bmApp->mPrintSetup)
-		bmApp->PageSetup();
-	if (!bmApp->mPrintSetup || !msg)
+	if (!beamApp->mPrintSetup)
+		beamApp->PageSetup();
+	if (!beamApp->mPrintSetup || !msg)
 		return B_OK;
 
 	BmMailRefVect* refVect = NULL;
-	msg->FindPointer( BmApplication::MSG_MAILREF_VECT, (void**)&refVect);
+	msg->FindPointer( BeamApplication::MSG_MAILREF_VECT, (void**)&refVect);
 	if (!refVect)
 		return B_OK;
 
 	// tell sending ref-view that we are doing work:
 	BMessenger sendingRefView;
-	msg->FindMessenger( BmApplication::MSG_SENDING_REFVIEW, &sendingRefView);
+	msg->FindMessenger( BeamApplication::MSG_SENDING_REFVIEW, &sendingRefView);
 	if (sendingRefView.IsValid())
 		sendingRefView.SendMessage( BMM_SET_BUSY);
 
-	bmApp->mPrintJob.SetSettings( new BMessage( *bmApp->mPrintSetup));
-	status_t result = bmApp->mPrintJob.ConfigJob();
+	beamApp->mPrintJob.SetSettings( new BMessage( *beamApp->mPrintSetup));
+	status_t result = beamApp->mPrintJob.ConfigJob();
 	if (result == B_OK) {
-		delete bmApp->mPrintSetup;
-		bmApp->mPrintSetup = bmApp->mPrintJob.Settings();
-		int32 firstPage = bmApp->mPrintJob.FirstPage();
-		int32 lastPage = bmApp->mPrintJob.LastPage();
+		delete beamApp->mPrintSetup;
+		beamApp->mPrintSetup = beamApp->mPrintJob.Settings();
+		int32 firstPage = beamApp->mPrintJob.FirstPage();
+		int32 lastPage = beamApp->mPrintJob.LastPage();
 		if (lastPage-firstPage+1 <= 0)
 			goto out;
 		BmMailRef* mailRef = NULL;
@@ -582,7 +581,7 @@ int32 PrintMails( void* data) {
 		mailWin->Show();
 		BmMailView* mailView = mailWin->MailView();
 		// now get printable rect...
-		BRect printableRect = bmApp->mPrintJob.PrintableRect();
+		BRect printableRect = beamApp->mPrintJob.PrintableRect();
 		// ...and adjust mailview accordingly (to use the available space
 		// effectively):
 		mailView->LockLooper();
@@ -590,10 +589,10 @@ int32 PrintMails( void* data) {
 		mailView->UnlockLooper();
 		mailView->BodyPartView()->IsUsedForPrinting( true);
 		// now we start printing...
-		bmApp->mPrintJob.BeginJob();
+		beamApp->mPrintJob.BeginJob();
 		int32 page = 1;
 		for(  uint32 mailIdx=0; 
-				!bmApp->IsQuitting() && mailIdx < refVect->size() && page<=lastPage;
+				!beamApp->IsQuitting() && mailIdx < refVect->size() && page<=lastPage;
 				++mailIdx) {
 			mailRef = (*refVect)[mailIdx].Get();
 			mailView->LockLooper();
@@ -613,10 +612,10 @@ int32 PrintMails( void* data) {
 					5, currFrame.bottom
 				)));
 			currFrame.bottom = topOfLine.y-1;
-			while( !bmApp->IsQuitting() && page<=lastPage) {
+			while( !beamApp->IsQuitting() && page<=lastPage) {
 				if (page >= firstPage) {
-					bmApp->mPrintJob.DrawView( mailView, currFrame, BPoint(0,0));
-					bmApp->mPrintJob.SpoolPage();
+					beamApp->mPrintJob.DrawView( mailView, currFrame, BPoint(0,0));
+					beamApp->mPrintJob.SpoolPage();
 				}
 				currFrame.top = currFrame.bottom+1;
 				currFrame.bottom = currFrame.top + height-1;
@@ -633,7 +632,7 @@ int32 PrintMails( void* data) {
 					break;
 			}
 		}
-		bmApp->mPrintJob.CommitJob();
+		beamApp->mPrintJob.CommitJob();
 		mailWin->PostMessage( B_QUIT_REQUESTED);
 	}
 	// now tell sending ref-view that we are finished:
@@ -648,9 +647,7 @@ out:
 
 
 
-int BmApplication::InstanceCount = 0;
-
-BmApplication* bmApp = NULL;
+BeamApplication* beamApp = NULL;
 
 static const char* BM_BEEP_EVENT = "New E-mail";
 
@@ -658,134 +655,48 @@ const char* BM_APP_SIG = "application/x-vnd.zooey-beam";
 const char* BM_TEST_APP_SIG = "application/x-vnd.zooey-testbeam";
 const char* const BM_DeskbarItemName = "Beam_DeskbarItem";
 
-const char* const BmApplication::MSG_MAILREF_VECT = "bm:mrefv";
-const char* const BmApplication::MSG_STATUS = 		"bm:status";
-const char* const BmApplication::MSG_WHO_TO = 		"bm:to";
-const char* const BmApplication::MSG_OPT_FIELD = 	"bm:optf";
-const char* const BmApplication::MSG_OPT_VALUE = 	"bm:optv";
-const char* const BmApplication::MSG_SUBJECT = 		"bm:subj";
-const char* const BmApplication::MSG_SELECTED_TEXT = 	"bm:seltext";
-const char* const BmApplication::MSG_SENDING_REFVIEW = 	"bm:srefv";
+const char* const BeamApplication::MSG_MAILREF_VECT = "bm:mrefv";
+const char* const BeamApplication::MSG_STATUS = 		"bm:status";
+const char* const BeamApplication::MSG_WHO_TO = 		"bm:to";
+const char* const BeamApplication::MSG_OPT_FIELD = 	"bm:optf";
+const char* const BeamApplication::MSG_OPT_VALUE = 	"bm:optv";
+const char* const BeamApplication::MSG_SUBJECT = 		"bm:subj";
+const char* const BeamApplication::MSG_SELECTED_TEXT = 	"bm:seltext";
+const char* const BeamApplication::MSG_SENDING_REFVIEW = 	"bm:srefv";
 
 
 /*------------------------------------------------------------------------------*\
-	BmApplication()
+	BeamApplication()
 		-	constructor
 \*------------------------------------------------------------------------------*/
-BmApplication::BmApplication( const char* sig)
+BeamApplication::BeamApplication( const char* sig)
 	:	inherited( sig)
-	,	mIsQuitting( false)
 	,	mInitCheck( B_NO_INIT)
 	,	mMailWin( NULL)
 	,	mPrintSetup( NULL)
 	,	mPrintJob( "Mail")
-	,	mStartupLocker( new BLocker( "StartupLocker", false))
 	,	mDeskbarItemIsOurs( false)
 {
-	if (InstanceCount > 0)
-		throw BM_runtime_error( "Trying to initialize more than one instance "
-										"of class Beam");
-
-	if (BM_TEST_APP_SIG == sig)
-		// set global flag, if in test-mode:
-		BeamInTestMode = true;
-
-	// find out if we are running on Dano (or newer):
-	system_info sysInfo;
-	get_system_info( &sysInfo);
-	BmString kTimestamp(sysInfo.kernel_build_date);
-	kTimestamp << " " << sysInfo.kernel_build_time;
-	time_t kTime;
-	ParseDateTime( kTimestamp, kTime);
-	if (kTime >= 1005829579)
-		BeamOnDano = true;
-
-	bmApp = this;
+	beamApp = this;
 	
-	mStartupLocker->Lock();
-
 	try {
-		BmAppName = bmApp->Name();
-		// set version info:
-		app_info appInfo;
-		BFile appFile;
-		version_info vInfo;
-		BAppFileInfo appFileInfo;
-		bmApp->GetAppInfo( &appInfo); 
-		appFile.SetTo( &appInfo.ref, B_READ_ONLY);
-		appFileInfo.SetTo( &appFile);
-		if (appFileInfo.GetVersionInfo( &vInfo, B_APP_VERSION_KIND) == B_OK) {
-			BmAppVersion = vInfo.short_info;
-		}
-		BmAppNameWithVersion = BmAppName + " " + BmAppVersion;
-		// note if we are running a devel-version:
-		if (BmAppVersion.IFindFirst( "devel") >= 0)
-			BeamInDevelMode = true;
-		// store app-path for later use:
-		node_ref nref;
-		nref.device = appInfo.ref.device;
-		nref.node = appInfo.ref.directory;
-		BDirectory appDir( &nref);
-		BEntry appDirEntry;
-		appDir.GetEntry( &appDirEntry);
-		BPath appPath;
-		appDirEntry.GetPath( &appPath);
-		mAppPath = appPath.Path();
-
-		// create the log-handler:
-		BmLogHandler::CreateInstance( 1, &nref);
-		BM_LOG( BM_LogApp, BmString("App-initialization started..."));
-
-		// create the info-roster (used by add-ons):
-		BeamRoster = new BmRoster();
-		time_t appModTime;
-		appFile.GetModificationTime( &appModTime);
-		BeamRoster->UpdateMimeTypeFile( sig, appModTime);
+		// create the GUI-info-roster:
+		BeamGuiRoster = new BmGuiRoster();
 
 		// load/determine all needed resources:
 		BmResources::CreateInstance();
-
-		// create BubbleHelper:
-		BubbleHelper::CreateInstance();
-
-		// load the preferences set by user (if any):
-		BmPrefs::CreateInstance();
-		// ...and finish part of resources-initialization that depends on prefs:
 		TheResources->InitializeWithPrefs();
-		BmBusyView::SetErrorIcon( TheResources->IconByName("Error"));
 
 		ColumnListView::SetExtendedSelectionPolicy( 
 									ThePrefs->GetBool( "ListviewLikeTracker", false));
 							// make sure this actually get's initialized...
 
+		// create BubbleHelper:
+		BubbleHelper::CreateInstance();
+		BmBusyView::SetErrorIcon( TheResources->IconByName("Error"));
+
 		// init charset-tables:
 		BmEncoding::InitCharsetMap();
-
-		// create the node-monitor looper:
-		BmMailMonitor::CreateInstance();
-
-		// create the job status window:
-		BmJobStatusWin::CreateInstance();
-		TheJobStatusWin->Hide();
-		TheJobStatusWin->Show();
-
-		// create most of our list-models:
-		BmSignatureList::CreateInstance();
-
-		BmFilterList::CreateInstance();
-
-		BmFilterChainList::CreateInstance();
-
-		BmPeopleMonitor::CreateInstance();
-		BmPeopleList::CreateInstance();
-
-		BmMailFolderList::CreateInstance();
-
-		BmIdentityList::CreateInstance();
-
-		BmSmtpAccountList::CreateInstance();
-
-		BmPopAccountList::CreateInstance();
 
 		BM_LOG( BM_LogApp, BmString("...setting up foreign-keys..."));
 		// now setup all foreign-key connections between these list-models:
@@ -806,6 +717,18 @@ BmApplication::BmApplication( const char* sig)
 		TheIdentityList->AddForeignKey( BmFilterAddon::FK_IDENTITY,
 												  TheFilterList.Get());
 
+		// create the node-monitor looper:
+		BmMailMonitor::CreateInstance();
+
+		// create the job status window:
+		BmJobStatusWin::CreateInstance();
+		TheJobStatusWin->Hide();
+		TheJobStatusWin->Show();
+		TheJobMetaController = TheJobStatusWin;
+
+		BmPeopleMonitor::CreateInstance();
+		BmPeopleList::CreateInstance();
+
 		add_system_beep_event( BM_BEEP_EVENT);
 
 		BM_LOG( BM_LogApp, BmString("...creating main-window..."));
@@ -813,10 +736,8 @@ BmApplication::BmApplication( const char* sig)
 		
 		TheBubbleHelper->EnableHelp( ThePrefs->GetBool( "ShowTooltips", true));
 
-		mInitCheck = B_OK;
-		InstanceCount++;
 		mStartupLocker->Unlock();
-		BM_LOG( BM_LogApp, BmString("App-initialization done."));
+		BM_LOG( BM_LogApp, BmString("BeamApp-initialization done."));
 	} catch (BM_error& err) {
 		BM_SHOWERR( err.what());
 		exit( 10);
@@ -824,10 +745,10 @@ BmApplication::BmApplication( const char* sig)
 }
 
 /*------------------------------------------------------------------------------*\
-	~BmApplication()
+	~BeamApplication()
 		-	standard destructor
 \*------------------------------------------------------------------------------*/
-BmApplication::~BmApplication() {
+BeamApplication::~BeamApplication() {
 	RemoveDeskbarItem();
 	ThePeopleMonitor = NULL;
 	TheMailMonitor = NULL;
@@ -844,12 +765,8 @@ BmApplication::~BmApplication() {
 #endif
 	BmRefObj::CleanupObjectLists();
 	delete mPrintSetup;
-	delete ThePrefs;
 	delete TheResources;
-	delete TheLogHandler;
-	delete mStartupLocker;
-	delete BeamRoster;
-	InstanceCount--;
+	delete BeamGuiRoster;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -858,7 +775,7 @@ BmApplication::~BmApplication() {
 		-	if Beam has been instructed to show a specific mail on startup, the
 			mail-window is shown on top of the main-window
 \*------------------------------------------------------------------------------*/
-void BmApplication::ReadyToRun() {
+void BeamApplication::ReadyToRun() {
 	if (TheMainWindow->IsMinimized())
 		TheMainWindow->Minimize( false);
 	if (mMailWin) {
@@ -871,53 +788,14 @@ void BmApplication::ReadyToRun() {
 	AppActivated()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmApplication::AppActivated( bool active) {
-}
-
-/*------------------------------------------------------------------------------*\
-	CreateRequiredIndices()
-		-	
-\*------------------------------------------------------------------------------*/
-static void CreateRequiredIndices() {
-	EnsureIndexExists( BM_MAIL_ATTR_ACCOUNT);
-	EnsureIndexExists( BM_MAIL_ATTR_IDENTITY);
-	EnsureIndexExists( BM_MAIL_ATTR_STATUS);
-
-// [zooey]: Should we activate this? It's too ugly, isn't it?
-/*
-	// There's a bug in BFS which sometimes causes an index to be removed when
-	// there's exactly one matching entry left. In order to avoid this, we
-	// make sure we have at least two files (non-mails), that live on the mailbox-
-	// volume:
-	BmString mboxPath = ThePrefs->GetString( "MailboxPath");
-	BDirectory mboxRoot( mboxPath.String());
-	if (mboxRoot.InitCheck() == B_OK) {
-		BmString txt(
-			"This file is one in a set of two that have been created by Beam\n"
-			"in order to circumvent a bug in BFS which may drop required indices\n"
-			"if they only contain one single entry.\n"
-		);
-		for( int i=1; i<=2; ++i) {
-			BmString nm("beam_mail_indices_anchor_");
-			nm << i;
-			BEntry entry( &mboxRoot, nm.String());
-			if (entry.InitCheck() != B_OK || !entry.Exists()) {
-				BFile f( &mboxRoot, nm.String(), B_WRITE_ONLY | B_CREATE_FILE);
-				f.WriteAttr( BM_MAIL_ATTR_ACCOUNT, B_STRING_TYPE, 0, "", 1);
-				f.WriteAttr( BM_MAIL_ATTR_IDENTITY, B_STRING_TYPE, 0, "", 1);
-				f.WriteAttr( BM_MAIL_ATTR_STATUS, B_STRING_TYPE, 0, "", 1);
-				f.Write( txt.String(), txt.Length());
-			}
-		}
-	}
-*/
+void BeamApplication::AppActivated( bool active) {
 }
 
 /*------------------------------------------------------------------------------*\
 	Run()
 		-	starts Beam
 \*------------------------------------------------------------------------------*/
-thread_id BmApplication::Run() {
+thread_id BeamApplication::Run() {
 	if (InitCheck() != B_OK) {
 		exit(10);
 	}
@@ -931,21 +809,14 @@ thread_id BmApplication::Run() {
 			mStartupLocker->Lock();
 		}
 
-		CreateRequiredIndices();
-
 		if (ThePrefs->GetBool( "UseDeskbar"))
 			InstallDeskbarItem();
 
+		// start most of our list-models:
 		BM_LOG( BM_LogApp, BmString("...reading POP-accounts..."));
 		ThePopAccountList->StartJobInNewThread();
 
-		BM_LOG( BM_LogApp, BmString("Showing main-window."));
-		TheMainWindow->Show();
-
 		// start most of our list-models:
-		BM_LOG( BM_LogApp, BmString("...querying people..."));
-		ThePeopleList->StartJobInNewThread();
-
 		BM_LOG( BM_LogApp, BmString("...reading identities..."));
 		TheIdentityList->StartJobInThisThread();
 
@@ -961,25 +832,20 @@ thread_id BmApplication::Run() {
 		BM_LOG( BM_LogApp, BmString("...reading SMTP-accounts..."));
 		TheSmtpAccountList->StartJobInThisThread();
 
-		if (BeamInTestMode)
-			mStartupLocker->Unlock();
+		BM_LOG( BM_LogApp, BmString("...querying people..."));
+		ThePeopleList->StartJobInNewThread();
+
+		BM_LOG( BM_LogApp, BmString("Showing main-window."));
+		TheMainWindow->Show();
+
 		tid = inherited::Run();
-	
+
 		ThePopAccountList->Store();
 							// always store pop-account-list since the list of 
 							// received mails may have changed
 		TheIdentityList->Store();
 							// always store identity-list since the current identity
 							// may have changed
-#ifdef BM_DEBUG_MEM
-		(new BAlert( "", "End of Beam(1), check mem-usage!!!", "OK"))->Go();
-		ThePopAccountList = NULL;
-		(new BAlert( "", "End of Beam(2), check mem-usage!!!", "OK"))->Go();
-		TheSmtpAccountList = NULL;
-		(new BAlert( "", "End of Beam(3), check mem-usage!!!", "OK"))->Go();
-		TheMailFolderList = NULL;
-		(new BAlert( "", "End of Beam(4), check mem-usage!!!", "OK"))->Go();
-#endif
 	} catch( BM_error &e) {
 		BM_SHOWERR( e.what());
 		exit(10);
@@ -991,11 +857,11 @@ thread_id BmApplication::Run() {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmApplication::InstallDeskbarItem() {
+void BeamApplication::InstallDeskbarItem() {
 	if (!mDeskbar.HasItem( BM_DeskbarItemName)) {
 		status_t res;
 		app_info appInfo;
-		if ((res = bmApp->GetAppInfo( &appInfo)) == B_OK) {
+		if ((res = beamApp->GetAppInfo( &appInfo)) == B_OK) {
 			int32 id;
 			appInfo.ref.set_name( BM_DeskbarItemName);
 			if ((res = mDeskbar.AddItem( &appInfo.ref, &id)) != B_OK) {
@@ -1012,7 +878,7 @@ void BmApplication::InstallDeskbarItem() {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmApplication::RemoveDeskbarItem() {
+void BeamApplication::RemoveDeskbarItem() {
 	if (mDeskbarItemIsOurs && mDeskbar.HasItem( BM_DeskbarItemName))
 		mDeskbar.RemoveItem( BM_DeskbarItemName);
 }
@@ -1021,7 +887,7 @@ void BmApplication::RemoveDeskbarItem() {
 	QuitRequested()
 		-	standard BeOS-behaviour, we allow a quit
 \*------------------------------------------------------------------------------*/
-bool BmApplication::QuitRequested() {
+bool BeamApplication::QuitRequested() {
 	BM_LOG( BM_LogApp, "App: quit requested, checking state...");
 	mIsQuitting = true;
 	TheMailMonitor->LockLooper();
@@ -1044,7 +910,7 @@ bool BmApplication::QuitRequested() {
 		// ask all windows if they are ready to quit, in which case we actually
 		// do quit (only if *ALL* windows indicate that they are prepared to quit!):
 		for( int32 i=count-1; shouldQuit && i>=0; --i) {
-			BWindow* win = bmApp->WindowAt( i);
+			BWindow* win = beamApp->WindowAt( i);
 			win->Lock();
 			if (win && !win->QuitRequested())
 				shouldQuit = false;
@@ -1058,7 +924,7 @@ bool BmApplication::QuitRequested() {
 	} else {
 		TheMailMonitor->Quit();
 		for( int32 i=count-1; i>=0; --i) {
-			BWindow* win = bmApp->WindowAt( i);
+			BWindow* win = beamApp->WindowAt( i);
 			if (win) {
 				win->LockLooper();
 				win->Quit();
@@ -1077,7 +943,7 @@ bool BmApplication::QuitRequested() {
 		-	first argument is interpreted to be a destination mail-address, so a 
 			new mail is generated for if an argument has been provided
 \*------------------------------------------------------------------------------*/
-void BmApplication::ArgvReceived( int32 argc, char** argv) {
+void BeamApplication::ArgvReceived( int32 argc, char** argv) {
 	if (argc>1 && !BeamInTestMode) {
 		BmString to( argv[1]);
 		if (to.ICompare("mailto:",7)==0)
@@ -1095,7 +961,7 @@ void BmApplication::ArgvReceived( int32 argc, char** argv) {
 		-	every given reference is opened, draft and pending messages are shown
 			in the mail-edit-window, while other mails are opened view-only.
 \*------------------------------------------------------------------------------*/
-void BmApplication::RefsReceived( BMessage* msg) {
+void BeamApplication::RefsReceived( BMessage* msg) {
 	if (!msg)
 		return;
 	entry_ref inref;
@@ -1132,7 +998,7 @@ void BmApplication::RefsReceived( BMessage* msg) {
 		-	handles all actions on mailrefs, like replying, forwarding, 
 			and creating new mails
 \*------------------------------------------------------------------------------*/
-void BmApplication::MessageReceived( BMessage* msg) {
+void BeamApplication::MessageReceived( BMessage* msg) {
 	try {
 		switch( msg->what) {
 			case BMM_CHECK_ALL: {
@@ -1141,6 +1007,7 @@ void BmApplication::MessageReceived( BMessage* msg) {
 				ThePopAccountList->CheckMail( true);
 				break;
 			}
+			case BM_JOBWIN_POP:
 			case BMM_CHECK_MAIL: {
 				const char* key = NULL;
 				msg->FindString( BmPopAccountList::MSG_ITEMKEY, &key);
@@ -1291,7 +1158,7 @@ void BmApplication::MessageReceived( BMessage* msg) {
 	PageSetup()
 		-	sets up the basic printing environment
 \*------------------------------------------------------------------------------*/
-void BmApplication::PageSetup() {
+void BeamApplication::PageSetup() {
 	if (mPrintSetup)
 		mPrintJob.SetSettings( new BMessage( *mPrintSetup));
 		
@@ -1308,7 +1175,7 @@ void BmApplication::PageSetup() {
 			(usually Netpositive)
 		-	mailto: - URLs are handled internally
 \*------------------------------------------------------------------------------*/
-void BmApplication::LaunchURL( const BmString url) {
+void BeamApplication::LaunchURL( const BmString url) {
 	char* urlStr = const_cast<char*>( url.String());
 	status_t result;
 	if (url.ICompare( "https:", 6) == 0)
@@ -1338,8 +1205,8 @@ void BmApplication::LaunchURL( const BmString url) {
 			}
 		}
 		to.DeUrlify();
-		msg.AddString( BmApplication::MSG_WHO_TO, to.String());
-		bmApp->PostMessage( &msg);
+		msg.AddString( BeamApplication::MSG_WHO_TO, to.String());
+		beamApp->PostMessage( &msg);
 		return;
 	}
 	else result = B_ERROR;
@@ -1355,7 +1222,7 @@ void BmApplication::LaunchURL( const BmString url) {
 	AboutRequested()
 		-	standard BeOS-behaviour, we show about-window
 \*------------------------------------------------------------------------------*/
-void BmApplication::AboutRequested() {
+void BeamApplication::AboutRequested() {
 	ImageAboutWindow* aboutWin = new ImageAboutWindow(
 		"About Beam",
 		"Beam",
@@ -1422,7 +1289,7 @@ Zach\n\
 	ScreenFrame()
 		-	returns the the current screen's frame
 \*------------------------------------------------------------------------------*/
-BRect BmApplication::ScreenFrame() {
+BRect BeamApplication::ScreenFrame() {
 	BScreen screen( TheMainWindow);
 	if (!screen.IsValid())
 		BM_SHOWERR( BmString("Could not initialize BScreen object !?!"));
@@ -1434,7 +1301,7 @@ BRect BmApplication::ScreenFrame() {
 		-	ensures that main-window and job-status-window are always shown inside
 			the same workspace
 \*------------------------------------------------------------------------------*/
-void BmApplication::SetNewWorkspace( uint32 newWorkspace) {
+void BeamApplication::SetNewWorkspace( uint32 newWorkspace) {
 	if (TheMainWindow->Workspaces() != newWorkspace)
 		TheMainWindow->SetWorkspaces( newWorkspace);
 	if (TheJobStatusWin->Workspaces() != newWorkspace)
@@ -1445,7 +1312,7 @@ void BmApplication::SetNewWorkspace( uint32 newWorkspace) {
 	CurrWorkspace()
 		-	
 \*------------------------------------------------------------------------------*/
-uint32 BmApplication::CurrWorkspace() {
+uint32 BeamApplication::CurrWorkspace() {
 	return TheMainWindow->Workspaces();
 }
 
@@ -1454,7 +1321,7 @@ uint32 BmApplication::CurrWorkspace() {
 		-	determines whether or not Beam handles the given mimetype
 		-	returns true for text/x-email and message/rfc822, false otherwise
 \*------------------------------------------------------------------------------*/
-bool BmApplication::HandlesMimetype( const BmString mimetype) {
+bool BeamApplication::HandlesMimetype( const BmString mimetype) {
 	return mimetype.ICompare( "text/x-email")==0 
 			 || mimetype.ICompare( "message/rfc822")==0;
 }

@@ -32,29 +32,14 @@
 #define _BmApp_h
 
 #include <Application.h>
-#include <Deskbar.h>
-#include <PrintJob.h>
-#include <Rect.h>
 #include "BmString.h"
 
-class BDeskbar;
 class BLocker;
 class BView;
-class BmWindow;
-
-extern const char* BM_APP_SIG;
-extern const char* BM_TEST_APP_SIG;
-
-enum {
-	BMM_SET_BUSY					= 'bMxa',
-	BMM_UNSET_BUSY					= 'bMxb'
-};
 
 class BmApplication : public BApplication
 {
 	typedef BApplication inherited;
-
-	friend int32 PrintMails( void* data);
 
 public:
 	//
@@ -62,21 +47,8 @@ public:
 	~BmApplication();
 
 	// native methods:
-	BRect ScreenFrame();
-	void SetNewWorkspace( uint32 newWorkspace);
-	uint32 CurrWorkspace();
-	//
-	bool HandlesMimetype( const BmString mimetype);
-	void LaunchURL( const BmString url);
 
 	// beos-stuff
-	void MessageReceived( BMessage* msg);
-	bool QuitRequested();
-	void AboutRequested();
-	void ReadyToRun();
-	void ArgvReceived( int32 argc, char** argv);
-	void RefsReceived( BMessage* msg);
-	void AppActivated( bool active);
 	thread_id Run();
 
 	// getters
@@ -88,39 +60,15 @@ public:
 	BmString BmAppName;
 	BmString BmAppNameWithVersion;
 
-	// message-fields:
-	static const char* const MSG_MAILREF_VECT;
-	static const char* const MSG_STATUS;
-	static const char* const MSG_WHO_TO;
-	static const char* const MSG_OPT_FIELD;
-	static const char* const MSG_OPT_VALUE;
-	static const char* const MSG_SUBJECT;
-	static const char* const MSG_SELECTED_TEXT;
-	static const char* const MSG_SENDING_REFVIEW;
-
-private:
-	void PageSetup();
-
-	void InstallDeskbarItem();
-	void RemoveDeskbarItem();
-
+protected:
 	status_t mInitCheck;
-	BmWindow* mMailWin;
 	bool mIsQuitting;
-
-	BDeskbar mDeskbar;
-
-	BMessage* mPrintSetup;
-	BPrintJob mPrintJob;
 
 	BLocker* mStartupLocker;
 	
-	bool mDeskbarItemIsOurs;
-
 	BmString mAppPath;
 	
 	static int InstanceCount;
-
 };
 
 extern BmApplication* bmApp;
