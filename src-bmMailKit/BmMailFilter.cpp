@@ -259,10 +259,6 @@ void BmMailFilter::ExecuteFilter( BmMail* mail) {
 		}
 	}
 	bool needToStore = false;
-	if (msgContext.folderName.Length()) {
-		if (mail->SetDestFoldername( msgContext.folderName))
-			needToStore = true;
-	}
 	if (msgContext.identity.Length()) {
 		mail->IdentityName( msgContext.identity);
 		needToStore = true;
@@ -274,6 +270,18 @@ void BmMailFilter::ExecuteFilter( BmMail* mail) {
 	if (msgContext.moveToTrash) {
 		mail->MoveToTrash( true);
 		needToStore = true;
+	}
+	if (msgContext.folderName.Length()) {
+		if (mail->SetDestFoldername( msgContext.folderName)) {
+			if (!needToStore && CurrentJobSpecifier()!=BM_EXECUTE_FILTER_IN_MEM) {
+				// optimize the (usual) case where folder-change is the only thing
+				// that has happened, if so, we just move the mail (but do not
+				// rewrite it completely);
+				if (!mail->MoveToDestFolderpath())
+					needToStore = true;
+			} else
+				needToStore = true;
+		}
 	}
 	if (needToStore && CurrentJobSpecifier()!=BM_EXECUTE_FILTER_IN_MEM) {
 		BM_LOG3( BM_LogFilter, 
