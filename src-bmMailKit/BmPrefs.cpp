@@ -253,11 +253,13 @@ void BmPrefs::InitDefaults() {
 							+ BM_LOGLVL1(BM_LogFilter)
 							+ BM_LOGLVL1(BM_LogRefCount);
 
+	mDefaultsMsg.AddBool( "AddPeopleNameToMailAddr", true);
 	mDefaultsMsg.AddBool( "AutoCheckOnlyIfPPPRunning", true);
 	mDefaultsMsg.AddBool( "Allow8BitMime", false);
 	mDefaultsMsg.AddBool( "BeepWhenNewMailArrived", true);
 	mDefaultsMsg.AddBool( "CacheRefsInMem", false);
 	mDefaultsMsg.AddBool( "CacheRefsOnDisk", true);
+	mDefaultsMsg.AddBool( "CloseViewWinAfterMailAction", true);
 	mDefaultsMsg.AddString( "DefaultCharset", BmEncoding::DefaultCharset.String());
 	mDefaultsMsg.AddString( "DefaultForwardType", "Inline");
 	mDefaultsMsg.AddBool( "DoNotAttachVCardsToForward", true);
@@ -281,6 +283,7 @@ void BmPrefs::InitDefaults() {
 	mDefaultsMsg.AddInt16( "Loglevel_Smtp", BM_LOGLVL_FOR(loglevels,BM_LogSmtp));
 	mDefaultsMsg.AddInt16( "Loglevel_Filter", BM_LOGLVL_FOR(loglevels,BM_LogFilter));
 	mDefaultsMsg.AddInt16( "Loglevel_RefCount", BM_LOGLVL_FOR(loglevels,BM_LogRefCount));
+	mDefaultsMsg.AddBool( "LookForPeopleOnlyInPeopleFolder", true);
 	mDefaultsMsg.AddMessage( "MailRefLayout", new BMessage);
 	mDefaultsMsg.AddString( "MailboxPath", "/boot/home/mail");
 	mDefaultsMsg.AddBool( "MakeQPSafeForEBCDIC", false);
@@ -296,6 +299,7 @@ void BmPrefs::InitDefaults() {
 	mDefaultsMsg.AddString( "QuoteFormatting", "Push Margin");
 	mDefaultsMsg.AddString( "QuotingLevelRX", "^((?:\\w?\\w?\\w?[>|]|[ \\t]*)*)(.*?)$");
 	mDefaultsMsg.AddString( "QuotingString", "> ");
+	mDefaultsMsg.AddString( "PeopleFolder", "/boot/home/people");
 	mDefaultsMsg.AddBool( "PreferUserAgentOverX-Mailer", true);
 	mDefaultsMsg.AddInt32( "ReceiveTimeout", 60);
 	mDefaultsMsg.AddString( "ReplyIntroStr", "On %D at %T, you wrote:");
@@ -304,6 +308,7 @@ void BmPrefs::InitDefaults() {
 	mDefaultsMsg.AddString( "ReplySubjectStr", "Re: %s");
 	mDefaultsMsg.AddBool( "RestoreFolderStates", true);
 	mDefaultsMsg.AddMessage( "Shortcuts", GetShortcutDefaults());
+	mDefaultsMsg.AddBool( "ShowAlertForErrors", true);
 	mDefaultsMsg.AddBool( "ShowDecodedLength", true);
 	mDefaultsMsg.AddBool( "ShowToolbarBorder", false);
 	mDefaultsMsg.AddBool( "ShowToolbarIcons", true);
@@ -312,6 +317,7 @@ void BmPrefs::InitDefaults() {
 	mDefaultsMsg.AddBool("SpecialHeaderForEachBcc", true);
 	mDefaultsMsg.AddBool( "StripedListView", true);
 	mDefaultsMsg.AddString( "TimeModeInHeaderView", "Local");
+	mDefaultsMsg.AddString( "UndoMode", "Words");
 	mDefaultsMsg.AddBool( "UseDeskbar", true);
 	mDefaultsMsg.AddBool( "UseDocumentResizer", true);
 	mDefaultsMsg.AddBool( "UseSwatchTimeInRefView", false);
