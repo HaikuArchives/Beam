@@ -8,12 +8,20 @@
 
 #include "BmUtil.h"
 
-//---------------------------------------------------
+/*------------------------------------------------------------------------------*\
+	LogHandler
+		-	the global object that handles all logging requests
+\*------------------------------------------------------------------------------*/
 namespace Beam {
 	BmLogHandler* LogHandler = NULL;
 };
 
-//---------------------------------------------------
+/*------------------------------------------------------------------------------*\
+	FindMsgString( archive, name)
+		-	extracts the msg-field with the specified name from the given archive and
+			returns it.
+		-	throws invalid_argument if field is not contained withing archive
+\*------------------------------------------------------------------------------*/
 const char *FindMsgString( BMessage* archive, char* name) {
 	const char *str;
 	assert(archive && name);
@@ -26,7 +34,12 @@ const char *FindMsgString( BMessage* archive, char* name) {
 	}
 }
 
-//---------------------------------------------------
+/*------------------------------------------------------------------------------*\
+	FindMsgBool( archive, name)
+		-	extracts the msg-field with the specified name from the given archive and
+			returns it.
+		-	throws invalid_argument if field is not contained withing archive
+\*------------------------------------------------------------------------------*/
 bool FindMsgBool( BMessage* archive, char* name) {
 	bool b;
 	assert(archive && name);
@@ -39,7 +52,12 @@ bool FindMsgBool( BMessage* archive, char* name) {
 	}
 }
 
-//---------------------------------------------------
+/*------------------------------------------------------------------------------*\
+	FindMsgInt32( archive, name)
+		-	extracts the msg-field with the specified name from the given archive and
+			returns it.
+		-	throws invalid_argument if field is not contained withing archive
+\*------------------------------------------------------------------------------*/
 int32 FindMsgInt32( BMessage* archive, char* name) {
 	int32 i;
 	assert(archive && name);
@@ -52,7 +70,12 @@ int32 FindMsgInt32( BMessage* archive, char* name) {
 	}
 }
 
-//---------------------------------------------------
+/*------------------------------------------------------------------------------*\
+	FindMsgInt16( archive, name)
+		-	extracts the msg-field with the specified name from the given archive and
+			returns it.
+		-	throws invalid_argument if field is not contained withing archive
+\*------------------------------------------------------------------------------*/
 int16 FindMsgInt16( BMessage* archive, char* name) {
 	int16 i;
 	assert(archive && name);
@@ -65,7 +88,12 @@ int16 FindMsgInt16( BMessage* archive, char* name) {
 	}
 }
 
-//---------------------------------------------------
+/*------------------------------------------------------------------------------*\
+	FindMsgFloat( archive, name)
+		-	extracts the msg-field with the specified name from the given archive and
+			returns it.
+		-	throws invalid_argument if field is not contained withing archive
+\*------------------------------------------------------------------------------*/
 float FindMsgFloat( BMessage* archive, char* name) {
 	float f;
 	assert(archive && name);
@@ -78,9 +106,11 @@ float FindMsgFloat( BMessage* archive, char* name) {
 	}
 }
 
-//---------------------------------------------------
+/*------------------------------------------------------------------------------*\
+	destructor
+		-	frees each and every log-file
+\*------------------------------------------------------------------------------*/
 BmLogHandler::~BmLogHandler() {
-BmLOG("BmLogHandler::~DESTRUCTOR called");
 	for(  LogfileMap::iterator logIter = mActiveLogs.begin();
 			logIter != mActiveLogs.end();
 			++logIter) {
@@ -88,11 +118,16 @@ BmLOG("BmLogHandler::~DESTRUCTOR called");
 	}
 }
 
-//---------------------------------------------------
+/*------------------------------------------------------------------------------*\
+	LogToFile( logname, msg)
+		-	writes msg into the logfile that is named logname
+		-	if no logfile of given name exists, it is created
+\*------------------------------------------------------------------------------*/
 void BmLogHandler::LogToFile( const char* const logname, const char* const msg) {
 	LogfileMap::iterator logIter = mActiveLogs.find( logname);
 	BmLogfile *log;
 	if (logIter == mActiveLogs.end()) {
+		// logfile doesn't exists, so we create it:
 		status_t res;
 		while( (res = mBenaph.Lock()) != B_NO_ERROR) {
 			BmLOG( BString("locking result: %ld") << res);
@@ -106,11 +141,14 @@ void BmLogHandler::LogToFile( const char* const logname, const char* const msg) 
 	log->Write( msg);
 }
 
-//---------------------------------------------------
+/*------------------------------------------------------------------------------*\
+	CloseLog( logname)
+		-	closes the logfile with the specified by name
+\*------------------------------------------------------------------------------*/
 void BmLogHandler::CloseLog( const char* const logname) {
 	LogfileMap::iterator logIter = mActiveLogs.find( logname);
 	BmLogfile *log;
-	if (logIter == mActiveLogs.end()) {
+	if (logIter != mActiveLogs.end()) {
 		status_t res;
 		while( (res = mBenaph.Lock()) != B_NO_ERROR) {
 			BmLOG( BString("locking result: %ld") << res);
@@ -122,10 +160,18 @@ void BmLogHandler::CloseLog( const char* const logname) {
 	}
 }
 
-//---------------------------------------------------
+/*------------------------------------------------------------------------------*\
+	LogPath
+		-	standard-path to logfiles
+		-	TODO: make this part of BmPrefs
+\*------------------------------------------------------------------------------*/
 BString BmLogHandler::BmLogfile::LogPath = "/boot/home/Sources/beam/logs/";
 
-//---------------------------------------------------
+/*------------------------------------------------------------------------------*\
+	Write( msg)
+		-	writes given msg into log, including current timestamp
+		-	log is flushed after each write
+\*------------------------------------------------------------------------------*/
 void BmLogHandler::BmLogfile::Write( const char* const msg) {
 	if (logfile == NULL) {
 		BString fn = BString(LogPath) << filename;
@@ -145,13 +191,19 @@ void BmLogHandler::BmLogfile::Write( const char* const msg) {
 	fflush( logfile);
 }
 
-//---------------------------------------------------
+/*------------------------------------------------------------------------------*\
+	BytesToString( bytes)
+		-	returns the given number of bytes as a short, descriptive string:
+			* bytes < 1024 				-> "X bytes"
+			* 1024 < bytes < 1024000	-> "X.xx KB"
+			* 1024000 < bytes 			-> "X.xx MB"
+\*------------------------------------------------------------------------------*/
 BString BytesToString( int32 bytes) {
 	ostrstream ostr; 
 	ostr << setiosflags( std::ios::fixed );
-	if (bytes >= 1024*1000) {
+	if (bytes >= 1024000) {
 		ostr 	<< setprecision(2) 
-				<< bytes/(1024*1000.0) 
+				<< bytes/(1024000.0) 
 				<< " MB";
 	} else if (bytes >= 1024) {
 		ostr	<< setiosflags( std::ios::fixed )

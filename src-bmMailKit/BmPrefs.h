@@ -14,12 +14,12 @@
 
 #include "BmUtil.h"
 
-/*------------------------------------------------------------------------------
+/*------------------------------------------------------------------------------*\
 	BmPrefs 
 		-	holds preference information for Beam
 		- 	derived from BArchivable, so it can be read from and
 			written to a file
-  ------------------------------------------------------------------------------*/
+\*------------------------------------------------------------------------------*/
 class BmPrefs : public BArchivable {
 	// archivable components:
 	static char* const MSG_DYNAMIC_CONN_WIN = "bm:dynconnwin";
@@ -38,6 +38,7 @@ public:
 	virtual status_t Archive( BMessage *archive, bool deep = true) const
 			;
 
+	// possible modes of BmConnectionWin:
 	enum TConnWinMode {
 		CONN_WIN_STATIC = 0,
 		CONN_WIN_DYNAMIC_EMPTY,

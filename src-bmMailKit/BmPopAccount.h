@@ -15,12 +15,12 @@
 
 #include "BmUtil.h"
 
-/*------------------------------------------------------------------------------
+/*------------------------------------------------------------------------------*\
 	BmPopAccount 
 		-	holds information about one specific POP3-account
 		- 	derived from BArchivable, so it can be read from and
 			written to a file
-  ------------------------------------------------------------------------------*/
+\*------------------------------------------------------------------------------*/
 class BmPopAccount : public BArchivable {
 	// archivable components:
 	static char* const MSG_NAME = 			"bm:name";

@@ -20,16 +20,23 @@
 
 #include "BmConnectionWin.h"
 
+/*------------------------------------------------------------------------------*\
+	the color used for status-bar's gauge:
+\*------------------------------------------------------------------------------*/
 const rgb_color BmConnectionWin::BM_COL_STATUSBAR = {128,128,128};
 
-//---------------------------------------
-bool BmConnectionWin::IsConnectionWinAlive = false;
-
-static bool IsConnectionWinAlive() {
+/*------------------------------------------------------------------------------*\
+	flag and access-function that indicate a user's request-to-stop:
+\*------------------------------------------------------------------------------*/
+bool BmConnectionWin::ConnectionWinAlive = false;
+bool BmConnectionWin::IsConnectionWinAlive() {
 	return BmConnectionWin::IsConnectionWinAlive;
 }
 
-//---------------------------------------
+/*------------------------------------------------------------------------------*\
+	constructor
+		-	creates outer view that will take up the connection-interfaces
+\*------------------------------------------------------------------------------*/
 BmConnectionWin::BmConnectionWin( const char* title, BLooper *invoker)
 	: MWindow( BRect(50,50,0,0), title,
 					B_FLOATING_WINDOW_LOOK, B_NORMAL_WINDOW_FEEL, 
@@ -43,26 +50,39 @@ BmConnectionWin::BmConnectionWin( const char* title, BLooper *invoker)
 		);
 	AddChild( dynamic_cast<BView*>(mOuterGroup));
 
-	BmConnectionWin::IsConnectionWinAlive = true;
+	BmConnectionWin::ConnectionWinAlive = true;
 }
 
-//---------------------------------------
+/*------------------------------------------------------------------------------*\
+	destructor
+		-	FIXME: needs to free memory if necessary!
+		-	tells interested party that we are finished
+\*------------------------------------------------------------------------------*/
 BmConnectionWin::~BmConnectionWin() {
 	if (mInvokingLooper) 
 		mInvokingLooper->PostMessage( BM_POPWIN_DONE);
-	BmConnectionWin::IsConnectionWinAlive = false;
+	BmConnectionWin::ConnectionWinAlive = false;
 }
 
-//---------------------------------------
+/*------------------------------------------------------------------------------*\
+	QuitRequested()
+		-	standard BeOS-behaviour, we allow a quit
+\*------------------------------------------------------------------------------*/
 bool BmConnectionWin::QuitRequested() {
-	BmConnectionWin::IsConnectionWinAlive = false;
+	BmConnectionWin::ConnectionWinAlive = false;
 	return true;
 }
 
-//---------------------------------------
+/*------------------------------------------------------------------------------*\
+	MessageReceived( msg)
+		-	handles messages sent from Application (connection requests)
+			and messages sent from connections (update-requests and 
+			finished-triggers)
+\*------------------------------------------------------------------------------*/
 void BmConnectionWin::MessageReceived(BMessage *msg) {
 	switch( msg->what) {
 		case BM_POPWIN_FETCHMSGS: {
+			// request to start a new POP3-connection
 			BArchivable *obj;
 			BmPopAccount *account;
 			obj = instantiate_object( msg);
@@ -72,11 +92,12 @@ void BmConnectionWin::MessageReceived(BMessage *msg) {
 					Show();
 			} else {
 				throw invalid_argument( "Could not create BmPopAccount-instance from message of type MSG_FETCHMSGS");
-													// Illegal message data !?!
+							// Illegal message data !?!
 			}
 			break;
 		}
 		case BM_POP_DONE: {
+			// a POP3-connection tells us that it has finished its job
 			RemovePopper( FindMsgString( msg, BmPopper::MSG_POPPER));
 			if (mActiveConnections.empty()) {
 				Hide();
@@ -85,6 +106,7 @@ void BmConnectionWin::MessageReceived(BMessage *msg) {
 		}
 		case BM_POP_UPDATE_STATE:
 		case BM_POP_UPDATE_MAILS: {
+			// a POP3-connection wants to update its interface
 			UpdatePopperInterface( msg);
 			break;
 		}
@@ -93,7 +115,13 @@ void BmConnectionWin::MessageReceived(BMessage *msg) {
 	}
 }
 
-//---------------------------------------
+/*------------------------------------------------------------------------------*\
+	AddPopper( account)
+		-	adds a new pop3-connection-interface to this window
+		-	the necessary BmPopper-object will be created and started
+			in a new thread
+		-	if connection is already active, it is left alone (nothing happens)
+\*------------------------------------------------------------------------------*/
 void BmConnectionWin::AddPopper( BmPopAccount *account) {
 	assert( account);
 	char tname[B_OS_NAME_LENGTH+1];
@@ -111,11 +139,12 @@ void BmConnectionWin::AddPopper( BmPopAccount *account) {
 		if ((res=get_thread_info( interfaceInfo->thread, &ti)) == B_OK) {
 			// thread is still running, so we better don't disturb:
 			return;
+		} else {
 		}
 	}
 
 	// we create a new thread for the Popper...
-	BmPopperInfo* popperInfo = new BmPopperInfo( account, account->Name(), this, &::IsConnectionWinAlive);
+	BmPopperInfo* popperInfo = new BmPopperInfo( account, account->Name(), this, &IsConnectionWinAlive);
 	sprintf( tname, "BmPopper%ld", BmPopper::NextID());
 	thread_id t_id = spawn_thread( &BmPopper::NewPopper, tname, 
 											 B_NORMAL_PRIORITY, popperInfo);
@@ -128,21 +157,28 @@ void BmConnectionWin::AddPopper( BmPopAccount *account) {
 		// ...note the thread's id and corresponding view inside the map...
 		mActiveConnections[account->Name()] = new BmConnectionWinInfo(t_id, interface, statBar, mailBar);
 	} else {
-		// store new thread id:
+		// we are in STATIC-mode, where inactive connections are shown. We just
+		// have to reactivate the interface.
+		// thus, we just store the new thread id...
 		BmConnectionWinInfo *interfaceInfo = ((*interfaceIter).second);
 		interfaceInfo->thread = t_id;
+		// ...and reinitialize the BStatusBars:
 		interfaceInfo->statBar->Reset( "State: ", name);
 		interfaceInfo->mailBar->Reset( "Messages: ", NULL);
 	}
 
-	// ...and activate the Popper:
+	// finally, we activate the Popper:
 	resume_thread( t_id);
 }
 
-//---------------------------------------
+/*------------------------------------------------------------------------------*\
+	AddPopperInterface( name, statBar, mailBar)
+		-	create a new interface for POP3-connections
+		-	the statusBar and the mailBar are returned to the caller
+\*------------------------------------------------------------------------------*/
 MView *BmConnectionWin::AddPopperInterface( const char* name, BStatusBar* &statBar, BStatusBar* &mailBar) {
 	BAutolock lock( this);
-	if (lock.IsLocked()) {
+	if (lock.IsLocked()) {					// lock window for change of layout
 		MView* newView = 
 		new MBorder
 		(
@@ -165,10 +201,13 @@ MView *BmConnectionWin::AddPopperInterface( const char* name, BStatusBar* &statB
 		return newView;
 	}
 	throw runtime_error("AddPopperInterface(): could not lock window");
-	return NULL;
 }
 
-//-------------------------------------------------
+/*------------------------------------------------------------------------------*\
+	UpdatePopperInterface( msg)
+		-	updates the popper-interface with new state-info received from BmPopper
+		-	only one of statusBar/mailBar will be updated
+\*------------------------------------------------------------------------------*/
 void BmConnectionWin::UpdatePopperInterface( BMessage* msg) {
 	const char* name = FindMsgString( msg, BmPopper::MSG_POPPER);
 	float delta = FindMsgFloat( msg, BmPopper::MSG_DELTA);
@@ -186,13 +225,22 @@ void BmConnectionWin::UpdatePopperInterface( BMessage* msg) {
 		if (msg->what == BM_POP_UPDATE_STATE) {
 			interfaceInfo->statBar->Update( delta, leading, trailing);
 		} else { 
+			// msg->what == BM_POP_UPDATE_MAILS
 			interfaceInfo->mailBar->Update( delta, leading, trailing);
 		}
 	} else
 		throw runtime_error("UpdatePopperInterface(): could not lock window");
 }
 
-//---------------------------------------
+/*------------------------------------------------------------------------------*\
+	RemovePopper( name)
+		-	removes a popper and its administrative info
+		-	the decision about whether or not to remove the popper's interface, too, 
+			depends on the mode of the connection-window:
+			*	CONN_WIN_DYNAMIC:			always remove interface
+			*	CONN_WIN_DYNAMIC_EMPTY:	remove interface if no new mail was found
+			*	CONN_WIN_STATIC:			never remove interface
+\*------------------------------------------------------------------------------*/
 void BmConnectionWin::RemovePopper( const char* name) {
 	assert( name);
 
@@ -201,6 +249,10 @@ void BmConnectionWin::RemovePopper( const char* name) {
 		return;									// account is not active, nothing to do...
 	
 	BmConnectionWinInfo *interfaceInfo = (*interfaceIter).second;
+	if (!interfaceInfo)
+		return;
+
+	// remove interface only if mode indicates to do so:
 	if (Beam::Prefs->DynamicConnectionWin() == BmPrefs::CONN_WIN_DYNAMIC 
 	|| (Beam::Prefs->DynamicConnectionWin() == BmPrefs::CONN_WIN_DYNAMIC_EMPTY
 		&& interfaceInfo->mailBar->CurrentValue()==0)) {
@@ -212,7 +264,10 @@ void BmConnectionWin::RemovePopper( const char* name) {
 	}
 }
 
-//---------------------------------------
+/*------------------------------------------------------------------------------*\
+	RemovePopperInterface( popperInfo)
+		-	removes the popper's interface from this window
+\*------------------------------------------------------------------------------*/
 void BmConnectionWin::RemovePopperInterface( BmConnectionWinInfo* popperInfo) {
 	BAutolock lock( this);
 	if (lock.IsLocked()) {

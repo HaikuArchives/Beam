@@ -25,14 +25,14 @@
 #define BM_POP_DONE				'bmpc'
 							// BmPopper has finished
 
-/*------------------------------------------------------------------------------
+/*------------------------------------------------------------------------------*\
 	BmPopperInfo
 		-	this structure represents a BmPopper's connection to the 
 			outer world.
 		-	a BmPopper begins life with a pointer to this structure,
 			nothing else is required
 			
-  ------------------------------------------------------------------------------*/
+\*------------------------------------------------------------------------------*/
 struct BmPopperInfo {
 	BmPopAccount* account;
 							// the POP-account we have to deal with
@@ -53,13 +53,13 @@ struct BmPopperInfo {
 			{}
 };
 
-/*------------------------------------------------------------------------------
+/*------------------------------------------------------------------------------*\
 	BmPopper
 		-	implements the POP-client
 		-	each instance represents a single connection to a specific POP-account
 		-	in general, each BmPopper is started as a thread which exits when the
 			POP-session has ended
-  ------------------------------------------------------------------------------*/
+\*------------------------------------------------------------------------------*/
 class BmPopper {
 public:
 	//	message component definitions for status-msgs:
@@ -96,6 +96,7 @@ private:
 	int32 mMsgSize;							// size of current msg
 	int32 mMsgTotalSize;						// size of all msgs to be received
 	BString mAnswer;							// holds last answer of POP-server
+	BString mReplyLine;						// holds last server-reply (the answer's first line)
 
 	int32 mState;								// current POP3-state (refer enum below)
 	enum States {

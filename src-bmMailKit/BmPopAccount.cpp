@@ -9,11 +9,11 @@
 
 #include "BmPopAccount.h"
 
-/*------------------------------------------------------------------------------
+/*------------------------------------------------------------------------------*\
 	BmPopAccount( archive)
 		-	constructs a BmPopAccount from a BMessage
 		-	N.B.: BMessage must be in NETWORK-BYTE-ORDER
-  ------------------------------------------------------------------------------*/
+\*------------------------------------------------------------------------------*/
 BmPopAccount::BmPopAccount( BMessage *archive) 
 	: BArchivable( archive)
 {
@@ -31,11 +31,11 @@ BmPopAccount::BmPopAccount( BMessage *archive)
 	mSMTPPortNr = ntohs(FindMsgInt16( archive, MSG_SMTP_PORT_NR));
 }
 
-/*------------------------------------------------------------------------------
+/*------------------------------------------------------------------------------*\
 	Archive( archive, deep)
 		-	writes BmPopAccount into archive
 		-	parameter deep makes no difference...
-  ------------------------------------------------------------------------------*/
+\*------------------------------------------------------------------------------*/
 status_t BmPopAccount::Archive( BMessage *archive, bool deep) const {
 	status_t ret = (BArchivable::Archive( archive, deep)
 		||	archive->AddString("class", "BmPopAccount")
@@ -54,20 +54,20 @@ status_t BmPopAccount::Archive( BMessage *archive, bool deep) const {
 	return ret;
 }
 
-/*------------------------------------------------------------------------------
+/*------------------------------------------------------------------------------*\
 	Instantiate( archive)
 		-	(re-)creates a PopAccount from a given BMessage
-  ------------------------------------------------------------------------------*/
+\*------------------------------------------------------------------------------*/
 BArchivable* BmPopAccount::Instantiate( BMessage *archive) {
 	if (!validate_instantiation( archive, "BmPopAccount"))
 		return NULL;
 	return new BmPopAccount( archive);
 }
 
-/*------------------------------------------------------------------------------
+/*------------------------------------------------------------------------------*\
 	POPAddress()
 		-	returns the POP3-connect-info as a BNetAddress
-  ------------------------------------------------------------------------------*/
+\*------------------------------------------------------------------------------*/
 BNetAddress BmPopAccount::POPAddress() const {
 	BNetAddress addr( mPOPServer.String(), mPortNr);
 	if (addr.InitCheck() == B_OK)
@@ -76,10 +76,10 @@ BNetAddress BmPopAccount::POPAddress() const {
 		throw runtime_error("BmPopAccount: Could not create PopAddress");
 }
 
-/*------------------------------------------------------------------------------
+/*------------------------------------------------------------------------------*\
 	SMTPAddress()
 		-	returns the SMTP-connect-info as a BNetAddress
-  ------------------------------------------------------------------------------*/
+\*------------------------------------------------------------------------------*/
 BNetAddress BmPopAccount::SMTPAddress() const {
 	BNetAddress addr( mSMTPServer.String(), mSMTPPortNr);
 	if (addr.InitCheck() == B_OK)
