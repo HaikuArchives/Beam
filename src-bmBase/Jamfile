@@ -13,7 +13,7 @@ SharedLibrary bmBase.so
 		BmString.cpp
 		md5c.c
 	: 	
-		be 
+		$(STDC++LIB) be 
 	;
 
 MakeLocate bmBase.so : [ FDirName $(DISTRO_DIR) lib ] ;

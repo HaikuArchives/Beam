@@ -27,9 +27,9 @@
 /*                                                                       */
 /*************************************************************************/
 
+#include "BmBodyPartList.h"
 #include "BmDataModel.h"
 #include "BmMailRef.h"
-#include "BmBodyPartList.h"
 	// having this up here seems to reliably avoid an internal compiler error
 	// that shows up otherwise. Go figure...
 

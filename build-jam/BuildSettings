@@ -8,9 +8,6 @@ if $(OSPLAT) = PPC {
 	CFLAGS = [ FFilter $(CFLAGS) : -nosyspath ] ;
 	C++FLAGS = [ FFilter $(C++FLAGS) : -nosyspath ] ;
 	LINKFLAGS += -warn -export pragma ;
-} else {
-	CFLAGS += -march=pentiumpro ;
-	C++FLAGS += -march=pentiumpro ;
 }
 
 LIBNETAPI = netapi ;	# default, may be changed to bnetapi (see below)
@@ -107,7 +104,7 @@ rule SetUpSubDirBuildSettings {
 		}
 	} else {
 		if $(OSPLAT) = X86 {
-			OPTIM ?= -O3 ;
+			OPTIM ?= -O2 ;
 		} else {
 			OPTIM ?= -O7 ;
 		}

@@ -23,6 +23,10 @@ if $(OSPLAT) = PPC {
 					 ;
 }
 
+# use the zeta stdc++-lib instead of the R5-provided version, as that
+# one contains a buggy std::string implementation:
+FIXEDSTDC++LIB = stdc++.r4 ;
+
 Application TestBeam
 	:  
 		Base64DecoderTest.cpp
@@ -45,7 +49,7 @@ Application TestBeam
 	: 	
 		beamInParts.a bmMailKit.so bmDaemon.so 
 		bmGuiBase.so bmRegexx.so bmBase.so 
-		layout tracker cppunit $(STDC++LIB) translation be
+		layout tracker cppunit $(FIXEDSTDC++LIB) translation be
 	;
 XRes TestBeam 
 	: 
@@ -56,14 +60,16 @@ MimeSet TestBeam ;
 
 Application TestBeamMini
 	:  
-		MultiLockerTest.cpp                   
 		TestBeamMini.cpp
 	: 	
-		bmBase.so 
-		cppunit $(STDC++LIB) be
-	;
-XRes TestBeamMini
-	: 
-		[ FDirName $(TOP) resources BmTestAppResources.rsrc ] 
+		cppunit $(FIXEDSTDC++LIB) be
 	;
 MimeSet TestBeamMini ;
+
+Application TestBeamMicro
+	:  
+		TestBeamMicro.cpp
+	: 	
+		$(FIXEDSTDC++LIB) be
+	;
+MimeSet TestBeamMicro ;

@@ -39,7 +39,7 @@
 
 MultiLockerTest::MultiLockerTest(std::string name)
 	: BThreadedTestCase(name)
-//	, mLocker( "lock")
+	, mLocker( "lock")
 	, mVal( 0)
 {
 }
@@ -50,10 +50,55 @@ MultiLockerTest::suite() {
 	BThreadedTestCaller<MultiLockerTest> *caller;
 	MultiLockerTest *test;
 	
+	// simple test for read-locking:
+	suite->addTest(new CppUnit::TestCaller<MultiLockerTest>(
+		"MultiLockerTest::BasicReadLockTest", 
+		&MultiLockerTest::BasicReadLockTest
+	));
+
+	// simple test for write-locking:
+	suite->addTest(new CppUnit::TestCaller<MultiLockerTest>(
+		"MultiLockerTest::BasicWriteLockTest", 
+		&MultiLockerTest::BasicWriteLockTest
+	));
+
+	// test for read-lock nesting:
+	suite->addTest(new CppUnit::TestCaller<MultiLockerTest>(
+		"MultiLockerTest::ReadLockNestTest", 
+		&MultiLockerTest::ReadLockNestTest
+	));
+
+	// test for write-lock nesting:
+	suite->addTest(new CppUnit::TestCaller<MultiLockerTest>(
+		"MultiLockerTest::WriteLockNestTest", 
+		&MultiLockerTest::WriteLockNestTest
+	));
+
+	// read-locks can pass one another:
+	test = new MultiLockerTest;
+	caller = new BThreadedTestCaller<MultiLockerTest>(
+		"MultiLockerTest::ReadLockPassTest", test
+	);
+	caller->addThread("t1", &MultiLockerTest::ReadLockPassTest1);
+	caller->addThread("t2", &MultiLockerTest::ReadLockPassTest2);
+	suite->addTest(caller);
+	
+	// write-locks must block each other:
+	test = new MultiLockerTest;
+	caller = new BThreadedTestCaller<MultiLockerTest>(
+		"MultiLockerTest::WriteLockBlockTest", test
+	);
+	caller->addThread("t1", &MultiLockerTest::WriteLockBlockTest1);
+	caller->addThread("t2", &MultiLockerTest::WriteLockBlockTest1);
+	caller->addThread("t3", &MultiLockerTest::WriteLockBlockTest1);
+	caller->addThread("t4", &MultiLockerTest::WriteLockBlockTest1);
+	caller->addThread("t5", &MultiLockerTest::WriteLockBlockTest1);
+	suite->addTest(caller);
+	
 	// massively parallel read-lock test:
 	test = new MultiLockerTest;
 	caller = new BThreadedTestCaller<MultiLockerTest>(
-		"MultiLockerTests::MassiveReadLockTest", test
+		"MultiLockerTest::MassiveReadLockTest", test
 	);
 	caller->addThread("t1", &MultiLockerTest::MassiveReadLockTest);
 	caller->addThread("t2", &MultiLockerTest::MassiveReadLockTest);
@@ -63,58 +108,14 @@ MultiLockerTest::suite() {
 	caller->addThread("t6", &MultiLockerTest::MassiveReadLockTest);
 	caller->addThread("t7", &MultiLockerTest::MassiveReadLockTest);
 	caller->addThread("t8", &MultiLockerTest::MassiveReadLockTest);
-	suite->addTest(caller);
-	
-#if 0
-	// simple test for read-locking:
-	suite->addTest(new CppUnit::TestCaller<MultiLockerTest>(
-		"MultiLockerTests::BasicReadLockTest", 
-		&MultiLockerTest::BasicReadLockTest
-	));
-
-	// simple test for write-locking:
-	suite->addTest(new CppUnit::TestCaller<MultiLockerTest>(
-		"MultiLockerTests::BasicWriteLockTest", 
-		&MultiLockerTest::BasicWriteLockTest
-	));
-
-	// test for read-lock nesting:
-	suite->addTest(new CppUnit::TestCaller<MultiLockerTest>(
-		"MultiLockerTests::ReadLockNestTest", 
-		&MultiLockerTest::ReadLockNestTest
-	));
-
-	// test for write-lock nesting:
-	suite->addTest(new CppUnit::TestCaller<MultiLockerTest>(
-		"MultiLockerTests::WriteLockNestTest", 
-		&MultiLockerTest::WriteLockNestTest
-	));
-
-	// read-locks can pass one another:
-	test = new MultiLockerTest;
-	caller = new BThreadedTestCaller<MultiLockerTest>(
-		"MultiLockerTests::ReadLockPassTest", test
-	);
-	caller->addThread("t1", &MultiLockerTest::ReadLockPassTest1);
-	caller->addThread("t2", &MultiLockerTest::ReadLockPassTest2);
-	suite->addTest(caller);
-	
-	// write-locks must block each other:
-	test = new MultiLockerTest;
-	caller = new BThreadedTestCaller<MultiLockerTest>(
-		"MultiLockerTests::WriteLockBlockTest", test
-	);
-	caller->addThread("t1", &MultiLockerTest::WriteLockBlockTest1);
-	caller->addThread("t2", &MultiLockerTest::WriteLockBlockTest1);
-	caller->addThread("t3", &MultiLockerTest::WriteLockBlockTest1);
-	caller->addThread("t4", &MultiLockerTest::WriteLockBlockTest1);
-	caller->addThread("t5", &MultiLockerTest::WriteLockBlockTest1);
+	caller->addThread("t9", &MultiLockerTest::MassiveReadLockTest);
+	caller->addThread("t10", &MultiLockerTest::MassiveReadLockTest);
 	suite->addTest(caller);
 	
 	// read- and write-locks must cross-block each other:
 	test = new MultiLockerTest;
 	caller = new BThreadedTestCaller<MultiLockerTest>(
-		"MultiLockerTests::ReadWriteLockBlockTest", test
+		"MultiLockerTest::ReadWriteLockBlockTest", test
 	);
 	caller->addThread("t1", &MultiLockerTest::ReadWriteLockBlockTest1);
 	caller->addThread("t2", &MultiLockerTest::ReadWriteLockBlockTest2);
@@ -126,42 +127,35 @@ MultiLockerTest::suite() {
 	// expanding a read-lock to a write-locks must cross-block all readers:
 	test = new MultiLockerTest;
 	caller = new BThreadedTestCaller<MultiLockerTest>(
-		"MultiLockerTests::ExpandReadToWriteLockTest", test
+		"MultiLockerTest::ExpandReadToWriteLockTest", test
 	);
 	caller->addThread("t1", &MultiLockerTest::ExpandReadToWriteLockTest1);
 	caller->addThread("t2", &MultiLockerTest::ExpandReadToWriteLockTest2);
 	caller->addThread("t3", &MultiLockerTest::ExpandReadToWriteLockTest3);
 	caller->addThread("t4", &MultiLockerTest::ExpandReadToWriteLockTest4);
 	suite->addTest(caller);
-#endif	
+
 	return suite;
 }
 
 void
 MultiLockerTest::MassiveReadLockTest() {
-	NextSubTest();
-	CPPUNIT_ASSERT( true);
-//	CPPUNIT_ASSERT( mLocker.IsReadLocked() == false);
-	for( int i=0; i<10000; ++i) {
+	CPPUNIT_ASSERT( mLocker.IsReadLocked() == false);
+	for( int i=0; i<1000; ++i) {
 		NextSubTest();
-		CPPUNIT_ASSERT( true);
-//		CPPUNIT_ASSERT( mLocker.ReadLock() == true);
+		CPPUNIT_ASSERT( mLocker.ReadLock() == true);
 		NextSubTest();
-		CPPUNIT_ASSERT( true);
-//		CPPUNIT_ASSERT( mLocker.IsReadLocked() == true);
+		CPPUNIT_ASSERT( mLocker.IsReadLocked() == true);
 	}
-	for( int i=0; i<10000; ++i) {
+	for( int i=0; i<1000; ++i) {
 		NextSubTest();
-		CPPUNIT_ASSERT( true);
-//		CPPUNIT_ASSERT( mLocker.IsReadLocked() == true);
-//		mLocker.ReadUnlock();
+		CPPUNIT_ASSERT( mLocker.IsReadLocked() == true);
+		mLocker.ReadUnlock();
 	}
 	NextSubTest();
-	CPPUNIT_ASSERT( true);
-//	CPPUNIT_ASSERT( mLocker.IsReadLocked() == false);
+	CPPUNIT_ASSERT( mLocker.IsReadLocked() == false);
 }	
 
-/*
 void
 MultiLockerTest::BasicReadLockTest() {
 	NextSubTest();
@@ -415,4 +409,3 @@ MultiLockerTest::ExpandReadToWriteLockTest4() {
 		mLocker.ReadUnlock();
 	}
 }
-*/

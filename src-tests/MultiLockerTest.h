@@ -47,7 +47,6 @@ public:
 	
 	void MassiveReadLockTest();
 
-/*
 	void BasicReadLockTest();
 	void BasicWriteLockTest();
 
@@ -67,11 +66,10 @@ public:
 	void ExpandReadToWriteLockTest2();
 	void ExpandReadToWriteLockTest3();
 	void ExpandReadToWriteLockTest4();
-*/
 
 protected:
 	bool WaitForVal( int32 val);
-//	BmMultiLocker mLocker;
+	BmMultiLocker mLocker;
 	int32 mVal;
 };
 

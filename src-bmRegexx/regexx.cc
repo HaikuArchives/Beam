@@ -29,7 +29,7 @@
 #include "regexx.hh"
 #include "pcre.h"
 
-BmString BM_REGEXX_DEFAULT_STRING;
+BmString regexx::BM_REGEXX_DEFAULT_STRING;
 
 const unsigned int&
 regexx::Regexx::exec(int _flags)
