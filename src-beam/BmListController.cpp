@@ -724,7 +724,18 @@ BmListViewItem* BmListViewController::UpdateModelItem( BmListModelItem* item,
 																		 BmUpdFlags updFlags) {
 	BmListViewItem* viewItem = FindViewItemFor( item);
 	if (viewItem) {
-		viewItem->UpdateView( updFlags);
+		int32 itemIndex = IndexOf( viewItem);
+		bool needRedraw = false; 
+		if (itemIndex >= 0) {
+			BRect b = Bounds();
+			int32 visibleTopIndex = IndexOf( b.LeftTop());
+			int32 visibleBottomIndex = IndexOf( b.LeftBottom());
+			if (visibleBottomIndex <= 0)
+				visibleBottomIndex = CountItems()-1;
+			if (itemIndex >= visibleTopIndex && itemIndex <= visibleBottomIndex)
+				needRedraw = true;
+		}
+		viewItem->UpdateView( updFlags, needRedraw);
 	} else
 		BM_LOG2( BM_LogModelController, 
 					BmString(ControllerName())
