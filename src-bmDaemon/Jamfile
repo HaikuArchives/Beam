@@ -6,7 +6,7 @@ SubDirHdrs $(TOP) src-bmMailKit ;
 
 SubDirSysHdrs /boot/home/config/include ;
 
-DEFINES += B_BUILDING_BMDAEMON ;
+DEFINES += BM_BUILDING_BMDAEMON ;
 
 SharedLibrary bmDaemon.so
 	:  

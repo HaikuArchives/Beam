@@ -39,11 +39,11 @@
 #include <Message.h>
 #include "BmString.h"
 
-extern BmString BM_SPACES;
-extern BmString BM_DEFAULT_STRING;
-extern BmString BM_DefaultItemLabel;
-extern BmString BM_NoItemLabel;
-extern BmString BM_WHITESPACE;
+extern IMPEXPBMMAILKIT BmString BM_SPACES;
+extern IMPEXPBMMAILKIT BmString BM_DEFAULT_STRING;
+extern IMPEXPBMMAILKIT BmString BM_DefaultItemLabel;
+extern IMPEXPBMMAILKIT BmString BM_NoItemLabel;
+extern IMPEXPBMMAILKIT BmString BM_WHITESPACE;
 
 /*------------------------------------------------------------------------------*\
 	FindMsgXXX( archive, name)

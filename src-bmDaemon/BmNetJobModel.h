@@ -31,6 +31,8 @@
 #ifndef _BmNetJobModel_h
 #define _BmNetJobModel_h
 
+#include "BmDaemon.h"
+
 #include "BmDataModel.h"
 #include "BmMemIO.h"
 #include "BmUtil.h"
@@ -41,7 +43,7 @@ class BNetEndpoint;
 	class BmStatusFilter
 		-	
 \*------------------------------------------------------------------------------*/
-class BmStatusFilter : public BmMemFilter {
+class IMPEXPBMDAEMON BmStatusFilter : public BmMemFilter {
 	typedef BmMemFilter inherited;
 
 public:
@@ -74,7 +76,7 @@ protected:
 	class BmNetJobModel
 		-	
 \*------------------------------------------------------------------------------*/
-class BmNetJobModel : public BmJobModel {
+class IMPEXPBMDAEMON BmNetJobModel : public BmJobModel {
 	typedef BmJobModel inherited;
 
 	friend class BmNetIBuf;
@@ -149,7 +151,7 @@ protected:
 	class BmDotstuffDecoder
 		-	
 \*------------------------------------------------------------------------------*/
-class BmDotstuffDecoder : public BmMemFilter {
+class IMPEXPBMDAEMON BmDotstuffDecoder : public BmMemFilter {
 	typedef BmMemFilter inherited;
 
 public:
@@ -171,7 +173,7 @@ protected:
 	class BmDotstuffEncoder
 		-	
 \*------------------------------------------------------------------------------*/
-class BmDotstuffEncoder : public BmMemFilter {
+class IMPEXPBMDAEMON BmDotstuffEncoder : public BmMemFilter {
 	typedef BmMemFilter inherited;
 
 public:
@@ -193,7 +195,7 @@ protected:
 	class BmNetIBuf
 		-	
 \*------------------------------------------------------------------------------*/
-class BmNetIBuf : public BmMemIBuf {
+class IMPEXPBMDAEMON BmNetIBuf : public BmMemIBuf {
 	typedef BmMemIBuf inherited;
 
 public:
@@ -218,7 +220,7 @@ protected:
 	class BmNetOBuf
 		-	
 \*------------------------------------------------------------------------------*/
-class BmNetOBuf : public BmMemOBuf {
+class IMPEXPBMDAEMON BmNetOBuf : public BmMemOBuf {
 	typedef BmMemOBuf inherited;
 
 public:

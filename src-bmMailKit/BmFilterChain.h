@@ -41,7 +41,7 @@
 
 #include <map.h>
 
-extern BmString BM_DefaultOutItemLabel;
+extern IMPEXPBMMAILKIT BmString BM_DefaultOutItemLabel;
 
 class BmFilterChainList;
 class BmChainedFilterList;

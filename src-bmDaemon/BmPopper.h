@@ -36,6 +36,8 @@
 
 #include <Message.h>
 
+#include "BmDaemon.h"
+
 #include "BmNetJobModel.h"
 
 class BmPopAccount;
@@ -48,7 +50,7 @@ enum {
 	BmPopStatusFilter
 		-	
 \*------------------------------------------------------------------------------*/
-class BmPopStatusFilter : public BmStatusFilter {
+class IMPEXPBMDAEMON BmPopStatusFilter : public BmStatusFilter {
 	typedef BmStatusFilter inherited;
 
 public:
@@ -74,7 +76,7 @@ protected:
 		-	in general, each BmPopper is started as a thread which exits when the
 			POP-session has ended
 \*------------------------------------------------------------------------------*/
-class BmPopper : public BmNetJobModel {
+class IMPEXPBMDAEMON BmPopper : public BmNetJobModel {
 	typedef BmNetJobModel inherited;
 	
 public:

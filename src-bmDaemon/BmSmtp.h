@@ -36,6 +36,8 @@
 
 #include <Message.h>
 
+#include "BmDaemon.h"
+
 #include "BmNetJobModel.h"
 
 class BmSmtpAccount;
@@ -48,7 +50,7 @@ enum {
 	BmSmtpStatusFilter
 		-	
 \*------------------------------------------------------------------------------*/
-class BmSmtpStatusFilter : public BmStatusFilter {
+class IMPEXPBMDAEMON BmSmtpStatusFilter : public BmStatusFilter {
 	typedef BmStatusFilter inherited;
 
 public:
@@ -75,7 +77,7 @@ protected:
 		-	in general, each BmSmtp is started as a thread which exits when the
 			SMTP-session has ended
 \*------------------------------------------------------------------------------*/
-class BmSmtp : public BmNetJobModel {
+class IMPEXPBMDAEMON BmSmtp : public BmNetJobModel {
 	typedef BmNetJobModel inherited;
 	
 	typedef vector< BmString> BmRcptVect;

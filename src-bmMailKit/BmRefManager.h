@@ -31,8 +31,6 @@
 #ifndef _BmRefManager_h
 #define _BmRefManager_h
 
-#include "BmMailKit.h"
-
 #include <stdio.h>
 
 #include <typeinfo>
@@ -41,9 +39,9 @@
 #include <Locker.h>
 #include "BmString.h"
 
-#include "BmBasics.h"
+#include "BmMailKit.h"
 
-#pragma interface
+#include "BmBasics.h"
 
 template <class T> class BmRef;
 class BmObjectList;
@@ -51,7 +49,8 @@ class BmObjectList;
 	BmRefObj
 		-	an object that can be reference-managed
 \*------------------------------------------------------------------------------*/
-class IMPEXPBMMAILKIT BmRefObj {
+class IMPEXPBMMAILKIT BmRefObj 
+{
 	
 public:
 	BmRefObj() : mRefCount(0) 				{}
@@ -95,7 +94,8 @@ private:
 	BmRef
 		-	smart-pointer class that implements reference-counting (via BmRefObj)
 \*------------------------------------------------------------------------------*/
-template <class T> class IMPEXPBMMAILKIT BmRef {
+template <class T> class BmRef 
+{
 
 	T* mPtr;
 
@@ -182,7 +182,7 @@ private:
 // helper function to keep logging out of header-file:
 void LogHelper( const BmString& text);
 
-template <class T> class IMPEXPBMMAILKIT BmWeakRef {
+template <class T> class BmWeakRef {
 
 	BmString mName;
 	T* mPtr;
