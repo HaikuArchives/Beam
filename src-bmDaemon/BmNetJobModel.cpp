@@ -208,7 +208,7 @@ void BmNetJobModel::SendCommand( BmStringIBuf& cmd, const BmString& secret,
 											bool dotstuffEncoding, bool update) {
 #ifdef BM_LOGGING
 	BmString logStr( "-->\n");
-	logStr.Append( cmd.FirstBuf(), min( (uint32)1024, cmd.FirstSize()));
+	logStr.Append( cmd.FirstBuf(), min( (uint32)16384, cmd.FirstSize()));
 	if (secret.Length()) {
 		logStr << " secret_data_omitted_here";
 							// we do not want to log any passwords...
