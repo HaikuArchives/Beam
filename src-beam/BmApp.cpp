@@ -325,13 +325,14 @@ void BmApplication::ArgvReceived( int32 argc, char** argv) {
 void BmApplication::RefsReceived( BMessage* msg) {
 	if (!msg)
 		return;
+	entry_ref inref;
 	entry_ref eref;
 	BEntry entry;
 	struct stat st;
-	for( int index=0; msg->FindRef( "refs", index, &eref) == B_OK; ++index) {
-		if (entry.SetTo( &eref) != B_OK)
-			continue;
-		if (entry.GetStat( &st) != B_OK)
+	for( int index=0; msg->FindRef( "refs", index, &inref) == B_OK; ++index) {
+		if (entry.SetTo( &inref, true) != B_OK
+		|| entry.GetRef( &eref) != B_OK
+		|| entry.GetStat( &st) != B_OK)
 			continue;
 		BmRef<BmMailRef> ref = BmMailRef::CreateInstance( NULL, eref, st);
 		if (!ref)
