@@ -77,6 +77,18 @@ bool BmMainWindow::IsAlive() {
 	return BmMainWindow::nIsAlive;
 }
 
+void UpdateAccounts( BmToolbarButton* button)
+{
+	BmModelItemMap::const_iterator iter;
+	for( 	iter = ThePopAccountList->begin(); 
+			iter != ThePopAccountList->end(); ++iter) {
+		BMessage* msg = new BMessage( BMM_CHECK_MAIL);
+		msg->AddString( BmPopAccountList::MSG_ITEMKEY, 
+							 iter->second->Key().String());
+		button->AddActionVariation( iter->second->DisplayKey(), msg);
+	}
+}
+
 /*------------------------------------------------------------------------------*\
 	CreateInstance()
 		-	creates the app's main window
@@ -120,7 +132,7 @@ BmMainWindow::BmMainWindow()
 	// Get maximum button size
 	float width=0, height=0;
 	BmToolbarButton::CalcMaxSize(width, height, "Check",		
-										  TheResources->IconByName("Button_Check"));
+										  TheResources->IconByName("Button_Check"), true);
 	BmToolbarButton::CalcMaxSize(width, height, "New",			
 										  TheResources->IconByName("Button_New"));
 	BmToolbarButton::CalcMaxSize(width, height, "Reply",		
@@ -151,7 +163,7 @@ BmMainWindow::BmMainWindow()
 							TheResources->IconByName("Button_Check"), 
 							width, height,
 							new BMessage(BMM_CHECK_MAIL), this, 
-							"Check for new mail"
+							"Check for new mail", true
 						),
 					mNewButton 
 						= new BmToolbarButton( 
@@ -213,6 +225,7 @@ BmMainWindow::BmMainWindow()
 			0
 		);
 
+	mCheckButton->SetUpdateVariationsFunc( UpdateAccounts);
 	mReplyButton->AddActionVariation( "Reply", new BMessage(BMM_REPLY));
 	mReplyButton->AddActionVariation( "Reply To List", 
 												 new BMessage(BMM_REPLY_LIST));
