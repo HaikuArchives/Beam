@@ -47,7 +47,7 @@ const int BM_MAX_MATCH_COUNT = 20;
 class BmSpamFilter : public BmFilterAddon {
 	typedef BmFilterAddon inherited;
 	
-	friend class SieveTest;
+	friend class SpamTest;
 
 public:
 	BmSpamFilter( const BmString& name, const BMessage* archive);
@@ -57,7 +57,7 @@ public:
 	BLocker* Lock();
 
 	// implementations for abstract BmFilterAddon-methods:
-	bool Execute( void* msgContext);
+	bool Execute( BmMsgContext* msgContext);
 	bool SanityCheck( BmString& complaint, BmString& fieldName);
 	status_t Archive( BMessage* archive, bool deep = true) const;
 	BmString ErrorString() const;
@@ -77,6 +77,55 @@ protected:
 	BmString mLastErr;
 	static BLocker* nLock;
 
+	/********************************************************************************\
+		What follows is a C++-"port" of a classifier contained in CRM114 
+		(the Controllable	Regex Mutilator, a language for filtering spam, 
+		see crm114.sourceforge.net).
+		I have simply ripped out the OSBF classifier (OSBF stands for 'orthogonal 
+		sparse bigram, Fidelis style') which is used to classify the mails that
+		Beam sees. It is a statistical filter, not quite Bayesian, but very similar.
+		[the OSBF-classifier is copyright by Fidelis Assis]
+		[crm114 is copyright William S. Yerazunis]
+		Thanks to these guys and everyone on the crm114-lists!
+	\********************************************************************************/
+	typedef struct
+	{
+	  unsigned long hash;
+	  unsigned long key;
+	  unsigned long value;
+	} OsbfFeatureBucket;
+	
+	typedef struct
+	{
+		unsigned char version[4];
+		unsigned long buckets;	/* number of buckets in the file */
+		unsigned long learnings;	/* number of trainings executed */
+	} OsbfHeader;
+	
+	static unsigned char OsbfFileVersion[4];
+	
+	/* max feature value */
+	static const unsigned long OsbfFeatureBucketValueMax = 65535;
+	
+	/* max number of features */
+	static const unsigned long OsbfDefaultFileLength = 94321;
+	
+	/* max chain len - microgrooming is triggered after this, if enabled */ 
+	static const unsigned long OsbfMicrogroomChainLength = 29;
+	/* maximum number of buckets groom-zeroed */
+	static const unsigned long OsbfMicrogroomStopAfter = 128;
+	/* minimum ratio between max and min P(F|C) */
+	static const unsigned long OsbfMinPmaxPminRatio = 9;
+
+	status_t ReadDataFile( const BmString& filename, OsbfHeader& header,
+								  OsbfFeatureBucket*& hash);
+	status_t CreateDataFile( const BmString& filename);
+	
+	OsbfHeader mSpamHeader;
+	OsbfFeatureBucket* mSpamHash;
+	OsbfHeader mTofuHeader;
+	OsbfFeatureBucket* mTofuHash;
+	
 private:
 	BmSpamFilter();									// hide default constructor
 	// Hide copy-constructor and assignment:

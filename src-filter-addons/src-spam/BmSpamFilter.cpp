@@ -39,6 +39,8 @@
 #include "BubbleHelper.h"
 
 #include "BmLogHandler.h"
+#include "BmMail.h"
+#include "BmRosterBase.h"
 #include "BmSpamFilter.h"
 
 
@@ -75,6 +77,9 @@ const char* FilterKinds[] = {
 extern "C" __declspec(dllexport) 
 const char* DefaultFilterName = "<<< SPAM-filter >>>";
 
+unsigned char 
+BmSpamFilter::OsbfFileVersion[4] = { 'C', 'F', 'C', '1' };
+
 /*------------------------------------------------------------------------------*\
 	BmSpamFilter( archive)
 		-	c'tor
@@ -82,6 +87,8 @@ const char* DefaultFilterName = "<<< SPAM-filter >>>";
 \*------------------------------------------------------------------------------*/
 BmSpamFilter::BmSpamFilter( const BmString& name, const BMessage* archive) 
 	:	mName( name)
+	,	mSpamHash( NULL)
+	,	mTofuHash( NULL)
 {
 	int16 version;
 	if (archive->FindInt16( MSG_VERSION, &version) != B_OK)
@@ -93,6 +100,8 @@ BmSpamFilter::BmSpamFilter( const BmString& name, const BMessage* archive)
 		-	standard d'tor
 \*------------------------------------------------------------------------------*/
 BmSpamFilter::~BmSpamFilter() {
+	delete mTofuHash;
+	delete mSpamHash;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -118,14 +127,24 @@ status_t BmSpamFilter::Archive( BMessage* archive, bool) const {
 	Execute()
 		-	
 \*------------------------------------------------------------------------------*/
-bool BmSpamFilter::Execute( void* message_context) {
-	BmMsgContext* msgContext = static_cast< BmMsgContext*>( message_context);
+bool BmSpamFilter::Execute( BmMsgContext* msgContext) {
 	BmString mailId;
 	if (msgContext)
-		mailId = msgContext->mailId;
+		mailId = msgContext->mail->Name();
 	BM_LOG2( BM_LogFilter, BmString("Spam-Addon: asked to execute filter <") 
 									<< Name() 
 									<< "> on mail with Id <" << mailId << ">");
+	status_t err;
+	if (!mSpamHash) {
+		BmString spamFilename 
+			= BmString( BeamRoster->SettingsPath()) << "/Spam.data";
+		err = ReadDataFile( spamFilename, mSpamHeader, mSpamHash);
+	}
+	if (!mTofuHash) {
+		BmString tofuFilename 
+			= BmString( BeamRoster->SettingsPath()) << "/Tofu.data";
+		err = ReadDataFile( tofuFilename, mTofuHeader, mTofuHash);
+	}
 	BM_LOG2( BM_LogFilter, "Spam-Addon: starting execution...");
 //	int res = sieve_execute_script( mCompiledScript, msgContext);
 	BM_LOG2( BM_LogFilter, "Spam-Addon: done.");
@@ -150,6 +169,95 @@ bool BmSpamFilter::SanityCheck( BmString& complaint, BmString& fieldName) {
 BmString BmSpamFilter::ErrorString() const {
 	return mLastErr;
 }
+
+/*------------------------------------------------------------------------------*\
+	ReadDataFile()
+		-	
+\*------------------------------------------------------------------------------*/
+status_t BmSpamFilter::ReadDataFile( const BmString& filename,
+												 OsbfHeader& header,
+												 OsbfFeatureBucket*& hash)
+{
+	BFile file;
+	// try to open data-file...
+	status_t err;
+	BM_LOG( BM_LogFilter, 
+			  BmString("Spam-Addon: trying to read datafile ") << filename);
+	if ((err = file.SetTo( filename.String(), B_READ_ONLY)) != B_OK) {
+		err = CreateDataFile( filename);
+		if (err != B_OK)
+			return err;
+		err = file.SetTo( filename.String(), B_READ_ONLY);
+		if (err != B_OK) {
+			BM_LOGERR( BmString("Giving up on spam/tofu datafile ") << filename);
+			return err;
+		}
+	}
+	// read header
+	if ((err = file.Read(&header, sizeof(header))) < (int32)sizeof(header))
+		return err < 0 ? err : B_IO_ERROR;
+	BM_LOG2( BM_LogFilter, 
+			   BmString("Spam-Addon: file has room for ") << header.buckets
+			   	<< " features, number of learnings is " << header.learnings);
+	// check version
+	if (memcmp(header.version, OsbfFileVersion, sizeof(header.version)) != 0) {
+		BM_LOGERR( BmString("Wrong version of spam/tofu datafile ") << filename);
+		return B_MISMATCHED_VALUES;
+	}
+	// read hash
+	hash = new OsbfFeatureBucket [header.buckets];
+	ssize_t sz = header.buckets * sizeof(OsbfFeatureBucket);
+	if ((err = file.Read(hash, sz)) < sz) {
+		BM_LOGERR( BmString("Not enough data in datafile ") << filename);
+		delete hash;
+		hash = NULL;
+  		return err < 0 ? err : B_IO_ERROR;
+	}
+	BM_LOG( BM_LogFilter, 
+			  BmString("Spam-Addon: ok, done reading datafile ") << filename);
+	return B_OK;
+}
+
+/*------------------------------------------------------------------------------*\
+	CreateDataFile()
+		-	
+\*------------------------------------------------------------------------------*/
+status_t BmSpamFilter::CreateDataFile( const BmString& filename)
+{
+	status_t err;
+	BFile file;
+	BM_LOG( BM_LogFilter, 
+			  BmString("Spam-Addon: trying to create datafile ") << filename);
+	err = file.SetTo( filename.String(), B_READ_WRITE | B_CREATE_FILE);
+	if (err == B_OK) {
+		// Set the header.
+		OsbfHeader h;
+		unsigned long bucketCount = OsbfDefaultFileLength;
+		h.version = OsbfFileVersion;
+		h.learnings = 0;
+		h.buckets = bucketCount;
+		// Write header
+		if ((err=file.Write(&h, sizeof (h))) != sizeof(h))
+     		return err < 0 ? err : B_IO_ERROR;
+
+		//  Initialize hashes - zero all buckets
+		OsbfFeatureBucket feature = { 0, 0, 0 };
+		for (unsigned long i = 0; i < bucketCount; i++)
+		{
+      	// Write buckets
+      	if ((err=file.Write(&feature, sizeof(feature))) != sizeof(feature))
+      		return err < 0 ? err : B_IO_ERROR;
+		}
+		BM_LOG( BM_LogFilter, 
+				  BmString("Spam-Addon: ok, done creating datafile ") << filename);
+	}
+	if (err < B_OK)
+		BM_LOGERR( BmString("Couldn't create spam/tofu datafile ")
+						<< filename << " -> " << strerror(err));
+	return err;
+}
+
+
 
 /*------------------------------------------------------------------------------*\
 	InstantiateFilter()
@@ -263,3 +371,4 @@ BmFilterAddonPrefsView* InstantiateFilterPrefs( float minx, float miny,
 	else
 		return NULL;
 }
+
