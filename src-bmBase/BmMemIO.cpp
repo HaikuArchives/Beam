@@ -95,7 +95,7 @@ uint32 BmMemFilter::Read( char* data, uint32 reqLen) {
 							// size of any single source-byte. At the moment, the
 							// biggest possible destination-size of a single source-byte
 							// is produced by the UTF8-encoder, which may blow up a single
-							// character to 5 bytes (or less, of course).
+							// character to 6 bytes (e.g.: =\r\n=FE).
 	uint32 readLen = 0;
 	uint32 srcLen;
 	uint32 destLen;
@@ -104,14 +104,14 @@ uint32 BmMemFilter::Read( char* data, uint32 reqLen) {
 	while( !mHadError && !mEndReached && readLen < reqLen-minSize) {
 		if (mCurrPos==mCurrSize || tooSmall) {
 			// block is empty or too small, we need to fetch more data:
-			if (mInput->IsAtEnd()) {
+			if (!tooSmall && mInput->IsAtEnd()) {
 				// there is no more input data in our input-MemIO, 
 				// this means that we have reached the end.
 				// We just have to finalize the filter-output:
 				destLen = reqLen-readLen;
 				Finalize( data+readLen, destLen);
 				readLen += destLen;
-					break;
+				break;
 			}
 			// we "move-up" the remaining part of the buffer...
 			srcLen = mCurrSize-mCurrPos;
