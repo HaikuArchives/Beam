@@ -48,6 +48,8 @@ class BPath;
 using namespace regexx;
 
 #include "BmApp.h"
+#include "BmBasics.h"
+#include "BmLogHandler.h"
 #include "BmPrefs.h"
 #include "BmStorageUtil.h"
 
@@ -177,63 +179,66 @@ BTestSuite* CreateMailParserTestSuite() {
 		-	
 \*------------------------------------------------------------------------------*/
 int32 StartTests( void* args) {
-	// wait until app ist initialized:
-	testApp->StartupLocker()->Lock();
-
-	// create ascii-alphabet:
-	for( uint8 h=0; h<16; ++h) {
-		for( uint8 l=0; l<16; ++l) {
-			if (h || l)
-				AsciiAlphabet[h].Append( h*16 + l, 1);
+	try {
+		// wait until app ist initialized:
+		testApp->StartupLocker()->Lock();
+	
+		// create ascii-alphabet:
+		for( uint8 h=0; h<16; ++h) {
+			for( uint8 l=0; l<16; ++l) {
+				if (h || l)
+					AsciiAlphabet[h].Append( h*16 + l, 1);
+			}
 		}
+		
+		// change to src-test folder in order to be able to read
+		// testdata:
+		BmString testPath(testApp->AppPath());
+		testPath.Truncate( testPath.FindLast( "/beam"));
+		testPath << "/beam_testdata";
+		if (!access( testPath.String(), R_OK)) {
+			HaveTestdata = true;
+			chdir( testPath.String());
+		}
+	
+		// use a different mailbox if in test-mode:
+		ThePrefs->SetString( "MailboxPath", testPath+"/mail");
+		ThePrefs->SetupMailboxVolume();
+		// now remove old test-mailbox and replace by freshly unzipped archive:
+		static char buf[1024];
+		BmString currPath = getcwd( buf, 1024);
+		CPPUNIT_ASSERT( currPath.FindFirst( "beam_testdata") >= 0);
+								// make sure we have correct path, we *don't* want
+								// to make a rm -rf on a wrong path...
+		system( "rm -rf >/dev/null mail");
+		system( "unzip -o >/dev/null mail.zip");
+		
+		// allow app to start running...
+		testApp->StartupLocker()->Unlock();
+		snooze( 200*1000);
+		// ...and wait for Beam to be completely up and running:
+		testApp->StartupLocker()->Lock();
+	
+		BTestShell shell("Beam Testing Framework", new SemaphoreSyncObject);
+	
+		// we use only statically linked tests since linking each test against
+		// Beam_in_Parts.a would yield large binaries for each test, no good!
+		shell.AddSuite( CreateBmBaseTestSuite() );
+		shell.AddSuite( CreateMailTrackerTestSuite() );
+		shell.AddSuite( CreateMailParserTestSuite() );
+	
+		BTestShell::SetGlobalShell(&shell);
+	
+		// run the tests
+		ArgsInfo* argsInfo = static_cast<ArgsInfo*>( args);
+		shell.Run( argsInfo->argc, argsInfo->argv);
+		
+		// done with the tests, now quit the app:
+		testApp->StartupLocker()->Unlock();
+		be_app->PostMessage( B_QUIT_REQUESTED);
+	} catch( BM_error& e) {
+		ShowAlert( e.what());
 	}
-	
-	// change to src-test folder in order to be able to read
-	// testdata:
-	BmString testPath(testApp->AppPath());
-	testPath.Truncate( testPath.FindLast( "/beam"));
-	testPath << "/beam_testdata";
-	if (!access( testPath.String(), R_OK)) {
-		HaveTestdata = true;
-		chdir( testPath.String());
-	}
-
-	// use a different mailbox if in test-mode:
-	ThePrefs->SetString( "MailboxPath", testPath+"/mail");
-	ThePrefs->SetupMailboxVolume();
-	// now remove old test-mailbox and replace by freshly unzipped archive:
-	static char buf[1024];
-	BmString currPath = getcwd( buf, 1024);
-	CPPUNIT_ASSERT( currPath.FindFirst( "beam_testdata") >= 0);
-							// make sure we have correct path, we *don't* want
-							// to make a rm -rf on a wrong path...
-	system( "rm -rf >/dev/null mail");
-	system( "unzip -o >/dev/null mail.zip");
-	
-	// allow app to start running...
-	testApp->StartupLocker()->Unlock();
-	snooze( 200*1000);
-	// ...and wait for Beam to be completely up and running:
-	testApp->StartupLocker()->Lock();
-
-	BTestShell shell("Beam Testing Framework", new SemaphoreSyncObject);
-
-	// we use only statically linked tests since linking each test against
-	// Beam_in_Parts.a would yield large binaries for each test, no good!
-	shell.AddSuite( CreateBmBaseTestSuite() );
-	shell.AddSuite( CreateMailTrackerTestSuite() );
-	shell.AddSuite( CreateMailParserTestSuite() );
-
-	BTestShell::SetGlobalShell(&shell);
-
-	// run the tests
-	ArgsInfo* argsInfo = static_cast<ArgsInfo*>( args);
-	shell.Run( argsInfo->argc, argsInfo->argv);
-	
-	// done with the tests, now quit the app:
-	testApp->StartupLocker()->Unlock();
-	be_app->PostMessage( B_QUIT_REQUESTED);
-
 	return 0;
 }
 
