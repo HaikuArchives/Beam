@@ -1,5 +1,6 @@
 /*
-	BmPopAccount.h		-	$Id$
+	BmPopAccount.h
+		$Id$
 */
 
 #ifndef _BmPopAccount_h

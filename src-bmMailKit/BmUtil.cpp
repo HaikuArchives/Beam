@@ -1,5 +1,6 @@
 /*
-	BmUtil.cpp		-	$Id$
+	BmUtil.cpp
+		$Id$
 */
 
 #include <stdio.h>

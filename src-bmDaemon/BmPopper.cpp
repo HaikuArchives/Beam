@@ -1,16 +1,16 @@
 /*
-	BmPopper.cpp		-	$Id$
+	BmPopper.cpp
+		$Id$
 */
 
-#include <malloc.h>
 #include <stdio.h>
 
 #include <Alert.h>
 
 #include "BmPopper.h"
 
-int32 BmPopper::ReceiveTimeout = 10*1000*1000;
-int32 BmPopper::PasswordTimeout = 20*1000*1000;
+int32 BmPopper::ReceiveTimeout = 60*1000*1000;
+int32 BmPopper::PasswordTimeout = 120*1000*1000;
 
 //-------------------------------------------------
 int32 BmPopper::NewPopper( void* data) {
@@ -41,10 +41,11 @@ BmPopper::BmPopper( BmPopperInfo* info)
 	: mPopperInfo( info)
 	, mPopServer()
 	, mState( 0)
-	, mDataPtr( NULL)
 	, mConnected( false)
 	, mMsgUIDs( NULL)
 	, mMsgCount( 0)
+	, mMsgSize( 0)
+	, mMsgTotalSize( 1)
 	, log( info->name)
 {
 }
@@ -53,8 +54,6 @@ BmPopper::BmPopper( BmPopperInfo* info)
 BmPopper::~BmPopper() { 
 	if (mConnected)
 		this->Quit();
-	if (mDataPtr)
-		free( mDataPtr);
 	if (mMsgUIDs)
 		delete [] mMsgUIDs;
 	BLooper* looper = mPopperInfo->statusLooper;
@@ -70,7 +69,7 @@ BmPopper::~BmPopper() {
 
 //-------------------------------------------------
 void BmPopper::Start() {
-	static const float delta = (100.0 / POP_DISCONNECT);
+	const float delta = (100.0 / POP_DISCONNECT);
 
 	if (mPopServer.InitCheck() != B_OK) {
 		throw runtime_error("BmPopper: could not create NetEndpoint");
@@ -143,36 +142,38 @@ void BmPopper::Connect() {
 		throw network_error( s);
 	}
 	mConnected = true;
-	StoreAnswer( CheckForPositiveAnswer( SINGLE_LINE));
+	CheckForPositiveAnswer( SINGLE_LINE);
 }
 
 //-------------------------------------------------
 void BmPopper::Login() {
 	BString cmd = BString("USER ") << mPopperInfo->account->Username();
 	SendCommand( cmd);
-	StoreAnswer( CheckForPositiveAnswer( SINGLE_LINE));
+	CheckForPositiveAnswer( SINGLE_LINE);
 	cmd = BString("PASS ") << mPopperInfo->account->Password();
 	SendCommand( cmd);
-	StoreAnswer( CheckForPositiveAnswer( SINGLE_LINE, BmPopper::PasswordTimeout));
+	CheckForPositiveAnswer( SINGLE_LINE, BmPopper::PasswordTimeout);
 }
 
 //-------------------------------------------------
 void BmPopper::Check() {
 	BString cmd("STAT");
 	SendCommand( cmd);
-	StoreAnswer( CheckForPositiveAnswer( SINGLE_LINE));
-	if (sscanf( mDataPtr+4, "%ld", &mMsgCount) != 1 || mMsgCount < 0)
+	CheckForPositiveAnswer( SINGLE_LINE);
+	if (sscanf( mAnswer.c_str()+4, "%ld %ld", &mMsgCount, &mMsgTotalSize) != 2 || mMsgCount < 0)
 		throw network_error( "answer to STAT has unknown format");
 	if (mMsgCount == 0)
 		return;
+	if (mMsgTotalSize == 0)
+		mMsgTotalSize = 1;
 	mMsgUIDs = new BString[mMsgCount];
 	cmd = BString("UIDL");
 	SendCommand( cmd);
-	StoreAnswer( GetAnswer( MULTI_LINE));
-	if (*mDataPtr == '+') {
+	GetAnswer( MULTI_LINE);
+	if (mAnswer[0] == '+') {
 		int32 msgNum;
 		char msgUID[100];
-		char *p = strstr( mDataPtr, "\r\n");
+		char *p = strstr( mAnswer.c_str(), "\r\n");
 		if (!p)
 			return;
 		p += 2;
@@ -189,12 +190,16 @@ void BmPopper::Check() {
 
 //-------------------------------------------------
 void BmPopper::Retrieve() {
-	static const float delta = (100.0 / mMsgCount);
+	int32 num;
 	for( int32 i=0; i<mMsgCount; i++) {
-		UpdateMailBar( delta, NULL, i+1, mMsgCount);
-		BString cmd = BString("RETR ") << i+1;
+		BString cmd = BString("LIST ") << i+1;
 		SendCommand( cmd);
-		StoreAnswer( CheckForPositiveAnswer( MULTI_LINE));
+		CheckForPositiveAnswer( SINGLE_LINE);
+		if (sscanf( mAnswer.c_str()+4, "%ld %ld", &num, &mMsgSize) != 2 || num != i+1)
+		throw network_error( "answer to LIST has unknown format");
+		cmd = BString("RETR ") << i+1;
+		SendCommand( cmd);
+		CheckForPositiveAnswer( MULTI_LINE, BmPopper::ReceiveTimeout, i+1);
 snooze( 200*1000);
 	}
 }
@@ -214,7 +219,7 @@ void BmPopper::Quit( bool WaitForAnswer) {
 	try {
 		SendCommand( cmd);
 		if (WaitForAnswer) {
-			StoreAnswer( GetAnswer( SINGLE_LINE));
+			GetAnswer( SINGLE_LINE);
 		}
 	} catch(...) {	}
 	mPopServer.Close();
@@ -222,37 +227,29 @@ void BmPopper::Quit( bool WaitForAnswer) {
 }
 
 //-------------------------------------------------
-void BmPopper::StoreAnswer( char* buf) {
-	if (mDataPtr) 
-		free( mDataPtr);
-	mDataPtr = buf;
-}
-
-//-------------------------------------------------
-char* BmPopper::CheckForPositiveAnswer( bool SingleLineMode, int32 AnswerTimeout) {
-	char* answer = GetAnswer( SingleLineMode, AnswerTimeout);
-	if (*answer != '+') {
+void BmPopper::CheckForPositiveAnswer( bool SingleLineMode, int32 AnswerTimeout, int32 mailNr) {
+	GetAnswer( SingleLineMode, AnswerTimeout, mailNr);
+	if (mAnswer[0] != '+') {
 		BString err("Server answers: \n");
-		err += answer;
+		err += mAnswer.c_str();
 		err.RemoveSet("\r");
-		free( answer);
 		throw network_error( err);
 	}
-	return answer;
 }
 
 //-------------------------------------------------
-char* BmPopper::GetAnswer( bool SingleLineMode, int32 AnswerTimeout) {
+void BmPopper::GetAnswer( bool SingleLineMode, int32 AnswerTimeout, int32 mailNr) {
 	int32 bufSize = 4096;
 	const int32 SMALL = 512;
-	const int32 HUGE = 1024*1024;		// One Megabyte of POP-reply is too much!
-	char *buffer = static_cast<char*>(malloc( bufSize));
+	const int32 HUGE = 32*1024*1024;		// more than 32 MB of POP-reply is too much!
 	int32 offset = 0;
+	mAnswer = "";
 	bool done = false;
+	char *buffer = static_cast<char*>(malloc( bufSize));
+	if (!buffer)
+		throw runtime_error("BmPopper: could not get memory via malloc()");
 	try {
-		if (!buffer) {
-			throw runtime_error("BmPopper: could not get memory via malloc()");
-		}
+		bool firstBlock = true;
 		do {
 			int32 bufFree = bufSize-offset;
 			if (bufFree < SMALL) {
@@ -268,7 +265,7 @@ char* BmPopper::GetAnswer( bool SingleLineMode, int32 AnswerTimeout) {
 			char *bufPos = &buffer[offset];
 			int32 numBytes = ReceiveBlock( bufPos, bufFree, AnswerTimeout);
 			offset += numBytes;
-			if (SingleLineMode || offset==0 && *bufPos=='-') {
+			if (SingleLineMode || firstBlock && *buffer=='-') {
 				if (strstr( bufPos, "\r\n")) {
 					done = true;
 				}
@@ -277,11 +274,20 @@ char* BmPopper::GetAnswer( bool SingleLineMode, int32 AnswerTimeout) {
 					done = true;
 				}
 			}
+			firstBlock = false;
+			if (mailNr > 0) {
+				float delta = (100.0 * numBytes) / mMsgTotalSize;
+				BString text = BString("(") << mMsgSize/1024 << " KB)  ";
+				UpdateMailBar( delta, text.String(), mailNr, mMsgCount);
+			}
 		} while( !done);
-		return buffer;
+		mAnswer = buffer;
+		free( buffer);
+		buffer = 0;
 	}
 	catch (...) {
-		free( buffer);
+		if (buffer)
+			free( buffer);
 		throw;
 	}
 }

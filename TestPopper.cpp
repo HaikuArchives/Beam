@@ -1,5 +1,6 @@
 /*
-	TestPopper.cpp		-	$Id$
+	TestPopper.cpp
+		$Id$
 */
 
 #include <stdio.h>

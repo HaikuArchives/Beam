@@ -1,5 +1,6 @@
 /*
-	BmPopper.h		-	$Id$
+	BmPopper.h
+		$Id$
 */
 
 #ifndef _BmPopper_h
@@ -10,9 +11,7 @@
 #include <Message.h>
 #include <NetAddress.h>
 #include <NetEndpoint.h>
-#include <StatusBar.h>
 #include <String.h>
-#include <Window.h>
 
 #include "BmPopAccount.h"
 
@@ -43,13 +42,14 @@ public:
 	static char* const MSG_DELTA = 			"bm:delta";
 	static char* const MSG_TRAILING = 		"bm:trailing";
 	static char* const MSG_LEADING = 		"bm:leading";
-public:
+
 	BmPopper( BmPopperInfo* info);
 	virtual ~BmPopper();
 
 	static int32 NewPopper( void* data);
 	static int32 NextID() { return ++mId; }
 	void Start();
+
 private:
 	static int32 mId;
 	static int32 FeedbackTimeout;
@@ -62,11 +62,13 @@ private:
 	BmPopperInfo* mPopperInfo;
 	BNetEndpoint mPopServer;
 	int32 mState;
-	char* mDataPtr;
 	bool mConnected;
 	BString* mMsgUIDs;
 	int32 mMsgCount;
+	int32 mMsgSize;
+	int32 mMsgTotalSize;
 	BmLogfile log;
+	string mAnswer;
 
 	void Connect();
 	void Login();
@@ -79,11 +81,11 @@ private:
 	void UpdateMailBar( const float, const char*, int32, int32);
 	bool ShouldContinue();
 	void StoreAnswer( char *);
-	char* CheckForPositiveAnswer( bool SingleLineMode, int32 answerTimeout=ReceiveTimeout);
-	char* GetAnswer( bool SingleLineMode, int32 answerTimeout=ReceiveTimeout);
+	void CheckForPositiveAnswer( bool SingleLineMode, int32 answerTimeout=ReceiveTimeout, int32 mailNr=0);
+	void GetAnswer( bool SingleLineMode, int32 answerTimeout=ReceiveTimeout, int32 mailNr = 0);
 	int32 ReceiveBlock( char* buffer, int32 max, int32 answerTimeout=ReceiveTimeout);
 	void SendCommand( BString &cmd);
-private:
+
 	enum States {
 		POP_CONNECT = 0,
 		POP_LOGIN,

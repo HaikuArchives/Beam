@@ -1,5 +1,6 @@
 /*
-	BmConnectionWin.cpp		-	$Id$
+	BmConnectionWin.cpp
+		$Id$
 */
 
 #include <stdio.h>

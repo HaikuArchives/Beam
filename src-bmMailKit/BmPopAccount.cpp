@@ -1,5 +1,6 @@
 /*
-	BmPopAccount.cpp		-	$Id$
+	BmPopAccount.cpp
+		$Id$
 */
 
 #include <be/app/Message.h>

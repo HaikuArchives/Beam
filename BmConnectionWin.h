@@ -1,5 +1,6 @@
 /*
-	BmConnectionWin.h		-	$Id$
+	BmConnectionWin.h
+		$Id$
 */
 
 #ifndef _BmPopperWin_h

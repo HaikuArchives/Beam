@@ -1,5 +1,6 @@
 /*
-	BmUtil.h		-	$Id$
+	BmUtil.h
+		$Id$
 */
 
 #ifndef _BmUtil_h
