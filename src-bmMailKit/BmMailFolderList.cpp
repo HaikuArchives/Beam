@@ -345,18 +345,6 @@ BmMailFolderList::~BmMailFolderList() {
 }
 
 /*------------------------------------------------------------------------------*\
-	StartJob()
-		-	
-\*------------------------------------------------------------------------------*/
-bool BmMailFolderList::StartJob() {
-	if (inherited::StartJob()) {
-		QueryForNewMails();
-		return true;
-	} else
-		return false;
-}
-
-/*------------------------------------------------------------------------------*\
 	AddNewFlag()
 		-	
 \*------------------------------------------------------------------------------*/
@@ -433,6 +421,19 @@ BmMailFolder* BmMailFolderList::AddMailFolder( entry_ref& eref, int64 node,
 	BmMailFolder* newFolder = new BmMailFolder( this, eref, node, parent, mtime);
 	AddItemToList( newFolder, parent);
 	return newFolder;
+}
+
+/*------------------------------------------------------------------------------*\
+	StartJob()
+		-	
+\*------------------------------------------------------------------------------*/
+bool BmMailFolderList::StartJob() {
+	if (inherited::StartJob()) {
+		if (!mNewMailQuery.IsLive())
+			QueryForNewMails();
+		return true;
+	} else
+		return false;
 }
 
 /*------------------------------------------------------------------------------*\
