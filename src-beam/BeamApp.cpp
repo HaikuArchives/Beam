@@ -753,10 +753,6 @@ BeamApplication::~BeamApplication() {
 	ThePeopleMonitor = NULL;
 	TheMailMonitor = NULL;
 	ThePeopleList = NULL;
-#ifdef BM_REF_DEBUGGING
-	BmRefObj::PrintRefsLeft();
-#endif
-	BmRefObj::CleanupObjectLists();
 	delete mPrintSetup;
 	delete TheResources;
 	delete BeamGuiRoster;

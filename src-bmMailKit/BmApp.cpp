@@ -232,6 +232,11 @@ BmApplication::~BmApplication()
 	TheFilterList = NULL;
 	TheSignatureList = NULL;
 
+#ifdef BM_REF_DEBUGGING
+	BmRefObj::PrintRefsLeft();
+#endif
+	BmRefObj::CleanupObjectLists();
+
 	delete ThePrefs;
 	BmLogHandler::Shutdown();
 	delete TheLogHandler;
