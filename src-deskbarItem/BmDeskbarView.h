@@ -49,6 +49,11 @@ enum {
 	BMM_RESET_ICON = 		'bMDa'
 };
 
+// messages send from deskbar-view to app:
+enum {
+	BM_DESKBAR_GET_MBOX_DEVICE = 'bMDb'
+};
+
 class BmDeskbarView: public BView {
 	typedef BView inherited;
 public:
@@ -66,8 +71,8 @@ protected:
 	void ShowMenu( BPoint point);
 	void IncNewMailCount();
 	void DecNewMailCount();
-	void SendToBeam( BMessage *msg);
-	void InstallDeskbarMonitor();
+	void SendToBeam( BMessage *msg, BHandler *replyHandler = NULL);
+	void InstallDeskbarMonitor( dev_t mbox_dev);
 	void HandleQueryUpdateMsg( BMessage* msg);
 	
 	// overrides of BView base:

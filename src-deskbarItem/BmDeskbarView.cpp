@@ -122,7 +122,9 @@ status_t BmDeskbarView::Archive( BMessage *data,
 }
 
 void BmDeskbarView::AttachedToWindow() {
-	InstallDeskbarMonitor();
+	// ask app for the volume of our mailbox-directory:
+	BMessage request(BM_DESKBAR_GET_MBOX_DEVICE);
+	SendToBeam( &request, this);
 }
 
 
@@ -152,6 +154,11 @@ void BmDeskbarView::MessageReceived(BMessage *msg) {
 		}
 		case B_QUERY_UPDATE: {
 			HandleQueryUpdateMsg( msg);
+			break;
+		}
+		case BM_DESKBAR_GET_MBOX_DEVICE: {
+			dev_t mbox_dev = msg->FindInt32( "mbox_dev");
+			InstallDeskbarMonitor( mbox_dev);
 			break;
 		}
 		default: {
@@ -214,27 +221,29 @@ void BmDeskbarView::ChangeIcon( const char* iconName) {
 }
 
 /*------------------------------------------------------------------------------*\
-	QueryForNewMails()
+	InstallDeskbarMonitor()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmDeskbarView::InstallDeskbarMonitor() {
+void BmDeskbarView::InstallDeskbarMonitor( dev_t mbox_dev) {
 	int32 count;
 	dirent* dent;
 	node_ref nref;
 	char buf[4096];
 
-	BPath path;
 	entry_ref eref;
 	
 	BMessenger thisAsTarget( this);
+	
+	// determine root-dir of our mailbox-directory:
+	BDirectory mboxRoot;
+	BVolume mboxVolume( mbox_dev);
+	mboxVolume.GetRootDirectory( &mboxRoot);
+	if (mboxRoot.InitCheck() == B_OK) {
 
-	// fetch node-ref of Trash (a kludge, should be able to handle more than one):
-	BDirectory trash( "/boot/home/Desktop/Trash");
-	trash.GetNodeRef( &mTrashNodeRef);
-	// determine the volume of our home-directory:
-	if (find_directory( B_USER_DIRECTORY, &path) == B_OK
-	&& get_ref_for_path( path.Path(), &eref) == B_OK) {
-		BVolume mboxVolume = eref.device;
+		// fetch node-ref of Trash (a kludge, should be able to handle more than one):
+		BDirectory trash( &mboxRoot, "home/Desktop/Trash");
+		trash.GetNodeRef( &mTrashNodeRef);
+
 		if (mNewMailQuery.SetVolume( &mboxVolume) == B_OK
 		&& mNewMailQuery.SetPredicate( "MAIL:status == 'New'") == B_OK
 		&& mNewMailQuery.SetTarget( thisAsTarget) == B_OK
@@ -258,10 +267,10 @@ void BmDeskbarView::InstallDeskbarMonitor() {
 /***********************************************************
  * SendToBeam
  ***********************************************************/
-void BmDeskbarView::SendToBeam( BMessage* msg) {
+void BmDeskbarView::SendToBeam( BMessage* msg, BHandler* replyHandler) {
 	BMessenger beam( BM_APP_SIG);
 	if (beam.IsValid()) {
-		if (beam.SendMessage( msg, (BHandler*)NULL, 1000000) == B_OK)
+		if (beam.SendMessage( msg, replyHandler, 1000000) == B_OK)
 			return;
 	}
 	// Beam has probably crashed, we quit, too:
