@@ -148,7 +148,7 @@ private:
 		- 	implements all mail-specific text-handling like header-parsing, en-/decoding,
 			en-/decrypting
 \*------------------------------------------------------------------------------*/
-class BmMailHeader : public BmRefObj {
+class BmMailHeader : public virtual BmRefObj {
 
 public:
 	typedef vector< BmString> BmValueList;
