@@ -35,6 +35,10 @@ public:
 	// c'tors and d'tor:
 	BmAddress( BString addrText);
 	~BmAddress();
+
+	// native methods:
+	void ConstructHeaderForSending( BString& header, int32 encoding, 
+											  int32 fieldNameLength) const;
 	// operators:
 	operator BString() const;
 						// returns address completely formatted (ready to be sent)

@@ -28,7 +28,9 @@ namespace BmEncoding {
 //	int32 DecodedLength( const BString& encodingStyle, const char* text, int32 length);
 
 	BString ConvertHeaderPartToUTF8( const BString& headerPart, int32 defaultEncoding);
-	BString ConvertUTF8ToHeaderPart( const BString& utf8text, int32 encoding);
+	BString ConvertUTF8ToHeaderPart( const BString& utf8text, int32 encoding,
+												bool useQuotedPrintableIfNeeded,
+												bool fold=false, int32 fieldLen=0);
 	
 };
 

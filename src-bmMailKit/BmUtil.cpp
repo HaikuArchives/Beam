@@ -10,6 +10,8 @@
 #include "BmBasics.h"
 #include "BmUtil.h"
 
+BString BM_SPACES("                                                                                ");
+
 /*------------------------------------------------------------------------------*\
 	FindMsgString( archive, name)
 		-	extracts the msg-field with the specified name from the given archive and

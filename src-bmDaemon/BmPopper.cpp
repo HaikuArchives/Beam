@@ -262,20 +262,19 @@ void BmPopper::Retrieve() {
 		if (!CheckForPositiveAnswer( MULTI_LINE, ++newMailIndex))
 			return;
 		BmMail mail( mAnswer, Name());
-		mail.Store();
+		if (mail.InitCheck() != B_OK || !mail.Store())
+			return;
 		mPopAccount->MarkUIDAsDownloaded( mMsgUIDs[i]);
-	}
-	if (mNewMsgCount)
-		UpdateMailStatus( 100.0, "done", mNewMsgCount);
-	//	delete the retrieved messages if required:
-	if (mPopAccount->DeleteMailFromServer()) {
-		for( int32 i=0; i<mMsgCount; i++) {
-			BString cmd = BString("DELE ") << i+1;
+		//	delete the retrieved message if required:
+		if (mPopAccount->DeleteMailFromServer()) {
+			cmd = BString("DELE ") << i+1;
 			SendCommand( cmd);
 			if (!CheckForPositiveAnswer( SINGLE_LINE))
 				return;
 		}
 	}
+	if (mNewMsgCount)
+		UpdateMailStatus( 100.0, "done", mNewMsgCount);
 }
 
 /*------------------------------------------------------------------------------*\

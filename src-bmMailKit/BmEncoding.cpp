@@ -17,6 +17,9 @@ using namespace regexx;
 
 #define HEXDIGIT2CHAR(d) (((d)>='0'&&(d)<='9') ? (d)-'0' : ((d)>='A'&&(d)<='F') ? (d)-'A'+10 : ((d)>='a'&&(d)<='f') ? (d)-'a'+10 : 0)
 
+#define CHAR2HIGHNIBBLE(c) (((c) > 0x9F ? 'A'-10 : '0')+((c)>>4))
+#define CHAR2LOWNIBBLE(c)  ((((c)&0x0F) > 9 ? 'A'-10 : '0')+((c)&0x0F))
+
 const char* BmEncoding::BM_Encodings[] = {
 	"ISO-8859-1",
 	"ISO-8859-2",
@@ -206,7 +209,58 @@ void BmEncoding::Encode( BString encodingStyle, const BString& src, BString& des
 	dest.Truncate(0,false);
 	if (encodingStyle == "Q" || encodingStyle == "QUOTED-PRINTABLE") {
 		// quoted printable:
-		dest = src;
+		int32 destLen = srcLen*3;
+		char* buf = dest.LockBuffer( destLen+1);
+		int32 destCount = 0;
+		int32 lineLength = 0;
+		for( const char* p=src.String(); *p; ++p) {
+			BString addChars;
+			unsigned char c = *p;
+			if (isalnum(c)) {
+				addChars += c;
+			} else if (c == ' ' || c == '\t') {
+				// in encoded-words, we always replace SPACE by underline:
+				if (c == ' ' && isEncodedWord)
+					addChars += '_';
+				else {
+					bool needsEncoding = true;
+					for( const char* p2=p+1; *p2; ++p2) {
+						if (*p2 == '\r' && *(p2+1)=='\n')
+							break;
+						if (*p2 != ' ' && *p2 != '\t') {
+							needsEncoding = false;
+							break;
+						}
+					}
+					if (needsEncoding) {
+						addChars << '=' << (char)CHAR2HIGHNIBBLE(c) << (char)CHAR2LOWNIBBLE(c);
+					} else {
+						addChars += c;
+					}
+				}
+			} else if (c == '\r' && *(p+1) == '\n') {
+				buf[destCount++] = '\r';
+				buf[destCount++] = '\n';
+				p++;
+				lineLength = 0;
+				continue;
+			} else {
+				addChars << '=' << (char)CHAR2HIGHNIBBLE(c) << (char)CHAR2LOWNIBBLE(c);
+			}
+			int32 addLen = addChars.Length();
+			if (lineLength + addLen > 76) {
+				// insert soft linebreak:
+				buf[destCount++] = '=';
+				buf[destCount++] = '\r';
+				buf[destCount++] = '\n';
+				lineLength = 0;
+			}
+			addChars.CopyInto( buf+destCount, 0, addLen);
+			destCount += addLen;
+			lineLength += addLen;
+		}
+		buf[destCount] = '\0';
+		dest.UnlockBuffer( destCount);
 	} else if (encodingStyle == "B" || encodingStyle == "BASE64") {
 		// base64:
 		int32 destLen = srcLen*5/3;		// just to be sure... (need to be a little over 4/3)
@@ -389,8 +443,43 @@ BString BmEncoding::ConvertHeaderPartToUTF8( const BString& headerPart,
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BString BmEncoding::ConvertUTF8ToHeaderPart( const BString& utf8text, int32 encoding) {
-//	BString quotedPrintable = Encode( );
-	
-	return utf8text;
+BString BmEncoding::ConvertUTF8ToHeaderPart( const BString& utf8text, int32 encoding,
+															bool useQuotedPrintableIfNeeded,
+															bool fold, int32 fieldLen) {
+	bool needsQuotedPrintable = false;
+	BString charsetString;
+	ConvertFromUTF8( encoding, utf8text, charsetString);
+	if (useQuotedPrintableIfNeeded) {
+		// check if string needs quoted-printable encoding (...contains non-ASCII chars):
+		for( const char* p = charsetString.String(); *p; ++p) {
+			unsigned char c = *p;
+			if (c>127 || c<32) {
+				needsQuotedPrintable = true;
+				break;
+			}
+		}
+	}
+	BString charset = EncodingToCharset( encoding);
+	BString encodedString;
+	Encode( needsQuotedPrintable?"Q":"7bit", charsetString, encodedString, true);
+	int32 maxChars = 76 						// 76 chars maximum
+						- (fieldLen + 2)		// space used by "fieldname: "
+						- charset.Length()	// length of charset in encoded-word
+						- 7;						// =?...?q?...?=
+	if (fold && encodedString.Length() > maxChars) {
+		BString foldedString;
+		while( encodedString.Length() > maxChars) {
+			BString tmp;
+			encodedString.MoveInto( tmp, 0, maxChars-5);
+			foldedString << "=?" << charset << "?q?" << tmp << "?=\r\n";
+			foldedString.Append( BM_SPACES, fieldLen+2);
+		}
+		foldedString << "=?" << charset << "?q?" << encodedString << "?=";
+		return foldedString;		
+	} else {
+		if (needsQuotedPrintable)
+			return BString("=?") + charset + "?q?" + encodedString + "?=";
+		else
+			return encodedString;
+	}
 }

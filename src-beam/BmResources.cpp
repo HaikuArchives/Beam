@@ -100,19 +100,25 @@ BBitmap* BmResources::IconByName( const BString name) {
 			if (mt.GetIcon( icon, B_MINI_ICON) != B_OK) {
 				// the given mimetype has no icon defined, we check if the preferred app 
 				// of this mimetype has an icon for this type:
-				status_t err;
-				char preferredApp[B_MIME_TYPE_LENGTH+1];
-				if (mt.GetPreferredApp( preferredApp) != B_OK
-				|| mt.SetTo( preferredApp) != B_OK
-				|| (err=mt.GetIconForType( name.String(), icon, B_MINI_ICON)) != B_OK) {
+				BMimeType preferredApp;
+				char preferredAppName[B_MIME_TYPE_LENGTH+1];
+				if (mt.GetPreferredApp( preferredAppName) != B_OK
+				|| preferredApp.SetTo( preferredAppName) != B_OK
+				|| preferredApp.GetIconForType( name.String(), icon, B_MINI_ICON) != B_OK) {
 					// the preferred-app doesn't exist or has no icon for this mimetype.
-					// We take the icon of a generic file:
-					mt.SetTo("application/octet-stream");
-					if (mt.InitCheck() == B_OK) {
-						if (mt.GetIcon( icon, B_MINI_ICON) != B_OK) {
-							// no icon for generic file ?!? we give up...
-							delete icon;
-							icon = NULL;
+					// We check if the mimetype's supertype has an icon:
+					BMimeType supertype;
+					mt.GetSupertype( &supertype);
+					if (supertype.GetIcon( icon, B_MINI_ICON) != B_OK) {
+						// no icon for the supertype, tough!
+						// We take the icon of a generic file:
+						mt.SetTo("application/octet-stream");
+						if (mt.InitCheck() == B_OK) {
+							if (mt.GetIcon( icon, B_MINI_ICON) != B_OK) {
+								// no icon for generic file ?!? we give up...
+								delete icon;
+								icon = NULL;
+							}
 						}
 					}
 				}

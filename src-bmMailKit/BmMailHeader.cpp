@@ -83,6 +83,24 @@ BmAddress::operator BString() const {
 	return mPhrase.Length() ? (mPhrase + " <" + mAddrSpec + ">") : mAddrSpec;
 }
 
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmAddress::ConstructHeaderForSending( BString& header, int32 encoding, 
+														 int32 fieldNameLength) const {
+	if (mPhrase.Length()) {
+		BString converted = ConvertUTF8ToHeaderPart( mPhrase, encoding, true, 
+																	true, fieldNameLength);
+		if (converted.Length()+mAddrSpec.Length()+3 > BM_LINE_WIDTH) {
+			header << converted << "\r\n";
+			header.Append( BM_SPACES, fieldNameLength+2);
+			header << "<" << ConvertUTF8ToHeaderPart( mAddrSpec, encoding, false) << ">";
+		} else
+			header << converted << " <" << mAddrSpec << ">";
+	} else
+		header += ConvertUTF8ToHeaderPart( mAddrSpec, encoding, false);
+}
 
 
 /********************************************************************************\
@@ -244,23 +262,25 @@ BmAddressList::operator BString() const {
 \*------------------------------------------------------------------------------*/
 void BmAddressList::ConstructHeaderForSending( BString& header, int32 encoding, 
 															  int32 fieldNameLength) {
-	static BString spaces("                                                     ");
+	BString fieldString;
 	if (mIsGroup)
-		header << mGroupName << ": ";
+		fieldString << mGroupName << ": ";
 	BmAddrList::const_iterator pos;
 	for( pos=mAddrList.begin(); pos!=mAddrList.end(); ++pos) {
-		BString converted = ConvertUTF8ToHeaderPart( *pos, encoding);
+		BString converted;
+		pos->ConstructHeaderForSending( converted, encoding, fieldNameLength);
 		if (pos != mAddrList.begin()) {
-			header << ",";
-			if (header.Length() + converted.Length() > BM_LINE_WIDTH) {
-				header << "\r\n";
-				header.Append( spaces, fieldNameLength+2);
+			fieldString += ',';
+			if (fieldString.Length() + converted.Length() > BM_LINE_WIDTH) {
+				fieldString += "\r\n";
+				fieldString.Append( BM_SPACES, fieldNameLength+2);
 			}
 		}
-		header << converted;
+		fieldString += converted;
 	}
 	if (mIsGroup)
-		header << ";";
+		fieldString += ";";
+	header += fieldString;
 }
 
 
@@ -616,7 +636,6 @@ void BmMailHeader::StoreAttributes( BFile& mailFile) {
 		-	
 \*------------------------------------------------------------------------------*/
 BString BmMailHeader::FoldLine( BString line, int fieldLength) {
-	BString spaces("                                                            ");
 	BString temp;
 	BString foldedLine;
 	while( line.Length() > BM_LINE_WIDTH) {
@@ -629,7 +648,7 @@ BString BmMailHeader::FoldLine( BString line, int fieldLength) {
 			line.MoveInto( temp, 0, BM_LINE_WIDTH);
 		}
 		foldedLine << temp << "\r\n";
-		foldedLine.Append( spaces, fieldLength+2);
+		foldedLine.Append( BM_SPACES, fieldLength+2);
 	}
 	return foldedLine << line;
 }

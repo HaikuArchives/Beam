@@ -11,6 +11,8 @@
 #include <Message.h>
 #include <String.h>
 
+extern BString BM_SPACES;
+
 /*------------------------------------------------------------------------------*\*\
 	ShowAlert( text, logtext)
 		-	pops up an Alert showing the passed text
