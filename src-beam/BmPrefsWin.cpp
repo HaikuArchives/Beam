@@ -61,6 +61,7 @@
 #include "BmPrefsFilterChainView.h"
 #include "BmPrefsGeneralView.h"
 #include "BmPrefsIdentityView.h"
+#include "BmPrefsLoggingView.h"
 #include "BmPrefsMailConstrView.h"
 #include "BmPrefsMailReadView.h"
 #include "BmPrefsRecvMailView.h"
@@ -130,6 +131,7 @@ BmPrefsWin::BmPrefsWin()
 								new BmPrefsView( NULL),
 								new BmPrefsGeneralView(),
 								new BmPrefsShortcutsView(),
+								new BmPrefsLoggingView(),
 								new BmPrefsMailConstrView(),
 								new BmPrefsSendMailView(),
 								new BmPrefsMailReadView(),
@@ -231,6 +233,10 @@ CLVContainerView* BmPrefsWin::CreatePrefsListView( minimax minmax, int32 width, 
 
 	item = new CLVEasyItem( 1, false, false, 18.0);
 	item->SetColumnContent( 1, "Shortcuts");
+	mPrefsListView->AddItem( item);
+
+	item = new CLVEasyItem( 1, false, false, 18.0);
+	item->SetColumnContent( 1, "Logging");
 	mPrefsListView->AddItem( item);
 
 	item = new CLVEasyItem( 0, true, false, 18.0);
