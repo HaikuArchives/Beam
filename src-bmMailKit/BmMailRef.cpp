@@ -41,7 +41,7 @@
 #include "BmStorageUtil.h"
 #include "BmUtil.h"
 
-#define BM_REFKEY(x) (BmString() << x.st_ino)
+#define BM_REFKEYSTAT(x) (BmString() << x.st_ino << "_" << x.st_dev)
 
 	// archival-fieldnames:
 const char* const BmMailRef::MSG_ACCOUNT = 	"bm:ac";
@@ -67,11 +67,12 @@ const int16 BmMailRef::nArchiveVersion = 1;
 \*------------------------------------------------------------------------------*/
 BmRef<BmMailRef> BmMailRef::CreateInstance( BmMailRefList* model, entry_ref &eref, 
 												  		  struct stat& st) {
+	GlobalLocker()->Lock();
 	BmProxy* proxy = BmRefObj::GetProxy( typeid(BmMailRef).name());
 	if (proxy) {
-		BAutolock lock( &proxy->Locker);
-		BmString key( BM_REFKEY( st));
+		BmString key( BM_REFKEYSTAT( st));
 		BmRef<BmMailRef> mailRef( dynamic_cast<BmMailRef*>( proxy->FetchObject( key)));
+		GlobalLocker()->Unlock();
 		if (mailRef) {
 			// update mailref with new info:
 			if (model) {
@@ -93,6 +94,7 @@ BmRef<BmMailRef> BmMailRef::CreateInstance( BmMailRefList* model, entry_ref &ere
 			return newRef;
 		}
 	}
+	GlobalLocker()->Unlock();
 	BM_THROW_RUNTIME( BmString("Could not get proxy for ") << typeid(BmMailRef).name());
 	return NULL;
 }
@@ -102,11 +104,12 @@ BmRef<BmMailRef> BmMailRef::CreateInstance( BmMailRefList* model, entry_ref &ere
 		-	standard c'tor
 \*------------------------------------------------------------------------------*/
 BmMailRef::BmMailRef( BmMailRefList* model, entry_ref &eref, struct stat& st)
-	:	inherited( BM_REFKEY(st), model, (BmListModelItem*)NULL)
+	:	inherited( BM_REFKEYSTAT(st), model, (BmListModelItem*)NULL)
 	,	mEntryRef( eref)
-	,	mInode( st.st_ino)
 	,	mInitCheck( B_NO_INIT)
 {
+	mNodeRef.device = st.st_dev;
+	mNodeRef.node = st.st_ino;
 	if (ReadAttributes( &st))
 		mInitCheck = B_OK;
 }
@@ -117,15 +120,15 @@ BmMailRef::BmMailRef( BmMailRefList* model, entry_ref &eref, struct stat& st)
 \*------------------------------------------------------------------------------*/
 BmMailRef::BmMailRef( BMessage* archive, BmMailRefList* model)
 	:	inherited( "", model, (BmListModelItem*)NULL)
-	,	mInode( 0)
 	,	mInitCheck( B_NO_INIT)
 {
 	try {
 		status_t err;
 		(err = archive->FindRef( MSG_ENTRYREF, &mEntryRef)) == B_OK
 													|| BM_THROW_RUNTIME( BmString("BmMailRef: Could not find msg-field ") << MSG_ENTRYREF << "\n\nError:" << strerror(err));
-		mInode = FindMsgInt64( archive, MSG_INODE);
-		Key( BmString() << mInode);
+		mNodeRef.node = FindMsgInt64( archive, MSG_INODE);
+		mNodeRef.device = mEntryRef.device;
+		Key( BM_REFKEY( mNodeRef));
 
 		mAccount = FindMsgString( archive, MSG_ACCOUNT);
 		mHasAttachments = FindMsgBool( archive, MSG_ATTACHMENTS);
@@ -205,7 +208,7 @@ status_t BmMailRef::Archive( BMessage* archive, bool) const {
 		|| archive->AddInt32( MSG_CREATED, mCreated)
 		|| archive->AddRef( MSG_ENTRYREF, &mEntryRef)
 		|| archive->AddString( MSG_FROM, mFrom.String())
-		|| archive->AddInt64( MSG_INODE, mInode)
+		|| archive->AddInt64( MSG_INODE, mNodeRef.node)
 		|| archive->AddString( MSG_NAME, mName.String())
 		|| archive->AddString( MSG_PRIORITY, mPriority.String())
 		|| archive->AddString( MSG_REPLYTO, mReplyTo.String())

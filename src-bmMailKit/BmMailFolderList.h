@@ -63,10 +63,10 @@ public:
 	
 private:
 	BmMailFolder* parent;
-	ino_t lastParentInode;
+	node_ref lastParentNodeRef;
 	BmRef<BmListModelItem> lastParentRef;
 	BmMailFolder* oldParent;
-	ino_t lastOldParentInode;
+	node_ref lastOldParentNodeRef;
 	BmRef<BmListModelItem> lastOldParentRef;
 	int32 counter;
 
@@ -81,7 +81,7 @@ private:
 \*------------------------------------------------------------------------------*/
 class BmMailFolderList : public BmListModel {
 	typedef BmListModel inherited;
-	typedef map< ino_t, BmMailFolder*> BmNewNodeMap;
+	typedef map< BmString, BmMailFolder*> BmNewNodeMap;
 
 	friend class BmMailFolder;
 	friend BmMailMonitor;
@@ -97,11 +97,11 @@ public:
 	virtual ~BmMailFolderList();
 	
 	// native methods:
-	BmMailFolder* AddNewFlag( ino_t pnode, ino_t node);
-	void RemoveNewFlag( ino_t pnode, ino_t node);
-	void SetFolderForNodeFlaggedNew( ino_t node, BmMailFolder* folder);
-	BmMailFolder* GetFolderForNodeFlaggedNew( ino_t node);
-	bool NodeIsFlaggedNew( ino_t node);
+	BmMailFolder* AddNewFlag( const node_ref& pnref, const node_ref& nref);
+	void RemoveNewFlag( const node_ref& pnref, const node_ref& nref);
+	void SetFolderForNodeFlaggedNew( const node_ref& nref, BmMailFolder* folder);
+	BmMailFolder* GetFolderForNodeFlaggedNew( const node_ref& nref);
+	bool NodeIsFlaggedNew( const node_ref& nref);
 	void QueryForNewMails();
 	
 	// overrides of list-model base:

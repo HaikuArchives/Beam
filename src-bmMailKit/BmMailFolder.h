@@ -71,7 +71,7 @@ public:
 	void RecreateCache();
 	void AddMailRef( entry_ref& eref, struct stat& st);
 	bool HasMailRef( BmString key);
-	void RemoveMailRef( ino_t node);
+	void RemoveMailRef( const node_ref& nref);
 	void CleanupForMailRefList( BmMailRefList* refList);
 	void CreateSubFolder( BmString name);
 	void Rename( BmString newName);
@@ -84,7 +84,7 @@ public:
 	// getters:
 	inline const entry_ref& EntryRef() const 		{ return mEntryRef; }
 	inline const entry_ref* EntryRefPtr() const	{ return &mEntryRef; }
-	inline const ino_t& Inode() const				{ return mInode; }
+	inline const node_ref& NodeRef() const			{ return mNodeRef; }
 	inline const int NewMailCount() const			{ return mNewMailCount; }
 	inline const int NewMailCountForSubfolders() const		{ return mNewMailCountForSubfolders; }
 	inline const time_t LastModified() const		{ return mLastModified; }
@@ -111,7 +111,7 @@ private:
 
 	// the following members will be archived as part of BmFolderList:
 	entry_ref mEntryRef;
-	ino_t mInode;
+	node_ref mNodeRef;
 	time_t mLastModified;
 
 	// the following members will be archived into their own files:

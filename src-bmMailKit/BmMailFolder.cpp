@@ -59,15 +59,16 @@ const BmUpdFlags BmMailFolder::UPD_NEW_STATUS = 	1<<2;
 \*------------------------------------------------------------------------------*/
 BmMailFolder::BmMailFolder( BmMailFolderList* model, entry_ref &eref, ino_t node, 
 									 BmMailFolder* parent, time_t &modified)
-	:	inherited( BmString() << node, model, parent)
+	:	inherited( BmString() << node << "_" << eref.device, model, parent)
 	,	mEntryRef( eref)
-	,	mInode( node)
 	,	mLastModified( modified)
 	,	mMailRefList( NULL)
 	,	mNewMailCount( 0)
 	,	mNewMailCountForSubfolders( 0)
 	,	mName( eref.name)
 {
+	mNodeRef.node = node;
+	mNodeRef.device = eref.device;
 	StartNodeMonitor();
 }
 
@@ -77,7 +78,6 @@ BmMailFolder::BmMailFolder( BmMailFolderList* model, entry_ref &eref, ino_t node
 \*------------------------------------------------------------------------------*/
 BmMailFolder::BmMailFolder( BMessage* archive, BmMailFolderList* model, BmMailFolder* parent)
 	:	inherited( "", model, parent)
-	,	mInode( 0)
 	,	mMailRefList( NULL)
 	,	mNewMailCount( 0)
 	,	mNewMailCountForSubfolders( 0)
@@ -86,9 +86,10 @@ BmMailFolder::BmMailFolder( BMessage* archive, BmMailFolderList* model, BmMailFo
 		status_t err;
 		(err = archive->FindRef( MSG_ENTRYREF, &mEntryRef)) == B_OK
 													|| BM_THROW_RUNTIME( BmString("BmMailFolder: Could not find msg-field ") << MSG_ENTRYREF << "\n\nError:" << strerror(err));
-		mInode = FindMsgInt64( archive, MSG_INODE);
+		mNodeRef.node = FindMsgInt64( archive, MSG_INODE);
+		mNodeRef.device = mEntryRef.device;
 		mLastModified = FindMsgInt32( archive, MSG_LASTMODIFIED);
-		Key( BmString() << mInode);
+		Key( BM_REFKEY( mNodeRef));
 		mName = mEntryRef.name;
 		StartNodeMonitor();
 	} catch (exception &e) {
@@ -110,10 +111,7 @@ BmMailFolder::~BmMailFolder() {
 		-	instructs the node-monitor to watch this folder
 \*------------------------------------------------------------------------------*/
 void BmMailFolder::StartNodeMonitor() {
-	node_ref nref;
-	nref.device = mEntryRef.device;
-	nref.node = mInode;
-	watch_node( &nref, B_WATCH_DIRECTORY, BMessenger( TheMailMonitor));
+	watch_node( &mNodeRef, B_WATCH_DIRECTORY, BMessenger( TheMailMonitor));
 }
 
 /*------------------------------------------------------------------------------*\
@@ -121,10 +119,7 @@ void BmMailFolder::StartNodeMonitor() {
 		-	instructs the node-monitor to stop watching this folder
 \*------------------------------------------------------------------------------*/
 void BmMailFolder::StopNodeMonitor() {
-	node_ref nref;
-	nref.device = mEntryRef.device;
-	nref.node = mInode;
-	watch_node( &nref, B_STOP_WATCHING, BMessenger( TheMailMonitor));
+	watch_node( &mNodeRef, B_STOP_WATCHING, BMessenger( TheMailMonitor));
 }
 
 /*------------------------------------------------------------------------------*\
@@ -134,8 +129,7 @@ void BmMailFolder::StopNodeMonitor() {
 status_t BmMailFolder::Archive( BMessage* archive, bool deep) const {
 	status_t ret = inherited::Archive( archive, deep)
 		|| archive->AddRef( MSG_ENTRYREF, &mEntryRef)
-		|| archive->AddInt64( MSG_INODE, mInode)
-//		|| archive->AddInt32( MSG_LASTMODIFIED, mLastModified)
+		|| archive->AddInt64( MSG_INODE, mNodeRef.node)
 		|| archive->AddInt32( MSG_LASTMODIFIED, time(NULL))
 							// bump time to the last time folder-cache has been written
 		|| archive->AddInt32( MSG_NUMCHILDREN, size());
@@ -172,9 +166,6 @@ bool BmMailFolder::CheckIfModifiedSince( time_t when, time_t* storeNewModTime) {
 	BDirectory mailDir;
 	bool hasChanged = false;
 	
-	if (!mInode)
-		return false;							// dummy folder has never modified
-
 	BM_LOG3( BM_LogMailTracking, "BmMailFolder::CheckIfModifiedSince() - start");
 	mailDir.SetTo( this->EntryRefPtr());
 	(err = mailDir.InitCheck()) == B_OK
@@ -288,7 +279,11 @@ void BmMailFolder::RecreateCache() {
 void BmMailFolder::AddMailRef( entry_ref& eref, struct stat& st) {
 	BmAutolock lock( nRefListLocker);
 	lock.IsLocked() 							|| BM_THROW_RUNTIME( Name() + ":AddMailRef(): Unable to get lock");
-	BM_LOG2( BM_LogMailTracking, Name()+" adding mail-ref " << st.st_ino);
+	node_ref nref;
+	nref.node = st.st_ino;
+	nref.device = st.st_dev;
+	BmString key( BM_REFKEY( nref));
+	BM_LOG2( BM_LogMailTracking, Name()+" adding mail-ref " << key);
 	if (mMailRefList) {
 		if (!mMailRefList->AddMailRef( eref, st)) {
 			BM_LOG2( BM_LogMailTracking, Name()+" mail-ref already exists.");
@@ -296,8 +291,8 @@ void BmMailFolder::AddMailRef( entry_ref& eref, struct stat& st) {
 	}
 	// if mail-ref is flagged new, we have to tell the mailfolderlist that we own
 	// this new-mail and increment our new-mail-counter (causing an update):
-	if (TheMailFolderList->NodeIsFlaggedNew( st.st_ino))
-		TheMailFolderList->SetFolderForNodeFlaggedNew( st.st_ino, this);
+	if (TheMailFolderList->NodeIsFlaggedNew( nref))
+		TheMailFolderList->SetFolderForNodeFlaggedNew( nref, this);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -319,19 +314,20 @@ bool BmMailFolder::HasMailRef( BmString key) {
 		-	removes the mail-ref specified by the given node from this folder's
 			mailref-list
 \*------------------------------------------------------------------------------*/
-void BmMailFolder::RemoveMailRef( ino_t node) {
+void BmMailFolder::RemoveMailRef( const node_ref& nref) {
 	BmAutolock lock( nRefListLocker);
 	lock.IsLocked() 							|| BM_THROW_RUNTIME( Name() + ":RemoveMailRef(): Unable to get lock");
-	BM_LOG2( BM_LogMailTracking, Name()+" removing mail-ref "<<node);
+ 	BmString key( BM_REFKEY( nref));
+ 	BM_LOG2( BM_LogMailTracking, Name()+" removing mail-ref " << key);
 	if (mMailRefList) {
-		if (!mMailRefList->RemoveItemFromList( BmString()<<node)) {
+		if (!mMailRefList->RemoveItemFromList( key)) {
 			BM_LOG2( BM_LogMailTracking, Name()+" mail-ref doesn't exist.");
 		}
 	}
 	// if mail-ref is flagged new, we have to tell the mailfolderlist that we no 
 	// longer own this new-mail and decrement our new-mail-counter (causing an update):
-	if (TheMailFolderList->NodeIsFlaggedNew( node))
-		TheMailFolderList->SetFolderForNodeFlaggedNew( node, NULL);
+	if (TheMailFolderList->NodeIsFlaggedNew( nref))
+		TheMailFolderList->SetFolderForNodeFlaggedNew( nref, NULL);
 }
 
 /*------------------------------------------------------------------------------*\

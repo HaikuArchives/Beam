@@ -67,10 +67,8 @@ BmMailMonitor* BmMailMonitor::CreateInstance() {
 BmMailMonitor::BmMailMonitor()
 	:	BLooper("MailMonitor", B_DISPLAY_PRIORITY, 500)
 	,	parent( NULL)
-	,	lastParentInode( 0)
 	,	lastParentRef( NULL)
 	,	oldParent( NULL)
-	,	lastOldParentInode( 0)
 	,	lastOldParentRef( NULL)
 	,	counter( 0)
 {
@@ -114,7 +112,7 @@ void BmMailMonitor::HandleMailMonitorMsg( BMessage* msg) {
 	const char *name;
 	struct stat st;
 	status_t err;
-	ino_t node;
+	node_ref nref;
 	BM_LOG2( BM_LogMailTracking, BmString("MailMonitorMessage nr.") << ++counter << " received.");
 	BmMailFolder* folder = NULL;
 	try {
@@ -127,7 +125,8 @@ void BmMailMonitor::HandleMailMonitorMsg( BMessage* msg) {
 													|| BM_THROW_RUNTIME( BmString("Field '")<<directory<<"' not found in msg !?!");
 				(err = msg->FindInt32( "device", &eref.device)) == B_OK
 													|| BM_THROW_RUNTIME( BmString("Field 'device' not found in msg !?!"));
-				(err = msg->FindInt64( "node", &node)) == B_OK
+				nref.device = eref.device;
+				(err = msg->FindInt64( "node", &nref.node)) == B_OK
 													|| BM_THROW_RUNTIME( BmString("Field 'node' not found in msg !?!"));
 				if (opcode != B_ENTRY_REMOVED) {
 					BNode aNode;
@@ -139,18 +138,6 @@ void BmMailMonitor::HandleMailMonitorMsg( BMessage* msg) {
 													|| BM_THROW_RUNTIME( BmString("Couldn't create node for parent-node <")<<eref.directory<<"> and name <"<<eref.name << "> \n\nError:" << strerror(err));
 					(err = nodeInfo.SetTo( &aNode)) == B_OK
 													|| BM_THROW_RUNTIME( BmString("Couldn't create node-info for node --- parent-node <")<<eref.directory<<"> and name <"<<eref.name << "> \n\nError:" << strerror(err));
-/*
-					int i;
-					for( i=0; i<100 && (err=nodeInfo.GetType( mimeType)) != B_OK; ++i) {
-						// some programs create mails directly in the in-folder (instead of creating the mail-file
-						// in a temp-folder and then moving the complete file over to the mailbox).
-						// In order to avoid reading half-written mail-files, we wait til we find a mimetype and
-						// hope that this means the file is complete...
-						snooze( 10*1000);		// pause for 10ms
-					}
-					if (err != B_OK)
-						BM_LOG2( BM_LogMailTracking, BmString("Unable to determine file-type of file/folder ") << name);
-*/
 					(err = aNode.GetStat( &st)) == B_OK
 													|| BM_THROW_RUNTIME( BmString("Couldn't get stats for node --- parent-node <")<<eref.directory<<"> and name <"<<eref.name << "> \n\nError:" << strerror(err));
 				}
@@ -158,10 +145,12 @@ void BmMailMonitor::HandleMailMonitorMsg( BMessage* msg) {
 					BmAutolock lock( TheMailFolderList->mModelLocker);
 					lock.IsLocked() 			|| BM_THROW_RUNTIME( "HandleMailMonitorMsg(): Unable to get lock");
 					// check if the parent dir is the same as it was for the last message:
-					if (!lastParentRef || lastParentInode != eref.directory) {
+					if (!lastParentRef || lastParentNodeRef.node != eref.directory
+					 || lastParentNodeRef.device != eref.device) {
 						// try to find new parent dir in our own structure:
-						lastParentRef = TheMailFolderList->FindItemByKey(BmString()<<eref.directory);
-						lastParentInode = eref.directory;
+						lastParentNodeRef.node = eref.directory;
+						lastParentNodeRef.device = eref.device;
+						lastParentRef = TheMailFolderList->FindItemByKey( BM_REFKEY( lastParentNodeRef));
 						parent = dynamic_cast<BmMailFolder*>( lastParentRef.Get());
 					}
 	
@@ -170,11 +159,11 @@ void BmMailMonitor::HandleMailMonitorMsg( BMessage* msg) {
 							BM_THROW_RUNTIME( BmString("Folder with inode <") << eref.directory << "> is unknown.");
 						if (S_ISDIR(st.st_mode)) {
 							// a new mail-folder has been created, we add it to our list:
-							BM_LOG2( BM_LogMailTracking, BmString("New mail-folder <") << eref.name << "," << node << "> detected.");
-							TheMailFolderList->AddMailFolder( eref, node, parent, st.st_mtime);
+							BM_LOG2( BM_LogMailTracking, BmString("New mail-folder <") << eref.name << "," << nref.node << "> detected.");
+							TheMailFolderList->AddMailFolder( eref, nref.node, parent, st.st_mtime);
 						} else {
 							// a new mail has been created, we add it to the parent folder:
-							BM_LOG2( BM_LogMailTracking, BmString("New mail <") << eref.name << "," << node << "> detected.");
+							BM_LOG2( BM_LogMailTracking, BmString("New mail <") << eref.name << "," << nref.node << "> detected.");
 							parent->AddMailRef( eref, st);
 						}
 					} else if (opcode == B_ENTRY_REMOVED) {
@@ -182,16 +171,16 @@ void BmMailMonitor::HandleMailMonitorMsg( BMessage* msg) {
 						// so we have to find out by ourselves:
 						BmListModelItem* item = NULL;
 						if (parent)
-							item = parent->FindItemByKey(BmString()<<node);
+							item = parent->FindItemByKey( BM_REFKEY( nref));
 						if (item) {
 							// a folder has been deleted, we remove it from our list:
-							BM_LOG2( BM_LogMailTracking, BmString("Removal of mail-folder <") << node << "> detected.");
+							BM_LOG2( BM_LogMailTracking, BmString("Removal of mail-folder <") << nref.node << "> detected.");
 							TheMailFolderList->RemoveItemFromList( item);
 						} else {
 							// a mail has been deleted, we remove it from the parent-folder:
-							BM_LOG2( BM_LogMailTracking, BmString("Removal of mail <") << node << "> detected.");
+							BM_LOG2( BM_LogMailTracking, BmString("Removal of mail <") << nref.node << "> detected.");
 							if (parent)
-								parent->RemoveMailRef( node);
+								parent->RemoveMailRef( nref);
 						}
 					} else if (opcode == B_ENTRY_MOVED) {
 						entry_ref erefFrom;
@@ -203,21 +192,23 @@ void BmMailMonitor::HandleMailMonitorMsg( BMessage* msg) {
 														|| BM_THROW_RUNTIME( BmString("Field 'name' not found in msg !?!"));
 						erefFrom.set_name( name);
 						// check if the old-parent dir is the same as it was for the last message:
-						if (!lastOldParentRef || lastOldParentInode != erefFrom.directory) {
+						if (!lastOldParentRef || lastOldParentNodeRef.node != erefFrom.directory
+						|| lastOldParentNodeRef.device != erefFrom.device) {
 							// try to find new old-parent dir in our own structure:
-							lastOldParentRef = TheMailFolderList->FindItemByKey(BmString()<<erefFrom.directory);
-							lastOldParentInode = erefFrom.directory;
+							lastOldParentNodeRef.node = erefFrom.directory;
+							lastOldParentNodeRef.device = erefFrom.device;
+							lastOldParentRef = TheMailFolderList->FindItemByKey( BM_REFKEY( lastOldParentNodeRef));
 							oldParent = dynamic_cast<BmMailFolder*>( lastOldParentRef.Get());
 						}
 						if (S_ISDIR(st.st_mode)) {
 							// it's a mail-folder, we check for type of change:
 							if (oldParent)
-								folder = dynamic_cast<BmMailFolder*>( oldParent->FindItemByKey(BmString()<<node));
+								folder = dynamic_cast<BmMailFolder*>( oldParent->FindItemByKey( BM_REFKEY( nref)));
 							else
-								folder = dynamic_cast<BmMailFolder*>( TheMailFolderList->FindItemByKey(BmString()<<node).Get());
+								folder = dynamic_cast<BmMailFolder*>( TheMailFolderList->FindItemByKey( BM_REFKEY( nref)).Get());
 							if (erefFrom.directory == eref.directory) {
 								// rename only, we take the short path:
-								BM_LOG2( BM_LogMailTracking, BmString("Rename of mail-folder <") << eref.name << "," << node << "> detected.");
+								BM_LOG2( BM_LogMailTracking, BmString("Rename of mail-folder <") << eref.name << "," << nref.node << "> detected.");
 								folder->EntryRef( eref);
 								TheMailFolderList->TellModelItemUpdated( folder, UPD_KEY);
 							} else {
@@ -228,13 +219,13 @@ void BmMailMonitor::HandleMailMonitorMsg( BMessage* msg) {
 									// folder was unknown before, probably because it has been moved from
 									// a place outside the /boot/home/mail substructure inside it.
 									// We create the new folder...
-									folder = TheMailFolderList->AddMailFolder( eref, node, parent, st.st_mtime);
+									folder = TheMailFolderList->AddMailFolder( eref, nref.node, parent, st.st_mtime);
 									// ...and scan for potential sub-folders:
 									TheMailFolderList->doInitializeMailFolders( folder, 1);
-									BM_LOG2( BM_LogMailTracking, BmString("Move of mail-folder <") << eref.name << "," << node << "> detected.\nFrom: "<<(oldParent?oldParent->Key():"<outside>")<<" to: "<<(parent?parent->Key():"<outside>"));
+									BM_LOG2( BM_LogMailTracking, BmString("Move of mail-folder <") << eref.name << "," << nref.node << "> detected.\nFrom: "<<(oldParent?oldParent->Key():"<outside>")<<" to: "<<(parent?parent->Key():"<outside>"));
 								} else {
 									// folder exists in our structure
-									BM_LOG2( BM_LogMailTracking, BmString("Move of mail-folder <") << eref.name << "," << node << "> detected.\nFrom: "<<(oldParent?oldParent->Key():"<outside>")<<" to: "<<(parent?parent->Key():"<outside>"));
+									BM_LOG2( BM_LogMailTracking, BmString("Move of mail-folder <") << eref.name << "," << nref.node << "> detected.\nFrom: "<<(oldParent?oldParent->Key():"<outside>")<<" to: "<<(parent?parent->Key():"<outside>"));
 									// we have to keep a reference to our folder around, otherwise the
 									// folder might just disappear in RemoveItemFromList():
 									BmRef<BmListModelItem> folderRef( folder);
@@ -249,9 +240,9 @@ void BmMailMonitor::HandleMailMonitorMsg( BMessage* msg) {
 						} else {
 							// it's a mail-ref, we remove it from old parent and add it
 							// to its new parent:
-							BM_LOG2( BM_LogMailTracking, BmString("Move of mail <") << eref.name << "," << node << "> detected.");
+							BM_LOG2( BM_LogMailTracking, BmString("Move of mail <") << eref.name << "," << nref.node << "> detected.");
 							if (oldParent)
-								oldParent->RemoveMailRef( node);
+								oldParent->RemoveMailRef( nref);
 							if (parent)
 								parent->AddMailRef( eref, st);
 						}
@@ -272,29 +263,31 @@ void BmMailMonitor::HandleMailMonitorMsg( BMessage* msg) {
 void BmMailMonitor::HandleQueryUpdateMsg( BMessage* msg) {
 	int32 opcode = msg->FindInt32( "opcode");
 	status_t err;
+	node_ref pnref;
 	node_ref nref;
-	ino_t node;
 	BM_LOG2( BM_LogMailTracking, BmString("QueryUpdateMessage nr.") << ++counter << " received.");
 	try {
 		switch( opcode) {
 			case B_ENTRY_CREATED: {
-				(err = msg->FindInt64( "directory", &nref.node)) == B_OK
+				(err = msg->FindInt64( "directory", &pnref.node)) == B_OK
 													|| BM_THROW_RUNTIME( "Field 'directory' not found in msg !?!");
 				(err = msg->FindInt32( "device", &nref.device)) == B_OK
 													|| BM_THROW_RUNTIME( "Field 'device' not found in msg !?!");
-				(err = msg->FindInt64( "node", &node)) == B_OK
+				(err = msg->FindInt64( "node", &nref.node)) == B_OK
 													|| BM_THROW_RUNTIME( BmString("Field 'node' not found in msg !?!"));
-				TheMailFolderList->AddNewFlag( nref.node, node);
+				pnref.device = nref.device;
+				TheMailFolderList->AddNewFlag( pnref, nref);
 				break;
 			}
 			case B_ENTRY_REMOVED: {
-				(err = msg->FindInt64( "directory", &nref.node)) == B_OK
+				(err = msg->FindInt64( "directory", &pnref.node)) == B_OK
 													|| BM_THROW_RUNTIME( "Field 'directory' not found in msg !?!");
 				(err = msg->FindInt32( "device", &nref.device)) == B_OK
 													|| BM_THROW_RUNTIME( "Field 'device' not found in msg !?!");
-				(err = msg->FindInt64( "node", &node)) == B_OK
+				(err = msg->FindInt64( "node", &nref.node)) == B_OK
 													|| BM_THROW_RUNTIME( BmString("Field 'node' not found in msg !?!"));
-				TheMailFolderList->RemoveNewFlag( nref.node, node);
+				pnref.device = nref.device;
+				TheMailFolderList->RemoveNewFlag( pnref, nref);
 				break;
 			}
 		}
@@ -359,10 +352,10 @@ bool BmMailFolderList::StartJob() {
 	AddNewFlag()
 		-	
 \*------------------------------------------------------------------------------*/
-BmMailFolder* BmMailFolderList::AddNewFlag( ino_t pnode, ino_t node) {
-	BmRef<BmListModelItem> parentRef = FindItemByKey( BmString()<<pnode);
+BmMailFolder* BmMailFolderList::AddNewFlag( const node_ref& pnref, const node_ref& nref) {
+	BmRef<BmListModelItem> parentRef = FindItemByKey( BM_REFKEY( pnref));
 	BmMailFolder* parent = dynamic_cast< BmMailFolder*>( parentRef.Get());
-	mNewMailNodeMap[ node] = parent;
+	mNewMailNodeMap[BM_REFKEY( nref)] = parent;
 	if (parent)
 		parent->BumpNewMailCount();
 	return parent;
@@ -372,9 +365,9 @@ BmMailFolder* BmMailFolderList::AddNewFlag( ino_t pnode, ino_t node) {
 	RemoveNewFlag()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmMailFolderList::RemoveNewFlag( ino_t pnode, ino_t node) {
-	BmRef<BmListModelItem> parentRef = FindItemByKey( BmString()<<pnode);
-	mNewMailNodeMap.erase( node);
+void BmMailFolderList::RemoveNewFlag( const node_ref& pnref, const node_ref& nref) {
+	BmRef<BmListModelItem> parentRef = FindItemByKey( BM_REFKEY( pnref));
+	mNewMailNodeMap.erase( BM_REFKEY( nref));
 	BmMailFolder* parent = dynamic_cast< BmMailFolder*>( parentRef.Get());
 	if (parent)
 		parent->BumpNewMailCount( -1);
@@ -384,10 +377,10 @@ void BmMailFolderList::RemoveNewFlag( ino_t pnode, ino_t node) {
 	SetFolderForNodeFlaggedNew()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmMailFolderList::SetFolderForNodeFlaggedNew( ino_t node, BmMailFolder* folder) {
-	BmMailFolder* oldFolder = mNewMailNodeMap[ node];
+void BmMailFolderList::SetFolderForNodeFlaggedNew( const node_ref& nref, BmMailFolder* folder) {
+	BmMailFolder* oldFolder = mNewMailNodeMap[ BM_REFKEY( nref)];
 	if (oldFolder != folder) {
-		mNewMailNodeMap[ node] = folder;
+		mNewMailNodeMap[ BM_REFKEY( nref)] = folder;
 		if (oldFolder)
 			oldFolder->BumpNewMailCount( -1);
 		if (folder)
@@ -399,16 +392,16 @@ void BmMailFolderList::SetFolderForNodeFlaggedNew( ino_t node, BmMailFolder* fol
 	GetFolderForNodeFlaggedNew()
 		-	
 \*------------------------------------------------------------------------------*/
-BmMailFolder* BmMailFolderList::GetFolderForNodeFlaggedNew( ino_t node) {
-	return mNewMailNodeMap[ node];
+BmMailFolder* BmMailFolderList::GetFolderForNodeFlaggedNew( const node_ref& nref) {
+	return mNewMailNodeMap[ BM_REFKEY( nref)];
 }
 
 /*------------------------------------------------------------------------------*\
 	NodeIsFlaggedNew()
 		-	
 \*------------------------------------------------------------------------------*/
-bool BmMailFolderList::NodeIsFlaggedNew( ino_t node) {
-	return mNewMailNodeMap.find( node) != mNewMailNodeMap.end();
+bool BmMailFolderList::NodeIsFlaggedNew( const node_ref& nref) {
+	return mNewMailNodeMap.find( BM_REFKEY( nref)) != mNewMailNodeMap.end();
 }
 
 /*------------------------------------------------------------------------------*\
@@ -567,6 +560,7 @@ void BmMailFolderList::QueryForNewMails() {
 	int32 count, newCount=0;
 	status_t err;
 	dirent* dent;
+	node_ref pnref;
 	node_ref nref;
 	char buf[4096];
 
@@ -590,10 +584,12 @@ void BmMailFolderList::QueryForNewMails() {
 		dent = (dirent* )buf;
 		while (count-- > 0) {
 			newCount++;
-			nref.device = dent->d_pdev;
-			nref.node = dent->d_pino;
+			pnref.device = dent->d_pdev;
+			pnref.node = dent->d_pino;
+			nref.device = dent->d_dev;
+			nref.node = dent->d_ino;
 			
-			foldersWithNewMail.insert( AddNewFlag( dent->d_pino, dent->d_ino));
+			foldersWithNewMail.insert( AddNewFlag( pnref, nref));
 			// Bump the dirent-pointer by length of the dirent just handled:
 			dent = (dirent* )((char* )dent + dent->d_reclen);
 		}

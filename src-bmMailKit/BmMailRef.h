@@ -90,7 +90,7 @@ public:
 	inline const entry_ref& EntryRef() const 		{ return mEntryRef; }
 	inline const entry_ref* EntryRefPtr() const	{ return &mEntryRef; }
 	inline const char* TrackerName() const			{ return mEntryRef.name; }
-	inline const ino_t& Inode() const				{ return mInode; }
+	inline const node_ref& NodeRef() const			{ return mNodeRef; }
 	inline status_t InitCheck()	const				{ return mInitCheck; }
 	inline const BmString& Account() const 		{ return mAccount; }
 	inline const BmString& Cc() const 				{ return mCc; }
@@ -122,7 +122,7 @@ protected:
 private:
 	// the following members will be archived as part of BmFolderList:
 	entry_ref mEntryRef;
-	ino_t mInode;
+	node_ref mNodeRef;
 	BmString mAccount;
 	BmString mCc;
 	BmString mFrom;
