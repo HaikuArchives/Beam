@@ -17,7 +17,7 @@
 
 #include <SupportDefs.h>
 
-#include "SantaPartsForBeam.h"
+#include "BmGuiBase.h"
 
 //Fills the StringsWidths array with the width of each individual string in the array using 
 //BFont::GetStringWidths(), then finds the longest string width in the array and returns that width.

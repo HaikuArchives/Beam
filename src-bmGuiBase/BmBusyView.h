@@ -35,7 +35,7 @@
 #include <Messenger.h>
 #include <View.h>
 
-#include "SantaPartsForBeam.h"
+#include "BmGuiBase.h"
 
 class IMPEXPBMGUIBASE BmBusyView : public BView
 {

@@ -36,7 +36,7 @@
 
 #include <layout.h>
 
-#include "SantaPartsForBeam.h"
+#include "BmGuiBase.h"
 #include "BmDividable.h"
 
 class HGroup;

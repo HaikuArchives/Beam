@@ -36,7 +36,7 @@
 #include <TextView.h>
 #include <MessageFilter.h>
 
-#include "SantaPartsForBeam.h"
+#include "BmGuiBase.h"
 
 //******************************************************************************************************
 //**** Forward name declarations

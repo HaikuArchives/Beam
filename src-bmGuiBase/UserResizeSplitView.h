@@ -46,7 +46,7 @@
 #include <layout.h>
 #include <MGroup.h>
 
-#include "SantaPartsForBeam.h"
+#include "BmGuiBase.h"
 
 //******************************************************************************************************
 //**** UserResizeSplitView

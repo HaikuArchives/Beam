@@ -33,7 +33,7 @@
 
 #include <MCheckBox.h>
 
-#include "SantaPartsForBeam.h"
+#include "BmGuiBase.h"
 
 class HGroup;
 

@@ -37,7 +37,7 @@
 #include <View.h>
 
 
-#include "SantaPartsForBeam.h"
+#include "BmGuiBase.h"
 
 //******************************************************************************************************
 //**** Forward name declarations

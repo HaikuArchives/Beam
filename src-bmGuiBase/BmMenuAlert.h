@@ -13,7 +13,7 @@
 
 #include <MWindow.h>
 
-#include "SantaPartsForBeam.h"
+#include "BmGuiBase.h"
 
 #include "BmString.h"
 

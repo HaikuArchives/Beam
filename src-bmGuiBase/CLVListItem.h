@@ -31,7 +31,7 @@
 class ColumnListView;
 class BList;
 
-#include "SantaPartsForBeam.h"
+#include "BmGuiBase.h"
 
 //******************************************************************************************************
 //**** CLVListItem CLASS DECLARATION

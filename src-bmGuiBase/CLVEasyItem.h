@@ -28,7 +28,7 @@
 //******************************************************************************************************
 //**** PROJECT HEADER FILES AND CLASS NAME DECLARATIONS
 //******************************************************************************************************
-#include "SantaPartsForBeam.h"
+#include "BmGuiBase.h"
 #include "CLVListItem.h"
 
 class BBitmap;

@@ -31,7 +31,7 @@
 #ifndef _BmDividable_h
 #define _BmDividable_h
 
-#include "SantaPartsForBeam.h"
+#include "BmGuiBase.h"
 
 class MView;
 

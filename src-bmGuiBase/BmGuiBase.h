@@ -1,5 +1,5 @@
 /*
-	BmSantaPartsForBeam.h
+	BmBmGuiBase.h
 		$Id$
 */
 /*************************************************************************/
@@ -27,12 +27,12 @@
 /*                                                                       */
 /*************************************************************************/
 
-#ifndef _BmSantaPartsForBeam_h
-#define _BmSantaPartsForBeam_h
+#ifndef _BmGuiBase_h
+#define _BmGuiBase_h
 
 #include <BeBuild.h>
 
-// import-/export-declarations for the SantaPartsForBeam shared-lib
+// import-/export-declarations for the bmGuiBase shared-lib
 #ifdef BM_BUILDING_BMGUIBASE
 #define IMPEXPBMGUIBASE _EXPORT
 #else

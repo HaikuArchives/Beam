@@ -34,7 +34,7 @@ class BCursor;
 class BLocker;
 class BList;
 
-#include "SantaPartsForBeam.h"
+#include "BmGuiBase.h"
 
 class IMPEXPBMGUIBASE BubbleHelper
 {

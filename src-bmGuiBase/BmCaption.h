@@ -33,7 +33,7 @@
 
 #include <StringView.h>
 
-#include "SantaPartsForBeam.h"
+#include "BmGuiBase.h"
 
 class IMPEXPBMGUIBASE BmCaption : public BStringView
 {

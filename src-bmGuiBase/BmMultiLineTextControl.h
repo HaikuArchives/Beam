@@ -35,7 +35,7 @@
 
 #include <layout.h>
 
-#include "SantaPartsForBeam.h"
+#include "BmGuiBase.h"
 #include "MultiLineTextControl.h"
 #include "BmDividable.h"
 
