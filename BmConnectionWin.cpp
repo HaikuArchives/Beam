@@ -96,7 +96,7 @@ void BmConnectionWin::MessageReceived(BMessage *msg) {
 void BmConnectionWin::AddPopper( BmPopAccount *account) {
 	assert( account);
 	char tname[B_OS_NAME_LENGTH+1];
-	const char* name = account->Name().String();
+	const char* name = account->Name().c_str();
 	BStatusBar* statBar;
 	BStatusBar* mailBar;
 	MView* interface;

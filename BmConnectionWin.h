@@ -37,7 +37,7 @@ class BmConnectionWin : public MWindow {
 			, mailBar(mb)
 			{}
 	};
-	typedef map<BString, BmConnectionWinInfo*> ConnectionMap;
+	typedef map<string, BmConnectionWinInfo*> ConnectionMap;
 public:
 	static bool IsConnectionWinAlive;
 

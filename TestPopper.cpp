@@ -42,7 +42,7 @@ int main()
 		be_app->Run();
 	} 
 	catch( exception &e) {
-		BmLOG( BString("Oops: %s") << e.what());
+		BmLOG( string("Oops: %s") + e.what());
 	}
 	delete be_app;
 }

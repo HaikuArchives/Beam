@@ -20,8 +20,7 @@
 //---------------------------------------------------
 class network_error : public runtime_error {
 public:
-  network_error (const string& what_arg): runtime_error (what_arg) { }
-  network_error (const BString& what_arg): runtime_error (what_arg.String()) { }
+  network_error (const string& what_arg): runtime_error (what_arg.c_str()) { }
   network_error (char *const what_arg): runtime_error (what_arg) { }
 };
 
@@ -44,11 +43,11 @@ class BmLogHandler {
 		~BmLogfile() { if (logfile) fclose(logfile); }
 		void Write( const char* const msg);
 	
-		static BString LogPath;
+		static string LogPath;
 	
 	private:
 		FILE* logfile;
-		BString filename;
+		string filename;
 		BStopWatch watch;
 	};
 
@@ -58,16 +57,12 @@ class BmLogHandler {
 
 public:
 	void LogToFile( const char* const logname, const char* const msg);
-	void LogToFile( const char* const logname, const BString &msg) 
-							{ LogToFile( logname, msg.String()); }
 	void LogToFile( const char* const logname, const string &msg) 
 							{ LogToFile( logname, msg.c_str()); }
-	void LogToFile( BString &logname, const char* const msg)
-							{ LogToFile( logname.String(), msg); }
-	void LogToFile( BString &logname, const BString &msg) 
-							{ LogToFile( logname.String(), msg.String()); }
-	void LogToFile( BString &logname, const string &msg) 
-							{ LogToFile( logname.String(), msg.c_str()); }
+	void LogToFile( string &logname, const char* const msg)
+							{ LogToFile( logname.c_str(), msg); }
+	void LogToFile( string &logname, const string &msg) 
+							{ LogToFile( logname.c_str(), msg.c_str()); }
 
 	BmLogHandler() : mBenaph("beam_loghandler") { }
 	~BmLogHandler();
@@ -87,5 +82,8 @@ namespace Beam {
 //---------------------------------------------------
 string BytesToString( int32 bytes);
 
+//---------------------------------------------------
+string iToStr( int32 i);
+string fToStr( double f);
 
 #endif

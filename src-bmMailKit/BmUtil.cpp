@@ -6,7 +6,11 @@
 #include <iomanip>
 #include <strstream>
 
+#include <regexx/regexx.hh>
+
 #include "BmUtil.h"
+
+using namespace regexx;
 
 //---------------------------------------------------
 namespace Beam {
@@ -94,7 +98,7 @@ void BmLogHandler::LogToFile( const char* const logname, const char* const msg) 
 	if (logIter == mActiveLogs.end()) {
 		status_t res;
 		while( (res = mBenaph.Lock()) != B_NO_ERROR) {
-			BmLOG( BString("locking result: %ld") << res);
+			BmLOG( string("locking result: %ld") + iToStr(res));
 		}
 		log = new BmLogfile( logname);
 		mActiveLogs[logname] = log;
@@ -106,25 +110,26 @@ void BmLogHandler::LogToFile( const char* const logname, const char* const msg) 
 }
 
 //---------------------------------------------------
-BString BmLogHandler::BmLogfile::LogPath = "/boot/home/Sources/beam/logs/";
+string BmLogHandler::BmLogfile::LogPath = "/boot/home/Sources/beam/logs/";
 
 //---------------------------------------------------
 void BmLogHandler::BmLogfile::Write( const char* const msg) {
 	if (logfile == NULL) {
-		BString fn = BString(LogPath) << filename;
-		if (fn.FindFirst(".log") == B_ERROR) {
+		string fn = string(LogPath) + filename;
+		if (fn.find(".log") == string::npos) {
 			fn += ".log";
 		}
-		if (!(logfile = fopen( fn.String(), "a"))) {
-			BString s = BString("Unable to open logfile ") << fn;
-			throw runtime_error( s.String());
+		if (!(logfile = fopen( fn.c_str(), "a"))) {
+			string s = string("Unable to open logfile ") + fn;
+			throw runtime_error( s.c_str());
 		}
 		fprintf( logfile, "------------------------------\nSession Started\n------------------------------\n");
 	}
-	BString s(msg);
-	s.ReplaceAll("\r","<CR>");
-	s.ReplaceAll("\n","\n                ");
-	fprintf( logfile, "<%012Ld>: %s\n", watch.ElapsedTime(), s.String());
+	string s(msg);
+	Regexx rx;
+	rx.replace( s, "\013", "<CR>", Regexx::global);
+	rx.replace( s, "\n", "\n                ", Regexx::global|Regexx::newline);
+	fprintf( logfile, "<%012Ld>: %s\n", watch.ElapsedTime(), s.c_str());
 }
 
 //---------------------------------------------------
@@ -148,4 +153,18 @@ string BytesToString( int32 bytes) {
 	}
 	ostr << '\0';								// terminate string!
 	return ostr.str();
+}
+
+//---------------------------------------------------
+string iToStr( int32 i) {
+	char buf[40];
+	sprintf( buf, "%ld", i);
+	return string( buf);
+}
+
+//---------------------------------------------------
+string fToStr( double f) {
+	char buf[40];
+	sprintf( buf, "%.2f", f);
+	return string( buf);
 }

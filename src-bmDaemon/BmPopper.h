@@ -37,7 +37,7 @@
 struct BmPopperInfo {
 	BmPopAccount* account;
 							// the POP-account we have to deal with
-	BString name;
+	string name;
 							// name of this POP-session (used in GUI and for logging purposes)
 	BLooper *statusLooper;
 							// the looper that should receive status-messages from a BmPopper.
@@ -46,7 +46,7 @@ struct BmPopperInfo {
 							// a bool-function that returns true as long as the BmPopper
 							// should continue to run. OPTIONAL
 
-	BmPopperInfo( BmPopAccount* a, const BString &n, BLooper* sl, bool (*f)()) 
+	BmPopperInfo( BmPopAccount* a, const string &n, BLooper* sl, bool (*f)()) 
 			: account(a)
 			, name(n)
 			, statusLooper(sl)
@@ -91,7 +91,7 @@ private:
 	BNetEndpoint mPopServer;				// network-connection to POP-server
 	bool mConnected;							// are we connected to the server?
 
-	BString* mMsgUIDs;						// array of unique-IDs, one for each message
+	string* mMsgUIDs;						// array of unique-IDs, one for each message
 	int32 mMsgCount;							// number of msgs to be received
 	int32 mMsgSize;							// size of current msg
 	int32 mMsgTotalSize;						// size of all msgs to be received
@@ -132,7 +132,7 @@ private:
 	void CheckForPositiveAnswer( bool SingleLineMode, int32 mailNr=0);
 	void GetAnswer( bool SingleLineMode, int32 mailNr = 0);
 	int32 ReceiveBlock( char* buffer, int32 max);
-	void SendCommand( BString &cmd);
+	void SendCommand( string cmd);
 };
 
 #endif
