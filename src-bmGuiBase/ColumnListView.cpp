@@ -1998,6 +1998,10 @@ void ColumnListView::Draw( BRect updateRect) {
 	inherited::Draw( updateRect);
 }
 
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
 void ColumnListView::KeyDown(const char *bytes, int32 numBytes) 
 { 
 	if ( numBytes == 1 ) {
@@ -2051,7 +2055,8 @@ void ColumnListView::KeyDown(const char *bytes, int32 numBytes)
 			case B_DOWN_ARROW: {
 				// In order to correctly scroll downwards when the user extends the
 				// selection via cursor-keys, we do the selection stuff ourselves
-				// (since BListView::KeyDown insists on calling ScrollToSelection())
+				// (since BListView::KeyDown insists on calling ScrollToSelection(), which
+				// always shows the *top* of the selection [but we want to see the bottom!])
 				// and then scroll the listview in such a way that the freshly selected
 				// item is at the bottom of the view:
 				int32 mods = Window()->CurrentMessage()->FindInt32("modifiers");
@@ -2083,6 +2088,10 @@ void ColumnListView::KeyDown(const char *bytes, int32 numBytes)
 	BListView::KeyDown( bytes, numBytes);
 }
 
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
 void ColumnListView::ShowColumn( int32 col_index) {
 	AssertWindowLocked();
 	CLVColumn* column = (CLVColumn*)fColumnList.ItemAt( col_index);
@@ -2092,6 +2101,10 @@ void ColumnListView::ShowColumn( int32 col_index) {
 	}
 }
 
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
 void ColumnListView::HideColumn( int32 col_index) {
 	AssertWindowLocked();
 	if (fColumnDisplayList.CountItems() > 1) {
@@ -2104,6 +2117,10 @@ void ColumnListView::HideColumn( int32 col_index) {
 	}
 }
 
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
 void ColumnListView::MessageReceived(BMessage* msg) {
 	switch( msg->what) {
 		case 'PSTE': {
@@ -2137,6 +2154,10 @@ void ColumnListView::MessageReceived(BMessage* msg) {
 	}
 }
 
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
 status_t ColumnListView::Archive(BMessage* archive, bool deep) const {
 	AssertWindowLocked();
 	status_t ret = B_OK;
@@ -2172,6 +2193,10 @@ status_t ColumnListView::Archive(BMessage* archive, bool deep) const {
 	return ret;
 }
 
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
 status_t ColumnListView::Unarchive(const BMessage* archive, bool deep) {
 	AssertWindowLocked();
 	status_t ret = B_OK;
@@ -2208,7 +2233,5 @@ status_t ColumnListView::Unarchive(const BMessage* archive, bool deep) {
 		}
 		SetDisplayOrder( displayCols);
 	}
-	
-	
 	return ret;
 }

@@ -155,15 +155,15 @@ class ColumnListView : public BListView
 		}
 
 		//BView overrides
-		virtual void FrameResized(float Width, float Height);
- 		virtual void ScrollTo(BPoint point);
- 		virtual void MouseDown(BPoint point);
-		virtual void MouseUp(BPoint where);
-		virtual void MouseMoved(BPoint where, uint32 code, const BMessage* message);
-		virtual void WindowActivated(bool active);
+		void FrameResized(float Width, float Height);
+ 		void ScrollTo(BPoint point);
+ 		void MouseDown(BPoint point);
+		void MouseUp(BPoint where);
+		void MouseMoved(BPoint where, uint32 code, const BMessage* message);
+		void WindowActivated(bool active);
 		//
-		virtual void Draw( BRect updateRect);
-		virtual void DrawColumn( BRect updateRect, int32 column_index);
+		void Draw( BRect updateRect);
+		void DrawColumn( BRect updateRect, int32 column_index);
 
 
 		//List functions
