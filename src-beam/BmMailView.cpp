@@ -811,6 +811,7 @@ void BmMailView::ShowMail( BmMailRef* ref, bool async) {
 			mBodyPartView->ShowBody( NULL);
 			mCurrMail = NULL;
 			SendNoticesIfNeeded( false);
+			ContainerView()->SetErrorText(BM_DEFAULT_STRING);
 			return;
 		}
 		mCurrMail = BmMail::CreateInstance( ref);
@@ -839,6 +840,7 @@ void BmMailView::ShowMail( BmMail* mail, bool async) {
 			mHeaderView->ShowHeader( NULL);
 			mBodyPartView->ShowBody( NULL);
 			SendNoticesIfNeeded( false);
+			ContainerView()->SetErrorText(BM_DEFAULT_STRING);
 			return;
 		}
 		mCurrMail = mail;
@@ -990,6 +992,7 @@ void BmMailView::JobIsDone( bool completed) {
 		mHeaderView->ShowHeader( NULL);
 		SetText( "");
 		ContainerView()->UnsetBusy();
+		ContainerView()->SetErrorText(BM_DEFAULT_STRING);
 		SendNoticesIfNeeded( false);
 	}
 out:
