@@ -279,6 +279,7 @@ class IMPEXPSANTAPARTSFORBEAM ColumnListView : public BListView
 		bool fClickSetsFocus;
 		static int32 fExtendSelMask;
 		static int32 fToggleSelMask;
+		bool fExtendingDownwards;
 
 		minimax fMinMax;		
 };

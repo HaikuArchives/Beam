@@ -152,6 +152,7 @@ fDeactivatedVerticalBar( NULL),
 fStripedBackground( false),
 fInsertAtSortedPos( true),
 fClickSetsFocus( false),
+fExtendingDownwards( true),
 fMinMax( minmax)
 {
 }
@@ -2069,27 +2070,63 @@ void ColumnListView::KeyDown(const char *bytes, int32 numBytes)
 				}
 				break;
 			}
+			case B_UP_ARROW:
 			case B_DOWN_ARROW: {
-				// In order to correctly scroll downwards when the user extends the
-				// selection via cursor-keys, we do the selection stuff ourselves
-				// (since BListView::KeyDown insists on calling ScrollToSelection(), which
-				// always shows the *top* of the selection [but we want to see the bottom!])
-				// and then scroll the listview in such a way that the freshly selected
-				// item is at the bottom of the view:
 				int32 mods = Window()->CurrentMessage()->FindInt32("modifiers");
 				if (mods & B_SHIFT_KEY && ListType() == B_MULTIPLE_SELECTION_LIST) {
 					int32 currIdx = -1;
 					int32 maxSelIdx = -1;
-					for( int32 i=0; (currIdx=CurrentSelection(i))>=0; ++i) {
+					int32 minSelIdx = -1;
+					int32 count;
+					for( count=0; (currIdx=CurrentSelection(count))>=0; ++count) {
 						if (maxSelIdx < currIdx)
 							maxSelIdx = currIdx;
+						if (minSelIdx == -1 || minSelIdx > currIdx)
+							minSelIdx = currIdx;
 					}
-					if (maxSelIdx >= 0 && maxSelIdx+1<CountItems()) {
-						Select( ++maxSelIdx, true);
-						BRect frame = ItemFrame( maxSelIdx);
-						float newYPos = frame.bottom-Bounds().Height();
-						if (newYPos > Bounds().top || frame.top < Bounds().top)
-							ScrollTo( BPoint( 0, MAX( 0, newYPos)));
+					if (count == 1) {
+						// we are extending a single selection, so here we decide if we
+						// are extending upwards or downwards:
+						fExtendingDownwards = (bytes[0] == B_DOWN_ARROW);
+					}
+					if (bytes[0] == B_DOWN_ARROW) {
+						if (fExtendingDownwards) {
+							if (maxSelIdx >= 0 && maxSelIdx+1<CountItems()) {
+								Select( ++maxSelIdx, true);
+								// In order to correctly scroll downwards when the user 
+								// extends the selection via cursor-keys, we do the 
+								// selection stuff ourselves (since BListView::KeyDown 
+								// insists on calling ScrollToSelection(), which
+								// always shows the *top* of the selection [but we want
+								// to see the bottom!]) and then scroll the listview in
+								// such a way that the freshly selected item is at the 
+								// bottom of the view:
+								BRect frame = ItemFrame( maxSelIdx);
+								float newYPos = frame.bottom-Bounds().Height();
+								if (newYPos > Bounds().top || frame.top < Bounds().top)
+									ScrollTo( BPoint( 0, MAX( 0, newYPos)));
+							}
+						} else if (minSelIdx >= 0) {
+							Deselect( minSelIdx);
+							ScrollToSelection();
+						}
+					} else {
+						// (bytes[0] == B_UP_ARROW)
+						if (!fExtendingDownwards) {
+							if (minSelIdx > 0) {
+								Select( --minSelIdx, true);
+								ScrollToSelection();
+							}
+						} else if (maxSelIdx >= 0) {
+							Deselect( maxSelIdx);
+							if (maxSelIdx > 0) {
+								// show the item that has just been deselected:
+								BRect frame = ItemFrame( maxSelIdx-1);
+								float newYPos = frame.top;
+								if (newYPos < Bounds().top)
+									ScrollTo( BPoint( 0, MAX( 0, newYPos)));
+							}
+						}
 					}
 					return;
 				}
