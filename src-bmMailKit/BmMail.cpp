@@ -216,10 +216,12 @@ BmMail::BmMail( BmString &msgText, const BmString account)
 	if (ident) {
 		// now try to find a better match through recipient-addresses:
 		BmAddress recvAddr( mHeader->DetermineReceivingAddrFor( ident));
-		identRef	
-			= TheIdentityList->FindIdentityForAddrSpec( recvAddr.AddrSpec());
-		if (identRef)
-			ident = dynamic_cast< BmIdentity*>( identRef.Get());
+		if (recvAddr.InitOK()) {
+			identRef	
+				= TheIdentityList->FindIdentityForAddrSpec( recvAddr.AddrSpec());
+			if (identRef)
+				ident = dynamic_cast< BmIdentity*>( identRef.Get());
+		}
 	}
 	if (ident)
 		mIdentityName = ident->Key();
