@@ -1,11 +1,14 @@
 SubDir TOP src-bmBase ;
 
+DEFINES += BM_BUILDING_BMBASE ;
+
 SharedLibrary bmBase.so
 	:  
 		BmBasics.cpp 
 		BmFilterAddon.cpp 
 		BmLogHandler.cpp 
 		BmMemIO.cpp 
+		BmRosterBase.cpp 
 		BmString.cpp
 		md5c.c
 	: 	

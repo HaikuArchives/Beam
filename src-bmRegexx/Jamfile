@@ -5,6 +5,8 @@ SubDirHdrs $(TOP) src-bmBase ;
 SubDirSysHdrs /boot/home/config/include ;
 LINKFLAGS += -L/boot/home/config/lib ;
 
+DEFINES += BM_BUILDING_LIBREGEXX ;
+
 SharedLibrary regexx.so
 	:  
 		regexx.cc

@@ -7,7 +7,10 @@ SubDirHdrs $(TOP) src-deskbarItem ;
 
 SubDirSysHdrs /boot/home/config/include ;
 SubDirSysHdrs /boot/home/config/include/liblayout ;
+
 LINKFLAGS += -L/boot/home/config/lib ;
+
+DEFINES += BM_REF_DEBUGGING ;
 
 Application Beam
 	:  
@@ -27,6 +30,7 @@ Application Beam
 		BmLogWindow.cpp
 		BmMail.cpp
 		BmMailEditWin.cpp
+		BmMailFactory.cpp
 		BmMailFilter.cpp
 		BmMailFolder.cpp
 		BmMailFolderList.cpp

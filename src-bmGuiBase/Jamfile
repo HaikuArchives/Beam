@@ -8,13 +8,17 @@ SubDirSysHdrs /boot/home/config/include/liblayout ;
 
 LINKFLAGS += -L/boot/home/config/lib ;
 
+DEFINES += BM_BUILDING_SANTAPARTSFORBEAM ;
+
 SharedLibrary santaPartsForBeam.so
 	:  
 		BetterScrollView.cpp
 		BmBusyView.cpp
 		BmCaption.cpp
 		BmCheckControl.cpp
+		BmDividable.cpp
 		BmFilterAddonPrefs.cpp
+		BmMenuAlert.cpp
 		BmMenuControl.cpp
 		BmMenuControllerBase.cpp
 		BmMultiLineTextControl.cpp
