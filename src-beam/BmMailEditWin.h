@@ -78,6 +78,7 @@ public:
 	// overrides of BView base:
 	void MessageReceived( BMessage* msg);
 	void AttachedToWindow( void);
+	void DetachedFromWindow( void);
 
 private:
 	// Hide copy-constructor and assignment:

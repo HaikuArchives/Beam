@@ -120,6 +120,16 @@ void BmPeopleControl::AttachedToWindow( void) {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
+void BmPeopleControl::DetachedFromWindow( void) {
+	// disconnect from people-list:
+	DetachModel();
+	inherited::DetachedFromWindow();
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
 void BmPeopleControl::MessageReceived( BMessage* msg) {
 	try {
 		switch( msg->what) {
