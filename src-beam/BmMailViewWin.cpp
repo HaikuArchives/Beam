@@ -317,8 +317,16 @@ void BmMailViewWin::MessageReceived( BMessage* msg) {
 							msg2.AddString( BmApplication::MSG_SELECTED_TEXT, selectedText.String());
 						be_app_messenger.SendMessage( &msg2, &msg2);
 					}
-					if (msg->what == BMM_TRASH)
+					if (msg->what == BMM_TRASH
+					|| (ThePrefs->GetBool("CloseViewWinAfterMailAction", true)
+						&& (msg->what == BMM_REDIRECT
+							|| msg->what == BMM_REPLY
+							|| msg->what == BMM_REPLY_LIST
+							|| msg->what == BMM_REPLY_ORIGINATOR
+							|| msg->what == BMM_REPLY_ALL))) 
+					{
 						PostMessage( B_QUIT_REQUESTED);
+					}
 				}
 				break;
 			}
