@@ -132,7 +132,7 @@ const char* const BmBodyPartView::MSG_SHOWALL = "bm:showall";
 BmBodyPartView::BmBodyPartView( minimax minmax, int32 width, int32 height, 
 										  bool editable)
 	:	inherited( minmax, BRect(0,0,width-1,height-1), "Beam_BodyPartView", 
-					  B_SINGLE_SELECTION_LIST, true, true)
+					  B_MULTIPLE_SELECTION_LIST, true, true)
 	,	mShowAllParts( false)
 	,	mEditable( editable)
 	,	mSavePanel( NULL)
@@ -140,13 +140,8 @@ BmBodyPartView::BmBodyPartView( minimax minmax, int32 width, int32 height,
 {
 	SetViewColor( BACKGROUND_COL);
 	fLightColumnCol = BACKGROUND_COL;
-	if (!editable) {	
-		fSelectedItemColorWindowActive = 
-		fSelectedItemColorWindowInactive = BACKGROUND_COL;
-	} else {
-		fSelectedItemColorWindowActive = 
-		fSelectedItemColorWindowInactive = BeShadow;
-	}
+	fSelectedItemColorWindowActive = 
+	fSelectedItemColorWindowInactive = BeShadow;
 
 	Initialize( BRect(0,0,800,40), B_WILL_DRAW | B_FRAME_EVENTS,
 					B_FOLLOW_NONE, false, false, false, B_FANCY_BORDER);
@@ -194,6 +189,7 @@ status_t BmBodyPartView::Archive( BMessage* archive, bool) const {
 \*------------------------------------------------------------------------------*/
 status_t BmBodyPartView::Unarchive( const BMessage* archive, bool) {
 	status_t ret = archive->FindBool( MSG_SHOWALL, &mShowAllParts);
+	fAvoidColPushing = !mShowAllParts;
 	return ret;
 }
 
@@ -204,7 +200,8 @@ status_t BmBodyPartView::Unarchive( const BMessage* archive, bool) {
 BmListViewItem* BmBodyPartView::CreateListViewItem( BmListModelItem* item, 
 																	 BMessage*) {
 	BmBodyPart* modelItem = dynamic_cast<BmBodyPart*>( item);
-	if (mShowAllParts || !modelItem->IsMultiPart() && !modelItem->ShouldBeShownInline()) {
+	if (mShowAllParts || !modelItem->IsMultiPart() 
+	&& !modelItem->ShouldBeShownInline()) {
 		return new BmBodyPartItem( this, item);
 	} else {
 		return NULL;
@@ -256,7 +253,8 @@ void BmBodyPartView::AddAttachment( BMessage* msg) {
 		return;
 	entry_ref ref;
 	BmRef<BmDataModel> modelRef( DataModel());
-	BmBodyPartList* bodyPartList = dynamic_cast<BmBodyPartList*>( modelRef.Get());
+	BmBodyPartList* bodyPartList 
+		= dynamic_cast<BmBodyPartList*>( modelRef.Get());
 	if (!bodyPartList)
 		return;
 	for( int i=0; msg->FindRef( "refs", i, &ref) == B_OK; ++i) {
@@ -314,11 +312,15 @@ void BmBodyPartView::AddAllModelItems() {
 	// update info about maximum column widths:
 	int32 count = FullListCountItems();
 	for( int i=0; i<count; ++i) {
-		BmListViewItem* viewItem = dynamic_cast<BmListViewItem*>( FullListItemAt( i));
+		BmListViewItem* viewItem 
+			= dynamic_cast<BmListViewItem*>( FullListItemAt( i));
 		for( int c=nFirstTextCol; c<CountColumns(); ++c) {
 			float textWidth = StringWidth( viewItem->GetColumnContentText(c));
-			mColWidths[c] = MAX( mColWidths[c], 
-										textWidth+10+EXPANDER_SHIFT*viewItem->OutlineLevel());
+			mColWidths[c] 
+				= MAX( 
+					mColWidths[c], 
+					textWidth+10+EXPANDER_SHIFT*viewItem->OutlineLevel()
+				);
 		}
 		Expand(FullListItemAt(i));
 	}
@@ -335,10 +337,12 @@ void BmBodyPartView::AddAllModelItems() {
 		-	we 
 \*------------------------------------------------------------------------------*/
 void BmBodyPartView::RemoveModelItem( BmListModelItem* item) {
-	BM_LOG2( BM_LogModelController, BmString(ControllerName())<<": removing one item from listview");
+	BM_LOG2( BM_LogModelController, 
+				BmString(ControllerName())<<": removing one item from listview");
 	inherited::RemoveModelItem( item);
 	BmRef<BmDataModel> modelRef( DataModel());
-	BmBodyPartList* bodyPartList = dynamic_cast<BmBodyPartList*>( modelRef.Get());
+	BmBodyPartList* bodyPartList 
+		= dynamic_cast<BmBodyPartList*>( modelRef.Get());
 	ShowBody( bodyPartList);
 }
 
@@ -358,11 +362,13 @@ void BmBodyPartView::KeyDown(const char *bytes, int32 numBytes) {
 	if ( numBytes == 1 && mEditable) {
 		switch( bytes[0]) {
 			case B_DELETE: {
-				int32 idx = CurrentSelection(0);
-				if (idx >= 0) {
-					BmRef<BmDataModel> modelRef( DataModel());
-					BmBodyPartList* body = dynamic_cast<BmBodyPartList*>( modelRef.Get());
-					BmBodyPartItem* bodyItem = dynamic_cast<BmBodyPartItem*>(ItemAt( idx));
+				BmRef<BmDataModel> modelRef( DataModel());
+				BmBodyPartList* body 
+					= dynamic_cast<BmBodyPartList*>( modelRef.Get());
+				int32 idx;
+				for( int32 i=0; (idx = CurrentSelection(i)) >= 0; ++i) {
+					BmBodyPartItem* bodyItem 
+						= dynamic_cast<BmBodyPartItem*>(ItemAt( idx));
 					body->RemoveItemFromList( bodyItem->ModelItem());
 				}				
 			}
@@ -388,7 +394,8 @@ void BmBodyPartView::MouseDown( BPoint point) {
 	&& !mEditable && buttons == B_SECONDARY_MOUSE_BUTTON) {
 		int32 clickIndex = IndexOf( point);
 		if (clickIndex >= 0) {
-			Select( clickIndex);
+			if (!IsItemSelected( clickIndex))
+				Select( clickIndex);
 		} else 
 			DeselectAll();
 		ShowMenu( point);
@@ -404,12 +411,14 @@ void BmBodyPartView::MessageReceived( BMessage* msg) {
 		switch( msg->what) {
 			case BM_BODYPARTVIEW_SHOWALL: {
 				mShowAllParts = true;
+				fAvoidColPushing = false;
 				BmRef<BmDataModel> modelRef( DataModel());
 				ShowBody( dynamic_cast<BmBodyPartList*>( modelRef.Get()));
 				break;
 			}
 			case BM_BODYPARTVIEW_SHOWATTACHMENTS: {
 				mShowAllParts = false;
+				fAvoidColPushing = true;
 				BmRef<BmDataModel> modelRef( DataModel());
 				ShowBody( dynamic_cast<BmBodyPartList*>( modelRef.Get()));
 				break;
@@ -418,16 +427,18 @@ void BmBodyPartView::MessageReceived( BMessage* msg) {
 				int32 index = CurrentSelection( 0);
 				if (index < 0)
 					break;
-				BmBodyPartItem* bodyPartItem = dynamic_cast<BmBodyPartItem*>( FullListItemAt( index));
+				BmBodyPartItem* bodyPartItem 
+					= dynamic_cast<BmBodyPartItem*>( FullListItemAt( index));
 				if (!bodyPartItem)
 					break;
 				BmBodyPart* bodyPart( bodyPartItem->ModelItem());
 				if (!bodyPart)
 					break;
-				// first step, let user select filename to save under:
+				// first step, let user select folder to save stuff into:
 				if (!mSavePanel) {
-					mSavePanel = new BFilePanel( B_SAVE_PANEL, new BMessenger(this), NULL,
-														  B_FILE_NODE, false);
+					mSavePanel = new BFilePanel( 
+						B_SAVE_PANEL, new BMessenger(this), NULL, B_FILE_NODE, false
+					);
 				}
 				mSavePanel->SetSaveText( bodyPart->FileName().String());
 				mSavePanel->Show();
@@ -437,42 +448,53 @@ void BmBodyPartView::MessageReceived( BMessage* msg) {
 				int32 buttonPressed;
 				if (msg->FindInt32( "which", &buttonPressed) != B_OK) {
 					// first step, ask user about it:
-					int32 index = CurrentSelection( 0);
-					if (index < 0)
-						break;
-					BmBodyPartItem* bodyPartItem = dynamic_cast<BmBodyPartItem*>( FullListItemAt( index));
-					if (!bodyPartItem)
-						break;
-					BmBodyPart* bodyPart( bodyPartItem->ModelItem());
-					if (!bodyPart)
-						break;
-					BMessage* newMsg = new BMessage(BM_BODYPARTVIEW_DELETE_ATTACHMENT);
-					newMsg->AddInt32( "sel_index", index);
-					BmString s("Are you sure about removing the attachment ");
-					s << bodyPart->FileName() << " from the mail?";
-					BAlert* alert = new BAlert( "Remove Mail-Attachment", 
-														 s.String(),
-													 	 "Remove", "Cancel", NULL, B_WIDTH_AS_USUAL,
-													 	 B_WARNING_ALERT);
-					alert->SetShortcut( 1, B_ESCAPE);
-					alert->Go( new BInvoker( newMsg, BMessenger( this)));
-				} else {
-					// second step, do it if user said ok:
-					if (buttonPressed == 0) {
-						int32 index = -1;
-						msg->FindInt32( "sel_index", &index);
-						if (index < 0)
-							break;
-						BmBodyPartItem* bodyPartItem = dynamic_cast<BmBodyPartItem*>( FullListItemAt( index));
+					BMessage* newMsg = NULL;
+					int32 index;
+					for( int32 i=0; (index = CurrentSelection(i)) >= 0; ++i) {
+						BmBodyPartItem* bodyPartItem 
+							= dynamic_cast<BmBodyPartItem*>( FullListItemAt( index));
 						if (!bodyPartItem)
 							break;
 						BmBodyPart* bodyPart( bodyPartItem->ModelItem());
 						if (!bodyPart)
 							break;
-						BmRef<BmDataModel> modelRef( DataModel());
-						BmBodyPartList* bodyPartList 
-							= dynamic_cast<BmBodyPartList*>( modelRef.Get());
-						if (bodyPartList && bodyPartList->Mail()) {
+						if (!newMsg)
+							newMsg = new BMessage(BM_BODYPARTVIEW_DELETE_ATTACHMENT);
+						newMsg->AddInt32( "sel_index", index);
+					}
+					BAlert* alert = new BAlert( 
+						"Remove Mail-Attachment", 
+						"Are you sure about removing the selected attachment(s)"
+							" from the mail?",
+						"Remove", "Cancel", NULL, B_WIDTH_AS_USUAL,
+						B_WARNING_ALERT
+					);
+					alert->SetShortcut( 1, B_ESCAPE);
+					alert->Go( new BInvoker( newMsg, BMessenger( this)));
+				} else {
+					// second step, do it if user said ok:
+					BmRef<BmDataModel> modelRef( DataModel());
+					BmBodyPartList* bodyPartList 
+						= dynamic_cast<BmBodyPartList*>( modelRef.Get());
+					if (bodyPartList && bodyPartList->Mail() 
+					&& buttonPressed == 0) {
+						int32 index;
+						for(
+							int32 i=0; 
+							msg->FindInt32( "sel_index", i, &index) == B_OK;
+							++i
+						) {
+							if (index < 0)
+								break;
+							BmBodyPartItem* bodyPartItem 
+								= dynamic_cast<BmBodyPartItem*>( 
+									FullListItemAt( index)
+								);
+							if (!bodyPartItem)
+								break;
+							BmBodyPart* bodyPart( bodyPartItem->ModelItem());
+							if (!bodyPart)
+								break;
 							bodyPartList->RemoveItemFromList( bodyPart);
 							bodyPartList->Mail()->ConstructAndStore();
 						}
@@ -481,31 +503,32 @@ void BmBodyPartView::MessageReceived( BMessage* msg) {
 				break;
 			}
 			case B_CANCEL: {
-				// since a SavePanel seems to avoid quitting, thus stopping Beam from proper exit,
-				// we detroy the panel:
+				// since a SavePanel seems to avoid quitting, thus stopping Beam 
+				// from proper exit, we detroy the panel:
 				delete mSavePanel;
 				mSavePanel = NULL;
 				break;
 			}
 			case B_SAVE_REQUESTED: {
-				// since a SavePanel seems to avoid quitting, thus stopping Beam from proper exit,
-				// we detroy the panel:
+				// since a SavePanel seems to avoid quitting, thus stopping Beam 
+				// from proper exit, we detroy the panel:
 				delete mSavePanel;
 				mSavePanel = NULL;
-				int32 index = CurrentSelection( 0);
-				if (index < 0)
-					break;
-				BmBodyPartItem* bodyPartItem = dynamic_cast<BmBodyPartItem*>( FullListItemAt( index));
-				if (!bodyPartItem)
-					break;
-				BmRef<BmListModelItem> modelItemRef( );
-				BmBodyPart* bodyPart( bodyPartItem->ModelItem());
-				if (!bodyPart)
-					break;
-				entry_ref destDirRef;
-				if (msg->FindRef( "directory", 0, &destDirRef) == B_OK) {
-					BmString name = msg->FindString( "name");
-					bodyPart->SaveAs( destDirRef, name);
+				int32 index;
+				for( int32 i=0; (index = CurrentSelection(i)) >= 0; ++i) {
+					BmBodyPartItem* bodyPartItem 
+						= dynamic_cast<BmBodyPartItem*>( FullListItemAt( index));
+					if (!bodyPartItem)
+						break;
+					BmRef<BmListModelItem> modelItemRef( );
+					BmBodyPart* bodyPart( bodyPartItem->ModelItem());
+					if (!bodyPart)
+						break;
+					entry_ref destDirRef;
+					if (msg->FindRef( "directory", 0, &destDirRef) == B_OK) {
+						BmString name = msg->FindString( "name");
+						bodyPart->SaveAs( destDirRef, name);
+					}
 				}
 				break;
 			}
@@ -513,25 +536,32 @@ void BmBodyPartView::MessageReceived( BMessage* msg) {
 			case B_COPY_TARGET: {
 				if (msg->IsReply()) {
 					const BMessage* dragMsg = msg->Previous();
-					if (!dragMsg || BmDragId!=dragMsg->FindString("be:originator"))
-						break;
-					BmString key=dragMsg->FindString("be:originator_data");
 					BmRef<BmDataModel> modelRef( DataModel());
-					BmBodyPartList* bodyPartList = dynamic_cast<BmBodyPartList*>( modelRef.Get());
-					if (!bodyPartList)
+					BmBodyPartList* bodyPartList 
+						= dynamic_cast<BmBodyPartList*>( modelRef.Get());
+					if (!dragMsg || !bodyPartList
+					|| BmDragId!=dragMsg->FindString("be:originator"))
 						break;
-					BmRef<BmListModelItem> bodyPartItem = bodyPartList->FindItemByKey( key);
-					BmBodyPart* bodyPart = dynamic_cast<BmBodyPart*>( bodyPartItem.Get());
-					if (bodyPart) {
-						if (msg->what == B_COPY_TARGET) {
-							entry_ref dref;
-							msg->FindRef( "directory", &dref);
-							BDirectory dir( &dref);
-							BFile file( &dir, msg->FindString("name"), B_WRITE_ONLY);
-							if (file.InitCheck() == B_OK)
-								bodyPart->WriteToFile( file);
-						} else if (msg->what == B_TRASH_TARGET && mEditable) {
-							bodyPartList->RemoveItemFromList( bodyPart);
+					int32 index;
+					for( int32 i=0; (index = CurrentSelection(i)) >= 0; ++i) {
+						BmBodyPartItem* bodyPartItem 
+							= dynamic_cast<BmBodyPartItem*>( FullListItemAt( index));
+						BmBodyPart* bodyPart 
+							= dynamic_cast<BmBodyPart*>( bodyPartItem->ModelItem());
+						if (bodyPart) {
+							if (msg->what == B_COPY_TARGET) {
+								entry_ref dref;
+								msg->FindRef( "directory", &dref);
+								BDirectory dir( &dref);
+								BFile file( 
+									&dir, bodyPart->FileName().String(), 
+									B_WRITE_ONLY | B_CREATE_FILE
+								);
+								if (file.InitCheck() == B_OK)
+									bodyPart->WriteToFile( file);
+							} else if (msg->what == B_TRASH_TARGET && mEditable) {
+								bodyPartList->RemoveItemFromList( bodyPart);
+							}
 						}
 					}
 				}
@@ -555,7 +585,8 @@ void BmBodyPartView::MessageReceived( BMessage* msg) {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmBodyPartView::ItemInvoked( int32 index) {
-	BmBodyPartItem* bodyPartItem = dynamic_cast<BmBodyPartItem*>( FullListItemAt( index));
+	BmBodyPartItem* bodyPartItem 
+		= dynamic_cast<BmBodyPartItem*>( FullListItemAt( index));
 	if (bodyPartItem) {
 		BmBodyPart* bodyPart( bodyPartItem->ModelItem());
 		if (!bodyPart)
@@ -573,13 +604,14 @@ void BmBodyPartView::ItemInvoked( int32 index) {
 			if (bodyPart->MimeType().ICompare( "message/rfc822") == 0
 			&& realMT.ICompare( "text/",5) == 0) {
 				// skip complaining about emails being text/plain which comes
-				// up quite regularly due to the limited success of the corresponding
+				// up quite regularly due to the limited success of the corresp.
 				// BeOS-mimetype-sniffer-rules (they require a mail to start with 
 				// "Return-Path: ", which is not always the case):
 				choice = 1;		// revert to declared type
 			} else {
-				BmString s("ATTENTION!\n\nThe attachment has been declared to be of type \n\n\t");
-				s << bodyPart->MimeType()
+				BmString s("ATTENTION!\n\n");
+				s << "The attachment has been declared to be of type \n\n\t"
+				  << bodyPart->MimeType()
 				  << "\n\nbut BeOS thinks it is in fact of type\n\n\t" << realMT
 				  << "\n\nWhat would you like Beam to do?";
 				BmString openReal = BmString("Open as ")<<realMT;
@@ -602,27 +634,18 @@ void BmBodyPartView::ItemInvoked( int32 index) {
 			}
 		}
 		if (bmApp->HandlesMimetype( realMT)) {
+			// take care of text/x-email and message/rfc822 ourselves:
 			BMessage msg( B_REFS_RECEIVED);
 			msg.AddRef( "refs", &eref);
 			bmApp->RefsReceived( &msg);
 		} else {
-			BmString mtTrustInfo = ThePrefs->GetString( "MimeTypeTrustInfo", 
-																	 "<application/pdf:T><application/zip:T><application:W><:T>");
 			bool doIt = true;
-			Regexx rx;
-			int count = rx.exec( mtTrustInfo, "<(.*?):(\\w)>", Regexx::global);
-			for( int i=0; i<count; ++i) {
-				BmString match = rx.match[i].atom[0];
-				if ( realMT.ICompare( match, match.Length()) == 0) {
-					BmString trustLevel = rx.match[i].atom[1];
-					if (trustLevel.ICompare( "T") != 0) {
-						BmString s("The attachment may contain harmful content, are you sure to open it?");
-						BAlert* alert = new BAlert( "", s.String(), "Yes", "No");
-						alert->SetShortcut( 1, B_ESCAPE);
-						doIt = (alert->Go() == 0);
-					}
-					break;
-				}
+			if (BmBodyPart::MimeTypeIsPotentiallyHarmful( realMT)) {
+				BmString s("The attachment may contain harmful content, "
+							  "are you sure to open it?");
+				BAlert* alert = new BAlert( "", s.String(), "Yes", "No");
+				alert->SetShortcut( 1, B_ESCAPE);
+				doIt = (alert->Go() == 0);
 			}
 			if (doIt) {
 				BEntry entry( &eref);
@@ -633,10 +656,17 @@ void BmBodyPartView::ItemInvoked( int32 index) {
 					update_mime_info( path.Path(), false, true, false);
 					res = be_roster->Launch( &eref);
 					if (res != B_OK && res != B_ALREADY_RUNNING) {
-						ShowAlert( BmString("Sorry, could not launch application for this attachment (unknown mimetype perhaps?)\n\nError: ") << strerror(res));
+						ShowAlert( 
+							BmString("Sorry, could not launch application for "
+										"this attachment (unknown mimetype perhaps?)\n\n"
+										"Error: ") << strerror(res)
+						);
 					}
 				} else
-					ShowAlert( BmString("Sorry, could not open this attachment.\n\nError: ") << strerror(res));
+					ShowAlert( 
+						BmString("Sorry, could not open this attachment.\n\n"
+									"Error: ") << strerror(res)
+					);
 			}
 		}
 		bodyPartItem->Highlight( false);
@@ -654,20 +684,24 @@ bool BmBodyPartView::InitiateDrag( BPoint, int32 index, bool wasSelected) {
 	BMessage dragMsg( B_SIMPLE_DATA);
 	BmBodyPartItem* bodyPartItem = dynamic_cast<BmBodyPartItem*>(ItemAt( index));
 	BmBodyPart* bodyPart( bodyPartItem->ModelItem());
-	const char* filename = bodyPartItem->GetColumnContentText( COL_NAME);
 	dragMsg.AddInt32( "be:actions", B_COPY_TARGET);
 	dragMsg.AddInt32( "be:actions", B_TRASH_TARGET);
 	dragMsg.AddString( "be:types", B_FILE_MIME_TYPE);
-	dragMsg.AddString( "be:filetypes", bodyPart->MimeType().String());
-	dragMsg.AddString( "be:clip_name", filename);
+//	dragMsg.AddString( "be:filetypes", bodyPart->MimeType().String());
 	dragMsg.AddString( "be:originator", BmDragId.String());
-	dragMsg.AddString( "be:originator_data", bodyPart->Key().String());
+	dragMsg.AddString( "be:clip_name", bodyPart->FileName().String());
 	dragMsg.AddPointer( "bm:bodypart", bodyPart);
+	int32 currIdx;
+	// we count the number of selected items:
+	int32 selCount;
+	for( selCount=0; (currIdx=CurrentSelection( selCount))>=0; ++selCount)
+		;
+	const int32 th=10;
 	BFont font;
 	GetFont( &font);
 	float lineHeight = MAX(TheResources->FontLineHeight( &font),20.0);
 	float baselineOffset = TheResources->FontBaselineOffset( &font);
-	BRect dragRect( 0, 0, 200-1, 1*lineHeight-1);
+	BRect dragRect( 0, 0, 200-1, MIN(selCount,th+1)*lineHeight-1);
 	BView* dummyView = new BView( dragRect, NULL, B_FOLLOW_NONE, 0);
 	BBitmap* dragImage = new BBitmap( dragRect, B_RGBA32, true);
 	dragImage->AddChild( dummyView);
@@ -677,12 +711,26 @@ bool BmBodyPartView::InitiateDrag( BPoint, int32 index, bool wasSelected) {
 	dummyView->SetDrawingMode( B_OP_ALPHA);
 	dummyView->SetHighColor( 0, 0, 0, 128);
 	dummyView->SetBlendingMode( B_CONSTANT_ALPHA, B_ALPHA_COMPOSITE);
-	// now we add the selected item to drag-image and to drag-msg:
-	const BBitmap* icon = bodyPartItem->GetColumnContentBitmap( 0);
-	if (icon) {
-		dummyView->DrawBitmapAsync( icon, BPoint(0,0));
+	// now we add the selected items to drag-image:
+	for( int32 i=0; (currIdx=CurrentSelection( i))>=0; ++i) {
+		bodyPartItem = dynamic_cast<BmBodyPartItem*>(ItemAt( currIdx));
+		bodyPart = bodyPartItem->ModelItem();
+		if (i<th) {
+			// add only the first ten selections to drag-image:
+			const BBitmap* icon = bodyPartItem->GetColumnContentBitmap( 0);
+			if (icon) {
+				dummyView->DrawBitmapAsync( icon, BPoint(0,i*lineHeight));
+			}
+			dummyView->DrawString( bodyPart->FileName().String(), 
+										  BPoint( 20.0, i*lineHeight+baselineOffset));
+		} else if (i==th) {
+			// add an indicator that more items are being dragged than shown:
+			BmString indicator = BmString("(...and ") << selCount-th 
+				<< (selCount-th == 1 ? " more item)" : " more items)");
+			dummyView->DrawString( indicator.String(), 
+										  BPoint( 20.0, i*lineHeight+baselineOffset));
+		}
 	}
-	dummyView->DrawString( filename, BPoint(20.0,baselineOffset));
 	dragImage->Unlock();
 	DragMessage( &dragMsg, dragImage, B_OP_ALPHA, BPoint( 10.0, 10.0));
 	return true;
@@ -698,10 +746,12 @@ void BmBodyPartView::ShowMenu( BPoint point) {
 	font.SetSize( 10);
 	theMenu->SetFont( &font);
 
-	BMenuItem* item = new BMenuItem( "Show All MIME-Bodies", 
-												new BMessage( mShowAllParts
-																  ? BM_BODYPARTVIEW_SHOWATTACHMENTS
-																  : BM_BODYPARTVIEW_SHOWALL));
+	BMenuItem* item = new BMenuItem( 
+		"Show All MIME-Bodies", 
+		new BMessage( mShowAllParts
+							  ? BM_BODYPARTVIEW_SHOWATTACHMENTS
+							  : BM_BODYPARTVIEW_SHOWALL)
+	);
 	item->SetTarget( this);
 	item->SetMarked( mShowAllParts);
 	theMenu->AddItem( item);
