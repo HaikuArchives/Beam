@@ -8,11 +8,12 @@ if $(OSPLAT) = PPC {
 	CFLAGS = [ FFilter $(CFLAGS) : -nosyspath ] ;
 	C++FLAGS = [ FFilter $(C++FLAGS) : -nosyspath ] ;
 	LINKFLAGS += -warn -export pragma ;
-	LIBNETAPI = netapi ;
 } else {
 	CFLAGS += -march=pentiumpro ;
 	C++FLAGS += -march=pentiumpro ;
 }
+
+LIBNETAPI = netapi ;	# default, may be changed to bnetapi (see below)
 
 if $(OSPLAT) = X86 {
 	# check for BONE...
@@ -29,8 +30,8 @@ if $(OSPLAT) = X86 {
 		LINKLIBS += -lzeta ;
 	}
 	# check for libnetapi...
-	local haveLibnetapi = [ GLOB /boot/develop/lib : libnetapi.so ] ;
-	if ! $(haveLibNetApi) {
+	local haveLibnetapi = [ GLOB /boot/develop/lib/x86 : libnetapi.so ] ;
+	if ! $(haveLibnetapi) {
 		LIBNETAPI = bnetapi ;
 	}
 }
