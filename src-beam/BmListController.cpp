@@ -591,24 +591,35 @@ BmListViewItem* BmListViewController::doAddModelItem( BmListViewItem* parent, Bm
 	RemoveModelItem( msg)
 		-	Hook function that is called whenever an item has been deleted from the
 			listmodel
-		-	this implementation informs the model that we have noticed the removal 
-			of the item. This is neccessary since the model is waiting for all 
-			controllers to signal that they have understood that the deleted item
-			is no longer valid. Otherwise, a controller might still access
-			an item that has already been deleted by the model.
 \*------------------------------------------------------------------------------*/
 void BmListViewController::RemoveModelItem( BmListModelItem* item) {
 	BM_LOG2( BM_LogModelController, BmString(ControllerName())<<": removing one item from listview");
+	if (item) {
+		doRemoveModelItem( item);
+		UpdateCaption();
+		BMessage msg( BM_NTFY_LISTCONTROLLER_MODIFIED);
+		SendNotices( BM_NTFY_LISTCONTROLLER_MODIFIED, &msg);
+	}
+}
+
+/*------------------------------------------------------------------------------*\
+	doRemoveModelItem( msg)
+		-
+\*------------------------------------------------------------------------------*/
+void BmListViewController::doRemoveModelItem( BmListModelItem* item) {
 	if (item) {
 		BmListViewItem* viewItem = FindViewItemFor( item);
 		if (viewItem) {
 			RemoveItem( viewItem);
 			mViewModelMap.erase( item);
+			// remove all sub-items of current item from the view as well:
+			BmModelItemMap::const_iterator iter;
+			for( iter = item->begin(); iter != item->end(); ++iter) {
+				BmListModelItem* subItem = iter->second.Get();
+				doRemoveModelItem( subItem);
+			}
 			delete viewItem;
 		}
-		UpdateCaption();
-		BMessage msg( BM_NTFY_LISTCONTROLLER_MODIFIED);
-		SendNotices( BM_NTFY_LISTCONTROLLER_MODIFIED, &msg);
 	}
 }
 

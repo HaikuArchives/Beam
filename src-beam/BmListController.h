@@ -249,6 +249,7 @@ protected:
 
 private:
 	BmListViewItem* doAddModelItem( BmListViewItem* parent, BmListModelItem* item);
+	void doRemoveModelItem( BmListModelItem* item);
 
 	// Hide copy-constructor and assignment:
 	BmListViewController( const BmListViewController&);
