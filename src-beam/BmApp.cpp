@@ -614,31 +614,43 @@ void BmApplication::ForwardMails( BMessage* msg, bool join) {
 	const char* selectedText = NULL;
 	msg->FindString( MSG_SELECTED_TEXT, &selectedText);
 	if (join) {
+		// fetch mail-refs from message and sort them chronologically:
+		typedef multimap< time_t, BmMailRef* >BmSortedRefMap;
+		BmSortedRefMap sortedRefMap;
 		for(  int index=0; 
 				msg->FindPointer( MSG_MAILREF, index, (void**)&mailRef) == B_OK;
 				++index) {
+			if (mailRef)
+				sortedRefMap.insert( pair<time_t, BmMailRef*>( mailRef->When(), 
+																			  mailRef));
+		}
+		// now iterate over the sorted mail-refs:
+		for(  BmSortedRefMap::const_iterator iter = sortedRefMap.begin(); 
+				iter != sortedRefMap.end(); 
+				++iter) {
+			mailRef = iter->second;
 			BmRef<BmMail> mail = BmMail::CreateInstance( mailRef);
 			if (mail) {
 				mail->StartJobInThisThread( BmMail::BM_READ_MAIL_JOB);
 				if (mail->InitCheck() != B_OK)
 					continue;
 				if (msg->what == BMM_FORWARD_ATTACHED) {
-					if (index == 0) 
+					if (iter == sortedRefMap.begin()) 
 						newMail = mail->CreateAttachedForward();
 					else
 						newMail->AddAttachmentFromRef( mailRef->EntryRefPtr());
 				} else if (msg->what == BMM_FORWARD_INLINE) {
-					if (index == 0) 
+					if (iter == sortedRefMap.begin()) 
 						newMail = mail->CreateInlineForward( false, selectedText);
 					else
 						newMail->AddPartsFromMail( mail, false, BM_IS_FORWARD);
 				} else if (msg->what == BMM_FORWARD_INLINE_ATTACH) {
-					if (index == 0) 
+					if (iter == sortedRefMap.begin()) 
 						newMail = mail->CreateInlineForward( true, selectedText);
 					else
 						newMail->AddPartsFromMail( mail, true, BM_IS_FORWARD);
 				}
-				if (index == 0) {
+				if (iter == sortedRefMap.begin()) {
 					// set subject for multiple forwards:
 					BmString oldSub = mail->GetFieldVal( BM_FIELD_SUBJECT);
 					BmString subject = newMail->CreateForwardSubjectFor( oldSub + " (and more...)");
@@ -702,12 +714,23 @@ void BmApplication::ReplyToMails( BMessage* msg, bool join) {
 	const char* selectedText = NULL;
 	msg->FindString( MSG_SELECTED_TEXT, &selectedText);
 	if (join) {
-		typedef map< BmString, BmRef<BmMail> >BmNewMailMap;
-		BmNewMailMap newMailMap;
-		// we collect new mails in the map defined above...
+		// fetch mail-refs from message and sort them chronologically:
+		typedef multimap< time_t, BmMailRef* >BmSortedRefMap;
+		BmSortedRefMap sortedRefMap;
 		for(  int index=0; 
 				msg->FindPointer( MSG_MAILREF, index, (void**)&mailRef) == B_OK;
 				++index) {
+			if (mailRef)
+				sortedRefMap.insert( pair<time_t, BmMailRef*>( mailRef->When(), 
+																			  mailRef));
+		}
+		// we file mails into the different originator-slots:
+		typedef map< BmString, BmRef<BmMail> >BmNewMailMap;
+		BmNewMailMap newMailMap;
+		for(  BmSortedRefMap::const_iterator iter = sortedRefMap.begin(); 
+				iter != sortedRefMap.end(); 
+				++iter) {
+			mailRef = iter->second;
 			BmRef<BmMail> mail = BmMail::CreateInstance( mailRef);
 			if (mail) {
 				mail->StartJobInThisThread( BmMail::BM_READ_MAIL_JOB);
@@ -719,8 +742,8 @@ void BmApplication::ReplyToMails( BMessage* msg, bool join) {
 					newMail = mail->CreateReply( msg->what, selectedText);
 				else
 					newMail->AddPartsFromMail( mail, false, BM_IS_REPLY);
-				if (index == 0) {
-					// set subject for multiple forwards:
+				if (iter == sortedRefMap.begin()) {
+					// set subject for multiple replies:
 					BmString oldSub = mail->GetFieldVal( BM_FIELD_SUBJECT);
 					BmString subject = newMail->CreateReplySubjectFor( oldSub + " (and more...)");
 					newMail->SetFieldVal( BM_FIELD_SUBJECT, subject);
@@ -729,8 +752,9 @@ void BmApplication::ReplyToMails( BMessage* msg, bool join) {
 			mailRef->RemoveRef();	// msg is no more refering to mailRef
 		}
 		// ...and now show all the freshly generated mails:
-		BmNewMailMap::const_iterator iter;
-		for( iter=newMailMap.begin(); iter!=newMailMap.end(); ++iter) {
+		for(  BmNewMailMap::const_iterator iter=newMailMap.begin(); 
+			   iter!=newMailMap.end(); 
+			   ++iter) {
 			BmMailEditWin* editWin = BmMailEditWin::CreateInstance( iter->second.Get());
 			if (editWin)
 				editWin->Show();
