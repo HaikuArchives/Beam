@@ -226,6 +226,8 @@ MMenuBar* BmMailViewWin::CreateMenu() {
 	menu->AddItem( CreateMenuItem( "Page Setup...", BMM_PAGE_SETUP));
 	menu->AddItem( CreateMenuItem( "Print Message...", BMM_PRINT));
 	menu->AddSeparatorItem();
+	AddItemToMenu( menu, CreateMenuItem( "Preferences...", BMM_PREFERENCES), bmApp);
+	menu->AddSeparatorItem();
 	menu->AddItem( CreateMenuItem( "Close", B_QUIT_REQUESTED));
 	menu->AddSeparatorItem();
 	AddItemToMenu( menu, CreateMenuItem( "Quit Beam", B_QUIT_REQUESTED), bmApp);
@@ -255,7 +257,6 @@ MMenuBar* BmMailViewWin::CreateMenu() {
 	// temporary deactivations:
 	menubar->FindItem( BMM_FIND)->SetEnabled( false);
 	menubar->FindItem( BMM_FIND_NEXT)->SetEnabled( false);
-	menubar->FindItem( BMM_FILTER)->SetEnabled( false);
 
 	return menubar;
 }
