@@ -30,7 +30,15 @@
 #ifndef _BmEncoding_h
 #define _BmEncoding_h
 
+// deactivate this to use standard BeOS translation (but beware, it 
+// *is* buggy for some asian encodings [like EUC-JP]):
+#define BM_USE_ICONV
+
 #include <memory>
+
+#ifdef BM_USE_ICONV
+#include <iconv.h>
+#endif
 
 #include "BmString.h"
 #include "BmMemIO.h"
@@ -90,6 +98,14 @@ class BmUtf8Decoder : public BmMemFilter {
 public:
 	BmUtf8Decoder( BmMemIBuf* input, uint32 destEncoding, 
 						uint32 blockSize=nBlockSize);
+	~BmUtf8Decoder();
+	
+	// native methods:
+	void InitConverter();
+	void SetTransliterate( bool transliterate);
+
+	// overrides of BmMemFilter base:
+	void Reset( BmMemIBuf* input);
 
 protected:
 	// overrides of BmMailFilter base:
@@ -97,6 +113,10 @@ protected:
 					 char* destBuf, uint32& destLen);
 
 	uint32 mDestEncoding;
+#ifdef BM_USE_ICONV
+	iconv_t mIconvDescr;
+	bool mTransliterate;
+#endif
 };
 
 /*------------------------------------------------------------------------------*\
@@ -109,6 +129,7 @@ class BmUtf8Encoder : public BmMemFilter {
 public:
 	BmUtf8Encoder( BmMemIBuf* input, uint32 srcEncoding, 
 						uint32 blockSize=nBlockSize);
+	~BmUtf8Encoder();
 
 protected:
 	// overrides of BmMailFilter base:
@@ -116,6 +137,9 @@ protected:
 					 char* destBuf, uint32& destLen);
 
 	uint32 mSrcEncoding;
+#ifdef BM_USE_ICONV
+	iconv_t mIconvDescr;
+#endif
 };
 
 /*------------------------------------------------------------------------------*\

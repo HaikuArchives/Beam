@@ -384,7 +384,67 @@ BmUtf8Decoder::BmUtf8Decoder( BmMemIBuf* input, uint32 destEncoding,
 										uint32 blockSize)
 	:	inherited( input, blockSize)
 	,	mDestEncoding( destEncoding)
+	,	mIconvDescr( NULL)
+#ifdef BM_USE_ICONV
+	,	mTransliterate( false)
+#endif
 {
+	InitConverter();
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+BmUtf8Decoder::~BmUtf8Decoder()
+{
+#ifdef BM_USE_ICONV
+	if (mIconvDescr) {
+		iconv_close( mIconvDescr);
+		mIconvDescr = NULL;
+	}
+#endif
+}
+
+/*------------------------------------------------------------------------------*\
+	Reset()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmUtf8Decoder::Reset( BmMemIBuf* input) {
+	inherited::Reset( input);
+	InitConverter();
+}
+
+/*------------------------------------------------------------------------------*\
+	InitConverter()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmUtf8Decoder::InitConverter() {
+#ifdef BM_USE_ICONV
+	if (mIconvDescr) {
+		iconv_close( mIconvDescr);
+		mIconvDescr = NULL;
+	}
+	BmString toSet = EncodingToCharset( mDestEncoding)
+							+ (mTransliterate ? "//TRANSLIT" : "");
+	if ((mIconvDescr = iconv_open( "UTF-8", toSet.String())) == NULL) {
+		BM_LOGERR( BmString("libiconv: unable to convert from UTF-8 to ") << toSet);
+		mHadError = true;
+	}
+#endif
+}
+
+/*------------------------------------------------------------------------------*\
+	SetTransliterate()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmUtf8Decoder::SetTransliterate( bool transliterate) {
+#ifdef BM_USE_ICONV
+	if (mIconvDescr && mTransliterate == transliterate)
+		return;
+	mTransliterate = transliterate;
+	InitConverter();
+#endif
 }
 
 /*------------------------------------------------------------------------------*\
@@ -403,12 +463,35 @@ void BmUtf8Decoder::Filter( const char* srcBuf, uint32& srcLen,
 		return;
 	}
 
+#ifdef BM_USE_ICONV
+	const char* inBuf = srcBuf;
+	size_t inBytesLeft = srcLen;
+	char* outBuf = destBuf;
+	size_t outBytesLeft = destLen;
+	size_t irrevCount = iconv( mIconvDescr, &inBuf, &inBytesLeft, &outBuf, &outBytesLeft);
+	srcLen -= inBytesLeft;
+	destLen -= outBytesLeft;
+	if (irrevCount == (size_t)-1) {
+		if (errno == E2BIG)
+			BM_LOG3( BM_LogMailParse, "Result in utf8-decode: too big, need to continue");
+		else if (errno == EINVAL)
+			BM_LOG3( BM_LogMailParse, "Result in utf8-decode: stopped on multibyte char, need to continue");
+		else if (errno == EILSEQ) {
+			BM_LOG( BM_LogMailParse, "Result in utf8-decode: invalid multibyte char found");
+			mHadError = true;
+		} else {
+			BM_LOGERR( BmString("Unknown error-result in utf8-decode: ") << errno);
+			mHadError = true;
+		}
+	}
+#else
 	int32 state = 0;
 	status_t err = convert_from_utf8( mDestEncoding, srcBuf, (int32*)&srcLen, 
 												 destBuf, (int32*)&destLen, &state);
 	if (err != B_OK) {
 		BM_LOG( BM_LogMailParse, BmString("error in utf8-decode: ") << strerror(err));
 	}
+#endif
 
 	BM_LOG3( BM_LogMailParse, "utf8-decode: done");
 }
@@ -428,6 +511,27 @@ BmUtf8Encoder::BmUtf8Encoder( BmMemIBuf* input, uint32 srcEncoding,
 	:	inherited( input, blockSize)
 	,	mSrcEncoding( srcEncoding)
 {
+#ifdef BM_USE_ICONV
+	BmString fromSet = EncodingToCharset( srcEncoding);
+	if ((mIconvDescr = iconv_open( fromSet.String(), "UTF-8")) == NULL) {
+		BM_LOGERR( BmString("libiconv: unable to convert from ") << fromSet << " to UTF-8");
+		mHadError = true;
+	}
+#endif
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+BmUtf8Encoder::~BmUtf8Encoder()
+{
+#ifdef BM_USE_ICONV
+	if (mIconvDescr) {
+		iconv_close( mIconvDescr);
+		mIconvDescr = NULL;
+	}
+#endif
 }
 
 /*------------------------------------------------------------------------------*\
@@ -446,12 +550,35 @@ void BmUtf8Encoder::Filter( const char* srcBuf, uint32& srcLen,
 		return;
 	}
 
+#ifdef BM_USE_ICONV
+	const char* inBuf = srcBuf;
+	size_t inBytesLeft = srcLen;
+	char* outBuf = destBuf;
+	size_t outBytesLeft = destLen;
+	size_t irrevCount = iconv( mIconvDescr, &inBuf, &inBytesLeft, &outBuf, &outBytesLeft);
+	srcLen -= inBytesLeft;
+	destLen -= outBytesLeft;
+	if (irrevCount == (size_t)-1) {
+		if (errno == E2BIG)
+			BM_LOG3( BM_LogMailParse, "Result in utf8-encode: too big, need to continue");
+		else if (errno == EINVAL)
+			BM_LOG3( BM_LogMailParse, "Result in utf8-encode: stopped on multibyte char, need to continue");
+		else if (errno == EILSEQ) {
+			BM_LOGERR( "Result in utf8-encode: invalid multibyte char found");
+			mHadError = true;
+		} else {
+			BM_LOGERR( BmString("Unknown error-result in utf8-encode: ") << errno);
+			mHadError = true;
+		}
+	}
+#else
 	int32 state = 0;
 	status_t err = convert_to_utf8( mSrcEncoding, srcBuf, (int32*)&srcLen, 
 											  destBuf, (int32*)&destLen, &state);
 	if (err != B_OK) {
 		BM_LOG( BM_LogMailParse, BmString("error in utf8-encode: ") << strerror(err));
 	}
+#endif
 
 	BM_LOG3( BM_LogMailParse, "utf8-encode: done");
 }
