@@ -936,15 +936,15 @@ thread_id BmApplication::Run() {
 		if (ThePrefs->GetBool( "UseDeskbar"))
 			InstallDeskbarItem();
 
+		BM_LOG( BM_LogApp, BmString("...reading POP-accounts..."));
+		ThePopAccountList->StartJobInNewThread();
+
 		BM_LOG( BM_LogApp, BmString("Showing main-window."));
 		TheMainWindow->Show();
 
 		// start most of our list-models:
 		BM_LOG( BM_LogApp, BmString("...querying people..."));
 		ThePeopleList->StartJobInNewThread();
-
-		BM_LOG( BM_LogApp, BmString("...reading POP-accounts..."));
-		ThePopAccountList->StartJobInNewThread();
 
 		BM_LOG( BM_LogApp, BmString("...reading identities..."));
 		TheIdentityList->StartJobInThisThread();
@@ -1142,8 +1142,6 @@ void BmApplication::MessageReceived( BMessage* msg) {
 				break;
 			}
 			case BMM_CHECK_MAIL: {
-				while( ThePopAccountList->IsJobRunning())
-					snooze( 200*1000);
 				const char* key = NULL;
 				msg->FindString( BmPopAccountList::MSG_ITEMKEY, &key);
 				if (key) {
