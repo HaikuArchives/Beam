@@ -753,19 +753,16 @@ bool BmMail::Send(bool now)
 
 /*------------------------------------------------------------------------------*\
 	Store()
-		-	stores mail-data and attributes inside a file
+		-	determines where this mail should be living and the stores it there
 \*------------------------------------------------------------------------------*/
 bool BmMail::Store() {
-	BmBackedFile mailFile;
-	BEntry folderEntry;
+	BEntry folderEntry, backupEntry;
 	status_t err = B_NO_INIT;
-	ssize_t res;
-	char filenameBuf[B_FILE_NAME_LENGTH];
-	BmString filename;
 	BPath newHomePath;
 	BmString status;
 	bigtime_t whenCreated;
-	BEntry backupEntry;
+	char filenameBuf[B_FILE_NAME_LENGTH];
+	BmString filename;
 
 	try {
 		// Find out where mail shall be living:
@@ -842,7 +839,7 @@ bool BmMail::Store() {
 				create_directory( newHomePath.Path(), 0755);
 			}
 		}
-			
+		
 		// create entry for new mail-file:
 		BmString newName;
 		if (!filename.Length())
@@ -851,36 +848,9 @@ bool BmMail::Store() {
 		else
 			// reuse old name for mail that already lives on disk:
 			newName = BmString(newHomePath.Path()) + "/" + filename;
-		if ((err = mEntry.SetTo( newName.String())) != B_OK)
-			BM_THROW_RUNTIME( 
-				BmString("Could not create entry for mail-file <") 
-					<< newName << ">\n\n Result: " << strerror(err)
-			);
-		mEntry.GetName( filenameBuf);
-		filename = filenameBuf;
 
-		// we create/open the new mailfile (keeping a backup)...
-		if ((err = mailFile.SetTo(	mEntry, "text/x-email", &backupEntry)) != B_OK)
-			BM_THROW_RUNTIME( 
-				BmString("Could not create backed mail-file\n\t<") 
-					<< filename << ">\n\n Result: " << strerror(err)
-			);
-		// ...store all other attributes...
-		StoreAttributes( mailFile.File(), status, whenCreated);
-		mHeader->StoreAttributes( mailFile.File());
-		// ...and finally write the raw mail into the file:
-		int32 len = mText.Length();
-		if ((res = mailFile.Write( mText.String(), len)) < len) {
-			if (res < 0) {
-				BM_THROW_RUNTIME( BmString("Unable to write to mailfile <") 
-											<< filename << ">\n\n Result: " 
-											<< strerror(err));
-			} else {
-				BM_THROW_RUNTIME( BmString("Could not write complete mail to "
-													"file.\nWrote ") 
-											<< res << " bytes instead of " << len);
-			}
-		}
+		StoreIntoFile( newName, status, whenCreated, &backupEntry);
+
 		entry_ref eref;
 		if ((err = mEntry.GetRef( &eref)) != B_OK)
 			BM_THROW_RUNTIME( 
@@ -900,8 +870,48 @@ bool BmMail::Store() {
 		BM_SHOWERR(e.what());
 		return false;
 	}
-
 	return true;
+}
+
+/*------------------------------------------------------------------------------*\
+	StoreIntoFile()
+		-	writes mail-data and attributes into a file
+\*------------------------------------------------------------------------------*/
+void BmMail::StoreIntoFile( const BmString& filename, const BmString& status,
+									 bigtime_t whenCreated, BEntry* backupEntry) {
+	BmBackedFile mailFile;
+	status_t err = B_NO_INIT;
+	ssize_t res;
+
+	if ((err = mEntry.SetTo( filename.String())) != B_OK)
+		BM_THROW_RUNTIME( 
+			BmString("Could not create entry for mail-file <") 
+				<< filename << ">\n\n Result: " << strerror(err)
+		);
+
+	// we create/open the new mailfile (keeping a backup)...
+	if ((err = mailFile.SetTo(	mEntry, "text/x-email", backupEntry)) != B_OK)
+		BM_THROW_RUNTIME( 
+			BmString("Could not create backed mail-file\n\t<") 
+				<< filename << ">\n\n Result: " << strerror(err)
+		);
+	// ...store all other attributes...
+	StoreAttributes( mailFile.File(), status, whenCreated);
+	mHeader->StoreAttributes( mailFile.File());
+
+	// ...and finally write the raw mail into the file:
+	int32 len = mText.Length();
+	if ((res = mailFile.Write( mText.String(), len)) < len) {
+		if (res < 0) {
+			BM_THROW_RUNTIME( BmString("Unable to write to mailfile <") 
+										<< filename << ">\n\n Result: " 
+										<< strerror(err));
+		} else {
+			BM_THROW_RUNTIME( BmString("Could not write complete mail to "
+												"file.\nWrote ") 
+										<< res << " bytes instead of " << len);
+		}
+	}
 }
 
 /*------------------------------------------------------------------------------*\

@@ -164,6 +164,8 @@ public:
 	void ApplyInboundFilters();
 	bool Send( bool now=true);
 	bool Store();
+	void StoreIntoFile( const BmString& filename, const BmString& status,
+							  bigtime_t whenCreated, BEntry* backupEntry = NULL);
 	void ResyncFromDisk();
 	//
 	const BmString& GetFieldVal( const BmString fieldName);
