@@ -205,11 +205,6 @@ BmApplication::BmApplication( const char* sig)
 		BM_LOG( BM_LogApp, BmString("...creating main-window..."));
 		BmMainWindow::CreateInstance();
 		
-		BmString wspc = ThePrefs->GetString( "Workspace", "Current");
-		TheMainWindow->SetWorkspaces( wspc=="Current" 
-													? B_CURRENT_WORKSPACE 
-													: 1<<(atoi( wspc.String())-1));
-		
 		TheBubbleHelper->EnableHelp( ThePrefs->GetBool( "ShowTooltips", true));
 
 		mInitCheck = B_OK;
@@ -336,7 +331,7 @@ void BmApplication::InstallDeskbarItem() {
 			int32 id;
 			appInfo.ref.set_name( BM_DeskbarItemName);
 			if ((res = mDeskbar.AddItem( &appInfo.ref, &id)) != B_OK)
-				BM_SHOWERR( BmString("Unable to install Beam_DeskbarItem (")<<BM_DeskbarItemName<<").\nError: \n\t" << strerror( res))
+				BM_SHOWERR( BmString("Unable to install Beam_DeskbarItem (")<<BM_DeskbarItemName<<").\nError: \n\t" << strerror( res));
 		}
 	}
 }
@@ -801,12 +796,12 @@ void BmApplication::ForwardMails( BMessage* msg, bool join) {
 					if (iter == sortedRefMap.begin()) 
 						newMail = mail->CreateInlineForward( false, selectedText);
 					else
-						newMail->AddPartsFromMail( mail, false, BM_IS_FORWARD);
+						newMail->AddPartsFromMail( mail, false, BM_IS_FORWARD, false);
 				} else if (msg->what == BMM_FORWARD_INLINE_ATTACH) {
 					if (iter == sortedRefMap.begin()) 
 						newMail = mail->CreateInlineForward( true, selectedText);
 					else
-						newMail->AddPartsFromMail( mail, true, BM_IS_FORWARD);
+						newMail->AddPartsFromMail( mail, true, BM_IS_FORWARD, false);
 				}
 				if (iter == sortedRefMap.begin()) {
 					// set subject for multiple forwards:
@@ -863,6 +858,7 @@ void BmApplication::ForwardMails( BMessage* msg, bool join) {
 void BmApplication::ReplyToMails( BMessage* msg, bool join) {
 	if (!msg)
 		return;
+	bool replyGoesToPersonOnly = false;
 	// tell sending ref-view that we are doing work:
 	BMessenger sendingRefView;
 	msg->FindMessenger( MSG_SENDING_REFVIEW, &sendingRefView);
@@ -896,12 +892,13 @@ void BmApplication::ReplyToMails( BMessage* msg, bool join) {
 					mail->StartJobInThisThread( BmMail::BM_READ_MAIL_JOB);
 				if (mail->InitCheck() != B_OK)
 					continue;
-				BmString replyAddr = mail->DetermineReplyAddress( msg->what, true);
+				BmString replyAddr = mail->DetermineReplyAddress( msg->what, true,
+																				  replyGoesToPersonOnly);
 				BmRef<BmMail>& newMail = newMailMap[replyAddr];
 				if (!newMail) 
-					newMail = mail->CreateReply( msg->what, selectedText);
+					newMail = mail->CreateReply( msg->what, replyGoesToPersonOnly, selectedText);
 				else
-					newMail->AddPartsFromMail( mail, false, BM_IS_REPLY);
+					newMail->AddPartsFromMail( mail, false, BM_IS_REPLY, replyGoesToPersonOnly);
 				if (iter == sortedRefMap.begin()) {
 					// set subject for multiple replies:
 					BmString oldSub = mail->GetFieldVal( BM_FIELD_SUBJECT);
@@ -931,7 +928,8 @@ void BmApplication::ReplyToMails( BMessage* msg, bool join) {
 					mail->StartJobInThisThread( BmMail::BM_READ_MAIL_JOB);
 				if (mail->InitCheck() != B_OK)
 					continue;
-				newMail = mail->CreateReply( msg->what, index==0 ? selectedText : NULL);
+				newMail = mail->CreateReply( msg->what, replyGoesToPersonOnly, 
+													  index==0 ? selectedText : NULL);
 				if (newMail) {
 					BmMailEditWin* editWin = BmMailEditWin::CreateInstance( newMail.Get());
 					if (editWin)
@@ -1105,24 +1103,31 @@ Heike Herfart \n\
 \n\
 Adam McNutt\n\
 Atillâ Öztürk\n\
-Bernd Korz\n\
+Bernd Thorsten Korz\n\
 Cedric Vincent\n\
 Charlie Clark\n\
 Eberhard Hafermalz\n\
 Eugenia Loli-Queru\n\
 Helmar Rudolph\n\
+Ingo Weinhold\n\
 Jace Cavacini\n\
+Jon Hart\n\
 Kevin Musick\n\
+Koki\n\
 Lars Müller\n\
+Len G. Jacob\n\
 Linus Almstrom\n\
 Mathias Reitinger\n\
 Max Hartmann\n\
 MDR-team (MailDaemonReplacement)\n\
+Mikhail Panasyuk\n\
+Olivier Milla (methadras)\n\
 qwilk\n\
 Paweł Lewicki\n\
 Rainer Riedl\n\
 Rob Lund\n\
 Shard\n\
+Stephan Assmus\n\
 Stephan Buelling\n\
 Stephen Butters\n\
 Tyler Dauwalder\n\
@@ -1141,7 +1146,7 @@ Zach\n\
 		-	returns the the current screen's frame
 \*------------------------------------------------------------------------------*/
 BRect BmApplication::ScreenFrame() {
-	BScreen screen;
+	BScreen screen( TheMainWindow);
 	if (!screen.IsValid())
 		BM_SHOWERR( BmString("Could not initialize BScreen object !?!"));
 	return screen.Frame();
