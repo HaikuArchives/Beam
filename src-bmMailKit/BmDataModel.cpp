@@ -574,17 +574,7 @@ BmListModelItem::BmListModelItem( const BmString& key, BmListModel* model,
 	:	mKey( key)
 	,	mListModel( model)
 	,	mParent( parent)
-{
-}
-
-/*------------------------------------------------------------------------------*\
-	ListModelItem( item)
-		-	copy c'tor
-\*------------------------------------------------------------------------------*/
-BmListModelItem::BmListModelItem( const BmListModelItem& item)
-	:	mKey( item.Key())
-	,	mListModel( NULL)
-	,	mParent( NULL)
+	,	mItemIsValid( true)
 {
 }
 
@@ -691,6 +681,35 @@ BmListModelItem* BmListModelItem::FindItemByKey( const BmString& key) {
 \*------------------------------------------------------------------------------*/
 BmRef<BmListModel> BmListModelItem::ListModel() const	{ 
 	return mListModel.Get(); 
+}
+
+/*------------------------------------------------------------------------------*\
+	ItemIsValid( b)
+		-	
+\*------------------------------------------------------------------------------*/
+void BmListModelItem::ItemIsValid( bool _itemIsValid) {
+	if (mItemIsValid != _itemIsValid) {
+		BmRef<BmListModel> listModel( ListModel());
+		if (listModel) {
+			BmAutolockCheckGlobal lock( listModel->ModelLocker());
+			if (!lock.IsLocked())
+				BM_THROW_RUNTIME( listModel->ModelNameNC() 
+											<< ": Unable to get lock");
+			if (_itemIsValid) {
+				// item has changed from invalid to valid, we set to valid and then
+				// tell controllers about its addition:
+				mItemIsValid = true;
+				listModel->TellModelItemAdded( this);
+			} else {
+				// item has changed from valid to invalid, we first
+				// tell controllers about its removal and then set item to invalid
+				// (otherwise, TellModelItemRemoved would ignore our request,
+				// since this item is invalid):
+				listModel->TellModelItemRemoved( this);
+				mItemIsValid = false;
+			}
+		}
+	}
 }
 
 
@@ -904,13 +923,15 @@ BmRef<BmListModelItem> BmListModel::FindItemByKey( const BmString& key) {
 		BM_THROW_RUNTIME( 
 			ModelNameNC() << ":FindItemByKey(): Unable to get lock"
 		);
-	BmModelItemMap::const_iterator iter;
-	for( iter = begin(); !found && iter != end(); ++iter) {
-		BmListModelItem* item = iter->second.Get();
-		if (item->Key() == key)
-			return item;
-		else if (!item->empty())
-			found = item->FindItemByKey( key);
+	BmModelItemMap::const_iterator iter = mModelItemMap.find( key);
+	if (iter != end()) {
+		found = iter->second.Get();
+	} else {
+		for( iter = begin(); !found && iter != end(); ++iter) {
+			BmListModelItem* item = iter->second.Get();
+			if (!item->empty())
+				found = item->FindItemByKey( key);
+		}
 	}
 	return found;
 }
@@ -920,7 +941,7 @@ BmRef<BmListModelItem> BmListModel::FindItemByKey( const BmString& key) {
 		-	tells all controllers that the given item has been added to hierarchy
 \*------------------------------------------------------------------------------*/
 void BmListModel::TellModelItemAdded( BmListModelItem* item) {
-	if (Frozen())
+	if (Frozen() || !item->ItemIsValid())
 		return;
 	BmAutolockCheckGlobal lock( mModelLocker);
 	if (!lock.IsLocked())
@@ -949,7 +970,7 @@ void BmListModel::TellModelItemAdded( BmListModelItem* item) {
 			they won't access the removed item (stale pointer)
 \*------------------------------------------------------------------------------*/
 void BmListModel::TellModelItemRemoved( BmListModelItem* item) {
-	if (Frozen())
+	if (Frozen() || !item->ItemIsValid())
 		return;
 	BmAutolockCheckGlobal lock( mModelLocker);
 	if (!lock.IsLocked())
@@ -979,7 +1000,7 @@ void BmListModel::TellModelItemRemoved( BmListModelItem* item) {
 \*------------------------------------------------------------------------------*/
 void BmListModel::TellModelItemUpdated( BmListModelItem* item, BmUpdFlags flags,
 													 const BmString oldKey) {
-	if (Frozen())
+	if (Frozen() || !item->ItemIsValid())
 		return;
 	BmAutolockCheckGlobal lock( mModelLocker);
 	if (!lock.IsLocked())

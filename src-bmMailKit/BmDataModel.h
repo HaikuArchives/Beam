@@ -71,6 +71,8 @@ enum {
 \*------------------------------------------------------------------------------*/
 class BmDataModel : public virtual BmRefObj {
 	typedef set< BmController*> BmControllerSet;
+	
+	friend class MailMonitorTest;
 
 public:
 	// c'tors & d'tor:
@@ -221,13 +223,13 @@ public:
 	// c'tors & d'tor:
 	BmListModelItem( const BmString& key, BmListModel* model, 
 						  BmListModelItem* parent);
-	BmListModelItem( const BmListModelItem&);
 	virtual ~BmListModelItem();
 
 	// native methods:
 	BmListModelItem* FindItemByKey( const BmString& key);
 	virtual int16 ArchiveVersion() const = 0;
 	virtual void IntegrateAppendedArchive( BMessage* archive);
+	void ItemIsValid( bool b);
 
 	// getters:
 	inline BmModelItemMap::const_iterator begin() const	
@@ -241,6 +243,7 @@ public:
 													{ return mKey; }
 	inline BmRef<BmListModelItem> Parent() const		
 													{ return mParent; }
+	inline bool ItemIsValid() const		{ return mItemIsValid; }
 	BmRef<BmListModel> ListModel() const;
 
 	// setters:
@@ -266,10 +269,12 @@ protected:
 
 	BmListModelItem* mParent;
 	BmWeakRef<BmListModel> mListModel;
+	bool mItemIsValid;
 
 private:
 	// Hide assignment:
 #ifndef __POWERPC__
+	BmListModelItem( const BmListModelItem&);
 	BmListModelItem operator=( const BmListModelItem&);
 #endif
 	
