@@ -236,6 +236,7 @@ bool BmMailFolderView::AcceptsDropOf( const BMessage* msg) {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmMailFolderView::HandleDrop( const BMessage* msg) {
+	static int jobNum = 1;
 	if (msg && mCurrHighlightItem
 	&& (msg->what == B_SIMPLE_DATA)) {
 		BmMailFolder* folder = dynamic_cast<BmMailFolder*>( mCurrHighlightItem->ModelItem());
@@ -245,7 +246,9 @@ void BmMailFolderView::HandleDrop( const BMessage* msg) {
 			for( int i=0; msg->FindRef( BmMailMover::MSG_REFS, i, &eref)==B_OK; ++i) {
 				tmpMsg.AddRef( BmMailMover::MSG_REFS, &eref);
 			}
-			tmpMsg.AddString( BmJobModel::MSG_JOB_NAME, folder->Name().String());
+			BmString jobName = folder->Name();
+			jobName << jobNum++;
+			tmpMsg.AddString( BmJobModel::MSG_JOB_NAME, jobName.String());
 			tmpMsg.AddString( BmJobModel::MSG_MODEL, folder->Key().String());
 			TheJobStatusWin->PostMessage( &tmpMsg);
 		}
