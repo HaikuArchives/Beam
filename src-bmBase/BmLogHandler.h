@@ -52,8 +52,8 @@ class BFile;
 struct node_ref;
 /*------------------------------------------------------------------------------*\
 	BmLogHandler
-		-	implements the global log-handler that received all logging requests and
-			executes them
+		-	implements the global log-handler that received all logging requests 
+			and executes them
 		-	different logfiles are identified by their name and will be created 
 			on demand
 \*------------------------------------------------------------------------------*/
@@ -101,8 +101,6 @@ public:
 
 	bool mWaitingForShutdown;
 
-	BList mActiveLogs;					
-							// list of logfiles
 	BLocker mLocker;
 							// benaphore used to lock write-access to list
 
@@ -144,6 +142,8 @@ private:
 		BmLogfile operator=( const BmLogfile&);
 	};
 
+	BList mActiveLogs;					
+							// list of logfiles
 	BList mWatcherInfo;
 
 	uint32 mLoglevels;
