@@ -174,7 +174,7 @@ BmMailRef::BmMailRef( BMessage* archive, BmMailRefList* model)
 
 		mInitCheck = B_OK;
 	} catch (exception &e) {
-		BM_SHOWERR( e.what());
+		BM_LOGERR( e.what());
 	}
 }
 
@@ -324,7 +324,7 @@ bool BmMailRef::ReadAttributes( const struct stat* statInfo) {
 		} else 
 			BM_LOG2( BM_LogMailTracking, BString("file <")<<mEntryRef.name<<" is not a mail, ignoring it.");
 	} catch( exception &e) {
-		BM_SHOWERR( e.what());
+		BM_LOGERR( e.what());
 	}
 	return retval;
 }

@@ -528,6 +528,9 @@ void BmApplication::MessageReceived( BMessage* msg) {
 				for( index=0; msg->FindPointer( MSG_MAILREF, index, (void**)&mailRef) == B_OK; ++index) {
 					BM_LOG( BM_LogMainWindow, BString("Asked to trash mail <") << mailRef->TrackerName() << ">");
 					refs[index] = mailRef->EntryRef();
+					mailRef->MarkAs( BM_MAIL_STATUS_READ);
+							// mark mail as read before moving to trash, so that we don't confuse
+							// our new-mail counter
 					mailRef->RemoveRef();	// msg is no more refering to mailRef
 				}
 				MoveToTrash( refs, index);

@@ -494,12 +494,13 @@ void BmMailEditWin::MessageReceived( BMessage* msg) {
 				BmRef<BmMail> mail = mMailView->CurrMail();
 				if (!mail)
 					break;
-				if (mail->IsFieldEmpty(BM_FIELD_FROM)) {
+				if (mail->IsFieldEmpty( mail->IsRedirect() ? BM_FIELD_RESENT_FROM : BM_FIELD_FROM)) {
 					BM_SHOWERR("Please enter at least one address into the <FROM> field before sending this mail, thank you.");
 					break;
 				}
-				if (mail->IsFieldEmpty(BM_FIELD_TO) && mail->IsFieldEmpty(BM_FIELD_CC)
-				&& mail->IsFieldEmpty(BM_FIELD_BCC)) {
+				if (mail->IsFieldEmpty( mail->IsRedirect() ? BM_FIELD_RESENT_TO : BM_FIELD_TO) 
+				&& mail->IsFieldEmpty( mail->IsRedirect() ? BM_FIELD_RESENT_CC : BM_FIELD_CC)
+				&& mail->IsFieldEmpty( mail->IsRedirect() ? BM_FIELD_RESENT_BCC : BM_FIELD_BCC)) {
 					BM_SHOWERR("Please enter at least one address into the\n\t<TO>,<CC> or <BCC>\nfield before sending this mail, thank you.");
 					break;
 				}
@@ -816,7 +817,9 @@ bool BmMailEditWin::CreateMailFromFields( bool hardWrapIfNeeded) {
 			mail->SetFieldVal( BM_FIELD_DATE, TimeToString( time( NULL), 
 																			"%a, %d %b %Y %H:%M:%S %z"));
 		}
-		return mail->ConstructRawText( convertedText, encoding, smtpAccount);
+		bool res = mail->ConstructRawText( convertedText, encoding, smtpAccount);
+		mMailView->UpdateControllers();
+		return res;
 	} else
 		return false;
 }

@@ -666,6 +666,17 @@ void BmMailView::ShowMail( BmMail* mail, bool async) {
 }
 
 /*------------------------------------------------------------------------------*\
+	UpdateControllers()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailView::UpdateControllers() {
+	if (mCurrMail) {
+		mHeaderView->ShowHeader( mCurrMail->Header().Get());
+		mBodyPartView->ShowBody( mCurrMail->Body());
+	}
+}
+
+/*------------------------------------------------------------------------------*\
 	JobIsDone( completed)
 		-	
 \*------------------------------------------------------------------------------*/
@@ -736,8 +747,8 @@ void BmMailView::JobIsDone( bool completed) {
 		}
 		SetText( displayText.String(), displayText.Length(), textRunArray);
 		free( textRunArray);
-		BM_LOG2( BM_LogMailParse, BString("done, mail is visible"));
 		mHeaderView->ShowHeader( mCurrMail->Header().Get());
+		BM_LOG2( BM_LogMailParse, BString("done, mail is visible"));
 		ContainerView()->UnsetBusy();
 		ScrollTo( 0,0);
 		if (mCurrMail->Status() == BM_MAIL_STATUS_NEW) {

@@ -95,25 +95,6 @@ bool MoveToTrash( const entry_ref* refs, int32 count) {
 } 
 
 /*------------------------------------------------------------------------------*\
-	LivesInTrash( nref)
-		-	return whether or not the given node_ref lives inside the trash
-\*------------------------------------------------------------------------------*/
-bool LivesInTrash( const node_ref* nref) {
-	BDirectory dir( nref);
-	if (dir.InitCheck() != B_OK)
-		return false;
-	BEntry entry;
-	if (dir.GetEntry( &entry) != B_OK)
-		return false;
-	BPath path;
-	if (entry.GetPath( &path) != B_OK)
-		return false;
-	BString pathStr = path.Path();
-	pathStr << "/";
-	return pathStr.ICompare( "/boot/home/Desktop/Trash/", 25) == 0;
-} 
-
-/*------------------------------------------------------------------------------*\
 	CheckMimeType( eref, type)
 		-	checks if the file specified by eref is of the given mimetype
 \*------------------------------------------------------------------------------*/

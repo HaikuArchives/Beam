@@ -256,6 +256,50 @@ BString& RemoveSetFromString( BString& str, const char* charsToRemove) {
 }
 
 /*------------------------------------------------------------------------------*\
+	ReplaceSubstringWith( str, findStr, replaceStr)
+		-	replaces all occurrences of findStr in str with replaceStr
+		-	this function performs *much* better than BString::ReplaceAll()
+\*------------------------------------------------------------------------------*/
+BString& ReplaceSubstringWith( BString& str, const BString findStr, 
+										 const BString replaceStr) {
+	if (!findStr.Length() || !str.Length())
+		return str;
+	int32 newbufLen = (int32)MAX( MAX( replaceStr.Length(), 128), str.Length()*1.5);
+	char* newbuf = (char*)malloc( newbufLen+1);
+	if (newbuf) {
+		int32 destPos = 0;
+		int32 lastSrcPos = 0;
+		int32 len;
+		for( int32 srcPos=0; (srcPos=str.FindFirst( findStr, lastSrcPos))!=B_ERROR; ) {
+			len = srcPos-lastSrcPos;
+			if (destPos+len+replaceStr.Length() >= newbufLen) {
+				newbufLen = MAX( 2*newbufLen, destPos+len+replaceStr.Length());
+				newbuf = (char*)realloc( newbuf, newbufLen+1);
+			}
+			if (len>0) {
+				str.CopyInto( newbuf+destPos, lastSrcPos, len);
+				destPos+=len;
+			}
+			replaceStr.CopyInto( newbuf+destPos, 0, replaceStr.Length());
+			destPos += replaceStr.Length();
+			lastSrcPos = srcPos+findStr.Length();
+		}
+		if ((len = str.Length()-lastSrcPos)) {
+			if (destPos+len >= newbufLen) {
+				newbufLen = MAX( 2*newbufLen, destPos+len);
+				newbuf = (char*)realloc( newbuf, newbufLen+1);
+			}
+			str.CopyInto( newbuf+destPos, lastSrcPos, len);
+			destPos += len;
+		}
+		*(newbuf+destPos) = '\0';
+		str.SetTo( newbuf);
+		free( newbuf);
+	}
+	return str;
+}
+
+/*------------------------------------------------------------------------------*\
 	BmToLower( string)
 		-	calls ToLower() on given string in a DANO-compatible way:
 \*------------------------------------------------------------------------------*/

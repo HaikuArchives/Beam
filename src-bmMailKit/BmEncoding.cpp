@@ -576,7 +576,9 @@ bool BmEncoding::IsCompatibleWithText( const BString& s) {
 	// check if given string contains any characters that suggest the data
 	// is in fact binary:
 	for( int32 i=0; i<s.Length(); ++i) {
-		if (s[i]<32 && !isspace(s[i]))
+		// currently, we believe that only ascii-0 is not compatible
+		// with attachments of type text:
+		if (!s[i])
 			return false;
 	}
 	return true;

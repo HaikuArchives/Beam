@@ -261,7 +261,7 @@ void BmMailMonitor::HandleMailMonitorMsg( BMessage* msg) {
 			}
 		}
 	} catch( exception &e) {
-		BM_SHOWERR( e.what());
+		BM_LOGERR( e.what());
 	}
 }
 
@@ -282,8 +282,6 @@ void BmMailMonitor::HandleQueryUpdateMsg( BMessage* msg) {
 													|| BM_THROW_RUNTIME( "Field 'directory' not found in msg !?!");
 				(err = msg->FindInt32( "device", &nref.device)) == B_OK
 													|| BM_THROW_RUNTIME( "Field 'device' not found in msg !?!");
-				if (LivesInTrash( &nref))
-					break;
 				(err = msg->FindInt64( "node", &node)) == B_OK
 													|| BM_THROW_RUNTIME( BString("Field 'node' not found in msg !?!"));
 				TheMailFolderList->AddNewFlag( nref.node, node);
@@ -296,14 +294,12 @@ void BmMailMonitor::HandleQueryUpdateMsg( BMessage* msg) {
 													|| BM_THROW_RUNTIME( "Field 'device' not found in msg !?!");
 				(err = msg->FindInt64( "node", &node)) == B_OK
 													|| BM_THROW_RUNTIME( BString("Field 'node' not found in msg !?!"));
-				if (LivesInTrash( &nref))
-					break;
 				TheMailFolderList->RemoveNewFlag( nref.node, node);
 				break;
 			}
 		}
 	} catch( exception &e) {
-		BM_SHOWERR( e.what());
+		BM_LOGERR( e.what());
 	}
 }
 
@@ -588,8 +584,7 @@ void BmMailFolderList::QueryForNewMails() {
 			newCount++;
 			nref.device = dent->d_pdev;
 			nref.node = dent->d_pino;
-			if (!LivesInTrash( &nref))
-				AddNewFlag( dent->d_pino, dent->d_ino);
+			AddNewFlag( dent->d_pino, dent->d_ino);
 			// Bump the dirent-pointer by length of the dirent just handled:
 			dent = (dirent* )((char* )dent + dent->d_reclen);
 		}

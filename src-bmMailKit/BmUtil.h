@@ -87,6 +87,8 @@ BString operator+(const BString& s1, const char* s2);
 	(needed since performance of BString::RemoveAll() is so pathetic...)
 \*------------------------------------------------------------------------------*/
 BString& RemoveSetFromString( BString& str, const char* chars);
+BString& ReplaceSubstringWith( BString& str, const BString findStr, 
+										 const BString replaceStr);
 /*------------------------------------------------------------------------------*\
 	utility function to lower/upper a string (needed for Dano):
 \*------------------------------------------------------------------------------*/

@@ -244,9 +244,9 @@ void BmLogHandler::BmLogfile::MessageReceived( BMessage* msg) {
 \*------------------------------------------------------------------------------*/
 void BmLogHandler::BmLogfile::Write( const char* const msg, int32 threadId) {
 	BString s(msg);
-	s.ReplaceAll( "\r", "<CR>");
-	s.ReplaceAll( "\n\n", "\n");
-	s.ReplaceAll( "\n", "\n                       ");
+	ReplaceSubstringWith( s, "\r", "<CR>");
+	ReplaceSubstringWith( s, "\n\n", "\n");
+	ReplaceSubstringWith( s, "\n", "\n                                   ");
 	s << "\n";
 	static char buf[40];
 	sprintf( buf, "<%6ld|%s.%04Ld>: ", 

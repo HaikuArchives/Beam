@@ -532,7 +532,8 @@ bool BmPopper::GetAnswer( bool SingleLineMode, int32 mailNr) {
 		} while( !done && numBytes);
 		mAnswer.UnlockBuffer( -1);
 		if (done) {
-			mAnswer.ReplaceAll( "\n..", "\n.");	// remove padding of "termination octet" (dot) inside message
+			ReplaceSubstringWith( mAnswer, "\n..", "\n.");	
+							// remove padding of "termination octet" (dot) inside message
 		} else  {
 			//	numBytes == 0, interrupt by external event (user)
 			mAnswer = "";

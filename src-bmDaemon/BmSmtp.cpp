@@ -688,7 +688,10 @@ void BmSmtp::SendCommand( BString cmd, BString secret, bool isMailData) {
 													// we do not want to log any passwords...
 	} else {
 		command = cmd;
-		BM_LOG( BM_LogSmtp, BString("-->\n") << cmd);
+		if (isMailData)
+			BM_LOG3( BM_LogSmtp, BString("-->\n") << cmd);
+		else
+			BM_LOG( BM_LogSmtp, BString("-->\n") << cmd);
 	}
 	if (!command.Length() || command[command.Length()-1] != '\n')
 		command << "\r\n";

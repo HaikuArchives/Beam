@@ -76,25 +76,6 @@ BView* instantiate_deskbar_item(void) {
 	return new BmDeskbarView(BRect(0, 0, 15, 15));
 }
 
-/*------------------------------------------------------------------------------*\
-	LivesInTrash( nref)
-		-	return whether or not the given node_ref lives inside the trash
-\*------------------------------------------------------------------------------*/
-bool LivesInTrash( const node_ref* nref) {
-	BDirectory dir( nref);
-	if (dir.InitCheck() != B_OK)
-		return false;
-	BEntry entry;
-	if (dir.GetEntry( &entry) != B_OK)
-		return false;
-	BPath path;
-	if (entry.GetPath( &path) != B_OK)
-		return false;
-	BString pathStr = path.Path();
-	pathStr << "/";
-	return pathStr.ICompare( "/boot/home/Desktop/Trash/", 25) == 0;
-} 
-
 /***********************************************************
  * Constructor.
  ***********************************************************/
@@ -261,8 +242,7 @@ void BmDeskbarView::InstallDeskbarMonitor() {
 				while (count-- > 0) {
 					nref.device = dent->d_pdev;
 					nref.node = dent->d_pino;
-					if (!LivesInTrash( &nref))
-						mNewMailCount++;
+					mNewMailCount++;
 					// Bump the dirent-pointer by length of the dirent just handled:
 					dent = (dirent* )((char* )dent + dent->d_reclen);
 				}
@@ -320,6 +300,9 @@ void BmDeskbarView::MouseDown(BPoint pos) {
 void BmDeskbarView::ShowMenu( BPoint point) {
 	BMenuItem* item;
 	BPopUpMenu* theMenu = new BPopUpMenu( BM_DeskbarItemName, false, false);
+	BFont menuFont( *be_plain_font);
+	menuFont.SetSize(10);
+	theMenu->SetFont( &menuFont);
 
 	item = new BMenuItem( "Check Mail", new BMessage( BMM_CHECK_MAIL));
 	item->SetTarget( BMessenger( BM_APP_SIG));
@@ -360,18 +343,14 @@ void BmDeskbarView::HandleQueryUpdateMsg( BMessage* msg) {
 	switch( opcode) {
 		case B_ENTRY_CREATED: {
 			if (msg->FindInt64( "directory", &nref.node) == B_OK
-			&& msg->FindInt32( "device", &nref.device) == B_OK
-			&& !LivesInTrash( &nref)) {
+			&& msg->FindInt32( "device", &nref.device) == B_OK)
 				IncNewMailCount();
-			}
 			break;
 		}
 		case B_ENTRY_REMOVED: {
 			if (msg->FindInt64( "directory", &nref.node) == B_OK
-			&& msg->FindInt32( "device", &nref.device) == B_OK
-			&& !LivesInTrash( &nref)) {
+			&& msg->FindInt32( "device", &nref.device) == B_OK)
 				DecNewMailCount();
-			}
 			break;
 		}
 	}

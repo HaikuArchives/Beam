@@ -77,7 +77,7 @@ BmAddress::BmAddress( BString fullText)
 	BString addrText, phraseText;
 
 	// first we check whether the addresstext is separated into phrase and addrspec:
-	if (rx.exec( fullText, "^\\s*(.*?)\\s*<\\s*(?:.+:)?([^:]+)\\s*>\\s*$")) {
+	if (rx.exec( fullText, "^\\s*(.*?)\\s*<\\s*(?:.+:)?([^:]*?)\\s*>\\s*$")) {
 		// it's a phrase followed by an address (which possibly contains a source-route).
 		fullText.CopyInto( phraseText, rx.match[0].atom[0].start(), rx.match[0].atom[0].Length());
 		fullText.CopyInto( addrText, rx.match[0].atom[1].start(), rx.match[0].atom[1].Length());
@@ -702,7 +702,7 @@ void BmMailHeader::ParseHeader( const BString &header) {
 	for(  int32 offset=0; 
 			(pos = header.FindFirst( "\r\n", offset)) != B_ERROR;
 			offset = pos+2) {
-		if (!isspace(header[pos+2])) {
+		if (pos>lastpos && !isspace(header[pos+2])) {
 			subparts.push_back( subpart( lastpos, pos-lastpos));
 			lastpos = pos+2;
 		}
