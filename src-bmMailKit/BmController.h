@@ -63,6 +63,7 @@ public:
 	virtual void AttachModel( BmDataModel* model=NULL);
 	virtual void DetachModel();
 	virtual void ResetController()		{ }
+	virtual bool IsMsgFromCurrentModel( BMessage* msg);
 
 	// getters
 	inline const char* ControllerName() const	{ return mControllerName.String(); }
@@ -72,7 +73,6 @@ public:
 
 protected:
 	//
-	virtual bool IsMsgFromCurrentModel( BMessage* msg);
 	virtual bool MsgNeedsAck( BMessage* msg);
 
 private:
