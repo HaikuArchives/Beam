@@ -9,6 +9,9 @@
 
 #include <Alert.h>
 
+#include <regexx/regexx.hh>
+using regexx;
+
 #include "BmPopper.h"
 
 #undef LOGNAME
@@ -111,7 +114,7 @@ void BmPopper::Start() {
 			TStateMethod stateFunc = PopStates[mState].func;
 			UpdatePOPStatus( (mState==POP_CONNECT ? 0.0 : delta), NULL);
 			(this->*stateFunc)();
-snooze( 200*1000);
+// snooze( 200*1000);
 		}
 	}
 	catch( runtime_error &err) {
@@ -230,15 +233,17 @@ void BmPopper::Check() {
 
 	// we try to fetch a list of unique message IDs from server:
 	mMsgUIDs = new BString[mMsgCount];
+	for( int32 i=0; i<mMsgCount; i++) { mMsgUIDs[i] = NULL; }
 	cmd = BString("UIDL");
 	SendCommand( cmd);
 	// The UIDL-command may not be implemented by this server, so we 
 	// do not require a postive answer, we just hope for it:
 	GetAnswer( MULTI_LINE);
-	if (mAnswer[0] == '+') {
+	if (
+0 && mAnswer[0] == '+') {
 		// ok, we've got the UIDL-listing, so we fetch it:
 		int32 msgNum;
-		char msgUID[100];
+		char msgUID[71];
 		// listing begins on second line, so we skip the first:
 		char *p = strstr( mAnswer.String(), "\r\n");
 		if (!p)
@@ -246,13 +251,17 @@ void BmPopper::Check() {
 		p += 2;
 		// fetch UIDLs one per line and store them in array:
 		for( int32 i=0; i<mMsgCount; i++) {
-			if (sscanf( p, "%ld %s", &msgNum, msgUID) != 2 || msgNum <= 0)
+			if (sscanf( p, "%ld %70s", &msgNum, msgUID) != 2 || msgNum <= 0)
 				throw network_error( "answer to UIDL has unknown format");
 			mMsgUIDs[i] = msgUID;
+			// skip to next line:
 			if (!(p = strstr( p, "\r\n")))
-				return;
+				throw network_error( "answer to UIDL has unknown format");
 			p += 2;
 		}
+	} else {
+		// no UIDL-listing from server, we will have to fetch the UIDLs later
+		// or generate our own (happens in class BmMail)
 	}
 }
 
@@ -271,7 +280,7 @@ void BmPopper::Retrieve() {
 		cmd = BString("RETR ") << i+1;
 		SendCommand( cmd);
 		CheckForPositiveAnswer( MULTI_LINE, i+1);
-snooze( 200*1000);
+// snooze( 200*1000);
 	}
 	UpdateMailStatus( 0, "done", mMsgCount);
 	mAnswer.Truncate( BmPopper::NetBufSize, false);
@@ -287,7 +296,7 @@ void BmPopper::Update() {
 			BString cmd = BString("DELE ") << i+1;
 			SendCommand( cmd);
 			CheckForPositiveAnswer( SINGLE_LINE);
-snooze( 200*1000);
+// snooze( 200*1000);
 		}
 	}
 }
@@ -350,18 +359,19 @@ void BmPopper::GetAnswer( bool SingleLineMode, int32 mailNr) {
 	char *buffer;
 	bool done = false;
 	bool firstBlock = true;
-	BmLOG(BString("bufSize(1):") << bufSize);
-	mAnswer.SetTo( '\0', bufSize);
+	BmLOG(BString("bufSize:") << bufSize);
+	mAnswer.SetTo( '\0', bufSize);		// preallocate the bufsize we need
 	buffer = mAnswer.LockBuffer( 0);
 	try {
 		do {
 			int32 bufFree = bufSize - offset;
 			if (bufFree < SMALL) {
+				// bufsize is not sufficient, we enlarge the buffer:
 				bufSize *= 2;
 				mAnswer.UnlockBuffer( offset);
 				buffer = mAnswer.LockBuffer( bufSize);
 				bufFree = bufSize - offset;
-				BmLOG(BString("bufSize(2):") << bufSize);
+				BmLOG(BString("bufSize enlarged to:") << bufSize);
 			}
 			if (bufFree > BmPopper::NetBufSize)
 				bufFree = BmPopper::NetBufSize;
@@ -399,7 +409,7 @@ void BmPopper::GetAnswer( bool SingleLineMode, int32 mailNr) {
 /*------------------------------------------------------------------------------
 	ReceiveBlock( buffer, max)
 		-	receives a block of a specified size (<=max) from server and appends
-			it to mAnswer
+			it to mAnswer (well, writes it into mAnswer's buffer)
 		-	ensures user-feedback is not blocked longer than BmPopper::FeedbackTimeout
 		-	waits only BmPopper::ReceiveTimeout seconds for answer,
 			throws an exception if no answer has arrived within that timeframe

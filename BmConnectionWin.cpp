@@ -201,8 +201,9 @@ void BmConnectionWin::RemovePopper( const char* name) {
 		return;									// account is not active, nothing to do...
 	
 	BmConnectionWinInfo *interfaceInfo = (*interfaceIter).second;
-	if (Beam::Prefs->DynamicConnectionWin() 
-	|| interfaceInfo->mailBar->CurrentValue()==0) {
+	if (Beam::Prefs->DynamicConnectionWin() == BmPrefs::CONN_WIN_DYNAMIC 
+	|| (Beam::Prefs->DynamicConnectionWin() == BmPrefs::CONN_WIN_DYNAMIC_EMPTY
+		&& interfaceInfo->mailBar->CurrentValue()==0)) {
 		RemovePopperInterface( interfaceInfo);
 							// account is found, so we remove its interface...
 		mActiveConnections.erase( interfaceIter);

@@ -38,20 +38,28 @@ public:
 	virtual status_t Archive( BMessage *archive, bool deep = true) const
 			;
 
+	enum TConnWinMode {
+		CONN_WIN_STATIC = 0,
+		CONN_WIN_DYNAMIC_EMPTY,
+		CONN_WIN_DYNAMIC
+	};
+
 	// getters:
-	bool DynamicConnectionWin() const	{ return mDynamicConnectionWin; }
+	TConnWinMode DynamicConnectionWin() const	{ return mDynamicConnectionWin; }
 	int16 ReceiveTimeout() const 			{ return mReceiveTimeout; }
 
 	// setters:
-	void CheckMail( bool b) 				{ mDynamicConnectionWin = b; }
+	void CheckMail( TConnWinMode m) 		{ mDynamicConnectionWin = m; }
 	void ReceiveTimeout( int16 i) 		{ mReceiveTimeout = i; }
 
 	bool static InitPrefs();
 
 private:
 	// TODO: make these configurable by user (i.e. write a GUI):
-	bool mDynamicConnectionWin;			// show connections in connection-window only when
-													// they are alive (or display them always)?
+	TConnWinMode mDynamicConnectionWin;	// show connections in connection-window only when
+													// they are alive, 
+													// show the ones with new mail
+													// or display them all the time?
 	int16 mReceiveTimeout;					// network-timeout for answer of servers
 };
 

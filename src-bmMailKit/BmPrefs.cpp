@@ -32,7 +32,7 @@ bool BmPrefs::InitPrefs()
   ------------------------------------------------------------------------------*/
 BmPrefs::BmPrefs( void)
 	: BArchivable() 
-	, mDynamicConnectionWin( false)
+	, mDynamicConnectionWin( CONN_WIN_DYNAMIC_EMPTY)
 	, mReceiveTimeout( 60 )
 {
 }
@@ -45,7 +45,7 @@ BmPrefs::BmPrefs( void)
 BmPrefs::BmPrefs( BMessage *archive) 
 	: BArchivable( archive)
 {
-	mDynamicConnectionWin = FindMsgBool( archive, MSG_DYNAMIC_CONN_WIN);
+	mDynamicConnectionWin = static_cast<TConnWinMode>(FindMsgInt16( archive, MSG_DYNAMIC_CONN_WIN));
 	mReceiveTimeout = ntohs(FindMsgInt16( archive, MSG_RECEIVE_TIMEOUT));
 }
 
@@ -57,7 +57,7 @@ BmPrefs::BmPrefs( BMessage *archive)
 status_t BmPrefs::Archive( BMessage *archive, bool deep) const {
 	status_t ret = (BArchivable::Archive( archive, deep)
 		||	archive->AddString("class", "BmPrefs")
-		||	archive->AddBool( MSG_DYNAMIC_CONN_WIN, mDynamicConnectionWin)
+		||	archive->AddInt16( MSG_DYNAMIC_CONN_WIN, mDynamicConnectionWin)
 		||	archive->AddInt16( MSG_RECEIVE_TIMEOUT, htons(mReceiveTimeout)));
 	return ret;
 }
