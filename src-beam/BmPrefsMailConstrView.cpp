@@ -342,6 +342,7 @@ void BmPrefsMailConstrView::Initialize() {
 	mForwardSubjectStrControl->SetTarget( this);
 	mForwardSubjectRxControl->SetTarget( this);
 	mReplyIntroStrControl->SetTarget( this);
+	mReplyIntroStrPrivateControl->SetTarget( this);
 	mReplySubjectStrControl->SetTarget( this);
 	mReplySubjectRxControl->SetTarget( this);
 
