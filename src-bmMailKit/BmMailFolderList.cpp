@@ -596,8 +596,9 @@ void BmMailFolderList::SetFolderForNodeFlaggedNew( const node_ref& nref,
 	GetFolderForNodeFlaggedNew()
 		-	
 \*------------------------------------------------------------------------------*/
-BmMailFolder* BmMailFolderList
-::GetFolderForNodeFlaggedNew( const node_ref& nref) {
+BmMailFolder* 
+BmMailFolderList::GetFolderForNodeFlaggedNew( const node_ref& nref) 
+{
 	BmAutolockCheckGlobal lock( mModelLocker);
 	if (!lock.IsLocked())
 		BM_THROW_RUNTIME( 
@@ -610,7 +611,8 @@ BmMailFolder* BmMailFolderList
 	NodeIsFlaggedNew()
 		-	
 \*------------------------------------------------------------------------------*/
-bool BmMailFolderList::NodeIsFlaggedNew( const node_ref& nref) {
+bool 
+BmMailFolderList::NodeIsFlaggedNew( const node_ref& nref) {
 	BmAutolockCheckGlobal lock( mModelLocker);
 	if (!lock.IsLocked())
 		BM_THROW_RUNTIME( 
@@ -623,9 +625,10 @@ bool BmMailFolderList::NodeIsFlaggedNew( const node_ref& nref) {
 	AddMailFolder()
 		-	
 \*------------------------------------------------------------------------------*/
-BmMailFolder* BmMailFolderList::AddMailFolder( entry_ref& eref, int64 node, 
-															  BmMailFolder* parent, 
-															  time_t mtime) {
+BmMailFolder* 
+BmMailFolderList::AddMailFolder( entry_ref& eref, int64 node, 
+										   BmMailFolder* parent, 
+											time_t mtime) {
 	BmMailFolder* newFolder = new BmMailFolder( this, eref, node, parent, mtime);
 	AddItemToList( newFolder, parent);
 	return newFolder;
@@ -636,6 +639,11 @@ BmMailFolder* BmMailFolderList::AddMailFolder( entry_ref& eref, int64 node,
 		-	
 \*------------------------------------------------------------------------------*/
 BmRef<BmMailRef> BmMailFolderList::FindMailRefByKey( const node_ref& nref) {
+	BmAutolockCheckGlobal lock( mModelLocker);
+	if (!lock.IsLocked())
+		BM_THROW_RUNTIME( 
+			ModelNameNC() << ":FindMailRefByKey(): Unable to get lock"
+		);
 	BmRef<BmMailRef> ref;
 	if (mTopFolder) {	
 		BmString key = BM_REFKEY( nref);
