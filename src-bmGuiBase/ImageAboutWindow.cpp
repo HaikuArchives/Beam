@@ -192,6 +192,8 @@ ImageAboutWindow::ImageAboutWindow(const char* window_title, const char* app_tit
 		if(m_lines[line][0] == 0)
 			m_lines[line] = NULL;
 
+	string_widths = MAX(280, string_widths);
+	
 	m_title_rect.left = logo_right + 10 + floor((string_widths-title_width)/2);
 	m_title_rect.top = m_logo_rect.top + (floor(((m_logo_rect.bottom-m_logo_rect.top)-
 		bold_height)/2));
@@ -200,8 +202,6 @@ ImageAboutWindow::ImageAboutWindow(const char* window_title, const char* app_tit
 	m_title_rect.right = m_title_rect.left + title_width;
 	m_title_rect.bottom = m_title_rect.top + bold_height;
 
-	string_widths = MAX(280, string_widths);
-	
 	float curr_pos = m_title_rect.bottom + ceil(bold_height/4);
 	if(m_version)
 	{
