@@ -1523,6 +1523,8 @@ void ColumnListView::Expand(CLVListItem* item)
 				break;
 		}
 	}
+	ExpansionChanged( item, true);
+							// [zooey]: give subclasses a chance to act upon change
 }
 
 
@@ -1567,6 +1569,8 @@ void ColumnListView::Collapse(CLVListItem* item)
 				break;
 		}
 	}
+	ExpansionChanged( item, false);
+							// [zooey]: give subclasses a chance to act upon change
 }
 
 
@@ -1927,6 +1931,9 @@ status_t ColumnListView::UnArchive(BMessage* archive, bool deep) {
 	AssertWindowLocked();
 	status_t ret = B_OK;
 	int i;
+	
+	if (!archive || archive->IsEmpty()) return B_OK;
+	
 	// display order of columns:
 	const int32 numCols = CountColumns();
 	int32 displayCols[numCols];
@@ -1959,17 +1966,4 @@ status_t ColumnListView::UnArchive(BMessage* archive, bool deep) {
 	}
 	
 	return ret;
-}
-
-void ColumnListView::SetDefaults() {
-	// display order of columns:
-	const int32 numCols = CountColumns();
-	int32 displayCols[numCols];
-	for( int i=0; i<numCols; ++i) { 
-		displayCols[i] = i;
-	}
-	SetDisplayOrder( displayCols);
-
-	// sortkeys and -modes (none):
-	SetSorting( 0, NULL, NULL);
 }

@@ -36,7 +36,7 @@ public:
 	void DataModel( BmDataModel* model)	{ mDataModel = model; }
 	// getters
 	const char* ControllerName() const	{ return mControllerName.String(); }
-	BString ModelName() 						{ return mDataModel ? mDataModel->ModelName() : "***NULL***"; }
+	const BString ModelName() const		{ return mDataModel ? mDataModel->ModelName() : "***NULL***"; }
 
 	virtual void AttachModel( BmDataModel* model=NULL);
 	virtual void DetachModel();

@@ -43,7 +43,7 @@ public:
 	const ino_t& Inode() const				{ return mInode; }
 	const int NewMailCount() const		{ return mNewMailCount; }
 	const int NewMailCountForSubfolders() const		{ return mNewMailCountForSubfolders; }
-	BmMailFolder* Parent() const			{ return dynamic_cast<BmMailFolder*>( mParent); }
+	BmMailFolder* Parent() 					{ return dynamic_cast<BmMailFolder*>( mParent); }
 	BmMailRefList* MailRefList();
 	//
 	const BString& Name() const			{ return mName; }

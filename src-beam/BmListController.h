@@ -22,6 +22,8 @@ class BHandler;
 
 class BmListViewController;
 
+typedef uint32 BmUpdFlags;
+
 /*------------------------------------------------------------------------------*\
 	BmListViewItem
 		-	
@@ -29,48 +31,45 @@ class BmListViewController;
 class BmListViewItem : public CLVEasyItem
 {
 	typedef CLVEasyItem inherited;
-
+	
 	struct BmListColumn {
 		const char* text;
 		bool rightJustified;
 	};
 
-	class BmListViewItemInfo {
-	public:
-		bool isExpanded;
-		
-		BmListViewItemInfo();
-		BmListViewItemInfo( BMessage* msg);
-		virtual ~BmListViewItemInfo();
-	private:
-		//	message component definitions for status-msgs:
-		static const char* const MSG_EXPANDED = 			"bm:expd";
-	};
+	friend BmListViewController;
+
+protected: 
+	// archival-fieldnames:
+	static const char* const MSG_EXPANDED = 	"bm:expnd";
+	static const char* const MSG_CHILDNAMES = 	"bm:chldnm";
+	static const char* const MSG_CHILDREN = 		"bm:chldrn";
+
+	// flags indicating which parts are to be updated
+	static const BmUpdFlags UPD_EXPANDER 	= 1<<0;
+	static const BmUpdFlags UPD_ALL 			= 0xFFFFFFFF;
 
 public:
 	//
-	BmListViewItem( BString& key, BmListModelItem* item,
-						 bool hierarchical=false, uint32 level=0, 
-						 bool superitem=false, bool expanded=false);
-	~BmListViewItem();
+	BmListViewItem( BString& key, BmListModelItem* item, bool hierarchical=false, 
+						 BMessage* archive=NULL);
+	virtual ~BmListViewItem();
 	
-	//	
-	virtual status_t Archive( BMessage* archive, bool deep = true) const;
-
-	//
+	// native methods:
 	void SetTextCols( int16 firstTextCol, BmListColumn* columnVec, bool truncate=true);
-	
+	void AddSubItemsToList( BmListViewController *view);
+	virtual void UpdateView( BmUpdFlags flags);
+
+	//	overrides from listitem-baseclass:
+	status_t Archive( BMessage* archive, bool deep = true) const;
+
 	// getters:
-	BString Key()								{ return mKey; }
-	BmListModelItem* ModelItem()			{ return mModelItem; }
-
-	//
-	virtual void AddSubItemsToList( BmListViewController *view);
-
+	const BString Key() const				{ return mKey; }
+	BmListModelItem* ModelItem() 			{ return mModelItem; }
+	
 protected:
 	BString mKey;
 	BmListModelItem* mModelItem;
-	int32 mFirstTextCol;
 	BList* mSubItemList;
 };
 
@@ -84,38 +83,41 @@ class BmListViewController : public ColumnListView, public BmJobController
 	typedef BmJobController inheritedController;
 
 public:
-	
-	//Constructor and destructor
+	//
 	BmListViewController( minimax minmax,BRect rect,
 								 const char* Name = NULL,
 								 list_view_type Type = B_SINGLE_SELECTION_LIST,
 								 bool hierarchical = false,
 								 bool showLabelView = true);
-	~BmListViewController();
+	virtual ~BmListViewController();
+
+	// native methods:
+	void AddModelItemsToList();
+	void AddModelItem( BMessage* msg);
+	void RemoveModelItem( BMessage* msg);
+	void UpdateModelItem( BMessage* msg);
+	void UpdateModelState( BMessage* msg);
+	void UpdateItem( BmListViewItem* item, BmUpdFlags flags);
+	//
+	virtual BmListViewItem* CreateListViewItem( BmListModelItem* item, 
+															  BMessage* archive=NULL) 			= 0;
+	//
+	BMessage* GetArchiveForItemKey( BString);
+
+	// overrides of controller-baseclass:
+	void AttachModel( BmDataModel* model=NULL);
+	void DetachModel();
+	BHandler* GetControllerHandler() 	{ return this; }
+	void JobIsDone( bool completed);
+
+	// overrides of listview-baseclass:
+	void ExpansionChanged( CLVListItem* item, bool expanded);
+	void MessageReceived( BMessage* msg);
+	void MouseDown(BPoint point);
 
 	// getters:
 	CLVContainerView* ContainerView()	{ return inherited::fScrollView; }
-
-	virtual void AttachModel( BmDataModel* model=NULL);
-	virtual void DetachModel();
-
-	//
-	virtual BHandler* GetControllerHandler() { return this; }
-	//
-	virtual void MessageReceived( BMessage* msg);
-	virtual void AddModelItem( BMessage* msg);
-	virtual void RemoveModelItem( BMessage* msg);
-	virtual void UpdateModelItem( BMessage* msg);
-	virtual void UpdateModelState( BMessage* msg);
-	virtual void JobIsDone( bool completed);
-	//
-	virtual BmListViewItem* CreateListViewItem( BmListModelItem* item, 
-															  uint32 level=0) 			= 0;
-	virtual BmListViewItem* TopHierarchyItem()	{ return NULL; }
-	//
-	virtual void AddModelItemsToList();
-	
-	virtual void MouseDown(BPoint point);
+	BMessage* InitialStateInfo()			{ return mInitialStateInfo; }
 
 protected:
 	virtual BmListModel* DataModel()		{ return dynamic_cast<BmListModel*>(BmController::DataModel()); }

@@ -18,14 +18,25 @@
 class BmMailFolderItem : public BmListViewItem
 {
 	typedef BmListViewItem inherited;
-	static const int16 nFirstTextCol;
+
+	enum Columns {
+		COL_ICON = 1,
+		COL_NAME,
+		COL_MAX
+	};
+
+protected:
+	// flags indicating which parts are to be updated
+	static const BmUpdFlags UPD_NAME	= 2<<0;
 
 public:
-	BmMailFolderItem( BString key, BmListModelItem* item, uint32 level, 
-							bool superitem, bool expanded);
+	BmMailFolderItem( BString key, BmListModelItem* item, bool superitem, 
+							BMessage* archive);
 	~BmMailFolderItem();
 
-	virtual bool NeedsHighlight();
+	// overrides of listitem-baseclass:
+	void UpdateView( BmUpdFlags flags);
+	BmMailFolder* ModelItem() 	{ return dynamic_cast< BmMailFolder*>( mModelItem); }
 };
 
 
@@ -45,17 +56,17 @@ public:
 	BmMailFolderView(  minimax minmax, int32 width, int32 height);
 	~BmMailFolderView();
 
-	//
-	BmListViewItem* CreateListViewItem( BmListModelItem* item, uint32 level=0);
+	// native methods:
+	BmListViewItem* CreateListViewItem( BmListModelItem* item, BMessage* archive=NULL);
 	
-	//
-	virtual BString StateInfoBasename()	{ return "MailFolderView"; }
+	// overrides of controller-baseclass:
+	BString StateInfoBasename()			{ return "MailFolderView"; }
+	void Update( BmUpdFlags flags);
 
-	//
+	// overrides of listview-baseclass:
 	void MessageReceived( BMessage* msg);
 	void SelectionChanged( void);
 
-private:
 };
 
 #endif

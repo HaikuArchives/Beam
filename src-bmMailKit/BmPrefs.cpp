@@ -74,6 +74,8 @@ BmPrefs::BmPrefs( void)
 	,	mRefCaching( true)
 	,	mDefaultEncoding( B_ISO1_CONVERSION)
 	,	mStripedListView( true)
+	,	mMailRefLayout( new BMessage)
+	,	mRestoreFolderStates( true)
 {
 #ifdef BM_LOGGING
 	BString s;
@@ -104,16 +106,25 @@ BmPrefs::BmPrefs( BMessage* archive)
 	mRefCaching = FindMsgBool( archive, MSG_REF_CACHING);
 	mDefaultEncoding = FindMsgInt32( archive, MSG_DEFAULT_ENCODING);
 	mStripedListView = FindMsgBool( archive, MSG_STRIPED_LISTVIEW);
+	mMailRefLayout = FindMsgMsg( archive, MSG_MAILREF_LAYOUT);
+	mRestoreFolderStates = FindMsgBool( archive, MSG_RESTORE_FOLDERS);
 	bmApp->LogHandler->LogLevels( mLoglevels);
 }
 
+/*------------------------------------------------------------------------------*\
+	~BmPrefs()
+		-	standard destructor
+\*------------------------------------------------------------------------------*/
+BmPrefs::~BmPrefs() {
+	delete mMailRefLayout;
+}
 /*------------------------------------------------------------------------------*\
 	Archive( archive, deep)
 		-	writes BmPrefs into archive
 		-	parameter deep makes no difference...
 \*------------------------------------------------------------------------------*/
 status_t BmPrefs::Archive( BMessage* archive, bool deep) const {
-	status_t ret = (inherited::Archive( archive, deep)
+	status_t ret = inherited::Archive( archive, deep)
 		||	archive->AddString("class", "BmPrefs")
 		||	archive->AddInt16( MSG_DYNAMIC_CONN_WIN, mDynamicConnectionWin)
 		||	archive->AddInt16( MSG_RECEIVE_TIMEOUT, htons(mReceiveTimeout))
@@ -121,7 +132,9 @@ status_t BmPrefs::Archive( BMessage* archive, bool deep) const {
 		||	archive->AddString( MSG_MAILBOXPATH, mMailboxPath.String())
 		||	archive->AddBool( MSG_REF_CACHING, mRefCaching)
 		||	archive->AddInt32( MSG_DEFAULT_ENCODING, htonl(mDefaultEncoding))
-		||	archive->AddBool( MSG_STRIPED_LISTVIEW, mStripedListView));
+		||	archive->AddBool( MSG_STRIPED_LISTVIEW, mStripedListView)
+		||	archive->AddMessage( MSG_MAILREF_LAYOUT, mMailRefLayout)
+		||	archive->AddBool( MSG_RESTORE_FOLDERS, mRestoreFolderStates);
 	return ret;
 }
 

@@ -60,8 +60,6 @@ class CLVEasyItem : public CLVListItem
 		virtual const int32 GetNumValueForColumn( int32 column_index) const 		{ return 0; }
 		virtual const time_t GetDateValueForColumn( int32 column_index) const 	{ return 0; }
 
-		virtual bool NeedsHighlight() 	{ return false; }
-
 	protected:
 		void PrepListsForSet(int column_index);
 		

@@ -11,37 +11,10 @@
 #include "BmListController.h"
 #include "BmDataModel.h"
 #include "BmLogHandler.h"
+#include "BmPrefs.h"
 #include "BmUtil.h"
 
 //#include <Profile.h>
-
-/********************************************************************************\
-	BmListViewItemInfo
-\********************************************************************************/
-
-/*------------------------------------------------------------------------------*\
-	()
-		-	
-\*------------------------------------------------------------------------------*/
-BmListViewItem::BmListViewItemInfo::BmListViewItemInfo()
-	:	isExpanded( false) 			
-{
-}
-
-/*------------------------------------------------------------------------------*\
-	()
-		-	
-\*------------------------------------------------------------------------------*/
-BmListViewItem::BmListViewItemInfo::BmListViewItemInfo( BMessage* archive) {
-}
-
-/*------------------------------------------------------------------------------*\
-	()
-		-	
-\*------------------------------------------------------------------------------*/
-BmListViewItem::BmListViewItemInfo::~BmListViewItemInfo() {
-}
-
 
 
 /********************************************************************************\
@@ -54,15 +27,13 @@ BmListViewItem::BmListViewItemInfo::~BmListViewItemInfo() {
 		-	
 \*------------------------------------------------------------------------------*/
 BmListViewItem::BmListViewItem( BString& key, BmListModelItem* modelItem,
-										  bool hierarchical, uint32 level, 
-										  bool superitem, bool expanded) 
-	:	inherited( level, superitem, expanded, MAX(bmApp->FontLineHeight(), 18))
+										  bool hierarchical, BMessage* archive)
+	:	inherited( 0, !modelItem->empty(), false, MAX(bmApp->FontLineHeight(), 18))
 	,	mKey( key)
 	,	mModelItem( modelItem)
-	,	mFirstTextCol( hierarchical ? 3 : 2)
-							// skip expander if listview is hierarchical
 	,	mSubItemList( NULL)
 {
+	SetExpanded( archive ? archive->FindBool( MSG_EXPANDED) : false);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -85,9 +56,30 @@ BmListViewItem::~BmListViewItem() {
 		-	
 \*------------------------------------------------------------------------------*/
 status_t BmListViewItem::Archive( BMessage* archive, bool deep) const {
-	status_t ret = inherited::Archive( archive, deep);
-//		|| archive->AddBool( MSG_EXPANDED, &isExpanded);
+	// first we archive the item's attributes into a separate message...
+	BMessage msg;
+	msg.AddBool( MSG_EXPANDED, IsExpanded());
+
+	// ...now we add this message with a corresponding key to the archive:
+	status_t ret = archive->AddMessage( MSG_CHILDREN, &msg)
+						|| archive->AddString( MSG_CHILDNAMES, Key());
+
+	if (deep && ret==B_OK && mSubItemList) {
+		// we repeat the procedure for all our subitems:
+		int32 numItems = mSubItemList->CountItems();
+		for( int32 i=0; i<numItems && ret==B_OK; ++i) {
+			BmListViewItem* item = static_cast< BmListViewItem*>( mSubItemList->ItemAt( i));
+			ret = item->Archive( archive, deep);
+		}
+	}
 	return ret;
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmListViewItem::UpdateView( BmUpdFlags flags) {
 }
 
 /*------------------------------------------------------------------------------*\
@@ -111,10 +103,10 @@ void BmListViewItem::AddSubItemsToList( BmListViewController* view) {
 	if (!mModelItem->empty()) {
 		mSubItemList = new BList( mModelItem->size());
 		SetSuperItem( true);
-		SetExpanded( true);
 		for( iter = mModelItem->begin(); iter != mModelItem->end(); ++iter) {
 			BmListModelItem* subItem = iter->second;
-			BmListViewItem* viewItem = view->CreateListViewItem( subItem);
+			BMessage* archive = view->GetArchiveForItemKey( subItem->Key());
+			BmListViewItem* viewItem = view->CreateListViewItem( subItem, archive);
 			mSubItemList->AddItem( viewItem);
 			view->AddUnder( viewItem, this);
 			viewItem->AddSubItemsToList( view);
@@ -153,31 +145,13 @@ BmListViewController::~BmListViewController() {
 }
 
 /*------------------------------------------------------------------------------*\
-	AttachModel()
-		-	reads appropriate state-info after attaching to data-model
+	MouseDown( point)
+		-	override that automatically grabs the keyboard-focus after a click 
+			inside the listview
 \*------------------------------------------------------------------------------*/
-void BmListViewController::AttachModel( BmDataModel* model) {
-	inheritedController::AttachModel( model);
-	ReadStateInfo();
-}
-
-/*------------------------------------------------------------------------------*\
-	DetachModel()
-		-	writes state-info for current data-model before detaching
-		-	clears listview after detach
-\*------------------------------------------------------------------------------*/
-void BmListViewController::DetachModel() {
-	WriteStateInfo();
-	inheritedController::DetachModel();
-	MakeEmpty();		// clear display
-	if (mItemList) {
-		while( !mItemList->IsEmpty()) {
-			BmListViewItem* subItem = static_cast<BmListViewItem*>(mItemList->RemoveItem( (int32)0));
-			delete subItem;
-		}		
-		delete mItemList;
-		mItemList = NULL;
-	}
+void BmListViewController::MouseDown(BPoint point) { 
+	inherited::MouseDown( point); 
+	MakeFocus( true);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -218,7 +192,7 @@ void BmListViewController::MessageReceived( BMessage* msg) {
 	}
 	catch( exception &err) {
 		// a problem occurred, we tell the user:
-		BM_SHOWERR( BString(ControllerName()) << err.what());
+		BM_SHOWERR( BString(ControllerName()) << ":\n\t" << err.what());
 	}
 }
 
@@ -259,6 +233,41 @@ void BmListViewController::AddModelItem( BMessage* msg) {
 }
 
 /*------------------------------------------------------------------------------*\
+	AddAllModelItemsToList()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmListViewController::AddModelItemsToList() {
+	BAutolock lock( DataModel()->ModelLocker());
+	lock.IsLocked()	 						|| BM_THROW_RUNTIME( BString() << ControllerName() << ":AddModelItemsToMap(): Unable to lock model");
+	BmListModel *model = DataModel();
+	mItemList = new BList( model->size());
+	SetDisconnectScrollView( true);
+	BmModelItemMap::const_iterator iter;
+	for( iter = model->begin(); iter != model->end(); ++iter) {
+		BmListModelItem* modelItem = iter->second;
+		BmListViewItem* viewItem;
+		if (Hierarchical()) {
+			BMessage* archive = GetArchiveForItemKey( modelItem->Key());
+			viewItem = CreateListViewItem( modelItem, archive);
+			mItemList->AddItem( viewItem);
+			// immediately add item and its subitems to the listview:
+			AddItem( viewItem);
+			viewItem->AddSubItemsToList( this);
+		} else {
+			viewItem = CreateListViewItem( modelItem);
+			mItemList->AddItem( viewItem);
+		}
+	}
+	if (!Hierarchical()) {
+		// add complete item-list for efficiency:
+		AddList( mItemList);
+	}
+	SortItems();
+	SetDisconnectScrollView( false);
+	UpdateColumnSizesDataRectSizeScrollBars( true);
+}
+
+/*------------------------------------------------------------------------------*\
 	RemoveModelItem( msg)
 		-	Hook function that is called whenever an item has been deleted from the
 			listmodel
@@ -293,6 +302,56 @@ void BmListViewController::UpdateModelState( BMessage* msg) {
 }
 
 /*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmListViewController::ExpansionChanged( CLVListItem* _item, bool expanded) {
+	BmListViewItem* item = dynamic_cast< BmListViewItem*>( _item);
+	UpdateItem( item, BmListViewItem::UPD_EXPANDER);
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmListViewController::UpdateItem( BmListViewItem* item, BmUpdFlags flags) {
+	if (!item)
+		return;
+	LockLooper();
+	item->UpdateView( flags);
+	InvalidateItem( IndexOf( item));
+	UnlockLooper();
+}
+
+/*------------------------------------------------------------------------------*\
+	AttachModel()
+		-	reads appropriate state-info after attaching to data-model
+\*------------------------------------------------------------------------------*/
+void BmListViewController::AttachModel( BmDataModel* model) {
+	inheritedController::AttachModel( model);
+	ReadStateInfo();
+}
+
+/*------------------------------------------------------------------------------*\
+	DetachModel()
+		-	writes state-info for current data-model before detaching
+		-	clears listview after detach
+\*------------------------------------------------------------------------------*/
+void BmListViewController::DetachModel() {
+	WriteStateInfo();
+	inheritedController::DetachModel();
+	MakeEmpty();								// clear display
+	if (mItemList) {
+		while( !mItemList->IsEmpty()) {
+			BmListViewItem* subItem = static_cast<BmListViewItem*>(mItemList->RemoveItem( (int32)0));
+			delete subItem;
+		}		
+		delete mItemList;
+		mItemList = NULL;
+	}
+}
+
+/*------------------------------------------------------------------------------*\
 	JobIsDone( completed)
 		-	Hook function that is called whenever the jobmodel associated to this 
 			controller indicates that it is done (meaning: the list has been fetched
@@ -305,46 +364,6 @@ void BmListViewController::JobIsDone( bool completed) {
 }
 
 /*------------------------------------------------------------------------------*\
-	AddAllModelItemsToMap()
-		-	
-\*------------------------------------------------------------------------------*/
-void BmListViewController::AddModelItemsToList() {
-	BAutolock lock( DataModel()->ModelLocker());
-	lock.IsLocked()	 						|| BM_THROW_RUNTIME( BString() << ControllerName() << ":AddModelItemsToMap(): Unable to lock model");
-	BmListModel *model = DataModel();
-	mItemList = new BList( model->size());
-	SetDisconnectScrollView( true);
-	BmModelItemMap::const_iterator iter;
-	for( iter = model->begin(); iter != model->end(); ++iter) {
-		BmListModelItem* modelItem = iter->second;
-		BmListViewItem* viewItem = CreateListViewItem( modelItem);
-		mItemList->AddItem( viewItem);
-		if (Hierarchical()) {
-			// immediately add item and its subitems:
-			AddItem( viewItem);
-			viewItem->AddSubItemsToList( this);
-		}
-	}
-	if (!Hierarchical()) {
-		// add complete item-list for efficiency:
-		AddList( mItemList);
-	}
-	SortItems();
-	SetDisconnectScrollView( false);
-	UpdateColumnSizesDataRectSizeScrollBars( true);
-}
-
-/*------------------------------------------------------------------------------*\
-	MouseDown( point)
-		-	override that automatically grabs the keyboard-focus after a click 
-			inside the listview
-\*------------------------------------------------------------------------------*/
-void BmListViewController::MouseDown(BPoint point) { 
-	inherited::MouseDown( point); 
-	MakeFocus( true);
-}
-
-/*------------------------------------------------------------------------------*\
 	WriteStateInfo( )
 		-	
 \*------------------------------------------------------------------------------*/
@@ -353,11 +372,14 @@ void BmListViewController::WriteStateInfo() {
 	BString stateInfoFilename;
 	BFile stateInfoFile;
 	auto_ptr< BMessage> archive( new BMessage);
+	
+	if (!DataModel())
+		return;
 
 	try {
 		stateInfoFilename = BString(bmApp->SettingsPath.Path()) << "/StateInfo/" 
 								  << StateInfoBasename() << "_" << ModelName();
-		this->Archive( archive.get()) == B_OK
+		this->Archive( archive.get(), Hierarchical()) == B_OK
 													|| BM_THROW_RUNTIME( BString("Unable to archive State-Info for ")<<Name());
 		(err = stateInfoFile.SetTo( stateInfoFilename.String(), 
 											 B_WRITE_ONLY | B_CREATE_FILE | B_ERASE_FILE)) == B_OK
@@ -375,19 +397,35 @@ void BmListViewController::WriteStateInfo() {
 \*------------------------------------------------------------------------------*/
 status_t BmListViewController::Archive(BMessage* archive, bool deep) const {
 	status_t ret = inherited::Archive( archive, deep);
-	if (deep && ret == B_OK) {
-/*
-		BmModelItemMap::const_iterator pos;
-		for( pos = mSubItemMap.begin(); pos != mSubItemMap.end(); ++pos) {
-			if (ret == B_OK) {
-				BMessage msg;
-				ret = pos->second->Archive( &msg, deep)
-						|| archive->AddMessage( MSG_CHILDREN, &msg);
-			}
+	if (deep && ret == B_OK && mItemList) {
+		int32 numItems = mItemList->CountItems();
+		for( int32 i=0; i<numItems && ret==B_OK; ++i) {
+			BmListViewItem* item = static_cast< BmListViewItem*>( mItemList->ItemAt( i));
+			ret = item->Archive( archive, deep);
 		}
-*/
+	}
+	if (ret != B_OK) {
+		ShowAlert( BString("Could not archive State-Info for ") << ModelName() << " errortext: "<< strerror( ret));
 	}
 	return ret;
+}
+
+/*------------------------------------------------------------------------------*\
+	GetArchiveForItemKey( )
+		-	
+\*------------------------------------------------------------------------------*/
+BMessage* BmListViewController::GetArchiveForItemKey( BString key) {
+	if (mInitialStateInfo) {
+		status_t ret = B_OK;
+		for( int i=0; ret==B_OK; ++i) {
+			const char* name;
+			ret = mInitialStateInfo->FindString( BmListViewItem::MSG_CHILDNAMES, i, &name);
+			if (key == name) {
+				return FindMsgMsg( mInitialStateInfo, BmListViewItem::MSG_CHILDREN, NULL, i);
+			}
+		}
+	}
+	return NULL;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -415,5 +453,5 @@ void BmListViewController::ReadStateInfo() {
 			BM_SHOWERR( e.what());
 		}
 	} else 
-		inherited::SetDefaults();
+		inherited::UnArchive( bmApp->Prefs->MailRefLayout());
 }

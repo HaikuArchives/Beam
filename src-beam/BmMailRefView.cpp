@@ -18,7 +18,7 @@ const int16 BmMailRefItem::nFirstTextCol = 3;
 		-	
 \*------------------------------------------------------------------------------*/
 BmMailRefItem::BmMailRefItem( BString key, BmListModelItem* _item)
-	:	inherited( key, _item, false)
+	:	inherited( key, _item)
 {
 	BmMailRef* ref = dynamic_cast<BmMailRef*>( _item);
 
@@ -162,7 +162,8 @@ BmMailRefView::~BmMailRefView() {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmListViewItem* BmMailRefView::CreateListViewItem( BmListModelItem* item, uint32 level) {
+BmListViewItem* BmMailRefView::CreateListViewItem( BmListModelItem* item, 
+																	BMessage* archive) {
 	return new BmMailRefItem( item->Key(), item);
 }
 

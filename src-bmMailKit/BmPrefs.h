@@ -19,15 +19,17 @@
 class BmPrefs : public BArchivable {
 	typedef BArchivable inherited;
 	// archivable components:
-	static const char* const MSG_DYNAMIC_CONN_WIN = "bm:dynconnwin";
-	static const char* const MSG_RECEIVE_TIMEOUT = 	"bm:recvtimeout";
-	static const char* const MSG_LOGLEVELS = 			"bm:loglevels";
-	static const char* const MSG_MAILBOXPATH = 		"bm:mailboxpath";
-	static const char* const MSG_REF_CACHING = 		"bm:refcaching";
-	static const char* const MSG_DEFAULT_ENCODING = "bm:defencoding";
-	static const char* const MSG_STRIPED_LISTVIEW = "bm:stripedlv";
+	static const char* const MSG_DYNAMIC_CONN_WIN = 	"bm:dyncw";
+	static const char* const MSG_RECEIVE_TIMEOUT = 		"bm:rcvtmo";
+	static const char* const MSG_LOGLEVELS = 				"bm:lglev";
+	static const char* const MSG_MAILBOXPATH = 			"bm:mbpath";
+	static const char* const MSG_REF_CACHING = 			"bm:rfcache";
+	static const char* const MSG_DEFAULT_ENCODING = 	"bm:defenc";
+	static const char* const MSG_STRIPED_LISTVIEW = 	"bm:strpdlv";
+	static const char* const MSG_MAILREF_LAYOUT = 		"bm:mreflayout";
+	static const char* const MSG_RESTORE_FOLDERS = 		"bm:rstfldrs";
 
-	static const char* const PREFS_FILENAME = 		"General Settings";
+	static const char* const PREFS_FILENAME = 			"General Settings";
 
 public:
 	//
@@ -35,7 +37,7 @@ public:
 	//
 	BmPrefs( void);
 	BmPrefs( BMessage* archive);
-	virtual ~BmPrefs() 						{}
+	virtual ~BmPrefs();
 
 	bool Store();
 	
@@ -60,6 +62,8 @@ public:
 	bool RefCaching() const 				{ return mRefCaching; }
 	int32 DefaultEncoding() const 		{ return mDefaultEncoding; }
 	bool StripedListView() const 			{ return mStripedListView; }
+	BMessage* MailRefLayout() const		{ return mMailRefLayout; }
+	bool RestoreFolderStates() const 	{ return mRestoreFolderStates; }
 
 	// setters:
 	void CheckMail( TConnWinMode m) 		{ mDynamicConnectionWin = m; }
@@ -69,6 +73,8 @@ public:
 	void RefCaching( bool b) 				{ mRefCaching = b; }
 	void DefaultEncoding( int32 i) 		{ mDefaultEncoding = i; }
 	void StripedListView( bool b) 		{ mStripedListView = b; }
+	void MailRefLayout( BMessage* m) 	{ mMailRefLayout = m; }
+	void RestoreFolderStates( bool b) 	{ mRestoreFolderStates = b; }
 
 
 private:
@@ -100,7 +106,15 @@ private:
 							//	-	when a new mail is created in order to be sent
 
 	bool mStripedListView;
-							// toggles striping of listview
+							// toggles striping of listview, striped mode is faster,
+							// but I'm sure some people will prefer dotted-tail-mode 
+							// (which is slower).
+	BMessage* mMailRefLayout;
+							// archive of default state-info for MailRef-listview
+	bool mRestoreFolderStates;
+							// determines whether or not the states of each mail-folder
+							// (e.g. expanded or not) will be restored as they were at the
+							// end of the last sesson.
 };
 
 #endif

@@ -84,11 +84,9 @@ class ColumnListView : public BListView
 			/*** Not implemented yet
 		ColumnListView(BMessage* archive);
 		static ColumnListView* Instantiate(BMessage* data);
-		virtual	status_t Archive(BMessage* data, bool deep = true) const;
 			***/
 		virtual status_t Archive(BMessage* data, bool deep = true) const;
 		virtual status_t UnArchive(BMessage* archive, bool deep = true);
-		virtual void SetDefaults();
 
 		//Column setup functions
 		virtual bool AddColumn(CLVColumn* Column);			//Note that a column may only be added to
@@ -195,6 +193,7 @@ class ColumnListView : public BListView
 		virtual void Expand(CLVListItem* item);
 		virtual void Collapse(CLVListItem* item);
 		bool IsExpanded(int32 fullListIndex) const;
+		virtual void ExpansionChanged(CLVListItem* item, bool expanded) {}
 		void SetSortFunction(CLVCompareFuncPtr compare);
 		void SortItems();
 		virtual CLVContainerView* CreateContainer(bool horizontal, bool vertical, bool scroll_view_corner,

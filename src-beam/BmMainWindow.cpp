@@ -28,6 +28,10 @@ bool BmMainWindow::IsAlive() {
 }
 
 
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
 BmMainWindow::BmMainWindow()
 	:	inherited( BRect(50,50,800,600), "Beam 0.x", B_TITLED_WINDOW_LOOK, 
 					  B_NORMAL_WINDOW_FEEL, B_ASYNCHRONOUS_CONTROLS)
@@ -64,9 +68,17 @@ BmMainWindow::BmMainWindow()
 	AddChild( dynamic_cast<BView*>(mOuterGroup));
 }
 
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
 BmMainWindow::~BmMainWindow() {
 }
 
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
 void BmMainWindow::BeginLife() {
 	nIsAlive = true;
 	try {
@@ -78,18 +90,30 @@ void BmMainWindow::BeginLife() {
 	}
 }
 
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
 CLVContainerView* BmMainWindow::CreateMailFolderView( minimax minmax, int32 width, int32 height) {
 	mMailFolderView = BmMailFolderView::CreateInstance( minmax, width, height);
 	bmApp->MailFolderView = mMailFolderView;
 	return mMailFolderView->ContainerView();
 }
 
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
 CLVContainerView* BmMainWindow::CreateMailRefView( minimax minmax, int32 width, int32 height) {
 	mMailRefView = BmMailRefView::CreateInstance( minmax, width, height);
 	bmApp->MailRefView = mMailRefView;
 	return mMailRefView->ContainerView();
 }
 
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
 void BmMainWindow::MessageReceived( BMessage* msg) {
 	try {
 		switch( msg->what) {
@@ -121,6 +145,8 @@ bool BmMainWindow::QuitRequested() {
 		-	standard BeOS-behaviour, we quit
 \*------------------------------------------------------------------------------*/
 void BmMainWindow::Quit() {
+	mMailRefView->DetachModel();
+	mMailFolderView->DetachModel();
 	BM_LOG3( BM_LogMainWindow, BString("MainWindow has quit"));
 	inherited::Quit();
 }

@@ -405,14 +405,14 @@ void CLVColumn::DrawColumnHeader(BView* view, BRect header_rect, bool sort_key, 
 		{
 		// Draw a lash indicating the current sorting-order:
 			float Width = view->StringWidth(label);
+			if (sortPrio == 0)
+				view->SetHighColor( Black);
+			else if (sortPrio == 1)
+				view->SetHighColor( BeDarkShadow);
+			else
+				view->SetHighColor( BeShadow);
+			float x_offs, y_offs;
 			if (header_rect.right-header_rect.left-Width > 18) {
-				if (sortPrio == 0)
-					view->SetHighColor( Black);
-				else if (sortPrio == 1)
-					view->SetHighColor( BeDarkShadow);
-				else
-					view->SetHighColor( BeShadow);
-				float x_offs, y_offs;
 				y_offs = font_ascent-5;
 				if (!(fFlags&CLV_RIGHT_JUSTIFIED))
 					x_offs = header_rect.left + Width + 8;
@@ -426,6 +426,21 @@ void CLVColumn::DrawColumnHeader(BView* view, BRect header_rect, bool sort_key, 
 					view->FillTriangle( BPoint( x_offs, header_rect.top+y_offs+5), 
 											  BPoint( x_offs + 10, header_rect.top+y_offs+5),
 											  BPoint( x_offs + 5, header_rect.top+y_offs));
+				}
+			} else {
+				y_offs = font_ascent+3;
+				if (!(fFlags&CLV_RIGHT_JUSTIFIED))
+					x_offs = header_rect.right - 5 - 3;
+				else 
+					x_offs = header_rect.left + 5;
+				if (sortMode == Ascending) {
+					view->FillTriangle( BPoint( x_offs, header_rect.top+y_offs), 
+											  BPoint( x_offs + 4, header_rect.top+y_offs),
+											  BPoint( x_offs + 2, header_rect.top+y_offs+2));
+				} else if (sortMode == Descending) {
+					view->FillTriangle( BPoint( x_offs, header_rect.top+y_offs+2), 
+											  BPoint( x_offs + 4, header_rect.top+y_offs+2),
+											  BPoint( x_offs + 2, header_rect.top+y_offs));
 				}
 			}
 		}

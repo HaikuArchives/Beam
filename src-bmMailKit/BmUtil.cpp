@@ -18,10 +18,10 @@
 			returns it.
 		-	throws BM_invalid_argument if field is not contained withing archive
 \*------------------------------------------------------------------------------*/
-const char* FindMsgString( BMessage* archive, const char* name) {
+const char* FindMsgString( BMessage* archive, const char* name, int32 index) {
 	const char* str;
 	BM_assert(archive && name);
-	if (archive->FindString( name, &str) == B_OK) {
+	if (archive->FindString( name, index, &str) == B_OK) {
 		return str;
 	} else {
 		throw BM_invalid_argument( BString( "unknown message-field: ") << name);
@@ -34,10 +34,10 @@ const char* FindMsgString( BMessage* archive, const char* name) {
 			returns it.
 		-	throws BM_invalid_argument if field is not contained withing archive
 \*------------------------------------------------------------------------------*/
-bool FindMsgBool( BMessage* archive, const char* name) {
+bool FindMsgBool( BMessage* archive, const char* name, int32 index) {
 	bool b;
 	BM_assert(archive && name);
-	if (archive->FindBool( name, &b) == B_OK) {
+	if (archive->FindBool( name, index, &b) == B_OK) {
 		return b;
 	} else {
 		throw BM_invalid_argument( BString( "unknown message-field: ") << name);
@@ -50,10 +50,10 @@ bool FindMsgBool( BMessage* archive, const char* name) {
 			returns it.
 		-	throws BM_invalid_argument if field is not contained withing archive
 \*------------------------------------------------------------------------------*/
-int64 FindMsgInt64( BMessage* archive, const char* name) {
+int64 FindMsgInt64( BMessage* archive, const char* name, int32 index) {
 	int64 i;
 	BM_assert(archive && name);
-	if (archive->FindInt64( name, &i) == B_OK) {
+	if (archive->FindInt64( name, index, &i) == B_OK) {
 		return i;
 	} else {
 		throw BM_invalid_argument( BString( "unknown message-field: ") << name);
@@ -66,10 +66,10 @@ int64 FindMsgInt64( BMessage* archive, const char* name) {
 			returns it.
 		-	throws BM_invalid_argument if field is not contained withing archive
 \*------------------------------------------------------------------------------*/
-int32 FindMsgInt32( BMessage* archive, const char* name) {
+int32 FindMsgInt32( BMessage* archive, const char* name, int32 index) {
 	int32 i;
 	BM_assert(archive && name);
-	if (archive->FindInt32( name, &i) == B_OK) {
+	if (archive->FindInt32( name, index, &i) == B_OK) {
 		return i;
 	} else {
 		throw BM_invalid_argument( BString( "unknown message-field: ") << name);
@@ -82,10 +82,10 @@ int32 FindMsgInt32( BMessage* archive, const char* name) {
 			returns it.
 		-	throws BM_invalid_argument if field is not contained withing archive
 \*------------------------------------------------------------------------------*/
-int16 FindMsgInt16( BMessage* archive, const char* name) {
+int16 FindMsgInt16( BMessage* archive, const char* name, int32 index) {
 	int16 i;
 	BM_assert(archive && name);
-	if (archive->FindInt16( name, &i) == B_OK) {
+	if (archive->FindInt16( name, index, &i) == B_OK) {
 		return i;
 	} else {
 		throw BM_invalid_argument( BString( "unknown message-field: ") << name);
@@ -98,9 +98,11 @@ int16 FindMsgInt16( BMessage* archive, const char* name) {
 			returns it.
 		-	throws BM_invalid_argument if field is not contained withing archive
 \*------------------------------------------------------------------------------*/
-BMessage* FindMsgMsg( BMessage* archive, const char* name, BMessage* msg) {
+BMessage* FindMsgMsg( BMessage* archive, const char* name, BMessage* msg, int32 index) {
 	BM_assert(archive && name);
-	if (archive->FindMessage( name, msg) == B_OK) {
+	if (!msg)
+		msg = new BMessage;
+	if (archive->FindMessage( name, index, msg) == B_OK) {
 		return msg;
 	} else {
 		throw BM_invalid_argument( BString( "unknown message-field: ") << name);
@@ -113,10 +115,10 @@ BMessage* FindMsgMsg( BMessage* archive, const char* name, BMessage* msg) {
 			returns it.
 		-	throws BM_invalid_argument if field is not contained withing archive
 \*------------------------------------------------------------------------------*/
-float FindMsgFloat( BMessage* archive, const char* name) {
+float FindMsgFloat( BMessage* archive, const char* name, int32 index) {
 	float f;
 	BM_assert(archive && name);
-	if (archive->FindFloat( name, &f) == B_OK) {
+	if (archive->FindFloat( name, index, &f) == B_OK) {
 		return f;
 	} else {
 		BString s( "unknown message-field: ");
@@ -131,10 +133,10 @@ float FindMsgFloat( BMessage* archive, const char* name) {
 			returns it.
 		-	throws BM_invalid_argument if field is not contained withing archive
 \*------------------------------------------------------------------------------*/
-void* FindMsgPointer( BMessage* archive, const char* name) {
+void* FindMsgPointer( BMessage* archive, const char* name, int32 index) {
 	void* ptr;
 	BM_assert(archive && name);
-	if (archive->FindPointer( name, &ptr) == B_OK) {
+	if (archive->FindPointer( name, index, &ptr) == B_OK) {
 		return ptr;
 	} else {
 		throw BM_invalid_argument( BString( "unknown message-field: ") << name);

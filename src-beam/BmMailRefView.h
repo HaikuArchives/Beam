@@ -54,7 +54,7 @@ public:
 	virtual BString StateInfoBasename()	{ return "MailRefView"; }
 
 	//
-	BmListViewItem* CreateListViewItem( BmListModelItem* item, uint32 level=0);
+	BmListViewItem* CreateListViewItem( BmListModelItem* item, BMessage* archive=NULL);
 	
 private:
 	BmMailFolder* mCurrFolder;

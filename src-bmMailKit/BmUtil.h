@@ -60,14 +60,14 @@ inline bool BM_THROW_NETWORK( const BString &s) { throw BM_network_error(s); }
 		-	functions that extract the msg-field of a specified name from the given 
 			archive and return it.
 \*------------------------------------------------------------------------------*/
-const char* FindMsgString( BMessage* archive, const char* name);
-bool FindMsgBool( BMessage* archive, const char* name);
-int64 FindMsgInt64( BMessage* archive, const char* name);
-int32 FindMsgInt32( BMessage* archive, const char* name);
-int16 FindMsgInt16( BMessage* archive, const char* name);
-float FindMsgFloat( BMessage* archive, const char* name);
-BMessage* FindMsgMsg( BMessage* archive, const char* name, BMessage* msg);
-void* FindMsgPointer( BMessage* archive, const char* name);
+const char* FindMsgString( BMessage* archive, const char* name, int32 index=0);
+bool FindMsgBool( BMessage* archive, const char* name, int32 index=0);
+int64 FindMsgInt64( BMessage* archive, const char* name, int32 index=0);
+int32 FindMsgInt32( BMessage* archive, const char* name, int32 index=0);
+int16 FindMsgInt16( BMessage* archive, const char* name, int32 index=0);
+float FindMsgFloat( BMessage* archive, const char* name, int32 index=0);
+BMessage* FindMsgMsg( BMessage* archive, const char* name, BMessage* msg=NULL, int32 index=0);
+void* FindMsgPointer( BMessage* archive, const char* name, int32 index=0);
 
 /*------------------------------------------------------------------------------*\*\
 	ShowAlert( text, logtext)
