@@ -716,9 +716,48 @@ void BmMail::AddBaseMailRef( BmMailRef* ref) {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmMail::DestFoldername( const BmString& destFoldername) {
-	mDestFoldername = destFoldername;
-	mDestFoldername.ReplaceAll( '.', '/');
+const BPath& BmMail::DestFolderpath() const {
+	if (mDestFolderpath.InitCheck() != B_OK) {
+		if (mEntry.InitCheck() == B_OK || mMailRef && mMailRef->InitCheck() == B_OK) {
+			status_t err;
+			BDirectory homeDir;
+			BEntry entry;
+			if (mEntry.InitCheck() == B_OK) {
+				entry = mEntry;
+			} else if (mMailRef && mMailRef->InitCheck() == B_OK) {
+				(err = entry.SetTo( mMailRef->EntryRefPtr())) == B_OK
+													|| BM_THROW_RUNTIME( BmString("Could not create entry from mail-ref <") << mMailRef->Key() << ">\n\n Result: " << strerror(err));
+			}
+			(err = entry.GetParent( &homeDir)) == B_OK
+													|| BM_THROW_RUNTIME( BmString("Could not get parent for mail <")<<Name()<<">\n\n Result: " << strerror(err));
+			(err = mDestFolderpath.SetTo( &homeDir, NULL)) == B_OK
+													|| BM_THROW_RUNTIME( BmString("Could not get path for homeDir of mail <")<<Name()<<">\n\n Result: " << strerror(err));
+		}
+	}
+	return mDestFolderpath;
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+bool BmMail::SetDestFoldername( const BmString& inFoldername) {
+	BmString destFoldername( inFoldername);
+	destFoldername.ReplaceAll( '.', '/');
+	if (!destFoldername.Length()) {
+		if (mDestFolderpath.InitCheck() == B_OK) {
+			mDestFolderpath.Unset();
+			return true;
+		}
+		return false;
+	}
+	BmString p( ThePrefs->GetString("MailboxPath") + "/" << destFoldername);
+	BPath newPath( p.String(), NULL, true);
+	if (newPath != DestFolderpath()) {
+		mDestFolderpath = newPath;
+		return true;
+	}
+	return false;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -771,7 +810,7 @@ void BmMail::Filter( BmFilter* inFilter) {
 	}
 	BmRef<BmMailFilter> filterJob = new BmMailFilter( Name(), filter.Get());
 	filterJob->AddMail( this);
-	filterJob->StartJobInThisThread();
+	filterJob->StartJobInThisThread( BmMailFilter::BM_EXECUTE_FILTER);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -804,6 +843,8 @@ bool BmMail::Store() {
 													|| BM_THROW_RUNTIME( BmString("Could not find tmp-directory on this system") << "\n\n Result: " << strerror(err));
 		(err = tmpDir.SetTo( tmpPath.Path())) == B_OK
 													|| BM_THROW_RUNTIME( BmString("Could not find tmp-directory on this system") << "\n\n Result: " << strerror(err));
+
+		DestFolderpath();						// init mDestFolderpath
 
 		if (mEntry.InitCheck() == B_OK 
 		|| mMailRef && mMailRef->InitCheck() == B_OK) {
@@ -838,18 +879,16 @@ bool BmMail::Store() {
 
 		// now check whether mail-filtering has decided that the mail shall live
 		// in a specific folder:
-		if (mDestFoldername.Length()) {
-			// try to file mail into given destination-folder:
-			BmString p( ThePrefs->GetString("MailboxPath") + "/" << mDestFoldername);
-			BPath tryPath( p.String());
-			if ((err = homeDir.SetTo( tryPath.Path())) != B_OK) {
+		if (newHomePath != mDestFolderpath) {
+			// try to file mail into a different destination-folder:
+			if ((err = homeDir.SetTo( mDestFolderpath.Path())) != B_OK) {
 				BmLogHandler::Log( "Filter", BM_LogAll, 
-										 BmString("Could not file message into mail-folder\n") << tryPath.Path()
+										 BmString("Could not file message into mail-folder\n") << mDestFolderpath.Path()
 											<< "\nError: " << strerror(err)
 											<< "\n\nMessage will now be filed into the folder\n" 
 											<< newHomePath.Path(), 0);
 			} else
-				newHomePath = tryPath;
+				newHomePath = mDestFolderpath;
 		}
 		// finally we set homeDir to the (possibly new) folder that the mail
 		// shall live in:
@@ -891,15 +930,16 @@ bool BmMail::Store() {
 		// now move mail to it's real home:
 		(err = mEntry.MoveTo( &homeDir)) == B_OK
 													|| BM_THROW_RUNTIME( BmString("Could not move mail <")<<basicFilename<<"> to home-folder\n\n Result: " << strerror(err));
+		entry_ref eref;
+		(err = mEntry.GetRef( &eref)) == B_OK
+													|| BM_THROW_RUNTIME( BmString("Could not get entry-ref for mail <")<<basicFilename<<">.\n\n Result: " << strerror(err));
 		if (!mMailRef) {
 			// mail has been freshly created, we add a mail-ref for it:
-			entry_ref eref;
 			struct stat st;
-			mEntry.GetRef( &eref);
 			mEntry.GetStat( &st);
 			mMailRef = BmMailRef::CreateInstance( NULL, eref, st);
 		} else
-			mMailRef->ResyncFromDisk();
+			mMailRef->ResyncFromDisk( &eref);
 		for( uint32 i=0; i<mBaseRefVect.size(); ++i) {
 			mBaseRefVect[i]->MarkAs( mNewBaseStatus.String());
 		}

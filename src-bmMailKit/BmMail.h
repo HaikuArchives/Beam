@@ -36,6 +36,7 @@
 #include <E-mail.h>
 #include <Entry.h>
 #include <Mime.h>
+#include <Path.h>
 
 #include "BmDataModel.h"
 #include "BmMailHeader.h"
@@ -176,7 +177,8 @@ public:
 								  bool isForward,
 								  const BmString selectedText="");
 	//
-	void DestFoldername( const BmString& destFoldername);
+	bool SetDestFoldername( const BmString& destFoldername);
+	const BPath& DestFolderpath() const;
 	
 	// overrides of jobmodel base:
 	bool StartJob();
@@ -257,9 +259,9 @@ private:
 							// new status of base mail (forwarded/replied)
 	BmString mSignatureName;
 							// name of signature to use in this mail
-	BmString mDestFoldername;
-							// name of folder where the mail shall be stored in
-							// (this may be set by a mail-filter)
+	mutable BPath mDestFolderpath;
+							// path to folder where the mail shall be stored in
+							// (this may be changed by a mail-filter)
 	mutable BmString mDefaultStatus;
 							// default status of this mail, only relevant
 							// before mail lives on disk
