@@ -903,11 +903,21 @@ bool BmMail::Store( bool storeOnlyAttributesIfPossible) {
 		if (storeOnlyAttributesIfPossible && mEntry.InitCheck() == B_OK) {
 			// rewrite attributes only, most probably as the result of a
 			// filtering process:
-			if ((err = mEntry.SetTo( newName.String())) != B_OK)
+			BEntry newEntry;
+			if ((err = newEntry.SetTo( newName.String())) != B_OK)
 				BM_THROW_RUNTIME( 
 					BmString("Could not create entry for mail-file <") 
 						<< filename << ">\n\n Result: " << strerror(err)
 				);
+			if (!newEntry.Exists()) {
+				BDirectory newHomeDir( newHomePath.Path());
+				if ((err = mEntry.MoveTo( &newHomeDir)) != B_OK)
+					BM_THROW_RUNTIME( 
+						BmString("Could not create move mail-file <") << filename 
+							<< "> to folder <" << newHomePath.Path()
+							<< ">\n\n Result: " << strerror(err)
+					);
+			}
 			BNode mailNode;
 			if ((err = mailNode.SetTo( newName.String())) != B_OK)
 				BM_THROW_RUNTIME(
