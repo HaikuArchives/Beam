@@ -41,11 +41,13 @@ using namespace regexx;
 
 #include "BeamApp.h"
 #include "BmBasics.h"
+#include "BmEncoding.h"
 #include "BmLogHandler.h"
 #include "BmBodyPartList.h"
 #include "BmBodyPartView.h"
 #include "BmMailView.h"
 #include "BmPrefs.h"
+#include "BmRosterBase.h"
 #include "BmResources.h"
 #include "BmStorageUtil.h"
 #include "BmUtil.h"
@@ -404,7 +406,7 @@ void BmBodyPartView::MouseDown( BPoint point) {
 	BMessage* msg = Looper()->CurrentMessage();
 	int32 buttons;
 	if (msg->FindInt32( "buttons", &buttons)==B_OK 
-	&& !mEditable && buttons == B_SECONDARY_MOUSE_BUTTON) {
+	&& buttons == B_SECONDARY_MOUSE_BUTTON) {
 		int32 clickIndex = IndexOf( point);
 		if (clickIndex >= 0) {
 			if (!IsItemSelected( clickIndex))
@@ -455,6 +457,68 @@ void BmBodyPartView::MessageReceived( BMessage* msg) {
 				}
 				mSavePanel->SetSaveText( bodyPart->FileName().String());
 				mSavePanel->Show();
+				break;
+			}
+			case BM_BODYPARTVIEW_SRC_CHARSET: {
+				// change the source charset, i.e. the charset this
+				// bodypart originally came from. This usually is UTF8 on BeOS,
+				// but sometimes one has to handle other text-attachments, too.
+				BMenuItem* item = NULL;
+				msg->FindPointer( "source", (void**)&item);
+				int32 index = CurrentSelection( 0);
+				if (index < 0 || !item)
+					break;
+				BmBodyPartItem* bodyPartItem 
+					= dynamic_cast<BmBodyPartItem*>( FullListItemAt( index));
+				if (!bodyPartItem)
+					break;
+				BmBodyPart* bodyPart( bodyPartItem->ModelItem());
+				if (!bodyPart)
+					break;
+				BmString charset(item->Label());
+				BmStringIBuf srcBuf( bodyPart->DecodedData());
+				BmString utf8Text;
+				const uint32 blockSize 
+					= max( (int32)128, bodyPart->DecodedLength());
+				BmStringOBuf destBuf( blockSize);
+				BmUtf8Encoder encoder( &srcBuf, charset, blockSize);
+				destBuf.Write( &encoder, blockSize);
+				utf8Text.Adopt( destBuf.TheString());
+				if (encoder.HadError() || encoder.HadToDiscardChars()) {
+					BAlert* alert = new BAlert( 
+						"Wrong Source Charset", 
+						"The selected source charset is probably incorrect, "
+							"as some of the characters couldn't be converted to UTF8.",
+						"Ok", NULL, NULL, B_WIDTH_AS_USUAL,
+						B_WARNING_ALERT
+					);
+					alert->SetShortcut( 1, B_ESCAPE);
+					alert->Go( new BInvoker( new BMessage('xxxx'), BMessenger( this)));
+				} else {
+					bodyPart->SetBodyText( utf8Text, charset);
+					BmRef<BmDataModel> modelRef( DataModel());
+					ShowBody( dynamic_cast<BmBodyPartList*>( modelRef.Get()));
+				}
+				break;
+			}
+			case BM_BODYPARTVIEW_DEST_CHARSET: {
+				// change the destination charset, i.e. the charset this
+				// bodypart will have in the mail:
+				BMenuItem* item = NULL;
+				msg->FindPointer( "source", (void**)&item);
+				int32 index = CurrentSelection( 0);
+				if (index < 0 || !item)
+					break;
+				BmBodyPartItem* bodyPartItem 
+					= dynamic_cast<BmBodyPartItem*>( FullListItemAt( index));
+				if (!bodyPartItem)
+					break;
+				BmBodyPart* bodyPart( bodyPartItem->ModelItem());
+				if (!bodyPart)
+					break;
+				bodyPart->SuggestCharset( item->Label());
+				BmRef<BmDataModel> modelRef( DataModel());
+				ShowBody( dynamic_cast<BmBodyPartList*>( modelRef.Get()));
 				break;
 			}
 			case BM_BODYPARTVIEW_DELETE_ATTACHMENT: {
@@ -759,28 +823,41 @@ void BmBodyPartView::ShowMenu( BPoint point) {
 	font.SetSize( 10);
 	theMenu->SetFont( &font);
 
-	BMenuItem* item = new BMenuItem( 
-		"Show All MIME-Bodies", 
-		new BMessage( mShowAllParts
-							  ? BM_BODYPARTVIEW_SHOWATTACHMENTS
-							  : BM_BODYPARTVIEW_SHOWALL)
-	);
-	item->SetTarget( this);
-	item->SetMarked( mShowAllParts);
-	theMenu->AddItem( item);
-
-	theMenu->AddSeparatorItem();
-	item = new BMenuItem( "Save Attachment As...", 
-								 new BMessage( BM_BODYPARTVIEW_SAVE_ATTACHMENT));
-	item->SetTarget( this);
-	theMenu->AddItem( item);
-
+	BMenuItem* item; 
 	if (!mEditable) {
+		item = new BMenuItem( 
+			"Show All MIME-Bodies", 
+			new BMessage( mShowAllParts
+								  ? BM_BODYPARTVIEW_SHOWATTACHMENTS
+								  : BM_BODYPARTVIEW_SHOWALL)
+		);
+		item->SetTarget( this);
+		item->SetMarked( mShowAllParts);
+		theMenu->AddItem( item);
+	
 		theMenu->AddSeparatorItem();
-		item = new BMenuItem( "Remove Attachment from Mail...", 
-									 new BMessage( BM_BODYPARTVIEW_DELETE_ATTACHMENT));
+		item = new BMenuItem( "Save Attachment As...", 
+									 new BMessage( BM_BODYPARTVIEW_SAVE_ATTACHMENT));
 		item->SetTarget( this);
 		theMenu->AddItem( item);
+	
+		if (!mEditable) {
+			theMenu->AddSeparatorItem();
+			item = new BMenuItem( "Remove Attachment from Mail...", 
+										 new BMessage( BM_BODYPARTVIEW_DELETE_ATTACHMENT));
+			item->SetTarget( this);
+			theMenu->AddItem( item);
+		}
+	} else {
+		BMenu* menu = new BMenu( "Specify Source Charset");
+		menu->SetFont( &font);
+		BeamGuiRoster->AddCharsetMenu( menu, this, BM_BODYPARTVIEW_SRC_CHARSET);
+		theMenu->AddItem( menu);
+		theMenu->AddSeparatorItem();
+		menu = new BMenu( "Select Destination Charset");
+		menu->SetFont( &font);
+		BeamGuiRoster->AddCharsetMenu( menu, this, BM_BODYPARTVIEW_DEST_CHARSET);
+		theMenu->AddItem( menu);
 	}
 
    ConvertToScreen(&point);
