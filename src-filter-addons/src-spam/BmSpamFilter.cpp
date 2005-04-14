@@ -1254,9 +1254,9 @@ bool BmSpamFilter::OsbfClassifier::Classify( BmMsgContext* msgContext)
 			overallPr = clampMax;
 		float ratioSpam = 0.5;
 		if (isSpam)
-			ratioSpam -= fabs(overallPr / (clampMin/0.5));
+			ratioSpam += fabs(overallPr / (clampMin/0.5));
 		else
-			ratioSpam += fabs(overallPr / (clampMax/0.5));
+			ratioSpam -= fabs(overallPr / (clampMax/0.5));
 		msgContext->data.AddFloat("RatioSpam", ratioSpam);
 	}
 	
