@@ -1,6 +1,8 @@
 SubDir TOP src-filter-addons src-sieve src-libSieve ;
 
+# <pe-inc>
 SubDirHdrs $(TOP) src-bmBase ;
+# </pe-inc>
 
 CCFLAGS += -DENABLE_REGEX ;
 if $(OSPLAT) = X86 {
@@ -11,6 +13,7 @@ if $(OSPLAT) = X86 {
 
 SubDirSysHdrs /boot/home/config/include ;
 
+# <pe-src>
 StaticLibrary libsieve.a
 	:  
 		addr.y
@@ -29,5 +32,6 @@ StaticLibrary libsieve.a
 		xmalloc.c
 	: 	
 	;
+# </pe-src>
 
 MakeLocate libsieve.a : [ FDirName $(OBJECTS_DIR) lib ] ;

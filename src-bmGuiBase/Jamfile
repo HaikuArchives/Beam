@@ -1,15 +1,18 @@
 SubDir TOP src-bmGuiBase ;
 
+# <pe-inc>
 SubDirHdrs $(TOP) src-bmBase ;
 SubDirHdrs $(TOP) src-bmRegexx ;
 
 SubDirSysHdrs /boot/home/config/include ;
 SubDirSysHdrs /boot/home/config/include/liblayout ;
+# </pe-inc>
 
 LINKFLAGS += -L/boot/home/config/lib ;
 
 DEFINES += BM_BUILDING_BMGUIBASE ;
 
+# <pe-src>
 SharedLibrary bmGuiBase.so
 	:  
 		BetterScrollView.cpp
@@ -45,6 +48,7 @@ SharedLibrary bmGuiBase.so
 		bmRegexx.so bmBase.so 
 		layout pcre $(STDC++LIB) be 
 	;
+# </pe-src>
 
 MakeLocate bmGuiBase.so : [ FDirName $(DISTRO_DIR) lib ] ;
 

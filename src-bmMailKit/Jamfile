@@ -1,14 +1,17 @@
 SubDir TOP src-bmMailKit ;
 
+# <pe-inc>
 SubDirHdrs $(TOP) src-bmBase ;
 SubDirHdrs $(TOP) src-bmRegexx ;
 
 SubDirSysHdrs /boot/home/config/include ;
+# </pe-inc>
 
 LINKFLAGS += -L/boot/home/config/lib ;
 
 DEFINES += BM_BUILDING_BMMAILKIT ;
 
+# <pe-src>
 SharedLibrary bmMailKit.so
 	:  
 		BmApp.cpp
@@ -40,6 +43,7 @@ SharedLibrary bmMailKit.so
 		bmBase.so bmRegexx.so 
 		iconv $(STDC++LIB) be 
 	;
+# </pe-src>
 
 MakeLocate bmMailKit.so : [ FDirName $(DISTRO_DIR) lib ] ;
 

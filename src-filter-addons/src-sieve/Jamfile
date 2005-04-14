@@ -1,5 +1,6 @@
 SubDir TOP src-filter-addons src-sieve ;
 
+# <pe-inc>
 SubDirHdrs $(TOP) src-bmBase ;
 SubDirHdrs $(TOP) src-bmRegexx ;
 SubDirHdrs $(TOP) src-bmGuiBase ;
@@ -7,12 +8,13 @@ SubDirHdrs $(TOP) src-bmMailKit ;
 SubDirHdrs $(TOP) src-filter-addons src-sieve src-libSieve ;
 SubDirHdrs $(OBJECTS_DIR) src-filter-addons src-sieve src-libSieve ;
 
-SubDirSysHdrs /boot/home/config/include/cppunit ;
 SubDirSysHdrs /boot/home/config/include ;
 SubDirSysHdrs /boot/home/config/include/liblayout ;
+# </pe-inc>
 
 LINKFLAGS += -L/boot/home/config/lib ;
 
+# <pe-src>
 AddOn Sieve
 	:  
 		BmSieveFilter.cpp
@@ -20,6 +22,7 @@ AddOn Sieve
 		libsieve.a bmGuiBase.so bmMailKit.so bmRegexx.so bmBase.so 
 		layout pcreposix be
 	;
+# </pe-src>
 
 SubInclude TOP src-filter-addons src-sieve src-libSieve ;
 

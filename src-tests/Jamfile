@@ -1,5 +1,6 @@
 SubDir TOP src-tests ;
 
+# <pe-inc>
 SubDirHdrs $(TOP) src-beam ;
 SubDirHdrs $(TOP) src-bmBase ;
 SubDirHdrs $(TOP) src-bmRegexx ;
@@ -13,6 +14,7 @@ SubDirHdrs $(TOP) src-filter-addons src-sieve src-libSieve ;
 SubDirSysHdrs /boot/home/config/include/cppunit ;
 SubDirSysHdrs /boot/home/config/include ;
 SubDirSysHdrs /boot/home/config/include/liblayout ;
+# </pe-inc>
 
 LINKFLAGS += -L/boot/home/config/lib ;
 
@@ -25,6 +27,7 @@ if $(OSPLAT) = PPC {
 					 ;
 }
 
+# <pe-src>
 Application TestBeam
 	:  
 		Base64DecoderTest.cpp
@@ -51,6 +54,7 @@ Application TestBeam
 		bmGuiBase.so bmRegexx.so bmBase.so 
 		layout tracker pcreposix cppunit $(STDC++LIB) translation be
 	;
+# </pe-src>
 XRes TestBeam 
 	: 
 		[ FDirName $(TOP) resources BmIcons.rsrc ]  

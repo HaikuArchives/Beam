@@ -1,5 +1,6 @@
 SubDir TOP src-beam ;
 
+# <pe-inc>
 SubDirHdrs $(TOP) src-bmBase ;
 SubDirHdrs $(TOP) src-bmRegexx ;
 SubDirHdrs $(TOP) src-bmMailKit ;
@@ -9,9 +10,11 @@ SubDirHdrs $(TOP) src-deskbarItem ;
 
 SubDirSysHdrs /boot/home/config/include ;
 SubDirSysHdrs /boot/home/config/include/liblayout ;
+# </pe-inc>
 
 LINKFLAGS += -L/boot/home/config/lib ;
 
+# <pe-src>
 StaticLibrary beamInParts.a
 	:  
 		BeamApp.cpp
@@ -49,9 +52,11 @@ StaticLibrary beamInParts.a
 		BmToolbarButton.cpp
 		BmWindow.cpp
 	;
+# </pe-src>
 	
 MakeLocate beamInParts.a : [ FDirName $(OBJECTS_DIR) lib ] ;
 
+# <pe-src>
 Application Beam
 	:  
 		Beam.cpp
@@ -60,6 +65,7 @@ Application Beam
 		bmBase.so bmRegexx.so bmMailKit.so bmDaemon.so bmGuiBase.so 
 		layout tracker $(STDC++LIB) translation be 
 	;
+# </pe-src>
 
 XRes Beam 
 	: 

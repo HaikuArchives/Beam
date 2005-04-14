@@ -1,14 +1,18 @@
 SubDir TOP src-deskbarItem ;
 
+# <pe-inc>
 SubDirHdrs $(TOP) src-beam ;
 SubDirHdrs $(TOP) src-deskbarItem ;
+# </pe-inc>
 
+# <pe-src>
 AddOn Beam_DeskbarItem
 	:  
 		BmDeskbarView.cpp
 	: 	
 		be
 	;
+# </pe-src>
 
 XRes Beam_DeskbarItem
 	: 

@@ -1,12 +1,15 @@
 SubDir TOP src-bmRegexx ;
 
+# <pe-inc>
 SubDirHdrs $(TOP) src-bmBase ;
+# </pe-inc>
 
 SubDirSysHdrs /boot/home/config/include ;
 LINKFLAGS += -L/boot/home/config/lib ;
 
 DEFINES += BM_BUILDING_BMREGEXX ;
 
+# <pe-src>
 SharedLibrary bmRegexx.so
 	:  
 		regexx.cc
@@ -15,6 +18,7 @@ SharedLibrary bmRegexx.so
 		bmBase.so 
 		pcre $(STDC++LIB) 
 	;
+# </pe-src>
 
 MakeLocate bmRegexx.so : [ FDirName $(DISTRO_DIR) lib ] ;
 
