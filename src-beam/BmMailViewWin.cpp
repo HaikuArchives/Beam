@@ -237,10 +237,6 @@ MMenuBar* BmMailViewWin::CreateMenu() {
 	menu->AddItem( CreateMenuItem( "Show Raw Message", BMM_SWITCH_RAW));
 	menubar->AddItem( menu);
 
-	// temporary deactivations:
-	menubar->FindItem( BMM_FIND)->SetEnabled( false);
-	menubar->FindItem( BMM_FIND_NEXT)->SetEnabled( false);
-
 	return menubar;
 }
 
@@ -362,8 +358,8 @@ void BmMailViewWin::MessageReceived( BMessage* msg) {
 						bool hasMail = msg->FindBool( BmMailView::MSG_HAS_MAIL);
 						// adjust menu:
 						BMenuBar* menuBar = KeyMenuBar();
-						menuBar->FindItem( BMM_FIND)->SetEnabled( false && hasMail);
-						menuBar->FindItem( BMM_FIND_NEXT)->SetEnabled( false && hasMail);
+						menuBar->FindItem( BMM_FIND)->SetEnabled( hasMail);
+						menuBar->FindItem( BMM_FIND_NEXT)->SetEnabled( hasMail);
 						menuBar->FindItem( BMM_SWITCH_HEADER)->SetEnabled( hasMail);
 						BMenuItem* item = menuBar->FindItem( BMM_SWITCH_RAW);
 						item->SetEnabled( hasMail);
@@ -371,6 +367,15 @@ void BmMailViewWin::MessageReceived( BMessage* msg) {
 						break;
 					}
 				}
+				break;
+			}
+			case BMM_FIND: {
+				// to easen use of incremental search, we activate the mailview:
+				mMailView->MakeFocus(true);
+				break;
+			}
+			case BMM_FIND_NEXT: {
+				PostMessage( msg, mMailView);
 				break;
 			}
 			default:

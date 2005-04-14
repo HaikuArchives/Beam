@@ -286,7 +286,7 @@ MMenuBar* BmMainWindow::CreateMenu() {
 	menu->AddItem( CreateMenuItem( "Copy", B_COPY));
 	menu->AddItem( CreateMenuItem( "Select All", B_SELECT_ALL));
 	menu->AddSeparatorItem();
-	menu->AddItem( CreateMenuItem( "Find...", BMM_FIND));
+	menu->AddItem( CreateMenuItem( "Find", BMM_FIND));
 	menu->AddItem( CreateMenuItem( "Find Messages", BMM_FIND_MESSAGES));
 	menu->AddItem( CreateMenuItem( "Find Next", BMM_FIND_NEXT));
 	mMainMenuBar->AddItem( menu);
@@ -542,6 +542,15 @@ void BmMainWindow::MessageReceived( BMessage* msg) {
 				BmLogWindow::CreateAndStartInstanceFor( logName.String());
 				break;
 			}
+			case BMM_FIND: {
+				// to easen use of incremental search, we activate the mailview:
+				mMailView->MakeFocus(true);
+				break;
+			}
+			case BMM_FIND_NEXT: {
+				PostMessage( msg, mMailView);
+				break;
+			}
 			case BMM_SEND_PENDING: {
 				BmString key = msg->FindString( BmSmtpAccountList::MSG_ITEMKEY);
 				if (key.Length())
@@ -657,8 +666,8 @@ void BmMainWindow::MailRefSelectionChanged( bool haveSelectedRef) {
 \*------------------------------------------------------------------------------*/
 void BmMainWindow::MailViewChanged( bool hasMail) {
 	// adjust menu:
-	mMainMenuBar->FindItem( BMM_FIND)->SetEnabled( false && hasMail);
-	mMainMenuBar->FindItem( BMM_FIND_NEXT)->SetEnabled( false && hasMail);
+	mMainMenuBar->FindItem( BMM_FIND)->SetEnabled( hasMail);
+	mMainMenuBar->FindItem( BMM_FIND_NEXT)->SetEnabled( hasMail);
 	BMenuItem* item = mMainMenuBar->FindItem( BMM_SWITCH_RAW);
 	item->SetEnabled( hasMail);
 	item->SetMarked( mMailView->ShowRaw());
