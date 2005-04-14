@@ -215,6 +215,20 @@ void BmMailFilter::Execute( BmMail* mail) {
 	} else
 		ExecuteFilter( mail, mFilter.Get(), &msgContext);
 	bool needToStore = false;
+	bool learnAsSpam = msgContext.data.FindBool("LearnAsSpam");
+	if (learnAsSpam) {
+		BmRef<BmFilter> learnAsSpamFilter = TheFilterList->LearnAsSpamFilter();
+		if (learnAsSpamFilter)
+			learnAsSpamFilter->Execute( &msgContext);
+		needToStore = true;
+	}
+	bool learnAsTofu = msgContext.data.FindBool("LearnAsTofu");
+	if (learnAsTofu) {
+		BmRef<BmFilter> learnAsTofuFilter = TheFilterList->LearnAsTofuFilter();
+		if (learnAsTofuFilter)
+			learnAsTofuFilter->Execute( &msgContext);
+		needToStore = true;
+	}
 	BmString newIdentity = msgContext.data.FindString("Identity");
 	if (newIdentity.Length()) {
 		mail->IdentityName( newIdentity);
@@ -234,19 +248,6 @@ void BmMailFilter::Execute( BmMail* mail) {
 		mail->MoveToTrash( true);
 		needToStore = true;
 	}
-	BmString newFolderName = msgContext.data.FindString("FolderName");
-	if (newFolderName.Length()) {
-		if (mail->SetDestFoldername( newFolderName)) {
-			if (!needToStore && !mExecuteInMem) {
-				// optimize the (usual) case where folder-change is the only thing
-				// that has happened, if so, we just move the mail (but do not
-				// rewrite it completely);
-				if (!mail->MoveToDestFolderpath())
-					needToStore = true;
-			} else
-				needToStore = true;
-		}
-	}
 	float ratioSpam;
 	if (msgContext.data.FindFloat("RatioSpam", &ratioSpam) == B_OK) {
 		mail->RatioSpam(ratioSpam);
@@ -262,19 +263,18 @@ void BmMailFilter::Execute( BmMail* mail) {
 		mail->MarkAsTofu();
 		needToStore = true;
 	}
-	bool learnAsSpam = msgContext.data.FindBool("LearnAsSpam");
-	if (learnAsSpam) {
-		BmRef<BmFilter> learnAsSpamFilter = TheFilterList->LearnAsSpamFilter();
-		if (learnAsSpamFilter)
-			learnAsSpamFilter->Execute( NULL);
-		needToStore = true;
-	}
-	bool learnAsTofu = msgContext.data.FindBool("LearnAsTofu");
-	if (learnAsTofu) {
-		BmRef<BmFilter> learnAsTofuFilter = TheFilterList->LearnAsTofuFilter();
-		if (learnAsTofuFilter)
-			learnAsTofuFilter->Execute( NULL);
-		needToStore = true;
+	BmString newFolderName = msgContext.data.FindString("FolderName");
+	if (newFolderName.Length()) {
+		if (mail->SetDestFoldername( newFolderName)) {
+			if (!needToStore && !mExecuteInMem) {
+				// optimize the (usual) case where folder-change is the only thing
+				// that has happened, if so, we just move the mail (but do not
+				// rewrite it completely);
+				if (!mail->MoveToDestFolderpath())
+					needToStore = true;
+			} else
+				needToStore = true;
+		}
 	}
 	if (needToStore && !mExecuteInMem) {
 		BM_LOG3( BM_LogFilter, 
