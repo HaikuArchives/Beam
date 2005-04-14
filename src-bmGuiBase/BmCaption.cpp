@@ -30,6 +30,8 @@
 
 #include "Colors.h"
 
+#include <cstdio>
+
 #include "BmCaption.h"
 
 /*------------------------------------------------------------------------------*\
@@ -37,7 +39,8 @@
 		-	
 \*------------------------------------------------------------------------------*/
 BmCaption::BmCaption( BRect frame, const char* text) 
-	:	inherited( frame, NULL, text)
+	:	inherited( frame, NULL, B_FOLLOW_NONE, B_WILL_DRAW)
+	,	mText(text)
 {
 	SetViewUIColor( B_UI_PANEL_BACKGROUND_COLOR);
 	SetLowUIColor( B_UI_PANEL_BACKGROUND_COLOR);
@@ -51,6 +54,16 @@ BmCaption::~BmCaption() {
 }
 
 /*------------------------------------------------------------------------------*\
+	SetText( )
+		-	
+\*------------------------------------------------------------------------------*/
+void BmCaption::SetText( const char* txt)
+{
+	mText = txt; 
+	Invalidate();
+}
+
+/*------------------------------------------------------------------------------*\
 	( )
 		-	
 \*------------------------------------------------------------------------------*/
@@ -58,6 +71,7 @@ void BmCaption::Draw( BRect updateRect) {
 	BRect r = Bounds();
 	SetLowColor( ui_color( B_UI_PANEL_BACKGROUND_COLOR));
 	FillRect( BRect(1.0,1.0,r.right-1,r.bottom-1), B_SOLID_LOW);
+
 	SetHighColor( ui_color( B_UI_SHINE_COLOR));
 	StrokeLine( BPoint(0.0,1.0), BPoint(r.right-1,1.0));
 	StrokeLine( BPoint(0.0,1.0), r.LeftBottom());
@@ -65,6 +79,7 @@ void BmCaption::Draw( BRect updateRect) {
 	StrokeLine( r.LeftTop(), r.RightTop());
 	StrokeLine( r.RightTop(), r.RightBottom());
 	StrokeLine( r.LeftBottom(), r.RightBottom());
+
 	SetHighColor( ui_color( B_UI_PANEL_TEXT_COLOR));
 	font_height fInfo;
 	BFont captionFont( *be_plain_font);
@@ -72,7 +87,19 @@ void BmCaption::Draw( BRect updateRect) {
 	captionFont.GetHeight( &fInfo);
 	SetFont( &captionFont);
 	float offset = (1+r.Height()-(fInfo.ascent+fInfo.descent))/2.0;
-	float width = be_plain_font->StringWidth( Text());
+	float width;
+	BmString tmp = mText;
+	const char* text = tmp.String();
+	while(1) {
+		width = be_plain_font->StringWidth(text);
+		if (width+4.0 < r.Width())
+			break;
+		text++;
+		while((*text & 0xc0) == 0x80)
+			text++;		// skip UTF8 subsequence chars
+		if (!*text)
+			break;
+	}
 	BPoint pos( r.Width()-width-2.0, fInfo.ascent+offset);
-	DrawString( Text(), pos);
+	DrawString( text, pos);
 }

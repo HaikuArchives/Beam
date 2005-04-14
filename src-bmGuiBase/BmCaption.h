@@ -31,27 +31,33 @@
 #ifndef _BmCaption_h
 #define _BmCaption_h
 
-#include <StringView.h>
+#include <View.h>
 
 #include "BmGuiBase.h"
 
-class IMPEXPBMGUIBASE BmCaption : public BStringView
+#include "BmString.h"
+
+class IMPEXPBMGUIBASE BmCaption : public BView
 {
-	typedef BStringView inherited;
+	typedef BView inherited;
 
 public:
 	// creator-func, c'tors and d'tor:
 	BmCaption( BRect frame, const char* text);
 	~BmCaption();
 
-	// overrides of BStringView base:
-	void Draw( BRect bounds);
+	const char* Text() const				{ return mText.String(); }
+	void SetText( const char* txt);
+
+	// overrides of BView base:
+	virtual void Draw( BRect bounds);
 
 private:
 	// Hide copy-constructor and assignment:
 	BmCaption( const BmCaption&);
 	BmCaption operator=( const BmCaption&);
-
+	
+	BmString mText;
 };
 
 
