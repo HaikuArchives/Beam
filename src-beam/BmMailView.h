@@ -127,6 +127,9 @@ public:
 	BmString GetTextForTextrun( BmTextRunIter run);
 	void SendNoticesIfNeeded( bool haveMail);
 	bool IsDisplayComplete();
+	//
+	void HandleIncrementalSearchKeys(const char* bytes, int32 numBytes);
+	void IncrementalSearch(const BmString& search, bool next=false);
 
 	// overrides of BTextView base:
 	bool AcceptsDrop( const BMessage* msg);
@@ -186,6 +189,7 @@ private:
 	bool mShowingUrlCursor;
 	bool mHaveMail;
 	BmString mParsingErrors;
+	int32 mIncrSearchPos;
 	
 	// will be archived:
 	BmString mFontName;
@@ -202,6 +206,7 @@ private:
 };
 
 class BmBusyView;
+class BmCaption;
 /*------------------------------------------------------------------------------*\
 	BmMailViewContainer
 		-	
@@ -220,10 +225,12 @@ public:
 	void SetErrorText( const BmString& text);
 	void PulseBusyView();
 	void RedrawScrollbars();
+	BmCaption* Caption() 					{ return mCaption; }
 
 	// overrides of BView base:
 	void FrameResized(float new_width, float new_height);
 	void Draw( BRect bounds);
+
 
 	// additions for liblayout:
 	virtual minimax layoutprefs();
@@ -231,6 +238,7 @@ public:
 
 private:
 	BmBusyView* mBusyView;
+	BmCaption* mCaption;
 
 	// Hide copy-constructor and assignment:
 	BmMailViewContainer( const BmMailViewContainer&);

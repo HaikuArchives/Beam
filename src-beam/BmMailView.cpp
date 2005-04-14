@@ -27,6 +27,8 @@
 /*                                                                       */
 /*************************************************************************/
 
+#include <cctype>
+
 #include <Clipboard.h>
 #include <MenuItem.h>
 #include <PopUpMenu.h>
@@ -41,6 +43,7 @@ using namespace regexx;
 #include "BmBodyPartList.h"
 #include "BmBodyPartView.h"
 #include "BmBusyView.h"
+#include "BmCaption.h"
 #include "BmEncoding.h"
 	using namespace BmEncoding;
 #include "BmGuiUtil.h"
@@ -250,6 +253,7 @@ BmMailView::BmMailView( minimax minmax, BRect frame, bool outbound)
 	,	mReadRunner( NULL)
 	,	mShowingUrlCursor( false)
 	,	mHaveMail( false)
+	,	mIncrSearchPos( 0)
 	,	mDisplayInProgress( false)
 {
 	mHeaderView = new BmMailHeaderView( NULL);
@@ -488,6 +492,10 @@ void BmMailView::MessageReceived( BMessage* msg) {
 					mCurrMail->MarkAs( BM_MAIL_STATUS_READ);
 				break;
 			}
+			case BMM_FIND_NEXT: {
+				IncrementalSearch( mScrollView->Caption()->Text(), true);
+				break;
+			}
 			case B_MOUSE_WHEEL_CHANGED: {
 				if (modifiers() 
 				& (B_SHIFT_KEY | B_LEFT_CONTROL_KEY | B_RIGHT_OPTION_KEY)) {
@@ -542,12 +550,14 @@ void BmMailView::KeyDown(const char *bytes, int32 numBytes) {
 					inherited::KeyDown( bytes, numBytes);
 				break;
 			}
-			default:
-				inherited::KeyDown( bytes, numBytes);
-				break;
 		}
-	} else 
-		inherited::KeyDown( bytes, numBytes);
+	}
+	unsigned char c = bytes[0];
+	if (!IsEditable() && (c>=32 || c==B_BACKSPACE || c==B_ESCAPE)) {
+		// do incremental search:
+		HandleIncrementalSearchKeys(bytes, numBytes);
+	}
+	inherited::KeyDown( bytes, numBytes);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -804,6 +814,7 @@ void BmMailView::GetWrappedText( BmString& out, bool hardWrapIfNeeded) {
 void BmMailView::ShowMail( BmMailRef* ref, bool async) {
 	try {
 		StopJob();
+		mIncrSearchPos = 0;
 		if (!ref) {
 			if (DataModel())
 				DetachModel();
@@ -833,6 +844,7 @@ void BmMailView::ShowMail( BmMailRef* ref, bool async) {
 void BmMailView::ShowMail( BmMail* mail, bool async) {
 	try {
 		StopJob();
+		mIncrSearchPos = 0;
 		if (!mail || mail->InitCheck() != B_OK) {
 			if (DataModel())
 				DetachModel();
@@ -998,6 +1010,56 @@ void BmMailView::JobIsDone( bool completed) {
 	}
 out:
 	mDisplayInProgress = false;
+}
+
+/*------------------------------------------------------------------------------*\
+	HandleIncrementalSearchKeys( )
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailView::HandleIncrementalSearchKeys(const char* bytes, 
+															int32 numBytes)
+{
+	BmString text = mScrollView->Caption()->Text();
+	if (bytes[0] == B_ESCAPE) {
+		text.Truncate(0);
+	} else if (bytes[0] == B_BACKSPACE) {
+		if (text.Length()) {
+			int32 lastBytePos = text.Length()-1;
+			// skip utf8 subsequence chars:
+			while(lastBytePos>=0 && (text[lastBytePos] & 0xc0) == 0x80)
+				lastBytePos--;
+			// skip normal char or utf8-sequence start character
+			// (this is done by truncating to lastBytePos):
+			if (lastBytePos < 0)
+				lastBytePos = 0;
+			text.Truncate(lastBytePos);
+		}
+	} else {
+		text.Append(bytes, numBytes);
+	}
+	mScrollView->Caption()->SetText(text.String());
+	IncrementalSearch(text, false);
+}
+
+/*------------------------------------------------------------------------------*\
+	IncrementalSearch()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailView::IncrementalSearch(const BmString& search, bool next)
+{
+	if (search.Length()) {
+		BmString mailtext = Text();
+		int32 newPos = mailtext.IFindFirst(search, mIncrSearchPos + (next?1:0));
+		if (newPos < B_OK)
+			newPos = mailtext.IFindFirst(search);
+		if (newPos >= 0) {
+			mIncrSearchPos = newPos;
+			Select(mIncrSearchPos, mIncrSearchPos+search.Length());
+			ScrollToSelection();
+			return;
+		}
+	}
+	Select(0,0);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -1258,9 +1320,21 @@ BmMailViewContainer::BmMailViewContainer( minimax minmax, BmMailView* target,
 		float bvSize = hsFrame.Height();
 		hScroller->ResizeBy( -bvSize, 0.0);
 		hScroller->MoveBy( bvSize, 0.0);
+		hsFrame.left += bvSize;
 		mBusyView = new BmBusyView( BRect( hsLT.x, hsLT.y, 
-													  hsLT.x+bvSize, hsLT.y+bvSize));
+													  hsLT.x+bvSize-1, hsLT.y+bvSize));
 		AddChild( mBusyView);
+
+		hsLT = hsFrame.LeftTop();
+		// shrink horizontal scrollbar to make room for the caption:
+		float cvSize = 80.0;
+		hScroller->ResizeBy( -cvSize, 0.0);
+		hScroller->MoveBy( cvSize, 0.0);
+		hsFrame.left += cvSize;
+		mCaption = new BmCaption( 
+			BRect( hsLT.x, hsLT.y, hsLT.x+cvSize, hsLT.y+hsFrame.Height()), ""
+		);
+		AddChild( mCaption);
 	}
 }
 
@@ -1336,9 +1410,11 @@ BRect BmMailViewContainer::layout(BRect rect)
 	ResizeTo(rect.Width(),rect.Height());
 	BScrollBar* hScroller = ScrollBar( B_HORIZONTAL);
 	if (mBusyView && hScroller) {
-		BRect bvFrame = mBusyView->Frame();
 		BRect hsFrame = hScroller->Frame();
+		BRect bvFrame = mBusyView->Frame();
 		mBusyView->MoveTo( bvFrame.left, hsFrame.bottom-bvFrame.Height());
+		BRect cvFrame = mCaption->Frame();
+		mCaption->MoveTo( cvFrame.left, hsFrame.bottom-cvFrame.Height());
 	}
 	return rect;
 }
@@ -1391,4 +1467,3 @@ void BmMailViewContainer::RedrawScrollbars() {
 	if (vScroller)
 		vScroller->Invalidate();
 }
-
