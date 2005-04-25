@@ -144,12 +144,13 @@ void BmWindow::Show() {
 	}
 	if (!Looper()->IsLocked()) {
 		// showing living window, we bring it to front:
-		LockLooper();
-		if (IsMinimized())
-			Minimize( false);
-		inherited::Hide();
-		inherited::Show();
-		UnlockLooper();
+		if (LockLooper()) {
+			if (IsMinimized())
+				Minimize( false);
+			inherited::Hide();
+			inherited::Show();
+			UnlockLooper();
+		}
 	} else
 		inherited::Show();
 }

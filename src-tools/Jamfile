@@ -9,9 +9,8 @@ SubDirSysHdrs /boot/home/config/include ;
 # </pe-inc>
 
 # <pe-src>
-Application MailConverter
-	:  
-		MailConverter.cpp
+Application MailConverter : 
+	MailConverter.cpp
 	: 	
 		bmMailKit.so bmBase.so be
 	;
@@ -26,9 +25,8 @@ XRes MailConverter
 MimeSet MailConverter ;
 
 # <pe-src>
-Application SpamOMeter
-	:  
-		SpamOMeter.cpp
+Application SpamOMeter : 
+	SpamOMeter.cpp
 	: 	
 		bmMailKit.so bmRegexx.so bmBase.so be
 	;

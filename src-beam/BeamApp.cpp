@@ -584,9 +584,10 @@ int32 PrintMails( void* data) {
 		BRect printableRect = beamApp->mPrintJob.PrintableRect();
 		// ...and adjust mailview accordingly (to use the available space
 		// effectively):
-		mailView->LockLooper();
-		mailWin->ResizeTo( printableRect.Width()+8, 600);
-		mailView->UnlockLooper();
+		if (mailView->LockLooper()) {
+			mailWin->ResizeTo( printableRect.Width()+8, 600);
+			mailView->UnlockLooper();
+		}
 		mailView->BodyPartView()->IsUsedForPrinting( true);
 		// now we start printing...
 		beamApp->mPrintJob.BeginJob();
@@ -595,11 +596,12 @@ int32 PrintMails( void* data) {
 				!beamApp->IsQuitting() && mailIdx < refVect->size() && page<=lastPage;
 				++mailIdx) {
 			mailRef = (*refVect)[mailIdx].Get();
-			mailView->LockLooper();
-			mailView->BodyPartView()->SetViewColor( 
-				ui_color( B_UI_DOCUMENT_BACKGROUND_COLOR)
-			);
-			mailView->UnlockLooper();
+			if (mailView->LockLooper()) {
+				mailView->BodyPartView()->SetViewColor( 
+					ui_color( B_UI_DOCUMENT_BACKGROUND_COLOR)
+				);
+				mailView->UnlockLooper();
+			}
 			mailView->ShowMail( mailRef, false);
 			while( !mailView->IsDisplayComplete())
 				snooze( 50*1000);
@@ -619,12 +621,13 @@ int32 PrintMails( void* data) {
 				}
 				currFrame.top = currFrame.bottom+1;
 				currFrame.bottom = currFrame.top + height-1;
-				mailView->LockLooper();
-				topOfLine 
-					= mailView->PointAt( mailView->OffsetAt( BPoint( 
-						5, currFrame.bottom
-					)));
-				mailView->UnlockLooper();
+				if (mailView->LockLooper()) {
+					topOfLine 
+						= mailView->PointAt( mailView->OffsetAt( BPoint( 
+							5, currFrame.bottom
+						)));
+					mailView->UnlockLooper();
+				}
 				currFrame.bottom = topOfLine.y-1;
 				page++;
 				if (currFrame.top >= totalHeight || currFrame.Height() <= 1)
@@ -879,44 +882,45 @@ void BeamApplication::RemoveDeskbarItem() {
 bool BeamApplication::QuitRequested() {
 	BM_LOG( BM_LogApp, "App: quit requested, checking state...");
 	mIsQuitting = true;
-	TheMailMonitor->LockLooper();
-
 	bool shouldQuit = true;
-	int32 count = CountWindows();
-	// first check if there are any active jobs:
-	if (TheJobStatusWin && TheJobStatusWin->HasActiveJobs()) {
-		BAlert* alert = new BAlert( "Active Jobs", 
-			"There are still some jobs/connections active!"
-				"\nDo you really want to quit now?",
-			"Yes, Quit Now", "Cancel", NULL, B_WIDTH_AS_USUAL,
-			B_WARNING_ALERT
-		);
-		alert->SetShortcut( 1, B_ESCAPE);
-		if (alert->Go() == 1)
-			shouldQuit = false;
-	}
-	if (shouldQuit) {
-		// ask all windows if they are ready to quit, in which case we actually
-		// do quit (only if *ALL* windows indicate that they are prepared to quit!):
-		for( int32 i=count-1; shouldQuit && i>=0; --i) {
-			BWindow* win = beamApp->WindowAt( i);
-			win->Lock();
-			if (win && !win->QuitRequested())
+	if (TheMailMonitor->LockLooper()) {
+
+		int32 count = CountWindows();
+		// first check if there are any active jobs:
+		if (TheJobStatusWin && TheJobStatusWin->HasActiveJobs()) {
+			BAlert* alert = new BAlert( "Active Jobs", 
+				"There are still some jobs/connections active!"
+					"\nDo you really want to quit now?",
+				"Yes, Quit Now", "Cancel", NULL, B_WIDTH_AS_USUAL,
+				B_WARNING_ALERT
+			);
+			alert->SetShortcut( 1, B_ESCAPE);
+			if (alert->Go() == 1)
 				shouldQuit = false;
-			win->Unlock();
 		}
-	}
-	
-	if (!shouldQuit) {
-		TheMailMonitor->UnlockLooper();
-		mIsQuitting = false;
-	} else {
-		TheMailMonitor->Quit();
-		for( int32 i=count-1; i>=0; --i) {
-			BWindow* win = beamApp->WindowAt( i);
-			if (win) {
-				win->LockLooper();
-				win->Quit();
+		if (shouldQuit) {
+			// ask all windows if they are ready to quit, in which case we actually
+			// do quit (only if *ALL* windows indicate that they are prepared to quit!):
+			for( int32 i=count-1; shouldQuit && i>=0; --i) {
+				BWindow* win = beamApp->WindowAt( i);
+				win->Lock();
+				if (win && !win->QuitRequested())
+					shouldQuit = false;
+				win->Unlock();
+			}
+		}
+		
+		if (!shouldQuit) {
+			TheMailMonitor->UnlockLooper();
+			mIsQuitting = false;
+		} else {
+			TheMailMonitor->Quit();
+			for( int32 i=count-1; i>=0; --i) {
+				BWindow* win = beamApp->WindowAt( i);
+				if (win) {
+					win->LockLooper();
+					win->Quit();
+				}
 			}
 		}
 	}

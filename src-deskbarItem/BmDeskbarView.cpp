@@ -215,9 +215,10 @@ void BmDeskbarView::ChangeIcon( const char* iconName) {
 	delete mCurrIcon;
 	mCurrIcon = newIcon;
 	mCurrIconName = newIcon ? iconName : "";
-	LockLooper();
-	Invalidate();
-	UnlockLooper();
+	if (LockLooper()) {
+		Invalidate();
+		UnlockLooper();
+	}
 }
 
 /*------------------------------------------------------------------------------*\

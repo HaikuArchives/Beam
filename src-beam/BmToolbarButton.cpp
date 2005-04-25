@@ -119,33 +119,34 @@ BmToolbar::~BmToolbar()
 		-	
 \*------------------------------------------------------------------------------*/
 void BmToolbar::UpdateLayout() {
-	LockLooper();
-	BView* group = ChildAt(0);
-	if (group) {
-		int32 count = group->CountChildren();
-		// Get maximum button size...
-		float width=0, height=0;
-		for( int32 c=0; c<count; ++c) {
-			BmToolbarButton* tbb 
-				= dynamic_cast<BmToolbarButton*>(group->ChildAt(c));
-			if (tbb)
-				BmToolbarButton::CalcMaxSize(width, height, tbb->Label().String(), 
-													  tbb->NeedsLatch());
+	if (LockLooper()) {
+		BView* group = ChildAt(0);
+		if (group) {
+			int32 count = group->CountChildren();
+			// Get maximum button size...
+			float width=0, height=0;
+			for( int32 c=0; c<count; ++c) {
+				BmToolbarButton* tbb 
+					= dynamic_cast<BmToolbarButton*>(group->ChildAt(c));
+				if (tbb)
+					BmToolbarButton::CalcMaxSize(width, height, tbb->Label().String(), 
+														  tbb->NeedsLatch());
+			}
+			//...and layout all buttons according to this size:
+			for( int32 c=0; c<count; ++c) {
+				BmToolbarButton* tbb 
+					= dynamic_cast<BmToolbarButton*>(group->ChildAt(c));
+				if (tbb)
+					tbb->CreateAllPictures(width, height);
+			}
+			MWindow* win = dynamic_cast<MWindow*>( Window());
+			if (win)
+				win->RecalcSize();
+			for( int32 c=0; c<count; ++c)
+				group->ChildAt(c)->Invalidate();
 		}
-		//...and layout all buttons according to this size:
-		for( int32 c=0; c<count; ++c) {
-			BmToolbarButton* tbb 
-				= dynamic_cast<BmToolbarButton*>(group->ChildAt(c));
-			if (tbb)
-				tbb->CreateAllPictures(width, height);
-		}
-		MWindow* win = dynamic_cast<MWindow*>( Window());
-		if (win)
-			win->RecalcSize();
-		for( int32 c=0; c<count; ++c)
-			group->ChildAt(c)->Invalidate();
+		UnlockLooper();
 	}
-	UnlockLooper();
 }
 
 
