@@ -163,8 +163,10 @@ void BmPrefsMailReadView::Initialize() {
 		"in the 'Small'-mode of the mailheader-view.\n"
 		"Just enter the header-fields in the order you wish them to appear\n"
 		"and separate them by a ',' (comma).\n"
-		"If put a '/' (slash) between two fieldnames, the first field will\n"
-		"be displayed, but if that is empty, the second will be used."
+		"In order to display a field only if it actually has content, put\n"
+		"a '?' behind the field name.\n"
+		"If you put a '/' (slash) between two field names, the first field will\n"
+		"be displayed, but if that is empty, the second one will be used."
 	);
 	TheBubbleHelper->SetHelp( 
 		mHeaderListLargeControl, 
@@ -172,8 +174,10 @@ void BmPrefsMailReadView::Initialize() {
 		"in the 'Large'-mode of the mailheader-view.\n"
 		"Just enter the header-fields in the order you wish them to appear\n"
 		"and separate them by a ',' (comma).\n"
-		"If put a '/' (slash) between two fieldnames, the first field will\n"
-		"be displayed, but if that is empty, the second will be used."
+		"In order to display a field only if it actually has content, put\n"
+		"a '?' behind the field name.\n"
+		"If you put a '/' (slash) between two field names, the first field will\n"
+		"be displayed, but if that is empty, the second one will be used."
 	);
 	TheBubbleHelper->SetHelp( 
 		mMarkAsReadDelayControl, 
