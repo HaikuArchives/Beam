@@ -28,7 +28,9 @@
 /*************************************************************************/
 
 
+#include <Application.h>
 #include <Clipboard.h>
+#include <MenuBar.h>
 #include <MenuItem.h>
 #include <PopUpMenu.h>
 #include <StringView.h>
@@ -41,6 +43,7 @@
 using namespace regexx;
 
 
+#include "BeamApp.h"
 #include "BmEncoding.h"
 	using namespace BmEncoding;
 #include "BmLogHandler.h"
@@ -48,44 +51,255 @@ using namespace regexx;
 #include "BmMailHeaderView.h"
 #include "BmMailView.h"
 #include "BmMsgTypes.h"
+#include "BmPeople.h"
 #include "BmPrefs.h"
 #include "BmResources.h"
 
 
-/********************************************************************************\
+static const float addrMenuWidth = 7;
+
+/*------------------------------------------------------------------------------*\
 	BmMailHeaderFieldView
-\********************************************************************************/
+		-	
+\*------------------------------------------------------------------------------*/
+class BmMailHeaderView::BmMailHeaderFieldView : public BView 
+{
+	typedef BView inherited;
+	
+	class BmAddrMenuView : public BView 
+	{
+		typedef BView inherited;
+	public:
+		BmAddrMenuView(BRect frame, const BmAddressList* addrList);
+		virtual ~BmAddrMenuView();
+		virtual void Draw(BRect updateRect);
+		virtual void MouseDown( BPoint point);
+		virtual void ShowMenu( BPoint point);
+	private:
+		const BmAddressList* mAddrList;
+		float mTriangleYPos;
+	};
+
+	class BmMsgFilter : public BMessageFilter {
+	public:
+		BmMsgFilter( BHandler* destHandler, uint32 cmd)
+			: 	BMessageFilter( B_ANY_DELIVERY, B_ANY_SOURCE, cmd) 
+			,	mDestHandler( destHandler)
+		{
+		}
+		filter_result Filter( BMessage* msg, BHandler** handler);
+	private:
+		BHandler* mDestHandler;
+	};
+
+public:
+	// c'tors and d'tor:
+	BmMailHeaderFieldView( const BmString& title, const BmAddressList* addrList,
+								  BFont* font, float fixedWidth, float titleWidth=-1);
+	BmMailHeaderFieldView( const BmString& title, const BmString& value, 
+								  BFont* font, float fixedWidth, float titleWidth=-1);
+	~BmMailHeaderFieldView();
+
+	// native methods:
+	void SetTitleWidth( float newWidth, float fixedWidth);
+	float GetTitleWidth();
+	void ShowMenu( BPoint point);
+
+	// overrides of BView base:
+	void MouseDown(BPoint point);
+
+private:
+	void SetTo( const BmString& title, const BmString& value, 
+					const BmAddressList* addrList, BFont* font, float fixedWidth, 
+					float titleWidth);
+	BStringView* mTitleView;
+	BmAddrMenuView* mAddrMenuView;
+	BTextView* mContentView;
+
+	// Hide copy-constructor and assignment:
+	BmMailHeaderFieldView( const BmMailHeaderFieldView&);
+	BmMailHeaderFieldView operator=( const BmMailHeaderFieldView&);
+};
+
+// #pragma mark - BmAddrMenuView
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+BmMailHeaderView::BmMailHeaderFieldView::BmAddrMenuView
+::BmAddrMenuView(BRect frame, const BmAddressList* addrList)
+	:	inherited(frame, "FieldTitleView", B_FOLLOW_NONE, B_WILL_DRAW)
+	,	mAddrList(addrList)
+{
+	SetViewColor( BmWeakenColor( B_UI_PANEL_BACKGROUND_COLOR, 2));
+	SetLowColor( BmWeakenColor( B_UI_PANEL_BACKGROUND_COLOR, 2));
+	SetHighColor( BmWeakenColor( B_UI_PANEL_BACKGROUND_COLOR, 4));
+}
 
 /*------------------------------------------------------------------------------*\
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmMailHeaderFieldView::BmMailHeaderFieldView( BmString fieldName, 
-															 BmString value,
-															 BFont* font, 
-															 float fixedWidth,
-															 float titleWidth)
+BmMailHeaderView::BmMailHeaderFieldView::BmAddrMenuView
+::~BmAddrMenuView()
+{
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailHeaderView::BmMailHeaderFieldView::BmAddrMenuView
+::Draw(BRect updateRect)
+{
+	inherited::Draw(updateRect);
+	if (mAddrList && mAddrList->InitOK()) {
+		BRect b = Bounds();
+		float x = 2;
+		float y = b.Height() / 2.0;
+		FillTriangle( BPoint(x-2,y-1), BPoint(x+2,y-1), BPoint(x,y+1));
+	}
+}
+
+/*------------------------------------------------------------------------------*\
+	MouseDown( point)
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailHeaderView::BmMailHeaderFieldView::BmAddrMenuView
+::MouseDown( BPoint point)
+{
+	inherited::MouseDown( point); 
+	if (mAddrList && mAddrList->InitOK())
+		ShowMenu( point);
+}
+
+/*------------------------------------------------------------------------------*\
+	( )
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailHeaderView::BmMailHeaderFieldView::BmAddrMenuView
+::ShowMenu( BPoint point)
+{
+	BPopUpMenu* menu = new BPopUpMenu("NewPeopleMenu", false, false);
+	BFont menuFont( *be_plain_font);
+	menuFont.SetSize( 10);
+	menu->SetFont( &menuFont);
+	menu->SetAsyncAutoDestruct(true);
+	
+	BMenu* editPersonMenu = new BMenu("Import & Edit Address");
+	editPersonMenu->SetFont( &menuFont);
+	menu->AddItem(editPersonMenu);
+
+	BMenu* createPersonMenu = new BMenu("Import Address");
+	createPersonMenu->SetFont( &menuFont);
+	menu->AddItem(createPersonMenu);
+
+	BMessage* allMsg = new BMessage(BMM_CREATE_PERSON_FROM_ADDR);
+	uint16 count = 0;
+	BmAddrList::const_iterator iter;
+	for( iter = mAddrList->begin(); iter != mAddrList->end(); ++iter) {
+		if (!ThePeopleList->FindPersonByEmail(iter->AddrSpec())) {
+			BMessage* msg = new BMessage(BMM_CREATE_PERSON_FROM_ADDR);
+			msg->AddString("email", iter->AddrSpec().String());
+			msg->AddString("name", iter->Phrase().String());
+			allMsg->AddString("email", iter->AddrSpec().String());
+			allMsg->AddString("name", iter->Phrase().String());
+			BMenuItem* item = new BMenuItem( iter->AddrString().String(), msg);
+			item->SetTarget( be_app);
+			createPersonMenu->AddItem( item);
+			BMessage* editMsg = new BMessage(*msg);
+			editMsg->AddBool("edit", true);
+			item = new BMenuItem( iter->AddrString().String(), editMsg);
+			item->SetTarget( be_app);
+			editPersonMenu->AddItem( item);
+			count++;
+		}
+	}
+	if (count > 1) {
+		createPersonMenu->AddSeparatorItem();
+		BMenuItem* item = new BMenuItem( "<All Addresses>", allMsg);
+		item->SetTarget( be_app);
+		createPersonMenu->AddItem( item);
+		BMessage* allEditMsg = new BMessage(*allMsg);
+		allEditMsg->AddBool("edit", true);
+		item = new BMenuItem( "<All Addresses>", allEditMsg);
+		item->SetTarget( be_app);
+		editPersonMenu->AddItem( item);
+	}
+   ConvertToScreen(&point);
+	BRect openRect;
+	openRect.top = point.y - 5;
+	openRect.bottom = point.y + 5;
+	openRect.left = point.x - 5;
+	openRect.right = point.x + 5;
+  	menu->Go( point, true, false, openRect, true);
+}
+
+
+
+// #pragma mark - BmMailHeaderFieldView
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+BmMailHeaderView::BmMailHeaderFieldView
+::BmMailHeaderFieldView( const BmString& title, const BmAddressList* addrList, 
+								 BFont* font, float fixedWidth, float titleWidth)
 	:	inherited( BRect( 0, 0, 0, 0),
 					  "MailHeaderFieldView", B_FOLLOW_NONE, B_WILL_DRAW)
+{
+	BmString value = addrList ? addrList->AddrString() : BM_DEFAULT_STRING;
+	SetTo(title, value, addrList, font, fixedWidth, titleWidth);
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+BmMailHeaderView::BmMailHeaderFieldView
+::BmMailHeaderFieldView( const BmString& title, const BmString& value, 
+								 BFont* font, float fixedWidth, float titleWidth)
+	:	inherited( BRect( 0, 0, 0, 0),
+					  "MailHeaderFieldView", B_FOLLOW_NONE, B_WILL_DRAW)
+{
+	SetTo(title, value, NULL, font, fixedWidth, titleWidth);
+}
+
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailHeaderView::BmMailHeaderFieldView
+::SetTo( const BmString& title, const BmString& value, 
+			const BmAddressList* addrList,
+			BFont* font, float fixedWidth, float titleWidth)
 {
 	SetViewColor( BmWeakenColor( B_UI_PANEL_BACKGROUND_COLOR, 2));
 	const float leftOffs = 15;
 	const float textInset = 1;
 	font->SetFace( B_BOLD_FACE);
 	if (titleWidth < 0)
-		titleWidth = font->StringWidth( fieldName.String());
+		titleWidth = font->StringWidth( title.String());
 	float fhl = ceil(TheResources->FontHeight(font));
-	BRect titleRect( leftOffs, textInset, 5+leftOffs+titleWidth, textInset+fhl+1);
-	mTitleView = new BStringView( titleRect, "titleView", fieldName.String());
+	BRect titleRect(leftOffs, textInset, 2+leftOffs+titleWidth, textInset+fhl+1);
+
+	mTitleView = new BStringView( titleRect, NULL, title.String());
 	mTitleView->SetFont( font);
-	mTitleView->SetViewColor( BmWeakenColor( B_UI_PANEL_BACKGROUND_COLOR, 2));
-	mTitleView->SetLowColor( BmWeakenColor( B_UI_PANEL_BACKGROUND_COLOR, 2));
 	mTitleView->SetAlignment( B_ALIGN_RIGHT);
 	AddChild( mTitleView);
-	BRect contentRect( titleRect.left+titleRect.Width()+5, 0, fixedWidth, 10);
+
+	BRect addrMenuRect( titleRect.left+titleRect.Width(), 0,
+							  titleRect.left+titleRect.Width()+addrMenuWidth, 10);
+	mAddrMenuView = new BmAddrMenuView( addrMenuRect, addrList);
+	AddChild( mAddrMenuView);
+
+	BRect contentRect( titleRect.left+titleRect.Width()+addrMenuWidth, 0,
+							 fixedWidth, 10);
 	BRect textRect = contentRect.InsetByCopy( textInset, textInset);
-	textRect.OffsetTo( 4+textInset, textInset);
+	textRect.OffsetTo( 1+textInset, textInset);
 	font->SetFace( B_REGULAR_FACE);
+	SetFont(font);
 	rgb_color col = ui_color( B_UI_PANEL_TEXT_COLOR);
 	mContentView = new BTextView( contentRect, "contentView", textRect,
 											font, &col, B_FOLLOW_NONE, B_WILL_DRAW);
@@ -98,6 +312,7 @@ BmMailHeaderFieldView::BmMailHeaderFieldView( BmString fieldName,
 	float neededHeight 
 		= mContentView->TextHeight( 0, value.Length())+2*textInset;
 	ResizeTo( fixedWidth, neededHeight);
+	mAddrMenuView->ResizeTo( addrMenuWidth, mContentView->LineHeight());
 	mContentView->ResizeTo( fixedWidth-contentRect.left, neededHeight);
 	mTitleView->AddFilter( new BmMsgFilter( this, B_MOUSE_DOWN));
 	mContentView->AddFilter( new BmMsgFilter( this, B_MOUSE_DOWN));
@@ -108,17 +323,18 @@ BmMailHeaderFieldView::BmMailHeaderFieldView( BmString fieldName,
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmMailHeaderFieldView::~BmMailHeaderFieldView() {
-	delete mContentView;
-	delete mTitleView;
+BmMailHeaderView::BmMailHeaderFieldView
+::~BmMailHeaderFieldView()
+{
 }
 
 /*------------------------------------------------------------------------------*\
 	Filter()
 		-	
 \*------------------------------------------------------------------------------*/
-filter_result BmMailHeaderFieldView::BmMsgFilter::Filter( BMessage* msg, 
-																			 BHandler** handler) {
+filter_result BmMailHeaderView::BmMailHeaderFieldView::BmMsgFilter
+::Filter( BMessage* msg, BHandler** handler) 
+{
 	if (msg->what == B_MOUSE_DOWN) {
 		int32 buttons;
 		int32 clicks;
@@ -158,7 +374,8 @@ filter_result BmMailHeaderFieldView::BmMsgFilter::Filter( BMessage* msg,
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-float BmMailHeaderFieldView::GetTitleWidth() {
+float BmMailHeaderView::BmMailHeaderFieldView::GetTitleWidth() 
+{
 	return mContentView->Frame().left;
 }
 
@@ -166,14 +383,16 @@ float BmMailHeaderFieldView::GetTitleWidth() {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmMailHeaderFieldView::SetTitleWidth( float newTitleWidth, 
-														 float fixedWidth) {
+void BmMailHeaderView::BmMailHeaderFieldView
+::SetTitleWidth( float newTitleWidth, float fixedWidth) 
+{
 	BRect titleRect = mTitleView->Frame();
 	mTitleView->MoveTo( newTitleWidth-5-titleRect.Width(), titleRect.top);
-	mContentView->MoveTo( newTitleWidth, 0);
-	mContentView->ResizeTo( fixedWidth-newTitleWidth, 
+	mAddrMenuView->MoveTo( newTitleWidth, 0);
+	mContentView->MoveTo( newTitleWidth+addrMenuWidth, 0);
+	mContentView->ResizeTo( fixedWidth-newTitleWidth-addrMenuWidth, 
 									mContentView->Frame().Height());
-	BRect textRect( 4, 1, fixedWidth-newTitleWidth-5, 
+	BRect textRect( 2, 1, fixedWidth-newTitleWidth-addrMenuWidth-2, 
 						 mContentView->Frame().Height()-1);
 	mContentView->SetTextRect( textRect);
 }
@@ -182,7 +401,8 @@ void BmMailHeaderFieldView::SetTitleWidth( float newTitleWidth,
 	MouseDown( point)
 		-	
 \*------------------------------------------------------------------------------*/
-void BmMailHeaderFieldView::MouseDown( BPoint point) {
+void BmMailHeaderView::BmMailHeaderFieldView::MouseDown( BPoint point) 
+{
 	inherited::MouseDown( point); 
 	if (Parent())
 		if (Parent()->Parent())
@@ -199,7 +419,8 @@ void BmMailHeaderFieldView::MouseDown( BPoint point) {
 	( )
 		-	
 \*------------------------------------------------------------------------------*/
-void BmMailHeaderFieldView::ShowMenu( BPoint point) {
+void BmMailHeaderView::BmMailHeaderFieldView::ShowMenu( BPoint point) 
+{
 	BPopUpMenu* theMenu = new BPopUpMenu( "HeaderViewMenu", false, false);
 	BFont font( *be_plain_font);
 	font.SetSize( 10);
@@ -219,13 +440,13 @@ void BmMailHeaderFieldView::ShowMenu( BPoint point) {
 	);
 	item->SetTarget( headerView);
 	item->SetMarked( 
-		headerView->mDisplayMode == BmMailHeaderView::SMALL_HEADERS
+		headerView->DisplayMode() == BmMailHeaderView::SMALL_HEADERS
 	);
 	theMenu->AddItem( item);
 	item = new BMenuItem( "Large Header", new BMessage( BM_HEADERVIEW_LARGE));
 	item->SetTarget( headerView);
 	item->SetMarked( 
-		headerView->mDisplayMode == BmMailHeaderView::LARGE_HEADERS
+		headerView->DisplayMode() == BmMailHeaderView::LARGE_HEADERS
 	);
 	theMenu->AddItem( item);
 	item = new BMenuItem( 
@@ -233,14 +454,14 @@ void BmMailHeaderFieldView::ShowMenu( BPoint point) {
 	);
 	item->SetTarget( headerView);
 	item->SetMarked( 
-		headerView->mDisplayMode == BmMailHeaderView::FULL_HEADERS
+		headerView->DisplayMode() == BmMailHeaderView::FULL_HEADERS
 	);
 	theMenu->AddItem( item);
 	theMenu->AddSeparatorItem();
 	item = new BMenuItem( "Show info from Resent-fields if present", 
 								 new BMessage( BM_HEADERVIEW_SWITCH_RESENT));
 	item->SetTarget( headerView);
-	item->SetMarked( headerView->mShowRedirectFields);
+	item->SetMarked( headerView->ShowRedirectFields());
 	theMenu->AddItem( item);
 	theMenu->AddSeparatorItem();
 	item = new BMenuItem( "Copy Header to Clipboard", 
@@ -248,7 +469,8 @@ void BmMailHeaderFieldView::ShowMenu( BPoint point) {
 	item->SetTarget( headerView);
 	theMenu->AddItem( item);
 	theMenu->AddSeparatorItem();
-	TheResources->AddFontSubmenuTo( theMenu, headerView, &headerView->mFont);
+	GetFont(&font);
+	TheResources->AddFontSubmenuTo( theMenu, headerView, &font);
 
    ConvertToScreen(&point);
 	BRect openRect;
@@ -262,9 +484,7 @@ void BmMailHeaderFieldView::ShowMenu( BPoint point) {
 
 
 
-/********************************************************************************\
-	BmMailHeaderView
-\********************************************************************************/
+// #pragma mark - BmMailHeaderView
 
 const char* const BmMailHeaderView::MSG_VERSION = 		"bm:version";
 const char* const BmMailHeaderView::MSG_MODE = 			"bm:mode";
@@ -411,6 +631,9 @@ float BmMailHeaderView::AddFieldViews() {
 			int32 pos = field.FindFirst("/");
 			if (pos != B_ERROR)
 				field.Truncate( pos);
+			pos = field.FindFirst("?");
+			if (pos != B_ERROR)
+				field.Truncate( pos);
 			titles.push_back( field<<":");
 		}
 	}
@@ -426,50 +649,72 @@ float BmMailHeaderView::AddFieldViews() {
 		mFont.SetFace( B_REGULAR_FACE);
 		// small or large mode, display fields as defined by prefs:
 		for( uint32 l=0; l<fields.size(); ++l) {
-			BmString fieldVal;
-			int count = rx.exec( fields[l], "[\\w\\-]+", Regexx::global);
-			for( int i=0; i<count && !fieldVal.Length(); ++i) {
+			vector<BmString> fieldVals;
+			int count = rx.exec( fields[l], "[\\w\\-]+\\??", Regexx::global);
+			const BmAddressList* addrList = NULL;
+			bool skipEmpty = false;
+			for( int i=0; i<count && fieldVals.empty(); ++i) {
 				BmString fieldName = rx.match[i];
-				if (mMailHeader->IsRedirect()) {
-					if (mShowRedirectFields && fieldName == BM_FIELD_FROM)
-						fieldVal = mMailHeader->GetFieldVal( BM_FIELD_RESENT_FROM);
-					else if (mShowRedirectFields && fieldName == BM_FIELD_TO)
-						fieldVal = mMailHeader->GetFieldVal( BM_FIELD_RESENT_TO);
-					else if (mShowRedirectFields && fieldName == BM_FIELD_SENDER)
-						fieldVal = mMailHeader->GetFieldVal( BM_FIELD_RESENT_SENDER);
-					else if (mShowRedirectFields && fieldName == BM_FIELD_CC)
-						fieldVal = mMailHeader->GetFieldVal( BM_FIELD_RESENT_CC);
-					else if (mShowRedirectFields && fieldName == BM_FIELD_BCC)
-						fieldVal = mMailHeader->GetFieldVal( BM_FIELD_RESENT_BCC);
-					else if (mShowRedirectFields && fieldName == BM_FIELD_DATE)
-						fieldVal = mMailHeader->GetFieldVal( BM_FIELD_RESENT_DATE);
-					else if (mShowRedirectFields && fieldName == BM_FIELD_MESSAGE_ID)
-						fieldVal 
-							= mMailHeader->GetFieldVal( BM_FIELD_RESENT_MESSAGE_ID);
-					else
-						fieldVal = mMailHeader->GetFieldVal( fieldName);
-				} else 
-					fieldVal = mMailHeader->GetFieldVal( fieldName);
-				if (fieldName == BM_FIELD_DATE) {
-					BmString timeMode 
-						= ThePrefs->GetString( "TimeModeInHeaderView", "native");
-					if (timeMode.ICompare( "native") != 0) {
-						time_t lt = 0;
-						ParseDateTime( fieldVal, lt);
-						if (timeMode.ICompare( "swatch") == 0)
-							fieldVal = TimeToSwatchString( lt);
-						else if (timeMode.ICompare( "local") == 0)
-							fieldVal = TimeToString( lt, "%Y-%m-%d %H:%M:%S %Z");
+				if (fieldName[fieldName.Length()-1] == '?') {
+					skipEmpty = true;
+					fieldName.Truncate(fieldName.Length()-1);
+				}
+				BmString fieldVal;
+				uint32 valCount = mMailHeader->CountFieldVals(fieldName);
+				for( uint32 v=0; v<valCount; ++v) {
+					BmString fn = fieldName;
+					if (mMailHeader->IsRedirect()) {
+						if (mShowRedirectFields && fieldName == BM_FIELD_FROM)
+							fn = BM_FIELD_RESENT_FROM;
+						else if (mShowRedirectFields && fieldName == BM_FIELD_TO)
+							fn = BM_FIELD_RESENT_TO;
+						else if (mShowRedirectFields && fieldName == BM_FIELD_SENDER)
+							fn = BM_FIELD_RESENT_SENDER;
+						else if (mShowRedirectFields && fieldName == BM_FIELD_CC)
+							fn = BM_FIELD_RESENT_CC;
+						else if (mShowRedirectFields && fieldName == BM_FIELD_BCC)
+							fn = BM_FIELD_RESENT_BCC;
+						else if (mShowRedirectFields && fieldName == BM_FIELD_DATE)
+							fn = BM_FIELD_RESENT_DATE;
+						else if (mShowRedirectFields && fieldName == BM_FIELD_MESSAGE_ID)
+							fn = BM_FIELD_RESENT_MESSAGE_ID;
+					}
+					fieldVal = mMailHeader->GetFieldVal( fn, v);
+					if (fieldName == BM_FIELD_DATE) {
+						BmString timeMode 
+							= ThePrefs->GetString( "TimeModeInHeaderView", "native");
+						if (timeMode.ICompare( "native") != 0) {
+							time_t lt = 0;
+							ParseDateTime( fieldVal, lt);
+							if (timeMode.ICompare( "swatch") == 0)
+								fieldVal = TimeToSwatchString( lt);
+							else if (timeMode.ICompare( "local") == 0)
+								fieldVal = TimeToString( lt, "%Y-%m-%d %H:%M:%S %Z");
+						}
+					}
+					if (fieldVal.Length()) {
+						fieldVals.push_back(fieldVal);
+						if (mMailHeader->IsAddressField(fn))
+							addrList = &mMailHeader->GetAddressList(fn);
 					}
 				}
 			}
-			BmMailHeaderFieldView* fv 
-				= new BmMailHeaderFieldView( titles[l], fieldVal, &mFont, 
-													  FixedWidth(), maxTitleWidth);
-			mFieldViews.push_back( fv);
-			fv->MoveTo( 0, yPos);
-			AddChild( fv);
-			yPos += fv->Frame().Height();
+			if (fieldVals.empty() && !skipEmpty)
+				fieldVals.push_back(BM_DEFAULT_STRING);
+			BmMailHeaderFieldView* fv;
+			for( uint32 v=0; v<fieldVals.size(); ++v) {
+				if (addrList) {
+					fv = new BmMailHeaderFieldView( titles[l], addrList, &mFont, 
+															  FixedWidth(), maxTitleWidth);
+				} else {
+					fv = new BmMailHeaderFieldView( titles[l], fieldVals[v], &mFont, 
+															  FixedWidth(), maxTitleWidth);
+				}
+				mFieldViews.push_back( fv);
+				fv->MoveTo( 0, yPos);
+				AddChild( fv);
+				yPos += fv->Frame().Height();
+			}
 		}
 	} else {
 		// full mode, display complete header:
@@ -547,23 +792,23 @@ void BmMailHeaderView::MessageReceived( BMessage* msg) {
 		switch( msg->what) {
 			case BMM_SWITCH_HEADER: {
 				mDisplayMode++;
-				if (mDisplayMode>2)
-					mDisplayMode=0;
+				if (mDisplayMode > FULL_HEADERS)
+					mDisplayMode = SMALL_HEADERS;
 				ShowHeader( mMailHeader.Get());
 				break;
 			}
 			case BM_HEADERVIEW_SMALL: {
-				mDisplayMode = 0;
+				mDisplayMode = SMALL_HEADERS;
 				ShowHeader( mMailHeader.Get());
 				break;
 			}
 			case BM_HEADERVIEW_LARGE: {
-				mDisplayMode = 1;
+				mDisplayMode = LARGE_HEADERS;
 				ShowHeader( mMailHeader.Get());
 				break;
 			}
 			case BM_HEADERVIEW_FULL: {
-				mDisplayMode = 2;
+				mDisplayMode = FULL_HEADERS;
 				ShowHeader( mMailHeader.Get());
 				break;
 			}

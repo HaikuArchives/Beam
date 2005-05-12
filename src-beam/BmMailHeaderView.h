@@ -50,63 +50,13 @@ enum {
 	BM_HEADERVIEW_COPY_HEADER	= 'bmfe'
 };
 
-class BStringView;
-class BTextView;
-/*------------------------------------------------------------------------------*\
-	BmMailHeaderFieldView
-		-	
-\*------------------------------------------------------------------------------*/
-class BmMailHeaderFieldView : public BView {
-	typedef BView inherited;
-	
-	class BmMsgFilter : public BMessageFilter {
-	public:
-		BmMsgFilter( BHandler* destHandler, uint32 cmd)
-			: 	BMessageFilter( B_ANY_DELIVERY, B_ANY_SOURCE, cmd) 
-			,	mDestHandler( destHandler)
-		{
-		}
-		filter_result Filter( BMessage* msg, BHandler** handler);
-	private:
-		BHandler* mDestHandler;
-	};
-
-public:
-	// c'tors and d'tor:
-	BmMailHeaderFieldView( BmString fieldName, BmString value, BFont* font, 
-								  float fixedWidth, float titleWidth=-1);
-	~BmMailHeaderFieldView();
-
-	// native methods:
-	void SetTitleWidth( float newWidth, float fixedWidth);
-	float GetTitleWidth();
-	void ShowMenu( BPoint point);
-
-	// overrides of BView base:
-	void MouseDown(BPoint point);
-
-private:
-	BStringView* mTitleView;
-	BTextView* mContentView;
-
-	// Hide copy-constructor and assignment:
-	BmMailHeaderFieldView( const BmMailHeaderFieldView&);
-	BmMailHeaderFieldView operator=( const BmMailHeaderFieldView&);
-};
-
-
-
 /*------------------------------------------------------------------------------*\
 	BmMailHeaderView
 		-	
 \*------------------------------------------------------------------------------*/
 class BmMailHeaderView : public BView {
 	typedef BView inherited;
-	friend BmMailHeaderFieldView;
-
-	static const int SMALL_HEADERS = 0;
-	static const int LARGE_HEADERS = 1;
-	static const int FULL_HEADERS = 2;
+	class BmMailHeaderFieldView;
 
 	// archival-fieldnames:
 	static const char* const MSG_VERSION;
@@ -116,6 +66,12 @@ class BmMailHeaderView : public BView {
 	static const char* const MSG_FONTSIZE;
 
 public:
+	enum {
+		SMALL_HEADERS = 0,
+		LARGE_HEADERS,
+		FULL_HEADERS
+	};
+
 	// c'tors and d'tor:
 	BmMailHeaderView( BmMailHeader* header);
 	~BmMailHeaderView();
@@ -126,7 +82,9 @@ public:
 	status_t Unarchive( BMessage* archive, bool deep=true);
 	float AddFieldViews();
 	void RemoveFieldViews();
-	inline float FixedWidth() 				{ return 5000; }
+	float FixedWidth() const				{ return 5000; }
+	int16 DisplayMode() const				{ return mDisplayMode; }
+	bool ShowRedirectFields() const		{ return mShowRedirectFields; }
 
 	// overrides of BView base:
 	void Draw( BRect bounds);
