@@ -48,7 +48,8 @@ extern const char* BM_TEST_APP_SIG;
 
 enum {
 	BMM_SET_BUSY					= 'bMxa',
-	BMM_UNSET_BUSY					= 'bMxb'
+	BMM_UNSET_BUSY					= 'bMxb',
+	BMM_CREATE_PERSON_FROM_ADDR	= 'bMxc'
 };
 
 class BeamApplication : public BmApplication
