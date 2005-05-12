@@ -513,18 +513,38 @@ void BmMailHeader::BmHeaderList::GetAllValues( BmMsgContext& msgContext) const {
 }
 
 /*------------------------------------------------------------------------------*\
+	CountValuesFor( fieldName)
+		-	returns the value-count found for given fieldName
+\*------------------------------------------------------------------------------*/
+uint32 BmMailHeader::BmHeaderList::CountValuesFor(const BmString& fieldName) const
+{
+	BmHeaderMap::const_iterator iter = mHeaders.find(fieldName);
+	return (iter == mHeaders.end()) ? 0 : iter->second.size();
+}
+
+/*------------------------------------------------------------------------------*\
+	ValueAt( fieldName, idx)
+		-	returns the value no. idx for given fieldName
+\*------------------------------------------------------------------------------*/
+const BmString& BmMailHeader::BmHeaderList
+::ValueAt(const BmString& fieldName, uint32 idx) const 
+{
+	BmHeaderMap::const_iterator iter = mHeaders.find(fieldName);
+	if (iter == mHeaders.end())
+		return BM_DEFAULT_STRING;
+	const BmValueList& valueList = iter->second;
+	if (valueList.size() <= idx)
+		return BM_DEFAULT_STRING;
+	return valueList[idx];
+}
+
+/*------------------------------------------------------------------------------*\
 	operator [] ( fieldName)
 		-	returns first value found for given fieldName
 \*------------------------------------------------------------------------------*/
 const BmString& BmMailHeader::BmHeaderList
 ::operator [] (const BmString& fieldName) const {
-	BmHeaderMap::const_iterator iter = mHeaders.find(fieldName);
-	if (iter == mHeaders.end())
-		return BM_DEFAULT_STRING;
-	const BmValueList& valueList = iter->second;
-	if (valueList.empty())
-		return BM_DEFAULT_STRING;
-	return valueList.front();
+	return ValueAt( fieldName, 0);
 }
 
 
@@ -617,12 +637,21 @@ void BmMailHeader::GetAllFieldValues( BmMsgContext& msgContext) const {
 	GetFieldVal()
 	-	
 \*------------------------------------------------------------------------------*/
-const BmString& BmMailHeader::GetFieldVal( BmString fieldName) {
+const BmString& BmMailHeader::GetFieldVal( BmString fieldName, uint32 idx) {
 	fieldName.CapitalizeEachWord();
 	if (IsAddressField( fieldName))
 		return mAddrMap[fieldName].AddrString();
 	else
-		return mHeaders[fieldName];
+		return mHeaders.ValueAt(fieldName, idx);
+}
+
+/*------------------------------------------------------------------------------*\
+	CountFieldVals()
+	-	
+\*------------------------------------------------------------------------------*/
+uint32 BmMailHeader::CountFieldVals( BmString fieldName) {
+	fieldName.CapitalizeEachWord();
+	return mHeaders.CountValuesFor(fieldName);
 }
 
 /*------------------------------------------------------------------------------*\

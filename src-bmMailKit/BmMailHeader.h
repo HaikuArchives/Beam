@@ -178,6 +178,8 @@ private:
 													{ return mHeaders.begin(); }
 		BmHeaderMap::const_iterator end() const	
 													{ return mHeaders.end(); }
+		uint32 CountValuesFor(const BmString& fieldName) const;
+		const BmString& ValueAt(const BmString& fieldName, uint32 idx) const;
 		const BmString& operator [] (const BmString& fieldName) const;
 		void GetAllValues( BmMsgContext& msgContext) const;
 
@@ -223,7 +225,8 @@ public:
 
 	// getters:
 	void GetAllFieldValues( BmMsgContext& msgContext) const;
-	const BmString& GetFieldVal( BmString fieldName);
+	const BmString& GetFieldVal( BmString fieldName, uint32 idx=0);
+	uint32 CountFieldVals( BmString fieldName);
 	inline const BmString& HeaderString() const	
 													{ return mHeaderString; }
 	inline const int32 HeaderLength() const
