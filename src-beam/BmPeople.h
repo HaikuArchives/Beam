@@ -78,7 +78,7 @@ class BmPerson : public BmListModelItem {
 public:
 	BmPerson( BmPeopleList* model, const node_ref& nref, const BmString& name,
 				 const BmString& nick, const BmString& email, const BmString& groups,
-				 bool foreign);
+				 const entry_ref& eref, bool foreign);
 	virtual ~BmPerson();
 	
 	// native methods:
@@ -92,9 +92,15 @@ public:
 												 const BmString& email);
 
 	bool AddEmail( const BmString &em);
+	bool CreateNewEmail( const BmString &em);
+	bool HasEmail( const BmString &em) const;
 
 	// getters:
-	inline const node_ref &NodeRef() const		{ return mNodeRef; }
+	inline const node_ref &NodeRef() const		
+													{ return mNodeRef; }
+	inline const entry_ref &EntryRef() const		
+													{ return mEntryRef; }
+	inline const BmString &Name() const	{ return mName; }
 
 	// setters:
 
@@ -103,7 +109,6 @@ public:
 private:
 
 	// native methods:
-
 	BmPerson();									// hide default constructor
 	// Hide copy-constructor and assignment:
 	BmPerson( const BmPerson&);
@@ -114,6 +119,7 @@ private:
 	BmStringVect mEmails;
 	BmStringVect mGroups;
 	node_ref mNodeRef;
+	entry_ref mEntryRef;
 	bool mIsForeign;							// true if person does not live under ~/People
 };
 
@@ -135,9 +141,14 @@ public:
 	void AddPeopleToMenu( BMenu* menu, const BMessage& templateMsg, 
 								 const char* addrField);
 	BmRef< BmPerson> FindPersonByNodeRef( const node_ref& nref);
+	BmRef< BmPerson> FindPersonByEmail( const BmString& email);
+	BmRef< BmPerson> FindPersonByName( const BmString& name);
 	//
 	void AddPerson( const node_ref& nref, const entry_ref& eref);
 	void RemovePerson( const node_ref& nref);
+	//
+	status_t CreateNewPerson( const BmString& name, const BmString& email, 
+									  entry_ref* eref=NULL);
 
 	// overrides of listmodel base:
 	const BmString SettingsFileName()	{ return ""; }

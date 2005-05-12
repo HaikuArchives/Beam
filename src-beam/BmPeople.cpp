@@ -34,6 +34,7 @@
 #include <FindDirectory.h>
 #include <MenuItem.h>
 #include <Messenger.h>
+#include <NodeInfo.h>
 #include <NodeMonitor.h>
 #include <Path.h>
 
@@ -80,11 +81,12 @@ void BmPersonInfo::AddEmails( const BmString& name, const BmStringVect& mails) {
 \*------------------------------------------------------------------------------*/
 BmPerson::BmPerson( BmPeopleList* model, const node_ref& nref, const BmString& name,
 						  const BmString& nick, const BmString& email, const BmString& groups,
-						  bool foreign) 
+						  const entry_ref& eref, bool foreign) 
 	:	inherited( (BmString()<<nref.node).String(), model, (BmListModelItem*)NULL)
 	,	mName( name)
 	,	mNick( nick)
 	,	mNodeRef( nref)
+	,	mEntryRef( eref)
 	,	mIsForeign( foreign)
 {
 	if (!AddEmail( email))
@@ -124,6 +126,39 @@ bool BmPerson::AddEmail( const BmString& em) {
 		mEmails.push_back( em);
 		return true;
 	}
+	return false;
+}
+
+/*------------------------------------------------------------------------------*\
+	CreateNewEmail()
+		-	
+\*------------------------------------------------------------------------------*/
+bool BmPerson::CreateNewEmail( const BmString& em) {
+	uint16 count = mEmails.size();
+	if (count >= 5)
+		// can only handle up two 5 emails (even MrPeeps doesn't do more)
+		return false;
+	if (AddEmail(em)) {
+		count++;
+		BNode node(&mEntryRef);
+		BmString attrName("META:email");
+		if (count > 1)
+			attrName << count;
+		node.WriteAttr( attrName.String(), B_STRING_TYPE, 0, 
+							 em.String(), em.Length()+1);
+		return true;
+	}
+	return false;
+}
+
+/*------------------------------------------------------------------------------*\
+	HasEmail()
+		-	
+\*------------------------------------------------------------------------------*/
+bool BmPerson::HasEmail( const BmString& em) const {
+	for( uint32 i=0; i<mEmails.size(); ++i)
+		if (mEmails[i].ICompare(em) == 0)
+			return true;
 	return false;
 }
 
@@ -377,6 +412,73 @@ BmRef< BmPerson> BmPeopleList::FindPersonByNodeRef( const node_ref& nref) {
 }
 
 /*------------------------------------------------------------------------------*\
+	FindPersonByEmail()
+		-	
+\*------------------------------------------------------------------------------*/
+BmRef< BmPerson> BmPeopleList::FindPersonByEmail( const BmString& email) {
+	if (!email.Length())
+		return NULL;
+	BmAutolockCheckGlobal lock( ModelLocker());
+	if (!lock.IsLocked())
+		BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
+	BmModelItemMap::const_iterator iter;
+	for( iter = begin(); iter != end(); ++iter) {
+		BmPerson* person = dynamic_cast< BmPerson*>( iter->second.Get());
+		if (person && person->HasEmail(email))
+			return person;
+	}
+	return NULL;
+}
+
+/*------------------------------------------------------------------------------*\
+	FindPersonByName()
+		-	
+\*------------------------------------------------------------------------------*/
+BmRef< BmPerson> BmPeopleList::FindPersonByName( const BmString& name) {
+	if (!name.Length())
+		return NULL;
+	BmAutolockCheckGlobal lock( ModelLocker());
+	if (!lock.IsLocked())
+		BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
+	BmModelItemMap::const_iterator iter;
+	for( iter = begin(); iter != end(); ++iter) {
+		BmPerson* person = dynamic_cast< BmPerson*>( iter->second.Get());
+		if (person && person->Name().ICompare(name) == 0)
+			return person;
+	}
+	return NULL;
+}
+
+/*------------------------------------------------------------------------------*\
+	CreateNewPerson( name, email)
+		-	
+\*------------------------------------------------------------------------------*/
+status_t BmPeopleList::CreateNewPerson( const BmString& name, 
+													 const BmString& email,
+													 entry_ref *eref)
+{
+	if (!email.Length())
+		return B_BAD_VALUE;
+	BmString fileName;
+	BmString peopleFolder = ThePrefs->GetString( "PeopleFolder", 
+																"/boot/home/people");
+	fileName << peopleFolder << "/" << (name.Length() ? name : email);
+	BFile peopleFile(fileName.String(), B_CREATE_FILE | B_READ_WRITE);
+	status_t res = peopleFile.InitCheck();
+	if (res == B_OK) {
+		peopleFile.WriteAttr( "META:name", B_STRING_TYPE, 0, 
+									 name.String(), name.Length()+1);
+		peopleFile.WriteAttr( "META:email", B_STRING_TYPE, 0, 
+									 email.String(), email.Length()+1);
+		BNodeInfo nodeInfo( &peopleFile);
+		nodeInfo.SetType( "application/x-person");
+		if (eref)
+			res = get_ref_for_path(fileName.String(), eref);
+	}
+	return res;
+}
+
+/*------------------------------------------------------------------------------*\
 	AddPerson( nref, eref)
 		-	
 \*------------------------------------------------------------------------------*/
@@ -407,7 +509,8 @@ void BmPeopleList::AddPerson( const node_ref& nref, const entry_ref& eref) {
 		BmReadStringAttr( &node, "META:nickname", nick);
 		BmReadStringAttr( &node, "META:email", email);
 		BmReadStringAttr( &node, "META:group", groups);
-		BmPerson* newPerson = new BmPerson( this, nref, name, nick, email, groups, foreign);
+		BmPerson* newPerson 
+			= new BmPerson( this, nref, name, nick, email, groups, eref, foreign);
 		for( int c=1; c<9; ++c) {
 			email.Truncate(0);
 			BmString emailAttr("META:email");
