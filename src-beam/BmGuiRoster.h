@@ -50,6 +50,8 @@ public:
 	bool AskUserForPwd( const BmString& text, BmString& pwd);
 	bool AskUserForPopAcc( const BmString& accName, BmString& popAccName);
 
+	bool IsEmailKnown( const BmString& email);
+
 	void RebuildCharsetMenu( BmMenuControllerBase* menu);
 	void AddCharsetMenu( BMenu* menu, BHandler* target, int32 msgType);
 	void RebuildFilterMenu( BmMenuControllerBase* menu);

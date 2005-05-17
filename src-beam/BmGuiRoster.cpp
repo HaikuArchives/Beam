@@ -44,6 +44,7 @@ using namespace regexx;
 	using namespace BmEncoding;
 #include "BmFilter.h"
 #include "BmFilterChain.h"
+#include "BmGuiRoster.h"
 #include "BmGuiUtil.h"
 #include "BmIdentity.h"
 #include "BmJobStatusWin.h"
@@ -53,9 +54,9 @@ using namespace regexx;
 #include "BmMailFolderList.h"
 #include "BmMenuControllerBase.h"
 #include "BmMsgTypes.h"
+#include "BmPeople.h"
 #include "BmPopAccount.h"
 #include "BmPrefs.h"
-#include "BmGuiRoster.h"
 #include "BmSmtpAccount.h"
 #include "BmSignature.h"
 #include "BmStorageUtil.h"
@@ -129,6 +130,15 @@ bool BmGuiRoster::AskUserForPopAcc( const BmString& accName, BmString& popAccNam
 		return popAccName.Length() > 0;
 	} else
 		return false;
+}
+
+/*------------------------------------------------------------------------------*\
+	IsEmailKnown()
+		-	
+\*------------------------------------------------------------------------------*/
+bool BmGuiRoster::IsEmailKnown( const BmString& email)
+{
+	return ThePeopleList->FindPersonByEmail( email) != NULL;
 }
 
 namespace BmPrivate {

@@ -95,6 +95,8 @@ public:
 	virtual bool AskUserForPopAcc( const BmString& accName, 
 											 BmString& popAccName) = 0;
 
+	virtual bool IsEmailKnown( const BmString& email) = 0;
+
 	virtual void RebuildCharsetMenu( BmMenuControllerBase* menu) = 0;
 	virtual void AddCharsetMenu( BMenu* menu, BHandler* target, int32 msgType) = 0;
 	virtual void RebuildFilterMenu( BmMenuControllerBase* menu) = 0;
