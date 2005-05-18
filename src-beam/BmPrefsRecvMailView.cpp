@@ -777,8 +777,8 @@ void BmPrefsRecvMailView::MessageReceived( BMessage* msg) {
 					mCurrAcc->HomeFolder( path);
 					mHomeFolderControl->MarkItem( path.String());
 				} else {
-					mCurrAcc->HomeFolder( BM_MAIL_FOLDER_IN);
-					mHomeFolderControl->MarkItem( BM_MAIL_FOLDER_IN);
+					mCurrAcc->HomeFolder( BmMailFolder::IN_FOLDER_NAME);
+					mHomeFolderControl->MarkItem( BmMailFolder::IN_FOLDER_NAME);
 				}
 				NoticeChange();
 				break;

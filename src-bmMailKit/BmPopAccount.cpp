@@ -41,7 +41,7 @@ using namespace regexx;
 #include "BmBasics.h"
 #include "BmIdentity.h"
 #include "BmLogHandler.h"
-#include "BmMail.h"
+#include "BmMailFolder.h"
 #include "BmPopAccount.h"
 #include "BmRosterBase.h"
 #include "BmUtil.h"
@@ -158,7 +158,7 @@ BmPopAccount::BmPopAccount( BMessage* archive, BmPopAccountList* model)
 	}
 	mHomeFolder = archive->FindString( MSG_HOME_FOLDER);
 	if (!mHomeFolder.Length())
-		mHomeFolder = BM_MAIL_FOLDER_IN;
+		mHomeFolder = BmMailFolder::IN_FOLDER_NAME;
 	if (version <= 6) {
 		// with version 7 we changed the UID-format, we convert old format:
 		const char* uidStr;

@@ -30,6 +30,7 @@
 
 #include <Directory.h>
 #include <NodeMonitor.h>
+#include <Path.h>
 
 #include "BmBasics.h"
 #include "BmLogHandler.h"
@@ -56,6 +57,26 @@ const char* const BmMailFolder::MSG_NAME = 			"bm:fname";
 const BmUpdFlags BmMailFolder::UPD_NEW_COUNT 		= 	1<<2;
 const BmUpdFlags BmMailFolder::UPD_TOTAL_COUNT 		= 	1<<3;
 const BmUpdFlags BmMailFolder::UPD_HAVE_NEW_STATUS	= 	1<<4;
+
+const char* BmMailFolder::DRAFT_FOLDER_NAME		= "draft";
+const char* BmMailFolder::IN_FOLDER_NAME			= "in";
+const char* BmMailFolder::OUT_FOLDER_NAME			= "out";
+const char* BmMailFolder::QUARANTINE_FOLDER_NAME= "quarantine";
+const char* BmMailFolder::SPAM_FOLDER_NAME		= "spam";
+
+/*------------------------------------------------------------------------------*\
+	IsSystemFolder( path)
+\*------------------------------------------------------------------------------*/
+bool BmMailFolder::IsSystemFolder( const BPath& path)
+{
+	BmString mbox( ThePrefs->GetString("MailboxPath") + "/");
+	BmString pathStr( path.Path());
+	return (pathStr ==  mbox + DRAFT_FOLDER_NAME
+	|| pathStr == mbox + OUT_FOLDER_NAME
+	|| pathStr == mbox + SPAM_FOLDER_NAME
+	|| pathStr == mbox + QUARANTINE_FOLDER_NAME
+	|| pathStr == mbox + DRAFT_FOLDER_NAME);
+}
 
 /*------------------------------------------------------------------------------*\
 	BmMailFolder( eref, parent, modified)

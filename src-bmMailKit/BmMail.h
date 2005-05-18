@@ -124,11 +124,6 @@ extern IMPEXPBMMAILKIT const char* BM_MAIL_STATUS_REDIRECTED;
 extern IMPEXPBMMAILKIT const char* BM_MAIL_STATUS_REPLIED;
 extern IMPEXPBMMAILKIT const char* BM_MAIL_STATUS_SENT;
 
-extern IMPEXPBMMAILKIT const char* BM_MAIL_FOLDER_DRAFT;
-extern IMPEXPBMMAILKIT const char* BM_MAIL_FOLDER_IN;
-extern IMPEXPBMMAILKIT const char* BM_MAIL_FOLDER_OUT;
-extern IMPEXPBMMAILKIT const char* BM_MAIL_FOLDER_SPAM;
-
 extern IMPEXPBMMAILKIT const char* BM_MAIL_CLASS_SPAM;
 extern IMPEXPBMMAILKIT const char* BM_MAIL_CLASS_TOFU;
 
@@ -184,6 +179,7 @@ public:
 	const BmString Status() const;
 	//
 	void RatioSpam( float rs);
+	float RatioSpam() const;
 	void MarkAsSpam();
 	void MarkAsTofu();
 	bool IsMarkedAsSpam() const;

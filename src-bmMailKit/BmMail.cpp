@@ -32,7 +32,6 @@
 
 #include <Directory.h>
 #include <FindDirectory.h>
-#include <NodeInfo.h>
 
 #include "split.hh"
 using namespace regexx;
@@ -46,6 +45,7 @@ using namespace regexx;
 #include "BmLogHandler.h"
 #include "BmMail.h"
 #include "BmMailFilter.h"
+#include "BmMailFolder.h"
 #include "BmMailHeader.h"
 #include "BmMailRef.h"
 #include "BmPrefs.h"
@@ -131,11 +131,6 @@ const char* BM_MAIL_STATUS_REDIRECTED	= "Redirected";
 const char* BM_MAIL_STATUS_REPLIED		= "Replied";
 const char* BM_MAIL_STATUS_SENT			= "Sent";
 
-const char* BM_MAIL_FOLDER_DRAFT			= "draft";
-const char* BM_MAIL_FOLDER_IN				= "in";
-const char* BM_MAIL_FOLDER_OUT			= "out";
-const char* BM_MAIL_FOLDER_SPAM			= "spam";
-
 const char* BM_MAIL_CLASS_SPAM			= "Spam";
 const char* BM_MAIL_CLASS_TOFU			= "Genuine";
 /********************************************************************************\
@@ -182,6 +177,7 @@ BmMail::BmMail( bool outbound)
 	,	mOutbound( outbound)
 	,	mRightMargin( ThePrefs->GetInt( "MaxLineLen"))
 	,	mMoveToTrash( false)
+	,	mRatioSpam( 0)
 {
 	BmString emptyMsg = BmString(BM_FIELD_MIME)+": 1.0\r\n";
 	emptyMsg << "Content-Type: text/plain; charset=\"" 
@@ -216,6 +212,7 @@ BmMail::BmMail( BmString &msgText, const BmString account)
 	,	mOutbound( false)
 	,	mRightMargin( ThePrefs->GetInt( "MaxLineLen"))
 	,	mMoveToTrash( false)
+	,	mRatioSpam( 0)
 {
 	SetTo( msgText, account);
 
@@ -250,6 +247,7 @@ BmMail::BmMail( BmMailRef* ref)
 	,	mOutbound( false)
 	,	mRightMargin( ThePrefs->GetInt( "MaxLineLen"))
 	,	mMoveToTrash( false)
+	,	mRatioSpam( 0)
 {
 	mOutbound = 
 		Status() == BM_MAIL_STATUS_DRAFT
@@ -629,7 +627,7 @@ void BmMail::MarkAsTofu() {
 }
 
 /*------------------------------------------------------------------------------*\
-	RatioSpam()
+	RatioSpam(rs)
 		-	
 \*------------------------------------------------------------------------------*/
 void BmMail::RatioSpam( float rs)
@@ -637,6 +635,18 @@ void BmMail::RatioSpam( float rs)
 	mRatioSpam = rs;
 	if (mMailRef)
 		mMailRef->RatioSpam(rs);
+}
+
+/*------------------------------------------------------------------------------*\
+	RatioSpam()
+		-	
+\*------------------------------------------------------------------------------*/
+float BmMail::RatioSpam() const
+{
+	if (mMailRef)
+		return mMailRef->RatioSpam();
+	else
+		return mRatioSpam;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -849,7 +859,9 @@ bool BmMail::Store( bool storeOnlyAttributesIfPossible) {
 		} else {
 			// this mail is new, so first we find it's new home (a mail-folder)...
 			BmString defaultPath( ThePrefs->GetString("MailboxPath") + "/" 
-							+ (mOutbound ? BM_MAIL_FOLDER_OUT : BM_MAIL_FOLDER_IN));
+							+ (mOutbound 
+									? BmMailFolder::OUT_FOLDER_NAME 
+									: BmMailFolder::IN_FOLDER_NAME));
 			newHomePath.SetTo( defaultPath.String());
 			// since mail is new, we initialize its creation-time...
 			whenCreated = real_time_clock_usecs();
@@ -863,14 +875,20 @@ bool BmMail::Store( bool storeOnlyAttributesIfPossible) {
 			// try to file mail into a different destination-folder:
 			folderEntry.SetTo( mDestFolderpath.Path(), true);
 			if (!folderEntry.Exists()) {
-				BmLogHandler::Log( "Filter", 
-										 BmString("Could not file message into "
-										 			 "mail-folder\n") 
-										 	<< mDestFolderpath.Path()
-											<< "\nError: " << strerror(err)
-											<< "\n\nMessage will now be filed "
-											<<	"into the folder\n" 
-											<< newHomePath.Path());
+				// folder does not exists, we check if its a system folder
+				if (BmMailFolder::IsSystemFolder(mDestFolderpath)) {
+					// yep, its a system folder, so we silently (re-)create it:
+					create_directory( mDestFolderpath.Path(), 0755);
+				} else {
+					BmLogHandler::Log( "Filter", 
+											 BmString("Could not file message into "
+											 			 "mail-folder\n") 
+											 	<< mDestFolderpath.Path()
+												<< "\nError: " << strerror(err)
+												<< "\n\nMessage will now be filed "
+												<<	"into the folder\n" 
+												<< newHomePath.Path());
+				}
 			} else
 				newHomePath = mDestFolderpath;
 		}
@@ -880,15 +898,9 @@ bool BmMail::Store( bool storeOnlyAttributesIfPossible) {
 		folderEntry.SetTo( newHomePath.Path(), true);
 		if (!folderEntry.Exists()) {
 			// folder does not exists, we check if its a system folder
-			BmString mbox( ThePrefs->GetString("MailboxPath") + "/");
-			BmString newBox( newHomePath.Path());
-			if (newBox ==  mbox + BM_MAIL_FOLDER_IN
-			|| newBox == mbox + BM_MAIL_FOLDER_OUT
-			|| newBox == mbox + BM_MAIL_FOLDER_SPAM
-			|| newBox == mbox + BM_MAIL_FOLDER_DRAFT) {
+			if (BmMailFolder::IsSystemFolder(newHomePath))
 				// yep, its a system folder, so we silently (re-)create it:
 				create_directory( newHomePath.Path(), 0755);
-			}
 		}
 		
 		// create entry for new mail-file:

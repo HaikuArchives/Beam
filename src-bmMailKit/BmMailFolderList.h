@@ -133,6 +133,9 @@ public:
 
 	// setters:
 	void MailboxPathHasChanged( bool b) { mMailboxPathHasChanged = b; }
+	
+	// getters:
+	BmMailFolder* TopFolder() const		{ return mTopFolder.Get(); }
 
 	static BmRef< BmMailFolderList> theInstance;
 	

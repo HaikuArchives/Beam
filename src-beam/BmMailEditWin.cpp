@@ -58,6 +58,7 @@
 #include "BmIdentity.h"
 #include "BmLogHandler.h"
 #include "BmMail.h"
+#include "BmMailFolder.h"
 #include "BmMailEditWin.h"
 #include "BmMailRef.h"
 #include "BmMailView.h"
@@ -1347,12 +1348,12 @@ bool BmMailEditWin::SaveMail( bool saveForSend) {
 			// set selected folder as default and then start filter-job:
 			BMenuItem* labelItem = mFileIntoControl->MenuItem();
 			BmString destFolderName 
-				= labelItem ? labelItem->Label() : BM_MAIL_FOLDER_OUT;
+				= labelItem ? labelItem->Label() : BmMailFolder::OUT_FOLDER_NAME;
 			mail->SetDestFoldername( destFolderName);
 		} else {
 			// drop draft mails into 'draft'-folder:
 			if (mail->Status() == BM_MAIL_STATUS_DRAFT)
-				mail->SetDestFoldername( BM_MAIL_FOLDER_DRAFT);
+				mail->SetDestFoldername( BmMailFolder::DRAFT_FOLDER_NAME);
 		}
 			
 		if (mail->Store(false)) {

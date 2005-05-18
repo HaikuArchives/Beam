@@ -107,7 +107,7 @@ public:
 													{ return mLastModified; }
 	BmRef<BmMailRefList> MailRefList();
 	inline const BmString& Name() const	{ return mName; }
-	inline const BmString& SelectedRefKey() const	
+	inline const BmString& SelectedRefKey() const
 													{ return mSelectedRefKey; }
 
 	// setters:
@@ -116,6 +116,8 @@ public:
 	void MailCount( int32 i);
 	inline void SelectedRefKey( const BmString& key)
 													{ mSelectedRefKey = key; }
+
+	static bool IsSystemFolder( const BPath& path);
 
 	// archival-fieldnames:
 	static const char* const MSG_ENTRYREF;
@@ -131,6 +133,12 @@ public:
 	static const BmUpdFlags UPD_NEW_COUNT;
 	static const BmUpdFlags UPD_TOTAL_COUNT;
 	static const BmUpdFlags UPD_HAVE_NEW_STATUS;
+
+	static const char* DRAFT_FOLDER_NAME;
+	static const char* IN_FOLDER_NAME;
+	static const char* OUT_FOLDER_NAME;
+	static const char* QUARANTINE_FOLDER_NAME;
+	static const char* SPAM_FOLDER_NAME;
 
 private:
 	void StartNodeMonitor();
