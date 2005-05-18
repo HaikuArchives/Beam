@@ -324,6 +324,9 @@ public:
 	static const char* const MSG_MARK_SPAM_AS_READ;
 	static const char* const MSG_SPAM_THRESHOLD;
 	static const char* const MSG_TOFU_THRESHOLD;
+	static const char* const MSG_PROTECT_KNOWN;
+	static const char* const MSG_FILE_UNSURE;
+	static const char* const MSG_UNSURE_THRESHOLD;
 	static const int16 nArchiveVersion;
 
 	bool mActionFileSpam;
@@ -332,6 +335,9 @@ public:
 	bool mActionFileLearnedTofu;
 	int8 mSpamThreshold;
 	int8 mTofuThreshold;
+	bool mProtectKnownAddrs;
+	bool mActionFileUnsure;
+	int8 mUnsureThreshold;
 
 protected:
 	BmString mName;
@@ -367,7 +373,10 @@ enum {
 	BM_PROTECTMYTOFU_CHANGED	= 'bmTf',
 	BM_RESET_STATISTICS			= 'bmTg',
 	BM_MARKSPAM_CHANGED			= 'bmTh',
-	BM_TRAIN_FILTER				= 'bmTi'
+	BM_TRAIN_FILTER				= 'bmTi',
+	BM_FILEUNSURESPAM_CHANGED	= 'bmTj',
+	BM_UNSURE_THRESHOLD_CHANGED= 'bmTk',
+	BM_PROTECTKNOWN_CHANGED		= 'bmTl'
 };
 
 
@@ -398,14 +407,20 @@ private:
 	MButton* mTrainButton;
 	MSlider* mThresholdControl;
 	MSlider* mProtectMyTofuControl;
+	MSlider* mUnsureThresholdControl;
 	BStatusBar* mSpamThresholdBar;
 	BStatusBar* mTofuThresholdBar;
 	BmCheckControl* mFileSpamControl;
 	BmCheckControl* mMarkSpamAsReadControl;
 	BmCheckControl* mFileLearnedSpamControl;
 	BmCheckControl* mFileLearnedTofuControl;
+	BmCheckControl* mFileUnsureSpamControl;
+	BmCheckControl* mProtectKnownAddrsControl;
 
 	BmSpamFilter* mCurrFilterAddon;
+	
+	static int32 StartSpamometer( void* data);
+	static bool nSpamometerRunning;
 
 	// Hide copy-constructor and assignment:
 	BmSpamFilterPrefs( const BmSpamFilterPrefs&);
