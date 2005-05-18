@@ -1246,7 +1246,19 @@ void BeamApplication::AboutRequested() {
 		"BEware, Another Mailer\n(c) Oliver Tappe, Berlin, Germany",
 		"mailto:beam@hirschkaefer.de",
 		"http://beam.sourceforge.net",
-		"\n\n\n\n\n\n\nThanks to:\n\
+		"\n\n\n\n\n\n\nBeam makes use of the following Software:\n\
+	OSBF from crm114, by Bill Yerazunis and Fidelis Assis\n\
+\n\
+	Libiconv, by Bruno Haible\n\
+\n\
+	Liblayout, by Marco Nelissen\n\
+\n\
+	PCRE, by Philip Hazel\n\
+\n\
+	Regexx, by Gustavo Niemeyer\n\
+\n\
+	SantasGiftBag, by Brain Tietz\n\
+\n\n\n\n\n\n\nThanks to:\n\
 \n\
 Heike Herfart \n\
 	for understanding the geek, \n\
