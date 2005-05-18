@@ -16,7 +16,10 @@ Software required by / used within Beam:
    - PCRE, Perl-Compatible-Regular-Expression library, by Philip Hazel.
 
    - Libiconv, a library that does conversion between different
-     characterset-encodings.
+     characterset-encodings, by Bruno Haible.
+
+	- OSBF from crm114, a bayes-like filter that's good for SPAM-filtering,
+	  by Fidelis Assis and Bill Yerazunis.
 
 If you have questions, suggestions, complaints or a nice set of icons, 
 you can reach the author at: <beam@hirschkaefer.de>.
