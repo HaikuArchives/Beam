@@ -79,6 +79,7 @@ void BmMemFilter::Reset( BmMemIBuf* input) {
 	mIsFinalized = false;
 	mHadError = false;
 	mEndReached = false;
+	mStatusText.Truncate(0);
 	if (input)
 		mInput = input;
 }
@@ -137,6 +138,17 @@ uint32 BmMemFilter::Read( char* data, uint32 reqLen) {
 	}
 	mDestCount += readLen;
 	return readLen;
+}
+
+/*------------------------------------------------------------------------------*\
+	AddStatusText()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMemFilter::AddStatusText( const BmString& text)
+{
+	if (mStatusText.Length())
+		mStatusText << "\n";
+	mStatusText << text;
 }
 
 /*------------------------------------------------------------------------------*\

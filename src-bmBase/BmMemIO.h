@@ -65,6 +65,7 @@ public:
 
 	// native methods:
 	virtual void Reset( BmMemIBuf* input=NULL);
+	void AddStatusText( const BmString& text);
 
 	// overrides of BmMemIBuf:
 	uint32 Read( char* data, uint32 reqLen);
@@ -74,6 +75,8 @@ public:
 	bool HadError() const					{ return mHadError; }
 	uint32 SrcCount() const					{ return mSrcCount; }
 	uint32 DestCount() const				{ return mDestCount; }
+	bool HaveStatusText() const			{ return mStatusText.Length() > 0; }
+	const BmString& StatusText() const	{ return mStatusText; }
 
 	static IMPEXPBMBASE const uint32 nBlockSize;
 	static IMPEXPBMBASE const char* nTagImmediatePassOn;
@@ -104,6 +107,8 @@ protected:
 	BmString mTags;
 							// tags influencing the behaviour of the filter
 							// (subclasses may add new tags for themselves)
+	BmString mStatusText;
+							// room for an overall status text
 	bool mIsFinalized;
 							// indicates that Finalize() has completed
 	bool mHadError;
