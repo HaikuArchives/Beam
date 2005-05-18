@@ -233,6 +233,11 @@ public:
 	virtual bool SanityCheck( BmString& complaint, BmString& fieldName) const
 													{ return true; }
 
+	struct Collector {
+		virtual bool operator() (const BmListModelItem* listItem) = 0;
+	};
+	bool ForEachSubItem(BmListModelItem::Collector& collector) const;
+
 	// getters:
 	BmModelItemMap::const_iterator begin() const;
 	BmModelItemMap::const_iterator end() const;
@@ -340,6 +345,8 @@ public:
 									  BList& appendedArchives);
 	virtual bool AppendArchive( BMessage* archive);
 	virtual void IntegrateAppendedArchives( BList& appendedArchives);
+
+	bool ForEachItem(BmListModelItem::Collector& collector) const;
 
 	// overrides of Archivable base:
 	status_t Archive( BMessage* archive, bool deep) const;

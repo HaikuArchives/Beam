@@ -773,6 +773,24 @@ void BmListModelItem::ItemIsValid( bool _itemIsValid) {
 	}
 }
 
+/*------------------------------------------------------------------------------*\
+		-	
+\*------------------------------------------------------------------------------*/
+bool BmListModelItem
+::ForEachSubItem(BmListModelItem::Collector& collector) const
+{
+	BmModelItemMap::const_iterator iter;
+	for( iter=begin(); iter != end(); ++iter) {
+		if (!iter->second)
+			continue;
+		if (!collector(iter->second.Get())
+		|| !iter->second->ForEachSubItem( collector))
+			return false;
+	}
+	return true;
+}
+
+
 
 
 /********************************************************************************\
@@ -1007,6 +1025,25 @@ bool BmListModel::empty() const
 	if (!lock.IsLocked())
 		BM_THROW_RUNTIME( ModelNameNC() << "empty(): Unable to get lock");
 	return mModelItemMap.empty(); 
+}
+
+/*------------------------------------------------------------------------------*\
+		-	
+\*------------------------------------------------------------------------------*/
+bool BmListModel::ForEachItem(BmListModelItem::Collector& collector) const
+{
+	BmAutolockCheckGlobal lock( mModelLocker);
+	if (!lock.IsLocked())
+		BM_THROW_RUNTIME( ModelNameNC() << "ForEachItem(): Unable to get lock");
+	BmModelItemMap::const_iterator iter;
+	for( iter=begin(); iter != end(); ++iter) {
+		if (!iter->second)
+			continue;
+		if (!collector(iter->second.Get())
+		|| !iter->second->ForEachSubItem( collector))
+			return false;
+	}
+	return true;
 }
 
 /*------------------------------------------------------------------------------*\
