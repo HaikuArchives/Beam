@@ -44,10 +44,11 @@ actions Distro
 	rm -rf $(DISTRO_DIR)/TestBeam $(DISTRO_DIR)/logs*
 	mkdir -p $(DISTRO_DIR)/Icons ;
 	cp -a $(TOP)/resources/iconset* $(DISTRO_DIR)/Icons/ ;
+	find $(DISTRO_DIR)/Icons -maxdepth 2 -name CVS -exec rm -r {} \; ;
 	cp -a $(TOP)/Changes.txt $(DISTRO_DIR)/ ;
 	cp -a $(TOP)/Readme.txt $(DISTRO_DIR)/ ;
 	cp -a $(TOP)/GnuGeneralPublicLicense.txt $(DISTRO_DIR)/ ;
-	find $(DISTRO_DIR)/Icons -maxdepth 2 -name CVS -exec rm -r {} \; ;
+	ln -sfn ../lib $(DISTRO_DIR)/tools/ ;
 	mimeset $(DISTRO_DIR) ;
 }
 
