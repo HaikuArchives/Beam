@@ -161,29 +161,38 @@ int BmMailFolderItem::CompareItems( const CLVListItem *a_Item1,
 			= TheMailFolderView->ColumnAt( KeyColumn)->SortMode();
 		int32 rev = sortmode == Ascending ? 1 : -1;
 	
-		if (folder1->Name().ICompare("in")==0 
-		|| folder1->Name().ICompare("in ",3)==0)
+		BmMailFolder* topFolder = TheMailFolderList->TopFolder();
+		bool folder1FollowsTop = (folder1->Parent().Get() == topFolder);
+		bool folder2FollowsTop = (folder2->Parent().Get() == topFolder);
+		if (folder1->Name().ICompare(BmMailFolder::IN_FOLDER_NAME)==0 
+		&& folder1FollowsTop)
 			return -1 * rev;
-		if (folder2->Name().ICompare("in")==0 
-		|| folder2->Name().ICompare("in ",3)==0)
+		if (folder2->Name().ICompare(BmMailFolder::IN_FOLDER_NAME)==0 
+		&& folder2FollowsTop)
 			return 1 * rev;
-		if (folder1->Name().ICompare("out")==0 
-		|| folder1->Name().ICompare("out ",4)==0)
+		if (folder1->Name().ICompare(BmMailFolder::OUT_FOLDER_NAME)==0 
+		&& folder1FollowsTop)
 			return -1 * rev;
-		if (folder2->Name().ICompare("out")==0 
-		|| folder2->Name().ICompare("out ",4)==0)
+		if (folder2->Name().ICompare(BmMailFolder::OUT_FOLDER_NAME)==0 
+		&& folder2FollowsTop)
 			return 1 * rev;
-		if (folder1->Name().ICompare("draft")==0 
-		|| folder1->Name().ICompare("draft ",6)==0)
+		if (folder1->Name().ICompare(BmMailFolder::DRAFT_FOLDER_NAME)==0 
+		&& folder1FollowsTop)
 			return -1 * rev;
-		if (folder2->Name().ICompare("draft")==0 
-		|| folder2->Name().ICompare("draft ",6)==0)
+		if (folder2->Name().ICompare(BmMailFolder::DRAFT_FOLDER_NAME)==0 
+		&& folder2FollowsTop)
 			return 1 * rev;
-		if (folder1->Name().ICompare("spam")==0 
-		|| folder1->Name().ICompare("spam ",5)==0)
+		if (folder1->Name().ICompare(BmMailFolder::QUARANTINE_FOLDER_NAME)==0 
+		&& folder1FollowsTop)
 			return -1 * rev;
-		if (folder2->Name().ICompare("spam")==0 
-		|| folder2->Name().ICompare("spam ",5)==0)
+		if (folder2->Name().ICompare(BmMailFolder::QUARANTINE_FOLDER_NAME)==0 
+		&& folder2FollowsTop)
+			return 1 * rev;
+		if (folder1->Name().ICompare(BmMailFolder::SPAM_FOLDER_NAME)==0 
+		&& folder1FollowsTop)
+			return -1 * rev;
+		if (folder2->Name().ICompare(BmMailFolder::SPAM_FOLDER_NAME)==0 
+		&& folder2FollowsTop)
 			return 1 * rev;
 	}
 	return CLVEasyItem::CompareItems( a_Item1, a_Item2, KeyColumn, col_flags);
