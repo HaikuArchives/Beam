@@ -1,6 +1,400 @@
 change-history of Beam:
 		$Id$
 
+< 2005-05-18: commit, moved tag 'current-devel' >
+
+BmBodyPartList, BmBodyPartView, BmEncoding, BmMailView:
+	-	use BmMemFiler::StatusText() to redirect the final remaining
+		parsing errors from the error-popup to the ParsingError-collection.
+		Now, parsing errors should never lead to the error-popup being shown.
+
+BmDataModel:
+	-	added simple visitor pattern implementation - ForEachItem().
+
+BmMail, BmMailEditWin, BmMailFolder, BmMailFolderList, BmPopAccount, 
+BmPrefsRecvMailView:
+	-	moved names of system folders from BmMail into BmMailFolder, adjusted
+		references to these folders accordingly.
+
+BmMailFolderView:
+	-	simplified special sorting of system-folders (what did the space-appended
+		names do in here?).
+
+BmMemIO:
+	-	added support for a general status-text to BmMemFilter.
+
+BmRosterBase, BmGuiRoster:
+	-	added support for finding out whether or not an address is known
+		as people file.
+
+BmSpamFilter:
+	-	added support for avoiding mails from known addresses from being
+		seen as SPAM.
+	-	added support for filing unsure SPAM into the 'quarantine'-folder.
+	-	improved behaviour of SpamOMeter sessions.
+
+SpamOMeter:
+	-	changed way how we pass-back success/error information, as exit-code
+		doesn't work for the way SpamOMeter is being called from Beam.
+
+< 2005-05-12: commit >
+
+BeamApp:
+	-	implemented support for importing mail-addresses into people files.
+
+BmMailHeader:
+	-	added methods for counting the number of instances of a specific field.
+	-	added support for accessing a fields value by index (not only first
+		value, as before).
+
+BmMailHeaderView:
+	-	implemented support for importing mail-addresses into people files.
+	-	fixed bug with multiple instances of non-address fields not being
+	 	shown in header-display.
+	-	added support for displaying header-fields only if they have content
+		(appending a ? to the field-name triggers this behaviour).
+
+BmPeople:
+	-	implemented support for importing mail-addresses into people files.
+	-	added FindPersonByName() and FindPersonByEmail()
+
+BmPrefsIdentityView:
+	-	fixed incorrect order of identity columns in listview.
+
+BmPrefsMailReadView:
+	-	updated tooltips to current state of things.
+
+< 2005-04-25: commit >
+
+BeamApp, BmDeskbarView, BmToolbarButton, BmWindow:
+	- robustified LockLooper()/UnlockLooper() blocks (we now check the return-
+	  value of LockLooper()).
+
+< 2005-04-14: commit >
+
+BmBodyPartView:
+	-	added support for specifying src- and dest-charset for text-attachments.
+		This is especially useful if you need to send non-UTF8 attachments.
+
+BmCaption:
+	-	major cleanup, why on earth was this inheriting from BStringView
+		(it didn't use any of its features)???
+	-	added proper clipping of caption text.
+
+BmMail:
+	-	fixed problem in Store() when asked to store attributes only and
+		needed to move mail into another folder, too (used to throw in that 
+		case).
+
+BmMailFilter:
+	-	execute LearnAsSpam- and LearnAsTofu-Filters before handling any
+		other requests, such that these can change every aspect of the filter
+		*before* it is being dealt with.
+		
+BmMailView:
+	-	added support for incremental searching the mailtext.
+
+BmMailViewWin, BmMainWindow:
+	-	activated Find and Find Next menus as we now have incremental search
+
+BmSpamFilter:
+	-	corrected computation of ratioSpam (got the sign wrong).
+
+< 2005-03-30: commit >
+
+BmMail:
+	-	BmMail::Store() now supports storing the attributes of a mail only.
+		This optimization boosts filtering performance quite a lot, since
+		filters never change the mail-text, they only need to rewrite the
+		attributes.
+
+BmMailEditWin, BmMailFilter, BmPopper:
+	-	adjusted to updated BmMail::Store() signature.
+
+< 2005-03-28: commit >
+
+BmGuiRoster:
+	-	minor clarification.
+
+BmListController:
+	-	in WriteStateCache() we only write the cache if the model has actually
+		completed (as writing an incomplete cache is no good). This fixes the
+		bug that caused Beam to lose state of mail-folders when the user quits
+		Beam before the mail-folders have been shown.
+
+BmMail:
+	-	added on-demand-creation of spam-folder.
+
+BmMailFolderList:
+	-	removed unneeded locking around initialization/instantiation, which
+		allows Beam to quit, even when the mail-folders aren't set up yet.
+
+BmMailRef:
+	-	we need to update the display even if we couldn't read the 
+		'RatioSpam'-attribute.
+
+BmMailRefList:
+	-	we now automatically trigger a rewrite of the cache when we had to
+		integrated appended archives during the load.
+
+BmMailRefView:
+	-	we now map 'Genuine'-classification to 'Tofu', since that's how we
+		call it in other places.
+
+BmSpamFilter, SpamOMeter:
+	-	implemented training of filter through querying for SPAM-/TOFU-mails
+		and sending these through SpamOMeter.
+
+BmSieveFilter, BmMailFilter:
+	-	added support for learning matching mails as SPAM or TOFU.
+
+MailConverter:
+	-	added usage-info.
+
+< 2005-03-19: commit >
+
+BeamApp, BmApp:
+	-	moved checking for ref-leaks to proper place (into BmApp).
+
+BmFilter:
+	-	removed GetStatistics-filter, as it isn't needed (since user has no
+		direct access to it).
+	-	added missing jobSpecs param when calling addon's Execute().
+
+BmJobStatusWin, BmMainWindow:
+	-	added support for LearnAsSpam- & LearnAsTofu-filtering.
+
+BmMail:
+	-	finished support for Classification- and RatioSpam-attribute.
+
+BmMailFilter:
+	-	added support for setting Classification- and RatioSpam-attributes.
+
+BmMailRef:
+	-	fixed some bugs in handling of RatioSpam-attribute.
+
+BmMailRefView
+	-	added support for LearnAsSpam- & LearnAsTofu-filtering.
+	-	activated new columns Classification and RatioSpam.
+
+BmMailFolderView:
+	-	integrated spam-folder into special sorting order for system folders.
+
+BmSpamFilter:
+	-	implemented prefs-GUI.
+	-	added support for getting & resetting statistics.
+	-	now returns more useful results via msgContext when learning.
+
+< 2005-03-14: commit >
+
+BeamApp:
+	-	declare ourselves as non-testing app.
+
+BmFilterAddon, BmFilter, BmMailFilter, BmSieveFilter:
+	-	refactored filter-interface such that it is a bit more versatile,
+		now BMessages are used for data-interchange and as job-specifier-
+		description.
+
+BmLogHandler:
+	-	added BmLogHandler::Shutdown(), for easier cleanup.
+
+BmMail, BmMailRef:
+	-	implemented MarkAsSpam() & MarkAsTofu(), as well as support for the
+		underlying attributes ("Classification" & "RatioSpam")
+
+BmMailRefView, BmWindow:
+	-	added support for triggering the context-menu via the B_MENU-key (a
+		modifier).
+
+BmMemIO:
+	-	added defalt constructor for BmStringIBuf
+
+BmSpamFilter:
+	-	finished implementation, cross-checked with crm114-behaviour on Linux.
+	-	added all internal filters neccessary for use in Beam (LearnAsSpam,
+		LearnAsTofu, Reset, GetStatistics).
+	-	ran many tests (with SpamOMeter) in order to determine good default
+		settings (--rts=5 --rtt=20 is very good with my own corpus as well
+		as the one from SpamAssassin).
+
+SpamOMeter: 
+	-	added
+
+< 2005-02-21: commit >
+
+many files:
+	-	refactored BmApplication and BmRoster into separate classes, such
+		that other applications (than Beam) can make use of bmMailKit more
+		easily.
+
+< 2005-02-16: commit >
+
+BmBodyPartList:
+	-	improved HasAttachmenst() such that it only indicates a mail having
+		attachments when there is a multipart-bodypart and if this one has
+		actually more than one child.
+
+BmFilterAddon:
+	-	added spamValue to msgContext.
+	-	the Execute() method of a filter-addon can now specify a certain
+		job type.
+
+BmMail, BmMailRef, BmMailRefList:
+	-	added spam-related attributes that MDR has introduced (we will use
+		them, too, in order to stay compatible).
+
+BmPopper, BmSmtp:
+	-	added transfer-speed logging for mails larger than 100KB
+
+BmRoster:
+	-	fixed non-working shortcuts in class ListMenuBuilder.
+	
+BmSieveFilter:
+	-	the Execute() method of a filter-addon can now specify a certain
+		job type.
+
+BmSpamFilter:
+	-	the Execute() method of a filter-addon can now specify a certain
+		job type.
+	-	added support for learning as spam/tofu (each of which is a 
+		specific job type).
+
+< 2005-02-02: commit, moved tag 'current-devel' >
+
+BmPopAccount, BmSmtpAccount:
+	-	fixed incorrect uppercasing of <auto> - mode.
+
+BmSmtp:
+	-	made support for AUTH ... and AUTH=... more obvious.
+
+< 2005-02-02: commit, moved tag 'current-devel' >
+
+BmPopAccount, BmPopper, BmPrefsRecvMailView, BmPrefsSendMailView,
+BmSmtp, BmSmtpAccount:
+	-	added automatic detection of best authentication mode.
+
+< 2005-02-02: commit >
+
+BmMailView:
+	-	exclude commas from URIs in the highlighting code.
+
+BmEncoding:
+	-	added support for transparent filter-tags to BmMemFilter (each specific
+		filter can add/implement tags that it requires).
+	-	base64-encoder now supports encoding to a single line (which is required
+		by the DIGEST-MD5 and CRAM-MD5 authentication algorithms).
+
+BmMemIO:
+	-	added support for transparent filter-tags to BmMemFilter (each specific
+		filter can add/implement tags that it requires).
+
+BmNetJobModel, BmPopper, BmSmtp:
+	-	added support for DIGEST-MD5 and CRAM-MD5 authentication
+
+BmPopAccount, BmSmtpAccount:
+	-	added support for DIGEST-MD5 and CRAM-MD5 authentication
+
+BmPrefsRecvMailView, BmPrefsSendMailView:
+	-	added support for DIGEST-MD5 and CRAM-MD5 authentication
+
+BmString, BmUtil:
+	-	moved BM_DEFAULT_STRING from BmUtil to BmString.
+
+md5:
+	-	added MD5Sum() and MD5_HMAC().
+
+BmSpamFilter:
+	-	adjusted to use of transparent filter-tags with BmMemFilter.
+
+< 2005-01-18: commit >
+
+BmMemIO:
+	-	removed superfluous BmMemOBuf class
+	-	added BmMemBufConsumer
+	-	minor cleanups
+
+BmNetJobModel:
+	-	removed BmMemOBuf
+
+BmSieveFilter:
+	-	fixed problem with script not being compiled after it has been changed.
+
+BmSpamFilter:
+	-	finished porting the OSBF-classifier from crm114.
+
+BmString:
+	-	added operator << double
+
+< 2005-01-14: commit >
+
+BmFilter, BmFilterAddon, BmSieveFilter, SieveTest:
+	-	added support for Initialize()-method which is called right after
+		a filter has been setup, such that all sieve-filters will compile
+		their script immediately after instantiation, not on demand.
+		This way, the idle-time after Beam-startup is used for script-
+		compilation, which feels faster (especially since the compilation
+		now doesn't hit the performance when first checking for mails).
+
+< 2005-01-14: commit >
+
+BmBodyPartList:
+	-	renamed ID() to Id(), as this collides with a #define inside of
+		a lexer in libsieve (yuck!).
+
+BmFilterAddon, BmMailFilter, BmSieveFilter, SieveTest:
+	-	reworked data-interface, instead of passing every possible argument
+		as explicit data-element, we now simply include a BmMail-pointer inside
+		a BmMsgContext. This makes each addon depend on bmMailKit.so, but that
+		doesn't hurt, as this is already part of Beam.
+
+BmRoster:
+	-	fixed bug with RebuildStatusMenu() not adding the new status to the
+		message.
+
+BmSpamFilter:
+	-	added creation/reading of data files.
+
+< 2005-01-13: commit >
+
+BmFilter, BmPrefsFilterView:
+	-	every kind of filter can now supply a default name for its filters
+		(used by spam-filter to differ from 'new filter').
+	-	minor formatting cleanups
+
+BmGuiUtil, BmRoster:
+	-	moved AddListToMenu() from BmGuiUtil to BmRoster and refactored
+		it into the class ListMenuBuilder.
+	-	added support for specifying a filter-functor that is called for
+		every list-item.
+
+BmMailRefView:
+	-	in AddMailRefMenu() make use of RebuildStatusMenu().
+
+BmResources:
+	-	improved translator-useage to such an extent that we try to
+		load the PNG-translator explicitly, in order to avoid instantiating
+		all available translators (which happens if the PNG-translator can't
+		be found). This change lifts 200KB off Beam's memory footprint!
+		
+BuildSettings:
+	-	switched from -O2 to -O3 and added -fstrict-aliasing.
+
+BmSpamFilter:
+	-	added SPAM-filter skeleton.
+
+< 2005-01-12: commit, moved tag 'current-devel' >
+
+comparator:
+	-	fixed bug in i;ascii-numeric with incorrect results when
+		comparing non-numerical values to numerical ones.
+
+script:
+	-	fixed bug with non-existant headers not having a :count of 0.
+	-	fixed :count not working at all with multiple headers.
+
+SieveTest:
+	-	completed relational tests (with numerical :count and :value).
+
 < 2005-01-12: commit, moved tag 'current-devel' >
 
 BmListController:
