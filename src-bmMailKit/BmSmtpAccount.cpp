@@ -97,7 +97,7 @@ BmSmtpAccount::BmSmtpAccount( BMessage* archive, BmSmtpAccountList* model)
 		mAccForSmtpAfterPop = FindMsgString( archive, MSG_ACC_FOR_SAP);
 	}
 	if (version <= 4) {
-		if (mAuthMethod[0] != '<')
+		if (mAuthMethod.Length() && mAuthMethod[0] != '<')
 			mAuthMethod.ToUpper( );
 	}
 	if (version <= 5) {
