@@ -279,6 +279,12 @@ void SpamOMeter( const char* pathfileName, ResInfo& ri)
 		}
 		Out("%ld...", mail->RawText().Length());
 		BmMsgContext result;
+		// Learning as Tofu/Spam actually skips the learning if a mail has
+		// already been marked as such. However, we are simulating a fresh
+		// training session here, so in order to be able to execute learnAsSpam
+		// and learnAsTofu, we force it:
+		result.data.AddBool("ForceLearning", true);
+		// now classify this message:
 		result.mail = mail.Get();
 		spamAddon->Execute( &result, &ClassifyJob);
 		bool isSpam = result.data.FindBool("IsSpam");
@@ -373,7 +379,7 @@ void SpamOMeter( const char* pathfileName, ResInfo& ri)
 int 
 main( int argc, char** argv) 
 {
-	int exitVal = 0;
+	BmString exitVal;
 	int as = 1;
 	while( as<argc && *argv[as] == '-') {
 		if (!strcmp(argv[as], "--verbose"))
@@ -432,7 +438,7 @@ main( int argc, char** argv)
 				  "\t\tshow resulting SPAM-filter statistics\n"
 				  "\t[--verbose]\n"
 				  "\t\tprint each mail and its classification-result\n");
-		exit(5);
+		exit(10);
 	}
 
 	ResetJob.AddString("jobSpecifier", "Reset");
@@ -472,7 +478,7 @@ main( int argc, char** argv)
 		spamAddon = anySpamFilter->Addon();
 		if (!spamAddon) {
 			fprintf(stderr, "could not access spam-filter-addon (not loaded)!\n");
-			exitVal = 10;
+			exitVal = "failed";
 			goto out;
 		}
 	}
@@ -492,7 +498,7 @@ main( int argc, char** argv)
 					  "There aren't enough mails for training available.\n"
 					  "At least %u SPAM- & TOFU-mails are required.\n"
 					  "No training has been done!\n", MinTrainingCount);
-			exitVal = 5;
+			exitVal = "too few";
 			goto out;
 		} else {
 			printf("%c]2;Beam SPAM-Filter Training Session   (error!)%c\n", 27, 7);
@@ -500,7 +506,7 @@ main( int argc, char** argv)
 					  "Couldn't query for training mails.\n"
 					  "Error: %s\n"
 					  "No training has been done!\n", strerror(err));
-			exitVal = 10;
+			exitVal = "failed";
 			goto out;
 		}
 	} else {
@@ -587,8 +593,12 @@ main( int argc, char** argv)
 								100.0-errorsFP, 100.0-errorsAll);
 		fprintf(stderr,"************************************************************\n");
 	}
+	exitVal = "ok";
 out:
 	TheFilterList = NULL;
 	delete app;
-	return exitVal;
+	BFile resultFile("/boot/var/tmp/bm_spamometer_results", 
+						  B_READ_WRITE | B_ERASE_FILE | B_CREATE_FILE);
+	resultFile.Write(exitVal.String(), exitVal.Length());
+	return 0;
 }
