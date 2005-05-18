@@ -300,6 +300,7 @@ void BmBodyPartView::AdjustVerticalSize() {
 	if (mailView) {
 		mailView->ScrollTo( 0, 0);
 		mailView->CalculateVerticalOffset();
+		mailView->UpdateParsingStatus();
 	}
 }
 

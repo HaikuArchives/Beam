@@ -528,9 +528,11 @@ BmMemFilterRef BmEncoding::FindDecoderFor( BmMemIBuf* input,
 	else if (encodingStyle.ICompare("binary")==0)
 		filter = new BmBinaryDecoder( input, blockSize);
 	else {
-		BM_SHOWERR( BmString("FindDecoderFor(): Unrecognized encoding-style <")
-							<< encodingStyle << "> found.\nAssuming 7bit.");
 		filter = new BmLinebreakDecoder( input, blockSize);
+		filter->AddStatusText( 
+			BmString("FindDecoderFor(): Unrecognized encoding-style <")
+				<< encodingStyle << "> found.\nAssuming 7bit."
+		);
 	}
 	return BmMemFilterRef( filter);
 }
@@ -556,9 +558,11 @@ BmMemFilterRef BmEncoding::FindEncoderFor( BmMemIBuf* input,
 	else if (encodingStyle.ICompare("binary")==0)
 		filter = new BmBinaryEncoder( input, blockSize);
 	else {
-		BM_SHOWERR( BmString("FindEncoderFor(): Unrecognized encoding-style <")
-							<< encodingStyle << "> found.\nAssuming 7bit.");
 		filter = new BmLinebreakEncoder( input, blockSize);
+		filter->AddStatusText( 
+			BmString("FindEncoderFor(): Unrecognized encoding-style <")
+				<< encodingStyle << "> found.\nAssuming 7bit."
+		);
 	}
 	return BmMemFilterRef( filter);
 }
@@ -634,8 +638,8 @@ void BmUtf8Decoder::InitConverter() {
 	BmString toSet = mDestCharset	+ flag;
 	if (!mDestCharset.Length()
 	|| (mIconvDescr = iconv_open( toSet.String(), "utf-8")) == ICONV_ERR) {
-		BM_SHOWERR( BmString("libiconv: unable to convert from utf-8 to ") 
-							<< toSet);
+		AddStatusText( BmString("libiconv: unable to convert from utf-8 to ") 
+								<< toSet);
 		mHadError = true;
 		return;
 	}
@@ -684,8 +688,8 @@ void BmUtf8Decoder::Filter( const char* srcBuf, uint32& srcLen,
 						"Result in utf8-decode: too big, need to continue");
 		else if (errno == EINVAL) {
 			if (mStoppedOnMultibyte) {
-				BM_SHOWERR( "utf8-decode: encountered incomplete multibyte "
-								"character, parts of text may be missing");
+				AddStatusText( "utf8-decode: encountered incomplete multibyte "
+									"character, parts of text may be missing");
 				mHadError = true;
 			} else {
 				mStoppedOnMultibyte = true;
@@ -868,8 +872,8 @@ void BmUtf8Encoder::Filter( const char* srcBuf, uint32& srcLen,
 					iconv( mIconvDescr, NULL, NULL, NULL, NULL);
 					mHaveResetToInitialState = true;
 				} else {
-					BM_SHOWERR( "utf8-encode: encountered incomplete multibyte "
-									"character, parts of text may be missing");
+					AddStatusText( "utf8-encode: encountered incomplete multibyte "
+										"character, parts of text may be missing");
 					mHadError = true;
 				}
 			} else {
@@ -1284,8 +1288,8 @@ void BmQpEncodedWordEncoder::InitConverter() {
 	BmString toSet = mDestCharset;
 	if (!mDestCharset.Length()
 	|| (mIconvDescr = iconv_open( toSet.String(), "utf-8")) == ICONV_ERR) {
-		BM_SHOWERR( BmString("libiconv: unable to convert from utf-8 to ") 
-							<< toSet);
+		AddStatusText( BmString("libiconv: unable to convert from utf-8 to ") 
+								<< toSet);
 		mHadError = true;
 		return;
 	}
@@ -1429,8 +1433,8 @@ void BmQpEncodedWordEncoder::Filter( const char* srcBuf, uint32& srcLen,
 							"Result in utf8-decode: too big, need to continue");
 			else if (errno == EINVAL) {
 				if (mStoppedOnMultibyte) {
-					BM_SHOWERR( "utf8-decode: encountered incomplete multibyte "
-									"character, parts of text may be missing");
+					AddStatusText( "utf8-decode: encountered incomplete multibyte "
+										"character, parts of text may be missing");
 					mHadError = true;
 				} else {
 					mStoppedOnMultibyte = true;

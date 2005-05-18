@@ -117,6 +117,7 @@ public:
 	void ShowMail( BmMailRef* ref, bool async=true);
 	void ShowMail( BmMail* mail, bool async=true);
 	void DisplayBodyPart( BmStringOBuf& displayBuf, BmBodyPart* bodyPart);
+	void UpdateParsingStatus();
 	status_t Archive( BMessage* archive, bool deep=true) const;
 	status_t Unarchive( BMessage* archive, bool deep=true);
 	bool WriteStateInfo();

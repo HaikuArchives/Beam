@@ -1136,6 +1136,33 @@ void BmMailView::DisplayBodyPart( BmStringOBuf& displayBuf,
 }
 
 /*------------------------------------------------------------------------------*\
+	UpdateParsingStatus()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailView::UpdateParsingStatus() {
+	struct ParsingStatusCollector : public BmListModelItem::Collector {
+		ParsingStatusCollector(BmMailView* mv) 
+			: mailView( mv) 					{}
+		virtual bool operator() (const BmListModelItem* listItem) 
+		{
+			const BmBodyPart* bodyPart 
+				= dynamic_cast<const BmBodyPart*>( listItem);
+			if (bodyPart && !bodyPart->IsMultiPart()) {
+				if (bodyPart->HadParsingErrors())
+					mailView->AddParsingError(bodyPart->ParsingErrors());
+			}
+			return true;
+		}
+		BmMailView* mailView;
+	};
+	ParsingStatusCollector collector(this);
+	mParsingErrors.Truncate( 0);
+	if (mCurrMail && mCurrMail->Body())
+		mCurrMail->Body()->ForEachItem( collector);
+	ContainerView()->SetErrorText(mParsingErrors);
+}
+
+/*------------------------------------------------------------------------------*\
 	TextRunInfoAt()
 		-	
 \*------------------------------------------------------------------------------*/

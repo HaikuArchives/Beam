@@ -744,6 +744,8 @@ const BmString& BmBodyPart::DecodedData() const {
 						tempIO.Write( &textConverter);
 						mHadErrorDuringConversion = textConverter.HadToDiscardChars() 
 											|| textConverter.HadError();
+						if (decoder->HaveStatusText())
+							AddParsingError(decoder->StatusText());
 						if (!mHadErrorDuringConversion || i==charsetVect.size()-1) {
 							if (i>0) {
 								AddParsingError(
@@ -768,6 +770,8 @@ const BmString& BmBodyPart::DecodedData() const {
 					tempIO.Write( decoder.get());
 					mDecodedData.Adopt( tempIO.TheString());
 					mHadErrorDuringConversion = false;
+					if (decoder->HaveStatusText())
+						AddParsingError(decoder->StatusText());
 				}
 				BM_LOG2( BM_LogMailParse, "done");
 				mHaveDecodedData = true;
