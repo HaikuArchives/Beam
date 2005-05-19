@@ -82,7 +82,8 @@ SetupMsgContext(BmString text)
 		static int count=0;
 		mailId = BmString("testmail-")<<++count;
 		delete msgContext;
-		msgContext = new BmMsgContext(mail.Get());
+		msgContext = new BmMsgContext();
+		msgContext->mail = mail.Get();
 	} catch( BM_error& e) {
 		cerr << e.what() << endl;
 		throw;
@@ -119,33 +120,39 @@ static int32
 Result()
 {
 	int32 res = RES_KEEP;
-	if (msgContext->stopProcessing) {
+	bool stopProcessing = msgContext->data.FindBool("StopProcessing");
+	if (stopProcessing) {
 		res |= RES_STOP;
-		msgContext->stopProcessing = false;
+		msgContext->data.RemoveName("StopProcessing");
 	}
-	if (msgContext->identity.Length()) {
-		targetIdentity = msgContext->identity;
+	BmString newIdentity = msgContext->data.FindString("Identity");
+	if (newIdentity.Length()) {
+		targetIdentity = newIdentity;
 		res |= RES_IDENTITY;
-		msgContext->identity = "";
+		msgContext->data.RemoveName("Identity");
 	}
-	if (msgContext->status.Length()) {
-		targetStatus = msgContext->status;
+	BmString newStatus = msgContext->data.FindString("Status");
+	if (newStatus.Length()) {
+		targetStatus = newStatus;
 		res |= RES_STATUS;
-		msgContext->status = "";
+		msgContext->data.RemoveName("Status");
 	}
-	if (msgContext->folderName.Length()) {
-		targetFolder = msgContext->folderName;
+	BmString newFolderName = msgContext->data.FindString("FolderName");
+	if (newFolderName.Length()) {
+		targetFolder = newFolderName;
 		res |= RES_FILEINTO;
-		msgContext->folderName = "";
+		msgContext->data.RemoveName("FolderName");
 	}
-	if (msgContext->rejectMsg.Length()) {
-		targetMsg = msgContext->rejectMsg;
+	BmString rejectMsg = msgContext->data.FindString("RejectMsg");
+	if (rejectMsg.Length()) {
+		targetMsg = rejectMsg;
 		res |= RES_REJECT;
-		msgContext->rejectMsg = "";
+		msgContext->data.RemoveName("RejectMsg");
 	}
-	if (msgContext->moveToTrash) {
+	bool moveToTrash = msgContext->data.FindBool("MoveToTrash");
+	if (moveToTrash) {
 		res |= RES_TRASH;
-		msgContext->moveToTrash = false;
+		msgContext->data.RemoveName("MoveToTrash");
 	}
 //	cerr << res << endl;
 	return res;

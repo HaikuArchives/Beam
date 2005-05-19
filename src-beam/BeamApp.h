@@ -44,7 +44,6 @@ class BView;
 class BmWindow;
 
 extern const char* BM_APP_SIG;
-extern const char* BM_TEST_APP_SIG;
 
 enum {
 	BMM_SET_BUSY					= 'bMxa',

@@ -270,10 +270,12 @@ int main(int argc, char **argv) {
 	argsInfo.argc = argc;
 	argsInfo.argv = argv;
 
+	const char* BM_TEST_APP_SIG = "application/x-vnd.zooey-testbeam";
+
 	// first remove any old test-settings, since we want to start afresh:
 	system( "rm -rf >/dev/null /boot/home/config/settings/Beam_Test");
 
-	testApp = new BmApplication( BM_TEST_APP_SIG);
+	testApp = new BmApplication( BM_TEST_APP_SIG, true);
 	
 	thread_id tid = spawn_thread( StartTests, "Beam_Test", 
 											B_NORMAL_PRIORITY, &argsInfo);

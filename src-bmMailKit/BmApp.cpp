@@ -170,7 +170,7 @@ BmApplication::BmApplication( const char* sig, bool testModeRequested)
 		if (BmAppVersion.IFindFirst( "devel") >= 0)
 			BeamInDevelMode = true;
 		// note if we are running in test-mode:
-		if (testModeRequested || BmString(sig).IFindFirst( "test") >= 0)
+		if (testModeRequested)
 			BeamInTestMode = true;
 		// store app-path for later use:
 		node_ref nref;
