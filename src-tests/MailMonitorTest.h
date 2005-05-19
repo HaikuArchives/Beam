@@ -50,6 +50,8 @@ class MailMonitorTest : public BTestCase
 	CPPUNIT_TEST_SUITE_END();
 public:
 	
+	MailMonitorTest();
+
 	// This function called before *each* test added in Suite()
 	void setUp();
 	

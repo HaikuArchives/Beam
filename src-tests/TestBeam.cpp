@@ -218,9 +218,6 @@ int32 StartTests( void* args) {
 			chdir( testPath.String());
 		}
 	
-		// use a different mailbox if in test-mode:
-		ThePrefs->SetString( "MailboxPath", testPath+"/mail");
-		ThePrefs->SetupMailboxVolume();
 		// now remove old test-mailbox and replace by freshly unzipped archive:
 		static char buf[1024];
 		BmString currPath = getcwd( buf, 1024);
@@ -229,6 +226,10 @@ int32 StartTests( void* args) {
 								// to make a rm -rf on a wrong path...
 		system( "rm -rf >/dev/null mail");
 		system( "unzip -o >/dev/null mail.zip");
+
+		// use a different mailbox if in test-mode:
+		ThePrefs->SetString( "MailboxPath", testPath+"/mail");
+		ThePrefs->SetupMailboxVolume();
 		
 		// allow app to start running...
 		testApp->StartupLocker()->Unlock();

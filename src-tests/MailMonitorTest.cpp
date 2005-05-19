@@ -43,6 +43,13 @@
 #include "BmMailRefList.h"
 #include "BmStorageUtil.h"
 
+MailMonitorTest::MailMonitorTest()
+{
+	BmMailMonitor::CreateInstance();
+	TheMailFolderList->NeedControllersToContinue(false);
+	TheMailFolderList->StartJobInThisThread();
+}
+
 // setUp
 void
 MailMonitorTest::setUp()
