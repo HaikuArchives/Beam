@@ -49,7 +49,11 @@ class BmToolbar :  public MBorder
 public:
 	BmToolbar(MView* kid);
 	~BmToolbar();
-	void UpdateLayout();
+	BRect layout(BRect inRect);
+	void UpdateLayout( bool recalcSizes);
+	BBitmap* BackgroundBitmap()			{ return mBackgroundBitmap; }
+private:
+	BBitmap* mBackgroundBitmap;
 };
 
 class BmToolbarManager
@@ -113,6 +117,7 @@ public:
 	bool NeedsLatch() const					{ return mNeedsLatch; }
 
 	// overrides of Button base:
+	void Draw( BRect updateRect);
 	void MouseDown( BPoint point);
 
 private:

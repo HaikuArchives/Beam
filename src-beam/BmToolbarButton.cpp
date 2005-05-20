@@ -68,7 +68,7 @@ void BmToolbarManager::UpdateAllToolbars() {
 	for( iter=mToolbarSet.begin(); iter != mToolbarSet.end(); ++iter) {
 		BmToolbar* tb = (*iter);
 		if (tb)
-			tb->UpdateLayout();
+			tb->UpdateLayout(true);
 	}
 	mToolbarLock.Unlock();
 }
@@ -101,6 +101,7 @@ void BmToolbarManager::RemoveToolbar( BmToolbar* tb)
 \*------------------------------------------------------------------------------*/
 BmToolbar::BmToolbar(MView* kid)
 	:	inherited( M_RAISED_BORDER, 1, NULL, kid)
+	,	mBackgroundBitmap( NULL)
 {
 	TheToolbarManager->AddToolbar( this);
 }
@@ -111,6 +112,7 @@ BmToolbar::BmToolbar(MView* kid)
 \*------------------------------------------------------------------------------*/
 BmToolbar::~BmToolbar()
 {
+	delete mBackgroundBitmap;
 	TheToolbarManager->RemoveToolbar( this);
 }
 
@@ -118,8 +120,52 @@ BmToolbar::~BmToolbar()
 	( )
 		-	
 \*------------------------------------------------------------------------------*/
-void BmToolbar::UpdateLayout() {
+BRect BmToolbar::layout(BRect inRect)
+{
+	BRect rect = inherited::layout(inRect);
+	UpdateLayout(false);
+	return rect;
+}
+
+/*------------------------------------------------------------------------------*\
+	( )
+		-	
+\*------------------------------------------------------------------------------*/
+void BmToolbar::UpdateLayout(bool recalcSizes) {
 	if (LockLooper()) {
+		// since we want the background tiles for the complete toolbar to appear
+		// as one piece, we can't simply use the toolbar-background as view-bitmap
+		// in all toolbar-buttons (horizontal wallpapering wouldn't work).
+		// So, we render the complete wallpaper into a special bitmap, (part of)
+		// which is/ then used by each toolbar-button when that creates it's 
+		// pictures.
+		BRect rect = Bounds();
+		BmBitmapHandle* toolbarBackground 
+			= TheResources->IconByName("Toolbar_Background");
+		if (toolbarBackground) {
+			delete mBackgroundBitmap;
+			BView* view = new BView( rect, NULL, B_FOLLOW_NONE, 0);
+			mBackgroundBitmap = new BBitmap( rect, B_RGBA32, true);
+			mBackgroundBitmap->AddChild( view);
+			mBackgroundBitmap->Lock();
+			
+			float y=0.0;
+			while(y < rect.Height()) {
+				float x=0.0;
+				while(x < rect.Width()) {
+					view->DrawBitmap(toolbarBackground->bitmap, BPoint(x,y));
+					x += toolbarBackground->bitmap->Bounds().Width();
+				}
+				y += toolbarBackground->bitmap->Bounds().Height();
+			}
+		
+			view->Sync();
+			mBackgroundBitmap->Unlock();
+			mBackgroundBitmap->RemoveChild(view);
+			delete view;
+		}
+	
+		// now step through all toolbar-buttons and let them create their pictures:
 		BView* group = ChildAt(0);
 		if (group) {
 			int32 count = group->CountChildren();
@@ -140,7 +186,7 @@ void BmToolbar::UpdateLayout() {
 					tbb->CreateAllPictures(width, height);
 			}
 			MWindow* win = dynamic_cast<MWindow*>( Window());
-			if (win)
+			if (win && recalcSizes)
 				win->RecalcSize();
 			for( int32 c=0; c<count; ++c)
 				group->ChildAt(c)->Invalidate();
@@ -157,9 +203,13 @@ void BmToolbar::UpdateLayout() {
 \*------------------------------------------------------------------------------*/
 void BmToolbarSpace::Draw( BRect updateRect) {
 	Space::Draw( updateRect);
-	BmBitmapHandle* toolbarBackground 
-		= TheResources->IconByName("Toolbar_Background");
-	DrawBitmap( toolbarBackground->bitmap, Bounds());
+	BmToolbar* toolbar = dynamic_cast<BmToolbar*>(Parent()->Parent());
+	BBitmap* toolbarBackground = NULL;
+	if (toolbar) {
+		toolbarBackground = toolbar->BackgroundBitmap();
+		if (toolbarBackground)
+			DrawBitmap( toolbarBackground, Frame(), Bounds());
+	}
 }
 
 
@@ -180,9 +230,8 @@ BmToolbarButton::BmToolbarButton( const char *label, float width, float height,
 	,	mLabel( label)
 	,	mResourceName( resourceName ? resourceName : label)
 {
+	SetFlags(Flags() & ~B_NAVIGABLE);
 	TheBubbleHelper->SetHelp( this, tipText);
-	SetViewColor( B_TRANSPARENT_COLOR);
-	CreateAllPictures( width, height);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -191,6 +240,21 @@ BmToolbarButton::BmToolbarButton( const char *label, float width, float height,
 \*------------------------------------------------------------------------------*/
 BmToolbarButton::~BmToolbarButton() {
 	TheBubbleHelper->SetHelp( this, NULL);
+}
+
+/*------------------------------------------------------------------------------*\
+	( )
+		-	
+\*------------------------------------------------------------------------------*/
+void BmToolbarButton::Draw( BRect updateRect) {
+	BView::Draw( updateRect);
+	BPicture* pic = NULL;
+	if (!IsEnabled())
+		pic = DisabledOff();
+	else
+		pic = Value() ? EnabledOn() : EnabledOff();
+	if (pic)
+		DrawPicture( pic, BPoint(0, 0));
 }
 
 /*------------------------------------------------------------------------------*\
@@ -292,9 +356,14 @@ BPicture* BmToolbarButton::CreatePicture( int32 mode, float width,
 	view->SetHighColor( ui_color( B_UI_PANEL_TEXT_COLOR));
 	view->SetViewColor( B_TRANSPARENT_COLOR);
 	view->SetLowColor( ui_color( B_UI_PANEL_BACKGROUND_COLOR));
-	BmBitmapHandle* toolbarBackground 
-		= TheResources->IconByName("Toolbar_Background");
-	view->DrawBitmap( toolbarBackground->bitmap, view->Bounds());
+
+	BmToolbar* toolbar = dynamic_cast<BmToolbar*>(Parent()->Parent());
+	BBitmap* toolbarBackground = NULL;
+	if (toolbar) {
+		toolbarBackground = toolbar->BackgroundBitmap();
+		if (toolbarBackground)
+			view->DrawBitmap( toolbarBackground, Frame(), rect);
+	}
 
 	// Draw Border
 	if (ThePrefs->GetBool( "ShowToolbarBorder", true)) {
@@ -363,11 +432,14 @@ BPicture* BmToolbarButton::CreatePicture( int32 mode, float width,
 	if (mode == STATE_DISABLED) {
 		// blend complete picture into background:
 		view->SetDrawingMode( B_OP_BLEND);
-		view->DrawBitmap( toolbarBackground->bitmap, view->Bounds());
-		view->DrawBitmap( toolbarBackground->bitmap, view->Bounds());
+		view->DrawBitmap( toolbarBackground, Frame(), view->Bounds());
+		view->DrawBitmap( toolbarBackground, Frame(), view->Bounds());
+//		view->DrawBitmap( toolbarBackground->bitmap, view->Bounds());
+//		view->DrawBitmap( toolbarBackground->bitmap, view->Bounds());
 	}
 
 	view->EndPicture();
+	view->Sync();
 	drawImage->Unlock();
 	delete drawImage;
 	return picture;
