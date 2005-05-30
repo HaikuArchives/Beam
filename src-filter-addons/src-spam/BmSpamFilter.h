@@ -329,15 +329,19 @@ public:
 	static const char* const MSG_UNSURE_THRESHOLD;
 	static const int16 nArchiveVersion;
 
-	bool mActionFileSpam;
-	bool mActionFileLearnedSpam;
-	bool mActionMarkSpamAsRead;
-	bool mActionFileLearnedTofu;
-	int8 mSpamThreshold;
-	int8 mTofuThreshold;
-	bool mProtectKnownAddrs;
-	bool mActionFileUnsure;
-	int8 mUnsureThreshold;
+	struct Data {
+		Data();
+		bool mActionFileSpam;
+		bool mActionFileLearnedSpam;
+		bool mActionMarkSpamAsRead;
+		bool mActionFileLearnedTofu;
+		int8 mSpamThreshold;
+		int8 mTofuThreshold;
+		bool mProtectKnownAddrs;
+		bool mActionFileUnsure;
+		int8 mUnsureThreshold;
+	};
+	static Data D;
 
 protected:
 	BmString mName;

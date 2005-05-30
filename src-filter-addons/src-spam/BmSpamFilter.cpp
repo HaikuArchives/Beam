@@ -1824,14 +1824,13 @@ const char* const BmSpamFilter::MSG_FILE_UNSURE		=		"bm:fu";
 const char* const BmSpamFilter::MSG_UNSURE_THRESHOLD	=	"bm:uthr";
 const int16 BmSpamFilter::nArchiveVersion = 5;
 
+BmSpamFilter::Data BmSpamFilter::D;
 /*------------------------------------------------------------------------------*\
-	BmSpamFilter( archive)
-		-	c'tor
-		-	constructs a BmSpamFilter from a BMessage
+	Data()
+		-	c'tor for static data struct
 \*------------------------------------------------------------------------------*/
-BmSpamFilter::BmSpamFilter( const BmString& name, const BMessage* archive) 
-	:	mName( name)
-	,	mActionFileSpam( true)
+BmSpamFilter::Data::Data() 
+	:	mActionFileSpam( true)
 	,	mActionMarkSpamAsRead( false)
 	,	mActionFileLearnedSpam( true)
 	,	mActionFileLearnedTofu( true)
@@ -1841,25 +1840,35 @@ BmSpamFilter::BmSpamFilter( const BmString& name, const BMessage* archive)
 	,	mActionFileUnsure( true)
 	,	mUnsureThreshold(70)
 {
+}
+
+/*------------------------------------------------------------------------------*\
+	BmSpamFilter( archive)
+		-	c'tor
+		-	constructs a BmSpamFilter from a BMessage
+\*------------------------------------------------------------------------------*/
+BmSpamFilter::BmSpamFilter( const BmString& name, const BMessage* archive) 
+	:	mName( name)
+{
 	int16 version;
 	if (archive->FindInt16( MSG_VERSION, &version) != B_OK)
 		version = 0;
 	if (version >= 2) {
-		archive->FindBool( MSG_FILE_SPAM, &mActionFileSpam);
-		archive->FindBool( MSG_FILE_LEARNED_SPAM, &mActionFileLearnedSpam);
-		archive->FindBool( MSG_FILE_LEARNED_TOFU, &mActionFileLearnedTofu);
+		archive->FindBool( MSG_FILE_SPAM, &D.mActionFileSpam);
+		archive->FindBool( MSG_FILE_LEARNED_SPAM, &D.mActionFileLearnedSpam);
+		archive->FindBool( MSG_FILE_LEARNED_TOFU, &D.mActionFileLearnedTofu);
 	}
 	if (version >= 3) {
-		archive->FindInt8( MSG_SPAM_THRESHOLD, &mSpamThreshold);
-		archive->FindInt8( MSG_TOFU_THRESHOLD, &mTofuThreshold);
+		archive->FindInt8( MSG_SPAM_THRESHOLD, &D.mSpamThreshold);
+		archive->FindInt8( MSG_TOFU_THRESHOLD, &D.mTofuThreshold);
 	}
 	if (version >= 4) {
-		archive->FindBool( MSG_MARK_SPAM_AS_READ, &mActionMarkSpamAsRead);
+		archive->FindBool( MSG_MARK_SPAM_AS_READ, &D.mActionMarkSpamAsRead);
 	}
 	if (version >= 5) {
-		archive->FindBool( MSG_PROTECT_KNOWN, &mProtectKnownAddrs);
-		archive->FindBool( MSG_FILE_UNSURE, &mActionFileUnsure);
-		archive->FindInt8( MSG_UNSURE_THRESHOLD, &mUnsureThreshold);
+		archive->FindBool( MSG_PROTECT_KNOWN, &D.mProtectKnownAddrs);
+		archive->FindBool( MSG_FILE_UNSURE, &D.mActionFileUnsure);
+		archive->FindInt8( MSG_UNSURE_THRESHOLD, &D.mUnsureThreshold);
 	}
 }
 
@@ -1880,15 +1889,15 @@ BmSpamFilter::Archive( BMessage* archive, bool) const
 {
 	status_t ret 
 		= (archive->AddInt16( MSG_VERSION, nArchiveVersion)
-		| archive->AddBool( MSG_FILE_SPAM, mActionFileSpam)
-		| archive->AddBool( MSG_MARK_SPAM_AS_READ, mActionMarkSpamAsRead)
-		| archive->AddBool( MSG_FILE_LEARNED_SPAM, mActionFileLearnedSpam)
-		| archive->AddBool( MSG_FILE_LEARNED_TOFU, mActionFileLearnedTofu)
-		| archive->AddInt8( MSG_SPAM_THRESHOLD, mSpamThreshold)
-		| archive->AddInt8( MSG_TOFU_THRESHOLD, mTofuThreshold)
-		| archive->AddBool( MSG_PROTECT_KNOWN, mProtectKnownAddrs)
-		| archive->AddBool( MSG_FILE_UNSURE, mActionFileUnsure)
-		| archive->AddInt8( MSG_UNSURE_THRESHOLD, mUnsureThreshold));
+		| archive->AddBool( MSG_FILE_SPAM, D.mActionFileSpam)
+		| archive->AddBool( MSG_MARK_SPAM_AS_READ, D.mActionMarkSpamAsRead)
+		| archive->AddBool( MSG_FILE_LEARNED_SPAM, D.mActionFileLearnedSpam)
+		| archive->AddBool( MSG_FILE_LEARNED_TOFU, D.mActionFileLearnedTofu)
+		| archive->AddInt8( MSG_SPAM_THRESHOLD, D.mSpamThreshold)
+		| archive->AddInt8( MSG_TOFU_THRESHOLD, D.mTofuThreshold)
+		| archive->AddBool( MSG_PROTECT_KNOWN, D.mProtectKnownAddrs)
+		| archive->AddBool( MSG_FILE_UNSURE, D.mActionFileUnsure)
+		| archive->AddInt8( MSG_UNSURE_THRESHOLD, D.mUnsureThreshold));
 	return ret;
 }
 
@@ -1917,9 +1926,9 @@ BmSpamFilter::Execute( BmMsgContext* msgContext, const BMessage* _jobSpecs)
 		BM_LOG2( BM_LogFilter, "Spam-Addon: starting Classify job...");
 		int32 dummy;
 		if (jobSpecs.FindInt32("ThresholdForSpam", &dummy) != B_OK)
-			jobSpecs.AddInt32("ThresholdForSpam", mSpamThreshold);
+			jobSpecs.AddInt32("ThresholdForSpam", D.mSpamThreshold);
 		if (jobSpecs.FindInt32("ThresholdForTofu", &dummy) != B_OK)
-			jobSpecs.AddInt32("ThresholdForTofu", mTofuThreshold);
+			jobSpecs.AddInt32("ThresholdForTofu", D.mTofuThreshold);
 		result = nClassifier.Classify( msgContext);
 		if (result) {
 			bool isSpam = msgContext->data.FindBool("IsSpam");
@@ -1931,7 +1940,7 @@ BmSpamFilter::Execute( BmMsgContext* msgContext, const BMessage* _jobSpecs)
 								<< "(with a confidence of " 
 								<< (int)(ratioSpam*100) << "%).");
 				bool isFromKnownAddress = false;
-				if (mProtectKnownAddrs && BeamGuiRoster) {
+				if (D.mProtectKnownAddrs && BeamGuiRoster) {
 					const BmAddressList& fromAddrList
 						= msgContext->mail->Header()->GetAddressList(BM_FIELD_FROM);
 					BmAddress fromAddr = fromAddrList.FirstAddress();
@@ -1948,19 +1957,20 @@ BmSpamFilter::Execute( BmMsgContext* msgContext, const BMessage* _jobSpecs)
 					jobSpecifier = "LearnAsTofu";
 				} else {
 					// from unknown address, so we file in spam/quarantine:
-					if (mActionFileUnsure && ratioSpam < mUnsureThreshold/100.0) {
+					if (D.mActionFileUnsure 
+					&& ratioSpam < D.mUnsureThreshold/100.0) {
 						msgContext->data.RemoveName("FolderName");
 						msgContext->data.AddString(
 							"FolderName", BmMailFolder::QUARANTINE_FOLDER_NAME
 						);
 					} else {
-						if (mActionFileSpam) {
+						if (D.mActionFileSpam) {
 							msgContext->data.RemoveName("FolderName");
 							msgContext->data.AddString(
 								"FolderName", BmMailFolder::SPAM_FOLDER_NAME
 							);
 						}
-						if (mActionMarkSpamAsRead) {
+						if (D.mActionMarkSpamAsRead) {
 							msgContext->data.RemoveName("Status");
 							msgContext->data.AddString("Status", BM_MAIL_STATUS_READ);
 						}
@@ -1972,12 +1982,12 @@ BmSpamFilter::Execute( BmMsgContext* msgContext, const BMessage* _jobSpecs)
 	if (!jobSpecifier.ICompare("LearnAsSpam")) {
 		BM_LOG2( BM_LogFilter, "Spam-Addon: starting LearnAsSpam job...");
 		float ratioSpam = msgContext->mail->RatioSpam();
-		if (mActionFileUnsure && ratioSpam < mUnsureThreshold/100.0)
+		if (D.mActionFileUnsure && ratioSpam < D.mUnsureThreshold/100.0)
 			// allow re-learning of quarantined spam messages:
 			msgContext->data.AddBool("ForceLearning", true);
 		result = nClassifier.LearnAsSpam( msgContext);
 		if (result) {
-			if (mActionFileLearnedSpam) {
+			if (D.mActionFileLearnedSpam) {
 				msgContext->data.RemoveName("FolderName");
 				msgContext->data.AddString("FolderName", 
 													BmMailFolder::SPAM_FOLDER_NAME);
@@ -1988,7 +1998,7 @@ BmSpamFilter::Execute( BmMsgContext* msgContext, const BMessage* _jobSpecs)
 	} else if (!jobSpecifier.ICompare("LearnAsTofu")) {
 		BM_LOG2( BM_LogFilter, "Spam-Addon: starting LearnAsTofu job...");
 		result = nClassifier.LearnAsTofu( msgContext);
-		if (result && mActionFileLearnedTofu) {
+		if (result && D.mActionFileLearnedTofu) {
 			msgContext->data.RemoveName("FolderName");
 			msgContext->data.AddString("FolderName", BmMailFolder::IN_FOLDER_NAME);
 		}
@@ -2432,7 +2442,7 @@ void BmSpamFilterPrefs::MessageReceived( BMessage* msg) {
 		case BM_FILESPAM_CHANGED: {
 			if (mCurrFilterAddon) {
 				bool newVal = mFileSpamControl->Value();
-				mCurrFilterAddon->mActionFileSpam = newVal;
+				mCurrFilterAddon->D.mActionFileSpam = newVal;
 				PropagateChange();
 			}
 			break;
@@ -2440,7 +2450,7 @@ void BmSpamFilterPrefs::MessageReceived( BMessage* msg) {
 		case BM_MARKSPAM_CHANGED: {
 			if (mCurrFilterAddon) {
 				bool newVal = mMarkSpamAsReadControl->Value();
-				mCurrFilterAddon->mActionMarkSpamAsRead = newVal;
+				mCurrFilterAddon->D.mActionMarkSpamAsRead = newVal;
 				PropagateChange();
 			}
 			break;
@@ -2448,7 +2458,7 @@ void BmSpamFilterPrefs::MessageReceived( BMessage* msg) {
 		case BM_FILELEARNEDSPAM_CHANGED: {
 			if (mCurrFilterAddon) {
 				bool newVal = mFileLearnedSpamControl->Value();
-				mCurrFilterAddon->mActionFileLearnedSpam = newVal;
+				mCurrFilterAddon->D.mActionFileLearnedSpam = newVal;
 				PropagateChange();
 			}
 			break;
@@ -2456,7 +2466,7 @@ void BmSpamFilterPrefs::MessageReceived( BMessage* msg) {
 		case BM_FILELEARNEDTOFU_CHANGED: {
 			if (mCurrFilterAddon) {
 				bool newVal = mFileLearnedTofuControl->Value();
-				mCurrFilterAddon->mActionFileLearnedTofu = newVal;
+				mCurrFilterAddon->D.mActionFileLearnedTofu = newVal;
 				PropagateChange();
 			}
 			break;
@@ -2477,7 +2487,7 @@ void BmSpamFilterPrefs::MessageReceived( BMessage* msg) {
 		case BM_UNSURE_THRESHOLD_CHANGED: {
 			if (mCurrFilterAddon) {
 				int32 newVal = mUnsureThresholdControl->Value();
-				mCurrFilterAddon->mUnsureThreshold = newVal;
+				mCurrFilterAddon->D.mUnsureThreshold = newVal;
 				PropagateChange();
 			}
 			break;
@@ -2485,7 +2495,7 @@ void BmSpamFilterPrefs::MessageReceived( BMessage* msg) {
 		case BM_PROTECTKNOWN_CHANGED: {
 			if (mCurrFilterAddon) {
 				bool newVal = mProtectKnownAddrsControl->Value();
-				mCurrFilterAddon->mProtectKnownAddrs = newVal;
+				mCurrFilterAddon->D.mProtectKnownAddrs = newVal;
 				PropagateChange();
 			}
 			break;
@@ -2552,8 +2562,8 @@ int32 BmSpamFilterPrefs::StartSpamometer( void* data)
 		BmString spamometer = BeamRoster->AppPath();
 		spamometer 
 			<< "/tools/SpamOMeter --dehtml --keep-atags"
-			<< " --rst=" << filterAddon->mSpamThreshold 
-			<< " --rtt=" << filterAddon->mTofuThreshold
+			<< " --rst=" << filterAddon->D.mSpamThreshold 
+			<< " --rtt=" << filterAddon->D.mTofuThreshold
 			<< " --do-training";
 		BmString trainCmd("Terminal -t \"Beam SPAM-Filter Training Session\"");
 		trainCmd << " /bin/sh -c '" << spamometer << ";"
@@ -2603,30 +2613,30 @@ int32 BmSpamFilterPrefs::StartSpamometer( void* data)
 void BmSpamFilterPrefs::ShowFilter( BmFilterAddon* addon) {
 	mCurrFilterAddon = dynamic_cast< BmSpamFilter*>( addon);
 	if (mCurrFilterAddon) {
-		mFileSpamControl->SetValueSilently( mCurrFilterAddon->mActionFileSpam);
+		mFileSpamControl->SetValueSilently( mCurrFilterAddon->D.mActionFileSpam);
 		mMarkSpamAsReadControl->SetValueSilently( 
-			mCurrFilterAddon->mActionMarkSpamAsRead
+			mCurrFilterAddon->D.mActionMarkSpamAsRead
 		);
 		mFileLearnedSpamControl->SetValueSilently( 
-			mCurrFilterAddon->mActionFileLearnedSpam
+			mCurrFilterAddon->D.mActionFileLearnedSpam
 		);
 		mFileLearnedTofuControl->SetValueSilently( 
-			mCurrFilterAddon->mActionFileLearnedTofu
+			mCurrFilterAddon->D.mActionFileLearnedTofu
 		);
-		uint8 spamThreshold = mCurrFilterAddon->mSpamThreshold;
-		uint8 tofuThreshold = mCurrFilterAddon->mTofuThreshold;
+		uint8 spamThreshold = mCurrFilterAddon->D.mSpamThreshold;
+		uint8 tofuThreshold = mCurrFilterAddon->D.mTofuThreshold;
 		uint8 thresholdVal = (spamThreshold+tofuThreshold)/2;
 		uint8 protectMyTofuVal = tofuThreshold-spamThreshold;
 		mThresholdControl->SetValue(thresholdVal);
 		mProtectMyTofuControl->SetValue(protectMyTofuVal);
 
 		mProtectKnownAddrsControl->SetValueSilently( 
-			mCurrFilterAddon->mProtectKnownAddrs
+			mCurrFilterAddon->D.mProtectKnownAddrs
 		);
 		mFileUnsureSpamControl->SetValueSilently( 
-			mCurrFilterAddon->mActionFileUnsure
+			mCurrFilterAddon->D.mActionFileUnsure
 		);
-		mUnsureThresholdControl->SetValue( mCurrFilterAddon->mUnsureThreshold);
+		mUnsureThresholdControl->SetValue( mCurrFilterAddon->D.mUnsureThreshold);
 		UpdateState(true);
 	}
 }
@@ -2645,10 +2655,10 @@ bool BmSpamFilterPrefs::UpdateState(bool force) {
 		int32 spamThr = thresholdVal-protectMyTofuVal/2;
 		if (spamThr < 0)
 			spamThr = 0;
-		if (force || spamThr != mCurrFilterAddon->mSpamThreshold 
-		|| tofuThr != mCurrFilterAddon->mTofuThreshold) {
-			mCurrFilterAddon->mSpamThreshold = spamThr;
-			mCurrFilterAddon->mTofuThreshold = tofuThr;
+		if (force || spamThr != mCurrFilterAddon->D.mSpamThreshold 
+		|| tofuThr != mCurrFilterAddon->D.mTofuThreshold) {
+			mCurrFilterAddon->D.mSpamThreshold = spamThr;
+			mCurrFilterAddon->D.mTofuThreshold = tofuThr;
 			char buf[10];
 			mSpamThresholdBar->Reset("Resulting Spam Threshold: ");
 			mSpamThresholdBar->SetMaxValue(50);
