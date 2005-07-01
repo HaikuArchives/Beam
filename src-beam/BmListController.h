@@ -226,7 +226,10 @@ protected:
 
 	// archival of the controller's state-info:
 	virtual BmString StateInfoBasename()				= 0;
+	virtual BmString StateInfoFilename( bool forRead);
 	virtual BMessage* DefaultLayout()	{ return NULL; }
+
+	virtual void PopulateLabelViewMenu( BMenu* menu);
 
 	typedef map< BmListModelItem*, BmListViewItem*> BmViewModelMap;
 

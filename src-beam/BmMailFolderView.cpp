@@ -213,6 +213,10 @@ int16 BmMailFolderView::nArchiveVersion = 1;
 
 BmMailFolderView* BmMailFolderView::theInstance = NULL;
 
+enum {
+	BMM_CONNECT_LAYOUT = 'bmCL'
+};
+
 /*------------------------------------------------------------------------------*\
 	()
 		-	
@@ -537,6 +541,16 @@ void BmMailFolderView::MessageReceived( BMessage* msg) {
 					mPartnerMailRefView->ShowFolder( folder.Get());
 				break;
 			}
+			case BMM_CONNECT_LAYOUT: {
+				folder = CurrentFolder();
+				if (!folder)
+					return;
+				bool connected = folder->RefListStateInfoConnectedToParent();
+				folder->RefListStateInfoConnectedToParent( !connected);
+				if (mPartnerMailRefView)
+					mPartnerMailRefView->ReadStateInfo();
+				break;
+			}
 			case B_MOUSE_WHEEL_CHANGED: {
 				if (modifiers() & (B_LEFT_CONTROL_KEY | B_RIGHT_OPTION_KEY)) {
 					if (mPartnerMailRefView) {
@@ -657,6 +671,16 @@ void BmMailFolderView::ShowMenu( BPoint point) {
 		item->SetTarget( this);
 		theMenu->AddItem( item);
 	
+		theMenu->AddSeparatorItem();
+	
+		item = new BMenuItem( "Connect Listview-Layout to Parent", 
+									 new BMessage( BMM_CONNECT_LAYOUT));
+		folder = CurrentFolder();
+		if (folder && folder->RefListStateInfoConnectedToParent())
+			item->SetMarked( true);
+		item->SetTarget( this);
+		theMenu->AddItem( item);
+
 		theMenu->AddSeparatorItem();
 	
 		item = new BMenuItem( "Recreate Cache", 

@@ -90,7 +90,7 @@ class BmMenuController;
 class BmMailRefView : public BmListViewController
 {
 	typedef BmListViewController inherited;
-	
+
 public:
 	static const char* const MSG_MAILS_SELECTED;
 
@@ -108,8 +108,7 @@ public:
 	inline void TeamUpWith( BmMailView* mv) 	{ mPartnerMailView = mv; }
 	void AddSelectedRefsToMsg( BMessage* msg);
 	void ShowMenu( BPoint point);
-	static void AddMailRefMenu( BMenu* menu, BHandler* target,
-										 bool isContextMenu);
+	void AddMailRefMenu( BMenu* menu, BHandler* target, bool isContextMenu);
 	void SendNoticesIfNeeded( bool haveSelectedRef);
 	void TrashSelectedMessages();
 
@@ -125,6 +124,7 @@ public:
 
 	// overrides of controller base:
 	BmString StateInfoBasename();
+	BmString StateInfoFilename( bool forRead);
 	BMessage* DefaultLayout();
 	CLVContainerView* CreateContainer( bool horizontal, bool vertical, 
 												  bool scroll_view_corner, border_style border, 
@@ -135,12 +135,13 @@ public:
 protected:
 	// overrides of listcontroller base:
 	void JobIsDone( bool completed);
-	
+	void PopulateLabelViewMenu( BMenu* menu);
 
 private:
 	BmRef<BmMailFolder> mCurrFolder;
 	BmMailView* mPartnerMailView;
 	bool mHaveSelectedRef;
+	bool mStateInfoConnectedToParentFolder;
 
 	// Hide copy-constructor and assignment:
 	BmMailRefView( const BmMailRefView&);

@@ -832,9 +832,7 @@ void BmListViewController::ShowOrHideColumn( BMessage* msg) {
 	( )
 		-	
 \*------------------------------------------------------------------------------*/
-void BmListViewController::ShowLabelViewMenu( BPoint point) {
-	BPopUpMenu* theMenu = new BPopUpMenu( "LabelViewMenu", false, false);
-
+void BmListViewController::PopulateLabelViewMenu( BMenu* menu) {
 	int32 numCols = fColumnList.CountItems();
 	int32 numVisibleCols = fColumnDisplayList.CountItems();
 	for( int32 i=0; i<numCols; ++i) {
@@ -858,8 +856,21 @@ void BmListViewController::ShowLabelViewMenu( BPoint point) {
 			item->SetEnabled( false);
 		}
 		item->SetTarget( this);
-		theMenu->AddItem( item);
+		menu->AddItem( item);
 	}
+}
+
+/*------------------------------------------------------------------------------*\
+	( )
+		-	
+\*------------------------------------------------------------------------------*/
+void BmListViewController::ShowLabelViewMenu( BPoint point) {
+	BPopUpMenu* theMenu = new BPopUpMenu( "LabelViewMenu", false, false);
+	BFont font( *be_plain_font);
+	font.SetSize( 10);
+	theMenu->SetFont( &font);
+
+	PopulateLabelViewMenu( theMenu);
 
 	if (theMenu->CountItems() > 0) {
 	   ColumnLabelView()->ConvertToScreen(&point);
@@ -954,12 +965,11 @@ void BmListViewController::MakeEmpty() {
 }
 
 /*------------------------------------------------------------------------------*\
-	WriteStateInfo( )
+	StartJob( )
 		-	
 \*------------------------------------------------------------------------------*/
 void BmListViewController::StartJob( BmJobModel* model, bool startInNewThread,
 											    int32 jobSpecifier) {
-	AttachModel( model);
 	ScrollView()->SetBusy();
 	UpdateCaption( "tracking...");
 	inheritedController::StartJob( model, startInNewThread, jobSpecifier);
@@ -986,7 +996,6 @@ void BmListViewController::JobIsDone( bool completed) {
 \*------------------------------------------------------------------------------*/
 void BmListViewController::WriteStateInfo() {
 	status_t err;
-	BmString stateInfoFilename;
 	BFile stateInfoFile;
 	BMessage archive;
 	
@@ -995,7 +1004,7 @@ void BmListViewController::WriteStateInfo() {
 		return;
 
 	try {
-		stateInfoFilename = StateInfoBasename() << "_" << ModelName();
+		BmString stateInfoFilename = StateInfoFilename( false);
 		if (this->Archive( &archive, Hierarchical()) != B_OK)
 			BM_THROW_RUNTIME( BmString("Unable to archive State-Info for ")
 										<< Name());
@@ -1063,6 +1072,14 @@ BMessage* BmListViewController::GetArchiveForItemKey( const BmString& key,
 }
 
 /*------------------------------------------------------------------------------*\
+	StateInfoFilename( )
+		-	
+\*------------------------------------------------------------------------------*/
+BmString BmListViewController::StateInfoFilename( bool forRead) {
+	return StateInfoBasename() << "_" << ModelName();
+}
+
+/*------------------------------------------------------------------------------*\
 	ReadStateInfo( )
 		-	
 \*------------------------------------------------------------------------------*/
@@ -1072,7 +1089,7 @@ void BmListViewController::ReadStateInfo() {
 	BFile stateInfoFile;
 
 	// try to open state-info-file...
-	stateInfoFilename = StateInfoBasename() << "_" << ModelName();
+	stateInfoFilename = StateInfoFilename(true);
 	if (mUseStateCache
 	&& (err = stateInfoFile.SetTo( 
 		BeamRoster->StateInfoFolder(), 

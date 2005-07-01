@@ -32,6 +32,9 @@
 #include <PopUpMenu.h>
 #include <Window.h>
 
+#include "BubbleHelper.h"
+#include "CLVColumnLabelView.h"
+
 #include "BeamApp.h"
 #include "BmBasics.h"
 #include "BmFilter.h"
@@ -323,6 +326,10 @@ const char* const BmMailRefView::MENU_MOVE =				"Move To";
 
 const BmString BmDragId = "beam/ref";
 
+enum {
+	BMM_CONNECT_LAYOUT = 'bmCL'
+};
+
 /*------------------------------------------------------------------------------*\
 	()
 		-	
@@ -341,6 +348,7 @@ BmMailRefView::BmMailRefView( minimax minmax, int32 width, int32 height)
 					  B_MULTIPLE_SELECTION_LIST, false, true, true, true)
 	,	mCurrFolder( NULL)
 	,	mHaveSelectedRef( false)
+	,	mStateInfoConnectedToParentFolder( true)
 {
 	int32 flags = CLV_SORT_KEYABLE;
 	SetViewColor( B_TRANSPARENT_COLOR);
@@ -351,10 +359,10 @@ BmMailRefView::BmMailRefView( minimax minmax, int32 width, int32 height)
 					B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE,
 					B_FOLLOW_NONE, true, true, true, B_FANCY_BORDER);
 
-	AddColumn( new CLVColumn( "", 18.0, 
+	AddColumn( new CLVColumn( "S", 18.0, 
 									  flags | CLV_NOT_RESIZABLE | CLV_COLDATA_NUMBER
 									  | CLV_COLTYPE_BITMAP, 
-									  18.0, "Status [Icon]"));
+									  18.0, "(S)tatus [Icon]"));
 	AddColumn( new CLVColumn( "A", 18.0, 
 									  flags | CLV_NOT_RESIZABLE | CLV_COLDATA_NUMBER
 									  | CLV_COLTYPE_BITMAP, 
@@ -363,26 +371,26 @@ BmMailRefView::BmMailRefView( minimax minmax, int32 width, int32 height)
 									  flags | CLV_NOT_RESIZABLE | CLV_COLDATA_NUMBER
 									  | CLV_COLTYPE_BITMAP, 
 									  18.0, "(P)riority [Icon]"));
-	AddColumn( new CLVColumn( "From", 200.0, flags | CLV_COLTYPE_USERTEXT, 
+	AddColumn( new CLVColumn( "From", 150.0, flags | CLV_COLTYPE_USERTEXT, 
 									  20.0));
-	AddColumn( new CLVColumn( "Subject", 200.0, flags | CLV_COLTYPE_USERTEXT, 
+	AddColumn( new CLVColumn( "Subject", 300.0, flags | CLV_COLTYPE_USERTEXT, 
 									  20.0));
-	AddColumn( new CLVColumn( "Date", 100.0, 
+	AddColumn( new CLVColumn( "Date-Sent", 100.0, 
 									  flags | CLV_COLDATA_DATE | CLV_COLTYPE_USERTEXT, 
 									  20.0));
-	AddColumn( new CLVColumn( "Size", 50.0, 
+	AddColumn( new CLVColumn( "Size", 60.0, 
 									  flags | CLV_COLDATA_NUMBER | CLV_RIGHT_JUSTIFIED
 									  | CLV_COLTYPE_USERTEXT,
 									  20.0));
 	AddColumn( new CLVColumn( "Cc", 100.0, flags | CLV_COLTYPE_USERTEXT, 20.0));
-	AddColumn( new CLVColumn( "Account", 100.0, flags | CLV_COLTYPE_USERTEXT, 
+	AddColumn( new CLVColumn( "Account", 120.0, flags | CLV_COLTYPE_USERTEXT, 
 									  20.0));
-	AddColumn( new CLVColumn( "To", 100.0, flags | CLV_COLTYPE_USERTEXT, 20.0));
+	AddColumn( new CLVColumn( "To", 150.0, flags | CLV_COLTYPE_USERTEXT, 20.0));
 	AddColumn( new CLVColumn( "Reply-To", 150.0, flags | CLV_COLTYPE_USERTEXT,
 									  20.0));
 	AddColumn( new CLVColumn( "Name", 150.0, flags | CLV_COLTYPE_USERTEXT, 
 									  20.0));
-	AddColumn( new CLVColumn( "Date-Created", 100.0, 
+	AddColumn( new CLVColumn( "Date-Received", 110.0, 
 									  flags | CLV_COLDATA_BIGTIME | CLV_COLTYPE_USERTEXT,
 									  20.0));
 	AddColumn( new CLVColumn( "Tracker-Name", 150.0, 
@@ -396,16 +404,25 @@ BmMailRefView::BmMailRefView( minimax minmax, int32 width, int32 height)
 	AddColumn( new CLVColumn( "P", 100.0, 
 									  flags | CLV_COLDATA_NUMBER | CLV_COLTYPE_USERTEXT,
 									  18.0, "(P)riority [Text]"));
-	AddColumn( new CLVColumn( "Identity", 100.0, flags | CLV_COLTYPE_USERTEXT, 
+	AddColumn( new CLVColumn( "Identity", 120.0, flags | CLV_COLTYPE_USERTEXT, 
 									  40.0));
-	AddColumn( new CLVColumn( "Classification", 150.0, flags | CLV_COLTYPE_USERTEXT, 
+	AddColumn( new CLVColumn( "Class", 40.0, flags | CLV_COLTYPE_USERTEXT, 
 									  40.0));
 	AddColumn( new CLVColumn( "RatioSpam", 100.0, flags | CLV_COLDATA_NUMBER 
 										| CLV_RIGHT_JUSTIFIED| CLV_COLTYPE_USERTEXT, 
 									  40.0));
 	SetSortFunction( CLVEasyItem::CompareItems);
-	SetSortKey( COL_DATE);
-	SetSortMode( COL_DATE, Descending, false);
+	SetSortKey( COL_WHEN_CREATED);
+	SetSortMode( COL_WHEN_CREATED, Descending, false);
+	int32 displayOrder[] = {
+		COL_STATUS_I, COL_ATTACHMENTS_I, COL_NAME, COL_SUBJECT, COL_WHEN_CREATED, 
+		COL_SIZE, COL_IDENTITY, COL_ACCOUNT,
+		-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
+		-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1
+	};
+	SetDisplayOrder(displayOrder);
+	
+	TheBubbleHelper->SetHelp( ColumnLabelView(), "Right-Click to show/hide columns");
 }
 
 /*------------------------------------------------------------------------------*\
@@ -413,6 +430,7 @@ BmMailRefView::BmMailRefView( minimax minmax, int32 width, int32 height)
 		-	
 \*------------------------------------------------------------------------------*/
 BmMailRefView::~BmMailRefView() { 
+	TheBubbleHelper->SetHelp( ColumnLabelView(), NULL);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -486,6 +504,14 @@ void BmMailRefView::MessageReceived( BMessage* msg) {
 				if (modifiers() & B_MENU_KEY) {
 					ShowMenu( BPoint(100,50));
 				}
+				break;
+			}
+			case BMM_CONNECT_LAYOUT: {
+				if (!mCurrFolder)
+					return;
+				bool connected = mCurrFolder->RefListStateInfoConnectedToParent();
+				mCurrFolder->RefListStateInfoConnectedToParent( !connected);
+				ReadStateInfo();
 				break;
 			}
 			default:
@@ -705,13 +731,11 @@ void BmMailRefView::ShowFolder( BmMailFolder* folder) {
 													: NULL);
 		if (mPartnerMailView)
 			mPartnerMailView->ShowMail( static_cast< BmMailRef*>( NULL));
+		DetachModel();
+		MakeEmpty();
+		mCurrFolder = folder;
 		if (refList)
 			StartJob( refList.Get());
-		else {
-			DetachModel();
-			MakeEmpty();
-		}
-		mCurrFolder = folder;
 		SelectionChanged();
 	}
 	catch( BM_error &err) {
@@ -753,11 +777,44 @@ BmString BmMailRefView::StateInfoBasename()	{
 }
 
 /*------------------------------------------------------------------------------*\
+	StateInfoFilename( )
+		-	
+\*------------------------------------------------------------------------------*/
+BmString BmMailRefView::StateInfoFilename( bool forRead) {
+	if (mCurrFolder) {
+		BmRef<BmListModelItem> folderRef = mCurrFolder.Get();
+		BmString stateInfoFilename;
+		while( folderRef) {
+			BmMailFolder* folder = dynamic_cast<BmMailFolder*>(folderRef.Get());
+			if (folder) {
+				stateInfoFilename
+					= StateInfoBasename() 
+						<< "_" << folder->Key() << " (" << folder->Name() << ")";
+				if (!folder->RefListStateInfoConnectedToParent()) {
+					BEntry stateInfoEntry( BeamRoster->StateInfoFolder(), 
+												  stateInfoFilename.String());
+					// if forRead==true, we want to return the first file that
+					// exists, but if we are going to create it anyway, we want
+					// to return the filename the info should be stored into (i.e.
+					// the first item in the hierarchy that isn't connected to
+					// its parent).
+					if (!forRead || stateInfoEntry.Exists())
+						break;
+				}
+			}
+			folderRef = folder->Parent();
+		}
+		return stateInfoFilename;
+	}
+	return inherited::StateInfoFilename( forRead);
+}
+
+/*------------------------------------------------------------------------------*\
 	( )
 		-	
 \*------------------------------------------------------------------------------*/
-BMessage* BmMailRefView::DefaultLayout()		{ 
-	return ThePrefs->GetMsg("MailRefLayout"); 
+BMessage* BmMailRefView::DefaultLayout() {
+	return ThePrefs->GetMsg("MailRefLayout");
 }
 
 /*------------------------------------------------------------------------------*\
@@ -955,8 +1012,31 @@ void BmMailRefView::AddMailRefMenu( BMenu* menu, BHandler* target,
 												 BMM_PRINT, "Print Message..."), 
 							target);
 		menu->AddSeparatorItem();
+	} else {
+		AddItemToMenu( menu, 
+							CreateMenuItem( "Previous Message", BMM_PREVIOUS_MESSAGE),
+							target);
+		AddItemToMenu( menu, 
+							CreateMenuItem( "Next Message", BMM_NEXT_MESSAGE), 
+							target);
+		menu->AddSeparatorItem();
 	}
 	AddItemToMenu( menu, CreateMenuItem( "Move To Trash", BMM_TRASH), target);
+}
+
+/*------------------------------------------------------------------------------*\
+	( )
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailRefView::PopulateLabelViewMenu( BMenu* menu) {
+	BMenuItem* item = new BMenuItem( "Connect Layout to Parent", 
+												new BMessage( BMM_CONNECT_LAYOUT));
+	if (mCurrFolder && mCurrFolder->RefListStateInfoConnectedToParent())
+		item->SetMarked( true);
+	item->SetTarget( this);
+	menu->AddItem( item);
+	menu->AddSeparatorItem();
+	inherited::PopulateLabelViewMenu( menu);
 }
 
 /*------------------------------------------------------------------------------*\
