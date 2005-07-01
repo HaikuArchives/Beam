@@ -1037,6 +1037,7 @@ void BmMailEditWin::HandleFromSet( const BmString& from) {
 	TheIdentityList->CurrIdentity( ident);
 	BmString fromAddr = ident->GetFromAddress();
 	mail->SetupFromIdentityAndRecvAddr( ident, fromAddr);
+	mMailView->SetSignatureByName( mail->SignatureName());
 	SetFieldsFromMail( mail.Get(), true);
 }
 
