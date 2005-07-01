@@ -4,6 +4,7 @@
 */
 
 #include <File.h>
+#include <MessageFilter.h>
 #include <View.h>
 
 #include "BeamApp.h"
@@ -13,6 +14,36 @@
 #include "BmRosterBase.h"
 #include "BmUtil.h"
 #include "BmWindow.h"
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+class BmScrollWheelFilter : public BMessageFilter {
+public:
+	BmScrollWheelFilter()
+		: 	BMessageFilter( B_ANY_DELIVERY, B_ANY_SOURCE, B_MOUSE_WHEEL_CHANGED) 
+	{
+	}
+	filter_result Filter( BMessage* msg, BHandler** handler);
+private:
+};
+
+/*------------------------------------------------------------------------------*\
+	Filter()
+		-	
+\*------------------------------------------------------------------------------*/
+filter_result BmScrollWheelFilter::Filter( BMessage* msg, 
+														 BHandler** handler) {
+	bool passedOn = false;
+	msg->FindBool("bm:passed_on", &passedOn);
+	if (handler && msg->what == B_MOUSE_WHEEL_CHANGED && !passedOn) {
+		BWindow* win = dynamic_cast<BWindow*>(Looper());
+		if (win)
+			*handler = win->LastMouseMovedView();
+	}
+	return B_DISPATCH_MESSAGE;
+}
 
 const char* const BmWindow::MSG_FRAME = 	"bm:frm";
 
@@ -27,6 +58,7 @@ BmWindow::BmWindow( const char* statefileName, BRect frame, const char* title,
 	,	mStatefileName( statefileName)
 	,	mLifeHasBegun( false)
 { 
+	AddCommonFilter( new BmScrollWheelFilter());
 }
 
 /*------------------------------------------------------------------------------*\
