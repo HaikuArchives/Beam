@@ -1,4 +1,4 @@
-/*
+	/*
 	BmMailFolder.cpp
 		$Id$
 */
@@ -49,6 +49,7 @@ const char* const BmMailFolder::MSG_INODE = 			"bm:inod";
 const char* const BmMailFolder::MSG_LASTMODIFIED = "bm:lmod";
 const char* const BmMailFolder::MSG_MAILCOUNT = 	"bm:mcnt";
 const char* const BmMailFolder::MSG_SELECTED_KEY =	"bm:selk";
+const char* const BmMailFolder::MSG_STATEINFO_CONNECTED = "bm:sicn";
 
 //	message component definitions for status-msgs:
 const char* const BmMailFolder::MSG_NAME = 			"bm:fname";
@@ -63,6 +64,8 @@ const char* BmMailFolder::IN_FOLDER_NAME			= "in";
 const char* BmMailFolder::OUT_FOLDER_NAME			= "out";
 const char* BmMailFolder::QUARANTINE_FOLDER_NAME= "quarantine";
 const char* BmMailFolder::SPAM_FOLDER_NAME		= "spam";
+
+const int16 BmMailFolder::nArchiveVersion = 4;
 
 /*------------------------------------------------------------------------------*\
 	IsSystemFolder( path)
@@ -87,10 +90,11 @@ BmMailFolder::BmMailFolder( BmMailFolderList* model, entry_ref &eref,
 	:	inherited( BmString() << node, model, parent)
 	,	mEntryRef( eref)
 	,	mLastModified( modified)
+	,	mMailCount( -1)
+	,	mRefListStateInfoConnectedToParent( true)
 	,	mMailRefList( NULL)
 	,	mNewMailCount( 0)
 	,	mNewMailCountForSubfolders( 0)
-	,	mMailCount( -1)
 	,	mName( eref.name)
 {
 	mNodeRef.node = node;
@@ -106,6 +110,7 @@ BmMailFolder::BmMailFolder( BMessage* archive, BmMailFolderList* model,
 									 BmMailFolder* parent)
 	:	inherited( "", model, parent)
 	,	mMailRefList( NULL)
+	,	mRefListStateInfoConnectedToParent( true)
 	,	mNewMailCount( 0)
 	,	mNewMailCountForSubfolders( 0)
 	,	mMailCount( -1)
@@ -133,6 +138,9 @@ BmMailFolder::BmMailFolder( BMessage* archive, BmMailFolderList* model,
 			mMailCount = FindMsgInt32( archive, MSG_MAILCOUNT);
 		if (version > 2)
 			mSelectedRefKey = FindMsgString( archive, MSG_SELECTED_KEY);
+		if (version > 3)
+			mRefListStateInfoConnectedToParent 
+				= FindMsgBool( archive, MSG_STATEINFO_CONNECTED);
 		StartNodeMonitor();
 	} catch (BM_error &e) {
 		BM_SHOWERR( e.what());
@@ -177,7 +185,9 @@ status_t BmMailFolder::Archive( BMessage* archive, bool deep) const {
 							// been written
 		|| archive->AddInt32( MSG_NUMCHILDREN, size())
 		|| archive->AddInt32( MSG_MAILCOUNT, mMailCount)
-		|| archive->AddString( MSG_SELECTED_KEY, mSelectedRefKey.String());
+		|| archive->AddString( MSG_SELECTED_KEY, mSelectedRefKey.String())
+		|| archive->AddBool( MSG_STATEINFO_CONNECTED, 
+									mRefListStateInfoConnectedToParent);
 	if (deep && ret == B_OK) {
 		BmModelItemMap::const_iterator pos;
 		for( pos = begin(); pos != end(); ++pos) {

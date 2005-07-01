@@ -53,7 +53,7 @@ typedef map<BmString, BmMailFolder*> BmFolderMap;
 class IMPEXPBMMAILKIT BmMailFolder : public BmListModelItem {
 	typedef BmListModelItem inherited;
 
-	static const int16 nArchiveVersion = 3;
+	static const int16 nArchiveVersion;
 
 public:
 	BmMailFolder( BmMailFolderList* model, entry_ref &eref, ino_t node,
@@ -109,6 +109,8 @@ public:
 	inline const BmString& Name() const	{ return mName; }
 	inline const BmString& SelectedRefKey() const
 													{ return mSelectedRefKey; }
+	inline bool RefListStateInfoConnectedToParent() const 
+													{ return mRefListStateInfoConnectedToParent; }
 
 	// setters:
 	inline void EntryRef( const entry_ref &e)
@@ -116,6 +118,8 @@ public:
 	void MailCount( int32 i);
 	inline void SelectedRefKey( const BmString& key)
 													{ mSelectedRefKey = key; }
+	inline void RefListStateInfoConnectedToParent( bool b)
+													{ mRefListStateInfoConnectedToParent = b; }
 
 	static bool IsSystemFolder( const BPath& path);
 
@@ -125,6 +129,7 @@ public:
 	static const char* const MSG_LASTMODIFIED;
 	static const char* const MSG_MAILCOUNT;
 	static const char* const MSG_SELECTED_KEY;
+	static const char* const MSG_STATEINFO_CONNECTED;
 
 	//	message component definitions for status-msgs:
 	static const char* const MSG_NAME;
@@ -150,6 +155,7 @@ private:
 	time_t mLastModified;
 	int32 mMailCount;
 	BmString mSelectedRefKey;
+	bool mRefListStateInfoConnectedToParent;
 
 	// the following members will be archived into their own files:
 	BmRef< BmMailRefList> mMailRefList;
