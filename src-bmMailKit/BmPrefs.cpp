@@ -510,9 +510,11 @@ BMessage* BmPrefs::GetShortcutDefaults( BMessage* shortcutsMsg) {
 	SetShortcutIfNew( shortcutsMsg, "Move To Trash", "T");
 	SetShortcutIfNew( shortcutsMsg, "New Folder", "");
 	SetShortcutIfNew( shortcutsMsg, "New Message", "N");
+	SetShortcutIfNew( shortcutsMsg, "Next Message", "<DOWN_ARROW>");
 	SetShortcutIfNew( shortcutsMsg, "Page Setup", "");
 	SetShortcutIfNew( shortcutsMsg, "Paste", "V");
 	SetShortcutIfNew( shortcutsMsg, "Preferences", "<SHIFT>P");
+	SetShortcutIfNew( shortcutsMsg, "Previous Message", "<UP_ARROW>");
 	SetShortcutIfNew( shortcutsMsg, "Print Message", "P");
 	SetShortcutIfNew( shortcutsMsg, "Quit Beam", "Q");
 	SetShortcutIfNew( shortcutsMsg, "Recache Folder", "");
