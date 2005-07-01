@@ -35,14 +35,19 @@
 
 class MMenuBar;
 
+class BmMailRefView;
 class BmMailView;
 class BmMailViewContainer;
 class BmMenuController;
 class BmToolbarButton;
+class UserResizeSplitView;
 
 class BmMailViewWin : public BmWindow
 {
 	typedef BmWindow inherited;
+
+	// archival-fieldnames:
+	static const char* const MSG_HSPLITTER;
 
 public:
 	// creator-func, c'tors and d'tor:
@@ -57,17 +62,23 @@ public:
 	void MessageReceived( BMessage*);
 	bool QuitRequested();
 	void Quit();
+	status_t ArchiveState( BMessage* archive) const;
 	status_t UnarchiveState( BMessage* archive);
 	
 	// getters:
 	BmMailView* MailView() const			{ return mMailView; }
 	
 private:
+	CLVContainerView* CreateMailRefView( minimax minmax, float width, 
+													 float height);
 	BmMailViewContainer* CreateMailView( minimax minmax, BRect frame);
 	void CreateGUI();
 	MMenuBar* CreateMenu();
 
+	BmMailRefView* mMailRefView;
 	BmMailView* mMailView;
+	
+	UserResizeSplitView* mHorzSplitter;
 	
 	BmToolbarButton* mNewButton;
 	BmToolbarButton* mReplyButton;

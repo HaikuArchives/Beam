@@ -39,6 +39,7 @@
 	using namespace regexx;
 
 #include "PrefilledBitmap.h"
+#include "UserResizeSplitView.h"
 
 #include "BeamApp.h"
 #include "BmFilter.h"
@@ -62,6 +63,8 @@
 
 float BmMailViewWin::nNextXPos = 300;
 float BmMailViewWin::nNextYPos = 100;
+
+const char* const BmMailViewWin::MSG_HSPLITTER = "bm:hspl";
 
 /*------------------------------------------------------------------------------*\
 	CreateInstance()
@@ -87,8 +90,21 @@ BmMailViewWin::BmMailViewWin( BmMailRef* mailRef)
 	,	mFilterMenu( NULL)
 {
 	CreateGUI();
-	if (mailRef)
+	if (mailRef) {
+		mMailRefView->StartJob( mailRef->ListModel().Get());
 		ShowMail( mailRef);
+	}
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+status_t BmMailViewWin::ArchiveState( BMessage* archive) const {
+	status_t ret = inherited::ArchiveState( archive)
+						|| archive->AddFloat( MSG_HSPLITTER, 
+													 mHorzSplitter->DividerLeftOrTop());
+	return ret;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -96,8 +112,11 @@ BmMailViewWin::BmMailViewWin( BmMailRef* mailRef)
 		-	
 \*------------------------------------------------------------------------------*/
 status_t BmMailViewWin::UnarchiveState( BMessage* archive) {
-	status_t ret = inherited::UnarchiveState( archive);
+	float hDividerPos;
+	status_t ret = inherited::UnarchiveState( archive)
+						|| archive->FindFloat( MSG_HSPLITTER, &hDividerPos);
 	if (ret == B_OK) {
+		mHorzSplitter->SetPreferredDividerLeftOrTop( hDividerPos);
 		BRect frame = Frame();
 		if (nNextXPos != frame.left || nNextYPos != frame.top) {
 			nNextXPos = frame.left;
@@ -173,11 +192,17 @@ void BmMailViewWin::CreateGUI() {
 					0
 				)
 			),
-			new Space(minimax(-1,4,-1,4)),
-			CreateMailView( minimax(200,200,1E5,1E5), BRect(0,0,400,200)),
+			mHorzSplitter = new UserResizeSplitView( 
+				CreateMailRefView( minimax(200,50,1E5,1E5), 400, 200),
+				CreateMailView( minimax(200,80,1E5,1E5), BRect(0,0,400,200)),
+				"hsplitter", 0, B_HORIZONTAL, true, true, true, true, 
+				false, B_FOLLOW_NONE
+			),
 			0
 		);
 		
+	mMailRefView->TeamUpWith( mMailView);
+	mMailView->TeamUpWith( mMailRefView);
 	mReplyButton->AddActionVariation( "Reply", new BMessage(BMM_REPLY));
 	mReplyButton->AddActionVariation( "Reply To List", new BMessage(BMM_REPLY_LIST));
 	mReplyButton->AddActionVariation( "Reply To Person", new BMessage(BMM_REPLY_ORIGINATOR));
@@ -231,13 +256,23 @@ MMenuBar* BmMailViewWin::CreateMenu() {
 	menu = new BMenu( "Message");
 	menu->AddItem( CreateMenuItem( "New Message", BMM_NEW_MAIL));
 	menu->AddSeparatorItem();
-	BmMailRefView::AddMailRefMenu( menu, this, false);
+	mMailRefView->AddMailRefMenu( menu, this, false);
 	menu->AddSeparatorItem();
 	menu->AddItem( CreateMenuItem( "Toggle Header Mode", BMM_SWITCH_HEADER));
 	menu->AddItem( CreateMenuItem( "Show Raw Message", BMM_SWITCH_RAW));
 	menubar->AddItem( menu);
 
 	return menubar;
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+CLVContainerView* BmMailViewWin::CreateMailRefView( minimax minmax, float width,
+																	 float height) {
+	mMailRefView = BmMailRefView::CreateInstance( minmax, width, height);
+	return mMailRefView->ContainerView();
 }
 
 /*------------------------------------------------------------------------------*\
@@ -376,6 +411,15 @@ void BmMailViewWin::MessageReceived( BMessage* msg) {
 			}
 			case BMM_FIND_NEXT: {
 				PostMessage( msg, mMailView);
+				break;
+			}
+			case BMM_PREVIOUS_MESSAGE:
+			case BMM_NEXT_MESSAGE: {
+				const char bytes
+					= (msg->what == BMM_NEXT_MESSAGE) 
+						? B_DOWN_ARROW
+						: B_UP_ARROW;
+				mMailRefView->KeyDown( &bytes, 1);
 				break;
 			}
 			default:
