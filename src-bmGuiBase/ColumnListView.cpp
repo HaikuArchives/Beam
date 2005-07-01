@@ -2103,8 +2103,6 @@ void ColumnListView::Draw( BRect updateRect) {
 		}
 		updateRect.top = ThisItemRect.bottom+1;
 	}
-	if (updateRect.Height() <= 0)
-		return;
 
 	if (fStripedBackground) {
 		BList* DisplayList = &fColumnDisplayList;

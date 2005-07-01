@@ -59,6 +59,7 @@ class IMPEXPBMGUIBASE ColumnListView : public BListView
 {
 		typedef BListView inherited;
 
+	protected:
 		// archival-fieldnames:
 		static const char* const MSG_DISPLAYORDER;
 		static const char* const MSG_NUMSORTKEYS;
