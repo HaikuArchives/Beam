@@ -1037,35 +1037,40 @@ void BmMailHeader::ParseHeader( const BmString &header) {
 	|| mAddrMap[BM_FIELD_RESENT_SENDER].InitOK())
 		IsRedirect( true);
 
+	DetermineName();
+}
+
+/*------------------------------------------------------------------------------*\
+	DetermineName()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailHeader::DetermineName() {
 	if (mMail) {
+		BmAddressList addrList;
 		// we construct the 'name' for this mail (will go into 
 		// attribute MAIL:name)...
 		if (mMail->Outbound()) {
 			// for outbound mails we fetch the groupname or phrase of the 
 			// first TO-address:
-			BmAddressList toAddrList = mAddrMap[BM_FIELD_TO];
-			if (toAddrList.IsGroup()) {
-				mName = toAddrList.GroupName();
-			} else {
-				BmAddress toAddr = toAddrList.FirstAddress();
-				if (toAddr.HasPhrase())
-					mName = toAddr.Phrase();
-				else
-					mName = toAddr.AddrSpec();
+			addrList = mAddrMap[BM_FIELD_TO];
+			if (!addrList.InitOK()) {
+				addrList = mAddrMap[BM_FIELD_CC];
+				if (!addrList.InitOK())
+					addrList = mAddrMap[BM_FIELD_BCC];
 			}
 		} else {
 			// for inbound mails we fetch the groupname or phrase of the 
 			// first FROM-address:
-			BmAddressList fromAddrList = mAddrMap[BM_FIELD_FROM];
-			if (fromAddrList.IsGroup()) {
-				mName = fromAddrList.GroupName();
-			} else {
-				BmAddress fromAddr = fromAddrList.FirstAddress();
-				if (fromAddr.HasPhrase())
-					mName = fromAddr.Phrase();
-				else
-					mName = fromAddr.AddrSpec();
-			}
+			addrList = mAddrMap[BM_FIELD_FROM];
+		}
+		if (addrList.IsGroup()) {
+			mName = addrList.GroupName();
+		} else {
+			BmAddress addr = addrList.FirstAddress();
+			if (addr.HasPhrase())
+				mName = addr.Phrase();
+			else
+				mName = addr.AddrSpec();
 		}
 	}
 }
@@ -1349,6 +1354,9 @@ bool BmMailHeader::ConstructRawText( BmStringOBuf& msgText,
 		}
 		mHeaderString.Adopt( headerIO.TheString());
 		msgText << mHeaderString;
+
+		DetermineName();
+
 		return true;
 	} catch( BM_text_error& textErr) {
 		BmString errText = BmString("The ") << fieldName << "-field "

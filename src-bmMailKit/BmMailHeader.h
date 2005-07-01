@@ -251,6 +251,7 @@ protected:
 	void ParseHeader( const BmString &header);
 	BmString ParseHeaderField( BmString fieldName, BmString fieldValue);
 	BmString StripField( BmString fieldValue, BmString* commentBuffer=NULL);
+	void DetermineName();
 
 private:
 	void AddParsingError( const BmString& errStr);
