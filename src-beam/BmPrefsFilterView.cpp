@@ -321,7 +321,8 @@ BmPrefsFilterView::BmPrefsFilterView()
 				),
 				0
 			),
-			"hsplitter", 180, B_HORIZONTAL, true, true, false, B_FOLLOW_NONE
+			"hsplitter", 180, B_HORIZONTAL, true, true, false, false, false, 
+			B_FOLLOW_NONE
 		);
 
 	mFilterControl->SetDivider( 80);

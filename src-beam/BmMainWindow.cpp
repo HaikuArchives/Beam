@@ -126,9 +126,9 @@ BmMainWindow::BmMainWindow()
 	,	mVertSplitter( NULL)
 	,	mErrLogWin( NULL)
 {
-	CreateMailFolderView( minimax(0,100,300,1E5), 200, 400);
-	CreateMailRefView( minimax(200,100,1E5,1E5), 400, 200);
-	CreateMailView( minimax(200,200,1E5,1E5), BRect(0,0,400,200));
+	CreateMailFolderView( minimax(50,100,1E5,1E5), 200, 400);
+	CreateMailRefView( minimax(300,50,1E5,1E5), 400, 200);
+	CreateMailView( minimax(300,80,1E5,1E5), BRect(0,0,400,200));
 
 	// Get maximum button size
 	float width=0, height=0;
@@ -203,10 +203,11 @@ BmMainWindow::BmMainWindow()
 					mHorzSplitter = new UserResizeSplitView( 
 						mMailRefView->ContainerView(),
 						mMailView->ContainerView(),
-						"hsplitter", 200, B_HORIZONTAL, true, true, false, 
-						B_FOLLOW_NONE
+						"hsplitter", 200, B_HORIZONTAL, true, true, true, true, 
+						false, B_FOLLOW_NONE
 					),
-					"vsplitter", 170, B_VERTICAL, true, true, false, B_FOLLOW_NONE
+					"vsplitter", 170, B_VERTICAL, true, true, true, false, false, 
+					B_FOLLOW_NONE
 				),
 				0
 			),
@@ -540,6 +541,15 @@ void BmMainWindow::MessageReceived( BMessage* msg) {
 			case BMM_SHOW_LOGFILE: {
 				BmString logName = msg->FindString( "logfile");
 				BmLogWindow::CreateAndStartInstanceFor( logName.String());
+				break;
+			}
+			case BMM_PREVIOUS_MESSAGE:
+			case BMM_NEXT_MESSAGE: {
+				const char bytes
+					= (msg->what == BMM_NEXT_MESSAGE) 
+						? B_DOWN_ARROW
+						: B_UP_ARROW;
+				mMailRefView->KeyDown( &bytes, 1);
 				break;
 			}
 			case BMM_FIND: {

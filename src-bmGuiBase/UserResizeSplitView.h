@@ -2,29 +2,6 @@
 //Name:		UserResizeSplitView.h
 //Author:	Brian Tietz
 //Copyright 1999
-//Conventions:
-//	Global constants (declared with const) and #defines - begin with "c_" followed by lowercase
-//		words separated by underscores.
-//		(E.G., #define c_my_constant 5).
-//		(E.G., const int c_my_constant = 5;).
-//	Global variables - begin with "g_" followed by lowercase words separated by underscores.
-//		(E.G., int g_my_global;).
-//	New data types (classes, structs, typedefs, etc.) - begin with an uppercase letter followed by
-//		lowercase words separated by uppercase letters.  Enumerated constants contain a prefix
-//		associating them with a particular enumerated set.
-//		(E.G., typedef int MyTypedef;).
-//		(E.G., enum MyEnumConst {c_mec_one, c_mec_two};)
-//	Private member variables - begin with "m_" followed by lowercase words separated by underscores.
-//		(E.G., int m_my_member;).
-//	Public or friend-accessible member variables - all lowercase words separated by underscores.
-//		(E.G., int public_member;).
-//	Argument and local variables - begin with a lowercase letter followed by
-//		lowercase words separated by underscores.  If the name is already taken by a public member
-//		variable, prefix with a_ or l_
-//		(E.G., int my_local; int a_my_arg, int l_my_local).
-//	Functions (member or global) - begin with an uppercase letter followed by lowercase words
-//		separated by uppercase letters.
-//		(E.G., void MyFunction(void);).
 
 
 #ifndef _USER_RESIZE_SPLIT_VIEW_H_
@@ -59,6 +36,8 @@ class IMPEXPBMGUIBASE UserResizeSplitView : public MGroup, public BView
 									orientation posture = B_HORIZONTAL, 
 									bool should_resize_left_or_top = true,
 									bool should_resize_right_or_bottom = true, 
+									bool can_hide_left_or_top = false,
+									bool can_hide_right_or_bottom = false, 
 									bool move_slider_on_frame_resize = false,
 									uint32 resize_mask = B_FOLLOW_LEFT|B_FOLLOW_TOP, 
 									uint32 flags = B_WILL_DRAW|B_FRAME_EVENTS);
@@ -89,14 +68,14 @@ class IMPEXPBMGUIBASE UserResizeSplitView : public MGroup, public BView
 			float right_or_bottom_minimum_size);
 
 		virtual void SetPreferredDividerLeftOrTop(float divider_left_or_top);
-		virtual void SetDividerLeftOrTop(float divider_left_or_top);
+		virtual void SetDividerLeftOrTop(float divider_left_or_top, 
+													bool force = false);
 		inline float DividerLeftOrTop() {return m_divider_left_or_top;}
 
 		virtual void ResizeLeftOrTopChildTo(float width_or_height);
 		virtual void ResizeRightOrBottomChildTo(float width_or_height);
 
 		//BView overrides
-		virtual void AttachedToWindow();
 		virtual void Draw(BRect updateRect);
 		virtual void MouseDown(BPoint where);
 		virtual void MouseMoved(BPoint where, uint32 code, const BMessage *message);
@@ -119,13 +98,16 @@ class IMPEXPBMGUIBASE UserResizeSplitView : public MGroup, public BView
 		orientation m_posture;
 		bool m_should_resize_left_or_top;
 		bool m_should_resize_right_or_bottom;
+		bool m_can_hide_left_or_top;
+		bool m_can_hide_right_or_bottom;
 		bool m_move_slider_on_frame_resize;
 		bool m_dragging;
 		MView* m_left_or_top;
 		MView* m_right_or_bottom;
 		BView* m_left_or_top_BV;
 		BView* m_right_or_bottom_BV;
-		float m_cached_width_or_height;
+		float m_cached_width;
+		float m_cached_height;
 		float m_drag_mouse_offset;
 };
 

@@ -520,7 +520,8 @@ BmPrefsFilterChainView::BmPrefsFilterChainView()
 				),
 				0
 			),
-			"hsplitter", 150, B_HORIZONTAL, true, true, false, B_FOLLOW_NONE
+			"hsplitter", 150, B_HORIZONTAL, true, true, false, false, false, 
+			B_FOLLOW_NONE
 		);
 
 	float buttonWidth = StringWidth( "Remove Chain")+20;

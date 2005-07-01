@@ -73,6 +73,8 @@ enum {
 	BMM_EDIT_AS_NEW				= 'bMdq',
 	BMM_LEARN_AS_SPAM				= 'bMdr',
 	BMM_LEARN_AS_TOFU				= 'bMds',
+	BMM_NEXT_MESSAGE				= 'bMdt',
+	BMM_PREVIOUS_MESSAGE			= 'bMdu',
 	
 	// mail edit window
 	BMM_ATTACH						= 'bMea',

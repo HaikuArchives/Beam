@@ -147,7 +147,8 @@ BmPrefsWin::BmPrefsWin()
 								0
 							)
 						),
-						"vsplitter", 120, B_VERTICAL, true, true, false, B_FOLLOW_NONE
+						"vsplitter", 120, B_VERTICAL, true, true, false, false, 
+						false, B_FOLLOW_NONE
 					),
 					0
 				)
