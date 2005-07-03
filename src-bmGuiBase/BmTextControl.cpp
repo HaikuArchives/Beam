@@ -35,6 +35,7 @@
 
 #include "Colors.h"
 
+#include "BmBasics.h"
 #include "BmMenuControllerBase.h"
 #include "BmTextControl.h"
 
@@ -101,13 +102,14 @@ void BmTextControl::InitSize( const char* label, int32 fixedTextLen,
 		GetPreferredSize( &width, &height);
 //		if (!popup)
 //			popup = new BmMenuControllerBase( label, true, false);
-#ifdef B_BEOS_VERSION_DANO
-		mMenuField = new BMenuField( BRect( 2,2,Divider(),height), NULL, label,
-											  popup, true, B_FOLLOW_NONE, B_WILL_DRAW);
-#else
-		mMenuField = new BMenuField( BRect( 2,0,Divider(),height), NULL, label,
-											  popup, true, B_FOLLOW_NONE, B_WILL_DRAW);
-#endif
+		if (BeamOnDano)
+			mMenuField 
+				= new BMenuField( BRect( 2,2,Divider(),height), NULL, label,
+										popup, true, B_FOLLOW_NONE, B_WILL_DRAW);
+		else
+			mMenuField 
+				= new BMenuField( BRect( 2,0,Divider(),height), NULL, label,
+										popup, true, B_FOLLOW_NONE, B_WILL_DRAW);
 		mMenuField->SetDivider( 0);
 		AddChild( mMenuField);
 	}
