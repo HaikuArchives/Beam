@@ -28,6 +28,7 @@
 /*************************************************************************/
 
 
+#include <MenuBar.h>
 #include <MenuItem.h>
 
 #include <HGroup.h>
@@ -49,26 +50,27 @@ using namespace regexx;
 BmMenuControl::BmMenuControl( const char* label, BMenu* menu, float weight, 
 										float maxWidth, const char* fitText)
 	:	inherited( BRect(0,0,400,20), NULL, label, menu, true, B_FOLLOW_NONE)
-	,	mMenu( static_cast<BMenu*>( ChildAt( 0)))
+	,	mMenuBar( MenuBar())
 {
-	ResizeToPreferred();
-	BRect b = Bounds();
+	mMenuBar->ResizeToPreferred();
 	float labelWidth = StringWidth( label);
 	if (BeamOnDano)
 		SetDivider( 13 + (label ? labelWidth+19 : 0));
 	else
 		SetDivider( (label ? labelWidth+19 : 0));
+	float minHeight = mMenuBar->Frame().Height()+6;
 	if (fitText) {
 		float fixedWidth = StringWidth( fitText)+Divider()+27;
-		ct_mpm = minimax( fixedWidth, b.Height()+4, 
-								fixedWidth, b.Height()+4);
+		ct_mpm = minimax( fixedWidth, minHeight, fixedWidth, minHeight);
 	} else {
 		ct_mpm = minimax( 
-			StringWidth("1234567890")+Divider()+27, 
-			b.Height()+4, maxWidth, b.Height()+4, weight
+			StringWidth("1234567890")+Divider()+27, minHeight, 
+			maxWidth, minHeight, weight
 		);
 	}
 	ResizeTo( ct_mpm.mini.x, ct_mpm.mini.y);
+	mMenuBar->MoveTo( mMenuBar->Frame().left, 3);
+	mMenuBar->ResizeTo( mMenuBar->Bounds().Width(), mMenuBar->Bounds().Height()-1);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -76,6 +78,16 @@ BmMenuControl::BmMenuControl( const char* label, BMenu* menu, float weight,
 		-	
 \*------------------------------------------------------------------------------*/
 BmMenuControl::~BmMenuControl() {
+}
+
+/*------------------------------------------------------------------------------*\
+	( )
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMenuControl::AllAttached() {
+	// circumvent resizing done by BMenuField::AllAttached(), as this
+	// messes up our own size calculations
+	BView::AllAttached();
 }
 
 /*------------------------------------------------------------------------------*\
@@ -160,8 +172,9 @@ BRect BmMenuControl::layout(BRect frame) {
 									: Divider()-12;
 	if (occupiedSpace < 3)
 		occupiedSpace = 3;					// leave room for focus-rectangle
-	mMenu->MoveTo( occupiedSpace, mMenu->Frame().top);
-	mMenu->ResizeTo( frame.Width()-occupiedSpace-6, mMenu->Frame().Height());
-	mMenu->Invalidate();
+	mMenuBar->MoveTo( occupiedSpace, mMenuBar->Frame().top);
+	mMenuBar->ResizeTo( frame.Width()-occupiedSpace-6, 
+							  mMenuBar->Frame().Height());
+	mMenuBar->Invalidate();
 	return frame;
 }

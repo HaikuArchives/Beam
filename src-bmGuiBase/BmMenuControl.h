@@ -39,6 +39,7 @@
 #include "BmDividable.h"
 
 class HGroup;
+class BMenuBar;
 
 class IMPEXPBMGUIBASE BmMenuControl : public MView, 
 															 public BMenuField,
@@ -60,13 +61,14 @@ public:
 	void SetEnabled( bool enabled);
 	void SetDivider( float divider);
 	float Divider() const;
+	void AllAttached();
 
 private:
 
 	minimax layoutprefs();
 	BRect layout(BRect frame);
 	
-	BMenu* mMenu;
+	BMenuBar* mMenuBar;
 	
 	// Hide copy-constructor and assignment:
 	BmMenuControl( const BmMenuControl&);
