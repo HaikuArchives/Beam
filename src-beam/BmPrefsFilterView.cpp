@@ -293,7 +293,7 @@ BmPrefsFilterView::BmPrefsFilterView()
 				0
 			),
 			new VGroup(
-				minimax(400,250),
+				minimax(400,300),
 				mFilterControl = new BmTextControl( "Filter name:"),
 				new Space( minimax(0,5,0,5)),
 				mLayeredAddonGroup = new LayeredGroup(
