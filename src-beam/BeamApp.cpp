@@ -965,23 +965,32 @@ void BeamApplication::RefsReceived( BMessage* msg) {
 		|| entry.GetRef( &eref) != B_OK)
 			continue;
 		BmRef<BmMailRef> ref = BmMailRef::CreateInstance( eref);
-		if (!ref)
-			continue;
-		if (ref->Status() == BM_MAIL_STATUS_DRAFT
-		|| ref->Status() == BM_MAIL_STATUS_PENDING) {
-			BmMailEditWin* editWin = BmMailEditWin::CreateInstance( ref.Get());
-			if (editWin) {
+		if (ref && ref->ItemIsValid()) {
+			if (ref->Status() == BM_MAIL_STATUS_DRAFT
+			|| ref->Status() == BM_MAIL_STATUS_PENDING) {
+				BmMailEditWin* editWin = BmMailEditWin::CreateInstance( ref.Get());
+				if (editWin) {
+					editWin->Show();
+					if (!mMailWin)
+						mMailWin = editWin;
+				}
+			} else {
+				BmMailViewWin* viewWin = BmMailViewWin::CreateInstance( ref.Get());
+				if (viewWin) {
+					viewWin->Show();
+					if (!mMailWin)
+						mMailWin = viewWin;
+				}
+			}
+		} else if (CheckMimeType( &eref, "application/x-person")) {
+			BmStringVect emails;
+			ThePeopleList->GetEmailsFromPeopleFile( eref, emails);
+			BmString email = SelectEmailForPerson( emails);
+			BmRef<BmMail> mail = new BmMail( true);
+			mail->SetFieldVal( BM_FIELD_TO, email);
+			BmMailEditWin* editWin = BmMailEditWin::CreateInstance( mail.Get());
+			if (editWin)
 				editWin->Show();
-				if (!mMailWin)
-					mMailWin = editWin;
-			}
-		} else {
-			BmMailViewWin* viewWin = BmMailViewWin::CreateInstance( ref.Get());
-			if (viewWin) {
-				viewWin->Show();
-				if (!mMailWin)
-					mMailWin = viewWin;
-			}
 		}
 	}
 }
@@ -998,10 +1007,14 @@ void BeamApplication::MessageReceived( BMessage* msg) {
 				while( ThePopAccountList->IsJobRunning())
 					snooze( 200*1000);
 				ThePopAccountList->CheckMail( true);
+				if (ThePrefs->GetBool( "SendPendingMailsOnCheck", true))
+					TheSmtpAccountList->SendPendingMails();
 				break;
 			}
 			case BM_JOBWIN_POP:
 			case BMM_CHECK_MAIL: {
+				while( ThePopAccountList->IsJobRunning())
+					snooze( 200*1000);
 				const char* key = NULL;
 				msg->FindString( BmPopAccountList::MSG_ITEMKEY, &key);
 				if (key) {
@@ -1017,6 +1030,8 @@ void BeamApplication::MessageReceived( BMessage* msg) {
 								  BmString("PopAccount ") << key	
 								  		<< ": mail is checked now");
 						ThePopAccountList->CheckMailFor( key, isAutoCheck);
+						if (ThePrefs->GetBool( "SendPendingMailsOnCheck", true))
+							TheSmtpAccountList->SendPendingMails();
 					} else
 						BM_LOG( BM_LogApp, 
 								  BmString("PopAccount ") << key	
@@ -1024,6 +1039,8 @@ void BeamApplication::MessageReceived( BMessage* msg) {
 				} else {
 					BM_LOG( BM_LogApp, "Request to check mail for all accounts");
 					ThePopAccountList->CheckMail();
+					if (ThePrefs->GetBool( "SendPendingMailsOnCheck", true))
+						TheSmtpAccountList->SendPendingMails();
 				}
 				break;
 			}
