@@ -91,16 +91,16 @@ public:
 	static BmString GenerateMailAddr( const BmString& name, 
 												 const BmString& email);
 
-	bool AddEmail( const BmString &em);
+	bool AddEmail( const BmString& em);
 	bool CreateNewEmail( const BmString &em);
-	bool HasEmail( const BmString &em) const;
+	bool HasEmail( const BmString& em) const;
 
 	// getters:
-	inline const node_ref &NodeRef() const		
+	inline const node_ref& NodeRef() const
 													{ return mNodeRef; }
-	inline const entry_ref &EntryRef() const		
+	inline const entry_ref& EntryRef() const
 													{ return mEntryRef; }
-	inline const BmString &Name() const	{ return mName; }
+	inline const BmString& Name() const	{ return mName; }
 
 	// setters:
 
@@ -149,6 +149,9 @@ public:
 	//
 	status_t CreateNewPerson( const BmString& name, const BmString& email, 
 									  entry_ref* eref=NULL);
+
+	void GetEmailsFromPeopleFile( const entry_ref& eref,
+											BmStringVect& emails);
 
 	// overrides of listmodel base:
 	const BmString SettingsFileName()	{ return ""; }

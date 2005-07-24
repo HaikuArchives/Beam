@@ -534,6 +534,46 @@ void BmPeopleList::RemovePerson( const node_ref& nref) {
 }
 
 /*------------------------------------------------------------------------------*\
+	GetEmailsFromPeopleFile()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmPeopleList::GetEmailsFromPeopleFile( const entry_ref& eref,
+														  BmStringVect& emails) {
+	emails.clear();
+	BNode personNode( &eref);
+	if (personNode.InitCheck() != B_OK)
+		return;
+
+	BmString name;
+	BmReadStringAttr( &personNode, "META:name", name);
+	BmString addrSpec;
+	BmReadStringAttr( &personNode, "META:email", addrSpec);
+	BmString addr;
+	if (name.Length()
+	&& ThePrefs->GetBool( "AddPeopleNameToMailAddr", true))
+		addr << '"' << name << '"' << " <" << addrSpec << ">";
+	else
+		addr = addrSpec;
+	if (addr.Length())
+		emails.push_back( addr);
+	for( int c=1; c<9; ++c) {
+		addrSpec.Truncate(0);
+		BmString emailAttr("META:email");
+		BmReadStringAttr( &personNode, (emailAttr<<c).String(), addrSpec);
+		if (addrSpec.Length() > 0) {
+			addr.Truncate(0);
+			if (name.Length()
+			&& ThePrefs->GetBool( "AddPeopleNameToMailAddr", true))
+				addr << '"' << name << '"' << " <" << addrSpec << ">";
+			else
+				addr = addrSpec;
+			if (addr.Length())
+				emails.push_back( addr);
+		}
+	}
+}
+
+/*------------------------------------------------------------------------------*\
 	InitializeItems()
 		-	
 \*------------------------------------------------------------------------------*/
