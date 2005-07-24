@@ -75,6 +75,21 @@
 #include "BmTextControl.h"
 #include "BmToolbarButton.h"
 
+/*------------------------------------------------------------------------------*\
+	SelectEmailForPerson( emails)
+		-	selects one of the given emails of a person
+\*------------------------------------------------------------------------------*/
+BmString SelectEmailForPerson( const BmStringVect& emails) {
+	if (emails.empty())
+		return BM_DEFAULT_STRING;
+	// maybe TODO: ask user which of the given addresses should be used.
+	// However, this would be a major usability drawback, as this method is
+	// triggered by selecting one or more people files and opening them with / 
+	// dragging them over Beam. That's why we currently select the first mail
+	// automatically:
+	return emails[0];
+}
+
 /********************************************************************************\
 	BmMailEditWin
 \********************************************************************************/
@@ -145,8 +160,7 @@ BMessageFilter* CreatePeopleDropMsgFilter(uint32 cmd)
 	Filter()
 		-	
 \*------------------------------------------------------------------------------*/
-filter_result BmShiftTabMsgFilter::Filter( BMessage* msg, 
-																			 BHandler**) {
+filter_result BmShiftTabMsgFilter::Filter( BMessage* msg, BHandler**) {
 	if (msg->what == B_KEY_DOWN) {
 		BmString bytes = msg->FindString( "bytes");
 		int32 modifiers = msg->FindInt32( "modifiers");
@@ -163,7 +177,7 @@ filter_result BmShiftTabMsgFilter::Filter( BMessage* msg,
 		-	
 \*------------------------------------------------------------------------------*/
 filter_result BmPeopleDropMsgFilter::Filter( BMessage* msg, 
-																				BHandler** handler) {
+															BHandler** handler) {
 	filter_result res = B_DISPATCH_MESSAGE;
 	BView* cntrl = handler ? dynamic_cast< BView*>( *handler) : NULL;
 	if (msg && msg->what == B_SIMPLE_DATA && cntrl) {
@@ -173,23 +187,12 @@ filter_result BmPeopleDropMsgFilter::Filter( BMessage* msg,
 		entry_ref eref;
 		for( int32 i=0; msg->FindRef( "refs", i, &eref) == B_OK; ++i) {
 			if (CheckMimeType( &eref, "application/x-person")) {
-				BNode personNode( &eref);
-				if (personNode.InitCheck() != B_OK)
-					continue;
-				BmString name;
-				BmReadStringAttr( &personNode, "META:name", name);
-				BmString addrSpec;
-				BmReadStringAttr( &personNode, "META:email", addrSpec);
-				BmString addr;
-				if (name.Length()
-				&& ThePrefs->GetBool( "AddPeopleNameToMailAddr", true))
-					addr << '"' << name << '"' << " <" << addrSpec << ">";
-				else
-					addr = addrSpec;
-				if (addr.Length())
-					win->AddAddressToTextControl( 
-						dynamic_cast< BmTextControl*>( cntrl), addr
-					);
+				BmStringVect emails;
+				ThePeopleList->GetEmailsFromPeopleFile( eref, emails);
+				BmString email = SelectEmailForPerson( emails);
+				win->AddAddressToTextControl( 
+					dynamic_cast< BmTextControl*>( cntrl), email
+				);
 				res = B_SKIP_MESSAGE;
 			}
 		}

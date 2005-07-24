@@ -81,6 +81,9 @@ class VGroup;
 class BFilePanel;
 
 
+typedef vector<BmString> BmStringVect;
+BmString SelectEmailForPerson( const BmStringVect& emails);
+
 /*------------------------------------------------------------------------------*\
 	BmMailEditWin
 		-	
