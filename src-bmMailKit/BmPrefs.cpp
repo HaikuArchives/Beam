@@ -415,6 +415,7 @@ void BmPrefs::InitDefaults() {
 	mDefaultsMsg.AddString( "ReplySubjectRX", "^\\s*(Re|Aw)(\\[\\d+\\])?:");
 	mDefaultsMsg.AddString( "ReplySubjectStr", "Re: %s");
 	mDefaultsMsg.AddBool( "RestoreFolderStates", true);
+	mDefaultsMsg.AddBool( "SendPendingMailsOnCheck", true);
 	mDefaultsMsg.AddMessage( "Shortcuts", GetShortcutDefaults());
 	mDefaultsMsg.AddBool( "ShowAlertForErrors", false);
 	mDefaultsMsg.AddBool( "ShowDecodedLength", true);
