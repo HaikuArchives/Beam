@@ -30,6 +30,7 @@
 
 #include <Alert.h>
 #include <FilePanel.h>
+#include <fs_attr.h>
 #include <MenuItem.h>
 #include <NodeInfo.h>
 #include <PopUpMenu.h>
@@ -732,7 +733,11 @@ void BmBodyPartView::ItemInvoked( int32 index) {
 				status_t res=entry.InitCheck();
 				if (res==B_OK && path.InitCheck()==B_OK && path.Path()) {
 					update_mime_info( path.Path(), false, true, false);
-					res = be_roster->Launch( &eref);
+					// using BRoster::Launch(type, args, ...) seems to be more
+					// reliable than Launch(eref), as for instance Firefox
+					// doesn't work with the latter...
+					char* urlStr = const_cast<char*>(path.Path());
+					res = be_roster->Launch(realMT.String(), 1, &urlStr);
 					if (res != B_OK && res != B_ALREADY_RUNNING) {
 						ShowAlert( 
 							BmString("Sorry, could not launch application for "
