@@ -140,6 +140,7 @@ private:
 	BmCLVContainerView operator=( const BmCLVContainerView&);
 };
 
+class BMenu;
 class BMessageRunner;
 /*------------------------------------------------------------------------------*\
 	BmListViewController

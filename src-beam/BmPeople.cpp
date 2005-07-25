@@ -134,7 +134,7 @@ bool BmPerson::AddEmail( const BmString& em) {
 		-	
 \*------------------------------------------------------------------------------*/
 bool BmPerson::CreateNewEmail( const BmString& em) {
-	uint16 count = mEmails.size();
+	uint32 count = mEmails.size();
 	if (count >= 5)
 		// can only handle up two 5 emails (even MrPeeps doesn't do more)
 		return false;
