@@ -112,7 +112,7 @@ public:
 												  uint32 ResizingMode, 
 												  uint32 flags);
 	bool AcceptsDropOf( const BMessage* msg);
-	void HandleDrop( const BMessage* msg);
+	void HandleDrop( BMessage* msg);
 	void ItemInvoked( int32 index);
 	void KeyDown(const char *bytes, int32 numBytes);
 	BmString StateInfoBasename()			{ return "MailFolderView"; }

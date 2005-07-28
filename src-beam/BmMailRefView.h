@@ -116,7 +116,7 @@ public:
 	void KeyDown(const char *bytes, int32 numBytes);
 	bool InitiateDrag( BPoint point, int32 index, bool wasSelected);
 	bool AcceptsDropOf( const BMessage* msg);
-	void HandleDrop( const BMessage* msg);
+	void HandleDrop( BMessage* msg);
 	void MessageReceived( BMessage* msg);
 	void SelectionChanged( void);
 	void ItemInvoked( int32 index);

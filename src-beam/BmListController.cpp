@@ -394,7 +394,7 @@ void BmListViewController::HighlightItemAt( const BPoint& point) {
 	HandleDrop( msg)
 		-	
 \*------------------------------------------------------------------------------*/
-void BmListViewController::HandleDrop( const BMessage*) {
+void BmListViewController::HandleDrop( BMessage*) {
 	// remove the drag-highlight, if neccessary:
 	if (mCurrHighlightItem) {
 		mCurrHighlightItem->Highlight( false);

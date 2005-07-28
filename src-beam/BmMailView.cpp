@@ -441,7 +441,7 @@ void BmMailView::MessageReceived( BMessage* msg) {
 				break;
 			}
 			case B_SIMPLE_DATA: {
-				mBodyPartView->AddAttachment( msg);
+				mBodyPartView->HandleDrop( msg);
 				break;
 			}
 			case BM_MAILVIEW_COPY_URL: {

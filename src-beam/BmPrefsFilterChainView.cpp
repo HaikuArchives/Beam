@@ -414,7 +414,7 @@ bool BmChainedFilterView::AcceptsDropOf( const BMessage* msg) {
 	HandleDrop( msg)
 		-	
 \*------------------------------------------------------------------------------*/
-void BmChainedFilterView::HandleDrop( const BMessage* msg) {
+void BmChainedFilterView::HandleDrop( BMessage* msg) {
 	if (msg && msg->what == BM_CHAINED_FILTER_DRAG && mCurrHighlightItem) {
 		BmChainedFilter* highlightedFilter 
 			= dynamic_cast< BmChainedFilter*>( mCurrHighlightItem->ModelItem());

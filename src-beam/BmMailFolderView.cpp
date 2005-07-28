@@ -349,7 +349,7 @@ bool BmMailFolderView::AcceptsDropOf( const BMessage* msg) {
 	HandleDrop( msg)
 		-	
 \*------------------------------------------------------------------------------*/
-void BmMailFolderView::HandleDrop( const BMessage* msg) {
+void BmMailFolderView::HandleDrop( BMessage* msg) {
 	static int jobNum = 1;
 	type_code tc;
 	int32 refCount;

@@ -699,7 +699,7 @@ bool BmMailRefView::AcceptsDropOf( const BMessage* msg) {
 	HandleDrop( msg)
 		-	
 \*------------------------------------------------------------------------------*/
-void BmMailRefView::HandleDrop( const BMessage* msg) {
+void BmMailRefView::HandleDrop( BMessage* msg) {
 	type_code tc;
 	int32 refCount;
 	if (mCurrFolder && msg && msg->what == B_SIMPLE_DATA

@@ -162,7 +162,7 @@ public:
 												  uint32 flags);
 	bool InitiateDrag( BPoint, int32 index, bool wasSelected);
 	bool AcceptsDropOf( const BMessage* msg);
-	void HandleDrop( const BMessage* msg);
+	void HandleDrop( BMessage* msg);
 
 	// overrides of listview base:
 	void MessageReceived( BMessage* msg);
