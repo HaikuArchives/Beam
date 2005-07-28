@@ -279,28 +279,21 @@ void UserResizeSplitView::FrameResized(float new_width, float new_height)
 void UserResizeSplitView::Draw(BRect updateRect)
 {
 	BRect b = Bounds();
-	const float dist = 5;
+	const float dist = 3;
 	const float count 
 		= floor((m_posture == B_HORIZONTAL ? b.Width() : b.Height()) / dist);
 	rgb_color lightColor = ui_color(B_UI_SHINE_COLOR);
 	rgb_color darkColor = BmWeakenColor( B_UI_SHADOW_COLOR, 3);
 	BeginLineArray(count*2);
-	if (m_posture == B_HORIZONTAL) {
-		float x = 2;
-		float y = m_divider_left_or_top + 1;
-		for (int c=0; c<count; ++c) {
-			AddLine(BPoint(x+1, y), BPoint(x ,y+1), lightColor);
-			AddLine(BPoint(x+1, y+1), BPoint(x+1, y+1), darkColor);
+	float x = m_posture == B_HORIZONTAL ? 2 : m_divider_left_or_top + 1;
+	float y = m_posture == B_HORIZONTAL ? m_divider_left_or_top + 1 : 2;
+	for (int c=0; c<count; ++c) {
+		AddLine(BPoint(x, y), BPoint(x ,y), darkColor);
+		AddLine(BPoint(x+1, y+1), BPoint(x+1, y+1), lightColor);
+		if (m_posture == B_HORIZONTAL)
 			x += dist;
-		}
-	} else {
-		float x = m_divider_left_or_top + 1;
-		float y = 2;
-		for (int c=0; c<count; ++c) {
-			AddLine(BPoint(x+1, y), BPoint(x ,y+1), lightColor);
-			AddLine(BPoint(x+1, y+1), BPoint(x+1, y+1), darkColor);
+		else
 			y += dist;
-		}
 	}
 	EndLineArray();
 }
