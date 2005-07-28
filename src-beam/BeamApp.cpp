@@ -1003,14 +1003,6 @@ void BeamApplication::RefsReceived( BMessage* msg) {
 void BeamApplication::MessageReceived( BMessage* msg) {
 	try {
 		switch( msg->what) {
-			case BMM_CHECK_ALL: {
-				while( ThePopAccountList->IsJobRunning())
-					snooze( 200*1000);
-				ThePopAccountList->CheckMail( true);
-				if (ThePrefs->GetBool( "SendPendingMailsOnCheck", true))
-					TheSmtpAccountList->SendPendingMails();
-				break;
-			}
 			case BM_JOBWIN_POP:
 			case BMM_CHECK_MAIL: {
 				while( ThePopAccountList->IsJobRunning())
@@ -1030,18 +1022,27 @@ void BeamApplication::MessageReceived( BMessage* msg) {
 								  BmString("PopAccount ") << key	
 								  		<< ": mail is checked now");
 						ThePopAccountList->CheckMailFor( key, isAutoCheck);
-						if (ThePrefs->GetBool( "SendPendingMailsOnCheck", true))
+						if (!isAutoCheck
+						&& ThePrefs->GetBool( "SendPendingMailsOnCheck", true))
 							TheSmtpAccountList->SendPendingMails();
 					} else
 						BM_LOG( BM_LogApp, 
 								  BmString("PopAccount ") << key	
 								  		<< ": mail is not checked (PPP isn't running)");
 				} else {
-					BM_LOG( BM_LogApp, "Request to check mail for all accounts");
-					ThePopAccountList->CheckMail();
+					ThePopAccountList->CheckMail( false);
 					if (ThePrefs->GetBool( "SendPendingMailsOnCheck", true))
 						TheSmtpAccountList->SendPendingMails();
 				}
+				break;
+			}
+			case BMM_CHECK_ALL: {
+				BM_LOG( BM_LogApp, "Request to check mail for all accounts");
+				while( ThePopAccountList->IsJobRunning())
+					snooze( 200*1000);
+				ThePopAccountList->CheckMail( true);
+				if (ThePrefs->GetBool( "SendPendingMailsOnCheck", true))
+					TheSmtpAccountList->SendPendingMails();
 				break;
 			}
 			case BMM_NEW_MAIL: {

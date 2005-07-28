@@ -249,15 +249,6 @@ BmBodyPart::BmBodyPart( BmBodyPartList* model, const entry_ref* ref,
 				? BmString("utf-8")
 				: ThePrefs->GetString( "DefaultCharset");
 	try {
-		status_t err;
-		BFile file;
-		off_t size;
-		if ((err=file.SetTo( ref, B_READ_ONLY)) != B_OK)
-			BM_THROW_RUNTIME( BmString("Couldn't create file for <") << ref->name 
-										<< "> \n\nError:" << strerror(err));
-		if ((err=file.GetSize( &size)) != B_OK)
-			BM_THROW_RUNTIME( BmString("Couldn't get file-size for <") 
-										<< ref->name << "> \n\nError:" << strerror(err));
 		BmString mimetype = DetermineMimeType( ref, false);
 		if (mimetype.ICompare("text/x-email")==0) {
 			// convert beos-own mail-mimetype into correct message/rfc822:
@@ -267,30 +258,24 @@ BmBodyPart::BmBodyPart( BmBodyPartList* model, const entry_ref* ref,
 		mContentDisposition.SetTo( BmString( "attachment; filename=\"")
 												<<ref->name<<'"');
 
+		BmString filepath = BPath(ref).Path();
 		if (mimetype.ICompare( "text/", 5)==0 
 		&& !ThePrefs->GetBool( "ImportExportTextAsUtf8", true)) {
 			BmString nativeString;
-			char* buf = nativeString.LockBuffer( size);
-			file.Read( buf, size);
-			buf[size] = '\0';
-			nativeString.UnlockBuffer( size);
+			FetchFile(filepath, nativeString);
 			if (!IsCompatibleWithText( nativeString)) {
 				BM_SHOWERR( "The attachment has been advertised as text, "
 								"although it seems to contain binary data.\n\n"
 								"The attachment will be added as generic file, "
 								"just to be safe.");
 				mimetype="application/octet-stream";
-				file.Seek( 0, SEEK_SET);
 			} else {
 				ConvertToUTF8( mCurrentCharset, nativeString, mDecodedData);
 				mHaveDecodedData = true;
 			}
 		}
 		if (!mHaveDecodedData) {
-			char* buf = mDecodedData.LockBuffer( size);
-			file.Read( buf, size);
-			buf[size] = '\0';
-			mDecodedData.UnlockBuffer( size);
+			FetchFile(filepath, mDecodedData);
 			mCurrentCharset = mSuggestedCharset = "UTF-8";
 			mHaveDecodedData = true;
 		}
