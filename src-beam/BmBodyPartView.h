@@ -64,7 +64,8 @@ public:
 	~BmBodyPartView();
 
 	// native methods:
-	void AddAttachment( BMessage* msg);
+	void AddAttachment( const BMessage* msg);
+	void AddAttachment( const char* path);
 	void AdjustVerticalSize();
 	void ShowBody( BmBodyPartList* body);
 
@@ -86,6 +87,7 @@ public:
 	void ItemInvoked( int32 index);
 	void RemoveModelItem( BmListModelItem* item);
 	BmString StateInfoBasename();
+	void HandleDrop( BMessage*);
 
 	// getters:
 	inline float FixedWidth() 				{ return 5000; }

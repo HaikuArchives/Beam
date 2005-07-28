@@ -30,6 +30,7 @@
 
 #include <Alert.h>
 #include <FilePanel.h>
+#include <FindDirectory.h>
 #include <fs_attr.h>
 #include <MenuItem.h>
 #include <NodeInfo.h>
@@ -264,7 +265,7 @@ void BmBodyPartView::ShowBody( BmBodyPartList* body) {
 	AddAttachment()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmBodyPartView::AddAttachment( BMessage* msg) {
+void BmBodyPartView::AddAttachment( const BMessage* msg) {
 	if (!mEditable)
 		return;
 	entry_ref ref;
@@ -283,6 +284,25 @@ void BmBodyPartView::AddAttachment( BMessage* msg) {
 		BmRef<BmBodyPart> newBodyPart( new BmBodyPart(*droppedBodyPart));
 		bodyPartList->AddItemToList( newBodyPart.Get());
 	}
+	ShowBody( bodyPartList);
+}
+
+/*------------------------------------------------------------------------------*\
+	AddAttachment()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmBodyPartView::AddAttachment( const char* path) {
+	if (!mEditable)
+		return;
+	BmRef<BmDataModel> modelRef( DataModel());
+	BmBodyPartList* bodyPartList 
+		= dynamic_cast<BmBodyPartList*>( modelRef.Get());
+	if (!bodyPartList)
+		return;
+	BEntry entry(path);
+	entry_ref ref;
+	if (entry.GetRef(&ref) == B_OK)
+		bodyPartList->AddAttachmentFromRef( &ref, mDefaultCharset);
 	ShowBody( bodyPartList);
 }
 
@@ -647,7 +667,7 @@ void BmBodyPartView::MessageReceived( BMessage* msg) {
 				break;
 			}
 			case B_SIMPLE_DATA: {
-				AddAttachment( msg);
+				HandleDrop(msg);
 				break;
 			}
 			default:
@@ -657,6 +677,58 @@ void BmBodyPartView::MessageReceived( BMessage* msg) {
 		// a problem occurred, we tell the user:
 		BM_SHOWERR( BmString("BodyPartView:\n\t") << err.what());
 	}
+}
+
+/*------------------------------------------------------------------------------*\
+	HandleDrop( msg)
+		-	
+\*------------------------------------------------------------------------------*/
+void BmBodyPartView::HandleDrop( BMessage* msg) {
+	entry_ref ref;
+	if (msg->FindRef( "refs", &ref) == B_OK)
+		AddAttachment( msg);
+	else {
+		BPath tempPath;
+		entry_ref tempPathRef;
+		if (find_directory( B_COMMON_TEMP_DIRECTORY, &tempPath, true) == B_OK 
+		&& get_ref_for_path( tempPath.Path(), &tempPathRef) == B_OK) {
+
+			// build the reply message
+			BMessage reply(B_COPY_TARGET);
+			reply.AddInt32("be:actions", B_COPY_TARGET);
+			reply.AddString("be:types", "application/octet-stream");
+			reply.AddRef("directory", &tempPathRef);
+			const char* filename;
+			if (msg->FindString("be:clip_name", &filename) != B_OK)
+				filename = "beam_dropped_file";
+			reply.AddString("name", filename);
+			BmString dropFileName = tempPath.Path();
+			dropFileName << "/" << filename;
+			{
+				BFile file( dropFileName.String(), 
+								B_READ_WRITE | B_CREATE_FILE | B_ERASE_FILE);
+			}
+	
+			// Attach any data the originator may have tagged on
+			BMessage data;
+			if (msg->FindMessage("be:originator-data", &data) == B_OK)
+				reply.AddMessage("be:originator-data", &data);
+	
+			// copy over all the file types the drag initiator claimed to
+			// support
+			for (int32 index = 0; ; index++) {
+				const char *type;
+				if (msg->FindString("be:filetypes", index, &type) != B_OK)
+					break;
+				reply.AddString("be:filetypes", type);
+			}
+	
+			BMessage dataMsg;
+			if (msg->SendReply(&reply, &dataMsg) == B_OK)
+				AddAttachment(dropFileName.String());
+		}
+	}
+	inherited::HandleDrop(msg);
 }
 
 /*------------------------------------------------------------------------------*\
