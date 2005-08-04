@@ -130,28 +130,14 @@ void BmRecvAccItem::UpdateView( BmUpdFlags flags, bool redraw,
 	BmRecvAccView
 \********************************************************************************/
 
-BmRecvAccView* BmRecvAccView::theInstance = NULL;
-
 /*------------------------------------------------------------------------------*\
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmRecvAccView* BmRecvAccView::CreateInstance( minimax minmax, int32 width, 
-															 int32 height) {
-	if (theInstance)
-		return theInstance;
-	else 
-		return theInstance = new BmRecvAccView( minmax, width, height);
-}
-
-/*------------------------------------------------------------------------------*\
-	()
-		-	
-\*------------------------------------------------------------------------------*/
-BmRecvAccView::BmRecvAccView( minimax minmax, int32 width, int32 height)
-	:	inherited( minmax, BRect(0,0,width-1,height-1), "Beam_RecvAccView", 
+BmRecvAccView::BmRecvAccView( int32 width, int32 height)
+	:	inherited( BRect(0,0,width-1,height-1), "Beam_RecvAccView", 
 					  B_SINGLE_SELECTION_LIST, 
-					  false, true, true, false)
+					  false, true)
 {
 	int32 flags = CLV_SORT_KEYABLE;
 	SetViewColor( B_TRANSPARENT_COLOR);
@@ -159,10 +145,6 @@ BmRecvAccView::BmRecvAccView( minimax minmax, int32 width, int32 height)
 		SetStripedBackground( true);
 	else 
 		flags |= CLV_TELL_ITEMS_WIDTH;
-
-	Initialize( BRect( 0,0,width-1,height-1),
-					B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE,
-					B_FOLLOW_TOP_BOTTOM, true, true, true, B_FANCY_BORDER);
 
 	AddColumn( new CLVColumn( "Account", 80.0, flags, 50.0));
 	AddColumn( new CLVColumn( "C", 20.0, flags, 20.0, "(C)heck?"));
@@ -185,7 +167,6 @@ BmRecvAccView::BmRecvAccView( minimax minmax, int32 width, int32 height)
 		-	
 \*------------------------------------------------------------------------------*/
 BmRecvAccView::~BmRecvAccView() {
-	theInstance = NULL;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -195,23 +176,6 @@ BmRecvAccView::~BmRecvAccView() {
 BmListViewItem* BmRecvAccView::CreateListViewItem( BmListModelItem* item,
 																	BMessage*) {
 	return new BmRecvAccItem( this, item);
-}
-
-/*------------------------------------------------------------------------------*\
-	CreateContainer()
-		-	
-\*------------------------------------------------------------------------------*/
-CLVContainerView* BmRecvAccView::CreateContainer( bool horizontal, 
-																  bool vertical, 
-												  				  bool scroll_view_corner, 
-												  				  border_style border, 
-																  uint32 ResizingMode, 
-																  uint32 flags) 
-{
-	return new BmCLVContainerView( fMinMax, this, ResizingMode, flags, 
-											 horizontal, vertical, scroll_view_corner, 
-											 border, mShowCaption, mShowBusyView, 
-											 be_plain_font->StringWidth(" 99 accounts "));
 }
 
 /*------------------------------------------------------------------------------*\
@@ -258,7 +222,13 @@ BmPrefsRecvMailView::BmPrefsRecvMailView()
 {
 	MView* view = 
 		new VGroup(
-			CreateAccListView( minimax(400,100,1E5,1E5), 400, 100),
+			new BetterScrollView( 
+				minimax(400,100,1E5,1E5), 
+				mAccListView = new BmRecvAccView( 400, 100),
+				BM_SV_H_SCROLLBAR | BM_SV_V_SCROLLBAR | BM_SV_CORNER
+				| BM_SV_CAPTION,
+				"99 accounts"
+			),
 			new HGroup(
 				mAddButton = new MButton( "Add Account", 
 												  new BMessage(BM_ADD_ACCOUNT), 
@@ -1016,16 +986,4 @@ void BmPrefsRecvMailView::ShowAccount( int32 selection) {
 	}
 	mMinutesLabel->Invalidate();
 	mDaysLabel->Invalidate();
-}
-
-/*------------------------------------------------------------------------------*\
-	()
-		-	
-\*------------------------------------------------------------------------------*/
-CLVContainerView* BmPrefsRecvMailView::CreateAccListView( minimax minmax, 
-																			 int32 width, 
-																			 int32 height) {
-	mAccListView = BmRecvAccView::CreateInstance( minmax, width, height);
-	mAccListView->ClickSetsFocus( true);
-	return mAccListView->ContainerView();
 }

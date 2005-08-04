@@ -30,6 +30,8 @@
 
 #include <cstring>
 
+#include <ScrollBar.h>
+
 #include "BubbleHelper.h"
 #include "Colors.h"
 
@@ -43,13 +45,17 @@ static BMessage pulseMsg(BM_PULSE);
 
 const BmBitmapHandle* BmBusyView::nErrorIcon = NULL;
 
+static const float kBvHeight = B_H_SCROLL_BAR_HEIGHT;
+static const float kBvWidth = kBvHeight - 1;
+
 /*------------------------------------------------------------------------------*\
 	( )
 		-	
 \*------------------------------------------------------------------------------*/
-BmBusyView::BmBusyView( BRect frame)
-	:	inherited( frame, "BmBusyView", B_FOLLOW_NONE, B_WILL_DRAW)
-	,	mCachedBounds( Bounds())
+BmBusyView::BmBusyView( BPoint leftTop)
+	:	inherited( BRect(leftTop.x, leftTop.y, 
+							  leftTop.x+kBvWidth-1, leftTop.y+kBvHeight-1), 
+					  "BmBusyView", B_FOLLOW_NONE, B_WILL_DRAW)
 	,	mMsgRunner( NULL)
 	,	mBusyCount( 0)
 	,	mCurrState( 0)
@@ -165,7 +171,7 @@ void BmBusyView::Pulse() {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmBusyView::Draw( BRect) {
-	BRect r = mCachedBounds;
+	BRect r = Bounds();
 	SetHighColor( ui_color( B_UI_SHINE_COLOR));
 	StrokeLine( BPoint(0.0,1.0), BPoint(r.right-1,1.0));
 	StrokeLine( BPoint(0.0,1.0), r.LeftBottom());

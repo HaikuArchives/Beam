@@ -103,43 +103,6 @@ protected:
 	BmListViewItem operator=( const BmListViewItem&);
 };
 
-/*------------------------------------------------------------------------------*\
-	BmCLVContainerView
-		-	
-\*------------------------------------------------------------------------------*/
-class BmCLVContainerView : public CLVContainerView
-{
-	typedef CLVContainerView inherited;
-public:
-	BmCLVContainerView( minimax minmax, ColumnListView* target, uint32 resizingMode, 
-							  uint32 flags, bool horizontal, bool vertical,
-							  bool scroll_view_corner, border_style border, 
-							  bool showCaption=false, bool showBusyView=false,
-							  float captionWidth=0);
-	~BmCLVContainerView();
-	
-	// native methods:
-	void SetBusy();
-	void UnsetBusy();
-	void PulseBusyView();
-
-	// overrides of MView base:
-	BRect layout( BRect);
-	
-	// setters:
-	void SetCaptionText( const char* text);
-	inline void SetCaptionWidth( float width) 	{ mCaptionWidth = width; }
-
-private:
-	BmCaption* mCaption;
-	float mCaptionWidth;
-	BmBusyView* mBusyView;
-
-	// Hide copy-constructor and assignment:
-	BmCLVContainerView( const BmCLVContainerView&);
-	BmCLVContainerView operator=( const BmCLVContainerView&);
-};
-
 class BMenu;
 class BMessageRunner;
 /*------------------------------------------------------------------------------*\
@@ -157,13 +120,11 @@ class BmListViewController : public ColumnListView, public BmJobController
 
 public:
 	//c'tors and d'tor:
-	BmListViewController( minimax minmax,BRect rect,
+	BmListViewController( BRect rect,
 								 const char* Name = NULL,
 								 list_view_type Type = B_SINGLE_SELECTION_LIST,
 								 bool hierarchical = false,
-								 bool showLabelView = true,
-								 bool showCaption = false,
-								 bool showBusyView = false);
+								 bool showLabelView = true);
 	virtual ~BmListViewController();
 
 	// native methods:
@@ -180,9 +141,6 @@ public:
 	status_t Archive(BMessage* archive, bool deep=true) const;
 
 	// overrides of listview base:
-	CLVContainerView* CreateContainer( bool horizontal, bool vertical, 
-												  bool scroll_view_corner, border_style border, 
-												  uint32 ResizingMode, uint32 flags);
 	void ExpansionChanged( CLVListItem* item, bool expanded);
 	void ShowLabelViewMenu( BPoint pos);
 	void AttachedToWindow();
@@ -191,10 +149,8 @@ public:
 	void MouseDown(BPoint point);
 	void MouseUp(BPoint point);
 	void MouseMoved( BPoint point, uint32 transit, const BMessage *msg);
-	BmCLVContainerView* ScrollView() 	{ return dynamic_cast<BmCLVContainerView*>(fScrollView); }
 
 	// getters:
-	inline CLVContainerView* ContainerView()	{ return inherited::fScrollView; }
 	inline BMessage* InitialStateInfo()			{ return mInitialStateInfo; }
 	virtual const char* ItemNameForCaption()	{ return "item"; }
 

@@ -123,28 +123,14 @@ void BmRecvIdentItem::UpdateView( BmUpdFlags flags, bool redraw,
 	BmRecvIdentView
 \********************************************************************************/
 
-BmRecvIdentView* BmRecvIdentView::theInstance = NULL;
-
 /*------------------------------------------------------------------------------*\
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmRecvIdentView* BmRecvIdentView::CreateInstance( minimax minmax, int32 width, 
-																  int32 height) {
-	if (theInstance)
-		return theInstance;
-	else 
-		return theInstance = new BmRecvIdentView( minmax, width, height);
-}
-
-/*------------------------------------------------------------------------------*\
-	()
-		-	
-\*------------------------------------------------------------------------------*/
-BmRecvIdentView::BmRecvIdentView( minimax minmax, int32 width, int32 height)
-	:	inherited( minmax, BRect(0,0,width-1,height-1), "Beam_IdentView", 
+BmRecvIdentView::BmRecvIdentView( int32 width, int32 height)
+	:	inherited( BRect(0,0,width-1,height-1), "Beam_IdentView", 
 					  B_SINGLE_SELECTION_LIST, 
-					  false, true, true, false)
+					  false, true)
 {
 	int32 flags = CLV_SORT_KEYABLE;
 	SetViewColor( B_TRANSPARENT_COLOR);
@@ -152,10 +138,6 @@ BmRecvIdentView::BmRecvIdentView( minimax minmax, int32 width, int32 height)
 		SetStripedBackground( true);
 	else 
 		flags |= CLV_TELL_ITEMS_WIDTH;
-
-	Initialize( BRect( 0,0,width-1,height-1),
-					B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE,
-					B_FOLLOW_TOP_BOTTOM, true, true, true, B_FANCY_BORDER);
 
 	AddColumn( new CLVColumn( "Identity", 80.0, flags, 50.0));
 	AddColumn( new CLVColumn( "Real Name", 80.0, flags, 40.0));
@@ -175,7 +157,6 @@ BmRecvIdentView::BmRecvIdentView( minimax minmax, int32 width, int32 height)
 		-	
 \*------------------------------------------------------------------------------*/
 BmRecvIdentView::~BmRecvIdentView() {
-	theInstance = NULL;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -185,23 +166,6 @@ BmRecvIdentView::~BmRecvIdentView() {
 BmListViewItem* BmRecvIdentView::CreateListViewItem( BmListModelItem* item,
 																	  BMessage*) {
 	return new BmRecvIdentItem( this, item);
-}
-
-/*------------------------------------------------------------------------------*\
-	CreateContainer()
-		-	
-\*------------------------------------------------------------------------------*/
-CLVContainerView* BmRecvIdentView::CreateContainer( bool horizontal, 
-																	 bool vertical, 
-												  				 	 bool scroll_view_corner, 
-												  				 	 border_style border, 
-																 	 uint32 ResizingMode, 
-																 	 uint32 flags) 
-{
-	return new BmCLVContainerView( fMinMax, this, ResizingMode, flags, 
-											 horizontal, vertical, scroll_view_corner, 
-											 border, mShowCaption, mShowBusyView, 
-											 be_plain_font->StringWidth(" 99 items "));
 }
 
 /*------------------------------------------------------------------------------*\
@@ -248,7 +212,13 @@ BmPrefsIdentityView::BmPrefsIdentityView()
 {
 	MView* view = 
 		new VGroup(
-			CreateIdentListView( minimax(400,100,1E5,1E5), 400, 100),
+			new BetterScrollView( 
+				minimax(400,100,1E5,1E5), 
+				mIdentListView = new BmRecvIdentView( 400, 100),
+				BM_SV_H_SCROLLBAR | BM_SV_V_SCROLLBAR | BM_SV_CORNER
+				| BM_SV_CAPTION,
+				"99 identities"
+			),
 			new HGroup(
 				mAddButton = new MButton( "Add Identity", 
 												  new BMessage(BM_ADD_IDENTITY), 
@@ -743,16 +713,4 @@ void BmPrefsIdentityView::ShowIdentity( int32 selection) {
 		} else
 			mCurrIdent = NULL;
 	}
-}
-
-/*------------------------------------------------------------------------------*\
-	()
-		-	
-\*------------------------------------------------------------------------------*/
-CLVContainerView* BmPrefsIdentityView::CreateIdentListView( minimax minmax, 
-																				int32 width, 
-																				int32 height) {
-	mIdentListView = BmRecvIdentView::CreateInstance( minmax, width, height);
-	mIdentListView->ClickSetsFocus( true);
-	return mIdentListView->ContainerView();
 }

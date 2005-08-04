@@ -36,6 +36,7 @@
 #include <View.h>
 
 #include "BmGuiBase.h"
+#include "BmString.h"
 
 class BmBitmapHandle;
 
@@ -45,7 +46,7 @@ class IMPEXPBMGUIBASE BmBusyView : public BView
 
 public:
 	// creator-func, c'tors and d'tor:
-	BmBusyView( BRect frame);
+	BmBusyView( BPoint leftTop);
 	~BmBusyView();
 
 	// native methods:
@@ -65,7 +66,6 @@ public:
 private:
 	void UpdateErrorStatus();
 
-	BRect mCachedBounds;
 	BMessageRunner* mMsgRunner;
 	int16 mBusyCount;
 	int32 mCurrState;

@@ -71,9 +71,8 @@ class BmRecvAccView : public BmListViewController
 	typedef BmListViewController inherited;
 	
 public:
-	// creator-func, c'tors and d'tor:
-	static BmRecvAccView* CreateInstance(  minimax minmax, int32 width, int32 height);
-	BmRecvAccView(  minimax minmax, int32 width, int32 height);
+	// c'tors and d'tor:
+	BmRecvAccView( int32 width, int32 height);
 	~BmRecvAccView();
 
 	// native methods:
@@ -83,16 +82,9 @@ public:
 	BmString StateInfoBasename()			{ return "RecvAccView"; }
 	BmListViewItem* AddModelItem( BmListModelItem* item);
 	const char* ItemNameForCaption()		{ return "account"; }
-	CLVContainerView* CreateContainer( bool horizontal, bool vertical, 
-												  bool scroll_view_corner, 
-												  border_style border, 
-												  uint32 ResizingMode, 
-												  uint32 flags);
 
 	// overrides of listview base:
 	void MessageReceived( BMessage* msg);
-
-	static BmRecvAccView* theInstance;
 
 private:
 
@@ -154,8 +146,6 @@ public:
 	// setters:
 
 private:
-	CLVContainerView* CreateAccListView( minimax minmax, int32 width, int32 height);
-
 	BmListViewController* mAccListView;
 	BmTextControl* mAccountControl;
 	BmTextControl* mLoginControl;

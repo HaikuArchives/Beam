@@ -71,9 +71,8 @@ class BmSendAccView : public BmListViewController
 	typedef BmListViewController inherited;
 	
 public:
-	// creator-func, c'tors and d'tor:
-	static BmSendAccView* CreateInstance(  minimax minmax, int32 width, int32 height);
-	BmSendAccView(  minimax minmax, int32 width, int32 height);
+	// c'tors and d'tor:
+	BmSendAccView( int32 width, int32 height);
 	~BmSendAccView();
 
 	// native methods:
@@ -83,16 +82,9 @@ public:
 	BmString StateInfoBasename()			{ return "SendAccView"; }
 	BmListViewItem* AddModelItem( BmListModelItem* item);
 	const char* ItemNameForCaption()		{ return "account"; }
-	CLVContainerView* CreateContainer( bool horizontal, bool vertical, 
-												  bool scroll_view_corner, 
-												  border_style border, 
-												  uint32 ResizingMode, 
-												  uint32 flags);
 
 	// overrides of listview base:
 	void MessageReceived( BMessage* msg);
-
-	static BmSendAccView* theInstance;
 
 private:
 
@@ -149,8 +141,6 @@ public:
 	// setters:
 
 private:
-	CLVContainerView* CreateAccListView( minimax minmax, int32 width, int32 height);
-
 	BmListViewController* mAccListView;
 	BmTextControl* mAccountControl;
 	BmTextControl* mDomainControl;

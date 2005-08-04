@@ -96,7 +96,7 @@ public:
 	// setters:
 
 private:
-	CLVContainerView* CreateListView( minimax minmax, int32 width, int32 height);
+	ColumnListView* CreateListView( int32 width, int32 height);
 
 	ColumnListView* mListView;
 	BmTextControl* mNameControl;

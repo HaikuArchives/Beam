@@ -70,9 +70,6 @@ public:
 	void ShowBody( BmBodyPartList* body);
 
 	// overrides of listview base:
-	CLVContainerView* CreateContainer( bool horizontal, bool vertical, 
-												  bool scroll_view_corner, border_style border, 
-												  uint32 ResizingMode, uint32 flags);
 	bool InitiateDrag( BPoint point, int32 index, bool wasSelected);
 	void KeyDown(const char *bytes, int32 numBytes);
 	void MessageReceived( BMessage* msg);

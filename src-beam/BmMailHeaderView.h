@@ -89,6 +89,7 @@ public:
 	// overrides of BView base:
 	void Draw( BRect bounds);
 	void MessageReceived( BMessage* msg);
+	status_t UISettingsChanged(const BMessage* changes, uint32 flags);
 
 private:
 	BmRef<BmMailHeader> mMailHeader;

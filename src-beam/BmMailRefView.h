@@ -99,8 +99,8 @@ public:
 	static const char* const MENU_MOVE;
 
 	// creator-func, c'tors and d'tor:
-	static BmMailRefView* CreateInstance( minimax minmax, int32 width, int32 height);
-	BmMailRefView( minimax minmax, int32 width, int32 height);
+	static BmMailRefView* CreateInstance( int32 width, int32 height);
+	BmMailRefView( int32 width, int32 height);
 	~BmMailRefView();
 
 	// native methods:
@@ -126,9 +126,6 @@ public:
 	BmString StateInfoBasename();
 	BmString StateInfoFilename( bool forRead);
 	BMessage* DefaultLayout();
-	CLVContainerView* CreateContainer( bool horizontal, bool vertical, 
-												  bool scroll_view_corner, border_style border, 
-												  uint32 ResizingMode, uint32 flags);
 	BmListViewItem* CreateListViewItem( BmListModelItem* item, BMessage* archive=NULL);
 	const char* ItemNameForCaption()		{ return "message"; }
 

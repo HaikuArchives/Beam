@@ -126,10 +126,6 @@ BmMainWindow::BmMainWindow()
 	,	mVertSplitter( NULL)
 	,	mErrLogWin( NULL)
 {
-	CreateMailFolderView( minimax(50,100,1E5,1E5), 200, 400);
-	CreateMailRefView( minimax(300,50,1E5,1E5), 400, 200);
-	CreateMailView( minimax(300,80,1E5,1E5), BRect(0,0,400,200));
-
 	// Get maximum button size
 	float width=0, height=0;
 	BmToolbarButton::CalcMaxSize(width, height, "Check", true);
@@ -199,10 +195,26 @@ BmMainWindow::BmMainWindow()
 			),
 			new HGroup(
 				mVertSplitter = new UserResizeSplitView( 
-					mMailFolderView->ContainerView(),
+					new BetterScrollView( 
+						minimax(50,100,1E5,1E5), 
+						mMailFolderView = BmMailFolderView::CreateInstance( 200, 400),
+						BM_SV_H_SCROLLBAR | BM_SV_V_SCROLLBAR | BM_SV_CORNER
+						| BM_SV_BUSYVIEW | BM_SV_CAPTION,
+						"999 folders"
+					),
 					mHorzSplitter = new UserResizeSplitView( 
-						mMailRefView->ContainerView(),
-						mMailView->ContainerView(),
+						new BetterScrollView( 
+							minimax(300,50,1E5,1E5), 
+							mMailRefView = BmMailRefView::CreateInstance( 400, 200),
+							BM_SV_H_SCROLLBAR | BM_SV_V_SCROLLBAR | BM_SV_CORNER
+							| BM_SV_BUSYVIEW | BM_SV_CAPTION,
+							"99999 messages"
+						),
+						new BmMailViewContainer(
+							minimax(300,80,1E5,1E5), 
+							mMailView = BmMailView::CreateInstance( BRect(0,0,400,200), 
+																				 false)
+						),
 						"hsplitter", 200, B_HORIZONTAL, true, true, true, true, 
 						false, B_FOLLOW_NONE
 					),
@@ -410,37 +422,6 @@ void BmMainWindow::BeginLife() {
 \*------------------------------------------------------------------------------*/
 void BmMainWindow::WorkspacesChanged( uint32, uint32 newWorkspaces) {
 	beamApp->SetNewWorkspace( newWorkspaces);
-}
-
-/*------------------------------------------------------------------------------*\
-	()
-		-	
-\*------------------------------------------------------------------------------*/
-CLVContainerView* BmMainWindow::CreateMailFolderView( minimax minmax, 
-																		int32 width, 
-																		int32 height) {
-	mMailFolderView = BmMailFolderView::CreateInstance( minmax, width, height);
-	return mMailFolderView->ContainerView();
-}
-
-/*------------------------------------------------------------------------------*\
-	()
-		-	
-\*------------------------------------------------------------------------------*/
-CLVContainerView* BmMainWindow::CreateMailRefView( minimax minmax, 
-																	int32 width, int32 height) {
-	mMailRefView = BmMailRefView::CreateInstance( minmax, width, height);
-	return mMailRefView->ContainerView();
-}
-
-/*------------------------------------------------------------------------------*\
-	()
-		-	
-\*------------------------------------------------------------------------------*/
-BmMailViewContainer* BmMainWindow::CreateMailView( minimax minmax, 
-																	BRect frame) {
-	mMailView = BmMailView::CreateInstance( minmax, frame, false);
-	return mMailView->ContainerView();
 }
 
 /*------------------------------------------------------------------------------*\

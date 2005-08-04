@@ -160,17 +160,14 @@ const char* const BmListViewController::MSG_SCROLL_STEP= "step";
 	BmListViewController()
 		-	standard contructor
 \*------------------------------------------------------------------------------*/
-BmListViewController::BmListViewController( minimax minmax, BRect rect,
+BmListViewController::BmListViewController( BRect rect,
 								 const char* Name, list_view_type Type, 
-								 bool hierarchical, bool showLabelView, 
-								 bool showCaption, bool showBusyView)
-	:	inherited( minmax, rect, Name, 
+								 bool hierarchical, bool showLabelView)
+	:	inherited( rect, Name, 
 					  B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE,
 					  Type, hierarchical, showLabelView)
 	,	inheritedController( Name)
 	,	mInitialStateInfo( NULL)
-	,	mShowCaption( showCaption)
-	,	mShowBusyView( showBusyView)
 	,	mUseStateCache( true)
 	,	mCurrHighlightItem( NULL)
 	,	mSittingOnExpander( false)
@@ -203,23 +200,6 @@ BmListViewController::~BmListViewController() {
 	delete mExpandCollapseRunner;
 	delete mPulsedScrollRunner;
 	delete mInitialStateInfo;
-}
-
-/*------------------------------------------------------------------------------*\
-	CreateContainer()
-		-	
-\*------------------------------------------------------------------------------*/
-CLVContainerView* 
-BmListViewController::CreateContainer( bool horizontal, 
-													bool vertical, 
-						  							bool scroll_view_corner, 
-						  							border_style border, 
-												   uint32 ResizingMode, 
-												   uint32 flags) 
-{
-	return new BmCLVContainerView( fMinMax, this, ResizingMode, flags, 
-											 horizontal, vertical, scroll_view_corner, 
-											 border, mShowCaption, mShowBusyView);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -466,11 +446,13 @@ void BmListViewController::MessageReceived( BMessage* msg) {
 				break;
 			}
 			case BMM_SET_BUSY: {
-				ScrollView()->SetBusy();
+				if (fScrollView)
+					fScrollView->SetBusy();
 				break;
 			}
 			case BMM_UNSET_BUSY: {
-				ScrollView()->UnsetBusy();
+				if (fScrollView)
+					fScrollView->UnsetBusy();
 				break;
 			}
 			case B_CONTROL_INVOKED: {
@@ -600,7 +582,8 @@ void BmListViewController::AddAllModelItems() {
 								<< modelItem->Key());
 		}
 		if (count%100==0) {
-			ScrollView()->PulseBusyView();
+			if (fScrollView)
+				fScrollView->PulseBusyView();
 			BmString caption = BmString() << count << " " << ItemNameForCaption()
 										<< (count>1?"s":"");
 			UpdateCaption( caption.String());
@@ -791,9 +774,9 @@ void BmListViewController::UpdateModelState( BMessage*) {
 		-
 \*------------------------------------------------------------------------------*/
 void BmListViewController::UpdateCaption( const char* text) {
-	if (mShowCaption && fScrollView) {
+	if (fScrollView) {
 		if (text) {
-			ScrollView()->SetCaptionText( text);
+			fScrollView->SetCaptionText( text);
 		} else {
 			int32 numItems = FullListCountItems();
 			BmString caption;
@@ -802,7 +785,7 @@ void BmListViewController::UpdateCaption( const char* text) {
 			else
 				caption = BmString("")<<numItems<<" "<<ItemNameForCaption()
 								<<(numItems>1 ? "s" : "");
-			ScrollView()->SetCaptionText( caption.String());
+			fScrollView->SetCaptionText( caption.String());
 		}
 		Window()->UpdateIfNeeded();
 	}
@@ -873,7 +856,7 @@ void BmListViewController::ShowLabelViewMenu( BPoint point) {
 	PopulateLabelViewMenu( theMenu);
 
 	if (theMenu->CountItems() > 0) {
-	   ColumnLabelView()->ConvertToScreen(&point);
+		ColumnLabelView()->ConvertToScreen(&point);
 		BRect openRect;
 		openRect.top = point.y - 5;
 		openRect.bottom = point.y + 5;
@@ -932,7 +915,8 @@ void BmListViewController::AttachModel( BmDataModel* model) {
 void BmListViewController::DetachModel() {
 	WriteStateInfo();
 	inheritedController::DetachModel();
-	ScrollView()->UnsetBusy();
+	if (fScrollView)
+		fScrollView->UnsetBusy();
 	MakeEmpty();
 	UpdateCaption();
 }
@@ -970,7 +954,8 @@ void BmListViewController::MakeEmpty() {
 \*------------------------------------------------------------------------------*/
 void BmListViewController::StartJob( BmJobModel* model, bool startInNewThread,
 											    int32 jobSpecifier) {
-	ScrollView()->SetBusy();
+	if (fScrollView)
+		fScrollView->SetBusy();
 	UpdateCaption( "tracking...");
 	inheritedController::StartJob( model, startInNewThread, jobSpecifier);
 }
@@ -987,7 +972,8 @@ void BmListViewController::JobIsDone( bool completed) {
 	} else {
 		UpdateCaption( "");
 	}
-	ScrollView()->UnsetBusy();
+	if (fScrollView)
+		fScrollView->UnsetBusy();
 }
 
 /*------------------------------------------------------------------------------*\
@@ -1134,140 +1120,4 @@ void BmListViewController::ReadStateInfo() {
 	mInitialStateInfo = DefaultLayout();
 	if (mInitialStateInfo)
 		Unarchive( mInitialStateInfo);
-}
-
-
-
-/********************************************************************************\
-	BmCLVContainerView
-\********************************************************************************/
-
-/*------------------------------------------------------------------------------*\
-	( )
-		-	
-\*------------------------------------------------------------------------------*/
-BmCLVContainerView::BmCLVContainerView( minimax minmax, ColumnListView* target, 
-													 uint32 resizingMode, uint32 flags, 
-													 bool horizontal, bool vertical,
-													 bool scroll_view_corner, 
-													 border_style border, 
-													 bool showCaption, bool showBusyView,
-													 float captionWidth)
-	:	inherited( minmax, target, resizingMode, flags, horizontal, vertical,
-					  scroll_view_corner, border)
-	,	mCaption( NULL)
-	,	mCaptionWidth( captionWidth)
-	,	mBusyView( NULL)
-{
-	SetViewUIColor( B_UI_PANEL_BACKGROUND_COLOR);
-	BRect frame;
-	BPoint LT;
-	BScrollBar* hScroller = horizontal ? ScrollBar( B_HORIZONTAL) : NULL;
-	if (hScroller) {
-		frame = hScroller->Frame();
-		if (showCaption && !mCaptionWidth)
-			hScroller->Hide();
-	} else {
-		frame = Bounds();
-		frame.left += 1;
-		frame.right -= 1;
-		frame.top = frame.bottom - 1 - B_H_SCROLL_BAR_HEIGHT;
-	}
-	if (showBusyView) {
-		LT = frame.LeftTop();
-		float bvSize = frame.Height();
-		if (hScroller) {
-			// a horizontal scrollbar exists, we shrink it to make room 
-			// for the busyview:
-			hScroller->ResizeBy( -bvSize, 0.0);
-			hScroller->MoveBy( bvSize, 0.0);
-		}
-		mBusyView = new BmBusyView( BRect( LT.x, LT.y, LT.x+bvSize-1, LT.y+bvSize));
-		AddChild( mBusyView);
-		frame.left += bvSize;
-	}
-	if (showCaption) {
-		LT = frame.LeftTop();
-		if (hScroller) {
-			// a horizontal scrollbar exists, we shrink it to make room 
-			// for the caption:
-			hScroller->ResizeBy( -mCaptionWidth, 0.0);
-			hScroller->MoveBy( mCaptionWidth, 0.0);
-		} else {
-			// no horizontal scrollbar, so the caption occupies all the 
-			// remaining space:
-			mCaptionWidth = frame.Width();
-		}
-		mCaption = new BmCaption( 
-			BRect( LT.x, LT.y, LT.x+mCaptionWidth, LT.y+frame.Height()), ""
-		);
-		AddChild( mCaption);
-	}
-}
-
-/*------------------------------------------------------------------------------*\
-	( )
-		-	
-\*------------------------------------------------------------------------------*/
-BmCLVContainerView::~BmCLVContainerView() {
-}
-	
-/*------------------------------------------------------------------------------*\
-	( )
-		-	
-\*------------------------------------------------------------------------------*/
-void BmCLVContainerView::SetCaptionText( const char* text) {
-	if (mCaption)
-		mCaption->SetText( text);
-}
-
-/*------------------------------------------------------------------------------*\
-	( )
-		-	
-\*------------------------------------------------------------------------------*/
-void BmCLVContainerView::SetBusy() {
-	if (mBusyView) mBusyView->SetBusy();
-}
-
-/*------------------------------------------------------------------------------*\
-	( )
-		-	
-\*------------------------------------------------------------------------------*/
-void BmCLVContainerView::UnsetBusy() {
-	if (mBusyView) mBusyView->UnsetBusy();
-}
-
-/*------------------------------------------------------------------------------*\
-	( )
-		-	
-\*------------------------------------------------------------------------------*/
-void BmCLVContainerView::PulseBusyView() {
-	if (mBusyView) mBusyView->Pulse();
-}
-
-/*------------------------------------------------------------------------------*\
-	( )
-		-	
-\*------------------------------------------------------------------------------*/
-BRect BmCLVContainerView::layout( BRect rect) {
-	BRect r = inherited::layout( rect);
-	float fullCaptionWidth = r.Width();
-	fullCaptionWidth -= 2.0;
-	if (mBusyView) {
-		BRect bvFrame = mBusyView->Frame();
-		mBusyView->MoveTo( bvFrame.left, rect.bottom-1-bvFrame.Height());
-		fullCaptionWidth -= bvFrame.Width();
-	}
-	if (mCaption) {
-		BRect cpFrame = mCaption->Frame();
-		mCaption->MoveTo( cpFrame.left, rect.bottom-1-cpFrame.Height());
-		BScrollBar* hScroller = ScrollBar( B_HORIZONTAL);
-		if (!mCaptionWidth && (!hScroller || hScroller->IsHidden())) {
-			if (ScrollBar( B_VERTICAL))
-				fullCaptionWidth -= B_V_SCROLL_BAR_WIDTH + 2;
-			mCaption->ResizeTo( fullCaptionWidth, cpFrame.Height());
-			mCaption->Invalidate();
-		}
-	}
-	return r;
 }

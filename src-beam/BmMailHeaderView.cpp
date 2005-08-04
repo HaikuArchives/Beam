@@ -784,6 +784,16 @@ float BmMailHeaderView::AddFieldViews() {
 }
 
 /*------------------------------------------------------------------------------*\
+	UISettingsChanged()
+		-	for Zeta only, react on color changes
+\*------------------------------------------------------------------------------*/
+status_t BmMailHeaderView::UISettingsChanged(const BMessage* changes, 
+															uint32 flags) {
+	ShowHeader( mMailHeader.Get());
+	return B_OK;
+}
+
+/*------------------------------------------------------------------------------*\
 	MessageReceived( msg)
 		-	
 \*------------------------------------------------------------------------------*/

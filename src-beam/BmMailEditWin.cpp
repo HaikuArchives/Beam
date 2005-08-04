@@ -514,7 +514,10 @@ void BmMailEditWin::CreateGUI() {
 				0
 			),
 			mSeparator = new Space(minimax(-1,4,-1,4)),
-			CreateMailView( minimax(200,200,1E5,1E5), BRect(0,0,400,200)),
+			new BmMailViewContainer(
+				minimax(200,200,1E5,1E5),
+				mMailView = BmMailView::CreateInstance( BRect(0,0,400,200), true)
+			),
 			0
 		);
 
@@ -567,16 +570,6 @@ ZETA_ONLY(
 )
 
 	AddChild( dynamic_cast<BView*>(mOuterGroup));
-}
-
-/*------------------------------------------------------------------------------*\
-	()
-		-	
-\*------------------------------------------------------------------------------*/
-BmMailViewContainer* BmMailEditWin::CreateMailView( minimax minmax, 
-																	 BRect frame) {
-	mMailView = BmMailView::CreateInstance( minmax, frame, true);
-	return mMailView->ContainerView();
 }
 
 /*------------------------------------------------------------------------------*\

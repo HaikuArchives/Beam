@@ -36,7 +36,8 @@
 //******************************************************************************************************
 //**** PROJECT HEADER FILES
 //******************************************************************************************************
-#include "Debug.h"
+#include <Debug.h>
+#include "BmBasics.h"
 #include "ColumnListView.h"
 #include "CLVColumnLabelView.h"
 #include "CLVColumn.h"
@@ -74,39 +75,6 @@ uint8 CLVDownArrowData[132] =
 	0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF
 };
 
-
-
-//******************************************************************************************************
-//**** ColumnListView CLASS DEFINITION
-//******************************************************************************************************
-CLVContainerView::CLVContainerView( minimax minmax, ColumnListView* target, uint32 resizingMode, uint32 flags,
-	bool horizontal, bool vertical, bool scroll_view_corner, border_style border) :
-BetterScrollView(NULL,target,resizingMode,flags,horizontal,vertical,scroll_view_corner,border)
-{
-	ct_mpm = minmax;
-	IsBeingDestroyed = false;
-};
-
-
-CLVContainerView::~CLVContainerView()
-{
-	IsBeingDestroyed = true;
-}
-
-// adapted for liblayout
-minimax CLVContainerView::layoutprefs()
-{
-	return mpm=ct_mpm;
-}
-
-BRect CLVContainerView::layout(BRect rect)
-{
-	MoveTo(rect.LeftTop());
-	ResizeTo(rect.Width(),rect.Height());
-	return rect;
-}
-// (end of adaptation)
-
 const char* const ColumnListView::MSG_DISPLAYORDER = 	"bm:dsplord";
 const char* const ColumnListView::MSG_NUMSORTKEYS = 	"bm:nsort";
 const char* const ColumnListView::MSG_SORTKEY = 		"bm:sortk";
@@ -119,9 +87,9 @@ int32 ColumnListView::fToggleSelMask = B_OPTION_KEY|B_COMMAND_KEY;
 //******************************************************************************************************
 //**** ColumnListView CLASS DEFINITION
 //******************************************************************************************************
-ColumnListView::ColumnListView(minimax minmax, BRect Frame, const char *Name,
+ColumnListView::ColumnListView(BRect Frame, const char *Name,
 	uint32 flags, list_view_type Type, bool hierarchical, bool showLabelView)
-: BListView(Frame,Name,Type,B_FOLLOW_ALL_SIDES,flags),
+: BListView(Frame,Name,Type,B_FOLLOW_NONE,flags),
 fHierarchical( hierarchical),
 fShowLabelView( showLabelView),
 fColumnList(6),
@@ -143,40 +111,23 @@ fWindowActive( false),
 fDeactivatedVerticalBar( NULL),
 fStripedBackground( false),
 fInsertAtSortedPos( true),
-fClickSetsFocus( false),
+fClickSetsFocus( true),
 fExtendingDownwards( true),
 fAvoidColPushing( false),
-fMinItemHeight( 5),
-fMinMax( minmax)
+fMinItemHeight( 5)
 {
-}
-
-CLVContainerView* ColumnListView::Initialize( BRect Frame, uint32 flags, uint32 ResizingMode, 
-								 bool horizontal, bool vertical, bool scroll_view_corner, 
-								 border_style border, const BFont* LabelFont) {
+	SetViewColor( B_TRANSPARENT_COLOR);
 	// setup caption font to be one less in size than given (standard) font:
-	BFont captionFont(*LabelFont);
-	captionFont.SetSize(LabelFont->Size()-1);
+	BFont captionFont(*be_plain_font);
+	captionFont.SetSize(captionFont.Size()-1);
 	//Create the column titles bar view
 	font_height FontAttributes;
 	captionFont.GetHeight(&FontAttributes);
 	float LabelFontHeight = ceil(FontAttributes.ascent) + ceil(FontAttributes.descent);
-	float ColumnLabelViewBottom = Frame.top+LabelFontHeight+2.0;
-	fColumnLabelView = new CLVColumnLabelView( BRect(Frame.left,Frame.top,Frame.right,
-											   ColumnLabelViewBottom),this,&captionFont);
-
-	//Create the container view
-	EmbedInContainer(horizontal,vertical,scroll_view_corner,border,ResizingMode,flags);
-
-	//Complete the setup
-	UpdateDataRect();
-	fColumnLabelView->UpdateDragGroups();
-
-	SetViewColor( B_TRANSPARENT_COLOR);
-
-	return fScrollView;
+	BRect labelFrame = Frame;
+	labelFrame.bottom = labelFrame.top + LabelFontHeight + 2.0;
+	fColumnLabelView = new CLVColumnLabelView( labelFrame, this, &captionFont);
 }
-
 
 ColumnListView::~ColumnListView()
 {
@@ -192,46 +143,38 @@ ColumnListView::~ColumnListView()
 	// (and thus not being destroyed as part of view hierarchy):
 	if (!fShowLabelView)
 		delete fColumnLabelView;
-
-	//Remove and delete the container view if necessary
-	if(!fScrollView->IsBeingDestroyed)
-	{
-		fScrollView->RemoveChild(this);
-		delete fScrollView;
-	}
 }
 
-
-CLVContainerView* ColumnListView::CreateContainer(bool horizontal, bool vertical, bool scroll_view_corner, 
-	border_style border, uint32 ResizingMode, uint32 flags)
-{
-	return new CLVContainerView(fMinMax,this,ResizingMode,flags,horizontal,vertical,scroll_view_corner,border);
+// for Zeta only, react on color changes:
+status_t ColumnListView::UISettingsChanged(const BMessage* changes, uint32 flags) {
+	fSelectedItemColorWindowActive = ui_color( B_UI_MENU_SELECTED_BACKGROUND_COLOR);
+	fSelectedItemColorWindowInactive = ui_color( B_UI_MENU_SELECTED_BACKGROUND_COLOR);
+	fSelectedItemColorTintedWindowActive = BmWeakenColor( B_UI_MENU_SELECTED_BACKGROUND_COLOR, 1);
+	fSelectedItemColorTintedWindowInactive = BmWeakenColor( B_UI_MENU_SELECTED_BACKGROUND_COLOR, 1);
+	fDarkColumnCol = BmWeakenColor( B_UI_DOCUMENT_BACKGROUND_COLOR, 1);
+	fLightColumnCol = ui_color( B_UI_DOCUMENT_BACKGROUND_COLOR);
+	Invalidate();
+	return B_OK;
 }
 
-
-void ColumnListView::EmbedInContainer(bool horizontal, bool vertical, bool scroll_view_corner, border_style border,
-	uint32 ResizingMode, uint32 flags)
-{
-	BRect ViewFrame = Frame();
-	BRect LabelsFrame = fColumnLabelView->Frame();
-
-	fScrollView = CreateContainer(horizontal,vertical,scroll_view_corner,border,ResizingMode,
-		flags&(B_NAVIGABLE^0xFFFFFFFF));
-	BRect NewFrame = Frame();
-
-	if (fShowLabelView) {
-		//Resize the main view to make room for the CLVColumnLabelView
-		ResizeTo(ViewFrame.Width(),ViewFrame.Height()-(LabelsFrame.Height()+1));
-		MoveTo(NewFrame.left,NewFrame.top+LabelsFrame.Height()+1);
-		fColumnLabelView->MoveTo(NewFrame.left,NewFrame.top);
-		//Add the ColumnLabelView
+void ColumnListView::AttachedToWindow() {
+	inherited::AttachedToWindow();
+	fScrollView = dynamic_cast<BetterScrollView*>(Parent());
+	if (fScrollView && fShowLabelView) {
+		BRect viewFrame = Frame();
+		BRect labelFrame = fColumnLabelView->Frame();
+		// Resize the main view to make room for the CLVColumnLabelView (and add 1 more line
+		// that represents the lower border of the labelview):
+		ResizeTo(viewFrame.Width(), viewFrame.Height()-(labelFrame.Height()+1));
+		MoveTo(viewFrame.left, viewFrame.top+labelFrame.Height()+1);
+		fColumnLabelView->MoveTo(viewFrame.left, viewFrame.top);
 		fScrollView->AddChild(fColumnLabelView);
-		//Remove and re-add the BListView so that it will draw after the CLVColumnLabelView
-		fScrollView->RemoveChild(this);
-		fScrollView->AddChild(this);
 	}
-}
 
+	//Complete the setup
+	UpdateDataRect();
+	fColumnLabelView->UpdateDragGroups();
+}
 
 void ColumnListView::UpdateDataRect(bool scrolling_allowed)
 {
@@ -274,7 +217,8 @@ void ColumnListView::UpdateDataRect(bool scrolling_allowed)
 		DataHeight -= 1.0;
 
 	//Update the scroll bars
-	fScrollView->SetDataRect(BRect(0,0,DataWidth,DataHeight),scrolling_allowed);
+	if (fScrollView)
+		fScrollView->SetDataRect(BRect(0,0,DataWidth,DataHeight),scrolling_allowed);
 }
 
 

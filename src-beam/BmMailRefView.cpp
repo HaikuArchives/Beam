@@ -334,18 +334,17 @@ enum {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmMailRefView* BmMailRefView::CreateInstance( minimax minmax, int32 width, 
-															 int32 height) {
-	return new BmMailRefView( minmax, width, height);
+BmMailRefView* BmMailRefView::CreateInstance( int32 width, int32 height) {
+	return new BmMailRefView( width, height);
 }
 
 /*------------------------------------------------------------------------------*\
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmMailRefView::BmMailRefView( minimax minmax, int32 width, int32 height)
-	:	inherited( minmax, BRect(0,0,width-1,height-1), "Beam_MailRefView", 
-					  B_MULTIPLE_SELECTION_LIST, false, true, true, true)
+BmMailRefView::BmMailRefView( int32 width, int32 height)
+	:	inherited( BRect(0,0,width-1,height-1), "Beam_MailRefView", 
+					  B_MULTIPLE_SELECTION_LIST, false, true)
 	,	mCurrFolder( NULL)
 	,	mHaveSelectedRef( false)
 	,	mStateInfoConnectedToParentFolder( true)
@@ -354,10 +353,6 @@ BmMailRefView::BmMailRefView( minimax minmax, int32 width, int32 height)
 	SetViewColor( B_TRANSPARENT_COLOR);
 	if (ThePrefs->GetBool("StripedListView"))
 		SetStripedBackground( true);
-
-	Initialize( BRect(0,0,width-1,height-1), 
-					B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE,
-					B_FOLLOW_NONE, true, true, true, B_FANCY_BORDER);
 
 	AddColumn( new CLVColumn( "S", 18.0, 
 									  flags | CLV_NOT_RESIZABLE | CLV_COLDATA_NUMBER
@@ -431,25 +426,6 @@ BmMailRefView::BmMailRefView( minimax minmax, int32 width, int32 height)
 \*------------------------------------------------------------------------------*/
 BmMailRefView::~BmMailRefView() { 
 	TheBubbleHelper->SetHelp( ColumnLabelView(), NULL);
-}
-
-/*------------------------------------------------------------------------------*\
-	CreateContainer()
-		-	
-\*------------------------------------------------------------------------------*/
-CLVContainerView* BmMailRefView::CreateContainer( bool horizontal, 
-																  bool vertical, 
-												  				  bool scroll_view_corner, 
-												  				  border_style border, 
-																  uint32 ResizingMode, 
-																  uint32 flags) 
-{
-	return 
-		new BmCLVContainerView( 
-			fMinMax, this, ResizingMode, flags, horizontal, vertical, 
-			scroll_view_corner, border, mShowCaption, mShowBusyView, 
-			be_plain_font->StringWidth(" 99999 messages ")
-		);
 }
 
 /*------------------------------------------------------------------------------*\

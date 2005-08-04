@@ -193,8 +193,17 @@ void BmMailViewWin::CreateGUI() {
 				)
 			),
 			mHorzSplitter = new UserResizeSplitView( 
-				CreateMailRefView( minimax(200,50,1E5,1E5), 400, 200),
-				CreateMailView( minimax(200,80,1E5,1E5), BRect(0,0,400,200)),
+				new BetterScrollView(
+					minimax(200,50,1E5,1E5), 
+					BmMailRefView::CreateInstance( 400, 200),
+					BM_SV_H_SCROLLBAR | BM_SV_V_SCROLLBAR | BM_SV_CORNER
+					| BM_SV_BUSYVIEW | BM_SV_CAPTION,
+					"99999 messages"
+				),
+				new BmMailViewContainer(
+					minimax(200,80,1E5,1E5), 
+					BmMailView::CreateInstance( BRect(0,0,400,200), false)
+				),
 				"hsplitter", 0, B_HORIZONTAL, true, true, true, true, 
 				false, B_FOLLOW_NONE
 			),
@@ -263,25 +272,6 @@ MMenuBar* BmMailViewWin::CreateMenu() {
 	menubar->AddItem( menu);
 
 	return menubar;
-}
-
-/*------------------------------------------------------------------------------*\
-	()
-		-	
-\*------------------------------------------------------------------------------*/
-CLVContainerView* BmMailViewWin::CreateMailRefView( minimax minmax, float width,
-																	 float height) {
-	mMailRefView = BmMailRefView::CreateInstance( minmax, width, height);
-	return mMailRefView->ContainerView();
-}
-
-/*------------------------------------------------------------------------------*\
-	()
-		-	
-\*------------------------------------------------------------------------------*/
-BmMailViewContainer* BmMailViewWin::CreateMailView( minimax minmax, BRect frame) {
-	mMailView = BmMailView::CreateInstance( minmax, frame, false);
-	return mMailView->ContainerView();
 }
 
 /*------------------------------------------------------------------------------*\

@@ -35,7 +35,6 @@
 
 #include "BmWindow.h"
 
-class CLVContainerView;
 class UserResizeSplitView;
 class BmPrefsViewContainer;
 class MButton;
@@ -68,7 +67,7 @@ protected:
 	status_t UnarchiveState( BMessage* archive);
 
 private:
-	CLVContainerView* CreatePrefsListView( minimax minmax, int32 width, int32 height);
+	ColumnListView* CreatePrefsListView( int32 width, int32 height);
 	void PrefsListSelectionChanged( int32 numSelected);
 
 	ColumnListView* mPrefsListView;

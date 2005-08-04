@@ -69,9 +69,8 @@ class BmSignatureView : public BmListViewController
 	typedef BmListViewController inherited;
 	
 public:
-	// creator-func, c'tors and d'tor:
-	static BmSignatureView* CreateInstance(  minimax minmax, int32 width, int32 height);
-	BmSignatureView(  minimax minmax, int32 width, int32 height);
+	// c'tors and d'tor:
+	BmSignatureView( int32 width, int32 height);
 	~BmSignatureView();
 
 	// native methods:
@@ -81,16 +80,9 @@ public:
 	BmString StateInfoBasename()			{ return "SignatureView"; }
 	BmListViewItem* AddModelItem( BmListModelItem* item);
 	const char* ItemNameForCaption()		{ return "signature"; }
-	CLVContainerView* CreateContainer( bool horizontal, bool vertical, 
-												  bool scroll_view_corner, 
-												  border_style border, 
-												  uint32 ResizingMode, 
-												  uint32 flags);
 
 	// overrides of listview base:
 	void MessageReceived( BMessage* msg);
-
-	static BmSignatureView* theInstance;
 
 private:
 
@@ -145,8 +137,6 @@ public:
 	// setters:
 
 private:
-	CLVContainerView* CreateSigListView( minimax minmax, int32 width, int32 height);
-
 	BmListViewController* mSigListView;
 	BmTextControl* mSignatureControl;
 	BmMultiLineTextControl* mContentControl;

@@ -78,9 +78,6 @@ protected:
 	status_t UnarchiveState( BMessage* archive);
 
 private:
-	CLVContainerView* CreateMailFolderView( minimax minmax, int32 width, int32 height);
-	CLVContainerView* CreateMailRefView( minimax minmax, int32 width, int32 height);
-	BmMailViewContainer* CreateMailView( minimax minmax, BRect frame);
 	MMenuBar* CreateMenu();
 	void MailFolderSelectionChanged( bool haveSelectedFolder);
 	void MailRefSelectionChanged( bool haveSelectedRef);

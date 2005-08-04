@@ -148,7 +148,7 @@ const char* const BmBodyPartView::MSG_SHOWALL = "bm:showall";
 \*------------------------------------------------------------------------------*/
 BmBodyPartView::BmBodyPartView( minimax minmax, int32 width, int32 height, 
 										  bool editable)
-	:	inherited( minmax, BRect(0,0,width-1,height-1), "Beam_BodyPartView", 
+	:	inherited( BRect(0,0,width-1,height-1), "Beam_BodyPartView", 
 					  B_MULTIPLE_SELECTION_LIST, true, true)
 	,	mShowAllParts( false)
 	,	mEditable( editable)
@@ -160,8 +160,6 @@ BmBodyPartView::BmBodyPartView( minimax minmax, int32 width, int32 height,
 	fSelectedItemColorWindowActive = 
 	fSelectedItemColorWindowInactive = BmWeakenColor( B_UI_SHADOW_COLOR, 3);
 
-	Initialize( BRect(0,0,800,40), B_WILL_DRAW | B_FRAME_EVENTS,
-					B_FOLLOW_NONE, false, false, false, B_FANCY_BORDER);
 	SetResizingMode( B_FOLLOW_NONE);
 	int32 flags = Flags();
 	flags &= (B_NAVIGABLE^0xFFFFFFFF);
@@ -223,20 +221,6 @@ BmListViewItem* BmBodyPartView::CreateListViewItem( BmListModelItem* item,
 	} else {
 		return NULL;
 	}
-}
-
-/*------------------------------------------------------------------------------*\
-	CreateContainer()
-		-	
-\*------------------------------------------------------------------------------*/
-CLVContainerView* BmBodyPartView::CreateContainer( bool, bool, 
-												  					bool, 
-												  					border_style border, 
-																	uint32 ResizingMode, 
-																	uint32 flags) 
-{
-	return new BmCLVContainerView( fMinMax, this, ResizingMode, flags, false, 
-											 false, false, border, false, false);
 }
 
 /*------------------------------------------------------------------------------*\

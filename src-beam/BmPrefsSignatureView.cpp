@@ -116,28 +116,14 @@ void BmSignatureItem::UpdateView( BmUpdFlags flags, bool redraw,
 	BmSignatureView
 \********************************************************************************/
 
-BmSignatureView* BmSignatureView::theInstance = NULL;
-
 /*------------------------------------------------------------------------------*\
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmSignatureView* BmSignatureView::CreateInstance( minimax minmax, int32 width, 
-																  int32 height) {
-	if (theInstance)
-		return theInstance;
-	else 
-		return theInstance = new BmSignatureView( minmax, width, height);
-}
-
-/*------------------------------------------------------------------------------*\
-	()
-		-	
-\*------------------------------------------------------------------------------*/
-BmSignatureView::BmSignatureView( minimax minmax, int32 width, int32 height)
-	:	inherited( minmax, BRect(0,0,width-1,height-1), "Beam_SignatureView", 
+BmSignatureView::BmSignatureView( int32 width, int32 height)
+	:	inherited( BRect(0,0,width-1,height-1), "Beam_SignatureView", 
 					  B_SINGLE_SELECTION_LIST, 
-					  false, true, true, false)
+					  false, true)
 {
 	int32 flags = 0;
 	SetViewColor( B_TRANSPARENT_COLOR);
@@ -145,10 +131,6 @@ BmSignatureView::BmSignatureView( minimax minmax, int32 width, int32 height)
 		SetStripedBackground( true);
 	else 
 		flags |= CLV_TELL_ITEMS_WIDTH;
-
-	Initialize( BRect( 0,0,width-1,height-1),
-					B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE,
-					B_FOLLOW_TOP_BOTTOM, true, true, true, B_FANCY_BORDER);
 
 	AddColumn( new CLVColumn( "Name", 80.0, CLV_SORT_KEYABLE|flags, 50.0));
 	AddColumn( new CLVColumn( "Dynamic", 80.0, CLV_SORT_KEYABLE|flags, 40.0));
@@ -163,7 +145,6 @@ BmSignatureView::BmSignatureView( minimax minmax, int32 width, int32 height)
 		-	
 \*------------------------------------------------------------------------------*/
 BmSignatureView::~BmSignatureView() {
-	theInstance = NULL;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -173,24 +154,6 @@ BmSignatureView::~BmSignatureView() {
 BmListViewItem* BmSignatureView::CreateListViewItem( BmListModelItem* item,
 																	  BMessage*) {
 	return new BmSignatureItem( this, item);
-}
-
-/*------------------------------------------------------------------------------*\
-	CreateContainer()
-		-	
-\*------------------------------------------------------------------------------*/
-CLVContainerView* BmSignatureView::CreateContainer( bool horizontal, 
-																	 bool vertical, 
-												  				    bool scroll_view_corner, 
-												  				    border_style border, 
-																    uint32 ResizingMode, 
-																    uint32 flags) 
-{
-	return new BmCLVContainerView( fMinMax, this, ResizingMode, flags, 
-											 horizontal, vertical, scroll_view_corner, 
-											 border, mShowCaption, mShowBusyView, 
-											 be_plain_font->StringWidth(
-											 	" 99 signatures "));
 }
 
 /*------------------------------------------------------------------------------*\
@@ -237,7 +200,13 @@ BmPrefsSignatureView::BmPrefsSignatureView()
 {
 	MView* view = 
 		new VGroup(
-			CreateSigListView( minimax(400,60,1E5,1E5), 400, 150),
+			new BetterScrollView( 
+				minimax(400,60,1E5,1E5), 
+				mSigListView = new BmSignatureView( 400, 150),
+				BM_SV_H_SCROLLBAR | BM_SV_V_SCROLLBAR | BM_SV_CORNER
+				| BM_SV_CAPTION,
+				"99 signatures"
+			),
 			new HGroup(
 				mAddButton = new MButton( "Add Signature", 
 												  new BMessage(BM_ADD_SIGNATURE), 
@@ -588,16 +557,4 @@ void BmPrefsSignatureView::ShowSignature( int32 selection) {
 		} else
 			mCurrSig = NULL;
 	}
-}
-
-/*------------------------------------------------------------------------------*\
-	()
-		-	
-\*------------------------------------------------------------------------------*/
-CLVContainerView* BmPrefsSignatureView::CreateSigListView( minimax minmax, 
-																			  int32 width, 
-																			  int32 height) {
-	mSigListView = BmSignatureView::CreateInstance( minmax, width, height);
-	mSigListView->ClickSetsFocus( true);
-	return mSigListView->ContainerView();
 }

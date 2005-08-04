@@ -12,69 +12,80 @@
 //can take advantage of enhancements and bug fixes as they become available. Feel free to distribute the 
 //ColumnListView source, including modified versions, but keep this documentation and license with it.
 
-//Conventions:
-//    Global constants (declared with const) and #defines - all uppercase letters with words separated 
-//        by underscores.
-//        (E.G., #define MY_DEFINE 5).
-//        (E.G., const int MY_CONSTANT = 5;).
-//    New data types (classes, structs, typedefs, etc.) - begin with an uppercase letter followed by
-//        lowercase words separated by uppercase letters.  Enumerated constants contain a prefix
-//        associating them with a particular enumerated set.
-//        (E.G., typedef int MyTypedef;).
-//        (E.G., enum MyEnumConst {MEC_ONE, MEC_TWO};)
-//    Global variables - begin with "g_" followed by lowercase words separated by underscores.
-//        (E.G., int g_my_global;).
-//    Argument and local variables - begin with a lowercase letter followed by
-//        lowercase words separated by underscores.
-//        (E.G., int my_local;).
-//    Member variables - begin with "m_" followed by lowercase words separated by underscores.
-//        (E.G., int m_my_member;).
-//    Functions (member or global) - begin with an uppercase letter followed by lowercase words
-//        separated by uppercase letters.
-//        (E.G., void MyFunction(void);).
-
-
 #ifndef _SGB_BETTER_SCROLL_VIEW_H_
 #define _SGB_BETTER_SCROLL_VIEW_H_
 
 
 //******************************************************************************************************
-//**** PROJECT HEADER FILES
+//**** SYSTEM HEADER FILES
 //******************************************************************************************************
 #include <ScrollView.h>
 
+#include <layout.h>
 
 //******************************************************************************************************
 //**** PROJECT HEADER FILES
 //******************************************************************************************************
 #include "BmGuiBase.h"
+
+#include "BmBusyView.h"
+#include "BmCaption.h"
 #include "ScrollViewCorner.h"
+
+typedef uint32 BmScrollViewFlags;
+enum  {
+	BM_SV_H_SCROLLBAR = 1<<0,
+	BM_SV_V_SCROLLBAR = 1<<1,
+	BM_SV_CORNER = 1<<2,
+	BM_SV_BUSYVIEW = 1<<3,
+	BM_SV_CAPTION = 1<<4
+};
 
 
 //******************************************************************************************************
 //**** CLASS DECLARATIONS
 //******************************************************************************************************
-class IMPEXPBMGUIBASE BetterScrollView : public BScrollView
+class IMPEXPBMGUIBASE BetterScrollView : public MView, public BScrollView
 {
-	public:
-		BetterScrollView(const char *name, BView *target, uint32 resizeMask = B_FOLLOW_LEFT | B_FOLLOW_TOP,
-			uint32 flags = B_FRAME_EVENTS | B_WILL_DRAW, bool horizontal = true, bool vertical = true,
-			bool scroll_view_corner = true, border_style border = B_FANCY_BORDER);
-		virtual ~BetterScrollView();
-		virtual void SetDataRect(BRect data_rect, bool scrolling_allowed = true);
-		inline BRect DataRect() {return m_data_rect;}
-		virtual	void FrameResized(float new_width, float new_height);
-		virtual void AttachedToWindow();
-		void WindowActivated(bool active);
+public:
+	BetterScrollView(minimax minmax, BView* target, BmScrollViewFlags svFlags,
+						  const char* captionMaxText = NULL);
+	virtual ~BetterScrollView();
 
-	protected:
-		void UpdateScrollBars(bool scrolling_allowed);
+	void SetBusy();
+	void UnsetBusy();
+	void PulseBusyView();
+	void SetErrorText( const BmString& text);
 
-		BRect m_data_rect;
-		BScrollBar* m_h_scrollbar;
-		BScrollBar* m_v_scrollbar;
-		ScrollViewCorner* m_scroll_view_corner;
-		BView* m_target;
+	void SetCaptionText( const char* text);
+	void SetCaptionWidth( float width) 	{ mCaptionWidth = width; }
+	BmCaption* Caption() 					{ return mCaption; }
+
+	virtual void SetDataRect(BRect data_rect, bool scrolling_allowed = true);
+	inline BRect DataRect() {return mDataRect;}
+
+	void Draw( BRect bounds);
+	void FrameResized(float new_width, float new_height);
+	void AttachedToWindow();
+	void WindowActivated(bool active);
+	status_t SetBorderHighlighted( bool highlighted);
+
+	// overrides of MView base:
+	BRect layout( BRect);
+	minimax layoutprefs();
+	
+protected:
+	void UpdateScrollBars(bool scrolling_allowed);
+
+	BmCaption* mCaption;
+	float mCaptionWidth;
+	BmBusyView* mBusyView;
+
+	BRect mDataRect;
+	BScrollBar* mHScroller;
+	BScrollBar* mVScroller;
+	ScrollViewCorner* mScrollViewCorner;
+	BView* mTarget;
 };
 
 

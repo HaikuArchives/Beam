@@ -69,9 +69,6 @@ public:
 	BmMailView* MailView() const			{ return mMailView; }
 	
 private:
-	CLVContainerView* CreateMailRefView( minimax minmax, float width, 
-													 float height);
-	BmMailViewContainer* CreateMailView( minimax minmax, BRect frame);
 	void CreateGUI();
 	MMenuBar* CreateMenu();
 

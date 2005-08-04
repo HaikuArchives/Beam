@@ -71,9 +71,8 @@ class BmRecvIdentView : public BmListViewController
 	typedef BmListViewController inherited;
 	
 public:
-	// creator-func, c'tors and d'tor:
-	static BmRecvIdentView* CreateInstance(  minimax minmax, int32 width, int32 height);
-	BmRecvIdentView(  minimax minmax, int32 width, int32 height);
+	// c'tors and d'tor:
+	BmRecvIdentView( int32 width, int32 height);
 	~BmRecvIdentView();
 
 	// native methods:
@@ -82,16 +81,9 @@ public:
 	// overrides of controller base:
 	BmString StateInfoBasename()			{ return "IdentView"; }
 	BmListViewItem* AddModelItem( BmListModelItem* item);
-	CLVContainerView* CreateContainer( bool horizontal, bool vertical, 
-												  bool scroll_view_corner, 
-												  border_style border, 
-												  uint32 ResizingMode, 
-												  uint32 flags);
 
 	// overrides of listview base:
 	void MessageReceived( BMessage* msg);
-
-	static BmRecvIdentView* theInstance;
 
 private:
 
@@ -148,8 +140,6 @@ public:
 	// setters:
 
 private:
-	CLVContainerView* CreateIdentListView( minimax minmax, int32 width, int32 height);
-
 	BmListViewController* mIdentListView;
 	BmTextControl* mIdentityControl;
 	BmTextControl* mMailAddrControl;

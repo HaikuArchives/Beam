@@ -221,28 +221,24 @@ enum {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmMailFolderView* BmMailFolderView::CreateInstance( minimax minmax, 
-																	 int32 width, 
+BmMailFolderView* BmMailFolderView::CreateInstance( int32 width, 
 																	 int32 height) {
 	if (theInstance)
 		return theInstance;
 	else 
-		return theInstance = new BmMailFolderView( minmax, width, height);
+		return theInstance = new BmMailFolderView( width, height);
 }
 
 /*------------------------------------------------------------------------------*\
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmMailFolderView::BmMailFolderView( minimax minmax, int32 width, int32 height)
-	:	inherited( minmax, BRect(0,0,width-1,height-1), "Beam_FolderView", 
-					  B_SINGLE_SELECTION_LIST, true, true, true, true)
+BmMailFolderView::BmMailFolderView( int32 width, int32 height)
+	:	inherited( BRect(0,0,width-1,height-1), "Beam_FolderView", 
+					  B_SINGLE_SELECTION_LIST, true, true)
 	,	mPartnerMailRefView( NULL)
 	,	mHaveSelectedFolder( false)
 {
-	Initialize( BRect( 0,0,width-1,height-1), 
-					B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE,
-					B_FOLLOW_TOP_BOTTOM, true, true, true, B_FANCY_BORDER);
 	AddColumn( new CLVColumn( NULL, 10.0, 
 									  CLV_EXPANDER | CLV_LOCK_AT_BEGINNING 
 									  | CLV_NOT_MOVABLE | CLV_COLTYPE_BITMAP, 10.0));
@@ -267,25 +263,6 @@ BmMailFolderView::BmMailFolderView( minimax minmax, int32 width, int32 height)
 \*------------------------------------------------------------------------------*/
 BmMailFolderView::~BmMailFolderView() {
 	theInstance = NULL;
-}
-
-/*------------------------------------------------------------------------------*\
-	CreateContainer()
-		-	
-\*------------------------------------------------------------------------------*/
-CLVContainerView* BmMailFolderView::CreateContainer( bool horizontal, 
-																	  bool vertical, 
-												  					  bool scroll_view_corner, 
-												  					  border_style border, 
-																	  uint32 ResizingMode, 
-																	  uint32 flags) 
-{
-	return 
-		new BmCLVContainerView( 
-			fMinMax, this, ResizingMode, flags, horizontal, vertical, 
-			scroll_view_corner, border, mShowCaption, mShowBusyView, 
-			be_plain_font->StringWidth(" 999 folders ")
-		);
 }
 
 /*------------------------------------------------------------------------------*\

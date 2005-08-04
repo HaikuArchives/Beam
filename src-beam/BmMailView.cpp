@@ -42,8 +42,6 @@ using namespace regexx;
 #include "BmBasics.h"
 #include "BmBodyPartList.h"
 #include "BmBodyPartView.h"
-#include "BmBusyView.h"
-#include "BmCaption.h"
 #include "BmEncoding.h"
 	using namespace BmEncoding;
 #include "BmGuiUtil.h"
@@ -207,10 +205,10 @@ const char* const BmMailView::MSG_HAS_MAIL = "bm:hmail";
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmMailView* BmMailView::CreateInstance( minimax minmax, BRect frame, 
+BmMailView* BmMailView::CreateInstance( BRect frame, 
 													 bool outbound) {
 	// create standard mail-view:
-	BmMailView* instance = new BmMailView( minmax, frame, outbound);
+	BmMailView* instance = new BmMailView( frame, outbound);
 	// try to open state-cache-file...
 	status_t err;
 	BFile archiveFile;
@@ -239,7 +237,7 @@ BmMailView* BmMailView::CreateInstance( minimax minmax, BRect frame,
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmMailView::BmMailView( minimax minmax, BRect frame, bool outbound) 
+BmMailView::BmMailView( BRect frame, bool outbound) 
 	:	inherited( frame, "MailView", B_FOLLOW_NONE, B_WILL_DRAW | B_NAVIGABLE)
 	,	inheritedController( "MailViewController")
 	,	mOutbound( outbound)
@@ -287,8 +285,6 @@ BmMailView::BmMailView( minimax minmax, BRect frame, bool outbound)
 			m_separator_chars = "";
 	}
 	CalculateVerticalOffset();
-	mScrollView = new BmMailViewContainer( minmax, this, B_FOLLOW_NONE, 
-														B_WILL_DRAW | B_FRAME_EVENTS);
 
 	SetViewUIColor(B_UI_DOCUMENT_BACKGROUND_COLOR);
 	SetLowUIColor(B_UI_DOCUMENT_BACKGROUND_COLOR);
@@ -367,6 +363,7 @@ void BmMailView::AttachedToWindow() {
 	if (mOutbound) {
 		SetFixedWidth( ThePrefs->GetInt( "MaxLineLen"));
 	}
+	mScrollView = dynamic_cast<BmMailViewContainer*>(Parent());
 }
 
 /*------------------------------------------------------------------------------*\
@@ -493,7 +490,8 @@ void BmMailView::MessageReceived( BMessage* msg) {
 				break;
 			}
 			case BMM_FIND_NEXT: {
-				IncrementalSearch( mScrollView->Caption()->Text(), true);
+				if (mScrollView)
+					IncrementalSearch( mScrollView->Caption()->Text(), true);
 				break;
 			}
 			case B_MOUSE_WHEEL_CHANGED: {
@@ -647,9 +645,8 @@ void BmMailView::MouseMoved( BPoint point, uint32 transit,
 \*------------------------------------------------------------------------------*/
 void BmMailView::MakeFocus(bool focused) {
 	inherited::MakeFocus(focused);
-	if (mScrollView) {
+	if (mScrollView)
 		mScrollView->Invalidate();
-	}
 }
 
 /*------------------------------------------------------------------------------*\
@@ -1019,6 +1016,8 @@ out:
 void BmMailView::HandleIncrementalSearchKeys(const char* bytes, 
 															int32 numBytes)
 {
+	if (!mScrollView)
+		return;
 	BmString text = mScrollView->Caption()->Text();
 	if (bytes[0] == B_ESCAPE) {
 		text.Truncate(0);
@@ -1037,7 +1036,7 @@ void BmMailView::HandleIncrementalSearchKeys(const char* bytes,
 	} else {
 		text.Append(bytes, numBytes);
 	}
-	mScrollView->Caption()->SetText(text.String());
+	mScrollView->SetCaptionText(text.String());
 	IncrementalSearch(text, false);
 }
 
@@ -1330,39 +1329,13 @@ void BmMailView::ShowMenu( BPoint point) {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmMailViewContainer::BmMailViewContainer( minimax minmax, BmMailView* target, 
-														uint32 resizingMode, uint32 flags)
-	:	inherited( NULL, target, resizingMode, flags, true, true, false, 
-					  B_FANCY_BORDER)
+BmMailViewContainer::BmMailViewContainer( minimax minmax, BmMailView* target)
+	:	inherited( minmax, target, 
+					  BM_SV_H_SCROLLBAR | BM_SV_V_SCROLLBAR | BM_SV_BUSYVIEW
+					  | BM_SV_CAPTION, "12345678901234567890")
 {
 	SetViewUIColor( B_UI_PANEL_BACKGROUND_COLOR);
 	ct_mpm = minmax;
-	target->TargetedByScrollView( this);
-	BRect hsFrame;
-	BPoint hsLT;
-	BScrollBar* hScroller = ScrollBar( B_HORIZONTAL);
-	if (hScroller) {
-		hsFrame = hScroller->Frame();
-		hsLT = hsFrame.LeftTop();
-		float bvSize = hsFrame.Height();
-		hScroller->ResizeBy( -bvSize, 0.0);
-		hScroller->MoveBy( bvSize, 0.0);
-		hsFrame.left += bvSize;
-		mBusyView = new BmBusyView( BRect( hsLT.x, hsLT.y, 
-													  hsLT.x+bvSize-1, hsLT.y+bvSize));
-		AddChild( mBusyView);
-
-		hsLT = hsFrame.LeftTop();
-		// shrink horizontal scrollbar to make room for the caption:
-		float cvSize = 80.0;
-		hScroller->ResizeBy( -cvSize, 0.0);
-		hScroller->MoveBy( cvSize, 0.0);
-		hsFrame.left += cvSize;
-		mCaption = new BmCaption( 
-			BRect( hsLT.x, hsLT.y, hsLT.x+cvSize, hsLT.y+hsFrame.Height()), ""
-		);
-		AddChild( mCaption);
-	}
 }
 
 /*------------------------------------------------------------------------------*\
@@ -1373,124 +1346,16 @@ BmMailViewContainer::~BmMailViewContainer() {
 }
 
 /*------------------------------------------------------------------------------*\
-	()
-		-	
-\*------------------------------------------------------------------------------*/
-minimax BmMailViewContainer::layoutprefs()
-{
-	return mpm=ct_mpm;
-}
-
-/*------------------------------------------------------------------------------*\
-	()
-		-	
-\*------------------------------------------------------------------------------*/
-void BmMailViewContainer::Draw( BRect bounds) {
-	inherited::Draw( bounds);
-	if (m_target) {
-		BRect bounds = Bounds();
-		BPoint lb( bounds.right-B_V_SCROLL_BAR_WIDTH, bounds.bottom);
-		BPoint lt( bounds.right-B_V_SCROLL_BAR_WIDTH, 
-					  bounds.bottom-B_H_SCROLL_BAR_HEIGHT);
-		BPoint rt( bounds.right, bounds.bottom-B_H_SCROLL_BAR_HEIGHT);
-		if (IsFocus() || m_target->IsFocus()) {
-			SetHighColor( keyboard_navigation_color());
-			StrokeLine( bounds.LeftBottom(), lb);
-			StrokeLine( bounds.RightTop(), rt);
-			StrokeLine( bounds.LeftTop(), bounds.RightTop());
-			StrokeLine( bounds.LeftTop(), bounds.LeftBottom());
-			StrokeLine( lb, lt);
-			StrokeLine( lt, rt);
-		} else {
-			SetHighColor( ui_color( B_UI_SHINE_COLOR));
-			StrokeLine( bounds.LeftBottom(), lb);
-			StrokeLine( bounds.RightTop(), rt);
-			StrokeLine( lb, lt);
-			StrokeLine( lt, rt);
-			SetHighColor( tint_color( 
-				ui_color( B_UI_PANEL_BACKGROUND_COLOR), B_DARKEN_1_TINT
-			));
-			StrokeLine( bounds.LeftTop(), bounds.RightTop());
-			StrokeLine( bounds.LeftTop(), bounds.LeftBottom());
-		}
-	}
-}
-
-/*------------------------------------------------------------------------------*\
-	()
-		-	
-\*------------------------------------------------------------------------------*/
-void BmMailViewContainer::FrameResized(float new_width, float new_height) {
-	if (m_target)
-		m_target->ResizeTo( new_width-B_V_SCROLL_BAR_WIDTH-4,
-								  new_height-B_H_SCROLL_BAR_HEIGHT-4);
-	Invalidate();
-}
-
-/*------------------------------------------------------------------------------*\
-	()
-		-	
-\*------------------------------------------------------------------------------*/
-BRect BmMailViewContainer::layout(BRect rect)
-{
-	MoveTo(rect.LeftTop());
-	ResizeTo(rect.Width(),rect.Height());
-	BScrollBar* hScroller = ScrollBar( B_HORIZONTAL);
-	if (mBusyView && hScroller) {
-		BRect hsFrame = hScroller->Frame();
-		BRect bvFrame = mBusyView->Frame();
-		mBusyView->MoveTo( bvFrame.left, hsFrame.bottom-bvFrame.Height());
-		BRect cvFrame = mCaption->Frame();
-		mCaption->MoveTo( cvFrame.left, hsFrame.bottom-cvFrame.Height());
-	}
-	return rect;
-}
-
-/*------------------------------------------------------------------------------*\
-	( )
-		-	
-\*------------------------------------------------------------------------------*/
-void BmMailViewContainer::SetBusy() {
-	if (mBusyView)
-		mBusyView->SetBusy();
-}
-
-/*------------------------------------------------------------------------------*\
-	( )
-		-	
-\*------------------------------------------------------------------------------*/
-void BmMailViewContainer::UnsetBusy() {
-	if (mBusyView) 
-		mBusyView->UnsetBusy();
-}
-
-/*------------------------------------------------------------------------------*\
-	( )
-		-	
-\*------------------------------------------------------------------------------*/
-void BmMailViewContainer::SetErrorText(const BmString& text) {
-	if (mBusyView) 
-		mBusyView->SetErrorText( text);
-}
-
-/*------------------------------------------------------------------------------*\
-	( )
-		-	
-\*------------------------------------------------------------------------------*/
-void BmMailViewContainer::PulseBusyView() {
-	if (mBusyView)
-		mBusyView->Pulse();
-}
-
-/*------------------------------------------------------------------------------*\
 	( )
 		-	
 \*------------------------------------------------------------------------------*/
 void BmMailViewContainer::RedrawScrollbars() {
+/*
 	BScrollBar* hScroller = ScrollBar( B_HORIZONTAL);
 	if (hScroller)
 		hScroller->Invalidate();
 	BScrollBar* vScroller = ScrollBar( B_VERTICAL);
 	if (vScroller)
 		vScroller->Invalidate();
+*/
 }

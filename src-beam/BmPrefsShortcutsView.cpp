@@ -134,7 +134,13 @@ BmPrefsShortcutsView::BmPrefsShortcutsView()
 {
 	MView* view = 
 		new VGroup(
-			CreateListView( minimax(400,300,1E5,1E5), 400, 400),
+			new BetterScrollView( 
+				minimax(400,300,1E5,1E5), 
+				CreateListView( 400, 400),
+				BM_SV_H_SCROLLBAR | BM_SV_V_SCROLLBAR | BM_SV_CORNER
+				| BM_SV_CAPTION,
+				"99 shortcuts"
+			),
 			new Space( minimax(0,10,0,10)),
 			new MBorder( M_LABELED_BORDER, 10, (char*)"Shortcut Info",
 				new VGroup(
@@ -294,8 +300,8 @@ void BmPrefsShortcutsView::ShowShortcut( int32 selection) {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-CLVContainerView* BmPrefsShortcutsView::CreateListView( minimax minmax, int32 width, int32 height) {
-	mListView = new ColumnListView( minmax, BRect( 0, 0, width-1, height-1), NULL, 
+ColumnListView* BmPrefsShortcutsView::CreateListView( int32 width, int32 height) {
+	mListView = new ColumnListView( BRect( 0, 0, width-1, height-1), NULL, 
 											  B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE,
 											  B_SINGLE_SELECTION_LIST);
 
@@ -312,16 +318,11 @@ CLVContainerView* BmPrefsShortcutsView::CreateListView( minimax minmax, int32 wi
 	if (ThePrefs->GetBool("StripedListView"))
 		mListView->SetStripedBackground( true);
 
-	CLVContainerView* container 
-		= mListView->Initialize( BRect( 0,0,width-1,height-1), 
-										 B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE,
-										 B_FOLLOW_TOP_BOTTOM, false, true, true, B_FANCY_BORDER,
-										 be_bold_font);
 	mListView->AddColumn( new CLVColumn( "Menu-Item", 300.0, CLV_SORT_KEYABLE|flags, 100.0));
 	mListView->AddColumn( new CLVColumn( "Shortcut", 80.0, CLV_SORT_KEYABLE|flags, 4.0));
 
 	mListView->SetSortFunction( CLVEasyItem::CompareItems);
 	mListView->SetSortKey( 0);
 
-	return container;
+	return mListView;
 }

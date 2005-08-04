@@ -69,10 +69,8 @@ class BmFilterChainView : public BmListViewController
 	typedef BmListViewController inherited;
 	
 public:
-	// creator-func, c'tors and d'tor:
-	static BmFilterChainView* CreateInstance( minimax minmax, int32 width, 
-															int32 height);
-	BmFilterChainView(  minimax minmax, int32 width, int32 height);
+	// c'tors and d'tor:
+	BmFilterChainView( int32 width, int32 height);
 	~BmFilterChainView();
 
 	// native methods:
@@ -83,11 +81,6 @@ public:
 	BmString StateInfoBasename()			{ return "FilterChainView"; }
 	BmListViewItem* AddModelItem( BmListModelItem* item);
 	const char* ItemNameForCaption()		{ return "filter-chain"; }
-	CLVContainerView* CreateContainer( bool horizontal, bool vertical, 
-												  bool scroll_view_corner, 
-												  border_style border, 
-												  uint32 ResizingMode, 
-												  uint32 flags);
 
 	// overrides of listview base:
 	void MessageReceived( BMessage* msg);
@@ -141,10 +134,8 @@ class BmChainedFilterView : public BmListViewController
 	typedef BmListViewController inherited;
 	
 public:
-	// creator-func, c'tors and d'tor:
-	static BmChainedFilterView* CreateInstance( minimax minmax, int32 width, 
-															  int32 height);
-	BmChainedFilterView(  minimax minmax, int32 width, int32 height);
+	// c'tors and d'tor:
+	BmChainedFilterView( int32 width, int32 height);
 	~BmChainedFilterView();
 
 	// native methods:
@@ -155,11 +146,6 @@ public:
 	BmString StateInfoBasename()			{ return "ChainedFilterView"; }
 	BmListViewItem* AddModelItem( BmListModelItem* item);
 	const char* ItemNameForCaption()		{ return "filter"; }
-	CLVContainerView* CreateContainer( bool horizontal, bool vertical, 
-												  bool scroll_view_corner, 
-												  border_style border, 
-												  uint32 ResizingMode, 
-												  uint32 flags);
 	bool InitiateDrag( BPoint, int32 index, bool wasSelected);
 	bool AcceptsDropOf( const BMessage* msg);
 	void HandleDrop( BMessage* msg);
@@ -232,13 +218,6 @@ public:
 	// setters:
 
 private:
-	CLVContainerView* CreateFilterChainListView( minimax minmax, int32 width, 
-																int32 height);
-	CLVContainerView* CreateChainedFilterListView( minimax minmax, int32 width, 
-																  int32 height);
-	CLVContainerView* CreateAvailableFilterListView( minimax minmax, int32 width, 
-																	 int32 height);
-
 	BmListViewController* mFilterChainListView;
 	BmListViewController* mChainedFilterListView;
 	BmListViewController* mAvailableFilterListView;

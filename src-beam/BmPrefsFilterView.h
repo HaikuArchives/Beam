@@ -69,12 +69,8 @@ class BmFilterView : public BmListViewController
 	typedef BmListViewController inherited;
 	
 public:
-	// creator-func, c'tors and d'tor:
-	static BmFilterView* CreateInstance( minimax minmax, int32 width, 
-													 int32 height,
-													 bool showCaption=true);
-	BmFilterView(  minimax minmax, int32 width, int32 height, 
-						bool showCaption=true);
+	// c'tors and d'tor:
+	BmFilterView( int32 width, int32 height);
 	~BmFilterView();
 
 	// native methods:
@@ -85,11 +81,6 @@ public:
 	BmString StateInfoBasename()			{ return "FilterView"; }
 	BmListViewItem* AddModelItem( BmListModelItem* item);
 	const char* ItemNameForCaption()		{ return "filter"; }
-	CLVContainerView* CreateContainer( bool horizontal, bool vertical, 
-												  bool scroll_view_corner, 
-												  border_style border, 
-												  uint32 ResizingMode, 
-												  uint32 flags);
 
 	// overrides of listview base:
 	void MessageReceived( BMessage* msg);
@@ -149,9 +140,6 @@ public:
 	// setters:
 
 private:
-	CLVContainerView* CreateFilterListView( minimax minmax, int32 width, 
-														 int32 height);
-
 	BmListViewController* mFilterListView;
 	MPopup* mAddPopup;
 	MButton* mRemoveButton;

@@ -126,7 +126,11 @@ BmPrefsWin::BmPrefsWin()
 					mVertSplitter = new UserResizeSplitView(
 						new VGroup(
 							minimax(100,200,200,1E5),
-							CreatePrefsListView( minimax(100,200,200,1E5), 120, 200),
+							new BetterScrollView( 
+								minimax(100,200,200,1E5), 
+								CreatePrefsListView( 120, 200),
+								BM_SV_V_SCROLLBAR
+							),
 							new Space( minimax(0,2,0,2)),
 							0
 						),
@@ -209,8 +213,8 @@ status_t BmPrefsWin::UnarchiveState( BMessage* archive) {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-CLVContainerView* BmPrefsWin::CreatePrefsListView( minimax minmax, int32 width, int32 height) {
-	mPrefsListView = new ColumnListView( minmax, BRect( 0, 0, width-1, height-1), NULL, 
+ColumnListView* BmPrefsWin::CreatePrefsListView( int32 width, int32 height) {
+	mPrefsListView = new ColumnListView( BRect( 0, 0, width-1, height-1), NULL, 
 													 B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE,
 													 B_SINGLE_SELECTION_LIST, true, true);
 
@@ -223,11 +227,6 @@ CLVContainerView* BmPrefsWin::CreatePrefsListView( minimax minmax, int32 width, 
 		MAX( TheResources->FontLineHeight(), 
 			  ThePrefs->GetInt( "MinHeightHierarchicalListItems", 18))
 	);
-	CLVContainerView* container 
-		= mPrefsListView->Initialize( BRect( 0,0,width-1,height-1), 
-												B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE,
-												B_FOLLOW_TOP_BOTTOM, false, true, true, B_FANCY_BORDER,
-												be_bold_font);
 	mPrefsListView->AddColumn( 
 		new CLVColumn( NULL, 10.0, 
 							CLV_EXPANDER | CLV_LOCK_AT_BEGINNING | CLV_NOT_MOVABLE
@@ -287,7 +286,7 @@ CLVContainerView* BmPrefsWin::CreatePrefsListView( minimax minmax, int32 width, 
 	item->SetColumnContent( 1, "Chains");
 	mPrefsListView->AddItem( item);
 
-	return container;
+	return mPrefsListView;
 }
 
 /*------------------------------------------------------------------------------*\

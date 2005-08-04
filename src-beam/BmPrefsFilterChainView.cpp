@@ -112,29 +112,15 @@ void BmFilterChainItem::UpdateView( BmUpdFlags flags, bool redraw,
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmFilterChainView* BmFilterChainView::CreateInstance( minimax minmax, 
-																		int32 width, 
-																		int32 height) {
-	return new BmFilterChainView( minmax, width, height);
-}
-
-/*------------------------------------------------------------------------------*\
-	()
-		-	
-\*------------------------------------------------------------------------------*/
-BmFilterChainView::BmFilterChainView( minimax minmax, int32 width, int32 height)
-	:	inherited( minmax, BRect(0,0,width-1,height-1), "Beam_FilterView", 
+BmFilterChainView::BmFilterChainView( int32 width, int32 height)
+	:	inherited( BRect(0,0,width-1,height-1), "Beam_FilterView", 
 					  B_SINGLE_SELECTION_LIST, 
-					  false, true, true, false)
+					  false, true)
 {
 	int32 flags = 0;
 	SetViewColor( B_TRANSPARENT_COLOR);
 	if (ThePrefs->GetBool("StripedListView"))
 		SetStripedBackground( true);
-
-	Initialize( BRect( 0,0,width-1,height-1),
-					B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE,
-					B_FOLLOW_TOP_BOTTOM, true, true, true, B_FANCY_BORDER);
 
 	AddColumn( new CLVColumn( "Name", 250.0, flags, 50.0));
 
@@ -156,24 +142,6 @@ BmFilterChainView::~BmFilterChainView() {
 BmListViewItem* BmFilterChainView::CreateListViewItem( BmListModelItem* item,
 																		 BMessage*) {
 	return new BmFilterChainItem( this, item);
-}
-
-/*------------------------------------------------------------------------------*\
-	CreateContainer()
-		-	
-\*------------------------------------------------------------------------------*/
-CLVContainerView* BmFilterChainView::CreateContainer( bool horizontal, 
-																		bool vertical, 
-													  					bool scroll_view_corner, 
-												  						border_style border, 
-																		uint32 ResizingMode, 
-																		uint32 flags) 
-{
-	return new BmCLVContainerView( 
-		fMinMax, this, ResizingMode, flags, horizontal, vertical, 
-		scroll_view_corner, border, mShowCaption, mShowBusyView, 
-		be_plain_font->StringWidth(" 99 filter-chains ")
-	);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -282,30 +250,15 @@ const char* BmChainedFilterView::MSG_OLD_POS = "bm:oldPos";
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmChainedFilterView* BmChainedFilterView::CreateInstance( minimax minmax, 
-																			 int32 width, 
-																			 int32 height) {
-	return new BmChainedFilterView( minmax, width, height);
-}
-
-/*------------------------------------------------------------------------------*\
-	()
-		-	
-\*------------------------------------------------------------------------------*/
-BmChainedFilterView::BmChainedFilterView( minimax minmax, 
-														int32 width, int32 height)
-	:	inherited( minmax, BRect(0,0,width-1,height-1), "Beam_ChainedFilterView", 
+BmChainedFilterView::BmChainedFilterView( int32 width, int32 height)
+	:	inherited( BRect(0,0,width-1,height-1), "Beam_ChainedFilterView", 
 					  B_SINGLE_SELECTION_LIST, 
-					  false, true, true, false)
+					  false, true)
 {
 	int32 flags = 0;
 	SetViewColor( B_TRANSPARENT_COLOR);
 	if (ThePrefs->GetBool("StripedListView"))
 		SetStripedBackground( true);
-
-	Initialize( BRect( 0,0,width-1,height-1),
-					B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE,
-					B_FOLLOW_TOP_BOTTOM, true, true, true, B_FANCY_BORDER);
 
 	AddColumn( new CLVColumn( "Pos", 20.0, 
 									  flags|CLV_SORT_KEYABLE|CLV_RIGHT_JUSTIFIED
@@ -333,22 +286,6 @@ BmChainedFilterView::~BmChainedFilterView() {
 BmListViewItem* BmChainedFilterView::CreateListViewItem( BmListModelItem* item,
 																			BMessage*) {
 	return new BmChainedFilterItem( this, item);
-}
-
-/*------------------------------------------------------------------------------*\
-	CreateContainer()
-		-	
-\*------------------------------------------------------------------------------*/
-CLVContainerView* BmChainedFilterView::CreateContainer( bool horizontal, 
-																		  bool vertical, 
-												  						  bool scroll_view_corner, 
-														  				  border_style border, 
-																		  uint32 ResizingMode, 
-																		  uint32 flags) 
-{
-	return new BmCLVContainerView( fMinMax, this, ResizingMode, flags, 
-											 horizontal, vertical, scroll_view_corner, 
-											 border, false, false);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -466,7 +403,13 @@ BmPrefsFilterChainView::BmPrefsFilterChainView()
 		new UserResizeSplitView(
 			new HGroup(
 				minimax(400,100,1E5,1E5),
-				CreateFilterChainListView( minimax(200,100,1E5,1E5), 200, 150),
+				new BetterScrollView( 
+					minimax(200,100,1E5,1E5), 
+					mFilterChainListView = new BmFilterView( 200, 150),
+					BM_SV_H_SCROLLBAR | BM_SV_V_SCROLLBAR | BM_SV_CORNER
+					| BM_SV_CAPTION,
+					"99 filter-chains"
+				),
 				new Space( minimax(5,0,5,1E5)),
 				new VGroup(
 					mAddButton = new MButton( 
@@ -494,9 +437,10 @@ BmPrefsFilterChainView::BmPrefsFilterChainView()
 							mChainControl = new BmTextControl( "Filter-Chain name:"),
 							0
 						),
-						CreateChainedFilterListView( 
+						new BetterScrollView( 
 							minimax(200,120,1E5,1E5), 
-							200, 200
+							mChainedFilterListView = new BmFilterView( 200, 200),
+							BM_SV_H_SCROLLBAR | BM_SV_V_SCROLLBAR | BM_SV_CORNER
 						),
 						0
 					)
@@ -513,9 +457,10 @@ BmPrefsFilterChainView::BmPrefsFilterChainView()
 				new Space( minimax(10, 0, 10, 1E5)),
 				borderr = new MBorder( 
 					M_LABELED_BORDER, 10, (char*)"Available Filters",
-					CreateAvailableFilterListView( 
+					new BetterScrollView( 
 						minimax(200,120,1E5,1E5), 
-						200, 200
+						mAvailableFilterListView = new BmFilterView( 200, 200),
+						BM_SV_H_SCROLLBAR | BM_SV_V_SCROLLBAR | BM_SV_CORNER
 					)
 				),
 				0
@@ -852,40 +797,4 @@ void BmPrefsFilterChainView::UpdateState() {
 	} else {
 		mChainControl->SetTextSilently( mCurrFilterChain->Name().String());
 	}
-}
-
-/*------------------------------------------------------------------------------*\
-	()
-		-	
-\*------------------------------------------------------------------------------*/
-CLVContainerView* BmPrefsFilterChainView
-::CreateFilterChainListView( minimax minmax, int32 width, int32 height) {
-	mFilterChainListView 
-		= BmFilterChainView::CreateInstance( minmax, width, height);
-	mFilterChainListView->ClickSetsFocus( true);
-	return mFilterChainListView->ContainerView();
-}
-
-/*------------------------------------------------------------------------------*\
-	()
-		-	
-\*------------------------------------------------------------------------------*/
-CLVContainerView* BmPrefsFilterChainView
-::CreateChainedFilterListView( minimax minmax, int32 width, int32 height) {
-	mChainedFilterListView 
-		= BmChainedFilterView::CreateInstance( minmax, width, height);
-	mChainedFilterListView->ClickSetsFocus( true);
-	return mChainedFilterListView->ContainerView();
-}
-
-/*------------------------------------------------------------------------------*\
-	()
-		-	
-\*------------------------------------------------------------------------------*/
-CLVContainerView* BmPrefsFilterChainView
-::CreateAvailableFilterListView( minimax minmax, int32 width, int32 height) {
-	mAvailableFilterListView 
-		= BmFilterView::CreateInstance( minmax, width, height, false);
-	mAvailableFilterListView->ClickSetsFocus( true);
-	return mAvailableFilterListView->ContainerView();
 }

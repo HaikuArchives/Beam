@@ -12,31 +12,12 @@
 //can take advantage of enhancements and bug fixes as they become available. Feel free to distribute the 
 //ColumnListView source, including modified versions, but keep this documentation and license with it.
 
-//Conventions:
-//    Global constants (declared with const) and #defines - all uppercase letters with words separated 
-//        by underscores.
-//        (E.G., #define MY_DEFINE 5).
-//        (E.G., const int MY_CONSTANT = 5;).
-//    New data types (classes, structs, typedefs, etc.) - begin with an uppercase letter followed by
-//        lowercase words separated by uppercase letters.  Enumerated constants contain a prefix
-//        associating them with a particular enumerated set.
-//        (E.G., typedef int MyTypedef;).
-//        (E.G., enum MyEnumConst {MEC_ONE, MEC_TWO};)
-//    Global variables - begin with "g_" followed by lowercase words separated by underscores.
-//        (E.G., int g_my_global;).
-//    Argument and local variables - begin with a lowercase letter followed by
-//        lowercase words separated by underscores.
-//        (E.G., int my_local;).
-//    Member variables - begin with "m_" followed by lowercase words separated by underscores.
-//        (E.G., int m_my_member;).
-//    Functions (member or global) - begin with an uppercase letter followed by lowercase words
-//        separated by uppercase letters.
-//        (E.G., void MyFunction(void);).
-
+#include <stdio.h>
 
 //******************************************************************************************************
 //**** PROJECT HEADER FILES
 //******************************************************************************************************
+#include "BmBasics.h"
 #include "BetterScrollView.h"
 #include "Colors.h"
 
@@ -44,60 +25,133 @@
 //******************************************************************************************************
 //**** BetterScrollView CLASS
 //******************************************************************************************************
-#include <stdio.h>
-BetterScrollView::BetterScrollView(const char *name, BView *target, uint32 resizeMask, uint32 flags,
-	bool horizontal, bool vertical, bool scroll_view_corner, border_style border)
-: BScrollView(name, target, resizeMask, flags, horizontal, vertical, border)
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+BetterScrollView::BetterScrollView(minimax minmax, BView *target, 
+	BmScrollViewFlags svFlags, const char* captionMaxText)
+	: BScrollView("BetterScrollView", target, 
+					  B_FOLLOW_NONE, B_FRAME_EVENTS | B_WILL_DRAW, 
+					  svFlags & BM_SV_H_SCROLLBAR, svFlags & BM_SV_V_SCROLLBAR,
+					  B_PLAIN_BORDER)
+	,	mCaption( NULL)
+	,	mCaptionWidth( 0)
+	,	mBusyView( NULL)
+	,	mTarget(target)
 {
-	m_target = target;
-	m_data_rect.Set(-1,-1,-1,-1);
-	m_h_scrollbar = ScrollBar(B_HORIZONTAL);
-	m_v_scrollbar = ScrollBar(B_VERTICAL);
-#ifdef B_BEOS_VERSION_DANO
-	// on Dano/Zeta, we need to correct the h-scroller-size slightly...
-	if (m_h_scrollbar)
-		m_h_scrollbar->ResizeBy( 1.0, 0.0);
-	// ...and move and resize the v-scroller, too:
-	if (m_v_scrollbar) {
-		m_v_scrollbar->MoveBy( 0.0, -1.0);
-		m_v_scrollbar->ResizeBy( 0.0, 2.0);
+	ct_mpm = minmax;
+	mDataRect.Set(-1,-1,-1,-1);
+	mHScroller = ScrollBar(B_HORIZONTAL);
+	mVScroller = ScrollBar(B_VERTICAL);
+	if (BeamOnDano) {
+		// on Dano/Zeta, we need to correct the h-scroller-size slightly...
+		if (mHScroller) {
+			mHScroller->ResizeTo( mHScroller->Frame().Width(), B_H_SCROLL_BAR_HEIGHT-1);
+		}
+		// ...and resize the v-scroller, too:
+		if (mVScroller) {
+			mVScroller->ResizeTo( B_V_SCROLL_BAR_WIDTH-1, mVScroller->Frame().Height());
+		}
+	} else {
+		// on R5, we need to correct the h-scroller-position slightly:
+		if (mHScroller) {
+			mHScroller->MoveBy( 1.0, -1.0);
+			mHScroller->ResizeBy( -1.0, 0.0);
+		}
 	}
-#else
-	// on R5, we need to correct the h-scroller-position slightly:
-	if (m_h_scrollbar) {
-		m_h_scrollbar->MoveBy( 1.0, 0.0);
-		m_h_scrollbar->ResizeBy( -1.0, 0.0);
-	}
-#endif
-	if(scroll_view_corner && horizontal && vertical)
-	{
-		m_scroll_view_corner = new ScrollViewCorner(m_v_scrollbar->Frame().left+1,
-			m_h_scrollbar->Frame().top);
-		AddChild(m_scroll_view_corner);
+	if (svFlags & BM_SV_CORNER) {
+		BRect bounds = Bounds();
+		mScrollViewCorner 
+			= new ScrollViewCorner(bounds.right-B_V_SCROLL_BAR_WIDTH,
+										  bounds.bottom-B_H_SCROLL_BAR_HEIGHT);
+		AddChild(mScrollViewCorner);
 	}
 	else
-		m_scroll_view_corner = NULL;
+		mScrollViewCorner = NULL;
+
+	SetViewUIColor( B_UI_PANEL_BACKGROUND_COLOR);
+	BRect frame;
+	BPoint LT;
+	if (mHScroller)
+		frame = mHScroller->Frame();
+	else {
+		frame = Bounds();
+		frame.left += 1;
+		frame.right -= 1;
+		frame.top = frame.bottom - B_H_SCROLL_BAR_HEIGHT;
+	}
+	if (svFlags & BM_SV_BUSYVIEW) {
+		LT = frame.LeftTop();
+		mBusyView = new BmBusyView( LT);
+		BRect bvFrame = mBusyView->Frame();
+		float bvWidth = 1+bvFrame.right-bvFrame.left;
+		if (mHScroller) {
+			// a horizontal scrollbar exists, we shrink it to make room 
+			// for the busyview:
+			mHScroller->ResizeBy( -bvWidth, 0.0);
+			mHScroller->MoveBy( bvWidth, 0.0);
+		}
+		AddChild( mBusyView);
+		frame.left += bvWidth;
+	}
+	if (svFlags & BM_SV_CAPTION) {
+		if (captionMaxText)
+			mCaptionWidth = be_plain_font->StringWidth(captionMaxText);
+		LT = frame.LeftTop();
+		if (mHScroller) {
+			// a horizontal scrollbar exists, we shrink it to make room 
+			// for the caption:
+			mHScroller->ResizeBy( -mCaptionWidth, 0.0);
+			mHScroller->MoveBy( mCaptionWidth, 0.0);
+		} else {
+			// no horizontal scrollbar, so the caption occupies all the 
+			// remaining space:
+			mCaptionWidth = frame.Width();
+		}
+		mCaption = new BmCaption( 
+			BRect( LT.x, LT.y, LT.x+mCaptionWidth-1, LT.y+frame.Height()), ""
+		);
+		AddChild( mCaption);
+	}
 }
 
 
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
 BetterScrollView::~BetterScrollView()
 { }
 
 
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
 void BetterScrollView::SetDataRect(BRect data_rect, bool scrolling_allowed)
 {
-	m_data_rect = data_rect;
+	mDataRect = data_rect;
 	UpdateScrollBars(scrolling_allowed);
 }
 
 
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
 void BetterScrollView::FrameResized(float new_width, float new_height)
 {
 	BScrollView::FrameResized(new_width,new_height);
-	UpdateScrollBars(true);
+//	UpdateScrollBars(true);
 }
 
 
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
 void BetterScrollView::AttachedToWindow()
 {
 	BScrollView::AttachedToWindow();
@@ -105,26 +159,75 @@ void BetterScrollView::AttachedToWindow()
 }
 
 
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+status_t BetterScrollView::SetBorderHighlighted( bool highlighted)
+{
+	Draw( Bounds());
+	return B_OK;
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
 void BetterScrollView::WindowActivated(bool active)
 {
-	if (m_scroll_view_corner) {
+	if (mScrollViewCorner) {
 		bool scEnabled = (
-			m_h_scrollbar && m_h_scrollbar->Proportion() < 1.0 
-			|| m_v_scrollbar && m_v_scrollbar->Proportion() < 1.0
+			mHScroller && mHScroller->Proportion() < 1.0 
+			|| mVScroller && mVScroller->Proportion() < 1.0
 		);
-		m_scroll_view_corner->SetEnabled( scEnabled && active);
-		m_scroll_view_corner->Draw(
+		mScrollViewCorner->SetEnabled( scEnabled && active);
+		mScrollViewCorner->Draw(
 			BRect(0.0, 0.0, B_V_SCROLL_BAR_WIDTH, B_H_SCROLL_BAR_HEIGHT)
 		);
 	}
 	BScrollView::WindowActivated(active);
 }
 
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void BetterScrollView::Draw( BRect rect) {
+	BScrollView::Draw( rect);
+	if (mTarget) {
+		BRect bounds = Bounds();
+		rgb_color color = 
+			IsFocus() || mTarget->IsFocus() 
+				? keyboard_navigation_color()
+				: BmWeakenColor( B_UI_SHADOW_COLOR, 3);
+		if (mHScroller && mVScroller && !mScrollViewCorner) {
+			BPoint lb( bounds.right-B_V_SCROLL_BAR_WIDTH, bounds.bottom);
+			BPoint lt( bounds.right-B_V_SCROLL_BAR_WIDTH, 
+						  bounds.bottom-B_H_SCROLL_BAR_HEIGHT);
+			BPoint rt( bounds.right, bounds.bottom-B_H_SCROLL_BAR_HEIGHT);
+			BeginLineArray(10);
+			AddLine( bounds.LeftBottom(), lb, color);
+			AddLine( bounds.RightTop(), rt, color);
+			AddLine( lb, lt, color);
+			AddLine( lt, rt, color);
+			AddLine( bounds.LeftTop(), bounds.RightTop(), color);
+			AddLine( bounds.LeftTop(), bounds.LeftBottom(), color);
+			EndLineArray();
+		} else {
+			SetHighColor( color);
+			StrokeRect( bounds);
+		}
+	}
+}
 
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
 void BetterScrollView::UpdateScrollBars(bool scrolling_allowed)
 {
 	//Figure out the bounds and scroll if necessary
-	BRect view_bounds = m_target->Bounds();
+	BRect view_bounds = mTarget->Bounds();
 
 	float page_width, page_height, view_width, view_height;
 	view_width = view_bounds.right-view_bounds.left;
@@ -134,8 +237,8 @@ void BetterScrollView::UpdateScrollBars(bool scrolling_allowed)
 	if(scrolling_allowed)
 	{
 		//Figure out the width of the page rectangle
-		page_width = m_data_rect.right-m_data_rect.left;
-		page_height = m_data_rect.bottom-m_data_rect.top;
+		page_width = mDataRect.right-mDataRect.left;
+		page_height = mDataRect.bottom-mDataRect.top;
 		if(view_width > page_width)
 			page_width = view_width;
 		if(view_height > page_height)
@@ -143,42 +246,42 @@ void BetterScrollView::UpdateScrollBars(bool scrolling_allowed)
 	
 		//Adjust positions
 		float delta_x = 0.0;
-		if(m_h_scrollbar)
+		if(mHScroller)
 		{
-			if(view_bounds.left < m_data_rect.left)
-				delta_x = m_data_rect.left - view_bounds.left;
-			else if(view_bounds.right > m_data_rect.left+page_width)
-				delta_x = m_data_rect.left+page_width - view_bounds.right;
+			if(view_bounds.left < mDataRect.left)
+				delta_x = mDataRect.left - view_bounds.left;
+			else if(view_bounds.right > mDataRect.left+page_width)
+				delta_x = mDataRect.left+page_width - view_bounds.right;
 		}
 	
 		float delta_y = 0.0;
-		if(m_v_scrollbar)
+		if(mVScroller)
 		{
-			if(view_bounds.top < m_data_rect.top)
-				delta_y = m_data_rect.top - view_bounds.top;
-			else if(view_bounds.bottom > m_data_rect.top+page_height)
-				delta_y = m_data_rect.top+page_height - view_bounds.bottom;
+			if(view_bounds.top < mDataRect.top)
+				delta_y = mDataRect.top - view_bounds.top;
+			else if(view_bounds.bottom > mDataRect.top+page_height)
+				delta_y = mDataRect.top+page_height - view_bounds.bottom;
 		}
 	
 		if(delta_x != 0.0 || delta_y != 0.0)
 		{
-			m_target->ScrollTo(BPoint(view_bounds.left+delta_x,view_bounds.top+delta_y));
+			mTarget->ScrollTo(BPoint(view_bounds.left+delta_x,view_bounds.top+delta_y));
 			view_bounds = Bounds();
 		}
 	}
 	else
 	{
-		min = m_data_rect.left;
+		min = mDataRect.left;
 		if(view_bounds.left < min)
 			min = view_bounds.left;
-		max = m_data_rect.right;
+		max = mDataRect.right;
 		if(view_bounds.right > max)
 			max = view_bounds.right;
 		page_width = max-min;
-		min = m_data_rect.top;
+		min = mDataRect.top;
 		if(view_bounds.top < min)
 			min = view_bounds.top;
-		max = m_data_rect.bottom;
+		max = mDataRect.bottom;
 		if(view_bounds.bottom > max)
 			max = view_bounds.bottom;
 		page_height = max-min;
@@ -191,51 +294,141 @@ void BetterScrollView::UpdateScrollBars(bool scrolling_allowed)
 	//Set the scroll bar ranges and proportions.  If the whole document is visible, inactivate the
 	//slider
 	bool active_scroller = false;
-	if(m_h_scrollbar)
+	if(mHScroller)
 	{
 		if(width_prop >= 1.0)
-			m_h_scrollbar->SetRange(0.0,0.0);
+			mHScroller->SetRange(0.0,0.0);
 		else
 		{
-			min = m_data_rect.left;
-			max = m_data_rect.left + page_width - view_width;
+			min = mDataRect.left;
+			max = mDataRect.left + page_width - view_width;
 			if(view_bounds.left < min)
 				min = view_bounds.left;
 			if(view_bounds.left > max)
 				max = view_bounds.left;
-			m_h_scrollbar->SetRange(min,max);
-			m_h_scrollbar->SetSteps(ceil(view_width/20), view_width);
+			mHScroller->SetRange(min,max);
+			mHScroller->SetSteps(ceil(view_width/20), view_width);
 			active_scroller = true;
 		}
-		m_h_scrollbar->SetProportion(width_prop);
+		mHScroller->SetProportion(width_prop);
 	}
-	if(m_v_scrollbar)
+	if (mVScroller)
 	{
 		if(height_prop >= 1.0)
-			m_v_scrollbar->SetRange(0.0,0.0);
+			mVScroller->SetRange(0.0,0.0);
 		else
 		{
-			min = m_data_rect.top;
-			max = m_data_rect.top + page_height - view_height;
+			min = mDataRect.top;
+			max = mDataRect.top + page_height - view_height;
 			if(view_bounds.top < min)
 				min = view_bounds.top;
 			if(view_bounds.top > max)
 				max = view_bounds.top;
-			m_v_scrollbar->SetRange(min,max);
-			m_v_scrollbar->SetSteps(ceil(view_height/20), view_height);
+			mVScroller->SetRange(min,max);
+			mVScroller->SetSteps(ceil(view_height/20), view_height);
 			active_scroller = true;
 		}
-		m_v_scrollbar->SetProportion(height_prop);
+		mVScroller->SetProportion(height_prop);
 	}
-	if (m_scroll_view_corner) {
+	if (mScrollViewCorner) {
 		bool scEnabled = (
-			m_h_scrollbar && m_h_scrollbar->Proportion() < 1.0 
-			|| m_v_scrollbar && m_v_scrollbar->Proportion() < 1.0
+			mHScroller && mHScroller->Proportion() < 1.0 
+			|| mVScroller && mVScroller->Proportion() < 1.0
 		);
-		m_scroll_view_corner->SetEnabled( scEnabled);
-		m_scroll_view_corner->Draw(
-			BRect(0.0, 0.0, B_V_SCROLL_BAR_WIDTH, B_H_SCROLL_BAR_HEIGHT)
-		);
+		mScrollViewCorner->SetEnabled( scEnabled);
+		mScrollViewCorner->Invalidate();
 	}
 }
 
+/*------------------------------------------------------------------------------*\
+	( )
+		-	
+\*------------------------------------------------------------------------------*/
+void BetterScrollView::SetCaptionText( const char* text) {
+	if (mCaption)
+		mCaption->SetText( text);
+}
+
+/*------------------------------------------------------------------------------*\
+	( )
+		-	
+\*------------------------------------------------------------------------------*/
+void BetterScrollView::SetErrorText( const BmString& text) {
+	if (mBusyView)
+		mBusyView->SetErrorText( text);
+}
+
+/*------------------------------------------------------------------------------*\
+	( )
+		-	
+\*------------------------------------------------------------------------------*/
+void BetterScrollView::SetBusy() {
+	if (mBusyView)
+		mBusyView->SetBusy();
+}
+
+/*------------------------------------------------------------------------------*\
+	( )
+		-	
+\*------------------------------------------------------------------------------*/
+void BetterScrollView::UnsetBusy() {
+	if (mBusyView)
+		mBusyView->UnsetBusy();
+}
+
+/*------------------------------------------------------------------------------*\
+	( )
+		-	
+\*------------------------------------------------------------------------------*/
+void BetterScrollView::PulseBusyView() {
+	if (mBusyView) 
+		mBusyView->Pulse();
+}
+
+/*------------------------------------------------------------------------------*\
+	( )
+		-	
+\*------------------------------------------------------------------------------*/
+minimax BetterScrollView::layoutprefs()
+{
+	return mpm=ct_mpm;
+}
+
+/*------------------------------------------------------------------------------*\
+	( )
+		-	
+\*------------------------------------------------------------------------------*/
+BRect BetterScrollView::layout( BRect r) {
+	MoveTo(r.LeftTop());
+	ResizeTo(r.Width(),r.Height());
+	if (mTarget) {
+		BRect targetRect = mTarget->Frame();
+		if (mHScroller || mBusyView || mCaption)
+			targetRect.bottom = r.Height() - 1 - B_H_SCROLL_BAR_HEIGHT;
+		else
+			targetRect.bottom = r.bottom;
+		if (mVScroller)
+			targetRect.right = r.Width() - 1 - B_V_SCROLL_BAR_WIDTH;
+		else
+			targetRect.right = r.right;
+		mTarget->ResizeTo(targetRect.Width(), targetRect.Height());
+	}
+	float fullCaptionWidth = r.Width();
+	fullCaptionWidth -= 2.0;
+	if (mBusyView) {
+		BRect bvFrame = mBusyView->Frame();
+		mBusyView->MoveTo( bvFrame.left, r.Height()-B_H_SCROLL_BAR_HEIGHT);
+		fullCaptionWidth -= bvFrame.Width();
+	}
+	if (mCaption) {
+		BRect cpFrame = mCaption->Frame();
+		mCaption->MoveTo( cpFrame.left, r.Height()-B_H_SCROLL_BAR_HEIGHT);
+		if (!mCaptionWidth && (!mHScroller || mHScroller->IsHidden())) {
+			if (mVScroller)
+				fullCaptionWidth -= B_V_SCROLL_BAR_WIDTH + 2;
+			mCaption->ResizeTo( fullCaptionWidth, cpFrame.Height());
+			mCaption->Invalidate();
+		}
+	}
+	return r;
+}

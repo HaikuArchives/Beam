@@ -120,28 +120,14 @@ void BmSendAccItem::UpdateView( BmUpdFlags flags, bool redraw,
 	BmSendAccView
 \********************************************************************************/
 
-BmSendAccView* BmSendAccView::theInstance = NULL;
-
 /*------------------------------------------------------------------------------*\
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmSendAccView* BmSendAccView::CreateInstance( minimax minmax, int32 width, 
-															 int32 height) {
-	if (theInstance)
-		return theInstance;
-	else 
-		return theInstance = new BmSendAccView( minmax, width, height);
-}
-
-/*------------------------------------------------------------------------------*\
-	()
-		-	
-\*------------------------------------------------------------------------------*/
-BmSendAccView::BmSendAccView( minimax minmax, int32 width, int32 height)
-	:	inherited( minmax, BRect(0,0,width-1,height-1), "Beam_SendAccView", 
+BmSendAccView::BmSendAccView( int32 width, int32 height)
+	:	inherited( BRect(0,0,width-1,height-1), "Beam_SendAccView", 
 					  B_SINGLE_SELECTION_LIST, 
-					  false, true, true, false)
+					  false, true)
 {
 	int32 flags = CLV_SORT_KEYABLE;
 	SetViewColor( B_TRANSPARENT_COLOR);
@@ -149,10 +135,6 @@ BmSendAccView::BmSendAccView( minimax minmax, int32 width, int32 height)
 		SetStripedBackground( true);
 	else 
 		flags |= CLV_TELL_ITEMS_WIDTH;
-
-	Initialize( BRect( 0,0,width-1,height-1),
-					B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE,
-					B_FOLLOW_TOP_BOTTOM, true, true, true, B_FANCY_BORDER);
 
 	AddColumn( new CLVColumn( "Account", 80.0, flags, 50.0));
 	AddColumn( new CLVColumn( "Server", 80.0, flags, 40.0));
@@ -171,7 +153,6 @@ BmSendAccView::BmSendAccView( minimax minmax, int32 width, int32 height)
 		-	
 \*------------------------------------------------------------------------------*/
 BmSendAccView::~BmSendAccView() {
-	theInstance = NULL;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -181,23 +162,6 @@ BmSendAccView::~BmSendAccView() {
 BmListViewItem* BmSendAccView::CreateListViewItem( BmListModelItem* item,
 																	BMessage*) {
 	return new BmSendAccItem( this, item);
-}
-
-/*------------------------------------------------------------------------------*\
-	CreateContainer()
-		-	
-\*------------------------------------------------------------------------------*/
-CLVContainerView* BmSendAccView::CreateContainer( bool horizontal, 
-																  bool vertical, 
-												  				  bool scroll_view_corner, 
-												  				  border_style border, 
-																  uint32 ResizingMode, 
-																  uint32 flags) 
-{
-	return new BmCLVContainerView( fMinMax, this, ResizingMode, flags, 
-											 horizontal, vertical, scroll_view_corner, 
-											 border, mShowCaption, mShowBusyView, 
-											 be_plain_font->StringWidth(" 99 accounts "));
 }
 
 /*------------------------------------------------------------------------------*\
@@ -244,7 +208,13 @@ BmPrefsSendMailView::BmPrefsSendMailView()
 {
 	MView* view = 
 		new VGroup(
-			CreateAccListView( minimax(400,60,1E5,1E5), 400, 80),
+			new BetterScrollView( 
+				minimax(400,60,1E5,1E5), 
+				mAccListView = new BmSendAccView( 400, 80),
+				BM_SV_H_SCROLLBAR | BM_SV_V_SCROLLBAR | BM_SV_CORNER
+				| BM_SV_CAPTION,
+				"99 accounts"
+			),
 			new HGroup(
 				mAddButton = new MButton( "Add Account", 
 												  new BMessage(BM_ADD_ACCOUNT), 
@@ -765,16 +735,4 @@ void BmPrefsSendMailView::UpdateState() {
 		if (!pwdEnabled)
 			mPwdControl->SetTextSilently("");
 	}
-}
-
-/*------------------------------------------------------------------------------*\
-	()
-		-	
-\*------------------------------------------------------------------------------*/
-CLVContainerView* BmPrefsSendMailView::CreateAccListView( minimax minmax, 
-																			 int32 width, 
-																			 int32 height) {
-	mAccListView = BmSendAccView::CreateInstance( minmax, width, height);
-	mAccListView->ClickSetsFocus( true);
-	return mAccListView->ContainerView();
 }

@@ -35,7 +35,6 @@
 class CLVListItem;
 class CLVColumnLabelView;
 class CLVFillerView;
-class CLVContainerView;
 #include "PrefilledBitmap.h"
 #include "BetterScrollView.h"
 
@@ -69,28 +68,16 @@ class IMPEXPBMGUIBASE ColumnListView : public BListView
 
 	public:
 		//Constructor and destructor
-		ColumnListView( minimax minmax,
-						BRect Frame,
+		ColumnListView(BRect Frame,
 						const char* Name = NULL,
 						uint32 flags = B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE,
 						list_view_type Type = B_SINGLE_SELECTION_LIST,
 						bool hierarchical = false,
 						bool showLabelView = true);
 		virtual ~ColumnListView();
-		virtual CLVContainerView* Initialize( BRect Frame, 
-											 uint32 flags, 
-											 uint32 ResizingMode = B_FOLLOW_LEFT | B_FOLLOW_TOP,
-											 bool horizontal = true,					//Which scroll bars should I add, if any
-											 bool vertical = true,
-											 bool scroll_view_corner = true,
-											 border_style border = B_NO_BORDER,		//What type of border to add, if any
-											 const BFont* LabelFont = be_plain_font);
 
-		//Archival stuff
-			/*** Not implemented yet
-		ColumnListView(BMessage* archive);
-		static ColumnListView* Instantiate(BMessage* data);
-			***/
+		void AttachedToWindow();
+
 		virtual status_t Archive(BMessage* data, bool deep = true) const;
 		virtual status_t Unarchive(const BMessage* archive, bool deep = true);
 
@@ -208,8 +195,6 @@ class IMPEXPBMGUIBASE ColumnListView : public BListView
 		void SetSortFunction(CLVCompareFuncPtr compare);
 		void SortItems();
 		void ReSortItem(CLVListItem* item);
-		virtual CLVContainerView* CreateContainer(bool horizontal, bool vertical, bool scroll_view_corner,
-			border_style border, uint32 ResizingMode, uint32 flags);
 		virtual void KeyDown(const char *bytes, int32 numBytes);
 
 		inline int32 GetDisplayIndexForColumn( int32 column_index) {
@@ -227,6 +212,8 @@ class IMPEXPBMGUIBASE ColumnListView : public BListView
 
 		virtual void MessageReceived( BMessage* msg);
 
+		status_t UISettingsChanged(const BMessage* changes, uint32 flags);
+
 		static void SetExtendedSelectionPolicy( bool likeTracker);
 
 	protected:
@@ -243,8 +230,6 @@ class IMPEXPBMGUIBASE ColumnListView : public BListView
 		friend class CLVListItem;
 		friend class CLVEasyItem;
 
-		void EmbedInContainer(bool horizontal, bool vertical, bool scroll_view_corner, border_style border,
-			uint32 ResizingMode, uint32 flags);
 		void SortListArray(CLVListItem** SortArray, int32 NumberOfItems);
 		void MakeEmptyPrivate();
 		bool AddListPrivate(BList* newItems, int32 fullListIndex);
@@ -254,11 +239,12 @@ class IMPEXPBMGUIBASE ColumnListView : public BListView
 		static int PlainBListSortFunc(BListItem** item1, BListItem** item2);
 		static int HierarchicalBListSortFunc(BListItem** item1, BListItem** item2);
 		void AssertWindowLocked() const;
-		virtual CLVContainerView* ScrollView() 	{ return fScrollView; }
+		virtual BetterScrollView* ScrollView()
+													{ return fScrollView; }
 		virtual CLVColumnLabelView* ColumnLabelView() 	{ return fColumnLabelView; }
 
 		CLVColumnLabelView* fColumnLabelView;
-		CLVContainerView* fScrollView;
+		BetterScrollView* fScrollView;
 		bool fHierarchical;
 		bool fShowLabelView;
 		BList fColumnList;
@@ -291,26 +277,5 @@ class IMPEXPBMGUIBASE ColumnListView : public BListView
 
 		minimax fMinMax;		
 };
-
-class IMPEXPBMGUIBASE CLVContainerView : public MView, public BetterScrollView
-{
-		typedef BetterScrollView inherited;
-	public:
-		CLVContainerView( minimax minmax, ColumnListView* target, uint32 resizingMode, 
-								uint32 flags, bool horizontal, bool vertical,
-								bool scroll_view_corner, border_style border);
-		~CLVContainerView();
-	
-		// adapted for liblayout
-		virtual minimax layoutprefs();
-		virtual BRect layout(BRect);
-		// (end of adaptation)	
-
-	private:
-		friend class ColumnListView;
-		bool IsBeingDestroyed;
-};
-
-
 
 #endif

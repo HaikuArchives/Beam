@@ -116,30 +116,15 @@ void BmFilterItem::UpdateView( BmUpdFlags flags, bool redraw,
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-BmFilterView* BmFilterView::CreateInstance( minimax minmax, int32 width, 
-														  int32 height,
-														  bool showCaption) {
-	return new BmFilterView( minmax, width, height, showCaption);
-}
-
-/*------------------------------------------------------------------------------*\
-	()
-		-	
-\*------------------------------------------------------------------------------*/
-BmFilterView::BmFilterView( minimax minmax, int32 width, int32 height, 
-									 bool showCaption)
-	:	inherited( minmax, BRect(0,0,width-1,height-1), "Beam_FilterView", 
+BmFilterView::BmFilterView( int32 width, int32 height)
+	:	inherited( BRect(0,0,width-1,height-1), "Beam_FilterView", 
 					  B_SINGLE_SELECTION_LIST, 
-					  false, true, showCaption, false)
+					  false, true)
 {
 	int32 flags = 0;
 	SetViewColor( B_TRANSPARENT_COLOR);
 	if (ThePrefs->GetBool("StripedListView"))
 		SetStripedBackground( true);
-
-	Initialize( BRect( 0,0,width-1,height-1),
-					B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE,
-					B_FOLLOW_TOP_BOTTOM, true, true, true, B_FANCY_BORDER);
 
 	AddColumn( new CLVColumn( "Name", 200.0, flags|CLV_SORT_KEYABLE, 50.0));
 	AddColumn( new CLVColumn( "State", 80.0, flags, 50.0));
@@ -162,27 +147,6 @@ BmFilterView::~BmFilterView() {
 BmListViewItem* BmFilterView::CreateListViewItem( BmListModelItem* item,
 																  BMessage*) {
 	return new BmFilterItem( this, item);
-}
-
-/*------------------------------------------------------------------------------*\
-	CreateContainer()
-		-	
-\*------------------------------------------------------------------------------*/
-CLVContainerView* BmFilterView::CreateContainer( bool horizontal, 
-																 bool vertical, 
-												  				 bool scroll_view_corner, 
-												  				 border_style border, 
-																 uint32 ResizingMode, 
-																 uint32 flags) 
-{
-	return new BmCLVContainerView( 
-		fMinMax, this, ResizingMode, flags, horizontal, 
-		vertical, scroll_view_corner, border, 
-		mShowCaption, mShowBusyView, 
-		mShowCaption 
-			? be_plain_font->StringWidth(" 99 filters ")
-			: 0
-	);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -259,7 +223,13 @@ BmPrefsFilterView::BmPrefsFilterView()
 			new VGroup(
 				minimax(200,120),
 				new HGroup(
-					CreateFilterListView( minimax(200,60,1E5,1E5), 200, 100),
+					new BetterScrollView( 
+						minimax(200,60,1E5,1E5), 
+						mFilterListView = new BmFilterView( 200, 100),
+						BM_SV_H_SCROLLBAR | BM_SV_V_SCROLLBAR | BM_SV_CORNER
+						| BM_SV_CAPTION,
+						"99 filters"
+					),
 					new Space( minimax(5,0,5,0)),
 					new VGroup(
 						new HGroup(
@@ -671,16 +641,4 @@ void BmPrefsFilterView::ShowFilter( int32 selection) {
 		} else
 			mCurrFilter = NULL;
 	}
-}
-
-/*------------------------------------------------------------------------------*\
-	()
-		-	
-\*------------------------------------------------------------------------------*/
-CLVContainerView* BmPrefsFilterView::CreateFilterListView( minimax minmax, 
-																			  int32 width, 
-																			  int32 height) {
-	mFilterListView = BmFilterView::CreateInstance( minmax, width, height);
-	mFilterListView->ClickSetsFocus( true);
-	return mFilterListView->ContainerView();
 }

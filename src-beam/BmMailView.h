@@ -108,9 +108,7 @@ public:
 	static const char* const MSG_HAS_MAIL;
 
 	// creator-func, c'tors and d'tor:
-	static BmMailView* CreateInstance(  minimax minmax, BRect frame, 
-													bool outbound);
-	BmMailView( minimax minmax, BRect frame, bool outbound);
+	static BmMailView* CreateInstance( BRect frame, bool outbound);
 	~BmMailView();
 
 	// native methods:
@@ -202,6 +200,7 @@ private:
 	bool mDisplayInProgress;
 
 	// Hide copy-constructor and assignment:
+	BmMailView( BRect frame, bool outbound);
 	BmMailView( const BmMailView&);
 	BmMailView operator=( const BmMailView&);
 };
@@ -212,35 +211,17 @@ class BmCaption;
 	BmMailViewContainer
 		-	
 \*------------------------------------------------------------------------------*/
-class BmMailViewContainer : public MView, public BetterScrollView {
+class BmMailViewContainer : public BetterScrollView {
 	typedef BetterScrollView inherited;
 
 public:
-	BmMailViewContainer( minimax minmax, BmMailView* target, 
-								uint32 resizingMode, uint32 flags);
+	BmMailViewContainer( minimax minmax, BmMailView* target);
 	~BmMailViewContainer();
 
 	// native methods:
-	void SetBusy();
-	void UnsetBusy();
-	void SetErrorText( const BmString& text);
-	void PulseBusyView();
 	void RedrawScrollbars();
-	BmCaption* Caption() 					{ return mCaption; }
-
-	// overrides of BView base:
-	void FrameResized(float new_width, float new_height);
-	void Draw( BRect bounds);
-
-
-	// additions for liblayout:
-	virtual minimax layoutprefs();
-	virtual BRect layout(BRect);
 
 private:
-	BmBusyView* mBusyView;
-	BmCaption* mCaption;
-
 	// Hide copy-constructor and assignment:
 	BmMailViewContainer( const BmMailViewContainer&);
 	BmMailViewContainer operator=( const BmMailViewContainer&);

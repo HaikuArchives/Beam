@@ -155,14 +155,16 @@ ListSelectionAlert::ListSelectionAlert(const char* title, const char* info_text,
 	sel_list_rect.right += B_V_SCROLL_BAR_WIDTH;
 	sel_list_rect.bottom += B_H_SCROLL_BAR_HEIGHT;
 
-	m_list_view = new ColumnListView( minimax(0,0,1E5,1E5), sel_list_rect, NULL, B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE,
+	m_list_view = new ColumnListView( sel_list_rect, NULL, 
+												 B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE,
 												 B_SINGLE_SELECTION_LIST, true, true);
 
 	m_list_view->SetMinItemHeight( 18);
 
-	CLVContainerView* container 
-		= m_list_view->Initialize( sel_list_rect, B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE,
-											B_FOLLOW_TOP_BOTTOM, true, true, true, B_FANCY_BORDER);
+	BetterScrollView* container 
+		= new BetterScrollView( minimax(0,0,1e5,1e5), m_list_view, 
+										BM_SV_H_SCROLLBAR | BM_SV_V_SCROLLBAR 
+										| BM_SV_CORNER);
 	m_list_view->AddColumn( 
 		new CLVColumn( title, 300.0, CLV_TELL_ITEMS_WIDTH, 300.0));
 
