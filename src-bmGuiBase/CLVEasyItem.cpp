@@ -210,7 +210,7 @@ void CLVEasyItem::DrawItemColumn(BRect item_column_rect, int32 column_index)
 			fOwner->SetFont( be_bold_font);
 		}
 	
-		fOwner->SetHighColor( ui_color( B_UI_PANEL_TEXT_COLOR));
+		fOwner->SetHighColor( ui_color( B_UI_DOCUMENT_TEXT_COLOR));
 		if(type == CLV_COLTYPE_STATICTEXT)
 			text = (const char*)m_column_content.ItemAt(column_index);
 		else if(type == CLV_COLTYPE_USERTEXT)

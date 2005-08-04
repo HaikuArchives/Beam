@@ -114,7 +114,8 @@ fInsertAtSortedPos( true),
 fClickSetsFocus( true),
 fExtendingDownwards( true),
 fAvoidColPushing( false),
-fMinItemHeight( 5)
+fMinItemHeight( 5),
+fScrollView(NULL)
 {
 	SetViewColor( B_TRANSPARENT_COLOR);
 	// setup caption font to be one less in size than given (standard) font:
@@ -872,6 +873,8 @@ void ColumnListView::SortingChanged()
 void ColumnListView::FrameResized(float width, float height)
 {
 	UpdateDataRect();
+	if (fColumnLabelView)
+		fColumnLabelView->ResizeTo(width, fColumnLabelView->Frame().Height());
 	BListView::FrameResized(width,height);
 }
 

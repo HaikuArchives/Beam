@@ -46,13 +46,21 @@ BetterScrollView::BetterScrollView(minimax minmax, BView *target,
 	mHScroller = ScrollBar(B_HORIZONTAL);
 	mVScroller = ScrollBar(B_VERTICAL);
 	if (BeamOnDano) {
-		// on Dano/Zeta, we need to correct the h-scroller-size slightly...
-		if (mHScroller) {
-			mHScroller->ResizeTo( mHScroller->Frame().Width(), B_H_SCROLL_BAR_HEIGHT-1);
+		// on Dano/Zeta, a fancy border has a border-size of three instead of two,
+		// so we need to adjust the target's size in order to compensate...
+		if (mTarget) {
+			mTarget->MoveBy( -1.0, -1.0);
+			mTarget->ResizeBy( 1.0, 1.0);
 		}
-		// ...and resize the v-scroller, too:
+		// ...and move and resize the h-scroller's size...
+		if (mHScroller) {
+			mHScroller->MoveBy( -1.0, 1.0);
+			mHScroller->ResizeBy( 2.0, 0.0);
+		}
+		// ...and finally move and resize the v-scroller, too:
 		if (mVScroller) {
-			mVScroller->ResizeTo( B_V_SCROLL_BAR_WIDTH-1, mVScroller->Frame().Height());
+			mVScroller->MoveBy( 0.0, -1.0);
+			mVScroller->ResizeBy( 0.0, 2.0);
 		}
 	} else {
 		// on R5, we need to correct the h-scroller-position slightly:
@@ -66,6 +74,9 @@ BetterScrollView::BetterScrollView(minimax minmax, BView *target,
 		mScrollViewCorner 
 			= new ScrollViewCorner(bounds.right-B_V_SCROLL_BAR_WIDTH-1,
 										  bounds.bottom-B_H_SCROLL_BAR_HEIGHT-1);
+		if (BeamOnDano)
+			// looks better on Zeta:
+			mScrollViewCorner->ResizeBy(-1.0, -1.0);
 		AddChild(mScrollViewCorner);
 	}
 	else
@@ -112,7 +123,7 @@ BetterScrollView::BetterScrollView(minimax minmax, BView *target,
 			mCaptionWidth = frame.Width();
 		}
 		mCaption = new BmCaption( 
-			BRect( LT.x, LT.y, LT.x+mCaptionWidth, LT.y+frame.Height()), ""
+			BRect( LT.x, LT.y, LT.x+mCaptionWidth-1, LT.y+frame.Height()), ""
 		);
 		AddChild( mCaption);
 	}
@@ -144,8 +155,8 @@ void BetterScrollView::SetDataRect(BRect data_rect, bool scrolling_allowed)
 \*------------------------------------------------------------------------------*/
 void BetterScrollView::FrameResized(float new_width, float new_height)
 {
-//	BScrollView::FrameResized(new_width,new_height);
-//	UpdateScrollBars(true);
+	BScrollView::FrameResized(new_width,new_height);
+	Invalidate(BRect(MAX(0,new_width-20), MAX(0,new_height-20), new_width, new_height));
 }
 
 
@@ -194,7 +205,8 @@ void BetterScrollView::WindowActivated(bool active)
 		-	
 \*------------------------------------------------------------------------------*/
 void BetterScrollView::Draw( BRect rect) {
-	BScrollView::Draw( rect);
+	BView::Draw( rect);
+		// avoid special drawing of border by calling BView::Draw()
 	if (mTarget) {
 		BRect bounds = Bounds();
 		rgb_color color = 
@@ -207,6 +219,14 @@ void BetterScrollView::Draw( BRect rect) {
 						  bounds.bottom-B_H_SCROLL_BAR_HEIGHT);
 			BPoint rt( bounds.right, bounds.bottom-B_H_SCROLL_BAR_HEIGHT);
 			BeginLineArray(10);
+			if (BeamOnDano) {
+				// draw inner border (only left and top part, as the other
+				// parts are drawn by scrollbars anyway):
+				SetHighColor( BmWeakenColor( B_UI_SHADOW_COLOR, BeShadowMod));
+				BRect border = bounds.InsetByCopy(1.0, 1.0);
+				StrokeLine( border.LeftTop(), border.RightTop());
+				StrokeLine( border.LeftTop(), border.LeftBottom());
+			}
 			AddLine( bounds.LeftBottom(), lb, color);
 			AddLine( bounds.RightTop(), rt, color);
 			AddLine( lb, lt, color);
@@ -217,6 +237,11 @@ void BetterScrollView::Draw( BRect rect) {
 		} else {
 			SetHighColor( color);
 			StrokeRect( bounds);
+			if (BeamOnDano) {
+				// draw inner border:
+				SetHighColor( BmWeakenColor( B_UI_SHADOW_COLOR, BeShadowMod));
+				StrokeRect( bounds.InsetByCopy(1.0, 1.0));
+			}
 		}
 	}
 }
