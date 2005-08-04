@@ -205,8 +205,11 @@ void BetterScrollView::WindowActivated(bool active)
 		-	
 \*------------------------------------------------------------------------------*/
 void BetterScrollView::Draw( BRect rect) {
-	BView::Draw( rect);
+	if (BeamOnDano)
 		// avoid special drawing of border by calling BView::Draw()
+		BView::Draw( rect);
+	else
+		BScrollView::Draw( rect);
 	if (mTarget) {
 		BRect bounds = Bounds();
 		rgb_color color = 
