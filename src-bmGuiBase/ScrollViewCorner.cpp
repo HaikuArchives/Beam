@@ -20,7 +20,7 @@
 
 
 ScrollViewCorner::ScrollViewCorner(float Left,float Top)
-: BView(BRect(Left,Top,Left+B_V_SCROLL_BAR_WIDTH-1,Top+B_H_SCROLL_BAR_HEIGHT-1),
+: BView(BRect(Left,Top,Left+B_V_SCROLL_BAR_WIDTH,Top+B_H_SCROLL_BAR_HEIGHT),
 		  NULL, B_FOLLOW_RIGHT | B_FOLLOW_BOTTOM, B_WILL_DRAW),
 	m_enabled( false)
 {

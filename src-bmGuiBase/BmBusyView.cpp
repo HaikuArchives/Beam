@@ -45,7 +45,7 @@ static BMessage pulseMsg(BM_PULSE);
 
 const BmBitmapHandle* BmBusyView::nErrorIcon = NULL;
 
-static const float kBvHeight = B_H_SCROLL_BAR_HEIGHT;
+static const float kBvHeight = B_H_SCROLL_BAR_HEIGHT + 1;
 static const float kBvWidth = kBvHeight - 1;
 
 /*------------------------------------------------------------------------------*\

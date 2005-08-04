@@ -35,7 +35,7 @@ BetterScrollView::BetterScrollView(minimax minmax, BView *target,
 	: BScrollView("BetterScrollView", target, 
 					  B_FOLLOW_NONE, B_FRAME_EVENTS | B_WILL_DRAW, 
 					  svFlags & BM_SV_H_SCROLLBAR, svFlags & BM_SV_V_SCROLLBAR,
-					  B_PLAIN_BORDER)
+					  B_FANCY_BORDER)
 	,	mCaption( NULL)
 	,	mCaptionWidth( 0)
 	,	mBusyView( NULL)
@@ -57,15 +57,15 @@ BetterScrollView::BetterScrollView(minimax minmax, BView *target,
 	} else {
 		// on R5, we need to correct the h-scroller-position slightly:
 		if (mHScroller) {
-			mHScroller->MoveBy( 1.0, -1.0);
+			mHScroller->MoveBy( 1.0, 0.0);
 			mHScroller->ResizeBy( -1.0, 0.0);
 		}
 	}
 	if (svFlags & BM_SV_CORNER) {
 		BRect bounds = Bounds();
 		mScrollViewCorner 
-			= new ScrollViewCorner(bounds.right-B_V_SCROLL_BAR_WIDTH,
-										  bounds.bottom-B_H_SCROLL_BAR_HEIGHT);
+			= new ScrollViewCorner(bounds.right-B_V_SCROLL_BAR_WIDTH-1,
+										  bounds.bottom-B_H_SCROLL_BAR_HEIGHT-1);
 		AddChild(mScrollViewCorner);
 	}
 	else
@@ -77,9 +77,10 @@ BetterScrollView::BetterScrollView(minimax minmax, BView *target,
 	if (mHScroller)
 		frame = mHScroller->Frame();
 	else {
-		frame = Bounds();
+		frame = Bounds().InsetByCopy( 1.0, 1.0);
 		frame.left += 1;
 		frame.right -= 1;
+		frame.bottom -= 2;
 		frame.top = frame.bottom - B_H_SCROLL_BAR_HEIGHT;
 	}
 	if (svFlags & BM_SV_BUSYVIEW) {
@@ -111,7 +112,7 @@ BetterScrollView::BetterScrollView(minimax minmax, BView *target,
 			mCaptionWidth = frame.Width();
 		}
 		mCaption = new BmCaption( 
-			BRect( LT.x, LT.y, LT.x+mCaptionWidth-1, LT.y+frame.Height()), ""
+			BRect( LT.x, LT.y, LT.x+mCaptionWidth, LT.y+frame.Height()), ""
 		);
 		AddChild( mCaption);
 	}
@@ -143,7 +144,7 @@ void BetterScrollView::SetDataRect(BRect data_rect, bool scrolling_allowed)
 \*------------------------------------------------------------------------------*/
 void BetterScrollView::FrameResized(float new_width, float new_height)
 {
-	BScrollView::FrameResized(new_width,new_height);
+//	BScrollView::FrameResized(new_width,new_height);
 //	UpdateScrollBars(true);
 }
 
@@ -199,7 +200,7 @@ void BetterScrollView::Draw( BRect rect) {
 		rgb_color color = 
 			IsFocus() || mTarget->IsFocus() 
 				? keyboard_navigation_color()
-				: BmWeakenColor( B_UI_SHADOW_COLOR, 3);
+				: ui_color(B_UI_PANEL_BACKGROUND_COLOR);
 		if (mHScroller && mVScroller && !mScrollViewCorner) {
 			BPoint lb( bounds.right-B_V_SCROLL_BAR_WIDTH, bounds.bottom);
 			BPoint lt( bounds.right-B_V_SCROLL_BAR_WIDTH, 
@@ -404,11 +405,11 @@ BRect BetterScrollView::layout( BRect r) {
 	if (mTarget) {
 		BRect targetRect = mTarget->Frame();
 		if (mHScroller || mBusyView || mCaption)
-			targetRect.bottom = r.Height() - 1 - B_H_SCROLL_BAR_HEIGHT;
+			targetRect.bottom = r.Height() - 1 - B_H_SCROLL_BAR_HEIGHT - 1;
 		else
 			targetRect.bottom = r.bottom;
 		if (mVScroller)
-			targetRect.right = r.Width() - 1 - B_V_SCROLL_BAR_WIDTH;
+			targetRect.right = r.Width() - 1 - B_V_SCROLL_BAR_WIDTH - 1;
 		else
 			targetRect.right = r.right;
 		mTarget->ResizeTo(targetRect.Width(), targetRect.Height());
@@ -417,12 +418,12 @@ BRect BetterScrollView::layout( BRect r) {
 	fullCaptionWidth -= 2.0;
 	if (mBusyView) {
 		BRect bvFrame = mBusyView->Frame();
-		mBusyView->MoveTo( bvFrame.left, r.Height()-B_H_SCROLL_BAR_HEIGHT);
+		mBusyView->MoveTo( bvFrame.left, r.Height()-B_H_SCROLL_BAR_HEIGHT-1);
 		fullCaptionWidth -= bvFrame.Width();
 	}
 	if (mCaption) {
 		BRect cpFrame = mCaption->Frame();
-		mCaption->MoveTo( cpFrame.left, r.Height()-B_H_SCROLL_BAR_HEIGHT);
+		mCaption->MoveTo( cpFrame.left, r.Height()-B_H_SCROLL_BAR_HEIGHT-1);
 		if (!mCaptionWidth && (!mHScroller || mHScroller->IsHidden())) {
 			if (mVScroller)
 				fullCaptionWidth -= B_V_SCROLL_BAR_WIDTH + 2;
