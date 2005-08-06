@@ -111,15 +111,15 @@ BmPrefsGeneralView::BmPrefsGeneralView()
 				),
 				new MBorder( M_LABELED_BORDER, 10, (char*)"Toolbar Options",
 					new VGroup(
+						mToolbarLabelControl = new BmMenuControl( 
+							"Layout of Labels in Toolbar:", 
+							new BPopUpMenu("")
+						),
+						new Space( minimax(0,10,0,10)),
 						mShowToolbarBorderControl = new BmCheckControl( 
 							"Show Border around Toolbar-Buttons", 
 							new BMessage(BM_SHOW_TOOLBAR_BORDER_CHANGED), 
 							this, ThePrefs->GetBool("ShowToolbarBorder", false)
-						),
-						new Space( minimax(0,10,0,10)),
-						mToolbarLabelControl = new BmMenuControl( 
-							"Layout of Labels in Toolbar:", 
-							new BPopUpMenu("")
 						),
 						new Space( minimax(0,10,0,10)),
 						new HGroup(

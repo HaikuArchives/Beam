@@ -223,7 +223,7 @@ BmPrefsRecvMailView::BmPrefsRecvMailView()
 	MView* view = 
 		new VGroup(
 			new BetterScrollView( 
-				minimax(400,100,1E5,1E5), 
+				minimax(-1,100,1E5,1E5), 
 				mAccListView = new BmRecvAccView( 400, 100),
 				BM_SV_H_SCROLLBAR | BM_SV_V_SCROLLBAR | BM_SV_CORNER
 				| BM_SV_CAPTION,

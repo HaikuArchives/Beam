@@ -119,10 +119,10 @@ BmPrefsWin::BmPrefsWin()
 {
 	MView* mOuterGroup = 
 		new VGroup( 
-			minimax( 700, 550),
+			minimax( -1, 550),
 			new MBorder( M_RAISED_BORDER, 5, NULL,
 				new HGroup(
-					minimax(500,200),
+					minimax(-1,200),
 					mVertSplitter = new UserResizeSplitView(
 						new VGroup(
 							minimax(100,200,200,1E5),

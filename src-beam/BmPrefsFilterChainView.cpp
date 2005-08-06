@@ -91,7 +91,7 @@ BmFilterChainItem::~BmFilterChainItem() {
 void BmFilterChainItem::UpdateView( BmUpdFlags flags, bool redraw, 
 												uint32 updColBitmap) {
 	BmFilterChain* chain	= dynamic_cast<BmFilterChain*>( ModelItem());
-	if (flags & UPD_ALL) {
+	if (chain && flags & UPD_ALL) {
 		const char* cols[] = {
 			chain->Key().String(),
 			NULL
