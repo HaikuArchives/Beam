@@ -295,8 +295,6 @@ BmPrefsFilterView::BmPrefsFilterView()
 			B_FOLLOW_NONE
 		);
 
-	mFilterControl->SetDivider( 80);
-	
 	mAddToChainControl->SetValue( true);
 
 	mGroupView->AddChild( dynamic_cast<BView*>(view));

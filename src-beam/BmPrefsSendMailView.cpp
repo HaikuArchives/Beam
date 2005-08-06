@@ -233,7 +233,7 @@ BmPrefsSendMailView::BmPrefsSendMailView()
 						),
 						new Space( minimax(0,5,0,5)),
 						new HGroup( 
-							mServerControl = new BmTextControl( "SMTP-Server/Port:"),
+							mServerControl = new BmTextControl( "SMTP-Server / Port:"),
 							mPortControl = new BmTextControl( "", false, 0, 8),
 							0
 						),
@@ -261,7 +261,7 @@ BmPrefsSendMailView::BmPrefsSendMailView()
 							)
 						),
 						new HGroup( 
-							mLoginControl = new BmTextControl( "User/Pwd:"),
+							mLoginControl = new BmTextControl( "User / Pwd:"),
 							mPwdControl = new BmTextControl( "", false, 0, 8),
 							0
 						),

@@ -246,7 +246,7 @@ BmPrefsRecvMailView::BmPrefsRecvMailView()
 																		 false, 0, 25),
 						new Space( minimax(0,5,0,5)),
 						new HGroup( 
-							mServerControl = new BmTextControl( "POP-Server:"),
+							mServerControl = new BmTextControl( "POP-Server / Port:"),
 							mPortControl = new BmTextControl( "", false, 0, 8),
 							0
 						),
@@ -261,7 +261,7 @@ BmPrefsRecvMailView::BmPrefsRecvMailView()
 							0
 						),
 						new HGroup( 
-							mLoginControl = new BmTextControl( "User/Pwd:"),
+							mLoginControl = new BmTextControl( "User / Pwd:"),
 							mPwdControl = new BmTextControl( "", false, 0, 8),
 							0
 						),
