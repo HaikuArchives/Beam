@@ -33,8 +33,8 @@
 #include <MenuItem.h>
 #include <Window.h>
 
+#include "BmBasics.h"
 #include "BmMenuControllerBase.h"
-
 
 /*------------------------------------------------------------------------------*\
 	BmMenuControllerBase()
@@ -71,6 +71,12 @@ void BmMenuControllerBase::UpdateItemList( void) {
 	if (mRebuildMenuFunc) {
 		// menu is created by a dedicated function:
 		(BeamGuiRoster->*mRebuildMenuFunc)( this);
+		if (mFlags & BM_MC_ADD_NONE_ITEM) {
+			BMenuItem* item = new BMenuItem( BM_NoItemLabel.String(), 
+														new BMessage(*mMsgTemplate));
+			item->SetTarget( mMsgTarget);
+			AddItem( item);
+		}
 	}
 	if (mFlags & BM_MC_LABEL_FROM_MARKED) {
 		// mark the item corresponding to the label of our controlling menu-item:
