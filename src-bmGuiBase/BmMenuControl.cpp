@@ -73,6 +73,8 @@ BmMenuControl::BmMenuControl( const char* label, BMenu* menu, float weight,
 		);
 	}
 	ResizeTo( ct_mpm.mini.x, ct_mpm.mini.y);
+	if (!BeamOnDano)
+		mMenuBar->ResizeBy( 0.0, -1.0);
 }
 
 /*------------------------------------------------------------------------------*\
