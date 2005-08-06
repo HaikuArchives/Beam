@@ -54,9 +54,10 @@ BmMenuControl::BmMenuControl( const char* label, BMenu* menu, float weight,
 {
 	mMenuBar->ResizeToPreferred();
 	float labelWidth = StringWidth( label);
-	if (BeamOnDano)
+	if (BeamOnDano) {
 		SetDivider( 13 + (label ? labelWidth+19 : 0));
-	else
+		mMenuBar->ResizeBy(0.0, 5.0);
+	} else
 		SetDivider( (label ? labelWidth+19 : 0));
 	float minHeight = mMenuBar->Frame().Height()+6;
 	if (fitText) {
@@ -69,8 +70,8 @@ BmMenuControl::BmMenuControl( const char* label, BMenu* menu, float weight,
 		);
 	}
 	ResizeTo( ct_mpm.mini.x, ct_mpm.mini.y);
-	mMenuBar->MoveTo( mMenuBar->Frame().left, 3);
-	mMenuBar->ResizeTo( mMenuBar->Bounds().Width(), mMenuBar->Bounds().Height()-1);
+//	mMenuBar->MoveTo( mMenuBar->Frame().left, 3);
+//	mMenuBar->ResizeTo( mMenuBar->Bounds().Width(), mMenuBar->Bounds().Height()-1);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -85,9 +86,12 @@ BmMenuControl::~BmMenuControl() {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmMenuControl::AllAttached() {
-	// circumvent resizing done by BMenuField::AllAttached(), as this
-	// messes up our own size calculations
-	BView::AllAttached();
+	if (BeamOnDano)
+		inherited::AllAttached();
+	else
+		// circumvent resizing done by BMenuField::AllAttached(), as this
+		// messes up our own size calculations
+		BView::AllAttached();
 }
 
 /*------------------------------------------------------------------------------*\
@@ -172,9 +176,17 @@ BRect BmMenuControl::layout(BRect frame) {
 									: Divider()-12;
 	if (occupiedSpace < 3)
 		occupiedSpace = 3;					// leave room for focus-rectangle
-	mMenuBar->MoveTo( occupiedSpace, mMenuBar->Frame().top);
+
+	mMenuBar->MoveTo( occupiedSpace, BeamOnDano ? 5 : 3);
 	mMenuBar->ResizeTo( frame.Width()-occupiedSpace-6, 
 							  mMenuBar->Frame().Height());
+	if (BeamOnDano)
+		// on Dano/Zeta there seems to be a bug with computing the 
+		// max-content-width under some conditions. Unfortunately, liblayout
+		// is able to trigger exactly these conditions >:o/
+		// As a workaround, we explicitly set the max-content-width:
+		mMenuBar->SetMaxContentWidth( frame.Width());
 	mMenuBar->Invalidate();
+
 	return frame;
 }
