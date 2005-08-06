@@ -42,6 +42,9 @@ using namespace regexx;
 #include "BmMenuControl.h"
 #include "BmMenuControllerBase.h"
 
+static float kDanoExtraLabelOffset = 3.0;
+	// offset required on Dano/Zeta in order to align label with 
+	// textcontrol labels.
 
 /*------------------------------------------------------------------------------*\
 	( )
@@ -70,8 +73,6 @@ BmMenuControl::BmMenuControl( const char* label, BMenu* menu, float weight,
 		);
 	}
 	ResizeTo( ct_mpm.mini.x, ct_mpm.mini.y);
-//	mMenuBar->MoveTo( mMenuBar->Frame().left, 3);
-//	mMenuBar->ResizeTo( mMenuBar->Bounds().Width(), mMenuBar->Bounds().Height()-1);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -149,7 +150,7 @@ minimax BmMenuControl::layoutprefs() {
 \*------------------------------------------------------------------------------*/
 void BmMenuControl::SetDivider( float divider) {
 	if (BeamOnDano)
-		inherited::SetDivider( divider-13);
+		inherited::SetDivider( divider-13-kDanoExtraLabelOffset);
 	else
 		inherited::SetDivider( divider);
 }
@@ -166,9 +167,12 @@ float BmMenuControl::Divider() const {
 	( )
 		-	
 \*------------------------------------------------------------------------------*/
-BRect BmMenuControl::layout(BRect frame) {
-	if (frame == Frame())
-		return frame;
+BRect BmMenuControl::layout(BRect inFrame) {
+	if (inFrame == Frame())
+		return inFrame;
+	BRect frame = inFrame;
+	if (BeamOnDano)
+		frame.left += kDanoExtraLabelOffset;
 	MoveTo(frame.LeftTop());
 	ResizeTo(frame.Width(),frame.Height());
 	float occupiedSpace = BeamOnDano
@@ -184,9 +188,10 @@ BRect BmMenuControl::layout(BRect frame) {
 		// on Dano/Zeta there seems to be a bug with computing the 
 		// max-content-width under some conditions. Unfortunately, liblayout
 		// is able to trigger exactly these conditions >:o/
-		// As a workaround, we explicitly set the max-content-width:
+		// As a workaround, we explicitly set the max-content-width to a
+		// value that works (actually, it's too large, but it doesn't matter):
 		mMenuBar->SetMaxContentWidth( frame.Width());
 	mMenuBar->Invalidate();
 
-	return frame;
+	return inFrame;
 }
