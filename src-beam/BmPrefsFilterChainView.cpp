@@ -51,7 +51,6 @@
 #include "BmPrefsFilterView.h"
 #include "BmPrefsFilterChainView.h"
 #include "BmTextControl.h"
-#include "BmUtil.h"
 
 enum {
 	BM_CHAIN_FILTER		= M_PLAYBW_SELECTED,
@@ -405,7 +404,7 @@ BmPrefsFilterChainView::BmPrefsFilterChainView()
 				minimax(400,100,1E5,1E5),
 				new BetterScrollView( 
 					minimax(200,100,1E5,1E5), 
-					mFilterChainListView = new BmFilterView( 200, 150),
+					mFilterChainListView = new BmFilterChainView( 200, 150),
 					BM_SV_H_SCROLLBAR | BM_SV_V_SCROLLBAR | BM_SV_CORNER
 					| BM_SV_CAPTION,
 					"99 filter-chains"
@@ -439,7 +438,7 @@ BmPrefsFilterChainView::BmPrefsFilterChainView()
 						),
 						new BetterScrollView( 
 							minimax(200,120,1E5,1E5), 
-							mChainedFilterListView = new BmFilterView( 200, 200),
+							mChainedFilterListView = new BmChainedFilterView( 200, 200),
 							BM_SV_H_SCROLLBAR | BM_SV_V_SCROLLBAR | BM_SV_CORNER
 						),
 						0
