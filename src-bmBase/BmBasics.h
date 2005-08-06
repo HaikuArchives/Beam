@@ -47,6 +47,9 @@ extern IMPEXPBMBASE bool BeamInDevelMode;
 extern IMPEXPBMBASE bool BeamOnDano;
 							// indicates if Beam is running on Dano or later
 
+extern IMPEXPBMBASE BmString BM_DefaultItemLabel;
+extern IMPEXPBMBASE BmString BM_NoItemLabel;
+
 /*------------------------------------------------------------------------------*\
 	BM_error
 		-	base-class for any Beam-exception

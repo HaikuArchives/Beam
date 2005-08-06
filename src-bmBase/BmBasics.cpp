@@ -34,6 +34,9 @@ bool BeamInTestMode = false;
 bool BeamInDevelMode = false;
 bool BeamOnDano = false;
 
+BmString BM_DefaultItemLabel("<default>");
+BmString BM_NoItemLabel("<none>");
+
 /********************************************************************************\
 	BM_error
 \********************************************************************************/
