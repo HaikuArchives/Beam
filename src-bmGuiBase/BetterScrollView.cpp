@@ -435,11 +435,11 @@ BRect BetterScrollView::layout( BRect r) {
 		if (mHScroller || mBusyView || mCaption)
 			targetRect.bottom = r.Height() - 1 - B_H_SCROLL_BAR_HEIGHT - 1;
 		else
-			targetRect.bottom = r.bottom;
+			targetRect.bottom = r.bottom-2;
 		if (mVScroller)
 			targetRect.right = r.Width() - 1 - B_V_SCROLL_BAR_WIDTH - 1;
 		else
-			targetRect.right = r.right;
+			targetRect.right = r.right-2;
 		mTarget->ResizeTo(targetRect.Width(), targetRect.Height());
 	}
 	float fullCaptionWidth = r.Width();
