@@ -628,7 +628,6 @@ void BmMailFolderView::ShowMenu( BPoint point) {
 
 	BPopUpMenu* theMenu = new BPopUpMenu( "MailFolderViewMenu", false, false);
 	BFont font( *be_plain_font);
-	font.SetSize( 10);
 	theMenu->SetFont( &font);
 
 	BMenuItem* item;

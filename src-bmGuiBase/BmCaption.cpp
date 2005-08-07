@@ -32,6 +32,7 @@
 
 #include <cstdio>
 
+#include "BmBasics.h"
 #include "BmCaption.h"
 
 /*------------------------------------------------------------------------------*\
@@ -70,20 +71,27 @@ void BmCaption::SetText( const char* txt)
 void BmCaption::Draw( BRect updateRect) {
 	BRect r = Bounds();
 	SetLowColor( ui_color( B_UI_PANEL_BACKGROUND_COLOR));
-	FillRect( BRect(1.0,1.0,r.right-1,r.bottom-1), B_SOLID_LOW);
+	FillRect( r.InsetByCopy(1.0, 1.0), B_SOLID_LOW);
 
 	SetHighColor( ui_color( B_UI_SHINE_COLOR));
 	StrokeLine( BPoint(0.0,1.0), BPoint(r.right-1,1.0));
 	StrokeLine( BPoint(0.0,1.0), r.LeftBottom());
 	SetHighColor( BmWeakenColor( B_UI_SHADOW_COLOR, BeShadowMod));
 	StrokeLine( r.LeftTop(), r.RightTop());
-	StrokeLine( r.RightTop(), r.RightBottom());
+	if (BeamOnDano)
+		StrokeLine( r.RightTop(), r.RightBottom());
+	else
+		// looks better on R5:
+		StrokeLine( r.RightTop(), r.RightBottom(), B_SOLID_LOW);
 	StrokeLine( r.LeftBottom(), r.RightBottom());
 
 	SetHighColor( ui_color( B_UI_PANEL_TEXT_COLOR));
 	font_height fInfo;
 	BFont captionFont( *be_plain_font);
-	captionFont.SetSize( be_plain_font->Size()-1);
+	float captionFontSize = be_plain_font->Size();
+	if (captionFontSize > 12)
+		captionFontSize = 12;
+	captionFont.SetSize( captionFontSize);
 	captionFont.GetHeight( &fInfo);
 	SetFont( &captionFont);
 	float offset = (1+r.Height()-(fInfo.ascent+fInfo.descent))/2.0;

@@ -467,7 +467,6 @@ void BmGuiRoster::AddCharsetMenu( BMenu* menu, BHandler* target, int32 msgType)
 	BMenu* moreMenu = new BMenu( "<show all>");
 	moreMenu->SetLabelFromMarked( false);
 	BFont font( *be_plain_font);
-	font.SetSize( 10);
 	moreMenu->SetFont( &font);
 	BmCharsetMap::const_iterator iter;
 	for( iter = TheCharsetMap.begin(); iter != TheCharsetMap.end(); ++iter) {

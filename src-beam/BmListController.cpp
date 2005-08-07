@@ -850,7 +850,6 @@ void BmListViewController::PopulateLabelViewMenu( BMenu* menu) {
 void BmListViewController::ShowLabelViewMenu( BPoint point) {
 	BPopUpMenu* theMenu = new BPopUpMenu( "LabelViewMenu", false, false);
 	BFont font( *be_plain_font);
-	font.SetSize( 10);
 	theMenu->SetFont( &font);
 
 	PopulateLabelViewMenu( theMenu);

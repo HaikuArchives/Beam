@@ -182,7 +182,6 @@ void BmMailHeaderView::BmMailHeaderFieldView::BmAddrMenuView
 {
 	BPopUpMenu* menu = new BPopUpMenu("NewPeopleMenu", false, false);
 	BFont menuFont( *be_plain_font);
-	menuFont.SetSize( 10);
 	menu->SetFont( &menuFont);
 	menu->SetAsyncAutoDestruct(true);
 	
@@ -424,7 +423,6 @@ void BmMailHeaderView::BmMailHeaderFieldView::ShowMenu( BPoint point)
 	BPopUpMenu* theMenu = new BPopUpMenu( "HeaderViewMenu", false, false);
 	BFont font( *be_plain_font);
 	font.SetSize( 10);
-	theMenu->SetFont( &font);
 
 	// we fetch real point of click from message (since we may have modified it
 	// in the message-filter):

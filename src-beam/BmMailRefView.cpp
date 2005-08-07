@@ -900,7 +900,6 @@ void BmMailRefView::AddMailRefMenu( BMenu* menu, BHandler* target,
 	if (!menu)
 		return;
 	BFont font( *be_plain_font);
-	font.SetSize( 10);
 	BMenuItem* replyMenuItem = CreateSubMenuItem( "Reply", BMM_REPLY);
 	BMenu* replyMenu = replyMenuItem->Submenu();
 	if (isContextMenu)
@@ -1023,7 +1022,6 @@ void BmMailRefView::ShowMenu( BPoint point) {
 	BPopUpMenu* theMenu = new BPopUpMenu( "MailFolderViewMenu", false, false);
 
 	BFont font( *be_plain_font);
-	font.SetSize( 10);
 	theMenu->SetFont( &font);
 
 	AddMailRefMenu( theMenu, Window(), true);

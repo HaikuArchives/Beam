@@ -90,7 +90,6 @@ BmLogWindow::BmLogWindow( const BRect& frame, const BmString& title,
 	mLogView = new MTextView();
 	mLogView->MakeEditable( false);
 	BFont font( be_fixed_font);
-	font.SetSize(10);
 	mLogView->SetFontAndColor( 0,0,&font);
 	AddChild( dynamic_cast< BView*>( 
 		new MScrollView( mLogView, false, true)

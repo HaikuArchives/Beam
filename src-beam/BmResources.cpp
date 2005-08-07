@@ -273,7 +273,6 @@ void BmResources::AddFontSubmenuTo( BMenu* menu, BHandler* target,
 		return;
 	BMenu* fontMenu = new BMenu( "Select Font");
 	BFont font( *be_plain_font);
-	font.SetSize( 10);
 	fontMenu->SetFont( &font);
 	menu->AddItem( fontMenu);
 	font_family family;

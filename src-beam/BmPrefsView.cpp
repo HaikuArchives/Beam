@@ -109,7 +109,6 @@ void BmPrefsView::Activated() {
 void BmPrefsView::Initialize() {
 	if (mLabelView) {
 		BFont font = *be_bold_font;
-		font.SetSize(12);
 		mLabelView->SetFont( &font);
 		BmSetViewUIColor( mLabelView, B_UI_CONTROL_HIGHLIGHT_COLOR);
 		BmSetLowUIColor( mLabelView, B_UI_CONTROL_HIGHLIGHT_COLOR);

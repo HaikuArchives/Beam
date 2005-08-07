@@ -118,16 +118,15 @@ fMinItemHeight( 5),
 fScrollView(NULL)
 {
 	SetViewColor( B_TRANSPARENT_COLOR);
-	// setup caption font to be one less in size than given (standard) font:
-	BFont captionFont(*be_plain_font);
-	captionFont.SetSize(captionFont.Size()-1);
+	BFont labelFont(*be_plain_font);
+//	labelFont.SetSize(captionFont.Size()-1);
 	//Create the column titles bar view
 	font_height FontAttributes;
-	captionFont.GetHeight(&FontAttributes);
+	labelFont.GetHeight(&FontAttributes);
 	float LabelFontHeight = ceil(FontAttributes.ascent) + ceil(FontAttributes.descent);
 	BRect labelFrame = Frame;
 	labelFrame.bottom = labelFrame.top + LabelFontHeight + 2.0;
-	fColumnLabelView = new CLVColumnLabelView( labelFrame, this, &captionFont);
+	fColumnLabelView = new CLVColumnLabelView( labelFrame, this, &labelFont);
 }
 
 ColumnListView::~ColumnListView()

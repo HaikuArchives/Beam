@@ -882,7 +882,6 @@ bool BmBodyPartView::InitiateDrag( BPoint, int32 index, bool wasSelected) {
 void BmBodyPartView::ShowMenu( BPoint point) {
 	BPopUpMenu* theMenu = new BPopUpMenu( "BodyPartViewMenu", false, false);
 	BFont font( *be_plain_font);
-	font.SetSize( 10);
 	theMenu->SetFont( &font);
 
 	BMenuItem* item; 

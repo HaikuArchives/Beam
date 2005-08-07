@@ -313,7 +313,6 @@ void BmDeskbarView::ShowMenu( BPoint point) {
 	BMenuItem* item;
 	BPopUpMenu* theMenu = new BPopUpMenu( BM_DeskbarItemName, false, false);
 	BFont menuFont( *be_plain_font);
-	menuFont.SetSize(10);
 	theMenu->SetFont( &menuFont);
 
 	item = new BMenuItem( "Check Mail", new BMessage( BMM_CHECK_MAIL));
