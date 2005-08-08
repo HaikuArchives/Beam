@@ -685,7 +685,7 @@ float BmMailHeaderView::AddFieldViews() {
 							time_t lt = 0;
 							ParseDateTime( fieldVal, lt);
 							if (timeMode.ICompare( "swatch") == 0)
-								fieldVal = TimeToSwatchString( lt);
+								fieldVal = TimeToSwatchString( lt, "%Y-%m-%d @");
 							else if (timeMode.ICompare( "local") == 0)
 								fieldVal = TimeToString( lt, "%Y-%m-%d %H:%M:%S %Z");
 						}
