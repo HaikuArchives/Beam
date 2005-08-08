@@ -240,10 +240,51 @@ const bigtime_t BmMailRefItem::GetBigtimeValueForColumn( int32 column_index) con
 }
 
 /*------------------------------------------------------------------------------*\
+	FitDateIntoColumn()
+		-	picks apropriate date-formats such that each item fits into the
+			available column space (just as in Tracker).
+\*------------------------------------------------------------------------------*/
+void BmMailRefItem::FitDateIntoColumn(int32 colIdx, time_t utc, 
+												  BmString& dateStr) const 
+{
+	// TODO: replaces these formats with localized versions!
+	if (ThePrefs->GetBool( "UseSwatchTimeInRefView", false)) {
+		const char* formats[] = {
+			"%A, %Y-%m-%d @",
+			"%a, %Y-%m-%d @",
+			"%Y-%m-%d @",
+			"%y-%m-%d @",
+			"%y-%m-%d",
+			NULL
+		};
+		for( const char** f = formats; *f; ++f) {
+			dateStr = TimeToSwatchString( utc, *f);
+			if (ColumnFitsText(colIdx, dateStr.String()))
+				break;
+		}
+	} else {
+		const char* formats[] = {
+			"%A, %Y-%m-%d %H:%M:%S",
+			"%a, %Y-%m-%d %H:%M:%S",
+			"%a, %Y-%m-%d %H:%M",
+			"%Y-%m-%d %H:%M",
+			"%y-%m-%d %H:%M",
+			"%y-%m-%d",
+			NULL
+		};
+		for( const char** f = formats; *f; ++f) {
+			dateStr = TimeToString( utc, *f);
+			if (ColumnFitsText(colIdx, dateStr.String()))
+				break;
+		}
+	}
+}
+
+/*------------------------------------------------------------------------------*\
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-const char* BmMailRefItem::GetUserText(int32 colIdx, float /*colWidth*/) const {
+const char* BmMailRefItem::GetUserText(int32 colIdx, float colWidth) const {
 	BmMailRef* ref( ModelItem());
 	if (!ref)
 		return "";
@@ -256,7 +297,8 @@ const char* BmMailRefItem::GetUserText(int32 colIdx, float /*colWidth*/) const {
 		text = ref->Subject().String();
 		break;
 	case COL_DATE:
-		text = ref->WhenString().String();
+		FitDateIntoColumn( colIdx, ref->When()/(1000*1000), mWhenString);
+		text = mWhenString.String();
 		break;
 	case COL_SIZE:
 		text = ref->SizeString().String();
@@ -276,9 +318,12 @@ const char* BmMailRefItem::GetUserText(int32 colIdx, float /*colWidth*/) const {
 	case COL_NAME:
 		text = ref->Name().String();
 		break;
-	case COL_WHEN_CREATED:
-		text = ref->WhenCreatedString().String();
+	case COL_WHEN_CREATED: {
+		FitDateIntoColumn( colIdx, ref->WhenCreated()/(1000*1000), 
+								 mWhenCreatedString);
+		text = mWhenCreatedString.String();
 		break;
+	}
 	case COL_TRACKER_NAME:
 		text = ref->TrackerName();
 		break;
@@ -435,6 +480,22 @@ BmMailRefView::~BmMailRefView() {
 BmListViewItem* BmMailRefView::CreateListViewItem( BmListModelItem* item, 
 																	BMessage*) {
 	return new BmMailRefItem( this, item);
+}
+
+/*------------------------------------------------------------------------------*\
+	ColumnWidthChanged()
+		-	reformat date columns when the width changes
+\*------------------------------------------------------------------------------*/
+void BmMailRefView::ColumnWidthChanged(int32 colIdx, float NewWidth)
+{
+	inherited::ColumnWidthChanged(colIdx, NewWidth);
+	CLVColumn* column = (CLVColumn*)ColumnAt(colIdx);
+	if (!column)
+		return;
+	BRect colBounds = Bounds();
+	colBounds.left = column->ColumnBegin();
+	colBounds.right = column->ColumnEnd();
+	Invalidate( colBounds);
 }
 
 /*------------------------------------------------------------------------------*\

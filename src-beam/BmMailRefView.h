@@ -70,11 +70,18 @@ public:
 	void UpdateView( BmUpdFlags flags, bool redraw = true, 
 						  uint32 updColBitmap = 0);
 	
+	void FitDateIntoColumn(int32 colIdx, time_t utc, 
+								  BmString& dateStr) const;
+
 	// overrides of CLVEasyItem base:
 	const int32 GetNumValueForColumn( int32 column_index) const;
 	const time_t GetDateValueForColumn( int32 column_index) const;
 	const bigtime_t GetBigtimeValueForColumn( int32 column_index) const;
 	const char* GetUserText( int32 column_index, float column_width) const;
+
+private:
+	mutable BmString mWhenString;
+	mutable BmString mWhenCreatedString;
 
 	// Hide copy-constructor and assignment:
 	BmMailRefItem( const BmMailRefItem&);
@@ -121,6 +128,7 @@ public:
 	void SelectionChanged( void);
 	void ItemInvoked( int32 index);
 	void MouseDown(BPoint point);
+	void ColumnWidthChanged(int32 ColumnIndex, float NewWidth);
 
 	// overrides of controller base:
 	BmString StateInfoBasename();
