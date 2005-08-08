@@ -245,12 +245,6 @@ BmMailRef::BmMailRef( BMessage* archive, node_ref& nref)
 		}
 
 		mSizeString = BytesToString( mSize,true);
-		mWhenCreatedString = ThePrefs->GetBool( "UseSwatchTimeInRefView", false)
-								? TimeToSwatchString( mWhenCreated/(1000*1000))
-								: TimeToString( mWhenCreated/(1000*1000));
-		mWhenString = 	ThePrefs->GetBool( "UseSwatchTimeInRefView", false)
-								? TimeToSwatchString( mWhen)
-								: TimeToString( mWhen);
 		if (mRatioSpam != UNKNOWN_RATIO)
 			mRatioSpamString << mRatioSpam;
 
@@ -383,9 +377,6 @@ bool BmMailRef::ReadAttributes( const struct stat* statInfo,
 							&when, sizeof(time_t));
 		if (when != mWhen) {
 			mWhen = when;
-			mWhenString = 	ThePrefs->GetBool( "UseSwatchTimeInRefView", false)
-									? TimeToSwatchString( mWhen)
-									: TimeToString( mWhen);
 			updFlags |= UPD_WHEN;
 		}
 
@@ -428,16 +419,11 @@ bool BmMailRef::ReadAttributes( const struct stat* statInfo,
 		if (node.ReadAttr( BM_MAIL_ATTR_WHEN_CREATED, B_UINT64_TYPE, 0, 
 								 &whenCreated, sizeof(bigtime_t)) < 0) {
 			// corresponding attribute doesn't exist, we fetch it from the
-			// file's creation time (which is just time_t instead of bigtime_t):
-			whenCreated = static_cast<int64>(	st.st_crtime)*(1000*1000);
-						// yes, crtime contains the creation-time, trust me!
+			// file's modification time (which is just time_t instead of bigtime_t):
+			whenCreated = static_cast<int64>(	st.st_mtime)*(1000*1000);
 		}
 		if (whenCreated != mWhenCreated) {
 			mWhenCreated = whenCreated;
-			mWhenCreatedString 
-				= ThePrefs->GetBool( "UseSwatchTimeInRefView", false)
-					? TimeToSwatchString( mWhenCreated/(1000*1000))
-					: TimeToString( mWhenCreated/(1000*1000));
 			updFlags |= UPD_WHEN_CREATED;
 		}
 
@@ -479,9 +465,7 @@ bool BmMailRef::ReadAttributes( const struct stat* statInfo,
 		mTo = "";
 		mIdentity = "";
 		mWhen = 0;
-		mWhenString = "";
 		mWhenCreated = 0;
-		mWhenCreatedString = "";
 		mHasAttachments = false;
 		mSize = 0;
 		mSizeString = "";

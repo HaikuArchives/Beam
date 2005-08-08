@@ -116,12 +116,8 @@ public:
 											 		{ return mSubject; }
 	inline const BmString& To() const 	{ return mTo; }
 	inline const time_t& When() const 	{ return mWhen; }
-	inline const BmString& WhenString() const
-												 	{ return mWhenString; }
 	inline const bigtime_t& WhenCreated() const
 													{ return mWhenCreated; }
-	inline const BmString& WhenCreatedString() const 
-													{ return mWhenCreatedString; }
 	inline const off_t& Size() const 	{ return mSize; }
 	inline const BmString& SizeString() const
 												 	{ return mSizeString; }
@@ -190,10 +186,8 @@ private:
 	BmString mSubject;
 	BmString mTo;
 	time_t mWhen;
-	BmString mWhenString;
 	bigtime_t mWhenCreated;
 							// time (in microseconds) when mail has been received
-	BmString mWhenCreatedString;
 	off_t mSize;
 	BmString mSizeString;
 	bool mHasAttachments;
