@@ -806,6 +806,9 @@ entry_ref BmBodyPart::WriteToTempFile( BmString filename) {
 	if (!filename.Length()) {
 		filename = mFileName;
 	}
+	filename.ReplaceSet( "/`´:\"\\", "_");
+	if (filename.Length() > B_FILE_NAME_LENGTH)
+		filename.Truncate( B_FILE_NAME_LENGTH);
 	if (find_directory( B_COMMON_TEMP_DIRECTORY, &tempPath, true) == B_OK) {
 		BDirectory tempDir;
 		BFile tempFile;
