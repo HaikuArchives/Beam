@@ -118,7 +118,7 @@ const char* CLVEasyItem::GetColumnContentText(int column_index)
 		if (type == CLV_COLTYPE_STATICTEXT)
 			return (char*)m_column_content.ItemAt(column_index);
 		if (type == CLV_COLTYPE_USERTEXT)
-			return GetUserText(column_index,-1);
+			return GetUserText(column_index,column->Width());
 	}
 	return NULL;
 }
@@ -135,13 +135,28 @@ const BmBitmapHandle* CLVEasyItem::GetColumnContentBitmap(int column_index)
 	return NULL;
 }
 
+bool CLVEasyItem::ColumnFitsText(int column_index, const char* text) const
+{
+	CLVColumn* column = (CLVColumn*)fOwner->ColumnAt(column_index);
+	if (!column)
+		return false;
+	bool striped = ((ColumnListView*)fOwner)->StripedBackground();
+	float offs = striped ? 5.0 : 2.0;
+	BFont owner_font;
+	fOwner->GetFont(&owner_font);
+	float string_width 
+		= Bold() 
+			? be_bold_font->StringWidth(text)
+			: owner_font.StringWidth(text);
+	return offs + string_width <= column->Width();
+}
 
 void CLVEasyItem::DrawItemColumn(BRect item_column_rect, int32 column_index)
 {
 	rgb_color color, tinted_color;
 	bool selected = IsSelected();
 	bool striped = ((ColumnListView*)fOwner)->StripedBackground();
-	float offs = striped ? 5.0 : 0.0;
+	float offs = striped ? 5.0 : 2.0;
 
 	if(selected) {
 		color = fOwner->ItemSelectColor();
@@ -214,7 +229,7 @@ void CLVEasyItem::DrawItemColumn(BRect item_column_rect, int32 column_index)
 		if(type == CLV_COLTYPE_STATICTEXT)
 			text = (const char*)m_column_content.ItemAt(column_index);
 		else if(type == CLV_COLTYPE_USERTEXT)
-			text = GetUserText(column_index,-1);
+			text = GetUserText(column_index,column->Width());
 
 		if(text != NULL)
 		{
@@ -226,14 +241,14 @@ void CLVEasyItem::DrawItemColumn(BRect item_column_rect, int32 column_index)
 			float text_offset = ceil(fontAttrs.ascent) + (Height()-fontHeight)/2.0;
 			BPoint draw_point;
 			if(!right_justify)
-				draw_point.Set(item_column_rect.left+(offs?offs:2.0),item_column_rect.top+text_offset);
+				draw_point.Set(item_column_rect.left+offs,item_column_rect.top+text_offset);
 			else
 			{
 				float string_width 
 					= Bold() 
 						? be_bold_font->StringWidth(text)
 						: owner_font.StringWidth(text);
-				draw_point.Set(item_column_rect.right-(offs?offs:2.0)-string_width,item_column_rect.top+text_offset);
+				draw_point.Set(item_column_rect.right-offs-string_width,item_column_rect.top+text_offset);
 			}				
 			fOwner->DrawString(text,draw_point);
 		}
@@ -335,34 +350,42 @@ const char* CLVEasyItem::GetUserText(int32, float) const
 	return NULL;
 }
 
-void CLVEasyItem::Highlight( bool b) { 
+void CLVEasyItem::Highlight( bool b) 
+{ 
 	SetStyleFlag( CLV_STYLE_HIGHLIGHT, b); 
 }
 
-bool CLVEasyItem::Highlight( ) { 
+bool CLVEasyItem::Highlight( ) const 
+{ 
 	return (fItemFlags & CLV_STYLE_HIGHLIGHT) != 0; 
 }
 
-void CLVEasyItem::HighlightTop( bool b) { 
+void CLVEasyItem::HighlightTop( bool b) 
+{ 
 	SetStyleFlag( CLV_STYLE_HIGHLIGHT_TOP, b); 
 }
 
-bool CLVEasyItem::HighlightTop( ) { 
+bool CLVEasyItem::HighlightTop( ) const 
+{ 
 	return (fItemFlags & CLV_STYLE_HIGHLIGHT_TOP) != 0; 
 }
 
-void CLVEasyItem::HighlightBottom( bool b) { 
+void CLVEasyItem::HighlightBottom( bool b) 
+{ 
 	SetStyleFlag( CLV_STYLE_HIGHLIGHT_BOTTOM, b); 
 }
 
-bool CLVEasyItem::HighlightBottom( ) { 
+bool CLVEasyItem::HighlightBottom( ) const
+{ 
 	return (fItemFlags & CLV_STYLE_HIGHLIGHT_BOTTOM) != 0; 
 }
 
-void CLVEasyItem::Bold( bool b) { 
+void CLVEasyItem::Bold( bool b) 
+{ 
 	SetStyleFlag( CLV_STYLE_BOLD, b); 
 }
 
-bool CLVEasyItem::Bold( ) { 
+bool CLVEasyItem::Bold( ) const 
+{ 
 	return (fItemFlags & CLV_STYLE_BOLD) != 0; 
 }

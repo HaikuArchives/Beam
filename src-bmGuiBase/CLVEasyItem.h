@@ -55,19 +55,20 @@ class IMPEXPBMGUIBASE CLVEasyItem : public CLVListItem
 		virtual void Update(BView *owner, const BFont *font);
 		static int CompareItems(const CLVListItem* a_Item1, const CLVListItem* a_Item2, int32 KeyColumn, int32 col_flags);
 		virtual const char* GetUserText(int32 column_index, float column_width) const;
+		bool ColumnFitsText(int column_index, const char* text) const;
 
 		virtual const int32 GetNumValueForColumn( int32) const 		{ return 0; }
 		virtual const time_t GetDateValueForColumn( int32) const 	{ return 0; }
 		virtual const bigtime_t GetBigtimeValueForColumn( int32) const 	{ return 0; }
 
 		void Highlight( bool b);
-		bool Highlight( );
+		bool Highlight( ) const;
 		void HighlightTop( bool b);
-		bool HighlightTop( );
+		bool HighlightTop( ) const;
 		void HighlightBottom( bool b);
-		bool HighlightBottom( );
+		bool HighlightBottom( ) const;
 		void Bold( bool b);
-		bool Bold( );
+		bool Bold( ) const;
 
 	protected:
 		void PrepListsForSet(int column_index);
