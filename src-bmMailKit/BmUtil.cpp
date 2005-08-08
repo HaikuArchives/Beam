@@ -181,14 +181,17 @@ BmString BytesToString( int32 bytes, bool mini) {
 }
 
 /*------------------------------------------------------------------------------*\
-	TimeToSwatchString( time)
+	TimeToSwatchString( time, format)
 		-	converts the given (utc) time into a string representing 
 			swatch internet time
 \*------------------------------------------------------------------------------*/
-BmString TimeToSwatchString( time_t utc) {
+BmString TimeToSwatchString( time_t utc, const char* format) {
 	time_t swatch = utc+3600;	// add one hour
 	int32 beats = ((swatch % 86400) * 1000) / 86400;
-	return TimeToString( utc, "%Y-%m-%d @") << beats;
+	BmString timeStr = TimeToString( utc, format);
+	if (strchr(format, '@'))
+		timeStr << beats;
+	return timeStr;
 }
 
 /*------------------------------------------------------------------------------*\

@@ -65,7 +65,7 @@ IMPEXPBMMAILKIT BmString BytesToString( int32 bytes, bool mini=false);
 /*------------------------------------------------------------------------------*\
 	time-related utility functions
 \*------------------------------------------------------------------------------*/
-IMPEXPBMMAILKIT BmString TimeToSwatchString( time_t t);
+IMPEXPBMMAILKIT BmString TimeToSwatchString( time_t t, const char* format);
 IMPEXPBMMAILKIT bool ParseDateTime( const BmString& str, time_t& dateTime);
 
 /*------------------------------------------------------------------------------*\
