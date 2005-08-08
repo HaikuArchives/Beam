@@ -489,6 +489,10 @@ void BmMailView::MessageReceived( BMessage* msg) {
 					mCurrMail->MarkAs( BM_MAIL_STATUS_READ);
 				break;
 			}
+			case BMM_FIND: {
+				StartIncrementalSearch();
+				break;
+			}
 			case BMM_FIND_NEXT: {
 				if (mScrollView)
 					IncrementalSearch( mScrollView->Caption()->Text(), true);
@@ -645,8 +649,11 @@ void BmMailView::MouseMoved( BPoint point, uint32 transit,
 \*------------------------------------------------------------------------------*/
 void BmMailView::MakeFocus(bool focused) {
 	inherited::MakeFocus(focused);
-	if (mScrollView)
+	if (mScrollView) {
+		if (!focused)
+			mScrollView->Caption()->SetHighlight(false);
 		mScrollView->Invalidate();
+	}
 }
 
 /*------------------------------------------------------------------------------*\
@@ -1010,6 +1017,16 @@ out:
 }
 
 /*------------------------------------------------------------------------------*\
+	StartIncrementalSearch( )
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailView::StartIncrementalSearch()
+{
+	MakeFocus( true);
+	mScrollView->Caption()->SetHighlight( true, "Search:");
+}
+
+/*------------------------------------------------------------------------------*\
 	HandleIncrementalSearchKeys( )
 		-	
 \*------------------------------------------------------------------------------*/
@@ -1021,6 +1038,7 @@ void BmMailView::HandleIncrementalSearchKeys(const char* bytes,
 	BmString text = mScrollView->Caption()->Text();
 	if (bytes[0] == B_ESCAPE) {
 		text.Truncate(0);
+		mScrollView->Caption()->SetHighlight( false);
 	} else if (bytes[0] == B_BACKSPACE) {
 		if (text.Length()) {
 			int32 lastBytePos = text.Length()-1;
@@ -1035,6 +1053,7 @@ void BmMailView::HandleIncrementalSearchKeys(const char* bytes,
 		}
 	} else {
 		text.Append(bytes, numBytes);
+		mScrollView->Caption()->SetHighlight( true, "Search:");
 	}
 	mScrollView->SetCaptionText(text.String());
 	IncrementalSearch(text, false);

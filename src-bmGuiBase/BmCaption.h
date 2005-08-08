@@ -49,6 +49,8 @@ public:
 	const char* Text() const				{ return mText.String(); }
 	void SetText( const char* txt);
 
+	void SetHighlight( bool highlight, const char* label="");
+
 	// overrides of BView base:
 	virtual void Draw( BRect bounds);
 
@@ -58,6 +60,8 @@ private:
 	BmCaption operator=( const BmCaption&);
 	
 	BmString mText;
+	bool mHighlight;
+	BmString mHighlightLabel;
 };
 
 

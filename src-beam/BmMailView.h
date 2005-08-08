@@ -127,8 +127,7 @@ public:
 	void SendNoticesIfNeeded( bool haveMail);
 	bool IsDisplayComplete();
 	//
-	void HandleIncrementalSearchKeys(const char* bytes, int32 numBytes);
-	void IncrementalSearch(const BmString& search, bool next=false);
+	void StartIncrementalSearch();
 
 	// overrides of BTextView base:
 	bool AcceptsDrop( const BMessage* msg);
@@ -168,6 +167,8 @@ public:
 	void AddParsingError( const BmString& errStr);
 
 protected:
+	void HandleIncrementalSearchKeys(const char* bytes, int32 numBytes);
+	void IncrementalSearch(const BmString& search, bool next=false);
 	void JobIsDone( bool completed);
 
 private:

@@ -533,11 +533,7 @@ void BmMainWindow::MessageReceived( BMessage* msg) {
 				mMailRefView->KeyDown( &bytes, 1);
 				break;
 			}
-			case BMM_FIND: {
-				// to easen use of incremental search, we activate the mailview:
-				mMailView->MakeFocus(true);
-				break;
-			}
+			case BMM_FIND:
 			case BMM_FIND_NEXT: {
 				PostMessage( msg, mMailView);
 				break;
