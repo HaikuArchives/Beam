@@ -195,14 +195,15 @@ void BmMailViewWin::CreateGUI() {
 			mHorzSplitter = new UserResizeSplitView( 
 				new BetterScrollView(
 					minimax(200,50,1E5,1E5), 
-					BmMailRefView::CreateInstance( 400, 200),
+					mMailRefView = BmMailRefView::CreateInstance( 400, 200),
 					BM_SV_H_SCROLLBAR | BM_SV_V_SCROLLBAR | BM_SV_CORNER
 					| BM_SV_BUSYVIEW | BM_SV_CAPTION,
 					"99999 messages"
 				),
 				new BmMailViewContainer(
 					minimax(200,80,1E5,1E5), 
-					BmMailView::CreateInstance( BRect(0,0,400,200), false)
+					mMailView = BmMailView::CreateInstance( BRect(0,0,400,200), 
+																		 false)
 				),
 				"hsplitter", 0, B_HORIZONTAL, true, true, true, true, 
 				false, B_FOLLOW_NONE
@@ -394,11 +395,7 @@ void BmMailViewWin::MessageReceived( BMessage* msg) {
 				}
 				break;
 			}
-			case BMM_FIND: {
-				// to easen use of incremental search, we activate the mailview:
-				mMailView->MakeFocus(true);
-				break;
-			}
+			case BMM_FIND:
 			case BMM_FIND_NEXT: {
 				PostMessage( msg, mMailView);
 				break;
