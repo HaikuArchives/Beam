@@ -33,6 +33,7 @@
 #include <Directory.h>
 #include <File.h>
 #include <FindDirectory.h>
+#include <fs_attr.h>
 #include <Path.h>
 #include <UTF8.h>
 
@@ -41,6 +42,7 @@
 #include "BmLogHandler.h"
 #include "BmPrefs.h"
 #include "BmRosterBase.h"
+#include "BmStorageUtil.h"
 #include "BmUtil.h"
 
 
@@ -57,7 +59,7 @@ const char* const BmPrefs::LOG_LVL_3 = "Log Everything";
 const BmString BmPrefs::nListSeparator = ",";
 
 const BmString BmPrefs::nDefaultIconset = "/Icons/iconset 22 nuvola grey-red";
-const int16 BmPrefs::nPrefsVersion = 11;
+const int16 BmPrefs::nPrefsVersion = 12;
 
 /*------------------------------------------------------------------------------*\
 	CreateInstance()
@@ -80,11 +82,39 @@ BmPrefs* BmPrefs::CreateInstance() {
 		// ...ok, settings file found, we fetch our prefs from it:
 		try {
 			BMessage archive;
-			if ((err = archive.Unflatten( &prefsFile)) != B_OK)
-				BM_THROW_RUNTIME( 
-					BmString("Could not fetch settings from file\n\t<") 
-						<< prefsFilename << ">\n\n Result: " << strerror(err)
-				);
+			InitDefaults(archive);
+			char name[B_ATTR_NAME_LENGTH];
+			char buf[4096];
+			attr_info info;
+			int count = 0;
+			// fetch settings from attributes:
+			while (prefsFile.GetNextAttrName(name) == B_OK) {
+				if (strncmp(name, "BEOS:", 5) == 0)
+					continue;
+				err = prefsFile.GetAttrInfo(name, &info);
+				if (err == B_OK)
+					err = prefsFile.ReadAttr(name, info.type, 0, buf, info.size);
+				if (err > 0) {
+					archive.RemoveName(name);
+					err = archive.AddData(name, info.type, buf, info.size);
+				}
+				if (err != B_OK)
+					BM_THROW_RUNTIME( 
+						BmString("Could not fetch setting <")
+							<< name << "> from file\n\t<" 
+							<< prefsFilename << ">\n\n Result: " << strerror(err)
+					);
+				count++;
+			}
+			if (!count) {
+				// probably old format (flattened message), so we fall back:
+				if ((err = archive.Unflatten( &prefsFile)) != B_OK)
+					BM_THROW_RUNTIME( 
+						BmString("Could not fetch settings from file\n\t<") 
+							<< prefsFilename << ">\n\n Result: " << strerror(err)
+					);
+			}
+
 			prefs = new BmPrefs( &archive);
 		} catch (BM_error &e) {
 			BM_SHOWERR( e.what());
@@ -111,7 +141,7 @@ BmPrefs::BmPrefs( void)
 	,	mLocker( "PrefsLock")
 {
 	theInstance = this;
-	InitDefaults();
+	InitDefaults(mDefaultsMsg);
 	mSavedPrefsMsg = mPrefsMsg = mDefaultsMsg;
 	SetLoglevels();
 	SetupMailboxVolume();
@@ -130,8 +160,7 @@ BmPrefs::BmPrefs( BMessage* archive)
 	,	mLocker( "PrefsLock")
 {
 	theInstance = this;
-	InitDefaults();
-	mSavedPrefsMsg = mPrefsMsg = *archive;
+	mPrefsMsg = *archive;
 	int16 version = 0;
 	archive->FindInt16( MSG_VERSION, &version);
 
@@ -247,7 +276,7 @@ BmPrefs::BmPrefs( BMessage* archive)
 		mPrefsMsg.AddString( "ListFields", "Mail-Followup-To,Reply-To");
 	}
 	if (version < 11) {
-		// changes introduced with version 9:
+		// changes introduced with version 11:
 		//
 		// replace <>-separators by simple commas:
 		const char *fields[] = { "MimeTypeTrustInfo", "StandardCharsets", NULL };
@@ -260,7 +289,14 @@ BmPrefs::BmPrefs( BMessage* archive)
 			mPrefsMsg.ReplaceString( *f, s.String());
 		}
 	}
-
+	if (version < 12) {
+		// changes introduced with version 12:
+		//
+		// remove unneeded accumulated loglevels entry:
+		mPrefsMsg.RemoveName("Loglevels");
+	}
+	mSavedPrefsMsg = mPrefsMsg;
+	
 	SetLoglevels();
 	SetupMailboxVolume();
 
@@ -320,9 +356,9 @@ void BmPrefs::ResetToDefault() {
 	InitDefaults( )
 		-	constructs a BMessage containing all defaultVal values
 \*------------------------------------------------------------------------------*/
-void BmPrefs::InitDefaults() {
-	mDefaultsMsg.MakeEmpty();
-	mDefaultsMsg.AddInt16( MSG_VERSION, nPrefsVersion);
+void BmPrefs::InitDefaults(BMessage& defaultsMsg) {
+	defaultsMsg.MakeEmpty();
+	defaultsMsg.AddInt16( MSG_VERSION, nPrefsVersion);
 	int32 loglevels = BM_LOGLVL1(BM_LogPop)
 							+ BM_LOGLVL0(BM_LogJobWin) 
 							+ BM_LOGLVL0(BM_LogMailParse) 
@@ -333,111 +369,130 @@ void BmPrefs::InitDefaults() {
 							+ BM_LOGLVL1(BM_LogSmtp)
 							+ BM_LOGLVL1(BM_LogFilter)
 							+ BM_LOGLVL0(BM_LogRefCount);
-
-	mDefaultsMsg.AddBool( "AddPeopleNameToMailAddr", true);
-	mDefaultsMsg.AddString( "AutoCharsetsInbound", 
-									"us-ascii,utf-8,default");
-	mDefaultsMsg.AddString( "AutoCharsetsOutbound", 
-									"us-ascii,default,iso-2022-jp,utf-8");
-	mDefaultsMsg.AddBool( "AutoCheckOnlyIfPPPRunning", true);
-	mDefaultsMsg.AddBool( "Allow8BitMime", false);
-	mDefaultsMsg.AddBool( "BeepWhenNewMailArrived", true);
-	mDefaultsMsg.AddBool( "CacheRefsInMem", false);
-	mDefaultsMsg.AddBool( "CacheRefsOnDisk", true);
-	mDefaultsMsg.AddBool( "CloseViewWinAfterMailAction", true);
-	mDefaultsMsg.AddString( "DefaultCharset", 
-									BmEncoding::DefaultCharset.String());
-	mDefaultsMsg.AddString( "DefaultForwardType", "Inline");
-	mDefaultsMsg.AddBool( "DoNotAttachVCardsToForward", false);
-	mDefaultsMsg.AddBool( "DynamicStatusWin", true);
-	mDefaultsMsg.AddString( "ForwardIntroStr", "On %d at %t, %f wrote:");
-	mDefaultsMsg.AddString( "ForwardSubjectRX", 
-									"^\\s*\\[?\\s*Fwd(\\[\\d+\\])?:");
-	mDefaultsMsg.AddString( "ForwardSubjectStr", "Fwd: %s");
-	mDefaultsMsg.AddBool( "GenerateOwnMessageIDs", true);
-	mDefaultsMsg.AddBool( "HardWrapMailText", true);
-	mDefaultsMsg.AddString( "HeaderListLarge", 
-									"Subject,From,Date,To,Cc,User-Agent/X-Mailer");
-	mDefaultsMsg.AddString( "HeaderListSmall", "Subject,From,Date");
-	BmString defaultIconPath = BeamRoster->AppPath() + nDefaultIconset;
-	mDefaultsMsg.AddString( "IconPath", defaultIconPath.String());
-	mDefaultsMsg.AddBool( "InOutAlwaysAtTop", true);
-	mDefaultsMsg.AddBool( "ImportExportTextAsUtf8", true);
-	mDefaultsMsg.AddString( "ListFields", "Mail-Followup-To,Reply-To");
-	mDefaultsMsg.AddBool( "ListviewLikeTracker", false);
-	mDefaultsMsg.AddInt32( "Loglevels", loglevels);
-	mDefaultsMsg.AddInt32( "Loglevel_Pop", 
+	defaultsMsg.AddInt32( "Loglevel_Pop", 
 								  BM_LOGLVL_FOR(loglevels,BM_LogPop));
-	mDefaultsMsg.AddInt32( "Loglevel_JobWin", 
+	defaultsMsg.AddInt32( "Loglevel_JobWin", 
 								  BM_LOGLVL_FOR(loglevels,BM_LogJobWin));
-	mDefaultsMsg.AddInt32( "Loglevel_MailParse", 
+	defaultsMsg.AddInt32( "Loglevel_MailParse", 
 								  BM_LOGLVL_FOR(loglevels,BM_LogMailParse));
-	mDefaultsMsg.AddInt32( "Loglevel_App", 
+	defaultsMsg.AddInt32( "Loglevel_App", 
 								  BM_LOGLVL_FOR(loglevels,BM_LogApp));
-	mDefaultsMsg.AddInt32( "Loglevel_MailTracking", 
+	defaultsMsg.AddInt32( "Loglevel_MailTracking", 
 								  BM_LOGLVL_FOR(loglevels,BM_LogMailTracking));
-	mDefaultsMsg.AddInt32( "Loglevel_Gui", 
+	defaultsMsg.AddInt32( "Loglevel_Gui", 
 								  BM_LOGLVL_FOR(loglevels,BM_LogGui));
-	mDefaultsMsg.AddInt32( "Loglevel_ModelController", 
+	defaultsMsg.AddInt32( "Loglevel_ModelController", 
 								  BM_LOGLVL_FOR(loglevels,BM_LogModelController));
-	mDefaultsMsg.AddInt32( "Loglevel_Smtp", 
+	defaultsMsg.AddInt32( "Loglevel_Smtp", 
 								  BM_LOGLVL_FOR(loglevels,BM_LogSmtp));
-	mDefaultsMsg.AddInt32( "Loglevel_Filter", 
+	defaultsMsg.AddInt32( "Loglevel_Filter", 
 								  BM_LOGLVL_FOR(loglevels,BM_LogFilter));
-	mDefaultsMsg.AddInt32( "Loglevel_RefCount", 
+	defaultsMsg.AddInt32( "Loglevel_RefCount", 
 								  BM_LOGLVL_FOR(loglevels,BM_LogRefCount));
-	mDefaultsMsg.AddBool( "LookForPeopleOnlyInPeopleFolder", true);
-	mDefaultsMsg.AddMessage( "MailRefLayout", new BMessage);
+
+	defaultsMsg.AddBool( "AddPeopleNameToMailAddr", true);
+	defaultsMsg.AddBool( "Allow8BitMime", false);
+	defaultsMsg.AddBool( "Allow8BitMimeInHeader", false);
+	defaultsMsg.AddBool( "AutoCharsetDetectionInbound", true);
+	defaultsMsg.AddBool( "AutoCharsetDetectionOutbound", true);
+	defaultsMsg.AddString( "AutoCharsetsInbound", 
+									"us-ascii,utf-8,default");
+	defaultsMsg.AddString( "AutoCharsetsOutbound", 
+									"us-ascii,default,iso-2022-jp,utf-8");
+	defaultsMsg.AddBool( "AutoCheckOnlyIfPPPRunning", true);
+	defaultsMsg.AddBool( "AvoidPrefsSanityChecks", false);
+	defaultsMsg.AddBool( "BeepWhenNewMailArrived", true);
+	defaultsMsg.AddBool( "CacheRefsInMem", false);
+	defaultsMsg.AddBool( "CacheRefsOnDisk", true);
+	defaultsMsg.AddBool( "CloseViewWinAfterMailAction", true);
+	defaultsMsg.AddString( "DefaultCharset", 
+									BmEncoding::DefaultCharset.String());
+	defaultsMsg.AddString( "DefaultForwardType", "Inline");
+	defaultsMsg.AddBool( "DoNotAttachVCardsToForward", false);
+	defaultsMsg.AddBool( "DynamicStatusWin", true);
+	defaultsMsg.AddInt32( "ExpandCollapseDelay", 1000);
+	defaultsMsg.AddInt32( "FeedbackTimeout", 200);
+	defaultsMsg.AddString( "ForwardIntroStr", "On %d at %t, %f wrote:");
+	defaultsMsg.AddString( "ForwardSubjectRX", 
+									"^\\s*\\[?\\s*Fwd(\\[\\d+\\])?:");
+	defaultsMsg.AddString( "ForwardSubjectStr", "Fwd: %s");
+	defaultsMsg.AddBool( "GenerateOwnMessageIDs", true);
+	defaultsMsg.AddBool( "HardWrapMailText", true);
+	defaultsMsg.AddString( "HeaderListLarge", 
+									"Subject,From,Date,To,Cc,User-Agent/X-Mailer");
+	defaultsMsg.AddString( "HeaderListSmall", "Subject,From,Date");
+	BmString defaultIconPath = BeamRoster->AppPath() + nDefaultIconset;
+	defaultsMsg.AddString( "IconPath", defaultIconPath.String());
+	defaultsMsg.AddBool( "InOutAlwaysAtTop", true);
+	defaultsMsg.AddBool( "ImportExportTextAsUtf8", true);
+	defaultsMsg.AddString( "ListFields", "Mail-Followup-To,Reply-To");
+	defaultsMsg.AddBool( "ListviewLikeTracker", false);
+	defaultsMsg.AddInt32( "ListviewFlatMinItemHeight", 16);
+	defaultsMsg.AddInt32( "ListviewHierarchicalMinItemHeight", 16);
+	defaultsMsg.AddBool( "LookForPeopleOnlyInPeopleFolder", true);
 	// standard mail-box:
-	mDefaultsMsg.AddString( "MailboxPath", "/boot/home/mail");
-	mDefaultsMsg.AddBool( "MakeQPSafeForEBCDIC", false);
-	mDefaultsMsg.AddInt32( "MarkAsReadDelay", 500);
-	mDefaultsMsg.AddInt32( "MaxLineLen", 76);
-	mDefaultsMsg.AddBool( "NeverExceed78Chars", false);
-	mDefaultsMsg.AddString( 
+	defaultsMsg.AddString( "MailboxPath", "/boot/home/mail");
+	defaultsMsg.AddBool( "MakeQPSafeForEBCDIC", true);
+	defaultsMsg.AddBool( "MapClassificationGenuineToTofu", true);
+	defaultsMsg.AddInt32( "MarkAsReadDelay", 500);
+	defaultsMsg.AddInt32( "MaxLineLen", 76);
+	defaultsMsg.AddInt32( "MaxLineLenForHardWrap", 998);
+	defaultsMsg.AddInt32( "MinLogfileSize", 50*1024);
+	defaultsMsg.AddInt32( "MaxLogfileSize", 200*1024);
+	defaultsMsg.AddBool( "NeverExceed78Chars", false);
+	defaultsMsg.AddString( 
 		"MimeTypeTrustInfo", 
 		"application/pdf:T,application/zip:T,application:W,:T"
 	);
-	mDefaultsMsg.AddInt32( "MSecsBeforeMailMoverShows", 500*1000);
-	mDefaultsMsg.AddInt32( "MSecsBeforePopperRemove", 5000*1000);
-	mDefaultsMsg.AddInt32( "MSecsBeforeSmtpRemove", 0*1000);
-	mDefaultsMsg.AddInt32( "NetReceiveBufferSize", 15000);
-	mDefaultsMsg.AddInt32( "NetSendBufferSize", 15000);
-	mDefaultsMsg.AddString( "QuoteFormatting", "Push Margin");
-	mDefaultsMsg.AddString( "QuotingLevelRX", 
+	defaultsMsg.AddInt32( "MSecsBeforeMailFilterShows", 500*1000);
+	defaultsMsg.AddInt32( "MSecsBeforeMailMoverShows", 500*1000);
+	defaultsMsg.AddInt32( "MSecsBeforePopperRemove", 5000*1000);
+	defaultsMsg.AddInt32( "MSecsBeforeRemoveFailed", 5000*1000);
+	defaultsMsg.AddInt32( "MSecsBeforeSmtpRemove", 0*1000);
+	defaultsMsg.AddInt32( "NetReceiveBufferSize", 15000);
+	defaultsMsg.AddInt32( "NetSendBufferSize", 15000);
+	defaultsMsg.AddString( "QuoteFormatting", "Push Margin");
+	defaultsMsg.AddString( "QuotingLevelRX", 
 									"^((?:\\w?\\w?\\w?[>|]|[ \\t]*)*)(.*?)$");
-	mDefaultsMsg.AddString( "QuotingString", "> ");
-	mDefaultsMsg.AddString( "PeopleFolder", "/boot/home/people");
-	mDefaultsMsg.AddBool( "PreferUserAgentOverX-Mailer", true);
-	mDefaultsMsg.AddInt32( "ReceiveTimeout", 60);
-	mDefaultsMsg.AddString( "ReplyIntroDefaultNick", "you");
-	mDefaultsMsg.AddString( "ReplyIntroStr", "On %d at %t, %f wrote:");
-	mDefaultsMsg.AddString( "ReplySubjectRX", "^\\s*(Re|Aw)(\\[\\d+\\])?:");
-	mDefaultsMsg.AddString( "ReplySubjectStr", "Re: %s");
-	mDefaultsMsg.AddBool( "RestoreFolderStates", true);
-	mDefaultsMsg.AddBool( "SendPendingMailsOnCheck", true);
-	mDefaultsMsg.AddMessage( "Shortcuts", GetShortcutDefaults());
-	mDefaultsMsg.AddBool( "ShowAlertForErrors", false);
-	mDefaultsMsg.AddBool( "ShowDecodedLength", true);
-	mDefaultsMsg.AddBool( "ShowToolbarBorder", false);
-	mDefaultsMsg.AddBool( "ShowToolbarIcons", true);
-	mDefaultsMsg.AddString( "ShowToolbarLabel", "Right");
-	mDefaultsMsg.AddString( "SignatureRX", "^---?\\s*\\n");
-	mDefaultsMsg.AddBool("SpecialHeaderForEachBcc", false);
-	mDefaultsMsg.AddString( "StandardCharsets", 
+	defaultsMsg.AddString( "QuotingString", "> ");
+	defaultsMsg.AddString( "PeopleFolder", "/boot/home/people");
+	defaultsMsg.AddBool( "PreferReplyToList", true);
+	defaultsMsg.AddBool( "PreferUserAgentOverX-Mailer", true);
+	defaultsMsg.AddInt32( "PulsedScrollDelay", 100);
+	defaultsMsg.AddInt32( "ReceiveTimeout", 60);
+	defaultsMsg.AddString( "ReplyIntroDefaultNick", "you");
+	defaultsMsg.AddString( "ReplyIntroStr", "On %d at %t, %f wrote:");
+	defaultsMsg.AddString( "ReplySubjectRX", "^\\s*(Re|Aw)(\\[\\d+\\])?:");
+	defaultsMsg.AddString( "ReplySubjectStr", "Re: %s");
+	defaultsMsg.AddBool( "RestoreFolderStates", true);
+	defaultsMsg.AddBool( "SelectNextMailAfterDelete", true);
+	defaultsMsg.AddBool( "SendPendingMailsOnCheck", true);
+	defaultsMsg.AddBool( "SetMailDateWithEverySave", true);
+	defaultsMsg.AddMessage( "Shortcuts", GetShortcutDefaults());
+	defaultsMsg.AddBool( "ShowAlertForErrors", false);
+	defaultsMsg.AddBool( "ShowDecodedLength", true);
+	defaultsMsg.AddBool( "ShowToolbarBorder", false);
+	defaultsMsg.AddBool( "ShowToolbarIcons", true);
+	defaultsMsg.AddString( "ShowToolbarLabel", "Right");
+	defaultsMsg.AddBool( "ShowTooltips", true);
+	defaultsMsg.AddString( "SignatureRX", "^---?\\s*\\n");
+	defaultsMsg.AddInt32( "SpacesPerTab", 4);
+	defaultsMsg.AddBool("SpecialHeaderForEachBcc", false);
+	defaultsMsg.AddString( "StandardCharsets", 
 									"iso-8859-1,iso-8859-2,iso-8859-3,iso-8859-4,"
 									"iso-8859-5,iso-8859-6,iso-8859-7,iso-8859-8,"
 									"iso-8859-9,iso-8859-10,iso-8859-13,iso-8859-14,"
 									"iso-8859-15,macroman,windows-1251,windows-1252,"
 									"cp866,cp850,iso-2022-jp,iso-2022-jp-2,"
 									"koi8-r,euc-kr,big-5,us-ascii,utf-8");
-	mDefaultsMsg.AddBool( "StripedListView", true);
-	mDefaultsMsg.AddString( "TimeModeInHeaderView", "Local");
-	mDefaultsMsg.AddString( "UndoMode", "Words");
-	mDefaultsMsg.AddBool( "UseDeskbar", true);
-	mDefaultsMsg.AddBool( "UseDocumentResizer", true);
-	mDefaultsMsg.AddBool( "UseSwatchTimeInRefView", false);
-	mDefaultsMsg.AddString( "Workspace", "Current");
+	defaultsMsg.AddBool( "StrictCharsetHandling", false);
+	defaultsMsg.AddBool( "StripedListView", true);
+	defaultsMsg.AddString( "TimeModeInHeaderView", "Local");
+	defaultsMsg.AddString( "UndoMode", "Words");
+	defaultsMsg.AddBool( "UseDeskbar", true);
+	defaultsMsg.AddBool( "UseDocumentResizer", true);
+	defaultsMsg.AddBool( "UseSwatchTimeInRefView", false);
+	defaultsMsg.AddString( "Workspace", "Current");
 }
 
 /*------------------------------------------------------------------------------*\
@@ -679,7 +734,7 @@ void BmPrefs::SetupMailboxVolume() {
 		-	stores preferences into global Settings-file:
 \*------------------------------------------------------------------------------*/
 bool BmPrefs::Store() {
-	BFile prefsFile;
+	BmBackedFile prefsFile;
 	status_t err;
 	BAutolock lock( mLocker);
 	if (!lock.IsLocked())
@@ -689,10 +744,7 @@ bool BmPrefs::Store() {
 		BmString prefsFilename 
 			= BmString( BeamRoster->SettingsPath()) 
 					<< "/" << PREFS_FILENAME;
-		if ((err = prefsFile.SetTo( 
-			prefsFilename.String(), 
-			B_WRITE_ONLY | B_CREATE_FILE | B_ERASE_FILE
-		)) != B_OK)
+		if ((err = prefsFile.SetTo( prefsFilename.String())) != B_OK)
 			BM_THROW_RUNTIME( BmString("Could not create settings file\n\t<") 
 										<< prefsFilename << ">\n\n Result: " 
 										<< strerror(err));
@@ -702,11 +754,32 @@ bool BmPrefs::Store() {
 		// update shortcuts:
 		mPrefsMsg.RemoveName("Shortcuts");
 		mPrefsMsg.AddMessage("Shortcuts", &mShortcutsMsg);
-		// store prefs-data inside file:		
-		if ((err = mPrefsMsg.Flatten( &prefsFile)) != B_OK)
-			BM_THROW_RUNTIME( BmString("Could not store settings into file\n\t<") 
-										<< prefsFilename << ">\n\n Result: " 
-										<< strerror(err));
+
+		BmString tip("The settings can be found in the attributes of this file!");
+		prefsFile.File().Write(tip.String(), tip.Length());
+		// store prefs-data as attributes:
+		char *name;
+		uint32 type;
+		int32 count;
+		for (int32 i = 0; 
+			  mPrefsMsg.GetInfo(B_ANY_TYPE, i, &name, &type, &count) == B_OK; 
+			  ++i) {
+			for (int32 j = 0; j < count; ++j) {
+				const void *value;
+				ssize_t msize;
+
+				err = mPrefsMsg.FindData( name, type, j, &value, &msize);
+				if (err == B_OK)
+					err = prefsFile.File().WriteAttr( name, type, 0, value, msize);
+				if (err < B_OK)
+					BM_THROW_RUNTIME( 
+						BmString("Could not store setting <") 
+							<< name << "> into file\n\t<"
+							<< prefsFilename << ">\n\n Result: " 
+							<< strerror(err));
+			}
+		}
+
 		// update saved state to current:
 		mSavedPrefsMsg = mPrefsMsg;
 	} catch( BM_error &e) {

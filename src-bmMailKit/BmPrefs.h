@@ -107,10 +107,10 @@ public:
 
 private:
 
-	void InitDefaults();
 	void SetLoglevels();
-	BMessage* GetShortcutDefaults( BMessage* msg=NULL);
-	void SetShortcutIfNew( BMessage* msg, const char* name, const BmString val);
+	static void InitDefaults(BMessage& defaultsMsg);
+	static BMessage* GetShortcutDefaults( BMessage* msg=NULL);
+	static void SetShortcutIfNew( BMessage* msg, const char* name, const BmString val);
 
 	BMessage mPrefsMsg;
 	BMessage mDefaultsMsg;
