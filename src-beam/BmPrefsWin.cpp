@@ -225,7 +225,7 @@ ColumnListView* BmPrefsWin::CreatePrefsListView( int32 width, int32 height) {
 	mPrefsListView->ClickSetsFocus( true);
 	mPrefsListView->SetMinItemHeight( 
 		MAX( TheResources->FontLineHeight(), 
-			  ThePrefs->GetInt( "MinHeightHierarchicalListItems", 18))
+			  ThePrefs->GetInt( "ListviewHierarchicalMinItemHeight", 16))
 	);
 	mPrefsListView->AddColumn( 
 		new CLVColumn( NULL, 10.0, 

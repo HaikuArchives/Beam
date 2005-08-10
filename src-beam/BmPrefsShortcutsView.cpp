@@ -311,7 +311,7 @@ ColumnListView* BmPrefsShortcutsView::CreateListView( int32 width, int32 height)
 
 	mListView->SetMinItemHeight( 
 		MAX( TheResources->FontLineHeight(),
-			  ThePrefs->GetInt( "MinHeightListItems", 16))
+			  ThePrefs->GetInt( "ListviewFlatMinItemHeight", 16))
 	);
 
 	int32 flags = 0;

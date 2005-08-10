@@ -133,7 +133,6 @@ public:
 	// overrides of controller base:
 	BmString StateInfoBasename();
 	BmString StateInfoFilename( bool forRead);
-	BMessage* DefaultLayout();
 	BmListViewItem* CreateListViewItem( BmListModelItem* item, BMessage* archive=NULL);
 	const char* ItemNameForCaption()		{ return "message"; }
 

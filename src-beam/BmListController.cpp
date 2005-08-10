@@ -176,10 +176,10 @@ BmListViewController::BmListViewController( BRect rect,
 	,	mPulsedScrollStep( 0)
 	,	mDragBetweenItems( false)
 {
-	float minHeight 
+	float minHeight
 		= hierarchical
-			? ThePrefs->GetInt( "MinHeightHierarchicalListItems", 16)
-			: ThePrefs->GetInt( "MinHeightListItems", 16);
+			? ThePrefs->GetInt( "ListviewHierarchicalMinItemHeight", 16)
+			: ThePrefs->GetInt( "ListviewFlatMinItemHeight", 16);
 	SetMinItemHeight( MAX( TheResources->FontLineHeight(), minHeight));
 }
 
