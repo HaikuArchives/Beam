@@ -186,14 +186,17 @@ BRect BmMenuControl::layout(BRect inFrame) {
 	mMenuBar->MoveTo( occupiedSpace, BeamOnDano ? 5 : 3);
 	mMenuBar->ResizeTo( frame.Width()-occupiedSpace-6, 
 							  mMenuBar->Frame().Height());
-	if (BeamOnDano)
+	if (BeamOnDano) {
 		// on Dano/Zeta there seems to be a bug with computing the 
 		// max-content-width under some conditions. Unfortunately, liblayout
 		// is able to trigger exactly these conditions >:o/
 		// As a workaround, we explicitly set the max-content-width to a
 		// value that works (actually, it's too large, but it doesn't matter):
 		mMenuBar->SetMaxContentWidth( frame.Width());
-	mMenuBar->Invalidate();
+		// additionally, there are drawing artefacts on Zeta, visible
+		// in the Beam-Prefs. Explicitly requesting a redraw fixes this:
+		Invalidate();
+	}
 
 	return inFrame;
 }

@@ -758,7 +758,11 @@ bool BmPrefs::Store() {
 		BmString tip("The settings can be found in the attributes of this file!");
 		prefsFile.File().Write(tip.String(), tip.Length());
 		// store prefs-data as attributes:
+#ifdef B_BEOS_VERSION_DANO
+		const char *name;
+#else
 		char *name;
+#endif
 		uint32 type;
 		int32 count;
 		for (int32 i = 0; 
