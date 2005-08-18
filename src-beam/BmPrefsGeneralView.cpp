@@ -422,17 +422,15 @@ void BmPrefsGeneralView::MessageReceived( BMessage* msg) {
 					// first step, let user select new mailbox:
 					if (!mMailboxPanel) {
 						entry_ref eref;
-						if (get_ref_for_path(
+						status_t err = get_ref_for_path(
 							ThePrefs->GetString("MailboxPath").String(),	&eref
-						) == B_OK) {
-							mMailboxPanel = new BFilePanel( 
-								B_OPEN_PANEL, new BMessenger(this), NULL,
-								B_DIRECTORY_NODE, false, msg
-							);
-						}
+						);
+						mMailboxPanel = new BFilePanel( 
+							B_OPEN_PANEL, new BMessenger(this), 
+							err == B_OK ? &eref : NULL, B_DIRECTORY_NODE, false, msg
+						);
 					}
-					if (mMailboxPanel)
-						mMailboxPanel->Show();
+					mMailboxPanel->Show();
 				} else {
 					// second step, set mailbox accordingly:
 					BEntry entry( &mailboxRef);
@@ -464,15 +462,13 @@ void BmPrefsGeneralView::MessageReceived( BMessage* msg) {
 						if (pos != B_ERROR)
 							iconPath.Truncate(pos);
 						entry_ref eref;
-						if (get_ref_for_path(iconPath.String(), &eref) == B_OK) {
-							mIconboxPanel = new BFilePanel( 
-								B_OPEN_PANEL, &msnger, &eref,
-								B_DIRECTORY_NODE, false, msg
-							);
-						}
+						status_t err = get_ref_for_path(iconPath.String(), &eref);
+						mIconboxPanel = new BFilePanel( 
+							B_OPEN_PANEL, &msnger, err == B_OK ? &eref : NULL,
+							B_DIRECTORY_NODE, false, msg
+						);
 					}
-					if (mIconboxPanel)
-						mIconboxPanel->Show();
+					mIconboxPanel->Show();
 				} else {
 					// second step, set iconbox accordingly:
 					BEntry entry( &iconboxRef);
