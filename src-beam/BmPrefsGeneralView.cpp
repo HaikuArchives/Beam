@@ -421,15 +421,18 @@ void BmPrefsGeneralView::MessageReceived( BMessage* msg) {
 				if (msg->FindRef( "refs", 0, &mailboxRef) != B_OK) {
 					// first step, let user select new mailbox:
 					if (!mMailboxPanel) {
-						mMailboxPanel = new BFilePanel( 
-							B_OPEN_PANEL, new BMessenger(this), NULL,
-							B_DIRECTORY_NODE, false, msg
-						);
+						entry_ref eref;
+						if (get_ref_for_path(
+							ThePrefs->GetString("MailboxPath").String(),	&eref
+						) == B_OK) {
+							mMailboxPanel = new BFilePanel( 
+								B_OPEN_PANEL, new BMessenger(this), NULL,
+								B_DIRECTORY_NODE, false, msg
+							);
+						}
 					}
-					mMailboxPanel->SetPanelDirectory( 
-						ThePrefs->GetString("MailboxPath").String()
-					);
-					mMailboxPanel->Show();
+					if (mMailboxPanel)
+						mMailboxPanel->Show();
 				} else {
 					// second step, set mailbox accordingly:
 					BEntry entry( &mailboxRef);
@@ -452,20 +455,24 @@ void BmPrefsGeneralView::MessageReceived( BMessage* msg) {
 			}
 			case BM_SELECT_ICONBOX: {
 				entry_ref iconboxRef;
+				BMessenger msnger(this);
 				if (msg->FindRef( "refs", 0, &iconboxRef) != B_OK) {
 					// first step, let user select new iconbox:
 					if (!mIconboxPanel) {
-						mIconboxPanel = new BFilePanel( 
-							B_OPEN_PANEL, new BMessenger(this), NULL,
-							B_DIRECTORY_NODE, false, msg
-						);
+						BmString iconPath = ThePrefs->GetString("IconPath");
+						int32 pos = iconPath.FindLast('/');
+						if (pos != B_ERROR)
+							iconPath.Truncate(pos);
+						entry_ref eref;
+						if (get_ref_for_path(iconPath.String(), &eref) == B_OK) {
+							mIconboxPanel = new BFilePanel( 
+								B_OPEN_PANEL, &msnger, &eref,
+								B_DIRECTORY_NODE, false, msg
+							);
+						}
 					}
-					BmString iconPath = ThePrefs->GetString("IconPath");
-					int32 pos = iconPath.FindLast('/');
-					if (pos != B_ERROR)
-						iconPath.Truncate(pos);
-					mIconboxPanel->SetPanelDirectory( iconPath.String());
-					mIconboxPanel->Show();
+					if (mIconboxPanel)
+						mIconboxPanel->Show();
 				} else {
 					// second step, set iconbox accordingly:
 					BEntry entry( &iconboxRef);
