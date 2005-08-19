@@ -1275,7 +1275,7 @@ void BeamApplication::AboutRequested() {
 \n\
 	Regexx, by Gustavo Niemeyer\n\
 \n\
-	SantasGiftBag, by Brain Tietz\n\
+	SantasGiftBag, by Brian Tietz\n\
 \n\n\n\n\n\n\nThanks to:\n\
 \n\
 Heike Herfart \n\

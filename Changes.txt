@@ -1,6 +1,195 @@
 change-history of Beam:
 		$Id$
 
+< 2005-08-19: commit, moved tag 'current-devel', release test-050819 >
+
+BmMainWindow:
+	-	temporarily removed 'Find Messages'-menu as it ain't working anyway.
+
+< 2005-08-18: commit >
+
+BmPrefsGeneralView:
+	-	circumvent what seems to be a bug in BFilePanel, which deadlocks the
+		app when using SetPanelDirectory() on an existing (sic!) dir.
+
+< 2005-08-17: commit >
+
+BuildSettings:
+	-	now uses -mcpu=pentiumpro instead of -march=pentiumpro such that Beam
+		is still able to run on non-pentiumpro CPUs (like VIA C3).
+
+< 2005-08-10: commit >
+
+BmPrefs:
+	-	switched to attribute-based storage
+	-	default-settings are now blended into the existing settings.
+
+BmSieveFilter:
+	-	added support for relational operators to GUI.
+
+several files:
+	-	fixed some prefs-related glitches and typos.
+
+< 2005-08-08: commit >
+
+BmBodyPartList:
+	-	fixed unsafe filename handling when trying to store an attachment.
+
+BmCaption, BmMailView, BmMainWindow:
+	-	activating the incremental search now visually changes the caption-view
+		such that the user has a better chance of understanding what's going
+		on. Idea (and color >:o) from Stippi.
+
+BmMailViewWin:
+	-	fixed crashing bug in CreateGUI().
+	-	find-request is now passed on to mail-view.
+
+< 2005-08-08: commit >
+ 
+BmMailHeaderView:
+	-	adapted to new signature of TimeToSwatchString().
+
+BmMailRef:
+	-	now uses modification-time instead of creation-time when initializing
+		the when-created attribute, as this gives better results for mail files
+		that have been copied between partitions (the creation-time then holds
+		the time of the copy, while the mod-time holds the time the mail had
+		been written).
+	-	mWhenCreatedString and mWhenString have been moved out of the model
+		into the view, as the view now selects the date-format depending on
+		the available column space.
+
+BmMailRefView:
+	-	Date-columns are now automatically reformatted such that they fit into
+		the available column space (if at all possible). Idea from Stippi.
+
+CLVEasyItem:
+	-	added ColumnFitsText() which determines whether or not a given text
+		fits into a column.
+	-	improved const-correctness somewhat.
+
+BmUtil:
+	-	changed TimeToSwatchString() such that it accepts other formats, too.
+
+< 2005-08-07: commit >
+
+many files:
+	-	reworked visuals and some parts of behaviour such that Beam now works
+		and looks properly on R5 and Zeta.
+
+< 2005-07-28: commit >
+
+BeamApp:
+	-	avoid sending of pendings mails if check has been triggered automatically,
+		as I consider this behaviour confusing.
+
+BmBodyPartList:
+	-	fixed crash when adding an empty attachment.
+
+BmBodyPartView:
+	-	improved drag'n'drop handling such that we can now accept a drop from
+		BeMail. However, BeMail doesn't accept drops from us, but that seems
+		to be a problem over there, as BeMail requires drag messages to contain
+		a ref (but we don't since the attachment is yet a virtual file).
+
+many files:
+	-	changed HandleDrop() to take a non-const BMessage*, as sending a reply
+		doesn't work on const BMessages.
+
+UserResizeSplitView:
+	-	changed drawing to match Stippi's style used in Wonderbrush.
+
+< 2005-07-24: commit, moved tag 'current-devel' >
+
+BeamApp:
+	-	in RefsReceived(), we now support people-files too. A new mail will
+		be created with the given people as recipients (idea taken from Zeta).
+	-	depending on prefs-value 'SendPendingMailsOnCheck', we now send all
+		pending mails on a mail-check (again, idea taken from Zeta).
+
+BmBodyPartView:
+	-	now uses BRoster::Launch(type, argc, argv) instead of Launch(eref),
+		as the latter doesn't work for firefox (idea taken from Zeta).
+
+BmMailEditWin:
+	-	reworked handling of people-drops in order to simplify handling
+		of people files in app's RefsReceived().
+
+BmPeople:
+	-	added support for fetching all emails from a given people file ref.
+
+BmPrefs:
+	-	added 'SendPendingMailsOnCheck'.
+
+BuildSettings:
+	-	now uses 'pentiumpro' architecture on x86.
+
+< 2005-07-03: commit >
+
+BmMenuControl:
+	-	fixed layouting code such that the vertical size and position always
+		match the ones used by a BmTextControl that has a menu as its label.
+
+BmPrefsFilterView:
+	-	fixed min height being too small for 13pt font.
+
+BmTextControl:
+	-	minor cleanup.
+
+< 2005-07-01: commit >
+
+BmListControllerView, BmMailFolderView, BmMailRefView:
+	-	implemented hierarchical state-info handling, such that a folder inherits
+		the state-info from its parent, but can (explicitly) disconnect from it.
+		This should make setting up the preferred listview layout much easier.
+	-	The default ref-list layout is now much simpler (lots of columns have
+		been hidden).
+
+BmMailEditWin:
+	-	fixed bug with signature not automatically being applied to mail when
+		a new identity is selected.
+
+BmMailFolder:
+	-	now stores info about if the corresponding ref-list's layout is connected
+		to parent or not.
+
+BmMailHeader:
+	-	fixed bug with 'Name'-attribute not being set for outbound mails.
+
+BmMailViewWin:
+	-	added RefListView, such that navigation is possible and independent
+		of main window. The RefListView is hidden by default, but can be shown
+		by means dragging the split-view at the top downwards.
+
+BmPrefs:
+	-	added default shortcuts for the two new menu-cmds 'Previous Message' &
+		'Next Message'.
+
+BmWindow:
+	-	added message filter for scrollwheel events, which redirects these events
+		to the view that currently is under the mouse (suggested by Stephan Aßmus).
+
+ColumnListView:
+	-	fixed drawing artefacts when dragging a window across the view (single-
+		line updates were not handled correctly).
+
+UserResizeSplitView (and several other files):
+	-	added support for auto-hiding a child if the available space is smaller
+		than the child's minimum size.
+
+< 2005-05-30: commit >
+
+BmSpamFilter:
+	-	oops: the three different instances (classify, learn-as-spam and 
+	   learn-as-tofu) all had their own dataset, but only the classify-dataset
+	   was actually changed by prefs. Now there's only one (static) dataset left.
+
+< 2005-05-20: commit >
+
+BmToolbarButton:
+	-	fixed broken support for toolbar backgrounds, which didn't work properly
+		for images that need a certain tile size in horizontal direction.
+
 < 2005-05-18: commit, moved tag 'current-devel' >
 
 BmBodyPartList, BmBodyPartView, BmEncoding, BmMailView:

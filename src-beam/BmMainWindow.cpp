@@ -300,7 +300,7 @@ MMenuBar* BmMainWindow::CreateMenu() {
 	menu->AddItem( CreateMenuItem( "Select All", B_SELECT_ALL));
 	menu->AddSeparatorItem();
 	menu->AddItem( CreateMenuItem( "Find", BMM_FIND));
-	menu->AddItem( CreateMenuItem( "Find Messages", BMM_FIND_MESSAGES));
+//	menu->AddItem( CreateMenuItem( "Find Messages", BMM_FIND_MESSAGES));
 	menu->AddItem( CreateMenuItem( "Find Next", BMM_FIND_NEXT));
 	mMainMenuBar->AddItem( menu);
 
@@ -393,8 +393,6 @@ void BmMainWindow::BeginLife() {
 		mMainMenuBar->FindItem( BMM_SWITCH_RAW)->SetMarked( mMailView->ShowRaw());
 		mMainMenuBar->FindItem( BMM_SWITCH_HEADER)
 			->SetTarget( (BHandler*)mMailView->HeaderView());
-		// temporary deactivation:
-		mMainMenuBar->FindItem( BMM_FIND_MESSAGES)->SetEnabled( false);
 
 		// populate pop-account menu in order to activate shortcuts:
 		while( !ThePopAccountList->IsJobCompleted())
