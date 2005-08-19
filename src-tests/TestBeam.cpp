@@ -247,7 +247,10 @@ int32 StartTests( void* args) {
 		shell.AddSuite( CreateFilterAddonsTestSuite() );
 	
 		BTestShell::SetGlobalShell(&shell);
-	
+
+		// set prefs as required by tests:	
+		ThePrefs->SetBool( "MakeQPSafeForEBCDIC", false);
+
 		// run the tests
 		ArgsInfo* argsInfo = static_cast<ArgsInfo*>( args);
 		shell.Run( argsInfo->argc, argsInfo->argv);
