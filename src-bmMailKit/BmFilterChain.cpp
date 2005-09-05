@@ -172,6 +172,7 @@ void BmChainedFilterList::RenumberPos() {
 	BmAutolockCheckGlobal lock( ModelLocker());
 	if (!lock.IsLocked())
 		BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
+	mPosVect.clear();
 	// first fill pos-vect from chained filters:
 	BmModelItemMap::const_iterator iter;
 	for( iter = begin(); iter != end(); ++iter) {
