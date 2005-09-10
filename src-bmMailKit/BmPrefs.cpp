@@ -160,6 +160,7 @@ BmPrefs::BmPrefs( BMessage* archive)
 	,	mLocker( "PrefsLock")
 {
 	theInstance = this;
+	InitDefaults(mDefaultsMsg);
 	mPrefsMsg = *archive;
 	int16 version = 0;
 	archive->FindInt16( MSG_VERSION, &version);
