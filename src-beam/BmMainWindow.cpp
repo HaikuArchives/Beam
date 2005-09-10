@@ -218,7 +218,7 @@ BmMainWindow::BmMainWindow()
 						"hsplitter", 200, B_HORIZONTAL, true, true, true, true, 
 						false, B_FOLLOW_NONE
 					),
-					"vsplitter", 170, B_VERTICAL, true, true, true, false, false, 
+					"vsplitter", 220, B_VERTICAL, true, true, true, false, false, 
 					B_FOLLOW_NONE
 				),
 				0
