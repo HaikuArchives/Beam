@@ -90,7 +90,7 @@ private:
 	BmTempFileList operator=( const BmTempFileList&);
 };
 
-extern BmTempFileList TheTempFileList;
+extern IMPEXPBMMAILKIT BmTempFileList TheTempFileList;
 
 /*------------------------------------------------------------------------------*\
 	BmBackedFile

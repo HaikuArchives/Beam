@@ -913,8 +913,12 @@ static int verify_relat(char *r)
     else if (!strcmp(r, "ne")) {return NE;}
     else if (!strcmp(r, "eq")) {return EQ;}
     else{
+#ifdef __MWERKS__
+      sprintf(errbuf, "flag '%s': not a valid relational operation", r);
+#else
       snprintf(errbuf, sizeof(errbuf), 
       	   "flag '%s': not a valid relational operation", r);
+#endif
       sieveerror(errbuf);
       return -1;
     }

@@ -41,7 +41,7 @@
 
 class MultiLockerTest : public BThreadedTestCase {
 public:
-	MultiLockerTest(std::string name = "");
+	MultiLockerTest(string name = "");
 
 	static CppUnit::Test* suite();
 	

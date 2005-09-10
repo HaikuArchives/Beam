@@ -340,7 +340,7 @@ void MD5Digest (unsigned char *s, char* out) {
 	int i;
 	unsigned char digest[17];
 	
-	MD5Sum(s, digest);
+	MD5Sum(s, (char*)digest);
 
   	for (i = 0;  i < 16;  i++) {
   		unsigned char c = digest[i];
@@ -361,7 +361,7 @@ void MD5Sum (unsigned char *s, char* out) {
 	
 	MD5Init(&context);
 	MD5Update(&context, s, strlen((char*)s));
-	MD5Final(out, &context);
+	MD5Final((unsigned char*)out, &context);
 	out[16] = '\0';
 }
 

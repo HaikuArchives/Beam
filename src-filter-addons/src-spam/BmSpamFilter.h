@@ -79,8 +79,9 @@ class BmSpamFilter : public BmFilterAddon {
 		void JobSpecs( const BMessage* jobSpecs)
 													{ mJobSpecs = jobSpecs; }
 													
+#ifndef __MWERKS__
 	private:
-		
+#endif
 		static const BMessage* mJobSpecs;
 
 		typedef struct

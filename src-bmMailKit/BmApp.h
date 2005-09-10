@@ -32,12 +32,15 @@
 #define _BmApp_h
 
 #include <Application.h>
+
+#include "BmMailKit.h"
+
 #include "BmString.h"
 
 class BLocker;
 class BView;
 
-class BmApplication : public BApplication
+class IMPEXPBMMAILKIT BmApplication : public BApplication
 {
 	typedef BApplication inherited;
 

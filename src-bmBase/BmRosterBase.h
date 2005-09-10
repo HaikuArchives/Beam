@@ -80,7 +80,7 @@ extern IMPEXPBMBASE BmRosterBase* BeamRoster;
 			retrieve info from the user (through a GUI) or fill menus.
 		-	The implementation lives in a derived class called BmGuiRoster.
 \*------------------------------------------------------------------------------*/
-extern BLooper* TheJobMetaController;
+extern IMPEXPBMBASE BLooper* TheJobMetaController;
 
 class IMPEXPBMBASE BmGuiRosterBase {
 
@@ -89,7 +89,7 @@ public:
 	virtual ~BmGuiRosterBase() 			{}
 	
 	// native methods:
-	BLooper* JobMetaController()			{ return TheJobMetaController; }
+	BLooper* JobMetaController();
 
 	virtual bool AskUserForPwd( const BmString& text, BmString& pwd) = 0;
 	virtual bool AskUserForPopAcc( const BmString& accName, 

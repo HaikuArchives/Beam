@@ -257,7 +257,7 @@ void SpamOMeter( const char* pathfileName, ResInfo& ri)
 	BEntry entry;
 	unsigned int pvs = min_c(pathVect.size(), Limit);
 	int perfs = PerfCount >= 0 ? min_c(PerfCount, (int32)pvs) : pvs/5;
-	char resultBuf[pvs];
+	char* resultBuf = new char [pvs];
 	for(uint32 i=0; i<pvs; ++i) {
 		Out("%s...", pathVect[i].String());
 		if ((res = entry.SetTo(pathVect[i].String())) != B_OK) {
@@ -374,6 +374,7 @@ void SpamOMeter( const char* pathfileName, ResInfo& ri)
 		fprintf(stderr,"\tunsure:           %6.2f\n", ri.unsure);
 		fprintf(stderr,"\tcorrectness (FP): %6.2f   correctness (all): %6.2f\n", ri.totalFalsePos, ri.totalOverall);
 	}
+	delete [] resultBuf;
 }
 
 int 
@@ -466,7 +467,7 @@ main( int argc, char** argv)
 		argc++;
 	};
 
-	ResInfo resInfo[argc];
+	ResInfo* resInfo = new ResInfo [argc];
 	const char* APP_SIG = "application/x-vnd.zooey-spamometer";
 	BmApplication* app 
 		= new BmApplication( APP_SIG, TrainingMode ? false : true);
@@ -597,6 +598,7 @@ main( int argc, char** argv)
 out:
 	TheFilterList = NULL;
 	delete app;
+	delete [] resInfo;
 	BFile resultFile("/boot/var/tmp/bm_spamometer_results", 
 						  B_READ_WRITE | B_ERASE_FILE | B_CREATE_FILE);
 	resultFile.Write(exitVal.String(), exitVal.Length());

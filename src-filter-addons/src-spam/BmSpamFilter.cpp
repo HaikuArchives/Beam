@@ -1703,7 +1703,7 @@ status_t BmSpamFilter::OsbfClassifier::CreateDataFile( const BmString& filename)
 		// Set the header.
 		Header h;
 		unsigned long bucketCount = DefaultFileLength;
-		h.version = FileVersion;
+		memcpy(h.version, FileVersion, sizeof(FileVersion));
 		h.learnings = 0;
 		h.classifications = 0;
 		h.mistakes = 0;

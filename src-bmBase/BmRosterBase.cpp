@@ -35,3 +35,8 @@ BmRosterBase* BeamRoster = 0;
 BmGuiRosterBase* BeamGuiRoster = 0;
 
 BLooper* TheJobMetaController = 0;
+
+BLooper* BmGuiRosterBase::JobMetaController()
+{
+	return TheJobMetaController;
+}
