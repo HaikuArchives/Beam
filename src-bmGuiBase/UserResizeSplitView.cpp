@@ -43,6 +43,7 @@ UserResizeSplitView::UserResizeSplitView(MView* top_or_left,
 	m_can_hide_right_or_bottom = can_hide_right_or_bottom;
 	m_move_slider_on_frame_resize = move_slider_on_frame_resize;
 	m_dragging = false;
+	m_have_clamped_to_limits = false;
 	SetViewUIColor(B_UI_PANEL_BACKGROUND_COLOR);
 	m_left_or_top = top_or_left;
 	if (top_or_left)
@@ -375,6 +376,16 @@ BRect UserResizeSplitView::layout(BRect frame)
 		if (m_right_or_bottom)
 			m_right_or_bottom->layout( BRect(m_divider_left_or_top+Thickness,
 														rect.top, rect.right, rect.bottom));
+	}
+	if (!m_have_clamped_to_limits) {
+		// sometimes the given initial position of the divider doesn't fit
+		// to the children's constraints. This happens for instance, if the
+		// user changed the font setting between two Beam sessions. Here we
+		// explicitly reset the divider position in order to trigger the
+		// inherent clamping of this position to the possible values that are
+		// defined by the children's min/max sizes:
+		SetDividerLeftOrTop(m_divider_left_or_top, true);
+		m_have_clamped_to_limits = true;
 	}
 	return frame;
 }

@@ -102,6 +102,7 @@ class IMPEXPBMGUIBASE UserResizeSplitView : public MGroup, public BView
 		bool m_can_hide_right_or_bottom;
 		bool m_move_slider_on_frame_resize;
 		bool m_dragging;
+		bool m_have_clamped_to_limits;
 		MView* m_left_or_top;
 		MView* m_right_or_bottom;
 		BView* m_left_or_top_BV;
