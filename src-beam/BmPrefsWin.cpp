@@ -108,7 +108,7 @@ BmPrefsWin* BmPrefsWin::CreateInstance()
 		-	
 \*------------------------------------------------------------------------------*/
 BmPrefsWin::BmPrefsWin()
-	:	inherited( "PrefsWin", BRect(50,50,549,449),
+	:	inherited( "PrefsWin", BRect(50,50,849,449),
 					  "Beam Preferences",
 					  B_FLOATING_WINDOW_LOOK, B_NORMAL_WINDOW_FEEL, 
 					  B_ASYNCHRONOUS_CONTROLS)
@@ -151,7 +151,7 @@ BmPrefsWin::BmPrefsWin()
 								0
 							)
 						),
-						"vsplitter", 120, B_VERTICAL, true, true, false, false, 
+						"vsplitter", 150, B_VERTICAL, true, true, false, false, 
 						false, B_FOLLOW_NONE
 					),
 					0
