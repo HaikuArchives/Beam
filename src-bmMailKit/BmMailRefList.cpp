@@ -217,9 +217,6 @@ bool BmMailRefList::StartJob() {
 		if (cacheFileUpToDate) {
 			// ...ok, cache-file should contain up-to-date info, 
 			// we fetch our data from it:
-/*
-	[zooey]: we can use this to read a bit faster, but use quite some more mem:
-	
 			off_t sz = 0;
 			if ((err = cacheFile.GetSize(&sz)) != B_OK)
 				BM_THROW_RUNTIME( 
@@ -239,9 +236,8 @@ bool BmMailRefList::StartJob() {
 						<< filename << ">, read only " << err << " bytes"
 				);
 			BMemoryIO memIO(buf.get(), sz);
-*/
 			MyInstantiateItems( 
-				&cacheFile, 
+				&memIO,
 				FindMsgInt32( 
 					&msg, 
 					BmListModelItem::MSG_NUMCHILDREN
@@ -441,7 +437,7 @@ void BmMailRefList::MyInstantiateItems( BDataIO* dataIO, int32 numChildren) {
 		BM_LOG( BM_LogMailTracking, 
 				  BmString("Fetching appended MailRef-archives for folder ")
 				  		<< folder->Name());
-		BList appendedArchives(100);
+		BList appendedArchives(10000);
 		FetchAppendedArchives( dataIO, &appendedArchives);
 		if (appendedArchives.CountItems() > 0) {
 			IntegrateAppendedArchives( appendedArchives);
