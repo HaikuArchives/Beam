@@ -371,6 +371,98 @@ void BmListViewController::HighlightItemAt( const BPoint& point) {
 }
 
 /*------------------------------------------------------------------------------*\
+	CreateDragImage()
+		-	
+\*------------------------------------------------------------------------------*/
+BBitmap* BmListViewController::CreateDragImage(const vector<int>& cols, 
+															  int32 max) {
+	int32 currIdx;
+	// we count the number of selected items:
+	int32 selCount;
+	for( selCount=0; (currIdx=CurrentSelection( selCount))>=0; ++selCount)
+		;
+	BM_LOG2( BM_LogGui, BmString("CreateDragImage() - found ")
+								<<selCount<<" selections");
+	const float v = 5;
+	const float h = 5;
+
+	float width = 0;
+	for( uint32 c=0; c<cols.size(); ++c) {
+		CLVColumn* col = ColumnAt(cols[c]);
+		if (!col)
+			continue;
+		width += col->Width();
+	}
+
+	BFont font;
+	GetFont( &font);
+	float lineHeight = MAX(TheResources->FontLineHeight( &font),20.0);
+	float baselineOffset = TheResources->FontBaselineOffset( &font);
+	BRect dragRect( 0, 0, 2*h+width-1, MIN(selCount,max)*lineHeight-1+v);
+	BView* dummyView = new BView( dragRect, NULL, B_FOLLOW_NONE, 0);
+	BBitmap* dragImage = new BBitmap( dragRect, B_RGBA32, true);
+	dragImage->AddChild( dummyView);
+	dragImage->Lock();
+	dummyView->SetHighColor( B_TRANSPARENT_COLOR);
+	dummyView->FillRect( dragRect);
+	dummyView->SetDrawingMode( B_OP_ALPHA);
+	dummyView->SetBlendingMode( B_PIXEL_ALPHA, B_ALPHA_COMPOSITE);
+	rgb_color tcol = ui_color( B_UI_PANEL_BACKGROUND_COLOR);
+	tcol.alpha = 192;
+	dummyView->SetHighColor( tcol);
+	dummyView->FillRoundRect( dragRect, 5, 5);
+	tcol = BmWeakenColor( B_UI_PANEL_BACKGROUND_COLOR, 3);
+	tcol.alpha = 192;
+	dummyView->SetHighColor( tcol);
+	dummyView->SetPenSize( 2);
+	dummyView->StrokeRoundRect( dragRect, 5, 5);
+	dummyView->SetPenSize( 1);
+	dummyView->SetHighColor( ui_color( B_UI_PANEL_TEXT_COLOR));
+	dragRect.InsetBy(h,v);
+	BRegion region;
+	// now we add all selected items to drag-image and to drag-msg:
+	for( int32 i=0; (currIdx=CurrentSelection( i))>=0; ++i) {
+		BmListViewItem* item = dynamic_cast<BmListViewItem*>(ItemAt( currIdx));
+		if (i==max-1 && selCount>max) {
+			// add an indicator that more items are being dragged than shown:
+			region.Set(dragRect);
+			dummyView->ConstrainClippingRegion(&region);
+			BmString indicator = BmString("(...and ") << selCount-max 
+				<< (selCount-max == 1 ? " more item)" : " more items)");
+			dummyView->DrawString( indicator.String(), 
+										  BPoint( h, v+i*lineHeight+baselineOffset));
+			dummyView->ConstrainClippingRegion(NULL);
+		} else if (i<max) {
+			// add only the first couple of selections to drag-image:
+			float hOffs = 0;
+			for( uint32 c=0; c<cols.size(); ++c) {
+				CLVColumn* col = ColumnAt(cols[c]);
+				if (!col)
+					continue;
+				if ((col->Type() & CLV_COLTYPE_MASK) == CLV_COLTYPE_BITMAP) {
+					const BmBitmapHandle* icon 
+						= item->GetColumnContentBitmap( cols[c]);
+					if (icon && icon->bitmap)
+						dummyView->DrawBitmapAsync( icon->bitmap, 
+															 BPoint(h+hOffs,v+i*lineHeight));
+				} else {
+					const char* text = item->GetColumnContentText( cols[c]);
+					if (text)
+						dummyView->DrawString( 
+							text, 
+							BPoint( h+hOffs, 
+									  v+i*lineHeight+baselineOffset)
+						);
+				}
+				hOffs += col->Width();
+			}
+		}
+	}
+	dragImage->Unlock();
+	return dragImage;
+}
+
+/*------------------------------------------------------------------------------*\
 	HandleDrop( msg)
 		-	
 \*------------------------------------------------------------------------------*/

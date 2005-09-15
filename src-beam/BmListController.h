@@ -170,6 +170,7 @@ protected:
 	virtual void ItemInvoked( int32 index);
 	virtual bool AcceptsDropOf( const BMessage*)	{ return false; }
 	virtual void HandleDrop( BMessage* msg);
+	virtual BBitmap* CreateDragImage(const vector<int>& cols, int32 maxLines=10);
 	void HighlightItemAt( const BPoint& point);
 	void ShowOrHideColumn( BMessage* msg);
 	//
