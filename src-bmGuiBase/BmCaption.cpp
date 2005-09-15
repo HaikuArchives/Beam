@@ -44,7 +44,7 @@ BmCaption::BmCaption( BRect frame, const char* text)
 	,	mText(text)
 	,	mHighlight(false)
 {
-	SetViewUIColor( B_UI_PANEL_BACKGROUND_COLOR);
+	SetViewColor( B_TRANSPARENT_COLOR);
 	SetLowUIColor( B_UI_PANEL_BACKGROUND_COLOR);
 }
 
