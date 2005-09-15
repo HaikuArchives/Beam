@@ -708,7 +708,7 @@ void BmBodyPartView::HandleDrop( BMessage* msg) {
 			}
 	
 			BMessage dataMsg;
-			if (msg->SendReply(&reply, &dataMsg) == B_OK)
+			if (msg->SendReply(&reply, (BHandler*)NULL, 100000) == B_OK)
 				AddAttachment(dropFileName.String());
 		}
 	}
@@ -830,47 +830,11 @@ bool BmBodyPartView::InitiateDrag( BPoint, int32 index, bool wasSelected) {
 	dragMsg.AddString( "be:originator", BmDragId.String());
 	dragMsg.AddString( "be:clip_name", bodyPart->FileName().String());
 	dragMsg.AddPointer( "bm:bodypart", bodyPart);
-	int32 currIdx;
-	// we count the number of selected items:
-	int32 selCount;
-	for( selCount=0; (currIdx=CurrentSelection( selCount))>=0; ++selCount)
-		;
-	const int32 th=10;
-	BFont font;
-	GetFont( &font);
-	float lineHeight = MAX(TheResources->FontLineHeight( &font),20.0);
-	float baselineOffset = TheResources->FontBaselineOffset( &font);
-	BRect dragRect( 0, 0, 200-1, MIN(selCount,th+1)*lineHeight-1);
-	BView* dummyView = new BView( dragRect, NULL, B_FOLLOW_NONE, 0);
-	BBitmap* dragImage = new BBitmap( dragRect, B_RGBA32, true);
-	dragImage->AddChild( dummyView);
-	dragImage->Lock();
-	dummyView->SetHighColor( B_TRANSPARENT_COLOR);
-	dummyView->FillRect( dragRect);
-	dummyView->SetDrawingMode( B_OP_ALPHA);
-	dummyView->SetHighColor( 0, 0, 0, 128);
-	dummyView->SetBlendingMode( B_CONSTANT_ALPHA, B_ALPHA_COMPOSITE);
-	// now we add the selected items to drag-image:
-	for( int32 i=0; (currIdx=CurrentSelection( i))>=0; ++i) {
-		bodyPartItem = dynamic_cast<BmBodyPartItem*>(ItemAt( currIdx));
-		bodyPart = bodyPartItem->ModelItem();
-		if (i<th) {
-			// add only the first ten selections to drag-image:
-			const BmBitmapHandle* icon = bodyPartItem->GetColumnContentBitmap( 0);
-			if (icon) {
-				dummyView->DrawBitmapAsync( icon->bitmap, BPoint(0,i*lineHeight));
-			}
-			dummyView->DrawString( bodyPart->FileName().String(), 
-										  BPoint( 20.0, i*lineHeight+baselineOffset));
-		} else if (i==th) {
-			// add an indicator that more items are being dragged than shown:
-			BmString indicator = BmString("(...and ") << selCount-th 
-				<< (selCount-th == 1 ? " more item)" : " more items)");
-			dummyView->DrawString( indicator.String(), 
-										  BPoint( 20.0, i*lineHeight+baselineOffset));
-		}
-	}
-	dragImage->Unlock();
+	vector<int> cols;
+	cols.push_back(1);
+	cols.push_back(2);
+	cols.push_back(3);
+	BBitmap* dragImage = CreateDragImage(cols);
 	DragMessage( &dragMsg, dragImage, B_OP_ALPHA, BPoint( 10.0, 10.0));
 	return true;
 }
