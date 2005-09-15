@@ -118,8 +118,8 @@ fMinItemHeight( 5),
 fScrollView(NULL)
 {
 	SetViewColor( B_TRANSPARENT_COLOR);
-	BFont labelFont(*be_plain_font);
-//	labelFont.SetSize(captionFont.Size()-1);
+	SetFont(&bm_plain_font);
+	BFont labelFont(bm_plain_font);
 	//Create the column titles bar view
 	font_height FontAttributes;
 	labelFont.GetHeight(&FontAttributes);
@@ -1427,9 +1427,10 @@ bool ColumnListView::RemoveItem(BListItem* a_item)
 		int32 ItemsToRemove = 1 + FullListNumberOfSubitems(item);
 		result = RemoveItems(fFullItemList.IndexOf(item),ItemsToRemove);
 	}
-	else
+	else {
 		result = BListView::RemoveItem((BListItem*)item);
-	UpdateDataRect();
+		UpdateDataRect();
+	}
 	return result;
 }
 
