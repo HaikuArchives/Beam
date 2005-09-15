@@ -430,6 +430,7 @@ void BmPrefs::InitDefaults(BMessage& defaultsMsg) {
 	defaultsMsg.AddBool( "ListviewLikeTracker", false);
 	defaultsMsg.AddInt32( "ListviewFlatMinItemHeight", 16);
 	defaultsMsg.AddInt32( "ListviewHierarchicalMinItemHeight", 16);
+	defaultsMsg.AddBool( "ListviewUsesStringSpacing", false);
 	defaultsMsg.AddBool( "LookForPeopleOnlyInPeopleFolder", true);
 	// standard mail-box:
 	defaultsMsg.AddString( "MailboxPath", "/boot/home/mail");
