@@ -182,3 +182,6 @@ rgb_color BmFixupColor( const char* uiColName, int level, bool weaken) {
 	} else
 		return ui_color( uiColName);
 }
+
+BFont bm_plain_font;
+BFont bm_bold_font;

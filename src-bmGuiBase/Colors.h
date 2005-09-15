@@ -75,4 +75,7 @@ rgb_color IMPEXPBMGUIBASE ui_color( const char* uiColName);
 
 #endif
 
+extern IMPEXPBMGUIBASE BFont bm_plain_font;
+extern IMPEXPBMGUIBASE BFont bm_bold_font;
+
 #endif
