@@ -58,6 +58,7 @@ using namespace regexx;
 #include "BmMailEditWin.h"
 #include "BmMailFactory.h"
 #include "BmMailFolderList.h"
+#include "BmMailMonitor.h"
 #include "BmMailMover.h"
 #include "BmMailRef.h"
 #include "BmMailView.h"
@@ -731,6 +732,13 @@ BeamApplication::BeamApplication( const char* sig)
 
 		BmPeopleMonitor::CreateInstance();
 		BmPeopleList::CreateInstance();
+
+		bm_plain_font = *be_plain_font;
+		bm_bold_font = *be_bold_font;
+		if (ThePrefs->GetBool("ListviewUsesStringSpacing")) {
+			bm_plain_font.SetSpacing(B_STRING_SPACING);
+			bm_bold_font.SetSpacing(B_STRING_SPACING);
+		}
 
 		add_system_beep_event( BM_BEEP_EVENT);
 
