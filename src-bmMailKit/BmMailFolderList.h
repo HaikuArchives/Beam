@@ -44,58 +44,7 @@
 #include "BmDataModel.h"
 #include "BmMailFolder.h"
 
-/*------------------------------------------------------------------------------*\
-	BmMailMonitor
-		-	class 
-\*------------------------------------------------------------------------------*/
-class IMPEXPBMMAILKIT BmMailMonitor : public BLooper {
-	typedef BLooper inherited;
-
-public:
-	// creator-func and c'tor:
-	static BmMailMonitor* CreateInstance();
-	BmMailMonitor();
-
-	//	native methods:
-	void HandleMailMonitorMsg( BMessage* msg);
-	void HandleQueryUpdateMsg( BMessage* msg);
-	//
-	void CacheRefToFolder( node_ref& nref, const BmString& fKey);
-
-	// overrides of looper base:
-	void MessageReceived( BMessage* msg);
-
-	static BmMailMonitor* theInstance;
-	
-private:
-	void EntryCreated( BmMailFolder* parent, node_ref& nref,
-							 entry_ref& eref, struct stat& st);
-	void EntryRemoved( BmMailFolder* parent, node_ref& nref);
-	void EntryMoved( BmMailFolder* parent, node_ref& nref,
-						  entry_ref& eref, struct stat& st,
-						  BmMailFolder* oldParent, entry_ref& erefFrom);
-	void EntryChanged( node_ref& nref);
-
-	// When trying to handle B_ATTR_CHANGED events for a mail-ref whose
-	// ref-list isn't loaded, the given info isn't enough to find out the 
-	// folder this mail-ref lives in. In order to remedy this, we cache
-	// mail-ref -> folder entries when we update an attribute ourselves
-	// (currently only MAIL:status):
-	struct FolderInfo {
-		FolderInfo( BmString fk) : folderKey(fk), usedCount(1) {}
-		BmString folderKey;
-		int usedCount;
-	};
-	typedef map<BmString, FolderInfo> CachedRefToFolderMap;
-	CachedRefToFolderMap mCachedRefToFolderMap;
-
-	int32 mCounter;
-
-	// Hide copy-constructor and assignment:
-	BmMailMonitor( const BmMailMonitor&);
-	BmMailMonitor operator=( const BmMailMonitor&);
-};
-
+class BmMailMonitor;
 class BmMailRef;
 /*------------------------------------------------------------------------------*\
 	BmMailFolderList
@@ -105,7 +54,7 @@ class IMPEXPBMMAILKIT BmMailFolderList : public BmListModel {
 	typedef BmListModel inherited;
 
 	friend class BmMailFolder;
-	friend BmMailMonitor;
+	friend class BmMailMonitorWorker;
 
 	// archival-fieldnames:
 	static const char* const MSG_MAILBOXMTIME;
@@ -166,7 +115,5 @@ private:
 };
 
 #define TheMailFolderList BmMailFolderList::theInstance
-
-#define TheMailMonitor BmMailMonitor::theInstance
 
 #endif

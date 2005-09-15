@@ -37,6 +37,7 @@
 #include "BmLogHandler.h"
 #include "BmMail.h"
 #include "BmMailFolderList.h"
+#include "BmMailMonitor.h"
 #include "BmMailRef.h"
 #include "BmMailRefList.h"
 #include "BmPrefs.h"
