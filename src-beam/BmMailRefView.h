@@ -48,6 +48,15 @@ enum {
 						// inside a window of it's own).
 };
 
+struct BmDateWidthAdjuster
+{
+	BmDateWidthAdjuster(CLVEasyItem*);
+	const char* operator() (int32 colIdx, time_t utc);
+	BmString dateStr;
+	float cachedWidth;
+	CLVEasyItem* item;
+};
+
 /*------------------------------------------------------------------------------*\
 	BmMailRefItem
 		-	
@@ -80,8 +89,8 @@ public:
 	const char* GetUserText( int32 column_index, float column_width) const;
 
 private:
-	mutable BmString mWhenString;
-	mutable BmString mWhenCreatedString;
+	mutable BmDateWidthAdjuster mWhenStringAdjuster;
+	mutable BmDateWidthAdjuster mWhenCreatedStringAdjuster;
 
 	// Hide copy-constructor and assignment:
 	BmMailRefItem( const BmMailRefItem&);
@@ -90,6 +99,7 @@ private:
 
 class BmMailView;
 class BmMenuController;
+
 /*------------------------------------------------------------------------------*\
 	BmMailRefView
 		-	

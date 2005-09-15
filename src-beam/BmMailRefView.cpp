@@ -30,6 +30,7 @@
 
 #include <MenuItem.h>
 #include <PopUpMenu.h>
+#include <Region.h>
 #include <Window.h>
 
 #include "BubbleHelper.h"
@@ -94,6 +95,65 @@ enum Columns {
 };
 
 /********************************************************************************\
+	BmDateWidthAdjuster
+\********************************************************************************/
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+BmDateWidthAdjuster::BmDateWidthAdjuster(CLVEasyItem* i)
+	:	cachedWidth(0)
+	,	item(i)
+{
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+const char* BmDateWidthAdjuster::operator() (int32 colIdx, time_t utc)
+{
+	CLVColumn* column = item->ColumnAt(colIdx);
+	if (!column)
+		return "";
+	if (column->Width() != cachedWidth) {
+		// TODO: replace these formats with localized versions!
+		if (ThePrefs->GetBool( "UseSwatchTimeInRefView", false)) {
+			const char* formats[] = {
+				"%A, %Y-%m-%d @",
+				"%a, %Y-%m-%d @",
+				"%Y-%m-%d @",
+				"%y-%m-%d @",
+				"%y-%m-%d",
+				NULL
+			};
+			for( const char** f = formats; *f; ++f) {
+				dateStr = TimeToSwatchString( utc, *f);
+				if (item->ColumnFitsText(colIdx, dateStr.String()))
+					break;
+			}
+		} else {
+			const char* formats[] = {
+				"%A, %Y-%m-%d %H:%M:%S",
+				"%a, %Y-%m-%d %H:%M:%S",
+				"%a, %Y-%m-%d %H:%M",
+				"%Y-%m-%d %H:%M",
+				"%y-%m-%d %H:%M",
+				"%y-%m-%d",
+				NULL
+			};
+			for( const char** f = formats; *f; ++f) {
+				dateStr = TimeToString( utc, *f);
+				if (item->ColumnFitsText(colIdx, dateStr.String()))
+					break;
+			}
+		}
+		cachedWidth = column->Width();
+	}
+	return dateStr.String();
+}
+
+/********************************************************************************\
 	BmMailRefItem
 \********************************************************************************/
 
@@ -105,6 +165,8 @@ enum Columns {
 BmMailRefItem::BmMailRefItem( ColumnListView* lv, 
 										BmListModelItem* _item)
 	:	inherited( lv, _item)
+	,	mWhenStringAdjuster(this)
+	,	mWhenCreatedStringAdjuster(this)
 {
 }
 
@@ -131,9 +193,13 @@ void BmMailRefItem::UpdateView( BmUpdFlags flags, bool redraw,
 		BmString st = BmString("Mail_") << ref->Status();
 		icon = TheResources->IconByName(st);
 		SetColumnContent( COL_STATUS_I, icon);
-		if (redraw)
+		if (redraw) {
 			updColBitmap = 0xFFFFFFFF;
 							// Bold() may have changed font, need to redraw everything!
+			mWhenStringAdjuster.cachedWidth = 0;
+			mWhenCreatedStringAdjuster.cachedWidth = 0;
+							// trigger re-adjustment of date columns
+		}
 	}
 	if (flags & BmMailRef::UPD_ATTACHMENTS) {
 		if (ref->HasAttachments()) {
@@ -240,47 +306,6 @@ const bigtime_t BmMailRefItem::GetBigtimeValueForColumn( int32 column_index) con
 }
 
 /*------------------------------------------------------------------------------*\
-	FitDateIntoColumn()
-		-	picks apropriate date-formats such that each item fits into the
-			available column space (just as in Tracker).
-\*------------------------------------------------------------------------------*/
-void BmMailRefItem::FitDateIntoColumn(int32 colIdx, time_t utc, 
-												  BmString& dateStr) const 
-{
-	// TODO: replaces these formats with localized versions!
-	if (ThePrefs->GetBool( "UseSwatchTimeInRefView", false)) {
-		const char* formats[] = {
-			"%A, %Y-%m-%d @",
-			"%a, %Y-%m-%d @",
-			"%Y-%m-%d @",
-			"%y-%m-%d @",
-			"%y-%m-%d",
-			NULL
-		};
-		for( const char** f = formats; *f; ++f) {
-			dateStr = TimeToSwatchString( utc, *f);
-			if (ColumnFitsText(colIdx, dateStr.String()))
-				break;
-		}
-	} else {
-		const char* formats[] = {
-			"%A, %Y-%m-%d %H:%M:%S",
-			"%a, %Y-%m-%d %H:%M:%S",
-			"%a, %Y-%m-%d %H:%M",
-			"%Y-%m-%d %H:%M",
-			"%y-%m-%d %H:%M",
-			"%y-%m-%d",
-			NULL
-		};
-		for( const char** f = formats; *f; ++f) {
-			dateStr = TimeToString( utc, *f);
-			if (ColumnFitsText(colIdx, dateStr.String()))
-				break;
-		}
-	}
-}
-
-/*------------------------------------------------------------------------------*\
 	()
 		-	
 \*------------------------------------------------------------------------------*/
@@ -297,8 +322,7 @@ const char* BmMailRefItem::GetUserText(int32 colIdx, float colWidth) const {
 		text = ref->Subject().String();
 		break;
 	case COL_DATE:
-		FitDateIntoColumn( colIdx, ref->When()/(1000*1000), mWhenString);
-		text = mWhenString.String();
+		text = mWhenStringAdjuster( colIdx, ref->When()/(1000*1000));
 		break;
 	case COL_SIZE:
 		text = ref->SizeString().String();
@@ -319,9 +343,7 @@ const char* BmMailRefItem::GetUserText(int32 colIdx, float colWidth) const {
 		text = ref->Name().String();
 		break;
 	case COL_WHEN_CREATED: {
-		FitDateIntoColumn( colIdx, ref->WhenCreated()/(1000*1000), 
-								 mWhenCreatedString);
-		text = mWhenCreatedString.String();
+		text = mWhenCreatedStringAdjuster( colIdx, ref->WhenCreated()/(1000*1000));
 		break;
 	}
 	case COL_TRACKER_NAME:
@@ -490,7 +512,7 @@ void BmMailRefView::ColumnWidthChanged(int32 colIdx, float NewWidth)
 {
 	inherited::ColumnWidthChanged(colIdx, NewWidth);
 	CLVColumn* column = (CLVColumn*)ColumnAt(colIdx);
-	if (!column)
+	if (!column || column->Flags()&(CLV_COLDATA_DATE|CLV_COLDATA_BIGTIME) == 0)
 		return;
 	BRect colBounds = Bounds();
 	colBounds.left = column->ColumnBegin();
@@ -665,52 +687,20 @@ bool BmMailRefView::InitiateDrag( BPoint, int32 index, bool wasSelected) {
 	BmMailRef* ref( refItem->ModelItem());
 	dragMsg.AddString( "be:clip_name", ref->TrackerName());
 	dragMsg.AddString( "be:originator", BmDragId.String());
+	// now we add all selected items to drag-msg:
 	int32 currIdx;
-	// we count the number of selected items:
-	int32 selCount;
-	for( selCount=0; (currIdx=CurrentSelection( selCount))>=0; ++selCount)
-		;
-	BM_LOG2( BM_LogGui, BmString("MailRefView::InitiateDrag() - found ")
-								<<selCount<<" selections");
-	const int32 th=10;
-	BFont font;
-	GetFont( &font);
-	float lineHeight = MAX(TheResources->FontLineHeight( &font),20.0);
-	float baselineOffset = TheResources->FontBaselineOffset( &font);
-	BRect dragRect( 0, 0, 200-1, MIN(selCount,th)*lineHeight-1);
-	BView* dummyView = new BView( dragRect, NULL, B_FOLLOW_NONE, 0);
-	BBitmap* dragImage = new BBitmap( dragRect, B_RGBA32, true);
-	dragImage->AddChild( dummyView);
-	dragImage->Lock();
-	dummyView->SetHighColor( B_TRANSPARENT_COLOR);
-	dummyView->FillRect( dragRect);
-	dummyView->SetDrawingMode( B_OP_ALPHA);
-	dummyView->SetHighColor( ui_color( B_UI_PANEL_TEXT_COLOR));
-	dummyView->SetBlendingMode( B_PIXEL_ALPHA, B_ALPHA_COMPOSITE);
-	// now we add all selected items to drag-image and to drag-msg:
 	for( int32 i=0; (currIdx=CurrentSelection( i))>=0; ++i) {
 		refItem = dynamic_cast<BmMailRefItem*>(ItemAt( currIdx));
 		BmMailRef* ref( refItem->ModelItem());
 		dragMsg.AddRef( "refs", ref->EntryRefPtr());
-		if (i<th) {
-			// add only the first ten selections to drag-image:
-			const BmBitmapHandle* icon = refItem->GetColumnContentBitmap( 0);
-			if (icon && icon->bitmap) {
-				dummyView->DrawBitmapAsync( icon->bitmap, BPoint(0,i*lineHeight));
-			}
-			dummyView->DrawString( ref->Subject().String(), 
-										  BPoint( 20.0, i*lineHeight+baselineOffset));
-		} else if (i==th) {
-			// add an indicator that more items are being dragged than shown:
-			BmString indicator = BmString("(...and ") << selCount-th 
-				<< (selCount-th == 1 ? " more item)" : " more items)");
-			dummyView->DrawString( indicator.String(), 
-										  BPoint( 20.0, i*lineHeight+baselineOffset));
-		}
 		if (i%100==0)
 			BM_LOG2( BM_LogGui, BmString("MailRefView::InitiateDrag() - processing ")<<i<<"th selection");
 	}
-	dragImage->Unlock();
+	vector<int> cols;
+	cols.push_back(0);
+	cols.push_back(11);
+	cols.push_back(4);
+	BBitmap* dragImage = CreateDragImage(cols);
 	DragMessage( &dragMsg, dragImage, B_OP_ALPHA, BPoint( 10.0, 10.0));
 	DeselectAll();
 	BM_LOG2( BM_LogGui, "MailRefView::InitiateDrag() - exit");
