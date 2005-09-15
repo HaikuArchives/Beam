@@ -51,7 +51,13 @@ class IMPEXPBMGUIBASE CLVEasyItem : public CLVListItem
 		virtual void SetColumnContent(int column_index, const char *text);
 		const char* GetColumnContentText(int column_index);
 		const BmBitmapHandle* GetColumnContentBitmap(int column_index);
-		virtual void DrawItemColumn(BRect item_column_rect, int32 column_index);
+
+		virtual void DrawColumn(BRect item_column_rect, int32 column_index, 
+										CLVDrawingContext* ctx);
+
+		virtual CLVDrawingContext* CreateDrawingContext();
+		virtual void SetupDrawingContext(CLVDrawingContext* drawingContext);
+
 		virtual void Update(BView *owner, const BFont *font);
 		static int CompareItems(const CLVListItem* a_Item1, const CLVListItem* a_Item2, int32 KeyColumn, int32 col_flags);
 		virtual const char* GetUserText(int32 column_index, float column_width) const;
@@ -75,7 +81,7 @@ class IMPEXPBMGUIBASE CLVEasyItem : public CLVListItem
 		
 		BList m_column_content;	//List of char* (full content) or BmBitmapHandle*
 
-	protected:
+	private:
 };
 
 

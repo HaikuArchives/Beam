@@ -29,9 +29,15 @@
 //**** PROJECT HEADER FILES AND CLASS NAME DECLARATIONS
 //******************************************************************************************************
 class ColumnListView;
+class CLVColumn;
 class BList;
 
 #include "BmGuiBase.h"
+
+struct CLVDrawingContext
+{
+	virtual ~CLVDrawingContext() {}
+};
 
 //******************************************************************************************************
 //**** CLVListItem CLASS DECLARATION
@@ -51,14 +57,18 @@ class IMPEXPBMGUIBASE CLVListItem : public BListItem
 		virtual	status_t Archive(BMessage* data, bool deep = true) const;
 		*/
 		
-		virtual void DrawItemColumn(BRect item_column_rect, int32 column_index) = 0;	
+		virtual void DrawItem(BView*, BRect itemRect, bool complete);
+		virtual void DrawColumn(BRect item_column_rect, int32 column_index, 
+										CLVDrawingContext* ctx) = 0;
 								//column_index (0-N) is based on the order in which the columns were added
 								//to the ColumnListView, not the display order.  An index of -1 indicates
 								//that the program needs to draw a blank area beyond the last column.  The
 								//main purpose is to allow the highlighting bar to continue all the way to
 								//the end of the ColumnListView, even after the end of the last column.
-		virtual void DrawItem(BView* /*owner*/, BRect itemRect, bool complete);
-								//In general, you don't need or want to override DrawItem().
+
+		virtual CLVDrawingContext* CreateDrawingContext();
+		virtual void SetupDrawingContext(CLVDrawingContext* drawingContext);
+
 		BRect ItemColumnFrame(int32 column_index);
 		float ExpanderShift(int32 column_index);
 		virtual void Update(BView* owner, const BFont* font);
@@ -71,6 +81,7 @@ class IMPEXPBMGUIBASE CLVListItem : public BListItem
 		virtual void ColumnWidthChanged(int32 column_index, float column_width);
 		virtual void FrameChanged(int32 column_index, BRect new_frame);
 		void InvalidateColumn( int32 column_index);
+		CLVColumn* ColumnAt( int32 column_index);
 
 	protected:
 		friend class ColumnListView;

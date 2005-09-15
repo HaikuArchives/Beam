@@ -146,43 +146,85 @@ bool CLVEasyItem::ColumnFitsText(int column_index, const char* text) const
 	fOwner->GetFont(&owner_font);
 	float string_width 
 		= Bold() 
-			? be_bold_font->StringWidth(text)
+			? bm_bold_font.StringWidth(text)
 			: owner_font.StringWidth(text);
 	return offs + string_width <= column->Width();
 }
 
-void CLVEasyItem::DrawItemColumn(BRect item_column_rect, int32 column_index)
+struct CLVEasyItemDrawingContext : public CLVDrawingContext
 {
-	rgb_color color, tinted_color;
-	bool selected = IsSelected();
-	bool striped = ((ColumnListView*)fOwner)->StripedBackground();
-	float offs = striped ? 5.0 : 2.0;
-
-	if(selected) {
-		color = fOwner->ItemSelectColor();
-		tinted_color = fOwner->ItemSelectColorTinted();
-	} else {
-		color = fOwner->LightColumnCol();
-		tinted_color = fOwner->DarkColumnCol();
+	rgb_color backColor, tintedBackColor;
+	BFont textFont, ownerFont;
+	float hOffs, vOffs;
+	bool needToRestoreOwnerFont, striped;
+	ColumnListView* owner;
+	
+	virtual ~CLVEasyItemDrawingContext() {
+		if (needToRestoreOwnerFont)
+			owner->SetFont(&ownerFont);
 	}
-	if (Highlight()) {
-		const float highlight_tint = B_DARKEN_1_TINT;
-		color = tint_color( color, highlight_tint);
-		tinted_color = tint_color( tinted_color, highlight_tint);
-	}
-	fOwner->SetDrawingMode(B_OP_COPY);
+};
 
+CLVDrawingContext* CLVEasyItem::CreateDrawingContext()
+{
+	return new CLVEasyItemDrawingContext;
+}
+
+void CLVEasyItem::SetupDrawingContext(CLVDrawingContext* drawingContext)
+{
+	CLVEasyItemDrawingContext* ctx
+		= dynamic_cast<CLVEasyItemDrawingContext*>(drawingContext);
+	if (ctx) {
+		bool selected = IsSelected();
+		ctx->striped = fOwner->StripedBackground();
+		ctx->hOffs = ctx->striped ? 5.0 : 2.0;
+		ctx->owner = fOwner;
+
+		if(selected) {
+			ctx->backColor = fOwner->ItemSelectColor();
+			ctx->tintedBackColor = fOwner->ItemSelectColorTinted();
+		} else {
+			ctx->backColor = fOwner->LightColumnCol();
+			ctx->tintedBackColor = fOwner->DarkColumnCol();
+		}
+		if (Highlight()) {
+			const float highlight_tint = B_DARKEN_1_TINT;
+			ctx->backColor = tint_color( ctx->backColor, highlight_tint);
+			ctx->tintedBackColor 
+				= tint_color( ctx->tintedBackColor, highlight_tint);
+		}
+		if (Bold()) {
+			ctx->needToRestoreOwnerFont = true;
+			fOwner->GetFont(&ctx->ownerFont);
+			fOwner->SetFont(&bm_bold_font);
+			ctx->textFont = bm_bold_font;
+		} else {
+			ctx->needToRestoreOwnerFont = false;
+			fOwner->GetFont(&ctx->textFont);
+		}
+		font_height fontAttrs;
+		ctx->ownerFont.GetHeight( &fontAttrs);
+		float fontHeight = ceil(fontAttrs.ascent) + ceil(fontAttrs.descent);
+		ctx->vOffs = ceil(fontAttrs.ascent) + (Height()-fontHeight)/2.0;
+	}
+	CLVListItem::SetupDrawingContext(drawingContext);
+}
+
+void CLVEasyItem::DrawColumn(BRect item_column_rect, int32 column_index,
+									  CLVDrawingContext* drawingContext)
+{
+	CLVEasyItemDrawingContext* ctx
+		= dynamic_cast<CLVEasyItemDrawingContext*>(drawingContext);
+	if (!ctx)
+		return;
 	int32 index = fOwner->GetDisplayIndexForColumn( abs(column_index));
 	if (column_index < 0)
 		index = abs(column_index);
-	if (striped && index % 2) {
-		fOwner->SetHighColor( tinted_color);
-		fOwner->SetLowColor( tinted_color);
-	} else {
-		fOwner->SetHighColor( color);
-		fOwner->SetLowColor( color);
-	}
-	fOwner->FillRect( item_column_rect);
+	if (ctx->striped && index % 2)
+		fOwner->SetLowColor( ctx->tintedBackColor);
+	else
+		fOwner->SetLowColor( ctx->backColor);
+	fOwner->FillRect( item_column_rect, B_SOLID_LOW);
 	
 	if(column_index < 0)
 		return;
@@ -218,13 +260,6 @@ void CLVEasyItem::DrawItemColumn(BRect item_column_rect, int32 column_index)
 	if(type == CLV_COLTYPE_STATICTEXT || type == CLV_COLTYPE_USERTEXT)
 	{
 		const char* text = NULL;
-
-		BFont owner_font;
-		fOwner->GetFont(&owner_font);
-		if (Bold()) {
-			fOwner->SetFont( be_bold_font);
-		}
-	
 		fOwner->SetHighColor( ui_color( B_UI_DOCUMENT_TEXT_COLOR));
 		if(type == CLV_COLTYPE_STATICTEXT)
 			text = (const char*)m_column_content.ItemAt(column_index);
@@ -233,28 +268,17 @@ void CLVEasyItem::DrawItemColumn(BRect item_column_rect, int32 column_index)
 
 		if(text != NULL)
 		{
-			font_height fontAttrs;
-			BFont curr_font;
-			fOwner->GetFont(&curr_font);
-			curr_font.GetHeight( &fontAttrs);
-			float fontHeight = ceil(fontAttrs.ascent) + ceil(fontAttrs.descent);
-			float text_offset = ceil(fontAttrs.ascent) + (Height()-fontHeight)/2.0;
 			BPoint draw_point;
 			if(!right_justify)
-				draw_point.Set(item_column_rect.left+offs,item_column_rect.top+text_offset);
+				draw_point.Set(item_column_rect.left+ctx->hOffs,
+									item_column_rect.top+ctx->vOffs);
 			else
 			{
-				float string_width 
-					= Bold() 
-						? be_bold_font->StringWidth(text)
-						: owner_font.StringWidth(text);
-				draw_point.Set(item_column_rect.right-offs-string_width,item_column_rect.top+text_offset);
+				float string_width = ctx->textFont.StringWidth(text);
+				draw_point.Set(item_column_rect.right-ctx->hOffs-string_width,
+									item_column_rect.top+ctx->vOffs);
 			}				
 			fOwner->DrawString(text,draw_point);
-		}
-
-		if (Bold()) {
-			fOwner->SetFont( &owner_font);
 		}
 	}
 	else if(type == CLV_COLTYPE_BITMAP)
@@ -279,7 +303,7 @@ void CLVEasyItem::DrawItemColumn(BRect item_column_rect, int32 column_index)
 			item_column_rect.bottom = item_column_rect.top + (bounds.bottom-bounds.top);
 			fOwner->SetDrawingMode( B_OP_ALPHA);
 			fOwner->SetBlendingMode( B_PIXEL_ALPHA, B_ALPHA_OVERLAY);
-			fOwner->DrawBitmap(bitmap,item_column_rect);
+			fOwner->DrawBitmapAsync(bitmap,item_column_rect);
 			fOwner->SetDrawingMode(B_OP_COPY);
 		}
 	}

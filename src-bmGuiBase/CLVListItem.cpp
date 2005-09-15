@@ -44,6 +44,11 @@ CLVListItem::~CLVListItem()
 { }
 
 
+CLVColumn* CLVListItem::ColumnAt( int32 column_index)
+{
+	return fOwner->ColumnAt(column_index);
+}
+
 BRect CLVListItem::ItemColumnFrame(int32 column_index)
 {
 	BList* ColumnList = &fOwner->fColumnList;
@@ -171,7 +176,16 @@ bool CLVListItem::ExpanderRectContains(BPoint where) {
 	return contains;
 }
 
-void CLVListItem::DrawItem(BView* /*owner*/, BRect itemRect, bool complete)
+CLVDrawingContext* CLVListItem::CreateDrawingContext()
+{ 
+	return NULL;
+}
+
+void CLVListItem::SetupDrawingContext(CLVDrawingContext* drawingContext) 
+{
+}
+
+void CLVListItem::DrawItem(BView*, BRect itemRect, bool complete)
 {
 	BList* DisplayList = &((ColumnListView*)fOwner)->fColumnDisplayList;
 	int32 NumberOfColumns = DisplayList->CountItems();
@@ -186,11 +200,17 @@ void CLVListItem::DrawItem(BView* /*owner*/, BRect itemRect, bool complete)
 		if((ThisColumn->fFlags & CLV_EXPANDER) || ThisColumn->fPushedByExpander)
 			PushMax = ThisColumn->fColumnEnd;
 	}
+
 	BRegion ClippingRegion;
+/*
 	if(!complete)
 		fOwner->GetClippingRegion(&ClippingRegion);
 	else
+*/
 		ClippingRegion.Set(itemRect);
+
+	CLVDrawingContext* ctx = CreateDrawingContext();
+	SetupDrawingContext(ctx);
 	float LastColumnEnd = -1.0;
 
 	//Draw the columns
@@ -212,8 +232,8 @@ void CLVListItem::DrawItem(BView* /*owner*/, BRect itemRect, bool complete)
 			if(ClippingRegion.Intersects(ThisColumnRect))
 			{
 				//Give the programmer a chance to do his kind of highlighting if the item is selected
-				DrawItemColumn(ThisColumnRect,
-					((ColumnListView*)fOwner)->fColumnList.IndexOf(ThisColumn));
+				DrawColumn(ThisColumnRect, fOwner->fColumnList.IndexOf(ThisColumn),
+							  ctx);
 				if(IsSuperItem())
 				{
 					//Draw the expander, clip manually
@@ -247,15 +267,17 @@ void CLVListItem::DrawItem(BView* /*owner*/, BRect itemRect, bool complete)
 			if(Shift > 0.0 && ThisColumnRect.right > PushMax)
 				ThisColumnRect.right = PushMax;
 			if(ThisColumnRect.right >= ThisColumnRect.left && ClippingRegion.Intersects(ThisColumnRect))
-				DrawItemColumn(ThisColumnRect,
-					((ColumnListView*)fOwner)->fColumnList.IndexOf(ThisColumn));
+				DrawColumn(ThisColumnRect, fOwner->fColumnList.IndexOf(ThisColumn),
+							  ctx);
 		}
+
 	}
 	//Fill the area after all the columns (so the select highlight goes all the way across)
 	ThisColumnRect.left = LastColumnEnd + 1.0;
 	ThisColumnRect.right = fOwner->Bounds().right;
 	if(ThisColumnRect.left <= ThisColumnRect.right && ClippingRegion.Intersects(ThisColumnRect))
-		DrawItemColumn(ThisColumnRect,-NumberOfColumns);
+		DrawColumn(ThisColumnRect,-NumberOfColumns, ctx);
+	delete ctx;
 }
 
 
