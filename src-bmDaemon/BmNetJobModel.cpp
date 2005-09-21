@@ -303,15 +303,16 @@ void BmNetJobModel::AuthDigestMD5( const BmString& username,
 		BmString rawResponse = BmString("username=") << '"' << username << '"';
 		rawResponse << ",realm=" << '"' << challengeMap["realm"] << '"';
 		rawResponse << ",nonce=" << '"' << challengeMap["nonce"] << '"';
-		rawResponse	<< ",nc=00000001";
 		char temp[33];
+		srand(system_time());
 		for( int i=0; i<32; ++i)
 			temp[i] = 1+(rand()%254);
-		temp[33] = '\0';
+		temp[32] = '\0';
 		BmString rawCnonce(temp);
 		BmString cnonce;
 		Encode("base64", rawCnonce, cnonce);
 		rawResponse	<< ",cnonce=" << '"' << cnonce << '"';
+		rawResponse	<< ",nc=00000001";
 		rawResponse	<< ",qop=auth";
 		rawResponse	<< ",digest-uri=" << '"' << serviceUri << '"';
 		char sum0[17], hd1[33], hd2[33], hd3[33];
@@ -326,7 +327,7 @@ void BmNetJobModel::AuthDigestMD5( const BmString& username,
 			<< ':' << cnonce << ':' << "auth" << ':' << hd2;
 		MD5Digest((unsigned char*)kd.String(), hd3);
 		rawResponse	<< ",response=" << hd3;
-		rawResponse	<< ",charset=utf-8";
+//		rawResponse	<< ",charset=utf-8";
 		rawResponse	<< ",maxbuf=65535";
 		BM_LOG2( mLogType, BmString("response:\n") << rawResponse);
 		BmString tags = BmBase64Encoder::nTagOnSingleLine;
