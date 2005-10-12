@@ -59,7 +59,10 @@ BetterScrollView::BetterScrollView(minimax minmax, BView *target,
 		}
 		// ...and finally move and resize the v-scroller, too:
 		if (mVScroller) {
-			mVScroller->MoveBy( 0.0, -1.0);
+			float hOffs = Bounds().right - B_V_SCROLL_BAR_WIDTH - 1
+						- mVScroller->Frame().left;
+				// workaround for difference between Zeta 1.0.1 and older versions
+			mVScroller->MoveBy( hOffs, -1.0);
 			mVScroller->ResizeBy( 0.0, 2.0);
 		}
 	} else {
