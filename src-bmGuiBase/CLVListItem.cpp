@@ -202,11 +202,9 @@ void CLVListItem::DrawItem(BView*, BRect itemRect, bool complete)
 	}
 
 	BRegion ClippingRegion;
-/*
 	if(!complete)
 		fOwner->GetClippingRegion(&ClippingRegion);
 	else
-*/
 		ClippingRegion.Set(itemRect);
 
 	CLVDrawingContext* ctx = CreateDrawingContext();
