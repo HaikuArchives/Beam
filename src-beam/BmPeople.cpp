@@ -42,6 +42,7 @@
 using namespace regexx;
 
 #include "BmLogHandler.h"
+#include "BmMailHeader.h"
 #include "BmPeople.h"
 #include "BmPrefs.h"
 #include "BmStorageUtil.h"
@@ -166,11 +167,17 @@ bool BmPerson::HasEmail( const BmString& em) const {
 	GenerateMailAddr()
 		-	
 \*------------------------------------------------------------------------------*/
-BmString BmPerson::GenerateMailAddr( const BmString& name, const BmString& email) {
+BmString BmPerson::GenerateMailAddr( const BmString& name, 
+												 const BmString& email,
+												 const BmString& nick) {
+	BmString addr;
 	if (name.Length() > 0)
-		return BmString("\"") << name << "\" <" << email << ">";
+		addr = BmAddress::QuotedPhrase(name) << " <" << email << ">";
 	else
-		return email;
+		addr = email;
+	if (nick.Length() > 0)
+		addr << " (" << nick << ")";
+	return addr;
 }
 
 /*------------------------------------------------------------------------------*\

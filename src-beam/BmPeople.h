@@ -42,6 +42,7 @@
 #include <Looper.h>
 #include <Query.h>
 
+#include "BmBasics.h"
 #include "BmDataModel.h"
 
 class BMenu;
@@ -89,7 +90,8 @@ public:
 	void AddToAllPeopleMap( BmPersonMap& allPeopleMap) const;
 	//
 	static BmString GenerateMailAddr( const BmString& name, 
-												 const BmString& email);
+												 const BmString& email,
+												 const BmString& nick=BM_DEFAULT_STRING);
 
 	bool AddEmail( const BmString& em);
 	bool CreateNewEmail( const BmString &em);
@@ -101,6 +103,9 @@ public:
 	inline const entry_ref& EntryRef() const
 													{ return mEntryRef; }
 	inline const BmString& Name() const	{ return mName; }
+	inline const BmStringVect& Emails() const	
+													{ return mEmails; }
+	inline const BmString& Nick() const	{ return mNick; }
 
 	// setters:
 
