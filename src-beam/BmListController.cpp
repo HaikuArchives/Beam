@@ -175,6 +175,7 @@ BmListViewController::BmListViewController( BRect rect,
 	,	mPulsedScrollRunner( NULL)
 	,	mPulsedScrollStep( 0)
 	,	mDragBetweenItems( false)
+	,	mIsHidden(IsHidden())
 {
 	float minHeight
 		= hierarchical
@@ -1052,13 +1053,34 @@ void BmListViewController::StartJob( BmJobModel* model, bool startInNewThread,
 }
 
 /*------------------------------------------------------------------------------*\
+	FrameResized()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmListViewController::FrameResized(float width, float height)
+{
+	inherited::FrameResized(width, height);
+	// track showing/hiding of view and add/drop view-items for model 
+	// accordingly:
+	if (DataModel()) {
+		if (mIsHidden) {
+			if (!IsHidden())
+				JobIsDone(true);
+		} else {
+			if (IsHidden())
+				MakeEmpty();
+		}
+	}
+	mIsHidden = IsHidden();
+}
+
+/*------------------------------------------------------------------------------*\
 	JobIsDone( completed)
 		-	Hook function that is called whenever the jobmodel associated to this 
 			controller indicates that it is done (meaning: the list has been 
 			fetched and is now ready to be displayed).
 \*------------------------------------------------------------------------------*/
 void BmListViewController::JobIsDone( bool completed) {
-	if (completed) {
+	if (completed && !IsHidden()) {
 		AddAllModelItems();
 	} else {
 		UpdateCaption( "");
