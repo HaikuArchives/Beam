@@ -91,9 +91,9 @@ public:
 	inline const BmString& AddrSpec() const
 													{ return mAddrSpec; }
 
-private:
+	static BmString QuotedPhrase(const BmString& phrase);
 
-	BmString QuotedPhrase() const;
+private:
 
 	bool mInitOK;
 	BmString mPhrase;

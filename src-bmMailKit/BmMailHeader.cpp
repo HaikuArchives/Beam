@@ -140,14 +140,14 @@ bool BmAddress::SetTo( const BmString& fullText) {
 	QuotedPhrase()
 		-	returns the given phrase quoted if neccessary
 \*------------------------------------------------------------------------------*/
-BmString BmAddress::QuotedPhrase() const {
+BmString BmAddress::QuotedPhrase(const BmString& phrase) {
 	// quote the phrase if it contains "dangerous" characters:
 	BmString unsafeChars(",:;<>()\"");
-	size_t lenOk = strcspn( mPhrase.String(), unsafeChars.String());
-	if (lenOk < (size_t)mPhrase.Length())
-		return BmString("\"") << mPhrase << "\"";
+	size_t lenOk = strcspn( phrase.String(), unsafeChars.String());
+	if (lenOk < (size_t)phrase.Length())
+		return BmString("\"") << phrase << "\"";
 	else
-		return mPhrase;
+		return phrase;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -157,7 +157,7 @@ BmString BmAddress::QuotedPhrase() const {
 const BmString& BmAddress::AddrString() const {
 	mAddrString.Truncate(0);
 	if (mPhrase.Length()) {
-		mAddrString = QuotedPhrase() + " <" + mAddrSpec + ">";
+		mAddrString = QuotedPhrase(mPhrase) + " <" + mAddrSpec + ">";
 	} else
 		mAddrString = mAddrSpec;
 	return mAddrString;
@@ -185,7 +185,7 @@ void BmAddress::ConstructRawText( BmString& header, const BmString& charset,
 		= ConvertUTF8ToHeaderPart( mAddrSpec, charset, false, fieldNameLength);
 	if (mPhrase.Length()) {
 		BmString convertedPhrase 
-			= ConvertUTF8ToHeaderPart( QuotedPhrase(), charset, true, 
+			= ConvertUTF8ToHeaderPart( QuotedPhrase(mPhrase), charset, true, 
 												fieldNameLength);
 		if (convertedPhrase.Length()+convertedAddrSpec.Length()+3 
 				> ThePrefs->GetInt( "MaxLineLen")) {
