@@ -2533,19 +2533,19 @@ BmString::Trim( bool left, bool right) {
 	if (len) {
 		char* buf = LockBuffer( len);
 		char* start = buf;
-		char* end = start+len-1;
+		char* end = start+len;
 		if (left)
 			while( isspace(*start))
 				start++;
 		if (right)
-			while( end>start && isspace(*end))
+			while( end>start && isspace(*(end-1)))
 				end--;
 		if (*start==0 || end==buf) {
 			// string contains whitespace only, we throw it away:
 			*buf = 0;
 			len = 0;
 		} else {
-			len = end-start+1;
+			len = end-start;
 			if (len>0)
 				memmove( buf, start, len);
 		}

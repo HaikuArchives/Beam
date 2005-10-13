@@ -118,6 +118,46 @@ StringTest::StringBeamExtensionsTest(void)
 	CPPUNIT_ASSERT( strcmp( trim.String(), "") == 0);
 
 	NextSubTest();
+	trim = "x";
+	trim.Trim(true, true);
+	CPPUNIT_ASSERT( strcmp( trim.String(), "x") == 0);
+
+	NextSubTest();
+	trim = "x";
+	trim.Trim(true, false);
+	CPPUNIT_ASSERT( strcmp( trim.String(), "x") == 0);
+
+	NextSubTest();
+	trim = "x";
+	trim.Trim(false, true);
+	CPPUNIT_ASSERT( strcmp( trim.String(), "x") == 0);
+
+	NextSubTest();
+	trim = "x";
+	trim.Trim(false, false);
+	CPPUNIT_ASSERT( strcmp( trim.String(), "x") == 0);
+
+	NextSubTest();
+	trim = " x ";
+	trim.Trim(true, true);
+	CPPUNIT_ASSERT( strcmp( trim.String(), "x") == 0);
+
+	NextSubTest();
+	trim = " x ";
+	trim.Trim(true, false);
+	CPPUNIT_ASSERT( strcmp( trim.String(), "x ") == 0);
+
+	NextSubTest();
+	trim = " x ";
+	trim.Trim(false, true);
+	CPPUNIT_ASSERT( strcmp( trim.String(), " x") == 0);
+
+	NextSubTest();
+	trim = " x ";
+	trim.Trim(false, false);
+	CPPUNIT_ASSERT( strcmp( trim.String(), " x ") == 0);
+
+	NextSubTest();
 	trim = "xxx";
 	trim.Trim();
 	CPPUNIT_ASSERT( strcmp( trim.String(), "xxx") == 0);
