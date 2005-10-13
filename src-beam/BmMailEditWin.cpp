@@ -27,16 +27,11 @@
 /*                                                                       */
 /*************************************************************************/
 
+#include <cctype>
+
 #include <FilePanel.h>
 #include <MenuItem.h>
 #include <MessageFilter.h>
-
-#if B_ZETA_VERSION > B_ZETA_VERSION_BETA
-#	define ZETA_ONLY(x) x
-#	include <interface/EMailCompleter.h>
-#else
-#	define ZETA_ONLY(x)
-#endif
 
 #include "BmString.h"
 
@@ -73,6 +68,7 @@
 #include "BmSmtpAccount.h"
 #include "BmStorageUtil.h"
 #include "BmTextControl.h"
+#include "BmMailAddrCompleter.h"
 #include "BmToolbarButton.h"
 
 /*------------------------------------------------------------------------------*\
@@ -266,6 +262,7 @@ BmMailEditWin::BmMailEditWin( BmMailRef* mailRef, BmMail* mail)
 	mToControl->AddFilter( CreatePeopleDropMsgFilter( B_SIMPLE_DATA));
 	mCcControl->AddFilter( CreatePeopleDropMsgFilter( B_SIMPLE_DATA));
 	mBccControl->AddFilter( CreatePeopleDropMsgFilter( B_SIMPLE_DATA));
+	new BmMailAddressCompleter( mToControl);
 	if (mail)
 		EditMail( mail);
 	else
@@ -562,12 +559,6 @@ void BmMailEditWin::CreateGUI() {
 	// changed-flag accordingly:	
 	mMailView->BodyPartView()->StartWatching( this, 
 															BM_NTFY_LISTCONTROLLER_MODIFIED);
-
-ZETA_ONLY(
-	mToControl->TextView()->AddFilter(new BEMailCompleter);
-	mCcControl->TextView()->AddFilter(new BEMailCompleter);
-	mBccControl->TextView()->AddFilter(new BEMailCompleter);
-)
 
 	AddChild( dynamic_cast<BView*>(mOuterGroup));
 }
