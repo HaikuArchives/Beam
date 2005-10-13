@@ -175,6 +175,14 @@ void BmJobController::StartJob( BmJobModel* model, bool startInNewThread,
 	AttachModel( model);
 	BmJobModel* jobModel = dynamic_cast<BmJobModel*>( DataModel().Get());
 	if (jobModel) {
+		if (jobModel->IsJobCompleted() 
+		&& jobSpecifier == BmJobModel::BM_DEFAULT_JOB) {
+			BM_LOG2( BM_LogModelController, 
+						BmString("Controller <") << ControllerName() 
+							<< "> avoids already completed job " << ModelName());
+			JobIsDone(true);
+			return;
+		}
 		BM_LOG2( BM_LogModelController, 
 					BmString("Controller <") << ControllerName() 
 						<< "> starts job " << ModelName());
