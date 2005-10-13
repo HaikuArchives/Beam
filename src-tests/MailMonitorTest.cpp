@@ -39,6 +39,7 @@
 
 #include "BmMailFolder.h"
 #include "BmMailFolderList.h"
+#include "BmMailMonitor.h"
 #include "BmMailRef.h"
 #include "BmMailRefList.h"
 #include "BmStorageUtil.h"
