@@ -15,51 +15,50 @@ SubDirSysHdrs /boot/home/config/include/liblayout ;
 LINKFLAGS += -L/boot/home/config/lib ;
 
 # <pe-src>
-StaticLibrary beamInParts.a
-	:  
-		BeamApp.cpp
-		BmBodyPartView.cpp
-		BmGuiRoster.cpp
-		BmGuiUtil.cpp
-		BmJobStatusWin.cpp
-		BmListController.cpp
-		BmLogWindow.cpp
-		BmMailEditWin.cpp
-		BmMailFolderView.cpp
-		BmMailHeaderView.cpp
-		BmMailMover.cpp
-		BmMailRefView.cpp
-		BmMailView.cpp
-		BmMailViewWin.cpp
-		BmMainWindow.cpp
-		BmMenuController.cpp
-		BmPeople.cpp
-		BmPrefsFilterChainView.cpp
-		BmPrefsFilterView.cpp
-		BmPrefsGeneralView.cpp
-		BmPrefsIdentityView.cpp
-		BmPrefsLoggingView.cpp
-		BmPrefsMailConstrView.cpp
-		BmPrefsMailReadView.cpp
-		BmPrefsRecvMailView.cpp
-		BmPrefsSendMailView.cpp
-		BmPrefsShortcutsView.cpp
-		BmPrefsSignatureView.cpp
-		BmPrefsView.cpp
-		BmPrefsWin.cpp
-		BmResources.cpp
-		BmRulerView.cpp
-		BmToolbarButton.cpp
-		BmWindow.cpp
+StaticLibrary beamInParts.a : 
+	BeamApp.cpp
+	BmBodyPartView.cpp
+	BmGuiRoster.cpp
+	BmGuiUtil.cpp
+	BmJobStatusWin.cpp
+	BmListController.cpp
+	BmLogWindow.cpp
+	BmMailEditWin.cpp
+	BmMailFolderView.cpp
+	BmMailHeaderView.cpp
+	BmMailMover.cpp
+	BmMailRefView.cpp
+	BmMailView.cpp
+	BmMailViewWin.cpp
+	BmMainWindow.cpp
+	BmMenuController.cpp
+	BmPeople.cpp
+	BmPrefsFilterChainView.cpp
+	BmPrefsFilterView.cpp
+	BmPrefsGeneralView.cpp
+	BmPrefsIdentityView.cpp
+	BmPrefsLoggingView.cpp
+	BmPrefsMailConstrView.cpp
+	BmPrefsMailReadView.cpp
+	BmPrefsRecvMailView.cpp
+	BmPrefsSendMailView.cpp
+	BmPrefsShortcutsView.cpp
+	BmPrefsSignatureView.cpp
+	BmPrefsView.cpp
+	BmPrefsWin.cpp
+	BmResources.cpp
+	BmRulerView.cpp
+	BmToolbarButton.cpp
+	BmWindow.cpp
 	;
 # </pe-src>
 	
 MakeLocate beamInParts.a : [ FDirName $(OBJECTS_DIR) lib ] ;
 
 # <pe-src>
-Application Beam
-	:  
-		Beam.cpp
+Application Beam : 
+	Beam.cpp
+	BmMailAddrCompleter.cpp
 	: 	
 		beamInParts.a
 		bmBase.so bmRegexx.so bmMailKit.so bmDaemon.so bmGuiBase.so 
