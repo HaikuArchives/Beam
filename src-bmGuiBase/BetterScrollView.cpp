@@ -113,7 +113,7 @@ BetterScrollView::BetterScrollView(minimax minmax, BView *target,
 	}
 	if (svFlags & BM_SV_CAPTION) {
 		if (captionMaxText)
-			mCaptionWidth = be_plain_font->StringWidth(captionMaxText);
+			mCaptionWidth = 10 + be_plain_font->StringWidth(captionMaxText);
 		LT = frame.LeftTop();
 		if (mHScroller) {
 			// a horizontal scrollbar exists, we shrink it to make room 
