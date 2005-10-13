@@ -46,6 +46,12 @@ BmCaption::BmCaption( BRect frame, const char* text)
 {
 	SetViewColor( B_TRANSPARENT_COLOR);
 	SetLowUIColor( B_UI_PANEL_BACKGROUND_COLOR);
+	BFont captionFont( *be_plain_font);
+	float captionFontSize = be_plain_font->Size();
+	if (captionFontSize > 12)
+		captionFontSize = 12;
+	captionFont.SetSize( captionFontSize);
+	SetFont( &captionFont);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -108,13 +114,9 @@ void BmCaption::Draw( BRect updateRect) {
 
 	SetHighColor( ui_color( B_UI_PANEL_TEXT_COLOR));
 	font_height fInfo;
-	BFont captionFont( *be_plain_font);
-	float captionFontSize = be_plain_font->Size();
-	if (captionFontSize > 12)
-		captionFontSize = 12;
-	captionFont.SetSize( captionFontSize);
+	BFont captionFont;
+	GetFont(&captionFont);
 	captionFont.GetHeight( &fInfo);
-	SetFont( &captionFont);
 	float offset = (1+r.Height()-(fInfo.ascent+fInfo.descent))/2.0;
 	float freeWidth = r.Width();
 	if (mHighlight && mHighlightLabel.Length()) {
