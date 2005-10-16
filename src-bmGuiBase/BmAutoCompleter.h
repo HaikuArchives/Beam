@@ -43,12 +43,23 @@ public:
 	class Choice
 	{
 	public:
-		Choice( const BmString& choiceText)
-			:	mText(choiceText)				{}
+		Choice( const BmString& choiceText, const BmString& displayText, 
+				  int32 matchPos, int32 matchLen)
+			:	mText(choiceText)
+			,	mDisplayText(displayText)
+			,	mMatchPos(matchPos)
+			,	mMatchLen(matchLen)			{}
 		virtual ~Choice()						{}
 		const BmString& Text() const		{ return mText; }
+		const BmString& DisplayText() const		
+													{ return mDisplayText; }
+		int32 MatchPos() const				{ return mMatchPos; }
+		int32 MatchLen() const				{ return mMatchLen; }
 	private:
 		BmString mText;
+		BmString mDisplayText;
+		int32 mMatchPos;
+		int32 mMatchLen;
 	};
 
 	class EditView

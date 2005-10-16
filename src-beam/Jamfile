@@ -23,6 +23,7 @@ StaticLibrary beamInParts.a :
 	BmJobStatusWin.cpp
 	BmListController.cpp
 	BmLogWindow.cpp
+	BmMailAddrCompleter.cpp
 	BmMailEditWin.cpp
 	BmMailFolderView.cpp
 	BmMailHeaderView.cpp
@@ -58,7 +59,6 @@ MakeLocate beamInParts.a : [ FDirName $(OBJECTS_DIR) lib ] ;
 # <pe-src>
 Application Beam : 
 	Beam.cpp
-	BmMailAddrCompleter.cpp
 	: 	
 		beamInParts.a
 		bmBase.so bmRegexx.so bmMailKit.so bmDaemon.so bmGuiBase.so 

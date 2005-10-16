@@ -149,6 +149,7 @@ void BmDefaultCompletionStyle::ApplyChoice(bool hideChoices)
 	completedText.Insert(choiceStr, mPatternStartPos);
 
 	mFullEnteredText = completedText;
+	mPatternLength = choiceStr.Length();
 	mEditView->SetEditViewState(completedText, 
 										 mPatternStartPos+choiceStr.Length());
 	if (hideChoices)
@@ -264,6 +265,71 @@ void BmDefaultChoiceView::ListView::MouseDown(BPoint point)
 		BListView::MouseDown(point);
 }
 
+// #pragma mark - BmDefaultChoiceView::ListItem
+/*------------------------------------------------------------------------------*\
+	( )
+		-	
+\*------------------------------------------------------------------------------*/
+BmDefaultChoiceView::ListItem::ListItem(const BmAutoCompleter::Choice* choice)
+	:	BListItem()
+{
+	mPreText = choice->DisplayText();
+	if (choice->MatchLen() > 0) {
+		mPreText.MoveInto(mMatchText, choice->MatchPos(), choice->MatchLen());
+		mPreText.MoveInto(mPostText, choice->MatchPos(), mPreText.Length());
+	}
+}
+
+/*------------------------------------------------------------------------------*\
+	( )
+		-	
+\*------------------------------------------------------------------------------*/
+void BmDefaultChoiceView::ListItem
+::DrawItem(BView* owner, BRect frame, bool complete = false)
+{
+	rgb_color textCol, backCol, matchCol;
+	if (IsSelected()) {
+		textCol = ui_color(B_UI_MENU_SELECTED_ITEM_TEXT_COLOR);
+		backCol = ui_color(B_UI_MENU_SELECTED_BACKGROUND_COLOR);
+		matchCol = BmWeakenColor(B_UI_MENU_SELECTED_BACKGROUND_COLOR, 1);
+	} else {
+		textCol = ui_color(B_UI_DOCUMENT_TEXT_COLOR);
+		backCol = ui_color(B_UI_DOCUMENT_BACKGROUND_COLOR);
+		matchCol = BmWeakenColor(B_UI_DOCUMENT_BACKGROUND_COLOR, 1);
+	}
+	BFont font;
+	font_height fontHeight;
+	owner->GetFont(&font);
+	font.GetHeight(&fontHeight);
+	float xPos = frame.left+1;
+	float yPos = frame.top+fontHeight.ascent;
+	float w;
+	if (mPreText.Length()) {
+		w = owner->StringWidth(mPreText.String());
+		owner->SetLowColor(backCol);
+		owner->FillRect(BRect(xPos, frame.top, xPos+w-1, frame.bottom), 
+							 B_SOLID_LOW);
+		owner->SetHighColor(textCol);
+		owner->DrawString(mPreText.String(), BPoint(xPos, yPos));
+		xPos += w;
+	}
+	if (mMatchText.Length()) {
+		w = owner->StringWidth(mMatchText.String());
+		owner->SetLowColor(matchCol);
+		owner->FillRect(BRect(xPos, frame.top, xPos+w-1, frame.bottom), 
+							 B_SOLID_LOW);
+		owner->DrawString(mMatchText.String(), BPoint(xPos, yPos));
+		xPos += w;
+	}
+	if (mPostText.Length()) {
+		w = owner->StringWidth(mPostText.String());
+		owner->SetLowColor(backCol);
+		owner->FillRect(BRect(xPos, frame.top, xPos+w-1, frame.bottom), 
+							 B_SOLID_LOW);
+		owner->DrawString(mPostText.String(), BPoint(xPos, yPos));
+	}
+}
+
 // #pragma mark - BmDefaultChoiceView
 /*------------------------------------------------------------------------------*\
 	( )
@@ -302,31 +368,6 @@ void BmDefaultChoiceView::SelectChoiceAt(int32 index)
 	}
 }
 
-class BmChoiceItem : public BStringItem
-{
-public:
-	BmChoiceItem(const char* text)
-		: BStringItem(text)
-	{
-	}
-	virtual void DrawItem(BView* owner, BRect frame, bool complete = false)
-	{
-		if (IsSelected()) {
-			BmSetLowUIColor(owner, B_UI_MENU_SELECTED_BACKGROUND_COLOR);
-			BmSetHighUIColor(owner, B_UI_MENU_SELECTED_ITEM_TEXT_COLOR);
-		}
-		if (complete || IsSelected())
-			owner->FillRect(frame, B_SOLID_LOW);
-		BFont font;
-		font_height fontHeight;
-		owner->GetFont(&font);
-		font.GetHeight(&fontHeight);
-		owner->DrawString(Text(), 
-								BPoint(frame.left+1, frame.top+2+fontHeight.ascent));
-	}
-private:
-};
-
 /*------------------------------------------------------------------------------*\
 	( )
 		-	
@@ -348,7 +389,7 @@ void BmDefaultChoiceView::ShowChoices(BmAutoCompleter::CompletionStyle* complete
 	int32 count = choiceModel->CountChoices();
 	for(int32 i=0; i<count; ++i) {
 		mListView->AddItem(
-			new BmChoiceItem(choiceModel->ChoiceAt(i)->Text().String())
+			new ListItem(choiceModel->ChoiceAt(i))
 		);
 	}
 

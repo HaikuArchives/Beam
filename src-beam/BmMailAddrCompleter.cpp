@@ -110,15 +110,37 @@ void BmMailAddressCompleter::MailAddrChoiceModel
 			// email for each person, as otherwise the list may get rather long
 			// (without improving the usefulness a lot).
 			const BmStringVect& emails = person->Emails();
+			int32 pattLen = pattern.Length();
 			for( uint32 e=0; e<emails.size(); ++e) {
-				BmString mailAddr 
-					= BmPerson::GenerateMailAddr(person->Name(), emails[e], 
-														  person->Nick());
-				if (person->Name().ICompare(pattern, pattern.Length()) == 0
-				|| emails[e].ICompare(pattern, pattern.Length()) == 0
-				|| person->Nick().ICompare(pattern, pattern.Length()) == 0
-				|| mailAddr.ICompare(pattern, pattern.Length()) == 0) {
-					mChoicesList.AddItem(new Choice(mailAddr));
+				int32 namePos = 0;
+				int32 emailPos = 0;
+				int32 nickPos = 0;
+				BmString rawAddr, displayAddr;
+				if (person->Name().Length() > 0) {
+					rawAddr = BmAddress::QuotedPhrase(person->Name()) << " <";
+					emailPos = rawAddr.Length();
+					rawAddr << emails[e] << ">";
+				} else {
+					emailPos = 0;
+					rawAddr = emails[e];
+				}
+				displayAddr = rawAddr;
+				if (person->Nick().Length() > 0) {
+					nickPos = rawAddr.Length()+2;
+					displayAddr << " (" << person->Nick() << ")";
+				}
+				if (person->Name().ICompare(pattern, pattLen) == 0)
+					mChoicesList.AddItem(new Choice(rawAddr, displayAddr, namePos, 
+															  pattLen));
+				else if (emails[e].ICompare(pattern, pattLen) == 0)
+					mChoicesList.AddItem(new Choice(rawAddr, displayAddr, emailPos, 
+															  pattLen));
+				else if (person->Nick().ICompare(pattern, pattLen) == 0)
+					mChoicesList.AddItem(new Choice(rawAddr, displayAddr, nickPos, 
+															  pattLen));
+				else if (displayAddr.ICompare(pattern, pattLen) == 0) {
+					mChoicesList.AddItem(new Choice(rawAddr, displayAddr, 0, 
+															  pattLen));
 				}
 			}
 		}

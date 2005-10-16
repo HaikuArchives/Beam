@@ -78,6 +78,7 @@ private:
 class IMPEXPBMGUIBASE BmDefaultChoiceView 
 	: public BmAutoCompleter::ChoiceView
 {
+protected:
 	class ListView : public BListView
 	{
 	public:
@@ -89,6 +90,18 @@ class IMPEXPBMGUIBASE BmDefaultChoiceView
 	private:
 		BmAutoCompleter::CompletionStyle* mCompleter;
 	};
+
+	class ListItem : public BListItem
+	{
+	public:
+		ListItem(const BmAutoCompleter::Choice* choice);
+		virtual void DrawItem(BView* owner, BRect frame, bool complete = false);
+	private:
+		BmString mPreText;
+		BmString mMatchText;
+		BmString mPostText;
+	};
+	
 	
 public:
 	BmDefaultChoiceView();
