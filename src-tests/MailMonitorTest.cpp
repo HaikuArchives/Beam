@@ -66,7 +66,7 @@ MailMonitorTest::tearDown()
 }
 
 
-static const int32 NAPTIME = 10*1000;
+static const int32 NAPTIME = 100*1000;
 							// this may need tweaking if run on slow machine!
 
 /*------------------------------------------------------------------------------*\
