@@ -34,6 +34,7 @@
 #include <stdio.h>
 
 #include <Alert.h>
+#include <Directory.h>
 #include <List.h>
 #include <Locker.h>
 #include <Looper.h>
@@ -149,7 +150,7 @@ private:
 	BList mWatcherInfo;
 
 	uint32 mLoglevels;
-	BDirectory* mAppFolder;
+	BDirectory mLogFolder;
 	int32 mMinFileSize;
 	int32 mMaxFileSize;
 	bool mShowErrorsOnScreen;

@@ -31,9 +31,12 @@
 
 #include <Autolock.h>
 #include <Directory.h>
+#include <Entry.h>
 #include <File.h>
+#include <FindDirectory.h>
 #include <MessageQueue.h>
 #include <Messenger.h>
+#include <Path.h>
 
 #include "BmBasics.h"
 #include "BmLogHandler.h"
@@ -186,12 +189,26 @@ BmLogHandler* BmLogHandler::CreateInstance( uint32 logLevels,
 	constructor
 		-	initializes StopWatch()
 \*------------------------------------------------------------------------------*/
-BmLogHandler::BmLogHandler( uint32 logLevels, node_ref* appFolder)
+BmLogHandler::BmLogHandler( uint32 logLevels, node_ref* appFolderNodeRef)
 	:	StopWatch( "Beam_watch", true)
-	,	mLocker("beam_loghandler")
+	,	mLocker( "beam_loghandler")
 	,	mLoglevels( logLevels)
-	,	mAppFolder( new BDirectory( appFolder))
 {
+	BPath logPath;
+	if (find_directory( B_COMMON_LOG_DIRECTORY, &logPath, true) == B_OK) {
+		mLogFolder.SetTo(logPath.Path());
+		if (!mLogFolder.Contains("beam")) {
+			// try to move old logs-folder from app-folder to /var/log:
+			BDirectory appFolder(appFolderNodeRef);
+			if (appFolder.Contains("logs")) {
+				// ok, logs-folder exists at old place, we move to /var/log/beam:
+				BPath oldLogPath(&appFolder, "logs");
+				BmString mvCmd = BmString("mv ") << oldLogPath.Path() << " " 
+										<< logPath.Path() << "/" << "beam";
+				system(mvCmd.String());
+			}
+		}
+	}
 }
 
 /*------------------------------------------------------------------------------*\
@@ -206,7 +223,6 @@ BmLogHandler::~BmLogHandler() {
 		looper->Quit();
 	}
 	mActiveLogs.MakeEmpty();
-	delete mAppFolder;
 	TheLogHandler = NULL;
 }
 
@@ -260,8 +276,8 @@ BmLogHandler::WatcherInfoFor( const BmString &logname) {
 BmLogHandler::BmLogfile* BmLogHandler::FindLogfile( const BmString &ln) {
 	BmString logFolderName 
 		= BeamInTestMode
-			? "logs_test"					// use another log-folder in testmode
-			: "logs";
+			? "beam_test"					// use another log-folder in testmode
+			: "beam";
 	BAutolock lock( mLocker);
 	if (!lock.IsLocked())
 		throw BM_runtime_error("LogToFile(): Unable to get lock on loghandler");
@@ -270,9 +286,9 @@ BmLogHandler::BmLogfile* BmLogHandler::FindLogfile( const BmString &ln) {
 	BmLogfile* log = LogfileFor( logname);
 	if (!log) {
 		// logfile doesn't exists, so we create it:
-		mAppFolder->CreateDirectory( logFolderName.String(), NULL);
+		mLogFolder.CreateDirectory( logFolderName.String(), NULL);
 						// ensure that the logs-folder exists
-		BFile* logfile = new BFile( mAppFolder, name.String(),
+		BFile* logfile = new BFile( &mLogFolder, name.String(),
 											 B_READ_WRITE|B_CREATE_FILE|B_OPEN_AT_END);
 		if (logfile->InitCheck() != B_OK)
 			throw BM_runtime_error( BmString("Unable to open logfile ") << name);
