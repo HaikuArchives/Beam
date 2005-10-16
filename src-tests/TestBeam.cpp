@@ -216,21 +216,22 @@ int32 StartTests( void* args) {
 		if (!access( testPath.String(), R_OK)) {
 			HaveTestdata = true;
 			chdir( testPath.String());
+			// now remove old test-mailbox and replace by freshly unzipped archive:
+			static char buf[1024];
+			BmString currPath = getcwd( buf, 1024);
+			CPPUNIT_ASSERT( currPath.FindFirst( "beam_testdata") >= 0);
+									// make sure we have correct path, we *don't* want
+									// to make a rm -rf on a wrong path...
+			system( "rm -rf >/dev/null mail");
+			system( "unzip -o >/dev/null mail.zip");
+
+			// use a different mailbox if in test-mode:
+			ThePrefs->SetString( "MailboxPath", testPath+"/mail");
+			ThePrefs->SetupMailboxVolume();
+		} else {
+			fprintf(stderr, "beam_testdata-folder wasn't found, skipping MailMonitor-tests\n");
 		}
 	
-		// now remove old test-mailbox and replace by freshly unzipped archive:
-		static char buf[1024];
-		BmString currPath = getcwd( buf, 1024);
-		CPPUNIT_ASSERT( currPath.FindFirst( "beam_testdata") >= 0);
-								// make sure we have correct path, we *don't* want
-								// to make a rm -rf on a wrong path...
-		system( "rm -rf >/dev/null mail");
-		system( "unzip -o >/dev/null mail.zip");
-
-		// use a different mailbox if in test-mode:
-		ThePrefs->SetString( "MailboxPath", testPath+"/mail");
-		ThePrefs->SetupMailboxVolume();
-		
 		// allow app to start running...
 		testApp->StartupLocker()->Unlock();
 		snooze( 200*1000);
@@ -242,7 +243,8 @@ int32 StartTests( void* args) {
 		// we use only statically linked tests since linking each test against
 		// Beam_in_Parts.a would yield large binaries for each test, no good!
 		shell.AddSuite( CreateBmBaseTestSuite() );
-		shell.AddSuite( CreateMailTrackerTestSuite() );
+		if (HaveTestdata)
+			shell.AddSuite( CreateMailTrackerTestSuite() );
 		shell.AddSuite( CreateMailParserTestSuite() );
 		shell.AddSuite( CreateFilterAddonsTestSuite() );
 	
