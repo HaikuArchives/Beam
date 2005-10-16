@@ -171,12 +171,12 @@ BmString BmPerson::GenerateMailAddr( const BmString& name,
 												 const BmString& email,
 												 const BmString& nick) {
 	BmString addr;
+	if (nick.Length() > 0)
+		addr << "(" << nick << ") ";
 	if (name.Length() > 0)
 		addr = BmAddress::QuotedPhrase(name) << " <" << email << ">";
 	else
 		addr = email;
-	if (nick.Length() > 0)
-		addr << " (" << nick << ")";
 	return addr;
 }
 
@@ -187,11 +187,11 @@ BmString BmPerson::GenerateMailAddr( const BmString& name,
 void BmPerson::AddToNickMap( BmPersonMap& nickMap) const {
 	if (!mIsForeign && mNick.Length() && !mEmails.empty()) {
 		BmPersonInfo& personInfo = nickMap[GenerateSortkeyFor( mNick)];
-		personInfo.AddEmails( mNick, mEmails);
+		personInfo.AddEmails( mName, mEmails);
 		if (personInfo.emails.size() > 1)
 			personInfo.name = mNick;
 		else
-			personInfo.name = GenerateMailAddr( mNick, mEmails[0]);
+			personInfo.name = mNick + ": " + GenerateMailAddr( mName, mEmails[0]);
 	}
 }
 
