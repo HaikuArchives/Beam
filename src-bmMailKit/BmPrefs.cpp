@@ -84,7 +84,14 @@ BmPrefs* BmPrefs::CreateInstance() {
 			BMessage archive;
 			InitDefaults(archive);
 			char name[B_ATTR_NAME_LENGTH];
-			char buf[4096];
+			int bufSize = 4096;
+			char* buf = (char*)malloc(bufSize);
+			if (!buf)
+				BM_THROW_RUNTIME( 
+					BmString("Could not alloc attribute buffer for prefs-file\n\t<")
+						<< prefsFilename << ">\n"
+				);
+			
 			attr_info info;
 			int count = 0;
 			// fetch settings from attributes:
@@ -92,8 +99,11 @@ BmPrefs* BmPrefs::CreateInstance() {
 				if (strncmp(name, "BEOS:", 5) == 0)
 					continue;
 				err = prefsFile.GetAttrInfo(name, &info);
-				if (err == B_OK)
+				if (err == B_OK) {
+					if (bufSize < info.size)
+						buf = (char*)realloc(buf, info.size);
 					err = prefsFile.ReadAttr(name, info.type, 0, buf, info.size);
+				}
 				if (err > 0) {
 					archive.RemoveName(name);
 					err = archive.AddData(name, info.type, buf, info.size);
@@ -106,6 +116,8 @@ BmPrefs* BmPrefs::CreateInstance() {
 					);
 				count++;
 			}
+			free(buf);
+
 			if (!count) {
 				// probably old format (flattened message), so we fall back:
 				if ((err = archive.Unflatten( &prefsFile)) != B_OK)
