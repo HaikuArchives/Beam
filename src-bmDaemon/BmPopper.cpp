@@ -565,20 +565,20 @@ void BmPopper::StateRetrieve() {
 							<< mAnswerText.Length()/duration/1024.0 << "KB/s");
 		}
 		// now create a mail from the received data...
-		BM_LOG3( BM_LogPop, "Creating mail...");
+		BM_LOG2( BM_LogPop, "Creating mail...");
 		BmRef<BmMail> mail = new BmMail( mAnswerText, mPopAccount->Name());
 		if (mail->InitCheck() != B_OK)
 			goto CLEAN_UP;
 		// ...set default folder according to pop-account settings...
 		mail->SetDestFoldername( mPopAccount->HomeFolder());
 		// ...execute mail-filters for this mail...
-		BM_LOG3( BM_LogPop, "...applying filters (in memory)...");
+		BM_LOG2( BM_LogPop, "...applying filters (in memory)...");
 		mail->ApplyInboundFilters();
 		// ...and store mail on disk:
-		BM_LOG3( BM_LogPop, "...storing mail...");
+		BM_LOG2( BM_LogPop, "...storing mail...");
 		if (!mail->Store(false))
 			goto CLEAN_UP;
-		BM_LOG3( BM_LogPop, "...done");
+		BM_LOG2( BM_LogPop, "...done");
 		mPopAccount->MarkUIDAsDownloaded( mMsgUIDs[i]);
 		//	delete the retrieved message if required:
 		if (mPopAccount->DeleteMailFromServer()) {
