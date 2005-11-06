@@ -331,16 +331,17 @@ void BmMailViewWin::MessageReceived( BMessage* msg) {
 												 selectedText.String());
 						be_app_messenger.SendMessage( msg);
 					}
-					if (msg->what == BMM_TRASH
-					|| (ThePrefs->GetBool("CloseViewWinAfterMailAction", true)
-						&& (msg->what == BMM_REDIRECT
-							|| msg->what == BMM_FORWARD_INLINE
-							|| msg->what == BMM_FORWARD_INLINE_ATTACH
-							|| msg->what == BMM_FORWARD_ATTACHED
-							|| msg->what == BMM_REPLY
-							|| msg->what == BMM_REPLY_LIST
-							|| msg->what == BMM_REPLY_ORIGINATOR
-							|| msg->what == BMM_REPLY_ALL))) 
+					if (mMailRefView->IsHidden()
+					&& (msg->what == BMM_TRASH
+						|| (ThePrefs->GetBool("CloseViewWinAfterMailAction", true)
+							&& (msg->what == BMM_REDIRECT
+								|| msg->what == BMM_FORWARD_INLINE
+								|| msg->what == BMM_FORWARD_INLINE_ATTACH
+								|| msg->what == BMM_FORWARD_ATTACHED
+								|| msg->what == BMM_REPLY
+								|| msg->what == BMM_REPLY_LIST
+								|| msg->what == BMM_REPLY_ORIGINATOR
+								|| msg->what == BMM_REPLY_ALL))))
 					{
 						PostMessage( B_QUIT_REQUESTED);
 					}
