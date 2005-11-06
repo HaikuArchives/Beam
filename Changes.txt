@@ -1,6 +1,9 @@
 change-history of Beam:
 		$Id$
 
+xxx, just testing
+
+
 < 2005-08-19: commit, moved tag 'current-devel', release test-050819 >
 
 BmMainWindow:
