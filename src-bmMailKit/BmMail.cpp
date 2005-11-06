@@ -1143,6 +1143,9 @@ bool BmMail::StartJob() {
 		BM_LOG2( BM_LogMailParse, 
 					BmString("...should be reading ") << mailSize << " bytes");
 		char* buf = mailText.LockBuffer( mailSize);
+		if (!buf)
+			throw BM_runtime_error( BmString("Not enough memory for mail from "
+														"file\n\t<") << eref.name << ">");
 		off_t realSize = 0;
 		const size_t blocksize = 65536;
 		for(  int32 offs=0; 
@@ -1170,6 +1173,10 @@ bool BmMail::StartJob() {
 			return false;
 		BM_LOG2( BM_LogMailParse, 
 					BmString("...real size is ") << realSize << " bytes");
+		if (realSize > mailSize)
+			throw BM_runtime_error( BmString("Real size is ") << realSize 
+							<< " bytes but expected size was only " << mailSize 
+							<< " bytes!?!");
 		buf[realSize] = '\0';
 		mailText.UnlockBuffer( realSize);
 		// take care to remove all binary nulls:
