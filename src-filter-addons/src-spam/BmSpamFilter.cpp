@@ -243,14 +243,18 @@ void BmSpamFilter::OsbfClassifier::SpamRelevantMailtextSelector
 	if (mMail->Body()->IsMultiPart())
 		body = FindBodyPartWithHighestSpamRelevance(body.Get());
 	if (body && body->IsText()) {
+		const int32 maxBodySize = 64*1024;
+		int32 bodyLen = MIN(body->DecodedData().Length(), maxBodySize);
+			// use only first 64 KB of text in order to avoid stuffing too much
+			// data from one single mail into our database
 		bool deHtml = mJobSpecs ? mJobSpecs->FindBool("DeHtml") : false;
 		if (deHtml && !body->MimeType().ICompare("text/html")) {
-			BmStringIBuf htmlIn(body->DecodedData());
+			BmStringIBuf htmlIn(body->DecodedData().String(), bodyLen);
 			HtmlRemover htmlRemover(&htmlIn);
 			mDeHtmlBuf.Write(&htmlRemover);
 			inBuf.AddBuffer(mDeHtmlBuf.TheString());
 		} else
-			inBuf.AddBuffer(body->DecodedData());
+			inBuf.AddBuffer(body->DecodedData().String(), bodyLen);
 	}
 }
 
@@ -401,7 +405,7 @@ status_t BmSpamFilter::OsbfClassifier
 		return mStatus;
 	}
 
-	BM_LOG2( BM_LogFilter, BmString("learning feature: ") << BmString( buf, bufLen));
+	BM_LOG3( BM_LogFilter, BmString("learning feature: ") << BmString( buf, bufLen));
 
    // Shift hash value of feature into pipe
    mHashpipe.push_front( strnhash( buf, bufLen));
@@ -624,7 +628,7 @@ status_t BmSpamFilter::OsbfClassifier
 		return mStatus;
 	}
 
-	BM_LOG2( BM_LogFilter, BmString("classifying feature: ") << BmString( buf, bufLen));
+	BM_LOG3( BM_LogFilter, BmString("classifying feature: ") << BmString( buf, bufLen));
 
    // Shift hash value of feature into pipe
    mHashpipe.push_front( strnhash( buf, bufLen));
