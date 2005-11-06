@@ -1,6 +1,8 @@
 change-history of Beam:
 		$Id$
 
+
+
 < 2005-08-19: commit, moved tag 'current-devel', release test-050819 >
 
 BmMainWindow:
@@ -123,6 +125,1315 @@ BmPrefs:
 
 BuildSettings:
 	-	now uses 'pentiumpro' architecture on x86.
+
+< 2005-07-03: commit >
+
+BmMenuControl:
+	-	fixed layouting code such that the vertical size and position always
+		match the ones used by a BmTextControl that has a menu as its label.
+
+BmPrefsFilterView:
+	-	fixed min height being too small for 13pt font.
+
+BmTextControl:
+	-	minor cleanup.
+
+< 2005-07-01: commit >
+
+BmListControllerView, BmMailFolderView, BmMailRefView:
+	-	implemented hierarchical state-info handling, such that a folder inherits
+		the state-info from its parent, but can (explicitly) disconnect from it.
+		This should make setting up the preferred listview layout much easier.
+	-	The default ref-list layout is now much simpler (lots of columns have
+		been hidden).
+
+BmMailEditWin:
+	-	fixed bug with signature not automatically being applied to mail when
+		a new identity is selected.
+
+BmMailFolder:
+	-	now stores info about if the corresponding ref-list's layout is connected
+		to parent or not.
+
+BmMailHeader:
+	-	fixed bug with 'Name'-attribute not being set for outbound mails.
+
+BmMailViewWin:
+	-	added RefListView, such that navigation is possible and independent
+		of main window. The RefListView is hidden by default, but can be shown
+		by means dragging the split-view at the top downwards.
+
+BmPrefs:
+	-	added default shortcuts for the two new menu-cmds 'Previous Message' &
+		'Next Message'.
+
+BmWindow:
+	-	added message filter for scrollwheel events, which redirects these events
+		to the view that currently is under the mouse (suggested by Stephan Aßmus).
+
+ColumnListView:
+	-	fixed drawing artefacts when dragging a window across the view (single-
+		line updates were not handled correctly).
+
+UserResizeSplitView (and several other files):
+	-	added support for auto-hiding a child if the available space is smaller
+		than the child's minimum size.
+
+< 2005-05-30: commit >
+
+BmSpamFilter:
+	-	oops: the three different instances (classify, learn-as-spam and 
+	   learn-as-tofu) all had their own dataset, but only the classify-dataset
+	   was actually changed by prefs. Now there's only one (static) dataset left.
+
+< 2005-05-20: commit >
+
+BmToolbarButton:
+	-	fixed broken support for toolbar backgrounds, which didn't work properly
+		for images that need a certain tile size in horizontal direction.
+
+< 2005-05-18: commit, moved tag 'current-devel' >
+
+BmBodyPartList, BmBodyPartView, BmEncoding, BmMailView:
+	-	use BmMemFiler::StatusText() to redirect the final remaining
+		parsing errors from the error-popup to the ParsingError-collection.
+		Now, parsing errors should never lead to the error-popup being shown.
+
+BmDataModel:
+	-	added simple visitor pattern implementation - ForEachItem().
+
+BmMail, BmMailEditWin, BmMailFolder, BmMailFolderList, BmPopAccount, 
+BmPrefsRecvMailView:
+	-	moved names of system folders from BmMail into BmMailFolder, adjusted
+		references to these folders accordingly.
+
+BmMailFolderView:
+	-	simplified special sorting of system-folders (what did the space-appended
+		names do in here?).
+
+BmMemIO:
+	-	added support for a general status-text to BmMemFilter.
+
+BmRosterBase, BmGuiRoster:
+	-	added support for finding out whether or not an address is known
+		as people file.
+
+BmSpamFilter:
+	-	added support for avoiding mails from known addresses from being
+		seen as SPAM.
+	-	added support for filing unsure SPAM into the 'quarantine'-folder.
+	-	improved behaviour of SpamOMeter sessions.
+
+SpamOMeter:
+	-	changed way how we pass-back success/error information, as exit-code
+		doesn't work for the way SpamOMeter is being called from Beam.
+
+< 2005-05-12: commit >
+
+BeamApp:
+	-	implemented support for importing mail-addresses into people files.
+
+BmMailHeader:
+	-	added methods for counting the number of instances of a specific field.
+	-	added support for accessing a fields value by index (not only first
+		value, as before).
+
+BmMailHeaderView:
+	-	implemented support for importing mail-addresses into people files.
+	-	fixed bug with multiple instances of non-address fields not being
+	 	shown in header-display.
+	-	added support for displaying header-fields only if they have content
+		(appending a ? to the field-name triggers this behavi86.
+
+< 2005-07-03: commit >
+
+BmMenuControl:
+	-	fixed layouting code such that the vertical size and position always
+		match the ones used by a BmTextControl that has a menu as its label.
+
+BmPrefsFilterView:
+	-	fixed min height being too small for 13pt font.
+
+BmTextControl:
+	-	minor cleanup.
+
+< 2005-07-01: commit >
+
+BmListControllerView, BmMailFolderView, BmMailRefView:
+	-	implemented hierarchical state-info handling, such that a folder inherits
+		the state-info from its parent, but can (explicitly) disconnect from it.
+		This should make setting up the preferred listview layout much easier.
+	-	The default ref-list layout is now much simpler (lots of columns have
+		been hidden).
+
+BmMailEditWin:
+	-	fixed bug with signature not automatically being applied to mail when
+		a new identity is selected.
+
+BmMailFolder:
+	-	now stores info about if the corresponding ref-list's layout is connected
+		to parent or not.
+
+BmMailHeader:
+	-	fixed bug with 'Name'-attribute not being set for outbound mails.
+
+BmMailViewWin:
+	-	added RefListView, such that navigation is possible and independent
+		of main window. The RefListView is hidden by default, but can be shown
+		by means dragging the split-view at the top downwards.
+
+BmPrefs:
+	-	added default shortcuts for the two new menu-cmds 'Previous Message' &
+		'Next Message'.
+
+BmWindow:
+	-	added message filter for scrollwheel events, which redirects these events
+		to the view that currently is under the mouse (suggested by Stephan Aßmus).
+
+ColumnListView:
+	-	fixed drawing artefacts when dragging a window across the view (single-
+		line updates were not handled correctly).
+
+UserResizeSplitView (and several other files):
+	-	added support for auto-hiding a child if the available space is smaller
+		than the child's minimum size.
+
+< 2005-05-30: commit >
+
+BmSpamFilter:
+	-	oops: the three different instances (classify, learn-as-spam and 
+	   learn-as-tofu) all had their own dataset, but only the classify-dataset
+	   was actually changed by prefs. Now there's only one (static) dataset left.
+
+< 2005-05-20: commit >
+
+BmToolbarButton:
+	-	fixed broken support for toolbar backgrounds, which didn't work properly
+		for images that need a certain tile size in horizontal direction.
+
+< 2005-05-18: commit, moved tag 'current-devel' >
+
+BmBodyPartList, BmBodyPartView, BmEncoding, BmMailView:
+	-	use BmMemFiler::StatusText() to redirect the final remaining
+		parsing errors from the error-popup to the ParsingError-collection.
+		Now, parsing errors should never lead to the error-popup being shown.
+
+BmDataModel:
+	-	added simple visitor pattern implementation - ForEachItem().
+
+BmMail, BmMailEditWin, BmMailFolder, BmMailFolderList, BmPopAccount, 
+BmPrefsRecvMailView:
+	-	moved names of system folders from BmMail into BmMailFolder, adjusted
+		references to these folders accordingly.
+
+BmMailFolderView:
+	-	simplified special sorting of system-folders (what did the space-appended
+		names do in here?).
+
+BmMemIO:
+	-	added support for a general status-text to BmMemFilter.
+
+BmRosterBase, BmGuiRoster:
+	-	added support for finding out whether or not an address is known
+		as people file.
+
+BmSpamFilter:
+	-	added support for avoiding mails from known addresses from being
+		seen as SPAM.
+	-	added support for filing unsure SPAM into the 'quarantine'-folder.
+	-	improved behaviour of SpamOMeter sessions.
+
+SpamOMeter:
+	-	changed way how we pass-back success/error information, as exit-code
+		doesn't work for the way SpamOMeter is being called from Beam.
+
+< 2005-05-12: commit >
+
+BeamApp:
+	-	implemented support for importing mail-addresses into people files.
+
+BmMailHeader:
+	-	added methods for counting the number of instances of a specific field.
+	-	added support for accessing a fields value by index (not only first
+		value, as before).
+
+BmMailHeaderView:
+	-	implemented support for importing mail-addresses into people files.
+	-	fixed bug with multiple instances of non-address fields not being
+	 	shown in header-display.
+	-	added support for displaying header-fields only if they have content
+		(appending a ? to the field-name triggers this behavi86.
+
+< 2005-07-03: commit >
+
+BmMenuControl:
+	-	fixed layouting code such that the vertical size and position always
+		match the ones used by a BmTextControl that has a menu as its label.
+
+BmPrefsFilterView:
+	-	fixed min height being too small for 13pt font.
+
+BmTextControl:
+	-	minor cleanup.
+
+< 2005-07-01: commit >
+
+BmListControllerView, BmMailFolderView, BmMailRefView:
+	-	implemented hierarchical state-info handling, such that a folder inherits
+		the state-info from its parent, but can (explicitly) disconnect from it.
+		This should make setting up the preferred listview layout much easier.
+	-	The default ref-list layout is now much simpler (lots of columns have
+		been hidden).
+
+BmMailEditWin:
+	-	fixed bug with signature not automatically being applied to mail when
+		a new identity is selected.
+
+BmMailFolder:
+	-	now stores info about if the corresponding ref-list's layout is connected
+		to parent or not.
+
+BmMailHeader:
+	-	fixed bug with 'Name'-attribute not being set for outbound mails.
+
+BmMailViewWin:
+	-	added RefListView, such that navigation is possible and independent
+		of main window. The RefListView is hidden by default, but can be shown
+		by means dragging the split-view at the top downwards.
+
+BmPrefs:
+	-	added default shortcuts for the two new menu-cmds 'Previous Message' &
+		'Next Message'.
+
+BmWindow:
+	-	added message filter for scrollwheel events, which redirects these events
+		to the view that currently is under the mouse (suggested by Stephan Aßmus).
+
+ColumnListView:
+	-	fixed drawing artefacts when dragging a window across the view (single-
+		line updates were not handled correctly).
+
+UserResizeSplitView (and several other files):
+	-	added support for auto-hiding a child if the available space is smaller
+		than the child's minimum size.
+
+< 2005-05-30: commit >
+
+BmSpamFilter:
+	-	oops: the three different instances (classify, learn-as-spam and 
+	   learn-as-tofu) all had their own dataset, but only the classify-dataset
+	   was actually changed by prefs. Now there's only one (static) dataset left.
+
+< 2005-05-20: commit >
+
+BmToolbarButton:
+	-	fixed broken support for toolbar backgrounds, which didn't work properly
+		for images that need a certain tile size in horizontal direction.
+
+< 2005-05-18: commit, moved tag 'current-devel' >
+
+BmBodyPartList, BmBodyPartView, BmEncoding, BmMailView:
+	-	use BmMemFiler::StatusText() to redirect the final remaining
+		parsing errors from the error-popup to the ParsingError-collection.
+		Now, parsing errors should never lead to the error-popup being shown.
+
+BmDataModel:
+	-	added simple visitor pattern implementation - ForEachItem().
+
+BmMail, BmMailEditWin, BmMailFolder, BmMailFolderList, BmPopAccount, 
+BmPrefsRecvMailView:
+	-	moved names of system folders from BmMail into BmMailFolder, adjusted
+		references to these folders accordingly.
+
+BmMailFolderView:
+	-	simplified special sorting of system-folders (what did the space-appended
+		names do in here?).
+
+BmMemIO:
+	-	added support for a general status-text to BmMemFilter.
+
+BmRosterBase, BmGuiRoster:
+	-	added support for finding out whether or not an address is known
+		as people file.
+
+BmSpamFilter:
+	-	added support for avoiding mails from known addresses from being
+		seen as SPAM.
+	-	added support for filing unsure SPAM into the 'quarantine'-folder.
+	-	improved behaviour of SpamOMeter sessions.
+
+SpamOMeter:
+	-	changed way how we pass-back success/error information, as exit-code
+		doesn't work for the way SpamOMeter is being called from Beam.
+
+< 2005-05-12: commit >
+
+BeamApp:
+	-	implemented support for importing mail-addresses into people files.
+
+BmMailHeader:
+	-	added methods for counting the number of instances of a specific field.
+	-	added support for accessing a fields value by index (not only first
+		value, as before).
+
+BmMailHeaderView:
+	-	implemented support for importing mail-addresses into people files.
+	-	fixed bug with multiple instances of non-address fields not being
+	 	shown in header-display.
+	-	added support for displaying header-fields only if they have content
+		(appending a ? to the field-name triggers this behavi86.
+
+< 2005-07-03: commit >
+
+BmMenuControl:
+	-	fixed layouting code such that the vertical size and position always
+		match the ones used by a BmTextControl that has a menu as its label.
+
+BmPrefsFilterView:
+	-	fixed min height being too small for 13pt font.
+
+BmTextControl:
+	-	minor cleanup.
+
+< 2005-07-01: commit >
+
+BmListControllerView, BmMailFolderView, BmMailRefView:
+	-	implemented hierarchical state-info handling, such that a folder inherits
+		the state-info from its parent, but can (explicitly) disconnect from it.
+		This should make setting up the preferred listview layout much easier.
+	-	The default ref-list layout is now much simpler (lots of columns have
+		been hidden).
+
+BmMailEditWin:
+	-	fixed bug with signature not automatically being applied to mail when
+		a new identity is selected.
+
+BmMailFolder:
+	-	now stores info about if the corresponding ref-list's layout is connected
+		to parent or not.
+
+BmMailHeader:
+	-	fixed bug with 'Name'-attribute not being set for outbound mails.
+
+BmMailViewWin:
+	-	added RefListView, such that navigation is possible and independent
+		of main window. The RefListView is hidden by default, but can be shown
+		by means dragging the split-view at the top downwards.
+
+BmPrefs:
+	-	added default shortcuts for the two new menu-cmds 'Previous Message' &
+		'Next Message'.
+
+BmWindow:
+	-	added message filter for scrollwheel events, which redirects these events
+		to the view that currently is under the mouse (suggested by Stephan Aßmus).
+
+ColumnListView:
+	-	fixed drawing artefacts when dragging a window across the view (single-
+		line updates were not handled correctly).
+
+UserResizeSplitView (and several other files):
+	-	added support for auto-hiding a child if the available space is smaller
+		than the child's minimum size.
+
+< 2005-05-30: commit >
+
+BmSpamFilter:
+	-	oops: the three different instances (classify, learn-as-spam and 
+	   learn-as-tofu) all had their own dataset, but only the classify-dataset
+	   was actually changed by prefs. Now there's only one (static) dataset left.
+
+< 2005-05-20: commit >
+
+BmToolbarButton:
+	-	fixed broken support for toolbar backgrounds, which didn't work properly
+		for images that need a certain tile size in horizontal direction.
+
+< 2005-05-18: commit, moved tag 'current-devel' >
+
+BmBodyPartList, BmBodyPartView, BmEncoding, BmMailView:
+	-	use BmMemFiler::StatusText() to redirect the final remaining
+		parsing errors from the error-popup to the ParsingError-collection.
+		Now, parsing errors should never lead to the error-popup being shown.
+
+BmDataModel:
+	-	added simple visitor pattern implementation - ForEachItem().
+
+BmMail, BmMailEditWin, BmMailFolder, BmMailFolderList, BmPopAccount, 
+BmPrefsRecvMailView:
+	-	moved names of system folders from BmMail into BmMailFolder, adjusted
+		references to these folders accordingly.
+
+BmMailFolderView:
+	-	simplified special sorting of system-folders (what did the space-appended
+		names do in here?).
+
+BmMemIO:
+	-	added support for a general status-text to BmMemFilter.
+
+BmRosterBase, BmGuiRoster:
+	-	added support for finding out whether or not an address is known
+		as people file.
+
+BmSpamFilter:
+	-	added support for avoiding mails from known addresses from being
+		seen as SPAM.
+	-	added support for filing unsure SPAM into the 'quarantine'-folder.
+	-	improved behaviour of SpamOMeter sessions.
+
+SpamOMeter:
+	-	changed way how we pass-back success/error information, as exit-code
+		doesn't work for the way SpamOMeter is being called from Beam.
+
+< 2005-05-12: commit >
+
+BeamApp:
+	-	implemented support for importing mail-addresses into people files.
+
+BmMailHeader:
+	-	added methods for counting the number of instances of a specific field.
+	-	added support for accessing a fields value by index (not only first
+		value, as before).
+
+BmMailHeaderView:
+	-	implemented support for importing mail-addresses into people files.
+	-	fixed bug with multiple instances of non-address fields not being
+	 	shown in header-display.
+	-	added support for displaying header-fields only if they have content
+		(appending a ? to the field-name triggers this behavi86.
+
+< 2005-07-03: commit >
+
+BmMenuControl:
+	-	fixed layouting code such that the vertical size and position always
+		match the ones used by a BmTextControl that has a menu as its label.
+
+BmPrefsFilterView:
+	-	fixed min height being too small for 13pt font.
+
+BmTextControl:
+	-	minor cleanup.
+
+< 2005-07-01: commit >
+
+BmListControllerView, BmMailFolderView, BmMailRefView:
+	-	implemented hierarchical state-info handling, such that a folder inherits
+		the state-info from its parent, but can (explicitly) disconnect from it.
+		This should make setting up the preferred listview layout much easier.
+	-	The default ref-list layout is now much simpler (lots of columns have
+		been hidden).
+
+BmMailEditWin:
+	-	fixed bug with signature not automatically being applied to mail when
+		a new identity is selected.
+
+BmMailFolder:
+	-	now stores info about if the corresponding ref-list's layout is connected
+		to parent or not.
+
+BmMailHeader:
+	-	fixed bug with 'Name'-attribute not being set for outbound mails.
+
+BmMailViewWin:
+	-	added RefListView, such that navigation is possible and independent
+		of main window. The RefListView is hidden by default, but can be shown
+		by means dragging the split-view at the top downwards.
+
+BmPrefs:
+	-	added default shortcuts for the two new menu-cmds 'Previous Message' &
+		'Next Message'.
+
+BmWindow:
+	-	added message filter for scrollwheel events, which redirects these events
+		to the view that currently is under the mouse (suggested by Stephan Aßmus).
+
+ColumnListView:
+	-	fixed drawing artefacts when dragging a window across the view (single-
+		line updates were not handled correctly).
+
+UserResizeSplitView (and several other files):
+	-	added support for auto-hiding a child if the available space is smaller
+		than the child's minimum size.
+
+< 2005-05-30: commit >
+
+BmSpamFilter:
+	-	oops: the three different instances (classify, learn-as-spam and 
+	   learn-as-tofu) all had their own dataset, but only the classify-dataset
+	   was actually changed by prefs. Now there's only one (static) dataset left.
+
+< 2005-05-20: commit >
+
+BmToolbarButton:
+	-	fixed broken support for toolbar backgrounds, which didn't work properly
+		for images that need a certain tile size in horizontal direction.
+
+< 2005-05-18: commit, moved tag 'current-devel' >
+
+BmBodyPartList, BmBodyPartView, BmEncoding, BmMailView:
+	-	use BmMemFiler::StatusText() to redirect the final remaining
+		parsing errors from the error-popup to the ParsingError-collection.
+		Now, parsing errors should never lead to the error-popup being shown.
+
+BmDataModel:
+	-	added simple visitor pattern implementation - ForEachItem().
+
+BmMail, BmMailEditWin, BmMailFolder, BmMailFolderList, BmPopAccount, 
+BmPrefsRecvMailView:
+	-	moved names of system folders from BmMail into BmMailFolder, adjusted
+		references to these folders accordingly.
+
+BmMailFolderView:
+	-	simplified special sorting of system-folders (what did the space-appended
+		names do in here?).
+
+BmMemIO:
+	-	added support for a general status-text to BmMemFilter.
+
+BmRosterBase, BmGuiRoster:
+	-	added support for finding out whether or not an address is known
+		as people file.
+
+BmSpamFilter:
+	-	added support for avoiding mails from known addresses from being
+		seen as SPAM.
+	-	added support for filing unsure SPAM into the 'quarantine'-folder.
+	-	improved behaviour of SpamOMeter sessions.
+
+SpamOMeter:
+	-	changed way how we pass-back success/error information, as exit-code
+		doesn't work for the way SpamOMeter is being called from Beam.
+
+< 2005-05-12: commit >
+
+BeamApp:
+	-	implemented support for importing mail-addresses into people files.
+
+BmMailHeader:
+	-	added methods for counting the number of instances of a specific field.
+	-	added support for accessing a fields value by index (not only first
+		value, as before).
+
+BmMailHeaderView:
+	-	implemented support for importing mail-addresses into people files.
+	-	fixed bug with multiple instances of non-address fields not being
+	 	shown in header-display.
+	-	added support for displaying header-fields only if they have content
+		(appending a ? to the field-name triggers this behavi86.
+
+< 2005-07-03: commit >
+
+BmMenuControl:
+	-	fixed layouting code such that the vertical size and position always
+		match the ones used by a BmTextControl that has a menu as its label.
+
+BmPrefsFilterView:
+	-	fixed min height being too small for 13pt font.
+
+BmTextControl:
+	-	minor cleanup.
+
+< 2005-07-01: commit >
+
+BmListControllerView, BmMailFolderView, BmMailRefView:
+	-	implemented hierarchical state-info handling, such that a folder inherits
+		the state-info from its parent, but can (explicitly) disconnect from it.
+		This should make setting up the preferred listview layout much easier.
+	-	The default ref-list layout is now much simpler (lots of columns have
+		been hidden).
+
+BmMailEditWin:
+	-	fixed bug with signature not automatically being applied to mail when
+		a new identity is selected.
+
+BmMailFolder:
+	-	now stores info about if the corresponding ref-list's layout is connected
+		to parent or not.
+
+BmMailHeader:
+	-	fixed bug with 'Name'-attribute not being set for outbound mails.
+
+BmMailViewWin:
+	-	added RefListView, such that navigation is possible and independent
+		of main window. The RefListView is hidden by default, but can be shown
+		by means dragging the split-view at the top downwards.
+
+BmPrefs:
+	-	added default shortcuts for the two new menu-cmds 'Previous Message' &
+		'Next Message'.
+
+BmWindow:
+	-	added message filter for scrollwheel events, which redirects these events
+		to the view that currently is under the mouse (suggested by Stephan Aßmus).
+
+ColumnListView:
+	-	fixed drawing artefacts when dragging a window across the view (single-
+		line updates were not handled correctly).
+
+UserResizeSplitView (and several other files):
+	-	added support for auto-hiding a child if the available space is smaller
+		than the child's minimum size.
+
+< 2005-05-30: commit >
+
+BmSpamFilter:
+	-	oops: the three different instances (classify, learn-as-spam and 
+	   learn-as-tofu) all had their own dataset, but only the classify-dataset
+	   was actually changed by prefs. Now there's only one (static) dataset left.
+
+< 2005-05-20: commit >
+
+BmToolbarButton:
+	-	fixed broken support for toolbar backgrounds, which didn't work properly
+		for images that need a certain tile size in horizontal direction.
+
+< 2005-05-18: commit, moved tag 'current-devel' >
+
+BmBodyPartList, BmBodyPartView, BmEncoding, BmMailView:
+	-	use BmMemFiler::StatusText() to redirect the final remaining
+		parsing errors from the error-popup to the ParsingError-collection.
+		Now, parsing errors should never lead to the error-popup being shown.
+
+BmDataModel:
+	-	added simple visitor pattern implementation - ForEachItem().
+
+BmMail, BmMailEditWin, BmMailFolder, BmMailFolderList, BmPopAccount, 
+BmPrefsRecvMailView:
+	-	moved names of system folders from BmMail into BmMailFolder, adjusted
+		references to these folders accordingly.
+
+BmMailFolderView:
+	-	simplified special sorting of system-folders (what did the space-appended
+		names do in here?).
+
+BmMemIO:
+	-	added support for a general status-text to BmMemFilter.
+
+BmRosterBase, BmGuiRoster:
+	-	added support for finding out whether or not an address is known
+		as people file.
+
+BmSpamFilter:
+	-	added support for avoiding mails from known addresses from being
+		seen as SPAM.
+	-	added support for filing unsure SPAM into the 'quarantine'-folder.
+	-	improved behaviour of SpamOMeter sessions.
+
+SpamOMeter:
+	-	changed way how we pass-back success/error information, as exit-code
+		doesn't work for the way SpamOMeter is being called from Beam.
+
+< 2005-05-12: commit >
+
+BeamApp:
+	-	implemented support for importing mail-addresses into people files.
+
+BmMailHeader:
+	-	added methods for counting the number of instances of a specific field.
+	-	added support for accessing a fields value by index (not only first
+		value, as before).
+
+BmMailHeaderView:
+	-	implemented support for importing mail-addresses into people files.
+	-	fixed bug with multiple instances of non-address fields not being
+	 	shown in header-display.
+	-	added support for displaying header-fields only if they have content
+		(appending a ? to the field-name triggers this behavi86.
+
+< 2005-07-03: commit >
+
+BmMenuControl:
+	-	fixed layouting code such that the vertical size and position always
+		match the ones used by a BmTextControl that has a menu as its label.
+
+BmPrefsFilterView:
+	-	fixed min height being too small for 13pt font.
+
+BmTextControl:
+	-	minor cleanup.
+
+< 2005-07-01: commit >
+
+BmListControllerView, BmMailFolderView, BmMailRefView:
+	-	implemented hierarchical state-info handling, such that a folder inherits
+		the state-info from its parent, but can (explicitly) disconnect from it.
+		This should make setting up the preferred listview layout much easier.
+	-	The default ref-list layout is now much simpler (lots of columns have
+		been hidden).
+
+BmMailEditWin:
+	-	fixed bug with signature not automatically being applied to mail when
+		a new identity is selected.
+
+BmMailFolder:
+	-	now stores info about if the corresponding ref-list's layout is connected
+		to parent or not.
+
+BmMailHeader:
+	-	fixed bug with 'Name'-attribute not being set for outbound mails.
+
+BmMailViewWin:
+	-	added RefListView, such that navigation is possible and independent
+		of main window. The RefListView is hidden by default, but can be shown
+		by means dragging the split-view at the top downwards.
+
+BmPrefs:
+	-	added default shortcuts for the two new menu-cmds 'Previous Message' &
+		'Next Message'.
+
+BmWindow:
+	-	added message filter for scrollwheel events, which redirects these events
+		to the view that currently is under the mouse (suggested by Stephan Aßmus).
+
+ColumnListView:
+	-	fixed drawing artefacts when dragging a window across the view (single-
+		line updates were not handled correctly).
+
+UserResizeSplitView (and several other files):
+	-	added support for auto-hiding a child if the available space is smaller
+		than the child's minimum size.
+
+< 2005-05-30: commit >
+
+BmSpamFilter:
+	-	oops: the three different instances (classify, learn-as-spam and 
+	   learn-as-tofu) all had their own dataset, but only the classify-dataset
+	   was actually changed by prefs. Now there's only one (static) dataset left.
+
+< 2005-05-20: commit >
+
+BmToolbarButton:
+	-	fixed broken support for toolbar backgrounds, which didn't work properly
+		for images that need a certain tile size in horizontal direction.
+
+< 2005-05-18: commit, moved tag 'current-devel' >
+
+BmBodyPartList, BmBodyPartView, BmEncoding, BmMailView:
+	-	use BmMemFiler::StatusText() to redirect the final remaining
+		parsing errors from the error-popup to the ParsingError-collection.
+		Now, parsing errors should never lead to the error-popup being shown.
+
+BmDataModel:
+	-	added simple visitor pattern implementation - ForEachItem().
+
+BmMail, BmMailEditWin, BmMailFolder, BmMailFolderList, BmPopAccount, 
+BmPrefsRecvMailView:
+	-	moved names of system folders from BmMail into BmMailFolder, adjusted
+		references to these folders accordingly.
+
+BmMailFolderView:
+	-	simplified special sorting of system-folders (what did the space-appended
+		names do in here?).
+
+BmMemIO:
+	-	added support for a general status-text to BmMemFilter.
+
+BmRosterBase, BmGuiRoster:
+	-	added support for finding out whether or not an address is known
+		as people file.
+
+BmSpamFilter:
+	-	added support for avoiding mails from known addresses from being
+		seen as SPAM.
+	-	added support for filing unsure SPAM into the 'quarantine'-folder.
+	-	improved behaviour of SpamOMeter sessions.
+
+SpamOMeter:
+	-	changed way how we pass-back success/error information, as exit-code
+		doesn't work for the way SpamOMeter is being called from Beam.
+
+< 2005-05-12: commit >
+
+BeamApp:
+	-	implemented support for importing mail-addresses into people files.
+
+BmMailHeader:
+	-	added methods for counting the number of instances of a specific field.
+	-	added support for accessing a fields value by index (not only first
+		value, as before).
+
+BmMailHeaderView:
+	-	implemented support for importing mail-addresses into people files.
+	-	fixed bug with multiple instances of non-address fields not being
+	 	shown in header-display.
+	-	added support for displaying header-fields only if they have content
+		(appending a ? to the field-name triggers this behavi86.
+
+< 2005-07-03: commit >
+
+BmMenuControl:
+	-	fixed layouting code such that the vertical size and position always
+		match the ones used by a BmTextControl that has a menu as its label.
+
+BmPrefsFilterView:
+	-	fixed min height being too small for 13pt font.
+
+BmTextControl:
+	-	minor cleanup.
+
+< 2005-07-01: commit >
+
+BmListControllerView, BmMailFolderView, BmMailRefView:
+	-	implemented hierarchical state-info handling, such that a folder inherits
+		the state-info from its parent, but can (explicitly) disconnect from it.
+		This should make setting up the preferred listview layout much easier.
+	-	The default ref-list layout is now much simpler (lots of columns have
+		been hidden).
+
+BmMailEditWin:
+	-	fixed bug with signature not automatically being applied to mail when
+		a new identity is selected.
+
+BmMailFolder:
+	-	now stores info about if the corresponding ref-list's layout is connected
+		to parent or not.
+
+BmMailHeader:
+	-	fixed bug with 'Name'-attribute not being set for outbound mails.
+
+BmMailViewWin:
+	-	added RefListView, such that navigation is possible and independent
+		of main window. The RefListView is hidden by default, but can be shown
+		by means dragging the split-view at the top downwards.
+
+BmPrefs:
+	-	added default shortcuts for the two new menu-cmds 'Previous Message' &
+		'Next Message'.
+
+BmWindow:
+	-	added message filter for scrollwheel events, which redirects these events
+		to the view that currently is under the mouse (suggested by Stephan Aßmus).
+
+ColumnListView:
+	-	fixed drawing artefacts when dragging a window across the view (single-
+		line updates were not handled correctly).
+
+UserResizeSplitView (and several other files):
+	-	added support for auto-hiding a child if the available space is smaller
+		than the child's minimum size.
+
+< 2005-05-30: commit >
+
+BmSpamFilter:
+	-	oops: the three different instances (classify, learn-as-spam and 
+	   learn-as-tofu) all had their own dataset, but only the classify-dataset
+	   was actually changed by prefs. Now there's only one (static) dataset left.
+
+< 2005-05-20: commit >
+
+BmToolbarButton:
+	-	fixed broken support for toolbar backgrounds, which didn't work properly
+		for images that need a certain tile size in horizontal direction.
+
+< 2005-05-18: commit, moved tag 'current-devel' >
+
+BmBodyPartList, BmBodyPartView, BmEncoding, BmMailView:
+	-	use BmMemFiler::StatusText() to redirect the final remaining
+		parsing errors from the error-popup to the ParsingError-collection.
+		Now, parsing errors should never lead to the error-popup being shown.
+
+BmDataModel:
+	-	added simple visitor pattern implementation - ForEachItem().
+
+BmMail, BmMailEditWin, BmMailFolder, BmMailFolderList, BmPopAccount, 
+BmPrefsRecvMailView:
+	-	moved names of system folders from BmMail into BmMailFolder, adjusted
+		references to these folders accordingly.
+
+BmMailFolderView:
+	-	simplified special sorting of system-folders (what did the space-appended
+		names do in here?).
+
+BmMemIO:
+	-	added support for a general status-text to BmMemFilter.
+
+BmRosterBase, BmGuiRoster:
+	-	added support for finding out whether or not an address is known
+		as people file.
+
+BmSpamFilter:
+	-	added support for avoiding mails from known addresses from being
+		seen as SPAM.
+	-	added support for filing unsure SPAM into the 'quarantine'-folder.
+	-	improved behaviour of SpamOMeter sessions.
+
+SpamOMeter:
+	-	changed way how we pass-back success/error information, as exit-code
+		doesn't work for the way SpamOMeter is being called from Beam.
+
+< 2005-05-12: commit >
+
+BeamApp:
+	-	implemented support for importing mail-addresses into people files.
+
+BmMailHeader:
+	-	added methods for counting the number of instances of a specific field.
+	-	added support for accessing a fields value by index (not only first
+		value, as before).
+
+BmMailHeaderView:
+	-	implemented support for importing mail-addresses into people files.
+	-	fixed bug with multiple instances of non-address fields not being
+	 	shown in header-display.
+	-	added support for displaying header-fields only if they have content
+		(appending a ? to the field-name triggers this behavi86.
+
+< 2005-07-03: commit >
+
+BmMenuControl:
+	-	fixed layouting code such that the vertical size and position always
+		match the ones used by a BmTextControl that has a menu as its label.
+
+BmPrefsFilterView:
+	-	fixed min height being too small for 13pt font.
+
+BmTextControl:
+	-	minor cleanup.
+
+< 2005-07-01: commit >
+
+BmListControllerView, BmMailFolderView, BmMailRefView:
+	-	implemented hierarchical state-info handling, such that a folder inherits
+		the state-info from its parent, but can (explicitly) disconnect from it.
+		This should make setting up the preferred listview layout much easier.
+	-	The default ref-list layout is now much simpler (lots of columns have
+		been hidden).
+
+BmMailEditWin:
+	-	fixed bug with signature not automatically being applied to mail when
+		a new identity is selected.
+
+BmMailFolder:
+	-	now stores info about if the corresponding ref-list's layout is connected
+		to parent or not.
+
+BmMailHeader:
+	-	fixed bug with 'Name'-attribute not being set for outbound mails.
+
+BmMailViewWin:
+	-	added RefListView, such that navigation is possible and independent
+		of main window. The RefListView is hidden by default, but can be shown
+		by means dragging the split-view at the top downwards.
+
+BmPrefs:
+	-	added default shortcuts for the two new menu-cmds 'Previous Message' &
+		'Next Message'.
+
+BmWindow:
+	-	added message filter for scrollwheel events, which redirects these events
+		to the view that currently is under the mouse (suggested by Stephan Aßmus).
+
+ColumnListView:
+	-	fixed drawing artefacts when dragging a window across the view (single-
+		line updates were not handled correctly).
+
+UserResizeSplitView (and several other files):
+	-	added support for auto-hiding a child if the available space is smaller
+		than the child's minimum size.
+
+< 2005-05-30: commit >
+
+BmSpamFilter:
+	-	oops: the three different instances (classify, learn-as-spam and 
+	   learn-as-tofu) all had their own dataset, but only the classify-dataset
+	   was actually changed by prefs. Now there's only one (static) dataset left.
+
+< 2005-05-20: commit >
+
+BmToolbarButton:
+	-	fixed broken support for toolbar backgrounds, which didn't work properly
+		for images that need a certain tile size in horizontal direction.
+
+< 2005-05-18: commit, moved tag 'current-devel' >
+
+BmBodyPartList, BmBodyPartView, BmEncoding, BmMailView:
+	-	use BmMemFiler::StatusText() to redirect the final remaining
+		parsing errors from the error-popup to the ParsingError-collection.
+		Now, parsing errors should never lead to the error-popup being shown.
+
+BmDataModel:
+	-	added simple visitor pattern implementation - ForEachItem().
+
+BmMail, BmMailEditWin, BmMailFolder, BmMailFolderList, BmPopAccount, 
+BmPrefsRecvMailView:
+	-	moved names of system folders from BmMail into BmMailFolder, adjusted
+		references to these folders accordingly.
+
+BmMailFolderView:
+	-	simplified special sorting of system-folders (what did the space-appended
+		names do in here?).
+
+BmMemIO:
+	-	added support for a general status-text to BmMemFilter.
+
+BmRosterBase, BmGuiRoster:
+	-	added support for finding out whether or not an address is known
+		as people file.
+
+BmSpamFilter:
+	-	added support for avoiding mails from known addresses from being
+		seen as SPAM.
+	-	added support for filing unsure SPAM into the 'quarantine'-folder.
+	-	improved behaviour of SpamOMeter sessions.
+
+SpamOMeter:
+	-	changed way how we pass-back success/error information, as exit-code
+		doesn't work for the way SpamOMeter is being called from Beam.
+
+< 2005-05-12: commit >
+
+BeamApp:
+	-	implemented support for importing mail-addresses into people files.
+
+BmMailHeader:
+	-	added methods for counting the number of instances of a specific field.
+	-	added support for accessing a fields value by index (not only first
+		value, as before).
+
+BmMailHeaderView:
+	-	implemented support for importing mail-addresses into people files.
+	-	fixed bug with multiple instances of non-address fields not being
+	 	shown in header-display.
+	-	added support for displaying header-fields only if they have content
+		(appending a ? to the field-name triggers this behavi86.
+
+< 2005-07-03: commit >
+
+BmMenuControl:
+	-	fixed layouting code such that the vertical size and position always
+		match the ones used by a BmTextControl that has a menu as its label.
+
+BmPrefsFilterView:
+	-	fixed min height being too small for 13pt font.
+
+BmTextControl:
+	-	minor cleanup.
+
+< 2005-07-01: commit >
+
+BmListControllerView, BmMailFolderView, BmMailRefView:
+	-	implemented hierarchical state-info handling, such that a folder inherits
+		the state-info from its parent, but can (explicitly) disconnect from it.
+		This should make setting up the preferred listview layout much easier.
+	-	The default ref-list layout is now much simpler (lots of columns have
+		been hidden).
+
+BmMailEditWin:
+	-	fixed bug with signature not automatically being applied to mail when
+		a new identity is selected.
+
+BmMailFolder:
+	-	now stores info about if the corresponding ref-list's layout is connected
+		to parent or not.
+
+BmMailHeader:
+	-	fixed bug with 'Name'-attribute not being set for outbound mails.
+
+BmMailViewWin:
+	-	added RefListView, such that navigation is possible and independent
+		of main window. The RefListView is hidden by default, but can be shown
+		by means dragging the split-view at the top downwards.
+
+BmPrefs:
+	-	added default shortcuts for the two new menu-cmds 'Previous Message' &
+		'Next Message'.
+
+BmWindow:
+	-	added message filter for scrollwheel events, which redirects these events
+		to the view that currently is under the mouse (suggested by Stephan Aßmus).
+
+ColumnListView:
+	-	fixed drawing artefacts when dragging a window across the view (single-
+		line updates were not handled correctly).
+
+UserResizeSplitView (and several other files):
+	-	added support for auto-hiding a child if the available space is smaller
+		than the child's minimum size.
+
+< 2005-05-30: commit >
+
+BmSpamFilter:
+	-	oops: the three different instances (classify, learn-as-spam and 
+	   learn-as-tofu) all had their own dataset, but only the classify-dataset
+	   was actually changed by prefs. Now there's only one (static) dataset left.
+
+< 2005-05-20: commit >
+
+BmToolbarButton:
+	-	fixed broken support for toolbar backgrounds, which didn't work properly
+		for images that need a certain tile size in horizontal direction.
+
+< 2005-05-18: commit, moved tag 'current-devel' >
+
+BmBodyPartList, BmBodyPartView, BmEncoding, BmMailView:
+	-	use BmMemFiler::StatusText() to redirect the final remaining
+		parsing errors from the error-popup to the ParsingError-collection.
+		Now, parsing errors should never lead to the error-popup being shown.
+
+BmDataModel:
+	-	added simple visitor pattern implementation - ForEachItem().
+
+BmMail, BmMailEditWin, BmMailFolder, BmMailFolderList, BmPopAccount, 
+BmPrefsRecvMailView:
+	-	moved names of system folders from BmMail into BmMailFolder, adjusted
+		references to these folders accordingly.
+
+BmMailFolderView:
+	-	simplified special sorting of system-folders (what did the space-appended
+		names do in here?).
+
+BmMemIO:
+	-	added support for a general status-text to BmMemFilter.
+
+BmRosterBase, BmGuiRoster:
+	-	added support for finding out whether or not an address is known
+		as people file.
+
+BmSpamFilter:
+	-	added support for avoiding mails from known addresses from being
+		seen as SPAM.
+	-	added support for filing unsure SPAM into the 'quarantine'-folder.
+	-	improved behaviour of SpamOMeter sessions.
+
+SpamOMeter:
+	-	changed way how we pass-back success/error information, as exit-code
+		doesn't work for the way SpamOMeter is being called from Beam.
+
+< 2005-05-12: commit >
+
+BeamApp:
+	-	implemented support for importing mail-addresses into people files.
+
+BmMailHeader:
+	-	added methods for counting the number of instances of a specific field.
+	-	added support for accessing a fields value by index (not only first
+		value, as before).
+
+BmMailHeaderView:
+	-	implemented support for importing mail-addresses into people files.
+	-	fixed bug with multiple instances of non-address fields not being
+	 	shown in header-display.
+	-	added support for displaying header-fields only if they have content
+		(appending a ? to the field-name triggers this behavi86.
+
+< 2005-07-03: commit >
+
+BmMenuControl:
+	-	fixed layouting code such that the vertical size and position always
+		match the ones used by a BmTextControl that has a menu as its label.
+
+BmPrefsFilterView:
+	-	fixed min height being too small for 13pt font.
+
+BmTextControl:
+	-	minor cleanup.
+
+< 2005-07-01: commit >
+
+BmListControllerView, BmMailFolderView, BmMailRefView:
+	-	implemented hierarchical state-info handling, such that a folder inherits
+		the state-info from its parent, but can (explicitly) disconnect from it.
+		This should make setting up the preferred listview layout much easier.
+	-	The default ref-list layout is now much simpler (lots of columns have
+		been hidden).
+
+BmMailEditWin:
+	-	fixed bug with signature not automatically being applied to mail when
+		a new identity is selected.
+
+BmMailFolder:
+	-	now stores info about if the corresponding ref-list's layout is connected
+		to parent or not.
+
+BmMailHeader:
+	-	fixed bug with 'Name'-attribute not being set for outbound mails.
+
+BmMailViewWin:
+	-	added RefListView, such that navigation is possible and independent
+		of main window. The RefListView is hidden by default, but can be shown
+		by means dragging the split-view at the top downwards.
+
+BmPrefs:
+	-	added default shortcuts for the two new menu-cmds 'Previous Message' &
+		'Next Message'.
+
+BmWindow:
+	-	added message filter for scrollwheel events, which redirects these events
+		to the view that currently is under the mouse (suggested by Stephan Aßmus).
+
+ColumnListView:
+	-	fixed drawing artefacts when dragging a window across the view (single-
+		line updates were not handled correctly).
+
+UserResizeSplitView (and several other files):
+	-	added support for auto-hiding a child if the available space is smaller
+		than the child's minimum size.
+
+< 2005-05-30: commit >
+
+BmSpamFilter:
+	-	oops: the three different instances (classify, learn-as-spam and 
+	   learn-as-tofu) all had their own dataset, but only the classify-dataset
+	   was actually changed by prefs. Now there's only one (static) dataset left.
+
+< 2005-05-20: commit >
+
+BmToolbarButton:
+	-	fixed broken support for toolbar backgrounds, which didn't work properly
+		for images that need a certain tile size in horizontal direction.
+
+< 2005-05-18: commit, moved tag 'current-devel' >
+
+BmBodyPartList, BmBodyPartView, BmEncoding, BmMailView:
+	-	use BmMemFiler::StatusText() to redirect the final remaining
+		parsing errors from the error-popup to the ParsingError-collection.
+		Now, parsing errors should never lead to the error-popup being shown.
+
+BmDataModel:
+	-	added simple visitor pattern implementation - ForEachItem().
+
+BmMail, BmMailEditWin, BmMailFolder, BmMailFolderList, BmPopAccount, 
+BmPrefsRecvMailView:
+	-	moved names of system folders from BmMail into BmMailFolder, adjusted
+		references to these folders accordingly.
+
+BmMailFolderView:
+	-	simplified special sorting of system-folders (what did the space-appended
+		names do in here?).
+
+BmMemIO:
+	-	added support for a general status-text to BmMemFilter.
+
+BmRosterBase, BmGuiRoster:
+	-	added support for finding out whether or not an address is known
+		as people file.
+
+BmSpamFilter:
+	-	added support for avoiding mails from known addresses from being
+		seen as SPAM.
+	-	added support for filing unsure SPAM into the 'quarantine'-folder.
+	-	improved behaviour of SpamOMeter sessions.
+
+SpamOMeter:
+	-	changed way how we pass-back success/error information, as exit-code
+		doesn't work for the way SpamOMeter is being called from Beam.
+
+< 2005-05-12: commit >
+
+BeamApp:
+	-	implemented support for importing mail-addresses into people files.
+
+BmMailHeader:
+	-	added methods for counting the number of instances of a specific field.
+	-	added support for accessing a fields value by index (not only first
+		value, as before).
+
+BmMailHeaderView:
+	-	implemented support for importing mail-addresses into people files.
+	-	fixed bug with multiple instances of non-address fields not being
+	 	shown in header-display.
+	-	added support for displaying header-fields only if they have content
+		(appending a ? to the field-name triggers this behavi86.
 
 < 2005-07-03: commit >
 
@@ -653,6 +1964,1098 @@ MailMonitorTest:
 BmApp, BmBodyPartView, BmMailEditWin, BmMailFolderView, BmMailRefView,
 BmMailViewWin, BmMainWindow, BmPrefsGeneralView, BmResources, 
 BmToolbarButton, BmBusyView, CLVEasyItem:
+	-	added support for switching toolbar-layout and -icons on the fly.
+	   We currently leak all loaded bitmaps, but I chose to ignore this,
+	   as switching icons shouldn't be *that* frequent.
+
+BmJobStatusWin:
+	-	avoid getting the focus if in click-to-focus mode, such that we
+		do not get in the user's way.
+
+src-bmBase/Jamfile:
+	-	libstdc++ is no longer neccessary, so do not link against it.
+
+< 2004-09-13: commit >
+
+BmMultiLocker:
+	-	simplified Spinlock by making use of atomic_or.
+
+regexx.cc:
+	-	fixed namespace issue with definition of BM_REGEXX_DEFAULT_STRING.
+
+< 2004-07-19: commit >
+
+BmMailFilter:
+	-	fixed problem with status always being set, even if no change occurred.
+
+BmMultiLocker, Jamfile(s), MultiLockerTest:
+	-	added own implementation of a multiple reader, single writer lock.
+	-	this improves upon BMultiLocker to such an extent that:
+		+	a thread which already has a read-lock and tries to become the 
+			writer doesn't deadlock, but becomes the writer once all (other)
+			read-locks have been freed.
+		+	a writer can ask for read-locks without causing deadlock.
+		+	proper read-lock nesting is supported and IsReadLocked() works
+			(instead of always returning true).
+
+MemIoTest:
+	cosmetics
+
+< 2004-07-10: commit, moved tag 'current-devel' >
+
+BmApp:
+	-	removed an unneeded spinlock.
+	-	start reading of pop-account list before showing the main-window,
+		such that the main-window can wait on the pop-account list.
+
+BmMailRefList:
+	-	fixed a bug that caused rebuilding the cache to not work at all.
+
+BmMainWindow:
+	-	wait for the pop-account list in order to make the shortcuts work
+		first time.
+
+BmMenuControllerBase:
+	-	now we update the list whenever the shortcuts change, too.
+
+BmRoster:
+	-	added missing support for shortcuts in RebuildList().
+
+BuildSettings:
+	-	fixed use of $BUILD_DEBUG instead of $(BUILD_DEBUG)
+
+< 2004-07-09: commit, moved tag 'current-devel' >
+
+BmMailEditWin:
+	-	more juggling around the internal compiler error...
+
+BmMailFolderView:
+	-	fixed problem with New/Mails-columns being shown too far right
+		(outside the visible area).
+
+BmMailQuery, BmStorageUtil:
+	-	we no longer use the Trash's node-ref but we use the path in order
+		to determine whether or not a mail lives inside the trash.
+
+BmMainWindow:
+	-	title no longer includes version string, as Alan correctly pointed
+		out that most apps just use their name (not the version).
+
+BmPrefs, 
+	-	simplified determination of (default) icon-path
+	-	replaced TrashNodeRef by TrashPath.
+
+BmPrefsGeneralView:
+	-	simplified determination of (default) icon-path
+	-	fixed error when selecting the icon-path for the first time.
+
+BmResources:
+	-	simplified determination of (default) icon-path
+
+BmSmtp:
+	-	cosmetical changes
+
+< 2004-07-08: commit, moved tag 'current-devel' >
+
+BmLogWindow:
+	-	avoid-focus is now only applied if mouse_mode is click-to-focus.
+
+< 2004-07-07: commit >
+
+BmMail:
+	-	added mail-status 'Error'.
+
+BmSmtp:
+	-	when an error occurs during send, we now log the error and skip the
+		mail, marking it as erraneous. So any further mails will be send (if
+		possible).
+
+BmIcons.rsrc:
+	-	fixed a few glitches with respect to drawing the icons over different 
+		background colors.
+
+BmSieveFilter:
+	-	added some more log info.
+
+< 2004-07-06: commit >
+
+BmBodyPartList, BmEncoding, BmMailHeader:
+	-	added (very simplistic) automatic charset detection in case of 
+		conversion errors (both inbound and outbound).
+		For inbound detection, a proper detection algorithm would yield
+		much better results, but we stick with our try-some approach (for now).
+
+BmMailEditWin:
+	-	if automatic charset detection succeeds during save/send, we
+		select the charset-menu accordingly, such that the user knows what's
+		been going on.
+
+BmMailHeaderView:
+	-	dropped superfluous error-msg.
+	
+BmMailView:
+	-	in JobIsDone() we now reset mParsingErrors, such that we do not show
+		errors that were actually found during last try...
+
+BmPrefs:
+	-	added two new (list-)fields, 'AutoCharsetsInbound' and 
+		'AutoCharsetsOutbound', which define the charsets to be used during
+		autbarButton, BmBusyView, CLVEasyItem:
+	-	added support for switching toolbar-layout and -icons on the fly.
+	   We currently leak all loaded bitmaps, but I chose to ignore this,
+	   as switching icons shouldn't be *that* frequent.
+
+BmJobStatusWin:
+	-	avoid getting the focus if in click-to-focus mode, such that we
+		do not get in the user's way.
+
+src-bmBase/Jamfile:
+	-	libstdc++ is no longer neccessary, so do not link against it.
+
+< 2004-09-13: commit >
+
+BmMultiLocker:
+	-	simplified Spinlock by making use of atomic_or.
+
+regexx.cc:
+	-	fixed namespace issue with definition of BM_REGEXX_DEFAULT_STRING.
+
+< 2004-07-19: commit >
+
+BmMailFilter:
+	-	fixed problem with status always being set, even if no change occurred.
+
+BmMultiLocker, Jamfile(s), MultiLockerTest:
+	-	added own implementation of a multiple reader, single writer lock.
+	-	this improves upon BMultiLocker to such an extent that:
+		+	a thread which already has a read-lock and tries to become the 
+			writer doesn't deadlock, but becomes the writer once all (other)
+			read-locks have been freed.
+		+	a writer can ask for read-locks without causing deadlock.
+		+	proper read-lock nesting is supported and IsReadLocked() works
+			(instead of always returning true).
+
+MemIoTest:
+	cosmetics
+
+< 2004-07-10: commit, moved tag 'current-devel' >
+
+BmApp:
+	-	removed an unneeded spinlock.
+	-	start reading of pop-account list before showing the main-window,
+		such that the main-window can wait on the pop-account list.
+
+BmMailRefList:
+	-	fixed a bug that caused rebuilding the cache to not work at all.
+
+BmMainWindow:
+	-	wait for the pop-account list in order to make the shortcuts work
+		first time.
+
+BmMenuControllerBase:
+	-	now we update the list whenever the shortcuts change, too.
+
+BmRoster:
+	-	added missing support for shortcuts in RebuildList().
+
+BuildSettings:
+	-	fixed use of $BUILD_DEBUG instead of $(BUILD_DEBUG)
+
+< 2004-07-09: commit, moved tag 'current-devel' >
+
+BmMailEditWin:
+	-	more juggling around the internal compiler error...
+
+BmMailFolderView:
+	-	fixed problem with New/Mails-columns being shown too far right
+		(outside the visible area).
+
+BmMailQuery, BmStorageUtil:
+	-	we no longer use the Trash's node-ref but we use the path in order
+		to determine whether or not a mail lives inside the trash.
+
+BmMainWindow:
+	-	title no longer includes version string, as Alan correctly pointed
+		out that most apps just use their name (not the version).
+
+BmPrefs, 
+	-	simplified determination of (default) icon-path
+	-	replaced TrashNodeRef by TrashPath.
+
+BmPrefsGeneralView:
+	-	simplified determination of (default) icon-path
+	-	fixed error when selecting the icon-path for the first time.
+
+BmResources:
+	-	simplified determination of (default) icon-path
+
+BmSmtp:
+	-	cosmetical changes
+
+< 2004-07-08: commit, moved tag 'current-devel' >
+
+BmLogWindow:
+	-	avoid-focus is now only applied if mouse_mode is click-to-focus.
+
+< 2004-07-07: commit >
+
+BmMail:
+	-	added mail-status 'Error'.
+
+BmSmtp:
+	-	when an error occurs during send, we now log the error and skip the
+		mail, marking it as erraneous. So any further mails will be send (if
+		possible).
+
+BmIcons.rsrc:
+	-	fixed a few glitches with respect to drawing the icons over different 
+		background colors.
+
+BmSieveFilter:
+	-	added some more log info.
+
+< 2004-07-06: commit >
+
+BmBodyPartList, BmEncoding, BmMailHeader:
+	-	added (very simplistic) automatic charset detection in case of 
+		conversion errors (both inbound and outbound).
+		For inbound detection, a proper detection algorithm would yield
+		much better results, but we stick with our try-some approach (for now).
+
+BmMailEditWin:
+	-	if automatic charset detection succeeds during save/send, we
+		select the charset-menu accordingly, such that the user knows what's
+		been going on.
+
+BmMailHeaderView:
+	-	dropped superfluous error-msg.
+	
+BmMailView:
+	-	in JobIsDone() we now reset mParsingErrors, such that we do not show
+		errors that were actually found during last try...
+
+BmPrefs:
+	-	added two new (list-)fields, 'AutoCharsetsInbound' and 
+		'AutoCharsetsOutbound', which define the charsets to be used during
+		autbarButton, BmBusyView, CLVEasyItem:
+	-	added support for switching toolbar-layout and -icons on the fly.
+	   We currently leak all loaded bitmaps, but I chose to ignore this,
+	   as switching icons shouldn't be *that* frequent.
+
+BmJobStatusWin:
+	-	avoid getting the focus if in click-to-focus mode, such that we
+		do not get in the user's way.
+
+src-bmBase/Jamfile:
+	-	libstdc++ is no longer neccessary, so do not link against it.
+
+< 2004-09-13: commit >
+
+BmMultiLocker:
+	-	simplified Spinlock by making use of atomic_or.
+
+regexx.cc:
+	-	fixed namespace issue with definition of BM_REGEXX_DEFAULT_STRING.
+
+< 2004-07-19: commit >
+
+BmMailFilter:
+	-	fixed problem with status always being set, even if no change occurred.
+
+BmMultiLocker, Jamfile(s), MultiLockerTest:
+	-	added own implementation of a multiple reader, single writer lock.
+	-	this improves upon BMultiLocker to such an extent that:
+		+	a thread which already has a read-lock and tries to become the 
+			writer doesn't deadlock, but becomes the writer once all (other)
+			read-locks have been freed.
+		+	a writer can ask for read-locks without causing deadlock.
+		+	proper read-lock nesting is supported and IsReadLocked() works
+			(instead of always returning true).
+
+MemIoTest:
+	cosmetics
+
+< 2004-07-10: commit, moved tag 'current-devel' >
+
+BmApp:
+	-	removed an unneeded spinlock.
+	-	start reading of pop-account list before showing the main-window,
+		such that the main-window can wait on the pop-account list.
+
+BmMailRefList:
+	-	fixed a bug that caused rebuilding the cache to not work at all.
+
+BmMainWindow:
+	-	wait for the pop-account list in order to make the shortcuts work
+		first time.
+
+BmMenuControllerBase:
+	-	now we update the list whenever the shortcuts change, too.
+
+BmRoster:
+	-	added missing support for shortcuts in RebuildList().
+
+BuildSettings:
+	-	fixed use of $BUILD_DEBUG instead of $(BUILD_DEBUG)
+
+< 2004-07-09: commit, moved tag 'current-devel' >
+
+BmMailEditWin:
+	-	more juggling around the internal compiler error...
+
+BmMailFolderView:
+	-	fixed problem with New/Mails-columns being shown too far right
+		(outside the visible area).
+
+BmMailQuery, BmStorageUtil:
+	-	we no longer use the Trash's node-ref but we use the path in order
+		to determine whether or not a mail lives inside the trash.
+
+BmMainWindow:
+	-	title no longer includes version string, as Alan correctly pointed
+		out that most apps just use their name (not the version).
+
+BmPrefs, 
+	-	simplified determination of (default) icon-path
+	-	replaced TrashNodeRef by TrashPath.
+
+BmPrefsGeneralView:
+	-	simplified determination of (default) icon-path
+	-	fixed error when selecting the icon-path for the first time.
+
+BmResources:
+	-	simplified determination of (default) icon-path
+
+BmSmtp:
+	-	cosmetical changes
+
+< 2004-07-08: commit, moved tag 'current-devel' >
+
+BmLogWindow:
+	-	avoid-focus is now only applied if mouse_mode is click-to-focus.
+
+< 2004-07-07: commit >
+
+BmMail:
+	-	added mail-status 'Error'.
+
+BmSmtp:
+	-	when an error occurs during send, we now log the error and skip the
+		mail, marking it as erraneous. So any further mails will be send (if
+		possible).
+
+BmIcons.rsrc:
+	-	fixed a few glitches with respect to drawing the icons over different 
+		background colors.
+
+BmSieveFilter:
+	-	added some more log info.
+
+< 2004-07-06: commit >
+
+BmBodyPartList, BmEncoding, BmMailHeader:
+	-	added (very simplistic) automatic charset detection in case of 
+		conversion errors (both inbound and outbound).
+		For inbound detection, a proper detection algorithm would yield
+		much better results, but we stick with our try-some approach (for now).
+
+BmMailEditWin:
+	-	if automatic charset detection succeeds during save/send, we
+		select the charset-menu accordingly, such that the user knows what's
+		been going on.
+
+BmMailHeaderView:
+	-	dropped superfluous error-msg.
+	
+BmMailView:
+	-	in JobIsDone() we now reset mParsingErrors, such that we do not show
+		errors that were actually found during last try...
+
+BmPrefs:
+	-	added two new (list-)fields, 'AutoCharsetsInbound' and 
+		'AutoCharsetsOutbound', which define the charsets to be used during
+		autbarButton, BmBusyView, CLVEasyItem:
+	-	added support for switching toolbar-layout and -icons on the fly.
+	   We currently leak all loaded bitmaps, but I chose to ignore this,
+	   as switching icons shouldn't be *that* frequent.
+
+BmJobStatusWin:
+	-	avoid getting the focus if in click-to-focus mode, such that we
+		do not get in the user's way.
+
+src-bmBase/Jamfile:
+	-	libstdc++ is no longer neccessary, so do not link against it.
+
+< 2004-09-13: commit >
+
+BmMultiLocker:
+	-	simplified Spinlock by making use of atomic_or.
+
+regexx.cc:
+	-	fixed namespace issue with definition of BM_REGEXX_DEFAULT_STRING.
+
+< 2004-07-19: commit >
+
+BmMailFilter:
+	-	fixed problem with status always being set, even if no change occurred.
+
+BmMultiLocker, Jamfile(s), MultiLockerTest:
+	-	added own implementation of a multiple reader, single writer lock.
+	-	this improves upon BMultiLocker to such an extent that:
+		+	a thread which already has a read-lock and tries to become the 
+			writer doesn't deadlock, but becomes the writer once all (other)
+			read-locks have been freed.
+		+	a writer can ask for read-locks without causing deadlock.
+		+	proper read-lock nesting is supported and IsReadLocked() works
+			(instead of always returning true).
+
+MemIoTest:
+	cosmetics
+
+< 2004-07-10: commit, moved tag 'current-devel' >
+
+BmApp:
+	-	removed an unneeded spinlock.
+	-	start reading of pop-account list before showing the main-window,
+		such that the main-window can wait on the pop-account list.
+
+BmMailRefList:
+	-	fixed a bug that caused rebuilding the cache to not work at all.
+
+BmMainWindow:
+	-	wait for the pop-account list in order to make the shortcuts work
+		first time.
+
+BmMenuControllerBase:
+	-	now we update the list whenever the shortcuts change, too.
+
+BmRoster:
+	-	added missing support for shortcuts in RebuildList().
+
+BuildSettings:
+	-	fixed use of $BUILD_DEBUG instead of $(BUILD_DEBUG)
+
+< 2004-07-09: commit, moved tag 'current-devel' >
+
+BmMailEditWin:
+	-	more juggling around the internal compiler error...
+
+BmMailFolderView:
+	-	fixed problem with New/Mails-columns being shown too far right
+		(outside the visible area).
+
+BmMailQuery, BmStorageUtil:
+	-	we no longer use the Trash's node-ref but we use the path in order
+		to determine whether or not a mail lives inside the trash.
+
+BmMainWindow:
+	-	title no longer includes version string, as Alan correctly pointed
+		out that most apps just use their name (not the version).
+
+BmPrefs, 
+	-	simplified determination of (default) icon-path
+	-	replaced TrashNodeRef by TrashPath.
+
+BmPrefsGeneralView:
+	-	simplified determination of (default) icon-path
+	-	fixed error when selecting the icon-path for the first time.
+
+BmResources:
+	-	simplified determination of (default) icon-path
+
+BmSmtp:
+	-	cosmetical changes
+
+< 2004-07-08: commit, moved tag 'current-devel' >
+
+BmLogWindow:
+	-	avoid-focus is now only applied if mouse_mode is click-to-focus.
+
+< 2004-07-07: commit >
+
+BmMail:
+	-	added mail-status 'Error'.
+
+BmSmtp:
+	-	when an error occurs during send, we now log the error and skip the
+		mail, marking it as erraneous. So any further mails will be send (if
+		possible).
+
+BmIcons.rsrc:
+	-	fixed a few glitches with respect to drawing the icons over different 
+		background colors.
+
+BmSieveFilter:
+	-	added some more log info.
+
+< 2004-07-06: commit >
+
+BmBodyPartList, BmEncoding, BmMailHeader:
+	-	added (very simplistic) automatic charset detection in case of 
+		conversion errors (both inbound and outbound).
+		For inbound detection, a proper detection algorithm would yield
+		much better results, but we stick with our try-some approach (for now).
+
+BmMailEditWin:
+	-	if automatic charset detection succeeds during save/send, we
+		select the charset-menu accordingly, such that the user knows what's
+		been going on.
+
+BmMailHeaderView:
+	-	dropped superfluous error-msg.
+	
+BmMailView:
+	-	in JobIsDone() we now reset mParsingErrors, such that we do not show
+		errors that were actually found during last try...
+
+BmPrefs:
+	-	added two new (list-)fields, 'AutoCharsetsInbound' and 
+		'AutoCharsetsOutbound', which define the charsets to be used during
+		autbarButton, BmBusyView, CLVEasyItem:
+	-	added support for switching toolbar-layout and -icons on the fly.
+	   We currently leak all loaded bitmaps, but I chose to ignore this,
+	   as switching icons shouldn't be *that* frequent.
+
+BmJobStatusWin:
+	-	avoid getting the focus if in click-to-focus mode, such that we
+		do not get in the user's way.
+
+src-bmBase/Jamfile:
+	-	libstdc++ is no longer neccessary, so do not link against it.
+
+< 2004-09-13: commit >
+
+BmMultiLocker:
+	-	simplified Spinlock by making use of atomic_or.
+
+regexx.cc:
+	-	fixed namespace issue with definition of BM_REGEXX_DEFAULT_STRING.
+
+< 2004-07-19: commit >
+
+BmMailFilter:
+	-	fixed problem with status always being set, even if no change occurred.
+
+BmMultiLocker, Jamfile(s), MultiLockerTest:
+	-	added own implementation of a multiple reader, single writer lock.
+	-	this improves upon BMultiLocker to such an extent that:
+		+	a thread which already has a read-lock and tries to become the 
+			writer doesn't deadlock, but becomes the writer once all (other)
+			read-locks have been freed.
+		+	a writer can ask for read-locks without causing deadlock.
+		+	proper read-lock nesting is supported and IsReadLocked() works
+			(instead of always returning true).
+
+MemIoTest:
+	cosmetics
+
+< 2004-07-10: commit, moved tag 'current-devel' >
+
+BmApp:
+	-	removed an unneeded spinlock.
+	-	start reading of pop-account list before showing the main-window,
+		such that the main-window can wait on the pop-account list.
+
+BmMailRefList:
+	-	fixed a bug that caused rebuilding the cache to not work at all.
+
+BmMainWindow:
+	-	wait for the pop-account list in order to make the shortcuts work
+		first time.
+
+BmMenuControllerBase:
+	-	now we update the list whenever the shortcuts change, too.
+
+BmRoster:
+	-	added missing support for shortcuts in RebuildList().
+
+BuildSettings:
+	-	fixed use of $BUILD_DEBUG instead of $(BUILD_DEBUG)
+
+< 2004-07-09: commit, moved tag 'current-devel' >
+
+BmMailEditWin:
+	-	more juggling around the internal compiler error...
+
+BmMailFolderView:
+	-	fixed problem with New/Mails-columns being shown too far right
+		(outside the visible area).
+
+BmMailQuery, BmStorageUtil:
+	-	we no longer use the Trash's node-ref but we use the path in order
+		to determine whether or not a mail lives inside the trash.
+
+BmMainWindow:
+	-	title no longer includes version string, as Alan correctly pointed
+		out that most apps just use their name (not the version).
+
+BmPrefs, 
+	-	simplified determination of (default) icon-path
+	-	replaced TrashNodeRef by TrashPath.
+
+BmPrefsGeneralView:
+	-	simplified determination of (default) icon-path
+	-	fixed error when selecting the icon-path for the first time.
+
+BmResources:
+	-	simplified determination of (default) icon-path
+
+BmSmtp:
+	-	cosmetical changes
+
+< 2004-07-08: commit, moved tag 'current-devel' >
+
+BmLogWindow:
+	-	avoid-focus is now only applied if mouse_mode is click-to-focus.
+
+< 2004-07-07: commit >
+
+BmMail:
+	-	added mail-status 'Error'.
+
+BmSmtp:
+	-	when an error occurs during send, we now log the error and skip the
+		mail, marking it as erraneous. So any further mails will be send (if
+		possible).
+
+BmIcons.rsrc:
+	-	fixed a few glitches with respect to drawing the icons over different 
+		background colors.
+
+BmSieveFilter:
+	-	added some more log info.
+
+< 2004-07-06: commit >
+
+BmBodyPartList, BmEncoding, BmMailHeader:
+	-	added (very simplistic) automatic charset detection in case of 
+		conversion errors (both inbound and outbound).
+		For inbound detection, a proper detection algorithm would yield
+		much better results, but we stick with our try-some approach (for now).
+
+BmMailEditWin:
+	-	if automatic charset detection succeeds during save/send, we
+		select the charset-menu accordingly, such that the user knows what's
+		been going on.
+
+BmMailHeaderView:
+	-	dropped superfluous error-msg.
+	
+BmMailView:
+	-	in JobIsDone() we now reset mParsingErrors, such that we do not show
+		errors that were actually found during last try...
+
+BmPrefs:
+	-	added two new (list-)fields, 'AutoCharsetsInbound' and 
+		'AutoCharsetsOutbound', which define the charsets to be used during
+		autbarButton, BmBusyView, CLVEasyItem:
+	-	added support for switching toolbar-layout and -icons on the fly.
+	   We currently leak all loaded bitmaps, but I chose to ignore this,
+	   as switching icons shouldn't be *that* frequent.
+
+BmJobStatusWin:
+	-	avoid getting the focus if in click-to-focus mode, such that we
+		do not get in the user's way.
+
+src-bmBase/Jamfile:
+	-	libstdc++ is no longer neccessary, so do not link against it.
+
+< 2004-09-13: commit >
+
+BmMultiLocker:
+	-	simplified Spinlock by making use of atomic_or.
+
+regexx.cc:
+	-	fixed namespace issue with definition of BM_REGEXX_DEFAULT_STRING.
+
+< 2004-07-19: commit >
+
+BmMailFilter:
+	-	fixed problem with status always being set, even if no change occurred.
+
+BmMultiLocker, Jamfile(s), MultiLockerTest:
+	-	added own implementation of a multiple reader, single writer lock.
+	-	this improves upon BMultiLocker to such an extent that:
+		+	a thread which already has a read-lock and tries to become the 
+			writer doesn't deadlock, but becomes the writer once all (other)
+			read-locks have been freed.
+		+	a writer can ask for read-locks without causing deadlock.
+		+	proper read-lock nesting is supported and IsReadLocked() works
+			(instead of always returning true).
+
+MemIoTest:
+	cosmetics
+
+< 2004-07-10: commit, moved tag 'current-devel' >
+
+BmApp:
+	-	removed an unneeded spinlock.
+	-	start reading of pop-account list before showing the main-window,
+		such that the main-window can wait on the pop-account list.
+
+BmMailRefList:
+	-	fixed a bug that caused rebuilding the cache to not work at all.
+
+BmMainWindow:
+	-	wait for the pop-account list in order to make the shortcuts work
+		first time.
+
+BmMenuControllerBase:
+	-	now we update the list whenever the shortcuts change, too.
+
+BmRoster:
+	-	added missing support for shortcuts in RebuildList().
+
+BuildSettings:
+	-	fixed use of $BUILD_DEBUG instead of $(BUILD_DEBUG)
+
+< 2004-07-09: commit, moved tag 'current-devel' >
+
+BmMailEditWin:
+	-	more juggling around the internal compiler error...
+
+BmMailFolderView:
+	-	fixed problem with New/Mails-columns being shown too far right
+		(outside the visible area).
+
+BmMailQuery, BmStorageUtil:
+	-	we no longer use the Trash's node-ref but we use the path in order
+		to determine whether or not a mail lives inside the trash.
+
+BmMainWindow:
+	-	title no longer includes version string, as Alan correctly pointed
+		out that most apps just use their name (not the version).
+
+BmPrefs, 
+	-	simplified determination of (default) icon-path
+	-	replaced TrashNodeRef by TrashPath.
+
+BmPrefsGeneralView:
+	-	simplified determination of (default) icon-path
+	-	fixed error when selecting the icon-path for the first time.
+
+BmResources:
+	-	simplified determination of (default) icon-path
+
+BmSmtp:
+	-	cosmetical changes
+
+< 2004-07-08: commit, moved tag 'current-devel' >
+
+BmLogWindow:
+	-	avoid-focus is now only applied if mouse_mode is click-to-focus.
+
+< 2004-07-07: commit >
+
+BmMail:
+	-	added mail-status 'Error'.
+
+BmSmtp:
+	-	when an error occurs during send, we now log the error and skip the
+		mail, marking it as erraneous. So any further mails will be send (if
+		possible).
+
+BmIcons.rsrc:
+	-	fixed a few glitches with respect to drawing the icons over different 
+		background colors.
+
+BmSieveFilter:
+	-	added some more log info.
+
+< 2004-07-06: commit >
+
+BmBodyPartList, BmEncoding, BmMailHeader:
+	-	added (very simplistic) automatic charset detection in case of 
+		conversion errors (both inbound and outbound).
+		For inbound detection, a proper detection algorithm would yield
+		much better results, but we stick with our try-some approach (for now).
+
+BmMailEditWin:
+	-	if automatic charset detection succeeds during save/send, we
+		select the charset-menu accordingly, such that the user knows what's
+		been going on.
+
+BmMailHeaderView:
+	-	dropped superfluous error-msg.
+	
+BmMailView:
+	-	in JobIsDone() we now reset mParsingErrors, such that we do not show
+		errors that were actually found during last try...
+
+BmPrefs:
+	-	added two new (list-)fields, 'AutoCharsetsInbound' and 
+		'AutoCharsetsOutbound', which define the charsets to be used during
+		autbarButton, BmBusyView, CLVEasyItem:
+	-	added support for switching toolbar-layout and -icons on the fly.
+	   We currently leak all loaded bitmaps, but I chose to ignore this,
+	   as switching icons shouldn't be *that* frequent.
+
+BmJobStatusWin:
+	-	avoid getting the focus if in click-to-focus mode, such that we
+		do not get in the user's way.
+
+src-bmBase/Jamfile:
+	-	libstdc++ is no longer neccessary, so do not link against it.
+
+< 2004-09-13: commit >
+
+BmMultiLocker:
+	-	simplified Spinlock by making use of atomic_or.
+
+regexx.cc:
+	-	fixed namespace issue with definition of BM_REGEXX_DEFAULT_STRING.
+
+< 2004-07-19: commit >
+
+BmMailFilter:
+	-	fixed problem with status always being set, even if no change occurred.
+
+BmMultiLocker, Jamfile(s), MultiLockerTest:
+	-	added own implementation of a multiple reader, single writer lock.
+	-	this improves upon BMultiLocker to such an extent that:
+		+	a thread which already has a read-lock and tries to become the 
+			writer doesn't deadlock, but becomes the writer once all (other)
+			read-locks have been freed.
+		+	a writer can ask for read-locks without causing deadlock.
+		+	proper read-lock nesting is supported and IsReadLocked() works
+			(instead of always returning true).
+
+MemIoTest:
+	cosmetics
+
+< 2004-07-10: commit, moved tag 'current-devel' >
+
+BmApp:
+	-	removed an unneeded spinlock.
+	-	start reading of pop-account list before showing the main-window,
+		such that the main-window can wait on the pop-account list.
+
+BmMailRefList:
+	-	fixed a bug that caused rebuilding the cache to not work at all.
+
+BmMainWindow:
+	-	wait for the pop-account list in order to make the shortcuts work
+		first time.
+
+BmMenuControllerBase:
+	-	now we update the list whenever the shortcuts change, too.
+
+BmRoster:
+	-	added missing support for shortcuts in RebuildList().
+
+BuildSettings:
+	-	fixed use of $BUILD_DEBUG instead of $(BUILD_DEBUG)
+
+< 2004-07-09: commit, moved tag 'current-devel' >
+
+BmMailEditWin:
+	-	more juggling around the internal compiler error...
+
+BmMailFolderView:
+	-	fixed problem with New/Mails-columns being shown too far right
+		(outside the visible area).
+
+BmMailQuery, BmStorageUtil:
+	-	we no longer use the Trash's node-ref but we use the path in order
+		to determine whether or not a mail lives inside the trash.
+
+BmMainWindow:
+	-	title no longer includes version string, as Alan correctly pointed
+		out that most apps just use their name (not the version).
+
+BmPrefs, 
+	-	simplified determination of (default) icon-path
+	-	replaced TrashNodeRef by TrashPath.
+
+BmPrefsGeneralView:
+	-	simplified determination of (default) icon-path
+	-	fixed error when selecting the icon-path for the first time.
+
+BmResources:
+	-	simplified determination of (default) icon-path
+
+BmSmtp:
+	-	cosmetical changes
+
+< 2004-07-08: commit, moved tag 'current-devel' >
+
+BmLogWindow:
+	-	avoid-focus is now only applied if mouse_mode is click-to-focus.
+
+< 2004-07-07: commit >
+
+BmMail:
+	-	added mail-status 'Error'.
+
+BmSmtp:
+	-	when an error occurs during send, we now log the error and skip the
+		mail, marking it as erraneous. So any further mails will be send (if
+		possible).
+
+BmIcons.rsrc:
+	-	fixed a few glitches with respect to drawing the icons over different 
+		background colors.
+
+BmSieveFilter:
+	-	added some more log info.
+
+< 2004-07-06: commit >
+
+BmBodyPartList, BmEncoding, BmMailHeader:
+	-	added (very simplistic) automatic charset detection in case of 
+		conversion errors (both inbound and outbound).
+		For inbound detection, a proper detection algorithm would yield
+		much better results, but we stick with our try-some approach (for now).
+
+BmMailEditWin:
+	-	if automatic charset detection succeeds during save/send, we
+		select the charset-menu accordingly, such that the user knows what's
+		been going on.
+
+BmMailHeaderView:
+	-	dropped superfluous error-msg.
+	
+BmMailView:
+	-	in JobIsDone() we now reset mParsingErrors, such that we do not show
+		errors that were actually found during last try...
+
+BmPrefs:
+	-	added two new (list-)fields, 'AutoCharsetsInbound' and 
+		'AutoCharsetsOutbound', which define the charsets to be used during
+		auto-matching.
+
+BmPrefsMailConstrView:
+	-	corrected handling of preferred charsets (no longer use <>-quotes).
+
+< 2004-07-04: commit >
+
+BmBusyView:
+	-	unset tooltip for empty error-string more reliably.
+
+BmMailView:
+	-	clear error-icon if empty.
+
+< 2004-07-04: commit >
+
+BmBodyPart, BmBusyView, BmEncoding, BmMail, BmMailHeader, BmMailHeaderView, 
+BmMailView:
+	-	mail-parsing errors no longer trigger the error-window as this is
+		too tedious (spam often deliberately announces wrong encoding).
+		We now indicate any problems with an error-icon inside the busy-view.
+		Hovering over this icons shows the error-message as tool-tip.
+
+BmLogWindow:
+	-	now avoids keyboard focus in order to be less of a nuisance in
+		click-to-focus mode.
+
+BmPrefsSendMailView:
+	-	added missing <none>-item to pop-acc-menu.
+
+< 2004-06-29: commit, moved tag 'current-devel' >
+
+BmIdentity, BmMailHeader, BmPrefsIdentityView:
+	-	added support for default-headers, which make it possible to setup
+		an identity such that every mail from that identity has (e.g.) a
+		specific Bcc-header.
+
+BmMail:
+	-	we now replace any binary nulls in the mailtext by a space.
+
+BmMailEditWin:
+	-	we no longer send all pending mails for the SMTP-account, but we
+		just send this single mail.
+	-	added support for default-headers (and changing these as the user
+		selects another identity).
+
+BmMailFilter, BmFilterChain, BmPrefsFilterChainView:
+	-	dropped support for two outgoing filter-chains, as it doesn't make
+		any sense to me any more (let's see if that changes again...).
+
+BmMailQuery:
+	-	we no longer deal with mails living in Trash...
+	-	instead of collecting fullblown mails we collect entry-refs instead,
+		which is faster and uses less memory...
+
+BmMailRef, BmMailRefList:
+	-	pulled fetching of stat-info inside BmMailRef-construction, unless
+		it is present anyway.
+
+BmMainWindow:
+	-	activated "Send All Pending Mails"-menu (i.e. no more 'World Peace').
+	-	added send-pending sub-menu (with one entry for each smtp-account).
+
+BmPrefs:
+	-	added public member TrashNodeRef, which is the node-ref of the
+		Trash-directory on the mailbox-volume.
+
+BmPrefsSendMailView:
+	-	for smtp-after-pop we now require the pop-account to be set in the
+		prefs.
+
+BmSieveFilter:
+	-	changed layout (hopefully to be cleaner now).
+
+BmSmtpAccount, BmSmtp, BmJobStatusWin:
+	-	restructured handling of pending mails: Instead of holding the
+		pending mails inside the account, we now pass them on to the
+		job-window, which in turn stuffs them inside the smtp-job.
+	-	added support for sending a single, specified mail.
+
+TextEntryAlert:
+	-	fixed bug that always caused an empty result string.
+
+< 2004-06-28: commit, moved tag 'current-devel' >
+
+BmApp:
+	-	we only start slaves for tasks beyond a certain size (mail-count).
+
+BmMailEditWin, BuildSettings:
+	-	applied Alan's patches for ZETA.
+
+< 2004-06-25: commit, moved tag 'current-devel' >
+
+BmDividable:
+	-	fixed compilation issue under Dano.
+
+BuildSettings, Jamfile, UserBuildConfig.sample:
+	-	added support for switching on/off building of tests.
+
+< 2004-06-25: commit, moved tag 'current-devel' >
+
+BmFilterChain, BmPrefFilterChainView:
+	-	fixed bug with dragging chained filters to new position in list 
+		not working.
+
+BmMailFolder:
+	-	reduced usage of RefListLocker to the minimum.
+
+< 2004-06-25: commit, moved tag 'current-devel' >
+
+BmBodyPartList:
+	-	fixed incorrect handling of attachment-filenames that contain slashes.
+
+BmDataModel:
+	-	instead of checking whether the model is locked in empty() and size(),
+		we now explicitly lock it instead. It's just begin() and end() where
+		we require the model to be locked by the caller.
+
+BmFilter:
+	-	fixed incorrect signature of SanityCheck().
+
+BmFilterChain, BmMailFilter:
+	-	simplified sorting of filter inside chain.
+
+BmGuiUtil, BmMailView, BmMainWindow, BmRoster:
+	-	added missing locks when accessing a model's item-map.
+
+BmListController:
+	-	added missing locks for adding, removing and updating items.
+
+BmMail, BmMailFactory:
+	-	centralized initialization of a mail from given identity-data into
+		the new method SetupFromIdentityAndRecvAddr().
+
+BmbarButton, BmBusyView, CLVEasyItem:
 	-	added support for switching toolbar-layout and -icons on the fly.
 	   We currently leak all loaded bitmaps, but I chose to ignore this,
 	   as switching icons shouldn't be *that* frequent.
@@ -1386,2900 +3789,656 @@ many files:
 		and to use less memory.
 
 BmDataModel:
-	-	added OutlineLevel() to BmListModelItem which returns the number
-		of parents (the level) for an item.
-
-BmMailFilter:
-	-	fixed ref-leak during (local) mail-filtering.
-
-BmNetJobModel:
-	-	enlarged size of buffer that is being logged from 1024 bytes
-		to 16KB. This way we will we log most emails completely.
-
-BmPrefsFilterView:
-	-	fixed crash when creating filter from a mail, we were using
-		delete[] instead of delete.
-	-	finished work on streamlining the update-semantics of listview-
-		items.
-
-BmSieveFilter:
-	-	added support for removing marked filter-lines instead of just
-		the last one. This was annoying esp. if you had created the
-		filter by 'Create Filter from Mail'.
-
-BmStorageUtil:
-	-	FetchFile doesn't crash anymore when it is asked to read an
-		existing, but empty file.
-
-pcre:
-	- fixed compilation issue with -DDEBUG
-
-< 2003-12-04: commit>
-
-many files:
-	-	changed technique used for transporting a mailref-selection
-		within Beam, now we no longer add each ref to the message,
-		but we pass a pointer to an allocated vector (which is freed
-		by the final receiver). This performs much better, actually.
-
-BmSmtp:
-	-	added support for filtering outgoing mail.
-
-< 2003-11-29: commit>
-
-many files:
-	- fixed compilation issues under zeta.
-
-BmMail:
-	-	added MoveToDestFolderpath().
-
-BmMailFilter:
-	-	optimized usual case of a filter-run resulting in all mails just
-		being moved to another folder.
-		This is now delegated to BmMail::MoveToDestFolderpath(), instead
-		of (re-)writing the whole mails to disk.
-
-BmMailFolder:
-	-	if a mail-ref is added/removed to/from a folder whose mailref-list
-		isn't currently loaded, the folder's mail-count is now set to
-		unknown in order to communicate that we really don't know
-		(anymore).
-
-BmMailHeaderView:
-	-	fixed bug when handling very large header-fields, which caused
-		incorrect textview-heights to be used, resulting in part of the
-		text being cut invisible.
-	-	fixed mistake that inhibited the user from selecting the complete
-		contents of a multiline header-field (you could only select a
-		single line).
-
-BmPeople:
-	-	improved behaviour if people-folder doesn't exist (we silently
-		ignore that now).
-	-	foreign-people submenu is only shown if there in fact are any
-		foreigners to be shown there.
-
-BmPrefs:
-	- improved the error message if the mailbox can not be found.
-
-
-< 2003-11-25: commit>
-
-BmApp:
-	-	updated BmMailRef-creation to new standards.
-
-BmDataModel:
-	-	added separate count for invalid items, so that the number of
-		valid items can easily be computed (size-invalidCount).
-	-	restricted calls to UpdatedMenuControllers() to JobIsDone(), since
-		it isn't needed in the other cases.
-
-BmListController:
-	-	optimised MakeEmpty() by means of telling the BList in advance, how
-		many items it will hold.
-
-BmMail:
-	-	fixed erraneous behaviour if mailbox does not live on same the
-		device as the temp-folder does.
-	-	instead of overwriting mail-files, we now leave a backup copy
-		which is removed after the new mail has been written on disk.
-		This way Beam should never lose a mail when crashing.
-
-BmMailEditWin:
-	-	added support for removal of mail-addresses by menu (use the
-		<remove> submenu for that).
-	
-BmMailFolder, BmMailRefView:
-	-	current position in a folder is now persistent.
+	-	added OutlineLevel() to BmListMoo now use the BmBackedFile-class.
 
 BmMailFolderList:
-	-	restricted locking of folder-list only to places where it really
-		is needed (hopefully we haven't opened up any locking-holes...).
-
-BmMailHeader:
-	-	minor cleanup.
-
-BmMailRef, BmMailRefList:
-	-	fixed bug with invalid items being shown in folder-count.
-
-BmMenuController, BmMenuControllerBase:
-	-	fixed linking problem under Zeta (why wasn't this shown on R5?).
-
-ColumnListView:
-	-	added support for proper reduction of a selection that has been
-		extended by pressing the SHIFT-modifier.
-
-
-*******************************************************************************
-[Beam 1.0] - 2003-11-23 - tagged and released
-*******************************************************************************
-
-< 2003-11-21: commit, moved tag "current-stable">
-
-BmPopAccount:
-	-	fixed int32-overflow when setting up check-interval runner, 
-		avoiding fetching mails in a tight loop (oops!).
-
-BmPopper:
-	-	fixed crash in StateCheck(), where free'd memory was accessed
-		(why didn't this crash more often?).
-		Solved this by dumping c-style string-functions in favour of
-		BString.
-
-*******************************************************************************
-[Beam 1.0-rc8] - 2003-11-20 - tagged and released
-*******************************************************************************
-
-< 2003-11-17: commit, moved tag "current-stable" >
-
-BmMailEditWin:
-	-	now we only overwrite a mail's identity if the user has actually
-		selected one.
-
-< 2003-11-16: commit, moved tag "current-stable" >
-
-BmMailEditWin:
-	-	fixed crashing-bug in destructor that depended on the window-map
-		key (the mail's entry_ref) being the same as it was when the window
-		was created. This resulted in windows not being removed from the
-		map when they should, which in turn lead to crashes.
-
-< 2003-11-14: commit, moved tag "current-stable" >
-
-BmPrefsMailConstrView:
-	-	fixed missing SetTarget() for mReplyIntroPrivateStrControl.
-
-*******************************************************************************
-[Beam 1.0-rc7]
-*******************************************************************************
-
-< 2003-11-12: commit>
-
-BmBodyPartList, BmEncoding, BmMailHeader:
-	-	fixed bug with illegal characters being able to slip into encoded
-		mail-headers, some of which do indeed confuse mail-servers and
-		cause mails to be garbled. 
-		Now we avoid any of <>:;()[]\ to be included in mail-headers in
-		an unencoded form.
-	-	fixed possible encoding of References- and In-Reply-To-fields
-		although encoding is forbidden within these fields.
-
-BmEncoding:
-	-	added Finalize() to Utf8Decoder, where give iconv the opportunity
-		to add a final shift-sequence if needed (e.g. for iso-2022-jp).
-	-	added support for automatically suppressing conversion errors if
-		(and only if) all that is missing is the final shift-sequence.
-		This "error" happens a lot because of several MUAs (Beam included)
-		not doing iso-2022-jp conversion *quite* right.
-
-BmJobStatusWin:
-	-	improved checking for active jobs such that inactive (but visible)
-		jobs no longer trigger the alert.
-
-BmPrefsMailConstrView:
-	-	made the two settings 'AddPeopleNameToMailAddr' and 
-		'LookForPeopleInPeopleFolder' actually work.
-
-EncodedWordEncoderTest:
-	-	changed results to comply with new encoding rules.
-
-*******************************************************************************
-[Beam 1.0-rc6]
-*******************************************************************************
-
-< 2003-11-10: commit>
-
-BmApp:
-	-	fixed handling of 'mailto:'-URLs.
-	-	added missing foreign-key from filters to identity-list.
-	-	fixed possible crash during printing of mails.
-	-	before quitting, we now check if there are still jobs active
-
-BmBodyPartList:
-	-	fixed bug that would not accept an empty first line within
-		a mimepart as representing an empty mimepart-header.
-
-BmDataModel, BmMenuController:
-	-	added support to list-models for automatically telling interested
-		menu-controllers about any occuring changes. This fixes the
-		problem of the network-menu-items' shortcuts not working unless
-		the menu was being shown on-screen.
-
-BmJobStatusWin:
-	-	added HasActiveJobs()
-
-BmListController, BmController, BmMailFolderView:
-	-	changed several methods from public to protected.
-
-mLogWindow:
-	-	we now avoid automatic workspace-activation if shown.
-
-BmMail:
-	-	added field 'X-List' to the list-indicators.
-	-	fixed bug in quoting-code that caused Beam to freeze if a '|'
-		was part of the quoting-phrase.
-
-BmMailEditWin:
-	-	we now update the identity, too, if the mail is being saved.
-
-BmMailHeader:
-	-	we no longer write Resent-fields into the mail-attributes, since
-		that seems just confusing.
-	-	in DetermineListAddress() we now look into Resent-fields for the
-		list-address, this way Beam is able to correctly reply to the
-		list if the mail has been redirected to the list.
-
-BmMailRefView:
-	-	made automatic selection of next mail after a delete optional.
-
-BmMailView:
-	-	disallowed the chars '&' and '=' to end a line since they are
-		common in URLs which we do not want to word-wrap.
-	-	added IsDisplayComplete() - method to facilitate printing of mails.
-
-BmMenuController:
-	-	added automatic adding/removing to/from listmodel's set of parties
-		interested in changes.
-
-BmPrefsMailReadView:
-	-	added option for automatic selection of next mail after a delete.
-
-BmPrefsReccvMailView:
-	-	corrected ESC-shortcut of remove-account alert.
-
-BmRulerView:
-	-	we now avoid setting the position to anything less than one.
-
-BmSmtp:
-	-	fixed bug with missing "\r\n" when generating bcc-header.
-	-	fixed problem with logging of msg-header not working properly.
-
-BmString:
-	-	added checks for memory-allocation failure
-	-	fixed MoveInto() to handle oversized requests more gracefully
-	    (more DWIM).
-	    
-StringTest:
-	-	added tests for low-memory situations.
-
-web/
-	-	updated info to Beam 1.0
-
-*******************************************************************************
-[Beam 1.0-rc5]
-*******************************************************************************
-
-< 2003-10-21: commit>
-
-BmApp:
-	-	simplified handling of BMM_TRASH.
-
-BmMailRefView, BmMainWindow:
-	-	unified handling of different trash-shortcuts (DEL, CTRL-T,
-		menu and toolbar) such that Beam now does the same no matter
-		which shortcut you use.
-
-BmMemIO:
-	-	removed unneeded #includes
-
-< 2003-10-20: commit>
-
-BmApp, BmDataModel, BmMainWindow:
-	-	removed awkward special-casing of job-done messages being
-		routed through the app just to inform the main-window when
-		the popaccount-list has been read. Must have been a bad
-		day at the time...
-
-BmBodyPartList, BmEncoding:
-	-	extended NeedsEncoding() to support different line-lengths
-		when determining overlong lines (for header and body).
-
-BmMail:
-	-	changed AddQuotedText() to be more efficient for very long
-		paragraphs.
-
-libregexx:
-	- fixed compilation issue if using C-mode.
-
-< 2003-10-16: commit>
-
-BmPrefsRecvMailView:
-	-	fixed bug that caused DeleteMailFromServer-setting to not work
-		anymore (and nobody noticed for weeks, tsk!).
-
-makefiles:
-	-	patched makesystem to work on PPC, too.
-
-many files:
-	-	fixed compilation issues on PPC
-
-< 2003-10-13: commit>
-
-BmBodyPartList:
-	-	changed check for discarded characters when converting to/from
-		UTF-8.
-
-BmEncoding:
-	-	we now consistently discard chars that are illegal for a specific
-		encoding and keep track of the first discarded position.
-	-	in NeedsEncoding() we no demand encoding if the text contains
-		lines that exceed the length of 998 octets (see RFC2822).
-
-BmLogWindow:
-	-	we no longer show error-window if in testmode.
-
-BmMailView:
-	-	instead of requiring hard-breaks of lines exceeding 998 octets,
-		we now demand qp-encoding of the mail-text instead. This avoids
-		the insertion of unwanted newlines into very long paragraphs.
-
-BmPrefsView, BmPrefs...View, BmPrefsWin:
-	-	when activating a specific prefs-view automatically, we now take 
-		care to select the activated view in the prefs-listview, too.
-
-BmPrefs, BmRulerView:
-	-	changed from prefs-setting 'MaxLineLenForHardWrap' to 
-		'NeverExceed78Chars'.
-
-src-tests:
-	-	updated tests to current state of BmEncoding
-	-	added remaining tests so that encoding/decoding is now complete.
-
-WrappingTextView:
-	-	we now ignore B_COPY-messges if the selection is empty. This way
-		we no longer clobber an existing selection when the user presses
-		CTRL-C instead of CTRL-V.
-
-< 2003-10-10: commit>
-
-BmBodyPartList, BmEncoding:
-	-	added support for automatic replacement of charset 'unknown-8bit'
-		(added by some servers during conversion) with default-charset.
-
-BmDataModel:
-	-	ThreadStartFunc() no longer throws, thus avoiding terminate().
-
-BmMail:
-	-	fixed bug with personal-reply-phrase ("you") not working.
-
-BmMailHeader:
-	-	file now follows the 80-chars-per-line rule.
-
-BmNetUtil:
-	-	fixed bug in IsPPPRunning() under BONE which would cause Beam to
-		run out of file-descriptors. No good!
-
-< 2003-10-09: commit>
-
-BmApp:
-	-	added log-entries when a pop-account wants to check mail (such 
-		that it is clear whether the check is being executed or not).
-
-BmBasics:
-	-	added global flag BeamOnDano that indicates whether or not Beam
-		is currently running an Dano (or later).
-
-BmFilter:
-	-	fixed crash when taking along older filter-settings (only vague
-		chance this ever happens in the outside world, but it did for me).
-
-BmLogHandler:
-	-	made mActiveLogs private
-
-BmLogWindow
-	-	positions of log-windows are now persistent.
-	-	made error-window cling to bottom of main-window.
-
-BmMainWindow:
-	-	made error-window cling to bottom of main-window.
-	-	now we correctly add all entries to log-menu.
-
-BmMenuControl:
-	-	changed Dano-compatibility from a compile-time-switch to
-		a run-time switch. This way the bone-release should look alright
-		under Dano, too.
-
-BmPrefsRecvMailView:
-	-	added minor fix to redrawing of days-label.
-
-< 2003-10-07: commit>
-
-BmBodyPartList:
-	-	fixed crashing bug with empty bodyparts not being handled 
-		correctly. When looking for the end of a bodypart's header, 
-		we now make sure to not accept any separator-lines that are not 
-		part of the current bodypart.
-
-ColumnListView:
-	-	fixed bug with items not being added to the end of the superitem's
-		children list if the listview is hierarchical and does not have
-		any sorting order. 
-		This caused the bodypart-view to be upside-down (last item first).
-
-many files:
-	-	changed usage of BM_THROW...-macros to comply with the 
-		80-chars-per-line rule.
-
-*******************************************************************************
-[Beam 1.0-rc4]
-*******************************************************************************
-
-< 2003-10-05: commit>
-
-BmBasics:
-	-	added context-parameter to BM_text_error
-
-BmBodyPartList:
-	-	added empty context-parameter when using BM_text_error.
-
-BmEncoding:
-	-	added us-ascii to charsets.
-	-	added check for conversion errors when converting header-
-		contents from UTF-8 to destination charset.
-
-BmMailEditWin:
-	-	now handles conversion-errors for header-fields, too (not just
-		for mail-text and attachments).
-
-BmMailHeader:
-	-	ConstructRawText() now throws a BM_text_error if the conversion
-		of one of the header-field contents to it's destination charset
-		failed.
-
-BmMainWindow:
-	-	changed shortcuts for network-menu to be in the same order as
-		on the keyboard (1234567890 instead if 0123456789).
-
-BmPrefs:
-	-	added 'us-ascii' to the frequently used charsets.
-
-< 2003-10-02: commit>
-
-BmApp, TestBeam:
-	-	improved startup-snychronisation between Beam and its testing
-		thread (synchronization is now two-way).
-
-BmJobStatusWin, BmNetJobModel:
-	-	reworked according to 80-chars-per-line rule.
-
-BmPopAccount:
-	-	removed unneded include of BmPopper.h
-
-BmPrefsMailReadView, BmPrefsRecvMailView:
-	-	moved check-only-if-PPP-is-up-setting to POP-accounts page
-		since too many people have had problems finding it where it
-		used to live.
-
-BmPrefs:
-	-	removed unneded setting of mailbox-path for testmode.
-
-BmSmtp:
-	-	fixed crash in StateAuthThroughPopServer() if only checking
-		for supported authentication-types.
-	-	checking for authentication-types works again.
-
-QuotedPrintableEncoderTest:
-	-	even more tests for encoded-word encoding (now with different
-		charset).
-
-< 2003-09-30: commit>
-
-BmMailEditWin, BmMenuControl, BmSieveFilter, BmTextControl:
-	-	established a layout that is consistent between R5 and Dano.
-
-BmMenuControllerBase, BmPrefsIdentityView, BmPrefsRecvMailView:
-	-	fixed minor problem with mark not always being set properly.
-
-BmSignature:
-	-	made sure to convert-charsets to lowercase
-
-QuotedPrintableEncoderTest:
-	-	added some more tests for problematic encoded-word encoding.
-
-< 2003-09-29: commit>
-
-BmMail, BmMailView:
-	-	fixed problem with long-word-handling messing up formatting of
-		asian text (that do not contain spaces and such appear as very 
-		long words). Now Beam explicitly checks for URLs and only keeps
-		those intact.
-
-BmMailEditWin:
-	-	convinced detail-buttons to work more reliably (not just every
-		second time...).
-
-WrappingTextView:
-	-	increased length of nLongLine-constant to make sense for asian
-		(very long) words, too.
-
-< 2003-09-29: commit>
-
-BmEncoding:
-	-	changed BmQpEncodedWordEncoder in such a way that it does the
-		character conversion (from utf-8 to the destination charset), too.
-		This should finally deal properly with the problem of not being
-		allowed to separate a multibyte-char across two encoded words.
-		RFC2047 is a nightmare...
-	-	made utf-8 encoding/decoding more robust against illegal multibyte
-		sequences.
-
-BmPrefsGeneralView:
-	-	fixed a typo and worked towards 80-chars-per-line.
-
-BmSmtp:
-	-	if a send-job is stopped, it no longer marks the current mail as
-		sent (it leaves it alone instead).
-
-QuotedPrintableEncoderTest:
-	-	added more tests for BmQpEncodedWordEncoder.
-
-
-*******************************************************************************
-[Beam 1.0-rc3]
-*******************************************************************************
-
-BmPrefsFilterChainView:
-	-	'Pos'-column is now again hidden properly
-	-	cleaned source to follow 80-chars-per-line
-
-BmUtil:
-	-	improved robustness of ParseDateTime() with respect to dates
-		containing textual timezones that parsedate() doesn't know about.
-
-< 2003-09-23: commit>
-
-BmApp:
-	-	some minor changes to support testing.
-	-	corrected homepage-url to point to sourceforge.
-	-	in QuitRequested(), we now lock each window before calling
-		its QuitRequested(), avoiding calls to the debugger.
-
-BmEncoding:
-	-	minor fixes in BmBase64Decoder, BmQuotedPrintableEncoder and
-		BmFoldedLineEncoder. All these should strictly follow RFCs, now!
-
-BmFilterChain:
-	-	sorted map of filters inside a chain is now updated when an
-		item is added, not only when one is removed.
-
-BmIdentity:
-	-	In HandlesAddrSpec(), we no longer return true if given an
-		empty addrSpec. When replying to mailing-lists, this could 
-		result in the From:-header being randomly chosen from the
-		mail being replied too (ieek!).
-
-BmMail:
-	-	A small change increasing robustness towards incomplete setups.
-
-BmPrefsRecvMailView:
-	-	delete-mail-delay-textview is now enabled/disabled as needed.
-
-BmMemIO:
-	-	added new class BmRingBuf, which implements a ring-buffer
-		(no more need to use BmString for that purpose).
-
-BmString:
-	-	fixed a hanging-bug in ReplaceSet().
-	-	fixed incorrect handling of %%-sequence in DeUrlify().
-	-	added tests (openbeos and own) for automated testing.
-
-src-tests:
-	-	added tests for BmBase (BmString and BmMemIO-classes).
-	-	added tests for base64-encoding & -decoding as well as tests
-		for FoldedLineEncoder.
-
-several files:
-	-	more cleanups concerning the 80-chars-per-line rule.
-
-< 2003-09-15: commit>
-
-BmApp, BmBasics:
-	-	added support for testmode
-
-BmBodyPartList:
-	-	finished support for handling text-attachments as utf-8 or
-		as being of the charset currently selected in edit-window.
-	-	fixed minor problem with pending \r\n being included in the
-		bodypart, when in fact it shouldn't (since it is just there
-		to separate the bodypart from the boundary).
-
-BmBodyPartView:
-	-	finished support for handling text-attachments as utf-8 or
-		as being of the charset currently selected in edit-window.
-	-	added missing support for dragging from one bodypartview to
-		another one.
-
-BmEncoding:
-	-	corrected a couple of bugs in BmQuotedPrintableDecoder.
-		Hey, automated testing pays off already!
-
-BmLogHandler, BmLogWindow:
-	-	added support for automatically bringing up the error-window
-		if an error occurs (and no alerts should be shown).
-	-	made the relation between log-files and log-windows a bit
-		more flexible.
-
-BmMail:
-	-	finished support for handling text-attachments as utf-8 or
-		as being of the charset currently selected in edit-window.
-
-BmMailEditWin:
-	-	finished support for handling text-attachments as utf-8 or
-		as being of the charset currently selected in edit-window.
-
-BmPopAccount, BmSmtpAccount, BmPopper:
-	-	logfiles are no longer created statically one for each account.
-		Instead they are created when needed.
-
-BmPrefs, BmPrefsGeneralView:
-	-	changed default for 'ShowAlertForErrors'-setting from true 
-		to false.
-
-BmPrefsMailConstrView:
-	-	added control for "ImportExportTextAsUtf8"-setting.
-
-BmResources:
-	-	added support for testmode
-
-several files:
-	-	changed many occurrences of BM_LOGERR to BM_SHOWERR, since
-		this now will only pop-up the error-window instead of showing
-		an alert.
-
-makefiles:
-	-	finally cleaned up things so that Beam compiles on "normal"
-		BeOS-pcs. It compiles under R5 x86, BONE and Dano, 
-		but not PPC yet.
-
-src-tests:
-	-	added TestBeam to CVS currently with tests for 
-		BmQuotedPrintableDecoder only, but there's more to come.
-
-< 2003-09-13: commit>
-
-BmFilterChain, BmIdentity, BmPopAccount, BmSmtpAccount:
-	-	fixed race-condition/crash in ForeignKeyChanged().
-
-BmNetJobModel, BmPopper, BmSmtp:
-	-	cleanup of net-related include-files.
-
-< 2003-09-12: commit>
-
-BmEncoding:
-	-	fixed problem with encoded-words being over-ambitious in digesting
-		whitespace. Now only whitespace between encoded-words is dumped
-		(whitespace between encoded-word and normal header-text stays
-		intact).
-
-BmMail, BmMailFilter:
-	-	rewrote move-to-tash functionality.
-
-BmPopAccount, BmSmtpAccount:
-	-	fixed signedness-related warning.
-
-BmPrefsLoggingView:
-	-	corrected minimum width of menus on the left to actually fit
-		'Log Everything'.
-
-pcre:
-	-	upgraded to version 4.4
-
-libSieve:
-	-	fixed a load of warnings.
-
-makefiles:
-	-	readjusted so that Beam compiles cleanly (no warnings) while
-		sacrificing as few warnings as possible.
-
-*******************************************************************************
-[Beam 1.0-rc2]
-*******************************************************************************
-
-< 2003-09-11: commit>
-
-BmApp, BmMainWindow, BmMailRefView, BmMailViewWin, BmPrefs:
-	-	added support for 'Edit As New...'-functionality.
-
-BmMail:
-	-	improved detection of identity for incoming mails:
-		when we have determined the default-identity for the 
-		given pop-account, we now proceed to check if there's
-		another identity that corresponds directly to the
-		receiving address of the current mail.
-
-BmMailEditWin:
-	-	now archives/restores state of detail-buttons, too.
-
-BmMenuControllerBase:
-	-	now keeps the marked item even for menus which do not
-		have the BM_MC_LABEL_FROM_MARKED-flag set.
-
-BmPrefs:
-	-	switch loglevels from int16 to int32
-	-	removed multiple entries for 'DefaultCharset'
-
-BmTextControl:
-	-	now uses BmMenuControllerBase as Menu
-
-< 2003-09-09: commit>
-
-BmMenuControllerBase:
-	-	added as base class for BmMenuController, which allows us
-		to use simple menu-controllers in add-ons (like SIEVE).
-
-BmSieveFilter:
-	-	implemented folder- and identity-menu by means of
-		BmMenuControllerBase, ensuring that these menues are
-		always up to date.
-
-< 2003-09-08: commit>
-
-many files:
-	-	replaced most #defines by something more c++-like.
-	-	tried hard to comply better with the 80-chars-per-line rule.
-
-BmApp:
-	-	added support for joining multiple replies into one single
-		mail, no matter what the original recipients were.
-
-BmBodyPartView:
-	-	added support for removing attachments from mails that are
-		being read (not edited).
-
-BmDataModel:
-	-	RenameItem() now takes the oldKey by-value such that is not changed
-		during the rename-operation.
-	-	added support for appended archives, which are being written
-		while Beam is running and integrated into the current archive
-		upon Store() or on startup-after-crash.
-
-BmDeskbarView:
-	-	now we avoid dealing with new mails living in Trash since other
-		mail-clients might put them there with status=='New'. We no
-		longer care about those.
-
-BmEncoding:
-	-	fixed problem in BmFoldedLineEncoder that would always
-		lead to hard-break formatting.
-
-BmLogWindow:
-	-	cosmetical changes: smaller tab, fixed font.
-
-BmMail:
-	-	corrected a small problem in DetermineReplyAddress() with respect
-		to the setting of replyToPersonOnly.
-
-BmMailFilter:
-	-	now we (again) do stop processing the filter chain if a matching
-		filter has requested so.
-
-BmMainWindow:
-	-	convinced the pop-accounts menu to automagically be updated
-		when the PopAccountlist is set-up in order to make the menu
-		shortcuts work at all times (not only after you opened the
-		menu for the first time).
-
-BmMenuController:
-	-	simplified and polished, works more reliably now.
-
-BmPopAccount:
-	-	added missing initialization for mHomeFolder.
-	-	changed UID-handling, esp. we no write UIDs of downloaded mails
-		immediately, so that after a crash Beam should now only double
-		download a maximum of one mail only.
-
-BmPopper:
-	-	added support for removing mails from server after a given 
-		number of days.
-	-	added support for removing local UIDs that are not any longer
-		listed on the server (saves _loads_ of space, my PopAccounts-file
-		has gone from 128KB to 3KB...)
-
-BmPrefsFilterChainView:
-	-	replaced non-working MoveUp/MoveDown-buttons by drag'n'drop.
-
-BmPrefsIdentityView:
-	-	corrected heading.
-
-BmPrefsMailConstrView:
-	-	fixed bug with default-charset not being saved.
-
-BmPrefsRecvMailView:
-	-	added support for automatically removing the corresponding 
-		identities when an account is removed.
-
-BmPrefsWin:
-	-	upon startup, we now show the 'General' - page.
-
-BmString:
-	-	fixed embarrassing bug in Trim(), which caused havoc in mail-
-		header generation when editing mails.
-
-BmUtil:
-	-	corrected one-hour offset in date when converting to internet
-		time, which could lead to wrong date being displayed.
-
-ColumnListView:
-	-	fixed bug when sorting items at the end of a hierarchical
-		listview which has "pending children".
-
-makefiles/:
-	-	added the make-system that has kindly been provided by
-		Linus Almstrom.
-
-< 2003-08-21: commit>
-
-BmBodyPartList:
-	-	added WriteToFile() as support for new drag-protocol.
-
-BmBodyPartView:
-	-	upgraded dragging-protocol to actually make use of the
-		notification message.
-
-BmEncoding:
-	-	fixed case-related problem in charset-conversion that could lead
-		to a hang.
-	-	Fixed problem with Beam sometimes violating RFC2047	in such a way 
-	    that it was possible to separate a multibyte-char across two 
-	    encoded-words. This is no longer the case (I hope).
-
-BmMail:
-	-	write missing MAIL:-attributes to file (e.g. MAIL:recipients 
-		and MAIL:flags).
-
-BmMailHeader:
-	-	fixed cache-validation bug in BmAddrList, which resulted in
-		outdated mAddrString-contents being returned by AddrString().
-
-BmMailRefView:
-	-	added checking of be:originator when handling B_TRASH_TARGET.
-
-BmMemIO:
-	-	in BmMemFilter::Read(), we no longer Finalize() the filter
-		if the dest-buffer is to small and just has to be grown.
-
-*******************************************************************************
-[Beam 1.0-rc1]
-
-	summary:
-		-	added detailed logging of mail-filtering
-		-	brought prefs up-to-date, including possibility to influence logging
-		-	startup feels faster now (window is shown sooner)
-		-	on startup, we now block mail-checking until pop-accounts are complete.
-		-	several smaller bugs fixed
-*******************************************************************************
-
-< 2003-08-09: commit>
-
-BmEncoding, BmPrefs, BmPrefsMailConstrView:
-	-	fixed a couple of case-inconsistencies.
-
-BmLogHandler:
-	-	replaced parameter-nam "flag" by the more appropriate "terrain".
-
-BmLogWindow:
-	-	now always use B_TITLED_WINDOW_LOOK, otherwise the scrollbar's
-		lower button is not visible.
-
-BmMailFilter, BmSieveFilter:
-	-	added (more detailed) logging.
-
-BmMailFolderView:
-	-	in InOutAlwaysAtTop-mode, we now move the drafts folder to the
-		top, too.
-
-BmPrefsGeneralView:
-	-	added prefs-item ShowToolbarBorder.
-
-BmPrefsLogging:
-	-	added this prefs-view.
-
-BmPrefsWin:
-	-	added logging-prefs-view.
-
-< 2003-08-07: commit>
-
-BmApp:
-	-	before checking mail, we now check if all pop-accounts have been
-		read and, if not, we wait until they are.
-
-BmMailView:
-	-	small modification concerning the prefs-item UndoMode.
-
-BmPrefs:
-	-	added new prefs-items to default-msg.
-
-BmPrefsGeneralView:
-	-	added the prefs-items ShowToolbarLabel, ShowToolbarIcons,
-		ShowAlertForErrors and CloseViewWin.
-
-BmPrefsMailConstrView:
-	-	added support for selecting the frequently used character-sets.
-	-	added the prefs-items UndoMode, ReplyIntroStrPrivate, 
-		AddNameToPeople, PeopleFolder and LookInPeopleFolder.
-
-BmPrefsMailReadView:
-	-	added the prefs-items ShowDecodedLength, UseSwatchTimeInRefView
-		and TimeModeInHeaderView.
-
-BmPrefsWin:
-	-	changed minimum size in such a way that filter-page is always
-		displayed correctly.
-
-< 2003-08-05: commit>
-
-BmApp:
-	-	in ReplyToMails() we now use the information if a mail goes
-		to a person only in order to correctly set the reply-intro
-		under all circumstances.
-
-BmBodyPartView:
-	-	changed (again) the way how Beam complains when an attachment's
-		declared mimetype does not match its real one. Now we explicitly
-		check if message/rfc822 has been detected as text/... and in that
-		case automatically insist on open this attachment as a mail.
-
-BmEncoding:
-	-	added automatic correction from "utf8" to "utf-8" when converting
-		from/to UTF-8.
-
-BmGuiUtil:
-	-	small optimization in AddCharsetMenu().
-
-BmLogHandler:
-	-	fixed problems with new BM_LOG-macros: they were not properly
-		surrounded by a statement block, which lead to unwanted changes
-		of code-grammar (if-else structures were being corrupted).
-
-BmMail:
-	-	in CreateReply(), AddPartsFromMail() and CreateReplyIntro() 
-		we now use the information if a mail goes to a person only 
-		in order to correctly set the reply-intro under all circumstances.
-	-	in HasComeFromList(), we now look at the mail-field Mailing-List,
-		too.
-
-BmMailHeader:
-	-	in DetermineReplyAddress(), we now look at the mail-field 
-		Mail-Followup-To, too.
-	-	in DetermineOriginator(), we now look at the mail-field 
-		Mail-Reply-To, too.
-
-BmMailRefView, BmPrefs:
-	-	changed menu-entry from "Reply To Originator" to "Reply To Person".
-
-BmMainWindow, BmLogWindow, BmMailEditWin, BmMailViewWin:
-	-	changed default for Prefs-value 'UseDocumentResizer' to true.
-
-BmWindow:
-	-	added code to ensure that windows are always opened on-screen.
-
-< 2003-08-02: commit>
-
-BmApp:
-	-	added some more logging to startup-phase.
-	-	restructured startup phase to feel faster.
-
-BmMailFolderList:
-	-	corrected counting of folders for logging.
-
-BmMailHeader:
-	-	fixed bug in unfolding-regex: spaces at the end of the line
-		were not matched (but they should be). Now Beam should always
-		separate two unfolded lines by exactly one space.
-
-BmMailRefList, BmListController:
-	-	deactivated logging of estimated object sizes (useful for debugging,
-	    but no more needed).
-
-BmLogHandler:
-	-	optimized and cleaned-up logging to such an extent that the
-		string to be logged is only created if current loglevels suffice.
-		These preparations were needed in order to allow logging in
-		release-versions of Beam.
-	-	finished support for passing log-messages on to log-windows.
-	
-BmLogWindow:
-	-	added (replaced BmLogView), a simple way to view logs.
-
-BmPopper:
-	-	in destructor, we no longer finish the corresponding log. Since
-		the logs now live on, they can be selected in the 'Show Log'-menu,
-		which is what we want.
-
-BmString:
-	-	added Trim()
-
-many files:
-	-	checked and corrected logging where appropriate.
-
-
-
-*******************************************************************************
-[Beam test-03-07-28]
-
-	summary:
-		-	Graphical editor for Mail-filters has been sexed up a bit.
-		-	Mail-filters can be created from a given mail (From, To
-		   and Subject will be set).
-		-	When adding filters, you can now ask Beam to automatically
-		   add them to the default chain.
-		-	several bugs fixed
-*******************************************************************************
-
-< 2003-07-28: release test-03-07-28 >
-
-BmFilterAddon:
-	-	added SetupFromMailData() that creates some filter-lines according
-		to the given mail-data.
-
-BmApp, BmMailViewWin, BmMainWindow, BmMsgTypes:
-	-	added BMM_CREATE_FILTER
+	-	cosmetical changes.
 
 BmMailRef:
-	-	corrected a comment
-	
-BmMailRefView:
-	-	added menu-entry to create a filter from (first) selected mail.
+	-	added missing member-initializers for mWhen and mWhenCreated.
 
-BmMultiLineTextControl:
-	-	corrected layout concerning the divider-position.
+BmSmtp:
+	-	added missing member-initializer for mCurrMailSize.
 
-BmPrefsFilterChainView:
-	-	added a minimum size to hgroup containing filter-chain listview.
-	-	removed some layout-glitches.
+BmStorageUtils:
+	-	added BmBackedFile, a file with automatic backup.
 
-BmPrefsFilterView:
-	-	added check-button that allows to automatically add new filters to
-		the default chain, too.
-	-	added support for creating filters from a given mail
+< 2004-05-07: commit, moved tag 'current-devel' >
 
-BmPrefsView, BmPrefsWin:
-	-	added support for jumping to a specific prefsview and send it a
-		message (asking it to do something)
+BmEncoding:
+	-	removed spurious addition of Escape to the characters safe for 
+		qp-encoding, i.e. it would not be encoded. I can't remember the
+		reason why I had added it, and it looks strange now. Maybe it
+		has to do with japanese encoding (that uses Esc a lot), but I
+		don't know.
 
-BmSieveFilter:
-	-	made menu-controls of filter-line top-aligned.
-	-	moved values-control closer to operator-control.
-	-	HACKED a way around a weird BScrollView-problem which causes
-		problems when resizing a view that is scrolled downwards.
-	-	added support for creating filter from mail-data.
+< 2004-05-07: commit >
 
-ColumnListView:
-	-	removed return-value checking from Unarchive(), since it caused
-		problems when trying to read from older state-archives.
+BmEncoding:
+	-	fixed bug in base64-decoder that chokes on embedded padding chars.
+		Unfortunately, Beam is producing these by itself when it concatenates
+		several encoded-words into one string.
 
-ImageAboutWindow:
-	-	added B_NOT_ZOOMABLE to window's flags.
-
-MultiLineTextControl:
-	-	fixed crash if given label is NULL.
-
-< 2003-07-26: commit>
-
-BmBasics:
-	-	fixed two bugs introduced during restructuring work: BM_network_error
-		and BM_text_error are now (again) derived from BM_runtime_error, not
-		BM_error.
-		
-BmJobStatusWin:
-	-	added stop-button to BmMailMoverJob.
-
-BmMailFilter, BmMailMover:
-	-	now we say "stopped!" if job has been stopped.
-	
-BmMailViewWin:
-	-	we now close the window automatically after a reply has been 
-		requested (depending on prefs).
-
-BmMenuControl:
-	-	added support for specifying a text at construction time, which
-		will be used to determine the exact width of the menufield.
-	-	corrected incorrect layout if divider < 12
-
-BmMultiLineTextControl:
-	-	minor cleanup, moved MView-related methods from private to
-		public in order to be able to use them from external classes.
-
-BmPrefsFilterView:
-	-	adjusted default layout of splitter
-
-BmSieveFilter:
-	-	added support for SIEVE's address-test, allowing to specify which
-		part of an address field to use for a match
-	-	added support for multiple values, which can now be entered in
-		a corresponding multiline-textfield.
-	-	added BmFilterScrollView, a scrollview that works as required by
-		the filter-list. Now the maximum number of filter-lines is 
-		(arbitrarily) set to 20. That should be enough, I hope.
-
-BmTextControl:
-	-	corrected incorrect layout if divider < 12
-
-BmToolbarButton:
-	-	now we make sure never to display a context-menu if the button
-		does not need a latch (has no subitems).
-
-ColumnListView:
-	-	fixed bug that would allow extending the selection by use of
-		cursor-down key although the listview is in single-select mode.
-
-MultiLineTextControl:
-	-	changed text-margin from 4 to 3 pixels.
-
-< 2003-07-23: commit>
-
-BmApp:
-	-	added code to setup the foreign-key connections between the
-		different listmodels.
-
-BmDataModel:
-	-	added support for automatic handling of foreign-keys, allowing
-		Beam to track listmodel-items referencing other listmodel-items
-		to update their record if the referenced item is being renamed.
-
-BmFilter:
-	-	implemented ForeignKeyChanged() in order to automatically update
-		foreign-keys (call is double-dispatched to add-on).
-
-BmFilterAddon:
-	-	added identifiers for the foreign-key folder and identity
-	-	added abstract ForeignKeyChanged()-base method
-
-BmFilterChain:
-	-	added methods for removing a filter from one/all chain(s).
-	-	added methods for renaming a filter in one/all chain(s).
-
-BmIdentity:
-	-	implemented ForeignKeyChanged() in order to automatically update
-		foreign-keys.
-
-BmMailFolder, BmMailFolderList:
-	-	implemented automatic updating of foreign-keys to folder-name.
-
-BmMailRefView:
-	-	added identity - column to listview
-
-BmMailView:
-	-	when adding signature to empty mailtext, we now always make sure
-		to insert an empty line before the signature. Without this, 
-		the complete mailtext would be grey.
-
-BmMenuControl:
-	-	fixed crash in MarkItem() when an item was not found in recurse 
-		mode.
-
-BmPeople:
-	-	added support for using full mail-address in addition to just
-		using the addrSpec.
-
-BmPopAccount:
-	-	implemented ForeignKeyChanged() in order to automatically update
-		foreign-keys.
-
-BmPrefs:
-	-	fixed bug with archive-version not being updated correctly, which
-		in turn caused the item "DefaultCharset" being added every time
-		the prefs were saved.
-
-BmPrefsFilterView:
-	-	fixed sorting of filters (now we *do* set a sortkey...).
-	-	when renaming a filter, we now adjust the link in all chains
-		that use this filter.
-	-	when removing a filter, we now remove the link from all chains
-		that used this filter.
-
-BmPrefsFilterChainView:
-	-	fixed sorting of chained items (now we sort numerically).
-	-	when renaming a chain, we now adjust the link in all pop-accounts
-		that use this chain.
-
-BmSieveFilter:
-	-	implemented ForeignKeyChanged() in order to automatically update
-		foreign-keys.
-
-BmSmtpAccount:
-	-	implemented ForeignKeyChanged() in order to automatically update
-		foreign-keys.
-
-< 2003-07-16: commit>
-
-BmFilter:
-	-	corrected bug that would cause Beam to create wrong kind of
-		Sieve-filter when trying to migrate older archive versions.
-
-BmFilterChain:
-	-	fixed crash when removing a filter from the chain (the STL is
-		a bit tricky sometimes...)
-
-BmMailEditWin:
-	-	BmPeopleControl now detaches from model as itself gets detached
-		from window. This fixes the bug with BmPeopleList being unable
-		to send messages to detached view ("bad port id").
-
-BmSieveFilter:
-	-	added "List-Id" to list of standard-fields.
-
-BmStorageUtil:
-	-	in EnsureIndexExists(), we now check if index exists instead
-		of always trying to create it, avoiding irrelevant error-logs.
-
-script.c (libSieve):
-	-	re-added changes that were lost during my last cvs-havoc. Without
-		these changes a script could only be used once.
-
-*******************************************************************************
-[Beam test-03-07-15]
-
-	summary:
-		-	Mail-filters are now implemented as add-ons.
-		-	Mail-filters can be edited in a graphical way, so that it
-		   is no longer neccessary (but possible) to edit the SIEVE-script.
-		-	Filters can (and have to) be grouped into filter-chains, which
-			are associated to specific accounts.
-		-	Beam now provides full support for mail-identities, making it
-			easier to handle many different mail-accounts.
-		-	
-*******************************************************************************
-
-< 2003-07-15: release test-03-07-15 >
-
-Changes.txt, ToDo.txt:
-	-	updated for release test-03-07-15
-
-updateLibFolder.sh:
-	-	now we recreate every link by use of -f flag.
-
-BmFilter:
-	-	we now expect our add-ons in add-on folder relative to
-		Beam's path.
-
-BmFilterAddon, BmMailFilter, BmSieveFilter:
-	-	finished implementing SetStatus- and Discard-functionalities-
-
-BmIdentity:
-	-	fixed crash when trying to archive an identity-list that has
-		no current identity.
+BmListController:
+	-	in UpdateModelItem(), we now only redraw the item if it is visible
+		at all.
 
 BmMail:
-	-	implemented storing of mails into Trash.
-
-BmPrefsFilterChainView:
-	-	removed glitch with chainview not always appearing.
-
-< 2003-07-13: commit >
-
-- structural changes
-- finished implementing SIEVE as addon
-- added GUI-prefs for SIEVE-filters
-- added full support for mail-identities
-
-< 2003-04-22: commit >
-
-BmApp:
-	-	added support for moving mails into a specific folder (this time
-		not by drag'n'drop but through use of a context-menu).
-
-BmBodyPartList
-	-	replaced calls to GetStrippedFieldVal() with GetFieldVal()
-	-	improved handling of errors during text-conversion
-
-BmDataModel:
-	-	added DisplayKey() to BmListModelItem, this represents a name
-		of the item that is being used for display.
-	-	in RenameItem() we now avoid doing anything if the old and
-		the new name are identical (we used to find a new, unique name
-		in this case).
-
-BmEncoding:
-	-	added support to UTF8Encoder for automatic discarding of
-		illegal char-sequences. This way, chars that could not be
-		converted will be missing from the displayed mailtext, but
-		the mailtext will not be cut off at the first illegal sequence.
-
-BmMailEditWin:
-	-	replaced calls to GetStrippedFieldVal() with GetFieldVal()
-
-BmMailFolder:
-	-	added DisplayKey()
+	-	fixed bug with generating backup-name for mails with very long names.
 
 BmMailFolderList:
-	-	fixed problem with NewMail-query when restarting job-model
+	-	cosmetical changes
 
-BmMailHeader, BmMail:
-	-	threw out handling of unstripped headers, now we have only one
-		set of headers (the stripped, i.e. parsed version), which makes 
-		things clearer and more obvious.
+BmMailRef:
+	-	in ResyncFromDisk() we call TellModelItemUpdated() only if anything
+		has in fact changed.
 
-BmMailHeaderView:
-	-	now all key-msgs within a header-field-view that concern 
-		cursor-movement are propagated to the mailview instead. This
-		way you can click on the mail-header and still use the cursor
-		keys to navigate the mail-view. Additionally, this avoids
-		scrolling away the header-field-view's contents... >:oP
-	-	fixed incorrect textrect in content-view of a header-field,
-		which would lead to text of long fields being cut off at the
-		right edge.
-		
-BmMailRefView:
-	-	added move-to submenu to context-menu
+Base64DecoderTest:
+	-	added test that checks for correct handling of embedded padding
+		chars.
 
-BmMailView:
-	-	the separator-chars for undo/redo of the underlying 
-		WrappingTextView are now setup according to prefs.
+< 2004-05-04: commit >
 
-BmMainWindow, BmMailViewWin:
-	-	adjusted to new menu-controller conventions
-	-	added handling of BMM_MOVE messages
-
-BmMenuController:
-	-	reworked code to be of more general use.
-	-	added sorting to hierarchical menus.
-
-BmMsgTypes.h:
-	-	added BMM_MOVE
-
-BmPopAccount:
-	-	in GetDomainName(), we now take into account the possibility
-		that the PopServer that has been entered by the user is
-		just a domain (no host part). In this case, we no longer cut
-		of the first part of the domain, we just return the complete
-		string.
-	-	integrated NeedControllersToContinue(false)
-
-BmPrefsFilterView, BmPrefsRecvMailView, BmPrefsSendMailView:
-	-	fixed annoying reversal-problem when editing the key-field
-		(the name).
-
-BmSmtpAccount:
-	-	integrated NeedControllersToContinue(false)
-
-BubbleHelper:
-	-	added support for central cursor management
-	-	upgraded BView-lookup from BList to stl::map
-
-Cursor, CLVColumnLabelView:
-	-	switched to R5 cursor-handling (BCursor)
-
-UserResizeSplitView:
-	-	fixed problems with incorrect mouse-cursors after drag
-
-WrappingTextView:
-	-	added support for word-, sentence-, paragraph-wise undo/redo.
-
-BmMemIO:
-	-	added support for resetting a BmStringOBuf.
-
-< 2003-04-10: commit >
-
-BmApp:
-	-	now we start mail-reading-jobs only if the mail has not already
-		been read from disk. This fixes the annoying behaviour that the
-		mailview always scrolls back to top/left when you reply/print/
-		forward this mail.
-
-BmDataModel:
-	-	added NeedControllersToContinue() which specifies if a
-		job-model requires controllers in order to run or not
-
-BmEncoding:
-	-	fixed bug leading to endless loop when the only space in a
-		header-field is at the beginning.
-	-	folding code handles long lines without spaces a bit smarter.
-
-BmMail:
-	-	removed superfluous space in first 'References:'-line.
-
-BmMailEditWin:
-	-	added support for drag'n'drop of people into the addr-fields.
-
-BmPeople:
-	-	added support for live people-queries
-
-< 2003-03-28: commit >
-
-BmApp:
-	-	added TheFilterChainList to global init/uninit
-
-BmDataModel:
-	-	in RenameItem(), we now pass UPD_SORT to TellModelItemUpdated(),
-		such that the View has a chance to re-sort the items.
-
-BmFilter, BmJobStatusWin, BmMailFilter, BmMailRefView, BmMailViewWin,
-BmMainWindow, BmPopAccount, BmPopper, BmPrefsFilterView, 
-BmPrefsRecvMailView, BmPrefsWin:
-	-	switched from inbound/outbound filter-lists to a single
-		list of filters that is associated to accounts by the 
-		newly introduced filter-chains. 
-		I believe this represents a good compromise between flexibility
-		and ease-of-setup.
-
-BmFilterChain:
-	-	file added, implements BmFilterChain, BmFilterChainList and 
-		BmChainedFilter
-
-BmLogHandler:
-	-	fixed bug with log-files not quitting when they should
-
-BmMailHeader:
-	-	made BmRefObj virtual in BmMailHeader
-
-BmPeople:
-	-	added email-attribute to people-query (this fixes the problem
-		of people with empty names not being shown).
-	-	corrected handling of foreign people
-
-BmPrefs:
-	-	adjusted default shortcuts
-
-BmPrefsFilterChainView:
-	-	added file, implements filter-chain administration
-
-BmResources:
-	-	we now remove all whitespace from FQDN, just to be sure
-
-BmTextControl:
-	-	added missing include for MenuField.h
-
-< 2003-03-12: commit >
-
-BmEncoding:
-	-	fixed bug with incorrect return-code expectations when calling
-		iconv_open()
-
-BmRefManager:
-	-	fixed serious bug that showed when using virtual BmRefObj
-		base classes. The bug itself being a cast from void* to 
-		BmRefObj which just does not work for virtual base classes.
-
-< 2003-03-04: commit >
-
-BmBodyPartList:
-	-	removed visit to debugger in SetTo() when trying to call 
-		AddSubItem() without having the model locked. Now we lock it.
-
-< 2003-03-04: commit >
-
-all files:
-	-	checked and tightened use of free pointers / ref-objects
-	-	checked and tightened locking mechanism, esp. trying to avoid
-		the problematic situation when a thread tries to lock a model
-		while it already holds the GlobalLock. This situation now 
-		triggers the debugger.
-	-	added quite some more BM_ASSERTs into devel-build in order to
-		drop into the debugger whenever something insane is going on.
-
-BmBodyPartList:
-	-	by default, if a bodypart doesn't contain any charset-specification
-		in its content-type, we now use the DefaultEncoding instead of
-		us-ascii. Since this doesn't conform to RFC822, this can be
-		changed by prefs.
-
-BmPopAccount, BmSmtpAccount:
-	-	removed superfluous filter-member
-
-BmPrefsRecvMailView, BmPrefsSendMailView:
-	-	removed superfluous filter-control
-
-BmUtil:
-	-	fixed char-count/byte-count confusion in WordWrap() which would
-		lead to unreasonably short lines with 2-byte encodings.
-
-< 2003-02-26: commit >
-
-BmApp:
-	-	juggled order of object-creation so that prefs are created
-		a bit sooner (since we now need them for logfile-truncation).
-
-BmListController:
-	-	fixed bug in RemoveModelItem() that would simply ignore any
-		items contained within the item to be removed. Now these
-		items will be removed, too. This removes a ref-leak.
-
-BmLogHandler:
-	-	added support for logfile-truncation
+BmMail, BmPrefsMailConstrView:
+	-	added support for %FA and %FN macros in reply-/forward-intro.
 
 BmMailFolderList:
-	-	simplified and bug-fixed node-monitoring code somewhat
+	-	we now filter out second event of a single B_ENTRY_MOVED node-monitor
+		message as we want to handle it only once.
 
-BmMailFolderView:
-	-	removed UpdateModelItem() specialization, because this is
-		now handled in super-class
+< 2004-04-30: moved current-devel >
 
-BmPrefs:
-	-	we now ensure that ThePrefs is initialized at the very start
-		of constructor
-
-BmRefManager:
-	-	minor cleanup of logging-texts
-
-< 2003-02-26: commit >
-
-BmDataModel:
-	-	added UPD_SORT-flag that indicates the sorting order has changed
-
-BmListController:
-	-	added support for automagical renaming of state-files to
-		new naming-convention (including the device-no).
-
-BmMailHeader:
-	-	minor cleanup
-
-BmFilter, BmJobStatusWin, BmMail, BmMailEditWin, BmMailFilter, 
-BmMailRefView, BmMailViewWin, BmMainWindow, BmPopper, BmPrefsFilterView:
-	-	reworked filter-handling to provide a sortable list of filters
-		(each of which can be active/deactive)
-
-BmPrefsShortcutsView:
-	-	fixed bug with columns being right-justified when in fact they
-		should be left-justified
-
-BmPrefsMailConstrView, BmPrefsSignatureView:
-	-	changed charset-menus to work correctly for all libiconv-charsets
-
-BmMailRefList:
-	-	added support for automagical renaming of mailcache-files to
-		new naming-convention (including the device-no).
-
-< 2003-02-25: commit >
-
-several files:
-	-	instead of using the BeOS-provided encodings (B_..._CONVERSION)
-		we now load all available charsets from libiconv.
-	-	removed int32-encoding and replaced it with BmString charset.
-	-	made naming consistent between charset and encoding: 
-		charset always means character-encoding (e.g. ISO-8859-1), 
-		while encoding refers to content-transfer-encoding (e.g. base64).
-
-BmApp:
-	-	moved opening of prefs-window to this class, since it is now
-		being used in several places.
-
-BmListController:
-	-	added mapping from model-item to view-item in order to speed
-		up linear search in FindViewItemFor()
-
-BmMailEditWin:
-	-	added access to prefs-window to menu
-	-	completed support for new libiconv-charsets
-
-BmMailFolder, BmMailFolderList, BmMailRef:
-	-	made sure to always use node-refs, not just inodes.
-
-BmMailHeaderView:
-	-	fixed crash when header contained malformed lines (lines that
-		do not start with whitespace, but were missing a colon).
-
-BmMailRefView:
-	-	when the user presses DELETE in order to move mails to trash, we
-		now immediately remove the items from the listview (the *view*,
-		*not* the mailref-list). This gives nicer looks (less flicker) and
-		should remove situations where mails were asked to be moved to 
-		Tracker more than once, resulting in Tracker complaining about
-		such nonsense.
-
-BmMailView:
-	-	added message when a mail's textbody could not be converted 
-		correctly from the suggested charset into UTF-8
-
-BmMailViewWin:
-	-	added access to prefs-window to menu
-	-	removed reference to non-existent menu-item "Filter", which
-		caused a crash on open
-
-BmString:
-	-	added assert()-calls after malloc()/realloc(), just to be sure
-		to crash immediately upon memory-problems
-
-ColumnListView:
-	-	corrected a bug in scrolldown-with-selection-code where the view
-		was (confusingly) shifted when all selected items were already
-		visible in the center of the screen.
-
-*******************************************************************************
-[Beam test-03-02-17]
-
-	summary:
-		-	Beam now uses libiconv for text-conversions instead of the BeOS-native
-			functions (since they do not always work reliably).
-		-	the behaviour of the prefs window has been overhauled
-		-	Beam supports mail-filters through native SIEVE-scripts
-			(you have to enter them manually).
-
-*******************************************************************************
-< 2003-02-17: commit, 'current'-tag moved >
-
-BmEncoding:
-	-	corrected wrong order of iconv_open() params... tsk!
-
-BmMenuController:
-	-	added, these were missing from cvs since a couple of days
-
-BmPrefs:
-	-	changed defaults of log-levels
-
--------------------------------------------------------------------------------
-< 2003-02-16: commit >
-
-BmBasics:
-	-	added new BM_text_error exception
-
-BmBodyPartList, BmMailEditWin:
-	-	added support for detecting encoding mismatches (when the
-		mailtext contains characters that could not be converted to the
-		selected encoding). In such a case, we now ask the user to
-		check the selected charset or remove the offending character(s).
+< 2004-04-27: commit >
 
 BmController:
-	-	moved IsMsgFromCurrentModel() from protected to public
-
-BmEncoding:
-	-	added support for using libiconv for character-conversions, and
-		made this mode the default, since the BeOS-provided conversion-
-		routines do not always work reliably when they encounter characters
-		that are not supported by a specific encoding (resulting in '\0'-
-		characters being inserted into the string, which sooner or later 
-		leads to complete havoc...).
-
-BmFilter:
-	-	removed the unneeded msg-field MSG_FILTER
-
-BmJobStatusWin:
-	-	BmMailFilterView now uses BmListModel::MSG_ITEMKEY instead of 
-		BmFilter::MSG_FILTER
-
-BmMail:
-	-	minor cleanup
-
-BmMailRefView, BmMainWindow, BmMailViewWin:
-	-	added support for dynamically changing the filter-menus as
-		the filter-list are being edited.
-
-BmMailView:
-	-	removed unneccessary include for BmMainWindow
-
-BmPref*View, BmRulerView:
-	-	in the view's destructor, we now remove all BubbleHelper-entries,
-		so we do not leave entries lying around that might creep up at
-		odd places (when an address is reused by another view)
-
-BmMemIO.h:
-	-	added getters HadError(), SrcCount() and DestCount()
-
-Beam*.proj:
-	-	added libiconv.so to libraries and removed libtextencoding.so and
-		libtranslation.so
-
--------------------------------------------------------------------------------
-< 2003-02-13: commit >
-
-BmFilter:
-	-	added a couple of MSG-field-names used for communication
-		between mail-filter model and view.
-
-BmJobStatusWin:
-	-	added BmMailFilterView
-	-	changed color of status-bar under DANO (so that it doesn't
-		match the background color...)
-
-BmMail:
-	-	changed mDestFoldername to be a path instead of a BmString
-		(and renamed it to mDestFolderpath while doing it). This
-		simplifies the task of determining a mail's new home-folder
-		somewhat (although it's still something of a mess).
-
-BmMailEditWin:
-	-	now uses BmMail::SetDestFoldername()
-
-BmMailFilter:
-	-	now we actually read mails from disk before filtering them. This
-		avoids crashing a lot >;o)
-	-	implemented store-on-change-only for mail-filtering
-	-	added new job-specifier BM_EXECUTE_FILTER that executes a
-		filter even if no controller is present (as is the case when
-		Beam has just downloaded this mail).
-
-BmMailRef:
-	-	added newRef-argument to ResyncFromDisk()
-
-BmMailRefView, BmMailViewWin, BmMainWindow:
-	-	added support for applying filters to selected mails
-
-BmPopper, BmSmtp:
-	-	added check to ShouldContinue() in StateLogin()
-
--------------------------------------------------------------------------------
-< 2003-02-08: commit, 'current'-tag moved >
-
-BmCheckControl:
-	-	added SetValueSilently(), needed by PrefsViews
-
-BmFilter:
-	-	added support for constructing appropriate error-strings
-
-BmMail:
-	-	added support for changing a mail's status before it has
-		been written to disk (required in order to realize the sieve
-		imapflags-actions).
-
-BmMailFilter:
-	-	added support for setting mail-flags through sieve's 
-		imapflags-actions
-		
-BmPrefs:
-	-	added ResetToDefault()
-
-BmPrefs...View, BmPrefsWin:
-	-	fixed several layout-issues
-	-	completely overhauled behaviour prefs-window, which now seems to 
-		make more sense
-	-	added support for restoring defaults
-
-xmalloc:
-	-	fixed bug in xstrconcat() with pos not being incremented
-
--------------------------------------------------------------------------------
-< 2003-02-07: commit, 'current'-tag moved >
-
-BmApp:
-	-	when joining replies/forwards, they are now being joined
-		in chronolical order
-
-BmBodyPartView:
-	-	we now accept incorrect mimetype-declarations for attachments
-		if (and only if) the real mimetype has supertype "text". 
-		This makes it possible to quietly open email-attachments 
-		('message/rfc822' but BeOS sees them as 'text/x-email').
-	-	fixed bug with incorrectly declared attachments of real 
-		supertype 'text' always being opened with the declared type.
-		Now they are opened with their real type.
-
-BmFilter:
-	-	added Execute()-method that (surprise) executes this filter
-		in the given message-context
-	-	added support for default-filters
+	-	removed left-overs from profiling
 
 BmListController:
-	-	fixed bug that caused autoscroll to stop working when the mouse
-		had temporarily exited the listview (and re-entered the scrollzone 
-		later)
-		
-BmMail:
-	-	added Filter()-method that applies the appropriate mail-filter
-		to this mail
-	-	fixed bug with mails being incorrectly initialized as inbound
-		when in fact they were outbound
+	-	added some more logging
+	-	cosmetical changes
 
-BmMailEditWin:
-	-	changed SaveMail() to apply mail-filter immediately before send 
-		a mail
-	-	changed SaveMail() to store draft messages in the 'draft'-folder
-	-	whenever we save a mail, we make sure to set its outbound-flag
-
-BmMailFilter:
-	-	added struct MsgContext that includes support for deleting the
-		header-buffers which are neccessary because of the braindead
-		mechanism libSieve uses to access the headers of a mail
-
-BmMailFolderView:
-	-	fixed minor bug with name of MailMover-jobs not being unique
-
-BmMailHeader:
-	-	added support for accessing all entries for a single header
-
-BmPopAccount, BmSmtpAccount:
-	-	added support for handling an account's filtername
-
-BmPopper:
-	-	after a mail has been rerieved, we now apply the appropriate
-		mail-filter before storing the mail on disk
-
-BmPrefsFilterView:
-	-	added support for specifying a default filter (one for inbound 
-		and one for outbound)
-
-BmPrefsRecvMailView, BmPrefsSendMailView:
-	-	added support for associating mail-filters with accounts
-
-BmUtil:
-	-	Fixed ugly bug in WordWrap() that would drop the last line of 
-		a mail.
-
-sieve.y, sieve-lex.l:
-	-	added workaround for the (annoying) fact that flex is not being
-		re-initialized correctly when we start to parse a new script.
-		We now do the re-initialization ourselves (hopefully not missing
-		anything...)
-
-CLVEasyItem, CLVColumn
-	-	fixed bug with right-justified columns not working properly
-
--------------------------------------------------------------------------------
-< 2003-02-05: commit >
-
-BmApp:
-	-	updated credits (added Paweł Lewicki)
-	-	added creation/deletion of FilterLists
-
-BmEncoding:
-	-	removed padding to field-name length from folding-code, since 
-		it is useless
-	-	fixed bug with one additional space being inserted during
-		unfolding of non-address fields
-
-BmFilter:
-	-	created, a BmFilter contains info about one specific SIEVE-
-		script.
-
-BmListController:
-	-	fixed auto-scrolling being activated when in fact it shouldn't.
-		Now there is a 12-pixel scrollzone at the edge of a listview
-		that activates auto-scrolling.
-	-	The highlighted item is now updated during autoscroll (i.e. the
-		highlight moves with the scroll).
-
-BmLogHandler:
-	-	added BM_LogFilter logging-type
-
-BmMail:
-	-	added support for storing mails in a destination folder that
-		has been set by a mail-filter
-
-BmMailFilter:
-	-	created, a BmMailFilter executes a given BmFilter on a BmMail
-
-BmMailHeader:
-	-	removed padding to field-name length from folding-code, since 
-		it is useless
-	-	fixed a minor bug that caused Beam to select an suboptimal 
-		from-address for a reply whenever an address-matching-fallback 
-		has been found (although an address-exact-match exists, too). 
-
-BmMultilineTextControl:
-	-	completed support for automatic layout during resize
-
-BmPopAccount:
-	-	renamed "fallback"-account to "catch-all"-account
-
-BmPopper:
-	-	fixed crash when ns-lookup failed
-
-BmPrefs:
-	-	added BM_LogFilter logging-type
-
-BmPrefsFilterView:
-	-	created, contains functionality for editing a filter-list
-
-BmPrefs...View:
-	-	now include individual files instead of "liblayout-all.h"
-
-BmPrefsWin:
-	-	added two instances of BmPrefsFilterView (one inbound the
-		other outbound).
-
-BmSignature:
-	-	added locking when accessing a dynamic signature
-
-BmSmtp:
-	-	fixed crash when ns-lookup failed
-
-BmStorageUtil:
-	-	fixed BmTempFileList::NextTempFilenameWithPath() to correctly
-		insert a '/' between path and filename.
-
-BmString:
-	-	LockBuffer() now returns a buffer when asked for size 0 (this
-		buffer is of length 1 to allow for storing the '\0'-terminator).
-		This fixes a crash in BmStorageUtil::FetchFile() and other places.
-
-Build.txt:
-	-	added this file, containing a building-howto
-
-MultiLineTextControl:
-	-	fixed bug with textview still being editable when the 
-		MultiLineTextControl has been disabled.
-
-sieve.y:
-	-	fixed two minor include-issues
-
-sieve_err:
-	-	added sieve_strerror()
-
-libSieve:
-	-	fiddled several files to make libSieve work on PPC
-
-*******************************************************************************
-[Beam test-03-01-27]
-
-	summary:
-		-	Beam now runs on PPC, too
-		-	a (rather large) refactoring step has been done in order to simplify 
-			handling of memory-/network-buffers and to reduce memory-footprint
-		-	support for people-files has been included, just select from the
-			"To:", "Cc:" or "Bcc:" menu.
-		-	toolbar-buttons now support several text/icon-layouts and can serve for
-			more than one action (prefs missing)
-		-	mailing-lists are now properly supported, there are several ways to
-			reply to a mail (reply-to-list, reply-to-person, be-smart, reply-to-all)
-		-	support for swatch-internet-time added (prefs missing)
-
-*******************************************************************************
-< 2003-01-27: commit >
-
-CLVColumn, CLVEasyItem:
-	-	removed support for string-truncation that is not used by Beam
-		but that used to eat a considerable amount of memory when 
-		browsing large mail-folders
-
-BmPrefsGeneralView:
-	-	removed default-refview-layout and useStripedListView, since
-		they did not really make sense
-
-BmMailRef, BmMailRefList:
-	-	removed dummy-items that used to be needed for the 
-		default-layout view provided in prefs (which is now gone)
-	-	changed constructors to take 'const BmString&'-parameters 
-		instead of BmString, avoiding the copying overhead
-
-BmBodyPartList, BmBodyPartView, BmDataModel, BmMailFolder, 
-BmMailFolderView, BmMailRefView, BmPrefsRecvMailView, 
-BmPrefsSendMailView, BmPrefsSignatureView:
-	-	changed constructors to take 'const BmString&'-parameters 
-		instead of BmString, avoiding the copying overhead
-
-BmListController:
-	-	optimised memory-footprint by providing the item-contents
-		through GetUserText() instead of statically copying them
-		into the list-view
-	-	changed constructors to take 'const BmString&'-parameters 
-		instead of BmString, avoiding the copying overhead
-
-BmMail:
-	-	changed iter++ to ++iter, just to be consistent (and because
-		pre-increment is better for objects than post-increment)
-
-BmMainWindow:
-	-	fiddled with default-sizes
-
-libSieve:
-	-	fixed warnings during compilation
-
--------------------------------------------------------------------------------
-< 2003-01-22: commit >
-
-folder build_ppc/release
-	-	added project-files for PowerPC-version
-
-many files:
-	-	patched to compile & run under PowerPC
-
--------------------------------------------------------------------------------
-< 2003-01-19: commit >
-
-Beam_in_Parts*.proj:
-	-	added BmNetJobModel.*
-
-BmBodyPartList:
-	-	changed first parameter of BmMemFilter-calls to be a pointer 
-		instead of a reference
-
-BmEncoding:
-	-	removed BmDotstuff-(de/en)coder-classes, they now live in
-		BmNetJobModel
-
-BmJobStatusWin:
-	-	QuitRequested() now takes a little snooze() in order to give 
-		running jobs a chance to stop
-
-BmLogHandler:
-	-	corrected wrong number of spaces in linebreak-reformatting
-
-BmMailView:
-	-	corrected automatic cursor-positioning when the selected signature
-		has changed
+BmDataModel, BmMailFolder, BmMailRef, BmMailRefList:
+	-	implemented appending archives to cache for the case when the
+		cache isn't loaded. This speeds up use of long folders that are
+		the target of mail-filters, as the cache no longer needs to be
+		thrown away.
 
 BmMemIO:
-	-	BmStringIBuf now supports multiple buffers, i.e. you can add
-		any number of input buffers to a BmStringIBuf which will pass
-		them on to its output as if it was only one single buffer
+	-	removed ugly minSize-crutch.
 
-BmNetJobModel:
-	-	added this, which contains the following classes:
-		+	BmNetJobModel, an abstraction of job-models that run over
-			a network (i.e. send/receive data)
-		+	BmNetIBuf, a BmMemIBuf-subclass that reads from a socket
-		+	BmNetOBuf, a BmMemOBuf-subclass that writes to a socket
-		+	BmDotStuffEncoder & BmDotStuffDecoder, that implement
-			the dot-stuffing algorithm used by several mail-protocols
-		+	BmStatusFilter, an abstract class for fetching data from
-			a server and separate the answer into a status-part and an
-			optional part containing additional data
-
-BmPopAccount:
-	-	made GetPOPAddress() deal properly with NULL-pointers
-
-BmPopper:
-	-	reworked network-code to make use of BmNetJobModel base-class
-		(and other classes from BmNetJobModel)
-	-	added BmPopStatusFilter, a BmMemFilter that knows how to separate
-		POP3-status messages from additional answer-data and is able to
-		interprete the status-messages
-
-BmSmtpAccount:
-	-	made GetSMTPAddress() deal properly with NULL-pointers
-
-BmSmtp:
-	-	reworked network-code to make use of BmNetJobModel base-class
-		(and other classes from BmNetJobModel)
-	-	added BmSmtpStatusFilter, a BmMemFilter that knows how to separate
-		SMTP-status messages from additional answer-data and is able to
-		interprete the status-messages
-
-BmWindow, BmMainWindow, BmMailEditWin, BmMailViewWin:
-	-	fixed problem with CUT/COPY/UNDO-messages being sent in an
-		infinite loop if the focus-view does not understand them
-	-	moved handling of CUT/COPY/UNDO-messages into BmWindow
-
--------------------------------------------------------------------------------
-< 2003-01-14: commit >
-
-BmBodyPartList:
-	-	fixed encoding/conversion being the wrong way round in
-		ConstructBodyForSending(). We have to convert first, then
-		encode...
-
-BmEncoding:
-	-	NeedsEncoding now explicitly takes an utf8-string (it
-		actually doesn't matter, but I wanted to clear things up).
-
-BmMail, BmMailEditWin:
-	-	ConstructBodyForSending now gets the editedText as UTF8-
-		string as opposed to a string in the mail's native charset
-
-BmPeople:
-	-	fixed bug where persons with empty emails would be added to
-		their respective groups, resulting in a crash when actually
-		trying to display this group's list of mail-addresses
-
--------------------------------------------------------------------------------
-< 2003-01-12: commit >
-
-BmStorageUtil:
-	-	fixed bug in BmReadStringAttr that would read the terminating
-		'\0' into the string, too.
-
--------------------------------------------------------------------------------
-< 2003-01-10: commit >
-
-*.proj:
-	-	added missing BmString-support to bone-/release-projects
-
-BmEncoding:
-	-	implemented a redesigned decoding/encoding scheme
-		based on BmMemFilter derivatives, quoted-printable and
-		base64 are done.
-
-< 2003-01-01: commit >
-
-BmBodyPartList, BmMail, BmMeilHeader, BmMailView:
-	-	reimplemented buffer handling to use BmMemFilters and/or
-		BmMemIO-classes, resulting in much less memory being used 
-		when handling large mails
-
-BmEncoding:
-	-	finished the redesigned decoding/encoding scheme
-		based on BmMemFilter derivatives
-	-	re-implemented the conversion and en/de-coding functions
-		to use BmMemfilters
-	-	optimzed quoted-printable and esp. base64-code
-
-BmMailHeaderView:
-	-	added timezone to string when displaying times converted to
-		localtime
-
-BmMailRef:
-	-	added missing support for swatch-time when reading attributes
-		directly from file (as opposed to reading from archive).
-
-BmMemIO:
-	-	finsished implementation of memory-/string-IO classes
-
-BmPopper:
-	-	enlarged network buffer-sizes to 64KB
-	-	switch from class-constant to Prefs-field "NetReceiveBufferSize"
-
-BmPrefs:
-	-	added field "NetReceiveBufferSize"
-
-BmSmtp:
-	-	enlarged network buffer-sizes to 64KB
-	-	reimplemented buffer handling to use BmMemFilters, resulting
-		in a much less memory being used when handling large mails
-
-BmString:
-	-	changed RemoveAll()-functions to use _ReplaceAll()
-
-BmUtil:
-	-	fixed local/utc-confusion in TimeToSwatchString()
-
-base64:
-	-	removed, functionality has been moved to BmEncoding
-
--------------------------------------------------------------------------------
-< 2002-12-28: commit >
-
-BmApp, BmBasics, BmBusyView, BmController, BmDataModel, BmEncoding,
-BmGutUtil, BmJobStatusWin, BmListController, BmLogHandler, BmMailFolder,
-BmMailFolderView, BmMailMover, BmMailRef, BmMailRefList, BmMailView,
-BmMailViewWin, BmMainWindow, BmNetUtil, BmPeople, BmPopAccount,
-BmPopper, BmPrefs*View, BmPrefsWin, BmRefManager, BmResources,
-BmRulerView, BmSignature, BmSmtpAccount, BmToolbarButton, BmWindow,
-BmDeskbarView, regexx, split, WrappingTextView:
-	-	switched from BString to BmString
-
-BmBodyPartList:
-	-	switched from BString to BmString
-	-	we now decode/convert bodyparts only at the point when this
-		data is actually needed (lazy evaluation), resulting in a
-		better performance for the usual case where only an overview
-		of the bodypart is being displayed, but no data accessed.
-		N.B.: For best performance, we'd have to resort to displaying 
-		the length of each bodypart in its encoded form (set the Prefs-
-		value "ShowDecodedLength" to false for that), but 
-		since this might confuse our users, we better stick with 
-		showing the correct, decoded values.
-	-	fixed bug in multipart-parsing that caused any multipart
-		to actually handle the text contained within its boundaries
-		itself, in effect resulting in this text being added to a mail
-		twice during save, first by the multipart (incorrect) and the 
-		through its children (correct).
-
-BmBodyPartView:
-	-	switched from BString to BmString
-	-	added support for prefs value "ShowDecodedSizeOfAttachments"
-
-BmMail:
-	-	switched from BString to BmString
-	-	reactivated Mail-proxy, so that a mail exists only once in
-		Beam, no matter how often it is being used.
-
-BmMailEditWin:
-	-	switched from BString to BmString
-	-	fixed bug that caused Beam to ignore any changes within textviews
-		except the subject-field.
-
-BmMailFolderList:
-	-	switched from BString to BmString
-	-	improved performance of new-mail-detection on startup by
-		freezing the list during the query, then thawing it and update
-		the appropriate mail-folders manually, afterwards.
-
-BmMailHeader:
-	-	fixed bug in BmAddressList::SplitIntoAddresses() which caused
-		addr-lists that contained two phraseless route-addresses 
-		enclosed by <> to be garbled. The following address is an
-		example: 
-			<test1@xxx.de>, <test2@yyy.com>
-		came out as:
-			test1@xxx.de>, <test2@yyy.com
-	-	switched from BString to BmString
-
-BmMailHeaderView:
-	-	switched from BString to BmString
-	-	added support for pref-value "TimeModeInHeaderView", which can
-		be used to select between three time-modes:
-		   + native (showing the date as formatted within the mail)
-		   + local (showing date converted to localtime)
-		   + swatch (showing date converted to swatch-internet-time)
-
-BmMailRefView:
-	-	switched from BString to BmString
-	-	added support for showing timestamps as swatch-internet-time
-
-BmPrefs:
-	-	switched from BString to BmString
-	-	added fields: 
-		+ "TimeModeInHeaderView"
-		+ "UseSwatchTimeInRefView"
-
-BmSmtp:
-	-	switched from BString to BmString
-	-	optimized handling of sending large mails to several Bcc-
-		recipients. The mailtext is now prepared once (in advance)
-		instead of being prepared for each and every recipient.
-
-BmStorageUtil:
-	-	switched from BString to BmString
-	-	added BmReadStringAttr()
-
-BmString:
-	-	added to project, codebase is from OpenBeOS and has been 
-		renamed and modified for Beam's needs.
-
-BmUtil:
-	-	switched from BString to BmString
-	-	as a result of the switch to BmString, several util-methods
-		that used to reside in BmUtil have been integrated into BmString.
-
--------------------------------------------------------------------------------
-< 2002-12-18: commit (new CVS-folder layout) >
-
-all:
-	-	reworked CVS-folder layout to be easier to understand and
-		work with
-
-BmApp:
-	-	in RefsReceived() we traverse links now
-
-BmBodyPartList:
-	-	fixed bug with initializers relying on declaration order
-		(which in fact was the other way around)
-	-	reworked & simplified multipart-handling (and introduced 
-		PruneUnneededMultiParts() for that purpose)
-
-BmBodyPartView:
-	-	we avoid complaining about mimetype-mismatches if the real
-		mimetype is (or rather, BeOS believes it to be) text/plain
-
-BmMail:
-	-	reworked things so that ConstructBodyForSending() does not
-		require reinitialization of mail. This way we avoid reparsing
-		the mail's contents during a save
-
-BmRulerView:
-	-	fixed initializers relying on declaration order
-
-BmStorageUtil:
-	-	in DetermineMimeType() we traverse links now
-
--------------------------------------------------------------------------------
-< 2002-12-16: commit >
-
-BmBodyPartList:
-	-	when creating a bodypart from a given file, we no longer
-		doublecheck the files mimetype, since that exposes the
-		problem of the BeOS text/x-email mimetype sniffer-rule not
-		correctly identifying outgoing emails as such (it thinks
-		they are text/plain).
-		This fix complies with the following concept about data:
-		trust local info, but do not trust remote info.
-
-BmBodyPartView:
-	-	changed mimetype-check of attachments in such a way that
-		Beam now offers to open the attachment with the real or
-		the declared mimetype, thus allowing for easier handling of
-		cases where BeOS' idea of a files mimetype is wrong.
-
-BmMail:
-	-	always display correct originator in reply-intro, instead
-		of (under some circumstances) showing the list address
-
-BmMailEditWin:
-	-	the window-title now reflects the mail's current subject
-
-BmPeople:
-	-	fixed problem of duplicate mails being shown
-	-	added 'All People'-submenu
-
-BmStorageUtil:
-	-	minor cleanup
-
--------------------------------------------------------------------------------
-< 2002-12-12: commit>
-
-BmApp:
-	-	fixed bug when replying to several mails: addresses 
-		with different phrases but identical addr-specs are now
-		handled as one single address
-
-BmBodyPartList:
-	-	redesigned and reactivated support for encoding-selection
-		by user
-
-BmBodyPartView:
-	-	now logs into MailParser.log
-
-BmLogHandler:
-	-	now show correct micro-seconds when logging
-
-BmMail:
-	-	added DetermineReplyAddress(), a central place where
-		the different reply-modes are handled
-		
-BmMailHeader:
-	-	added BmAddressList::AddrSpecsAsString(), which extracts
-		only the addr-specs from an addresslist
-
-BmMailEditWin:
-	-	changed people-selection-code to provide menus for
-		different groups of people
-
-BmMailView:
-	-	now logs into MailParser.log
-	-	redesigned and reactivated support for encoding-selection
-		by user
-
-BmPeople:
-	-	completed implementation of people-selection
-
-libregexx/split:
-	-	added split() and splitex() functions that return the
-		resulting vector through passed-in references (faster)
-	-	fixed incorrect handling of last match in split()/splitex()
-
--------------------------------------------------------------------------------
-< 2002-12-10: commit>
-
-Beam_in_Parts_*bone.proj, Beam_in_Parts_release.proj:
-	-	added missing BmPeople.*
-
--------------------------------------------------------------------------------
-< 2002-12-10: commit>
-
-BmListViewController:
-	-	added support for automatic scrolling during drag'n'drop
-
-BmMail:
-	-	added support for very long words (urls) being wrapped when 
-		they should not be
-
-BmMailView:
-	-	added support for very long words (urls) being wrapped when 
-		they should not be
-
-BmUtil:
-	-	ConvertTabsToSpaces(): made tabwidth configurable
-	-	WordWrap() now cares for words that exceed the maximum
-		line length (like URLs) to not be wrapped
+BmRefManager:
+	-	STL-related cleanups.
 
 ColumnListView:
-	-	small cleanups
+	-	AssertWindowLocked() works only in debug-mode from now on.
 
-WrappingTextView:
-	-	added support for moving cursor wordwise when pressing
-		ALT/CONTROL and cursor-keys
+many files:
+	-	A first try at establishing compatibility with Dano/Zeta UI-colors.
 
--------------------------------------------------------------------------------
-< 2002-12-08: commit>
-
-BmApp:
-	-	mailto: now supports arbitrary parameters (not only subject)
-	-	added support for reply_list and reply_originator
+< 2004-04-04: commit >
 
 BmBodyPartList:
-	-	fixed bug with newlines not being handled correctly during
-		ContentField-parsing.
-		
+	-	added MimeTypeIsPotentiallyHarmful()-predicate
+
+BmBodyPartView:
+	-	moved judgement about harmfulness of a given bodypart out into
+		BmBodyPart for clarity
+	-	cleaned up invocation and dragging of attachments.
+
+BmEncoding:
+	-	fixed incorrect positioning of cursor when trying to show the
+		exact position of a conversion-problem in the mail-text.
+
+BmFilter:
+	-	minor cleanup
+
 BmMail:
-	-	added two new reply-types, list and originator
-	-	made smart reply-type detection as the default reply-type,
-		where Beam automatically tries to determine wether to reply
-		to the list or to the person
-
-BmMailEditWin:
-	-	added variations to send-button
-	-	fixed bug with bcc-field not being visible (but latch indicating
-		that it should be)
-
-BmMailFolderView:
-	-	repaired non-working handling of latch by key-press
-
-BmMailHeader:
-	-	added DetermineListAddress()
+	-	when replying to a mail from ourselves, we use the original
+		sender as the target (not ourselves). This has been suggested
+		by Ingo Weinhold.
 
 BmMailRefView:
-	-	added reply_list and reply_originator to menu
+	-	streamlined dragging-code (now we draw up to 10 items).
 
-BmMailViewWin:
-	-	added variations to reply- and forward-buttons
+BmSieveFilter:
+	-	fixed bugs in match-line removal code (we now move the model-data
+		accordingly, too, not just the GUI-contents).
 
-BmMainWindow:
-	-	added variations to reply- and forward-buttons
+CLVEasyItem:
+	-	constructor now respects the AvoidColPushing-flag of the listview
 
-BmPrefs:
-	-	switched DefaultForwardType from int- to string-type
+CLVListItem:
+	-	cosmetical fixes
 
-BmPrefsMailConstrView:
-	-	switched DefaultForwardType from int- to string-type
+ColumnListView:
+	-	added flag fAvoidColPushing
+	-	fixed resorting-problem which caused an item to jump to the end
+		of similar items. Now this item just stays in place if sorting
+		order hasn't changed.
 
-BmToolbarButton:
-	-	added support for action-variations (latch)
+< 2004-02-22: commit>
 
-libsieve:
-	-	upgraded to version 2.1.3
+Readme:
+	- added reference to PCRE
 
--------------------------------------------------------------------------------
-< 2002-12-05: commit >
+< 2003-12-18: commit>
+
+many files:
+	-	some more optimisations concerning use of memory.
+	-	finished work on streamlining the update-semantics of listview-
+		items.
+	-	fixed sorting issues with new update-semantics.
 
 BmApp:
-	-	added creation/deletion of BmPeopleList
+	-	removed unneeded (and erraneous) showing of main-window in
+		AppActivated(). R5 just doesn't exhibit this problem, but Zeta
+		does...
 
-BmMailEditWin:
-	-	added support for selecting people in to/cc/bcc-fields, 
-	-	original patch has been submitted by Rainer Riedl, thanks!
-
-BmPeople:
-	-	created, contains BmPeopleList
-
-BmUtil:
-	-	added GenerateSortkeyFor()	
+BmStorageUtil:
+	-	changed BmReadStringAttr() to return a bool that indicates
+		whether or not the attribute has actually changed from the
+		current value passed in via outStr.
 
 
+< 2003-12-09: commit>
 
-*******************************************************************************
-[Beam v0.914, 2002-11-29]:
-*******************************************************************************
-	BmApplication:
-		-	mark mails as read before trashing them in order to avoid confusing
-			the new-mail counter.
-	
-	BmDeskbarItem:
-		-	shrunk menu-font to 10 points.
-		-	removed LivesInTrash(), since that didn't make any sense.
-	
-	BmEncoding:
-		-	added IsCompatibleWithText() in order to check attachments of type
-			text if they really are text (not binary), before they are being
-			added to a mail. This is needed in the special case where an attachment
-			lives on a non-BeOS filesystem (thus not having reliable filetypes).
-			For Instance, BeOS believes that MS-Word documents on a FAT32-partition
-			are of type text/plain, while in fact they contain binary data.
-			To avoid Beam chopping off the file, we do this sanity check first.
-	
-	BmGuiUtils:
-		-	changed handling of shortcuts in CreateMenuItem() such that trailing
-			dots are removed.
-	
-	BmLogHandler:
-		-	replaced calls to BString::ReplaceAll with ReplaceSubstringWith().
-	
-	BmMail:
-		-	fixed crash in quoting-code when long lines containing only spaces
-			were encountered.
-			
-	BmMailEditWin:
-		-	now we clobber a mail's date only if it is not a redirection, since
-			in that case the original date *must not* be fiddled with.
-		-	After constructing a mail's text afresh, we now update the mail's
-			connections to it's controllers, since the datamodel's for the
-			body and the header have been changed. This fixes the bug that
-			caused Beam to ignore changes to the bodypartlist (attachments)
-			when the mail has been saved once (from inside the maileditview).
-			After the first save, the connection to the (old) bodypartlist 
-			persisted so that any further changes to the attachments would be
-			lost. This bug could lead to lost/unwanted attachments when a mail
-			was finally sent.
-		-	Corrected field-value check for the case of a redirected mail
-			(we have to check the resent-... fields in that case).
-			
-	BmMailFolder:
-		-	instead of using one locker per mail-folder, we now use a single
-			static locker to protect the ref-lists of all mail-folders. There were 
-			just too many lockers around.
-	
-	BmMailFolderList:
-		-	the new-mail counter does not anymore check if new mail lives
-			in trash, since that is unreliable anyway (moves inside/outside 
-			trash are not seen). We just hope that there'll never be any
-			new mail in trash...
-	
-	BmMailHeader:
-		-	several cosmetic changes that faciliate correct handling of empty
-			group-addresslists.
-		-	the regexx that was used to split the mail-header into separate
-			fields used too much stack space (leading to crashes), so we now use
-			hand-coded field-separation.
-	
-	BmMailRef:
-		-	when errors occur during construction, we now only log the errors
-			instead of popping up alerts for them, in order to behave in a
-			more sensible way if other mail-software is around (like MDR).
-	
-	BmMailView:
-		-	added UpdateControllers() that reinstalls controller/datamodel 
-			connections.
-	
-	BmPrefs:
-		-	patched archive-version to 3
-		-	changed handling of shortcuts such that trailing dots are removed.
-			This avoids problems when adding/removing dots in the menu-items.
-			
-	BmSmtp:
-		-	fix problem that made Beam try to send empty rcpt-commands to
-			server for empty group-addresslists.
-	
-	BmStorageUtil:
-		-	Fixed MoveToTrash so that it works with LocaleTracker, too.
-			We now use find_directory() to get the desktop-path and then 
-			target the tracker message to that window (usually 
-			"/boot/home/Desktop"). This seems to work for both OpenTracker and
-			LocaleTracker.
-		-	Fixed MoveToTrash even more to work with all known Trackers
-			(5.00, 5.02, OpenTracker and LocaleTracker). Now both 'Desktop' and
-			'/boot/home/Desktop' are tried as base-windows.
-		-	removed LivesInTrash(), since that didn't make any sense.
-			
-	BmUtil:
-		-	added ReplaceSubstringWith() to avoid the use of the pathetic
-			BString::ReplaceAll().
-	
-	general node-monitoring:
-		-	we do not any longer show errors on screen, since there are just
-			to many of them happening, esp. when MDR is running. MDR seems to 
-			create and then immediately rename/move mails, which would confuse
-			Beam ever to often. So now at least Beam is quiet about it...
+many files:
+	-	reworked ColumnListView-Update semantics to be finer grained
+		and to use less memory.
 
-	release-projects:
-		-	replaced -fomit-frame-pointer with -fno-omit-frame-pointer, since
-			this way the obscure crashes that some people have experienced
-			during send/receive don't (seem to) occur. While at it, we removed
-			the unneeded -no-pic, too.
-	
-[Beam v0.913, 2002-11-15]:
-	all:
-		-	added a +1 to many BString::LockBuffer() calls in order to have enough
-			room for the trailing '\0'. The BeBook isn't too clear about this, so we 
-			play safe.
-			
-	BmApp:
-		-	replaced old, overly simple deskbar-item with new implementation
-		-	in QuitRequested() we now find out if there is any window that does 
-			not want to quit yet. Only if there's no veto, we go on and really quit
-			all windows and the app.
-	
-	BmBodyPartList:
-		-	added functionality to automatically determine the correct mimetype
-			of any attachment during open/save, if that mimetype has no or an
-			incorrect mimetype set.
-		-	now Beam no longer complains about empty multipart bodies, where the
-			boundary appears only once (with appended '--')
-	
-	BmBodyPartView:
-		-	now verifies advertised mimetype before opening an attachment
-	
-	BmDataModel:
-		-	added HandleError(), which knows when to log and/or show errors
-	
-	BmDeskbarView:
-		-	added implementation of a real deskbar-view that does not seem to crash
-			the original R5-deskbar anymore
-	
-	BmEncoding:
-		-	fixed bug introduced in 0.913rc2 that would incorrectly handle softbreaks
-			that were followed by only a single character. This resulted in newlines being 
-			removed were they shouldn't and the mail-layout being somewhat garbled.
-			N.B.: This bug affected only the displaying of mails, not the actual mail
-			generation.
-		-	fixed bug with quoted-printable encoding that would let an underscore-char
-			pass through unencoded (which would lead to erraneous results in the 
-			decoding stage, in turn messing up iso-2022-jp encodings, which in turn
-			would cut off messages!).
-	
-	BmJobStatusWin:
-		-	changed filter-hack to start immediately after all popper-jobs have finished,
-			not after they have been removed from the status-win.
-	
-	BmListController:
-		-	enhanced "spring-loaded"-opening of folders in such a way that the 
-			timer-triggered expand/collapse would not occur when the user has
-			expanded/collapsed the current item manually (by moving the mouse 
-			over the expander).
-	
-	BmLogHandler:
-		-	now we are logging proper timestamps (with msecs)
-		-	BM_LOGERR now always logs into current logfile, too
-		
-	BmMail:
-		-	a race-condition that occurs when multiple mails are being deleted through
-			the trash would sometimes lead to the strange effect that the mail-ref would
-			select and try to display a message that has just been deleted. In this case
-			an error message was shown that complained about the deleted message
-			not being there >:o/ Now we simply do not display such a message but
-			ignore a missing message quietly.
-		-	when creating a reply, the algorithm by which we determine the receiving
-			address (the new from) has been improved to handle gracefully the case
-			where the account that has received the mail could not be found anymore
-			(for instance because it has been renamed).
-		-	corrected handling of multiple originators when generating reply-/forward-intro.
-		-	set default from-account when redirecting mails
-	
-	BmMailFolder:
-		-	fixed bug in AddMailRef() & RemoveMailRef() where the methods would
-			return without handling the needed new-mail status-changes.
-	
-	BmMailView:
-		-	added missing conversion to local linebreaks for mimeparts that
-			make use of the 'binary' content-transfer-encoding.
-		-	added support for copying URLs to clipboard
-	
-	BmPopper:
-		-	from now on, errors are shown only when ShouldContinue() yields true
-	
-	BmPrefs...View:
-		-	changed minimum sizes to cooperate with 800*600 screens
-		
-	BmResources:
-		-	added sanity-check to FetchOwnFQDN() that removes any newlines 
-			from hostname/domain.
-			
-	BmSmtp:
-		-	from now on, errors are shown only when ShouldContinue() yields true
-	
-	BmUtil:
-		-	fixed buffer-overflow in ConvertTabsToSpaces() that caused many crashes.
-		-	now WordWrap() works correctly even if the to-be-wrapped text doesn't
-			end with a newline
-		-	removed call to LockBuffer( 0) that doesn't work under Dano
-	
-	ColumnListView:
-		-	added a workaround for the problem with the BListView not correctly
-			scrolling down with the selection when the user uses Shift-CursorDown
-			to extend the selection beyond the visible items.
-		-	pressing escape now deselects all items. This way it is possible to get
-			out of the all-items-are-selected trap (cursor would not move anymore).
-	
-	PCRE:
-		-	updated to pcre v3.9
+BmDataModel:
+	-	added OutlineLevel() to BmListMoo now use the BmBackedFile-class.
+
+BmMailFolderList:
+	-	cosmetical changes.
+
+BmMailRef:
+	-	added missing member-initializers for mWhen and mWhenCreated.
+
+BmSmtp:
+	-	added missing member-initializer for mCurrMailSize.
+
+BmStorageUtils:
+	-	added BmBackedFile, a file with automatic backup.
+
+< 2004-05-07: commit, moved tag 'current-devel' >
+
+BmEncoding:
+	-	removed spurious addition of Escape to the characters safe for 
+		qp-encoding, i.e. it would not be encoded. I can't remember the
+		reason why I had added it, and it looks strange now. Maybe it
+		has to do with japanese encoding (that uses Esc a lot), but I
+		don't know.
+
+< 2004-05-07: commit >
+
+BmEncoding:
+	-	fixed bug in base64-decoder that chokes on embedded padding chars.
+		Unfortunately, Beam is producing these by itself when it concatenates
+		several encoded-words into one string.
+
+BmListController:
+	-	in UpdateModelItem(), we now only redraw the item if it is visible
+		at all.
+
+BmMail:
+	-	fixed bug with generating backup-name for mails with very long names.
+
+BmMailFolderList:
+	-	cosmetical changes
+
+BmMailRef:
+	-	in ResyncFromDisk() we call TellModelItemUpdated() only if anything
+		has in fact changed.
+
+Base64DecoderTest:
+	-	added test that checks for correct handling of embedded padding
+		chars.
+
+< 2004-05-04: commit >
+
+BmMail, BmPrefsMailConstrView:
+	-	added support for %FA and %FN macros in reply-/forward-intro.
+
+BmMailFolderList:
+	-	we now filter out second event of a single B_ENTRY_MOVED node-monitor
+		message as we want to handle it only once.
+
+< 2004-04-30: moved current-devel >
+
+< 2004-04-27: commit >
+
+BmController:
+	-	removed left-overs from profiling
+
+BmListController:
+	-	added some more logging
+	-	cosmetical changes
+
+BmDataModel, BmMailFolder, BmMailRef, BmMailRefList:
+	-	implemented appending archives to cache for the case when the
+		cache isn't loaded. This speeds up use of long folders that are
+		the target of mail-filters, as the cache no longer needs to be
+		thrown away.
+
+BmMemIO:
+	-	removed ugly minSize-crutch.
+
+BmRefManager:
+	-	STL-related cleanups.
+
+ColumnListView:
+	-	AssertWindowLocked() works only in debug-mode from now on.
+
+many files:
+	-	A first try at establishing compatibility with Dano/Zeta UI-colors.
+
+< 2004-04-04: commit >
+
+BmBodyPartList:
+	-	added MimeTypeIsPotentiallyHarmful()-predicate
+
+BmBodyPartView:
+	-	moved judgement about harmfulness of a given bodypart out into
+		BmBodyPart for clarity
+	-	cleaned up invocation and dragging of attachments.
+
+BmEncoding:
+	-	fixed incorrect positioning of cursor when trying to show the
+		exact position of a conversion-problem in the mail-text.
+
+BmFilter:
+	-	minor cleanup
+
+BmMail:
+	-	when replying to a mail from ourselves, we use the original
+		sender as the target (not ourselves). This has been suggested
+		by Ingo Weinhold.
+
+BmMailRefView:
+	-	streamlined dragging-code (now we draw up to 10 items).
+
+BmSieveFilter:
+	-	fixed bugs in match-line removal code (we now move the model-data
+		accordingly, too, not just the GUI-contents).
+
+CLVEasyItem:
+	-	constructor now respects the AvoidColPushing-flag of the listview
+
+CLVListItem:
+	-	cosmetical fixes
+
+ColumnListView:
+	-	added flag fAvoidColPushing
+	-	fixed resorting-problem which caused an item to jump to the end
+		of similar items. Now this item just stays in place if sorting
+		order hasn't changed.
+
+< 2004-02-22: commit>
+
+Readme:
+	- added reference to PCRE
+
+< 2003-12-18: commit>
+
+many files:
+	-	some more optimisations concerning use of memory.
+	-	finished work on streamlining the update-semantics of listview-
+		items.
+	-	fixed sorting issues with new update-semantics.
+
+BmApp:
+	-	removed unneeded (and erraneous) showing of main-window in
+		AppActivated(). R5 just doesn't exhibit this problem, but Zeta
+		does...
+
+BmStorageUtil:
+	-	changed BmReadStringAttr() to return a bool that indicates
+		whether or not the attribute has actually changed from the
+		current value passed in via outStr.
 
 
-[Beam v0.913rc2, 2002-06-14]:
-	BmBodyPartList:
-		-	fixed crashing bug when saving non-text attachments
-		-	now transfer-encodings like '8bits' are handled correctly (as '8bit')
-	
-	BmEncoding
-		-	qp-lines ending with an *encoded* '=' were incorrectly joined with
-			the following line (only plain [non-encoded] '=' indicate a soft-wrap).
-		
-	BmJobStatusWin:
-		-	a PopperView now only beeps once when new mail has arrived
-		-	when a complete Popper-run is done, Beam looks for an executable
-			named 'filter' in the app's home folder, which is then executed. 
-			This way, external mail filtering can be done.
-	
-	BmListViewController:
-		-	added support for delayed auto-expand/-collapse during drag
-		-	fixed leaking of all items in destructor...this additionally closes
-			the reference leaks that showed when closing prefs-window
-	
-	BmMailEditWin:
-		-	fixed bug that caused unmodified mails to not be hard-wrapped
-			before send
-		-	if there's only one smtp-account, it is selected automatically
-	
-	BmMailFolderView
-		-	pressing the right control-key while moving the mouse-wheel or using the 
-			cursor-keys will scroll the mail-view (only left key was working before)
-	
-	BmMailRefView:
-		-	fixed ref-leak when handling a drop
-		-	pressing the right control-key while moving the mouse-wheel or using the 
-			cursor-keys will scroll the mail-view (only left key was working before)
-		
-	BmMailView:
-		-	when pasting text, now the font of the mailview is forced upon the
-			pasted text
-		-	signatures with special characters are now displayed correctly 
-			(superfluous conversion to UTF8 removed).
-		-	when the user has selected a new signature, the cursor is now positioned
-			immediately *before* the new sig-text (not at the end of the sig, as before).
-		-	pressing the right control-key while moving the mouse-wheel or using the 
-			cursor-keys will scroll the mailref-view (only left key was working before)
-	
-	BmMainWindow:
-		-	removed ref-leak in BmMainMenuBar, which occurred whenever any 
-			pop-account was added/removed/changed.
-		-	fixed problem with BmMainMenuBar not showing any Pop-Accounts at all.
-			
-	WrappingTextView:
-		-	fixed bug when undoing a deletion (now the deleted text is saved
-			*before* it is being deleted from textview, err...)
+< 2003-12-09: commit>
 
-[Beam v0.913rc1, 2002-05-09]:
+many files:
+	-	reworked ColumnListView-Update semantics to be finer grained
+		and to use less memory.
 
-	base64:
-		-	added (code comes straight from MDR). This code replaces the one
-			supplied by BeOS that crashes upon encountering incorrect data.
+BmDataModel:
+	-	added OutlineLevel() to BmListMoo now use the BmBackedFile-class.
 
-	Beam_release.proj:
-		-	added -no-fpic -fomit-frame-pointer parameters for better code
-	
-	Beam...bone.proj
-		-	added separate project-files for bone-/dano-version.
-	
-	BmApp:
-		-	joined replies/forwards now correctly generate subjects through 
-			BmMail::CreateXXXSubjectFor()-methods.
-			Additionally, now the first subject gets copied into the joined mail
-			plus a ' (and more...)', indicating that there's more than one subject.
-		-	added support for subjects and URL-encodings in mailto: URLs
-		-	when marking mails as read that are not new (replied, forwarded, etc.)
-			Beam now asks the user whether to just mark new mails or really
-			mark all.
-		-	fixed reference-leak when printing mails
-		-	fixed crash in RefsReceived when a non-mail reference has been received
-		
-	BmBodyPartList:
-		-	Erraneous MIME-headers with missing semicolon between field-value and 
-			attributes no longer cause an exception (they are now silently accepted).
-	
-	BmBodyPartView:
-		-	fixed bug with icons being cut off down the tree hierarchy
-	
-	BmDataModel:
-		-	BmListModel now sets and updates a mNeedsStore-flag as needed (this
-			flag indicates that the list has changed and should be stored)
-		
-	BmEncoding:
-		-	replaced BeOS-native base64-routines by the ones from MDR (which do not
-			seem to crash).
-	
-	BmJobStatusWin:
-		-	removed Window()->UpdateIfNeeded()-call in BmPopperView::AskUserForPwd(),
-			since that's potentially unsafe and is not needed anyway.
-		-	improved look'n'feel of password-acquisitors
-		-	added support for beep-event when new mail arrived.
-		-	fixed problem with auto-checks removing job-window when they
-			should not.
-	
-	BmMail:
-		-	fixed bug in AddPartsFromMail which always added forward-intro, even
-			if current mail was a reply.
-		-	filename-creation now respects B_FILE_NAME_LENGTH
-		-	when creating reply-/forward-intro, %s now expands to subject and
-			\n to newline.
-		-	quoting now handles non-trivial encodings better (like iso-2022-jp), now
-			the character-count is used instead of the byte-count.
-		-	saving a message does not re-read it from disk anymore, since this does
-			not make sense anymore (not that it used to make much sense before...)
-		
-	BmMailEditWin:
-		-	hardwrapping is only executed directly before a mail is sent (not when
-			it is saved as draft).
-		-	now the mail-date is bumped whenever the mail is saved (per default)
-		
-	BmMailFolderView:
-		-	now allows scrolling of refview by SHIFT-modifier and scrolling of mailview
-			by CONTROL-modifier
-	
-	BmMailRefList:
-		-	now the mailref-cache is only stored when neccessary
-		-	changed structure of mail-cache for better performance when reading/
-			writing the cache.
-	
-	BmMailView:
-		-	mouse-cursor changes if hovering over URL
-		-	fixed BTextView-issue when typing spaces at end of line, now only
-			one space is accepted.
-		-	the TextRect is now recalculated when the font changes
-		-	added multi-level undo (limited only by available memory)
-			
-	BmPopAccount:
-		-	when re-reading POP-account-settings within prefs, the state of downloaded
-			messages must be kept as is (not re-read), since otherwise Beam may
-			download messages again that already were downloaded before.
-		
-	BmPrefs:
-		-	now all public calls are secured by a locker, since when resetting prefs to
-			saved state, we might be causing crashes without the lock.
-	
-	BmPrefsGeneralView:
-		-	checkbox added for new-mail beep-event (on/off)
-	
-	BmPrefsMailReadView:
-		-	fixed non-working AutoCheckOnlyIfPPPRunning-checkbox
-		-	fixed non-working MarkAsReadDelay-control.
-		
-	BmPrefsRecvMailView:
-		-	added sanity-check
-	
-	BmPrefsSendMailView:
-		-	fixed state-handling (enabling/disabling) properly
-		-	added sanity-check
-	
-	BmSignature:
-		-	dynamic signatures are now interpreted as a shell-script, not as one
-			single command
-	
-	WrappingTextView:
-		-	when removing characters (e.g. by pressing Delete), a modification-msg
-			now indicates the state change
+BmMailFolderList:
+	-	cosmetical changes.
 
-v0.912, 2002-04-14
-	-	better support for forwarding & replying to multiple messages at once,
-		now you can choose whether or not to join the messages.
-	-	added support for printing one or more messages.
-	-	corrected some MIME-problems, increasing robustness and eliminating 
-		the compatibility-problems Beam had with other mail-programs 
-		(like Mail-It or Eudora). These programs now accept Beam-generated 
-		MIME-messages, including quoted-printables and attachments.
-	-	doubleclicking a folder now opens the corresponding Tracker-window.
-	-	deactivating the Desktop-icon does work now.
-	-	added configurable delay before a shown mail is being marked as read.
-	-	added option for using 8-bit-mime when constructing mails.
-	-	added an option to switch between soft/hard-wrapping of the mailtext 
-		(Beam always used soft-wrapping before).
-	-	when requested, Beam can now contact a POP3/SMTP-server and suggest 
-		the best (most "secure") authentication type.
-	-	and other (minor) bugfixes, usability and GUI-enhancements.
+BmMailRef:
+	-	added missing member-initializers for mWhen and mWhenCreated.
 
-v0.911, 2002-03-24
-	-	fixed stupid bug that caused Beam to crash if no FolderView-state
-		exists (like after first install)
-	-	forwarding attachments works correctly now
+BmSmtp:
+	-	added missing member-initializer for mCurrMailSize.
 
-v0.91, 2002-03-24
-	-	header-view contents are now selectable and draggable.
-	-	added support for redirecting mails.
-	-	Beam now works under Dano (BeOS 5.1).
-	-	signature support added (for static and dynamic signatures).
-	-	added automatic mail-checking (every xx minutes).
-	-	all shortcuts are now configurable via prefs.
-	-	added better quoting-modes (simple, push-margin and auto-wrap)
-		in order to reduce comb-like effect.
-	-	added option to show in- & out-folders always at top.
-	-	added tooltips to all preferences-controls, which is one step
-		on the way to better usability (but Online-Help still missing).
-	-	added Deskbar icon indicating the presence of new mail.
-		(This seems to constantly crash the R5 Deskbar, but it works
-		for OpenTracker & Dano versions...)
-	-	Display-font can now be selected when viewing/editing mails.
-	-	Beam can now set itself up as preferred email application.
-	-	fixed problems with node-monitoring stopping to work after a
-		recreate-cache.
-	-	Beam now correctly shows BeOS standard-icons for mails, if 
-		Beam is preferred app.
-	-	fixed incorrect mail-address creation in case of phrases containing
-		commas (like: Meyer, Justin <xx@yyy.zz>). This would now be created
-		as "Meyer, Justin" <xx@yyy.zz>.
-	-	fixed problems with highlighting URLs that contain a tilde ('~').
-	-	many more bugfixes
+BmStorageUtils:
+	-	added BmBackedFile, a file with automatic backup.
 
-v0.903, 2002-02-22
-	-	Beam no longer complains about unknown prefs-field 'BeMailStyle'.
+< 2004-05-07: commit, moved tag 'current-devel' >
 
-v0.902, 2002-02-22
-	-	removed crashing bug when wildly moving through mailfolder-view.
-	-	disabled selecting and invoking for	the dummy-mailrefview used in prefs.
-	-	make the reply-mode with selected text work (only selected text will be
-		included in reply).
+BmEncoding:
+	-	removed spurious addition of Escape to the characters safe for 
+		qp-encoding, i.e. it would not be encoded. I can't remember the
+		reason why I had added it, and it looks strange now. Maybe it
+		has to do with japanese encoding (that uses Esc a lot), but I
+		don't know.
 
-v0.901, 2002-02-21
-	-	enable people to send mail if there is no working name-service
-		(Beam used to complain that it could not determine own hostname).
-		In this case, Beam now uses host/domain info from network settings-file.
-													[thx to the many people who reported this]
-	-	preferences window is now moved to front when a user tries to open it twice
-		(instead of crashing, as before).
-	-	recreating a mailfolder-cache now works.
-	-	new prefs-flag that selects BeMail-compatible shortcuts.
-	-	when a new node has been detected and seems to have zero size, we assume
-		that an application is creating the mail-file directly inside the in-folder.
-		In this case, we snooze for a short amount of time and then proceed to
-		read the file, which hopefully is now completely written.
-		This is no complete solution, but I hope that this will increase 
-		compatibility with MailDaemonReplacement and other programs.
-	-	fixed a couple of smaller redraw/layout issues
+< 2004-05-07: commit >
 
-v0.90, 2002-02-19
-	- first public release
-	
+BmEncoding:
+	-	fixed bug in base64-decoder that chokes on embedded padding chars.
+		Unfortunately, Beam is producing these by itself when it concatenates
+		several encoded-words into one string.
+
+BmListController:
+	-	in UpdateModelItem(), we now only redraw the item if it is visible
+		at all.
+
+BmMail:
+	-	fixed bug with generating backup-name for mails with very long names.
+
+BmMailFolderList:
+	-	cosmetical changes
+
+BmMailRef:
+	-	in ResyncFromDisk() we call TellModelItemUpdated() only if anything
+		has in fact changed.
+
+Base64DecoderTest:
+	-	added test that checks for correct handling of embedded padding
+		chars.
+
+< 2004-05-04: commit >
+
+BmMail, BmPrefsMailConstrView:
+	-	added support for %FA and %FN macros in reply-/forward-intro.
+
+BmMailFolderList:
+	-	we now filter out second event of a single B_ENTRY_MOVED node-monitor
+		message as we want to handle it only once.
+
+< 2004-04-30: moved current-devel >
+
+< 2004-04-27: commit >
+
+BmController:
+	-	removed left-overs from profiling
+
+BmListController:
+	-	added some more logging
+	-	cosmetical changes
+
+BmDataModel, BmMailFolder, BmMailRef, BmMailRefList:
+	-	implemented appending archives to cache for the case when the
+		cache isn't loaded. This speeds up use of long folders that are
+		the target of mail-filters, as the cache no longer needs to be
+		thrown away.
+
+BmMemIO:
+	-	removed ugly minSize-crutch.
+
+BmRefManager:
+	-	STL-related cleanups.
+
+ColumnListView:
+	-	AssertWindowLocked() works only in debug-mode from now on.
+
+many files:
+	-	A first try at establishing compatibility with Dano/Zeta UI-colors.
+
+< 2004-04-04: commit >
+
+BmBodyPartList:
+	-	added MimeTypeIsPotentiallyHarmful()-predicate
+
+BmBodyPartView:
+	-	moved judgement about harmfulness of a given bodypart out into
+		BmBodyPart for clarity
+	-	cleaned up invocation and dragging of attachments.
+
+BmEncoding:
+	-	fixed incorrect positioning of cursor when trying to show the
+		exact position of a conversion-problem in the mail-text.
+
+BmFilter:
+	-	minor cleanup
+
+BmMail:
+	-	when replying to a mail from ourselves, we use the original
+		sender as the target (not ourselves). This has been suggested
+		by Ingo Weinhold.
+
+BmMailRefView:
+	-	streamlined dragging-code (now we draw up to 10 items).
+
+BmSieveFilter:
+	-	fixed bugs in match-line removal code (we now move the model-data
+		accordingly, too, not just the GUI-contents).
+
+CLVEasyItem:
+	-	constructor now respects the AvoidColPushing-flag of the listview
+
+CLVListItem:
+	-	cosmetical fixes
+
+ColumnListView:
+	-	added flag fAvoidColPushing
+	-	fixed resorting-problem which caused an item to jump to the end
+		of similar items. Now this item just stays in place if sorting
+		order hasn't changed.
+
+< 2004-02-22: commit>
+
+Readme:
+	- added reference to PCRE
+
+< 2003-12-18: commit>
+
+many files:
+	-	some more optimisations concerning use of memory.
+	-	finished work on streamlining the update-semantics of listview-
+		items.
+	-	fixed sorting issues with new update-semantics.
+
+BmApp:
+	-	removed unneeded (and erraneous) showing of main-window in
+		AppActivated(). R5 just doesn't exhibit this problem, but Zeta
+		does...
+
+BmStorageUtil:
+	-	changed BmReadStringAttr() to return a bool that indicates
+		whether or not the attribute has actually changed from the
+		current value passed in via outStr.
+
+
+< 2003-12-09: commit>
+
+many files:
+	-	reworked ColumnListView-Update semantics to be finer grained
+		and to use less memory.
+
+BmDataModel:
+	-	added OutlineLevel() to BmListMoo now use the BmBackedFile-class.
+
+BmMailFolderList:
+	-	cosmetical changes.
+
+BmMailRef:
+	-	added missing member-initializers for mWhen and mWhenCreated.
+
+BmSmtp:
+	-	added missing member-initializer for mCurrMailSize.
+
+BmStorageUtils:
+	-	added BmBackedFile, a file with automatic backup.
+
+< 2004-05-07: commit, moved tag 'current-devel' >
+
+BmEncoding:
+	-	removed spurious addition of Escape to the characters safe for 
+		qp-encoding, i.e. it would not be encoded. I can't remember the
+		reason why I had added it, and it looks strange now. Maybe it
+		has to do with japanese encoding (that uses Esc a lot), but I
+		don't know.
+
+< 2004-05-07: commit >
+
+BmEncoding:
+	-	fixed bug in base64-decoder that chokes on embedded padding chars.
+		Unfortunately, Beam is producing these by itself when it concatenates
+		several encoded-words into one string.
+
+BmListController:
+	-	in UpdateModelItem(), we now only redraw the item if it is visible
+		at all.
+
+BmMail:
+	-	fixed bug with generating backup-name for mails with very long names.
+
+BmMailFolderList:
+	-	cosmetical changes
+
+BmMailRef:
+	-	in ResyncFromDisk() we call TellModelItemUpdated() only if anything
+		has in fact changed.
+
+Base64DecoderTest:
+	-	added test that checks for correct handling of embedded padding
+		chars.
+
+< 2004-05-04: commit >
+
+BmMail, BmPrefsMailConstrView:
+	-	added support for %FA and %FN macros in reply-/forward-intro.
+
+BmMailFolderList:
+	-	we now filter out second event of a single B_ENTRY_MOVED node-monitor
+		message as we want to handle it only once.
+
+< 2004-04-30: moved current-devel >
+
+< 2004-04-27: commit >
+
+BmController:
+	-	removed left-overs from profiling
+
+BmListController:
+	-	added some more logging
+	-	cosmetical changes
+
+BmDataModel, BmMailFolder, BmMailRef, BmMailRefList:
+	-	implemented appending archives to cache for the case when the
+		cache isn't loaded. This speeds up use of long folders that are
+		the target of mail-filters, as the cache no longer needs to be
+		thrown away.
+
+BmMemIO:
+	-	removed ugly minSize-crutch.
+
+BmRefManager:
+	-	STL-related cleanups.
+
+ColumnListView:
+	-	AssertWindowLocked() works only in debug-mode from now on.
+
+many files:
+	-	A first try at establishing compatibility with Dano/Zeta UI-colors.
+
+< 2004-04-04: commit >
+
+BmBodyPartList:
+	-	added MimeTypeIsPotentiallyHarmful()-predicate
+
+BmBodyPartView:
+	-	moved judgement about harmfulness of a given bodypart out into
+		BmBodyPart for clarity
+	-	cleaned up invocation and dragging of attachments.
+
+BmEncoding:
+	-	fixed incorrect positioning of cursor when trying to show the
+		exact position of a conversion-problem in the mail-text.
+
+BmFilter:
+	-	minor cleanup
+
+BmMail:
+	-	when replying to a mail from ourselves, we use the original
+		sender as the target (not ourselves). This has been suggested
+		by Ingo Weinhold.
+
+BmMailRefView:
+	-	streamlined dragging-code (now we draw up to 10 items).
+
+BmSieveFilter:
+	-	fixed bugs in match-line removal code (we now move the model-data
+		accordingly, too, not just the GUI-contents).
+
+CLVEasyItem:
+	-	constructor now respects the AvoidColPushing-flag of the listview
+
+CLVListItem:
+	-	cosmetical fixes
+
+ColumnListView:
+	-	added flag fAvoidColPushing
+	-	fixed resorting-problem which caused an item to jump to the end
+		of similar items. Now this item just stays in place if sorting
+		order hasn't changed.
+
+< 2004-02-22: commit>
+
+Readme:
+	- added reference to PCRE
+
+< 2003-12-18: commit>
+
+many files:
+	-	some more optimisations concerning use of memory.
+	-	finished work on streamlining the update-semantics of listview-
+		items.
+	-	fixed sorting issues with new update-semantics.
+
+BmApp:
+	-	removed unneeded (and erraneous) showing of main-window in
+		AppActivated(). R5 just doesn't exhibit this problem, but Zeta
+		does...
+
+BmStorageUtil:
+	-	changed BmReadStringAttr() to return a bool that indicates
+		whether or not the attribute has actually changed from the
+		current value passed in via outStr.
+
+
+< 2003-12-09: commit>
+
+many files:
+	-	reworked ColumnListView-Update semantics to be finer grained
+		and to use less memory.
+
+BmDataModel:
+	-	added OutlineLevel() to BmListMoo now use the BmBackedFile-class.
+
+BmMailFolderList:
+	-	cosmetical changes.
+
+BmMailRef:
+	-	added missing member-initializers for mWhen and mWhenCreated.
+
+BmSmtp:
+	-	added missing member-initializer for mCurrMailSize.
+
+BmStorageUtils:
+	-	added BmBackedFile, a file with automatic backup.
+
+< 2004-05-07: commit, moved tag 'current-devel' >
+
+BmEncoding:
+	-	removed spurious addition of Escape to the characters safe for 
+		qp-encoding, i.e. it would not be encoded. I can't remember the
+		reason why I had added it, and it looks strange now. Maybe it
+		has to do with japanese en
