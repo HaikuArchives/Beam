@@ -1448,14 +1448,7 @@ BmString&
 BmString::ReplaceAll(char replaceThis, char withThis, int32 fromOffset)
 {
 	CHECK_PARAM(fromOffset >= 0, "'fromOffset' must not be negative!");
-	for (int32 pos = min_clamp0(fromOffset, Length());;) {
-		pos = FindFirst(replaceThis, pos);
-		if (pos < 0)
-			break;
-		_privateData[pos] = withThis;
-	}
-	
-	return *this;
+	return Replace(replaceThis, withThis, REPLACE_ALL, fromOffset);
 }
 
 
@@ -1465,7 +1458,7 @@ BmString::Replace(char replaceThis, char withThis, int32 maxReplaceCount, int32 
 	CHECK_PARAM(fromOffset >= 0, "'fromOffset' must not be negative!");
 	if (maxReplaceCount > 0) {
 		for (int32 pos = min_clamp0(fromOffset, Length()); 
-			  		maxReplaceCount > 0; maxReplaceCount--) {
+			  		maxReplaceCount > 0; --maxReplaceCount, ++pos) {
 			pos = FindFirst(replaceThis, pos);
 			if (pos < 0)
 				break;
@@ -1558,16 +1551,7 @@ BmString&
 BmString::IReplaceAll(char replaceThis, char withThis, int32 fromOffset)
 {
 	CHECK_PARAM(fromOffset >= 0, "'fromOffset' must not be negative!");
-
-	char tmp[2] = { replaceThis, '\0' };
-
-	for (int32 pos = min_clamp0(fromOffset, Length());;) {
-		pos = _IFindAfter(tmp, pos, 1);
-		if (pos < 0)
-			break;
-		_privateData[pos] = withThis;
-	}
-	return *this;
+	return IReplace(replaceThis, withThis, REPLACE_ALL, fromOffset);
 }
 
 
@@ -1582,7 +1566,7 @@ BmString::IReplace(char replaceThis, char withThis, int32 maxReplaceCount, int32
 		return *this;
 		
 	for (int32 pos = min_clamp0(fromOffset,Length()); 
-		  	maxReplaceCount > 0;   maxReplaceCount--) {	
+		  	maxReplaceCount > 0;   --maxReplaceCount, ++pos) {
 		pos = _IFindAfter(tmp, pos, 1);
 		if (pos < 0)
 			break;
