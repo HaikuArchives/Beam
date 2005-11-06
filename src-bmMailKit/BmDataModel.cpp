@@ -614,7 +614,7 @@ void BmListModelItem::IntegrateAppendedArchive( BMessage* /*archive*/) {
 bool BmListModelItem::AddSubItem( BmListModelItem* subItem) {
 #ifdef BM_REF_DEBUGGING
 	BmRef<BmListModel> listModel( ListModel());
-	BM_ASSERT( listModel && listModel->ModelLocker().IsLocked());
+	BM_ASSERT( !listModel || listModel->ModelLocker().IsLocked());
 #endif
 	BmModelItemMap::iterator iter = mSubItemMap.find( subItem->Key());
 	if (iter == mSubItemMap.end()) {
