@@ -462,7 +462,7 @@ void BmMailView::MessageReceived( BMessage* msg) {
 					BmRef< BmBodyPart> textBody( 
 						mCurrMail->Body()->EditableTextBody());
 					if (textBody) {
-						textBody->SuggestCharset( item->Label());
+						textBody->DecodeText( item->Label());
 						JobIsDone( true);
 					}
 				}
@@ -543,14 +543,14 @@ void BmMailView::KeyDown(const char *bytes, int32 numBytes) {
 						mPartnerMailRefView->KeyDown( bytes, numBytes);
 				} else
 					inherited::KeyDown( bytes, numBytes);
-				break;
+				return;
 			}
 			case B_DELETE: {
 				if (mCurrMail && mPartnerMailRefView)
 					mPartnerMailRefView->KeyDown( bytes, numBytes);
 				else
 					inherited::KeyDown( bytes, numBytes);
-				break;
+				return;
 			}
 		}
 	}
@@ -570,7 +570,8 @@ void BmMailView::MouseDown( BPoint point) {
 	BMessage* msg = Looper()->CurrentMessage();
 	int32 buttons;
 	if (msg->FindInt32( "buttons", &buttons)==B_OK) {
-		if (buttons == B_PRIMARY_MOUSE_BUTTON) {
+		if (buttons == B_PRIMARY_MOUSE_BUTTON 
+		|| buttons == B_TERTIARY_MOUSE_BUTTON) {
 			int32 offset =  OffsetAt( point);
 			mClickedTextRun = TextRunInfoAt( offset);
 		} else if (buttons == B_SECONDARY_MOUSE_BUTTON) {
@@ -967,8 +968,6 @@ void BmMailView::JobIsDone( bool completed) {
 				}
 			}
 		}
-//		BM_LOG2( BM_LogMailParse, BmString("remove <CR>s from mailtext"));
-//		displayText.RemoveAll( "\r");
 		BM_LOG2( BM_LogMailParse, BmString("setting mailtext into textview"));
 		// set up textrun-array
 		int32 trsiz = sizeof( struct text_run);
@@ -1299,8 +1298,9 @@ void BmMailView::ShowMenu( BPoint point) {
 				BMenu* menu = new BMenu( "Try Charset");
 				menu->SetFont( &font);
 				BeamGuiRoster->AddCharsetMenu( menu, this, BM_MAILVIEW_SELECT_CHARSET);
-				BMenuItem* curr 
-					= menu->FindItem( textBody->SuggestedCharset().String());
+				BmString currCharset = textBody->SuggestedCharset();
+				currCharset.ToLower();
+				BMenuItem* curr = menu->FindItem( currCharset.String());
 				if (curr)
 					curr->SetMarked( true);
 				theMenu->AddItem( menu);
