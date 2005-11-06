@@ -106,6 +106,7 @@ private:
 	bool mShowAllParts;
 	bool mEditable;
 	bool mIsUsedForPrinting;
+	bool mInUpdate;
 	BmString mDefaultCharset;
 							// holds charset that will be used for dropped 
 							// text-attachments (or UTF-8, depending on prefs).

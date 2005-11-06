@@ -154,6 +154,7 @@ BmBodyPartView::BmBodyPartView( minimax minmax, int32 width, int32 height,
 	,	mEditable( editable)
 	,	mSavePanel( NULL)
 	,	mIsUsedForPrinting( false)
+	,	mInUpdate( false)
 {
 	SetViewColor( ui_color( B_UI_PANEL_BACKGROUND_COLOR));
 	fLightColumnCol = ui_color( B_UI_PANEL_BACKGROUND_COLOR);
@@ -315,7 +316,8 @@ void BmBodyPartView::AdjustVerticalSize() {
 \*------------------------------------------------------------------------------*/
 void BmBodyPartView::ExpansionChanged( CLVListItem* _item, bool expanded) {
 	inherited::ExpansionChanged( _item, expanded);
-	AdjustVerticalSize();
+	if (!mInUpdate)
+		AdjustVerticalSize();
 }
 
 /*------------------------------------------------------------------------------*\
@@ -332,6 +334,7 @@ void BmBodyPartView::AddAllModelItems() {
 	inherited::AddAllModelItems();
 	// update info about maximum column widths:
 	int32 count = FullListCountItems();
+	mInUpdate = true;
 	for( int i=0; i<count; ++i) {
 		BmListViewItem* viewItem 
 			= dynamic_cast<BmListViewItem*>( FullListItemAt( i));
@@ -349,7 +352,7 @@ void BmBodyPartView::AddAllModelItems() {
 	for( i=nFirstTextCol; i<CountColumns(); ++i) {
 		ColumnAt( i)->SetWidth( mColWidths[i]);
 	}
-
+	mInUpdate = false;
 	AdjustVerticalSize();
 }
 
