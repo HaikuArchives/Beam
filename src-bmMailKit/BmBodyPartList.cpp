@@ -341,6 +341,12 @@ BmBodyPart::BmBodyPart( const BmBodyPart& in)
 {
 	mDecodedData.SetTo( in.DecodedData());
 	mHaveDecodedData = true;
+	BmModelItemMap::const_iterator iter;
+	for( iter = in.begin(); iter != in.end(); ++iter) {
+		BmBodyPart* bodyPart = dynamic_cast< BmBodyPart*>( iter->second.Get());
+		BmBodyPart* copiedBody = new BmBodyPart( *bodyPart);
+		AddSubItem( copiedBody);
+	}
 }
 
 /*------------------------------------------------------------------------------*\
@@ -470,21 +476,7 @@ void BmBodyPart::SetTo( const BmString& msgtext, int32 start, int32 length,
 		if (IsText() && body->EditableTextBody() == this) {
 			// text data is decoded and then converted from it's native charset
 			// into utf8:
-			DecodedData();
-			BM_LOG2( BM_LogMailParse, "...splitting off signature...");
-			// split off signature, if any:
-			Regexx rx;
-			BmString sigRX = ThePrefs->GetString( "SignatureRX");
-			int32 count 
-				= rx.exec( mDecodedData, sigRX, Regexx::newline|Regexx::global);
-			if (count>0) {
-				BmString sigStr( mDecodedData.String()+rx.match[count-1].start()
-											+rx.match[count-1].Length());
-				mDecodedData.Truncate( rx.match[count-1].start());
-				body->Signature( sigStr);
-			}
-			BM_LOG2( BM_LogMailParse, "...done (decoding of text-part)");
-			mHaveDecodedData = true;
+			DecodeText();
 		} else {
 			// decoding of attachments is deferred until actually needed
 		}
@@ -688,7 +680,33 @@ bool BmBodyPart::ShouldBeShownInline()	const {
 }
 
 /*------------------------------------------------------------------------------*\
-	RecodeData()
+	DecodeText()
+	-	
+\*------------------------------------------------------------------------------*/
+void BmBodyPart::DecodeText(const char* tryCharset) {
+	if (tryCharset)
+		mSuggestedCharset = tryCharset;
+	DecodedData();
+	BM_LOG2( BM_LogMailParse, "...splitting off signature...");
+	// split off signature, if any:
+	Regexx rx;
+	BmString sigRX = ThePrefs->GetString( "SignatureRX");
+	int32 count 
+		= rx.exec( mDecodedData, sigRX, Regexx::newline|Regexx::global);
+	if (count>0) {
+		BmString sigStr( mDecodedData.String()+rx.match[count-1].start()
+									+rx.match[count-1].Length());
+		mDecodedData.Truncate( rx.match[count-1].start());
+	 	BmRef<BmListModel> bodyRef = mListModel.Get();
+	 	BmBodyPartList* body = dynamic_cast< BmBodyPartList*>( bodyRef.Get());
+	 	if (body)
+			body->Signature( sigStr);
+	}
+	BM_LOG2( BM_LogMailParse, "...done (decoding of text-part)");
+}
+
+/*------------------------------------------------------------------------------*\
+	DecodedData()
 	-	
 \*------------------------------------------------------------------------------*/
 const BmString& BmBodyPart::DecodedData() const {
@@ -721,11 +739,13 @@ const BmString& BmBodyPart::DecodedData() const {
 												 mBodyLength);
 						BmMemFilterRef decoder 
 							= FindDecoderFor( &text, mContentTransferEncoding);
+						BmLinebreakDecoder linebreakDecoder( decoder.get());
+						BmMailtextCleaner mailtextCleaner( &linebreakDecoder);
 						BmStringOBuf tempIO( mBodyLength, 1.2);
 						charset = charsetVect[i];
 						BM_LOG2( BM_LogMailParse, 
 									BmString( "trying charset ") << charset);
-						BmUtf8Encoder textConverter( decoder.get(), charset);
+						BmUtf8Encoder textConverter( &mailtextCleaner, charset);
 						tempIO.Write( &textConverter);
 						mHadErrorDuringConversion = textConverter.HadToDiscardChars() 
 											|| textConverter.HadError();
@@ -1309,6 +1329,7 @@ bool BmBodyPartList::IsMultiPart() const {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmBodyPartList::PruneUnneededMultiParts() {
+	vector< BmRef< BmListModelItem> > removedRefVect;
 	BmAutolockCheckGlobal lock( mModelLocker);
 	if (!lock.IsLocked())
 		BM_THROW_RUNTIME( 
@@ -1321,12 +1342,14 @@ void BmBodyPartList::PruneUnneededMultiParts() {
 			int32 subCount = bodyPart->PruneUnneededMultiParts();
 			if (subCount == 0) {
 				// remove this multipart, it is empty:
-				RemoveItemFromList( bodyPart);
+				removedRefVect.push_back(bodyPart);
+				inherited::RemoveItemFromList( bodyPart);
 			} else if (subCount == 1) {
 				// replace this multipart with its only child:
 				BmRef< BmListModelItem> childRef( bodyPart->begin()->second.Get());
 				BmString parentKey = bodyPart->Key();
-				RemoveItemFromList( bodyPart);
+				removedRefVect.push_back(bodyPart);
+				inherited::RemoveItemFromList( bodyPart);
 				AddItemToList( childRef.Get());
 				RenameItem( childRef->Key(), parentKey);
 			}

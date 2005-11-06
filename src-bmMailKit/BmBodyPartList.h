@@ -126,6 +126,7 @@ public:
 
 	// getters:
 	inline bool IsMultiPart() const		{ return mIsMultiPart; }
+	void DecodeText(const char* tryCharset = NULL);
 	const BmString& DecodedData() const;
 	inline int32 DecodedLength() const	{ return DecodedData().Length(); }
 	inline status_t InitCheck() const	{ return mInitCheck; }
