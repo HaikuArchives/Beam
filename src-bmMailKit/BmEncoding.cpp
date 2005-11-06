@@ -1887,6 +1887,53 @@ void BmLinebreakEncoder::Filter( const char* srcBuf, uint32& srcLen,
 
 
 /********************************************************************************\
+	BmMailtextCleaner
+\********************************************************************************/
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+BmMailtextCleaner::BmMailtextCleaner( BmMemIBuf* input, uint32 blockSize)
+	:	inherited( input, blockSize)
+{
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailtextCleaner::Filter( const char* srcBuf, uint32& srcLen, 
+										  char* destBuf, uint32& destLen) {
+	BM_LOG3( BM_LogMailParse, 
+				BmString("starting to clean mailtext of ") 
+					<< srcLen << " bytes");
+	const char* src = srcBuf;
+	const char* srcEnd = srcBuf+srcLen;
+	char* dest = destBuf;
+	char* destEnd = destBuf+destLen;
+
+	char c;
+	for( ; src<srcEnd && dest<destEnd; ++src) {
+		switch((c = *src)) {
+			case '\xa0':
+				// shift-space is just bollocks, it confuses BTextView, as well
+				// as our own wrapping code. We replace it by space:
+				*dest++ = '\x20';
+				break;
+			default:
+				*dest++ = c;
+		}
+	}
+
+	srcLen = src-srcBuf;
+	destLen = dest-destBuf;
+	BM_LOG3( BM_LogMailParse, "mailtext-cleaner: done");
+}
+
+
+
+/********************************************************************************\
 	BmBinaryDecoder
 \********************************************************************************/
 

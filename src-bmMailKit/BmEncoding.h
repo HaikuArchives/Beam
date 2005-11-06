@@ -398,6 +398,23 @@ protected:
 };
 
 /*------------------------------------------------------------------------------*\
+	class BmMailtextCleaner
+		-	
+\*------------------------------------------------------------------------------*/
+class IMPEXPBMMAILKIT BmMailtextCleaner : public BmMemFilter {
+	typedef BmMemFilter inherited;
+
+public:
+	BmMailtextCleaner( BmMemIBuf* input, uint32 blockSize=nBlockSize);
+
+protected:
+	// overrides of BmMailFilter base:
+	void Filter( const char* srcBuf, uint32& srcLen, 
+					 char* destBuf, uint32& destLen);
+
+};
+
+/*------------------------------------------------------------------------------*\
 	class BmBinaryDecoder
 		-	
 \*------------------------------------------------------------------------------*/
