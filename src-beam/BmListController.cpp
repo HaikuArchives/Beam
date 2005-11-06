@@ -1080,7 +1080,7 @@ void BmListViewController::FrameResized(float width, float height)
 			fetched and is now ready to be displayed).
 \*------------------------------------------------------------------------------*/
 void BmListViewController::JobIsDone( bool completed) {
-	if (completed && !IsHidden()) {
+	if (completed) {
 		AddAllModelItems();
 	} else {
 		UpdateCaption( "");

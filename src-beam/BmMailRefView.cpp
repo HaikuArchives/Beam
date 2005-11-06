@@ -776,6 +776,9 @@ void BmMailRefView::ShowFolder( BmMailFolder* folder) {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmMailRefView::JobIsDone( bool completed) {
+	if (IsHidden())
+		// if view is hidden, we avoid adding all view-items:
+		completed = false;
 	inherited::JobIsDone( completed);
 	if (completed && mCurrFolder) {
 		BmRef<BmMailRefList> refList( mCurrFolder->MailRefList().Get());
