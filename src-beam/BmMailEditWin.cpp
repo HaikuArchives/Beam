@@ -263,6 +263,8 @@ BmMailEditWin::BmMailEditWin( BmMailRef* mailRef, BmMail* mail)
 	mCcControl->AddFilter( CreatePeopleDropMsgFilter( B_SIMPLE_DATA));
 	mBccControl->AddFilter( CreatePeopleDropMsgFilter( B_SIMPLE_DATA));
 	new BmMailAddressCompleter( mToControl);
+	new BmMailAddressCompleter( mCcControl);
+	new BmMailAddressCompleter( mBccControl);
 	if (mail)
 		EditMail( mail);
 	else
