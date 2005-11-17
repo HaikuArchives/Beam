@@ -97,8 +97,9 @@ void BmPopStatusFilter::Filter( const char* srcBuf, uint32& srcLen,
 			src++;								// skip '\n'
 			mHaveStatus = true;
 			mStatusText.RemoveAll( "\r");
-			if (!mNeedData)
-				// the status is all we want, we are done:
+			if (!mNeedData || mStatusText[0] != '+')
+				// if the status is all we want or an error occurred,
+				// we are done:
 				mEndReached = true;
 		}
 		srcLen = src-srcBuf;
@@ -580,8 +581,9 @@ void BmPopper::StateRetrieve() {
 			goto CLEAN_UP;
 		BM_LOG2( BM_LogPop, "...done");
 		mPopAccount->MarkUIDAsDownloaded( mMsgUIDs[i]);
-		//	delete the retrieved message if required:
-		if (mPopAccount->DeleteMailFromServer()) {
+		//	delete the retrieved message if required to do so immediately:
+		if (mPopAccount->DeleteMailFromServer() 
+		&& mPopAccount->DeleteMailDelay() <= 0) {
 			cmd = BmString("DELE ") << i+1;
 			SendCommand( cmd);
 			if (!CheckForPositiveAnswer())
