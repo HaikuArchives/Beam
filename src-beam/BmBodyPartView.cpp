@@ -637,12 +637,12 @@ void BmBodyPartView::MessageReceived( BMessage* msg) {
 						if (bodyPart) {
 							if (msg->what == B_COPY_TARGET) {
 								entry_ref dref;
-								msg->FindRef( "directory", &dref);
+								const char* name;
+								if (msg->FindRef( "directory", &dref) != B_OK
+								||	msg->FindString( "name", &name) != B_OK)
+									return;
 								BDirectory dir( &dref);
-								BFile file( 
-									&dir, bodyPart->FileName().String(), 
-									B_WRITE_ONLY | B_CREATE_FILE
-								);
+								BFile file( &dir, name, B_WRITE_ONLY | B_CREATE_FILE);
 								if (file.InitCheck() == B_OK)
 									bodyPart->WriteToFile( file);
 							} else if (msg->what == B_TRASH_TARGET && mEditable) {
