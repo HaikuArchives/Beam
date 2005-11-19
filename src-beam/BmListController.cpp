@@ -175,7 +175,7 @@ BmListViewController::BmListViewController( BRect rect,
 	,	mPulsedScrollRunner( NULL)
 	,	mPulsedScrollStep( 0)
 	,	mDragBetweenItems( false)
-	,	mIsHidden(IsHidden())
+	,	mIsHidden(false)
 {
 	float minHeight
 		= hierarchical
@@ -717,16 +717,18 @@ BmListViewItem* BmListViewController::AddModelItem( BmListModelItem* item) {
 		);
 	BM_LOG2( BM_LogModelController, 
 				BmString(ControllerName())<<": adding one item to listview");
-	BmListViewItem* newItem;
-	if (!Hierarchical()) {
-		newItem = doAddModelItem( NULL, item, true);
-	} else {
-		BmRef<BmListModelItem> parent( item->Parent());
-		BmListViewItem* parentItem = FindViewItemFor( parent.Get());
-		newItem = doAddModelItem( parentItem, item, true);
+	BmListViewItem* newItem = FindViewItemFor( item);
+	if (!newItem) {
+		if (!Hierarchical()) {
+			newItem = doAddModelItem( NULL, item, true);
+		} else {
+			BmRef<BmListModelItem> parent( item->Parent());
+			BmListViewItem* parentItem = FindViewItemFor( parent.Get());
+			newItem = doAddModelItem( parentItem, item, true);
+		}
+		BMessage msg( BM_NTFY_LISTCONTROLLER_MODIFIED);
+		SendNotices( BM_NTFY_LISTCONTROLLER_MODIFIED, &msg);
 	}
-	BMessage msg( BM_NTFY_LISTCONTROLLER_MODIFIED);
-	SendNotices( BM_NTFY_LISTCONTROLLER_MODIFIED, &msg);
 	return newItem;
 }
 
