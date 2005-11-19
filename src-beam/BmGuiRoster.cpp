@@ -27,6 +27,8 @@
 /*                                                                       */
 /*************************************************************************/
 
+#include <algorithm>
+
 #include <FindDirectory.h>
 #include <Menu.h>
 #include <MenuItem.h>
@@ -165,11 +167,18 @@ static void ClearMenu( BmMenuControllerBase* menu)
 \*------------------------------------------------------------------------------*/
 class ListMenuBuilder {
 
-	typedef map< BmString, BmListModelItem* > BmSortedItemMap;
+	typedef vector< BmListModelItem*> ItemVect;
 public:
 
 	struct ItemFilter {
+		// returns true if item should be filtered:
 		virtual bool operator() (const BmListModelItem* item) = 0;
+	};
+
+	struct ItemComparer {
+		bool operator() (const BmListModelItem* a, const BmListModelItem* b) {
+			return a->DisplayKey().ICompare(b->DisplayKey()) < 0;
+		}
 	};
 	
 	ListMenuBuilder( BmListModel* list, BMenu* menu, BMessage* msgTemplate,
@@ -219,34 +228,30 @@ ListMenuBuilder::~ListMenuBuilder()
 
 status_t ListMenuBuilder::Go()
 {
-	BmSortedItemMap sortedMap;
 	if (mList) {
 		BmAutolockCheckGlobal lock( mList->ModelLocker());
 		if (!lock.IsLocked())
 			BM_THROW_RUNTIME( 
 				mList->ModelNameNC() << ": Unable to get lock"
 			);
+		ItemVect sortedVect;
 		BmModelItemMap::const_iterator iter;
 		for( iter = mList->begin();  iter != mList->end();  ++iter) {
-			if (mItemFilter && !(*mItemFilter)(iter->second.Get()))
-				continue;
-			BmString sortKey = iter->second->DisplayKey();
-			sortedMap[sortKey.ToLower()] = iter->second.Get();
+			if (!mItemFilter || !(*mItemFilter)(iter->second.Get()))
+				sortedVect.push_back(iter->second.Get());
 		}
+		sort(sortedVect.begin(), sortedVect.end(), ItemComparer());
 		if (mAddNoneItem && mMenu) {
 			BMenuItem* noneItem = new BMenuItem( BM_NoItemLabel.String(),
 															 new BMessage( *mMsgTemplate));
 			noneItem->SetTarget( mMsgTarget);
 			mMenu->AddItem( noneItem);
 		}
-		int s=0;
-		BmSortedItemMap::const_iterator siter;
-		for( siter = sortedMap.begin(); siter != sortedMap.end(); ++siter, ++s) {
-			if (s<mShortcuts.Length())
-				AddListItemToMenu( siter->second, mMenu, mSkipFirstLevel, 
-										 mShortcuts[s]);
-			else
-				AddListItemToMenu( siter->second, mMenu, mSkipFirstLevel);
+		for( uint32 i=0; i<sortedVect.size(); ++i) {
+			AddListItemToMenu( sortedVect[i], mMenu, mSkipFirstLevel, 
+									 i < (uint32)mShortcuts.Length() 
+									 	? mShortcuts[i] 
+									 	: '\0');
 		}
 	}
 	return B_OK;
@@ -257,21 +262,17 @@ void ListMenuBuilder::AddListItemToMenu( BmListModelItem* item,
 													  bool skipThisButAddChildren,
 													  char shortcut) 
 {
-	if (menu) {
-		BmSortedItemMap sortedMap;
+	if (menu && item) {
+		ItemVect sortedVect;
+		BmModelItemMap::const_iterator iter;
+		for( iter = item->begin();  iter != item->end();  ++iter) {
+			if (!mItemFilter || !(*mItemFilter)(iter->second.Get()))
+				sortedVect.push_back(iter->second.Get());
+		}
+		sort(sortedVect.begin(), sortedVect.end(), ItemComparer());
 		if (skipThisButAddChildren) {
-			if (!item->empty()) {
-				BmModelItemMap::const_iterator iter;
-				for( iter = item->begin();  iter != item->end();  ++iter) {
-					if (mItemFilter && !(*mItemFilter)(iter->second.Get()))
-						continue;
-					BmString sortKey = iter->second->DisplayKey();
-					sortedMap[sortKey.ToLower()] = iter->second.Get();
-				}
-				BmSortedItemMap::const_iterator siter;
-				for( siter = sortedMap.begin(); siter != sortedMap.end(); ++siter)
-					AddListItemToMenu( siter->second, menu);
-			}
+			for( uint32 i=0; i<sortedVect.size(); ++i)
+				AddListItemToMenu( sortedVect[i], menu);
 		} else {
 			BMessage* msg = new BMessage( *mMsgTemplate);
 			msg->AddString( BmListModel::MSG_ITEMKEY, item->Key().String());
@@ -279,16 +280,10 @@ void ListMenuBuilder::AddListItemToMenu( BmListModelItem* item,
 			if (!item->empty()) {
 				BMenu* subMenu = new BMenu( item->DisplayKey().String());
 				subMenu->SetFont( &mFont);
-				BmModelItemMap::const_iterator iter;
-				for( iter = item->begin();  iter != item->end();  ++iter) {
-					if (mItemFilter && !(*mItemFilter)(iter->second.Get()))
-						continue;
-					BmString sortKey = iter->second->DisplayKey();
-					sortedMap[sortKey.ToLower()] = iter->second.Get();
+				for( uint32 i=0; i<sortedVect.size(); ++i) {
+					if (!mItemFilter || !(*mItemFilter)(iter->second.Get()))
+						AddListItemToMenu( sortedVect[i], subMenu);
 				}
-				BmSortedItemMap::const_iterator siter;
-				for( siter = sortedMap.begin(); siter != sortedMap.end(); ++siter)
-					AddListItemToMenu( siter->second, subMenu);
 				menuItem = new BMenuItem( subMenu, msg);
 			} else {
 				menuItem = new BMenuItem( item->DisplayKey().String(), msg);
@@ -332,7 +327,7 @@ void BmGuiRoster::RebuildFilterMenu( BmMenuControllerBase* menu)
 		bool operator() ( const BmListModelItem* item)
 		{
 			const BmFilter* filter = dynamic_cast<const BmFilter*>(item);
-			return filter && filter->Kind().ICompare("Spam") != 0;
+			return !filter || filter->Kind().ICompare("Spam") == 0;
 		}
 	};
 	ItemFilter itemFilter;
