@@ -65,6 +65,7 @@ public:
 	bool Store();
 	bool StartJob();
 	void RemoveController( BmController* controller);
+	bool IsJobCompleted() const;
 	const BmString SettingsFileName();
 	int16 ArchiveVersion() const			{ return nArchiveVersion; }
 	bool AddItemToList( BmListModelItem* item, 

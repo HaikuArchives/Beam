@@ -89,6 +89,15 @@ void BmMailRefList::MarkCacheAsDirty() {
 }
 
 /*------------------------------------------------------------------------------*\
+	IsJobCompleted()
+		-	checks if this job has been completed
+\*------------------------------------------------------------------------------*/
+bool BmMailRefList::IsJobCompleted() const
+{
+	return !mNeedsCacheUpdate && inherited::IsJobCompleted();
+}
+
+/*------------------------------------------------------------------------------*\
 	SettingsFileName()
 		-	
 \*------------------------------------------------------------------------------*/
