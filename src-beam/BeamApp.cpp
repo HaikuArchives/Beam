@@ -840,6 +840,13 @@ thread_id BeamApplication::Run() {
 
 		tid = inherited::Run();
 
+		ThePrefs->Store();
+							// always store prefs since it contains references to
+							// list-items that are tracked via foreign-keys. If the
+							// user has renamed a folder, for instance the references
+							// to this folder will have moved along automatically, but
+							// we need to store these new prefs, as otherwise it would
+							// be lost.
 		ThePopAccountList->Store();
 							// always store pop-account-list since the list of 
 							// received mails may have changed
