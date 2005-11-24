@@ -285,7 +285,7 @@ BmDefaultChoiceView::ListItem::ListItem(const BmAutoCompleter::Choice* choice)
 		-	
 \*------------------------------------------------------------------------------*/
 void BmDefaultChoiceView::ListItem
-::DrawItem(BView* owner, BRect frame, bool complete = false)
+::DrawItem(BView* owner, BRect frame, bool complete)
 {
 	rgb_color textCol, backCol, matchCol;
 	if (IsSelected()) {

@@ -79,9 +79,9 @@
 static int MailAddrSorter(const void* l, const void* r) 
 {
 	const BmAutoCompleter::Choice* left 
-		= *static_cast<const BmAutoCompleter::Choice**>(l);
+		= *static_cast<const BmAutoCompleter::Choice* const *>(l);
 	const BmAutoCompleter::Choice* right 
-		= *static_cast<const BmAutoCompleter::Choice**>(r);
+		= *static_cast<const BmAutoCompleter::Choice* const *>(r);
 	BmString leftStr(left->Text());
 	leftStr.RemoveSet("\"'");
 	BmString rightStr(right->Text());
