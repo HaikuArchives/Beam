@@ -507,6 +507,15 @@ void BmJobModel::StopJob() {
 }
 
 /*------------------------------------------------------------------------------*\
+	IsJobCompleted()
+		-	checks if this job has been completed
+\*------------------------------------------------------------------------------*/
+bool BmJobModel::IsJobCompleted() const
+{
+	return mJobState == JOB_COMPLETED;
+}
+
+/*------------------------------------------------------------------------------*\
 	IsJobRunning()
 		-	checks if this job is currently running (or paused)
 \*------------------------------------------------------------------------------*/

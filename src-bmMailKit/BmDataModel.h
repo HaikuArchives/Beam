@@ -158,7 +158,7 @@ public:
 	inline thread_id JobThreadID() const
 													{ return mThreadID; }
 	bool IsJobRunning() const;
-	inline bool IsJobCompleted() const	{ return mJobState == JOB_COMPLETED; }
+	virtual bool IsJobCompleted() const;
 	inline int32 CurrentJobSpecifier() const	
 													{ return mJobSpecifier; }
 
