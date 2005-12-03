@@ -289,12 +289,34 @@ BmString::CountChars() const
 	}
 #endif
 
-	while (start++ != end) {
+	while (start++ < end) {
 		count++;
 
 		// Jump to next UTF8 character
 		while((*start & 0xc0) == 0x80)
 			start++;
+	}
+
+	return count;
+}
+
+// CountLines
+/*! \brief Returns the number of lines contained in the object.
+	\return An integer which is the number of lines in the string.
+	
+	Counts the number of lines contained in the string (the line
+   separator is '\n').
+*/
+int32
+BmString::CountLines() const
+{
+	int32 count = 1;
+	
+	const char *end = _privateData + Length();
+	
+	for(const char *start = _privateData; start < end; ++start) {
+		if (*start == '\n')
+			count++;
 	}
 
 	return count;
@@ -1188,7 +1210,7 @@ BmString::FindFirst(char c) const
 	
 	/* Scans the string until we find the character, */
 	/* or we hit the string's end */
-	while(start != end && *start != c)
+	while(start < end && *start != c)
 		start++;
 	
 	if (start == end)

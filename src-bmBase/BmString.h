@@ -55,6 +55,9 @@ public:
 
 	int32				CountChars() const;
 						/* returns number of UTF8 characters in string */
+
+	int32				CountLines() const;
+						/* returns number of lines in string (separator is \n) */
 /*---- Assignment ----------------------------------------------------------*/
 	BmString 			&operator=(const BmString &);
 	BmString 			&operator=(const char *);
