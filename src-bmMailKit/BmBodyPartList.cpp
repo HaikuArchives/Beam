@@ -696,11 +696,14 @@ void BmBodyPart::DecodeText(const char* tryCharset) {
 	if (count>0) {
 		BmString sigStr( mDecodedData.String()+rx.match[count-1].start()
 									+rx.match[count-1].Length());
-		mDecodedData.Truncate( rx.match[count-1].start());
-	 	BmRef<BmListModel> bodyRef = mListModel.Get();
-	 	BmBodyPartList* body = dynamic_cast< BmBodyPartList*>( bodyRef.Get());
-	 	if (body)
-			body->Signature( sigStr);
+		if (sigStr.CountLines() <= ThePrefs->GetInt("MaxLinesForSignature", 5)) {
+			// split-off signature:
+			mDecodedData.Truncate( rx.match[count-1].start());
+		 	BmRef<BmListModel> bodyRef = mListModel.Get();
+		 	BmBodyPartList* body = dynamic_cast< BmBodyPartList*>( bodyRef.Get());
+		 	if (body)
+				body->Signature( sigStr);
+		}
 	}
 	BM_LOG2( BM_LogMailParse, "...done (decoding of text-part)");
 }
