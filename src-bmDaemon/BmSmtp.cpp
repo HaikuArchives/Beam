@@ -142,7 +142,7 @@ void BmSmtpStatusFilter::Filter( const char* srcBuf, uint32& srcLen,
 		-	
 \*------------------------------------------------------------------------------*/
 bool BmSmtpStatusFilter::CheckForPositiveAnswer() {
-	if (mStatusText.Length() && mStatusText[0] > '3') {
+	if (mStatusText.Length() && mStatusText.Compare("3", 1) > 0) {
 		BmString err("Server answers: \n");
 		err += mStatusText;
 		err.RemoveAll( "\r");

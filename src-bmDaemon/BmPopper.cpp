@@ -97,7 +97,7 @@ void BmPopStatusFilter::Filter( const char* srcBuf, uint32& srcLen,
 			src++;								// skip '\n'
 			mHaveStatus = true;
 			mStatusText.RemoveAll( "\r");
-			if (!mNeedData || mStatusText[0] != '+')
+			if (!mNeedData || mStatusText.Compare("+", 1) != 0)
 				// if the status is all we want or an error occurred,
 				// we are done:
 				mEndReached = true;
@@ -114,7 +114,7 @@ void BmPopStatusFilter::Filter( const char* srcBuf, uint32& srcLen,
 		-	
 \*------------------------------------------------------------------------------*/
 bool BmPopStatusFilter::CheckForPositiveAnswer() {
-	if (mStatusText.Length() && mStatusText[0] != '+') {
+	if (mStatusText.Length() && mStatusText.Compare("+", 1) != 0) {
 		BmString err("Server answers: \n");
 		err += mStatusText;
 		err.RemoveAll( "\r");
