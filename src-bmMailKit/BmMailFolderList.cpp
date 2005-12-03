@@ -337,7 +337,8 @@ void BmMailFolderList::InstantiateItems( BMessage* archive) {
 	{	// scope for autolock
 		int32 folderCount = 1;
 		mTopFolder = new BmMailFolder( &msg, this, NULL);
-		BNode node( ThePrefs->GetString( "MailboxPath").String());
+		BEntry entry( ThePrefs->GetString( "MailboxPath").String());
+		BNode node( &entry);
 		node_ref nref;
 		node.GetNodeRef( &nref);
 		if (mTopFolder->NodeRef().node != nref.node) {
@@ -416,7 +417,7 @@ void BmMailFolderList::QueryForNewMails() {
 	BM_LOG( BM_LogMailTracking, "Start of newMail-query");
 	if ((err = mNewMailQuery.SetVolume( &ThePrefs->MailboxVolume)) != B_OK)
 		BM_THROW_RUNTIME( BmString("SetVolume(): ") << strerror(err));
-	if ((err = mNewMailQuery.SetPredicate( "MAIL:status == 'New'")) != B_OK)
+	if ((err = mNewMailQuery.SetPredicate( "(MAIL:status == 'New') || (MAIL:status == 'Pending')")) != B_OK)
 		BM_THROW_RUNTIME( BmString("SetPredicate(): ") << strerror(err));
 	if ((err = mNewMailQuery.SetTarget( BMessenger( TheMailMonitor))) != B_OK)
 		BM_THROW_RUNTIME( 
