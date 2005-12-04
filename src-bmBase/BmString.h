@@ -328,7 +328,7 @@ private:
 	void			_AssertNotUsingAsCString() const {}
 #endif
 
-	char			*_Alloc( int32);
+	char			*_Alloc( int32 dataLen, bool allocateEmptyString = false);
 
 	struct PosVect;
 	void 			_ReplaceAtPositions( const PosVect* positions,

@@ -1725,19 +1725,22 @@ char*
 BmString::LockBuffer(int32 maxLength)
 {
 	_SetUsingAsCString(true); //debug
+
+	if (maxLength < 0)
+		maxLength = 0;
 	
 	int32 len = Length();
-	
-	if (maxLength > len) {
-		if (!_GrowBy(maxLength - len))
+
+	// Note, that we also want to allocate a buffer, if both maxLength and len
+	// are 0. This allows the caller to actually write to the returned buffer
+	// in this case (only the terminating null at position 0, of course).
+	if (maxLength > len || len == 0 && maxLength == 0) {
+		if (!_Alloc(maxLength, true))
 			return NULL;
 		if (!len && _privateData)
 			// if string was empty before call to LockBuffer(), we make sure the
 			// buffer represents an empty c-string:
 			*_privateData = '\0';
-	} else if (!maxLength && !len) {
-		// special case for unallocated string, we return an empty c-string:
-		return const_cast<char*>(String());
 	}
 
 	return _privateData;
@@ -2043,13 +2046,18 @@ BmString::operator<<(double d)
 
 /*---- Private or Reserved ------------------------------------------------*/
 char*
-BmString::_Alloc(int32 dataLen)
+BmString::_Alloc(int32 dataLen, bool allocateEmptyString)
 {
 	char *dataPtr = _privateData ? _privateData - sizeof(int32) : NULL;
-	if (dataLen <= 0) {	// release buffer if requested size is 0:
-		free(dataPtr);
-		_privateData = NULL;
-		return NULL;
+	if (dataLen <= 0) {
+		if (!allocateEmptyString) {
+			// Release buffer if requested size is 0 and we're not told to
+			// allocate an empty string.
+			free(dataPtr);
+			_privateData = NULL;
+			return NULL;
+		} else
+			dataLen = 0;
 	}
 	int32 allocLen = dataLen + sizeof(int32) + 1;
 	dataPtr = (char *)realloc(dataPtr, allocLen);
