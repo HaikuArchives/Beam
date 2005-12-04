@@ -393,7 +393,7 @@ void BmBodyPart::SetTo( const BmString& msgtext, int32 start, int32 length,
 			} else {
 				// try to find the empty line that separates header from body:
 				pos = msgtext.FindFirst( "\r\n\r\n", start);
-				if (pos == B_ERROR || pos >= end) {
+				if (pos < 0 || pos + 4 > end) {
 					BmString str;
 					msgtext.CopyInto( str, start, min( length, (int32)256));
 					BmString s 
@@ -1184,7 +1184,7 @@ BmBodyPartList::~BmBodyPartList() {
 void BmBodyPartList::ParseMail() {
 	mEditableTextBody = NULL;
 	Cleanup();
-	if (mMail) {
+	if (mMail && mMail->HeaderLength() >= 2) {
 		const BmString& msgText = mMail->RawText();
 		BmBodyPart* bodyPart 
 			= new BmBodyPart( this, msgText, mMail->HeaderLength()+2, 
