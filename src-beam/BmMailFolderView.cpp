@@ -56,7 +56,7 @@ enum Columns {
 	COL_EXPANDER = 0,
 	COL_ICON,
 	COL_NAME,
-	COL_NEW_COUNT,
+	COL_SPECIAL_COUNT,
 	COL_TOTAL_COUNT
 };
 
@@ -87,22 +87,22 @@ void BmMailFolderItem::UpdateView( BmUpdFlags flags, bool redraw,
 	BmMailFolder* folder( ModelItem());
 	if (!folder)
 		return;
-	if (flags & (UPD_KEY | BmMailFolder::UPD_HAVE_NEW_STATUS)) {
-		Bold( folder->NewMailCount());
+	if (flags & (UPD_KEY | BmMailFolder::UPD_HAVE_SPECIAL_STATUS)) {
+		Bold( folder->SpecialMailCount());
 		SetColumnContent( COL_NAME, folder->Name().String());
 		if (redraw)
 			updColBitmap = 0xFFFFFFFF;
 							// Bold() may have changed font, need to redraw everything!
 	}
-	if (flags & (UPD_EXPANDER | BmMailFolder::UPD_HAVE_NEW_STATUS)) {
+	if (flags & (UPD_EXPANDER | BmMailFolder::UPD_HAVE_SPECIAL_STATUS)) {
 		BmBitmapHandle* icon;
-		if (folder->NewMailCount()) {
-			if (folder->HasNewMailInSubfolders() && !IsExpanded())
+		if (folder->SpecialMailCount()) {
+			if (folder->HasSpecialMailInSubfolders() && !IsExpanded())
 				icon = TheResources->IconByName("Folder_New_NewInSub");
 			else
 				icon = TheResources->IconByName("Folder_New");
 		} else {
-			if (folder->HasNewMailInSubfolders() && !IsExpanded())
+			if (folder->HasSpecialMailInSubfolders() && !IsExpanded())
 				icon = TheResources->IconByName("Folder_NewInSub");
 			else
 				icon = TheResources->IconByName("Folder");
@@ -110,17 +110,17 @@ void BmMailFolderItem::UpdateView( BmUpdFlags flags, bool redraw,
 		SetColumnContent( COL_ICON, icon, 2.0);
 		updColBitmap |= (1UL<<COL_ICON);
 	}
-	if (flags & BmMailFolder::UPD_NEW_COUNT) {
+	if (flags & BmMailFolder::UPD_SPECIAL_COUNT) {
 		BmString newCountStr;
-		int32 newCount = folder->NewMailCount();
+		int32 newCount = folder->SpecialMailCount();
 		if (newCount == 0)
 			newCountStr = "-";
 		else if (newCount < 0)
 			newCountStr = "?";
 		else
 			newCountStr << newCount;
-		SetColumnContent( COL_NEW_COUNT, newCountStr.String());
-		updColBitmap |= (1UL<<COL_NEW_COUNT);
+		SetColumnContent( COL_SPECIAL_COUNT, newCountStr.String());
+		updColBitmap |= (1UL<<COL_SPECIAL_COUNT);
 	}
 	if (flags & BmMailFolder::UPD_TOTAL_COUNT) {
 		BmString totalCountStr;

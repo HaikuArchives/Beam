@@ -83,89 +83,31 @@ BmMailFolderList::~BmMailFolderList() {
 }
 
 /*------------------------------------------------------------------------------*\
-	AddNewFlag()
+	AddSpecialFlag()
 		-	
 \*------------------------------------------------------------------------------*/
-BmMailFolder* BmMailFolderList::AddNewFlag( const node_ref& pnref, 
-														  const node_ref& nref) {
+BmMailFolder* BmMailFolderList::AddSpecialFlag( const node_ref& pnref, 
+																const node_ref& nref) {
 #ifdef BM_REF_DEBUGGING
 	BM_ASSERT( ModelLocker().IsLocked());
 #endif
 	BmRef<BmListModelItem> parentRef = FindItemByKey( BM_REFKEY( pnref));
 	BmMailFolder* parent = dynamic_cast< BmMailFolder*>( parentRef.Get());
-	mNewMailNodeMap[BM_REFKEY( nref)] = parent;
 	if (parent)
-		parent->BumpNewMailCount();
+		parent->AddSpecialFlagForMailRef(BM_REFKEY(nref));
 	return parent;
 }
 
 /*------------------------------------------------------------------------------*\
-	RemoveNewFlag()
+	RemoveSpecialFlag()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmMailFolderList::RemoveNewFlag( const node_ref& pnref, 
-												  const node_ref& nref) {
-	BmAutolockCheckGlobal lock( mModelLocker);
-	if (!lock.IsLocked())
-		BM_THROW_RUNTIME( 
-			ModelNameNC() << ":RemoveNewFlag(): Unable to get lock"
-		);
+void BmMailFolderList::RemoveSpecialFlag( const node_ref& pnref, 
+												  		const node_ref& nref) {
 	BmRef<BmListModelItem> parentRef = FindItemByKey( BM_REFKEY( pnref));
-	mNewMailNodeMap.erase( BM_REFKEY( nref));
 	BmMailFolder* parent = dynamic_cast< BmMailFolder*>( parentRef.Get());
 	if (parent)
-		parent->BumpNewMailCount( -1);
-}
-
-/*------------------------------------------------------------------------------*\
-	SetFolderForNodeFlaggedNew()
-		-	
-\*------------------------------------------------------------------------------*/
-void BmMailFolderList::SetFolderForNodeFlaggedNew( const node_ref& nref, 
-																	BmMailFolder* folder) {
-	BmAutolockCheckGlobal lock( mModelLocker);
-	if (!lock.IsLocked())
-		BM_THROW_RUNTIME( 
-			ModelNameNC() << ":SetFolderForNodeFlaggedNew(): Unable to get lock"
-		);
-	BmString refKey( BM_REFKEY( nref));
-	BmMailFolder* oldFolder = mNewMailNodeMap[refKey];
-	if (oldFolder != folder) {
-		mNewMailNodeMap[ refKey] = folder;
-		if (oldFolder)
-			oldFolder->BumpNewMailCount( -1);
-		if (folder)
-			folder->BumpNewMailCount();
-	}
-}
-
-/*------------------------------------------------------------------------------*\
-	GetFolderForNodeFlaggedNew()
-		-	
-\*------------------------------------------------------------------------------*/
-BmMailFolder* 
-BmMailFolderList::GetFolderForNodeFlaggedNew( const node_ref& nref) 
-{
-	BmAutolockCheckGlobal lock( mModelLocker);
-	if (!lock.IsLocked())
-		BM_THROW_RUNTIME( 
-			ModelNameNC() << ":GetFolderForNodeFlaggedNew(): Unable to get lock"
-		);
-	return mNewMailNodeMap[ BM_REFKEY( nref)];
-}
-
-/*------------------------------------------------------------------------------*\
-	NodeIsFlaggedNew()
-		-	
-\*------------------------------------------------------------------------------*/
-bool 
-BmMailFolderList::NodeIsFlaggedNew( const node_ref& nref) {
-	BmAutolockCheckGlobal lock( mModelLocker);
-	if (!lock.IsLocked())
-		BM_THROW_RUNTIME( 
-			ModelNameNC() << ":NodeIsFlaggedNew(): Unable to get lock"
-		);
-	return mNewMailNodeMap.find( BM_REFKEY( nref)) != mNewMailNodeMap.end();
+		parent->RemoveSpecialFlagForMailRef(BM_REFKEY(nref));
 }
 
 /*------------------------------------------------------------------------------*\
@@ -206,8 +148,8 @@ BmRef<BmMailRef> BmMailFolderList::FindMailRefByKey( const node_ref& nref) {
 \*------------------------------------------------------------------------------*/
 bool BmMailFolderList::StartJob() {
 	if (inherited::StartJob()) {
-		if (!mNewMailQuery.IsLive())
-			QueryForNewMails();
+		if (!mSpecialMailQuery.IsLive())
+			QueryForSpecialMails();
 		return true;
 	} else
 		return false;
@@ -394,10 +336,10 @@ int BmMailFolderList::doInstantiateMailFolders( BmMailFolder* folder,
 }
 
 /*------------------------------------------------------------------------------*\
-	QueryForNewMails()
+	QueryForSpecialMails()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmMailFolderList::QueryForNewMails() {
+void BmMailFolderList::QueryForSpecialMails() {
 	int32 count, newCount=0;
 	status_t err;
 	dirent* dent;
@@ -406,28 +348,33 @@ void BmMailFolderList::QueryForNewMails() {
 	char buf[4096];
 
 	typedef set<BmMailFolder*> BmFolderSet;
-	BmFolderSet foldersWithNewMail;
+	BmFolderSet foldersWithSpecialMail;
 
 	BmAutolockCheckGlobal lock( mModelLocker);
 	if (!lock.IsLocked())
 		BM_THROW_RUNTIME( 
-			ModelNameNC() << ":QueryForNewMails(): Unable to get lock"
+			ModelNameNC() << ":QueryForSpecialMails(): Unable to get lock"
 		);
 
 	BM_LOG( BM_LogMailTracking, "Start of newMail-query");
-	if ((err = mNewMailQuery.SetVolume( &ThePrefs->MailboxVolume)) != B_OK)
+	if ((err = mSpecialMailQuery.SetVolume( &ThePrefs->MailboxVolume)) != B_OK)
 		BM_THROW_RUNTIME( BmString("SetVolume(): ") << strerror(err));
-	if ((err = mNewMailQuery.SetPredicate( "(MAIL:status == 'New') || (MAIL:status == 'Pending')")) != B_OK)
+	// the following predicate exposes a bug in the way multiple values of a
+	// single attribute are handled: in live mode BeOS actually sends *two* 
+	// query updates for each message that matches the criteria...
+	// We circumvent the problem by using proper id-keying in the code that
+	// handles new/pending mails.
+	if ((err = mSpecialMailQuery.SetPredicate( "(MAIL:status = 'New') || (MAIL:status = 'Pending')")) != B_OK)
 		BM_THROW_RUNTIME( BmString("SetPredicate(): ") << strerror(err));
-	if ((err = mNewMailQuery.SetTarget( BMessenger( TheMailMonitor))) != B_OK)
+	if ((err = mSpecialMailQuery.SetTarget( BMessenger( TheMailMonitor))) != B_OK)
 		BM_THROW_RUNTIME( 
-			BmString("QueryForNewMails(): could not set query target.\n\nError:") 
+			BmString("QueryForSpecialMails(): could not set query target.\n\nError:") 
 				<< strerror(err)
 		);
-	if ((err = mNewMailQuery.Fetch()) != B_OK)
+	if ((err = mSpecialMailQuery.Fetch()) != B_OK)
 		BM_THROW_RUNTIME( BmString("Fetch(): ") << strerror(err));
 	Freeze();
-	while ((count = mNewMailQuery.GetNextDirents((dirent* )buf, 4096)) > 0) {
+	while ((count = mSpecialMailQuery.GetNextDirents((dirent* )buf, 4096)) > 0) {
 		dent = (dirent* )buf;
 		while (count-- > 0) {
 			newCount++;
@@ -436,20 +383,20 @@ void BmMailFolderList::QueryForNewMails() {
 			nref.device = dent->d_dev;
 			nref.node = dent->d_ino;
 			
-			foldersWithNewMail.insert( AddNewFlag( pnref, nref));
+			foldersWithSpecialMail.insert( AddSpecialFlag( pnref, nref));
 			// Bump the dirent-pointer by length of the dirent just handled:
 			dent = (dirent* )((char* )dent + dent->d_reclen);
 		}
 	}
 	Thaw();
 	BmFolderSet::const_iterator iter;
-	BmFolderSet::const_iterator end = foldersWithNewMail.end();
-	for(	iter = foldersWithNewMail.begin(); iter != end; ++iter) {
+	BmFolderSet::const_iterator end = foldersWithSpecialMail.end();
+	for(	iter = foldersWithSpecialMail.begin(); iter != end; ++iter) {
 		if (*iter)
 			TellModelItemUpdated( 
 				*iter, 
-				BmMailFolder::UPD_NEW_COUNT 
-				| BmMailFolder::UPD_HAVE_NEW_STATUS
+				BmMailFolder::UPD_SPECIAL_COUNT 
+				| BmMailFolder::UPD_HAVE_SPECIAL_STATUS
 			);
 	}
 	BM_LOG( BM_LogMailTracking, 

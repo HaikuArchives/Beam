@@ -390,10 +390,10 @@ void BmMailMonitorWorker::EntryRemoved( BmMailFolder* parent, node_ref& nref) {
 		BmAutolockCheckGlobal lock( TheMailFolderList->mModelLocker);
 		if (!lock.IsLocked())
 			BM_THROW_RUNTIME( "MailMonitor::EntryRemoved(): Unable to get lock");
-		// adjust new-mail-count accordingly...
-		int32 newMailCount = folder->NewMailCount() 
-									+ folder->NewMailCountForSubfolders();
-		parent->BumpNewMailCountForSubfolders( -1*newMailCount);
+		// adjust special-mail-count accordingly...
+		int32 specialMailCount = folder->SpecialMailCount() 
+									+ folder->SpecialMailCountForSubfolders();
+		parent->BumpSpecialMailCountForSubfolders( -1*specialMailCount);
 		// ...and remove folder from list:
 		TheMailFolderList->RemoveItemFromList( folder.Get());
 	} else {
@@ -491,11 +491,12 @@ void BmMailMonitorWorker::EntryMoved( BmMailFolder* parent, node_ref& nref,
 								<< (parent
 										? parent->Key()
 										: BmString( "<outside>")));
-				// adjust new-mail-count accordingly...
-				int32 newMailCount = folder->NewMailCount() 
-											+ folder->NewMailCountForSubfolders();
+				// adjust special-mail-count accordingly...
+				int32 specialMailCount 
+					= folder->SpecialMailCount() 
+						+ folder->SpecialMailCountForSubfolders();
 				if (oldParent)
-					oldParent->BumpNewMailCountForSubfolders( -1*newMailCount);
+					oldParent->BumpSpecialMailCountForSubfolders( -1*specialMailCount);
 				// ...and remove from folder-list:
 				TheMailFolderList->RemoveItemFromList( folder.Get());
 				if (parent) {
@@ -504,7 +505,7 @@ void BmMailMonitorWorker::EntryMoved( BmMailFolder* parent, node_ref& nref,
 					folder->EntryRef( eref);
 					TheMailFolderList->AddItemToList( folder.Get(), parent);
 					// and adjust the new-mail-count accordingly:
-					parent->BumpNewMailCountForSubfolders( newMailCount);
+					parent->BumpSpecialMailCountForSubfolders( specialMailCount);
 				}
 			}
 		}
@@ -605,9 +606,9 @@ void BmMailMonitorWorker::HandleQueryUpdateMsg( BMessage* msg) {
 						BM_THROW_RUNTIME( 
 							"HandleMailMonitorMsg(): Unable to get lock"
 						);
-					TheMailFolderList->AddNewFlag( pnref, nref);
+					TheMailFolderList->AddSpecialFlag( pnref, nref);
 				} else {							// opcode == B_ENTRY_REMOVED
-					TheMailFolderList->RemoveNewFlag( pnref, nref);
+					TheMailFolderList->RemoveSpecialFlag( pnref, nref);
 				}
 				break;
 			}

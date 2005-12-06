@@ -876,7 +876,7 @@ bool BmMail::Store( bool storeOnlyAttributesIfPossible) {
 			folderEntry.SetTo( mDestFolderpath.Path(), true);
 			if (!folderEntry.Exists()) {
 				// folder does not exists, we check if its a system folder
-				if (BmMailFolder::IsSystemFolder(mDestFolderpath)) {
+				if (BmMailFolder::IsSystemFolderPath(mDestFolderpath)) {
 					// yep, its a system folder, so we silently (re-)create it:
 					create_directory( mDestFolderpath.Path(), 0755);
 				} else {
@@ -898,7 +898,7 @@ bool BmMail::Store( bool storeOnlyAttributesIfPossible) {
 		folderEntry.SetTo( newHomePath.Path(), true);
 		if (!folderEntry.Exists()) {
 			// folder does not exists, we check if its a system folder
-			if (BmMailFolder::IsSystemFolder(newHomePath))
+			if (BmMailFolder::IsSystemFolderPath(newHomePath))
 				// yep, its a system folder, so we silently (re-)create it:
 				create_directory( newHomePath.Path(), 0755);
 		}
@@ -936,7 +936,7 @@ bool BmMail::Store( bool storeOnlyAttributesIfPossible) {
 					BmString("Could not create node for mail-file <") 
 						<< filename << ">\n\n Result: " << strerror(err)
 				);
-			BM_LOG2( BM_LogMailParse, "storing mail-attributes...");
+			BM_LOG2( BM_LogMailParse, "storing mail-attributes only...");
 			StoreAttributes( mailNode, status, whenCreated);
 		} else {
 			// write complete mail to disk:

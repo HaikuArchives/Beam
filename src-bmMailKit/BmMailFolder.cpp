@@ -56,9 +56,9 @@ const char* const BmMailFolder::MSG_STATEINFO_CONNECTED = "bm:sicn";
 const char* const BmMailFolder::MSG_NAME = 			"bm:fname";
 
 // flags indicating which parts are to be updated:
-const BmUpdFlags BmMailFolder::UPD_NEW_COUNT 		= 	1<<2;
-const BmUpdFlags BmMailFolder::UPD_TOTAL_COUNT 		= 	1<<3;
-const BmUpdFlags BmMailFolder::UPD_HAVE_NEW_STATUS	= 	1<<4;
+const BmUpdFlags BmMailFolder::UPD_SPECIAL_COUNT 			= 	1<<2;
+const BmUpdFlags BmMailFolder::UPD_TOTAL_COUNT 				= 	1<<3;
+const BmUpdFlags BmMailFolder::UPD_HAVE_SPECIAL_STATUS	= 	1<<4;
 
 const char* BmMailFolder::DRAFT_FOLDER_NAME		= "draft";
 const char* BmMailFolder::IN_FOLDER_NAME			= "in";
@@ -69,17 +69,23 @@ const char* BmMailFolder::SPAM_FOLDER_NAME		= "spam";
 const int16 BmMailFolder::nArchiveVersion = 4;
 
 /*------------------------------------------------------------------------------*\
-	IsSystemFolder( path)
+	IsSystemFolderPath( path)
 \*------------------------------------------------------------------------------*/
-bool BmMailFolder::IsSystemFolder( const BPath& path)
+bool BmMailFolder::IsSystemFolderPath( const BPath& path)
 {
-	BmString mbox( ThePrefs->GetString("MailboxPath") + "/");
-	BmString pathStr( path.Path());
-	return (pathStr ==  mbox + DRAFT_FOLDER_NAME
-	|| pathStr == mbox + OUT_FOLDER_NAME
-	|| pathStr == mbox + SPAM_FOLDER_NAME
-	|| pathStr == mbox + QUARANTINE_FOLDER_NAME
-	|| pathStr == mbox + DRAFT_FOLDER_NAME);
+	BPath mboxPath;
+	BEntry mboxEntry(ThePrefs->GetString("MailboxPath").String(), true);
+	mboxEntry.GetPath(&mboxPath);
+	BPath traversedPath;
+	BEntry traversedEntry(path.Path(), true);
+	traversedEntry.GetPath(&traversedPath);
+	BmString mboxStr(mboxPath.Path());
+	BmString pathStr(traversedPath.Path());
+	return (pathStr ==  mboxStr + "/" + DRAFT_FOLDER_NAME
+	|| pathStr == mboxStr + "/" + OUT_FOLDER_NAME
+	|| pathStr == mboxStr + "/" + SPAM_FOLDER_NAME
+	|| pathStr == mboxStr + "/" + QUARANTINE_FOLDER_NAME
+	|| pathStr == mboxStr + "/" + DRAFT_FOLDER_NAME);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -94,8 +100,7 @@ BmMailFolder::BmMailFolder( BmMailFolderList* model, entry_ref &eref,
 	,	mMailCount( -1)
 	,	mRefListStateInfoConnectedToParent( true)
 	,	mMailRefList( NULL)
-	,	mNewMailCount( 0)
-	,	mNewMailCountForSubfolders( 0)
+	,	mSpecialMailCountForSubfolders( 0)
 	,	mName( eref.name)
 {
 	mNodeRef.node = node;
@@ -112,8 +117,7 @@ BmMailFolder::BmMailFolder( BMessage* archive, BmMailFolderList* model,
 	:	inherited( "", model, parent)
 	,	mMailRefList( NULL)
 	,	mRefListStateInfoConnectedToParent( true)
-	,	mNewMailCount( 0)
-	,	mNewMailCountForSubfolders( 0)
+	,	mSpecialMailCountForSubfolders( 0)
 	,	mMailCount( -1)
 {
 	try {
@@ -203,6 +207,21 @@ status_t BmMailFolder::Archive( BMessage* archive, bool deep) const {
 }
 
 /*------------------------------------------------------------------------------*\
+	IsOutbound()
+		-	returns whether or not this folder is outbound (i.e. is or lives
+			underneath the folder 'mailbox/out').
+\*------------------------------------------------------------------------------*/
+bool BmMailFolder::IsOutbound() {
+	BmRef<BmListModelItem> item = this;
+	BmRef<BmListModelItem> parent;
+	while((parent = item->Parent()) != NULL && parent->Parent() != NULL)
+		item = parent;
+	// now item should be a folder living underneath 'mailbox'
+	BmMailFolder* folder = dynamic_cast<BmMailFolder*>(item.Get());
+	return (folder && folder->DisplayKey() == OUT_FOLDER_NAME);
+}
+
+/*------------------------------------------------------------------------------*\
 	CheckIfModifiedSinceLastTime()
 		-	determines if this mail-folder has been written to since the last time
 			Beam ran.
@@ -248,42 +267,59 @@ bool BmMailFolder::CheckIfModifiedSince( time_t when, time_t* storeNewModTime) {
 }
 
 /*------------------------------------------------------------------------------*\
-	BumpNewMailCount( offset)
-		-	increases this folder's new-mail counter by the given offset
+	AddSpecialFlagForMailRef(key)
+		-	
 \*------------------------------------------------------------------------------*/
-void BmMailFolder::BumpNewMailCount( int32 offset) {
-	int32 oldCount = 	mNewMailCount;
-	mNewMailCount += offset;
-	if (mNewMailCount < 0)
-		mNewMailCount = 0;
-	BmUpdFlags upd = UPD_NEW_COUNT;
-	if (oldCount*mNewMailCount==0 && offset)
-		// new mail status has changed (either was 0 before or is 0 now)
-		upd |= UPD_HAVE_NEW_STATUS;
+void BmMailFolder::AddSpecialFlagForMailRef(const BmString& key) {
+	int32 oldCount = 	mSpecialMailRefSet.size();
+	mSpecialMailRefSet.insert(key);
+	BmUpdFlags upd = UPD_SPECIAL_COUNT;
+	int32 offset = mSpecialMailRefSet.size() - oldCount;
+	if (!oldCount)
+		// new mail status has changed (was 0 before)
+		upd |= UPD_HAVE_SPECIAL_STATUS;
 	TheMailFolderList->TellModelItemUpdated( this, upd);
 	BmRef<BmMailFolder> parent( dynamic_cast< BmMailFolder*>( Parent().Get()));
 	if (parent)
-		parent->BumpNewMailCountForSubfolders( offset);
+		parent->BumpSpecialMailCountForSubfolders( offset);
 }
 
 /*------------------------------------------------------------------------------*\
-	BumpNewMailCountForSubfolders()
-		-	increases this folder's new-mail-in-subfolders counter by the given 
-			offset
+	RemoveSpecialFlagForMailRef(key)
+		-	
 \*------------------------------------------------------------------------------*/
-void BmMailFolder::BumpNewMailCountForSubfolders( int32 offset) {
-	int32 oldCount = 	mNewMailCountForSubfolders;
-	mNewMailCountForSubfolders += offset;
-	if (mNewMailCountForSubfolders < 0)
-		mNewMailCountForSubfolders = 0;
-	BmUpdFlags upd = UPD_NEW_COUNT;
-	if (oldCount*mNewMailCount==0 && offset)
-		// new mail status has changed (either was 0 before or is 0 now)
-		upd |= UPD_HAVE_NEW_STATUS;
+void BmMailFolder::RemoveSpecialFlagForMailRef(const BmString& key) {
+	int32 oldCount = 	mSpecialMailRefSet.size();
+	mSpecialMailRefSet.erase(key);
+	int32 offset = mSpecialMailRefSet.size() - oldCount;
+	BmUpdFlags upd = UPD_SPECIAL_COUNT;
+	if (oldCount>0 && mSpecialMailRefSet.empty())
+		// new mail status has changed (is 0 now)
+		upd |= UPD_HAVE_SPECIAL_STATUS;
 	TheMailFolderList->TellModelItemUpdated( this, upd);
 	BmRef<BmMailFolder> parent( dynamic_cast< BmMailFolder*>( Parent().Get()));
 	if (parent)
-		parent->BumpNewMailCountForSubfolders( offset);
+		parent->BumpSpecialMailCountForSubfolders( offset);
+}
+
+/*------------------------------------------------------------------------------*\
+	BumpSpecialMailCountForSubfolders()
+		-	increases this folder's new-mail-in-subfolders counter by the given 
+			offset
+\*------------------------------------------------------------------------------*/
+void BmMailFolder::BumpSpecialMailCountForSubfolders( int32 offset) {
+	int32 oldCount = 	mSpecialMailCountForSubfolders;
+	mSpecialMailCountForSubfolders += offset;
+	if (mSpecialMailCountForSubfolders < 0)
+		mSpecialMailCountForSubfolders = 0;
+	BmUpdFlags upd = UPD_SPECIAL_COUNT;
+	if (oldCount*mSpecialMailCountForSubfolders==0 && offset)
+		// new mail status has changed (either was 0 before or is 0 now)
+		upd |= UPD_HAVE_SPECIAL_STATUS;
+	TheMailFolderList->TellModelItemUpdated( this, upd);
+	BmRef<BmMailFolder> parent( dynamic_cast< BmMailFolder*>( Parent().Get()));
+	if (parent)
+		parent->BumpSpecialMailCountForSubfolders( offset);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -401,10 +437,6 @@ void BmMailFolder::AddMailRef( entry_ref& eref, struct stat& st) {
 	} else
 		// ref-list couldn't be created (?!?) we mark the mail-count as unknown:
 		MailCount( -1);
-	// if mail-ref is flagged new, we have to tell the mailfolderlist that we own
-	// this new-mail and increment our new-mail-counter (causing an update):
-	if (TheMailFolderList->NodeIsFlaggedNew( nref))
-		TheMailFolderList->SetFolderForNodeFlaggedNew( nref, this);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -446,11 +478,6 @@ void BmMailFolder::RemoveMailRef( const node_ref& nref) {
 	} else
 		// ref-list couldn't be created (?!?) we mark the mail-count as unknown:
 		MailCount( -1);
-	// if mail-ref is flagged new, we have to tell the mailfolderlist that we no 
-	// longer own this new-mail and decrement our new-mail-counter 
-	// (causing an update):
-	if (TheMailFolderList->NodeIsFlaggedNew( nref))
-		TheMailFolderList->SetFolderForNodeFlaggedNew( nref, NULL);
 }
 
 /*------------------------------------------------------------------------------*\

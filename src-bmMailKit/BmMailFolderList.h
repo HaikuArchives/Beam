@@ -67,12 +67,9 @@ public:
 	virtual ~BmMailFolderList();
 	
 	// native methods:
-	BmMailFolder* AddNewFlag( const node_ref& pnref, const node_ref& nref);
-	void RemoveNewFlag( const node_ref& pnref, const node_ref& nref);
-	void SetFolderForNodeFlaggedNew( const node_ref& nref, BmMailFolder* folder);
-	BmMailFolder* GetFolderForNodeFlaggedNew( const node_ref& nref);
-	bool NodeIsFlaggedNew( const node_ref& nref);
-	void QueryForNewMails();
+	BmMailFolder* AddSpecialFlag( const node_ref& pnref, const node_ref& nref);
+	void RemoveSpecialFlag( const node_ref& pnref, const node_ref& nref);
+	void QueryForSpecialMails();
 	BmRef<BmMailRef> FindMailRefByKey( const node_ref& nref);
 	
 	// overrides of list-model base:
@@ -105,8 +102,7 @@ private:
 	BmRef<BmMailFolder> mTopFolder;
 	
 	// the following members will NOT be archived at all:
-	BQuery mNewMailQuery;
-	BmFolderMap mNewMailNodeMap;
+	BQuery mSpecialMailQuery;
 	bool mMailboxPathHasChanged;
 
 	// Hide copy-constructor and assignment:

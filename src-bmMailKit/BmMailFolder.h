@@ -44,8 +44,6 @@
 class BmMailFolder;
 class BmMailFolderList;
 
-typedef map<BmString, BmMailFolder*> BmFolderMap;
-
 /*------------------------------------------------------------------------------*\
 	BmMailFolder
 		-	class 
@@ -55,6 +53,8 @@ class IMPEXPBMMAILKIT BmMailFolder : public BmListModelItem {
 
 	static const int16 nArchiveVersion;
 
+	typedef set<BmString> SpecialMailRefSet;
+
 public:
 	BmMailFolder( BmMailFolderList* model, entry_ref &eref, ino_t node,
 					  BmMailFolder* parent, time_t &modified);
@@ -63,11 +63,13 @@ public:
 	virtual ~BmMailFolder();
 	
 	// native methods:
-	void BumpNewMailCount( int32 offset=1);
-	void BumpNewMailCountForSubfolders( int32 offset=1);
-	bool HasNewMail() const					{ return mNewMailCount>0 
-															|| mNewMailCountForSubfolders>0; }
-	bool HasNewMailInSubfolders() const	{ return mNewMailCountForSubfolders>0; }
+	void AddSpecialFlagForMailRef( const BmString& key);
+	void RemoveSpecialFlagForMailRef( const BmString& key);
+	void BumpSpecialMailCountForSubfolders( int32 offset=1);
+	bool HasSpecialMail() const			{ return mSpecialMailRefSet.size()>0 
+															|| mSpecialMailCountForSubfolders>0; }
+	bool HasSpecialMailInSubfolders() const	
+													{ return mSpecialMailCountForSubfolders>0; }
 	bool CheckIfModifiedSinceLastTime();
 	bool CheckIfModifiedSince( time_t when, time_t* storeNewModTime=NULL);
 	void CreateMailRefList();
@@ -82,6 +84,7 @@ public:
 	void CreateSubFolder( BmString name);
 	void Rename( BmString newName);
 	void MoveToTrash();
+	bool IsOutbound();
 
 	// overrides of listmodel-item base:
 	const BmString& DisplayKey() const	{ return mName; }
@@ -97,10 +100,10 @@ public:
 													{ return &mEntryRef; }
 	inline const node_ref& NodeRef() const
 													{ return mNodeRef; }
-	inline const int32 NewMailCount() const
-													{ return mNewMailCount; }
-	inline const int32 NewMailCountForSubfolders() const
-													{ return mNewMailCountForSubfolders; }
+	inline const int32 SpecialMailCount() const
+													{ return mSpecialMailRefSet.size(); }
+	inline const int32 SpecialMailCountForSubfolders() const
+													{ return mSpecialMailCountForSubfolders; }
 	inline const int32 MailCount() const	
 													{ return mMailCount; }
 	inline const time_t LastModified() const
@@ -121,7 +124,7 @@ public:
 	inline void RefListStateInfoConnectedToParent( bool b)
 													{ mRefListStateInfoConnectedToParent = b; }
 
-	static bool IsSystemFolder( const BPath& path);
+	static bool IsSystemFolderPath( const BPath& path);
 
 	// archival-fieldnames:
 	static const char* const MSG_ENTRYREF;
@@ -135,9 +138,9 @@ public:
 	static const char* const MSG_NAME;
 
 	// flags indicating which parts are to be updated:
-	static const BmUpdFlags UPD_NEW_COUNT;
+	static const BmUpdFlags UPD_SPECIAL_COUNT;
 	static const BmUpdFlags UPD_TOTAL_COUNT;
-	static const BmUpdFlags UPD_HAVE_NEW_STATUS;
+	static const BmUpdFlags UPD_HAVE_SPECIAL_STATUS;
 
 	static const char* DRAFT_FOLDER_NAME;
 	static const char* IN_FOLDER_NAME;
@@ -162,8 +165,8 @@ private:
 	static BLocker nRefListLocker;
 
 	// the following members will NOT be archived at all:
-	int32 mNewMailCount;
-	int32 mNewMailCountForSubfolders;
+	SpecialMailRefSet mSpecialMailRefSet;
+	int32 mSpecialMailCountForSubfolders;
 	BmString mName;
 
 	// Hide copy-constructor and assignment:
