@@ -123,7 +123,7 @@ public:
 												 	{ return mSizeString; }
 	inline const bool HasAttachments() const
 												 	{ return mHasAttachments; }
-	inline const bool IsNew() const		{ return mStatus == "New"; }
+	const bool IsSpecial() const;
 	inline const BmString& Identity() const
 											 		{ return mIdentity; }
 	inline const BmString& Classification() const

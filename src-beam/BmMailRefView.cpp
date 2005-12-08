@@ -189,7 +189,7 @@ void BmMailRefItem::UpdateView( BmUpdFlags flags, bool redraw,
 	BmBitmapHandle* icon = NULL;
 
 	if (flags & BmMailRef::UPD_STATUS) {
-		Bold( ref->IsNew());
+		Bold( ref->IsSpecial());
 		BmString st = BmString("Mail_") << ref->Status();
 		icon = TheResources->IconByName(st);
 		SetColumnContent( COL_STATUS_I, icon);
