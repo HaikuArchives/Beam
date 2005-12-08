@@ -104,6 +104,9 @@ BmMailFolder* BmMailFolderList::AddSpecialFlag( const node_ref& pnref,
 \*------------------------------------------------------------------------------*/
 void BmMailFolderList::RemoveSpecialFlag( const node_ref& pnref, 
 												  		const node_ref& nref) {
+#ifdef BM_REF_DEBUGGING
+	BM_ASSERT( ModelLocker().IsLocked());
+#endif
 	BmRef<BmListModelItem> parentRef = FindItemByKey( BM_REFKEY( pnref));
 	BmMailFolder* parent = dynamic_cast< BmMailFolder*>( parentRef.Get());
 	if (parent)
@@ -279,7 +282,7 @@ void BmMailFolderList::InstantiateItems( BMessage* archive) {
 	{	// scope for autolock
 		int32 folderCount = 1;
 		mTopFolder = new BmMailFolder( &msg, this, NULL);
-		BEntry entry( ThePrefs->GetString( "MailboxPath").String());
+		BEntry entry( ThePrefs->GetString( "MailboxPath").String(), true);
 		BNode node( &entry);
 		node_ref nref;
 		node.GetNodeRef( &nref);
