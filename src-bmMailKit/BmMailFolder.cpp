@@ -432,13 +432,15 @@ void BmMailFolder::AddMailRef( entry_ref& eref, struct stat& st) {
 	nref.node = st.st_ino;
 	nref.device = st.st_dev;
 	BmString key( BM_REFKEY( nref));
-	AddSpecialFlagForMailRef(key);
 	BM_LOG2( BM_LogMailTracking, Name()+" adding mail-ref " << key);
 	BmRef<BmMailRefList> refList = MailRefList();
 	if (refList) {
-		if (!refList->AddMailRef( eref, st)) {
+		BmRef<BmMailRef> ref( refList->AddMailRef( eref, st));
+		if (ref) {
+			if (ref->IsSpecial())
+				AddSpecialFlagForMailRef(key);
+		} else
 			BM_LOG2( BM_LogMailTracking, Name()+" mail-ref already exists.");
-		}
 	} else
 		// ref-list couldn't be created (?!?) we mark the mail-count as unknown:
 		MailCount( -1);
@@ -475,11 +477,15 @@ BmRef<BmListModelItem> BmMailFolder::FindMailRefByKey( const BmString& key) {
 \*------------------------------------------------------------------------------*/
 void BmMailFolder::RemoveMailRef( const node_ref& nref) {
  	BmString key( BM_REFKEY( nref));
-	RemoveSpecialFlagForMailRef(key);
  	BM_LOG2( BM_LogMailTracking, Name()+" removing mail-ref " << key);
 	BmRef<BmMailRefList> refList = MailRefList();
 	if (refList) {
-		if (!refList->RemoveMailRef( key))
+		BmRef<BmMailRef> ref 
+			= dynamic_cast<BmMailRef*>( refList->RemoveMailRef( key).Get());
+		if (ref) {
+			if (ref->IsSpecial())
+				RemoveSpecialFlagForMailRef(key);
+		} else
 			BM_LOG2( BM_LogMailTracking, Name()+" mail-ref doesn't exist.");
 	} else
 		// ref-list couldn't be created (?!?) we mark the mail-count as unknown:
