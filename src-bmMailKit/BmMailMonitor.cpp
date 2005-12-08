@@ -600,15 +600,16 @@ void BmMailMonitorWorker::HandleQueryUpdateMsg( BMessage* msg) {
 				if ((err = msg->FindInt64( "node", &nref.node)) != B_OK)
 					BM_THROW_RUNTIME( "Field 'node' not found in msg !?!");
 				pnref.device = nref.device;
-				if (opcode == B_ENTRY_CREATED) {
+				{	// scope for lock
 					BmAutolockCheckGlobal lock( TheMailFolderList->mModelLocker);
 					if (!lock.IsLocked())
 						BM_THROW_RUNTIME( 
 							"HandleMailMonitorMsg(): Unable to get lock"
 						);
-					TheMailFolderList->AddSpecialFlag( pnref, nref);
-				} else {							// opcode == B_ENTRY_REMOVED
-					TheMailFolderList->RemoveSpecialFlag( pnref, nref);
+					if (opcode == B_ENTRY_CREATED)
+						TheMailFolderList->AddSpecialFlag( pnref, nref);
+					else		// opcode == B_ENTRY_REMOVED
+						TheMailFolderList->RemoveSpecialFlag( pnref, nref);
 				}
 				break;
 			}

@@ -273,15 +273,17 @@ bool BmMailFolder::CheckIfModifiedSince( time_t when, time_t* storeNewModTime) {
 void BmMailFolder::AddSpecialFlagForMailRef(const BmString& key) {
 	int32 oldCount = 	mSpecialMailRefSet.size();
 	mSpecialMailRefSet.insert(key);
-	BmUpdFlags upd = UPD_SPECIAL_COUNT;
 	int32 offset = mSpecialMailRefSet.size() - oldCount;
-	if (!oldCount)
-		// new mail status has changed (was 0 before)
-		upd |= UPD_HAVE_SPECIAL_STATUS;
-	TheMailFolderList->TellModelItemUpdated( this, upd);
-	BmRef<BmMailFolder> parent( dynamic_cast< BmMailFolder*>( Parent().Get()));
-	if (parent)
-		parent->BumpSpecialMailCountForSubfolders( offset);
+	if (offset) {
+		BmUpdFlags upd = UPD_SPECIAL_COUNT;
+		if (!oldCount)
+			// new mail status has changed (was 0 before)
+			upd |= UPD_HAVE_SPECIAL_STATUS;
+		TheMailFolderList->TellModelItemUpdated( this, upd);
+		BmRef<BmMailFolder> parent( dynamic_cast< BmMailFolder*>( Parent().Get()));
+		if (parent)
+			parent->BumpSpecialMailCountForSubfolders( offset);
+	}
 }
 
 /*------------------------------------------------------------------------------*\
@@ -292,14 +294,16 @@ void BmMailFolder::RemoveSpecialFlagForMailRef(const BmString& key) {
 	int32 oldCount = 	mSpecialMailRefSet.size();
 	mSpecialMailRefSet.erase(key);
 	int32 offset = mSpecialMailRefSet.size() - oldCount;
-	BmUpdFlags upd = UPD_SPECIAL_COUNT;
-	if (oldCount>0 && mSpecialMailRefSet.empty())
-		// new mail status has changed (is 0 now)
-		upd |= UPD_HAVE_SPECIAL_STATUS;
-	TheMailFolderList->TellModelItemUpdated( this, upd);
-	BmRef<BmMailFolder> parent( dynamic_cast< BmMailFolder*>( Parent().Get()));
-	if (parent)
-		parent->BumpSpecialMailCountForSubfolders( offset);
+	if (offset) {
+		BmUpdFlags upd = UPD_SPECIAL_COUNT;
+		if (oldCount>0 && mSpecialMailRefSet.empty())
+			// new mail status has changed (is 0 now)
+			upd |= UPD_HAVE_SPECIAL_STATUS;
+		TheMailFolderList->TellModelItemUpdated( this, upd);
+		BmRef<BmMailFolder> parent( dynamic_cast< BmMailFolder*>( Parent().Get()));
+		if (parent)
+			parent->BumpSpecialMailCountForSubfolders( offset);
+	}
 }
 
 /*------------------------------------------------------------------------------*\
@@ -428,6 +432,7 @@ void BmMailFolder::AddMailRef( entry_ref& eref, struct stat& st) {
 	nref.node = st.st_ino;
 	nref.device = st.st_dev;
 	BmString key( BM_REFKEY( nref));
+	AddSpecialFlagForMailRef(key);
 	BM_LOG2( BM_LogMailTracking, Name()+" adding mail-ref " << key);
 	BmRef<BmMailRefList> refList = MailRefList();
 	if (refList) {
@@ -470,6 +475,7 @@ BmRef<BmListModelItem> BmMailFolder::FindMailRefByKey( const BmString& key) {
 \*------------------------------------------------------------------------------*/
 void BmMailFolder::RemoveMailRef( const node_ref& nref) {
  	BmString key( BM_REFKEY( nref));
+	RemoveSpecialFlagForMailRef(key);
  	BM_LOG2( BM_LogMailTracking, Name()+" removing mail-ref " << key);
 	BmRef<BmMailRefList> refList = MailRefList();
 	if (refList) {
