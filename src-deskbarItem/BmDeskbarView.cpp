@@ -228,10 +228,10 @@ void BmDeskbarView::ChangeIcon( const char* iconName) {
 void BmDeskbarView::InstallDeskbarMonitor( dev_t mbox_dev) {
 	int32 count;
 	dirent* dent;
-	node_ref nref;
 	char buf[4096];
 
 	entry_ref eref;
+	BEntry entry;
 	
 	BMessenger thisAsTarget( this);
 	
@@ -246,15 +246,17 @@ void BmDeskbarView::InstallDeskbarMonitor( dev_t mbox_dev) {
 		trash.GetNodeRef( &mTrashNodeRef);
 
 		if (mNewMailQuery.SetVolume( &mboxVolume) == B_OK
-		&& mNewMailQuery.SetPredicate( "MAIL:status == 'New'") == B_OK
+		&& mNewMailQuery.SetPredicate( "MAIL:status = 'New'") == B_OK
 		&& mNewMailQuery.SetTarget( thisAsTarget) == B_OK
 		&& mNewMailQuery.Fetch() == B_OK) {
 			while ((count = mNewMailQuery.GetNextDirents((dirent* )buf, 4096)) > 0) {
 				dent = (dirent* )buf;
 				while (count-- > 0) {
-					nref.device = dent->d_pdev;
-					nref.node = dent->d_pino;
-					if (nref != mTrashNodeRef)
+					eref.device = dent->d_pdev;
+					eref.directory = dent->d_pino;
+					eref.set_name(dent->d_name);
+					entry.SetTo(&eref);
+					if (!trash.Contains(&entry))
 						mNewMailCount++;
 					// Bump the dirent-pointer by length of the dirent just handled:
 					dent = (dirent* )((char* )dent + dent->d_reclen);
