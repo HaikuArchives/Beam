@@ -982,7 +982,8 @@ void BmMail::StoreIntoFile( const BmString& filename, const BmString& status,
 		);
 
 	// we create/open the new mailfile (keeping a backup)...
-	if ((err = mailFile.SetTo(	mEntry, "text/x-email", backupEntry)) != B_OK)
+	err = mailFile.SetTo( filename.String(), "text/x-email", backupEntry);
+	if (err != B_OK)
 		BM_THROW_RUNTIME( 
 			BmString("Could not create backed mail-file\n\t<") 
 				<< filename << ">\n\n Result: " << strerror(err)
