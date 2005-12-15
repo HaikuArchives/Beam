@@ -228,7 +228,7 @@ public:
 	// native methods:
 	BmListModelItem* FindItemByKey( const BmString& key);
 	virtual int16 ArchiveVersion() const = 0;
-	virtual void IntegrateAppendedArchive( BMessage* archive);
+	virtual void ExecuteAction(BMessage* action);
 	void ItemIsValid( bool b);
 	virtual bool SanityCheck( BmString& complaint, BmString& fieldName) const
 													{ return true; }
@@ -312,9 +312,26 @@ class IMPEXPBMMAILKIT BmListModel : public BmJobModel, public BArchivable {
 protected:
 	static const char* const MSG_VERSION;
 
+	class StoredActionManager {
+		typedef vector<BMessage*> ActionVect;
+	public:
+		StoredActionManager(BmListModel* list);
+		~StoredActionManager();
+		//
+		bool StoreAction(BMessage* action);
+		bool Flush();
+		//
+		void MaxCacheSize(uint32 maxCacheSize)
+													{ mMaxCacheSize = maxCacheSize; }
+	private:
+		ActionVect mActionVect;
+		BmListModel* mList;
+		uint32 mMaxCacheSize;
+	};
+	
 public:
 	// c'tors & d'tor:
-	BmListModel( const BmString& name);
+	BmListModel( const BmString& name, uint32 logTerrain);
 	virtual ~BmListModel();
 
 	// native methods:
@@ -335,16 +352,18 @@ public:
 	//
 	virtual bool Store();
 	virtual const BmString SettingsFileName() = 0;
-	virtual void InitializeItems()		{	mInitCheck = B_OK; }
-	virtual void InstantiateItems( BMessage*)
-													{ mInitCheck = B_OK; }
+	virtual void InitializeItems()		{ mInitCheck = B_OK; }
+	virtual void InstantiateItemsFromStream( BDataIO* dataIO, BMessage* headerMsg = NULL);
+	virtual void InstantiateItems( BMessage* archive);
+	virtual void InstantiateItem( BMessage* archive)
+													{ }
 	virtual void Cleanup();
 	virtual int16 ArchiveVersion() const = 0;
 
-	static BMessage* Restore( const BmString settingsFile, 
-									  BList& appendedArchives);
-	virtual bool AppendArchive( BMessage* archive);
-	virtual void IntegrateAppendedArchives( BList& appendedArchives);
+	BMessage* Restore( BDataIO* dataIO);
+	bool StoreAction(BMessage* action);
+	bool RestoreAndExecuteActionsFrom(BDataIO* dataIO);
+	virtual void ExecuteAction(BMessage* action);
 
 	bool ForEachItem(BmListModelItem::Collector& collector) const;
 
@@ -381,9 +400,6 @@ protected:
 	virtual void TellModelItemUpdated( BmListModelItem* item, 
 												  BmUpdFlags flags=UPD_ALL,
 												  const BmString oldKey="");
-	//
-	static void FetchAppendedArchives( BDataIO* dataIO, 
-												  BList* appendedArchives);
 
 	// overrides of job-model base:
 	void TellJobIsDone( bool completed=true);
@@ -393,6 +409,8 @@ protected:
 	bool mNeedsStore;
 	BmForeignKeyVect mForeignKeyVect;
 	int32 mInvalidCount;
+	StoredActionManager mStoredActionManager;
+	uint32 mLogTerrain;
 
 private:
 	// Hide copy-constructor and assignment:

@@ -29,6 +29,7 @@
 
 
 #include <Application.h>
+#include <DataIO.h>
 #include <Messenger.h>
 #include <File.h>
 
@@ -608,10 +609,10 @@ status_t BmListModelItem::Archive( BMessage* archive, bool deep) const {
 }
 
 /*------------------------------------------------------------------------------*\
-	IntegrateAppendedArchive( archive)
+	ExecuteAction(action)
 		-	
 \*------------------------------------------------------------------------------*/
-void BmListModelItem::IntegrateAppendedArchive( BMessage* /*archive*/) {
+void BmListModelItem::ExecuteAction(BMessage* /*action*/) {
 }
 
 /*------------------------------------------------------------------------------*\
@@ -806,6 +807,92 @@ bool BmListModelItem
 	BmListModel
 \********************************************************************************/
 
+/*------------------------------------------------------------------------------*\
+	StoredActionManager()
+		-	
+\*------------------------------------------------------------------------------*/
+BmListModel::StoredActionManager
+::StoredActionManager(BmListModel* list)
+	:	mList(list)
+	,	mMaxCacheSize(100)
+{
+}
+
+/*------------------------------------------------------------------------------*\
+	StoredActionManager()
+		-	
+\*------------------------------------------------------------------------------*/
+BmListModel::StoredActionManager::~StoredActionManager()
+{
+}
+
+/*------------------------------------------------------------------------------*\
+	StoreAction()
+		-	adds given archive at end of settings-file
+\*------------------------------------------------------------------------------*/
+bool BmListModel::StoredActionManager::StoreAction(BMessage* action)
+{
+	BmAutolockCheckGlobal lock( mList->ModelLocker());
+	if (!lock.IsLocked())
+		BM_THROW_RUNTIME( "StoreAction(): Unable to get lock");
+	bool result = true;
+	mActionVect.push_back(action);
+	if (mActionVect.size() >= mMaxCacheSize)
+		result = Flush();
+	return result;
+}
+
+/*------------------------------------------------------------------------------*\
+	Flush()
+		-	appends all stored actions to the settings-file
+\*------------------------------------------------------------------------------*/
+bool BmListModel::StoredActionManager::Flush()
+{
+	if (mActionVect.empty())
+		return true;
+
+	BFile file;
+	status_t err;
+
+	try {
+		BMallocIO mallocIO;
+		mallocIO.SetBlockSize(mActionVect.size()*1024);
+		BMessage* action;
+		for( uint32 i=0; i<mActionVect.size(); ++i) {
+			action = mActionVect[i];
+			if ((err = action->Flatten( &mallocIO)) != B_OK)
+				BM_THROW_RUNTIME( 
+					BmString("Could not flatten stored actions\n\n Result: ") 
+						<< strerror(err)
+				);
+			delete action;
+		}
+		mActionVect.clear();
+		BmString filename = mList->SettingsFileName();
+		err = file.SetTo( filename.String(), B_WRITE_ONLY | B_OPEN_AT_END);
+		if (err == B_ENTRY_NOT_FOUND) {
+			// file does not exist yet, we try to create it through Store():
+			mList->Store();
+			if ((err = file.SetTo( 
+				filename.String(), 
+				B_WRITE_ONLY | B_OPEN_AT_END | B_CREATE_FILE
+			))	!= B_OK)
+				BM_THROW_RUNTIME( BmString("Could not append to settings-file\n\t<")
+										 	<< filename << ">\n\n Result: " 
+										 	<< strerror(err));
+		}
+		ssize_t sz = file.Write( mallocIO.Buffer(), mallocIO.BufferLength());
+		if (sz < 0)
+			BM_THROW_RUNTIME( BmString("Could not write to settings-file\n\t<")
+									 	<< filename << ">\n\n Result: " 
+									 	<< strerror(sz));
+		return true;
+	} catch( BM_error &e) {
+		BM_SHOWERR( e.what());
+		return false;
+	}
+}
+
 const char* const BmListModel::MSG_VERSION = "bm:version";
 
 const char* const BmListModel::MSG_ITEMKEY 		=	"bm:ikey";
@@ -818,11 +905,13 @@ const char* const BmListModel::MSG_OLD_KEY		= 	"bm:oldkey";
 	ListModel()
 		-	c'tor
 \*------------------------------------------------------------------------------*/
-BmListModel::BmListModel( const BmString& name)
+BmListModel::BmListModel( const BmString& name, uint32 logTerrain)
 	:  inherited( name)
 	,	mInitCheck( B_NO_INIT)
 	,	mNeedsStore( false)
 	,	mInvalidCount( 0)
+	,	mStoredActionManager(this)
+	,	mLogTerrain( logTerrain)
 {
 }
 
@@ -841,6 +930,7 @@ void BmListModel::Cleanup() {
 	BmAutolockCheckGlobal lock( mModelLocker);
 	if (!lock.IsLocked())
 		BM_THROW_RUNTIME( ModelNameNC() << ":Cleanup(): Unable to get lock");
+	mStoredActionManager.Flush();
 	mModelItemMap.clear();
 	mNeedsStore = false;
 	mInitCheck = B_NO_INIT;
@@ -964,6 +1054,16 @@ void BmListModel::SetItemValidity(  BmListModelItem* item, bool isValid) {
 			item->mItemIsValid = false;
 		}
 	}
+}
+
+/*------------------------------------------------------------------------------*\
+		-	
+\*------------------------------------------------------------------------------*/
+bool BmListModel::StoreAction(BMessage* action)
+{
+	if (!action)
+		return false;
+	return mStoredActionManager.StoreAction(new BMessage(*action));
 }
 
 /*------------------------------------------------------------------------------*\
@@ -1292,103 +1392,90 @@ bool BmListModel::Store() {
 
 /*------------------------------------------------------------------------------*\
 	Restore()
-		-	restores List from Settings-file (if it exists)
+		-	restores List from given stream
 \*------------------------------------------------------------------------------*/
-BMessage* BmListModel::Restore( const BmString filename, 
-										  BList& appendedArchives) {
+BMessage* BmListModel::Restore( BDataIO* dataIO) {
+	BMessage* archive = new BMessage;
+
+	// try to fetch list-archive from given stream:
+	status_t err = archive->Unflatten(dataIO);
+	if (err != B_OK) {
+		BM_SHOWERR( 
+			BmString("Could not fetch settings from given stream\n\nResult: ") 
+				<< strerror(err)
+		);
+		delete archive;
+		return NULL;
+	} else
+		return archive;
+}
+
+/*------------------------------------------------------------------------------*\
+	InstantiateItemsFromStream( dataIO, headerMsg)
+		-	instantiates the list from the given stream
+\*------------------------------------------------------------------------------*/
+void BmListModel::InstantiateItemsFromStream( BDataIO* dataIO, BMessage* /*headerMsg*/) {
+	BM_LOG2( mLogTerrain, BmString("Start of InstantiateItems() for ") << Name());
+	auto_ptr<BMessage> archive( Restore( dataIO));
+	InstantiateItems(archive.get());
+}
+
+/*------------------------------------------------------------------------------*\
+	InstantiateItems( archive)
+		-	instantiates the list from the given archive
+\*------------------------------------------------------------------------------*/
+void BmListModel::InstantiateItems( BMessage* archive) {
+	if (!archive)
+		return;
+	int32 numChildren 
+		= FindMsgInt32( archive, BmListModelItem::MSG_NUMCHILDREN);
 	status_t err;
-	BFile file;
-	BMessage* archive = NULL;
-
-	// try to open settings-file...
-	if ((err = file.SetTo( filename.String(), B_READ_ONLY)) == B_OK) {
-		// ...ok, settings file found, we fetch our data from it:
-		try {
-			archive = new BMessage;
-			if ((err = archive->Unflatten( &file)) != B_OK)
-				BM_THROW_RUNTIME( 
-					BmString("Could not fetch settings from file\n\t<") 
-						<< filename << ">\n\n Result: " << strerror(err)
-				);
-			FetchAppendedArchives( &file, &appendedArchives);
-		} catch (BM_error &e) {
-			BM_SHOWERR( e.what());
-			delete archive;
-			archive = NULL;
-		}
+	BMessage msg;
+	for( int i=0; i<numChildren; ++i) {
+		if ((err = archive->FindMessage( 
+			BmListModelItem::MSG_CHILDREN, i, &msg
+		)) != B_OK)
+			BM_THROW_RUNTIME(BmString("Could not instantiate item nr. ") << i+1 
+										<< " \n\nError:" << strerror(err));
+		InstantiateItem(&msg);
 	}
-	return archive;
+	BM_LOG2( mLogTerrain, BmString("End of InstantiateItems() for ") << Name());
+	mInitCheck = B_OK;
 }
 
 /*------------------------------------------------------------------------------*\
-	FetchAppendedArchives()
-		-	fetches appended archives from given file and puts them into given list
+	RestoreAndExecuteActionsFrom(dataIO)
+		-	fetches all stored actions from the given stream and execute them.
+		-	during the process of restoring the actions, we lock the list in order
+			to stop new (incoming) actions from being stored, as these actions would 
+			be written to the file we are currently reading from (and we'd like 
+			to avoid racing ourselves).
 \*------------------------------------------------------------------------------*/
-void BmListModel::FetchAppendedArchives( BDataIO* dataIO, BList* appendedArchives) {
-	BMessage* appendedArchive = new BMessage;
-	while (appendedArchive->Unflatten( dataIO) == B_OK) {
-		appendedArchives->AddItem( appendedArchive);
-		appendedArchive = new BMessage;
+bool BmListModel::RestoreAndExecuteActionsFrom(BDataIO* dataIO)
+{
+	BmAutolockCheckGlobal lock( mModelLocker);
+	if (!lock.IsLocked())
+		BM_THROW_RUNTIME( ModelNameNC() << ":RestoreAndExecute(): Unable to get lock");
+	uint32 count = 0;
+	BMessage action;
+	while (action.Unflatten(dataIO) == B_OK) {
+		ExecuteAction(&action);
+		count++;
 	}
-	delete appendedArchive;
+	return count > 0;
 }
 
 /*------------------------------------------------------------------------------*\
-	AppendArchive()
-		-	adds given archive at end of settings-file
-\*------------------------------------------------------------------------------*/
-bool BmListModel::AppendArchive( BMessage* archive) {
-	BFile file;
-	status_t err;
-
-	try {
-		BmAutolockCheckGlobal lock( mModelLocker);
-		if (!lock.IsLocked())
-			BM_THROW_RUNTIME( 
-				ModelNameNC() << ":AppendArchive(): Unable to get lock"
-			);
-		BmString filename = SettingsFileName();
-		err = file.SetTo( filename.String(), B_WRITE_ONLY | B_OPEN_AT_END);
-		if (err == B_ENTRY_NOT_FOUND) {
-			// file does not exist yet, we try to create it through Store():
-			Store();
-			if ((err = file.SetTo( 
-				filename.String(), 
-				B_WRITE_ONLY | B_OPEN_AT_END | B_CREATE_FILE
-			))	!= B_OK)
-				BM_THROW_RUNTIME( BmString("Could not append to settings-file\n\t<")
-										 	<< filename << ">\n\n Result: " 
-										 	<< strerror(err));
-		}
-		if ((err = archive->Flatten( &file)) != B_OK)
-			BM_THROW_RUNTIME( BmString("Could not append settings to file\n\t<") 
-										<< filename << ">\n\n Result: " << strerror(err));
-	} catch( BM_error &e) {
-		BM_SHOWERR( e.what());
-		return false;
-	}
-	return true;
-}
-
-/*------------------------------------------------------------------------------*\
-	IntegrateAppendedArchives( list)
+	ExecuteAction()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmListModel::IntegrateAppendedArchives( BList& appendedArchives) {
-	int32 count = appendedArchives.CountItems();
-	BmString key;
-	BMessage* archive;
-	for( int i=0; i<count; ++i) {
-		archive = static_cast< BMessage*>( appendedArchives.ItemAt( i));
-		if (archive) {
-			key = archive->FindString( MSG_ITEMKEY);
-			BmRef<BmListModelItem> item( FindItemByKey( key));
-			if (item)
-				item->IntegrateAppendedArchive( archive);
-			delete archive;
-		}
+void BmListModel::ExecuteAction(BMessage* action) {
+	if (action) {
+		BmString key = action->FindString(MSG_ITEMKEY);
+		BmRef<BmListModelItem> item(FindItemByKey(key));
+		if (item)
+			item->ExecuteAction(action);
 	}
-	appendedArchives.MakeEmpty();
 }
 
 /*------------------------------------------------------------------------------*\
@@ -1407,17 +1494,21 @@ bool BmListModel::StartJob() {
 
 	Freeze();
 	try {
-		BList appendedArchives(100);
-		BMessage* archive = Restore( SettingsFileName(), appendedArchives);
-		if (archive) {
-			InstantiateItems( archive);
-			delete archive;
-		} else {
-			// ...no cache file found, we fetch the existing items by hand...
+		// flush any pending to-be-stored actions
+		mStoredActionManager.Flush();
+		// try to open settings-file...
+		BFile file;
+		status_t err = file.SetTo( SettingsFileName().String(), B_READ_ONLY);
+		if (err == B_OK) {
+			// read archive(s) from cache/settings-file:
+			InstantiateItemsFromStream(&file);
+			RestoreAndExecuteActionsFrom(&file);
+		}
+		if (mInitCheck != B_OK) {
+			// no cache file found, or it couldn't be read, we fetch the 
+			// existing items by hand:
 			InitializeItems();
 		}
-		if (appendedArchives.CountItems() > 0)
-			IntegrateAppendedArchives( appendedArchives);
 	} catch (BM_error &e) {
 		BM_SHOWERR( e.what());
 	}
