@@ -291,6 +291,8 @@ void BmMail::SetupFromIdentityAndRecvAddr( BmIdentity* ident,
 		SetFieldVal( BM_FIELD_FROM, recvAddr);
 		if (ident->ReplyTo().Length())
 			SetFieldVal( BM_FIELD_REPLY_TO, ident->ReplyTo());
+		else
+			RemoveField( BM_FIELD_REPLY_TO);
 		SetSignatureByName( ident->SignatureName());
 		AccountName( ident->SMTPAccount());
 		IdentityName( ident->Key());
@@ -969,8 +971,9 @@ bool BmMail::Store( bool storeOnlyAttributesIfPossible) {
 	StoreIntoFile()
 		-	writes mail-data and attributes into a file
 \*------------------------------------------------------------------------------*/
-void BmMail::StoreIntoFile( const BmString& filename, const BmString& status,
+void BmMail::StoreIntoFile( const BmString& _filename, const BmString& status,
 									 bigtime_t whenCreated, BEntry* backupEntry) {
+	BmString filename = _filename;
 	BmBackedFile mailFile;
 	status_t err = B_NO_INIT;
 	ssize_t res;
@@ -980,6 +983,26 @@ void BmMail::StoreIntoFile( const BmString& filename, const BmString& status,
 			BmString("Could not create entry for mail-file <") 
 				<< filename << ">\n\n Result: " << strerror(err)
 		);
+
+	if (!backupEntry || backupEntry->InitCheck() != B_OK) {
+		// this mail has never been stored on disk before, so we
+		// need to make sure the name is unique:
+		if (mEntry.Exists()) {
+			// bump the filename until there's no such entry:
+			uint32 i = 1;
+			BmString fn;
+			while (mEntry.Exists()) {
+				fn = BmString(filename) << "-" << i;
+				if ((err = mEntry.SetTo( fn.String())) != B_OK) {
+					BM_THROW_RUNTIME( 
+						BmString("Could not create entry for mail-file <") 
+							<< fn << ">\n\n Result: " << strerror(err)
+					);
+				}
+			}
+			filename = fn;
+		}
+	}
 
 	// we create/open the new mailfile (keeping a backup)...
 	err = mailFile.SetTo( filename.String(), "text/x-email", backupEntry);
@@ -1068,15 +1091,10 @@ void BmMail::StoreAttributes( BNode& mailNode, const BmString& status,
 \*------------------------------------------------------------------------------*/
 BmString BmMail::CreateBasicFilename() {
 	static int32 counter = 1;
-	BmString name = mHeader->GetFieldVal(BM_FIELD_SUBJECT);
-	// we remove some illegal characters from filename, if present:
-	name.ReplaceSet( "/`´:\"\\", "_");
-	if (name.Length() > B_FILE_NAME_LENGTH-25)
-		name.Truncate( B_FILE_NAME_LENGTH-25);
 	char now[16];
 	time_t t = time(NULL);
 	strftime( now, 15, "%0Y%0m%0d%0H%0M%0S", localtime( &t));
-	name << "_" << now << "_" << counter++;
+	BmString name = BmString("mail-") << now << "-" << counter++;
 	return name;
 }
 
