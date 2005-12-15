@@ -69,7 +69,7 @@ BmMailFolderList* BmMailFolderList::CreateInstance() {
 		-	standard c'tor
 \*------------------------------------------------------------------------------*/
 BmMailFolderList::BmMailFolderList()
-	:	BmListModel( "MailFolderList")
+	:	BmListModel( "MailFolderList", BM_LogMailTracking)
 	,	mMailboxPathHasChanged( false)
 {
 }
@@ -343,7 +343,7 @@ int BmMailFolderList::doInstantiateMailFolders( BmMailFolder* folder,
 		-	
 \*------------------------------------------------------------------------------*/
 void BmMailFolderList::QueryForSpecialMails() {
-	int32 count, newCount=0;
+	int32 count, specialCount=0;
 	status_t err;
 	dirent* dent;
 	node_ref pnref;
@@ -359,7 +359,7 @@ void BmMailFolderList::QueryForSpecialMails() {
 			ModelNameNC() << ":QueryForSpecialMails(): Unable to get lock"
 		);
 
-	BM_LOG( BM_LogMailTracking, "Start of newMail-query");
+	BM_LOG( BM_LogMailTracking, "Start of special-mail-query");
 	if ((err = mSpecialMailQuery.SetVolume( &ThePrefs->MailboxVolume)) != B_OK)
 		BM_THROW_RUNTIME( BmString("SetVolume(): ") << strerror(err));
 	// the following predicate exposes a bug in the way multiple values of a
@@ -380,7 +380,7 @@ void BmMailFolderList::QueryForSpecialMails() {
 	while ((count = mSpecialMailQuery.GetNextDirents((dirent* )buf, 4096)) > 0) {
 		dent = (dirent* )buf;
 		while (count-- > 0) {
-			newCount++;
+			specialCount++;
 			pnref.device = dent->d_pdev;
 			pnref.node = dent->d_pino;
 			nref.device = dent->d_dev;
@@ -403,8 +403,8 @@ void BmMailFolderList::QueryForSpecialMails() {
 			);
 	}
 	BM_LOG( BM_LogMailTracking, 
-			  BmString("End of newMail-query (") << newCount 
-			  		<< " new mails found)");
+			  BmString("End of special-mail-query (") << specialCount 
+			  		<< " special mails found)");
 }
 
 /*------------------------------------------------------------------------------*\

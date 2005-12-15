@@ -117,15 +117,16 @@ public:
 	// overrides of listmodel base:
 	int16 ArchiveVersion() const			{ return nArchiveVersion; }
 	const BmString SettingsFileName();
-	void InstantiateItems( BMessage* archive);
 	bool AddItemToList( BmListModelItem* item, BmListModelItem* parent=NULL);
 	void RemoveItemFromList( BmListModelItem* item);
 	bool StartJob();
+	void InstantiateItem( BMessage* archive);
 	void ForeignKeyChanged( const BmString& key, 
 									const BmString& oldVal, 
 									const BmString& newVal);
 
 private:
+
 	BmChainedFilterList();					// hide default constructor
 	// Hide copy-constructor and assignment:
 	BmChainedFilterList( const BmChainedFilterList&);
@@ -208,7 +209,7 @@ public:
 	
 	// overrides of listmodel base:
 	const BmString SettingsFileName();
-	void InstantiateItems( BMessage* archive);
+	void InstantiateItem( BMessage* archive);
 	int16 ArchiveVersion() const			{ return nArchiveVersion; }
 	bool StartJob();
 

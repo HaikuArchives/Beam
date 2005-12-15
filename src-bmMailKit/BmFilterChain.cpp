@@ -120,7 +120,7 @@ const char* const BmChainedFilterList::MSG_NAME = "bm:name";
 		-	c'tor
 \*------------------------------------------------------------------------------*/
 BmChainedFilterList::BmChainedFilterList( const char* name) 
-	:	inherited( name)
+	:	inherited( name, BM_LogFilter)
 {
 	// tell filter-list that our items have a foreign-key on its items:
 	TheFilterList->AddForeignKey( BmChainedFilter::MSG_FILTERNAME,	this);
@@ -241,38 +241,15 @@ bool BmChainedFilterList::StartJob() {
 }
 
 /*------------------------------------------------------------------------------*\
-	InstantiateItems( archive)
+	InstantiateItem( archive)
 		-	
 \*------------------------------------------------------------------------------*/
-void BmChainedFilterList::InstantiateItems( BMessage* archive) {
-	BM_LOG2( BM_LogFilter, 
-				BmString("Start of InstantiateItems() for ChainedFilterList") 
-					<< ModelName());
-	status_t err;
-	int32 numChildren = FindMsgInt32( archive, BmListModelItem::MSG_NUMCHILDREN);
-	for( int i=0; i<numChildren; ++i) {
-		BMessage msg;
-		if ((err = archive->FindMessage( 
-			BmListModelItem::MSG_CHILDREN, i, &msg)
-		) != B_OK)
-			BM_THROW_RUNTIME( BmString("Could not find item nr. ") << i+1 
-										<< " \n\nError:" << strerror(err));
-		BmChainedFilter* newFilter = new BmChainedFilter( &msg, this);
-		BM_LOG3( BM_LogFilter, 
-					BmString("ChainedFilter <") << newFilter->Key() << "> read");
-		AddItemToList( newFilter);
-	}
-	BM_LOG2( BM_LogFilter, 
-				BmString("End of InstantiateItems() for FilterChain") 
-					<< ModelName());
-	RenumberPos();
-	mInitCheck = B_OK;
+void BmChainedFilterList::InstantiateItem( BMessage* archive) {
+	BmChainedFilter* newFilter = new BmChainedFilter( archive, this);
+	BM_LOG3( BM_LogFilter, 
+				BmString("ChainedFilter <") << newFilter->Key() << "> read");
+	AddItemToList( newFilter);
 }
-
-
-
-
-
 
 
 
@@ -358,7 +335,7 @@ BmFilterChainList* BmFilterChainList::CreateInstance() {
 		-	default constructor, creates empty list
 \*------------------------------------------------------------------------------*/
 BmFilterChainList::BmFilterChainList( const char* name)
-	:	inherited( name)
+	:	inherited( name, BM_LogFilter)
 {
 }
 
@@ -415,27 +392,26 @@ void BmFilterChainList::RemoveFilterFromAllChains( const BmString& filterName) {
 }
 
 /*------------------------------------------------------------------------------*\
-	InstantiateItems( archive)
-		-	initializes the filterchain-list from the given archive
+	InstantiateItem( archive)
+		-	instantiates one filter-chain from the given archive
 \*------------------------------------------------------------------------------*/
-void BmFilterChainList::InstantiateItems( BMessage* archive) {
-	BM_LOG2( BM_LogFilter, BmString("Start of InstantiateItems() for FilterChainList"));
+void BmFilterChainList::InstantiateItem( BMessage* archive) {
+	BmFilterChain* newChain = new BmFilterChain( archive, this);
+	BM_LOG3( BM_LogFilter, BmString("FilterChain <") << newChain->Name() << "> read");
+	int32 numChildren 
+		= FindMsgInt32( archive, BmListModelItem::MSG_NUMCHILDREN);
 	status_t err;
-	int32 numChildren = FindMsgInt32( archive, BmListModelItem::MSG_NUMCHILDREN);
 	for( int i=0; i<numChildren; ++i) {
 		BMessage msg;
 		if ((err = archive->FindMessage( 
-			BmListModelItem::MSG_CHILDREN, i, &msg)
-		) != B_OK)
-			BM_THROW_RUNTIME( BmString("Could not find item nr. ") << i+1 
+			BmListModelItem::MSG_CHILDREN, i, &msg
+		)) != B_OK)
+			BM_THROW_RUNTIME(BmString("Could not instantiate item nr. ") << i+1 
 										<< " \n\nError:" << strerror(err));
-		BmFilterChain* newChain = new BmFilterChain( &msg, this);
-		BM_LOG3( BM_LogFilter, BmString("FilterChain <") << newChain->Name() << "> read");
-		newChain->ChainedFilters()->InstantiateItems( &msg);
-		AddItemToList( newChain);
+		newChain->ChainedFilters()->InstantiateItem( &msg);
 	}
-	BM_LOG2( BM_LogFilter, BmString("End of InstantiateItems() for FilterChainList"));
-	mInitCheck = B_OK;
+	newChain->ChainedFilters()->RenumberPos();
+	AddItemToList( newChain);
 }
 
 /*------------------------------------------------------------------------------*\

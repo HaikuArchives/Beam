@@ -202,7 +202,7 @@ BmFilterList* BmFilterList::CreateInstance() {
 		-	default constructor, creates empty list
 \*------------------------------------------------------------------------------*/
 BmFilterList::BmFilterList( const char* name)
-	:	inherited( name)
+	:	inherited( name, BM_LogFilter)
 {
 	LoadAddons();
 }
@@ -310,9 +310,9 @@ void BmFilterList::LoadAddons() {
 				ao.defaultFilterName = *defaultFilterName;
 			else
 				ao.defaultFilterName = "new filter";
+#if 0
 			// we try to set TheBubbleHelper and TheLogHandler globals inside 
 			// the addon to our current values:
-/*
 			BubbleHelper** bhPtr;
 			if (get_image_symbol( ao.image, "TheBubbleHelper", B_SYMBOL_TYPE_ANY, 
 										 (void**)&bhPtr) == B_OK) {
@@ -323,7 +323,7 @@ void BmFilterList::LoadAddons() {
 										 (void**)&lhPtr) == B_OK) {
 				*lhPtr = TheLogHandler;
 			}
-*/
+#endif
 			// now we add the addon to our map (one entry per filter-kind):
 			while( *filterKinds) {
 				BmString kind(*filterKinds);
@@ -384,25 +384,11 @@ bool BmFilterList::HaveSpamFilter() const
 }
 
 /*------------------------------------------------------------------------------*\
-	InstantiateItems( archive)
-		-	initializes the signature-list from the given archive
+	InstantiateItem( archive)
+		-	instantiates a filter from the given archive
 \*------------------------------------------------------------------------------*/
-void BmFilterList::InstantiateItems( BMessage* archive) {
-	BM_LOG2( BM_LogFilter, 
-				BmString("Start of InstantiateItems() for FilterList"));
-	status_t err;
-	int32 numChildren = FindMsgInt32( archive, BmListModelItem::MSG_NUMCHILDREN);
-	for( int i=0; i<numChildren; ++i) {
-		BMessage msg;
-		if ((err = archive->FindMessage( 
-			BmListModelItem::MSG_CHILDREN, i, &msg
-		)) != B_OK)
-			BM_THROW_RUNTIME(BmString("Could not find signature nr. ") << i+1 
-										<< " \n\nError:" << strerror(err));
-		BmFilter* newFilter = new BmFilter( &msg, this);
-		AddItemToList( newFilter);
-	}
-	BM_LOG2( BM_LogFilter, BmString("End of InstantiateItems() for FilterList"));
-	mInitCheck = B_OK;
+void BmFilterList::InstantiateItem( BMessage* archive) {
+	BmFilter* newFilter = new BmFilter( archive, this);
+	AddItemToList( newFilter);
 }
 

@@ -162,7 +162,7 @@ public:
 	void ForeignKeyChanged( const BmString& key, 
 									const BmString& oldVal, const BmString& newVal);
 	const BmString SettingsFileName();
-	void InstantiateItems( BMessage* archive);
+	void InstantiateItem( BMessage* archive);
 	int16 ArchiveVersion() const			{ return nArchiveVersion; }
 
 	static BmRef< BmFilterList> theInstance;

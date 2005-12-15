@@ -72,7 +72,7 @@ public:
 							  BmListModelItem* parent=NULL);
 	void RemoveItemFromList( BmListModelItem* item);
 	void SetItemValidity(  BmListModelItem* item, bool isValid);
-	void IntegrateAppendedArchives( BList& appendedArchives);
+	void ExecuteAction( BMessage* action);
 	
 	// getters:
 	inline bool NeedsCacheUpdate() const
@@ -85,7 +85,7 @@ private:
 
 	// native methods:
 	void InitializeItems();
-	void MyInstantiateItems( BDataIO* dataIO, int32 numChildren);
+	void InstantiateItemsFromStream( BDataIO* dataIO, BMessage* headerMsg = NULL);
 
 	// the following members will NOT be archived at all:
 	BmWeakRef<BmMailFolder> mFolder;

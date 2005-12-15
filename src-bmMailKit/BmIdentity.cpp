@@ -235,7 +235,7 @@ BmIdentityList* BmIdentityList::CreateInstance() {
 		-	default constructor, creates empty list
 \*------------------------------------------------------------------------------*/
 BmIdentityList::BmIdentityList()
-	:	inherited( "IdentityList") 
+	:	inherited( "IdentityList", BM_LogMailTracking) 
 	,	mCurrIdentity( NULL)
 {
 	NeedControllersToContinue( false);
@@ -297,34 +297,32 @@ status_t BmIdentityList::Archive( BMessage* archive, bool deep) const {
 }
 
 /*------------------------------------------------------------------------------*\
+	InstantiateItem( archive)
+		-	instantiates an identity from the given archive
+\*------------------------------------------------------------------------------*/
+void BmIdentityList::InstantiateItem( BMessage* archive) {
+	BmIdentity* newIdent = new BmIdentity( archive, this);
+	BM_LOG3( BM_LogMailTracking, 
+				BmString("Identity <") << newIdent->Name() << "," 
+					<< newIdent->Key() << "> read");
+	AddItemToList( newIdent);
+	if (!mCurrIdentity)
+		mCurrIdentity = newIdent;
+	}
+
+/*------------------------------------------------------------------------------*\
 	InstantiateItems( archive)
-		-	initializes the identities info from the given message
+		-	fetches info about last current identity from archive
 \*------------------------------------------------------------------------------*/
 void BmIdentityList::InstantiateItems( BMessage* archive) {
-	BM_LOG2( BM_LogMailTracking, BmString("Start of InstantiateItems() for IdentityList"));
-	status_t err;
-	int32 numChildren = FindMsgInt32( archive, BmListModelItem::MSG_NUMCHILDREN);
-	for( int i=0; i<numChildren; ++i) {
-		BMessage msg;
-		if ((err = archive->FindMessage( 
-			BmListModelItem::MSG_CHILDREN, i, &msg
-		)) != B_OK)
-			BM_THROW_RUNTIME( BmString("Could not find identity nr. ") << i+1 
-										<< " \n\nError:" << strerror(err));
-		BmIdentity* newIdent = new BmIdentity( &msg, this);
-		BM_LOG3( BM_LogMailTracking, BmString("Identity <") << newIdent->Name() << "," << newIdent->Key() << "> read");
-		AddItemToList( newIdent);
-		if (i==0)
-			mCurrIdentity = newIdent;
-	}
+	mCurrIdentity = NULL;
+	inherited::InstantiateItems(archive);
 	BmString currIdentName = archive->FindString( MSG_CURR_IDENTITY);
 	if (currIdentName.Length()) {
 		BmRef<BmListModelItem> identRef = FindItemByKey( currIdentName);
 		if (identRef)
 			mCurrIdentity = dynamic_cast< BmIdentity*>( identRef.Get());
 	}
-	BM_LOG2( BM_LogMailTracking, BmString("End of InstantiateItems() for IdentityList"));
-	mInitCheck = B_OK;
 }
 
 /*------------------------------------------------------------------------------*\

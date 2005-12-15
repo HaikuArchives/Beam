@@ -75,8 +75,8 @@ const char* const BmPopAccount::AUTH_CRAM_MD5 = 	"CRAM-MD5";
 const char* const BmPopAccount::AUTH_DIGEST_MD5 = 	"DIGEST-MD5";
 
 enum {
-	BM_APPENDED_UID	= 'bmez'
-							// a uid that has been appended to archive
+	BM_APPEND_UID	= 'bmez'
+		// a uid that has been downloaded from server
 };
 
 /*------------------------------------------------------------------------------*\
@@ -242,15 +242,15 @@ status_t BmPopAccount::Archive( BMessage* archive, bool deep) const {
 }
 
 /*------------------------------------------------------------------------------*\
-	IntegrateAppendedArchive( archive)
+	ExecuteAction( action)
 		-	
 \*------------------------------------------------------------------------------*/
-void BmPopAccount::IntegrateAppendedArchive( BMessage* archive) {
-	switch( archive->what) {
-		case BM_APPENDED_UID: {
+void BmPopAccount::ExecuteAction( BMessage* action) {
+	switch( action->what) {
+		case BM_APPEND_UID: {
 			BmUidInfo uidInfo;
-			uidInfo.uid = archive->FindString( MSG_UID);
-			uidInfo.timeDownloaded = archive->FindInt32( MSG_UID_TIME);
+			uidInfo.uid = action->FindString( MSG_UID);
+			uidInfo.timeDownloaded = action->FindInt32( MSG_UID_TIME);
 			mUIDs.push_back( uidInfo);
 		}
 	};
@@ -316,11 +316,11 @@ void BmPopAccount::MarkUIDAsDownloaded( const BmString& uid) {
 	uidInfo.timeDownloaded = time( NULL);
 	mUIDs.push_back( uidInfo);
 	// append info about new downloaded UID to settings-file:
-	BMessage archive( BM_APPENDED_UID);
-	archive.AddString( BmListModel::MSG_ITEMKEY, Key().String());
-	archive.AddString( MSG_UID, uid.String());
-	archive.AddInt32( MSG_UID_TIME, uidInfo.timeDownloaded);
-	ThePopAccountList->AppendArchive( &archive);
+	BMessage action( BM_APPEND_UID);
+	action.AddString( BmListModel::MSG_ITEMKEY, Key().String());
+	action.AddString( MSG_UID, uid.String());
+	action.AddInt32( MSG_UID_TIME, uidInfo.timeDownloaded);
+	ThePopAccountList->StoreAction(&action);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -460,8 +460,10 @@ BmPopAccountList* BmPopAccountList
 		-	default constructor, creates empty list
 \*------------------------------------------------------------------------------*/
 BmPopAccountList::BmPopAccountList()
-	:	inherited( "PopAccountList") 
+	:	inherited( "PopAccountList", BM_LogMailTracking) 
 {
+	mStoredActionManager.MaxCacheSize(1);
+		// store all actions (downloaded UIDs) immediately
 	NeedControllersToContinue( false);
 }
 
@@ -483,33 +485,25 @@ const BmString BmPopAccountList::SettingsFileName() {
 }
 
 /*------------------------------------------------------------------------------*\
+	InstantiateItem( archive)
+		-	instantiates one POP3-account from the given archive
+\*------------------------------------------------------------------------------*/
+void BmPopAccountList::InstantiateItem( BMessage* archive) {
+	BmPopAccount* newAcc = new BmPopAccount( archive, this);
+	BM_LOG3( BM_LogMailTracking, 
+				BmString("PopAccount <") << newAcc->Name() << "," 
+					<< newAcc->Key() << "> read");
+	AddItemToList( newAcc);
+}
+
+/*------------------------------------------------------------------------------*\
 	InstantiateItems( archive)
-		-	initializes the POP3-accounts info from the given message
+		-	instantiates all POP3-accounts from the given archive
 \*------------------------------------------------------------------------------*/
 void BmPopAccountList::InstantiateItems( BMessage* archive) {
-	int16 version;
-	if (archive->FindInt16( MSG_VERSION, &version) != B_OK)
-		version = 0;
-	BM_LOG2( BM_LogMailTracking, 
-				BmString("Start of InstantiateItems() for PopAccountList"));
-	status_t err;
-	int32 numChildren = FindMsgInt32( archive, BmListModelItem::MSG_NUMCHILDREN);
-	for( int i=0; i<numChildren; ++i) {
-		BMessage msg;
-		if ((err = archive->FindMessage( 
-			BmListModelItem::MSG_CHILDREN, i, &msg
-		)) != B_OK)
-			BM_THROW_RUNTIME( BmString("Could not find pop-account nr. ") << i+1 
-										<< " \n\nError:" << strerror(err));
-		BmPopAccount* newAcc = new BmPopAccount( &msg, this);
-		BM_LOG3( BM_LogMailTracking, 
-					BmString("PopAccount <") << newAcc->Name() << "," 
-						<< newAcc->Key() << "> read");
-		AddItemToList( newAcc);
-	}
-	BM_LOG2( BM_LogMailTracking, 
-				BmString("End of InstantiateItems() for PopAccountList"));
-	mInitCheck = B_OK;
+	inherited::InstantiateItems(archive);
+	int16 version = 0;
+	archive->FindInt16( MSG_VERSION, &version);
 	if (version<2) {
 		// with version 2 we introduced identities, so we have split some info
 		// off the pop-accounts and have created appropriate identities from it.

@@ -187,6 +187,7 @@ public:
 	void ForeignKeyChanged( const BmString& key, 
 									const BmString& oldVal, const BmString& newVal);
 	const BmString SettingsFileName();
+	void InstantiateItem( BMessage* archive);
 	void InstantiateItems( BMessage* archive);
 	status_t Archive( BMessage* archive, bool deep = true) const;
 	int16 ArchiveVersion() const			{ return nArchiveVersion; }

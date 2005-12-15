@@ -1163,7 +1163,8 @@ bool BmBodyPart::MimeTypeIsPotentiallyHarmful( const BmString& realMT) {
 		-	standard c'tor
 \*------------------------------------------------------------------------------*/
 BmBodyPartList::BmBodyPartList( BmMail* mail)
-	:	inherited( BmString("BodyPartList_") << mail->ModelName())
+	:	inherited( BmString("BodyPartList_") << mail->ModelName(), 
+					  BM_LogMailParse)
 	,	mMail( mail)
 	,	mEditableTextBody( NULL)
 	,	mInitCheck( B_NO_INIT)

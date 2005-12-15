@@ -84,9 +84,13 @@ UpdateMimeTypeFile( const char* s, time_t appModTime)
 static void 
 CreateRequiredIndices() 
 {
-	EnsureIndexExists( BM_MAIL_ATTR_ACCOUNT);
-	EnsureIndexExists( BM_MAIL_ATTR_IDENTITY);
-	EnsureIndexExists( BM_MAIL_ATTR_STATUS);
+	// TODO: actually no indices are *required* currently, they'll only
+	// be required once Beam supports virtual folders.
+	// For now, we only make sure that MAIL:status exists...
+	EnsureIndexExists( BM_MAIL_ATTR_STATUS, B_STRING_TYPE);
+	// ...and create indices for the Beam-only attributes:
+	EnsureIndexExists( BM_MAIL_ATTR_ACCOUNT, B_STRING_TYPE);
+	EnsureIndexExists( BM_MAIL_ATTR_IDENTITY, B_STRING_TYPE);
 
 // [zooey]: Should we activate this? It's too ugly, isn't it?
 /*

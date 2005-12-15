@@ -283,7 +283,7 @@ BmPeopleList* BmPeopleList::CreateInstance() {
 		-	default constructor, creates empty list
 \*------------------------------------------------------------------------------*/
 BmPeopleList::BmPeopleList()
-	:	inherited( "PeopleList") 
+	:	inherited( "PeopleList", BM_LogApp)
 {
 	NeedControllersToContinue( false);
 }
@@ -615,7 +615,7 @@ void BmPeopleList::InitializeItems() {
 	BM_LOG2( BM_LogApp, "Start of people-query");
 	if ((err = mPeopleQuery.SetVolume( &peopleVolume)) != B_OK)
 		BM_THROW_RUNTIME( BmString("SetVolume(): ") << strerror(err));
-	if ((err = mPeopleQuery.SetPredicate( "META:email == '**'")) != B_OK)
+	if ((err = mPeopleQuery.SetPredicate( "META:email = '*'")) != B_OK)
 		BM_THROW_RUNTIME( BmString("SetPredicate(): ") << strerror(err));
 	if ((err = mPeopleQuery.SetTarget( BMessenger( ThePeopleMonitor))) != B_OK)
 		BM_THROW_RUNTIME( BmString("BmPeopleList::InitializeItems(): could not set query target.\n\nError:") << strerror(err));

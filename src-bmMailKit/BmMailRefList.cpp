@@ -55,7 +55,7 @@ const int16 BmMailRefList::nArchiveVersion = 3;
 \*------------------------------------------------------------------------------*/
 BmMailRefList::BmMailRefList( BmMailFolder* folder)
 	:	BmListModel( BmString("MailRefList_") << folder->Key() 
-							<< " (" << folder->Name()<<")")
+							<< " (" << folder->Name()<<")", BM_LogMailTracking)
 	,	mFolder( folder)
 	,	mNeedsCacheUpdate( false)
 {
@@ -189,6 +189,9 @@ bool BmMailRefList::StartJob() {
 		BMessage msg;
 		BmString filename = SettingsFileName();
 	
+		// flush any pending to-be-stored actions
+		mStoredActionManager.Flush();
+
 		bool cacheFileUpToDate = false;
 		if (ThePrefs->GetBool("CacheRefsOnDisk")
 		&& (err = cacheFile.SetTo( filename.String(), B_READ_ONLY)) != B_OK) {
@@ -226,6 +229,8 @@ bool BmMailRefList::StartJob() {
 		if (cacheFileUpToDate) {
 			// ...ok, cache-file should contain up-to-date info, 
 			// we fetch our data from it:
+#if 0
+// is a bit faster, but uses (considerably) more memory:
 			off_t sz = 0;
 			if ((err = cacheFile.GetSize(&sz)) != B_OK)
 				BM_THROW_RUNTIME( 
@@ -252,6 +257,8 @@ bool BmMailRefList::StartJob() {
 					BmListModelItem::MSG_NUMCHILDREN
 				)
 			);
+#endif
+			InstantiateItemsFromStream( &cacheFile, &msg);
 		} else {
 			// ...caching disabled or no cache file found or update 
 			// required/requested, we fetch the existing mails from disk...
@@ -279,14 +286,17 @@ BmRef<BmMailRef> BmMailRefList::AddMailRef( entry_ref& eref, struct stat& st) {
 	} else if (newMailRef) {
 		// ref-list has not been read yet, we append info about the added
 		// item to the cache:
-		BMessage archive;
-		newMailRef->Archive( &archive);
-		archive.AddInt32( BmMailRef::MSG_OPCODE, B_ENTRY_CREATED);
-		if (AppendArchive( &archive)) {
+		BMessage action;
+		newMailRef->Archive( &action);
+		action.AddInt32( BmMailRef::MSG_OPCODE, B_ENTRY_CREATED);
+		BM_LOG( BM_LogMailTracking, 
+				  BmString("Storing created-action for ref ") 
+				  	<< newMailRef->Key());
+		if (StoreAction(&action)) {
 			BmRef<BmMailFolder> folder( mFolder.Get());
-							// hold a ref on the corresponding folder while we use it
+				// hold a ref on the corresponding folder while we use it
 			if (folder)
-				folder->MailCount( folder->MailCount()+1);
+				folder->BumpMailCount(1);
 			return newMailRef;
 		}
 	}
@@ -305,14 +315,16 @@ BmRef<BmListModelItem> BmMailRefList::RemoveMailRef( const BmString& key) {
 	} else {
 		// ref-list has not been read yet, we append info about the removed
 		// item to the cache:
-		BMessage archive;
-		archive.AddInt32( BmMailRef::MSG_OPCODE, B_ENTRY_REMOVED);
-		archive.AddString( MSG_ITEMKEY, key.String());
-		if (AppendArchive( &archive)) {
+		BMessage action;
+		action.AddInt32( BmMailRef::MSG_OPCODE, B_ENTRY_REMOVED);
+		action.AddString( MSG_ITEMKEY, key.String());
+		BM_LOG( BM_LogMailTracking, 
+				  BmString("Storing removed-action for ref ") << key);
+		if (StoreAction(&action)) {
 			BmRef<BmMailFolder> folder( mFolder.Get());
-							// hold a ref on the corresponding folder while we use it
+				// hold a ref on the corresponding folder while we use it
 			if (folder)
-				folder->MailCount( folder->MailCount()-1);
+				folder->BumpMailCount(-1);
 		}
 	}
 	return removedRef;
@@ -332,10 +344,12 @@ void BmMailRefList::UpdateMailRef( const BmString& key) {
 	} else {
 		// ref-list has not been read yet, we append info about the changed
 		// item to the cache:
-		BMessage archive;
-		archive.AddInt32( BmMailRef::MSG_OPCODE, B_ATTR_CHANGED);
-		archive.AddString( MSG_ITEMKEY, key.String());
-		AppendArchive( &archive);
+		BMessage action;
+		action.AddInt32( BmMailRef::MSG_OPCODE, B_ATTR_CHANGED);
+		action.AddString( MSG_ITEMKEY, key.String());
+		BM_LOG( BM_LogMailTracking, 
+				  BmString("Storing update-action for ref ") << key);
+		StoreAction(&action);
 	}
 }
 
@@ -411,10 +425,14 @@ void BmMailRefList::InitializeItems() {
 }
 
 /*------------------------------------------------------------------------------*\
-	InstantiateMailRefs( archive)
+	InstantiateMailRefs( dataIO, headerMsg)
 		-	
 \*------------------------------------------------------------------------------*/
-void BmMailRefList::MyInstantiateItems( BDataIO* dataIO, int32 numChildren) {
+void BmMailRefList::InstantiateItemsFromStream( BDataIO* dataIO, BMessage* headerMsg) {
+	if (!headerMsg)
+		return;
+	int32 numChildren 
+		= FindMsgInt32( headerMsg, BmListModelItem::MSG_NUMCHILDREN);
 	BmRef<BmMailFolder> folder( mFolder.Get());	
 							// hold a ref on the corresponding folder while we use it
 	BM_LOG( BM_LogMailTracking, 
@@ -444,14 +462,10 @@ void BmMailRefList::MyInstantiateItems( BDataIO* dataIO, int32 numChildren) {
 	bool needsStore = false;
 	if (!stopped) {
 		BM_LOG( BM_LogMailTracking, 
-				  BmString("Fetching appended MailRef-archives for folder ")
+				  BmString("Fetching stored actions for folder ")
 				  		<< folder->Name());
-		BList appendedArchives(10000);
-		FetchAppendedArchives( dataIO, &appendedArchives);
-		if (appendedArchives.CountItems() > 0) {
-			IntegrateAppendedArchives( appendedArchives);
+		if (RestoreAndExecuteActionsFrom(dataIO))
 			needsStore = true;
-		}
 	}
 	BM_LOG( BM_LogMailTracking, 
 			  BmString("End of InstantiateMailRefs() for folder ") 
@@ -462,7 +476,7 @@ void BmMailRefList::MyInstantiateItems( BDataIO* dataIO, int32 numChildren) {
 		folder->MailCount( ValidCount());
 		mNeedsCacheUpdate = false;
 		mNeedsStore = needsStore;
-							// overrule changes caused from reading the cache
+			// overrule changes caused by reading the cache
 		mInitCheck = B_OK;
 	}
 }
@@ -531,45 +545,38 @@ void BmMailRefList::RemoveController( BmController* controller) {
 }
 
 /*------------------------------------------------------------------------------*\
-	IntegrateAppendedArchives( list)
+	ExecuteAction( action)
 		-	
 \*------------------------------------------------------------------------------*/
-void BmMailRefList::IntegrateAppendedArchives( BList& appendedArchives) {
-	int32 count = appendedArchives.CountItems();
-	BMessage* archive;
-	for( int i=0; i<count; ++i) {
-		archive = static_cast< BMessage*>( appendedArchives.ItemAt( i));
-		if (archive) {
-			int32 op = archive->FindInt32( BmMailRef::MSG_OPCODE);
-			if (op == B_ENTRY_CREATED) {
-				BmRef<BmMailRef> ref( BmMailRef::CreateInstance( archive));
-				if (ref) {
-					BM_LOG2( BM_LogMailTracking, 
-							   BmString("IntegrateAppendedArchives(): "
-							   	"Adding MailRef with key") << ref->Key());
-					ref->ResyncFromDisk();
-					if (AddItemToList( ref.Get()))
-						mNeedsStore = true;
-				}
-			} else if (op == B_ENTRY_REMOVED) {
-				BmString key = archive->FindString( MSG_ITEMKEY);
+void BmMailRefList::ExecuteAction(BMessage* action) {
+	if (action) {
+		int32 op = action->FindInt32( BmMailRef::MSG_OPCODE);
+		if (op == B_ENTRY_CREATED) {
+			BmRef<BmMailRef> ref( BmMailRef::CreateInstance( action));
+			if (ref) {
 				BM_LOG2( BM_LogMailTracking, 
-						   BmString("IntegrateAppendedArchives(): "
-						   	"Removing MailRef with key") << key);
-				RemoveItemByKey( key);
-			} else if (op == B_ATTR_CHANGED) {
-				BmString key = archive->FindString( MSG_ITEMKEY);
-				BM_LOG2( BM_LogMailTracking, 
-						   BmString("IntegrateAppendedArchives(): "
-						   	"Updating MailRef with key") << key);
-				BmRef<BmListModelItem> item( FindItemByKey( key));
-				BmMailRef* ref = dynamic_cast< BmMailRef*>( item.Get());
-				if (ref)
-					ref->ResyncFromDisk();
+						   BmString("ExecuteAction(): "
+						   	"Adding MailRef with key") << ref->Key());
+				ref->ResyncFromDisk();
+				if (AddItemToList( ref.Get()))
+					mNeedsStore = true;
 			}
-			delete archive;
+		} else if (op == B_ENTRY_REMOVED) {
+			BmString key = action->FindString( MSG_ITEMKEY);
+			BM_LOG2( BM_LogMailTracking, 
+					   BmString("ExecuteAction(): "
+					   	"Removing MailRef with key") << key);
+			RemoveItemByKey( key);
+		} else if (op == B_ATTR_CHANGED) {
+			BmString key = action->FindString( MSG_ITEMKEY);
+			BM_LOG2( BM_LogMailTracking, 
+					   BmString("ExecuteAction(): "
+					   	"Updating MailRef with key") << key);
+			BmRef<BmListModelItem> item( FindItemByKey( key));
+			BmMailRef* ref = dynamic_cast< BmMailRef*>( item.Get());
+			if (ref)
+				ref->ResyncFromDisk();
 		}
 	}
-	appendedArchives.MakeEmpty();
 }
 

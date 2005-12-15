@@ -245,7 +245,7 @@ BmSmtpAccountList* BmSmtpAccountList::CreateInstance() {
 		-	default constructor, creates empty list
 \*------------------------------------------------------------------------------*/
 BmSmtpAccountList::BmSmtpAccountList()
-	:	inherited( "SmtpAccountList")
+	:	inherited( "SmtpAccountList", BM_LogMailTracking)
 {
 	NeedControllersToContinue( false);
 }
@@ -268,30 +268,15 @@ const BmString BmSmtpAccountList::SettingsFileName() {
 }
 
 /*------------------------------------------------------------------------------*\
-	InstantiateItems( archive)
-		-	fetches SMTP-accounts from given message-archive
+	InstantiateItem( archive)
+		-	instantiates one SMTP-account from given message-archive
 \*------------------------------------------------------------------------------*/
-void BmSmtpAccountList::InstantiateItems( BMessage* archive) {
-	BM_LOG2( BM_LogMailTracking, 
-				BmString("Start of InstantiateItems() for SmtpAccountList"));
-	status_t err;
-	int32 numChildren = FindMsgInt32( archive, BmListModelItem::MSG_NUMCHILDREN);
-	for( int i=0; i<numChildren; ++i) {
-		BMessage msg;
-		if ((err = archive->FindMessage( 
-			BmListModelItem::MSG_CHILDREN, i, &msg
-		)) != B_OK)
-			BM_THROW_RUNTIME( BmString("Could not find smtp-account nr. ") << i+1 
-										<< " \n\nError:" << strerror(err));
-		BmSmtpAccount* newAcc = new BmSmtpAccount( &msg, this);
-		BM_LOG3( BM_LogMailTracking, 
-					BmString("SmtpAccount <") << newAcc->Name() << "," 
-						<< newAcc->Key() << "> read");
-		AddItemToList( newAcc);
-	}
-	BM_LOG2( BM_LogMailTracking, 
-				BmString("End of InstantiateMailRefs() for SmtpAccountList"));
-	mInitCheck = B_OK;
+void BmSmtpAccountList::InstantiateItem( BMessage* archive) {
+	BmSmtpAccount* newAcc = new BmSmtpAccount( archive, this);
+	BM_LOG3( BM_LogMailTracking, 
+				BmString("SmtpAccount <") << newAcc->Name() << "," 
+					<< newAcc->Key() << "> read");
+	AddItemToList( newAcc);
 }
 
 /*------------------------------------------------------------------------------*\

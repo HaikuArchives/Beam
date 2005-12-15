@@ -86,7 +86,7 @@ public:
 	// stuff needed for Archival:
 	status_t Archive( BMessage* archive, bool deep = true) const;
 	int16 ArchiveVersion() const			{ return nArchiveVersion; }
-	void IntegrateAppendedArchive( BMessage* archive);
+	void ExecuteAction( BMessage* action);
 
 	// getters:
 	inline const BmString &AuthMethod() const	
@@ -244,6 +244,7 @@ public:
 									const BmString& newVal);
 	const BmString SettingsFileName();
 	void InstantiateItems( BMessage* archive);
+	void InstantiateItem( BMessage* archive);
 	int16 ArchiveVersion() const			{ return nArchiveVersion; }
 
 	static BmRef<BmPopAccountList> theInstance;

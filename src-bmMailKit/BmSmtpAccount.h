@@ -183,7 +183,7 @@ public:
 	
 	// overrides of listmodel base:
 	const BmString SettingsFileName();
-	void InstantiateItems( BMessage* archive);
+	void InstantiateItem( BMessage* archive);
 	int16 ArchiveVersion() const			{ return nArchiveVersion; }
 	
 	static BmRef<BmSmtpAccountList> theInstance;
