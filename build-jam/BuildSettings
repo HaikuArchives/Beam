@@ -10,6 +10,8 @@ if $(OSPLAT) = PPC {
 	LINKFLAGS += -warn -export pragma ;
 }
 
+PLATFORM = r5 ;
+
 LIBNETAPI = netapi ;	# default, may be changed to bnetapi (see below)
 
 if $(OSPLAT) = X86 {
@@ -20,6 +22,7 @@ if $(OSPLAT) = X86 {
 		C++FLAGS += -DBEAM_FOR_BONE ;
 		SYSHDRS += /boot/develop/headers/be/bone /boot/develop/headers/be/bone/sys ;
 		LINKLIBS += -lsocket -lbind ;
+		PLATFORM = bone ;
 	}
 	# check for Zeta...
 	local haveZeta = [ GLOB /boot/beos/system/lib : libzeta.so ] ;
@@ -28,6 +31,7 @@ if $(OSPLAT) = X86 {
 		CCFLAGS += -D_ZETA_USING_DEPRECATED_API_ ;
 		C++FLAGS += -D_ZETA_USING_DEPRECATED_API_ ;
 		SYSHDRS += /boot/develop/headers/liblayout /boot/develop/headers/pcre ;
+		PLATFORM = zeta ;
 	}
 	# check for libbnetapi...
 	local haveLibbnetapi = [ GLOB /boot/develop/lib/x86 : libbnetapi.so ] ;
@@ -87,12 +91,13 @@ rule SetUpSubDirBuildSettings {
 		CCFLAGS += -g ;
 		C++FLAGS += -g -fno-inline ;
 		LINKFLAGS += -g ;
-		DISTRO_DIR			= [ FDirName $(TOP) generated distro_debug ] ;
-		OBJECTS_DIR			= [ FDirName $(TOP) generated objects-debug ] ;
+		DISTRO_DIR			= [ FDirName $(TOP) generated distro-debug-$(PLATFORM) ] ;
+		OBJECTS_DIR			= [ FDirName $(TOP) generated objects-debug-$(PLATFORM) ] ;
 	}
 	else 
 	{
-		OBJECTS_DIR			= [ FDirName $(TOP) generated objects-nodebug ] ;
+		DISTRO_DIR			= [ FDirName $(TOP) generated distro-$(PLATFORM) ] ;
+		OBJECTS_DIR			= [ FDirName $(TOP) generated objects-$(PLATFORM) ] ;
 	}
 
 	# optimization settings

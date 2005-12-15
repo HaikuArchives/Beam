@@ -3,13 +3,14 @@
 BUILD_DIR			= [ FDirName $(TOP) build-jam ] ;
 GENERATED_DIR		= [ FDirName $(TOP) generated ] ;
 DISTRO_DIR			= [ FDirName $(TOP) generated distro ] ;
-FULL_DISTRO_DIR	= [ FDirName $(TOP) generated distro_with_libs ] ;
 
 include [ FDirName $(BUILD_DIR) HelperRules ] ;
 include [ FDirName $(BUILD_DIR) ConfigRules ] ;
 include [ FDirName $(BUILD_DIR) OverriddenJamRules ] ;
 include [ FDirName $(BUILD_DIR) MainBuildRules ] ;
 include [ FDirName $(BUILD_DIR) BuildSettings ] ;
+
+FULL_DISTRO_DIR	= $(DISTRO_DIR)-with-libs ;
 
 # Include UserBuildConfig.
 {
