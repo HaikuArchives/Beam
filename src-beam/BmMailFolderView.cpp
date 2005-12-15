@@ -514,8 +514,6 @@ void BmMailFolderView::MessageReceived( BMessage* msg) {
 				if (!folder)
 					return;
 				folder->RecreateCache();
-				if (mPartnerMailRefView)
-					mPartnerMailRefView->ShowFolder( folder.Get());
 				break;
 			}
 			case BMM_CONNECT_LAYOUT: {
