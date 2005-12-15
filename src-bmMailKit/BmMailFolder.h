@@ -65,6 +65,7 @@ public:
 	// native methods:
 	void AddSpecialFlagForMailRef( const BmString& key);
 	void RemoveSpecialFlagForMailRef( const BmString& key);
+	void BumpMailCount( int32 offset=1);
 	void BumpSpecialMailCountForSubfolders( int32 offset=1);
 	bool HasSpecialMail() const			{ return mSpecialMailRefSet.size()>0 
 															|| mSpecialMailCountForSubfolders>0; }
@@ -118,9 +119,9 @@ public:
 	// setters:
 	inline void EntryRef( const entry_ref &e)
 												 	{ mEntryRef = e; mName = e.name; }
-	void MailCount( int32 i);
 	inline void SelectedRefKey( const BmString& key)
 													{ mSelectedRefKey = key; }
+	void MailCount( int32 count);
 	inline void RefListStateInfoConnectedToParent( bool b)
 													{ mRefListStateInfoConnectedToParent = b; }
 

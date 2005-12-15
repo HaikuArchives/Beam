@@ -307,6 +307,32 @@ void BmMailFolder::RemoveSpecialFlagForMailRef(const BmString& key) {
 }
 
 /*------------------------------------------------------------------------------*\
+	BumpMailCount( offset)
+		-	changes mail-count for this folder
+		-	tells that model has been updated
+\*------------------------------------------------------------------------------*/
+void BmMailFolder::BumpMailCount( int32 offset) {
+	if (mMailCount < 0)
+		return;		// mail-count is unknown, so we can't bump it
+	if (offset) {
+		mMailCount += offset;
+		TellModelItemUpdated( UPD_TOTAL_COUNT);
+	}
+}
+
+/*------------------------------------------------------------------------------*\
+	MailCount( count)
+		-	sets mail-count for this folder
+		-	tells that model has been updated
+\*------------------------------------------------------------------------------*/
+void BmMailFolder::MailCount( int32 count) {
+	if (mMailCount != count) {
+		mMailCount = count;
+		TellModelItemUpdated( UPD_TOTAL_COUNT);
+	}
+}
+
+/*------------------------------------------------------------------------------*\
 	BumpSpecialMailCountForSubfolders()
 		-	increases this folder's new-mail-in-subfolders counter by the given 
 			offset
@@ -371,18 +397,6 @@ void BmMailFolder::CleanupForMailRefList( BmMailRefList* refList) {
 }
 
 /*------------------------------------------------------------------------------*\
-	MailCount( count)
-		-	sets mail-count for this folder
-		-	tells that model has been updated
-\*------------------------------------------------------------------------------*/
-void BmMailFolder::MailCount( int32 i) {
-	if (mMailCount != i) {
-		mMailCount = i;
-		TellModelItemUpdated( UPD_TOTAL_COUNT);
-	}
-}
-
-/*------------------------------------------------------------------------------*\
 	UpdateName( eref)
 		-	sets a new name for this folder (is called by node-monitor)
 		-	adjusts foreign-keys accordingly
@@ -417,8 +431,10 @@ void BmMailFolder::UpdateName( const entry_ref& eref) {
 \*------------------------------------------------------------------------------*/
 void BmMailFolder::RecreateCache() {
 	BmRef<BmMailRefList> refList = MailRefList();
-	if (refList)
+	if (refList) {
 		refList->MarkCacheAsDirty();
+		refList->StartJobInNewThread();
+	}
 }
 
 /*------------------------------------------------------------------------------*\
@@ -443,7 +459,7 @@ void BmMailFolder::AddMailRef( entry_ref& eref, struct stat& st) {
 			BM_LOG2( BM_LogMailTracking, Name()+" mail-ref already exists.");
 	} else
 		// ref-list couldn't be created (?!?) we mark the mail-count as unknown:
-		MailCount( -1);
+		mMailCount = -1;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -480,16 +496,11 @@ void BmMailFolder::RemoveMailRef( const node_ref& nref) {
  	BM_LOG2( BM_LogMailTracking, Name()+" removing mail-ref " << key);
 	BmRef<BmMailRefList> refList = MailRefList();
 	if (refList) {
-		BmRef<BmMailRef> ref 
-			= dynamic_cast<BmMailRef*>( refList->RemoveMailRef( key).Get());
-		if (ref) {
-			if (ref->IsSpecial())
-				RemoveSpecialFlagForMailRef(key);
-		} else
-			BM_LOG2( BM_LogMailTracking, Name()+" mail-ref doesn't exist.");
+		refList->RemoveMailRef( key);
+		RemoveSpecialFlagForMailRef(key);
 	} else
 		// ref-list couldn't be created (?!?) we mark the mail-count as unknown:
-		MailCount( -1);
+		mMailCount = -1;
 }
 
 /*------------------------------------------------------------------------------*\
