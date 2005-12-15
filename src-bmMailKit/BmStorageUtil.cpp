@@ -210,13 +210,12 @@ BmString DetermineMimeType( const entry_ref* inref, bool doublecheck) {
 		-	create an index for the given attribute-name 
 			(the index is created on the mailbox-volume).
 \*------------------------------------------------------------------------------*/
-void EnsureIndexExists( const char* attrName) {
+void EnsureIndexExists( const char* attrName, int32 type) {
 	struct index_info idxInfo;
 	if (fs_stat_index( ThePrefs->MailboxVolume.Device(), attrName, 
 							 &idxInfo) != 0) {
 		status_t res = fs_create_index( ThePrefs->MailboxVolume.Device(), 
-												  attrName,
-												  B_STRING_TYPE, 0);
+												  attrName, type, 0);
 		if (res == -1)
 			BM_SHOWERR( BmString("Could not create index for attribute ")
 								<< attrName << ".\n\nError: " << strerror( errno));
@@ -336,20 +335,20 @@ BmBackedFile::BmBackedFile( const char* filename, const char *mimetype,
 }
 
 /*------------------------------------------------------------------------------*\
-	BmBackedFile()
-		-	construct backed-file from given entry
-\*------------------------------------------------------------------------------*/
-BmBackedFile::BmBackedFile( const BEntry& entry, const char *mimetype,
-									 const BEntry* backupEntry)
-{
-	SetTo( entry, mimetype, backupEntry);
-}
-
-/*------------------------------------------------------------------------------*\
 	~BmBackedFile()
 		-	sync's new file and then removes backup.
 \*------------------------------------------------------------------------------*/
 BmBackedFile::~BmBackedFile() {
+	if (mMimeType.Length()) {
+		status_t err;
+		BNodeInfo nodeInfo;
+		if ((err = nodeInfo.SetTo( &mFile)) != B_OK)
+			BM_THROW_RUNTIME( 
+				BmString("Could not set node-info for file\n\t<") 
+					<< mFileName << ">\n\n Result: " << strerror(err)
+			);
+		nodeInfo.SetType( mMimeType.String());
+	}
 	if (mFile.InitCheck() == B_OK)
 		mFile.Sync();
 	if (mBackupEntry.InitCheck() == B_OK && mBackupEntry.Exists())
@@ -371,31 +370,12 @@ status_t BmBackedFile::SetTo( const char* filename, const char *mimetype,
 }
 
 /*------------------------------------------------------------------------------*\
-	BmBackedFile()
-		-	construct backed-file from given entry
-\*------------------------------------------------------------------------------*/
-status_t BmBackedFile::SetTo( const BEntry& entry, const char *mimetype,
-										const BEntry* backupEntry)
-{
-	BPath path;
-	status_t err = entry.GetPath( &path);
-	if (err != B_OK)
-		return err;
-	if (backupEntry)
-		mBackupEntry = *backupEntry;
-	mFileName = path.Path();
-	mMimeType = mimetype;
-	return Init();
-}
-
-/*------------------------------------------------------------------------------*\
 	Init()
 		-	makes backup, if file already exists and then creates new file
 \*------------------------------------------------------------------------------*/
 status_t BmBackedFile::Init() {
 	status_t err;
 	BNode node;
-	BNodeInfo nodeInfo;
 	if (mBackupEntry.InitCheck() != B_OK) {
 		if ((err = mBackupEntry.SetTo( mFileName.String())) != B_OK) {
 			BM_LOGERR( 
@@ -408,31 +388,15 @@ status_t BmBackedFile::Init() {
 	if (mBackupEntry.Exists()) {
 		// file exists, we rename it to a unique backup-name:
 		static int counter = 1;
-		BmString backupExt(" (beam-backup) ");
+		BmString backupExt("-backup");
 		mBackupName.SetTo( mFileName, B_FILE_NAME_LENGTH-10-backupExt.Length());
-		mBackupName << backupExt << counter++;
+		mBackupName << backupExt << "-" << counter++;
 		if ((err = mBackupEntry.Rename( mBackupName.String(), true)) != B_OK) {
 			BM_LOGERR( 
 				BmString("Could not rename file <") << mFileName << "> to <"
 					<< mBackupName << ">\n\n Result: " << strerror(err)
 			);
 			return err;
-		}
-		if (mMimeType.Length()) {
-			// ...change the mime-type of the backup-file:
-			BmString backupMimeType = mMimeType;
-			backupMimeType << "-backup";
-			if ((err = node.SetTo( &mBackupEntry)) != B_OK)
-				BM_THROW_RUNTIME( 
-					BmString("Could not set node for backup file\n\t<") 
-						<< mBackupName << ">\n\n Result: " << strerror(err)
-				);
-			if ((err = nodeInfo.SetTo( &node)) != B_OK)
-				BM_THROW_RUNTIME( 
-					BmString("Could not set node-info for backup file\n\t<") 
-						<< mBackupName << ">\n\n Result: " << strerror(err)
-				);
-			nodeInfo.SetType( backupMimeType.String());
 		}
 	} else
 		mBackupEntry.Unset();
@@ -443,14 +407,6 @@ status_t BmBackedFile::Init() {
 				<< mFileName << ">\n\n Result: " << strerror(err)
 		);
 		return err;
-	}
-	if (mMimeType.Length()) {
-		if ((err = nodeInfo.SetTo( &mFile)) != B_OK)
-			BM_THROW_RUNTIME( 
-				BmString("Could not set node-info for file\n\t<") 
-					<< mFileName << ">\n\n Result: " << strerror(err)
-			);
-		nodeInfo.SetType( mMimeType.String());
 	}
 	return B_OK;
 }

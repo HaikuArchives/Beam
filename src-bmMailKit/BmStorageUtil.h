@@ -57,7 +57,7 @@ IMPEXPBMMAILKIT
 BmString DetermineMimeType( const entry_ref* eref, bool doublecheck=false);
 
 IMPEXPBMMAILKIT 
-void EnsureIndexExists( const char* attrName);
+void EnsureIndexExists( const char* attrName, int32 type);
 
 IMPEXPBMMAILKIT 
 bool FetchFile( BmString fileName, BmString& contents);
@@ -101,12 +101,8 @@ public:
 	BmBackedFile()								{}
 	BmBackedFile( const char* filename, const char *mimetype = NULL,
 					  const BEntry* = NULL);
-	BmBackedFile( const BEntry& entry, const char *mimetype = NULL,
-					  const BEntry* = NULL);
 	~BmBackedFile();
 	status_t SetTo( const char* filename, const char *mimetype = NULL,
-						 const BEntry* = NULL);
-	status_t SetTo( const BEntry& entry, const char *mimetype = NULL,
 						 const BEntry* = NULL);
 	ssize_t Write(const void *buffer, size_t size);
 	BFile& File()								{ return mFile; }
