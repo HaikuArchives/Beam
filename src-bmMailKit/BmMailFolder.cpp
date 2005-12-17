@@ -73,19 +73,29 @@ const int16 BmMailFolder::nArchiveVersion = 4;
 \*------------------------------------------------------------------------------*/
 bool BmMailFolder::IsSystemFolderPath( const BPath& path)
 {
-	BPath mboxPath;
-	BEntry mboxEntry(ThePrefs->GetString("MailboxPath").String(), true);
-	mboxEntry.GetPath(&mboxPath);
-	BPath traversedPath;
-	BEntry traversedEntry(path.Path(), true);
-	traversedEntry.GetPath(&traversedPath);
-	BmString mboxStr(mboxPath.Path());
-	BmString pathStr(traversedPath.Path());
-	return (pathStr ==  mboxStr + "/" + DRAFT_FOLDER_NAME
-	|| pathStr == mboxStr + "/" + OUT_FOLDER_NAME
-	|| pathStr == mboxStr + "/" + SPAM_FOLDER_NAME
-	|| pathStr == mboxStr + "/" + QUARANTINE_FOLDER_NAME
-	|| pathStr == mboxStr + "/" + DRAFT_FOLDER_NAME);
+	static BmString cachedMailbox;
+	static node_ref cachedMailboxRef;
+	//
+	BmString mbox = ThePrefs->GetString("MailboxPath");
+	if (cachedMailbox != mbox) {
+		// cache traversed entry ref for mailbox:
+		BEntry mboxEntry(mbox.String(), true);
+		BNode mboxNode(&mboxEntry);
+		if (mboxEntry.GetNodeRef(&cachedMailboxRef) != B_OK)
+			return false;
+		cachedMailbox = mbox;
+	}
+	entry_ref pathRef;
+	if (get_ref_for_path(path.Path(), &pathRef) != B_OK)
+		return false;
+	if (pathRef.device != cachedMailboxRef.device
+	|| pathRef.directory != cachedMailboxRef.node)
+		return false;
+	return (!strcmp(pathRef.name, DRAFT_FOLDER_NAME)
+	|| !strcmp(pathRef.name, IN_FOLDER_NAME)
+	|| !strcmp(pathRef.name, OUT_FOLDER_NAME)
+	|| !strcmp(pathRef.name, QUARANTINE_FOLDER_NAME)
+	|| !strcmp(pathRef.name, SPAM_FOLDER_NAME));
 }
 
 /*------------------------------------------------------------------------------*\
