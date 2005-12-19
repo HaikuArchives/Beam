@@ -1339,14 +1339,14 @@ bool BmMailEditWin::SaveMail( bool saveForSend) {
 			BMenuItem* labelItem = mFileIntoControl->MenuItem();
 			BmString destFolderName 
 				= labelItem ? labelItem->Label() : BmMailFolder::OUT_FOLDER_NAME;
-			mail->SetDestFoldername( destFolderName);
+			mail->SetDestFolderName( destFolderName);
 		} else {
 			// drop draft mails into 'draft'-folder:
 			if (mail->Status() == BM_MAIL_STATUS_DRAFT)
-				mail->SetDestFoldername( BmMailFolder::DRAFT_FOLDER_NAME);
+				mail->SetDestFolderName( BmMailFolder::DRAFT_FOLDER_NAME);
 		}
 			
-		if (mail->Store(false)) {
+		if (mail->Store()) {
 			mHasNeverBeenSaved = false;
 			mModified = false;
 			if (LockLooper()) {

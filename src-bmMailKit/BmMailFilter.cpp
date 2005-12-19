@@ -265,12 +265,12 @@ void BmMailFilter::Execute( BmMail* mail) {
 	}
 	BmString newFolderName = msgContext.data.FindString("FolderName");
 	if (newFolderName.Length()) {
-		if (mail->SetDestFoldername( newFolderName)) {
+		if (mail->SetDestFolderName( newFolderName)) {
 			if (!needToStore && !mExecuteInMem) {
 				// optimize the (usual) case where folder-change is the only thing
 				// that has happened, if so, we just move the mail (but do not
 				// rewrite it completely);
-				if (!mail->MoveToDestFolderpath())
+				if (!mail->MoveToDestFolder())
 					needToStore = true;
 			} else
 				needToStore = true;
@@ -279,7 +279,7 @@ void BmMailFilter::Execute( BmMail* mail) {
 	if (needToStore && !mExecuteInMem) {
 		BM_LOG3( BM_LogFilter, 
 					"Filtering has changed something, so mail will be stored now.");
-		mail->Store(true);
+		mail->Store();
 	}
 }
 

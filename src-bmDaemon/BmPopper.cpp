@@ -572,13 +572,13 @@ void BmPopper::StateRetrieve() {
 		if (mail->InitCheck() != B_OK)
 			goto CLEAN_UP;
 		// ...set default folder according to pop-account settings...
-		mail->SetDestFoldername( mPopAccount->HomeFolder());
+		mail->SetDestFolderName( mPopAccount->HomeFolder());
 		// ...execute mail-filters for this mail...
 		BM_LOG2( BM_LogPop, "...applying filters (in memory)...");
 		mail->ApplyInboundFilters();
 		// ...and store mail on disk:
 		BM_LOG2( BM_LogPop, "...storing mail...");
-		if (!mail->Store(false))
+		if (!mail->Store())
 			goto CLEAN_UP;
 		BM_LOG2( BM_LogPop, "...done");
 		mPopAccount->MarkUIDAsDownloaded( mMsgUIDs[i]);

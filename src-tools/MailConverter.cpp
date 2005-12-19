@@ -62,16 +62,12 @@ void MailConverter( const char* folder)
 	BmMail mail( BM_DEFAULT_STRING, "");
 	status_t res;
 	BmString status( BM_MAIL_STATUS_READ);
-	BEntry entry;
-	BPath path;
 	while(dir.GetNextRef(&eref) == B_OK) {
 		if ((res = file.SetTo(&eref, B_READ_WRITE)) != B_OK) {
 			fprintf(stderr, "%s: %s\n", eref.name, strerror(res));
 			continue;
 		}
 		printf("%s...", eref.name);
-		entry.SetTo(&eref);
-		entry.GetPath(&path);
 		file.GetSize(&size);
 		buf = str.LockBuffer(size+1);
 		if (!buf) {
@@ -80,7 +76,7 @@ void MailConverter( const char* folder)
 		sz = file.Read(buf, size);
 		str.UnlockBuffer(sz);
 		mail.SetTo(str, "dummyAccount");
-		mail.StoreIntoFile(path.Path(), status, real_time_clock_usecs());
+		mail.StoreIntoFile(&dir, eref.name, status, real_time_clock_usecs());
 		printf("ok\n");
 	}
 }
