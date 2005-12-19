@@ -230,12 +230,12 @@ void BmMailFilter::Execute( BmMail* mail) {
 		needToStore = true;
 	}
 	BmString newIdentity = msgContext.GetString("Identity");
-	if (newIdentity.Length()) {
+	if (newIdentity.Length() && newIdentity != mail->IdentityName()) {
 		mail->IdentityName( newIdentity);
 		needToStore = true;
 	}
 	BmString newStatus = msgContext.GetString("Status");
-	if (newStatus.Length()) {
+	if (newStatus.Length() && newStatus != mail->Status()) {
 		mail->MarkAs( newStatus.String());
 		needToStore = true;
 	}
@@ -249,16 +249,19 @@ void BmMailFilter::Execute( BmMail* mail) {
 		needToStore = true;
 	}
 	if (msgContext.HasField("RatioSpam")) {
-		mail->RatioSpam(msgContext.GetDouble("RatioSpam"));
-		needToStore = true;
+		double ratioSpam = msgContext.GetDouble("RatioSpam");
+		if (ratioSpam != mail->RatioSpam()) {
+			mail->RatioSpam(ratioSpam);
+			needToStore = true;
+		}
 	}
 	bool isSpam = msgContext.GetBool("IsSpam");
-	if (isSpam) {
+	if (isSpam && !mail->IsMarkedAsSpam()) {
 		mail->MarkAsSpam();
 		needToStore = true;
 	}
 	bool isTofu = msgContext.GetBool("IsTofu");
-	if (isTofu) {
+	if (isTofu && !mail->IsMarkedAsTofu()) {
 		mail->MarkAsTofu();
 		needToStore = true;
 	}
