@@ -125,7 +125,7 @@ public:
 	inline void RefListStateInfoConnectedToParent( bool b)
 													{ mRefListStateInfoConnectedToParent = b; }
 
-	static bool IsSystemFolderPath( const BPath& path);
+	static bool IsSystemFolderSubPath( const BmString& subPath);
 
 	// archival-fieldnames:
 	static const char* const MSG_ENTRYREF;

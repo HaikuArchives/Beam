@@ -69,33 +69,17 @@ const char* BmMailFolder::SPAM_FOLDER_NAME		= "spam";
 const int16 BmMailFolder::nArchiveVersion = 4;
 
 /*------------------------------------------------------------------------------*\
-	IsSystemFolderPath( path)
+	IsSystemFolderSubPath( subPath)
+		-	determines if the given subpath (relative off mailbox) is the name
+			of a system folder or not
 \*------------------------------------------------------------------------------*/
-bool BmMailFolder::IsSystemFolderPath( const BPath& path)
+bool BmMailFolder::IsSystemFolderSubPath( const BmString& subPath)
 {
-	static BmString cachedMailbox;
-	static node_ref cachedMailboxRef;
-	//
-	BmString mbox = ThePrefs->GetString("MailboxPath");
-	if (cachedMailbox != mbox) {
-		// cache traversed entry ref for mailbox:
-		BEntry mboxEntry(mbox.String(), true);
-		BNode mboxNode(&mboxEntry);
-		if (mboxEntry.GetNodeRef(&cachedMailboxRef) != B_OK)
-			return false;
-		cachedMailbox = mbox;
-	}
-	entry_ref pathRef;
-	if (get_ref_for_path(path.Path(), &pathRef) != B_OK)
-		return false;
-	if (pathRef.device != cachedMailboxRef.device
-	|| pathRef.directory != cachedMailboxRef.node)
-		return false;
-	return (!strcmp(pathRef.name, DRAFT_FOLDER_NAME)
-	|| !strcmp(pathRef.name, IN_FOLDER_NAME)
-	|| !strcmp(pathRef.name, OUT_FOLDER_NAME)
-	|| !strcmp(pathRef.name, QUARANTINE_FOLDER_NAME)
-	|| !strcmp(pathRef.name, SPAM_FOLDER_NAME));
+	return (subPath == DRAFT_FOLDER_NAME
+	|| subPath == IN_FOLDER_NAME
+	|| subPath == OUT_FOLDER_NAME
+	|| subPath == QUARANTINE_FOLDER_NAME
+	|| subPath == SPAM_FOLDER_NAME);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -477,6 +461,10 @@ void BmMailFolder::AddMailRef( entry_ref& eref, struct stat& st) {
 		-	
 \*------------------------------------------------------------------------------*/
 BmRef<BmListModelItem> BmMailFolder::FindMailRefByKey( const BmString& key) {
+#ifdef BM_REF_DEBUGGING
+	BmRef<BmListModel> listModel( ListModel());
+	BM_ASSERT( !listModel || listModel->ModelLocker().IsLocked());
+#endif
 	BmRef<BmListModelItem> foundRef;
 	{ // scope for ref:
 		BmRef<BmMailRefList> refList = mMailRefList;
