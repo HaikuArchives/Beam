@@ -127,6 +127,52 @@ BmMailFolderList::AddMailFolder( entry_ref& eref, int64 node,
 }
 
 /*------------------------------------------------------------------------------*\
+	FindMailFolderBySubPath(subPath)
+		-	
+\*------------------------------------------------------------------------------*/
+BmRef<BmMailFolder> BmMailFolderList
+::FindMailFolderBySubPath( const BmString& subPath) {
+	if (!subPath.Length())
+		return NULL;
+	BmAutolockCheckGlobal lock( mModelLocker);
+	if (!lock.IsLocked())
+		BM_THROW_RUNTIME( 
+			ModelNameNC() << ":FindMailFolderBySubPath(): Unable to get lock"
+		);
+	BmString remainder = subPath;
+	BmMailFolder* currFolder = mTopFolder.Get();
+	BmString currName;
+	BmModelItemMap::const_iterator iter;
+	while(remainder.Length() && currFolder) {
+		int32 slashPos = remainder.FindFirst('/');
+		if (slashPos < 0) {
+			currName = remainder;
+			remainder.Truncate(0);
+		} else {
+			currName.SetTo(remainder.String(), slashPos);
+			remainder.Remove(0, slashPos+1);
+		}
+		bool found = false;
+		for( iter = currFolder->begin(); 
+			  !found && iter != currFolder->end(); 
+			  ++iter) {
+			BmMailFolder* subFolder = dynamic_cast< BmMailFolder*>(
+				iter->second.Get()
+			);
+			if (subFolder) {
+				if (subFolder->DisplayKey() == currName) {
+					currFolder = subFolder;
+					found = true;
+				}
+			}
+		}
+		if (!found)
+			currFolder = NULL;
+	}
+	return currFolder;
+}
+
+/*------------------------------------------------------------------------------*\
 	FindMailRefByKey()
 		-	
 \*------------------------------------------------------------------------------*/

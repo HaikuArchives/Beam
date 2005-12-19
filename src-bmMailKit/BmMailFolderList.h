@@ -71,6 +71,7 @@ public:
 	void RemoveSpecialFlag( const node_ref& pnref, const node_ref& nref);
 	void QueryForSpecialMails();
 	BmRef<BmMailRef> FindMailRefByKey( const node_ref& nref);
+	BmRef<BmMailFolder> FindMailFolderBySubPath( const BmString& subPath);
 	
 	// overrides of list-model base:
 	bool StartJob();
