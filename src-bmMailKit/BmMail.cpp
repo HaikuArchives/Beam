@@ -734,6 +734,13 @@ bool BmMail::MoveToDestFolder() {
 			BmRef<BmMailFolder> destFolder = DestFolder();
 			if (!destFolder)
 				return false;
+			entry_ref mailEntryRef = mMailRef->EntryRef();
+			node_ref folderRef = destFolder->NodeRef();
+			if (folderRef.device == mailEntryRef.device
+			&& folderRef.node == mailEntryRef.directory) {
+				// mail already lives in that folder, nothing to do:
+				return true;
+			}
 			BDirectory newHomeDir( destFolder->EntryRefPtr());
 			if (newHomeDir.InitCheck() != B_OK)
 				return false;
