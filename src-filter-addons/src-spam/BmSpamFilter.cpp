@@ -1113,7 +1113,7 @@ void BmSpamFilter::OsbfClassifier::Store()
 bool BmSpamFilter::OsbfClassifier::LearnAsSpam(BmMsgContext* msgContext)
 {
 	if (msgContext->mail->IsMarkedAsSpam()
-	&& !msgContext->data.FindBool("ForceLearning"))
+	&& !msgContext->GetBool("ForceLearning"))
 		return false;							// learning once is enough
 	if (msgContext->mail->IsMarkedAsTofu()) {
 		// unlearn this mail as tofu, since it's not:
@@ -1123,12 +1123,9 @@ bool BmSpamFilter::OsbfClassifier::LearnAsSpam(BmMsgContext* msgContext)
 	// learn this mail as spam:
 	bool ok = Learn(msgContext, true, false);
 	if (ok) {
-		msgContext->data.RemoveName("IsSpam");
-		msgContext->data.RemoveName("IsTofu");
-		msgContext->data.RemoveName("RatioSpam");
-		msgContext->data.AddBool("IsSpam", true);
-		msgContext->data.AddBool("IsTofu", false);
-		msgContext->data.AddFloat("RatioSpam", 1.0);
+		msgContext->SetBool("IsSpam", true);
+		msgContext->SetBool("IsTofu", false);
+		msgContext->SetDouble("RatioSpam", 1.0);
 	}
 	return ok;
 }
@@ -1140,7 +1137,7 @@ bool BmSpamFilter::OsbfClassifier::LearnAsSpam(BmMsgContext* msgContext)
 bool BmSpamFilter::OsbfClassifier::LearnAsTofu( BmMsgContext* msgContext)
 {
 	if (msgContext->mail->IsMarkedAsTofu()
-	&& !msgContext->data.FindBool("ForceLearning"))
+	&& !msgContext->GetBool("ForceLearning"))
 		return false;							// learning once is enough
 	if (msgContext->mail->IsMarkedAsSpam()) {
 		// unlearn this mail as spam, since it's not:
@@ -1150,12 +1147,9 @@ bool BmSpamFilter::OsbfClassifier::LearnAsTofu( BmMsgContext* msgContext)
 	// learn this mail as tofu:
 	bool ok = Learn(msgContext, false, false);
 	if (ok) {
-		msgContext->data.RemoveName("IsSpam");
-		msgContext->data.RemoveName("IsTofu");
-		msgContext->data.RemoveName("RatioSpam");
-		msgContext->data.AddBool("IsSpam", false);
-		msgContext->data.AddBool("IsTofu", true);
-		msgContext->data.AddFloat("RatioSpam", 0.0);
+		msgContext->SetBool("IsSpam", false);
+		msgContext->SetBool("IsTofu", true);
+		msgContext->SetDouble("RatioSpam", 0.0);
 	}
 	return ok;
 }
@@ -1227,19 +1221,18 @@ bool BmSpamFilter::OsbfClassifier::Classify( BmMsgContext* msgContext)
 			mJobSpecs->FindInt32("UnsureForTofu", &UnsureForTofu);
 		}
 		bool isSpam = (overallPr < 0);
-		msgContext->data.RemoveName("IsReinforced");
+		bool reinforced = false;
 		if (fabs(overallPr) < (isSpam ? ThresholdForSpam : ThresholdForTofu)) {
 			// the classifier isn't sure, so we we either reinforce or leave unsure:
 			if (fabs(overallPr) > (isSpam ? UnsureForSpam : UnsureForTofu)) {
 				// reinforce by explicitly learning it:
 				Learn(msgContext, isSpam, false);
-				msgContext->data.AddBool("IsReinforced", true);
+				reinforced = true;
 			}
 		}
-		msgContext->data.RemoveName("IsTofu");
-		msgContext->data.RemoveName("IsSpam");
-		msgContext->data.AddBool("IsTofu", overallPr >= UnsureForTofu);
-		msgContext->data.AddBool("IsSpam", overallPr < -1*UnsureForTofu);
+		msgContext->SetBool("IsReinforced", reinforced);
+		msgContext->SetBool("IsTofu", overallPr >= UnsureForTofu);
+		msgContext->SetBool("IsSpam", overallPr < -1*UnsureForTofu);
 		if (overallPr >= UnsureForTofu) {
 			mTofuHeader.classifications++;
 			mNeedToStoreTofu = true;
@@ -1248,8 +1241,7 @@ bool BmSpamFilter::OsbfClassifier::Classify( BmMsgContext* msgContext)
 			mSpamHeader.classifications++;
 			mNeedToStoreSpam = true;
 		}
-		msgContext->data.RemoveName("OverallPr");
-		msgContext->data.AddDouble("OverallPr", overallPr);
+		msgContext->SetDouble("OverallPr", overallPr);
 		// overallPr is an open range (spam)[-min..+max](tofu), but the 
 		// "RatioSpam"-attribute from MDR is (tofu)[0..1](spam), 
 		// so we need to convert:
@@ -1264,7 +1256,7 @@ bool BmSpamFilter::OsbfClassifier::Classify( BmMsgContext* msgContext)
 			ratioSpam += fabs(overallPr / (clampMin/0.5));
 		else
 			ratioSpam -= fabs(overallPr / (clampMax/0.5));
-		msgContext->data.AddFloat("RatioSpam", ratioSpam);
+		msgContext->SetDouble("RatioSpam", ratioSpam);
 	}
 	
 	return status;
@@ -1394,7 +1386,7 @@ bool BmSpamFilter::OsbfClassifier::GetStatistics( BmMsgContext* msgContext)
 		return false;
 	}
 	
-	msgContext->data.MakeEmpty();
+	msgContext->ResetData();
 	uint32 maxChain = 0;
 	uint32 curChain = 0;
 	uint32 totChain = 0;
@@ -1419,17 +1411,17 @@ bool BmSpamFilter::OsbfClassifier::GetStatistics( BmMsgContext* msgContext)
 			}
 		}
 	}
-	msgContext->data.AddInt32("SpamBuckets", mSpamHeader.buckets);
-	msgContext->data.AddInt32("SpamBucketsUsed", usedBuckets);
-	msgContext->data.AddInt32("SpamLearnings", mSpamHeader.learnings);
-	msgContext->data.AddInt32("SpamClassifications", mSpamHeader.classifications);
-	msgContext->data.AddInt32("SpamMistakes", mSpamHeader.mistakes);
-	msgContext->data.AddInt32("SpamChains", numChains);
-	msgContext->data.AddInt32("SpamChainsMaxLength", maxChain);
-	msgContext->data.AddInt32("SpamChainsAverageLength", 
-									 numChains > 0 ? totChain/numChains : 0);
-	msgContext->data.AddInt32("SpamMaxValue", maxValue);
-	msgContext->data.AddInt32("SpamAverageValue", usedBuckets ? sum / usedBuckets : 0);
+	msgContext->SetInt32("SpamBuckets", mSpamHeader.buckets);
+	msgContext->SetInt32("SpamBucketsUsed", usedBuckets);
+	msgContext->SetInt32("SpamLearnings", mSpamHeader.learnings);
+	msgContext->SetInt32("SpamClassifications", mSpamHeader.classifications);
+	msgContext->SetInt32("SpamMistakes", mSpamHeader.mistakes);
+	msgContext->SetInt32("SpamChains", numChains);
+	msgContext->SetInt32("SpamChainsMaxLength", maxChain);
+	msgContext->SetInt32("SpamChainsAverageLength", 
+								numChains > 0 ? totChain/numChains : 0);
+	msgContext->SetInt32("SpamMaxValue", maxValue);
+	msgContext->SetInt32("SpamAverageValue", usedBuckets ? sum / usedBuckets : 0);
 
 	maxChain = 0;
 	curChain = 0;
@@ -1455,17 +1447,17 @@ bool BmSpamFilter::OsbfClassifier::GetStatistics( BmMsgContext* msgContext)
 			}
 		}
 	}
-	msgContext->data.AddInt32("TofuBuckets", mTofuHeader.buckets);
-	msgContext->data.AddInt32("TofuBucketsUsed", usedBuckets);
-	msgContext->data.AddInt32("TofuLearnings", mTofuHeader.learnings);
-	msgContext->data.AddInt32("TofuClassifications", mTofuHeader.classifications);
-	msgContext->data.AddInt32("TofuMistakes", mTofuHeader.mistakes);
-	msgContext->data.AddInt32("TofuChains", numChains);
-	msgContext->data.AddInt32("TofuChainsMaxLength", maxChain);
-	msgContext->data.AddInt32("TofuChainsAverageLength", 
-									 numChains > 0 ? totChain/numChains : 0);
-	msgContext->data.AddInt32("TofuMaxValue", maxValue);
-	msgContext->data.AddInt32("TofuAverageValue", usedBuckets ? sum / usedBuckets : 0);
+	msgContext->SetInt32("TofuBuckets", mTofuHeader.buckets);
+	msgContext->SetInt32("TofuBucketsUsed", usedBuckets);
+	msgContext->SetInt32("TofuLearnings", mTofuHeader.learnings);
+	msgContext->SetInt32("TofuClassifications", mTofuHeader.classifications);
+	msgContext->SetInt32("TofuMistakes", mTofuHeader.mistakes);
+	msgContext->SetInt32("TofuChains", numChains);
+	msgContext->SetInt32("TofuChainsMaxLength", maxChain);
+	msgContext->SetInt32("TofuChainsAverageLength", 
+								numChains > 0 ? totChain/numChains : 0);
+	msgContext->SetInt32("TofuMaxValue", maxValue);
+	msgContext->SetInt32("TofuAverageValue", usedBuckets ? sum / usedBuckets : 0);
 
 	return true;
 }
@@ -1935,10 +1927,9 @@ BmSpamFilter::Execute( BmMsgContext* msgContext, const BMessage* _jobSpecs)
 			jobSpecs.AddInt32("ThresholdForTofu", D.mTofuThreshold);
 		result = nClassifier.Classify( msgContext);
 		if (result) {
-			bool isSpam = msgContext->data.FindBool("IsSpam");
+			bool isSpam = msgContext->GetBool("IsSpam");
 			if (isSpam) {
-				float ratioSpam = 0;
-				msgContext->data.FindFloat("RatioSpam", &ratioSpam);
+				double ratioSpam = msgContext->GetDouble("RatioSpam");
 				BM_LOG( BM_LogFilter, 
 						  BmString("Spam-Addon: mail is considered SPAM ")
 								<< "(with a confidence of " 
@@ -1963,21 +1954,16 @@ BmSpamFilter::Execute( BmMsgContext* msgContext, const BMessage* _jobSpecs)
 					// from unknown address, so we file in spam/quarantine:
 					if (D.mActionFileUnsure 
 					&& ratioSpam < D.mUnsureThreshold/100.0) {
-						msgContext->data.RemoveName("FolderName");
-						msgContext->data.AddString(
+						msgContext->SetString(
 							"FolderName", BmMailFolder::QUARANTINE_FOLDER_NAME
 						);
 					} else {
-						if (D.mActionFileSpam) {
-							msgContext->data.RemoveName("FolderName");
-							msgContext->data.AddString(
+						if (D.mActionFileSpam)
+							msgContext->SetString(
 								"FolderName", BmMailFolder::SPAM_FOLDER_NAME
 							);
-						}
-						if (D.mActionMarkSpamAsRead) {
-							msgContext->data.RemoveName("Status");
-							msgContext->data.AddString("Status", BM_MAIL_STATUS_READ);
-						}
+						if (D.mActionMarkSpamAsRead)
+							msgContext->SetString("Status", BM_MAIL_STATUS_READ);
 					}
 				}
 			}
@@ -1988,24 +1974,18 @@ BmSpamFilter::Execute( BmMsgContext* msgContext, const BMessage* _jobSpecs)
 		float ratioSpam = msgContext->mail->RatioSpam();
 		if (D.mActionFileUnsure && ratioSpam < D.mUnsureThreshold/100.0)
 			// allow re-learning of quarantined spam messages:
-			msgContext->data.AddBool("ForceLearning", true);
+			msgContext->SetBool("ForceLearning", true);
 		result = nClassifier.LearnAsSpam( msgContext);
 		if (result) {
-			if (D.mActionFileLearnedSpam) {
-				msgContext->data.RemoveName("FolderName");
-				msgContext->data.AddString("FolderName", 
-													BmMailFolder::SPAM_FOLDER_NAME);
-			}
-			msgContext->data.RemoveName("Status");
-			msgContext->data.AddString("Status", BM_MAIL_STATUS_READ);
+			if (D.mActionFileLearnedSpam)
+				msgContext->SetString("FolderName", BmMailFolder::SPAM_FOLDER_NAME);
+			msgContext->SetString("Status", BM_MAIL_STATUS_READ);
 		}
 	} else if (!jobSpecifier.ICompare("LearnAsTofu")) {
 		BM_LOG2( BM_LogFilter, "Spam-Addon: starting LearnAsTofu job...");
 		result = nClassifier.LearnAsTofu( msgContext);
-		if (result && D.mActionFileLearnedTofu) {
-			msgContext->data.RemoveName("FolderName");
-			msgContext->data.AddString("FolderName", BmMailFolder::IN_FOLDER_NAME);
-		}
+		if (result && D.mActionFileLearnedTofu)
+			msgContext->SetString("FolderName", BmMailFolder::IN_FOLDER_NAME);
 	} else if (!jobSpecifier.ICompare("Reset")) {
 		BM_LOG2( BM_LogFilter, "Spam-Addon: starting Reset job...");
 		result = nClassifier.Reset( msgContext);
@@ -2341,24 +2321,22 @@ void BmSpamFilterPrefs::MessageReceived( BMessage* msg) {
 			getStatSpecs.AddString("jobSpecifier", "GetStatistics");
 			BmMsgContext result;
 			mCurrFilterAddon->Execute( &result, &getStatSpecs);
-			int32	spamBuckets = result.data.FindInt32("SpamBuckets");
-			int32	spamBucketsUsed = result.data.FindInt32("SpamBucketsUsed");
-			int32	spamLearnings = result.data.FindInt32("SpamLearnings");
-			int32	spamClassifications 
-				= result.data.FindInt32("SpamClassifications");
-			int32	spamMistakes = result.data.FindInt32("SpamMistakes");
-			int32	spamAverageValue = result.data.FindInt32("SpamAverageValue");
+			int32	spamBuckets = result.GetInt32("SpamBuckets");
+			int32	spamBucketsUsed = result.GetInt32("SpamBucketsUsed");
+			int32	spamLearnings = result.GetInt32("SpamLearnings");
+			int32	spamClassifications = result.GetInt32("SpamClassifications");
+			int32	spamMistakes = result.GetInt32("SpamMistakes");
+			int32	spamAverageValue = result.GetInt32("SpamAverageValue");
 			int32	spamChainsAverageLength 
-				= result.data.FindInt32("SpamChainsAverageLength");
-			int32	tofuBuckets = result.data.FindInt32("TofuBuckets");
-			int32	tofuBucketsUsed = result.data.FindInt32("TofuBucketsUsed");
-			int32	tofuLearnings = result.data.FindInt32("TofuLearnings");
-			int32	tofuClassifications 
-				= result.data.FindInt32("TofuClassifications");
-			int32	tofuMistakes = result.data.FindInt32("TofuMistakes");
-			int32	tofuAverageValue = result.data.FindInt32("TofuAverageValue");
+				= result.GetInt32("SpamChainsAverageLength");
+			int32	tofuBuckets = result.GetInt32("TofuBuckets");
+			int32	tofuBucketsUsed = result.GetInt32("TofuBucketsUsed");
+			int32	tofuLearnings = result.GetInt32("TofuLearnings");
+			int32	tofuClassifications = result.GetInt32("TofuClassifications");
+			int32	tofuMistakes = result.GetInt32("TofuMistakes");
+			int32	tofuAverageValue = result.GetInt32("TofuAverageValue");
 			int32	tofuChainsAverageLength 
-				= result.data.FindInt32("TofuChainsAverageLength");
+				= result.GetInt32("TofuChainsAverageLength");
 			double errorsFP = spamClassifications 
 										? 100.0*spamMistakes/(float)spamClassifications
 										: 0;

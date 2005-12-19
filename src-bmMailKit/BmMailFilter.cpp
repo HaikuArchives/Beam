@@ -215,55 +215,54 @@ void BmMailFilter::Execute( BmMail* mail) {
 	} else
 		ExecuteFilter( mail, mFilter.Get(), &msgContext);
 	bool needToStore = false;
-	bool learnAsSpam = msgContext.data.FindBool("LearnAsSpam");
+	bool learnAsSpam = msgContext.GetBool("LearnAsSpam");
 	if (learnAsSpam) {
 		BmRef<BmFilter> learnAsSpamFilter = TheFilterList->LearnAsSpamFilter();
 		if (learnAsSpamFilter)
 			learnAsSpamFilter->Execute( &msgContext);
 		needToStore = true;
 	}
-	bool learnAsTofu = msgContext.data.FindBool("LearnAsTofu");
+	bool learnAsTofu = msgContext.GetBool("LearnAsTofu");
 	if (learnAsTofu) {
 		BmRef<BmFilter> learnAsTofuFilter = TheFilterList->LearnAsTofuFilter();
 		if (learnAsTofuFilter)
 			learnAsTofuFilter->Execute( &msgContext);
 		needToStore = true;
 	}
-	BmString newIdentity = msgContext.data.FindString("Identity");
+	BmString newIdentity = msgContext.GetString("Identity");
 	if (newIdentity.Length()) {
 		mail->IdentityName( newIdentity);
 		needToStore = true;
 	}
-	BmString newStatus = msgContext.data.FindString("Status");
+	BmString newStatus = msgContext.GetString("Status");
 	if (newStatus.Length()) {
 		mail->MarkAs( newStatus.String());
 		needToStore = true;
 	}
-	BmString rejectMsg = msgContext.data.FindString("RejectMsg");
+	BmString rejectMsg = msgContext.GetString("RejectMsg");
 	if (rejectMsg.Length()) {
 		// ToDo (maybe): implement sending of MDN
 	}
-	bool moveToTrash = msgContext.data.FindBool("MoveToTrash");
+	bool moveToTrash = msgContext.GetBool("MoveToTrash");
 	if (moveToTrash) {
 		mail->MoveToTrash( true);
 		needToStore = true;
 	}
-	float ratioSpam;
-	if (msgContext.data.FindFloat("RatioSpam", &ratioSpam) == B_OK) {
-		mail->RatioSpam(ratioSpam);
+	if (msgContext.HasField("RatioSpam")) {
+		mail->RatioSpam(msgContext.GetDouble("RatioSpam"));
 		needToStore = true;
 	}
-	bool isSpam = msgContext.data.FindBool("IsSpam");
+	bool isSpam = msgContext.GetBool("IsSpam");
 	if (isSpam) {
 		mail->MarkAsSpam();
 		needToStore = true;
 	}
-	bool isTofu = msgContext.data.FindBool("IsTofu");
+	bool isTofu = msgContext.GetBool("IsTofu");
 	if (isTofu) {
 		mail->MarkAsTofu();
 		needToStore = true;
 	}
-	BmString newFolderName = msgContext.data.FindString("FolderName");
+	BmString newFolderName = msgContext.GetString("FolderName");
 	if (newFolderName.Length()) {
 		if (mail->SetDestFolderName( newFolderName)) {
 			if (!needToStore && !mExecuteInMem) {
@@ -299,31 +298,36 @@ bool BmMailFilter::ExecuteFilter( BmMail* mail, BmFilter* filter,
 		BM_LOG2( BM_LogFilter, 
 					BmString("Executing Filter ") << filter->Name() 
 						<< " (type=" << filter->Kind() << ")...");
+		msgContext->ResetChanges();
 		filter->Execute( msgContext);
-		BmString newIdentity = msgContext->data.FindString("Identity");
-		if (newIdentity.Length())
+		if (msgContext->FieldHasChanged("Identity")) {
+			BmString newIdentity = msgContext->GetString("Identity");
 			BM_LOG( BM_LogFilter, 
 					  BmString("Filter ") << filter->Name() 
 					  		<< ": setting identity to " 
 					  		<< newIdentity);
-		BmString newStatus = msgContext->data.FindString("Status");
-		if (newStatus.Length())
+		}
+		if (msgContext->FieldHasChanged("Status")) {
+			BmString newStatus = msgContext->GetString("Status");
 			BM_LOG( BM_LogFilter, 
 					  BmString("Filter ") << filter->Name() 
 					  		<< ": setting status to " 
 					  		<< newStatus);
-		bool moveToTrash = msgContext->data.FindBool("MoveToTrash");
-		if (moveToTrash)
+		}
+		if (msgContext->FieldHasChanged("MoveToTrash")
+		&& msgContext->GetBool("MoveToTrash")) {
 			BM_LOG( BM_LogFilter, 
 					  BmString("Filter ") << filter->Name() 
 					  		<< ": moving mail to trash.");
-		BmString rejectMsg = msgContext->data.FindString("RejectMsg");
-		if (rejectMsg.Length())
+		}
+		if (msgContext->FieldHasChanged("RejectMsg")) {
+			BmString rejectMsg = msgContext->GetString("RejectMsg");
 			BM_LOG( BM_LogFilter, 
 					  BmString("Filter ") << filter->Name() 
 					  		<< ": rejecting mail with msg " 
 					  		<< rejectMsg);
-		bool stopProcessing = msgContext->data.FindBool("StopProcessing");
+		}
+		bool stopProcessing = msgContext->GetBool("StopProcessing");
 		if (stopProcessing) {
 			BM_LOG( BM_LogFilter, 
 					  BmString("Filter ") << filter->Name() 

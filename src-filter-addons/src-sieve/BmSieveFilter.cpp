@@ -380,10 +380,8 @@ void BmSieveFilter::SetMailFlags( sieve_imapflags_t* flags,
 			BmString flag( flags->flag[i]);
 			BM_LOG3( BM_LogFilter, BmString("Sieve-Addon: SetMailFlags called "
 													  "with flag ") << flag); 
-			if (!flag.ICompare( "\\Seen")) {
-				msgContext->data.RemoveName("Status");
-				msgContext->data.AddString("Status", "Read");
-			}
+			if (!flag.ICompare( "\\Seen"))
+				msgContext->SetString("Status", "Read");
 		}
 	}
 }
@@ -413,10 +411,8 @@ int BmSieveFilter::sieve_discard( void* /*action_context*/, void*,
 			   				  		    const char**) {
 	BM_LOG3( BM_LogFilter, BmString("Sieve-Addon: sieve_discard called")); 
 	BmMsgContext* msgContext = static_cast< BmMsgContext*>( message_context);
-	if (msgContext) {
-		msgContext->data.RemoveName("MoveToTrash");
-		msgContext->data.AddBool("MoveToTrash", true);
-	}
+	if (msgContext)
+		msgContext->SetBool("MoveToTrash", true);
 	return SIEVE_OK;
 }
 
@@ -452,14 +448,10 @@ int BmSieveFilter::sieve_fileinto( void* action_context, void* script_context,
 			);
 			alert->SetShortcut( 0, B_ESCAPE);
 			char pathbuf[1024];
-			if (alert->Go( pathbuf, 1024) == 1) {
-				msgContext->data.RemoveName("FolderName");
-				msgContext->data.AddString("FolderName", pathbuf);
-			}
-		} else {
-			msgContext->data.RemoveName("FolderName");
-			msgContext->data.AddString("FolderName", fileintoContext->mailbox);
-		}
+			if (alert->Go( pathbuf, 1024) == 1)
+				msgContext->SetString("FolderName", pathbuf);
+		} else
+			msgContext->SetString("FolderName", fileintoContext->mailbox);
 	}
 	return SIEVE_OK;
 }
@@ -479,8 +471,7 @@ int BmSieveFilter::sieve_reject( void* action_context, void* script_context,
 		BM_LOG3( BM_LogFilter, BmString("Sieve-Addon: sieve_reject called "
 												  "with msg ")
 												  <<rejectContext->msg);
-		msgContext->data.RemoveName("RejectMsg");
-		msgContext->data.AddString("RejectMsg", rejectContext->msg);
+		msgContext->SetString("RejectMsg", rejectContext->msg);
 	}
 	return SIEVE_OK;
 }
@@ -504,26 +495,24 @@ int BmSieveFilter::sieve_notify( void* action_context, void*,
 		}
 		if (!BmNotifySetIdentity.ICompare( notifyContext->method)) {
 			// set identity for mail according to notify-options:
-			msgContext->data.RemoveName("Identity");
-			msgContext->data.AddString("Identity", notifyContext->options[0]);
+			msgContext->SetString("Identity", notifyContext->options[0]);
 		} else if (!BmNotifySetStatus.ICompare( notifyContext->method)) {
 			// set status for mail according to notify-options:
-			msgContext->data.RemoveName("Status");
-			msgContext->data.AddString("Status", notifyContext->options[0]);
+			msgContext->SetString("Status", notifyContext->options[0]);
 		} else if (!BmNotifyStopProcessing.ICompare( notifyContext->method)) {
 			// we stop processing since this filter has matched:
-			msgContext->data.RemoveName("StopProcessing");
-			msgContext->data.AddBool("StopProcessing", true);
+			msgContext->SetBool("StopProcessing", true);
 		} else if (!BmNotifySetSpamTofu.ICompare( notifyContext->method)) {
 			// set spam/tofu-state for mail according to notify-options:
-			msgContext->data.RemoveName("LearnAsSpam");
-			msgContext->data.RemoveName("LearnAsTofu");
 			BmString spam("Spam");
 			BmString tofu("Tofu");
-			if (!spam.ICompare(notifyContext->options[0]))
-				msgContext->data.AddBool("LearnAsSpam", true);
-			else if (!tofu.ICompare(notifyContext->options[0]))
-				msgContext->data.AddBool("LearnAsTofu", true);
+			if (!spam.ICompare(notifyContext->options[0])) {
+				msgContext->SetBool("LearnAsSpam", true);
+				msgContext->SetBool("LearnAsTofu", false);
+			} else if (!tofu.ICompare(notifyContext->options[0])) {
+				msgContext->SetBool("LearnAsSpam", false);
+				msgContext->SetBool("LearnAsTofu", true);
+			}
 		}
 	}
 	return SIEVE_OK;

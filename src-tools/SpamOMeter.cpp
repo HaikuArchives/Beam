@@ -283,15 +283,14 @@ void SpamOMeter( const char* pathfileName, ResInfo& ri)
 		// already been marked as such. However, we are simulating a fresh
 		// training session here, so in order to be able to execute learnAsSpam
 		// and learnAsTofu, we force it:
-		result.data.AddBool("ForceLearning", true);
+		result.SetBool("ForceLearning", true);
 		// now classify this message:
 		result.mail = mail.Get();
 		spamAddon->Execute( &result, &ClassifyJob);
-		bool isSpam = result.data.FindBool("IsSpam");
-		bool isTofu = result.data.FindBool("IsTofu");
-		bool isReinforced = result.data.FindBool("IsReinforced");
-		double overallPr = 0.0;
-		result.data.FindDouble("OverallPr", &overallPr);
+		bool isSpam = result.GetBool("IsSpam");
+		bool isTofu = result.GetBool("IsTofu");
+		bool isReinforced = result.GetBool("IsReinforced");
+		double overallPr = result.GetDouble("OverallPr");
 		if (isSpam)
 			Out("SPAM(%f)...", overallPr);
 		else if (isTofu)
@@ -554,20 +553,20 @@ main( int argc, char** argv)
 	if (Statistics) {
 		BmMsgContext result;
 		spamAddon->Execute( &result, &GetStatisticsJob);
-		int32	spamBuckets = result.data.FindInt32("SpamBuckets");
-		int32	spamBucketsUsed = result.data.FindInt32("SpamBucketsUsed");
-		int32	spamLearnings = result.data.FindInt32("SpamLearnings");
-		int32	spamClassifications = result.data.FindInt32("SpamClassifications");
-		int32	spamMistakes = result.data.FindInt32("SpamMistakes");
-		int32	spamAverageValue = result.data.FindInt32("SpamAverageValue");
-		int32	spamChainsAverageLength = result.data.FindInt32("SpamChainsAverageLength");
-		int32	tofuBuckets = result.data.FindInt32("TofuBuckets");
-		int32	tofuBucketsUsed = result.data.FindInt32("TofuBucketsUsed");
-		int32	tofuLearnings = result.data.FindInt32("TofuLearnings");
-		int32	tofuClassifications = result.data.FindInt32("TofuClassifications");
-		int32	tofuMistakes = result.data.FindInt32("TofuMistakes");
-		int32	tofuAverageValue = result.data.FindInt32("TofuAverageValue");
-		int32	tofuChainsAverageLength = result.data.FindInt32("TofuChainsAverageLength");
+		int32	spamBuckets = result.GetInt32("SpamBuckets");
+		int32	spamBucketsUsed = result.GetInt32("SpamBucketsUsed");
+		int32	spamLearnings = result.GetInt32("SpamLearnings");
+		int32	spamClassifications = result.GetInt32("SpamClassifications");
+		int32	spamMistakes = result.GetInt32("SpamMistakes");
+		int32	spamAverageValue = result.GetInt32("SpamAverageValue");
+		int32	spamChainsAverageLength = result.GetInt32("SpamChainsAverageLength");
+		int32	tofuBuckets = result.GetInt32("TofuBuckets");
+		int32	tofuBucketsUsed = result.GetInt32("TofuBucketsUsed");
+		int32	tofuLearnings = result.GetInt32("TofuLearnings");
+		int32	tofuClassifications = result.GetInt32("TofuClassifications");
+		int32	tofuMistakes = result.GetInt32("TofuMistakes");
+		int32	tofuAverageValue = result.GetInt32("TofuAverageValue");
+		int32	tofuChainsAverageLength = result.GetInt32("TofuChainsAverageLength");
 		double errorsFP = spamClassifications 
 									? 100.0*spamMistakes/(float)spamClassifications
 									: 0;
