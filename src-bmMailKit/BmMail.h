@@ -43,6 +43,7 @@
 
 #include "BmBodyPartList.h"
 #include "BmDataModel.h"
+#include "BmMailFolder.h"
 #include "BmMailRef.h"
 #include "BmUtil.h"
 
@@ -162,9 +163,10 @@ public:
 	void ApplyOutboundFilters();
 	void ApplyInboundFilters();
 	bool Send( bool now=true);
-	bool Store(bool storeOnlyAttributesIfPossible);
-	void StoreIntoFile( const BmString& filename, const BmString& status,
-							  bigtime_t whenCreated, BEntry* backupEntry = NULL);
+	bool Store();
+	void StoreIntoFile( BDirectory* destDir, BmString filename, 
+							  const BmString& status, bigtime_t whenCreated, 
+							  BEntry* backupEntry = NULL);
 	void ResyncFromDisk();
 	//
 	const BmString& GetFieldVal( const BmString fieldName);
@@ -188,10 +190,10 @@ public:
 	void AddAttachmentFromRef( const entry_ref* ref,
 										const BmString& defaultCharset);
 	//
-	bool SetDestFoldername( const BmString& destFoldername);
-	const BPath& DestFolderpath() const;
+	bool SetDestFolderName( const BmString& destFolderName);
+	BmRef<BmMailFolder> DestFolder() const;
 	//	
-	bool MoveToDestFolderpath();
+	bool MoveToDestFolder();
 	//
 	void SetBaseMailInfo( BmMailRef* ref, const BmString newStatus);
 	void AddBaseMailRef( BmMailRef* ref);
@@ -282,8 +284,8 @@ private:
 	bool mMoveToTrash;
 							// indicates that this mail should be trashed (after being
 							// stored)
-	mutable BPath mDestFolderpath;
-							// path to folder where the mail shall be stored in
+	mutable BmString mDestFolderName;
+							// name of folder where the mail shall be stored into
 							// (this may be changed by a mail-filter)
 	mutable BmString mDefaultStatus;
 							// default status of this mail, only relevant
