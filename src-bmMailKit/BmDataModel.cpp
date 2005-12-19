@@ -42,9 +42,7 @@
 #include "BmUtil.h"
 
 
-/********************************************************************************\
-	BmDataModel
-\********************************************************************************/
+// #pragma mark - BmDataModel
 
 //	message component definitions for status-msgs:
 const char* const BmDataModel::MSG_MODEL = 			"bm:model";
@@ -316,9 +314,7 @@ void BmDataModel::HandleError( const BmString& errStr) {
 
 
 
-/********************************************************************************\
-	BmJobModel
-\********************************************************************************/
+// #pragma mark - BmJobModel
 
 //	message component definitions for status-msgs:
 const char* const BmJobModel::MSG_COMPLETED = 	"bm:completed";
@@ -569,9 +565,7 @@ void BmJobModel::TellJobIsDone( bool completed) {
 
 
 
-/********************************************************************************\
-	BmListModelItem
-\********************************************************************************/
+// #pragma mark - BmListModelItem
 
 const char* const BmListModelItem::MSG_VERSION  = 		"bm:version";
 const char* const BmListModelItem::MSG_NUMCHILDREN = 	"bm:count";
@@ -800,12 +794,7 @@ bool BmListModelItem
 	return true;
 }
 
-
-
-
-/********************************************************************************\
-	BmListModel
-\********************************************************************************/
+// #pragma mark - BmListModel::StoredActionManager
 
 /*------------------------------------------------------------------------------*\
 	StoredActionManager()
@@ -892,6 +881,8 @@ bool BmListModel::StoredActionManager::Flush()
 		return false;
 	}
 }
+
+// #pragma mark - BmListModel
 
 const char* const BmListModel::MSG_VERSION = "bm:version";
 
