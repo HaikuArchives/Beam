@@ -55,10 +55,32 @@ struct IMPEXPBMBASE BmMsgContext {
 	int32 headerInfoCount;
 	BmHeaderInfo *headerInfos;
 	
-	// data-message that contains input & output data:
-	BMessage data;
+	void ResetChanges();
+	bool FieldHasChanged(const char* fieldName) const;
+
+	void ResetData();
+	bool HasField(const char* fieldName) const;
+
+	void SetInt32(const char* fieldName, int32 value);
+	int32 GetInt32(const char* fieldName) const;
+
+	void SetString(const char* fieldName, const char* value);
+	const char* GetString(const char* fieldName) const;
+	
+	void SetBool(const char* fieldName, bool value);
+	bool GetBool(const char* fieldName) const;
+
+	void SetDouble(const char* fieldName, double value);
+	double GetDouble(const char* fieldName) const;
 
 private:
+	void NoteChange(const char* fieldName);
+
+	// data message that contains input & output data:
+	BMessage mDataMsg;
+	// status message that notes changes to any of the fields:
+	BMessage mStatusMsg;
+
 	// Hide copy-constructor:
 	BmMsgContext( const BmMsgContext&);
 };
