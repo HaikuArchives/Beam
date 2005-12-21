@@ -287,6 +287,8 @@ static int32 TrashMails( void* data)
 		return B_OK;
 	int32 countFound = refVect->size();
 	if (countFound>0) {
+		BM_LOG( BM_LogApp, 
+				  BmString("Asked to trash ") << countFound << " mails");
 		struct entry_ref *refs = new entry_ref [countFound];
 
 		// tell sending ref-view that we are doing work:
@@ -301,18 +303,7 @@ static int32 TrashMails( void* data)
 		for( iter = refVect->begin(); 
 			  !beamApp->IsQuitting() && iter != refVect->end(); ++iter) {
 			mailRef = iter->Get();
-			BM_LOG( BM_LogApp, 
-					  BmString("Asked to trash mail <") 
-					  		<< mailRef->TrackerName() << ">");
-			if (mailRef->Status() == BM_MAIL_STATUS_NEW)
-				mailRef->MarkAs( BM_MAIL_STATUS_READ);
-					// mark new mails as read such that the deskbar-item 
-					// will notice the disappearance of these new mails
-					// (otherwise it won't get notified by the live-query).
 			refs[index++] = mailRef->EntryRef();
-			if (index % 100 == 0)
-				snooze(500*1000);
-					// give mail monitor a chance to catch up...
 		}
 		MoveToTrash( refs, index);
 		delete [] refs;
@@ -1161,11 +1152,15 @@ void BeamApplication::MessageReceived( BMessage* msg) {
 				inherited::MessageReceived( msg);
 				break;
 			}
-			case BM_DESKBAR_GET_MBOX_DEVICE: {
+			case BM_DESKBAR_GET_MBOX: {
 				if (!msg->IsReply()) {
-					BMessage reply( BM_DESKBAR_GET_MBOX_DEVICE);
-					reply.AddInt32( "mbox_dev", ThePrefs->MailboxVolume.Device());
-					msg->SendReply( &reply, (BHandler*)NULL, 1000000);
+					BMessage reply( BM_DESKBAR_GET_MBOX);
+					entry_ref mboxRef;
+					BEntry entry(ThePrefs->GetString("MailboxPath").String(), true);
+					if (entry.GetRef(&mboxRef) == B_OK) {
+						reply.AddRef( "mbox", &mboxRef);
+						msg->SendReply( &reply, (BHandler*)NULL, 1000000);
+					}
 				}
 				break;
 			}
