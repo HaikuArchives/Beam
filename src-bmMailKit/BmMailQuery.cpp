@@ -31,6 +31,7 @@
 #include <Entry.h>
 
 #include "BmLogHandler.h"
+#include "BmMailFolderList.h"
 #include "BmMailQuery.h"
 #include "BmMailRef.h"
 #include "BmPrefs.h"
@@ -84,7 +85,7 @@ void BmMailQuery::Execute()
 
 	entry_ref eref;
 	while ((err = mQuery.GetNextRef(&eref)) == B_OK) {
-		if (!LivesInTrash(eref))
+		if (LivesInMailbox(eref))
 			mRefVect.push_back(eref);
 	}
 	BM_LOG2( BM_LogMailTracking, "Done with pending-mail-query");
