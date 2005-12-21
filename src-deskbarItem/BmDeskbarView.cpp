@@ -68,69 +68,82 @@ const char* const BM_DeskbarItemName = "Beam_DeskbarItem";
 const char* const BM_DeskbarNormal = "DeskbarIconNormal";
 const char* const BM_DeskbarNew = "DeskbarIconNew";
 
-/***********************************************************
- * Deskbar item installing function
- ***********************************************************/
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
 BView* instantiate_deskbar_item(void) {
 	return new BmDeskbarView(BRect(0, 0, 15, 15));
 }
 
-/***********************************************************
- * Constructor.
- ***********************************************************/
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
 BmDeskbarView::BmDeskbarView(BRect frame)
 	:	BView( frame, BM_DeskbarItemName, B_FOLLOW_NONE, 
 				 B_WILL_DRAW|B_PULSE_NEEDED)
 	,	mCurrIcon( NULL)
 	,	mNewMailCount( 0)
+	,	mNewMailCountNeedsUpdate( true)
 {
 }
 
-/***********************************************************
- * Constructor for achiving.
- ***********************************************************/
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
 BmDeskbarView::BmDeskbarView(BMessage *message)
 	:	BView( message)
 	,	mCurrIcon( NULL)
 	,	mNewMailCount( 0)
+	,	mNewMailCountNeedsUpdate( true)
 {
 }
 
-/***********************************************************
- * Destructor
- ***********************************************************/
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
 BmDeskbarView::~BmDeskbarView() {
 	delete mCurrIcon;
 }
 
-/***********************************************************
- * Instantiate
- ***********************************************************/
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
 BmDeskbarView* BmDeskbarView::Instantiate(BMessage *data) {
 	if (!validate_instantiation(data, "BmDeskbarView"))
 		return NULL;
 	return new BmDeskbarView(data);
 }
 
-/***********************************************************
- * Archive
- ***********************************************************/
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
 status_t BmDeskbarView::Archive( BMessage *data,
 										   bool deep) const {
 	BView::Archive(data, deep);
 	return data->AddString( "add_on", BM_DESKBAR_APP_SIG);
 }
 
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
 void BmDeskbarView::AttachedToWindow() {
 	// ask app for the volume of our mailbox-directory:
-	BMessage request(BM_DESKBAR_GET_MBOX_DEVICE);
+	BMessage request(BM_DESKBAR_GET_MBOX);
 	SendToBeam( &request, this);
 }
 
 
-/***********************************************************
- * Draw
- ***********************************************************/
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
 void BmDeskbarView::Draw(BRect /*updateRect*/) {	
 	rgb_color oldColor = HighColor();
 	SetHighColor(Parent()->ViewColor());
@@ -143,51 +156,10 @@ void BmDeskbarView::Draw(BRect /*updateRect*/) {
 	Sync();
 }
 
-/***********************************************************
- * MessageReceived
- ***********************************************************/
-void BmDeskbarView::MessageReceived(BMessage *msg) {
-	switch( msg->what) {
-		case BMM_RESET_ICON: {
-			ChangeIcon( BM_DeskbarNormal); 
-			break;
-		}
-		case B_QUERY_UPDATE: {
-			HandleQueryUpdateMsg( msg);
-			break;
-		}
-		case BM_DESKBAR_GET_MBOX_DEVICE: {
-			dev_t mbox_dev = msg->FindInt32( "mbox_dev");
-			InstallDeskbarMonitor( mbox_dev);
-			break;
-		}
-		default: {
-			BView::MessageReceived( msg);
-		}
-	}
-}
-
-/***********************************************************
- * IncNewMailCount
- ***********************************************************/
-void BmDeskbarView::IncNewMailCount()	{ 
-	if (mNewMailCount++ == 0 || mCurrIconName != BM_DeskbarNew)
-		ChangeIcon( BM_DeskbarNew); 
-}
-
-/***********************************************************
- * DecNewMailCount()
- ***********************************************************/
-void BmDeskbarView::DecNewMailCount() {
-	if (--mNewMailCount < 0)
-		mNewMailCount = 0;
-	if (!mNewMailCount) 
-		ChangeIcon( BM_DeskbarNormal); 
-}
-
-/***********************************************************
- * ChangeIcon
- ***********************************************************/
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
 void BmDeskbarView::ChangeIcon( const char* iconName) {
 	if (!iconName || mCurrIconName == iconName)
 		return;
@@ -222,54 +194,9 @@ void BmDeskbarView::ChangeIcon( const char* iconName) {
 }
 
 /*------------------------------------------------------------------------------*\
-	InstallDeskbarMonitor()
+	()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmDeskbarView::InstallDeskbarMonitor( dev_t mbox_dev) {
-	int32 count;
-	dirent* dent;
-	char buf[4096];
-
-	entry_ref eref;
-	BEntry entry;
-	
-	BMessenger thisAsTarget( this);
-	
-	// determine root-dir of our mailbox-directory:
-	BDirectory mboxRoot;
-	BVolume mboxVolume( mbox_dev);
-	mboxVolume.GetRootDirectory( &mboxRoot);
-	if (mboxRoot.InitCheck() == B_OK) {
-
-		// fetch node-ref of Trash (a kludge, should be able to handle more than one):
-		BDirectory trash( &mboxRoot, "home/Desktop/Trash");
-		trash.GetNodeRef( &mTrashNodeRef);
-
-		if (mNewMailQuery.SetVolume( &mboxVolume) == B_OK
-		&& mNewMailQuery.SetPredicate( "MAIL:status = 'New'") == B_OK
-		&& mNewMailQuery.SetTarget( thisAsTarget) == B_OK
-		&& mNewMailQuery.Fetch() == B_OK) {
-			while ((count = mNewMailQuery.GetNextDirents((dirent* )buf, 4096)) > 0) {
-				dent = (dirent* )buf;
-				while (count-- > 0) {
-					eref.device = dent->d_pdev;
-					eref.directory = dent->d_pino;
-					eref.set_name(dent->d_name);
-					entry.SetTo(&eref);
-					if (!trash.Contains(&entry))
-						mNewMailCount++;
-					// Bump the dirent-pointer by length of the dirent just handled:
-					dent = (dirent* )((char* )dent + dent->d_reclen);
-				}
-			}
-		}
-	}
-	ChangeIcon( mNewMailCount ? BM_DeskbarNew : BM_DeskbarNormal);
-}
-
-/***********************************************************
- * SendToBeam
- ***********************************************************/
 void BmDeskbarView::SendToBeam( BMessage* msg, BHandler* replyHandler) {
 	BMessenger beam( BM_APP_SIG);
 	if (beam.IsValid()) {
@@ -280,9 +207,10 @@ void BmDeskbarView::SendToBeam( BMessage* msg, BHandler* replyHandler) {
 	BDeskbar().RemoveItem( BM_DeskbarItemName);
 }
 
-/***********************************************************
- * Pulse
- ***********************************************************/
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
 void BmDeskbarView::Pulse() {
 	BMessenger beam( BM_APP_SIG);
 	if (!beam.IsValid()) {
@@ -291,9 +219,10 @@ void BmDeskbarView::Pulse() {
 	}
 }
 
-/***********************************************************
- * MouseDown
- ***********************************************************/
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
 void BmDeskbarView::MouseDown(BPoint pos) {
 	inherited::MouseDown(pos);
 	int32 buttons;
@@ -347,25 +276,148 @@ void BmDeskbarView::ShowMenu( BPoint point) {
 }
 
 /*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmDeskbarView::MessageReceived(BMessage *msg) {
+	switch( msg->what) {
+		case BMM_RESET_ICON: {
+			ChangeIcon( BM_DeskbarNormal); 
+			break;
+		}
+		case B_QUERY_UPDATE: {
+			HandleQueryUpdateMsg( msg);
+			break;
+		}
+		case BM_DESKBAR_GET_MBOX: {
+			if (msg->FindRef( "mbox", &mMailboxRef) == B_OK)
+				InstallDeskbarMonitor();
+			break;
+		}
+		default: {
+			BView::MessageReceived( msg);
+		}
+	}
+}
+
+/*------------------------------------------------------------------------------*\
+	InstallDeskbarMonitor()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmDeskbarView::InstallDeskbarMonitor() {
+	int32 count;
+	dirent* dent;
+	char buf[4096];
+
+	entry_ref eref;
+
+	BMessenger thisAsTarget( this);
+	
+	// determine root-dir of our mailbox-directory:
+	BVolume mboxVolume( mMailboxRef.device);
+	if (mNewMailQuery.SetVolume( &mboxVolume) == B_OK
+	&& mNewMailQuery.SetPredicate( "MAIL:status = 'New'") == B_OK
+	&& mNewMailQuery.SetTarget( thisAsTarget) == B_OK
+	&& mNewMailQuery.Fetch() == B_OK) {
+		while ((count = mNewMailQuery.GetNextDirents((dirent* )buf, 4096)) > 0) {
+			dent = (dirent* )buf;
+			while (count-- > 0) {
+				eref.device = dent->d_pdev;
+				eref.directory = dent->d_pino;
+				eref.set_name(dent->d_name);
+				mNewMailMap[dent->d_ino] = eref;
+				// Bump the dirent-pointer by length of the dirent just handled:
+				dent = (dirent* )((char* )dent + dent->d_reclen);
+			}
+		}
+	}
+	ChangeIcon( NewMailCount()>0 ? BM_DeskbarNew : BM_DeskbarNormal);
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmDeskbarView::IncNewMailCount()	{
+	if (mNewMailCount++ == 0 || mCurrIconName != BM_DeskbarNew)
+		ChangeIcon( BM_DeskbarNew); 
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmDeskbarView::DecNewMailCount() {
+	if (--mNewMailCount < 0)
+		mNewMailCount = 0;
+	if (!mNewMailCount) 
+		ChangeIcon( BM_DeskbarNormal); 
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+int32 BmDeskbarView::NewMailCount() {
+	if (mNewMailCountNeedsUpdate) {
+		// (re-)count all new mails that live in the mailbox:
+		mNewMailCount = 0;
+		NewMailMap::iterator iter;
+		for( iter=mNewMailMap.begin(); iter != mNewMailMap.end(); ++iter) {
+			if (LivesInMailbox(iter->second))
+				mNewMailCount++;
+		}
+	}
+	return mNewMailCount;
+}
+
+/*------------------------------------------------------------------------------*\
+	LivesInMailbox( eref)
+		-	returns whether or not the given entry_ref lives inside the Mailbox
+\*------------------------------------------------------------------------------*/
+bool BmDeskbarView::LivesInMailbox( const entry_ref& inref) {
+	BEntry entry(&inref);
+	entry_ref eref;
+	while (entry.GetParent(&entry) == B_OK) {
+		if (entry.GetRef(&eref) != B_OK)
+			break;
+		if (eref == mMailboxRef)
+			return true;
+	}
+	return false;
+}
+
+/*------------------------------------------------------------------------------*\
 	HandleQueryUpdateMsg()
 		-	
 \*------------------------------------------------------------------------------*/
 void BmDeskbarView::HandleQueryUpdateMsg( BMessage* msg) {
 	int32 opcode = msg->FindInt32( "opcode");
-	node_ref nref;
+	int64 node;
 	switch( opcode) {
 		case B_ENTRY_CREATED: {
-			if (msg->FindInt64( "directory", &nref.node) == B_OK
-			&& msg->FindInt32( "device", &nref.device) == B_OK
-			&& nref != mTrashNodeRef)
+			entry_ref eref;
+			const char* name;
+			if (msg->FindInt64( "directory", &eref.directory) != B_OK
+			|| msg->FindInt32( "device", &eref.device) != B_OK
+			|| msg->FindInt64( "node", &node) != B_OK
+			|| msg->FindString( "name", &name) != B_OK)
+				return;
+			eref.set_name(name);
+			mNewMailMap[node] = eref;
+			if (LivesInMailbox(eref))
 				IncNewMailCount();
 			break;
 		}
 		case B_ENTRY_REMOVED: {
-			if (msg->FindInt64( "directory", &nref.node) == B_OK
-			&& msg->FindInt32( "device", &nref.device) == B_OK
-			&& nref != mTrashNodeRef)
-				DecNewMailCount();
+			if (msg->FindInt64( "node", &node) != B_OK)
+				return;
+			NewMailMap::iterator iter = mNewMailMap.find(node);
+			if (iter != mNewMailMap.end()) {
+				if (LivesInMailbox(iter->second))
+					DecNewMailCount();
+				mNewMailMap.erase(node);
+			}
 			break;
 		}
 	}

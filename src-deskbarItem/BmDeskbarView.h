@@ -30,12 +30,13 @@
 #ifndef _BmDeskbarView_h
 #define _BmDeskbarView_h
 
+#include <map>
 
+#include <Entry.h>
 #include <Message.h>
 #include <Query.h>
 #include <String.h>
 #include <View.h>
-
 
 extern const char* BM_APP_SIG;
 extern const char* BM_DESKBAR_APP_SIG;
@@ -51,11 +52,12 @@ enum {
 
 // messages send from deskbar-view to app:
 enum {
-	BM_DESKBAR_GET_MBOX_DEVICE = 'bMDb'
+	BM_DESKBAR_GET_MBOX = 'bMDb'
 };
 
 class BmDeskbarView: public BView {
 	typedef BView inherited;
+	typedef map<int64, entry_ref> NewMailMap;
 public:
 	// c'tors and d'tor:
 	BmDeskbarView( BRect frame);
@@ -71,8 +73,10 @@ protected:
 	void ShowMenu( BPoint point);
 	void IncNewMailCount();
 	void DecNewMailCount();
+	int32 NewMailCount();
 	void SendToBeam( BMessage *msg, BHandler *replyHandler = NULL);
-	void InstallDeskbarMonitor( dev_t mbox_dev);
+	void InstallDeskbarMonitor();
+	bool LivesInMailbox(const entry_ref& eref);
 	void HandleQueryUpdateMsg( BMessage* msg);
 	
 	// overrides of BView base:
@@ -86,9 +90,11 @@ protected:
 private:
 	BQuery mNewMailQuery;
 	int32 mNewMailCount;
+	bool mNewMailCountNeedsUpdate;
 	BString mCurrIconName;
 	BBitmap *mCurrIcon;
-	node_ref mTrashNodeRef;
+	entry_ref mMailboxRef;
+	NewMailMap mNewMailMap;
 };
 
 #endif
