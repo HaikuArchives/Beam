@@ -172,7 +172,8 @@ BmJobController::~BmJobController() {
 \*------------------------------------------------------------------------------*/
 void BmJobController::StartJob( BmJobModel* model, bool startInNewThread,
 										  int32 jobSpecifier) {
-	AttachModel( model);
+	if (model)
+		AttachModel( model);
 	BmJobModel* jobModel = dynamic_cast<BmJobModel*>( DataModel().Get());
 	if (jobModel) {
 		if (jobModel->IsJobCompleted() 
