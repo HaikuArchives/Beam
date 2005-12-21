@@ -149,18 +149,16 @@ bool MoveToTrash( const entry_ref* refs, int32 count) {
 } 
 
 /*------------------------------------------------------------------------------*\
-	LivesInTrash( eref)
-		-	returns whether or not the given entry_ref lives inside the Trash
+	LivesInMailbox( eref)
+		-	returns whether or not the given entry_ref lives inside the Mailbox
 \*------------------------------------------------------------------------------*/
-bool LivesInTrash( const entry_ref& eref) {
-	BEntry entry( &eref);
-	BPath path;
-	entry.GetPath( &path);
-	if (path.InitCheck() != B_OK)
-		return false;
-	BmString refPath = path.Path();
-	BmString trashPath = ThePrefs->TrashPath;
-	return refPath.Compare(trashPath, trashPath.Length()) == 0;
+bool LivesInMailbox( const entry_ref& eref) {
+	node_ref nref;
+	nref.node = eref.directory;
+	nref.device = eref.device;
+	BmString key = BM_REFKEY(nref);
+	BmRef<BmListModelItem> itemRef = TheMailFolderList->FindItemByKey(key);
+	return itemRef != NULL;
 }
 
 /*------------------------------------------------------------------------------*\
