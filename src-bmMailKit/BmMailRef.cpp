@@ -238,7 +238,7 @@ BmMailRef::BmMailRef( BMessage* archive, node_ref& nref)
 			)*(1000*1000);
 
 		if (version >= 4)
-			mItemIsValid = FindMsgBool( archive, MSG_IS_VALID);
+			mIsValid = FindMsgBool( archive, MSG_IS_VALID);
 
 		if (version >= 5) {
 			mClassification = FindMsgString( archive, MSG_CLASSIFICATION);
@@ -272,7 +272,7 @@ BmMailRef::~BmMailRef() {
 status_t BmMailRef::Archive( BMessage* archive, bool) const {
 	status_t ret 
 		= archive->AddInt16( MSG_VERSION, nArchiveVersion)
-		|| archive->AddBool( MSG_IS_VALID, mItemIsValid)
+		|| archive->AddBool( MSG_IS_VALID, mIsValid)
 		|| archive->AddString( MSG_ACCOUNT, mAccount.String())
 		|| archive->AddBool( MSG_ATTACHMENTS, mHasAttachments)
 		|| archive->AddString( MSG_CC, mCc.String())
@@ -452,7 +452,7 @@ bool BmMailRef::ReadAttributes( const struct stat* statInfo,
 			updFlags |= UPD_PRIORITY;
 		}
 			
-		ItemIsValid( true);
+		IsValid( true);
 	} else {
 		// item is no mail, we mark it as invalid:
 		mName = mEntryRef.name;
@@ -478,7 +478,7 @@ bool BmMailRef::ReadAttributes( const struct stat* statInfo,
 		BM_LOG2( BM_LogMailTracking, 
 					BmString("file <") << mEntryRef.name 
 						<< " is not a mail, invalidating it.");
-		ItemIsValid( false);
+		IsValid( false);
 	}
 	if (updFlagsOut)
 		*updFlagsOut = updFlags;

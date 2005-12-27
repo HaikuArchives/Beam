@@ -653,7 +653,7 @@ void BmListViewController::AddAllModelItems() {
 	int32 count=1;
 	for( iter = model->begin(); iter != end; ++iter) {
 		BmListModelItem* modelItem = iter->second.Get();
-		if (!modelItem->ItemIsValid())
+		if (!modelItem->IsValid())
 			continue;
 		BmListViewItem* viewItem;
 		if (Hierarchical()) {

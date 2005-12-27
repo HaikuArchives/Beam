@@ -1160,10 +1160,9 @@ void BmMailView::UpdateParsingStatus() {
 	struct ParsingStatusCollector : public BmListModelItem::Collector {
 		ParsingStatusCollector(BmMailView* mv) 
 			: mailView( mv) 					{}
-		virtual bool operator() (const BmListModelItem* listItem) 
+		virtual bool operator() (BmListModelItem* listItem) 
 		{
-			const BmBodyPart* bodyPart 
-				= dynamic_cast<const BmBodyPart*>( listItem);
+			BmBodyPart* bodyPart = dynamic_cast<BmBodyPart*>( listItem);
 			if (bodyPart && !bodyPart->IsMultiPart()) {
 				if (bodyPart->HadParsingErrors())
 					mailView->AddParsingError(bodyPart->ParsingErrors());

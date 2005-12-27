@@ -509,14 +509,14 @@ void BmSmtp::StateSendMails() {
 	BmRef<BmMail> mail;
 	for( int32 i=0; i<mMailCount; ++i) {
 		mailRefs.push_back(BmMailRef::CreateInstance( mQueuedRefVect[i]));
-		if (mailRefs[i] && mailRefs[i]->ItemIsValid())
+		if (mailRefs[i] && mailRefs[i]->IsValid())
 			mMsgTotalSize += mailRefs[i]->Size();
 	}
 
 	Regexx rx;
 	mCurrMailNr = 1;
 	for( int32 i=0; i<mMailCount; ++i, ++mCurrMailNr) {
-		if (!mailRefs[i] || !mailRefs[i]->ItemIsValid()) {
+		if (!mailRefs[i] || !mailRefs[i]->IsValid()) {
 			BM_LOGERR( BmString("SendMails(): mail no. ") << i+1
 								<< " can't be found, skipping it.");
 			continue;
