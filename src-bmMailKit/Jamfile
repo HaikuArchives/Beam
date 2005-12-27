@@ -38,6 +38,7 @@ SharedLibrary bmMailKit.so :
 	BmSignature.cpp
 	BmSmtpAccount.cpp
 	BmStorageUtil.cpp
+	BmStoredActionManager.cpp
 	BmUtil.cpp
 	:  
 		bmBase.so bmRegexx.so 
