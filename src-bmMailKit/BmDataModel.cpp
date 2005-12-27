@@ -580,7 +580,7 @@ BmListModelItem::BmListModelItem( const BmString& key, BmListModel* model,
 	:	mKey( key)
 	,	mListModel( model)
 	,	mParent( parent)
-	,	mItemIsValid( true)
+	,	mIsValid( true)
 {
 }
 
@@ -761,19 +761,19 @@ uint32 BmListModelItem::OutlineLevel() const	{
 }
 
 /*------------------------------------------------------------------------------*\
-	ItemIsValid( b)
+	IsValid( b)
 		-	
 \*------------------------------------------------------------------------------*/
-void BmListModelItem::ItemIsValid( bool _itemIsValid) {
-	if (mItemIsValid != _itemIsValid) {
+void BmListModelItem::IsValid( bool _isValid) {
+	if (mIsValid != _isValid) {
 		BmRef<BmListModel> listModel( ListModel());
 		if (listModel)
 			// we have a listmodel, so we delegate the validity change to it,
 			// since it will deal with required updates, too:
-			listModel->SetItemValidity( this, _itemIsValid);
+			listModel->SetItemValidity( this, _isValid);
 		else
 			// no listmodel, we just change the validity:
-			mItemIsValid = _itemIsValid;
+			mIsValid = _isValid;
 	}
 }
 
@@ -792,94 +792,6 @@ bool BmListModelItem
 			return false;
 	}
 	return true;
-}
-
-// #pragma mark - BmListModel::StoredActionManager
-
-/*------------------------------------------------------------------------------*\
-	StoredActionManager()
-		-	
-\*------------------------------------------------------------------------------*/
-BmListModel::StoredActionManager
-::StoredActionManager(BmListModel* list)
-	:	mList(list)
-	,	mMaxCacheSize(100)
-{
-}
-
-/*------------------------------------------------------------------------------*\
-	StoredActionManager()
-		-	
-\*------------------------------------------------------------------------------*/
-BmListModel::StoredActionManager::~StoredActionManager()
-{
-}
-
-/*------------------------------------------------------------------------------*\
-	StoreAction()
-		-	adds given archive at end of settings-file
-\*------------------------------------------------------------------------------*/
-bool BmListModel::StoredActionManager::StoreAction(BMessage* action)
-{
-	BmAutolockCheckGlobal lock( mList->ModelLocker());
-	if (!lock.IsLocked())
-		BM_THROW_RUNTIME( "StoreAction(): Unable to get lock");
-	bool result = true;
-	mActionVect.push_back(action);
-	if (mActionVect.size() >= mMaxCacheSize)
-		result = Flush();
-	return result;
-}
-
-/*------------------------------------------------------------------------------*\
-	Flush()
-		-	appends all stored actions to the settings-file
-\*------------------------------------------------------------------------------*/
-bool BmListModel::StoredActionManager::Flush()
-{
-	if (mActionVect.empty())
-		return true;
-
-	BFile file;
-	status_t err;
-
-	try {
-		BMallocIO mallocIO;
-		mallocIO.SetBlockSize(mActionVect.size()*1024);
-		BMessage* action;
-		for( uint32 i=0; i<mActionVect.size(); ++i) {
-			action = mActionVect[i];
-			if ((err = action->Flatten( &mallocIO)) != B_OK)
-				BM_THROW_RUNTIME( 
-					BmString("Could not flatten stored actions\n\n Result: ") 
-						<< strerror(err)
-				);
-			delete action;
-		}
-		mActionVect.clear();
-		BmString filename = mList->SettingsFileName();
-		err = file.SetTo( filename.String(), B_WRITE_ONLY | B_OPEN_AT_END);
-		if (err == B_ENTRY_NOT_FOUND) {
-			// file does not exist yet, we try to create it through Store():
-			mList->Store();
-			if ((err = file.SetTo( 
-				filename.String(), 
-				B_WRITE_ONLY | B_OPEN_AT_END | B_CREATE_FILE
-			))	!= B_OK)
-				BM_THROW_RUNTIME( BmString("Could not append to settings-file\n\t<")
-										 	<< filename << ">\n\n Result: " 
-										 	<< strerror(err));
-		}
-		ssize_t sz = file.Write( mallocIO.Buffer(), mallocIO.BufferLength());
-		if (sz < 0)
-			BM_THROW_RUNTIME( BmString("Could not write to settings-file\n\t<")
-									 	<< filename << ">\n\n Result: " 
-									 	<< strerror(sz));
-		return true;
-	} catch( BM_error &e) {
-		BM_SHOWERR( e.what());
-		return false;
-	}
 }
 
 // #pragma mark - BmListModel
@@ -904,6 +816,8 @@ BmListModel::BmListModel( const BmString& name, uint32 logTerrain)
 	,	mStoredActionManager(this)
 	,	mLogTerrain( logTerrain)
 {
+	mStoredActionManager.MaxCacheSize(100);
+		// allow caching of 100 stored actions before writing through to disk
 }
 
 /*------------------------------------------------------------------------------*\
@@ -925,7 +839,16 @@ void BmListModel::Cleanup() {
 	mModelItemMap.clear();
 	mNeedsStore = false;
 	mInitCheck = B_NO_INIT;
+	mJobState = JOB_INITIALIZED;
 	mInvalidCount = 0;
+}
+
+/*------------------------------------------------------------------------------*\
+	FlushStoredActions()
+		-	
+\*------------------------------------------------------------------------------*/
+bool BmListModel::FlushStoredActions() {
+	return mStoredActionManager.Flush();
 }
 
 /*------------------------------------------------------------------------------*\
@@ -944,7 +867,7 @@ bool BmListModel::AddItemToList( BmListModelItem* item,
 		if (parent) {
 			if (parent->AddSubItem( item)) {
 				item->mListModel = this;
-				if (!item->mItemIsValid)
+				if (!item->mIsValid)
 					IncInvalidCount();
 				mNeedsStore = true;
 				TellModelItemAdded( item);
@@ -961,7 +884,7 @@ bool BmListModel::AddItemToList( BmListModelItem* item,
 				mModelItemMap[item->Key()] = item;
 				item->Parent( NULL);
 				item->mListModel = this;
-				if (!item->mItemIsValid)
+				if (!item->mIsValid)
 					IncInvalidCount();
 				mNeedsStore = true;
 				TellModelItemAdded( item);
@@ -997,7 +920,7 @@ void BmListModel::RemoveItemFromList( BmListModelItem* item) {
 			mModelItemMap.erase( item->Key());
 		}
 		item->mListModel = NULL;
-		if (!item->mItemIsValid)
+		if (!item->mIsValid)
 			DecInvalidCount();
 		TellModelItemRemoved( item);
 	}
@@ -1023,7 +946,7 @@ BmRef<BmListModelItem> BmListModel::RemoveItemByKey( const BmString& key) {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmListModel::SetItemValidity(  BmListModelItem* item, bool isValid) {
-	if (item && item->mItemIsValid != isValid) {
+	if (item && item->mIsValid != isValid) {
 		BmAutolockCheckGlobal lock( mModelLocker);
 		if (!lock.IsLocked())
 			BM_THROW_RUNTIME( 
@@ -1032,7 +955,7 @@ void BmListModel::SetItemValidity(  BmListModelItem* item, bool isValid) {
 		if (isValid) {
 			// item has changed from invalid to valid, we set to valid and then
 			// tell controllers about its addition:
-			item->mItemIsValid = true;
+			item->mIsValid = true;
 			DecInvalidCount();
 			TellModelItemAdded( item);
 		} else {
@@ -1042,7 +965,7 @@ void BmListModel::SetItemValidity(  BmListModelItem* item, bool isValid) {
 			// since this item is invalid):
 			TellModelItemRemoved( item);
 			IncInvalidCount();
-			item->mItemIsValid = false;
+			item->mIsValid = false;
 		}
 	}
 }
@@ -1224,7 +1147,7 @@ BmRef<BmListModelItem> BmListModel::FindItemByKey( const BmString& key) {
 		-	tells all controllers that the given item has been added to hierarchy
 \*------------------------------------------------------------------------------*/
 void BmListModel::TellModelItemAdded( BmListModelItem* item) {
-	if (Frozen() || !item->ItemIsValid())
+	if (Frozen() || !item->IsValid())
 		return;
 	BmAutolockCheckGlobal lock( mModelLocker);
 	if (!lock.IsLocked())
@@ -1253,7 +1176,7 @@ void BmListModel::TellModelItemAdded( BmListModelItem* item) {
 			they won't access the removed item (stale pointer)
 \*------------------------------------------------------------------------------*/
 void BmListModel::TellModelItemRemoved( BmListModelItem* item) {
-	if (Frozen() || !item->ItemIsValid())
+	if (Frozen() || !item->IsValid())
 		return;
 	BmAutolockCheckGlobal lock( mModelLocker);
 	if (!lock.IsLocked())
@@ -1283,7 +1206,7 @@ void BmListModel::TellModelItemRemoved( BmListModelItem* item) {
 void BmListModel::TellModelItemUpdated( BmListModelItem* item, 
 													 BmUpdFlags flags,
 													 const BmString oldKey) {
-	if (Frozen() || !item->ItemIsValid())
+	if (Frozen() || !item->IsValid())
 		return;
 	BmAutolockCheckGlobal lock( mModelLocker);
 	if (!lock.IsLocked())

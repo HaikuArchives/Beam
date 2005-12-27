@@ -42,6 +42,7 @@
 #include "BmString.h"
 
 #include "BmRefManager.h"
+#include "BmStoredActionManager.h"
 
 class BmController;
 
@@ -229,12 +230,12 @@ public:
 	BmListModelItem* FindItemByKey( const BmString& key);
 	virtual int16 ArchiveVersion() const = 0;
 	virtual void ExecuteAction(BMessage* action);
-	void ItemIsValid( bool b);
+	void IsValid( bool b);
 	virtual bool SanityCheck( BmString& complaint, BmString& fieldName) const
 													{ return true; }
 
 	struct Collector {
-		virtual bool operator() (const BmListModelItem* listItem) = 0;
+		virtual bool operator() (BmListModelItem* listItem) = 0;
 	};
 	bool ForEachSubItem(BmListModelItem::Collector& collector) const;
 
@@ -249,7 +250,7 @@ public:
 													{ return mKey; }
 	inline BmRef<BmListModelItem> Parent() const		
 													{ return mParent; }
-	inline bool ItemIsValid() const		{ return mItemIsValid; }
+	inline bool IsValid() const			{ return mIsValid; }
 	uint32 OutlineLevel() const;
 	BmRef<BmListModel> ListModel() const;
 
@@ -276,7 +277,7 @@ protected:
 
 	BmListModelItem* mParent;
 	BmWeakRef<BmListModel> mListModel;
-	bool mItemIsValid;
+	bool mIsValid;
 
 private:
 
@@ -301,33 +302,12 @@ private:
 \*------------------------------------------------------------------------------*/
 class IMPEXPBMMAILKIT BmListModel : public BmJobModel, public BArchivable {
 	typedef BmJobModel inherited;
-	friend BmListModelItem;
 
 	struct BmForeignKey {
 		BmWeakRef<BmListModel> foreignListModel;
 		BmString keyName;
 	};
 	typedef vector< BmForeignKey> BmForeignKeyVect;
-	
-protected:
-	static const char* const MSG_VERSION;
-
-	class StoredActionManager {
-		typedef vector<BMessage*> ActionVect;
-	public:
-		StoredActionManager(BmListModel* list);
-		~StoredActionManager();
-		//
-		bool StoreAction(BMessage* action);
-		bool Flush();
-		//
-		void MaxCacheSize(uint32 maxCacheSize)
-													{ mMaxCacheSize = maxCacheSize; }
-	private:
-		ActionVect mActionVect;
-		BmListModel* mList;
-		uint32 mMaxCacheSize;
-	};
 	
 public:
 	// c'tors & d'tor:
@@ -351,6 +331,7 @@ public:
 											  		{ }
 	//
 	virtual bool Store();
+	bool FlushStoredActions();
 	virtual const BmString SettingsFileName() = 0;
 	virtual void InitializeItems()		{ mInitCheck = B_OK; }
 	virtual void InstantiateItemsFromStream( BDataIO* dataIO, BMessage* headerMsg = NULL);
@@ -359,6 +340,12 @@ public:
 													{ }
 	virtual void Cleanup();
 	virtual int16 ArchiveVersion() const = 0;
+
+	virtual void TellModelItemAdded( BmListModelItem* item);
+	virtual void TellModelItemRemoved( BmListModelItem* item);
+	virtual void TellModelItemUpdated( BmListModelItem* item, 
+												  BmUpdFlags flags=UPD_ALL,
+												  const BmString oldKey="");
 
 	BMessage* Restore( BDataIO* dataIO);
 	bool StoreAction(BMessage* action);
@@ -393,13 +380,7 @@ public:
 	inline void DecInvalidCount()			{ mInvalidCount--; }
 
 protected:
-
-	// native methods:
-	virtual void TellModelItemAdded( BmListModelItem* item);
-	virtual void TellModelItemRemoved( BmListModelItem* item);
-	virtual void TellModelItemUpdated( BmListModelItem* item, 
-												  BmUpdFlags flags=UPD_ALL,
-												  const BmString oldKey="");
+	static const char* const MSG_VERSION;
 
 	// overrides of job-model base:
 	void TellJobIsDone( bool completed=true);
@@ -409,7 +390,7 @@ protected:
 	bool mNeedsStore;
 	BmForeignKeyVect mForeignKeyVect;
 	int32 mInvalidCount;
-	StoredActionManager mStoredActionManager;
+	BmStoredActionManager mStoredActionManager;
 	uint32 mLogTerrain;
 
 private:
