@@ -36,6 +36,7 @@
 #include <Path.h>
 
 #include <deque>
+#include <map>
 
 #include "BmBasics.h"
 #include "BmLogHandler.h"
@@ -55,6 +56,8 @@ public:
 
 	void Run();
 	void Quit();
+	//
+	bool IsIdle();
 	//
 	void AddMessage(BMessage* msg);
 	//
@@ -82,7 +85,7 @@ private:
 	// ref-list isn't loaded, the given info isn't enough to find out the 
 	// folder this mail-ref lives in. In order to remedy this, we cache
 	// mail-ref -> folder entries when we update an attribute ourselves
-	// (currently only MAIL:status):
+	// (currently MAIL:status and MAIL:classification):
 	struct FolderInfo {
 		FolderInfo( BmString fk) : folderKey(fk), usedCount(1) {}
 		BmString folderKey;
@@ -91,7 +94,7 @@ private:
 	typedef map<BmString, FolderInfo> CachedRefToFolderMap;
 	CachedRefToFolderMap mCachedRefToFolderMap;
 
-	// deque for incoming messages:
+	// deque for incoming node-monitor messages:
 	typedef deque<BMessage*> MessageList;
 	MessageList mMessageList;
 
@@ -99,6 +102,7 @@ private:
 	bool mShouldRun;
 	thread_id mThreadId;
 	int32 mCounter;
+	int32 mIdleTimeInMSecs;
 
 	// Hide copy-constructor and assignment:
 	BmMailMonitorWorker( const BmMailMonitorWorker&);
@@ -114,9 +118,9 @@ BmMailMonitorWorker::BmMailMonitorWorker()
 	,	mShouldRun(false)
 	,	mThreadId(-1)
 	,	mCounter(0)
+	,	mIdleTimeInMSecs(0)
 {
 }
-
 
 /*------------------------------------------------------------------------------*\
 	Run()
@@ -163,10 +167,12 @@ int32 BmMailMonitorWorker::ThreadEntry(void* data)
 \*------------------------------------------------------------------------------*/
 void BmMailMonitorWorker::MessageLoop()
 {
+	const int32 snoozeMSecs = 50;
 	BMessage* msg = NULL;
 	while(mShouldRun) {
 		if (mLocker.Lock()) {
 			if (!mMessageList.empty()) {
+				mIdleTimeInMSecs = 0;
 				msg = mMessageList.front();
 				mMessageList.pop_front();
 			} else
@@ -176,8 +182,10 @@ void BmMailMonitorWorker::MessageLoop()
 		if (msg) {
 			MessageReceived(msg);
 			delete msg;
-		} else
-			snooze(50*1000);
+		} else {
+			snooze(snoozeMSecs*1000);
+			mIdleTimeInMSecs += snoozeMSecs;
+		}
 	}
 }
 
@@ -215,6 +223,21 @@ void BmMailMonitorWorker::AddMessage( BMessage* msg) {
 		mMessageList.push_back(msg);
 		mLocker.Unlock();
 	}
+}
+
+/*------------------------------------------------------------------------------*\
+	IsIdle()
+		-	
+\*------------------------------------------------------------------------------*/
+bool BmMailMonitorWorker::IsIdle() {
+	bool res = false;
+	if (mLocker.Lock()) {
+		// Mailmonitor is idle if the message list is empty and if
+		// it has been so for the last second:
+		res = mMessageList.empty() && mIdleTimeInMSecs > 1000;
+		mLocker.Unlock();
+	}
+	return res;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -345,9 +368,6 @@ void BmMailMonitorWorker::EntryCreated( BmMailFolder* parent, node_ref& nref,
 				<< "> is unknown."
 		);
 	if (S_ISDIR(st.st_mode)) {
-		BmAutolockCheckGlobal lock( TheMailFolderList->mModelLocker);
-		if (!lock.IsLocked())
-			BM_THROW_RUNTIME( "MailMonitor::EntryCreated(): Unable to get lock");
 		// a new mail-folder has been created, we add 
 		// it to our list:
 		BM_LOG2( BM_LogMailTracking, 
@@ -374,9 +394,6 @@ void BmMailMonitorWorker::EntryRemoved( BmMailFolder* parent, node_ref& nref) {
 	// was removed, so we have to find out by ourselves:
 	if (parent) {
 		// a folder has been deleted, we remove it from our list:
-		BmAutolockCheckGlobal lock( TheMailFolderList->mModelLocker);
-		if (!lock.IsLocked())
-			BM_THROW_RUNTIME( "MailMonitor::EntryRemoved(): Unable to get lock");
 		folder = dynamic_cast< BmMailFolder*>( 
 			parent->FindItemByKey( BM_REFKEY( nref))
 		);
@@ -387,7 +404,7 @@ void BmMailMonitorWorker::EntryRemoved( BmMailFolder* parent, node_ref& nref) {
 		BM_LOG2( BM_LogMailTracking, 
 					BmString("Removal of mail-folder <") 
 						<< nref.node << "> detected.");
-		BmAutolockCheckGlobal lock( TheMailFolderList->mModelLocker);
+		BmAutolockCheckGlobal lock( TheMailFolderList->ModelLocker());
 		if (!lock.IsLocked())
 			BM_THROW_RUNTIME( "MailMonitor::EntryRemoved(): Unable to get lock");
 		// adjust special-mail-count accordingly...
@@ -448,7 +465,7 @@ void BmMailMonitorWorker::EntryMoved( BmMailFolder* parent, node_ref& nref,
 							<< "> detected.");
 			folder->UpdateName( eref);
 		} else {
-			BmAutolockCheckGlobal lock( TheMailFolderList->mModelLocker);
+			BmAutolockCheckGlobal lock( TheMailFolderList->ModelLocker());
 			if (!lock.IsLocked())
 				BM_THROW_RUNTIME( "MailMonitor::EntryMoved(): Unable to get lock");
 			// the folder has really changed position within the filesystem-tree:
@@ -466,7 +483,7 @@ void BmMailMonitorWorker::EntryMoved( BmMailFolder* parent, node_ref& nref,
 					st.st_mtime
 				);
 				// ...and scan for potential sub-folders:
-				TheMailFolderList->doInitializeMailFolders( folder.Get(), 1);
+				TheMailFolderList->InitializeSubFolders( folder.Get(), 1);
 				BM_LOG2( BM_LogMailTracking, 
 							BmString("Move of mail-folder <") 
 								<< eref.name << "," << nref.node 
@@ -531,6 +548,18 @@ void BmMailMonitorWorker::EntryChanged( node_ref& nref) {
 	BM_LOG2( BM_LogMailTracking, 
 				BmString("Change of item with node <") 
 					<< nref.node << "> detected...");
+	// B_ATTR_CHANGED messages only carry the node-ref of the file, from
+	// which we can't deduce the corresponding mail-folder. This is bad!
+	// In order to remedy the problem somewhat, we use a two-fold approach
+	// to fetch fetch the mailref that corresponds to the given node-ref:
+	// - whenever Beam itself changes an attribute of a node-ref, it
+	//   explicitly puts the parent folder of the mail-ref into a specific
+	//   map. So we first search this map for a corresponding entry.
+	// - if there is no corresponding entry in the map (which is the case
+	//   when the change has been triggered by another program) we try
+	//   to find the mail-ref by searching the complete mail-folder-hierarchy.
+	//	  This isn't reliable, as the mail-ref may not be loaded), but it 
+	//	  is better than nothing.
 	BmString key( BM_REFKEY( nref));
 	CachedRefToFolderMap::iterator pos = mCachedRefToFolderMap.find( key);
 	if (pos != mCachedRefToFolderMap.end()) {
@@ -601,7 +630,7 @@ void BmMailMonitorWorker::HandleQueryUpdateMsg( BMessage* msg) {
 					BM_THROW_RUNTIME( "Field 'node' not found in msg !?!");
 				pnref.device = nref.device;
 				{	// scope for lock
-					BmAutolockCheckGlobal lock( TheMailFolderList->mModelLocker);
+					BmAutolockCheckGlobal lock( TheMailFolderList->ModelLocker());
 					if (!lock.IsLocked())
 						BM_THROW_RUNTIME( 
 							"HandleMailMonitorMsg(): Unable to get lock"
@@ -679,6 +708,14 @@ void BmMailMonitor::MessageReceived( BMessage* msg) {
 \*------------------------------------------------------------------------------*/
 void BmMailMonitor::CacheRefToFolder( node_ref& nref, const BmString& fKey) {
 	mWorker->CacheRefToFolder(nref, fKey);
+}
+
+/*------------------------------------------------------------------------------*\
+	IsIdle()
+		-	
+\*------------------------------------------------------------------------------*/
+bool BmMailMonitor::IsIdle() {
+	return mWorker->IsIdle();
 }
 
 /*------------------------------------------------------------------------------*\

@@ -51,6 +51,7 @@ public:
 	~BmMailMonitor();
 
 	void CacheRefToFolder( node_ref& nref, const BmString& fKey);
+	bool IsIdle();
 
 	// overrides of looper base:
 	void MessageReceived( BMessage* msg);
