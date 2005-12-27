@@ -152,7 +152,7 @@ BmMailFolder::BmMailFolder( BMessage* archive, BmMailFolderList* model,
 \*------------------------------------------------------------------------------*/
 BmMailFolder::~BmMailFolder() {
 	StopNodeMonitor();
-	RemoveMailRefList();
+	mMailRefList = NULL;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -356,38 +356,8 @@ BmRef<BmMailRefList> BmMailFolder::MailRefList() {
 	if (!lock.IsLocked())
 		BM_THROW_RUNTIME( Name() + ":RemoveMailRefList(): Unable to get lock");
 	if (!mMailRefList)
-		CreateMailRefList();
+		mMailRefList = new BmMailRefList( this);
 	return mMailRefList;
-}
-
-/*------------------------------------------------------------------------------*\
-	CreateMailRefList()
-		-	creates the mailref-list for this folder
-\*------------------------------------------------------------------------------*/
-void BmMailFolder::CreateMailRefList() {
-	mMailRefList = new BmMailRefList( this);
-}
-
-/*------------------------------------------------------------------------------*\
-	RemoveMailRefList()
-		-	destroys this folder's mailref-list, freeing some memory
-\*------------------------------------------------------------------------------*/
-void BmMailFolder::RemoveMailRefList() {
-	BmAutolockCheckGlobal lock( nRefListLocker);
-	if (!lock.IsLocked())
-		BM_THROW_RUNTIME( Name() + ":RemoveMailRefList(): Unable to get lock");
-	mMailRefList = NULL;
-}
-
-/*------------------------------------------------------------------------------*\
-	CleanupForMailRefList( refList)
-		-	cleans the given refList from this folder if it still is the current
-			mailref-list (otherwise nothing happens)
-\*------------------------------------------------------------------------------*/
-void BmMailFolder::CleanupForMailRefList( BmMailRefList* refList) {
-	BmRef<BmMailRefList> currRefList = MailRefList();
-	if (currRefList == refList)
-		RemoveMailRefList();
 }
 
 /*------------------------------------------------------------------------------*\
@@ -454,34 +424,6 @@ void BmMailFolder::AddMailRef( entry_ref& eref, struct stat& st) {
 	} else
 		// ref-list couldn't be created (?!?) we mark the mail-count as unknown:
 		mMailCount = -1;
-}
-
-/*------------------------------------------------------------------------------*\
-	FindMailRefByKey()
-		-	
-\*------------------------------------------------------------------------------*/
-BmRef<BmListModelItem> BmMailFolder::FindMailRefByKey( const BmString& key) {
-#ifdef BM_REF_DEBUGGING
-	BmRef<BmListModel> listModel( ListModel());
-	BM_ASSERT( !listModel || listModel->ModelLocker().IsLocked());
-#endif
-	BmRef<BmListModelItem> foundRef;
-	{ // scope for ref:
-		BmRef<BmMailRefList> refList = mMailRefList;
-		if (refList)
-			foundRef = refList->FindItemByKey( key);
-	}
-	if (!foundRef) {
-		BmModelItemMap::const_iterator iter;
-		for( iter = begin(); !foundRef && iter != end(); ++iter) {
-			BmMailFolder* subFolder = dynamic_cast< BmMailFolder*>(
-				iter->second.Get()
-			);
-			if (subFolder)
-				foundRef = subFolder->FindMailRefByKey( key);
-		}
-	}
-	return foundRef;
 }
 
 /*------------------------------------------------------------------------------*\
