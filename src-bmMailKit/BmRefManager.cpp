@@ -266,9 +266,6 @@ BmRefObj* BmRefObj::FetchObject( const char* objListName,
 \*------------------------------------------------------------------------------*/
 const char* BmRefObj::ObjectListName() const 
 {
-	BAutolock lock( GlobalLocker());
-	if (!lock.IsLocked())
-		throw BM_runtime_error( "ObjectListName(): Could not acquire global lock!");
 	return typeid(*this).name();
 }
 
