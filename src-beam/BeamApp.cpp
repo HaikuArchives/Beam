@@ -712,8 +712,9 @@ BeamApplication::BeamApplication( const char* sig)
 		TheIdentityList->AddForeignKey( BmFilterAddon::FK_IDENTITY,
 												  TheFilterList.Get());
 
-		// create the node-monitor looper:
+		// create the node-monitor looper and the stored action flusher:
 		BmMailMonitor::CreateInstance();
+		BmStoredActionFlusher::CreateInstance();
 
 		// create the job status window:
 		BmJobStatusWin::CreateInstance();
@@ -753,6 +754,7 @@ BeamApplication::BeamApplication( const char* sig)
 BeamApplication::~BeamApplication() {
 	RemoveDeskbarItem();
 	ThePeopleMonitor = NULL;
+	TheStoredActionFlusher = NULL;
 	TheMailMonitor = NULL;
 	ThePeopleList = NULL;
 	delete mPrintSetup;
@@ -920,6 +922,7 @@ bool BeamApplication::QuitRequested() {
 			TheMailMonitor->UnlockLooper();
 			mIsQuitting = false;
 		} else {
+			TheStoredActionFlusher->Quit();
 			TheMailMonitor->Quit();
 			for( int32 i=count-1; i>=0; --i) {
 				BWindow* win = beamApp->WindowAt( i);
@@ -971,7 +974,7 @@ void BeamApplication::RefsReceived( BMessage* msg) {
 		|| entry.GetRef( &eref) != B_OK)
 			continue;
 		BmRef<BmMailRef> ref = BmMailRef::CreateInstance( eref);
-		if (ref && ref->ItemIsValid()) {
+		if (ref && ref->IsValid()) {
 			if (ref->Status() == BM_MAIL_STATUS_DRAFT
 			|| ref->Status() == BM_MAIL_STATUS_PENDING) {
 				BmMailEditWin* editWin = BmMailEditWin::CreateInstance( ref.Get());
