@@ -322,7 +322,7 @@ const char* BmMailRefItem::GetUserText(int32 colIdx, float colWidth) const {
 		text = ref->Subject().String();
 		break;
 	case COL_DATE:
-		text = mWhenStringAdjuster( colIdx, ref->When()/(1000*1000));
+		text = mWhenStringAdjuster( colIdx, ref->When());
 		break;
 	case COL_SIZE:
 		text = ref->SizeString().String();
