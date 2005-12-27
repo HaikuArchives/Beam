@@ -177,18 +177,37 @@ BmRef<BmMailFolder> BmMailFolderList
 		-	
 \*------------------------------------------------------------------------------*/
 BmRef<BmMailRef> BmMailFolderList::FindMailRefByKey( const node_ref& nref) {
-	BmAutolockCheckGlobal lock( mModelLocker);
-	if (!lock.IsLocked())
-		BM_THROW_RUNTIME( 
-			ModelNameNC() << ":FindMailRefByKey(): Unable to get lock"
-		);
-	BmRef<BmMailRef> ref;
 	if (mTopFolder) {	
+		// in order to avoid having to lock both the folder-list-lock and
+		// individual ref-list-locks (danger of deadlock), we first collect
+		// all folders into a vector...
+		struct FolderCollector : public BmListModelItem::Collector {
+			typedef vector< BmRef< BmMailFolder> > FolderVect;
+			virtual ~FolderCollector()		{}
+			virtual bool operator() (BmListModelItem* listItem) 
+			{
+				BmMailFolder* folder = dynamic_cast<BmMailFolder*>( listItem);
+				if (folder)
+					folderVect.push_back(folder);
+				return true;
+			}
+			FolderVect folderVect;
+		};
+		FolderCollector collector;
+		ForEachItem( collector);
+		// ...and now search the vector for the mail-ref:
 		BmString key = BM_REFKEY( nref);
-		BmRef<BmListModelItem> item = mTopFolder->FindMailRefByKey( key);
-		ref = dynamic_cast< BmMailRef*>( item.Get());
+		BmRef<BmListModelItem> foundRef;
+		for( uint32 i=0; i<collector.folderVect.size(); ++i) {
+			BmRef<BmMailRefList> refList 
+				= collector.folderVect[i]->MailRefList();
+			if (refList)
+				foundRef = refList->FindItemByKey( key);
+			if (foundRef)
+				return dynamic_cast< BmMailRef*>( foundRef.Get());
+		}
 	}
-	return ref;
+	return NULL;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -240,7 +259,7 @@ void BmMailFolderList::InitializeItems() {
 		mTopFolder = AddMailFolder( eref, nref.node, NULL, mtime);
 
 		// now we process all subfolders of the top-folder recursively:
-		int folderCount = 1 + doInitializeMailFolders( mTopFolder.Get(), 1);
+		int folderCount = 1 + InitializeSubFolders( mTopFolder.Get(), 1);
 		BM_LOG( BM_LogMailTracking, 
 				  BmString("End of initFolders (") << folderCount 
 				  		<< " folders found)");
@@ -250,11 +269,10 @@ void BmMailFolderList::InitializeItems() {
 }
 
 /*------------------------------------------------------------------------------*\
-	doInitializeMailFolders()
+	InitializeSubFolders()
 		-	
 \*------------------------------------------------------------------------------*/
-int BmMailFolderList::doInitializeMailFolders( BmMailFolder* folder, 
-															  int level) {
+int BmMailFolderList::InitializeSubFolders( BmMailFolder* folder, int level) {
 	BDirectory mailDir;
 	entry_ref eref;
 	dirent* dent;
@@ -300,7 +318,7 @@ int BmMailFolderList::doInitializeMailFolders( BmMailFolder* folder,
 				);
 				folderCount++;
 				// now we process the new sub-folder first:
-				folderCount += doInitializeMailFolders( newFolder, level+1);
+				folderCount += InitializeSubFolders( newFolder, level+1);
 			}
 			// Bump the dirent-pointer by length of the dirent just handled:
 			dent = (dirent* )((char* )dent + dent->d_reclen);
@@ -342,9 +360,9 @@ void BmMailFolderList::InstantiateItems( BMessage* archive) {
 					BmString("Top-folder <") << mTopFolder->EntryRef().name << "," 
 						<< mTopFolder->Key() << "> read");
 		if (mTopFolder->CheckIfModifiedSinceLastTime()) {
-			folderCount += doInitializeMailFolders( mTopFolder.Get(), 1);
+			folderCount += InitializeSubFolders( mTopFolder.Get(), 1);
 		} else {
-			folderCount += doInstantiateMailFolders( mTopFolder.Get(), &msg, 1);
+			folderCount += InstantiateSubFolders( mTopFolder.Get(), &msg, 1);
 		}
 		BM_LOG( BM_LogMailTracking, 
 				  BmString("End of reading folder-cache (") << folderCount 
@@ -354,12 +372,12 @@ void BmMailFolderList::InstantiateItems( BMessage* archive) {
 }
 
 /*------------------------------------------------------------------------------*\
-	doInstantiateMailFolders( archive)
+	InstantiateSubFolders( archive)
 		-	recursively (re-)creates all mail-folders from given archive
 \*------------------------------------------------------------------------------*/
-int BmMailFolderList::doInstantiateMailFolders( BmMailFolder* folder, 
-																BMessage* archive,
-																int level) {
+int BmMailFolderList::InstantiateSubFolders( BmMailFolder* folder, 
+															BMessage* archive,
+															int level) {
 	status_t err;
 	int32 numChildren = FindMsgInt32( archive, BmMailFolder::MSG_NUMCHILDREN);
 	int32 folderCount = numChildren;
@@ -376,9 +394,9 @@ int BmMailFolderList::doInstantiateMailFolders( BmMailFolder* folder,
 					BmString("Mail-folder <") << newFolder->EntryRef().name 
 						<< "," << newFolder->Key() << "> read");
 		if (newFolder->CheckIfModifiedSinceLastTime()) {
-			folderCount += doInitializeMailFolders( newFolder, level+1);
+			folderCount += InitializeSubFolders( newFolder, level+1);
 		} else {
-			folderCount += doInstantiateMailFolders( newFolder, &msg, level+1);
+			folderCount += InstantiateSubFolders( newFolder, &msg, level+1);
 		}
 	}
 	return folderCount;

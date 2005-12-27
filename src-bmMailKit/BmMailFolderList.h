@@ -53,9 +53,6 @@ class BmMailRef;
 class IMPEXPBMMAILKIT BmMailFolderList : public BmListModel {
 	typedef BmListModel inherited;
 
-	friend class BmMailFolder;
-	friend class BmMailMonitorWorker;
-
 	// archival-fieldnames:
 	static const char* const MSG_MAILBOXMTIME;
 	static const int16 nArchiveVersion;
@@ -72,6 +69,15 @@ public:
 	void QueryForSpecialMails();
 	BmRef<BmMailRef> FindMailRefByKey( const node_ref& nref);
 	BmRef<BmMailFolder> FindMailFolderBySubPath( const BmString& subPath);
+	//
+	void InitializeItems();
+	int InitializeSubFolders( BmMailFolder* folder, int level);
+	void InstantiateItems( BMessage* archive);
+	int InstantiateSubFolders( BmMailFolder* folder, BMessage* archive, 
+										int level);
+	//
+	BmMailFolder* AddMailFolder( entry_ref& eref, int64 node, 
+										  BmMailFolder* parent, time_t mtime);
 	
 	// overrides of list-model base:
 	bool StartJob();
@@ -88,13 +94,6 @@ public:
 	
 private:
 	// native methods:
-	BmMailFolder* AddMailFolder( entry_ref& eref, int64 node, 
-										  BmMailFolder* parent, time_t mtime);
-	void InitializeItems();
-	int doInitializeMailFolders( BmMailFolder* folder, int level);
-	void InstantiateItems( BMessage* archive);
-	int doInstantiateMailFolders( BmMailFolder* folder, BMessage* archive, 
-											int level);
 
 	// overrides of listmodel base:
 	int16 ArchiveVersion() const			{ return nArchiveVersion; }
