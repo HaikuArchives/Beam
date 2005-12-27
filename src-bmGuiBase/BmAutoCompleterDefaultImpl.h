@@ -31,7 +31,8 @@
 #ifndef _BmAutoCompleterVariations_h
 #define _BmAutoCompleterVariations_h
 
-#include <MessageFilter.h>
+#include <ListView.h>
+//#include <MessageFilter.h>
 
 #include "BmGuiBase.h"
 

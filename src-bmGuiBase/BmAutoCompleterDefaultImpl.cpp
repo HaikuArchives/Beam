@@ -1,5 +1,5 @@
 /*
-	BmAutoCompleterVariations.cpp
+	BmAutoCompleterDefaultImpl.cpp
 		$Id$
 */
 /*************************************************************************/
@@ -28,18 +28,14 @@
 /*************************************************************************/
 
 
-#include <AppDefs.h>
 #include <ListView.h>
-#include <Looper.h>
-#include <Message.h>
 #include <Screen.h>
-#include <TextControl.h>
 #include <Window.h>
 
 #include "BmBasics.h"
 #include "Colors.h"
 
-#include "BmAutoCompleterVariations.h"
+#include "BmAutoCompleterDefaultImpl.h"
 
 // #pragma mark - BmDefaultPatternSelector
 /*------------------------------------------------------------------------------*\
@@ -164,11 +160,12 @@ void BmDefaultCompletionStyle::CancelChoice()
 {
 	if (!mChoiceView || !mEditView)
 		return;
-
-	mEditView->SetEditViewState(mFullEnteredText, 
-										 mPatternStartPos+mPatternLength);
-	mChoiceView->HideChoices();
-	Select(-1);
+	if (mChoiceView->ChoicesAreShown()) {
+		mEditView->SetEditViewState(mFullEnteredText, 
+											 mPatternStartPos+mPatternLength);
+		mChoiceView->HideChoices();
+		Select(-1);
+	}
 }
 
 /*------------------------------------------------------------------------------*\

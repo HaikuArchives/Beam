@@ -16,7 +16,7 @@ DEFINES += BM_BUILDING_BMGUIBASE ;
 SharedLibrary bmGuiBase.so : 
 	BetterScrollView.cpp
 	BmAutoCompleter.cpp
-	BmAutoCompleterVariations.cpp
+	BmAutoCompleterDefaultImpl.cpp
 	BmBusyView.cpp
 	BmCaption.cpp
 	BmCheckControl.cpp

@@ -44,8 +44,8 @@ class IMPEXPBMGUIBASE BmTextControlCompleter
 {
 public:
 	BmTextControlCompleter(BTextControl* textControl, 
-							  ChoiceModel* choiceModel = NULL,
-							  PatternSelector* patternSelector = NULL);
+								  ChoiceModel* choiceModel = NULL,
+								  PatternSelector* patternSelector = NULL);
 	virtual ~BmTextControlCompleter();
 	
 private:

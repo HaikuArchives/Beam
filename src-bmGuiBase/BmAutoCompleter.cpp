@@ -28,18 +28,13 @@
 /*************************************************************************/
 
 
-#include <AppDefs.h>
-#include <ListView.h>
 #include <Looper.h>
 #include <Message.h>
-#include <Screen.h>
-#include <TextControl.h>
-#include <Window.h>
 
 #include "BmBasics.h"
 
 #include "BmAutoCompleter.h"
-#include "BmAutoCompleterVariations.h"
+#include "BmAutoCompleterDefaultImpl.h"
 
 // #pragma mark - DefaultPatternSelector
 class DefaultPatternSelector : public BmAutoCompleter::PatternSelector
@@ -282,31 +277,3 @@ void BmAutoCompleter::SetCompletionStyle(CompletionStyle* style)
 	delete mCompletionStyle;
 	mCompletionStyle = style;
 }
-
-class DefaultChoiceView : public BmAutoCompleter::ChoiceView
-{
-	class ListView : public BListView
-	{
-	public:
-		ListView(BmAutoCompleter::CompletionStyle* completer);
-		virtual void SelectionChanged();
-		virtual void MessageReceived(BMessage* msg);
-		virtual void MouseDown(BPoint point);
-	private:
-		BmAutoCompleter::CompletionStyle* mCompleter;
-	};
-	
-public:
-	DefaultChoiceView();
-	virtual ~DefaultChoiceView();
-	
-	virtual void SelectChoiceAt(int32 index);
-	virtual void ShowChoices(BmAutoCompleter::CompletionStyle* completer);
-	virtual void HideChoices();
-	virtual bool ChoicesAreShown();
-
-private:
-	BWindow* mWindow;
-	ListView* mListView;
-};
-

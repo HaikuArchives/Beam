@@ -27,17 +27,12 @@
 /*                                                                       */
 /*************************************************************************/
 
-#include <AppDefs.h>
-#include <ListView.h>
 #include <Looper.h>
-#include <Message.h>
-#include <Screen.h>
 #include <TextControl.h>
-#include <Window.h>
 
 #include "BmBasics.h"
 
-#include "BmAutoCompleterVariations.h"
+#include "BmAutoCompleterDefaultImpl.h"
 #include "BmTextControlCompleter.h"
 
 // #pragma mark - TextControlWrapper
@@ -145,7 +140,7 @@ filter_result BmTextControlCompleter::Filter(BMessage *message,
 			EditViewStateChanged();
 			return B_SKIP_MESSAGE;
 		case B_TAB: {
-			// we just make sure that the choices-view is closed when tabbing out:
+			// make sure that the choices-view is closed when tabbing out:
 			CancelChoice();
 			return B_DISPATCH_MESSAGE;
 		}
