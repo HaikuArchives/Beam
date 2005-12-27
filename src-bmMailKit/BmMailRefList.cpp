@@ -47,6 +47,9 @@ using namespace regexx;
 #include "BmRosterBase.h"
 #include "BmUtil.h"
 
+//******************************************************************************
+// #pragma mark -	BmMailRefList
+//******************************************************************************
 const int16 BmMailRefList::nArchiveVersion = 3;
 
 /*------------------------------------------------------------------------------*\
@@ -74,9 +77,7 @@ BmMailRefList::BmMailRefList( BmMailFolder* folder)
 		-	the mailref-list is stored (the cache is written) before it is deleted
 \*------------------------------------------------------------------------------*/
 BmMailRefList::~BmMailRefList() {
-	if (mNeedsStore && ThePrefs->GetBool("CacheRefsOnDisk"))
-		Store();
-	Cleanup();
+	StoreAndCleanup();
 }
 
 /*------------------------------------------------------------------------------*\
@@ -85,6 +86,22 @@ BmMailRefList::~BmMailRefList() {
 \*------------------------------------------------------------------------------*/
 void BmMailRefList::MarkCacheAsDirty() { 
 	mNeedsCacheUpdate = true;
+	Cleanup();
+}
+
+/*------------------------------------------------------------------------------*\
+	StoreAndCleanup()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailRefList::StoreAndCleanup() { 
+	BmAutolockCheckGlobal lock( ModelLocker());
+	if (!lock.IsLocked())
+		BM_THROW_RUNTIME( 
+			ModelNameNC() << ":StoreAndCleanup(): Unable to get lock"
+		);
+	if (ThePrefs->GetBool("CacheRefsOnDisk") && mNeedsStore 
+	&& !mNeedsCacheUpdate)
+		Store();
 	Cleanup();
 }
 
@@ -120,18 +137,18 @@ bool BmMailRefList::Store() {
 	BMessage archive;
 	BFile cacheFile;
 	status_t ret;
-	BMallocIO memIO;
-	memIO.SetBlockSize( 1200*(size()>1?size():1));
-							// acquiring enough mem for complete archive, 
-							// avoids realloc()
-
-	if (mInitCheck != B_OK) return true;
+	if (mInitCheck != B_OK)
+		return true;
 	try {
 		BmAutolockCheckGlobal lock( ModelLocker());
 		if (!lock.IsLocked())
 			BM_THROW_RUNTIME( 
 				ModelNameNC() << ":Store(): Unable to get lock"
 			);
+		BMallocIO memIO;
+		memIO.SetBlockSize( 1200 * MAX( size(), 1));
+			// acquire enough mem for complete archive, avoids realloc()
+	
 		BmString filename = SettingsFileName();
 		if ((ret = cacheFile.SetTo( 
 			filename.String(), 
@@ -145,7 +162,7 @@ bool BmMailRefList::Store() {
 		if (ret == B_OK) {
 			BM_LOG( BM_LogModelController, 
 					  BmString("ListModel <") << ModelName() 
-					  		<< "> begins to archive");
+					  		<< "> begins to archive...");
 			BmModelItemMap::const_iterator iter;
 			for( iter = begin(); iter != end() && ret == B_OK; ++iter) {
 				BMessage msg;
@@ -153,10 +170,13 @@ bool BmMailRefList::Store() {
 				if (ret == B_OK)
 					ret = msg.Flatten( &memIO);
 			}
+			BM_LOG( BM_LogModelController, 
+					  BmString("ListModel <") << ModelName() 
+					  		<< "> finished with archive, writing to file...");
 			cacheFile.Write( memIO.Buffer(), memIO.BufferLength());
 			BM_LOG( BM_LogModelController, 
 					  BmString("ListModel <") << ModelName() 
-					  		<< "> finished with archive");
+					  		<< "> finished with writing to file");
 		}
 	} catch( BM_error &e) {
 		BM_SHOWERR( e.what());
@@ -170,7 +190,7 @@ bool BmMailRefList::Store() {
 		-	
 \*------------------------------------------------------------------------------*/
 bool BmMailRefList::StartJob() {
-	// try to open folder-cache file...
+	// try to open cache file...
 	status_t err;
 	BFile cacheFile;
 	
@@ -180,50 +200,56 @@ bool BmMailRefList::StartJob() {
 	if (!folder)
 		return false;
 		
-	if (InitCheck() == B_OK && !mNeedsCacheUpdate) {
+	if (InitCheck() == B_OK && !mNeedsCacheUpdate)
 		return true;
-	}
 	
 	Freeze();									// we shut up for better performance
 	try {
-		BMessage msg;
-		BmString filename = SettingsFileName();
-	
-		// flush any pending to-be-stored actions
-		mStoredActionManager.Flush();
-
 		bool cacheFileUpToDate = false;
-		if (ThePrefs->GetBool("CacheRefsOnDisk")
-		&& (err = cacheFile.SetTo( filename.String(), B_READ_ONLY)) != B_OK) {
-			// cache-file not found, but we have changed names of cache-files
-			// in Nov 2003 (again!), so we check if a cache-file according to 
-			// the old name exists (and rename it to match our new regulations):
-			BmString oldFilename = BmString("folder_")
-											<< folder->Key()
-											<< "_" << ThePrefs->MailboxVolume.Device()
-											<< " (" << folder->Name() << ")";
-			BEntry entry( BeamRoster->MailCacheFolder(), oldFilename.String());
-			time_t mtime;
-			err = (entry.InitCheck() 
-					|| entry.GetModificationTime( &mtime) 
-					|| entry.Rename( filename.String()) 
-					|| entry.SetModificationTime( mtime));
-		}
-		if (ThePrefs->GetBool("CacheRefsOnDisk")
-		&& (err = cacheFile.SetTo( filename.String(), B_READ_ONLY)) == B_OK) {
-			time_t mtime;
-			if ((err = cacheFile.GetModificationTime( &mtime)) != B_OK)
+		BMessage msg;
+		{ // scope for lock
+			BmAutolockCheckGlobal lock( ModelLocker());
+			if (!lock.IsLocked())
 				BM_THROW_RUNTIME( 
-					BmString("Could not get mtime \nfor mail-folder <") << Name() 
-						<< "> \n\nError:" << strerror(err)
+					ModelNameNC() << ":AddMailRef(): Unable to get lock"
 				);
-			if (!mNeedsCacheUpdate && !folder->CheckIfModifiedSince( mtime)) {
-				// archive up-to-date, but is it the correct format-version?
-				msg.Unflatten( &cacheFile);
-				int16 version;
-				if (msg.FindInt16( MSG_VERSION, &version) == B_OK 
-				&& version == nArchiveVersion)
-					cacheFileUpToDate = true;
+			BmString filename = SettingsFileName();
+		
+			// flush any pending to-be-stored actions
+			mStoredActionManager.Flush();
+	
+			if (ThePrefs->GetBool("CacheRefsOnDisk")
+			&& (err = cacheFile.SetTo( filename.String(), B_READ_ONLY)) != B_OK) {
+				// cache-file not found, but we have changed names of cache-files
+				// in Nov 2003 (again!), so we check if a cache-file according to 
+				// the old name exists (and rename it to match our new regulations):
+				BmString oldFilename = BmString("folder_")
+												<< folder->Key()
+												<< "_" << ThePrefs->MailboxVolume.Device()
+												<< " (" << folder->Name() << ")";
+				BEntry entry( BeamRoster->MailCacheFolder(), oldFilename.String());
+				time_t mtime;
+				err = (entry.InitCheck() 
+						|| entry.GetModificationTime( &mtime) 
+						|| entry.Rename( filename.String()) 
+						|| entry.SetModificationTime( mtime));
+			}
+			if (ThePrefs->GetBool("CacheRefsOnDisk")
+			&& (err = cacheFile.SetTo( filename.String(), B_READ_ONLY)) == B_OK) {
+				time_t mtime;
+				if ((err = cacheFile.GetModificationTime( &mtime)) != B_OK)
+					BM_THROW_RUNTIME( 
+						BmString("Could not get mtime \nfor mail-folder <") << Name() 
+							<< "> \n\nError:" << strerror(err)
+					);
+				if (!mNeedsCacheUpdate && !folder->CheckIfModifiedSince( mtime)) {
+					// archive up-to-date, but is it the correct format-version?
+					msg.Unflatten( &cacheFile);
+					int16 version;
+					if (msg.FindInt16( MSG_VERSION, &version) == B_OK 
+					&& version == nArchiveVersion)
+						cacheFileUpToDate = true;
+				}
 			}
 		}
 		if (cacheFileUpToDate) {
@@ -277,10 +303,14 @@ bool BmMailRefList::StartJob() {
 		-	
 \*------------------------------------------------------------------------------*/
 BmRef<BmMailRef> BmMailRefList::AddMailRef( entry_ref& eref, struct stat& st) {
+	BmAutolockCheckGlobal lock( ModelLocker());
+	if (!lock.IsLocked())
+		BM_THROW_RUNTIME( 
+			ModelNameNC() << ":AddMailRef(): Unable to get lock"
+		);
 	BmRef<BmMailRef> newMailRef( BmMailRef::CreateInstance( eref, &st));
-	if (mInitCheck == B_OK || mJobState == JOB_RUNNING) {
-		// ref-list has been read from disk (or is currently being read), 
-		// so we can add to it:
+	if (mInitCheck == B_OK) {
+		// ref-list has been read from disk,  so we can add to it:
 		if (AddItemToList( newMailRef.Get()))
 			return newMailRef;
 	} else if (newMailRef) {
@@ -308,6 +338,11 @@ BmRef<BmMailRef> BmMailRefList::AddMailRef( entry_ref& eref, struct stat& st) {
 		-	
 \*------------------------------------------------------------------------------*/
 BmRef<BmListModelItem> BmMailRefList::RemoveMailRef( const BmString& key) {
+	BmAutolockCheckGlobal lock( ModelLocker());
+	if (!lock.IsLocked())
+		BM_THROW_RUNTIME( 
+			ModelNameNC() << ":RemoveMailRef(): Unable to get lock"
+		);
 	BmRef<BmListModelItem> removedRef;
 	if (mInitCheck == B_OK) {
 		// ref-list has been read from disk, so we can remove from it:
@@ -335,6 +370,11 @@ BmRef<BmListModelItem> BmMailRefList::RemoveMailRef( const BmString& key) {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmMailRefList::UpdateMailRef( const BmString& key) {
+	BmAutolockCheckGlobal lock( ModelLocker());
+	if (!lock.IsLocked())
+		BM_THROW_RUNTIME( 
+			ModelNameNC() << ":UpdateMailRef(): Unable to get lock"
+		);
 	if (mInitCheck == B_OK) {
 		// ref-list has been read from disk, so we can update (an item of) it:
 		BmRef<BmListModelItem> item = FindItemByKey( key);
@@ -354,7 +394,7 @@ void BmMailRefList::UpdateMailRef( const BmString& key) {
 }
 
 /*------------------------------------------------------------------------------*\
-	InitializeMailRefs()
+	InitializeItems()
 		-	
 \*------------------------------------------------------------------------------*/
 void BmMailRefList::InitializeItems() {
@@ -364,7 +404,7 @@ void BmMailRefList::InitializeItems() {
 	struct stat st;
 	status_t err;
 	char buf[4096];
-	int32 count, refCount = 0;
+	int32 count;
 	bool stopped = false;
 
 	BmRef<BmMailFolder> folder( mFolder.Get());	
@@ -376,6 +416,7 @@ void BmMailRefList::InitializeItems() {
 	// we create a BDirectory from the given mail-folder...
 	mailDir.SetTo( folder->EntryRefPtr());
 
+	BmRef<BmMailRef> newRef;
 	// ...and scan through all its entries for mails:
 	while (!stopped 
 	&& (count = mailDir.GetNextDirents((dirent* )buf, 4096)) > 0) {
@@ -397,8 +438,8 @@ void BmMailRefList::InitializeItems() {
 				eref.device = dent->d_pdev;
 				eref.directory = dent->d_pino;
 				eref.set_name( dent->d_name);
-				if (AddMailRef( eref, st))
-					refCount++;
+				newRef = BmMailRef::CreateInstance( eref, &st);
+				AddItemToList( newRef.Get());
 			}
 			// Bump the dirent-pointer by length of the dirent just handled:
 			dent = (dirent* )((char* )dent + dent->d_reclen);
@@ -417,6 +458,9 @@ void BmMailRefList::InitializeItems() {
 	if (stopped) {
 		Cleanup();
 	} else {
+		BmAutolockCheckGlobal lock( ModelLocker());
+		if (!lock.IsLocked())
+			BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
 		folder->MailCount( ValidCount());
 		mNeedsCacheUpdate = false;
 		mNeedsStore = true;
@@ -425,7 +469,7 @@ void BmMailRefList::InitializeItems() {
 }
 
 /*------------------------------------------------------------------------------*\
-	InstantiateMailRefs( dataIO, headerMsg)
+	InstantiateItemsFromStream( dataIO, headerMsg)
 		-	
 \*------------------------------------------------------------------------------*/
 void BmMailRefList::InstantiateItemsFromStream( BDataIO* dataIO, BMessage* headerMsg) {
@@ -459,25 +503,32 @@ void BmMailRefList::InstantiateItemsFromStream( BDataIO* dataIO, BMessage* heade
 							<< folder->Name());
 		}
 	}
-	bool needsStore = false;
-	if (!stopped) {
+	{  // now lock the list, as we must avoid the race condition where the 
+		// node monitor appends to the file while we fetch appended items 
+		// from it
+		BmAutolockCheckGlobal lock( ModelLocker());
+		if (!lock.IsLocked())
+			BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
+		bool needsStore = false;
+		if (!stopped) {
+			BM_LOG( BM_LogMailTracking, 
+					  BmString("Fetching stored actions for folder ")
+					  		<< folder->Name());
+			if (RestoreAndExecuteActionsFrom(dataIO))
+				needsStore = true;
+		}
 		BM_LOG( BM_LogMailTracking, 
-				  BmString("Fetching stored actions for folder ")
+				  BmString("End of InstantiateMailRefs() for folder ") 
 				  		<< folder->Name());
-		if (RestoreAndExecuteActionsFrom(dataIO))
-			needsStore = true;
-	}
-	BM_LOG( BM_LogMailTracking, 
-			  BmString("End of InstantiateMailRefs() for folder ") 
-			  		<< folder->Name());
-	if (stopped) {
-		Cleanup();
-	} else {
-		folder->MailCount( ValidCount());
-		mNeedsCacheUpdate = false;
-		mNeedsStore = needsStore;
-			// overrule changes caused by reading the cache
-		mInitCheck = B_OK;
+		if (stopped) {
+			Cleanup();
+		} else {
+			folder->MailCount( ValidCount());
+			mNeedsCacheUpdate = false;
+			mNeedsStore = needsStore;
+				// overrule changes caused by reading the cache
+			mInitCheck = B_OK;
+		}
 	}
 }
 
@@ -489,14 +540,12 @@ void BmMailRefList::InstantiateItemsFromStream( BDataIO* dataIO, BMessage* heade
 bool BmMailRefList::AddItemToList( BmListModelItem* item, 
 											  BmListModelItem* parent) {
 	bool res = inherited::AddItemToList( item, parent);
-
 	if (!Frozen()) {
 		BmRef<BmMailFolder> folder( mFolder.Get());
-							// hold a ref on the corresponding folder while we use it
-		if (folder)
-			folder->MailCount( ValidCount());
+			// hold a ref on the corresponding folder while we use it
+		if (folder && item->IsValid())
+			folder->BumpMailCount( 1);
 	}
-
 	return res;
 }
 
@@ -509,9 +558,9 @@ void BmMailRefList::RemoveItemFromList( BmListModelItem* item) {
 	inherited::RemoveItemFromList( item);
 	if (!Frozen()) {
 		BmRef<BmMailFolder> folder( mFolder.Get());
-							// hold a ref on the corresponding folder while we use it
-		if (folder)
-			folder->MailCount( ValidCount());
+			// hold a ref on the corresponding folder while we use it
+		if (folder && item->IsValid())
+			folder->BumpMailCount( -1);
 	}
 }
 
@@ -520,12 +569,14 @@ void BmMailRefList::RemoveItemFromList( BmListModelItem* item) {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmMailRefList::SetItemValidity( BmListModelItem* item, bool isValid) {
+	if (!item || item->IsValid() == isValid)
+		return;
 	inherited::SetItemValidity( item, isValid);
 	if (!Frozen()) {
 		BmRef<BmMailFolder> folder( mFolder.Get());
-							// hold a ref on the corresponding folder while we use it
+			// hold a ref on the corresponding folder while we use it
 		if (folder)
-			folder->MailCount( ValidCount());
+			folder->BumpMailCount( isValid ? 1 : -1);
 	}
 }
 
@@ -536,11 +587,9 @@ void BmMailRefList::SetItemValidity( BmListModelItem* item, bool isValid) {
 \*------------------------------------------------------------------------------*/
 void BmMailRefList::RemoveController( BmController* controller) {
 	inherited::RemoveController( controller);
-	BmRef<BmMailFolder> folder( mFolder.Get());
-							// hold a ref on the corresponding folder while we use it
-	if (folder) {
-		if (!(ThePrefs->GetBool("CacheRefsInMem") || HasControllers()))
-			folder->CleanupForMailRefList( this);
+	if (!(ThePrefs->GetBool("CacheRefsInMem") || HasControllers())) {
+		// cleanup ref-list in order to free memory:
+		StoreAndCleanup();
 	}
 }
 
@@ -579,4 +628,3 @@ void BmMailRefList::ExecuteAction(BMessage* action) {
 		}
 	}
 }
-

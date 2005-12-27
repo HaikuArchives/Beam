@@ -60,6 +60,7 @@ public:
 	BmRef<BmListModelItem> RemoveMailRef( const BmString& key);
 	void UpdateMailRef( const BmString& key);
 	void MarkCacheAsDirty();
+	void StoreAndCleanup();
 
 	// overrides of list-model base:
 	bool Store();
@@ -96,6 +97,5 @@ private:
 	BmMailRefList( const BmMailRefList&);
 	BmMailRefList operator=( const BmMailRefList&);
 };
-
 
 #endif
