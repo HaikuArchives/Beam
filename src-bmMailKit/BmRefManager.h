@@ -110,12 +110,12 @@ public:
 		*this = NULL;
 	}
 	BmRef<T>& operator= ( const BmRef<T>& ref) {
-		if (mPtr != ref.Get()) {
+		if (mPtr != ref.mPtr) {
 			// in order to behave correctly when being called recursively,
 			// we set new value before deleting old, so that a recursive call
 			// will skip this block (because of the condition above).
 			T* old = mPtr;
-			mPtr = ref.Get();
+			mPtr = ref.mPtr;
 			RemoveRef( old);
 			AddRef( mPtr);
 		}
@@ -133,14 +133,17 @@ public:
 		}
 		return *this;
 	}
-	bool operator== ( const BmRef<T>& ref) {
-		return mPtr == ref.Get();
+	bool operator== ( const BmRef<T>& ref) const {
+		return mPtr == ref.mPtr;
 	}
-	bool operator== ( const T* p) {
+	bool operator== ( const T* p) const {
 		return mPtr == p;
 	}
-	bool operator!= ( const T* p) {
+	bool operator!= ( const T* p) const {
 		return mPtr != p;
+	}
+	bool operator< ( const BmRef<T>& ref) const {
+		return mPtr < ref.mPtr;
 	}
 	void Clear() {
 		if (mPtr) {
@@ -203,11 +206,23 @@ public:
 		mObjectListName = p ? p->ObjectListName() : "";
 		return *this;
 	}
-	inline bool operator== ( const T* p) {
-		return (p == mPtr) && (p ? p->RefName() == mName : false);
+	inline bool operator== ( const T* p) const {
+		return (p == mPtr) 
+					&& (p ? p->RefName() == mName : false)
+					&& (p ? p->ObjectListName() == mObjectListName : false);
 	}
-	inline bool operator!= ( const T* p) {
-		return (p != mPtr) || (p ? p->RefName() != mName : true);
+	inline bool operator== ( const BmWeakRef<T>& ref) const {
+		return (mPtr == ref.mPtr) 
+					&& mName == ref.mName
+					&& mObjectListName == ref.mObjectListName;
+	}
+	inline bool operator!= ( const T* p) const {
+		return (p != mPtr) 
+					|| (p ? p->RefName() != mName : true)
+					|| (p ? p->ObjectListName() != mObjectListName : true);
+	}
+	inline bool operator< ( const BmWeakRef<T>& ref) const {
+		return (mPtr < ref.mPtr);
 	}
 	inline operator bool() const 			{ return Get(); }
 	inline BmRef<T> Get() const 			{
