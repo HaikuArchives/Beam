@@ -77,7 +77,7 @@ void BmStoredActionFlusher::Run()
 	// start new thread for worker:
 	BmString tname( "StoredActionFlusher");
 	mThreadId = spawn_thread( BmStoredActionFlusher::_ThreadEntry, 
-									  tname.String(), B_NORMAL_PRIORITY, this);
+									  tname.String(), B_LOW_PRIORITY, this);
 	if (mThreadId < 0)
 		throw BM_runtime_error("StoredActionFlusher::Run(): Could not spawn thread");
 	resume_thread( mThreadId);
@@ -119,14 +119,17 @@ void BmStoredActionFlusher::_Loop()
 			if (iter != mListSet.end()) {
 				list = *iter;
 				mListSet.erase(iter);
+				BM_LOG2( BM_LogMailTracking, 
+						   BmString("StoredActionFlusher: picked and removed "
+						   	"list-model ") << list->ModelName());
 			} else
 				list = NULL;
 			mLocker.Unlock();
 		}
-		if (list) {
+		if (list)
 			_FlushList(list);
-		} else
-			snooze(50*1000);
+		else
+			snooze(200*1000);
 	}
 }
 
@@ -136,7 +139,16 @@ void BmStoredActionFlusher::_Loop()
 \*------------------------------------------------------------------------------*/
 void BmStoredActionFlusher::AddList( BmRef<BmListModel> list) {
 	if (mLocker.Lock()) {
-		mListSet.insert(list);
+		BM_LOG( BM_LogMailTracking, 
+				  BmString("StoredActionFlusher: adding list-model <")	
+				  		<< list->ModelName());
+		if (mListSet.insert(list).second == true) {
+			BM_LOG( BM_LogMailTracking, 
+					  BmString("StoredActionFlusher: added list-model <")	
+					  		<< list->ModelName() 
+					  		<< ">\nnumber of lists to be flushed is " 
+					  		<< mListSet.size());
+		}
 		mLocker.Unlock();
 	}
 }
@@ -149,6 +161,9 @@ void BmStoredActionFlusher::_FlushList( BmRef<BmListModel>& list) {
 	if (!list)
 		return;
 	try {
+		BM_LOG( BM_LogMailTracking, 
+				  BmString("StoredActionFlusher: flushing list-model ")	
+				  		<< list->ModelName());
 		list->FlushStoredActions();
 	}
 	catch( BM_error &err) {
@@ -225,6 +240,9 @@ bool BmStoredActionManager::Flush()
 	status_t err;
 
 	try {
+		BM_LOG( BM_LogMailTracking, 
+				  BmString("Flushing stored actions for list-model ")
+				  		<< mList->ModelName());
 		BMallocIO mallocIO;
 		mallocIO.SetBlockSize(mActionVect.size()*1024);
 		BMessage* action;
