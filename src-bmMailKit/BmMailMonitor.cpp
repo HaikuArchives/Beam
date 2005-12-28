@@ -101,8 +101,8 @@ private:
 	BLocker mLocker;
 	bool mShouldRun;
 	thread_id mThreadId;
-	int32 mCounter;
-	int32 mIdleTimeInMSecs;
+	uint32 mCounter;
+	uint32 mIdleTimeInMSecs;
 
 	// Hide copy-constructor and assignment:
 	BmMailMonitorWorker( const BmMailMonitorWorker&);
