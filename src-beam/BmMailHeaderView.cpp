@@ -34,7 +34,6 @@
 #include <MenuItem.h>
 #include <PopUpMenu.h>
 #include <StringView.h>
-#include <TextView.h>
 
 #include "Colors.h"
 
@@ -51,6 +50,7 @@ using namespace regexx;
 #include "BmMailHeaderView.h"
 #include "BmMailView.h"
 #include "BmMsgTypes.h"
+#include "BmMultiLineStringView.h"
 #include "BmPeople.h"
 #include "BmPrefs.h"
 #include "BmResources.h"
@@ -114,7 +114,7 @@ private:
 					float titleWidth);
 	BStringView* mTitleView;
 	BmAddrMenuView* mAddrMenuView;
-	BTextView* mContentView;
+	BmMultiLineStringView* mContentView;
 
 	// Hide copy-constructor and assignment:
 	BmMailHeaderFieldView( const BmMailHeaderFieldView&);
@@ -185,33 +185,44 @@ void BmMailHeaderView::BmMailHeaderFieldView::BmAddrMenuView
 	menu->SetFont( &menuFont);
 	menu->SetAsyncAutoDestruct(true);
 	
-	BMenu* editPersonMenu = new BMenu("Import & Edit Address");
-	editPersonMenu->SetFont( &menuFont);
-	menu->AddItem(editPersonMenu);
-
-	BMenu* createPersonMenu = new BMenu("Import Address");
-	createPersonMenu->SetFont( &menuFont);
-	menu->AddItem(createPersonMenu);
-
-	BMessage* allMsg = new BMessage(BMM_CREATE_PERSON_FROM_ADDR);
+	BMenu* createAndEditPersonMenu = NULL;
+	BMenu* createPersonMenu = NULL;
+	BMenu* editPersonMenu = NULL;
+	BMenuItem* item = NULL;
 	uint16 count = 0;
 	BmAddrList::const_iterator iter;
+	BMessage* allMsg = new BMessage(BMM_CREATE_PERSON_FROM_ADDR);
 	for( iter = mAddrList->begin(); iter != mAddrList->end(); ++iter) {
 		if (!ThePeopleList->FindPersonByEmail(iter->AddrSpec())) {
+			if (!createAndEditPersonMenu) {
+				createAndEditPersonMenu = new BMenu("Import & Edit Address");
+				createAndEditPersonMenu->SetFont( &menuFont);
+			}
+	
+			if (!createPersonMenu) {
+				createPersonMenu = new BMenu("Import Address");
+				createPersonMenu->SetFont( &menuFont);
+			}
+	
 			BMessage* msg = new BMessage(BMM_CREATE_PERSON_FROM_ADDR);
 			msg->AddString("email", iter->AddrSpec().String());
 			msg->AddString("name", iter->Phrase().String());
 			allMsg->AddString("email", iter->AddrSpec().String());
 			allMsg->AddString("name", iter->Phrase().String());
-			BMenuItem* item = new BMenuItem( iter->AddrString().String(), msg);
+			item = new BMenuItem( iter->AddrString().String(), msg);
 			item->SetTarget( be_app);
 			createPersonMenu->AddItem( item);
-			BMessage* editMsg = new BMessage(*msg);
-			editMsg->AddBool("edit", true);
+			BMessage* createAndEditMsg = new BMessage(*msg);
+			createAndEditMsg->AddBool("edit", true);
+			item = new BMenuItem( iter->AddrString().String(), createAndEditMsg);
+			item->SetTarget( be_app);
+			createAndEditPersonMenu->AddItem( item);
+			count++;
+		} else {
+			BMessage* editMsg = new BMessage(BMM_EDIT_PERSON_WITH_ADDR);
 			item = new BMenuItem( iter->AddrString().String(), editMsg);
 			item->SetTarget( be_app);
-			editPersonMenu->AddItem( item);
-			count++;
+			createAndEditPersonMenu->AddItem( item);
 		}
 	}
 	if (count > 1) {
@@ -219,12 +230,20 @@ void BmMailHeaderView::BmMailHeaderFieldView::BmAddrMenuView
 		BMenuItem* item = new BMenuItem( "<All Addresses>", allMsg);
 		item->SetTarget( be_app);
 		createPersonMenu->AddItem( item);
-		BMessage* allEditMsg = new BMessage(*allMsg);
-		allEditMsg->AddBool("edit", true);
-		item = new BMenuItem( "<All Addresses>", allEditMsg);
+		BMessage* allCreateAndEditMsg = new BMessage(*allMsg);
+		allCreateAndEditMsg->AddBool("edit", true);
+		item = new BMenuItem( "<All Addresses>", allCreateAndEditMsg);
 		item->SetTarget( be_app);
-		editPersonMenu->AddItem( item);
+		createAndEditPersonMenu->AddItem( item);
 	}
+
+	if (createAndEditPersonMenu)
+		menu->AddItem(createAndEditPersonMenu);
+	if (createPersonMenu)
+		menu->AddItem(createPersonMenu);
+	if (editPersonMenu)
+		menu->AddItem(editPersonMenu);
+
    ConvertToScreen(&point);
 	BRect openRect;
 	openRect.top = point.y - 5;
@@ -288,28 +307,24 @@ void BmMailHeaderView::BmMailHeaderFieldView
 	mTitleView->SetAlignment( B_ALIGN_RIGHT);
 	AddChild( mTitleView);
 
-	BRect addrMenuRect( titleRect.left+titleRect.Width(), 0,
-							  titleRect.left+titleRect.Width()+addrMenuWidth, 10);
+	BRect addrMenuRect( titleRect.right+1, 0,
+							  titleRect.right+1+addrMenuWidth-1, 10);
 	mAddrMenuView = new BmAddrMenuView( addrMenuRect, addrList);
 	AddChild( mAddrMenuView);
 
-	BRect contentRect( titleRect.left+titleRect.Width()+addrMenuWidth, 0,
+	BRect contentRect( titleRect.right+1+addrMenuWidth, 0,
 							 fixedWidth, 10);
-	BRect textRect = contentRect.InsetByCopy( textInset, textInset);
-	textRect.OffsetTo( 1+textInset, textInset);
 	font->SetFace( B_REGULAR_FACE);
-	SetFont(font);
-	rgb_color col = ui_color( B_UI_PANEL_TEXT_COLOR);
-	mContentView = new BTextView( contentRect, "contentView", textRect,
-											font, &col, B_FOLLOW_NONE, B_WILL_DRAW);
-	mContentView->MakeEditable( false);
+	mContentView = new BmMultiLineStringView( contentRect, "contentView", 
+															value.String(),
+															B_FOLLOW_NONE, B_WILL_DRAW);
 	mContentView->MakeSelectable( true);
-	mContentView->SetStylable( false);
+	mContentView->SetFont( font);
+	mContentView->SetHighColor( ui_color( B_UI_PANEL_TEXT_COLOR));
 	mContentView->SetViewColor( BmWeakenColor( B_UI_PANEL_BACKGROUND_COLOR, 1));
+	mContentView->SetLowColor( BmWeakenColor( B_UI_PANEL_BACKGROUND_COLOR, 1));
 	AddChild( mContentView);
-	mContentView->SetText( value.String());
-	float neededHeight 
-		= mContentView->TextHeight( 0, value.Length())+2*textInset;
+	float neededHeight = mContentView->TextHeight()+2*textInset;
 	ResizeTo( fixedWidth, neededHeight);
 	mAddrMenuView->ResizeTo( addrMenuWidth, mContentView->LineHeight());
 	mContentView->ResizeTo( fixedWidth-contentRect.left, neededHeight);
@@ -388,12 +403,10 @@ void BmMailHeaderView::BmMailHeaderFieldView
 	BRect titleRect = mTitleView->Frame();
 	mTitleView->MoveTo( newTitleWidth-5-titleRect.Width(), titleRect.top);
 	mAddrMenuView->MoveTo( newTitleWidth, 0);
+printf("xpos:%f\n", newTitleWidth+addrMenuWidth);
 	mContentView->MoveTo( newTitleWidth+addrMenuWidth, 0);
 	mContentView->ResizeTo( fixedWidth-newTitleWidth-addrMenuWidth, 
 									mContentView->Frame().Height());
-	BRect textRect( 2, 1, fixedWidth-newTitleWidth-addrMenuWidth-2, 
-						 mContentView->Frame().Height()-1);
-	mContentView->SetTextRect( textRect);
 }
 
 /*------------------------------------------------------------------------------*\
