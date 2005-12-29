@@ -219,10 +219,15 @@ void BmMailHeaderView::BmMailHeaderFieldView::BmAddrMenuView
 			createAndEditPersonMenu->AddItem( item);
 			count++;
 		} else {
+			if (!editPersonMenu) {
+				editPersonMenu = new BMenu("Edit Address");
+				editPersonMenu->SetFont( &menuFont);
+			}
 			BMessage* editMsg = new BMessage(BMM_EDIT_PERSON_WITH_ADDR);
+			editMsg->AddString("email", iter->AddrSpec().String());
 			item = new BMenuItem( iter->AddrString().String(), editMsg);
 			item->SetTarget( be_app);
-			createAndEditPersonMenu->AddItem( item);
+			editPersonMenu->AddItem( item);
 		}
 	}
 	if (count > 1) {
@@ -480,7 +485,7 @@ void BmMailHeaderView::BmMailHeaderFieldView::ShowMenu( BPoint point)
 	item->SetTarget( headerView);
 	theMenu->AddItem( item);
 	theMenu->AddSeparatorItem();
-	GetFont(&font);
+	ChildAt(0)->GetFont(&font);
 	TheResources->AddFontSubmenuTo( theMenu, headerView, &font);
 
    ConvertToScreen(&point);
