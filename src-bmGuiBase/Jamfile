@@ -25,6 +25,7 @@ SharedLibrary bmGuiBase.so :
 	BmMenuAlert.cpp
 	BmMenuControl.cpp
 	BmMenuControllerBase.cpp
+	BmMultiLineStringView.cpp
 	BmMultiLineTextControl.cpp
 	BmTextControl.cpp
 	BmTextControlCompleter.cpp
