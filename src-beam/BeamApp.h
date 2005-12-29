@@ -46,9 +46,10 @@ class BmWindow;
 extern const char* BM_APP_SIG;
 
 enum {
-	BMM_SET_BUSY					= 'bMxa',
-	BMM_UNSET_BUSY					= 'bMxb',
-	BMM_CREATE_PERSON_FROM_ADDR	= 'bMxc'
+	BMM_SET_BUSY						= 'bMxa',
+	BMM_UNSET_BUSY						= 'bMxb',
+	BMM_CREATE_PERSON_FROM_ADDR	= 'bMxc',
+	BMM_EDIT_PERSON_WITH_ADDR		= 'bMxd'
 };
 
 class BeamApplication : public BmApplication

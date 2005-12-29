@@ -1189,6 +1189,21 @@ void BeamApplication::MessageReceived( BMessage* msg) {
 				}
 				break;
 			}
+			case BMM_EDIT_PERSON_WITH_ADDR: {
+				const char* email = NULL;
+				uint32 idx;
+				entry_ref eref;
+				for( idx=0; msg->FindString("email", idx, &email) == B_OK; ) {
+					BmRef<BmPerson> person 
+						= ThePeopleList->FindPersonByEmail(email);
+					if (person) {
+						eref = person->EntryRef();
+						be_roster->Launch(&eref);
+					}
+					idx++;
+				}
+				break;
+			}
 			default:
 				inherited::MessageReceived( msg);
 				break;
