@@ -408,7 +408,6 @@ void BmMailHeaderView::BmMailHeaderFieldView
 	BRect titleRect = mTitleView->Frame();
 	mTitleView->MoveTo( newTitleWidth-5-titleRect.Width(), titleRect.top);
 	mAddrMenuView->MoveTo( newTitleWidth, 0);
-printf("xpos:%f\n", newTitleWidth+addrMenuWidth);
 	mContentView->MoveTo( newTitleWidth+addrMenuWidth, 0);
 	mContentView->ResizeTo( fixedWidth-newTitleWidth-addrMenuWidth, 
 									mContentView->Frame().Height());
