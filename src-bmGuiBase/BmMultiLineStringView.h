@@ -41,6 +41,7 @@
 class IMPEXPBMGUIBASE BmMultiLineStringView : public BView
 {
 	typedef BView inherited;
+	struct TextLine;
 public:
 	BmMultiLineStringView( BRect frame, const char* name, const char *text, 
 								  uint32 resizingMode = B_FOLLOW_LEFT|B_FOLLOW_TOP,
@@ -60,23 +61,36 @@ public:
 	// overrides of BView:
 	void Draw( BRect updateRect);
 	void SetFont(const BFont *font, uint32 properties = B_FONT_ALL);
-
+	//
+	void MouseDown(BPoint point);
+	void MouseMoved(BPoint point, uint32 transit, const BMessage *message);
+	//
+	void MessageReceived( BMessage* msg);
+	//
+	void MakeFocus(bool focused = true);
+	//
+	void Select(int32 from, int32 to);
+	void GetSelection(int32* from, int32* to);
+	
 private:
 	void _InitText();
 	void _InitFont();
+	int32 _ConvertPointToIndex(const BPoint& point, bool closestCaretPos = true,
+										TextLine** textLinePtr = NULL);
+	void _InvalidateRange(int32 from, int32 to);
+	void _DrawString(const char* text, int32 len);
 
 	BmString mText;
-	BPoint mDrawPT;
 	float mLineHeight;
-	bool mIsSelectable;
+	float mAscent;
 
-	struct TextLine {
-		TextLine(const char* t, int32 l)
-			: text(t), len(l)					{}
-		const char* text;
-		int32 len;
-	};
+	bool mIsSelectable;
+	int32 mSelectionStart;
+	int32 mSelectionEnd;
+
 	BList mTextLines;
+
+	static const float nLeftOffset = 3.0;
 
 	// Hide copy-constructor and assignment:
 	BmMultiLineStringView( const BmMultiLineStringView&);
