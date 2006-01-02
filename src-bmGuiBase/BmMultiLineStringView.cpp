@@ -232,7 +232,13 @@ void BmMultiLineStringView::Draw(BRect updateRect)
 void BmMultiLineStringView::MouseDown(BPoint point)
 {
 	inherited::MouseDown(point);
+#ifdef BEAM_FOR_ZETA
+	// on ZETA, views are automatically scrolled such that as much of their
+	// area as possible is visible. We avoid this:
+	MakeFocusNoScroll(true);
+#else
 	MakeFocus(true);
+#endif
 	BMessage* msg = Looper()->CurrentMessage();
 	if (msg->FindInt32("buttons") == B_PRIMARY_MOUSE_BUTTON) {
 		if (msg->FindInt32("clicks") == 2) {
