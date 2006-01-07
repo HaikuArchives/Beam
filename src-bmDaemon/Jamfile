@@ -4,23 +4,27 @@ SubDir TOP src-bmDaemon ;
 SubDirHdrs $(TOP) src-bmBase ;
 SubDirHdrs $(TOP) src-bmRegexx ;
 SubDirHdrs $(TOP) src-bmMailKit ;
-# </pe-inc>
 
 SubDirSysHdrs /boot/home/config/include ;
+# </pe-inc>
 
 DEFINES += BM_BUILDING_BMDAEMON ;
 
 # <pe-src>
-SharedLibrary bmDaemon.so
-	:  
-		BmNetJobModel.cpp
-		BmNetUtil.cpp
-		BmPopper.cpp
-		BmSmtp.cpp
+SharedLibrary bmDaemon.so : 
+	<src-bmDaemon>BmNetEndpoint.cpp
+	BmNetEndpointRoster.cpp
+	BmNetJobModel.cpp
+	BmNetUtil.cpp
+	BmPopper.cpp
+	BmSmtp.cpp
 	: 	
 		bmBase.so bmRegexx.so bmMailKit.so
-		$(STDC++LIB) $(LIBNETAPI) be 
+		$(STDC++LIB) $(LIBNETAPI) be
 	;
 # </pe-src>
 
 MakeLocate bmDaemon.so : [ FDirName $(DISTRO_DIR) lib ] ;
+
+SubInclude TOP src-bmDaemon src-netendpoint-addons ;
+
