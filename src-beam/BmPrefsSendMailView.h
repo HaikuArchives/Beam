@@ -108,6 +108,7 @@ class BmPrefsSendMailView : public BmPrefsView {
 
 	enum {
 		BM_AUTH_SELECTED 			= 'bmAS',
+		BM_ENCRYPTION_SELECTED 		= 'bmES',
 		BM_POP_SELECTED 			= 'bmPS',
 		BM_PWD_STORED_CHANGED 	= 'bmPC',
 		BM_CHECK_AND_SUGGEST		= 'bmCS',
@@ -148,6 +149,7 @@ private:
 	BmTextControl* mPortControl;
 	BmTextControl* mPwdControl;
 	BmTextControl* mServerControl;
+	BmMenuControl* mEncryptionControl;
 	BmMenuControl* mAuthControl;
 	BmMenuControl* mPopControl;
 	BmCheckControl* mStorePwdControl;

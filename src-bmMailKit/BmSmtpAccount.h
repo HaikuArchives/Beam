@@ -83,6 +83,8 @@ public:
 													{ return mSMTPServer; }
 	inline const BmString &DomainToAnnounce() const 	
 													{ return mDomainToAnnounce; }
+	inline const BmString &EncryptionType() const 	
+													{ return mEncryptionType; }
 	inline const BmString &AuthMethod() const 	
 													{ return mAuthMethod; }
 	inline uint16 PortNr() const			{ return mPortNr; }
@@ -106,6 +108,9 @@ public:
 	inline void DomainToAnnounce( const BmString &s) 	
 													{ mDomainToAnnounce = s; 
 													  TellModelItemUpdated( UPD_ALL); }
+	inline void EncryptionType( const BmString &s) 
+													{ mEncryptionType = s; 
+													  TellModelItemUpdated( UPD_ALL); }
 	inline void AuthMethod( const BmString &s) 
 													{ mAuthMethod = s; 
 													  TellModelItemUpdated( UPD_ALL); }
@@ -118,6 +123,9 @@ public:
 													  TellModelItemUpdated( UPD_ALL); }
 
 	void AddressInfo( BmString& server, uint16& port) const;
+
+	static const char* const ENCRYPTION_TLS;
+	static const char* const ENCRYPTION_SSL;
 
 	static const char* const AUTH_AUTO;
 	static const char* const AUTH_SMTP_AFTER_POP;
@@ -132,6 +140,7 @@ public:
 	static const char* const MSG_PASSWORD;
 	static const char* const MSG_SMTP_SERVER;
 	static const char* const MSG_DOMAIN;
+	static const char* const MSG_ENCRYPTION_TYPE;
 	static const char* const MSG_AUTH_METHOD;
 	static const char* const MSG_PORT_NR;
 	static const char* const MSG_ACC_FOR_SAP;
@@ -153,6 +162,7 @@ private:
 	BmString mSMTPServer;			// 
 	BmString mDomainToAnnounce;	// domain-name that will be used when we
 											// announce ourselves to the server (HELO/EHLO)
+	BmString mEncryptionType;		// type of encryption to use
 	BmString mAuthMethod;			// authentication method to use
 	uint16 mPortNr;					// usually 25
 	BmString mPortNrString;			// Port-Nr as String

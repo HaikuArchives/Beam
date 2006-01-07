@@ -98,7 +98,7 @@ public:
 	BmPopper( const BmString& name, BmPopAccount* account);
 	virtual ~BmPopper();
 
-	BmString SuggestAuthType();
+	BmString SuggestAuthType(bool* supportsStartTls = NULL);
 	inline static int32 NextID() 			{ return ++mId; }
 	inline BmString Name() const			{ return ModelName(); }
 
@@ -119,6 +119,7 @@ private:
 	void StateCheck();
 	void StateRetrieve();
 	void StateDisconnect();
+	void StartEncryption(const BmString& encryptionType);
 	void Quit( bool WaitForAnswer=false);
 	void UpdatePOPStatus( const float, const char*, bool failed=false, 
 								 bool stopped=false);

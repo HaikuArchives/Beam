@@ -60,13 +60,17 @@ const char* const BmPopAccount::MSG_DELETE_DELAY = "bm:deletedelay";
 const char* const BmPopAccount::MSG_PORT_NR = 		"bm:portnr";
 const char* const BmPopAccount::MSG_UID = 			"bm:uid";
 const char* const BmPopAccount::MSG_UID_TIME = 		"bm:uidtm";
+const char* const BmPopAccount::MSG_ENCRYPTION_TYPE = "bm:encryptionType";
 const char* const BmPopAccount::MSG_AUTH_METHOD = 	"bm:authmethod";
 const char* const BmPopAccount::MSG_MARK_DEFAULT = "bm:markdefault";
 const char* const BmPopAccount::MSG_STORE_PWD = 	"bm:storepwd";
 const char* const BmPopAccount::MSG_CHECK_INTERVAL = "bm:checkinterval";
 const char* const BmPopAccount::MSG_FILTER_CHAIN = "bm:filterch";
 const char* const BmPopAccount::MSG_HOME_FOLDER =  "bm:homefold";
-const int16 BmPopAccount::nArchiveVersion = 9;
+const int16 BmPopAccount::nArchiveVersion = 10;
+
+const char* const BmPopAccount::ENCRYPTION_TLS = 	"TLS";
+const char* const BmPopAccount::ENCRYPTION_SSL = 	"SSL";
 
 const char* const BmPopAccount::AUTH_AUTO = 			"<auto>";
 const char* const BmPopAccount::AUTH_POP3 = 			"POP3";
@@ -90,6 +94,7 @@ BmPopAccount::BmPopAccount( const char* name, BmPopAccountList* model)
 	,	mDeleteMailDelay( 0)
 	,	mPortNr( 110)
 	,	mPortNrString( "110")
+	,	mEncryptionType( "")
 	,	mAuthMethod( "POP3")
 	,	mMarkedAsDefault( false)
 	,	mPwdStoredOnDisk( false)
@@ -201,6 +206,9 @@ BmPopAccount::BmPopAccount( BMessage* archive, BmPopAccountList* model)
 		// method. This is now the default:
 		mAuthMethod = AUTH_AUTO;
 	}
+	if (version > 9)
+		mEncryptionType = FindMsgString( archive, MSG_ENCRYPTION_TYPE);
+
 	SetupIntervalRunner();
 }
 
@@ -227,6 +235,7 @@ status_t BmPopAccount::Archive( BMessage* archive, bool deep) const {
 		||	archive->AddBool( MSG_DELETE_MAIL, mDeleteMailFromServer)
 		||	archive->AddInt16( MSG_DELETE_DELAY, mDeleteMailDelay)
 		||	archive->AddInt16( MSG_PORT_NR, mPortNr)
+		||	archive->AddString( MSG_ENCRYPTION_TYPE, mEncryptionType.String())
 		||	archive->AddString( MSG_AUTH_METHOD, mAuthMethod.String())
 		||	archive->AddBool( MSG_MARK_DEFAULT, mMarkedAsDefault)
 		||	archive->AddBool( MSG_STORE_PWD, mPwdStoredOnDisk)

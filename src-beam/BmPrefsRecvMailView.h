@@ -110,6 +110,7 @@ class BmPrefsRecvMailView : public BmPrefsView {
 
 	enum {
 		BM_AUTH_SELECTED 			 	= 'bmAS',
+		BM_ENCRYPTION_SELECTED		= 'bmES',
 		BM_FILTER_CHAIN_SELECTED 	= 'bmFS',
 		BM_HOME_FOLDER_SELECTED  	= 'bmHS',
 		BM_CHECK_MAIL_CHANGED 	 	= 'bmCC',
@@ -154,6 +155,7 @@ private:
 	BmTextControl* mServerControl;
 	BmTextControl* mCheckIntervalControl;
 	BmTextControl* mDeleteMailDelayControl;
+	BmMenuControl* mEncryptionControl;
 	BmMenuControl* mAuthControl;
 	BmMenuControl* mFilterChainControl;
 	BmMenuControl* mHomeFolderControl;

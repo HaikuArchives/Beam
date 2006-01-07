@@ -54,6 +54,7 @@ using namespace regexx;
 #include "BmMail.h"
 #include "BmMailHeader.h"
 #include "BmMemIO.h"
+#include "BmNetEndpointRoster.h"
 #include "BmNetUtil.h"
 #include "BmPopAccount.h"
 #include "BmPopper.h"
@@ -201,6 +202,7 @@ BmSmtp::BmSmtp( const BmString& name, BmSmtpAccount* account)
 	,	mState( 0)
 	,	mServerMayHaveSizeLimit( false)
 	,	mServerSupportsDSN( false)
+	,	mServerSupportsTLS( false)
 {
 }
 
@@ -348,6 +350,15 @@ void BmSmtp::StateConnect() {
 		throw BM_network_error( s);
 	}
 	CheckForPositiveAnswer();
+	BmString encryptionType = mSmtpAccount->EncryptionType();
+	if (TheNetEndpointRoster->SupportsEncryption()
+	&& (encryptionType.ICompare("TLS") == 0 
+		|| encryptionType.ICompare("SSL") == 0)) {
+		// straight TLS or SSL, we start the encryption layer 
+		// and proceed normally:
+		StartEncryption(encryptionType);
+		CheckForPositiveAnswer();
+	}
 }
 
 /*------------------------------------------------------------------------------*\
@@ -374,15 +385,57 @@ void BmSmtp::StateHelo() {
 			mServerSupportsDSN = true;
 		}
 		if (rx.exec( 
-			StatusText(), "^\\d\\d\\d.AUTH[\\s=]+(.*?)$", Regexx::newline
+			StatusText(), "^\\d\\d\\d.AUTH\\s+(.*?)$", Regexx::newline
 		)) {
 			mSupportedAuthTypes = rx.match[0].atom[0];
+		} else if (rx.exec( 
+			StatusText(), "^\\d\\d\\d.AUTH\\s*=\\s*(.*?)$", Regexx::newline
+		)) {
+			mSupportedAuthTypes = rx.match[0].atom[0];
+		}
+		if (rx.exec( StatusText(), "^\\d\\d\\d.STARTTLS\\b", Regexx::newline)) {
+			mServerSupportsTLS = true;
 		}
 	} catch(...) {
 		cmd = BmString("HELO ") << domain;
 		SendCommand( cmd);
 		CheckForPositiveAnswer();
 	}
+	// now use STARTTLS to start encryption if requested (and possible):
+	BmString encryptionType = mSmtpAccount->EncryptionType();
+	if (TheNetEndpointRoster->SupportsEncryption()
+	&& encryptionType.ICompare("STARTTLS") == 0
+	&& !mConnection->EncryptionIsActive()) {
+		cmd = BmString("STARTTLS");
+		SendCommand( cmd);
+		CheckForPositiveAnswer();
+		StartEncryption(encryptionType);
+	}
+}
+
+/*------------------------------------------------------------------------------*\
+	StartEncryption(encryptionType)
+		-	starts connection encryption
+\*------------------------------------------------------------------------------*/
+void BmSmtp::StartEncryption(BmString encryptionType) {
+	if (encryptionType.Length() == 0)
+		return;
+
+	bool redoHelo = false;
+	if (encryptionType.ICompare("STARTTLS") == 0) {
+		// STARTTLS resets the SMTP-session to initial state, so we need
+		// to send a second EHLO/HELO:
+		redoHelo = true;
+		encryptionType = "TLS";
+	}
+
+	// start connection encryption
+	status_t error = mConnection->StartEncryption(encryptionType.String());
+	if (error != B_OK)
+		throw BM_network_error( "Failed to start connection encryption.\n");
+
+	if (redoHelo)
+		StateHelo();
 }
 
 /*------------------------------------------------------------------------------*\
@@ -753,11 +806,15 @@ void BmSmtp::QueueMail( entry_ref eref)
 }
 
 /*------------------------------------------------------------------------------*\
-	SuggestAuthType()
+	SuggestAuthType(bool* supportsStartTls)
 		-	looks at the auth-types supported by the server and selects the most 
 			secure of those that is supported by Beam.
+		-	if supportsStarttls isn't NULL, the info about whether or not
+			the server supports the STLS command is put into that argument.
 \*------------------------------------------------------------------------------*/
-BmString BmSmtp::SuggestAuthType() const {
+BmString BmSmtp::SuggestAuthType(bool* supportsStartTls) const {
+	if (supportsStartTls)
+		*supportsStartTls = mServerSupportsTLS;
 	if (mSupportedAuthTypes.IFindFirst( BmSmtpAccount::AUTH_DIGEST_MD5) >= 0)
 		return BmSmtpAccount::AUTH_DIGEST_MD5;
 	else if (mSupportedAuthTypes.IFindFirst( BmSmtpAccount::AUTH_CRAM_MD5) >= 0)

@@ -50,6 +50,7 @@
 #include "BmLogHandler.h"
 #include "BmMenuControl.h"
 #include "BmMenuController.h"
+#include "BmNetEndpointRoster.h"
 #include "BmPopAccount.h"
 #include "BmPrefs.h"
 #include "BmPrefsSendMailView.h"
@@ -66,6 +67,7 @@
 enum Columns {
 	COL_KEY = 0,
 	COL_SERVER,
+	COL_ENCRYPTION_TYPE,
 	COL_AUTH_METHOD,
 	COL_USER,
 	COL_PWD,
@@ -101,6 +103,7 @@ void BmSendAccItem::UpdateView( BmUpdFlags flags, bool redraw,
 		const char* cols[] = {
 			acc->Key().String(),
 			acc->SMTPServer().String(),
+			acc->EncryptionType().String(),
 			acc->AuthMethod().String(),
 			acc->Username().String(),
 			acc->PwdStoredOnDisk() ? "*****":"",
@@ -138,6 +141,7 @@ BmSendAccView::BmSendAccView( int32 width, int32 height)
 
 	AddColumn( new CLVColumn( "Account", 80.0, flags, 50.0));
 	AddColumn( new CLVColumn( "Server", 80.0, flags, 40.0));
+	AddColumn( new CLVColumn( "Encryption", 80.0, flags, 40.0));
 	AddColumn( new CLVColumn( "Auth-Method", 80.0, flags, 40.0));
 	AddColumn( new CLVColumn( "User", 80.0, flags, 40.0));
 	AddColumn( new CLVColumn( "Pwd", 50.0, flags, 40.0));
@@ -238,6 +242,10 @@ BmPrefsSendMailView::BmPrefsSendMailView()
 							0
 						),
 						new Space( minimax(0,5,0,5)),
+						mEncryptionControl = new BmMenuControl( 
+							"Encryption:", 
+							new BPopUpMenu("")
+						),
 						new HGroup(
 							mAuthControl = new BmMenuControl( 
 								"Auth-method:", 
@@ -299,6 +307,7 @@ BmPrefsSendMailView::BmPrefsSendMailView()
 		mDomainControl,
 		mLoginControl,
 		mServerControl,
+		mEncryptionControl,
 		mAuthControl,
 		mPopControl,
 		NULL
@@ -322,6 +331,7 @@ BmPrefsSendMailView::~BmPrefsSendMailView() {
 	TheBubbleHelper->SetHelp( mPwdControl, NULL);
 	TheBubbleHelper->SetHelp( mServerControl, NULL);
 	TheBubbleHelper->SetHelp( mPortControl, NULL);
+	TheBubbleHelper->SetHelp( mEncryptionControl, NULL);
 	TheBubbleHelper->SetHelp( mAuthControl, NULL);
 	TheBubbleHelper->SetHelp( mPopControl, NULL);
 	TheBubbleHelper->SetHelp( mCheckAndSuggestButton, NULL);
@@ -382,6 +392,30 @@ void BmPrefsSendMailView::Initialize() {
 		"Please enter the SMTP-port of the server \n"
 		"into this field (usually 25)."
 	);
+	static BmString encrHelp;
+	if (TheNetEndpointRoster->SupportsEncryption()) {
+		encrHelp 
+			= 		"Here you can select the type of encryption to use:\n"
+					"<none>	- no encryption.";
+		if (TheNetEndpointRoster->SupportsEncryptionType("TLS"))
+			encrHelp 
+				<< "\n"
+				<<	"STARTTLS	- TLS (Transport Layer Security) encryption on\n"
+					"		  the standard SMTP-port (usually 25).\n"
+					"TLS		- TLS (Transport Layer Security) encryption on\n"
+					"		  a special SMTPS-port (usually 465).";
+		if (TheNetEndpointRoster->SupportsEncryptionType("SSL"))
+			encrHelp 
+				<< "\n"
+				<< "SSL		- SSL (Secure Socket Layer) encryption on\n"
+					"		  a special SMTPS-port (usually 465).";
+	} else {
+		encrHelp = "Encryption is not available,\n"
+					  "no addon could be loaded";
+	}
+	TheBubbleHelper->SetHelp( 
+		mEncryptionControl, encrHelp.String()
+	);
 	TheBubbleHelper->SetHelp( 
 		mAuthControl, 
 		"Here you can select the authentication type to use:\n"
@@ -412,6 +446,27 @@ void BmPrefsSendMailView::Initialize() {
 	mPwdControl->SetTarget( this);
 	mServerControl->SetTarget( this);
 	mStorePwdControl->SetTarget( this);
+
+	AddItemToMenu( mEncryptionControl->Menu(), 
+						new BMenuItem( BM_NoItemLabel.String(), 
+											new BMessage(BM_ENCRYPTION_SELECTED)), 
+						this);
+	if (TheNetEndpointRoster->SupportsEncryptionType("TLS")) {
+		AddItemToMenu( mEncryptionControl->Menu(), 
+							new BMenuItem( "STARTTLS", 
+												new BMessage(BM_ENCRYPTION_SELECTED)), 
+							this);
+		AddItemToMenu( mEncryptionControl->Menu(), 
+							new BMenuItem( "TLS", 
+												new BMessage(BM_ENCRYPTION_SELECTED)), 
+							this);
+	}
+	if (TheNetEndpointRoster->SupportsEncryptionType("SSL")) {
+		AddItemToMenu( mEncryptionControl->Menu(), 
+							new BMenuItem( "SSL", 
+												new BMessage(BM_ENCRYPTION_SELECTED)), 
+							this);
+	}
 
 	AddItemToMenu( mAuthControl->Menu(), 
 						new BMenuItem( BmSmtpAccount::AUTH_AUTO, 
@@ -544,6 +599,16 @@ void BmPrefsSendMailView::MessageReceived( BMessage* msg) {
 				UpdateState();
 				break;
 			}
+			case BM_ENCRYPTION_SELECTED: {
+				BMenuItem* item = mEncryptionControl->Menu()->FindMarked();
+				if (item && BM_NoItemLabel != item->Label())
+					mCurrAcc->EncryptionType( item->Label());
+				else
+					mCurrAcc->EncryptionType( "");
+				NoticeChange();
+				UpdateState();
+				break;
+			}
 			case BM_CHECK_AND_SUGGEST: {
 				if (mCurrAcc) {
 					BmRef<BmSmtp> smtp( new BmSmtp( mCurrAcc->Key(), 
@@ -669,6 +734,7 @@ void BmPrefsSendMailView::ShowAccount( int32 selection) {
 		mPortControl->SetTextSilently( "");
 		mPwdControl->SetTextSilently( "");
 		mServerControl->SetTextSilently( "");
+		mEncryptionControl->ClearMark();
 		mAuthControl->ClearMark();
 		mPopControl->ClearMark();
 		mStorePwdControl->SetValue( 0);
@@ -688,6 +754,12 @@ void BmPrefsSendMailView::ShowAccount( int32 selection) {
 					mPwdControl->SetTextSilently( mCurrAcc->Password().String());
 					mServerControl->SetTextSilently( 
 						mCurrAcc->SMTPServer().String());
+					mEncryptionControl->MarkItem( 
+						(mCurrAcc->EncryptionType().Length() 
+						&& TheNetEndpointRoster->SupportsEncryption())
+								? mCurrAcc->EncryptionType().String()
+								: BM_NoItemLabel.String()
+					);
 					mAuthControl->MarkItem( mCurrAcc->AuthMethod().Length() 
 														? mCurrAcc->AuthMethod().String()
 														: BM_NoItemLabel.String());
@@ -715,6 +787,10 @@ void BmPrefsSendMailView::UpdateState() {
 	mDomainControl->SetEnabled( accSelected);
 	mPortControl->SetEnabled( accSelected);
 	mServerControl->SetEnabled( accSelected);
+	if (TheNetEndpointRoster->SupportsEncryption())
+		mEncryptionControl->SetEnabled( accSelected);
+	else
+		mEncryptionControl->SetEnabled( false);
 	mAuthControl->SetEnabled( accSelected);
 	mCheckAndSuggestButton->SetEnabled( accSelected);
 	mRemoveButton->SetEnabled( accSelected);

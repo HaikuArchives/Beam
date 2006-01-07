@@ -103,7 +103,7 @@ public:
 
 	void QueueMail( entry_ref eref);
 
-	BmString SuggestAuthType() const;
+	BmString SuggestAuthType(bool* supportsStartTls = NULL) const;
 
 	inline BmString Name() const			{ return ModelName(); }
 
@@ -153,6 +153,7 @@ private:
 	void StateConnect();
 	void StateHelo();
 	void StateAuthViaPopServer();
+	void StartEncryption(BmString encryptionType);
 	void StateAuth();
 	void StateSendMails();
 	void StateDisconnect();
@@ -170,6 +171,7 @@ private:
 
 	bool mServerMayHaveSizeLimit;
 	bool mServerSupportsDSN;
+	bool mServerSupportsTLS;
 	BmString mSupportedAuthTypes;
 	
 	BmQueuedRefVect mQueuedRefVect;

@@ -49,11 +49,15 @@ const char* const BmSmtpAccount::MSG_USERNAME = 	"bm:username";
 const char* const BmSmtpAccount::MSG_PASSWORD = 	"bm:password";
 const char* const BmSmtpAccount::MSG_SMTP_SERVER = "bm:smtpserver";
 const char* const BmSmtpAccount::MSG_DOMAIN = 		"bm:domain";
+const char* const BmSmtpAccount::MSG_ENCRYPTION_TYPE = "bm:encryptionType";
 const char* const BmSmtpAccount::MSG_AUTH_METHOD = "bm:authmethod";
 const char* const BmSmtpAccount::MSG_PORT_NR = 		"bm:portnr";
 const char* const BmSmtpAccount::MSG_ACC_FOR_SAP = "bm:accForSmtpAfterPop";
 const char* const BmSmtpAccount::MSG_STORE_PWD = 	"bm:storepwd";
-const int16 BmSmtpAccount::nArchiveVersion = 6;
+const int16 BmSmtpAccount::nArchiveVersion = 7;
+
+const char* const BmSmtpAccount::ENCRYPTION_TLS = 	"TLS";
+const char* const BmSmtpAccount::ENCRYPTION_SSL = 	"SSL";
 
 const char* const BmSmtpAccount::AUTH_AUTO = 			"<auto>";
 const char* const BmSmtpAccount::AUTH_SMTP_AFTER_POP= "SMTP-AFTER-POP";
@@ -105,6 +109,9 @@ BmSmtpAccount::BmSmtpAccount( BMessage* archive, BmSmtpAccountList* model)
 		// method. This is now the default:
 		mAuthMethod = AUTH_AUTO;
 	}
+	if (version > 6) {
+		mEncryptionType = FindMsgString( archive, MSG_ENCRYPTION_TYPE);
+	}
 }
 
 /*------------------------------------------------------------------------------*\
@@ -126,6 +133,7 @@ status_t BmSmtpAccount::Archive( BMessage* archive, bool deep) const {
 		||	archive->AddString( MSG_PASSWORD, mPassword.String())
 		||	archive->AddString( MSG_SMTP_SERVER, mSMTPServer.String())
 		||	archive->AddString( MSG_DOMAIN, mDomainToAnnounce.String())
+		||	archive->AddString( MSG_ENCRYPTION_TYPE, mEncryptionType.String())
 		||	archive->AddString( MSG_AUTH_METHOD, mAuthMethod.String())
 		||	archive->AddInt16( MSG_PORT_NR, mPortNr)
 		||	archive->AddBool( MSG_STORE_PWD, mPwdStoredOnDisk)

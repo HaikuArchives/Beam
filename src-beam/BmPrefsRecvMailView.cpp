@@ -53,6 +53,7 @@
 #include "BmMailFolderList.h"
 #include "BmMenuControl.h"
 #include "BmMenuController.h"
+#include "BmNetEndpointRoster.h"
 #include "BmPopper.h"
 #include "BmPrefs.h"
 #include "BmPrefsRecvMailView.h"
@@ -75,6 +76,7 @@ enum Columns {
 	COL_SERVER,
 	COL_PORT,
 	COL_CHECK_INTERVAL,
+	COL_ENCRYPTION_TYPE,
 	COL_AUTH_METHOD,
 	COL_USER,
 	COL_PWD
@@ -113,6 +115,7 @@ void BmRecvAccItem::UpdateView( BmUpdFlags flags, bool redraw,
 			acc->POPServer().String(),
 			acc->PortNrString().String(),
 			acc->CheckIntervalString().String(),
+			acc->EncryptionType().String(),
 			acc->AuthMethod().String(),
 			acc->Username().String(),
 			acc->PwdStoredOnDisk() ? "*****":"",
@@ -154,6 +157,7 @@ BmRecvAccView::BmRecvAccView( int32 width, int32 height)
 	AddColumn( new CLVColumn( "Server", 80.0, flags, 40.0));
 	AddColumn( new CLVColumn( "Port", 40.0, 0, 40.0));
 	AddColumn( new CLVColumn( "Interval", 40.0, 0, 40.0));
+	AddColumn( new CLVColumn( "Encryption", 80.0, flags, 40.0));
 	AddColumn( new CLVColumn( "Auth-Method", 80.0, flags, 40.0));
 	AddColumn( new CLVColumn( "User", 80.0, flags, 40.0));
 	AddColumn( new CLVColumn( "Pwd", 50.0, flags, 40.0));
@@ -250,6 +254,8 @@ BmPrefsRecvMailView::BmPrefsRecvMailView()
 							mPortControl = new BmTextControl( "", false, 0, 8),
 							0
 						),
+						mEncryptionControl = new BmMenuControl( "Encryption:", 
+																	 new BPopUpMenu("")),
 						new HGroup( 
 							mAuthControl = new BmMenuControl( "Auth-method:", 
 																		 new BPopUpMenu("")),
@@ -352,6 +358,7 @@ BmPrefsRecvMailView::BmPrefsRecvMailView()
 		mAccountControl,
 		mLoginControl,
 		mServerControl,
+		mEncryptionControl,
 		mAuthControl,
 		mHomeFolderControl,
 		mFilterChainControl,
@@ -381,6 +388,7 @@ BmPrefsRecvMailView::~BmPrefsRecvMailView() {
 	TheBubbleHelper->SetHelp( mRemoveMailControl, NULL);
 	TheBubbleHelper->SetHelp( mDeleteMailDelayControl, NULL);
 	TheBubbleHelper->SetHelp( mStorePwdControl, NULL);
+	TheBubbleHelper->SetHelp( mEncryptionControl, NULL);
 	TheBubbleHelper->SetHelp( mAuthControl, NULL);
 	TheBubbleHelper->SetHelp( mHomeFolderControl, NULL);
 	TheBubbleHelper->SetHelp( mFilterChainControl, NULL);
@@ -460,6 +468,30 @@ void BmPrefsRecvMailView::Initialize() {
 		"If you uncheck this, Beam will ask you for the password\n"
 		"everytime you use this account."
 	);
+	static BmString encrHelp;
+	if (TheNetEndpointRoster->SupportsEncryption()) {
+		encrHelp 
+			= 		"Here you can select the type of encryption to use:\n"
+					"<none>	- no encryption.";
+		if (TheNetEndpointRoster->SupportsEncryptionType("TLS"))
+			encrHelp 
+				<< "\n"
+				<<	"STARTTLS	- TLS (Transport Layer Security) encryption on\n"
+					"		  the standard POP3-port (usually 110).\n"
+					"TLS		- TLS (Transport Layer Security) encryption on\n"
+					"		  a special POP3S-port (usually 995).";
+		if (TheNetEndpointRoster->SupportsEncryptionType("SSL"))
+			encrHelp 
+				<< "\n"
+				<< "SSL		- SSL (Secure Socket Layer) encryption on\n"
+					"		  a special POP3S-port (usually 995).";
+	} else {
+		encrHelp = "Encryption is not available,\n"
+					  "no addon could be loaded";
+	}
+	TheBubbleHelper->SetHelp( 
+		mEncryptionControl, encrHelp.String()
+	);
 	TheBubbleHelper->SetHelp( 
 		mAuthControl, 
 		"Here you can select the authentication type to use:\n"
@@ -508,6 +540,26 @@ void BmPrefsRecvMailView::Initialize() {
 	mDeleteMailDelayControl->SetTarget( this);
 	mStorePwdControl->SetTarget( this);
 
+	AddItemToMenu( mEncryptionControl->Menu(), 
+						new BMenuItem( BM_NoItemLabel.String(), 
+											new BMessage(BM_ENCRYPTION_SELECTED)), 
+						this);
+	if (TheNetEndpointRoster->SupportsEncryptionType("TLS")) {
+		AddItemToMenu( mEncryptionControl->Menu(), 
+							new BMenuItem( "STARTTLS", 
+												new BMessage(BM_ENCRYPTION_SELECTED)), 
+							this);
+		AddItemToMenu( mEncryptionControl->Menu(), 
+							new BMenuItem( "TLS", 
+												new BMessage(BM_ENCRYPTION_SELECTED)), 
+							this);
+	}
+	if (TheNetEndpointRoster->SupportsEncryptionType("SSL")) {
+		AddItemToMenu( mEncryptionControl->Menu(), 
+							new BMenuItem( "SSL", 
+												new BMessage(BM_ENCRYPTION_SELECTED)), 
+							this);
+	}
 	AddItemToMenu( mAuthControl->Menu(), 
 						new BMenuItem( BmPopAccount::AUTH_AUTO, 
 											new BMessage(BM_AUTH_SELECTED)), 
@@ -706,6 +758,15 @@ void BmPrefsRecvMailView::MessageReceived( BMessage* msg) {
 				NoticeChange();
 				break;
 			}
+			case BM_ENCRYPTION_SELECTED: {
+				BMenuItem* item = mEncryptionControl->Menu()->FindMarked();
+				if (item && BM_NoItemLabel != item->Label())
+					mCurrAcc->EncryptionType( item->Label());
+				else
+					mCurrAcc->EncryptionType( "");
+				NoticeChange();
+				break;
+			}
 			case BM_CHECK_AND_SUGGEST: {
 				if (mCurrAcc) {
 					BmRef<BmPopper> popper( new BmPopper( mCurrAcc->Key(), 
@@ -874,6 +935,10 @@ void BmPrefsRecvMailView::ShowAccount( int32 selection) {
 	mLoginControl->SetEnabled( enabled);
 	mPortControl->SetEnabled( enabled);
 	mServerControl->SetEnabled( enabled);
+	if (TheNetEndpointRoster->SupportsEncryption())
+		mEncryptionControl->SetEnabled( enabled);
+	else
+		mEncryptionControl->SetEnabled( false);
 	mAuthControl->SetEnabled( enabled);
 	mHomeFolderControl->SetEnabled( enabled);
 	mFilterChainControl->SetEnabled( enabled);
@@ -893,6 +958,7 @@ void BmPrefsRecvMailView::ShowAccount( int32 selection) {
 		mPwdControl->SetTextSilently( "");
 		mServerControl->SetTextSilently( "");
 		mCheckIntervalControl->SetTextSilently( "");
+		mEncryptionControl->ClearMark();
 		mAuthControl->ClearMark();
 		mHomeFolderControl->ClearMark();
 		mFilterChainControl->ClearMark();
@@ -927,6 +993,12 @@ void BmPrefsRecvMailView::ShowAccount( int32 selection) {
 						mCurrAcc->Password().String());
 					mServerControl->SetTextSilently( 
 						mCurrAcc->POPServer().String());
+					mEncryptionControl->MarkItem( 
+						(mCurrAcc->EncryptionType().Length() 
+						&& TheNetEndpointRoster->SupportsEncryption())
+								? mCurrAcc->EncryptionType().String()
+								: BM_NoItemLabel.String()
+					);
 					mAuthControl->MarkItem( mCurrAcc->AuthMethod().String());
 					mHomeFolderControl->MarkItem( 
 						mCurrAcc->HomeFolder().String());

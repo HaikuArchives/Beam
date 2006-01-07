@@ -50,6 +50,7 @@ using namespace regexx;
 #include "BmFilter.h"
 #include "BmLogHandler.h"
 #include "BmMail.h"
+#include "BmNetEndpointRoster.h"
 #include "BmPopAccount.h"
 #include "BmPopper.h"
 #include "BmPrefs.h"
@@ -313,11 +314,52 @@ void BmPopper::StateConnect() {
 						  	<< "\n\bError:\n\t" << mErrorString;
 		throw BM_network_error( s);
 	}
-	CheckForPositiveAnswer();
+	BmString greeting;
+	BmString encryptionType = mPopAccount->EncryptionType();
+	if (encryptionType.Length() && TheNetEndpointRoster->SupportsEncryption()) {
+		if (encryptionType.ICompare("STARTTLS") == 0) {
+			// STARTTLS means that we need to accept greeting from server in
+			// unencrypted fashion, which gets the POP3-session into AUTHORIZATION
+			// state.
+			CheckForPositiveAnswer();
+			greeting = StatusText();
+			// Now we're in AUTHORIZATION state, we ask the server to start TLS now:
+			BmString cmd("STLS");
+			SendCommand( cmd);
+			if (!CheckForPositiveAnswer())
+				return;
+			StartEncryption("TLS");
+				// STLS always uses TLS-protocol
+		} else {
+			// straight TLS or SSL, we start the encryption layer 
+			// and then proceed normally:
+			StartEncryption(encryptionType);
+			CheckForPositiveAnswer();
+			greeting = StatusText();
+		}
+	} else {
+		// no encryption:
+		CheckForPositiveAnswer();
+		greeting = StatusText();
+	}
 	Regexx rx;
-	if (rx.exec( StatusText(), "(<.+?>)\\s*$", Regexx::newline)) {
+	if (rx.exec( greeting, "(<.+?>)\\s*$", Regexx::newline)) {
 		mServerTimestamp = rx.match[0];
 	}
+}
+
+/*------------------------------------------------------------------------------*\
+	StartEncryption(encryptionType)
+		-	starts connection encryption
+\*------------------------------------------------------------------------------*/
+void BmPopper::StartEncryption(const BmString& encryptionType) {
+	if (encryptionType.Length() == 0)
+		return;
+
+	// start connection encryption
+	status_t error = mConnection->StartEncryption(encryptionType.String());
+	if (error != B_OK)
+		throw BM_network_error( "Failed to start connection encryption.\n");
 }
 
 /*------------------------------------------------------------------------------*\
@@ -625,11 +667,14 @@ void BmPopper::Quit( bool WaitForAnswer) {
 }
 
 /*------------------------------------------------------------------------------*\
-	SuggestAuthType()
+	SuggestAuthType(bool* supportsStartTls)
 		-	looks at the auth-types supported by the server and selects 
 			the most secure of those that is supported by Beam.
+		-	if supportsStarttls isn't NULL, the info about whether or not
+			the server supports the STLS command is put into that argument.
 \*------------------------------------------------------------------------------*/
-BmString BmPopper::SuggestAuthType() {
+BmString BmPopper::SuggestAuthType(bool* supportsStartTls) 
+{
 	BmString supportedAuthTypes;
 	BmString cmd("CAPA");
 	SendCommand( cmd);
@@ -645,6 +690,12 @@ BmString BmPopper::SuggestAuthType() {
 			mAnswerText, "^\\s*AUTH\\s+(.*?)$", Regexx::newline
 		)) {
 			supportedAuthTypes = rx.match[0].atom[0];
+		}
+		if (supportsStartTls) {
+			if (rx.exec( mAnswerText, "^\\s*STLS\\b", Regexx::newline))
+				*supportsStartTls = true;
+			else
+				*supportsStartTls = false;
 		}
 	} catch(...) {
 	}

@@ -89,6 +89,8 @@ public:
 	void ExecuteAction( BMessage* action);
 
 	// getters:
+	inline const BmString &EncryptionType() const	
+													{ return mEncryptionType; }
 	inline const BmString &AuthMethod() const	
 													{ return mAuthMethod; }
 	inline bool CheckMail() const 		{ return mCheckMail; }
@@ -119,6 +121,9 @@ public:
 													{ return mHomeFolder; }
 
 	// setters:
+	inline void EncryptionType( const BmString &s)
+													{ mEncryptionType = s; 
+													  TellModelItemUpdated( UPD_ALL); }
 	inline void AuthMethod( const BmString &s)
 													{ mAuthMethod = s; 
 													  TellModelItemUpdated( UPD_ALL); }
@@ -159,6 +164,9 @@ public:
 
 	void AddressInfo( BmString& server, uint16& port) const;
 
+	static const char* const ENCRYPTION_TLS;
+	static const char* const ENCRYPTION_SSL;
+
 	static const char* const AUTH_AUTO;
 	static const char* const AUTH_POP3;
 	static const char* const AUTH_APOP;
@@ -175,6 +183,7 @@ public:
 	static const char* const MSG_PORT_NR;
 	static const char* const MSG_UID;
 	static const char* const MSG_UID_TIME;
+	static const char* const MSG_ENCRYPTION_TYPE;
 	static const char* const MSG_AUTH_METHOD;
 	static const char* const MSG_MARK_DEFAULT;
 	static const char* const MSG_STORE_PWD;
@@ -202,6 +211,7 @@ private:
 	bool mDeleteMailFromServer;	// delete mails upon receive?
 	int16 mDeleteMailDelay;			// delete delay in days
 	BmString mDeleteMailDelayString;		// mDeleteMailDelay as String
+	BmString mEncryptionType;		// type of encryption
 	BmString mAuthMethod;			// authentication method
 	bool mMarkedAsDefault;			// is this the default account?
 	bool mPwdStoredOnDisk;			// store Passwords unsafely on disk?
