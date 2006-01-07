@@ -1,0 +1,26 @@
+SubDir TOP src-bmDaemon src-netendpoint-addons ;
+
+# <pe-inc>
+SubDirHdrs $(TOP) src-bmBase ;
+SubDirHdrs $(TOP) src-bmDaemon ;
+
+SubDirSysHdrs /boot/home/config/include ;
+# </pe-inc>
+
+LINKFLAGS += -L/boot/home/config/lib ;
+
+# build openssl-addon only if we have openssl headers:
+local haveOpenSsl = [ GLOB /boot/home/config/include/openssl : ssl.h ] ;
+if $(haveOpenSsl) {
+	# <pe-src>
+	AddOn OpenSslNetEndpoint
+		:  
+			BmOpenSslNetEndpoint.cpp
+		: 	
+			<src-bmDaemon>BmNetEndpoint.o 
+			bmBase.so
+			be $(LIBNETAPI) ssl crypto
+		;
+	# </pe-src>
+	MakeLocate OpenSslNetEndpoint : [ FDirName $(DISTRO_DIR) add-ons NetEndpoints ] ;
+}
