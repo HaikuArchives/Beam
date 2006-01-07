@@ -33,8 +33,6 @@
 # include <netinet/in.h>
 #endif
 
-#include <NetEndpoint.h>
-
 #include <ctype.h>
 
 #include "md5.h"
@@ -43,6 +41,7 @@
 #include "BmEncoding.h"
 	using namespace BmEncoding;
 #include "BmLogHandler.h"
+#include "BmNetEndpointRoster.h"
 #include "BmNetJobModel.h"
 #include "BmPrefs.h"
 
@@ -115,7 +114,7 @@ BmNetJobModel::~BmNetJobModel() {
 \*------------------------------------------------------------------------------*/
 bool BmNetJobModel::Connect( const BNetAddress* addr) { 
 	Disconnect();
-	mConnection = new BNetEndpoint;
+	mConnection = TheNetEndpointRoster->CreateEndpoint();
 	mErrorString.Truncate( 0);
 	if (mConnection->InitCheck() != B_OK) {
 		mErrorString = "unable to create BNetEndpoint";

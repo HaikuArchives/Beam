@@ -35,10 +35,9 @@
 
 #include "BmDataModel.h"
 #include "BmMemIO.h"
+#include "BmNetEndpoint.h"
 #include "BmUtil.h"
 
-class BNetAddress;
-class BNetEndpoint;
 /*------------------------------------------------------------------------------*\
 	class BmStatusFilter
 		-	
@@ -72,6 +71,7 @@ protected:
 
 };
 
+class BmSocket;
 /*------------------------------------------------------------------------------*\
 	class BmNetJobModel
 		-	
@@ -94,7 +94,7 @@ public:
 	bool ShouldContinue();
 
 	// getters:
-	inline BNetEndpoint* Connection()	{ return mConnection; }
+	inline BmNetEndpoint* Connection()	{ return mConnection; }
 	inline bool Connected() const			{ return mConnected; }
 	inline uint32 LogType() const			{ return mLogType; }
 	inline const BmString& AnswerText() const
@@ -129,7 +129,7 @@ protected:
 							  const BmString& serviceUri);
 	void AuthCramMD5( const BmString& username, const BmString& password);
 
-	BNetEndpoint* mConnection;
+	BmNetEndpoint* mConnection;
 	bool mConnected;
 	BmStatusFilter* mStatusFilter;
 							// filter that splits server-reply into data and status 
@@ -213,9 +213,9 @@ public:
 	bool IsAtEnd();
 
 	// getters:
-	BNetEndpoint* Connection()				{ return mJob 
-																	? mJob->Connection() 
-																	: NULL; }
+	BmNetEndpoint* Connection()			{ return mJob 
+																? mJob->Connection() 
+																: NULL; }
 
 protected:
 	BmNetJobModel* mJob;
@@ -237,9 +237,9 @@ public:
 	uint32 Write( BmMemIBuf* input, uint32 blockSize);
 
 	// getters:
-	BNetEndpoint* Connection()				{ return mJob 
-																	? mJob->Connection() 
-																	: NULL; }
+	BmNetEndpoint* Connection()			{ return mJob 
+																? mJob->Connection() 
+																: NULL; }
 
 	// setters:
 	inline void DoUpdate( bool b)			{ mUpdate = b; }
