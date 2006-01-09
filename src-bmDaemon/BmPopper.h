@@ -115,11 +115,11 @@ private:
 
 	// internal functions:
 	void StateConnect();
-	void StateLogin();
+	void StateStartTLS();
+	void StateAuth();
 	void StateCheck();
 	void StateRetrieve();
 	void StateDisconnect();
-	void StartEncryption(const BmString& encryptionType);
 	void Quit( bool WaitForAnswer=false);
 	void UpdatePOPStatus( const float, const char*, bool failed=false, 
 								 bool stopped=false);
@@ -148,7 +148,8 @@ private:
 							// current POP3-state (refer enum below)
 	enum States {
 		POP_CONNECT = 0,
-		POP_LOGIN,
+		POP_STARTTLS,
+		POP_AUTH,
 		POP_CHECK,
 		POP_RETRIEVE,
 		POP_DISCONNECT,
@@ -161,7 +162,11 @@ private:
 	struct PopState {
 		const char* text;
 		TStateMethod func;
-		PopState( const char* t, TStateMethod f) : text(t), func(f) { }
+		bool skip;
+		PopState( const char* t, TStateMethod f) 
+			: text(t)
+			, func(f) 
+			, skip(false)						{ }
 	};
 	static PopState PopStates[POP_FINAL];
 

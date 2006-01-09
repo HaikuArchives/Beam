@@ -153,7 +153,8 @@ int32 BmPopper::mId = 0;
 \*------------------------------------------------------------------------------*/
 BmPopper::PopState BmPopper::PopStates[BmPopper::POP_FINAL] = {
 	PopState( "connect...", &BmPopper::StateConnect),
-	PopState( "login...", &BmPopper::StateLogin),
+	PopState( "starttls...", &BmPopper::StateStartTLS),
+	PopState( "auth...", &BmPopper::StateAuth),
 	PopState( "check...", &BmPopper::StateCheck),
 	PopState( "get...", &BmPopper::StateRetrieve),
 	PopState( "quit...", &BmPopper::StateDisconnect),
@@ -204,17 +205,36 @@ bool BmPopper::ShouldContinue() {
 		-	returns whether or not the Popper has completed it's job
 \*------------------------------------------------------------------------------*/
 bool BmPopper::StartJob() {
-	const float delta = (100.0 / POP_DONE);
+	for( int32 state = POP_CONNECT; state<POP_DONE; ++state)
+		PopStates[state].skip = false;
+
+	if (CurrentJobSpecifier() == BM_AUTH_ONLY_JOB) {
+		// in auth-only mode, we skip after authorization:
+		PopStates[POP_CHECK].skip = true;
+		PopStates[POP_RETRIEVE].skip = true;
+	}
+
+	if (CurrentJobSpecifier() == BM_CHECK_AUTH_TYPES_JOB) {
+		// when checking capabilities, we skip nearly everything:
+		PopStates[POP_STARTTLS].skip = true;
+		PopStates[POP_AUTH].skip = true;
+		PopStates[POP_CHECK].skip = true;
+		PopStates[POP_RETRIEVE].skip = true;
+	}
+
+	int32 skipped = 0;
+	for( int32 state = POP_CONNECT; state<POP_DONE; ++state) {
+		if (PopStates[state].skip)
+			skipped++;
+	}
+	const float delta = (100.0 / (POP_DONE-skipped));
 	try {
 		for( mState=POP_CONNECT; ShouldContinue() && mState<POP_DONE; ++mState) {
+			if (PopStates[mState].skip)
+				continue;
 			TStateMethod stateFunc = PopStates[mState].func;
 			UpdatePOPStatus( (mState==POP_CONNECT ? 0.0 : delta), NULL);
 			(this->*stateFunc)();
-			if (CurrentJobSpecifier() == BM_AUTH_ONLY_JOB && mState==POP_LOGIN)
-				return true;
-			if (CurrentJobSpecifier() == BM_CHECK_AUTH_TYPES_JOB 
-			&& mState==POP_CONNECT)
-				return true;
 		}
 		if (!ShouldContinue())
 			UpdatePOPStatus( 0.0, NULL, false, true);
@@ -314,36 +334,17 @@ void BmPopper::StateConnect() {
 						  	<< "\n\bError:\n\t" << mErrorString;
 		throw BM_network_error( s);
 	}
-	BmString greeting;
 	BmString encryptionType = mPopAccount->EncryptionType();
-	if (encryptionType.Length() && TheNetEndpointRoster->SupportsEncryption()) {
-		if (encryptionType.ICompare("STARTTLS") == 0) {
-			// STARTTLS means that we need to accept greeting from server in
-			// unencrypted fashion, which gets the POP3-session into AUTHORIZATION
-			// state.
-			CheckForPositiveAnswer();
-			greeting = StatusText();
-			// Now we're in AUTHORIZATION state, we ask the server to start TLS now:
-			BmString cmd("STLS");
-			SendCommand( cmd);
-			if (!CheckForPositiveAnswer())
-				return;
-			StartEncryption("TLS");
-				// STLS always uses TLS-protocol
-		} else {
-			// straight TLS or SSL, we start the encryption layer 
-			// and then proceed normally:
-			StartEncryption(encryptionType);
-			CheckForPositiveAnswer();
-			greeting = StatusText();
-		}
-	} else {
-		// no encryption:
-		CheckForPositiveAnswer();
-		greeting = StatusText();
+	if (TheNetEndpointRoster->SupportsEncryption()
+	&& encryptionType.Length() && encryptionType.ICompare("STARTTLS") != 0) {
+		// straight TLS or SSL, we start the encryption layer: 
+		if (mConnection->StartEncryption(encryptionType.String()) != B_OK)
+			throw BM_network_error( "Failed to start connection encryption.\n");
 	}
+	// accept server greeting (either encrypted or unencrypted):
+	CheckForPositiveAnswer();
 	Regexx rx;
-	if (rx.exec( greeting, "(<.+?>)\\s*$", Regexx::newline)) {
+	if (rx.exec( StatusText(), "(<.+?>)\\s*$", Regexx::newline)) {
 		mServerTimestamp = rx.match[0];
 	}
 }
@@ -352,12 +353,19 @@ void BmPopper::StateConnect() {
 	StartEncryption(encryptionType)
 		-	starts connection encryption
 \*------------------------------------------------------------------------------*/
-void BmPopper::StartEncryption(const BmString& encryptionType) {
-	if (encryptionType.Length() == 0)
+void BmPopper::StateStartTLS() {
+	// check if encryption via STARTTLS is requested (and possible):
+	BmString encryptionType = mPopAccount->EncryptionType();
+	if (!TheNetEndpointRoster->SupportsEncryption()
+	|| encryptionType.ICompare("STARTTLS") != 0)
 		return;
 
-	// start connection encryption
-	status_t error = mConnection->StartEncryption(encryptionType.String());
+	// let's try to initiate TLS...
+	SendCommand( "STLS");
+	CheckForPositiveAnswer();
+
+	// start connection encryption:
+	status_t error = mConnection->StartEncryption("TLS");
 	if (error != B_OK)
 		throw BM_network_error( "Failed to start connection encryption.\n");
 }
@@ -372,11 +380,11 @@ void BmPopper::ExtractBase64(const BmString& text, BmString& base64)
 }
 
 /*------------------------------------------------------------------------------*\
-	StateLogin()
+	StateAuth()
 		-	Sends user/passwd combination and checks result
 		-	currently supports POP3- & APOP-authentication
 \*------------------------------------------------------------------------------*/
-void BmPopper::StateLogin() {
+void BmPopper::StateAuth() {
 	BmString pwd;
 	bool pwdOK = false;
 	bool first = true;

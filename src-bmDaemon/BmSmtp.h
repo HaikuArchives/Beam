@@ -131,6 +131,7 @@ private:
 		SMTP_AUTH_VIA_POP = 0,
 		SMTP_CONNECT,
 		SMTP_HELO,
+		SMTP_STARTTLS,
 		SMTP_AUTH,
 		SMTP_SEND,
 		SMTP_QUIT,
@@ -143,9 +144,11 @@ private:
 	struct SmtpState {
 		const char* text;
 		TStateMethod func;
+		bool skip;
 		SmtpState( const char* t, TStateMethod f) 
 			: text(t)
-			, func(f) 							{ }
+			, func(f)
+			, skip(false)						{ }
 	};
 	static SmtpState SmtpStates[SMTP_FINAL];
 
@@ -153,7 +156,7 @@ private:
 	void StateConnect();
 	void StateHelo();
 	void StateAuthViaPopServer();
-	void StartEncryption(BmString encryptionType);
+	void StateStartTLS();
 	void StateAuth();
 	void StateSendMails();
 	void StateDisconnect();

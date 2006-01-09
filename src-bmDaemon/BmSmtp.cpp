@@ -181,6 +181,7 @@ BmSmtp::SmtpState BmSmtp::SmtpStates[BmSmtp::SMTP_FINAL] = {
 	SmtpState( "auth via pop...", &BmSmtp::StateAuthViaPopServer),
 	SmtpState( "connect...", &BmSmtp::StateConnect),
 	SmtpState( "helo...", &BmSmtp::StateHelo),
+	SmtpState( "starttls...", &BmSmtp::StateStartTLS),
 	SmtpState( "auth...", &BmSmtp::StateAuth),
 	SmtpState( "send...", &BmSmtp::StateSendMails),
 	SmtpState( "quit...", &BmSmtp::StateDisconnect),
@@ -239,22 +240,40 @@ bool BmSmtp::StartJob() {
 		// authentication through pop-server takes place before anything else:
 		startState = SMTP_AUTH_VIA_POP;
 
-	const float delta = 100.0 / (SMTP_DONE-startState);
+	for( int32 state = startState; state<SMTP_DONE; ++state)
+		SmtpStates[state].skip = false;
+
+	if (mSmtpAccount->NeedsAuthViaPopServer()) {
+		// authorization is done via POP-server, so we skip our own:
+		SmtpStates[SMTP_AUTH].skip = true;
+	}
+
+	if (CurrentJobSpecifier() == BM_CHECK_CAPABILITIES_JOB) {
+		// when checking capabilities, we skip the real stuff (but we
+		// still take the STARTTLS-step, as the encrypted EHLO might
+		// yield a different result from the non-encrypted EHLO before!):
+		SmtpStates[SMTP_AUTH].skip = true;
+		SmtpStates[SMTP_SEND].skip = true;
+	}
+	
+	int32 skipped = 0;
+	for( int32 state = startState; state<SMTP_DONE; ++state) {
+		if (SmtpStates[state].skip)
+			skipped++;
+	}
+
+	SmtpStates[SMTP_STARTTLS].skip = mSmtpAccount->NeedsAuthViaPopServer();
+
+	const float delta = 100.0 / (SMTP_DONE-startState-skipped);
 	const bool failed=true;
 	try {
 		for( 	mState = startState; 
 				ShouldContinue() && mState<SMTP_DONE; ++mState) {
-			if (mState == SMTP_AUTH && mSmtpAccount->NeedsAuthViaPopServer())
+			if (SmtpStates[mState].skip)
 				continue;
 			TStateMethod stateFunc = SmtpStates[mState].func;
 			UpdateSMTPStatus( (mState==startState ? 0.0 : delta), NULL);
 			(this->*stateFunc)();
-			if (CurrentJobSpecifier() == BM_CHECK_CAPABILITIES_JOB 
-			&& mState==SMTP_HELO) {
-				// CHECK-CAPABILITIES-job is done after HELO:
-				UpdateSMTPStatus( delta*(SMTP_DONE-mState), NULL);
-				return true;
-			}
 		}
 		if (!ShouldContinue())
 			UpdateSMTPStatus( 0.0, NULL, false, true);
@@ -349,16 +368,15 @@ void BmSmtp::StateConnect() {
 						 	<< "\n\bError:\n\t"<< mErrorString;
 		throw BM_network_error( s);
 	}
-	CheckForPositiveAnswer();
 	BmString encryptionType = mSmtpAccount->EncryptionType();
 	if (TheNetEndpointRoster->SupportsEncryption()
-	&& (encryptionType.ICompare("TLS") == 0 
-		|| encryptionType.ICompare("SSL") == 0)) {
-		// straight TLS or SSL, we start the encryption layer 
-		// and proceed normally:
-		StartEncryption(encryptionType);
-		CheckForPositiveAnswer();
+	&& encryptionType.Length() && encryptionType.ICompare("STARTTLS") != 0) {
+		// straight TLS or SSL, we start the encryption layer: 
+		if (mConnection->StartEncryption(encryptionType.String()) != B_OK)
+			throw BM_network_error( "Failed to start connection encryption.\n");
 	}
+	// accept server greeting (either encrypted or unencrypted):
+	CheckForPositiveAnswer();
 }
 
 /*------------------------------------------------------------------------------*\
@@ -401,41 +419,31 @@ void BmSmtp::StateHelo() {
 		SendCommand( cmd);
 		CheckForPositiveAnswer();
 	}
-	// now use STARTTLS to start encryption if requested (and possible):
-	BmString encryptionType = mSmtpAccount->EncryptionType();
-	if (TheNetEndpointRoster->SupportsEncryption()
-	&& encryptionType.ICompare("STARTTLS") == 0
-	&& !mConnection->EncryptionIsActive()) {
-		cmd = BmString("STARTTLS");
-		SendCommand( cmd);
-		CheckForPositiveAnswer();
-		StartEncryption(encryptionType);
-	}
 }
 
 /*------------------------------------------------------------------------------*\
-	StartEncryption(encryptionType)
-		-	starts connection encryption
+	StateStartTLS()
+		-	starts TLS encryption if required
 \*------------------------------------------------------------------------------*/
-void BmSmtp::StartEncryption(BmString encryptionType) {
-	if (encryptionType.Length() == 0)
+void BmSmtp::StateStartTLS() {
+	// check if encryption via STARTTLS is requested (and possible):
+	BmString encryptionType = mSmtpAccount->EncryptionType();
+	if (!TheNetEndpointRoster->SupportsEncryption()
+	|| encryptionType.ICompare("STARTTLS") != 0)
 		return;
 
-	bool redoHelo = false;
-	if (encryptionType.ICompare("STARTTLS") == 0) {
-		// STARTTLS resets the SMTP-session to initial state, so we need
-		// to send a second EHLO/HELO:
-		redoHelo = true;
-		encryptionType = "TLS";
-	}
+	// let's try to initiate TLS...
+	SendCommand( "STARTTLS");
+	CheckForPositiveAnswer();
 
-	// start connection encryption
-	status_t error = mConnection->StartEncryption(encryptionType.String());
+	// start connection encryption:
+	status_t error = mConnection->StartEncryption("TLS");
 	if (error != B_OK)
 		throw BM_network_error( "Failed to start connection encryption.\n");
 
-	if (redoHelo)
-		StateHelo();
+	// STARTTLS resets the SMTP-session to initial state, so we need
+	// to send a second EHLO/HELO:
+	StateHelo();
 }
 
 /*------------------------------------------------------------------------------*\
