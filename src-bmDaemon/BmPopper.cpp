@@ -153,6 +153,7 @@ int32 BmPopper::mId = 0;
 \*------------------------------------------------------------------------------*/
 BmPopper::PopState BmPopper::PopStates[BmPopper::POP_FINAL] = {
 	PopState( "connect...", &BmPopper::StateConnect),
+	PopState( "capa...", &BmPopper::StateCapa),
 	PopState( "starttls...", &BmPopper::StateStartTLS),
 	PopState( "auth...", &BmPopper::StateAuth),
 	PopState( "check...", &BmPopper::StateCheck),
@@ -173,6 +174,7 @@ BmPopper::BmPopper( const BmString& name, BmPopAccount* account)
 	,	mMsgCount( 0)
 	,	mNewMsgCount( 0)
 	,	mNewMsgTotalSize( 1)
+	,	mSupportsTLS(false)
 	,	mState( 0)
 {
 }
@@ -346,6 +348,34 @@ void BmPopper::StateConnect() {
 	Regexx rx;
 	if (rx.exec( StatusText(), "(<.+?>)\\s*$", Regexx::newline)) {
 		mServerTimestamp = rx.match[0];
+	}
+}
+
+/*------------------------------------------------------------------------------*\
+	StateCapa()
+		-	asks server for its capabilities
+\*------------------------------------------------------------------------------*/
+void BmPopper::StateCapa() {
+	BmString cmd("CAPA");
+	SendCommand( cmd);
+	try {
+		CheckForPositiveAnswer( 16384, true);
+							// we expect a multiline string as answer
+		Regexx rx;
+		if (rx.exec( 
+			mAnswerText, "^\\s*SASL\\s+(.*?)$", Regexx::newline
+		)) {
+			mSupportedAuthTypes = rx.match[0].atom[0];
+		} else if (rx.exec( 
+			mAnswerText, "^\\s*AUTH\\s+(.*?)$", Regexx::newline
+		)) {
+			mSupportedAuthTypes = rx.match[0].atom[0];
+		}
+		if (rx.exec( mAnswerText, "^\\s*STLS\\b", Regexx::newline))
+			mSupportsTLS = true;
+		else
+			mSupportsTLS = false;
+	} catch(...) {
 	}
 }
 
@@ -683,33 +713,12 @@ void BmPopper::Quit( bool WaitForAnswer) {
 \*------------------------------------------------------------------------------*/
 BmString BmPopper::SuggestAuthType(bool* supportsStartTls) 
 {
-	BmString supportedAuthTypes;
-	BmString cmd("CAPA");
-	SendCommand( cmd);
-	try {
-		CheckForPositiveAnswer( 16384, true);
-							// we expect a multiline string as answer
-		Regexx rx;
-		if (rx.exec( 
-			mAnswerText, "^\\s*SASL\\s+(.*?)$", Regexx::newline
-		)) {
-			supportedAuthTypes = rx.match[0].atom[0];
-		} else if (rx.exec( 
-			mAnswerText, "^\\s*AUTH\\s+(.*?)$", Regexx::newline
-		)) {
-			supportedAuthTypes = rx.match[0].atom[0];
-		}
-		if (supportsStartTls) {
-			if (rx.exec( mAnswerText, "^\\s*STLS\\b", Regexx::newline))
-				*supportsStartTls = true;
-			else
-				*supportsStartTls = false;
-		}
-	} catch(...) {
-	}
-	if (supportedAuthTypes.IFindFirst( BmPopAccount::AUTH_DIGEST_MD5) >= 0)
+	if (supportsStartTls)
+		*supportsStartTls = mSupportsTLS;
+
+	if (mSupportedAuthTypes.IFindFirst( BmPopAccount::AUTH_DIGEST_MD5) >= 0)
 		return BmPopAccount::AUTH_DIGEST_MD5;
-	else if (supportedAuthTypes.IFindFirst( BmPopAccount::AUTH_CRAM_MD5) >= 0)
+	else if (mSupportedAuthTypes.IFindFirst( BmPopAccount::AUTH_CRAM_MD5) >= 0)
 		return BmPopAccount::AUTH_CRAM_MD5;
 	else if (mServerTimestamp.Length())
 		return BmPopAccount::AUTH_APOP;

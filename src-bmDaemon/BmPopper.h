@@ -115,6 +115,7 @@ private:
 
 	// internal functions:
 	void StateConnect();
+	void StateCapa();
 	void StateStartTLS();
 	void StateAuth();
 	void StateCheck();
@@ -144,10 +145,15 @@ private:
 							// total-size of msgs to be received
 	BmString mServerTimestamp;
 							// optional timestamp from Server (needed for APOP)
+	BmString mSupportedAuthTypes;
+							// list of auth-types the server indicates to support
+	bool mSupportsTLS;
+							// whether or not the server knows about STLS
 	int32 mState;		
 							// current POP3-state (refer enum below)
 	enum States {
 		POP_CONNECT = 0,
+		POP_CAPA,
 		POP_STARTTLS,
 		POP_AUTH,
 		POP_CHECK,
