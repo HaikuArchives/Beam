@@ -394,6 +394,9 @@ void BmMailMonitorWorker::EntryRemoved( BmMailFolder* parent, node_ref& nref) {
 	// was removed, so we have to find out by ourselves:
 	if (parent) {
 		// a folder has been deleted, we remove it from our list:
+		BmAutolockCheckGlobal lock( TheMailFolderList->ModelLocker());
+		if (!lock.IsLocked())
+			BM_THROW_RUNTIME( "MailMonitor::EntryRemoved(): Unable to get lock");
 		folder = dynamic_cast< BmMailFolder*>( 
 			parent->FindItemByKey( BM_REFKEY( nref))
 		);
