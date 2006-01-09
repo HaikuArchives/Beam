@@ -601,16 +601,29 @@ void BmPrefsSendMailView::MessageReceived( BMessage* msg) {
 			}
 			case BM_ENCRYPTION_SELECTED: {
 				BMenuItem* item = mEncryptionControl->Menu()->FindMarked();
-				if (item && BM_NoItemLabel != item->Label())
-					mCurrAcc->EncryptionType( item->Label());
-				else
+				BmString encryptionType;
+				if (item && BM_NoItemLabel != item->Label()) {
+					encryptionType = item->Label();
+					mCurrAcc->EncryptionType( encryptionType);
+				} else {
 					mCurrAcc->EncryptionType( "");
+				}
+				if (encryptionType == "TLS" || encryptionType == "SSL") {
+					if (atoi(mPortControl->Text()) == 25)
+						// auto-switch to SMTPS-port:
+						mPortControl->SetText("465");
+				} else {
+					if (atoi(mPortControl->Text()) == 465)
+						// auto-switch to SMTP-port:
+						mPortControl->SetText("25");
+				}
 				NoticeChange();
 				UpdateState();
 				break;
 			}
 			case BM_CHECK_AND_SUGGEST: {
 				if (mCurrAcc) {
+					// ToDo: this should be made asynchronous (using messages):
 					BmRef<BmSmtp> smtp( new BmSmtp( mCurrAcc->Key(), 
 															  mCurrAcc.Get()));
 					smtp->StartJobInThisThread( BmSmtp::BM_CHECK_CAPABILITIES_JOB);

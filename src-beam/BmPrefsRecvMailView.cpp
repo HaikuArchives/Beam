@@ -760,15 +760,28 @@ void BmPrefsRecvMailView::MessageReceived( BMessage* msg) {
 			}
 			case BM_ENCRYPTION_SELECTED: {
 				BMenuItem* item = mEncryptionControl->Menu()->FindMarked();
-				if (item && BM_NoItemLabel != item->Label())
-					mCurrAcc->EncryptionType( item->Label());
-				else
+				BmString encryptionType;
+				if (item && BM_NoItemLabel != item->Label()) {
+					encryptionType = item->Label();
+					mCurrAcc->EncryptionType( encryptionType);
+				} else {
 					mCurrAcc->EncryptionType( "");
+				}
+				if (encryptionType == "TLS" || encryptionType == "SSL") {
+					if (atoi(mPortControl->Text()) == 110)
+						// auto-switch to POP3S-port:
+						mPortControl->SetText("995");
+				} else {
+					if (atoi(mPortControl->Text()) == 995)
+						// auto-switch to POP3-port:
+						mPortControl->SetText("110");
+				}
 				NoticeChange();
 				break;
 			}
 			case BM_CHECK_AND_SUGGEST: {
 				if (mCurrAcc) {
+					// ToDo: this should be made asynchronous (using messages):
 					BmRef<BmPopper> popper( new BmPopper( mCurrAcc->Key(), 
 																	  mCurrAcc.Get()));
 					popper->StartJobInThisThread( BmPopper::BM_CHECK_AUTH_TYPES_JOB);
