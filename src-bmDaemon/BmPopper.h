@@ -85,6 +85,7 @@ public:
 	static const char* const MSG_DELTA;
 	static const char* const MSG_TRAILING;
 	static const char* const MSG_LEADING;
+	static const char* const MSG_ENCRYPTED;
 
 	// message component definitions for additional info:
 	static const char* const MSG_PWD;
@@ -92,13 +93,15 @@ public:
 	// alternate job-specifiers:
 	static const int32 BM_AUTH_ONLY_JOB;
 							// for authentication only (needed for SMTP-after-POP)
-	static const int32 BM_CHECK_AUTH_TYPES_JOB;
+	static const int32 BM_CHECK_CAPABILITIES_JOB;
 							// to find out about supported authentication types
 
 	BmPopper( const BmString& name, BmPopAccount* account);
 	virtual ~BmPopper();
 
-	BmString SuggestAuthType(bool* supportsStartTls = NULL);
+	bool SupportsTLS() const;
+	BmString SuggestAuthType() const;
+
 	inline static int32 NextID() 			{ return ++mId; }
 	inline BmString Name() const			{ return ModelName(); }
 
@@ -147,7 +150,7 @@ private:
 							// optional timestamp from Server (needed for APOP)
 	BmString mSupportedAuthTypes;
 							// list of auth-types the server indicates to support
-	bool mSupportsTLS;
+	bool mServerSupportsTLS;
 							// whether or not the server knows about STLS
 	int32 mState;		
 							// current POP3-state (refer enum below)

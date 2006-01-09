@@ -56,8 +56,10 @@ const char* const BmSmtpAccount::MSG_ACC_FOR_SAP = "bm:accForSmtpAfterPop";
 const char* const BmSmtpAccount::MSG_STORE_PWD = 	"bm:storepwd";
 const int16 BmSmtpAccount::nArchiveVersion = 7;
 
-const char* const BmSmtpAccount::ENCRYPTION_TLS = 	"TLS";
-const char* const BmSmtpAccount::ENCRYPTION_SSL = 	"SSL";
+const char* const BmSmtpAccount::ENCR_AUTO = 		"<auto>";
+const char* const BmSmtpAccount::ENCR_STARTTLS = 	"STARTTLS";
+const char* const BmSmtpAccount::ENCR_TLS = 			"TLS";
+const char* const BmSmtpAccount::ENCR_SSL = 			"SSL";
 
 const char* const BmSmtpAccount::AUTH_AUTO = 			"<auto>";
 const char* const BmSmtpAccount::AUTH_SMTP_AFTER_POP= "SMTP-AFTER-POP";
@@ -109,7 +111,11 @@ BmSmtpAccount::BmSmtpAccount( BMessage* archive, BmSmtpAccountList* model)
 		// method. This is now the default:
 		mAuthMethod = AUTH_AUTO;
 	}
-	if (version > 6) {
+	if (version <= 6) {
+		// with version 7 we introduce auto-detection of encryption 
+		// availability. This is now the default:
+		mEncryptionType = ENCR_AUTO;
+	} else {
 		mEncryptionType = FindMsgString( archive, MSG_ENCRYPTION_TYPE);
 	}
 }

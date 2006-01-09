@@ -89,6 +89,7 @@ public:
 	static const char* const MSG_DELTA;
 	static const char* const MSG_TRAILING;
 	static const char* const MSG_LEADING;
+	static const char* const MSG_ENCRYPTED;
 
 	// message component definitions for additional info:
 	static const char* const MSG_PWD;
@@ -103,7 +104,8 @@ public:
 
 	void QueueMail( entry_ref eref);
 
-	BmString SuggestAuthType(bool* supportsStartTls = NULL) const;
+	bool SupportsTLS() const;
+	BmString SuggestAuthType() const;
 
 	inline BmString Name() const			{ return ModelName(); }
 

@@ -166,6 +166,7 @@ const char* const BmSmtp::MSG_SMTP = 		"bm:smtp";
 const char* const BmSmtp::MSG_DELTA = 		"bm:delta";
 const char* const BmSmtp::MSG_TRAILING = 	"bm:trailing";
 const char* const BmSmtp::MSG_LEADING = 	"bm:leading";
+const char* const BmSmtp::MSG_ENCRYPTED = "bm:encrypted";
 
 // message component definitions for additional info:
 const char* const BmSmtp::MSG_PWD = 	"bm:pwd";
@@ -318,6 +319,8 @@ void BmSmtp::UpdateSMTPStatus( const float delta, const char* detailText,
 		msg->AddString( MSG_TRAILING, SmtpStates[mState].text);
 	if (detailText)
 		msg->AddString( MSG_LEADING, detailText);
+	if (mConnection && mConnection->EncryptionIsActive())
+		msg->AddBool( MSG_ENCRYPTED, true);
 	TellControllers( msg.get());
 }
 
@@ -370,7 +373,8 @@ void BmSmtp::StateConnect() {
 	}
 	BmString encryptionType = mSmtpAccount->EncryptionType();
 	if (TheNetEndpointRoster->SupportsEncryption()
-	&& encryptionType.Length() && encryptionType.ICompare("STARTTLS") != 0) {
+	&& (encryptionType.ICompare(BmSmtpAccount::ENCR_TLS) == 0
+		|| encryptionType.ICompare(BmSmtpAccount::ENCR_SSL) == 0)) {
 		// straight TLS or SSL, we start the encryption layer: 
 		if (mConnection->StartEncryption(encryptionType.String()) != B_OK)
 			throw BM_network_error( "Failed to start connection encryption.\n");
@@ -428,8 +432,15 @@ void BmSmtp::StateHelo() {
 void BmSmtp::StateStartTLS() {
 	// check if encryption via STARTTLS is requested (and possible):
 	BmString encryptionType = mSmtpAccount->EncryptionType();
+
+	// automatic means: use STARTTLS if available:
+	if (encryptionType.ICompare(BmSmtpAccount::ENCR_AUTO) == 0
+	&& mServerSupportsTLS) {
+		encryptionType = BmSmtpAccount::ENCR_STARTTLS;
+	}
+	
 	if (!TheNetEndpointRoster->SupportsEncryption()
-	|| encryptionType.ICompare("STARTTLS") != 0)
+	|| encryptionType.ICompare(BmSmtpAccount::ENCR_STARTTLS) != 0)
 		return;
 
 	// let's try to initiate TLS...
@@ -437,7 +448,7 @@ void BmSmtp::StateStartTLS() {
 	CheckForPositiveAnswer();
 
 	// start connection encryption:
-	status_t error = mConnection->StartEncryption("TLS");
+	status_t error = mConnection->StartEncryption(BmSmtpAccount::ENCR_TLS);
 	if (error != B_OK)
 		throw BM_network_error( "Failed to start connection encryption.\n");
 
@@ -814,15 +825,21 @@ void BmSmtp::QueueMail( entry_ref eref)
 }
 
 /*------------------------------------------------------------------------------*\
+	SupportsTLS()
+		-	returns whether or not the server has indicated that it supports 
+			the STARTTLS command
+\*------------------------------------------------------------------------------*/
+bool BmSmtp::SupportsTLS() const
+{
+	return mServerSupportsTLS;
+}
+
+/*------------------------------------------------------------------------------*\
 	SuggestAuthType(bool* supportsStartTls)
 		-	looks at the auth-types supported by the server and selects the most 
 			secure of those that is supported by Beam.
-		-	if supportsStarttls isn't NULL, the info about whether or not
-			the server supports the STLS command is put into that argument.
 \*------------------------------------------------------------------------------*/
-BmString BmSmtp::SuggestAuthType(bool* supportsStartTls) const {
-	if (supportsStartTls)
-		*supportsStartTls = mServerSupportsTLS;
+BmString BmSmtp::SuggestAuthType() const {
 	if (mSupportedAuthTypes.IFindFirst( BmSmtpAccount::AUTH_DIGEST_MD5) >= 0)
 		return BmSmtpAccount::AUTH_DIGEST_MD5;
 	else if (mSupportedAuthTypes.IFindFirst( BmSmtpAccount::AUTH_CRAM_MD5) >= 0)

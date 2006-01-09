@@ -69,8 +69,10 @@ const char* const BmPopAccount::MSG_FILTER_CHAIN = "bm:filterch";
 const char* const BmPopAccount::MSG_HOME_FOLDER =  "bm:homefold";
 const int16 BmPopAccount::nArchiveVersion = 10;
 
-const char* const BmPopAccount::ENCRYPTION_TLS = 	"TLS";
-const char* const BmPopAccount::ENCRYPTION_SSL = 	"SSL";
+const char* const BmPopAccount::ENCR_AUTO = 		"<auto>";
+const char* const BmPopAccount::ENCR_STARTTLS = "STARTTLS";
+const char* const BmPopAccount::ENCR_TLS = 		"TLS";
+const char* const BmPopAccount::ENCR_SSL = 		"SSL";
 
 const char* const BmPopAccount::AUTH_AUTO = 			"<auto>";
 const char* const BmPopAccount::AUTH_POP3 = 			"POP3";
@@ -206,8 +208,13 @@ BmPopAccount::BmPopAccount( BMessage* archive, BmPopAccountList* model)
 		// method. This is now the default:
 		mAuthMethod = AUTH_AUTO;
 	}
-	if (version > 9)
+	if (version <= 9) {
+		// with version 10 we introduce auto-detection of encryption 
+		// availability. This is now the default:
+		mEncryptionType = ENCR_AUTO;
+	} else {
 		mEncryptionType = FindMsgString( archive, MSG_ENCRYPTION_TYPE);
+	}
 
 	SetupIntervalRunner();
 }

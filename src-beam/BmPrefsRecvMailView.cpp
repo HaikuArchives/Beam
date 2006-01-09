@@ -473,14 +473,15 @@ void BmPrefsRecvMailView::Initialize() {
 		encrHelp 
 			= 		"Here you can select the type of encryption to use:\n"
 					"<none>	- no encryption.";
-		if (TheNetEndpointRoster->SupportsEncryptionType("TLS"))
+		if (TheNetEndpointRoster->SupportsEncryptionType(BmPopAccount::ENCR_TLS))
 			encrHelp 
 				<< "\n"
-				<<	"STARTTLS	- TLS (Transport Layer Security) encryption on\n"
+				<<	"<auto>		- means the STARTTLS method will be used if available.\n"
+					"STARTTLS	- TLS (Transport Layer Security) encryption on\n"
 					"		  the standard POP3-port (usually 110).\n"
 					"TLS		- TLS (Transport Layer Security) encryption on\n"
 					"		  a special POP3S-port (usually 995).";
-		if (TheNetEndpointRoster->SupportsEncryptionType("SSL"))
+		if (TheNetEndpointRoster->SupportsEncryptionType(BmPopAccount::ENCR_SSL))
 			encrHelp 
 				<< "\n"
 				<< "SSL		- SSL (Secure Socket Layer) encryption on\n"
@@ -544,19 +545,23 @@ void BmPrefsRecvMailView::Initialize() {
 						new BMenuItem( BM_NoItemLabel.String(), 
 											new BMessage(BM_ENCRYPTION_SELECTED)), 
 						this);
-	if (TheNetEndpointRoster->SupportsEncryptionType("TLS")) {
+	if (TheNetEndpointRoster->SupportsEncryptionType(BmPopAccount::ENCR_TLS)) {
 		AddItemToMenu( mEncryptionControl->Menu(), 
-							new BMenuItem( "STARTTLS", 
+							new BMenuItem( BmPopAccount::ENCR_AUTO, 
 												new BMessage(BM_ENCRYPTION_SELECTED)), 
 							this);
 		AddItemToMenu( mEncryptionControl->Menu(), 
-							new BMenuItem( "TLS", 
+							new BMenuItem( BmPopAccount::ENCR_STARTTLS, 
+												new BMessage(BM_ENCRYPTION_SELECTED)), 
+							this);
+		AddItemToMenu( mEncryptionControl->Menu(), 
+							new BMenuItem( BmPopAccount::ENCR_TLS, 
 												new BMessage(BM_ENCRYPTION_SELECTED)), 
 							this);
 	}
-	if (TheNetEndpointRoster->SupportsEncryptionType("SSL")) {
+	if (TheNetEndpointRoster->SupportsEncryptionType(BmPopAccount::ENCR_SSL)) {
 		AddItemToMenu( mEncryptionControl->Menu(), 
-							new BMenuItem( "SSL", 
+							new BMenuItem( BmPopAccount::ENCR_SSL, 
 												new BMessage(BM_ENCRYPTION_SELECTED)), 
 							this);
 	}
@@ -767,7 +772,8 @@ void BmPrefsRecvMailView::MessageReceived( BMessage* msg) {
 				} else {
 					mCurrAcc->EncryptionType( "");
 				}
-				if (encryptionType == "TLS" || encryptionType == "SSL") {
+				if (encryptionType == BmPopAccount::ENCR_TLS 
+				|| encryptionType == BmPopAccount::ENCR_SSL) {
 					if (atoi(mPortControl->Text()) == 110)
 						// auto-switch to POP3S-port:
 						mPortControl->SetText("995");
@@ -784,9 +790,19 @@ void BmPrefsRecvMailView::MessageReceived( BMessage* msg) {
 					// ToDo: this should be made asynchronous (using messages):
 					BmRef<BmPopper> popper( new BmPopper( mCurrAcc->Key(), 
 																	  mCurrAcc.Get()));
-					popper->StartJobInThisThread( BmPopper::BM_CHECK_AUTH_TYPES_JOB);
+					popper->StartJobInThisThread( 
+						BmPopper::BM_CHECK_CAPABILITIES_JOB
+					);
 					BmString suggestedAuthType = popper->SuggestAuthType();
-					mAuthControl->MarkItem( suggestedAuthType.String());
+					if (suggestedAuthType.Length())
+						mAuthControl->MarkItem( suggestedAuthType.String());
+					else
+						mAuthControl->MarkItem( BM_NoItemLabel.String());
+					if (popper->SupportsTLS())
+						// if server supports STARTTLS, we use it:
+						mEncryptionControl->MarkItem( BmPopAccount::ENCR_STARTTLS);
+					else
+						mEncryptionControl->MarkItem( BM_NoItemLabel.String());
 					NoticeChange();
 				}
 				// no break here, we want to proceed with updating the auth-menu...

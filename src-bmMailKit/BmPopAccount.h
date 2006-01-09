@@ -164,8 +164,10 @@ public:
 
 	void AddressInfo( BmString& server, uint16& port) const;
 
-	static const char* const ENCRYPTION_TLS;
-	static const char* const ENCRYPTION_SSL;
+	static const char* const ENCR_AUTO;
+	static const char* const ENCR_STARTTLS;
+	static const char* const ENCR_TLS;
+	static const char* const ENCR_SSL;
 
 	static const char* const AUTH_AUTO;
 	static const char* const AUTH_POP3;

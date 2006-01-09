@@ -135,6 +135,7 @@ const char* const BmPopper::MSG_POPPER = 		"bm:popper";
 const char* const BmPopper::MSG_DELTA = 		"bm:delta";
 const char* const BmPopper::MSG_TRAILING = 	"bm:trailing";
 const char* const BmPopper::MSG_LEADING = 	"bm:leading";
+const char* const BmPopper::MSG_ENCRYPTED = 	"bm:encrypted";
 
 // message component definitions for additional info:
 const char* const BmPopper::MSG_PWD = 	"bm:pwd";
@@ -142,8 +143,8 @@ const char* const BmPopper::MSG_PWD = 	"bm:pwd";
 // alternate job-specifiers:
 const int32 BmPopper::BM_AUTH_ONLY_JOB = 			1;
 					// for authentication only (needed for SMTP-after-POP)
-const int32 BmPopper::BM_CHECK_AUTH_TYPES_JOB = 2;
-					// to find out about supported authentication types
+const int32 BmPopper::BM_CHECK_CAPABILITIES_JOB = 2;
+					// to find out about supported capabilities
 
 int32 BmPopper::mId = 0;
 
@@ -174,7 +175,7 @@ BmPopper::BmPopper( const BmString& name, BmPopAccount* account)
 	,	mMsgCount( 0)
 	,	mNewMsgCount( 0)
 	,	mNewMsgTotalSize( 1)
-	,	mSupportsTLS(false)
+	,	mServerSupportsTLS(false)
 	,	mState( 0)
 {
 }
@@ -196,7 +197,7 @@ BmPopper::~BmPopper() {
 \*------------------------------------------------------------------------------*/
 bool BmPopper::ShouldContinue() {
 	return CurrentJobSpecifier() == BM_AUTH_ONLY_JOB
-			 || CurrentJobSpecifier() == BM_CHECK_AUTH_TYPES_JOB
+			 || CurrentJobSpecifier() == BM_CHECK_CAPABILITIES_JOB
 			 || inherited::ShouldContinue();
 }
 
@@ -216,7 +217,7 @@ bool BmPopper::StartJob() {
 		PopStates[POP_RETRIEVE].skip = true;
 	}
 
-	if (CurrentJobSpecifier() == BM_CHECK_AUTH_TYPES_JOB) {
+	if (CurrentJobSpecifier() == BM_CHECK_CAPABILITIES_JOB) {
 		// when checking capabilities, we skip nearly everything:
 		PopStates[POP_STARTTLS].skip = true;
 		PopStates[POP_AUTH].skip = true;
@@ -280,6 +281,8 @@ void BmPopper::UpdatePOPStatus( const float delta, const char* detailText,
 		msg->AddString( MSG_TRAILING, PopStates[mState].text);
 	if (detailText)
 		msg->AddString( MSG_LEADING, detailText);
+	if (mConnection && mConnection->EncryptionIsActive())
+		msg->AddBool( MSG_ENCRYPTED, true);
 	TellControllers( msg.get());
 }
 
@@ -338,7 +341,8 @@ void BmPopper::StateConnect() {
 	}
 	BmString encryptionType = mPopAccount->EncryptionType();
 	if (TheNetEndpointRoster->SupportsEncryption()
-	&& encryptionType.Length() && encryptionType.ICompare("STARTTLS") != 0) {
+	&& (encryptionType.ICompare(BmPopAccount::ENCR_TLS) == 0
+		|| encryptionType.ICompare(BmPopAccount::ENCR_SSL) == 0)) {
 		// straight TLS or SSL, we start the encryption layer: 
 		if (mConnection->StartEncryption(encryptionType.String()) != B_OK)
 			throw BM_network_error( "Failed to start connection encryption.\n");
@@ -372,9 +376,9 @@ void BmPopper::StateCapa() {
 			mSupportedAuthTypes = rx.match[0].atom[0];
 		}
 		if (rx.exec( mAnswerText, "^\\s*STLS\\b", Regexx::newline))
-			mSupportsTLS = true;
+			mServerSupportsTLS = true;
 		else
-			mSupportsTLS = false;
+			mServerSupportsTLS = false;
 	} catch(...) {
 	}
 }
@@ -386,8 +390,15 @@ void BmPopper::StateCapa() {
 void BmPopper::StateStartTLS() {
 	// check if encryption via STARTTLS is requested (and possible):
 	BmString encryptionType = mPopAccount->EncryptionType();
+
+	// automatic means: use STARTTLS if available:
+	if (encryptionType.ICompare(BmPopAccount::ENCR_AUTO) == 0
+	&& mServerSupportsTLS) {
+		encryptionType = BmPopAccount::ENCR_STARTTLS;
+	}
+	
 	if (!TheNetEndpointRoster->SupportsEncryption()
-	|| encryptionType.ICompare("STARTTLS") != 0)
+	|| encryptionType.ICompare(BmPopAccount::ENCR_STARTTLS) != 0)
 		return;
 
 	// let's try to initiate TLS...
@@ -395,7 +406,7 @@ void BmPopper::StateStartTLS() {
 	CheckForPositiveAnswer();
 
 	// start connection encryption:
-	status_t error = mConnection->StartEncryption("TLS");
+	status_t error = mConnection->StartEncryption(BmPopAccount::ENCR_TLS);
 	if (error != B_OK)
 		throw BM_network_error( "Failed to start connection encryption.\n");
 }
@@ -705,17 +716,22 @@ void BmPopper::Quit( bool WaitForAnswer) {
 }
 
 /*------------------------------------------------------------------------------*\
-	SuggestAuthType(bool* supportsStartTls)
+	SupportsTLS()
+		-	returns whether or not the server has indicated that it supports 
+			the STARTTLS command
+\*------------------------------------------------------------------------------*/
+bool BmPopper::SupportsTLS() const
+{
+	return mServerSupportsTLS;
+}
+
+/*------------------------------------------------------------------------------*\
+	SuggestAuthType()
 		-	looks at the auth-types supported by the server and selects 
 			the most secure of those that is supported by Beam.
-		-	if supportsStarttls isn't NULL, the info about whether or not
-			the server supports the STLS command is put into that argument.
 \*------------------------------------------------------------------------------*/
-BmString BmPopper::SuggestAuthType(bool* supportsStartTls) 
+BmString BmPopper::SuggestAuthType() const
 {
-	if (supportsStartTls)
-		*supportsStartTls = mSupportsTLS;
-
 	if (mSupportedAuthTypes.IFindFirst( BmPopAccount::AUTH_DIGEST_MD5) >= 0)
 		return BmPopAccount::AUTH_DIGEST_MD5;
 	else if (mSupportedAuthTypes.IFindFirst( BmPopAccount::AUTH_CRAM_MD5) >= 0)

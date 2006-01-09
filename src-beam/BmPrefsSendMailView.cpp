@@ -397,14 +397,15 @@ void BmPrefsSendMailView::Initialize() {
 		encrHelp 
 			= 		"Here you can select the type of encryption to use:\n"
 					"<none>	- no encryption.";
-		if (TheNetEndpointRoster->SupportsEncryptionType("TLS"))
+		if (TheNetEndpointRoster->SupportsEncryptionType(BmSmtpAccount::ENCR_TLS))
 			encrHelp 
 				<< "\n"
-				<<	"STARTTLS	- TLS (Transport Layer Security) encryption on\n"
+				<<	"<auto>		- means the STARTTLS method will be used if available.\n"
+					"STARTTLS	- TLS (Transport Layer Security) encryption on\n"
 					"		  the standard SMTP-port (usually 25).\n"
 					"TLS		- TLS (Transport Layer Security) encryption on\n"
 					"		  a special SMTPS-port (usually 465).";
-		if (TheNetEndpointRoster->SupportsEncryptionType("SSL"))
+		if (TheNetEndpointRoster->SupportsEncryptionType(BmSmtpAccount::ENCR_SSL))
 			encrHelp 
 				<< "\n"
 				<< "SSL		- SSL (Secure Socket Layer) encryption on\n"
@@ -451,19 +452,23 @@ void BmPrefsSendMailView::Initialize() {
 						new BMenuItem( BM_NoItemLabel.String(), 
 											new BMessage(BM_ENCRYPTION_SELECTED)), 
 						this);
-	if (TheNetEndpointRoster->SupportsEncryptionType("TLS")) {
+	if (TheNetEndpointRoster->SupportsEncryptionType(BmSmtpAccount::ENCR_TLS)) {
 		AddItemToMenu( mEncryptionControl->Menu(), 
-							new BMenuItem( "STARTTLS", 
+							new BMenuItem( BmSmtpAccount::ENCR_AUTO, 
 												new BMessage(BM_ENCRYPTION_SELECTED)), 
 							this);
 		AddItemToMenu( mEncryptionControl->Menu(), 
-							new BMenuItem( "TLS", 
+							new BMenuItem( BmSmtpAccount::ENCR_STARTTLS, 
+												new BMessage(BM_ENCRYPTION_SELECTED)), 
+							this);
+		AddItemToMenu( mEncryptionControl->Menu(), 
+							new BMenuItem( BmSmtpAccount::ENCR_TLS, 
 												new BMessage(BM_ENCRYPTION_SELECTED)), 
 							this);
 	}
-	if (TheNetEndpointRoster->SupportsEncryptionType("SSL")) {
+	if (TheNetEndpointRoster->SupportsEncryptionType(BmSmtpAccount::ENCR_SSL)) {
 		AddItemToMenu( mEncryptionControl->Menu(), 
-							new BMenuItem( "SSL", 
+							new BMenuItem( BmSmtpAccount::ENCR_SSL, 
 												new BMessage(BM_ENCRYPTION_SELECTED)), 
 							this);
 	}
@@ -608,7 +613,8 @@ void BmPrefsSendMailView::MessageReceived( BMessage* msg) {
 				} else {
 					mCurrAcc->EncryptionType( "");
 				}
-				if (encryptionType == "TLS" || encryptionType == "SSL") {
+				if (encryptionType == BmSmtpAccount::ENCR_TLS 
+				|| encryptionType == BmSmtpAccount::ENCR_SSL) {
 					if (atoi(mPortControl->Text()) == 25)
 						// auto-switch to SMTPS-port:
 						mPortControl->SetText("465");
@@ -632,6 +638,10 @@ void BmPrefsSendMailView::MessageReceived( BMessage* msg) {
 						mAuthControl->MarkItem( suggestedAuthType.String());
 					else
 						mAuthControl->MarkItem( BM_NoItemLabel.String());
+					if (smtp->SupportsTLS())
+						mEncryptionControl->MarkItem( BmSmtpAccount::ENCR_STARTTLS);
+					else
+						mEncryptionControl->MarkItem( BM_NoItemLabel.String());
 					NoticeChange();
 				}
 				// no break here, we want to proceed with updating the auth-menu...
