@@ -11,6 +11,9 @@ LINKFLAGS += -L/boot/home/config/lib ;
 
 # build openssl-addon only if we have openssl headers:
 local haveOpenSsl = [ GLOB /boot/home/config/include/openssl : ssl.h ] ;
+if ! $(haveOpenSsl) {
+	haveOpenSsl = [ GLOB /boot/develop/headers/openssl : ssl.h ] ;
+}
 if $(haveOpenSsl) {
 	# <pe-src>
 	AddOn OpenSslNetEndpoint
