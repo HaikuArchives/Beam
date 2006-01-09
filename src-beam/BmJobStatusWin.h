@@ -284,6 +284,8 @@ public:
 
 	//
 	static const rgb_color BM_COL_STATUSBAR;
+	static const rgb_color BM_COL_STATUSBAR_GOOD;
+	static const rgb_color BM_COL_STATUSBAR_BAD;
 
 	static BmJobStatusWin* theInstance;
 

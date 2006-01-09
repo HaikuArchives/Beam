@@ -516,6 +516,8 @@ void BmPopperView::UpdateModelView( BMessage* msg) {
 	msg->FindString( BmPopper::MSG_LEADING, &leading);
 	const char* trailing = NULL;
 	msg->FindString( BmPopper::MSG_TRAILING, &trailing);
+	bool encrypted = false;
+	msg->FindBool( BmPopper::MSG_ENCRYPTED, &encrypted);
 
 	BM_LOG3( BM_LogJobWin, BmString("Updating interface for ") << name);
 
@@ -533,6 +535,8 @@ void BmPopperView::UpdateModelView( BMessage* msg) {
 		} else { 
 			// domain == "statbar"
 			mStatBar->Update( delta, leading, trailing);
+			if (encrypted)
+				mStatBar->SetBarColor( BmJobStatusWin::BM_COL_STATUSBAR_GOOD);
 		}
 	} else
 		throw BM_runtime_error( "BmPopperView::UpdateModelView(): could not "
@@ -651,6 +655,8 @@ void BmSmtpView::UpdateModelView( BMessage* msg) {
 	msg->FindString( BmSmtp::MSG_LEADING, &leading);
 	const char* trailing = NULL;
 	msg->FindString( BmSmtp::MSG_TRAILING, &trailing);
+	bool encrypted = false;
+	msg->FindBool( BmSmtp::MSG_ENCRYPTED, &encrypted);
 
 	BM_LOG3( BM_LogJobWin, BmString("Updating interface for ") << name);
 
@@ -661,6 +667,8 @@ void BmSmtpView::UpdateModelView( BMessage* msg) {
 		} else { 
 			// domain == "statbar"
 			mStatBar->Update( delta, leading, trailing);
+			if (encrypted)
+				mStatBar->SetBarColor( BmJobStatusWin::BM_COL_STATUSBAR_GOOD);
 		}
 	} else
 		throw BM_runtime_error( "BmSmtpView::UpdateModelView(): could not "
@@ -683,6 +691,8 @@ const rgb_color BmJobStatusWin::BM_COL_STATUSBAR = {216,216,216};
 #else
 const rgb_color BmJobStatusWin::BM_COL_STATUSBAR = {160,160,160};
 #endif
+const rgb_color BmJobStatusWin::BM_COL_STATUSBAR_GOOD = {0,128,0};
+const rgb_color BmJobStatusWin::BM_COL_STATUSBAR_BAD = {128,0,0};
 BmJobStatusWin* BmJobStatusWin::theInstance = NULL;
 
 /*------------------------------------------------------------------------------*\
