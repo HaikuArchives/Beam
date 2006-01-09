@@ -46,7 +46,7 @@ public:
 	BmMultiLineStringView( BRect frame, const char* name, const char *text, 
 								  uint32 resizingMode = B_FOLLOW_LEFT|B_FOLLOW_TOP,
 								  uint32 flags = B_WILL_DRAW);
-	~BmMultiLineStringView();
+	virtual ~BmMultiLineStringView();
 	
 	// native methods:
 	void MakeSelectable(bool s) 			{ mIsSelectable = s; }
@@ -90,7 +90,7 @@ private:
 
 	BList mTextLines;
 
-	static const float nLeftOffset = 3.0;
+	static const float nLeftOffset;
 
 	// Hide copy-constructor and assignment:
 	BmMultiLineStringView( const BmMultiLineStringView&);

@@ -61,6 +61,6 @@ private:
 	BMessage mEncryptionInfo;
 };
 
-extern BmNetEndpointRoster* TheNetEndpointRoster;
+extern IMPEXPBMDAEMON BmNetEndpointRoster* TheNetEndpointRoster;
 
 #endif

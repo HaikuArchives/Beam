@@ -46,6 +46,8 @@ struct BmMultiLineStringView::TextLine
 	int32 len;
 };
 
+const float BmMultiLineStringView::nLeftOffset = 3.0;
+
 /*------------------------------------------------------------------------------*\
 	( )
 		-	

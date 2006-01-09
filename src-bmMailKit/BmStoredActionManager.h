@@ -42,7 +42,7 @@ class BmListModel;
 /*------------------------------------------------------------------------------*\
 	BmStoredActionFlusher
 \*------------------------------------------------------------------------------*/
-class BmStoredActionFlusher {
+class IMPEXPBMMAILKIT BmStoredActionFlusher {
 
 public:
 	static BmStoredActionFlusher* CreateInstance();
@@ -78,7 +78,7 @@ private:
 /*------------------------------------------------------------------------------*\
 	BmStoredActionManager
 \*------------------------------------------------------------------------------*/
-class BmStoredActionManager {
+class IMPEXPBMMAILKIT BmStoredActionManager {
 	typedef vector<BMessage*> ActionVect;
 public:
 	BmStoredActionManager(BmListModel* list);
