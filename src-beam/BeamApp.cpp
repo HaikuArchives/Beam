@@ -592,9 +592,9 @@ int32 PrintMails( void* data) {
 				mailView->BodyPartView()->SetViewColor( 
 					ui_color( B_UI_DOCUMENT_BACKGROUND_COLOR)
 				);
+				mailView->ShowMail( mailRef, false);
 				mailView->UnlockLooper();
 			}
-			mailView->ShowMail( mailRef, false);
 			while( !mailView->IsDisplayComplete())
 				snooze( 50*1000);
 			BRect currFrame = printableRect.OffsetToCopy( 0, 0);
