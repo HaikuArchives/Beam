@@ -80,13 +80,6 @@ class IMPEXPBMDAEMON BmPopper : public BmNetJobModel {
 	typedef BmNetJobModel inherited;
 	
 public:
-	//	message component definitions for status-msgs:
-	static const char* const MSG_POPPER;
-	static const char* const MSG_DELTA;
-	static const char* const MSG_TRAILING;
-	static const char* const MSG_LEADING;
-	static const char* const MSG_ENCRYPTED;
-
 	// message component definitions for additional info:
 	static const char* const MSG_PWD;
 

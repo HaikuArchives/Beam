@@ -81,6 +81,13 @@ void BmStatusFilter::Reset( BmMemIBuf* input) {
 #undef BM_LOGNAME
 #define BM_LOGNAME Name()
 
+const char* const BmNetJobModel::MSG_MODEL = 		"bm:model";
+const char* const BmNetJobModel::MSG_DELTA = 		"bm:delta";
+const char* const BmNetJobModel::MSG_TRAILING = 	"bm:trailing";
+const char* const BmNetJobModel::MSG_LEADING = 		"bm:leading";
+const char* const BmNetJobModel::MSG_ENCRYPTED = 	"bm:encrypted";
+const char* const BmNetJobModel::MSG_FAILED = 		"bm:failed";
+
 /*------------------------------------------------------------------------------*\
 	BmNetJobModel()
 		-	constructor

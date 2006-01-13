@@ -102,7 +102,13 @@ public:
 	inline const BmString& StatusText() const
 													{ return mStatusFilter->StatusText(); }
 
-	// setters:
+	//	message component definitions for status-msgs:
+	static const char* const MSG_MODEL;
+	static const char* const MSG_DELTA;
+	static const char* const MSG_TRAILING;
+	static const char* const MSG_LEADING;
+	static const char* const MSG_ENCRYPTED;
+	static const char* const MSG_FAILED;
 
 protected:
 	// native methods:
