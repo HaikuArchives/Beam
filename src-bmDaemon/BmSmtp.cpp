@@ -641,6 +641,8 @@ void BmSmtp::StateSendMails() {
 			}
 			if (ShouldContinue()) {
 				mail->MarkAs( BM_MAIL_STATUS_SENT);
+				mail->ApplyOutboundFilters();
+					// give filters a chance that check for 'Sent'-status...
 			}
 		} catch( BM_runtime_error &err) {
 			// a problem occurred, we tell the user:
