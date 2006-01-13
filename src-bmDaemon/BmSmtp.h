@@ -84,13 +84,6 @@ class IMPEXPBMDAEMON BmSmtp : public BmNetJobModel {
 	typedef vector< entry_ref> BmQueuedRefVect;
 	
 public:
-	//	message component definitions for status-msgs:
-	static const char* const MSG_SMTP;
-	static const char* const MSG_DELTA;
-	static const char* const MSG_TRAILING;
-	static const char* const MSG_LEADING;
-	static const char* const MSG_ENCRYPTED;
-
 	// message component definitions for additional info:
 	static const char* const MSG_PWD;
 	static const char* const MSG_REF;
