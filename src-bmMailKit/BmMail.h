@@ -178,7 +178,7 @@ public:
 	void RemoveField( const BmString fieldName);
 	void SetFieldVal( const BmString fieldName, const BmString value);
 	bool IsFieldEmpty( const BmString fieldName);
-	const BmString Status() const;
+	const BmString& Status() const;
 	//
 	void RatioSpam( float rs);
 	float RatioSpam() const;
@@ -248,7 +248,7 @@ private:
 	void SetDefaultHeaders( const BmString& defaultHeaders);
 	BmMail();
 	
-	const BmString DefaultStatus() const;
+	const BmString& DefaultStatus() const;
 
 	BmRef<BmMailHeader> mHeader;
 							// contains header-information

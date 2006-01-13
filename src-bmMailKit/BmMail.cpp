@@ -1179,7 +1179,7 @@ void BmMail::MarkAs( const char* status) {
 	Status()
 		-	
 \*------------------------------------------------------------------------------*/
-const BmString BmMail::Status() const { 
+const BmString& BmMail::Status() const { 
 	return mMailRef ? mMailRef->Status() : DefaultStatus();
 }
 
@@ -1187,7 +1187,7 @@ const BmString BmMail::Status() const {
 	DefaultStatus()
 		-	
 \*------------------------------------------------------------------------------*/
-const BmString BmMail::DefaultStatus() const {
+const BmString& BmMail::DefaultStatus() const {
 	if (!mDefaultStatus.Length())
 		mDefaultStatus = mOutbound 
 								? BM_MAIL_STATUS_DRAFT 
