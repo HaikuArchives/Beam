@@ -64,6 +64,7 @@
 #include "BmPrefs.h"
 #include "BmSmtpAccount.h"
 #include "BmSmtp.h"
+#include "Colors.h"
 
 
 static const int BM_MINSIZE = 200;
@@ -508,7 +509,7 @@ void BmPopperView::ResetController() {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmPopperView::UpdateModelView( BMessage* msg) {
-	BmString name = FindMsgString( msg, BmPopper::MSG_POPPER);
+	BmString name = FindMsgString( msg, BmPopper::MSG_MODEL);
 	BmString domain = FindMsgString( msg, BmJobModel::MSG_DOMAIN);
 
 	float delta = FindMsgFloat( msg, BmPopper::MSG_DELTA);
@@ -518,6 +519,8 @@ void BmPopperView::UpdateModelView( BMessage* msg) {
 	msg->FindString( BmPopper::MSG_TRAILING, &trailing);
 	bool encrypted = false;
 	msg->FindBool( BmPopper::MSG_ENCRYPTED, &encrypted);
+	bool failed = false;
+	msg->FindBool( BmPopper::MSG_FAILED, &failed);
 
 	BM_LOG3( BM_LogJobWin, BmString("Updating interface for ") << name);
 
@@ -535,8 +538,15 @@ void BmPopperView::UpdateModelView( BMessage* msg) {
 		} else { 
 			// domain == "statbar"
 			mStatBar->Update( delta, leading, trailing);
+			rgb_color newBarColor = mStatBar->BarColor();
 			if (encrypted)
-				mStatBar->SetBarColor( BmJobStatusWin::BM_COL_STATUSBAR_GOOD);
+				newBarColor = BmJobStatusWin::BM_COL_STATUSBAR_GOOD;
+			if (failed)
+				newBarColor = BmJobStatusWin::BM_COL_STATUSBAR_BAD;
+			if (newBarColor != mStatBar->BarColor()) {
+				mStatBar->SetBarColor(newBarColor);
+				mStatBar->Invalidate();
+			}
 		}
 	} else
 		throw BM_runtime_error( "BmPopperView::UpdateModelView(): could not "
@@ -647,7 +657,7 @@ void BmSmtpView::ResetController() {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmSmtpView::UpdateModelView( BMessage* msg) {
-	BmString name = FindMsgString( msg, BmSmtp::MSG_SMTP);
+	BmString name = FindMsgString( msg, BmSmtp::MSG_MODEL);
 	BmString domain = FindMsgString( msg, BmJobModel::MSG_DOMAIN);
 
 	float delta = FindMsgFloat( msg, BmSmtp::MSG_DELTA);
@@ -657,6 +667,8 @@ void BmSmtpView::UpdateModelView( BMessage* msg) {
 	msg->FindString( BmSmtp::MSG_TRAILING, &trailing);
 	bool encrypted = false;
 	msg->FindBool( BmSmtp::MSG_ENCRYPTED, &encrypted);
+	bool failed = false;
+	msg->FindBool( BmSmtp::MSG_FAILED, &failed);
 
 	BM_LOG3( BM_LogJobWin, BmString("Updating interface for ") << name);
 
@@ -667,8 +679,15 @@ void BmSmtpView::UpdateModelView( BMessage* msg) {
 		} else { 
 			// domain == "statbar"
 			mStatBar->Update( delta, leading, trailing);
+			rgb_color newBarColor = mStatBar->BarColor();
 			if (encrypted)
-				mStatBar->SetBarColor( BmJobStatusWin::BM_COL_STATUSBAR_GOOD);
+				newBarColor = BmJobStatusWin::BM_COL_STATUSBAR_GOOD;
+			if (failed)
+				newBarColor = BmJobStatusWin::BM_COL_STATUSBAR_BAD;
+			if (newBarColor != mStatBar->BarColor()) {
+				mStatBar->SetBarColor(newBarColor);
+				mStatBar->Invalidate();
+			}
 		}
 	} else
 		throw BM_runtime_error( "BmSmtpView::UpdateModelView(): could not "
@@ -691,8 +710,8 @@ const rgb_color BmJobStatusWin::BM_COL_STATUSBAR = {216,216,216};
 #else
 const rgb_color BmJobStatusWin::BM_COL_STATUSBAR = {160,160,160};
 #endif
-const rgb_color BmJobStatusWin::BM_COL_STATUSBAR_GOOD = {0,128,0};
-const rgb_color BmJobStatusWin::BM_COL_STATUSBAR_BAD = {128,0,0};
+const rgb_color BmJobStatusWin::BM_COL_STATUSBAR_GOOD = {0,192,0};
+const rgb_color BmJobStatusWin::BM_COL_STATUSBAR_BAD = {208,0,0};
 BmJobStatusWin* BmJobStatusWin::theInstance = NULL;
 
 /*------------------------------------------------------------------------------*\
