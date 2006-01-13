@@ -131,12 +131,6 @@ bool BmPopStatusFilter::CheckForPositiveAnswer() {
 	BmPopper
 \********************************************************************************/
 
-const char* const BmPopper::MSG_POPPER = 		"bm:popper";
-const char* const BmPopper::MSG_DELTA = 		"bm:delta";
-const char* const BmPopper::MSG_TRAILING = 	"bm:trailing";
-const char* const BmPopper::MSG_LEADING = 	"bm:leading";
-const char* const BmPopper::MSG_ENCRYPTED = 	"bm:encrypted";
-
 // message component definitions for additional info:
 const char* const BmPopper::MSG_PWD = 	"bm:pwd";
 
@@ -267,13 +261,14 @@ bool BmPopper::StartJob() {
 void BmPopper::UpdatePOPStatus( const float delta, const char* detailText, 
 										  bool failed, bool stopped) {
 	auto_ptr<BMessage> msg( new BMessage( BM_JOB_UPDATE_STATE));
-	msg->AddString( MSG_POPPER, Name().String());
-	msg->AddString( BmJobModel::MSG_DOMAIN, "statbar");
+	msg->AddString( MSG_MODEL, Name().String());
+	msg->AddString( MSG_DOMAIN, "statbar");
 	msg->AddFloat( MSG_DELTA, delta);
-	if (failed)
+	if (failed) {
 		msg->AddString( MSG_TRAILING, 
 							(BmString(PopStates[mState].text) << " FAILED!").String());
-	else if (stopped)
+		msg->AddBool( MSG_FAILED, true);
+	} else if (stopped)
 		msg->AddString( MSG_TRAILING, 
 							(BmString(PopStates[mState].text) 
 								<< " Stopped!").String());
@@ -299,8 +294,8 @@ void BmPopper::UpdateMailStatus( const float delta, const char* detailText,
 		text = "none";
 	}
 	auto_ptr<BMessage> msg( new BMessage( BM_JOB_UPDATE_STATE));
-	msg->AddString( MSG_POPPER, Name().String());
-	msg->AddString( BmJobModel::MSG_DOMAIN, "mailbar");
+	msg->AddString( MSG_MODEL, Name().String());
+	msg->AddString( MSG_DOMAIN, "mailbar");
 	msg->AddFloat( MSG_DELTA, delta);
 	msg->AddString( MSG_LEADING, text.String());
 	if (detailText)

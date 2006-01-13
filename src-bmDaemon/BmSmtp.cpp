@@ -162,12 +162,6 @@ bool BmSmtpStatusFilter::CheckForPositiveAnswer() {
 #undef BM_LOGNAME
 #define BM_LOGNAME Name()
 
-const char* const BmSmtp::MSG_SMTP = 		"bm:smtp";
-const char* const BmSmtp::MSG_DELTA = 		"bm:delta";
-const char* const BmSmtp::MSG_TRAILING = 	"bm:trailing";
-const char* const BmSmtp::MSG_LEADING = 	"bm:leading";
-const char* const BmSmtp::MSG_ENCRYPTED = "bm:encrypted";
-
 // message component definitions for additional info:
 const char* const BmSmtp::MSG_PWD = 	"bm:pwd";
 
@@ -304,14 +298,15 @@ bool BmSmtp::StartJob() {
 void BmSmtp::UpdateSMTPStatus( const float delta, const char* detailText, 
 										  bool failed, bool stopped) {
 	auto_ptr<BMessage> msg( new BMessage( BM_JOB_UPDATE_STATE));
-	msg->AddString( MSG_SMTP, Name().String());
-	msg->AddString( BmJobModel::MSG_DOMAIN, "statbar");
+	msg->AddString( MSG_MODEL, Name().String());
+	msg->AddString( MSG_DOMAIN, "statbar");
 	msg->AddFloat( MSG_DELTA, delta);
-	if (failed)
+	if (failed) {
 		msg->AddString( MSG_TRAILING, 
 							 (BmString(SmtpStates[mState].text) 
 								<< " FAILED!").String());
-	else if (stopped)
+		msg->AddBool( MSG_FAILED, true);
+	} else if (stopped)
 		msg->AddString( MSG_TRAILING, 
 							 (BmString(SmtpStates[mState].text) 
 							 	<< " Stopped!").String());
@@ -332,8 +327,8 @@ void BmSmtp::UpdateMailStatus( const float delta, const char* detailText,
 										 int32 currMsg) {
 	BmString text = BmString() << currMsg << " of " << mMailCount;
 	auto_ptr<BMessage> msg( new BMessage( BM_JOB_UPDATE_STATE));
-	msg->AddString( MSG_SMTP, Name().String());
-	msg->AddString( BmJobModel::MSG_DOMAIN, "mailbar");
+	msg->AddString( MSG_MODEL, Name().String());
+	msg->AddString( MSG_DOMAIN, "mailbar");
 	msg->AddFloat( MSG_DELTA, delta);
 	msg->AddString( MSG_LEADING, text.String());
 	if (detailText)
