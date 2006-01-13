@@ -698,8 +698,9 @@ void BmPrefsFilterChainView::MessageReceived( BMessage* msg) {
 				break;
 			}
 			case BM_EMPTY_CHAIN: {
-				BmListModel* chain 
-					= dynamic_cast< BmListModel*>( mCurrFilterChain.Get());
+				BmListModel* chain = dynamic_cast< BmListModel*>(
+					mCurrFilterChain->ChainedFilters()
+				);
 				if (chain) {
 					BmAutolockCheckGlobal lock( chain->ModelLocker());
 					if (!lock.IsLocked())
