@@ -1,7 +1,3 @@
-/*
-	FoldedLineEncoderTest.h
-		$Id$
-*/
 /*************************************************************************/
 /*                                                                       */
 /*  Beam - BEware Another Mailer                                         */

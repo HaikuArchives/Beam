@@ -1,9 +1,10 @@
 /*
- * Copyright 2005, Ingo Weinhold, bonefish@cs.tu-berlin.de.
- * Distributed under the terms of the MIT license.
+ * Copyright 2002-2006, project beam (http://sourceforge.net/projects/beam).
+ * All rights reserved. Distributed under the terms of the GNU GPL v2.
  *
- * Changed into an addon and extended somewhat 
- * by Oliver Tappe, zooey@hirschkaefer.de.
+ * Authors:
+ * 	Ingo Weinhold <bonefish@cs.tu-berlin.de>
+ *		Oliver Tappe <beam@hirschkaefer.de>
  */
 
 #include <Message.h>

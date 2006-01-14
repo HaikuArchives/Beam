@@ -1,10 +1,15 @@
-/* BmMultiLocker.h */
-/* multiple-reader single-writer locking class */
 /*
-	inspired by BMultiLocker, which is
-			Copyright 1999, Be Incorporated.   All Rights Reserved.
-*/
-
+ * Copyright 2002-2006, project beam (http://sourceforge.net/projects/beam).
+ * All rights reserved. Distributed under the terms of the GNU GPL v2.
+ *
+ * Authors:
+ *		Oliver Tappe <beam@hirschkaefer.de>
+ */
+/* 
+ * multiple-reader single-writer locking class,
+ * inspired by BMultiLocker, which is
+ *    Copyright 1999, Be Incorporated.   All Rights Reserved.
+ */
 
 #ifndef BM_MULTI_LOCKER_H
 #define BM_MULTI_LOCKER_H

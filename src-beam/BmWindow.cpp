@@ -1,8 +1,3 @@
-/*
-	BmWindow.cpp
-		$Id$
-*/
-
 #include <File.h>
 #include <MessageFilter.h>
 #include <View.h>

@@ -1,7 +1,3 @@
-/*
-	QuotedPrintableDecoderTest.cpp
-		$Id$
-*/
 /*************************************************************************/
 /*                                                                       */
 /*  Beam - BEware Another Mailer                                         */

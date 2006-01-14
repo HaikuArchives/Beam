@@ -1,7 +1,3 @@
-/*
-	FoldedLineEncoderTest.cpp
-		$Id$
-*/
 /*************************************************************************/
 /*                                                                       */
 /*  Beam - BEware Another Mailer                                         */

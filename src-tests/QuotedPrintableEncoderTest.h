@@ -1,7 +1,3 @@
-/*
-	QuotedPrintableEncoderTest.h
-		$Id$
-*/
 /*************************************************************************/
 /*                                                                       */
 /*  Beam - BEware Another Mailer                                         */

@@ -1,32 +1,10 @@
 /*
-	BmJobStatusWin.cpp
-		$Id$
-*/
-/*************************************************************************/
-/*                                                                       */
-/*  Beam - BEware Another Mailer                                         */
-/*                                                                       */
-/*  http://www.hirschkaefer.de/beam                                      */
-/*                                                                       */
-/*  Copyright (C) 2002 Oliver Tappe <beam@hirschkaefer.de>               */
-/*                                                                       */
-/*  This program is free software; you can redistribute it and/or        */
-/*  modify it under the terms of the GNU General Public License          */
-/*  as published by the Free Software Foundation; either version 2       */
-/*  of the License, or (at your option) any later version.               */
-/*                                                                       */
-/*  This program is distributed in the hope that it will be useful,      */
-/*  but WITHOUT ANY WARRANTY; without even the implied warranty of       */
-/*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU    */
-/*  General Public License for more details.                             */
-/*                                                                       */
-/*  You should have received a copy of the GNU General Public            */
-/*  License along with this program; if not, write to the                */
-/*  Free Software Foundation, Inc., 59 Temple Place - Suite 330,         */
-/*  Boston, MA  02111-1307, USA.                                         */
-/*                                                                       */
-/*************************************************************************/
-
+ * Copyright 2002-2006, project beam (http://sourceforge.net/projects/beam).
+ * All rights reserved. Distributed under the terms of the GNU GPL v2.
+ *
+ * Authors:
+ *		Oliver Tappe <beam@hirschkaefer.de>
+ */
 
 #include <stdio.h>
 
@@ -710,7 +688,7 @@ const rgb_color BmJobStatusWin::BM_COL_STATUSBAR = {216,216,216};
 #else
 const rgb_color BmJobStatusWin::BM_COL_STATUSBAR = {160,160,160};
 #endif
-const rgb_color BmJobStatusWin::BM_COL_STATUSBAR_GOOD = {0,192,0};
+const rgb_color BmJobStatusWin::BM_COL_STATUSBAR_GOOD = {0,160,0};
 const rgb_color BmJobStatusWin::BM_COL_STATUSBAR_BAD = {208,0,0};
 BmJobStatusWin* BmJobStatusWin::theInstance = NULL;
 

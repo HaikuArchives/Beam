@@ -1,7 +1,3 @@
-/*
-	LinebreakDecoderTest.cpp
-		$Id$
-*/
 /*************************************************************************/
 /*                                                                       */
 /*  Beam - BEware Another Mailer                                         */

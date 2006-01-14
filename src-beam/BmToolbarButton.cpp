@@ -1,8 +1,3 @@
-/*
-	BmToolbarButton.cpp
-		$Id$
-*/
-
 #include <set>
 
 #include <Bitmap.h>

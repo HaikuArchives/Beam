@@ -1,7 +1,3 @@
-/*
-	EncodedWordEncoderTest.cpp
-		$Id$
-*/
 /*************************************************************************/
 /*                                                                       */
 /*  Beam - BEware Another Mailer                                         */
