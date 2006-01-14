@@ -1,8 +1,711 @@
 change-history of Beam:
 		$Id$
 
+< 2006-01-14: commit, moved tag 'current-devel' >
 
+many files:
+	-	updated copyright and shortened license info.
 
+< 2006-01-13: commit >
+
+BmNetJobModel, BmPopper, BmSmtp:
+	-	refactored duplicate msg-types into base class
+	-	failed jobs are now indicated as such in the status msg
+
+BmJobStatusWin:
+	-	failed jobs are now highlighted (in red).
+
+< 2006-01-13: commit >
+
+BmPrefsFilterChainView:
+	-	'remove all'-button now works again, we tried to 
+		dynamic_cast the wrong object.
+
+BmMail:
+	-	fixed incorrect return type for Status() and DefaultStatus(),
+		as both should return a reference instead of a temporary.
+		This change fixes non-working checks on a mail's status
+		during filtering.
+
+BmSmtp:
+	-	we now apply outbound filters after the mail has been
+		sent, too. This way people can easily setup a filter
+		that puts sent messages into another folder (like 'Sent').
+
+< 2006-01-10: commit >
+
+BeamApp:
+	-	fixed debugger call during printing of messages
+
+< 2006-01-09: commit, moved tag 'current-devel' >
+
+BmMailMonitor:
+	-	fixed a locking hole that triggered assert().
+
+BmPopper, BmSmtp, BmPrefRecvMailView, BmPrefsSendMailView,
+BmPopAccount, BmSmtpAccount:
+	-	added support for automatic selection of encryption mode.
+
+BmJobStatusWin:
+	-	added support for indicating whether or not a session
+		is encrypted.
+
+< 2006-01-09: commit >
+
+BmPopper:
+	-	fixed crash when trying to determine supported auth-types
+		by introducing CAPA as a proper state.
+
+src-BmDaemon/src-netendpoint-addons/Jamfile:
+	-	Zeta comes with openssl in develop/headers, so we now look
+		there, too.
+
+BmMultiLineStringView, BmStoredActionManager:
+	-	fixed compilation issues on PPC.
+
+< 2006-01-09: commit, moved tag 'current-devel' >
+
+BmPrefsRecvMailView, BmPrefsSendMailView:
+	-	added auto-switching between encrypted and unencrypted
+		default ports.
+
+BmPopper, BmSmtp:
+	-	made starttls a proper state
+	-	cleanup with respect to different jobs and their effect
+		on the state machine.
+
+< 2006-01-07: commit >
+
+BmNetEndpoint:
+	-	added this file which contains an implementation for a 
+		BNetEndpoint replacement (that only contains what Beam uses). 
+	-	It adds abstract supports for an encryption layer.
+	-	This class serves	as a base for BmNetEndpoint-addons which
+		provide actual implementations for the encryption layer (
+		aka TLS/SSL-support).
+
+BmNetEndpointRoster:
+	-	added this file which contains a class that is responsible
+		for loading/unloading of BmNetEndpoint-addons and handing
+		out info about the (non-)availability of an encryption layer.
+
+BmNetJobModel:
+	-	now uses BmNetEndpoint instead of BNetEndpoint.
+
+BmOpenSslNetEndpoint, src-netendpoint-addons/Jamfile:
+	-	created addon that implements encryption via openssl. Making
+		this an addon keeps Beam itself free of dependencies to 
+		openssl (which may not be installed on every system). Using 
+		the addon, Beam will be able to use encryption on systems
+		that have openssl installed and fall back to no encryption
+		on systems where openssl isn't available.
+	-	the actual openssl-code has kindly been provided by 
+		Ingo Weinhold, thanks a lot!
+
+BmPopAccount, BmSmtpAccount, BmPopper, BmSmtp, 
+BmPrefsRecvMailView, BmPrefsSendMailView:
+	-	applied a slightly modified version of Ingo's patch that 
+		adds configuration support for encryption via TLS/SSL.
+
+src-bmDaemon/Jamfile:
+	-	added BmNetEndpoint* implementation and openssl-addon.
+
+< 2006-01-02: commit >
+
+BuildSettings:
+	-	added -DBEAM_FOR_ZETA when building on ZETA
+
+BmMultiLineStringView:
+	-	now uses MakeFocusNoScroll() in order to avoid autoscrolling
+		of string-views. This fixes the problem that clicking into
+		a headerview would cause unexpected scrolling on ZETA.
+
+< 2006-01-01: commit >
+
+BmMailHeaderView:
+	-	removed debug-printf.
+	
+BmMultiLineStringView:
+	-	added support for selection (and copying) of contents.
+	-	protected internal data by locking where needed.
+
+< 2005-12-29: commit >
+
+BmMailHeaderView:
+	-	fixed buglet with wrong fontsize being marked in font-submenu
+	-	fixed crash in addrMenu when an edit-only address exists.
+
+< 2005-12-29: commit >
+
+BeamApp:
+	-	added support for editing a person given his/her mail-address.
+
+BmMailHeaderView:
+	-	instead of using a BTextView for each value, we now use a
+		BmMultiLineStringView, which is more lightweight and
+		doesn't cause sudden scrolls when clicking into it (as the 
+		BTextView does on zeta).
+	-	the addr-menu now supports editing of existing addresses, too.
+
+BmMultiLineStringView:
+	-	added.
+
+src-bmGuiBase/Jamfile
+	-	added BmMultiLineStringView.
+
+< 2005-12-28: commit >
+
+BmMailMonitor:
+	-	switch counters from int32 to uint32 in order to avoid negative
+		values
+
+BmRefManager:
+	-	fixed problems when using BmRefs in containers that depend on
+		less<BmRef> (like std::set does).
+
+BmStoredActionManager:
+	-	now runs with B_LOW_PRIORITY.
+	-	added some logging
+	-	cleanup
+
+< 2005-12-27: commit >
+
+BeamApp:
+	-	added creation & deletion of BmStoredActionFlusher.
+	-	adjusted to changes in BmListModelItem
+
+BmAutoCompleter, BmAutoCompleterDefaultImpl,
+BmTextControlCompleter, src-BmGuiBase/Jamfile:
+	-	fixed incorrect handling of addresses pasted into the
+		autocompleter-view (used to drop the contents on tabbing
+		out).
+	-	some cleanup
+	-	renamed BmAutoCompleterVariations to 
+		BmAutoCompleterDefaultImpl, as default implementations is 
+		what it contains
+
+BmDataModel:
+	-	added missing storing and re-initialization of mJobState 
+		in BmListModel::Cleanup().
+	-	renamed BmListModelItem::ItemIsValid() to IsValid().
+	-	moved BmStoredActionManager into a file of its own.
+	-	made TellModel...() to public, so we don't need to make
+		BmListModelItem a friend of BmListModel (which wasn't any
+		help for subclasses of BmListModelItem anyway).
+
+BmListController, BmMailRef, BmMailView, BmSmtp:
+	-	adjusted to changes in BmListModelItem
+
+BmMailFolder:
+	-	we no longer replace a folder's reflist with NULL if there
+		are no more controllers, but we empty the current reflist
+		instead. This is necessary in order to avoid dropping some
+		node monitor messages when the user is jumping between 
+		folders while there's lots of activity.
+	-	dropped FindMailRefByKey(), as it is now completely implemented
+		in BmMailFolderList.
+
+BmMailFolderList:
+	-	reimplemented FindMailRefByKey() such that it no longer
+		holds the folder-list-lock and the ref-list-lock at the
+		same time. This was a cause for possible deadlock.
+	-	renamed doInitializeMailFolders() to InitializeSubFolders() and 
+		made it public, such that BmMailMonitor can call this method
+		without being a friend.
+
+BmMailMonitor:
+	-	added IsIdle() which is used by BmStoredActionFlusher in order
+		to find out if itself should start to flush.
+	-	adjusted to only use public members of BmMailFolderList and
+		BmDataModel.
+	-	added comment explaining a problem we have with B_ATTR_CHANGED
+		messages and our strategy towards dealing with it.
+
+BmMailRefList:
+	-	closed some locking holes, hopefully Beam should no longer
+		miss any mails when skipping heavily between folders while new
+		mail arrives (it used to leave some of them out of the cache
+		files). 
+	-	improved correctness of a folder's mail-count, but it still
+		isn't correct at all times (which is pretty impossible with the
+		current approach). Never mind, as the count gets corrected when
+		the folder is activated.
+	-	cleanup
+
+BmMailRefView:
+	-	fixed bug with Date always being shown as 1970-01-01
+
+BmRefManager:
+	-	removed superfluous locking.
+
+BmStoredActionManager:
+	-	refactored BmStoredActionManager into a file of its own
+	-	added BmStoredActionFlusher which implements auto-
+		flushing of "dirty" stored action managers.
+
+src-bmMailKit/Jamfile
+	-	added BmStoredActionManager.cpp
+
+< 2005-12-21: commit >
+
+BeamApp:
+	-	adjusted to changes in BmDeskbarItem's message protocol.
+
+BmController:
+	-	calling StartJob() with a NULL-model didn't start the
+		current model, but removed the model instead (replaced
+		it with null).
+
+BmDeskbarItem
+	-	reworked new-mail monitoring to better cope with new mails
+		that live outside of Beam's mailbox.
+
+BmMailFolderView:
+	-	recaching a folder indicates the working state again by
+		setting the ref-listview to busy.
+
+BmMailQuery:
+	-	now uses LivesInMailbox() instead of LivesInTrash().
+
+BmStorageUtil:
+	-	replaced LivesInTrash() by LivesInMailbox(), as we are
+		actually only interested whether or not a given mail
+		lives inside of Beam's current mailbox.
+
+< 2005-12-19: commit >
+
+BmMail:
+	-	fixed problem in MoveToDestFolder() when the mail already
+		lives in the destination folder.
+
+BmMailFilter:
+	-	fixed code to actually allow for the MoveToDestFolder()
+		optimization to pull through.
+
+< 2005-12-19: commit >
+
+BmFilterAddon:
+	-	changed interface of BmMsgContext to allow for reliable
+		checking whether or not a given field has been changed
+		by a filtering process.
+
+BmMailFilter, BmSieveFilter, BmSpamFilter, SpamOMeter:
+	-	adjusted to changes in BmMsgContext.
+
+< 2005-12-19: commit >
+
+BmDataModel:
+	-	cosmetics
+
+BmMail:
+	-	streamlined and greatly simplified storing of mails:
+		+	instead of using full paths, the destination now
+			consists of the destination mail-folder and the
+			filename of the mail.
+		+	mail filenames are now always unique, there used to
+			be a (unlikely) possibility of one mail clobbering
+			another.
+	-	cosmetical changes
+
+BmMailFolder:
+	-	optimized IsSystemFolderPath(), i.e. it no longer
+		uses GetPath().
+
+BmMailFolderList:
+	-	added FindMailFolderBySubPath() in order to easily fetch
+		the folder for a specific subpath (relative to mailbox).
+
+BmStorageUtil:
+	-	re-added support for creating a BmBackedFile from a BEntry,
+		as this now comes in handy with the new mail storage
+		routines.
+
+many files:
+	-	adjusted to new way of storing mails
+
+< 2005-12-15: commit, moved tag 'current-devel' >
+
+BuildSettings, Jamrules:
+	-	we now use separate object/distro folders for each platform
+
+BmDataModel:
+	-	implemented some kind of write-cache for stored actions,
+		this now lives in a class of its own, StoredActionManager.
+	-	reworked item-instantiation to be a bit more flexible and
+		comprehensible. Now every subclass should be able to 
+		implement its own needs within the given scheme.
+
+BmMail:
+	-	fixed bug that could leave incorrect reply-to field values
+		(from another identity) in place when replying/forwarding 
+		mails.
+	-	instead of banging the subject into something usable as a
+		filename, we now simply name every mail 'mail-' followed
+		be the current time and an internal (session-specific) 
+		counter. Although clashes should be rare, we now actually 
+		*ensure* that each mail gets a unique filename.
+
+BmMailFolder:
+	-	now uses a separate BumpMailCount() method which takes care
+		to only bump the mail count if it is actually known at 
+		the time. This fixes the bug that caused new mails appearing 
+		in folders whose mail-count isn't known to increment the
+		mail counter (from -1 to 0 and onwards), which in turn lead
+		to an incorrect total number.
+	-	fixed bug that caused recaching of folders to replace the
+		current ref-list by a new one and then recache into the
+		wrong (old) ref-list. Now it simply refills the	current 
+		ref-list.
+
+BmMailFolderView:
+	-	removed unneeded calls when recaching a folder's content.
+
+BmStorageUtil:
+	-	BmBackedFile now sets the mimetype of the new file in the
+		destructor, such that mails become valid *after* their data
+		and attributes have been written, not before. 
+	-	cleaned up BmBackedFile a bit.
+	-	EnsureIndexExists() now requires the attr-type, too.
+
+all listmodel implementations:
+	-	adjusted to match reworked instantiation interface.
+
+< 2005-12-08: commit >
+
+BmMailFolder:
+	-	one more fix for handling of special mail-refs, we now
+		check if a given mail-ref is in fact special and only add/
+		remove the special flag if that is indeed the case.
+
+BmMailRef, BmMailRefView:
+	-	renamed BmMailRef::IsNew() to IsSpecial() (and changed the
+		code accordingly).
+
+< 2005-12-08: commit >
+
+BmDeskbarItem:
+	-	some improvements concerning the handling of new mails living
+		in trash.
+
+BmMail:
+	-	we now pass the complete path to BmBackedFile::SetTo() in order
+		to avoid a (superfluous) call to GetPath() (as that is pretty 
+		slow).
+
+BmMailFolder, BmMailMonitor:
+	-	some more work towards a proper handling of new/special mails
+
+BmMailFolderList:
+	-	fix a problem if mailbox path is a link.
+
+BmPopper:
+	-	fixed bug introduced with last commit that caused Beam to
+		complain in case the server silently accepted a command
+		(like they usually deal with a 'QUIT').
+
+< 2005-12-06: commit >
+
+BmAppResources:
+	-	changed version string to devel version.
+
+BmMail, BmMailFolder, BmMailFolderList, BmMailFolderView,
+BmMailMonitor:
+	-	reworked handling of new mail count: instead of keeping a
+		global list in BmMailFolderList, each folder now keeps a list
+		of the new mails it contains. This is simpler and allows us
+		to circumvent a bug in BeOS' query code (which sends two query
+		updates if you check an attribute against two values and one
+		of them matches).
+	-	we now highlight pending messages, too, not only new ones (the
+		respective members have been renamed from *New* to *Special*).
+		
+< 2005-12-04: commit >
+
+BmBodyPartList:
+	-	applied two fixes sent in by Ingo.
+
+BmPopper, BmSmtp:
+	-	changed test for protocol-error (yet again) from using Compare() 
+	   to ByteAt().
+
+BmString:
+	-	applied a patch submitted by Ingo Weinhold that causes 
+	 	LockBuffer() to return an writable buffer (of length 1) if the 
+		requested size is 0. This allows the caller to actually write 
+		to this buffer (only the '\0'-delimiter makes sense, of course).
+
+< 2005-12-03: commit >
+
+BmBodyPartList:
+	-	now signatures can be limited to a maximum number of lines, in
+		order to circumvent problems when viewing digest mails. The
+		actual number can be altered via the prefs setting 
+		'MaxLinesForSignature', the default is 5.
+
+BmMailFolderList:
+	-	fixed problem when mailbox is a link (the folder cache was
+		always rebuilt in that case). Reported by stippi.
+
+BmPopper, BmSmtp:
+	-	fixed possible crash when accessing first char of status test.
+
+BmString:
+	-	added CountLines()
+
+< 2005-11-24: commit >
+
+BeamApp:
+	-	now always saves prefs upon exit, in order to avoid losing info
+		when for instance the prefs we changed by a renamed folder that
+		was tracked by foreign-keys in a filter.
+
+BmDataModel:
+	-	IsJobCompleted() is now virtual in order to allow overriding
+		in base classes.
+
+BmMailRefList:
+	-	fixed bug with recreate-cache only working every second time,
+		by overriding IsJobCompleted() and implement an additional
+		check for the need to recache the contents (in which case we
+		return false in order to indicate that the job isn't complete).
+
+< 2005-11-19: commit >
+
+BmGuiRoster:
+	-	ListMenuBuilder is now capable of separating two items with keys
+		only differing in case properly (used to drop one of these before).
+
+BmListController:
+	-	mIsHidden is now initialized to false, as otherwise every 
+	   controller view will (re-)add all items upon change of frame size.
+	-	in AddModelItem(), we no check if there isn't already a view-item
+		for the given model-item, just for improved robustness.
+
+< 2005-11-17: commit >
+
+BmBodyPartView:
+	-	now we actually use the name given to us when asked to write 
+		data into a file during drag'n'drop.
+
+BmPopper:
+	-	fixed bug with mails always being deleted immediately after they
+		had been received, even if they were supposed to stay on the
+		server for a couple of days.
+	-	fixed bug in status filter that caused failures/problems when
+		a server sent an error when Beam expected multiline data.
+
+< 2005-11-06: commit, moved tag 'current-devel' >
+
+BmBodyPartList:
+	-	copy-constructor now recursively copies children, too.
+	-	fixed crashing bug during pruning of unneeded multiparts.
+	-	added missing linebreak-conversion to standard conversion chain.
+	-	reworked text-part decoding such that signature is now always
+		split-off if needed, too. This fixes the bug of the signature
+		being shown twice after the user had requested another charset.
+	-	added BmMailtextCleaner-filter into standard conversion chain,
+		which replaces unwanted characters in the mailtext with sensible
+		ones (or drops them completely).
+
+BmBodyPartView:
+	-	optimised displaying of many attachments such that the view's
+		vertical size is only adjusted once, not once per item.
+
+BmDataModel:
+	-	made sure that a sub item can be added to an item although
+		the (parent) item isn't attached to a list yet.
+
+BmEncoding:
+	-	added BmMailtextCleaner filter.
+
+BmListController, BmMailRefView:
+	-	moved special-casing of hidden views from list-controller to
+		mailref-view, as doing it generally messes up views which can
+		exist and work in hidden state (like the bodypart-view).
+
+BmMail:
+	-	robustified somewhat against low-mem situations.
+
+BmMailEditWin:
+	-	address-completion now works for Cc and Bcc fields.
+
+BmMailView:
+	-	URLs can now be launched by tertiary mouse button, too (just
+		like in Firefox).
+	-	robustified automatic selection of menu-item corresponding to
+		a mail's charset (now works in a case-insensitive manner).
+
+BmMailViewWin:
+	-	if the mailref-listview is visible, the window no longer closes
+		after a mail action (was a bit confusing...).
+
+BmPopper:
+	-	changed levels of several log entries.
+
+BmSpamFilter:
+	-	we now use only the first 64KB of every mail-body in order to avoid
+		stuffing too much data of a single mail into our database. Without
+		this limit, handling large mails is slow and could lead to the
+		unwanted effect of a single email being capable to outweigh all
+		other features already in the db.
+	-	tightened some logging output from level 2 to 3, as otherwise the
+		behaviour for loglevel 2 was getting a bit too slow.
+
+BmString:
+	-	the char-argument versions of ReplaceAll() and IReplaceAll() will 
+		no longer loop endlessly when asked to replace a character with 
+		itself.
+
+< 2005-10-16: commit, moved tag 'current-devel' >
+
+BmAutoCompleter, BmAutoCompleterVariations, BmMailAddrCompleter:
+	-	added support for showing the matches in the choice-view.
+
+BmPeople:
+	-	small improvements concerning handling of nicks
+
+< 2005-10-16: commit, moved tag 'current-devel' >
+
+BmLogHandler:
+	-	moved log-folder to /var/log/beam, partly due to the fact that
+		Beam's app-folder may not be writable (like for instance if it
+		runs from the Zeta live-cd).
+
+MailMonitorTest:
+	-	tweaked NAP_TIME in order to be more reliable (would still prefer a
+		proper synchronization, though).
+
+TestBeam:
+	-	fixed starting code for the case when beam_testdata-folder doesn't
+		exist. We now simply skip the mail-monitor-tests in that case.
+
+< 2005-10-14: commit >
+
+BmAutoCompleter:
+	-	added this interface for auto-completion.
+
+BmAutoCompleterVariations:
+	-	added this as default implementation of auto-completer-controller 
+		and -view.
+
+BmCaption:
+	-	view font is now set in constructor instead of during draw.
+
+BmController:
+	-	added optimization for the case that a controller starts a default
+		job that had already been completed by another controller. In that
+		case, we no longer rerun the job, but shortcut to calling JobIsDone().
+
+BmListController:
+	-	now the view-items are only created if the listview is actually
+		shown, this optimizes the memory footprint of the mailview window
+		as the mailref-listview it contains is usually hidden.
+
+BmMailAddrCompleter:
+	-	added this implementation of mail-address auto-completion model
+
+BmMailEditWin:
+	-	replaced ZETA-only auto-completer by our own.
+
+BmMailHeader:
+	-	made QuotedPhrase() static in order to allow for calling it as
+		a utility function from other classes (the mail-addr auto-completer).
+
+BmPeople:
+	-	improved support for accessing people's data from other classes.
+
+BmString, StringTest:
+	-	fixed Trim() with respect to single-char strings (ugh!).
+
+BmTextControlCompleter:
+	-	added this implementation of a message-filter based auto-completer
+		that attaches to a text-control (or rather: the textview within).
+
+BetterScrollView:
+	-	added workaround for changed scrollbar position in Zeta 1.0.1.
+	-	allowed for more room in caption view.
+
+CLVListItem:
+	-	fixed bug with ClippingRegion not being properly when resizing
+		a listview.
+
+Jamfiles:
+	-	added auto-completer implementation to build.
+
+MailMonitorTest:
+	-	added missing include of BmMailMonitor.h.
+
+< 2005-09-21: commit >
+
+BmNetJobModel:
+	-	added missing seeding of rand() in DIGEST-MD5 implementation
+	-	fixed off-by-one bug in construction of cnonce, which caused the
+		DIGEST-MD5 method to fail with some servers.
+
+< 2005-09-15: commit >
+
+BeamApp:
+	-	added support for using B_STRING_SPACING in listviews; defaults to off.
+
+BmBodyPartView:
+	-	fixed deadlock when trying to drag'n'drop to ourselves.
+	-	refactored creation of drag-image to BmListController::CreateDragImage().
+
+BmCaption:
+	-	set view's color to transparent for less flicker during draw.
+
+BmListController:
+	-	refactored creation of drag-image to BmListController::CreateDragImage().
+
+BmMailFolder, BmMailFolderList, BmMailRef, Jamfile:
+	-	moved mail-monitor out to own file (BmMailMonitor).
+	
+BmMailMonitor:
+	-	added, moved mail-monitor code here.
+	-	decoupled handling of monitor-messages from receiving looper (by using
+		a separate worker thread), such that the looper never drops messages.
+
+BmMailRefList:
+	-	improved performance of integrating many added archives into the cache,
+		at least to a certain degree (it still is rather slow).
+
+BmMailRefView:
+	-	refactored creation of drag-image to BmListController::CreateDragImage().
+	-	optimized auto-adjusting of date-columns such that the adjustment
+		takes place if and only if the column width has changed.
+
+BmPrefs:
+	-	added 'ListviewUsesStringSpacing'.
+
+CLVEasyItem, CLVListItem:
+	-	refactored and optimized drawing code (we now make use of a per-item
+		drawing context in order to avoid having to set the state repeatedly for
+		each single item's column).
+
+Colors:
+	-	added global fonts bm_plain_font and bm_bold_font.
+
+ColumnListView:
+	-	now uses bm_plain_font
+
+< 2005-09-10: commit >
+
+BmMainWindow:
+	-	improved initial positions of splitters.
+
+BmPrefsWin:
+	-	corrected initial size of prefs win such that the headers in the
+		left listview aren't cut off.
+
+BuildSettings:
+	-	removed -mcpu=pentiumpro compiler switch since it introduces lots of 
+		weirdness, as for example throwing exceptions across shared-lib boundaries
+		doesn't work no more.
+
+UserResizeSplitView:
+	-	upon first layout, we now check if the given initial divider position
+		actually keeps the children to their limits and correct if not.
+		
 < 2005-08-19: commit, moved tag 'current-devel', release test-050819 >
 
 BmMainWindow:
