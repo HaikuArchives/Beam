@@ -566,8 +566,9 @@ void BmMailRefView::MessageReceived( BMessage* msg) {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmMailRefView::TrashSelectedMessages() {
+	BList selectedItems;
 	BMessage msg(BMM_TRASH);
-	AddSelectedRefsToMsg( &msg);
+	AddSelectedRefsToMsg( &msg, &selectedItems);
 
 	// note down selection...
 	int32 firstIdx = CurrentSelection( 0);
@@ -576,7 +577,7 @@ void BmMailRefView::TrashSelectedMessages() {
 	for( int32 i=0; (currIdx=CurrentSelection( i))>=0; ++i)
 		lastIdx = currIdx;
 
-	// ...and move cursor onwards...
+	// ...move cursor onwards...
 	bool selectNext 
 		= ThePrefs->GetBool( "SelectNextMailAfterDelete", true);
 	if (selectNext && lastIdx < CountItems()-1)
@@ -587,6 +588,10 @@ void BmMailRefView::TrashSelectedMessages() {
 				// select last item that remains in list
 	else
 		DeselectAll();
+
+	// ...remove all to-be-trashed messages from listview...
+	for(int32 i=0; i<selectedItems.CountItems(); ++i)
+		RemoveItem(static_cast<BListItem*>(selectedItems.ItemAt(i)));
 
 	// ...finally tell app to delete mails:
 	be_app_messenger.SendMessage( &msg);
@@ -821,7 +826,8 @@ BmString BmMailRefView::StateInfoFilename( bool forRead) {
 	AddSelectedRefsToMsg( msg)
 		-	
 \*------------------------------------------------------------------------------*/
-void BmMailRefView::AddSelectedRefsToMsg( BMessage* msg) {
+void BmMailRefView::AddSelectedRefsToMsg( BMessage* msg, 
+														BList* itemList) {
 	if (mPartnerMailView) {
 		BmString selectedText;
 		int32 start, finish;
@@ -835,13 +841,18 @@ void BmMailRefView::AddSelectedRefsToMsg( BMessage* msg) {
 	BMessenger msngr( this);
 	msg->AddMessenger( BeamApplication::MSG_SENDING_REFVIEW, msngr);
 	int32 selected = -1;
+	if (itemList)
+		itemList->MakeEmpty();
 	if (CurrentSelection(0) >= 0) {
 		BmMailRefVect* refs = new BmMailRefVect();
 		BmMailRefItem* refItem;
 		for( int32 idx=0; (selected = CurrentSelection(idx)) >= 0; ++idx) {
 			refItem = dynamic_cast<BmMailRefItem*>( ItemAt( selected));
-			if (refItem)
+			if (refItem) {
 				refs->push_back( refItem->ModelItem());
+				if (itemList)
+					itemList->AddItem(refItem);
+			}
 		}
 		msg->AddPointer( BeamApplication::MSG_MAILREF_VECT, 
 						  	  static_cast< void*>( refs));

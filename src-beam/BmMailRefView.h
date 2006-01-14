@@ -101,7 +101,7 @@ public:
 	// native methods:
 	void ShowFolder( BmMailFolder* folder);
 	inline void TeamUpWith( BmMailView* mv) 	{ mPartnerMailView = mv; }
-	void AddSelectedRefsToMsg( BMessage* msg);
+	void AddSelectedRefsToMsg(BMessage* msg, BList* itemList = NULL);
 	void ShowMenu( BPoint point);
 	void AddMailRefMenu( BMenu* menu, BHandler* target, bool isContextMenu);
 	void SendNoticesIfNeeded( bool haveSelectedRef);
