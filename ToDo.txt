@@ -3,36 +3,19 @@
 		$Id$
 */
 
-***********
-Beam 1.1:
-***********
-
--	add support for spam-filtering
-	(include SpamAssassin and Razor)
-
 -	implement RFC2231 to facilitate correct handling of attachment
 	filenames that exceed us-ascii encoding
 
 -	implement RFC2111 (cid: and mid: url-domains) to facilitate 
 	better display of html-pages
 
--	correct node-monitoring for the case when mail-files are being
-	created and Beam accesses them before they are written out
-	completely
-
--	show total number of messages and number of new messages for each folder.
-
 -	allow reading of mails by pressing space in mailref-view
-
--	add navigation through mails in mailview-win (next,prev)
 
 -	add some integration with MDR:
 	+	fetch addresses from MDR-settings
 	+	add a mode to Beam that uses MDR for transport
 
 -	color-coded reply levels
-
--	support hiding/showing preview-pane
 
 -	make non-menu keys and the corresponding actions configurable (esp. the
 	delete key).
@@ -41,23 +24,8 @@ Beam 1.1:
 
 -	make rulerview static (avoid scrolling it away).
 
--	add Received-attribute and show it inside mailref-view (use topmost/latest
-	Received-header).
-
-
-***********
-Beam 1.2:
-***********
-
 -	add support for tagging messages
 
 -	advanced POP-dialog: view mails directly on server, allow to delete them
 
--	implement 'send all pending messages'
-
-
-
-***********
-Beam 1.3:
-***********
 
