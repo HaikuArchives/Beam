@@ -22,7 +22,7 @@
 #include "BmMail.h"
 #include "BmMailFilter.h"
 #include "BmMailHeader.h"
-#include "BmPopAccount.h"
+#include "BmRecvAccount.h"
 #include "BmSmtpAccount.h"
 #include "BmUtil.h"
 
@@ -161,11 +161,11 @@ void BmMailFilter::Execute( BmMail* mail) {
 			chainItem = TheFilterChainList->FindItemByKey(BM_OutboundLabel);
 		} else {
 			// fetch the corresponding inbound-chain:
-			accItem = ThePopAccountList->FindItemByKey( mail->AccountName());
-			BmPopAccount* popAcc = dynamic_cast< BmPopAccount*>( accItem.Get());
-			if (popAcc)
+			accItem = TheRecvAccountList->FindItemByKey( mail->AccountName());
+			BmRecvAccount* recvAcc = dynamic_cast< BmRecvAccount*>( accItem.Get());
+			if (recvAcc)
 				chainItem 
-					= TheFilterChainList->FindItemByKey( popAcc->FilterChain());
+					= TheFilterChainList->FindItemByKey( recvAcc->FilterChain());
 			else
 				chainItem 
 					= TheFilterChainList->FindItemByKey( BM_DefaultItemLabel);

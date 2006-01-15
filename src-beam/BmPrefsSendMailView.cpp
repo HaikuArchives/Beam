@@ -29,7 +29,7 @@
 #include "BmMenuControl.h"
 #include "BmMenuController.h"
 #include "BmNetEndpointRoster.h"
-#include "BmPopAccount.h"
+#include "BmRecvAccount.h"
 #include "BmPrefs.h"
 #include "BmPrefsSendMailView.h"
 #include "BmPrefsWin.h"
@@ -237,12 +237,12 @@ BmPrefsSendMailView::BmPrefsSendMailView()
 							0
 						),
 						mPopControl = new BmMenuControl( 
-							"POP-account:", 
+							"POP3-Account:", 
 							new BmMenuController( 
-								"POP-account:", 
+								"POP3-Account:", 
 								this, 
 								new BMessage( BM_POP_SELECTED),
-								&BmGuiRosterBase::RebuildPopAccountMenu, 
+								&BmGuiRosterBase::RebuildRecvAccountMenu, 
 								BM_MC_LABEL_FROM_MARKED | BM_MC_ADD_NONE_ITEM
 							)
 						),

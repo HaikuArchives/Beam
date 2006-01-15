@@ -140,7 +140,7 @@ private:
 
 // the different "terrains" we will be logging, each of them
 // has its own loglevel:
-extern IMPEXPBMBASE const uint32 BM_LogPop;
+extern IMPEXPBMBASE const uint32 BM_LogRecv;
 extern IMPEXPBMBASE const uint32 BM_LogJobWin;
 extern IMPEXPBMBASE const uint32 BM_LogMailParse;
 extern IMPEXPBMBASE const uint32 BM_LogApp;

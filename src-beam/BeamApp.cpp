@@ -45,6 +45,7 @@ using namespace regexx;
 #include "BmMsgTypes.h"
 #include "BmNetUtil.h"
 #include "BmPeople.h"
+#include "BmRecvAccount.h"
 #include "BmPopAccount.h"
 #include "BmPrefs.h"
 #include "BmPrefsWin.h"
@@ -673,18 +674,18 @@ BeamApplication::BeamApplication( const char* sig)
 
 		BM_LOG( BM_LogApp, BmString("...setting up foreign-keys..."));
 		// now setup all foreign-key connections between these list-models:
-		ThePopAccountList->AddForeignKey( BmIdentity::MSG_POP_ACCOUNT, 
-													 TheIdentityList.Get());
+		TheRecvAccountList->AddForeignKey( BmIdentity::MSG_RECV_ACCOUNT, 
+													  TheIdentityList.Get());
 		TheSmtpAccountList->AddForeignKey( BmIdentity::MSG_SMTP_ACCOUNT, 
 													  TheIdentityList.Get());
 		TheSignatureList->AddForeignKey( BmIdentity::MSG_SIGNATURE_NAME,
 													TheIdentityList.Get());
-		TheFilterChainList->AddForeignKey( BmPopAccount::MSG_FILTER_CHAIN,
-													  ThePopAccountList.Get());
-		ThePopAccountList->AddForeignKey( BmSmtpAccount::MSG_ACC_FOR_SAP,
+		TheFilterChainList->AddForeignKey( BmRecvAccount::MSG_FILTER_CHAIN,
+													  TheRecvAccountList.Get());
+		TheRecvAccountList->AddForeignKey( BmSmtpAccount::MSG_ACC_FOR_SAP,
 													  TheSmtpAccountList.Get());
-		TheMailFolderList->AddForeignKey( BmPopAccount::MSG_HOME_FOLDER,
-													 ThePopAccountList.Get());
+		TheMailFolderList->AddForeignKey( BmRecvAccount::MSG_HOME_FOLDER,
+													 TheRecvAccountList.Get());
 		TheMailFolderList->AddForeignKey( BmFilterAddon::FK_FOLDER,
 													 TheFilterList.Get());
 		TheIdentityList->AddForeignKey( BmFilterAddon::FK_IDENTITY,
@@ -785,7 +786,7 @@ thread_id BeamApplication::Run() {
 
 		// start most of our list-models:
 		BM_LOG( BM_LogApp, BmString("...reading POP-accounts..."));
-		ThePopAccountList->StartJobInNewThread();
+		TheRecvAccountList->StartJobInNewThread();
 
 		// start most of our list-models:
 		BM_LOG( BM_LogApp, BmString("...reading identities..."));
@@ -818,9 +819,6 @@ thread_id BeamApplication::Run() {
 							// to this folder will have moved along automatically, but
 							// we need to store these new prefs, as otherwise it would
 							// be lost.
-		ThePopAccountList->Store();
-							// always store pop-account-list since the list of 
-							// received mails may have changed
 		TheIdentityList->Store();
 							// always store identity-list since the current identity
 							// may have changed
@@ -992,32 +990,32 @@ void BeamApplication::MessageReceived( BMessage* msg) {
 		switch( msg->what) {
 			case BM_JOBWIN_POP:
 			case BMM_CHECK_MAIL: {
-				while( ThePopAccountList->IsJobRunning())
+				while( TheRecvAccountList->IsJobRunning())
 					snooze( 200*1000);
 				const char* key = NULL;
-				msg->FindString( BmPopAccountList::MSG_ITEMKEY, &key);
+				msg->FindString( BmRecvAccountList::MSG_ITEMKEY, &key);
 				if (key) {
 					bool isAutoCheck 
-						= msg->FindBool( BmPopAccountList::MSG_AUTOCHECK);
+						= msg->FindBool( BmRecvAccountList::MSG_AUTOCHECK);
 					BM_LOG( BM_LogApp, 
-							  BmString("PopAccount ") << key << " asks to check mail " 
+							  BmString("RecvAccount ") << key << " asks to check mail " 
 							  	<< (isAutoCheck ? "(auto)" : "(manual)"));
 					if (!isAutoCheck 
 					|| !ThePrefs->GetBool( "AutoCheckOnlyIfPPPRunning", true) 
 					|| IsPPPRunning()) {
 						BM_LOG( BM_LogApp, 
-								  BmString("PopAccount ") << key	
+								  BmString("RecvAccount ") << key	
 								  		<< ": mail is checked now");
-						ThePopAccountList->CheckMailFor( key, isAutoCheck);
+						TheRecvAccountList->CheckMailFor( key, isAutoCheck);
 						if (!isAutoCheck
 						&& ThePrefs->GetBool( "SendPendingMailsOnCheck", true))
 							TheSmtpAccountList->SendPendingMails();
 					} else
 						BM_LOG( BM_LogApp, 
-								  BmString("PopAccount ") << key	
+								  BmString("RecvAccount ") << key	
 								  		<< ": mail is not checked (PPP isn't running)");
 				} else {
-					ThePopAccountList->CheckMail( false);
+					TheRecvAccountList->CheckMail( false);
 					if (ThePrefs->GetBool( "SendPendingMailsOnCheck", true))
 						TheSmtpAccountList->SendPendingMails();
 				}
@@ -1025,9 +1023,9 @@ void BeamApplication::MessageReceived( BMessage* msg) {
 			}
 			case BMM_CHECK_ALL: {
 				BM_LOG( BM_LogApp, "Request to check mail for all accounts");
-				while( ThePopAccountList->IsJobRunning())
+				while( TheRecvAccountList->IsJobRunning())
 					snooze( 200*1000);
-				ThePopAccountList->CheckMail( true);
+				TheRecvAccountList->CheckMail( true);
 				if (ThePrefs->GetBool( "SendPendingMailsOnCheck", true))
 					TheSmtpAccountList->SendPendingMails();
 				break;

@@ -17,13 +17,13 @@
 #include <List.h>
 #include "BmString.h"
 
-#include "BmPopAccount.h"
+#include "BmRecvAccount.h"
 
 class BmIdentityList;
 
 /*------------------------------------------------------------------------------*\
 	BmIdentity 
-		-	holds information about one specific POP3-account
+		-	holds information about one specific identity
 		- 	derived from BArchivable, so it can be read from and
 			written to a file
 \*------------------------------------------------------------------------------*/
@@ -41,7 +41,7 @@ public:
 	bool HandlesAddrSpec( BmString addrSpec, bool needExactMatch=false) const;
 	bool SanityCheck( BmString& complaint, BmString& fieldName) const;
 	//
-	BmRef<BmPopAccount> PopAcc() const;
+	BmRef<BmRecvAccount> RecvAcc() const;
 
 	// stuff needed for Archival:
 	status_t Archive( BMessage* archive, bool deep = true) const;
@@ -53,8 +53,8 @@ public:
 	inline bool MarkedAsBitBucket() const
 													{ return mMarkedAsBitBucket; }
 	inline const BmString &Name() const { return Key(); }
-	inline const BmString &POPAccount() const	
-													{ return mPOPAccount; }
+	inline const BmString &RecvAccount() const	
+													{ return mRecvAccount; }
 	inline const BmString &RealName() const 	
 													{ return mRealName; }
 	inline const BmString &ReplyTo() const 	
@@ -75,8 +75,8 @@ public:
 	inline void MarkedAsBitBucket( bool b)		
 													{ mMarkedAsBitBucket = b;  
 													  TellModelItemUpdated( UPD_ALL); }
-	inline void POPAccount( const BmString &s)
-													{ mPOPAccount = s; 
+	inline void RecvAccount( const BmString &s)
+													{ mRecvAccount = s; 
 													  TellModelItemUpdated( UPD_ALL); }
 	inline void RealName( const BmString &s) 	
 													{ mRealName = s; 
@@ -99,7 +99,7 @@ public:
 
 	// archivable components:
 	static const char* const MSG_NAME;
-	static const char* const MSG_POP_ACCOUNT;
+	static const char* const MSG_RECV_ACCOUNT;
 	static const char* const MSG_SMTP_ACCOUNT;
 	static const char* const MSG_REAL_NAME;
 	static const char* const MSG_MAIL_ADDR;
@@ -119,7 +119,7 @@ private:
 	void SetupIntervalRunner();
 
 	//BmString mName;					// name is stored in key (base-class)
-	BmString mPOPAccount;			// name of BmPopAccount to use with this Identity
+	BmString mRecvAccount;			// name of BmRecvAccount to use with this Identity
 	BmString mSMTPAccount;			// name of BmSmtpAccount to use with this Identity
 	BmString mRealName;
 	BmString mMailAddr;				// address to use (instead of composed address)
@@ -147,10 +147,10 @@ public:
 	~BmIdentityList();
 	
 	// native methods:
-	BmRef<BmIdentity> FindIdentityForPopAccount( const BmString accName);
-	BmString FindFromAddressForPopAccount( const BmString accName);
+	BmRef<BmIdentity> FindIdentityForRecvAccount( const BmString accName);
+	BmString FindFromAddressForRecvAccount( const BmString accName);
 	BmRef<BmIdentity> FindIdentityForAddrSpec( const BmString addr);
-	BmRef<BmPopAccount> FindPopAccountForAddrSpec( const BmString addr);
+	BmRef<BmRecvAccount> FindRecvAccountForAddrSpec( const BmString addr);
 	//
 	void ResetToSaved();
 	

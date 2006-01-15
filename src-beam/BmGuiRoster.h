@@ -38,7 +38,7 @@ public:
 	void RebuildIdentityMenu( BmMenuControllerBase* menu);
 	void RebuildLogMenu( BmMenuControllerBase* menu);
 	void RebuildPeopleMenu( BmMenuControllerBase* menu);
-	void RebuildPopAccountMenu( BmMenuControllerBase* menu);
+	void RebuildRecvAccountMenu( BmMenuControllerBase* menu);
 	void RebuildSignatureMenu( BmMenuControllerBase* menu);
 	void RebuildSmtpAccountMenu( BmMenuControllerBase* menu);
 	void RebuildStatusMenu( BmMenuControllerBase* menu);

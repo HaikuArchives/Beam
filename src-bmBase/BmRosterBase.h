@@ -82,7 +82,7 @@ public:
 	virtual void RebuildIdentityMenu( BmMenuControllerBase* menu) = 0;
 	virtual void RebuildLogMenu( BmMenuControllerBase* menu) = 0;
 	virtual void RebuildPeopleMenu( BmMenuControllerBase* menu) = 0;
-	virtual void RebuildPopAccountMenu( BmMenuControllerBase* menu) = 0;
+	virtual void RebuildRecvAccountMenu( BmMenuControllerBase* menu) = 0;
 	virtual void RebuildSignatureMenu( BmMenuControllerBase* menu) = 0;
 	virtual void RebuildSmtpAccountMenu( BmMenuControllerBase* menu) = 0;
 	virtual void RebuildStatusMenu( BmMenuControllerBase* menu) = 0;

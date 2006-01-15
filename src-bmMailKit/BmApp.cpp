@@ -19,7 +19,7 @@
 #include "BmLogHandler.h"
 #include "BmMail.h"
 #include "BmMailFolderList.h"
-#include "BmPopAccount.h"
+#include "BmRecvAccount.h"
 #include "BmPrefs.h"
 #include "BmRoster.h"
 #include "BmSignature.h"
@@ -190,7 +190,7 @@ BmApplication::BmApplication( const char* sig, bool testModeRequested)
 
 		BmSmtpAccountList::CreateInstance();
 
-		BmPopAccountList::CreateInstance();
+		BmRecvAccountList::CreateInstance();
 
 		mInitCheck = B_OK;
 		InstanceCount++;
@@ -206,13 +206,13 @@ BmApplication::BmApplication( const char* sig, bool testModeRequested)
 \*------------------------------------------------------------------------------*/
 BmApplication::~BmApplication() 
 {
-	ThePopAccountList = NULL;
-	TheSmtpAccountList = NULL;
+	TheSignatureList = NULL;
 	TheIdentityList = NULL;
+	TheSmtpAccountList = NULL;
+	TheRecvAccountList = NULL;
 	TheMailFolderList = NULL;
 	TheFilterChainList = NULL;
 	TheFilterList = NULL;
-	TheSignatureList = NULL;
 
 #ifdef BM_REF_DEBUGGING
 	BmRefObj::PrintRefsLeft();

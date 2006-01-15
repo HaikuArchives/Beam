@@ -33,6 +33,7 @@ SharedLibrary bmMailKit.so :
 	BmMailRefList.cpp
 	BmPopAccount.cpp
 	BmPrefs.cpp
+	BmRecvAccount.cpp
 	BmRefManager.cpp
 	BmRoster.cpp
 	BmSignature.cpp

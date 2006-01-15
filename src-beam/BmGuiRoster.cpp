@@ -35,7 +35,7 @@ using namespace regexx;
 #include "BmMenuControllerBase.h"
 #include "BmMsgTypes.h"
 #include "BmPeople.h"
-#include "BmPopAccount.h"
+#include "BmRecvAccount.h"
 #include "BmPrefs.h"
 #include "BmSmtpAccount.h"
 #include "BmSignature.h"
@@ -79,26 +79,27 @@ bool BmGuiRoster::AskUserForPwd( const BmString& text, BmString& pwd)
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-bool BmGuiRoster::AskUserForPopAcc( const BmString& accName, BmString& popAccName)
+bool BmGuiRoster::AskUserForPopAcc( const BmString& accName, 
+												BmString& popAccName)
 {
 	// ask user about password:
    BmString text = BmString( "Please select the POP3-account\nto be used "
    									  "in authentication\nfor SMTP-account <" )
 	   				   << accName << ">:";
 	BList list;
-	BmAutolockCheckGlobal lock( ThePopAccountList->ModelLocker());
+	BmAutolockCheckGlobal lock( TheRecvAccountList->ModelLocker());
 	if (!lock.IsLocked())
 		BM_THROW_RUNTIME( 
-			ThePopAccountList->ModelNameNC() << ": Unable to get lock"
+			TheRecvAccountList->ModelNameNC() << ": Unable to get lock"
 		);
 	BmModelItemMap::const_iterator iter;
-	for(	iter = ThePopAccountList->begin(); 
-			iter != ThePopAccountList->end(); ++iter) {
-		BmPopAccount* acc = dynamic_cast<BmPopAccount*>( iter->second.Get());
+	for(	iter = TheRecvAccountList->begin(); 
+			iter != TheRecvAccountList->end(); ++iter) {
+		BmRecvAccount* acc = dynamic_cast<BmRecvAccount*>( iter->second.Get());
 		list.AddItem( (void*)acc->Name().String());
 	}
 	ListSelectionAlert* alert = new ListSelectionAlert( 
-		"Pop-Account", text.String(), list, "", "Cancel", "OK"
+		"Recv-Account", text.String(), list, "", "Cancel", "OK"
 	);
 	alert->SetFeel( B_FLOATING_APP_WINDOW_FEEL);
 	alert->SetLook( B_FLOATING_WINDOW_LOOK);
@@ -360,9 +361,9 @@ void BmGuiRoster::RebuildPeopleMenu( BmMenuControllerBase* menu)
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmGuiRoster::RebuildPopAccountMenu( BmMenuControllerBase* menu)
+void BmGuiRoster::RebuildRecvAccountMenu( BmMenuControllerBase* menu)
 {
-	RebuildList( menu, ThePopAccountList.Get());
+	RebuildList( menu, TheRecvAccountList.Get());
 }
 
 /*------------------------------------------------------------------------------*\
@@ -477,25 +478,31 @@ void BmGuiRoster::RebuildLogMenu( BmMenuControllerBase* logMenu) {
 	}
 	// POP
 	{
-		BMenu* popMenu = new BMenu( "POP-Accounts");
-		BmAutolockCheckGlobal lock( ThePopAccountList->ModelLocker());
+		BMenu* recvMenu = new BMenu( "Receiving Accounts");
+		BmAutolockCheckGlobal lock( TheRecvAccountList->ModelLocker());
 		if (!lock.IsLocked())
 			BM_THROW_RUNTIME( 
-				ThePopAccountList->ModelNameNC() << ": Unable to get lock"
+				TheRecvAccountList->ModelNameNC() << ": Unable to get lock"
 			);
 		BmModelItemMap::const_iterator iter;
-		for( 	iter = ThePopAccountList->begin(); 
-				iter != ThePopAccountList->end(); ++iter) {
-			BmString logname = BmString("POP_") + iter->second->Key();
+		for( 	iter = TheRecvAccountList->begin(); 
+				iter != TheRecvAccountList->end(); ++iter) {
+			BmRecvAccount* recvAcc 
+				= dynamic_cast<BmRecvAccount*>(iter->second.Get());
+			if (!recvAcc)
+				continue;
+			BmString logname 
+				= BmString(recvAcc->Type()) << "_" << iter->second->Key();
 			BMessage* logMsg( new BMessage( logMenu->MsgTemplate()->what));
 			logMsg->AddString( "logfile", logname.String());
-			popMenu->AddItem( new BMenuItem( iter->second->Key().String(), logMsg));
+			recvMenu->AddItem( new BMenuItem( iter->second->Key().String(), 
+														 logMsg));
 		}
-		logMenu->AddItem( popMenu);
+		logMenu->AddItem( recvMenu);
 	}
 	// SMTP
 	{
-		BMenu* smtpMenu = new BMenu( "SMTP-Accounts");
+		BMenu* smtpMenu = new BMenu( "Sending Accounts");
 		BmAutolockCheckGlobal lock( TheSmtpAccountList->ModelLocker());
 		if (!lock.IsLocked())
 			BM_THROW_RUNTIME( 

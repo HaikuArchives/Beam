@@ -463,7 +463,7 @@ BmPopperView::~BmPopperView() {
 \*------------------------------------------------------------------------------*/
 BmJobModel* BmPopperView::CreateJobModel( BMessage* msg) {
 	BmString accName = FindMsgString( msg, BmJobModel::MSG_JOB_NAME);
-	BmRef<BmListModelItem> item = ThePopAccountList->FindItemByKey( accName);
+	BmRef<BmListModelItem> item = TheRecvAccountList->FindItemByKey( accName);
 	BmPopAccount* account;
 	if (!(account = dynamic_cast<BmPopAccount*>( item.Get())))
 		BM_THROW_INVALID( BmString("Could not find BmPopAccount ") << accName);
@@ -840,7 +840,7 @@ void BmJobStatusWin::AddJob( BMessage* msg) {
 		BM_LOG2( BM_LogJobWin, BmString("Creating new view for ") << name);
 		switch( msg->what) {
 			case BM_JOBWIN_POP: {
-				bool autoMode = msg->FindBool( BmPopAccountList::MSG_AUTOCHECK);
+				bool autoMode = msg->FindBool( BmRecvAccountList::MSG_AUTOCHECK);
 				controller = new BmPopperView( name.String(), autoMode);
 				break;
 			}

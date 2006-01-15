@@ -195,7 +195,7 @@ BmMail::BmMail( BmString &msgText, const BmString account)
 
 	// get default-identity corresponding to given account:
 	BmRef<BmIdentity> identRef 
-		= TheIdentityList->FindIdentityForPopAccount( account);
+		= TheIdentityList->FindIdentityForRecvAccount( account);
 	BmIdentity* ident = dynamic_cast< BmIdentity*>( identRef.Get());
 	if (ident) {
 		// now try to find a better match through recipient-addresses:
@@ -1074,7 +1074,7 @@ void BmMail::DetermineRecvAddrAndIdentity( BmString& receivingAddr,
 		// received can be identified (not always possible, since the account 
 		// may have been renamed or deleted by now):
 		ident = dynamic_cast< BmIdentity*>( 
-			TheIdentityList->FindIdentityForPopAccount( AccountName()).Get()
+			TheIdentityList->FindIdentityForRecvAccount( AccountName()).Get()
 		);
 	}
 	if (ident) {

@@ -326,7 +326,7 @@ void BmPrefsLoggingView::Update() {
 	val = "";
 	val << static_cast<int>( ThePrefs->GetInt("MaxLogfileSize",200*1024)/1024);
 	mMaxLogfileSizeControl->SetTextSilently( val.String());
-	mLogPopControl->MarkItem( ThePrefs->GetLogLevelFor( BM_LogPop));
+	mLogPopControl->MarkItem( ThePrefs->GetLogLevelFor( BM_LogRecv));
 	mLogSmtpControl->MarkItem( ThePrefs->GetLogLevelFor( BM_LogSmtp));
 	mLogFilterControl->MarkItem( ThePrefs->GetLogLevelFor( BM_LogFilter));
 	mLogAppControl->MarkItem( ThePrefs->GetLogLevelFor( BM_LogApp));
@@ -379,7 +379,7 @@ void BmPrefsLoggingView::MessageReceived( BMessage* msg) {
 			case BM_LOG_POP_SELECTED: {
 				BMenuItem* item = mLogPopControl->Menu()->FindMarked();
 				if (item) {
-					ThePrefs->SetLogLevelForTo( BM_LogPop, item->Label());
+					ThePrefs->SetLogLevelForTo( BM_LogRecv, item->Label());
 					NoticeChange();
 				}
 			}

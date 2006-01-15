@@ -10,8 +10,7 @@
 #define _BmPrefsRecvMailView_h
 
 #include "BmListController.h"
-#include "BmPopAccount.h"
-#define BmRecvAcc BmPopAccount
+#include "BmRecvAccount.h"
 #include "BmPrefsView.h"
 
 /*------------------------------------------------------------------------------*\
@@ -30,7 +29,9 @@ public:
 	// overrides of listitem base:
 	void UpdateView( BmUpdFlags flags, bool redraw = true, 
 						  uint32 updColBitmap = 0);
-	BmRecvAcc* ModelItem() const 			{ return dynamic_cast< BmRecvAcc*>( mModelItem.Get()); }
+	BmRecvAccount* ModelItem() const { 
+		return dynamic_cast< BmRecvAccount*>( mModelItem.Get()); 
+	}
 
 private:
 	// Hide copy-constructor and assignment:
@@ -96,7 +97,7 @@ class BmPrefsRecvMailView : public BmPrefsView {
 		BM_REMOVE_MAIL_CHANGED 	 	= 'bmRC',
 		BM_PWD_STORED_CHANGED 	 	= 'bmPC',
 		BM_CHECK_AND_SUGGEST		 	= 'bmCS',
-		BM_ADD_ACCOUNT 			 	= 'bmAA',
+		BM_ADD_POP_ACCOUNT 			= 'bmAP',
 		BM_REMOVE_ACCOUNT 		 	= 'bmRA',
 		BM_CHECK_IF_PPP_UP_CHANGED = 'bmCP'
 	};
@@ -144,12 +145,12 @@ private:
 	BmCheckControl* mAutoCheckIfPppUpControl;
 
 	MButton* mCheckAndSuggestButton;
-	MButton* mAddButton;
+	MButton* mAddPopButton;
 	MButton* mRemoveButton;
 	MStringView* mMinutesLabel;
 	MStringView* mDaysLabel;
 
-	BmRef<BmPopAccount> mCurrAcc;
+	BmRef<BmRecvAccount> mCurrAcc;
 	
 	// Hide copy-constructor and assignment:
 	BmPrefsRecvMailView( const BmPrefsRecvMailView&);

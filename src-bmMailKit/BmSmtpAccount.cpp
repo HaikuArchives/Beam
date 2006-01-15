@@ -254,8 +254,18 @@ BmSmtpAccountList::~BmSmtpAccountList() {
 		-	returns name of settings-file for list of SMTP-accounts
 \*------------------------------------------------------------------------------*/
 const BmString BmSmtpAccountList::SettingsFileName() {
-	return BmString( BeamRoster->SettingsPath()) << "/" 
-				<< "Smtp Accounts";
+	BmString name = BmString( BeamRoster->SettingsPath()) 
+							<< "/" << "Sending Accounts";
+	// this file used to be called "Smtp Accounts", so we automatically
+	// rename, if only the old name exists:
+	BEntry entry( name.String());
+	if (!entry.Exists()) {
+		BmString oldName = BmString( BeamRoster->SettingsPath()) 
+									<< "/" << "Smtp Accounts";
+		BEntry oldEntry( oldName.String());
+		oldEntry.Rename( name.String());
+	}
+	return name;
 }
 
 /*------------------------------------------------------------------------------*\

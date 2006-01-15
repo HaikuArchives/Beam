@@ -85,7 +85,7 @@ class BmPrefsIdentityView : public BmPrefsView {
 	typedef BmPrefsView inherited;
 
 	enum {
-		BM_POP_SELECTED 			= 'bmPS',
+		BM_RECV_SELECTED 			= 'bmRS',
 		BM_SIGNATURE_SELECTED 	= 'bmGS',
 		BM_SMTP_SELECTED 			= 'bmSS',
 		BM_IS_BUCKET_CHANGED	 	= 'bmFC',
@@ -125,7 +125,7 @@ private:
 	BmTextControl* mReplyToControl;
 	MButton* mSpecialHeadersButton;
 	BmMenuControl* mSignatureControl;
-	BmMenuControl* mPopControl;
+	BmMenuControl* mRecvControl;
 	BmMenuControl* mSmtpControl;
 	BmCheckControl* mIsBucketControl;
 	BmTextControl* mAliasesControl;

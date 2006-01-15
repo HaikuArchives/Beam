@@ -32,10 +32,12 @@
 #include "BmMenuControl.h"
 #include "BmMenuController.h"
 #include "BmNetEndpointRoster.h"
+#include "BmPopAccount.h"
 #include "BmPopper.h"
 #include "BmPrefs.h"
 #include "BmPrefsRecvMailView.h"
 #include "BmPrefsWin.h"
+#include "BmRecvAccount.h"
 #include "BmRosterBase.h"
 #include "BmSignature.h"
 #include "BmSmtpAccount.h"
@@ -48,6 +50,7 @@
 
 enum Columns {
 	COL_KEY = 0,
+	COL_TYPE,
 	COL_CHECK,
 	COL_DELETE,
 	COL_FILTER_CHAIN,
@@ -83,14 +86,15 @@ BmRecvAccItem::~BmRecvAccItem() {
 \*------------------------------------------------------------------------------*/
 void BmRecvAccItem::UpdateView( BmUpdFlags flags, bool redraw, 
 										  uint32 updColBitmap) {
-	BmRecvAcc* acc = ModelItem();
+	BmRecvAccount* acc = ModelItem();
 	if (flags & UPD_ALL) {
 		const char* cols[] = {
 			acc->Key().String(),
+			acc->Type(),
 			acc->CheckMail() ? "*" : "",
 			acc->DeleteMailFromServer() ? "*" : "",
 			acc->FilterChain().String(),
-			acc->POPServer().String(),
+			acc->Server().String(),
 			acc->PortNrString().String(),
 			acc->CheckIntervalString().String(),
 			acc->EncryptionType().String(),
@@ -128,6 +132,7 @@ BmRecvAccView::BmRecvAccView( int32 width, int32 height)
 		flags |= CLV_TELL_ITEMS_WIDTH;
 
 	AddColumn( new CLVColumn( "Account", 80.0, flags, 50.0));
+	AddColumn( new CLVColumn( "Type", 50.0, flags, 40.0));
 	AddColumn( new CLVColumn( "C", 20.0, flags, 20.0, "(C)heck?"));
 	AddColumn( new CLVColumn( "R", 20.0, flags, 20.0, 
 									  "(R)emove Mails from Server?"));
@@ -200,7 +205,7 @@ void BmRecvAccView::MessageReceived( BMessage* msg) {
 		-	
 \*------------------------------------------------------------------------------*/
 BmPrefsRecvMailView::BmPrefsRecvMailView() 
-	:	inherited( "Receiving Mail-Accounts (POP3)")
+	:	inherited( "Receiving Mail-Accounts (POP3 / IMAP)")
 {
 	MView* view = 
 		new VGroup(
@@ -212,9 +217,9 @@ BmPrefsRecvMailView::BmPrefsRecvMailView()
 				"99 accounts"
 			),
 			new HGroup(
-				mAddButton = new MButton( "Add Account", 
-												  new BMessage(BM_ADD_ACCOUNT), 
-												  this),
+				mAddPopButton = new MButton( "Add POP3-Account", 
+													  new BMessage(BM_ADD_POP_ACCOUNT), 
+													  this),
 				mRemoveButton = new MButton( "Remove Account", 
 													  new BMessage( BM_REMOVE_ACCOUNT), 
 													  this),
@@ -228,7 +233,7 @@ BmPrefsRecvMailView::BmPrefsRecvMailView()
 																		 false, 0, 25),
 						new Space( minimax(0,5,0,5)),
 						new HGroup( 
-							mServerControl = new BmTextControl( "POP-Server / Port:"),
+							mServerControl = new BmTextControl( "Server / Port:"),
 							mPortControl = new BmTextControl( "", false, 0, 8),
 							0
 						),
@@ -383,11 +388,11 @@ void BmPrefsRecvMailView::Initialize() {
 
 	TheBubbleHelper->SetHelp( 
 		mAccListView, 
-		"This listview shows every POP3-account you have defined."
+		"This listview shows every receiving account you have defined."
 	);
 	TheBubbleHelper->SetHelp( 
 		mAccountControl, 
-		"Here you can enter a name for this POP3-account.\n"
+		"Here you can enter a name for this account.\n"
 		"This name is used to identify this account in Beam."
 	);
 	TheBubbleHelper->SetHelp( 
@@ -404,13 +409,13 @@ void BmPrefsRecvMailView::Initialize() {
 	);
 	TheBubbleHelper->SetHelp( 
 		mServerControl, 
-		"Please enter the full name of the POP3-server \n"
+		"Please enter the full name of the server \n"
 		"into this field (e.g. 'pop.xxx.org')."
 	);
 	TheBubbleHelper->SetHelp( 
 		mPortControl, 
-		"Please enter the POP3-port of the server \n"
-		"into this field (usually 110)."
+		"Please enter the port of the server \n"
+		"into this field (usually 110 for POP3 and 143 for IMAP)."
 	);
 	TheBubbleHelper->SetHelp( 
 		mCheckAccountControl, 
@@ -451,19 +456,19 @@ void BmPrefsRecvMailView::Initialize() {
 		encrHelp 
 			= 		"Here you can select the type of encryption to use:\n"
 					"<none>	- no encryption.";
-		if (TheNetEndpointRoster->SupportsEncryptionType(BmPopAccount::ENCR_TLS))
+		if (TheNetEndpointRoster->SupportsEncryptionType(BmRecvAccount::ENCR_TLS))
 			encrHelp 
 				<< "\n"
 				<<	"<auto>		- means the STARTTLS method will be used if available.\n"
 					"STARTTLS	- TLS (Transport Layer Security) encryption on\n"
-					"		  the standard POP3-port (usually 110).\n"
+					"		  the standard port (usually 110 for POP and 143 for IMAP).\n"
 					"TLS		- TLS (Transport Layer Security) encryption on\n"
-					"		  a special POP3S-port (usually 995).";
-		if (TheNetEndpointRoster->SupportsEncryptionType(BmPopAccount::ENCR_SSL))
+					"		  a special port (usually 995 for POP and 993 for IMAP).";
+		if (TheNetEndpointRoster->SupportsEncryptionType(BmRecvAccount::ENCR_SSL))
 			encrHelp 
 				<< "\n"
 				<< "SSL		- SSL (Secure Socket Layer) encryption on\n"
-					"		  a special POP3S-port (usually 995).";
+					"		  a special port (usually 995 for POP and 993 for IMAP).";
 	} else {
 		encrHelp = "Encryption is not available,\n"
 					  "no addon could be loaded";
@@ -478,7 +483,8 @@ void BmPrefsRecvMailView::Initialize() {
 		"DIGEST-MD5	- is safe, neither password nor user are sent in cleartext.\n"
 		"CRAM-MD5		- is safe, neither password nor user are sent in cleartext.\n"
 		"APOP			- is somewhat safe, password is encrypted (but user isn't).\n"
-		"POP3			- is very unsafe, password is sent in cleartext"
+		"LOGIN		- is unsafe (unless encrypted), password is sent in cleartext.\n"
+		"POP3			- is unsafe (unless encrypted), password is sent in cleartext"
 	);
 	TheBubbleHelper->SetHelp( 
 		mHomeFolderControl, 
@@ -493,7 +499,7 @@ void BmPrefsRecvMailView::Initialize() {
 	);
 	TheBubbleHelper->SetHelp( 
 		mCheckAndSuggestButton, 
-		"When you click here, Beam will connect to the POP-server,\n"
+		"When you click here, Beam will connect to the server,\n"
 		"check which authentication types it supports and select\n"
 		"the most secure."
 	);
@@ -523,36 +529,36 @@ void BmPrefsRecvMailView::Initialize() {
 						new BMenuItem( BM_NoItemLabel.String(), 
 											new BMessage(BM_ENCRYPTION_SELECTED)), 
 						this);
-	if (TheNetEndpointRoster->SupportsEncryptionType(BmPopAccount::ENCR_TLS)) {
+	if (TheNetEndpointRoster->SupportsEncryptionType(BmRecvAccount::ENCR_TLS)) {
 		AddItemToMenu( mEncryptionControl->Menu(), 
-							new BMenuItem( BmPopAccount::ENCR_AUTO, 
+							new BMenuItem( BmRecvAccount::ENCR_AUTO, 
 												new BMessage(BM_ENCRYPTION_SELECTED)), 
 							this);
 		AddItemToMenu( mEncryptionControl->Menu(), 
-							new BMenuItem( BmPopAccount::ENCR_STARTTLS, 
+							new BMenuItem( BmRecvAccount::ENCR_STARTTLS, 
 												new BMessage(BM_ENCRYPTION_SELECTED)), 
 							this);
 		AddItemToMenu( mEncryptionControl->Menu(), 
-							new BMenuItem( BmPopAccount::ENCR_TLS, 
-												new BMessage(BM_ENCRYPTION_SELECTED)), 
-							this);
-	}
-	if (TheNetEndpointRoster->SupportsEncryptionType(BmPopAccount::ENCR_SSL)) {
-		AddItemToMenu( mEncryptionControl->Menu(), 
-							new BMenuItem( BmPopAccount::ENCR_SSL, 
+							new BMenuItem( BmRecvAccount::ENCR_TLS, 
 												new BMessage(BM_ENCRYPTION_SELECTED)), 
 							this);
 	}
+	if (TheNetEndpointRoster->SupportsEncryptionType(BmRecvAccount::ENCR_SSL)) {
+		AddItemToMenu( mEncryptionControl->Menu(), 
+							new BMenuItem( BmRecvAccount::ENCR_SSL, 
+												new BMessage(BM_ENCRYPTION_SELECTED)), 
+							this);
+	}
 	AddItemToMenu( mAuthControl->Menu(), 
-						new BMenuItem( BmPopAccount::AUTH_AUTO, 
+						new BMenuItem( BmRecvAccount::AUTH_AUTO, 
 											new BMessage(BM_AUTH_SELECTED)), 
 						this);
 	AddItemToMenu( mAuthControl->Menu(), 
-						new BMenuItem( BmPopAccount::AUTH_DIGEST_MD5, 
+						new BMenuItem( BmRecvAccount::AUTH_DIGEST_MD5, 
 											new BMessage(BM_AUTH_SELECTED)), 
 						this);
 	AddItemToMenu( mAuthControl->Menu(), 
-						new BMenuItem( BmPopAccount::AUTH_CRAM_MD5, 
+						new BMenuItem( BmRecvAccount::AUTH_CRAM_MD5, 
 											new BMessage(BM_AUTH_SELECTED)), 
 						this);
 	AddItemToMenu( mAuthControl->Menu(), 
@@ -566,7 +572,7 @@ void BmPrefsRecvMailView::Initialize() {
 
 	mAccListView->SetSelectionMessage( new BMessage( BM_SELECTION_CHANGED));
 	mAccListView->SetTarget( this);
-	mAccListView->StartJob( ThePopAccountList.Get(), false);
+	mAccListView->StartJob( TheRecvAccountList.Get(), false);
 	ShowAccount( -1);
 }
 
@@ -591,7 +597,7 @@ void BmPrefsRecvMailView::WriteStateInfo() {
 		-	
 \*------------------------------------------------------------------------------*/
 bool BmPrefsRecvMailView::SanityCheck() {
-	return DoSanityCheck( ThePopAccountList.Get(), Name());
+	return DoSanityCheck( TheRecvAccountList.Get(), Name());
 }
 
 /*------------------------------------------------------------------------------*\
@@ -599,7 +605,7 @@ bool BmPrefsRecvMailView::SanityCheck() {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmPrefsRecvMailView::SaveData() {
-	ThePopAccountList->Store();
+	TheRecvAccountList->Store();
 }
 
 /*------------------------------------------------------------------------------*\
@@ -607,7 +613,7 @@ void BmPrefsRecvMailView::SaveData() {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmPrefsRecvMailView::UndoChanges() {
-	ThePopAccountList->ResetToSaved();
+	TheRecvAccountList->ResetToSaved();
 	ShowAccount( -1);
 }
 
@@ -631,26 +637,26 @@ void BmPrefsRecvMailView::MessageReceived( BMessage* msg) {
 					if ( source == mAccountControl) {
 						BmString oldName = mCurrAcc->Name();
 						BmString newName = mAccountControl->Text();
-						ThePopAccountList->RenameItem( oldName, newName);
+						TheRecvAccountList->RenameItem( oldName, newName);
 						BmRef<BmIdentity> correspIdent;
 						BmModelItemMap::const_iterator iter;
-						// update any links to this pop-account:
+						// update any links to this account:
 						BAutolock lock( TheIdentityList->ModelLocker());
 						for(  iter = TheIdentityList->begin(); 
 								iter != TheIdentityList->end(); ++iter) {
 							BmIdentity* ident 
 								= dynamic_cast<BmIdentity*>( iter->second.Get());
 							if (ident) {
-								// rename link to this pop-account
-								if (ident->POPAccount()==oldName)
-									ident->POPAccount( newName);
+								// rename link to this account
+								if (ident->RecvAccount()==oldName)
+									ident->RecvAccount( newName);
 								// take note that we have an identity that shares the
-								// name with this pop-account:
+								// name with this account:
 								if (ident->Key()==oldName)
 									correspIdent = ident;
 							}
 						}
-						// rename identity that shares the name with this pop-account:
+						// rename identity that shares the name with this account:
 						if (correspIdent)
 							TheIdentityList->RenameItem( oldName, newName);
 						BAutolock lock2( TheSmtpAccountList->ModelLocker());
@@ -668,7 +674,7 @@ void BmPrefsRecvMailView::MessageReceived( BMessage* msg) {
 					else if ( source == mPwdControl)
 						mCurrAcc->Password( mPwdControl->Text());
 					else if ( source == mServerControl)
-						mCurrAcc->POPServer( mServerControl->Text());
+						mCurrAcc->Server( mServerControl->Text());
 					else if ( source == mCheckIntervalControl)
 						mCurrAcc->CheckInterval( 
 							MAX( 0,atoi(mCheckIntervalControl->Text())));
@@ -750,8 +756,8 @@ void BmPrefsRecvMailView::MessageReceived( BMessage* msg) {
 				} else {
 					mCurrAcc->EncryptionType( "");
 				}
-				if (encryptionType == BmPopAccount::ENCR_TLS 
-				|| encryptionType == BmPopAccount::ENCR_SSL) {
+				if (encryptionType == BmRecvAccount::ENCR_TLS 
+				|| encryptionType == BmRecvAccount::ENCR_SSL) {
 					if (atoi(mPortControl->Text()) == 110)
 						// auto-switch to POP3S-port:
 						mPortControl->SetText("995");
@@ -766,21 +772,26 @@ void BmPrefsRecvMailView::MessageReceived( BMessage* msg) {
 			case BM_CHECK_AND_SUGGEST: {
 				if (mCurrAcc) {
 					// ToDo: this should be made asynchronous (using messages):
-					BmRef<BmPopper> popper( new BmPopper( mCurrAcc->Key(), 
-																	  mCurrAcc.Get()));
-					popper->StartJobInThisThread( 
-						BmPopper::BM_CHECK_CAPABILITIES_JOB
-					);
-					BmString suggestedAuthType = popper->SuggestAuthType();
+					BmString suggestedAuthType;
+					BmPopAccount* popAcc 
+						= dynamic_cast<BmPopAccount*>(mCurrAcc.Get());
+					if (popAcc) {
+						BmRef<BmPopper> popper( new BmPopper( mCurrAcc->Key(), 
+																		  popAcc));
+						popper->StartJobInThisThread( 
+							BmPopper::BM_CHECK_CAPABILITIES_JOB
+						);
+						BmString suggestedAuthType = popper->SuggestAuthType();
+						if (popper->SupportsTLS())
+							// if server supports STARTTLS, we use it:
+							mEncryptionControl->MarkItem( BmPopAccount::ENCR_STARTTLS);
+						else
+							mEncryptionControl->MarkItem( BM_NoItemLabel.String());
+					}
 					if (suggestedAuthType.Length())
 						mAuthControl->MarkItem( suggestedAuthType.String());
 					else
 						mAuthControl->MarkItem( BM_NoItemLabel.String());
-					if (popper->SupportsTLS())
-						// if server supports STARTTLS, we use it:
-						mEncryptionControl->MarkItem( BmPopAccount::ENCR_STARTTLS);
-					else
-						mEncryptionControl->MarkItem( BM_NoItemLabel.String());
 					NoticeChange();
 				}
 				// no break here, we want to proceed with updating the auth-menu...
@@ -830,22 +841,22 @@ void BmPrefsRecvMailView::MessageReceived( BMessage* msg) {
 				NoticeChange();
 				break;
 			}
-			case BM_ADD_ACCOUNT: {
+			case BM_ADD_POP_ACCOUNT: {
 				BmString key( "new account");
-				for( int32 i=1; ThePopAccountList->FindItemByKey( key); ++i) {
+				for( int32 i=1; TheRecvAccountList->FindItemByKey( key); ++i) {
 					key = BmString("new account_")<<i;
 				}
-				ThePopAccountList->AddItemToList( 
+				TheRecvAccountList->AddItemToList( 
 					new BmPopAccount( key.String(), 
-											ThePopAccountList.Get())
+											TheRecvAccountList.Get())
 				);
 				mAccountControl->MakeFocus( true);
 				mAccountControl->TextView()->SelectAll();
 				NoticeChange();
-				// create an identity corresponding to this pop-account:
+				// create an identity corresponding to this account:
 				BmIdentity* newIdent 
 					= new BmIdentity( key.String(), TheIdentityList.Get());
-				newIdent->POPAccount( key);
+				newIdent->RecvAccount( key);
 				TheIdentityList->AddItemToList( newIdent);
 				break;
 			}
@@ -871,7 +882,7 @@ void BmPrefsRecvMailView::MessageReceived( BMessage* msg) {
 						if (buttonPressed == 0) {
 							for( ;; ) {
 								BmRef<BmIdentity> ident 
-									= TheIdentityList->FindIdentityForPopAccount( 
+									= TheIdentityList->FindIdentityForRecvAccount( 
 										mCurrAcc->Key()
 									);
 								if (!ident)
@@ -879,7 +890,7 @@ void BmPrefsRecvMailView::MessageReceived( BMessage* msg) {
 								TheIdentityList->RemoveItemFromList( ident.Get());
 							}
 						}
-						ThePopAccountList->RemoveItemFromList( mCurrAcc.Get());
+						TheRecvAccountList->RemoveItemFromList( mCurrAcc.Get());
 						mCurrAcc = NULL;
 						NoticeChange();
 					}
@@ -898,7 +909,7 @@ void BmPrefsRecvMailView::MessageReceived( BMessage* msg) {
 													 	 B_WARNING_ALERT);
 					alert->SetShortcut( 0, B_ESCAPE);
 					alert->Go( new BInvoker( new BMessage(*msg), BMessenger( this)));
-					BmPopAccount* acc=NULL;
+					BmRecvAccount* acc=NULL;
 					msg->FindPointer( MSG_ITEM, (void**)&acc);
 					BmListViewItem* accItem = mAccListView->FindViewItemFor( acc);
 					if (accItem)
@@ -909,7 +920,7 @@ void BmPrefsRecvMailView::MessageReceived( BMessage* msg) {
 					fieldName = msg->FindString( MSG_FIELD_NAME);
 					if (fieldName.ICompare( "username")==0)
 						mLoginControl->MakeFocus( true);
-					else if (fieldName.ICompare( "popserver")==0)
+					else if (fieldName.ICompare( "recvserver")==0)
 						mServerControl->MakeFocus( true);
 					else if (fieldName.ICompare( "portnr")==0)
 						mPortControl->MakeFocus( true);
@@ -999,7 +1010,7 @@ void BmPrefsRecvMailView::ShowAccount( int32 selection) {
 					mPwdControl->SetTextSilently( 
 						mCurrAcc->Password().String());
 					mServerControl->SetTextSilently( 
-						mCurrAcc->POPServer().String());
+						mCurrAcc->Server().String());
 					mEncryptionControl->MarkItem( 
 						(mCurrAcc->EncryptionType().Length() 
 						&& TheNetEndpointRoster->SupportsEncryption())

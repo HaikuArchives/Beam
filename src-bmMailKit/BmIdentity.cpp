@@ -26,7 +26,7 @@ using namespace regexx;
 \********************************************************************************/
 
 const char* const BmIdentity::MSG_NAME = 				"bm:name";
-const char* const BmIdentity::MSG_POP_ACCOUNT = 	"bm:popacc";
+const char* const BmIdentity::MSG_RECV_ACCOUNT = 	"bm:recvacc";
 const char* const BmIdentity::MSG_SMTP_ACCOUNT = 	"bm:smtpacc";
 const char* const BmIdentity::MSG_REAL_NAME = 		"bm:realname";
 const char* const BmIdentity::MSG_MAIL_ADDR = 		"bm:mailaddr";
@@ -35,7 +35,7 @@ const char* const BmIdentity::MSG_MARK_BUCKET = 	"bm:markbucket";
 const char* const BmIdentity::MSG_MAIL_ALIASES = "bm:mailaliases";
 const char* const BmIdentity::MSG_REPLY_TO = 		"bm:replyto";
 const char* const BmIdentity::MSG_SPECIAL_HEADERS = "bm:spechead";
-const int16 BmIdentity::nArchiveVersion = 3;
+const int16 BmIdentity::nArchiveVersion = 4;
 
 /*------------------------------------------------------------------------------*\
 	BmIdentity()
@@ -58,7 +58,6 @@ BmIdentity::BmIdentity( BMessage* archive, BmIdentityList* model)
 	int16 version;
 	if (archive->FindInt16( MSG_VERSION, &version) != B_OK)
 		version = 0;
-	mPOPAccount = FindMsgString( archive, MSG_POP_ACCOUNT);
 	mSMTPAccount = FindMsgString( archive, MSG_SMTP_ACCOUNT);
 	mRealName = FindMsgString( archive, MSG_REAL_NAME);
 	mMailAddr = FindMsgString( archive, MSG_MAIL_ADDR);
@@ -71,6 +70,12 @@ BmIdentity::BmIdentity( BMessage* archive, BmIdentityList* model)
 	if (version >= 3) {
 		mSpecialHeaders = FindMsgString( archive, MSG_SPECIAL_HEADERS);
 	}
+	if (version < 4) {
+		// with version 4 we renamed popacc to recvacc:
+		mRecvAccount = FindMsgString( archive, "bm:popacc");
+	} else {
+		mRecvAccount = FindMsgString( archive, MSG_RECV_ACCOUNT);
+	}
 }
 
 /*------------------------------------------------------------------------------*\
@@ -81,12 +86,13 @@ BmIdentity::~BmIdentity() {
 }
 
 /*------------------------------------------------------------------------------*\
-	UpdatePopAccount()
+	RecvAcc()
 		-	
 \*------------------------------------------------------------------------------*/
-BmRef<BmPopAccount> BmIdentity::PopAcc() const {
-	BmRef<BmListModelItem> accRef = ThePopAccountList->FindItemByKey( mPOPAccount);
-	return dynamic_cast< BmPopAccount*>( accRef.Get());
+BmRef<BmRecvAccount> BmIdentity::RecvAcc() const {
+	BmRef<BmListModelItem> accRef 
+		= TheRecvAccountList->FindItemByKey( mRecvAccount);
+	return dynamic_cast< BmRecvAccount*>( accRef.Get());
 }
 
 /*------------------------------------------------------------------------------*\
@@ -97,7 +103,7 @@ BmRef<BmPopAccount> BmIdentity::PopAcc() const {
 status_t BmIdentity::Archive( BMessage* archive, bool deep) const {
 	status_t ret = inherited::Archive( archive, deep)
 		||	archive->AddString( MSG_NAME, Key().String())
-		||	archive->AddString( MSG_POP_ACCOUNT, mPOPAccount.String())
+		||	archive->AddString( MSG_RECV_ACCOUNT, mRecvAccount.String())
 		||	archive->AddString( MSG_SMTP_ACCOUNT, mSMTPAccount.String())
 		||	archive->AddString( MSG_REAL_NAME, mRealName.String())
 		||	archive->AddString( MSG_MAIL_ADDR, mMailAddr.String())
@@ -114,23 +120,23 @@ status_t BmIdentity::Archive( BMessage* archive, bool deep) const {
 		-	returns the constructed from - address for this identity
 \*------------------------------------------------------------------------------*/
 BmString BmIdentity::GetFromAddress() const {
-	BmRef<BmPopAccount> popAcc = PopAcc();
-	if (!popAcc)
+	BmRef<BmRecvAccount> recvAcc = RecvAcc();
+	if (!recvAcc)
 		return "";
 	BmString addr( mRealName);
-	BmString domainPart = popAcc->GetDomainName();
+	BmString domainPart = recvAcc->GetDomainName();
 	if (domainPart.Length())
 		domainPart.Prepend( "@");
 	if (addr.Length()) {
 		if (mMailAddr.Length())
 			addr << " <" << mMailAddr << ">";
 		else
-			addr << " <" << popAcc->Username() << domainPart << ">";
+			addr << " <" << recvAcc->Username() << domainPart << ">";
 	} else {
 		if (mMailAddr.Length())
 			addr << mMailAddr;
 		else
-			addr << popAcc->Username() << domainPart;
+			addr << recvAcc->Username() << domainPart;
 	}
 	return addr;
 }
@@ -140,18 +146,19 @@ BmString BmIdentity::GetFromAddress() const {
 		-	determines if the given addrSpec belongs to this identity
 \*------------------------------------------------------------------------------*/
 bool BmIdentity::HandlesAddrSpec( BmString addrSpec, bool needExactMatch) const {
-	BmRef<BmPopAccount> popAcc = PopAcc();
-	if (!popAcc || !addrSpec.Length())
+	BmRef<BmRecvAccount> recvAcc = RecvAcc();
+	if (!recvAcc || !addrSpec.Length())
 		return false;
 	Regexx rx;
-	if (addrSpec==GetFromAddress() || addrSpec==mMailAddr || addrSpec==popAcc->Username())
+	if (addrSpec==GetFromAddress() || addrSpec==mMailAddr 
+	|| addrSpec==recvAcc->Username())
 		return true;
 	int32 atPos = addrSpec.FindFirst("@");
 	if (atPos != B_ERROR) {
 		BmString addrDomain( addrSpec.String()+atPos+1);
-		if (addrDomain != popAcc->GetDomainName())
+		if (addrDomain != recvAcc->GetDomainName())
 			return false;						// address is from different domain
-		if (addrSpec == popAcc->Username()+"@"+addrDomain)
+		if (addrSpec == recvAcc->Username()+"@"+addrDomain)
 			return true;
 		addrSpec.Truncate( atPos);
 	}
@@ -171,13 +178,17 @@ bool BmIdentity::HandlesAddrSpec( BmString addrSpec, bool needExactMatch) const 
 		-	returns true if values are ok, false (and error-info) if not
 \*------------------------------------------------------------------------------*/
 bool BmIdentity::SanityCheck( BmString& complaint, BmString& fieldName) const {
-	if (!mPOPAccount.Length()) {
-		complaint = "Please select a receiving-account to be associated with this identity.";
-		fieldName = "popaccount";
+	if (!mRecvAccount.Length()) {
+		complaint 
+			= "Please select a receiving-account to be associated with "
+			  "this identity.";
+		fieldName = "recvaccount";
 		return false;
 	}
 	if (!mSMTPAccount.Length()) {
-		complaint = "Please select a sending-account to be associated with this identity.";
+		complaint 
+			= "Please select a sending-account to be associated with "
+			  "this identity.";
 		fieldName = "smtpaccount";
 		return false;
 	}
@@ -228,7 +239,7 @@ BmIdentityList::~BmIdentityList() {
 
 /*------------------------------------------------------------------------------*\
 	SettingsFileName()
-		-	returns the name of the settins-file for the POP3-accounts-list
+		-	returns the name of the settins-file for the identity-list
 \*------------------------------------------------------------------------------*/
 const BmString BmIdentityList::SettingsFileName() {
 	return BmString( BeamRoster->SettingsPath()) << "/" << "Identities";
@@ -247,9 +258,9 @@ void BmIdentityList::ForeignKeyChanged( const BmString& key,
 	BmModelItemMap::const_iterator iter;
 	for( iter = begin(); iter != end(); ++iter) {
 		BmIdentity* ident = dynamic_cast< BmIdentity*>( iter->second.Get());
-		if (key == BmIdentity::MSG_POP_ACCOUNT) {
-			if (ident && ident->POPAccount() == oldVal)
-				ident->POPAccount( newVal);
+		if (key == BmIdentity::MSG_RECV_ACCOUNT) {
+			if (ident && ident->RecvAccount() == oldVal)
+				ident->RecvAccount( newVal);
 		} else if (key == BmIdentity::MSG_SMTP_ACCOUNT) {
 			if (ident && ident->SMTPAccount() == oldVal)
 				ident->SMTPAccount( newVal);
@@ -317,13 +328,14 @@ void BmIdentityList::ResetToSaved() {
 }
 
 /*------------------------------------------------------------------------------*\
-	FindIdentityForPopAccount( accName)
+	FindIdentityForRecvAccount( accName)
 		-	returns an identity matching the given account
 		-	if any identity using the given account is marked as a bit-bucket, this
 			identity is returned, otherwise the first identity using the given account
 			is returned.
 \*------------------------------------------------------------------------------*/
-BmRef<BmIdentity> BmIdentityList::FindIdentityForPopAccount( const BmString accName) {
+BmRef<BmIdentity> BmIdentityList
+::FindIdentityForRecvAccount( const BmString accName) {
 	BmAutolockCheckGlobal lock( ModelLocker());
 	if (!lock.IsLocked())
 		BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
@@ -331,13 +343,13 @@ BmRef<BmIdentity> BmIdentityList::FindIdentityForPopAccount( const BmString accN
 	// check if we have a bit-bucket identity:
 	for( iter = begin(); iter != end(); ++iter) {
 		BmIdentity* ident = dynamic_cast< BmIdentity*>( iter->second.Get());
-		if (ident->MarkedAsBitBucket() && ident->POPAccount()==accName)
+		if (ident->MarkedAsBitBucket() && ident->RecvAccount()==accName)
 			return ident;
 	}
 	// return the first address matching the given account:
 	for( iter = begin(); iter != end(); ++iter) {
 		BmIdentity* ident = dynamic_cast< BmIdentity*>( iter->second.Get());
-		if (ident->POPAccount()==accName)
+		if (ident->RecvAccount()==accName)
 			return ident;
 	}
 	// nothing found !?!
@@ -345,14 +357,15 @@ BmRef<BmIdentity> BmIdentityList::FindIdentityForPopAccount( const BmString accN
 }
 
 /*------------------------------------------------------------------------------*\
-	FindFromAddressForPopAccount( accName)
+	FindFromAddressForRecvAccount( accName)
 		-	returns the from-address corresponding to the given account
 \*------------------------------------------------------------------------------*/
-BmString BmIdentityList::FindFromAddressForPopAccount( const BmString accName) {
+BmString BmIdentityList
+::FindFromAddressForRecvAccount( const BmString accName) {
 	BmAutolockCheckGlobal lock( ModelLocker());
 	if (!lock.IsLocked())
 		BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
-	BmRef<BmIdentity> ident = FindIdentityForPopAccount( accName);
+	BmRef<BmIdentity> ident = FindIdentityForRecvAccount( accName);
 	if (ident)
 		return ident->GetFromAddress();
 	else
@@ -386,16 +399,17 @@ BmRef<BmIdentity> BmIdentityList::FindIdentityForAddrSpec( const BmString addrSp
 }
 
 /*------------------------------------------------------------------------------*\
-	FindPopAccountForAddrSpec( addr)
-		-	determines to which pop-account the given addrSpec belongs (if any)
+	FindRecvAccountForAddrSpec( addr)
+		-	determines to which recv-account the given addrSpec belongs (if any)
 \*------------------------------------------------------------------------------*/
-BmRef<BmPopAccount> BmIdentityList::FindPopAccountForAddrSpec( const BmString addrSpec) {
+BmRef<BmRecvAccount> BmIdentityList
+::FindRecvAccountForAddrSpec( const BmString addrSpec) {
 	BmAutolockCheckGlobal lock( ModelLocker());
 	if (!lock.IsLocked())
 		BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
 	BmRef<BmIdentity> ident = FindIdentityForAddrSpec( addrSpec);
 	if (ident)
-		return ident->PopAcc();
+		return ident->RecvAcc();
 	else
 		return NULL;
 }

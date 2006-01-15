@@ -441,7 +441,7 @@ void BmSmtp::StateStartTLS() {
 void BmSmtp::StateAuthViaPopServer() {
 	BmString accName = mSmtpAccount->AccForSmtpAfterPop();
 	BmRef<BmPopAccount> sendingAcc = dynamic_cast<BmPopAccount*>( 
-		ThePopAccountList->FindItemByKey( accName).Get()
+		TheRecvAccountList->FindItemByKey( accName).Get()
 	);
 	if (!sendingAcc)
 		BM_THROW_RUNTIME( BmString("Sorry, could not determine pop-account")

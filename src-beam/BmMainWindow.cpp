@@ -33,7 +33,7 @@
 #include "BmMainWindow.h"
 #include "BmMenuController.h"
 #include "BmMsgTypes.h"
-#include "BmPopAccount.h"
+#include "BmRecvAccount.h"
 #include "BmPrefs.h"
 #include "BmResources.h"
 #include "BmRosterBase.h"
@@ -56,14 +56,14 @@ bool BmMainWindow::IsAlive() {
 
 void UpdateAccounts( BmToolbarButton* button)
 {
-	BmAutolockCheckGlobal lock( ThePopAccountList->ModelLocker());
+	BmAutolockCheckGlobal lock( TheRecvAccountList->ModelLocker());
 	if (!lock.IsLocked())
 		BM_THROW_RUNTIME( "UpdateAccounts: Unable to get lock");
 	BmModelItemMap::const_iterator iter;
-	for( 	iter = ThePopAccountList->begin(); 
-			iter != ThePopAccountList->end(); ++iter) {
+	for( 	iter = TheRecvAccountList->begin(); 
+			iter != TheRecvAccountList->end(); ++iter) {
 		BMessage* msg = new BMessage( BMM_CHECK_MAIL);
-		msg->AddString( BmPopAccountList::MSG_ITEMKEY, 
+		msg->AddString( BmRecvAccountList::MSG_ITEMKEY, 
 							 iter->second->Key().String());
 		button->AddActionVariation( iter->second->DisplayKey(), msg);
 	}
@@ -288,7 +288,7 @@ MMenuBar* BmMainWindow::CreateMenu() {
 	mAccountMenu = new BmMenuController( 
 		"Check Mail For", this,
 		new BMessage( BMM_CHECK_MAIL), 
-		&BmGuiRosterBase::RebuildPopAccountMenu,
+		&BmGuiRosterBase::RebuildRecvAccountMenu,
 		BM_MC_MOVE_RIGHT
 	);
 	menu->AddItem( mAccountMenu);
@@ -372,8 +372,8 @@ void BmMainWindow::BeginLife() {
 		mMainMenuBar->FindItem( BMM_SWITCH_HEADER)
 			->SetTarget( (BHandler*)mMailView->HeaderView());
 
-		// populate pop-account menu in order to activate shortcuts:
-		while( !ThePopAccountList->IsJobCompleted())
+		// populate recv-account menu in order to activate shortcuts:
+		while( !TheRecvAccountList->IsJobCompleted())
 			snooze( 200*1000);
 		mAccountMenu->Shortcuts( "1234567890");
 

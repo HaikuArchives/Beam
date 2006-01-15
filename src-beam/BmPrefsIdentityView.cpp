@@ -27,7 +27,7 @@
 #include "BmLogHandler.h"
 #include "BmMenuControl.h"
 #include "BmMenuController.h"
-#include "BmPopAccount.h"
+#include "BmRecvAccount.h"
 #include "BmPrefs.h"
 #include "BmPrefsIdentityView.h"
 #include "BmPrefsWin.h"
@@ -46,7 +46,7 @@ enum Columns {
 	COL_REAL_NAME,
 	COL_MAIL_ADDR,
 	COL_MAIL_ALIASES,
-	COL_POP_ACC,
+	COL_RECV_ACC,
 	COL_BITBUCKET,
 	COL_SIGNATURE,
 	COL_SMTP_ACC
@@ -82,7 +82,7 @@ void BmRecvIdentItem::UpdateView( BmUpdFlags flags, bool redraw,
 			ident->RealName().String(),
 			ident->MailAddr().String(),
 			ident->MailAliases().String(),
-			ident->POPAccount().String(),
+			ident->RecvAccount().String(),
 			ident->MarkedAsBitBucket() ? "*" : "",
 			ident->SignatureName().String(),
 			ident->SMTPAccount().String(),
@@ -121,10 +121,10 @@ BmRecvIdentView::BmRecvIdentView( int32 width, int32 height)
 	AddColumn( new CLVColumn( "Real Name", 80.0, flags, 40.0));
 	AddColumn( new CLVColumn( "Mailaddress", 80.0, flags, 40.0));
 	AddColumn( new CLVColumn( "Aliases", 80.0, flags, 40.0));
-	AddColumn( new CLVColumn( "POP-Account", 80.0, flags, 40.0));
+	AddColumn( new CLVColumn( "Receiving Account", 80.0, flags, 40.0));
 	AddColumn( new CLVColumn( "F", 20.0, flags, 20.0, "(F)allback Identity?"));
 	AddColumn( new CLVColumn( "Signature", 80.0, flags, 40.0));
-	AddColumn( new CLVColumn( "SMTP-Account", 80.0, flags, 40.0));
+	AddColumn( new CLVColumn( "Sending Account", 80.0, flags, 40.0));
 
 	SetSortFunction( CLVEasyItem::CompareItems);
 	SetSortKey( COL_KEY);
@@ -225,13 +225,13 @@ BmPrefsIdentityView::BmPrefsIdentityView()
 						),
 						mAliasesControl = new BmTextControl( "Aliases:"),
 						new Space( minimax(0,5,0,5)),
-						mPopControl = new BmMenuControl( 
-							"POP-account:", 
+						mRecvControl = new BmMenuControl( 
+							"Receiving Account:", 
 							new BmMenuController( 
-								"POP-account:", 
+								"Receiving Account:", 
 								this, 
-								new BMessage( BM_POP_SELECTED),
-								&BmGuiRosterBase::RebuildPopAccountMenu, 
+								new BMessage( BM_RECV_SELECTED),
+								&BmGuiRosterBase::RebuildRecvAccountMenu, 
 								BM_MC_LABEL_FROM_MARKED
 							)
 						),
@@ -265,7 +265,7 @@ BmPrefsIdentityView::BmPrefsIdentityView()
 						new VGroup(
 							mIsBucketControl 
 								= new BmCheckControl( 
-									"Use as fallback identity for the POP-account", 
+									"Use as fallback identity for the Receiving Account", 
 									new BMessage(BM_IS_BUCKET_CHANGED), 
 									this
 								),
@@ -289,7 +289,7 @@ BmPrefsIdentityView::BmPrefsIdentityView()
 		mReplyToControl,
 		mSignatureControl,
 		mSmtpControl,
-		mPopControl,
+		mRecvControl,
 		NULL
 	);
 }
@@ -309,7 +309,7 @@ BmPrefsIdentityView::~BmPrefsIdentityView() {
 	TheBubbleHelper->SetHelp( mIsBucketControl, NULL);
 	TheBubbleHelper->SetHelp( mSignatureControl, NULL);
 	TheBubbleHelper->SetHelp( mSmtpControl, NULL);
-	TheBubbleHelper->SetHelp( mPopControl, NULL);
+	TheBubbleHelper->SetHelp( mRecvControl, NULL);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -364,7 +364,7 @@ void BmPrefsIdentityView::Initialize() {
 	);
 	TheBubbleHelper->SetHelp( 
 		mIsBucketControl, 
-		"Check this if the corresponding pop-account is a catch-all account,\n"
+		"Check this if the corresponding receiving account is a catch-all account,\n"
 		"and this identity should be used for unknown addresses\n"
 		"(Beam uses this information when trying to determine\n"
 		"the identity to use when replying to mails)."
@@ -375,13 +375,13 @@ void BmPrefsIdentityView::Initialize() {
 		"for every mail sent from this identity."
 	);
 	TheBubbleHelper->SetHelp( 
-		mPopControl, 
-		"Here you can select the POP3-account that corresponds\n"
+		mRecvControl, 
+		"Here you can select the receiving account that corresponds\n"
 		"to this identity."
 	);
 	TheBubbleHelper->SetHelp( 
 		mSmtpControl, 
-		"Here you can select the SMTP-account that shall be used\n"
+		"Here you can select the sending account that shall be used\n"
 		"to send mails from this identity."
 	);
 
@@ -486,12 +486,12 @@ void BmPrefsIdentityView::MessageReceived( BMessage* msg) {
 				NoticeChange();
 				break;
 			}
-			case BM_POP_SELECTED: {
-				BMenuItem* item = mPopControl->Menu()->FindMarked();
+			case BM_RECV_SELECTED: {
+				BMenuItem* item = mRecvControl->Menu()->FindMarked();
 				if (item && BM_NoItemLabel != item->Label())
-					mCurrIdent->POPAccount( item->Label());
+					mCurrIdent->RecvAccount( item->Label());
 				else
-					mCurrIdent->POPAccount( "");
+					mCurrIdent->RecvAccount( "");
 				NoticeChange();
 				break;
 			}
@@ -608,8 +608,8 @@ void BmPrefsIdentityView::MessageReceived( BMessage* msg) {
 					fieldName = msg->FindString( MSG_FIELD_NAME);
 					if (fieldName.ICompare( "smtpaccount")==0)
 						mSmtpControl->MakeFocus( true);
-					else if (fieldName.ICompare( "popaccount")==0)
-						mPopControl->MakeFocus( true);
+					else if (fieldName.ICompare( "recvaccount")==0)
+						mRecvControl->MakeFocus( true);
 				}
 				break;
 			}
@@ -637,7 +637,7 @@ void BmPrefsIdentityView::ShowIdentity( int32 selection) {
 	mSignatureControl->SetEnabled( enabled);
 	mSmtpControl->SetEnabled( enabled);
 	mSpecialHeadersButton->SetEnabled( enabled);
-	mPopControl->SetEnabled( enabled);
+	mRecvControl->SetEnabled( enabled);
 	mRemoveButton->SetEnabled( enabled);
 	mIsBucketControl->SetEnabled( enabled);
 	
@@ -649,7 +649,7 @@ void BmPrefsIdentityView::ShowIdentity( int32 selection) {
 		mRealNameControl->SetTextSilently( "");
 		mReplyToControl->SetTextSilently( "");
 		mSignatureControl->ClearMark();
-		mPopControl->ClearMark();
+		mRecvControl->ClearMark();
 		mSmtpControl->ClearMark();
 		mIsBucketControl->SetValue( 0);
 	} else {
@@ -679,8 +679,8 @@ void BmPrefsIdentityView::ShowIdentity( int32 selection) {
 							? mCurrIdent->SignatureName().String()
 							: BM_NoItemLabel.String()
 					);
-					mPopControl->MarkItem( mCurrIdent->POPAccount().Length() 
-													? mCurrIdent->POPAccount().String()
+					mRecvControl->MarkItem( mCurrIdent->RecvAccount().Length() 
+													? mCurrIdent->RecvAccount().String()
 													: "");
 					mSmtpControl->MarkItem( mCurrIdent->SMTPAccount().Length() 
 														? mCurrIdent->SMTPAccount().String()

@@ -60,7 +60,7 @@ BmString TimeToString( time_t utc, const char* format) {
 	has its own loglevel.
 	N.B.: the maximum number is 16, because we need two bits per terrain!
 \*------------------------------------------------------------------------------*/
-const uint32 BM_LogPop  				= 1UL<<0;
+const uint32 BM_LogRecv  				= 1UL<<0;
 const uint32 BM_LogJobWin 				= 1UL<<1;
 const uint32 BM_LogMailParse 			= 1UL<<2;
 const uint32 BM_LogApp		 			= 1UL<<3;

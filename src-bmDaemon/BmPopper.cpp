@@ -144,7 +144,7 @@ BmPopper::PopState BmPopper::PopStates[BmPopper::POP_FINAL] = {
 		-	contructor
 \*------------------------------------------------------------------------------*/
 BmPopper::BmPopper( const BmString& name, BmPopAccount* account)
-	:	inherited( BmString("POP_")<<name, BM_LogPop, 
+	:	inherited( BmString("POP_")<<name, BM_LogRecv, 
 					  new BmPopStatusFilter( NULL, this))
 	,	mPopAccount( account)
 	,	mCurrMailNr( 0)
@@ -307,12 +307,12 @@ void BmPopper::StateConnect() {
 	BNetAddress addr;
 	if (addr.SetTo( server.String(), port) != B_OK) {
 		BmString s = BmString("Could not determine address of POP-Server ") 
-							<< mPopAccount->POPServer();
+							<< mPopAccount->Server();
 		throw BM_network_error( s);
 	}
 	if (!Connect( &addr)) {
 		BmString s = BmString("Could not connect to POP-Server ") 
-							<< mPopAccount->POPServer() 
+							<< mPopAccount->Server() 
 						  	<< "\n\bError:\n\t" << mErrorString;
 		throw BM_network_error( s);
 	}
@@ -444,7 +444,7 @@ void BmPopper::StateAuth() {
 		} else if (authMethod == BmPopAccount::AUTH_CRAM_MD5) {
 			AuthCramMD5(mPopAccount->Username(), mPopAccount->Password());
 		} else if (authMethod == BmPopAccount::AUTH_DIGEST_MD5) {
-			BmString serviceUri = BmString("pop/") << mPopAccount->POPServer();
+			BmString serviceUri = BmString("pop/") << mPopAccount->Server();
 			AuthDigestMD5(mPopAccount->Username(), mPopAccount->Password(),
 							  serviceUri);
 		} else {
@@ -493,7 +493,7 @@ void BmPopper::StateCheck() {
 		UpdateMailStatus( 0, NULL, 0);
 		// we remove all local UIDs, since none are listed on the server:
 		BmString removedUids = mPopAccount->AdjustToCurrentServerUids( mMsgUIDs);
-		BM_LOG2( BM_LogPop, removedUids);
+		BM_LOG2( BM_LogRecv, removedUids);
 		return;									// no messages found, nothing more to do
 	}
 
@@ -517,7 +517,7 @@ void BmPopper::StateCheck() {
 			mMsgUIDs.push_back( rx.match[i].atom[1]);
 		// we remove local UIDs that are not listed on the server anymore:
 		BmString removedUids = mPopAccount->AdjustToCurrentServerUids( mMsgUIDs);
-		BM_LOG( BM_LogPop, removedUids);
+		BM_LOG( BM_LogRecv, removedUids);
 	} catch( BM_network_error& err) {
 		// no UIDL-listing from server, we will have to get by without...
 	}
@@ -533,7 +533,7 @@ void BmPopper::StateCheck() {
 	split( "\r\n", mAnswerText, listAnswerVect);
 	uint32 count = mMsgCount;
 	if (count != listAnswerVect.size()) {
-		BM_LOG( BM_LogPop, 
+		BM_LOG( BM_LogRecv, 
 				  BmString("Strange: server indicated ")<< mMsgCount
 						<< " mails, but LIST received " << listAnswerVect.size()
 						<< " lines!");
@@ -566,7 +566,7 @@ void BmPopper::StateCheck() {
 		} else {
 			// msg is old (according to known UID), we may have to remove it now:
 			if (!mPopAccount->DeleteMailFromServer()) {
-				BM_LOG2( BM_LogPop, BmString("Leaving mail with UID ")<<mMsgUIDs[i]
+				BM_LOG2( BM_LogRecv, BmString("Leaving mail with UID ")<<mMsgUIDs[i]
 											<<" on server\n"
 											<<"since user has told us to "
 											<<"leave all mails on server.");
@@ -576,7 +576,7 @@ void BmPopper::StateCheck() {
 				time_t now = time(NULL);
 				if (expirationTime <= now && mPopAccount->DeleteMailFromServer()) {
 					// remove
-					BM_LOG( BM_LogPop, 
+					BM_LOG( BM_LogRecv, 
 							  BmString("Removing mail with UID ")<<mMsgUIDs[i]
 									<<" from server\n"
 									<<"since it has been downloaded on "
@@ -589,7 +589,7 @@ void BmPopper::StateCheck() {
 					if (!CheckForPositiveAnswer())
 						return;
 				} else {
-					BM_LOG2( BM_LogPop, 
+					BM_LOG2( BM_LogRecv, 
 								BmString("Leaving mail with UID ")<<mMsgUIDs[i]
 									<<" on server\n"
 									<<"since it has been downloaded on "
@@ -629,26 +629,26 @@ void BmPopper::StateRetrieve() {
 			time_t after = time(NULL);
 			time_t duration = after-before > 0 ? after-before : 1;
 			// log speed for mails that exceed a certain size:
-			BM_LOG( BM_LogPop, 
+			BM_LOG( BM_LogRecv, 
 					  BmString("Received mail of size ")<<mAnswerText.Length()
 							<< " bytes in " << duration << " seconds => " 
 							<< mAnswerText.Length()/duration/1024.0 << "KB/s");
 		}
 		// now create a mail from the received data...
-		BM_LOG2( BM_LogPop, "Creating mail...");
+		BM_LOG2( BM_LogRecv, "Creating mail...");
 		BmRef<BmMail> mail = new BmMail( mAnswerText, mPopAccount->Name());
 		if (mail->InitCheck() != B_OK)
 			goto CLEAN_UP;
 		// ...set default folder according to pop-account settings...
 		mail->SetDestFolderName( mPopAccount->HomeFolder());
 		// ...execute mail-filters for this mail...
-		BM_LOG2( BM_LogPop, "...applying filters (in memory)...");
+		BM_LOG2( BM_LogRecv, "...applying filters (in memory)...");
 		mail->ApplyInboundFilters();
 		// ...and store mail on disk:
-		BM_LOG2( BM_LogPop, "...storing mail...");
+		BM_LOG2( BM_LogRecv, "...storing mail...");
 		if (!mail->Store())
 			goto CLEAN_UP;
-		BM_LOG2( BM_LogPop, "...done");
+		BM_LOG2( BM_LogRecv, "...done");
 		mPopAccount->MarkUIDAsDownloaded( mMsgUIDs[i]);
 		//	delete the retrieved message if required to do so immediately:
 		if (mPopAccount->DeleteMailFromServer() 
