@@ -32,9 +32,9 @@
 \*------------------------------------------------------------------------------*/
 BmStatusFilter::BmStatusFilter( BmMemIBuf* input, uint32 blockSize)
 	:	inherited( input, blockSize, nTagImmediatePassOn)
-	,	mUpdate( false)
 	,	mHaveStatus( false)
-	,	mNeedData( false)
+	,	mUpdate( false)
+	,	mInfoMsg( NULL)
 {
 }
 
@@ -45,8 +45,8 @@ BmStatusFilter::BmStatusFilter( BmMemIBuf* input, uint32 blockSize)
 void BmStatusFilter::Reset( BmMemIBuf* input) {
 	inherited::Reset( input);
 	mHaveStatus = false;
-	mNeedData = false;
 	mStatusText.Truncate( 0);
+	mInfoMsg = NULL;
 }
 
 
@@ -64,6 +64,8 @@ const char* const BmNetJobModel::MSG_TRAILING = 	"bm:trailing";
 const char* const BmNetJobModel::MSG_LEADING = 		"bm:leading";
 const char* const BmNetJobModel::MSG_ENCRYPTED = 	"bm:encrypted";
 const char* const BmNetJobModel::MSG_FAILED = 		"bm:failed";
+
+const char* const BmNetJobModel::IMSG_NEED_DATA = 	"needData";
 
 /*------------------------------------------------------------------------------*\
 	BmNetJobModel()
@@ -146,9 +148,10 @@ bool BmNetJobModel::ShouldContinue() {
 \*------------------------------------------------------------------------------*/
 bool BmNetJobModel::CheckForPositiveAnswer( uint32 expectedSize, 
 														  bool dotstuffDecoding,
-														  bool update) {
+														  bool update,
+														  BMessage* infoMsg) {
 	BM_ASSERT( mStatusFilter);
-	GetAnswer( expectedSize, dotstuffDecoding, update);
+	GetAnswer( expectedSize, dotstuffDecoding, update, infoMsg);
 	return mStatusFilter->CheckForPositiveAnswer() && ShouldContinue();
 }
 
@@ -157,13 +160,24 @@ bool BmNetJobModel::CheckForPositiveAnswer( uint32 expectedSize,
 		-	
 \*------------------------------------------------------------------------------*/
 void BmNetJobModel::GetAnswer( uint32 expectedSize, bool dotstuffDecoding,
-										 bool update) {
+										 bool update, BMessage* infoMsg) {
 	uint32 blockSize = ThePrefs->GetInt( "NetReceiveBufferSize", 10*1500);
 	BmStringOBuf answerBuf( max( expectedSize+128, blockSize), 2.0);
 	mStatusFilter->Reset( mReader);
 	mStatusFilter->DoUpdate( update);
-	mStatusFilter->NeedData( dotstuffDecoding);
+	BMessage localInfoMsg;
+	if (!infoMsg) {
+		mInfoMsg.MakeEmpty();
+		infoMsg = &mInfoMsg;
+	}
+	mStatusFilter->SetInfoMsg(infoMsg);
 	if (dotstuffDecoding) {
+		bool dummy;
+		if (infoMsg->FindBool(IMSG_NEED_DATA, &dummy) != B_OK) {
+			// dotstuff-decoding means that there needs to be data (or else
+			// there would be nothing we could decode...):
+			infoMsg->AddBool(IMSG_NEED_DATA, true);
+		}
 		BmDotstuffDecoder decoder( mStatusFilter, this, blockSize);
 		answerBuf.Write( &decoder, blockSize);
 	} else

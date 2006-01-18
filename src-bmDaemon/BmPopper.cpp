@@ -67,6 +67,10 @@ void BmPopStatusFilter::Filter( const char* srcBuf, uint32& srcLen,
 	const char* src = srcBuf;
 	const char* srcEnd = srcBuf+srcLen;
 
+	bool needData = false;
+	if (mInfoMsg)
+		mInfoMsg->FindBool(BmPopper::IMSG_NEED_DATA, &needData);
+
 	if (mHaveStatus) {
 		uint32 size = min( destLen, srcLen);
 		memcpy( destBuf, srcBuf, size);
@@ -80,7 +84,7 @@ void BmPopStatusFilter::Filter( const char* srcBuf, uint32& srcLen,
 			src++;								// skip '\n'
 			mHaveStatus = true;
 			mStatusText.RemoveAll( "\r");
-			if (!mNeedData 
+			if (!needData 
 			|| mStatusText.Length() && mStatusText.ByteAt(0) != '+')
 				// if the status is all we want or an error occurred,
 				// we are done:

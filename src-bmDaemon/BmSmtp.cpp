@@ -86,6 +86,10 @@ void BmSmtpStatusFilter::Filter( const char* srcBuf, uint32& srcLen,
 	const char* src = srcBuf;
 	const char* srcEnd = srcBuf+srcLen;
 
+	bool needData = false;
+	if (mInfoMsg)
+		mInfoMsg->FindBool(BmPopper::IMSG_NEED_DATA, &needData);
+
 	if (mHaveStatus) {
 		uint32 size = min( destLen, srcLen);
 		memcpy( destBuf, srcBuf, size);
@@ -112,7 +116,7 @@ void BmSmtpStatusFilter::Filter( const char* srcBuf, uint32& srcLen,
 		mStatusText.Append( srcBuf, statusSize);
 		if (mHaveStatus) {
 			src++;								// skip newline
-			if (!mNeedData)
+			if (!needData)
 				mEndReached = true;
 		}
 		srcLen = src-srcBuf;

@@ -39,14 +39,13 @@ public:
 
 	// setters:
 	inline void DoUpdate( bool b)			{ mUpdate = b; }
-	inline void NeedData( bool b)			{ mNeedData = b; }
+	void SetInfoMsg(BMessage* infoMsg)	{ mInfoMsg = infoMsg; }
 
 protected:
 	BmString mStatusText;
-	bool mUpdate;
 	bool mHaveStatus;
-	bool mNeedData;
-
+	bool mUpdate;
+	BMessage* mInfoMsg;
 };
 
 class BmSocket;
@@ -88,16 +87,22 @@ public:
 	static const char* const MSG_ENCRYPTED;
 	static const char* const MSG_FAILED;
 
+	// message components used for info-msgs (communication between
+	// protocol implementation and protocol-specific status filter):
+	static const char* const IMSG_NEED_DATA;
+
 protected:
 	// native methods:
 	virtual bool Connect( const BNetAddress* addr);
 	virtual void Disconnect();
 	virtual bool CheckForPositiveAnswer( uint32 expectedSize=4096, 
 													 bool dotstuffDecoding=false,
-													 bool update=false);
+													 bool update=false,
+													 BMessage* infoMsg=NULL);
 	virtual void GetAnswer( uint32 expectedSize=4096, 
 									bool dotstuffDecoding=false,
-									bool update=false);
+									bool update=false,
+									BMessage* infoMsg=NULL);
 	virtual void SendCommand( const BmString& cmd, 
 									  const BmString& secret=BM_DEFAULT_STRING,
 									  bool dotstuffEncoding=false,
@@ -118,6 +123,8 @@ protected:
 	BmStatusFilter* mStatusFilter;
 							// filter that splits server-reply into data and status 
 							// part (the status part is kept inside the filter object)
+	BMessage mInfoMsg;
+							// message with protocol-specific info for status filter
 	BmString mAnswerText;
 							// data part of server-reply
 	BmString mErrorString;
