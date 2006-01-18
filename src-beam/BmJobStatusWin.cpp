@@ -31,6 +31,8 @@
 #include "BeamApp.h"
 #include "BmBasics.h"
 #include "BmFilter.h"
+#include "BmImap.h"
+#include "BmImapAccount.h"
 #include "BmJobStatusWin.h"
 #include "BmLogHandler.h"
 #include "BmMailFilter.h"
@@ -48,8 +50,6 @@
 static const int BM_MINSIZE = 200;
 
 static const char* BM_BEEP_EVENT = "New E-mail";
-
-unsigned short BmPopperView::nActiveCount = 0;
 
 /********************************************************************************\
 	BmJobStatusView
@@ -531,25 +531,134 @@ void BmPopperView::UpdateModelView( BMessage* msg) {
 										"lock window");
 }
 
+
+
+/********************************************************************************\
+	BmImapView
+\********************************************************************************/
+
 /*------------------------------------------------------------------------------*\
-	StartJob()
-		-	
+	CreateInstance( name)
+		-	creates and returns a new imap-view
 \*------------------------------------------------------------------------------*/
-void BmPopperView::StartJob( BmJobModel* model, bool startInNewThread, 
-									  int32 jobSpecifier) {
-	nActiveCount++;
-	inherited::StartJob( model, startInNewThread, jobSpecifier);
+BmImapView* BmImapView::CreateInstance( const char* name, 
+													 bool isAutoCheck) {
+	return new BmImapView( name, isAutoCheck);
 }
 
 /*------------------------------------------------------------------------------*\
-	JobIsDone()
-		-	
+	BmImapView()
+		-	standard constructor
 \*------------------------------------------------------------------------------*/
-void BmPopperView::JobIsDone( bool completed) {
-	inherited::JobIsDone( completed);
-	--nActiveCount;
+BmImapView::BmImapView( const char* name, bool isAutoCheck)
+	:	BmJobStatusView( name)
+	,	mStatBar( NULL)
+	,	mMailBar( NULL)
+	,	mHaveBeeped( false)
+{
+	mIsAutoJob = isAutoCheck;
+	mMSecsBeforeRemove = MAX(10,ThePrefs->GetInt( "MSecsBeforePopperRemove"));
+	MView* view = new VGroup(
+		new MBViewWrapper(
+			mStatBar = new BStatusBar( 
+				BRect(), name, name, ""
+			), 
+			true, false, false
+		),
+		new MBViewWrapper(
+			mMailBar = new BStatusBar( 
+				BRect(), name, "Mails: ", ""
+			), 
+			true, false, false
+		),
+		0
+	);
+	AddChild( dynamic_cast<BView*>(view));
+	mStatBar->SetBarHeight( 8.0);
+	mStatBar->SetBarColor( BmJobStatusWin::BM_COL_STATUSBAR);
+	mMailBar->SetBarHeight( 8.0);
 }
 
+/*------------------------------------------------------------------------------*\
+	~BmImapView()
+		-	standard destructor
+\*------------------------------------------------------------------------------*/
+BmImapView::~BmImapView() {
+}
+
+/*------------------------------------------------------------------------------*\
+	CreateJobModel( data)
+		-	creates and returns a new job-model, data may contain constructor args
+\*------------------------------------------------------------------------------*/
+BmJobModel* BmImapView::CreateJobModel( BMessage* msg) {
+	BmString accName = FindMsgString( msg, BmJobModel::MSG_JOB_NAME);
+	BmRef<BmListModelItem> item = TheRecvAccountList->FindItemByKey( accName);
+	BmImapAccount* account;
+	if (!(account = dynamic_cast<BmImapAccount*>( item.Get())))
+		BM_THROW_INVALID( BmString("Could not find BmImapAccount ") << accName);
+	BmImap* imap = new BmImap( account->Name(), account);
+	return imap;
+}
+
+/*------------------------------------------------------------------------------*\
+	ResetController()
+		-	reinitializes the view in order to start another job
+\*------------------------------------------------------------------------------*/
+void BmImapView::ResetController() {
+	mStatBar->Reset( ControllerName(), "");
+	mStatBar->SetTrailingText( "idle");
+	mMailBar->Reset( "Mails: ", NULL);
+	mHaveBeeped = false;
+}
+
+/*------------------------------------------------------------------------------*\
+	UpdateModelView()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmImapView::UpdateModelView( BMessage* msg) {
+	BmString name = FindMsgString( msg, BmImap::MSG_MODEL);
+	BmString domain = FindMsgString( msg, BmJobModel::MSG_DOMAIN);
+
+	float delta = FindMsgFloat( msg, BmImap::MSG_DELTA);
+	const char* leading = NULL;
+	msg->FindString( BmImap::MSG_LEADING, &leading);
+	const char* trailing = NULL;
+	msg->FindString( BmImap::MSG_TRAILING, &trailing);
+	bool encrypted = false;
+	msg->FindBool( BmImap::MSG_ENCRYPTED, &encrypted);
+	bool failed = false;
+	msg->FindBool( BmImap::MSG_FAILED, &failed);
+
+	BM_LOG3( BM_LogJobWin, BmString("Updating interface for ") << name);
+
+	BmAutolockCheckGlobal lock( BmJobStatusWin::theInstance);
+	if (lock.IsLocked()) {
+		if (domain == "mailbar") {
+			mMailBar->Update( delta, leading, trailing);
+			if (mMailBar->CurrentValue()==mMailBar->MaxValue()
+			&& !mHaveBeeped
+			&& ThePrefs->GetBool( "BeepWhenNewMailArrived", true)) {
+				// we indicate the arrival of new mail by a beep:
+				system_beep( BM_BEEP_EVENT);
+				mHaveBeeped = true;
+			}
+		} else { 
+			// domain == "statbar"
+			mStatBar->Update( delta, leading, trailing);
+			rgb_color newBarColor = mStatBar->BarColor();
+			if (encrypted)
+				newBarColor = BmJobStatusWin::BM_COL_STATUSBAR_GOOD;
+			if (failed)
+				newBarColor = BmJobStatusWin::BM_COL_STATUSBAR_BAD;
+			if (newBarColor != mStatBar->BarColor()) {
+				mStatBar->SetBarColor(newBarColor);
+				mStatBar->Invalidate();
+			}
+		}
+	} else
+		throw BM_runtime_error( "BmImapView::UpdateModelView(): could not "
+										"lock window");
+}
 
 
 
@@ -842,6 +951,11 @@ void BmJobStatusWin::AddJob( BMessage* msg) {
 			case BM_JOBWIN_POP: {
 				bool autoMode = msg->FindBool( BmRecvAccountList::MSG_AUTOCHECK);
 				controller = new BmPopperView( name.String(), autoMode);
+				break;
+			}
+			case BM_JOBWIN_IMAP: {
+				bool autoMode = msg->FindBool( BmRecvAccountList::MSG_AUTOCHECK);
+				controller = new BmImapView( name.String(), autoMode);
 				break;
 			}
 			case BM_JOBWIN_SMTP:

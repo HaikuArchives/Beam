@@ -31,6 +31,7 @@ using namespace regexx;
 #include "BmFilterChain.h"
 #include "BmGuiRoster.h"
 #include "BmIdentity.h"
+#include "BmImapAccount.h"
 #include "BmJobStatusWin.h"
 #include "BmLogHandler.h"
 #include "BmMailEditWin.h"
@@ -785,7 +786,7 @@ thread_id BeamApplication::Run() {
 			InstallDeskbarItem();
 
 		// start most of our list-models:
-		BM_LOG( BM_LogApp, BmString("...reading POP-accounts..."));
+		BM_LOG( BM_LogApp, BmString("...reading receving accounts..."));
 		TheRecvAccountList->StartJobInNewThread();
 
 		// start most of our list-models:
@@ -989,6 +990,7 @@ void BeamApplication::MessageReceived( BMessage* msg) {
 	try {
 		switch( msg->what) {
 			case BM_JOBWIN_POP:
+			case BM_JOBWIN_IMAP:
 			case BMM_CHECK_MAIL: {
 				while( TheRecvAccountList->IsJobRunning())
 					snooze( 200*1000);
