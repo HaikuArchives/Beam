@@ -528,6 +528,27 @@ void BmRingBuf::Put( const char* data, uint32 len) {
 }
 
 /*------------------------------------------------------------------------------*\
+	operator BmString()
+		-	return complete buffer as string (and removes it)
+\*------------------------------------------------------------------------------*/
+BmRingBuf::operator BmString() {
+	BmString str;
+	if (mCurrFront == mCurrTail)			// buffer is empty
+		return str;
+	if (mCurrFront == mBufLen)
+		mCurrFront = 0;						// wrap
+
+	if (mCurrFront <= mCurrTail)
+		str.SetTo(mBuf + mCurrFront, mCurrTail - mCurrFront);
+	else {
+		str.SetTo(mBuf + mCurrFront, mBufLen - mCurrFront);
+		str.Append(mBuf, mCurrTail);
+	}
+	Reset();
+	return str;
+}
+
+/*------------------------------------------------------------------------------*\
 	Get()
 		-	fetches data from front of buffer (and removes it)
 \*------------------------------------------------------------------------------*/

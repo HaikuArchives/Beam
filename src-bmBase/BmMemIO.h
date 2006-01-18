@@ -234,6 +234,7 @@ public:
 
 	// native methods:
 	void Put( const char* data, uint32 len);
+	BmRingBuf::operator BmString();
 	char Get();
 	char PeekFront() const;
 	char PeekTail() const;
