@@ -26,6 +26,8 @@
 #include "BmFilterChain.h"
 #include "BmGuiUtil.h"
 #include "BmIdentity.h"
+#include "BmImap.h"
+#include "BmImapAccount.h"
 #include "BmLogHandler.h"
 #include "BmMail.h"
 #include "BmMailFolderList.h"
@@ -37,7 +39,6 @@
 #include "BmPrefs.h"
 #include "BmPrefsRecvMailView.h"
 #include "BmPrefsWin.h"
-#include "BmRecvAccount.h"
 #include "BmRosterBase.h"
 #include "BmSignature.h"
 #include "BmSmtpAccount.h"
@@ -220,6 +221,9 @@ BmPrefsRecvMailView::BmPrefsRecvMailView()
 				mAddPopButton = new MButton( "Add POP3-Account", 
 													  new BMessage(BM_ADD_POP_ACCOUNT), 
 													  this),
+				mAddImapButton = new MButton( "Add IMAP-Account", 
+													   new BMessage(BM_ADD_IMAP_ACCOUNT), 
+													   this),
 				mRemoveButton = new MButton( "Remove Account", 
 													  new BMessage( BM_REMOVE_ACCOUNT), 
 													  this),
@@ -566,6 +570,10 @@ void BmPrefsRecvMailView::Initialize() {
 											new BMessage(BM_AUTH_SELECTED)), 
 						this);
 	AddItemToMenu( mAuthControl->Menu(), 
+						new BMenuItem( BmImapAccount::AUTH_LOGIN, 
+											new BMessage(BM_AUTH_SELECTED)), 
+						this);
+	AddItemToMenu( mAuthControl->Menu(), 
 						new BMenuItem( BmPopAccount::AUTH_POP3, 
 											new BMessage(BM_AUTH_SELECTED)), 
 						this);
@@ -758,13 +766,13 @@ void BmPrefsRecvMailView::MessageReceived( BMessage* msg) {
 				}
 				if (encryptionType == BmRecvAccount::ENCR_TLS 
 				|| encryptionType == BmRecvAccount::ENCR_SSL) {
-					if (atoi(mPortControl->Text()) == 110)
-						// auto-switch to POP3S-port:
-						mPortControl->SetText("995");
+					if (mPortControl->Text() == mCurrAcc->DefaultPort(false))
+						// auto-switch to encrypted default-port:
+						mPortControl->SetText(mCurrAcc->DefaultPort(true));
 				} else {
-					if (atoi(mPortControl->Text()) == 995)
-						// auto-switch to POP3-port:
-						mPortControl->SetText("110");
+					if (mPortControl->Text() == mCurrAcc->DefaultPort(true))
+						// auto-switch to unencrypted default-port:
+						mPortControl->SetText(mCurrAcc->DefaultPort(false));
 				}
 				NoticeChange();
 				break;
@@ -773,6 +781,7 @@ void BmPrefsRecvMailView::MessageReceived( BMessage* msg) {
 				if (mCurrAcc) {
 					// ToDo: this should be made asynchronous (using messages):
 					BmString suggestedAuthType;
+					BmString encryptionType;
 					BmPopAccount* popAcc 
 						= dynamic_cast<BmPopAccount*>(mCurrAcc.Get());
 					if (popAcc) {
@@ -784,14 +793,26 @@ void BmPrefsRecvMailView::MessageReceived( BMessage* msg) {
 						BmString suggestedAuthType = popper->SuggestAuthType();
 						if (popper->SupportsTLS())
 							// if server supports STARTTLS, we use it:
-							mEncryptionControl->MarkItem( BmPopAccount::ENCR_STARTTLS);
-						else
-							mEncryptionControl->MarkItem( BM_NoItemLabel.String());
+							encryptionType = BmPopAccount::ENCR_STARTTLS;
+					} else {
+						BmImapAccount* imapAcc 
+							= dynamic_cast<BmImapAccount*>(mCurrAcc.Get());
+						if (imapAcc) {
+							BmRef<BmImap> imap( new BmImap( mCurrAcc->Key(), 
+																	  imapAcc));
+							imap->StartJobInThisThread( 
+								BmImap::BM_CHECK_CAPABILITIES_JOB
+							);
+							BmString suggestedAuthType = imap->SuggestAuthType();
+							if (imap->SupportsTLS())
+								// if server supports STARTTLS, we use it:
+								encryptionType = BmImapAccount::ENCR_STARTTLS;
+						}
 					}
 					if (suggestedAuthType.Length())
 						mAuthControl->MarkItem( suggestedAuthType.String());
-					else
-						mAuthControl->MarkItem( BM_NoItemLabel.String());
+					if (encryptionType.Length())
+						mEncryptionControl->MarkItem( encryptionType.String());
 					NoticeChange();
 				}
 				// no break here, we want to proceed with updating the auth-menu...
@@ -841,15 +862,20 @@ void BmPrefsRecvMailView::MessageReceived( BMessage* msg) {
 				NoticeChange();
 				break;
 			}
-			case BM_ADD_POP_ACCOUNT: {
+			case BM_ADD_POP_ACCOUNT:
+			case BM_ADD_IMAP_ACCOUNT: {
 				BmString key( "new account");
 				for( int32 i=1; TheRecvAccountList->FindItemByKey( key); ++i) {
 					key = BmString("new account_")<<i;
 				}
-				TheRecvAccountList->AddItemToList( 
-					new BmPopAccount( key.String(), 
-											TheRecvAccountList.Get())
-				);
+				BmRecvAccount* recvAcc;
+				if (msg->what == BM_ADD_POP_ACCOUNT)
+					recvAcc = new BmPopAccount( key.String(), 
+														 TheRecvAccountList.Get());
+				else
+					recvAcc = new BmImapAccount( key.String(), 
+														  TheRecvAccountList.Get());
+				TheRecvAccountList->AddItemToList( recvAcc);
 				mAccountControl->MakeFocus( true);
 				mAccountControl->TextView()->SelectAll();
 				NoticeChange();

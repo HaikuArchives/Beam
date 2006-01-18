@@ -98,6 +98,7 @@ class BmPrefsRecvMailView : public BmPrefsView {
 		BM_PWD_STORED_CHANGED 	 	= 'bmPC',
 		BM_CHECK_AND_SUGGEST		 	= 'bmCS',
 		BM_ADD_POP_ACCOUNT 			= 'bmAP',
+		BM_ADD_IMAP_ACCOUNT 			= 'bmAI',
 		BM_REMOVE_ACCOUNT 		 	= 'bmRA',
 		BM_CHECK_IF_PPP_UP_CHANGED = 'bmCP'
 	};
@@ -146,6 +147,7 @@ private:
 
 	MButton* mCheckAndSuggestButton;
 	MButton* mAddPopButton;
+	MButton* mAddImapButton;
 	MButton* mRemoveButton;
 	MStringView* mMinutesLabel;
 	MStringView* mDaysLabel;

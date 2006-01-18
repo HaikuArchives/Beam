@@ -21,6 +21,7 @@ SharedLibrary bmMailKit.so :
 	BmFilter.cpp
 	BmFilterChain.cpp
 	BmIdentity.cpp
+	BmImapAccount.cpp
 	BmMail.cpp
 	BmMailFactory.cpp
 	BmMailFilter.cpp
