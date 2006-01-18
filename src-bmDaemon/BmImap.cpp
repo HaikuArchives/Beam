@@ -483,7 +483,7 @@ return;
 	if (!CheckForTaggedPositiveAnswer())
 		return;
 
-	BmString cmd("SEARCH unseen");
+	cmd = ("SEARCH unseen");
 	TagAndSendCommand( cmd);
 	if (!CheckForTaggedPositiveAnswer())
 		return;
