@@ -36,6 +36,10 @@ public:
 	virtual const char* Type() const		{ return nType; }
 	virtual int32 JobType() const			{ return BM_JOBWIN_POP; }
 
+	virtual const char* DefaultPort(bool encrypted) const {
+		return encrypted ? "995" : "110";
+	}
+
 	static const char* const AUTH_POP3;
 	static const char* const AUTH_APOP;
 
