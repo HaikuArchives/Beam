@@ -54,6 +54,7 @@ public:
 
 	virtual const char* Type() const	= 0;
 	virtual int32 JobType() const	= 0;
+	virtual const char* DefaultPort(bool encrypted) const = 0;
 
 	// stuff needed for Archival:
 	status_t Archive( BMessage* archive, bool deep = true) const;

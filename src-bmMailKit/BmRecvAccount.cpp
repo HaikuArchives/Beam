@@ -17,6 +17,7 @@ using namespace regexx;
 
 #include "BmBasics.h"
 #include "BmIdentity.h"
+#include "BmImapAccount.h"
 #include "BmLogHandler.h"
 #include "BmMailFolder.h"
 #include "BmRecvAccount.h"
@@ -226,7 +227,8 @@ status_t BmRecvAccount::Archive( BMessage* archive, bool deep) const {
 		||	archive->AddBool( MSG_STORE_PWD, mPwdStoredOnDisk)
 		||	archive->AddInt16( MSG_CHECK_INTERVAL, mCheckInterval)
 		||	archive->AddString( MSG_FILTER_CHAIN, mFilterChain.String())
-		||	archive->AddString( MSG_HOME_FOLDER, mHomeFolder.String());
+		||	archive->AddString( MSG_HOME_FOLDER, mHomeFolder.String())
+		||	archive->AddString( MSG_TYPE, Type());
 	int32 count = mUIDs.size();
 	for( int i=0; ret==B_OK && i<count; ++i) {
 		ret = archive->AddString( MSG_UID, mUIDs[i].uid.String())
@@ -504,8 +506,8 @@ void BmRecvAccountList::InstantiateItem( BMessage* archive) {
 	BmRecvAccount* newAcc = NULL;
 	if (accType == BmPopAccount::nType)
 		newAcc = new BmPopAccount( archive, this);
-//	else
-//		newAcc = new BmImapAccount( archive, this);
+	else
+		newAcc = new BmImapAccount( archive, this);
 	BM_LOG3( BM_LogMailTracking, 
 				BmString("RecvAccount <") << newAcc->Type() << "," 
 					<< newAcc->Name() << "," << newAcc->Key() << "> read");
