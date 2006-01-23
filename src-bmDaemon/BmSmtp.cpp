@@ -525,8 +525,12 @@ void BmSmtp::StateAuth() {
 				SendCommand( "", base64);
 			}
 		} else if (authMethod == BmSmtpAccount::AUTH_CRAM_MD5) {
+			BmString cmd = BmString("AUTH CRAM-MD5");
+			SendCommand( cmd);
 			AuthCramMD5(mSmtpAccount->Username(), mSmtpAccount->Password());
 		} else if (authMethod == BmSmtpAccount::AUTH_DIGEST_MD5) {
+			BmString cmd = BmString("AUTH DIGEST-MD5");
+			SendCommand( cmd);
 			BmString serviceUri = BmString("smtp/") << mSmtpAccount->SMTPServer();
 			AuthDigestMD5(mSmtpAccount->Username(), mSmtpAccount->Password(),
 							  serviceUri);
@@ -766,7 +770,7 @@ void BmSmtp::Data( BmMail* mail, const BmString& headerText, BmString forBcc) {
 	BmStringIBuf sendBuf( completeHeader);
 	sendBuf.AddBuffer( mail->RawText().String()+mail->HeaderLength());
 	time_t before = time(NULL);
-	SendCommand( sendBuf, "", true, true);
+	SendCommandBuf( sendBuf, "", true, true);
 	int32 len = mail->RawText().Length();
 	if (len > ThePrefs->GetInt("LogSpeedThreshold", 100*1024)) {
 		time_t after = time(NULL);

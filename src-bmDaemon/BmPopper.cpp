@@ -446,8 +446,12 @@ void BmPopper::StateAuth() {
 				BM_THROW_RUNTIME( "Server did not supply a timestamp, "
 										"so APOP doesn't work.");
 		} else if (authMethod == BmPopAccount::AUTH_CRAM_MD5) {
+			BmString cmd = BmString("AUTH CRAM-MD5");
+			SendCommand( cmd);
 			AuthCramMD5(mPopAccount->Username(), mPopAccount->Password());
 		} else if (authMethod == BmPopAccount::AUTH_DIGEST_MD5) {
+			BmString cmd = BmString("AUTH DIGEST-MD5");
+			SendCommand( cmd);
 			BmString serviceUri = BmString("pop/") << mPopAccount->Server();
 			AuthDigestMD5(mPopAccount->Username(), mPopAccount->Password(),
 							  serviceUri);
@@ -546,8 +550,7 @@ void BmPopper::StateCheck() {
 	}
 	for( uint32 i=0; i<count; i++) {
 		int32 msgSize;
-		time_t timeDownloaded;
-		if (!mPopAccount->IsUIDDownloaded( mMsgUIDs[i], &timeDownloaded)) {
+		if (!mPopAccount->IsUIDDownloaded( mMsgUIDs[i])) {
 			// msg is new (according to unknown UID)
 			// fetch msgsize for message...
 			Regexx rx;
@@ -569,39 +572,13 @@ void BmPopper::StateCheck() {
 			mNewMsgCount++;
 		} else {
 			// msg is old (according to known UID), we may have to remove it now:
-			if (!mPopAccount->DeleteMailFromServer()) {
-				BM_LOG2( BM_LogRecv, BmString("Leaving mail with UID ")<<mMsgUIDs[i]
-											<<" on server\n"
-											<<"since user has told us to "
-											<<"leave all mails on server.");
-			} else {
-				time_t expirationTime 
-					= timeDownloaded + 60 * 60 * 24 * mPopAccount->DeleteMailDelay();
-				time_t now = time(NULL);
-				if (expirationTime <= now && mPopAccount->DeleteMailFromServer()) {
-					// remove
-					BM_LOG( BM_LogRecv, 
-							  BmString("Removing mail with UID ")<<mMsgUIDs[i]
-									<<" from server\n"
-									<<"since it has been downloaded on "
-									<<TimeToString( timeDownloaded)
-									<<",\nit's expiration time is " 
-									<<TimeToString( expirationTime)
-									<<"\nand now it is "	<< TimeToString( now));
-					cmd = BmString("DELE ") << i+1;
-					SendCommand( cmd);
-					if (!CheckForPositiveAnswer())
-						return;
-				} else {
-					BM_LOG2( BM_LogRecv, 
-								BmString("Leaving mail with UID ")<<mMsgUIDs[i]
-									<<" on server\n"
-									<<"since it has been downloaded on "
-									<<TimeToString( timeDownloaded)
-									<<",\nit's expiration time is " 
-									<<TimeToString( expirationTime)
-									<<"\nand now it is "	<< TimeToString( now));
-				}
+			BmString log;
+			if (mPopAccount->ShouldUIDBeDeletedFromServer(mMsgUIDs[i], log)) {
+				BM_LOG2( BM_LogRecv, log);
+				cmd = BmString("DELE ") << i+1;
+				SendCommand( cmd);
+				if (!CheckForPositiveAnswer())
+					return;
 			}
 		}
 	}
@@ -637,6 +614,14 @@ void BmPopper::StateRetrieve() {
 					  BmString("Received mail of size ")<<mAnswerText.Length()
 							<< " bytes in " << duration << " seconds => " 
 							<< mAnswerText.Length()/duration/1024.0 << "KB/s");
+		}
+		if (mAnswerText.Length() != mNewMsgSizes[mCurrMailNr-1]) {
+			// oops, we better complain:
+			throw BM_network_error( 
+				BmString("Received mail has ") << mAnswerText.Length()
+					<< " bytes but it was announced to have " 
+					<< mNewMsgSizes[mCurrMailNr-1] << " bytes!"
+			);
 		}
 		// now create a mail from the received data...
 		BM_LOG2( BM_LogRecv, "Creating mail...");
