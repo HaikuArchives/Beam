@@ -1346,7 +1346,7 @@ void BmListModel::InstantiateItems( BMessage* archive) {
 
 /*------------------------------------------------------------------------------*\
 	RestoreAndExecuteActionsFrom(dataIO)
-		-	fetches all stored actions from the given stream and execute them.
+		-	fetches all stored actions from the given stream and executes them.
 		-	during the process of restoring the actions, we lock the list in order
 			to stop new (incoming) actions from being stored, as these actions would 
 			be written to the file we are currently reading from (and we'd like 
@@ -1357,6 +1357,7 @@ bool BmListModel::RestoreAndExecuteActionsFrom(BDataIO* dataIO)
 	BmAutolockCheckGlobal lock( mModelLocker);
 	if (!lock.IsLocked())
 		BM_THROW_RUNTIME( ModelNameNC() << ":RestoreAndExecute(): Unable to get lock");
+	FlushStoredActions();
 	uint32 count = 0;
 	BMessage action;
 	while (action.Unflatten(dataIO) == B_OK) {
