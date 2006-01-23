@@ -626,6 +626,48 @@ void BmPrefsRecvMailView::UndoChanges() {
 }
 
 /*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmPrefsRecvMailView::EncryptionSelected() {
+	if (!mCurrAcc)
+		return;
+	BMenuItem* item = mEncryptionControl->Menu()->FindMarked();
+	BmString encryptionType;
+	if (item && BM_NoItemLabel != item->Label()) {
+		encryptionType = item->Label();
+		mCurrAcc->EncryptionType( encryptionType);
+	} else {
+		mCurrAcc->EncryptionType( "");
+	}
+	BmString currPort = mPortControl->Text();
+	if (encryptionType == BmRecvAccount::ENCR_TLS 
+	|| encryptionType == BmRecvAccount::ENCR_SSL) {
+		if (currPort == mCurrAcc->DefaultPort(false))
+			// auto-switch to encrypted default-port:
+			mPortControl->SetText(mCurrAcc->DefaultPort(true));
+	} else {
+		if (currPort == mCurrAcc->DefaultPort(true))
+			// auto-switch to unencrypted default-port:
+			mPortControl->SetText(mCurrAcc->DefaultPort(false));
+	}
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmPrefsRecvMailView::AuthTypeSelected() {
+	if (!mCurrAcc)
+		return;
+	BMenuItem* item = mAuthControl->Menu()->FindMarked();
+	if (item)
+		mCurrAcc->AuthMethod( item->Label());
+	else
+		mCurrAcc->AuthMethod( "");
+}
+
+/*------------------------------------------------------------------------------*\
 	MessageReceived( msg)
 		-	
 \*------------------------------------------------------------------------------*/
@@ -756,73 +798,12 @@ void BmPrefsRecvMailView::MessageReceived( BMessage* msg) {
 				break;
 			}
 			case BM_ENCRYPTION_SELECTED: {
-				BMenuItem* item = mEncryptionControl->Menu()->FindMarked();
-				BmString encryptionType;
-				if (item && BM_NoItemLabel != item->Label()) {
-					encryptionType = item->Label();
-					mCurrAcc->EncryptionType( encryptionType);
-				} else {
-					mCurrAcc->EncryptionType( "");
-				}
-				if (encryptionType == BmRecvAccount::ENCR_TLS 
-				|| encryptionType == BmRecvAccount::ENCR_SSL) {
-					if (mPortControl->Text() == mCurrAcc->DefaultPort(false))
-						// auto-switch to encrypted default-port:
-						mPortControl->SetText(mCurrAcc->DefaultPort(true));
-				} else {
-					if (mPortControl->Text() == mCurrAcc->DefaultPort(true))
-						// auto-switch to unencrypted default-port:
-						mPortControl->SetText(mCurrAcc->DefaultPort(false));
-				}
+				EncryptionSelected();
 				NoticeChange();
 				break;
 			}
-			case BM_CHECK_AND_SUGGEST: {
-				if (mCurrAcc) {
-					// ToDo: this should be made asynchronous (using messages):
-					BmString suggestedAuthType;
-					BmString encryptionType;
-					BmPopAccount* popAcc 
-						= dynamic_cast<BmPopAccount*>(mCurrAcc.Get());
-					if (popAcc) {
-						BmRef<BmPopper> popper( new BmPopper( mCurrAcc->Key(), 
-																		  popAcc));
-						popper->StartJobInThisThread( 
-							BmPopper::BM_CHECK_CAPABILITIES_JOB
-						);
-						BmString suggestedAuthType = popper->SuggestAuthType();
-						if (popper->SupportsTLS())
-							// if server supports STARTTLS, we use it:
-							encryptionType = BmPopAccount::ENCR_STARTTLS;
-					} else {
-						BmImapAccount* imapAcc 
-							= dynamic_cast<BmImapAccount*>(mCurrAcc.Get());
-						if (imapAcc) {
-							BmRef<BmImap> imap( new BmImap( mCurrAcc->Key(), 
-																	  imapAcc));
-							imap->StartJobInThisThread( 
-								BmImap::BM_CHECK_CAPABILITIES_JOB
-							);
-							BmString suggestedAuthType = imap->SuggestAuthType();
-							if (imap->SupportsTLS())
-								// if server supports STARTTLS, we use it:
-								encryptionType = BmImapAccount::ENCR_STARTTLS;
-						}
-					}
-					if (suggestedAuthType.Length())
-						mAuthControl->MarkItem( suggestedAuthType.String());
-					if (encryptionType.Length())
-						mEncryptionControl->MarkItem( encryptionType.String());
-					NoticeChange();
-				}
-				// no break here, we want to proceed with updating the auth-menu...
-			}
 			case BM_AUTH_SELECTED: {
-				BMenuItem* item = mAuthControl->Menu()->FindMarked();
-				if (item)
-					mCurrAcc->AuthMethod( item->Label());
-				else
-					mCurrAcc->AuthMethod( "");
+				AuthTypeSelected();
 				NoticeChange();
 				break;
 			}
@@ -860,6 +841,50 @@ void BmPrefsRecvMailView::MessageReceived( BMessage* msg) {
 				else
 					mCurrAcc->FilterChain( "");
 				NoticeChange();
+				break;
+			}
+			case BM_CHECK_AND_SUGGEST: {
+				if (mCurrAcc) {
+					// ToDo: this should be made asynchronous (using messages):
+					BmString suggestedAuthType;
+					BmString encryptionType;
+					BmPopAccount* popAcc 
+						= dynamic_cast<BmPopAccount*>(mCurrAcc.Get());
+					if (popAcc) {
+						BmRef<BmPopper> popper( new BmPopper( mCurrAcc->Key(), 
+																		  popAcc));
+						popper->StartJobInThisThread( 
+							BmPopper::BM_CHECK_CAPABILITIES_JOB
+						);
+						suggestedAuthType = popper->SuggestAuthType();
+						if (popper->SupportsTLS())
+							// if server supports STARTTLS, we use it:
+							encryptionType = BmPopAccount::ENCR_STARTTLS;
+					} else {
+						BmImapAccount* imapAcc 
+							= dynamic_cast<BmImapAccount*>(mCurrAcc.Get());
+						if (imapAcc) {
+							BmRef<BmImap> imap( new BmImap( mCurrAcc->Key(), 
+																	  imapAcc));
+							imap->StartJobInThisThread( 
+								BmImap::BM_CHECK_CAPABILITIES_JOB
+							);
+							suggestedAuthType = imap->SuggestAuthType();
+							if (imap->SupportsTLS())
+								// if server supports STARTTLS, we use it:
+								encryptionType = BmImapAccount::ENCR_STARTTLS;
+						}
+						if (suggestedAuthType.Length()) {
+							mAuthControl->MarkItem( suggestedAuthType.String());
+							AuthTypeSelected();
+						}
+						if (encryptionType.Length()) {
+							mEncryptionControl->MarkItem( encryptionType.String());
+							EncryptionSelected();
+						}
+						NoticeChange();
+					}
+				}
 				break;
 			}
 			case BM_ADD_POP_ACCOUNT:
