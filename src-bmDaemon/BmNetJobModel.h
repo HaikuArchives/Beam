@@ -36,6 +36,8 @@ public:
 	// getters:
 	inline const BmString& StatusText() const
 													{ return mStatusText; }
+	inline const BmString& BottomStatusText() const
+													{ return mBottomStatusText; }
 
 	// setters:
 	inline void DoUpdate( bool b)			{ mUpdate = b; }
@@ -43,6 +45,9 @@ public:
 
 protected:
 	BmString mStatusText;
+		// status server sent before any data
+	BmString mBottomStatusText;
+		// status server sent after any data
 	bool mHaveStatus;
 	bool mUpdate;
 	BMessage* mInfoMsg;
@@ -78,6 +83,9 @@ public:
 													{ return mAnswerText; }
 	inline const BmString& StatusText() const
 													{ return mStatusFilter->StatusText(); }
+	inline const BmString& BottomStatusText() const
+													{ return mStatusFilter
+																	->BottomStatusText(); }
 
 	//	message component definitions for status-msgs:
 	static const char* const MSG_MODEL;
@@ -107,10 +115,10 @@ protected:
 									  const BmString& secret=BM_DEFAULT_STRING,
 									  bool dotstuffEncoding=false,
 									  bool update=false);
-	virtual void SendCommand( BmStringIBuf& cmd, 
-									  const BmString& secret=BM_DEFAULT_STRING, 
-									  bool dotstuffEncoding=false,
-									  bool update=false);
+	virtual void SendCommandBuf( BmStringIBuf& cmd, 
+										  const BmString& secret=BM_DEFAULT_STRING, 
+										  bool dotstuffEncoding=false,
+										  bool update=false);
 
 	virtual void ExtractBase64(const BmString& text, BmString& base64) = 0;
 
@@ -131,7 +139,7 @@ protected:
 							// error-text of last failed command (Beam-generated, 
 							// not from server)
 	uint32 mLogType;
-							// log-type can be BmLogPop or BmLogSmtp
+							// log-type can be BM_LogRecv or BM_LogSmtp
 	BmNetIBuf* mReader;
 							// input stream
 	BmNetOBuf* mWriter;
@@ -142,6 +150,29 @@ protected:
 #ifndef __POWERPC__
 	BmNetJobModel operator=( const BmNetJobModel&);
 #endif
+};
+
+
+/*------------------------------------------------------------------------------*\
+	class BmTrafficLogger
+		-	
+\*------------------------------------------------------------------------------*/
+class IMPEXPBMDAEMON BmTrafficLogger : public BmMemFilter {
+	typedef BmMemFilter inherited;
+
+public:
+	BmTrafficLogger( BmMemIBuf* input, BmNetJobModel* job, int32 logLimit,
+						  const char* prefix, uint32 blockSize=nBlockSize);
+
+protected:
+	// overrides of BmMailFilter base:
+	void Filter( const char* srcBuf, uint32& srcLen, 
+					 char* destBuf, uint32& destLen);
+
+	int32 mLogLimit;
+	int32 mLoggedLength;
+	BmNetJobModel* mJob;
+	BmString mPrefix;
 };
 
 
