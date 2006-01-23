@@ -11,7 +11,7 @@
 
 #include "BmMailKit.h"
 
-#include <vector>
+#include <map>
 
 #include <Archivable.h>
 #include <List.h>
@@ -24,11 +24,6 @@ class BNetAddress;
 class BmRecvAccountList;
 
 class BMessageRunner;
-struct BmUidInfo {
-	BmString uid;
-	int32 timeDownloaded;
-};
-typedef vector<BmUidInfo> BmUidVect;
 /*------------------------------------------------------------------------------*\
 	BmRecvAccount 
 		-	holds information about one specific IMAP3-account
@@ -39,14 +34,17 @@ class IMPEXPBMMAILKIT BmRecvAccount : public BmListModelItem {
 	typedef BmListModelItem inherited;
 	friend BmRecvAccountList;
 
+	typedef map<BmString, time_t> BmUidMap;
 public:
 	BmRecvAccount( const char* name, BmRecvAccountList* model);
 	BmRecvAccount( BMessage* archive, BmRecvAccountList* model);
 	virtual ~BmRecvAccount();
 	
 	// native methods:
-	bool IsUIDDownloaded( const BmString& uid, time_t* downloadTime=NULL);
+	bool IsUIDDownloaded( const BmString& uid) const;
 	void MarkUIDAsDownloaded( const BmString& uid);
+	bool ShouldUIDBeDeletedFromServer( const BmString& uid, 
+												  BmString& logOutput) const;
 	BmString AdjustToCurrentServerUids( const vector<BmString>& serverUids);
 	//	
 	BmString GetDomainName() const;
@@ -191,7 +189,7 @@ protected:
 											// shall be stored into (by default, filters 
 											// may change that)
 
-	BmUidVect mUIDs;					// list of UIDs downloaded by this account
+	BmUidMap mUIDs;					// maps UIDs to time downloaded
 	BMessageRunner* mIntervalRunner;
 
 private:

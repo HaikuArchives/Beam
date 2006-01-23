@@ -59,8 +59,10 @@ const char* const BmRecvAccount::AUTH_CRAM_MD5 = 	"CRAM-MD5";
 const char* const BmRecvAccount::AUTH_DIGEST_MD5 = "DIGEST-MD5";
 
 enum {
-	BM_APPEND_UID	= 'bmez'
+	BM_APPEND_UID	= 'bmez',
 		// a uid that has been downloaded from server
+	BM_REMOVE_UID	= 'bmey'
+		// a uid that is no longer listed on server
 };
 
 /*------------------------------------------------------------------------------*\
@@ -146,15 +148,14 @@ BmRecvAccount::BmRecvAccount( BMessage* archive, BmRecvAccountList* model)
 		// with version 7 we changed the UID-format, we convert old format:
 		const char* uidStr;
 		const char* pos;
-		BmUidInfo uidInfo;
+		BmString uid;
 		for( int32 i=0; archive->FindString( MSG_UID, i, &uidStr) == B_OK; ++i) {
 			pos = strchr( uidStr, ' ');
 			if (pos)
-				uidInfo.uid = BmString( uidStr, pos-uidStr);
+				uid = BmString( uidStr, pos-uidStr);
 			else
-				uidInfo.uid = uidStr;
-			uidInfo.timeDownloaded = time( NULL);
-			mUIDs.push_back( uidInfo);
+				uid = uidStr;
+			mUIDs[uid] = time( NULL);
 		}
 		// initialize attributes introduced in version 7:
 		mDeleteMailDelay = 0;
@@ -162,14 +163,12 @@ BmRecvAccount::BmRecvAccount( BMessage* archive, BmRecvAccountList* model)
 	} else {
 		// load new UID-format:
 		const char* uidStr;
-		BmUidInfo uidInfo;
+		int32 timeDownloaded;
 		for( int32 i=0; 
 			  archive->FindString( MSG_UID, i, &uidStr) == B_OK
-			  && archive->FindInt32( MSG_UID_TIME, i, 
-			  								 &uidInfo.timeDownloaded) == B_OK;  
+			  && archive->FindInt32( MSG_UID_TIME, i, &timeDownloaded) == B_OK;
 			  ++i) {
-			uidInfo.uid = uidStr;
-			mUIDs.push_back( uidInfo);
+			mUIDs[uidStr] = timeDownloaded;
 		}
 		// load attributes introduced in version 7:
 		mDeleteMailDelay = archive->FindInt16( MSG_DELETE_DELAY);
@@ -229,10 +228,11 @@ status_t BmRecvAccount::Archive( BMessage* archive, bool deep) const {
 		||	archive->AddString( MSG_FILTER_CHAIN, mFilterChain.String())
 		||	archive->AddString( MSG_HOME_FOLDER, mHomeFolder.String())
 		||	archive->AddString( MSG_TYPE, Type());
-	int32 count = mUIDs.size();
-	for( int i=0; ret==B_OK && i<count; ++i) {
-		ret = archive->AddString( MSG_UID, mUIDs[i].uid.String())
-				|| archive->AddInt32( MSG_UID_TIME, mUIDs[i].timeDownloaded);
+	int32 i=0;
+	BmUidMap::const_iterator iter;
+	for( iter = mUIDs.begin(); ret==B_OK && iter!=mUIDs.end(); ++iter, ++i) {
+		ret = archive->AddString( MSG_UID, iter->first.String())
+				|| archive->AddInt32( MSG_UID_TIME, iter->second);
 	}
 	return ret;
 }
@@ -242,12 +242,17 @@ status_t BmRecvAccount::Archive( BMessage* archive, bool deep) const {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmRecvAccount::ExecuteAction( BMessage* action) {
+	BmString uid;
 	switch( action->what) {
 		case BM_APPEND_UID: {
-			BmUidInfo uidInfo;
-			uidInfo.uid = action->FindString( MSG_UID);
-			uidInfo.timeDownloaded = action->FindInt32( MSG_UID_TIME);
-			mUIDs.push_back( uidInfo);
+			uid = action->FindString( MSG_UID);
+			mUIDs[uid] = action->FindInt32( MSG_UID_TIME);
+			break;
+		}
+		case BM_REMOVE_UID: {
+			uid = action->FindString( MSG_UID);
+			mUIDs.erase( uid);
+			break;
 		}
 	};
 }
@@ -285,19 +290,9 @@ BmString BmRecvAccount::GetDomainName() const {
 		-	checks if a mail with the given uid (unique-ID) has already been 
 			downloaded
 \*------------------------------------------------------------------------------*/
-bool BmRecvAccount::IsUIDDownloaded( const BmString& uid, 
-												time_t* downloadTime) {
-	int32 count = mUIDs.size();
-	for( int32 i=count-1; i>=0; --i) {
-		if (!mUIDs[i].uid.Compare( uid)) {
-			if (downloadTime)
-				*downloadTime = mUIDs[i].timeDownloaded;
-			return true;
-		}
-	}
-	if (downloadTime)
-		*downloadTime = 0;
-	return false;
+bool BmRecvAccount::IsUIDDownloaded( const BmString& uid) const {
+	BmUidMap::const_iterator iter = mUIDs.find(uid);
+	return iter != mUIDs.end();
 }
 
 /*------------------------------------------------------------------------------*\
@@ -307,16 +302,61 @@ bool BmRecvAccount::IsUIDDownloaded( const BmString& uid,
 			been stored locally
 \*------------------------------------------------------------------------------*/
 void BmRecvAccount::MarkUIDAsDownloaded( const BmString& uid) {
-	BmUidInfo uidInfo;
-	uidInfo.uid = uid;
-	uidInfo.timeDownloaded = time( NULL);
-	mUIDs.push_back( uidInfo);
-	// append info about new downloaded UID to settings-file:
+	time_t timeDownloaded = time( NULL);
+	// we add the uid...
+	mUIDs[uid] = timeDownloaded;
+	// ...and append info about new downloaded UIDs to settings-file
+	// (just in order to be sure not to lose any info in case of a crash...):
 	BMessage action( BM_APPEND_UID);
 	action.AddString( BmListModel::MSG_ITEMKEY, Key().String());
 	action.AddString( MSG_UID, uid.String());
-	action.AddInt32( MSG_UID_TIME, uidInfo.timeDownloaded);
+	action.AddInt32( MSG_UID_TIME, timeDownloaded);
 	TheRecvAccountList->StoreAction(&action);
+}
+
+/*------------------------------------------------------------------------------*\
+	ShouldUIDBeDeletedFromServer( uid)
+		-	checks if a mail with the given uid (unique-ID) should be deleted
+			from the server now
+\*------------------------------------------------------------------------------*/
+bool BmRecvAccount::ShouldUIDBeDeletedFromServer( const BmString& uid,
+																  BmString& logOutput) const
+{
+	if (!DeleteMailFromServer()) {
+		logOutput 
+			= BmString("Leaving mail with UID ") << uid
+				<< " on server\n"
+				<< "since user has told us to leave all mails on server.";
+	} else {
+		BmUidMap::const_iterator iter = mUIDs.find(uid);
+		if (iter != mUIDs.end())
+			// hm, UID is unknown locally, we better leave it
+			return false;
+
+		time_t timeDownloaded = iter->second;
+		time_t expirationTime 
+			= timeDownloaded + 60 * 60 * 24 * DeleteMailDelay();
+		time_t now = time(NULL);
+		if (expirationTime <= now) {
+			logOutput 
+				= BmString("Removing mail with UID ") << uid << " from server\n"
+						<< "since it has been downloaded on "
+						<< TimeToString( timeDownloaded)
+						<< ",\nit's expiration time is " 
+						<< TimeToString( expirationTime)
+						<< "\nand now it is " << TimeToString( now);
+			return true;
+		} else {
+			logOutput 
+				= BmString("Leaving mail with UID ") << uid << " on server\n"
+					<< "since it has been downloaded on "
+					<< TimeToString( timeDownloaded)
+					<< ",\nit's expiration time is " 
+					<< TimeToString( expirationTime)
+					<< "\nand now it is " << TimeToString( now);
+		}
+	}
+	return false;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -324,27 +364,35 @@ void BmRecvAccount::MarkUIDAsDownloaded( const BmString& uid) {
 		-	removes all UIDs unless they are contained in the given vector.
 			This way we throw away old UIDs that no longer exist on server.
 \*------------------------------------------------------------------------------*/
-BmString BmRecvAccount::AdjustToCurrentServerUids( 
-														const vector<BmString>& serverUids) {
+BmString BmRecvAccount
+::AdjustToCurrentServerUids(const vector<BmString>& serverUids)
+{
 	BmString removedInfo;
-	BmUidVect newUids;
-	int32 lcount = mUIDs.size();
-	int32 scount = serverUids.size();
-	for( int32 l=0; l<lcount; ++l) {
+	BmUidMap::iterator iter;
+	BmUidMap::iterator curr;
+	for( iter = mUIDs.begin(); iter != mUIDs.end(); ) {
+		curr = iter++;
 		bool found = false;
-		for( int32 s=0; s<scount; ++s) {
-			if (!mUIDs[l].uid.Compare( serverUids[s])) {
-				newUids.push_back( mUIDs[l]);
+		for( uint32 s=0; s<serverUids.size(); ++s) {
+			if (curr->first.Compare( serverUids[s])) {
 				found = true;
 				break;
 			}
 		}
 		if (!found) {
-			removedInfo << "Removed local UID " << mUIDs[l].uid 
+			BmString uid = curr->first;
+			removedInfo << "Removed local UID " << uid
 							<< " since it is not listed by the server anymore.\n";
+			// remove the UID...
+			mUIDs.erase(curr);
+			// ...and append info about removed UID to settings-file
+			// (just in order to be sure not to lose any info in case of a crash...):
+			BMessage action( BM_REMOVE_UID);
+			action.AddString( BmListModel::MSG_ITEMKEY, Key().String());
+			action.AddString( MSG_UID, uid.String());
+			TheRecvAccountList->StoreAction(&action);
 		}
 	}
-	mUIDs = newUids;
 	return removedInfo;
 }
 
