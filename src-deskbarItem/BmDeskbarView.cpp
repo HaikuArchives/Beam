@@ -5,11 +5,11 @@
  * Authors:
  *		Oliver Tappe <beam@hirschkaefer.de>
  */
-/*************************************************************************/
-/*                                                                       */
-/* Parts of this source-file have been derived (ripped?) from Scooby!    */
-/*                                                                       */
-/*************************************************************************/
+/*
+ * Parts of this source-file have been derived (ripped?) from Scooby
+ */
+
+#include <deque>
 
 #include <stdio.h>
 
@@ -46,6 +46,247 @@ const char* const BM_DeskbarItemName = "Beam_DeskbarItem";
 const char* const BM_DeskbarNormal = "DeskbarIconNormal";
 const char* const BM_DeskbarNew = "DeskbarIconNew";
 
+/********************************************************************************\
+	MailMonitor
+\********************************************************************************/
+class MailMonitor {
+
+public:
+	MailMonitor(BmDeskbarView* view);
+
+	void Run(dev_t mailboxDevice);
+	void Quit();
+	//
+	void AddMessage(BMessage* msg);
+
+private:
+	//	native methods:
+	void MessageLoop();
+	void MessageReceived( BMessage* msg);
+	//
+	void HandleMailMonitorMsg( BMessage* msg);
+	void HandleQueryUpdateMsg( BMessage* msg);
+	//
+	static int32 ThreadEntry(void* data);
+	//
+	void StartQuery();
+
+	// deque for incoming node-monitor messages:
+	typedef deque<BMessage*> MessageList;
+	MessageList mMessageList;
+
+	BLocker mLocker;
+	bool mShouldRun;
+	thread_id mThreadId;
+	BmDeskbarView* mDeskbarView;
+
+	dev_t mMailboxDevice;
+	BQuery mNewMailQuery;
+
+	// Hide copy-constructor and assignment:
+	MailMonitor( const MailMonitor&);
+	MailMonitor operator=( const MailMonitor&);
+};
+
+static MailMonitor* gMailMonitor = NULL;
+
+/*------------------------------------------------------------------------------*\
+	BmMailMonitor()
+		-	standard c'tor
+\*------------------------------------------------------------------------------*/
+MailMonitor::MailMonitor(BmDeskbarView* view)
+	:	mLocker("BeamMonitorLock")
+	,	mShouldRun(false)
+	,	mThreadId(-1)
+	,	mDeskbarView(view)
+{
+}
+
+/*------------------------------------------------------------------------------*\
+	Run()
+		-	
+\*------------------------------------------------------------------------------*/
+void MailMonitor::Run(dev_t mailboxDevice)
+{
+	mMailboxDevice = mailboxDevice;
+	mShouldRun = true;
+	// start new thread for worker:
+	mThreadId = spawn_thread( MailMonitor::ThreadEntry, 
+									  "BeamMonitor", B_NORMAL_PRIORITY, this);
+	if (mThreadId >= 0)
+		resume_thread( mThreadId);
+}
+
+/*------------------------------------------------------------------------------*\
+	Quit()
+		-	
+\*------------------------------------------------------------------------------*/
+void MailMonitor::Quit()
+{
+	mShouldRun = false;
+	status_t exitVal;
+	wait_for_thread(mThreadId, &exitVal);
+}
+
+/*------------------------------------------------------------------------------*\
+	ThreadEntry()
+		-	
+\*------------------------------------------------------------------------------*/
+int32 MailMonitor::ThreadEntry(void* data)
+{
+	MailMonitor* worker = static_cast<MailMonitor*>(data);
+	if (worker) {
+		worker->StartQuery();
+		worker->MessageLoop();
+	}
+	return B_OK;
+}	
+
+/*------------------------------------------------------------------------------*\
+	StartQuery()
+		-	
+\*------------------------------------------------------------------------------*/
+void MailMonitor::StartQuery() {
+	int32 count;
+	dirent* dent;
+	char buf[4096];
+
+	entry_ref eref;
+
+	BMessenger target(mDeskbarView);
+
+	// determine root-dir of our mailbox-directory:
+	BVolume mboxVolume( mMailboxDevice);
+	if (mNewMailQuery.SetVolume( &mboxVolume) == B_OK
+	&& mNewMailQuery.SetPredicate( "MAIL:status = 'New'") == B_OK
+	&& mNewMailQuery.SetTarget( target) == B_OK
+	&& mNewMailQuery.Fetch() == B_OK) {
+		while ((count = mNewMailQuery.GetNextDirents((dirent* )buf, 4096)) > 0) {
+			dent = (dirent* )buf;
+			while (count-- > 0) {
+				eref.device = dent->d_pdev;
+				eref.directory = dent->d_pino;
+				eref.set_name(dent->d_name);
+				mDeskbarView->AddRef(dent->d_ino, eref);
+				// Bump the dirent-pointer by length of the dirent just handled:
+				dent = (dirent* )((char* )dent + dent->d_reclen);
+			}
+			if (!mShouldRun)
+				break;
+		}
+	}
+}
+
+/*------------------------------------------------------------------------------*\
+	MessageLoop()
+		-	
+\*------------------------------------------------------------------------------*/
+void MailMonitor::MessageLoop()
+{
+	const int32 snoozeMSecs = 20;
+	BMessage* msg = NULL;
+	while(mShouldRun) {
+		if (mLocker.Lock()) {
+			if (!mMessageList.empty()) {
+				msg = mMessageList.front();
+				mMessageList.pop_front();
+			} else
+				msg = NULL;
+			mLocker.Unlock();
+		}
+		if (msg) {
+			MessageReceived(msg);
+			delete msg;
+		} else {
+			snooze(snoozeMSecs*1000);
+		}
+	}
+}
+
+/*------------------------------------------------------------------------------*\
+	MessageReceived( msg)
+		-	
+\*------------------------------------------------------------------------------*/
+void MailMonitor::MessageReceived( BMessage* msg) {
+	switch( msg->what) {
+		case B_NODE_MONITOR: {
+			HandleMailMonitorMsg( msg);
+			break;
+		}
+		case B_QUERY_UPDATE: {
+			HandleQueryUpdateMsg( msg);
+			break;
+		}
+	}
+}
+
+/*------------------------------------------------------------------------------*\
+	AddMessage( msg)
+		-	
+\*------------------------------------------------------------------------------*/
+void MailMonitor::AddMessage( BMessage* msg) {
+	if (mLocker.Lock()) {
+		mMessageList.push_back(msg);
+		mLocker.Unlock();
+	}
+}
+
+/*------------------------------------------------------------------------------*\
+	HandleQueryUpdateMsg()
+		-	
+\*------------------------------------------------------------------------------*/
+void MailMonitor::HandleQueryUpdateMsg( BMessage* msg) {
+	int32 opcode = msg->FindInt32( "opcode");
+	int64 node;
+	switch( opcode) {
+		case B_ENTRY_CREATED: {
+			entry_ref eref;
+			const char* name;
+			if (msg->FindInt64( "directory", &eref.directory) != B_OK
+			|| msg->FindInt32( "device", &eref.device) != B_OK
+			|| msg->FindInt64( "node", &node) != B_OK
+			|| msg->FindString( "name", &name) != B_OK)
+				return;
+			eref.set_name(name);
+			mDeskbarView->AddRef(node, eref);
+			break;
+		}
+		case B_ENTRY_REMOVED: {
+			if (msg->FindInt64( "node", &node) != B_OK)
+				return;
+			mDeskbarView->RemoveRef(node);
+			break;
+		}
+	}
+}
+
+/*------------------------------------------------------------------------------*\
+	HandleMailMonitorMsg()
+		-	
+\*------------------------------------------------------------------------------*/
+void MailMonitor::HandleMailMonitorMsg( BMessage* msg) {
+	int32 opcode = msg->FindInt32( "opcode");
+	int64 node;
+	switch( opcode) {
+		case B_ENTRY_MOVED: {
+			entry_ref eref;
+			const char* name;
+			if (msg->FindInt64( "to directory", &eref.directory) != B_OK
+			|| msg->FindInt32( "device", &eref.device) != B_OK
+			|| msg->FindInt64( "node", &node) != B_OK
+			|| msg->FindString( "name", &name) != B_OK)
+				return;
+			eref.set_name(name);
+			mDeskbarView->UpdateRef(node, eref);
+			break;
+		}
+	}
+}
+
+
+/********************************************************************************\
+	BmDeskbarView
+\********************************************************************************/
 /*------------------------------------------------------------------------------*\
 	()
 		-	
@@ -84,6 +325,10 @@ BmDeskbarView::BmDeskbarView(BMessage *message)
 		-	
 \*------------------------------------------------------------------------------*/
 BmDeskbarView::~BmDeskbarView() {
+	if (gMailMonitor) {
+		gMailMonitor->Quit();
+		delete gMailMonitor;
+	}
 	delete mCurrIcon;
 }
 
@@ -103,7 +348,7 @@ BmDeskbarView* BmDeskbarView::Instantiate(BMessage *data) {
 \*------------------------------------------------------------------------------*/
 status_t BmDeskbarView::Archive( BMessage *data,
 										   bool deep) const {
-	BView::Archive(data, deep);
+	inherited::Archive(data, deep);
 	return data->AddString( "add_on", BM_DESKBAR_APP_SIG);
 }
 
@@ -112,11 +357,21 @@ status_t BmDeskbarView::Archive( BMessage *data,
 		-	
 \*------------------------------------------------------------------------------*/
 void BmDeskbarView::AttachedToWindow() {
+	inherited::AttachedToWindow();
 	// ask app for the volume of our mailbox-directory:
 	BMessage request(BM_DESKBAR_GET_MBOX);
 	SendToBeam( &request, this);
 }
 
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmDeskbarView::DetachedFromWindow() {
+	// stop watching all nodes
+	stop_watching( BMessenger(this));
+	inherited::DetachedFromWindow();
+}
 
 /*------------------------------------------------------------------------------*\
 	()
@@ -259,57 +514,30 @@ void BmDeskbarView::ShowMenu( BPoint point) {
 \*------------------------------------------------------------------------------*/
 void BmDeskbarView::MessageReceived(BMessage *msg) {
 	switch( msg->what) {
+		case BM_DESKBAR_GET_MBOX: {
+			if (msg->FindRef( "mbox", &mMailboxRef) == B_OK) {
+				gMailMonitor = new MailMonitor(this);
+				ChangeIcon( BM_DeskbarNormal);
+				gMailMonitor->Run(mMailboxRef.device);
+			}
+			break;
+		}
+		case B_QUERY_UPDATE:
+		case B_NODE_MONITOR: {
+			if (gMailMonitor) {
+				Looper()->DetachCurrentMessage();
+				gMailMonitor->AddMessage(msg);
+			}
+			break;
+		}
 		case BMM_RESET_ICON: {
 			ChangeIcon( BM_DeskbarNormal); 
 			break;
 		}
-		case B_QUERY_UPDATE: {
-			HandleQueryUpdateMsg( msg);
-			break;
-		}
-		case BM_DESKBAR_GET_MBOX: {
-			if (msg->FindRef( "mbox", &mMailboxRef) == B_OK)
-				InstallDeskbarMonitor();
-			break;
-		}
 		default: {
-			BView::MessageReceived( msg);
+			inherited::MessageReceived( msg);
 		}
 	}
-}
-
-/*------------------------------------------------------------------------------*\
-	InstallDeskbarMonitor()
-		-	
-\*------------------------------------------------------------------------------*/
-void BmDeskbarView::InstallDeskbarMonitor() {
-	int32 count;
-	dirent* dent;
-	char buf[4096];
-
-	entry_ref eref;
-
-	BMessenger thisAsTarget( this);
-	
-	// determine root-dir of our mailbox-directory:
-	BVolume mboxVolume( mMailboxRef.device);
-	if (mNewMailQuery.SetVolume( &mboxVolume) == B_OK
-	&& mNewMailQuery.SetPredicate( "MAIL:status = 'New'") == B_OK
-	&& mNewMailQuery.SetTarget( thisAsTarget) == B_OK
-	&& mNewMailQuery.Fetch() == B_OK) {
-		while ((count = mNewMailQuery.GetNextDirents((dirent* )buf, 4096)) > 0) {
-			dent = (dirent* )buf;
-			while (count-- > 0) {
-				eref.device = dent->d_pdev;
-				eref.directory = dent->d_pino;
-				eref.set_name(dent->d_name);
-				mNewMailMap[dent->d_ino] = eref;
-				// Bump the dirent-pointer by length of the dirent just handled:
-				dent = (dirent* )((char* )dent + dent->d_reclen);
-			}
-		}
-	}
-	ChangeIcon( NewMailCount()>0 ? BM_DeskbarNew : BM_DeskbarNormal);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -345,6 +573,7 @@ int32 BmDeskbarView::NewMailCount() {
 			if (LivesInMailbox(iter->second))
 				mNewMailCount++;
 		}
+		mNewMailCountNeedsUpdate = false;
 	}
 	return mNewMailCount;
 }
@@ -366,37 +595,60 @@ bool BmDeskbarView::LivesInMailbox( const entry_ref& inref) {
 }
 
 /*------------------------------------------------------------------------------*\
-	HandleQueryUpdateMsg()
+	AddRef()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmDeskbarView::HandleQueryUpdateMsg( BMessage* msg) {
-	int32 opcode = msg->FindInt32( "opcode");
-	int64 node;
-	switch( opcode) {
-		case B_ENTRY_CREATED: {
-			entry_ref eref;
-			const char* name;
-			if (msg->FindInt64( "directory", &eref.directory) != B_OK
-			|| msg->FindInt32( "device", &eref.device) != B_OK
-			|| msg->FindInt64( "node", &node) != B_OK
-			|| msg->FindString( "name", &name) != B_OK)
-				return;
-			eref.set_name(name);
-			mNewMailMap[node] = eref;
-			if (LivesInMailbox(eref))
-				IncNewMailCount();
-			break;
-		}
-		case B_ENTRY_REMOVED: {
-			if (msg->FindInt64( "node", &node) != B_OK)
-				return;
-			NewMailMap::iterator iter = mNewMailMap.find(node);
-			if (iter != mNewMailMap.end()) {
-				if (LivesInMailbox(iter->second))
-					DecNewMailCount();
-				mNewMailMap.erase(node);
-			}
-			break;
-		}
+void BmDeskbarView::AddRef(int64 node, const entry_ref& eref)
+{
+	// add info about the node
+	mNewMailMap[node] = eref;
+	if (LivesInMailbox(eref))
+		IncNewMailCount();
+
+	// from now on watch this node for moves:
+	node_ref nref;
+	nref.device = mMailboxRef.device;
+	nref.node = node;
+	watch_node( &nref, B_WATCH_NAME, BMessenger(this));
+}
+
+/*------------------------------------------------------------------------------*\
+	RemoveRef()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmDeskbarView::RemoveRef(int64 node)
+{
+	// stop watching this node
+	node_ref nref;
+	nref.device = mMailboxRef.device;
+	nref.node = node;
+	watch_node( &nref, B_STOP_WATCHING, BMessenger(this));
+
+	// remove info about the node
+	NewMailMap::iterator iter = mNewMailMap.find(node);
+	if (iter != mNewMailMap.end()) {
+		if (LivesInMailbox(iter->second))
+			DecNewMailCount();
+		mNewMailMap.erase(node);
+	}
+}
+
+/*------------------------------------------------------------------------------*\
+	UpdateRef()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmDeskbarView::UpdateRef(int64 node, const entry_ref& eref)
+{
+	NewMailMap::iterator iter = mNewMailMap.find(node);
+	if (iter != mNewMailMap.end()) {
+		// check if the LivesInMailbox state has changed and adjust the
+		// newMail-count accordingly:
+		bool usedToLiveInMailbox = LivesInMailbox(iter->second);
+		bool nowLivesInMailbox = LivesInMailbox(eref);
+		iter->second = eref;
+		if (usedToLiveInMailbox && !nowLivesInMailbox)
+			DecNewMailCount();
+		else if (!usedToLiveInMailbox && nowLivesInMailbox)
+			IncNewMailCount();
 	}
 }

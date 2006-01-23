@@ -30,7 +30,7 @@ enum {
 
 // messages send from deskbar-view to app:
 enum {
-	BM_DESKBAR_GET_MBOX = 'bMDb'
+	BM_DESKBAR_GET_MBOX = 	'bMDb'
 };
 
 class BmDeskbarView: public BView {
@@ -41,10 +41,12 @@ public:
 	BmDeskbarView( BRect frame);
 	BmDeskbarView( BMessage *data);
 	~BmDeskbarView();
-	void Init();
 	
 	static BmDeskbarView *Instantiate( BMessage *data);
 
+	void AddRef(int64 node, const entry_ref& eref);
+	void RemoveRef(int64 node);
+	void UpdateRef(int64 node, const entry_ref& eref);
 protected:	
 	// native methods:
 	void ChangeIcon( const char* iconName);
@@ -53,9 +55,7 @@ protected:
 	void DecNewMailCount();
 	int32 NewMailCount();
 	void SendToBeam( BMessage *msg, BHandler *replyHandler = NULL);
-	void InstallDeskbarMonitor();
 	bool LivesInMailbox(const entry_ref& eref);
-	void HandleQueryUpdateMsg( BMessage* msg);
 	
 	// overrides of BView base:
 	void Draw( BRect updateRect);
@@ -64,9 +64,9 @@ protected:
 	void MessageReceived(BMessage *message);
 	void Pulse( void);
 	void AttachedToWindow();
+	void DetachedFromWindow();
 	
 private:
-	BQuery mNewMailQuery;
 	int32 mNewMailCount;
 	bool mNewMailCountNeedsUpdate;
 	BString mCurrIconName;
