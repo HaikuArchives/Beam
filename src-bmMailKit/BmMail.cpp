@@ -1222,7 +1222,7 @@ float BmMail::RatioSpam() const
 		-	
 \*------------------------------------------------------------------------------*/
 bool BmMail::IsMarkedAsSpam() const {
-	return mMailRef ? mMailRef->Classification() == "Spam" : false;
+	return mMailRef ? mMailRef->Classification() == BM_MAIL_CLASS_SPAM : false;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -1230,5 +1230,5 @@ bool BmMail::IsMarkedAsSpam() const {
 		-	
 \*------------------------------------------------------------------------------*/
 bool BmMail::IsMarkedAsTofu() const {
-	return mMailRef ? mMailRef->Classification() == "Genuine" : false;
+	return mMailRef ? mMailRef->Classification() == BM_MAIL_CLASS_TOFU : false;
 }
