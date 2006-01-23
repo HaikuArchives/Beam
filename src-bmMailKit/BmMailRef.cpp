@@ -433,7 +433,7 @@ bool BmMailRef::ReadAttributes( const struct stat* statInfo,
 		IsValid( true);
 	} else {
 		// item is no mail, we mark it as invalid:
-		mName = mEntryRef.name;
+		mName = "";
 		mAccount = "";
 		mCc = "";
 		mFrom = "";
