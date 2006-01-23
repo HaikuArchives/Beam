@@ -60,6 +60,7 @@ public:
 	BmString GetShortcutFor( const char* shortcutID);
 	void SetShortcutFor( const char* name, const BmString val);
 
+	uint32 GetNumericLogLevelFor( uint32 terrain);
 	const char* GetLogLevelFor( uint32 terrain);
 	void SetLogLevelForTo( uint32 terrain, BmString level);
 

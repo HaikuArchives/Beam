@@ -36,7 +36,7 @@ const char* const BmPrefs::LOG_LVL_3 = "Log Everything";
 const BmString BmPrefs::nListSeparator = ",";
 
 const BmString BmPrefs::nDefaultIconset = "/Icons/iconset 22 nuvola grey-red";
-const int16 BmPrefs::nPrefsVersion = 12;
+const int16 BmPrefs::nPrefsVersion = 13;
 
 /*------------------------------------------------------------------------------*\
 	CreateInstance()
@@ -285,6 +285,15 @@ BmPrefs::BmPrefs( BMessage* archive)
 		// remove unneeded accumulated loglevels entry:
 		mPrefsMsg.RemoveName("Loglevels");
 	}
+	if (version < 13) {
+		// changes introduced with version 13:
+		//
+		// rename Loglevel_Pop to Loglevel_Recv:
+		int32 level = 0;
+		mPrefsMsg.FindInt32( "Loglevel_Pop", &level);
+		mPrefsMsg.AddInt32( "Loglevel_Recv", level);
+		mPrefsMsg.RemoveName("Loglevel_Pop");
+	}
 	mSavedPrefsMsg = mPrefsMsg;
 	
 	SetLoglevels();
@@ -359,7 +368,7 @@ void BmPrefs::InitDefaults(BMessage& defaultsMsg) {
 							+ BM_LOGLVL1(BM_LogSmtp)
 							+ BM_LOGLVL1(BM_LogFilter)
 							+ BM_LOGLVL0(BM_LogRefCount);
-	defaultsMsg.AddInt32( "Loglevel_Pop", 
+	defaultsMsg.AddInt32( "Loglevel_Recv", 
 								  BM_LOGLVL_FOR(loglevels,BM_LogRecv));
 	defaultsMsg.AddInt32( "Loglevel_JobWin", 
 								  BM_LOGLVL_FOR(loglevels,BM_LogJobWin));
@@ -435,6 +444,7 @@ void BmPrefs::InitDefaults(BMessage& defaultsMsg) {
 		"MimeTypeTrustInfo", 
 		"application/pdf:T,application/zip:T,application:W,:T"
 	);
+	defaultsMsg.AddInt32( "MSecsBeforeImapRemove", 5000*1000);
 	defaultsMsg.AddInt32( "MSecsBeforeMailFilterShows", 500*1000);
 	defaultsMsg.AddInt32( "MSecsBeforeMailMoverShows", 500*1000);
 	defaultsMsg.AddInt32( "MSecsBeforePopperRemove", 5000*1000);
@@ -584,13 +594,13 @@ BMessage* BmPrefs::GetShortcutDefaults( BMessage* shortcutsMsg) {
 }
 
 /*------------------------------------------------------------------------------*\
-	GetLogLevelFor( terrain)
-		-	returns the current log-level (as string) for the given terrain:
+	GetNumericLogLevelFor( terrain)
+		-	returns the current log-level for the given terrain:
 \*------------------------------------------------------------------------------*/
-const char* BmPrefs::GetLogLevelFor( uint32 terrain) {
-	int32 level = 0;
+uint32 BmPrefs::GetNumericLogLevelFor( uint32 terrain) {
+	uint32 level = 0;
 	if (terrain == BM_LogRecv)
-		level = mPrefsMsg.FindInt32("Loglevel_Pop");
+		level = mPrefsMsg.FindInt32("Loglevel_Recv");
 	else if (terrain == BM_LogSmtp)
 		level = mPrefsMsg.FindInt32("Loglevel_Smtp");
 	else if (terrain == BM_LogApp)
@@ -609,6 +619,14 @@ const char* BmPrefs::GetLogLevelFor( uint32 terrain) {
 		level = mPrefsMsg.FindInt32("Loglevel_ModelController");
 	else if (terrain == BM_LogRefCount)
 		level = mPrefsMsg.FindInt32("Loglevel_RefCount");
+	return level;
+}
+/*------------------------------------------------------------------------------*\
+	GetLogLevelFor( terrain)
+		-	returns the current log-level (as string) for the given terrain:
+\*------------------------------------------------------------------------------*/
+const char* BmPrefs::GetLogLevelFor( uint32 terrain) {
+	int32 level = GetNumericLogLevelFor(terrain);
 
 	if (level == 1)
 		return LOG_LVL_1;
@@ -636,7 +654,7 @@ void BmPrefs::SetLogLevelForTo( uint32 terrain, BmString loglevel) {
 		level = 0;
 
 	if (terrain == BM_LogRecv)
-		mPrefsMsg.ReplaceInt32("Loglevel_Pop", level);
+		mPrefsMsg.ReplaceInt32("Loglevel_Recv", level);
 	else if (terrain == BM_LogSmtp)
 		mPrefsMsg.ReplaceInt32("Loglevel_Smtp", level);
 	else if (terrain == BM_LogApp)
@@ -666,7 +684,7 @@ void BmPrefs::SetLogLevelForTo( uint32 terrain, BmString loglevel) {
 void BmPrefs::SetLoglevels() {
 	// transfer loglevel-definitions to log-handler:
 	int32 loglevels 
-		= BM_LOGLVL_VAL(mPrefsMsg.FindInt32( "Loglevel_Pop"), BM_LogRecv)
+		= BM_LOGLVL_VAL(mPrefsMsg.FindInt32( "Loglevel_Recv"), BM_LogRecv)
 			+ BM_LOGLVL_VAL(mPrefsMsg.FindInt32( "Loglevel_JobWin"), BM_LogJobWin) 
 			+ BM_LOGLVL_VAL(mPrefsMsg.FindInt32( "Loglevel_MailParse"),
 															 BM_LogMailParse) 
