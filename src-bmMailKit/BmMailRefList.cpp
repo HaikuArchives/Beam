@@ -585,8 +585,7 @@ void BmMailRefList::ExecuteAction(BMessage* action) {
 						   BmString("ExecuteAction(): "
 						   	"Adding MailRef with key") << ref->Key());
 				ref->ResyncFromDisk();
-				if (AddItemToList( ref.Get()))
-					mNeedsStore = true;
+				AddItemToList( ref.Get());
 			}
 		} else if (op == B_ENTRY_REMOVED) {
 			BmString key = action->FindString( MSG_ITEMKEY);
