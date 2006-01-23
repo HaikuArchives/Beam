@@ -56,6 +56,7 @@ BmImapStatusFilter::BmImapStatusFilter( BmMemIBuf* input, BmNetJobModel* job,
 	:	inherited(input, blockSize)
 	,	mJob(job)
 	,	mLineBuf(1000)
+	,	mLiteralCharCount(0)
 {
 }
 
@@ -63,43 +64,86 @@ BmImapStatusFilter::BmImapStatusFilter( BmMemIBuf* input, BmNetJobModel* job,
 	()
 		-	
 \*------------------------------------------------------------------------------*/
+void BmImapStatusFilter::Reset( BmMemIBuf* input)
+{
+	inherited::Reset( input);
+	mLiteralCharCount = 0;
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
 void BmImapStatusFilter::Filter( const char* srcBuf, uint32& srcLen, 
-										   char* destBuf, uint32& destLen) {
+										   char* destBuf, uint32& destLen)
+{
 	const char* src = srcBuf;
 	const char* srcEnd = srcBuf+srcLen;
 
-	BmString tagStr;
-	if (mInfoMsg)
-		tagStr = mInfoMsg->FindString(BmImap::IMSG_NEEDED_TAG);
+	if (!mLiteralCharCount) {
+		BmString tagStr;
+		if (mInfoMsg)
+			tagStr = mInfoMsg->FindString(BmImap::IMSG_NEEDED_TAG);
 
-	BmString line;
-	while( src<srcEnd) {
-		mLineBuf << *src++;
-		if (*src=='\n') {
+		// setup a regex-string that can decide whether or not a given line
+		// is a status line.
+		// IMAP actually only defines '*' or the tag as indicator, but since
+		// we are supporting DIGEST-MD5 and CRAM-MD5 and those do make use
+		// of '+' (which I *do* find rather annoying!), we check for '+', too
+		BmString statusRxStr 
+			= tagStr.Length()
+				? BmString("^(\\*|\\+|") << tagStr << ")\\s+"
+				: "^(\\*|\\+)\\s+";
+
+		Regexx rx;
+		while(src<srcEnd) {
 			mLineBuf << *src++;
-			// now we have a complete line in the ring buffer, we fetch it...
-			line = mLineBuf;
-			// ...and check it's status:
-			if (tagStr.Length() && line.ICompare(tagStr, tagStr.Length()) == 0
-			|| line.ICompare("* ", 2) == 0) {
-				// this is a tagged answer line, this means that we have
-				// reached the end of the buffer:
-				line.RemoveAll("\r");
-				mStatusText << line;
-				mLastStatusLine = line;
-				mHaveStatus = true;
-				srcLen = src-srcBuf;
-				destLen = 0;
-				// we have reached the end if no tag is expected (the answer
-				// will be one line only) or if this is the tagged line:
-				if (!tagStr.Length() || line.ICompare(tagStr, tagStr.Length()) == 0)
-					mEndReached = true;
-				return;
+			if (*src=='\n') {
+				mLineBuf << *src++;
+				// now we have a complete line in the ring buffer, we fetch it...
+				mLastStatusLine = mLineBuf;
+				// ...and check it's status:
+				if (rx.exec( mLastStatusLine, statusRxStr)) {
+					// this is a status line
+					mLastStatusLine.RemoveAll("\r");
+					if (mLastStatusLine.ByteAt(0) == '*'
+					|| mLastStatusLine.ByteAt(0) == '+')
+						// normal status (at top of answer stream)
+						mStatusText << mLastStatusLine;
+					else
+						// tagged status (at bottom of answer stream)
+						mBottomStatusText << mLastStatusLine;
+					mHaveStatus = true;
+					srcLen = src-srcBuf;
+					destLen = 0;
+					// we have reached the end if no tag is expected (the answer
+					// will be one line only) or if this is the tagged line:
+					if (!tagStr.Length() 
+					|| mLastStatusLine.ICompare(tagStr, tagStr.Length()) == 0)
+						mEndReached = true;
+					// check for a literal:
+					if (rx.exec(mLastStatusLine, "\\{(\\d+)\\}\\s*\\n")) {
+						BmString literalLen = rx.match[0].atom[0];
+						mLiteralCharCount = atoi(literalLen.String());
+					}
+					return;
+				}
+				break;
 			}
-			break;
+		}
+		srcLen = src-srcBuf;
+		destLen = 0;
+		return;
+	}
+	uint32 size = min( destLen, srcLen);
+	if (mLiteralCharCount) {
+		if (size >= mLiteralCharCount) {
+			size = mLiteralCharCount;
+			mLiteralCharCount = 0;
+		} else {
+			mLiteralCharCount -= size;
 		}
 	}
-	uint32 size = min( destLen, (uint32)(src-srcBuf));
 	memcpy( destBuf, srcBuf, size);
 	srcLen = destLen = size;
 	if (mUpdate && destLen)
@@ -110,18 +154,20 @@ void BmImapStatusFilter::Filter( const char* srcBuf, uint32& srcLen,
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-bool BmImapStatusFilter::CheckForPositiveAnswer() {
+bool BmImapStatusFilter::CheckForPositiveAnswer()
+{
 	BmString tagStr;
 	if (mInfoMsg)
 		tagStr = mInfoMsg->FindString(BmImap::IMSG_NEEDED_TAG);
-	if (mStatusText.Length()) {
-		BmString taggedBad;
-		if (tagStr.Length())
-			taggedBad = tagStr + " BAD";
-		// a problem is indicated by "* BAD" or "<tag> BAD":
-		if ((taggedBad.Length() 
-			&& mLastStatusLine.ICompare(taggedBad, taggedBad.Length()) == 0)
-		|| mLastStatusLine.ICompare("* BAD", 4) == 0) {
+	if (mLastStatusLine.Length()) {
+		// a problem is indicated by "* " or "<tag> ", followed by either
+		// "BAD" or "NO":
+		BmString badStatusRxStr 
+			= tagStr.Length()
+				? BmString("^(\\*|") << tagStr << ")\\s+(BAD|NO)\\b"
+				: "^\\*\\s+(BAD|NO)\\b";
+		Regexx rx;
+		if (rx.exec(mLastStatusLine, badStatusRxStr)) {
 			BmString err("Server answers: \n");
 			err += mLastStatusLine;
 			err.RemoveAll( "\r");
@@ -152,7 +198,8 @@ int32 BmImap::mId = 0;
 	ImapStates[]
 		-	array of IMAP-states, each with title and corresponding handler-method
 \*------------------------------------------------------------------------------*/
-BmImap::ImapState BmImap::ImapStates[BmImap::IMAP_FINAL] = {
+BmImap::ImapState BmImap::ImapStates[BmImap::IMAP_FINAL] = 
+{
 	ImapState( "connect...", &BmImap::StateConnect),
 	ImapState( "capa...", &BmImap::StateCapa),
 	ImapState( "starttls...", &BmImap::StateStartTLS),
@@ -177,6 +224,7 @@ BmImap::BmImap( const BmString& name, BmImapAccount* account)
 	,	mNewMsgTotalSize( 1)
 	,	mServerSupportsTLS(false)
 	,	mState( 0)
+	,	mTaggedMode( false)
 	,	mCurrTagNr( 0)
 {
 }
@@ -185,7 +233,8 @@ BmImap::BmImap( const BmString& name, BmImapAccount* account)
 	~BmImap()
 		-	destructor
 \*------------------------------------------------------------------------------*/
-BmImap::~BmImap() { 
+BmImap::~BmImap()
+{
 	BM_LOG_FINISH( BM_LOGNAME);
 }
 
@@ -196,7 +245,8 @@ BmImap::~BmImap() {
 			when it executes special jobs (not BM_DEFAULT_JOB), since in that
 			case there are no controllers present.
 \*------------------------------------------------------------------------------*/
-bool BmImap::ShouldContinue() {
+bool BmImap::ShouldContinue()
+{
 	return CurrentJobSpecifier() == BM_CHECK_CAPABILITIES_JOB
 			 || inherited::ShouldContinue();
 }
@@ -207,7 +257,8 @@ bool BmImap::ShouldContinue() {
 			handlers
 		-	returns whether or not the Imapper has completed it's job
 \*------------------------------------------------------------------------------*/
-bool BmImap::StartJob() {
+bool BmImap::StartJob()
+{
 	for( int32 state = IMAP_CONNECT; state<IMAP_DONE; ++state)
 		ImapStates[state].skip = false;
 
@@ -249,6 +300,14 @@ bool BmImap::StartJob() {
 		HandleError( text);
 		return false;
 	}
+	catch( Regexx::Exception &e) {
+		// a problem occurred, we tell the user:
+		BmString errstr = e.message();
+		UpdateIMAPStatus( 0.0, NULL, true);
+		BmString text = Name() << ":\n\nRegex: " << errstr;
+		HandleError( text);
+		return false;
+	}
 	return true;
 }
 
@@ -259,7 +318,8 @@ bool BmImap::StartJob() {
 			current stage (the BmString "FAILED!" will be shown)
 \*------------------------------------------------------------------------------*/
 void BmImap::UpdateIMAPStatus( const float delta, const char* detailText, 
-										  bool failed, bool stopped) {
+										  bool failed, bool stopped)
+{
 	auto_ptr<BMessage> msg( new BMessage( BM_JOB_UPDATE_STATE));
 	msg->AddString( MSG_MODEL, Name().String());
 	msg->AddString( MSG_DOMAIN, "statbar");
@@ -286,7 +346,8 @@ void BmImap::UpdateIMAPStatus( const float delta, const char* detailText,
 		- informs the interested party about the message currently dealt with
 \*------------------------------------------------------------------------------*/
 void BmImap::UpdateMailStatus( const float delta, const char* detailText, 
-											int32 currMsg) {
+											int32 currMsg)
+{
 	BmString text;
 	if (mNewMsgCount) {
 		text = BmString() << currMsg << " of " << mNewMsgCount;
@@ -307,7 +368,8 @@ void BmImap::UpdateMailStatus( const float delta, const char* detailText,
 	UpdateProgress( numBytes)
 		-
 \*------------------------------------------------------------------------------*/
-void BmImap::UpdateProgress( uint32 numBytes) {
+void BmImap::UpdateProgress( uint32 numBytes)
+{
 	float delta = (100.0*numBytes)/(mNewMsgTotalSize ? mNewMsgTotalSize : 1);
 	BmString detailText = BmString("size: ") 
 									<< BytesToString( mNewMsgSizes[mCurrMailNr-1]);
@@ -318,7 +380,8 @@ void BmImap::UpdateProgress( uint32 numBytes) {
 	StateConnect()
 		-	Initiates network-connection to IMAP-server
 \*------------------------------------------------------------------------------*/
-void BmImap::StateConnect() {
+void BmImap::StateConnect()
+{
 	BmString server;
 	uint16 port;
 	mImapAccount->AddressInfo( server, port);
@@ -350,15 +413,18 @@ void BmImap::StateConnect() {
 	StateCapa()
 		-	asks server for its capabilities
 \*------------------------------------------------------------------------------*/
-void BmImap::StateCapa() {
+void BmImap::StateCapa()
+{
+	SetTaggedMode(true);
 	BmString cmd("CAPABILITY");
-	TagAndSendCommand( cmd);
+	SendCommand( cmd);
 	int32 count;
 	try {
-		CheckForTaggedPositiveAnswer();
+		if (!CheckForPositiveAnswer())
+			return;
 		Regexx rx;
 		if ((count = rx.exec( 
-			StatusText(), "\\bAUTH=([\\S]+)", Regexx::newline
+			StatusText(), "\\bAUTH=([\\S]+)", Regexx::newline | Regexx::global
 		))) {
 			mSupportedAuthTypes.Truncate(0);
 			for(int32 i=0; i<count; ++i)
@@ -376,7 +442,8 @@ void BmImap::StateCapa() {
 	StartEncryption(encryptionType)
 		-	starts connection encryption
 \*------------------------------------------------------------------------------*/
-void BmImap::StateStartTLS() {
+void BmImap::StateStartTLS()
+{
 	// check if encryption via STARTTLS is requested (and possible):
 	BmString encryptionType = mImapAccount->EncryptionType();
 
@@ -391,8 +458,9 @@ void BmImap::StateStartTLS() {
 		return;
 
 	// let's try to initiate TLS...
-	TagAndSendCommand( "STARTTLS");
-	CheckForTaggedPositiveAnswer();
+	SendCommand( "STARTTLS");
+	if (!CheckForPositiveAnswer())
+		return;
 
 	// start connection encryption:
 	status_t error = mConnection->StartEncryption(BmImapAccount::ENCR_TLS);
@@ -413,7 +481,8 @@ void BmImap::ExtractBase64(const BmString& text, BmString& base64)
 	StateAuth()
 		-	Sends user/passwd combination and checks result
 \*------------------------------------------------------------------------------*/
-void BmImap::StateAuth() {
+void BmImap::StateAuth()
+{
 	BmString pwd;
 	bool pwdOK = false;
 	bool first = true;
@@ -440,18 +509,22 @@ void BmImap::StateAuth() {
 		}
 		first = false;
 		if (authMethod == BmImapAccount::AUTH_CRAM_MD5) {
+			BmString cmd = BmString("AUTHENTICATE CRAM-MD5");
+			SendCommand( cmd);
 			AuthCramMD5(mImapAccount->Username(), mImapAccount->Password());
 		} else if (authMethod == BmImapAccount::AUTH_DIGEST_MD5) {
+			BmString cmd = BmString("AUTHENTICATE DIGEST-MD5");
+			SendCommand( cmd);
 			BmString serviceUri = BmString("imap/") << mImapAccount->Server();
 			AuthDigestMD5(mImapAccount->Username(), mImapAccount->Password(),
 							  serviceUri);
 		} else {
 			// authMethod == AUTH_LOGIN: send username and password as plain text:
 			BmString cmd = BmString("LOGIN ") << mImapAccount->Username() << " ";
-			TagAndSendCommand( cmd, pwd);
+			SendCommand( cmd, pwd);
 		}
 		try {
-			if (CheckForTaggedPositiveAnswer())
+			if (CheckForPositiveAnswer())
 				pwdOK = true;
 			else {
 				Disconnect();
@@ -459,150 +532,116 @@ void BmImap::StateAuth() {
 				return;
 			}
 		} catch( BM_network_error &err) {
-			// most probably a wrong password...
-			BmString errstr = err.what();
-			int e;
-			if (mConnection && (e = mConnection->Error())!=B_OK)
-				errstr << "\nerror: " << e << ", " << mConnection->ErrorStr();
-			BmString text = Name() << ":\n\n" << errstr;
-			HandleError( text);
+			// let's see if the server disconnected
+			Regexx rx;
+			if (rx.exec( StatusText(), "^\\*\\s+BYE", Regexx::newline)) {
+				throw;
+			} else {
+				// it's most probably a wrong password...
+				BmString errstr = err.what();
+				int e;
+				if (mConnection && (e = mConnection->Error())!=B_OK)
+					errstr << "\nerror: " << e << ", " << mConnection->ErrorStr();
+				BmString text = Name() << ":\n\n" << errstr;
+				HandleError( text);
+			}
 		}
 	}
 }
 
 /*------------------------------------------------------------------------------*\
 	StateCheck()
-		-	looks for new mail
+		-	looks for new mail (only in inbox)
 \*------------------------------------------------------------------------------*/
-void BmImap::StateCheck() {
-return;
-	uint32 msgNum = 0;
-
+void BmImap::StateCheck()
+{
+	// select inbox and fetch number of existing messages...
 	BmString cmd("SELECT inbox");
-	TagAndSendCommand( cmd);
-	if (!CheckForTaggedPositiveAnswer())
+	SendCommand( cmd);
+	if (!CheckForPositiveAnswer())
 		return;
+	Regexx rx;
+	if (!rx.exec( StatusText(), "\\*\\s+(\\d+)\\s+exists", 
+					  Regexx::newline | Regexx::nocase))
+		throw BM_network_error( BmString("answer to '") << cmd 
+											<< "' has unknown format");
+	BmString msgCountStr = rx.match[0].atom[0];
+	mMsgCount = atoi(msgCountStr.String());
+	if (mMsgCount < 0)
+		mMsgCount = 0;
+	// ...and uidvalidity (domain of UIDs)
+	BmString uidValidity;
+	if (rx.exec( StatusText(), "\\buidvalidity\\s+(\\d+)", 
+					 Regexx::newline | Regexx::nocase))
+		uidValidity = rx.match[0].atom[0];
 
-	cmd = ("SEARCH unseen");
-	TagAndSendCommand( cmd);
-	if (!CheckForTaggedPositiveAnswer())
-		return;
-
-	if (sscanf( StatusText().String()+4, "%ld", &mMsgCount) != 1 
-	|| mMsgCount < 0)
-		throw BM_network_error( "answer to STAT has unknown format");
-	if (mMsgCount == 0) {
-		UpdateMailStatus( 0, NULL, 0);
-		// we remove all local UIDs, since none are listed on the server:
-		BmString removedUids = mImapAccount->AdjustToCurrentServerUids( mMsgUIDs);
-		BM_LOG2( BM_LogRecv, removedUids);
-		return;									// no messages found, nothing more to do
-	}
-
-	// we try to fetch a list of unique message IDs from server:
-	cmd = BmString("UIDL");
-	TagAndSendCommand( cmd);
-	try {
-		// The UIDL-command may not be implemented by this server, so we 
-		// do not require a positive answer, we just hope for it:
-		if (!CheckForTaggedPositiveAnswer())
-			return;								// interrupted, we give up
-		// ok, we've got the UIDL-listing, so we fetch it,
-		// fetch UIDLs one per line and store them in array:
-		Regexx rx;
-		int numLines = rx.exec( mAnswerText, "\\s*(\\d+)\\s+(.+?)\\s*$\\n", 
-										Regexx::newline | Regexx::global);
-		if (numLines < mMsgCount)
-			throw BM_network_error(	BmString("answer to UIDL has unknown format"
-														", too few lines matching"));
-		for( int32 i=0; i<mMsgCount; ++i)
-			mMsgUIDs.push_back( rx.match[i].atom[1]);
-		// we remove local UIDs that are not listed on the server anymore:
-		BmString removedUids = mImapAccount->AdjustToCurrentServerUids( mMsgUIDs);
-		BM_LOG( BM_LogRecv, removedUids);
-	} catch( BM_network_error& err) {
-		// no UIDL-listing from server, we will have to get by without...
-	}
-
-	// compute total size of messages that are new to us:
 	mNewMsgTotalSize = 0;
 	mNewMsgCount = 0;
-	cmd = "LIST";
-	TagAndSendCommand( cmd);
-	if (!CheckForTaggedPositiveAnswer())
-		return;
-	vector<BmString> listAnswerVect;
-	split( "\r\n", mAnswerText, listAnswerVect);
-	uint32 count = mMsgCount;
-	if (count != listAnswerVect.size()) {
-		BM_LOG( BM_LogRecv, 
-				  BmString("Strange: server indicated ")<< mMsgCount
-						<< " mails, but LIST received " << listAnswerVect.size()
-						<< " lines!");
-		if (count > listAnswerVect.size())
-			count = listAnswerVect.size();
-	}
-	for( uint32 i=0; i<count; i++) {
-		int32 msgSize;
-		time_t timeDownloaded;
-		if (!mImapAccount->IsUIDDownloaded( mMsgUIDs[i], &timeDownloaded)) {
-			// msg is new (according to unknown UID)
-			// fetch msgsize for message...
-			Regexx rx;
-			if (!rx.exec( listAnswerVect[i], "^\\s*(\\d+)\\s+(\\d+)\\s*$"))
-				throw BM_network_error( 
-					BmString("answer to LIST has unknown format, msg ") << i+1
-				);
-			BmString msgNumStr = rx.match[0].atom[0];
-			msgNum = atoi(msgNumStr.String());
-			if (msgNum != i+1)
-				throw BM_network_error( 
-					BmString("answer to LIST has unexpeced msgNo in line ") << i+1
-				);
-			BmString msgSizeStr = rx.match[0].atom[1];
-			msgSize = atoi(msgSizeStr.String());
-			// add msg-size to total:
-			mNewMsgTotalSize += msgSize;
-			mNewMsgSizes.push_back( msgSize);
-			mNewMsgCount++;
-		} else {
-			// msg is old (according to known UID), we may have to remove it now:
-			if (!mImapAccount->DeleteMailFromServer()) {
-				BM_LOG2( BM_LogRecv, BmString("Leaving mail with UID ")<<mMsgUIDs[i]
-											<<" on server\n"
-											<<"since user has told us to "
-											<<"leave all mails on server.");
+	if (mMsgCount) {
+		// fetch list with uid and size of every message:
+		cmd = BmString("FETCH 1:") << mMsgCount << " (uid rfc822.size)";
+		SendCommand( cmd);
+		if (!CheckForPositiveAnswer())
+			return;
+		int fetchedCount = rx.exec( 
+			StatusText(), 
+			"^\\*\\s+(\\d+)\\s+fetch\\s+\\(\\s*uid\\s+(\\d+)\\s+rfc822\\.size\\s+(\\d+)", 
+			Regexx::newline | Regexx::nocase | Regexx::global
+		);
+		if (!fetchedCount)
+			throw BM_network_error( BmString("answer to '") << cmd 
+												<< "' has unknown format");
+		if (fetchedCount != mMsgCount) {
+			BM_LOG( BM_LogRecv, 
+					  BmString("Strange: server indicated ")<< mMsgCount
+							<< " mails, but FETCH received " << fetchedCount
+							<< " lines!");
+			if (fetchedCount > mMsgCount)
+				fetchedCount = mMsgCount;
+		}
+		// grab individual UID and message size from result:
+		vector<int32> msgSizes;
+		mMsgUIDs.clear();
+		for( int32 i=0; i<fetchedCount; ++i) {
+			BmString nrStr = rx.match[i].atom[0];
+			int32 nr = atoi(nrStr.String());
+			if (nr != i+1)
+				throw BM_network_error( BmString("answer to '") << cmd 
+													<< "has unexpeced msg-nr. in line "
+													<< i+1);
+			// compose our uid as "uidvalidity:uid", such that we never
+			// confuse UIDs, should the server decide to renumber the messages:
+			BmString uid = uidValidity + ":" + rx.match[i].atom[1];
+			mMsgUIDs.push_back(uid);
+			//
+			BmString sizeStr = rx.match[i].atom[2];
+			msgSizes.push_back(atoi(sizeStr.String()));
+		}
+	
+		// compute total size of messages that are new to us:
+		for( int32 i=0; i<mMsgCount; i++) {
+			if (!mImapAccount->IsUIDDownloaded( mMsgUIDs[i])) {
+				// msg is new (according to unknown UID)
+				// add msg-size to total:
+				mNewMsgTotalSize += msgSizes[i];
+				mNewMsgSizes.push_back( msgSizes[i]);
+				mNewMsgCount++;
 			} else {
-				time_t expirationTime 
-					= timeDownloaded + 60 * 60 * 24 * mImapAccount->DeleteMailDelay();
-				time_t now = time(NULL);
-				if (expirationTime <= now && mImapAccount->DeleteMailFromServer()) {
-					// remove
-					BM_LOG( BM_LogRecv, 
-							  BmString("Removing mail with UID ")<<mMsgUIDs[i]
-									<<" from server\n"
-									<<"since it has been downloaded on "
-									<<TimeToString( timeDownloaded)
-									<<",\nit's expiration time is " 
-									<<TimeToString( expirationTime)
-									<<"\nand now it is "	<< TimeToString( now));
-					cmd = BmString("DELE ") << i+1;
-					TagAndSendCommand( cmd);
-					if (!CheckForTaggedPositiveAnswer())
+				// msg is old (according to known UID), we may have to remove it now:
+				BmString log;
+				if (mImapAccount->ShouldUIDBeDeletedFromServer(mMsgUIDs[i], log)) {
+					BM_LOG2( BM_LogRecv, log);
+					if (!DeleteMailFromServer(mMsgUIDs[i]))
 						return;
-				} else {
-					BM_LOG2( BM_LogRecv, 
-								BmString("Leaving mail with UID ")<<mMsgUIDs[i]
-									<<" on server\n"
-									<<"since it has been downloaded on "
-									<<TimeToString( timeDownloaded)
-									<<",\nit's expiration time is " 
-									<<TimeToString( expirationTime)
-									<<"\nand now it is "	<< TimeToString( now));
 				}
 			}
 		}
 	}
+
+	// remove local UIDs that are not listed on the server anymore:
+	BmString removedUids = mImapAccount->AdjustToCurrentServerUids( mMsgUIDs);
+	BM_LOG( BM_LogRecv, removedUids);
+
 	if (mNewMsgCount == 0) {
 		UpdateMailStatus( 0, NULL, 0);
 		return;									// no new messages found, nothing to do
@@ -613,8 +652,8 @@ return;
 	StateRetrieve()
 		-	retrieves all new mails from server
 \*------------------------------------------------------------------------------*/
-void BmImap::StateRetrieve() {
-return;
+void BmImap::StateRetrieve()
+{
 	BmString cmd;
 	mCurrMailNr = 1;
 	for( int32 i=0; i<mMsgCount; ++i) {
@@ -622,10 +661,12 @@ return;
 			// msg is old (according to known UID), we skip it:
 			continue;
 		}
-		cmd = BmString("RETR ") << i+1;
-		TagAndSendCommand( cmd);
+		// fetch current mail
+		BmString serverUID = LocalUidToServerUid(mMsgUIDs[i]);
+		cmd = BmString("UID FETCH ") << serverUID << " rfc822";
+		SendCommand( cmd);
 		time_t before = time(NULL);
-		if (!CheckForTaggedPositiveAnswer( mNewMsgSizes[mCurrMailNr-1], true))
+		if (!CheckForPositiveAnswer( mNewMsgSizes[mCurrMailNr-1], false, true))
 			goto CLEAN_UP;
 		if (mAnswerText.Length() > ThePrefs->GetInt("LogSpeedThreshold", 
 																  100*1024)) {
@@ -636,6 +677,14 @@ return;
 					  BmString("Received mail of size ")<<mAnswerText.Length()
 							<< " bytes in " << duration << " seconds => " 
 							<< mAnswerText.Length()/duration/1024.0 << "KB/s");
+		}
+		if (mAnswerText.Length() != mNewMsgSizes[mCurrMailNr-1]) {
+			// oops, we better complain:
+			throw BM_network_error( 
+				BmString("Received mail has ") << mAnswerText.Length()
+					<< " bytes but it was announced to have " 
+					<< mNewMsgSizes[mCurrMailNr-1] << " bytes!"
+			);
 		}
 		// now create a mail from the received data...
 		BM_LOG2( BM_LogRecv, "Creating mail...");
@@ -654,11 +703,10 @@ return;
 		BM_LOG2( BM_LogRecv, "...done");
 		mImapAccount->MarkUIDAsDownloaded( mMsgUIDs[i]);
 		//	delete the retrieved message if required to do so immediately:
-		if (mImapAccount->DeleteMailFromServer() 
-		&& mImapAccount->DeleteMailDelay() <= 0) {
-			cmd = BmString("DELE ") << i+1;
-			TagAndSendCommand( cmd);
-			if (!CheckForTaggedPositiveAnswer())
+		BmString log;
+		if (mImapAccount->ShouldUIDBeDeletedFromServer(mMsgUIDs[i], log)) {
+			BM_LOG2( BM_LogRecv, log);
+			if (!DeleteMailFromServer(mMsgUIDs[i]))
 				goto CLEAN_UP;
 		}
 		mCurrMailNr++;
@@ -670,10 +718,41 @@ CLEAN_UP:
 }
 
 /*------------------------------------------------------------------------------*\
+	LocalUidToServerUid(uid)
+		-	converts the local UID to the one given by server (by removing the 
+			uidvalidity from the local uid).
+\*------------------------------------------------------------------------------*/
+BmString BmImap::LocalUidToServerUid(const BmString& uid) const
+{
+	BmString serverUID;
+	int32 pos = uid.FindFirst(':');
+	if (pos >= 0)
+		serverUID.SetTo(uid.String()+pos+1);
+	else
+		serverUID = uid;
+	return serverUID;
+}
+
+/*------------------------------------------------------------------------------*\
+	DeleteMailFromServer(uid)
+		-	deletes the mail with the given UID
+\*------------------------------------------------------------------------------*/
+bool BmImap::DeleteMailFromServer(const BmString& uid)
+{
+	// we need to split off the uidvalidity from our local UID:
+	BmString serverUID = LocalUidToServerUid(uid);
+	BmString cmd;
+	cmd = BmString("UID STORE ") << serverUID << " flags.silent (\\deleted)";
+	SendCommand( cmd);
+	return CheckForPositiveAnswer();
+}
+
+/*------------------------------------------------------------------------------*\
 	StateDisconnect()
 		-	tells the server that we are finished
 \*------------------------------------------------------------------------------*/
-void BmImap::StateDisconnect() {
+void BmImap::StateDisconnect()
+{
 	Quit( true);
 }
 
@@ -685,38 +764,62 @@ void BmImap::StateDisconnect() {
 			because of an error we ignore any answer.
 		-	the network-connection is always closed
 \*------------------------------------------------------------------------------*/
-void BmImap::Quit( bool WaitForAnswer) {
+void BmImap::Quit( bool WaitForAnswer)
+{
 	BmString cmd("LOGOUT");
 	try {
-		TagAndSendCommand( cmd);
+		SendCommand( cmd);
 		if (WaitForAnswer)
-			CheckForTaggedPositiveAnswer();
+			CheckForPositiveAnswer();
 	} catch(...) {	}
 	Disconnect();
 }
 
 /*------------------------------------------------------------------------------*\
-	CheckForTaggedPositiveAnswer()
-		-	
+	SetTaggedMode()
+		-	activates/deactivates the use of tags. 
+		-	Most of IMAP actually runs in	tagged mode, only the greetings 
+			isn't tagged.
 \*------------------------------------------------------------------------------*/
-bool BmImap::CheckForTaggedPositiveAnswer( uint32 expectedSize, 
-														 bool update) 
+void BmImap::SetTaggedMode(bool tagged)
 {
-	BMessage infoMsg;
-	infoMsg.AddString(IMSG_NEEDED_TAG, mCurrTag.String());
-	return CheckForPositiveAnswer( expectedSize, false, update, &infoMsg);
+	mTaggedMode = tagged;
+	if (!mTaggedMode)
+		mCurrTag.Truncate(0);
 }
 
 /*------------------------------------------------------------------------------*\
-	TagAndSendCommand( cmd)
-		-	smuggles tag into command and send it off:
+	CheckForPositiveAnswer()
+		-	adds current tag to info msg such that status filter knows what
+			to look for.
 \*------------------------------------------------------------------------------*/
-void BmImap::TagAndSendCommand( const BmString& cmd, const BmString& secret,
-										  bool dotstuffEncoding, bool update) 
+bool BmImap::CheckForPositiveAnswer( uint32 expectedSize, 
+												 bool /*dotstuffDecoding*/,
+												 bool update,
+												 BMessage* infoMsg)
 {
-	mCurrTag = BmString("bm") << ++mCurrTagNr;
-	BmString taggedCmd = mCurrTag + " " + cmd;
-	SendCommand(taggedCmd, secret, dotstuffEncoding, update);
+	if (!infoMsg) {
+		mInfoMsg.MakeEmpty();
+		infoMsg = &mInfoMsg;
+	}
+	infoMsg->AddString(IMSG_NEEDED_TAG, mCurrTag.String());
+	return inherited::CheckForPositiveAnswer( expectedSize, false, update, 
+															infoMsg);
+}
+
+/*------------------------------------------------------------------------------*\
+	SendCommand( cmd)
+		-	smuggles tag into command (if required) and sends it off:
+\*------------------------------------------------------------------------------*/
+void BmImap::SendCommand( const BmString& cmd, const BmString& secret,
+								  bool dotstuffEncoding, bool update)
+{
+	if (mTaggedMode) {
+		mCurrTag = BmString("bm") << ++mCurrTagNr;
+		BmString taggedCmd = mCurrTag + " " + cmd;
+		inherited::SendCommand(taggedCmd, secret, dotstuffEncoding, update);
+	} else
+		inherited::SendCommand(cmd, secret, dotstuffEncoding, update);
 }
 
 /*------------------------------------------------------------------------------*\

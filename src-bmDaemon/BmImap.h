@@ -35,6 +35,7 @@ public:
 							  uint32 blockSize=65536);
 
 	// overrides of BmStatusFilter base:
+	void Reset( BmMemIBuf* input);
 	bool CheckForPositiveAnswer();
 
 protected:
@@ -45,6 +46,7 @@ protected:
 	BmNetJobModel* mJob;
 	BmRingBuf mLineBuf;
 	BmString mLastStatusLine;
+	uint32 mLiteralCharCount;
 };
 
 /*------------------------------------------------------------------------------*\
@@ -74,6 +76,8 @@ public:
 	inline static int32 NextID() 			{ return ++mId; }
 	inline BmString Name() const			{ return ModelName(); }
 
+	void SetTaggedMode(bool tagged);
+
 	// overrides of netjob-model base:
 	void UpdateProgress( uint32 numBytes);
 
@@ -97,16 +101,20 @@ private:
 	void StateCheck();
 	void StateRetrieve();
 	void StateDisconnect();
+	BmString LocalUidToServerUid(const BmString& uid) const;
+	bool DeleteMailFromServer(const BmString& uid);
 	void Quit( bool WaitForAnswer=false);
 	void UpdateIMAPStatus( const float, const char*, bool failed=false, 
 								 bool stopped=false);
 	void UpdateMailStatus( const float, const char*, int32);
-	bool CheckForTaggedPositiveAnswer( uint32 expectedSize=4096, 
-												  bool update=false);
-	void TagAndSendCommand( const BmString& cmd, 
-									const BmString& secret=BM_DEFAULT_STRING,
-									bool dotstuffEncoding=false,
-									bool update=false);
+	bool CheckForPositiveAnswer( uint32 expectedSize=4096, 
+										  bool dotstuffDecoding=false,
+										  bool update=false,
+										  BMessage* infoMsg=NULL);
+	void SendCommand( const BmString& cmd, 
+							const BmString& secret=BM_DEFAULT_STRING,
+							bool dotstuffEncoding=false,
+							bool update=false);
 
 	static int32 mId;
 							// unique message ID, this is used if a 
@@ -143,6 +151,8 @@ private:
 		IMAP_FINAL
 	};
 
+	bool mTaggedMode;
+							// whether or not we should send/expect tagged lines
 	int32 mCurrTagNr;
 							// current tag number, as required by IMAP
 	BmString mCurrTag;
