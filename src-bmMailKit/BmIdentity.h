@@ -158,7 +158,10 @@ public:
 	inline const BmRef<BmIdentity> CurrIdentity()  { return mCurrIdentity; }
 
 	// setters:
-	inline void CurrIdentity( BmIdentity* i) { mCurrIdentity = i; }
+	inline void CurrIdentity( BmIdentity* i) { 
+		mCurrIdentity = i; 
+		mNeedsStore = true;
+	}
 
 	// overrides of listmodel base:
 	void ForeignKeyChanged( const BmString& key, 
