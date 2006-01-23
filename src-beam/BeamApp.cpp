@@ -56,7 +56,6 @@ using namespace regexx;
 #include "BmStorageUtil.h"
 #include "BmUtil.h"
 
-
 /*------------------------------------------------------------------------------*\
 	BmSlaveHandler
 		-	
@@ -120,9 +119,9 @@ static int32 MarkMailsAs( void* data)
 	BmString newStatus = msg->FindString( BeamApplication::MSG_STATUS);
 	BmMailRefVect* refVect = NULL;
 	msg->FindPointer( BeamApplication::MSG_MAILREF_VECT, (void**)&refVect);
-	if (!refVect)
-		return B_OK;
-	int32 msgCount = refVect->size();
+	int32 msgCount = 0;
+	if (refVect)
+		msgCount = refVect->size();
 	if (msgCount>1) {
 		// first step, check if user has asked to mark as read and 
 		// has selected messages with advanced statii (like replied
@@ -185,6 +184,7 @@ static int32 MarkMailsAs( void* data)
 	}
 	delete refVect;
 				// freeing all references to mailrefs contained in vector
+	delete msg;
 	return B_OK;
 }
 
@@ -201,9 +201,9 @@ static int32 MoveMails( void* data)
 	static int jobNum = 1;
 	BmMailRefVect* refVect = NULL;
 	msg->FindPointer( BeamApplication::MSG_MAILREF_VECT, (void**)&refVect);
-	if (!refVect)
-		return B_OK;
-	int32 countFound = refVect->size();
+	int32 countFound = 0;
+	if (refVect)
+		countFound = refVect->size();
 	if (countFound > 0) {
 		// tell sending ref-view that we are doing work:
 		BMessenger sendingRefView;
@@ -248,6 +248,7 @@ static int32 MoveMails( void* data)
 	}
 	delete refVect;
 				// freeing all references to mailrefs contained in vector
+	delete msg;
 	return B_OK;
 }
 
@@ -263,9 +264,9 @@ static int32 TrashMails( void* data)
 		return B_OK;
 	BmMailRefVect* refVect = NULL;
 	msg->FindPointer( BeamApplication::MSG_MAILREF_VECT, (void**)&refVect);
-	if (!refVect)
-		return B_OK;
-	int32 countFound = refVect->size();
+	uint32 countFound = 0;
+	if (refVect)
+		countFound = refVect->size();
 	if (countFound>0) {
 		BM_LOG( BM_LogApp, 
 				  BmString("Asked to trash ") << countFound << " mails");
@@ -285,7 +286,8 @@ static int32 TrashMails( void* data)
 			mailRef = iter->Get();
 			refs[index++] = mailRef->EntryRef();
 		}
-		MoveToTrash( refs, index);
+		if (!beamApp->IsQuitting())
+			MoveToTrash( refs, index);
 		delete [] refs;
 
 		// now tell sending ref-view that we are finished:
@@ -294,6 +296,7 @@ static int32 TrashMails( void* data)
 	}
 	delete refVect;
 				// freeing all references to mailrefs contained in vector
+	delete msg;
 	return B_OK;
 }
 
@@ -352,17 +355,18 @@ static int32 EditMailsAsNew( void* data)
 		return B_OK;
 	BmMailRefVect* refVect = NULL;
 	msg->FindPointer( BeamApplication::MSG_MAILREF_VECT, (void**)&refVect);
-	if (!refVect)
-		return B_OK;
-
-	BM_LOG( BM_LogApp, 
-		BmString("Asked to edit ") << refVect->size() << " mails as new.");
-
-	BmCopyMailFactory factory;	
-	CreateMailsWithFactory( msg, refVect, &factory);
-
+	int32 msgCount = 0;
+	if (refVect)
+		msgCount = refVect->size();
+	if (msgCount) {
+		BM_LOG( BM_LogApp, 
+				  BmString("Asked to edit ") << msgCount << " mails as new.");
+		BmCopyMailFactory factory;	
+		CreateMailsWithFactory( msg, refVect, &factory);
+	}
 	delete refVect;
 		// freeing all references to mailrefs contained in vector
+	delete msg;
 	return B_OK;
 }
 
@@ -378,17 +382,18 @@ static int32 RedirectMails( void* data)
 		return B_OK;
 	BmMailRefVect* refVect = NULL;
 	msg->FindPointer( BeamApplication::MSG_MAILREF_VECT, (void**)&refVect);
-	if (!refVect)
-		return B_OK;
-
-	BM_LOG( BM_LogApp, 
-		BmString("Asked to redirect ") << refVect->size() << " mails.");
-
-	BmRedirectFactory factory;	
-	CreateMailsWithFactory( msg, refVect, &factory);
-
+	int32 msgCount = 0;
+	if (refVect)
+		msgCount = refVect->size();
+	if (msgCount) {
+		BM_LOG( BM_LogApp, 
+				  BmString("Asked to redirect ") << msgCount << " mails.");
+		BmRedirectFactory factory;	
+		CreateMailsWithFactory( msg, refVect, &factory);
+	}
 	delete refVect;
 		// freeing all references to mailrefs contained in vector
+	delete msg;
 	return B_OK;
 }
 
@@ -406,10 +411,9 @@ static int32 ForwardMails( void* data) {
 	int32 buttonPressed = 1;
 	BmMailRefVect* refVect = NULL;
 	msg->FindPointer( BeamApplication::MSG_MAILREF_VECT, (void**)&refVect);
-	if (!refVect)
-		return B_OK;
-
-	int32 msgCount = refVect->size();
+	int32 msgCount = 0;
+	if (refVect)
+		msgCount = refVect->size();
 	if (msgCount>1) {
 		// first step, ask user about how to forward multiple messages:
 		BmString s("You have selected more than one message.\n\n"
@@ -449,6 +453,7 @@ static int32 ForwardMails( void* data) {
 	}
 	delete refVect;
 		// freeing all references to mailrefs contained in vector
+	delete msg;
 	return B_OK;
 }
 
@@ -464,10 +469,9 @@ static int32 ReplyToMails( void* data) {
 	int32 buttonPressed = 0;
 	BmMailRefVect* refVect = NULL;
 	msg->FindPointer( BeamApplication::MSG_MAILREF_VECT, (void**)&refVect);
-	if (!refVect)
-		return B_OK;
-
-	int32 msgCount = refVect->size();
+	int32 msgCount = 0;
+	if (refVect)
+		msgCount = refVect->size();
 	if (msgCount>1) {
 		// first step, ask user about how to forward multiple messages:
 		BmString s("You have selected more than one message.\n\n"
@@ -510,6 +514,7 @@ static int32 ReplyToMails( void* data) {
 	}
 	delete refVect;
 		// freeing all references to mailrefs contained in vector
+	delete msg;
 	return B_OK;
 }
 
@@ -528,95 +533,98 @@ int32 PrintMails( void* data) {
 
 	BmMailRefVect* refVect = NULL;
 	msg->FindPointer( BeamApplication::MSG_MAILREF_VECT, (void**)&refVect);
-	if (!refVect)
-		return B_OK;
-
-	// tell sending ref-view that we are doing work:
-	BMessenger sendingRefView;
-	msg->FindMessenger( BeamApplication::MSG_SENDING_REFVIEW, &sendingRefView);
-	if (sendingRefView.IsValid())
-		sendingRefView.SendMessage( BMM_SET_BUSY);
-
-	beamApp->mPrintJob.SetSettings( new BMessage( *beamApp->mPrintSetup));
-	status_t result = beamApp->mPrintJob.ConfigJob();
-	if (result == B_OK) {
-		delete beamApp->mPrintSetup;
-		beamApp->mPrintSetup = beamApp->mPrintJob.Settings();
-		int32 firstPage = beamApp->mPrintJob.FirstPage();
-		int32 lastPage = beamApp->mPrintJob.LastPage();
-		if (lastPage-firstPage+1 <= 0)
-			goto out;
-		BmMailRef* mailRef = NULL;
-		// we create a hidden mail-view-window which is being used for printing:
-		BmMailViewWin* mailWin = BmMailViewWin::CreateInstance();
-		mailWin->Hide();
-		mailWin->Show();
-		BmMailView* mailView = mailWin->MailView();
-		// now get printable rect...
-		BRect printableRect = beamApp->mPrintJob.PrintableRect();
-		// ...and adjust mailview accordingly (to use the available space
-		// effectively):
-		if (mailView->LockLooper()) {
-			mailWin->ResizeTo( printableRect.Width()+8, 600);
-			mailView->UnlockLooper();
-		}
-		mailView->BodyPartView()->IsUsedForPrinting( true);
-		// now we start printing...
-		beamApp->mPrintJob.BeginJob();
-		int32 page = 1;
-		for(  uint32 mailIdx=0; 
-				!beamApp->IsQuitting() && mailIdx < refVect->size() && page<=lastPage;
-				++mailIdx) {
-			mailRef = (*refVect)[mailIdx].Get();
+	uint32 msgCount = 0;
+	if (refVect)
+		msgCount = refVect->size();
+	if (msgCount) {
+		// tell sending ref-view that we are doing work:
+		BMessenger sendingRefView;
+		msg->FindMessenger( BeamApplication::MSG_SENDING_REFVIEW, &sendingRefView);
+		if (sendingRefView.IsValid())
+			sendingRefView.SendMessage( BMM_SET_BUSY);
+	
+		beamApp->mPrintJob.SetSettings( new BMessage( *beamApp->mPrintSetup));
+		status_t result = beamApp->mPrintJob.ConfigJob();
+		if (result == B_OK) {
+			delete beamApp->mPrintSetup;
+			beamApp->mPrintSetup = beamApp->mPrintJob.Settings();
+			int32 firstPage = beamApp->mPrintJob.FirstPage();
+			int32 lastPage = beamApp->mPrintJob.LastPage();
+			if (lastPage-firstPage+1 <= 0)
+				goto out;
+			BmMailRef* mailRef = NULL;
+			// we create a hidden mail-view-window which is being used for printing:
+			BmMailViewWin* mailWin = BmMailViewWin::CreateInstance();
+			mailWin->Hide();
+			mailWin->Show();
+			BmMailView* mailView = mailWin->MailView();
+			// now get printable rect...
+			BRect printableRect = beamApp->mPrintJob.PrintableRect();
+			// ...and adjust mailview accordingly (to use the available space
+			// effectively):
 			if (mailView->LockLooper()) {
-				mailView->BodyPartView()->SetViewColor( 
-					ui_color( B_UI_DOCUMENT_BACKGROUND_COLOR)
-				);
-				mailView->ShowMail( mailRef, false);
+				mailWin->ResizeTo( printableRect.Width()+8, 600);
 				mailView->UnlockLooper();
 			}
-			while( !mailView->IsDisplayComplete())
-				snooze( 50*1000);
-			BRect currFrame = printableRect.OffsetToCopy( 0, 0);
-			BRect textRect = mailView->TextRect();
-			float totalHeight = textRect.top+mailView->TextHeight(0,100000);
-			float height = currFrame.Height();
-			BPoint topOfLine 
-				= mailView->PointAt( mailView->OffsetAt( BPoint( 
-					5, currFrame.bottom
-				)));
-			currFrame.bottom = topOfLine.y-1;
-			while( !beamApp->IsQuitting() && page<=lastPage) {
-				if (page >= firstPage) {
-					beamApp->mPrintJob.DrawView( mailView, currFrame, BPoint(0,0));
-					beamApp->mPrintJob.SpoolPage();
-				}
-				currFrame.top = currFrame.bottom+1;
-				currFrame.bottom = currFrame.top + height-1;
+			mailView->BodyPartView()->IsUsedForPrinting( true);
+			// now we start printing...
+			beamApp->mPrintJob.BeginJob();
+			int32 page = 1;
+			for(  uint32 mailIdx=0; 
+					!beamApp->IsQuitting() && mailIdx < msgCount 
+						&& page <= lastPage;
+					++mailIdx) {
+				mailRef = (*refVect)[mailIdx].Get();
 				if (mailView->LockLooper()) {
-					topOfLine 
-						= mailView->PointAt( mailView->OffsetAt( BPoint( 
-							5, currFrame.bottom
-						)));
+					mailView->BodyPartView()->SetViewColor( 
+						ui_color( B_UI_DOCUMENT_BACKGROUND_COLOR)
+					);
+					mailView->ShowMail( mailRef, false);
 					mailView->UnlockLooper();
 				}
+				while( !mailView->IsDisplayComplete())
+					snooze( 50*1000);
+				BRect currFrame = printableRect.OffsetToCopy( 0, 0);
+				BRect textRect = mailView->TextRect();
+				float totalHeight = textRect.top+mailView->TextHeight(0,100000);
+				float height = currFrame.Height();
+				BPoint topOfLine 
+					= mailView->PointAt( mailView->OffsetAt( BPoint( 
+						5, currFrame.bottom
+					)));
 				currFrame.bottom = topOfLine.y-1;
-				page++;
-				if (currFrame.top >= totalHeight || currFrame.Height() <= 1)
-					// end of current mail reached
-					break;
+				while( !beamApp->IsQuitting() && page<=lastPage) {
+					if (page >= firstPage) {
+						beamApp->mPrintJob.DrawView( mailView, currFrame, BPoint(0,0));
+						beamApp->mPrintJob.SpoolPage();
+					}
+					currFrame.top = currFrame.bottom+1;
+					currFrame.bottom = currFrame.top + height-1;
+					if (mailView->LockLooper()) {
+						topOfLine 
+							= mailView->PointAt( mailView->OffsetAt( BPoint( 
+								5, currFrame.bottom
+							)));
+						mailView->UnlockLooper();
+					}
+					currFrame.bottom = topOfLine.y-1;
+					page++;
+					if (currFrame.top >= totalHeight || currFrame.Height() <= 1)
+						// end of current mail reached
+						break;
+				}
 			}
+			beamApp->mPrintJob.CommitJob();
+			mailWin->PostMessage( B_QUIT_REQUESTED);
 		}
-		beamApp->mPrintJob.CommitJob();
-		mailWin->PostMessage( B_QUIT_REQUESTED);
+		// now tell sending ref-view that we are finished:
+		if (sendingRefView.IsValid())
+			sendingRefView.SendMessage( BMM_UNSET_BUSY);
 	}
-	// now tell sending ref-view that we are finished:
-	if (sendingRefView.IsValid())
-		sendingRefView.SendMessage( BMM_UNSET_BUSY);
-
 out:
 	delete refVect;
 			// freeing all references to mailrefs contained in vector
+	delete msg;
 	return B_OK;
 }
 
@@ -814,15 +822,18 @@ thread_id BeamApplication::Run() {
 		tid = inherited::Run();
 
 		ThePrefs->Store();
-							// always store prefs since it contains references to
-							// list-items that are tracked via foreign-keys. If the
-							// user has renamed a folder, for instance the references
-							// to this folder will have moved along automatically, but
-							// we need to store these new prefs, as otherwise it would
-							// be lost.
-		TheIdentityList->Store();
-							// always store identity-list since the current identity
-							// may have changed
+			// always store prefs since it contains references to
+			// list-items that are tracked via foreign-keys. If the
+			// user has renamed a folder, for instance the references
+			// to this folder will have moved along automatically, but
+			// we need to store these new prefs, as otherwise it would
+			// be lost.
+		TheRecvAccountList->StoreIfNeeded();
+			// store identity-list since the current identity
+			// may have changed
+		TheIdentityList->StoreIfNeeded();
+			// store identity-list since the current identity
+			// may have changed
 	} catch( BM_error &e) {
 		BM_SHOWERR( e.what());
 		exit(10);
