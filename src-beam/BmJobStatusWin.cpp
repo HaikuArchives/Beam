@@ -890,6 +890,7 @@ void BmJobStatusWin::MessageReceived(BMessage* msg) {
 		switch( msg->what) {
 			case BM_JOBWIN_SMTP:
 			case BM_JOBWIN_POP:
+			case BM_JOBWIN_IMAP:
 			case BM_JOBWIN_FILTER:
 			case BM_JOBWIN_MOVEMAILS: {
 				// request to start a new job
