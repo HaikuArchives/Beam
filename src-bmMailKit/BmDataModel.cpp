@@ -1249,6 +1249,15 @@ status_t BmListModel::Archive( BMessage* archive, bool deep) const {
 }
 
 /*------------------------------------------------------------------------------*\
+	StoreIfNeeded()
+		-	stores if indicated to do so (by mNeedsStore)
+\*------------------------------------------------------------------------------*/
+void BmListModel::StoreIfNeeded() {
+	if (mNeedsStore)
+		Store();
+}
+
+/*------------------------------------------------------------------------------*\
 	Store()
 		-	stores List inside Settings-dir
 \*------------------------------------------------------------------------------*/
@@ -1354,6 +1363,8 @@ bool BmListModel::RestoreAndExecuteActionsFrom(BDataIO* dataIO)
 		ExecuteAction(&action);
 		count++;
 	}
+	if (count > 0)
+		mNeedsStore = true;
 	return count > 0;
 }
 

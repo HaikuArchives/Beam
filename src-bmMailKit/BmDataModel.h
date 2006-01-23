@@ -309,6 +309,7 @@ public:
 											  		{ }
 	//
 	virtual bool Store();
+	void StoreIfNeeded();
 	bool FlushStoredActions();
 	virtual const BmString SettingsFileName() = 0;
 	virtual void InitializeItems()		{ mInitCheck = B_OK; }
