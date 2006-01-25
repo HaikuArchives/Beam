@@ -16,7 +16,6 @@
 #include "regexx.hh"
 	using namespace regexx;
 
-#include "PrefilledBitmap.h"
 #include "UserResizeSplitView.h"
 
 #include "BeamApp.h"

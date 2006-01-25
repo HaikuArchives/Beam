@@ -41,6 +41,7 @@ public:
 																				mModelItem.Get()); }
 	void UpdateView( BmUpdFlags flags, bool redraw = true, 
 						  uint32 updColBitmap = 0);
+	BmBitmapHandle* GetExpanderBitmap( bool expanded);
 
 	static int CompareItems( const CLVListItem *a_Item1, 
 									 const CLVListItem *a_Item2,

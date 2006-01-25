@@ -47,6 +47,8 @@ BmMailFolderItem::BmMailFolderItem( ColumnListView* lv,
 												bool, BMessage* archive)
 	:	inherited( lv, _item, true, archive)
 {
+	BmBitmapHandle* icon = TheResources->IconByName( "Folder");
+	SetColumnContent( COL_ICON, icon, 2.0);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -72,21 +74,8 @@ void BmMailFolderItem::UpdateView( BmUpdFlags flags, bool redraw,
 			updColBitmap = 0xFFFFFFFF;
 							// Bold() may have changed font, need to redraw everything!
 	}
-	if (flags & (UPD_EXPANDER | BmMailFolder::UPD_HAVE_SPECIAL_STATUS)) {
-		BmBitmapHandle* icon;
-		if (folder->SpecialMailCount()) {
-			if (folder->HasSpecialMailInSubfolders() && !IsExpanded())
-				icon = TheResources->IconByName("Folder_New_NewInSub");
-			else
-				icon = TheResources->IconByName("Folder_New");
-		} else {
-			if (folder->HasSpecialMailInSubfolders() && !IsExpanded())
-				icon = TheResources->IconByName("Folder_NewInSub");
-			else
-				icon = TheResources->IconByName("Folder");
-		}
-		SetColumnContent( COL_ICON, icon, 2.0);
-		updColBitmap |= (1UL<<COL_ICON);
+	if (flags & BmMailFolder::UPD_HAVE_SPECIAL_STATUS) {
+		updColBitmap |= (1UL<<COL_EXPANDER);
 	}
 	if (flags & BmMailFolder::UPD_SPECIAL_COUNT) {
 		BmString newCountStr;
@@ -176,6 +165,18 @@ int BmMailFolderItem::CompareItems( const CLVListItem *a_Item1,
 	return CLVEasyItem::CompareItems( a_Item1, a_Item2, KeyColumn, col_flags);
 }
 
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+BmBitmapHandle* BmMailFolderItem::GetExpanderBitmap( bool expanded) {
+	BmMailFolder* folder( ModelItem());
+	if (!expanded && folder && folder->HasSpecialMailInSubfolders())
+		return TheResources->IconByName("Expander_Right_Special");
+	else
+		return inherited::GetExpanderBitmap(expanded);
+}
+
 
 /********************************************************************************\
 	BmMailFolderView
@@ -217,9 +218,9 @@ BmMailFolderView::BmMailFolderView( int32 width, int32 height)
 	,	mPartnerMailRefView( NULL)
 	,	mHaveSelectedFolder( false)
 {
-	AddColumn( new CLVColumn( NULL, 10.0, 
+	AddColumn( new CLVColumn( NULL, 14.0, 
 									  CLV_EXPANDER | CLV_LOCK_AT_BEGINNING 
-									  | CLV_NOT_MOVABLE | CLV_COLTYPE_BITMAP, 10.0));
+									  | CLV_NOT_MOVABLE | CLV_COLTYPE_BITMAP, 14.0));
 	AddColumn( new CLVColumn( NULL, 18.0, 
 									  CLV_LOCK_AT_BEGINNING | CLV_NOT_MOVABLE 
 									  | CLV_NOT_RESIZABLE | CLV_PUSH_PASS 

@@ -33,6 +33,7 @@ class CLVColumn;
 class BList;
 
 #include "BmGuiBase.h"
+#include "BmBitmapHandle.h"
 
 struct CLVDrawingContext
 {
@@ -82,13 +83,19 @@ class IMPEXPBMGUIBASE CLVListItem : public BListItem
 		virtual void FrameChanged(int32 column_index, BRect new_frame);
 		void InvalidateColumn( int32 column_index);
 		CLVColumn* ColumnAt( int32 column_index);
+		
+		static void SetDefaultExpanderBitmaps(BmBitmapHandle* expanded, 
+														  BmBitmapHandle* unexpanded);
 
 	protected:
 		friend class ColumnListView;
 		void SetStyleFlag( uint8 style, bool on);
+		virtual BmBitmapHandle* GetExpanderBitmap( bool expanded);
 
 		ColumnListView* fOwner;
 		uint8 fItemFlags;
+		static BmBitmapHandle* gExpanderDefaultBitmapExpanded;
+		static BmBitmapHandle* gExpanderDefaultBitmapUnexpanded;
 };
 
 

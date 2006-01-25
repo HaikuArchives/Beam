@@ -28,6 +28,8 @@
 #include "ColumnListView.h"
 #include "CLVColumn.h"
 
+BmBitmapHandle* CLVListItem::gExpanderDefaultBitmapExpanded = NULL;
+BmBitmapHandle* CLVListItem::gExpanderDefaultBitmapUnexpanded = NULL;
 //******************************************************************************************************
 //**** CLVItem CLASS DEFINITION
 //******************************************************************************************************
@@ -234,26 +236,40 @@ void CLVListItem::DrawItem(BView*, BRect itemRect, bool complete)
 							  ctx);
 				if(IsSuperItem())
 				{
-					//Draw the expander, clip manually
-					float TopOffset = ceil((ThisColumnRect.bottom-ThisColumnRect.top-10.0)/2.0);
-					float LeftOffset = ThisColumn->fColumnEnd + Shift - 3.0 - 10.0;
-					float RightClip = LeftOffset + 10.0 - ThisColumnRect.right;
-					if(RightClip < 0.0)
-						RightClip = 0.0;
-					BBitmap* Arrow;
-					if(IsExpanded())
-						Arrow = &((ColumnListView*)fOwner)->fDownArrow;
-					else
-						Arrow = &((ColumnListView*)fOwner)->fRightArrow;
-					if(LeftOffset <= ThisColumnRect.right)
-					{
-						BRect expanderButtonRect(
-							LeftOffset,ThisColumnRect.top+TopOffset,
-							LeftOffset+10.0-RightClip,ThisColumnRect.top+TopOffset+10.0
-						);
-						fOwner->SetDrawingMode(B_OP_OVER);
-						fOwner->DrawBitmap(Arrow, BRect(0.0,0.0,10.0-RightClip,10.0),expanderButtonRect);
-						fOwner->SetDrawingMode(B_OP_COPY);
+					// fetch expander bitmap:
+					BmBitmapHandle* ArrowHandle;
+					BBitmap* Arrow = NULL;
+					ArrowHandle = GetExpanderBitmap(IsExpanded());
+					if (ArrowHandle)
+						Arrow = ArrowHandle->bitmap;
+					if (Arrow) {
+						BRect ab = Arrow->Bounds();
+						float h = ab.Height();
+						float r = ab.right;
+						float b = ab.bottom;
+	
+						//Draw the expander, clip manually
+						float TopOffset 
+							= ceil((ThisColumnRect.bottom-ThisColumnRect.top-h)/2.0);
+						float LeftOffset 
+							= ThisColumn->fColumnEnd + Shift - r;
+						float RightClip = LeftOffset + r - ThisColumnRect.right;
+						if(RightClip < 0.0)
+							RightClip = 0.0;
+						if(LeftOffset <= ThisColumnRect.right)
+						{
+							BRect expanderButtonRect(
+								LeftOffset,
+								ThisColumnRect.top+TopOffset,
+								LeftOffset+r-RightClip,
+								ThisColumnRect.top+TopOffset+b
+							);
+							fOwner->SetDrawingMode(B_OP_OVER);
+							fOwner->DrawBitmap(Arrow, 
+													 BRect(0.0,0.0,r-RightClip,b),
+													 expanderButtonRect);
+							fOwner->SetDrawingMode(B_OP_COPY);
+						}
 					}
 				}
 			}
@@ -308,9 +324,25 @@ void CLVListItem::FrameChanged(int32 /*column_index*/, BRect /*new_frame*/)
 {
 }
 
-void CLVListItem::SetStyleFlag( uint8 style, bool on) {
+void CLVListItem::SetStyleFlag( uint8 style, bool on)
+{
 	if (on)
 		fItemFlags |= style;
 	else
 		fItemFlags &= (0xFF ^ style);
+}
+
+void CLVListItem::SetDefaultExpanderBitmaps(BmBitmapHandle* expanded, 
+														  BmBitmapHandle* unexpanded)
+{
+	gExpanderDefaultBitmapExpanded = expanded;
+	gExpanderDefaultBitmapUnexpanded = unexpanded;
+}
+
+BmBitmapHandle* CLVListItem::GetExpanderBitmap( bool expanded)
+{
+	if (expanded)
+		return gExpanderDefaultBitmapExpanded;
+	else
+		return gExpanderDefaultBitmapUnexpanded;
 }

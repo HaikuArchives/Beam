@@ -35,7 +35,6 @@
 class CLVListItem;
 class CLVColumnLabelView;
 class CLVFillerView;
-#include "PrefilledBitmap.h"
 #include "BetterScrollView.h"
 
 
@@ -47,9 +46,6 @@ typedef int (*CLVCompareFuncPtr)(const CLVListItem* item1, const CLVListItem* it
 #define EXPANDER_SHIFT 14.0
 
 extern IMPEXPBMGUIBASE const float darken_tint;
-
-extern IMPEXPBMGUIBASE uint8 CLVRightArrowData[132];
-extern IMPEXPBMGUIBASE uint8 CLVDownArrowData[132];
 
 //******************************************************************************************************
 //**** ColumnListView CLASS DECLARATION
@@ -251,8 +247,6 @@ class IMPEXPBMGUIBASE ColumnListView : public BListView
 		BList fColumnDisplayList;
 		BList fSortKeyList;		//List contains CLVColumn pointers
 		BList fFullItemList;
-		PrefilledBitmap fRightArrow;
-		PrefilledBitmap fDownArrow;
 		int32 fExpanderColumn;
 		CLVCompareFuncPtr fCompare;
 		bool fWatchingForDrag;

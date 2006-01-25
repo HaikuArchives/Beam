@@ -332,6 +332,9 @@ void BmMailEditWin::CreateGUI() {
 	BmToolbarButton::CalcMaxSize( width, height, "New");
 	BmToolbarButton::CalcMaxSize( width, height, "Attach");
 
+	BBitmap* rightArrow = TheResources->IconByName("Expander_Right")->bitmap;
+	BBitmap* downArrow = TheResources->IconByName("Expander_Down")->bitmap;
+	
 	mOuterGroup = 
 		new VGroup(
 			minimax( 200, 300, 1E5, 1E5),
@@ -396,10 +399,8 @@ void BmMailEditWin::CreateGUI() {
 				mShowDetails1Button = 
 					new MPictureButton( 
 						minimax( 16,16,16,16), 
-						TheResources->CreatePictureFor( &TheResources->mRightArrow, 
-																  16, 16), 
-						TheResources->CreatePictureFor( &TheResources->mDownArrow, 
-																  16, 16), 
+						TheResources->CreatePictureFor( rightArrow, 16, 16), 
+						TheResources->CreatePictureFor( downArrow, 16, 16), 
 						new BMessage( BM_SHOWDETAILS1), this, B_TWO_STATE_BUTTON
 					),
 				new Space(minimax(4,-1,4,-1)),
@@ -423,10 +424,8 @@ void BmMailEditWin::CreateGUI() {
 				new HGroup(
 					mShowDetails2Button = 
 						new MPictureButton( minimax( 16,16,16,16), 
-							TheResources->CreatePictureFor( &TheResources->mRightArrow, 
-																	  16, 16), 
-							TheResources->CreatePictureFor( &TheResources->mDownArrow,
-																	  16, 16), 
+							TheResources->CreatePictureFor( rightArrow, 16, 16),
+							TheResources->CreatePictureFor( downArrow, 16, 16), 
 							new BMessage( BM_SHOWDETAILS2), this, B_TWO_STATE_BUTTON
 						),
 					new Space(minimax(4,-1,4,-1)),
@@ -455,10 +454,8 @@ void BmMailEditWin::CreateGUI() {
 			mSubjectGroup = new HGroup(
 				mShowDetails3Button = 
 					new MPictureButton( minimax( 16,16,16,16), 
-						TheResources->CreatePictureFor( &TheResources->mRightArrow,
-																  16, 16), 
-						TheResources->CreatePictureFor( &TheResources->mDownArrow, 
-																  16, 16), 
+						TheResources->CreatePictureFor( rightArrow, 16, 16), 
+						TheResources->CreatePictureFor( downArrow, 16, 16), 
 						new BMessage( BM_SHOWDETAILS3), this, B_TWO_STATE_BUTTON
 					),
 				new Space(minimax(4,-1,4,-1)),

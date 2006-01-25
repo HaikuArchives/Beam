@@ -14,7 +14,6 @@
 #include "BmString.h"
 
 #include "Colors.h"
-#include "PrefilledBitmap.h"
 
 class BmBitmapHandle;
 class BBitmap;
@@ -54,9 +53,6 @@ public:
 	//
 	void AddFontSubmenuTo( BMenu* menu, BHandler* target=NULL, 
 								  BFont* selectedFont=NULL);
-	//
-	PrefilledBitmap mRightArrow;
-	PrefilledBitmap mDownArrow;
 	//
 	BCursor mUrlCursor;
 

@@ -19,6 +19,8 @@
 #include <TranslatorRoster.h>
 #include <View.h>
 
+#include "CLVListItem.h"
+
 #include "BmBasics.h"
 #include "BmBitmapHandle.h"
 #include "BmLogHandler.h"
@@ -29,9 +31,6 @@
 #include "BmUtil.h"
 
 BmResources* BmResources::theInstance = NULL;
-
-extern uint8 CLVRightArrowData[132];
-extern uint8 CLVDownArrowData[132];
 
 // This is the link's mouse cursor (a replica of NetPositive's link cursor).
 // [zooey]: Thanks to William Kakes of Tall Hill Software for creating this!
@@ -76,9 +75,7 @@ BmResources* BmResources::CreateInstance() {
 		-	constructor
 \*------------------------------------------------------------------------------*/
 BmResources::BmResources()
-	:	mRightArrow( BRect(0.0,0.0,10.0,10.0), B_COLOR_8_BIT, CLVRightArrowData)
-	,	mDownArrow( BRect(0.0,0.0,10.0,10.0), B_COLOR_8_BIT, CLVDownArrowData)
-	,	mUrlCursor( url_cursor)
+	:	mUrlCursor( url_cursor)
 {
 	// Load all font-info:
 	FetchFonts();
@@ -116,6 +113,11 @@ void BmResources::InitializeWithPrefs()
 {
 	// Load all the needed icons from our resources:
 	FetchIcons();
+	// set default icons for expanders:
+	CLVListItem::SetDefaultExpanderBitmaps(
+		IconByName("Expander_Down"),
+		IconByName("Expander_Right")
+	);
 }
 
 /*------------------------------------------------------------------------------*\
