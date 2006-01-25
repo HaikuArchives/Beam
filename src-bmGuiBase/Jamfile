@@ -42,7 +42,6 @@ SharedLibrary bmGuiBase.so :
 	ListSelectionAlert.cpp
 	MultiLineTextControl.cpp
 	NewStrings.cpp
-	PrefilledBitmap.cpp
 	ScrollViewCorner.cpp
 	TextEntryAlert.cpp
 	UserResizeSplitView.cpp
