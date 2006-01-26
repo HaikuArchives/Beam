@@ -629,8 +629,7 @@ void BmMailRefView::KeyDown(const char *bytes, int32 numBytes) {
 			}
 			case B_SPACE: {
 				BmNewMailRefSelector newSelector;
-				BmMailNavigator navigator(this, mPartnerMailView,
-												  newSelector);
+				BmMailNavigator navigator(this, mPartnerMailView, newSelector);
 				int32 mods = Window()->CurrentMessage()->FindInt32("modifiers");
 				if (mods & B_SHIFT_KEY)
 					navigator.MoveBackward();

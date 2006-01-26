@@ -437,7 +437,7 @@ void BmPrefsGeneralView::MessageReceived( BMessage* msg) {
 					if (!mIconboxPanel) {
 						BmString iconPath = ThePrefs->GetString("IconPath");
 						int32 pos = iconPath.FindLast('/');
-						if (pos != B_ERROR)
+						if (pos >= 0)
 							iconPath.Truncate(pos);
 						entry_ref eref;
 						status_t err = get_ref_for_path(iconPath.String(), &eref);
