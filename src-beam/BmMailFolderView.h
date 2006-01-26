@@ -12,6 +12,7 @@
 #include <map>
 
 #include "BmListController.h"
+#include "BmMailFolder.h"
 
 /*------------------------------------------------------------------------------*\
 	types of messages sent via the observe/notify system:

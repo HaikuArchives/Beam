@@ -397,6 +397,13 @@ void BmMailFolderView::KeyDown(const char *bytes, int32 numBytes) {
 					inherited::KeyDown( bytes, numBytes);
 				break;
 			}
+			case B_SPACE: {
+				if (mPartnerMailRefView)
+					mPartnerMailRefView->KeyDown( bytes, numBytes);
+				else
+					inherited::KeyDown( bytes, numBytes);
+				return;
+			}
 			default:
 				inherited::KeyDown( bytes, numBytes);
 				break;

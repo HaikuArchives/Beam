@@ -24,6 +24,7 @@
 #include "BmMailFolder.h"
 #include "BmMailFolderList.h"
 #include "BmMailMover.h"
+#include "BmMailNavigator.h"
 #include "BmMailRef.h"
 #include "BmMailRefList.h"
 #include "BmMailRefView.h"
@@ -624,6 +625,17 @@ void BmMailRefView::KeyDown(const char *bytes, int32 numBytes) {
 			}
 			case B_DELETE: {
 				TrashSelectedMessages();
+				break;
+			}
+			case B_SPACE: {
+				BmNewMailRefSelector newSelector;
+				BmMailNavigator navigator(this, mPartnerMailView,
+												  newSelector);
+				int32 mods = Window()->CurrentMessage()->FindInt32("modifiers");
+				if (mods & B_SHIFT_KEY)
+					navigator.MoveBackward();
+				else
+					navigator.MoveForward();
 				break;
 			}
 			default:
