@@ -97,6 +97,7 @@ public:
 	// overrides of Button base:
 	void Draw( BRect updateRect);
 	void MouseDown( BPoint point);
+	void MouseMoved( BPoint point, uint32 transit, const BMessage *msg);
 
 private:
 	bool mHighlighted;
