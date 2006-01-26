@@ -530,15 +530,6 @@ void BmMailView::KeyDown(const char *bytes, int32 numBytes) {
 					inherited::KeyDown( bytes, numBytes);
 				return;
 			}
-			case B_SPACE: {
-				int32 mods = Window()->CurrentMessage()->FindInt32("modifiers");
-				if (mods & (B_LEFT_CONTROL_KEY | B_RIGHT_OPTION_KEY)
-				&& mPartnerMailRefView)
-					mPartnerMailRefView->KeyDown( bytes, numBytes);
-				else
-					inherited::KeyDown( bytes, numBytes);
-				return;
-			}
 		}
 	}
 	unsigned char c = bytes[0];
