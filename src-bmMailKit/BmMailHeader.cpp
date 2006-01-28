@@ -578,6 +578,8 @@ bool BmMailHeader::IsAddressField( BmString fieldName) {
 	-	
 \*------------------------------------------------------------------------------*/
 bool BmMailHeader::IsEncodingOkForField( BmString fieldName) {
+	if (fieldName.ICompare("Content-", 8) == 0)
+		return false;
 	BmString fname = BmString("<") << fieldName.CapitalizeEachWord() << ">";
 	return BmNoEncodingFieldNames.IFindFirst( fname) == B_ERROR;
 }
@@ -992,20 +994,26 @@ void BmMailHeader::ParseHeader( const BmString &header) {
 		fieldBody.Trim();
 
 		// insert pair into header-map:
-		bool hadConversionError;
-		AddFieldVal( 
-			fieldName, 
-			ConvertHeaderPartToUTF8( 
-				fieldBody, 
-				ThePrefs->GetString("DefaultCharset"),
-				hadConversionError
-			)
-		);
-		if (hadConversionError) {
-			BmString errStr 
-				= BmString("Autodetected charset of header-field '") 
-					<< fieldName << "', parts of text may be missing.";
-			AddParsingError( errStr);
+		if (IsEncodingOkForField(fieldName)) {
+			bool hadConversionError;
+			AddFieldVal( 
+				fieldName, 
+				ConvertHeaderPartToUTF8( 
+					fieldBody, 
+					mMail 
+						? mMail->DefaultCharset()
+						: ThePrefs->GetString("DefaultCharset"),
+					hadConversionError
+				)
+			);
+			if (hadConversionError) {
+				BmString errStr 
+					= BmString("Autodetected charset of header-field '") 
+						<< fieldName << "', parts of text may be missing.";
+				AddParsingError( errStr);
+			}
+		} else {
+			AddFieldVal(fieldName, fieldBody);
 		}
 
 		BM_LOG2( BM_LogMailParse, fieldName << ": " << fieldBody);
