@@ -128,9 +128,8 @@ void BmMailViewWin::CreateGUI() {
 	// Get maximum button size
 	float width=0, height=0;
 	BmToolbarButton::CalcMaxSize(width, height, "New");
-	BmToolbarButton::CalcMaxSize(width, height, "Reply");
-	BmToolbarButton::CalcMaxSize(width, height, "Reply All");
-	BmToolbarButton::CalcMaxSize(width, height, "Forward");
+	BmToolbarButton::CalcMaxSize(width, height, "Reply", true);
+	BmToolbarButton::CalcMaxSize(width, height, "Forward", true);
 	BmToolbarButton::CalcMaxSize(width, height, "Print");
 	BmToolbarButton::CalcMaxSize(width, height, "Trash");
 
@@ -257,7 +256,6 @@ MMenuBar* BmMailViewWin::CreateMenu() {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmMailViewWin::BeginLife() {
-	mToolbar->UpdateLayout(true);
 	BMenuBar* menuBar = KeyMenuBar();
 	if (menuBar) {
 		menuBar->FindItem( BMM_SWITCH_RAW)->SetTarget( mMailView);

@@ -327,10 +327,10 @@ status_t BmMailEditWin::UnarchiveState( BMessage* archive) {
 void BmMailEditWin::CreateGUI() {
 	// Get maximum button size
 	float width=0, height=0;
-	BmToolbarButton::CalcMaxSize( width, height, "Send");
+	BmToolbarButton::CalcMaxSize( width, height, "Send", true);
 	BmToolbarButton::CalcMaxSize( width, height, "Save");
 	BmToolbarButton::CalcMaxSize( width, height, "New");
-	BmToolbarButton::CalcMaxSize( width, height, "Attach");
+	BmToolbarButton::CalcMaxSize( width, height, "Attach"B_UTF8_ELLIPSIS);
 
 	BBitmap* rightArrow = TheResources->IconByName("Expander_Right")->bitmap;
 	BBitmap* downArrow = TheResources->IconByName("Expander_Down")->bitmap;
@@ -365,7 +365,7 @@ void BmMailEditWin::CreateGUI() {
 								),
 					mAttachButton 
 						= new BmToolbarButton( 
-									"Attach...", 
+									"Attach"B_UTF8_ELLIPSIS, 
 									width, height,
 									new BMessage(BMM_ATTACH), this, 
 									"Attach a file to this mail",
@@ -545,7 +545,6 @@ void BmMailEditWin::CreateGUI() {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmMailEditWin::BeginLife() {
-	mToolbar->UpdateLayout(true);
 }
 
 /*------------------------------------------------------------------------------*\
