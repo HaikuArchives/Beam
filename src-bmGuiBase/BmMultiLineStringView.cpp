@@ -394,7 +394,9 @@ int32 BmMultiLineStringView::_ConvertPointToIndex(const BPoint& point,
 		currWidth = StringWidth(text, len);
 		if (nLeftOffset + currWidth <= point.x)
 			break;
-		len--;
+		do {
+			len--;
+		} while (len && (text[len] & 0xc0) == 0x80);
 	}
 	if (!len)
 		currWidth = 0;
@@ -406,7 +408,9 @@ int32 BmMultiLineStringView::_ConvertPointToIndex(const BPoint& point,
 		float distToCurr = point.x - nLeftOffset - currWidth;
 		float distToNext = nLeftOffset + nextWidth - point.x;
 		if (distToNext <= distToCurr)
-			len++;
+			do {
+				len++;
+			} while (len < textLine->len && (text[len] & 0xc0) == 0x80);
 	} else if (!closestCaretPos && len == textLine->len) {
 		if (len && text[len-1] == '\n')
 			len--;
