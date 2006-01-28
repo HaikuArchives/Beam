@@ -56,11 +56,11 @@ BmPrefsLoggingView::BmPrefsLoggingView()
 			new HGroup(
 				new MBorder( M_LABELED_BORDER, 10, (char*)"Levels of Logging",
 					new VGroup(
-						mLogPopControl = new BmMenuControl( "Receiving Mail (POP3):", 
+						mLogPopControl = new BmMenuControl( "Receiving Mail:", 
 																		new BPopUpMenu(""), 
 																		1.0, 0,
 																		"Log Everything"),
-						mLogSmtpControl = new BmMenuControl( "Sending Mail (SMTP):", 
+						mLogSmtpControl = new BmMenuControl( "Sending Mail:", 
 																		 new BPopUpMenu("")),
 						new Space( minimax(0,10,0,10)),
 						mLogFilterControl = new BmMenuControl( "Filtering Mails:", 
@@ -173,7 +173,7 @@ void BmPrefsLoggingView::Initialize() {
 	TheBubbleHelper->SetHelp( 
 		mLogPopControl, 
 		"Here you can select how much shall be logged when receiving mails.\n"
-		"If you encounter problems with one of your POP-accounts,\n"
+		"If you encounter problems with one of your POP/IMAP-accounts,\n"
 		"you can increase this setting in order to get more info.\n"
 		"Please note that logging everything here means that complete\n"
 		"e-mails will be logged, so this can produce a lot of data."
