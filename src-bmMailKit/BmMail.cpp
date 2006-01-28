@@ -869,6 +869,8 @@ bool BmMail::ConstructRawText( const BmString& editedUtf8Text,
 		-	
 \*------------------------------------------------------------------------------*/
 const BmString& BmMail::DefaultCharset() const {
+	if (mSuggestedCharset.Length())
+		return mSuggestedCharset;
 	if (mBody)
 		return mBody->DefaultCharset();
 	return BmEncoding::DefaultCharset;

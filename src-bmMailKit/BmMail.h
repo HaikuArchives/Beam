@@ -212,6 +212,8 @@ public:
 	inline void Classification( const BmString& s)
 													{ mClassification = s; }
 	inline void MoveToTrash( bool b)		{ mMoveToTrash = b; }
+	inline void SuggestedCharset( const BmString& s)
+													{ mSuggestedCharset = s; }
 
 	static const int32 BM_READ_MAIL_JOB = 1;
 
@@ -268,6 +270,9 @@ private:
 	mutable BmString mDefaultStatus;
 							// default status of this mail, only relevant
 							// before mail lives on disk
+	BmString mSuggestedCharset;
+							// charset explicitly selected by user, overrides
+							// any other.
 	status_t mInitCheck;
 
 	// Hide copy-constructor and assignment:
