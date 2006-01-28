@@ -437,12 +437,8 @@ void BmMailView::MessageReceived( BMessage* msg) {
 				BMenuItem* item = NULL;
 				msg->FindPointer( "source", (void**)&item);
 				if (mCurrMail && item) {
-					BmRef< BmBodyPart> textBody( 
-						mCurrMail->Body()->EditableTextBody());
-					if (textBody) {
-						textBody->DecodeText( item->Label());
-						JobIsDone( true);
-					}
+					mCurrMail->SuggestedCharset(item->Label());
+					mCurrMail->ResyncFromDisk();
 				}
 				break;
 			}
