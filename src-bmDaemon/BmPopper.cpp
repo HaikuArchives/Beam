@@ -573,8 +573,10 @@ void BmPopper::StateCheck() {
 		} else {
 			// msg is old (according to known UID), we may have to remove it now:
 			BmString log;
-			if (mPopAccount->ShouldUIDBeDeletedFromServer(mMsgUIDs[i], log)) {
-				BM_LOG2( BM_LogRecv, log);
+			bool shouldBeRemoved 
+				= mPopAccount->ShouldUIDBeDeletedFromServer(mMsgUIDs[i], log);
+			BM_LOG2( BM_LogRecv, log);
+			if (shouldBeRemoved) {
 				cmd = BmString("DELE ") << i+1;
 				SendCommand( cmd);
 				if (!CheckForPositiveAnswer())

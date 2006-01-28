@@ -629,7 +629,10 @@ void BmImap::StateCheck()
 			} else {
 				// msg is old (according to known UID), we may have to remove it now:
 				BmString log;
-				if (mImapAccount->ShouldUIDBeDeletedFromServer(mMsgUIDs[i], log)) {
+				bool shouldBeRemoved 
+					= mImapAccount->ShouldUIDBeDeletedFromServer(mMsgUIDs[i], log);
+				BM_LOG2( BM_LogRecv, log);
+				if (shouldBeRemoved) {
 					BM_LOG2( BM_LogRecv, log);
 					if (!DeleteMailFromServer(mMsgUIDs[i]))
 						return;
