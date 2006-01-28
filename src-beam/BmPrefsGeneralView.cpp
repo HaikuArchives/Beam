@@ -94,12 +94,6 @@ BmPrefsGeneralView::BmPrefsGeneralView()
 							new BPopUpMenu("")
 						),
 						new Space( minimax(0,10,0,10)),
-						mShowToolbarBorderControl = new BmCheckControl( 
-							"Show Border around Toolbar-Buttons", 
-							new BMessage(BM_SHOW_TOOLBAR_BORDER_CHANGED), 
-							this, ThePrefs->GetBool("ShowToolbarBorder", false)
-						),
-						new Space( minimax(0,10,0,10)),
 						new HGroup(
 							mIconboxButton = new MButton( 
 								IconboxButtonLabel().String(), 
@@ -149,7 +143,6 @@ BmPrefsGeneralView::~BmPrefsGeneralView() {
 	TheBubbleHelper->SetHelp( mWorkspaceControl, NULL);
 	TheBubbleHelper->SetHelp( mListviewLikeTrackerControl, NULL);
 	TheBubbleHelper->SetHelp( mShowTooltipsControl, NULL);
-	TheBubbleHelper->SetHelp( mShowToolbarBorderControl, NULL);
 	TheBubbleHelper->SetHelp( mToolbarLabelControl, NULL);
 }
 
@@ -198,11 +191,6 @@ void BmPrefsGeneralView::Initialize() {
 		"Checking this makes Beam show a small \n"
 		"info-window (just like this one) when the \n"
 		"mouse-pointer lingers over a GUI-item."
-	);
-	TheBubbleHelper->SetHelp( 
-		mShowToolbarBorderControl, 
-		"If you check this a border is drawn around\n"
-		"each toolbar-button (like in Postmaster)."
 	);
 	TheBubbleHelper->SetHelp( 
 		mToolbarLabelControl, 
@@ -265,9 +253,6 @@ void BmPrefsGeneralView::Update() {
 	mShowTooltipsControl->SetValueSilently( 
 		ThePrefs->GetBool("ShowTooltips", true)
 	);
-	mShowToolbarBorderControl->SetValueSilently( 
-		ThePrefs->GetBool("ShowToolbarBorder", true)
-	);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -322,15 +307,6 @@ void BmPrefsGeneralView::MessageReceived( BMessage* msg) {
 			case BM_SHOW_TOOLTIPS_CHANGED: {
 				ThePrefs->SetBool("ShowTooltips", mShowTooltipsControl->Value());
 				TheBubbleHelper->EnableHelp( mShowTooltipsControl->Value());
-				NoticeChange();
-				break;
-			}
-			case BM_SHOW_TOOLBAR_BORDER_CHANGED: {
-				ThePrefs->SetBool(
-					"ShowToolbarBorder", 
-					mShowToolbarBorderControl->Value()
-				);
-				TheToolbarManager->UpdateAllToolbars();
 				NoticeChange();
 				break;
 			}

@@ -32,7 +32,6 @@ class BmPrefsGeneralView : public BmPrefsView {
 		BM_SELECT_ICONBOX		 				= 'bmSI',
 		BM_WORKSPACE_SELECTED				= 'bmWS',
 		BM_TOOLBAR_LABEL_SELECTED			= 'bmTL',
-		BM_SHOW_TOOLBAR_BORDER_CHANGED	= 'bmTB',
 		BM_LISTVIEW_LIKE_TRACKER_CHANGED	= 'bmLT'
 	};
 	
@@ -59,7 +58,6 @@ private:
 	BmString IconboxButtonLabel();
 
 	BmCheckControl* mShowTooltipsControl;
-	BmCheckControl* mShowToolbarBorderControl;
 	BmCheckControl* mListviewLikeTrackerControl;
 	BmMenuControl* mWorkspaceControl;
 	BmMenuControl* mToolbarLabelControl;
