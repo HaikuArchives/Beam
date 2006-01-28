@@ -372,10 +372,12 @@ status_t BmBackedFile::Init() {
 		mBackupEntry = mEntry;
 	if (mBackupEntry.Exists()) {
 		// file exists, we rename it to a unique backup-name:
-		static int counter = 1;
+		int counter = 0;
 		BmString backupExt("-backup");
 		mBackupName.SetTo( mFileName, B_FILE_NAME_LENGTH-10-backupExt.Length());
-		mBackupName << backupExt << "-" << counter++;
+		mBackupName << backupExt;
+		if (counter++)
+			mBackupName << "-" << counter;
 		if (mMimeType.Length()) {
 			// change mimetype of backup in order to trigger the node-monitor
 			// to invalidate it (remove the item from the listview):
