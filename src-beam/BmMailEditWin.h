@@ -52,6 +52,7 @@ class BmMenuController;
 class BmMenuControllerBase;
 class BmTextControl;
 class BmToolbarButton;
+class BmToolbar;
 class HGroup;
 class MPictureButton;
 class Space;
@@ -85,6 +86,7 @@ public:
 	~BmMailEditWin();
 
 	// overrides of BmWindow base:
+	void BeginLife();
 	void MessageReceived( BMessage*);
 	bool QuitRequested();
 	void Quit();
@@ -135,6 +137,7 @@ private:
 	BmToolbarButton* mSaveButton;
 	BmToolbarButton* mNewButton;
 	BmToolbarButton* mAttachButton;
+	BmToolbar* mToolbar;
 	
 	BmTextControl* mBccControl;
 	BmTextControl* mCcControl;

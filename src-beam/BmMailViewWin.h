@@ -18,6 +18,7 @@ class BmMailView;
 class BmMailViewContainer;
 class BmMenuController;
 class BmToolbarButton;
+class BmToolbar;
 class UserResizeSplitView;
 
 class BmMailViewWin : public BmWindow
@@ -60,6 +61,8 @@ private:
 	BmToolbarButton* mForwardButton;
 	BmToolbarButton* mPrintButton;
 	BmToolbarButton* mTrashButton;
+	
+	BmToolbar* mToolbar;
 	
 	MView* mOuterGroup;
 

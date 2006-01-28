@@ -142,7 +142,7 @@ void BmMailViewWin::CreateGUI() {
 		new VGroup(
 			minimax( 500, 400, 1E5, 1E5),
 			CreateMenu(),
-			new BmToolbar( 
+			mToolbar = new BmToolbar( 
 				new HGroup(
 					minimax( -1, -1, 1E5, -1),
 					mNewButton = new BmToolbarButton( "New", 
@@ -257,6 +257,7 @@ MMenuBar* BmMailViewWin::CreateMenu() {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmMailViewWin::BeginLife() {
+	mToolbar->UpdateLayout(true);
 	BMenuBar* menuBar = KeyMenuBar();
 	if (menuBar) {
 		menuBar->FindItem( BMM_SWITCH_RAW)->SetTarget( mMailView);

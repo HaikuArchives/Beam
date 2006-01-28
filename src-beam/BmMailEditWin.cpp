@@ -339,7 +339,7 @@ void BmMailEditWin::CreateGUI() {
 		new VGroup(
 			minimax( 200, 300, 1E5, 1E5),
 			CreateMenu(),
-			new BmToolbar(
+			mToolbar = new BmToolbar(
 				new HGroup(
 					minimax( -1, -1, 1E5, -1),
 					mSendButton 
@@ -538,6 +538,14 @@ void BmMailEditWin::CreateGUI() {
 															BM_NTFY_LISTCONTROLLER_MODIFIED);
 
 	AddChild( dynamic_cast<BView*>(mOuterGroup));
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailEditWin::BeginLife() {
+	mToolbar->UpdateLayout(true);
 }
 
 /*------------------------------------------------------------------------------*\
