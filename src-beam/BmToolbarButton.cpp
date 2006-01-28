@@ -20,7 +20,7 @@
 enum {STATE_ON, STATE_OFF, STATE_DISABLED};
 const float DIVW      = 6.0;
 const float DIVH      = 2.0;
-const float DIVLABELW = 10.0;
+const float DIVLABELW = 5.0;
 const float DIVLABELH = 5.0;
 const float DIVICONW  = 10.0;
 const float DIVICONH  = 6.0;
@@ -184,12 +184,13 @@ void BmToolbar::UpdateLayout(bool recalcSizes) {
 			MWindow* win = dynamic_cast<MWindow*>( Window());
 			if (win && recalcSizes)
 				win->RecalcSize();
-//			for( int32 c=0; c<count; ++c)
-//				group->ChildAt(c)->Invalidate();
+			for( int32 c=0; c<count; ++c)
+				group->ChildAt(c)->Invalidate();
 		}
-		// a little hackish, but we need to invalidate the whole window anyway,
-		// since icons in other views will have changed, too. So we take the
-		// simlest route and invalidate the whole window:
+		// FIXME: a little hackish, but we need to invalidate the whole window 
+		// anyway, since icons in other views will have changed, too. 
+		// Strangely enough, calling Invalidate() on the topmost child 
+		// doesn't work...
 		Window()->ChildAt(0)->Hide();
 		Window()->ChildAt(0)->Show();
 		UnlockLooper();
@@ -329,31 +330,34 @@ BPicture* BmToolbarButton::CreatePicture( int32 mode, float width,
 	BPoint posIcon( 0,0), posLabel( 0,0);
 	if (showIcons && (labelMode == "Left")) {
 		// Icon + Label/Left
-		float d = (width-DIVLATCHW-DIVW-labelWidth-iconWidth)/2;
+		float d = (width-(mNeedsLatch ? DIVLATCHW : 0)-DIVW-labelWidth-iconWidth)/2;
 		posLabel = BPoint( d,(height-labelHeight)/2);
-		posIcon = BPoint( d+DIVW+labelWidth+(mNeedsLatch?DIVLATCHW:0),
+		posIcon = BPoint( d+DIVW+labelWidth+(mNeedsLatch ? DIVLATCHW : 0),
 								(height-iconHeight)/2-1);
 	} else if (showIcons && (labelMode == "Right")) {
 		// Icon + Label/Right
-		float d = (width-DIVLATCHW-DIVW-labelWidth-iconWidth)/2;
+		float d = (width-(mNeedsLatch ? DIVLATCHW : 0)-DIVW-labelWidth-iconWidth)/2;
 		posLabel = BPoint( d+DIVW+iconWidth,(height-labelHeight)/2);
 		posIcon = BPoint( d,(height-iconHeight)/2-1);
 	} else if (showIcons && (labelMode == "Top")) {
 		// Icon + Label/top
 		float d = (height-DIVH-labelHeight-iconHeight)/2-2;
-		posLabel = BPoint( (width-labelWidth)/2, d);
+		posLabel = BPoint( (width-labelWidth-(mNeedsLatch ? DIVLATCHW : 0))/2, d);
 		posIcon = BPoint( (width-iconWidth)/2-1,d+DIVH+labelHeight);
 	} else if (showIcons && (labelMode == "Bottom")) {
 		// Icon + Label/bottom
 		float d = (height-DIVH-labelHeight-iconHeight)/2;
-		posLabel = BPoint( (width-labelWidth)/2, d+DIVH+iconHeight);
+		posLabel = BPoint( (width-labelWidth-(mNeedsLatch ? DIVLATCHW : 0))/2, 
+								 d+DIVH+iconHeight);
 		posIcon = BPoint( (width-iconWidth)/2-1,d);
 	} else if (!showIcons && labelMode != "Hide") {
 		// Label only
-		posLabel = BPoint( (width-labelWidth)/2, (height-labelHeight)/2);
+		posLabel = BPoint( (width-labelWidth-(mNeedsLatch ? DIVLATCHW : 0))/2, 
+								 (height-labelHeight)/2);
 	} else if (showIcons && labelMode == "Hide") {
 		// Icon only
-		posIcon = BPoint( (width-iconWidth)/2,(height-iconHeight)/2);
+		posIcon = BPoint( (width-iconWidth-(mNeedsLatch ? DIVLATCHW : 0))/2,
+								(height-iconHeight)/2);
 	}
 	
 	if (mNeedsLatch) {
@@ -546,25 +550,24 @@ void BmToolbarButton::CalcMaxSize( float& width, float& height,
 
 	if (showIcons && (labelMode == "Left" || labelMode == "Right")) {
 		// Icon + Label: horizontal
-		w = labelWidth+iconWidth+DIVW+2*DIVICONW + (needsLatch?DIVLATCHW:0);
+		w = labelWidth+iconWidth+DIVW+DIVICONW + (needsLatch ? DIVLATCHW : 0);
 		h = MAX( labelHeight+2*DIVLABELH, iconHeight+2*DIVICONH);
 	} else if (showIcons && (labelMode == "Top" || labelMode == "Bottom")) {
 		// Icon + Label: vertical
-		w = MAX( labelWidth+2*DIVLABELW, 
-					iconWidth+2*DIVICONW) + (needsLatch?DIVLATCHW:0);
+		w = MAX( labelWidth+2*DIVLABELW + (needsLatch?DIVLATCHW:0),
+					iconWidth+2*DIVICONW);
 		h = labelHeight+iconHeight+DIVH+2*DIVICONH;
 	} else if (!showIcons && labelMode != "Hide") {
 		// Label only
-		w = labelWidth+2*DIVLABELW + (needsLatch?DIVLATCHW:0);
+		w = labelWidth+DIVLABELW + (needsLatch?DIVLATCHW:0);
 		h = labelHeight+2*DIVLABELH;
 	} else /* if (showIcons && labelMode == "Hide") */ {
 		// Icon only
-		w = iconWidth+2*DIVICONW + (needsLatch?DIVLATCHW:0);
+		w = iconWidth+DIVICONW + (needsLatch?DIVLATCHW:0);
 		h = iconHeight+2*DIVICONH;
 	}
 
 	width  = MAX( width,  w);
-	height = MAX( height, 
-					  h - (ThePrefs->GetBool( "ToolbarBorder", true) ? 0 : 6));
+	height = MAX( height, h);
 }
 
