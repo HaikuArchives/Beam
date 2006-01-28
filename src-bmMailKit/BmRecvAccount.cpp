@@ -329,7 +329,7 @@ bool BmRecvAccount::ShouldUIDBeDeletedFromServer( const BmString& uid,
 				<< "since user has told us to leave all mails on server.";
 	} else {
 		BmUidMap::const_iterator iter = mUIDs.find(uid);
-		if (iter != mUIDs.end())
+		if (iter == mUIDs.end())
 			// hm, UID is unknown locally, we better leave it
 			return false;
 
