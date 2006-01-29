@@ -516,7 +516,7 @@ void BmPopper::StateCheck() {
 			return;								// interrupted, we give up
 		// ok, we've got the UIDL-listing, so we fetch it,
 		// fetch UIDLs one per line and store them in array:
-		int numLines = rx.exec( mAnswerText, "\\s*(\\d+)\\s+(.+?)\\s*$\\n", 
+		int numLines = rx.exec( mAnswerText, "\\s*(\\d+)\\s+(.+?)\\s*$", 
 										Regexx::newline | Regexx::global);
 		if (numLines < mMsgCount)
 			throw BM_network_error(	BmString("answer to UIDL has unknown format"
@@ -584,10 +584,8 @@ void BmPopper::StateCheck() {
 			}
 		}
 	}
-	if (mNewMsgCount == 0) {
+	if (mNewMsgCount == 0)
 		UpdateMailStatus( 0, NULL, 0);
-		return;									// no new messages found, nothing to do
-	}
 }
 
 /*------------------------------------------------------------------------------*\
@@ -597,7 +595,7 @@ void BmPopper::StateCheck() {
 void BmPopper::StateRetrieve() {
 	BmString cmd;
 	mCurrMailNr = 1;
-	for( int32 i=0; i<mMsgCount; ++i) {
+	for( int32 i=0; mNewMsgCount>0 && i<mMsgCount; ++i) {
 		if (mPopAccount->IsUIDDownloaded( mMsgUIDs[i])) {
 			// msg is old (according to known UID), we skip it:
 			continue;

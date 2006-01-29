@@ -634,7 +634,6 @@ void BmImap::StateCheck()
 					= mImapAccount->ShouldUIDBeDeletedFromServer(mMsgUIDs[i], log);
 				BM_LOG2( BM_LogRecv, log);
 				if (shouldBeRemoved) {
-					BM_LOG2( BM_LogRecv, log);
 					if (!DeleteMailFromServer(mMsgUIDs[i]))
 						return;
 				}
@@ -646,10 +645,8 @@ void BmImap::StateCheck()
 	BmString removedUids = mImapAccount->AdjustToCurrentServerUids( mMsgUIDs);
 	BM_LOG( BM_LogRecv, removedUids);
 
-	if (mNewMsgCount == 0) {
+	if (mNewMsgCount == 0)
 		UpdateMailStatus( 0, NULL, 0);
-		return;									// no new messages found, nothing to do
-	}
 }
 
 /*------------------------------------------------------------------------------*\
@@ -660,7 +657,7 @@ void BmImap::StateRetrieve()
 {
 	BmString cmd;
 	mCurrMailNr = 1;
-	for( int32 i=0; i<mMsgCount; ++i) {
+	for( int32 i=0; mNewMsgCount>0 && i<mMsgCount; ++i) {
 		if (mImapAccount->IsUIDDownloaded( mMsgUIDs[i])) {
 			// msg is old (according to known UID), we skip it:
 			continue;
