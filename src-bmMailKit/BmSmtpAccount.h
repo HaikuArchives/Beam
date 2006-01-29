@@ -45,6 +45,10 @@ public:
 	void SendMail( const entry_ref& eref);
 	void SendPendingMails();
 
+	const char* DefaultPort(bool encrypted) const {
+		return encrypted ? "465" : "25";
+	}
+
 	// stuff needed for Archival:
 	status_t Archive( BMessage* archive, bool deep = true) const;
 	int16 ArchiveVersion() const			{ return nArchiveVersion; }
