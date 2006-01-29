@@ -374,7 +374,7 @@ BmString BmRecvAccount
 		curr = iter++;
 		bool found = false;
 		for( uint32 s=0; s<serverUids.size(); ++s) {
-			if (curr->first.Compare( serverUids[s])) {
+			if (curr->first.Compare( serverUids[s]) == 0) {
 				found = true;
 				break;
 			}
