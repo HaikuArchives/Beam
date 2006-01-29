@@ -529,6 +529,48 @@ void BmPrefsSendMailView::UndoChanges() {
 }
 
 /*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmPrefsSendMailView::EncryptionSelected() {
+	if (!mCurrAcc)
+		return;
+	BMenuItem* item = mEncryptionControl->Menu()->FindMarked();
+	BmString encryptionType;
+	if (item && BM_NoItemLabel != item->Label()) {
+		encryptionType = item->Label();
+		mCurrAcc->EncryptionType( encryptionType);
+	} else {
+		mCurrAcc->EncryptionType( "");
+	}
+	BmString currPort = mPortControl->Text();
+	if (encryptionType == BmSmtpAccount::ENCR_TLS 
+	|| encryptionType == BmSmtpAccount::ENCR_SSL) {
+		if (currPort == mCurrAcc->DefaultPort(false))
+			// auto-switch to encrypted default-port:
+			mPortControl->SetText(mCurrAcc->DefaultPort(true));
+	} else {
+		if (currPort == mCurrAcc->DefaultPort(true))
+			// auto-switch to unencrypted default-port:
+			mPortControl->SetText(mCurrAcc->DefaultPort(false));
+	}
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmPrefsSendMailView::AuthTypeSelected() {
+	if (!mCurrAcc)
+		return;
+	BMenuItem* item = mAuthControl->Menu()->FindMarked();
+	if (item)
+		mCurrAcc->AuthMethod( item->Label());
+	else
+		mCurrAcc->AuthMethod( "");
+}
+
+/*------------------------------------------------------------------------------*\
 	MessageReceived( msg)
 		-	
 \*------------------------------------------------------------------------------*/
@@ -583,24 +625,13 @@ void BmPrefsSendMailView::MessageReceived( BMessage* msg) {
 				break;
 			}
 			case BM_ENCRYPTION_SELECTED: {
-				BMenuItem* item = mEncryptionControl->Menu()->FindMarked();
-				BmString encryptionType;
-				if (item && BM_NoItemLabel != item->Label()) {
-					encryptionType = item->Label();
-					mCurrAcc->EncryptionType( encryptionType);
-				} else {
-					mCurrAcc->EncryptionType( "");
-				}
-				if (encryptionType == BmSmtpAccount::ENCR_TLS 
-				|| encryptionType == BmSmtpAccount::ENCR_SSL) {
-					if (atoi(mPortControl->Text()) == 25)
-						// auto-switch to SMTPS-port:
-						mPortControl->SetText("465");
-				} else {
-					if (atoi(mPortControl->Text()) == 465)
-						// auto-switch to SMTP-port:
-						mPortControl->SetText("25");
-				}
+				EncryptionSelected();
+				NoticeChange();
+				UpdateState();
+				break;
+			}
+			case BM_AUTH_SELECTED: {
+				AuthTypeSelected();
 				NoticeChange();
 				UpdateState();
 				break;
@@ -616,22 +647,14 @@ void BmPrefsSendMailView::MessageReceived( BMessage* msg) {
 						mAuthControl->MarkItem( suggestedAuthType.String());
 					else
 						mAuthControl->MarkItem( BM_NoItemLabel.String());
+					AuthTypeSelected();
 					if (smtp->SupportsTLS())
 						mEncryptionControl->MarkItem( BmSmtpAccount::ENCR_STARTTLS);
 					else
 						mEncryptionControl->MarkItem( BM_NoItemLabel.String());
+					EncryptionSelected();
 					NoticeChange();
 				}
-				// no break here, we want to proceed with updating the auth-menu...
-			}
-			case BM_AUTH_SELECTED: {
-				BMenuItem* item = mAuthControl->Menu()->FindMarked();
-				if (item && BM_NoItemLabel != item->Label())
-					mCurrAcc->AuthMethod( item->Label());
-				else
-					mCurrAcc->AuthMethod( "");
-				NoticeChange();
-				UpdateState();
 				break;
 			}
 			case BM_POP_SELECTED: {

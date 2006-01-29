@@ -875,14 +875,15 @@ void BmPrefsRecvMailView::MessageReceived( BMessage* msg) {
 								encryptionType = BmImapAccount::ENCR_STARTTLS;
 						}
 					}
-					if (suggestedAuthType.Length()) {
+					if (suggestedAuthType.Length())
 						mAuthControl->MarkItem( suggestedAuthType.String());
-						AuthTypeSelected();
-					}
-					if (encryptionType.Length()) {
+					else
+						mAuthControl->MarkItem( BM_NoItemLabel.String());
+					AuthTypeSelected();
+					if (encryptionType.Length())
 						mEncryptionControl->MarkItem( encryptionType.String());
-						EncryptionSelected();
-					}
+					else
+						mEncryptionControl->MarkItem( BM_NoItemLabel.String());
 					NoticeChange();
 				}
 				break;

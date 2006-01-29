@@ -120,6 +120,9 @@ public:
 	// setters:
 
 private:
+	void AuthTypeSelected();
+	void EncryptionSelected();
+
 	BmListViewController* mAccListView;
 	BmTextControl* mAccountControl;
 	BmTextControl* mDomainControl;
