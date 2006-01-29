@@ -14,7 +14,6 @@
 
 #include <memory.h>
 #include <memory>
-#include <stdio.h>
 
 #ifdef BEAM_FOR_BONE
 # include <netinet/in.h>
@@ -494,9 +493,11 @@ void BmPopper::StateCheck() {
 	SendCommand( cmd);
 	if (!CheckForPositiveAnswer())
 		return;
-	if (sscanf( StatusText().String()+4, "%ld", &mMsgCount) != 1 
-	|| mMsgCount < 0)
+	Regexx rx;
+	if (!rx.exec( StatusText(), "^\\+OK\\s+(\\d+)", Regexx::nocase))
 		throw BM_network_error( "answer to STAT has unknown format");
+	BmString numStr = rx.match[0].atom[0];
+	int32 mMsgCount = atoi(numStr.String());
 	if (mMsgCount == 0) {
 		UpdateMailStatus( 0, NULL, 0);
 		// we remove all local UIDs, since none are listed on the server:
@@ -515,7 +516,6 @@ void BmPopper::StateCheck() {
 			return;								// interrupted, we give up
 		// ok, we've got the UIDL-listing, so we fetch it,
 		// fetch UIDLs one per line and store them in array:
-		Regexx rx;
 		int numLines = rx.exec( mAnswerText, "\\s*(\\d+)\\s+(.+?)\\s*$\\n", 
 										Regexx::newline | Regexx::global);
 		if (numLines < mMsgCount)
@@ -642,8 +642,11 @@ void BmPopper::StateRetrieve() {
 		BM_LOG2( BM_LogRecv, "...done");
 		mPopAccount->MarkUIDAsDownloaded( mMsgUIDs[i]);
 		//	delete the retrieved message if required to do so immediately:
-		if (mPopAccount->DeleteMailFromServer() 
-		&& mPopAccount->DeleteMailDelay() <= 0) {
+		BmString log;
+		bool shouldBeDeleted
+			= mPopAccount->ShouldUIDBeDeletedFromServer(mMsgUIDs[i], log);
+		BM_LOG2( BM_LogRecv, log);
+		if (shouldBeDeleted) {
 			cmd = BmString("DELE ") << i+1;
 			SendCommand( cmd);
 			if (!CheckForPositiveAnswer())
