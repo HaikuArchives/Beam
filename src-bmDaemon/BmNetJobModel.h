@@ -34,8 +34,6 @@ public:
 	void Reset( BmMemIBuf* input=NULL);
 
 	// getters:
-	inline const BmString& StatusText() const
-													{ return mStatusText; }
 	inline const BmString& BottomStatusText() const
 													{ return mBottomStatusText; }
 
@@ -44,8 +42,6 @@ public:
 	void SetInfoMsg(BMessage* infoMsg)	{ mInfoMsg = infoMsg; }
 
 protected:
-	BmString mStatusText;
-		// status server sent before any data
 	BmString mBottomStatusText;
 		// status server sent after any data
 	bool mHaveStatus;
