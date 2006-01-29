@@ -137,6 +137,8 @@ private:
 							// list of auth-types the server indicates to support
 	bool mServerSupportsTLS;
 							// whether or not the server knows about STLS
+	uint32 mExpungeCount;
+							// number of mails that need to be expunged
 	int32 mState;		
 							// current IMAP-state (refer enum below)
 	enum States {

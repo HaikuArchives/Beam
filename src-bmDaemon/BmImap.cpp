@@ -223,6 +223,7 @@ BmImap::BmImap( const BmString& name, BmImapAccount* account)
 	,	mNewMsgCount( 0)
 	,	mNewMsgTotalSize( 1)
 	,	mServerSupportsTLS(false)
+	,	mExpungeCount( 0)
 	,	mState( 0)
 	,	mTaggedMode( false)
 	,	mCurrTagNr( 0)
@@ -707,8 +708,10 @@ void BmImap::StateRetrieve()
 		mImapAccount->MarkUIDAsDownloaded( mMsgUIDs[i]);
 		//	delete the retrieved message if required to do so immediately:
 		BmString log;
-		if (mImapAccount->ShouldUIDBeDeletedFromServer(mMsgUIDs[i], log)) {
-			BM_LOG2( BM_LogRecv, log);
+		bool shouldBeDeleted
+			= mImapAccount->ShouldUIDBeDeletedFromServer(mMsgUIDs[i], log);
+		BM_LOG2( BM_LogRecv, log);
+		if (shouldBeDeleted) {
 			if (!DeleteMailFromServer(mMsgUIDs[i]))
 				goto CLEAN_UP;
 		}
@@ -747,6 +750,7 @@ bool BmImap::DeleteMailFromServer(const BmString& uid)
 	BmString cmd;
 	cmd = BmString("UID STORE ") << serverUID << " flags.silent (\\deleted)";
 	SendCommand( cmd);
+	mExpungeCount++;
 	return CheckForPositiveAnswer();
 }
 
@@ -756,6 +760,12 @@ bool BmImap::DeleteMailFromServer(const BmString& uid)
 \*------------------------------------------------------------------------------*/
 void BmImap::StateDisconnect()
 {
+	if (mExpungeCount) {
+		BmString cmd("EXPUNGE");
+		SendCommand( cmd);
+		if (!CheckForPositiveAnswer())
+			return;
+	}
 	Quit( true);
 }
 
