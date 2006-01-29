@@ -497,7 +497,7 @@ void BmPopper::StateCheck() {
 	if (!rx.exec( StatusText(), "^\\+OK\\s+(\\d+)", Regexx::nocase))
 		throw BM_network_error( "answer to STAT has unknown format");
 	BmString numStr = rx.match[0].atom[0];
-	int32 mMsgCount = atoi(numStr.String());
+	mMsgCount = atoi(numStr.String());
 	if (mMsgCount == 0) {
 		UpdateMailStatus( 0, NULL, 0);
 		// we remove all local UIDs, since none are listed on the server:
