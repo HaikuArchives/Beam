@@ -874,16 +874,16 @@ void BmPrefsRecvMailView::MessageReceived( BMessage* msg) {
 								// if server supports STARTTLS, we use it:
 								encryptionType = BmImapAccount::ENCR_STARTTLS;
 						}
-						if (suggestedAuthType.Length()) {
-							mAuthControl->MarkItem( suggestedAuthType.String());
-							AuthTypeSelected();
-						}
-						if (encryptionType.Length()) {
-							mEncryptionControl->MarkItem( encryptionType.String());
-							EncryptionSelected();
-						}
-						NoticeChange();
 					}
+					if (suggestedAuthType.Length()) {
+						mAuthControl->MarkItem( suggestedAuthType.String());
+						AuthTypeSelected();
+					}
+					if (encryptionType.Length()) {
+						mEncryptionControl->MarkItem( encryptionType.String());
+						EncryptionSelected();
+					}
+					NoticeChange();
 				}
 				break;
 			}
