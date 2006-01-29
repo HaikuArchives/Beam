@@ -1,6 +1,243 @@
 change-history of Beam:
 		$Id$
 
+< 2006-01-29: commit, moved tag 'current-devel' >
+
+BmImap:
+	-	added expung command to actually remove mails we marked as
+		deleted.
+	-	fixed logging when deleting mails immediately after they
+		have been fetched.
+
+BmPopper:
+	-	fixed logging when deleting mails.
+	-	small cleanup, replaced sscanf with regex and atol.
+
+BmPrefsRecvMailView:
+	-	fixed auto-detection for POP-accounts
+
+Changes.txt:
+	-	updated
+
+< 2006-01-28: commit, moved tag 'current-devel' >
+
+BmMailEditWin, BmMailViewWin:
+	-	corrected max-width calculations by supplying the correct
+		arguments (tsk!).
+	-	removed now superfluous updating of toolbar when window
+		begins life.
+
+< 2006-01-28: commit >
+
+BmImap, BmPopper:
+	-	now log result of ShouldUIDBeRemovedFromServer() even if
+		there's nothing to do.
+
+BmMail:
+	-	added support for letting the user suggest a charset.
+	
+BmMailEditWin, BmMailViewWin:
+	-	the layout of the toolbar is now updated when the window
+		begins its life.
+
+BmMailHeader:
+	-	IsEncodingOkForField() now excludes all fields beginning
+		with 'Content-'.
+	-	ParseHeader() now uses the default charset of this header's
+		mail (if any).
+
+BmMailView:
+	-	when the user requests another charset, we now pass it on
+		to the mail and resync it from disk, causing a complete
+		update, which in result causes the headers to be updated,
+		too.
+
+BmMultiLineStringView:
+	-	fixed problem when selecting UTF-8 multibyte characters.
+
+BmPrefsGeneralView:
+	-	removed support for toolbar border, since we now use
+		mouse-over highlighting.
+
+BmPrefsLoggingView:
+	-	cosmetics
+
+BmRecvAccount:
+	-	fixed wrong predicate.
+
+BmStorageUtil:
+	-	fixed strange counting of backups.
+
+BmToolbarButton:
+	-	improved width computation and drawing, the buttons now
+		use less space horizontally.
+
+< 2006-01-26: commit, moved tag 'current-devel' >
+
+BmIcons:
+	-	darkened Toolbar_Background somewhat
+
+BmMailRefView:
+	-	cosmetics
+
+BmMailView:
+	-	dropped support for navigation-by-space as it wasn't working
+		as intended and didn't make much sense from the mail-view
+		anyway.
+
+BmPrefsGeneralView:
+	-	cosmetics
+
+BmToolbarButton:
+	-	inserted a hack into BmToolbar::UpdateLayout() that causes
+		the whole window to be updated, since there are icons in
+		other places, which need to be updated, too.
+	-	improved drawing of toolbar button:
+		+ uses mouse-over highlighting
+		+ no longer creates a faked shadow
+		
+< 2006-01-26: commit >
+
+BmMailNavigator, src-beam/Jamfile:
+	-	added new file that implements navigation-by-space
+
+many files:
+	-	added support for navigating to next unread mail by
+		pressing space.
+
+< 2006-01-25: commit, moved tag 'current-devel' >
+
+PrefilledBitmap:
+	-	removed, as it is no longer needed.
+
+many files:
+	-	changed style of highlighting folders with new mail: instead
+		of requiring four different folder icons, we now only highlight
+		if a folder is not expanded but contains special mails in
+		one of its subfolders. The highlighting itself is now done
+		via two different versions of the unexpanded latch icon.
+	-	the latch icon is now taken from the resources, too.
+
+< 2006-01-23: commit, moved tag 'current-devel' >
+
+BmDataModel:
+	-	in RestoreAndExecuteActionsFrom() we now flush any pending
+		actions before we read them all. This fixes the showing of
+		already trashed mails in a folder that is under heavy fire
+		of the node monitor.
+
+BmMailRef:
+	-	fixed incorrect setting of mName in case a file was no mail.
+
+BmMailRefList:
+	-	cosmetical changes
+
+< 2006-01-23: commit, moved tag 'current-devel' >
+
+BeamApp:
+	-	fixed leaking of messages we detach from looper.
+
+BmDataModel:
+	-	added convenience method StoreIfNeeded().
+	-	after stored actions have been integrated, we indicate that
+		the list should be stored. This way, stored actions won't
+		queue up until the user stores the list manually.
+
+BmDeskbarView:
+	-	now monitors the nodes of all new messages in order to track
+		whether they are moved inside or outside of our mailbox.
+
+BmIdentity:
+	-	changing the current identity now triggers a store.
+
+BmImap:
+	-	finished implementation of a POP-like fetcher via IMAP. I have
+		tested this with (at least) 4 different servers and it seems
+		to work ok.
+
+BmJobStatusWin:
+	-	finished support for IMAP-jobs.
+
+BmMail:
+	-	cosmetics
+
+BmNetJobModel:
+	-	refactored logging of incoming traffic into a separate
+		class, BmTrafficLogger, which logs directly from the socket.
+		I expect to need this in order to be able to debug any 
+		problems with IMAP, as we weren't always logging what we
+		could have logged before.
+	-	fixed implementation of SASL-mechanisms to work with IMAP, too.
+	-	some little changes for IMAP.
+
+BmPrefs:
+	-	added GetNumericLogLevelFor().
+	-	renamed "Loglevel_Pop" to "Loglevel_Recv".
+
+BmPrefsRecvMailView:
+	-	auth-type and encryption weren't properly set during 
+		check-and-suggest.
+
+BmPopper, BmSmtp:
+	-	adjusted to changed interface of netjob-model.
+
+BmRecvAccount:
+	-	improved handling of UID-changes via stored actions (now 
+		supports removal, too).
+	-	the decision whether or not a mail should be removed from server
+		is now made here instead of in the transfer-protocol implementor.
+
+< 2006-01-18: commit >
+
+BeamApp, BmJobStatusWin:
+	-	added support for IMAP-jobs.
+
+BmImapAccount, src-bmMailKit/Jamfile:
+	-	added support for IMAP-accounts.
+
+BmImap, src-bmDaemon/Jamfile:
+	-	added first steps at (POP3-like) imap implementation, work
+		in progress...
+
+BmMemIO:
+	-	added operator BString() to BmRingBuf.
+
+BmNetJobModel, BmPopper, BmSmtp:
+	-	refactored the method we use to pass info to
+		status filter such that it is more adequate for
+		protocol specific information (we use a BMessage
+		now).
+
+BmPopAccount:
+	-	can now return default ports for encrypted & plain sessions.
+
+BmPrefsRecvMailView:
+	-	added support for IMAP-accounts.
+
+BmRecvAccount:
+	-	added missing archival of account type.
+	-	added support for IMAP-accounts.
+
+< 2006-01-15: commit >
+
+BmRecvAccount:
+	-	created this as common base for BmPopAccount and
+		BmImapAccount (which is going to be added soon).
+
+many files:
+	-	refactored handling of pop accounts into something
+		a little more abstract (receiving accounts), which
+		allows for the addition of BmImapAccount.
+
+< 2006-01-15: commit >
+
+BmMailRefView:
+	-	when trashing messages, we immediately remove them
+		from the listview in order to improve the user
+		experience (the message communication between Beam
+		and Tracker is rather slow, so the trashed messages
+		are "dragged behind" considerably otherwise).
+
 < 2006-01-14: commit, moved tag 'current-devel' >
 
 many files:
