@@ -8,9 +8,10 @@
  */
 
 #include <Message.h>
-#include <NetEndpoint.h>
 
 #include "BmOpenSslNetEndpoint.h"
+
+#include <NetEndpoint.h>
 
 #include <openssl/ssl.h>
 #include <openssl/err.h>

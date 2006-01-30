@@ -8,6 +8,9 @@
 #ifndef _BmNetEndpoint_h
 #define _BmNetEndpoint_h
 
+#ifdef BEAM_FOR_BONE
+# include <netinet/in.h>
+#endif
 #include <NetAddress.h>
 
 #include "BmDaemon.h"
