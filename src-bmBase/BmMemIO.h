@@ -24,6 +24,7 @@ public:
 	virtual ~BmMemIBuf()						{}
 	virtual uint32 Read( char* data, uint32 reqLen) = 0;
 	virtual bool IsAtEnd() = 0;
+	virtual void Stop()						{}
 };
 
 /*------------------------------------------------------------------------------*\
@@ -44,6 +45,7 @@ public:
 	// native methods:
 	virtual void Reset( BmMemIBuf* input=NULL);
 	void AddStatusText( const BmString& text);
+	virtual void Stop();
 
 	// overrides of BmMemIBuf:
 	uint32 Read( char* data, uint32 reqLen);
