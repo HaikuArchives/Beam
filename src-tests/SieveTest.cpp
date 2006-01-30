@@ -116,40 +116,36 @@ static int32
 Result()
 {
 	int32 res = RES_KEEP;
-	bool stopProcessing = msgContext->data.FindBool("StopProcessing");
+	bool stopProcessing = msgContext->GetBool("StopProcessing");
 	if (stopProcessing) {
 		res |= RES_STOP;
-		msgContext->data.RemoveName("StopProcessing");
 	}
-	BmString newIdentity = msgContext->data.FindString("Identity");
+	BmString newIdentity = msgContext->GetString("Identity");
 	if (newIdentity.Length()) {
 		targetIdentity = newIdentity;
 		res |= RES_IDENTITY;
-		msgContext->data.RemoveName("Identity");
 	}
-	BmString newStatus = msgContext->data.FindString("Status");
+	BmString newStatus = msgContext->GetString("Status");
 	if (newStatus.Length()) {
 		targetStatus = newStatus;
 		res |= RES_STATUS;
-		msgContext->data.RemoveName("Status");
 	}
-	BmString newFolderName = msgContext->data.FindString("FolderName");
+	BmString newFolderName = msgContext->GetString("FolderName");
 	if (newFolderName.Length()) {
 		targetFolder = newFolderName;
 		res |= RES_FILEINTO;
-		msgContext->data.RemoveName("FolderName");
 	}
-	BmString rejectMsg = msgContext->data.FindString("RejectMsg");
+	BmString rejectMsg = msgContext->GetString("RejectMsg");
 	if (rejectMsg.Length()) {
 		targetMsg = rejectMsg;
 		res |= RES_REJECT;
-		msgContext->data.RemoveName("RejectMsg");
 	}
-	bool moveToTrash = msgContext->data.FindBool("MoveToTrash");
+	bool moveToTrash = msgContext->GetBool("MoveToTrash");
 	if (moveToTrash) {
 		res |= RES_TRASH;
-		msgContext->data.RemoveName("MoveToTrash");
 	}
+	msgContext->ResetData();
+	msgContext->ResetChanges();
 //	cerr << res << endl;
 	return res;
 }

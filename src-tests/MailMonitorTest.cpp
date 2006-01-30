@@ -159,7 +159,7 @@ MailMonitorTest::MailRefTest(void)
 	// mailref should exist...
 	CPPUNIT_ASSERT( ref != NULL);
 	// ...but must be invalid:
-	CPPUNIT_ASSERT( ref->ItemIsValid() == false);
+	CPPUNIT_ASSERT( ref->IsValid() == false);
 
 	// changing the mimetype of a file so that it now *is* a mail
 	NextSubTest();
@@ -173,7 +173,7 @@ MailMonitorTest::MailRefTest(void)
 	// mailref should exist...
 	CPPUNIT_ASSERT( ref != NULL);
 	// ...and must be valid:
-	CPPUNIT_ASSERT( ref->ItemIsValid() == true);
+	CPPUNIT_ASSERT( ref->IsValid() == true);
 
 	// changing an attribute of a mail
 	NextSubTest();
