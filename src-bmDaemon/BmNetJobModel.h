@@ -28,7 +28,6 @@ public:
 
 	// native methods:
 	virtual bool CheckForPositiveAnswer() = 0;
-	virtual void Stop()						{ mHadError = true; }
 
 	// overrides of BmMemFilter-base:
 	void Reset( BmMemIBuf* input=NULL);
@@ -50,6 +49,7 @@ protected:
 };
 
 class BmSocket;
+class BmTrafficLogger;
 /*------------------------------------------------------------------------------*\
 	class BmNetJobModel
 		-	
@@ -138,6 +138,8 @@ protected:
 							// log-type can be BM_LogRecv or BM_LogSmtp
 	BmNetIBuf* mReader;
 							// input stream
+	BmTrafficLogger* mIncomingLogger;
+							// input stream logger
 	BmNetOBuf* mWriter;
 							// output stream
 

@@ -82,6 +82,11 @@ BmNetJobModel::BmNetJobModel( const BmString& name, uint32 logType,
 	,	mLogType( logType)
 {
 	mReader = new BmNetIBuf( this);
+	uint32 logLevel = ThePrefs->GetNumericLogLevelFor(mLogType);
+	int32 logLimits[4] = { 0, 256, 2048, 32768 };
+	mIncomingLogger 
+		= new BmTrafficLogger(mReader, this, logLimits[logLevel], "<--\n");
+
 	mWriter = new BmNetOBuf( this);
 }
 
@@ -93,6 +98,7 @@ BmNetJobModel::~BmNetJobModel()
 {
 	Disconnect();
 	delete mWriter;
+	delete mIncomingLogger;
 	delete mReader;
 	delete mStatusFilter;
 }
@@ -169,11 +175,8 @@ bool BmNetJobModel::CheckForPositiveAnswer( uint32 expectedSize,
 void BmNetJobModel::GetAnswer( uint32 expectedSize, bool dotstuffDecoding,
 										 bool update, BMessage* infoMsg) 
 {
-	uint32 logLevel = ThePrefs->GetNumericLogLevelFor(mLogType);
-	int32 logLimits[4] = { 0, 256, 2048, 32768 };
-	BmTrafficLogger logger(mReader, this, logLimits[logLevel], "<--\n");
-
-	mStatusFilter->Reset( &logger);
+	mIncomingLogger->Reset();
+	mStatusFilter->Reset( mIncomingLogger);
 	mStatusFilter->DoUpdate( update);
 	if (!infoMsg) {
 		mInfoMsg.MakeEmpty();
