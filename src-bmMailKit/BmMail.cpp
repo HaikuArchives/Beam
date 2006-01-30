@@ -154,7 +154,7 @@ BmMail::BmMail( bool outbound)
 	,	mOutbound( outbound)
 	,	mRightMargin( ThePrefs->GetInt( "MaxLineLen"))
 	,	mMoveToTrash( false)
-	,	mRatioSpam( 0)
+	,	mRatioSpam( BmMailRef::UNKNOWN_RATIO)
 {
 	BmString emptyMsg = BmString(BM_FIELD_MIME)+": 1.0\r\n";
 	emptyMsg << "Content-Type: text/plain; charset=\"" 
@@ -189,7 +189,7 @@ BmMail::BmMail( BmString &msgText, const BmString account)
 	,	mOutbound( false)
 	,	mRightMargin( ThePrefs->GetInt( "MaxLineLen"))
 	,	mMoveToTrash( false)
-	,	mRatioSpam( 0)
+	,	mRatioSpam( BmMailRef::UNKNOWN_RATIO)
 {
 	SetTo( msgText, account);
 
@@ -224,7 +224,7 @@ BmMail::BmMail( BmMailRef* ref)
 	,	mOutbound( false)
 	,	mRightMargin( ThePrefs->GetInt( "MaxLineLen"))
 	,	mMoveToTrash( false)
-	,	mRatioSpam( 0)
+	,	mRatioSpam( BmMailRef::UNKNOWN_RATIO)
 {
 	mOutbound = 
 		Status() == BM_MAIL_STATUS_DRAFT
@@ -601,9 +601,10 @@ void BmMail::StoreAttributes( BNode& mailNode, const BmString& status,
 	//
 	mailNode.WriteAttr( BM_MAIL_ATTR_CLASSIFICATION, B_STRING_TYPE, 0, 
 							  mClassification.String(), mClassification.Length()+1);
-	if (mRatioSpam != BmMailRef::UNKNOWN_RATIO)
+	float ratioSpam = RatioSpam();
+	if (ratioSpam != BmMailRef::UNKNOWN_RATIO)
 		mailNode.WriteAttr( BM_MAIL_ATTR_RATIO_SPAM, B_FLOAT_TYPE, 0, 
-								  &mRatioSpam, sizeof(mRatioSpam));
+								  &ratioSpam, sizeof(ratioSpam));
 }
 
 /*------------------------------------------------------------------------------*\
