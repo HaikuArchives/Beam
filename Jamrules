@@ -10,7 +10,7 @@ include [ FDirName $(BUILD_DIR) OverriddenJamRules ] ;
 include [ FDirName $(BUILD_DIR) MainBuildRules ] ;
 include [ FDirName $(BUILD_DIR) BuildSettings ] ;
 
-FULL_DISTRO_DIR	= $(DISTRO_DIR)-with-libs ;
+FULL_DISTRO_DIR	= [ FDirName $(TOP) generated distro-$(PLATFORM)-with-libs ] ;
 
 # Include UserBuildConfig.
 {
@@ -68,10 +68,10 @@ actions FullDistro
 	echo "making full distro $(FULL_DISTRO_DIR)" ;
 	rm -rf $(FULL_DISTRO_DIR) ;
 	cp -a $(DISTRO_DIR) $(FULL_DISTRO_DIR) ;
-	cp -a /boot/home/config/lib/libpcre.so $(FULL_DISTRO_DIR)/lib/ ;
-	cp -a /boot/home/config/lib/libpcreposix.so $(FULL_DISTRO_DIR)/lib/ ;
-	cp -a /boot/home/config/lib/libiconv.so $(FULL_DISTRO_DIR)/lib/ ;
-	cp -a /boot/home/config/lib/liblayout.so $(FULL_DISTRO_DIR)/lib/ ;
+	cp /boot/home/config/lib/libpcre.so $(FULL_DISTRO_DIR)/lib/ ;
+	cp /boot/home/config/lib/libpcreposix.so $(FULL_DISTRO_DIR)/lib/ ;
+	cp /boot/home/config/lib/libiconv.so $(FULL_DISTRO_DIR)/lib/ ;
+	cp /boot/home/config/lib/liblayout.so $(FULL_DISTRO_DIR)/lib/ ;
 	mimeset $(FULL_DISTRO_DIR) ;
 }
 
