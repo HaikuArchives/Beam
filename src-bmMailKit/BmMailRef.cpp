@@ -52,7 +52,8 @@ const int16 BmMailRef::nArchiveVersion = 5;
 // additional fieldnames for stored actions:
 const char* const BmMailRef::MSG_OPCODE = 	"bm:op";
 
-const float BmMailRef::UNKNOWN_RATIO = 100.0;
+const float BmMailRef::UNKNOWN_RATIO = 10.0;	
+	// just anything outside of [0..1]
 
 /*------------------------------------------------------------------------------*\
 	CreateInstance( )
