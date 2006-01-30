@@ -1,6 +1,53 @@
 change-history of Beam:
 		$Id$
 
+< 2006-01-30: added tag '1-1-rc1' >
+
+< 2006-01-30: commit, moved tag 'current-devel' >
+
+BmMail:
+	-	corrected initialization and storing of mRatioSpam.
+
+BmMailRef:
+	-	added comment about value of UNKNOWN_RATIO
+
+BmMemIO:
+	-	added Stop() to stop a complete chain of mem-filters.
+
+BmNetJobModel:
+	-	the incoming logger is now kept through the lifetime of
+		the job, not recreated for every answer. This fixes a
+		possible crash in ShouldContinue() if the user cancels 
+		the job.
+
+MailMonitorTest, SieveTest:
+	-	adjusted to changed interfaces.
+
+< 2006-01-29: commit, moved tag 'current-devel' >
+
+BmImap, BmPopper:
+	-	stability improvements.
+
+BmRecvAccount:
+	-	fixed (yet another) wrong predicate.
+
+< 2006-01-29: commit, moved tag 'current-devel' >
+
+BmNetJobModel:
+	-	removed superfluous mStatusText, since base already
+		provides that.
+
+BmPopper:
+	-	fixed stupid bug introduced a couple of hours ago that 
+		caused no mails to ever be fetched...
+
+BmPrefsRecvMailView, BmPrefsSendMailView:
+	-	small improvements concerning detection of authentication-
+		and encryption-type.
+
+BmSmtpAccount:
+	-	added DefaultPort()
+
 < 2006-01-29: commit, moved tag 'current-devel' >
 
 BmImap:
