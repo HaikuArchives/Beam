@@ -616,11 +616,12 @@ void BmPopper::StateRetrieve() {
 							<< mAnswerText.Length()/duration/1024.0 << "KB/s");
 		}
 		if (mAnswerText.Length() != mNewMsgSizes[mCurrMailNr-1]) {
-			// oops, we better complain:
-			throw BM_network_error( 
-				BmString("Received mail has ") << mAnswerText.Length()
-					<< " bytes but it was announced to have " 
-					<< mNewMsgSizes[mCurrMailNr-1] << " bytes!"
+			// as this actually happens (what the heck?) we simply
+			// log it if in verbose mode:
+			BM_LOG2( BM_LogRecv,
+						BmString("Received mail has ") << mAnswerText.Length()
+							<< " bytes but it was announced to have " 
+							<< mNewMsgSizes[mCurrMailNr-1] << " bytes."
 			);
 		}
 		// now create a mail from the received data...
