@@ -162,6 +162,8 @@ public:
 	BmTrafficLogger( BmMemIBuf* input, BmNetJobModel* job, int32 logLimit,
 						  const char* prefix, uint32 blockSize=nBlockSize);
 
+	void Reset( BmMemIBuf* input=NULL);
+
 protected:
 	// overrides of BmMailFilter base:
 	void Filter( const char* srcBuf, uint32& srcLen, 

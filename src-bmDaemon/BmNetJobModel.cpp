@@ -428,6 +428,16 @@ BmTrafficLogger::BmTrafficLogger( BmMemIBuf* input, BmNetJobModel* job,
 	()
 		-	
 \*------------------------------------------------------------------------------*/
+void BmTrafficLogger::Reset( BmMemIBuf* input)
+{
+	inherited::Reset( input);
+	mLoggedLength = 0;
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
 void BmTrafficLogger::Filter( const char* srcBuf, uint32& srcLen, 
 										char* destBuf, uint32& destLen)
 {
