@@ -647,24 +647,33 @@ bool BmMail::SetDestFolderName( const BmString& destFolderName) {
 BmRef<BmMailFolder> BmMail::DestFolder() const {
 	BmRef<BmMailFolder> folder;
 	if (mDestFolderName.Length()) {
-		folder = TheMailFolderList->FindMailFolderBySubPath(mDestFolderName);
-		if (!folder) {
-			// folder does not exists, we check if its a system folder...
-			if (BmMailFolder::IsSystemFolderSubPath(mDestFolderName)) {
-				// yep, its a system folder, so we silently (re-)create it:
-				BmString fullPath
-					= ThePrefs->GetString("MailboxPath") + "/" + mDestFolderName;
-				create_directory( fullPath.String(), 0755);
-				// now wait until folder shows up (via node-monitor):
-				for(int i=0; !folder && i<100; ++i) {
-					snooze(100*1000);
-					folder 
-						= TheMailFolderList->FindMailFolderBySubPath(mDestFolderName);
-				}
-			} 
+		while (!folder) {
+			folder = TheMailFolderList->FindMailFolderBySubPath(mDestFolderName);
+			if (!folder) {
+				// folder does not exists, we check if its a system folder...
+				if (BmMailFolder::IsSystemFolderSubPath(mDestFolderName)) {
+					// yep, its a system folder, so we silently (re-)create it:
+					BmString fullPath
+						= ThePrefs->GetString("MailboxPath") + "/" + mDestFolderName;
+					create_directory( fullPath.String(), 0755);
+					// now wait until folder shows up (via node-monitor):
+					for(int i=0; !folder && i<100; ++i) {
+						snooze(100*1000);
+						folder 
+							= TheMailFolderList->FindMailFolderBySubPath(mDestFolderName);
+					}
+				} 
+			}
+			if (!folder) {
+				// we may have to wait for the folder to appear:
+				if (TheMailFolderList->IsJobRunning())
+					snooze(200*1000);
+				else
+					break;
+			}
 		}
 	}
-	if (!folder) {
+	while (!folder) {
 		// no destination folder has been set up, or it wasn't found, we
 		// fall back to default folder:
 		if (mMailRef && mMailRef->InitCheck() == B_OK) {
@@ -684,6 +693,13 @@ BmRef<BmMailFolder> BmMail::DestFolder() const {
 					? BmMailFolder::OUT_FOLDER_NAME 
 					: BmMailFolder::IN_FOLDER_NAME;
 			folder = TheMailFolderList->FindMailFolderBySubPath(folderName);
+		}
+		if (!folder) {
+			// we may have to wait for the folder to appear:
+			if (TheMailFolderList->IsJobRunning())
+				snooze(200*1000);
+			else
+				break;
 		}
 	}
 	return folder;
