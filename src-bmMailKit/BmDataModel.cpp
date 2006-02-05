@@ -915,7 +915,8 @@ BmRef<BmListModelItem> BmListModel::RemoveItemByKey( const BmString& key) {
 			ModelNameNC() << ":RemoveItemFromList(): Unable to get lock"
 		);
 	BmRef<BmListModelItem> item( FindItemByKey( key));
-	RemoveItemFromList( item.Get());
+	if (item)
+		RemoveItemFromList( item.Get());
 	return item;
 }
 
