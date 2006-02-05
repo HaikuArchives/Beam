@@ -455,7 +455,8 @@ void BmMailFolderList::QueryForSpecialMails() {
 \*------------------------------------------------------------------------------*/
 void BmMailFolderList::RemoveController( BmController* controller) {
 	inherited::RemoveController( controller);
-	Store();
+	if (!IsJobRunning())
+		Store();
 	if (mMailboxPathHasChanged) {
 		// the user has selected a new mailbox, we remove all cache-files:
 		BEntry folderCache( SettingsFileName().String());
