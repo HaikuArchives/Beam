@@ -52,6 +52,7 @@ class BmMailHeaderView::BmMailHeaderFieldView : public BView
 		virtual ~BmAddrMenuView();
 		virtual void Draw(BRect updateRect);
 		virtual void MouseDown( BPoint point);
+		virtual void MessageReceived( BMessage* msg);
 		virtual void ShowMenu( BPoint point);
 	private:
 		const BmAddressList* mAddrList;
@@ -152,6 +153,38 @@ void BmMailHeaderView::BmMailHeaderFieldView::BmAddrMenuView
 }
 
 /*------------------------------------------------------------------------------*\
+	MessageReceived( msg)
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailHeaderView::BmMailHeaderFieldView::BmAddrMenuView
+::MessageReceived( BMessage* msg) {
+	try {
+		switch( msg->what) {
+			case B_COPY: {
+				BmString addrStr = mAddrList->AddrString();
+				BMessage* clipMsg;
+				if (be_clipboard->Lock()) {
+					be_clipboard->Clear();
+					if ((clipMsg = be_clipboard->Data())!=NULL) {
+						clipMsg->AddData( "text/plain", B_MIME_TYPE, 
+												addrStr.String(), addrStr.Length());
+						be_clipboard->Commit();
+					}
+					be_clipboard->Unlock();
+				}
+				break;
+			}
+			default:
+				inherited::MessageReceived( msg);
+		}
+	}
+	catch( BM_error &err) {
+		// a problem occurred, we tell the user:
+		BM_SHOWERR( BmString("MailHeaderFieldView:\n\t") << err.what());
+	}
+}
+
+/*------------------------------------------------------------------------------*\
 	( )
 		-	
 \*------------------------------------------------------------------------------*/
@@ -210,7 +243,7 @@ void BmMailHeaderView::BmMailHeaderFieldView::BmAddrMenuView
 	}
 	if (count > 1) {
 		createPersonMenu->AddSeparatorItem();
-		BMenuItem* item = new BMenuItem( "<All Addresses>", allMsg);
+		item = new BMenuItem( "<All Addresses>", allMsg);
 		item->SetTarget( be_app);
 		createPersonMenu->AddItem( item);
 		BMessage* allCreateAndEditMsg = new BMessage(*allMsg);
@@ -226,6 +259,9 @@ void BmMailHeaderView::BmMailHeaderFieldView::BmAddrMenuView
 		menu->AddItem(createPersonMenu);
 	if (editPersonMenu)
 		menu->AddItem(editPersonMenu);
+	item = new BMenuItem( "Copy to Clipboard", new BMessage(B_COPY));
+	item->SetTarget(this);
+	menu->AddItem(item);
 
    ConvertToScreen(&point);
 	BRect openRect;
