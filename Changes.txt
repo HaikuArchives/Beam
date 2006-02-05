@@ -1,6 +1,37 @@
 change-history of Beam:
 		$Id$
 
+< 2006-02-05: commit, moved tag 'current-devel'>
+
+BmDataModel:
+	-	RemoveItemByKey() now only calls RemoveItemFromList() if
+		the item could be found.
+
+BmMail:
+	-	DestFolder() now waits for a requested folder to appear or
+		until the folder-list has been read completely. This fixes
+		crashes experienced by Rainer when he checks mail directly
+		upon starting Beam.
+
+BmMailFolderList:
+	-	we only store the list if it actually has been read completely,
+		otherwise we would leave out folders during next start.
+
+BmMailHeaderView:
+	-	added support for copying addr-fields to clipboard.
+
+BmNetJobModel:
+	-	added missing Reset()-method to logger, such that the set 
+		limit is restarted for every request.
+
+< 2006-01-30: commit, moved tag 'current-devel'>
+
+BmImap, BmPopper:
+	-	oops, there obviously *are* servers that announce a certain
+		message size and then send a message of differing length.
+		Well, I should have known better than to handle this as an
+		error. Now we simply log this if in verbose mode.
+
 < 2006-01-30: added tag 'rel-1-1-rc1' >
 
 < 2006-01-30: commit, moved tag 'current-devel' >
