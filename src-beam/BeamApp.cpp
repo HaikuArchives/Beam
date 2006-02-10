@@ -963,6 +963,20 @@ void BeamApplication::RefsReceived( BMessage* msg) {
 			continue;
 		BmRef<BmMailRef> ref = BmMailRef::CreateInstance( eref);
 		if (ref && ref->IsValid()) {
+			if (ref->Status().Length() == 0) {
+				// mail has no status, meaning that it never has been
+				// stored properly (the attributes haven't been written).
+				// We read the mail and (re-)store it with the attributes:
+				BmRef<BmMail> mail = BmMail::CreateInstance(ref.Get());
+				mail->StartJobInThisThread(BmMail::BM_READ_MAIL_JOB);
+				if (!mail->IsJobCompleted()) {
+					BM_LOGERR( BmString("Unable to load mail ") << eref.name);
+					continue;
+				}
+				mail->Store();
+				ref = mail->MailRef();
+					// update mail-ref with the attributes just created
+			}
 			if (ref->Status() == BM_MAIL_STATUS_DRAFT
 			|| ref->Status() == BM_MAIL_STATUS_PENDING) {
 				BmMailEditWin* editWin = BmMailEditWin::CreateInstance( ref.Get());
