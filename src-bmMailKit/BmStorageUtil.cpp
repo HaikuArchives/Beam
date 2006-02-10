@@ -45,24 +45,23 @@ status_t WatchNode( const node_ref *node, uint32 flags, BHandler *handler) {
 
 	status_t result = watch_node( node, flags, BMessenger(handler));
 
-	if (result == B_OK || result != ENOMEM)
-		// need to make sure this uses the same error value as
-		// the node monitor code
-		return result;
-
-	gNodeMonitorCount += kNodeMonitorBumpValue;
-	BM_LOG2( BM_LogMailTracking, 
-				BmString("Failed to add monitor, trying to bump limit to ")
-					<< gNodeMonitorCount << " nodes.");
-	result = _kset_mon_limit_(gNodeMonitorCount);
-	if (result != B_OK) {
-		BM_LOGERR( BmString("Failed to allocate more node monitors, error: ")
+	if (result == ENOMEM) {
+		gNodeMonitorCount += kNodeMonitorBumpValue;
+		BM_LOG( BM_LogApp, 
+					BmString("Failed to add monitor, trying to bump limit to ")
+						<< gNodeMonitorCount << " nodes.");
+		result = _kset_mon_limit_(gNodeMonitorCount);
+		if (result != B_OK) {
+			BM_LOGERR( BmString("Failed to allocate more node monitors, error: ")
 						<< strerror(result));
-		return result;
+			return result;
+		}
+		// try again, this time with more node monitors
+		result = watch_node(node, flags, BMessenger(handler));
 	}
-
-	// try again, this time with more node monitors
-	return watch_node(node, flags, BMessenger(handler));
+	if (result != B_OK)
+		BM_LOGERR( BmString("Failed to monitor a node: ") << strerror(result));
+	return result;
 }
 
 /*------------------------------------------------------------------------------*\
