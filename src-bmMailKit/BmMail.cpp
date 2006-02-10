@@ -426,10 +426,13 @@ bool BmMail::Store() {
 	bigtime_t whenCreated;
 	BmString filename;
 	BEntry backupEntry;
+	BDirectory destDir;
 
 	try {
 		// Find out where mail shall be living:
 		BmRef<BmMailFolder> destFolder = DestFolder();
+		if (destFolder)
+			destDir.SetTo(&destFolder->NodeRef());
 
 		if (mMailRef && mMailRef->InitCheck() == B_OK) {
 			// mail has been read from disk, we re-use the old entry_ref
@@ -450,6 +453,10 @@ bool BmMail::Store() {
 				mEntry.GetName(filenameBuf);
 				filename.UnlockBuffer();
 			}
+			// set destination folder if there isn't any yet:
+			if (destDir.InitCheck() == B_NO_INIT)
+				mEntry.GetParent(&destDir);
+
 			// copy entry for later use as a backup file
 			backupEntry = mEntry;
 		} else {
@@ -461,7 +468,11 @@ bool BmMail::Store() {
 			filename = CreateBasicFilename();
 
 		// write mail to disk...
-		BDirectory destDir(&destFolder->NodeRef());
+		if ((err = destDir.InitCheck()) != B_OK)
+			BM_THROW_RUNTIME( 
+				BmString("Could not set up a directory for mail <") << filename
+					<< ">.\n\n Result: " << strerror(err)
+			);
 		StoreIntoFile( &destDir, filename, status, whenCreated, &backupEntry);
 		// ...and fetch resulting entry-ref
 		entry_ref eref;
