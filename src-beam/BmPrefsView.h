@@ -92,7 +92,7 @@ public:
 	// native methods:
 	void ShowPrefs( int index);
 	void WriteStateInfo();
-	bool ApplyChanges();
+	bool SaveChanges();
 	void RevertChanges();
 	void SetDefaults();
 	BmPrefsView* ShowPrefsByName( const BmString name, int32& indexOut);

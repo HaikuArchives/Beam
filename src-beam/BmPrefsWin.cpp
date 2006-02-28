@@ -58,7 +58,7 @@
 \********************************************************************************/
 
 enum {
-	BM_APPLY_CHANGES   = 'bmWA',
+	BM_SAVE_CHANGES    = 'bmWS',
 	BM_REVERT_CHANGES  = 'bmWR',
 	BM_SET_DEFAULTS    = 'bmWD'
 };
@@ -142,7 +142,7 @@ BmPrefsWin::BmPrefsWin()
 				new Space( minimax(40,0,40,0)),
 				mRevertButton = new MButton( "Revert", new BMessage(BM_REVERT_CHANGES), this, minimax(-1,-1,-1,-1)),
 				new Space( minimax(20,0,20,0)),
-				mApplyButton = new MButton( "Apply", new BMessage(BM_APPLY_CHANGES), this, minimax(-1,-1,-1,-1)),
+				mSaveButton = new MButton( "Save", new BMessage(BM_SAVE_CHANGES), this, minimax(-1,-1,-1,-1)),
 				new Space( minimax(20,0,20,0)),
 				0
 			),
@@ -150,7 +150,7 @@ BmPrefsWin::BmPrefsWin()
 			0
 		);
 	AddChild( dynamic_cast<BView*>(mOuterGroup));
-	mApplyButton->SetEnabled( false);
+	mSaveButton->SetEnabled( false);
 	mRevertButton->SetEnabled( false);
 	mPrefsListView->Select( 0);
 }
@@ -297,13 +297,13 @@ void BmPrefsWin::MessageReceived( BMessage* msg) {
 			}
 			case BM_PREFS_CHANGED: {
 				mChanged = true;
-				mApplyButton->SetEnabled( true);
+				mSaveButton->SetEnabled( true);
 				mRevertButton->SetEnabled( true);
 				break;
 			}
-			case BM_APPLY_CHANGES: {
-				if (mPrefsViewContainer->ApplyChanges()) {
-					mApplyButton->SetEnabled( false);
+			case BM_SAVE_CHANGES: {
+				if (mPrefsViewContainer->SaveChanges()) {
+					mSaveButton->SetEnabled( false);
 					mRevertButton->SetEnabled( false);
 					mChanged = false;
 				}
@@ -311,14 +311,14 @@ void BmPrefsWin::MessageReceived( BMessage* msg) {
 			}
 			case BM_REVERT_CHANGES: {
 				mPrefsViewContainer->RevertChanges();
-				mApplyButton->SetEnabled( false);
+				mSaveButton->SetEnabled( false);
 				mRevertButton->SetEnabled( false);
 				mChanged = false;
 				break;
 			}
 			case BM_SET_DEFAULTS: {
 				mPrefsViewContainer->SetDefaults();
-				mApplyButton->SetEnabled( true);
+				mSaveButton->SetEnabled( true);
 				mRevertButton->SetEnabled( true);
 				mChanged = true;
 				break;
@@ -364,7 +364,7 @@ bool BmPrefsWin::QuitRequested() {
 				mPrefsViewContainer->RevertChanges();
 				return true;
 			case 2:
-				return mPrefsViewContainer->ApplyChanges();
+				return mPrefsViewContainer->SaveChanges();
 		}
 	}
 	return true;

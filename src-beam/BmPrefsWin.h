@@ -53,7 +53,7 @@ private:
 	UserResizeSplitView* mVertSplitter;
 	
 	bool mChanged;
-	MButton* mApplyButton;
+	MButton* mSaveButton;
 	MButton* mRevertButton;
 	MButton* mDefaultsButton;
 

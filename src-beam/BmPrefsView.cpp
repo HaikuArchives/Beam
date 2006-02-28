@@ -233,7 +233,7 @@ void BmPrefsViewContainer::WriteStateInfo() {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-bool BmPrefsViewContainer::ApplyChanges() {
+bool BmPrefsViewContainer::SaveChanges() {
 	if (!mLayeredGroup)
 		return false;
 	if (!ThePrefs->GetBool( "AvoidPrefsSanityChecks", false)) {
