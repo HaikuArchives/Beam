@@ -385,11 +385,11 @@ void BmMailEditWin::CreateGUI() {
 												 &BmGuiRosterBase::RebuildIdentityMenu,
 												 BM_MC_RADIO_MODE)
 				),
-				mSmtpControl = new BmMenuControl( 
-					"SMTP-Server:", 
+				mCharsetControl = new BmMenuControl( 
+					"Charset:", 
 					new BmMenuController( "", this, 
-												 new BMessage( BM_SMTP_SELECTED), 
-												 &BmGuiRosterBase::RebuildSmtpAccountMenu, 
+												 new BMessage( BM_CHARSET_SELECTED), 
+												 &BmGuiRosterBase::RebuildCharsetMenu, 
 												 BM_MC_LABEL_FROM_MARKED),
 					0.5
 				),
@@ -409,14 +409,6 @@ void BmMailEditWin::CreateGUI() {
 					new BmMenuController( "To:", this, 
 												 new BMessage( BM_TO_ADDED), 
 												 &BmGuiRosterBase::RebuildPeopleMenu)
-				),
-				mCharsetControl = new BmMenuControl( 
-					"Charset:", 
-					new BmMenuController( "", this, 
-												 new BMessage( BM_CHARSET_SELECTED), 
-												 &BmGuiRosterBase::RebuildCharsetMenu, 
-												 BM_MC_LABEL_FROM_MARKED),
-					0.5
 				),
 				0
 			),
@@ -462,29 +454,44 @@ void BmMailEditWin::CreateGUI() {
 				mSubjectControl = new BmTextControl( "Subject:", false),
 				0
 			),
-			mDetails3Group = new HGroup(
-				new Space(minimax(20,-1,20,-1)),
-				mSignatureControl = new BmMenuControl( 
-					"Signature:", 
-					new BmMenuController( 
-						"Signature:", this, 
-						new BMessage( BM_SIGNATURE_SELECTED), 
-						&BmGuiRosterBase::RebuildSignatureMenu, 
-						BM_MC_ADD_NONE_ITEM | BM_MC_LABEL_FROM_MARKED
-					)
-				),
-				new Space(minimax(20,-1,20,-1)),
-				mFileIntoControl = new BmMenuControl( 
-					"Target Folder:",
-					new BmMenuControllerBase( 
-						"out", this, 
-						new BMessage( BM_FILEINTO_SELECTED), 
-						&BmGuiRosterBase::RebuildFolderMenu
+			mDetails3Group = new VGroup(
+				new HGroup(
+					new Space(minimax(20,-1,20,-1)),
+					mSignatureControl = new BmMenuControl( 
+						"Signature:", 
+						new BmMenuController( 
+							"Signature:", this, 
+							new BMessage( BM_SIGNATURE_SELECTED), 
+							&BmGuiRosterBase::RebuildSignatureMenu, 
+							BM_MC_ADD_NONE_ITEM | BM_MC_LABEL_FROM_MARKED
+						)
 					),
-					2.0
+					new Space(minimax(20,-1,20,-1)),
+					mSmtpControl = new BmMenuControl( 
+						"SMTP-Server:", 
+						new BmMenuController( "", this, 
+													 new BMessage( BM_SMTP_SELECTED), 
+													 &BmGuiRosterBase::RebuildSmtpAccountMenu, 
+													 BM_MC_LABEL_FROM_MARKED),
+						0.5
+					),
+					0
 				),
-				new Space(minimax(20,-1,20,-1)),
-				mEditHeaderControl = new BmCheckControl( "Edit Headers", 1, false),
+				new HGroup(
+					new Space(minimax(20,-1,20,-1)),
+					mFileIntoControl = new BmMenuControl( 
+						"Target Folder:",
+						new BmMenuControllerBase( 
+							"out", this, 
+							new BMessage( BM_FILEINTO_SELECTED), 
+							&BmGuiRosterBase::RebuildFolderMenu
+						),
+						2.0
+					),
+					new Space(minimax(20,-1,20,-1)),
+					mEditHeaderControl = new BmCheckControl( "Edit Headers", 1, false),
+					0
+				),
 				0
 			),
 			mSeparator = new Space(minimax(-1,4,-1,4)),

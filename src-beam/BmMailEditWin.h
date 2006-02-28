@@ -163,7 +163,7 @@ private:
 	bool mPrefsShowDetails3;
 	VGroup* mDetails1Group;
 	HGroup* mDetails2Group;
-	HGroup* mDetails3Group;
+	VGroup* mDetails3Group;
 	HGroup* mSubjectGroup;
 	VGroup* mOuterGroup;
 	Space* mSeparator;
