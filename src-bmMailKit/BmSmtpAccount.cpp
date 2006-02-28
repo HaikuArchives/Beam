@@ -31,7 +31,8 @@ const char* const BmSmtpAccount::MSG_AUTH_METHOD = "bm:authmethod";
 const char* const BmSmtpAccount::MSG_PORT_NR = 		"bm:portnr";
 const char* const BmSmtpAccount::MSG_ACC_FOR_SAP = "bm:accForSmtpAfterPop";
 const char* const BmSmtpAccount::MSG_STORE_PWD = 	"bm:storepwd";
-const int16 BmSmtpAccount::nArchiveVersion = 7;
+const char* const BmSmtpAccount::MSG_CLIENT_CERT = "bm:clientcert";
+const int16 BmSmtpAccount::nArchiveVersion = 8;
 
 const char* const BmSmtpAccount::ENCR_AUTO = 		"<auto>";
 const char* const BmSmtpAccount::ENCR_STARTTLS = 	"STARTTLS";
@@ -44,6 +45,7 @@ const char* const BmSmtpAccount::AUTH_PLAIN = 			"PLAIN";
 const char* const BmSmtpAccount::AUTH_LOGIN = 			"LOGIN";
 const char* const BmSmtpAccount::AUTH_CRAM_MD5 = 		"CRAM-MD5";
 const char* const BmSmtpAccount::AUTH_DIGEST_MD5 = 	"DIGEST-MD5";
+const char* const BmSmtpAccount::AUTH_NONE = 			"<none>";
 
 const char* const BmSmtpAccount::MSG_REF = "ref";
 /*------------------------------------------------------------------------------*\
@@ -73,9 +75,12 @@ BmSmtpAccount::BmSmtpAccount( BMessage* archive, BmSmtpAccountList* model)
 	mSMTPServer = FindMsgString( archive, MSG_SMTP_SERVER);
 	mDomainToAnnounce = FindMsgString( archive, MSG_DOMAIN);
 	mAuthMethod = FindMsgString( archive, MSG_AUTH_METHOD);
+	if (!mAuthMethod.Length())
+		mAuthMethod = AUTH_NONE;
 	mPortNr = FindMsgInt16( archive, MSG_PORT_NR);
 	mPortNrString << (uint32)mPortNr;
 	mPwdStoredOnDisk = FindMsgBool( archive, MSG_STORE_PWD);
+	mClientCertificate = archive->FindString( MSG_CLIENT_CERT);
 	if (version > 1) {
 		mAccForSmtpAfterPop = FindMsgString( archive, MSG_ACC_FOR_SAP);
 	}
@@ -95,6 +100,7 @@ BmSmtpAccount::BmSmtpAccount( BMessage* archive, BmSmtpAccountList* model)
 	} else {
 		mEncryptionType = FindMsgString( archive, MSG_ENCRYPTION_TYPE);
 	}
+	mClientCertificate = archive->FindString( MSG_CLIENT_CERT);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -120,17 +126,9 @@ status_t BmSmtpAccount::Archive( BMessage* archive, bool deep) const {
 		||	archive->AddString( MSG_AUTH_METHOD, mAuthMethod.String())
 		||	archive->AddInt16( MSG_PORT_NR, mPortNr)
 		||	archive->AddBool( MSG_STORE_PWD, mPwdStoredOnDisk)
-		||	archive->AddString( MSG_ACC_FOR_SAP, mAccForSmtpAfterPop.String());
+		||	archive->AddString( MSG_ACC_FOR_SAP, mAccForSmtpAfterPop.String())
+		||	archive->AddString( MSG_CLIENT_CERT, mClientCertificate.String());
 	return ret;
-}
-
-/*------------------------------------------------------------------------------*\
-	AddressInfo()
-		-	returns the SMTP-connect-info as a BNetAddress
-\*------------------------------------------------------------------------------*/
-void BmSmtpAccount::AddressInfo( BmString& server, uint16& port) const {
-	server = mSMTPServer;
-	port = mPortNr;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -155,7 +153,7 @@ bool BmSmtpAccount::SanityCheck( BmString& complaint,
 		fieldName = "smtpserver";
 		return false;
 	}
-	if ((mAuthMethod==AUTH_PLAIN || mAuthMethod==AUTH_LOGIN) 
+	if ((mAuthMethod != AUTH_NONE && mAuthMethod != AUTH_SMTP_AFTER_POP) 
 	&& !mUsername.Length()) {
 		complaint = "Please enter a username to use during authentication.";
 		fieldName = "username";

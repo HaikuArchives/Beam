@@ -90,6 +90,8 @@ public:
 													{ return mFilterChain; }
 	inline const BmString &HomeFolder() const 
 													{ return mHomeFolder; }
+	inline const BmString &ClientCertificate() const 
+													{ return mClientCertificate; }
 
 	// setters:
 	inline void EncryptionType( const BmString &s)
@@ -132,8 +134,9 @@ public:
 	inline void HomeFolder( const BmString &s)
 													{ mHomeFolder = s;  
 													  TellModelItemUpdated( UPD_ALL); }
-
-	void AddressInfo( BmString& server, uint16& port) const;
+	inline void ClientCertificate( const BmString &s)
+													{ mClientCertificate = s;  
+													  TellModelItemUpdated( UPD_ALL); }
 
 	static const char* const ENCR_AUTO;
 	static const char* const ENCR_STARTTLS;
@@ -143,6 +146,7 @@ public:
 	static const char* const AUTH_AUTO;
 	static const char* const AUTH_CRAM_MD5;
 	static const char* const AUTH_DIGEST_MD5;
+	static const char* const AUTH_NONE;
 
 	// archivable components:
 	static const char* const MSG_NAME;
@@ -163,6 +167,7 @@ public:
 	static const char* const MSG_HOME_FOLDER;
 	static const char* const MSG_DELETE_DELAY;
 	static const char* const MSG_TYPE;
+	static const char* const MSG_CLIENT_CERT;
 	static const int16 nArchiveVersion;
 
 protected:
@@ -188,6 +193,8 @@ protected:
 	BmString mHomeFolder;			// the folder where mails from this account
 											// shall be stored into (by default, filters 
 											// may change that)
+	BmString mClientCertificate;	// the client certificate that is going to
+											// be used during SSL/TLS handshake
 
 	BmUidMap mUIDs;					// maps UIDs to time downloaded
 	BMessageRunner* mIntervalRunner;

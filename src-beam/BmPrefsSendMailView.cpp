@@ -6,6 +6,7 @@
  *		Oliver Tappe <beam@hirschkaefer.de>
  */
 #include <Alert.h>
+#include <FilePanel.h>
 #include <MenuItem.h>
 #include <PopUpMenu.h>
 
@@ -187,6 +188,7 @@ void BmSendAccView::MessageReceived( BMessage* msg) {
 \*------------------------------------------------------------------------------*/
 BmPrefsSendMailView::BmPrefsSendMailView() 
 	:	inherited( "Sending Mail-Accounts (SMTP)")
+	,	mClientCertPanel( NULL)
 {
 	MView* view = 
 		new VGroup(
@@ -251,6 +253,17 @@ BmPrefsSendMailView::BmPrefsSendMailView()
 							mPwdControl = new BmTextControl( "", false, 0, 8),
 							0
 						),
+						new HGroup( 
+							mClientCertControl 
+								= new BmTextControl("Client Certificate:"),
+							mSelectClientCertButton 
+								= new MButton( 
+									"Select"B_UTF8_ELLIPSIS, 
+									new BMessage(BM_CLIENT_CERT_SELECTED), 
+									this
+								),
+							0
+						),
 						new Space( minimax(0,5,0,5)),
 						mDomainControl = new BmTextControl( "Domain to announce:"),
 						0
@@ -284,6 +297,7 @@ BmPrefsSendMailView::BmPrefsSendMailView()
 		mAccountControl,
 		mDomainControl,
 		mLoginControl,
+		mClientCertControl,
 		mServerControl,
 		mEncryptionControl,
 		mAuthControl,
@@ -295,6 +309,7 @@ BmPrefsSendMailView::BmPrefsSendMailView()
 	mPortControl->ct_mpm.weight = 0.4;
 	mPwdControl->SetDivider( 15);
 	mPwdControl->ct_mpm.weight = 0.4;
+	mSelectClientCertButton->ct_mpm = minimax(-1,-1,-1,-1,0);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -302,6 +317,7 @@ BmPrefsSendMailView::BmPrefsSendMailView()
 		-	
 \*------------------------------------------------------------------------------*/
 BmPrefsSendMailView::~BmPrefsSendMailView() {
+	delete mClientCertPanel;
 	TheBubbleHelper->SetHelp( mAccListView, NULL);
 	TheBubbleHelper->SetHelp( mAccountControl, NULL);
 	TheBubbleHelper->SetHelp( mDomainControl, NULL);
@@ -313,6 +329,8 @@ BmPrefsSendMailView::~BmPrefsSendMailView() {
 	TheBubbleHelper->SetHelp( mAuthControl, NULL);
 	TheBubbleHelper->SetHelp( mPopControl, NULL);
 	TheBubbleHelper->SetHelp( mCheckAndSuggestButton, NULL);
+	TheBubbleHelper->SetHelp( mClientCertControl, NULL);
+	TheBubbleHelper->SetHelp( mSelectClientCertButton, NULL);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -352,6 +370,19 @@ void BmPrefsSendMailView::Initialize() {
 		"will be used during authentication.\n"
 		"(You can only edit this field if you \n"
 		"checked 'Store Password on Disk')."
+	);
+	TheBubbleHelper->SetHelp( 
+		mClientCertControl, 
+		"Some servers require the user to authenticate\n"
+		"with a PKCS#12-client-certificate (as part of the SSL/TLS-\n"
+		"handshake). Here you can specify the file that contains\n"
+		"the client certificate."
+	);
+	TheBubbleHelper->SetHelp( 
+		mSelectClientCertButton, 
+		"Pressing this button allows you to select the\n"
+		"PKCS#12-file that is going to be used as the client\n"
+		"certificate in order to authenticate to the server."
 	);
 	TheBubbleHelper->SetHelp( 
 		mStorePwdControl, 
@@ -476,7 +507,7 @@ void BmPrefsSendMailView::Initialize() {
 											new BMessage(BM_AUTH_SELECTED)),
 						this);
 	AddItemToMenu( mAuthControl->Menu(), 
-						new BMenuItem( BM_NoItemLabel.String(), 
+						new BMenuItem( BmSmtpAccount::AUTH_NONE, 
 											new BMessage(BM_AUTH_SELECTED)), 
 						this);
 
@@ -611,6 +642,8 @@ void BmPrefsSendMailView::MessageReceived( BMessage* msg) {
 						mCurrAcc->Password( mPwdControl->Text());
 					else if ( source == mServerControl)
 						mCurrAcc->SMTPServer( mServerControl->Text());
+					else if ( source == mClientCertControl)
+						mCurrAcc->ClientCertificate( mClientCertControl->Text());
 					NoticeChange();
 					UpdateState();
 				}
@@ -654,6 +687,30 @@ void BmPrefsSendMailView::MessageReceived( BMessage* msg) {
 						mEncryptionControl->MarkItem( BM_NoItemLabel.String());
 					EncryptionSelected();
 					NoticeChange();
+					UpdateState();
+				}
+				break;
+			}
+			case BM_CLIENT_CERT_SELECTED: {
+				entry_ref certRef;
+				if (msg->FindRef( "refs", 0, &certRef) != B_OK) {
+					// first step, let user select new certificate:
+					if (!mClientCertPanel) {
+						BmString certPath = TheNetEndpointRoster->GetCertPath();
+						entry_ref eref;
+						status_t err = get_ref_for_path(certPath.String(), &eref);
+						mClientCertPanel = new BFilePanel( 
+							B_OPEN_PANEL, new BMessenger(this), 
+							err == B_OK ? &eref : NULL, B_FILE_NODE, false, msg
+						);
+					}
+					mClientCertPanel->Show();
+				} else {
+					// second step, set data accordingly:
+					mCurrAcc->ClientCertificate(certRef.name);
+					mClientCertControl->SetText(certRef.name);
+					NoticeChange();
+					UpdateState();
 				}
 				break;
 			}
@@ -762,6 +819,7 @@ void BmPrefsSendMailView::ShowAccount( int32 selection) {
 		mAuthControl->ClearMark();
 		mPopControl->ClearMark();
 		mStorePwdControl->SetValue( 0);
+		mClientCertControl->SetTextSilently( "");
 	} else {
 		BmSendAccItem* accItem 
 			= dynamic_cast<BmSendAccItem*>(mAccListView->ItemAt( selection));
@@ -792,6 +850,9 @@ void BmPrefsSendMailView::ShowAccount( int32 selection) {
 							? mCurrAcc->AccForSmtpAfterPop().String()
 							: BM_NoItemLabel.String());
 					mStorePwdControl->SetValue( mCurrAcc->PwdStoredOnDisk());
+					mClientCertControl->SetTextSilently( 
+						mCurrAcc->ClientCertificate().String()
+					);
 				}
 			}
 		} else
@@ -819,6 +880,8 @@ void BmPrefsSendMailView::UpdateState() {
 	mCheckAndSuggestButton->SetEnabled( accSelected);
 	mRemoveButton->SetEnabled( accSelected);
 	mStorePwdControl->SetEnabled( accSelected);
+	mClientCertControl->SetEnabled( accSelected);
+	mSelectClientCertButton->SetEnabled( accSelected);
 
 	if (!accSelected) {
 		mPopControl->SetEnabled( false);

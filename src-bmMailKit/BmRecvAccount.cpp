@@ -47,7 +47,8 @@ const char* const BmRecvAccount::MSG_CHECK_INTERVAL = "bm:checkinterval";
 const char* const BmRecvAccount::MSG_FILTER_CHAIN = 	"bm:filterch";
 const char* const BmRecvAccount::MSG_HOME_FOLDER =  	"bm:homefold";
 const char* const BmRecvAccount::MSG_TYPE = 				"bm:type";
-const int16 BmRecvAccount::nArchiveVersion = 11;
+const char* const BmRecvAccount::MSG_CLIENT_CERT = 	"bm:clientcert";
+const int16 BmRecvAccount::nArchiveVersion = 12;
 
 const char* const BmRecvAccount::ENCR_AUTO = 		"<auto>";
 const char* const BmRecvAccount::ENCR_STARTTLS =	"STARTTLS";
@@ -57,6 +58,7 @@ const char* const BmRecvAccount::ENCR_SSL = 			"SSL";
 const char* const BmRecvAccount::AUTH_AUTO = 		"<auto>";
 const char* const BmRecvAccount::AUTH_CRAM_MD5 = 	"CRAM-MD5";
 const char* const BmRecvAccount::AUTH_DIGEST_MD5 = "DIGEST-MD5";
+const char* const BmRecvAccount::AUTH_NONE = 		"<none>";
 
 enum {
 	BM_APPEND_UID	= 'bmez',
@@ -108,8 +110,11 @@ BmRecvAccount::BmRecvAccount( BMessage* archive, BmRecvAccountList* model)
 	mPortNr = FindMsgInt16( archive, MSG_PORT_NR);
 	mPortNrString << (uint32)mPortNr;
 	mAuthMethod = FindMsgString( archive, MSG_AUTH_METHOD);
+	if (!mAuthMethod.Length())
+		mAuthMethod = AUTH_NONE;
 	mMarkedAsDefault = FindMsgBool( archive, MSG_MARK_DEFAULT);
 	mPwdStoredOnDisk = FindMsgBool( archive, MSG_STORE_PWD);
+	mClientCertificate = archive->FindString( MSG_CLIENT_CERT);
 	if (version > 1) {
 		mCheckInterval = FindMsgInt16( archive, MSG_CHECK_INTERVAL);
 		if (mCheckInterval)
@@ -227,6 +232,7 @@ status_t BmRecvAccount::Archive( BMessage* archive, bool deep) const {
 		||	archive->AddInt16( MSG_CHECK_INTERVAL, mCheckInterval)
 		||	archive->AddString( MSG_FILTER_CHAIN, mFilterChain.String())
 		||	archive->AddString( MSG_HOME_FOLDER, mHomeFolder.String())
+		||	archive->AddString( MSG_CLIENT_CERT, mClientCertificate.String())
 		||	archive->AddString( MSG_TYPE, Type());
 	int32 i=0;
 	BmUidMap::const_iterator iter;
@@ -255,15 +261,6 @@ void BmRecvAccount::ExecuteAction( BMessage* action) {
 			break;
 		}
 	};
-}
-
-/*------------------------------------------------------------------------------*\
-	AddressInfo()
-		-	returns the connect-info
-\*------------------------------------------------------------------------------*/
-void BmRecvAccount::AddressInfo( BmString& server, uint16& port) const {
-	server = mServer;
-	port = mPortNr;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -442,7 +439,7 @@ void BmRecvAccount::SetupIntervalRunner() {
 \*------------------------------------------------------------------------------*/
 bool BmRecvAccount::SanityCheck( BmString& complaint, 
 											BmString& fieldName) const {
-	if (!mUsername.Length()) {
+	if (mAuthMethod != AUTH_NONE && !mUsername.Length()) {
 		complaint = "Please enter a username for this account.";
 		fieldName = "username";
 		return false;

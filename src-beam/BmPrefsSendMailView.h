@@ -77,6 +77,7 @@ class BmTextControl;
 class BmMenuControl;
 class BmCheckControl;
 class MButton;
+class BFilePanel;
 /*------------------------------------------------------------------------------*\
 	BmPrefsSendMailView
 		-	
@@ -86,12 +87,13 @@ class BmPrefsSendMailView : public BmPrefsView {
 
 	enum {
 		BM_AUTH_SELECTED 			= 'bmAS',
-		BM_ENCRYPTION_SELECTED 		= 'bmES',
+		BM_ENCRYPTION_SELECTED 	= 'bmES',
 		BM_POP_SELECTED 			= 'bmPS',
 		BM_PWD_STORED_CHANGED 	= 'bmPC',
 		BM_CHECK_AND_SUGGEST		= 'bmCS',
 		BM_ADD_ACCOUNT 			= 'bmAA',
-		BM_REMOVE_ACCOUNT 		= 'bmRA'
+		BM_REMOVE_ACCOUNT 		= 'bmRA',
+		BM_CLIENT_CERT_SELECTED = 'bmCT'
 	};
 
 
@@ -130,6 +132,7 @@ private:
 	BmTextControl* mPortControl;
 	BmTextControl* mPwdControl;
 	BmTextControl* mServerControl;
+	BmTextControl* mClientCertControl;
 	BmMenuControl* mEncryptionControl;
 	BmMenuControl* mAuthControl;
 	BmMenuControl* mPopControl;
@@ -137,6 +140,9 @@ private:
 	MButton* mCheckAndSuggestButton;
 	MButton* mAddButton;
 	MButton* mRemoveButton;
+	MButton* mSelectClientCertButton;
+
+	BFilePanel* mClientCertPanel;
 
 	BmRef<BmSmtpAccount> mCurrAcc;
 	

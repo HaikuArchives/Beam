@@ -73,6 +73,8 @@ public:
 													{ return mPortNrString; }
 	inline const BmString &AccForSmtpAfterPop() const
 													{ return mAccForSmtpAfterPop; }
+	inline const BmString &ClientCertificate() const 
+													{ return mClientCertificate; }
 
 	// setters:
 	inline void Username( const BmString &s) 	
@@ -102,8 +104,9 @@ public:
 	inline void AccForSmtpAfterPop( const BmString &s)	
 													{ mAccForSmtpAfterPop = s; 
 													  TellModelItemUpdated( UPD_ALL); }
-
-	void AddressInfo( BmString& server, uint16& port) const;
+	inline void ClientCertificate( const BmString &s)
+													{ mClientCertificate = s;  
+													  TellModelItemUpdated( UPD_ALL); }
 
 	static const char* const ENCR_AUTO;
 	static const char* const ENCR_STARTTLS;
@@ -116,6 +119,7 @@ public:
 	static const char* const AUTH_LOGIN;
 	static const char* const AUTH_CRAM_MD5;
 	static const char* const AUTH_DIGEST_MD5;
+	static const char* const AUTH_NONE;
 
 	// archivable components:
 	static const char* const MSG_NAME;
@@ -128,6 +132,7 @@ public:
 	static const char* const MSG_PORT_NR;
 	static const char* const MSG_ACC_FOR_SAP;
 	static const char* const MSG_STORE_PWD;
+	static const char* const MSG_CLIENT_CERT;
 	static const int16 nArchiveVersion;
 
 	// message field names:
@@ -151,6 +156,8 @@ private:
 	BmString mPortNrString;			// Port-Nr as String
 	bool mPwdStoredOnDisk;			// store Passwords unsafely on disk?
 	BmString mAccForSmtpAfterPop;	// pop-account to use for authentication
+	BmString mClientCertificate;	// the client certificate that is going to
+											// be used during SSL/TLS handshake
 };
 
 
