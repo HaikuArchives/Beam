@@ -116,6 +116,8 @@ protected:
 										  bool dotstuffEncoding=false,
 										  bool update=false);
 
+	virtual void SetupAdditionalInfo( BMessage* additionalInfo);
+
 	virtual void ExtractBase64(const BmString& text, BmString& base64) = 0;
 
 	void AuthDigestMD5( const BmString& username, const BmString& password,

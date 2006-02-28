@@ -116,8 +116,13 @@ bool BmNetJobModel::Connect( const BNetAddress* addr)
 		mErrorString = "unable to create BNetEndpoint";
 		return false;
 	}
+	BMessage additionalInfo;
+	SetupAdditionalInfo(&additionalInfo);
+	mConnection->SetAdditionalInfo(&additionalInfo);
 	status_t err;
 	if ((err=mConnection->Connect( *addr)) != B_OK) {
+		if (mConnection->IsStopRequested())
+			return true;
 		mErrorString = strerror(err);
 		return false;
 	}
@@ -244,6 +249,14 @@ void BmNetJobModel::SendCommandBuf( BmStringIBuf& cmd,
 							<< " should have been written";
 		throw BM_network_error( s);
 	}
+}
+
+/*------------------------------------------------------------------------------*\
+	SetupAdditionalInfo()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmNetJobModel::SetupAdditionalInfo( BMessage* additionalInfo)
+{
 }
 
 /*------------------------------------------------------------------------------*\

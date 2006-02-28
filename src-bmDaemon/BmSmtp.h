@@ -81,6 +81,7 @@ public:
 
 	// overrides of netjob-model base:
 	void UpdateProgress( uint32 numBytes);
+	void SetupAdditionalInfo( BMessage* additionalInfo);
 
 	// overrides of job-model base:
 	bool StartJob();

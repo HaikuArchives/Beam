@@ -175,9 +175,23 @@ BmPopper::~BmPopper() {
 			case there are no controllers present.
 \*------------------------------------------------------------------------------*/
 bool BmPopper::ShouldContinue() {
+	if (mConnection && mConnection->IsStopRequested())
+		return false;
 	return CurrentJobSpecifier() == BM_AUTH_ONLY_JOB
 			 || CurrentJobSpecifier() == BM_CHECK_CAPABILITIES_JOB
 			 || inherited::ShouldContinue();
+}
+
+/*------------------------------------------------------------------------------*\
+	SetupAdditionalInfo()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmPopper::SetupAdditionalInfo( BMessage* additionalInfo)
+{
+	additionalInfo->AddString(BmNetEndpoint::MSG_CLIENT_CERT_NAME,
+									  mPopAccount->ClientCertificate().String());
+	additionalInfo->AddString(BmNetEndpoint::MSG_SERVER_NAME,
+									  mPopAccount->Server().String());
 }
 
 /*------------------------------------------------------------------------------*\
@@ -304,11 +318,9 @@ void BmPopper::UpdateProgress( uint32 numBytes) {
 		-	Initiates network-connection to POP-server
 \*------------------------------------------------------------------------------*/
 void BmPopper::StateConnect() {
-	BmString server;
-	uint16 port;
-	mPopAccount->AddressInfo( server, port);
 	BNetAddress addr;
-	if (addr.SetTo( server.String(), port) != B_OK) {
+	if (addr.SetTo( mPopAccount->Server().String(), 
+						 mPopAccount->PortNr()) != B_OK) {
 		BmString s = BmString("Could not determine address of POP-Server ") 
 							<< mPopAccount->Server();
 		throw BM_network_error( s);
@@ -324,8 +336,13 @@ void BmPopper::StateConnect() {
 	&& (encryptionType.ICompare(BmPopAccount::ENCR_TLS) == 0
 		|| encryptionType.ICompare(BmPopAccount::ENCR_SSL) == 0)) {
 		// straight TLS or SSL, we start the encryption layer: 
-		if (mConnection->StartEncryption(encryptionType.String()) != B_OK)
+		if (mConnection->StartEncryption(encryptionType.String()) != B_OK) {
+			if (mConnection->IsStopRequested()) {
+				StopJob();
+				return;
+			}
 			throw BM_network_error( "Failed to start connection encryption.\n");
+		}
 	}
 	// accept server greeting (either encrypted or unencrypted):
 	CheckForPositiveAnswer();
@@ -387,8 +404,13 @@ void BmPopper::StateStartTLS() {
 
 	// start connection encryption:
 	status_t error = mConnection->StartEncryption(BmPopAccount::ENCR_TLS);
-	if (error != B_OK)
+	if (error != B_OK) {
+		if (mConnection->IsStopRequested()) {
+			StopJob();
+			return;
+		}
 		throw BM_network_error( "Failed to start connection encryption.\n");
+	}
 }
 
 /*------------------------------------------------------------------------------*\

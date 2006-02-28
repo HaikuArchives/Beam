@@ -205,8 +205,22 @@ BmSmtp::~BmSmtp() {
 			case there are no controllers present.
 \*------------------------------------------------------------------------------*/
 bool BmSmtp::ShouldContinue() {
+	if (mConnection && mConnection->IsStopRequested())
+		return false;
 	return CurrentJobSpecifier() == BM_CHECK_CAPABILITIES_JOB
 			 || inherited::ShouldContinue() ;
+}
+
+/*------------------------------------------------------------------------------*\
+	SetupAdditionalInfo()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmSmtp::SetupAdditionalInfo( BMessage* additionalInfo)
+{
+	additionalInfo->AddString(BmNetEndpoint::MSG_CLIENT_CERT_NAME,
+									  mSmtpAccount->ClientCertificate().String());
+	additionalInfo->AddString(BmNetEndpoint::MSG_SERVER_NAME,
+									  mSmtpAccount->SMTPServer().String());
 }
 
 /*------------------------------------------------------------------------------*\
@@ -337,11 +351,9 @@ void BmSmtp::UpdateProgress( uint32 numBytes) {
 		-	Initiates network-connection to SMTP-server
 \*------------------------------------------------------------------------------*/
 void BmSmtp::StateConnect() {
-	BmString server;
-	uint16 port;
-	mSmtpAccount->AddressInfo( server, port);
 	BNetAddress addr;
-	if (addr.SetTo( server.String(), port) != B_OK) {
+	if (addr.SetTo( mSmtpAccount->SMTPServer().String(), 
+						 mSmtpAccount->PortNr()) != B_OK) {
 		BmString s = BmString("Could not determine address of SMTP-Server ") 
 							<< mSmtpAccount->SMTPServer();
 		throw BM_network_error( s);
@@ -357,8 +369,13 @@ void BmSmtp::StateConnect() {
 	&& (encryptionType.ICompare(BmSmtpAccount::ENCR_TLS) == 0
 		|| encryptionType.ICompare(BmSmtpAccount::ENCR_SSL) == 0)) {
 		// straight TLS or SSL, we start the encryption layer: 
-		if (mConnection->StartEncryption(encryptionType.String()) != B_OK)
+		if (mConnection->StartEncryption(encryptionType.String()) != B_OK) {
+			if (mConnection->IsStopRequested()) {
+				StopJob();
+				return;
+			}
 			throw BM_network_error( "Failed to start connection encryption.\n");
+		}
 	}
 	// accept server greeting (either encrypted or unencrypted):
 	CheckForPositiveAnswer();
@@ -430,8 +447,13 @@ void BmSmtp::StateStartTLS() {
 
 	// start connection encryption:
 	status_t error = mConnection->StartEncryption(BmSmtpAccount::ENCR_TLS);
-	if (error != B_OK)
+	if (error != B_OK) {
+		if (mConnection->IsStopRequested()) {
+			StopJob();
+			return;
+		}
 		throw BM_network_error( "Failed to start connection encryption.\n");
+	}
 
 	// STARTTLS resets the SMTP-session to initial state, so we need
 	// to send a second EHLO/HELO:

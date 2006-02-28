@@ -17,12 +17,15 @@
 // #pragma mark - BmNetEndpoint
 //*****************************************************************************
 
+const char* const BmNetEndpoint::MSG_CLIENT_CERT_NAME = 	"bm:clcrtnm";
+const char* const BmNetEndpoint::MSG_SERVER_NAME = 		"bm:servnm";
 /*------------------------------------------------------------------------------*\
 	BmNetEndpoint()
 		-	constructor
 \*------------------------------------------------------------------------------*/
 BmNetEndpoint::BmNetEndpoint()
 	:	mSocket( new BNetEndpoint( SOCK_STREAM))
+	,	mStopRequested( false)
 {
 }
 
@@ -85,14 +88,6 @@ void BmNetEndpoint::Close()
 	StartEncryption()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmNetEndpoint::SetEncryptionType(const char* encType)
-{
-}
-
-/*------------------------------------------------------------------------------*\
-	StartEncryption()
-		-	
-\*------------------------------------------------------------------------------*/
 status_t BmNetEndpoint::StartEncryption(const char* encType) 
 {
 	return B_ERROR;
@@ -114,6 +109,16 @@ status_t BmNetEndpoint::StopEncryption()
 bool BmNetEndpoint::EncryptionIsActive() 
 {
 	return false;
+}
+
+/*------------------------------------------------------------------------------*\
+	SetAdditionalInfo()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmNetEndpoint::SetAdditionalInfo(const BMessage* msg)
+{
+	if (msg)
+		mAdditionalInfo = *msg;
 }
 
 /*------------------------------------------------------------------------------*\

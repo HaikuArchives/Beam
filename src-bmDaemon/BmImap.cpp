@@ -248,8 +248,22 @@ BmImap::~BmImap()
 \*------------------------------------------------------------------------------*/
 bool BmImap::ShouldContinue()
 {
+	if (mConnection && mConnection->IsStopRequested())
+		return false;
 	return CurrentJobSpecifier() == BM_CHECK_CAPABILITIES_JOB
 			 || inherited::ShouldContinue();
+}
+
+/*------------------------------------------------------------------------------*\
+	SetupAdditionalInfo()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmImap::SetupAdditionalInfo( BMessage* additionalInfo)
+{
+	additionalInfo->AddString(BmNetEndpoint::MSG_CLIENT_CERT_NAME,
+									  mImapAccount->ClientCertificate().String());
+	additionalInfo->AddString(BmNetEndpoint::MSG_SERVER_NAME,
+									  mImapAccount->Server().String());
 }
 
 /*------------------------------------------------------------------------------*\
@@ -383,11 +397,9 @@ void BmImap::UpdateProgress( uint32 numBytes)
 \*------------------------------------------------------------------------------*/
 void BmImap::StateConnect()
 {
-	BmString server;
-	uint16 port;
-	mImapAccount->AddressInfo( server, port);
 	BNetAddress addr;
-	if (addr.SetTo( server.String(), port) != B_OK) {
+	if (addr.SetTo( mImapAccount->Server().String(), 
+						 mImapAccount->PortNr()) != B_OK) {
 		BmString s = BmString("Could not determine address of IMAP-Server ") 
 							<< mImapAccount->Server();
 		throw BM_network_error( s);
@@ -403,8 +415,13 @@ void BmImap::StateConnect()
 	&& (encryptionType.ICompare(BmImapAccount::ENCR_TLS) == 0
 		|| encryptionType.ICompare(BmImapAccount::ENCR_SSL) == 0)) {
 		// straight TLS or SSL, we start the encryption layer: 
-		if (mConnection->StartEncryption(encryptionType.String()) != B_OK)
+		if (mConnection->StartEncryption(encryptionType.String()) != B_OK) {
+			if (mConnection->IsStopRequested()) {
+				StopJob();
+				return;
+			}
 			throw BM_network_error( "Failed to start connection encryption.\n");
+		}
 	}
 	// accept server greeting (either encrypted or unencrypted):
 	CheckForPositiveAnswer();
@@ -465,8 +482,13 @@ void BmImap::StateStartTLS()
 
 	// start connection encryption:
 	status_t error = mConnection->StartEncryption(BmImapAccount::ENCR_TLS);
-	if (error != B_OK)
+	if (error != B_OK) {
+		if (mConnection->IsStopRequested()) {
+			StopJob();
+			return;
+		}
 		throw BM_network_error( "Failed to start connection encryption.\n");
+	}
 }
 
 /*------------------------------------------------------------------------------*\
