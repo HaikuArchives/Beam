@@ -42,6 +42,9 @@ extern "C" int _kset_mon_limit_(int num);
 status_t WatchNode( const node_ref *node, uint32 flags, BHandler *handler) {
 	static int32 gNodeMonitorCount = 4096;
 	static const int32 kNodeMonitorBumpValue = 1024;
+	
+	if (!handler)
+		return B_BAD_VALUE;
 
 	status_t result = watch_node( node, flags, BMessenger(handler));
 
