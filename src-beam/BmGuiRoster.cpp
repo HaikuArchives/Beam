@@ -521,3 +521,15 @@ void BmGuiRoster::RebuildLogMenu( BmMenuControllerBase* logMenu) {
 	TheLogHandler->mLocker.Unlock();
 }
 
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+int32 BmGuiRoster::ShowAlert( const BmString& text, const char* btn1,
+										const char* btn2, const char* btn3)
+{
+	BAlert* alert = new BAlert( "Info needed", text.String(),
+									 	 btn1, btn2, btn3);
+	alert->SetShortcut( 0, B_ESCAPE);
+	return alert->Go();
+}

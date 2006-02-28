@@ -42,6 +42,9 @@ public:
 	void RebuildSignatureMenu( BmMenuControllerBase* menu);
 	void RebuildSmtpAccountMenu( BmMenuControllerBase* menu);
 	void RebuildStatusMenu( BmMenuControllerBase* menu);
+
+	int32 ShowAlert( const BmString& text, const char* btn1,
+						  const char* btn2, const char* btn3);
 };
 
 
