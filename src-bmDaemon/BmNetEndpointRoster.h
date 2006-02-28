@@ -8,6 +8,7 @@
 #ifndef _BmNetEndpointRoster_h
 #define _BmNetEndpointRoster_h
 
+#include <Locker.h>
 #include <Message.h>
 
 #include "BmDaemon.h"
@@ -26,8 +27,9 @@ public:
  	bool SupportsEncryption();
  	bool SupportsEncryptionType(const char* encType);
 	status_t GetEncryptionInfo(BMessage* encryptionInfo);
+	BmString GetCertPath();
 private:
-	void _Initialize();
+	void _InitializeIfNeeded();
 	void _Cleanup();
 
 	bool mNeedInit;
@@ -36,6 +38,7 @@ private:
 	BmInstantiateNetEndpointFunc mAddonInstantiateFunc;
 	BmGetEncryptionInfoFunc mAddonGetEncryptionInfoFunc;
 	BMessage mEncryptionInfo;
+	BLocker mLocker;
 };
 
 extern IMPEXPBMDAEMON BmNetEndpointRoster* TheNetEndpointRoster;
