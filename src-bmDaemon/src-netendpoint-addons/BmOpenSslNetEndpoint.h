@@ -10,15 +10,41 @@
 #ifndef _BmOpenSslNetEndpoint_h
 #define _BmOpenSslNetEndpoint_h
 
+#include <map>
+
+#include <Locker.h>
 #include "BmString.h"
 
 #include "BmNetEndpoint.h"
 
-// avoid inclusion of <openssl/ssl.h> here
-struct ssl_st;
+#include <openssl/ssl.h>
 
 class BmOpenSslNetEndpoint : public BmNetEndpoint {
 	typedef BmNetEndpoint inherited;
+	class ContextManager {
+		typedef map<thread_id, BmOpenSslNetEndpoint*> UserdataMap;
+	public:
+		ContextManager();
+		~ContextManager();
+	
+		SSL_CTX* TlsContext()					{ return mTlsContext; }
+		SSL_CTX* SslContext()					{ return mSslContext; }
+	
+		void SetUserdataForCurrentThread(BmOpenSslNetEndpoint* userdata);
+		BmOpenSslNetEndpoint* GetUserdataForCurrentThread();
+		void RemoveUserdataForCurrentThread();
+
+	private:
+		status_t _SetupContext(SSL_CTX* context);
+	
+		BLocker mLocker;
+		SSL_CTX* mTlsContext;
+		SSL_CTX* mSslContext;
+		status_t mStatus;
+		BmString mErrorStr;
+		UserdataMap mUserdataMap;
+	};
+	
 public:
 	BmOpenSslNetEndpoint();
 	virtual ~BmOpenSslNetEndpoint();
@@ -29,7 +55,6 @@ public:
 	virtual int Error() const;
 	virtual BmString ErrorStr() const;
 
-	virtual void SetEncryptionType(const char* encType);
 	virtual status_t StartEncryption(const char* encType);
 	virtual status_t StopEncryption();
 	virtual bool EncryptionIsActive();
@@ -40,13 +65,29 @@ public:
 
 	static status_t GetEncryptionInfo(BMessage* encryptionInfo);
 
+	static int ClientCertCallback(SSL* ssl, X509 **certP, EVP_PKEY **pkeyP);
+	static int VerifyCallback(int ok, X509_STORE_CTX *store);
+
 private:
 	status_t _StartEncryptionAfterConnecting();
 	status_t _TranslateErrorCode( int result);
+	status_t _FetchClientCertificateAndKey(SSL* ssl, X509 **x509, 
+														EVP_PKEY **pkey);
+	BmString _FingerprintForCert(X509* cert);
+	int _FetchVerificationError(X509_STORE_CTX *store);
+	bool _MatchHostname(const BmString& hostname, const BmString& pattern);
+	bool _VerifyHostname(X509* cert, const BmString& hostname, 
+								BmString& namesFoundInCert);
+	BmString _CertAsString(X509* cert);
+	status_t _PostHandshakeCheck();
 
-	ssl_st* mSSL;
+	SSL* mSSL;
 	BmString mEncryptionType;
+
 	int mError;
+	BmString mVerificationError;
+
+	static ContextManager nContextManager;
 };
 
 #endif
