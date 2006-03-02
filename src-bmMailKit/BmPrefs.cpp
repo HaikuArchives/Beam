@@ -452,6 +452,7 @@ void BmPrefs::InitDefaults(BMessage& defaultsMsg) {
 	defaultsMsg.AddInt32( "MSecsBeforeSmtpRemove", 0*1000);
 	defaultsMsg.AddInt32( "NetReceiveBufferSize", 15000);
 	defaultsMsg.AddInt32( "NetSendBufferSize", 15000);
+	defaultsMsg.AddBool( "QueueNetworkJobs", true);
 	defaultsMsg.AddString( "QuoteFormatting", "Push Margin");
 	defaultsMsg.AddString( "QuotingLevelRX", 
 									"^((?:\\w?\\w?\\w?[>|]|[ \\t]*)*)(.*?)$");
