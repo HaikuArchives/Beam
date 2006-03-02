@@ -373,16 +373,26 @@ void BmPrefsSendMailView::Initialize() {
 	);
 	TheBubbleHelper->SetHelp( 
 		mClientCertControl, 
+		TheNetEndpointRoster->SupportsEncryption() 
+		?
 		"Some servers require the user to authenticate\n"
 		"with a PKCS#12-client-certificate (as part of the SSL/TLS-\n"
 		"handshake). Here you can specify the file that contains\n"
 		"the client certificate."
+		:
+		"Certificate support is not available,\n"
+		"no addon could be loaded"
 	);
 	TheBubbleHelper->SetHelp( 
 		mSelectClientCertButton, 
+		TheNetEndpointRoster->SupportsEncryption() 
+		?
 		"Pressing this button allows you to select the\n"
 		"PKCS#12-file that is going to be used as the client\n"
 		"certificate in order to authenticate to the server."
+		:
+		"Certificate support is not available,\n"
+		"no addon could be loaded"
 	);
 	TheBubbleHelper->SetHelp( 
 		mStorePwdControl, 
@@ -872,16 +882,19 @@ void BmPrefsSendMailView::UpdateState() {
 	mDomainControl->SetEnabled( accSelected);
 	mPortControl->SetEnabled( accSelected);
 	mServerControl->SetEnabled( accSelected);
-	if (TheNetEndpointRoster->SupportsEncryption())
+	if (TheNetEndpointRoster->SupportsEncryption()) {
 		mEncryptionControl->SetEnabled( accSelected);
-	else
+		mClientCertControl->SetEnabled( accSelected);
+		mSelectClientCertButton->SetEnabled( accSelected);
+	} else {
 		mEncryptionControl->SetEnabled( false);
+		mClientCertControl->SetEnabled( false);
+		mSelectClientCertButton->SetEnabled( false);
+	}
 	mAuthControl->SetEnabled( accSelected);
 	mCheckAndSuggestButton->SetEnabled( accSelected);
 	mRemoveButton->SetEnabled( accSelected);
 	mStorePwdControl->SetEnabled( accSelected);
-	mClientCertControl->SetEnabled( accSelected);
-	mSelectClientCertButton->SetEnabled( accSelected);
 
 	if (!accSelected) {
 		mPopControl->SetEnabled( false);
