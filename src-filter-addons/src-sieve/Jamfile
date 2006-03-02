@@ -20,7 +20,7 @@ AddOn Sieve
 		BmSieveFilter.cpp
 	: 	
 		libsieve.a bmGuiBase.so bmMailKit.so bmRegexx.so bmBase.so 
-		layout pcreposix be
+		layout pcreposix be $(STDC++LIB)
 	;
 # </pe-src>
 

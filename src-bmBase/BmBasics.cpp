@@ -19,17 +19,13 @@ BmString BM_NoItemLabel("<none>");
 \********************************************************************************/
 
 BM_error::BM_error( const BmString& what_arg)
-	:	mWhat( what_arg)
+	:	inherited( what_arg.String())
 {
 }
 
 BM_error::BM_error( const char* what_arg)
-	:	mWhat( what_arg)
+	:	inherited( what_arg)
 {
-}
-
-const char* const BM_error::what() const {
-	return mWhat.String();
 }
 
 /********************************************************************************\

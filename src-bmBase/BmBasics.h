@@ -8,6 +8,8 @@
 #ifndef _BmBasics_h
 #define _BmBasics_h
 
+#include <stdexcept>
+
 #include <Debug.h>
 
 #include "BmBase.h"
@@ -32,13 +34,12 @@ extern IMPEXPBMBASE BmString BM_NoItemLabel;
 	BM_error
 		-	base-class for any Beam-exception
 \*------------------------------------------------------------------------------*/
-class IMPEXPBMBASE BM_error {
+class IMPEXPBMBASE BM_error : public runtime_error {
+	typedef runtime_error inherited;
 public:
 	BM_error( const BmString& what_arg);
 	BM_error( const char* what_arg);
-	const char* const what() const;
 private:
-	BmString mWhat;
 };
 
 /*------------------------------------------------------------------------------*\

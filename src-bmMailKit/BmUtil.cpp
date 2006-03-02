@@ -25,7 +25,7 @@ BmString BM_WHITESPACE = " \t\n\r\f";
 	FindMsgString( archive, name)
 		-	extracts the msg-field with the specified name from the given archive
 			and returns it.
-		-	throws BM_invalid_argument if field is not contained withing archive
+		-	throws BM_invalid_argument if field is not contained within archive
 \*------------------------------------------------------------------------------*/
 const char* FindMsgString( BMessage* archive, const char* name, int32 index) {
 	const char* str;
@@ -39,7 +39,7 @@ const char* FindMsgString( BMessage* archive, const char* name, int32 index) {
 	FindMsgBool( archive, name)
 		-	extracts the msg-field with the specified name from the given archive
 			and returns it.
-		-	throws BM_invalid_argument if field is not contained withing archive
+		-	throws BM_invalid_argument if field is not contained within archive
 \*------------------------------------------------------------------------------*/
 bool FindMsgBool( BMessage* archive, const char* name, int32 index) {
 	bool b;
@@ -53,7 +53,7 @@ bool FindMsgBool( BMessage* archive, const char* name, int32 index) {
 	FindMsgInt64( archive, name)
 		-	extracts the msg-field with the specified name from the given archive
 			and returns it.
-		-	throws BM_invalid_argument if field is not contained withing archive
+		-	throws BM_invalid_argument if field is not contained within archive
 \*------------------------------------------------------------------------------*/
 int64 FindMsgInt64( BMessage* archive, const char* name, int32 index) {
 	int64 i;
@@ -67,7 +67,7 @@ int64 FindMsgInt64( BMessage* archive, const char* name, int32 index) {
 	FindMsgInt32( archive, name)
 		-	extracts the msg-field with the specified name from the given archive
 			and returns it.
-		-	throws BM_invalid_argument if field is not contained withing archive
+		-	throws BM_invalid_argument if field is not contained within archive
 \*------------------------------------------------------------------------------*/
 int32 FindMsgInt32( BMessage* archive, const char* name, int32 index) {
 	int32 i;
@@ -81,7 +81,7 @@ int32 FindMsgInt32( BMessage* archive, const char* name, int32 index) {
 	FindMsgInt16( archive, name)
 		-	extracts the msg-field with the specified name from the given archive
 			and returns it.
-		-	throws BM_invalid_argument if field is not contained withing archive
+		-	throws BM_invalid_argument if field is not contained within archive
 \*------------------------------------------------------------------------------*/
 int16 FindMsgInt16( BMessage* archive, const char* name, int32 index) {
 	int16 i;
@@ -95,7 +95,7 @@ int16 FindMsgInt16( BMessage* archive, const char* name, int32 index) {
 	FindMsgMsg( archive, name)
 		-	extracts the msg-field with the specified name from the given archive
 			and returns it.
-		-	throws BM_invalid_argument if field is not contained withing archive
+		-	throws BM_invalid_argument if field is not contained within archive
 \*------------------------------------------------------------------------------*/
 BMessage* FindMsgMsg( BMessage* archive, const char* name, BMessage* msg, 
 							 int32 index) {
@@ -111,7 +111,7 @@ BMessage* FindMsgMsg( BMessage* archive, const char* name, BMessage* msg,
 	FindMsgFloat( archive, name)
 		-	extracts the msg-field with the specified name from the given archive
 			and returns it.
-		-	throws BM_invalid_argument if field is not contained withing archive
+		-	throws BM_invalid_argument if field is not contained within archive
 \*------------------------------------------------------------------------------*/
 float FindMsgFloat( BMessage* archive, const char* name, int32 index) {
 	float f;
@@ -128,7 +128,7 @@ float FindMsgFloat( BMessage* archive, const char* name, int32 index) {
 	FindMsgPointer( archive, name)
 		-	extracts the msg-field with the specified name from the given archive
 			and returns it.
-		-	throws BM_invalid_argument if field is not contained withing archive
+		-	throws BM_invalid_argument if field is not contained within archive
 \*------------------------------------------------------------------------------*/
 void* FindMsgPointer( BMessage* archive, const char* name, int32 index) {
 	void* ptr;

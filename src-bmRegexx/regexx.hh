@@ -29,6 +29,7 @@
 #ifndef REGEXX_HH
 #define REGEXX_HH
 
+#include <stdexcept>
 #include <vector>
 
 #include "libregexx.h"
@@ -268,13 +269,11 @@ namespace regexx {
      *  @author Gustavo Niemeyer
      *
      **/
-    class Exception {
+    class Exception : public runtime_error {
+    	typedef runtime_error inherited;
     public:
-      Exception(const BmString& _message) : m_message(_message) {}
-      /// Method to retrieve Exception information.
-      inline const BmString& message() { return m_message; }
-    private:
-      BmString m_message;
+      Exception(const BmString& _message) 
+      	:	inherited(_message.String()) {}
     };
 
     /** This exception is thrown when there are errors while compiling

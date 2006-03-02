@@ -28,7 +28,7 @@ MimeSet MailConverter ;
 Application SpamOMeter : 
 	SpamOMeter.cpp
 	: 	
-		bmMailKit.so bmRegexx.so bmBase.so be
+		bmMailKit.so bmRegexx.so bmBase.so be $(STDC++LIB)
 	;
 # </pe-src>
 

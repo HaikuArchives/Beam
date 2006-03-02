@@ -14,7 +14,7 @@ SharedLibrary bmBase.so
 		BmString.cpp
 		md5c.c
 	: 	
-		be 
+		be $(STDC++LIB)
 	;
 # </pe-src>
 
