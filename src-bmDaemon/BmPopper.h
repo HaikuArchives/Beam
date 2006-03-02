@@ -86,6 +86,7 @@ public:
 private:
 	// overrides of netjob-model base:
 	void ExtractBase64(const BmString& text, BmString& base64);
+	bool StartEncryption(const char* encType);
 
 	// internal functions:
 	void StateConnect();
@@ -95,6 +96,7 @@ private:
 	void StateCheck();
 	void StateRetrieve();
 	void StateDisconnect();
+
 	void Quit( bool WaitForAnswer=false);
 	void UpdatePOPStatus( const float, const char*, bool failed=false, 
 								 bool stopped=false);

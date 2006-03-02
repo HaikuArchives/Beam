@@ -192,6 +192,8 @@ void BmPopper::SetupAdditionalInfo( BMessage* additionalInfo)
 									  mPopAccount->ClientCertificate().String());
 	additionalInfo->AddString(BmNetEndpoint::MSG_SERVER_NAME,
 									  mPopAccount->Server().String());
+	additionalInfo->AddString(BmNetEndpoint::MSG_ACCEPTED_CERT_ID,
+									  mPopAccount->AcceptedCertID().String());
 }
 
 /*------------------------------------------------------------------------------*\
@@ -225,12 +227,16 @@ bool BmPopper::StartJob() {
 	}
 	const float delta = (100.0 / (POP_DONE-skipped));
 	try {
-		for( mState=POP_CONNECT; ShouldContinue() && mState<POP_DONE; ++mState) {
+		for( mState=POP_CONNECT; mState<POP_DONE; ++mState) {
 			if (PopStates[mState].skip)
 				continue;
 			TStateMethod stateFunc = PopStates[mState].func;
 			UpdatePOPStatus( (mState==POP_CONNECT ? 0.0 : delta), NULL);
 			(this->*stateFunc)();
+			if (!ShouldContinue()) {
+				Disconnect();
+				break;
+			}
 		}
 		if (!ShouldContinue())
 			UpdatePOPStatus( 0.0, NULL, false, true);
@@ -246,6 +252,19 @@ bool BmPopper::StartJob() {
 		UpdatePOPStatus( 0.0, NULL, true);
 		BmString text = Name() << ":\n\n" << errstr;
 		HandleError( text);
+		return false;
+	}
+	catch( exception &err) {
+		BmString errMsg;
+		errMsg << err.what() << " (" << typeid(err).name() << ")";
+		HandleError( errMsg);
+		return false;
+	}
+	catch( ...) {
+		BmString errMsg;
+		errMsg << "The job for account " << mPopAccount->Name() 
+				 << "received an unknown exception and died!";
+		HandleError(errMsg);
 		return false;
 	}
 	return true;
@@ -336,13 +355,8 @@ void BmPopper::StateConnect() {
 	&& (encryptionType.ICompare(BmPopAccount::ENCR_TLS) == 0
 		|| encryptionType.ICompare(BmPopAccount::ENCR_SSL) == 0)) {
 		// straight TLS or SSL, we start the encryption layer: 
-		if (mConnection->StartEncryption(encryptionType.String()) != B_OK) {
-			if (mConnection->IsStopRequested()) {
-				StopJob();
-				return;
-			}
-			throw BM_network_error( "Failed to start connection encryption.\n");
-		}
+		if (!StartEncryption(encryptionType.String()))
+			return;
 	}
 	// accept server greeting (either encrypted or unencrypted):
 	CheckForPositiveAnswer();
@@ -403,14 +417,23 @@ void BmPopper::StateStartTLS() {
 	CheckForPositiveAnswer();
 
 	// start connection encryption:
-	status_t error = mConnection->StartEncryption(BmPopAccount::ENCR_TLS);
-	if (error != B_OK) {
-		if (mConnection->IsStopRequested()) {
-			StopJob();
-			return;
-		}
-		throw BM_network_error( "Failed to start connection encryption.\n");
+	StartEncryption(BmPopAccount::ENCR_TLS);
+}
+
+/*------------------------------------------------------------------------------*\
+	StartEncryption()
+		-	extends activation of SSL/TLS encryption layer with automatic
+			updating of newly accepted certificate ID.
+\*------------------------------------------------------------------------------*/
+bool BmPopper::StartEncryption(const char* encType)
+{
+	bool ok = inherited::StartEncryption(encType);
+	if (ok) {
+		BmString certID = mConnection->NewAcceptedCertID();
+		if (certID.Length() && mPopAccount->AcceptedCertID() != certID)
+			mPopAccount->AcceptedCertID(certID);
 	}
+	return ok;
 }
 
 /*------------------------------------------------------------------------------*\

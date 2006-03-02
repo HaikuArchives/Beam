@@ -93,6 +93,7 @@ public:
 private:
 	// overrides of netjob-model base:
 	void ExtractBase64(const BmString& text, BmString& base64);
+	bool StartEncryption(const char* encType);
 
 	// internal functions:
 	void StateConnect();
@@ -102,6 +103,7 @@ private:
 	void StateCheck();
 	void StateRetrieve();
 	void StateDisconnect();
+
 	BmString LocalUidToServerUid(const BmString& uid) const;
 	bool DeleteMailFromServer(const BmString& uid);
 	void Quit( bool WaitForAnswer=false);

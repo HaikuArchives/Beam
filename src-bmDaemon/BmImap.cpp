@@ -264,6 +264,8 @@ void BmImap::SetupAdditionalInfo( BMessage* additionalInfo)
 									  mImapAccount->ClientCertificate().String());
 	additionalInfo->AddString(BmNetEndpoint::MSG_SERVER_NAME,
 									  mImapAccount->Server().String());
+	additionalInfo->AddString(BmNetEndpoint::MSG_ACCEPTED_CERT_ID,
+									  mImapAccount->AcceptedCertID().String());
 }
 
 /*------------------------------------------------------------------------------*\
@@ -298,6 +300,10 @@ bool BmImap::StartJob()
 			TStateMethod stateFunc = ImapStates[mState].func;
 			UpdateIMAPStatus( (mState==IMAP_CONNECT ? 0.0 : delta), NULL);
 			(this->*stateFunc)();
+			if (!ShouldContinue()) {
+				Disconnect();
+				break;
+			}
 		}
 		if (!ShouldContinue())
 			UpdateIMAPStatus( 0.0, NULL, false, true);
@@ -315,12 +321,17 @@ bool BmImap::StartJob()
 		HandleError( text);
 		return false;
 	}
-	catch( Regexx::Exception &e) {
-		// a problem occurred, we tell the user:
-		BmString errstr = e.message();
-		UpdateIMAPStatus( 0.0, NULL, true);
-		BmString text = Name() << ":\n\nRegex: " << errstr;
-		HandleError( text);
+	catch( exception &err) {
+		BmString errMsg;
+		errMsg << err.what() << " (" << typeid(err).name() << ")";
+		HandleError( errMsg);
+		return false;
+	}
+	catch( ...) {
+		BmString errMsg;
+		errMsg << "The job for account " << mImapAccount->Name() 
+				 << "received an unknown exception and died!";
+		HandleError(errMsg);
 		return false;
 	}
 	return true;
@@ -415,13 +426,8 @@ void BmImap::StateConnect()
 	&& (encryptionType.ICompare(BmImapAccount::ENCR_TLS) == 0
 		|| encryptionType.ICompare(BmImapAccount::ENCR_SSL) == 0)) {
 		// straight TLS or SSL, we start the encryption layer: 
-		if (mConnection->StartEncryption(encryptionType.String()) != B_OK) {
-			if (mConnection->IsStopRequested()) {
-				StopJob();
-				return;
-			}
-			throw BM_network_error( "Failed to start connection encryption.\n");
-		}
+		if (!StartEncryption(encryptionType.String()))
+			return;
 	}
 	// accept server greeting (either encrypted or unencrypted):
 	CheckForPositiveAnswer();
@@ -480,15 +486,23 @@ void BmImap::StateStartTLS()
 	if (!CheckForPositiveAnswer())
 		return;
 
-	// start connection encryption:
-	status_t error = mConnection->StartEncryption(BmImapAccount::ENCR_TLS);
-	if (error != B_OK) {
-		if (mConnection->IsStopRequested()) {
-			StopJob();
-			return;
-		}
-		throw BM_network_error( "Failed to start connection encryption.\n");
+	StartEncryption(BmImapAccount::ENCR_TLS);
+}
+
+/*------------------------------------------------------------------------------*\
+	StartEncryption()
+		-	extends activation of SSL/TLS encryption layer with automatic
+			updating of newly accepted certificate ID.
+\*------------------------------------------------------------------------------*/
+bool BmImap::StartEncryption(const char* encType)
+{
+	bool ok = inherited::StartEncryption(encType);
+	if (ok) {
+		BmString certID = mConnection->NewAcceptedCertID();
+		if (certID.Length() && mImapAccount->AcceptedCertID() != certID)
+			mImapAccount->AcceptedCertID(certID);
 	}
+	return ok;
 }
 
 /*------------------------------------------------------------------------------*\

@@ -90,6 +90,7 @@ public:
 protected:
 	// overrides of netjob-model base:
 	void ExtractBase64(const BmString& text, BmString& base64);
+	bool StartEncryption(const char* encType);
 
 private:
 	BmRef<BmSmtpAccount> mSmtpAccount;	// Info about our smtp-account
