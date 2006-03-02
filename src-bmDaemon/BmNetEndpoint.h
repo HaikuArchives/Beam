@@ -36,7 +36,9 @@ public:
 	virtual status_t StopEncryption();
 	virtual bool EncryptionIsActive();
 	//
-	virtual void SetAdditionalInfo(const BMessage* msg);
+	void SetAdditionalInfo(const BMessage* msg);
+	const BmString& NewAcceptedCertID();
+	void NewAcceptedCertID(const BmString& s);
 	//
 	virtual int32 Send( const void* buffer, size_t size, int flags = 0);
 	virtual int32 Receive( void* buffer, size_t size, int flags = 0);
@@ -48,12 +50,14 @@ public:
 	// message component definitions for additional info:
 	static const char* const MSG_CLIENT_CERT_NAME;
 	static const char* const MSG_SERVER_NAME;
+	static const char* const MSG_ACCEPTED_CERT_ID;
 protected:
 	BmNetEndpoint();
 
 	BNetEndpoint* mSocket;
 	BMessage mAdditionalInfo;
 	bool mStopRequested;
+	BmString mNewAcceptedCertID;
 };
 
 #endif

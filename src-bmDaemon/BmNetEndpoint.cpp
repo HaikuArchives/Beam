@@ -19,6 +19,7 @@
 
 const char* const BmNetEndpoint::MSG_CLIENT_CERT_NAME = 	"bm:clcrtnm";
 const char* const BmNetEndpoint::MSG_SERVER_NAME = 		"bm:servnm";
+const char* const BmNetEndpoint::MSG_ACCEPTED_CERT_ID = "bm:acccrtid";
 /*------------------------------------------------------------------------------*\
 	BmNetEndpoint()
 		-	constructor
@@ -119,6 +120,25 @@ void BmNetEndpoint::SetAdditionalInfo(const BMessage* msg)
 {
 	if (msg)
 		mAdditionalInfo = *msg;
+	mNewAcceptedCertID.Truncate(0);
+}
+
+/*------------------------------------------------------------------------------*\
+	NewAcceptedCertID()
+		-	
+\*------------------------------------------------------------------------------*/
+const BmString& BmNetEndpoint::NewAcceptedCertID()
+{
+	return mNewAcceptedCertID;
+}
+
+/*------------------------------------------------------------------------------*\
+	NewAcceptedCertID()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmNetEndpoint::NewAcceptedCertID(const BmString& s)
+{
+	mNewAcceptedCertID = s;
 }
 
 /*------------------------------------------------------------------------------*\
