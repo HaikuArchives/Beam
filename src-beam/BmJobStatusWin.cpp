@@ -197,6 +197,9 @@ void BmJobStatusView::JobIsDone( bool completed) {
 		mRemoveMsgRunner = new BMessageRunner( 
 			BMessenger( this), &timerMsg, timeToWait, 1
 		);
+		BMessage jobDoneMsg(BM_JOB_DONE);
+		jobDoneMsg.AddString(BmJobModel::MSG_JOB_NAME, ControllerName());
+		Looper()->PostMessage(&jobDoneMsg);
 	}
 }
 
@@ -687,7 +690,7 @@ BmSmtpView::BmSmtpView( const char* name)
 	MView* view = new VGroup(
 		new MBViewWrapper(
 			mStatBar = new BStatusBar( 
-				BRect(), name, name, ""
+				BRect(), name, (BmString("SMTP: ")<<name).String(), ""
 			), 
 			true, false, false
 		),
@@ -890,11 +893,33 @@ void BmJobStatusWin::MessageReceived(BMessage* msg) {
 		switch( msg->what) {
 			case BM_JOBWIN_SMTP:
 			case BM_JOBWIN_POP:
-			case BM_JOBWIN_IMAP:
+			case BM_JOBWIN_IMAP: {
+				if (mActiveJobs.empty()
+				|| !ThePrefs->GetBool("QueueNetworkJobs", true))
+					AddJob( msg);
+				else
+					QueueJob( msg);
+				break;
+			}
 			case BM_JOBWIN_FILTER:
 			case BM_JOBWIN_MOVEMAILS: {
-				// request to start a new job
 				AddJob( msg);
+				break;
+			}
+			case BM_JOB_DONE: {
+				BmString name = msg->FindString(BmJobModel::MSG_JOB_NAME);
+				JobMap::iterator pos = mActiveJobs.find(name);
+				if (pos != mActiveJobs.end()) {
+					// move job from active to done map:
+					mDoneJobs[name] = pos->second;
+					mActiveJobs.erase(pos);
+				}
+				if (mActiveJobs.empty() && !mQueuedJobs.empty()) {
+					BMessage* msg = mQueuedJobs[0];
+					mQueuedJobs.pop_front();
+					AddJob( msg);
+					delete msg;
+				}
 				break;
 			}
 			default:
@@ -905,6 +930,24 @@ void BmJobStatusWin::MessageReceived(BMessage* msg) {
 		// a problem occurred, we tell the user:
 		BM_SHOWERR( BmString("JobStatusWindow: ") << err.what());
 	}
+}
+
+/*------------------------------------------------------------------------------*\
+	QueueJob( msg)
+		-	queues a new job-interface for later execution
+\*------------------------------------------------------------------------------*/
+void BmJobStatusWin::QueueJob( BMessage* msg) {
+	BM_ASSERT( msg);
+
+	BmString name = FindMsgString( msg, BmJobModel::MSG_JOB_NAME);
+
+	BM_LOG( BM_LogJobWin, BmString("Queueing job ") << name);
+
+	BmAutolockCheckGlobal lock( this);
+	if (!lock.IsLocked())
+		BM_THROW_RUNTIME( "AddJob(): could not lock window");
+	DetachCurrentMessage();
+	mQueuedJobs.push_back(msg);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -1018,21 +1061,35 @@ void BmJobStatusWin::RemoveJob( const char* name) {
 		BM_THROW_RUNTIME( "RemoveJob(): could not lock window");
 
 	JobMap::iterator interfaceIter = mActiveJobs.find( name);
-	if (interfaceIter == mActiveJobs.end())
-		return;									// account isn't active, nothing to do!
+	if (interfaceIter == mActiveJobs.end()) {
+		// not found in active jobs, maybe it's done already?
+		interfaceIter = mDoneJobs.find(name);
+		if (interfaceIter == mDoneJobs.end())
+			return;
+	}
 	
 	BmJobStatusView* controller = (*interfaceIter).second;
-	if (!controller)
-		return;
+	if (controller) {
+		BRect rect = controller->Bounds();
+		mOuterGroup->RemoveChild( controller);
+		ResizeBy( 0, -1-(rect.Height()));
+		RecalcSize();
+		mActiveJobs.erase( controller->ControllerName());
+		mDoneJobs.erase( controller->ControllerName());
 
-	BRect rect = controller->Bounds();
-	mOuterGroup->RemoveChild( controller);
-	ResizeBy( 0, -1-(rect.Height()));
-	RecalcSize();
-	mActiveJobs.erase( controller->ControllerName());
-	if (mActiveJobs.empty()) {
-		while( !IsHidden())
-			Hide();
+		if (mActiveJobs.empty()) {
+			if (!mQueuedJobs.empty()) {
+				BMessage* msg = mQueuedJobs[0];
+				mQueuedJobs.pop_front();
+				AddJob( msg);
+				delete msg;
+			} else {
+				if (mDoneJobs.empty()) {
+					while( !IsHidden())
+						Hide();
+				}
+			}
+		}
 	}
 }
 
@@ -1043,7 +1100,7 @@ void BmJobStatusWin::RemoveJob( const char* name) {
 bool BmJobStatusWin::HasActiveJobs() {
 	BmAutolockCheckGlobal lock( this);
 	if (!lock.IsLocked())
-		BM_THROW_RUNTIME( "RemoveJob(): could not lock window");
+		BM_THROW_RUNTIME( "HasActiveJobs(): could not lock window");
 	JobMap::iterator iter;
 	for( iter = mActiveJobs.begin(); iter != mActiveJobs.end(); ++iter) {
 		BmJobStatusView* jobView = iter->second;

@@ -9,6 +9,7 @@
 #ifndef _BmJobStatusWin_h
 #define _BmJobStatusWin_h
 
+#include <deque>
 #include <map>
 
 #ifdef B_BEOS_VERSION_DANO
@@ -265,16 +266,13 @@ class BmJobStatusWin : public BmWindow {
 	friend class BmJobStatusView;
 
 	typedef map<BmString, BmJobStatusView*> JobMap;
+	typedef deque<BMessage*> JobQueue;
 
 public:
 	// creator-func, c'tors and d'tor:
 	static BmJobStatusWin* CreateInstance();
 	BmJobStatusWin();
 	virtual ~BmJobStatusWin();
-
-	// native methods:
-	void AddJob( BMessage* msg);
-	void RemoveJob( const char* name);
 
 	// overrides of BWindow base:
 	bool QuitRequested();
@@ -293,8 +291,17 @@ public:
 
 private:
 
+	// native methods:
+	void AddJob( BMessage* msg);
+	void RemoveJob( const char* name);
+	void QueueJob( BMessage* msg);
+
 	JobMap mActiveJobs;
-							// list of known jobs
+							// running jobs
+	JobMap mDoneJobs;
+							// jobs that are done, waiting to be removed
+	JobQueue mQueuedJobs;
+							// jobs waiting to run
 	VGroup* mOuterGroup;
 							// the outmost view that the connection-interfaces live in
 	BLooper* mInvokingLooper;
