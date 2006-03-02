@@ -146,6 +146,24 @@ void BmNetJobModel::Disconnect()
 }
 
 /*------------------------------------------------------------------------------*\
+	StartEncryption()
+		-	tries to activate SSL/TLS encryption layer
+\*------------------------------------------------------------------------------*/
+bool BmNetJobModel::StartEncryption(const char* encType)
+{
+	// start connection encryption:
+	status_t error = mConnection->StartEncryption(encType);
+	if (error != B_OK) {
+		if (mConnection->IsStopRequested()) {
+			StopJob();
+			return false;
+		}
+		throw BM_network_error( "Failed to start connection encryption.\n");
+	}
+	return true;
+}
+
+/*------------------------------------------------------------------------------*\
 	ShouldContinue()
 		-	determines whether or not the netjob should continue to run
 		-	if the job has been stopped, we pass this info on to our
@@ -691,7 +709,7 @@ uint32 BmNetOBuf::Write( const char* data, uint32 len)
 		BM_LOG3( mJob->LogType(), 
 					BmString("...sent ") << sent << " bytes");
 		if (sent < 0)
-			throw BM_network_error( Connection()->ErrorStr());
+			throw BM_network_error( strerror(sent));
 		else {
 			offs += sent;
 			sentSize += (uint32)sent;
@@ -722,7 +740,7 @@ uint32 BmNetOBuf::Write( BmMemIBuf* input, uint32 blockSize)
 		delete [] buf;
 	} catch (BM_error& err) {
 		delete [] buf;
-		throw err;
+		throw;
 	}
 	return writeLen;
 }

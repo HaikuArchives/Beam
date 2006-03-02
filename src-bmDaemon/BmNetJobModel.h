@@ -67,6 +67,7 @@ public:
 
 	// native methods:
 	virtual void UpdateProgress( uint32 numBytes) = 0;
+	virtual bool StartEncryption(const char* encType);
 
 	// overrides of BmJobModel base:
 	bool ShouldContinue();
