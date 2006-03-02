@@ -92,6 +92,8 @@ public:
 													{ return mHomeFolder; }
 	inline const BmString &ClientCertificate() const 
 													{ return mClientCertificate; }
+	inline const BmString &AcceptedCertID() const 
+													{ return mAcceptedCertID; }
 
 	// setters:
 	inline void EncryptionType( const BmString &s)
@@ -137,6 +139,9 @@ public:
 	inline void ClientCertificate( const BmString &s)
 													{ mClientCertificate = s;  
 													  TellModelItemUpdated( UPD_ALL); }
+	inline void AcceptedCertID( const BmString &s)
+													{ mAcceptedCertID = s;  
+													  TellModelItemUpdated( UPD_ALL); }
 
 	static const char* const ENCR_AUTO;
 	static const char* const ENCR_STARTTLS;
@@ -168,6 +173,7 @@ public:
 	static const char* const MSG_DELETE_DELAY;
 	static const char* const MSG_TYPE;
 	static const char* const MSG_CLIENT_CERT;
+	static const char* const MSG_ACCEPTED_CERT;
 	static const int16 nArchiveVersion;
 
 protected:
@@ -195,6 +201,8 @@ protected:
 											// may change that)
 	BmString mClientCertificate;	// the client certificate that is going to
 											// be used during SSL/TLS handshake
+	BmString mAcceptedCertID;		// ID of certificate that has been explicitly
+											// accepted by user
 
 	BmUidMap mUIDs;					// maps UIDs to time downloaded
 	BMessageRunner* mIntervalRunner;

@@ -75,6 +75,8 @@ public:
 													{ return mAccForSmtpAfterPop; }
 	inline const BmString &ClientCertificate() const 
 													{ return mClientCertificate; }
+	inline const BmString &AcceptedCertID() const 
+													{ return mAcceptedCertID; }
 
 	// setters:
 	inline void Username( const BmString &s) 	
@@ -107,6 +109,9 @@ public:
 	inline void ClientCertificate( const BmString &s)
 													{ mClientCertificate = s;  
 													  TellModelItemUpdated( UPD_ALL); }
+	inline void AcceptedCertID( const BmString &s)
+													{ mAcceptedCertID = s;  
+													  TellModelItemUpdated( UPD_ALL); }
 
 	static const char* const ENCR_AUTO;
 	static const char* const ENCR_STARTTLS;
@@ -133,6 +138,7 @@ public:
 	static const char* const MSG_ACC_FOR_SAP;
 	static const char* const MSG_STORE_PWD;
 	static const char* const MSG_CLIENT_CERT;
+	static const char* const MSG_ACCEPTED_CERT;
 	static const int16 nArchiveVersion;
 
 	// message field names:
@@ -158,6 +164,8 @@ private:
 	BmString mAccForSmtpAfterPop;	// pop-account to use for authentication
 	BmString mClientCertificate;	// the client certificate that is going to
 											// be used during SSL/TLS handshake
+	BmString mAcceptedCertID;		// ID of certificate that has been explicitly
+											// accepted by user
 };
 
 

@@ -48,6 +48,7 @@ const char* const BmRecvAccount::MSG_FILTER_CHAIN = 	"bm:filterch";
 const char* const BmRecvAccount::MSG_HOME_FOLDER =  	"bm:homefold";
 const char* const BmRecvAccount::MSG_TYPE = 				"bm:type";
 const char* const BmRecvAccount::MSG_CLIENT_CERT = 	"bm:clientcert";
+const char* const BmRecvAccount::MSG_ACCEPTED_CERT = 	"bm:acccert";
 const int16 BmRecvAccount::nArchiveVersion = 12;
 
 const char* const BmRecvAccount::ENCR_AUTO = 		"<auto>";
@@ -115,6 +116,7 @@ BmRecvAccount::BmRecvAccount( BMessage* archive, BmRecvAccountList* model)
 	mMarkedAsDefault = FindMsgBool( archive, MSG_MARK_DEFAULT);
 	mPwdStoredOnDisk = FindMsgBool( archive, MSG_STORE_PWD);
 	mClientCertificate = archive->FindString( MSG_CLIENT_CERT);
+	mAcceptedCertID = archive->FindString( MSG_ACCEPTED_CERT);
 	if (version > 1) {
 		mCheckInterval = FindMsgInt16( archive, MSG_CHECK_INTERVAL);
 		if (mCheckInterval)
@@ -233,6 +235,7 @@ status_t BmRecvAccount::Archive( BMessage* archive, bool deep) const {
 		||	archive->AddString( MSG_FILTER_CHAIN, mFilterChain.String())
 		||	archive->AddString( MSG_HOME_FOLDER, mHomeFolder.String())
 		||	archive->AddString( MSG_CLIENT_CERT, mClientCertificate.String())
+		||	archive->AddString( MSG_ACCEPTED_CERT, mAcceptedCertID.String())
 		||	archive->AddString( MSG_TYPE, Type());
 	int32 i=0;
 	BmUidMap::const_iterator iter;

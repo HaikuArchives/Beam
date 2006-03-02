@@ -32,6 +32,7 @@ const char* const BmSmtpAccount::MSG_PORT_NR = 		"bm:portnr";
 const char* const BmSmtpAccount::MSG_ACC_FOR_SAP = "bm:accForSmtpAfterPop";
 const char* const BmSmtpAccount::MSG_STORE_PWD = 	"bm:storepwd";
 const char* const BmSmtpAccount::MSG_CLIENT_CERT = "bm:clientcert";
+const char* const BmSmtpAccount::MSG_ACCEPTED_CERT = 	"bm:acccert";
 const int16 BmSmtpAccount::nArchiveVersion = 8;
 
 const char* const BmSmtpAccount::ENCR_AUTO = 		"<auto>";
@@ -81,6 +82,7 @@ BmSmtpAccount::BmSmtpAccount( BMessage* archive, BmSmtpAccountList* model)
 	mPortNrString << (uint32)mPortNr;
 	mPwdStoredOnDisk = FindMsgBool( archive, MSG_STORE_PWD);
 	mClientCertificate = archive->FindString( MSG_CLIENT_CERT);
+	mAcceptedCertID = archive->FindString( MSG_ACCEPTED_CERT);
 	if (version > 1) {
 		mAccForSmtpAfterPop = FindMsgString( archive, MSG_ACC_FOR_SAP);
 	}
@@ -100,7 +102,6 @@ BmSmtpAccount::BmSmtpAccount( BMessage* archive, BmSmtpAccountList* model)
 	} else {
 		mEncryptionType = FindMsgString( archive, MSG_ENCRYPTION_TYPE);
 	}
-	mClientCertificate = archive->FindString( MSG_CLIENT_CERT);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -127,7 +128,8 @@ status_t BmSmtpAccount::Archive( BMessage* archive, bool deep) const {
 		||	archive->AddInt16( MSG_PORT_NR, mPortNr)
 		||	archive->AddBool( MSG_STORE_PWD, mPwdStoredOnDisk)
 		||	archive->AddString( MSG_ACC_FOR_SAP, mAccForSmtpAfterPop.String())
-		||	archive->AddString( MSG_CLIENT_CERT, mClientCertificate.String());
+		||	archive->AddString( MSG_CLIENT_CERT, mClientCertificate.String())
+		||	archive->AddString( MSG_ACCEPTED_CERT, mAcceptedCertID.String());
 	return ret;
 }
 
