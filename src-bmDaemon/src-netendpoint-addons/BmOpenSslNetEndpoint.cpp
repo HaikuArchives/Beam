@@ -282,8 +282,8 @@ status_t BmOpenSslNetEndpoint::StartEncryption(const char* encType) {
 		return B_ERROR;
 	}
 
-	mVerificationError.Truncate(0);
 	// connect
+	_ClearErrorState();
 	if ((result = SSL_connect( mSSL)) != 1) {
 		mError = SSL_get_error( mSSL, result);
 		return B_ERROR;
@@ -474,7 +474,8 @@ status_t BmOpenSslNetEndpoint
 				mError = err;
 				stop = true;
 			}
-		}
+		} else
+			stop = true;
 	}
 	if (pkcs12);
 		PKCS12_free(pkcs12);
@@ -491,7 +492,7 @@ int BmOpenSslNetEndpoint::_FetchVerificationError(X509_STORE_CTX *store)
 {
 	int err = X509_STORE_CTX_get_error(store);
 	mVerificationError
-		<< err << " - " << X509_verify_cert_error_string(err) << "\n";
+		<< "   " << err << " - " << X509_verify_cert_error_string(err) << "\n";
 	// in order to delegate error handling to _PostHandshakeCheck(), 
 	// we always pretend that the certificate is ok:
 	return 1;
@@ -654,6 +655,16 @@ BmString BmOpenSslNetEndpoint::_CertAsString(X509* cert)
 }
 
 /*------------------------------------------------------------------------------*\
+	_ClearErrorState()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmOpenSslNetEndpoint::_ClearErrorState()
+{
+	mVerificationError.Truncate(0);
+	mError = 0;
+}
+
+/*------------------------------------------------------------------------------*\
 	_PostHandshakeCheck()
 		-	
 \*------------------------------------------------------------------------------*/
@@ -673,6 +684,10 @@ status_t BmOpenSslNetEndpoint::_PostHandshakeCheck()
 		BmString fingerprint = _FingerprintForCert(cert);
 		BmString certID;
 			certID << fingerprint << "#" << X509_issuer_and_serial_hash(cert);
+		BmString acceptedCertID
+			= mAdditionalInfo.FindString(MSG_ACCEPTED_CERT_ID);
+		if (certID == acceptedCertID)
+			return X509_V_OK;
 		
 		result = SSL_get_verify_result(mSSL);
 		BmString namesFoundInCert;
@@ -680,37 +695,44 @@ status_t BmOpenSslNetEndpoint::_PostHandshakeCheck()
 		X509_free(cert);
 		if (!hostVerified) {
 			mVerificationError 
-				<< "The given hostname\n   " << serverName << "\n"
-				<< "doesn't match any of the names found in the certificate:\n"
-				<< "   " << namesFoundInCert << "\n";
+				<< "   The given hostname\n"
+				<< "      " << serverName << "\n"
+				<< "   doesn't match any of the names found in the certificate:\n"
+				<< "      " << namesFoundInCert << "\n";
 		}
 		if (mVerificationError.Length()) {
 			// if any error occured, be it during openssl-internal verification
 			// or our own, we create an intro for the verification problem
 			// message...
+			BmString boundary;
+			boundary.SetTo('-', 100);
 			BmString problemMsg;
 			problemMsg
-				<< "The server-certificate could not be validated properly!\n"
-				<< "-----------------------------------------------------------\n"
-				<< "Certificate received from " << serverName << "\n"
+				<< "The server-certificate received from " << serverName << "\n"
+				<< "could not be validated properly!\n"
+				<< boundary << "\n"
+				<< "Certificate Info\n"
 				<< "   MD5-Fingerprint:   " << fingerprint << "\n"
 				<< _CertAsString(cert)
-				<< "-----------------------------------------------------------\n"
+				<< boundary << "\n"
+				<< "During validation, these problems occured:\n"
 				<< mVerificationError
-				<< "-----------------------------------------------------------\n"
+				<< boundary << "\n"
 				<< "Would you still like to accept this certificate and proceed?";
 			// ...and tell the user and ask if we should go on:
 			int32 choice = BeamGuiRoster->ShowAlert(problemMsg, 
 																 "Cancel", 
 																 "Accept Permanently", 
-																 "Accept for this Session");
+																 "Accept");
 			result = X509_V_OK;
-			if (choice == 1)
-				mAdditionalInfo.AddString("new-certID-accepted", certID.String());
-			else if (choice == 0) {
+			if (choice == 1) {
+				// set new accepted certID such that it gets stored
+				NewAcceptedCertID(certID);
+			} else if (choice == 0) {
 				mStopRequested = true;
 				result = X509_V_ERR_APPLICATION_VERIFICATION;
 			}
+			_ClearErrorState();
 		}
 	}
 	return result;

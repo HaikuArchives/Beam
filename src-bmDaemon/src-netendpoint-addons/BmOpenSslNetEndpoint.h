@@ -79,6 +79,7 @@ private:
 	bool _VerifyHostname(X509* cert, const BmString& hostname, 
 								BmString& namesFoundInCert);
 	BmString _CertAsString(X509* cert);
+	void _ClearErrorState();
 	status_t _PostHandshakeCheck();
 
 	SSL* mSSL;
