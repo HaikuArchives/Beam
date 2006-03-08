@@ -533,8 +533,47 @@ BmString BmOpenSslNetEndpoint::_FingerprintForCert(X509* cert)
 bool BmOpenSslNetEndpoint::_MatchHostname(const BmString& hostname,
 														const BmString& pattern)
 {
-printf("matching host<%s> to pattern<%s>\n", hostname.String(), pattern.String());
-	return hostname == pattern;
+	if (hostname.ICompare(pattern) == 0)
+		return true;
+	BmString hPart, pPart;
+	int32 hsPos = 0;
+	int32 hePos = hostname.Length();
+	int32 psPos = 0;
+	int32 pePos = pattern.Length();
+	bool stop = false;
+	while(!stop) {
+		if (hePos >= 0) {
+			hsPos = hostname.FindLast('.', hePos-1);
+			if (hsPos >= 0) {
+				hPart.SetTo(hostname.String()+hsPos+1, hePos-(hsPos+1));
+				hePos = hsPos;
+			} else {
+				hPart.SetTo(hostname.String(), hePos);
+				stop = true;
+			}
+		} else {
+			hPart.SetTo("");
+			stop = true;
+		}
+		if (pePos >= 0) {
+			psPos = pattern.FindLast('.', pePos-1);
+			if (psPos >= 0) {
+				pPart.SetTo(pattern.String()+psPos+1, pePos-(psPos+1));
+				pePos = psPos;
+			} else {
+				pPart.SetTo(pattern.String(), pePos);
+				stop = true;
+			}
+		} else {
+			pPart.SetTo("");
+			stop = true;
+		}
+		int32 asteriskPos = pPart.FindFirst('*');
+		int32 matchLen = asteriskPos<0 ? pPart.Length() : asteriskPos;
+		if (hPart.ICompare(pPart, matchLen) != 0)
+			return false;
+	}
+	return hsPos < 0 && psPos < 0;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -679,11 +718,8 @@ status_t BmOpenSslNetEndpoint::_PostHandshakeCheck()
 		// since the user can setup Beam such that it blindly accepts a server
 		// certificate given a specific id, we need to be able to *uniquely* 
 		// identify each and every server certificate. In order to get such an
-		// id, we compute the certID as the concatenation of the certificate 
-		// fingerprint and the hash of the certificate issuer and serial:
-		BmString fingerprint = _FingerprintForCert(cert);
-		BmString certID;
-			certID << fingerprint << "#" << X509_issuer_and_serial_hash(cert);
+		// id, we compute the certificate fingerprint and use it for that purpose:
+		BmString certID = _FingerprintForCert(cert);
 		BmString acceptedCertID
 			= mAdditionalInfo.FindString(MSG_ACCEPTED_CERT_ID);
 		if (certID == acceptedCertID)
@@ -705,14 +741,14 @@ status_t BmOpenSslNetEndpoint::_PostHandshakeCheck()
 			// or our own, we create an intro for the verification problem
 			// message...
 			BmString boundary;
-			boundary.SetTo('-', 100);
+			boundary.SetTo('-', 90);
 			BmString problemMsg;
 			problemMsg
 				<< "The server-certificate received from " << serverName << "\n"
 				<< "could not be validated properly!\n"
 				<< boundary << "\n"
 				<< "Certificate Info\n"
-				<< "   MD5-Fingerprint:   " << fingerprint << "\n"
+				<< "   MD5-Fingerprint:   " << certID << "\n"
 				<< _CertAsString(cert)
 				<< boundary << "\n"
 				<< "During validation, these problems occured:\n"
