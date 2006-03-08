@@ -43,10 +43,11 @@ status_t WatchNode( const node_ref *node, uint32 flags, BHandler *handler) {
 	static int32 gNodeMonitorCount = 4096;
 	static const int32 kNodeMonitorBumpValue = 1024;
 	
-	if (!handler)
+	BMessenger target(handler);
+	if (!handler || !target.IsValid())
 		return B_BAD_VALUE;
 
-	status_t result = watch_node( node, flags, BMessenger(handler));
+	status_t result = watch_node( node, flags, target);
 
 	if (result == ENOMEM) {
 		gNodeMonitorCount += kNodeMonitorBumpValue;
@@ -60,7 +61,7 @@ status_t WatchNode( const node_ref *node, uint32 flags, BHandler *handler) {
 			return result;
 		}
 		// try again, this time with more node monitors
-		result = watch_node(node, flags, BMessenger(handler));
+		result = watch_node(node, flags, target);
 	}
 	if (result != B_OK)
 		BM_LOGERR( BmString("Failed to monitor a node: ") << strerror(result));
