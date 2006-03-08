@@ -93,7 +93,8 @@ class BmPrefsSendMailView : public BmPrefsView {
 		BM_CHECK_AND_SUGGEST		= 'bmCS',
 		BM_ADD_ACCOUNT 			= 'bmAA',
 		BM_REMOVE_ACCOUNT 		= 'bmRA',
-		BM_CLIENT_CERT_SELECTED = 'bmCT'
+		BM_CLIENT_CERT_SELECTED = 'bmCT',
+		BM_CLEAR_ACCEPTED_CERT  = 'bmCA'
 	};
 
 
@@ -133,6 +134,7 @@ private:
 	BmTextControl* mPwdControl;
 	BmTextControl* mServerControl;
 	BmTextControl* mClientCertControl;
+	BmTextControl* mAcceptedCertControl;
 	BmMenuControl* mEncryptionControl;
 	BmMenuControl* mAuthControl;
 	BmMenuControl* mPopControl;
@@ -141,6 +143,7 @@ private:
 	MButton* mAddButton;
 	MButton* mRemoveButton;
 	MButton* mSelectClientCertButton;
+	MButton* mClearAcceptedCertButton;
 
 	BFilePanel* mClientCertPanel;
 

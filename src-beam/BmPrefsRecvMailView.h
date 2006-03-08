@@ -102,7 +102,8 @@ class BmPrefsRecvMailView : public BmPrefsView {
 		BM_ADD_IMAP_ACCOUNT 			= 'bmAI',
 		BM_REMOVE_ACCOUNT 		 	= 'bmRA',
 		BM_CHECK_IF_PPP_UP_CHANGED = 'bmCP',
-		BM_CLIENT_CERT_SELECTED 	= 'bmCT'
+		BM_CLIENT_CERT_SELECTED 	= 'bmCT',
+		BM_CLEAR_ACCEPTED_CERT  	= 'bmCA'
 	};
 	
 public:
@@ -141,6 +142,7 @@ private:
 	BmTextControl* mCheckIntervalControl;
 	BmTextControl* mDeleteMailDelayControl;
 	BmTextControl* mClientCertControl;
+	BmTextControl* mAcceptedCertControl;
 	BmMenuControl* mEncryptionControl;
 	BmMenuControl* mAuthControl;
 	BmMenuControl* mFilterChainControl;
@@ -156,6 +158,7 @@ private:
 	MButton* mAddImapButton;
 	MButton* mRemoveButton;
 	MButton* mSelectClientCertButton;
+	MButton* mClearAcceptedCertButton;
 	MStringView* mMinutesLabel;
 	MStringView* mDaysLabel;
 

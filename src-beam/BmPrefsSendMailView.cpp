@@ -210,64 +210,83 @@ BmPrefsSendMailView::BmPrefsSendMailView()
 			),
 			new Space( minimax(0,10,0,10)),
 			new HGroup(
-				new MBorder( M_LABELED_BORDER, 10, (char*)"Account Info",
-					new VGroup(
-						mAccountControl = new BmTextControl( 
-							"Account name:", false, 0, 25
-						),
-						new Space( minimax(0,5,0,5)),
-						new HGroup( 
-							mServerControl = new BmTextControl( "SMTP-Server / Port:"),
-							mPortControl = new BmTextControl( "", false, 0, 8),
+				new VGroup(
+					new MBorder( M_LABELED_BORDER, 10, (char*)"Account Info",
+						new VGroup(
+							mAccountControl = new BmTextControl( 
+								"Account name:", false, 0, 25
+							),
+							new Space( minimax(0,5,0,5)),
+							new HGroup( 
+								mServerControl = new BmTextControl( "SMTP-Server / Port:"),
+								mPortControl = new BmTextControl( "", false, 0, 8),
+								0
+							),
+							new Space( minimax(0,5,0,5)),
+							new HGroup(
+								mAuthControl = new BmMenuControl( 
+									"Auth-method:", 
+									new BPopUpMenu("")
+								),
+								mCheckAndSuggestButton = new MButton(
+									"Check and Suggest", 
+									new BMessage(BM_CHECK_AND_SUGGEST), 
+									this, minimax(-1,-1,-1,-1)
+								),
+								0
+							),
+							mPopControl = new BmMenuControl( 
+								"POP3-Account:", 
+								new BmMenuController( 
+									"POP3-Account:", 
+									this, 
+									new BMessage( BM_POP_SELECTED),
+									&BmGuiRosterBase::RebuildRecvAccountMenu, 
+									BM_MC_LABEL_FROM_MARKED | BM_MC_ADD_NONE_ITEM
+								)
+							),
+							new HGroup( 
+								mLoginControl = new BmTextControl( "User / Pwd:"),
+								mPwdControl = new BmTextControl( "", false, 0, 8),
+								0
+							),
+							new Space( minimax(0,5,0,5)),
+							mDomainControl = new BmTextControl( "Domain to announce:"),
 							0
-						),
-						new Space( minimax(0,5,0,5)),
-						mEncryptionControl = new BmMenuControl( 
-							"Encryption:", 
-							new BPopUpMenu("")
-						),
-						new HGroup(
-							mAuthControl = new BmMenuControl( 
-								"Auth-method:", 
+						)
+					),
+					new MBorder( M_LABELED_BORDER, 10, (char*)"Encryption & Security",
+						new VGroup(
+							mEncryptionControl = new BmMenuControl( 
+								"Encryption:", 
 								new BPopUpMenu("")
 							),
-							mCheckAndSuggestButton = new MButton(
-								"Check and Suggest", 
-								new BMessage(BM_CHECK_AND_SUGGEST), 
-								this, minimax(-1,-1,-1,-1)
+							new HGroup( 
+								mAcceptedCertControl 
+									= new BmTextControl("Server Certificate:"),
+								mClearAcceptedCertButton 
+									= new MButton( 
+										"Clear", 
+										new BMessage(BM_CLEAR_ACCEPTED_CERT), 
+										this
+									),
+								0
+							),
+							new HGroup( 
+								mClientCertControl 
+									= new BmTextControl("Client Certificate:"),
+								mSelectClientCertButton 
+									= new MButton( 
+										"Select"B_UTF8_ELLIPSIS, 
+										new BMessage(BM_CLIENT_CERT_SELECTED), 
+										this
+									),
+								0
 							),
 							0
-						),
-						mPopControl = new BmMenuControl( 
-							"POP3-Account:", 
-							new BmMenuController( 
-								"POP3-Account:", 
-								this, 
-								new BMessage( BM_POP_SELECTED),
-								&BmGuiRosterBase::RebuildRecvAccountMenu, 
-								BM_MC_LABEL_FROM_MARKED | BM_MC_ADD_NONE_ITEM
-							)
-						),
-						new HGroup( 
-							mLoginControl = new BmTextControl( "User / Pwd:"),
-							mPwdControl = new BmTextControl( "", false, 0, 8),
-							0
-						),
-						new HGroup( 
-							mClientCertControl 
-								= new BmTextControl("Client Certificate:"),
-							mSelectClientCertButton 
-								= new MButton( 
-									"Select"B_UTF8_ELLIPSIS, 
-									new BMessage(BM_CLIENT_CERT_SELECTED), 
-									this
-								),
-							0
-						),
-						new Space( minimax(0,5,0,5)),
-						mDomainControl = new BmTextControl( "Domain to announce:"),
-						0
-					)
+						)
+					),
+					0
 				),
 				new VGroup(
 					new MBorder( M_LABELED_BORDER, 10, (char*)"Options",
@@ -286,7 +305,6 @@ BmPrefsSendMailView::BmPrefsSendMailView()
 				),
 				0
 			),
-			new Space(minimax(0,0,1E5,1E5,0.5)),
 			0
 		);
 	mGroupView->AddChild( dynamic_cast<BView*>(view));
@@ -302,6 +320,7 @@ BmPrefsSendMailView::BmPrefsSendMailView()
 		mEncryptionControl,
 		mAuthControl,
 		mPopControl,
+		mAcceptedCertControl,
 		NULL
 	);
 
@@ -310,6 +329,7 @@ BmPrefsSendMailView::BmPrefsSendMailView()
 	mPwdControl->SetDivider( 15);
 	mPwdControl->ct_mpm.weight = 0.4;
 	mSelectClientCertButton->ct_mpm = minimax(-1,-1,-1,-1,0);
+	mClearAcceptedCertButton->ct_mpm = minimax(-1,-1,-1,-1,0);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -331,6 +351,8 @@ BmPrefsSendMailView::~BmPrefsSendMailView() {
 	TheBubbleHelper->SetHelp( mCheckAndSuggestButton, NULL);
 	TheBubbleHelper->SetHelp( mClientCertControl, NULL);
 	TheBubbleHelper->SetHelp( mSelectClientCertButton, NULL);
+	TheBubbleHelper->SetHelp( mAcceptedCertControl, NULL);
+	TheBubbleHelper->SetHelp( mClearAcceptedCertButton, NULL);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -457,6 +479,18 @@ void BmPrefsSendMailView::Initialize() {
 		"When you click here, Beam will connect to the SMTP-server,\n"
 		"check which authentication types it supports and select\n"
 		"the most secure."
+	);
+	TheBubbleHelper->SetHelp( 
+		mAcceptedCertControl, 
+		"This shows the MD5-fingerprint of the server certificate\n"
+		"which has been permanently accepted in one of the preceeding\n"
+		"sessions."
+	);
+	TheBubbleHelper->SetHelp( 
+		mClearAcceptedCertButton, 
+		"Pressing this button resets the certificate information for\n"
+		"this account, such that Beam no longer accepts the server's\n"
+		"certificate automatically."
 	);
 
 	mAccountControl->SetTarget( this);
@@ -724,6 +758,12 @@ void BmPrefsSendMailView::MessageReceived( BMessage* msg) {
 				}
 				break;
 			}
+			case BM_CLEAR_ACCEPTED_CERT: {
+				mCurrAcc->AcceptedCertID("");
+				mAcceptedCertControl->SetText("");
+				NoticeChange();
+				break;
+			}
 			case BM_POP_SELECTED: {
 				BMenuItem* item = mPopControl->Menu()->FindMarked();
 				if (item && BM_NoItemLabel != item->Label())
@@ -830,6 +870,7 @@ void BmPrefsSendMailView::ShowAccount( int32 selection) {
 		mPopControl->ClearMark();
 		mStorePwdControl->SetValue( 0);
 		mClientCertControl->SetTextSilently( "");
+		mAcceptedCertControl->SetTextSilently( "");
 	} else {
 		BmSendAccItem* accItem 
 			= dynamic_cast<BmSendAccItem*>(mAccListView->ItemAt( selection));
@@ -863,6 +904,9 @@ void BmPrefsSendMailView::ShowAccount( int32 selection) {
 					mClientCertControl->SetTextSilently( 
 						mCurrAcc->ClientCertificate().String()
 					);
+					mAcceptedCertControl->SetTextSilently( 
+						mCurrAcc->AcceptedCertID().String()
+					);
 				}
 			}
 		} else
@@ -882,14 +926,17 @@ void BmPrefsSendMailView::UpdateState() {
 	mDomainControl->SetEnabled( accSelected);
 	mPortControl->SetEnabled( accSelected);
 	mServerControl->SetEnabled( accSelected);
+	mAcceptedCertControl->SetEnabled( false);
 	if (TheNetEndpointRoster->SupportsEncryption()) {
 		mEncryptionControl->SetEnabled( accSelected);
 		mClientCertControl->SetEnabled( accSelected);
 		mSelectClientCertButton->SetEnabled( accSelected);
+		mClearAcceptedCertButton->SetEnabled( accSelected);
 	} else {
 		mEncryptionControl->SetEnabled( false);
 		mClientCertControl->SetEnabled( false);
 		mSelectClientCertButton->SetEnabled( false);
+		mClearAcceptedCertButton->SetEnabled( false);
 	}
 	mAuthControl->SetEnabled( accSelected);
 	mCheckAndSuggestButton->SetEnabled( accSelected);
