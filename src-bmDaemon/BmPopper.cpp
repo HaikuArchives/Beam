@@ -430,8 +430,10 @@ bool BmPopper::StartEncryption(const char* encType)
 	bool ok = inherited::StartEncryption(encType);
 	if (ok) {
 		BmString certID = mConnection->NewAcceptedCertID();
-		if (certID.Length() && mPopAccount->AcceptedCertID() != certID)
+		if (certID.Length() && mPopAccount->AcceptedCertID() != certID) {
 			mPopAccount->AcceptedCertID(certID);
+			TheRecvAccountList->MarkAsStoreNeeded();
+		}
 	}
 	return ok;
 }

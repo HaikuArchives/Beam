@@ -477,8 +477,10 @@ bool BmSmtp::StartEncryption(const char* encType)
 	bool ok = inherited::StartEncryption(encType);
 	if (ok) {
 		BmString certID = mConnection->NewAcceptedCertID();
-		if (certID.Length() && mSmtpAccount->AcceptedCertID() != certID)
+		if (certID.Length() && mSmtpAccount->AcceptedCertID() != certID) {
 			mSmtpAccount->AcceptedCertID(certID);
+			TheSmtpAccountList->MarkAsStoreNeeded();
+		}
 	}
 	return ok;
 }
