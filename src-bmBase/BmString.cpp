@@ -1330,7 +1330,7 @@ BmString::FindLast(char c, int32 beforeOffset) const
 		return B_ERROR;
 		
 	const char *start = String();
-	const char *end = String() + Length() - beforeOffset;
+	const char *end = String() + beforeOffset;
 	
 	/* Scans the string backwards until we found the character, */
 	/* or we reach the string's start */
