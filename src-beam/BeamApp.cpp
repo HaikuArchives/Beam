@@ -827,9 +827,12 @@ thread_id BeamApplication::Run() {
 			// user has renamed a folder, for instance the references
 			// to this folder will have moved along automatically, but
 			// we need to store these new prefs, as otherwise it would
-			// be lost.
+			// be lost from the next session onwards.
 		TheRecvAccountList->StoreIfNeeded();
-			// store identity-list since the current identity
+			// store recv-account-list since the certificate info
+			// may have changed
+		TheSmtpAccountList->StoreIfNeeded();
+			// store smtp-account-list since the certificate info
 			// may have changed
 		TheIdentityList->StoreIfNeeded();
 			// store identity-list since the current identity
