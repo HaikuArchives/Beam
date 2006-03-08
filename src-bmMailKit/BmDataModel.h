@@ -310,6 +310,7 @@ public:
 	//
 	virtual bool Store();
 	void StoreIfNeeded();
+	void MarkAsStoreNeeded()				{ mNeedsStore = true; }
 	bool FlushStoredActions();
 	virtual const BmString SettingsFileName() = 0;
 	virtual void InitializeItems()		{ mInitCheck = B_OK; }
