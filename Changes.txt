@@ -1,6 +1,139 @@
 change-history of Beam:
 		$Id$
 
+< 2006-03-10: added tag 'rel-1-1-rc2' >
+
+< 2006-03-10: commit, moved tag 'current-devel' >
+
+BmOpenSslNetEndpoint:
+	-	added hackish fix to avoid wrapping of boundary lines
+		in alert messages.
+
+Changes.txt
+	-	updated
+
+< 2006-03-08: commit, moved tag 'current-devel' >
+
+BeamApp:
+	-	Added auto-storing of smtp-accounts since they may now
+		be changed by the user accepting a server certificate.
+
+BmDataModel:
+	-	added MarkAsStoreNeeded() in order to allow items of
+		a listmode to trigger storing of the list.
+
+BmImap, BmPopper, BmSmtp:
+	-	the listmodel is now told to store itself if the
+		accepted certificate has changed.
+
+BmOpenSslNetEndpoint:
+	-	changed format of certificate-id to be the fingerprint
+		only (should be enough and is less confusing).
+	-	implemented hostname matching
+
+BmPrefsRecvMailView, BmPrefsSendMailView:
+	-	separated TLS-related settings from other stuff
+	-	added display of accepted certificate's MD5-fingerprint
+	-	added support for clearing the accepted certificate
+
+BmStorageUtil:
+	-	finally nailed the bug that caused lots of error logging
+		during shutdown.
+
+BmString:
+	-	fixed broken FindLast() taking a char and an offset
+
+< 2006-03-02: commit, moved tag 'current-devel' >
+
+BmImap, BmPopper, BmSmtp:
+	-	improved stability by catching all possible exceptions
+	-	in case of being stopped, we no longer give the impression of
+		having moved to the next protocol state.
+	-	added support for persistence of accepted cert IDs
+	
+BmJobStatusWin:
+	-	changed behaviour to allow for queueing of network jobs,
+		which now is the default. Running network jobs in parallel,
+		while seeming nice in theory, doesn't improve the performance
+		at all, and actually causes pain by hogging lots of CPU-
+		cycles (well, the R5-NetServer does).
+
+BmNetEndpoint:
+	-	added support for persistence of accepted cert IDs
+
+BmNetJobModel:
+	-	fixed incorrect re-throwing of exception
+	-	finished support for persistence of accepted cert IDs
+
+BmOpenSslNetEndpoint:
+	-	fixed endless loop when asking for passphrase
+	-	improved error output when validation fails
+	-	finished support for persistence of accepted cert IDs
+
+BmPrefs:
+	-	added default for 'QueueNetworkJobs' (true)
+
+BmPrefsRecvMailView, BmPrefsSendMailView:
+	-	certificate selection is only enabled if an add-on has 
+		been loaded that supports it
+
+BmRecvAccount, BmSmtpAccount:
+	-	added setting/getting of accepted certificate id.
+
+BmBasics, BmUtil, regexx:
+	-	changed all exceptions to stem from std::runtime_error
+		such that it is easier to catch them all
+
+< 2006-02-27: commit >
+
+BmGuiRoster, BmRosterBase:
+	-	added ShowAlert() which allows add-ons to show alerts.
+
+BmMailEditWin:
+	-	changed layout in order to decrease need for tabbing.
+
+BmNetEndpoint, BmNetJobModel, BmImap, BmPopper, BmSmtp:
+	-	adjusted interface and implementation to care for the
+		needs of certificate validation.
+
+BmNetEndpointRoster:
+	-	added locking, just to be safe.
+	-	added support for getting the default certificate path
+
+BmOpenSslNetEndpoint:
+	-	nearly finished implementation of certificate 
+		validation and improved error handling. The only thing
+		missing is persistence for accepted certificates.
+
+BmPrefsRecvMailView, BmPrefsSendMailView, BmRecvAccount, 
+BmSmtpAccount:
+	-	added support for selecting a client-certificate for an
+		account.
+
+BmPrefsView, BmPrefsWin:
+	-	changed 'Apply' to 'Save', as any changes are actually
+		applied automatically, it's only the storing that is
+		triggered by this button.
+
+BmStorageUtil:
+	-	circumvent logging lots of errors for being unable to
+		stop watching each folder upon shutdown (since the mail 
+		monitor has already been deleted).
+
+< 2006-02-10: commit >
+
+BeamApp:
+	-	added automatic rewriting of mails if they do not contain
+		any attributes yet (as happens when a mail has come from
+		an attachment).
+
+BmMail:
+	-	fixed problems when trying to store a mail outside of
+		mailbox hierarchy.
+
+BmStorageUtil:
+	-	improved error checking for WatchNode().
+
 < 2006-02-05: commit, moved tag 'current-devel'>
 
 BmDataModel:
