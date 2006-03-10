@@ -9,6 +9,9 @@
 
 #include <Font.h>
 #include <Message.h>
+#ifdef BEAM_FOR_BONE
+# include <netinet/in.h>
+#endif
 #include <NetEndpoint.h>
 
 #include "BmOpenSslNetEndpoint.h"
