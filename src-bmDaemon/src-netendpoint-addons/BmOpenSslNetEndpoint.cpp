@@ -7,6 +7,7 @@
  *		Oliver Tappe <beam@hirschkaefer.de>
  */
 
+#include <Font.h>
 #include <Message.h>
 #include <NetEndpoint.h>
 
@@ -741,7 +742,9 @@ status_t BmOpenSslNetEndpoint::_PostHandshakeCheck()
 			// or our own, we create an intro for the verification problem
 			// message...
 			BmString boundary;
-			boundary.SetTo('-', 90);
+			float count = 296.0 / be_plain_font->StringWidth("-");
+				// hack to avoid wrapping of boundary
+			boundary.SetTo('-', count);
 			BmString problemMsg;
 			problemMsg
 				<< "The server-certificate received from " << serverName << "\n"
