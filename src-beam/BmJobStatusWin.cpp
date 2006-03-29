@@ -46,6 +46,13 @@
 #include "BmSmtp.h"
 #include "Colors.h"
 
+/*
+ * TODO: refactor this bloody mess into something useful...
+ *       currently, it's too hard to tell what's going on when (too many
+ *			different concepts in one class).
+ */
+
+
 
 static const int BM_MINSIZE = 200;
 
@@ -178,29 +185,27 @@ void BmJobStatusView::JobIsDone( bool completed) {
 	BM_LOG2( BM_LogModelController, 
 				BmString("Controller <") << ControllerName() 
 					<< "> has been told that job " << ModelName() << " is done");
-	if (ThePrefs->GetBool("DynamicStatusWin") || AlwaysRemoveWhenDone()) {
-		int32 timeToWait 
-			= completed 
-				? (TheJobStatusWin->IsHidden() 
-					? 1 
-					: MSecsBeforeRemove())
-				: (TheJobStatusWin->IsHidden() 
-					? 1 
-					: ThePrefs->GetInt("MSecsBeforeRemoveFailed", 5000*1000));
-		delete mRemoveMsgRunner;
-		mRemoveMsgRunner = NULL;
-		BMessage timerMsg( BM_TIME_TO_REMOVE);
-		BM_LOG2( BM_LogModelController, 
-					BmString("Controller <") << ControllerName() 
-						<< "> sets timer-to-remove to " << MSecsBeforeRemove() 
-						<< " msecs");
-		mRemoveMsgRunner = new BMessageRunner( 
-			BMessenger( this), &timerMsg, timeToWait, 1
-		);
-		BMessage jobDoneMsg(BM_JOB_DONE);
-		jobDoneMsg.AddString(BmJobModel::MSG_JOB_NAME, ControllerName());
-		Looper()->PostMessage(&jobDoneMsg);
-	}
+	int32 timeToWait 
+		= completed 
+			? (TheJobStatusWin->IsHidden() 
+				? 1 
+				: MSecsBeforeRemove())
+			: (TheJobStatusWin->IsHidden() 
+				? 1 
+				: ThePrefs->GetInt("MSecsBeforeRemoveFailed", 5000*1000));
+	delete mRemoveMsgRunner;
+	mRemoveMsgRunner = NULL;
+	BMessage timerMsg( BM_TIME_TO_REMOVE);
+	BM_LOG2( BM_LogModelController, 
+				BmString("Controller <") << ControllerName() 
+					<< "> sets timer-to-remove to " << MSecsBeforeRemove() 
+					<< " msecs");
+	mRemoveMsgRunner = new BMessageRunner( 
+		BMessenger( this), &timerMsg, timeToWait, 1
+	);
+	BMessage jobDoneMsg(BM_JOB_DONE);
+	jobDoneMsg.AddString(BmJobModel::MSG_JOB_NAME, ControllerName());
+	Looper()->PostMessage(&jobDoneMsg);
 }
 
 
@@ -911,6 +916,13 @@ void BmJobStatusWin::MessageReceived(BMessage* msg) {
 				JobMap::iterator pos = mActiveJobs.find(name);
 				if (pos != mActiveJobs.end()) {
 					// move job from active to done map:
+					JobMap::iterator donePos = mDoneJobs.find(name);
+					if (donePos != mDoneJobs.end()) {
+						// job with this name is still in done queue, we need
+						// to remove it now, since we are going to clobber
+						// its place in the map next:
+						RemoveJob(name.String());
+					}
 					mDoneJobs[name] = pos->second;
 					mActiveJobs.erase(pos);
 				}
@@ -941,7 +953,7 @@ void BmJobStatusWin::QueueJob( BMessage* msg) {
 
 	BmString name = FindMsgString( msg, BmJobModel::MSG_JOB_NAME);
 
-	BM_LOG( BM_LogJobWin, BmString("Queueing job ") << name);
+	BM_LOG( BM_LogJobWin, BmString("Queueing job ") << name << " for addition");
 
 	BmAutolockCheckGlobal lock( this);
 	if (!lock.IsLocked())
@@ -977,63 +989,44 @@ void BmJobStatusWin::AddJob( BMessage* msg) {
 
 	JobMap::iterator interfaceIter = mActiveJobs.find( name);
 	if (interfaceIter != mActiveJobs.end()) {
-		// view found, maybe this job is already active:
-		controller = (*interfaceIter).second;
-		if (controller->IsJobRunning()) {
-			// job is still running, so we better don't disturb:
-			BM_LOG( BM_LogJobWin, 
-					  BmString("JobStatus ") << name 
-					  		<< " still active, add aborted.");
-			return;
-		}
+		// job is already active, so we better don't disturb:
+		return;
 	}
 
-	if (!controller)
-	{	// job is inactive, so we create a new controller for it:
-		BM_LOG2( BM_LogJobWin, BmString("Creating new view for ") << name);
-		switch( msg->what) {
-			case BM_JOBWIN_POP: {
-				bool autoMode = msg->FindBool( BmRecvAccountList::MSG_AUTOCHECK);
-				controller = new BmPopperView( name.String(), autoMode);
-				break;
-			}
-			case BM_JOBWIN_IMAP: {
-				bool autoMode = msg->FindBool( BmRecvAccountList::MSG_AUTOCHECK);
-				controller = new BmImapView( name.String(), autoMode);
-				break;
-			}
-			case BM_JOBWIN_SMTP:
-				controller = new BmSmtpView( name.String());
-				break;
-			case BM_JOBWIN_FILTER:
-				controller = new BmMailFilterView( name.String());
-				break;
-			case BM_JOBWIN_MOVEMAILS:
-				controller = new BmMailMoverView( name.String());
-				break;
-			default:
-				break;
+	// job is inactive, so we create a new controller for it:
+	BM_LOG2( BM_LogJobWin, BmString("Creating new view for ") << name);
+	switch( msg->what) {
+		case BM_JOBWIN_POP: {
+			bool autoMode = msg->FindBool( BmRecvAccountList::MSG_AUTOCHECK);
+			controller = new BmPopperView( name.String(), autoMode);
+			break;
 		}
-
-		BmAutolockCheckGlobal lock( this);
-		if (!lock.IsLocked())
-			BM_THROW_RUNTIME("AddJob(): could not lock window");
-
-		// add the new interface to our view:
-		mOuterGroup->AddChild( dynamic_cast<BView*>(controller));
-		BRect frame = controller->Frame();
-		float height = frame.bottom+2;
-		ResizeTo( Frame().Width(), height);
-		RecalcSize();
-		// ...and add the interface to the map:
-		mActiveJobs[name] = controller;
-	} else {
-		// we are in STATIC-mode, where inactive jobs are shown. We just
-		// have to reactivate the controller.
-		// This is done by the controllers Reset()-method:
-		BM_LOG2( BM_LogJobWin, BmString("Reactivating view of ") << name);
-		controller->ResetController();
+		case BM_JOBWIN_IMAP: {
+			bool autoMode = msg->FindBool( BmRecvAccountList::MSG_AUTOCHECK);
+			controller = new BmImapView( name.String(), autoMode);
+			break;
+		}
+		case BM_JOBWIN_SMTP:
+			controller = new BmSmtpView( name.String());
+			break;
+		case BM_JOBWIN_FILTER:
+			controller = new BmMailFilterView( name.String());
+			break;
+		case BM_JOBWIN_MOVEMAILS:
+			controller = new BmMailMoverView( name.String());
+			break;
+		default:
+			break;
 	}
+
+	// add the new interface to our view:
+	mOuterGroup->AddChild( dynamic_cast<BView*>(controller));
+	BRect frame = controller->Frame();
+	float height = frame.bottom+2;
+	ResizeTo( Frame().Width(), height);
+	RecalcSize();
+	// ...and add the interface to the map:
+	mActiveJobs[name] = controller;
 
 	// finally, we create the new job...
 	BmJobModel* job = controller->CreateJobModel( msg);
@@ -1060,13 +1053,9 @@ void BmJobStatusWin::RemoveJob( const char* name) {
 	if (!lock.IsLocked())
 		BM_THROW_RUNTIME( "RemoveJob(): could not lock window");
 
-	JobMap::iterator interfaceIter = mActiveJobs.find( name);
-	if (interfaceIter == mActiveJobs.end()) {
-		// not found in active jobs, maybe it's done already?
-		interfaceIter = mDoneJobs.find(name);
-		if (interfaceIter == mDoneJobs.end())
-			return;
-	}
+	JobMap::iterator interfaceIter = mDoneJobs.find(name);
+	if (interfaceIter == mDoneJobs.end())
+		return;
 	
 	BmJobStatusView* controller = (*interfaceIter).second;
 	if (controller) {
@@ -1074,7 +1063,6 @@ void BmJobStatusWin::RemoveJob( const char* name) {
 		mOuterGroup->RemoveChild( controller);
 		ResizeBy( 0, -1-(rect.Height()));
 		RecalcSize();
-		mActiveJobs.erase( controller->ControllerName());
 		mDoneJobs.erase( controller->ControllerName());
 
 		if (mActiveJobs.empty()) {
