@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <new>
 
+#include "BmBasics.h"
 #include "BmMemIO.h"
 
 /********************************************************************************\
@@ -84,6 +85,7 @@ uint32 BmMemFilter::Read( char* data, uint32 reqLen) {
 				break;
 			}
 			// we "move-up" the remaining part of the buffer...
+			BM_ASSERT(mCurrPos <= mCurrSize);
 			srcLen = mCurrSize-mCurrPos;
 			memmove( mBuf, mBuf+mCurrPos, srcLen);
 			mCurrPos = 0;
@@ -91,7 +93,8 @@ uint32 BmMemFilter::Read( char* data, uint32 reqLen) {
 			// ...and (re-)fill the buffer from our input-stream:
 			mCurrSize += mInput->Read( mBuf+srcLen, mBlockSize-srcLen);
 		}
-		srcLen = max_c( (uint32)0, (uint32)(mCurrSize - mCurrPos));
+		BM_ASSERT(mCurrPos <= mCurrSize);
+		srcLen = mCurrSize - mCurrPos;
 		if (srcLen) {
 			// actually filter one buffer-block:
 			destLen = reqLen-readLen;
