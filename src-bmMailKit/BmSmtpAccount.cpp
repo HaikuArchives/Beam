@@ -58,6 +58,8 @@ BmSmtpAccount::BmSmtpAccount( const char* name, BmSmtpAccountList* model)
 	,	mPortNr( 25)
 	,	mPortNrString( "25")
 	,	mPwdStoredOnDisk( false)
+	,	mEncryptionType( ENCR_AUTO)
+	,	mAuthMethod( AUTH_AUTO)
 {
 }
 
