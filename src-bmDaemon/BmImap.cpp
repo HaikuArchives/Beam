@@ -73,6 +73,7 @@ void BmImapStatusFilter::Filter( const char* srcBuf, uint32& srcLen,
 {
 	const char* src = srcBuf;
 	const char* srcEnd = srcBuf+srcLen;
+	char c;
 
 	if (!mLiteralCharCount) {
 		BmString tagStr;
@@ -91,9 +92,9 @@ void BmImapStatusFilter::Filter( const char* srcBuf, uint32& srcLen,
 
 		Regexx rx;
 		while(src<srcEnd) {
-			mLineBuf << *src++;
-			if (*src=='\n') {
-				mLineBuf << *src++;
+			c = *src++;
+			mLineBuf << c;
+			if (c == '\n') {
 				// now we have a complete line in the ring buffer, we fetch it...
 				mLastStatusLine = mLineBuf;
 				// ...and check it's status:
