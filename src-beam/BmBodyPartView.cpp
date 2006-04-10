@@ -556,10 +556,10 @@ void BmBodyPartView::MessageReceived( BMessage* msg) {
 								);
 							if (!bodyPartItem)
 								break;
-							BmBodyPart* bodyPart( bodyPartItem->ModelItem());
+							BmRef<BmBodyPart> bodyPart( bodyPartItem->ModelItem());
 							if (!bodyPart)
 								break;
-							bodyPartList->RemoveItemFromList( bodyPart);
+							bodyPartList->RemoveItemFromList( bodyPart.Get());
 							bodyPartList->Mail()->ConstructAndStore();
 						}
 					}
