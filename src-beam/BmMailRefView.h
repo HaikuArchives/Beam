@@ -86,6 +86,16 @@ class BmMailRefView : public BmListViewController
 {
 	typedef BmListViewController inherited;
 
+	class ReselectionInfo {
+	public:
+		ReselectionInfo() : mTimeOfDeselection(0) {}
+		void NoteDeselectionOf(const entry_ref& eref);
+		bool QualifiesForReselection(const entry_ref& eref);
+	private:
+		entry_ref mEntryRef;
+		bigtime_t mTimeOfDeselection;
+	};
+
 public:
 	static const char* const MSG_MAILS_SELECTED;
 
@@ -123,6 +133,8 @@ public:
 	BmString StateInfoFilename( bool forRead);
 	BmListViewItem* CreateListViewItem( BmListModelItem* item, BMessage* archive=NULL);
 	const char* ItemNameForCaption()		{ return "message"; }
+	BmListViewItem* AddModelItem( BmListModelItem* item);
+	void RemoveModelItem( BmListModelItem* item);
 
 protected:
 	// overrides of listcontroller base:
@@ -134,6 +146,8 @@ private:
 	BmMailView* mPartnerMailView;
 	bool mHaveSelectedRef;
 	bool mStateInfoConnectedToParentFolder;
+
+	ReselectionInfo mReselectionInfo;
 
 	// Hide copy-constructor and assignment:
 	BmMailRefView( const BmMailRefView&);

@@ -73,9 +73,7 @@ enum Columns {
 	COL_END
 };
 
-/********************************************************************************\
-	BmDateWidthAdjuster
-\********************************************************************************/
+// #pragma mark - BmDateWidthAdjuster
 /*------------------------------------------------------------------------------*\
 	()
 		-	
@@ -132,11 +130,9 @@ const char* BmDateWidthAdjuster::operator() (int32 colIdx, time_t utc)
 	return dateStr.String();
 }
 
-/********************************************************************************\
-	BmMailRefItem
-\********************************************************************************/
 
 
+// #pragma mark - BmMailRefItem
 /*------------------------------------------------------------------------------*\
 	()
 		-	
@@ -360,10 +356,46 @@ const char* BmMailRefItem::GetUserText(int32 colIdx, float colWidth) const {
 
 
 
-/********************************************************************************\
-	BmMailRefView
-\********************************************************************************/
+// #pragma mark -	BmMailRefView::ReselectionInfo
 
+/*------------------------------------------------------------------------------*\
+	NoteDeselectionOf( eref)
+		-	takes note of the deselection of a specific mail in order
+			to be able to automatically reselect this mail if it should 
+			reappear within a certain timeframe.
+\*------------------------------------------------------------------------------*/
+void BmMailRefView::ReselectionInfo
+::NoteDeselectionOf(const entry_ref& eref)
+{
+	mEntryRef = eref;
+	mTimeOfDeselection = system_time();
+	// there may be a backup-extension present, if so, we
+	// remove it in order to be able to compare this name
+	// against the real name of the mail, later:
+	BmString name = mEntryRef.name;
+	int32 backupPos = name.FindFirst(BmBackedFile::nBackupExt);
+	if (backupPos >= 0) {
+		name.Truncate(backupPos);
+		mEntryRef.set_name(name.String());
+	}
+}
+
+/*------------------------------------------------------------------------------*\
+	QualifiesForReselection( eref)
+		-	determines whether or not a (freshly created) mail should be
+			reselected or not.
+\*------------------------------------------------------------------------------*/
+bool BmMailRefView::ReselectionInfo
+::QualifiesForReselection(const entry_ref& eref)
+{
+	const int secs = 2;
+	return mEntryRef == eref 
+	&& system_time() <= mTimeOfDeselection + secs*1000*1000;
+}
+
+
+
+// #pragma mark -	BmMailRefView
 
 const char* const BmMailRefView::MSG_MAILS_SELECTED = "bm:msel";
 const char* const BmMailRefView::MENU_MARK_AS =			"Set Status To";
@@ -790,6 +822,44 @@ void BmMailRefView::JobIsDone( bool completed) {
 			}
 		}
 	}
+}
+
+/*------------------------------------------------------------------------------*\
+	AddModelItem( item)
+		-	
+\*------------------------------------------------------------------------------*/
+BmListViewItem* BmMailRefView::AddModelItem( BmListModelItem* item) {
+	BmListViewItem* viewItem = inherited::AddModelItem(item);
+	BmMailRef* mailRef = dynamic_cast<BmMailRef*>(item);
+	if (mailRef 
+	&& mReselectionInfo.QualifiesForReselection(mailRef->EntryRef())) {
+		Select(IndexOf(viewItem), true);
+	}
+	return viewItem;
+}
+
+/*------------------------------------------------------------------------------*\
+	RemoveModelItem( item)
+		-	takes note if the currently selected mail is removed in order
+			to be able to automatically reselect this mail if it should 
+			reappear within a certain timeframe. This avoids the misfeature
+			of a mail being deselected whenever it is stored.
+\*------------------------------------------------------------------------------*/
+void BmMailRefView::RemoveModelItem( BmListModelItem* item) {
+	BmMailRef* mailRef = dynamic_cast<BmMailRef*>(item);
+	if (mailRef) {
+		int32 selectedIdx = 0;
+		int32 idx = 0;
+		while((selectedIdx = CurrentSelection(idx++)) >= 0) {
+			BmListViewItem* viewItem 
+				= dynamic_cast<BmListViewItem*>(ItemAt(selectedIdx));
+			if (viewItem && viewItem->ModelItem() == item) {
+				mReselectionInfo.NoteDeselectionOf(mailRef->EntryRef());
+				break;
+			}
+		}
+	}
+	inherited::RemoveModelItem(item);
 }
 
 /*------------------------------------------------------------------------------*\
