@@ -7,7 +7,11 @@
  *		Oliver Tappe <beam@hirschkaefer.de>
  */
 
+#include <vector>
+#include <map>
+
 #include <Font.h>
+#include <Locker.h>
 #include <Message.h>
 #ifdef BEAM_FOR_BONE
 # include <netinet/in.h>
@@ -39,6 +43,57 @@ static BmString CollectSslErrorString()
 
 // #pragma mark - BmOpenSslNetEndpoint::ContextManager
 
+class BmOpenSslNetEndpoint::ContextManager {
+	typedef map<thread_id, BmOpenSslNetEndpoint*> UserdataMap;
+public:
+	ContextManager();
+	~ContextManager();
+
+	SSL_CTX* TlsContext()					{ return mTlsContext; }
+	SSL_CTX* SslContext()					{ return mSslContext; }
+
+	void SetUserdataForCurrentThread(BmOpenSslNetEndpoint* userdata);
+	BmOpenSslNetEndpoint* GetUserdataForCurrentThread();
+	void RemoveUserdataForCurrentThread();
+	void LockingCallback(int mode, int type, const char *file, int line);
+	unsigned long ThreadIdCallback(void);
+
+private:
+	status_t _SetupContext(SSL_CTX* context);
+	void _SetupSslLocks();
+	void _CleanupSslLocks();
+
+	BLocker mLocker;
+	SSL_CTX* mTlsContext;
+	SSL_CTX* mSslContext;
+	status_t mStatus;
+	BmString mErrorStr;
+	UserdataMap mUserdataMap;
+	vector<BLocker*> mSslLocks;
+};
+
+static BmOpenSslNetEndpoint::ContextManager gContextManager;
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+extern "C" 
+void locking_callback(int mode, int type, const char *file, int line)
+{
+	gContextManager.LockingCallback(mode, type, file, line);
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+extern "C"
+unsigned long thread_id_callback(void)
+{
+	return gContextManager.ThreadIdCallback();
+}
+
 /*------------------------------------------------------------------------------*\
 	()
 		-	
@@ -55,6 +110,9 @@ BmOpenSslNetEndpoint::ContextManager::ContextManager()
 
 	// the following is required for pkcs12-stuff:
 	PKCS12_PBE_add();
+
+	// enter threadsafe mode:
+	_SetupSslLocks();
 
 	// create TLS & SSL contexts:
 	mTlsContext = SSL_CTX_new(TLSv1_client_method());
@@ -85,6 +143,29 @@ BmOpenSslNetEndpoint::ContextManager::~ContextManager()
 		SSL_CTX_free( mTlsContext);
 	if (mSslContext)
 		SSL_CTX_free( mSslContext);
+	_CleanupSslLocks();
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmOpenSslNetEndpoint::ContextManager
+::LockingCallback(int mode, int type, const char *file, int line)
+{
+	if (mode & CRYPTO_LOCK)
+		mSslLocks[type]->Lock();
+	else
+		mSslLocks[type]->Unlock();
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+unsigned long BmOpenSslNetEndpoint::ContextManager::ThreadIdCallback(void)
+{
+	return (unsigned long)find_thread(NULL);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -159,9 +240,35 @@ status_t BmOpenSslNetEndpoint::ContextManager::_SetupContext(SSL_CTX* context)
 	return B_OK;
 }
 
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmOpenSslNetEndpoint::ContextManager::_SetupSslLocks(void)
+{
+	for (int i=0; i<CRYPTO_num_locks(); i++)
+		mSslLocks.push_back(new BLocker(CRYPTO_get_lock_name(i)));
+	CRYPTO_set_id_callback(thread_id_callback);
+	CRYPTO_set_locking_callback(locking_callback);
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmOpenSslNetEndpoint::ContextManager::_CleanupSslLocks(void)
+{
+	CRYPTO_set_id_callback(NULL);
+	CRYPTO_set_locking_callback(NULL);
+	for (int i=0; i<CRYPTO_num_locks(); i++)
+		delete mSslLocks[i];
+	mSslLocks.clear();
+}
+
 // #pragma mark - BmOpenSslNetEndpoint
 
-BmOpenSslNetEndpoint::ContextManager BmOpenSslNetEndpoint::nContextManager;
+BmOpenSslNetEndpoint::ContextManager*
+BmOpenSslNetEndpoint::nContextManager = &gContextManager;
 
 /*------------------------------------------------------------------------------*\
 	BmOpenSslNetEndpoint()
@@ -265,9 +372,9 @@ status_t BmOpenSslNetEndpoint::StartEncryption(const char* encType) {
 	// fetch context corresponding to requested type of connection
 	SSL_CTX* context;
 	if (mEncryptionType == "TLS")
-		context = nContextManager.TlsContext();
+		context = nContextManager->TlsContext();
 	else if (mEncryptionType == "SSL")
-		context = nContextManager.SslContext();
+		context = nContextManager->SslContext();
 	else
 		return B_BAD_VALUE;
 
@@ -277,7 +384,7 @@ status_t BmOpenSslNetEndpoint::StartEncryption(const char* encType) {
 		return B_ERROR;
 
 	// set ourselves as userdata for the new ssl object:
-	nContextManager.SetUserdataForCurrentThread(this);
+	nContextManager->SetUserdataForCurrentThread(this);
 
 	int result;
 	// set SSL file descriptor
@@ -309,7 +416,7 @@ status_t BmOpenSslNetEndpoint::StopEncryption() {
 	if (!mSSL)
 		return B_BAD_VALUE;
 
-	nContextManager.RemoveUserdataForCurrentThread();
+	nContextManager->RemoveUserdataForCurrentThread();
 
 	// shutdown connection
 	if (mError == 0) {
@@ -407,7 +514,7 @@ int BmOpenSslNetEndpoint
 ::ClientCertCallback(SSL* ssl, X509 **certP, EVP_PKEY **pkeyP)
 {
 	BmOpenSslNetEndpoint* endpoint 
-		= nContextManager.GetUserdataForCurrentThread();
+		= nContextManager->GetUserdataForCurrentThread();
 	if (endpoint) {
 		if (endpoint->_FetchClientCertificateAndKey(ssl, certP, pkeyP) == B_OK)
 			return 1;
@@ -423,7 +530,7 @@ int BmOpenSslNetEndpoint::VerifyCallback(int ok, X509_STORE_CTX *store)
 {
 	if (!ok) {
 		BmOpenSslNetEndpoint* endpoint 
-			= nContextManager.GetUserdataForCurrentThread();
+			= nContextManager->GetUserdataForCurrentThread();
 		if (endpoint)
 			ok = endpoint->_FetchVerificationError(store);
 	}

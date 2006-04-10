@@ -10,9 +10,6 @@
 #ifndef _BmOpenSslNetEndpoint_h
 #define _BmOpenSslNetEndpoint_h
 
-#include <map>
-
-#include <Locker.h>
 #include "BmString.h"
 
 #include "BmNetEndpoint.h"
@@ -21,29 +18,7 @@
 
 class BmOpenSslNetEndpoint : public BmNetEndpoint {
 	typedef BmNetEndpoint inherited;
-	class ContextManager {
-		typedef map<thread_id, BmOpenSslNetEndpoint*> UserdataMap;
-	public:
-		ContextManager();
-		~ContextManager();
-	
-		SSL_CTX* TlsContext()					{ return mTlsContext; }
-		SSL_CTX* SslContext()					{ return mSslContext; }
-	
-		void SetUserdataForCurrentThread(BmOpenSslNetEndpoint* userdata);
-		BmOpenSslNetEndpoint* GetUserdataForCurrentThread();
-		void RemoveUserdataForCurrentThread();
-
-	private:
-		status_t _SetupContext(SSL_CTX* context);
-	
-		BLocker mLocker;
-		SSL_CTX* mTlsContext;
-		SSL_CTX* mSslContext;
-		status_t mStatus;
-		BmString mErrorStr;
-		UserdataMap mUserdataMap;
-	};
+	class ContextManager;
 	
 public:
 	BmOpenSslNetEndpoint();
@@ -88,7 +63,7 @@ private:
 	int mError;
 	BmString mVerificationError;
 
-	static ContextManager nContextManager;
+	static ContextManager* nContextManager;
 };
 
 #endif
