@@ -230,7 +230,7 @@ public:
 	// getters:
 	inline status_t InitCheck()			{ return mInitCheck; }
 	inline BmRef<BmBodyPart> EditableTextBody() const 
-													{ return mEditableTextBody.Get(); }
+													{ return mEditableTextBody; }
 	inline const BmString& Signature() const	
 													{ return mSignature; }
 	inline BmMail* Mail() const			{ return mMail; }

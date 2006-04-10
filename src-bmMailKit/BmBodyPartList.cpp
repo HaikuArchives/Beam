@@ -353,6 +353,9 @@ void BmBodyPart::SetTo( const BmString& msgtext, int32 start, int32 length,
  	
  	mHadErrorDuringConversion = false;
  	mParsingErrors.Truncate(0);
+ 	
+ 	if (length < 0)
+ 		length = 0;
 
 	if (!header) {
 		// this is not the main body, so we have to split the MIME-headers from
@@ -379,9 +382,10 @@ void BmBodyPart::SetTo( const BmString& msgtext, int32 start, int32 length,
 									  "MIME-header and body in string <")<<str<<">.";
 					BM_LOG( BM_LogMailParse, s);
 				 	AddParsingError(s);
-					return;
-				}
-				mStartInRawText = pos+4;
+				 	pos = end;
+					mStartInRawText = end;
+				} else
+					mStartInRawText = pos+4;
 			}
 			BM_LOG2( BM_LogMailParse, "...copying headerText...");
 			msgtext.CopyInto( headerText, start, pos-start+2);
@@ -932,15 +936,8 @@ int32 BmBodyPart::PruneUnneededMultiParts() {
 			} else if (subCount == 1) {
 				// replace this multipart with its only child:
 				BmRef< BmListModelItem> childRef( bodyPart->begin()->second.Get());
-				BmString parentKey = bodyPart->Key();
 				RemoveSubItem( bodyPart);
 				AddSubItem( childRef.Get());
-				BmRef<BmListModel> listModel( ListModel());
-				if (listModel)
-					listModel->RenameItem( childRef->Key(), parentKey);
-							// reuse parent's key so that child takes up 
-							// the parent's position in list
-				continue;
 			}
 		}
 		count++;
@@ -1167,7 +1164,7 @@ void BmBodyPartList::ParseMail() {
 		const BmString& msgText = mMail->RawText();
 		BmBodyPart* bodyPart 
 			= new BmBodyPart( this, msgText, mMail->HeaderLength()+2, 
-									msgText.Length()-mMail->HeaderLength()-2, 
+									MAX(msgText.Length()-mMail->HeaderLength()-2, 0), 
 									mMail->DefaultCharset(),	mMail->Header());
 		AddItemToList( bodyPart);
 	}
@@ -1329,11 +1326,9 @@ void BmBodyPartList::PruneUnneededMultiParts() {
 			} else if (subCount == 1) {
 				// replace this multipart with its only child:
 				BmRef< BmListModelItem> childRef( bodyPart->begin()->second.Get());
-				BmString parentKey = bodyPart->Key();
 				removedRefVect.push_back(bodyPart);
 				inherited::RemoveItemFromList( bodyPart);
 				AddItemToList( childRef.Get());
-				RenameItem( childRef->Key(), parentKey);
 			}
 		}
 	}
