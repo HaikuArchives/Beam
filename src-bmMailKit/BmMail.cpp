@@ -857,9 +857,9 @@ BmBodyPartList* BmMail::Body() const
 \*------------------------------------------------------------------------------*/
 void BmMail::ConstructAndStore() {
 	BmRef< BmBodyPart> bodyPart( mBody->EditableTextBody());
-	if (bodyPart && ConstructRawText( bodyPart->DecodedData(),
-												 DefaultCharset(), 
-												 mAccountName)) {
+	if (ConstructRawText( bodyPart ? bodyPart->DecodedData() : "",
+								 DefaultCharset(), 
+								 mAccountName)) {
 		Store();
 	}
 }

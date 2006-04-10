@@ -88,10 +88,13 @@ public:
 						 const BEntry* = NULL);
 	ssize_t Write(const void *buffer, size_t size);
 	BFile& File()								{ return mFile; }
-	BEntry& BackupEntry()					{ return mBackupEntry; }
+	const BmString& BackupExtension()	{ return nBackupExt; }
+
+	static BmString nBackupExt;
 private:
 	status_t Init();
 	void Finish();
+
 	BEntry mEntry;
 	BmString mFileName;
 	BmString mMimeType;
