@@ -22,7 +22,7 @@ if $(haveOpenSsl) {
 		: 	
 			<src-bmDaemon>BmNetEndpoint.o 
 			bmBase.so
-			be $(LIBNETAPI) ssl crypto
+			be $(LIBNETAPI) ssl crypto $(LIBNET)
 		;
 	# </pe-src>
 	MakeLocate OpenSslNetEndpoint : [ FDirName $(DISTRO_DIR) add-ons NetEndpoints ] ;
