@@ -22,6 +22,7 @@ using namespace regexx;
 #include "BmMailHeader.h"
 #include "BmPeople.h"
 #include "BmPrefs.h"
+#include "BmRosterBase.h"
 #include "BmStorageUtil.h"
 #include "BmUtil.h"
 
@@ -245,6 +246,8 @@ void BmPerson::AddToGroupMap( BmGroupMap& groupMap) const {
 
 BmRef< BmPeopleList> BmPeopleList::theInstance( NULL);
 
+const char* BmPeopleList::MSG_KNOWN_ADDR = "knad";
+
 /*------------------------------------------------------------------------------*\
 	CreateInstance()
 		-	initialiazes object by fetching all people
@@ -302,80 +305,45 @@ void BmPeopleList::AddPeopleToMenu( BMenu* menu, const BMessage& templateMsg,
 	}
 	BFont font;
 	menu->GetFont( &font);
-	BMenu* subMenu = CreateSubmenuForPersonMap( nickMap, templateMsg, addrField,
-															  "Nicknames", &font);
+	BMenu* subMenu = _CreateSubmenuForPersonMap( nickMap, templateMsg, addrField,
+																"Nicknames", &font);
 	menu->AddItem( subMenu);
 	menu->AddSeparatorItem();
 	BmGroupMap::const_iterator group;
 	for( group = groupMap.begin(); group != groupMap.end(); ++group) {
-		subMenu = CreateSubmenuForPersonMap( group->second.personMap, 
-														 templateMsg, addrField,
-														 BmString("Group ")<<group->second.name, 
-														 &font, true);
+		subMenu = _CreateSubmenuForPersonMap( group->second.personMap, 
+														  templateMsg, addrField,
+														  BmString("Group ")<<group->second.name, 
+														  &font, true);
 		menu->AddItem( subMenu);
 	}
-	subMenu = CreateSubmenuForPersonMap( noGroupMap, templateMsg, addrField,
-													 "(Not in any Group)", &font);
+	subMenu = _CreateSubmenuForPersonMap( noGroupMap, templateMsg, addrField,
+													  "(Not in any Group)", &font);
 	menu->AddItem( subMenu);
 	menu->AddSeparatorItem();
 	if (foreignMap.size() > 0) {
-		subMenu = CreateSubmenuForPersonMap( foreignMap, templateMsg, addrField,
-														 "(Not in People-Folder)", &font);
+		subMenu = _CreateSubmenuForPersonMap( foreignMap, templateMsg, addrField,
+														  "(Not in People-Folder)", &font);
 		menu->AddItem( subMenu);
 		menu->AddSeparatorItem();
 	}
-	subMenu = CreateSubmenuForPersonMap( allPeopleMap, templateMsg, addrField,
-													 "All People", &font);
+	subMenu = _CreateSubmenuForPersonMap( allPeopleMap, templateMsg, addrField,
+													  "All People", &font);
 	menu->AddItem( subMenu);
-}
 
-/*------------------------------------------------------------------------------*\
-	CreateSubmenuForPersonMap()
-		-	
-\*------------------------------------------------------------------------------*/
-BMenu* BmPeopleList::CreateSubmenuForPersonMap( const BmPersonMap& personMap, 
-																const BMessage& templateMsg,
-																const char* addrField,
-																BmString label, BFont* font,
-																bool createAllEntry) {
+	// now add all addresses that we sent mails to, but that do not live
+	// in a people file:
 	BMessage* msg;
-	BMenu* subMenu = new BMenu( label.String());
-	subMenu->SetFont( font);
-	BmPersonMap::const_iterator person;
-	BmString allAddrs;
-	for( person = personMap.begin(); person != personMap.end(); ++person) {
-		const BmPersonInfo& info = person->second;
-		if (createAllEntry) {
-			if (person==personMap.begin())
-				allAddrs << info.emails[0];
-			else
-				allAddrs << ", " << info.emails[0];
-		}
-		uint32 numMails = info.emails.size();
-		if (numMails>1) {
-			BMenu* addrMenu = new BMenu( info.name.String());
-			addrMenu->SetFont( font);
-			for( uint32 i=0; i<numMails; ++i) {
-				msg = new BMessage( templateMsg);
-				msg->AddString( addrField, info.emails[i].String());
-				addrMenu->AddItem( new BMenuItem( info.emails[i].String(), msg));
-			}
-			msg = new BMessage( templateMsg);
-			msg->AddString( addrField, info.emails[0].String());
-			subMenu->AddItem( new BMenuItem( addrMenu, msg));
-		} else {
-			msg = new BMessage( templateMsg);
-			msg->AddString( addrField, info.emails[0].String());
-			subMenu->AddItem( new BMenuItem( info.name.String(), msg));
-		}
-	}
-	if (createAllEntry) {
+	subMenu = new BMenu( "Other Known Addresses");
+	subMenu->SetFont( &font);
+	BmKnownAddrSet::const_iterator addr;
+	for( addr = mKnownAddrSet.begin(); addr != mKnownAddrSet.end(); ++addr) {
 		msg = new BMessage( templateMsg);
-		msg->AddString( addrField, allAddrs.String());
-		subMenu->AddSeparatorItem();
-		subMenu->AddItem( new BMenuItem( "<Add Complete Group>", msg));
+		msg->AddString( addrField, (*addr).String());
+		subMenu->AddItem( new BMenuItem( (*addr).String(), msg));
 	}
-	return subMenu;
+	menu->AddSeparatorItem();
+	menu->AddItem( subMenu);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -558,10 +526,119 @@ void BmPeopleList::GetEmailsFromPeopleFile( const entry_ref& eref,
 }
 
 /*------------------------------------------------------------------------------*\
+	AddAsKnownAddress( addr)
+		-	adds the given (outbound) address to the set of known addresses
+\*------------------------------------------------------------------------------*/
+void BmPeopleList::AddAsKnownAddress( const BmString& addr) {
+	mKnownAddrSet.insert(addr);
+	BMessage action;
+	action.AddInt32( BmListModelItem::MSG_OPCODE, B_ENTRY_CREATED);
+	action.AddString( MSG_KNOWN_ADDR, addr.String());
+	StoreAction(&action);
+}
+
+/*------------------------------------------------------------------------------*\
+	IsAddressKnown( addr)
+		-	returns whether or not the give (outbound) address ist known
+\*------------------------------------------------------------------------------*/
+bool BmPeopleList::IsAddressKnown( const BmString& addr) const {
+	return mKnownAddrSet.find(addr) != mKnownAddrSet.end();
+}
+
+/*------------------------------------------------------------------------------*\
+	InstantiateItem( archive)
+		-	instantiates a known address from the given archive
+\*------------------------------------------------------------------------------*/
+void BmPeopleList::InstantiateItem( BMessage* archive) {
+	BmString knownAddr = archive->FindString(MSG_KNOWN_ADDR);
+	if (FindPersonByEmail(knownAddr))
+		// drop any address that exists as people file by now, all we need
+		// to do is trigger a store:
+		mNeedsStore = true;
+	else
+		// add known address as such since there is no people file for it:
+		mKnownAddrSet.insert(knownAddr);
+	BM_LOG3( BM_LogApp, 
+				BmString("PeopleList: known address <") << knownAddr << " read");
+}
+
+/*------------------------------------------------------------------------------*\
+	SettingsFileName()
+		-	
+\*------------------------------------------------------------------------------*/
+const BmString BmPeopleList::SettingsFileName() {
+	return BmString( BeamRoster->SettingsPath()) << "/" << "Known Addresses";
+}
+
+/*------------------------------------------------------------------------------*\
+	InstantiateItems( archive)
+		-	instantiates the list from the given archive
+\*------------------------------------------------------------------------------*/
+void BmPeopleList::InstantiateItems( BMessage* archive) {
+	_FetchAllPeopleInfo();
+	inherited::InstantiateItems(archive);
+}
+
+/*------------------------------------------------------------------------------*\
 	InitializeItems()
 		-	
 \*------------------------------------------------------------------------------*/
 void BmPeopleList::InitializeItems() {
+	_FetchAllPeopleInfo();
+	mInitCheck = B_OK;
+}
+
+/*------------------------------------------------------------------------------*\
+	ExecuteAction( action)
+		-	
+\*------------------------------------------------------------------------------*/
+void BmPeopleList::ExecuteAction(BMessage* action) {
+	if (action) {
+		int32 op = action->FindInt32( BmListModelItem::MSG_OPCODE);
+		if (op == B_ENTRY_CREATED) {
+			BmString knownAddr = action->FindString(MSG_KNOWN_ADDR);
+			mKnownAddrSet.insert(knownAddr);
+		} else if (op == B_ENTRY_REMOVED) {
+			BmString knownAddr = action->FindString(MSG_KNOWN_ADDR);
+			mKnownAddrSet.erase(knownAddr);
+		}
+	}
+}
+
+/*------------------------------------------------------------------------------*\
+	Archive( archive)
+		-	archives the listmodel with all items into the given message
+\*------------------------------------------------------------------------------*/
+status_t BmPeopleList::Archive( BMessage* archive, bool deep) const {
+	BmAutolockCheckGlobal lock( mModelLocker);
+	if (!lock.IsLocked())
+		BM_THROW_RUNTIME( 
+			ModelNameNC() << ":Archive(): Unable to get lock"
+		);
+	status_t ret = BArchivable::Archive( archive, deep);
+	if (ret == B_OK) {
+		ret = archive->AddInt32( BmListModelItem::MSG_NUMCHILDREN, mKnownAddrSet.size());
+		ret = archive->AddInt16( BmListModel::MSG_VERSION, ArchiveVersion());
+	}
+	if (deep && ret == B_OK) {
+		BM_LOG( BM_LogModelController, "PeopleList begins to archive");
+		BmKnownAddrSet::const_iterator iter;
+		for( iter = mKnownAddrSet.begin(); iter != mKnownAddrSet.end() && ret == B_OK; 
+				++iter) {
+			BMessage msg;
+			msg.AddString(MSG_KNOWN_ADDR, (*iter).String());
+			ret = archive->AddMessage( BmListModelItem::MSG_CHILDREN, &msg);
+		}
+		BM_LOG( BM_LogModelController, "PeopleList finished with archive");
+	}
+	return ret;
+}
+
+/*------------------------------------------------------------------------------*\
+	_FetchAllPeopleInfo()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmPeopleList::_FetchAllPeopleInfo() {
 	int32 count, peopleCount=0;
 	status_t err;
 	dirent* dent;
@@ -615,7 +692,55 @@ void BmPeopleList::InitializeItems() {
 		}
 	}
 	BM_LOG2( BM_LogApp, BmString("End of people-query (") << peopleCount << " people found)");
-	mInitCheck = B_OK;
+}
+
+/*------------------------------------------------------------------------------*\
+	_CreateSubmenuForPersonMap()
+		-	
+\*------------------------------------------------------------------------------*/
+BMenu* BmPeopleList::_CreateSubmenuForPersonMap( const BmPersonMap& personMap, 
+																 const BMessage& templateMsg,
+																 const char* addrField,
+																 BmString label, BFont* font,
+																 bool createAllEntry) {
+	BMessage* msg;
+	BMenu* subMenu = new BMenu( label.String());
+	subMenu->SetFont( font);
+	BmPersonMap::const_iterator person;
+	BmString allAddrs;
+	for( person = personMap.begin(); person != personMap.end(); ++person) {
+		const BmPersonInfo& info = person->second;
+		if (createAllEntry) {
+			if (person==personMap.begin())
+				allAddrs << info.emails[0];
+			else
+				allAddrs << ", " << info.emails[0];
+		}
+		uint32 numMails = info.emails.size();
+		if (numMails>1) {
+			BMenu* addrMenu = new BMenu( info.name.String());
+			addrMenu->SetFont( font);
+			for( uint32 i=0; i<numMails; ++i) {
+				msg = new BMessage( templateMsg);
+				msg->AddString( addrField, info.emails[i].String());
+				addrMenu->AddItem( new BMenuItem( info.emails[i].String(), msg));
+			}
+			msg = new BMessage( templateMsg);
+			msg->AddString( addrField, info.emails[0].String());
+			subMenu->AddItem( new BMenuItem( addrMenu, msg));
+		} else {
+			msg = new BMessage( templateMsg);
+			msg->AddString( addrField, info.emails[0].String());
+			subMenu->AddItem( new BMenuItem( info.name.String(), msg));
+		}
+	}
+	if (createAllEntry) {
+		msg = new BMessage( templateMsg);
+		msg->AddString( addrField, allAddrs.String());
+		subMenu->AddSeparatorItem();
+		subMenu->AddItem( new BMenuItem( "<Add Complete Group>", msg));
+	}
+	return subMenu;
 }
 
 

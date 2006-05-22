@@ -7,6 +7,10 @@
  */
 #include "BmBasics.h"
 
+#ifdef __MWERKS__
+#include <string>
+#endif
+
 bool BeamInTestMode = false;
 bool BeamInDevelMode = false;
 bool BeamOnDano = false;

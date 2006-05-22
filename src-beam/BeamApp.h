@@ -68,6 +68,7 @@ public:
 	static const char* const MSG_SUBJECT;
 	static const char* const MSG_SELECTED_TEXT;
 	static const char* const MSG_SENDING_REFVIEW;
+	static const char* const MSG_ENCLOSE;
 
 private:
 	void PageSetup();

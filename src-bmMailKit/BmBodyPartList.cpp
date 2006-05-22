@@ -717,7 +717,7 @@ const BmString& BmBodyPart::DecodedData() const {
 					else
 						// we try the native charset first and (in case of errors)
 						// all preferred charsets:
-						GetPreferredCharsets( charsetVect, mCurrentCharset);
+						GetPreferredCharsets( charsetVect, mSuggestedCharset);
 					BmString charset;
 					for( uint32 i=0; i<charsetVect.size(); ++i) {
 						BmStringIBuf text( mail->RawText().String()+mStartInRawText,

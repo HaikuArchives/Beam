@@ -646,6 +646,7 @@ const char* const BeamApplication::MSG_OPT_VALUE = 	"bm:optv";
 const char* const BeamApplication::MSG_SUBJECT = 		"bm:subj";
 const char* const BeamApplication::MSG_SELECTED_TEXT = 	"bm:seltext";
 const char* const BeamApplication::MSG_SENDING_REFVIEW = 	"bm:srefv";
+const char* const BeamApplication::MSG_ENCLOSE = 		"bm:encl";
 
 
 /*------------------------------------------------------------------------------*\
@@ -788,9 +789,7 @@ thread_id BeamApplication::Run() {
 			// Now wait until Test-thread allows us to start...
 			snooze( 200*1000);
 			mStartupLocker->Lock();
-		}
-
-		if (ThePrefs->GetBool( "UseDeskbar"))
+		} else if (ThePrefs->GetBool( "UseDeskbar"))
 			InstallDeskbarItem();
 
 		// start most of our list-models:
@@ -837,6 +836,9 @@ thread_id BeamApplication::Run() {
 		TheIdentityList->StoreIfNeeded();
 			// store identity-list since the current identity
 			// may have changed
+		ThePeopleList->StoreIfNeeded();
+			// store people-list since new known addresses may have
+			// been added
 	} catch( BM_error &e) {
 		BM_SHOWERR( e.what());
 		exit(10);
@@ -938,12 +940,15 @@ bool BeamApplication::QuitRequested() {
 \*------------------------------------------------------------------------------*/
 void BeamApplication::ArgvReceived( int32 argc, char** argv) {
 	if (argc>1 && !BeamInTestMode) {
-		BmString to( argv[1]);
-		if (to.ICompare("mailto:",7)==0)
-			LaunchURL( to);
+		BmString arg( argv[1]);
+		if (arg.ICompare("mailto:",7)==0)
+			LaunchURL( arg);
 		else {
 			BMessage msg(BMM_NEW_MAIL);
-			msg.AddString( MSG_WHO_TO, to.String());
+			if (arg.ICompare("enclosure:",10)==0)
+				msg.AddString( MSG_ENCLOSE, arg.String()+10);
+			else
+				msg.AddString( MSG_WHO_TO, arg.String());
 			PostMessage( &msg);
 		}
 	}
@@ -1066,9 +1071,10 @@ void BeamApplication::MessageReceived( BMessage* msg) {
 				if ((to = msg->FindString( MSG_WHO_TO))!=NULL)
 					mail->SetFieldVal( BM_FIELD_TO, to);
 				const char* optField = NULL;
+				const char* enclPath = NULL;
 				int32 i=0;
 				for( ; msg->FindString( MSG_OPT_FIELD, i, &optField)==B_OK; ++i) {
-					mail->SetFieldVal( optField, msg->FindString( MSG_OPT_VALUE, i));
+					mail->SetFieldVal( optField, optField);
 				}
 				BM_LOG( BM_LogApp, 
 						  BmString("Asked to create new mail with ") << i 
@@ -1076,6 +1082,18 @@ void BeamApplication::MessageReceived( BMessage* msg) {
 				BmMailEditWin* editWin = BmMailEditWin::CreateInstance( mail.Get());
 				if (editWin)
 					editWin->Show();
+				int32 e=0;
+				BEntry entry;
+				entry_ref eref;
+				status_t res;
+				for( ; msg->FindString( MSG_ENCLOSE, e, &enclPath)==B_OK; ++e) {
+					entry.SetTo(enclPath, true);
+					if ((res=entry.GetRef(&eref)) == B_OK) {
+						BMessage* attachMsg = new BMessage(BMM_ATTACH);
+						attachMsg->AddRef("refs", &eref);
+						editWin->PostMessage(attachMsg);
+					}
+				}
 				break;
 			}
 			case BMM_REDIRECT: {

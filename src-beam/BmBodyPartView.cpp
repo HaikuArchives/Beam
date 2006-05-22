@@ -617,14 +617,28 @@ void BmBodyPartView::MessageReceived( BMessage* msg) {
 								entry_ref dref;
 								const char* name;
 								if (msg->FindRef( "directory", &dref) != B_OK
-								||	msg->FindString( "name", &name) != B_OK)
+								||	dragMsg->FindString( "bm:name", i, &name) != B_OK)
 									return;
 								BDirectory dir( &dref);
-								BFile file( &dir, name, B_WRITE_ONLY | B_CREATE_FILE);
-								if (file.InitCheck() == B_OK)
-									bodyPart->WriteToFile( file);
-							} else if (msg->what == B_TRASH_TARGET && mEditable) {
+								if (bodyPart->MimeType().ICompare("text/x-email") == 0
+								|| bodyPart->MimeType().ICompare( "message/rfc822") == 0) {
+									// remove entry created by Tracker...
+									BEntry trackEntry(&dir, name);
+									trackEntry.Remove();
+									// ... and store mail with all attributes:
+									BmMail mail(bodyPart->DecodedData(), "");
+									mail.StoreIntoFile(&dir, name, BM_MAIL_STATUS_NEW, 
+															 real_time_clock_usecs());
+								} else {
+									// store other type of attachment:
+									BFile file( &dir, name, B_WRITE_ONLY | B_CREATE_FILE);
+									if (file.InitCheck() == B_OK)
+										bodyPart->WriteToFile( file);
+								}
+							} else if (msg->what == B_TRASH_TARGET) {
 								bodyPartList->RemoveItemFromList( bodyPart);
+								if (!mEditable)
+									bodyPartList->Mail()->ConstructAndStore();
 							}
 						}
 					}
@@ -811,6 +825,13 @@ bool BmBodyPartView::InitiateDrag( BPoint, int32 index, bool wasSelected) {
 	dragMsg.AddString( "be:originator", BmDragId.String());
 	dragMsg.AddString( "be:clip_name", bodyPart->FileName().String());
 	dragMsg.AddPointer( "bm:bodypart", bodyPart);
+	int32 idx;
+	for( int32 i=0; (idx = CurrentSelection(i)) >= 0; ++i) {
+		BmBodyPartItem* bpi = dynamic_cast<BmBodyPartItem*>(ItemAt( idx));
+		if (!bpi)
+			return false;
+		dragMsg.AddString( "bm:name",bpi->ModelItem()->FileName().String());
+	}
 	vector<int> cols;
 	cols.push_back(1);
 	cols.push_back(2);

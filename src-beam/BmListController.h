@@ -127,7 +127,6 @@ public:
 	void MouseDown(BPoint point);
 	void MouseUp(BPoint point);
 	void MouseMoved( BPoint point, uint32 transit, const BMessage *msg);
-	void FrameResized(float width, float height);
 
 	// getters:
 	inline BMessage* InitialStateInfo()			{ return mInitialStateInfo; }
@@ -181,7 +180,6 @@ protected:
 	BMessageRunner* mPulsedScrollRunner;
 	int32 mPulsedScrollStep;
 	bool mDragBetweenItems;
-	bool mIsHidden;
 
 	static const char* const MSG_HIGHITEM;
 	static const char* const MSG_EXPAND;

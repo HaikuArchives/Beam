@@ -734,9 +734,11 @@ void BmPrefs::SetupMailboxVolume() {
 	
 	// now find out about Trash-path on this volume:
 	BPath path;
-	if (find_directory(B_TRASH_DIRECTORY, &path, false, &MailboxVolume) != B_OK)
-		BM_THROW_RUNTIME( "Sorry, could not determine trash-directory !?!");
-	TrashPath = path.Path();
+	if (find_directory(B_TRASH_DIRECTORY, &path, false, &MailboxVolume) != B_OK) {
+		BM_LOGERR( "Mailbox-volume has no trash!");
+		TrashPath = "/Dummy-Trash";
+	} else
+		TrashPath = path.Path();
 }
 
 /*------------------------------------------------------------------------------*\

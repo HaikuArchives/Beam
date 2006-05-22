@@ -9,6 +9,7 @@
 #ifndef _BmPeople_h
 #define _BmPeople_h
 
+#include <set>
 #include <vector>
 
 #include <List.h>
@@ -107,6 +108,8 @@ private:
 
 
 
+typedef set<BmString> BmKnownAddrSet;
+	
 /*------------------------------------------------------------------------------*\
 	BmPeopleList 
 		-	holds list of all known People
@@ -135,22 +138,36 @@ public:
 	void GetEmailsFromPeopleFile( const entry_ref& eref,
 											BmStringVect& emails);
 
+	void AddAsKnownAddress( const BmString& addr);
+	bool IsAddressKnown( const BmString& addr) const;
+	BmKnownAddrSet::const_iterator KnownAddrBegin() 
+													{ return mKnownAddrSet.begin(); }
+	BmKnownAddrSet::const_iterator KnownAddrEnd() 
+													{ return mKnownAddrSet.end(); }
+
 	// overrides of listmodel base:
-	const BmString SettingsFileName()	{ return ""; }
+	const BmString SettingsFileName();
 	int16 ArchiveVersion() const			{ return 0; }
 
 	static BmRef<BmPeopleList> theInstance;
 
 private:
+	static const char* MSG_KNOWN_ADDR;
+	
 	// native methods:
-	BMenu* CreateSubmenuForPersonMap( const BmPersonMap& personMap, 
-												 const BMessage& templateMsg,
-												 const char* addrField,
-												 BmString label, BFont* font,
-												 bool createAllEntry=false);
+	BMenu* _CreateSubmenuForPersonMap( const BmPersonMap& personMap, 
+												  const BMessage& templateMsg,
+												  const char* addrField,
+												  BmString label, BFont* font,
+												  bool createAllEntry=false);
+	void _FetchAllPeopleInfo();
 
 	// overrides of listmode base:
 	void InitializeItems();
+	void InstantiateItems( BMessage* archive);
+	void InstantiateItem( BMessage* archive);
+	void ExecuteAction(BMessage* action);
+	status_t Archive( BMessage* archive, bool deep) const;
 
 	// Hide default constructor, BmPeopleList is a Singleton
 	BmPeopleList();
@@ -159,6 +176,7 @@ private:
 	BmPeopleList operator=( const BmPeopleList&);
 	
 	BQuery mPeopleQuery;
+	BmKnownAddrSet mKnownAddrSet;
 };
 
 #define ThePeopleList BmPeopleList::theInstance

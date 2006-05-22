@@ -42,23 +42,28 @@ extern "C" int _kset_mon_limit_(int num);
 status_t WatchNode( const node_ref *node, uint32 flags, BHandler *handler) {
 	static int32 gNodeMonitorCount = 4096;
 	static const int32 kNodeMonitorBumpValue = 1024;
+	static BLocker gBumpLock("NodeMonitorBumpLock");
 	
 	BMessenger target(handler);
 	if (!handler || !target.IsValid())
 		return B_BAD_VALUE;
 
+	int32 lastCount = gNodeMonitorCount;
 	status_t result = watch_node( node, flags, target);
 
 	if (result == ENOMEM) {
-		gNodeMonitorCount += kNodeMonitorBumpValue;
-		BM_LOG( BM_LogApp, 
-					BmString("Failed to add monitor, trying to bump limit to ")
-						<< gNodeMonitorCount << " nodes.");
-		result = _kset_mon_limit_(gNodeMonitorCount);
-		if (result != B_OK) {
-			BM_LOGERR( BmString("Failed to allocate more node monitors, error: ")
-						<< strerror(result));
-			return result;
+		BAutolock lock(&gBumpLock);
+		if (lastCount == gNodeMonitorCount) {
+			gNodeMonitorCount += kNodeMonitorBumpValue;
+			BM_LOG( BM_LogApp, 
+						BmString("Failed to add monitor, trying to bump limit to ")
+							<< gNodeMonitorCount << " nodes.");
+			result = _kset_mon_limit_(gNodeMonitorCount);
+			if (result != B_OK) {
+				BM_LOGERR( BmString("Failed to allocate more node monitors, error: ")
+							<< strerror(result));
+				return result;
+			}
 		}
 		// try again, this time with more node monitors
 		result = watch_node(node, flags, target);

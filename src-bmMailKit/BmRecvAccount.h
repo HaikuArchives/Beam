@@ -211,7 +211,9 @@ private:
 	BmRecvAccount();					// hide default constructor
 	// Hide copy-constructor and assignment:
 	BmRecvAccount( const BmRecvAccount&);
+#ifndef __MWERKS__
 	BmRecvAccount operator=( const BmRecvAccount&);
+#endif
 };
 
 
@@ -252,7 +254,6 @@ private:
 	// Hide copy-constructor and assignment:
 	BmRecvAccountList( const BmRecvAccountList&);
 	BmRecvAccountList operator=( const BmRecvAccountList&);
-	
 };
 
 #define TheRecvAccountList BmRecvAccountList::theInstance

@@ -29,7 +29,7 @@ public:
 	~BmMailMonitor();
 
 	void CacheRefToFolder( node_ref& nref, const BmString& fKey);
-	bool IsIdle();
+	bool IsIdle(uint32 msecs = 1000);
 
 	// overrides of looper base:
 	void MessageReceived( BMessage* msg);

@@ -124,7 +124,7 @@ BmString BmIdentity::GetFromAddress() const {
 	if (!recvAcc)
 		return "";
 	BmString addr( mRealName);
-	BmString domainPart = recvAcc->GetDomainName();
+	BmString domainPart = GetDomainName();
 	if (domainPart.Length())
 		domainPart.Prepend( "@");
 	if (addr.Length()) {
@@ -142,6 +142,25 @@ BmString BmIdentity::GetFromAddress() const {
 }
 
 /*------------------------------------------------------------------------------*\
+	GetDomainName()
+		-	returns the domain part of this identity's address
+\*------------------------------------------------------------------------------*/
+BmString BmIdentity::GetDomainName() const {
+	BmString domainName;
+	int32 atPos = mMailAddr.FindFirst("@");
+	if (atPos >= 0) {
+		// fetch domain name from our given mail-address:
+		domainName.SetTo(mMailAddr.String()+atPos+1);
+	} else {
+		// fetch domain name from receiving account's server name:
+		BmRef<BmRecvAccount> recvAcc = RecvAcc();
+		if (recvAcc)
+			domainName = recvAcc->GetDomainName();
+	}
+	return domainName;
+}
+
+/*------------------------------------------------------------------------------*\
 	HandlesAddrSpec()
 		-	determines if the given addrSpec belongs to this identity
 \*------------------------------------------------------------------------------*/
@@ -156,7 +175,7 @@ bool BmIdentity::HandlesAddrSpec( BmString addrSpec, bool needExactMatch) const 
 	int32 atPos = addrSpec.FindFirst("@");
 	if (atPos != B_ERROR) {
 		BmString addrDomain( addrSpec.String()+atPos+1);
-		if (addrDomain != recvAcc->GetDomainName())
+		if (addrDomain != GetDomainName())
 			return false;						// address is from different domain
 		if (addrSpec == recvAcc->Username()+"@"+addrDomain)
 			return true;
@@ -296,7 +315,7 @@ void BmIdentityList::InstantiateItem( BMessage* archive) {
 	AddItemToList( newIdent);
 	if (!mCurrIdentity)
 		mCurrIdentity = newIdent;
-	}
+}
 
 /*------------------------------------------------------------------------------*\
 	InstantiateItems( archive)

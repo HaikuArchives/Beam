@@ -9,6 +9,7 @@
 #include <Autolock.h>
 #include <Directory.h>
 #include <File.h>
+#include <MessageQueue.h>
 #include <NodeInfo.h>
 #include <NodeMonitor.h>
 #include <Path.h>
@@ -35,7 +36,7 @@ public:
 	void Run();
 	void Quit();
 	//
-	bool IsIdle();
+	bool IsIdle(uint32 msecs);
 	//
 	void AddMessage(BMessage* msg);
 	//
@@ -207,12 +208,12 @@ void BmMailMonitorWorker::AddMessage( BMessage* msg) {
 	IsIdle()
 		-	
 \*------------------------------------------------------------------------------*/
-bool BmMailMonitorWorker::IsIdle() {
+bool BmMailMonitorWorker::IsIdle(uint32 msecs) {
 	bool res = false;
-	if (mLocker.Lock()) {
+	if (mLocker.LockWithTimeout(20*1000) == B_OK) {
 		// Mailmonitor is idle if the message list is empty and if
-		// it has been so for the last second:
-		res = mMessageList.empty() && mIdleTimeInMSecs > 1000;
+		// it has been so for the given amount of microseconds:
+		res = mMessageList.empty() && mIdleTimeInMSecs > msecs;
 		mLocker.Unlock();
 	}
 	return res;
@@ -532,14 +533,14 @@ void BmMailMonitorWorker::EntryChanged( node_ref& nref) {
 	// B_ATTR_CHANGED messages only carry the node-ref of the file, from
 	// which we can't deduce the corresponding mail-folder. This is bad!
 	// In order to remedy the problem somewhat, we use a two-fold approach
-	// to fetch fetch the mailref that corresponds to the given node-ref:
+	// to fetch the mailref that corresponds to the given node-ref:
 	// - whenever Beam itself changes an attribute of a node-ref, it
 	//   explicitly puts the parent folder of the mail-ref into a specific
 	//   map. So we first search this map for a corresponding entry.
 	// - if there is no corresponding entry in the map (which is the case
 	//   when the change has been triggered by another program) we try
 	//   to find the mail-ref by searching the complete mail-folder-hierarchy.
-	//	  This isn't reliable, as the mail-ref may not be loaded), but it 
+	//	  This isn't reliable, as the mail-ref may not be loaded, but it 
 	//	  is better than nothing.
 	BmString key( BM_REFKEY( nref));
 	CachedRefToFolderMap::iterator pos = mCachedRefToFolderMap.find( key);
@@ -695,8 +696,8 @@ void BmMailMonitor::CacheRefToFolder( node_ref& nref, const BmString& fKey) {
 	IsIdle()
 		-	
 \*------------------------------------------------------------------------------*/
-bool BmMailMonitor::IsIdle() {
-	return mWorker->IsIdle();
+bool BmMailMonitor::IsIdle(uint32 msecs) {
+	return MessageQueue()->IsEmpty() && mWorker->IsIdle(msecs);
 }
 
 /*------------------------------------------------------------------------------*\

@@ -20,7 +20,7 @@
 #include <cppunit/TestCaller.h>
 #include <cppunit/TestSuite.h>
 
-MultiLockerTest::MultiLockerTest(std::string name)
+MultiLockerTest::MultiLockerTest(string name)
 	: BThreadedTestCase(name)
 	, mLocker( "lock")
 	, mVal( 0)
@@ -327,18 +327,18 @@ MultiLockerTest::ReadWriteLockBlockTest3() {
 void
 MultiLockerTest::ExpandReadToWriteLockTest1() {
 	NextSubTest();
-//	CPPUNIT_ASSERT( mLocker.ReadLock() == true);
+	CPPUNIT_ASSERT( mLocker.ReadLock() == true);
 	mVal = 1;
 	NextSubTest();
-//	CPPUNIT_ASSERT( WaitForVal(4));
+	CPPUNIT_ASSERT( WaitForVal(4));
 	try {
 		for( int i=0; i<1000; ++i) {
-//			CPPUNIT_ASSERT( mLocker.WriteLock() == true);
+			CPPUNIT_ASSERT( mLocker.WriteLock() == true);
 			NextSubTest();
-//			CPPUNIT_ASSERT( mLocker.IsReadLocked() == true);
-//			CPPUNIT_ASSERT( mLocker.IsWriteLocked() == true);
-//			CPPUNIT_ASSERT( mVal == 4);
-//			mLocker.WriteUnlock();
+			CPPUNIT_ASSERT( mLocker.IsReadLocked() == true);
+			CPPUNIT_ASSERT( mLocker.IsWriteLocked() == true);
+			CPPUNIT_ASSERT( mVal == 4);
+			mLocker.WriteUnlock();
 			snooze(1000);
 		}
 		mVal = -100;

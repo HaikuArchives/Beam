@@ -119,7 +119,8 @@ bool BmGuiRoster::AskUserForPopAcc( const BmString& accName,
 \*------------------------------------------------------------------------------*/
 bool BmGuiRoster::IsEmailKnown( const BmString& email)
 {
-	return ThePeopleList->FindPersonByEmail( email) != NULL;
+	return ThePeopleList->FindPersonByEmail(email) != NULL
+			 || ThePeopleList->IsAddressKnown(email);
 }
 
 namespace BmPrivate {
@@ -435,6 +436,7 @@ void BmGuiRoster::AddCharsetMenu( BMenu* menu, BHandler* target, int32 msgType)
 		charset = charsets[i];
 		charset.ToLower();
 		BMessage* msg = new BMessage( msgType);
+		msg->AddString("charset", charset.String());
 		AddItemToMenu( menu, CreateMenuItem( charset.String(), msg), target);
 	}
 	// add all other charsets:
@@ -448,6 +450,7 @@ void BmGuiRoster::AddCharsetMenu( BMenu* menu, BHandler* target, int32 msgType)
 			charset = iter->first;
 			charset.ToLower();
 			BMessage* msg = new BMessage( msgType);
+			msg->AddString("charset", charset.String());
 			AddItemToMenu( moreMenu, 
 								CreateMenuItem( charset.String(), msg), 
 								target);

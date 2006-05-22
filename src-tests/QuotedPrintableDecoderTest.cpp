@@ -54,7 +54,7 @@ static void DecodeQpAndCheck( BmString input, BmString result)
 		&srcBuf, blockSize, 
 		IsEncodedWord 
 			? BmQuotedPrintableDecoder::nTagIsEncodedWord 
-			: BM_DEFAULT_STRING
+			: ""
 	);
 	destBuf.Write( &qpDecoder, blockSize);
 	decodedStr.Adopt( destBuf.TheString());

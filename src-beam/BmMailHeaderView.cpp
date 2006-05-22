@@ -199,11 +199,18 @@ void BmMailHeaderView::BmMailHeaderFieldView::BmAddrMenuView
 	BMenu* createAndEditPersonMenu = NULL;
 	BMenu* createPersonMenu = NULL;
 	BMenu* editPersonMenu = NULL;
+	BMenu* mailToMenu = new BMenu("Mail To");
+	mailToMenu->SetFont( &menuFont);
 	BMenuItem* item = NULL;
 	uint16 count = 0;
 	BmAddrList::const_iterator iter;
 	BMessage* allMsg = new BMessage(BMM_CREATE_PERSON_FROM_ADDR);
 	for( iter = mAddrList->begin(); iter != mAddrList->end(); ++iter) {
+		BMessage* mailToMsg = new BMessage(BMM_NEW_MAIL);
+		mailToMsg->AddString(BeamApplication::MSG_WHO_TO, iter->AddrSpec().String());
+		item = new BMenuItem( iter->AddrString().String(), mailToMsg);
+		item->SetTarget( be_app);
+		mailToMenu->AddItem( item);
 		if (!ThePeopleList->FindPersonByEmail(iter->AddrSpec())) {
 			if (!createAndEditPersonMenu) {
 				createAndEditPersonMenu = new BMenu("Import & Edit Address");
@@ -253,6 +260,7 @@ void BmMailHeaderView::BmMailHeaderFieldView::BmAddrMenuView
 		createAndEditPersonMenu->AddItem( item);
 	}
 
+	menu->AddItem(mailToMenu);
 	if (createAndEditPersonMenu)
 		menu->AddItem(createAndEditPersonMenu);
 	if (createPersonMenu)

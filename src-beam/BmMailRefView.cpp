@@ -408,6 +408,11 @@ enum {
 	BMM_CONNECT_LAYOUT = 'bmCL'
 };
 
+enum {
+	BMH_NO_INIT = -1,
+	BMH_SHOWN = 0,
+	BMH_HIDDEN = 1
+};
 /*------------------------------------------------------------------------------*\
 	()
 		-	
@@ -426,6 +431,7 @@ BmMailRefView::BmMailRefView( int32 width, int32 height)
 	,	mCurrFolder( NULL)
 	,	mHaveSelectedRef( false)
 	,	mStateInfoConnectedToParentFolder( true)
+	,	mHiddenState(BMH_NO_INIT)
 {
 	int32 flags = CLV_SORT_KEYABLE;
 	SetViewColor( B_TRANSPARENT_COLOR);
@@ -773,6 +779,41 @@ void BmMailRefView::HandleDrop( BMessage* msg) {
 }
 
 /*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailRefView::WindowActivated(bool active)
+{
+	if (active && mHiddenState == BMH_NO_INIT) {
+		BRect b(Bounds());
+		mHiddenState = b.Height() > 0 ? BMH_HIDDEN : BMH_SHOWN;
+	}
+}
+
+/*------------------------------------------------------------------------------*\
+	FrameResized()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailRefView::FrameResized(float width, float height)
+{
+	inherited::FrameResized(width, height);
+	// track showing/hiding of view and add/drop view-items for model 
+	// accordingly:
+	if (mHiddenState == -1)
+		return;
+	if (DataModel()) {
+		if (mHiddenState == BMH_HIDDEN) {
+			if (!IsHidden())
+				JobIsDone(!IsJobRunning());
+		} else if (mHiddenState == BMH_SHOWN) {
+			if (IsHidden())
+				MakeEmpty();
+		}
+	}
+	mHiddenState = IsHidden() ? BMH_HIDDEN : BMH_SHOWN;
+}
+
+/*------------------------------------------------------------------------------*\
 	ShowFolder()
 		-	
 \*------------------------------------------------------------------------------*/
@@ -789,7 +830,6 @@ void BmMailRefView::ShowFolder( BmMailFolder* folder) {
 		mCurrFolder = folder;
 		if (refList)
 			StartJob( refList.Get());
-		SelectionChanged();
 	}
 	catch( BM_error &err) {
 		// a problem occurred, we tell the user:
@@ -819,7 +859,8 @@ void BmMailRefView::JobIsDone( bool completed) {
 				BRect frame = ItemFrame( idx);
 				float newYPos = frame.top-(Bounds().Height()-frame.Height())/2.0;
 				ScrollTo( BPoint( 0, MAX( 0, newYPos)));
-			}
+			} else
+				SelectionChanged();
 		}
 	}
 }

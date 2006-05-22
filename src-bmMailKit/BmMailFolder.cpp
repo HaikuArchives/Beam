@@ -336,7 +336,7 @@ void BmMailFolder::BumpSpecialMailCountForSubfolders( int32 offset) {
 BmRef<BmMailRefList> BmMailFolder::MailRefList() {
 	BmAutolockCheckGlobal lock( nRefListLocker);
 	if (!lock.IsLocked())
-		BM_THROW_RUNTIME( Name() + ":RemoveMailRefList(): Unable to get lock");
+		BM_THROW_RUNTIME( Name() + ":MailRefList(): Unable to get lock");
 	if (!mMailRefList)
 		mMailRefList = new BmMailRefList( this);
 	return mMailRefList;

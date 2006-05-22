@@ -1,10 +1,4 @@
 /*
-	BmMailFilter.cpp
-		- Implements the main POP3-client-class: BmMailFilter
-
-		$Id$
-*/
-/*
  * Copyright 2002-2006, project beam (http://sourceforge.net/projects/beam).
  * All rights reserved. Distributed under the terms of the GNU GPL v2.
  *
@@ -111,6 +105,7 @@ bool BmMailFilter::StartJob() {
 				mail = BmMail::CreateInstance( (*mMailRefs)[i].Get());
 				if (mail) {
 					mail->StartJobInThisThread( BmMail::BM_READ_MAIL_JOB);
+					if (mail->InitCheck() == B_OK)
 					Execute( mail.Get());
 				}
 				BmString currentCount = BmString()<<++c<<" of "<<count;
@@ -119,6 +114,8 @@ bool BmMailFilter::StartJob() {
 			mMailRefs->clear();
 		}
 		for( uint32 i=0; ShouldContinue() && i<mMails.size(); ++i) {
+			if (mMails[i]->InitCheck() != B_OK)
+				continue;
 			Execute( mMails[i].Get());
 			BmString currentCount = BmString()<<++c<<" of "<<count;
 			UpdateStatus( delta, mMails[i]->Name().String(), 

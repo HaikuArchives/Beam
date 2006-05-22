@@ -18,18 +18,17 @@
 #include <cppunit/TestCaller.h>
 #include <cppunit/TestSuite.h>
 #include <cppunit/extensions/HelperMacros.h>
-#include <TestCase.h>
+#include <ThreadedTestCase.h>
 
-class MailMonitorTest : public BTestCase
+class MailMonitorTest : public BThreadedTestCase
 {
-	typedef TestCase inherited;
-	CPPUNIT_TEST_SUITE( MailMonitorTest );
-	CPPUNIT_TEST( MailRefTest);
-	CPPUNIT_TEST( MailFolderTest);
-	CPPUNIT_TEST_SUITE_END();
+	typedef BThreadedTestCase inherited;
 public:
 	
+	static CppUnit::Test* suite();
+
 	MailMonitorTest();
+	virtual ~MailMonitorTest();
 
 	// This function called before *each* test added in Suite()
 	void setUp();
@@ -40,8 +39,19 @@ public:
 	//------------------------------------------------------------
 	// Test functions
 	//------------------------------------------------------------
-	void MailRefTest();
-	void MailFolderTest();
+	void BasicMailRefTest();
+	void BasicMailFolderTest();
+	void MassiveMailRefCreator();
+	void MassiveMailRefRemover();
+	void MassiveMailRefCheckerTest();
+	void SpecialMailSetter();
+	void SpecialMailClearer();
+	void SpecialMailCheckerTest();
+	void RefListAdder();
+	void RefListRemover();
+	void RefListStorageTest();
+private:
+	void SyncWithMailMonitor();
 };
 
 

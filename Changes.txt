@@ -1,6 +1,198 @@
 change-history of Beam:
 		$Id$
 
+< 2006-05-22: added tag 'rel-1-1' >
+
+< 2006-05-22: commit >
+
+BmDataModel:
+	-	TellJobIsDone() now explicitly sets the
+		job-state of a non-completed job to stopped.
+		This fixes problems with jobs being still 
+		marked as running when in fact they were
+		stopped because of an error. This in turn
+		fixes the problem reported by Rainer: 
+		Filtering a non-existing mail caused the
+		filter-view to appear but never to finish
+		(it was waiting for the mail to come out
+		of the running state)
+
+BmMailFilter:
+	-	only ever execute filters on mails that
+		have properly been initialized (other mails
+		are ignored)
+
+< 2006-05-21: commit >
+
+BeamApp:
+	-	added support for enclosure: - arguments 
+		('Mail To'-function in Zeta).
+
+BmMailFolderView:
+	-	implemented request by Ingo and Stippi that
+		causes the folder-view to avoid focus (it
+		passes it on to the reflist instead).
+
+WrappingTextView:
+	-	circumvented the problem of the mailview-
+		scrollbar sometimes not reacting to the
+		first click (the scrollbar would move down
+		but the mailview wouldn't).
+
+< 2006-05-01: moved tag 'rel-1-1-rc4' >
+
+< 2006-05-01: commit >
+
+BmBodyPartList, BmGuiRoster, BmMailView:
+	-	fixed broken explicit selection of charset
+
+< 2006-04-20: commit >
+
+BmMailAddrCompleter:
+	-	now takes known-addresses into account, too
+
+BmPeople:
+	-	made access to KnownAddrSet public, such that 
+		the mail-addr-completer	can access it
+
+BmSpamFilter:
+	-	when learning as SPAM, we now mark the mail as
+		read only if this was requested via prefs
+
+BmToolbarButton:
+	-	a right-click anywhere on the button now triggers
+		the menu to be displayed (if any). Suggested by
+		Stephan
+
+< 2006-04-18: added tag 'rel-1-1' >
+
+< 2006-04-18: commit >
+
+BmMailFolderList, BmMailRefList:
+	-	fixed problems if mailbox volume lives on a file-
+		system that delivers more than one Dirent per call.
+
+BmMailMonitor:
+	-	made IsIdle() accept the requested idle-time as
+		parameter.
+	-	IsIdle() now locks with a timeout to increase the
+		chance of escaping a deadlock.
+
+BmPrefs:
+	-	fixed problems if mailbox-volume has no trash.
+
+BmSpamFilter:
+	-	fixed bug with respect to use of DeHtml and KeepATags
+		(both were always false). Now they are correctly
+		pushed through from the prefs, and they default to
+		true.
+	-	improved handling of MDNs such that we now try to 
+		determine the original mail's content and only use
+		that for SPAM-related purposes. This avoids polluting
+		the database with MDN-specific vocabulary. This change
+		should lessen the probability for *real* MDNs (i.e.
+		MDNs generated as reply to our real mails) to get
+		classified as SPAM.
+
+BmStorageUtil:
+	-	protected automatic bumping of node-monitor slots
+		with a lock.
+
+MailMonitorTest:
+	-	added many more tests
+
+< 2006-04-13: commit >
+
+BmListController, BmMailRefView:
+	-	more bugfixes related to hiding/showing of mail-ref
+		listview.
+
+< 2006-04-13: commit >
+
+BeamApp, BmGuiRoster, BmMailEditWin, BmPeople, BmSpamFilter:
+	-	added support for "known addresses" to people list
+		such that Beam can keep track of people that we sent
+		mails to (but which haven't been added as people files
+		yet). This is important for the SPAM-filter, as it 
+		allows Beam to avoid marking mail as SPAM that comes
+		from addresses that we sent mail to.
+
+BmBodyPartView:
+	-	fixed incorrect handling of multiple bodyparts
+		during drag & drop
+	-	when dragging an attached mail to Tracker, the 
+		attributes of this mail are stored, too
+
+BmDataModel, BmMail, BmMailRef:
+	-	cleanup
+
+BmIdentity:
+	-	improved handling of the case where the mail server's
+		domain name differs from the domain part given in the
+		identity's mail address. Now the domain part given in
+		the identity's mail address has precedence
+
+BmListController:
+	-	fixed problem with mail-view window showing an empty
+		list sometimes. This was caused by an incorrect
+		initialization of mIsHidden, which must start in
+		the hidden state.
+
+BmMailHeaderView:
+	-	added support for sending a mail to any address
+		contained in the current mail
+
+BmMailRefView, BmMailView:
+	-	fixed minor problem in busy-state handling.
+
+< 2006-04-11: added tag 'rel-1-1-rc3' >
+
+< 2006-04-10: commit, moved tag 'current-devel' >
+
+BmBodyPartList:
+	-	fixed crashing bug in PruneUnneededMultiParts(), 
+		where we miscounted the number of bodyparts under
+		certain conditions.
+	-	fixed another bug in PruneUnneededMultiParts() that
+		lead to erraneous repition of editable text body at
+		top level.
+	-	fixed problems when parsing an empty mail.
+
+BmBodyPartView:
+	-	improved robustness a little
+
+BmMailRefView>:
+	-	added support for automatic reselection of mails that
+		have just been stored.
+
+BmOpenSslNetEndpoint:
+	-	moved ContextManager from header to implementation
+	-	added activation of OpenSSL-multithreading support 
+		to ContextManager
+
+src-bmDaemon/src-netendpoint-addons/Jamfile:
+	-	added net-libs to build in order to be able to link
+		the current libssl.so and libcrypto.so.
+
+BmStorageUtil:
+	-	cleanup
+
+< 2006-03-29: commit, moved tag 'current-devel' >
+
+BmImap:
+	-	fixed potential buffer overflow bug.
+
+BmJobStatusWin:
+	-	fixed bug when moving a job from the active to the
+		done queue that triggered a debugger call.
+
+BmMemIO:
+	-	added an assert to facilitate debugging the case when
+		the buffer is overflown.
+
+BmRecvAccount, BmSmtpAccount:
+	-	fixed default initializations
+
 < 2006-03-10: added tag 'rel-1-1-rc2' >
 
 < 2006-03-10: commit, moved tag 'current-devel' >

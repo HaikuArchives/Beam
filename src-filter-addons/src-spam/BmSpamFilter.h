@@ -160,13 +160,13 @@ class BmSpamFilter : public BmFilterAddon {
 			};
 			
 		public:
-			SpamRelevantMailtextSelector(const BmMail* mail);
+			SpamRelevantMailtextSelector(BmMail* mail);
 			void operator() (BmStringIBuf& inBuf);
 		
 		private:
 			void AddSpamRelevantBodyParts(BmStringIBuf& inBuf);
 			BmBodyPart* FindBodyPartWithHighestSpamRelevance(BmBodyPart* parent);
-			const BmMail* mMail;
+			BmRef<BmMail> mMail;
 			BmStringOBuf mDeHtmlBuf;
 		};
 		
@@ -305,6 +305,8 @@ public:
 	static const char* const MSG_PROTECT_KNOWN;
 	static const char* const MSG_FILE_UNSURE;
 	static const char* const MSG_UNSURE_THRESHOLD;
+	static const char* const MSG_DE_HTML;
+	static const char* const MSG_KEEP_A_TAGS;
 	static const int16 nArchiveVersion;
 
 	struct Data {
@@ -318,6 +320,8 @@ public:
 		bool mProtectKnownAddrs;
 		bool mActionFileUnsure;
 		int8 mUnsureThreshold;
+		bool mDeHtml;
+		bool mKeepATags;
 	};
 	static Data D;
 

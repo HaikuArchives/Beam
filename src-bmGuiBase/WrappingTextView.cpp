@@ -19,16 +19,9 @@
 #include <StringView.h>
 #include <Window.h>
 
+#include "BmBasics.h"
 #include "Colors.h"
 #include "WrappingTextView.h"
-
-const char* const WrappingTextView::n_long_line 
-	= "000000000000000000000000000000000000000000000000000000000000"
-	  "000000000000000000000000000000000000000000000000000000000000"
-	  "000000000000000000000000000000000000000000000000000000000000"
-	  "000000000000000000000000000000000000000000000000000000000000"
-	  "000000000000000000000000000000000000000000000000000000000000"
-	  "000000000000000000000000000000000000000000000000000000000000";
 
 WrappingTextView::UndoInfo::UndoInfo()
 	:	text_runs( NULL)
@@ -379,7 +372,7 @@ void WrappingTextView::ResetTextRect()
 	textRect.left = 4.0;
 	textRect.top = m_vertical_offset + 4.0;
 	if (m_fixed_width)
-		textRect.right = 8.0+StringWidth( n_long_line, m_fixed_width);
+		textRect.right = 8.0+StringWidth( "0") * m_fixed_width;
 	else
 		textRect.right -= 4.0;
 	textRect.bottom -= 4.0;
@@ -396,6 +389,14 @@ void WrappingTextView::ResetTextRect()
 		bar->SetProportion( MIN( 1.0, big/(height+m_vertical_offset)));
 	else 
 		bar->SetProportion( 1.0);
+
+	if (BeamOnDano) {
+		// circumvent a special feature/bug in Zeta with respect to 
+		// the scrollbar not always calling ValueChanged() on a click.
+		// Seemingly, changing the value twice hides the bug:
+		bar->SetValue(1);
+		bar->SetValue(0);
+	}
 
 	bar = ScrollBar( B_HORIZONTAL);
 	if (!bar) 	return;

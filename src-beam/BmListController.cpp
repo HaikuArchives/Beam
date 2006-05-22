@@ -153,7 +153,6 @@ BmListViewController::BmListViewController( BRect rect,
 	,	mPulsedScrollRunner( NULL)
 	,	mPulsedScrollStep( 0)
 	,	mDragBetweenItems( false)
-	,	mIsHidden(false)
 {
 	float minHeight
 		= hierarchical
@@ -1030,27 +1029,6 @@ void BmListViewController::StartJob( BmJobModel* model, bool startInNewThread,
 		fScrollView->SetBusy();
 	UpdateCaption( "tracking...");
 	inheritedController::StartJob( model, startInNewThread, jobSpecifier);
-}
-
-/*------------------------------------------------------------------------------*\
-	FrameResized()
-		-	
-\*------------------------------------------------------------------------------*/
-void BmListViewController::FrameResized(float width, float height)
-{
-	inherited::FrameResized(width, height);
-	// track showing/hiding of view and add/drop view-items for model 
-	// accordingly:
-	if (DataModel()) {
-		if (mIsHidden) {
-			if (!IsHidden())
-				JobIsDone(true);
-		} else {
-			if (IsHidden())
-				MakeEmpty();
-		}
-	}
-	mIsHidden = IsHidden();
 }
 
 /*------------------------------------------------------------------------------*\

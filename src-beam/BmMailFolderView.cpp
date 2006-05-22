@@ -339,6 +339,10 @@ void BmMailFolderView::HandleDrop( BMessage* msg) {
 \*------------------------------------------------------------------------------*/
 void BmMailFolderView::MouseDown( BPoint point) {
 	inherited::MouseDown( point); 
+	if (ThePrefs->GetBool("FolderViewPassesFocusToRefView", true)) {
+		if (mPartnerMailRefView)
+			mPartnerMailRefView->MakeFocus(true);
+	}
 	BMessage* msg = Looper()->CurrentMessage();
 	int32 buttons;
 	if (msg->FindInt32( "buttons", &buttons)==B_OK 

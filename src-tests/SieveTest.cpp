@@ -11,6 +11,8 @@
  *
  */
 
+#include <iostream>
+
 #include "SieveTest.h"
 
 #include "BmSieveFilter.h"

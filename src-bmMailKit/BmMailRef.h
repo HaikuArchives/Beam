@@ -137,8 +137,6 @@ public:
 	static const BmUpdFlags UPD_CLASSIFICATION= 1<<17;
 	static const BmUpdFlags UPD_RATIO_SPAM		= 1<<18;
 
-	// additional fieldnames for stored actions:
-	static const char* const MSG_OPCODE;
 							// indicates whether an item has been added or removed
 	static const float UNKNOWN_RATIO;
 

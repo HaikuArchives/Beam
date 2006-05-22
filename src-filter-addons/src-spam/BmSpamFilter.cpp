@@ -157,8 +157,7 @@ void BmSpamFilter::OsbfClassifier::SpamRelevantMailtextSelector::HtmlRemover
 			} else if (mKeepThisTagsContent)
 				*dest++ = c;
 			continue;
-		}
-		if (mInTag) {
+		} else if (mInTag) {
 			if (c == '>')
 				mInTag = false;
 			else if (c == '"') {
@@ -186,7 +185,7 @@ void BmSpamFilter::OsbfClassifier::SpamRelevantMailtextSelector::HtmlRemover
 		-	
 \*------------------------------------------------------------------------------*/
 BmSpamFilter::OsbfClassifier::SpamRelevantMailtextSelector
-::SpamRelevantMailtextSelector(const BmMail* mail)
+::SpamRelevantMailtextSelector(BmMail* mail)
 	:	mMail(mail)
 	,	mDeHtmlBuf(4096)
 {
@@ -199,9 +198,52 @@ BmSpamFilter::OsbfClassifier::SpamRelevantMailtextSelector
 void BmSpamFilter::OsbfClassifier::SpamRelevantMailtextSelector
 ::operator() (BmStringIBuf& inBuf)
 {
-	// add complete header:
+	// filter MDNs and replace them with the original mail, as this is
+	// what the SPAM-filter should deal with:
+	BmString from = mMail->GetFieldVal(BM_FIELD_FROM);
+	if ((from.IFindFirst("Mailer-Daemon") >= 0 
+		|| from.IFindFirst("Postmaster") >= 0)
+	&& mMail->GetFieldVal("Return-Path") == "<>") {
+		// mail is a MDN, we try to find the original mail as an attachment:
+		struct OriginalMailCollector : public BmListModelItem::Collector {
+			virtual ~OriginalMailCollector()	{}
+			virtual bool operator() (BmListModelItem* listItem)
+			{
+				BmBodyPart* bp = dynamic_cast<BmBodyPart*>(listItem);
+				if (bp && bp->MimeType().ICompare("message/rfc822") == 0) {
+					mOrigMailBodyPart = bp;
+					return false;
+				}
+				return true;
+			}
+			BmRef<BmBodyPart> mOrigMailBodyPart;
+		} origMailColl;
+		mMail->Body()->ForEachItem(origMailColl);
+		BmString origMailText;
+		if (origMailColl.mOrigMailBodyPart)
+			origMailText.SetTo(origMailColl.mOrigMailBodyPart->DecodedData());
+		else {
+			// no attachment found, we try to find the mailtext inline:
+			BmBodyPart* textBody = mMail->Body()->EditableTextBody().Get();
+			if (textBody) {
+				int32 inlineMailPos 
+					= textBody->DecodedData().IFindFirst("Return-Path:");
+				if (inlineMailPos < 0)
+					inlineMailPos = textBody->DecodedData().IFindFirst("Received:");
+				if (inlineMailPos >= 0)
+					origMailText = textBody->DecodedData().String()+inlineMailPos;
+			}
+		}
+		if (origMailText.Length()) {
+			// we have the text of the original mail, we use it instead of
+			// the MDN:
+			mMail = new BmMail(origMailText, mMail->AccountName());
+		}
+	}
+
+	// now that we know which mail to deal with, we add its header...
 	inBuf.AddBuffer(mMail->Header()->HeaderString());
-	// now add appropriate bodyparts:
+	// ...and add the mail's appropriate bodyparts:
 	AddSpamRelevantBodyParts(inBuf);
 }
 
@@ -225,7 +267,7 @@ void BmSpamFilter::OsbfClassifier::SpamRelevantMailtextSelector
 			// use only first 64 KB of text in order to avoid stuffing too much
 			// data from one single mail into our database
 		bool deHtml = mJobSpecs ? mJobSpecs->FindBool("DeHtml") : false;
-		if (deHtml && !body->MimeType().ICompare("text/html")) {
+		if (deHtml && body->MimeType().ICompare("text/html") == 0) {
 			BmStringIBuf htmlIn(body->DecodedData().String(), bodyLen);
 			HtmlRemover htmlRemover(&htmlIn);
 			mDeHtmlBuf.Write(&htmlRemover);
@@ -1795,7 +1837,9 @@ const char* const BmSpamFilter::MSG_TOFU_THRESHOLD	=		"bm:tthr";
 const char* const BmSpamFilter::MSG_PROTECT_KNOWN	=		"bm:pk";
 const char* const BmSpamFilter::MSG_FILE_UNSURE		=		"bm:fu";
 const char* const BmSpamFilter::MSG_UNSURE_THRESHOLD	=	"bm:uthr";
-const int16 BmSpamFilter::nArchiveVersion = 5;
+const char* const BmSpamFilter::MSG_DE_HTML			=		"bm:dh";
+const char* const BmSpamFilter::MSG_KEEP_A_TAGS		=		"bm:ka";
+const int16 BmSpamFilter::nArchiveVersion = 6;
 
 BmSpamFilter::Data BmSpamFilter::D;
 /*------------------------------------------------------------------------------*\
@@ -1812,6 +1856,8 @@ BmSpamFilter::Data::Data()
 	,	mProtectKnownAddrs( true)
 	,	mActionFileUnsure( true)
 	,	mUnsureThreshold(70)
+	,	mDeHtml(true)
+	,	mKeepATags(true)
 {
 }
 
@@ -1843,6 +1889,10 @@ BmSpamFilter::BmSpamFilter( const BmString& name, const BMessage* archive)
 		archive->FindBool( MSG_FILE_UNSURE, &D.mActionFileUnsure);
 		archive->FindInt8( MSG_UNSURE_THRESHOLD, &D.mUnsureThreshold);
 	}
+	if (version >= 6) {
+		archive->FindBool( MSG_DE_HTML, &D.mDeHtml);
+		archive->FindBool( MSG_KEEP_A_TAGS, &D.mKeepATags);
+	}
 }
 
 /*------------------------------------------------------------------------------*\
@@ -1870,7 +1920,9 @@ BmSpamFilter::Archive( BMessage* archive, bool) const
 		| archive->AddInt8( MSG_TOFU_THRESHOLD, D.mTofuThreshold)
 		| archive->AddBool( MSG_PROTECT_KNOWN, D.mProtectKnownAddrs)
 		| archive->AddBool( MSG_FILE_UNSURE, D.mActionFileUnsure)
-		| archive->AddInt8( MSG_UNSURE_THRESHOLD, D.mUnsureThreshold));
+		| archive->AddInt8( MSG_UNSURE_THRESHOLD, D.mUnsureThreshold)
+		| archive->AddBool( MSG_DE_HTML, D.mDeHtml)
+		| archive->AddBool( MSG_KEEP_A_TAGS, D.mKeepATags));
 	return ret;
 }
 
@@ -1895,6 +1947,11 @@ BmSpamFilter::Execute( BmMsgContext* msgContext, const BMessage* _jobSpecs)
 		jobSpecifier = jobSpecs.FindString("jobSpecifier");
 	}
 	nClassifier.JobSpecs(&jobSpecs);
+	bool bdummy;
+	if (jobSpecs.FindBool("DeHtml", &bdummy) != B_OK)
+		jobSpecs.AddBool("DeHtml", D.mDeHtml);
+	if (jobSpecs.FindBool("KeepATags", &bdummy) != B_OK)
+		jobSpecs.AddBool("KeepATags", D.mKeepATags);
 	if  (!jobSpecifier.ICompare("Classify") || !jobSpecifier.Length()) {
 		BM_LOG2( BM_LogFilter, "Spam-Addon: starting Classify job...");
 		int32 dummy;
@@ -1956,7 +2013,8 @@ BmSpamFilter::Execute( BmMsgContext* msgContext, const BMessage* _jobSpecs)
 		if (result) {
 			if (D.mActionFileLearnedSpam)
 				msgContext->SetString("FolderName", BmMailFolder::SPAM_FOLDER_NAME);
-			msgContext->SetString("Status", BM_MAIL_STATUS_READ);
+			if (D.mActionMarkSpamAsRead)
+				msgContext->SetString("Status", BM_MAIL_STATUS_READ);
 		}
 	} else if (!jobSpecifier.ICompare("LearnAsTofu")) {
 		BM_LOG2( BM_LogFilter, "Spam-Addon: starting LearnAsTofu job...");
@@ -2223,7 +2281,8 @@ void BmSpamFilterPrefs::Initialize() {
 	TheBubbleHelper->SetHelp( 
 		mProtectKnownAddrsControl, 
 		"Checking this will stop Beam from ever marking any mail as\n"
-		"SPAM if it comes from a known address (as people file)."
+		"SPAM if it comes from a known address (i.e. any address that\n"
+		"exists in a people file or that we have sent mail to in the past)."
 	);
 	TheBubbleHelper->SetHelp( 
 		mFileUnsureSpamControl, 

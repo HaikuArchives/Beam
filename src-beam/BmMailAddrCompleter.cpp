@@ -74,7 +74,8 @@ void BmMailAddressCompleter::MailAddrChoiceModel
 	for( int32 i=0; i<count; ++i)
 		delete static_cast<Choice*>(mChoicesList.ItemAt(i));
 	mChoicesList.MakeEmpty();
-	if (pattern.Length() == 0)
+	int32 pattLen = pattern.Length();
+	if (pattLen == 0)
 		return;
 	BmAutolockCheckGlobal lock( ThePeopleList->ModelLocker());
 	if (!lock.IsLocked())
@@ -88,7 +89,6 @@ void BmMailAddressCompleter::MailAddrChoiceModel
 			// email for each person, as otherwise the list may get rather long
 			// (without improving the usefulness a lot).
 			const BmStringVect& emails = person->Emails();
-			int32 pattLen = pattern.Length();
 			for( uint32 e=0; e<emails.size(); ++e) {
 				int32 namePos = 0;
 				int32 emailPos = 0;
@@ -122,6 +122,14 @@ void BmMailAddressCompleter::MailAddrChoiceModel
 				}
 			}
 		}
+	}
+	BmKnownAddrSet::const_iterator kaIter;
+	for( kaIter = ThePeopleList->KnownAddrBegin(); 
+		  kaIter != ThePeopleList->KnownAddrEnd(); 
+		  ++kaIter) {
+		BmString addr = *kaIter;
+		if (addr.ICompare(pattern, pattLen) == 0)
+			mChoicesList.AddItem(new Choice(addr, addr, 0, pattLen));
 	}
 	mChoicesList.SortItems(MailAddrSorter);
 }

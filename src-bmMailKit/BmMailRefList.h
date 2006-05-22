@@ -60,11 +60,13 @@ public:
 	// setters:
 	inline void MarkAsChanged() 			{ mNeedsStore = true; }
 
-private:
+protected:
 
 	// native methods:
 	void InitializeItems();
 	void InstantiateItemsFromStream( BDataIO* dataIO, BMessage* headerMsg = NULL);
+
+private:
 
 	// the following members will NOT be archived at all:
 	BmWeakRef<BmMailFolder> mFolder;

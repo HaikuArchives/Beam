@@ -123,7 +123,7 @@ public:
 	static const char* QUARANTINE_FOLDER_NAME;
 	static const char* SPAM_FOLDER_NAME;
 
-private:
+protected:
 	void StartNodeMonitor();
 	void StopNodeMonitor();
 
@@ -137,12 +137,13 @@ private:
 
 	// the following members will be archived into their own files:
 	BmRef< BmMailRefList> mMailRefList;
-	static BLocker nRefListLocker;
 
 	// the following members will NOT be archived at all:
 	SpecialMailRefSet mSpecialMailRefSet;
 	int32 mSpecialMailCountForSubfolders;
 	BmString mName;
+
+	static BLocker nRefListLocker;
 
 	// Hide copy-constructor and assignment:
 	BmMailFolder( const BmMailFolder&);

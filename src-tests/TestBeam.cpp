@@ -26,7 +26,7 @@ class BPath;
 #include "split.hh"
 using namespace regexx;
 
-#include "BmApp.h"
+#include "BeamApp.h"
 #include "BmBasics.h"
 #include "BmLogHandler.h"
 #include "BmPrefs.h"
@@ -102,8 +102,8 @@ BTestSuite* CreateBmBaseTestSuite() {
 	// ##### Add test suites here #####
 	suite->addTest("BmBase::MemIo", 
 						MemIoTest::suite());
-	suite->addTest("BmBase::MultiLocker", 
-						MultiLockerTest::suite());
+//	suite->addTest("BmBase::MultiLocker", 
+//						MultiLockerTest::suite());
 	suite->addTest("BmBase::String", 
 						StringTest::suite());
 	return suite;
@@ -201,8 +201,11 @@ int32 StartTests( void* args) {
 			CPPUNIT_ASSERT( currPath.FindFirst( "beam_testdata") >= 0);
 									// make sure we have correct path, we *don't* want
 									// to make a rm -rf on a wrong path...
+			printf("cleaning up remains from last run...");fflush(stdout);
 			system( "rm -rf >/dev/null mail");
+			printf("done\ncreating initial test setup...");fflush(stdout);
 			system( "unzip -o >/dev/null mail.zip");
+			printf("done\n");
 
 			// use a different mailbox if in test-mode:
 			ThePrefs->SetString( "MailboxPath", testPath+"/mail");
@@ -260,7 +263,9 @@ int main(int argc, char **argv) {
 	// first remove any old test-settings, since we want to start afresh:
 	system( "rm -rf >/dev/null /boot/home/config/settings/Beam_Test");
 
-	testApp = new BmApplication( BM_TEST_APP_SIG, true);
+	BeamInTestMode = true;
+
+	testApp = new BeamApplication( BM_TEST_APP_SIG);
 	
 	thread_id tid = spawn_thread( StartTests, "Beam_Test", 
 											B_NORMAL_PRIORITY, &argsInfo);

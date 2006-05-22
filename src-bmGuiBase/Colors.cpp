@@ -190,5 +190,12 @@ bool operator== (const rgb_color& left, const rgb_color& right) {
 				&& left.alpha == right.alpha;
 }
 
+bool operator!= (const rgb_color& left, const rgb_color& right) {
+	return left.red != right.red
+				|| left.green != right.green
+				|| left.blue != right.blue
+				|| left.alpha != right.alpha;
+}
+
 BFont bm_plain_font;
 BFont bm_bold_font;

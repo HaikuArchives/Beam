@@ -400,24 +400,23 @@ void BmMailRefList::InitializeItems() {
 	&& (count = mailDir.GetNextDirents((dirent* )buf, 4096)) > 0) {
 		dent = (dirent* )buf;
 		while (!stopped && count-- > 0) {
-			if (!strcmp(dent->d_name, ".") || !strcmp(dent->d_name, ".."))
-				continue;						// ignore . and .. dirs
-
-			if ((err=mailDir.GetStatFor( dent->d_name, &st)) != B_OK)
-				BM_THROW_RUNTIME( 
-					BmString("Could not get stat-info for \nmail-file <") 
-						<< dent->d_name << "> \n\nError:" << strerror(err)
-				);
-			if (S_ISREG( st.st_mode)) {
-				// we have found a new mail, so we add it to our list:
-				BM_LOG3( BM_LogMailTracking, 
-							BmString("Mail <") << dent->d_name << "," << dent->d_ino 
-								<< "> found ");
-				eref.device = dent->d_pdev;
-				eref.directory = dent->d_pino;
-				eref.set_name( dent->d_name);
-				newRef = BmMailRef::CreateInstance( eref, &st);
-				AddItemToList( newRef.Get());
+			if (!(!strcmp(dent->d_name, ".") || !strcmp(dent->d_name, ".."))) {
+				if ((err=mailDir.GetStatFor( dent->d_name, &st)) != B_OK)
+					BM_THROW_RUNTIME( 
+						BmString("Could not get stat-info for \nmail-file <") 
+							<< dent->d_name << "> \n\nError:" << strerror(err)
+					);
+				if (S_ISREG( st.st_mode)) {
+					// we have found a new mail, so we add it to our list:
+					BM_LOG3( BM_LogMailTracking, 
+								BmString("Mail <") << dent->d_name << "," << dent->d_ino 
+									<< "> found ");
+					eref.device = dent->d_pdev;
+					eref.directory = dent->d_pino;
+					eref.set_name( dent->d_name);
+					newRef = BmMailRef::CreateInstance( eref, &st);
+					AddItemToList( newRef.Get());
+				}
 			}
 			// Bump the dirent-pointer by length of the dirent just handled:
 			dent = (dirent* )((char* )dent + dent->d_reclen);

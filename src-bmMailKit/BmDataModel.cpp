@@ -536,6 +536,8 @@ void BmJobModel::TellJobIsDone( bool completed) {
 	msg.AddBool( MSG_COMPLETED, completed);
 	if (completed)
 		mJobState = JOB_COMPLETED;
+	else
+		mJobState = JOB_STOPPED;
 	BM_LOG2( BM_LogModelController, 
 				BmString("Job <") << name << "> tells it is done");
 	TellControllers( &msg, false);
@@ -548,6 +550,9 @@ void BmJobModel::TellJobIsDone( bool completed) {
 const char* const BmListModelItem::MSG_VERSION  = 		"bm:version";
 const char* const BmListModelItem::MSG_NUMCHILDREN = 	"bm:count";
 const char* const BmListModelItem::MSG_CHILDREN = 		"bm:chld";
+
+// additional fieldnames for stored actions:
+const char* const BmListModelItem::MSG_OPCODE = "bm:op";
 
 /*------------------------------------------------------------------------------*\
 	ListModelItem( key, parent)

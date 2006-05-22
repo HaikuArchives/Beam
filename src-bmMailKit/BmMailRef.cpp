@@ -49,9 +49,6 @@ const char* const BmMailRef::MSG_CLASSIFICATION = 	"bm:cl";
 const char* const BmMailRef::MSG_RATIO_SPAM= "bm:rs";
 const int16 BmMailRef::nArchiveVersion = 5;
 
-// additional fieldnames for stored actions:
-const char* const BmMailRef::MSG_OPCODE = 	"bm:op";
-
 const float BmMailRef::UNKNOWN_RATIO = 10.0;	
 	// just anything outside of [0..1]
 

@@ -124,7 +124,7 @@ class IMPEXPBMMAILKIT BmMail : public BmJobModel {
 public:
 	static BmRef<BmMail> CreateInstance( BmMailRef* ref);
 	BmMail( bool outbound);
-	BmMail( BmString &msgText, const BmString account=BmString());
+	BmMail( const BmString &msgText, const BmString account=BmString());
 	virtual ~BmMail();
 
 	// native methods:
@@ -132,7 +132,7 @@ public:
 	bool ConstructRawText( const BmString& editableUtf8Text, 
 								  const BmString& charset,
 								  BmString smtpAccount);
-	void SetTo( BmString &text, const BmString account);
+	void SetTo( const BmString &text, const BmString account);
 	void SetNewHeader( const BmString& headerStr);
 	void SetSignatureByName( const BmString sigName);
 	void SetupFromIdentityAndRecvAddr( BmIdentity* ident, 

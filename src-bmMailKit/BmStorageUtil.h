@@ -74,7 +74,7 @@ extern IMPEXPBMMAILKIT BmTempFileList TheTempFileList;
 	BmBackedFile
 		-	implements save storing into a file (by keeping a backup around).
 \*------------------------------------------------------------------------------*/
-class BmBackedFile {
+class IMPEXPBMMAILKIT BmBackedFile {
 public:
 	BmBackedFile()								{}
 	BmBackedFile( const char* filename, const char *mimetype = NULL,

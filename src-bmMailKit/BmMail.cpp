@@ -180,7 +180,7 @@ BmMail::BmMail( bool outbound)
 		-	constructor
 		-	creates message with given text and receiver-account
 \*------------------------------------------------------------------------------*/
-BmMail::BmMail( BmString &msgText, const BmString account) 
+BmMail::BmMail( const BmString &msgText, const BmString account) 
 	:	inherited( "MailModel_dummy")
 	,	mHeader( NULL)
 	,	mBody( NULL)
@@ -246,11 +246,12 @@ BmMail::~BmMail() {
 		-	account is the name of the POP/IMAP-account this message was 
 			received from
 \*------------------------------------------------------------------------------*/
-void BmMail::SetTo( BmString &text, const BmString account) {
+void BmMail::SetTo( const BmString &_text, const BmString account) {
+	BmString text;
 	BM_LOG2( BM_LogMailParse, "Converting Linebreaks to CRLF...");
-	text.ReplaceAll( 0, 32);
 		// take care to remove all binary nulls
-	text.ConvertLinebreaksToCRLF();
+	text.ConvertLinebreaksToCRLF(&_text);
+	text.ReplaceAll( 0, 32);
 	BM_LOG2( BM_LogMailParse, "done (Converting Linebreaks to CRLF)");
 
 	// find end of header (and start of body):
@@ -857,7 +858,7 @@ BmBodyPartList* BmMail::Body() const
 \*------------------------------------------------------------------------------*/
 void BmMail::ConstructAndStore() {
 	BmRef< BmBodyPart> bodyPart( mBody->EditableTextBody());
-	if (ConstructRawText( bodyPart ? bodyPart->DecodedData() : "",
+	if (ConstructRawText( bodyPart ? bodyPart->DecodedData() : BM_DEFAULT_STRING,
 								 DefaultCharset(), 
 								 mAccountName)) {
 		Store();

@@ -472,7 +472,11 @@ void BmToolbarButton::SetUpdateVariationsFunc( BmUpdateVariationsFunc* updFunc)
 		-	
 \*------------------------------------------------------------------------------*/
 void BmToolbarButton::MouseDown( BPoint point) {
-	if (IsEnabled() && mLatchRect.Contains( point))
+	int32 buttons = 0;
+	BMessage* msg = Looper()->CurrentMessage();
+	msg->FindInt32( "buttons", &buttons);
+	if (IsEnabled() && mLatchRect.Width() > 0
+	&& (mLatchRect.Contains( point) || buttons == B_SECONDARY_MOUSE_BUTTON))
 		ShowMenu( BPoint( 0.0, mLatchRect.top+3+LATCHSZ));
 	else
 		inherited::MouseDown( point); 

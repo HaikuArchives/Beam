@@ -38,6 +38,7 @@ public:
 	
 	// native methods:
 	BmString GetFromAddress() const;
+	BmString GetDomainName() const;
 	bool HandlesAddrSpec( BmString addrSpec, bool needExactMatch=false) const;
 	bool SanityCheck( BmString& complaint, BmString& fieldName) const;
 	//

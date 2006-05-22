@@ -53,7 +53,8 @@
 	SelectEmailForPerson( emails)
 		-	selects one of the given emails of a person
 \*------------------------------------------------------------------------------*/
-BmString SelectEmailForPerson( const BmStringVect& emails) {
+BmString SelectEmailForPerson( const BmStringVect& emails) 
+{
 	if (emails.empty())
 		return BM_DEFAULT_STRING;
 	// maybe TODO: ask user which of the given addresses should be used.
@@ -62,6 +63,38 @@ BmString SelectEmailForPerson( const BmStringVect& emails) {
 	// dragging them over Beam. That's why we currently select the first mail
 	// automatically:
 	return emails[0];
+}
+
+/*------------------------------------------------------------------------------*\
+	NoteOutboundAddresses()
+		-	
+\*------------------------------------------------------------------------------*/
+static void NoteOutboundAddresses( const BmAddressList& toList,
+											  const BmAddressList& ccList,
+											  const BmAddressList& bccList) 
+{
+	BmAddrList::const_iterator iter;
+	for( iter=toList.begin(); iter != toList.end(); ++iter) {
+		if (!iter->HasAddrSpec())
+			// empty group-addresses have no real address-specification 
+			// (like 'Undisclosed-Recipients: ;'), we filter those:
+			continue;
+		ThePeopleList->AddAsKnownAddress(iter->AddrSpec());
+	}
+	for( iter=ccList.begin(); iter != ccList.end(); ++iter) {
+		if (!iter->HasAddrSpec())
+			// empty group-addresses have no real address-specification 
+			// (like 'Undisclosed-Recipients: ;'), we filter those:
+			continue;
+		ThePeopleList->AddAsKnownAddress(iter->AddrSpec());
+	}
+	for( iter=bccList.begin(); iter != bccList.end(); ++iter) {
+		if (!iter->HasAddrSpec())
+			// empty group-addresses have no real address-specification 
+			// (like 'Undisclosed-Recipients: ;'), we filter those:
+			continue;
+		ThePeopleList->AddAsKnownAddress(iter->AddrSpec());
+	}
 }
 
 /********************************************************************************\
@@ -1156,6 +1189,11 @@ bool BmMailEditWin::CreateMailFromFields( bool hardWrapIfNeeded) {
 			mail->SetFieldVal( BM_FIELD_RESENT_FROM, mFromControl->Text());
 			mail->SetFieldVal( BM_FIELD_RESENT_SENDER, mSenderControl->Text());
 			mail->SetFieldVal( BM_FIELD_RESENT_TO, mToControl->Text());
+			NoteOutboundAddresses(
+				mail->Header()->GetAddressList( BM_FIELD_RESENT_TO),
+				mail->Header()->GetAddressList( BM_FIELD_RESENT_CC),
+				mail->Header()->GetAddressList( BM_FIELD_RESENT_BCC)
+			);
 		} else {
 			mail->SetFieldVal( BM_FIELD_BCC, mBccControl->Text());
 			mail->SetFieldVal( BM_FIELD_CC, mCcControl->Text());
@@ -1163,6 +1201,11 @@ bool BmMailEditWin::CreateMailFromFields( bool hardWrapIfNeeded) {
 			mail->SetFieldVal( BM_FIELD_SENDER, mSenderControl->Text());
 			mail->SetFieldVal( BM_FIELD_TO, mToControl->Text());
 			mail->SetFieldVal( BM_FIELD_REPLY_TO, mReplyToControl->Text());
+			NoteOutboundAddresses(
+				mail->Header()->GetAddressList( BM_FIELD_TO),
+				mail->Header()->GetAddressList( BM_FIELD_CC),
+				mail->Header()->GetAddressList( BM_FIELD_BCC)
+			);
 		}
 		mail->SetFieldVal( BM_FIELD_SUBJECT, mSubjectControl->Text());
 		if (!mail->IsRedirect() 

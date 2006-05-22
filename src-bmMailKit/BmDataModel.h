@@ -246,6 +246,7 @@ public:
 	//	message component definitions for status-msgs:
 	static const char* const MSG_NUMCHILDREN;
 	static const char* const MSG_CHILDREN;
+	static const char* const MSG_OPCODE;
 
 protected:
 	// native methods:

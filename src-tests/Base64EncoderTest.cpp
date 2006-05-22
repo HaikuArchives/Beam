@@ -53,7 +53,7 @@ static void EncodeBase64AndCheck( BmString input, BmString result)
 		&srcBuf, blockSize,
 		SingleLineMode
 			? BmBase64Encoder::nTagOnSingleLine
-			: BM_DEFAULT_STRING
+			: ""
 		);
 	destBuf.Write( &encoder, blockSize);
 	encodedStr.Adopt( destBuf.TheString());

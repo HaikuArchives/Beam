@@ -275,28 +275,29 @@ int BmMailFolderList::InitializeSubFolders( BmMailFolder* folder, int level) {
 		while (count-- > 0) {
 			if (!ShouldContinue())
 				goto out;
-			if (!strcmp(dent->d_name, ".") || !strcmp(dent->d_name, ".."))
-				continue;						// ignore . and .. dirs
-			if ((err = mailDir.GetStatFor( dent->d_name, &st)) != B_OK)
-				BM_THROW_RUNTIME( 
-					BmString("Could not get stat-info for \nmail-dir <") 
-						<< dent->d_name << "> \n\nError:" << strerror(err)
-				);
-			if (S_ISDIR( st.st_mode)) {
-				// we have found a new mail-folder, so we add it as a child
-				// of the current folder:
-				eref.device = dent->d_pdev;
-				eref.directory = dent->d_pino;
-				eref.set_name( dent->d_name);
-				BM_LOG3( BM_LogMailTracking, 
-							BmString("Mail-folder <") << dent->d_name << "," 
-								<< dent->d_ino << "> found at level " << level);
-				BmMailFolder* newFolder = AddMailFolder( 
-					eref, dent->d_ino, folder, st.st_mtime
-				);
-				folderCount++;
-				// now we process the new sub-folder first:
-				folderCount += InitializeSubFolders( newFolder, level+1);
+			if (!(!strcmp(dent->d_name, ".") || !strcmp(dent->d_name, ".."))) {
+				// ignore . and .. dirs
+				if ((err = mailDir.GetStatFor( dent->d_name, &st)) != B_OK)
+					BM_THROW_RUNTIME( 
+						BmString("Could not get stat-info for \nmail-dir <") 
+							<< dent->d_name << "> \n\nError:" << strerror(err)
+					);
+				if (S_ISDIR( st.st_mode)) {
+					// we have found a new mail-folder, so we add it as a child
+					// of the current folder:
+					eref.device = dent->d_pdev;
+					eref.directory = dent->d_pino;
+					eref.set_name( dent->d_name);
+					BM_LOG3( BM_LogMailTracking, 
+								BmString("Mail-folder <") << dent->d_name << "," 
+									<< dent->d_ino << "> found at level " << level);
+					BmMailFolder* newFolder = AddMailFolder( 
+						eref, dent->d_ino, folder, st.st_mtime
+					);
+					folderCount++;
+					// now we process the new sub-folder first:
+					folderCount += InitializeSubFolders( newFolder, level+1);
+				}
 			}
 			// Bump the dirent-pointer by length of the dirent just handled:
 			dent = (dirent* )((char* )dent + dent->d_reclen);

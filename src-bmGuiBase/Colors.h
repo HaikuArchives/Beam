@@ -42,7 +42,8 @@ inline rgb_color BmStrengthenColor( const char* uiColName, int level) {
 	return BmFixupColor( uiColName, level, false);
 }
 
-bool operator== (const rgb_color& left, const rgb_color& right);
+bool IMPEXPBMGUIBASE operator== (const rgb_color& left, const rgb_color& right);
+bool IMPEXPBMGUIBASE operator!= (const rgb_color& left, const rgb_color& right);
 
 #ifndef B_BEOS_VERSION_DANO
 

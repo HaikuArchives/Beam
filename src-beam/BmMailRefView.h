@@ -126,7 +126,9 @@ public:
 	void SelectionChanged( void);
 	void ItemInvoked( int32 index);
 	void MouseDown(BPoint point);
+	void FrameResized(float width, float height);
 	void ColumnWidthChanged(int32 ColumnIndex, float NewWidth);
+	void WindowActivated(bool active);
 
 	// overrides of controller base:
 	BmString StateInfoBasename();
@@ -146,6 +148,7 @@ private:
 	BmMailView* mPartnerMailView;
 	bool mHaveSelectedRef;
 	bool mStateInfoConnectedToParentFolder;
+	int32 mHiddenState;
 
 	ReselectionInfo mReselectionInfo;
 

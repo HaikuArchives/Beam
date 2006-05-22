@@ -434,10 +434,9 @@ void BmMailView::MessageReceived( BMessage* msg) {
 				break;
 			}
 			case BM_MAILVIEW_SELECT_CHARSET: {
-				BMenuItem* item = NULL;
-				msg->FindPointer( "source", (void**)&item);
-				if (mCurrMail && item) {
-					mCurrMail->SuggestedCharset(item->Label());
+				BmString charset = msg->FindString( "charset");
+				if (mCurrMail && charset.Length()) {
+					mCurrMail->SuggestedCharset(charset);
 					mCurrMail->ResyncFromDisk();
 				}
 				break;
@@ -806,9 +805,9 @@ void BmMailView::ShowMail( BmMailRef* ref, bool async) {
 		}
 		mCurrMail = BmMail::CreateInstance( ref);
 		mDisplayInProgress = true;
-		StartJob( mCurrMail.Get(), async);
 		if (async)
 			ContainerView()->SetBusy();
+		StartJob( mCurrMail.Get(), async);
 	}
 	catch( BM_error &err) {
 		// a problem occurred, we tell the user:
@@ -836,9 +835,9 @@ void BmMailView::ShowMail( BmMail* mail, bool async) {
 		}
 		mCurrMail = mail;
 		mDisplayInProgress = true;
-		StartJob( mCurrMail.Get(), async);
 		if (async)
 			ContainerView()->SetBusy();
+		StartJob( mCurrMail.Get(), async);
 	}
 	catch( BM_error &err) {
 		// a problem occurred, we tell the user:
@@ -986,6 +985,7 @@ void BmMailView::JobIsDone( bool completed) {
 		SendNoticesIfNeeded( false);
 	}
 out:
+	ContainerView()->UnsetBusy();
 	mDisplayInProgress = false;
 }
 
@@ -1093,6 +1093,7 @@ void BmMailView::DisplayBodyPart( BmStringOBuf& displayBuf,
 				}
 				displayBuf << "- - - - - - - - - - - - - - - - - - - -\n\n";
 			}
+			bodyPart->SuggestCharset(mCurrMail->DefaultCharset());
 			if (bodyPart->IsBinary()) {
 				// Binary subparts are not automatically being converted to local
 				// newlines. Since we are going to display this binary subpart

@@ -88,7 +88,7 @@ void BmImapStatusFilter::Filter( const char* srcBuf, uint32& srcLen,
 		BmString statusRxStr 
 			= tagStr.Length()
 				? BmString("^(\\*|\\+|") << tagStr << ")\\s+"
-				: "^(\\*|\\+)\\s+";
+				: BmString("^(\\*|\\+)\\s+");
 
 		Regexx rx;
 		while(src<srcEnd) {
@@ -160,7 +160,7 @@ bool BmImapStatusFilter::CheckForPositiveAnswer()
 		BmString badStatusRxStr 
 			= tagStr.Length()
 				? BmString("^(\\*|") << tagStr << ")\\s+(BAD|NO)\\b"
-				: "^\\*\\s+(BAD|NO)\\b";
+				: BmString("^\\*\\s+(BAD|NO)\\b");
 		Regexx rx;
 		if (rx.exec(mLastStatusLine, badStatusRxStr)) {
 			BmString err("Server answers: \n");
