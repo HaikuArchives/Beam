@@ -1,6 +1,5 @@
 /* interp.h -- interpretor definition
  * Larry Greenfield
- * $Id$
  */
 /***********************************************************
         Copyright 1999 by Carnegie Mellon University

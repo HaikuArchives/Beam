@@ -1,5 +1,4 @@
 /* exitcodes.h -- wrapper around sysextis.h
- * $Id$
  *
  * Copyright (c) 1998-2000 Carnegie Mellon University.  All rights reserved.
  *

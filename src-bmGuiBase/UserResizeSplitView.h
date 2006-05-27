@@ -1,4 +1,3 @@
-//		$Id$
 //Name:		UserResizeSplitView.h
 //Author:	Brian Tietz
 //Copyright 1999

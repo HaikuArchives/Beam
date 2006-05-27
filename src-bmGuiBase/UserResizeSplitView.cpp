@@ -1,4 +1,3 @@
-//		$Id$
 //Name:		UserResizeSplitView.cpp
 //Authors:	Brian Tietz
 //				Oliver Tappe

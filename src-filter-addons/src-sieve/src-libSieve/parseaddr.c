@@ -1,5 +1,4 @@
 /* parseaddr.c -- RFC 822 address parser
- * $Id$
  *
  * Copyright (c) 1998-2000 Carnegie Mellon University.  All rights reserved.
  *

@@ -1,6 +1,5 @@
 /* interp.c -- sieve script interpretor builder
  * Larry Greenfield
- * $Id$
  */
 /***********************************************************
         Copyright 1999 by Carnegie Mellon University

@@ -1,4 +1,3 @@
-//		$Id$
 //Name:		DeepBevelView.cpp
 //Author:	Brian Tietz
 //Copyright 1999

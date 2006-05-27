@@ -1,5 +1,4 @@
 /* imparse.c -- IMxP client-side parsing routines
- $Id$
  
  * Copyright (c) 1998-2000 Carnegie Mellon University.  All rights reserved.
  *

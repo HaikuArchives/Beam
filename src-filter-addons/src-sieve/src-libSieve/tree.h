@@ -1,6 +1,5 @@
 /* tree.h -- abstract syntax tree
  * Larry Greenfield
- * $Id$
  */
 /***********************************************************
         Copyright 1999 by Carnegie Mellon University

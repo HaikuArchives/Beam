@@ -2,7 +2,6 @@
 /*
  * addr.y -- RFC 822 address parser
  * Ken Murchison
- * $Id$
  */
 /***********************************************************
         Copyright 1999 by Carnegie Mellon University

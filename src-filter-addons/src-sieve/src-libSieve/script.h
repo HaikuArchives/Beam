@@ -1,6 +1,5 @@
 /* script.h -- script definition
  * Larry Greenfield
- * $Id$
  */
 /***********************************************************
         Copyright 1999 by Carnegie Mellon University

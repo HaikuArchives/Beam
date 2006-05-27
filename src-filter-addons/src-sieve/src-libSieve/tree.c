@@ -1,6 +1,5 @@
 /* tree.c -- abstract syntax tree handling
  * Larry Greenfield
- * $Id$
  */
 /***********************************************************
         Copyright 1999 by Carnegie Mellon University

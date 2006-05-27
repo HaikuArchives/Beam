@@ -1,5 +1,3 @@
-//		$Id$
-
 /*
 
     Bubblehelp class Copyright (C) 1998 Marco Nelissen <marcone@xs4all.nl>

@@ -1,4 +1,3 @@
-//		$Id$
 //*** LICENSE ***
 //ColumnListView, its associated classes and source code, and the other components of Santa's Gift Bag are
 //being made publicly available and free to use in freeware and shareware products with a price under $25
@@ -54,7 +53,11 @@ BetterScrollView::BetterScrollView(minimax minmax, BView *target,
 		}
 		// ...and move and resize the h-scroller's size...
 		if (mHScroller) {
+#ifdef B_ZETA_VERSION_1_2_0
+			mHScroller->MoveBy( -1.0, 0.0);
+#else
 			mHScroller->MoveBy( -1.0, 1.0);
+#endif
 			mHScroller->ResizeBy( 2.0, 0.0);
 		}
 		// ...and finally move and resize the v-scroller, too:

@@ -2,7 +2,6 @@
 /*
  * addr-lex.l -- RFC 822 address lexer
  * Ken Murchison
- * $Id$
  */
 /***********************************************************
         Copyright 1999 by Carnegie Mellon University

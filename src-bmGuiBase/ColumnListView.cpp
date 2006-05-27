@@ -1,6 +1,3 @@
-//		$Id$
-//Column list view source file
-
 //*** LICENSE ***
 //ColumnListView, its associated classes and source code, and the other components of Santa's Gift Bag are
 //being made publicly available and free to use in freeware and shareware products with a price under $25

@@ -41,8 +41,6 @@
  * Author: Chris Newman
  * Start Date: 4/6/93
  */
-/* $Id$
- */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"

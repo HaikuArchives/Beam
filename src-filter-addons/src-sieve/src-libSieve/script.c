@@ -1,6 +1,5 @@
 /* script.c -- sieve script functions
  * Larry Greenfield
- * $Id$
  */
 /***********************************************************
         Copyright 1999 by Carnegie Mellon University
