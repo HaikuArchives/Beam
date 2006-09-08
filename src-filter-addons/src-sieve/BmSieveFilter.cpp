@@ -1345,14 +1345,6 @@ BmSieveFilterPrefs::BmSieveFilterPrefs( minimax minmax)
 	mFilterGroup->AddChild( mSpaceAtBottom = new Space());
 	mVisibleLines = BM_MAX_MATCH_COUNT;
 
-	BMenuItem* item 
-		= new BMenuItem( "SPAM", new BMessage(BM_SET_SPAM_TOFU_SELECTED));
-	item->SetTarget(this);
-	spamTofuMenu->AddItem( item);
-	item = new BMenuItem( "TOFU", new BMessage( BM_SET_SPAM_TOFU_SELECTED));
-	item->SetTarget(this);
-	spamTofuMenu->AddItem( item);
-
 	AddChild( dynamic_cast<BView*>( vgroup));
 }
 
@@ -1515,6 +1507,14 @@ void BmSieveFilterPrefs::Initialize() {
 		mFieldNameControl[i]->SetTarget( this);
 		mValueControl[i]->SetTarget( this);
 	}		
+
+	BMenuItem* item 
+		= new BMenuItem( "SPAM", new BMessage(BM_SET_SPAM_TOFU_SELECTED));
+	item->SetTarget(this);
+	mSetSpamTofuValueControl->Menu()->AddItem( item);
+	item = new BMenuItem( "TOFU", new BMessage( BM_SET_SPAM_TOFU_SELECTED));
+	item->SetTarget(this);
+	mSetSpamTofuValueControl->Menu()->AddItem( item);
 }
 
 /*------------------------------------------------------------------------------*\
