@@ -128,7 +128,8 @@ public:
 	virtual ~BmMail();
 
 	// native methods:
-	void ConstructAndStore();
+	bool ReconstructRawText();
+	bool ConstructAndStore();
 	bool ConstructRawText( const BmString& editableUtf8Text, 
 								  const BmString& charset,
 								  BmString smtpAccount);

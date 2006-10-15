@@ -853,16 +853,25 @@ BmBodyPartList* BmMail::Body() const
 }
 
 /*------------------------------------------------------------------------------*\
+	ReconstructRawText()
+	-	
+\*------------------------------------------------------------------------------*/
+bool BmMail::ReconstructRawText() {
+	BmRef< BmBodyPart> bodyPart( mBody->EditableTextBody());
+	return ConstructRawText( bodyPart ? bodyPart->DecodedData() : BM_DEFAULT_STRING,
+								 DefaultCharset(), 
+								 mAccountName);
+}
+
+/*------------------------------------------------------------------------------*\
 	ConstructAndStore()
 	-	
 \*------------------------------------------------------------------------------*/
-void BmMail::ConstructAndStore() {
-	BmRef< BmBodyPart> bodyPart( mBody->EditableTextBody());
-	if (ConstructRawText( bodyPart ? bodyPart->DecodedData() : BM_DEFAULT_STRING,
-								 DefaultCharset(), 
-								 mAccountName)) {
-		Store();
-	}
+bool BmMail::ConstructAndStore() {
+	if (ReconstructRawText())
+		return Store();
+	else
+		return false;
 }
 
 /*------------------------------------------------------------------------------*\
