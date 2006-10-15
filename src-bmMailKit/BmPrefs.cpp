@@ -28,10 +28,10 @@ BmPrefs* BmPrefs::theInstance = NULL;
 const char* const BmPrefs::PREFS_FILENAME = 	"General Settings";
 const char* const BmPrefs::MSG_VERSION	 = 	"bm:version";
 
-const char* const BmPrefs::LOG_LVL_0 = "Don't Log";
+const char* const BmPrefs::LOG_LVL_0 = "Don't log";
 const char* const BmPrefs::LOG_LVL_1 = "Log";
-const char* const BmPrefs::LOG_LVL_2 = "Log More";
-const char* const BmPrefs::LOG_LVL_3 = "Log Everything";
+const char* const BmPrefs::LOG_LVL_2 = "Log more";
+const char* const BmPrefs::LOG_LVL_3 = "Log everything";
 
 const BmString BmPrefs::nListSeparator = ",";
 
