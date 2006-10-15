@@ -213,6 +213,12 @@ void BmMailFilter::Execute( BmMail* mail) {
 		mail->IdentityName( newIdentity);
 		needToStore = true;
 	}
+	BmString newListId = msgContext.GetString("ListId");
+	if (newListId.Length() && newListId != mail->GetFieldVal(BM_FIELD_LIST_ID)) {
+		mail->SetFieldVal(BM_FIELD_LIST_ID, newListId);
+		mail->ReconstructRawText();
+		needToStore = true;
+	}
 	BmString newStatus = msgContext.GetString("Status");
 	if (newStatus.Length() && newStatus != mail->Status()) {
 		mail->MarkAs( newStatus.String());
@@ -308,6 +314,13 @@ bool BmMailFilter::ExecuteFilter( BmMail* mail, BmFilter* filter,
 					  BmString("Filter ") << filter->Name() 
 					  		<< ": rejecting mail with msg " 
 					  		<< rejectMsg);
+		}
+		if (msgContext->FieldHasChanged("ListId")) {
+			BmString newListId = msgContext->GetString("ListId");
+			BM_LOG( BM_LogFilter, 
+					  BmString("Filter ") << filter->Name() 
+					  		<< ": setting ListId to " 
+					  		<< newListId);
 		}
 		bool stopProcessing = msgContext->GetBool("StopProcessing");
 		if (stopProcessing) {

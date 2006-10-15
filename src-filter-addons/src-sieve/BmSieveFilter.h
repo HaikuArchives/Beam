@@ -154,6 +154,8 @@ class BmGraphicalSieveFilter : public BmSieveFilter {
 	static const char* const MSG_SET_SPAM_TOFU;
 	static const char* const MSG_SET_SPAM_TOFU_VALUE;
 	static const char* const MSG_STOP_PROCESSING;
+	static const char* const MSG_SET_LIST_ID;
+	static const char* const MSG_SET_LIST_ID_VALUE;
 
 public:
 	BmGraphicalSieveFilter( const BmString& name, const BMessage* archive);
@@ -194,6 +196,8 @@ private:
 	bool mActionSetSpamTofu;
 	BmString mActionSetSpamTofuValue;
 	bool mStopProcessing;
+	bool mActionSetListId;
+	BmString mActionSetListIdValue;
 
 	BmGraphicalSieveFilter();				// hide default constructor
 	// Hide copy-constructor and assignment:
@@ -240,9 +244,10 @@ enum {
 	BM_STOP_PROCESSING_CHANGED	= 'bmTp',
 	BM_SET_SPAM_TOFU_CHANGED	= 'bmTq',
 	BM_SET_SPAM_TOFU_SELECTED	= 'bmTr',
+	BM_SET_LIST_ID_CHANGED		= 'bmTs',
 
-	BM_ADDRPART_SELECTED			= 'bmTs',
-	BM_FILEINTO_ASK_CHANGED		= 'bmTt'
+	BM_ADDRPART_SELECTED			= 'bmTu',
+	BM_FILEINTO_ASK_CHANGED		= 'bmTv'
 };
 
 
@@ -303,6 +308,8 @@ private:
 	BmCheckControl* mSetSpamTofuControl;
 	BmMenuControl* mSetSpamTofuValueControl;
 	BmCheckControl* mStopProcessingControl;
+	BmCheckControl* mSetListIdControl;
+	BmTextControl* mSetListIdValueControl;
 
 	BmGraphicalSieveFilter* mCurrFilterAddon;
 
@@ -321,7 +328,7 @@ private:
 class BmMultiLineTextControl;
 
 enum {
-	BM_TEST_FILTER			= 'bmTs'
+	BM_TEST_FILTER			= 'bmTz'
 };
 
 class BmSieveScriptFilterPrefs : public BmFilterAddonPrefsView {
