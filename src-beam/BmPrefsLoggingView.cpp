@@ -56,17 +56,17 @@ BmPrefsLoggingView::BmPrefsLoggingView()
 			new HGroup(
 				new MBorder( M_LABELED_BORDER, 10, (char*)"Levels of Logging",
 					new VGroup(
-						mLogPopControl = new BmMenuControl( "Receiving Mail:", 
+						mLogPopControl = new BmMenuControl( "Receiving mail:", 
 																		new BPopUpMenu(""), 
 																		1.0, 0,
-																		"Log Everything"),
-						mLogSmtpControl = new BmMenuControl( "Sending Mail:", 
+																		BmPrefs::LOG_LVL_3),
+						mLogSmtpControl = new BmMenuControl( "Sending mail:", 
 																		 new BPopUpMenu("")),
 						new Space( minimax(0,10,0,10)),
-						mLogFilterControl = new BmMenuControl( "Filtering Mails:", 
+						mLogFilterControl = new BmMenuControl( "Filtering mails:", 
 																			new BPopUpMenu("")),
 						new Space( minimax(0,10,0,10)),
-						mLogAppControl = new BmMenuControl( "Application State:", 
+						mLogAppControl = new BmMenuControl( "Application state:", 
 																		new BPopUpMenu("")),
 						new Space(),
 						0
@@ -75,20 +75,20 @@ BmPrefsLoggingView::BmPrefsLoggingView()
 				new MBorder( M_LABELED_BORDER, 10, (char*)"Levels of Debug-Logging",
 					new VGroup(
 						mLogMailTrackingControl 
-							= new BmMenuControl( "Tracking Mails:", 
+							= new BmMenuControl( "Tracking mails:", 
 														new BPopUpMenu(""),
 														1.0, 0,
-														"Log Everything"),
-						mLogMailParseControl = new BmMenuControl( "Parsing Mails:", 
+														BmPrefs::LOG_LVL_3),
+						mLogMailParseControl = new BmMenuControl( "Parsing mails:", 
 																				new BPopUpMenu("")),
 						new Space( minimax(0,10,0,10)),
-						mLogJobWinControl = new BmMenuControl( "Status Window:", 
+						mLogJobWinControl = new BmMenuControl( "Status window:", 
 																			new BPopUpMenu("")),
 						mLogGuiControl = new BmMenuControl( "General GUI:", 
 																		new BPopUpMenu("")),
 						new Space( minimax(0,10,0,10)),
 						mLogModelControllerControl 
-							= new BmMenuControl( "Info-Transport:", 
+							= new BmMenuControl( "Info transport:", 
 														new BPopUpMenu("")),
 						mLogRefCountControl = new BmMenuControl( "Memory:", 
 																			  new BPopUpMenu("")),
@@ -103,10 +103,10 @@ BmPrefsLoggingView::BmPrefsLoggingView()
 				new MBorder( M_LABELED_BORDER, 10, (char*)"Logfile Sizes",
 					new VGroup(
 						mMaxLogfileSizeControl 
-							= new BmTextControl( "Maximum size for logfile (KB):", 
+							= new BmTextControl( "Maximum size of logfile (KB):", 
 														false, 8),
 						mMinLogfileSizeControl 
-							= new BmTextControl( "Minimum size for logfile (KB):", 
+							= new BmTextControl( "Minimum size of logfile (KB):", 
 														false, 8),
 						0
 					)
@@ -197,7 +197,7 @@ void BmPrefsLoggingView::Initialize() {
 		"Here you can select how much will be logged\n"
 		"when filtering mails.\n"
 		"'Log'-mode will log executed actions only, while\n"
-		"'Log More'-mode will give additional info about\n"
+		"'Log more'-mode will give additional info about\n"
 		"which filters are being executed.\n"
 		"If you have problems getting a specific filter to\n"
 		"work properly, increasing this setting might help."
