@@ -453,6 +453,8 @@ void BmPopper::StateAuth() {
 	BmString authMethod = mPopAccount->AuthMethod();
 	if (authMethod == BmPopAccount::AUTH_AUTO)
 		authMethod = SuggestAuthType();
+	if (!authMethod.Length() || authMethod == BmPopAccount::AUTH_NONE)
+		return;			// no authentication needed (*very* unlikely...)
 	while(!pwdOK) {
 		bool pwdGiven = false;
 		if (first && mPopAccount->PwdStoredOnDisk()) {
@@ -495,13 +497,16 @@ void BmPopper::StateAuth() {
 			BmString serviceUri = BmString("pop/") << mPopAccount->Server();
 			AuthDigestMD5(mPopAccount->Username(), mPopAccount->Password(),
 							  serviceUri);
-		} else {
-			// authMethod == AUTH_POP3: send username and password as plain text:
+		} else if (authMethod == BmPopAccount::AUTH_POP3) {
+			// send username and password as plain text:
 			BmString cmd = BmString("USER ") << mPopAccount->Username();
 			SendCommand( cmd);
 			if (CheckForPositiveAnswer()) {
 				SendCommand( "PASS ", pwd);
 			}
+		} else {
+			throw BM_runtime_error( BmString("Unknown authentication type '")
+										   << authMethod << "' found!?! Skipping!");
 		}
 		try {
 			if (CheckForPositiveAnswer())

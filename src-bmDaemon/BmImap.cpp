@@ -523,6 +523,8 @@ void BmImap::StateAuth()
 	BmString authMethod = mImapAccount->AuthMethod();
 	if (authMethod == BmImapAccount::AUTH_AUTO)
 		authMethod = SuggestAuthType();
+	if (!authMethod.Length() || authMethod == BmImapAccount::AUTH_NONE)
+		return;			// no authentication needed (*very* unlikely...)
 	while(!pwdOK) {
 		bool pwdGiven = false;
 		if (first && mImapAccount->PwdStoredOnDisk()) {
@@ -552,10 +554,13 @@ void BmImap::StateAuth()
 			BmString serviceUri = BmString("imap/") << mImapAccount->Server();
 			AuthDigestMD5(mImapAccount->Username(), mImapAccount->Password(),
 							  serviceUri);
-		} else {
-			// authMethod == AUTH_LOGIN: send username and password as plain text:
+		} else if (authMethod == BmImapAccount::AUTH_LOGIN) {
+			// send username and password as plain text:
 			BmString cmd = BmString("LOGIN ") << mImapAccount->Username() << " ";
 			SendCommand( cmd, pwd);
+		} else {
+			throw BM_runtime_error( BmString("Unknown authentication type '")
+										   << authMethod << "' found!?! Skipping!");
 		}
 		try {
 			if (CheckForPositiveAnswer())

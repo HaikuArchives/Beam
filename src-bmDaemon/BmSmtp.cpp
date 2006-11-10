@@ -517,7 +517,7 @@ void BmSmtp::StateAuth() {
 	BmString authMethod = mSmtpAccount->AuthMethod();
 	if (authMethod == BmSmtpAccount::AUTH_AUTO)
 		authMethod = SuggestAuthType();
-	if (!authMethod.Length())
+	if (!authMethod.Length() || authMethod == BmSmtpAccount::AUTH_NONE)
 		return;			// no authentication needed...
 	while(!pwdOK) {
 		if (first && mSmtpAccount->PwdStoredOnDisk()) {
@@ -575,6 +575,9 @@ void BmSmtp::StateAuth() {
 			BmString serviceUri = BmString("smtp/") << mSmtpAccount->SMTPServer();
 			AuthDigestMD5(mSmtpAccount->Username(), mSmtpAccount->Password(),
 							  serviceUri);
+		} else {
+			throw BM_runtime_error( BmString("Unknown authentication type '")
+										   << authMethod << "' found!?! Skipping!");
 		}
 		try {
 			pwdOK = CheckForPositiveAnswer();
