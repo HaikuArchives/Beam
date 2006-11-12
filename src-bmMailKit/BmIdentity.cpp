@@ -64,6 +64,7 @@ BmIdentity::BmIdentity( BMessage* archive, BmIdentityList* model)
 	mSignatureName = FindMsgString( archive, MSG_SIGNATURE_NAME);
 	mMarkedAsBitBucket = FindMsgBool( archive, MSG_MARK_BUCKET);
 	mMailAliases = FindMsgString( archive, MSG_MAIL_ALIASES);
+	_SplitMailAliases();
 	if (version >= 2) {
 		mReplyTo = FindMsgString( archive, MSG_REPLY_TO);
 	}
@@ -184,10 +185,22 @@ bool BmIdentity::HandlesAddrSpec( BmString addrSpec, bool needExactMatch) const 
 	if (!needExactMatch && mMarkedAsBitBucket)
 		return true;
 		
-	// escape \ chars for the regexx engine
-	addrSpec.ReplaceAll("\\", "\\\\");	
-	BmString regex = BmString("\\b") + addrSpec + "\\b";
-	return rx.exec( mMailAliases, regex) > 0;
+	vector<BmString>::const_iterator iter;
+	for(iter = mMailAliasesVect.begin(); iter != mMailAliasesVect.end(); ++iter) {
+		if  (addrSpec.ICompare(*iter) == 0)
+			return true;
+	}
+	return false;
+}
+
+/*------------------------------------------------------------------------------*\
+	_SplitMailAliases()
+		-	splits the given comma-/space-separated string into a vector of
+			mail aliases
+\*------------------------------------------------------------------------------*/
+void BmIdentity::_SplitMailAliases()
+{
+	split("[\\s,]", mMailAliases, mMailAliasesVect);
 }
 
 /*------------------------------------------------------------------------------*\

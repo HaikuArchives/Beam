@@ -96,6 +96,7 @@ public:
 													  TellModelItemUpdated( UPD_ALL); }
 	inline void MailAliases( const BmString &s)
 													{ mMailAliases = s;
+													  _SplitMailAliases();
 													  TellModelItemUpdated( UPD_ALL); }
 
 	// archivable components:
@@ -118,8 +119,8 @@ private:
 	BmIdentity operator=( const BmIdentity&);
 
 	void SetupIntervalRunner();
+	void _SplitMailAliases();
 
-	//BmString mName;					// name is stored in key (base-class)
 	BmString mRecvAccount;			// name of BmRecvAccount to use with this Identity
 	BmString mSMTPAccount;			// name of BmSmtpAccount to use with this Identity
 	BmString mRealName;
@@ -127,6 +128,7 @@ private:
 	BmString mSignatureName;		// name of signature file
 	bool mMarkedAsBitBucket;		// is this account a catch-all-account for failed delivery?
 	BmString mMailAliases;			// addresses that belong to this identity, too
+	vector<BmString> mMailAliasesVect;
 	BmString mReplyTo;
 	BmString mSpecialHeaders;
 };
