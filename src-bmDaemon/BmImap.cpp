@@ -573,7 +573,8 @@ void BmImap::StateAuth()
 		} catch( BM_network_error &err) {
 			// let's see if the server disconnected
 			Regexx rx;
-			if (rx.exec( StatusText(), "^\\*\\s+BYE", Regexx::newline)) {
+			if (rx.exec( StatusText(), "^\\*\\s+BYE", 
+						 Regexx::newline | Regexx::nocase)) {
 				throw;
 			} else {
 				// it's most probably a wrong password...
