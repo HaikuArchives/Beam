@@ -301,7 +301,7 @@ MMenuBar* BmMainWindow::CreateMenu() {
 		BM_MC_MOVE_RIGHT
 	);
 	menu->AddItem( subMenu);
-	menu->AddItem( CreateMenuItem( "Send All Pending Messages...",
+	menu->AddItem( CreateMenuItem( "Send All Pending Messages",
 											 BMM_SEND_PENDING));
 	mMainMenuBar->AddItem( menu);
 
