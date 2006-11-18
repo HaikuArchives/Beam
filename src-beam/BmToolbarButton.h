@@ -19,6 +19,7 @@
 #include <MPictureButton.h>
 #include <Space.h>
 
+#include "BmGuiUtil.h"
 #include "BmString.h"
 
 class BmToolbar :  public MBorder
@@ -34,21 +35,7 @@ private:
 	BBitmap* mBackgroundBitmap;
 };
 
-class BmToolbarManager
-{
-	typedef set<BmToolbar*> BmToolbarSet;
-public:
-	BmToolbarManager();
-	void AddToolbar( BmToolbar* tb);
-	void RemoveToolbar( BmToolbar* tb);
-	void UpdateAllToolbars();
-	static BmToolbarManager* Instance();
-private:
-	static BmToolbarManager* theInstance;
-	BmToolbarSet mToolbarSet;
-	BLocker mToolbarLock;
-};
-
+typedef BmViewManager<BmToolbar> BmToolbarManager;
 #define TheToolbarManager (BmToolbarManager::Instance())
 
 class BmToolbarSpace :  public Space

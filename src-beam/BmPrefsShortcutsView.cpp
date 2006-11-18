@@ -29,7 +29,9 @@
 
 #include "BmEncoding.h"
 	using namespace BmEncoding;
+#include "BmGuiUtil.h"
 #include "BmLogHandler.h"
+#include "BmMenuController.h"
 #include "BmPrefs.h"
 #include "BmPrefsShortcutsView.h"
 #include "BmResources.h"
@@ -201,6 +203,7 @@ void BmPrefsShortcutsView::Update() {
 \*------------------------------------------------------------------------------*/
 void BmPrefsShortcutsView::SaveData() {
 	// prefs are already stored by General View
+	TheMenuItemManager->UpdateAll();
 }
 
 /*------------------------------------------------------------------------------*\

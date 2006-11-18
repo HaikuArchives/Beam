@@ -37,58 +37,18 @@ BmToolbarManager* BmToolbarManager::theInstance = NULL;
 	( )
 		-	
 \*------------------------------------------------------------------------------*/
-BmToolbarManager* BmToolbarManager::Instance()
-{
-	if (!theInstance)
-		theInstance = new BmToolbarManager;
-	return theInstance;
-};
-
-/*------------------------------------------------------------------------------*\
-	( )
-		-	
-\*------------------------------------------------------------------------------*/
-BmToolbarManager::BmToolbarManager()
-	:	mToolbarLock( "ToolbarManager")
-{
-};
-
-/*------------------------------------------------------------------------------*\
-	( )
-		-	
-\*------------------------------------------------------------------------------*/
-void BmToolbarManager::UpdateAllToolbars() {
-	mToolbarLock.Lock();
-	BmToolbarSet::iterator iter;
-	for( iter=mToolbarSet.begin(); iter != mToolbarSet.end(); ++iter) {
+void BmToolbarManager::UpdateAll() {
+	mLock.Lock();
+	BmViewSet::iterator iter;
+	for( iter=mViewSet.begin(); iter != mViewSet.end(); ++iter) {
 		BmToolbar* tb = (*iter);
 		if (tb)
 			tb->UpdateLayout(true);
 	}
-	mToolbarLock.Unlock();
+	mLock.Unlock();
 }
 
-/*------------------------------------------------------------------------------*\
-	( )
-		-	
-\*------------------------------------------------------------------------------*/
-void BmToolbarManager::AddToolbar( BmToolbar* tb)
-{
-	mToolbarLock.Lock();
-	mToolbarSet.insert( tb);
-	mToolbarLock.Unlock();
-}
 
-/*------------------------------------------------------------------------------*\
-	( )
-		-	
-\*------------------------------------------------------------------------------*/
-void BmToolbarManager::RemoveToolbar( BmToolbar* tb)
-{
-	mToolbarLock.Lock();
-	mToolbarSet.insert( tb);
-	mToolbarLock.Unlock();
-}
 
 /*------------------------------------------------------------------------------*\
 	( )
@@ -98,7 +58,7 @@ BmToolbar::BmToolbar(MView* kid)
 	:	inherited( M_RAISED_BORDER, 1, NULL, kid)
 	,	mBackgroundBitmap( NULL)
 {
-	TheToolbarManager->AddToolbar( this);
+	TheToolbarManager->Register(this);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -108,7 +68,7 @@ BmToolbar::BmToolbar(MView* kid)
 BmToolbar::~BmToolbar()
 {
 	delete mBackgroundBitmap;
-	TheToolbarManager->RemoveToolbar( this);
+	TheToolbarManager->Unregister(this);
 }
 
 /*------------------------------------------------------------------------------*\

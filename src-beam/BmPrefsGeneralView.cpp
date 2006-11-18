@@ -277,7 +277,7 @@ void BmPrefsGeneralView::SaveData() {
 void BmPrefsGeneralView::UndoChanges() {
 	ThePrefs->ResetToSaved();
 	TheResources->InitializeWithPrefs();
-	TheToolbarManager->UpdateAllToolbars();
+	TheToolbarManager->UpdateAll();
 }
 
 /*------------------------------------------------------------------------------*\
@@ -287,7 +287,7 @@ void BmPrefsGeneralView::UndoChanges() {
 void BmPrefsGeneralView::SetDefaults() {
 	ThePrefs->ResetToDefault();
 	TheResources->InitializeWithPrefs();
-	TheToolbarManager->UpdateAllToolbars();
+	TheToolbarManager->UpdateAll();
 }
 
 /*------------------------------------------------------------------------------*\
@@ -314,7 +314,7 @@ void BmPrefsGeneralView::MessageReceived( BMessage* msg) {
 				BMenuItem* item = mToolbarLabelControl->Menu()->FindMarked();
 				if (item) {
 					ThePrefs->SetString( "ShowToolbarLabel", item->Label());
-					TheToolbarManager->UpdateAllToolbars();
+					TheToolbarManager->UpdateAll();
 					NoticeChange();
 				}
 			}
@@ -431,7 +431,7 @@ void BmPrefsGeneralView::MessageReceived( BMessage* msg) {
 						ThePrefs->SetString( "IconPath", path.Path());
 						mIconboxButton->SetLabel( IconboxButtonLabel().String());
 						TheResources->InitializeWithPrefs();
-						TheToolbarManager->UpdateAllToolbars();
+						TheToolbarManager->UpdateAll();
 						NoticeChange();
 					}
 				}

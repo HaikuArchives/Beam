@@ -36,7 +36,7 @@ const char* const BmPrefs::LOG_LVL_3 = "Log everything";
 const BmString BmPrefs::nListSeparator = ",";
 
 const BmString BmPrefs::nDefaultIconset = "/Icons/iconset 22 nuvola grey-red";
-const int16 BmPrefs::nPrefsVersion = 13;
+const int16 BmPrefs::nPrefsVersion = 14;
 
 /*------------------------------------------------------------------------------*\
 	CreateInstance()
@@ -294,6 +294,21 @@ BmPrefs::BmPrefs( BMessage* archive)
 		mPrefsMsg.AddInt32( "Loglevel_Recv", level);
 		mPrefsMsg.RemoveName("Loglevel_Pop");
 	}
+	if (version < 14) {
+		// changes introduced with version 14:
+		//
+		// rename a couple of shortcuts:
+		mShortcutsMsg.AddString(
+			"Send All Pending Messages", 
+			mShortcutsMsg.FindString("Send Pending Messages")
+		);
+		mShortcutsMsg.RemoveName("Send Pending Messages");
+		mShortcutsMsg.AddString(
+			"Reply (Auto)",
+			mShortcutsMsg.FindString("Reply")
+		);
+		mShortcutsMsg.RemoveName("Reply");
+	}
 	mSavedPrefsMsg = mPrefsMsg;
 	
 	SetLoglevels();
@@ -501,11 +516,14 @@ void BmPrefs::InitDefaults(BMessage& defaultsMsg) {
 	GetShortcutFor( shortcutID)
 		-	returns the shortcut for a given id (label):
 \*------------------------------------------------------------------------------*/
-BmString BmPrefs::GetShortcutFor( const char* shortcutID) {
+BmString BmPrefs::GetShortcutFor( const char* _shortcutID) {
+	BmString shortcutID(_shortcutID);
+	shortcutID.RemoveAll( "...");
+	shortcutID.RemoveAll( B_UTF8_ELLIPSIS);
 	BAutolock lock( mLocker);
 	if (!lock.IsLocked())
 		BM_THROW_RUNTIME( "Prefs: Unable to get lock!");
-	const char* sc = mShortcutsMsg.FindString( shortcutID);
+	const char* sc = mShortcutsMsg.FindString( shortcutID.String());
 	return sc;
 }
 
@@ -579,15 +597,15 @@ BMessage* BmPrefs::GetShortcutDefaults( BMessage* shortcutsMsg) {
 	SetShortcutIfNew( shortcutsMsg, "Redirect", "B");
 	SetShortcutIfNew( shortcutsMsg, "Redo", "<SHIFT>Z");
 	SetShortcutIfNew( shortcutsMsg, "Rename Folder", "");
-	SetShortcutIfNew( shortcutsMsg, "Reply", "R");
+	SetShortcutIfNew( shortcutsMsg, "Reply (Auto)", "R");
 	SetShortcutIfNew( shortcutsMsg, "Reply To List", "");
 	SetShortcutIfNew( shortcutsMsg, "Reply To Person", "");
 	SetShortcutIfNew( shortcutsMsg, "Reply To All", "<SHIFT>R");
 	SetShortcutIfNew( shortcutsMsg, "SaveMail", "S");
 	SetShortcutIfNew( shortcutsMsg, "Select All", "A");
+	SetShortcutIfNew( shortcutsMsg, "Send All Pending Messages", "");
 	SetShortcutIfNew( shortcutsMsg, "Send Mail Now", "M");
 	SetShortcutIfNew( shortcutsMsg, "Send Mail Later", "<SHIFT>M");
-	SetShortcutIfNew( shortcutsMsg, "Send Pending Messages", "");
 	SetShortcutIfNew( shortcutsMsg, "Show Raw Message", "<SHIFT>H");
 	SetShortcutIfNew( shortcutsMsg, "Toggle Header Mode", "H");
 	SetShortcutIfNew( shortcutsMsg, "Undo", "Z");
