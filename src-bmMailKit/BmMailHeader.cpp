@@ -795,10 +795,15 @@ BmString BmMailHeader::DetermineSender() {
 BmString BmMailHeader::DetermineListAddress( bool bypassSanityTest) {
 	BmAddress listAddr;
 	Regexx rx;
-	// first we look into the List-Post-field (if it exists)...
-	if (rx.exec( mHeaders[BM_FIELD_LIST_POST], "<\\s*mailto:([^?>]+)", 
-					 Regexx::nocase | Regexx::newline)) {
-		listAddr.SetTo( rx.match[0].atom[0]);
+	// first, we look into the Reply-To-field (if it exists), as this
+	// is required if a list actually redirects replies to another list!
+	listAddr = mAddrMap[BM_FIELD_REPLY_TO].FirstAddress();
+	if (!listAddr.InitOK()) {
+		// now we look into the List-Post-field (if it exists)...
+		if (rx.exec( mHeaders[BM_FIELD_LIST_POST], "<\\s*mailto:([^?>]+)", 
+						 Regexx::nocase | Regexx::newline)) {
+			listAddr.SetTo( rx.match[0].atom[0]);
+		}
 	}
 	if (!listAddr.InitOK()) {
 		// ...we try to munge List-Id into a valid address:
