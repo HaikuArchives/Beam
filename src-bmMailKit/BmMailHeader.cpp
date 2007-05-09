@@ -803,6 +803,11 @@ BmString BmMailHeader::DetermineListAddress( bool bypassSanityTest) {
 		if (rx.exec( mHeaders[BM_FIELD_LIST_POST], "<\\s*mailto:([^?>]+)", 
 						 Regexx::nocase | Regexx::newline)) {
 			listAddr.SetTo( rx.match[0].atom[0]);
+			if (listAddr.InitOK())
+				// if an explicit List-Post is present, we want to accept it
+				// even if the list-address is nowhere found in the receiver
+				// fields (see sanity-check below):
+				bypassSanityTest = true;
 		}
 	}
 	if (!listAddr.InitOK()) {
