@@ -96,6 +96,7 @@ const char* BM_FIELD_SENDER 				= "Sender";
 const char* BM_FIELD_SUBJECT 				= "Subject";
 const char* BM_FIELD_TO 					= "To";
 const char* BM_FIELD_USER_AGENT			= "User-Agent";
+const char* BM_FIELD_X_BEENTHERE			= "X-Beenthere";
 const char* BM_FIELD_X_LIST				= "X-List";
 const char* BM_FIELD_X_MAILER				= "X-Mailer";
 const char* BM_FIELD_X_PRIORITY			= "X-Priority";
@@ -958,10 +959,10 @@ void BmMail::SetDefaultHeaders( const BmString& defaultHeaders)
 void BmMail::SetNewHeader( const BmString& headerStr) {
 	BmString newMsgText;
 	newMsgText.ConvertLinebreaksToCRLF( &headerStr);
-	int32 len = newMsgText.Length();
-	if (newMsgText[len-1] != '\n')
+	uint32 len = newMsgText.Length();
+	if (!len || newMsgText[len-1] != '\n')
 		newMsgText << "\r\n";
-	newMsgText << mText.String()+HeaderLength();
+	newMsgText << mText.String() + HeaderLength();
 	SetTo( newMsgText, mAccountName);
 	Store();
 	StartJobInThisThread();

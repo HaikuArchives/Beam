@@ -946,6 +946,14 @@ BmRef<BmMail> BmRedirectFactory::CreateRedirect( BmRef<BmMail>& mail) {
 		// oops, mail already had been redirected, we clobber the existing
 		// Resent-fields, since STD11 says multiple Resent-fields result in 
 		// undefined behaviour:
+		//
+		// TODO: time is flying, and the mail header fields are now defined by
+		// RFC2822, not STD11. RFC2822 states that new Resent-fields should be
+		// prepended to the header. Unfortunately, this would require rather
+		// a lot of changes in BmMailEditWin, as that only allows for editing
+		// one set of Resent-fields (it would drop the older ones). As I suppose
+		// the difference won't ever be noticed, we simply go with a single
+		// set of Resent-fields (for now):
 		newMail->RemoveField( BM_FIELD_RESENT_BCC);
 		newMail->RemoveField( BM_FIELD_RESENT_CC);
 		newMail->RemoveField( BM_FIELD_RESENT_DATE);
@@ -1026,16 +1034,36 @@ void BmCopyMailFactory::Produce()
 }
 
 /*------------------------------------------------------------------------------*\
-	CreateAsNew()
+	CreateCopy()
 	-	
 \*------------------------------------------------------------------------------*/
-BmRef<BmMail> BmCopyMailFactory::CreateCopy( BmRef<BmMail>& mail) {
+BmRef<BmMail> BmCopyMailFactory::CreateCopy( BmRef<BmMail>& oldMail) {
 	BmRef<BmMail> newMail = new BmMail( true);
-	BmString msgText( mail->RawText());
+	BmString msgText( oldMail->RawText());
 	newMail->SetTo( msgText, "");
 
+	// Remove anything but the basic fields from the mail header.
+	// Apart from being cleaner, this will remove any fields that might 
+	// inhibit the processing of this mail by any mailing list software 
+	// (they might consider this mail having looped and would drop it):
+	set<BmString> basicFields;
+	basicFields.insert(BM_FIELD_BCC);
+	basicFields.insert(BM_FIELD_CC);
+	basicFields.insert(BM_FIELD_FROM);
+	basicFields.insert(BM_FIELD_REPLY_TO);
+	basicFields.insert(BM_FIELD_SUBJECT);
+	basicFields.insert(BM_FIELD_TO);
+	vector<BmString> fieldNames;
+	newMail->Header()->GetAllFieldNames(fieldNames);
+	vector<BmString>::iterator iter;
+	for( iter = fieldNames.begin(); iter != fieldNames.end(); ++iter) {
+		if (basicFields.find(*iter) == basicFields.end())
+			newMail->Header()->RemoveField(*iter);
+	}
+
+	// re-set the identity to update the fields depending on it:
 	BmRef<BmListModelItem> identRef 
-		= TheIdentityList->FindItemByKey( mail->IdentityName());
+		= TheIdentityList->FindItemByKey( oldMail->IdentityName());
 	BmIdentity* ident = dynamic_cast<BmIdentity*>( identRef.Get());
 	if (ident) {
 		newMail->AccountName( ident->SMTPAccount());

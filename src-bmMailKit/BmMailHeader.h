@@ -160,6 +160,7 @@ private:
 		const BmString& ValueAt(const BmString& fieldName, uint32 idx) const;
 		const BmString& operator [] (const BmString& fieldName) const;
 		void GetAllValues( BmMsgContext& msgContext) const;
+		void GetAllNames(vector<BmString>& fieldNamesVect) const;
 
 	private:
 		BmHeaderMap mHeaders;
@@ -197,14 +198,16 @@ public:
 	void UnplugDefaultHeader( const BmMailHeader* defaultHeader);
 	//
 	bool ConstructRawText( BmStringOBuf& header, const BmString& charset);
+	//
+	void GetAllFieldValues( BmMsgContext& msgContext) const;
+	const BmString& GetFieldVal( BmString fieldName, uint32 idx=0);
+	uint32 CountFieldVals( BmString fieldName);
+	void GetAllFieldNames(vector<BmString>& fieldNamesVect) const;
 
 	// overrides of BmRefObj
 	const BmString& RefName() const		{ return mKey; }
 
 	// getters:
-	void GetAllFieldValues( BmMsgContext& msgContext) const;
-	const BmString& GetFieldVal( BmString fieldName, uint32 idx=0);
-	uint32 CountFieldVals( BmString fieldName);
 	inline const BmString& HeaderString() const	
 													{ return mHeaderString; }
 	inline const int32 HeaderLength() const

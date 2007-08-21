@@ -491,6 +491,19 @@ void BmMailHeader::BmHeaderList::GetAllValues( BmMsgContext& msgContext) const {
 }
 
 /*------------------------------------------------------------------------------*\
+	GetAllNames()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailHeader::BmHeaderList
+::GetAllNames(vector<BmString>& fieldNamesVect) const {
+	fieldNamesVect.clear();
+	BmHeaderMap::const_iterator iter;
+	for( iter=mHeaders.begin(); iter != mHeaders.end(); ++iter) {
+		fieldNamesVect.push_back(iter->first);
+	}
+}
+
+/*------------------------------------------------------------------------------*\
 	CountValuesFor( fieldName)
 		-	returns the value-count found for given fieldName
 \*------------------------------------------------------------------------------*/
@@ -623,6 +636,14 @@ const BmString& BmMailHeader::GetFieldVal( BmString fieldName, uint32 idx) {
 		return mAddrMap[fieldName].AddrString();
 	else
 		return mHeaders.ValueAt(fieldName, idx);
+}
+
+/*------------------------------------------------------------------------------*\
+	GetAllFieldNames()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailHeader::GetAllFieldNames(vector<BmString>& fieldNamesVect) const {
+	mHeaders.GetAllNames( fieldNamesVect);
 }
 
 /*------------------------------------------------------------------------------*\
