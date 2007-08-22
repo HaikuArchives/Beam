@@ -935,7 +935,7 @@ status_t BmSpamFilter::OsbfClassifier
 			bayes_denominator += mPltc[k];
 		}
 	
-	   double renorm = 0.0;
+		double renorm = 0.0;
 		// divide by Bayes' denominator
 		for (k = 0; k < MaxHash; k++) {
 
@@ -1839,7 +1839,8 @@ const char* const BmSpamFilter::MSG_FILE_UNSURE		=		"bm:fu";
 const char* const BmSpamFilter::MSG_UNSURE_THRESHOLD	=	"bm:uthr";
 const char* const BmSpamFilter::MSG_DE_HTML			=		"bm:dh";
 const char* const BmSpamFilter::MSG_KEEP_A_TAGS		=		"bm:ka";
-const int16 BmSpamFilter::nArchiveVersion = 6;
+const char* const BmSpamFilter::MSG_STOP_PROCESSING =	   "bm:stop";
+const int16 BmSpamFilter::nArchiveVersion = 7;
 
 BmSpamFilter::Data BmSpamFilter::D;
 /*------------------------------------------------------------------------------*\
@@ -1848,7 +1849,7 @@ BmSpamFilter::Data BmSpamFilter::D;
 \*------------------------------------------------------------------------------*/
 BmSpamFilter::Data::Data() 
 	:	mActionFileSpam( true)
-	,	mActionMarkSpamAsRead( false)
+	,	mActionMarkSpamAsRead( true)
 	,	mActionFileLearnedSpam( true)
 	,	mActionFileLearnedTofu( true)
 	,	mSpamThreshold(5)
@@ -1858,6 +1859,7 @@ BmSpamFilter::Data::Data()
 	,	mUnsureThreshold(70)
 	,	mDeHtml(true)
 	,	mKeepATags(true)
+	,	mStopProcessing(true)
 {
 }
 
@@ -1893,6 +1895,9 @@ BmSpamFilter::BmSpamFilter( const BmString& name, const BMessage* archive)
 		archive->FindBool( MSG_DE_HTML, &D.mDeHtml);
 		archive->FindBool( MSG_KEEP_A_TAGS, &D.mKeepATags);
 	}
+	if (version >= 7) {
+		archive->FindBool( MSG_STOP_PROCESSING, &D.mStopProcessing);
+	}
 }
 
 /*------------------------------------------------------------------------------*\
@@ -1922,7 +1927,8 @@ BmSpamFilter::Archive( BMessage* archive, bool) const
 		| archive->AddBool( MSG_FILE_UNSURE, D.mActionFileUnsure)
 		| archive->AddInt8( MSG_UNSURE_THRESHOLD, D.mUnsureThreshold)
 		| archive->AddBool( MSG_DE_HTML, D.mDeHtml)
-		| archive->AddBool( MSG_KEEP_A_TAGS, D.mKeepATags));
+		| archive->AddBool( MSG_KEEP_A_TAGS, D.mKeepATags)
+		| archive->AddBool( MSG_STOP_PROCESSING, D.mStopProcessing));
 	return ret;
 }
 
@@ -1999,6 +2005,8 @@ BmSpamFilter::Execute( BmMsgContext* msgContext, const BMessage* _jobSpecs)
 						if (D.mActionMarkSpamAsRead)
 							msgContext->SetString("Status", BM_MAIL_STATUS_READ);
 					}
+					if (D.mStopProcessing)
+						msgContext->SetBool("StopProcessing", true);
 				}
 			}
 		}
@@ -2106,17 +2114,10 @@ BmSpamFilterPrefs::BmSpamFilterPrefs( minimax minmax)
 							this
 						),
 						new Space(minimax(0, 10, 1e5, 10)),
-						new MBViewWrapper(
-							mSpamThresholdBar = new BStatusBar( 
-								BRect(), "SpamBar", "Resulting Spam Threshold: ", ""
-							), 
-							true, false, false
-						),
-						new MBViewWrapper(
-							mTofuThresholdBar = new BStatusBar( 
-								BRect(), "TofuBar", "Resulting Tofu Threshold: ", ""
-							), 
-							true, false, false
+						mUnsureThresholdControl = new MSlider( 
+							"Quarantine Threshold:", 50, 90, 1,
+							new BMessage(BM_UNSURE_THRESHOLD_CHANGED),
+							this
 						),
 						0
 					)
@@ -2145,49 +2146,35 @@ BmSpamFilterPrefs::BmSpamFilterPrefs( minimax minmax)
 				0
 			),
 			new VGroup(
+				new MBorder( M_LABELED_BORDER, 5, (char*)"Effective Values",
+					new VGroup( 
+						new MBViewWrapper(
+							mSpamThresholdBar = new BStatusBar( 
+								BRect(), "SpamBar", "Resulting Spam Threshold: ", ""
+							), 
+							true, false, false
+						),
+						new MBViewWrapper(
+							mTofuThresholdBar = new BStatusBar( 
+								BRect(), "TofuBar", "Resulting Tofu Threshold: ", ""
+							), 
+							true, false, false
+						),
+						0
+					)
+				),
 				new MBorder( M_LABELED_BORDER, 5, (char*)"Filter Actions",
 					new VGroup( 
-						mFileSpamControl = new BmCheckControl( 
-							"Move mails classified as Spam into spam-folder", 
-							new BMessage(BM_FILESPAM_CHANGED), 
-							this
-						),
-						mMarkSpamAsReadControl = new BmCheckControl( 
-							"Set status of mails classified as Spam to 'Read'",
-							new BMessage(BM_MARKSPAM_CHANGED),
-							this
-						),
-						new Space(minimax(0, 5, 1e5, 5)),
-						mFileLearnedSpamControl = new BmCheckControl( 
-							"Move mails learned as Spam into spam-folder", 
-							new BMessage(BM_FILELEARNEDSPAM_CHANGED), 
-							this
-						),
-						mFileLearnedTofuControl = new BmCheckControl( 
-							"Move mails learned as Tofu into in-folder", 
-							new BMessage(BM_FILELEARNEDTOFU_CHANGED), 
-							this
-						),
-						new Space(minimax(0, 5, 1e5, 5)),
 						mProtectKnownAddrsControl = new BmCheckControl( 
 							"Accept all mails from known addresses as Tofu", 
 							new BMessage(BM_PROTECTKNOWN_CHANGED), 
 							this
 						),
 						new Space(minimax(0, 5, 1e5, 5)),
-						mFileUnsureSpamControl = new BmCheckControl( 
-							"Move unsure Spam into quarantine-folder", 
-							new BMessage(BM_FILEUNSURESPAM_CHANGED), 
+						mStopProcessingControl = new BmCheckControl( 
+							"Stop processing a message considered Spam",
+							new BMessage(BM_STOP_PROCESSING_CHANGED), 
 							this
-						),
-						new HGroup( 
-							new Space( minimax( 20,0,20,1e5)),
-							mUnsureThresholdControl = new MSlider( 
-								"Quarantine Threshold:", 50, 90, 1,
-								new BMessage(BM_UNSURE_THRESHOLD_CHANGED),
-								this
-							),
-							0
 						),
 						0
 					)
@@ -2220,14 +2207,10 @@ BmSpamFilterPrefs::BmSpamFilterPrefs( minimax minmax)
 BmSpamFilterPrefs::~BmSpamFilterPrefs() {
 	TheBubbleHelper->SetHelp( mThresholdControl, NULL);
 	TheBubbleHelper->SetHelp( mProtectMyTofuControl, NULL);
-	TheBubbleHelper->SetHelp( mFileSpamControl, NULL);
-	TheBubbleHelper->SetHelp( mMarkSpamAsReadControl, NULL);
-	TheBubbleHelper->SetHelp( mFileLearnedSpamControl, NULL);
-	TheBubbleHelper->SetHelp( mFileLearnedTofuControl, NULL);
 	TheBubbleHelper->SetHelp( mSpamThresholdBar, NULL);
 	TheBubbleHelper->SetHelp( mTofuThresholdBar, NULL);
 	TheBubbleHelper->SetHelp( mProtectKnownAddrsControl, NULL);
-	TheBubbleHelper->SetHelp( mFileUnsureSpamControl, NULL);
+	TheBubbleHelper->SetHelp( mStopProcessingControl, NULL);
 	TheBubbleHelper->SetHelp( mUnsureThresholdControl, NULL);
 	TheBubbleHelper->SetHelp( mShowStatisticsButton, NULL);
 	TheBubbleHelper->SetHelp( mResetStatisticsButton, NULL);
@@ -2259,35 +2242,16 @@ void BmSpamFilterPrefs::Initialize() {
 		"[Hint: the suggested default value is 17]"
 	);
 	TheBubbleHelper->SetHelp( 
-		mFileSpamControl, 
-		"Checking this will cause Beam to automatically file mails\n"
-		"that have been classified as SPAM into the 'spam'-folder."
-	);
-	TheBubbleHelper->SetHelp( 
-		mMarkSpamAsReadControl, 
-		"Checking this will cause Beam to automatically\n"
-		"mark SPAM-mails as read."
-	);
-	TheBubbleHelper->SetHelp( 
-		mFileLearnedSpamControl, 
-		"Checking this will cause Beam to automatically file mails\n"
-		"that have been learned as SPAM into the 'spam'-folder."
-	);
-	TheBubbleHelper->SetHelp( 
-		mFileLearnedTofuControl, 
-		"Checking this will cause Beam to automatically file mails\n"
-		"that have been learned as TOFU into the 'in'-folder."
-	);
-	TheBubbleHelper->SetHelp( 
 		mProtectKnownAddrsControl, 
 		"Checking this will stop Beam from ever marking any mail as\n"
 		"SPAM if it comes from a known address (i.e. any address that\n"
 		"exists in a people file or that we have sent mail to in the past)."
 	);
 	TheBubbleHelper->SetHelp( 
-		mFileUnsureSpamControl, 
-		"Checking this causes Beam to file mails that have been classified\n"
-		"as SPAM with a low confidence into the 'quarantine'-folder."
+		mStopProcessingControl, 
+		"Check this if you want to stop filter-processing\n"
+		"for SPAM mails. Any subsequent filters\n"
+		"of the active filter-chain will be ignored."
 	);
 	TheBubbleHelper->SetHelp( 
 		mUnsureThresholdControl, 
@@ -2457,49 +2421,10 @@ void BmSpamFilterPrefs::MessageReceived( BMessage* msg) {
 			}
 			break;
 		}
-		case BM_FILESPAM_CHANGED: {
-			if (mCurrFilterAddon) {
-				bool newVal = mFileSpamControl->Value();
-				mCurrFilterAddon->D.mActionFileSpam = newVal;
-				PropagateChange();
-			}
-			break;
-		}
-		case BM_MARKSPAM_CHANGED: {
-			if (mCurrFilterAddon) {
-				bool newVal = mMarkSpamAsReadControl->Value();
-				mCurrFilterAddon->D.mActionMarkSpamAsRead = newVal;
-				PropagateChange();
-			}
-			break;
-		}
-		case BM_FILELEARNEDSPAM_CHANGED: {
-			if (mCurrFilterAddon) {
-				bool newVal = mFileLearnedSpamControl->Value();
-				mCurrFilterAddon->D.mActionFileLearnedSpam = newVal;
-				PropagateChange();
-			}
-			break;
-		}
-		case BM_FILELEARNEDTOFU_CHANGED: {
-			if (mCurrFilterAddon) {
-				bool newVal = mFileLearnedTofuControl->Value();
-				mCurrFilterAddon->D.mActionFileLearnedTofu = newVal;
-				PropagateChange();
-			}
-			break;
-		}
 		case BM_THRESHOLD_CHANGED:
 		case BM_PROTECTMYTOFU_CHANGED: {
 			if (UpdateState(false))
 				PropagateChange();
-			break;
-		}
-		case BM_FILEUNSURESPAM_CHANGED: {
-			if (mCurrFilterAddon) {
-				UpdateState(false);
-				PropagateChange();
-			}
 			break;
 		}
 		case BM_UNSURE_THRESHOLD_CHANGED: {
@@ -2514,6 +2439,14 @@ void BmSpamFilterPrefs::MessageReceived( BMessage* msg) {
 			if (mCurrFilterAddon) {
 				bool newVal = mProtectKnownAddrsControl->Value();
 				mCurrFilterAddon->D.mProtectKnownAddrs = newVal;
+				PropagateChange();
+			}
+			break;
+		}
+		case BM_STOP_PROCESSING_CHANGED: {
+			if (mCurrFilterAddon) {
+				bool newVal = mStopProcessingControl->Value();
+				mCurrFilterAddon->D.mStopProcessing = newVal;
 				PropagateChange();
 			}
 			break;
@@ -2631,16 +2564,6 @@ int32 BmSpamFilterPrefs::StartSpamometer( void* data)
 void BmSpamFilterPrefs::ShowFilter( BmFilterAddon* addon) {
 	mCurrFilterAddon = dynamic_cast< BmSpamFilter*>( addon);
 	if (mCurrFilterAddon) {
-		mFileSpamControl->SetValueSilently( mCurrFilterAddon->D.mActionFileSpam);
-		mMarkSpamAsReadControl->SetValueSilently( 
-			mCurrFilterAddon->D.mActionMarkSpamAsRead
-		);
-		mFileLearnedSpamControl->SetValueSilently( 
-			mCurrFilterAddon->D.mActionFileLearnedSpam
-		);
-		mFileLearnedTofuControl->SetValueSilently( 
-			mCurrFilterAddon->D.mActionFileLearnedTofu
-		);
 		uint8 spamThreshold = mCurrFilterAddon->D.mSpamThreshold;
 		uint8 tofuThreshold = mCurrFilterAddon->D.mTofuThreshold;
 		uint8 thresholdVal = (spamThreshold+tofuThreshold)/2;
@@ -2651,8 +2574,8 @@ void BmSpamFilterPrefs::ShowFilter( BmFilterAddon* addon) {
 		mProtectKnownAddrsControl->SetValueSilently( 
 			mCurrFilterAddon->D.mProtectKnownAddrs
 		);
-		mFileUnsureSpamControl->SetValueSilently( 
-			mCurrFilterAddon->D.mActionFileUnsure
+		mStopProcessingControl->SetValueSilently( 
+			mCurrFilterAddon->D.mStopProcessing
 		);
 		mUnsureThresholdControl->SetValue( mCurrFilterAddon->D.mUnsureThreshold);
 		UpdateState(true);
@@ -2665,7 +2588,7 @@ void BmSpamFilterPrefs::ShowFilter( BmFilterAddon* addon) {
 \*------------------------------------------------------------------------------*/
 bool BmSpamFilterPrefs::UpdateState(bool force) {
 	if (mCurrFilterAddon) {
-		mUnsureThresholdControl->SetEnabled(mFileUnsureSpamControl->Value());
+		mUnsureThresholdControl->SetEnabled(mCurrFilterAddon->D.mActionFileUnsure);
 		int32 thresholdVal = mThresholdControl->Value();
 		int32 protectMyTofuVal = mProtectMyTofuControl->Value();
 		int32 tofuThr 

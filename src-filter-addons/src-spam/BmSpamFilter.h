@@ -307,6 +307,7 @@ public:
 	static const char* const MSG_UNSURE_THRESHOLD;
 	static const char* const MSG_DE_HTML;
 	static const char* const MSG_KEEP_A_TAGS;
+	static const char* const MSG_STOP_PROCESSING;
 	static const int16 nArchiveVersion;
 
 	struct Data {
@@ -322,6 +323,7 @@ public:
 		int8 mUnsureThreshold;
 		bool mDeHtml;
 		bool mKeepATags;
+		bool mStopProcessing;
 	};
 	static Data D;
 
@@ -352,17 +354,13 @@ class BStatusBar;
 
 enum {
 	BM_SHOW_STATISTICS			= 'bmTa',
-	BM_FILESPAM_CHANGED			= 'bmTb',
-	BM_FILELEARNEDSPAM_CHANGED	= 'bmTc',
-	BM_FILELEARNEDTOFU_CHANGED	= 'bmTd',
-	BM_THRESHOLD_CHANGED			= 'bmTe',
-	BM_PROTECTMYTOFU_CHANGED	= 'bmTf',
-	BM_RESET_STATISTICS			= 'bmTg',
-	BM_MARKSPAM_CHANGED			= 'bmTh',
-	BM_TRAIN_FILTER				= 'bmTi',
-	BM_FILEUNSURESPAM_CHANGED	= 'bmTj',
-	BM_UNSURE_THRESHOLD_CHANGED= 'bmTk',
-	BM_PROTECTKNOWN_CHANGED		= 'bmTl'
+	BM_THRESHOLD_CHANGED			= 'bmTb',
+	BM_PROTECTMYTOFU_CHANGED	= 'bmTc',
+	BM_RESET_STATISTICS			= 'bmTd',
+	BM_TRAIN_FILTER				= 'bmTe',
+	BM_UNSURE_THRESHOLD_CHANGED= 'bmTf',
+	BM_PROTECTKNOWN_CHANGED		= 'bmTg',
+	BM_STOP_PROCESSING_CHANGED	= 'bmTh'
 };
 
 
@@ -396,12 +394,8 @@ private:
 	MSlider* mUnsureThresholdControl;
 	BStatusBar* mSpamThresholdBar;
 	BStatusBar* mTofuThresholdBar;
-	BmCheckControl* mFileSpamControl;
-	BmCheckControl* mMarkSpamAsReadControl;
-	BmCheckControl* mFileLearnedSpamControl;
-	BmCheckControl* mFileLearnedTofuControl;
-	BmCheckControl* mFileUnsureSpamControl;
 	BmCheckControl* mProtectKnownAddrsControl;
+	BmCheckControl* mStopProcessingControl;
 
 	BmSpamFilter* mCurrFilterAddon;
 	
