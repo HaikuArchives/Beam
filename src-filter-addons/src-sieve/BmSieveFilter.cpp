@@ -2029,8 +2029,7 @@ void BmSieveFilterPrefs::ShowFilter( BmFilterAddon* addon) {
 			mCurrFilterAddon->mActionSetSpamTofu);
 		mSetSpamTofuValueControl->MarkItem( 
 			mCurrFilterAddon->mActionSetSpamTofuValue.String());
-		mSetListIdControl->SetValueSilently( 
-			mCurrFilterAddon->mActionSetListId);
+		mSetListIdControl->SetValueSilently(mCurrFilterAddon->mActionSetListId);
 		mSetListIdValueControl->SetTextSilently( 
 			mCurrFilterAddon->mActionSetListIdValue.String());
 		mStopProcessingControl->SetValueSilently( 
@@ -2071,7 +2070,7 @@ void BmSieveFilterPrefs::UpdateState() {
 			mSetSpamTofuValueControl->ClearMark();
 		mSetListIdValueControl->SetEnabled( mSetListIdControl->Value());
 		if (!mSetListIdControl->Value())
-			mSetListIdValueControl->SetText("");
+			mSetListIdValueControl->SetTextSilently("");
 	}
 }
 
