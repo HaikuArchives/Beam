@@ -1874,6 +1874,7 @@ void BmLinebreakEncoder::Filter( const char* srcBuf, uint32& srcLen,
 \*------------------------------------------------------------------------------*/
 BmMailtextCleaner::BmMailtextCleaner( BmMemIBuf* input, uint32 blockSize)
 	:	inherited( input, blockSize)
+	,	mLastWasStartOfShiftSpace(false)
 {
 }
 
@@ -1891,16 +1892,25 @@ void BmMailtextCleaner::Filter( const char* srcBuf, uint32& srcLen,
 	char* dest = destBuf;
 	char* destEnd = destBuf+destLen;
 
+	// filter out shift-space (C2A0 in UTF-8) as it confuses BTextView, as well
+	// as our own wrapping code. We replace it by a normal space:
 	char c;
 	for( ; src<srcEnd && dest<destEnd; ++src) {
 		switch((c = *src)) {
-			case '\xa0':
-				// shift-space is just bollocks, it confuses BTextView, as well
-				// as our own wrapping code. We replace it by space:
-				*dest++ = '\x20';
+			case '\xC2':
+				mLastWasStartOfShiftSpace = true;
 				break;
+			case '\xa0':
+				if (mLastWasStartOfShiftSpace) {
+					*dest++ = '\x20';
+					mLastWasStartOfShiftSpace = false;
+					break;
+				}
+				else
+					// fall through
 			default:
 				*dest++ = c;
+				mLastWasStartOfShiftSpace = false;
 		}
 	}
 

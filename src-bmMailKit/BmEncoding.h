@@ -390,6 +390,8 @@ protected:
 	void Filter( const char* srcBuf, uint32& srcLen, 
 					 char* destBuf, uint32& destLen);
 
+private:
+	bool mLastWasStartOfShiftSpace;
 };
 
 /*------------------------------------------------------------------------------*\

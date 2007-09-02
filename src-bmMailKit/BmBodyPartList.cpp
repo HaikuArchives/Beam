@@ -725,13 +725,13 @@ const BmString& BmBodyPart::DecodedData() const {
 						BmMemFilterRef decoder 
 							= FindDecoderFor( &text, mContentTransferEncoding);
 						BmLinebreakDecoder linebreakDecoder( decoder.get());
-						BmMailtextCleaner mailtextCleaner( &linebreakDecoder);
 						BmStringOBuf tempIO( mBodyLength, 1.2);
 						charset = charsetVect[i];
 						BM_LOG2( BM_LogMailParse, 
 									BmString( "trying charset ") << charset);
-						BmUtf8Encoder textConverter( &mailtextCleaner, charset);
-						tempIO.Write( &textConverter);
+						BmUtf8Encoder textConverter( &linebreakDecoder, charset);
+						BmMailtextCleaner mailtextCleaner( &textConverter);
+						tempIO.Write( &mailtextCleaner);
 						mHadErrorDuringConversion = textConverter.HadToDiscardChars() 
 											|| textConverter.HadError();
 						if (decoder->HaveStatusText())
