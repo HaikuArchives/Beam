@@ -615,6 +615,33 @@ void BmMailEditWin::MessageReceived( BMessage* msg) {
 			}
 			case BMM_SEND_LATER:
 			case BMM_SEND_NOW: {
+				BmString subject = mSubjectControl->Text();
+				subject.Trim();
+				if (!subject.Length()) {
+					int32 buttonPressed;
+					if (msg->FindInt32( "which", &buttonPressed) != B_OK) {
+						// first step, warn user about empty subject:
+						BAlert* alert = new BAlert( 
+							"Empty Subject", 
+							"The mail does not have a subject. Do you want to "
+							"send it anyway?",
+							"Yes, Send", "No, Edit", NULL, B_WIDTH_AS_USUAL,
+							B_WARNING_ALERT
+						);
+						alert->SetShortcut( 1, B_ESCAPE);
+						alert->Go( new BInvoker( 
+							new BMessage(msg->what), BMessenger( this)
+						));
+						break;
+					} else {
+						// second step, break if user chose to edit mail:
+						if (buttonPressed == 1) {
+							mSubjectControl->MakeFocus(true);
+							break;
+						}
+					}
+				}
+				// send mail
 				if (mEditHeaderControl->Value()) {
 					if (!EditHeaders())
 						break;
@@ -999,8 +1026,11 @@ void BmMailEditWin::SendMail( bool sendNow)
 	if (mail->IsFieldEmpty( mail->IsRedirect() 
 										? BM_FIELD_RESENT_FROM 
 										: BM_FIELD_FROM)) {
-		BM_SHOWERR("Please enter at least one address into the <FROM> "
-					  "field before sending this mail, thank you.");
+		ShowAlertWithType(
+			"You have to enter at least one address into the\n"
+			"<FROM> field before you can send this mail!",
+			B_INFO_ALERT
+		);
 		return;
 	}
 	if (mail->IsFieldEmpty( mail->IsRedirect() 
@@ -1012,9 +1042,12 @@ void BmMailEditWin::SendMail( bool sendNow)
 	&& mail->IsFieldEmpty( mail->IsRedirect() 
 			? BM_FIELD_RESENT_BCC 
 			: BM_FIELD_BCC)) {
-		BM_SHOWERR("Please enter at least one address into the\n"
-					  "\t<TO>,<CC> or <BCC>\nfield before sending this "
-					  "mail, thank you.");
+		ShowAlertWithType(
+			"You have to enter at least one address into the\n"
+			"\t<TO>,<CC> or <BCC>\nfield before you can send\n"
+			"mail!",
+			B_INFO_ALERT
+		);
 		return;
 	}
 	BmRef<BmListModelItem> smtpRef 
@@ -1022,10 +1055,12 @@ void BmMailEditWin::SendMail( bool sendNow)
 	BmSmtpAccount* smtpAcc 
 		= dynamic_cast< BmSmtpAccount*>( smtpRef.Get());
 	if (!smtpAcc) {
-		ShowAlertWithType( "Before you can send this mail, "
-								 "you have to select the SMTP-Account "
-								 "to use for sending it.",
-								 B_INFO_ALERT);
+		ShowAlertWithType( 
+			"Before you can send this mail, "
+			"you have to select the SMTP-Account "
+			"to use for sending it.",
+			B_INFO_ALERT
+		);
 		return;
 	}
 	mail->Send( sendNow);

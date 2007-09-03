@@ -1,5 +1,121 @@
 change-history of Beam:
-		$Id$
+
+< 2007-09-03: moved tag 'rel-1-1-1' >
+
+< 2007-09-03: commit >
+
+BmMailEditWin:
+	*	added a warning before a mail without any subject is being sent
+		[suggested by Stippi]
+	*	turned a couple of logged errors into proper alerts, as they deserve
+		that kind of attention (mail fields missing values)
+
+< 2007-09-02: added tag 'rel-1-1-1' >
+
+< 2007-09-02: commit >
+
+BmBodyPartList, BmEncoding:
+	*	fixed a really bad bug that caused problems with mails that contained 
+		\xA0 as part of UTF-8 sequences. BmMailtextCleaner took them for 
+		shift-space and replaced them by real spaces, which in turn invalidated 
+		the UTF-8. [Bug spotted by Rainer a long time ago]
+
+< 2007-08-23: commit >
+
+BmSpamFilter:
+	*	cleaned up (i.e. removed) several options for the SPAM-filter, as they
+		should all be switched on at all times anyway
+	*	added one more option that allows the user to select whether or not the
+		SPAM-filter should stop processing the filter chain for mails considered
+		SPAM
+	*	used the free space to rearrange the options more pleasingly (for my
+		liking, at least)
+
+< 2007-08-22: commit >
+
+BmSieveFilter:
+	*	fixed bug causing infinite flooding with change messages for ListID 
+		textcontrol, causing havoc and sometimes even crashes
+
+< 2007-08-21: commit >
+
+BmMail, BmMailFactory, BmMailHeader:
+	*	Fixed problematic copying of mail-header when copying mails 
+		("Edit As New..."), which could lead to problems when the mail is being 
+		sent to a mailing list (that would be fooled into thinking the mail 
+		looped). Now we rebuild the mail header based only on the basic fields
+		(Bcc, Cc, From, Reply-To, Subject, To).
+
+< 2007-05-09: commit >
+
+BmMailHeader:
+	*	minor improvement with respect to handling of List-Post field when trying
+		to determine the list's address.
+
+< 2007-02-09: commit >
+
+BmMailHeader:
+	*	when replying to a list, we now pay attention to the reply-to field, as
+		this is required when a list redirects replies to another list
+
+< 2006-11-18: commit >
+
+BmGuiUtil, BmMailRefView, BmPrefs, BmPrefsGeneralView, BmPrefsShortcutsView
+BmToolbarButton:
+	*	added support for changing the shortcuts on-the-fly
+	*	added two missing shortcuts (I'm pretty sure more are missing)
+	*	refactored BmToolbarManager into something more reusable: BmViewManager
+
+BmMainWindow:
+	*	fixed typo in menu-entry
+
+< 2006-11-12: commit >
+
+BmIdentity:
+	*	replaced very unreliable way of matching against aliases by a much more
+		robust way. The basic idea was insane, as mails with mail-addresses that
+		could not be used as regex would cause Beam to fail downloading this and
+		any other mail from that specific account, doh!
+
+BmImap:
+	*	minor bugfix related to case-insensitivity of server responses
+
+< 2006-11-10: commit >
+
+BmImap, BmPopper, BmSmtp:
+	-	fixed bug with SMTP not working at all when the user requests no 
+		authentication at all. Thanks to Thom Holwerda for reporting this.
+	-	adjusted POP3 and IMAP along the same lines, i.e. to work without 
+		authentication (although it is much more unlikely that this will 
+		ever be used).
+
+< 2006-10-15: commit >
+
+BmMail:
+	-	added helper method ReconstructRawText() which updates the raw mailtext
+		from all other values
+
+BmMailFilter.cpp, BmSieveFilter:
+	-	added support for setting the List-Id from within a matching filter. This
+		is very handy in order to force mails to have come from specific lists 
+		(which sometimes isn't the case if people do multiposting and the like).
+
+BmPrefs:
+	-	updated case of logging-states to our new convention
+
+BmPrefsLoggingView:
+	-	first batch of typing corrections
+
+< 2006-09-08: commit >
+
+BmSieveFilter:
+	-	fixed bug with LearnAsSpam/Tofu-control not being usable at all (reported
+		by Rainer)
+
+< 2006-05-27: commit >
+
+BetterScrollView:
+	-	layout fix for Zeta-1.2
 
 < 2006-05-22: added tag 'rel-1-1' >
 
