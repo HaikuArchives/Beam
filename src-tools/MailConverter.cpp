@@ -15,11 +15,29 @@
 
 #include <Directory.h>
 #include <File.h>
+#include <NodeInfo.h>
 
 #include "BmApp.h"
 #include "BmMail.h"
 #include "BmMailRef.h"
-#include "BmPrefs.h"
+
+class MyMail : public BmMail {
+public:
+	MyMail()
+		:	BmMail(BM_DEFAULT_STRING, "") 
+	{
+	}
+	void SetTo(const BmString &msgText) 
+	{
+		BmMail::SetTo(msgText, "dummy-account");
+	}
+	void StoreAttributes( BFile& mailFile, const BmString& status, 
+								 bigtime_t whenCreated) 
+	{
+		BmMail::StoreAttributes(mailFile, status, whenCreated);
+		Header()->StoreAttributes(mailFile);
+	}
+};
 
 /*------------------------------------------------------------------------------*\
 	()
@@ -30,7 +48,7 @@ void MailConverter( const char* folder)
 	BDirectory dir( folder);
 	if (dir.InitCheck() != B_OK) {
 		fprintf(stderr, "can't open folder %s\n", folder);
-		exit(5);
+		return;
 	}
 	entry_ref eref;
 	BFile file;
@@ -38,26 +56,54 @@ void MailConverter( const char* folder)
 	BmString str;
 	char* buf;
 	off_t sz;
-	BmMail mail( BM_DEFAULT_STRING, "");
+	MyMail mail;
 	status_t res;
+	time_t modTime;
+	bigtime_t modTimeBig;
 	BmString status( BM_MAIL_STATUS_READ);
+	int errorCount = 0;
+	int okCount = 0;
 	while(dir.GetNextRef(&eref) == B_OK) {
+		printf("%s...", eref.name);
 		if ((res = file.SetTo(&eref, B_READ_WRITE)) != B_OK) {
-			fprintf(stderr, "%s: %s\n", eref.name, strerror(res));
+			fprintf(stderr, "unable to access file - %s\n", strerror(res));
+			errorCount++;
 			continue;
 		}
-		printf("%s...", eref.name);
 		file.GetSize(&size);
 		buf = str.LockBuffer(size+1);
 		if (!buf) {
 			fprintf(stderr, "not enough memory for %Lu bytes\n", size);
+			errorCount++;
+			continue;
 		}
 		sz = file.Read(buf, size);
+		if (sz < 0) {
+			fprintf(stderr, "unable to read from file - %s\n", strerror(res));
+			errorCount++;
+			continue;
+		}
 		str.UnlockBuffer(sz);
-		mail.SetTo(str, "dummyAccount");
-		mail.StoreIntoFile(&dir, eref.name, status, real_time_clock_usecs());
+		if (sz != size) {
+			fprintf(
+				stderr, "unable to read %Ld bytes from file (only got %Ld)\n", 
+				size, sz
+			);
+			errorCount++;
+			continue;
+		}
+		mail.SetTo(str);
+		file.GetModificationTime(&modTime);
+		modTimeBig = ((bigtime_t)modTime) * 1000*1000;
+		mail.StoreAttributes(file, status, modTimeBig);
+		BNodeInfo nodeInfo(&file);
+		nodeInfo.SetType("text/x-email");
+		okCount++;
 		printf("ok\n");
 	}
+	printf("%d mails have been converted successfully!\n", okCount);
+	if (errorCount)
+		printf("%d mails could not be converted!\n", errorCount);
 }
 
 int 
