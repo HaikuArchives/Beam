@@ -832,17 +832,9 @@ void BmMailEditWin::AddAddressToTextControl( BmTextControl* cntrl,
 	if (cntrl) {
 		BmString currStr = cntrl->Text();
 		currStr.Trim();
-		BmAddress addr( email);
-		BmString mailAddr;
-		if (ThePrefs->GetBool( "AddPeopleNameToMailAddr", true))
-			mailAddr = addr.AddrString();
-		else
-			mailAddr = addr.AddrSpec();
-		
-		if (currStr.Length() > 0)
-			currStr << ", " << mailAddr;
-		else
-			currStr << mailAddr;
+		BmAddressList addrList( currStr);
+		addrList.Add( email);
+		currStr = addrList.AddrString();
 		cntrl->SetText( currStr.String());
 		cntrl->TextView()->Select( currStr.Length(), currStr.Length());
 		cntrl->TextView()->ScrollToSelection();
