@@ -68,8 +68,7 @@ BmPerson::BmPerson( BmPeopleList* model, const node_ref& nref, const BmString& n
 	,	mEntryRef( eref)
 	,	mIsForeign( foreign)
 {
-	if (!AddEmail( email))
-		return;			// empty email, we skip the rest
+	AddEmail( email);
 	
 	BmStringVect grpVect;
 	split( ",", groups, grpVect);
