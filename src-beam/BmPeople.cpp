@@ -223,7 +223,7 @@ void BmPerson::AddToAllPeopleMap( BmPersonMap& allPeopleMap) const {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmPerson::AddToGroupMap( BmGroupMap& groupMap) const {
-	if (mIsForeign)
+	if (mIsForeign || mEmails.empty())
 		return;
 	for( uint32 i=0; i<mGroups.size(); ++i) {
 		BmGroupInfo& groupInfo = groupMap[GenerateSortkeyFor( mGroups[i])];
@@ -709,6 +709,8 @@ BMenu* BmPeopleList::_CreateSubmenuForPersonMap( const BmPersonMap& personMap,
 	BmString allAddrs;
 	for( person = personMap.begin(); person != personMap.end(); ++person) {
 		const BmPersonInfo& info = person->second;
+		if (info.emails.empty())
+			continue;
 		if (createAllEntry) {
 			if (person==personMap.begin())
 				allAddrs << info.emails[0];
