@@ -300,7 +300,8 @@ status_t TextEntryAlert::Go(BInvoker *invoker)
 
 void TextEntryAlert::SetShortcut(int32 index, char shortcut)
 {
-	m_shortcut[index] = shortcut;
+	if (index >= 0 && index <= 1)
+		m_shortcut[index] = shortcut;
 }
 
 

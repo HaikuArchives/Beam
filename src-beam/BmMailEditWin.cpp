@@ -989,7 +989,7 @@ bool BmMailEditWin::EditHeaders( )
 			false, 80, 20, B_WIDTH_FROM_LABEL, true,
 			&alertFrame
 		);
-	alert->SetShortcut( B_ESCAPE, 0);
+	alert->SetShortcut( 0, B_ESCAPE);
 	alert->TextEntryView()->DisallowChar( 27);
 	alert->TextEntryView()->SetFontAndColor( be_fixed_font);
 	int32 choice = alert->Go( headerStr);

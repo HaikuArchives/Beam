@@ -129,7 +129,8 @@ status_t BmMenuAlert::Go(BInvoker *invoker)
 
 void BmMenuAlert::SetShortcut(int32 index, char shortcut)
 {
-	m_shortcut[index] = shortcut;
+	if (index >= 0 && index <= 1)
+		m_shortcut[index] = shortcut;
 }
 
 
