@@ -287,6 +287,10 @@ int32 BmMailFactory::QuoteTextWithReWrap( const BmString& in, BmString& out,
 	for( int32 i=0; i<count; ++i) {
 		BmString q(rx.match[i].atom[0]);
 		quote.ConvertTabsToSpaces( ThePrefs->GetInt( "SpacesPerTab", 4), &q);
+		// limit the quote chars to a sane length (as otherwise we might
+		// loop endlessly when trying to wrap the content lines)
+		if (quote.Length() > maxTextLen / 2)
+			quote.Truncate(maxTextLen / 2);
 		line = rx.match[i].atom[1];
 		if ((line.CountChars() < minLenForWrappedLine && lastWasSpecialLine)
 		|| rxl.exec( line, ThePrefs->GetString( "QuotingLevelEmptyLineRX", 
