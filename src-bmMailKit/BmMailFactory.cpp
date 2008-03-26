@@ -229,6 +229,10 @@ int32 BmMailFactory::QuoteText( const BmString& in, BmString& out,
 	for( int32 i=0; i<count; ++i) {
 		BmString q(rx.match[i].atom[0]);
 		quote.ConvertTabsToSpaces( ThePrefs->GetInt( "SpacesPerTab", 4), &q);
+		// limit the quote chars to a sane length (as otherwise we might
+		// loop endlessly when trying to wrap the content lines)
+		if (quote.Length() > maxLineLen / 2)
+			quote.Truncate(maxLineLen / 2);
 		if (qStyle == BM_QUOTE_SIMPLE) {
 			// always respect maxLineLen, wrap when lines exceed right margin.
 			// This results in a combing-effect when long lines are wrapped
@@ -289,8 +293,8 @@ int32 BmMailFactory::QuoteTextWithReWrap( const BmString& in, BmString& out,
 		quote.ConvertTabsToSpaces( ThePrefs->GetInt( "SpacesPerTab", 4), &q);
 		// limit the quote chars to a sane length (as otherwise we might
 		// loop endlessly when trying to wrap the content lines)
-		if (quote.Length() > maxTextLen / 2)
-			quote.Truncate(maxTextLen / 2);
+		if (quote.Length() > maxLineLen / 2)
+			quote.Truncate(maxLineLen / 2);
 		line = rx.match[i].atom[1];
 		if ((line.CountChars() < minLenForWrappedLine && lastWasSpecialLine)
 		|| rxl.exec( line, ThePrefs->GetString( "QuotingLevelEmptyLineRX", 
@@ -651,6 +655,20 @@ BmRef<BmMail> BmReplyFactory::CreateReplyTo( BmRef<BmMail>& oldMail,
 	BmRef<BmIdentity> ident;
 	oldMail->DetermineRecvAddrAndIdentity( receivingAddr, ident);
 	newMail->SetupFromIdentityAndRecvAddr( ident.Get(), receivingAddr);
+
+	if (mReplyMode == BM_REPLY_MODE_SMART) {
+		// in DWIM-mode, we determine if it makes sense to do a reply-to-all 
+		// (which is the case if there are more than one recipients of the
+		// original message)
+		// If the message has come through a list, we do this still, as
+		// this makes it possible to include CC'ed addresses in the reply
+		// (which is very helpful if those are externals, i.e. not list
+		// subscribers).
+		BmAddressList toAddrs = oldMail->Header()->GetAddressList(BM_FIELD_TO);
+		BmAddressList ccAddrs = oldMail->Header()->GetAddressList(BM_FIELD_CC);
+		if (toAddrs.size() + ccAddrs.size() > 1)
+			mReplyMode = BM_REPLY_MODE_ALL;
+	}
 
 	// if we are replying to all, we may need to include more addresses:
 	if (mReplyMode == BM_REPLY_MODE_ALL) {
