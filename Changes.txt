@@ -1,5 +1,56 @@
 change-history of Beam:
 
+< 2008-03-27: added tag 'rel-1-1-2' >
+
+< 2008-03-27: commit >
+
+BmMailEditWin:
+	*	fixed another bug reported by Hartmut Reh: the edit window's title would
+		not get updated when editing the subject of a mail
+
+< 2008-03-26: commit >
+
+BmMailFactory:
+	*	Insane amount of whitespace within one line could steer the wrapping
+		code into an endless loop. The wrapping code is still a mess, but it
+		will handle this case more gracefully, now.
+	*	implemented a suggestion by Ingo: smart replies should check
+		automatically if it makes sense to do a reply-to-all
+  
+< 2008-03-23: commit >
+
+BmMailEditWin, BmPrefsIdentityView:
+	*	fixed bad bug when editing a mail's headers that would write data
+		into the wild, causing crashes (noticed by Hartmut Reh - thanks!)
+
+BmMenuAlert, ListSelectionAlert, TextEntryAlert:
+	*	added sanity check to SetShortcut() for all alert classes
+
+< 2007-10-23: commit >
+
+BmPeople:
+	*	added two missing sanity checks that could lead to crashes with people
+		files that had only empty 'email...'-attributes (again reported by Rainer, 
+		thanks!).
+
+< 2007-10-22: commit >
+
+BmPeople:
+	*	fixed problem regarding people files that have email2 set but an empty 
+		'email' attribute and their sorting into groups (reported by Rainer).
+
+< 2007-10-19: commit >
+
+BmMailEditWin:
+	*	fixed incorrect handling of multiple mail-addresses in 
+		AddAddressToTextControl() as reported by Rainer Riedl - thanks Rainer!
+
+< 2007-10-02: commit >
+
+MailConverter:
+	*	put this back into a working state (triggered by Steffen Friedle asking
+		me about such a tool)
+
 < 2007-09-03: moved tag 'rel-1-1-1' >
 
 < 2007-09-03: commit >
