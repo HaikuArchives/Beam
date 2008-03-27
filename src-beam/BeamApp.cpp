@@ -1317,11 +1317,13 @@ void BeamApplication::AboutRequested() {
 		"mailto:beam@hirschkaefer.de",
 		"http://beam.sourceforge.net",
 		"\n\n\n\n\n\n\nBeam makes use of the following Software:\n\
-	OSBF from crm114, by Bill Yerazunis and Fidelis Assis\n\
 \n\
 	Libiconv, by Bruno Haible\n\
 \n\
 	Liblayout, by Marco Nelissen\n\
+\n\
+	OSBF from crm114,\n\
+	    by Bill Yerazunis (crm114) and Fidelis Assis (OSBF)\n\
 \n\
 	PCRE, by Philip Hazel\n\
 \n\
