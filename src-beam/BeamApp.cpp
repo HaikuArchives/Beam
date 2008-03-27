@@ -1349,6 +1349,7 @@ Charlie Clark\n\
 David Vignoni\n\
 Eberhard Hafermalz\n\
 Eugenia Loli-Queru\n\
+Hartmut Reh\n\
 Helmar Rudolph\n\
 Ingo Weinhold\n\
 Jace Cavacini\n\
