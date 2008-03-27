@@ -30,5 +30,3 @@ you can reach the author at: <beam@hirschkaefer.de>.
 
 Have fun!
 
-
-$Id$

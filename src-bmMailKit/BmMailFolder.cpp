@@ -1,6 +1,5 @@
-	/*
+/*
 	BmMailFolder.cpp
-		$Id$
 */
 /*
  * Copyright 2002-2006, project beam (http://sourceforge.net/projects/beam).

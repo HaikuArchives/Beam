@@ -1,7 +1,4 @@
 /*
-	$Id$
-*/
-/*
  * Copyright 2002-2006, project beam (http://sourceforge.net/projects/beam).
  * All rights reserved. Distributed under the terms of the GNU GPL v2.
  *

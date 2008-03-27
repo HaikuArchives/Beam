@@ -1,6 +1,5 @@
 /*
 	ToDo-List for Beam
-		$Id$
 */
 
 -	implement RFC2231 to facilitate correct handling of attachment

@@ -1,4 +1,3 @@
-//		$Id$
 //Useful until be gets around to making these sorts of things
 //globals akin to be_plain_font, etc.
 
