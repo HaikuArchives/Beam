@@ -574,8 +574,9 @@ void BmMailEditWin::CreateGUI() {
 
 	// watch changes to bodypartview in order to be set the
 	// changed-flag accordingly:	
-	mMailView->BodyPartView()->StartWatching( this, 
-															BM_NTFY_LISTCONTROLLER_MODIFIED);
+	mMailView->BodyPartView()->StartWatching(
+		this, BM_NTFY_LISTCONTROLLER_MODIFIED
+	);
 
 	AddChild( dynamic_cast<BView*>(mOuterGroup));
 }
@@ -753,7 +754,7 @@ void BmMailEditWin::MessageReceived( BMessage* msg) {
 			case BM_TEXTFIELD_MODIFIED: {
 				BControl* source;
 				if (msg->FindPointer( "source", (void**)&source)==B_OK
-				&& source==mSubjectControl) {
+				&& source==dynamic_cast<BControl*>(mSubjectControl)) {
 					SetTitle( (BmString("Edit Mail: ") 
 								 + mSubjectControl->Text()).String());
 				}
