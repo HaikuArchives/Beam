@@ -41,7 +41,7 @@ public:
 		mViewSet.erase(v);
 		mLock.Unlock();
 	}
-	virtual void UpdateAll() {}
+	virtual void UpdateAll();
 	static BmViewManager<T>* Instance()
 	{
 		if (!theInstance)
