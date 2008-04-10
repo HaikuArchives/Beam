@@ -629,34 +629,6 @@ void BmPrefsRecvMailView::Initialize() {
 												new BMessage(BM_ENCRYPTION_SELECTED)), 
 							this);
 	}
-	AddItemToMenu( mAuthControl->Menu(), 
-						new BMenuItem( BmRecvAccount::AUTH_AUTO, 
-											new BMessage(BM_AUTH_SELECTED)), 
-						this);
-	AddItemToMenu( mAuthControl->Menu(), 
-						new BMenuItem( BmRecvAccount::AUTH_DIGEST_MD5, 
-											new BMessage(BM_AUTH_SELECTED)), 
-						this);
-	AddItemToMenu( mAuthControl->Menu(), 
-						new BMenuItem( BmRecvAccount::AUTH_CRAM_MD5, 
-											new BMessage(BM_AUTH_SELECTED)), 
-						this);
-	AddItemToMenu( mAuthControl->Menu(), 
-						new BMenuItem( BmPopAccount::AUTH_APOP, 
-											new BMessage(BM_AUTH_SELECTED)), 
-						this);
-	AddItemToMenu( mAuthControl->Menu(), 
-						new BMenuItem( BmImapAccount::AUTH_LOGIN, 
-											new BMessage(BM_AUTH_SELECTED)), 
-						this);
-	AddItemToMenu( mAuthControl->Menu(), 
-						new BMenuItem( BmPopAccount::AUTH_POP3, 
-											new BMessage(BM_AUTH_SELECTED)), 
-						this);
-	AddItemToMenu( mAuthControl->Menu(), 
-						new BMenuItem( BmPopAccount::AUTH_NONE, 
-											new BMessage(BM_AUTH_SELECTED)), 
-						this);
 
 	mAccListView->SetSelectionMessage( new BMessage( BM_SELECTION_CHANGED));
 	mAccListView->SetTarget( this);
@@ -1138,6 +1110,8 @@ void BmPrefsRecvMailView::ShowAccount( int32 selection) {
 	mRemoveMailControl->SetEnabled( enabled);
 	mStorePwdControl->SetEnabled( enabled);
 	
+	mAuthControl->MakeEmpty();
+
 	if (selection == -1) {
 		mCurrAcc = NULL;
 		mAccountControl->SetTextSilently( "");
@@ -1189,6 +1163,17 @@ void BmPrefsRecvMailView::ShowAccount( int32 selection) {
 								? mCurrAcc->EncryptionType().String()
 								: BM_NoItemLabel.String()
 					);
+					vector<BmString> authTypes;
+					mCurrAcc->GetSupportedAuthTypes(authTypes);
+					vector<BmString>::iterator authTypeIter = authTypes.begin();
+					for( ; authTypeIter != authTypes.end(); ++authTypeIter) {
+						AddItemToMenu( 
+							mAuthControl->Menu(), 
+							new BMenuItem( authTypeIter->String(),
+												new BMessage(BM_AUTH_SELECTED)),
+							this
+						);
+					}
 					mAuthControl->MarkItem( mCurrAcc->AuthMethod().String());
 					mHomeFolderControl->MarkItem( 
 						mCurrAcc->HomeFolder().String());

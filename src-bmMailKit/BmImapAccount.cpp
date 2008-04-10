@@ -60,3 +60,15 @@ BmImapAccount::BmImapAccount( BMessage* archive, BmRecvAccountList* model)
 BmImapAccount::~BmImapAccount() {
 }
 
+/*------------------------------------------------------------------------------*\
+	GetSupportedAuthTypes()
+		-
+\*------------------------------------------------------------------------------*/
+void BmImapAccount::GetSupportedAuthTypes(vector<BmString>& outList) const
+{
+	outList.push_back(AUTH_AUTO);
+	outList.push_back(AUTH_CRAM_MD5);
+	outList.push_back(AUTH_DIGEST_MD5);
+	outList.push_back(AUTH_LOGIN);
+	outList.push_back(AUTH_NONE);
+}

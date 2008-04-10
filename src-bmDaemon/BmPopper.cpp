@@ -497,8 +497,7 @@ void BmPopper::StateAuth() {
 			BmString serviceUri = BmString("pop/") << mPopAccount->Server();
 			AuthDigestMD5(mPopAccount->Username(), mPopAccount->Password(),
 							  serviceUri);
-		} else if (authMethod == BmPopAccount::AUTH_POP3
-		|| authMethod == BmPopAccount::AUTH_LOGIN) {
+		} else if (authMethod == BmPopAccount::AUTH_POP3) {
 			// send username and password as plain text:
 			BmString cmd = BmString("USER ") << mPopAccount->Username();
 			SendCommand( cmd);

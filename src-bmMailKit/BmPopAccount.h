@@ -40,6 +40,8 @@ public:
 		return encrypted ? "995" : "110";
 	}
 
+	virtual void GetSupportedAuthTypes(vector<BmString>& outList) const;
+
 	static const char* const AUTH_POP3;
 	static const char* const AUTH_APOP;
 

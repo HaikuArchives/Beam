@@ -61,3 +61,17 @@ BmPopAccount::BmPopAccount( BMessage* archive, BmRecvAccountList* model)
 BmPopAccount::~BmPopAccount() {
 }
 
+/*------------------------------------------------------------------------------*\
+	GetSupportedAuthTypes()
+		-
+\*------------------------------------------------------------------------------*/
+void BmPopAccount::GetSupportedAuthTypes(vector<BmString>& outList) const
+{
+	outList.push_back(AUTH_AUTO);
+	outList.push_back(AUTH_CRAM_MD5);
+	outList.push_back(AUTH_DIGEST_MD5);
+	outList.push_back(AUTH_POP3);
+	outList.push_back(AUTH_APOP);
+	outList.push_back(AUTH_NONE);
+}
+

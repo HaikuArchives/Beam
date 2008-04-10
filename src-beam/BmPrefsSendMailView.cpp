@@ -526,35 +526,6 @@ void BmPrefsSendMailView::Initialize() {
 							this);
 	}
 
-	AddItemToMenu( mAuthControl->Menu(), 
-						new BMenuItem( BmSmtpAccount::AUTH_AUTO, 
-											new BMessage(BM_AUTH_SELECTED)), 
-						this);
-	AddItemToMenu( mAuthControl->Menu(), 
-						new BMenuItem( BmSmtpAccount::AUTH_DIGEST_MD5, 
-											new BMessage(BM_AUTH_SELECTED)), 
-						this);
-	AddItemToMenu( mAuthControl->Menu(), 
-						new BMenuItem( BmSmtpAccount::AUTH_CRAM_MD5, 
-											new BMessage(BM_AUTH_SELECTED)), 
-						this);
-	AddItemToMenu( mAuthControl->Menu(), 
-						new BMenuItem( BmSmtpAccount::AUTH_PLAIN, 
-											new BMessage(BM_AUTH_SELECTED)), 
-						this);
-	AddItemToMenu( mAuthControl->Menu(), 
-						new BMenuItem( BmSmtpAccount::AUTH_LOGIN, 
-											new BMessage(BM_AUTH_SELECTED)), 
-						this);
-	AddItemToMenu( mAuthControl->Menu(), 
-						new BMenuItem( BmSmtpAccount::AUTH_SMTP_AFTER_POP, 
-											new BMessage(BM_AUTH_SELECTED)),
-						this);
-	AddItemToMenu( mAuthControl->Menu(), 
-						new BMenuItem( BmSmtpAccount::AUTH_NONE, 
-											new BMessage(BM_AUTH_SELECTED)), 
-						this);
-
 	mAccListView->SetSelectionMessage( new BMessage( BM_SELECTION_CHANGED));
 	mAccListView->SetTarget( this);
 	mAccListView->StartJob( TheSmtpAccountList.Get());
@@ -857,6 +828,7 @@ void BmPrefsSendMailView::MessageReceived( BMessage* msg) {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmPrefsSendMailView::ShowAccount( int32 selection) {
+	mAuthControl->MakeEmpty();
 	if (selection == -1) {
 		mCurrAcc = NULL;
 		mAccountControl->SetTextSilently( "");
@@ -893,6 +865,17 @@ void BmPrefsSendMailView::ShowAccount( int32 selection) {
 								? mCurrAcc->EncryptionType().String()
 								: BM_NoItemLabel.String()
 					);
+					vector<BmString> authTypes;
+					mCurrAcc->GetSupportedAuthTypes(authTypes);
+					vector<BmString>::iterator authTypeIter = authTypes.begin();
+					for( ; authTypeIter != authTypes.end(); ++authTypeIter) {
+						AddItemToMenu( 
+							mAuthControl->Menu(), 
+							new BMenuItem( authTypeIter->String(),
+												new BMessage(BM_AUTH_SELECTED)),
+							this
+						);
+					}
 					mAuthControl->MarkItem( mCurrAcc->AuthMethod().Length() 
 														? mCurrAcc->AuthMethod().String()
 														: BM_NoItemLabel.String());

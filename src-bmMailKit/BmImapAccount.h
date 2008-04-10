@@ -40,6 +40,8 @@ public:
 		return encrypted ? "993" : "143";
 	}
 
+	virtual void GetSupportedAuthTypes(vector<BmString>& outList) const;
+
 	static const char* const AUTH_LOGIN;
 
 	static const char* const nType;

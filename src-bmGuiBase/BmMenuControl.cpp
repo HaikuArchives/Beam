@@ -79,6 +79,19 @@ void BmMenuControl::AllAttached() {
 	( )
 		-	
 \*------------------------------------------------------------------------------*/
+void BmMenuControl::MakeEmpty() {
+	BMenu* menu = Menu();
+	if (!menu)
+		return;
+	BMenuItem* menuItem;
+	while((menuItem = menu->RemoveItem((int32)0)))
+		delete menuItem;
+}
+
+/*------------------------------------------------------------------------------*\
+	( )
+		-	
+\*------------------------------------------------------------------------------*/
 void BmMenuControl::MarkItem( const char* label) {
 	BmMenuControllerBase* menuContr 
 		= dynamic_cast< BmMenuControllerBase*>( Menu());

@@ -59,6 +59,8 @@ public:
 	int16 ArchiveVersion() const			{ return nArchiveVersion; }
 	void ExecuteAction( BMessage* action);
 
+	virtual void GetSupportedAuthTypes(vector<BmString>& outList) const = 0;
+
 	// getters:
 	inline const BmString &EncryptionType() const	
 													{ return mEncryptionType; }

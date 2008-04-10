@@ -32,6 +32,7 @@ public:
 	~BmMenuControl();
 	
 	// native methods:
+	void MakeEmpty();
 	void MarkItem( const char* label);
 	void ClearMark();
 

@@ -49,6 +49,8 @@ public:
 		return encrypted ? "465" : "25";
 	}
 
+	void GetSupportedAuthTypes(vector<BmString>& outList) const;
+
 	// stuff needed for Archival:
 	status_t Archive( BMessage* archive, bool deep = true) const;
 	int16 ArchiveVersion() const			{ return nArchiveVersion; }

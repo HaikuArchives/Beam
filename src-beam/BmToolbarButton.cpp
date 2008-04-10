@@ -221,7 +221,7 @@ void BmToolbarButton::Draw( BRect updateRect) {
 	if (mHighlighted && !Value() && IsEnabled()) {
 		// draw higlighting border
 		BRect rect(Bounds());
-		rect.InsetBy( 1, 1);
+//		rect.InsetBy( 1, 1);
 		BeginLineArray(4);
 		AddLine( rect.LeftBottom(), rect.LeftTop(), 
 					ui_color( B_UI_SHINE_COLOR));
