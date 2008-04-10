@@ -22,8 +22,8 @@ const float DIVW      = 6.0;
 const float DIVH      = 2.0;
 const float DIVLABELW = 5.0;
 const float DIVLABELH = 5.0;
-const float DIVICONW  = 10.0;
-const float DIVICONH  = 6.0;
+const float DIVICONW  = 8.0;
+const float DIVICONH  = 4.0;
 const float DIVLATCHW  = 10.0;
 const float DIVLATCHH  = 8.0;
 const float LATCHSZ  = 4.0;
@@ -221,7 +221,6 @@ void BmToolbarButton::Draw( BRect updateRect) {
 	if (mHighlighted && !Value() && IsEnabled()) {
 		// draw higlighting border
 		BRect rect(Bounds());
-//		rect.InsetBy( 1, 1);
 		BeginLineArray(4);
 		AddLine( rect.LeftBottom(), rect.LeftTop(), 
 					ui_color( B_UI_SHINE_COLOR));
@@ -437,7 +436,7 @@ void BmToolbarButton::MouseDown( BPoint point) {
 	msg->FindInt32( "buttons", &buttons);
 	if (IsEnabled() && mLatchRect.Width() > 0
 	&& (mLatchRect.Contains( point) || buttons == B_SECONDARY_MOUSE_BUTTON))
-		ShowMenu( BPoint( 0.0, mLatchRect.top+3+LATCHSZ));
+		ShowMenu( BPoint( 0.0, mLatchRect.top + 5 + LATCHSZ));
 	else
 		inherited::MouseDown( point); 
 }
@@ -514,23 +513,24 @@ void BmToolbarButton::CalcMaxSize( float& width, float& height,
 
 	if (showIcons && (labelMode == "Left" || labelMode == "Right")) {
 		// Icon + Label: horizontal
-		w = labelWidth+iconWidth+DIVW+DIVICONW + (needsLatch ? DIVLATCHW : 0);
-		h = MAX( labelHeight+2*DIVLABELH, iconHeight+2*DIVICONH);
+		w = labelWidth + iconWidth + DIVW + 2*DIVICONW 
+			+ (needsLatch ? DIVLATCHW : 0);
+		h = MAX( labelHeight + 2*DIVLABELH, iconHeight + 2*DIVICONH);
 	} else if (showIcons && (labelMode == "Top" || labelMode == "Bottom")) {
 		// Icon + Label: vertical
-		w = MAX( labelWidth+2*DIVLABELW + (needsLatch?DIVLATCHW:0),
-					iconWidth+2*DIVICONW);
-		h = labelHeight+iconHeight+DIVH+2*DIVICONH;
+		w = MAX( labelWidth + 2*DIVLABELW + (needsLatch ? DIVLATCHW : 0),
+					iconWidth + 2*DIVICONW);
+		h = labelHeight + iconHeight + DIVH + 2*DIVICONH;
 	} else if (!showIcons && labelMode != "Hide") {
 		// Label only
-		w = labelWidth+DIVLABELW + (needsLatch?DIVLATCHW:0);
-		h = labelHeight+2*DIVLABELH;
+		w = labelWidth + DIVLABELW + (needsLatch ? DIVLATCHW : 0);
+		h = labelHeight + 2*DIVLABELH;
 	} else /* if (showIcons && labelMode == "Hide") */ {
 		// Icon only
-		w = iconWidth+DIVICONW + (needsLatch?DIVLATCHW:0);
-		h = iconHeight+2*DIVICONH;
+		w = iconWidth + DIVICONW + (needsLatch?DIVLATCHW:0);
+		h = iconHeight + 2*DIVICONH;
 	}
-
+	
 	width  = MAX( width,  w);
 	height = MAX( height, h);
 }
