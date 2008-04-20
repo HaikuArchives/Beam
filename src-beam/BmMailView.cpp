@@ -790,6 +790,8 @@ void BmMailView::GetWrappedText( BmString& out, bool hardWrapIfNeeded) {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmMailView::ShowMail( BmMailRef* ref, bool async) {
+	if (mCurrMail && mCurrMail->MailRef() == ref)
+		return;
 	try {
 		StopJob();
 		mIncrSearchPos = 0;
@@ -820,6 +822,8 @@ void BmMailView::ShowMail( BmMailRef* ref, bool async) {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmMailView::ShowMail( BmMail* mail, bool async) {
+	if (mCurrMail == mail)
+		return;
 	try {
 		StopJob();
 		mIncrSearchPos = 0;
