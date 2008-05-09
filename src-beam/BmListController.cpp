@@ -154,11 +154,19 @@ BmListViewController::BmListViewController( BRect rect,
 	,	mPulsedScrollStep( 0)
 	,	mDragBetweenItems( false)
 {
+	BmString family = ThePrefs->GetString( "ListviewFont", "");
+	int size = ThePrefs->GetInt( "ListviewFontSize", 0);
+	BFont font(be_plain_font);
+	if (family.Length())
+		font.SetFamilyAndStyle( family.String(), NULL);
+	if (size > 0)
+		font.SetSize( size);
+	SetFont(&font);
 	float minHeight
 		= hierarchical
 			? ThePrefs->GetInt( "ListviewHierarchicalMinItemHeight", 16)
 			: ThePrefs->GetInt( "ListviewFlatMinItemHeight", 16);
-	SetMinItemHeight( MAX( TheResources->FontLineHeight(), minHeight));
+	SetMinItemHeight( MAX( TheResources->FontLineHeight(&font), minHeight));
 }
 
 /*------------------------------------------------------------------------------*\
@@ -374,7 +382,7 @@ BBitmap* BmListViewController::CreateDragImage(const vector<int>& cols,
 
 	BFont font;
 	GetFont( &font);
-	float lineHeight = MAX(TheResources->FontLineHeight( &font),20.0);
+	float lineHeight = MAX(TheResources->FontLineHeight( &font), 20.0);
 	float baselineOffset = TheResources->FontBaselineOffset( &font);
 	BRect dragRect( 0, 0, 2*h+width-1, MIN(selCount,max)*lineHeight-1+v);
 	BView* dummyView = new BView( dragRect, NULL, B_FOLLOW_NONE, 0);

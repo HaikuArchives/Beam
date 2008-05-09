@@ -36,7 +36,7 @@ const char* const BmPrefs::LOG_LVL_3 = "Log everything";
 const BmString BmPrefs::nListSeparator = ",";
 
 const BmString BmPrefs::nDefaultIconset = "/Icons/iconset 22 nuvola grey-red";
-const int16 BmPrefs::nPrefsVersion = 14;
+const int16 BmPrefs::nPrefsVersion = 15;
 
 /*------------------------------------------------------------------------------*\
 	CreateInstance()
@@ -309,6 +309,13 @@ BmPrefs::BmPrefs( BMessage* archive)
 		);
 		mShortcutsMsg.RemoveName("Reply");
 	}
+	if (version < 15) {
+		// changes introduced with version 15:
+		//
+		// add listview-font and -fontsize
+		mPrefsMsg.AddString( "ListviewFont", "");
+		mPrefsMsg.AddInt32( "ListviewFontSize", 0);
+	}
 	mSavedPrefsMsg = mPrefsMsg;
 	
 	SetLoglevels();
@@ -442,6 +449,8 @@ void BmPrefs::InitDefaults(BMessage& defaultsMsg) {
 	defaultsMsg.AddString( "ListFields", "Mail-Followup-To,Reply-To");
 	defaultsMsg.AddBool( "ListviewLikeTracker", false);
 	defaultsMsg.AddInt32( "ListviewFlatMinItemHeight", 16);
+	defaultsMsg.AddString( "ListviewFont", "");
+	defaultsMsg.AddInt32( "ListviewFontSize", 0);
 	defaultsMsg.AddInt32( "ListviewHierarchicalMinItemHeight", 16);
 	defaultsMsg.AddBool( "ListviewUsesStringSpacing", false);
 	defaultsMsg.AddBool( "LookForPeopleOnlyInPeopleFolder", true);
