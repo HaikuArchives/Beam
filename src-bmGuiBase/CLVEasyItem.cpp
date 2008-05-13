@@ -139,12 +139,11 @@ bool CLVEasyItem::ColumnFitsText(int column_index, const char* text) const
 		return false;
 	bool striped = ((ColumnListView*)fOwner)->StripedBackground();
 	float offs = striped ? 5.0 : 2.0;
-	BFont owner_font;
-	fOwner->GetFont(&owner_font);
-	float string_width 
-		= Bold() 
-			? bm_bold_font.StringWidth(text)
-			: owner_font.StringWidth(text);
+	BFont font;
+	fOwner->GetFont(&font);
+	if (Bold())
+		font.SetFace(B_BOLD_FACE);
+	float string_width = font.StringWidth(text);
 	return offs + string_width <= column->Width();
 }
 
@@ -193,14 +192,16 @@ void CLVEasyItem::SetupDrawingContext(CLVDrawingContext* drawingContext)
 		if (Bold()) {
 			ctx->needToRestoreOwnerFont = true;
 			fOwner->GetFont(&ctx->ownerFont);
-			fOwner->SetFont(&bm_bold_font);
-			ctx->textFont = bm_bold_font;
+			BFont boldfont(&ctx->ownerFont);
+			boldfont.SetFace(B_BOLD_FACE);
+			fOwner->SetFont(&boldfont);
+			ctx->textFont = boldfont;
 		} else {
 			ctx->needToRestoreOwnerFont = false;
 			fOwner->GetFont(&ctx->textFont);
 		}
 		font_height fontAttrs;
-		ctx->ownerFont.GetHeight( &fontAttrs);
+		ctx->textFont.GetHeight( &fontAttrs);
 		float fontHeight = ceil(fontAttrs.ascent) + ceil(fontAttrs.descent);
 		ctx->vOffs = ceil(fontAttrs.ascent) + (Height()-fontHeight)/2.0;
 	}
