@@ -146,20 +146,26 @@ bool BmMailFilter::StartJob() {
 void BmMailFilter::Execute( BmMail* mail) {
 	BmMsgContext msgContext;
 	msgContext.mail = mail;
+
+	BmRef< BmListModelItem> accItem 
+		= TheRecvAccountList->FindItemByKey( mail->AccountName());
+	BmRecvAccount* recvAcc = dynamic_cast< BmRecvAccount*>( accItem.Get());
+	if (!mail->Outbound() && recvAcc) {
+		// set default folder for this mail according to its receiving account
+		mail->SetDestFolderName(recvAcc->HomeFolder());
+	}
+
 	if (!mFilter) {
 		BM_LOG2( BM_LogFilter, 
 					BmString("Searching filter-chain for mail with Id <") 
 						<< mail->Name() << ">...");
 		// first we find the correct filter-chain for this mail...
-		BmRef< BmListModelItem> accItem;
 		BmRef< BmListModelItem> chainItem;
 		if (mail->Outbound()) {
 			// use the outbound chain:
 			chainItem = TheFilterChainList->FindItemByKey(BM_OutboundLabel);
 		} else {
 			// fetch the corresponding inbound-chain:
-			accItem = TheRecvAccountList->FindItemByKey( mail->AccountName());
-			BmRecvAccount* recvAcc = dynamic_cast< BmRecvAccount*>( accItem.Get());
 			if (recvAcc)
 				chainItem 
 					= TheFilterChainList->FindItemByKey( recvAcc->FilterChain());

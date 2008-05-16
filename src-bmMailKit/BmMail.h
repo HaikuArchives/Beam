@@ -200,6 +200,8 @@ public:
 													{ return mSignatureName; }
 	inline const BmString& IdentityName() const	
 													{ return mIdentityName; }
+	inline const BmString& DestFolderName() const	
+													{ return mDestFolderName; }
 
 	// setters:
 	inline void BumpRightMargin( int32 i)		

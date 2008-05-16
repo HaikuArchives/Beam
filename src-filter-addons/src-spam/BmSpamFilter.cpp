@@ -2027,8 +2027,10 @@ BmSpamFilter::Execute( BmMsgContext* msgContext, const BMessage* _jobSpecs)
 	} else if (!jobSpecifier.ICompare("LearnAsTofu")) {
 		BM_LOG2( BM_LogFilter, "Spam-Addon: starting LearnAsTofu job...");
 		result = nClassifier.LearnAsTofu( msgContext);
-		if (result && D.mActionFileLearnedTofu)
-			msgContext->SetString("FolderName", BmMailFolder::IN_FOLDER_NAME);
+		if (result && D.mActionFileLearnedTofu) {
+			const BmString& homeFolder = msgContext->mail->DestFolderName();
+			msgContext->SetString("FolderName", homeFolder.String());
+		}
 	} else if (!jobSpecifier.ICompare("Reset")) {
 		BM_LOG2( BM_LogFilter, "Spam-Addon: starting Reset job...");
 		result = nClassifier.Reset( msgContext);
