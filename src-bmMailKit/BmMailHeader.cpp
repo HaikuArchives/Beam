@@ -773,7 +773,7 @@ void BmMailHeader::RemoveAddrFieldVal(  BmString fieldName,
 	DetermineOriginator()
 	-	
 \*------------------------------------------------------------------------------*/
-BmString BmMailHeader::DetermineOriginator( bool bypassReplyTo) {
+BmAddressList BmMailHeader::DetermineOriginator( bool bypassReplyTo) {
 	BmAddressList addrList = mAddrMap[BM_FIELD_REPLY_TO];
 	if (bypassReplyTo || !addrList.InitOK()) {
 		addrList = mAddrMap[BM_FIELD_MAIL_REPLY_TO];
@@ -784,11 +784,7 @@ BmString BmMailHeader::DetermineOriginator( bool bypassReplyTo) {
 			}
 		}
 	}
-	if (!addrList.InitOK())
-		return "";
-	if (addrList.IsGroup())
-		return addrList.GroupName();
-	return addrList.AddrString();
+	return addrList;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -813,12 +809,12 @@ BmString BmMailHeader::DetermineSender() {
 	DetermineListAddress()
 		-	
 \*------------------------------------------------------------------------------*/
-BmString BmMailHeader::DetermineListAddress( bool bypassSanityTest) {
-	BmAddress listAddr;
+BmAddressList BmMailHeader::DetermineListAddress( bool bypassSanityTest) {
+	BmAddressList listAddr;
 	Regexx rx;
 	// first, we look into the Reply-To-field (if it exists), as this
 	// is required if a list actually redirects replies to another list!
-	listAddr = mAddrMap[BM_FIELD_REPLY_TO].FirstAddress();
+	listAddr = mAddrMap[BM_FIELD_REPLY_TO];
 	if (!listAddr.InitOK()) {
 		// now we look into the List-Post-field (if it exists)...
 		if (rx.exec( mHeaders[BM_FIELD_LIST_POST], "<\\s*mailto:([^?>]+)", 
@@ -852,34 +848,36 @@ BmString BmMailHeader::DetermineListAddress( bool bypassSanityTest) {
 		int32 numFields = listFields.size();
 		for( int i=0; i<numFields; ++i) {
 			if (!IsFieldEmpty( listFields[i])) {
-				listAddr = mAddrMap[listFields[i]].FirstAddress();
+				listAddr = mAddrMap[listFields[i]];
 				if (listAddr.InitOK())
 					break;
 			}
 		}
 	}
-	if (!bypassSanityTest) {
+	if (!bypassSanityTest && listAddr.AddrCount() == 1) {
+		BmAddress firstAddr = listAddr.FirstAddress();
 		// Sanity-check: the list-address *has* to be found somewhere within
 		// the (From, To, Cc, Bcc)-Headers. 
 		// If not, this mail is related to the list, but has not actually been
 		// delivered through this list. This probably means that this mail is
 		// a list-administrative mail (confirmation-requests and the like).
-		if (!(AddressFieldContainsAddrSpec( BM_FIELD_TO, listAddr.AddrSpec())
-		|| AddressFieldContainsAddrSpec( BM_FIELD_CC, listAddr.AddrSpec())
-		|| AddressFieldContainsAddrSpec( BM_FIELD_BCC, listAddr.AddrSpec())
-		|| AddressFieldContainsAddrSpec( BM_FIELD_FROM, listAddr.AddrSpec())
-		|| AddressFieldContainsAddrSpec( BM_FIELD_REPLY_TO, listAddr.AddrSpec())
-		|| AddressFieldContainsAddrSpec( BM_FIELD_RESENT_TO, listAddr.AddrSpec())
-		|| AddressFieldContainsAddrSpec( BM_FIELD_RESENT_CC, listAddr.AddrSpec())
-		|| AddressFieldContainsAddrSpec( BM_FIELD_RESENT_BCC, listAddr.AddrSpec())
+		if (!(AddressFieldContainsAddrSpec( BM_FIELD_TO, firstAddr.AddrSpec())
+		|| AddressFieldContainsAddrSpec( BM_FIELD_CC, firstAddr.AddrSpec())
+		|| AddressFieldContainsAddrSpec( BM_FIELD_BCC, firstAddr.AddrSpec())
+		|| AddressFieldContainsAddrSpec( BM_FIELD_FROM, firstAddr.AddrSpec())
+		|| AddressFieldContainsAddrSpec( BM_FIELD_REPLY_TO, firstAddr.AddrSpec())
+		|| AddressFieldContainsAddrSpec( BM_FIELD_RESENT_TO, firstAddr.AddrSpec())
+		|| AddressFieldContainsAddrSpec( BM_FIELD_RESENT_CC, firstAddr.AddrSpec())
+		|| AddressFieldContainsAddrSpec( BM_FIELD_RESENT_BCC, 
+													firstAddr.AddrSpec())
 		|| AddressFieldContainsAddrSpec( BM_FIELD_RESENT_FROM, 
-													listAddr.AddrSpec())))	{
+													firstAddr.AddrSpec())))	{
 			// We do not want to send any replies to administrative mails back to 
 			// the list, so we clear the List-Address:
-			return "";
+			listAddr.SetTo("");
 		}
 	}
-	return listAddr.AddrString();
+	return listAddr;
 }
 
 /*------------------------------------------------------------------------------*\

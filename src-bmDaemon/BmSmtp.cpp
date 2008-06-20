@@ -6,8 +6,6 @@
  *		Oliver Tappe <beam@hirschkaefer.de>
  */
 
-#include <vector>
-
 #include <ctype.h>
 #include <memory.h>
 #include <stdio.h>
@@ -653,18 +651,18 @@ void BmSmtp::StateSendMails() {
 		}
 
 		try {
-			BmRcptVect rcptVect;
+			BmRcptSet rcptSet;
 			if (ThePrefs->GetBool("SpecialHeaderForEachBcc")) {
-				if (HasStdRcpts( mail.Get(), rcptVect)) {
+				if (HasStdRcpts( mail.Get(), rcptSet)) {
 					Mail( mail.Get());
-					Rcpt( rcptVect);
+					Rcpt( rcptSet);
 					Data( mail.Get(), headerText);
 				}
 				BccRcpt( mail.Get(), true, headerText);
 			} else {
 				Mail( mail.Get());
-				if (HasStdRcpts( mail.Get(), rcptVect))
-					Rcpt( rcptVect);
+				if (HasStdRcpts( mail.Get(), rcptSet))
+					Rcpt( rcptSet);
 				BccRcpt( mail.Get(), false, headerText);
 				Data( mail.Get(), headerText);
 			}
@@ -724,7 +722,7 @@ void BmSmtp::Mail( BmMail* mail) {
 		-	returns true if at least one recipient has been set, false otherwise
 			(the latter case might occur if a mail only contains BCCs)
 \*------------------------------------------------------------------------------*/
-bool BmSmtp::HasStdRcpts( BmMail* mail, BmRcptVect& rcptVect) {
+bool BmSmtp::HasStdRcpts( BmMail* mail, BmRcptSet& rcptSet) {
 	BmAddrList::const_iterator iter;
 	const BmAddressList& toList 
 		= mail->IsRedirect() 
@@ -735,7 +733,7 @@ bool BmSmtp::HasStdRcpts( BmMail* mail, BmRcptVect& rcptVect) {
 			// empty group-addresses have no real address-specification 
 			// (like 'Undisclosed-Recipients: ;'), we filter those:
 			continue;
-		rcptVect.push_back( iter->AddrSpec());
+		rcptSet.insert( iter->AddrSpec());
 	}
 	const BmAddressList& ccList 
 		= mail->IsRedirect() 
@@ -746,18 +744,19 @@ bool BmSmtp::HasStdRcpts( BmMail* mail, BmRcptVect& rcptVect) {
 			// empty group-addresses have no real address-specification 
 			// (like 'Undisclosed-Recipients: ;'), we filter those:
 			continue;
-		rcptVect.push_back( iter->AddrSpec());
+		rcptSet.insert( iter->AddrSpec());
 	}
-	return rcptVect.size()>0;
+	return rcptSet.size() > 0;
 }
 
 /*------------------------------------------------------------------------------*\
-	bool Rcpt( rcptVect)
+	bool Rcpt( rcptSet)
 		-	announces all given recipients to the server
 \*------------------------------------------------------------------------------*/
-void BmSmtp::Rcpt( const BmRcptVect& rcptVect) {
-	for( uint32 i=0; i<rcptVect.size(); ++i) {
-		BmString cmd = BmString("RCPT to:<") << rcptVect[i] <<">";
+void BmSmtp::Rcpt( const BmRcptSet& rcptSet) {
+	BmRcptSet::const_iterator rcptIter;
+	for( rcptIter = rcptSet.begin(); rcptIter != rcptSet.end(); ++rcptIter) {
+		BmString cmd = BmString("RCPT to:<") << (*rcptIter) << ">";
 		SendCommand( cmd);
 		CheckForPositiveAnswer();
 	}

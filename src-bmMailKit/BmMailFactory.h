@@ -89,7 +89,7 @@ public:
 	void Produce();
 
 private:	
-	BmString DetermineReplyAddress( BmRef<BmMail>& mail, bool canonicalize);
+	BmString DetermineReplyAddress( BmRef<BmMail>& mail);
 	bool IsReplyToPersonOnly( BmRef<BmMail>& mail);
 
 	BmString CreateReplySubjectFor( const BmString& subject);

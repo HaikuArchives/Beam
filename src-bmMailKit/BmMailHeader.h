@@ -95,6 +95,8 @@ public:
 	~BmAddressList();
 
 	// native methods:
+	inline bool SetTo( BmString strippedFieldVal) 
+													{ return Set(strippedFieldVal); }
 	bool Set( BmString strippedFieldVal);
 	bool Add( BmString strippedFieldVal);
 	void Remove( BmString singleAddress);
@@ -191,8 +193,8 @@ public:
 	//
 	BmString DetermineSender();
 	BmString DetermineReceivingAddrFor( BmIdentity* ident);
-	BmString DetermineOriginator( bool bypassReplyTo=false);
-	BmString DetermineListAddress( bool bypassSanityTest=false);
+	BmAddressList DetermineOriginator( bool bypassReplyTo=false);
+	BmAddressList DetermineListAddress( bool bypassSanityTest=false);
 	//
 	void PlugDefaultHeader( const BmMailHeader* defaultHeader);
 	void UnplugDefaultHeader( const BmMailHeader* defaultHeader);

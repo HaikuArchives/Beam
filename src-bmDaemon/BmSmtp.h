@@ -10,6 +10,8 @@
 #define _BmSmtp_h
 
 #include <memory>
+#include <set>
+#include <vector>
 
 #include <Message.h>
 
@@ -57,7 +59,7 @@ protected:
 class IMPEXPBMDAEMON BmSmtp : public BmNetJobModel {
 	typedef BmNetJobModel inherited;
 	
-	typedef vector< BmString> BmRcptVect;
+	typedef set< BmString> BmRcptSet;
 	typedef vector< entry_ref> BmQueuedRefVect;
 	
 public:
@@ -137,8 +139,8 @@ private:
 
 	void Quit( bool WaitForAnswer=false);
 	void Mail( BmMail *mail);
-	bool HasStdRcpts( BmMail *mail, BmRcptVect& rcptVect);
-	void Rcpt( const BmRcptVect& rcptVect);
+	bool HasStdRcpts( BmMail *mail, BmRcptSet& rcptSet);
+	void Rcpt( const BmRcptSet& rcptSet);
 	void BccRcpt( BmMail *mail, bool sendDataForEachBcc, 
 					  const BmString& headerText);
 	void Data( BmMail *mail, const BmString& headerText, BmString forBcc="");

@@ -466,9 +466,8 @@ void BmReplyFactory::Produce()
 				if (mail->InitCheck() != B_OK)
 					// couldn't read this mail, ignore it:
 					continue;
-				BmString replyAddr 
-					= DetermineReplyAddress( mail, true);
-				BmString replyAddrSpec = BmAddress( replyAddr).AddrSpec(); 
+				BmString replyAddr = DetermineReplyAddress( mail);
+				BmString replyAddrSpec = BmAddress( replyAddr).AddrSpec();
 				BmString index = mJoinIntoOne 
 											? BmString("single") 
 											: replyAddrSpec;
@@ -541,18 +540,17 @@ void BmReplyFactory::Produce()
 	DetermineReplyAddress()
 	-	
 \*------------------------------------------------------------------------------*/
-BmString BmReplyFactory::DetermineReplyAddress( BmRef<BmMail>& mail, 
-																bool canonicalize)
+BmString BmReplyFactory::DetermineReplyAddress( BmRef<BmMail>& mail)
 {
 	// fill address information, depending on reply-mode:
-	BmString replyAddr;
+	BmAddressList replyAddr;
 	BmRef<BmMailHeader> header = mail->Header();
 	if (!header)
 		return "";
 	if (mail->Outbound()) {
 		// if replying to outbound messages, we re-use the original recipients,
 		// not ourselves:
-		replyAddr = header->GetAddressList( BM_FIELD_TO).AddrString();
+		replyAddr = header->GetAddressList( BM_FIELD_TO);
 	} else if (mReplyMode == BM_REPLY_MODE_SMART) {
 		// smart (*cough*) mode: If the mail has come from a list, we react
 		// according to user prefs (reply-to-list or reply-to-originator).
@@ -562,7 +560,7 @@ BmString BmReplyFactory::DetermineReplyAddress( BmRef<BmMail>& mail,
 							? header->DetermineListAddress()
 							: header->DetermineOriginator();
 		}
-		if (!replyAddr.Length()) {
+		if (!replyAddr.AddrCount()) {
 			replyAddr = header->DetermineOriginator();
 		}
 	} else if (mReplyMode == BM_REPLY_MODE_LIST) {
@@ -579,10 +577,7 @@ BmString BmReplyFactory::DetermineReplyAddress( BmRef<BmMail>& mail,
 		// we now include the Originator (plain and standard way):
 		replyAddr = header->DetermineOriginator();
 	}
-	if (canonicalize)
-		return BmAddressList( replyAddr).AddrString();
-	else
-		return replyAddr;
+	return replyAddr.AddrString();
 }
 
 /*------------------------------------------------------------------------------*\
@@ -647,8 +642,7 @@ BmRef<BmMail> BmReplyFactory::CreateReplyTo( BmRef<BmMail>& oldMail,
 		newMail->SetFieldVal( BM_FIELD_REFERENCES, oldRefs + " " + messageID);
 	else
 		newMail->SetFieldVal( BM_FIELD_REFERENCES, messageID);
-	BmString newTo 
-		= DetermineReplyAddress( oldMail, false);
+	BmString newTo = DetermineReplyAddress( oldMail);
 	newMail->SetFieldVal( BM_FIELD_TO, newTo);
 
 	BmString receivingAddr;
@@ -656,6 +650,10 @@ BmRef<BmMail> BmReplyFactory::CreateReplyTo( BmRef<BmMail>& oldMail,
 	oldMail->DetermineRecvAddrAndIdentity( receivingAddr, ident);
 	newMail->SetupFromIdentityAndRecvAddr( ident.Get(), receivingAddr);
 
+	const BmAddressList& toAddrs 
+		= oldMail->Header()->GetAddressList(BM_FIELD_TO);
+	const BmAddressList& ccAddrs 
+		= oldMail->Header()->GetAddressList(BM_FIELD_CC);
 	if (mReplyMode == BM_REPLY_MODE_SMART) {
 		// in DWIM-mode, we determine if it makes sense to do a reply-to-all 
 		// (which is the case if there are more than one recipients of the
@@ -664,25 +662,30 @@ BmRef<BmMail> BmReplyFactory::CreateReplyTo( BmRef<BmMail>& oldMail,
 		// this makes it possible to include CC'ed addresses in the reply
 		// (which is very helpful if those are externals, i.e. not list
 		// subscribers).
-		BmAddressList toAddrs = oldMail->Header()->GetAddressList(BM_FIELD_TO);
-		BmAddressList ccAddrs = oldMail->Header()->GetAddressList(BM_FIELD_CC);
 		if (toAddrs.size() + ccAddrs.size() > 1)
 			mReplyMode = BM_REPLY_MODE_ALL;
 	}
 
 	// if we are replying to all, we may need to include more addresses:
 	if (mReplyMode == BM_REPLY_MODE_ALL) {
-		BmString newCc = oldMail->GetFieldVal( BM_FIELD_CC);
-		if (newCc != newTo)
-			// add address only if not already done so
-			newMail->SetFieldVal( BM_FIELD_CC, newCc);
-		newMail->Header()->RemoveAddrFieldVal( BM_FIELD_CC, receivingAddr);
-		BmString additionalCc = oldMail->GetFieldVal( BM_FIELD_TO);
-		if (additionalCc != newTo)
-			// add address only if not already done so
-			newMail->Header()->AddFieldVal( BM_FIELD_CC, additionalCc);
+		BmAddrList::const_iterator addrIter;
+		for( addrIter = ccAddrs.begin(); addrIter != ccAddrs.end(); ++addrIter) {
+			// add address only if not already contained in To or Cc
+			const BmString& addr = addrIter->AddrString();
+			if (!newMail->Header()->AddressFieldContainsAddress(BM_FIELD_TO, addr)
+			&& !newMail->Header()->AddressFieldContainsAddress(BM_FIELD_CC, addr))
+				newMail->Header()->AddFieldVal( BM_FIELD_CC, addr);
+		}
+		for( addrIter = toAddrs.begin(); addrIter != toAddrs.end(); ++addrIter) {
+			// add address only if not already contained in To or Cc
+			const BmString& addr = addrIter->AddrString();
+			if (!newMail->Header()->AddressFieldContainsAddress(BM_FIELD_TO, addr)
+			&& !newMail->Header()->AddressFieldContainsAddress(BM_FIELD_CC, addr))
+				newMail->Header()->AddFieldVal( BM_FIELD_CC, addr);
+		}
 		// remove the receiving address from list of recipients, since we
 		// do not want to send ourselves a reply:
+		newMail->Header()->RemoveAddrFieldVal( BM_FIELD_TO, receivingAddr);
 		newMail->Header()->RemoveAddrFieldVal( BM_FIELD_CC, receivingAddr);
 	}
 	// massage subject, if neccessary:
