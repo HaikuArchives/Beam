@@ -120,6 +120,10 @@ float BmBodyPartView::nColWidths[10] = {10,20,20,20,20,20,20,20,20,0};
 
 const char* const BmBodyPartView::MSG_SHOWALL = "bm:showall";
 
+enum {
+	BM_EXECUTE_COPY_TARGET = 'bmec'
+};
+
 /*------------------------------------------------------------------------------*\
 	()
 		-	
@@ -596,15 +600,14 @@ void BmBodyPartView::MessageReceived( BMessage* msg) {
 				}
 				break;
 			}
-			case B_TRASH_TARGET:
-			case B_COPY_TARGET: {
+			case B_TRASH_TARGET: {
 				if (msg->IsReply()) {
 					const BMessage* dragMsg = msg->Previous();
 					BmRef<BmDataModel> modelRef( DataModel());
 					BmBodyPartList* bodyPartList 
 						= dynamic_cast<BmBodyPartList*>( modelRef.Get());
 					if (!dragMsg || !bodyPartList
-					|| BmDragId!=dragMsg->FindString("be:originator"))
+					|| BmDragId != dragMsg->FindString("be:originator"))
 						break;
 					int32 index;
 					for( int32 i=0; (index = CurrentSelection(i)) >= 0; ++i) {
@@ -613,34 +616,138 @@ void BmBodyPartView::MessageReceived( BMessage* msg) {
 						BmBodyPart* bodyPart 
 							= dynamic_cast<BmBodyPart*>( bodyPartItem->ModelItem());
 						if (bodyPart) {
-							if (msg->what == B_COPY_TARGET) {
-								entry_ref dref;
-								const char* name;
-								if (msg->FindRef( "directory", &dref) != B_OK
-								||	dragMsg->FindString( "bm:name", i, &name) != B_OK)
-									return;
-								BDirectory dir( &dref);
-								if (bodyPart->MimeType().ICompare("text/x-email") == 0
-								|| bodyPart->MimeType().ICompare( "message/rfc822") == 0) {
-									// remove entry created by Tracker...
-									BEntry trackEntry(&dir, name);
-									trackEntry.Remove();
-									// ... and store mail with all attributes:
-									BmMail mail(bodyPart->DecodedData(), "");
-									mail.StoreIntoFile(&dir, name, BM_MAIL_STATUS_NEW, 
-															 real_time_clock_usecs());
-								} else {
-									// store other type of attachment:
-									BFile file( &dir, name, B_WRITE_ONLY | B_CREATE_FILE);
-									if (file.InitCheck() == B_OK)
-										bodyPart->WriteToFile( file);
-								}
-							} else if (msg->what == B_TRASH_TARGET) {
-								bodyPartList->RemoveItemFromList( bodyPart);
-								if (!mEditable)
-									bodyPartList->Mail()->ConstructAndStore();
-							}
+							bodyPartList->RemoveItemFromList( bodyPart);
+							if (!mEditable)
+								bodyPartList->Mail()->ConstructAndStore();
 						}
+					}
+				}
+				break;
+			}
+			case B_COPY_TARGET: {
+				if (msg->IsReply()) {
+					const BMessage* dragMsg = msg->Previous();
+					BmRef<BmDataModel> modelRef( DataModel());
+					BmBodyPartList* bodyPartList 
+						= dynamic_cast<BmBodyPartList*>( modelRef.Get());
+					if (!dragMsg || !bodyPartList
+					|| BmDragId != dragMsg->FindString("be:originator"))
+						break;
+
+					// we collect info about the files to be copied, taking 
+					// additional note of whether or not we need to ask the user if 
+					// any existing files shall be clobbered
+					entry_ref dref;
+					const char* trackerName;
+					if (msg->FindRef( "directory", &dref) != B_OK
+					|| msg->FindString( "name", &trackerName) != B_OK)
+						return;
+					BEntry entry;
+					BDirectory dir( &dref);
+					BMessage* infoMsg = new BMessage(BM_EXECUTE_COPY_TARGET);
+					infoMsg->AddRef("directory", &dref);
+					infoMsg->AddString("trackername", trackerName);
+					int fileExistsCount = 0;
+					int32 index;
+					for( int32 i=0; (index = CurrentSelection(i)) >= 0; ++i) {
+						BmBodyPartItem* bodyPartItem 
+							= dynamic_cast<BmBodyPartItem*>( FullListItemAt( index));
+						BmBodyPart* bodyPart 
+							= dynamic_cast<BmBodyPart*>( bodyPartItem->ModelItem());
+						if (!bodyPart)
+							return;
+						const char* name;
+						if (dragMsg->FindString( "bm:name", i, &name) != B_OK)
+							return;
+						if (i == 0) {
+							// for first item, Tracker will have created a different
+							// name for the file if it already exists, so we compare
+							// the names in order to find out if the file existed
+							// before the drag
+							if (BmString(trackerName).Compare(name) != 0)
+								fileExistsCount++;
+						} else {
+							// Tracker only creates one entry, so we simply check all
+							// the other files for existence
+							if (entry.SetTo(&dir, name) == B_OK && entry.Exists())
+								fileExistsCount++;
+						}
+						infoMsg->AddString("name", name);
+						infoMsg->AddString("bpkey", bodyPart->Key().String());
+					}
+					if (fileExistsCount) {
+						BAlert* alert = new BAlert( 
+							"File Exists",
+							"At least one of the files you have dragged already exists"
+							   " in the target directory.\n"
+								"\nWould you like to overwrite any existing files?",
+							"Cancel", "Yes, Overwrite", NULL, B_WIDTH_AS_USUAL,
+							B_WARNING_ALERT
+						);
+						alert->SetShortcut( 0, B_ESCAPE);
+						alert->Go( new BInvoker( infoMsg, BMessenger( this)));
+						
+					} else {
+						BMessenger(this).SendMessage(infoMsg);
+						delete infoMsg;
+					}
+				}
+				break;
+			}
+			case BM_EXECUTE_COPY_TARGET: {
+				BmRef<BmDataModel> modelRef( DataModel());
+				BmBodyPartList* bodyPartList 
+					= dynamic_cast<BmBodyPartList*>( modelRef.Get());
+				if (!bodyPartList)
+					return;
+				entry_ref dref;
+				const char* trackerName;
+				if (msg->FindRef( "directory", &dref) != B_OK
+				|| msg->FindString( "trackername", &trackerName) != B_OK)
+					return;
+				BDirectory dir( &dref);
+
+				// remove entry created by Tracker...
+				BEntry entry(&dir, trackerName);
+				entry.Remove();
+				const char* name;
+				const char* bpkey;
+
+				// ... check if there's anything else to do ...
+				int32 buttonPressed = 1;
+				msg->FindInt32( "which", &buttonPressed);
+				if (buttonPressed == 0)
+					return;	// user cancelled
+
+				// ... and write all files into target directory
+				for( int32 i=0; msg->FindString("name", i, &name) == B_OK; ++i) {
+					if (msg->FindString("bpkey", i, &bpkey) != B_OK)
+						continue;
+					BmRef<BmListModelItem> listItem 
+						= bodyPartList->FindItemByKey(bpkey);
+					BmBodyPart* bodyPart 
+						= dynamic_cast<BmBodyPart*>( listItem.Get());
+					if (!bodyPart)
+						return;
+					if (bodyPart->MimeType().ICompare("text/x-email") == 0
+					|| bodyPart->MimeType().ICompare( "message/rfc822") == 0) {
+						// ... and store mail with all attributes:
+						BmMail mail(bodyPart->DecodedData(), "");
+						mail.StoreIntoFile(&dir, name, BM_MAIL_STATUS_NEW, 
+												 real_time_clock_usecs());
+					} else {
+						// store other type of attachment:
+						BFile file( &dir, name, B_WRITE_ONLY | B_CREATE_FILE);
+						if (file.InitCheck() == B_OK)
+							bodyPart->WriteToFile( file);
+					}
+
+					// finally set mimetype as a convenience
+					if (entry.SetTo( &dir, name) == B_OK) {
+						BPath path;
+						entry.GetPath( &path);
+						if (path.InitCheck() == B_OK && path.Path())
+							update_mime_info( path.Path(), false, false, false);
 					}
 				}
 				break;
