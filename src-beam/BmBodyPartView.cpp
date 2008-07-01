@@ -646,7 +646,6 @@ void BmBodyPartView::MessageReceived( BMessage* msg) {
 					BDirectory dir( &dref);
 					BMessage* infoMsg = new BMessage(BM_EXECUTE_COPY_TARGET);
 					infoMsg->AddRef("directory", &dref);
-					infoMsg->AddString("trackername", trackerName);
 					int fileExistsCount = 0;
 					int32 index;
 					for( int32 i=0; (index = CurrentSelection(i)) >= 0; ++i) {
@@ -664,8 +663,10 @@ void BmBodyPartView::MessageReceived( BMessage* msg) {
 							// name for the file if it already exists, so we compare
 							// the names in order to find out if the file existed
 							// before the drag
-							if (BmString(trackerName).Compare(name) != 0)
+							if (BmString(trackerName).Compare(name) != 0) {
+								infoMsg->AddString("trackertempname", trackerName);
 								fileExistsCount++;
+							}
 						} else {
 							// Tracker only creates one entry, so we simply check all
 							// the other files for existence
@@ -688,6 +689,7 @@ void BmBodyPartView::MessageReceived( BMessage* msg) {
 						alert->Go( new BInvoker( infoMsg, BMessenger( this)));
 						
 					} else {
+						infoMsg->AddInt32( "which", 1);
 						BMessenger(this).SendMessage(infoMsg);
 						delete infoMsg;
 					}
@@ -701,18 +703,17 @@ void BmBodyPartView::MessageReceived( BMessage* msg) {
 				if (!bodyPartList)
 					return;
 				entry_ref dref;
-				const char* trackerName;
-				if (msg->FindRef( "directory", &dref) != B_OK
-				|| msg->FindString( "trackername", &trackerName) != B_OK)
+				if (msg->FindRef( "directory", &dref) != B_OK)
 					return;
 				BDirectory dir( &dref);
+				BEntry entry;
 
-				// remove entry created by Tracker...
-				BEntry entry(&dir, trackerName);
-				entry.Remove();
-				const char* name;
-				const char* bpkey;
-
+				const char* trackerName;
+				if (msg->FindString( "trackertempname", &trackerName) == B_OK) {
+					// remove temporary entry created by Tracker...
+					if (entry.SetTo(&dir, trackerName) == B_OK)
+						entry.Remove();
+				}
 				// ... check if there's anything else to do ...
 				int32 buttonPressed = 1;
 				msg->FindInt32( "which", &buttonPressed);
@@ -720,6 +721,8 @@ void BmBodyPartView::MessageReceived( BMessage* msg) {
 					return;	// user cancelled
 
 				// ... and write all files into target directory
+				const char* name;
+				const char* bpkey;
 				for( int32 i=0; msg->FindString("name", i, &name) == B_OK; ++i) {
 					if (msg->FindString("bpkey", i, &bpkey) != B_OK)
 						continue;
