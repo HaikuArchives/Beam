@@ -1077,16 +1077,19 @@ void BmMailEditWin::HandleFromSet( const BmString& from) {
 	BmString fromAddr = ident->GetFromAddress();
 	mail->SetupFromIdentityAndRecvAddr( ident, fromAddr);
 	mMailView->SetSignatureByName( mail->SignatureName());
-	SetFieldsFromMail( mail.Get(), true);
+	SetFieldsFromMail( mail.Get(), ident);
 }
 
 /*------------------------------------------------------------------------------*\
 	SetFieldFromMail()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmMailEditWin::SetFieldsFromMail( BmMail* mail, bool onlyIdentityFields) 
+void BmMailEditWin::SetFieldsFromMail( BmMail* mail, BmIdentity* identity)
 {
 	if (mail) {
+		bool onlyIdentityFields = identity ? true : false;
+			// given identity indicates that only that has changed, we do not
+			// change any fields that do not depend on identity
 		BmString fromAddrSpec;
 		if (mail->IsRedirect()) {
 			mBccControl->SetTextSilently( 
@@ -1102,7 +1105,7 @@ void BmMailEditWin::SetFieldsFromMail( BmMail* mail, bool onlyIdentityFields)
 								mail->GetFieldVal( BM_FIELD_RESENT_TO).String());
 			fromAddrSpec 
 				= mail->Header()->GetAddressList( BM_FIELD_RESENT_FROM)
-																.FirstAddress().AddrSpec();
+					.FirstAddress().AddrSpec();
 		} else {
 			mBccControl->SetTextSilently( 
 							mail->GetFieldVal( BM_FIELD_BCC).String());
@@ -1119,11 +1122,12 @@ void BmMailEditWin::SetFieldsFromMail( BmMail* mail, bool onlyIdentityFields)
 							mail->GetFieldVal( BM_FIELD_REPLY_TO).String());
 			fromAddrSpec 
 				= mail->Header()->GetAddressList( BM_FIELD_FROM)
-																.FirstAddress().AddrSpec();
+					.FirstAddress().AddrSpec();
 		}
 		if (!onlyIdentityFields) {
 			mSubjectControl->SetTextSilently( 
-								mail->GetFieldVal( BM_FIELD_SUBJECT).String());
+				mail->GetFieldVal( BM_FIELD_SUBJECT).String()
+			);
 			SetTitle((BmString("Edit Mail: ")+mSubjectControl->Text()).String());
 			// mark corresponding charset:
 			BmString charset = mail->DefaultCharset();
@@ -1138,7 +1142,9 @@ void BmMailEditWin::SetFieldsFromMail( BmMail* mail, bool onlyIdentityFields)
 
 		// mark corresponding identity:
 		BmRef<BmIdentity> identRef 
-			= TheIdentityList->FindIdentityForAddrSpec( fromAddrSpec);
+			= identity 
+				? identity
+				: TheIdentityList->FindIdentityForAddrSpec( fromAddrSpec);
 		if (identRef)
 			mFromControl->Menu()->MarkItem( identRef->Key().String());
 		// mark corresponding SMTP-account (if any):

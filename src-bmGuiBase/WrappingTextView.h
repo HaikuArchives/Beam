@@ -33,7 +33,7 @@
 
 #include "BmString.h"
 
-#ifndef B_BEOS_VERSION_DANO
+#if !defined(B_BEOS_VERSION_DANO) && !defined(__HAIKU__)
 // fake system-message for redo:
 enum {
 	B_REDO = 'REDO'

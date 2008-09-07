@@ -5,7 +5,11 @@
  * Authors:
  *		Oliver Tappe <beam@hirschkaefer.de>
  */
-#include <socket.h>
+#ifdef BEAM_FOR_HAIKU
+# include <sys/socket.h>
+#else
+# include <socket.h>
+#endif
 #ifdef BEAM_FOR_BONE
 # include <netinet/in.h>
 #endif

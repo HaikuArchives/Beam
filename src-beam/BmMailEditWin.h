@@ -43,6 +43,7 @@ enum {
 class MMenuBar;
 
 class BmCheckControl;
+class BmIdentity;
 class BmMail;
 class BmMailView;
 class BmMailRef;
@@ -119,7 +120,7 @@ private:
 
 	bool CreateMailFromFields( bool hardWrapIfNeeded=true);
 	bool SaveMail( bool hardWrapIfNeeded=true);
-	void SetFieldsFromMail( BmMail* mail, bool onlyIdentityFields = false);
+	void SetFieldsFromMail( BmMail* mail, BmIdentity* identity = NULL);
 
 	void SendMail( bool sendNow);
 	bool EditHeaders();

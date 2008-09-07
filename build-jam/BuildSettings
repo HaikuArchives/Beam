@@ -15,6 +15,14 @@ PLATFORM = r5 ;
 LIBNETAPI = netapi ;	# default, may be changed to bnetapi (see below)
 
 if $(OSPLAT) = X86 {
+	# check for Haiku...
+	local haveHaiku = [ GLOB /boot/develop/headers/posix/arpa : inet.h ] ;
+	if $(haveHaiku)	{
+		CCFLAGS += -DBEAM_FOR_BONE -DBEAM_FOR_HAIKU ;
+		C++FLAGS += -DBEAM_FOR_BONE -DBEAM_FOR_HAIKU ;
+		LINKLIBS += -lnetwork ;
+		PLATFORM = haiku ;
+	}
 	# check for BONE...
 	local haveBone = [ GLOB /boot/develop/headers/be/bone/arpa : inet.h ] ;
 	if $(haveBone)	{

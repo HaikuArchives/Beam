@@ -22,6 +22,7 @@
 #include "BmRefManager.h"
 #include "BmStoredActionManager.h"
 
+class BDataIO;
 class BmController;
 
 /*------------------------------------------------------------------------------*\

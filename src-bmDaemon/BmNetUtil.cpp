@@ -6,10 +6,14 @@
  *		Oliver Tappe <beam@hirschkaefer.de>
  */
 
-#include <socket.h>
+#ifdef BEAM_FOR_HAIKU
+# include <sys/socket.h>
+#else
+# include <socket.h>
+#endif
 #include <netdb.h>
 #include <unistd.h>
-#ifdef BEAM_FOR_BONE
+#if defined(BEAM_FOR_BONE) && !defined(BEAM_FOR_HAIKU)
 # include <bone_serial_ppp.h>
 # define GETHOSTNAME_OK 0
 #else
@@ -44,7 +48,7 @@ BmString OwnDomain( BmString fqdn) {
 \*------------------------------------------------------------------------------*/
 bool IsPPPRunning() {
 	bool running = false;
-#ifdef BEAM_FOR_BONE
+#if defined(BEAM_FOR_BONE) && !defined(BEAM_FOR_HAIKU)
 	// the following has ruthlessly been ripped from the 
 	// MailDaemonReplacement (MDR):
 	int s = socket(AF_INET, SOCK_DGRAM, 0);

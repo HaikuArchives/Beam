@@ -11,6 +11,7 @@
 
 #include <set>
 
+#include <Locker.h>
 #include <MenuItem.h>
 
 #include "BmString.h"

@@ -170,8 +170,7 @@ bool BmIdentity::HandlesAddrSpec( BmString addrSpec, bool needExactMatch) const 
 	if (!recvAcc || !addrSpec.Length())
 		return false;
 	Regexx rx;
-	if (addrSpec==GetFromAddress() || addrSpec==mMailAddr 
-	|| addrSpec==recvAcc->Username())
+	if (addrSpec==GetFromAddress() || addrSpec==mMailAddr)
 		return true;
 	int32 atPos = addrSpec.FindFirst("@");
 	if (atPos != B_ERROR) {

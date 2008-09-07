@@ -12,7 +12,7 @@
 #include <deque>
 #include <map>
 
-#ifdef B_BEOS_VERSION_DANO
+#if defined(B_BEOS_VERSION_DANO) || defined(__HAIKU__)
 	class BFont;
 	class BMessage;
 	class BMessageRunner;
