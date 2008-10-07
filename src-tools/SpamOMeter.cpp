@@ -454,7 +454,8 @@ main( int argc, char** argv)
 	{
 		BmRef<BmFilter> anySpamFilter = TheFilterList->LearnAsSpamFilter();
 		// remove data-files (start with empty database):
-		spamAddon = anySpamFilter->Addon();
+		if (anySpamFilter)
+			spamAddon = anySpamFilter->Addon();
 		if (!spamAddon) {
 			fprintf(stderr, "could not access spam-filter-addon (not loaded)!\n");
 			exitVal = "failed";

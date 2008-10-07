@@ -49,6 +49,7 @@ actions Distro
 	cp -a $(TOP)/Changes.txt $(DISTRO_DIR)/ ;
 	cp -a $(TOP)/Readme.txt $(DISTRO_DIR)/ ;
 	cp -a $(TOP)/GnuGeneralPublicLicense.txt $(DISTRO_DIR)/ ;
+	ln -sfn ../add-ons $(DISTRO_DIR)/tools/ ;
 	ln -sfn ../lib $(DISTRO_DIR)/tools/ ;
 	mimeset $(DISTRO_DIR) ;
 }
