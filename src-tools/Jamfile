@@ -5,7 +5,7 @@ SubDirHdrs $(TOP) src-bmBase ;
 SubDirHdrs $(TOP) src-bmRegexx ;
 SubDirHdrs $(TOP) src-bmMailKit ;
 
-SubDirSysHdrs /boot/home/config/include ;
+SubDirSysHdrs $(COMMON_FOLDER)/include ;
 # </pe-inc>
 
 # <pe-src>

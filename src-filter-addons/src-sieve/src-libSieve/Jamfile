@@ -11,7 +11,7 @@ if $(OSPLAT) = X86 {
 	CCFLAGS += -proto lax -w nounwanted -w nounused ;
 }
 
-SubDirSysHdrs /boot/home/config/include ;
+SubDirSysHdrs $(COMMON_FOLDER)/include ;
 
 # <pe-src>
 StaticLibrary libsieve.a

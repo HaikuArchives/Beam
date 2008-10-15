@@ -11,6 +11,7 @@ if $(OSPLAT) = PPC {
 }
 
 PLATFORM = r5 ;
+COMMON_FOLDER = /boot/home/config ;
 
 LIBNETAPI = netapi ;	# default, may be changed to bnetapi (see below)
 
@@ -22,6 +23,7 @@ if $(OSPLAT) = X86 {
 		C++FLAGS += -DBEAM_FOR_BONE -DBEAM_FOR_HAIKU ;
 		LINKLIBS += -lnetwork ;
 		PLATFORM = haiku ;
+		COMMON_FOLDER = /boot/common ;
 	}
 	# check for BONE...
 	local haveBone = [ GLOB /boot/develop/headers/be/bone/arpa : inet.h ] ;

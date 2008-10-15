@@ -11,7 +11,7 @@ SubInclude TOP src-filter-addons ;
 SubInclude TOP src-tools ;
 
 # build tests only if we have cppunit:
-local haveCppunit = [ GLOB /boot/home/config/include/cppunit/cppunit : Test.h ] ;
+local haveCppunit = [ GLOB $(COMMON_FOLDER)/include/cppunit/cppunit : Test.h ] ;
 if $(BUILD_TESTS) != 0 && $(haveCppunit) {
 	SubInclude TOP src-tests ;
 }

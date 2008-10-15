@@ -4,10 +4,10 @@ SubDir TOP src-bmMailKit ;
 SubDirHdrs $(TOP) src-bmBase ;
 SubDirHdrs $(TOP) src-bmRegexx ;
 
-SubDirSysHdrs /boot/home/config/include ;
+SubDirSysHdrs $(COMMON_FOLDER)/include ;
 # </pe-inc>
 
-LINKFLAGS += -L/boot/home/config/lib ;
+LINKFLAGS += -L$(COMMON_FOLDER)/lib ;
 
 DEFINES += BM_BUILDING_BMMAILKIT ;
 

@@ -4,8 +4,8 @@ SubDir TOP src-bmRegexx ;
 SubDirHdrs $(TOP) src-bmBase ;
 # </pe-inc>
 
-SubDirSysHdrs /boot/home/config/include ;
-LINKFLAGS += -L/boot/home/config/lib ;
+SubDirSysHdrs $(COMMON_FOLDER)/include ;
+LINKFLAGS += -L$(COMMON_FOLDER)/lib ;
 
 DEFINES += BM_BUILDING_BMREGEXX ;
 

@@ -11,12 +11,12 @@ SubDirHdrs $(TOP) src-deskbarItem ;
 SubDirHdrs $(TOP) src-filter-addons src-sieve ;
 SubDirHdrs $(TOP) src-filter-addons src-sieve src-libSieve ;
 
-SubDirSysHdrs /boot/home/config/include/cppunit ;
-SubDirSysHdrs /boot/home/config/include ;
-SubDirSysHdrs /boot/home/config/include/liblayout ;
+SubDirSysHdrs $(COMMON_FOLDER)/include/cppunit ;
+SubDirSysHdrs $(COMMON_FOLDER)/include ;
+SubDirSysHdrs $(COMMON_FOLDER)/include/liblayout ;
 # </pe-inc>
 
-LINKFLAGS += -L/boot/home/config/lib ;
+LINKFLAGS += -L$(COMMON_FOLDER)/lib ;
 
 if $(OSPLAT) = PPC {
 	LINKFLAGS += -init _init_routine_ 

@@ -4,11 +4,11 @@ SubDir TOP src-bmGuiBase ;
 SubDirHdrs $(TOP) src-bmBase ;
 SubDirHdrs $(TOP) src-bmRegexx ;
 
-SubDirSysHdrs /boot/home/config/include ;
-SubDirSysHdrs /boot/home/config/include/liblayout ;
+SubDirSysHdrs $(COMMON_FOLDER)/include ;
+SubDirSysHdrs $(COMMON_FOLDER)/include/liblayout ;
 # </pe-inc>
 
-LINKFLAGS += -L/boot/home/config/lib ;
+LINKFLAGS += -L$(COMMON_FOLDER)/lib ;
 
 DEFINES += BM_BUILDING_BMGUIBASE ;
 

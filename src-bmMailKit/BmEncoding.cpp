@@ -656,8 +656,8 @@ void BmUtf8Decoder::Filter( const char* srcBuf, uint32& srcLen,
 	size_t inBytesLeft = srcLen;
 	char* outBuf = destBuf;
 	size_t outBytesLeft = destLen;
-	size_t irrevCount = iconv( mIconvDescr, &inBuf, &inBytesLeft, 
-										&outBuf, &outBytesLeft);
+	size_t irrevCount = iconv( mIconvDescr, const_cast<char**>(&inBuf), 
+										&inBytesLeft, &outBuf, &outBytesLeft);
 	srcLen -= inBytesLeft;
 	destLen -= outBytesLeft;
 	if (irrevCount == (size_t)-1) {
@@ -706,8 +706,8 @@ void BmUtf8Decoder::Finalize( char* destBuf, uint32& destLen) {
 	size_t inBytesLeft = 0;
 	char* outBuf = destBuf;
 	size_t outBytesLeft = destLen;
-	size_t irrevCount = iconv( mIconvDescr, &inBuf, &inBytesLeft, 
-										&outBuf, &outBytesLeft);
+	size_t irrevCount = iconv( mIconvDescr, const_cast<char**>(&inBuf), 
+										&inBytesLeft, &outBuf, &outBytesLeft);
 	destLen -= outBytesLeft;
 	if (irrevCount == (size_t)-1) {
 		if (errno == E2BIG) {
@@ -835,8 +835,8 @@ void BmUtf8Encoder::Filter( const char* srcBuf, uint32& srcLen,
 	size_t inBytesLeft = srcLen;
 	char* outBuf = destBuf;
 	size_t outBytesLeft = destLen;
-	size_t irrevCount 
-		= iconv( mIconvDescr, &inBuf, &inBytesLeft, &outBuf, &outBytesLeft);
+	size_t irrevCount = iconv( mIconvDescr, const_cast<char**>(&inBuf), 
+										&inBytesLeft, &outBuf, &outBytesLeft);
 	srcLen -= inBytesLeft;
 	destLen -= outBytesLeft;
 	if (irrevCount == (size_t)-1) {
@@ -1402,8 +1402,8 @@ void BmQpEncodedWordEncoder::Filter( const char* srcBuf, uint32& srcLen,
 								// of a single character (no matter what encoding)!
 		char* outBuf = mConversionBuf.LockBuffer( conversionBufLen);
 		size_t outBytesLeft = conversionBufLen;
-		size_t irrevCount = iconv( mIconvDescr, &src, &srcBytesLeft,
-											&outBuf, &outBytesLeft);
+		size_t irrevCount = iconv( mIconvDescr, const_cast<char**>(&src), 
+											&srcBytesLeft, &outBuf, &outBytesLeft);
 		mConversionBuf.UnlockBuffer( conversionBufLen - outBytesLeft);
 		if (irrevCount == (size_t)-1) {
 			if (errno == E2BIG)

@@ -4,13 +4,13 @@ SubDir TOP src-bmDaemon src-netendpoint-addons ;
 SubDirHdrs $(TOP) src-bmBase ;
 SubDirHdrs $(TOP) src-bmDaemon ;
 
-SubDirSysHdrs /boot/home/config/include ;
+SubDirSysHdrs $(COMMON_FOLDER)/include ;
 # </pe-inc>
 
-LINKFLAGS += -L/boot/home/config/lib ;
+LINKFLAGS += -L$(COMMON_FOLDER)/lib ;
 
 # build openssl-addon only if we have openssl headers:
-local haveOpenSsl = [ GLOB /boot/home/config/include/openssl : ssl.h ] ;
+local haveOpenSsl = [ GLOB $(COMMON_FOLDER)/include/openssl : ssl.h ] ;
 if ! $(haveOpenSsl) {
 	haveOpenSsl = [ GLOB /boot/develop/headers/openssl : ssl.h ] ;
 }
