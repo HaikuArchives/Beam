@@ -525,7 +525,15 @@ void BmMail::StoreIntoFile( BDirectory* destDir, BmString filename,
 			uint32 i = 1;
 			BmString fn;
 			while (mEntry.Exists()) {
-				fn = BmString(filename) << "-" << i;
+				if (i > 1000000) {
+					// something is fishy if more than a million mails have 
+					// arrived within one second - we complain
+					BM_THROW_RUNTIME( 
+						BmString("Unable to find unique name for mail-file <") 
+							<< fn << ">!"
+					);
+				}
+				fn = BmString(filename) << "-" << i++;
 				if ((err = mEntry.SetTo( destDir, fn.String())) != B_OK) {
 					BM_THROW_RUNTIME( 
 						BmString("Could not create entry for mail-file <") 
