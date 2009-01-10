@@ -33,6 +33,13 @@ BmString BmEncoding::DefaultCharset = "iso-8859-15";
 
 static iconv_t ICONV_ERR = (iconv_t)0xFFFFFFFF;
 
+// handle different constness in iconv() on haiku and BeOS:
+#ifdef __HAIKU__
+#define ICONV_IN_BUF(x) const_cast<char**>(x)
+#else
+#define ICONV_IN_BUF(x) x
+#endif
+
 /*------------------------------------------------------------------------------*\
 	HandleOneCharset()
 		-	this function is called during initialization of libiconv.
@@ -656,7 +663,7 @@ void BmUtf8Decoder::Filter( const char* srcBuf, uint32& srcLen,
 	size_t inBytesLeft = srcLen;
 	char* outBuf = destBuf;
 	size_t outBytesLeft = destLen;
-	size_t irrevCount = iconv( mIconvDescr, const_cast<char**>(&inBuf), 
+	size_t irrevCount = iconv( mIconvDescr, ICONV_IN_BUF(&inBuf), 
 										&inBytesLeft, &outBuf, &outBytesLeft);
 	srcLen -= inBytesLeft;
 	destLen -= outBytesLeft;
@@ -706,7 +713,7 @@ void BmUtf8Decoder::Finalize( char* destBuf, uint32& destLen) {
 	size_t inBytesLeft = 0;
 	char* outBuf = destBuf;
 	size_t outBytesLeft = destLen;
-	size_t irrevCount = iconv( mIconvDescr, const_cast<char**>(&inBuf), 
+	size_t irrevCount = iconv( mIconvDescr, ICONV_IN_BUF(&inBuf), 
 										&inBytesLeft, &outBuf, &outBytesLeft);
 	destLen -= outBytesLeft;
 	if (irrevCount == (size_t)-1) {
@@ -835,7 +842,7 @@ void BmUtf8Encoder::Filter( const char* srcBuf, uint32& srcLen,
 	size_t inBytesLeft = srcLen;
 	char* outBuf = destBuf;
 	size_t outBytesLeft = destLen;
-	size_t irrevCount = iconv( mIconvDescr, const_cast<char**>(&inBuf), 
+	size_t irrevCount = iconv( mIconvDescr, ICONV_IN_BUF(&inBuf), 
 										&inBytesLeft, &outBuf, &outBytesLeft);
 	srcLen -= inBytesLeft;
 	destLen -= outBytesLeft;
@@ -1402,7 +1409,7 @@ void BmQpEncodedWordEncoder::Filter( const char* srcBuf, uint32& srcLen,
 								// of a single character (no matter what encoding)!
 		char* outBuf = mConversionBuf.LockBuffer( conversionBufLen);
 		size_t outBytesLeft = conversionBufLen;
-		size_t irrevCount = iconv( mIconvDescr, const_cast<char**>(&src), 
+		size_t irrevCount = iconv( mIconvDescr, ICONV_IN_BUF(&src), 
 											&srcBytesLeft, &outBuf, &outBytesLeft);
 		mConversionBuf.UnlockBuffer( conversionBufLen - outBytesLeft);
 		if (irrevCount == (size_t)-1) {
@@ -1899,10 +1906,12 @@ void BmMailtextCleaner::Filter( const char* srcBuf, uint32& srcLen,
 		switch((c = *src)) {
 			case '\xC2':
 				mLastWasStartOfShiftSpace = true;
+				*dest++ = c;
 				break;
-			case '\xa0':
+			case '\xA0':
 				if (mLastWasStartOfShiftSpace) {
-					*dest++ = '\x20';
+					*(dest-1) = '\x20';
+					dest++;
 					mLastWasStartOfShiftSpace = false;
 					break;
 				}

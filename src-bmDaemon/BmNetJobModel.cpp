@@ -366,6 +366,15 @@ void BmNetJobModel::AuthDigestMD5( const BmString& username,
 		char sum0[17], hd1[33], hd2[33], hd3[33];
 		BmString a1,a2,kd;
 		BmString t1 = username + ":" + challengeMap["realm"] + ":" + password;
+		if (challengeMap["charset"].ICompare("utf-8") == 0) {
+			rawResponse	<< ",charset=utf-8";
+		} else {
+			// username and password must be encoded in iso8859-1, unless the server
+			// has specified that it supports utf-8
+			BmString t1iso;
+			ConvertFromUTF8("iso8859-1", t1, t1iso);
+			t1 = t1iso;
+		}
 		MD5Sum((unsigned char*)t1.String(), sum0);
 		a1 << sum0 << ":" << challengeMap["nonce"] << ":" << cnonce;
 		MD5Digest((unsigned char*)a1.String(), hd1);
@@ -375,7 +384,6 @@ void BmNetJobModel::AuthDigestMD5( const BmString& username,
 			<< ':' << cnonce << ':' << "auth" << ':' << hd2;
 		MD5Digest((unsigned char*)kd.String(), hd3);
 		rawResponse	<< ",response=" << hd3;
-//		rawResponse	<< ",charset=utf-8";
 		rawResponse	<< ",maxbuf=65535";
 		BM_LOG2( mLogType, BmString("response:\n") << rawResponse);
 		BmString tags = BmBase64Encoder::nTagOnSingleLine;
