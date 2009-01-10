@@ -1911,7 +1911,6 @@ void BmMailtextCleaner::Filter( const char* srcBuf, uint32& srcLen,
 			case '\xA0':
 				if (mLastWasStartOfShiftSpace) {
 					*(dest-1) = '\x20';
-					dest++;
 					mLastWasStartOfShiftSpace = false;
 					break;
 				}
