@@ -73,6 +73,8 @@ private:
 	BmToolbarButton* mNewButton;
 	BmToolbarButton* mReplyButton;
 	BmToolbarButton* mForwardButton;
+	BmToolbarButton* mTofuButton;
+	BmToolbarButton* mSpamButton;
 	BmToolbarButton* mPrintButton;
 	BmToolbarButton* mTrashButton;
 	

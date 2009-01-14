@@ -153,19 +153,33 @@ BmMainWindow::BmMainWindow()
 						   new BMessage( defaultFwdMsgType), this, 
 						   "Forward mail to somewhere else", true
 						),
-					mPrintButton 
+					mTofuButton
+						= new BmToolbarButton( 
+							"Tofu", 
+							width, height,
+							new BMessage(BMM_LEARN_AS_TOFU), this,
+							"Treat selected mail(s) as Tofu"
+						),
+					mSpamButton
+						= new BmToolbarButton( 
+							"Spam", 
+							width, height,
+							new BMessage(BMM_LEARN_AS_SPAM), this,
+							"Treat selected mail(s) as Spam"
+						),
+					mPrintButton
 						= new BmToolbarButton( 
 							"Print", 
 							width, height,
 							new BMessage(BMM_PRINT), this,
-							"Print selected messages(s)"
+							"Print selected mail(s)"
 						),
-					mTrashButton 
+					mTrashButton
 						= new BmToolbarButton( 
 							"Trash", 
 							width, height,
 							new BMessage(BMM_TRASH), this, 
-							"Move selected messages to Trash"
+							"Move selected mail(s) to Trash"
 						),
 					new BmToolbarSpace(),
 					0
@@ -598,6 +612,8 @@ void BmMainWindow::MailRefSelectionChanged( bool haveSelectedRef) {
 	// adjust buttons:
 	mReplyButton->SetEnabled( haveSelectedRef);
 	mForwardButton->SetEnabled( haveSelectedRef);
+	mTofuButton->SetEnabled( haveSelectedRef);
+	mSpamButton->SetEnabled( haveSelectedRef);
 	mTrashButton->SetEnabled( haveSelectedRef);
 	mPrintButton->SetEnabled( haveSelectedRef);
 	// adjust menu:
