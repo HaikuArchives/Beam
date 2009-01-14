@@ -79,6 +79,14 @@ class BmMailView;
 class BmMenuController;
 
 /*------------------------------------------------------------------------------*\
+	types of messages handled by a mailref-view:
+\*------------------------------------------------------------------------------*/
+enum {
+	BM_CHANGE_LABELS_LOCKED		= 'bmcf',
+							// the user has chosen to lock/unlock the column labels
+};
+
+/*------------------------------------------------------------------------------*\
 	BmMailRefView
 		-	
 \*------------------------------------------------------------------------------*/
@@ -129,6 +137,8 @@ public:
 	void FrameResized(float width, float height);
 	void ColumnWidthChanged(int32 ColumnIndex, float NewWidth);
 	void WindowActivated(bool active);
+	void AttachedToWindow(void);
+	void ReadStateInfo();
 
 	// overrides of controller base:
 	BmString StateInfoBasename();
@@ -149,6 +159,7 @@ private:
 	bool mHaveSelectedRef;
 	bool mStateInfoConnectedToParentFolder;
 	int32 mHiddenState;
+	BControl* mLockLabelsButton;
 
 	ReselectionInfo mReselectionInfo;
 

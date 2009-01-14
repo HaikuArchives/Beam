@@ -34,8 +34,9 @@
 //**** FUNCTION DEFINITIONS
 //******************************************************************************************************
 CLVColumnLabelView::CLVColumnLabelView(BRect Bounds,ColumnListView* parent,const BFont* Font)
-: BView(Bounds,NULL,B_FOLLOW_LEFT_RIGHT|B_FOLLOW_TOP,B_WILL_DRAW|B_FRAME_EVENTS),
-fDragGroups(10)
+: BView(Bounds,NULL,B_FOLLOW_LEFT_RIGHT|B_FOLLOW_TOP,B_WILL_DRAW|B_FRAME_EVENTS)
+, fDragGroups(10)
+, fLayoutIsLocked(false)
 {
 	SetFont(Font);
 	SetViewUIColor(B_UI_PANEL_BACKGROUND_COLOR);
@@ -60,6 +61,18 @@ CLVColumnLabelView::~CLVColumnLabelView()
 		CLVDragGroup* item = (CLVDragGroup*)fDragGroups.RemoveItem(int32(0));
 		delete item;
 	}
+}
+
+
+void CLVColumnLabelView::SetLayoutLocked(bool layoutIsLocked)
+{
+	fLayoutIsLocked = layoutIsLocked;
+}
+
+
+bool CLVColumnLabelView::LayoutLocked() const
+{
+	return fLayoutIsLocked;
 }
 
 
@@ -222,7 +235,7 @@ void CLVColumnLabelView::MouseDown(BPoint Point)
 	BPoint MousePos;
 	uint32 Buttons;
 	GetMouse(&MousePos,&Buttons);
-	if(Buttons == B_PRIMARY_MOUSE_BUTTON)
+	if(Buttons == B_PRIMARY_MOUSE_BUTTON && !fLayoutIsLocked)
 	{
 		BRect ViewBounds = Bounds();
 
@@ -318,6 +331,8 @@ void CLVColumnLabelView::MouseDown(BPoint Point)
 
 void CLVColumnLabelView::MouseMoved(BPoint where, uint32 code, const BMessage *)
 {
+	if (fLayoutIsLocked)
+		return;
 	bool should_show_modified_cursor = false;
 	if(fColumnClicked == NULL)
 	{

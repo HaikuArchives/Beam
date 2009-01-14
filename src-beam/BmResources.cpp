@@ -356,18 +356,28 @@ float BmResources::FontLineHeight( const BFont* font) {
 \*------------------------------------------------------------------------------*/
 BPicture* BmResources::CreatePictureFor( BBitmap* image, 
 													  float width, float height,
-													  bool transparentBack) {
+													  bool transparentBack, 
+													  BmPicFrameType frameType) {
 	BPicture* picture = new BPicture();
-	BRect rect(0,0,width-1,height-1);
-	BView* view = new BView( rect, NULL, B_FOLLOW_NONE, 0);
-	BBitmap* drawImage = new BBitmap( rect, B_RGBA32, true);
+	BRect r(0,0,width-1,height-1);
+	BView* view = new BView( r, NULL, B_FOLLOW_NONE, 0);
+	BBitmap* drawImage = new BBitmap( r, B_RGBA32, true);
 	drawImage->AddChild( view);
 	drawImage->Lock();
 	view->BeginPicture( picture);
 	view->SetViewColor( ui_color( B_UI_PANEL_BACKGROUND_COLOR));
 	if (!transparentBack) {
 		view->SetLowColor( ui_color( B_UI_PANEL_BACKGROUND_COLOR));
-		view->FillRect( rect, B_SOLID_LOW);
+		view->FillRect( r, B_SOLID_LOW);
+	}
+	if (frameType == BmPicFrame_ActionButton) {
+		view->SetHighColor( BmWeakenColor( B_UI_SHADOW_COLOR, BeShadowMod));
+		view->StrokeLine( r.RightTop(), r.RightBottom());
+		view->StrokeLine( r.LeftTop(), r.LeftBottom());
+		view->StrokeLine( r.LeftBottom(), r.RightBottom());
+		view->SetHighColor( ui_color( B_UI_SHINE_COLOR));
+		view->StrokeLine( BPoint(1.0,0.0), BPoint(r.right-1,0.0));
+		view->StrokeLine( BPoint(1.0,0.0), BPoint(1.0,r.bottom));
 	}
 	if (image) {
 		BRect imageRect = image->Bounds();

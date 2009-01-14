@@ -45,6 +45,7 @@ const char* const ColumnListView::MSG_NUMSORTKEYS = 	"bm:nsort";
 const char* const ColumnListView::MSG_SORTKEY = 		"bm:sortk";
 const char* const ColumnListView::MSG_SORTMODE = 		"bm:sortm";
 const char* const ColumnListView::MSG_COLWIDTH = 		"bm:colw";
+const char* const ColumnListView::MSG_LAYOUTLOCKED =	"bm:laylock";
 
 int32 ColumnListView::fExtendSelMask = B_SHIFT_KEY;
 int32 ColumnListView::fToggleSelMask = B_OPTION_KEY|B_COMMAND_KEY;
@@ -2270,14 +2271,19 @@ status_t ColumnListView::Archive(BMessage* archive, bool) const {
 			ret =	archive->AddInt32( MSG_SORTKEY, IndexOfColumn( Column))
 				|| archive->AddInt32( MSG_SORTMODE, Column->SortMode());
 		}
+	}
 		
-		if (ret == B_OK) {
-			// store each column's width:
-			for( i=0; i<numCols && ret==B_OK; ++i) { 
-				ret = archive->AddFloat( MSG_COLWIDTH, 
-												 ((CLVColumn*)fColumnList.ItemAt(i))->Width());
-			}
+	if (ret == B_OK) {
+		// store each column's width:
+		for( i=0; i<numCols && ret==B_OK; ++i) { 
+			ret = archive->AddFloat( MSG_COLWIDTH, 
+											 ((CLVColumn*)fColumnList.ItemAt(i))->Width());
 		}
+	}
+
+	if (ret == B_OK) {
+		// store layout locked state:
+		ret = archive->AddBool(MSG_LAYOUTLOCKED, fColumnLabelView->LayoutLocked());
 	}
 
 	return ret;
@@ -2327,6 +2333,11 @@ status_t ColumnListView::Unarchive(const BMessage* archive, bool) {
 		((CLVColumn*)fColumnList.ItemAt(i))->SetWidth( width);
 	}
 	SetDisplayOrder( displayCols);
+
+	// restore layout locked state:
+	bool layoutIsLocked = false;
+	archive->FindBool(MSG_LAYOUTLOCKED, &layoutIsLocked);
+	fColumnLabelView->SetLayoutLocked(layoutIsLocked);
 
 	return B_OK;
 }

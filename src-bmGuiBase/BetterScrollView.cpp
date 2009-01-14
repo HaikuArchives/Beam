@@ -31,14 +31,14 @@
 \*------------------------------------------------------------------------------*/
 BetterScrollView::BetterScrollView(minimax minmax, BView *target, 
 	BmScrollViewFlags svFlags, const char* captionMaxText)
-	: BScrollView("BetterScrollView", target, 
+	: BScrollView("BetterScrollView", target,
 					  B_FOLLOW_NONE, B_FRAME_EVENTS | B_WILL_DRAW, 
 					  svFlags & BM_SV_H_SCROLLBAR, svFlags & BM_SV_V_SCROLLBAR,
 					  B_FANCY_BORDER)
-	,	mCaption( NULL)
-	,	mCaptionWidth( 0)
-	,	mBusyView( NULL)
-	,	mTarget(target)
+	, mCaption( NULL)
+	, mCaptionWidth( 0)
+	, mBusyView( NULL)
+	, mTarget(target)
 {
 	ct_mpm = minmax;
 	mDataRect.Set(-1,-1,-1,-1);
@@ -135,13 +135,39 @@ BetterScrollView::BetterScrollView(minimax minmax, BView *target,
 	}
 }
 
-
 /*------------------------------------------------------------------------------*\
 	()
 		-	
 \*------------------------------------------------------------------------------*/
 BetterScrollView::~BetterScrollView()
 { }
+
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void BetterScrollView::AddActionView(BView* actionView)
+{
+	if (!actionView)
+		return;
+
+	AddChild( actionView);
+	mActionViews.push_back(actionView);
+
+	BRect b = Bounds();
+	float top = 2.0;
+	for(uint32 i=0; i<mActionViews.size(); ++i) {
+		BView* actionView = mActionViews[i];
+		actionView->MoveTo(b.right-B_V_SCROLL_BAR_WIDTH-1, top);
+		top += actionView->Bounds().Height();
+	}
+	if (mVScroller) {
+		mVScroller->ResizeTo(B_V_SCROLL_BAR_WIDTH, 
+			mVScroller->Bounds().Height()-top);
+		mVScroller->MoveTo(b.right-B_V_SCROLL_BAR_WIDTH-1, top+1);
+	}
+}
 
 
 /*------------------------------------------------------------------------------*\
@@ -448,8 +474,7 @@ BRect BetterScrollView::layout( BRect r) {
 			targetRect.right = r.right-2;
 		mTarget->ResizeTo(targetRect.Width(), targetRect.Height());
 	}
-	float fullCaptionWidth = r.Width();
-	fullCaptionWidth -= 2.0;
+	float fullCaptionWidth = r.Width() - 2.0;
 	if (mBusyView) {
 		BRect bvFrame = mBusyView->Frame();
 		mBusyView->MoveTo( bvFrame.left, r.Height()-B_H_SCROLL_BAR_HEIGHT-1);
@@ -464,6 +489,14 @@ BRect BetterScrollView::layout( BRect r) {
 			mCaption->ResizeTo( fullCaptionWidth, cpFrame.Height());
 			mCaption->Invalidate();
 		}
+	}
+	for(uint32 i=0; i<mActionViews.size(); ++i)
+	{
+		BView* actionView = mActionViews[i];
+		if (!actionView)
+			continue;
+		BRect avFrame = actionView->Frame();
+		actionView->MoveTo( r.Width()-B_V_SCROLL_BAR_WIDTH-1, avFrame.top);
 	}
 	return r;
 }

@@ -25,6 +25,11 @@ enum {
 	BM_FONTSIZE_SELECTED = 'bmFS'
 };
 
+enum BmPicFrameType {
+	BmPicFrame_None         = 0,
+	BmPicFrame_ActionButton = 1
+};
+
 /*------------------------------------------------------------------------------*\
 	BmResources 
 		-	holds all resources needed by Beam
@@ -49,7 +54,8 @@ public:
 	float FontLineHeight( const BFont* font=NULL);
 	//
 	BPicture* CreatePictureFor( BBitmap* image, float width, float height,
-										 bool transparentBack = false);
+										 bool transparentBack = false, 
+										 BmPicFrameType frameType = BmPicFrame_None);
 	//
 	void AddFontSubmenuTo( BMenu* menu, BHandler* target=NULL, 
 								  BFont* selectedFont=NULL);

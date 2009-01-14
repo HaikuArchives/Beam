@@ -58,6 +58,7 @@ class IMPEXPBMGUIBASE ColumnListView : public BListView
 		static const char* const MSG_SORTKEY;
 		static const char* const MSG_SORTMODE;
 		static const char* const MSG_COLWIDTH;
+		static const char* const MSG_LAYOUTLOCKED;
 
 	public:
 		//Constructor and destructor

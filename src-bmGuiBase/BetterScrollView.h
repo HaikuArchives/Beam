@@ -22,6 +22,8 @@
 
 #include <layout.h>
 
+#include <vector>
+
 //******************************************************************************************************
 //**** PROJECT HEADER FILES
 //******************************************************************************************************
@@ -35,9 +37,9 @@ typedef uint32 BmScrollViewFlags;
 enum  {
 	BM_SV_H_SCROLLBAR = 1<<0,
 	BM_SV_V_SCROLLBAR = 1<<1,
-	BM_SV_CORNER = 1<<2,
-	BM_SV_BUSYVIEW = 1<<3,
-	BM_SV_CAPTION = 1<<4
+	BM_SV_CORNER      = 1<<2,
+	BM_SV_BUSYVIEW    = 1<<3,
+	BM_SV_CAPTION     = 1<<4
 };
 
 
@@ -54,6 +56,7 @@ public:
 	void SetBusy();
 	void UnsetBusy();
 	void PulseBusyView();
+	
 	void SetErrorText( const BmString& text);
 
 	void SetCaptionText( const char* text);
@@ -68,6 +71,8 @@ public:
 	void AttachedToWindow();
 	void WindowActivated(bool active);
 	status_t SetBorderHighlighted( bool highlighted);
+	
+	void AddActionView(BView* actionView);
 
 	// overrides of MView base:
 	BRect layout( BRect);
@@ -85,6 +90,8 @@ protected:
 	BScrollBar* mVScroller;
 	ScrollViewCorner* mScrollViewCorner;
 	BView* mTarget;
+	
+	vector<BView*> mActionViews;
 };
 
 

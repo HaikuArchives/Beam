@@ -7,6 +7,7 @@
  */
 
 #include <MenuItem.h>
+#include <PictureButton.h>
 #include <PopUpMenu.h>
 #include <Region.h>
 #include <Window.h>
@@ -510,6 +511,8 @@ BmMailRefView::BmMailRefView( int32 width, int32 height)
 \*------------------------------------------------------------------------------*/
 BmMailRefView::~BmMailRefView() { 
 	TheBubbleHelper->SetHelp( ColumnLabelView(), NULL);
+	if (mLockLabelsButton)
+		TheBubbleHelper->SetHelp( mLockLabelsButton, NULL);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -536,6 +539,59 @@ void BmMailRefView::ColumnWidthChanged(int32 colIdx, float NewWidth)
 	colBounds.right = column->ColumnEnd();
 	Invalidate( colBounds);
 }
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailRefView::AttachedToWindow()
+{
+	// add toggle button that allows locking/unlocking of label view
+	BmBitmapHandle* lockedIconHandle = TheResources->IconByName("Locked");
+	BmBitmapHandle* unlockedIconHandle = TheResources->IconByName("Unlocked");
+	if (lockedIconHandle && unlockedIconHandle) {
+		CLVColumnLabelView* labelView = ColumnLabelView();
+		float labelViewHeight = labelView->Bounds().Height();
+		BBitmap* locked = lockedIconHandle->bitmap;
+		BBitmap* unlocked = unlockedIconHandle->bitmap;
+		BPicture* lockedPicture = TheResources->CreatePictureFor(
+			locked, B_V_SCROLL_BAR_WIDTH+1, labelViewHeight, false, 
+			BmPicFrame_ActionButton
+		);
+		BPicture* unlockedPicture = TheResources->CreatePictureFor(
+			unlocked, B_V_SCROLL_BAR_WIDTH+1, labelViewHeight, false, 
+			BmPicFrame_ActionButton
+		);
+		BPictureButton* lockLabelsButton = new BPictureButton(
+			BRect(0,0,B_V_SCROLL_BAR_WIDTH,labelViewHeight-1), "lockLabelsButton", 
+			unlockedPicture, lockedPicture, new BMessage(BM_CHANGE_LABELS_LOCKED), 
+			B_TWO_STATE_BUTTON
+		);
+		delete unlockedPicture;
+		delete lockedPicture;
+		BetterScrollView* sv = dynamic_cast<BetterScrollView*>(Parent());
+		if (sv) {
+			mLockLabelsButton = lockLabelsButton;
+			sv->AddActionView(lockLabelsButton);
+			lockLabelsButton->SetTarget(this);
+			TheBubbleHelper->SetHelp( mLockLabelsButton, 
+				"Click to lock/unlock column layout");
+		}
+	}
+	
+	inherited::AttachedToWindow();
+}
+
+
+/*------------------------------------------------------------------------------*\
+	ReadStateInfo( )
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailRefView::ReadStateInfo() {
+	inherited::ReadStateInfo();
+	mLockLabelsButton->SetValue(ColumnLabelView()->LayoutLocked() ? 1 : 0);
+}
+
 
 /*------------------------------------------------------------------------------*\
 	MessageReceived( msg)
@@ -588,6 +644,14 @@ void BmMailRefView::MessageReceived( BMessage* msg) {
 				bool connected = mCurrFolder->RefListStateInfoConnectedToParent();
 				mCurrFolder->RefListStateInfoConnectedToParent( !connected);
 				ReadStateInfo();
+				break;
+			}
+			case BM_CHANGE_LABELS_LOCKED: {
+				BControl* control;
+				if (msg->FindPointer("source", (void**)&control) == B_OK) {
+					CLVColumnLabelView* labelView = ColumnLabelView();
+					labelView->SetLayoutLocked(control->Value());
+				}
 				break;
 			}
 			default:

@@ -54,13 +54,16 @@ class IMPEXPBMGUIBASE CLVColumnLabelView : public BView
 		//Constructor and destructor
 		CLVColumnLabelView(BRect Bounds,ColumnListView* Parent,const BFont* Font);
 		~CLVColumnLabelView();
+		
+		void SetLayoutLocked(bool layoutIsLocked);
+		bool LayoutLocked() const;
 
 		//BView overrides
 		virtual void Draw(BRect UpdateRect);
 		virtual void MouseDown(BPoint Point);
 		virtual void MouseMoved(BPoint where, uint32 code, const BMessage *message);
 		virtual void MouseUp(BPoint where);
-
+		
 		virtual void MessageReceived( BMessage* msg);
 
 	private:
@@ -78,18 +81,19 @@ class IMPEXPBMGUIBASE CLVColumnLabelView : public BView
 		bool fColumnResizing;
 		bool fModifiedCursor;
 		BList fDragGroups;					//Groups of CLVColumns that must drag together
-		int32 fDragGroup;					//Index into DragGroups of the group being dragged by user
+		int32 fDragGroup;						//Index into DragGroups of the group being dragged by user
 		CLVDragGroup* fTheDragGroup;
 		CLVDragGroup* fTheShownGroupBefore;
 		CLVDragGroup* fTheShownGroupAfter;
 		int32 fSnapGroupBefore,				//Index into DragGroups of TheShownGroupBefore and
-			fSnapGroupAfter;				//TheShownGroupAfter, if the group the user is dragging is
-											//allowed to snap there, otherwise -1
+			fSnapGroupAfter;					//TheShownGroupAfter, if the group the user is dragging is
+													//allowed to snap there, otherwise -1
 		float fDragBoxMouseHoldOffset,fResizeMouseHoldOffset;
-		float fDragBoxWidth;				//Can include multiple columns; depends on CLV_LOCK_WITH_RIGHT
+		float fDragBoxWidth;					//Can include multiple columns; depends on CLV_LOCK_WITH_RIGHT
 		float fPrevDragOutlineLeft,fPrevDragOutlineRight;
 		float fSnapMin,fSnapMax;			//-1.0 indicates the column can't snap in the given direction
 		ColumnListView* fParent;
+		bool fLayoutIsLocked;				// complete layout locked?
 
 		//Private functions
 		void ShiftDragGroup(int32 NewPos);
