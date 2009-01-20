@@ -1365,7 +1365,7 @@ BmSieveFilterPrefs::BmSieveFilterPrefs( minimax minmax)
 					NULL, false, 1, 
 					0, true
 				),
-				mMarkControl[i] = new BmCheckControl( "[Mark]", NULL,	this),
+				mMarkControl[i] = new BmCheckControl( "", NULL,	this),
 				0
 			);
 		mMailPartControl[i]->ct_mpm.maxi.y = 1E5;
@@ -1374,7 +1374,7 @@ BmSieveFilterPrefs::BmSieveFilterPrefs( minimax minmax)
 		mOperatorControl[i]->ct_mpm.maxi.y = 1E5;
 		mFieldNameControl[i]->ct_mpm = minimax(80,-1,80,1E5);
 		mValueControl[i]->SetTabAllowed( false);
-		mValueControl[i]->ct_mpm = minimax(140,-1,1E5,1E5);
+		mValueControl[i]->ct_mpm = minimax(140,-1,1E5,1E5,5.0);
 		mMarkControl[i]->ct_mpm = minimax(-1,-1,-1,1E5);
 		mFilterGroup->AddChild( mFilterLine[i]);
 	}		
@@ -1396,6 +1396,7 @@ BmSieveFilterPrefs::~BmSieveFilterPrefs() {
 		TheBubbleHelper->SetHelp( mFieldNameControl[i], NULL);
 		TheBubbleHelper->SetHelp( mOperatorControl[i], NULL);
 		TheBubbleHelper->SetHelp( mValueControl[i], NULL);
+		TheBubbleHelper->SetHelp( mMarkControl[i], NULL);
 	}
 	TheBubbleHelper->SetHelp( mFileIntoControl, NULL);
 	TheBubbleHelper->SetHelp( mFileIntoValueControl, NULL);
@@ -1459,6 +1460,10 @@ void BmSieveFilterPrefs::Initialize() {
 			"the selected field will be matched against.\n"
 			"If any of the given values matches, the filter-line\n"
 			"is satisfied (values ar ORed)."
+		);
+		TheBubbleHelper->SetHelp( 
+			mMarkControl[i], 
+			"Check to mark this line."
 		);
 	}
 	TheBubbleHelper->SetHelp( 
