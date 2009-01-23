@@ -59,7 +59,9 @@ void BmTextControl::InitSize( const char* label, int32 fixedTextLen,
 										int32 minTextLen, BmMenuControllerBase* popup) {
 	ResizeToPreferred();
 	BRect b = Bounds();
-	float divPos = label ? StringWidth( label)+27 : 0;
+	float divPos = 0;
+	if (label)
+		divPos = StringWidth(label) + (mLabelIsMenu ? 27 : 3);
 	inherited::SetDivider( divPos);
 	BFont font;
 	mTextView->GetFont( &font);
@@ -183,9 +185,7 @@ BRect BmTextControl::layout(BRect frame) {
 		return frame;
 	MoveTo(frame.LeftTop());
 	ResizeTo(frame.Width(),frame.Height());
-	float occupiedSpace = Divider()-10;
-	if (occupiedSpace < 3)
-		occupiedSpace = 3;					// leave room for focus-rectangle
+	float occupiedSpace = 3 + Divider();
 	mTextView->MoveTo( occupiedSpace, 5);
 	mTextView->ResizeTo( frame.Width()-occupiedSpace-6, 
 								mTextView->Frame().Height());

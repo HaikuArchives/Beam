@@ -55,7 +55,7 @@ public:
 													{ return mMenuField; }
 	BmMenuControllerBase* Menu() const;
 
-private:
+protected:
 	minimax layoutprefs();
 	BRect layout(BRect frame);
 

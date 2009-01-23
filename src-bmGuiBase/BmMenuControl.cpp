@@ -39,7 +39,7 @@ BmMenuControl::BmMenuControl( const char* label, BMenu* menu, float weight,
 		SetDivider( 13 + (label ? labelWidth+19 : 0));
 		mMenuBar->ResizeBy(0.0, 5.0);
 	} else
-		SetDivider( (label ? labelWidth+19 : 0));
+		SetDivider( (label ? labelWidth + 3 : 0));
 	float minHeight = mMenuBar->Frame().Height()+6;
 	if (fitText) {
 		float fixedWidth = StringWidth( fitText)+Divider()+27;
@@ -170,9 +170,7 @@ BRect BmMenuControl::layout(BRect inFrame) {
 	ResizeTo(frame.Width(),frame.Height());
 	float occupiedSpace = BeamOnDano
 									? Divider()+1+13
-									: Divider()-12;
-	if (occupiedSpace < 3)
-		occupiedSpace = 3;					// leave room for focus-rectangle
+									: Divider() + 1;
 
 	mMenuBar->MoveTo( occupiedSpace, BeamOnDano ? 5 : 3);
 	mMenuBar->ResizeTo( frame.Width()-occupiedSpace-6, 
