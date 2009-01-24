@@ -356,8 +356,10 @@ float BmResources::FontLineHeight( const BFont* font) {
 \*------------------------------------------------------------------------------*/
 BPicture* BmResources::CreatePictureFor( BBitmap* image, 
 													  float width, float height,
-													  bool transparentBack, 
-													  BmPicFrameType frameType) {
+													  bool transparentBack,
+													  const char* backgroundCol,
+													  BmPicFrameType frameType,
+													  float offset) {
 	BPicture* picture = new BPicture();
 	BRect r(0,0,width-1,height-1);
 	BView* view = new BView( r, NULL, B_FOLLOW_NONE, 0);
@@ -365,9 +367,9 @@ BPicture* BmResources::CreatePictureFor( BBitmap* image,
 	drawImage->AddChild( view);
 	drawImage->Lock();
 	view->BeginPicture( picture);
-	view->SetViewColor( ui_color( B_UI_PANEL_BACKGROUND_COLOR));
+	view->SetViewColor( ui_color( backgroundCol));
 	if (!transparentBack) {
-		view->SetLowColor( ui_color( B_UI_PANEL_BACKGROUND_COLOR));
+		view->SetLowColor( ui_color( backgroundCol));
 		view->FillRect( r, B_SOLID_LOW);
 	}
 	if (frameType == BmPicFrame_ActionButton) {
@@ -384,8 +386,8 @@ BPicture* BmResources::CreatePictureFor( BBitmap* image,
 		float imageWidth = imageRect.Width();
 		float imageHeight = imageRect.Height();
 		view->SetDrawingMode(B_OP_OVER);
-		view->DrawBitmap( image, BPoint( (width-imageWidth)/2.0, 
-													(height-imageHeight)/2.0));
+		view->DrawBitmap( image, BPoint( (width-imageWidth)/2.0 + offset, 
+													(height-imageHeight)/2.0 + offset));
 		view->SetDrawingMode(B_OP_COPY);
 	}
 	view->EndPicture();

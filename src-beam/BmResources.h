@@ -54,8 +54,10 @@ public:
 	float FontLineHeight( const BFont* font=NULL);
 	//
 	BPicture* CreatePictureFor( BBitmap* image, float width, float height,
-										 bool transparentBack = false, 
-										 BmPicFrameType frameType = BmPicFrame_None);
+										 bool transparentBack = false,
+										 const char* backgrounCol = B_UI_PANEL_BACKGROUND_COLOR,
+										 BmPicFrameType frameType = BmPicFrame_None,
+										 float offset = 0.0);
 	//
 	void AddFontSubmenuTo( BMenu* menu, BHandler* target=NULL, 
 								  BFont* selectedFont=NULL);
