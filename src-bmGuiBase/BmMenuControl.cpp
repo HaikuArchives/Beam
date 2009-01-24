@@ -173,7 +173,7 @@ BRect BmMenuControl::layout(BRect inFrame) {
 									: Divider() + 1;
 
 	mMenuBar->MoveTo( occupiedSpace, BeamOnDano ? 5 : 3);
-	mMenuBar->ResizeTo( frame.Width()-occupiedSpace-6, 
+	mMenuBar->ResizeTo( frame.Width()-occupiedSpace-3, 
 							  mMenuBar->Frame().Height());
 	if (BeamOnDano) {
 		// on Dano/Zeta there seems to be a bug with computing the 
