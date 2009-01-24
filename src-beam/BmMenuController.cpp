@@ -58,3 +58,17 @@ void BmMenuController::UpdateItemList( void) {
 	if (win)
 		win->Unlock();
 }
+
+/*------------------------------------------------------------------------------*\
+	ClearMenu()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMenuController::Clear()
+{
+	inherited::Clear();
+	if (Flags() & BM_MC_ADD_NONE_ITEM) {
+		BMessage* msg = new BMessage( *(MsgTemplate()));
+		AddItemToMenu( this, CreateMenuItem( BM_NoItemLabel.String(), msg), 
+							MsgTarget());
+	}
+}

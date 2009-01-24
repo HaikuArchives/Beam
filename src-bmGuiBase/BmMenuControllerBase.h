@@ -50,6 +50,7 @@ public:
 	// native methods
 	void MarkItem( const char* label);
 	void ClearMark();
+	virtual void Clear();
 	//
 	static BMenuItem* MarkItemInMenu( BMenu* menu, const char* label);
 	static void ClearMarkInMenu( BMenu* menu);

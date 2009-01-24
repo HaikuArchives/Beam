@@ -29,6 +29,7 @@ public:
 
 	// overrides of base-methods:
 	void UpdateItemList();
+	void Clear();
 	
 private:
 	// Hide copy-constructor and assignment:

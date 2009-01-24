@@ -192,3 +192,15 @@ void BmMenuControllerBase::Shortcuts( const BmString s)
 	mShortcuts = s; 
 	UpdateItemList(); 
 }
+
+/*------------------------------------------------------------------------------*\
+	ClearMenu()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMenuControllerBase::Clear()
+{
+	BMenuItem* old;
+	while( (old = RemoveItem( (int32)0)) != NULL)
+		delete old;
+}
+
