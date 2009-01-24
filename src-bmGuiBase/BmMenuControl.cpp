@@ -39,7 +39,7 @@ BmMenuControl::BmMenuControl( const char* label, BMenu* menu, float weight,
 		SetDivider( 13 + (label ? labelWidth+19 : 0));
 		mMenuBar->ResizeBy(0.0, 5.0);
 	} else
-		SetDivider( (label ? labelWidth + 3 : 0));
+		SetDivider( (label ? labelWidth + 5 : 0));
 	float minHeight = mMenuBar->Frame().Height()+6;
 	if (fitText) {
 		float fixedWidth = StringWidth( fitText)+Divider()+27;
