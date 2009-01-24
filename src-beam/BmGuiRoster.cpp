@@ -32,6 +32,8 @@ using namespace regexx;
 #include "BmMail.h"
 #include "BmMailEditWin.h"
 #include "BmMailFolderList.h"
+#include "BmMailRefFilterControl.h"
+#include "BmMailRefViewFilterControl.h"
 #include "BmMenuControllerBase.h"
 #include "BmMsgTypes.h"
 #include "BmPeople.h"
@@ -131,14 +133,7 @@ namespace BmPrivate {
 \*------------------------------------------------------------------------------*/
 static void ClearMenu( BmMenuControllerBase* menu)
 {
-	BMenuItem* old;
-	while( (old = menu->RemoveItem( (int32)0)) != NULL)
-		delete old;
-	if (menu->Flags() & BM_MC_ADD_NONE_ITEM) {
-		BMessage* msg = new BMessage( *(menu->MsgTemplate()));
-		AddItemToMenu( menu, CreateMenuItem( BM_NoItemLabel.String(), msg), 
-							menu->MsgTarget());
-	}
+	menu->Clear();
 }
 
 /*------------------------------------------------------------------------------*\
@@ -522,6 +517,52 @@ void BmGuiRoster::RebuildLogMenu( BmMenuControllerBase* logMenu) {
 		logMenu->AddItem( smtpMenu);
 	}
 	TheLogHandler->mLocker.Unlock();
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmGuiRoster::RebuildMailRefFilterMenu( BmMenuControllerBase* menu)
+{
+	ClearMenu(menu);
+	const char* choices[] = {
+		BmMailRefFilterControl::TIME_SPAN_NONE,
+		BmMailRefFilterControl::TIME_SPAN_YEAR,
+		BmMailRefFilterControl::TIME_SPAN_MONTH,
+		BmMailRefFilterControl::TIME_SPAN_WEEK,
+		NULL
+	};
+	for( int i=0; choices[i]; ++i) {
+		BMessage* msg = new BMessage(*(menu->MsgTemplate()));
+		msg->AddString("filter_kind", choices[i]);
+		BMenuItem* item 
+			= new BMenuItem( choices[i], msg);
+		item->SetTarget( menu->MsgTarget());
+		menu->AddItem( item);
+	}
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmGuiRoster::RebuildMailRefViewFilterMenu( BmMenuControllerBase* menu)
+{
+	ClearMenu(menu);
+	const char* choices[] = {
+		BmMailRefViewFilterControl::FILTER_SUBJECT_OR_ADDRESS,
+		BmMailRefViewFilterControl::FILTER_MAILTEXT,
+		NULL
+	};
+	for( int i=0; choices[i]; ++i) {
+		BMessage* msg = new BMessage(*(menu->MsgTemplate()));
+		msg->AddString("filter_kind", choices[i]);
+		BMenuItem* item 
+			= new BMenuItem( choices[i], msg);
+		item->SetTarget( menu->MsgTarget());
+		menu->AddItem( item);
+	}
 }
 
 /*------------------------------------------------------------------------------*\

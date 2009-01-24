@@ -29,7 +29,9 @@ StaticLibrary beamInParts.a :
 	BmMailHeaderView.cpp
 	BmMailMover.cpp
 	BmMailNavigator.cpp
+	BmMailRefFilterControl.cpp
 	BmMailRefView.cpp
+	BmMailRefViewFilterControl.cpp
 	BmMailView.cpp
 	BmMailViewWin.cpp
 	BmMainWindow.cpp

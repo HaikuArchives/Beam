@@ -86,6 +86,8 @@ public:
 	virtual void RebuildSignatureMenu( BmMenuControllerBase* menu) = 0;
 	virtual void RebuildSmtpAccountMenu( BmMenuControllerBase* menu) = 0;
 	virtual void RebuildStatusMenu( BmMenuControllerBase* menu) = 0;
+	virtual void RebuildMailRefFilterMenu( BmMenuControllerBase* menu) = 0;
+	virtual void RebuildMailRefViewFilterMenu( BmMenuControllerBase* menu) = 0;
 
 	virtual int32 ShowAlert( const BmString& text, const char* btn1,
 									 const char* btn2, const char* btn3) = 0;

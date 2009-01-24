@@ -28,9 +28,12 @@
 #include "BmLogWindow.h"
 #include "BmMailFolderList.h"
 #include "BmMailFolderView.h"
+#include "BmMailRefFilterControl.h"
 #include "BmMailRefView.h"
+#include "BmMailRefViewFilterControl.h"
 #include "BmMailView.h"
 #include "BmMainWindow.h"
+#include "BmMenuControl.h"
 #include "BmMenuController.h"
 #include "BmMsgTypes.h"
 #include "BmRecvAccount.h"
@@ -38,6 +41,7 @@
 #include "BmResources.h"
 #include "BmRosterBase.h"
 #include "BmSmtpAccount.h"
+#include "BmTextControl.h"
 #include "BmToolbarButton.h"
 #include "BmUtil.h"
 
@@ -195,12 +199,22 @@ BmMainWindow::BmMainWindow()
 						"999 folders"
 					),
 					mHorzSplitter = new UserResizeSplitView( 
-						new BetterScrollView( 
-							minimax(300,50,1E5,1E5), 
-							mMailRefView = BmMailRefView::CreateInstance( 400, 200),
-							BM_SV_H_SCROLLBAR | BM_SV_V_SCROLLBAR | BM_SV_CORNER
-							| BM_SV_BUSYVIEW | BM_SV_CAPTION,
-							"99999 messages"
+						new VGroup(
+							new HGroup(
+								mMailRefViewFilterControl 
+									= new BmMailRefViewFilterControl(),
+								new Space(minimax(0,0,1E5,1E5, 0.3)),
+								mMailRefFilterControl = new BmMailRefFilterControl(),
+								0
+							),
+							new BetterScrollView( 
+								minimax(300,50,1E5,1E5), 
+								mMailRefView = BmMailRefView::CreateInstance( 400, 200),
+								BM_SV_H_SCROLLBAR | BM_SV_V_SCROLLBAR | BM_SV_CORNER
+								| BM_SV_BUSYVIEW | BM_SV_CAPTION,
+								"99999 messages"
+							),
+							0
 						),
 						new BmMailViewContainer(
 							minimax(300,80,1E5,1E5), 
@@ -236,6 +250,9 @@ BmMainWindow::BmMainWindow()
 	mMailFolderView->TeamUpWith( mMailRefView);
 	mMailRefView->TeamUpWith( mMailView);
 	mMailView->TeamUpWith( mMailRefView);
+
+	mMailRefViewFilterControl->TeamUpWith( mMailRefView);
+
 	MailFolderSelectionChanged( 0);
 	MailRefSelectionChanged( 0);
 	MailViewChanged( false);

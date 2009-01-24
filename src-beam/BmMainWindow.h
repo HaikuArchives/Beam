@@ -21,6 +21,8 @@ class BmToolbarButton;
 class CLVContainerView;
 class UserResizeSplitView;
 class BmLogWindow;
+class BmMailRefFilterControl;
+class BmMailRefViewFilterControl;
 
 class BmMainWindow : public BmWindow
 {
@@ -79,6 +81,9 @@ private:
 	BmToolbarButton* mTrashButton;
 	
 	BmMenuController* mAccountMenu;
+	
+	BmMailRefFilterControl* mMailRefFilterControl;
+	BmMailRefViewFilterControl* mMailRefViewFilterControl;
 	
 	MMenuBar* mMainMenuBar;
 	static bool nIsAlive;

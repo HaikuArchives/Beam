@@ -27,8 +27,10 @@
 #include "BmMailMover.h"
 #include "BmMailNavigator.h"
 #include "BmMailRef.h"
+#include "BmMailRefFilterControl.h"
 #include "BmMailRefList.h"
 #include "BmMailRefView.h"
+#include "BmMailRefViewFilterControl.h"
 #include "BmMailView.h"
 #include "BmMailViewWin.h"
 #include "BmMenuController.h"
@@ -556,16 +558,16 @@ void BmMailRefView::AttachedToWindow()
 		BBitmap* unlocked = unlockedIconHandle->bitmap;
 		BPicture* lockedPicture = TheResources->CreatePictureFor(
 			locked, B_V_SCROLL_BAR_WIDTH+1, labelViewHeight, false, 
-			BmPicFrame_ActionButton
+			B_UI_PANEL_BACKGROUND_COLOR, BmPicFrame_ActionButton
 		);
 		BPicture* unlockedPicture = TheResources->CreatePictureFor(
 			unlocked, B_V_SCROLL_BAR_WIDTH+1, labelViewHeight, false, 
-			BmPicFrame_ActionButton
+			B_UI_PANEL_BACKGROUND_COLOR, BmPicFrame_ActionButton
 		);
 		BPictureButton* lockLabelsButton = new BPictureButton(
 			BRect(0,0,B_V_SCROLL_BAR_WIDTH,labelViewHeight-1), "lockLabelsButton", 
 			unlockedPicture, lockedPicture, new BMessage(BM_CHANGE_LABELS_LOCKED), 
-			B_TWO_STATE_BUTTON
+			B_TWO_STATE_BUTTON, B_FOLLOW_NONE, B_WILL_DRAW
 		);
 		delete unlockedPicture;
 		delete lockedPicture;
@@ -652,6 +654,16 @@ void BmMailRefView::MessageReceived( BMessage* msg) {
 					CLVColumnLabelView* labelView = ColumnLabelView();
 					labelView->SetLayoutLocked(control->Value());
 				}
+				break;
+			}
+			case BM_MAILREF_VIEW_FILTER_CHANGED: {
+				const char* kind = msg->FindString(
+					BmMailRefViewFilterControl::MSG_FILTER_KIND
+				);
+				const char* content = msg->FindString(
+					BmMailRefViewFilterControl::MSG_FILTER_CONTENT
+				);
+printf("filter(%s):%s\n", kind, content);
 				break;
 			}
 			default:
