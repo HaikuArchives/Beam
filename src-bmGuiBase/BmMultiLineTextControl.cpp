@@ -29,7 +29,9 @@ BmMultiLineTextControl::BmMultiLineTextControl( const char* label, bool labelIsM
 	,	mLabelIsMenu( labelIsMenu)
 {
 	ResizeToPreferred();
-	float divPos = label ? StringWidth( label)+27 : 0;
+	float divPos = 0;
+	if (label)
+		divPos = StringWidth(label) + (mLabelIsMenu ? 27 : 3);
 	BFont font;
 	m_text_view->GetFont( &font);
 	font_height fh;
@@ -40,15 +42,15 @@ BmMultiLineTextControl::BmMultiLineTextControl( const char* label, bool labelIsM
 		ct_mpm = minimax( divPos + font.StringWidth("W")*minTextLen, height+4, 
 								1E5, fixedHeight ? height+4 : 1E5);
 	else
-		ct_mpm = minimax( divPos + font.StringWidth("W")*10, height+6, 
-								1E5, fixedHeight ? height+6 : 1E5);
+		ct_mpm = minimax( divPos + font.StringWidth("W")*10, height+4, 
+								1E5, fixedHeight ? height+4 : 1E5);
 	inherited::SetDivider( divPos);
 	if (labelIsMenu) {
 		float width, height;
 		GetPreferredSize( &width, &height);
 		BPopUpMenu* popup = new BPopUpMenu( label, true, false);
-		mMenuField = new BMenuField( BRect( 2,0,Divider(),height), NULL, label, popup, 
-											  true, B_FOLLOW_NONE, B_WILL_DRAW);
+		mMenuField = new BMenuField( BRect( 2,0,Divider(),height), NULL, label, 
+											  popup, true, B_FOLLOW_NONE, B_WILL_DRAW);
 		mMenuField->SetDivider( 0);
 		AddChild( mMenuField);
 	}
@@ -137,11 +139,9 @@ BRect BmMultiLineTextControl::layout(BRect frame) {
 		return frame;
 	MoveTo(frame.LeftTop());
 	ResizeTo(frame.Width(),frame.Height());
-	float occupiedSpace = Divider()-11;
-	if (occupiedSpace<2)
-		occupiedSpace = 2;
+	float occupiedSpace = 3 + Divider();
 	m_text_view->MoveTo( occupiedSpace, 4);
-	m_text_view->ResizeTo( frame.Width()-occupiedSpace-5, 
+	m_text_view->ResizeTo( frame.Width()-occupiedSpace-4, 
 								  frame.Height()-m_text_view->Frame().top-4-2);
 	return frame;
 }

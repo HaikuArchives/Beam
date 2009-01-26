@@ -187,7 +187,7 @@ BRect BmTextControl::layout(BRect frame) {
 	ResizeTo(frame.Width(),frame.Height());
 	float occupiedSpace = 3 + Divider();
 	mTextView->MoveTo( occupiedSpace, 5);
-	mTextView->ResizeTo( frame.Width()-occupiedSpace-6, 
+	mTextView->ResizeTo( frame.Width()-occupiedSpace-4, 
 								mTextView->Frame().Height());
 	return frame;
 }

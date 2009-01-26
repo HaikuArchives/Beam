@@ -39,13 +39,13 @@ BmMenuControl::BmMenuControl( const char* label, BMenu* menu, float weight,
 		SetDivider( 13 + (label ? labelWidth+19 : 0));
 		mMenuBar->ResizeBy(0.0, 5.0);
 	} else
-		SetDivider( (label ? labelWidth + 5 : 0));
+		SetDivider( (label ? labelWidth + 5 : 2));
 	float minHeight = mMenuBar->Frame().Height()+6;
 	if (fitText) {
 		float fixedWidth = StringWidth( fitText)+Divider()+27;
 		ct_mpm = minimax( fixedWidth, minHeight, fixedWidth, minHeight);
 	} else {
-		ct_mpm = minimax( 
+		ct_mpm = minimax(
 			StringWidth("1234567890")+Divider()+27, minHeight, 
 			maxWidth, minHeight, weight
 		);
@@ -173,7 +173,7 @@ BRect BmMenuControl::layout(BRect inFrame) {
 									: Divider() + 1;
 
 	mMenuBar->MoveTo( occupiedSpace, BeamOnDano ? 5 : 3);
-	mMenuBar->ResizeTo( frame.Width()-occupiedSpace-3, 
+	mMenuBar->ResizeTo( frame.Width()-occupiedSpace-2, 
 							  mMenuBar->Frame().Height());
 	if (BeamOnDano) {
 		// on Dano/Zeta there seems to be a bug with computing the 
