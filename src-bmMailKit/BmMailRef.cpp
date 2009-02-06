@@ -49,7 +49,7 @@ const char* const BmMailRef::MSG_CLASSIFICATION = 	"bm:cl";
 const char* const BmMailRef::MSG_RATIO_SPAM= "bm:rs";
 const int16 BmMailRef::nArchiveVersion = 5;
 
-const float BmMailRef::UNKNOWN_RATIO = 10.0;	
+const float BmMailRef::UNKNOWN_RATIO = 10.0;
 	// just anything outside of [0..1]
 
 /*------------------------------------------------------------------------------*\
@@ -448,7 +448,7 @@ bool BmMailRef::ReadAttributes( const struct stat* statInfo,
 		mSizeString = "";
 		mPriority = "";
 		mClassification = "";
-		mRatioSpam = 100;
+		mRatioSpam = UNKNOWN_RATIO;
 		mRatioSpamString = "";
 
 		BM_LOG2( BM_LogMailTracking, 
