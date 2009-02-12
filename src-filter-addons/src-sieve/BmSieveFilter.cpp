@@ -1365,7 +1365,11 @@ BmSieveFilterPrefs::BmSieveFilterPrefs( minimax minmax)
 					NULL, false, 1, 
 					0, true
 				),
-				mMarkControl[i] = new BmCheckControl( "", NULL,	this),
+				new VGroup(
+					mMarkControl[i] = new BmCheckControl( NULL, NULL,	this),
+					new Space(),
+					0
+				),
 				0
 			);
 		mMailPartControl[i]->ct_mpm.maxi.y = 1E5;
@@ -1375,7 +1379,7 @@ BmSieveFilterPrefs::BmSieveFilterPrefs( minimax minmax)
 		mFieldNameControl[i]->ct_mpm = minimax(80,-1,80,1E5);
 		mValueControl[i]->SetTabAllowed( false);
 		mValueControl[i]->ct_mpm = minimax(140,-1,1E5,1E5,5.0);
-		mMarkControl[i]->ct_mpm = minimax(-1,-1,-1,1E5);
+		mMarkControl[i]->ct_mpm.weight = 0.1;
 		mFilterGroup->AddChild( mFilterLine[i]);
 	}		
 	mFilterGroup->AddChild( mSpaceAtBottom = new Space());

@@ -29,8 +29,12 @@ public:
 	float LabelWidth();
 	void AdjustToMaxLabelWidth( float maxWidth);
 	void SetValueSilently( bool val);
+	
+	minimax layoutprefs();
 
 private:
+	void _InitSize();
+
 	// Hide copy-constructor and assignment:
 	BmCheckControl( const BmCheckControl&);
 	BmCheckControl operator=( const BmCheckControl&);
