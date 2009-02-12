@@ -82,9 +82,7 @@ void BmImapStatusFilter::Filter( const char* srcBuf, uint32& srcLen,
 
 		// setup a regex-string that can decide whether or not a given line
 		// is a status line.
-		// IMAP actually only defines '*' or the tag as indicator, but since
-		// we are supporting DIGEST-MD5 and CRAM-MD5 and those do make use
-		// of '+' (which I *do* find rather annoying!), we check for '+', too
+		// IMAP defines '*' (data), '+' (continuation) or the tag as indicator, 
 		BmString statusRxStr 
 			= tagStr.Length()
 				? BmString("^(\\*|\\+|") << tagStr << ")\\s+"
@@ -103,7 +101,8 @@ void BmImapStatusFilter::Filter( const char* srcBuf, uint32& srcLen,
 					mLastStatusLine.RemoveAll("\r");
 					if (mLastStatusLine.ByteAt(0) == '*'
 					|| mLastStatusLine.ByteAt(0) == '+')
-						// normal status (at top of answer stream)
+						// normal status (at top of answer stream) or continuation
+						// request
 						mStatusText << mLastStatusLine;
 					else
 						// tagged status (at bottom of answer stream)
