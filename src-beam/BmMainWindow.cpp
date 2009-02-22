@@ -157,19 +157,19 @@ BmMainWindow::BmMainWindow()
 						   new BMessage( defaultFwdMsgType), this, 
 						   "Forward mail to somewhere else", true
 						),
-					mTofuButton
-						= new BmToolbarButton( 
-							"Tofu", 
-							width, height,
-							new BMessage(BMM_LEARN_AS_TOFU), this,
-							"Treat selected mail(s) as Tofu"
-						),
 					mSpamButton
 						= new BmToolbarButton( 
 							"Spam", 
 							width, height,
 							new BMessage(BMM_LEARN_AS_SPAM), this,
 							"Treat selected mail(s) as Spam"
+						),
+					mTofuButton
+						= new BmToolbarButton( 
+							"Tofu", 
+							width, height,
+							new BMessage(BMM_LEARN_AS_TOFU), this,
+							"Treat selected mail(s) as Tofu"
 						),
 					mPrintButton
 						= new BmToolbarButton( 
