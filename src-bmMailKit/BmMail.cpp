@@ -592,7 +592,6 @@ void BmMail::StoreAttributes( BNode& mailNode, const BmString& status,
 	//
 	if (mOutbound) {
 		// write MAIL:flags in order to cooperate nicely with MDR:
-		BmString status = Status();
 		int32 flags = 0;
 		if (status==BM_MAIL_STATUS_PENDING)
 			flags = B_MAIL_PENDING | B_MAIL_SAVE;
@@ -622,10 +621,9 @@ void BmMail::StoreAttributes( BNode& mailNode, const BmString& status,
 	//
 	mailNode.WriteAttr( BM_MAIL_ATTR_CLASSIFICATION, B_STRING_TYPE, 0, 
 							  mClassification.String(), mClassification.Length()+1);
-	float ratioSpam = RatioSpam();
-	if (ratioSpam != BmMailRef::UNKNOWN_RATIO)
+	if (mRatioSpam != BmMailRef::UNKNOWN_RATIO)
 		mailNode.WriteAttr( BM_MAIL_ATTR_RATIO_SPAM, B_FLOAT_TYPE, 0, 
-								  &ratioSpam, sizeof(ratioSpam));
+								  &mRatioSpam, sizeof(mRatioSpam));
 }
 
 /*------------------------------------------------------------------------------*\
