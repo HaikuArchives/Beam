@@ -99,6 +99,7 @@ void BmCheckControl::SetValueSilently( bool val) {
 		-	
 \*------------------------------------------------------------------------------*/
 minimax BmCheckControl::layoutprefs() {
+	inherited::layoutprefs();
 	return mpm = ct_mpm;
 }
 
