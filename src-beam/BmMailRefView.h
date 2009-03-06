@@ -15,6 +15,8 @@
 #include "BmMailFolder.h"
 #include "BmMailRef.h"
 
+class BControl;
+
 /*------------------------------------------------------------------------------*\
 	types of messages sent via the observe/notify system:
 \*------------------------------------------------------------------------------*/
