@@ -22,6 +22,10 @@
 #include "BmRefManager.h"
 #include "BmStoredActionManager.h"
 
+using std::map;
+using std::set;
+using std::vector;
+
 class BDataIO;
 class BmController;
 
@@ -171,7 +175,7 @@ private:
 	// Hide copy-constructor and assignment:
 	BmJobModel( const BmJobModel&);
 #ifndef __POWERPC__
-	BmJobModel operator=( const BmJobModel&);
+	BmJobModel& operator=( const BmJobModel&);
 #endif
 
 	virtual void doStartJob();
@@ -264,7 +268,7 @@ private:
 	// Hide assignment:
 #ifndef __POWERPC__
 	BmListModelItem( const BmListModelItem&);
-	BmListModelItem operator=( const BmListModelItem&);
+	BmListModelItem& operator=( const BmListModelItem&);
 #endif
 	
 	BmString mKey;
@@ -379,7 +383,7 @@ private:
 	// Hide copy-constructor and assignment:
 	BmListModel( const BmListModel&);
 #ifndef __POWERPC__
-	BmListModel operator=( const BmListModel&);
+	BmListModel& operator=( const BmListModel&);
 #endif
 
 	BmModelItemMap mModelItemMap;

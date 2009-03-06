@@ -31,6 +31,8 @@
 
 #include <vector>
 
+using std::vector;
+
 #include "libregexx.h"
 #include "BmString.h"
 #include "regexx.hh"

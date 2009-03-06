@@ -13,6 +13,7 @@ using namespace BmEncoding;
 #include "BmGuiUtil.h"
 #include "BmPrefs.h"
 
+template<>
 BmMenuItemManager* BmMenuItemManager::theInstance = NULL;
 
 /*------------------------------------------------------------------------------*\
@@ -65,7 +66,9 @@ void BmMenuItem::UpdateShortcut()
 	( )
 		-	
 \*------------------------------------------------------------------------------*/
-void BmMenuItemManager::UpdateAll() {
+template<>
+void BmMenuItemManager::UpdateAll()
+{
 	mLock.Lock();
 	BmViewSet::iterator iter;
 	for(iter=mViewSet.begin(); iter != mViewSet.end(); ++iter) {

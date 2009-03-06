@@ -121,7 +121,7 @@ bool BmGuiRoster::AskUserForPopAcc( const BmString& accName,
 \*------------------------------------------------------------------------------*/
 bool BmGuiRoster::IsEmailKnown( const BmString& email)
 {
-	return ThePeopleList->FindPersonByEmail(email) != NULL
+	return ThePeopleList->FindPersonByEmail(email) != (BmPerson*)NULL
 			 || ThePeopleList->IsAddressKnown(email);
 }
 

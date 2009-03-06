@@ -130,7 +130,7 @@ enum {
 \*------------------------------------------------------------------------------*/
 BmBodyPartView::BmBodyPartView( minimax minmax, int32 width, int32 height, 
 										  bool editable)
-	:	inherited( BRect(0,0,width-1,height-1), "Beam_BodyPartView", 
+	:	inherited( BRect(0,0,(float)width-1,(float)height-1), "Beam_BodyPartView", 
 					  B_MULTIPLE_SELECTION_LIST, true, true)
 	,	mShowAllParts( false)
 	,	mEditable( editable)
@@ -198,8 +198,8 @@ status_t BmBodyPartView::Unarchive( const BMessage* archive, bool) {
 BmListViewItem* BmBodyPartView::CreateListViewItem( BmListModelItem* item, 
 																	 BMessage*) {
 	BmBodyPart* modelItem = dynamic_cast<BmBodyPart*>( item);
-	if (mShowAllParts || !modelItem->IsMultiPart() 
-	&& !modelItem->ShouldBeShownInline()) {
+	if (mShowAllParts || (!modelItem->IsMultiPart() 
+	&& !modelItem->ShouldBeShownInline())) {
 		return new BmBodyPartItem( this, item);
 	} else {
 		return NULL;
@@ -282,7 +282,7 @@ void BmBodyPartView::AdjustVerticalSize() {
 	int32 count = CountItems();
 	float itemHeight = count ? ItemAt(0)->Height()+1 : 0;
 							// makes this view disappear if no BodyPart is shown
-	ResizeTo( width, count*itemHeight);
+	ResizeTo( width, (float)count*itemHeight);
 	Invalidate();
 	BmMailView* mailView = (BmMailView*)Parent();
 	if (mailView) {
@@ -323,7 +323,7 @@ void BmBodyPartView::AddAllModelItems() {
 		for( int c=nFirstTextCol; c<CountColumns(); ++c) {
 			float textWidth = StringWidth( viewItem->GetColumnContentText(c));
 			mColWidths[c] 
-				= MAX( 
+				= (float)max_c( 
 					mColWidths[c], 
 					textWidth+10+EXPANDER_SHIFT*viewItem->OutlineLevel()
 				);
@@ -470,7 +470,7 @@ void BmBodyPartView::MessageReceived( BMessage* msg) {
 				BmStringIBuf srcBuf( bodyPart->DecodedData());
 				BmString utf8Text;
 				const uint32 blockSize 
-					= max( (int32)128, bodyPart->DecodedLength());
+					= max_c( (int32)128, bodyPart->DecodedLength());
 				BmStringOBuf destBuf( blockSize);
 				BmUtf8Encoder encoder( &srcBuf, charset, blockSize);
 				destBuf.Write( &encoder, blockSize);

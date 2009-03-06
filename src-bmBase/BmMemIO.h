@@ -165,8 +165,8 @@ public:
 	inline bool HasData() const			{ return mBuf!=NULL; }
 	inline char ByteAt( uint32 pos) const
 													{ return (!mBuf||pos<0||pos>=mCurrPos) 
-																	? 0 
-																	: mBuf[pos];
+																	? (char)0 
+																	: (char)mBuf[pos];
 													}
 	void Reset();
 

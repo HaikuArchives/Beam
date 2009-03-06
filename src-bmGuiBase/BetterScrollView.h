@@ -33,6 +33,8 @@
 #include "BmCaption.h"
 #include "ScrollViewCorner.h"
 
+using std::vector;
+
 typedef uint32 BmScrollViewFlags;
 enum  {
 	BM_SV_H_SCROLLBAR = 1<<0,

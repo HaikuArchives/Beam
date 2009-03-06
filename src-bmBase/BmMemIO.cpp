@@ -531,7 +531,7 @@ void BmRingBuf::Put( const char* data, uint32 len) {
 			mCurrTail += oldLen;
 		}
 		if (!mBuf)
-			throw bad_alloc();
+			throw std::bad_alloc();
 	}
 	for( uint32 i=0; i<len; ++i) {
 		if (mCurrTail == mBufLen)

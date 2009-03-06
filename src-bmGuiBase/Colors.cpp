@@ -182,6 +182,7 @@ rgb_color BmFixupColor( const char* uiColName, int level, bool weaken) {
 		return ui_color( uiColName);
 }
 
+#ifndef __HAIKU__
 bool operator== (const rgb_color& left, const rgb_color& right) {
 	return left.red == right.red
 				&& left.green == right.green
@@ -195,6 +196,7 @@ bool operator!= (const rgb_color& left, const rgb_color& right) {
 				|| left.blue != right.blue
 				|| left.alpha != right.alpha;
 }
+#endif // __HAIKU__
 
 BFont bm_plain_font;
 BFont bm_bold_font;

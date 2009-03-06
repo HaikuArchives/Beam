@@ -68,7 +68,7 @@ private:
 	// Hide copy-constructor and assignment:
 	BmController( const BmController&);
 #ifndef __POWERPC__
-	BmController operator=( const BmController&);
+	BmController& operator=( const BmController&);
 #endif
 };
 
@@ -103,7 +103,7 @@ protected:
 	// Hide copy-constructor and assignment:
 	BmJobController( const BmJobController&);
 #ifndef __POWERPC__
-	BmJobController operator=( const BmJobController&);
+	BmJobController& operator=( const BmJobController&);
 #endif
 };
 

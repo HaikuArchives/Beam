@@ -30,6 +30,9 @@
 #include "BmStorageUtil.h"
 #include "BmUtil.h"
 
+using std::map;
+using std::vector;
+
 BmResources* BmResources::theInstance = NULL;
 
 // This is the link's mouse cursor (a replica of NetPositive's link cursor).

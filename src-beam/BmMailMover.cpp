@@ -126,7 +126,7 @@ bool BmMailMover::StartJob() {
 \*------------------------------------------------------------------------------*/
 void BmMailMover::UpdateStatus( const float delta, const char* filename, 
 										  const char* currentCount) {
-	auto_ptr<BMessage> msg( new BMessage( BM_JOB_UPDATE_STATE));
+	std::auto_ptr<BMessage> msg( new BMessage( BM_JOB_UPDATE_STATE));
 	msg->AddString( MSG_MOVER, Name().String());
 	msg->AddString( BmJobModel::MSG_DOMAIN, "statbar");
 	msg->AddFloat( MSG_DELTA, delta);

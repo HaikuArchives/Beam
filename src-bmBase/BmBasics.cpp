@@ -32,6 +32,10 @@ BM_error::BM_error( const char* what_arg)
 {
 }
 
+BM_error::~BM_error() throw()
+{
+}
+
 /********************************************************************************\
 	BM_runtime_error
 \********************************************************************************/
@@ -43,6 +47,10 @@ BM_runtime_error::BM_runtime_error( const BmString& what_arg)
 
 BM_runtime_error::BM_runtime_error( const char* what_arg)
 	:	inherited( what_arg)
+{
+}
+
+BM_runtime_error::~BM_runtime_error() throw()
 {
 }
 
@@ -60,6 +68,10 @@ BM_invalid_argument::BM_invalid_argument( const char* what_arg)
 {
 }
 
+BM_invalid_argument::~BM_invalid_argument() throw()
+{
+}
+
 /********************************************************************************\
 	BM_network_error
 \********************************************************************************/
@@ -71,6 +83,10 @@ BM_network_error::BM_network_error( const BmString& what_arg)
 
 BM_network_error::BM_network_error( const char* what_arg)
 	:	inherited( what_arg)
+{
+}
+
+BM_network_error::~BM_network_error() throw()
 {
 }
 
@@ -90,6 +106,10 @@ BM_text_error::BM_text_error( const char* what_arg, const char* ctx, int32 pos)
 	:	inherited( what_arg)
 	,	posInText( pos)
 	,	context( ctx)
+{
+}
+
+BM_text_error::~BM_text_error() throw()
 {
 }
 

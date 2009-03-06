@@ -41,8 +41,10 @@ inline rgb_color BmStrengthenColor( const char* uiColName, int level) {
 	return BmFixupColor( uiColName, level, false);
 }
 
+#ifndef __HAIKU__
 bool IMPEXPBMGUIBASE operator== (const rgb_color& left, const rgb_color& right);
 bool IMPEXPBMGUIBASE operator!= (const rgb_color& left, const rgb_color& right);
+#endif
 
 #ifndef B_BEOS_VERSION_DANO
 

@@ -744,9 +744,9 @@ void BmPrefsFilterChainView::UnchainFilter() {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmPrefsFilterChainView::UpdateState() {
-	bool haveChain = (mCurrFilterChain != NULL);
-	bool haveChained = (mCurrChainedFilter != NULL);
-	bool haveAvailable = (mCurrAvailableFilter != NULL);
+	bool haveChain = (mCurrFilterChain != (BmFilterChain*)NULL);
+	bool haveChained = (mCurrChainedFilter != (BmChainedFilter*)NULL);
+	bool haveAvailable = (mCurrAvailableFilter != (BmFilter*)NULL);
 
 	mChainControl->SetEnabled( 
 		haveChain

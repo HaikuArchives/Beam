@@ -62,7 +62,7 @@ private:
 	// Hide copy-constructor and assignment:
 	BmRefObj( const BmRefObj&);
 #ifndef __POWERPC__
-	BmRefObj operator=( const BmRefObj&);
+	BmRefObj& operator=( const BmRefObj&);
 #endif
 };
 

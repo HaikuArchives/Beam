@@ -691,7 +691,7 @@ void BmMailView::SetSignatureByName( const BmString sigName) {
 	textRunArray->runs[1].font = mFont;
 	textRunArray->runs[1].color = BmWeakenColor(B_UI_DOCUMENT_TEXT_COLOR,2);
 	BmString sig = TheSignatureList->GetSignatureStringFor( sigName);
-	int32 lastTextPos = max( (long)0, text.Length()-1);
+	int32 lastTextPos = max_c( (long)0, text.Length()-1);
 	if (sig.Length())
 		text << "-- \n" << sig;
 	SetText( text.String(), text.Length(), textRunArray);

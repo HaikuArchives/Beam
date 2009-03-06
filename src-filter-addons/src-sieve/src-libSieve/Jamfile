@@ -34,4 +34,5 @@ StaticLibrary libsieve.a
 	;
 # </pe-src>
 
+MakeLocate sieve.h : [ FDirName $(OBJECTS_DIR) src-filter-addons src-sieve src-libSieve ] ;
 MakeLocate libsieve.a : [ FDirName $(OBJECTS_DIR) lib ] ;

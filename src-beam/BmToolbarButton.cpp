@@ -31,12 +31,14 @@ const float LATCHSZ  = 4.0;
 static BPicture BmDummyPicture;
 
 
+template<>
 BmToolbarManager* BmToolbarManager::theInstance = NULL;
 
 /*------------------------------------------------------------------------------*\
 	( )
 		-	
 \*------------------------------------------------------------------------------*/
+template<>
 void BmToolbarManager::UpdateAll() {
 	mLock.Lock();
 	BmViewSet::iterator iter;

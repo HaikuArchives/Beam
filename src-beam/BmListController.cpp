@@ -724,7 +724,7 @@ BmListViewItem* BmListViewController::AddModelItem( BmListModelItem* item) {
 BmListViewItem* BmListViewController::doAddModelItem( BmListViewItem* parent, 
 																		BmListModelItem* item,
 																		bool redraw) {
-	auto_ptr<BMessage> archive( 
+	std::auto_ptr<BMessage> archive( 
 		Hierarchical() 
 			? GetArchiveForItemKey( item->Key()) 
 			: NULL

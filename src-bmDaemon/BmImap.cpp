@@ -642,6 +642,7 @@ void BmImap::StateCheck()
 		}
 		// grab individual UID and message size from result:
 		vector<int32> msgSizes;
+		mMsgFlags.clear();
 		mMsgUIDs.clear();
 		mMsgFlags.clear();
 		for( int32 i=0; i<fetchedCount; ++i) {

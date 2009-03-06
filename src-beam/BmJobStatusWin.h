@@ -25,6 +25,9 @@
 #include "BmController.h"
 #include "BmWindow.h"
 
+using std::deque;
+using std::map;
+
 /*------------------------------------------------------------------------------*\
 	BmJobStatusView
 		-	controls a specific connection
@@ -71,7 +74,7 @@ private:
 	// Hide copy-constructor and assignment:
 	BmJobStatusView( const BmJobStatusView&);
 #ifndef __POWERPC__
-	BmJobStatusView operator=( const BmJobStatusView&);
+	BmJobStatusView& operator=( const BmJobStatusView&);
 #endif
 };
 

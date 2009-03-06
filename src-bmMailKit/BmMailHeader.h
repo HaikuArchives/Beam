@@ -20,6 +20,9 @@
 #include "BmRefManager.h"
 #include "BmUtil.h"
 
+using std::map;
+using std::vector;
+
 class BmMail;
 class BmIdentity;
 

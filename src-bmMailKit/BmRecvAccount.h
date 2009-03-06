@@ -19,6 +19,8 @@
 
 #include "BmDataModel.h"
 
+using std::map;
+
 class BHandler;
 class BNetAddress;
 class BmRecvAccountList;
@@ -32,7 +34,7 @@ class BMessageRunner;
 \*------------------------------------------------------------------------------*/
 class IMPEXPBMMAILKIT BmRecvAccount : public BmListModelItem {
 	typedef BmListModelItem inherited;
-	friend BmRecvAccountList;
+	friend class BmRecvAccountList;
 
 	typedef map<BmString, time_t> BmUidMap;
 public:
@@ -214,7 +216,7 @@ private:
 	// Hide copy-constructor and assignment:
 	BmRecvAccount( const BmRecvAccount&);
 #ifndef __MWERKS__
-	BmRecvAccount operator=( const BmRecvAccount&);
+	BmRecvAccount& operator=( const BmRecvAccount&);
 #endif
 };
 

@@ -67,7 +67,7 @@ class IMPEXPBMMAILKIT BmBodyPart : public BmListModelItem {
 
 	static const int16 nArchiveVersion = 1;
 	
-	friend BmBodyPartList;
+	friend class BmBodyPartList;
 
 public:
 	// c'tors and d'tor:

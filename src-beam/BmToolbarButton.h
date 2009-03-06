@@ -22,6 +22,9 @@
 #include "BmGuiUtil.h"
 #include "BmString.h"
 
+using std::set;
+using std::vector;
+
 class BmToolbar :  public MBorder
 {
 	typedef MBorder inherited;

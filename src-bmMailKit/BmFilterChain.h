@@ -16,7 +16,9 @@
 #include "BmString.h"
 #include "BmDataModel.h"
 
-#include <vector.h>
+#include <vector>
+
+using std::vector;
 
 extern IMPEXPBMMAILKIT BmString BM_OutboundLabel;
 

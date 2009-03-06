@@ -16,6 +16,8 @@
 
 #include "BmString.h"
 
+using std::set;
+
 class BHandler;
 class BMenu;
 class BMenuItem;

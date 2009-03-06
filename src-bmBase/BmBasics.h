@@ -34,11 +34,12 @@ extern IMPEXPBMBASE BmString BM_NoItemLabel;
 	BM_error
 		-	base-class for any Beam-exception
 \*------------------------------------------------------------------------------*/
-class IMPEXPBMBASE BM_error : public runtime_error {
-	typedef runtime_error inherited;
+class IMPEXPBMBASE BM_error : public std::runtime_error {
+	typedef std::runtime_error inherited;
 public:
 	BM_error( const BmString& what_arg);
 	BM_error( const char* what_arg);
+	virtual ~BM_error () throw();
 private:
 };
 
@@ -51,6 +52,7 @@ class IMPEXPBMBASE BM_runtime_error : public BM_error {
 public:
 	BM_runtime_error (const BmString& what_arg);
 	BM_runtime_error (const char* const what_arg);
+	virtual ~BM_runtime_error () throw();
 };
 
 /*------------------------------------------------------------------------------*\
@@ -62,6 +64,7 @@ class IMPEXPBMBASE BM_invalid_argument : public BM_error {
 public:
 	BM_invalid_argument (const BmString& what_arg);
 	BM_invalid_argument (const char* const what_arg);
+	virtual ~BM_invalid_argument () throw();
 };
 
 /*------------------------------------------------------------------------------*\
@@ -73,6 +76,7 @@ class IMPEXPBMBASE BM_network_error : public BM_runtime_error {
 public:
 	BM_network_error (const BmString& what_arg);
 	BM_network_error (const char* const what_arg);
+	virtual ~BM_network_error () throw();
 };
 
 /*------------------------------------------------------------------------------*\
@@ -86,6 +90,7 @@ class IMPEXPBMBASE BM_text_error : public BM_runtime_error {
 public:
 	BM_text_error (const BmString& what_arg, const char* ctx="", int32 pos=-1);
 	BM_text_error (const char* const what_arg, const char* ctx="", int32 pos=-1);
+	virtual ~BM_text_error () throw();
 	int32 posInText;
 	BmString context;
 };

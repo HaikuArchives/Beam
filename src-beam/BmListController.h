@@ -17,6 +17,8 @@
 #include "BmController.h"
 #include "BmDataModel.h"
 
+using std::map;
+
 class BmBusyView;
 class BmCaption;
 class BmListViewController;
@@ -45,7 +47,7 @@ class BmListViewItem : public CLVEasyItem
 {
 	typedef CLVEasyItem inherited;
 	
-	friend BmListViewController;
+	friend class BmListViewController;
 
 protected: 
 	// archival-fieldnames:
@@ -194,7 +196,7 @@ private:
 	// Hide copy-constructor and assignment:
 	BmListViewController( const BmListViewController&);
 #ifndef __POWERPC__
-	BmListViewController operator=( const BmListViewController&);
+	BmListViewController& operator=( const BmListViewController&);
 #endif
 };
 

@@ -80,7 +80,7 @@ class IMPEXPBMGUIBASE ImageAboutWindow : public BWindow
 		
 	private:
 		//Draw method
-		friend AboutView;
+		friend class AboutView;
 		void DrawContent(BView* view, BRect update_rect);
 
 		BBitmap* m_bitmap;
@@ -119,7 +119,7 @@ class AboutView : public BView
 
 		ImageAboutWindow* m_parent;
 
-		friend ImageAboutWindow;
+		friend class ImageAboutWindow;
 
 	public:
 		//BView override

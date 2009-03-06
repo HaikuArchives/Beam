@@ -16,6 +16,9 @@
 
 #include "BmRefManager.h"
 
+using std::set;
+using std::vector;
+
 class BmListModel;
 /*------------------------------------------------------------------------------*\
 	BmStoredActionFlusher

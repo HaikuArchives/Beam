@@ -26,7 +26,11 @@
 #ifndef REGEXX_HH
 #define REGEXX_HH
 
+#if __GNUC__ > 2
+#  include <ostream>
+#endif
 #include <stdexcept>
+#include <string>
 #include <vector>
 
 #include "libregexx.h"
@@ -35,6 +39,10 @@
 
 #include "BmString.h"
 #include "split.hh"
+
+using std::ostream;
+using std::string;
+using std::vector;
 
 namespace regexx {
 
@@ -266,8 +274,8 @@ namespace regexx {
      *  @author Gustavo Niemeyer
      *
      **/
-    class Exception : public runtime_error {
-    	typedef runtime_error inherited;
+    class Exception : public std::runtime_error {
+    	typedef std::runtime_error inherited;
     public:
       Exception(const BmString& _message) 
       	:	inherited(_message.String()) {}

@@ -104,7 +104,7 @@ private:
 	\*---------------------------------------------------------------------------*/
 	class IMPEXPBMBASE BmLogfile : public BLooper{
 		typedef BLooper inherited;
-		friend BmLogHandler;
+		friend class BmLogHandler;
 	public:
 		BmLogfile( BFile* file, const char* fn, const char* ln);
 		~BmLogfile();

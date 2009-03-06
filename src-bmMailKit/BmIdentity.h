@@ -19,6 +19,8 @@
 
 #include "BmRecvAccount.h"
 
+using std::vector;
+
 class BmIdentityList;
 
 /*------------------------------------------------------------------------------*\
@@ -29,7 +31,7 @@ class BmIdentityList;
 \*------------------------------------------------------------------------------*/
 class IMPEXPBMMAILKIT BmIdentity : public BmListModelItem {
 	typedef BmListModelItem inherited;
-	friend BmIdentityList;
+	friend class BmIdentityList;
 
 public:
 	BmIdentity( const char* name, BmIdentityList* model);
