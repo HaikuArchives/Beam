@@ -457,8 +457,8 @@ void BmImap::StateCapa()
 }
 
 /*------------------------------------------------------------------------------*\
-	StartEncryption(encryptionType)
-		-	starts connection encryption
+	StateStartTLS()
+		-	
 \*------------------------------------------------------------------------------*/
 void BmImap::StateStartTLS()
 {
@@ -484,7 +484,7 @@ void BmImap::StateStartTLS()
 }
 
 /*------------------------------------------------------------------------------*\
-	StartEncryption()
+	StartEncryption(encryptionType)
 		-	extends activation of SSL/TLS encryption layer with automatic
 			updating of newly accepted certificate ID.
 \*------------------------------------------------------------------------------*/
@@ -618,13 +618,15 @@ void BmImap::StateCheck()
 	mNewMsgCount = 0;
 	if (mMsgCount) {
 		// fetch list with uid and size of every message:
-		cmd = BmString("FETCH 1:") << mMsgCount << " (uid rfc822.size)";
+		// add "flags" here to the list of data to fetch.
+		cmd = BmString("FETCH 1:") << mMsgCount << " (uid rfc822.size flags)";
 		SendCommand( cmd);
 		if (!CheckForPositiveAnswer())
 			return;
 		int fetchedCount = rx.exec( 
 			StatusText(), 
-			"^\\*\\s+(\\d+)\\s+fetch\\s+\\(\\s*uid\\s+(\\d+)\\s+rfc822\\.size\\s+(\\d+)", 
+//			"^\\*\\s+(\\d+)\\s+fetch\\s+\\(\\s*uid\\s+(\\d+)\\                          s+rfc822\\.size\\s+(\\d+)", 
+			"^\\*\\s+(\\d+)\\s+fetch\\s+\\(\\s*uid\\s+(\\d+)\\s*flags\\s+\\(([^)]+)\\)\\s+rfc822\\.size\\s+(\\d+)",
 			Regexx::newline | Regexx::nocase | Regexx::global
 		);
 		if (!fetchedCount)
@@ -641,6 +643,7 @@ void BmImap::StateCheck()
 		// grab individual UID and message size from result:
 		vector<int32> msgSizes;
 		mMsgUIDs.clear();
+		mMsgFlags.clear();
 		for( int32 i=0; i<fetchedCount; ++i) {
 			BmString nrStr = rx.match[i].atom[0];
 			int32 nr = atoi(nrStr.String());
@@ -652,8 +655,12 @@ void BmImap::StateCheck()
 			// confuse UIDs, should the server decide to renumber the messages:
 			BmString uid = uidValidity + ":" + rx.match[i].atom[1];
 			mMsgUIDs.push_back(uid);
-			//
-			BmString sizeStr = rx.match[i].atom[2];
+			// flags
+			BmString flagsString = rx.match[i].atom[2];
+			unsigned flags = StringToFlags(flagsString);
+			mMsgFlags.push_back(flags);
+			// size
+			BmString sizeStr = rx.match[i].atom[3];
 			msgSizes.push_back(atoi(sizeStr.String()));
 		}
 	
@@ -702,6 +709,7 @@ void BmImap::StateRetrieve()
 		}
 		// fetch current mail
 		BmString serverUID = LocalUidToServerUid(mMsgUIDs[i]);
+// TODO: May also add more stuff to FETCH, like "flags"
 		cmd = BmString("UID FETCH ") << serverUID << " rfc822";
 		SendCommand( cmd);
 		time_t before = time(NULL);
@@ -731,6 +739,16 @@ void BmImap::StateRetrieve()
 		BmRef<BmMail> mail = new BmMail( mAnswerText, mImapAccount->Name());
 		if (mail->InitCheck() != B_OK)
 			goto CLEAN_UP;
+		// ...set IMAP UID - TODO: Use serverUID instead?
+		mail->ImapUID(mMsgUIDs[i]);
+		// ...set the message flags
+		uint32 flags = mMsgFlags[i];
+		if (flags & FLAG_ANSWERED)
+			mail->MarkAs("Replied");
+		else if (flags & FLAG_SEEN)
+			mail->MarkAs("Read");
+		else if (flags & FLAG_DRAFT)
+			mail->MarkAs("Draft");
 		// ...set default folder according to pop-account settings...
 		mail->SetDestFolderName( mImapAccount->HomeFolder());
 		// ...execute mail-filters for this mail...
@@ -895,3 +913,59 @@ BmString BmImap::SuggestAuthType() const
 	else
 		return BmImapAccount::AUTH_LOGIN;
 }
+
+BmString BmImap::FlagsToString(uint32 flags) const
+{
+	BmString string;
+	bool first = true;
+	if (flags & FLAG_SEEN) {
+		string << "\\Seen";
+		first = false;
+	}
+	if (flags & FLAG_ANSWERED) {
+		if (first)
+			string << "\\Answered";
+		else
+			string << " \\Answered";
+		first = false;
+	}
+	if (flags & FLAG_FLAGGED) {
+		if (first)
+			string << "\\Flagged";
+		else
+			string << " \\Flagged";
+		first = false;
+	}
+	if (flags & FLAG_DELETED) {
+		if (first)
+			string << "\\Deleted";
+		else
+			string << " \\Deleted";
+		first = false;
+	}
+	if (flags & FLAG_DRAFT) {
+		if (first)
+			string << "\\Draft";
+		else
+			string << " \\Draft";
+		first = false;
+	}
+	return string;
+}
+
+uint32 BmImap::StringToFlags(const BmString& flagsString) const
+{
+	uint32 flags = 0;
+	if (flagsString.FindFirst("\\Seen") >= 0)
+		flags |= FLAG_SEEN;
+	if (flagsString.FindFirst("\\Answered") >= 0)
+		flags |= FLAG_ANSWERED;
+	if (flagsString.FindFirst("\\Flagged") >= 0)
+		flags |= FLAG_FLAGGED;
+	if (flagsString.FindFirst("\\Deleted") >= 0)
+		flags |= FLAG_DELETED;
+	if (flagsString.FindFirst("\\Draft") >= 0)
+		flags |= FLAG_DRAFT;
+	return flags;
+}
+

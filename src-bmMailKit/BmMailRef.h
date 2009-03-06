@@ -47,6 +47,7 @@ class IMPEXPBMMAILKIT BmMailRef : public BmListModelItem {
 	static const char* const MSG_IS_VALID;
 	static const char* const MSG_CLASSIFICATION;
 	static const char* const MSG_RATIO_SPAM;
+	static const char* const MSG_IMAP_UID;
 	static const int16 nArchiveVersion;
 
 public:
@@ -79,6 +80,8 @@ public:
 	inline const node_ref& NodeRef() const
 													{ return mNodeRef; }
 	inline status_t InitCheck()	const	{ return mInitCheck; }
+	inline const BmString& ImapUID() const
+											 		{ return mImapUID; }
 	inline const BmString& Account() const
 											 		{ return mAccount; }
 	inline const BmString& Cc() const 	{ return mCc; }
@@ -136,6 +139,7 @@ public:
 	static const BmUpdFlags UPD_TRACKERNAME	= 1<<16;
 	static const BmUpdFlags UPD_CLASSIFICATION= 1<<17;
 	static const BmUpdFlags UPD_RATIO_SPAM		= 1<<18;
+	static const BmUpdFlags UPD_IMAP_UID		= 1<<19;
 
 							// indicates whether an item has been added or removed
 	static const float UNKNOWN_RATIO;
@@ -152,6 +156,7 @@ private:
 	// the following members will be archived as part of BmFolderList:
 	entry_ref mEntryRef;
 	node_ref mNodeRef;
+	BmString mImapUID;
 	BmString mAccount;
 	BmString mCc;
 	BmString mFrom;

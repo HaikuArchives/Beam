@@ -51,6 +51,7 @@ extern IMPEXPBMMAILKIT const char* BM_MAIL_ATTR_RATIO_SPAM;
 extern IMPEXPBMMAILKIT const char* BM_MAIL_ATTR_IDENTITY;
 extern IMPEXPBMMAILKIT const char* BM_MAIL_ATTR_MARGIN;
 extern IMPEXPBMMAILKIT const char* BM_MAIL_ATTR_WHEN_CREATED;
+extern IMPEXPBMMAILKIT const char* BM_MAIL_ATTR_IMAP_UID;
 
 extern IMPEXPBMMAILKIT const char* BM_FIELD_BCC;
 extern IMPEXPBMMAILKIT const char* BM_FIELD_CC;
@@ -202,6 +203,8 @@ public:
 													{ return mIdentityName; }
 	inline const BmString& DestFolderName() const	
 													{ return mDestFolderName; }
+	inline const BmString& ImapUID() const	
+													{ return mImapUID; }
 
 	// setters:
 	inline void BumpRightMargin( int32 i)		
@@ -218,6 +221,8 @@ public:
 	inline void MoveToTrash( bool b)		{ mMoveToTrash = b; }
 	inline void SuggestedCharset( const BmString& s)
 													{ mSuggestedCharset = s; }
+	inline void ImapUID( const BmString& s)	
+													{ mImapUID = s; }
 
 	static const int32 BM_READ_MAIL_JOB = 1;
 
@@ -277,6 +282,9 @@ private:
 	BmString mSuggestedCharset;
 							// charset explicitly selected by user, overrides
 							// any other.
+	BmString mImapUID;
+							// UID for this mail as retrieved from the IMAP
+							// server.
 	status_t mInitCheck;
 
 	// Hide copy-constructor and assignment:

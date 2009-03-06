@@ -47,7 +47,8 @@ const char* const BmMailRef::MSG_IDENTITY = 	"bm:id";
 const char* const BmMailRef::MSG_IS_VALID = 	"bm:iv";
 const char* const BmMailRef::MSG_CLASSIFICATION = 	"bm:cl";
 const char* const BmMailRef::MSG_RATIO_SPAM= "bm:rs";
-const int16 BmMailRef::nArchiveVersion = 5;
+const char* const BmMailRef::MSG_IMAP_UID =	"bm:ui";
+const int16 BmMailRef::nArchiveVersion = 6;
 
 const float BmMailRef::UNKNOWN_RATIO = 10.0;
 	// just anything outside of [0..1]
@@ -221,6 +222,10 @@ BmMailRef::BmMailRef( BMessage* archive, node_ref& nref)
 			mRatioSpam = FindMsgFloat( archive, MSG_RATIO_SPAM);
 		}
 
+		if (version >= 6) {
+			mImapUID = FindMsgString( archive, MSG_IMAP_UID);
+		}
+
 		mSizeString = BytesToString( mSize,true);
 		if (mRatioSpam != UNKNOWN_RATIO)
 			mRatioSpamString << mRatioSpam;
@@ -266,7 +271,8 @@ status_t BmMailRef::Archive( BMessage* archive, bool) const {
 		|| archive->AddString( MSG_IDENTITY, mIdentity.String())
 		|| archive->AddInt32( MSG_WHEN, mWhen)
 		|| archive->AddString( MSG_CLASSIFICATION, mClassification.String())
-		|| archive->AddFloat( MSG_RATIO_SPAM, mRatioSpam);
+		|| archive->AddFloat( MSG_RATIO_SPAM, mRatioSpam)
+		|| archive->AddString( MSG_IMAP_UID, mImapUID.String());
 	return ret;
 }
 
@@ -328,6 +334,8 @@ bool BmMailRef::ReadAttributes( const struct stat* statInfo,
 		// file is indeed a mail, we fetch its attributes:
 		if (BmReadStringAttr( &node, BM_MAIL_ATTR_NAME, 	mName))
 			updFlags |= UPD_NAME;
+		if (BmReadStringAttr( &node, BM_MAIL_ATTR_IMAP_UID, mImapUID))
+			updFlags |= UPD_IMAP_UID;
 		if (BmReadStringAttr( &node, BM_MAIL_ATTR_ACCOUNT, mAccount))
 			updFlags |= UPD_ACCOUNT;
 		if (BmReadStringAttr( &node, BM_MAIL_ATTR_CC, 		mCc))
@@ -432,6 +440,7 @@ bool BmMailRef::ReadAttributes( const struct stat* statInfo,
 	} else {
 		// item is no mail, we mark it as invalid:
 		mName = "";
+		mImapUID = "";
 		mAccount = "";
 		mCc = "";
 		mFrom = "";

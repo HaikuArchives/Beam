@@ -69,6 +69,7 @@ CreateRequiredIndices()
 	// ...and create indices for the Beam-only attributes:
 	EnsureIndexExists( BM_MAIL_ATTR_ACCOUNT, B_STRING_TYPE);
 	EnsureIndexExists( BM_MAIL_ATTR_IDENTITY, B_STRING_TYPE);
+	EnsureIndexExists( BM_MAIL_ATTR_IMAP_UID, B_STRING_TYPE);
 
 // [zooey]: Should we activate this? It's too ugly, isn't it?
 /*

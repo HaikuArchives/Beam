@@ -58,6 +58,7 @@ const char* BM_MAIL_ATTR_RATIO_SPAM		= "MAIL:ratio_spam";
 const char* BM_MAIL_ATTR_IDENTITY		= "MAIL:beam/identity";
 const char* BM_MAIL_ATTR_MARGIN	 		= "MAIL:beam/margin";
 const char* BM_MAIL_ATTR_WHEN_CREATED = "MAIL:beam/when-created";
+const char* BM_MAIL_ATTR_IMAP_UID	 	= "MAIL:beam/imap-uid";
 
 const char* BM_FIELD_BCC 					= "Bcc";
 const char* BM_FIELD_CC 					= "Cc";
@@ -391,6 +392,7 @@ bool BmMail::StartJob() {
 		// we initialize the BmMail-internals from the plain text:
 		BM_LOG2( BM_LogMailParse, BmString("initializing BmMail from msgtext"));
 		mIdentityName = mMailRef->Identity();
+		mImapUID = mMailRef->ImapUID();
 		SetTo( mailText, mMailRef->Account());
 		BM_LOG2( BM_LogMailParse, BmString("Done, mail is initialized"));
 	} catch (BM_error &e) {
@@ -589,6 +591,8 @@ void BmMail::StoreAttributes( BNode& mailNode, const BmString& status,
 							  mAccountName.String(), mAccountName.Length()+1);
 	mailNode.WriteAttr( BM_MAIL_ATTR_IDENTITY, B_STRING_TYPE, 0, 
 							  mIdentityName.String(), mIdentityName.Length()+1);
+	mailNode.WriteAttr( BM_MAIL_ATTR_IMAP_UID, B_STRING_TYPE, 0, 
+							  mImapUID.String(), mIdentityName.Length()+1);
 	//
 	if (mOutbound) {
 		// write MAIL:flags in order to cooperate nicely with MDR:

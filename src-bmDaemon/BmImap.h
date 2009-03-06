@@ -119,6 +119,9 @@ private:
 							bool dotstuffEncoding=false,
 							bool update=false);
 
+	BmString FlagsToString(uint32 flags) const;
+	uint32 StringToFlags(const BmString& flagsString) const;
+
 	static int32 mId;
 							// unique message ID, this is used if a 
 							// received message has no UID.
@@ -126,6 +129,19 @@ private:
 							// Info about our pop-account
 	vector<BmString> mMsgUIDs;
 							// array of unique-IDs, one for each message
+	enum States {
+		IMAP_CONNECT = 0,
+		IMAP_CAPA,
+		IMAP_STARTTLS,
+		IMAP_AUTH,
+		IMAP_CHECK,
+		IMAP_RETRIEVE,
+		IMAP_DISCONNECT,
+		IMAP_DONE,
+		IMAP_FINAL
+	};
+	vector<uint32> mMsgFlags;
+							// an array of message flags, one for each message
 	int32 mMsgCount;
 							// number of msgs found on server
 	int32 mCurrMailNr;
@@ -144,16 +160,12 @@ private:
 							// number of mails that need to be expunged
 	int32 mState;		
 							// current IMAP-state (refer enum below)
-	enum States {
-		IMAP_CONNECT = 0,
-		IMAP_CAPA,
-		IMAP_STARTTLS,
-		IMAP_AUTH,
-		IMAP_CHECK,
-		IMAP_RETRIEVE,
-		IMAP_DISCONNECT,
-		IMAP_DONE,
-		IMAP_FINAL
+	enum {
+		FLAG_SEEN		= 1 << 0,
+		FLAG_ANSWERED	= 1 << 1,
+		FLAG_FLAGGED	= 1 << 2,
+		FLAG_DELETED	= 1 << 3,
+		FLAG_DRAFT		= 1 << 4
 	};
 
 	bool mTaggedMode;
