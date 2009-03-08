@@ -11,7 +11,6 @@
 
 #include <HGroup.h>
 #include <LayeredGroup.h>
-#include <MButton.h>
 #include <MPopup.h>
 #include <MStringView.h>
 #include <Space.h>
@@ -20,6 +19,7 @@
 #include "split.hh"
 using namespace regexx;
 
+#include "BetterButton.h"
 #include "BubbleHelper.h"
 #include "Colors.h"
 
@@ -117,7 +117,7 @@ BmPrefsMailConstrView::BmPrefsMailConstrView()
 						   ),
 							new Space( minimax(0,5,0,5)),
 							new HGroup(
-								mPeopleFolderButton = new MButton( 
+								mPeopleFolderButton = new BetterButton( 
 									PeopleFolderButtonLabel().String(), 
 									new BMessage( BM_SELECT_PEOPLE_FOLDER), 
 									this,minimax(-1,-1,-1,-1)

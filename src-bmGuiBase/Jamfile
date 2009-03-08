@@ -14,6 +14,7 @@ DEFINES += BM_BUILDING_BMGUIBASE ;
 
 # <pe-src>
 SharedLibrary bmGuiBase.so : 
+	BetterButton.cpp
 	BetterScrollView.cpp
 	BmAutoCompleter.cpp
 	BmAutoCompleterDefaultImpl.cpp

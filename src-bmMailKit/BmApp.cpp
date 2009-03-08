@@ -122,6 +122,7 @@ BmApplication::BmApplication( const char* sig, bool testModeRequested)
 										"of class BmApplication");
 
 	// find out if we are running on Dano (or newer):
+#ifndef __HAIKU__
 	system_info sysInfo;
 	get_system_info( &sysInfo);
 	BmString kTimestamp(sysInfo.kernel_build_date);
@@ -130,6 +131,7 @@ BmApplication::BmApplication( const char* sig, bool testModeRequested)
 	ParseDateTime( kTimestamp, kTime);
 	if (kTime >= 1005829579)
 		BeamOnDano = true;
+#endif
 
 	bmApp = this;
 	

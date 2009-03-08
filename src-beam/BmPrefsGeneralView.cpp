@@ -23,12 +23,12 @@
 #endif
 #include <HGroup.h>
 #include <LayeredGroup.h>
-#include <MButton.h>
 #include <MPopup.h>
 #include <MStringView.h>
 #include <Space.h>
 #include <VGroup.h>
 
+#include "BetterButton.h"
 #include "BubbleHelper.h"
 #include "Colors.h"
 
@@ -95,7 +95,7 @@ BmPrefsGeneralView::BmPrefsGeneralView()
 						),
 						new Space( minimax(0,10,0,10)),
 						new HGroup(
-							mIconboxButton = new MButton( 
+							mIconboxButton = new BetterButton( 
 								IconboxButtonLabel().String(), 
 								new BMessage( BM_SELECT_ICONBOX), 
 								this, minimax(-1,-1,-1,-1)
@@ -109,7 +109,7 @@ BmPrefsGeneralView::BmPrefsGeneralView()
 				0
 			),
 			new HGroup( 
-				mMailboxButton = new MButton( 
+				mMailboxButton = new BetterButton( 
 					MailboxButtonLabel().String(), 
 					new BMessage( BM_SELECT_MAILBOX), 
 					this, minimax(-1,-1,-1,-1)
@@ -119,7 +119,7 @@ BmPrefsGeneralView::BmPrefsGeneralView()
 			),
 			new Space( minimax(10,0,10,0)),
 			new HGroup( 
-				new MButton( 
+				new BetterButton( 
 					"Make Beam preferred-app for email...", 
 					new BMessage( BM_MAKE_BEAM_STD_APP), 
 					this, minimax(-1,-1,-1,-1)

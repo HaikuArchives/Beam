@@ -12,12 +12,12 @@
 
 #include <HGroup.h>
 #include <LayeredGroup.h>
-#include <MButton.h>
 #include <MPopup.h>
 #include <MStringView.h>
 #include <Space.h>
 #include <VGroup.h>
 
+#include "BetterButton.h"
 #include "BubbleHelper.h"
 #include "Colors.h"
 #include "ColumnListView.h"
@@ -220,13 +220,13 @@ BmPrefsRecvMailView::BmPrefsRecvMailView()
 				"99 accounts"
 			),
 			new HGroup(
-				mAddPopButton = new MButton( "Add POP3-Account", 
+				mAddPopButton = new BetterButton( "Add POP3-Account", 
 													  new BMessage(BM_ADD_POP_ACCOUNT), 
 													  this),
-				mAddImapButton = new MButton( "Add IMAP-Account", 
+				mAddImapButton = new BetterButton( "Add IMAP-Account", 
 													   new BMessage(BM_ADD_IMAP_ACCOUNT), 
 													   this),
-				mRemoveButton = new MButton( "Remove Account", 
+				mRemoveButton = new BetterButton( "Remove Account", 
 													  new BMessage( BM_REMOVE_ACCOUNT), 
 													  this),
 				0
@@ -247,7 +247,7 @@ BmPrefsRecvMailView::BmPrefsRecvMailView()
 							new HGroup( 
 								mAuthControl = new BmMenuControl( "Auth-method:", 
 																			 new BPopUpMenu("")),
-								mCheckAndSuggestButton = new MButton(
+								mCheckAndSuggestButton = new BetterButton(
 									"Check and Suggest",
 									new BMessage(BM_CHECK_AND_SUGGEST), 
 									this, minimax(-1,-1,-1,-1)
@@ -290,7 +290,7 @@ BmPrefsRecvMailView::BmPrefsRecvMailView()
 								mAcceptedCertControl 
 									= new BmTextControl("Server Certificate:"),
 								mClearAcceptedCertButton 
-									= new MButton( 
+									= new BetterButton( 
 										"Clear", 
 										new BMessage(BM_CLEAR_ACCEPTED_CERT), 
 										this
@@ -301,7 +301,7 @@ BmPrefsRecvMailView::BmPrefsRecvMailView()
 								mClientCertControl 
 									= new BmTextControl("Client Certificate:"),
 								mSelectClientCertButton 
-									= new MButton( 
+									= new BetterButton( 
 										"Select"B_UTF8_ELLIPSIS, 
 										new BMessage(BM_CLIENT_CERT_SELECTED), 
 										this

@@ -11,11 +11,11 @@
 
 #include <HGroup.h>
 #include <LayeredGroup.h>
-#include <MButton.h>
 #include <MPopup.h>
 #include <Space.h>
 #include <VGroup.h>
 
+#include "BetterButton.h"
 #include "BubbleHelper.h"
 #include "Colors.h"
 #include "ColumnListView.h"
@@ -198,10 +198,10 @@ BmPrefsIdentityView::BmPrefsIdentityView()
 				"99 identities"
 			),
 			new HGroup(
-				mAddButton = new MButton( "Add Identity", 
+				mAddButton = new BetterButton( "Add Identity", 
 												  new BMessage(BM_ADD_IDENTITY), 
 												  this),
-				mRemoveButton = new MButton("Remove Identity", 
+				mRemoveButton = new BetterButton("Remove Identity", 
 													 new BMessage( BM_REMOVE_IDENTITY), 
 													 this),
 				0
@@ -216,7 +216,7 @@ BmPrefsIdentityView::BmPrefsIdentityView()
 						mMailAddrControl = new BmTextControl( "Mail address:"),
 						new HGroup(
 							mReplyToControl = new BmTextControl( "Reply-To:"),
-							mSpecialHeadersButton = new MButton( 
+							mSpecialHeadersButton = new BetterButton( 
 								"Special Headers...", 
 							   new BMessage(BM_SET_SPECIAL_HEADERS), 
 							   this, minimax(-1,-1,-1,-1)

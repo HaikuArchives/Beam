@@ -22,7 +22,6 @@
 #include <layout.h>
 #include <HGroup.h>
 #include <MBorder.h>
-#include <MButton.h>
 #include <MBViewWrapper.h>
 #include <MStop.h>
 #include <MStringView.h>

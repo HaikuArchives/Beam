@@ -1,6 +1,9 @@
 #include <set>
 
 #include <Bitmap.h>
+#ifdef __HAIKU__
+# include <ControlLook.h>
+#endif
 #include <PopUpMenu.h>
 #include <MenuItem.h>
 #include "BmString.h"
@@ -57,7 +60,7 @@ void BmToolbarManager::UpdateAll() {
 		-	
 \*------------------------------------------------------------------------------*/
 BmToolbar::BmToolbar(MView* kid)
-	:	inherited( M_RAISED_BORDER, 1, NULL, kid)
+	:	inherited( M_NO_BORDER, 1, NULL, kid)
 	,	mBackgroundBitmap( NULL)
 {
 	TheToolbarManager->Register(this);
@@ -159,6 +162,24 @@ void BmToolbar::UpdateLayout(bool recalcSizes) {
 	}
 }
 
+/*------------------------------------------------------------------------------*\
+	( )
+		-	
+\*------------------------------------------------------------------------------*/
+void BmToolbar::Draw( BRect updateRect) {
+	BRect bounds = Bounds();
+	SetHighColor( tint_color(ui_color(B_PANEL_BACKGROUND_COLOR),
+		B_LIGHTEN_1_TINT));
+	StrokeLine(BPoint(bounds.left, bounds.bottom - 1),
+		BPoint(bounds.left, bounds.top));
+	StrokeLine(BPoint(bounds.left + 1, bounds.top),
+		BPoint(bounds.right, bounds.top));
+	SetHighColor( tint_color(HighColor(), B_DARKEN_1_TINT));
+	StrokeLine(BPoint(bounds.right, bounds.top + 1),
+		BPoint(bounds.right, bounds.bottom - 1));
+	StrokeLine(BPoint(bounds.left, bounds.bottom),
+		BPoint(bounds.right, bounds.bottom));
+}
 
 
 /*------------------------------------------------------------------------------*\
@@ -212,17 +233,15 @@ BmToolbarButton::~BmToolbarButton() {
 \*------------------------------------------------------------------------------*/
 void BmToolbarButton::Draw( BRect updateRect) {
 	BView::Draw( updateRect);
-	BPicture* pic = NULL;
-	if (!IsEnabled())
-		pic = DisabledOff();
-	else
-		pic = Value() ? EnabledOn() : EnabledOff();
-	if (pic)
-		DrawPicture( pic, BPoint(0, 0));
 
+#ifndef __HAIKU__
 	if (mHighlighted && !Value() && IsEnabled()) {
+#else
+	if (mHighlighted && IsEnabled()) {
+#endif
 		// draw higlighting border
 		BRect rect(Bounds());
+#ifndef __HAIKU__
 		BeginLineArray(4);
 		AddLine( rect.LeftBottom(), rect.LeftTop(), 
 					ui_color( B_UI_SHINE_COLOR));
@@ -233,7 +252,24 @@ void BmToolbarButton::Draw( BRect updateRect) {
 		AddLine( rect.RightBottom(), rect.RightTop(), 
 					BmWeakenColor(B_UI_SHADOW_COLOR, BeShadowMod));
 		EndLineArray();
+#else
+		uint32 flags = 0;
+		if (Value())
+			flags |= BControlLook::B_ACTIVATED;
+		rgb_color base = ui_color(B_PANEL_BACKGROUND_COLOR);
+		be_control_look->DrawButtonFrame(this, rect, updateRect, base, flags);
+		be_control_look->DrawButtonBackground(this, rect, updateRect, base,
+			flags);
+#endif // __HAIKU__
 	}
+
+	BPicture* pic = NULL;
+	if (!IsEnabled())
+		pic = DisabledOff();
+	else
+		pic = Value() ? EnabledOn() : EnabledOff();
+	if (pic)
+		DrawPicture( pic, BPoint(0, 0));
 
 }
 
@@ -345,6 +381,7 @@ BPicture* BmToolbarButton::CreatePicture( int32 mode, float width,
 	view->SetViewColor( B_TRANSPARENT_COLOR);
 	view->SetLowColor( ui_color( B_UI_PANEL_BACKGROUND_COLOR));
 
+#ifndef __HAIKU__
 	BmToolbar* toolbar = dynamic_cast<BmToolbar*>(Parent()->Parent());
 	BBitmap* toolbarBackground = NULL;
 	if (toolbar) {
@@ -366,11 +403,30 @@ BPicture* BmToolbarButton::CreatePicture( int32 mode, float width,
 							ui_color( B_UI_SHINE_COLOR));
 		view->EndLineArray();
 	}
+#endif __HAIKU__
 
 	// Draw Icon
 	if (showIcons && image) {
 		view->SetDrawingMode( B_OP_ALPHA);
 		view->SetBlendingMode( B_PIXEL_ALPHA, B_ALPHA_OVERLAY);
+#ifdef __HAIKU__
+		BBitmap disabledImage(image);
+		if (mode == STATE_DISABLED) {
+			image = &disabledImage;
+			uint8* bits = (uint8*)image->Bits();
+			uint32 width = image->Bounds().IntegerWidth() + 1;
+			uint32 height = image->Bounds().IntegerWidth() + 1;
+			uint32 bpr = image->BytesPerRow();
+			for (uint32 y = 0; y < height; y++) {
+				uint8* b = bits;
+				for (uint32 x = 0; x < width; x++) {
+					b[3] = (uint8)(((int)b[3] * 100) >> 8);
+					b += 4;
+				}
+				bits += bpr;
+			}
+		}
+#endif
 		if (mode == STATE_ON) {
 			view->DrawBitmap( image, posIcon+BPoint(1,1));
 		} else {
@@ -405,12 +461,14 @@ BPicture* BmToolbarButton::CreatePicture( int32 mode, float width,
 								  BPoint( x_offs+LATCHSZ, y_offs+LATCHSZ));
 	}
 
+#ifndef __HAIKU__
 	if (mode == STATE_DISABLED) {
 		// blend complete picture into background:
 		view->SetDrawingMode( B_OP_BLEND);
 		view->DrawBitmap( toolbarBackground, Frame(), view->Bounds());
 		view->DrawBitmap( toolbarBackground, Frame(), view->Bounds());
 	}
+#endif
 
 	view->EndPicture();
 	view->Sync();

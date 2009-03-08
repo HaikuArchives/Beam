@@ -12,12 +12,12 @@
 
 #include <HGroup.h>
 #include <LayeredGroup.h>
-#include <MButton.h>
 #include <MPopup.h>
 #include <MStringView.h>
 #include <Space.h>
 #include <VGroup.h>
 
+#include "BetterButton.h"
 #include "BubbleHelper.h"
 #include "Colors.h"
 #include "ColumnListView.h"
@@ -225,7 +225,7 @@ BmPrefsFilterView::BmPrefsFilterView()
 							0
 						),
 						new HGroup(
-							mRemoveButton = new MButton( 
+							mRemoveButton = new BetterButton( 
 								"Remove Filter", 
 								new BMessage( BM_REMOVE_FILTER), 
 								this, minimax( -1, -1, -1, -1)

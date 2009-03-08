@@ -22,10 +22,10 @@
 
 #include <HGroup.h>
 #include <LayeredGroup.h>
-#include <MButton.h>
 #include <Space.h>
 #include <VGroup.h>
 
+#include "BetterButton.h"
 #include "ColumnListView.h"
 #include "CLVEasyItem.h"
 #include "UserResizeSplitView.h"
@@ -138,11 +138,11 @@ BmPrefsWin::BmPrefsWin()
 			new Space( minimax(0,10,0,10)),
 			new HGroup(
 				new Space(),
-				mDefaultsButton = new MButton( "Defaults", new BMessage(BM_SET_DEFAULTS), this, minimax(-1,-1,-1,-1)),
+				mDefaultsButton = new BetterButton( "Defaults", new BMessage(BM_SET_DEFAULTS), this, minimax(-1,-1,-1,-1)),
 				new Space( minimax(40,0,40,0)),
-				mRevertButton = new MButton( "Revert", new BMessage(BM_REVERT_CHANGES), this, minimax(-1,-1,-1,-1)),
+				mRevertButton = new BetterButton( "Revert", new BMessage(BM_REVERT_CHANGES), this, minimax(-1,-1,-1,-1)),
 				new Space( minimax(20,0,20,0)),
-				mSaveButton = new MButton( "Save", new BMessage(BM_SAVE_CHANGES), this, minimax(-1,-1,-1,-1)),
+				mSaveButton = new BetterButton( "Save", new BMessage(BM_SAVE_CHANGES), this, minimax(-1,-1,-1,-1)),
 				new Space( minimax(20,0,20,0)),
 				0
 			),

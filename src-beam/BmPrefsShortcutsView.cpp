@@ -16,7 +16,6 @@
 #endif
 #include <HGroup.h>
 #include <LayeredGroup.h>
-#include <MButton.h>
 #include <MPopup.h>
 #include <MStringView.h>
 #include <Space.h>

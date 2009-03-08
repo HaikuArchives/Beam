@@ -240,8 +240,16 @@ void BetterScrollView::Draw( BRect rect) {
 	if (BeamOnDano)
 		// avoid special drawing of border by calling BView::Draw()
 		BView::Draw( rect);
+#ifndef __HAIKU__
 	else
 		BScrollView::Draw( rect);
+#else
+	else {
+		BRect bounds = Bounds();
+		SetHighColor( BmWeakenColor( B_UI_SHADOW_COLOR, BeShadowMod));
+		StrokeRect( bounds.InsetByCopy(1, 1));
+	}
+#endif
 	if (mTarget) {
 		BRect bounds = Bounds();
 		rgb_color color = 

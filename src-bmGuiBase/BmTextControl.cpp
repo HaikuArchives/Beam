@@ -6,6 +6,10 @@
  *		Oliver Tappe <beam@hirschkaefer.de>
  */
 
+#ifdef __HAIKU__
+# include <ControlLook.h>
+#endif
+#include <MenuBar.h>
 #include <MenuField.h>
 #include <PopUpMenu.h>
 
@@ -185,9 +189,21 @@ BRect BmTextControl::layout(BRect frame) {
 		return frame;
 	MoveTo(frame.LeftTop());
 	ResizeTo(frame.Width(),frame.Height());
+#ifdef __HAIKU__
+	float occupiedSpace = 3 + Divider();
+	float top = mTextView->Frame().top;
+	float height = mTextView->Frame().Height();
+	if (mLabelIsMenu) {
+		top = mMenuField->MenuBar()->Frame().top;
+		height = mMenuField->MenuBar()->Frame().Height();
+	}
+	mTextView->MoveTo( occupiedSpace, top);
+	mTextView->ResizeTo( frame.Width()-occupiedSpace-4, height);
+#else
 	float occupiedSpace = 3 + Divider();
 	mTextView->MoveTo( occupiedSpace, 5);
 	mTextView->ResizeTo( frame.Width()-occupiedSpace-4, 
 								mTextView->Frame().Height());
+#endif // __HAIKU__
 	return frame;
 }

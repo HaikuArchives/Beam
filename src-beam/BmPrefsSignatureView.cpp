@@ -11,12 +11,12 @@
 
 #include <HGroup.h>
 #include <LayeredGroup.h>
-#include <MButton.h>
 #include <MPopup.h>
 #include <MStringView.h>
 #include <Space.h>
 #include <VGroup.h>
 
+#include "BetterButton.h"
 #include "BubbleHelper.h"
 #include "Colors.h"
 #include "ColumnListView.h"
@@ -186,10 +186,10 @@ BmPrefsSignatureView::BmPrefsSignatureView()
 				"99 signatures"
 			),
 			new HGroup(
-				mAddButton = new MButton( "Add Signature", 
+				mAddButton = new BetterButton( "Add Signature", 
 												  new BMessage(BM_ADD_SIGNATURE), 
 												  this),
-				mRemoveButton = new MButton( "Remove Signature", 
+				mRemoveButton = new BetterButton( "Remove Signature", 
 													  new BMessage( BM_REMOVE_SIGNATURE), 
 													  this),
 				0
@@ -211,7 +211,7 @@ BmPrefsSignatureView::BmPrefsSignatureView()
 							this
 						),
 						new Space(),
-						mTestButton = new MButton( 
+						mTestButton = new BetterButton( 
 							"Test this signature", 
 							new BMessage( BM_TEST_SIGNATURE), 
 							this, minimax(-1,-1,-1,-1)

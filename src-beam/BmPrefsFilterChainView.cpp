@@ -13,7 +13,6 @@
 //#include <liblayout/LayeredGroup.h>
 #include <HGroup.h>
 #include <LayeredGroup.h>
-#include <MButton.h>
 #include <MPlayBW.h>
 #include <MPlayFW.h>
 #include <MFFWD.h>
@@ -21,6 +20,7 @@
 #include <Space.h>
 #include <VGroup.h>
 
+#include "BetterButton.h"
 #include "BubbleHelper.h"
 #include "UserResizeSplitView.h"
 
@@ -389,12 +389,12 @@ BmPrefsFilterChainView::BmPrefsFilterChainView()
 				),
 				new Space( minimax(5,0,5,1E5)),
 				new VGroup(
-					mAddButton = new MButton( 
+					mAddButton = new BetterButton( 
 						"Add Chain", 
 						new BMessage(BM_ADD_CHAIN), 
 						this
 					),
-					mRemoveButton = new MButton( 
+					mRemoveButton = new BetterButton( 
 						"Remove Chain", 
 						new BMessage( BM_REMOVE_CHAIN), 
 						this

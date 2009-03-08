@@ -33,6 +33,7 @@ public:
 	~BmToolbar();
 	BRect layout(BRect inRect);
 	void UpdateLayout( bool recalcSizes);
+	void Draw( BRect updateRect);
 	BBitmap* BackgroundBitmap()			{ return mBackgroundBitmap; }
 private:
 	BBitmap* mBackgroundBitmap;

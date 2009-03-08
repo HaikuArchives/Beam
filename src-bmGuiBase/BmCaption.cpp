@@ -76,17 +76,22 @@ void BmCaption::Draw( BRect updateRect) {
 	}
 	else
 		SetLowColor( ui_color( B_UI_PANEL_BACKGROUND_COLOR));
+#ifndef __HAIKU__
 	FillRect( r.InsetByCopy(1.0, 1.0), B_SOLID_LOW);
-
+#else
+	FillRect( BRect(r.top + 1, r.left + 1, r.right, r.bottom - 1), B_SOLID_LOW);
+#endif
 	SetHighColor( ui_color( B_UI_SHINE_COLOR));
-	StrokeLine( BPoint(0.0,1.0), BPoint(r.right-1,1.0));
+	StrokeLine( BPoint(0.0,1.0), BPoint(r.right,1.0));
 	StrokeLine( BPoint(0.0,1.0), r.LeftBottom());
 	SetHighColor( BmWeakenColor( B_UI_SHADOW_COLOR, BeShadowMod));
 	if (BeamOnDano)
 		StrokeLine( r.RightTop(), r.RightBottom());
+#ifndef __HAIKU__
 	else
 		// looks better on R5, as it blends with scrollbar:
 		StrokeLine( r.RightTop(), r.RightBottom(), B_SOLID_LOW);
+#endif
 	StrokeLine( r.LeftTop(), r.RightTop());
 	StrokeLine( r.LeftBottom(), r.RightBottom());
 
