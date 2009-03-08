@@ -114,6 +114,8 @@ BmMainWindow::BmMainWindow()
 	BmToolbarButton::CalcMaxSize(width, height, "New");
 	BmToolbarButton::CalcMaxSize(width, height, "Reply", true);
 	BmToolbarButton::CalcMaxSize(width, height, "Forward", true);
+	BmToolbarButton::CalcMaxSize(width, height, "Spam");
+	BmToolbarButton::CalcMaxSize(width, height, "Tofu");
 	BmToolbarButton::CalcMaxSize(width, height, "Print");
 	BmToolbarButton::CalcMaxSize(width, height, "Trash");
 
