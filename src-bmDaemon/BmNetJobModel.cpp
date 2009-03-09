@@ -747,6 +747,8 @@ uint32 BmNetOBuf::Write( BmMemIBuf* input, uint32 blockSize)
 		uint32 len;
 		while( mJob->ShouldContinue() && !input->IsAtEnd()) {
 			len = input->Read( buf, blockSize);
+			if (len == 0)
+				break;
 			writeLen += Write( buf, len);
 		}
 		delete [] buf;
