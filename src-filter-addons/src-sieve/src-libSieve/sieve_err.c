@@ -33,7 +33,7 @@ struct et_list {
     const struct error_table * table;
 };
 
-#ifdef __BEOS__
+#if defined(__BEOS__) || defined(__HAIKU__)
 static struct et_list *_et_list = 0;
 #else
 extern struct et_list *_et_list;
@@ -51,7 +51,7 @@ void initialize_siev_error_table (NOARGS) {
     }
 }
 
-#ifdef __BEOS__
+#if defined(__BEOS__) || defined(__HAIKU__)
 const char* sieve_strerror( long err_no) {
 	long offs;
 	const struct error_table* table;
