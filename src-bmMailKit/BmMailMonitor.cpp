@@ -25,6 +25,10 @@
 #include "BmStorageUtil.h"
 #include "BmUtil.h"
 
+using std::deque;
+using std::map;
+using std::pair;
+
 /********************************************************************************\
 	BmMailMonitorWorker
 \********************************************************************************/

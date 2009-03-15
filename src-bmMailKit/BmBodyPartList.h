@@ -17,6 +17,7 @@
 #include "BmMailHeader.h"
 #include "BmMemIO.h"
 
+class BFile;
 class BmMail;
 
 /*------------------------------------------------------------------------------*\

@@ -41,6 +41,7 @@
 #include "split.hh"
 
 using std::ostream;
+using std::pair;
 using std::string;
 using std::vector;
 

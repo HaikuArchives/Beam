@@ -144,7 +144,7 @@ bool LivesInMailbox( const entry_ref& eref) {
 	nref.device = eref.device;
 	BmString key = BM_REFKEY(nref);
 	BmRef<BmListModelItem> itemRef = TheMailFolderList->FindItemByKey(key);
-	return itemRef != NULL;
+	return itemRef != (BmListModelItem*)NULL;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -294,7 +294,7 @@ bool BmReadStringAttr( const BNode* node, const char* attrName,
 	attr_info attrInfo;
 	BmString tmpStr;
 	if (node->GetAttrInfo( attrName, &attrInfo) == B_OK) {
-		long long size = max( (long long)0, attrInfo.size-1);
+		long long size = std::max( (long long)0, attrInfo.size-1);
 		char* buf = tmpStr.LockBuffer( size);
 		node->ReadAttr( attrName, B_STRING_TYPE, 0, buf, size);
 		tmpStr.UnlockBuffer( size);

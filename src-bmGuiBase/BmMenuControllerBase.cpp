@@ -98,7 +98,7 @@ BMenuItem* BmMenuControllerBase::MarkItemInMenu( BMenu* menu,
 		return NULL;
 	BMenuItem* item = NULL;
 	// split path into it's parts:
-	vector<BmString> itemVect;
+	std::vector<BmString> itemVect;
 	int32 startPos = 0;
 	int32 endPos;
 	BmString labelStr( label);

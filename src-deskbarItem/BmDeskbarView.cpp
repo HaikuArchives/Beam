@@ -72,7 +72,7 @@ private:
 	void StartQuery();
 
 	// deque for incoming node-monitor messages:
-	typedef deque<BMessage*> MessageList;
+	typedef std::deque<BMessage*> MessageList;
 	MessageList mMessageList;
 
 	BLocker mLocker;

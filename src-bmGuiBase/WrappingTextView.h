@@ -59,7 +59,7 @@ class IMPEXPBMGUIBASE WrappingTextView : public BTextView
 			~UndoInfo();
 			void JoinTextRuns( const text_run_array* a_runs, int32 len, bool atFront);
 		};
-		typedef vector< UndoInfo> TUndoVect;
+		typedef std::vector< UndoInfo> TUndoVect;
 
 		static const char* const n_long_line;
 	public:

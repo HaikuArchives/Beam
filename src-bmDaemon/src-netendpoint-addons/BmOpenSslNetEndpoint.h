@@ -18,7 +18,6 @@
 
 class BmOpenSslNetEndpoint : public BmNetEndpoint {
 	typedef BmNetEndpoint inherited;
-	class ContextManager;
 	
 public:
 	BmOpenSslNetEndpoint();
@@ -43,6 +42,9 @@ public:
 	static int ClientCertCallback(SSL* ssl, X509 **certP, EVP_PKEY **pkeyP);
 	static int VerifyCallback(int ok, X509_STORE_CTX *store);
 
+	static void LockingCallback(int mode, int type, const char *file, int line);
+	static unsigned long ThreadIdCallback(void);
+
 private:
 	status_t _StartEncryptionAfterConnecting();
 	status_t _TranslateErrorCode( int result);
@@ -63,7 +65,35 @@ private:
 	int mError;
 	BmString mVerificationError;
 
-	static ContextManager* nContextManager;
+	class ContextManager {
+		typedef std::map<thread_id, BmOpenSslNetEndpoint*> UserdataMap;
+	public:
+		ContextManager();
+		~ContextManager();
+	
+		SSL_CTX* TlsContext()					{ return mTlsContext; }
+		SSL_CTX* SslContext()					{ return mSslContext; }
+	
+		void SetUserdataForCurrentThread(BmOpenSslNetEndpoint* userdata);
+		BmOpenSslNetEndpoint* GetUserdataForCurrentThread();
+		void RemoveUserdataForCurrentThread();
+		void LockingCallback(int mode, int type, const char *file, int line);
+		unsigned long ThreadIdCallback(void);
+	
+	private:
+		status_t _SetupContext(SSL_CTX* context);
+		void _SetupSslLocks();
+		void _CleanupSslLocks();
+	
+		BLocker mLocker;
+		SSL_CTX* mTlsContext;
+		SSL_CTX* mSslContext;
+		status_t mStatus;
+		BmString mErrorStr;
+		UserdataMap mUserdataMap;
+		std::vector<BLocker*> mSslLocks;
+	};
+	static ContextManager nContextManager;
 };
 
 #endif

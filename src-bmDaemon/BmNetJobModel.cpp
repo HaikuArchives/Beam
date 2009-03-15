@@ -212,7 +212,7 @@ void BmNetJobModel::GetAnswer( uint32 expectedSize, bool dotstuffDecoding,
 	mStatusFilter->SetInfoMsg(infoMsg);
 
 	uint32 blockSize = ThePrefs->GetInt( "NetReceiveBufferSize", 10*1500);
-	BmStringOBuf answerBuf( max( expectedSize+128, blockSize), 2.0);
+	BmStringOBuf answerBuf( std::max( expectedSize+128, blockSize), 2.0);
 
 	if (dotstuffDecoding) {
 		bool dummy;
@@ -248,7 +248,7 @@ void BmNetJobModel::SendCommandBuf( BmStringIBuf& cmd,
 												bool dotstuffEncoding, bool update)
 {
 	BmString logStr( "-->\n");
-	logStr.Append( cmd.FirstBuf(), min( (uint32)16384, cmd.FirstSize()));
+	logStr.Append( cmd.FirstBuf(), std::min( (uint32)16384, cmd.FirstSize()));
 	if (secret.Length()) {
 		logStr << " secret_data_omitted_here";
 							// we do not want to log any passwords...
@@ -489,7 +489,7 @@ void BmTrafficLogger::Filter( const char* srcBuf, uint32& srcLen,
 
 	if (mLogLimit < 0 || mLoggedLength < mLogLimit) {
 		uint32 logLeft = mLogLimit < 0 ? srcLen : mLogLimit - mLoggedLength;
-		uint32 logLen = min(srcLen, logLeft);
+		uint32 logLen = std::min(srcLen, logLeft);
 		BmString logStr = mPrefix;
 		logStr.Append(srcBuf, logLen);
 		mLoggedLength += logLen;
@@ -497,7 +497,7 @@ void BmTrafficLogger::Filter( const char* srcBuf, uint32& srcLen,
 	}
 
 	// pass on the data:
-	uint32 size = min( destLen, srcLen);
+	uint32 size = std::min( destLen, srcLen);
 	memcpy( destBuf, srcBuf, size);
 	srcLen = destLen = size;
 	BM_LOG3( mJob->LogType(), "traffic logger: done");

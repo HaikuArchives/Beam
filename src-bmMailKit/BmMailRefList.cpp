@@ -242,7 +242,7 @@ bool BmMailRefList::StartJob() {
 						<< "> \n\nError:" << strerror(err)
 				);
 			sz -= cacheFile.Position();
-			auto_ptr<char> buf(new char [sz]);
+			std::auto_ptr<char> buf(new char [sz]);
 			if ((err = cacheFile.Read(buf.get(), sz)) < B_OK)
 				BM_THROW_RUNTIME( 
 					BmString("couldn't read from cache-file <") << filename 

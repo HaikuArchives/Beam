@@ -25,7 +25,7 @@
 			the moving-operation has ended
 \*------------------------------------------------------------------------------*/
 struct IMPEXPBMMAILKIT BmMailQuery {
-	typedef vector< entry_ref > BmRefVect;
+	typedef std::vector< entry_ref > BmRefVect;
 	
 	BmMailQuery();
 	virtual ~BmMailQuery()					{}

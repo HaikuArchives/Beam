@@ -189,8 +189,10 @@ status_t BmMailFolder::Archive( BMessage* archive, bool deep) const {
 bool BmMailFolder::IsOutbound() {
 	BmRef<BmListModelItem> item = this;
 	BmRef<BmListModelItem> parent;
-	while((parent = item->Parent()) != NULL && parent->Parent() != NULL)
+	while((parent = item->Parent()) != (BmListModelItem*)NULL	
+		&& parent->Parent() != (BmListModelItem*)NULL) {
 		item = parent;
+	}
 	// now item should be a folder living underneath 'mailbox'
 	BmMailFolder* folder = dynamic_cast<BmMailFolder*>(item.Get());
 	return (folder && folder->DisplayKey() == OUT_FOLDER_NAME);

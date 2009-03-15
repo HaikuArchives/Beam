@@ -376,7 +376,7 @@ void BmBodyPart::SetTo( const BmString& msgtext, int32 start, int32 length,
 				pos = msgtext.FindFirst( "\r\n\r\n", start);
 				if (pos < 0 || pos + 4 > end) {
 					BmString str;
-					msgtext.CopyInto( str, start, min( length, (int32)256));
+					msgtext.CopyInto( str, start, std::min( length, (int32)256));
 					BmString s 
 						= BmString("Couldn't determine borderline between "
 									  "MIME-header and body in string <")<<str<<">.";
@@ -584,7 +584,7 @@ void BmBodyPart::SetTo( const BmString& msgtext, int32 start, int32 length,
 				int32 startOffs = startPos-msgtext.String()+firstBoundaryLen;
 				BM_LOG2( BM_LogMailParse, 
 							"Subpart of multipart found will be added to array");
-				int32 len = max((long)0,nPos-msgtext.String()-startOffs-2);
+				int32 len = std::max((long)0,nPos-msgtext.String()-startOffs-2);
 							// -2 in order to leave out \r\n before boundary
 				BmBodyPart *subPart 
 					= new BmBodyPart( (BmBodyPartList*)ListModel().Get(), 

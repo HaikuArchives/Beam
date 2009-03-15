@@ -893,7 +893,7 @@ bool BmMail::ConstructRawText( const BmString& editedUtf8Text,
 										 const BmString& charset,
 										 const BmString smtpAccount) {
 	int32 startSize = mBody->EstimateEncodedSize() + editedUtf8Text.Length() 
-							+ max( mHeader->HeaderLength(), (int32)4096)+4096;
+							+ std::max( mHeader->HeaderLength(), (int32)4096)+4096;
 	startSize += 65536-(startSize%65536);
 	BmStringOBuf msgText( startSize, 1.2);
 	mAccountName = smtpAccount;

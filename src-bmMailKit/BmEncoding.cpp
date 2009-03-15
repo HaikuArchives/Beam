@@ -173,7 +173,7 @@ void BmEncoding::ConvertToUTF8( const BmString& srcCharset,
 		return;
 	}
 	BmStringIBuf srcBuf( src);
-	const uint32 blockSize = max( (int32)128, src.Length());
+	const uint32 blockSize = std::max( (int32)128, src.Length());
 	BmStringOBuf destBuf( blockSize);
 	BmUtf8Encoder encoder( &srcBuf, srcCharset, blockSize);
 	destBuf.Write( &encoder, blockSize);
@@ -193,7 +193,7 @@ void BmEncoding::ConvertFromUTF8( const BmString& destCharset,
 		return;
 	}
 	BmStringIBuf srcBuf( src);
-	const uint32 blockSize = max( (int32)128, src.Length());
+	const uint32 blockSize = std::max( (int32)128, src.Length());
 	BmStringOBuf destBuf( blockSize);
 	BmUtf8Decoder decoder( &srcBuf, destCharset, blockSize);
 	destBuf.Write( &decoder, blockSize);
@@ -207,7 +207,7 @@ void BmEncoding::ConvertFromUTF8( const BmString& destCharset,
 void BmEncoding::Encode( BmString encodingStyle, const BmString& src, 
 								 BmString& dest, const BmString& tags) {
 	BmStringIBuf srcBuf( src);
-	const uint32 blockSize = max( (int32)128, src.Length());
+	const uint32 blockSize = std::max( (int32)128, src.Length());
 	BmStringOBuf destBuf( blockSize);
 	BmMemFilterRef encoder 
 		= FindEncoderFor( &srcBuf, encodingStyle, blockSize, tags);
@@ -222,7 +222,7 @@ void BmEncoding::Encode( BmString encodingStyle, const BmString& src,
 void BmEncoding::Decode( BmString encodingStyle, const BmString& src, 
 								 BmString& dest, const BmString& tags) {
 	BmStringIBuf srcBuf( src);
-	const uint32 blockSize = max( (int32)128, src.Length());
+	const uint32 blockSize = std::max( (int32)128, src.Length());
 	BmStringOBuf destBuf( blockSize);
 	BmMemFilterRef decoder 
 		= FindDecoderFor( &srcBuf, encodingStyle, blockSize, tags);
@@ -252,7 +252,7 @@ BmString BmEncoding::ConvertHeaderPartToUTF8( const BmString& headerPart,
 	Regexx rx;
 	rx.expr( "=\\?(.+?)\\?(.)\\?(.*?)\\?=");
 	rx.str( headerPart);
-	const uint32 blockSize = max( (int32)128, headerPart.Length());
+	const uint32 blockSize = std::max( (int32)128, headerPart.Length());
 	vector< BmTextPart> textPartVect;
 	BmTextPart currTextPart( defaultCharset, "", "");
 	
@@ -403,7 +403,7 @@ BmString BmEncoding::ConvertUTF8ToHeaderPart( const BmString& utf8Text,
 		transferEncoding = "8bit";
 		needsQuotedPrintable = false;
 	}
-	const uint32 blockSize = max( (int32)128, utf8Text.Length());
+	const uint32 blockSize = std::max( (int32)128, utf8Text.Length());
 	BmString foldedString;
 	BmCharsetVect charsetVect;
 	if (ThePrefs->GetBool("AutoCharsetDetectionOutbound", true)) {
@@ -1951,7 +1951,7 @@ void BmBinaryDecoder::Filter( const char* srcBuf, uint32& srcLen,
 	BM_LOG3( BM_LogMailParse, 
 				BmString("starting to decode binary of ") << srcLen << " bytes");
 
-	uint32 size = min( destLen, srcLen);
+	uint32 size = std::min( destLen, srcLen);
 	memcpy( destBuf, srcBuf, size);
 
 	srcLen = destLen = size;
@@ -1982,7 +1982,7 @@ void BmBinaryEncoder::Filter( const char* srcBuf, uint32& srcLen,
 	BM_LOG3( BM_LogMailParse, 
 				BmString("starting to encode binary of ") << srcLen << " bytes");
 
-	uint32 size = min( destLen, srcLen);
+	uint32 size = std::min( destLen, srcLen);
 	memcpy( destBuf, srcBuf, size);
 
 	srcLen = destLen = size;

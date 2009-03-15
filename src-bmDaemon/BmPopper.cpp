@@ -65,7 +65,7 @@ void BmPopStatusFilter::Filter( const char* srcBuf, uint32& srcLen,
 		mInfoMsg->FindBool(BmPopper::IMSG_NEED_DATA, &needData);
 
 	if (mHaveStatus) {
-		uint32 size = min( destLen, srcLen);
+		uint32 size = std::min( destLen, srcLen);
 		memcpy( destBuf, srcBuf, size);
 		srcLen = destLen = size;
 	} else {
@@ -248,7 +248,7 @@ bool BmPopper::StartJob() {
 		HandleError( text);
 		return false;
 	}
-	catch( exception &err) {
+	catch( std::exception &err) {
 		BmString errMsg;
 		errMsg << err.what() << " (" << typeid(err).name() << ")";
 		HandleError( errMsg);
@@ -272,7 +272,7 @@ bool BmPopper::StartJob() {
 \*------------------------------------------------------------------------------*/
 void BmPopper::UpdatePOPStatus( const float delta, const char* detailText, 
 										  bool failed, bool stopped) {
-	auto_ptr<BMessage> msg( new BMessage( BM_JOB_UPDATE_STATE));
+	std::auto_ptr<BMessage> msg( new BMessage( BM_JOB_UPDATE_STATE));
 	msg->AddString( MSG_MODEL, Name().String());
 	msg->AddString( MSG_DOMAIN, "statbar");
 	msg->AddFloat( MSG_DELTA, delta);
@@ -305,7 +305,7 @@ void BmPopper::UpdateMailStatus( const float delta, const char* detailText,
 	} else {
 		text = "none";
 	}
-	auto_ptr<BMessage> msg( new BMessage( BM_JOB_UPDATE_STATE));
+	std::auto_ptr<BMessage> msg( new BMessage( BM_JOB_UPDATE_STATE));
 	msg->AddString( MSG_MODEL, Name().String());
 	msg->AddString( MSG_DOMAIN, "mailbar");
 	msg->AddFloat( MSG_DELTA, delta);

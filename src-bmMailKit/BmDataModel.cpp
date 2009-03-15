@@ -1323,7 +1323,7 @@ BMessage* BmListModel::Restore( BDataIO* dataIO) {
 \*------------------------------------------------------------------------------*/
 void BmListModel::InstantiateItemsFromStream( BDataIO* dataIO, BMessage* /*headerMsg*/) {
 	BM_LOG2( mLogTerrain, BmString("Start of InstantiateItems() for ") << Name());
-	auto_ptr<BMessage> archive( Restore( dataIO));
+	std::auto_ptr<BMessage> archive( Restore( dataIO));
 	InstantiateItems(archive.get());
 }
 

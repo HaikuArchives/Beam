@@ -19,7 +19,7 @@
 
 BLocker* BmRefObj::nGlobalLocker = NULL;
 
-typedef multimap<BmString,BmRefObj*> BmObjectMap;
+typedef std::multimap<BmString,BmRefObj*> BmObjectMap;
 /*------------------------------------------------------------------------------*\
 	BmObjectList
 		-	an object that manages all instances of a specific class
@@ -32,7 +32,7 @@ struct BmObjectList
 
 	static BmObjectList* GetObjectList( const char* const objListName);
 	static void CleanupObjectLists();
-	typedef map<BmString,BmObjectList*> BmObjectListMap;
+	typedef std::map<BmString,BmObjectList*> BmObjectListMap;
 	static BmObjectListMap nObjectListMap;
 };
 BmObjectList::BmObjectListMap BmObjectList::nObjectListMap;
@@ -107,7 +107,7 @@ void BmRefObj::AddRef()
 	BM_ASSERT( objList!=NULL && mRefCount >= 0);
 	int32 lastCount = atomic_add( &mRefCount, 1);
 	if (lastCount == 0) {
-		objList->ObjectMap.insert( pair<const BmString, BmRefObj*>( RefName(), 
+		objList->ObjectMap.insert( std::pair<const BmString, BmRefObj*>( RefName(), 
 																					 this));
 	}
 #ifdef BM_REF_DEBUGGING
@@ -157,7 +157,7 @@ void BmRefObj::RenameRef( const char* newName)
 	if (pos != objList->ObjectMap.end())
 		objList->ObjectMap.erase( pos);
 	// ...and insert under new name:
-	objList->ObjectMap.insert( pair< const BmString, BmRefObj*>( newName, this));
+	objList->ObjectMap.insert( std::pair< const BmString, BmRefObj*>( newName, this));
 }
 
 /*------------------------------------------------------------------------------*\

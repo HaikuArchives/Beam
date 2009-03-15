@@ -35,7 +35,7 @@ enum {
 
 class BmDeskbarView: public BView {
 	typedef BView inherited;
-	typedef map<int64, entry_ref> NewMailMap;
+	typedef std::map<int64, entry_ref> NewMailMap;
 public:
 	// c'tors and d'tor:
 	BmDeskbarView( BRect frame);

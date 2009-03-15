@@ -43,37 +43,6 @@ static BmString CollectSslErrorString()
 
 // #pragma mark - BmOpenSslNetEndpoint::ContextManager
 
-class BmOpenSslNetEndpoint::ContextManager {
-	typedef map<thread_id, BmOpenSslNetEndpoint*> UserdataMap;
-public:
-	ContextManager();
-	~ContextManager();
-
-	SSL_CTX* TlsContext()					{ return mTlsContext; }
-	SSL_CTX* SslContext()					{ return mSslContext; }
-
-	void SetUserdataForCurrentThread(BmOpenSslNetEndpoint* userdata);
-	BmOpenSslNetEndpoint* GetUserdataForCurrentThread();
-	void RemoveUserdataForCurrentThread();
-	void LockingCallback(int mode, int type, const char *file, int line);
-	unsigned long ThreadIdCallback(void);
-
-private:
-	status_t _SetupContext(SSL_CTX* context);
-	void _SetupSslLocks();
-	void _CleanupSslLocks();
-
-	BLocker mLocker;
-	SSL_CTX* mTlsContext;
-	SSL_CTX* mSslContext;
-	status_t mStatus;
-	BmString mErrorStr;
-	UserdataMap mUserdataMap;
-	vector<BLocker*> mSslLocks;
-};
-
-static BmOpenSslNetEndpoint::ContextManager gContextManager;
-
 /*------------------------------------------------------------------------------*\
 	()
 		-	
@@ -81,7 +50,7 @@ static BmOpenSslNetEndpoint::ContextManager gContextManager;
 extern "C" 
 void locking_callback(int mode, int type, const char *file, int line)
 {
-	gContextManager.LockingCallback(mode, type, file, line);
+	BmOpenSslNetEndpoint::LockingCallback(mode, type, file, line);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -91,7 +60,7 @@ void locking_callback(int mode, int type, const char *file, int line)
 extern "C"
 unsigned long thread_id_callback(void)
 {
-	return gContextManager.ThreadIdCallback();
+	return BmOpenSslNetEndpoint::ThreadIdCallback();
 }
 
 /*------------------------------------------------------------------------------*\
@@ -267,8 +236,8 @@ void BmOpenSslNetEndpoint::ContextManager::_CleanupSslLocks(void)
 
 // #pragma mark - BmOpenSslNetEndpoint
 
-BmOpenSslNetEndpoint::ContextManager*
-BmOpenSslNetEndpoint::nContextManager = &gContextManager;
+BmOpenSslNetEndpoint::ContextManager
+BmOpenSslNetEndpoint::nContextManager;
 
 /*------------------------------------------------------------------------------*\
 	BmOpenSslNetEndpoint()
@@ -372,9 +341,9 @@ status_t BmOpenSslNetEndpoint::StartEncryption(const char* encType) {
 	// fetch context corresponding to requested type of connection
 	SSL_CTX* context;
 	if (mEncryptionType == "TLS")
-		context = nContextManager->TlsContext();
+		context = nContextManager.TlsContext();
 	else if (mEncryptionType == "SSL")
-		context = nContextManager->SslContext();
+		context = nContextManager.SslContext();
 	else
 		return B_BAD_VALUE;
 
@@ -384,7 +353,7 @@ status_t BmOpenSslNetEndpoint::StartEncryption(const char* encType) {
 		return B_ERROR;
 
 	// set ourselves as userdata for the new ssl object:
-	nContextManager->SetUserdataForCurrentThread(this);
+	nContextManager.SetUserdataForCurrentThread(this);
 
 	int result;
 	// set SSL file descriptor
@@ -416,7 +385,7 @@ status_t BmOpenSslNetEndpoint::StopEncryption() {
 	if (!mSSL)
 		return B_BAD_VALUE;
 
-	nContextManager->RemoveUserdataForCurrentThread();
+	nContextManager.RemoveUserdataForCurrentThread();
 
 	// shutdown connection
 	if (mError == 0) {
@@ -514,7 +483,7 @@ int BmOpenSslNetEndpoint
 ::ClientCertCallback(SSL* ssl, X509 **certP, EVP_PKEY **pkeyP)
 {
 	BmOpenSslNetEndpoint* endpoint 
-		= nContextManager->GetUserdataForCurrentThread();
+		= nContextManager.GetUserdataForCurrentThread();
 	if (endpoint) {
 		if (endpoint->_FetchClientCertificateAndKey(ssl, certP, pkeyP) == B_OK)
 			return 1;
@@ -530,11 +499,29 @@ int BmOpenSslNetEndpoint::VerifyCallback(int ok, X509_STORE_CTX *store)
 {
 	if (!ok) {
 		BmOpenSslNetEndpoint* endpoint 
-			= nContextManager->GetUserdataForCurrentThread();
+			= nContextManager.GetUserdataForCurrentThread();
 		if (endpoint)
 			ok = endpoint->_FetchVerificationError(store);
 	}
 	return ok;
+}
+
+/*------------------------------------------------------------------------------*\
+	LockingCallback()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmOpenSslNetEndpoint::LockingCallback(int mode, int type, const char *file, int line)
+{
+	return nContextManager.LockingCallback(mode, type, file, line);
+}
+
+/*------------------------------------------------------------------------------*\
+	ThreadIdCallback()
+		-	
+\*------------------------------------------------------------------------------*/
+unsigned long BmOpenSslNetEndpoint::ThreadIdCallback(void)
+{
+	return nContextManager.ThreadIdCallback();
 }
 
 /*------------------------------------------------------------------------------*\

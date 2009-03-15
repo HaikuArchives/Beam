@@ -23,6 +23,7 @@
 using std::map;
 using std::vector;
 
+class BFile;
 class BmMail;
 class BmIdentity;
 

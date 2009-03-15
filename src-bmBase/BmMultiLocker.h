@@ -23,6 +23,8 @@
 #include "BmBase.h"
 #include "BmString.h"
 
+using std::map;
+
 class IMPEXPBMBASE BmMultiLocker
 {
 	typedef map<thread_id,int32> ThreadMap;
