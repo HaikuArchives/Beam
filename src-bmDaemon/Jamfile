@@ -14,6 +14,7 @@ DEFINES += BM_BUILDING_BMDAEMON ;
 SharedLibrary bmDaemon.so : 
 	<src-bmDaemon>BmNetEndpoint.cpp
 	BmImap.cpp
+	BmImapNestedStringList.cpp
 	BmNetEndpointRoster.cpp
 	BmNetJobModel.cpp
 	BmNetUtil.cpp

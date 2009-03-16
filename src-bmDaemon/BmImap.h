@@ -16,6 +16,7 @@
 #include "BmDaemon.h"
 
 #include "BmNetJobModel.h"
+#include "BmImapNestedStringList.h"
 
 class BmImapAccount;
 
@@ -119,8 +120,8 @@ private:
 							bool dotstuffEncoding=false,
 							bool update=false);
 
-	BmString FlagsToString(uint32 flags) const;
-	uint32 StringToFlags(const BmString& flagsString) const;
+	static BmString FlagsToString(uint32 flags);
+	static uint32 StringToFlags(const BmImapNestedStringList& flagsString);
 
 	static int32 mId;
 							// unique message ID, this is used if a 
@@ -142,15 +143,15 @@ private:
 	};
 	vector<uint32> mMsgFlags;
 							// an array of message flags, one for each message
-	int32 mMsgCount;
+	uint32 mMsgCount;
 							// number of msgs found on server
-	int32 mCurrMailNr;
+	uint32 mCurrMailNr;
 							// nr of currently handled mail (0 if none)
-	int32 mNewMsgCount;
+	uint32 mNewMsgCount;
 							// number of msgs to be received
-	vector<int32> mNewMsgSizes;
+	vector<uint32> mNewMsgSizes;
 							// sizes of msgs to be received
-	int32 mNewMsgTotalSize;
+	uint32 mNewMsgTotalSize;
 							// total-size of msgs to be received
 	BmString mSupportedAuthTypes;
 							// list of auth-types the server indicates to support
@@ -170,7 +171,7 @@ private:
 
 	bool mTaggedMode;
 							// whether or not we should send/expect tagged lines
-	int32 mCurrTagNr;
+	uint32 mCurrTagNr;
 							// current tag number, as required by IMAP
 	BmString mCurrTag;
 							// current tag identifier, (last one sent to server)

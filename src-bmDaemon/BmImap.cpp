@@ -623,10 +623,9 @@ void BmImap::StateCheck()
 		SendCommand( cmd);
 		if (!CheckForPositiveAnswer())
 			return;
-		int fetchedCount = rx.exec( 
-			StatusText(), 
-//			"^\\*\\s+(\\d+)\\s+fetch\\s+\\(\\s*uid\\s+(\\d+)\\                          s+rfc822\\.size\\s+(\\d+)", 
-			"^\\*\\s+(\\d+)\\s+fetch\\s+\\(\\s*uid\\s+(\\d+)\\s*flags\\s+\\(([^)]+)\\)\\s+rfc822\\.size\\s+(\\d+)",
+		const BmString& status = StatusText();
+		uint32 fetchedCount = rx.exec( 
+			status, "^\\*\\s+(\\d+)\\s+fetch\\s+(\\([^\\r\\n]*\\))",
 			Regexx::newline | Regexx::nocase | Regexx::global
 		);
 		if (!fetchedCount)
@@ -640,33 +639,74 @@ void BmImap::StateCheck()
 			if (fetchedCount > mMsgCount)
 				fetchedCount = mMsgCount;
 		}
-		// grab individual UID and message size from result:
-		vector<int32> msgSizes;
+		// grab individual UID, flags and message size from result:
+		vector<uint32> msgSizes;
 		mMsgFlags.clear();
 		mMsgUIDs.clear();
-		mMsgFlags.clear();
-		for( int32 i=0; i<fetchedCount; ++i) {
+		BmImapNestedStringList nestedList;
+		for(uint32 i=0; i<fetchedCount; ++i) {
 			BmString nrStr = rx.match[i].atom[0];
-			int32 nr = atoi(nrStr.String());
+			uint32 nr = atoi(nrStr.String());
 			if (nr != i+1)
 				throw BM_network_error( BmString("answer to '") << cmd 
-													<< "has unexpeced msg-nr. in line "
+													<< "' has unexpected msg-nr. in line "
 													<< i+1);
-			// compose our uid as "uidvalidity:uid", such that we never
-			// confuse UIDs, should the server decide to renumber the messages:
-			BmString uid = uidValidity + ":" + rx.match[i].atom[1];
-			mMsgUIDs.push_back(uid);
-			// flags
-			BmString flagsString = rx.match[i].atom[2];
-			unsigned flags = StringToFlags(flagsString);
-			mMsgFlags.push_back(flags);
-			// size
-			BmString sizeStr = rx.match[i].atom[3];
-			msgSizes.push_back(atoi(sizeStr.String()));
+			const char* posInText = status.String() + rx.match[i].atom[1].start();
+			if (!nestedList.Parse(posInText))
+				throw BM_network_error( BmString("answer to '") << cmd 
+													<< "' has unparsable string list in line "
+													<< i+1);
+			uint32 listSize = nestedList.Size();
+			if (listSize % 2 != 0)
+				throw BM_network_error( BmString("answer to '") << cmd 
+													<< "' has uneven number of items "
+													<< "in string list in line "
+													<< i+1);
+			for(uint32 l = 0; l < listSize; l += 2) {
+				const BmString& key = nestedList[l].Text();
+				if (key.ICompare("UID") == 0) {
+					// compose our uid as "uidvalidity:uid", such that we never
+					// confuse UIDs, should the server decide to renumber the messages:
+					BmString uid = uidValidity + ":" + nestedList[l+1].Text();
+					mMsgUIDs.push_back(uid);
+				} else if (key.ICompare("FLAGS") == 0) {
+					unsigned flags = StringToFlags(nestedList[l+1]);
+					mMsgFlags.push_back(flags);
+				} else if (key.ICompare("RFC822.SIZE") == 0) {
+					const BmString& sizeStr = nestedList[l+1].Text();
+					msgSizes.push_back(atoi(sizeStr.String()));
+				} else
+					throw BM_network_error( BmString("answer to '") << cmd 
+														<< "' contains unrequested key '" << key
+														<< "' in string list in line "
+														<< i+1);
+			}
+			if (mMsgUIDs.size() != i + 1)
+				throw BM_network_error( BmString("answer to '") << cmd 
+													<< "' is missing UID in line "
+													<< i+1);
+			if (mMsgFlags.size() != i + 1)
+				throw BM_network_error( BmString("answer to '") << cmd 
+													<< "' is missing FLAGS in line "
+													<< i+1);
+			if (msgSizes.size() != i + 1)
+				throw BM_network_error( BmString("answer to '") << cmd 
+													<< "' is missing RFC822.SIZE in line "
+													<< i+1);
 		}
+
+		if (mMsgUIDs.size() != mMsgCount)
+			throw BM_network_error( BmString("answer to '") << cmd 
+												<< "' does not have enough UIDs");
+		if (mMsgFlags.size() != mMsgCount)
+			throw BM_network_error( BmString("answer to '") << cmd 
+												<< "' does not have enough FLAGS");
+		if (msgSizes.size() != mMsgCount)
+			throw BM_network_error( BmString("answer to '") << cmd 
+												<< "' does not have enough RFC822.SIZEs");
 	
 		// compute total size of messages that are new to us:
-		for( int32 i=0; i<mMsgCount; i++) {
+		for(uint32 i=0; i<mMsgCount; i++) {
 			if (!mImapAccount->IsUIDDownloaded( mMsgUIDs[i])) {
 				// msg is new (according to unknown UID)
 				// add msg-size to total:
@@ -703,7 +743,7 @@ void BmImap::StateRetrieve()
 {
 	BmString cmd;
 	mCurrMailNr = 1;
-	for( int32 i=0; mNewMsgCount>0 && i<mMsgCount; ++i) {
+	for(uint32 i=0; mNewMsgCount>0 && i<mMsgCount; ++i) {
 		if (mImapAccount->IsUIDDownloaded( mMsgUIDs[i])) {
 			// msg is old (according to known UID), we skip it:
 			continue;
@@ -726,7 +766,7 @@ void BmImap::StateRetrieve()
 							<< " bytes in " << duration << " seconds => " 
 							<< mAnswerText.Length()/duration/1024.0 << "KB/s");
 		}
-		if (mAnswerText.Length() != mNewMsgSizes[mCurrMailNr-1]) {
+		if ((uint32)mAnswerText.Length() != mNewMsgSizes[mCurrMailNr-1]) {
 			// as this actually happens (what the heck?) we simply
 			// log it if in verbose mode:
 			BM_LOG2( BM_LogRecv,
@@ -915,7 +955,7 @@ BmString BmImap::SuggestAuthType() const
 		return BmImapAccount::AUTH_LOGIN;
 }
 
-BmString BmImap::FlagsToString(uint32 flags) const
+BmString BmImap::FlagsToString(uint32 flags)
 {
 	BmString string;
 	bool first = true;
@@ -954,19 +994,21 @@ BmString BmImap::FlagsToString(uint32 flags) const
 	return string;
 }
 
-uint32 BmImap::StringToFlags(const BmString& flagsString) const
+uint32 BmImap::StringToFlags(const BmImapNestedStringList& flagsString)
 {
 	uint32 flags = 0;
-	if (flagsString.FindFirst("\\Seen") >= 0)
-		flags |= FLAG_SEEN;
-	if (flagsString.FindFirst("\\Answered") >= 0)
-		flags |= FLAG_ANSWERED;
-	if (flagsString.FindFirst("\\Flagged") >= 0)
-		flags |= FLAG_FLAGGED;
-	if (flagsString.FindFirst("\\Deleted") >= 0)
-		flags |= FLAG_DELETED;
-	if (flagsString.FindFirst("\\Draft") >= 0)
-		flags |= FLAG_DRAFT;
+	for(uint32 i = 0; i < flagsString.Size(); ++i) {
+		if (flagsString[i].Text() == "\\Seen")
+			flags |= FLAG_SEEN;
+		else if (flagsString[i].Text() == "\\Answered")
+			flags |= FLAG_ANSWERED;
+		else if (flagsString[i].Text() == "\\Flagged")
+			flags |= FLAG_FLAGGED;
+		else if (flagsString[i].Text() == "\\Deleted")
+			flags |= FLAG_DELETED;
+		else if (flagsString[i].Text() == "\\Draft")
+			flags |= FLAG_DRAFT;
+	}
 	return flags;
 }
 
