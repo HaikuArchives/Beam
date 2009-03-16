@@ -234,14 +234,31 @@ BmToolbarButton::~BmToolbarButton() {
 void BmToolbarButton::Draw( BRect updateRect) {
 	BView::Draw( updateRect);
 
-#ifndef __HAIKU__
-	if (mHighlighted && !Value() && IsEnabled()) {
-#else
+	BRect rect(Bounds());
+#ifdef __HAIKU__
 	if (mHighlighted && IsEnabled()) {
-#endif
 		// draw higlighting border
-		BRect rect(Bounds());
+		uint32 flags = 0;
+		if (Value())
+			flags |= BControlLook::B_ACTIVATED;
+		rgb_color base = ui_color(B_PANEL_BACKGROUND_COLOR);
+		be_control_look->DrawButtonFrame(this, rect, updateRect, base, flags);
+		be_control_look->DrawButtonBackground(this, rect, updateRect, base,
+			flags);
+	}
+#endif // __HAIKU__
+
+	BPicture* pic = NULL;
+	if (!IsEnabled())
+		pic = DisabledOff();
+	else
+		pic = Value() ? EnabledOn() : EnabledOff();
+	if (pic)
+		DrawPicture(pic, BPoint(0, 0));
+
 #ifndef __HAIKU__
+	if (mHighlighted && IsEnabled()) {
+		// draw higlighting border
 		BeginLineArray(4);
 		AddLine( rect.LeftBottom(), rect.LeftTop(), 
 					ui_color( B_UI_SHINE_COLOR));
@@ -252,25 +269,8 @@ void BmToolbarButton::Draw( BRect updateRect) {
 		AddLine( rect.RightBottom(), rect.RightTop(), 
 					BmWeakenColor(B_UI_SHADOW_COLOR, BeShadowMod));
 		EndLineArray();
-#else
-		uint32 flags = 0;
-		if (Value())
-			flags |= BControlLook::B_ACTIVATED;
-		rgb_color base = ui_color(B_PANEL_BACKGROUND_COLOR);
-		be_control_look->DrawButtonFrame(this, rect, updateRect, base, flags);
-		be_control_look->DrawButtonBackground(this, rect, updateRect, base,
-			flags);
-#endif // __HAIKU__
 	}
-
-	BPicture* pic = NULL;
-	if (!IsEnabled())
-		pic = DisabledOff();
-	else
-		pic = Value() ? EnabledOn() : EnabledOff();
-	if (pic)
-		DrawPicture( pic, BPoint(0, 0));
-
+#endif
 }
 
 /*------------------------------------------------------------------------------*\
