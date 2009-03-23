@@ -51,8 +51,6 @@ BmListViewItem::BmListViewItem( ColumnListView* lv, BmListModelItem* modelItem,
 										  bool, BMessage* archive)
 	:	inherited( modelItem->OutlineLevel(), !modelItem->empty(), false, lv)
 	,	mModelItem( modelItem)
-	,	mShouldBeHidden( false)
-	,	mIsHidden( false)
 {
 	SetExpanded( archive ? archive->FindBool( MSG_EXPANDED) : false);
 }
@@ -217,11 +215,15 @@ const char* const BmListViewController::MSG_SCROLL_STEP= "step";
 \*------------------------------------------------------------------------------*/
 BmListViewController::BmListViewController( BRect rect,
 								 const char* Name, list_view_type Type, 
-								 bool hierarchical, bool showLabelView)
+								 bool hierarchical, bool showLabelView,
+								 BmViewItemManager* viewItemManager)
 	:	inherited( rect, Name, 
 					  B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE,
 					  Type, hierarchical, showLabelView)
 	,	inheritedController( Name)
+	,	mViewItemManager( 
+			viewItemManager ? viewItemManager : new BmViewItemManager
+		)
 	,	mInitialStateInfo( NULL)
 	,	mUseStateCache( true)
 	,	mCurrHighlightItem( NULL)
@@ -263,6 +265,7 @@ BmListViewController::~BmListViewController() {
 	delete mExpandCollapseRunner;
 	delete mPulsedScrollRunner;
 	delete mInitialStateInfo;
+	delete mViewItemManager;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -683,7 +686,7 @@ void BmListViewController::MessageReceived( BMessage* msg) {
 \*------------------------------------------------------------------------------*/
 BmListViewItem* 
 BmListViewController::FindViewItemFor( BmListModelItem* modelItem) const {
-	return mViewItemManager.FindViewItemFor(modelItem);
+	return mViewItemManager->FindViewItemFor(modelItem);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -722,7 +725,7 @@ void BmListViewController::AddAllModelItems() {
 			if (viewItem) {
 				viewItem->UpdateView( UPD_ALL, false);
 				tempList->AddItem( viewItem);
-				mViewItemManager.Add(modelItem, viewItem);
+				mViewItemManager->Add(modelItem, viewItem);
 				BM_LOG2( BM_LogMailTracking, 
 							BmString("ListView <") << ModelName() << "> added view-item "
 								<< viewItem->Key());
@@ -808,7 +811,7 @@ BmListViewItem* BmListViewController::doAddModelItem( BmListViewItem* parent,
 			AddUnder( newItem, parent);
 		else
 			AddItem( newItem);
-		mViewItemManager.Add(item, newItem);
+		mViewItemManager->Add(item, newItem);
 		newItem->UpdateView( UPD_ALL, redraw);
 		BM_LOG2( BM_LogMailTracking, 
 					BmString("ListView <") << ModelName() << "> added view-item " 
@@ -853,7 +856,7 @@ void BmListViewController::RemoveModelItem( BmListModelItem* item) {
 		-
 \*------------------------------------------------------------------------------*/
 void BmListViewController::doRemoveModelItem( BmListModelItem* item) {
-	BmListViewItem* viewItem = mViewItemManager.Remove(item);
+	BmListViewItem* viewItem = mViewItemManager->Remove(item);
 	if (viewItem) {
 		RemoveItem( viewItem);
 		BM_LOG2( BM_LogMailTracking, 
@@ -1077,7 +1080,7 @@ void BmListViewController::MakeEmpty() {
 		for( int i=0; i<count; ++i)
 			tempList.AddItem( FullListItemAt( i));
 		inherited::MakeEmpty();					// clear display
-		mViewItemManager.MakeEmpty();
+		mViewItemManager->MakeEmpty();
 		UpdateCaption();
 		UnlockLooper();
 	}

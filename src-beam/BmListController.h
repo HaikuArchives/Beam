@@ -78,9 +78,6 @@ public:
 protected:
 	BmRef<BmListModelItem> mModelItem;
 	
-	bool mShouldBeHidden : 1;
-	bool mIsHidden : 1;
-
 	// Hide copy-constructor and assignment:
 	BmListViewItem( const BmListViewItem&);
 	BmListViewItem operator=( const BmListViewItem&);
@@ -109,7 +106,7 @@ public:
 	virtual BmListViewItem* FindViewItemFor(
 		const BmListModelItem* modelItem) const;
 		
-private:
+protected:
 	BmViewModelMap mViewModelMap;
 };
 
@@ -132,7 +129,8 @@ public:
 								 const char* Name = NULL,
 								 list_view_type Type = B_SINGLE_SELECTION_LIST,
 								 bool hierarchical = false,
-								 bool showLabelView = true);
+								 bool showLabelView = true,
+								 BmViewItemManager* viewItemManager = NULL);
 	virtual ~BmListViewController();
 
 	// native methods:
@@ -199,7 +197,7 @@ protected:
 
 	virtual void PopulateLabelViewMenu( BMenu* menu);
 
-	BmViewItemManager mViewItemManager;
+	BmViewItemManager* mViewItemManager;
 	BMessage* mInitialStateInfo;
 	bool mShowCaption;
 	bool mShowBusyView;
