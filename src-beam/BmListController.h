@@ -77,6 +77,9 @@ public:
 	
 protected:
 	BmRef<BmListModelItem> mModelItem;
+	
+	bool mShouldBeHidden : 1;
+	bool mIsHidden : 1;
 
 	// Hide copy-constructor and assignment:
 	BmListViewItem( const BmListViewItem&);
@@ -85,6 +88,31 @@ protected:
 
 class BMenu;
 class BMessageRunner;
+
+/*------------------------------------------------------------------------------*\
+	BmViewItemManager
+		-	manages the relations between listmodel-items and view items
+\*------------------------------------------------------------------------------*/
+class BmViewItemManager
+{
+	typedef map<const BmListModelItem*, BmListViewItem*> BmViewModelMap;
+
+public:
+	BmViewItemManager();
+	virtual ~BmViewItemManager();
+	
+	virtual void Add(const BmListModelItem* modelItem, BmListViewItem* viewItem);
+	virtual BmListViewItem* Remove(const BmListModelItem* modelItem);
+
+	virtual void MakeEmpty();
+	
+	virtual BmListViewItem* FindViewItemFor(
+		const BmListModelItem* modelItem) const;
+		
+private:
+	BmViewModelMap mViewModelMap;
+};
+
 /*------------------------------------------------------------------------------*\
 	BmListViewController
 		-	
@@ -108,7 +136,6 @@ public:
 	virtual ~BmListViewController();
 
 	// native methods:
-	BmListViewItem* FindViewItemFor( BmListModelItem* modelItem) const;
 	virtual void WriteStateInfo();
 	virtual void ReadStateInfo();
 
@@ -129,6 +156,9 @@ public:
 	void MouseDown(BPoint point);
 	void MouseUp(BPoint point);
 	void MouseMoved( BPoint point, uint32 transit, const BMessage *msg);
+
+	// overrides of listitem-manager base
+	BmListViewItem* FindViewItemFor( BmListModelItem* modelItem) const;
 
 	// getters:
 	inline BMessage* InitialStateInfo()			{ return mInitialStateInfo; }
@@ -169,9 +199,7 @@ protected:
 
 	virtual void PopulateLabelViewMenu( BMenu* menu);
 
-	typedef map< BmListModelItem*, BmListViewItem*> BmViewModelMap;
-
-	BmViewModelMap mViewModelMap;
+	BmViewItemManager mViewItemManager;
 	BMessage* mInitialStateInfo;
 	bool mShowCaption;
 	bool mShowBusyView;

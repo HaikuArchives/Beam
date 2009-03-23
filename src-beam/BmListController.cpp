@@ -51,6 +51,8 @@ BmListViewItem::BmListViewItem( ColumnListView* lv, BmListModelItem* modelItem,
 										  bool, BMessage* archive)
 	:	inherited( modelItem->OutlineLevel(), !modelItem->empty(), false, lv)
 	,	mModelItem( modelItem)
+	,	mShouldBeHidden( false)
+	,	mIsHidden( false)
 {
 	SetExpanded( archive ? archive->FindBool( MSG_EXPANDED) : false);
 }
@@ -121,6 +123,81 @@ void BmListViewItem::SetTextCols( int16 firstTextCol, const char** content) {
 }
 
 
+
+/********************************************************************************\
+	BmViewItemManager
+\********************************************************************************/
+
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+BmViewItemManager::BmViewItemManager()
+{
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+BmViewItemManager::~BmViewItemManager()
+{
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmViewItemManager::Add(const BmListModelItem* modelItem,
+									 BmListViewItem* viewItem)
+{
+	mViewModelMap[modelItem] = viewItem;
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+BmListViewItem* BmViewItemManager::Remove(const BmListModelItem* modelItem)
+{
+	BmListViewItem* viewItem = NULL;
+	if (modelItem) {
+		BmViewModelMap::iterator pos = mViewModelMap.find(modelItem);
+		if (pos != mViewModelMap.end()) {
+			viewItem = pos->second;
+			mViewModelMap.erase(pos);
+		}
+	}
+	return viewItem;
+}
+	
+/*------------------------------------------------------------------------------*\
+	MakeEmpty()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmViewItemManager::MakeEmpty()
+{
+	BmViewModelMap::iterator iter = mViewModelMap.begin();
+	for(; iter != mViewModelMap.end(); ++iter) {
+		delete iter->second;
+	}
+	mViewModelMap.clear();
+}
+
+/*------------------------------------------------------------------------------*\
+	FindViewItemFor( modelItem)
+		-	
+\*------------------------------------------------------------------------------*/
+BmListViewItem* 
+BmViewItemManager::FindViewItemFor(const BmListModelItem* modelItem) const
+{
+	BmViewModelMap::const_iterator iter = mViewModelMap.find(modelItem);
+	if (iter == mViewModelMap.end())
+		return NULL;
+	else
+		return iter->second;
+}
 
 /********************************************************************************\
 	BmListViewController
@@ -606,11 +683,7 @@ void BmListViewController::MessageReceived( BMessage* msg) {
 \*------------------------------------------------------------------------------*/
 BmListViewItem* 
 BmListViewController::FindViewItemFor( BmListModelItem* modelItem) const {
-	BmViewModelMap::const_iterator iter = mViewModelMap.find( modelItem);
-	if (iter == mViewModelMap.end())
-		return NULL;
-	else
-		return iter->second;
+	return mViewItemManager.FindViewItemFor(modelItem);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -649,7 +722,7 @@ void BmListViewController::AddAllModelItems() {
 			if (viewItem) {
 				viewItem->UpdateView( UPD_ALL, false);
 				tempList->AddItem( viewItem);
-				mViewModelMap[modelItem] = viewItem;
+				mViewItemManager.Add(modelItem, viewItem);
 				BM_LOG2( BM_LogMailTracking, 
 							BmString("ListView <") << ModelName() << "> added view-item "
 								<< viewItem->Key());
@@ -735,7 +808,7 @@ BmListViewItem* BmListViewController::doAddModelItem( BmListViewItem* parent,
 			AddUnder( newItem, parent);
 		else
 			AddItem( newItem);
-		mViewModelMap[item] = newItem;
+		mViewItemManager.Add(item, newItem);
 		newItem->UpdateView( UPD_ALL, redraw);
 		BM_LOG2( BM_LogMailTracking, 
 					BmString("ListView <") << ModelName() << "> added view-item " 
@@ -780,26 +853,19 @@ void BmListViewController::RemoveModelItem( BmListModelItem* item) {
 		-
 \*------------------------------------------------------------------------------*/
 void BmListViewController::doRemoveModelItem( BmListModelItem* item) {
-	BmListViewItem* viewItem = NULL;
-	if (item) {
-		BmViewModelMap::iterator pos = mViewModelMap.find( item);
-		if (pos != mViewModelMap.end()) {
-			viewItem = pos->second;
-			mViewModelMap.erase( pos);
+	BmListViewItem* viewItem = mViewItemManager.Remove(item);
+	if (viewItem) {
+		RemoveItem( viewItem);
+		BM_LOG2( BM_LogMailTracking, 
+					BmString("ListView <") << ModelName() 
+						<< "> removed view-item " << viewItem->Key());
+		// remove all sub-items of current item from the view as well:
+		BmModelItemMap::const_iterator iter;
+		for( iter = item->begin(); iter != item->end(); ++iter) {
+			BmListModelItem* subItem = iter->second.Get();
+			doRemoveModelItem( subItem);
 		}
-		if (viewItem) {
-			RemoveItem( viewItem);
-			BM_LOG2( BM_LogMailTracking, 
-						BmString("ListView <") << ModelName() 
-							<< "> removed view-item " << viewItem->Key());
-			// remove all sub-items of current item from the view as well:
-			BmModelItemMap::const_iterator iter;
-			for( iter = item->begin(); iter != item->end(); ++iter) {
-				BmListModelItem* subItem = iter->second.Get();
-				doRemoveModelItem( subItem);
-			}
-			delete viewItem;
-		}
+		delete viewItem;
 	}
 }
 
@@ -1011,17 +1077,7 @@ void BmListViewController::MakeEmpty() {
 		for( int i=0; i<count; ++i)
 			tempList.AddItem( FullListItemAt( i));
 		inherited::MakeEmpty();					// clear display
-		int c;
-		count = tempList.CountItems();
-		for( int i=0; i<count; ++i) {
-			BmListViewItem* subItem 
-				= static_cast<BmListViewItem*>(tempList.ItemAt( i));
-			if ((c = mViewModelMap.erase( subItem->ModelItem())) != 1)
-				BM_LOG( BM_LogModelController, 
-						  BmString("unable to erase subItem ") << subItem->Key() 
-								<< " from ViewModelMap.\nResult of erase() is: "<<c);
-			delete subItem;
-		}
+		mViewItemManager.MakeEmpty();
 		UpdateCaption();
 		UnlockLooper();
 	}
