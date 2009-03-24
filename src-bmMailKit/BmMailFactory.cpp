@@ -225,10 +225,12 @@ int32 BmMailFactory::QuoteText( const BmString& in, BmString& out,
 	rx.expr( ThePrefs->GetString( "QuotingLevelRX"));
 	int modifiedMaxLen = maxLineLen;
 	int maxTextLen;
+	// cache a few preference values
+	int32 spacesPerTab = ThePrefs->GetInt( "SpacesPerTab", 4);
 	int32 count = rx.exec( Regexx::study | Regexx::global | Regexx::newline);
 	for( int32 i=0; i<count; ++i) {
 		BmString q(rx.match[i].atom[0]);
-		quote.ConvertTabsToSpaces( ThePrefs->GetInt( "SpacesPerTab", 4), &q);
+		quote.ConvertTabsToSpaces( spacesPerTab, &q);
 		// limit the quote chars to a sane length (as otherwise we might
 		// loop endlessly when trying to wrap the content lines)
 		if (quote.Length() > maxLineLen / 2)
@@ -271,12 +273,14 @@ int32 BmMailFactory::QuoteText( const BmString& in, BmString& out,
 		-	
 \*------------------------------------------------------------------------------*/
 int32 BmMailFactory::QuoteTextWithReWrap( const BmString& in, BmString& out, 
-											  BmString quoteString, int maxLineLen) {
+											  BmString quoteString, int maxLineLen)
+{
 	out = "";
 	if (!in.Length())
 		return maxLineLen;
 	Regexx rx;
 	rx.str( in);
+
 	rx.expr( ThePrefs->GetString( "QuotingLevelRX"));
 	BmString currQuote;
 	BmString text;
@@ -287,20 +291,24 @@ int32 BmMailFactory::QuoteTextWithReWrap( const BmString& in, BmString& out,
 	int minLenForWrappedLine = ThePrefs->GetInt( "MinLenForWrappedLine", 50);
 	bool lastWasSpecialLine = true;
 	int32 lastLineLen = 0;
+	// cache a few preference values
+	int32 spacesPerTab = ThePrefs->GetInt( "SpacesPerTab", 4);
+	BmString quotingLevelEmptyLineRX
+		= ThePrefs->GetString( "QuotingLevelEmptyLineRX", "^[ \\t]*$");
+	BmString quotingLevelListLineRX
+		= ThePrefs->GetString( "QuotingLevelListLineRX",  "^[*+\\-\\d]+.*?$");
 	int32 count = rx.exec( Regexx::study | Regexx::global | Regexx::newline);
 	for( int32 i=0; i<count; ++i) {
 		BmString q(rx.match[i].atom[0]);
-		quote.ConvertTabsToSpaces( ThePrefs->GetInt( "SpacesPerTab", 4), &q);
+		quote.ConvertTabsToSpaces( spacesPerTab, &q);
 		// limit the quote chars to a sane length (as otherwise we might
 		// loop endlessly when trying to wrap the content lines)
 		if (quote.Length() > maxLineLen / 2)
 			quote.Truncate(maxLineLen / 2);
 		line = rx.match[i].atom[1];
 		if ((line.CountChars() < minLenForWrappedLine && lastWasSpecialLine)
-		|| rxl.exec( line, ThePrefs->GetString( "QuotingLevelEmptyLineRX", 
-															 "^[ \\t]*$"))
-		|| rxl.exec( line, ThePrefs->GetString( "QuotingLevelListLineRX", 
-															 "^[*+\\-\\d]+.*?$"))) {
+		|| rxl.exec( line, quotingLevelEmptyLineRX)
+		|| rxl.exec( line, quotingLevelListLineRX)) {
 			if (i != 0) {
 				maxTextLen = MAX( 0, 
 							 			maxLineLen - currQuote.CountChars() 
