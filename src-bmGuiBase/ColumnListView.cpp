@@ -1335,6 +1335,18 @@ bool ColumnListView::AddItemPrivate(CLVListItem* item, int32 fullListIndex)
 }
 
 
+bool ColumnListView::ReplaceItemsWith(BList* newItems, bool sort)
+{
+	AssertWindowLocked();
+	MakeEmptyPrivate();
+	bool result = AddListPrivate(newItems, 0);
+	if (sort)
+		SortItems();
+	UpdateDataRect();
+	return result;
+}
+
+
 bool ColumnListView::AddList(BList* newItems)
 {
 	bool result;
@@ -1553,8 +1565,7 @@ int32 ColumnListView::FullListCountItems() const
 void ColumnListView::MakeEmpty()
 {
 	AssertWindowLocked();
-	fFullItemList.MakeEmpty();
-	BListView::MakeEmpty();
+	MakeEmptyPrivate();
 	UpdateDataRect();
 }
 

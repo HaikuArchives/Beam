@@ -159,6 +159,7 @@ class IMPEXPBMGUIBASE ColumnListView : public BListView
 		int32 DetermineSortedPosHierarchical( CLVListItem* item, uint32 startIndex);
 		virtual bool AddItem(BListItem* item, int32 fullListIndex);
 		virtual bool AddItem(BListItem* item);
+		virtual bool ReplaceItemsWith(BList* newItems, bool sort = true);
 		virtual bool AddList(BList* newItems);						//This must be a BList of
 																	//CLVListItem*'s, NOT BListItem*'s
 		virtual bool AddList(BList* newItems, int32 fullListIndex);	//This must be a BList of
