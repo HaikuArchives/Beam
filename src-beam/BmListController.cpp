@@ -32,6 +32,20 @@ using namespace regexx;
 #include "BmUtil.h"
 
 /********************************************************************************\
+	BmViewItemFilter
+\********************************************************************************/
+
+BmViewItemFilter::BmViewItemFilter()
+{
+}
+
+BmViewItemFilter::~BmViewItemFilter()
+{
+}
+
+
+
+/********************************************************************************\
 	BmListViewItem
 \********************************************************************************/
 
@@ -51,6 +65,8 @@ BmListViewItem::BmListViewItem( ColumnListView* lv, BmListModelItem* modelItem,
 										  bool, BMessage* archive)
 	:	inherited( modelItem->OutlineLevel(), !modelItem->empty(), false, lv)
 	,	mModelItem( modelItem)
+	,	mShouldBeHidden( false)
+	,	mIsHidden( false)
 {
 	SetExpanded( archive ? archive->FindBool( MSG_EXPANDED) : false);
 }
@@ -132,6 +148,8 @@ void BmListViewItem::SetTextCols( int16 firstTextCol, const char** content) {
 		-	
 \*------------------------------------------------------------------------------*/
 BmViewItemManager::BmViewItemManager()
+	:	mLocker("ViewItemManagerLock")
+	,	mFilter(NULL)
 {
 }
 
@@ -141,6 +159,8 @@ BmViewItemManager::BmViewItemManager()
 \*------------------------------------------------------------------------------*/
 BmViewItemManager::~BmViewItemManager()
 {
+	delete mFilter;
+	MakeEmpty();
 }
 
 /*------------------------------------------------------------------------------*\
@@ -150,7 +170,14 @@ BmViewItemManager::~BmViewItemManager()
 void BmViewItemManager::Add(const BmListModelItem* modelItem,
 									 BmListViewItem* viewItem)
 {
+	if (!viewItem)
+		return;
+	BAutolock lock(mLocker);
+	if (!lock.IsLocked())
+		BM_THROW_RUNTIME("BmViewItemManager::Add(): Unable to get lock");
 	mViewModelMap[modelItem] = viewItem;
+	if (mFilter && !mFilter->Matches(viewItem))
+		viewItem->ShouldBeHidden(true);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -161,6 +188,9 @@ BmListViewItem* BmViewItemManager::Remove(const BmListModelItem* modelItem)
 {
 	BmListViewItem* viewItem = NULL;
 	if (modelItem) {
+		BAutolock lock(mLocker);
+		if (!lock.IsLocked())
+			BM_THROW_RUNTIME("BmViewItemManager::Remove(): Unable to get lock");
 		BmViewModelMap::iterator pos = mViewModelMap.find(modelItem);
 		if (pos != mViewModelMap.end()) {
 			viewItem = pos->second;
@@ -176,10 +206,13 @@ BmListViewItem* BmViewItemManager::Remove(const BmListModelItem* modelItem)
 \*------------------------------------------------------------------------------*/
 void BmViewItemManager::MakeEmpty()
 {
-	BmViewModelMap::iterator iter = mViewModelMap.begin();
-	for(; iter != mViewModelMap.end(); ++iter) {
+	BAutolock lock(mLocker);
+	if (!lock.IsLocked())
+		BM_THROW_RUNTIME("BmViewItemManager::MakeEmpty(): Unable to get lock");
+
+	BmViewModelMap::iterator iter;
+	for(iter = mViewModelMap.begin(); iter != mViewModelMap.end(); ++iter)
 		delete iter->second;
-	}
 	mViewModelMap.clear();
 }
 
@@ -190,12 +223,88 @@ void BmViewItemManager::MakeEmpty()
 BmListViewItem* 
 BmViewItemManager::FindViewItemFor(const BmListModelItem* modelItem) const
 {
+	BAutolock lock(mLocker);
+	if (!lock.IsLocked())
+		BM_THROW_RUNTIME(
+			"BmViewItemManager::FindViewItemFor(): Unable to get lock"
+		);
+
 	BmViewModelMap::const_iterator iter = mViewModelMap.find(modelItem);
 	if (iter == mViewModelMap.end())
 		return NULL;
 	else
 		return iter->second;
 }
+
+/*------------------------------------------------------------------------------*\
+	ApplyFilter(filter, continueCallback)
+		-	sets new filter (which may be NULL) and applies it to all view items
+		-	this object takes possession of the given filter and will delete it
+			whenever a new filter is set or the object is destroyed
+		-	the given callback will be checked to determine if the process 
+			should be stopped
+		-	returns true if filter has been applied to all view items
+			and false if the process was stopped inbetween or an error occurred
+		-	since this method may take a considerable amount of time, it is
+			being invoked in a separate job thread
+\*------------------------------------------------------------------------------*/
+bool BmViewItemManager::ApplyFilter(BmViewItemFilter* filter, 
+	ContinueCallback& continueCallback, BmListViewController* listView)
+{
+	BM_LOG2( BM_LogGui, BmString("starting to apply list-item filter"));
+	BmListViewItem* viewItem;
+	BmViewModelMap::const_iterator iter;
+	{	// scope for lock
+		BAutolock lock(mLocker);
+		if (!lock.IsLocked())
+			BM_THROW_RUNTIME(
+				"BmViewItemManager::ApplyFilter(): Unable to get lock"
+			);
+	
+		if (filter != mFilter) {
+			delete mFilter;
+			mFilter = filter;
+		}
+	
+		for(iter = mViewModelMap.begin(); iter != mViewModelMap.end(); ++iter) {
+			viewItem = iter->second;
+			if (!viewItem || !continueCallback())
+				return false;
+			viewItem->ShouldBeHidden(mFilter && !mFilter->Matches(viewItem));
+		}
+	}
+	
+	/* The result of filter application will be changes to the shouldBeHidden
+		attribute of the view items - every matching view item will have
+		shouldBeHidden == false, while for all others shouldBeHidden == true.
+		So now we have to adjust the visibility of the items accordingly:
+	*/
+	BM_LOG2( BM_LogGui, BmString("starting to adjust listview"));
+
+	// always lock the looper first, then the manager lock, as otherwise
+	// we might deadlock
+	BAutolock listLock(listView->Looper());
+	if (!listLock.IsLocked())
+		BM_THROW_RUNTIME(
+			"BmViewItemManager::ApplyFilter(): Unable to get looper lock!"
+		);
+	BAutolock lock(mLocker);
+	if (!lock.IsLocked())
+		BM_THROW_RUNTIME(
+			"BmViewItemManager::ApplyFilter(): Unable to get lock"
+		);
+
+	BList visibleItems(mViewModelMap.size());
+	for(iter = mViewModelMap.begin(); iter != mViewModelMap.end(); ++iter) {
+		if (!iter->second->ShouldBeHidden())
+			visibleItems.AddItem(iter->second);
+	}
+	listView->ReplaceItemsWith(&visibleItems);
+	BM_LOG2( BM_LogGui, BmString("finished with adjusting listview"));
+	
+	return true;
+}
+
 
 /********************************************************************************\
 	BmListViewController
@@ -215,15 +324,11 @@ const char* const BmListViewController::MSG_SCROLL_STEP= "step";
 \*------------------------------------------------------------------------------*/
 BmListViewController::BmListViewController( BRect rect,
 								 const char* Name, list_view_type Type, 
-								 bool hierarchical, bool showLabelView,
-								 BmViewItemManager* viewItemManager)
+								 bool hierarchical, bool showLabelView)
 	:	inherited( rect, Name, 
 					  B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE,
 					  Type, hierarchical, showLabelView)
 	,	inheritedController( Name)
-	,	mViewItemManager( 
-			viewItemManager ? viewItemManager : new BmViewItemManager
-		)
 	,	mInitialStateInfo( NULL)
 	,	mUseStateCache( true)
 	,	mCurrHighlightItem( NULL)
@@ -253,19 +358,9 @@ BmListViewController::BmListViewController( BRect rect,
 		-	standard d'tor
 \*------------------------------------------------------------------------------*/
 BmListViewController::~BmListViewController() {
-	BList tempList;
-		int32 count = FullListCountItems();
-		for( int i=0; i<count; ++i)
-			tempList.AddItem( FullListItemAt( i));
-		while( !tempList.IsEmpty()) {
-			BmListViewItem* subItem 
-				= static_cast<BmListViewItem*>(tempList.RemoveItem( (int32)0));
-			delete subItem;
-		}
 	delete mExpandCollapseRunner;
 	delete mPulsedScrollRunner;
 	delete mInitialStateInfo;
-	delete mViewItemManager;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -686,7 +781,7 @@ void BmListViewController::MessageReceived( BMessage* msg) {
 \*------------------------------------------------------------------------------*/
 BmListViewItem* 
 BmListViewController::FindViewItemFor( BmListModelItem* modelItem) const {
-	return mViewItemManager->FindViewItemFor(modelItem);
+	return mViewItemManager.FindViewItemFor(modelItem);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -723,9 +818,13 @@ void BmListViewController::AddAllModelItems() {
 		} else {
 			viewItem = CreateListViewItem( modelItem);
 			if (viewItem) {
-				viewItem->UpdateView( UPD_ALL, false);
-				tempList->AddItem( viewItem);
-				mViewItemManager->Add(modelItem, viewItem);
+				mViewItemManager.Add(modelItem, viewItem);
+				if (viewItem->ShouldBeHidden())
+					viewItem->IsHidden(true);
+				else {
+					viewItem->UpdateView( UPD_ALL, false);
+					tempList->AddItem( viewItem);
+				}
 				BM_LOG2( BM_LogMailTracking, 
 							BmString("ListView <") << ModelName() << "> added view-item "
 								<< viewItem->Key());
@@ -807,12 +906,16 @@ BmListViewItem* BmListViewController::doAddModelItem( BmListViewItem* parent,
 	);
 	BmListViewItem* newItem = CreateListViewItem( item, archive.get());
 	if (newItem) {
-		if (parent)
-			AddUnder( newItem, parent);
-		else
-			AddItem( newItem);
-		mViewItemManager->Add(item, newItem);
-		newItem->UpdateView( UPD_ALL, redraw);
+		mViewItemManager.Add(item, newItem);
+		if (newItem->ShouldBeHidden())
+			newItem->IsHidden(true);
+		else {
+			if (parent)
+				AddUnder( newItem, parent);
+			else
+				AddItem( newItem);
+			newItem->UpdateView( UPD_ALL, redraw);
+		}
 		BM_LOG2( BM_LogMailTracking, 
 					BmString("ListView <") << ModelName() << "> added view-item " 
 						<< newItem->Key());
@@ -856,7 +959,7 @@ void BmListViewController::RemoveModelItem( BmListModelItem* item) {
 		-
 \*------------------------------------------------------------------------------*/
 void BmListViewController::doRemoveModelItem( BmListModelItem* item) {
-	BmListViewItem* viewItem = mViewItemManager->Remove(item);
+	BmListViewItem* viewItem = mViewItemManager.Remove(item);
 	if (viewItem) {
 		RemoveItem( viewItem);
 		BM_LOG2( BM_LogMailTracking, 
@@ -1075,15 +1178,26 @@ void BmListViewController::DetachModel() {
 \*------------------------------------------------------------------------------*/
 void BmListViewController::MakeEmpty() {
 	if (LockLooper()) {
-		int32 count = FullListCountItems();
-		BList tempList(count);
-		for( int i=0; i<count; ++i)
-			tempList.AddItem( FullListItemAt( i));
 		inherited::MakeEmpty();					// clear display
-		mViewItemManager->MakeEmpty();
+		mViewItemManager.MakeEmpty();
 		UpdateCaption();
 		UnlockLooper();
 	}
+}
+
+/*------------------------------------------------------------------------------*\
+ApplyViewItemFilter( )
+	-	
+\*------------------------------------------------------------------------------*/
+bool BmListViewController::ApplyViewItemFilter(BmViewItemFilter* filter, 
+	BmViewItemManager::ContinueCallback& continueCallback)
+{
+	bool result = mViewItemManager.ApplyFilter(filter, continueCallback, this);
+	if (LockLooper()) {
+		UpdateCaption();
+		UnlockLooper();
+	}
+	return result;
 }
 
 /*------------------------------------------------------------------------------*\

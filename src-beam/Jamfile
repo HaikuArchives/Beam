@@ -32,6 +32,7 @@ StaticLibrary beamInParts.a :
 	BmMailRefFilterControl.cpp
 	BmMailRefView.cpp
 	BmMailRefViewFilterControl.cpp
+	BmMailRefViewFilterJob.cpp
 	BmMailView.cpp
 	BmMailViewWin.cpp
 	BmMainWindow.cpp

@@ -12,6 +12,9 @@
 #include <layout.h>
 #include <HGroup.h>
 
+#include "BmController.h"
+#include "BmMailRefViewFilterJob.h"
+
 class BMessageRunner;
 class BmMailRefView;
 class BmMenuControl;
@@ -22,9 +25,10 @@ enum {
 						// sent whenever the filter has changed
 };
 
-class BmMailRefViewFilterControl : public HGroup
+class BmMailRefViewFilterControl : public HGroup, public BmJobController
 {
-	typedef HGroup inherited;
+	typedef HGroup inheritedView;
+	typedef BmJobController inheritedController;
 
 public:
 	// creator-func, c'tors and d'tor:
@@ -34,7 +38,10 @@ public:
 	// native methods:
 	void TeamUpWith(BmMailRefView* mrv)	{ mPartnerMailRefView = mrv; }
 
-	// overrides:
+	// overrides of controller base:
+	BHandler* GetControllerHandler() 	{ return this; }
+
+	// overrides of view base:
 	void AttachedToWindow();
 	void MessageReceived(BMessage* msg);
 
@@ -42,15 +49,17 @@ public:
 	static const char* const MSG_FILTER_KIND;
 	static const char* const MSG_FILTER_CONTENT;
 	
-	static const char* const FILTER_SUBJECT_OR_ADDRESS;
-	static const char* const FILTER_MAILTEXT;
+protected:
+	// overrides of controller base:
+	void JobIsDone(bool completed);
+
 private:
 	BmMenuControl* mMenuControl;
 	BmTextControl* mTextControl;
 	
 	BMessageRunner* mMsgRunner;
 	BmMailRefView* mPartnerMailRefView;
-
+	
 	// Hide copy-constructor and assignment:
 	BmMailRefViewFilterControl( const BmMailRefViewFilterControl&);
 	BmMailRefViewFilterControl operator=( const BmMailRefViewFilterControl&);

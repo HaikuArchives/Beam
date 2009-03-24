@@ -551,8 +551,8 @@ void BmGuiRoster::RebuildMailRefViewFilterMenu( BmMenuControllerBase* menu)
 {
 	ClearMenu(menu);
 	const char* choices[] = {
-		BmMailRefViewFilterControl::FILTER_SUBJECT_OR_ADDRESS,
-		BmMailRefViewFilterControl::FILTER_MAILTEXT,
+		BmMailRefItemFilter::FILTER_SUBJECT_OR_ADDRESS,
+		BmMailRefItemFilter::FILTER_MAILTEXT,
 		NULL
 	};
 	for( int i=0; choices[i]; ++i) {

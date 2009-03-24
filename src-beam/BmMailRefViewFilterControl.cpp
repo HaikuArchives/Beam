@@ -21,29 +21,25 @@
 const char* const BmMailRefViewFilterControl::MSG_FILTER_KIND = "bm:filknd";
 const char* const BmMailRefViewFilterControl::MSG_FILTER_CONTENT = "bm:cont";
 
-const char* const BmMailRefViewFilterControl::FILTER_SUBJECT_OR_ADDRESS 
-	= "Subject or Address";
-const char* const BmMailRefViewFilterControl::FILTER_MAILTEXT
-	= "Mailtext";
-
 /*------------------------------------------------------------------------------*\
 	( )
 		-	
 \*------------------------------------------------------------------------------*/
 BmMailRefViewFilterControl::BmMailRefViewFilterControl()
-	:	inherited(
+	:	inheritedView(
 			mMenuControl = new BmMenuControl(
 				"Filter on:",
 				new BmMenuController(
-					"Subject or Address", this,
+					BmMailRefItemFilter::FILTER_SUBJECT_OR_ADDRESS, this,
 					new BMessage(BM_MAILREF_VIEW_FILTER_CHANGED), 
 					&BmGuiRosterBase::RebuildMailRefViewFilterMenu,
 					BM_MC_LABEL_FROM_MARKED
-				), 1, 1E5, "Subject or Address"
+				), 1, 1E5, BmMailRefItemFilter::FILTER_SUBJECT_OR_ADDRESS
 			),
 			mTextControl = new BmTextControl(NULL, false, 0, 30),
 			NULL
 		)
+	,	inheritedController("RefViewFilterController")
 	,	mMsgRunner(NULL)
 	,	mPartnerMailRefView(NULL)
 {
@@ -56,8 +52,7 @@ BmMailRefViewFilterControl::BmMailRefViewFilterControl()
 		-	
 \*------------------------------------------------------------------------------*/
 BmMailRefViewFilterControl::~BmMailRefViewFilterControl() {
-	if (mMsgRunner)
-		delete mMsgRunner;
+	delete mMsgRunner;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -66,7 +61,7 @@ BmMailRefViewFilterControl::~BmMailRefViewFilterControl() {
 \*------------------------------------------------------------------------------*/
 void BmMailRefViewFilterControl::AttachedToWindow()
 {
-	inherited::AttachedToWindow();
+	inheritedView::AttachedToWindow();
 	mTextControl->SetTarget(this);
 }
 
@@ -78,15 +73,15 @@ void BmMailRefViewFilterControl::MessageReceived(BMessage* msg) {
 	try {
 		switch( msg->what) {
 			case BM_MAILREF_VIEW_FILTER_CHANGED: {
-				if (mMsgRunner) {
-					delete mMsgRunner;
-					mMsgRunner = NULL;
-				}
-				msg->AddString(MSG_FILTER_KIND, mMenuControl->MenuItem()->Label());
-				msg->AddString(MSG_FILTER_CONTENT, mTextControl->Text());
-				BMessenger partner(mPartnerMailRefView);
-				if (partner.IsValid())
-					partner.SendMessage(msg, (BHandler*)NULL, 500*1000);
+				delete mMsgRunner;
+				mMsgRunner = NULL;
+				BmString kind = mMenuControl->MenuItem()->Label();
+				BmString content = mTextControl->Text();
+				BmMailRefItemFilter* filter 
+					= content.Length() > 0
+						? new BmMailRefItemFilter(kind, content)
+						: NULL;
+				StartJob(new BmMailRefViewFilterJob(filter, mPartnerMailRefView));
 				break;
 			}
 			case BM_TEXTFIELD_MODIFIED: {
@@ -99,12 +94,29 @@ void BmMailRefViewFilterControl::MessageReceived(BMessage* msg) {
 				}
 				break;
 			}
+			case BM_JOB_DONE: {
+				if (!IsMsgFromCurrentModel( msg))
+					break;
+				JobIsDone( FindMsgBool( msg, BmJobModel::MSG_COMPLETED));
+				break;
+			}
 			default:
-				inherited::MessageReceived( msg);
+				inheritedView::MessageReceived( msg);
 		}
 	}
 	catch( BM_error &err) {
 		// a problem occurred, we tell the user:
 		BM_SHOWERR( BmString("MailRefViewFilterControl: ") << err.what());
 	}
+}
+
+/*------------------------------------------------------------------------------*\
+	JobIsDone()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailRefViewFilterControl::JobIsDone(bool completed)
+{
+	BM_LOG2( BM_LogModelController, 
+				BmString("Controller <") << ControllerName() 
+					<< "> has been told that job " << ModelName() << " is done");
 }

@@ -77,6 +77,7 @@ private:
 	BmMailRefItem operator=( const BmMailRefItem&);
 };
 
+class BmMailRefViewFilter;
 class BmMailView;
 class BmMenuController;
 

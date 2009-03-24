@@ -74,10 +74,20 @@ public:
 	inline const BmString& Key() const	{ return mModelItem->Key(); }
 	virtual BmListModelItem* ModelItem() const	
 													{ return mModelItem.Get(); }
-	
+	inline bool ShouldBeHidden() const	{ return mShouldBeHidden; }
+	inline bool IsHidden() const			{ return mIsHidden; }
+
+	// setters	
+	inline void ShouldBeHidden(bool shouldBeHidden) 
+													{ mShouldBeHidden = shouldBeHidden; }
+	inline void IsHidden(bool isHidden) { mIsHidden = isHidden; }
+
 protected:
 	BmRef<BmListModelItem> mModelItem;
 	
+	bool mShouldBeHidden : 1;
+	bool mIsHidden : 1;
+
 	// Hide copy-constructor and assignment:
 	BmListViewItem( const BmListViewItem&);
 	BmListViewItem operator=( const BmListViewItem&);
@@ -85,10 +95,27 @@ protected:
 
 class BMenu;
 class BMessageRunner;
+class BmListViewController;
+
+/*------------------------------------------------------------------------------*\
+	BmViewItemFilter
+		-	
+\*------------------------------------------------------------------------------*/
+class BmViewItemFilter
+{
+public:
+	BmViewItemFilter();
+	virtual ~BmViewItemFilter();
+	
+	virtual bool Matches(const BmListViewItem* viewItem) const = 0;
+
+private:
+};
 
 /*------------------------------------------------------------------------------*\
 	BmViewItemManager
-		-	manages the relations between listmodel-items and view items
+		-	manages the relations between listmodel-items and view items (which are
+			optionally limited by a view item filter)
 \*------------------------------------------------------------------------------*/
 class BmViewItemManager
 {
@@ -96,18 +123,25 @@ class BmViewItemManager
 
 public:
 	BmViewItemManager();
-	virtual ~BmViewItemManager();
+	~BmViewItemManager();
 	
-	virtual void Add(const BmListModelItem* modelItem, BmListViewItem* viewItem);
-	virtual BmListViewItem* Remove(const BmListModelItem* modelItem);
+	void Add(const BmListModelItem* modelItem, BmListViewItem* viewItem);
+	BmListViewItem* Remove(const BmListModelItem* modelItem);
 
-	virtual void MakeEmpty();
+	void MakeEmpty();
 	
-	virtual BmListViewItem* FindViewItemFor(
-		const BmListModelItem* modelItem) const;
+	BmListViewItem* FindViewItemFor(const BmListModelItem* modelItem) const;
 		
-protected:
+	struct ContinueCallback {
+		virtual bool operator() () = 0;
+	};
+	bool ApplyFilter(BmViewItemFilter* filter, ContinueCallback& callback,
+						  BmListViewController* listView);
+
+private:
 	BmViewModelMap mViewModelMap;
+	mutable BLocker mLocker;
+	mutable BmViewItemFilter* mFilter;
 };
 
 /*------------------------------------------------------------------------------*\
@@ -129,13 +163,14 @@ public:
 								 const char* Name = NULL,
 								 list_view_type Type = B_SINGLE_SELECTION_LIST,
 								 bool hierarchical = false,
-								 bool showLabelView = true,
-								 BmViewItemManager* viewItemManager = NULL);
+								 bool showLabelView = true);
 	virtual ~BmListViewController();
 
 	// native methods:
 	virtual void WriteStateInfo();
 	virtual void ReadStateInfo();
+	bool ApplyViewItemFilter(BmViewItemFilter* filter,
+									 BmViewItemManager::ContinueCallback& callback);
 
 	// overrides of controller base:
 	void AttachModel( BmDataModel* model=NULL);
@@ -159,8 +194,10 @@ public:
 	BmListViewItem* FindViewItemFor( BmListModelItem* modelItem) const;
 
 	// getters:
-	inline BMessage* InitialStateInfo()			{ return mInitialStateInfo; }
-	virtual const char* ItemNameForCaption()	{ return "item"; }
+	inline BMessage* InitialStateInfo()			
+													{ return mInitialStateInfo; }
+	virtual const char* ItemNameForCaption()	
+													{ return "item"; }
 
 	// setters:
 	void UseStateCache( bool b) 			{ mUseStateCache = b; }
@@ -197,7 +234,7 @@ protected:
 
 	virtual void PopulateLabelViewMenu( BMenu* menu);
 
-	BmViewItemManager* mViewItemManager;
+	BmViewItemManager mViewItemManager;
 	BMessage* mInitialStateInfo;
 	bool mShowCaption;
 	bool mShowBusyView;
