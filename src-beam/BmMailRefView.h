@@ -17,6 +17,8 @@
 
 class BControl;
 
+class BmMailRefViewFilterControl;
+
 /*------------------------------------------------------------------------------*\
 	types of messages sent via the observe/notify system:
 \*------------------------------------------------------------------------------*/
@@ -121,7 +123,8 @@ public:
 
 	// native methods:
 	void ShowFolder( BmMailFolder* folder);
-	inline void TeamUpWith( BmMailView* mv) 	{ mPartnerMailView = mv; }
+	inline void TeamUpWith(BmMailView* mv) 	{ mPartnerMailView = mv; }
+	void TeamUpWith(BmMailRefViewFilterControl* fc);
 	void AddSelectedRefsToMsg(BMessage* msg, BList* itemList = NULL);
 	void ShowMenu( BPoint point);
 	void AddMailRefMenu( BMenu* menu, BHandler* target, bool isContextMenu);
@@ -159,6 +162,7 @@ protected:
 private:
 	BmRef<BmMailFolder> mCurrFolder;
 	BmMailView* mPartnerMailView;
+	BmMailRefViewFilterControl* mPartnerFilterControl;
 	bool mHaveSelectedRef;
 	bool mStateInfoConnectedToParentFolder;
 	int32 mHiddenState;

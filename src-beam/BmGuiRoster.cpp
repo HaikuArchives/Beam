@@ -538,6 +538,9 @@ void BmGuiRoster::RebuildMailRefFilterMenu( BmMenuControllerBase* menu)
 		msg->AddString("filter_kind", choices[i]);
 		BMenuItem* item 
 			= new BMenuItem( choices[i], msg);
+// TODO: remove, once it is implemented
+if (i>=1)
+	item->SetEnabled(false);
 		item->SetTarget( menu->MsgTarget());
 		menu->AddItem( item);
 	}
@@ -560,6 +563,9 @@ void BmGuiRoster::RebuildMailRefViewFilterMenu( BmMenuControllerBase* menu)
 		msg->AddString("filter_kind", choices[i]);
 		BMenuItem* item 
 			= new BMenuItem( choices[i], msg);
+// TODO: remove, once it is implemented
+if (i==1)
+	item->SetEnabled(false);
 		item->SetTarget( menu->MsgTarget());
 		menu->AddItem( item);
 	}

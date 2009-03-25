@@ -593,6 +593,7 @@ BMessage* BmPrefs::GetShortcutDefaults( BMessage* shortcutsMsg) {
 	SetShortcutIfNew( shortcutsMsg, "MarkAsReplied", "");
 	SetShortcutIfNew( shortcutsMsg, "MarkAsSent", "");
 	SetShortcutIfNew( shortcutsMsg, "Move To Trash", "T");
+	SetShortcutIfNew( shortcutsMsg, "Narrow Down Messages", "<SHIFT>N");
 	SetShortcutIfNew( shortcutsMsg, "New Folder", "");
 	SetShortcutIfNew( shortcutsMsg, "New Message", "N");
 	SetShortcutIfNew( shortcutsMsg, "Next Message", "<DOWN_ARROW>");
@@ -615,6 +616,7 @@ BMessage* BmPrefs::GetShortcutDefaults( BMessage* shortcutsMsg) {
 	SetShortcutIfNew( shortcutsMsg, "Send All Pending Messages", "");
 	SetShortcutIfNew( shortcutsMsg, "Send Mail Now", "M");
 	SetShortcutIfNew( shortcutsMsg, "Send Mail Later", "<SHIFT>M");
+	SetShortcutIfNew( shortcutsMsg, "Set Time Span", "<SHIFT>S");
 	SetShortcutIfNew( shortcutsMsg, "Show Raw Message", "<SHIFT>H");
 	SetShortcutIfNew( shortcutsMsg, "Toggle Header Mode", "H");
 	SetShortcutIfNew( shortcutsMsg, "Undo", "Z");

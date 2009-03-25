@@ -9,6 +9,8 @@
 #ifndef _BmMailRefViewFilterControl_h
 #define _BmMailRefViewFilterControl_h
 
+#include <MessageFilter.h>
+
 #include <layout.h>
 #include <HGroup.h>
 
@@ -16,6 +18,7 @@
 #include "BmMailRefViewFilterJob.h"
 
 class BMessageRunner;
+
 class BmMailRefView;
 class BmMenuControl;
 class BmTextControl;
@@ -37,6 +40,7 @@ public:
 	
 	// native methods:
 	void TeamUpWith(BmMailRefView* mrv)	{ mPartnerMailRefView = mrv; }
+	void ClearFilter();
 
 	// overrides of controller base:
 	BHandler* GetControllerHandler() 	{ return this; }
@@ -44,10 +48,15 @@ public:
 	// overrides of view base:
 	void AttachedToWindow();
 	void MessageReceived(BMessage* msg);
+	void KeyDown(const char *bytes, int32 numBytes);
+	void MakeFocus(bool focus);
 
 	//	message component definitions for status-msgs:
 	static const char* const MSG_FILTER_KIND;
 	static const char* const MSG_FILTER_CONTENT;
+	
+	static filter_result MessageFilterHook(BMessage* msg, BHandler** handler,
+														BMessageFilter* messageFilter);
 	
 protected:
 	// overrides of controller base:
@@ -59,6 +68,9 @@ private:
 	
 	BMessageRunner* mMsgRunner;
 	BmMailRefView* mPartnerMailRefView;
+	
+	BmString mLastKind;
+	BmString mLastContent;
 	
 	// Hide copy-constructor and assignment:
 	BmMailRefViewFilterControl( const BmMailRefViewFilterControl&);

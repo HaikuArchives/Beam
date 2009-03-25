@@ -26,6 +26,7 @@
 #include "BmMailHeaderView.h"
 #include "BmMailRef.h"
 #include "BmMailRefView.h"
+#include "BmMailRefViewFilterControl.h"
 #include "BmMailView.h"
 #include "BmMailViewWin.h"
 #include "BmMenuController.h"
@@ -177,12 +178,20 @@ void BmMailViewWin::CreateGUI() {
 				)
 			),
 			mHorzSplitter = new UserResizeSplitView( 
-				new BetterScrollView(
-					minimax(200,50,1E5,1E5), 
-					mMailRefView = BmMailRefView::CreateInstance( 400, 200),
-					BM_SV_H_SCROLLBAR | BM_SV_V_SCROLLBAR | BM_SV_CORNER
-					| BM_SV_BUSYVIEW | BM_SV_CAPTION,
-					"99999 messages"
+				new VGroup(
+					new HGroup(
+						mMailRefViewFilterControl = new BmMailRefViewFilterControl(),
+						new Space(minimax(0,0,1E5,1E5, 0.3)),
+						0
+					),
+					new BetterScrollView( 
+						minimax(300,50,1E5,1E5), 
+						mMailRefView = BmMailRefView::CreateInstance( 400, 200),
+						BM_SV_H_SCROLLBAR | BM_SV_V_SCROLLBAR | BM_SV_CORNER
+						| BM_SV_BUSYVIEW | BM_SV_CAPTION,
+						"99999 messages"
+					),
+					0
 				),
 				new BmMailViewContainer(
 					minimax(200,80,1E5,1E5), 
@@ -197,6 +206,9 @@ void BmMailViewWin::CreateGUI() {
 		
 	mMailRefView->TeamUpWith( mMailView);
 	mMailView->TeamUpWith( mMailRefView);
+	mMailRefViewFilterControl->TeamUpWith(mMailRefView);
+	mMailRefView->TeamUpWith(mMailRefViewFilterControl);
+
 	mReplyButton->AddActionVariation( "Reply", new BMessage(BMM_REPLY));
 	mReplyButton->AddActionVariation( "Reply To List", new BMessage(BMM_REPLY_LIST));
 	mReplyButton->AddActionVariation( "Reply To Person", new BMessage(BMM_REPLY_ORIGINATOR));

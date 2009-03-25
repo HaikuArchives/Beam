@@ -28,7 +28,7 @@ const char* const BmMailRefViewFilterControl::MSG_FILTER_CONTENT = "bm:cont";
 BmMailRefViewFilterControl::BmMailRefViewFilterControl()
 	:	inheritedView(
 			mMenuControl = new BmMenuControl(
-				"Filter on:",
+				"Narrow Down:",
 				new BmMenuController(
 					BmMailRefItemFilter::FILTER_SUBJECT_OR_ADDRESS, this,
 					new BMessage(BM_MAILREF_VIEW_FILTER_CHANGED), 
@@ -63,6 +63,20 @@ void BmMailRefViewFilterControl::AttachedToWindow()
 {
 	inheritedView::AttachedToWindow();
 	mTextControl->SetTarget(this);
+	mTextControl->TextView()->AddFilter(new BMessageFilter(
+		B_ANY_DELIVERY, B_ANY_SOURCE, B_KEY_DOWN, MessageFilterHook
+	));
+	mLastKind = mMenuControl->MenuItem()->Label();
+}
+
+/*------------------------------------------------------------------------------*\
+	( )
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailRefViewFilterControl::MakeFocus(bool focus)
+{
+	if (focus)
+		mTextControl->MakeFocus(true);
 }
 
 /*------------------------------------------------------------------------------*\
@@ -77,11 +91,17 @@ void BmMailRefViewFilterControl::MessageReceived(BMessage* msg) {
 				mMsgRunner = NULL;
 				BmString kind = mMenuControl->MenuItem()->Label();
 				BmString content = mTextControl->Text();
-				BmMailRefItemFilter* filter 
-					= content.Length() > 0
-						? new BmMailRefItemFilter(kind, content)
-						: NULL;
-				StartJob(new BmMailRefViewFilterJob(filter, mPartnerMailRefView));
+				if (content != mLastContent || kind != mLastKind) {
+					BmMailRefItemFilter* filter
+						= content.Length() > 0
+							? new BmMailRefItemFilter(kind, content)
+							: NULL;
+					StartJob(
+						new BmMailRefViewFilterJob(filter, mPartnerMailRefView)
+					);
+					mLastKind = kind;
+					mLastContent = content;
+				}
 				break;
 			}
 			case BM_TEXTFIELD_MODIFIED: {
@@ -111,6 +131,31 @@ void BmMailRefViewFilterControl::MessageReceived(BMessage* msg) {
 }
 
 /*------------------------------------------------------------------------------*\
+	KeyDown()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailRefViewFilterControl::KeyDown(const char *bytes, int32 numBytes)
+{
+	if (numBytes == 1) {
+		switch(bytes[0]) {
+			case B_ESCAPE:
+				ClearFilter();
+				return;
+			case B_DOWN_ARROW:
+				// shift focus to ref-view
+				if (mPartnerMailRefView) {
+					mPartnerMailRefView->MakeFocus(true);
+					mPartnerMailRefView->ScrollToSelection();
+				}
+				return;
+			default:
+				break;
+		}
+	}
+	inheritedView::KeyDown( bytes, numBytes);
+}
+
+/*------------------------------------------------------------------------------*\
 	JobIsDone()
 		-	
 \*------------------------------------------------------------------------------*/
@@ -119,4 +164,34 @@ void BmMailRefViewFilterControl::JobIsDone(bool completed)
 	BM_LOG2( BM_LogModelController, 
 				BmString("Controller <") << ControllerName() 
 					<< "> has been told that job " << ModelName() << " is done");
+}
+
+/*------------------------------------------------------------------------------*\
+	ClearFilter()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailRefViewFilterControl::ClearFilter()
+{
+	mTextControl->TextView()->SetText("");
+}
+
+/*------------------------------------------------------------------------------*\
+	MessageFilterHook()
+		-	intercepts key-down messages for B_ESCAPE and B_DOWN_ARROW from the
+			textview and passes them on to the control, which will trigger
+			some specific actions for those
+\*------------------------------------------------------------------------------*/
+filter_result BmMailRefViewFilterControl::MessageFilterHook(BMessage* msg, 
+	BHandler** handler, BMessageFilter* messageFilter)
+{
+	if (msg->what == B_KEY_DOWN) {
+		BmString bytes = msg->FindString( "bytes");
+		if (bytes.Length() 
+		&& (bytes[0] == B_ESCAPE || bytes[0] == B_DOWN_ARROW)) {
+			// dispatch to the control:
+			BView* view = (BView*)(*handler);
+			*handler =  view->Parent()->Parent();
+		}
+	}
+	return B_DISPATCH_MESSAGE;
 }

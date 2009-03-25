@@ -53,6 +53,8 @@ enum {
 	BMM_LEARN_AS_TOFU				= 'bMds',
 	BMM_NEXT_MESSAGE				= 'bMdt',
 	BMM_PREVIOUS_MESSAGE			= 'bMdu',
+	BMM_NARROW_DOWN				= 'bMdv',
+	BMM_SET_TIME_SPAN				= 'bMdw',
 	
 	// mail edit window
 	BMM_ATTACH						= 'bMea',

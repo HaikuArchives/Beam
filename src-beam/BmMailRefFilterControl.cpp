@@ -37,6 +37,7 @@ BmMailRefFilterControl::BmMailRefFilterControl()
 			1, 1E5, TIME_SPAN_NONE
 	)
 {
+	SetFlags(Flags() & ~B_NAVIGABLE);
 }
 
 /*------------------------------------------------------------------------------*\

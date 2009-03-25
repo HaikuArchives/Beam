@@ -66,7 +66,6 @@ BmListViewItem::BmListViewItem( ColumnListView* lv, BmListModelItem* modelItem,
 	:	inherited( modelItem->OutlineLevel(), !modelItem->empty(), false, lv)
 	,	mModelItem( modelItem)
 	,	mShouldBeHidden( false)
-	,	mIsHidden( false)
 {
 	SetExpanded( archive ? archive->FindBool( MSG_EXPANDED) : false);
 }
@@ -820,9 +819,7 @@ void BmListViewController::AddAllModelItems() {
 			viewItem = CreateListViewItem( modelItem);
 			if (viewItem) {
 				mViewItemManager.Add(modelItem, viewItem);
-				if (viewItem->ShouldBeHidden())
-					viewItem->IsHidden(true);
-				else {
+				if (!viewItem->ShouldBeHidden()) {
 					viewItem->UpdateView( UPD_ALL, false);
 					tempList->AddItem( viewItem);
 				}
@@ -908,9 +905,7 @@ BmListViewItem* BmListViewController::doAddModelItem( BmListViewItem* parent,
 	BmListViewItem* newItem = CreateListViewItem( item, archive.get());
 	if (newItem) {
 		mViewItemManager.Add(item, newItem);
-		if (newItem->ShouldBeHidden())
-			newItem->IsHidden(true);
-		else {
+		if (!newItem->ShouldBeHidden()) {
 			if (parent)
 				AddUnder( newItem, parent);
 			else

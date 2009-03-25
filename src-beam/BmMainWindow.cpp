@@ -253,7 +253,8 @@ BmMainWindow::BmMainWindow()
 	mMailRefView->TeamUpWith( mMailView);
 	mMailView->TeamUpWith( mMailRefView);
 
-	mMailRefViewFilterControl->TeamUpWith( mMailRefView);
+	mMailRefViewFilterControl->TeamUpWith(mMailRefView);
+	mMailRefView->TeamUpWith(mMailRefViewFilterControl);
 
 	MailFolderSelectionChanged( 0);
 	MailRefSelectionChanged( 0);
@@ -310,9 +311,11 @@ MMenuBar* BmMainWindow::CreateMenu() {
 	menu->AddItem( CreateMenuItem( "Copy", B_COPY));
 	menu->AddItem( CreateMenuItem( "Select All", B_SELECT_ALL));
 	menu->AddSeparatorItem();
-	menu->AddItem( CreateMenuItem( "Find", BMM_FIND));
-//	menu->AddItem( CreateMenuItem( "Find Messages", BMM_FIND_MESSAGES));
+	menu->AddItem( CreateMenuItem( "Narrow Down Messages", BMM_NARROW_DOWN));
+	menu->AddItem( CreateMenuItem( "Find in Message", BMM_FIND));
 	menu->AddItem( CreateMenuItem( "Find Next", BMM_FIND_NEXT));
+	menu->AddSeparatorItem();
+	menu->AddItem( CreateMenuItem( "Set Time Span", BMM_SET_TIME_SPAN));
 	mMainMenuBar->AddItem( menu);
 
 	// Network
@@ -545,6 +548,14 @@ void BmMainWindow::MessageReceived( BMessage* msg) {
 			case BMM_FIND:
 			case BMM_FIND_NEXT: {
 				PostMessage( msg, mMailView);
+				break;
+			}
+			case BMM_NARROW_DOWN: {
+				mMailRefViewFilterControl->MakeFocus(true);
+				break;
+			}
+			case BMM_SET_TIME_SPAN: {
+				mMailRefFilterControl->MakeFocus(true);
 				break;
 			}
 			case BMM_SEND_PENDING: {

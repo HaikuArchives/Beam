@@ -432,6 +432,8 @@ BmMailRefView::BmMailRefView( int32 width, int32 height)
 	:	inherited( BRect(0,0,width-1,height-1), "Beam_MailRefView", 
 					  B_MULTIPLE_SELECTION_LIST, false, true)
 	,	mCurrFolder( NULL)
+	,	mPartnerMailView(NULL)
+	,	mPartnerFilterControl(NULL)
 	,	mHaveSelectedRef( false)
 	,	mStateInfoConnectedToParentFolder( true)
 	,	mHiddenState(BMH_NO_INIT)
@@ -524,6 +526,15 @@ BmMailRefView::~BmMailRefView() {
 BmListViewItem* BmMailRefView::CreateListViewItem( BmListModelItem* item, 
 																	BMessage*) {
 	return new BmMailRefItem( this, item);
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailRefView::TeamUpWith(BmMailRefViewFilterControl* fc)
+{
+	mPartnerFilterControl = fc;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -656,16 +667,6 @@ void BmMailRefView::MessageReceived( BMessage* msg) {
 				}
 				break;
 			}
-			case BM_MAILREF_VIEW_FILTER_CHANGED: {
-				const char* kind = msg->FindString(
-					BmMailRefViewFilterControl::MSG_FILTER_KIND
-				);
-				const char* content = msg->FindString(
-					BmMailRefViewFilterControl::MSG_FILTER_CONTENT
-				);
-printf("filter(%s):%s\n", kind, content);
-				break;
-			}
 			default:
 				inherited::MessageReceived( msg);
 		}
@@ -749,6 +750,11 @@ void BmMailRefView::KeyDown(const char *bytes, int32 numBytes) {
 					navigator.MoveBackward();
 				else
 					navigator.MoveForward();
+				break;
+			}
+			case B_ESCAPE: {
+				if (mPartnerFilterControl)
+					mPartnerFilterControl->ClearFilter();
 				break;
 			}
 			default:
@@ -904,6 +910,8 @@ void BmMailRefView::ShowFolder( BmMailFolder* folder) {
 		if (mPartnerMailView)
 			mPartnerMailView->ShowMail( static_cast< BmMailRef*>( NULL));
 		DetachModel();
+		if (mPartnerFilterControl)
+			mPartnerFilterControl->ClearFilter();
 		MakeEmpty();
 		mCurrFolder = folder;
 		if (refList)

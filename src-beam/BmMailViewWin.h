@@ -14,6 +14,7 @@
 class MMenuBar;
 
 class BmMailRefView;
+class BmMailRefViewFilterControl;
 class BmMailView;
 class BmMailViewContainer;
 class BmMenuController;
@@ -67,6 +68,8 @@ private:
 	BmToolbar* mToolbar;
 	
 	MView* mOuterGroup;
+
+	BmMailRefViewFilterControl* mMailRefViewFilterControl;
 
 	BmMenuController* mFilterMenu;
 

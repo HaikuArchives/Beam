@@ -75,18 +75,15 @@ public:
 	virtual BmListModelItem* ModelItem() const	
 													{ return mModelItem.Get(); }
 	inline bool ShouldBeHidden() const	{ return mShouldBeHidden; }
-	inline bool IsHidden() const			{ return mIsHidden; }
 
 	// setters	
 	inline void ShouldBeHidden(bool shouldBeHidden) 
 													{ mShouldBeHidden = shouldBeHidden; }
-	inline void IsHidden(bool isHidden) { mIsHidden = isHidden; }
 
 protected:
 	BmRef<BmListModelItem> mModelItem;
 	
-	bool mShouldBeHidden : 1;
-	bool mIsHidden : 1;
+	bool mShouldBeHidden;
 
 	// Hide copy-constructor and assignment:
 	BmListViewItem( const BmListViewItem&);
@@ -137,6 +134,8 @@ public:
 	};
 	bool ApplyFilter(BmViewItemFilter* filter, ContinueCallback& callback,
 						  BmListViewController* listView);
+	
+	inline bool IsFiltered()				{ return mFilter != NULL; }
 
 private:
 	BmViewModelMap mViewModelMap;
