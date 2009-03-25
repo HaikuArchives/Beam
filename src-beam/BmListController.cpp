@@ -619,6 +619,7 @@ BBitmap* BmListViewController::CreateDragImage(const vector<int>& cols,
 			}
 		}
 	}
+	dummyView->Sync();
 	dragImage->Unlock();
 	return dragImage;
 }
