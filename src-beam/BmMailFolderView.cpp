@@ -316,11 +316,12 @@ void BmMailFolderView::HandleDrop( BMessage* msg) {
 		);
 		if (folder) {
 			BMessage tmpMsg( BM_JOBWIN_MOVEMAILS);
-			entry_ref eref;
 			entry_ref* refs = new entry_ref [refCount];
 			int i=0;
-			while(  msg->FindRef( "refs", i, &refs[i]) == B_OK)
-				++i;
+			for(; i < refCount; ++i) {
+				if (msg->FindRef( "refs", i, &refs[i]) != B_OK)
+					break;
+			}
 			tmpMsg.AddPointer( BmMailMover::MSG_REFS, (void*)refs);
 			tmpMsg.AddInt32( BmMailMover::MSG_REF_COUNT, i);
 			BmString jobName = folder->Name();

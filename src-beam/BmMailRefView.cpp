@@ -621,9 +621,11 @@ void BmMailRefView::MessageReceived( BMessage* msg) {
 						type_code code;
 						origMsg->GetInfo( "refs", &code, &count);
 						entry_ref* refs = new entry_ref [count];
-						int i=0;
-						while( origMsg->FindRef( "refs", i, &refs[i]) == B_OK)
-							++i;
+						int32 i=0;
+						for(; i < count; ++i) {
+							if (origMsg->FindRef( "refs", i, &refs[i]) != B_OK)
+								break;
+						}
 						MoveToTrash( refs, i);
 						delete [] refs;
 					}
@@ -846,9 +848,8 @@ void BmMailRefView::HandleDrop( BMessage* msg) {
 	if (mCurrFolder && msg && msg->what == B_SIMPLE_DATA
 	&& msg->GetInfo( "refs", &tc, &refCount) == B_OK) {
 		BMessage tmpMsg( BM_JOBWIN_MOVEMAILS);
-		entry_ref eref;
 		entry_ref* refs = new entry_ref [refCount];
-		int i = 0;
+		int32 i = 0;
 		for(; i < refCount; i++) {
 			if (msg->FindRef( "refs", i, &refs[i]) != B_OK)
 				break;
