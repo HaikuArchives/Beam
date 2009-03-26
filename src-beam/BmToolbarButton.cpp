@@ -242,7 +242,8 @@ void BmToolbarButton::Draw( BRect updateRect) {
 		if (Value())
 			flags |= BControlLook::B_ACTIVATED;
 		rgb_color base = ui_color(B_PANEL_BACKGROUND_COLOR);
-		be_control_look->DrawButtonFrame(this, rect, updateRect, base, flags);
+		be_control_look->DrawButtonFrame(this, rect, updateRect, base, base,
+			flags);
 		be_control_look->DrawButtonBackground(this, rect, updateRect, base,
 			flags);
 	}
