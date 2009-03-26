@@ -359,7 +359,7 @@ int BmMailFolderList::InstantiateSubFolders( BmMailFolder* folder,
 															int level) {
 	status_t err;
 	int32 numChildren = FindMsgInt32( archive, BmMailFolder::MSG_NUMCHILDREN);
-	int32 folderCount = numChildren;
+	int32 folderCount = 0;
 	for( int i=0; i<numChildren; ++i) {
 		BMessage msg;
 		if ((err = archive->FindMessage( 
@@ -368,7 +368,15 @@ int BmMailFolderList::InstantiateSubFolders( BmMailFolder* folder,
 			BM_THROW_RUNTIME( BmString("Could not find mailfolder-child nr. ") 
 										<< i+1 << " \n\nError:" << strerror(err));
 		BmMailFolder* newFolder = new BmMailFolder( &msg, this, folder);
+		if (!newFolder->Exists()) {
+			BM_LOG( BM_LogMailTracking, 
+					BmString("Mail-folder <") << newFolder->EntryRef().name 
+						<< "," << newFolder->Key() 
+						<< "> doesn't exist anymore - skipped!");
+			continue;
+		}
 		AddItemToList( newFolder, folder);
+		folderCount++;
 		BM_LOG3( BM_LogMailTracking, 
 					BmString("Mail-folder <") << newFolder->EntryRef().name 
 						<< "," << newFolder->Key() << "> read");

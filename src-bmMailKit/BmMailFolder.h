@@ -60,6 +60,7 @@ public:
 	void Rename( BmString newName);
 	void MoveToTrash();
 	bool IsOutbound();
+	bool Exists() const;
 
 	// overrides of listmodel-item base:
 	const BmString& DisplayKey() const	{ return mName; }

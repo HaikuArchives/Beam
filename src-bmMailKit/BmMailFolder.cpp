@@ -153,6 +153,15 @@ void BmMailFolder::StopNodeMonitor() {
 }
 
 /*------------------------------------------------------------------------------*\
+	Exists()
+		-	returns whether or not this folder still exists on disk
+\*------------------------------------------------------------------------------*/
+bool BmMailFolder::Exists() const {
+	BEntry entry(&mEntryRef);
+	return entry.Exists();
+}
+
+/*------------------------------------------------------------------------------*\
 	Archive( archive)
 		-	archives this folder into the given message-archive
 \*------------------------------------------------------------------------------*/
