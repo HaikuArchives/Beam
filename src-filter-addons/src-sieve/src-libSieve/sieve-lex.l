@@ -53,86 +53,115 @@ ws		[ \t]+
 ident		[a-zA-Z_][a-zA-Z_0-9]*
 CRLF		(\r\n|\r|\n)
 
-%state MULTILINE
-%state QSTRING
+%x MULTILINE QSTRING
 
 %%
-<MULTILINE>^\.{CRLF}	{ BEGIN INITIAL; 
-                          if (mlbuf) mlbuf[mlcur] = '\0';
-                          sievelval.sval = chkBuf(); return STRING; }
-<MULTILINE>^\.\.  { /* dot stuffing! we want one . */ yyless(1); }
-<MULTILINE>(.|\n) { if (mlcur == mlbufsz) 
+%{
+	BEGIN INITIAL;
+%}
+<MULTILINE>^\.{CRLF} { 
+		    BEGIN INITIAL; 
+                    if (mlbuf) 
+                        mlbuf[mlcur] = '\0';
+                    sievelval.sval = chkBuf(); 
+                    return STRING; 
+                }
+<MULTILINE>^\.\.  { /* dot stuffing! we want one . */ 
+		    yyless(1);
+		}
+<MULTILINE>(.|\n) { 
+		    if (mlcur == mlbufsz) 
 			mlbuf = xrealloc(mlbuf, 1 + (mlbufsz+=1024));
-		    mlbuf[mlcur++] = yytext[0]; }
-<MULTILINE><<EOF>> { sieveerror("unexpected end of file in string"); 
-		     yyterminate(); }
-<QSTRING>\"        { BEGIN INITIAL;
-                     if (mlbuf) mlbuf[mlcur] = '\0';
-		     sievelval.sval = chkBuf(); return STRING; }
-<QSTRING>(.|\n)   { if (mlcur == mlbufsz) 
+		    mlbuf[mlcur++] = yytext[0]; 
+		}
+<MULTILINE><<EOF>> { 
+		    sieveerror("unexpected end of file in string"); 
+		    yyterminate(); 
+		}
+<QSTRING>\"     { 
+		    BEGIN INITIAL;
+                    if (mlbuf) 
+                        mlbuf[mlcur] = '\0';
+		    sievelval.sval = chkBuf(); 
+		    return STRING; 
+		}
+<QSTRING>(.|\n) { 
+		    if (mlcur == mlbufsz) 
 			mlbuf = xrealloc(mlbuf, 1 + (mlbufsz+=1024));
-		    mlbuf[mlcur++] = yytext[0]; }
-<INITIAL>text:{ws}?(#.*)?{CRLF}	{ BEGIN MULTILINE;
-			  mlcur = 0; mlbufsz = 0; mlbuf = NULL; }
-<INITIAL>\"        { BEGIN QSTRING;
-                    mlcur = 0; mlbufsz = 0; mlbuf = NULL; }
-<INITIAL>[0-9]+[KMG]?	{ sievelval.nval = tonum(yytext); return NUMBER; }
-<INITIAL>if		return IF;
-<INITIAL>elsif		return ELSIF;
-<INITIAL>else		return ELSE;
-<INITIAL>anyof		return ANYOF;
-<INITIAL>allof		return ALLOF;
-<INITIAL>exists		return EXISTS;
-<INITIAL>false		return SFALSE;
-<INITIAL>true		return STRUE;
-<INITIAL>address	return ADDRESS;
-<INITIAL>envelope	return ENVELOPE;
-<INITIAL>header		return HEADER;
-<INITIAL>not		return NOT;
-<INITIAL>size		return SIZE;
-<INITIAL>reject		return REJCT;
-<INITIAL>fileinto	return FILEINTO;
-<INITIAL>redirect	return REDIRECT;
-<INITIAL>keep		return KEEP;
-<INITIAL>require	return REQUIRE;
-<INITIAL>stop		return STOP;
-<INITIAL>discard	return DISCARD;
-<INITIAL>setflag	return SETFLAG;
-<INITIAL>addflag	return ADDFLAG;
-<INITIAL>removeflag	return REMOVEFLAG;
-<INITIAL>mark		return MARK;
-<INITIAL>unmark		return UNMARK;
-<INITIAL>notify		return NOTIFY;
-<INITIAL>denotify	return DENOTIFY;
-<INITIAL>:id		return ID;
-<INITIAL>:method	return METHOD;
-<INITIAL>:options	return OPTIONS;
-<INITIAL>:low		return LOW;
-<INITIAL>:normal	return NORMAL;
-<INITIAL>:high		return HIGH;
-<INITIAL>:message	return MESSAGE;
-<INITIAL>vacation	return VACATION;
-<INITIAL>:days		return DAYS;
-<INITIAL>:addresses	return ADDRESSES;
-<INITIAL>:subject	return SUBJECT;
-<INITIAL>:mime		return MIME;
-<INITIAL>:comparator	return COMPARATOR;
-<INITIAL>:is		return IS;
-<INITIAL>:contains	return CONTAINS;
-<INITIAL>:matches	return MATCHES;
-<INITIAL>:regex		return REGEX;
-<INITIAL>:count		return COUNT;
-<INITIAL>:value		return VALUE;
-<INITIAL>:over		return OVER;
-<INITIAL>:under		return UNDER;
-<INITIAL>:all		return ALL;
-<INITIAL>:localpart	return LOCALPART;
-<INITIAL>:domain	return DOMAIN;
-<INITIAL>:user		return USER;
-<INITIAL>:detail	return DETAIL;
-<INITIAL>[ \t\n\r] ;	/* ignore whitespace */
-<INITIAL>#.* ;		/* ignore comments */
-.			return yytext[0];
+		    mlbuf[mlcur++] = yytext[0]; 
+		}
+text:{ws}?(#.*)?{CRLF}	{ 
+		    BEGIN MULTILINE;
+		    mlcur = 0; 
+		    mlbufsz = 0; 
+		    mlbuf = NULL; 
+		}
+\"        	{ 
+		    BEGIN QSTRING;
+                    mlcur = 0; 
+                    mlbufsz = 0; 
+                    mlbuf = NULL; 
+                }
+[0-9]+[KMG]?	{ 
+		    sievelval.nval = tonum(yytext); 
+		    return NUMBER; 
+		}
+if		return IF;
+elsif		return ELSIF;
+else		return ELSE;
+anyof		return ANYOF;
+allof		return ALLOF;
+exists		return EXISTS;
+false		return SFALSE;
+true		return STRUE;
+address		return ADDRESS;
+envelope	return ENVELOPE;
+header		return HEADER;
+not		return NOT;
+size		return SIZE;
+reject		return REJCT;
+fileinto	return FILEINTO;
+redirect	return REDIRECT;
+keep		return KEEP;
+require		return REQUIRE;
+stop		return STOP;
+discard		return DISCARD;
+setflag		return SETFLAG;
+addflag		return ADDFLAG;
+removeflag	return REMOVEFLAG;
+mark		return MARK;
+unmark		return UNMARK;
+notify		return NOTIFY;
+denotify	return DENOTIFY;
+:id		return ID;
+:method		return METHOD;
+:options	return OPTIONS;
+:low		return LOW;
+:normal		return NORMAL;
+:high		return HIGH;
+:message	return MESSAGE;
+vacation	return VACATION;
+:days		return DAYS;
+:addresses	return ADDRESSES;
+:subject	return SUBJECT;
+:mime		return MIME;
+:comparator	return COMPARATOR;
+:is		return IS;
+:contains	return CONTAINS;
+:matches	return MATCHES;
+:regex		return REGEX;
+:count		return COUNT;
+:value		return VALUE;
+:over		return OVER;
+:under		return UNDER;
+:all		return ALL;
+:localpart	return LOCALPART;
+:domain		return DOMAIN;
+:user		return USER;
+:detail		return DETAIL;
+[ \t\n\r]+ 	; /* ignore whitespace */
+#.* 		; /* ignore comments */
+.		return yytext[0];
 
 %%
 /*  */

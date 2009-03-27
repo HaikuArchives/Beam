@@ -167,7 +167,7 @@ rule LexC++
 
 actions LexC++
 {
-	$(LEX) -i -C -P$(<:B) -o$(1) $(2)
+	$(LEX) -i -P$(<:B) -o$(1) $(2)
 }
 
 rule Bison
