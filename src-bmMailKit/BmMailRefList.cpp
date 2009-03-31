@@ -184,6 +184,7 @@ bool BmMailRefList::StartJob() {
 	Freeze();									// we shut up for better performance
 	try {
 		bool cacheFileUpToDate = false;
+		BmString filename = SettingsFileName();
 		BMessage msg;
 		{ // scope for lock
 			BmAutolockCheckGlobal lock( ModelLocker());
@@ -191,7 +192,6 @@ bool BmMailRefList::StartJob() {
 				BM_THROW_RUNTIME( 
 					ModelNameNC() << ":AddMailRef(): Unable to get lock"
 				);
-			BmString filename = SettingsFileName();
 		
 			// flush any pending to-be-stored actions
 			mStoredActionManager.Flush();
@@ -233,8 +233,9 @@ bool BmMailRefList::StartJob() {
 		if (cacheFileUpToDate) {
 			// ...ok, cache-file should contain up-to-date info, 
 			// we fetch our data from it:
-#if 0
-// is a bit faster, but uses (considerably) more memory:
+#ifdef __HAIKU__
+			// On haiku, this is considerably faster than unflattening from a file.
+			// TODO: find out why haiku is much slower than R5 in this!
 			off_t sz = 0;
 			if ((err = cacheFile.GetSize(&sz)) != B_OK)
 				BM_THROW_RUNTIME( 
@@ -254,15 +255,10 @@ bool BmMailRefList::StartJob() {
 						<< filename << ">, read only " << err << " bytes"
 				);
 			BMemoryIO memIO(buf.get(), sz);
-			MyInstantiateItems( 
-				&memIO,
-				FindMsgInt32( 
-					&msg, 
-					BmListModelItem::MSG_NUMCHILDREN
-				)
-			);
-#endif
+			InstantiateItemsFromStream( &memIO, &msg);
+#else
 			InstantiateItemsFromStream( &cacheFile, &msg);
+#endif
 		} else {
 			// ...caching disabled or no cache file found or update 
 			// required/requested, we fetch the existing mails from disk...
