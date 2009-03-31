@@ -329,7 +329,7 @@ void BmMailFolderList::InstantiateItems( BMessage* archive) {
 		BNode node( &entry);
 		node_ref nref;
 		node.GetNodeRef( &nref);
-		if (mTopFolder->NodeRef().node != nref.node) {
+		if (!mTopFolder->Exists() || mTopFolder->NodeRef().node != nref.node) {
 			// mailbox-folder has changed since last session, we start afresh:
 			InitializeItems();
 			return;
