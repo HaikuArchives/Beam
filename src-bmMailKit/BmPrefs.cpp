@@ -751,7 +751,9 @@ void BmPrefs::SetupMailboxVolume() {
 	// determine the volume of our mailbox:
 	BmString mailboxPath = GetString( "MailboxPath", "/boot/home/mail");
 	BEntry entry;
-	if (entry.SetTo( mailboxPath.String(), true) != B_OK)
+	if (!entry.Exists())
+		create_directory(mailboxPath.String(), 0755);
+	if (entry.SetTo(mailboxPath.String(), true) != B_OK)
 		BM_THROW_RUNTIME( 
 			BmString("Sorry, could not get entry for mailbox <") 
 				<< mailboxPath << "> !"
