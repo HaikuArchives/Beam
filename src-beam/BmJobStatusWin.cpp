@@ -513,7 +513,7 @@ void BmPopperView::UpdateModelView( BMessage* msg) {
 	if (lock.IsLocked()) {
 		if (domain == "mailbar") {
 			if (delta < 0)
-				mMailBar->Reset();
+				mMailBar->Update(-1 * mMailBar->CurrentValue());
 			else
 				mMailBar->Update( delta, leading, trailing);
 			if (mMailBar->CurrentValue()==mMailBar->MaxValue()
@@ -647,7 +647,7 @@ void BmImapView::UpdateModelView( BMessage* msg) {
 	if (lock.IsLocked()) {
 		if (domain == "mailbar") {
 			if (delta < 0)
-				mMailBar->Reset();
+				mMailBar->Update(-1 * mMailBar->CurrentValue());
 			else
 				mMailBar->Update( delta, leading, trailing);
 			if (mMailBar->CurrentValue()==mMailBar->MaxValue()
