@@ -226,7 +226,8 @@ BmMail::BmMail( BmMailRef* ref)
 	,	mOutbound( false)
 	,	mRightMargin( ThePrefs->GetInt( "MaxLineLen"))
 	,	mMoveToTrash( false)
-	,	mRatioSpam( BmMailRef::UNKNOWN_RATIO)
+	,	mClassification( ref ? ref->Classification() : NULL)
+	,	mRatioSpam( ref ? ref->RatioSpam() : BmMailRef::UNKNOWN_RATIO)
 {
 	mOutbound = 
 		Status() == BM_MAIL_STATUS_DRAFT
@@ -487,11 +488,14 @@ bool BmMail::Store() {
 			);
 		}
 
-		// now that the mail lives on the disk, we move it to trash, if requested:
+		// now that the mail lives on disk, we move it to trash, if requested:
 		if (mMoveToTrash)
 			::MoveToTrash( &eref, 1);
+
 		// create a (new) mail-ref for the freshly saved mail:
 		mMailRef = BmMailRef::CreateInstance( eref);
+
+		// set new status for any mail(s) this one is based on:
 		for( uint32 i=0; i<mBaseRefVect.size(); ++i) {
 			mBaseRefVect[i]->MarkAs( mNewBaseStatus.String());
 		}
@@ -1269,11 +1273,22 @@ float BmMail::RatioSpam() const
 }
 
 /*------------------------------------------------------------------------------*\
+	HasBeenClassified()
+		-	
+\*------------------------------------------------------------------------------*/
+bool BmMail::HasBeenClassified() const
+{
+	return this->RatioSpam() != BmMailRef::UNKNOWN_RATIO;
+}
+
+/*------------------------------------------------------------------------------*\
 	IsMarkedAsSpam()
 		-	
 \*------------------------------------------------------------------------------*/
 bool BmMail::IsMarkedAsSpam() const {
-	return mMailRef ? mMailRef->Classification() == BM_MAIL_CLASS_SPAM : false;
+	return mMailRef 
+		? mMailRef->Classification() == BM_MAIL_CLASS_SPAM 
+		: mClassification == BM_MAIL_CLASS_SPAM;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -1281,5 +1296,7 @@ bool BmMail::IsMarkedAsSpam() const {
 		-	
 \*------------------------------------------------------------------------------*/
 bool BmMail::IsMarkedAsTofu() const {
-	return mMailRef ? mMailRef->Classification() == BM_MAIL_CLASS_TOFU : false;
+	return mMailRef 
+		? mMailRef->Classification() == BM_MAIL_CLASS_TOFU 
+		: mClassification == BM_MAIL_CLASS_TOFU;
 }

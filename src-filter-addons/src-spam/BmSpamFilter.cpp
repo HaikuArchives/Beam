@@ -1150,7 +1150,7 @@ bool BmSpamFilter::OsbfClassifier::LearnAsSpam(BmMsgContext* msgContext)
 }
 
 /*------------------------------------------------------------------------------*\
-	Learn()
+	LearnAsTofu()
 		-	
 \*------------------------------------------------------------------------------*/
 bool BmSpamFilter::OsbfClassifier::LearnAsTofu( BmMsgContext* msgContext)
@@ -1958,7 +1958,8 @@ BmSpamFilter::Execute( BmMsgContext* msgContext, const BMessage* _jobSpecs)
 		jobSpecs.AddBool("DeHtml", D.mDeHtml);
 	if (jobSpecs.FindBool("KeepATags", &bdummy) != B_OK)
 		jobSpecs.AddBool("KeepATags", D.mKeepATags);
-	if  (!jobSpecifier.ICompare("Classify") || !jobSpecifier.Length()) {
+	if  ((!jobSpecifier.ICompare("Classify") || !jobSpecifier.Length()) 
+		&& !msgContext->mail->HasBeenClassified()) {
 		BM_LOG2( BM_LogFilter, "Spam-Addon: starting Classify job...");
 		int32 dummy;
 		if (jobSpecs.FindInt32("ThresholdForSpam", &dummy) != B_OK)

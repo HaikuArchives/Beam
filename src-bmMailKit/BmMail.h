@@ -163,6 +163,7 @@ public:
 	//
 	void RatioSpam( float rs);
 	float RatioSpam() const;
+	bool HasBeenClassified() const;
 	void MarkAsSpam();
 	void MarkAsTofu();
 	bool IsMarkedAsSpam() const;
