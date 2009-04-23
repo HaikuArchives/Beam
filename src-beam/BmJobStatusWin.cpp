@@ -512,7 +512,10 @@ void BmPopperView::UpdateModelView( BMessage* msg) {
 	BmAutolockCheckGlobal lock( BmJobStatusWin::theInstance);
 	if (lock.IsLocked()) {
 		if (domain == "mailbar") {
-			mMailBar->Update( delta, leading, trailing);
+			if (delta < 0)
+				mMailBar->Reset();
+			else
+				mMailBar->Update( delta, leading, trailing);
 			if (mMailBar->CurrentValue()==mMailBar->MaxValue()
 			&& !mHaveBeeped
 			&& ThePrefs->GetBool( "BeepWhenNewMailArrived", true)) {
@@ -520,6 +523,8 @@ void BmPopperView::UpdateModelView( BMessage* msg) {
 				system_beep( BM_BEEP_EVENT);
 				mHaveBeeped = true;
 			}
+		} else if (domain == "mailbar.cleanup") {
+			mMailBar->Update( delta, leading, trailing);
 		} else { 
 			// domain == "statbar"
 			mStatBar->Update( delta, leading, trailing);
@@ -641,7 +646,10 @@ void BmImapView::UpdateModelView( BMessage* msg) {
 	BmAutolockCheckGlobal lock( BmJobStatusWin::theInstance);
 	if (lock.IsLocked()) {
 		if (domain == "mailbar") {
-			mMailBar->Update( delta, leading, trailing);
+			if (delta < 0)
+				mMailBar->Reset();
+			else
+				mMailBar->Update( delta, leading, trailing);
 			if (mMailBar->CurrentValue()==mMailBar->MaxValue()
 			&& !mHaveBeeped
 			&& ThePrefs->GetBool( "BeepWhenNewMailArrived", true)) {
@@ -649,6 +657,8 @@ void BmImapView::UpdateModelView( BMessage* msg) {
 				system_beep( BM_BEEP_EVENT);
 				mHaveBeeped = true;
 			}
+		} else if (domain == "mailbar.cleanup") {
+			mMailBar->Update( delta, leading, trailing);
 		} else { 
 			// domain == "statbar"
 			mStatBar->Update( delta, leading, trailing);

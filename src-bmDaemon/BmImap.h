@@ -102,6 +102,7 @@ private:
 	void StateStartTLS();
 	void StateAuth();
 	void StateCheck();
+	void StateCleanup();
 	void StateRetrieve();
 	void StateDisconnect();
 
@@ -111,6 +112,7 @@ private:
 	void UpdateIMAPStatus( const float, const char*, bool failed=false, 
 								 bool stopped=false);
 	void UpdateMailStatus( const float, const char*, int32);
+	void UpdateCleanupStatus( const float, int32);
 	bool CheckForPositiveAnswer( uint32 expectedSize=4096, 
 										  bool dotstuffDecoding=false,
 										  bool update=false,
@@ -136,6 +138,7 @@ private:
 		IMAP_STARTTLS,
 		IMAP_AUTH,
 		IMAP_CHECK,
+		IMAP_CLEANUP,
 		IMAP_RETRIEVE,
 		IMAP_DISCONNECT,
 		IMAP_DONE,
@@ -153,6 +156,8 @@ private:
 							// sizes of msgs to be received
 	uint32 mNewMsgTotalSize;
 							// total-size of msgs to be received
+	vector<BmString> mCleanupMsgUIDs;
+							// UIDs of msgs to be deleted
 	BmString mSupportedAuthTypes;
 							// list of auth-types the server indicates to support
 	bool mServerSupportsTLS;

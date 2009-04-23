@@ -199,6 +199,7 @@ BmImap::ImapState BmImap::ImapStates[BmImap::IMAP_FINAL] =
 	ImapState( "starttls...", &BmImap::StateStartTLS),
 	ImapState( "auth...", &BmImap::StateAuth),
 	ImapState( "check...", &BmImap::StateCheck),
+	ImapState( "cleanup...", &BmImap::StateCleanup),
 	ImapState( "get...", &BmImap::StateRetrieve),
 	ImapState( "quit...", &BmImap::StateDisconnect),
 	ImapState( "done", NULL)
@@ -381,6 +382,26 @@ void BmImap::UpdateMailStatus( const float delta, const char* detailText,
 	msg->AddString( MSG_LEADING, text.String());
 	if (detailText)
 		msg->AddString( MSG_TRAILING, detailText);
+	TellControllers( msg.get());
+}
+
+/*------------------------------------------------------------------------------*\
+	UpdateCleanupStatus( delta, currMsg)
+		- informs the interested party about the message currently dealt with
+\*------------------------------------------------------------------------------*/
+void BmImap::UpdateCleanupStatus( const float delta, int32 currMsg) {
+	BmString text;
+	uint32 count = mCleanupMsgUIDs.size();
+	if (count > 0) {
+		text = BmString() << currMsg << " of " << count;
+	} else {
+		text = "none";
+	}
+	std::auto_ptr<BMessage> msg( new BMessage( BM_JOB_UPDATE_STATE));
+	msg->AddString( MSG_MODEL, Name().String());
+	msg->AddString( MSG_DOMAIN, "mailbar.cleanup");
+	msg->AddFloat( MSG_DELTA, delta);
+	msg->AddString( MSG_LEADING, text.String());
 	TellControllers( msg.get());
 }
 
@@ -616,6 +637,7 @@ void BmImap::StateCheck()
 
 	mNewMsgTotalSize = 0;
 	mNewMsgCount = 0;
+	mCleanupMsgUIDs.clear();
 	if (mMsgCount) {
 		// fetch list with uid and size of every message:
 		// add "flags" here to the list of data to fetch.
@@ -720,8 +742,8 @@ void BmImap::StateCheck()
 					= mImapAccount->ShouldUIDBeDeletedFromServer(mMsgUIDs[i], log);
 				BM_LOG2( BM_LogRecv, log);
 				if (shouldBeRemoved) {
-					if (!DeleteMailFromServer(mMsgUIDs[i]))
-						return;
+					// store msg-UID for cleanup state
+					mCleanupMsgUIDs.push_back(mMsgUIDs[i]);
 				}
 			}
 		}
@@ -736,11 +758,31 @@ void BmImap::StateCheck()
 }
 
 /*------------------------------------------------------------------------------*\
+	StateCleanup()
+		-	deletes all old mails from server
+\*------------------------------------------------------------------------------*/
+void BmImap::StateCleanup() {
+	BmString cmd;
+	uint32 count = mCleanupMsgUIDs.size();
+	if (count == 0)
+		return;
+	for(uint32 i = 0; i < count; ++i) {
+		if (!DeleteMailFromServer(mCleanupMsgUIDs[i]))
+			return;
+		float delta = 100.0 / (count != 0 ? count : 1);
+		UpdateCleanupStatus( delta, i + 1);
+	}
+	mCleanupMsgUIDs.clear();
+	UpdateCleanupStatus( 100.0, count);
+}
+
+/*------------------------------------------------------------------------------*\
 	StateRetrieve()
 		-	retrieves all new mails from server
 \*------------------------------------------------------------------------------*/
 void BmImap::StateRetrieve()
 {
+	UpdateMailStatus( -1, NULL, 0);
 	BmString cmd;
 	mCurrMailNr = 1;
 	for(uint32 i=0; mNewMsgCount>0 && i<mMsgCount; ++i) {

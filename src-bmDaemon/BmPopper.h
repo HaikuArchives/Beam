@@ -94,6 +94,7 @@ private:
 	void StateStartTLS();
 	void StateAuth();
 	void StateCheck();
+	void StateCleanup();
 	void StateRetrieve();
 	void StateDisconnect();
 
@@ -101,6 +102,7 @@ private:
 	void UpdatePOPStatus( const float, const char*, bool failed=false, 
 								 bool stopped=false);
 	void UpdateMailStatus( const float, const char*, int32);
+	void UpdateCleanupStatus( const float, int32);
 
 	static int32 mId;
 							// unique message ID, this is used if a 
@@ -119,6 +121,8 @@ private:
 							// sizes of msgs to be received
 	int32 mNewMsgTotalSize;
 							// total-size of msgs to be received
+	vector<int32> mCleanupMsgs;
+							// index numbers of old msgs to be deleted after check
 	BmString mServerTimestamp;
 							// optional timestamp from Server (needed for APOP)
 	BmString mSupportedAuthTypes;
@@ -133,6 +137,7 @@ private:
 		POP_STARTTLS,
 		POP_AUTH,
 		POP_CHECK,
+		POP_CLEANUP,
 		POP_RETRIEVE,
 		POP_DISCONNECT,
 		POP_DONE,
