@@ -57,6 +57,9 @@ static const int BM_MINSIZE = 200;
 
 static const char* BM_BEEP_EVENT = "New E-mail";
 
+static rgb_color BM_MAIL_FETCH_COLOR = { 50, 150, 255 };
+static rgb_color BM_MAIL_DELETE_COLOR = { 0, 0, 128 };
+
 /********************************************************************************\
 	BmJobStatusView
 \********************************************************************************/
@@ -512,6 +515,7 @@ void BmPopperView::UpdateModelView( BMessage* msg) {
 	BmAutolockCheckGlobal lock( BmJobStatusWin::theInstance);
 	if (lock.IsLocked()) {
 		if (domain == "mailbar") {
+			mMailBar->SetBarColor(BM_MAIL_FETCH_COLOR);
 			if (delta < 0)
 				mMailBar->Update(-1 * mMailBar->CurrentValue());
 			else
@@ -524,6 +528,7 @@ void BmPopperView::UpdateModelView( BMessage* msg) {
 				mHaveBeeped = true;
 			}
 		} else if (domain == "mailbar.cleanup") {
+			mMailBar->SetBarColor(BM_MAIL_DELETE_COLOR);
 			mMailBar->Update( delta, leading, trailing);
 		} else { 
 			// domain == "statbar"
@@ -646,6 +651,7 @@ void BmImapView::UpdateModelView( BMessage* msg) {
 	BmAutolockCheckGlobal lock( BmJobStatusWin::theInstance);
 	if (lock.IsLocked()) {
 		if (domain == "mailbar") {
+			mMailBar->SetBarColor(BM_MAIL_FETCH_COLOR);
 			if (delta < 0)
 				mMailBar->Update(-1 * mMailBar->CurrentValue());
 			else
@@ -658,6 +664,7 @@ void BmImapView::UpdateModelView( BMessage* msg) {
 				mHaveBeeped = true;
 			}
 		} else if (domain == "mailbar.cleanup") {
+			mMailBar->SetBarColor(BM_MAIL_DELETE_COLOR);
 			mMailBar->Update( delta, leading, trailing);
 		} else { 
 			// domain == "statbar"
