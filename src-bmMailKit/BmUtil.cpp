@@ -179,7 +179,7 @@ BmString TimeToSwatchString( time_t utc, const char* format) {
 bool ParseDateTime( const BmString& str, time_t& dateTime) {
 	if (!str.Length()) return false;
 	// some mail-clients (notably BeMail!) generate date-formats with doubled
-	// time-zone information which confuses parsedatetime(). 
+	// time-zone information which confuses parsedate().
 	// N.B. Some other mailers enclose the same textual representation in
 	// comments (parantheses), which is perfectly legal and will be handled
 	// by the mail-header parsing code (the comments will not be present
@@ -195,6 +195,24 @@ bool ParseDateTime( const BmString& str, time_t& dateTime) {
 		// and try again:
 		s = rx.replace( str, "^(.+?)[a-zA-Z ]+$", "$1");
 		dateTime = parsedate( s.String(), -1);
+
+		if (dateTime == -1 && rx.exec(str, "\\s([+-])(\\d\\d)(\\d\\d)\\s*$")) {
+			// Still no success, probably because the implementation of 
+			// parsedate() does not understand numerical timezones, either.
+			// We remove the numerical timezone info and adjust the time 
+			// accordingly:
+			BmString sign = rx.match[0].atom[0];
+			BmString hours = rx.match[0].atom[1];
+			BmString minutes = rx.match[0].atom[2];
+			time_t timezoneOffset
+				= atol(hours.String()) * 60 * 60 + atol(minutes.String()) * 60;
+			if (sign == "+")
+				timezoneOffset *= -1;
+			s = rx.replace( str, "^(.+?)\\s*[+-]\\d\\d\\d\\d\\s*$", "$1");
+			dateTime = parsedate( s.String(), -1);
+			if  (dateTime != -1)
+				dateTime += timezoneOffset;
+		}
 	}
 	return dateTime != -1;
 }
