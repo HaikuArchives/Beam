@@ -181,22 +181,22 @@ bool ParseDateTime( const BmString& str, time_t& dateTime) {
 	// some mail-clients (notably BeMail!) generate date-formats with doubled
 	// time-zone information which confuses parsedate().
 	// N.B. Some other mailers enclose the same textual representation in
-	// comments (parantheses), which is perfectly legal and will be handled
-	// by the mail-header parsing code (the comments will not be present
+	// ()-comments, which is perfectly legal and will be handled by the 
+	// mail-header parsing code (those comments will not be present
 	// in the string handled here).
 	Regexx rx;
 	// remove superfluous timezone information, i.e. convert something
 	// like '12:11:10 +0200 CEST' to '12:11:10 +0200':
-	BmString s = rx.replace( str, "([+\\-]\\d+)[\\D]+$", "$1");
+	BmString s = rx.replace( str, "([+-]\\d{4})[\\D]+$", "$1");
 	// convert datetime-string into time_t:
 	dateTime = parsedate( s.String(), -1);
 	if (dateTime == -1) {
 		// direct parsing wasn't successful, so we remove any textual timezone
 		// and try again:
-		s = rx.replace( str, "^(.+?)[a-zA-Z ]+$", "$1");
+		s = rx.replace( s, "^(.+?)[a-zA-Z\\s]+$", "$1");
 		dateTime = parsedate( s.String(), -1);
 
-		if (dateTime == -1 && rx.exec(str, "\\s([+-])(\\d\\d)(\\d\\d)\\s*$")) {
+		if (dateTime == -1 && rx.exec(s, "\\s([+-])(\\d\\d)(\\d\\d)\\s*$")) {
 			// Still no success, probably because the implementation of 
 			// parsedate() does not understand numerical timezones, either.
 			// We remove the numerical timezone info and adjust the time 
@@ -208,12 +208,13 @@ bool ParseDateTime( const BmString& str, time_t& dateTime) {
 				= atol(hours.String()) * 60 * 60 + atol(minutes.String()) * 60;
 			if (sign == "+")
 				timezoneOffset *= -1;
-			s = rx.replace( str, "^(.+?)\\s*[+-]\\d\\d\\d\\d\\s*$", "$1");
+			s = rx.replace( s, "^(.+?)\\s*[+-]\\d\\d\\d\\d\\s*$", "$1 GMT");
 			dateTime = parsedate( s.String(), -1);
 			if  (dateTime != -1)
 				dateTime += timezoneOffset;
 		}
 	}
+
 	return dateTime != -1;
 }
 
