@@ -18,6 +18,7 @@ using namespace regexx;
 #include "BmBasics.h"
 #include "BmIdentity.h"
 #include "BmLogHandler.h"
+#include "BmMailHeader.h"
 #include "BmRosterBase.h"
 #include "BmUtil.h"
 
@@ -124,7 +125,7 @@ BmString BmIdentity::GetFromAddress() const {
 	BmRef<BmRecvAccount> recvAcc = RecvAcc();
 	if (!recvAcc)
 		return "";
-	BmString addr( mRealName);
+	BmString addr( BmAddress::QuotedPhrase(mRealName));
 	BmString domainPart = GetDomainName();
 	if (domainPart.Length())
 		domainPart.Prepend( "@");

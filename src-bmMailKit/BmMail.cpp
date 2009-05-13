@@ -1089,7 +1089,14 @@ void BmMail::SetupFromIdentityAndRecvAddr( BmIdentity* ident,
 														 const BmString& recvAddr) 
 {
 	if (ident && recvAddr.Length()) {
-		SetFieldVal( BM_FIELD_FROM, recvAddr);
+		BmString realName = ident->RealName();
+		BmString fromAddress;
+		if (recvAddr.FindFirst('<') < 0 && realName.Length()) {
+			fromAddress 
+				= BmAddress::QuotedPhrase(realName) + " <" + recvAddr + ">";
+		} else
+			fromAddress = recvAddr;
+		SetFieldVal( BM_FIELD_FROM, fromAddress);
 		if (ident->ReplyTo().Length())
 			SetFieldVal( BM_FIELD_REPLY_TO, ident->ReplyTo());
 		else
