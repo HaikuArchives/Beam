@@ -359,32 +359,22 @@ void BmIdentityList::ResetToSaved() {
 }
 
 /*------------------------------------------------------------------------------*\
-	FindIdentityForRecvAccount( accName)
-		-	returns an identity matching the given account
-		-	if any identity using the given account is marked as a bit-bucket, this
-			identity is returned, otherwise the first identity using the given account
-			is returned.
+	FindIdentitiesForRecvAccount( accName)
+		-	returns the identities matching the given account
 \*------------------------------------------------------------------------------*/
-BmRef<BmIdentity> BmIdentityList
-::FindIdentityForRecvAccount( const BmString accName) {
+void BmIdentityList::FindIdentitiesForRecvAccount( const BmString accName, 
+																 BmIdentityVect& identities) {
 	BmAutolockCheckGlobal lock( ModelLocker());
 	if (!lock.IsLocked())
 		BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
+
+	identities.clear();
 	BmModelItemMap::const_iterator iter;
-	// check if we have a bit-bucket identity:
-	for( iter = begin(); iter != end(); ++iter) {
-		BmIdentity* ident = dynamic_cast< BmIdentity*>( iter->second.Get());
-		if (ident->MarkedAsBitBucket() && ident->RecvAccount()==accName)
-			return ident;
-	}
-	// return the first address matching the given account:
 	for( iter = begin(); iter != end(); ++iter) {
 		BmIdentity* ident = dynamic_cast< BmIdentity*>( iter->second.Get());
 		if (ident->RecvAccount()==accName)
-			return ident;
+			identities.push_back(ident);
 	}
-	// nothing found !?!
-	return NULL;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -396,11 +386,16 @@ BmString BmIdentityList
 	BmAutolockCheckGlobal lock( ModelLocker());
 	if (!lock.IsLocked())
 		BM_THROW_RUNTIME( ModelNameNC() << ": Unable to get lock");
-	BmRef<BmIdentity> ident = FindIdentityForRecvAccount( accName);
-	if (ident)
-		return ident->GetFromAddress();
-	else
-		return "";
+
+	BmIdentityVect identities;
+	FindIdentitiesForRecvAccount(accName, identities);
+	BmIdentityVect::iterator iter;
+	for (iter = identities.begin(); iter != identities.end(); ++iter) {
+		BmIdentity* ident = iter->Get();
+		if (ident)
+			return ident->GetFromAddress();
+	}
+	return BM_DEFAULT_STRING;
 }
 
 /*------------------------------------------------------------------------------*\

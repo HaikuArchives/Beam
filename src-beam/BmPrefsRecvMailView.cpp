@@ -1014,14 +1014,13 @@ void BmPrefsRecvMailView::MessageReceived( BMessage* msg) {
 					// second step, do it if user said ok:
 					if (buttonPressed < 2) {
 						if (buttonPressed == 0) {
-							for( ;; ) {
-								BmRef<BmIdentity> ident 
-									= TheIdentityList->FindIdentityForRecvAccount( 
-										mCurrAcc->Key()
-									);
-								if (!ident)
-									break;
-								TheIdentityList->RemoveItemFromList( ident.Get());
+							BmIdentityVect identities;
+							TheIdentityList->FindIdentitiesForRecvAccount( 
+								mCurrAcc->Key(), identities);
+							BmIdentityVect::iterator iter;
+							for (iter = identities.begin(); iter != identities.end();
+								++iter) {
+								TheIdentityList->RemoveItemFromList( iter->Get());
 							}
 						}
 						TheRecvAccountList->RemoveItemFromList( mCurrAcc.Get());

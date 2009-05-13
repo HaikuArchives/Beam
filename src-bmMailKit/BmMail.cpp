@@ -83,6 +83,7 @@ const char* BM_FIELD_MAILING_LIST		= "Mailing-List";
 const char* BM_FIELD_MESSAGE_ID			= "Message-Id";
 const char* BM_FIELD_MIME 					= "Mime-Version";
 const char* BM_FIELD_PRIORITY				= "Priority";
+const char* BM_FIELD_RECEIVED				= "Received";
 const char* BM_FIELD_REFERENCES			= "References";
 const char* BM_FIELD_REPLY_TO				= "Reply-To";
 const char* BM_FIELD_RESENT_BCC			= "Resent-Bcc";
@@ -195,22 +196,11 @@ BmMail::BmMail( const BmString &msgText, const BmString account)
 {
 	SetTo( msgText, account);
 
-	// get default-identity corresponding to given account:
-	BmRef<BmIdentity> identRef 
-		= TheIdentityList->FindIdentityForRecvAccount( account);
-	BmIdentity* ident = dynamic_cast< BmIdentity*>( identRef.Get());
-	if (ident) {
-		// now try to find a better match through recipient-addresses:
-		BmAddress recvAddr( mHeader->DetermineReceivingAddrFor( ident));
-		if (recvAddr.InitOK()) {
-			identRef	
-				= TheIdentityList->FindIdentityForAddrSpec( recvAddr.AddrSpec());
-			if (identRef)
-				ident = dynamic_cast< BmIdentity*>( identRef.Get());
-		}
-	}
-	if (ident)
-		mIdentityName = ident->Key();
+	BmString recvAddr;
+	BmRef<BmIdentity> identRef;
+	DetermineRecvAddrAndIdentity(recvAddr, identRef);
+	if (identRef)
+		mIdentityName = identRef.Get()->Key();
 }
 	
 /*------------------------------------------------------------------------------*\
@@ -1116,33 +1106,33 @@ void BmMail::SetupFromIdentityAndRecvAddr( BmIdentity* ident,
 	-	
 \*------------------------------------------------------------------------------*/
 void BmMail::DetermineRecvAddrAndIdentity( BmString& receivingAddr,
-														 BmRef<BmIdentity>& ident)
+														 BmRef<BmIdentity>& identRefOut)
 {
 	// try to determince the receiving address and identity
 	// from the received mail's to-/cc-/bcc-info in several steps.
-	// First, we check if this mail has an identity assigned to it:
-	ident = dynamic_cast< BmIdentity*>( 
+	// First, we collect all potential identities:
+	BmIdentityVect identities;
+	BmRef<BmIdentity> identRef = dynamic_cast< BmIdentity*>(
 		TheIdentityList->FindItemByKey( IdentityName()).Get()
 	);
-	if (!ident) {
-		// second, we check if the account through which the mail has been 
-		// received can be identified (not always possible, since the account 
-		// may have been renamed or deleted by now):
-		ident = dynamic_cast< BmIdentity*>( 
-			TheIdentityList->FindIdentityForRecvAccount( AccountName()).Get()
-		);
+	if (identRef.Get()) {
+		// mail has an identity assigned, we use just that
+		identities.push_back(identRef);
+	} else {
+		// check all identities that match the receiving account 
+		// (not always possible, since the account may have been renamed or 
+		// deleted by now):
+		TheIdentityList->FindIdentitiesForRecvAccount(AccountName(),
+			identities);
 	}
-	if (ident) {
-		// receiving identity is known, we let it find the receiving address
-		receivingAddr = Header()->DetermineReceivingAddrFor( ident.Get());
-		// if the identity doesn't handle any receiving address of this mail,
-		// we simply use the identity's default address:
-		if (!receivingAddr.Length())
-			receivingAddr = ident->GetFromAddress();
-	}
+
+	// now find the receiving address by iterating over all potential identites
+	receivingAddr 
+		= Header()->DetermineReceivingAddrFor(identities, &identRefOut);
+
 	if (!receivingAddr.Length()) {
-		// the receiving address could not be determined, so we iterate through 
-		// all identities and try to find one that (may) have received this mail.
+		// the receiving address could not be determined, so we simply try again
+		// with all identities to find one that (may) have received this mail:
 		BmAutolockCheckGlobal lock( TheIdentityList->ModelLocker());
 		if (!lock.IsLocked())
 			BM_THROW_RUNTIME( 
@@ -1150,15 +1140,13 @@ void BmMail::DetermineRecvAddrAndIdentity( BmString& receivingAddr,
 				"Unable to get lock on IdentityList"
 			);
 		BmModelItemMap::const_iterator iter;
-		for( iter = TheIdentityList->begin(); 
-			  iter != TheIdentityList->end() && !receivingAddr.Length(); 
+		identities.clear();
+		for( iter = TheIdentityList->begin(); iter != TheIdentityList->end();
 			  ++iter) {
-			ident = dynamic_cast< BmIdentity*>( iter->second.Get());
-			if (ident) {
-				receivingAddr 
-					= Header()->DetermineReceivingAddrFor( ident.Get());
-			}
+			identities.push_back(dynamic_cast< BmIdentity*>( iter->second.Get()));
 		}
+		receivingAddr
+			= Header()->DetermineReceivingAddrFor(identities, &identRefOut);
 	}
 }
 

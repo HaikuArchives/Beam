@@ -16,6 +16,7 @@
 
 #include "BmBasics.h"
 #include "BmFilterAddon.h"
+#include "BmIdentity.h"
 #include "BmMemIO.h"
 #include "BmRefManager.h"
 #include "BmUtil.h"
@@ -61,7 +62,8 @@ public:
 	bool SetTo( const BmString& addrText);
 	void ConstructRawText( BmString& header, const BmString& charset, 
 								  int32 fieldNameLength) const;
-	bool IsHandledByAccount( BmIdentity* ident, bool needExactMatch=false) const;
+	bool IsHandledByIdentity( BmIdentity* ident,
+									  bool needExactMatch=false) const;
 	const BmString& AddrString() const;
 
 	// getters:
@@ -107,7 +109,7 @@ public:
 	BmStringList SplitIntoAddresses( BmString addrList);
 	void ConstructRawText( BmStringOBuf& header, const BmString& charset, 
 								  int32 fieldNameLength) const;
-	const BmString& FindAddressMatchingAccount( BmIdentity* ident, 
+	const BmString& FindAddressMatchingIdentity(BmIdentity* ident,
 															  bool needExactMatch=false) const;
 	bool ContainsAddrSpec( BmString addrSpec) const;
 	const BmString& AddrString() const;
@@ -196,7 +198,8 @@ public:
 												 const BmString& address);
 	//
 	BmString DetermineSender();
-	BmString DetermineReceivingAddrFor( BmIdentity* ident);
+	BmString DetermineReceivingAddrFor(const BmIdentityVect& identities,
+		BmRef<BmIdentity>* identRefOut = NULL);
 	BmAddressList DetermineOriginator( bool bypassReplyTo=false);
 	BmAddressList DetermineListAddress( bool bypassSanityTest=false);
 	//

@@ -145,8 +145,8 @@ const BmString& BmAddress::AddrString() const {
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-bool BmAddress::IsHandledByAccount( BmIdentity* ident, 
-												bool needExactMatch) const {
+bool BmAddress::IsHandledByIdentity( BmIdentity* ident, 
+												 bool needExactMatch) const {
 	if (!ident)
 		return false;
 	return ident->HandlesAddrSpec( mAddrSpec, needExactMatch);
@@ -272,10 +272,10 @@ void BmAddressList::Remove( BmString singleAddress) {
 		-	
 \*------------------------------------------------------------------------------*/
 const BmString& BmAddressList
-::FindAddressMatchingAccount( BmIdentity* ident, bool needExactMatch) const {
+::FindAddressMatchingIdentity( BmIdentity* ident, bool needExactMatch) const {
 	int32 count = mAddrList.size();
 	for( int i=0; i<count; ++i) {
-		if (mAddrList[i].IsHandledByAccount( ident, needExactMatch))
+		if (mAddrList[i].IsHandledByIdentity( ident, needExactMatch))
 			return mAddrList[i].AddrString();
 	}
 	return BM_DEFAULT_STRING;
@@ -884,27 +884,64 @@ BmAddressList BmMailHeader::DetermineListAddress( bool bypassSanityTest) {
 	DetermineReceivingAddrFor()
 		-	
 \*------------------------------------------------------------------------------*/
-BmString BmMailHeader::DetermineReceivingAddrFor( BmIdentity* ident) {
+BmString 
+BmMailHeader::DetermineReceivingAddrFor(const BmIdentityVect& identities,
+	BmRef<BmIdentity>* identRefOut) {
 	BmString addr;
 	bool needExactMatch = true;
 	// in the first loop-run, we check whether any of the addresses matches
 	// the given identity exactly, in the second loop-run, we accept matches
 	// by catch-all-identities, too:
 	for( int i=0;  !addr.Length() && i<2;  ++i) {
-		addr = mAddrMap[BM_FIELD_TO].FindAddressMatchingAccount( 
-			ident, needExactMatch
-		);
-		if (addr.Length())
-			break;
-		addr = mAddrMap[BM_FIELD_CC].FindAddressMatchingAccount( 
-			ident, needExactMatch
-		);
-		if (addr.Length())
-			break;
-		addr = mAddrMap[BM_FIELD_BCC].FindAddressMatchingAccount( 
-			ident, needExactMatch
-		);
+		BmIdentityVect::const_iterator iter;
+		for (iter = identities.begin(); 
+			iter != identities.end() && !addr.Length(); ++iter) {
+			addr = mAddrMap[BM_FIELD_TO].FindAddressMatchingIdentity( 
+				iter->Get(), needExactMatch
+			);
+			if (!addr.Length()) {
+				addr = mAddrMap[BM_FIELD_CC].FindAddressMatchingIdentity( 
+					iter->Get(), needExactMatch
+				);
+			}
+			if (!addr.Length()) {
+				addr = mAddrMap[BM_FIELD_BCC].FindAddressMatchingIdentity( 
+					iter->Get(), needExactMatch
+				);
+			}
+			if (addr.Length() && identRefOut)
+				*identRefOut = *iter;
+		}
 		needExactMatch = false;
+	}
+	if (!addr.Length()) {
+		// nothing found yet - that usually means that none of our mail adresses
+		// is contained as part of an address field in the header (the usual
+		// case for mailing lists). Let's have a look at the Received headers
+		// and try to find a matching address there:
+		Regexx rx;
+		rx.expr("[-+\\w]+@(?:[-+\\w]+\\.)?(?:[-+\\w]+)");
+		uint32 receivedCount = CountFieldVals(BM_FIELD_RECEIVED);
+		for (uint32 r = 0; r < receivedCount && !addr.Length(); ++r) {
+			BmString receivedVal = GetFieldVal(BM_FIELD_RECEIVED, r);
+			rx.str(receivedVal);
+			int32 matchCount = rx.exec(Regexx::global);
+			for (int32 m = 0; m < matchCount && !addr.Length(); ++m) {
+				BmString mailAddr = rx.match[m];
+				bool needExactMatch = true;
+				for (int i=0; !addr.Length() && i < 2; ++i) {
+					BmIdentityVect::const_iterator iter;
+					for (iter = identities.begin(); 
+						iter != identities.end() && !addr.Length(); ++iter) {
+						if ((*iter)->HandlesAddrSpec(mailAddr, needExactMatch)) {
+							addr = mailAddr;
+							*identRefOut = *iter;
+						}
+					}
+					needExactMatch = false;
+				}
+			}
+		}
 	}
 	return addr;
 }

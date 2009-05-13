@@ -136,6 +136,9 @@ private:
 };
 
 
+
+typedef vector< BmRef<BmIdentity> > BmIdentityVect;
+
 /*------------------------------------------------------------------------------*\
 	BmIdentityList 
 		-	holds list of all Identities
@@ -152,7 +155,8 @@ public:
 	~BmIdentityList();
 	
 	// native methods:
-	BmRef<BmIdentity> FindIdentityForRecvAccount( const BmString accName);
+	void FindIdentitiesForRecvAccount( const BmString accName, 
+												  BmIdentityVect& identities);
 	BmString FindFromAddressForRecvAccount( const BmString accName);
 	BmRef<BmIdentity> FindIdentityForAddrSpec( const BmString addr);
 	BmRef<BmRecvAccount> FindRecvAccountForAddrSpec( const BmString addr);
