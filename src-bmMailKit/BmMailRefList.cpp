@@ -513,7 +513,7 @@ void BmMailRefList::InstantiateItemsFromStream( BDataIO* dataIO, BMessage* heade
 bool BmMailRefList::AddItemToList( BmListModelItem* item, 
 											  BmListModelItem* parent) {
 	bool res = inherited::AddItemToList( item, parent);
-	if (!Frozen()) {
+	if (res && !Frozen()) {
 		BmRef<BmMailFolder> folder( mFolder.Get());
 			// hold a ref on the corresponding folder while we use it
 		if (folder && item->IsValid())

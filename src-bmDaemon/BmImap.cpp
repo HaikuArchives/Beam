@@ -516,7 +516,7 @@ bool BmImap::StartEncryption(const char* encType)
 		BmString certID = mConnection->NewAcceptedCertID();
 		if (certID.Length() && mImapAccount->AcceptedCertID() != certID) {
 			mImapAccount->AcceptedCertID(certID);
-			TheRecvAccountList->MarkAsStoreNeeded();
+			TheRecvAccountList->MarkAsChanged();
 		}
 	}
 	return ok;

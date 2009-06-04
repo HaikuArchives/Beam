@@ -51,7 +51,7 @@ public:
 																	? mDataModel->ModelName() 
 																	: BM_DEFAULT_STRING; }
 	inline BmString ModelNameNC() const { return ModelName(); }
-	virtual const BmRef<BmDataModel>& DataModel()
+	virtual const BmRef<BmDataModel>& DataModel() const
 													{ return mDataModel; }
 
 protected:

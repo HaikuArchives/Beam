@@ -1182,7 +1182,7 @@ void BmListViewController::MakeEmpty() {
 }
 
 /*------------------------------------------------------------------------------*\
-ApplyViewItemFilter( )
+	ApplyViewItemFilter( )
 	-	
 \*------------------------------------------------------------------------------*/
 bool BmListViewController::ApplyViewItemFilter(BmViewItemFilter* filter, 
@@ -1192,6 +1192,26 @@ bool BmListViewController::ApplyViewItemFilter(BmViewItemFilter* filter,
 	if (LockLooper()) {
 		UpdateCaption();
 		UnlockLooper();
+	}
+	return result;
+}
+
+/*------------------------------------------------------------------------------*\
+	ApplyModelItemFilter( )
+	-	
+\*------------------------------------------------------------------------------*/
+bool BmListViewController::ApplyModelItemFilter(BmListModelItemFilter* filter)
+{
+	bool result = false;
+	if (LockLooper()) {
+		BmListModel *model = dynamic_cast<BmListModel*>(DataModel().Get());
+		BM_ASSERT(model);
+		model->MarkCacheAsDirty();
+			// we want to bypass the cache, as it may no longer contain all mails
+		model->SetFilter(filter);
+		StartJob();
+		UnlockLooper();
+		result = true;
 	}
 	return result;
 }

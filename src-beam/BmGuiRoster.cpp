@@ -526,22 +526,19 @@ void BmGuiRoster::RebuildLogMenu( BmMenuControllerBase* logMenu) {
 void BmGuiRoster::RebuildMailRefFilterMenu( BmMenuControllerBase* menu)
 {
 	ClearMenu(menu);
-	const char* choices[] = {
-		BmMailRefFilterControl::TIME_SPAN_NONE,
-		BmMailRefFilterControl::TIME_SPAN_YEAR,
-		BmMailRefFilterControl::TIME_SPAN_MONTH,
-		BmMailRefFilterControl::TIME_SPAN_WEEK,
-		NULL
-	};
-	for( int i=0; choices[i]; ++i) {
+	BmString options = ThePrefs->GetString("TimeSpanOptions");
+	vector<BmString> choices;
+	split(",", options, choices);
+	choices.insert(choices.begin(), BmMailRefFilterControl::TIME_SPAN_NONE);
+	for (uint32 i = 0; i < choices.size(); ++i) {
+		BmString label = choices[i];
+		if (i > 0)
+			label << " Days";
 		BMessage* msg = new BMessage(*(menu->MsgTemplate()));
-		msg->AddString("filter_kind", choices[i]);
-		BMenuItem* item 
-			= new BMenuItem( choices[i], msg);
-// TODO: remove, once it is implemented
-if (i>=1)
-	item->SetEnabled(false);
-		item->SetTarget( menu->MsgTarget());
+		msg->AddString(BmMailRefFilterControl::MSG_TIME_SPAN_LABEL,
+			label.String());
+		BMenuItem* item = new BMenuItem(label.String(), msg);
+		item->SetTarget(menu->MsgTarget());
 		menu->AddItem( item);
 	}
 }
@@ -560,9 +557,9 @@ void BmGuiRoster::RebuildMailRefViewFilterMenu( BmMenuControllerBase* menu)
 	};
 	for( int i=0; choices[i]; ++i) {
 		BMessage* msg = new BMessage(*(menu->MsgTemplate()));
-		msg->AddString("filter_kind", choices[i]);
-		BMenuItem* item 
-			= new BMenuItem( choices[i], msg);
+		msg->AddString(BmMailRefViewFilterControl::MSG_FILTER_KIND, 
+			choices[i]);
+		BMenuItem* item = new BMenuItem(choices[i], msg);
 // TODO: remove, once it is implemented
 if (i==1)
 	item->SetEnabled(false);

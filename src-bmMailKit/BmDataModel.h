@@ -277,6 +277,20 @@ private:
 };
 
 /*------------------------------------------------------------------------------*\
+	BmListModelItemFilter
+		-	
+\*------------------------------------------------------------------------------*/
+class IMPEXPBMMAILKIT BmListModelItemFilter
+{
+public:
+	virtual ~BmListModelItemFilter()	{}
+	
+	virtual bool Matches(const BmListModelItem* modelItem) const = 0;
+	virtual status_t Archive( BMessage* archive) const = 0;
+ 	virtual const BmString& Label() const = 0;
+};
+
+/*------------------------------------------------------------------------------*\
 	BmListModel
 		-	an interface that extends BmJobModel with the ability to
 			handle list-objects
@@ -316,7 +330,9 @@ public:
 	//
 	virtual bool Store();
 	void StoreIfNeeded();
-	void MarkAsStoreNeeded()				{ mNeedsStore = true; }
+	void MarkAsChanged()						{ mNeedsStore = true; }
+	virtual void MarkCacheAsDirty()		{ }
+	
 	bool FlushStoredActions();
 	virtual const BmString SettingsFileName() = 0;
 	virtual void InitializeItems()		{ mInitCheck = B_OK; }
@@ -324,6 +340,10 @@ public:
 	virtual void InstantiateItems( BMessage* archive);
 	virtual void InstantiateItem( BMessage* archive)
 													{ }
+	const BmListModelItemFilter* Filter() const
+													{ return mFilter; }
+	void SetFilter(BmListModelItemFilter* filter);
+	
 	virtual void Cleanup();
 	virtual int16 ArchiveVersion() const = 0;
 
@@ -378,6 +398,7 @@ protected:
 	int32 mInvalidCount;
 	BmStoredActionManager mStoredActionManager;
 	uint32 mLogTerrain;
+	BmListModelItemFilter* mFilter;
 
 private:
 	// Hide copy-constructor and assignment:

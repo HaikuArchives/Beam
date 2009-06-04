@@ -11,15 +11,16 @@
 #include "BmBasics.h"
 #include "BmGuiRoster.h"
 #include "BmLogHandler.h"
+#include "BmMailRef.h"
+#include "BmMailRefFilter.h"
 #include "BmMailRefFilterControl.h"
+#include "BmMailRefView.h"
 #include "BmMenuController.h"
 
-const char* const BmMailRefFilterControl::MSG_TIME_SPAN = "bm:timsp";
+
+const char* const BmMailRefFilterControl::MSG_TIME_SPAN_LABEL = "bm:timsp";
 
 const char* const BmMailRefFilterControl::TIME_SPAN_NONE  = "<No Limit>";
-const char* const BmMailRefFilterControl::TIME_SPAN_YEAR  = "One Year";
-const char* const BmMailRefFilterControl::TIME_SPAN_MONTH = "One Month";
-const char* const BmMailRefFilterControl::TIME_SPAN_WEEK  = "One Week";
 
 /*------------------------------------------------------------------------------*\
 	( )
@@ -35,7 +36,8 @@ BmMailRefFilterControl::BmMailRefFilterControl()
 				BM_MC_LABEL_FROM_MARKED
 			),
 			1, 1E5, TIME_SPAN_NONE
-	)
+		)
+	,	mPartnerMailRefView(NULL)
 {
 	SetFlags(Flags() & ~B_NAVIGABLE);
 }
@@ -49,15 +51,6 @@ BmMailRefFilterControl::~BmMailRefFilterControl()
 }
 
 /*------------------------------------------------------------------------------*\
-	( )
-		-	
-\*------------------------------------------------------------------------------*/
-void BmMailRefFilterControl::AttachedToWindow()
-{
-	inherited::AttachedToWindow();
-}
-
-/*------------------------------------------------------------------------------*\
 	()
 		-	
 \*------------------------------------------------------------------------------*/
@@ -65,6 +58,15 @@ void BmMailRefFilterControl::MessageReceived(BMessage* msg) {
 	try {
 		switch( msg->what) {
 			case BM_MAILREF_FILTER_CHANGED: {
+				if (mPartnerMailRefView) {
+					BmString label = msg->FindString(MSG_TIME_SPAN_LABEL);
+					int32 numberOfDays = atol(label.String());
+					BmMailRefFilter* filter 
+						= label != TIME_SPAN_NONE
+							? new BmMailRefFilter(label, numberOfDays)
+							: NULL;
+					mPartnerMailRefView->ApplyModelItemFilter(filter);
+				}
 				break;
 			}
 			default:

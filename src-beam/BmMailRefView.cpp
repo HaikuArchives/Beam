@@ -27,6 +27,7 @@
 #include "BmMailMover.h"
 #include "BmMailNavigator.h"
 #include "BmMailRef.h"
+#include "BmMailRefFilter.h"
 #include "BmMailRefFilterControl.h"
 #include "BmMailRefList.h"
 #include "BmMailRefView.h"
@@ -401,6 +402,9 @@ bool BmMailRefView::ReselectionInfo
 // #pragma mark -	BmMailRefView
 
 const char* const BmMailRefView::MSG_MAILS_SELECTED = "bm:msel";
+
+const char* const BmMailRefView::MSG_FILTER_ARCHIVE = "bm:fila";
+
 const char* const BmMailRefView::MENU_MARK_AS =			"Set Status To";
 const char* const BmMailRefView::MENU_FILTER = 			"Apply Specific Filter";
 const char* const BmMailRefView::MENU_MOVE =				"Move To";
@@ -434,6 +438,7 @@ BmMailRefView::BmMailRefView( int32 width, int32 height)
 	,	mCurrFolder( NULL)
 	,	mPartnerMailView(NULL)
 	,	mPartnerFilterControl(NULL)
+	,	mPartnerViewFilterControl(NULL)
 	,	mHaveSelectedRef( false)
 	,	mStateInfoConnectedToParentFolder( true)
 	,	mHiddenState(BMH_NO_INIT)
@@ -532,9 +537,18 @@ BmListViewItem* BmMailRefView::CreateListViewItem( BmListModelItem* item,
 	()
 		-	
 \*------------------------------------------------------------------------------*/
-void BmMailRefView::TeamUpWith(BmMailRefViewFilterControl* fc)
+void BmMailRefView::TeamUpWith(BmMailRefFilterControl* fc)
 {
 	mPartnerFilterControl = fc;
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+void BmMailRefView::TeamUpWith(BmMailRefViewFilterControl* fc)
+{
+	mPartnerViewFilterControl = fc;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -603,8 +617,50 @@ void BmMailRefView::AttachedToWindow()
 void BmMailRefView::ReadStateInfo() {
 	inherited::ReadStateInfo();
 	mLockLabelsButton->SetValue(ColumnLabelView()->LayoutLocked() ? 1 : 0);
+
+	BmListModel* listModel = dynamic_cast<BmListModel*>(DataModel().Get());
+	if (listModel && listModel->Filter() && mPartnerFilterControl) {
+		BmString label = listModel->Filter()->Label();
+		mPartnerFilterControl->MarkItem(label.String());
+	}
 }
 
+/*------------------------------------------------------------------------------*\
+	Archive()
+		-	
+\*------------------------------------------------------------------------------*/
+status_t BmMailRefView::Archive(BMessage* archive, bool deep) const {
+	status_t ret = inherited::Archive( archive, deep);
+	if (ret == B_OK) {
+		BmListModel* listModel = dynamic_cast<BmListModel*>(DataModel().Get());
+		if (listModel && listModel->Filter()) {
+			BMessage filterArchive;
+			if (listModel->Filter()->Archive(&filterArchive) == B_OK)
+				ret = archive->AddMessage(MSG_FILTER_ARCHIVE, &filterArchive);
+		}
+	}
+	return ret;
+}
+
+/*------------------------------------------------------------------------------*\
+	()
+		-	
+\*------------------------------------------------------------------------------*/
+status_t BmMailRefView::Unarchive(const BMessage* archive, bool deep)
+{
+	status_t result = inherited::Unarchive(archive, deep);
+	if (result == B_OK) {
+		BMessage filterArchive;
+		if (archive->FindMessage(MSG_FILTER_ARCHIVE, &filterArchive) == B_OK) {
+			BmMailRefFilter* filter = new BmMailRefFilter(&filterArchive);
+			BmListModel* listModel 
+				= dynamic_cast<BmListModel*>(DataModel().Get());
+			if (listModel)
+				listModel->SetFilter(filter);
+		}
+	}
+	return result;
+}
 
 /*------------------------------------------------------------------------------*\
 	MessageReceived( msg)
@@ -755,8 +811,8 @@ void BmMailRefView::KeyDown(const char *bytes, int32 numBytes) {
 				break;
 			}
 			case B_ESCAPE: {
-				if (mPartnerFilterControl)
-					mPartnerFilterControl->ClearFilter();
+				if (mPartnerViewFilterControl)
+					mPartnerViewFilterControl->ClearFilter();
 				break;
 			}
 			default:
@@ -911,8 +967,8 @@ void BmMailRefView::ShowFolder( BmMailFolder* folder) {
 		if (mPartnerMailView)
 			mPartnerMailView->ShowMail( static_cast< BmMailRef*>( NULL));
 		DetachModel();
-		if (mPartnerFilterControl)
-			mPartnerFilterControl->ClearFilter();
+		if (mPartnerViewFilterControl)
+			mPartnerViewFilterControl->ClearFilter();
 		MakeEmpty();
 		mCurrFolder = folder;
 		if (refList)

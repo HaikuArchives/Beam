@@ -449,7 +449,7 @@ bool BmPopper::StartEncryption(const char* encType)
 		BmString certID = mConnection->NewAcceptedCertID();
 		if (certID.Length() && mPopAccount->AcceptedCertID() != certID) {
 			mPopAccount->AcceptedCertID(certID);
-			TheRecvAccountList->MarkAsStoreNeeded();
+			TheRecvAccountList->MarkAsChanged();
 		}
 	}
 	return ok;

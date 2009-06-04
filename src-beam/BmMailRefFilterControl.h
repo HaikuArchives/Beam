@@ -13,6 +13,8 @@
 
 #include "BmMenuControl.h"
 
+class BmMailRefView;
+
 enum {
 	BM_MAILREF_FILTER_CHANGED = 'bmfC'
 						// sent whenever the filter has changed
@@ -28,20 +30,19 @@ public:
 	~BmMailRefFilterControl();
 	
 	// native methods:
+	void TeamUpWith(BmMailRefView* mrv)	{ mPartnerMailRefView = mrv; }
 
 	// overrides:
-	void AttachedToWindow();
 	void MessageReceived(BMessage* msg);
 
 	//	message component definitions for status-msgs:
-	static const char* const MSG_TIME_SPAN;
+	static const char* const MSG_TIME_SPAN_LABEL;
 	
 	static const char* const TIME_SPAN_NONE;
-	static const char* const TIME_SPAN_YEAR;
-	static const char* const TIME_SPAN_MONTH;
-	static const char* const TIME_SPAN_WEEK;
 
 private:
+	BmMailRefView* mPartnerMailRefView;
+
 	// Hide copy-constructor and assignment:
 	BmMailRefFilterControl(const BmMailRefFilterControl&);
 	BmMailRefFilterControl operator=(const BmMailRefFilterControl&);

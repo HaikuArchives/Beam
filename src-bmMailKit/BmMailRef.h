@@ -14,6 +14,7 @@
 #include <vector>
 
 #include <Entry.h>
+#include <Node.h>
 
 #include "BmString.h"
 #include "BmDataModel.h"

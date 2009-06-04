@@ -256,6 +256,9 @@ BmMainWindow::BmMainWindow()
 	mMailRefViewFilterControl->TeamUpWith(mMailRefView);
 	mMailRefView->TeamUpWith(mMailRefViewFilterControl);
 
+	mMailRefFilterControl->TeamUpWith(mMailRefView);
+	mMailRefView->TeamUpWith(mMailRefFilterControl);
+
 	MailFolderSelectionChanged( 0);
 	MailRefSelectionChanged( 0);
 	MailViewChanged( false);

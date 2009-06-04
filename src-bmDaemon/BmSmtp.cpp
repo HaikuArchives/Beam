@@ -471,7 +471,7 @@ bool BmSmtp::StartEncryption(const char* encType)
 		BmString certID = mConnection->NewAcceptedCertID();
 		if (certID.Length() && mSmtpAccount->AcceptedCertID() != certID) {
 			mSmtpAccount->AcceptedCertID(certID);
-			TheSmtpAccountList->MarkAsStoreNeeded();
+			TheSmtpAccountList->MarkAsChanged();
 		}
 	}
 	return ok;

@@ -798,6 +798,7 @@ BmListModel::BmListModel( const BmString& name, uint32 logTerrain)
 	,	mInvalidCount( 0)
 	,	mStoredActionManager(this)
 	,	mLogTerrain( logTerrain)
+	,	mFilter(NULL)
 {
 	mStoredActionManager.MaxCacheSize(100);
 		// allow caching of 100 stored actions before writing through to disk
@@ -808,6 +809,7 @@ BmListModel::BmListModel( const BmString& name, uint32 logTerrain)
 		-	d'tor
 \*------------------------------------------------------------------------------*/
 BmListModel::~BmListModel() {
+	delete mFilter;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -819,6 +821,10 @@ void BmListModel::Cleanup() {
 	if (!lock.IsLocked())
 		BM_THROW_RUNTIME( ModelNameNC() << ":Cleanup(): Unable to get lock");
 	mStoredActionManager.Flush();
+	if (mFilter) {
+		delete mFilter;
+		mFilter = NULL;
+	}
 	mModelItemMap.clear();
 	mNeedsStore = false;
 	mInitCheck = B_NO_INIT;
@@ -862,12 +868,15 @@ bool BmListModel::AddItemToList( BmListModelItem* item,
 				return true;
 			}
 		} else {
+			if (mFilter && item->IsValid() && !mFilter->Matches(item))
+				return false;
+				
 			BmModelItemMap::iterator iter = mModelItemMap.find( item->Key());
 			if (iter == mModelItemMap.end()) {
 				mModelItemMap[item->Key()] = item;
 				item->Parent( NULL);
 				item->mListModel = this;
-				if (!item->mIsValid)
+				if (!item->IsValid())
 					IncInvalidCount();
 				mNeedsStore = true;
 				TellModelItemAdded( item);
@@ -1124,6 +1133,15 @@ BmRef<BmListModelItem> BmListModel::FindItemByKey( const BmString& key) {
 		}
 	}
 	return found;
+}
+
+/*------------------------------------------------------------------------------*\
+	SetFilter( item, b)
+		-	
+\*------------------------------------------------------------------------------*/
+void BmListModel::SetFilter(BmListModelItemFilter* filter) {
+	delete mFilter;
+	mFilter = filter;
 }
 
 /*------------------------------------------------------------------------------*\

@@ -56,9 +56,7 @@ public:
 	// getters:
 	inline bool NeedsCacheUpdate() const
 													{ return mNeedsCacheUpdate; }
-	
-	// setters:
-	inline void MarkAsChanged() 			{ mNeedsStore = true; }
+
 
 protected:
 

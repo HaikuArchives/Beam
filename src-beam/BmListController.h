@@ -152,7 +152,7 @@ class BmListViewController : public ColumnListView, public BmJobController
 	typedef ColumnListView inherited;
 	typedef BmJobController inheritedController;
 
-	//	message component definitions:
+	//	archive component definitions:
 	static const char* const MSG_COLUMN_NO;
 	static const char* const MSG_COLUMN_POS;
 
@@ -170,6 +170,7 @@ public:
 	virtual void ReadStateInfo();
 	bool ApplyViewItemFilter(BmViewItemFilter* filter,
 									 BmViewItemManager::ContinueCallback& callback);
+	bool ApplyModelItemFilter(BmListModelItemFilter* filter);
 
 	// overrides of controller base:
 	void AttachModel( BmDataModel* model=NULL);

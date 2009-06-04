@@ -36,7 +36,7 @@ const char* const BmPrefs::LOG_LVL_3 = "Log everything";
 const BmString BmPrefs::nListSeparator = ",";
 
 const BmString BmPrefs::nDefaultIconset = "/Icons/iconset 22 nuvola grey-red";
-const int16 BmPrefs::nPrefsVersion = 15;
+const int16 BmPrefs::nPrefsVersion = 16;
 
 /*------------------------------------------------------------------------------*\
 	CreateInstance()
@@ -316,6 +316,12 @@ BmPrefs::BmPrefs( BMessage* archive)
 		mPrefsMsg.AddString( "ListviewFont", "");
 		mPrefsMsg.AddInt32( "ListviewFontSize", 0);
 	}
+	if (version < 16) {
+		// changes introduced with version 16:
+		//
+		// add listview-font and -fontsize
+		mPrefsMsg.AddString( "TimeSpanOptions", "365,90,30,14,7");
+	}
 	mSavedPrefsMsg = mPrefsMsg;
 	
 	SetLoglevels();
@@ -514,6 +520,7 @@ void BmPrefs::InitDefaults(BMessage& defaultsMsg) {
 	defaultsMsg.AddBool( "StrictCharsetHandling", false);
 	defaultsMsg.AddBool( "StripedListView", true);
 	defaultsMsg.AddString( "TimeModeInHeaderView", "Local");
+	defaultsMsg.AddString( "TimeSpanOptions", "365,90,30,14,7");
 	defaultsMsg.AddString( "UndoMode", "Words");
 	defaultsMsg.AddBool( "UseDeskbar", true);
 	defaultsMsg.AddBool( "UseDocumentResizer", true);

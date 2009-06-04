@@ -53,7 +53,6 @@ public:
 
 	//	message component definitions for status-msgs:
 	static const char* const MSG_FILTER_KIND;
-	static const char* const MSG_FILTER_CONTENT;
 	
 	static filter_result MessageFilterHook(BMessage* msg, BHandler** handler,
 														BMessageFilter* messageFilter);
