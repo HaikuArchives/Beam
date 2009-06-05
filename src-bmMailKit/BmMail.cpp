@@ -1122,7 +1122,7 @@ void BmMail::DetermineRecvAddrAndIdentity( BmString& receivingAddr,
 	BmRef<BmIdentity> identRef = dynamic_cast< BmIdentity*>(
 		TheIdentityList->FindItemByKey( IdentityName()).Get()
 	);
-	if (identRef.Get()) {
+	if (identRef) {
 		// mail has an identity assigned, we use just that
 		identities.push_back(identRef);
 	} else {
@@ -1133,11 +1133,18 @@ void BmMail::DetermineRecvAddrAndIdentity( BmString& receivingAddr,
 			identities);
 	}
 
-	// now find the receiving address by iterating over all potential identites
+	// now find the receiving address by iterating over all likely identites
 	receivingAddr 
 		= Header()->DetermineReceivingAddrFor(identities, &identRefOut);
 
 	if (!receivingAddr.Length()) {
+		// if the mail has an identity set, we pick that one
+		if (identRef) {
+			identRefOut = identRef;
+			receivingAddr = identRef->GetFromAddress();
+			return;
+		}
+		
 		// the receiving address could not be determined, so we simply try again
 		// with all identities to find one that (may) have received this mail:
 		BmAutolockCheckGlobal lock( TheIdentityList->ModelLocker());
@@ -1154,6 +1161,7 @@ void BmMail::DetermineRecvAddrAndIdentity( BmString& receivingAddr,
 		}
 		receivingAddr
 			= Header()->DetermineReceivingAddrFor(identities, &identRefOut);
+		
 	}
 }
 
