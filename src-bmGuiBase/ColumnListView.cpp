@@ -176,9 +176,7 @@ void ColumnListView::UpdateDataRect(bool scrolling_allowed)
 	float DataHeight = 0.0;
 	int32 NumberOfItems = CountItems();
 	for(int32 Counter2 = 0; Counter2 < NumberOfItems; Counter2++)
-		DataHeight += ItemAt(Counter2)->Height()+1.0;
-	if(NumberOfItems > 0)
-		DataHeight -= 1.0;
+		DataHeight += ItemAt(Counter2)->Height();
 
 	//Update the scroll bars
 	if (fScrollView)
