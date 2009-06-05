@@ -27,7 +27,6 @@
 #include "BmMailMover.h"
 #include "BmMailNavigator.h"
 #include "BmMailRef.h"
-#include "BmMailRefFilter.h"
 #include "BmMailRefFilterControl.h"
 #include "BmMailRefList.h"
 #include "BmMailRefView.h"
@@ -403,8 +402,6 @@ bool BmMailRefView::ReselectionInfo
 
 const char* const BmMailRefView::MSG_MAILS_SELECTED = "bm:msel";
 
-const char* const BmMailRefView::MSG_FILTER_ARCHIVE = "bm:fila";
-
 const char* const BmMailRefView::MENU_MARK_AS =			"Set Status To";
 const char* const BmMailRefView::MENU_FILTER = 			"Apply Specific Filter";
 const char* const BmMailRefView::MENU_MOVE =				"Move To";
@@ -617,49 +614,6 @@ void BmMailRefView::AttachedToWindow()
 void BmMailRefView::ReadStateInfo() {
 	inherited::ReadStateInfo();
 	mLockLabelsButton->SetValue(ColumnLabelView()->LayoutLocked() ? 1 : 0);
-
-	BmListModel* listModel = dynamic_cast<BmListModel*>(DataModel().Get());
-	if (listModel && listModel->Filter() && mPartnerFilterControl) {
-		BmString label = listModel->Filter()->Label();
-		mPartnerFilterControl->MarkItem(label.String());
-	}
-}
-
-/*------------------------------------------------------------------------------*\
-	Archive()
-		-	
-\*------------------------------------------------------------------------------*/
-status_t BmMailRefView::Archive(BMessage* archive, bool deep) const {
-	status_t ret = inherited::Archive( archive, deep);
-	if (ret == B_OK) {
-		BmListModel* listModel = dynamic_cast<BmListModel*>(DataModel().Get());
-		if (listModel && listModel->Filter()) {
-			BMessage filterArchive;
-			if (listModel->Filter()->Archive(&filterArchive) == B_OK)
-				ret = archive->AddMessage(MSG_FILTER_ARCHIVE, &filterArchive);
-		}
-	}
-	return ret;
-}
-
-/*------------------------------------------------------------------------------*\
-	()
-		-	
-\*------------------------------------------------------------------------------*/
-status_t BmMailRefView::Unarchive(const BMessage* archive, bool deep)
-{
-	status_t result = inherited::Unarchive(archive, deep);
-	if (result == B_OK) {
-		BMessage filterArchive;
-		if (archive->FindMessage(MSG_FILTER_ARCHIVE, &filterArchive) == B_OK) {
-			BmMailRefFilter* filter = new BmMailRefFilter(&filterArchive);
-			BmListModel* listModel 
-				= dynamic_cast<BmListModel*>(DataModel().Get());
-			if (listModel)
-				listModel->SetFilter(filter);
-		}
-	}
-	return result;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -973,6 +927,8 @@ void BmMailRefView::ShowFolder( BmMailFolder* folder) {
 		mCurrFolder = folder;
 		if (refList)
 			StartJob( refList.Get());
+		else if (mPartnerFilterControl)
+			mPartnerFilterControl->ClearMark();
 	}
 	catch( BM_error &err) {
 		// a problem occurred, we tell the user:
@@ -992,6 +948,13 @@ void BmMailRefView::JobIsDone( bool completed) {
 	if (completed && mCurrFolder) {
 		BmRef<BmMailRefList> refList( mCurrFolder->MailRefList().Get());
 		if (refList) {
+			if (mPartnerFilterControl) {
+				BmString label 
+					= refList->Filter()
+						? refList->Filter()->Label()
+						: BmMailRefFilterControl::TIME_SPAN_NONE;
+				mPartnerFilterControl->MarkItem(label.String());
+			}
 			BmRef<BmListModelItem> refItem 
 				= refList->FindItemByKey( mCurrFolder->SelectedRefKey());
 			BmListViewItem* viewItem = FindViewItemFor( refItem.Get());

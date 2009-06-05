@@ -27,6 +27,8 @@ class IMPEXPBMMAILKIT BmMailRefList : public BmListModel {
 
 	static const int16 nArchiveVersion;
 
+	static const char* const MSG_FILTER_ARCHIVE;
+
 public:
 
 	// c'tors and d'tor

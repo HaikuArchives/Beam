@@ -1209,6 +1209,7 @@ bool BmListViewController::ApplyModelItemFilter(BmListModelItemFilter* filter)
 		model->MarkCacheAsDirty();
 			// we want to bypass the cache, as it may no longer contain all mails
 		model->SetFilter(filter);
+		MakeEmpty();
 		StartJob();
 		UnlockLooper();
 		result = true;

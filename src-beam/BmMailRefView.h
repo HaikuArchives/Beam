@@ -113,8 +113,6 @@ class BmMailRefView : public BmListViewController
 public:
 	static const char* const MSG_MAILS_SELECTED;
 
-	static const char* const MSG_FILTER_ARCHIVE;
-
 	static const char* const MENU_MARK_AS;
 	static const char* const MENU_FILTER;
 	static const char* const MENU_MOVE;
@@ -149,8 +147,6 @@ public:
 	void WindowActivated(bool active);
 	void AttachedToWindow(void);
 	void ReadStateInfo();
-	status_t Archive(BMessage* archive, bool deep=true) const;
-	status_t Unarchive(const BMessage* archive, bool deep=true);
 
 	// overrides of controller base:
 	BmString StateInfoBasename();

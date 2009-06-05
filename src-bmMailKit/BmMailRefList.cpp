@@ -20,6 +20,7 @@ using namespace regexx;
 #include "BmLogHandler.h"
 #include "BmMailFolder.h"
 #include "BmMailRef.h"
+#include "BmMailRefFilter.h"
 #include "BmMailRefList.h"
 #include "BmPrefs.h"
 #include "BmRosterBase.h"
@@ -29,6 +30,8 @@ using namespace regexx;
 // #pragma mark -	BmMailRefList
 //******************************************************************************
 const int16 BmMailRefList::nArchiveVersion = 3;
+
+const char* const BmMailRefList::MSG_FILTER_ARCHIVE = "bm:fila";
 
 /*------------------------------------------------------------------------------*\
 	BmMailRefList()
@@ -134,9 +137,17 @@ bool BmMailRefList::Store() {
 		)) != B_OK)
 			BM_THROW_RUNTIME( BmString("Could not create settings-file\n\t<") 
 										<< filename << ">\n\n Result: " << strerror(ret));
-		ret = archive.AddInt16( MSG_VERSION, nArchiveVersion)
-				| archive.AddInt32( BmListModelItem::MSG_NUMCHILDREN, size())
-				| archive.Flatten( &memIO);
+		ret = archive.AddInt16( MSG_VERSION, nArchiveVersion);
+		if (ret == B_OK && mFilter) {
+			BMessage filterArchive;
+			ret = mFilter->Archive(&filterArchive);
+			if (ret == B_OK)
+				ret = archive.AddMessage(MSG_FILTER_ARCHIVE, &filterArchive);
+		}
+		if (ret == B_OK) {
+			ret = archive.AddInt32( BmListModelItem::MSG_NUMCHILDREN, size())
+					| archive.Flatten( &memIO);
+		}
 		if (ret == B_OK) {
 			BM_LOG( BM_LogModelController, 
 					  BmString("ListModel <") << ModelName() 
@@ -448,6 +459,13 @@ void BmMailRefList::InitializeItems() {
 void BmMailRefList::InstantiateItemsFromStream( BDataIO* dataIO, BMessage* headerMsg) {
 	if (!headerMsg)
 		return;
+
+	BMessage filterArchive;
+	if (headerMsg->FindMessage(MSG_FILTER_ARCHIVE, &filterArchive) == B_OK) {
+		BmMailRefFilter* filter = new BmMailRefFilter(&filterArchive);
+		SetFilter(filter);
+	}
+
 	int32 numChildren 
 		= FindMsgInt32( headerMsg, BmListModelItem::MSG_NUMCHILDREN);
 	BmRef<BmMailFolder> folder( mFolder.Get());	

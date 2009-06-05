@@ -31,6 +31,7 @@ SharedLibrary bmMailKit.so :
 	BmMailMonitor.cpp
 	BmMailQuery.cpp
 	BmMailRef.cpp
+	BmMailRefFilter.cpp
 	BmMailRefList.cpp
 	BmPopAccount.cpp
 	BmPrefs.cpp
