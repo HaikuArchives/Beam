@@ -18,8 +18,6 @@
 #include "BmMenuControl.h"
 #include "BmTextControl.h"
 
-const char* const BmMailRefViewFilterControl::MSG_FILTER_KIND = "bm:filknd";
-
 /*------------------------------------------------------------------------------*\
 	( )
 		-	
@@ -88,7 +86,7 @@ void BmMailRefViewFilterControl::MessageReceived(BMessage* msg) {
 			case BM_MAILREF_VIEW_FILTER_CHANGED: {
 				delete mMsgRunner;
 				mMsgRunner = NULL;
-				BmString kind = msg->FindString(MSG_FILTER_KIND);
+				BmString kind = mMenuControl->MenuItem()->Label();
 				BmString content = mTextControl->Text();
 				if (content != mLastContent || kind != mLastKind) {
 					BmMailRefItemFilter* filter

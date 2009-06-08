@@ -51,9 +51,6 @@ public:
 	void KeyDown(const char *bytes, int32 numBytes);
 	void MakeFocus(bool focus);
 
-	//	message component definitions for status-msgs:
-	static const char* const MSG_FILTER_KIND;
-	
 	static filter_result MessageFilterHook(BMessage* msg, BHandler** handler,
 														BMessageFilter* messageFilter);
 	

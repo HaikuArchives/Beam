@@ -557,8 +557,6 @@ void BmGuiRoster::RebuildMailRefViewFilterMenu( BmMenuControllerBase* menu)
 	};
 	for( int i=0; choices[i]; ++i) {
 		BMessage* msg = new BMessage(*(menu->MsgTemplate()));
-		msg->AddString(BmMailRefViewFilterControl::MSG_FILTER_KIND, 
-			choices[i]);
 		BMenuItem* item = new BMenuItem(choices[i], msg);
 // TODO: remove, once it is implemented
 if (i==1)
