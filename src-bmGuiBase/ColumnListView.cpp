@@ -175,8 +175,14 @@ void ColumnListView::UpdateDataRect(bool scrolling_allowed)
 	//Figure out the height
 	float DataHeight = 0.0;
 	int32 NumberOfItems = CountItems();
-	for(int32 Counter2 = 0; Counter2 < NumberOfItems; Counter2++)
+	for(int32 Counter2 = 0; Counter2 < NumberOfItems; Counter2++) {
 		DataHeight += ItemAt(Counter2)->Height();
+#ifndef __HAIKU__
+		// BeOS seems to compute the item height incorrectly, returning one pixel less than
+		// will be used to draw the item, we compensate:
+		++DataHeight;
+#endif
+	}
 
 	//Update the scroll bars
 	if (fScrollView)
