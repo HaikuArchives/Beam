@@ -17,10 +17,8 @@ Application MailConverter :
 # </pe-src>
 
 MakeLocate MailConverter : [ FDirName $(DISTRO_DIR) tools ] ;
-XRes MailConverter
-	: 
-		[ FDirName $(TOP) resources MailConverter.rsrc ] 
-	;
+ResComp MailConverter.rsrc : MailConverter.rdef ;
+XRes MailConverter : MailConverter.rsrc	;
 
 MimeSet MailConverter ;
 
@@ -33,10 +31,8 @@ Application SpamOMeter :
 # </pe-src>
 
 MakeLocate SpamOMeter : [ FDirName $(DISTRO_DIR) tools ] ;
-XRes SpamOMeter
-	: 
-		[ FDirName $(TOP) resources SpamOMeter.rsrc ] 
-	;
+ResComp SpamOMeter.rsrc : SpamOMeter.rdef ;
+XRes SpamOMeter : SpamOMeter.rsrc ;
 
 MimeSet SpamOMeter ;
 

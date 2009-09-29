@@ -55,9 +55,12 @@ Application TestBeam
 		layout tracker pcreposix cppunit $(STDC++LIB) translation be
 	;
 # </pe-src>
+
+ResComp BmTestAppResources.rsrc : BmTestAppResources.rdef ;
+
 XRes TestBeam 
 	: 
-		[ FDirName $(TOP) resources BmIcons.rsrc ]  
-		[ FDirName $(TOP) resources BmTestAppResources.rsrc ] 
+		BmIcons.rsrc
+		BmTestAppResources.rsrc
 	;
 MimeSet TestBeam ;

@@ -1,0 +1,18 @@
+
+resource app_signature "application/x-vnd.zooey-spamometer";
+
+resource file_types message;
+
+resource app_version {
+	major  = 1,
+	middle = 0,
+	minor  = 0,
+
+	variety = B_APPV_DEVELOPMENT,
+	internal = 0,
+
+	short_info = "devel",
+	long_info = "SpamOMeter"
+};
+
+resource app_flags B_SINGLE_LAUNCH;

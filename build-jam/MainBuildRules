@@ -153,6 +153,24 @@ actions XRes1
 	xres -o "$(1)" "$(2)" ;
 }
 
+rule ResComp
+{
+	# ResComp <resource file> : <rdef file> ;
+	#
+	# <resource file> and <rdef file> must be gristed.
+
+	SEARCH on $(2) += [ FDirName $(TOP) resources ] ;
+	MakeLocate $(1) : [ FDirName $(GENERATED_DIR) resources ] ;
+	Depends $(1) : $(2) ;
+	LocalClean clean : $(1) ;
+	ResComp1 $(1) : $(2) ;
+}
+
+actions ResComp1
+{
+	rc "$(2)" -o "$(1)"
+}
+
 actions MimeSet
 {
 	mimeset -f "$(1)" ;

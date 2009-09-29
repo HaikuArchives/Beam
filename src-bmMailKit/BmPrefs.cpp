@@ -35,8 +35,8 @@ const char* const BmPrefs::LOG_LVL_3 = "Log everything";
 
 const BmString BmPrefs::nListSeparator = ",";
 
-const BmString BmPrefs::nDefaultIconset = "/Icons/iconset 22 nuvola grey-red";
-const int16 BmPrefs::nPrefsVersion = 16;
+const BmString BmPrefs::nDefaultIconset = "/Icons/iconset 32 stippi";
+const int16 BmPrefs::nPrefsVersion = 17;
 
 /*------------------------------------------------------------------------------*\
 	CreateInstance()
@@ -321,6 +321,14 @@ BmPrefs::BmPrefs( BMessage* archive)
 		//
 		// add listview-font and -fontsize
 		mPrefsMsg.AddString( "TimeSpanOptions", "365,90,30,14,7");
+	}
+	if (version < 17) {
+		// changes introduced with version 17:
+		//
+		// set new iconset default
+		BmString defaultIconPath = BeamRoster->AppPath() + nDefaultIconset;
+		mPrefsMsg.RemoveName( "IconPath");
+		mPrefsMsg.AddString( "IconPath", defaultIconPath.String());
 	}
 	mSavedPrefsMsg = mPrefsMsg;
 	

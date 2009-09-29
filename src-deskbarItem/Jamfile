@@ -14,10 +14,13 @@ AddOn Beam_DeskbarItem
 	;
 # </pe-src>
 
+ResComp BmDeskbarIcons.rsrc : BmDeskbarIcons.rdef ;
+ResComp BmDeskbarResources.rsrc : BmDeskbarResources.rdef ;
+
 XRes Beam_DeskbarItem
 	: 
-		[ FDirName $(TOP) resources BmDeskbarIcons.rsrc ] 
-		[ FDirName $(TOP) resources BmDeskbarResources.rsrc ] 
+		BmDeskbarIcons.rsrc
+		BmDeskbarResources.rsrc 
 	;
 
 MimeSet Beam_DeskbarItem ;

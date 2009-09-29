@@ -70,10 +70,13 @@ Application Beam :
 	;
 # </pe-src>
 
+ResComp BmIcons.rsrc : BmIcons.rdef ;
+ResComp BmAppResources.rsrc	: BmAppResources.rdef ;
+
 XRes Beam 
 	: 
-		[ FDirName $(TOP) resources BmIcons.rsrc ]  
-		[ FDirName $(TOP) resources BmAppResources.rsrc ] 
+		BmIcons.rsrc 
+		BmAppResources.rsrc
 	;
 
 MimeSet Beam ;
