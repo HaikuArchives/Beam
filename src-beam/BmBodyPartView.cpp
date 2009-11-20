@@ -841,7 +841,7 @@ void BmBodyPartView::ItemInvoked( int32 index) {
 		BmString realMT = DetermineMimeType( &eref, true);
 		if (realMT.ICompare( bodyPart->MimeType())!=0) {
 			int32 choice = 0;
-			if (bodyPart->MimeType().ICompare( "message/rfc822") == 0
+			if (BeamRoster->IsSupportedEmailMimeType( bodyPart->MimeType())
 			&& realMT.ICompare( "text/",5) == 0) {
 				// skip complaining about emails being text/plain which comes
 				// up quite regularly due to the limited success of the corresp.

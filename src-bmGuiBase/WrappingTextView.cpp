@@ -425,7 +425,7 @@ void WrappingTextView::CalculateVerticalOffset() {
 		BView* child = ChildAt(i);
 		child->MoveTo( 0, offset);
 		BRect frame = child->Frame();
-		offset += 1+frame.Height();
+		offset += frame.Height();
 	}
 	m_vertical_offset = MAX( offset, 0);
 	ResetTextRect();

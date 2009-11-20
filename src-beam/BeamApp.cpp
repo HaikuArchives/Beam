@@ -1421,9 +1421,8 @@ uint32 BeamApplication::CurrWorkspace() {
 /*------------------------------------------------------------------------------*\
 	HandlesMimetype( mimetype)
 		-	determines whether or not Beam handles the given mimetype
-		-	returns true for text/x-email and message/rfc822, false otherwise
+		-	returns true for any mail-related types, false otherwise
 \*------------------------------------------------------------------------------*/
 bool BeamApplication::HandlesMimetype( const BmString mimetype) {
-	return mimetype.ICompare( "text/x-email")==0 
-			 || mimetype.ICompare( "message/rfc822")==0;
+	return BeamRoster->IsSupportedEmailMimeType( mimetype);
 }

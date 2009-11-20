@@ -39,6 +39,8 @@ public:
 
 	virtual const char* AppNameWithVersion() = 0;
 
+	virtual bool IsSupportedEmailMimeType( const BmString& mimetype);
+
 	virtual const char* AppPath() = 0;
 	virtual const char* SettingsPath() = 0;
 

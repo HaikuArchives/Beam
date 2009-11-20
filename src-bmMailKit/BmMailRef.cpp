@@ -19,6 +19,7 @@
 #include "BmMailRef.h"
 #include "BmMailRefList.h"
 #include "BmPrefs.h"
+#include "BmRoster.h"
 #include "BmStorageUtil.h"
 #include "BmUtil.h"
 
@@ -328,9 +329,7 @@ bool BmMailRef::ReadAttributes( const struct stat* statInfo,
 	}
 
 	BmReadStringAttr( &node, "BEOS:TYPE", filetype);
-	if (err == B_OK
-	&& (!filetype.ICompare("text/x-email") 
-		|| !filetype.ICompare("message/rfc822"))) {
+	if (err == B_OK && BeamRoster->IsSupportedEmailMimeType( filetype)) {
 		// file is indeed a mail, we fetch its attributes:
 		if (BmReadStringAttr( &node, BM_MAIL_ATTR_NAME, 	mName))
 			updFlags |= UPD_NAME;
