@@ -586,7 +586,7 @@ void BmMail::StoreAttributes( BNode& mailNode, const BmString& status,
 	mailNode.WriteAttr( BM_MAIL_ATTR_IDENTITY, B_STRING_TYPE, 0, 
 							  mIdentityName.String(), mIdentityName.Length()+1);
 	mailNode.WriteAttr( BM_MAIL_ATTR_IMAP_UID, B_STRING_TYPE, 0, 
-							  mImapUID.String(), mIdentityName.Length()+1);
+							  mImapUID.String(), mImapUID.Length()+1);
 	//
 	if (mOutbound) {
 		// write MAIL:flags in order to cooperate nicely with MDR:
