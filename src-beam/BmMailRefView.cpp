@@ -461,7 +461,7 @@ BmMailRefView::BmMailRefView( int32 width, int32 height)
 									  20.0));
 	AddColumn( new CLVColumn( "Subject", 300.0, flags | CLV_COLTYPE_USERTEXT, 
 									  20.0));
-	AddColumn( new CLVColumn( "Date-Sent", 100.0, 
+	AddColumn( new CLVColumn( "Date", 100.0, 
 									  flags | CLV_COLDATA_DATE | CLV_COLTYPE_USERTEXT, 
 									  20.0));
 	AddColumn( new CLVColumn( "Size", 60.0, 
@@ -476,7 +476,7 @@ BmMailRefView::BmMailRefView( int32 width, int32 height)
 									  20.0));
 	AddColumn( new CLVColumn( "Name", 150.0, flags | CLV_COLTYPE_USERTEXT, 
 									  20.0));
-	AddColumn( new CLVColumn( "Date-Received", 110.0, 
+	AddColumn( new CLVColumn( "Delivery-Date", 110.0, 
 									  flags | CLV_COLDATA_BIGTIME | CLV_COLTYPE_USERTEXT,
 									  20.0));
 	AddColumn( new CLVColumn( "Tracker-Name", 150.0, 
