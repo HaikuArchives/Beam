@@ -28,8 +28,8 @@ documentation and/or software.
  */
 
 
-#include <cstdio>
-#include <cstring>
+#include <stdio.h>
+#include <string.h>
 
 #define BM_BUILDING_BMBASE 1
 

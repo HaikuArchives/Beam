@@ -1323,7 +1323,8 @@ void BeamApplication::AboutRequested() {
 	Liblayout, by Marco Nelissen\n\
 \n\
 	OSBF from crm114,\n\
-	    by Bill Yerazunis (crm114) and Fidelis Assis (OSBF)\n\
+	    by Bill Yerazunis (crm114)\n\
+	    and Fidelis Assis (OSBF)\n\
 \n\
 	PCRE, by Philip Hazel\n\
 \n\
@@ -1331,7 +1332,8 @@ void BeamApplication::AboutRequested() {
 \n\
 	SantasGiftBag, by Brian Tietz\n\
 \n\
-	if available: openssl, by the OpenSSL Project\n\
+	if available:\n\
+	    openssl, by the OpenSSL Project\n\
 \n\n\n\n\n\n\nThanks to:\n\
 \n\
 Heike Herfart \n\
