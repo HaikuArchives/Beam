@@ -632,7 +632,8 @@ void BmPopper::StateCheck() {
 			msgNum = atoi(msgNumStr.String());
 			if (msgNum != i+1)
 				throw BM_network_error( 
-					BmString("answer to LIST has unexpeced msgNo in line ") << i+1
+					BmString("answer to LIST has unexpected msg-nr. ") << msgNum 
+						<< " in line " << i+1
 				);
 			BmString msgSizeStr = rx.match[0].atom[1];
 			msgSize = atoi(msgSizeStr.String());
