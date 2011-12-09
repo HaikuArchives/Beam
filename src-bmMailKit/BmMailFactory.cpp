@@ -1093,6 +1093,9 @@ BmRef<BmMail> BmCopyMailFactory::CreateCopy( BmRef<BmMail>& oldMail) {
 		if (basicFields.find(*iter) == basicFields.end())
 			newMail->Header()->RemoveField(*iter);
 	}
+	
+	// make sure that there's always the MIME-Version header
+	newMail->Header()->SetFieldVal(BM_FIELD_MIME, "1.0");
 
 	// re-set the identity to update the fields depending on it:
 	BmRef<BmListModelItem> identRef 
