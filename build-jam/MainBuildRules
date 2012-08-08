@@ -290,8 +290,14 @@ if $(OSPLAT) = X86 {
 }
 
 # Variable referring to the STL.
-if $(OSPLAT) = X86 {
-	STDC++LIB = stdc++.r4 ;
+if $(IS_GCC_4_PLATFORM) {
+	# gcc 4 Haiku
+	STDC++LIB = stdc++ ;
 } else {
-	STDC++LIB = mslcpp_4_0 ;
+	# BeOS or BeOS compatible Haiku
+	if $(OSPLAT) = X86 {
+		STDC++LIB = stdc++.r4 ;
+	} else {
+		STDC++LIB = mslcpp_4_0 ;
+	}
 }

@@ -4,6 +4,18 @@ BUILD_DIR			= [ FDirName $(TOP) build-jam ] ;
 GENERATED_DIR		= [ FDirName $(TOP) generated ] ;
 DISTRO_DIR			= [ FDirName $(TOP) generated distro ] ;
 
+# First find out which gcc version the platform uses.
+IS_GCC_4_PLATFORM = ;
+if $(OS) = HAIKU {
+	# Only Haiku might use gcc 4. We use the existence of a libstdc++.r4.so in
+	# /boot/develop/abi/current/lib to judge whether this is a BeOS compatible and thus
+	# gcc 2 platform.
+	local hasLibStdC++.R4 = [ Glob /boot/develop/abi/current/lib : libstdc++.r4.so ] ;
+	if ! $(hasLibStdC++.R4) {
+		IS_GCC_4_PLATFORM = 1 ;
+	}
+}
+
 include [ FDirName $(BUILD_DIR) HelperRules ] ;
 include [ FDirName $(BUILD_DIR) ConfigRules ] ;
 include [ FDirName $(BUILD_DIR) OverriddenJamRules ] ;

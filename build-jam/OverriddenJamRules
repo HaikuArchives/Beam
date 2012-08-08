@@ -41,10 +41,20 @@ actions piecemeal together existing Clean
 # Changes to rules for sake of discrimination between system and non-system
 # headers.
 
-if $(OSPLAT) = X86 {
-	HDRS_INCLUDES_SEPARATOR = -I- ;
+if $(IS_GCC_4_PLATFORM) {
+	HDRS_INCLUDES_SEPARATOR = ;
+	HDRS_LOCAL_INCLUDE_OPTION = -Iquote ;
+	HDRS_SYSTEM_INCLUDE_OPTION = -I ;
 } else {
-	HDRS_INCLUDES_SEPARATOR = -i- ;
+	if $(OSPLAT) = X86 {
+			HDRS_INCLUDES_SEPARATOR = -I- ;
+			HDRS_LOCAL_INCLUDE_OPTION = -I ;
+			HDRS_SYSTEM_INCLUDE_OPTION = -I ;
+	} else {
+		HDRS_INCLUDES_SEPARATOR = -i- ;
+		HDRS_LOCAL_INCLUDE_OPTION = -I ;
+		HDRS_SYSTEM_INCLUDE_OPTION = -I ;
+	}
 }
 
 rule Cc
@@ -65,9 +75,9 @@ rule Cc
 
 	CCFLAGS on $(<) += $(CCFLAGS) $(SUBDIRCCFLAGS) $(OPTIM) ;
 
-	CCHDRS on $(<) = [ on $(<) FIncludes $(HDRS) ]
-		$(HDRS_INCLUDES_SEPARATOR) [ on $(<) FSysIncludes $(SYSHDRS) ] ;
-	CCDEFS on $(<) = [ on $(<) FDefines $(DEFINES) ] ;
+	CCHDRS on $(<) = [ on $(<) FIncludes $(HDRS) : $(HDRS_LOCAL_INCLUDE_OPTION) ]
+		$(HDRS_INCLUDES_SEPARATOR) 
+		[ on $(<) FSysIncludes $(SYSHDRS) : $(HDRS_SYSTEM_INCLUDE_OPTION) ] ;
 }
 
 rule C++
@@ -81,8 +91,9 @@ rule C++
 
 	C++FLAGS on $(<) += $(C++FLAGS) $(SUBDIRC++FLAGS) $(OPTIM) ;
 
-	CCHDRS on $(<) = [ on $(<) FIncludes $(HDRS) ]
-		$(HDRS_INCLUDES_SEPARATOR) [ on $(<) FSysIncludes $(SYSHDRS) ] ;
+	CCHDRS on $(<) = [ on $(<) FIncludes $(HDRS) : $(HDRS_LOCAL_INCLUDE_OPTION) ]
+		$(HDRS_INCLUDES_SEPARATOR) 
+		[ on $(<) FSysIncludes $(SYSHDRS) : $(HDRS_SYSTEM_INCLUDE_OPTION) ] ;
 	CCDEFS on $(<) = [ on $(<) FDefines $(DEFINES) ] ;
 }
 
@@ -151,8 +162,9 @@ rule ObjectHdrs
 	local s ;
 	for s in [ FGristFiles $(<:S=$(SUFOBJ)) ] {
 		HDRS on $(s) += $(>) ;
-		CCHDRS on $(s) = [ on $(s) FIncludes $(HDRS) ]
-			$(HDRS_INCLUDES_SEPARATOR) [ on $(s) FSysIncludes $(SYSHDRS) ] ;
+		CCHDRS on $(s) = [ on $(s) FIncludes $(HDRS) : $(HDRS_LOCAL_INCLUDE_OPTION) ]
+			$(HDRS_INCLUDES_SEPARATOR) 
+			[ on $(s) FSysIncludes $(SYSHDRS) : $(HDRS_SYSTEM_INCLUDE_OPTION) ] ;
 	}
 }
 
