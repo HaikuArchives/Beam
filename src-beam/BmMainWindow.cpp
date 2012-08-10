@@ -205,7 +205,7 @@ BmMainWindow::BmMainWindow()
 							new HGroup(
 								mMailRefViewFilterControl 
 									= new BmMailRefViewFilterControl(),
-								new Space(minimax(0,0,1E5,1E5, 0.3)),
+								new Space(minimax(0,0,1E5,1E5, 0.3f)),
 								mMailRefFilterControl = new BmMailRefFilterControl(),
 								0
 							),

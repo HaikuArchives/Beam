@@ -343,12 +343,12 @@ BmListViewController::BmListViewController( BRect rect,
 	if (family.Length())
 		font.SetFamilyAndStyle( family.String(), NULL);
 	if (size > 0)
-		font.SetSize( size);
+		font.SetSize( float(size));
 	SetFont(&font);
 	float minHeight
 		= hierarchical
-			? ThePrefs->GetInt( "ListviewHierarchicalMinItemHeight", 16)
-			: ThePrefs->GetInt( "ListviewFlatMinItemHeight", 16);
+			? float(ThePrefs->GetInt( "ListviewHierarchicalMinItemHeight", 16))
+			: float(ThePrefs->GetInt( "ListviewFlatMinItemHeight", 16));
 	SetMinItemHeight( MAX( TheResources->FontLineHeight(&font), minHeight));
 }
 
@@ -479,7 +479,7 @@ void BmListViewController::HighlightItemAt( const BPoint& point) {
 	bool forceUpdate = false;
 	if (mDragBetweenItems) {
 		BRect firstItemRect = ItemFrame( 0);
-		BPoint highPt( point.x, point.y-firstItemRect.Height()/2.0);
+		BPoint highPt( point.x, point.y-firstItemRect.Height()/2.0f);
 		index = IndexOf( highPt);
 		if (index < 0) {
 			if (highPt.y < firstItemRect.top && point.y >= firstItemRect.top) {
@@ -556,9 +556,9 @@ BBitmap* BmListViewController::CreateDragImage(const vector<int>& cols,
 
 	BFont font;
 	GetFont( &font);
-	float lineHeight = MAX(TheResources->FontLineHeight( &font), 20.0);
+	float lineHeight = MAX(TheResources->FontLineHeight( &font), 20.0f);
 	float baselineOffset = TheResources->FontBaselineOffset( &font);
-	BRect dragRect( 0, 0, 2*h+width-1, MIN(selCount,max)*lineHeight-1+v);
+	BRect dragRect( 0, 0, 2*h+width-1, float(MIN(selCount,max))*lineHeight-1+v);
 	BView* dummyView = new BView( dragRect, NULL, B_FOLLOW_NONE, 0);
 	BBitmap* dragImage = new BBitmap( dragRect, B_RGBA32, true);
 	dragImage->AddChild( dummyView);
@@ -590,7 +590,7 @@ BBitmap* BmListViewController::CreateDragImage(const vector<int>& cols,
 			BmString indicator = BmString("(...and ") << selCount-max 
 				<< (selCount-max == 1 ? " more item)" : " more items)");
 			dummyView->DrawString( indicator.String(), 
-										  BPoint( h, v+i*lineHeight+baselineOffset));
+										  BPoint( h, v+float(i)*lineHeight+baselineOffset));
 			dummyView->ConstrainClippingRegion(NULL);
 		} else if (i<max) {
 			// add only the first couple of selections to drag-image:
@@ -602,16 +602,17 @@ BBitmap* BmListViewController::CreateDragImage(const vector<int>& cols,
 				if ((col->Type() & CLV_COLTYPE_MASK) == CLV_COLTYPE_BITMAP) {
 					const BmBitmapHandle* icon 
 						= item->GetColumnContentBitmap( cols[c]);
-					if (icon && icon->bitmap)
-						dummyView->DrawBitmapAsync( icon->bitmap, 
-															 BPoint(h+hOffs,v+i*lineHeight));
+					if (icon && icon->bitmap) {
+						dummyView->DrawBitmapAsync( 
+							icon->bitmap, BPoint(h+hOffs,v+float(i)*lineHeight));
+					}
 				} else {
 					const char* text = item->GetColumnContentText( cols[c]);
 					if (text)
 						dummyView->DrawString( 
 							text, 
 							BPoint( h+hOffs, 
-									  v+i*lineHeight+baselineOffset)
+									  v+float(i)*lineHeight+baselineOffset)
 						);
 				}
 				hOffs += col->Width();

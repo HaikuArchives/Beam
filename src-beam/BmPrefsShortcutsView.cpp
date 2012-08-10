@@ -281,7 +281,8 @@ void BmPrefsShortcutsView::ShowShortcut( int32 selection) {
 		-	
 \*------------------------------------------------------------------------------*/
 ColumnListView* BmPrefsShortcutsView::CreateListView( int32 width, int32 height) {
-	mListView = new ColumnListView( BRect( 0, 0, width-1, height-1), NULL, 
+	mListView = new ColumnListView( BRect( 0, 0, float(width-1), float(height-1)), 
+											  NULL, 
 											  B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE,
 											  B_SINGLE_SELECTION_LIST);
 
@@ -291,7 +292,7 @@ ColumnListView* BmPrefsShortcutsView::CreateListView( int32 width, int32 height)
 
 	mListView->SetMinItemHeight( 
 		MAX( TheResources->FontLineHeight(),
-			  ThePrefs->GetInt( "ListviewFlatMinItemHeight", 16))
+			  float(ThePrefs->GetInt( "ListviewFlatMinItemHeight", 16)))
 	);
 
 	int32 flags = 0;

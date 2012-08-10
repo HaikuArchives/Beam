@@ -207,7 +207,7 @@ BmToolbarButton::BmToolbarButton( const char *label, float width, float height,
 											 BMessage *message, BHandler *handler, 
 											 const char* tipText, bool needsLatch,
 											 const char* resourceName)
-	:	inherited( minimax( width, height, -1 ,-1), 
+	:	inherited( minimax( int(width), int(height), -1 ,-1), 
 					  &BmDummyPicture, &BmDummyPicture, message, handler)
 	,	mHighlighted( false)
 	,	mNeedsLatch( needsLatch)
@@ -279,7 +279,7 @@ void BmToolbarButton::Draw( BRect updateRect) {
 		-	
 \*------------------------------------------------------------------------------*/
 void BmToolbarButton::CreateAllPictures( float width, float height) {
-	ct_mpm = minimax( width, height, -1, -1);
+	ct_mpm = minimax( int(width), int(height), -1, -1);
 	BPicture* off_pic = 
 		CreatePicture( STATE_OFF, width, height);
 	BPicture* on_pic = 
@@ -404,7 +404,7 @@ BPicture* BmToolbarButton::CreatePicture( int32 mode, float width,
 							ui_color( B_UI_SHINE_COLOR));
 		view->EndLineArray();
 	}
-#endif __HAIKU__
+#endif
 
 	// Draw Icon
 	if (showIcons && image) {

@@ -181,7 +181,7 @@ void BmMailViewWin::CreateGUI() {
 				new VGroup(
 					new HGroup(
 						mMailRefViewFilterControl = new BmMailRefViewFilterControl(),
-						new Space(minimax(0,0,1E5,1E5, 0.3)),
+						new Space(minimax(0,0,1E5,1E5, 0.3f)),
 						0
 					),
 					new BetterScrollView( 

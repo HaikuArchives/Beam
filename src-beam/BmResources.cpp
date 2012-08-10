@@ -291,7 +291,7 @@ void BmResources::AddFontSubmenuTo( BMenu* menu, BHandler* target,
 		= { "8","9","10","11","12","13","14","15","16","18","20","24",NULL };
 	for( int i=0; sizes[i]!=NULL; ++i) {
 		BMessage* msg = new BMessage( BM_FONTSIZE_SELECTED);
-		int16 size = atoi(sizes[i]);
+		int16 size = int16(atoi(sizes[i]));
 		msg->AddInt16( BM_MSG_FONT_SIZE, size);
 		BMenuItem* item = new BMenuItem( sizes[i], msg);
 		if (target)
@@ -389,8 +389,8 @@ BPicture* BmResources::CreatePictureFor( BBitmap* image,
 		float imageWidth = imageRect.Width();
 		float imageHeight = imageRect.Height();
 		view->SetDrawingMode(B_OP_OVER);
-		view->DrawBitmap( image, BPoint( (width-imageWidth)/2.0 + offset, 
-													(height-imageHeight)/2.0 + offset));
+		view->DrawBitmap( image, BPoint( (width-imageWidth)/2.0f + offset, 
+													(height-imageHeight)/2.0f + offset));
 		view->SetDrawingMode(B_OP_COPY);
 	}
 	view->EndPicture();

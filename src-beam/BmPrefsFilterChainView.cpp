@@ -90,7 +90,7 @@ void BmFilterChainItem::UpdateView( BmUpdFlags flags, bool redraw,
 		-	
 \*------------------------------------------------------------------------------*/
 BmFilterChainView::BmFilterChainView( int32 width, int32 height)
-	:	inherited( BRect(0,0,width-1,height-1), "Beam_FilterView", 
+	:	inherited( BRect(0,0,float(width-1),float(height-1)), "Beam_FilterView", 
 					  B_SINGLE_SELECTION_LIST, 
 					  false, true)
 {
@@ -228,7 +228,8 @@ const char* BmChainedFilterView::MSG_OLD_POS = "bm:oldPos";
 		-	
 \*------------------------------------------------------------------------------*/
 BmChainedFilterView::BmChainedFilterView( int32 width, int32 height)
-	:	inherited( BRect(0,0,width-1,height-1), "Beam_ChainedFilterView", 
+	:	inherited( BRect(0,0,float(width-1),float(height-1)), 
+					  "Beam_ChainedFilterView", 
 					  B_SINGLE_SELECTION_LIST, 
 					  false, true)
 {

@@ -107,7 +107,7 @@ void BmSendAccItem::UpdateView( BmUpdFlags flags, bool redraw,
 		-	
 \*------------------------------------------------------------------------------*/
 BmSendAccView::BmSendAccView( int32 width, int32 height)
-	:	inherited( BRect(0,0,width-1,height-1), "Beam_SendAccView", 
+	:	inherited( BRect(0,0,float(width-1),float(height-1)), "Beam_SendAccView", 
 					  B_SINGLE_SELECTION_LIST, 
 					  false, true)
 {
@@ -325,9 +325,9 @@ BmPrefsSendMailView::BmPrefsSendMailView()
 	);
 
 	mPortControl->SetDivider( 15);
-	mPortControl->ct_mpm.weight = 0.4;
+	mPortControl->ct_mpm.weight = 0.4f;
 	mPwdControl->SetDivider( 15);
-	mPwdControl->ct_mpm.weight = 0.4;
+	mPwdControl->ct_mpm.weight = 0.4f;
 	mSelectClientCertButton->ct_mpm = minimax(-1,-1,-1,-1,0);
 	mClearAcceptedCertButton->ct_mpm = minimax(-1,-1,-1,-1,0);
 }
@@ -652,7 +652,7 @@ void BmPrefsSendMailView::MessageReceived( BMessage* msg) {
 					else if ( source == mLoginControl)
 						mCurrAcc->Username( mLoginControl->Text());
 					else if ( source == mPortControl)
-						mCurrAcc->PortNr( atoi(mPortControl->Text()));
+						mCurrAcc->PortNr( uint16(atoi(mPortControl->Text())));
 					else if ( source == mPwdControl)
 						mCurrAcc->Password( mPwdControl->Text());
 					else if ( source == mServerControl)

@@ -383,7 +383,7 @@ BmString::operator[](int32 index) const
 inline char 
 BmString::ByteAt(int32 index) const
 {
-	if (!_privateData || index < 0 || index > Length())
+	if (!_privateData || index < 0 || uint32(index) > uint32(Length()))
 		return 0;
 	return _privateData[index];
 }

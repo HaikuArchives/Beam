@@ -32,8 +32,8 @@ int32 BmLogWindow::nWinCount = 0;
 BmLogWindow* BmLogWindow::CreateAndStartInstanceFor( const char* logfileName,
 																	  bool showUponNews,
 																	  bool clingToMainWin) {
-	float x = 50+(nWinCount*20)%300;
-	float y = 50+(nWinCount*20)%300;
+	float x = float(50+(nWinCount*20)%300);
+	float y = float(50+(nWinCount*20)%300);
 	BRect frame( x, y, x+599, y + (clingToMainWin ? 99 : 199));
 	BmString title("Beam-Log: ");
 	title << logfileName;

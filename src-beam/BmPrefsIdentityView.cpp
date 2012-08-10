@@ -106,7 +106,7 @@ void BmRecvIdentItem::UpdateView( BmUpdFlags flags, bool redraw,
 		-	
 \*------------------------------------------------------------------------------*/
 BmRecvIdentView::BmRecvIdentView( int32 width, int32 height)
-	:	inherited( BRect(0,0,width-1,height-1), "Beam_IdentView", 
+	:	inherited( BRect(0,0,float(width-1),float(height-1)), "Beam_IdentView", 
 					  B_SINGLE_SELECTION_LIST, 
 					  false, true)
 {

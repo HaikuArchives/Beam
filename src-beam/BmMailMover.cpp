@@ -22,7 +22,7 @@
 #undef BM_LOGNAME
 #define BM_LOGNAME Name()
 
-static const float GRAIN = 1.0;
+static const float GRAIN = 1.0f;
 
 const char* const BmMailMover::MSG_MOVER = 		"bm:mover";
 const char* const BmMailMover::MSG_DELTA = 		"bm:delta";
@@ -60,7 +60,7 @@ bool BmMailMover::StartJob() {
 
 	if (!mRefs)
 		return false;
-	const float delta =  100.0 / (mRefCount / GRAIN);
+	const float delta =  100.0f / (float(mRefCount) / GRAIN);
 	status_t err;
 
 	BDirectory destDir( mDestFolder->EntryRefPtr());

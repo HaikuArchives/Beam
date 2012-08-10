@@ -99,9 +99,8 @@ void BmSignatureItem::UpdateView( BmUpdFlags flags, bool redraw,
 		-	
 \*------------------------------------------------------------------------------*/
 BmSignatureView::BmSignatureView( int32 width, int32 height)
-	:	inherited( BRect(0,0,width-1,height-1), "Beam_SignatureView", 
-					  B_SINGLE_SELECTION_LIST, 
-					  false, true)
+	:	inherited( BRect(0,0,float(width-1),float(height-1)), 
+					  "Beam_SignatureView", B_SINGLE_SELECTION_LIST, false, true)
 {
 	int32 flags = 0;
 	SetViewColor( B_TRANSPARENT_COLOR);
@@ -233,7 +232,7 @@ BmPrefsSignatureView::BmPrefsSignatureView()
 					0
 				)
 			),
-			new Space(minimax(0,0,1E5,1E5,0.1)),
+			new Space(minimax(0,0,1E5,1E5, 0.1f)),
 			0
 		);
 	mGroupView->AddChild( dynamic_cast<BView*>(view));

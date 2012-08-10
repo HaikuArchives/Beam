@@ -192,9 +192,11 @@ status_t BmPrefsWin::UnarchiveState( BMessage* archive) {
 		-	
 \*------------------------------------------------------------------------------*/
 ColumnListView* BmPrefsWin::CreatePrefsListView( int32 width, int32 height) {
-	mPrefsListView = new ColumnListView( BRect( 0, 0, width-1, height-1), NULL, 
-													 B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE,
-													 B_SINGLE_SELECTION_LIST, true, true);
+	mPrefsListView = new ColumnListView( 
+		BRect( 0, 0, float(width-1), float(height-1)), NULL, 
+		B_WILL_DRAW | B_FRAME_EVENTS | B_NAVIGABLE,
+		B_SINGLE_SELECTION_LIST, true, true
+	);
 
 	BFont font(*be_bold_font);
 	mPrefsListView->SetFont( &font);
@@ -203,7 +205,7 @@ ColumnListView* BmPrefsWin::CreatePrefsListView( int32 width, int32 height) {
 	mPrefsListView->ClickSetsFocus( true);
 	mPrefsListView->SetMinItemHeight( 
 		MAX( TheResources->FontLineHeight(), 
-			  ThePrefs->GetInt( "ListviewHierarchicalMinItemHeight", 16))
+			  float(ThePrefs->GetInt( "ListviewHierarchicalMinItemHeight", 16)))
 	);
 	mPrefsListView->AddColumn( 
 		new CLVColumn( NULL, 10.0, 

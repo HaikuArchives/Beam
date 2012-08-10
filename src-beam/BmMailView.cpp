@@ -61,7 +61,7 @@ void WordWrap( const BmString& in, BmString& out, int32 maxLineLen,
 	const char *s = in.String();
 	bool needBreak = false;
 	bool isUrl = false;
-	BmStringOBuf tempIO( in.Length()*1.1, 1.1);
+	BmStringOBuf tempIO( int32(float(in.Length())*1.1f), 1.1f);
 	for( int32 pos = 0;  !needBreak;  pos += nl.Length(), lastPos = pos) {
 		pos = in.FindFirst( nl, pos);
 		if (pos == B_ERROR) {
@@ -225,7 +225,7 @@ BmMailView::BmMailView( BRect frame, bool outbound)
 	,	mShowRaw( false)
 	,	mShowInlinesSeparately( true)
 	,	mFontSize( 12)
-	,	mHighlightFlags( 0xFFFF)
+	,	mHighlightFlags( int16(0xFFFF))
 	,	mReadRunner( NULL)
 	,	mShowingUrlCursor( false)
 	,	mHaveMail( false)

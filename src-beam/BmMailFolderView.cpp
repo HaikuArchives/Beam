@@ -213,7 +213,7 @@ BmMailFolderView* BmMailFolderView::CreateInstance( int32 width,
 		-	
 \*------------------------------------------------------------------------------*/
 BmMailFolderView::BmMailFolderView( int32 width, int32 height)
-	:	inherited( BRect(0,0,width-1,height-1), "Beam_FolderView", 
+	:	inherited( BRect(0,0,float(width-1),float(height-1)), "Beam_FolderView", 
 					  B_SINGLE_SELECTION_LIST, true, true)
 	,	mPartnerMailRefView( NULL)
 	,	mHaveSelectedFolder( false)

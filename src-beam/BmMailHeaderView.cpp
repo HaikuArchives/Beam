@@ -134,8 +134,8 @@ void BmMailHeaderView::BmMailHeaderFieldView::BmAddrMenuView
 	inherited::Draw(updateRect);
 	if (mAddrList && mAddrList->InitOK()) {
 		BRect b = Bounds();
-		float x = 2;
-		float y = b.Height() / 2.0;
+		float x = 2.0f;
+		float y = b.Height() / 2.0f;
 		FillTriangle( BPoint(x-2,y-1), BPoint(x+2,y-1), BPoint(x,y+1));
 	}
 }
@@ -326,7 +326,7 @@ void BmMailHeaderView::BmMailHeaderFieldView
 	font->SetFace( B_BOLD_FACE);
 	if (titleWidth < 0)
 		titleWidth = font->StringWidth( title.String());
-	float fhl = ceil(TheResources->FontHeight(font));
+	float fhl = float(ceil(TheResources->FontHeight(font)));
 	BRect titleRect(leftOffs, textInset, 2+leftOffs+titleWidth, textInset+fhl+1);
 
 	mTitleView = new BStringView( titleRect, NULL, title.String());
@@ -565,7 +565,7 @@ status_t BmMailHeaderView::Archive( BMessage* archive, bool) const {
 		mFont.GetFamilyAndStyle( &family, &style);
 		BmString fontName = BmString(family) + "," + style;
 		ret = archive->AddString( MSG_FONTNAME, fontName.String())
-					|| archive->AddInt16( MSG_FONTSIZE, mFont.Size());
+					|| archive->AddInt16( MSG_FONTSIZE, int16_t(mFont.Size()));
 	}
 	return ret;
 }

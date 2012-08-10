@@ -122,7 +122,7 @@ void BmRecvAccItem::UpdateView( BmUpdFlags flags, bool redraw,
 		-	
 \*------------------------------------------------------------------------------*/
 BmRecvAccView::BmRecvAccView( int32 width, int32 height)
-	:	inherited( BRect(0,0,width-1,height-1), "Beam_RecvAccView", 
+	:	inherited( BRect(0,0,float(width-1),float(height-1)), "Beam_RecvAccView", 
 					  B_SINGLE_SELECTION_LIST, 
 					  false, true)
 {
@@ -387,9 +387,9 @@ BmPrefsRecvMailView::BmPrefsRecvMailView()
 	);
 	
 	mPortControl->SetDivider( 15);
-	mPortControl->ct_mpm.weight = 0.4;
+	mPortControl->ct_mpm.weight = 0.4f;
 	mPwdControl->SetDivider( 15);
-	mPwdControl->ct_mpm.weight = 0.4;
+	mPwdControl->ct_mpm.weight = 0.4f;
 	mSelectClientCertButton->ct_mpm = minimax(-1,-1,-1,-1,0);
 	mClearAcceptedCertButton->ct_mpm = minimax(-1,-1,-1,-1,0);
 }
@@ -772,17 +772,17 @@ void BmPrefsRecvMailView::MessageReceived( BMessage* msg) {
 					} else if ( source == mLoginControl)
 						mCurrAcc->Username( mLoginControl->Text());
 					else if ( source == mPortControl)
-						mCurrAcc->PortNr( atoi(mPortControl->Text()));
+						mCurrAcc->PortNr( uint16(atoi(mPortControl->Text())));
 					else if ( source == mPwdControl)
 						mCurrAcc->Password( mPwdControl->Text());
 					else if ( source == mServerControl)
 						mCurrAcc->Server( mServerControl->Text());
 					else if ( source == mCheckIntervalControl)
 						mCurrAcc->CheckInterval( 
-							MAX( 0,atoi(mCheckIntervalControl->Text())));
+							int16(MAX( 0,atoi(mCheckIntervalControl->Text()))));
 					else if ( source == mDeleteMailDelayControl)
 						mCurrAcc->DeleteMailDelay( 
-							MAX( 0,atoi(mDeleteMailDelayControl->Text())));
+							uint16(MAX( 0,atoi(mDeleteMailDelayControl->Text()))));
 					else if ( source == mClientCertControl)
 						mCurrAcc->ClientCertificate( mClientCertControl->Text());
 					NoticeChange();

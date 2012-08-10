@@ -246,13 +246,13 @@ const int32 BmMailRefItem::GetNumValueForColumn( int32 column_index) const {
 		return ref->HasAttachments() ? 0 : 1;	
 							// show mails with attachment at top
 	} else if (column_index == COL_PRIORITY_I || column_index == COL_PRIORITY) {
-		int16 prio = atol( ref->Priority().String());
+		int16 prio = int16(atoi( ref->Priority().String()));
 		return (prio>=1 && prio<=5) ? prio : 3;
 							// illdefined priority means medium priority (=3)
 	} else if (column_index == COL_SIZE) {
-		return ref->Size();
+		return int32(ref->Size());
 	} else if (column_index == COL_RATIO_SPAM) {
-		return (int32)(ref->RatioSpam()*1000);	
+		return int32(ref->RatioSpam()*1000);	
 							// errr, since we are returning int32!
 	} else {
 		return 0;		// we don't know this number-column !?!
@@ -321,7 +321,9 @@ const char* BmMailRefItem::GetUserText(int32 colIdx, float colWidth) const {
 		text = ref->Name().String();
 		break;
 	case COL_WHEN_CREATED: {
-		text = mWhenCreatedStringAdjuster( colIdx, ref->WhenCreated()/(1000*1000));
+		text = mWhenCreatedStringAdjuster( 
+			colIdx, time_t(ref->WhenCreated()/(1000*1000))
+		);
 		break;
 	}
 	case COL_TRACKER_NAME:
@@ -430,7 +432,7 @@ BmMailRefView* BmMailRefView::CreateInstance( int32 width, int32 height) {
 		-	
 \*------------------------------------------------------------------------------*/
 BmMailRefView::BmMailRefView( int32 width, int32 height)
-	:	inherited( BRect(0,0,width-1,height-1), "Beam_MailRefView", 
+	:	inherited( BRect(0,0,float(width-1),float(height-1)), "Beam_MailRefView", 
 					  B_MULTIPLE_SELECTION_LIST, false, true)
 	,	mCurrFolder( NULL)
 	,	mPartnerMailView(NULL)
@@ -556,7 +558,7 @@ void BmMailRefView::ColumnWidthChanged(int32 colIdx, float NewWidth)
 {
 	inherited::ColumnWidthChanged(colIdx, NewWidth);
 	CLVColumn* column = (CLVColumn*)ColumnAt(colIdx);
-	if (!column || column->Flags()&(CLV_COLDATA_DATE|CLV_COLDATA_BIGTIME) == 0)
+	if (!column || (column->Flags()&(CLV_COLDATA_DATE|CLV_COLDATA_BIGTIME)) == 0)
 		return;
 	BRect colBounds = Bounds();
 	colBounds.left = column->ColumnBegin();
@@ -963,7 +965,7 @@ void BmMailRefView::JobIsDone( bool completed) {
 				Select( idx);
 				// show the selected item centered within the view (if possible):
 				BRect frame = ItemFrame( idx);
-				float newYPos = frame.top-(Bounds().Height()-frame.Height())/2.0;
+				float newYPos = frame.top-(Bounds().Height()-frame.Height())/2.0f;
 				ScrollTo( BPoint( 0, MAX( 0, newYPos)));
 			} else
 				SelectionChanged();
