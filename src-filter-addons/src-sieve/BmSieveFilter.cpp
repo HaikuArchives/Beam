@@ -47,12 +47,12 @@ extern "C" {
 #include "BmTextControl.h"
 
 
-extern "C" __declspec(dllexport)
+extern "C"
 BmFilterAddon* InstantiateFilter( const BmString& name, 
 											 const BMessage* archive,
 											 const BmString& kind);
 
-extern "C" __declspec(dllexport) 
+extern "C"
 BmFilterAddonPrefsView* InstantiateFilterPrefs( float minx, float miny,
 																float maxx, float maxy,
 																const BmString& kind);
@@ -73,11 +73,13 @@ BLocker* BmSieveFilter::nSieveLock = NULL;
 const char* FILTER_SIEVE 			= "Sieve";
 const char* FILTER_SIEVE_SCRIPT 	= "Sieve-Script";
 
-extern "C" __declspec(dllexport) const char* FilterKinds[] = {
-	FILTER_SIEVE,
-	FILTER_SIEVE_SCRIPT,
-	NULL
-};
+extern "C" {
+	const char* FilterKinds[] = {
+		FILTER_SIEVE,
+		FILTER_SIEVE_SCRIPT,
+		NULL
+	};
+}
 
 static const BmString BmNotifySetIdentity = "BeamSetIdentity";
 static const BmString BmNotifySetStatus = "BeamSetStatus";
@@ -1022,7 +1024,7 @@ void BmGraphicalSieveFilter::ForeignKeyChanged( const BmString& key,
 	InstantiateFilter()
 		-	
 \*------------------------------------------------------------------------------*/
-extern "C" __declspec(dllexport)
+extern "C"
 BmFilterAddon* InstantiateFilter( const BmString& name, 
 											 const BMessage* archive,
 											 const BmString& kind) {
@@ -1115,8 +1117,8 @@ BRect BmFilterScrollView::layout(BRect rect) {
 	bv->TargetedByScrollView( this);
 	MoveTo( rect.left, rect.top);
 	ResizeTo( rect.Width(), rect.Height());
-	int32 inset = 2;
-	float viewWidth = rect.Width()-B_V_SCROLL_BAR_WIDTH-inset*2;
+	float inset = 2.0f;
+	float viewWidth = rect.Width()-B_V_SCROLL_BAR_WIDTH-inset*2.0f;
 	float viewHeight = rect.Height()-inset*2;
 	float dataHeight = kid->mpm.mini.y;
 	if (dataHeight < viewHeight)
@@ -1265,7 +1267,7 @@ BmSieveFilterPrefs::BmSieveFilterPrefs( minimax minmax)
 						),
 						new Space( minimax( 20,0,20,1e5)),
 						new VGroup(
-							minimax(-1,-1,1e5,1e5,0.7),
+							minimax(-1,-1,1e5,1e5,0.7f),
 							new HGroup(
 								mSetSpamTofuControl = new BmCheckControl( 
 									"Learn as", 
@@ -1378,8 +1380,8 @@ BmSieveFilterPrefs::BmSieveFilterPrefs( minimax minmax)
 		mOperatorControl[i]->ct_mpm.maxi.y = 1E5;
 		mFieldNameControl[i]->ct_mpm = minimax(80,-1,80,1E5);
 		mValueControl[i]->SetTabAllowed( false);
-		mValueControl[i]->ct_mpm = minimax(140,-1,1E5,1E5,5.0);
-		mMarkControl[i]->ct_mpm.weight = 0.1;
+		mValueControl[i]->ct_mpm = minimax(140,-1,1E5,1E5,5.0f);
+		mMarkControl[i]->ct_mpm.weight = 0.1f;
 		mFilterGroup->AddChild( mFilterLine[i]);
 	}		
 	mFilterGroup->AddChild( mSpaceAtBottom = new Space());
@@ -1534,7 +1536,7 @@ void BmSieveFilterPrefs::Initialize() {
 		item->SetTarget( this);
 		mAnyAllControl->Menu()->AddItem( item);
 	}
-	for( int i=0; i<BM_MAX_MATCH_COUNT; ++i) {
+	for( int16 i=0; i<BM_MAX_MATCH_COUNT; ++i) {
 		for( const char** itemP = mailParts; *itemP; ++itemP) {
 			if (BM_MP_SEPARATOR == *itemP)
 				mMailPartControl[i]->Menu()->AddSeparatorItem();
@@ -1683,7 +1685,7 @@ void BmSieveFilterPrefs::AdjustSizeOfValueControl(
 	BmString txt( control->Text());
 	for( int32 pos = 0; (pos = txt.FindFirst( "\n", pos)) != B_ERROR; ++pos)
 		++lineCount;
-	float height = lineHeight*lineCount+13;
+	float height = float(lineHeight*lineCount+13);
 	control->ct_mpm.mini.y = control->ct_mpm.maxi.y
 	= control->mpm.mini.y = control->mpm.maxi.y = height;
 	control->SetTextMargin( 2);
@@ -1709,7 +1711,7 @@ void BmSieveFilterPrefs::MessageReceived( BMessage* msg) {
 		case BM_REMOVE_FILTER_LINE: {
 			if (mVisibleLines>1 && mCurrFilterAddon) {
 				RemoveMarkedFilterLines();
-				mCurrFilterAddon->mMatchCount = mVisibleLines;
+				mCurrFilterAddon->mMatchCount = int16(mVisibleLines);
 				AdjustScrollView();
 				UpdateState();
 				PropagateChange();
@@ -2221,14 +2223,16 @@ void BmSieveScriptFilterPrefs::ShowFilter( BmFilterAddon* addon) {
 	InstantiateFilterPrefs()
 		-	
 \*------------------------------------------------------------------------------*/
-extern "C" __declspec(dllexport) 
+extern "C"
 BmFilterAddonPrefsView* InstantiateFilterPrefs( float minx, float miny,
 																float maxx, float maxy,
 																const BmString& kind) {
 	if (!kind.ICompare( FILTER_SIEVE))
-		return new BmSieveFilterPrefs( minimax( minx, miny, maxx, maxy));
+		return new BmSieveFilterPrefs( minimax( int(minx), int(miny), int(maxx), 
+															 int(maxy)));
 	else if (!kind.ICompare( FILTER_SIEVE_SCRIPT))
-		return new BmSieveScriptFilterPrefs( minimax( minx, miny, maxx, maxy));
+		return new BmSieveScriptFilterPrefs( minimax( int(minx), int(miny), 
+																	 int(maxx), int(maxy)));
 	else
 		return NULL;
 }

@@ -1712,7 +1712,7 @@ BmString::LockBuffer(int32 maxLength)
 	// Note, that we also want to allocate a buffer, if both maxLength and len
 	// are 0. This allows the caller to actually write to the returned buffer
 	// in this case (only the terminating null at position 0, of course).
-	if (maxLength > len || len == 0 && maxLength == 0) {
+	if (maxLength > len || (len == 0 && maxLength == 0)) {
 		if (!_Alloc(maxLength, true))
 			return NULL;
 		if (!len && _privateData)
@@ -1752,7 +1752,7 @@ BmString::ToLower()
 {
 	int32 length = Length();
 	for (int32 count = 0; count < length; count++)
-			_privateData[count] = tolower(_privateData[count]);
+			_privateData[count] = char(tolower(_privateData[count]));
 	
 	return *this;
 }
@@ -1767,7 +1767,7 @@ BmString::ToUpper()
 {			
 	int32 length = Length();
 	for (int32 count = 0; count < length; count++)
-			_privateData[count] = toupper(_privateData[count]);
+			_privateData[count] = char(toupper(_privateData[count]));
 	
 	return *this;
 }
@@ -1783,11 +1783,11 @@ BmString::Capitalize()
 	if (_privateData == NULL)
 		return *this;
 		
-	_privateData[0] = toupper(_privateData[0]);
+	_privateData[0] = char(toupper(_privateData[0]));
 	int32 length = Length();
 		
 	for (int32 count = 1; count < length; count++)
-			_privateData[count] = tolower(_privateData[count]);
+			_privateData[count] = char(tolower(_privateData[count]));
 
 	return *this;
 }
@@ -1814,7 +1814,7 @@ BmString::CapitalizeEachWord()
 		for(; count < length; count++) {
 			if (isalpha(_privateData[count])) {
 				// ...found! Convert it to uppercase.
-				_privateData[count] = toupper(_privateData[count]);
+				_privateData[count] = char(toupper(_privateData[count]));
 				count++;
 				break;
 			}
@@ -1823,7 +1823,7 @@ BmString::CapitalizeEachWord()
 		// and meanwhile, turn to lowercase all the alphabetical ones
 		for(; count < length; count++) {
 			if (isalpha(_privateData[count]))
-				_privateData[count] = tolower(_privateData[count]);
+				_privateData[count] = char(tolower(_privateData[count]));
 			else
 				break;
 		}
@@ -2340,7 +2340,7 @@ strcasestr(const char *s, const char *find)
 	size_t len;
 
 	if ((c = *find++) != 0) {
-		c = tolower((unsigned char)c);
+		c = char(tolower((unsigned char)c));
 		len = strlen(find);
 		do {
 			do {
@@ -2391,7 +2391,7 @@ BmString& BmString::ConvertLinebreaksToLF( const BmString* srcData) {
 		return *this;
 	}
 	
-	BmStringOBuf tempIO( (int32)max_c( 128, src->Length()*1.2), 1.2);
+	BmStringOBuf tempIO( (int32)max_c( 128, src->Length()*1.2), 1.2f);
 	int32 lastSrcPos = 0;
 	int32 len;
 	for( int32 srcPos=0; (srcPos=src->_FindAfter( "\r\n", lastSrcPos, 2)) != B_ERROR; ) {
@@ -2422,7 +2422,7 @@ BmString& BmString::ConvertLinebreaksToCRLF( const BmString* srcData) {
 		return *this;
 	}
 	
-	BmStringOBuf tempIO( (int32)max_c( 128, src->Length()*1.2), 1.2);
+	BmStringOBuf tempIO( (int32)max_c( 128, src->Length()*1.2), 1.2f);
 	int32 lastSrcPos = 0;
 	int32 len;
 	for( int32 srcPos=0; (srcPos=src->_FindAfter( "\n", srcPos, 1)) != B_ERROR; srcPos++) {
@@ -2458,7 +2458,7 @@ BmString::ConvertTabsToSpaces( int32 numSpaces, const BmString* srcData) {
 	
 	BmString spaces;
 	spaces.SetTo( ' ', numSpaces);
-	BmStringOBuf tempIO( (int32)max_c( 128, src->Length()*1.2), 1.2);
+	BmStringOBuf tempIO( (int32)max_c( 128, src->Length()*1.2), 1.2f);
 	int32 lastSrcPos = 0;
 	int32 len;
 	for( int32 srcPos=0; (srcPos=src->_FindAfter( "\t", lastSrcPos, 1)) != B_ERROR; ) {
@@ -2484,18 +2484,18 @@ BmString::ConvertTabsToSpaces( int32 numSpaces, const BmString* srcData) {
 #define HEXDIGIT2CHAR(d) (((d)>='0'&&(d)<='9') ? (d)-'0' : ((d)>='A'&&(d)<='F') ? (d)-'A'+10 : ((d)>='a'&&(d)<='f') ? (d)-'a'+10 : 0)
 BmString&
 BmString::DeUrlify() {
-	BmStringOBuf tempIO( (int32)max_c( 128, Length()), 1.2);
+	BmStringOBuf tempIO( (int32)max_c( 128, Length()), 1.2f);
 	int32 lastSrcPos = 0;
 	int32 len;
 	char c1, c2;
 	for( int32 srcPos=0; (srcPos=_FindAfter( "%", srcPos, 1)) != B_ERROR; srcPos++) {
-		if ((c1=toupper(ByteAt(srcPos+1)))!=0
-		&& (c1>='A' && c1<='F' || c1>='0' && c1<='9')
-		&& (c2=toupper(ByteAt(srcPos+2)))!=0
-		&& (c2>='A' && c2<='F' || c2>='0' && c2<='9')) {
+		if ((c1=char(toupper(ByteAt(srcPos+1))))!=0
+		&& ((c1>='A' && c1<='F') || (c1>='0' && c1<='9'))
+		&& (c2=char(toupper(ByteAt(srcPos+2))))!=0
+		&& ((c2>='A' && c2<='F') || (c2>='0' && c2<='9'))) {
 			len = srcPos-lastSrcPos;
 			tempIO.Write( String()+lastSrcPos, len);
-			char native[2] = {HEXDIGIT2CHAR(c1)*16+HEXDIGIT2CHAR(c2), '\0'};
+			char native[2] = {char(HEXDIGIT2CHAR(c1)*16+HEXDIGIT2CHAR(c2)), '\0'};
 			tempIO.Write( native, 1);
 			lastSrcPos = srcPos+3;
 		} else if (c1 == '%') {

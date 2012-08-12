@@ -2,10 +2,13 @@ SubDir TOP src-bmRegexx ;
 
 # <pe-inc>
 SubDirHdrs $(TOP) src-bmBase ;
-# </pe-inc>
 
 SubDirSysHdrs $(COMMON_FOLDER)/include ;
-LINKFLAGS += -L$(COMMON_FOLDER)/lib ;
+# </pe-inc>
+
+if $(OS) != HAIKU {
+	LINKFLAGS += -L$(COMMON_FOLDER)/lib ;
+}
 
 DEFINES += BM_BUILDING_BMREGEXX ;
 

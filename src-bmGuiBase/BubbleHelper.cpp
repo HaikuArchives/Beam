@@ -332,7 +332,7 @@ void BubbleHelper::DisplayHelp(const char *text, BPoint where)
     int linewidth;
     for(int i=0;i<numlines;i++)
         if((linewidth=int(textview->LineWidth(i)))>width)
-            width=linewidth;
+            width=float(linewidth);
     textwin->ResizeTo(width+4,height);
     textview->SetTextRect(BRect(2,2,width+2,height+2));
     

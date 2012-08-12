@@ -9,6 +9,7 @@
 #include <set>
 
 #include <errno.h> 
+#include <sys/resource.h>
 
 #include <Directory.h> 
 #include <Messenger.h> 
@@ -33,12 +34,24 @@ BmString BM_REFKEY( const node_ref& nref) {
 }
 
 /*------------------------------------------------------------------------------*\
+	SetNodeMonitorLimit()
+		-	Sets the number of available node monitor entries to the given value.
+\*------------------------------------------------------------------------------*/
+static status_t setNodeMonitorLimit(int newLimit) {
+	struct rlimit rl;
+	rl.rlim_cur = newLimit;
+	rl.rlim_max = RLIM_SAVED_MAX;
+	if (setrlimit( RLIMIT_NOVMON, &rl) < 0)
+		return errno;
+		
+	return B_OK;
+}
+
+/*------------------------------------------------------------------------------*\
 	WatchNode()
 		-	tries to add a node-watcher, if limit is reached, we bump it
 		-	Ripped from OpenTracker
 \*------------------------------------------------------------------------------*/
-extern "C" int _kset_mon_limit_(int num);
-
 status_t WatchNode( const node_ref *node, uint32 flags, BHandler *handler) {
 	static int32 gNodeMonitorCount = 4096;
 	static const int32 kNodeMonitorBumpValue = 1024;
@@ -56,9 +69,9 @@ status_t WatchNode( const node_ref *node, uint32 flags, BHandler *handler) {
 		if (lastCount == gNodeMonitorCount) {
 			gNodeMonitorCount += kNodeMonitorBumpValue;
 			BM_LOG( BM_LogApp, 
-						BmString("Failed to add monitor, trying to bump limit to ")
+					  BmString("Failed to add monitor, trying to bump limit to ")
 							<< gNodeMonitorCount << " nodes.");
-			result = _kset_mon_limit_(gNodeMonitorCount);
+			result = setNodeMonitorLimit(gNodeMonitorCount);
 			if (result != B_OK) {
 				BM_LOGERR( BmString("Failed to allocate more node monitors, error: ")
 							<< strerror(result));
@@ -217,8 +230,8 @@ bool FetchFile( BmString fileName, BmString& contents) {
 		off_t size;
 		file.GetSize( &size);
 		if (size>0) {
-			char* buf = contents.LockBuffer( size);
-			ssize_t read = file.Read( buf, size);
+			char* buf = contents.LockBuffer( int32(size));
+			ssize_t read = file.Read( buf, size_t(size));
 			read = MAX( 0, read);
 			buf[read] = '\0';
 			contents.UnlockBuffer( read);
@@ -295,9 +308,9 @@ bool BmReadStringAttr( const BNode* node, const char* attrName,
 	BmString tmpStr;
 	if (node->GetAttrInfo( attrName, &attrInfo) == B_OK) {
 		long long size = std::max( (long long)0, attrInfo.size-1);
-		char* buf = tmpStr.LockBuffer( size);
-		node->ReadAttr( attrName, B_STRING_TYPE, 0, buf, size);
-		tmpStr.UnlockBuffer( size);
+		char* buf = tmpStr.LockBuffer( int32(size));
+		node->ReadAttr( attrName, B_STRING_TYPE, 0, buf, size_t(size));
+		tmpStr.UnlockBuffer( int32(size));
 	}
 	if (tmpStr != outStr) {
 		outStr.Adopt( tmpStr);
@@ -457,8 +470,8 @@ status_t SetupFolder( const BmString& name, BDirectory* dir) {
 	if (dir) {
 		res = dir->SetTo( name.String());
 		if (res != B_OK) {
-			if ((res = create_directory( name.String(), 0755) 
-			|| (res = dir->SetTo( name.String()))) != B_OK) {
+			if ((res = create_directory( name.String(), 0755)) != 0
+			|| (res = dir->SetTo( name.String())) != B_OK) {
 				BM_SHOWERR( BmString("Sorry, could not create folder ") << name
 									<< ".\n\t Error:" << strerror( res));
 			}

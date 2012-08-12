@@ -259,10 +259,10 @@ void UserResizeSplitView::Draw(BRect updateRect)
 	BRect b = Bounds();
 	const float dist = 3;
 	const float count 
-		= floor((m_posture == B_HORIZONTAL ? b.Width() : b.Height()) / dist);
+		= floorf((m_posture == B_HORIZONTAL ? b.Width() : b.Height()) / dist);
 	rgb_color lightColor = ui_color(B_UI_SHINE_COLOR);
 	rgb_color darkColor = BmWeakenColor( B_UI_SHADOW_COLOR, 3);
-	BeginLineArray(count*2);
+	BeginLineArray(int32(count*2));
 	float x = m_posture == B_HORIZONTAL ? 2 : m_divider_left_or_top + 1;
 	float y = m_posture == B_HORIZONTAL ? m_divider_left_or_top + 1 : 2;
 	for (int c=0; c<count; ++c) {
@@ -306,11 +306,6 @@ void UserResizeSplitView::MouseUp(BPoint where)
 	be_app->SetCursor( B_CURSOR_SYSTEM_DEFAULT);
 	TheBubbleHelper->EnableHelp( true);
 	m_dragging = false;
-	float mouse_position = 0;
-	if(m_posture == B_HORIZONTAL)
-		mouse_position = where.y;
-	else
-		mouse_position = where.x;
 	BView::MouseUp( where);
 }
 

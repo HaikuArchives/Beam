@@ -202,8 +202,8 @@ void CLVEasyItem::SetupDrawingContext(CLVDrawingContext* drawingContext)
 		}
 		font_height fontAttrs;
 		ctx->textFont.GetHeight( &fontAttrs);
-		float fontHeight = ceil(fontAttrs.ascent) + ceil(fontAttrs.descent);
-		ctx->vOffs = ceil(fontAttrs.ascent) + (Height()-fontHeight)/2.0;
+		float fontHeight = ceilf(fontAttrs.ascent) + ceilf(fontAttrs.descent);
+		ctx->vOffs = ceilf(fontAttrs.ascent) + (Height()-fontHeight)/2.0f;
 	}
 	CLVListItem::SetupDrawingContext(drawingContext);
 }
@@ -297,7 +297,7 @@ void CLVEasyItem::DrawColumn(BRect item_column_rect, int32 column_index,
 				item_column_rect.left = item_column_rect.right-horizontal_offset-(bounds.right-bounds.left);
 				item_column_rect.right -= horizontal_offset;
 			}
-			item_column_rect.top += ceil(((item_column_rect.bottom-item_column_rect.top)-(bounds.bottom-bounds.top))/2.0);
+			item_column_rect.top += ceilf(((item_column_rect.bottom-item_column_rect.top)-(bounds.bottom-bounds.top))/2.0f);
 			item_column_rect.bottom = item_column_rect.top + (bounds.bottom-bounds.top);
 			fOwner->SetDrawingMode( B_OP_ALPHA);
 			fOwner->SetBlendingMode( B_PIXEL_ALPHA, B_ALPHA_OVERLAY);

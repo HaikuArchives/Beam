@@ -13,6 +13,7 @@
 #include <Autolock.h>
 
 #include <deque>
+using std::deque;
 
 #include "BmFilterAddon.h"
 #include "BmFilterAddonPrefs.h"

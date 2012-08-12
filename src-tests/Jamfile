@@ -16,7 +16,9 @@ SubDirSysHdrs $(COMMON_FOLDER)/include ;
 SubDirSysHdrs $(COMMON_FOLDER)/include/liblayout ;
 # </pe-inc>
 
-LINKFLAGS += -L$(COMMON_FOLDER)/lib ;
+if $(OS) != HAIKU {
+	LINKFLAGS += -L$(COMMON_FOLDER)/lib ;
+}
 
 if $(OSPLAT) = PPC {
 	LINKFLAGS += -init _init_routine_ 

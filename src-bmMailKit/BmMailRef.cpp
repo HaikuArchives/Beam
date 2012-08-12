@@ -227,7 +227,7 @@ BmMailRef::BmMailRef( BMessage* archive, node_ref& nref)
 			mImapUID = FindMsgString( archive, MSG_IMAP_UID);
 		}
 
-		mSizeString = BytesToString( mSize,true);
+		mSizeString = BytesToString( int32(mSize), true);
 		if (mRatioSpam != UNKNOWN_RATIO)
 			mRatioSpamString << mRatioSpam;
 
@@ -395,7 +395,7 @@ bool BmMailRef::ReadAttributes( const struct stat* statInfo,
 
 		if (mSize != st.st_size) {
 			mSize = st.st_size;
-			mSizeString = BytesToString( mSize,true);
+			mSizeString = BytesToString( int32(mSize), true);
 			updFlags |= UPD_SIZE;
 		}
 

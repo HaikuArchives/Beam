@@ -66,7 +66,7 @@ void BmRulerView::Draw( BRect bounds) {
 								: 0;
 	float width 
 		= maxLineLen
-			? float(1+maxLineLen*mSingleCharWidth)
+			? 1.0f+float(maxLineLen)*mSingleCharWidth
 							// stop at hard-wrap border
 			: r.Width();						
 							// draw all the way
@@ -106,7 +106,7 @@ void BmRulerView::Draw( BRect bounds) {
 	}
 
 	// draw right-margin indicator:
-	float xPos = float(nXOffset+mIndicatorPos*mSingleCharWidth);
+	float xPos = nXOffset+float(mIndicatorPos)*mSingleCharWidth;
 	float yPos = r.bottom-10;
 	SetHighColor( 
 		BmWeakenColor( B_UI_CONTROL_HIGHLIGHT_COLOR, mIndicatorGrabbed ? 0 : 2)

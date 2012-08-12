@@ -10,7 +10,9 @@ SubDirSysHdrs $(COMMON_FOLDER)/include ;
 SubDirSysHdrs $(COMMON_FOLDER)/include/liblayout ;
 # </pe-inc>
 
-LINKFLAGS += -L$(COMMON_FOLDER)/lib ;
+if $(OS) != HAIKU {
+	LINKFLAGS += -L$(COMMON_FOLDER)/lib ;
+}
 
 # <pe-src>
 AddOn Spam
@@ -18,7 +20,7 @@ AddOn Spam
 		BmSpamFilter.cpp
 	: 	
 		bmGuiBase.so bmMailKit.so bmRegexx.so bmBase.so 
-		layout pcreposix be
+		layout pcre $(STDC++LIB) be
 	;
 # </pe-src>
 

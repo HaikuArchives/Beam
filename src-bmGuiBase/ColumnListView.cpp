@@ -87,9 +87,9 @@ fScrollView(NULL)
 	//Create the column titles bar view
 	font_height FontAttributes;
 	labelFont.GetHeight(&FontAttributes);
-	float LabelFontHeight = ceil(FontAttributes.ascent) + ceil(FontAttributes.descent);
+	float LabelFontHeight = ceilf(FontAttributes.ascent) + ceilf(FontAttributes.descent);
 	BRect labelFrame = Frame;
-	labelFrame.bottom = labelFrame.top + LabelFontHeight + 2.0;
+	labelFrame.bottom = labelFrame.top + LabelFontHeight + 2.0f;
 	fColumnLabelView = new CLVColumnLabelView( labelFrame, this, &labelFont);
 }
 
@@ -158,7 +158,7 @@ void ColumnListView::UpdateDataRect(bool scrolling_allowed)
 		if(Column->IsShown())
 		{
 			float ColumnWidth = Column->Width();
-			ColumnBegin = ColumnEnd + 1.0;
+			ColumnBegin = ColumnEnd + 1.0f;
 			ColumnEnd = ColumnBegin + ColumnWidth;
 			Column->fColumnBegin = ColumnBegin;
 			Column->fColumnEnd = ColumnEnd;
@@ -535,7 +535,7 @@ void ColumnListView::ColumnWidthChanged(int32 ColumnIndex, float NewWidth)
 			if(ThisColumn->fPushedByExpander || (ThisColumn->fFlags & CLV_EXPANDER))
 			{
 				float ColumnWidth = NewWidth;
-				float ExpanderShift = ThisItem->OutlineLevel() * EXPANDER_SHIFT;
+				float ExpanderShift = float(ThisItem->OutlineLevel()) * EXPANDER_SHIFT;
 				if(ThisColumn->fFlags & CLV_EXPANDER)
 				{
 					if(ColumnEnd + ExpanderShift > PushMax)
@@ -621,7 +621,7 @@ void ColumnListView::DisplayOrderChanged(const int32* order)
 					ThisColumnRect.right = ColumnRight;
 					if(ThisColumn->fFlags & CLV_EXPANDER)
 					{
-						ThisColumnRect.right += item->OutlineLevel() * EXPANDER_SHIFT;
+						ThisColumnRect.right += float(item->OutlineLevel()) * EXPANDER_SHIFT;
 						if(ThisColumnRect.right > PushMax)
 							ThisColumnRect.right = PushMax;
 					}
@@ -629,10 +629,10 @@ void ColumnListView::DisplayOrderChanged(const int32* order)
 					{
 						if(ThisColumn->fPushedByExpander)
 						{
-							float Shift = item->OutlineLevel() * EXPANDER_SHIFT;
+							float Shift = float(item->OutlineLevel()) * EXPANDER_SHIFT;
 							ThisColumnRect.left += Shift;
 							ThisColumnRect.right += Shift;
-							if(Shift > 0.0 && ThisColumnRect.right > PushMax)
+							if(Shift > 0.0f && ThisColumnRect.right > PushMax)
 								ThisColumnRect.right = PushMax;
 						}
 					}
@@ -1607,13 +1607,14 @@ void ColumnListView::FullListDoForEach(bool (*func)(CLVListItem*))
 {
 	AssertWindowLocked();
 	int32 NumberOfItems = fFullItemList.CountItems();
-	for(int32 Counter = 0; Counter < NumberOfItems; Counter++)
-		if (Hierarchical())
-			if(func((CLVListItem*)fFullItemList.ItemAt(Counter)) == true)
+	for (int32 Counter = 0; Counter < NumberOfItems; Counter++)
+		if (Hierarchical()) {
+			if (func((CLVListItem*)fFullItemList.ItemAt(Counter)) == true)
 				return;
-		else
-			if(func((CLVListItem*)ItemAt(Counter)) == true)
+		} else {
+			if (func((CLVListItem*)ItemAt(Counter)) == true)
 				return;
+		}
 }
 
 
@@ -1621,13 +1622,14 @@ void ColumnListView::FullListDoForEach(bool (*func)(CLVListItem*, void*), void* 
 {
 	AssertWindowLocked();
 	int32 NumberOfItems = fFullItemList.CountItems();
-	for(int32 Counter = 0; Counter < NumberOfItems; Counter++)
-		if (Hierarchical())
-			if(func((CLVListItem*)fFullItemList.ItemAt(Counter),arg2) == true)
+	for (int32 Counter = 0; Counter < NumberOfItems; Counter++)
+		if (Hierarchical()) {
+			if (func((CLVListItem*)fFullItemList.ItemAt(Counter),arg2) == true)
 				return;
-		else
-			if(func((CLVListItem*)ItemAt(Counter),arg2) == true)
+		} else {
+			if (func((CLVListItem*)ItemAt(Counter),arg2) == true)
 				return;
+		}
 }
 
 

@@ -82,7 +82,7 @@ BRect CLVListItem::ItemColumnFrame(int32 column_index)
 
 	if(ThisColumn->fFlags & CLV_EXPANDER)
 	{
-		ThisColumnRect.right += OutlineLevel() * EXPANDER_SHIFT;
+		ThisColumnRect.right += float(OutlineLevel()) * EXPANDER_SHIFT;
 		if(ThisColumnRect.right > PushMax)
 			ThisColumnRect.right = PushMax;
 	}
@@ -90,10 +90,10 @@ BRect CLVListItem::ItemColumnFrame(int32 column_index)
 	{
 		if(ThisColumn->fPushedByExpander)
 		{
-			float Shift = OutlineLevel() * EXPANDER_SHIFT;
+			float Shift = float(OutlineLevel()) * EXPANDER_SHIFT;
 			ThisColumnRect.left += Shift;
 			ThisColumnRect.right += Shift;
-			if(Shift > 0.0 && ThisColumnRect.right > PushMax)
+			if(Shift > 0.0f && ThisColumnRect.right > PushMax)
 				ThisColumnRect.right = PushMax;
 		}
 	}
@@ -128,7 +128,7 @@ bool CLVListItem::ExpanderRectContains(BPoint where) {
 	float PushMax = itemRect.right;
 	CLVColumn* ThisColumn;
 	BRect ThisColumnRect = itemRect;
-	float ExpanderDelta = OutlineLevel() * EXPANDER_SHIFT;
+	float ExpanderDelta = float(OutlineLevel()) * EXPANDER_SHIFT;
 	//Figure out what the limit is for expanders pushing other columns
 	for(int32 Counter = 0; Counter < NumberOfColumns; Counter++)
 	{
@@ -155,16 +155,16 @@ bool CLVListItem::ExpanderRectContains(BPoint where) {
 			if(IsSuperItem())
 			{
 				//Draw the expander, clip manually
-				float TopOffset = ceil((ThisColumnRect.bottom-ThisColumnRect.top-10.0)/2.0);
-				float LeftOffset = ThisColumn->fColumnEnd + Shift - 3.0 - 10.0;
-				float RightClip = LeftOffset + 10.0 - ThisColumnRect.right;
-				if(RightClip < 0.0)
-					RightClip = 0.0;
+				float TopOffset = ceilf((ThisColumnRect.bottom-ThisColumnRect.top-10.0f)/2.0f);
+				float LeftOffset = ThisColumn->fColumnEnd + Shift - 3.0f - 10.0f;
+				float RightClip = LeftOffset + 10.0f - ThisColumnRect.right;
+				if(RightClip < 0.0f)
+					RightClip = 0.0f;
 				if(LeftOffset <= ThisColumnRect.right)
 				{
 					BRect expanderButtonRect(
 						LeftOffset,ThisColumnRect.top+TopOffset,
-						LeftOffset+10.0-RightClip,ThisColumnRect.top+TopOffset+10.0
+						LeftOffset+10.0f-RightClip,ThisColumnRect.top+TopOffset+10.0f
 					);
 					contains = expanderButtonRect.Contains( where);
 				}
@@ -191,7 +191,7 @@ void CLVListItem::DrawItem(BView*, BRect itemRect, bool complete)
 	float PushMax = itemRect.right;
 	CLVColumn* ThisColumn;
 	BRect ThisColumnRect = itemRect;
-	float ExpanderDelta = OutlineLevel() * EXPANDER_SHIFT;
+	float ExpanderDelta = float(OutlineLevel()) * EXPANDER_SHIFT;
 	//Figure out what the limit is for expanders pushing other columns
 	for(int32 Counter = 0; Counter < NumberOfColumns; Counter++)
 	{
@@ -247,12 +247,12 @@ void CLVListItem::DrawItem(BView*, BRect itemRect, bool complete)
 	
 						//Draw the expander, clip manually
 						float TopOffset 
-							= ceil((ThisColumnRect.bottom-ThisColumnRect.top-h)/2.0);
+							= ceilf((ThisColumnRect.bottom-ThisColumnRect.top-h)/2.0f);
 						float LeftOffset 
 							= ThisColumn->fColumnEnd + Shift - r;
 						float RightClip = LeftOffset + r - ThisColumnRect.right;
-						if(RightClip < 0.0)
-							RightClip = 0.0;
+						if(RightClip < 0.0f)
+							RightClip = 0.0f;
 						if(LeftOffset <= ThisColumnRect.right)
 						{
 							BRect expanderButtonRect(
@@ -284,7 +284,7 @@ void CLVListItem::DrawItem(BView*, BRect itemRect, bool complete)
 
 	}
 	//Fill the area after all the columns (so the select highlight goes all the way across)
-	ThisColumnRect.left = LastColumnEnd + 1.0;
+	ThisColumnRect.left = LastColumnEnd + 1.0f;
 	ThisColumnRect.right = fOwner->Bounds().right;
 	if(ThisColumnRect.left <= ThisColumnRect.right && ClippingRegion.Intersects(ThisColumnRect))
 		DrawColumn(ThisColumnRect,-NumberOfColumns, ctx);
@@ -296,9 +296,9 @@ float CLVListItem::ExpanderShift(int32 column_index)
 {
 	CLVColumn* ThisColumn = fOwner->ColumnAt(column_index);
 	if (!(ThisColumn->fPushedByExpander || ThisColumn->fFlags & CLV_EXPANDER))
-		return 0.0;
+		return 0.0f;
 	else
-		return OutlineLevel() * EXPANDER_SHIFT;
+		return float(OutlineLevel()) * EXPANDER_SHIFT;
 }
 
 

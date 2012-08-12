@@ -174,7 +174,8 @@ status_t FindTrainingMails( BmString &msgFileName)
 	if (!Verbose)
 		printf(" \n");
 
-	TrainCount = min_c(TrainingMailsSpam.size(), TrainingMailsTofu.size());
+	TrainCount = uint16(std::min(TrainingMailsSpam.size(), 
+										  TrainingMailsTofu.size()));
 	if (TrainCount < MinTrainingCount)
 		// no mails found for training
 		return B_BAD_VALUE;
@@ -221,13 +222,13 @@ void SpamOMeter( const char* pathfileName, ResInfo& ri)
 		return;
 	}
 	pathFile.GetSize(&size);
-	char* buf = str.LockBuffer(size+1);
+	char* buf = str.LockBuffer(int32(size+1));
 	if (!buf) {
 		fprintf(stderr, "not enough memory for %Lu bytes\n", size);
 		return;
 	}
-	sz = pathFile.Read(buf, size);
-	str.UnlockBuffer(sz);
+	sz = pathFile.Read(buf, size_t(size));
+	str.UnlockBuffer(int32(sz));
 	vector<BmString> pathVect;
 	split( "\n", str, pathVect);
 	BmRef<BmMailRef> ref;

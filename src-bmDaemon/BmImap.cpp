@@ -129,7 +129,7 @@ void BmImapStatusFilter::Filter( const char* srcBuf, uint32& srcLen,
 		destLen = 0;
 		return;
 	}
-	uint32 size = min( destLen, srcLen);
+	uint32 size = std::min( destLen, srcLen);
 	if (mLiteralCharCount) {
 		if (size >= mLiteralCharCount) {
 			size = mLiteralCharCount;
@@ -287,13 +287,13 @@ bool BmImap::StartJob()
 		if (ImapStates[state].skip)
 			skipped++;
 	}
-	const float delta = (100.0 / (IMAP_DONE-skipped));
+	const float delta = (100.0f / float(IMAP_DONE-skipped));
 	try {
 		for( mState=IMAP_CONNECT; ShouldContinue() && mState<IMAP_DONE; ++mState) {
 			if (ImapStates[mState].skip)
 				continue;
 			TStateMethod stateFunc = ImapStates[mState].func;
-			UpdateIMAPStatus( (mState==IMAP_CONNECT ? 0.0 : delta), NULL);
+			UpdateIMAPStatus( (mState==IMAP_CONNECT ? 0.0f : delta), NULL);
 			(this->*stateFunc)();
 			if (!ShouldContinue()) {
 				Disconnect();
@@ -316,7 +316,7 @@ bool BmImap::StartJob()
 		HandleError( text);
 		return false;
 	}
-	catch( exception &err) {
+	catch( std::exception &err) {
 		BmString errMsg;
 		errMsg << err.what() << " (" << typeid(err).name() << ")";
 		HandleError( errMsg);
@@ -341,7 +341,7 @@ bool BmImap::StartJob()
 void BmImap::UpdateIMAPStatus( const float delta, const char* detailText, 
 										  bool failed, bool stopped)
 {
-	auto_ptr<BMessage> msg( new BMessage( BM_JOB_UPDATE_STATE));
+	std::auto_ptr<BMessage> msg( new BMessage( BM_JOB_UPDATE_STATE));
 	msg->AddString( MSG_MODEL, Name().String());
 	msg->AddString( MSG_DOMAIN, "statbar");
 	msg->AddFloat( MSG_DELTA, delta);
@@ -375,7 +375,7 @@ void BmImap::UpdateMailStatus( const float delta, const char* detailText,
 	} else {
 		text = "none";
 	}
-	auto_ptr<BMessage> msg( new BMessage( BM_JOB_UPDATE_STATE));
+	std::auto_ptr<BMessage> msg( new BMessage( BM_JOB_UPDATE_STATE));
 	msg->AddString( MSG_MODEL, Name().String());
 	msg->AddString( MSG_DOMAIN, "mailbar");
 	msg->AddFloat( MSG_DELTA, delta);
@@ -411,7 +411,7 @@ void BmImap::UpdateCleanupStatus( const float delta, int32 currMsg) {
 \*------------------------------------------------------------------------------*/
 void BmImap::UpdateProgress( uint32 numBytes)
 {
-	float delta = (100.0*numBytes)/(mNewMsgTotalSize ? mNewMsgTotalSize : 1);
+	float delta = (100.0f*float(numBytes))/float(mNewMsgTotalSize ? mNewMsgTotalSize : 1);
 	BmString detailText = BmString("size: ") 
 									<< BytesToString( mNewMsgSizes[mCurrMailNr-1]);
 	UpdateMailStatus( delta, detailText.String(), mCurrMailNr);
@@ -769,7 +769,7 @@ void BmImap::StateCleanup() {
 	for(uint32 i = 0; i < count; ++i) {
 		if (!DeleteMailFromServer(mCleanupMsgUIDs[i]))
 			return;
-		float delta = 100.0 / (count != 0 ? count : 1);
+		float delta = 100.0f / float(count != 0 ? count : 1);
 		UpdateCleanupStatus( delta, i + 1);
 	}
 	mCleanupMsgUIDs.clear();

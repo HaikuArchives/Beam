@@ -86,9 +86,9 @@ ListSelectionAlert::ListSelectionAlert(const char* title, const char* info_text,
 	struct font_height plain_font_height;
 	be_plain_font->GetHeight(&plain_font_height);
 	info_box = result_rects[0];
-	info_box.bottom = info_box.top + (ceil(plain_font_height.ascent) + ceil(plain_font_height.descent))*4;
+	info_box.bottom = info_box.top + (ceilf(plain_font_height.ascent) + ceilf(plain_font_height.descent))*4;
 	sel_list_rect = result_rects[1];
-	sel_list_rect.bottom = sel_list_rect.top + min_list_box_height;
+	sel_list_rect.bottom = sel_list_rect.top + float(min_list_box_height);
 	sel_list_rect.InsetBy(0-(c_text_margin+c_text_border_width),
 		0-(c_text_margin+c_text_border_width));
 	if(sel_list_rect.Width() < min_list_box_width)
@@ -224,8 +224,8 @@ ListSelectionAlert::ListSelectionAlert(const char* title, const char* info_text,
 	if(frame == NULL)
 	{
 		BRect screen_frame = BScreen().Frame();
-		MoveTo(ceil((screen_frame.Width()-bounds.Width())/2),
-			ceil((screen_frame.Height()-bounds.Height()-19)/2));
+		MoveTo(ceilf((screen_frame.Width()-bounds.Width())/2),
+			ceilf((screen_frame.Height()-bounds.Height()-19)/2));
 	}
 
 	//Create the background view and add the children
@@ -252,7 +252,7 @@ ListSelectionAlert::ListSelectionAlert(const char* title, const char* info_text,
 	if(min_width < 120)
 		min_width = 120;
 	float min_height = sel_list_rect.top;
-	min_height += (ceil(plain_font_height.ascent)+ceil(plain_font_height.descent));
+	min_height += (ceilf(plain_font_height.ascent)+ceilf(plain_font_height.descent));
 	min_height += ((c_text_margin+c_text_border_width)*2 + c_item_spacing);
 	if(m_buttons[0] || m_buttons[1])
 		min_height += (buttons_height + c_item_spacing);

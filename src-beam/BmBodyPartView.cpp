@@ -323,9 +323,9 @@ void BmBodyPartView::AddAllModelItems() {
 		for( int c=nFirstTextCol; c<CountColumns(); ++c) {
 			float textWidth = StringWidth( viewItem->GetColumnContentText(c));
 			mColWidths[c] 
-				= (float)max_c( 
+				= (float)std::max( 
 					mColWidths[c], 
-					textWidth+10+EXPANDER_SHIFT*viewItem->OutlineLevel()
+					textWidth+10.0f+EXPANDER_SHIFT*float(viewItem->OutlineLevel())
 				);
 		}
 		Expand(FullListItemAt(i));

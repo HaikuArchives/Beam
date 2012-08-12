@@ -7,7 +7,9 @@ SubDirHdrs $(TOP) src-bmRegexx ;
 SubDirSysHdrs $(COMMON_FOLDER)/include ;
 # </pe-inc>
 
-LINKFLAGS += -L$(COMMON_FOLDER)/lib ;
+if $(OS) != HAIKU {
+	LINKFLAGS += -L$(COMMON_FOLDER)/lib ;
+}
 
 DEFINES += BM_BUILDING_BMMAILKIT ;
 

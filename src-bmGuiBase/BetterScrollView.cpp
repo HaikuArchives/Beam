@@ -221,8 +221,8 @@ void BetterScrollView::WindowActivated(bool active)
 {
 	if (mScrollViewCorner) {
 		bool scEnabled = (
-			mHScroller && mHScroller->Proportion() < 1.0 
-			|| mVScroller && mVScroller->Proportion() < 1.0
+			(mHScroller && mHScroller->Proportion() < 1.0) 
+			|| (mVScroller && mVScroller->Proportion() < 1.0)
 		);
 		mScrollViewCorner->SetEnabled( scEnabled && active);
 		mScrollViewCorner->Draw(
@@ -362,7 +362,6 @@ void BetterScrollView::UpdateScrollBars(bool scrolling_allowed)
 
 	//Set the scroll bar ranges and proportions.  If the whole document is visible, inactivate the
 	//slider
-	bool active_scroller = false;
 	if(mHScroller)
 	{
 		if(width_prop >= 1.0)
@@ -376,8 +375,7 @@ void BetterScrollView::UpdateScrollBars(bool scrolling_allowed)
 			if(view_bounds.left > max)
 				max = view_bounds.left;
 			mHScroller->SetRange(min,max);
-			mHScroller->SetSteps(ceil(view_width/20), view_width);
-			active_scroller = true;
+			mHScroller->SetSteps(ceilf(view_width/20.0f), view_width);
 		}
 		mHScroller->SetProportion(width_prop);
 	}
@@ -394,15 +392,14 @@ void BetterScrollView::UpdateScrollBars(bool scrolling_allowed)
 			if(view_bounds.top > max)
 				max = view_bounds.top;
 			mVScroller->SetRange(min,max);
-			mVScroller->SetSteps(ceil(view_height/20), view_height);
-			active_scroller = true;
+			mVScroller->SetSteps(ceilf(view_height/20.0f), view_height);
 		}
 		mVScroller->SetProportion(height_prop);
 	}
 	if (mScrollViewCorner) {
 		bool scEnabled = (
-			mHScroller && mHScroller->Proportion() < 1.0 
-			|| mVScroller && mVScroller->Proportion() < 1.0
+			(mHScroller && mHScroller->Proportion() < 1.0) 
+			|| (mVScroller && mVScroller->Proportion() < 1.0)
 		);
 		mScrollViewCorner->SetEnabled( scEnabled);
 		mScrollViewCorner->Invalidate();
@@ -482,7 +479,7 @@ BRect BetterScrollView::layout( BRect r) {
 			targetRect.right = r.right-2;
 		mTarget->ResizeTo(targetRect.Width(), targetRect.Height());
 	}
-	float fullCaptionWidth = r.Width() - 2.0;
+	float fullCaptionWidth = r.Width() - 2.0f;
 	if (mBusyView) {
 		BRect bvFrame = mBusyView->Frame();
 		mBusyView->MoveTo( bvFrame.left, r.Height()-B_H_SCROLL_BAR_HEIGHT-1);

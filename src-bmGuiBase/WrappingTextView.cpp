@@ -126,7 +126,7 @@ void WrappingTextView::UndoInfo::JoinTextRuns( const text_run_array* a_runs, int
 
 
 WrappingTextView::WrappingTextView(BRect a_frame,const char* a_name,int32 a_resize_mode,int32 a_flags)
-: BTextView(a_frame, a_name, BRect(4.0,4.0,a_frame.right-a_frame.left-4.0,a_frame.bottom-a_frame.top-4.0),
+: BTextView(a_frame, a_name, BRect(4.0f,4.0f,a_frame.right-a_frame.left-4.0f,a_frame.bottom-a_frame.top-4.0f),
 	a_resize_mode,a_flags)
 {
 	m_vertical_offset = 0;
@@ -369,12 +369,12 @@ void WrappingTextView::ResetTextRect()
 	BRect bounds = Bounds();
 	BRect textRect = bounds;
 	textRect.left = 4.0;
-	textRect.top = m_vertical_offset + 4.0;
+	textRect.top = m_vertical_offset + 4.0f;
 	if (m_fixed_width)
-		textRect.right = 8.0+StringWidth( "0") * m_fixed_width;
+		textRect.right = 8.0f + StringWidth( "0") * float(m_fixed_width);
 	else
-		textRect.right -= 4.0;
-	textRect.bottom -= 4.0;
+		textRect.right -= 4.0f;
+	textRect.bottom -= 4.0f;
 	SetTextRect(textRect);
 	// we have to readjust the scrollbar-proportion, since
 	// the BTextView doesn't do it correctly when we have
@@ -385,9 +385,9 @@ void WrappingTextView::ResetTextRect()
 	bar->GetSteps( &small, &big);
 	float height = TextHeight( 0, TextLength());
 	if (height+m_vertical_offset)
-		bar->SetProportion( MIN( 1.0, big/(height+m_vertical_offset)));
+		bar->SetProportion( MIN( 1.0f, big/(height+m_vertical_offset)));
 	else 
-		bar->SetProportion( 1.0);
+		bar->SetProportion( 1.0f);
 
 	if (BeamOnDano) {
 		// circumvent a special feature/bug in Zeta with respect to 
@@ -409,7 +409,7 @@ void WrappingTextView::ResetTextRect()
 	}
 	bar->SetSteps( width/10, width);
 	bar->SetRange( 0, MAX(0, maxWidth-width));
-	bar->SetProportion( MIN( 1.0, width/maxWidth));
+	bar->SetProportion( MIN( 1.0f, width/maxWidth));
 }
 
 

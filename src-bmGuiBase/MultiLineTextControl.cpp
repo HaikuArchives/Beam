@@ -52,7 +52,7 @@ MultiLineTextControl::MultiLineTextControl(BRect frame, const char* name, const 
 	m_modification_message = NULL;
 	m_inline_label = inline_label;
 	if(m_inline_label)
-		m_divider = floor((frame.right-frame.left)/2);
+		m_divider = floorf((frame.right-frame.left)/2.0f);
 	else
 		m_divider = 0;
 	ReevaluateLabelRect();
@@ -102,8 +102,8 @@ void MultiLineTextControl::ReevaluateLabelRect()
 	GetFont(&font);
 	struct font_height curr_font_height;
 	font.GetHeight(&curr_font_height);
-	m_label_font_ascent = ceil(curr_font_height.ascent);
-	float height = m_label_font_ascent + ceil(curr_font_height.descent);
+	m_label_font_ascent = ceilf(curr_font_height.ascent);
+	float height = m_label_font_ascent + ceilf(curr_font_height.descent);
 	float width = font.StringWidth(Label());
 	if(m_inline_label)
 	{

@@ -12,15 +12,18 @@ SubDirSysHdrs $(COMMON_FOLDER)/include ;
 SubDirSysHdrs $(COMMON_FOLDER)/include/liblayout ;
 # </pe-inc>
 
-LINKFLAGS += -L$(COMMON_FOLDER)/lib ;
+if $(OS) != HAIKU {
+	LINKFLAGS += -L$(COMMON_FOLDER)/lib ;
+}
 
 # <pe-src>
 AddOn Sieve
 	:  
 		BmSieveFilter.cpp
 	: 	
-		libsieve.a /boot/common/lib/libpcreposix.a /boot/common/lib/libpcre.a bmGuiBase.so bmMailKit.so bmRegexx.so bmBase.so 
-		layout be $(STDC++LIB)
+		libsieve.a 
+		$(COMMON_FOLDER)/lib/libpcreposix.a $(COMMON_FOLDER)/lib/libpcre.a 
+		bmGuiBase.so bmMailKit.so bmRegexx.so bmBase.so layout be $(STDC++LIB)
 	;
 # </pe-src>
 

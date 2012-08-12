@@ -121,7 +121,7 @@ void StrToUpper(char* string)
 	while(*string != 0)
 	{
 		if(*string >= 'a' && *string <= 'z')
-			*string = *string - 'a' + 'A';
+			*string = char(*string - 'a' + 'A');
 		string++;
 	}
 }
@@ -132,7 +132,7 @@ void StrToLower(char* string)
 	while(*string != 0)
 	{
 		if(*string >= 'A' && *string <= 'Z')
-			*string = *string - 'A' + 'a';
+			*string = char(*string - 'A' + 'a');
 		string++;
 	}
 }

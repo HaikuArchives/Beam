@@ -131,9 +131,9 @@ float BmMultiLineStringView::LineHeight()
 \*------------------------------------------------------------------------------*/
 float BmMultiLineStringView::TextHeight()
 {
-	float textHeight = 0.0;
+	float textHeight = 0.0f;
 	if (!Looper() || LockLooper()) {
-		textHeight = mLineHeight * mTextLines.CountItems();
+		textHeight = mLineHeight * float(mTextLines.CountItems());
 		if (Looper())
 			UnlockLooper();
 	}
@@ -147,7 +147,7 @@ float BmMultiLineStringView::TextHeight()
 void BmMultiLineStringView::Draw(BRect updateRect)
 {
 	inherited::Draw(updateRect);
-	BPoint pt(nLeftOffset, mAscent+1.0);
+	BPoint pt(nLeftOffset, mAscent+1.0f);
 	rgb_color frontCol = HighColor();
 	rgb_color backCol = LowColor();
 	int32 selStart = MIN(mSelectionStart, mSelectionEnd);
@@ -337,8 +337,8 @@ void BmMultiLineStringView::_InitFont()
 
 	struct font_height fh;
 	GetFontHeight(&fh);
-	mLineHeight = ceil(fh.ascent+fh.descent+fh.leading);
-	mAscent = ceil(fh.ascent);
+	mLineHeight = ceilf(fh.ascent+fh.descent+fh.leading);
+	mAscent = ceilf(fh.ascent);
 }
 
 /*------------------------------------------------------------------------------*\

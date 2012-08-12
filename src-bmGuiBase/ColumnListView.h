@@ -40,7 +40,7 @@ class CLVFillerView;
 //******************************************************************************************************
 typedef int (*CLVCompareFuncPtr)(const CLVListItem* item1, const CLVListItem* item2, int32 sort_key, int32 col_flags);
 
-#define EXPANDER_SHIFT 14.0
+#define EXPANDER_SHIFT 14.0f
 
 extern IMPEXPBMGUIBASE const float darken_tint;
 

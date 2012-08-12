@@ -253,7 +253,7 @@ bool BmSmtp::StartJob() {
 
 	SmtpStates[SMTP_STARTTLS].skip = mSmtpAccount->NeedsAuthViaPopServer();
 
-	const float delta = 100.0 / (SMTP_DONE-startState-skipped);
+	const float delta = 100.0f / float(SMTP_DONE-startState-skipped);
 	const bool failed=true;
 	try {
 		for( 	mState = startState; 
@@ -261,7 +261,7 @@ bool BmSmtp::StartJob() {
 			if (SmtpStates[mState].skip)
 				continue;
 			TStateMethod stateFunc = SmtpStates[mState].func;
-			UpdateSMTPStatus( (mState==startState ? 0.0 : delta), NULL);
+			UpdateSMTPStatus( (mState==startState ? 0.0f : delta), NULL);
 			(this->*stateFunc)();
 			if (!ShouldContinue()) {
 				Disconnect();
@@ -352,7 +352,8 @@ void BmSmtp::UpdateMailStatus( const float delta, const char* detailText,
 		-
 \*------------------------------------------------------------------------------*/
 void BmSmtp::UpdateProgress( uint32 numBytes) {
-	float delta = (100.0 * numBytes) / (mMsgTotalSize ? mMsgTotalSize : 1);
+	float delta 
+		= (100.0f * float(numBytes)) / float(mMsgTotalSize ? mMsgTotalSize : 1);
 	BmString detailText = BmString("size: ") << BytesToString( mCurrMailSize);
 	UpdateMailStatus( delta, detailText.String(), mCurrMailNr);
 }
@@ -609,7 +610,7 @@ void BmSmtp::StateSendMails() {
 	for( int32 i=0; i<mMailCount; ++i) {
 		mailRefs.push_back(BmMailRef::CreateInstance( mQueuedRefVect[i]));
 		if (mailRefs[i] && mailRefs[i]->IsValid())
-			mMsgTotalSize += mailRefs[i]->Size();
+			mMsgTotalSize += int32(mailRefs[i]->Size());
 	}
 
 	Regexx rx;

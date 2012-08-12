@@ -78,12 +78,12 @@ BmPrefs* BmPrefs::CreateInstance() {
 				err = prefsFile.GetAttrInfo(name, &info);
 				if (err == B_OK) {
 					if (bufSize < info.size)
-						buf = (char*)realloc(buf, info.size);
-					err = prefsFile.ReadAttr(name, info.type, 0, buf, info.size);
+						buf = (char*)realloc(buf, size_t(info.size));
+					err = prefsFile.ReadAttr(name, info.type, 0, buf, size_t(info.size));
 				}
 				if (err > 0) {
 					archive.RemoveName(name);
-					err = archive.AddData(name, info.type, buf, info.size);
+					err = archive.AddData(name, info.type, buf, ssize_t(info.size));
 				}
 				if (err != B_OK)
 					BM_THROW_RUNTIME( 

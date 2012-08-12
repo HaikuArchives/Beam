@@ -341,7 +341,7 @@ bool BmMail::StartJob() {
 			);
 		BM_LOG2( BM_LogMailParse, 
 					BmString("...should be reading ") << mailSize << " bytes");
-		char* buf = mailText.LockBuffer( mailSize);
+		char* buf = mailText.LockBuffer( int32(mailSize));
 		if (!buf)
 			throw BM_runtime_error( BmString("Not enough memory for mail from "
 														"file\n\t<") << eref.name << ">");
@@ -353,7 +353,7 @@ bool BmMail::StartJob() {
 			ssize_t read = mailFile.Read( 
 				pos, 
 				mailSize-offs < blocksize 
-					? mailSize-offs 
+					? size_t(mailSize-offs)
 					: blocksize
 			);
 			BM_LOG3( BM_LogMailParse, 
@@ -377,7 +377,7 @@ bool BmMail::StartJob() {
 							<< " bytes but expected size was only " << mailSize 
 							<< " bytes!?!");
 		buf[realSize] = '\0';
-		mailText.UnlockBuffer( realSize);
+		mailText.UnlockBuffer( int32(realSize));
 		// take care to remove all binary nulls:
 		mailText.ReplaceAll( 0, 32);
 		// we initialize the BmMail-internals from the plain text:
@@ -734,7 +734,7 @@ BmRef<BmMailFolder> BmMail::DestFolder() const {
 bool BmMail::MoveToDestFolder() {
 	if (mDestFolderName.Length()) {
 		if (mEntry.InitCheck() == B_OK
-		|| mMailRef && mMailRef->InitCheck() == B_OK) {
+		|| (mMailRef && mMailRef->InitCheck() == B_OK)) {
 			status_t err;
 			if (mEntry.InitCheck() != B_OK) {
 				if ((err = mEntry.SetTo( mMailRef->EntryRefPtr())) != B_OK)
@@ -889,7 +889,7 @@ bool BmMail::ConstructRawText( const BmString& editedUtf8Text,
 	int32 startSize = mBody->EstimateEncodedSize() + editedUtf8Text.Length() 
 							+ std::max( mHeader->HeaderLength(), (int32)4096)+4096;
 	startSize += 65536-(startSize%65536);
-	BmStringOBuf msgText( startSize, 1.2);
+	BmStringOBuf msgText( startSize, 1.2f);
 	mAccountName = smtpAccount;
 	if (!mHeader->ConstructRawText( msgText, charset))
 		return false;

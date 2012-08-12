@@ -6,8 +6,10 @@
  *		Oliver Tappe <beam@hirschkaefer.de>
  */
 #include <assert.h>
-#include <cstring>
 #include <stdlib.h>
+#include <string.h>
+
+#include <algorithm>
 #include <new>
 
 #include "BmBasics.h"
@@ -355,9 +357,10 @@ bool BmStringOBuf::GrowBufferToFit( uint32 len) {
 	if (!mBuf || mCurrPos+len > mBufLen) {
 		if (mBuf) {
 			mStr.UnlockBuffer( mBufLen);
-			mBufLen = (uint32)max_c( mGrowFactor*mBufLen, mGrowFactor*(mCurrPos+len));
+			mBufLen = uint32(std::max( mGrowFactor*float(mBufLen), 
+												mGrowFactor*float(mCurrPos+len)));
 		} else
-			mBufLen = (uint32)max_c( mBufLen, mCurrPos+len);
+			mBufLen = (uint32)std::max( mBufLen, mCurrPos+len);
 		mBuf = mStr.LockBuffer( mBufLen);
 		if (!mBuf)
 			return false;
@@ -523,7 +526,8 @@ void BmRingBuf::Put( const char* data, uint32 len) {
 	if (!mBuf || mBufLen <= Length()+len) {
 		// need more space:
 		int32 oldLen = mBufLen;
-		mBufLen = (uint32)max_c( mGrowFactor*mBufLen, mGrowFactor*(Length()+len));
+		mBufLen = (uint32)std::max( mGrowFactor*float(mBufLen), 
+											 mGrowFactor*float(Length()+len));
 		mBuf = (char*)realloc( mBuf, mBufLen);
 		if (mCurrTail < mCurrFront && mCurrTail) {
 			// re-join wrapped part of buffer with its front:

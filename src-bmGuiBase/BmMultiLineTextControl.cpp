@@ -37,13 +37,15 @@ BmMultiLineTextControl::BmMultiLineTextControl( const char* label, bool labelIsM
 	font_height fh;
 	font.GetHeight( &fh);
 	float lineHeight = fh.ascent + fh.descent + fh.leading; 
-	float height = lineHeight*lineCount+12;
+	float height = lineHeight*float(lineCount)+12.0f;
 	if (minTextLen)
-		ct_mpm = minimax( divPos + font.StringWidth("W")*minTextLen, height+4, 
-								1E5, fixedHeight ? height+4 : 1E5);
+		ct_mpm = minimax( int(divPos + font.StringWidth("W")*float(minTextLen)), 
+								int(height+4), 100000, 
+								fixedHeight ? int(height+4) : 100000);
 	else
-		ct_mpm = minimax( divPos + font.StringWidth("W")*10, height+4, 
-								1E5, fixedHeight ? height+4 : 1E5);
+		ct_mpm = minimax( int(divPos + font.StringWidth("W")*10), 
+								int(height+4), 100000, fixedHeight 
+								? int(height+4) : 100000);
 	inherited::SetDivider( divPos);
 	if (labelIsMenu) {
 		float width, height;

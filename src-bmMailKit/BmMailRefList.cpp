@@ -255,7 +255,7 @@ bool BmMailRefList::StartJob() {
 				);
 			sz -= cacheFile.Position();
 			std::auto_ptr<char> buf(new char [sz]);
-			if ((err = cacheFile.Read(buf.get(), sz)) < B_OK)
+			if ((err = cacheFile.Read(buf.get(), size_t(sz))) < B_OK)
 				BM_THROW_RUNTIME( 
 					BmString("couldn't read from cache-file <") << filename 
 						<< "> \n\nError:" << strerror(err)
@@ -265,7 +265,7 @@ bool BmMailRefList::StartJob() {
 					BmString("couldn't read ") << sz << " bytes from cache-file <"
 						<< filename << ">, read only " << err << " bytes"
 				);
-			BMemoryIO memIO(buf.get(), sz);
+			BMemoryIO memIO(buf.get(), size_t(sz));
 			InstantiateItemsFromStream( &memIO, &msg);
 #else
 			InstantiateItemsFromStream( &cacheFile, &msg);

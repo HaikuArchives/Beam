@@ -100,7 +100,7 @@ void BmCaption::Draw( BRect updateRect) {
 	BFont captionFont;
 	GetFont(&captionFont);
 	captionFont.GetHeight( &fInfo);
-	float offset = (1+r.Height()-(fInfo.ascent+fInfo.descent))/2.0;
+	float offset = (1.0f+r.Height()-(fInfo.ascent+fInfo.descent))/2.0f;
 	float freeWidth = r.Width();
 	if (mHighlight && mHighlightLabel.Length()) {
 		freeWidth -= StringWidth(mHighlightLabel.String())+2;
@@ -119,6 +119,6 @@ void BmCaption::Draw( BRect updateRect) {
 		if (!*text)
 			break;
 	}
-	BPoint pos( r.Width()-width-2.0, fInfo.ascent+offset);
+	BPoint pos( r.Width()-width-2.0f, fInfo.ascent+offset);
 	DrawString( text, pos);
 }

@@ -352,9 +352,9 @@ void BmNetJobModel::AuthDigestMD5( const BmString& username,
 		rawResponse << ",realm=" << '"' << challengeMap["realm"] << '"';
 		rawResponse << ",nonce=" << '"' << challengeMap["nonce"] << '"';
 		char temp[33];
-		srand(system_time());
+		srand((unsigned int)system_time());
 		for( int i=0; i<32; ++i)
-			temp[i] = 1+(rand()%254);
+			temp[i] = char(1+rand()%254);
 		temp[32] = '\0';
 		BmString rawCnonce(temp);
 		BmString cnonce;

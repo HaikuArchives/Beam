@@ -71,15 +71,16 @@ void BmTextControl::InitSize( const char* label, int32 fixedTextLen,
 	mTextView->GetFont( &font);
 	if (fixedTextLen) {
 		mTextView->SetMaxBytes( fixedTextLen);
-		float width = divPos + font.StringWidth("W")*fixedTextLen;
-		ct_mpm = minimax( width, b.Height()+4, width, b.Height()+4);
+		float width = divPos + font.StringWidth("W")*float(fixedTextLen);
+		ct_mpm = minimax( int(width), int(b.Height()+4), int(width), 
+								int(b.Height()+4));
 	} else {
 		if (minTextLen)
-			ct_mpm = minimax( divPos + font.StringWidth("W")*minTextLen, 
-									b.Height()+4, 1E5, b.Height()+4);
+			ct_mpm = minimax( int(divPos + font.StringWidth("W")*float(minTextLen)), 
+									int(b.Height()+4), 100000, int(b.Height()+4));
 		else
-			ct_mpm = minimax( divPos + font.StringWidth("W")*10, b.Height()+4, 
-									1E5, b.Height()+4);
+			ct_mpm = minimax( int(divPos + font.StringWidth("W")*10), 
+									int(b.Height()+4), 100000, int(b.Height()+4));
 	}
 	if (mLabelIsMenu) {
 		float width, height;

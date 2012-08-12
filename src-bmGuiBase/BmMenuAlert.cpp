@@ -69,14 +69,14 @@ BmMenuAlert::BmMenuAlert(float width, float height, const char* title, const cha
 	m_label_view->MakeSelectable(false);
 	m_label_view->SetWordWrap(false);
 	float th = m_label_view->TextHeight(0,10000);
-	m_label_view->ct_mpm = minimax(width,th,width,th);
+	m_label_view->ct_mpm = minimax(int(width),int(th),int(width),int(th));
 	
 	AddChild( dynamic_cast<BView*>(vg));
 
 	// position window on screen:
 	BScreen screen( this);
 	BRect screenFrame = screen.Frame();
-	MoveTo( (screenFrame.Width()-width)/2.0, (screenFrame.Height()-height)/2.0);
+	MoveTo( (screenFrame.Width()-width)/2.0f, (screenFrame.Height()-height)/2.0f);
 
 	//Complete the setup
 	m_invoker = NULL;
@@ -160,7 +160,7 @@ filter_result BmMenuAlert::KeyDownFilter(BMessage *message)
 				m_buttons[0]->KeyDown(&space,1);
 				return B_SKIP_MESSAGE;
 			}
-			else if(byte == B_ENTER || m_shortcut[1] && byte == m_shortcut[1])
+			else if(byte == B_ENTER || (m_shortcut[1] && byte == m_shortcut[1]))
 			{
 				m_buttons[1]->KeyDown(&space,1);
 				return B_SKIP_MESSAGE;

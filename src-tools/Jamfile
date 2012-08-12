@@ -12,7 +12,7 @@ SubDirSysHdrs $(COMMON_FOLDER)/include ;
 Application MailConverter : 
 	MailConverter.cpp
 	: 	
-		bmMailKit.so bmBase.so be
+		bmMailKit.so bmBase.so $(STDC++LIB) be
 	;
 # </pe-src>
 

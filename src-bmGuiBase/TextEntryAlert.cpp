@@ -112,8 +112,8 @@ TextEntryAlert::TextEntryAlert(const char* title, const char* info_text, const c
 //		ceil(plain_font_height.descent);
 	entry_text_rect = result_rects[1];
 	entry_text_rect.bottom = entry_text_rect.top +
-		(ceil(plain_font_height.ascent)+ceil(plain_font_height.descent))*min_text_box_rows +
-		ceil(plain_font_height.leading)*(min_text_box_rows-1);
+		(ceilf(plain_font_height.ascent)+ceilf(plain_font_height.descent))*float(min_text_box_rows) +
+		ceilf(plain_font_height.leading)*float(min_text_box_rows-1);
 	entry_text_rect.InsetBy(0-(c_text_margin+c_text_border_width),
 		0-(c_text_margin+c_text_border_width));
 	if(entry_text_rect.Width() < min_text_box_width)
@@ -221,8 +221,8 @@ TextEntryAlert::TextEntryAlert(const char* title, const char* info_text, const c
 	if(frame == NULL)
 	{
 		BRect screen_frame = BScreen().Frame();
-		MoveTo(ceil((screen_frame.Width()-bounds.Width())/2),
-			ceil((screen_frame.Height()-bounds.Height()-19)/2));
+		MoveTo(ceilf((screen_frame.Width()-bounds.Width())/2),
+			ceilf((screen_frame.Height()-bounds.Height()-19)/2));
 	}
 
 	//Create the background view and add the children
@@ -248,7 +248,7 @@ TextEntryAlert::TextEntryAlert(const char* title, const char* info_text, const c
 	if(min_width < 120)
 		min_width = 120;
 	float min_height = entry_text_rect.top;
-	min_height += (ceil(plain_font_height.ascent)+ceil(plain_font_height.descent));
+	min_height += (ceilf(plain_font_height.ascent)+ceilf(plain_font_height.descent));
 	min_height += ((c_text_margin+c_text_border_width)*2 + c_item_spacing);
 	if(m_buttons[0] || m_buttons[1])
 		min_height += (buttons_height + c_item_spacing);
@@ -502,7 +502,7 @@ void TextEntryAlertTextEntryView::SetTabAllowed(bool allow)
 
 void TextEntryAlertTextEntryView::KeyDown(const char* bytes, int32 num_bytes)
 {
-	if(num_bytes == 1 && (bytes[0] == B_TAB && (!m_tab_allowed)) || (bytes[0] == B_ENTER && (!m_multi_line)))
+	if (num_bytes == 1 && ((bytes[0] == B_TAB && !m_tab_allowed) || (bytes[0] == B_ENTER && !m_multi_line)))
 	{
 		BView::KeyDown(bytes,num_bytes);
 		return;

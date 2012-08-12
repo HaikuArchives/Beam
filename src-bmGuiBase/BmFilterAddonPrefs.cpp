@@ -18,7 +18,7 @@
 \*------------------------------------------------------------------------------*/
 BmFilterAddonPrefsView::BmFilterAddonPrefsView(float minX, float minY, 
 															  float maxX, float maxY)
-	:	inherited( minimax( minX, minY, maxX, maxY), NULL)
+	:	inherited( minimax( int(minX), int(minY), int(maxX), int(maxY)), NULL)
 {
 }
 

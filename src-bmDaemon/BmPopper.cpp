@@ -78,7 +78,7 @@ void BmPopStatusFilter::Filter( const char* srcBuf, uint32& srcLen,
 			mHaveStatus = true;
 			mStatusText.RemoveAll( "\r");
 			if (!needData 
-			|| mStatusText.Length() && mStatusText.ByteAt(0) != '+')
+			|| (mStatusText.Length() && mStatusText.ByteAt(0) != '+'))
 				// if the status is all we want or an error occurred,
 				// we are done:
 				mEndReached = true;
@@ -222,13 +222,13 @@ bool BmPopper::StartJob() {
 		if (PopStates[state].skip)
 			skipped++;
 	}
-	const float delta = (100.0 / (POP_DONE-skipped));
+	const float delta = (100.0f / float(POP_DONE-skipped));
 	try {
 		for( mState=POP_CONNECT; mState<POP_DONE; ++mState) {
 			if (PopStates[mState].skip)
 				continue;
 			TStateMethod stateFunc = PopStates[mState].func;
-			UpdatePOPStatus( (mState==POP_CONNECT ? 0.0 : delta), NULL);
+			UpdatePOPStatus( (mState==POP_CONNECT ? 0.0f : delta), NULL);
 			(this->*stateFunc)();
 			if (!ShouldContinue()) {
 				Disconnect();
@@ -343,7 +343,8 @@ void BmPopper::UpdateCleanupStatus( const float delta, int32 currMsg) {
 		-
 \*------------------------------------------------------------------------------*/
 void BmPopper::UpdateProgress( uint32 numBytes) {
-	float delta = (100.0*numBytes)/(mNewMsgTotalSize ? mNewMsgTotalSize : 1);
+	float delta 
+		= (100.0f*float(numBytes))/float(mNewMsgTotalSize ? mNewMsgTotalSize : 1);
 	BmString detailText = BmString("size: ") 
 									<< BytesToString( mNewMsgSizes[mCurrMailNr-1]);
 	UpdateMailStatus( delta, detailText.String(), mCurrMailNr);
@@ -671,7 +672,7 @@ void BmPopper::StateCleanup() {
 		SendCommand( cmd);
 		if (!CheckForPositiveAnswer())
 			return;
-		float delta = 100.0 / (count != 0 ? count : 1);
+		float delta = 100.0f / float(count != 0 ? count : 1);
 		UpdateCleanupStatus( delta, i + 1);
 	}
 	mCleanupMsgs.clear();

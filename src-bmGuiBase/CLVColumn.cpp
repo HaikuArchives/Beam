@@ -118,7 +118,7 @@ void CLVColumn::SetWidth(float width)
 			BRect SourceArea = ColumnViewBounds;
 			float Delta = width-OldWidth;
 			if(!(fFlags&CLV_RIGHT_JUSTIFIED))
-				SourceArea.left = fColumnEnd+1.0;
+				SourceArea.left = fColumnEnd+1.0f;
 			else
 			{
 				if(Delta >= 0)
@@ -161,14 +161,14 @@ void CLVColumn::SetWidth(float width)
 				if(!(fFlags&CLV_RIGHT_JUSTIFIED))
 				{
 					DestArea.left = fColumnBegin;
-					SourceArea.left = fColumnEnd+1.0;
+					SourceArea.left = fColumnEnd+1.0f;
 					SourceArea.right = DestArea.right = fColumnEnd+Delta;
 				}
 				else
 				{
 					SourceArea.left = DestArea.left = fColumnBegin;
 					SourceArea.right = fColumnBegin+Delta;
-					DestArea.right = fColumnEnd+Delta+1.0;
+					DestArea.right = fColumnEnd+Delta+1.0f;
 				}				
 			}
 			else
@@ -176,7 +176,7 @@ void CLVColumn::SetWidth(float width)
 				DestArea.left = fColumnBegin;
 				DestArea.right = fColumnEnd+Delta;
 				fParent->fColumnLabelView->Invalidate(DestArea);
-				SourceArea.left = DestArea.left = ColumnViewBounds.right+Delta+1.0;
+				SourceArea.left = DestArea.left = ColumnViewBounds.right+Delta+1.0f;
 				SourceArea.right = DestArea.right = ColumnViewBounds.right;
 			}
 			fParent->fColumnLabelView->Invalidate(DestArea);
@@ -395,13 +395,13 @@ void CLVColumn::DrawColumnHeader(BView* view, BRect header_rect, bool sort_key, 
 		view->SetDrawingMode(B_OP_OVER);
 		BPoint text_point;
 		if(!(fFlags&CLV_RIGHT_JUSTIFIED))
-			text_point.Set(header_rect.left+offs,header_rect.top+1.0+font_ascent);
+			text_point.Set(header_rect.left+offs,header_rect.top+1.0f+font_ascent);
 		else
 		{
 			BFont label_font;
 			view->GetFont(&label_font);
 			float string_width = label_font.StringWidth(label);
-			text_point.Set(header_rect.right-offs-string_width,header_rect.top+1.0+font_ascent);
+			text_point.Set(header_rect.right-offs-string_width,header_rect.top+1.0f+font_ascent);
 		}
 		view->DrawString(label,text_point);
 		view->SetDrawingMode(B_OP_COPY);

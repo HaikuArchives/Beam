@@ -98,7 +98,7 @@ bool BmMailFilter::StartJob() {
 			count += mMailRefs->size();
 		BM_LOG2( BM_LogFilter, 
 					BmString("Starting filter-job for ") << count << " mails.");
-		const float delta =  100.0 / (count / GRAIN);
+		const float delta =  100.0f / (float(count) / GRAIN);
 		if (mMailRefs) {
 			BmRef<BmMail> mail;
 			for( uint32 i=0; ShouldContinue() && i<mMailRefs->size(); ++i) {
@@ -242,7 +242,7 @@ void BmMailFilter::Execute( BmMail* mail) {
 	if (msgContext.HasField("RatioSpam")) {
 		double ratioSpam = msgContext.GetDouble("RatioSpam");
 		if (ratioSpam != mail->RatioSpam()) {
-			mail->RatioSpam(ratioSpam);
+			mail->RatioSpam(float(ratioSpam));
 			needToStore = true;
 		}
 	}

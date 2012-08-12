@@ -141,12 +141,12 @@ ImageAboutWindow::ImageAboutWindow(const char* window_title, const char* app_tit
 	//Get font size information
 	struct font_height font_ht;
 	be_bold_font->GetHeight(&font_ht);
-	m_bold_font_ascent = ceil(font_ht.ascent);
-	float bold_height = m_bold_font_ascent + ceil(font_ht.descent);
+	m_bold_font_ascent = ceilf(font_ht.ascent);
+	float bold_height = m_bold_font_ascent + ceilf(font_ht.descent);
 	be_plain_font->GetHeight(&font_ht);
-	m_plain_font_ascent = ceil(font_ht.ascent);
-	float plain_height = m_plain_font_ascent + ceil(font_ht.descent);
-	float plain_spacing = m_plain_font_ascent + ceil(font_ht.descent) + ceil(font_ht.leading);
+	m_plain_font_ascent = ceilf(font_ht.ascent);
+	float plain_height = m_plain_font_ascent + ceilf(font_ht.descent);
+	float plain_spacing = m_plain_font_ascent + ceilf(font_ht.descent) + ceilf(font_ht.leading);
 
 	//Get bounding boxes for the various strings
 	float title_width = be_bold_font->StringWidth(m_title);
@@ -185,31 +185,31 @@ ImageAboutWindow::ImageAboutWindow(const char* window_title, const char* app_tit
 
 	string_widths = MAX(280, string_widths);
 	
-	m_title_rect.left = logo_right + 10 + floor((string_widths-title_width)/2);
-	m_title_rect.top = m_logo_rect.top + (floor(((m_logo_rect.bottom-m_logo_rect.top)-
+	m_title_rect.left = logo_right + 10 + floorf((string_widths-title_width)/2);
+	m_title_rect.top = m_logo_rect.top + (floorf(((m_logo_rect.bottom-m_logo_rect.top)-
 		bold_height)/2));
 	if(m_title_rect.top < 10)
 		m_title_rect.top = 10;
 	m_title_rect.right = m_title_rect.left + title_width;
 	m_title_rect.bottom = m_title_rect.top + bold_height;
 
-	float curr_pos = m_title_rect.bottom + ceil(bold_height/4);
+	float curr_pos = m_title_rect.bottom + ceilf(bold_height/4);
 	if(m_version)
 	{
-		m_version_rect.left = logo_right + 10 + floor((string_widths-version_width)/2);
+		m_version_rect.left = logo_right + 10 + floorf((string_widths-version_width)/2);
 		m_version_rect.top = curr_pos;
 		m_version_rect.right = m_version_rect.left + version_width;
 		m_version_rect.bottom = m_version_rect.top + plain_height;
 		curr_pos += plain_spacing;
 	}
 	if(m_num_lines > 0)
-		curr_pos += ceil(bold_height*1.4);
+		curr_pos += ceilf(bold_height*1.4f);
 
 	for(int i=0; i<m_num_lines; i++)
 	{
 		if(m_lines[i])
 		{
-			m_text_rects[i].left = logo_right + 10 + floor((string_widths-body_lengths[i])/2);
+			m_text_rects[i].left = logo_right + 10 + floorf((string_widths-body_lengths[i])/2.0f);
 			m_text_rects[i].top = curr_pos;
 			m_text_rects[i].right = m_text_rects[i].left + body_lengths[i];
 			m_text_rects[i].bottom = m_text_rects[i].top + plain_height;
@@ -223,7 +223,7 @@ ImageAboutWindow::ImageAboutWindow(const char* window_title, const char* app_tit
 		delete[] body_lengths;
 
 	if (m_email) {
-		m_email_rect.left = logo_right + 10 + floor((string_widths-email_width)/2);
+		m_email_rect.left = logo_right + 10 + floorf((string_widths-email_width)/2);
 		m_email_rect.top = curr_pos;
 		m_email_rect.right = m_email_rect.left + email_width;
 		m_email_rect.bottom = m_email_rect.top + plain_height;
@@ -231,7 +231,7 @@ ImageAboutWindow::ImageAboutWindow(const char* window_title, const char* app_tit
 	}
 
 	if (m_web) {
-		m_web_rect.left = logo_right + 10 + floor((string_widths-web_width)/2);
+		m_web_rect.left = logo_right + 10 + floorf((string_widths-web_width)/2);
 		m_web_rect.top = curr_pos;
 		m_web_rect.right = m_web_rect.left + web_width;
 		m_web_rect.bottom = m_web_rect.top + plain_height;
@@ -277,8 +277,8 @@ ImageAboutWindow::ImageAboutWindow(const char* window_title, const char* app_tit
 	content_view->AddChild( m_credits_label);
 	content_view->AddChild( m_credits_view);
 	BRect screen_limits = BScreen().Frame();
-	MoveTo(screen_limits.left+floor((screen_limits.Width()-bounds.Width())/2),
-		screen_limits.top+floor((screen_limits.Height()-bounds.Height())/2));
+	MoveTo(screen_limits.left+floorf((screen_limits.Width()-bounds.Width())/2.0f),
+		screen_limits.top+floorf((screen_limits.Height()-bounds.Height())/2.0f));
 }
 
 

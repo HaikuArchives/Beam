@@ -10,7 +10,7 @@ AddOn Beam_DeskbarItem
 	:  
 		BmDeskbarView.cpp
 	: 	
-		be
+		$(STDC++LIB) be
 	;
 # </pe-src>
 

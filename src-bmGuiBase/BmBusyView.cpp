@@ -171,7 +171,7 @@ void BmBusyView::Draw( BRect) {
 	StrokeEllipse( r);
 	r.InsetBy( 1.0, 1.0);
 	float start = 0;
-	float end = (mCurrState % 360);
+	float end = float(mCurrState % 360);
 	SetHighColor( (mCurrState / 360) % 2 
 		? ui_color( B_UI_CONTROL_HIGHLIGHT_COLOR)
 		: ui_color( B_UI_CONTROL_BACKGROUND_COLOR)

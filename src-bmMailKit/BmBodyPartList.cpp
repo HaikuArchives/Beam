@@ -725,7 +725,7 @@ const BmString& BmBodyPart::DecodedData() const {
 						BmMemFilterRef decoder 
 							= FindDecoderFor( &text, mContentTransferEncoding);
 						BmLinebreakDecoder linebreakDecoder( decoder.get());
-						BmStringOBuf tempIO( mBodyLength, 1.2);
+						BmStringOBuf tempIO( mBodyLength, 1.2f);
 						charset = charsetVect[i];
 						BM_LOG2( BM_LogMailParse, 
 									BmString( "trying charset ") << charset);
@@ -753,7 +753,7 @@ const BmString& BmBodyPart::DecodedData() const {
 											 mBodyLength);
 					BmMemFilterRef decoder 
 						= FindDecoderFor( &text, mContentTransferEncoding);
-					BmStringOBuf tempIO( mBodyLength, 1.2);
+					BmStringOBuf tempIO( mBodyLength, 1.2f);
 					BM_LOG2( BM_LogMailParse, 
 								BmString( "decoding bodytext of ") << mBodyLength 
 									<< " bytes...");

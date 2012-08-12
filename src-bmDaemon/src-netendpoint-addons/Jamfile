@@ -7,7 +7,9 @@ SubDirHdrs $(TOP) src-bmDaemon ;
 SubDirSysHdrs $(COMMON_FOLDER)/include ;
 # </pe-inc>
 
-LINKFLAGS += -L$(COMMON_FOLDER)/lib ;
+if $(OS) != HAIKU {
+	LINKFLAGS += -L$(COMMON_FOLDER)/lib ;
+}
 
 # build openssl-addon only if we have openssl headers:
 local haveOpenSsl = [ GLOB $(COMMON_FOLDER)/include/openssl : ssl.h ] ;
@@ -22,7 +24,7 @@ if $(haveOpenSsl) {
 		: 	
 			<src-bmDaemon>BmNetEndpoint.o 
 			bmBase.so
-			be $(LIBNETAPI) ssl crypto $(LIBNET)
+			be $(LIBNETAPI) ssl crypto $(LIBNET) $(STDC++LIB)
 		;
 	# </pe-src>
 	MakeLocate OpenSslNetEndpoint : [ FDirName $(DISTRO_DIR) add-ons NetEndpoints ] ;

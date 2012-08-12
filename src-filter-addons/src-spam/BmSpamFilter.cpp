@@ -40,25 +40,23 @@
 
 const char* FILTER_SPAM 			= "Spam";
 
-extern "C" __declspec(dllexport)
+extern "C"
 BmFilterAddon* InstantiateFilter( const BmString& name, 
 											 const BMessage* archive,
 											 const BmString& kind);
 
-extern "C" __declspec(dllexport) 
+extern "C"
 BmFilterAddonPrefsView* InstantiateFilterPrefs( float minx, float miny,
 																float maxx, float maxy,
 																const BmString& kind);
 
-extern "C" __declspec(dllexport) 
-const char* FilterKinds[] = {
-	FILTER_SPAM,
-	NULL
-};
-
-extern "C" __declspec(dllexport) 
-const char* DefaultFilterName = "<<< SPAM-filter >>>";
-
+extern "C" {
+	const char* FilterKinds[] = {
+		FILTER_SPAM,
+		NULL
+	};
+	const char* DefaultFilterName = "<<< SPAM-filter >>>";
+}
 
 
 //     strnhash - generate the hash of a string of length N
@@ -1264,17 +1262,17 @@ bool BmSpamFilter::OsbfClassifier::Classify( BmMsgContext* msgContext)
 		// overallPr is an open range (spam)[-min..+max](tofu), but the 
 		// "RatioSpam"-attribute from MDR is (tofu)[0..1](spam), 
 		// so we need to convert:
-		float clampMin = -1*(15.0+ThresholdForSpam);
-		float clampMax = (15.0+ThresholdForTofu);
+		float clampMin = -1.0f*float(15+ThresholdForSpam);
+		float clampMax = float(15+ThresholdForTofu);
 		if (overallPr < clampMin)
 			overallPr = clampMin;
 		if (overallPr > clampMax)
 			overallPr = clampMax;
-		float ratioSpam = 0.5;
+		float ratioSpam = 0.5f;
 		if (isSpam)
-			ratioSpam += fabs(overallPr / (clampMin/0.5));
+			ratioSpam += float(fabs(overallPr / (clampMin/0.5)));
 		else
-			ratioSpam -= fabs(overallPr / (clampMax/0.5));
+			ratioSpam -= float(fabs(overallPr / (clampMax/0.5)));
 		msgContext->SetDouble("RatioSpam", ratioSpam);
 	}
 	
@@ -1504,7 +1502,7 @@ void BmSpamFilter::OsbfClassifier::Microgroom ( FeatureBucket* hash,
 																Header* header,
 																unsigned long hindex)
 {
-	uint32 i, j, k;
+	uint32 i, j;
 	uint32 packstart;
 	int32 packlen;
 	int32 zeroed_countdown, max_zeroed_buckets;
@@ -1513,7 +1511,6 @@ void BmSpamFilter::OsbfClassifier::Microgroom ( FeatureBucket* hash,
 	bool groom_any = false;
 	
 	zeroed_countdown = MicrogroomStopAfter;
-	k = 0;
 	
 	//   micropack - start at initial chain start, move to back of 
 	//   chain that overflowed, then scale just that chain.
@@ -2073,7 +2070,7 @@ BmString BmSpamFilter::ErrorString() const {
 	InstantiateFilter()
 		-	
 \*------------------------------------------------------------------------------*/
-extern "C" __declspec(dllexport)
+extern "C"
 BmFilterAddon* InstantiateFilter( const BmString& name, 
 											 const BMessage* archive,
 											 const BmString& kind) {
@@ -2432,7 +2429,7 @@ void BmSpamFilterPrefs::MessageReceived( BMessage* msg) {
 		}
 		case BM_UNSURE_THRESHOLD_CHANGED: {
 			if (mCurrFilterAddon) {
-				int32 newVal = mUnsureThresholdControl->Value();
+				int8 newVal = int8(mUnsureThresholdControl->Value());
 				mCurrFilterAddon->D.mUnsureThreshold = newVal;
 				PropagateChange();
 			}
@@ -2569,8 +2566,8 @@ void BmSpamFilterPrefs::ShowFilter( BmFilterAddon* addon) {
 	if (mCurrFilterAddon) {
 		uint8 spamThreshold = mCurrFilterAddon->D.mSpamThreshold;
 		uint8 tofuThreshold = mCurrFilterAddon->D.mTofuThreshold;
-		uint8 thresholdVal = (spamThreshold+tofuThreshold)/2;
-		uint8 protectMyTofuVal = tofuThreshold-spamThreshold;
+		uint8 thresholdVal = uint8((spamThreshold+tofuThreshold)/2);
+		uint8 protectMyTofuVal = uint8(tofuThreshold-spamThreshold);
 		mThresholdControl->SetValue(thresholdVal);
 		mProtectMyTofuControl->SetValue(protectMyTofuVal);
 
@@ -2601,17 +2598,17 @@ bool BmSpamFilterPrefs::UpdateState(bool force) {
 			spamThr = 0;
 		if (force || spamThr != mCurrFilterAddon->D.mSpamThreshold 
 		|| tofuThr != mCurrFilterAddon->D.mTofuThreshold) {
-			mCurrFilterAddon->D.mSpamThreshold = spamThr;
-			mCurrFilterAddon->D.mTofuThreshold = tofuThr;
+			mCurrFilterAddon->D.mSpamThreshold = int8(spamThr);
+			mCurrFilterAddon->D.mTofuThreshold = int8(tofuThr);
 			char buf[10];
 			mSpamThresholdBar->Reset("Resulting Spam Threshold: ");
 			mSpamThresholdBar->SetMaxValue(50);
 			sprintf(buf, "%lu", spamThr);
-			mSpamThresholdBar->Update(spamThr, buf);
+			mSpamThresholdBar->Update(float(spamThr), buf);
 			mTofuThresholdBar->Reset("Resulting Tofu Threshold: ");
 			mTofuThresholdBar->SetMaxValue(50);
 			sprintf(buf, "%lu", tofuThr);
-			mTofuThresholdBar->Update(tofuThr, buf);
+			mTofuThresholdBar->Update(float(tofuThr), buf);
 			return true;
 		}
 	}
@@ -2624,12 +2621,13 @@ bool BmSpamFilterPrefs::UpdateState(bool force) {
 	InstantiateFilterPrefs()
 		-	
 \*------------------------------------------------------------------------------*/
-extern "C" __declspec(dllexport) 
+extern "C"
 BmFilterAddonPrefsView* InstantiateFilterPrefs( float minx, float miny,
 																float maxx, float maxy,
 																const BmString& kind) {
 	if (!kind.ICompare( FILTER_SPAM))
-		return new BmSpamFilterPrefs( minimax( minx, miny, maxx, maxy));
+		return new BmSpamFilterPrefs( minimax( int(minx), int(miny), 
+															int(maxx), int(maxy)));
 	else
 		return NULL;
 }

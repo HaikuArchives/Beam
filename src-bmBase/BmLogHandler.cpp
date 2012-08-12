@@ -274,7 +274,8 @@ BmLogHandler::BmLogfile* BmLogHandler::FindLogfile( const BmString &ln) {
 		if (logfile->Position() > mMaxFileSize) {
 			off_t newSize = mMinFileSize;
 			char* buf = new char [newSize+1];
-			newSize = logfile->ReadAt( logfile->Position()-newSize, buf, newSize);
+			newSize = logfile->ReadAt( logfile->Position()-newSize, buf, 
+												size_t(newSize));
 			buf[newSize] = '\0';
 			int32 offs = 0;
 			char* pos = strchr( buf, '\n');
@@ -282,7 +283,7 @@ BmLogHandler::BmLogfile* BmLogHandler::FindLogfile( const BmString &ln) {
 				offs = 1+pos-buf;
 			logfile->SetSize( 0);
 			logfile->Seek( SEEK_SET, 0);
-			logfile->WriteAt( 0, buf+offs, newSize-offs);
+			logfile->WriteAt( 0, buf+offs, size_t(newSize-offs));
 			delete [] buf;
 		}
 		log = new BmLogfile( logfile, name.String(), logname.String());
@@ -302,7 +303,7 @@ BmLogHandler::BmLogfile* BmLogHandler::FindLogfile( const BmString &ln) {
 		   minlevel
 \*------------------------------------------------------------------------------*/
 bool BmLogHandler::CheckLogLevel( uint32 terrain, int8 minlevel) const {
-	int8 loglevel = BM_LOGLVL_FOR(mLoglevels, terrain);
+	int8 loglevel = int8(BM_LOGLVL_FOR(mLoglevels, terrain));
 	return loglevel >= minlevel;
 }
 
@@ -422,8 +423,8 @@ void BmLogHandler::BmLogfile::Write( const char* const msg, int32 threadId) {
 	s.ReplaceAll( "\n", "\n                                  ");
 	s << "\n";
 	bigtime_t rtNow = real_time_clock_usecs();
-	time_t now = rtNow/1000000;
-	int32 nowMSecs = (rtNow/1000)%1000;
+	time_t now = time_t(rtNow/1000000);
+	int32 nowMSecs = int32((rtNow/1000)%1000);
 	char buf[40];
 	sprintf( buf, "<%6ld|%s.%03ld>: ", 
 					  threadId, 

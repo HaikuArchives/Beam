@@ -896,13 +896,13 @@ void BmUtf8Encoder::Filter( const char* srcBuf, uint32& srcLen,
 \********************************************************************************/
 
 inline unsigned char HEXDIGIT2CHAR( unsigned char d) {
-	return (((d)>='0'&&(d)<='9') 
-					? (d)-'0' 
-					: ((d)>='A'&&(d)<='F') 
-							? (d)-'A'+10 
-							: ((d)>='a'&&(d)<='f') 
-									? (d)-'a'+10 
-									: 0);
+	return (unsigned char)((d>='0' && d<='9') 
+					? d-'0' 
+					: (d>='A' && d<='F') 
+							? d-'A'+10
+							: (d>='a' && d<='f') 
+									? d-'a'+10
+									: '\0');
 }
 
 const char* BmQuotedPrintableDecoder::nTagIsEncodedWord = "<EncWord>";
@@ -986,7 +986,7 @@ void BmQuotedPrintableDecoder::Filter( const char* srcBuf, uint32& srcLen,
 					if (qpChars.FindFirst(c1)!=B_ERROR 
 					&& qpChars.FindFirst(c2)!=B_ERROR) {
 						// decode a single character:
-						*dest++ = HEXDIGIT2CHAR(c1)*16 + HEXDIGIT2CHAR(c2);
+						*dest++ = char(HEXDIGIT2CHAR(c1)*16 + HEXDIGIT2CHAR(c2));
 						src += 2;
 					} else {
 						// it's either a softbreak or broken encoding, we'll see:
@@ -1644,9 +1644,9 @@ void BmBase64Decoder::Filter( const char* srcBuf, uint32& srcLen,
 			if (value == -2) {
 				// padding-char ('=') encountered, we flush converted chars...
 				if (mIndex) {
-					*dest++ = (mConcat & 0x00ff0000) >> 16;
+					*dest++ = char((mConcat & 0x00ff0000) >> 16);
 					if (mIndex > 2)
-						*dest++ = (mConcat & 0x0000ff00) >> 8;
+						*dest++ = char((mConcat & 0x0000ff00) >> 8);
 				}
 				// ... and reset state:
 				mConcat = mIndex = 0;
@@ -1657,9 +1657,9 @@ void BmBase64Decoder::Filter( const char* srcBuf, uint32& srcLen,
 		mConcat |= (value << ((3-mIndex)*6));
 		
 		if (++mIndex == 4) {
-			*dest++ = (mConcat & 0x00ff0000) >> 16;
-			*dest++ = (mConcat & 0x0000ff00) >> 8;
-			*dest++ = (mConcat & 0x000000ff);
+			*dest++ = char((mConcat & 0x00ff0000) >> 16);
+			*dest++ = char((mConcat & 0x0000ff00) >> 8);
+			*dest++ = char((mConcat & 0x000000ff));
 			mConcat = mIndex = 0;
 		}
 	}
@@ -1680,9 +1680,9 @@ void BmBase64Decoder::Finalize( char* destBuf, uint32& destLen) {
 		// output remaining characters:
 		BM_ASSERT( dest<=destEnd-3);
 							// must be the case for mIndex!=0
-		*dest++ = (mConcat & 0x00ff0000) >> 16;
+		*dest++ = char((mConcat & 0x00ff0000) >> 16);
 		if (mIndex > 2)
-			*dest++ = (mConcat & 0x0000ff00) >> 8;
+			*dest++ = char((mConcat & 0x0000ff00) >> 8);
 		mConcat = mIndex = 0;
 	}
 	destLen = dest-destBuf;

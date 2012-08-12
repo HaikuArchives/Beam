@@ -70,9 +70,9 @@ void BmCheckControl::_InitSize()
 	GetPreferredSize(&width, &height);
 	// if there's no label, just use the space required for the checkbox
 	if (Label() == NULL)
-		ct_mpm = minimax(17, height, 17, height);
+		ct_mpm = minimax(17, int(height), 17, int(height));
 	else
-		ct_mpm = minimax(width, height, 1E5, height);
+		ct_mpm = minimax(int(width), int(height), 1E5, int(height));
 }
 
 /*------------------------------------------------------------------------------*\

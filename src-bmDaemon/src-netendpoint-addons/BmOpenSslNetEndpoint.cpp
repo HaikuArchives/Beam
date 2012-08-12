@@ -614,8 +614,8 @@ BmString BmOpenSslNetEndpoint::_FingerprintForCert(X509* cert)
 		return "";
 	for (unsigned int j=0; j < n; ++j) {
   		unsigned char c = md[j];
-		*buf++ = (c > 0x9F ? 'A'-10 : '0')+(c>>4);
-		*buf++ = ((c&0x0F) > 9 ? 'A'-10 : '0')+(c&0x0F);
+		*buf++ = char((c > 0x9F ? 'A'-10 : '0')+(c>>4));
+		*buf++ = char(((c&0x0F) > 9 ? 'A'-10 : '0')+(c&0x0F));
 		if (j+1 < n)
 			*buf++ = ':';
 	}
@@ -839,9 +839,9 @@ status_t BmOpenSslNetEndpoint::_PostHandshakeCheck()
 			// or our own, we create an intro for the verification problem
 			// message...
 			BmString boundary;
-			float count = 296.0 / be_plain_font->StringWidth("-");
+			float count = 296.0f / be_plain_font->StringWidth("-");
 				// hack to avoid wrapping of boundary
-			boundary.SetTo('-', count);
+			boundary.SetTo('-', int32(count));
 			BmString problemMsg;
 			problemMsg
 				<< "The server-certificate received from " << serverName << "\n"
@@ -904,7 +904,7 @@ status_t BmOpenSslNetEndpoint::_TranslateErrorCode( int result)
 	InstantiateNetEndpoint()
 		-	
 \*------------------------------------------------------------------------------*/
-extern "C" __declspec(dllexport)
+extern "C"
 BmNetEndpoint* InstantiateNetEndpoint()
 {
 	return new BmOpenSslNetEndpoint();
@@ -914,7 +914,7 @@ BmNetEndpoint* InstantiateNetEndpoint()
 	GetEncryptionInfo()
 		-	
 \*------------------------------------------------------------------------------*/
-extern "C" __declspec(dllexport)
+extern "C"
 status_t GetEncryptionInfo(BMessage* encryptionInfo)
 {
 	return BmOpenSslNetEndpoint::GetEncryptionInfo(encryptionInfo);

@@ -11,6 +11,8 @@
 
 #include <vector>
 
+using std::vector;
+
 /*------------------------------------------------------------------------------*\
 	BmImapNestedStringList
 		-	implements the parenthesized list structure as defined by the IMAP

@@ -46,7 +46,7 @@ public:
 	BmString RefPrintHex() const;
 
 	// statics:
-	static inline BLocker* GlobalLocker();
+	static BLocker* GlobalLocker();
 	static BmString RefPrintHex( const void* ptr);
 	static void CleanupObjectLists();
 #ifdef BM_REF_DEBUGGING

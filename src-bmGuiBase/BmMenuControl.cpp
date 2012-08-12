@@ -43,12 +43,11 @@ BmMenuControl::BmMenuControl( const char* label, BMenu* menu, float weight,
 	float minHeight = mMenuBar->Frame().Height()+6;
 	if (fitText) {
 		float fixedWidth = StringWidth( fitText)+Divider()+27;
-		ct_mpm = minimax( fixedWidth, minHeight, fixedWidth, minHeight);
+		ct_mpm = minimax( int(fixedWidth), int(minHeight), 
+								int(fixedWidth), int(minHeight));
 	} else {
-		ct_mpm = minimax(
-			StringWidth("1234567890")+Divider()+27, minHeight, 
-			maxWidth, minHeight, weight
-		);
+		ct_mpm = minimax(	int(StringWidth("1234567890")+Divider()+27), 
+								int(minHeight), int(maxWidth), int(minHeight), weight);
 	}
 	ResizeTo( ct_mpm.mini.x, ct_mpm.mini.y);
 	if (!BeamOnDano)
