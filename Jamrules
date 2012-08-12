@@ -22,8 +22,6 @@ include [ FDirName $(BUILD_DIR) OverriddenJamRules ] ;
 include [ FDirName $(BUILD_DIR) MainBuildRules ] ;
 include [ FDirName $(BUILD_DIR) BuildSettings ] ;
 
-FULL_DISTRO_DIR	= [ FDirName $(TOP) generated distro-$(PLATFORM)-with-libs ] ;
-
 # Include UserBuildConfig.
 {
 	local userBuildConfig = [ GLOB $(BUILD_DIR) : UserBuildConfig ] ;
@@ -65,26 +63,3 @@ actions Distro
 	ln -sfn ../lib $(DISTRO_DIR)/tools/ ;
 	mimeset $(DISTRO_DIR) ;
 }
-
-Depends fulldistro : distro ;
-
-rule FullDistro
-{
-	local target = $(1) ;
-
-	NotFile $(target) ;
-	Always $(target) ;
-}
-
-actions FullDistro
-{
-	echo "making full distro $(FULL_DISTRO_DIR)" ;
-	rm -rf $(FULL_DISTRO_DIR) ;
-	cp -a $(DISTRO_DIR) $(FULL_DISTRO_DIR) ;
-	cp $(COMMON_FOLDER)/lib/libpcre.so $(FULL_DISTRO_DIR)/lib/ ;
-	cp $(COMMON_FOLDER)/lib/libpcreposix.so $(FULL_DISTRO_DIR)/lib/ ;
-	cp $(COMMON_FOLDER)/lib/libiconv.so $(FULL_DISTRO_DIR)/lib/ ;
-	cp $(COMMON_FOLDER)/lib/liblayout.so $(FULL_DISTRO_DIR)/lib/ ;
-	mimeset $(FULL_DISTRO_DIR) ;
-}
-

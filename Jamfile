@@ -17,5 +17,3 @@ if $(BUILD_TESTS) != 0 && $(haveCppunit) {
 }
 
 Distro distro ;
-
-FullDistro fulldistro ;
