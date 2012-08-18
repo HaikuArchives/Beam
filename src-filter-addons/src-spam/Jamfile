@@ -20,7 +20,7 @@ AddOn Spam
 		BmSpamFilter.cpp
 	: 	
 		bmGuiBase.so bmMailKit.so bmRegexx.so bmBase.so 
-		layout pcre $(STDC++LIB) be
+		layout $(STDC++LIB) be
 	;
 # </pe-src>
 

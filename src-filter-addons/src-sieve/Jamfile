@@ -22,8 +22,9 @@ AddOn Sieve
 		BmSieveFilter.cpp
 	: 	
 		libsieve.a 
-		$(COMMON_FOLDER)/lib/libpcreposix.a $(COMMON_FOLDER)/lib/libpcre.a 
-		bmGuiBase.so bmMailKit.so bmRegexx.so bmBase.so layout be $(STDC++LIB)
+		bmGuiBase.so bmMailKit.so bmRegexx.so bmBase.so 
+		layout pcreposix pcre
+		be $(STDC++LIB)
 	;
 # </pe-src>
 

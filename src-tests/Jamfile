@@ -54,7 +54,8 @@ Application TestBeam
 		$(OBJECTS_DIR)/src-filter-addons/src-sieve/BmSieveFilter.o libsieve.a
 		beamInParts.a bmMailKit.so bmDaemon.so 
 		bmGuiBase.so bmRegexx.so bmBase.so 
-		layout tracker pcreposix cppunit $(STDC++LIB) translation be
+		pcreposix pcre
+		layout tracker cppunit $(STDC++LIB) translation be
 	;
 # </pe-src>
 

@@ -67,6 +67,10 @@ Application Beam :
 	Beam.cpp
 	: 	
 		beamInParts.a
+		pcreposix pcre	
+			# explicitly link in pcreposix to avoid problems with add-ons
+			# requiring it and symbol preemption (causing libroot's regex
+			# symbols to be used, which in turn cause crashes.
 		bmBase.so bmRegexx.so bmMailKit.so bmDaemon.so bmGuiBase.so 
 		layout tracker $(STDC++LIB) translation be 
 	;
