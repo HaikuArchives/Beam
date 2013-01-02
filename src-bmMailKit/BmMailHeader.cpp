@@ -32,6 +32,9 @@ static BmString BmAddressFieldNames =
 	"<Bcc><Resent-Bcc><Cc><List-Id><Resent-Cc><From><Resent-From><Reply-To>"
 	"<Resent-Reply-To><Sender><Resent-Sender><To><Resent-To>";
 
+static BmString BmIdentificationFieldNames = 
+	"<Message-ID><In-Reply-To><References>";
+
 static BmString BmNoEncodingFieldNames = 
 	"<Received><Message-ID><Resent-Message-ID><In-Reply-To><References><Date>"
 	"<Resent-Date>";
@@ -584,6 +587,15 @@ BmMailHeader::~BmMailHeader() {
 bool BmMailHeader::IsAddressField( BmString fieldName) {
 	BmString fname = BmString("<") << fieldName.CapitalizeEachWord() << ">";
 	return BmAddressFieldNames.IFindFirst( fname) != B_ERROR;
+}
+
+/*------------------------------------------------------------------------------*\
+	IsIdentificationField()
+	-	
+\*------------------------------------------------------------------------------*/
+bool BmMailHeader::IsIdentificationField( BmString fieldName) {
+	BmString fname = BmString("<") << fieldName.CapitalizeEachWord() << ">";
+	return BmIdentificationFieldNames.IFindFirst( fname) != B_ERROR;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -1391,6 +1403,10 @@ bool BmMailHeader::ConstructRawText( BmStringOBuf& msgText,
 				mAddrMap[fieldName].ConstructRawText( headerIO, charset, 
 																  fieldName.Length());
 				headerIO << "\r\n";
+			} else if (IsIdentificationField( fieldName)) {
+				headerIO << fieldName << ": \r\n " 
+							<< ConvertUTF8ToHeaderPart( iter->second.front(), charset, false, 0)
+							<< "\r\n";
 			} else {
 				const BmValueList& valueList = iter->second;
 				int count = valueList.size();

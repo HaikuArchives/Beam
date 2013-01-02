@@ -234,6 +234,7 @@ public:
 
 	// class-functions:
 	static bool IsAddressField( const BmString fieldName);
+	static bool IsIdentificationField( const BmString fieldName);
 	static bool IsEncodingOkForField( const BmString fieldName);
 	static bool IsStrippingOkForField( const BmString fieldName);
 
