@@ -110,7 +110,7 @@ TextEntryAlert::TextEntryAlert(const char* title, const char* info_text, const c
 
 //	info_text_box.bottom = info_text_box.top + ceil(plain_font_height.ascent) +
 //		ceil(plain_font_height.descent);
-	entry_text_rect = result_rects[1];
+	entry_text_rect = result_rects[1].IsValid() ? result_rects[1] : BRect(0, 0, min_text_box_width - 1, 0);
 	entry_text_rect.bottom = entry_text_rect.top +
 		(ceilf(plain_font_height.ascent)+ceilf(plain_font_height.descent))*float(min_text_box_rows) +
 		ceilf(plain_font_height.leading)*float(min_text_box_rows-1);
