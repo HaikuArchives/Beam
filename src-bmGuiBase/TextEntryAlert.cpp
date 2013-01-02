@@ -152,7 +152,6 @@ TextEntryAlert::TextEntryAlert(const char* title, const char* info_text, const c
 		entry_text_rect.OffsetTo(info_text_box.right+c_inline_label_spacing,c_item_spacing);
 	else
 		entry_text_rect.OffsetTo(c_item_spacing,info_text_box.bottom+c_non_inline_label_spacing);
-		//-5 is to compensate for extra pixels that BeOS adds to the font height
 	if(frame != NULL)
 	{
 		if(entry_text_rect.left + min_text_box_width < frame->Width()-c_item_spacing)
