@@ -8,8 +8,8 @@ SubDirHdrs $(TOP) src-bmDaemon ;
 SubDirHdrs $(TOP) src-bmGuiBase ;
 SubDirHdrs $(TOP) src-deskbarItem ;
 
-SubDirSysHdrs $(COMMON_FOLDER)/include ;
-SubDirSysHdrs $(COMMON_FOLDER)/include/liblayout ;
+SubDirSysHdrs $(COMMON_FOLDER)/develop/headers ;
+SubDirSysHdrs $(COMMON_FOLDER)/develop/headers/liblayout ;
 # </pe-inc>
 
 if $(OS) != HAIKU {

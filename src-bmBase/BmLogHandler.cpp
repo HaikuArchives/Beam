@@ -173,7 +173,7 @@ BmLogHandler::BmLogHandler( uint32 logLevels, node_ref* appFolderNodeRef)
 	,	mLoglevels( logLevels)
 {
 	BPath logPath;
-	if (find_directory( B_COMMON_LOG_DIRECTORY, &logPath, true) == B_OK) {
+	if (find_directory( B_SYSTEM_LOG_DIRECTORY, &logPath, true) == B_OK) {
 		mLogFolder.SetTo(logPath.Path());
 		if (!mLogFolder.Contains("beam")) {
 			// try to move old logs-folder from app-folder to /var/log:

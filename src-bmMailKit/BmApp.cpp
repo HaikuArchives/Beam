@@ -38,7 +38,7 @@ UpdateMimeTypeFile( const char* s, time_t appModTime)
 {
 	BmString sig(s);
 	BPath path;
-	if (find_directory( B_COMMON_SETTINGS_DIRECTORY, &path) == B_OK) {
+	if (find_directory( B_SYSTEM_SETTINGS_DIRECTORY, &path) == B_OK) {
 		sig.ToLower();
 		BEntry mtEntry( (BmString(path.Path())<<"/beos_mime/"<<sig).String());
 		if (mtEntry.InitCheck() == B_OK) {

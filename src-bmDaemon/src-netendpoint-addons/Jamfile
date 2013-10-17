@@ -12,9 +12,9 @@ if $(OS) != HAIKU {
 }
 
 # build openssl-addon only if we have openssl headers:
-local haveOpenSsl = [ GLOB $(COMMON_FOLDER)/include/openssl : ssl.h ] ;
+local haveOpenSsl = [ GLOB $(COMMON_FOLDER)/develop/headers/openssl : ssl.h ] ;
 if ! $(haveOpenSsl) {
-	haveOpenSsl = [ GLOB /boot/develop/headers/openssl : ssl.h ] ;
+	haveOpenSsl = [ GLOB /boot/system/develop/headers/openssl : ssl.h ] ;
 }
 if $(haveOpenSsl) {
 	# <pe-src>

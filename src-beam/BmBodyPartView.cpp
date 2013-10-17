@@ -779,7 +779,7 @@ void BmBodyPartView::HandleDrop( BMessage* msg) {
 	else {
 		BPath tempPath;
 		entry_ref tempPathRef;
-		if (find_directory( B_COMMON_TEMP_DIRECTORY, &tempPath, true) == B_OK 
+		if (find_directory( B_SYSTEM_TEMP_DIRECTORY, &tempPath, true) == B_OK
 		&& get_ref_for_path( tempPath.Path(), &tempPathRef) == B_OK) {
 
 			// build the reply message

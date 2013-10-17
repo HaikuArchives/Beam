@@ -11,9 +11,9 @@ SubDirHdrs $(TOP) src-deskbarItem ;
 SubDirHdrs $(TOP) src-filter-addons src-sieve ;
 SubDirHdrs $(TOP) src-filter-addons src-sieve src-libSieve ;
 
-SubDirSysHdrs $(COMMON_FOLDER)/include/cppunit ;
-SubDirSysHdrs $(COMMON_FOLDER)/include ;
-SubDirSysHdrs $(COMMON_FOLDER)/include/liblayout ;
+SubDirSysHdrs $(COMMON_FOLDER)/develop/headers/cppunit ;
+SubDirSysHdrs $(COMMON_FOLDER)/develop/headers ;
+SubDirSysHdrs $(COMMON_FOLDER)/develop/headers/liblayout ;
 # </pe-inc>
 
 if $(OS) != HAIKU {
