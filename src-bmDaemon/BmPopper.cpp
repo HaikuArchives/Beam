@@ -32,17 +32,17 @@ using namespace regexx;
 #include "BmRosterBase.h"
 #include "BmUtil.h"
 
-// standard logfile-name for this class:
-#undef BM_LOGNAME
-#define BM_LOGNAME Name()
-
 /********************************************************************************\
 	BmPopStatusFilter
 \********************************************************************************/
 
+// standard logfile-name for this class:
+#undef BM_LOGNAME
+#define BM_LOGNAME mJob->Name()
+
 /*------------------------------------------------------------------------------*\
 	()
-		-	
+		-
 \*------------------------------------------------------------------------------*/
 BmPopStatusFilter::BmPopStatusFilter( BmMemIBuf* input, BmNetJobModel* job,
 												  uint32 blockSize)
@@ -53,9 +53,9 @@ BmPopStatusFilter::BmPopStatusFilter( BmMemIBuf* input, BmNetJobModel* job,
 
 /*------------------------------------------------------------------------------*\
 	()
-		-	
+		-
 \*------------------------------------------------------------------------------*/
-void BmPopStatusFilter::Filter( const char* srcBuf, uint32& srcLen, 
+void BmPopStatusFilter::Filter( const char* srcBuf, uint32& srcLen,
 										  char* destBuf, uint32& destLen) {
 	const char* src = srcBuf;
 	const char* srcEnd = srcBuf+srcLen;
@@ -75,13 +75,17 @@ void BmPopStatusFilter::Filter( const char* srcBuf, uint32& srcLen,
 		mStatusText.Append( srcBuf, statusSize);
 		if (src<srcEnd) {
 			src++;								// skip '\n'
-			mHaveStatus = true;
-			mStatusText.RemoveAll( "\r");
-			if (!needData 
-			|| (mStatusText.Length() && mStatusText.ByteAt(0) != '+'))
-				// if the status is all we want or an error occurred,
-				// we are done:
-				mEndReached = true;
+			// sometimes it happens that servers answer with a leading '\n',
+			// make sure to skip empty lines before the status line.
+			if (statusSize > 0) {
+				mHaveStatus = true;
+				mStatusText.RemoveAll( "\r");
+				if (!needData
+				|| (mStatusText.Length() && mStatusText.ByteAt(0) != '+'))
+					// if the status is all we want or an error occurred,
+					// we are done:
+					mEndReached = true;
+			}
 		}
 		srcLen = src-srcBuf;
 		destLen = 0;
@@ -92,7 +96,7 @@ void BmPopStatusFilter::Filter( const char* srcBuf, uint32& srcLen,
 
 /*------------------------------------------------------------------------------*\
 	()
-		-	
+		-
 \*------------------------------------------------------------------------------*/
 bool BmPopStatusFilter::CheckForPositiveAnswer() {
 	if (mStatusText.Length() && mStatusText.ByteAt(0) != '+') {
@@ -109,6 +113,10 @@ bool BmPopStatusFilter::CheckForPositiveAnswer() {
 /********************************************************************************\
 	BmPopper
 \********************************************************************************/
+
+// standard logfile-name for this class:
+#undef BM_LOGNAME
+#define BM_LOGNAME Name()
 
 // message component definitions for additional info:
 const char* const BmPopper::MSG_PWD = 	"bm:pwd";
@@ -144,7 +152,7 @@ BmPopper::PopState BmPopper::PopStates[BmPopper::POP_FINAL] = {
 		-	contructor
 \*------------------------------------------------------------------------------*/
 BmPopper::BmPopper( const BmString& name, BmPopAccount* account)
-	:	inherited( BmString("POP_")<<name, BM_LogRecv, 
+	:	inherited( BmString("POP_")<<name, BM_LogRecv,
 					  new BmPopStatusFilter( NULL, this))
 	,	mPopAccount( account)
 	,	mCurrMailNr( 0)
@@ -160,7 +168,7 @@ BmPopper::BmPopper( const BmString& name, BmPopAccount* account)
 	~BmPopper()
 		-	destructor
 \*------------------------------------------------------------------------------*/
-BmPopper::~BmPopper() { 
+BmPopper::~BmPopper() {
 	BM_LOG_FINISH( BM_LOGNAME);
 }
 
@@ -181,7 +189,7 @@ bool BmPopper::ShouldContinue() {
 
 /*------------------------------------------------------------------------------*\
 	SetupAdditionalInfo()
-		-	
+		-
 \*------------------------------------------------------------------------------*/
 void BmPopper::SetupAdditionalInfo( BMessage* additionalInfo)
 {
@@ -195,7 +203,7 @@ void BmPopper::SetupAdditionalInfo( BMessage* additionalInfo)
 
 /*------------------------------------------------------------------------------*\
 	StartJob()
-		-	the mainloop, steps through all POP3-stages and calls the corresponding 
+		-	the mainloop, steps through all POP3-stages and calls the corresponding
 			handlers
 		-	returns whether or not the Popper has completed it's job
 \*------------------------------------------------------------------------------*/
@@ -259,7 +267,7 @@ bool BmPopper::StartJob() {
 	}
 	catch( ...) {
 		BmString errMsg;
-		errMsg << "The job for account " << mPopAccount->Name() 
+		errMsg << "The job for account " << mPopAccount->Name()
 				 << "received an unknown exception and died!";
 		HandleError(errMsg);
 		return false;
@@ -273,19 +281,19 @@ bool BmPopper::StartJob() {
 		-	failed==true means that we only want to indicate the failure of the
 			current stage (the BmString "FAILED!" will be shown)
 \*------------------------------------------------------------------------------*/
-void BmPopper::UpdatePOPStatus( const float delta, const char* detailText, 
+void BmPopper::UpdatePOPStatus( const float delta, const char* detailText,
 										  bool failed, bool stopped) {
 	std::auto_ptr<BMessage> msg( new BMessage( BM_JOB_UPDATE_STATE));
 	msg->AddString( MSG_MODEL, Name().String());
 	msg->AddString( MSG_DOMAIN, "statbar");
 	msg->AddFloat( MSG_DELTA, delta);
 	if (failed) {
-		msg->AddString( MSG_TRAILING, 
+		msg->AddString( MSG_TRAILING,
 							(BmString(PopStates[mState].text) << " FAILED!").String());
 		msg->AddBool( MSG_FAILED, true);
 	} else if (stopped)
-		msg->AddString( MSG_TRAILING, 
-							(BmString(PopStates[mState].text) 
+		msg->AddString( MSG_TRAILING,
+							(BmString(PopStates[mState].text)
 								<< " Stopped!").String());
 	else
 		msg->AddString( MSG_TRAILING, PopStates[mState].text);
@@ -300,7 +308,7 @@ void BmPopper::UpdatePOPStatus( const float delta, const char* detailText,
 	UpdateMailStatus( delta, detailText, currMsg)
 		- informs the interested party about the message currently dealt with
 \*------------------------------------------------------------------------------*/
-void BmPopper::UpdateMailStatus( const float delta, const char* detailText, 
+void BmPopper::UpdateMailStatus( const float delta, const char* detailText,
 											int32 currMsg) {
 	BmString text;
 	if (mNewMsgCount) {
@@ -343,9 +351,9 @@ void BmPopper::UpdateCleanupStatus( const float delta, int32 currMsg) {
 		-
 \*------------------------------------------------------------------------------*/
 void BmPopper::UpdateProgress( uint32 numBytes) {
-	float delta 
+	float delta
 		= (100.0f*float(numBytes))/float(mNewMsgTotalSize ? mNewMsgTotalSize : 1);
-	BmString detailText = BmString("size: ") 
+	BmString detailText = BmString("size: ")
 									<< BytesToString( mNewMsgSizes[mCurrMailNr-1]);
 	UpdateMailStatus( delta, detailText.String(), mCurrMailNr);
 }
@@ -356,15 +364,15 @@ void BmPopper::UpdateProgress( uint32 numBytes) {
 \*------------------------------------------------------------------------------*/
 void BmPopper::StateConnect() {
 	BNetAddress addr;
-	if (addr.SetTo( mPopAccount->Server().String(), 
+	if (addr.SetTo( mPopAccount->Server().String(),
 						 mPopAccount->PortNr()) != B_OK) {
-		BmString s = BmString("Could not determine address of POP-Server ") 
+		BmString s = BmString("Could not determine address of POP-Server ")
 							<< mPopAccount->Server();
 		throw BM_network_error( s);
 	}
 	if (!Connect( &addr)) {
-		BmString s = BmString("Could not connect to POP-Server ") 
-							<< mPopAccount->Server() 
+		BmString s = BmString("Could not connect to POP-Server ")
+							<< mPopAccount->Server()
 						  	<< "\n\bError:\n\t" << mErrorString;
 		throw BM_network_error( s);
 	}
@@ -372,7 +380,7 @@ void BmPopper::StateConnect() {
 	if (TheNetEndpointRoster->SupportsEncryption()
 	&& (encryptionType.ICompare(BmPopAccount::ENCR_TLS) == 0
 		|| encryptionType.ICompare(BmPopAccount::ENCR_SSL) == 0)) {
-		// straight TLS or SSL, we start the encryption layer: 
+		// straight TLS or SSL, we start the encryption layer:
 		if (!StartEncryption(encryptionType.String()))
 			return;
 	}
@@ -395,11 +403,11 @@ void BmPopper::StateCapa() {
 		CheckForPositiveAnswer( 16384, true);
 							// we expect a multiline string as answer
 		Regexx rx;
-		if (rx.exec( 
+		if (rx.exec(
 			mAnswerText, "^\\s*SASL\\s+(.*?)$", Regexx::newline
 		)) {
 			mSupportedAuthTypes = rx.match[0].atom[0];
-		} else if (rx.exec( 
+		} else if (rx.exec(
 			mAnswerText, "^\\s*AUTH\\s+(.*?)$", Regexx::newline
 		)) {
 			mSupportedAuthTypes = rx.match[0].atom[0];
@@ -425,7 +433,7 @@ void BmPopper::StateStartTLS() {
 	&& mServerSupportsTLS) {
 		encryptionType = BmPopAccount::ENCR_STARTTLS;
 	}
-	
+
 	if (!TheNetEndpointRoster->SupportsEncryption()
 	|| encryptionType.ICompare(BmPopAccount::ENCR_STARTTLS) != 0)
 		return;
@@ -458,7 +466,7 @@ bool BmPopper::StartEncryption(const char* encType)
 
 /*------------------------------------------------------------------------------*\
 	ExtractBase64()
-		-	
+		-
 \*------------------------------------------------------------------------------*/
 void BmPopper::ExtractBase64(const BmString& text, BmString& base64)
 {
@@ -499,7 +507,7 @@ void BmPopper::StateAuth() {
 		}
 		first = false;
 		if (authMethod == BmPopAccount::AUTH_APOP) {
-			// APOP-method: 
+			// APOP-method:
 			if (mServerTimestamp.Length()) {
 				BmString secret( mServerTimestamp + pwd);
 				BmString Digest;
@@ -580,13 +588,13 @@ void BmPopper::StateCheck() {
 	cmd = BmString("UIDL");
 	SendCommand( cmd);
 	try {
-		// The UIDL-command may not be implemented by this server, so we 
+		// The UIDL-command may not be implemented by this server, so we
 		// do not require a positive answer, we just hope for it:
 		if (!CheckForPositiveAnswer( 16384, true))
 			return;								// interrupted, we give up
 		// ok, we've got the UIDL-listing, so we fetch it,
 		// fetch UIDLs one per line and store them in array:
-		int numLines = rx.exec( mAnswerText, "\\s*(\\d+)\\s+(.+?)\\s*$", 
+		int numLines = rx.exec( mAnswerText, "\\s*(\\d+)\\s+(.+?)\\s*$",
 										Regexx::newline | Regexx::global);
 		if (numLines < mMsgCount)
 			throw BM_network_error(	BmString("answer to UIDL has unknown format"
@@ -612,7 +620,7 @@ void BmPopper::StateCheck() {
 	split( "\r\n", mAnswerText, listAnswerVect);
 	uint32 count = mMsgCount;
 	if (count != listAnswerVect.size()) {
-		BM_LOG( BM_LogRecv, 
+		BM_LOG( BM_LogRecv,
 				  BmString("Strange: server indicated ")<< mMsgCount
 						<< " mails, but LIST received " << listAnswerVect.size()
 						<< " lines!");
@@ -626,14 +634,14 @@ void BmPopper::StateCheck() {
 			// fetch msgsize for message...
 			Regexx rx;
 			if (!rx.exec( listAnswerVect[i], "^\\s*(\\d+)\\s+(\\d+)\\s*$"))
-				throw BM_network_error( 
+				throw BM_network_error(
 					BmString("answer to LIST has unknown format, msg ") << i+1
 				);
 			BmString msgNumStr = rx.match[0].atom[0];
 			msgNum = atoi(msgNumStr.String());
 			if (msgNum != i+1)
-				throw BM_network_error( 
-					BmString("answer to LIST has unexpected msg-nr. ") << msgNum 
+				throw BM_network_error(
+					BmString("answer to LIST has unexpected msg-nr. ") << msgNum
 						<< " in line " << i+1
 				);
 			BmString msgSizeStr = rx.match[0].atom[1];
@@ -645,7 +653,7 @@ void BmPopper::StateCheck() {
 		} else {
 			// msg is old (according to known UID), we may have to remove it now:
 			BmString log;
-			bool shouldBeRemoved 
+			bool shouldBeRemoved
 				= mPopAccount->ShouldUIDBeDeletedFromServer(mMsgUIDs[i], log);
 			BM_LOG2( BM_LogRecv, log);
 			if (shouldBeRemoved) {
@@ -697,14 +705,14 @@ void BmPopper::StateRetrieve() {
 		time_t before = time(NULL);
 		if (!CheckForPositiveAnswer( mNewMsgSizes[mCurrMailNr-1], true, true))
 			goto CLEAN_UP;
-		if (mAnswerText.Length() > ThePrefs->GetInt("LogSpeedThreshold", 
+		if (mAnswerText.Length() > ThePrefs->GetInt("LogSpeedThreshold",
 																  100*1024)) {
 			time_t after = time(NULL);
 			time_t duration = after-before > 0 ? after-before : 1;
 			// log speed for mails that exceed a certain size:
-			BM_LOG( BM_LogRecv, 
+			BM_LOG( BM_LogRecv,
 					  BmString("Received mail of size ")<<mAnswerText.Length()
-							<< " bytes in " << duration << " seconds => " 
+							<< " bytes in " << duration << " seconds => "
 							<< mAnswerText.Length()/duration/1024.0 << "KB/s");
 		}
 		if (mAnswerText.Length() != mNewMsgSizes[mCurrMailNr-1]) {
@@ -712,7 +720,7 @@ void BmPopper::StateRetrieve() {
 			// log it if in verbose mode:
 			BM_LOG2( BM_LogRecv,
 						BmString("Received mail has ") << mAnswerText.Length()
-							<< " bytes but it was announced to have " 
+							<< " bytes but it was announced to have "
 							<< mNewMsgSizes[mCurrMailNr-1] << " bytes."
 			);
 		}
@@ -761,7 +769,7 @@ void BmPopper::StateDisconnect() {
 
 /*------------------------------------------------------------------------------*\
 	Quit( WaitForAnswer)
-		-	sends a QUIT to the server, waiting for answer only 
+		-	sends a QUIT to the server, waiting for answer only
 			if WaitForAnswer==true
 		-	normally, we wait for an answer, just if we are shutting down
 			because of an error we ignore any answer.
@@ -779,7 +787,7 @@ void BmPopper::Quit( bool WaitForAnswer) {
 
 /*------------------------------------------------------------------------------*\
 	SupportsTLS()
-		-	returns whether or not the server has indicated that it supports 
+		-	returns whether or not the server has indicated that it supports
 			the STARTTLS command
 \*------------------------------------------------------------------------------*/
 bool BmPopper::SupportsTLS() const
@@ -789,7 +797,7 @@ bool BmPopper::SupportsTLS() const
 
 /*------------------------------------------------------------------------------*\
 	SuggestAuthType()
-		-	looks at the auth-types supported by the server and selects 
+		-	looks at the auth-types supported by the server and selects
 			the most secure of those that is supported by Beam.
 \*------------------------------------------------------------------------------*/
 BmString BmPopper::SuggestAuthType() const
