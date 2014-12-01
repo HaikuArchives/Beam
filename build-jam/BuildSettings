@@ -44,7 +44,7 @@ if $(OSPLAT) = X86 {
 		PLATFORM = zeta ;
 	}
 	# check for libbnetapi...
-	local haveLibbnetapi = [ GLOB /boot/develop/lib/x86 : libbnetapi.so ] ;
+	local haveLibbnetapi = [ GLOB /boot/system/develop/lib : libbnetapi.so ] ;
 	if $(haveLibbnetapi) {
 		LIBNETAPI = bnetapi ;
 	}
