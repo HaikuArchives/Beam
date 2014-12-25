@@ -31,9 +31,9 @@ class BFile;
 struct node_ref;
 /*------------------------------------------------------------------------------*\
 	BmLogHandler
-		-	implements the global log-handler that received all logging requests 
+		-	implements the global log-handler that received all logging requests
 			and executes them
-		-	different logfiles are identified by their name and will be created 
+		-	different logfiles are identified by their name and will be created
 			on demand
 \*------------------------------------------------------------------------------*/
 class IMPEXPBMBASE BmLogHandler {
@@ -82,9 +82,6 @@ public:
 
 	bool mWaitingForShutdown;
 
-	BLocker mLocker;
-							// benaphore used to lock write-access to list
-
 	//	message component definitions for status-msgs:
 	static const char* const MSG_MESSAGE;
 	static const char* const MSG_THREAD_ID;
@@ -96,7 +93,7 @@ private:
 	// Hide copy-constructor and assignment:
 	BmLogHandler( const BmLogHandler&);
 	BmLogHandler operator=( const BmLogHandler&);
-	
+
 	/*---------------------------------------------------------------------------*\
 		BmLogfile
 			-	implements a single logfile
@@ -110,7 +107,7 @@ private:
 		~BmLogfile();
 		void Write( const char* const msg, const int32 threadId);
 		void MessageReceived( BMessage* msg);
-	
+
 		BList mWatchingHandlers;
 		BmString logname;
 
@@ -123,7 +120,10 @@ private:
 		BmLogfile operator=( const BmLogfile&);
 	};
 
-	BList mActiveLogs;					
+	BLocker mLocker;
+							// benaphore used to lock write-access to list
+
+	BList mActiveLogs;
 							// list of logfiles
 	BList mWatcherInfo;
 
@@ -152,14 +152,14 @@ extern IMPEXPBMBASE const uint32 BM_LogFilter;
 extern IMPEXPBMBASE const uint32 BM_LogRefCount;
 extern IMPEXPBMBASE const uint32 BM_LogAll;
 
-// macros to convert the loglevel for a specific terrain 
+// macros to convert the loglevel for a specific terrain
 // into it's internal bit-representation:
 #define BM_LOGLVL0(terrain) (0)
 #define BM_LOGLVL1(terrain) (terrain)
 #define BM_LOGLVL2(terrain) (terrain<<16)
 #define BM_LOGLVL3(terrain) (terrain+(terrain<<16))
 
-// macro to obtain the loglevel for a specific terrain 
+// macro to obtain the loglevel for a specific terrain
 // from it's internal bit-representation:
 #define BM_LOGLVL_FOR(loglevels,terrain) \
 (((loglevels & terrain) ? 1 : 0) + ((loglevels & terrain<<16) ? 2 : 0))
@@ -172,7 +172,7 @@ extern IMPEXPBMBASE const uint32 BM_LogAll;
 /*------------------------------------------------------------------------------*\
 	time-related utility functions
 \*------------------------------------------------------------------------------*/
-IMPEXPBMBASE BmString TimeToString( time_t t, 
+IMPEXPBMBASE BmString TimeToString( time_t t,
 												const char* format="%Y-%m-%d %H:%M:%S");
 
 /*------------------------------------------------------------------------------*\

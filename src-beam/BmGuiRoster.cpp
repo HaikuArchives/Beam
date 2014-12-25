@@ -47,7 +47,7 @@ using namespace regexx;
 
 /*------------------------------------------------------------------------------*\
 	()
-		-	
+		-
 \*------------------------------------------------------------------------------*/
 BmGuiRoster::BmGuiRoster()
 {
@@ -55,9 +55,9 @@ BmGuiRoster::BmGuiRoster()
 
 /*------------------------------------------------------------------------------*\
 	()
-		-	
+		-
 \*------------------------------------------------------------------------------*/
-bool BmGuiRoster::AskUserForPwd( const BmString& text, BmString& pwd) 
+bool BmGuiRoster::AskUserForPwd( const BmString& text, BmString& pwd)
 {
 	// ask user about password:
 	TextEntryAlert* alert = new TextEntryAlert( "Info needed", text.String(),
@@ -79,9 +79,9 @@ bool BmGuiRoster::AskUserForPwd( const BmString& text, BmString& pwd)
 
 /*------------------------------------------------------------------------------*\
 	()
-		-	
+		-
 \*------------------------------------------------------------------------------*/
-bool BmGuiRoster::AskUserForPopAcc( const BmString& accName, 
+bool BmGuiRoster::AskUserForPopAcc( const BmString& accName,
 												BmString& popAccName)
 {
 	// ask user about password:
@@ -91,16 +91,16 @@ bool BmGuiRoster::AskUserForPopAcc( const BmString& accName,
 	BList list;
 	BmAutolockCheckGlobal lock( TheRecvAccountList->ModelLocker());
 	if (!lock.IsLocked())
-		BM_THROW_RUNTIME( 
+		BM_THROW_RUNTIME(
 			TheRecvAccountList->ModelNameNC() << ": Unable to get lock"
 		);
 	BmModelItemMap::const_iterator iter;
-	for(	iter = TheRecvAccountList->begin(); 
+	for(	iter = TheRecvAccountList->begin();
 			iter != TheRecvAccountList->end(); ++iter) {
 		BmRecvAccount* acc = dynamic_cast<BmRecvAccount*>( iter->second.Get());
 		list.AddItem( (void*)acc->Name().String());
 	}
-	ListSelectionAlert* alert = new ListSelectionAlert( 
+	ListSelectionAlert* alert = new ListSelectionAlert(
 		"Recv-Account", text.String(), list, "", "Cancel", "OK"
 	);
 	alert->SetFeel( B_FLOATING_APP_WINDOW_FEEL);
@@ -117,7 +117,7 @@ bool BmGuiRoster::AskUserForPopAcc( const BmString& accName,
 
 /*------------------------------------------------------------------------------*\
 	IsEmailKnown()
-		-	
+		-
 \*------------------------------------------------------------------------------*/
 bool BmGuiRoster::IsEmailKnown( const BmString& email)
 {
@@ -129,7 +129,7 @@ namespace BmPrivate {
 
 /*------------------------------------------------------------------------------*\
 	ClearMenu()
-		-	
+		-
 \*------------------------------------------------------------------------------*/
 static void ClearMenu( BmMenuControllerBase* menu)
 {
@@ -155,18 +155,18 @@ public:
 			return a->DisplayKey().ICompare(b->DisplayKey()) < 0;
 		}
 	};
-	
+
 	ListMenuBuilder( BmListModel* list, BMenu* menu, BMessage* msgTemplate,
 						  BHandler* msgTarget, const BmString& shortcuts);
 	~ListMenuBuilder();
 	status_t Go();
-	
+
 	void SkipFirstLevel( bool b)			{ mSkipFirstLevel = b; }
 	void AddNoneItem( bool b)				{ mAddNoneItem = b; }
 	void ItemFilter( ItemFilter* f)		{ mItemFilter = f; }
 
 private:
-	void AddListItemToMenu( BmListModelItem* item, 
+	void AddListItemToMenu( BmListModelItem* item,
 									BMenu* menu,
 									bool skipThisButAddChildren=false,
 									char shortcut=0);
@@ -182,7 +182,7 @@ private:
 	BmString mShortcuts;
 };
 
-ListMenuBuilder::ListMenuBuilder( BmListModel* list, BMenu* menu, 
+ListMenuBuilder::ListMenuBuilder( BmListModel* list, BMenu* menu,
 											 BMessage* msgTemplate, BHandler* msgTarget,
 											 const BmString& shortcuts)
 	:	mList(list)
@@ -206,7 +206,7 @@ status_t ListMenuBuilder::Go()
 	if (mList) {
 		BmAutolockCheckGlobal lock( mList->ModelLocker());
 		if (!lock.IsLocked())
-			BM_THROW_RUNTIME( 
+			BM_THROW_RUNTIME(
 				mList->ModelNameNC() << ": Unable to get lock"
 			);
 		ItemVect sortedVect;
@@ -223,19 +223,19 @@ status_t ListMenuBuilder::Go()
 			mMenu->AddItem( noneItem);
 		}
 		for( uint32 i=0; i<sortedVect.size(); ++i) {
-			AddListItemToMenu( sortedVect[i], mMenu, mSkipFirstLevel, 
-									 i < (uint32)mShortcuts.Length() 
-									 	? mShortcuts[i] 
+			AddListItemToMenu( sortedVect[i], mMenu, mSkipFirstLevel,
+									 i < (uint32)mShortcuts.Length()
+									 	? mShortcuts[i]
 									 	: '\0');
 		}
 	}
 	return B_OK;
 }
 
-void ListMenuBuilder::AddListItemToMenu( BmListModelItem* item, 
+void ListMenuBuilder::AddListItemToMenu( BmListModelItem* item,
 													  BMenu* menu,
 													  bool skipThisButAddChildren,
-													  char shortcut) 
+													  char shortcut)
 {
 	if (menu && item) {
 		ItemVect sortedVect;
@@ -271,16 +271,16 @@ void ListMenuBuilder::AddListItemToMenu( BmListModelItem* item,
 	}
 }
 
-static void RebuildList( BmMenuControllerBase* menu, BmListModel* list, 
+static void RebuildList( BmMenuControllerBase* menu, BmListModel* list,
 								 bool skipFirstLevel=false);
 /*------------------------------------------------------------------------------*\
 	RebuildList()
-		-	
+		-
 \*------------------------------------------------------------------------------*/
 static void RebuildList( BmMenuControllerBase* menu, BmListModel* list,
 								 bool skipFirstLevel)
 {
-	ClearMenu( menu);	
+	ClearMenu( menu);
 	ListMenuBuilder builder(list, menu, menu->MsgTemplate(), menu->MsgTarget(),
 									menu->Shortcuts());
 	builder.SkipFirstLevel(skipFirstLevel);
@@ -293,7 +293,7 @@ using namespace BmPrivate;
 
 /*------------------------------------------------------------------------------*\
 	()
-		-	
+		-
 \*------------------------------------------------------------------------------*/
 void BmGuiRoster::RebuildFilterMenu( BmMenuControllerBase* menu)
 {
@@ -306,8 +306,8 @@ void BmGuiRoster::RebuildFilterMenu( BmMenuControllerBase* menu)
 		}
 	};
 	ItemFilter itemFilter;
-	ClearMenu( menu);	
-	ListMenuBuilder builder(TheFilterList.Get(), menu, menu->MsgTemplate(), 
+	ClearMenu( menu);
+	ListMenuBuilder builder(TheFilterList.Get(), menu, menu->MsgTemplate(),
 									menu->MsgTarget(), menu->Shortcuts());
 	builder.ItemFilter(&itemFilter);
 	builder.Go();
@@ -317,7 +317,7 @@ void BmGuiRoster::RebuildFilterMenu( BmMenuControllerBase* menu)
 
 /*------------------------------------------------------------------------------*\
 	()
-		-	
+		-
 \*------------------------------------------------------------------------------*/
 void BmGuiRoster::RebuildFilterChainMenu( BmMenuControllerBase* menu)
 {
@@ -326,7 +326,7 @@ void BmGuiRoster::RebuildFilterChainMenu( BmMenuControllerBase* menu)
 
 /*------------------------------------------------------------------------------*\
 	()
-		-	
+		-
 \*------------------------------------------------------------------------------*/
 void BmGuiRoster::RebuildFolderMenu( BmMenuControllerBase* menu)
 {
@@ -335,7 +335,7 @@ void BmGuiRoster::RebuildFolderMenu( BmMenuControllerBase* menu)
 
 /*------------------------------------------------------------------------------*\
 	()
-		-	
+		-
 \*------------------------------------------------------------------------------*/
 void BmGuiRoster::RebuildIdentityMenu( BmMenuControllerBase* menu)
 {
@@ -344,18 +344,18 @@ void BmGuiRoster::RebuildIdentityMenu( BmMenuControllerBase* menu)
 
 /*------------------------------------------------------------------------------*\
 	()
-		-	
+		-
 \*------------------------------------------------------------------------------*/
 void BmGuiRoster::RebuildPeopleMenu( BmMenuControllerBase* menu)
 {
-	ClearMenu( menu);	
+	ClearMenu( menu);
 	// Delegate task (back) to MailEditWin:
 	BmMailEditWin::RebuildPeopleMenu( menu);
 }
 
 /*------------------------------------------------------------------------------*\
 	()
-		-	
+		-
 \*------------------------------------------------------------------------------*/
 void BmGuiRoster::RebuildRecvAccountMenu( BmMenuControllerBase* menu)
 {
@@ -364,7 +364,7 @@ void BmGuiRoster::RebuildRecvAccountMenu( BmMenuControllerBase* menu)
 
 /*------------------------------------------------------------------------------*\
 	()
-		-	
+		-
 \*------------------------------------------------------------------------------*/
 void BmGuiRoster::RebuildSignatureMenu( BmMenuControllerBase* menu)
 {
@@ -373,7 +373,7 @@ void BmGuiRoster::RebuildSignatureMenu( BmMenuControllerBase* menu)
 
 /*------------------------------------------------------------------------------*\
 	()
-		-	
+		-
 \*------------------------------------------------------------------------------*/
 void BmGuiRoster::RebuildSmtpAccountMenu( BmMenuControllerBase* menu)
 {
@@ -382,22 +382,22 @@ void BmGuiRoster::RebuildSmtpAccountMenu( BmMenuControllerBase* menu)
 
 /*------------------------------------------------------------------------------*\
 	()
-		-	
+		-
 \*------------------------------------------------------------------------------*/
 void BmGuiRoster::RebuildStatusMenu( BmMenuControllerBase* menu)
 {
-	ClearMenu( menu);	
+	ClearMenu( menu);
 	const char* stats[] = {
-		BM_MAIL_STATUS_DRAFT, BM_MAIL_STATUS_FORWARDED, 
-		BM_MAIL_STATUS_NEW, 
-		BM_MAIL_STATUS_PENDING, BM_MAIL_STATUS_READ, 
+		BM_MAIL_STATUS_DRAFT, BM_MAIL_STATUS_FORWARDED,
+		BM_MAIL_STATUS_NEW,
+		BM_MAIL_STATUS_PENDING, BM_MAIL_STATUS_READ,
 		BM_MAIL_STATUS_REDIRECTED,
 		BM_MAIL_STATUS_REPLIED, BM_MAIL_STATUS_SENT,	NULL
 	};
 	for( int i=0; stats[i]; ++i) {
 		BMessage* msg = new BMessage(*(menu->MsgTemplate()));
 		msg->AddString(BeamApplication::MSG_STATUS, stats[i]);
-		BMenuItem* item 
+		BMenuItem* item
 			= new BMenuItem( stats[i], msg);
 		item->SetTarget( menu->MsgTarget());
 		menu->AddItem( item);
@@ -406,17 +406,17 @@ void BmGuiRoster::RebuildStatusMenu( BmMenuControllerBase* menu)
 
 /*------------------------------------------------------------------------------*\
 	()
-		-	
+		-
 \*------------------------------------------------------------------------------*/
 void BmGuiRoster::RebuildCharsetMenu( BmMenuControllerBase* menu)
 {
-	ClearMenu( menu);	
+	ClearMenu( menu);
 	AddCharsetMenu(menu, menu->MsgTarget(), menu->MsgTemplate()->what);
 }
 
 /*------------------------------------------------------------------------------*\
 	()
-		-	
+		-
 \*------------------------------------------------------------------------------*/
 void BmGuiRoster::AddCharsetMenu( BMenu* menu, BHandler* target, int32 msgType)
 {
@@ -446,8 +446,8 @@ void BmGuiRoster::AddCharsetMenu( BMenu* menu, BHandler* target, int32 msgType)
 			charset.ToLower();
 			BMessage* msg = new BMessage( msgType);
 			msg->AddString("charset", charset.String());
-			AddItemToMenu( moreMenu, 
-								CreateMenuItem( charset.String(), msg), 
+			AddItemToMenu( moreMenu,
+								CreateMenuItem( charset.String(), msg),
 								target);
 		}
 	}
@@ -457,7 +457,7 @@ void BmGuiRoster::AddCharsetMenu( BMenu* menu, BHandler* target, int32 msgType)
 
 /*------------------------------------------------------------------------------*\
 	()
-		-	
+		-
 \*------------------------------------------------------------------------------*/
 void BmGuiRoster::RebuildLogMenu( BmMenuControllerBase* logMenu) {
 	const char* logNames[] = {
@@ -479,21 +479,21 @@ void BmGuiRoster::RebuildLogMenu( BmMenuControllerBase* logMenu) {
 		BMenu* recvMenu = new BMenu( "Receiving Accounts");
 		BmAutolockCheckGlobal lock( TheRecvAccountList->ModelLocker());
 		if (!lock.IsLocked())
-			BM_THROW_RUNTIME( 
+			BM_THROW_RUNTIME(
 				TheRecvAccountList->ModelNameNC() << ": Unable to get lock"
 			);
 		BmModelItemMap::const_iterator iter;
-		for( 	iter = TheRecvAccountList->begin(); 
+		for( 	iter = TheRecvAccountList->begin();
 				iter != TheRecvAccountList->end(); ++iter) {
-			BmRecvAccount* recvAcc 
+			BmRecvAccount* recvAcc
 				= dynamic_cast<BmRecvAccount*>(iter->second.Get());
 			if (!recvAcc)
 				continue;
-			BmString logname 
+			BmString logname
 				= BmString(recvAcc->Type()) << "_" << iter->second->Key();
 			BMessage* logMsg( new BMessage( logMenu->MsgTemplate()->what));
 			logMsg->AddString( "logfile", logname.String());
-			recvMenu->AddItem( new BMenuItem( iter->second->Key().String(), 
+			recvMenu->AddItem( new BMenuItem( iter->second->Key().String(),
 														 logMsg));
 		}
 		logMenu->AddItem( recvMenu);
@@ -503,11 +503,11 @@ void BmGuiRoster::RebuildLogMenu( BmMenuControllerBase* logMenu) {
 		BMenu* smtpMenu = new BMenu( "Sending Accounts");
 		BmAutolockCheckGlobal lock( TheSmtpAccountList->ModelLocker());
 		if (!lock.IsLocked())
-			BM_THROW_RUNTIME( 
+			BM_THROW_RUNTIME(
 				TheSmtpAccountList->ModelNameNC() << ": Unable to get lock"
 			);
 		BmModelItemMap::const_iterator iter;
-		for( 	iter = TheSmtpAccountList->begin(); 
+		for( 	iter = TheSmtpAccountList->begin();
 				iter != TheSmtpAccountList->end(); ++iter) {
 			BmString logname = BmString("SMTP_") + iter->second->Key();
 			BMessage* logMsg( new BMessage( logMenu->MsgTemplate()->what));
@@ -516,12 +516,11 @@ void BmGuiRoster::RebuildLogMenu( BmMenuControllerBase* logMenu) {
 		}
 		logMenu->AddItem( smtpMenu);
 	}
-	TheLogHandler->mLocker.Unlock();
 }
 
 /*------------------------------------------------------------------------------*\
 	()
-		-	
+		-
 \*------------------------------------------------------------------------------*/
 void BmGuiRoster::RebuildMailRefFilterMenu( BmMenuControllerBase* menu)
 {
@@ -545,7 +544,7 @@ void BmGuiRoster::RebuildMailRefFilterMenu( BmMenuControllerBase* menu)
 
 /*------------------------------------------------------------------------------*\
 	()
-		-	
+		-
 \*------------------------------------------------------------------------------*/
 void BmGuiRoster::RebuildMailRefViewFilterMenu( BmMenuControllerBase* menu)
 {
@@ -568,7 +567,7 @@ if (i==1)
 
 /*------------------------------------------------------------------------------*\
 	()
-		-	
+		-
 \*------------------------------------------------------------------------------*/
 int32 BmGuiRoster::ShowAlert( const BmString& text, const char* btn1,
 										const char* btn2, const char* btn3)
