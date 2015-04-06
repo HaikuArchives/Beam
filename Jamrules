@@ -57,7 +57,7 @@ actions Distro
 	cp -a $(TOP)/resources/iconset* $(DISTRO_DIR)/Icons/ ;
 	find $(DISTRO_DIR)/Icons -maxdepth 2 -name CVS -exec rm -r {} \; ;
 	cp -a $(TOP)/Changes.txt $(DISTRO_DIR)/ ;
-	cp -a $(TOP)/Readme.txt $(DISTRO_DIR)/ ;
+	cp -a $(TOP)/Readme.md $(DISTRO_DIR)/ ;
 	cp -a $(TOP)/GnuGeneralPublicLicense.txt $(DISTRO_DIR)/ ;
 	ln -sfn ../add-ons $(DISTRO_DIR)/tools/ ;
 	ln -sfn ../lib $(DISTRO_DIR)/tools/ ;
