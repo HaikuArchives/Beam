@@ -522,13 +522,12 @@ void BmPopper::StateAuth() {
 		} else if (authMethod == BmPopAccount::AUTH_CRAM_MD5) {
 			BmString cmd = BmString("AUTH CRAM-MD5");
 			SendCommand( cmd);
-			AuthCramMD5(mPopAccount->Username(), mPopAccount->Password());
+			AuthCramMD5(mPopAccount->Username(), pwd);
 		} else if (authMethod == BmPopAccount::AUTH_DIGEST_MD5) {
 			BmString cmd = BmString("AUTH DIGEST-MD5");
 			SendCommand( cmd);
 			BmString serviceUri = BmString("pop/") << mPopAccount->Server();
-			AuthDigestMD5(mPopAccount->Username(), mPopAccount->Password(),
-							  serviceUri);
+			AuthDigestMD5(mPopAccount->Username(), pwd, serviceUri);
 		} else if (authMethod == BmPopAccount::AUTH_POP3) {
 			// send username and password as plain text:
 			BmString cmd = BmString("USER ") << mPopAccount->Username();
