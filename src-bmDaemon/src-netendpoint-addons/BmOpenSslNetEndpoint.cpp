@@ -11,8 +11,10 @@
 #include <map>
 
 #include <Font.h>
+#include <Path.h>
 #include <Locker.h>
 #include <Message.h>
+#include <FindDirectory.h>
 #ifdef BEAM_FOR_BONE
 # include <netinet/in.h>
 #endif
@@ -70,7 +72,6 @@ unsigned long thread_id_callback(void)
 BmOpenSslNetEndpoint::ContextManager::ContextManager()
 	:	mLocker("OpenSslContextManagerLock")
 	,	mTlsContext(NULL)
-	,	mSslContext(NULL)
 	,	mStatus(B_NO_INIT)
 {
 	if (!SSL_library_init())
@@ -83,22 +84,38 @@ BmOpenSslNetEndpoint::ContextManager::ContextManager()
 	// enter threadsafe mode:
 	_SetupSslLocks();
 
-	// create TLS & SSL contexts:
-	mTlsContext = SSL_CTX_new(TLSv1_client_method());
-	status_t result;
-	if ((result = _SetupContext(mTlsContext)) != B_OK) {
-		SSL_CTX_free( mTlsContext);
-		mTlsContext = NULL;
-		mStatus = result;
-		return;
-	}
-	mSslContext = SSL_CTX_new(SSLv3_client_method());
-	if ((result = _SetupContext(mSslContext)) != B_OK) {
-		SSL_CTX_free( mSslContext);
-		mSslContext = NULL;
-		mStatus = result;
-		return;
-	}
+	// create TLS context (mostly copied from BSecureSocket)
+	mTlsContext = SSL_CTX_new(SSLv23_method());
+	SSL_CTX_set_options(mTlsContext, SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3);
+	SSL_CTX_set_options(mTlsContext, SSL_OP_NO_COMPRESSION);
+	SSL_CTX_set_mode(mTlsContext, SSL_MODE_AUTO_RETRY);
+	SSL_CTX_set_cipher_list(mTlsContext,
+		"ECDHE-ECDSA-AES128-GCM-SHA256:"
+		"ECDHE-RSA-AES128-GCM-SHA256:"
+		"ECDHE-ECDSA-AES256-GCM-SHA384:"
+		"ECDHE-RSA-AES256-GCM-SHA384:"
+		"ECDHE-ECDSA-CHACHA20-POLY1305-SHA256:"
+		"ECDHE-RSA-CHACHA20-POLY1305-SHA256:"
+		"ECDHE-ECDSA-AES256-SHA:"
+		"ECDHE-ECDSA-AES128-SHA:"
+		"ECDHE-RSA-AES128-SHA:"
+		"ECDHE-RSA-AES256-SHA:"
+		"DHE-RSA-AES128-SHA:"
+		"DHE-RSA-AES256-SHA:"
+		"AES128-SHA:"
+		"AES256-SHA");
+	SSL_CTX_set_ecdh_auto(mTlsContext, 1);
+	SSL_CTX_set_client_cert_cb(mTlsContext, 
+		BmOpenSslNetEndpoint::ClientCertCallback);
+	SSL_CTX_set_verify(mTlsContext, SSL_VERIFY_PEER,
+		BmOpenSslNetEndpoint::VerifyCallback);
+	
+	BPath certificateStore;
+	find_directory(B_SYSTEM_DATA_DIRECTORY, &certificateStore);
+	certificateStore.Append("ssl/CARootCertificates.pem");
+	SSL_CTX_load_verify_locations(mTlsContext, certificateStore.Path(), NULL);
+	SSL_CTX_set_verify(mTlsContext, SSL_VERIFY_PEER, VerifyCallback);
+
 	mStatus = B_OK;
 }
 
@@ -110,8 +127,6 @@ BmOpenSslNetEndpoint::ContextManager::~ContextManager()
 {
 	if (mTlsContext)
 		SSL_CTX_free( mTlsContext);
-	if (mSslContext)
-		SSL_CTX_free( mSslContext);
 	_CleanupSslLocks();
 }
 
@@ -177,36 +192,6 @@ void BmOpenSslNetEndpoint::ContextManager::RemoveUserdataForCurrentThread()
 		mUserdataMap.erase(find_thread(NULL));
 		mLocker.Unlock();
 	}
-}
-
-/*------------------------------------------------------------------------------*\
-	()
-		-	
-\*------------------------------------------------------------------------------*/
-status_t BmOpenSslNetEndpoint::ContextManager::_SetupContext(SSL_CTX* context)
-{
-	if (!context)
-		return B_ERROR;
-	if (SSL_CTX_set_default_verify_paths(context) != 1) {
-		mErrorStr = BmString("couldn't set default verify paths\n")
-							<< CollectSslErrorString();
-		return B_ERROR;
-	}
-	const char* cipherList = "ALL:!ADH:!LOW:!EXP:!MD5:@STRENGTH";
-		// as in  "Network Security with OpenSSL", page 146f
-	if (SSL_CTX_set_cipher_list(context, cipherList) != 1) {
-		mErrorStr = BmString("couldn't set default verify paths\n")
-							<< CollectSslErrorString();
-		return B_ERROR;
-	}
-
-	SSL_CTX_set_client_cert_cb(context, 
-										BmOpenSslNetEndpoint::ClientCertCallback);
-
-	SSL_CTX_set_verify(context, SSL_VERIFY_PEER,
-							 BmOpenSslNetEndpoint::VerifyCallback);
-
-	return B_OK;
 }
 
 /*------------------------------------------------------------------------------*\
@@ -339,13 +324,8 @@ status_t BmOpenSslNetEndpoint::StartEncryption(const char* encType) {
 		mEncryptionType = encType;
 
 	// fetch context corresponding to requested type of connection
-	SSL_CTX* context;
-	if (mEncryptionType == "TLS")
-		context = nContextManager.TlsContext();
-	else if (mEncryptionType == "SSL")
-		context = nContextManager.SslContext();
-	else
-		return B_BAD_VALUE;
+	// TODO/FIXME: we're ignoring encType on purpose here (remove it?)
+	SSL_CTX* context = nContextManager.TlsContext();
 
 	// create SSL structure
 	mSSL = SSL_new( context);

@@ -72,7 +72,6 @@ private:
 		~ContextManager();
 	
 		SSL_CTX* TlsContext()					{ return mTlsContext; }
-		SSL_CTX* SslContext()					{ return mSslContext; }
 	
 		void SetUserdataForCurrentThread(BmOpenSslNetEndpoint* userdata);
 		BmOpenSslNetEndpoint* GetUserdataForCurrentThread();
@@ -81,13 +80,11 @@ private:
 		unsigned long ThreadIdCallback(void);
 	
 	private:
-		status_t _SetupContext(SSL_CTX* context);
 		void _SetupSslLocks();
 		void _CleanupSslLocks();
 	
 		BLocker mLocker;
 		SSL_CTX* mTlsContext;
-		SSL_CTX* mSslContext;
 		status_t mStatus;
 		BmString mErrorStr;
 		UserdataMap mUserdataMap;
